@@ -371,6 +371,18 @@ def _cal_events_for(symbol):
     out.sort(key=lambda x: x["ts"])
     return out
 
+@router.get("/api/calendar/{symbol}")
+def get_calendar_events(symbol: str):
+    """رویدادهای تقویم کدال نماد (مجمع/تقسیم سود/افزایش سرمایه/…) — سبک، بدون سری قیمت."""
+    try:
+        events = _cal_events_for(symbol)
+        return {"status": "ok", "symbol": symbol,
+                "count": len(events), "events": events}
+    except Exception as e:
+        return {"status": "error", "symbol": symbol,
+                "message": str(e), "events": []}
+
+
 @router.get("/api/ma/{symbol}")
 def get_ma_events(symbol: str, days: int = Query(730)):
     """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) از price_history + رویدادهای تقویم نماد."""
