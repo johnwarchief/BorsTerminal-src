@@ -1,8 +1,9 @@
 // تست لایهٔ دادهٔ واحد «کل بورس» + رادار + fallback اولین screener (ادامهٔ فاز ۱)
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it } from 'vitest';
-import { buildMarketSeries, buildWholeMarket, TEDPIX_SOURCE } from '@features/technical/api/useMarketSeries';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { buildMarketSeries, buildWholeMarket, fetchTedipx, TEDPIX_SOURCE } from '@features/technical/api/useMarketSeries';
+import { toKLineData } from '@features/technical/api/useCandleFeed';
 import { FTS_FIB_BANDS, FTS_FIB_LEVELS } from '@features/technical/lib/ftsOverlays';
 import { buildDrawingGroups, toolLabel } from '@features/technical/lib/drawingTools';
 import type { KLineData } from '@vendor/klinecharts';
@@ -83,6 +84,50 @@ describe('کاتالوگ ابزارهای ترسیم FTS', () => {
     expect(names).toContain('ftsPosition');
     expect(names).not.toContain('straightLine'); // vendor-supported، بدون پشتیبانی حذف می‌شود
     expect(toolLabel('ftsPosition')).toBe('پوزیشن لانگ/شورت');
+  });
+});
+
+function resp(body: unknown): Response {
+  return { ok: true, status: 200, json: async () => body } as unknown as Response;
+}
+
+describe('مسیر شاخص کل واقعی (TEDPIX) + fallback', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('index موفق: قرارداد پاسخ و کندل‌ها درست است', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          resp({
+            status: 'success',
+            symbol: 'شاخص کل',
+            has_volume: false,
+            candles: [
+              { time: '2026-09-13', open: 1, high: 2, low: 0.5, close: 1.5 },
+              { time: '2026-09-14', open: 1.5, high: 2, low: 1, close: 1.8 },
+            ],
+          }),
+        ),
+      ),
+    );
+    const feed = await fetchTedipx();
+    expect(feed.status).toBe('success');
+    expect(feed.has_volume).toBe(false);
+    const candles = toKLineData(feed.candles ?? [], []);
+    expect(candles).toHaveLength(2);
+    const w = buildWholeMarket(candles, null);
+    expect(w.kind).toBe('candles');
+    expect(w.source).toBe(TEDPIX_SOURCE);
+  });
+
+  it('index خطا (status!=success): fallback به سری کلان', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(resp({ status: 'error', candles: [] }))));
+    const feed = await fetchTedipx();
+    expect(feed.status).not.toBe('success');
+    const macro = buildMarketSeries(timeline({ ready: true, series: { val_bt: [1, 2], t: ['a', 'b'] } }));
+    const w = buildWholeMarket([], macro);
+    expect(w.kind).toBe('macro');
   });
 });
 
