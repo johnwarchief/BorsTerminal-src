@@ -1,5 +1,5 @@
 // features/technical/routes/TechnicalPage.tsx -- صفحه تکنیکال FTS (ایجنت 2)
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
@@ -13,7 +13,8 @@ import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
-import { KLineChartWrapper, type ChartMarker, type ChartPalette, type FtsChartLayers } from '../components/KLineChartWrapper';
+import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type ChartPalette, type FtsChartLayers } from '../components/KLineChartWrapper';
+import { DrawingToolbar } from '../components/DrawingToolbar';
 import { FtsToolbar } from '../components/FtsToolbar';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
@@ -66,6 +67,10 @@ export default function TechnicalPage() {
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const showRsi = useFtsConfigStore((s) => s.showRsi);
   const showVolMa = useFtsConfigStore((s) => s.showVolMa);
+  const priceScale = useFtsConfigStore((s) => s.priceScale);
+  const showGrid = useFtsConfigStore((s) => s.showGrid);
+  const showCrosshair = useFtsConfigStore((s) => s.showCrosshair);
+  const [chartApi, setChartApi] = useState<ChartDrawApi | null>(null);
 
   const feed = useCandleFeed(symbol);
   const candles = feed.candles;
@@ -213,28 +218,35 @@ export default function TechnicalPage() {
                 hint="سرور برای این نماد کندلی برنگرداند؛ ممکن است نماد جدید باشد یا هنوز همگام سازی نشده"
               />
             ) : (
-              <>
-                <KLineChartWrapper
-                  data={displayed}
-                  palette={theme === 'dark' ? DARK : LIGHT}
-                  layers={layers}
-                  height={600}
-                  chartType={chartType}
-                  showRsi={showRsi}
-                  showVolMa={showVolMa}
-                />
-                <FtsBottomStrip
-                  data={{
-                    mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
-                    stackLabel: STACK_LABEL[maPanel.stack],
-                    stackTone: maPanel.stack === 'bull' ? 'green' : maPanel.stack === 'bear' ? 'red' : 'gray',
-                    setups: signal?.payload.setups ?? [],
-                    resistance: jetPrice,
-                    support: signal?.payload.keyLevels.find((k) => k.type === 'support')?.price ?? null,
-                    stopLoss: signal?.payload.stopLossPrice ?? null,
-                  }}
-                />
-              </>
+              <div className="flex items-start gap-2">
+                <DrawingToolbar api={chartApi} />
+                <div className="flex min-w-0 flex-1 flex-col gap-4">
+                  <KLineChartWrapper
+                    data={displayed}
+                    palette={theme === 'dark' ? DARK : LIGHT}
+                    layers={layers}
+                    height={600}
+                    chartType={chartType}
+                    showRsi={showRsi}
+                    showVolMa={showVolMa}
+                    priceScale={priceScale}
+                    showGrid={showGrid}
+                    showCrosshair={showCrosshair}
+                    onApi={setChartApi}
+                  />
+                  <FtsBottomStrip
+                    data={{
+                      mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
+                      stackLabel: STACK_LABEL[maPanel.stack],
+                      stackTone: maPanel.stack === 'bull' ? 'green' : maPanel.stack === 'bear' ? 'red' : 'gray',
+                      setups: signal?.payload.setups ?? [],
+                      resistance: jetPrice,
+                      support: signal?.payload.keyLevels.find((k) => k.type === 'support')?.price ?? null,
+                      stopLoss: signal?.payload.stopLossPrice ?? null,
+                    }}
+                  />
+                </div>
+              </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">

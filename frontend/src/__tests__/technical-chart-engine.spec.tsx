@@ -3,7 +3,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KLineChart, KLineData, KLineChartsApi } from '@vendor/klinecharts';
-import { KLineChartWrapper, sortAscending, type ChartPalette, type FtsChartLayers } from '@features/technical/components/KLineChartWrapper';
+import { KLineChartWrapper, sortAscending, type ChartDrawApi, type ChartPalette, type FtsChartLayers } from '@features/technical/components/KLineChartWrapper';
 import { FtsBottomStrip } from '@features/technical/components/FtsBottomStrip';
 import {
   FIB_ZONE_OVERLAY,
@@ -594,5 +594,32 @@ describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', ()
   it('دکمه تمام‌صفحه وجود دارد', async () => {
     render(<KLineChartWrapper data={candles(6)} palette={PALETTE} />);
     expect(await screen.findByTestId('kline-fullscreen')).toBeInTheDocument();
+  });
+
+  it('مقیاس قیمت روی yAxis.type اعمال می‌شود', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} priceScale="logarithm" />);
+    await waitFor(() => {
+      expect(mock?.chart.setStyles).toHaveBeenCalledWith({ yAxis: { type: 'logarithm' } });
+    });
+  });
+
+  it('onApi: startDraw اورلی می‌سازد و clear پاک می‌کند', async () => {
+    let api: ChartDrawApi | null = null;
+    render(
+      <KLineChartWrapper
+        data={candles(6)}
+        palette={PALETTE}
+        onApi={(a) => {
+          api = a;
+        }}
+      />,
+    );
+    await waitFor(() => {
+      expect(api).not.toBeNull();
+    });
+    (api as unknown as ChartDrawApi).startDraw('straightLine');
+    expect(mock?.chart.createOverlay).toHaveBeenCalledWith({ name: 'straightLine', groupId: 'fts-draw' });
+    (api as unknown as ChartDrawApi).clearDrawings();
+    expect(mock?.chart.removeOverlay).toHaveBeenCalledWith({ groupId: 'fts-draw' });
   });
 });

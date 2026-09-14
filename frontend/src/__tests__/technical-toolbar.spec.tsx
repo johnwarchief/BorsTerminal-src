@@ -1,9 +1,12 @@
 // تست تولبار و بازنمونه‌گیری تایم‌فریم (فاز ۳) — هم‌خوانی با تریدینگ‌ویو
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FtsToolbar } from '@features/technical/components/FtsToolbar';
+import { DrawingToolbar } from '@features/technical/components/DrawingToolbar';
+import type { ChartDrawApi } from '@features/technical/components/KLineChartWrapper';
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
 import { resample } from '@features/technical/lib/resample';
+import { buildDrawingGroups } from '@features/technical/lib/drawingTools';
 import type { KLineData } from '@vendor/klinecharts';
 
 const day = (ts: number, o: number, h: number, l: number, c: number, v: number): KLineData => ({
@@ -70,5 +73,58 @@ describe('تولبار تریدینگ‌ویویی', () => {
     const before = useFtsConfigStore.getState().showMAs;
     fireEvent.click(screen.getByRole('button', { name: /مووینگ ها/ }));
     expect(useFtsConfigStore.getState().showMAs).toBe(!before);
+  });
+
+  it('مقیاس قیمت و کلیدهای نمایش', () => {
+    render(<FtsToolbar />);
+    fireEvent.click(screen.getByRole('button', { name: 'لگاریتمی' }));
+    expect(useFtsConfigStore.getState().priceScale).toBe('logarithm');
+    fireEvent.click(screen.getByRole('button', { name: 'خطی' }));
+    expect(useFtsConfigStore.getState().priceScale).toBe('normal');
+    const gridBefore = useFtsConfigStore.getState().showGrid;
+    fireEvent.click(screen.getByRole('button', { name: /شبکه/ }));
+    expect(useFtsConfigStore.getState().showGrid).toBe(!gridBefore);
+  });
+
+  it('نوع چارت توخالی مقدار معتبر candle.type می‌دهد', () => {
+    render(<FtsToolbar />);
+    fireEvent.click(screen.getByRole('button', { name: 'کندل توخالی' }));
+    expect(useFtsConfigStore.getState().chartType).toBe('candle_stroke');
+    fireEvent.click(screen.getByRole('button', { name: 'کندل' }));
+    expect(useFtsConfigStore.getState().chartType).toBe('candle_solid');
+  });
+});
+
+describe('کاتالوگ و ریل ابزارهای ترسیم', () => {
+  afterEach(() => {
+    (window as unknown as { klinecharts?: unknown }).klinecharts = undefined;
+  });
+
+  it('buildDrawingGroups فقط ابزارهای پشتیبانی‌شده را نگه می‌دارد', () => {
+    const g = buildDrawingGroups(['straightLine', 'fibonacciLine', 'brush']);
+    expect(g.map((x) => x.label)).toEqual(['خطوط', 'فیبوناچی', 'حاشیه‌نویسی']);
+    expect(g[0].tools.map((t) => t.name)).toEqual(['straightLine']);
+    expect(buildDrawingGroups([])).toEqual([]);
+  });
+
+  it('ریل، flyout را باز و startDraw را صدا می‌زند', () => {
+    (window as unknown as { klinecharts: unknown }).klinecharts = {
+      getSupportedOverlays: () => ['straightLine', 'fibonacciLine'],
+    };
+    const startDraw = vi.fn();
+    const api = { startDraw, undo: vi.fn(), redo: vi.fn(), clearDrawings: vi.fn(), hideDrawings: vi.fn() } as ChartDrawApi;
+    render(<DrawingToolbar api={api} />);
+    fireEvent.click(screen.getByTestId('draw-group-straightLine'));
+    fireEvent.click(screen.getByTestId('draw-straightLine'));
+    expect(startDraw).toHaveBeenCalledWith('straightLine');
+    // flyout بعد از انتخاب بسته می‌شود
+    expect(screen.queryByTestId('draw-flyout')).toBeNull();
+  });
+
+  it('دکمه‌های undo/clear/pنهان بدون API غیرفعال‌اند', () => {
+    (window as unknown as { klinecharts: unknown }).klinecharts = { getSupportedOverlays: () => ['straightLine'] };
+    render(<DrawingToolbar api={null} />);
+    expect(screen.getByTestId('draw-undo')).toBeDisabled();
+    expect(screen.getByTestId('draw-clear')).toBeDisabled();
   });
 });
