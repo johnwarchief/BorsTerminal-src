@@ -19,6 +19,7 @@ import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
 import { FtsBottomStrip } from '../components/FtsBottomStrip';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
+import { MarketOverview } from '../components/MarketOverview';
 
 const MA_PERIODS = [14, 21, 52, 100];
 
@@ -135,8 +136,9 @@ export default function TechnicalPage() {
   // داده ندارد: سرور صریح empty گفته یا تاریخچه خالی است — ماسک نمی شود
   const noData = feed.data?.status === 'empty' || (!feed.isLoading && !feed.isError && candles.length === 0);
 
+  // بدون نماد: چارت کل بورس (نمای کلان بازار)، نه صفحهٔ خالی/بن‌بست
   if (!symbol) {
-    return <EmptyState title="نمادی انتخاب نشده" hint="از تابلو بازار یک نماد انتخاب کن یا نشانی را با نماد باز کن" />;
+    return <MarketOverview />;
   }
 
   return (
