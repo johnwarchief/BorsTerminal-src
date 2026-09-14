@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `2a4e4c2` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۴۴۴ سبز (۴۱ فایل) · eslint صفر · build سالم
+- **master HEAD:** `fef5d51` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۴۵۵ سبز (۴۳ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -50,3 +50,9 @@
 ## به‌روزرسانی ۳ (ایجنتهد main, 2026-09-14 ~19:40)
 - **agent/technical (ادامه‌ی فاز 3)** مرج شد (`efef9c3` + merge commit `2a4e4c2`). ریل ابزار ترسیم (خطوط/کانال/فیبوناچی/حاشیه‌نویسی + واگرد/ازنو/پاک/پنهان)، مقیاس قیمت/شبکه/کراس‌هیر، اصلاح candle.type به مقادیر معتبر vendor، DrawingToolbar + lib/drawingTools. vitest 444/41 سبز · eslint صفر · build سالم.
 - باقیمانده‌ی فاز 3 (آگاهانه): مقایسه نماد، هشدار، بازپخش، انتشار، چیدمان‌ها، دیالوگ کامل Settings، Properties هر ابزار، میان‌برها، magnet/stay-in-draw، Heikin-Ashi/Renko/Kagi/PnF، تایم‌فریم‌های درون‌روزی.
+
+
+## به‌روزرسانی ۴ (ایجنتهد main, 2026-09-14 ~20:00)
+- **agent/technical (ادامه‌ی فاز 1)** مرج شد: `986f082` + merge commit `fef5d51`. (feed: ترجیح /api/chart با fallback به /api/history + نشانهٔ منبع؛ لایهٔ دادهٔ واحد useMarketSeries؛ رادار سلامت کلان؛ fallback اولین نماد screener). vitest 455/43 سبز · eslint صفر · build سالم.
+- سوییچ نمای «کل‌بورس» به `/api/index/tedpix` **هنوز اعمال نشده** (منبع فعلی `local:mstat-timeline`)؛ اما useMarketSeries/buildMarketSeries دقیقاً همان seam جای‌گزینی است (یک تابع).
+- باگ بک‌اند (خارج‌قلمرو): `/api/history` و `/api/fts` تطبیق نماد را دقیق (WHERE symbol=?) می‌زنند و DB بعضی نمادها را با «ك/ي» عربی ذخیره کرده (344 نماد KAF عربی، 554 YEH) ⇒ تاریخچه/FTS این نمادها خالی می‌ماند. /api/chart سالم است (CDN + نرمال‌سازی). نیازمند نرمال‌سازی سمت پایتون.
