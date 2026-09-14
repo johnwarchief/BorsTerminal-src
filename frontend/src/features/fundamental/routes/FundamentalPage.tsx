@@ -22,6 +22,7 @@ import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
 import { isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
+import { AssemblyBadge } from '../components/AssemblyBadge';
 import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 import { EpsLadder } from '../components/EpsLadder';
@@ -175,6 +176,7 @@ export default function FundamentalPage() {
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}
         {isHolding ? <Badge tone="blue">هلدینگ / سرمایه‌گذاری</Badge> : null}
+        <AssemblyBadge symbol={symbol} />
         {signal ? (
           <>
             <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
