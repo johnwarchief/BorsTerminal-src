@@ -38,6 +38,15 @@ describe('دیالوگ تنظیمات چارت', () => {
     fireEvent.click(screen.getByTestId('chart-settings-close'));
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('سوییچ موتور چارت: پیش‌فرض klinecharts و تغییر به lightweight', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} />);
+    expect(['klinecharts', 'lightweight']).toContain(useFtsConfigStore.getState().chartEngine);
+    fireEvent.click(screen.getByRole('button', { name: 'Lightweight Charts' }));
+    expect(useFtsConfigStore.getState().chartEngine).toBe('lightweight');
+    fireEvent.click(screen.getByRole('button', { name: 'klinecharts (فعلی)' }));
+    expect(useFtsConfigStore.getState().chartEngine).toBe('klinecharts');
+  });
 });
 
 describe('پنل تنظیمات ابزار ترسیم', () => {

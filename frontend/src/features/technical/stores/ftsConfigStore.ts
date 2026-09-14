@@ -15,6 +15,8 @@ export type FtsLayerKey =
 
 /** نوع نمایش چارت — مقادیر معتبر candle.type در klinecharts v10 */
 export type ChartType = 'candle_solid' | 'candle_stroke' | 'ohlc' | 'line' | 'area';
+/** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
+export type ChartEngine = 'klinecharts' | 'lightweight';
 /** تایم‌فریم — روزانه/هفتگی/ماهانه (بازنمونه‌گیری سمت کلاینت از کندل روزانه) */
 export type Timeframe = 'day' | 'week' | 'month';
 /** مقیاس محور قیمت — مقادیر معتبر yAxis.type در klinecharts v10 */
@@ -26,6 +28,7 @@ type FtsFlags = Record<FtsLayerKey, boolean>;
 
 type FtsConfigState = FtsFlags & {
   chartType: ChartType;
+  chartEngine: ChartEngine;
   timeframe: Timeframe;
   priceScale: PriceScale;
   showGrid: boolean;
@@ -34,6 +37,7 @@ type FtsConfigState = FtsFlags & {
   showVolMa: boolean;
   toggle: (k: FtsLayerKey) => void;
   setChartType: (t: ChartType) => void;
+  setChartEngine: (e: ChartEngine) => void;
   setTimeframe: (t: Timeframe) => void;
   setPriceScale: (p: PriceScale) => void;
   toggleDisplay: (k: DisplayKey) => void;
@@ -54,6 +58,7 @@ export const DEFAULTS: FtsFlags = {
 
 type PersistedState = FtsFlags & {
   chartType: ChartType;
+  chartEngine: ChartEngine;
   timeframe: Timeframe;
   priceScale: PriceScale;
   showGrid: boolean;
@@ -65,6 +70,7 @@ type PersistedState = FtsFlags & {
 const PERSIST_DEFAULTS: PersistedState = {
   ...DEFAULTS,
   chartType: 'candle_solid',
+  chartEngine: 'klinecharts',
   timeframe: 'day',
   priceScale: 'normal',
   showGrid: true,
@@ -83,6 +89,7 @@ function pick(s: PersistedState): PersistedState {
     showFibZones: s.showFibZones,
     showSetupMarkers: s.showSetupMarkers,
     chartType: s.chartType,
+    chartEngine: s.chartEngine,
     timeframe: s.timeframe,
     priceScale: s.priceScale,
     showGrid: s.showGrid,
@@ -122,6 +129,12 @@ export const useFtsConfigStore = create<FtsConfigState>((set) => ({
   setChartType: (t) =>
     set((s) => {
       const next = { ...pick(s), chartType: t };
+      persist(next);
+      return { ...s, ...next };
+    }),
+  setChartEngine: (e) =>
+    set((s) => {
+      const next = { ...pick(s), chartEngine: e };
       persist(next);
       return { ...s, ...next };
     }),

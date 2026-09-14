@@ -1,7 +1,12 @@
 // features/technical/components/ChartSettingsDialog.tsx -- دیالوگ تنظیمات چارت (تب‌های مقیاس/ظاهر/ابزار)
 // همهٔ فیلدها واقعی و متصل به ftsConfigStore هستند (بدون شبیه‌سازی).
 // طبق docs/CHART-PARITY-REFERENCE.md §۳ (زیرمجموعهٔ قابل‌نگاشت روی klinecharts v10).
-import { useFtsConfigStore, type ChartType, type PriceScale, type Timeframe } from '../stores/ftsConfigStore';
+import { useFtsConfigStore, type ChartEngine, type ChartType, type PriceScale, type Timeframe } from '../stores/ftsConfigStore';
+
+const ENGINES: { key: ChartEngine; label: string; hint: string }[] = [
+  { key: 'klinecharts', label: 'klinecharts (فعلی)', hint: 'موتور قدیمی؛ ابزارهای ترسیم FTS فعال' },
+  { key: 'lightweight', label: 'Lightweight Charts', hint: 'موتور متن‌باز تریدینگ‌ویو؛ فاز مهاجرت' },
+];
 
 const SCALES: { key: PriceScale; label: string; hint: string }[] = [
   { key: 'normal', label: 'خطی', hint: 'yAxis.type = normal' },
@@ -65,6 +70,7 @@ function Choice<T extends string>({
 export function ChartSettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const priceScale = useFtsConfigStore((s) => s.priceScale);
   const chartType = useFtsConfigStore((s) => s.chartType);
+  const chartEngine = useFtsConfigStore((s) => s.chartEngine);
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const showGrid = useFtsConfigStore((s) => s.showGrid);
   const showCrosshair = useFtsConfigStore((s) => s.showCrosshair);
@@ -72,6 +78,7 @@ export function ChartSettingsDialog({ open, onClose }: { open: boolean; onClose:
   const showVolMa = useFtsConfigStore((s) => s.showVolMa);
   const setPriceScale = useFtsConfigStore((s) => s.setPriceScale);
   const setChartType = useFtsConfigStore((s) => s.setChartType);
+  const setChartEngine = useFtsConfigStore((s) => s.setChartEngine);
   const setTimeframe = useFtsConfigStore((s) => s.setTimeframe);
   const toggleDisplay = useFtsConfigStore((s) => s.toggleDisplay);
   const toggleIndicator = useFtsConfigStore((s) => s.toggleIndicator);
@@ -94,6 +101,10 @@ export function ChartSettingsDialog({ open, onClose }: { open: boolean; onClose:
             ✕
           </button>
         </div>
+
+        <Row label="موتور چارت" hint="پیش‌فرض klinecharts است تا رگرسیون نشود">
+          <Choice options={ENGINES} value={chartEngine} onPick={setChartEngine} />
+        </Row>
 
         <Row label="مقیاس محور قیمت" hint="نگاشت به yAxis.type در klinecharts">
           <Choice options={SCALES} value={priceScale} onPick={setPriceScale} />

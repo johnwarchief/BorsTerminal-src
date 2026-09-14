@@ -1,5 +1,5 @@
 // features/technical/routes/TechnicalPage.tsx -- صفحه تکنیکال FTS (ایجنت 2)
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
@@ -17,6 +17,12 @@ import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type FtsChartLa
 import { DrawingToolbar } from '../components/DrawingToolbar';
 import { ToolPropertiesPanel } from '../components/ToolPropertiesPanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
+
+/** موتور Lightweight Charts فقط زمانی بارگذاری می‌شود که کاربر آن را انتخاب کند
+    (مسیر قدیم klinecharts دست‌نخورده و ایزوله از خطای احتمالی LW می‌ماند). */
+const LwChartWrapper = lazy(() =>
+  import('../components/LwChartWrapper').then((m) => ({ default: m.LwChartWrapper })),
+);
 import { paletteFor } from '../lib/chartPalette';
 import { FtsToolbar } from '../components/FtsToolbar';
 import { FtsStatusCard } from '../components/FtsStatusCard';
@@ -51,6 +57,7 @@ export default function TechnicalPage() {
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const showFtsCard = useFtsConfigStore((s) => s.showFtsCard);
   const chartType = useFtsConfigStore((s) => s.chartType);
+  const chartEngine = useFtsConfigStore((s) => s.chartEngine);
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const showRsi = useFtsConfigStore((s) => s.showRsi);
   const showVolMa = useFtsConfigStore((s) => s.showVolMa);
@@ -216,20 +223,42 @@ export default function TechnicalPage() {
                 <div className="flex items-start gap-2">
                 <DrawingToolbar api={chartApi} />
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
-                  <KLineChartWrapper
-                    data={displayed}
-                    palette={paletteFor(theme)}
-                    layers={layers}
-                    height={600}
-                    chartType={chartType}
-                    showRsi={showRsi}
-                    showVolMa={showVolMa}
-                    priceScale={priceScale}
-                    showGrid={showGrid}
-                    showCrosshair={showCrosshair}
-                    onApi={setChartApi}
-                    onDrawChange={setLastDraw}
-                  />
+                  {chartEngine === 'lightweight' ? (
+                    <Suspense
+                      fallback={
+                        <div
+                          className="glass-panel flex items-center justify-center rounded-2xl p-10 text-xs text-text-muted"
+                          style={{ height: 600 }}
+                          data-testid="lw-loading"
+                        >
+                          در حال بارگذاری موتور Lightweight Charts...
+                        </div>
+                      }
+                    >
+                      <LwChartWrapper
+                        data={displayed}
+                        palette={paletteFor(theme)}
+                        height={600}
+                        showRsi={showRsi}
+                        showVolMa={showVolMa}
+                      />
+                    </Suspense>
+                  ) : (
+                    <KLineChartWrapper
+                      data={displayed}
+                      palette={paletteFor(theme)}
+                      layers={layers}
+                      height={600}
+                      chartType={chartType}
+                      showRsi={showRsi}
+                      showVolMa={showVolMa}
+                      priceScale={priceScale}
+                      showGrid={showGrid}
+                      showCrosshair={showCrosshair}
+                      onApi={setChartApi}
+                      onDrawChange={setLastDraw}
+                    />
+                  )}
                   <FtsBottomStrip
                     data={{
                       mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
