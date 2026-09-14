@@ -1,6 +1,6 @@
 // features/technical/routes/TechnicalPage.tsx -- صفحه تکنیکال FTS (ایجنت 2)
-import { useEffect, useMemo } from 'react';
-import { useParams } from 'react-router';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { toFaDigits } from '@shared/lib/fmt';
@@ -20,6 +20,9 @@ import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
 import { FtsBottomStrip } from '../components/FtsBottomStrip';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { MarketOverview } from '../components/MarketOverview';
+import { TechnicalSidebar } from '../components/TechnicalSidebar';
+import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
+import { computeTradeLevels } from '../lib/levels';
 
 const MA_PERIODS = [14, 21, 52, 100];
 
@@ -45,7 +48,9 @@ const STACK_LABEL = { bull: 'سالم صعودی', bear: 'سالم نزولی', 
 
 export default function TechnicalPage() {
   const params = useParams();
+  const navigate = useNavigate();
   const stored = useSymbolStore((s) => s.symbol);
+  const setStored = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
   const theme = useUiStore((s) => s.theme);
 
@@ -136,65 +141,101 @@ export default function TechnicalPage() {
   // داده ندارد: سرور صریح empty گفته یا تاریخچه خالی است — ماسک نمی شود
   const noData = feed.data?.status === 'empty' || (!feed.isLoading && !feed.isError && candles.length === 0);
 
-  // بدون نماد: چارت کل بورس (نمای کلان بازار)، نه صفحهٔ خالی/بن‌بست
-  if (!symbol) {
-    return <MarketOverview />;
-  }
+  /** انتخاب نماد از سایدبار: همان نماد روی چارت + پرش به روت نماد */
+  const selectSymbol = useCallback(
+    (s: string) => {
+      if (!s) return;
+      setStored(s);
+      navigate(`/technical/${encodeURIComponent(s)}`);
+    },
+    [navigate, setStored],
+  );
+
+  /** نمای «ترازها و حد ضرر» سایدبار برای نماد فعال */
+  const activeLevels = useMemo<ActiveLevelsView>(() => {
+    const fib = analysis.data?.fts?.fib ?? null;
+    const { swingLow, stop5pct } = computeTradeLevels(series.lows);
+    return {
+      symbol,
+      zone3340: fib?.zone_33_40 ? { lo: fib.zone_33_40.lo ?? null, hi: fib.zone_33_40.hi ?? null } : null,
+      zone61870: fib?.zone_618_70 ? { lo: fib.zone_618_70.lo ?? null, hi: fib.zone_618_70.hi ?? null } : null,
+      baseLevel: fib?.retrace_base_low ?? null,
+      ma100: maPanel.m100,
+      swingLow,
+      stop5pct,
+      keyLevels: signal?.payload.keyLevels ?? [],
+      stopLoss: signal?.payload.stopLossPrice ?? null,
+      lastClose: lastCandle?.close ?? null,
+      setups: signal?.payload.setups ?? [],
+      direction: signal?.direction ?? null,
+    };
+  }, [analysis.data, series.lows, maPanel.m100, signal, symbol, lastCandle]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-base font-black text-text-primary">{symbol}</h2>
-        <Badge tone="blue">{toFaDigits(candles.length)} کندل روزانه</Badge>
-        {signal ? (
-          <>
-            <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
-            {signal.score != null ? <Badge tone="blue">امتیاز {toFaDigits(signal.score)}</Badge> : null}
-            {signal.payload.dataQuality === 'partial' ? <Badge tone="yellow">داده جزئی</Badge> : null}
-          </>
-        ) : null}
-        {feed.isLoading ? <span className="text-xs text-text-secondary">در حال دریافت...</span> : null}
-        {feed.isError ? <span className="text-xs text-accent-red">خطا در دریافت تاریخچه</span> : null}
-      </div>
+    <div className="flex flex-col gap-4 xl:flex-row">
+      <TechnicalSidebar active={activeLevels} onSelect={selectSymbol} />
 
-      <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
-
-      <FtsToolbar />
-
-      {noData ? (
-        <EmptyState
-          title="تاریخچه قیمتی برای این نماد نیست"
-          hint="سرور برای این نماد کندلی برنگرداند؛ ممکن است نماد جدید باشد یا هنوز همگام سازی نشده"
-        />
-      ) : (
-        <>
-          <KLineChartWrapper data={candles} palette={theme === 'dark' ? DARK : LIGHT} layers={layers} height={600} />
-          <FtsBottomStrip
-            data={{
-              mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
-              stackLabel: STACK_LABEL[maPanel.stack],
-              stackTone: maPanel.stack === 'bull' ? 'green' : maPanel.stack === 'bear' ? 'red' : 'gray',
-              setups: signal?.payload.setups ?? [],
-              resistance: jetPrice,
-              support: signal?.payload.keyLevels.find((k) => k.type === 'support')?.price ?? null,
-              stopLoss: signal?.payload.stopLossPrice ?? null,
-            }}
-          />
-        </>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <FtsTrendPanel data={analysis.data?.fts ?? null} />
-
-        {showFtsCard ? (
-          <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={jetPrice} />
+      <main className="flex min-w-0 flex-1 flex-col gap-4">
+        {!symbol ? (
+          // بدون نماد: چارت کل بورس (نمای کلان بازار)، نه صفحهٔ خالی/بن‌بست
+          <MarketOverview />
         ) : (
-          <div className="glass-panel p-4">
-            <h3 className="mb-2 text-sm font-black text-text-primary">داوری ایجنت</h3>
-            <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
-          </div>
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-black text-text-primary">{symbol}</h2>
+              <Badge tone="blue">{toFaDigits(candles.length)} کندل روزانه</Badge>
+              {signal ? (
+                <>
+                  <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
+                  {signal.score != null ? <Badge tone="blue">امتیاز {toFaDigits(signal.score)}</Badge> : null}
+                  {signal.payload.dataQuality === 'partial' ? <Badge tone="yellow">داده جزئی</Badge> : null}
+                </>
+              ) : null}
+              {feed.isLoading ? <span className="text-xs text-text-secondary">در حال دریافت...</span> : null}
+              {feed.isError ? <span className="text-xs text-accent-red">خطا در دریافت تاریخچه</span> : null}
+            </div>
+
+            <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
+
+            <FtsToolbar />
+
+            {noData ? (
+              <EmptyState
+                title="تاریخچه قیمتی برای این نماد نیست"
+                hint="سرور برای این نماد کندلی برنگرداند؛ ممکن است نماد جدید باشد یا هنوز همگام سازی نشده"
+              />
+            ) : (
+              <>
+                <KLineChartWrapper data={candles} palette={theme === 'dark' ? DARK : LIGHT} layers={layers} height={600} />
+                <FtsBottomStrip
+                  data={{
+                    mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
+                    stackLabel: STACK_LABEL[maPanel.stack],
+                    stackTone: maPanel.stack === 'bull' ? 'green' : maPanel.stack === 'bear' ? 'red' : 'gray',
+                    setups: signal?.payload.setups ?? [],
+                    resistance: jetPrice,
+                    support: signal?.payload.keyLevels.find((k) => k.type === 'support')?.price ?? null,
+                    stopLoss: signal?.payload.stopLossPrice ?? null,
+                  }}
+                />
+              </>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <FtsTrendPanel data={analysis.data?.fts ?? null} />
+
+              {showFtsCard ? (
+                <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={jetPrice} />
+              ) : (
+                <div className="glass-panel p-4">
+                  <h3 className="mb-2 text-sm font-black text-text-primary">داوری ایجنت</h3>
+                  <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
+                </div>
+              )}
+            </div>
+          </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
