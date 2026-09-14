@@ -42,6 +42,18 @@ export const PULLBACK_MARKER_OVERLAY = 'ftsPullbackMarker';
 /** jetResistanceOverlay: خط مقاومت جت (خط آبی پرواز) با لیبل قیمت */
 export const JET_LINE_OVERLAY = 'ftsJetLine';
 
+/** ابزارهای ترسیمی سفارشیِ تعاملی FTS — نگاشتِ نبودشان در klinecharts v10 */
+export const FTS_FIB_OVERLAY = 'ftsFib';
+export const FTS_MEASURE_OVERLAY = 'ftsMeasure';
+export const FTS_POSITION_OVERLAY = 'ftsPosition';
+
+/** سطوح فیبوی FTS (FTS_SPEC بخش اول بند ۳): دو کمربند + مبنا ۱.۰ */
+export const FTS_FIB_LEVELS = [0, 0.33, 0.4, 0.618, 0.7, 1] as const;
+export const FTS_FIB_BANDS: readonly (readonly [number, number])[] = [
+  [0.33, 0.4],
+  [0.618, 0.7],
+];
+
 type MarkerCtx = {
   overlay: Record<string, unknown>;
   coordinates: { x: number; y: number }[];
@@ -185,6 +197,147 @@ export function registerFtsOverlays(api: {
         });
       }
       return figures;
+    },
+  });
+  registerFtsDrawing(reg);
+}
+
+/**
+ * اورلی‌های ترسیمی تعاملی FTS: فیبوی بازگشتی FTS (۳۳/۴۰/۶۱.۸/۷۰/۱۰۰)،
+ * اندازه‌گیری (دو نقطه) و پوزیشن لانگ/شورت (سه نقطه). قیمت/زمان از overlay.points،
+ * مختصات از ctx.coordinates (هم‌الگو با fibonacciLine خود vendor).
+ */
+function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
+  const ptsOf = (ctx: { overlay: Record<string, unknown> }) =>
+    (ctx.overlay.points ?? []) as { value?: number; timestamp?: number }[];
+  const priceAt = (pts: { value?: number }[], t: number): number | null => {
+    const v0 = pts[0]?.value;
+    const v1 = pts[1]?.value;
+    if (typeof v0 !== 'number' || typeof v1 !== 'number') return null;
+    return v1 + (v0 - v1) * t;
+  };
+  const label = (x: number, y: number, text: string, color: string, align: 'left' | 'right' | 'center' = 'right'): OverlayFigure => ({
+    type: 'text',
+    attrs: { x, y, text, align, baseline: 'bottom' },
+    styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+    ignoreEvent: true,
+  });
+  const band = (x: number, y1: number, y2: number, w: number, color: string, edge: string): OverlayFigure => ({
+    type: 'rect',
+    attrs: { x, y: Math.min(y1, y2), width: w, height: Math.max(2, Math.abs(y1 - y2)) },
+    styles: { color, borderColor: edge, borderSize: 1, borderStyle: 'dashed' },
+    ignoreEvent: true,
+  });
+
+  reg({
+    name: FTS_FIB_OVERLAY,
+    totalStep: 3,
+    needDefaultPointFigure: true,
+    needDefaultXAxisFigure: true,
+    needDefaultYAxisFigure: true,
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (c.length < 2 || typeof c[0]?.y !== 'number' || typeof c[1]?.y !== 'number') return [];
+      const w = ctx.bounding.width;
+      const pts = ptsOf(ctx);
+      const yOf = (t: number) => (c[1].y as number) + ((c[0].y as number) - (c[1].y as number)) * t;
+      const figs: OverlayFigure[] = [];
+      for (const [b0, b1] of FTS_FIB_BANDS) {
+        const shallow = b0 < 0.5;
+        figs.push(
+          band(0, yOf(b0), yOf(b1), w, shallow ? FTS_OVERLAY_COLORS.fibStep1 : FTS_OVERLAY_COLORS.fibStep2, shallow ? FTS_OVERLAY_COLORS.fibStep1Edge : FTS_OVERLAY_COLORS.fibStep2Edge),
+        );
+      }
+      for (const t of FTS_FIB_LEVELS) {
+        const y = yOf(t);
+        figs.push({
+          type: 'line',
+          attrs: { coordinates: [{ x: 0, y }, { x: w, y }] },
+          styles: { style: 'solid', color: FTS_OVERLAY_COLORS.fibText, size: 1 },
+          ignoreEvent: true,
+        });
+        const p = priceAt(pts, t);
+        figs.push(label(w - 4, y - 4, `${p == null ? '-' : p.toFixed(0)} (${(t * 100).toFixed(1)}%)`, FTS_OVERLAY_COLORS.fibText));
+      }
+      return figs;
+    },
+  });
+
+  reg({
+    name: FTS_MEASURE_OVERLAY,
+    totalStep: 3,
+    needDefaultPointFigure: true,
+    needDefaultXAxisFigure: true,
+    needDefaultYAxisFigure: true,
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (c.length < 2 || typeof c[0]?.y !== 'number' || typeof c[1]?.y !== 'number') return [];
+      const pts = ptsOf(ctx);
+      const v0 = pts[0]?.value;
+      const v1 = pts[1]?.value;
+      const t0 = pts[0]?.timestamp;
+      const t1 = pts[1]?.timestamp;
+      let bars: number | null = null;
+      try {
+        if (typeof t0 === 'number' && typeof t1 === 'number') {
+          const list = ctx.chart.getDataList();
+          const lo = Math.min(t0, t1);
+          const hi = Math.max(t0, t1);
+          bars = list.filter((k) => k.timestamp >= lo && k.timestamp <= hi).length;
+        }
+      } catch {
+        bars = null;
+      }
+      const delta = typeof v0 === 'number' && typeof v1 === 'number' ? v1 - v0 : null;
+      const pct = delta != null && typeof v0 === 'number' && v0 !== 0 ? (delta / v0) * 100 : null;
+      const up = delta == null || delta >= 0;
+      const color = up ? FTS_OVERLAY_COLORS.pullback : FTS_OVERLAY_COLORS.chohRed;
+      const sign = (n: number) => (n >= 0 ? '+' : '');
+      const text = `${delta == null ? '-' : sign(delta) + delta.toFixed(0)} (${pct == null ? '-' : sign(pct) + pct.toFixed(1) + '%'})${bars == null ? '' : ` · ${bars} کندل`}`;
+      return [
+        {
+          type: 'line',
+          attrs: { coordinates: [{ x: c[0].x, y: c[0].y }, { x: c[1].x, y: c[1].y }] },
+          styles: { style: 'dashed', color, size: 1.5 },
+          ignoreEvent: true,
+        },
+        label((c[0].x + c[1].x) / 2, Math.min(c[0].y as number, c[1].y as number) - 6, text, color, 'center'),
+      ];
+    },
+  });
+
+  reg({
+    name: FTS_POSITION_OVERLAY,
+    totalStep: 4,
+    needDefaultPointFigure: true,
+    needDefaultXAxisFigure: true,
+    needDefaultYAxisFigure: true,
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (c.length < 3) return [];
+      const pts = ptsOf(ctx);
+      const w = ctx.bounding.width;
+      const entry = pts[0]?.value;
+      const stop = pts[1]?.value;
+      const target = pts[2]?.value;
+      const yEntry = c[0].y as number;
+      const yStop = c[1].y as number;
+      const yTarget = c[2].y as number;
+      const rr =
+        typeof entry === 'number' && typeof stop === 'number' && typeof target === 'number' && Math.abs(entry - stop) > 0
+          ? Math.abs(target - entry) / Math.abs(entry - stop)
+          : null;
+      return [
+        band(0, yEntry, yTarget, w, 'rgba(16, 185, 129, 0.14)', 'rgba(16, 185, 129, 0.6)'),
+        band(0, yEntry, yStop, w, 'rgba(244, 63, 94, 0.14)', 'rgba(244, 63, 94, 0.6)'),
+        {
+          type: 'line',
+          attrs: { coordinates: [{ x: 0, y: yEntry }, { x: w, y: yEntry }] },
+          styles: { style: 'solid', color: '#38bdf8', size: 1.5 },
+          ignoreEvent: true,
+        },
+        label(w - 4, yEntry - 4, `ورود ${entry == null ? '-' : entry.toFixed(0)} · R/R ${rr == null ? '-' : rr.toFixed(2)}`, '#38bdf8'),
+      ];
     },
   });
 }

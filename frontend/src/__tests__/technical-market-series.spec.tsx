@@ -2,7 +2,10 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
-import { buildMarketSeries } from '@features/technical/api/useMarketSeries';
+import { buildMarketSeries, buildWholeMarket, TEDPIX_SOURCE } from '@features/technical/api/useMarketSeries';
+import { FTS_FIB_BANDS, FTS_FIB_LEVELS } from '@features/technical/lib/ftsOverlays';
+import { buildDrawingGroups, toolLabel } from '@features/technical/lib/drawingTools';
+import type { KLineData } from '@vendor/klinecharts';
 import { buildRadarAxes, radarComplete, radarLabelPositions, radarPolygon } from '@features/technical/lib/radar';
 import { firstScreenerSymbol, type ScreenerRow } from '@features/technical/api/useScreener';
 import { SidebarRadar } from '@features/technical/components/SidebarRadar';
@@ -42,6 +45,44 @@ describe('لایهٔ دادهٔ واحد «کل بورس»', () => {
   it('ready=false وقتی سرور می‌گوید آماده نیست', () => {
     const s = buildMarketSeries(timeline({ ready: false, series: { val_bt: [1], t: ['12:58'] } }));
     expect(s!.ready).toBe(false);
+  });
+});
+
+function kline(n: number): KLineData[] {
+  return Array.from({ length: n }, (_, i) => ({ timestamp: i * 86400000, open: 1, high: 2, low: 0.5, close: 1.5 }));
+}
+
+describe('انتخاب منبع سری «کل بورس»', () => {
+  it('شاخص واقعی (کندل) اولویت دارد', () => {
+    const w = buildWholeMarket(kline(3), buildMarketSeries(timeline({ ready: true, series: { val_bt: [1, 2], t: ['a', 'b'] } })));
+    expect(w.kind).toBe('candles');
+    expect(w.source).toBe(TEDPIX_SOURCE);
+  });
+
+  it('در نبود شاخص، سری کلان میشود', () => {
+    const w = buildWholeMarket([], buildMarketSeries(timeline({ ready: true, series: { val_bt: [1, 2], t: ['a', 'b'] } })));
+    expect(w.kind).toBe('macro');
+  });
+
+  it('نبود هر دو ⇒ none', () => {
+    expect(buildWholeMarket([], null).kind).toBe('none');
+  });
+});
+
+describe('کاتالوگ ابزارهای ترسیم FTS', () => {
+  it('سطوح فیبوی FTS طبق FTS_SPEC بند ۳', () => {
+    expect([...FTS_FIB_LEVELS]).toEqual([0, 0.33, 0.4, 0.618, 0.7, 1]);
+    expect(FTS_FIB_BANDS.map((b) => [...b])).toEqual([[0.33, 0.4], [0.618, 0.7]]);
+  });
+
+  it('ابزارهای سفارشی FTS حتی بدون پشتیبانی vendor می‌مانند', () => {
+    const g = buildDrawingGroups([]);
+    const names = g.flatMap((x) => x.tools.map((t) => t.name));
+    expect(names).toContain('ftsFib');
+    expect(names).toContain('ftsMeasure');
+    expect(names).toContain('ftsPosition');
+    expect(names).not.toContain('straightLine'); // vendor-supported، بدون پشتیبانی حذف می‌شود
+    expect(toolLabel('ftsPosition')).toBe('پوزیشن لانگ/شورت');
   });
 });
 

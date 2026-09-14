@@ -100,11 +100,14 @@ describe('کاتالوگ و ریل ابزارهای ترسیم', () => {
     (window as unknown as { klinecharts?: unknown }).klinecharts = undefined;
   });
 
-  it('buildDrawingGroups فقط ابزارهای پشتیبانی‌شده را نگه می‌دارد', () => {
+  it('buildDrawingGroups ابزارهای پشتیبانی‌شده را نگه می‌دارد و سفارشی‌ها همیشه هستند', () => {
     const g = buildDrawingGroups(['straightLine', 'fibonacciLine', 'brush']);
-    expect(g.map((x) => x.label)).toEqual(['خطوط', 'فیبوناچی', 'حاشیه‌نویسی']);
+    expect(g.map((x) => x.label)).toEqual(['خطوط', 'فیبوناچی', 'اندازه‌گیری / پوزیشن', 'حاشیه‌نویسی']);
     expect(g[0].tools.map((t) => t.name)).toEqual(['straightLine']);
-    expect(buildDrawingGroups([])).toEqual([]);
+    // بدون پشتیبانی vendor، فقط گروه‌های سفارشی FTS می‌مانند
+    const empty = buildDrawingGroups([]);
+    expect(empty.every((x) => x.tools.every((t) => t.custom === true))).toBe(true);
+    expect(empty.length).toBeGreaterThan(0);
   });
 
   it('ریل، flyout را باز و startDraw را صدا می‌زند', () => {
@@ -112,7 +115,7 @@ describe('کاتالوگ و ریل ابزارهای ترسیم', () => {
       getSupportedOverlays: () => ['straightLine', 'fibonacciLine'],
     };
     const startDraw = vi.fn();
-    const api = { startDraw, undo: vi.fn(), redo: vi.fn(), clearDrawings: vi.fn(), hideDrawings: vi.fn() } as ChartDrawApi;
+    const api = { startDraw, undo: vi.fn(), redo: vi.fn(), clearDrawings: vi.fn(), hideDrawings: vi.fn(), updateLast: vi.fn() } as ChartDrawApi;
     render(<DrawingToolbar api={api} />);
     fireEvent.click(screen.getByTestId('draw-group-straightLine'));
     fireEvent.click(screen.getByTestId('draw-straightLine'));

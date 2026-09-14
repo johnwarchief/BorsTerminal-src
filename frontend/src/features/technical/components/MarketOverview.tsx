@@ -1,12 +1,15 @@
 // features/technical/components/MarketOverview.tsx -- نمای «کل بورس» وقتی نمادی انتخاب نشده
-// قبلاً تب تکنیکال بدون نماد بن‌بست بود؛ اکنون نمای کلان کل بازار (نبض + سری «کل بورس»).
-// سری از لایهٔ دادهٔ واحد (useMarketSeries) می‌آید تا بعداً «شاخص کل واقعی» بدون refactor
-// جایگزین شود. صادقانه: هیچ OHLC شاخص کل در بک‌اند نیست؛ غایب ⇒ «بدون داده» (Circuit Breaker).
+// ارتقا یافته (فاز ۳): چارت کندل واقعی شاخص کل (TEDPIX) از /api/index/tedpix؛ اگر شاخص
+// نرسد، fallback به سری کلان /api/mstat/timeline (چارت خطی). همه از لایهٔ دادهٔ واحد
+// (useWholeMarket) می‌آید تا جایگزینی/افزودن منبع بدون refactor باشد. غایب ⇒ «بدون داده».
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useUiStore } from '@shared/stores/uiStore';
 import { MacroLineChart } from './MacroLineChart';
+import { KLineChartWrapper } from './KLineChartWrapper';
+import { paletteFor } from '../lib/chartPalette';
 import { macroEqRow, macroHemat, useMarketMacro } from '../api/useMarketMacro';
-import { useMarketSeries } from '../api/useMarketSeries';
+import { useWholeMarket } from '../api/useMarketSeries';
 import { firstScreenerSymbol, useFtsScreener } from '../api/useScreener';
 
 function fmt(x: number | null | undefined, digits = 1): string {
@@ -32,8 +35,9 @@ function Stat({ label, hint, tone, children }: { label: string; hint?: string; t
 
 export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void }) {
   const { data: macro, isLoading } = useMarketMacro();
-  const { data: series } = useMarketSeries();
+  const { data: market } = useWholeMarket();
   const { data: screener } = useFtsScreener();
+  const theme = useUiStore((s) => s.theme);
 
   const thermo = macro?.thermometer ?? null;
   const depth = macro?.depth ?? null;
@@ -45,7 +49,7 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
   const flowFixed = sm?.flow?.fixed_flow_b_toman ?? null;
 
   const fallbackSymbol = firstScreenerSymbol(screener?.data ?? []);
-  const day = series?.day ?? macro?.summary?.asof?.d_even ?? null;
+  const day = macro?.summary?.asof?.d_even ?? null;
   const negPct = thermo?.negative_pct ?? null;
   const breadthWarn = typeof negPct === 'number' && thermo?.entry_rule_pct != null ? negPct >= thermo.entry_rule_pct : false;
 
@@ -54,14 +58,14 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">کل بورس</h2>
         {day != null ? <Badge tone="blue">روز {toFaDigits(String(day))}</Badge> : null}
+        {market?.source ? <Badge tone="gray">{market.source}</Badge> : null}
         <Badge tone="gray">نمای کلان بازار</Badge>
-        {series?.source ? <Badge tone="gray">{series.source}</Badge> : null}
         {isLoading ? <span className="text-xs text-text-secondary">در حال دریافت نبض بازار...</span> : null}
       </div>
 
       <p className="text-[11px] leading-5 text-text-muted">
-        سری OHLC «شاخص کل (TEDPIX)» در بک‌اند نیست؛ نمای کل‌بازار از لایهٔ دادهٔ واحد (فعلاً <span className="num">/api/mstat/timeline</span>) و
-        اسنپ‌شات‌های <span className="num">/api/mstat/*</span> ساخته می‌شود. برای انتخاب نماد از سایدبار «دیده‌بان» استفاده کن.
+        چارت کل بازار از سری واقعی شاخص کل (<span className="num">TEDPIX</span>) می‌آید؛ اگر شاخص در دسترس نباشد،
+        به سری کلان <span className="num">/api/mstat/timeline</span> برمی‌گردد. برای انتخاب نماد از سایدبار «دیده‌بان» استفاده کن.
       </p>
 
       {fallbackSymbol && onSelect ? (
@@ -76,18 +80,35 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
       ) : null}
 
       <div className="glass-panel rounded-2xl p-3">
-        <MacroLineChart
-          values={series?.points.map((p) => p.value) ?? []}
-          labels={series?.points.map((p) => p.label) ?? []}
-          title={series?.title ?? 'سری کل بورس'}
-          unit={series?.unit}
-          testId="macro-val"
-        />
-        {series?.note ? (
-          <span className="mt-1 block text-[10px] text-text-muted" data-testid="macro-note">
-            {series.note}
-          </span>
-        ) : null}
+        {market?.kind === 'candles' ? (
+          <>
+            <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-[11px] font-bold text-text-secondary">{market.title}</span>
+              <span className="num text-[10px] text-text-muted">{toFaDigits(market.candles.length)} کندل روزانه · بدون حجم</span>
+            </div>
+            <KLineChartWrapper data={market.candles} palette={paletteFor(theme)} height={380} />
+          </>
+        ) : market?.kind === 'macro' ? (
+          <>
+            <MacroLineChart
+              values={market.series.points.map((p) => p.value)}
+              labels={market.series.points.map((p) => p.label)}
+              title={market.series.title}
+              unit={market.series.unit}
+              testId="macro-val"
+            />
+            {market.series.note ? (
+              <span className="mt-1 block text-[10px] text-text-muted" data-testid="macro-note">
+                {market.series.note}
+              </span>
+            ) : null}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border-c bg-bg-secondary p-6 text-center" data-testid="market-chart-empty">
+            <span className="text-xs font-bold text-text-secondary">سری کل بازار در دسترس نیست</span>
+            <span className="text-[11px] text-text-muted">نه شاخص کل برگشت و نه سری کلان؛ بدون دادهٔ ساختگی.</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4" data-testid="macro-stats">

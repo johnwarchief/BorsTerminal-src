@@ -77,7 +77,7 @@ function Divider() {
   return <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border-c" />;
 }
 
-export function FtsToolbar() {
+export function FtsToolbar({ onOpenSettings }: { onOpenSettings?: () => void }) {
   const chartType = useFtsConfigStore((s) => s.chartType);
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const priceScale = useFtsConfigStore((s) => s.priceScale);
@@ -162,6 +162,20 @@ export function FtsToolbar() {
           onClick={() => toggle(it.key)}
         />
       ))}
+
+      {onOpenSettings ? (
+        <>
+          <Divider />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            data-testid="open-chart-settings"
+            className="rounded-full border border-border-accent bg-bg-card px-3 py-1 text-xs font-bold text-accent-blue transition-colors hover:bg-accent-blue/15"
+          >
+            تنظیمات چارت
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

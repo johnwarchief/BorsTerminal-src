@@ -5,8 +5,46 @@ import { useEffect, useState } from 'react';
 import { buildDrawingGroups, type DrawingGroup } from '../lib/drawingTools';
 import type { ChartDrawApi } from './KLineChartWrapper';
 
+/** آیکون‌های سادهٔ SVG هر گروه (بدون ایموجی) — هم‌خوانی ظاهری با تولبار تریدینگ‌ویو */
+const GROUP_ICONS: Record<string, React.ReactNode> = {
+  خطوط: (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <line x1="2" y1="13" x2="14" y2="3" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="2" cy="13" r="1.6" fill="currentColor" />
+      <circle cx="14" cy="3" r="1.6" fill="currentColor" />
+    </svg>
+  ),
+  کانال: (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <line x1="2" y1="11" x2="14" y2="4" stroke="currentColor" strokeWidth="1.4" />
+      <line x1="2" y1="14" x2="14" y2="7" stroke="currentColor" strokeWidth="1.4" strokeDasharray="2 2" />
+    </svg>
+  ),
+  فیبوناچی: (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <line x1="2" y1="3" x2="14" y2="3" stroke="currentColor" strokeWidth="1.2" />
+      <line x1="2" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" />
+      <line x1="2" y1="11" x2="14" y2="11" stroke="currentColor" strokeWidth="1.2" strokeDasharray="2 2" />
+      <line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  ),
+  'اندازه‌گیری / پوزیشن': (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <rect x="2" y="3" width="12" height="4" fill="currentColor" opacity="0.35" />
+      <rect x="2" y="9" width="12" height="4" fill="currentColor" opacity="0.15" />
+      <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1.2" />
+    </svg>
+  ),
+  'حاشیه‌نویسی': (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <path d="M2 12h9l3-3-3-3H2z" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  ),
+};
+
 function RailButton({
   label,
+  icon,
   title,
   onClick,
   disabled,
@@ -14,6 +52,7 @@ function RailButton({
   testId,
 }: {
   label: string;
+  icon?: React.ReactNode;
   title: string;
   onClick: () => void;
   disabled?: boolean;
@@ -26,13 +65,14 @@ function RailButton({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
+      aria-label={title}
       title={title}
       data-testid={testId}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-bold transition-colors disabled:opacity-40 ${
+      className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition-colors disabled:opacity-40 ${
         active ? 'border-border-accent bg-accent-blue/15 text-accent-blue' : 'border-border-c bg-bg-card text-text-secondary hover:text-accent-blue'
       }`}
     >
-      {label}
+      {icon ?? label}
     </button>
   );
 }
@@ -57,6 +97,7 @@ export function DrawingToolbar({ api }: { api: ChartDrawApi | null }) {
         <div key={g.label} className="relative">
           <RailButton
             label={g.glyph}
+            icon={GROUP_ICONS[g.label]}
             title={g.label}
             active={open === g.label}
             onClick={() => setOpen(open === g.label ? null : g.label)}
