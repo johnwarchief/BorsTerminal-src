@@ -1,7 +1,8 @@
 // features/fundamental/ui/FtsScreenTable.tsx -- دیده‌بان کلان بنیادی
 // ماتریس مقایسه‌ای ۵ شاخص جزوهٔ FTS + ستون امتیاز نردبان (۰..۵) قابل سورت.
 // کلیک روی سطر نماد را در استور فعال می‌کند تا سایدبار چپ و نمای
-// کالبدشکافی باز شود. «شکاف داده» علامت می‌خورد — نه خطای خام، نه کرش.
+// کالبدشکافی باز شود. جای برچسب عمومی «شکاف داده»، علتِ واقعیِ هر شاخص
+// نمایش داده می‌شود (lib/gapReason) — نه خطای خام، نه کرش.
 // دروازه‌های سخت (قیمت‌گذاری دستوری/تعلیق): ردیف‌های excluded پیش‌فرض
 // حذف می‌شوند؛ سوییچ «نمایش ردیف‌های حذف‌شده» فقط برای بازرسی آن‌هاست.
 // قلمرو جدول: فقط «شرکت‌های تولیدی و خدماتی» — صندوق‌ها، کارگزاری‌ها،
@@ -13,12 +14,14 @@ import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
 import {
-  EPS_GAP_LABEL,
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
+  epsGapLabel,
   epsHistory,
   epsSeriesText,
 } from '../lib/epsHistory';
+import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
+import { GapHint } from '../components/GapHint';
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
@@ -32,7 +35,7 @@ const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: 'score', label: 'امتیاز', title: 'نردبان بنیادی ۰ تا ۵' },
 ];
 
-/** چهارحالتهٔ شاخص ۲ (قبول / سابقهٔ ناقص / مردود / شکاف) و سه‌حالتهٔ بقیهٔ شاخص‌ها */
+/** چهارحالتهٔ شاخص ۲ (قبول / سابقهٔ ناقص / مردود / بدون داده) و سه‌حالتهٔ بقیهٔ شاخص‌ها */
 type CellState = 'pass' | 'fail' | 'gap' | 'partial';
 
 function cellState(pass: boolean | null | undefined, value: number | null | undefined): CellState {
@@ -40,17 +43,33 @@ function cellState(pass: boolean | null | undefined, value: number | null | unde
   return pass ? 'pass' : 'fail';
 }
 
-const STATE_BADGE: Record<CellState, { tone: 'green' | 'red' | 'gray'; label: string }> = {
+const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: string }> = {
   pass: { tone: 'green', label: '✓' },
   fail: { tone: 'red', label: '✗' },
-  gap: { tone: 'gray', label: EPS_GAP_LABEL },
-  // برچسب «سابقهٔ ناقص» با span اختصاصی رندر می‌شود (نه Badge) — اینجا فقط پشتیبانِ نوع است
-  partial: { tone: 'gray', label: EPS_GAP_LABEL },
 };
 
+/** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
+ *  (پیش از آن با برچسب علت‌دار یا برچسب سابقهٔ ناقص رندر می‌شوند). */
 function PassMark({ state }: { state: CellState }) {
-  const b = STATE_BADGE[state];
+  const b = STATE_BADGE[state === 'pass' ? 'pass' : 'fail'];
   return <Badge tone={b.tone}>{b.label}</Badge>;
+}
+
+/** سلول بی‌داده: جای برچسب عمومی «شکاف داده»، علتِ واقعی را می‌نویسد
+ *  (برچسب کوتاه + tooltip علت و راه‌حل — الگوی GapHint) */
+function GapMark({ label, tooltip, testId }: { label: string; tooltip: string; testId?: string }) {
+  return (
+    <GapHint reason={tooltip}>
+      <span data-testid={testId} className="max-w-[9.5rem] text-[9px] font-bold leading-snug text-accent-yellow">
+        {label}
+      </span>
+    </GapHint>
+  );
+}
+
+/** سلول بی‌داده با علتِ همان محور */
+function AxisGapMark({ axis }: { axis: GapAxis }) {
+  return <GapMark label={gapLabel(axis)} tooltip={gapTooltip(axis)} testId={`fts-gap-reason-${axis}`} />;
 }
 
 export function FtsScreenTable({
@@ -198,7 +217,7 @@ export function FtsScreenTable({
               const epsPartialRejected = i2 === 'partial';
               const epsGapReason = epsHist.realYears
                 ? `فقط ${toFaDigits(epsHist.realYears)} سال از ${toFaDigits(epsHist.requiredYears)} سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
-                : 'هیچ صورت مالی ۱۲ماههٔ EPS در کدال ثبت نشده است.';
+                : 'این ردیفِ اسکنر سابقهٔ EPS سالانه ندارد؛ علت دقیق در کارت نماد (دادهٔ جزئیات کدال) دیده می‌شود.';
               return (
                 <tr
                   key={r.symbol}
@@ -223,7 +242,7 @@ export function FtsScreenTable({
                       <span className={`num ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                         {r.rev_growth == null ? '—' : fmtPct(r.rev_growth)}
                       </span>
-                      <PassMark state={i1} />
+                      {i1 === 'gap' ? <AxisGapMark axis="1a_monetary_growth" /> : <PassMark state={i1} />}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -239,6 +258,12 @@ export function FtsScreenTable({
                         >
                           {epsHist.label} ⓘ
                         </span>
+                      ) : i2 === 'gap' ? (
+                        <GapMark
+                          label={epsGapLabel(epsHist.realYears)}
+                          tooltip={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
+                          testId="eps-gap-reason"
+                        />
                       ) : (
                         <PassMark state={i2} />
                       )}
@@ -247,7 +272,7 @@ export function FtsScreenTable({
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
                       <span className="num text-text-primary">{r.gross_margin == null ? '—' : fmtPct(r.gross_margin)}</span>
-                      <PassMark state={i3} />
+                      {i3 === 'gap' ? <AxisGapMark axis="3_gross_margin" /> : <PassMark state={i3} />}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -255,11 +280,13 @@ export function FtsScreenTable({
                       <span className="num text-text-primary">
                         {r.profit_potential_pct == null ? '—' : fmtPct(r.profit_potential_pct)}
                       </span>
-                      <PassMark state={i4} />
+                      {i4 === 'gap' ? <AxisGapMark axis="4_sales_to_mcap" /> : <PassMark state={i4} />}
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <PassMark state={i5} />
+                    <div className="flex items-center gap-1.5">
+                      {i5 === 'gap' ? <AxisGapMark axis="5_industry" /> : <PassMark state={i5} />}
+                    </div>
                     {r.excluded ? (
                       <span className="mr-1 text-[9px] text-accent-red" title={r.exclusion_reasons ?? ''}>
                         {r.exclusion_reasons}
@@ -286,7 +313,8 @@ export function FtsScreenTable({
         </table>
       </div>
       <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-[10px] text-text-muted">
-        ✓ قبول · ✗ مردود · «{EPS_GAP_LABEL}» = صورت مالی/گزارش ماهانهٔ کدال برای آن شاخص نیست — سطر حذف نمی‌شود
+        ✓ قبول · ✗ مردود · سلول بی‌داده به‌جای برچسب عمومی، علت را می‌نویسد (مثلاً «{gapLabel('1a_monetary_growth')}»
+        ⇒ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
         · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است
         {excludedCount > 0 && !showExcluded
           ? ` · ${toFaDigits(excludedCount)} ردیفِ مشمول دروازه‌های سخت پنهان شد`

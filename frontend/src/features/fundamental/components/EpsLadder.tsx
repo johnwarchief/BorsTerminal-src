@@ -4,12 +4,13 @@
 // ۳ ماهه با ۱۲ ماهه) به چشم نیاید.
 // سابقهٔ ناقصِ ≥۲ ساله: همان سال‌های موجود رندر می‌شود + برچسب نارنجیِ
 // «مردود در شاخص ۲ — سابقهٔ ناقص» تا داده حیف نشود ولی ردِ گیت روشن بماند.
-// <۲ سال: همان «ناقص» قبلی (شکاف داده) می‌ماند — هیچ چیز جدید نمایش داده نمی‌شود.
+// <۲ سال: برچسب علت‌دار («سابقهٔ EPS کمتر از ۲ سال»/«صورت مالی سالانه در کدال نیست»).
 import { toFaDigits } from '@shared/lib/fmt';
 import { GapHint, epsGapReason } from './GapHint';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
+  epsGapLabel,
   epsHistory,
   epsRealYears,
 } from '../lib/epsHistory';
@@ -61,7 +62,7 @@ export function EpsLadder({
           </span>
         ) : partial ? (
           <GapHint reason={gapReason}>
-            <span className="text-xs font-bold text-accent-red">ناقص</span>
+            <span className="text-xs font-bold text-accent-red">{epsGapLabel(realYears)}</span>
           </GapHint>
         ) : null}
       </div>

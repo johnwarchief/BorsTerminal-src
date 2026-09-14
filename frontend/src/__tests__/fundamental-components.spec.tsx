@@ -13,10 +13,11 @@ const QUARTERS: FiscalQuarter[] = [
 ];
 
 describe('کامپوننت های بنیادی', () => {
-  it('نردبان EPS دوره ناقص را با خط تیره قرمز نشان می دهد', () => {
+  it('نردبان EPS دوره ناقص را با خط تیره قرمز و علتِ گویا نشان می دهد', () => {
     render(<EpsLadder slots={['1403', '1404']} series={[100, null]} partial />);
     expect(screen.getByText('-')).toBeInTheDocument();
-    expect(screen.getByText('ناقص')).toBeInTheDocument();
+    // جای برچسب خالی «ناقص»، علتِ واقعی: فقط ۱ سال سابقه هست
+    expect(screen.getByText('سابقهٔ EPS کمتر از ۲ سال')).toBeInTheDocument();
   });
 
   it('نردبان EPS با ۲ سالِ موجود: همان دو سال رندر + برچسب «مردود — سابقهٔ ناقص» + علت در title', () => {
@@ -31,9 +32,9 @@ describe('کامپوننت های بنیادی', () => {
     expect(label.getAttribute('title')).toContain('فقط ۲ سال از ۳ سال');
   });
 
-  it('نردبان EPS با ۱ سالِ موجود: همان «ناقص» قبلی می‌ماند — برچسب جدید نمی‌آید', () => {
+  it('نردبان EPS با ۱ سالِ موجود: برچسب علت‌دار می‌گیرد — برچسب سابقهٔ ناقص نمی‌آید', () => {
     render(<EpsLadder slots={['1404']} series={[100]} partial requiredYears={3} />);
-    expect(screen.getByText('ناقص')).toBeInTheDocument();
+    expect(screen.getByText('سابقهٔ EPS کمتر از ۲ سال')).toBeInTheDocument();
     expect(screen.queryByTestId('eps-partial-rejected')).not.toBeInTheDocument();
   });
 

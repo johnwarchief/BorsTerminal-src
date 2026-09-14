@@ -8,7 +8,15 @@ import { Badge } from '@shared/components/Badge';
 import { GapHint, epsGapReason, GENERIC_GAP_REASON, PHYSICAL_NA_REASON, VALUATION_GAP_REASON } from './GapHint';
 import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
-import { EPS_PARTIAL_TESTID, epsHistory, epsRealYears } from '../lib/epsHistory';
+import { EPS_PARTIAL_TESTID, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
+import {
+  NO_ANNUAL_SALES,
+  NO_GROSS_MARGIN,
+  NO_MCAP,
+  NOT_COMPUTABLE,
+  gapReason as axisGapReason,
+  gapTooltip as axisGapTooltip,
+} from '../lib/gapReason';
 
 export type DrillDownKey = '1' | '2' | '3' | '4' | '5';
 
@@ -63,8 +71,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {growth == null ? (
-          <GapHint reason={GENERIC_GAP_REASON}>
-            <Badge tone="gray">شکاف داده</Badge>
+          <GapHint reason={axisGapTooltip('1a_monetary_growth')}>
+            <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
+              {axisGapReason('1a_monetary_growth').label}
+            </span>
           </GapHint>
         ) : (
           <Badge tone={growth >= (inflation ?? 0) ? 'green' : 'yellow'}>رشد {fmtPct(growth)}</Badge>
@@ -109,8 +119,8 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             : realGrowth != null
               ? `رشد واقعی پس از کسر اثر نرخ: ${fmtPct(realGrowth)} (اثر تقریبی نرخ ${fmtPct(vol?.implied_price_pct ?? null, 0)})`
               : vol?.data_gap
-                ? 'شکاف داده — ستون تناژ فیزیکی در گزارش ماهانهٔ کدال ثبت نشده است.'
-                : 'شکاف داده — رشد مقداری قابل محاسبه نیست.'}
+                ? `${axisGapReason('1b_volume_growth').why} رشد مقداری از این گزارش حساب نمیشود.`
+                : 'رشد مقداری قابل محاسبه نیست — گزارش ماهانهٔ فیزیکی کدال ناقص است.'}
         </p>
       </div>
     </div>
@@ -133,7 +143,7 @@ function Panel2({ card }: { card: FtsCard }) {
   /** همان منطق و برچسبِ جدولِ غربالگری/نردبان (lib/epsHistory) */
   const hist = epsHistory(series, required);
   const partialShown = ind?.partial == true && hist.state === 'partial';
-  const gapReason = epsGapReason({
+  const gapWhy = epsGapReason({
     available: realYears,
     required,
     interimAvailable: ind?.interim?.available ?? false,
@@ -142,19 +152,22 @@ function Panel2({ card }: { card: FtsCard }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {rising == null && realYears < 2 ? (
-          <GapHint reason={gapReason}>
-            <Badge tone="gray">شکاف داده</Badge>
+          <GapHint reason={`${gapWhy} راه‌حل: ${axisGapReason('2_eps_trend').fix}`}>
+            <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
+              {epsGapLabel(realYears)}
+            </span>
           </GapHint>
         ) : partialShown ? (
           <span
             data-testid={EPS_PARTIAL_TESTID}
+            title={gapWhy}
             className="inline-flex items-center rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2.5 py-0.5 text-xs font-semibold text-accent-susp"
           >
             {hist.label}
           </span>
         ) : (
           <Badge tone={rising == null ? 'gray' : rising ? 'green' : 'red'}>
-            {rising == null ? 'شکاف داده' : rising ? 'صعودی ✓' : 'صعودی نیست ✗'}
+            {rising == null ? epsGapLabel(realYears) : rising ? 'صعودی ✓' : 'صعودی نیست ✗'}
           </Badge>
         )}
         {ind?.evidence_tier ? <Badge tone="blue">{ind.evidence_tier}</Badge> : null}
@@ -336,7 +349,7 @@ function Panel4({ card }: { card: FtsCard }) {
               `${toFaDigits(fmtInt(annualSales))} m‌ت`
             ) : (
               <GapHint reason={VALUATION_GAP_REASON}>
-                <span className="text-accent-red">بدون داده</span>
+                <span className="text-accent-red">{NO_ANNUAL_SALES}</span>
               </GapHint>
             )}
           </span>
@@ -347,7 +360,7 @@ function Panel4({ card }: { card: FtsCard }) {
               fmtPct(marginUsed)
             ) : (
               <GapHint reason={GENERIC_GAP_REASON}>
-                <span className="text-accent-red">بدون داده</span>
+                <span className="text-accent-red">{NO_GROSS_MARGIN}</span>
               </GapHint>
             )}
           </span>
@@ -358,7 +371,7 @@ function Panel4({ card }: { card: FtsCard }) {
               `${toFaDigits(mcapHt.toFixed(2))} همت`
             ) : (
               <GapHint reason={VALUATION_GAP_REASON}>
-                <span className="text-accent-red">بدون داده</span>
+                <span className="text-accent-red">{NO_MCAP}</span>
               </GapHint>
             )}
           </span>
@@ -367,12 +380,12 @@ function Panel4({ card }: { card: FtsCard }) {
             {potential != null ? (
               fmtPct(potential)
             ) : (
-              <GapHint reason={VALUATION_GAP_REASON}>بدون داده</GapHint>
+              <GapHint reason={VALUATION_GAP_REASON}>{NOT_COMPUTABLE}</GapHint>
             )}
           </span>
         </div>
         <p className="mt-1.5 text-[10px] leading-relaxed text-text-muted">
-          A از سالانه‌سازی داینامیک N ماهه می‌آید؛ B حاشیهٔ ناخالص آخرین دورهٔ حسابرسی‌شده؛ D ارزش لحظه‌ای بازار. هر متغیرِ غایب فقط در جای خودش «بدون داده» می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
+          A از سالانه‌سازی داینامیک N ماهه می‌آید؛ B حاشیهٔ ناخالص آخرین دورهٔ حسابرسی‌شده؛ D ارزش لحظه‌ای بازار. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
         </p>
       </div>
     </div>

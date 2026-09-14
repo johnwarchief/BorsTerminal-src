@@ -1,4 +1,4 @@
-// تست دیده‌بان کلان بنیادی: ماتریس ۵ شاخص + سورت + شکاف داده + انتخاب نماد
+// تست دیده‌بان کلان بنیادی: ماتریس ۵ شاخص + سورت + علت‌دار بودن بی‌داده + انتخاب نماد
 // + دروازه‌های سخت (excluded) + regression سورت پیش‌فرض امتیاز (نزولی)
 // + فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اختیار حذف می‌شوند
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -94,7 +94,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(onSelect).toHaveBeenCalledWith('شپنا');
   });
 
-  it('شکاف داده علامت می خورد نه کرش — سطر حذف نمی شود', () => {
+  it('بدون داده علامت می خورد نه کرش — سطر حذف نمی شود (با علت هر شاخص)', () => {
     render(
       <FtsScreenTable
         rows={[
@@ -116,19 +116,34 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
       />,
     );
     expect(screen.getByText('ناقص')).toBeInTheDocument();
-    expect(screen.getAllByText('شکاف داده').length).toBeGreaterThanOrEqual(4);
+    // جای برچسب عمومی «شکاف داده»، علتِ همان شاخص نمایش داده میشود
+    expect(screen.getAllByText('گزارش ماهانهٔ کدال نیست').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('سابقهٔ EPS سالانه ثبت نشده').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('سود ناخالص در کدال نیست').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('سالانه‌سازی فروش کدال ناقص').length).toBeGreaterThanOrEqual(1);
+    // برچسب عمومی حذف شده — هیچجا «شکاف داده» نداریم
+    expect(screen.queryByText('شکاف داده')).not.toBeInTheDocument();
   });
 
-  it('ردیف بدون سابقه EPS سه ساله برچسب شکاف می گیرد نه مردود', () => {
+  it('سلول بی‌داده tooltip علت + راه‌حل دارد (الگوی GapHint)', () => {
+    render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null })]} onSelect={() => {}} />);
+    const cell = screen.getByTestId('fts-gap-reason-1a_monetary_growth');
+    const hint = cell.closest('[data-testid="gap-hint"]');
+    expect(hint).not.toBeNull();
+    const title = hint?.getAttribute('title') ?? '';
+    expect(title).toContain('گزارش فروش دورهٔ مشابه سال قبل در کدال موجود نیست');
+    expect(title).toContain('راه‌حل');
+  });
+
+  it('ردیف بدون سابقه EPS: برچسب علت‌دار «سابقهٔ EPS سالانه ثبت نشده» نه «مردود»', () => {
     render(
       <FtsScreenTable
-        rows={[row({ symbol: 'تازه‌وارد', eps_series: [50], eps_data_gap: true, i2_pass: false })]}
+        rows={[row({ symbol: 'تازه‌وارد', eps_series: null, eps_last: null, eps_data_gap: true, i2_pass: false })]}
         onSelect={() => {}}
       />,
     );
     expect(screen.getByText('تازه‌وارد')).toBeInTheDocument();
-    const gaps = screen.getAllByText('شکاف داده');
-    expect(gaps.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('سابقهٔ EPS سالانه ثبت نشده').length).toBeGreaterThanOrEqual(1);
   });
 
   it('۲ سال EPS: سری دو ساله نمایش + برچسب یکسانِ «مردود در شاخص ۲ — سابقهٔ ناقص» با علت در title', () => {
@@ -150,7 +165,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(label.textContent).not.toContain('قبول');
   });
 
-  it('۱ سال EPS: همان «شکاف داده» قبلی — برچسب سابقهٔ ناقص نمی‌آید', () => {
+  it('۱ سال EPS: برچسب علت‌دار «سابقهٔ EPS کمتر از ۲ سال» — برچسب سابقهٔ ناقص نمی‌آید', () => {
     render(
       <FtsScreenTable
         rows={[row({ symbol: 'یک‌ساله', eps_series: [50], eps_data_gap: true, i2_pass: null })]}
@@ -158,7 +173,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
       />,
     );
     expect(screen.queryByTestId('eps-partial-rejected')).not.toBeInTheDocument();
-    expect(screen.getAllByText('شکاف داده').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('سابقهٔ EPS کمتر از ۲ سال').length).toBeGreaterThanOrEqual(1);
   });
 
   it('جدول خالی حالت خالی تمیز دارد', () => {

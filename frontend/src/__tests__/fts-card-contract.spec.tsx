@@ -146,8 +146,8 @@ describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته
     expect(screen.getByTestId('fts-card-cell-2_eps_trend')).toHaveTextContent('قبول');
     expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap')).toHaveTextContent('مردود');
     expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('قبول');
-    // حالت «بدون داده» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
-    expect(screen.queryByText(/بدون داده — کارت بنیادی/)).not.toBeInTheDocument();
+    // حالت «داده نیامد» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
+    expect(screen.queryByText(/دادهٔ کارت بنیادی/)).not.toBeInTheDocument();
   });
 });
 
