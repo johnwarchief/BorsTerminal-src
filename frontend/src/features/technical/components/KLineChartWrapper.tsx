@@ -291,6 +291,19 @@ export function KLineChartWrapper({
     } catch {
       // ثبت تکراری خطا نیست
     }
+    // ابزارهای پیشرفتهٔ TradingView (react-klinecharts-ui) به‌صورت lazy ثبت می‌شوند تا
+    // چانک صفحهٔ تکنیکال سبک بماند؛ ابزارهای سفارشی در کاتالوگ همیشه نمایش داده می‌شوند.
+    void import('../lib/tvTools')
+      .then((m) => {
+        try {
+          m.registerTvOverlays(api);
+        } catch {
+          // ثبت اختیاری است
+        }
+      })
+      .catch(() => {
+        // بسته در دسترس نیست — مسیر اصلی دست‌نخورده می‌ماند
+      });
     try {
       api.registerLocale('fa-IR', FA_LOCALE);
     } catch {

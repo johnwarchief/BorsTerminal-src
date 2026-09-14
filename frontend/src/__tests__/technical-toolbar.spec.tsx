@@ -102,7 +102,7 @@ describe('کاتالوگ و ریل ابزارهای ترسیم', () => {
 
   it('buildDrawingGroups ابزارهای پشتیبانی‌شده را نگه می‌دارد و سفارشی‌ها همیشه هستند', () => {
     const g = buildDrawingGroups(['straightLine', 'fibonacciLine', 'brush']);
-    expect(g.map((x) => x.label)).toEqual(['خطوط', 'فیبوناچی', 'اندازه‌گیری / پوزیشن', 'حاشیه‌نویسی']);
+    expect(g.map((x) => x.label)).toEqual(['خطوط', 'فیبوناچی', 'اندازه‌گیری / پوزیشن', 'حاشیه‌نویسی', 'پیشرفته (TV)']);
     expect(g[0].tools.map((t) => t.name)).toEqual(['straightLine']);
     // بدون پشتیبانی vendor، فقط گروه‌های سفارشی FTS می‌مانند
     const empty = buildDrawingGroups([]);
