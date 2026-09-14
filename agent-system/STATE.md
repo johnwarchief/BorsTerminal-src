@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `c7d54d6` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۵۴۷ سبز (۵۰ فایل) · eslint صفر · build سالم
+- **master HEAD:** `2bc9928` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۵۵۴ سبز (۵۱ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -124,3 +124,7 @@
 - هد دو وابستگی چارت اضافه کرد (`d766150` react-klinecharts-ui، `8a1980f` @klinecharts/extension).
 - **agent/technical (T-08)** مرج شد: `37ee8dd` + `60d1695` + merge commit `c7d54d6`. انواع چارت HA/Renko/Kagi/PnF در لایهٔ داده (چون klinecharts v10 ندارد)؛ دیالوگ تنظیمات تب‌دار TV-style با کنترل‌های واقعی موتور؛ پنل ابزار با تب‌ها + ذخیرهٔ پیش‌فرض در localStorage. صادقانه: تب نماد فقط خواندنی (setPriceVolumePrecision حذف شده)، رویدادها خالی با دلیل، هشدار placeholder، مختصات فقط نمایش. اعتبارسنجی: vitest 547/547 (50 فایل)، eslint صفر، build سالم.
 - دو ویرایش آینده (نیازمند قابلیت موتور، خارج قلمرو): ویرایش نقاط ترسیم (onOverlaySelected) و نمایش مشروط به تایم‌فریم.
+
+
+## به‌روزرسانی ۱۷ (ایجنتهد main, 2026-09-15 ~00:30)
+- **agent/technical (T-09)** مرج شد: `8b6d13f` + merge commit `2bc9928`. پروب `react-klinecharts-ui@2.2.0` = سازگار (در dist هیچ API حذف‌شدهٔ v9 نیست؛ فقط registerOverlay/Indicator/Hotkey). ادغام جزئی: به‌جای تعویض پوسته/provider، ۱۴ ابزار منتخب TV در گروه «پرفته (TV)» کاتالوگ ثبت شد؛ ثبت lazy (چانک `tvTools` جدا ~176KB). اعتبارسنجی: vitest 554/554 (51 فایل)، eslint صفر، build سالم — TechnicalPage از ~292KB به ~116KB آمد (dist تأیید شد).
