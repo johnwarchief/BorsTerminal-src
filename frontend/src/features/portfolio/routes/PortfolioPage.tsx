@@ -1,0 +1,370 @@
+// features/portfolio/routes/PortfolioPage.tsx -- مدیریت پرتفوی (بازطراحی کامل)
+// دوگانهٔ «پرتفوی هدف / پرتفوی فعلی» + چارت دونات SVG + نوار دلتا + جدول سه‌تبه.
+// تمام‌عرض فقط داخل صفحه خودش (w-full max-w-none).
+import { useEffect, useMemo, useState } from 'react';
+import { Badge } from '@shared/components/Badge';
+import { EmptyState } from '@shared/components/EmptyState';
+import { toFaDigits } from '@shared/lib/fmt';
+import { FlashNum } from '@shared/components/FlashNum';
+import { useSymbolStore } from '@shared/stores/symbolStore';
+import { publishSignal } from '@shared/lib/signalBus';
+import { useMarketCloses, usePortfolio } from '../api/usePortfolio';
+import { portfolioSignal } from '../model/portfolioSignals';
+import {
+  buildDelta,
+  useTargetAllocation,
+  type TargetClass,
+} from '../stores/targetAllocation';
+import { TargetBanner } from '../components/TargetBanner';
+import { TargetDonut } from '../components/TargetDonut';
+import { TargetEditModal } from '../components/TargetEditModal';
+import { DeltaBar } from '../components/DeltaBar';
+import { useStopLossBoard } from '../api/useStopLossBoard';
+
+const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
+const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'بدون تصمیم' };
+
+type BoardTab = 'portfolio' | 'monitor' | 'rejects';
+
+/** فاصله قیمت تا حد ضرر به درصد؛ null یعنی داده ناقص */
+export function distanceToStopPct(price: number | null, stop: number | null): number | null {
+  if (price == null || stop == null || stop <= 0) return null;
+  return ((price - stop) / stop) * 100;
+}
+
+/** برچسب وضعیت حد ضرر بر اساس فاصله قیمت */
+export function stopStatusTone(dist: number | null): 'red' | 'yellow' | 'green' | 'gray' {
+  if (dist == null) return 'gray';
+  if (dist < 0) return 'red';
+  if (dist < 5) return 'yellow';
+  return 'green';
+}
+
+function stopAsNumber(v: number | string | null | undefined): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const n = Number(v.replace(/[^\d.-]/g, ''));
+    return Number.isFinite(n) && v.trim() !== '' ? n : null;
+  }
+  return null;
+}
+
+function faNum(x: number, digits = 1): string {
+  return toFaDigits(x.toFixed(digits));
+}
+
+/** رندر پله‌های DCA — فیبو ۳۳-۴۰ و ۶۱-۷۰ + ستاپ جت؛ غیب داده ⇒ «بدون داده» */
+function dcaLabel(fib1: { lo: number | null; hi: number | null } | null, fib2: { lo: number | null; hi: number | null } | null, jet: boolean | null): string {
+  const parts: string[] = [];
+  parts.push(fib1 != null && (fib1.lo != null || fib1.hi != null) ? `پله۱ ${faNum(fib1.lo ?? fib1.hi ?? 0, 0)}` : 'پله۱ بدون داده');
+  parts.push(fib2 != null && (fib2.lo != null || fib2.hi != null) ? `پله۲ ${faNum(fib2.lo ?? fib2.hi ?? 0, 0)}` : 'پله۲ بدون داده');
+  parts.push(jet === true ? 'جت ✓' : jet === false ? 'جت ✕' : 'جت بدون داده');
+  return parts.join(' · ');
+}
+
+export default function PortfolioPage() {
+  const symbol = useSymbolStore((s) => s.symbol);
+  const setSymbol = useSymbolStore((s) => s.setSymbol);
+  const portfolio = usePortfolio();
+  const closes = useMarketCloses();
+  const [tab, setTab] = useState<BoardTab>('portfolio');
+  const [editOpen, setEditOpen] = useState(false);
+
+  const view = useTargetAllocation((s) => s.view);
+  const setView = useTargetAllocation((s) => s.setView);
+  const classes = useTargetAllocation((s) => s.classes);
+  const resetTarget = useTargetAllocation((s) => s.reset);
+
+  const holdings = useMemo(() => portfolio.data?.portfolio ?? [], [portfolio.data]);
+  const monitor = useMemo(() => portfolio.data?.monitor ?? [], [portfolio.data]);
+  const rejects = useMemo(() => (portfolio.data?.decisions ?? []).filter((d) => (d.status ?? '').toLowerCase() === 'reject'), [portfolio.data]);
+  const counts = portfolio.data?.counts ?? {};
+  const limits = portfolio.data?.limits;
+
+  // حد ضررها برای ردیف‌های نماد فعلی (سبد + زیر نظر)
+  const boardSymbols = useMemo(() => [...holdings, ...monitor].map((h) => h.symbol), [holdings, monitor]);
+  const stops = useStopLossBoard(boardSymbols);
+
+  // سیگنال پرتفوی برای نماد انتخابی — با ظرفیت‌سنجی صنعت
+  const sectorUsedPct = useMemo(() => {
+    if (!symbol) return null;
+    const sector = holdings.find((h) => h.symbol === symbol)?.sector ?? null;
+    if (!sector) return null;
+    return holdings
+      .filter((h) => h.symbol !== symbol && (h.sector ?? '') === sector)
+      .reduce((s, h) => s + (h.weight_eff_pct ?? 0), 0);
+  }, [holdings, symbol]);
+
+  const signal = useMemo(() => {
+    if (!symbol) return null;
+    const all = [...holdings, ...monitor];
+    const decision = all.find((d) => d.symbol === symbol) ?? null;
+    return portfolioSignal({
+      symbol,
+      decision,
+      currentPrice: closes.data?.get(symbol) ?? null,
+      sector: decision?.sector ?? null,
+      sectorUsedPct,
+    });
+  }, [symbol, holdings, monitor, closes.data, sectorUsedPct]);
+
+  useEffect(() => {
+    if (signal) publishSignal(signal);
+  }, [signal]);
+
+  const deltaRows = useMemo(() => buildDelta(classes, holdings), [classes, holdings]);
+
+  if (portfolio.isLoading) return <EmptyState title="در حال دریافت سبد..." />;
+  if (portfolio.isError) return <EmptyState title="خطا در دریافت سبد" hint="اتصال بک اند را بررسی کن" />;
+
+  const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
+  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
+  const sumWeight = limits?.sum_weight_pct;
+  const weightCap = limits?.weight_cap_pct;
+
+  const tabs: { id: BoardTab; label: string; count: number }[] = [
+    { id: 'portfolio', label: 'سبد', count: holdings.length },
+    { id: 'monitor', label: 'زیر نظر', count: monitor.length },
+    { id: 'rejects', label: 'حذف شده', count: rejects.length },
+  ];
+
+  return (
+    <div className="flex w-full max-w-none flex-col gap-4">
+      {/* سوییچر دوگانه */}
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'target'}
+          onClick={() => setView('target')}
+          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
+            view === 'target'
+              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
+              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
+          }`}
+        >
+          پرتفوی هدف (Target Allocation)
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'current'}
+          onClick={() => setView('current')}
+          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
+            view === 'current'
+              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
+              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
+          }`}
+        >
+          پرتفوی فعلی (Current Holdings)
+        </button>
+      </div>
+
+      {view === 'target' ? (
+        /* ─── بخش اول: پرتفوی هدف ─── */
+        <>
+          <TargetBanner />
+          <div className="glass-panel panel-in p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-black text-text-primary">ترکیب دارایی پیشنهادی FTS</h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="rounded-full border border-accent-blue/40 bg-accent-blue/10 px-3 py-1 text-[11px] font-bold text-accent-blue hover:bg-accent-blue/20"
+                >
+                  ویرایش دارایی
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-[11px] font-bold text-text-secondary hover:text-text-primary"
+                >
+                  افزودن دارایی
+                </button>
+                <button
+                  type="button"
+                  onClick={() => resetTarget()}
+                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-[11px] font-bold text-text-secondary hover:text-text-primary"
+                >
+                  بازنشانی به پیش‌فرض FTS
+                </button>
+              </div>
+            </div>
+            <TargetDonut classes={classes} />
+            <ul className="mt-4 grid gap-1.5 sm:grid-cols-2">
+              {classes.map((c: TargetClass) => (
+                <li key={c.id} className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-bg-secondary/40 px-2.5 py-1.5">
+                  <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: c.color }} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-text-primary" title={c.label}>{c.label}</span>
+                  {c.hint ? <span className="hidden max-w-40 truncate text-[10px] text-text-muted sm:block" title={c.hint}>{c.hint}</span> : null}
+                  <span className="num text-xs font-black text-text-primary">{toFaDigits(c.pct)}٪</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <TargetEditModal open={editOpen} onClose={() => setEditOpen(false)} />
+        </>
+      ) : (
+        /* ─── بخش دوم: پرتفوی فعلی ─── */
+        <>
+          <DeltaBar rows={deltaRows} />
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
+            <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
+            <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
+            {sumWeight != null ? (
+              <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>جمع وزن {toFaDigits(sumWeight)} درصد</Badge>
+            ) : null}
+            {weightCap != null ? <Badge tone="gray">سقف وزن هر نماد {toFaDigits(weightCap)} درصد</Badge> : null}
+          </div>
+
+          {signal ? (
+            <div className="glass-panel panel-in p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <h3 className="text-sm font-black text-text-primary">سیگنال پرتفوی {symbol}</h3>
+                <Badge tone="gray">{STATUS_LABEL[signal.payload.decision] ?? signal.payload.decision}</Badge>
+                {signal.payload.weightPct != null ? <Badge tone="blue">وزن {toFaDigits(signal.payload.weightPct)} درصد</Badge> : null}
+                {signal.payload.stopLoss != null ? <Badge tone="gray">حد ضرر {toFaDigits(signal.payload.stopLoss)}</Badge> : null}
+              </div>
+              <p className="text-xs leading-6 text-text-secondary">{signal.rationale}</p>
+              {signal.payload.alerts.length > 0 ? (
+                <ul className="mt-1.5 flex list-inside list-disc flex-col gap-0.5">
+                  {signal.payload.alerts.map((a, i) => (
+                    <li key={i} className="text-[11px] font-bold text-accent-susp">{a}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors duration-200 ${
+                  tab === t.id
+                    ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
+                    : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
+                }`}
+              >
+                {t.label} <span className="num">({toFaDigits(t.count)})</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="glass-panel overflow-hidden rounded-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-bg-card/70 text-right text-[11px] uppercase tracking-wider text-text-secondary">
+                    <th className="px-3 py-2.5 font-bold">نماد</th>
+                    <th className="px-3 py-2.5 font-bold">وضعیت</th>
+                    <th className="px-3 py-2.5 font-bold">وزن در سبد</th>
+                    <th className="px-3 py-2.5 font-bold">سود/زیان</th>
+                    <th className="px-3 py-2.5 font-bold">حد ضرر تکنیکال</th>
+                    <th className="px-3 py-2.5 font-bold">حد ضرر بنیادی</th>
+                    <th className="px-3 py-2.5 font-bold">فاصله تا حد ضرر</th>
+                    <th className="px-3 py-2.5 font-bold">پله‌های DCA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-6 text-center text-xs text-text-muted">
+                        {rowLabel} خالی است
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((h) => {
+                      const stopCell = stops.map.get(h.symbol) ?? {
+                        techStop: null,
+                        techBasis: 'بدون داده',
+                        fib1: null,
+                        fib2: null,
+                        jetActive: null,
+                        fundStop: { margin: null, growth: null, hit: null },
+                      };
+                      const stop = stopAsNumber(h.stop_loss) ?? stopCell.techStop;
+                      const price = closes.data?.get(h.symbol) ?? null;
+                      const dist = distanceToStopPct(price, stop);
+                      const distTone = stopStatusTone(dist);
+                      const fundHit = stopCell.fundStop.hit;
+                      const pnl = price != null && typeof h.price === 'number' && h.price > 0 ? ((price - h.price) / h.price) * 100 : null;
+                      return (
+                        <tr
+                          key={h.symbol}
+                          className={`cursor-pointer border-b border-[var(--hairline)] transition-colors duration-200 odd:bg-bg-secondary/40 hover:bg-bg-card/60 ${h.symbol === symbol ? 'bg-accent-blue/12 outline outline-1 outline-border-accent' : ''}`}
+                          onClick={() => setSymbol(h.symbol)}
+                        >
+                          <td className="px-3 py-2.5 font-bold text-text-primary">{h.symbol}</td>
+                          <td className="px-3 py-2.5">
+                            <Badge tone={STATUS_TONE[(h.status ?? 'pending').toLowerCase() as keyof typeof STATUS_TONE] ?? 'gray'}>
+                              {STATUS_LABEL[(h.status ?? 'pending').toLowerCase()] ?? h.status ?? 'بدون تصمیم'}
+                            </Badge>
+                          </td>
+                          <td className="px-3 py-2.5 text-text-primary">
+                            <FlashNum value={h.weight_eff_pct ?? null} render={(v) => (v == null ? '-' : `${toFaDigits(v)} درصد`)} />
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {pnl == null ? (
+                              <span className="text-xs text-text-muted">-</span>
+                            ) : (
+                              <span className={`num text-xs font-bold ${pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                {pnl >= 0 ? '+' : ''}{toFaDigits(Math.round(pnl * 10) / 10)}٪
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {stop != null ? (
+                              <span className="num text-xs text-text-secondary" title={stopCell.techBasis}>
+                                {toFaDigits(stop)} <span className="text-[10px] text-text-muted">({stopCell.techBasis})</span>
+                              </span>
+                            ) : (
+                              <span className="text-xs text-text-muted">بدون داده</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {fundHit == null ? (
+                              <span className="text-xs text-text-muted">بدون داده</span>
+                            ) : (
+                              <Badge tone={fundHit ? 'red' : 'green'}>
+                                {fundHit ? 'فعال' : 'سالم'}
+                                {stopCell.fundStop.margin != null ? <span className="num"> · حاشیه {toFaDigits(stopCell.fundStop.margin)}٪</span> : null}
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {dist == null ? (
+                              <span className="text-xs text-text-muted">-</span>
+                            ) : (
+                              <span
+                                className={`num text-xs font-bold ${
+                                  distTone === 'red' ? 'text-accent-red' : distTone === 'yellow' ? 'text-accent-yellow' : 'text-accent-green'
+                                }`}
+                              >
+                                {dist < 0 ? 'شکسته' : `${toFaDigits(Math.round(dist * 10) / 10)}٪`}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            <span className="num text-[11px] text-text-secondary" title={dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}>
+                              {dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

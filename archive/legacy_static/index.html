@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ترمینال بورس فینال | BorsTerminal Final</title>
+    <link href="static/vendor/fonts/vazirmatn.css?v=10.0.0" rel="stylesheet">
+    <script src="static/vendor/klinecharts.min.js?v=10.0.0"></script>
+    <script src="static/vendor/drawing_math.js?v=10.0.0"></script>
+    <link rel="icon" href="static/favicon.svg?v=10.0.0" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/styles.css?v=10.0.0">
+    <link rel="stylesheet" href="/static/styles_365.css?v=10.0.0">
+    <link rel="stylesheet" href="/static/calendar/calendar.css?v=10.0.0">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">BA</div>
+                <div><h2>بورسایجنت</h2><span>ترمینال پرو</span></div>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-item active" onclick="switchView('mstat', this)">🌐 وضعیت بازار</button>
+                <button class="nav-item" onclick="switchView('market', this)">📊 تابلوخوانی</button>
+                <button class="nav-item" onclick="switchView('screener', this)">🎯 بنیادی</button>
+                <button class="nav-item" onclick="switchView('tech', this)">📈 تکنیکال</button>
+                <button class="nav-item nav-item-portfolio" onclick="switchView('portfolio', this)">💼 پورتفوی FTS</button>
+                <button class="nav-item" onclick="calTabOpen(this)">📅 تقویم</button>
+            </nav>
+            <div class="sidebar-settings" id="tsetmcSettingsPanel" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="font-size: 0.875rem; color: var(--accent-blue); margin-bottom: 5px;">⚙️ تنظیمات TSETMC</h3>
+                
+                <input type="text" id="symbolSearch" placeholder="جستجوی نماد..." oninput="applyFiltersDebounced()" style="width:100%; padding:10px; border-radius:8px; background:var(--bg-primary); border:1px solid var(--border-color); color:#fff; font-family:inherit;">
+
+                <div class="arow-wrap">
+                    <div class="arow-head">
+                        <span>⏱️ بازهٔ بروزرسانی خودکار</span>
+                        <b id="autoRefreshVal" style="color:#2dd4bf;">30 ثانیه</b>
+                    </div>
+                    <!-- هر دو اسلایدر در یک ردیف افقی، جدا با رنگ متمایز -->
+                    <div class="arow-row">
+                        <span class="arow arow--sec">
+                            <span class="arow-tag">ثانیه</span>
+                            <input type="range" id="autoRefreshSec" class="arow-slider" min="1" max="59" step="1" value="30"
+                                   oninput="onSecSlider(this.value)" title="۱ تا ۵۹ ثانیه" aria-label="بازه بر ثانیه">
+                            <span id="autoRefreshSecVal" class="arow-val">30</span>
+                        </span>
+                        <span class="arow-sep"></span>
+                        <span class="arow arow--min">
+                            <span class="arow-tag">دقیقه</span>
+                            <input type="range" id="autoRefreshMin" class="arow-slider" min="1" max="30" step="1" value="5"
+                                   oninput="onMinSlider(this.value)" title="۱ تا ۳۰ دقیقه" aria-label="بازه بر دقیقه">
+                            <span id="autoRefreshMinVal" class="arow-val">5</span>
+                        </span>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary);">🔠 اندازه فونت:</label>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span class="font-stepper"><button type="button" onclick="stepFont('market',-5)">−</button><input type="text" inputmode="numeric" id="fontScaleNum_market" value="100%" onchange="setFontNum('market',this.value)" onkeydown="if(event.key==='Enter')this.blur()"><button type="button" onclick="stepFont('market',5)">+</button></span>
+                        <span id="fontScaleVal" style="font-size: 0.6875rem; color:var(--text-secondary); min-width:34px; text-align:center;">100%</span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary);">نوع:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="stock" onchange="applyFilters()" checked><span>سهام</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="payeh" onchange="applyFilters()" checked><span>فرابورس - بازار پایه</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="teseh" onchange="applyFilters()"><span>تسهیلات مسکن</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="right" onchange="applyFilters()"><span>حق تقدم</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="bond" onchange="applyFilters()"><span>اوراق بدهی</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="option" onchange="applyFilters()"><span>اختیار معامله</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="ati" onchange="applyFilters()"><span>آتی</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="fund" onchange="applyFilters()"><span>صندوق سرمایه گذاری</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="kala" onchange="applyFilters()"><span>بورس کالا</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="tal" onchange="applyFilters()"><span>معاملات پایانی TAL</span></label>
+                        <label class="type-chip"><input type="checkbox" class="asset-cb" value="energy" onchange="applyFilters()"><span>انرژی</span></label>
+                    </div>
+                </div>
+
+                <div id="cfSection" style="background:var(--bg-card); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                    <div onclick="toggleSection('cfSection')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <label style="font-size: 0.6875rem; color:var(--text-secondary); cursor:pointer;">🧪 فیلتر سفارشی (فرمول خودت) <span id="cfSectionToggle" style="opacity:.7;">▾</span></label>
+                    </div>
+                    <div id="cfSectionBody" style="display:none;">
+                    <input type="text" id="customFilterName" placeholder="نام فیلتر (مثلاً جهش قیمت)" style="width:100%; padding:8px; border-radius:7px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.75rem; margin-bottom:6px;">
+                    <input type="text" id="customFilterExpr" placeholder="فرمول: p_last>2000 && percent_change>3 && ps<1" style="width:100%; padding:8px; border-radius:7px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.75rem; margin-bottom:6px;">
+                    <input type="text" id="customFilterEmoji" placeholder="ایموجی (اختیاری) — مثل 🚀" style="width:100%; padding:8px; border-radius:7px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.75rem; margin-bottom:6px;">
+                    <button class="btn-filter" style="width:100%; margin-bottom:8px;" onclick="addCustomFilter()">＋ افزودن فیلتر (همان لحظه)</button>
+                    <div id="customFiltersList" style="display:flex; flex-direction:column; gap:5px;"></div>
+                    <div style="font-size: 0.6562rem; color:var(--text-muted); margin-top:8px;">فیلدها: p_last, p_closing, percent_change, pe, eps, mcap, vol_ratio, z_tot_tran, price_min, price_max, buy_power_i, sell_power_i | عملگرها: >, <, >=, <=, == | ترکیب: &&, ||</div>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-card); padding:8px; border-radius:6px;">
+                    <span style="font-size: 0.6875rem; color:var(--accent-blue); font-weight:bold; display:block; margin-bottom:5px;">نشان‌میدهد (ستون‌های جدول):</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; font-size: 0.6875rem; color:var(--text-secondary);">
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="p_last" checked onchange="applyColShow()"><span>آخرین</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="p_closing" checked onchange="applyColShow()"><span>پایانی</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="percent_change" checked onchange="applyColShow()"><span>تغییر</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="pe" checked onchange="applyColShow()"><span>P/E</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="eps" checked onchange="applyColShow()"><span>EPS</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="vol_ratio" checked onchange="applyColShow()"><span>حجم مشکوک</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="buy_power" checked onchange="applyColShow()"><span>قدرت خریدار/فروشنده</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="q_tot_tran" checked onchange="applyColShow()"><span>تعداد معاملات</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="q_tot_cap" checked onchange="applyColShow()"><span>ارزش معاملات</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="filters" checked onchange="applyColShow()"><span>فیلترها</span></label>
+                        <label class="type-chip"><input type="checkbox" class="colshow-cb" data-col="sel" checked onchange="applyColShow()"><span>وضعیت سبد</span></label>
+                    </div>
+                </div>
+
+                <div style="background:var(--bg-card); padding:8px; border-radius:6px;">
+                    <span style="font-size: 0.6875rem; color:var(--accent-blue); font-weight:bold; display:block; margin-bottom:5px;">نمایش دیده‌بان:</span>
+                    <div style="display:flex; gap:10px; font-size: 0.6875rem; color:var(--text-primary);">
+                        <label style="cursor:pointer;"><input type="radio" name="tradeState" value="all" onchange="applyFilters()"> همه نمادها</label>
+                        <label style="cursor:pointer;"><input type="radio" name="tradeState" value="traded" onchange="applyFilters()" checked> معامله شده</label>
+                    </div>
+                </div>
+                <select id="sectorFilter" onchange="applyFilters()" style="width:100%; padding:10px; border-radius:8px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.8125rem;">
+                    <option value="">گروه صنعت: همه گروهها</option>
+                </select>
+
+                <label style="color:var(--text-secondary); display:flex; align-items:center; gap:8px; font-size: 0.75rem; cursor:pointer;">
+                    <input type="checkbox" id="formatMBToggle" onchange="renderTable(filteredData)" checked> نمایش اعداد بزرگ (M/B)
+                </label>
+            </div>
+
+            <div class="sidebar-settings" id="codalSettingsPanel" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                <h3 style="font-size: 0.875rem; color: var(--accent-green); margin-bottom: 5px;">🎯 تنظیمات کدال</h3>
+                <div id="ftsPreCard" style="background:var(--bg-card); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+                    <div onclick="toggleFtsPre()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                        <label style="font-size:11px; color:var(--text-secondary); cursor:pointer;">📐 پیش‌شرط‌های ۵ شاخص (جزوه) <span id="ftsPreToggle" style="font-size:17px; color:var(--accent-blue); font-weight:700;">▾</span></label>
+                    </div>
+                    <!-- v9.1: باز شده به‌صورت پیش‌فرض — قبلاً display:none بود و آستانه‌ها هرگز دیده نمی‌شدند -->
+                    <div id="ftsPreBody" data-open="1" style="display:flex; margin-top:6px; flex-direction:column; gap:6px;">
+                        <div class="fts-grid">
+                            <div class="fts-cap" style="grid-column:1 / -1;">شاخص ۱ — رشد فروش</div>
+                            <label class="fts-lbl"><span class="fts-name">رشد فروش نقطه‌به‌نقطه (YoY)</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_growth_min" step="5" min="0"><span class="fts-unit">٪</span></span></label>
+                            <label class="fts-lbl"><span class="fts-name">تورم سالانه (مبنا)</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_inflation_min" step="5" min="0"><span class="fts-unit">٪</span></span></label>
+                            <div class="fts-cap" style="grid-column:1 / -1;">شاخص ۲ — روند EPS</div>
+                            <label class="fts-lbl"><span class="fts-name">سال متوالی سودآوری (بدون زیان)</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_eps_years" min="2" max="6" step="1"><span class="fts-unit">سال</span></span></label>
+                            <div class="fts-cap" style="grid-column:1 / -1;">شاخص ۳ — حاشیه سود</div>
+                            <label class="fts-lbl"><span class="fts-name">حاشیه سود ناخالص</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_margin_min" step="5" min="0"><span class="fts-unit">٪</span></span></label>
+                            <label class="fts-lbl"><span class="fts-name">حاشیه ایده‌آل (امتیاز کامل)</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_margin_optimal" step="5" min="0"><span class="fts-unit">٪</span></span></label>
+                            <div class="fts-cap" style="grid-column:1 / -1;">شاخص ۴ — فروش و پتانسیل</div>
+                            <label class="fts-lbl"><span class="fts-name">فروش به ارزش بازار</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_sales_to_mcap_min" step="0.1" min="0"></span></label>
+                            <label class="fts-lbl"><span class="fts-name">پتانسیل سود ناخالص</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_profit_potential_min" step="5" min="0"><span class="fts-unit">٪</span></span></label>
+                            <div class="fts-cap" style="grid-column:1 / -1;">پارامترهای کمکی</div>
+                            <label class="fts-lbl"><span class="fts-name">حداقل ارزش بازار</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_mcap_min_hmt" step="500" min="0"><span class="fts-unit">همت</span></span></label>
+                            <label class="fts-lbl"><span class="fts-name">سقف واچ‌لیست</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_watchlist_max" step="10" min="1"><span class="fts-unit">سهم</span></span></label>
+                            <label class="fts-lbl"><span class="fts-name">آستانهٔ تعلیق</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_suspended_max_stale_sessions" min="1" max="8" step="1"><span class="fts-unit">نشست</span></span></label>
+                            <label class="fts-lbl fts-lbl--full"><span class="fts-name">حداقل میانگین ارزش معاملات روزانه</span><span class="fts-field"><input type="number" class="fts-inp" id="fts_min_trade_val" step="1" min="0"><span class="fts-unit">همت/میلیارد</span></span></label>
+                            <label class="fts-lbl fts-lbl--chk" title="شرکت‌هایی که زیان انباشته‌شان بیش از نصف سرمایه است (ماده ۱۴۱ قانون تجارت) از واچ‌لیست حذف می‌شوند.">
+                                <input type="checkbox" class="fts-chk" id="fts_filter_m141">
+                                <span class="fts-name fts-name--chk">حذف شرکت‌های مشمول ماده ۱۴۱ (زیان انباشته)</span>
+                            </label>
+                        </div>
+                        <label class="fts-lbl fts-lbl--stack"><span class="fts-name">۵) حالت فیلتر صنعت:</span>
+                            <select id="fts_industry_mode" class="fts-inp fts-inp--wide">
+                                <option value="Exclude_Mandatory_Pricing">حذف قیمت‌گذاری دستوری (خودرو، دارو، نیروگاه، غذا، لاستیک، شوینده، بیمه)</option>
+                                <option value="Rank_Only">فقط برچسب‌گذاری — بدون حذف</option>
+                            </select>
+                        </label>
+                        <label class="fts-lbl fts-lbl--stack"><span class="fts-name">صنایع قیمت‌گذاری دستوری (ویرگول جدا):</span>
+                            <textarea class="fts-inp fts-ta" id="fts_mandatory_sectors" rows="2" spellcheck="false" placeholder="مثلاً: خودرو، دارو، نیروگاه…"></textarea></label>
+                        <label class="fts-lbl fts-lbl--stack"><span class="fts-name">صنایع قیمت‌گذاری آزاد / بورس کالا:</span>
+                            <textarea class="fts-inp fts-ta" id="fts_free_sectors" rows="2" spellcheck="false" placeholder="مثلاً: فلزات اساسی، پتروشیمی، سیمان…"></textarea></label>
+
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-filter" onclick="saveFtsConfig()" style="flex:1; border-color:rgba(34,197,94,.5); color:#22c55e;">💾 ذخیره و اعمال</button>
+                            <button class="btn-filter" onclick="loadFtsConfig(true)" style="border-color:rgba(56,189,248,.4);">↺ بازیابی</button>
+                        </div>
+                        <div id="ftsPreMsg" style="font-size:10px; color:var(--text-muted);"></div>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary); display: block; margin-bottom: 8px;">📑 نوع نماد:</label>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="stock" checked onchange="applyScreenerSearch()"><span>سهام</span></label>
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="fund" checked onchange="applyScreenerSearch()"><span>صندوق</span></label>
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="payeh" checked onchange="applyScreenerSearch()"><span>فرابورس پایه</span></label>
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="right" checked onchange="applyScreenerSearch()"><span>حق تقدم</span></label>
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="option" checked onchange="applyScreenerSearch()"><span>مشتقه</span></label>
+                        <label class="type-chip" style="cursor:pointer;"><input type="checkbox" class="screener-asset-cb" value="kala" checked onchange="applyScreenerSearch()"><span>بورس کالا</span></label>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary); display: block; margin-bottom: 8px;">🏭 گروه صنعت:</label>
+                    <select id="screenerSectorFilter" onchange="applyScreenerSearch()" style="width:100%; padding:8px; border-radius:8px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.75rem;">
+                        <option value="">همه گروه‌ها</option>
+                    </select>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary);">🔠 اندازه فونت:</label>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span class="font-stepper"><button type="button" onclick="stepFont('screener',-5)">−</button><input type="text" inputmode="numeric" id="fontScaleNum_screener" value="100%" onchange="setFontNum('screener',this.value)" onkeydown="if(event.key==='Enter')this.blur()"><button type="button" onclick="stepFont('screener',5)">+</button></span>
+                        <span style="font-size: 0.6875rem; color:var(--text-secondary);">%</span>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary); cursor:pointer;"><input type="checkbox" id="numFmtToggle" onchange="setNumFmt(this.checked ? 'jooze' : 'raw')" checked> 📐 حذف ۴ رقم از راست (جزوه)</label>
+                </div>
+                <!-- v9.1: کارت فیلتر ستاره‌ای حذف شد (لاجیک آن از app.js هم برداشته شد) -->
+
+                <div id="fltSection" style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div onclick="toggleSection('fltSection')" style="cursor:pointer;">
+                        <label style="font-size: 0.6875rem; color: var(--text-secondary); cursor:pointer;">✅ شاخص‌های استاد <span id="fltSectionToggle" style="opacity:.7;">▾</span></label>
+                    </div>
+                    <div id="fltSectionBody" style="display:none;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; flex-direction: column;">
+                        <label class="type-chip"><input type="checkbox" id="fltGrowth" onchange="applyCodalFilters()"><span>۱. رشد فروش</span></label>
+                        <label class="type-chip"><input type="checkbox" id="fltProfit" onchange="applyCodalFilters()"><span>۲. سودآوری مستمر</span></label>
+                        <label class="type-chip"><input type="checkbox" id="fltMargin" onchange="applyCodalFilters()"><span>۳. حاشیه ناخالص ≥۳۰٪</span></label>
+                        <label class="type-chip"><input type="checkbox" id="fltMcap" onchange="applyCodalFilters()"><span>۴. ارزش بازار ≥۱ همت</span></label>
+                        <label class="type-chip"><input type="checkbox" id="fltSector" onchange="applyCodalFilters()"><span>۵. صنعت تاییدشده</span></label>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-size: 0.6875rem; color: var(--text-secondary); display: block; margin-bottom: 8px;">🗂 ستون‌های جدول:</label>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="rev_growth" onchange="applyCodalFilters()" checked><span>رشد فروش</span></label>
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="gross_margin" onchange="applyCodalFilters()" checked><span>حاشیه</span></label>
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="ps" onchange="applyCodalFilters()" checked><span>P/S</span></label>
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="mcap" onchange="applyCodalFilters()" checked><span>ارزش</span></label>
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="revenue" onchange="applyCodalFilters()" checked><span>فروش</span></label>
+                        <label class="type-chip"><input type="checkbox" class="col-cb" data-col="net_profit" onchange="applyCodalFilters()" checked><span>سود خالص</span></label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="sidebar-resizer" id="sidebarResizer" title="درگ برای تغییر عرض"></div>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header class="top-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button class="icon-btn" onclick="toggleSidebar()" title="باز/بسته کردن منو">☰</button>
+                    <button class="icon-btn" onclick="toggleTheme()" title="تغییر تم (تاریک/روشن)">🌓</button>
+                    <span class="badge live" style="font-size: 0.75rem; background:rgba(16,185,129,0.1); color:var(--accent-green); padding:4px 8px; border-radius:6px;">🟢 آنلاین</span>
+                    <span id="codalV2Badge" class="badge" style="font-size: 0.75rem; padding:4px 8px; border-radius:6px; background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-secondary);">🛰️ کدال: —</span>
+                    <button id="codalConnBtn" class="icon-btn" style="display:none; width:40px; height:40px; border-radius:50%; font-size: 1.25rem; font-weight:900; background:rgba(56,189,248,.15); border:1px solid rgba(56,189,248,.4); color:var(--accent-blue);" onclick="openAdbGuide()" title="وضعیت اتصال کدال — راهنمای بلاک IP و چرخش (ADB)">?</button>
+                </div>
+                <div id="exportContainer" style="display:flex; gap:10px; align-items:center;">
+                    <div style="position:relative;">
+                        <button class="btn-export" onclick="toggleExportMenu()" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg, #38bdf8, #0284c7); color:#fff; border:none; border-radius:10px; padding:10px 16px; font-weight:800; font-family:inherit; font-size: 0.8125rem; cursor:pointer; box-shadow:0 4px 14px rgba(56,189,248,.35); transition:.15s;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            دانلود خروجی
+                            <span style="font-size: 0.5625rem; opacity:.8;">▾</span>
+                        </button>
+                        <div id="exportMenu" style="display:none; position:absolute; left:0; top:calc(100% + 6px); z-index:200; background:var(--bg-card,#232c40); border:1px solid var(--border-color); border-radius:12px; padding:6px; box-shadow:0 14px 36px rgba(0,0,0,.55); min-width:210px;">
+                            <button class="exp-item" onclick="downloadExport('xlsx')"><span style="font-size: 1rem;">📊</span> اکسل (Excel)</button>
+                            <button class="exp-item" onclick="downloadExport('pdf')"><span style="font-size: 1rem;">📄</span> PDF</button>
+                            <button class="exp-item" onclick="downloadExport('docx')"><span style="font-size: 1rem;">📝</span> ورد (Word)</button>
+                            <button class="exp-item" onclick="downloadExport('csv')"><span style="font-size: 1rem;">📋</span> CSV</button>
+                            <div style="border-top:1px solid var(--border-color); margin:5px 4px;"></div>
+                            <div style="font-size: 0.6562rem; color:var(--text-secondary); padding:4px 8px; line-height:1.7;">خروجی فقط نتایج <b style="color:var(--accent-blue);">فیلترهای فعال</b> (نه کل بازار)</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="miniSyncStatus" style="display:none; align-items:center; gap:8px; background:rgba(56,189,248,0.1); color:var(--accent-blue); padding:6px 12px; border-radius:6px; font-size: 0.75rem; font-weight:bold; cursor:pointer;" onclick="restoreSyncOverlay()">
+                    <span style="animation: spin 2s linear infinite; display:inline-block;">⚙️</span>
+                    <span id="miniSyncText">درحال اسکن...</span>
+                </div>
+            </header>
+
+            <!-- View: Market Watch Table -->
+            <section id="marketView" class="view-panel active">
+                <div class="quick-filters" style="margin-bottom: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button class="action-sync-btn" id="btnSyncMarket" onclick="triggerMarketSync()">🔄 بروزرسانی زنده تابلو</button>
+                    <div class="mini-q-host" style="display:flex; align-items:center; gap:6px;">
+                        <label class="type-chip" title="در ساعات بازار، به صورت خودکار داده را با بازهٔ انتخابشده تازه میکند (رفرش + سینک)">
+                            <input type="checkbox" id="autoRefreshCb" checked onchange="toggleAutoRefresh(this)"><span id="autoRefreshLabel">بروزرسانی خودکار</span>
+                        </label>
+                        <span class="mini-q" onclick="rvToastSv('🔄 در ساعت بازار (۹ تا ۱۲:۳۰) هر X ثانیه داده تازه میشود و اگر کهنهتر از بازه بود، سینک زنده میزند')">?</span>
+                    </div>
+                    <span id="marketDateInfo" style="font-size: 0.75rem; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:6px 12px; color:var(--accent-blue); font-weight:700;">📅 در حال دریافت تاریخ بازار...</span>
+                    <button class="btn-filter" onclick="toggleFilter('f_roobi', this)" title="(pl)==(tmin) && zd1>1 && plp<-1 && qd1>100">🧹 کف روبی صف فروش <span class="fx" onclick="removeBuiltinFilter(event,'f_roobi')">✕</span></button>
+                    <button class="btn-filter" onclick="toggleFilter('f_susp', this)" title="tvol > 3×mean30 و tno > 50">🔥 حجم مشکوک <span class="fx" onclick="removeBuiltinFilter(event,'f_susp')">✕</span></button>
+                    <button class="btn-filter" onclick="toggleFilter('f_clock', this)" title="pl >= pc×1.02 و tvol > mean30 و tno > 30">⏰ الگوی ساعت <span class="fx" onclick="removeBuiltinFilter(event,'f_clock')">✕</span></button>
+                    <button class="btn-filter" onclick="toggleFilter('f_jet', this)" title="tvol>3×mean30 + قدرت خریدار حقوقی ≥1.5× + شکست سقفهای ۶۰ روز + tno>100">🚀 فیلتر جت <span class="fx" onclick="removeBuiltinFilter(event,'f_jet')">✕</span></button>
+                    <button class="btn-filter" onclick="toggleFilter('f_noqteh', this)" title="فاصله از کف ۳۰ روزه < 3% و tvol > mean30 و tno > 5">🎯 نقطه زنی <span class="fx" onclick="removeBuiltinFilter(event,'f_noqteh')">✕</span></button>
+                    <div class="mini-q-host" style="display:flex; align-items:center; gap:6px;">
+                        <label class="type-chip" title="نمادهای خارج از تابلو (بازار انرژی/کالا/اوراق بهار — در API تابلو نیستند ولی زندهاند)">
+                            <input type="checkbox" id="showFossils" checked onchange="toggleFossilView(this)"><span>💤 خارج از تابلو</span>
+                        </label>
+                        <span class="mini-q" onclick="rvToastSv('💤 فسیل = نمادی که در بازار (تابلو) نیست ولی سهم دارد: بازار انرژی/کالا/اوراق بازار — داده پایه ندارد (قیمت/حجم صفر)')">?</span>
+                    </div>
+                </div>
+                <!-- جزئیات بروزرسانی تابلو بازار -->
+                <div id="marketSyncDetails" style="display:none; margin-bottom:12px; padding:10px 14px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; font-size: 0.75rem; color:var(--text-secondary);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                        <span id="msdTitle" style="font-weight:bold; color:var(--text-primary);">📊 در حال بروزرسانی تابلو...</span>
+                        <span style="display:flex; align-items:center; gap:8px;">
+                            <span id="msdMeta"></span>
+                            <button class="icon-btn" onclick="closeMarketSyncDetails()" title="بستن نوتیف">✕</button>
+                        </span>
+                    </div>
+                    <div style="height:6px; background:var(--bg-primary); border-radius:4px; margin-top:7px; overflow:hidden;">
+                        <div id="msdBar" style="height:100%; width:0%; background:var(--accent-green); transition:width .3s;"></div>
+                    </div>
+                    <div id="msdDetail" style="margin-top:7px; line-height:1.9;"></div>
+                </div>
+                <div class="table-stats" style="margin-bottom: 10px; padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+                    <span>📋 <strong id="statShown" style="color: var(--accent-blue);">۰</strong> نماد نمایش دادهشده از <strong id="statTotal" style="color: var(--text-primary);">۰</strong> کل بازار</span>
+                    <span id="statSummary" style="direction: rtl;"></span>
+                </div>
+                <div class="table-container card">
+                    <table id="marketTable">
+                        <colgroup>
+                            <col style="width:6%"><col style="width:16%"><col style="width:6%"><col style="width:6%">
+                            <col style="width:5%"><col style="width:5%"><col style="width:5%"><col style="width:6%">
+                            <col style="width:10%"><col style="width:6%"><col style="width:6%"><col style="width:5%">
+                            <col style="width:9%"><col style="width:9%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th data-w="6" style="cursor:pointer;" onclick="handleSort('symbol')">نماد ↕</th>
+                                <th data-w="16" style="cursor:pointer;" onclick="handleSort('name')">نام شرکت ↕</th>
+                                <th data-col="p_last" data-w="6" style="cursor:pointer;" onclick="handleSort('p_last')">آخرین ↕</th>
+                                <th data-col="p_closing" data-w="6" style="cursor:pointer;" onclick="handleSort('p_closing')">پایانی ↕</th>
+                                <th data-col="percent_change" data-w="5" style="cursor:pointer;" onclick="handleSort('percent_change')">تغییر ↕</th>
+                                <th data-col="pe" data-w="5" style="cursor:pointer;" onclick="handleSort('pe')">P/E ↕</th>
+                                <th data-col="eps" data-w="5" style="cursor:pointer;" onclick="handleSort('eps')">EPS ↕</th>
+                                <th data-col="vol_ratio" data-w="6" style="cursor:pointer;" onclick="handleSort('vol_ratio')">حجم مشکوک ↕</th>
+                                <th data-col="buy_power" data-w="10" style="cursor:pointer;" onclick="handleSort('buy_power_i')" title="حجم خریدار/فروشنده حقوقی به ازای هر معامله">قدرت خریدار/فروشنده ↕</th>
+                                <th data-col="q_tot_tran" data-w="6" style="cursor:pointer;" onclick="handleSort('q_tot_tran')">تعداد معاملات ↕</th>
+                                <th data-col="q_tot_cap" data-w="6" style="cursor:pointer;" onclick="handleSort('q_tot_cap')">ارزش معاملات ↕</th>
+                                <th data-col="filters" data-w="5" title="کدام فیلترهای TSETMC این نماد را دارد">فیلترها</th>
+                                <th data-col="sel" data-w="9" title="وضعیت تصمیم سبد: بررسی‌نشده / تایید / رد / زیر نظر">وضعیت</th>
+                                <th data-w="9">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="marketTableBody">
+                            <tr><td colspan="14" style="text-align: center;">در حال دریافت دادههای بازار...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- New Screener View -->
+            <section id="screenerView" class="view-panel" style="display:none;">
+                <div class="quick-filters" style="margin-bottom: 15px; display: flex; gap: 8px; align-items: center;">
+                    <input id="screenerSearch" type="text" placeholder="🔍 جستجوی نماد / نام شرکت / صنعت..." oninput="applyScreenerSearch()" style="flex:1; padding:9px 12px; border-radius:8px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary); font-family:inherit; font-size: 0.8125rem; min-width:180px;">
+                    <div id="codalScanInfo" style="display:none; flex-basis:100%; background:rgba(56,189,248,0.06); border:1px dashed var(--border-color); border-radius:8px; padding:9px 12px; font-size: 0.75rem; line-height:2; color:var(--text-secondary); margin-top:4px;"></div>
+<span id="codalCtrlBtns" style="display:none; gap:6px;">
+                        <button class="btn-filter" id="btnCodalPause" onclick="codalControl('pause')" style="padding:4px 10px; font-size: 0.75rem;">⏸️ مکث</button>
+                        <button class="btn-filter" id="btnCodalResume" onclick="codalControl('resume')" style="display:none; padding:4px 10px; font-size: 0.75rem;">▶️ ادامه</button>
+                        <button class="btn-filter" id="btnCodalStop" onclick="codalControl('stop')" style="padding:4px 10px; font-size: 0.75rem; border-color:rgba(239,68,68,0.45); color:#ef4444;">⏹️ توقف</button>
+                    </span>
+                    <button class="action-sync-btn" id="btnSyncCodal" onclick="toggleCodalStartPanel()" style="margin-top:4px;">🔄 بروزرسانی اطلاعات</button>
+                    <div id="codalStartPanel" style="display:none; margin-top:6px; background:var(--bg-card); border:1px solid var(--accent-blue); border-radius:8px; padding:10px;">
+                        <div style="font-size: 0.6875rem; color:var(--text-secondary); line-height:1.9; margin-bottom:4px;" id="codalStartHint">—</div>
+                        <label style="display:flex; align-items:center; gap:6px; font-size: 0.7188rem; color:var(--text-secondary); margin-bottom:8px; cursor:pointer;">
+                            <input type="checkbox" id="codalModeOptimized" onchange="codalModeChanged()"> ⚡ حالت بهینه: فقط دادهٔ تغییرپذیر (۶× کمتر درخواست)
+                        </label>
+                        <div style="display:flex; gap:6px;">
+                            <button class="action-sync-btn" onclick="startCodalRun('update')" style="flex:1; margin:0;">▶️ شروع بروزرسانی</button>
+                            <button class="action-sync-btn" onclick="startCodalRun('optimized')" style="flex:1; margin:0; background:rgba(56,189,248,0.12); border-color:rgba(56,189,248,0.4);">⚡ بهینه</button>
+                        </div>
+                    </div>
+                    <button class="action-sync-btn" id="btnSyncCodalNew" onclick="syncPipeline('discover', this)" style="margin-top:4px; background:rgba(34,197,94,0.12); border-color:rgba(34,197,94,0.4);">📥 دریافت نمادهای جدید</button>
+                </div>
+                <div class="table-stats" style="margin-bottom: 10px; padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+                    <span>🏛️ <strong id="screenerStatShown" style="color: var(--accent-blue);">۰</strong> نماد با داده بنیادی کامل از <strong id="screenerStatTotal" style="color: var(--text-primary);">۰</strong> نماد غربالشده</span>
+                    <span id="screenerStatSummary" style="direction: rtl;">در حال بارگذاری...</span>
+                    <span id="screenerUnitNote" style="display:none;"></span>
+                    <button data-selcount type="button" class="action-sync-btn" onclick="if(window.SEL)SEL.openPortfolio()" title="سبد نهایی ۵ تا ۷ سهمی" style="padding:4px 12px; font-size: 0.6875rem; white-space:nowrap;">🧺 سبد من (0/7)</button>
+                </div>
+                <div class="table-container card">
+                    <table id="screenerTable">
+                        <thead>
+                            <tr>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('symbol')">نماد ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('name')">نام شرکت ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('sector_name')">گروه صنعت ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('rev_growth')" title="شاخص ۱ — فروش تجمیعی ÷ همان دورهٔ سال قبل">۱ رشد فروش ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('eps_last')" title="شاخص ۲ — EPS سالانهٔ حسابرسی‌شدهٔ شرکت اصلی، ۳ سال متوالی صعودی">۲ روند EPS ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('gross_margin')" title="شاخص ۳ — سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰">۳ حاشیه ناخالص ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('sales_to_mcap')" title="شاخص ۴ — فروش سالانهٔ Annualized ÷ ارزش بازار">۴ فروش÷ارزش ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('profit_potential_pct')" title="شاخص ۴ — پتانسیل سود ناخالص به ارزش بازار">۴ پتانسیل سود ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('pricing_mode')" title="شاخص ۵ — قیمت‌گذاری آزاد/بورس کالا در برابر دستوری">۵ نوع قیمت‌گذاری ↕</th>
+                                <th onclick="handleSortScreener('mcap')" style="cursor:pointer" title="ارزش بازار (همت)">ارزش بازار ↕</th>
+                                <th style="cursor:pointer;" onclick="handleSortScreener('score')">امتیاز /۵ ↕</th>
+                                <th data-col="وضعیت" title="وضعیت تصمیم سبد: بررسی‌نشده / تایید / رد / زیر نظر">وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screenerTableBody">
+                            <tr><td colspan="13" style="text-align: center;">در حال اسکن پایگاه داده کدال...</td></tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                <!-- v9.7.3 — ماتریس «تایید سه‌گانه» روی واچ‌لیستِ کاربر.
+                     بدنه را static/selection.js (WL.render) می‌سازد؛ اینجا فقط
+                     اسکلت است تا با الگوی calView/screenerView بخواند. -->
+                <div class="table-container card" id="watchMatrixCard" style="margin-top:14px; display:none;">
+                    <div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:8px;">
+                        <strong style="font-size:0.8125rem; color:var(--text-primary);">⭐ واچ‌لیست — تایید سه‌گانه</strong>
+                        <span id="watchMatrixMeta" style="font-size:0.6875rem; color:var(--text-secondary); direction:rtl;">—</span>
+                        <button class="action-sync-btn" onclick="if(window.WL)WL.refresh()" style="padding:4px 12px; font-size:0.6875rem; margin:0;">🔄 محاسبهٔ دوباره</button>
+                    </div>
+                    <table id="watchMatrixTable">
+                        <thead>
+                            <tr>
+                                <th>نماد</th>
+                                <th>نام</th>
+                                <th title="ستون ۱ — ساختار قیمت از price_history (روند، موقعیت در بازه، حجم) + دروازهٔ نرم هفتگی MA52/RSI7 · نشانه‌ها: ✔ تایید ⚠ هشدار ✖ رد – بی‌داده">تکنیکال</th>
+                                <th title="ستون ۲ — پول بازیگران از client_type + daily_prices + market_watch (الگوی ساعت و حجم مشکوک فقط هشدارند، نه حذف)">تابلوخوانی</th>
+                                <th title="ستون ۳ — پنج شاخص FTS از fts_engine (ماده ۱۴۱/زیان‌ده = ⚠ هشدار، دیگر وتو نمی‌خورد)">بنیادی</th>
+                                <th title="CONFIRMED هر سه · PROBABLE دو تا · WATCH دارای هشدار (بدون حذف) · WEAK بدون تایید · INSUFFICIENT داده ناکافی">داوری</th>
+                                <th title="تعداد ستون‌هایی که «تایید» شده‌اند ÷ تعداد ستون‌هایی که داده دارند — ستون بی‌داده در مخرج نمی‌آید">تایید/داده</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="watchMatrixBody">
+                            <tr><td colspan="8" style="text-align:center;">واچ‌لیست خالی است — روی ☆ واچ در جدول بنیادی بزنید.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ===== تب تقویم (کدال) — بدنه را static/calendar/calendar.js می‌سازد ===== -->
+            <section id="calView" class="view-panel" style="display:none;"></section>
+
+            <!-- ===== تب تکنیکال (دقیقاً شبیه رهاورد) ===== -->
+            <section id="techView" class="view-panel" style="display:none;">
+                <!-- ══════ UI Nuke & Rebuild (v5.0): Unified CSS Grid — بدون شناور/تداخل ══════ -->
+                <div class="tv5-shell">
+                    <!-- TOP: Symbol + Timeframes + Settings group -->
+                    <header class="tv5-header nn-head">
+                        <div class="nn-group nn-sym">
+                            <div class="rv-sym-wrap">
+                                <input id="rvSymInput" class="rv-sym-input" placeholder="جستجوی نماد..." value="" autocomplete="off" onfocus="rvOnSearch(this.value)" oninput="rvOnSearch(this.value)" onkeydown="rvSearchKey(event)" onblur="setTimeout(()=>{const d=rvEl('rvSearchDrop'); if(d) d.style.display='none';}, 250)" style="max-width:150px;">
+                                <div id="rvSearchDrop" class="rv-search-drop" style="display:none;"></div>
+                            </div>
+                        </div>
+                        <div class="nn-group">
+                            <button class="nn-btn" id="nnTfBtn" title="انتخاب تایم‌فریم">D <svg viewBox="0 0 16 8" width="16" height="8"><path fill="currentColor" d="M0 1.475l7.396 6.04.596.485.593-.49L16 1.39 14.807 0 7.393 6.122 8.58 6.12 1.186.08z"/></svg></button>
+                            <button class="nn-btn" id="nnCandleBtn" title="نوع نمودار"><svg viewBox="0 0 28 28" fill="currentColor" width="28" height="28"><path d="M17 11v6h3v-6h-3zm-.5-1h4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5z"/><path d="M18 7h1v3.5h-1zm0 10.5h1V21h-1z"/><path d="M9 8v12h3V8H9zm-.5-1h4a.5.5 0 0 1 .5.5v13a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5z"/><path d="M10 4h1v3.5h-1zm0 16.5h1V24h-1z"/></svg><svg viewBox="0 0 16 8" width="16" height="8"><path fill="currentColor" d="M0 1.475l7.396 6.04.596.485.593-.49L16 1.39 14.807 0 7.393 6.122 8.58 6.12 1.186.08z"/></svg></button>
+                        </div>
+                        <div class="nn-group">
+                            <button class="nn-btn" id="nnCompareBtn" title="مقایسه نماد"><svg viewBox="0 0 28 28" width="28" height="28"><path fill="currentColor" d="M13.5 6a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM4 14.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z"/><path fill="currentColor" d="M9 14h4v-4h1v4h4v1h-4v4h-1v-4H9v-1z"/></svg> مقایسه</button>
+                            <button class="nn-btn" id="rvIndBtn" title="اندیکاتورها (MA/RSI/MACD/...)" onclick="rvToggleIndPanel()"><svg viewBox="0 0 28 28" fill="none" width="28" height="28"><path stroke="currentColor" d="M20 17l-5 5M15 17l5 5M9 11.5h7M17.5 8a2.5 2.5 0 0 0-5 0v11a2.5 2.5 0 0 1-5 0"/></svg> اندیکاتورها</button>
+                            <button class="nn-btn" id="nnTplBtn" title="قالب‌های ترسیم"><svg viewBox="0 0 28 28" width="28" height="28"><path fill="currentColor" fill-rule="evenodd" d="M8 7h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM6 8c0-1.1.9-2 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8zm11-1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm-2 1c0-1.1.9-2 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2V8zm-4 8H8a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1zm-3-1a2 2 0 0 0-2 2v3c0 1.1.9 2 2 2h3a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H8zm9 1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1zm-2 1c0-1.1.9-2 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3a2 2 0 0 1-2-2v-3z"/></svg> قالب‌ها</button>
+                        </div>
+                        <div class="nn-group">
+                            <button class="nn-btn" id="nnAdjBtn" title="نوع تعدیل قیمت (کلیک: تغییر)" onclick="rvToggleAdj()">تعدیل عملکردی</button>
+                            <button class="nn-btn" id="rvBtnCalEvents" title="رویدادهای تقویم (مجمع/سود/افزایش سرمایه…) روی چارت" onclick="rvToggleEventMarks()">📅 رویدادها</button>
+                        </div>
+                        <div class="nn-group nn-spacer"></div>
+                        <div class="nn-group">
+                            <button class="nn-btn nn-ico" id="nnUndoBtn" title="واگرد (Ctrl+Z)"><svg viewBox="0 0 28 28" width="28" height="28"><path fill="currentColor" d="M8.707 13l2.647 2.646-.707.708L6.792 12.5l3.853-3.854.708.708L8.707 12H14.5a5.5 5.5 0 0 1 5.5 5.5V19h-1v-1.5a4.5 4.5 0 0 0-4.5-4.5H8.707z"/></svg></button>
+                            <button class="nn-btn nn-ico" id="nnRedoBtn" title="بازانجام"><svg viewBox="0 0 28 28" width="28" height="28"><path fill="currentColor" d="M18.293 13l-2.647 2.646.707.708 3.854-3.854-3.854-3.854-.707.708L18.293 12H12.5A5.5 5.5 0 0 0 7 17.5V19h1v-1.5a4.5 4.5 0 0 1 4.5-4.5h5.793z"/></svg></button>
+                            <button class="nn-btn" id="nnSaveBtn" title="ذخیره رسم‌ها"><svg version="1.1" viewBox="0 0 28 28" width="28" height="28"><g fill="none"><path stroke="currentColor" stroke-dasharray="3.5,2.5" d="M21.5 21.5h-14a5 5 0 1 1 .42-9.983 7.5 7.5 0 0 1 14.57 2.106 4.002 4.002 0 0 1-.99 7.877z"/><path stroke="currentColor" stroke-dasharray="49.866326904296876 13.08991081237793" stroke-dashoffset="49.242997817993164" d="M21.5 21.5h-14a5 5 0 1 1 .42-9.983 7.5 7.5 0 0 1 14.57 2.106 4.002 4.002 0 0 1-.99 7.877z"/><path d="M11 20h6v5h-6z"/><g stroke="currentColor"><path stroke-linecap="square" d="M14.5 14.5v10"/><path d="M11 17l3.5-3.5L18 17"/></g><g stroke="currentColor"><path stroke-dasharray="0% 200%" d="M10 15l2.5 2.5L18 12"/></g></g></svg> ذخیره</button>
+                            <button class="nn-btn nn-ico" id="nnFsBtn" title="حالت تمام صفحه"><svg viewBox="0 0 28 28" width="28" height="28"><g fill="currentColor"><path d="M21 7v4h1V6h-5v1z"/><path d="M16.854 11.854l5-5-.708-.708-5 5zM7 7v4H6V6h5v1z"/><path d="M11.146 11.854l-5-5 .708-.708 5 5zM21 21v-4h1v5h-5v-1z"/><path d="M16.854 16.146l5 5-.708.708-5-5z"/><g><path d="M7 21v-4H6v5h5v-1z"/><path d="M11.146 16.146l-5 5 .708.708 5-5z"/></g></g></svg></button>
+                            <button class="nn-btn nn-ico" id="nnShotBtn" title="عکس از نمودار"><svg viewBox="0 0 28 28" fill="currentColor" width="28" height="28"><path fill-rule="evenodd" clip-rule="evenodd" d="M11.118 6a.5.5 0 0 0-.447.276L9.809 8H5.5A1.5 1.5 0 0 0 4 9.5v10A1.5 1.5 0 0 0 5.5 21h16a1.5 1.5 0 0 0 1.5-1.5v-10A1.5 1.5 0 0 0 21.5 8h-4.309l-.862-1.724A.5.5 0 0 0 15.882 6h-4.764zm-1.342-.17A1.5 1.5 0 0 1 11.118 5h4.764a1.5 1.5 0 0 1 1.342.83L17.809 7H21.5A2.5 2.5 0 0 1 24 9.5v10a2.5 2.5 0 0 1-2.5 2.5h-16A2.5 2.5 0 0 1 3 19.5v-10A2.5 2.5 0 0 1 5.5 7h3.691l.585-1.17z"/><path fill-rule="evenodd" clip-rule="evenodd" d="M13.5 18a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zm0 1a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9z"/></svg></button>
+                        </div>
+                        <div class="nn-group">
+                            <button class="tv5-btn" title="تنظیمات چارت (نوع/حجم)" onclick="rvOpenChartSettings()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5l1.1 3 3-.5 1.6 2.6-2.2 2 2.2 2-1.6 2.6-3-.5-1.1 3-1.1-3-3 .5-1.6-2.6 2.2-2-2.2-2 1.6-2.6 3 .5z"/></svg></button>
+                            <!-- v9.5 — مودال جامع تنظیمات (۴ تب، ذخیره در localStorage) -->
+                            <button class="tv5-btn" id="btsSettingsBtn" title="تنظیمات پیشرفته چارت (نماد/نوار وضعیت/محورها/بوم)" onclick="btsOpenSettings()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg></button>
+                            <button class="tv5-btn" id="rvThemeBtn" title="تم روشن/تاریک چارت" onclick="rvToggleChartTheme()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/></svg></button>
+                        </div>
+                    </header>
+                    <div class="nn-pop" id="nnPop" style="display:none;"></div>
+                    <!-- BOTTOM-LEFT-CENTER GRID -->
+                    <div class="tv5-grid">
+                        <!-- SIDEBAR: single vertical column of drawing tools -->
+                        <!-- v8.0: rail از tech_tools.js ساخته میشود — ۸ گروه مطابق نهایت‌نگر -->
+                        <aside class="tv5-sidebar" id="rail"></aside>
+                        <!-- MAIN: chart -->
+                        <main class="tv5-main">
+                            <div class="rv-chart-head" id="rvChartHead">
+                                <span class="rv-legend-sym" id="rvChtSym">بورش‌اجنت 365</span>
+                                <span class="rv-legend-tf" id="rvChtTf">تایم فریم: -</span>
+                                <span class="rv-legend-tf" id="rvChtScale">مقیاس: -</span>
+                                <span class="rv-legend-sep"></span>
+                                <span class="rv-legend-item" id="rvLgO">باز: —</span>
+                                <span class="rv-legend-item" id="rvLgH">سقف: —</span>
+                                <span class="rv-legend-item" id="rvLgL">کف: —</span>
+                                <span class="rv-legend-item rv-legend-final" id="rvLgC">پایانی: —</span>
+                                <span class="rv-legend-item" id="rvLgV">حجم: —</span>
+                            </div>
+                            <!-- ═══ v9.0 — نوار تصمیم سبد بالای چارت (Accept / Reject / Monitor) ═══ -->
+                            <div id="selBar" class="sel-bar" style="display:none;">
+                                <span id="selBarSym" class="sel-bar-sym"></span>
+                                <span class="sel-bar-spacer"></span>
+                                <button id="selBtn_reject"   class="sel-btn sel-reject"   type="button" title="رد نماد با انتخاب دلیل">✖ رد</button>
+                                <button id="selBtn_monitor"  class="sel-btn sel-monitor"  type="button" title="ثبت در رادار زیر نظر">◔ زیر نظر</button>
+                                <button id="selBtn_accept"   class="sel-btn sel-accept"   type="button" title="تایید و افزودن به سبد + حد ضرر">✔ تایید</button>
+                                <button id="selBtn_portfolio" class="sel-btn sel-portfolio" data-selcount type="button" title="سبد نهایی ۵ تا ۷ سهمی">🧺 سبد من (0/7)</button>
+                            </div>
+                            <div id="rvIndPanel" style="display:none; position:absolute; top:40px; left:46px; z-index:50; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.4); max-width:420px;"></div>
+                        <div class="rv-chart-box" id="rvChartBox">
+                                <div id="rvDrawFloat"></div>
+                                <div id="rvWatermark"></div>
+                                <div id="rvMainChart"></div>
+                                <div id="rvPaneHost"></div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </section>
+
+                <section id="mstatView" class="view-panel" style="display:none;">
+                    <div class="quick-filters" style="margin-bottom: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button class="action-sync-btn" onclick="msRefresh(true)">🔄 بروزرسانی</button>
+                        <label class="type-chip">Polling:
+                            <select id="msPoll" onchange="msSetPoll(this.value)" style="padding:3px 6px; border-radius:5px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary);">
+                                <option value="0">خاموش</option><option value="30">۳۰ ثانیه</option>
+                                <option value="60" selected>۶۰ ثانیه</option><option value="120">۲ دقیقه</option>
+                            </select>
+                        </label>
+                        <label class="type-chip">گروه:
+                            <select id="msGroup" onchange="msSetGroup(this.value)" style="padding:3px 6px; border-radius:5px; background:var(--bg-primary); border:1px solid var(--border-color); color:var(--text-primary);">
+                                <option value="eq_all">سهام، حق تقدم و ص.سهامی</option>
+                                <option value="all">کل بازار</option>
+                                <option value="stock_right">سهام و حق تقدم</option>
+                                <option value="fixed_fund">صندوق درآمد ثابت</option>
+                                <option value="top50">۵۰ شرکت بزرگ</option>
+                                <option value="lev_fund">صندوق‌های اهرمی</option>
+                                <option value="gold_fund">صندوق‌های طلا</option>
+                            </select>
+                        </label>
+                        <span id="msHealth" class="ms-health" title="سلامت کلان بر پایهٔ ارزش معاملات — سند FTS صفحهٔ ۳: بالای ۲۰ همت مساعد، زیر ۱۰ همت نامساعد"></span>
+                        <span id="msStatus" style="font-size: 0.6875rem; color:var(--text-muted); margin-inline-start:auto;"></span>
+                    </div>
+
+                    <!-- v9.8.0 — بنر شاخص نقدینگی کلان + جریان پول هوشمند (نقشهٔ راهبرد FTS) -->
+                    <div id="msMacroBanner" class="card ms-macro-banner">
+                        <div class="ms-macro-grid">
+                            <div class="ms-macro-main">
+                                <div class="ms-macro-title">💧 بنر شاخص نقدینگی کلان
+                                    <span class="ms-unit">ارزش معاملات خرد · سند FTS ص۳</span></div>
+                                <div class="ms-macro-value"><b id="msMacroHemat">—</b> <span class="ms-macro-unit">همت</span></div>
+                                <div id="msMacroLabel" class="ms-health mid">🟡 در حال محاسبه…</div>
+                            </div>
+                            <div class="ms-macro-side">
+                                <div id="msMacroWatch" class="ms-watch hidden" title="اگر بیش از ۸۰٪ نمادها منفی یا در صف فروش باشند، بازار در کف است — نقطهٔ شکار FTS">
+                                    <span class="ms-watch-ico">⚡</span>
+                                    <div><b>فرصت پایش برای ورود (FTS)</b>
+                                        <div id="msMacroWatchSub" class="ms-watch-sub"></div></div>
+                                </div>
+                                <div id="msMacroIdeal" class="ms-ideal hidden" title="ورود هم‌زمان پول به سهام و خروج آن از صندوق‌های درآمد ثابت">
+                                    <span class="ms-ideal-ico">✅</span>
+                                    <div><b>جریان نقدینگی: حالت ایده‌آل FTS</b>
+                                        <div id="msMacroIdealSub" class="ms-ideal-sub"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="msMacroMeta" class="ms-hint" style="margin-top:6px;"></div>
+                    </div>
+
+                    <!-- گام ۱: جدول خلاصهٔ معاملات خرد و صندوق‌ها -->
+                    <div class="card" style="padding:10px 12px; margin-bottom:12px;">
+                        <h4 style="font-size: 0.75rem; margin-bottom:6px;">📋 خلاصهٔ معاملات سهام و صندوق‌ها <span class="ms-unit">حجم: میلیارد سهم · ارزش و پول: میلیارد تومان · سرانه: میلیون تومان</span></h4>
+                        <div style="overflow-x:auto;">
+                        <table id="msSummary" class="ms-table" style="width:100%;">
+                            <thead><tr>
+                                <th>گروه</th><th class="num">نماد</th><th class="num">حجم (م.سهم)</th>
+                                <th class="num">ارزش (م.تومان)</th><th class="num">سرانه خرید حقیقی</th>
+                                <th class="num">سرانه فروش حقیقی</th><th class="num">قدرت خرید</th>
+                                <th class="num">ورود پول حقیقی</th>
+                            </tr></thead>
+                            <tbody><tr><td colspan="8" class="ms-empty">در حال دریافت…</td></tr></tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- v9.8.0 — نشانگر جریان پول هوشمند: سهام/حق‌تقدم ⇄ صندوق درآمد ثابت -->
+                    <div class="card" style="padding:12px; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                            <h4 style="font-size: 0.75rem; margin:0;">🧠 جریان پول هوشمند
+                                <span class="ms-unit">مقایسهٔ ورود/خروج پول خرد · میلیارد تومان</span></h4>
+                            <span id="msFlowBadge" class="ms-health mid hidden" style="margin-inline-start:auto;"></span>
+                        </div>
+                        <div class="ms-flow-grid">
+                            <div class="ms-flow-col">
+                                <div class="ms-tlcap">📈 سهام و حق‌تقدم (پول خرد)</div>
+                                <div id="msFlowEqVal" class="ms-flow-num">—</div>
+                                <div id="msFlowEqBar" class="ms-flow-track"><div class="ms-flow-fill"></div></div>
+                                <div id="msFlowEqDir" class="ms-hint">—</div>
+                            </div>
+                            <div class="ms-flow-vs">⇄</div>
+                            <div class="ms-flow-col">
+                                <div class="ms-tlcap">🏦 صندوق‌های درآمد ثابت</div>
+                                <div id="msFlowFixedVal" class="ms-flow-num">—</div>
+                                <div id="msFlowFixedBar" class="ms-flow-track"><div class="ms-flow-fill"></div></div>
+                                <div id="msFlowFixedDir" class="ms-hint">—</div>
+                            </div>
+                        </div>
+                        <div id="msFlowNote" class="ms-hint"></div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap: 12px; align-items:start;">
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:4px;">📊 توزیع بازدهی آخرین معاملات (۱۲ بازه)</h4>
+                                <div id="msHistoNote" class="ms-unit" style="margin-bottom:6px;"></div>
+                                <canvas id="msHisto12" style="width:100%; height:190px;"></canvas>
+                            </div>
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:6px;">🌡 دماسنج بازار — نسبت نمادهای مثبت و منفی</h4>
+                                <div id="msThermo"></div>
+                            </div>
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:4px;">📈 محدودهٔ قیمتی (۷ بازه)</h4>
+                                <canvas id="msHisto7" style="width:100%; height:140px;"></canvas>
+                            </div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:6px;">📖 سفارش‌های ۵ خط اول و ارزش صف‌ها <span class="ms-unit">میلیارد تومان</span></h4>
+                                <div id="msDepth"></div>
+                            </div>
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:6px;">🧩 تفکیک صف‌های خرید و فروش</h4>
+                                <div id="msQueueSplit"></div>
+                            </div>
+                            <div class="card" style="padding:12px;">
+                                <h4 style="font-size: 0.75rem; margin-bottom:6px;">🔄 نوسان بالا — چرخش صف‌ها و فاز بازار</h4>
+                                <div id="msPhases"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- گام ۴: تایم‌لاین‌های درون‌روزی -->
+                    <div class="card" style="padding:12px; margin-top:12px;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+                            <h4 style="font-size: 0.75rem; margin:0;">🕘 تایم‌لاین درون‌روزی (۰۹:۰۰ تا ۱۳:۰۰)</h4>
+                            <div class="ms-switch" role="group" aria-label="نحلهٔ نمایش">
+                                <button id="msModeCum" class="ms-swbtn active" onclick="msSetMode('cum')">مجموع (تجمعی)</button>
+                                <button id="msModeInst" class="ms-swbtn" onclick="msSetMode('inst')">لحظه‌ای</button>
+                            </div>
+                            <span id="msTlNote" class="ms-unit"></span>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:12px;">
+                            <div><div class="ms-tlcap">💰 ورود/خروج پول (سهام و ص.سهامی | درآمد ثابت)</div><canvas id="msTlFlow" style="width:100%; height:150px;"></canvas></div>
+                            <div><div class="ms-tlcap">📊 تعداد نمادهای مثبت و منفی</div><canvas id="msTlPosNeg" style="width:100%; height:150px;"></canvas></div>
+                            <div><div class="ms-tlcap">📖 ارزش سفارش خرید / فروش</div><canvas id="msTlOrders" style="width:100%; height:150px;"></canvas></div>
+                            <div><div class="ms-tlcap">👥 سرانه خرید / فروش حقیقی</div><canvas id="msTlPerCap" style="width:100%; height:150px;"></canvas></div>
+                            <div><div class="ms-tlcap">🛒 تعداد صف خرید / فروش</div><canvas id="msTlQueues" style="width:100%; height:150px;"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- گام ۵.۱: تفکیک حقیقی/حقوقی -->
+                    <div class="card" style="padding:12px; margin-top:12px;">
+                        <h4 style="font-size: 0.75rem; margin-bottom:8px;">🧾 تفکیک حقیقی و حقوقی</h4>
+                        <div id="msClTabs" class="ms-tabs" style="margin-bottom:8px;"></div>
+                        <div style="overflow-x:auto;">
+                        <table id="msClTable" class="ms-table" style="width:100%;">
+                            <thead><tr>
+                                <th>نوع بازیگر</th><th class="num">تعداد خریداران</th><th class="num">ارزش خرید</th>
+                                <th class="num">٪ خرید</th><th class="num">٪ فروش</th><th class="num">ارزش فروش</th>
+                                <th class="num">تعداد فروشندگان</th>
+                            </tr></thead><tbody></tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- گام ۵.۳ و ۵.۲: صنایع + تابلوی نمادها (v9.8.0: رتبه‌بندی FTS) -->
+                    <div style="display:grid; grid-template-columns: 340px 1fr; gap:12px; margin-top:12px; align-items:start;">
+                        <div class="card" style="padding:10px;">
+                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+                                <h4 style="font-size: 0.75rem; margin:0;">🏭 صنایع پیشرو <span class="ms-unit">رتبه: ارزش + ورود پول</span></h4>
+                            </div>
+                            <div id="msIndLeader" class="ms-leader hidden"></div>
+                            <div style="overflow-x:auto;">
+                            <table id="msIndRank" class="ms-table ms-indrank" style="width:100%;">
+                                <thead><tr>
+                                    <th title="رتبه بر پایهٔ ارزش معاملات">رتبه</th>
+                                    <th>صنعت</th>
+                                    <th class="num" title="ارزش معاملات (میلیارد تومان)">ارزش</th>
+                                    <th class="num" title="ورود پول خرد حقیقی (میلیارد تومان)">ورود پول</th>
+                                    <th class="num" title="مثبت / منفی">+/−</th>
+                                </tr></thead>
+                                <tbody><tr><td colspan="5" class="ms-empty">در حال دریافت…</td></tr></tbody>
+                            </table>
+                            </div>
+                            <div id="msInd" class="ms-scroll" style="margin-top:6px;" title="فهرست کامل برای فیلترِ جدول"></div>
+                        </div>
+                        <div class="card" style="padding:10px;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                                <h4 style="font-size: 0.75rem; margin:0;">⭐ تابلوی نمادها</h4>
+                                <span id="msGridMeta" class="ms-unit"></span>
+                                <button id="msIndClear" class="ms-chipbtn" style="display:none;" onclick="msClearIndustry()"></button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                            <table id="msGrid" class="ms-table ms-grid" style="width:100%;">
+                                <thead><tr id="msGridHead"></tr></thead>
+                                <tbody><tr><td colspan="16" class="ms-empty">در حال دریافت…</td></tr></tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            <!-- Analysis Modal -->
+            <div id="chartModal" class="modal">
+                <div class="modal-content card" style="width: 1100px;">
+                    <div class="modal-header" style="flex-direction: column; align-items: stretch; gap: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="modal-title">
+                                <h2 id="modalSymbol" style="color:var(--accent-blue);">نماد</h2>
+                                <span id="modalName" class="text-muted">نام شرکت</span>
+                            </div>
+                            <button class="icon-btn" onclick="gotoChart(document.getElementById('modalSymbol').innerText, document.getElementById('modalName').innerText)" title="باز کردن در چارت تکنیکال">📊</button>
+
+                            <button class="close-btn" onclick="closeModal()">✕</button>
+                        </div>
+                        <div class="modal-tabs" style="display:flex; gap:10px; border-bottom:1px solid var(--border-color); padding-bottom:10px; align-items:center;">
+                            <button class="btn-open active" id="tabBtnFund" onclick="switchModalTab('fund')">🏛️ تحلیل بنیادی (فیلترهای استاد)</button>
+                            <button class="btn-export" style="margin-right:auto;" onclick="downloadSymbolReport(document.getElementById('modalSymbol').innerText)">📥 دانلود گزارش کامل این نماد</button>
+                        </div>
+                    </div>
+
+                    <div class="modal-body" style="padding-top: 10px;">
+                        <!-- Fundamental Tab -->
+                        <div id="tabFund" class="mod-tab" style="display:block;">
+                            <div class="fundamental-section">
+                                <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
+                                    <div class="metric-card"><span class="m-label">ارزش بازار (Mcap)</span><span id="mMcap" class="m-val" dir="ltr">—</span></div>
+                                    <div class="metric-card"><span class="m-label">فروش کل (Rev)</span><span id="mRev" class="m-val" dir="ltr">—</span></div>
+                                    <div class="metric-card"><span class="m-label">نسبت P/S</span><span id="mPS" class="m-val" dir="ltr">—</span></div>
+                                    <div class="metric-card"><span class="m-label">حاشیه سود ناخالص</span><span id="mGMar" class="m-val" dir="ltr">—</span></div>
+                                </div>
+                                <div id="smartInsightsBox" class="insights-box" style="margin-top:20px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 💼 Portfolio Workstation FTS -->
+            <div id="portfolioView" class="view-panel" style="display:none;">
+                <div class="top-header">
+                    <div>
+                        <h2 style="font-size: 1.125rem; color: var(--accent-blue); margin-bottom:4px;">💼 کارتابل پورتفوی و مدیریت سرمایه FTS</h2>
+                        <span class="text-muted" style="font-size: 0.75rem;">مدیریت ریسک، تخصیص سرمایه و نردبان حد ضرر پویا بر اساس متدولوژی FTS</span>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span class="ms-unit">نمایش بر اساس:</span>
+                        <div class="ms-switch" role="group">
+                            <button id="pfModeSwing" class="ms-swbtn active" onclick="pfSetMode('swing')">🎯 نوسان‌گیر (۱-۲ ماه)</button>
+                            <button id="pfModeTrend" class="ms-swbtn" onclick="pfSetMode('trend')">📈 روندگیر (≥۳ ماه)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ردیف ۱: سه ویجت بالایی -->
+                <div style="display:grid; grid-template-columns: 1fr 1.4fr 1fr; gap:14px; margin-bottom:14px;">
+
+                    <!-- ویجت ۱: سقف درگیری -->
+                    <div class="card pf-glass">
+                        <h4 style="font-size: 0.8125rem; color: var(--accent-blue); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <span>🛡</span><span>سقف درگیری سرمایه (FTS)</span>
+                        </h4>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                            <span class="ms-unit">سرمایه کل (تومان)</span>
+                            <input id="pfTotalCap" type="number" min="0" step="1000000" placeholder="مثلا 500000000" style="width:140px;" onchange="pfUpdateCapital(this.value)" />
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+                            <span class="ms-unit">سرمایه فعال</span>
+                            <span id="pfActivePct" class="pf-num-xl" style="color:var(--accent-green);">—</span>
+                        </div>
+                        <div class="pf-progress-track">
+                            <div id="pfActiveBar" class="pf-progress-fill" style="width:0%; background:linear-gradient(90deg,#10b981,#22c55e);"></div>
+                            <div class="pf-cap-mark" style="right:70%;" title="سقف عادی ۷۰٪"></div>
+                            <div class="pf-cap-mark pf-cap-mark--warn" style="right:85%;" title="هشدار ۸۵٪"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.6875rem; color:var(--text-secondary); margin-top:6px;">
+                            <span>۰٪</span><span>۷۰٪ (عادی)</span><span>۱۰۰٪</span>
+                        </div>
+                        <div id="pfCapAlert" class="pf-alert" style="margin-top:10px;">—</div>
+                    </div>
+
+                    <!-- ویجت ۲: موازنه سبد -->
+                    <div class="card pf-glass">
+                        <h4 style="font-size: 0.8125rem; color: var(--accent-blue); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <span>⚖️</span><span>موازنه سبد (تخصیص دارایی)</span>
+                        </h4>
+                        <div class="pf-balance-grid">
+                            <div class="pf-balance-col">
+                                <div class="pf-balance-title">💵 دلاری (کالایی)</div>
+                                <div id="pfDollarPct" class="pf-num-lg" style="color:#38bdf8;">۰٪</div>
+                                <div class="pf-mini-bar"><div id="pfDollarBar" class="pf-mini-fill" style="width:0%; background:#38bdf8;"></div></div>
+                                <div class="pf-balance-sub">فلزات · پتروشیمی · پالایش · سیمان</div>
+                            </div>
+                            <div class="pf-balance-col">
+                                <div class="pf-balance-title">🏠 ریالی (داخلی)</div>
+                                <div id="pfRialPct" class="pf-num-lg" style="color:#a78bfa;">۰٪</div>
+                                <div class="pf-mini-bar"><div id="pfRialBar" class="pf-mini-fill" style="width:0%; background:#a78bfa;"></div></div>
+                                <div class="pf-balance-sub">غذا · دارو · IT · خودرو</div>
+                            </div>
+                            <div class="pf-balance-col">
+                                <div class="pf-balance-title">🏢 بزرگ/شاخص‌ساز</div>
+                                <div id="pfLargePct" class="pf-num-lg" style="color:#22c55e;">۰٪</div>
+                                <div class="pf-mini-bar"><div id="pfLargeBar" class="pf-mini-fill" style="width:0%; background:#22c55e;"></div></div>
+                                <div class="pf-balance-sub">نمادهای سنگین بازار</div>
+                            </div>
+                            <div class="pf-balance-col">
+                                <div class="pf-balance-title">🚀 چابک/کوچک</div>
+                                <div id="pfSmallPct" class="pf-num-lg" style="color:#f59e0b;">۰٪</div>
+                                <div class="pf-mini-bar"><div id="pfSmallBar" class="pf-mini-fill" style="width:0%; background:#f59e0b;"></div></div>
+                                <div class="pf-balance-sub">نمادهای کم‌میانگین ارزش</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                            <span class="pf-pill">طلا <b id="pfGoldPct">۰٪</b></span>
+                            <span class="pf-pill">اهرمی <b id="pfLevPct">۰٪</b></span>
+                            <span class="pf-pill">درآمد ثابت <b id="pfFixPct">۰٪</b></span>
+                        </div>
+                    </div>
+
+                    <!-- ویجت ۳: هشدارهای FTS -->
+                    <div class="card pf-glass">
+                        <h4 style="font-size: 0.8125rem; color: var(--accent-blue); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                            <span>🚦</span><span>هشدارهای لحظه‌ای FTS</span>
+                        </h4>
+                        <div id="pfAlerts" class="pf-alerts">
+                            <div class="pf-alert-item pf-alert-ok">✅ همه پوزیشن‌ها در محدوده امن</div>
+                        </div>
+                        <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                            <span class="ms-unit">رنگ‌بندی:</span>
+                            <span class="pf-tag pf-tag-pass">pass</span>
+                            <span class="pf-tag pf-tag-warn">warn</span>
+                            <span class="pf-tag pf-tag-fail">fail</span>
+                            <span class="pf-tag pf-tag-nodata">nodata</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ردیف ۲: جدول مدیریت پوزیشن + ماتریس FTS -->
+                <div class="card pf-glass">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <h4 style="font-size: 0.875rem; color: var(--accent-blue); margin:0; display:flex; align-items:center; gap:6px;">
+                            <span>🧮</span><span>نردبان حد ضرر پویا + ماتریس تاییدیه‌های FTS</span>
+                        </h4>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input id="pfQuickAdd" type="text" placeholder="افزودن نماد (مثلا: فولاد)…" class="pf-input" />
+                            <button class="ms-chipbtn" onclick="pfQuickAdd()">➕ افزودن</button>
+                            <button class="ms-chipbtn" onclick="pfExportCSV()">📤 خروجی CSV</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                    <table id="pfTable" class="ms-table pf-table">
+                        <thead>
+                            <tr>
+                                <th>نماد</th>
+                                <th class="num">میانگین ورود</th>
+                                <th class="num">پله‌ها (تعداد/قیمت)</th>
+                                <th class="num">قیمت فعلی</th>
+                                <th class="num">سود/زیان (٪)</th>
+                                <th class="num">حد ضرر (SL)</th>
+                                <th class="num">تارگت (TP)</th>
+                                <th class="num">R/R</th>
+                                <th>ماتریس FTS</th>
+                                <th>یادداشت تحلیلی</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pfTbody">
+                            <tr><td colspan="11" class="ms-empty">پورتفوی خالی است. نمادی اضافه کنید.</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+    </div>
+    <!-- Sync Progress Overlay -->
+    <div id="syncOverlay" class="sync-overlay" style="display:none;">
+        <div class="sync-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="font-size: 0.9375rem; color:var(--accent-blue); margin:0;">🔄 همگامسازی در حال اجرا</h3>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="syncStage" class="sync-stage">...</span>
+                    <button onclick="minimizeSyncOverlay()" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-secondary); padding:4px 8px; border-radius:6px; cursor:pointer; font-size: 0.6875rem;">➖ پسزمینه</button>
+                </div>
+            </div>
+            <div class="sync-bar-track">
+                <div id="syncBar" class="sync-bar-fill" style="width:0%;"></div>
+            </div>
+            <div id="syncDetail" class="sync-detail">در حال شروع...</div>
+            <div id="syncExtra" style="margin-top:8px; font-size: 0.75rem; line-height:2; color:var(--text-secondary);"></div>
+            <div id="syncDiag" style="margin-top:8px; font-size: 0.7188rem; line-height:1.8; color:var(--text-warning); display:none; padding:8px; border-radius:6px; background:rgba(255,170,0,0.08); border:1px solid rgba(255,170,0,0.25);"></div>
+            <div style="display:flex; justify-content:space-between; font-size: 0.6875rem; color:var(--text-secondary); margin-top:8px;">
+                <span id="syncCount">۰ / ۰</span>
+                <span id="syncElapsed">۰:۰۰</span>
+            </div>
+        </div>
+    </div>
+    <!-- راهنمای اول-اجرا: اینترنت و چرخش IP (ADB) -->
+    <div id="adbModal" class="modal">
+        <div class="modal-content card" style="width:580px; max-width:92vw; gap:8px;">
+            <div class="modal-header">
+                <h2 style="font-size: 1rem; color:var(--accent-blue);">🛜 راهنمای اتصال اینترنت و چرخش IP</h2>
+                <button class="icon-btn" onclick="closeAdbGuide()" title="بستن">✕</button>
+            </div>
+            <div style="padding:4px 2px; font-size: 0.8125rem; line-height:2.1; color:var(--text-primary);">
+                <div id="adbGuideStatus" style="padding:12px; border-radius:8px; background:var(--bg-primary); border:1px solid var(--border-color); font-size: 0.7812rem; line-height:1.9;"></div>
+                <div style="margin-top:12px;">
+                    <b style="color:var(--accent-green);">🎯 چرخش IP با گوشی (ADB) چیست؟</b><br>
+                    وقتی سایتهای بورس درخواستهای پشتسرهم را مسدود کنند (۴۲۹)، بهجای انتظار طولانی، برنامه خودکار اینترنت گوشی را ~۲ دقیقه قطع/وصل میکند تا یک IP تازه از اپراتور بگیرد و اسکن همانجا ادامه یابد. <b>سریعترین گزینه؛ مخصوص کسی که اینترنت سیستم را از گوشی میگیرد.</b>
+                </div>
+                <div style="margin-top:10px;">
+                    <b style="color:var(--accent-blue);">🔌 راهاندازی گوشی (فقط یک بار):</b>
+                    <ol style="margin:6px 0; padding-right:20px; font-size: 0.7812rem;">
+                        <li>گوشی را با کابل USB به این سیستم وصل کن.</li>
+                        <li>در تنظیمات گوشی: <b>Developer Options → USB Debugging</b> را روشن کن (اگر گزینه نیست، ۷ بار روی «شماره ساخت» ضربه بزن).</li>
+
+                <!-- v9.7.7 — ستون واچ‌لیست و بج‌ها در هدر جدول -->
+                <th data-col="watchlist" style="width:48px;">⭐</th>
+                <th data-col="badges" style="width:120px;">برچسب‌ها</th>
+                        <li><b>USB Tethering</b> را فعال کن — اینترنت سیستم از گوشی تأمین میشود.</li>
+                        <li>در پنجره Allow گوشی تأیید کن و دوباره روی ❓ بزن تا وضعیت تایید شود.</li>
+                    </ol>
+                </div>
+                <div style="margin-top:10px;">
+                    <b style="color:var(--text-secondary);">اگر از اینترنت گوشی استفاده نمیکنی، toggle زیر را خاموش کن</b> — اسکن به حالت صبر نرمال برمیگردد (مسیر ده سیتا‌ی رسمی + گزینههای پوکسی موجود).
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding:12px 14px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:8px;">
+                    <div>
+                        <b>چرخش IP با گوشی (ADB)</b><br>
+                        <span style="font-size: 0.75rem; color:var(--text-secondary);">خاموش = گزینههای دیگر (صبر/پوکسی)</span>
+                    </div>
+                    <label class="adb-switch">
+                        <input type="checkbox" id="adbEnableToggle" onchange="setAdbToggle()">
+                        <span class="adb-slider"></span>
+                    </label>
+                </div>
+                <button onclick="closeAdbGuide()" style="width:100%; margin-top:14px; padding:10px; background:var(--accent-green); color:#fff; border:none; border-radius:8px; font-weight:bold; font-family:inherit; font-size: 0.8125rem; cursor:pointer;">فهمیدم — شروع کن 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== پنل تکنیکال جدا (سبک رهاورد/نهایت‌نگر) ===== -->
+    <!-- ═══ v9.0 — مودال «سبد نهایی من (۵ تا ۷ سهم)» ═══ -->
+<div id="portfolioModal" class="modal">
+    <div class="modal-content" style="max-width: 940px; width: 94%; background: var(--bg-secondary, #1a2233); border: 1px solid var(--border-color); border-radius: 14px; padding: 18px 20px; box-shadow: 0 20px 60px rgba(0,0,0,.55);">
+        <div class="modal-header">
+            <div>
+                <h3 style="margin: 0 0 3px 0;">🧺 سبد نهایی من (۵ تا ۷ سهم)</h3>
+                <span style="font-size: 0.6875rem; color: var(--text-secondary);">مدیریت وزن سبد — نوع سهم (دلاری/ریالی) و سقف وزن هر سهم ۱۰٪ تا ۲۰٪</span>
+            </div>
+            <button id="portfolioClose" type="button" title="بستن" style="border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); border-radius: 8px; padding: 5px 11px; cursor: pointer; font-family: inherit; font-size: 0.8rem;">✕</button>
+        </div>
+        <div id="portfolioBody" style="max-height: 64vh; overflow-y: auto;"></div>
+    </div>
+</div>
+
+<script src="static/jalaali-js.min.js?v=10.0.0"></script>
+    <script src="static/app.js?v=10.0.0"></script>
+    <!-- v9.8.1 فاز ۰ (interface freeze) — دامنههای استخراجشده از app.js:
+         تحلیل بنیادی (تب #tabFund) و کارتابل سبد (#portfolioView).
+         بعد از app.js میآیند چون app.js فقط مصرفکننده است
+         (openAnalysis → loadFundamentalData، switchView('portfolio') → initPortfolio). -->
+    <script src="static/fundamental_ui.js?v=10.0.0"></script>
+    <script src="static/portfolio_ui.js?v=10.0.0"></script>
+    <script src="static/vendor/nn_icons/nn_icons.js?v=10.0.0"></script>
+    <script src="static/vendor/rtv-icons/rtv_icons.js?v=10.0.0"></script>
+    <script src="static/tech_rtv.js?v=10.0.0"></script>
+    <script src="static/tech_tools.js?v=10.0.0"></script>
+    <!-- تب تقویم: سرویس باید پیش از UI بارگذاری شود -->
+    <script src="static/calendar/calendarService.js?v=10.0.0"></script>
+    <script src="static/calendar/calendar.js?v=10.0.0"></script>
+    <!-- v9.0 — سازوکار تصمیم سبد (آخر از همه: به rv/rvLoad وابسته است) -->
+    <script src="static/selection.js?v=10.0.0"></script>
+    <script src="static/mstat.js?v=10.0.0"></script>
+    <!-- v9.5 — لایهٔ الحاقی چارت رهاورد ۳۶۵ (نوع قیمت/نوار پایین/مودال تنظیمات):
+         باید بعد از tech_rtv.js و tech_tools.js بیاید به‌همین‌ترتیب -->
+    <script src="static/tech_365.js?v=10.0.0"></script>
+</body>
+</html>

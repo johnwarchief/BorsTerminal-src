@@ -1,0 +1,40 @@
+// shared/lib/fmt.ts -- قالب بندی اعداد فارسی و مبالغ
+const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+
+/** تبدیل ارقام لاتین به فارسی */
+export function toFaDigits(input: string | number): string {
+  return String(input).replace(/[0-9]/g, (d) => FA_DIGITS[Number(d)]);
+}
+
+/** عدد با جداکننده هزارگان و ارقام فارسی */
+export function fmtInt(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return '-';
+  const grouped = Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
+  return toFaDigits(grouped);
+}
+
+/** درصد با یک رقم اعشار */
+export function fmtPct(x: number | null | undefined, digits = 1): string {
+  if (x == null || !Number.isFinite(x)) return '-';
+  return toFaDigits(x.toFixed(digits)) + '٪';
+}
+
+/** ریال = 10 ریال؟ نه -- هر تومان 10 ریال است */
+export const RIAL_PER_TOMAN = 10;
+/** هر همت = 10 به توان 13 ریال */
+export const HEMMAT_RIAL = 1e13;
+
+/** مبلغ ریالی به همت با دو رقم اعشار */
+export function fmtHemmat(rial: number | null | undefined): string {
+  if (rial == null || !Number.isFinite(rial)) return '-';
+  return toFaDigits((rial / HEMMAT_RIAL).toFixed(2)) + ' همت';
+}
+
+/** ارزش بازار به تومان -- تک منبع از TSETMC */
+export function fmtMarketCapToman(toman: number | null | undefined): string {
+  if (toman == null || !Number.isFinite(toman)) return '-';
+  if (toman >= 1e12) return toFaDigits((toman / 1e12).toFixed(2)) + ' همت';
+  if (toman >= 1e9) return toFaDigits((toman / 1e9).toFixed(1)) + ' میلیارد تومان';
+  if (toman >= 1e6) return toFaDigits((toman / 1e6).toFixed(1)) + ' میلیون تومان';
+  return fmtInt(toman) + ' تومان';
+}

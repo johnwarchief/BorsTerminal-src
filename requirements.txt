@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+requests
+httpx
+# numpy با pin: نسخهٔ 2.1+ baseline X86_V2 اجباری دارد و روی CPU های قدیمی کرش میکند
+numpy==2.0.2
+pandas==2.2.3

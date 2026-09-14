@@ -1,0 +1,45 @@
+/* tokens.css -- بازتاب متغیرهای تم static/styles.css (نام ها حفظ) + لایه Cyber-Finance */
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #121a2b;
+  --bg-card: #1a2438;
+  --border-color: #2c3a57;
+  --border-accent: #38bdf8;
+  --text-primary: #eef2f7;
+  --text-secondary: #9aa8bd;
+  --text-muted: #6d7a90;
+  --accent-blue: #38bdf8;
+  --accent-green: #10b981;
+  --accent-red: #f43f5e;
+  --accent-yellow: #f59e0b;
+  --accent-susp: #f97316;
+  --accent-susp-bg: rgba(249, 115, 22, 0.16);
+  /* لایه سایبر: نئون و خطوط مویی */
+  --neon-cyan: #22d3ee;
+  --neon-red: #ff3860;
+  --hairline: rgba(255, 255, 255, 0.1);
+  --glass-tint: rgba(18, 26, 43, 0.66);
+  --glass-shadow: 0 8px 30px rgba(2, 6, 17, 0.45);
+}
+
+[data-theme='light'] {
+  --bg-primary: #eef2f8;
+  --bg-secondary: #ffffff;
+  --bg-card: #e2e8f0;
+  --border-color: #cbd5e1;
+  --border-accent: #72aecf;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent-green: #15803d;
+  --accent-red: #dc2626;
+  --accent-yellow: #b45309;
+  --accent-blue: #7db9db;
+  --accent-susp: #ea580c;
+  --accent-susp-bg: rgba(251, 146, 60, 0.22);
+  --neon-cyan: #0891b2;
+  --neon-red: #e11d48;
+  --hairline: rgba(15, 23, 42, 0.12);
+  --glass-tint: rgba(255, 255, 255, 0.72);
+  --glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}

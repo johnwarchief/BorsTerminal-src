@@ -1,0 +1,3205 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Fetch Codal notices + deep-extract financial statements into market.db (offline).
+
+Tables:
+  * codal_notices       - notice list (symbol, company, title, publish date, url)
+  * financial_statements - extracted fundamentals (operating revenue, gross profit, ...)
+
+Extraction: the Codal report page carries a JS var `datasource = {...}` holding
+table cells; if absent, inner sheets (sheetId) are crawled.
+"""
+import os
+import re
+import shutil
+import subprocess
+import sys
+import json
+import time
+import random
+import sqlite3
+import datetime
+from collections import defaultdict
+from urllib.parse import urlencode, quote
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+API = "https://search.codal.ir/api/search/v2/q"
+
+# Stealth: real, modern desktop browser fingerprints — one is picked at random
+# per run (i.e., per session), so consecutive fetches look like different users.
+# YAGNI: hardcoded list, no third-party fake-useragent package.
+UA_LIST = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+]
+HEADERS = {
+    "User-Agent": random.choice(UA_LIST),
+    # JSON-first: the Codal search API must return JSON, not an HTML page.
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "fa-IR,fa;q=0.9,en-US;q=0.8",
+    # no "br": standard requests/urllib3 cannot decode Brotli natively
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Referer": "https://codal.ir/",
+    "Origin": "https://codal.ir",
+}
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market.db")
+STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_status.json")
+OD_STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_ondemand.json")
+
+TARGET = 1000        # target notice count
+PER_PAGE = 20        # fixed Codal page size
+DEEP_LIMIT = 500     # max deep-analyzed reports per run (maximum historical coverage)
+MAX_PAGES = 50       # safety cap on a fresh DB (max_saved==0) to avoid infinite fetch
+# Global scan: فقط اطلاعیههای قابل استفاده (صورت مالی / فعالیت ماهانه) در
+# codal_notices ذخیره شوند؛ «پورتفوی صندوق»، «مجمع»، «توقف/بازگشایی»، «تغییر مدیران»
+# و… فقط صرفاً حجم DB را بالا میبرند و هیچوقت scrape نمیشوند.
+SAVE_USEFUL_ONLY = True
+
+# Industries EXCLUDED from the discovery scan (5-step playbook: رد
+# خودرو/بیمه/دارو/غذایی/نیروگاه/لاستیک). Their notices never feed the 5-step
+# score, so fetching them only costs WAF budget. ~622 symbols (~26%) skipped.
+REJECTED_SECTORS = (
+    "خودرو و ساخت قطعات",
+    "بيمه وصندوق بازنشستگي به جزتامين اجتماعي",
+    "مواد و محصولات دارويي",
+    "محصولات غذايي و آشاميدني به جز قند و شكر",
+    "عرضه برق، گاز، بخاروآب گرم",
+    "لاستيك و پلاستيك",
+)
+
+_LAST_429 = False
+_CONSEC_429 = 0          # consecutive final-429 symbols (WAF gate)
+POLITE = False           # پروفایل بدون-IP-روتاریشن: بین هر درخواست مکث امن (میانگین ~1.7s)
+
+# الگوی burst-rest (اندازهگیری 09-01): WAF کدال ویندوزی است نه نرخ لحظهای
+# (429 در ~35-50 درخواست در تستهای امروز؛ rest 180s بعد از 50 هم هنوز 429 آمد).
+# بُرست 35 درخواست → استراحت 240s (محافظهکار؛ بدون ADB).
+_POLITE_BURST_MAX = 35
+_POLITE_REST = 240
+_POLITE_BURST_COUNT = 0
+
+
+def polite_pause(base_lo=1.2, base_hi=2.2):
+    """مکث بین درخواستها وقتی POLITE فعال است (برای IP ثابت بدون ADB) + بُرست-رست."""
+    global _POLITE_BURST_COUNT
+    if POLITE:
+        time.sleep(random.uniform(base_lo, base_hi))
+        _POLITE_BURST_COUNT += 1
+        if _POLITE_BURST_COUNT >= _POLITE_BURST_MAX:
+            _POLITE_BURST_COUNT = 0
+            print(f"  [polite] burst of {_POLITE_BURST_MAX} requests — resting {_POLITE_REST}s "
+                  f"(WAF window-safe)", flush=True)
+            time.sleep(_POLITE_REST)
+
+
+def set_polite(v):
+    """فعالسازی پروفایل polite از CLI (بدون نیاز به global در __main__)."""
+    global POLITE
+    POLITE = bool(v)
+_DISCOVERY_ABORTED = False  # set by discovery_scan on WAF-stall abort
+
+
+def write_status(stage, detail=""):
+    """Lightweight progress channel for the live sync indicator in dashboard.py.
+
+    Writes a tiny JSON atomically; the dashboard polls this file without blocking."""
+    try:
+        tmp = STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"stage": stage, "detail": detail,
+                       "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False)
+        os.replace(tmp, STATUS_PATH)
+    except Exception:
+        pass
+
+
+_CODAL_START = None
+
+
+def _v2ray_snapshot():
+    """v2ray/node status for the UI (read-only — zero Codal traffic)."""
+    try:
+        import v2ray_rotator as _vr
+        return _vr.snapshot()
+    except Exception:
+        return {}
+
+
+def _fmt_ban_until():
+    """HH:MM of the shared 429 cooldown end, if a (long) backoff is armed."""
+    try:
+        u = globals().get("_BACKOFF_UNTIL", 0) or 0
+        if u > time.time() + 30:
+            return time.strftime("%H:%M", time.localtime(u))
+    except Exception:
+        pass
+    return ""
+
+
+CONTROL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "codal_control.json")
+_USER_STOPPED = False  # set when the user hits توقف in the dashboard
+
+
+def _control_cmd():
+    """Poll the user control file (codal_control.json): pause / resume / stop.
+
+    Written by the dashboard (app.py /api/codal/control); read here at every
+    symbol boundary so the UI buttons take effect within one symbol (~14 s).
+    """
+    global _USER_STOPPED
+    try:
+        with open(CONTROL_PATH, encoding="utf-8") as f:
+            cmd = (json.load(f).get("cmd") or "").strip().lower()
+    except Exception:
+        cmd = ""
+    if cmd == "stop":
+        _USER_STOPPED = True
+    return cmd
+
+
+def _control_sleep(total_seconds, slice_=5.0):
+    """Sleep in 5 s slices so the user's 'stop' lands within ~5 s even during
+    long WAF rests (1800 s). Returns 'stop' if the user stopped, else ''."""
+    end = time.time() + total_seconds
+    while time.time() < end:
+        if _control_cmd() == "stop":
+            return "stop"
+        time.sleep(slice_)
+    return ""
+
+
+def write_progress(phase, detail, total=0, current=0, symbol="", extra=None):
+    """Granular, real-time progress channel for the Codal background sync.
+
+    Mirrors test_tsetmc.write_progress and writes the shared sync_status.json so
+    the dashboard sidebar can render a live progress bar, ETA, and current action
+    (phases: codal_sync = notices+extraction, codal_backoff = 429 pause)."""
+    global _CODAL_START
+    try:
+        if _CODAL_START is None:
+            _CODAL_START = datetime.datetime.now()
+        elapsed = (datetime.datetime.now() - _CODAL_START).total_seconds()
+        percent = round(100.0 * current / total, 1) if total else 0.0
+        tmp = STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({
+                "stage": "codal", "phase": phase, "detail": detail,
+                "total": int(total), "current": int(current), "symbol": symbol,
+                "elapsed": round(elapsed, 1), "percent": percent,
+                "v2ray": _v2ray_snapshot(), "ban_until": _fmt_ban_until(),
+                "extra": extra or {},
+                "ts": datetime.datetime.now().isoformat(timespec="seconds"),
+            }, f, ensure_ascii=False)
+        os.replace(tmp, STATUS_PATH)
+    except Exception:
+        pass
+
+
+def write_od_status(symbol, stage, detail=""):
+    """Per-symbol status channel for ON-DEMAND fetches. Isolated from the general
+    sync_status.json so its loading state never collides with the auto background sync."""
+    try:
+        tmp = OD_STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"symbol": symbol, "stage": stage, "detail": detail,
+                       "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False)
+        os.replace(tmp, OD_STATUS_PATH)
+    except Exception:
+        pass
+
+
+def write_summary(update):
+    """Merge a run's results into sync_summary.json (read-modify-write, atomic).
+
+    Each background worker writes only its own keys so the two processes never
+    clobber each other's results."""
+    try:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "sync_summary.json")
+        data = {}
+        try:
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            pass
+        data.update(update)
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------- smart resume (backlog progress)
+STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "codal_state.json")
+
+
+def load_state():
+    """farthest_page_reached — the deepest backlog page successfully fetched."""
+    try:
+        with open(STATE_PATH, encoding="utf-8") as f:
+            return int(json.load(f).get("farthest_page_reached", 0) or 0)
+    except Exception:
+        return 0
+
+
+def save_state(page):
+    """Monotonic, atomic write of the farthest page reached (never regresses)."""
+    try:
+        if page <= load_state():
+            return
+        tmp = STATE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"farthest_page_reached": page,
+                       "updated_at": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False, indent=2)
+        os.replace(tmp, STATE_PATH)
+    except Exception:
+        pass
+
+
+NOTICE_UPSERT = """INSERT OR REPLACE INTO codal_notices
+    (tracing_no, symbol, company_name, title, letter_code, publish_date,
+     sent_date, url, fetched_at, pdf_url, excel_url)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)"""
+
+
+QUERY = {
+    "Audited": "true", "AuditorRef": "-1", "Category": "-1", "Childs": "false",
+    "CompanyState": "-1", "CompanyType": "-1", "Consolidatable": "true",
+    "IsNotAudited": "false", "Length": "-1", "LetterType": "-1", "Mains": "true",
+    "NotAudited": "true", "NotConsolidatable": "true", "Publisher": "false",
+    "TracingNo": "-1", "Symbol": "", "Title": "", "Type": "-1", "search": "true",
+}
+
+# Arabic/Farsi normalization + remove ZWNJ for reliable label matching
+_NORM = str.maketrans({"ي": "ی", "ك": "ک", "\u200c": "", "\u200f": "", "\u064a": "ی"})
+
+# Row-label patterns (after normalization: spaces + ZWNJ stripped, ي/ك unified)
+PATTERNS = {
+    "revenue": [r"^جمعدرآمدهایعملیاتی", r"^درآمدهایعملیاتی$", r"^درآمدعملیاتی",
+                r"^فروشخالص", r"^مبلغفروش", r"^بهایفروش", r"^جمعفروش",
+                r"^درآمدهعملیاتی", r"^فروش", r"^درآمد(?!سرمایهگذاری|سودسهام)"],
+    "gross_profit": [r"سود\(?زیان\)?ناخالص", r"سودناخالص", r"سودوزيانناخالص"],
+    "operating_profit": [r"سود\(?زیان\)?عملیات", r"سودعملیاتی", r"سودوزيانعملياتي"],
+    "net_profit": [r"سود\(?زیان\)?خالص", r"سودخالص", r"سودوزيانخالص", r"سود\(?زیان\)?قابلتخصیصبهصاحبان",
+                   r"^زیانخالص"],
+    "total_assets": [r"^جمعداراییها$", r"^جمع داراییها$", r"^جمع داراییها", r"کل داراییها", r"مجموع داراییها",
+                     r"^جمعدارایی(?!های)", r"^مجموعدارایی(?!های)"],
+    "total_liabilities": [r"^جمعبدهیها$", r"^جمع بدهیها$", r"^جمعبدیها", r"کل بدهیها", r"مجموع بدهیها",
+                          r"^جمعبدهی(?!های)", r"^مجموعبدهی(?!های)"],
+    "total_equity": [r"^جمعحقوقصاحبانسهام$", r"^جمع حقوق صاحبان سهام$", r"حقوقصاحبانسهام", r"کل حقوقصاحبانسهام",
+                     r"^جمعحقوقمالکانه", r"^حقوقمالکانه$"],
+    "capital": [r"^سرمایه$", r"سرمایهپرداخته", r"محل تامینسرمایه", r"سرمایهثبتشده"],
+    "retained_earnings": [r"سود\(?زیان\)?انباشته", r"سودانباشته", r"سودوزيانانباشته", r"اندوختهسرمایه",
+                          r"زیانانباشته"],
+    "basic_eps": [r"سود\(?زیان\)?خالصهرسهم", r"سود\(?زیان\)?خالصهرسهمپایه",
+                  r"epsخالصهرسهم", r"سودخالصهرسهم", r"درآمدهرسهم"],
+}
+
+# Column order for the financial_statements row tuple
+FS_KEYS = ["revenue", "gross_profit", "operating_profit", "net_profit",
+           "total_assets", "total_liabilities", "total_equity",
+           "capital", "retained_earnings", "basic_eps"]
+
+FS_UPSERT = ("INSERT OR REPLACE INTO financial_statements VALUES ("
+             + ",".join("?" * (8 + len(FS_KEYS) + 3)) + ")")
+
+
+def nfmt(n):
+    try:
+        return f"{n:,}"
+    except (TypeError, ValueError):
+        return str(n)
+
+
+def norm(s):
+    """Normalize Farsi label: unify chars and drop spaces."""
+    return re.sub(r"\s+", "", str(s or "").translate(_NORM))
+
+
+def num(v):
+    """Convert Codal numeric string to number."""
+    s = str(v).replace(",", "").replace("\u200c", "").strip()
+    if not s or s in {"-", "—"}:
+        return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def _headers():
+    """Fresh headers with a ROTATED User-Agent per request.
+
+    The module-level HEADERS dict is built ONCE at import, so every request in
+    a long run shares one UA — WAF fingerprints that instantly and 429-blocks
+    the whole session. Rotating per request makes us look like many browsers."""
+    h = dict(HEADERS)
+    h["User-Agent"] = random.choice(UA_LIST)
+    return h
+
+
+def make_session():
+    s = requests.Session()
+    # Strict SSL interception in the region blocks plain (VPN-less) Codal access:
+    # disable certificate verification and silence InsecureRequestWarning so the
+    # console stays clean. Browser-like stealth headers (incl. a randomly rotated
+    # User-Agent) are attached via the module-level HEADERS on every request.
+    s.verify = False
+    try:
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    except Exception:
+        pass
+    # اگر USB tethering فعال باشد، ترافیک را از IP تترینگ بفرست (تا چرخش IP
+    # گوشی مؤثر باشد حتی وقتی Wi-Fi کامپیوتر روشن است).
+    # --no-tether: از Wi-Fi خانه برو — کدال IP تترینگ را زودتر 429 میکند
+    _tether_ip = _detect_tether_ip() if not _NO_TETHER else None
+    if _tether_ip:
+        try:
+            import socket
+            s.mount("https://", _SourceAddressAdapter(_tether_ip))
+            s.mount("http://", _SourceAddressAdapter(_tether_ip))
+            if not quiet_print_global():
+                print(f"  [net] traffic bound to tether IP {_tether_ip}", flush=True)
+            return s
+        except Exception as e:
+            if not quiet_print_global():
+                print(f"  [net] tether bind failed ({e}) — using default route", flush=True)
+    retry = Retry(
+        connect=4, read=4, status=3,
+        backoff_factor=1.0,
+        # 429 is NOT retried by urllib3 — it must return to our code so the
+        # shared _BACKOFF gate pauses ALL workers together instead of this
+        # session hammering the WAF with 4 hidden retries.
+        status_forcelist=(500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=10)
+    s.mount("https://", adapter)
+    s.mount("http://", adapter)
+    return s
+
+
+def _detect_tether_ip():
+    """Returns the local IP of an active USB tether adapter (Windows SAMSUNG
+    Remote NDIS), or None if no tethering is up."""
+    try:
+        import subprocess as _sp
+        out = _sp.run(
+            ["powershell.exe", "-NoProfile", "-Command",
+             "Get-NetAdapter -ErrorAction SilentlyContinue "
+             "| Where-Object { $_.InterfaceDescription -match 'SAMSUNG|Remote NDIS|RNDIS|Android|USB Tether' -and $_.Status -eq 'Up' } "
+             "| ForEach-Object { Get-NetIPAddress -InterfaceIndex $_.ifIndex -AddressFamily IPv4 "
+             "-ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddress }"],
+            capture_output=True, text=True, timeout=10)
+        for line in (out.stdout or "").splitlines():
+            line = line.strip()
+            if line and line != "127.0.0.1" and line.startswith("172."):
+                return line
+    except Exception:
+        pass
+    return None
+
+
+class _SourceAddressAdapter(HTTPAdapter):
+    """HTTPAdapter that binds every connection to a specific source IP so
+    traffic egresses via the USB-tethered phone instead of the default Wi-Fi."""
+
+    def __init__(self, source_address, *args, **kwargs):
+        self._source_address = source_address
+        super().__init__(*args, **kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        import urllib3
+        kwargs["source_address"] = (self._source_address, 0)
+        return super().init_poolmanager(*args, **kwargs)
+
+
+def quiet_print_global():
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Camoufox — anti-detect browser transport (WAF 429 killer)
+# ---------------------------------------------------------------------------
+# The Codal search API (search.codal.ir) hard 429-blocks plain requests (seen
+# live: 2495/2495 symbols rejected). Camoufox carries a real Firefox fingerprint
+# (JS, cookies, TLS) so the same calls pass. Scrape endpoints (codal.ir/Reports)
+# do NOT 429 with plain requests, so they keep the fast requests path.
+import threading
+import queue
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except Exception:
+    pass
+
+CAM_ACTIVE = True  # search API via Camoufox; scrape stays on requests
+_NO_CAM = True    # پیشفرض خاموش (09-01: با requests+UA مرورگر، WAF کدال بدون مرورگر هم جواب میدهد)؛ --camoufox روشنش میکند
+# Detection: اگر camoufox/playwright در محیط موجود نباشد (مثلاً EXE سبک بدون آن)،
+# خودکار به حالت requests-only برو تا اسکن کدرنش کند
+_CAM_ROOT = None
+try:
+    import importlib.util as _ilu
+    _CAM_AVAILABLE = _ilu.find_spec("camoufox") is not None and _ilu.find_spec("playwright") is not None
+    # در dev: باینریها در venv جدا هستند — برای پیمودن path ماژول از آن venv
+    if _CAM_AVAILABLE:
+        _tmp = _ilu.find_spec("camoufox")
+        if _tmp is not None and _tmp.origin and "site-packages" in str(_tmp.origin).replace("\\", "/"):
+            _CAM_ROOT = str(_tmp.origin).replace("\\", "/").rsplit("/lib/site-packages", 1)[0]
+except Exception:
+    _CAM_AVAILABLE = False
+# ← در EXE باینری مرورگر وجود ندارد — همان اول از لانچ انصراف بده (بدون ۴ خطای گران)
+if _CAM_AVAILABLE:
+    try:
+        _node = None
+        for _cand in (r"C:\Users\PCMOD\AppData\Local\hermes\venvs\camoufox\Lib\site-packages\playwright\driver\node.exe",
+                      os.path.join(os.path.dirname(sys.executable), "playwright", "driver", "node.exe")):
+            if os.path.isfile(_cand):
+                _node = _cand
+                break
+        if _node is None:
+            print("  [camoufox] browser binary NOT bundled (EXE/SDK) — requests-only fallback")
+            _CAM_AVAILABLE = False
+    except Exception:
+        pass
+_CAM_LAUNCH_FAILS = 0      # consecutive launch failures (cooldown gate)
+_CAM_FAIL_LIMIT = 4        # after 4 consecutive failures -> 15min cooldown
+_CAM_DISABLED_UNTIL = 0.0  # epoch until which Camoufox is on cooldown
+
+
+class _CamoufoxResponse:
+    """requests.Response-compatible facade over a browser GET."""
+
+    def __init__(self, status, text):
+        self.status_code = int(status or 0)
+        self.text = text or ""
+
+    def json(self):
+        return json.loads(self.text)
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"HTTP {self.status_code}")
+
+
+# ----------------------------------------------------------- proxy pool
+# WAF کدال (search.codal.ir) روی هر IP نرخگیری سخت میکند (429 IIS). این استخر
+# پروکسیهای عمومی HTTP/HTTPS/SOCKS5 را از لیستهای raw GitHub میگیرد (که در
+# این شبکه بازند)، مرحلهبهمرحله فیلتر میکند (زنده → تست هدفمند روی خودِ
+# کدال) و فقط پروکسیهایی که واقعاً 200 برگرداندند را در استخری با حداکثر
+# PROXY_POOL_WANT عضو نگه میدارد. اگر پروکسی سالمی نبود، مسیر بدون proxy
+# ادامه مییابد (fallback امن — بدون رگرسیون).
+PROXY_LISTS = (
+    "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+    "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt",
+    "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt",
+    "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt",
+)
+PROXY_POOL_WANT = 5      # اندازهٔ هدف استخر (پروکسی تأییدشده)
+PROXY_TEST_ONLY = 12     # چند پروکسی پراستن در هر چرخه روی کدال تست میشوند (1 درخواست/هرکدام)
+PROXY_SCAN_MAX = 150     # حداکثر پروکسی در هر چرخه برای فیلتر زنده (ipify)
+PROXY_REFRESH_TTL = 900.0
+_PROXY_LOCK = threading.Lock()
+_PROXY_POOL = []         # ["http://ip:port", "socks5://ip:port", ...]
+_PROXY_BLACK = set()
+_PROXY_DISABLED = True  # پیشفرض خاموش (09-01: پروکسیها/home نقشی نداشتند؛ تترینگ/ADB کافی)؛ --proxy روشنش میکند
+#              legacy: discovery scan: direct-only (dead proxies cost ~40s/cycle)
+_NO_TETHER = False       # --no-tether: از Wi-Fi خانه بهجای IP تترینگ (کدال تترینگ را زود 429 میکند)
+_PROXY_FRESH_UNTIL = 0.0
+_PROXY_PROBE = API + "?PageNumber=1&Symbol=" + quote("خساپا") + "&Category=1&LetterType=-1"
+_PROXY_RE = re.compile(r"^[\d.]+:\d{1,5}$")
+
+
+def _norm_proxy(line):
+    """'ip:port' -> 'http://ip:port'; فرمتهای prefixدار (http/socks4/socks5) حفظ میشوند."""
+    s = (line or "").strip().replace(",", "")
+    if not s or s.startswith("#"):
+        return None
+    for proto in ("http://", "https://", "socks5://", "socks4://"):
+        if s.startswith(proto):
+            return s
+    if _PROXY_RE.match(s):
+        return "http://" + s
+    return None
+
+
+def _plist_http(url):
+    try:
+        r = requests.get(url, timeout=25, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200 and r.text:
+            return r.text.splitlines()
+    except Exception:
+        pass
+    return []
+
+
+def _proxy_alive(proxy, target=None, timeout=7):
+    """یک GET از طریق پروکسی (برای HTTPS/target، CONNECT واقعی هم سنجیده میشود)."""
+    try:
+        r = requests.get(target or "http://api.ipify.org?format=json",
+                         proxies={"http": proxy, "https": proxy},
+                         timeout=timeout, verify=False,
+                         headers={"Accept": "application/json"})
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def build_proxy_pool(verbose=True):
+    """دانلود لیستها → فیلتر زنده (ipify) → تست هدفمند روی search.codal.ir →
+    استخر حداقل PROXY_POOL_WANT پروکسی تأییدشده. شکست ⇒ استخر خالی (fallback)."""
+    global _PROXY_POOL, _PROXY_FRESH_UNTIL
+    with _PROXY_LOCK:
+        if (time.time() < _PROXY_FRESH_UNTIL
+                and len(_PROXY_POOL) >= PROXY_POOL_WANT):
+            return _PROXY_POOL
+        _PROXY_FRESH_UNTIL = time.time() + PROXY_REFRESH_TTL
+    raw = []
+    for u in PROXY_LISTS:
+        lines = _plist_http(u)
+        if verbose:
+            print(f"  [proxy] {u.split('/')[2]}: {len(lines)} lines")
+        for ln in lines:
+            p = _norm_proxy(ln)
+            if p and p not in _PROXY_BLACK:
+                raw.append(p)
+        if len(raw) >= 600:
+            break
+    raw = list(dict.fromkeys(raw))
+    if not raw:
+        if verbose:
+            print("  [proxy] no lists available — continuing without proxy")
+        return []
+    random.shuffle(raw)
+    cands = raw[:PROXY_SCAN_MAX]
+    # مرحلهٔ ۱: فیلتر زنده روی ipify (بدون فشار روی کدال)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as ex:
+        alive = [p for p, ok in zip(cands, ex.map(_proxy_alive, cands)) if ok]
+    if verbose:
+        print(f"  [proxy] alive(ipify): {len(alive)}/{len(cands)}")
+    if not alive:
+        return []
+    # مرحلهٔ ۲: تست هدفمند روی کدال — فقط چند تای اول (1 درخواست/پروکسی)
+    verified = []
+    for p in alive[:PROXY_TEST_ONLY]:
+        if _proxy_alive(p, target=_PROXY_PROBE, timeout=12):
+            verified.append(p)
+            if verbose:
+                print(f"  [proxy] VERIFIED -> {p}")
+            if len(verified) >= PROXY_POOL_WANT:
+                break
+    with _PROXY_LOCK:
+        _PROXY_POOL = verified
+        for p in verified:
+            _PROXY_BLACK.discard(p)
+    if verbose:
+        print(f"  [proxy] pool: {len(_PROXY_POOL)} verified "
+              f"(got {len(alive)} alive from {len(cands)} candidates)")
+    return _PROXY_POOL
+
+
+def _proxy_take():
+    with _PROXY_LOCK:
+        return _PROXY_POOL[0] if _PROXY_POOL else None
+
+
+def _proxy_discard(p):
+    with _PROXY_LOCK:
+        if p in _PROXY_POOL:
+            _PROXY_POOL.remove(p)
+        _PROXY_BLACK.add(p)
+
+
+# --- v2ray IP rotation (lazy; module/xray brokenness is non-fatal) ---------
+try:
+    import v2ray_rotator as _V2
+except Exception:
+    _V2 = None
+
+
+def _v2ray_ensure():
+    """Local xray SOCKS proxy 127.0.0.1:1080 up? (starts it if needed)."""
+    global _USER_STOPPED
+    if _V2 is None or not _V2.find_xray():
+        return False
+    try:
+        return bool(_V2.ensure_running())
+    except _V2.RotatorStop:
+        _USER_STOPPED = True
+        return False
+    except Exception:
+        return False
+
+
+def _v2ray_rotate():
+    """Rotate to the next upstream config; True only if search.codal.ir answers."""
+    global _USER_STOPPED
+    if _V2 is None or not _V2.find_xray():
+        return False
+    try:
+        return bool(_V2.rotate())
+    except _V2.RotatorStop:
+        _USER_STOPPED = True
+        return False
+    except Exception:
+        return False
+
+
+def _cam_proxy():
+    """پروکسی تأییدشده به شکل dict برای Camoufox(proxy=…); None اگر استخر خالی
+    است یا پروکسی غیرفعال شده (discovery scan مسیر مستقیم).
+    اگر چرخش v2ray فعال باشد → SOCKS5 لوکال 1080 (IP عوض میشود ولی پورت لوکال
+    ثابت است؛ مرورگر بدون ریاستارت بهکار ادامه میدهد)."""
+    if _PROXY_DISABLED:
+        return None  # discovery: direct-only — rotator ensure costs minutes (dead pool)
+    if _v2ray_ensure():
+        return {"server": _V2.SOCKS_URL}
+    p = _proxy_take()
+    return {"server": p} if p else None
+
+
+class CamoufoxSession:
+    """One browser pinned to a dedicated runner thread (playwright sync API
+    requires a thread WITHOUT a running asyncio loop). ALL browser work
+    (launch / goto / proxy swap / close) executes in that thread; the caller
+    only pushes commands through a queue and waits on a future. This makes
+    destroy/recreate safe even from asyncio-owned threads (uvicorn workers,
+    asyncio.run wrappers): the launch happens in a fresh loop-free thread, so
+    the 'Playwright Sync API inside asyncio loop' guard can never fire.
+
+    recycle-safe: هر خطای صفحه/اتصال ⇒ بستن کامل page/browser/context در رانر
+    و لانچ خودکار از نو در استفادهٔ بعدی (بدون خطای asyncio).
+
+    proxy-aware: هر 429 با پروکسی ⇒ دور ریختن پروکسی و retry یکباره؛ بدون
+    پروکسی ⇒ همان 429 (لایهٔ caller بکآف مشترک را اجرا میکند).
+    """
+
+    def __init__(self):
+        self._proxy = _cam_proxy()
+        self._opts = dict(geoip=True, humanize=True, headless=True)
+        if self._proxy:
+            self._opts["proxy"] = self._proxy
+        self._q = queue.Queue()
+        self._thread = None
+        self._dead = False
+        self._err_streak = 0
+        self.browser = None  # mirror for introspection; real one lives in runner
+
+    # ---------------- runner (loop-free worker thread) ----------------
+
+    def _ensure_runner(self):
+        if self._thread is None or not self._thread.is_alive():
+            self._thread = threading.Thread(
+                target=self._runner, daemon=True, name="camoufox-session")
+            self._thread.start()
+
+    def _cmd(self, op, payload, timeout):
+        fut = queue.Queue()
+        self._q.put((op, payload, fut))
+        try:
+            res = fut.get(timeout=timeout)
+        except queue.Empty:
+            raise RuntimeError(f"camoufox command '{op}' timed out after {timeout}s")
+        if isinstance(res, Exception):
+            raise res
+        return res
+
+    def _runner(self):
+        browser = cf = page = None
+        try:
+            while True:
+                op, payload, fut = self._q.get()
+                if op is None:  # close — cleanup and exit
+                    break
+                try:
+                    if op == "launch":
+                        browser, cf, page = self._launch_runner(browser, cf, page)
+                        fut.put(True)
+                    elif op == "goto":
+                        url, headers, timeout = payload
+                        if browser is None:
+                            browser, cf, page = self._launch_runner(browser, cf, page)
+                        if page is None or page.is_closed():
+                            page = browser.new_page()
+                            page.set_extra_http_headers(
+                                {"Accept": "application/json, text/plain, */*",
+                                 "Accept-Language": "en-US,en;q=0.9"})
+                        resp = page.goto(url, wait_until="domcontentloaded",
+                                         timeout=int(timeout * 1000))
+                        text = resp.text() if resp else ""
+                        status = resp.status if resp else 0
+                        fut.put((status, text))
+                    elif op == "switch":
+                        old = payload  # server of the discarded proxy
+                        if old:
+                            print(f"  [camoufox] proxy {old} failed — cycling")
+                            _proxy_discard(old)
+                        browser, cf, page = self._recycle_runner(browser, cf, page)
+                        self._proxy = _cam_proxy()
+                        self._opts = dict(geoip=True, humanize=True, headless=True)
+                        if self._proxy:
+                            self._opts["proxy"] = self._proxy
+                        browser, cf, page = self._launch_runner(browser, cf, page)
+                        fut.put(True)
+                except Exception as e:
+                    # recycle کامل مرورگر در خود رانر؛ خطا به caller برمیگردد
+                    browser, cf, page = self._recycle_runner(browser, cf, page)
+                    fut.put(e)
+        finally:
+            self._recycle_runner(browser, cf, page)
+
+    def _launch_runner(self, browser, cf, page):
+        from camoufox.sync_api import Camoufox
+        # چک باینری مرورگر FF153/FF152 — در EXE آن را نداریم؛ اگر نبود
+        # بدون حتی تلاش، fallback به requests (پیش از این «Connection closed» کرش می‌داد)
+        try:
+            import glob as _g
+            _binary_hits = _g.glob(os.path.expandvars(r"%LOCALAPPDATA%\hermes\venvs\camoufox\Lib\site-packages\camoufox\browsers\*\*"))
+            _browser_dirs = (_g.glob(os.path.expanduser(r"~/AppData/Local/camoufox/*"))
+                             + _g.glob(os.path.expanduser(r"~/.cache/camoufox/*")))
+            if not _binary_hits and not _browser_dirs:
+                print("  [camoufox] browser binary NOT found (EXE without bundled FF) — requests-only")
+                raise RuntimeError("camoufox-binary-missing")
+        except RuntimeError:
+            raise
+        except Exception:
+            pass
+        print("  [camoufox] starting browser"
+              + (" (relaunch)" if browser is not None else "") + " ...")
+        if cf is not None:
+            # stale instance (likely dead driver) must be torn down BEFORE a
+            # new one is built, or the sync API loop stays locked in-thread
+            _teardown_camoufox(cf)
+        cf = Camoufox(**self._opts)
+        try:
+            browser = cf.__enter__()
+        except Exception:
+            # dead driver / broken instance (e.g. missing '_playwright'): tear
+            # it down fully; runner recycles and the next attempt starts fresh
+            _teardown_camoufox(cf)
+            raise
+        return browser, cf, None
+
+    def _recycle_runner(self, browser, cf, page):
+        """بستن کامل هر آنچه در رانر زنده است (page/browser/context)."""
+        try:
+            if page is not None:
+                page.close()
+        except Exception:
+            pass
+        try:
+            if browser is not None:
+                browser.close()
+        except Exception:
+            pass
+        try:
+            if cf is not None:
+                cf.__exit__(None, None, None)
+        except Exception:
+            pass
+        return None, None, None
+
+    # ---------------- public API ----------------
+
+    def get(self, url, headers=None, timeout=60):
+        if self._dead:
+            raise RuntimeError("camoufox session is dead")
+        self._ensure_runner()
+        last = None
+        for attempt in (0, 1):
+            try:
+                status, text = self._cmd("goto", (url, headers or {}, timeout),
+                                         timeout + 45)
+                self._err_streak = 0
+                _cam_launch_ok()   # success resets the module-level failure gate
+                if status == 429 and self._proxy and attempt == 0:
+                    if self._cmd("switch", self._proxy.get("server"), 120):
+                        continue
+                    return _CamoufoxResponse(429, "")
+                return _CamoufoxResponse(status, text)
+            except Exception as e:
+                last = e
+                self._err_streak += 1
+                print(f"  [camoufox] page error: {type(e).__name__}: {e}"
+                      + ("" if attempt else " (recycling)"))
+                if self._proxy and attempt == 0:
+                    try:
+                        if self._cmd("switch", self._proxy.get("server"), 120):
+                            continue
+                    except Exception:
+                        pass
+                # Runner already recycled the dead instance; the next attempt
+                # auto-launches a fresh browser (new driver) in the runner.
+                time.sleep(3)
+        # Both attempts failed -> kill the session; a fresh CamoufoxSession
+        # (new loop-free runner thread) is built on the next _cam_session().
+        self._dead = True
+        _cam_launch_failed(f"page error streak ({self._err_streak}) - "
+                           "recycling without progress")
+        raise last
+
+    def close(self):
+        """بستن کامل session: رانر + مرورگر + context (قبل از ساخت از نو)."""
+        try:
+            if self._thread is not None and self._thread.is_alive():
+                done = queue.Queue()
+                self._q.put((None, None, done))
+                done.get(timeout=20)
+        except Exception:
+            pass
+        self._thread = None
+        self._dead = True
+
+
+_CAM_TLS = threading.local()
+
+
+def _cam_launch_failed(msg):
+    """ثبت شکست لانچ؛ پس از _CAM_FAIL_LIMIT شکست پیاپی → cooldown ۹۰۰ ثانیه."""
+    global _CAM_LAUNCH_FAILS, _CAM_DISABLED_UNTIL
+    _CAM_LAUNCH_FAILS += 1
+    print(f"  [camoufox] launch failure #{_CAM_LAUNCH_FAILS}: {msg}")
+    if _CAM_LAUNCH_FAILS >= _CAM_FAIL_LIMIT:
+        print("  [camoufox] too many consecutive failures — cooldown 900s "
+              "(requests fallback active)")
+        _CAM_LAUNCH_FAILS = 0
+        _CAM_DISABLED_UNTIL = time.time() + 900
+    return None
+
+
+def _teardown_camoufox(cf):
+    """Safe teardown of a Camoufox instance even with a dead driver:
+    neither AttributeError ('_playwright') nor 'Connection closed' may block
+    cleanup (a leaked sync API loop poisons every later launch in the thread)."""
+    try:
+        cf.__exit__(None, None, None)
+    except Exception:
+        pass
+
+
+def _cam_launch_ok():
+    """A successful browser op resets the consecutive-failure gate."""
+    global _CAM_LAUNCH_FAILS
+    _CAM_LAUNCH_FAILS = 0
+
+
+def _cam_session():
+    """Thread-local Camoufox session; None if unavailable (caller falls back)."""
+    global _CAM_AVAILABLE
+    if not CAM_ACTIVE or not _CAM_AVAILABLE or _NO_CAM:
+        return None
+    if time.time() < _CAM_DISABLED_UNTIL:
+        return None  # cooldown فعال — مسیر requests امنتر است
+    sess = getattr(_CAM_TLS, "sess", None)
+    if sess is not None and sess._dead:
+        # پاکسازی کامل session مرده (رانر/مرورگر/context) پیش از ساخت از نو
+        sess.close()
+        _CAM_TLS.sess = None
+        sess = None
+    if sess is None:
+        # استخر پروکسی اگر هنوز ساخته نشده: ساخت lazy (یکبار؛ در شکست خالی میماند)
+        if not _PROXY_POOL and not _PROXY_DISABLED:
+            build_proxy_pool(verbose=False)
+        try:
+            sess = CamoufoxSession()
+            _CAM_TLS.sess = sess
+        except Exception as e:
+            _cam_launch_failed(f"session construct: {type(e).__name__}: {e}")
+            return None
+    return sess
+
+
+def _jitter(lo=4.0, hi=7.0):
+    """Between-page delay: short with Camoufox (real fingerprint does the work),
+    conservative sleep with plain requests (the WAF is watching)."""
+    if CAM_ACTIVE:
+        time.sleep(random.uniform(2.5, 4.0))
+    else:
+        time.sleep(random.uniform(lo, hi))
+
+
+def create_schema(conn):
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS codal_notices (
+            tracing_no INTEGER PRIMARY KEY, symbol TEXT, company_name TEXT,
+            title TEXT, letter_code TEXT, publish_date TEXT, sent_date TEXT,
+            url TEXT, fetched_at TEXT,
+            pdf_url TEXT, excel_url TEXT);
+        CREATE INDEX IF NOT EXISTS ix_codal_symbol ON codal_notices(symbol);
+        CREATE INDEX IF NOT EXISTS ix_codal_date ON codal_notices(publish_date DESC);
+
+        CREATE TABLE IF NOT EXISTS financial_statements (
+            tracing_no       INTEGER PRIMARY KEY,
+            symbol           TEXT,
+            company_name     TEXT,
+            title            TEXT,
+            report_kind      TEXT,
+            period_months    INTEGER,
+            period_end       TEXT,
+            publish_date     TEXT,
+            revenue          REAL,
+            gross_profit     REAL,
+            operating_profit REAL,
+            net_profit       REAL,
+            total_assets     REAL,
+            total_liabilities REAL,
+            total_equity     REAL,
+            capital          REAL,
+            retained_earnings REAL,
+            basic_eps        REAL,
+            unit             TEXT,
+            url              TEXT,
+            fetched_at       TEXT);
+        CREATE INDEX IF NOT EXISTS ix_fs_symbol ON financial_statements(symbol);
+
+        CREATE TABLE IF NOT EXISTS monthly_sales (
+            tracing_no INTEGER PRIMARY KEY,
+            symbol TEXT, title TEXT, period_end TEXT,
+            year INTEGER, month INTEGER,
+            monthly_revenue REAL, ytd_revenue REAL,
+            monthly_revenue_prev REAL, ytd_revenue_prev REAL,
+            pdf_url TEXT, excel_url TEXT);
+        CREATE INDEX IF NOT EXISTS ix_ms_symbol ON monthly_sales(symbol);
+
+        CREATE TABLE IF NOT EXISTS price_history (
+            symbol TEXT, date TEXT, open REAL, high REAL, low REAL,
+            close REAL, volume REAL, PRIMARY KEY (symbol, date));
+        """
+    )
+    conn.commit()
+
+
+# Migrate existing DBs to add new financial columns (safe if already present)
+_FS_NEW_COLS = ["total_assets", "total_liabilities", "total_equity",
+                "capital", "retained_earnings", "basic_eps"]
+def migrate_schema(conn):
+    # مقایسه سال قبل (جزوه ۱۴۰۵: ستون «مقایسه با دوره مشابه سال قبل»)
+    mcols = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+    for c in ("monthly_revenue_prev", "ytd_revenue_prev"):
+        if c not in mcols:
+            try:
+                conn.execute(f"ALTER TABLE monthly_sales ADD COLUMN {c} REAL")
+            except Exception:
+                pass
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(financial_statements)")}
+    for c in _FS_NEW_COLS:
+        if c not in cols:
+            conn.execute(f"ALTER TABLE financial_statements ADD COLUMN {c} REAL")
+    # لینکهای مستقیم PDF/اکسل روی اطلاعیهها (ارتقای امن DB های قدیمی)
+    ncols = {r[1] for r in conn.execute("PRAGMA table_info(codal_notices)")}
+    for c in ("pdf_url", "excel_url"):
+        if c not in ncols:
+            try:
+                conn.execute(f"ALTER TABLE codal_notices ADD COLUMN {c} TEXT")
+            except Exception:
+                pass
+    conn.commit()
+
+
+# Module-level progress context so fetch_page's 429 backoff can report progress.
+_CB_TOTAL, _CB_DONE, _CB_SYM = 0, 0, ""
+
+# ---------------------------------------------------------------- notice list
+def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
+    global _CONSEC_429
+    """Fetch one page with robust exponential backoff on rate-limit (429).
+    On 429 sleeps 30s, then 60s, then 120s (up to `max_429_retries` retries),
+    then gives up and returns None (the caller stops the run gracefully).
+    A human-like random delay is applied on transient request errors.
+    quiet=True skips the global sync_status.json progress writes (on-demand
+    runs must stay invisible to the global market-status UI)."""
+    url = f"{API}?{urlencode(dict(query or QUERY, PageNumber=page))}"
+    polite_pause()      # بدون ADB: مکث ~1.7s قبل از هر درخواست
+    for attempt in range(max_429_retries + 1):
+        try:
+            # search API با requests دچار 429 دائمی میشود → Camoufox (مرورگر
+            # واقعی)؛ فقط در صورت در دسترس نبودن به requests برگرد
+            cam = _cam_session()
+            if cam is not None:
+                try:
+                    r = cam.get(url, timeout=60)
+                except Exception as cam_e:
+                    # Camoufox مرورگر هنوز آماده نیست/خاموش شده → fallback
+                    # مستقیم به requests همان session (تترینگ/پروکسی) — گاهی
+                    # زودتر از بالا آمدن مرورگر جواب میدهد
+                    if attempt == max_429_retries:
+                        print(f"  page {page}: camoufox failed - {cam_e}")
+                    r = s.get(url, headers=_headers(), timeout=60)
+            else:
+                r = s.get(url, headers=_headers(), timeout=60)
+        except Exception as e:
+            # v9.8.1 — قطع نشست/Timeout (requests.exceptions.Timeout، ConnectionError،
+            # ProxyError، ...) رویِ متوالی = تترینگ/مودم افتاده؛ کارتِ بعدی همان
+            # مسیرِ 429 است: چرخش IP با ADB (قطع/وصل حالت پرواز) و retry.
+            # پیش‌تر این شاخه فقط sleep جیتری میخورد و هیچ چرخشی رخ نمیداد.
+            if attempt == max_429_retries:
+                print(f"  page {page}: request failed - {e}")
+                return []
+            _tmo = type(e).__name__
+            if attempt >= 1 and not POLITE and rotate_ip_via_adb():
+                print(f"  page {page}: network stall ({_tmo}) -> ADB airplane "
+                      "toggle gave fresh IP - retrying", flush=True)
+                _trigger_backoff(10)
+                _control_sleep(10)
+                continue
+            time.sleep(random.uniform(2.5, 5.0))
+            continue
+        if r.status_code in (429, 403):
+            # v9.8.1 — 403 (بن/WAF قطعی) هم مثل 429 با چرخش IP برخورد میکند؛
+            # پیش‌تر 403 بی‌صدا به raise_for_status می‌افتاد و کل صفحه دور
+            # ریخته میشد بدون هیچ تلاشی برای IP تازه.
+            if attempt < max_429_retries:
+                if not POLITE and not _PROXY_DISABLED and _v2ray_rotate():
+                    # discovery: direct-only — proxy rotate is dead weight
+                    # (retry stays on the direct IP); ADB below still works
+                    # IP تازه از طریق xray (SOCKS لوکال 1080) — retry تقریباً فوری
+                    wait = 5
+                    print(f"  page {page}: {r.status_code} -> v2ray rotate, retrying in "
+                          f"{wait}s ...", flush=True)
+                elif not POLITE and rotate_ip_via_adb():
+                    # تازه IP سلولی عوض شده — retry تقریباً فوری
+                    wait = 5
+                    print(f"  page {page}: {r.status_code} -> ADB rotate, retrying in {wait}s ...",
+                          flush=True)
+                else:
+                    wait = 30 * (2 ** attempt)   # 30s, 60s, 120s
+                    print(f"  page {page}: {r.status_code} rate-limit - sleeping {wait}s "
+                          f"(retry {attempt + 1}/{max_429_retries}) ...", flush=True)
+                # surface the pause to the dashboard (Codal phase stays codal_sync);
+                # on-demand runs (quiet) never touch the global status channel
+                if not quiet:
+                    write_progress("codal_backoff",
+                                   f"وقفه {wait} ثانیهای برای جلوگیری از مسدودی "
+                                   f"({r.status_code}) — صفحه {page} ...",
+                                   _CB_TOTAL, _CB_DONE, _CB_SYM)
+                _trigger_backoff(wait)   # pause the WHOLE pool too
+                _control_sleep(wait)
+                continue
+            print(f"  page {page}: {r.status_code} rate-limit - giving up after "
+                  f"{max_429_retries} retries.")
+            global _LAST_429, _CONSEC_429
+            _LAST_429 = True
+            _CONSEC_429 += 1
+            if _CONSEC_429 >= 3 and not POLITE and rotate_ip_via_adb():
+                # ADB IP تازه داد — لازم نیست ۳۰ دقیقه بخوابیم؛ خنکسازی کوتاه
+                print(f"  page {page}: WAF ban persists ({_CONSEC_429}) - "
+                      "ADB rotated fresh IP, short 20s cooldown", flush=True)
+                _trigger_backoff(20)
+                _CONSEC_429 = 0
+                return None
+            _trigger_backoff(1800)       # whole pool goes silent 30 min — probing extends bans
+            if _CONSEC_429 >= 3:
+                # WAF بن پایدار — توقف كامل ترافيك (بدون probe) تا بن كهنه شود؛
+                # probe در حين بن آن را تمديد ميكند (اثباتشده 2026-08-25).
+                print(f"  page {page}: WAF ban persists ({_CONSEC_429}) - "
+                      f"silent 1800s rest (no traffic, resume after)", flush=True)
+                try:
+                    write_progress("codal_backoff",
+                                   "بن WAF كدال - توقف ترافيك 30 دقيقه (بازگشت خودكار)",
+                                   globals().get("_CB_TOTAL", 0),
+                                   globals().get("_CB_DONE", 0),
+                                   globals().get("_CB_SYM", ""))
+                except Exception:
+                    pass
+                _CONSEC_429 = 0
+                _control_sleep(1800)  # sliced sleep - user stop lands within ~5 s
+            return None
+        _CONSEC_429 = 0  # پاسخ غير-429 → WAF لحظهای مشکلی ندارد
+        try:
+            r.raise_for_status()
+        except Exception as e:
+            print(f"  page {page}: HTTP error - {e}")
+            return []
+        try:
+            return r.json().get("Letters") or []
+        except ValueError:
+            # non-JSON body (HTML fallback / Cloudflare challenge / firewall page)
+            # — log what the server actually returned so it is never silent
+            print(f"  JSON Error (Status {r.status_code}): {r.text[:150]}")
+            return []
+    return None  # rate-limited sentinel
+
+
+def fetch_notices(s, now, max_saved_tn=0, resume_from=0):
+    """Two-phase Codal fetch with Smart Resume (codal_state.json).
+
+    Phase A (incremental): pages 1..K — fresh notices only; stops the moment a
+    tracing_no already in the DB appears, so old backlog pages are never
+    re-fetched as part of the news pass.
+    Phase B (historical resume): continues from max(resume_from, K) + 1 down to
+    MAX_PAGES; codal_state.json is updated after every successful page, so a
+    crash / persistent-429 exit resumes exactly where it left off next run.
+
+    Returns (rows, n_new): all fetched rows for insertion + how many of them are
+    genuinely NEW notices (Phase A delta)."""
+    global _CB_TOTAL, _CB_DONE, _CB_SYM
+    _CB_TOTAL, _CB_DONE, _CB_SYM = TARGET, 0, ""
+    rows, seen = [], set()
+    max_pages = MAX_PAGES
+    write_progress("codal_sync",
+                   f"فاز A: دریافت اطلاعیههای جدید کدال (ادامه از بایگانی صفحه {resume_from}) ...",
+                   max_pages, 0)
+
+    def _get(page, light=False):
+        """Fetch one page (anti-ban delay + 429 backoff); None = must stop.
+        light=True skips the long cooldown — used to re-try the page that just
+        failed in Phase A without burning another 3x120s on a persistent block."""
+        if page > 1:
+            _jitter(4.5, 7.5)
+        try:
+            letters = fetch_page(s, page)
+        except Exception as e:
+            print(f"  error on page {page}: {e}")
+            return None
+        if letters is None:  # persistent 429 — ride out the cooldown, else stop
+            if light:
+                print(f"  page {page}: still rate-limited after Phase A - stopping.")
+                return None
+            print(f"  page {page}: rate-limited - riding out cooldown ...")
+            for _ in range(3):
+                if _control_sleep(120) == "stop":
+                    return None
+                # previous time.sleep(120)
+                write_progress("codal_backoff",
+                               f"وقفه ۱۲۰ ثانیهای برای رفع مسدودی (۴۲۹) — صفحه {page} ...",
+                               _CB_TOTAL, _CB_DONE, _CB_SYM)
+                letters = fetch_page(s, page)
+                if letters is not None:
+                    break
+            if letters is None:
+                print(f"  page {page}: still blocked after cooldown - stopping.")
+                return None
+        return letters
+
+    def _collect(letters, stop_at_existing):
+        """Add unseen notices; stop_at_existing=True (Phase A) returns (n, hit)
+        where hit = first already-saved tracing_no encountered (backlog reached)."""
+        n = 0
+        for x in letters:
+            t = x.get("TracingNo")
+            if t is None or t in seen:
+                continue
+            if stop_at_existing and max_saved_tn and t <= max_saved_tn:
+                return n, True
+            # whitelist خودآموز: فقط عنوانی که با الگوهای موفق تاریخ کدال
+            # مطابقت دارد ذخیره شود (strict positive؛ بدون باز کردن URL).
+            if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
+                continue
+            seen.add(t)
+            rows.append((
+                t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
+                (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
+                (x.get("PublishDateTime") or "").strip(), (x.get("SentDateTime") or "").strip(),
+                "https://codal.ir" + (x.get("Url") or ""), now,
+                (x.get("PdfUrl") or ""), (x.get("ExcelUrl") or ""),
+            ))
+            _CB_DONE = len(rows)
+            n += 1
+        return n, False
+
+    # ---- Phase A: fresh news (stop at the first already-saved tracing_no) ----
+    n_new = 0
+    phase_a_last = 0
+    phase_a_failed = 0  # page that forced Phase A to stop (429/error); 0 = none
+    for page in range(1, max_pages + 1):
+        letters = _get(page)
+        if letters is None:
+            phase_a_failed = page
+            break
+        if not letters:  # empty page (end of results)
+            save_state(page)
+            break
+        n, hit = _collect(letters, True)
+        n_new += n
+        if hit:
+            save_state(page - 1)  # page K fetched but only partially new
+            break
+        phase_a_last = page
+        if page % 10 == 0 or len(rows) >= TARGET:
+            print(f"  page {page} - total {nfmt(len(rows))} notices")
+            write_progress("codal_sync",
+                           f"فاز A: صفحه {page} از {max_pages}", max_pages, page)
+        if len(rows) >= TARGET:
+            break
+    if phase_a_last:
+        save_state(phase_a_last)  # remember progress if Phase A ended early
+
+    # ---- Phase B: historical backlog resume (persist after every page) ----
+    start = max(resume_from, phase_a_last) + 1
+    if start <= max_pages:
+        print(f"  Phase B: resuming backlog from page {start} (state={resume_from})")
+        write_progress("codal_sync", f"فاز B: ادامهٔ بایگانی از صفحه {start} ...",
+                       max_pages, start - 1)
+        for page in range(start, max_pages + 1):
+            # light=True: page was JUST tried (and blocked) in Phase A — a single
+            # retry without another 3x120s cooldown; if still blocked, stop and
+            # let the NEXT run resume from state (farthest_page_reached).
+            letters = _get(page, light=(page == phase_a_failed))
+            if letters is None:
+                break
+            if not letters:
+                save_state(page)
+                break
+            _collect(letters, False)  # backlog pages: add everything unseen
+            save_state(page)          # persisted after EVERY successful page
+            if page % 10 == 0 or len(rows) >= TARGET:
+                print(f"  page {page} - total {nfmt(len(rows))} notices")
+                write_progress("codal_sync",
+                               f"فاز B: صفحه {page} از {max_pages}", max_pages, page)
+            if len(rows) >= TARGET:
+                break
+    else:
+        print(f"  backlog complete (state={resume_from} >= {max_pages}): Phase B skipped")
+
+    write_progress("codal_sync",
+                   f"دریافت فهرست اطلاعیهها: {nfmt(len(rows))} مورد ({n_new} جدید)",
+                   len(rows) or 1, len(rows))
+    return rows, n_new
+
+
+# ------------------------------------------------------------ deep extraction
+def datasource(html):
+    """Pull the datasource object out of the report HTML."""
+    m = re.search(r"var\s+datasource\s*=\s*(\{.*?\});\s*\n", html, re.S)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(1))
+    except json.JSONDecodeError:
+        return None
+
+
+_BS_SIDE_KEYS = {"total_liabilities", "total_equity", "capital",
+                 "retained_earnings"}
+
+
+def parse_tables(ds, out):
+    """Walk table cells and pick key items.
+
+    Handles BOTH classic vertical tables (label in col 1, values col 2+) AND
+    Codal's side-by-side balance sheets (assets label in col 1, liabilities/
+    equity label in col 5 with values col 6+)."""
+    unit = None
+    for sheet in ds.get("sheets", []):
+        for tbl in sheet.get("tables", []):
+            unit = unit or (tbl.get("description") or "").strip() or None
+            grid = defaultdict(dict)
+            for c in tbl.get("cells", []):
+                grid[c.get("rowSequence")][c.get("columnSequence")] = c.get("value")
+            for r in sorted(k for k in grid if k is not None):
+                label = norm(grid[r].get(1))
+                rlabel = norm(grid[r].get(5)) if grid[r].get(5) else None
+                if not label and not rlabel:
+                    continue
+                for key, pats in PATTERNS.items():
+                    if out.get(key) is not None:
+                        continue
+                    # left side: col 1 label, values from col 2+
+                    if label and any(re.search(p, label) for p in pats):
+                        for ci in sorted(k for k in grid[r] if k)[1:]:
+                            v = num(grid[r][ci])
+                            if v not in (None, 0.0):
+                                out[key] = v
+                                break
+                        break
+                    # right side: col 5 label, values from col 6+
+                    # (BS keys only — IS rows never live in side-by-side tables)
+                    if rlabel and key in _BS_SIDE_KEYS and any(re.search(p, rlabel) for p in pats):
+                        for ci in sorted(k for k in grid[r] if k):
+                            if ci <= 5:
+                                continue
+                            v = num(grid[r][ci])
+                            if v not in (None, 0.0):
+                                out[key] = v
+                                break
+                        break
+    return unit
+
+
+def scrape_report(s, url):
+    """Fetch report page and extract numbers; crawl inner sheets if needed."""
+    out, meta, unit = {}, {}, None
+    r = s.get(url, headers=_headers(), timeout=60)
+    r.raise_for_status()
+    html = r.text
+    ds = datasource(html)
+    if ds:
+        unit = parse_tables(ds, out)
+        meta = {"period": ds.get("period"), "end": ds.get("periodEndToDate")}
+    if (out.get("revenue") is None or out.get("gross_profit") is None
+            or out.get("total_assets") is None
+            or out.get("total_liabilities") is None
+            or out.get("total_equity") is None):
+        for sid in re.findall(r'<option[^>]*value="(\d+)"', html)[:6]:
+            try:
+                ds2 = datasource(s.get(f"{url}&sheetId={sid}", headers=_headers(), timeout=60).text)
+            except Exception:
+                continue
+            if not ds2:
+                continue
+            unit = parse_tables(ds2, out) or unit
+            meta = meta or {"period": ds2.get("period"), "end": ds2.get("periodEndToDate")}
+            if (out.get("revenue") is not None and out.get("gross_profit") is not None
+                    and out.get("total_assets") is not None
+                    and out.get("total_liabilities") is not None
+                    and out.get("total_equity") is not None):
+                break
+    return out, meta, unit
+
+
+def kind_of(title):
+    """Detect report kind with strict Negative Filtering to prevent useless deep-crawls."""
+    t = norm(title)
+
+    # BLACKLIST: If the title contains any of these, it's NOT a raw data table.
+    bad_words = ["توضیحات", "تصمیمات", "آگهی", "زمانبندی", "تمدید", "لغو", "تعلیق", "تغییر",
+                     "دعوت", "تکمیلی", "پیوست", "دلایل", "شفافسازی", "افشای", "مهلت"]
+    if any(b in t for b in bad_words):
+        return None
+
+    if "فعالیتماهانه" in t:
+        return "Monthly Activity Report"
+
+    if "صورتهایمالی" in t or "صورتمالی" in t:
+        # WHITELIST: Must be a periodic report
+        if any(x in t for x in ["میان", "دوره", "سالمالی", "تلفیقی", "حسابرسی"]):
+            return "Financial Statements"
+
+    return None
+
+
+# ─────────────────── self-learned title whitelist (pattern mining) ──────────
+# بهجای regexهای دستنویس: الگوها از عناوین «موفق» تاریخ کدال یاد گرفته
+# میشوند — هر عنوانی که تاکنون با موفقیت به financial_statements یا
+# monthly_sales استخراج شده، یک قالب regex میسازد (تاریخ/عدد → wildcard).
+# عنوان ورودی که با هیچ قالب شناختهشدهای مطابقت نکند همان لحظه رد میشود —
+# بدون حتی باز کردن URL (صرفهجویی در scrape و شبکه).
+_TITLE_PATTERNS = None          # list[re.Pattern]؛ lazy، یکبار در هر run
+
+
+def _title_norm(s):
+    """Persian/Arabic digits → ASCII + ZWNJ/ي/ك unify + strip whitespace."""
+    t = str(s or "").translate(_NORM)
+    t = t.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
+    return re.sub(r"\s+", "", t)
+
+
+def _title_regexes(force=False):
+    """Mine strict positive-whitelist regexes from historically successful titles.
+
+    A template = one successful title with date runs and digit runs generalized
+    to wildcards (e.g. 'صورتهایمالیسالمالیمنتهیبه۱۴۰۴/۱۲/۲۹' →
+    'صورتهایمالیسالمالیمنتهیبه<DATE>' → regex with \\d{4}[-/]\\d{1,2}[-/]\\d{1,2}).
+    Every compiled pattern is anchored (^...$) so matching is exact."""
+
+    global _TITLE_PATTERNS
+    if _TITLE_PATTERNS is not None and not force:
+        return _TITLE_PATTERNS
+    templates, n_success = set(), 0
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+        try:
+            rows = conn.execute(
+                "SELECT DISTINCT title FROM financial_statements "
+                "UNION SELECT DISTINCT title FROM monthly_sales").fetchall()
+        finally:
+            conn.close()
+        n_success = len(rows)
+        for (title,) in rows:
+            t = _title_norm(title)
+            if not t:
+                continue
+            t = re.sub(r"\d{4}[-/]\d{1,2}[-/]\d{1,2}", "<DATE>", t)
+            t = re.sub(r"\d{4}[-/]\d{1,2}", "<DATE>", t)   # تاریخ بدون روز: ۱۴۰۱/۱۲
+            t = re.sub(r"\d+", "<N>", t)
+            # هر پسوند پرانتزی (حسابرسی‌شده، اصلاحیه، شرکت X، ...) → اختیاری
+            t = re.sub(r"\([^)]*\)", "<SUF>", t)
+            templates.add(t)
+    except Exception as e:
+        print(f"  [patterns] mining failed: {e} — falling back to kind_of")
+        templates = set()
+    if not templates:
+        _TITLE_PATTERNS = []       # DB نوپا → خزانهٔ ذهنی خالی → kind_of قدیمی
+        return _TITLE_PATTERNS
+    pats = []
+    for t in templates:
+        had_suf = "<SUF>" in t
+        pat = (re.escape(t)
+               .replace("<DATE>", r"\d{4}[-/]\d{1,2}(?:[-/]\d{1,2})?")
+               .replace("<N>", r"\d+")
+               .replace("<SUF>", r"(?:\([^)]*\))*"))
+        # "میاندورهایتلفیقی" ≠ "تلفیقی" — الگوی تلفیقی باید بدون «میاندورهای» هم بپذیرد
+        pat = pat.replace("میاندورهایتلفیقی", r"(?:میاندورهای)?تلفیقی")
+        if not had_suf:
+            pat = pat.rstrip("$") + r"(?:\([^)]*\))*$"
+        pats.append(re.compile("^" + pat + "$"))
+    print(f"  [patterns] learned {len(pats)} title patterns "
+          f"from {n_success} successful titles", flush=True)
+    _TITLE_PATTERNS = pats
+    return _TITLE_PATTERNS
+
+
+def _positive_title(title):
+    """Strict positive whitelist: True only if a learned pattern matches.
+
+    Empty whitelist (fresh DB, nothing learned yet) → fall back to kind_of so
+    nothing is silently lost on the very first run."""
+
+    pats = _title_regexes()
+    if not pats:
+        return kind_of(title) is not None
+    t = _title_norm(title)
+    return any(p.match(t) for p in pats)
+
+
+MS_UPSERT = """INSERT OR REPLACE INTO monthly_sales
+    (tracing_no, symbol, title, period_end, year, month,
+     monthly_revenue, ytd_revenue, monthly_revenue_prev, ytd_revenue_prev, pdf_url, excel_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+
+
+def _bank_fallback(grid, rows):
+    """Generic monthly table fallback (banks, services, etc.).
+
+    جزوه (وبملت): بانک «فروش» ندارد؛ جدول «درآمد محقق‌شده» چند ردیف دارد
+    (تسهیلات اعطایی/سپرده‌گذاری/اوراق بدهی/سرمایه‌گذاری‌ها/کارمزد) و ردیف
+    «جمع» ندارد — مجموع ردیف‌ها خودِ کل درآمدهاست. ابتدا این حالت special-case
+    می‌شود؛ اگر جدول «درآمد محقق شده» نبود، رفتار عمومی (ردیف جمع) می‌ماند.
+    Returns (m, y) or (None, None)."""
+    # --- حالت بانک: هدر «درآمد محقق شده طی دوره یک ماهه» + «...از ابتدای سال مالی» ---
+    hdr = None
+    mcol = ycol = None
+    for hr in rows[:3]:
+        hv = {ci: norm(grid[hr][ci]) for ci in grid[hr]}
+        mc = [ci for ci, v in hv.items() if "درآمد" in v and "محقق" in v and "طیدوره" in v.replace(" ", "")]
+        yc = [ci for ci, v in hv.items() if "جمعدرآمد" in v.replace(" ", "") and "ابتدای" in v]
+        if mc and yc:
+            hdr, mcol, ycol = hr, min(mc), min(yc)
+            break
+    if hdr is not None:
+        sm = sy = 0.0
+        got = False
+        for r2 in rows:
+            if r2 <= hdr:
+                continue
+            lab = norm(grid[r2].get(1)) or ""
+            if lab.startswith("سرفصل") or lab.startswith("جمع") or lab.startswith("مجموع"):
+                break
+            mv = num(grid[r2].get(mcol))
+            yv = num(grid[r2].get(ycol))
+            if mv is None and yv is None:
+                continue
+            sm += mv or 0.0
+            sy += yv or 0.0
+            got = True
+        if got:
+            return (sm if sm else None, sy if sy else None)
+    # --- رفتار عمومی: ردیف «جمع» ---
+    mcol = ycol = None
+    for hr in (rows[0], rows[1] if len(rows) > 1 else rows[0]):
+        hv = {ci: norm(grid[hr][ci]) for ci in grid[hr]}
+        for ci, v in hv.items():
+            if re.search(r"دوره\s*(یک|[0-9۰-۹]+)\s*ماهه", v) and "ازابتدای" not in v:
+                mcol = ci
+            elif "ازابتدایسالمالی" in v or ("دوره" in v and "سالمالی" in v):
+                ycol = ci
+    if mcol is None and ycol is None:
+        return None, None
+    total_row = None
+    for r2 in rows:
+        lab = norm(grid[r2].get(1))
+        if lab in ("جمع", "جمعکل"):
+            total_row = r2
+            break
+    if total_row is None:
+        return None, None   # بدون ردیف جمع، ردیف آخر یادداشت است نه جمع (باگ وبملت)
+    m = num(grid[total_row].get(mcol)) if mcol is not None else None
+    y = num(grid[total_row].get(ycol)) if ycol is not None else None
+    return (m, y) if (m is not None or y is not None) else (None, None)
+
+
+def scrape_monthly_report(s, url):
+    """Scenario 1 — monthly activity report (گزارش فعالیت ماهانه).
+
+    The sales table has a TWO-row header (group row «از ابتدای سال مالی تا» /
+    «دوره یک ماهه منتهی به» + sub-column row «مبلغ فروش …») and a final
+    «جمع» (Total) row. Returns (values dict, period_end)."""
+    out = {}
+    try:
+        r = s.get(url, headers=_headers(), timeout=60)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"  monthly report error: {e}")
+        return out, None
+    ds = datasource(r.text)
+    if not ds:
+        return out, None
+    period_end = ds.get("periodEndToDate")
+    best = None  # fallback (monthly, ytd) without header match
+    for sheet in ds.get("sheets", []):
+        for tbl in sheet.get("tables", []):
+            grid = defaultdict(dict)
+            for c in tbl.get("cells", []):
+                grid[c.get("rowSequence")][c.get("columnSequence")] = c.get("value")
+            rows = sorted(k for k in grid if k is not None)
+            if len(rows) < 2:
+                continue
+            # two-row header: one row carries the group titles, the other the
+            # sub-column titles («مبلغ فروش …»). Order may swap between reports.
+            sub_row = grp_row = None
+            for hr in (rows[0], rows[1]):
+                hv = {ci: norm(grid[hr][ci]) for ci in grid[hr]}
+                if any("مبلغفروش" in v for v in hv.values()):
+                    sub_row = hr
+                if any("دورهیکماهه" in v or "ازابتدایسالمالی" in v for v in hv.values()):
+                    grp_row = hr
+            if sub_row is None or grp_row is None:
+                continue  # not a sales table; bank fallback runs after the loop
+            sub = {ci: norm(grid[sub_row][ci]) for ci in grid[sub_row]}
+            grp = {ci: norm(grid[grp_row][ci]) for ci in grid[grp_row]}
+            gcols = sorted(ci for ci in grp if grp[ci])
+
+            def _group_of(ci):
+                g = ""
+                for gc in gcols:
+                    if gc <= ci:
+                        g = grp[gc]
+                    else:
+                        break
+                return g
+
+            mcols = [ci for ci in sub if "مبلغفروش" in sub[ci]
+                     and "دورهیکماهه" in _group_of(ci)]
+            ycols = [ci for ci in sub if "مبلغفروش" in sub[ci]
+                     and "ازابتدایسالمالی" in _group_of(ci)
+                     and (not mcols or ci > min(mcols))]
+            mcol = min(mcols) if mcols else None
+            ycol = min(ycols) if ycols else None
+            # جزوه ۱۴۰۵: گزارش ماهانه ستون «مقایسه با دوره مشابه سال قبل» هم دارد
+            # (تکرار گروه‌های «دورهیکماهه»/«ازابتدایسالمالی» = سال قبل)
+            _ms = sorted(mcols); _ys = sorted(ycols)
+            mcol_prev = _ms[1] if len(_ms) > 1 else None
+            ycol_prev = _ys[1] if len(_ys) > 1 else None
+            # Total row: prefer the exact «جمع»/«جمع کل», then any «جمع…»
+            total_row = None
+            for r2 in rows:
+                lab = norm(grid[r2].get(1))
+                if lab in ("جمع", "جمعکل"):
+                    total_row = r2
+                    break
+            if total_row is None:
+                for r2 in rows:
+                    lab = norm(grid[r2].get(1))
+                    if lab.startswith("جمع"):
+                        total_row = r2
+                        break
+            if total_row is None:
+                continue
+            m = num(grid[total_row].get(mcol)) if mcol is not None else None
+            y = num(grid[total_row].get(ycol)) if ycol is not None else None
+            mp = num(grid[total_row].get(mcol_prev)) if mcol_prev is not None else None
+            yp = num(grid[total_row].get(ycol_prev)) if ycol_prev is not None else None
+            if m is None and y is None:
+                continue
+            if mcol is not None or ycol is not None:
+                return {"monthly_revenue": m, "ytd_revenue": y,
+                        "monthly_revenue_prev": mp, "ytd_revenue_prev": yp}, period_end
+            if best is None:
+                best = (m, y)
+    if best:
+        out["monthly_revenue"], out["ytd_revenue"] = best
+    # ---- Bank/insurance fallback: no «فروش» table matched anywhere — try the
+    # income-style table (شستا, وبملت, …) on every sheet once, take the first hit.
+    if "monthly_revenue" not in out and "ytd_revenue" not in out:
+        for sheet in ds.get("sheets", []):
+            for tbl in sheet.get("tables", []):
+                grid = defaultdict(dict)
+                for c in tbl.get("cells", []):
+                    grid[c.get("rowSequence")][c.get("columnSequence")] = c.get("value")
+                rows = sorted(k for k in grid if k is not None)
+                if len(rows) < 2:
+                    continue
+                m, y = _bank_fallback(grid, rows)
+                if m is not None or y is not None:
+                    out["monthly_revenue"], out["ytd_revenue"] = m, y
+                    return out, period_end
+    return out, period_end
+
+
+# ---------------------------------------------------------------------------
+# Concurrent bulk sync state (shared across ThreadPoolExecutor workers)
+# ---------------------------------------------------------------------------
+import threading
+import concurrent.futures
+
+_BACKOFF_LOCK = threading.Lock()
+_BACKOFF_UNTIL = 0.0          # epoch seconds until which ALL workers must pause
+_BACKOFF_EVENTS = 0
+# search API فقط سریال: WAF همان ۲ درخواست همزمان از یک IP را بن میکند (درخواست
+# تکی → 200؛ ۲ کارگر موازی → 429 فوری، حتی با جیتر ۲.۵-۴ ثانیه). فاز ۱ (scrape از
+# codal.ir/Reports) WAF ندارد و میتواند موازی بماند.
+_SEARCH_LOCK = threading.Lock()
+
+
+def _wait_if_backing_off():
+    """Block the calling worker until any shared 429 cooldown has elapsed."""
+    global _BACKOFF_UNTIL
+    while True:
+        with _BACKOFF_LOCK:
+            remaining = _BACKOFF_UNTIL - time.time()
+        if remaining <= 0:
+            return ""
+        if _control_cmd() == "stop":
+            return "stop"
+        write_progress("codal_backoff",
+                       f"وقفه همگانی {int(remaining)} ثانیه به دلیل محدودیت (۴۲۹) — همه کارگرها متوقفاند ...",
+                       globals().get("_CB_TOTAL", 0),
+                       globals().get("_CB_DONE", 0),
+                       globals().get("_CB_SYM", ""))
+        time.sleep(min(remaining, 5))
+
+
+# ───────────────── Android ADB IP rotation (cellular recharge) ───────────────
+# کدال (search.codal.ir) روی IP نرخگیری میکند؛ لیست پروکسیهای رایگان به آن
+# نمیرسند. با اتصال گوشی اندروید از طریق adb، بههمزدن حالت پرواز مودم را
+# مجبور به رجیستر مجدد میکند → IP سلولی تازه. شرط: ترافیک کامپیوتر از دیتای
+# گوشی عبور کند (تترینگ/هاتاسپات). در نبود adb یا دستگاه، همهٔ مسیرها به
+# sleep-backoff قبلی برمیگردند (هیچ رگرسیونی).
+_ADB_CMD = None            # مسیر adb.exe کش شده؛ None = دوباره بگرد
+_ADB_LOCK = threading.Lock()
+_ADB_ROTATED_AT = 0.0      # monotonic ts آخرین چرخش موفق
+_ADB_MIN_GAP = 120.0      # کل چرخه چرخش (enable+80s+disable+20s) — جلوگیری از توگل تکراری
+
+_ADB_CANDIDATES = (
+    r"C:\adb\platform-tools\adb.exe",
+    r"C:\adb\adb.exe",
+    os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
+    os.path.expandvars(r"%ANDROID_HOME%\platform-tools\adb.exe"),
+)
+
+_ADB_CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "adb_config.json")
+_ADB_CFG_TS = 0.0
+_ADB_CFG_CACHED = True
+
+
+def _adb_enabled():
+    """تنظیم کاربر از راهنمای UI (adb_config.json): خاموش = چرخش IP ممنوع."""
+    global _ADB_CFG_TS, _ADB_CFG_CACHED
+    if time.monotonic() - _ADB_CFG_TS < 5.0:
+        return _ADB_CFG_CACHED
+    v = True
+    try:
+        with open(_ADB_CFG_PATH, encoding="utf-8") as f:
+            v = bool(json.load(f).get("enabled", True))
+    except Exception:
+        pass
+    _ADB_CFG_TS = time.monotonic()
+    _ADB_CFG_CACHED = v
+    return v
+
+
+def _find_adb():
+    """adb.exe: اول PATH، بعد محلهای رایج SDK."""
+    global _ADB_CMD
+    if _ADB_CMD and not os.path.isfile(_ADB_CMD):
+        _ADB_CMD = None            # v9.7.2 — مسیر کش‌شده حذف/منتقل شده: دوباره بگرد
+    if _ADB_CMD:
+        return _ADB_CMD
+    p = shutil.which("adb")
+    if not p:
+        for cand in _ADB_CANDIDATES:
+            if cand and os.path.isfile(cand):
+                p = cand
+                break
+    if p:
+        _ADB_CMD = p
+    return p
+
+
+# ─────────────── v9.7.2 — لایهٔ تاب‌آوری ADB (Retry + Re-connect) ───────────────
+# سه عیب عملی در مسیر پیشین:
+#  ۱) «offline» و «unauthorized» دقیقاً مثل «دستگاه نیست» رفتار می‌کردند و
+#     False برمی‌گرداندند؛ در حالی که کابل وصل است و با kill-server/start-server
+#     (یا تأیید دستی پنجرهٔ RSA روی گوشی) احیا شدنی است.
+#  ۲) یک نوسان کوتاه کابل کل چرخش را بی‌درود شکست می‌داد و اسکن به خواب
+#     طولانی می‌رفت، بدون اینکه دوباره دیوایس را پینگ کند.
+#  ۳) «adb devices» یک‌بار و بدون تلاش مجدد زده می‌شد؛ خطای گذرای USB هم
+#     قطعی تلقی می‌شد.
+_ADB_TRIES = 3             # دورهای پینگ تا دیدن دستگاه «device»
+_ADB_RETRY_DELAY = 4.0     # فاصلهٔ پینگ مجدد پس از نوسان کابل
+
+
+def _adb_run(adb, args, timeout=10, tries=1):
+    """یک فرمان adb با تلاش مجدد؛ نوسان گذرای USB را می‌خورد.
+
+    آخرین CompletedProcess را برمی‌گرداند و None اگر همهٔ تلاش‌ها استثنا دادند.
+    """
+    last = None
+    for i in range(max(1, tries)):
+        try:
+            kw = dict(capture_output=True, text=True, timeout=timeout)
+            if os.name == "nt":
+                kw["creationflags"] = subprocess.CREATE_NO_WINDOW
+            last = subprocess.run([adb] + list(args), **kw)
+            if last.returncode == 0:
+                return last
+        except Exception:
+            last = None
+        if i + 1 < tries:
+            time.sleep(_ADB_RETRY_DELAY)
+    return last
+
+
+def _adb_devices(adb):
+    """دستگاه‌ها را بر پایهٔ وضعیت واقعی دسته‌بندی می‌کند.
+
+    برمی‌گرداند (ready, unauthorized, offline). تفکیک لازم است چون «دیوان بالا
+    است ولی گواهی RSA تأیید نشده» با «هیچ کابلی نیست» راه‌حل متفاوتی دارد.
+    """
+    ready, unauth, off = [], [], []
+    r = _adb_run(adb, ["devices"], timeout=8, tries=2)
+    if r is None:
+        return ready, unauth, off
+    for ln in (r.stdout or "").splitlines():
+        parts = ln.split("\t")
+        if len(parts) < 2:
+            continue                       # سرصفحه و خطوط خلا
+        serial, st = parts[0].strip(), parts[-1].strip()
+        if st == "device":
+            ready.append(serial)
+        elif st == "unauthorized":
+            unauth.append(serial)
+        elif st in ("offline", "no permissions"):
+            off.append(serial)
+    return ready, unauth, off
+
+
+def _adb_restart_server(adb, quiet=False):
+    """دیوان adb را از قفل/آفلاینی در می‌آورد (کاهشِ رایج پس از کابل‌کشی)."""
+    for cmd in (["kill-server"], ["start-server"]):
+        try:
+            kw = dict(capture_output=True, text=True, timeout=20)
+            if os.name == "nt":
+                kw["creationflags"] = subprocess.CREATE_NO_WINDOW
+            subprocess.run([adb] + cmd, **kw)
+        except Exception as e:
+            if not quiet:
+                print(f"  [adb] {' '.join(cmd)} failed ({e})", flush=True)
+    time.sleep(2.5)
+
+
+def _adb_wait_ready(adb, quiet=False, tries=_ADB_TRIES):
+    """حلقهٔ Retry + Re-connect: تا دستگاه واقعاً آماده نشده، دست‌بردار نمی‌کند.
+
+    هر دور که دیوایس offline/unauthorized بود، سرور adb بازراه‌اندازی و دوباره
+    پینگ می‌شود؛ اگر هیچ دیوایسی نبود، پس از مکث کوتاه مجدد تلاش می‌کند تا نوسان
+    کابل برنامه را فریز نکند. serial آماده یا None.
+    """
+    for attempt in range(1, tries + 1):
+        ready, unauth, off = _adb_devices(adb)
+        if ready:
+            if attempt > 1 and not quiet:
+                print(f"  [adb] device recovered on attempt {attempt} "
+                      f"→ {ready[0]}", flush=True)
+            return ready[0]
+        stalled = unauth or off
+        if attempt == tries:
+            break
+        if stalled:
+            why = ("unauthorized — accept the RSA prompt on the phone"
+                   if unauth else "offline")
+            if not quiet:
+                print(f"  [adb] device {why}; restarting adb server and "
+                      f"re-pinging ({attempt}/{tries})", flush=True)
+            _adb_restart_server(adb, quiet=quiet)
+        else:
+            if not quiet:
+                print(f"  [adb] no device yet — re-pinging in "
+                      f"{_ADB_RETRY_DELAY:.0f}s ({attempt}/{tries})", flush=True)
+            time.sleep(_ADB_RETRY_DELAY)
+    return None
+
+
+def rotate_ip_via_adb(quiet=False):
+    """چرخش IP سلولی: airplane-mode enable → 80s → disable → 20s (اندازهگیری
+    2026-08-26 روی MCI: توگل کوتاه (<60s) IP را پین شده نگه میدارد؛ تخریب
+    کامل PDP context (~80-90s) → آدرس/NAT تازه. گوشی RFCT30KRY6D متصل است).
+
+    True = یک دستگاه متصل بود و توگل موفق شد (یا کمتر از _ADB_MIN_GAP گذشته و
+    IP تازه است). False = adb نیست / دستگاه نیست / توگل رد شد → sleep backoff."""
+    global _ADB_ROTATED_AT
+    if time.monotonic() - _ADB_ROTATED_AT < _ADB_MIN_GAP:
+        return True                      # همین الان چرخیده — دوباره نزن
+    if not _adb_enabled():
+        if not quiet:
+            print("  [adb] disabled by user (toggle off) — falling back to sleep "
+                  "backoff", flush=True)
+        return False
+    adb = _find_adb()
+    if not adb:
+        if not quiet:
+            print("  [adb] not found — falling back to sleep backoff", flush=True)
+        return False
+    # v9.7.2 — قفل غیرهمبلوک: یک دور کامل توگل ~۲ دقیقه طول می‌کشد و در نسخهٔ
+    # پیشین کارگرِ دوم روی همان قفل می‌خوابید و ترد اسکن فریز می‌شد.
+    if not _ADB_LOCK.acquire(blocking=False):
+        if not quiet:
+            print("  [adb] rotation already running in another worker — skipping",
+                  flush=True)
+        return True                      # IP تازه در راه است؛ خوابیدن لازم نیست
+    wifi_off = False
+    try:
+        def _pub_ip():
+            try:
+                return requests.get("https://api.ipify.org", timeout=8).text.strip()
+            except Exception:
+                return None
+
+        # باگ 09-05: ترافیک از Wi-Fi (metric 55) میرود نه گوشی (75) → توگل ایرپلین
+        # IP را عوض نمیکرد ولی True برمیگشت. راه‌حل: حین روتیشن Wi-Fi موقتاً خاموش.
+        def _wifi(on):
+            nonlocal wifi_off
+            try:
+                subprocess.run(["powershell.exe", "-NoProfile", "-Command",
+                    (["Disable", "Enable"][bool(on)]) + "-NetAdapter -Name 'Wi-Fi' -Confirm:$false"],
+                    capture_output=True, timeout=25,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+                wifi_off = not on
+            except Exception:
+                pass
+
+        # v9.7.2 — حلقهٔ Retry + Re-connect: نوسان کابل دیگر چرخش را نمی‌شکند و
+        # دستگاهِ offline/unauthorized با بازراه‌اندازی دیوان احیا می‌شود.
+        if not _adb_wait_ready(adb, quiet=quiet):
+            if not quiet:
+                print("  [adb] no usable device after retries — falling back to "
+                      "sleep backoff", flush=True)
+            return False
+
+        _wifi(False)
+        time.sleep(3)
+        ip_before = _pub_ip()   # baseline قبل از توگل — تأیید واقعی تغییر IP
+        # نکته: «svc usb tethering enable» فرمان معتبری نیست (usage error) —
+        # tethering باید از قبل روشن باشد؛ اگر نبود، مرحلهٔ تأیید IP پایین
+        # False برمیگرداند و به sleep-backoff می‌افتیم.
+        a = _adb_run(adb, ["shell", "cmd", "connectivity", "airplane-mode", "enable"],
+                     tries=2)
+        time.sleep(80)   # تخریب کامل PDP — توگل کوتاه IP را پین نگه میدارد (MCI)
+        b = _adb_run(adb, ["shell", "cmd", "connectivity", "airplane-mode", "disable"],
+                     tries=2)
+        time.sleep(20)
+        if a is None or b is None or a.returncode != 0 or b.returncode != 0:
+            if not quiet:
+                print("  [adb] airplane-mode command rejected — falling back "
+                      "to sleep backoff", flush=True)
+            return False
+        # --- تأیید واقعی تغییر IP (باگ 09-05: بدون این، وقتی ترافیک از WiFi
+        # خانگی میرود نه گوشی، IP عوض نمیشد ولی True برمیگشت و اسکن روی بن ادامه میداد) ---
+        ip_now = None
+        for _ in range(4):                      # شبکه گوشی تا ~۳۰s بعد از airplane-off بالا می‌آید
+            time.sleep(6)
+            ip_now = _pub_ip()
+            if ip_now:
+                break
+        if ip_now and ip_before and ip_now == ip_before:
+            if not quiet:
+                print(f"  [adb] IP UNCHANGED ({ip_now}) — NAT reused; falling back "
+                      "to sleep backoff", flush=True)
+            return False
+        globals()["_ADB_LAST_IP"] = ip_now
+        _ADB_ROTATED_AT = time.monotonic()
+        print(f"  [adb] IP rotated via airplane-mode toggle → {ip_now or '?'}",
+              flush=True)
+        return True
+    except Exception as e:
+        # v9.7.2 — هر خطای غیرمنتظره به backoff می‌رود نه به بالا؛ در نسخهٔ پیشین
+        # فقط دو مسیرِ خاص try/except داشتند و بقیه می‌توانست ترد کارگر را بکشد.
+        if not quiet:
+            print(f"  [adb] rotation aborted ({e}) — falling back to sleep backoff",
+                  flush=True)
+        return False
+    finally:
+        # v9.7.2 — حیاتی: پیش‌تر _wifi(True) فقط در مسیرهای خطای شناخته‌شده زده
+        # می‌شد؛ استثنا یا کشته‌شدن پروسه میانِ توگل، Wi-Fi میزبان را خاموش
+        # نگه می‌داشت (قطع اینترنت). اینجا تضمینی برگردانده می‌شود.
+        if wifi_off:
+            try:
+                subprocess.run(["powershell.exe", "-NoProfile", "-Command",
+                    "Enable-NetAdapter -Name 'Wi-Fi' -Confirm:$false"],
+                    capture_output=True, timeout=25,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+            except Exception:
+                pass
+        _ADB_LOCK.release()
+
+
+def _trigger_backoff(seconds=60):
+    """Called by any worker that hit a 429: pauses the WHOLE pool safely.
+    Escalates on repeated hits (60 -> 120 -> 240) so a hot WAF ban can reset.
+    With ADB available, a fresh cell IP replaces the long cooldown (10s)."""
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS
+    rotated = rotate_ip_via_adb(quiet=True)
+    with _BACKOFF_LOCK:
+        _BACKOFF_EVENTS += 1
+        if rotated:
+            seconds = 10               # IP تازه سلولی — خنکسازی کوتاه و ادامه
+        elif _BACKOFF_EVENTS > 2:
+            seconds = min(240, 60 * (2 ** min(_BACKOFF_EVENTS - 2, 2)))
+        new_until = time.time() + seconds
+        if new_until > _BACKOFF_UNTIL:
+            _BACKOFF_UNTIL = new_until
+    print(f"  [backoff] 429 detected — global pause {seconds}s (event #{_BACKOFF_EVENTS})"
+          + (" via ADB rotate" if rotated else ""), flush=True)
+
+
+def _parse_year_month(period_end):
+    """'1404/06/31' -> (1404, 6) or (None, None)."""
+    try:
+        parts = str(period_end or "").split("/")
+        return int(parts[0]), int(parts[1])
+    except (ValueError, IndexError):
+        return None, None
+
+
+def _period_from_title(title):
+    """Extract period-end '1405/03/31' from a notice title, or None.
+
+    Titles always carry the period: '...منتهی به ۱۴۰۴/۱۲/۲۹...' — parsing it
+    lets us skip duplicate periods BEFORE any HTTP request."""
+    t = norm(title)
+    # Persian/Arabic digits -> ASCII (norm() keeps them native)
+    t = t.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
+    m = re.search(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", t)
+    if m:
+        return f"{m.group(1)}/{int(m.group(2)):02d}/{int(m.group(3)):02d}"
+    return None
+
+
+def _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn):
+    """Upsert notice rows + deep-extract FS/MS در new reports.
+    scrape از codal.ir/Reports است که 429 نمیخورد (فقط search API) →
+    گزارشهای هر نماد به صورت موازی scrape میشوند تا سرعت چند برابر شود.
+    Returns (n_fs, n_ms)."""
+    n_fs = n_ms = 0
+    conn.executemany(NOTICE_UPSERT, rows)
+    conn.commit()
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def _scrape_one(n):
+        kind = kind_of(n[3])
+        if kind == "Monthly Activity Report":
+            pe_title = _period_from_title(n[3])
+            if pe_title and pe_title in known_ms_pe:
+                return None
+            sess2 = make_session()
+            try:
+                vals, period_end = scrape_monthly_report(sess2, n[7])
+            except Exception as e:
+                print(f"  [worker] monthly failed {n[1]}: {e}")
+                vals, period_end = {}, None
+            if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
+                year = month = None
+                if period_end:
+                    mm = re.match(r"(\d{4})[-/](\d{1,2})", str(period_end))
+                    if mm:
+                        year, month = int(mm.group(1)), int(mm.group(2))
+                return ("ms", (n[0], n[1], n[3], period_end, year, month,
+                               vals.get("monthly_revenue"),
+                               vals.get("ytd_revenue"),
+                               vals.get("monthly_revenue_prev"),
+                               vals.get("ytd_revenue_prev"), n[9], n[10]))
+            return None
+        elif kind == "Financial Statements":
+            pe_title = _period_from_title(n[3])
+            if pe_title and pe_title in known_pe:
+                print(f"  [worker] {n[1]}: skip FS dup {pe_title}")
+                return None
+            sess2 = make_session()
+            try:
+                vals, meta, unit = scrape_report(sess2, n[7])
+            except Exception as e:
+                print(f"  [worker] FS scrape failed {n[1]}: {e}")
+                vals, meta, unit = {}, {}, None
+            if vals.get("revenue") is not None:
+                pe = meta.get("end")
+                if pe and pe in known_pe:
+                    print(f"  [worker] {n[1]}: skip duplicate period {pe}")
+                    return None
+                return ("fs", (n[0], n[1], n[2], n[3], kind, meta.get("period"),
+                               meta.get("end"), n[5])
+                        + tuple(vals.get(k) for k in FS_KEYS)
+                        + (unit, n[7], now))
+            return None
+        return None
+
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as _ex:
+        for res in _ex.map(_scrape_one, rows):
+            if res:
+                results.append(res)
+    for kind, row in results:
+        if kind == "ms":
+            conn.execute(MS_UPSERT, row)
+            n_ms += 1
+        else:
+            conn.execute(
+                "INSERT OR REPLACE INTO financial_statements VALUES ("
+                + ",".join("?" * (8 + len(FS_KEYS) + 3)) + ")", row)
+            n_fs += 1
+    conn.commit()
+    return n_fs, n_ms
+
+
+def dedupe_symbol(sym):
+    """Task 2 — النشاف (ابتکار قرابة پس از next scrape): هر period_end فقط آخرین tracing_no
+    (اصلاحیه) بماند. خروجی: (n_fs_removed, n_ms_removed) — بدون آسیب به حاشیه."""
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    try:
+        removed = removed_ms = 0
+        latest = dict(conn.execute(
+            "SELECT period_end, MAX(tracing_no) FROM financial_statements "
+            "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
+        for pe, mx in latest.items():
+            cur = conn.execute(
+                "DELETE FROM financial_statements WHERE symbol=? AND period_end=? AND tracing_no<>?",
+                (sym, pe, mx))
+            removed += cur.rowcount
+        latest_ms = dict(conn.execute(
+            "SELECT period_end, MAX(tracing_no) FROM monthly_sales "
+            "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
+        for pe, mx in latest_ms.items():
+            cur = conn.execute(
+                "DELETE FROM monthly_sales WHERE symbol=? AND period_end=? AND tracing_no<>?",
+                (sym, pe, mx))
+            removed_ms += cur.rowcount
+        conn.commit()
+        return removed, removed_ms
+    finally:
+        conn.close()
+
+
+def update_symbol_incremental(sym, sess):
+    """Task 2 — Dynamic Updater (per-symbol delta):
+    FromDate = آخرین publish_date DB (نرمالشده) → فقط اسناد پس از آن (اصلاحیهها/جدیدها).
+    بعد از شستشو: dedupe → تثبیت 5-index (با بازیابی در app.py)."""
+    conn = sqlite3.connect(DB_PATH, timeout=60)
+    r = conn.execute("SELECT MAX(publish_date) FROM codal_notices WHERE symbol=?", (sym,)).fetchone()
+    has_fs = conn.execute("SELECT 1 FROM financial_statements WHERE symbol=? LIMIT 1", (sym,)).fetchone()
+    has_ms = conn.execute("SELECT 1 FROM monthly_sales WHERE symbol=? LIMIT 1", (sym,)).fetchone()
+    conn.close()
+    if not (has_fs or has_ms):
+        return _process_symbol(sym, sess)   # تازهکار → full discovery via _process_symbol
+    from_date = None
+    if r and r[0]:
+        v = str(r[0]).translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
+        from_date = v[:10]
+    n_notices = 0
+    for cat in ("1", "3"):
+        q = dict(QUERY, Symbol=sym, Category=cat, LetterType="-1")
+        if from_date:
+            q["FromDate"] = from_date
+        rows = fetch_page(sess, 1, q, quiet=True, max_429_retries=2)
+        if rows is None:
+            continue
+        new_rows = []
+        for x in rows:
+            t = x.get("TracingNo")
+            if t is None:
+                continue
+            title = (x.get("Title") or "").strip()
+            if SAVE_USEFUL_ONLY and not _positive_title(title):
+                continue
+            pdf_raw = (x.get("PdfUrl") or "").strip()
+            excel_raw = (x.get("ExcelUrl") or "").strip()
+            if pdf_raw and not pdf_raw.startswith("http"):
+                pdf_raw = "https://codal.ir/" + pdf_raw
+            if excel_raw and not excel_raw.startswith("http"):
+                excel_raw = "https://codal.ir/" + excel_raw
+            new_rows.append((t, (x.get("Symbol") or "").strip(),
+                             (x.get("CompanyName") or "").strip(), title,
+                             (x.get("LetterCode") or "").strip(),
+                             (x.get("PublishDateTime") or "").strip(),
+                             (x.get("SentDateTime") or "").strip(),
+                             "https://codal.ir" + (x.get("Url") or ""),
+                             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                             pdf_raw, excel_raw))
+        if new_rows:
+            c2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+            try:
+                known_pe = {r0[0] for r0 in c2.execute(
+                    "SELECT DISTINCT period_end FROM financial_statements WHERE symbol=?", (sym,))}
+                known_ms_pe = {r0[0] for r0 in c2.execute(
+                    "SELECT DISTINCT period_end FROM monthly_sales WHERE symbol=?", (sym,))}
+                nf, nm = _deep_extract(new_rows, known_pe, known_ms_pe, set(), set(), c2)
+                n_notices += nf + nm
+            finally:
+                c2.close()
+    # بعد از هر موجة جدید: dedupe تا 5-index پایدار بماند
+    try:
+        removed, removed_ms = dedupe_symbol(sym)
+        n_notices += removed + removed_ms
+    except Exception:
+        pass
+    return n_notices, 0, 0
+
+
+def _process_symbol(sym, sess):
+    """Per-symbol targeted scan (Laser-Scan).
+
+    PROBE-VERIFIED (خساپا, real Codal API): page 1 of Category=1 returns 20
+    notices of which ~15 are real financial statements covering 8 unique
+    periods — far more than the 3 recent periods the playbook needs. Page 1 of
+    Category=3 returns 20 monthly reports (~1.7 years). So ONE page per
+    category is sufficient; fetching page 2+ only re-fetches old duplicates.
+
+    Returns (n_notices, n_fs, n_ms): new notices upserted, financial statements
+    extracted, monthly-sales rows extracted for this symbol."""
+    n_notices = n_fs = n_ms = 0
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Every symbol gets an independent vote: whether THIS symbol hit a hard 429
+    # (not some earlier worker) decides the shared gate in main().
+    global _LAST_429
+    _LAST_429 = False
+
+    # Already-known tracing numbers + period_ends (skip duplicate HTTP requests)
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    try:
+        known = {r[0] for r in conn.execute(
+            "SELECT tracing_no FROM codal_notices WHERE symbol=?", (sym,))}
+        known_pe = {r[0] for r in conn.execute(
+            "SELECT DISTINCT period_end FROM financial_statements WHERE symbol=?", (sym,))}
+        known_ms_pe = {r[0] for r in conn.execute(
+            "SELECT DISTINCT period_end FROM monthly_sales WHERE symbol=?", (sym,))}
+        fs_done = {r[0] for r in conn.execute(
+            "SELECT tracing_no FROM financial_statements WHERE symbol=?", (sym,))}
+        ms_done = {r[0] for r in conn.execute(
+            "SELECT tracing_no FROM monthly_sales WHERE symbol=?", (sym,))}
+    finally:
+        conn.close()
+
+    # اگر همه اطلاعیههای شناختهشده قبلاً استخراج شدهاند، search لازم نیست
+    # (سریع رد شو — صفر درخواست HTTP به search API)
+    pool_all = []
+    try:
+        c2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+        pool_all = [tuple(r) for r in c2.execute(
+            "SELECT tracing_no, symbol, company_name, title, letter_code,"
+            " publish_date, sent_date, url, fetched_at, pdf_url, excel_url"
+            " FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC", (sym,))]
+        c2.close()
+    except Exception:
+        pass
+    if pool_all:
+        need_fs = any(kind_of(n[3]) == "Financial Statements" and n[0] not in fs_done for n in pool_all)
+        need_ms = any(kind_of(n[3]) == "Monthly Activity Report" and n[0] not in ms_done for n in pool_all)
+        if not need_fs and not need_ms:
+            return 0, 0, 0, "done"  # کاملاً استخراجشده — بدون هیچ درخواستی
+
+    categories = {"1": "Financial Statements", "3": "Monthly Activity Report"}
+    cat1_empty = False  # skip cat3 when cat1 has no letters (DB-proven 0 monthly-without-FS)
+    rows = []
+    sym_blocked = False  # 429 در همین نماد؟ — وضعیت محلی، بدون پرچم سراسری
+    # اگر نماد اطلاعیه دارد، search API نمیزنیم (همیشه 429 میخورد) —
+    # مستقیم از notices موجود scrape میکنیم که 429 نمیخورد.
+    if known:
+        rows = pool_all  # fallback scrape مستقیم، بدون search
+    else:
+        for cat, cat_name in categories.items():
+            if cat == "3" and cat1_empty:
+                break  # DB-verified: no symbol has monthly reports without FS notices
+            q = dict(QUERY, Symbol=sym, Category=cat, LetterType="-1")
+            for page in (1,):  # فقط صفحه ۱ — ثابتشده کافی است (probe واقعی)
+                _jitter()  # جیتر محافظهکارانه — WAF آرام
+                letters = fetch_page(sess, page, q, quiet=True, max_429_retries=2)
+                # در بن، نماد را فوراً رها نکن (اینطوری ~۱۷۵۰ نماد بدون اطلاعیه
+                # برای همیشه میمانند): تا ۵ دور صبر+retry — بن کدال ~۲۰-۳۰
+                # دقیقه است و بعد از lift شدن، سریال جواب میدهد.
+                r_try = 0
+                while letters is None and r_try < 5:
+                    r_try += 1
+                    if _wait_if_backing_off() == "stop":   # کاربر توقف زده
+                        break
+                    _jitter()
+                    letters = fetch_page(sess, page, q, quiet=True, max_429_retries=2)
+                if letters is None:  # 429 ماندگار — پس از ۵ دور، رها کن
+                    sym_blocked = True
+                    break
+                if not letters:
+                    if cat == "1":
+                        cat1_empty = True
+                    break
+                for x in letters:
+                    t = x.get("TracingNo")
+                    if t is None or t in known:
+                        continue
+                    # whitelist خودآموز: عنوان نامطبوع → همانجا رد (بدون scrape)
+                    if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
+                        continue
+                    known.add(t)
+                    pdf_raw = (x.get("PdfUrl") or "").strip()
+                    excel_raw = (x.get("ExcelUrl") or "").strip()
+                    if pdf_raw and not pdf_raw.startswith("http"):
+                        pdf_raw = "https://codal.ir/" + pdf_raw
+                    if excel_raw and not excel_raw.startswith("http"):
+                        excel_raw = "https://codal.ir/" + excel_raw
+                    rows.append((t, sym, (x.get("CompanyName") or "").strip(),
+                                 (x.get("Title") or "").strip(),
+                                 (x.get("LetterCode") or "").strip(),
+                                 (x.get("PublishDateTime") or "").strip(),
+                                 (x.get("SentDateTime") or "").strip(),
+                                 "https://codal.ir" + (x.get("Url") or ""), now,
+                                 pdf_raw, excel_raw))
+    if not rows:
+        # Fallback: no new notices via API — scrape existing notices that
+        # still lack extracted data (search API 429-blocked, scrape still OK).
+        conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+        try:
+            pool = [tuple(r) for r in conn.execute(
+                "SELECT tracing_no, symbol, company_name, title, letter_code,"
+                " publish_date, sent_date, url, fetched_at, pdf_url, excel_url"
+                " FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC", (sym,))]
+            fs_done = {r[0] for r in conn.execute(
+                "SELECT tracing_no FROM financial_statements WHERE symbol=?", (sym,))}
+            ms_done = {r[0] for r in conn.execute(
+                "SELECT tracing_no FROM monthly_sales WHERE symbol=?", (sym,))}
+        finally:
+            conn.close()
+        fs_targets = [n for n in pool if kind_of(n[3]) == "Financial Statements" and n[0] not in fs_done]
+        ms_targets = [n for n in pool if kind_of(n[3]) == "Monthly Activity Report" and n[0] not in ms_done]
+        if fs_targets or ms_targets:
+            rows = pool  # inject into the extraction loop below (dedup by kind skips done)
+            print(f"  [worker] {sym}: API blocked — scraping {len(fs_targets)} FS + {len(ms_targets)} monthly from {len(pool)} existing notices", flush=True)
+    if not rows:
+        return 0, 0, 0, ("blocked" if sym_blocked else "empty")
+
+    # Smart-report: چه نسبتی از اطلاعیهها واقعاً مفید است (بدون باز کردن URL)
+    useful = sum(1 for r in rows if kind_of(r[3]))
+    print(f"  [worker] {sym}: {len(rows)} notices, {useful} useful "
+          f"({useful * 100 // max(len(rows), 1)}%) — extracting ...")
+
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    try:
+        n_fs, n_ms = _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn)
+    finally:
+        conn.close()
+    return len(rows), n_fs, n_ms, (("new" if (n_fs or n_ms)
+                                    else ("blocked" if sym_blocked else "empty")))
+
+
+def _is_derivative(sym, name):
+    """مشتقهها (اختیار معامله / حق تقدم / ضهرم) در کدال نماد شرکتی ندارند —
+    جستجویشان فقط درخواست بیفایده به WAF است. ملحقات کنار گذاشته میشوند."""
+    x = norm(str(sym or ""))
+    n = norm(str(name or ""))
+    if re.search(r"اختيار|اختیار|ضهرم", x):
+        return True
+    # ض+نام پایه+سررسید (ضهمن5025) — مشتقههای سهام پایه
+    if re.match(r"^ض[آ-ی]{2,6}\d{4}$", x):
+        return True
+    if re.search(r"حق تقدم|حق خرید|حق پذیره|پذیره نویسی", n):
+        return True
+    if "-" in x:
+        return True
+    if x.startswith("حق") or x.startswith("ح ") or x.startswith("ت ع"):
+        return True
+    return False
+
+
+def _is_fund(sym, name):
+    """صندوقهای سرمایهگذاری/مشتقههای صندوقمحور: صورت مالی دورهای (Category 1)
+    ندارند — فقط «پورتفوی»/«گزارش عملکرد» که برای تحلیل مالی استفاده نمیشود."""
+    n = norm(str(name or ""))
+    if "صندوق" in n or "مشترک" in n:
+        return True
+    # صندوقهای «بخشی» و «بازارگردانی» (نام شرکت «بخشی صنایع…»، «اختصاصی بازارگردانی…»)
+    if re.search(r"بخشی|بازارگردانی|گواهی.?سپرده|تأمین سرمایه", n):
+        return True
+    return False
+
+
+def feed_sync(mode="update", optimized=False):
+    """Smart GLOBAL-FEED sync — جایگزین جستجوی نماد-به-نماد.
+
+    کشف 2026-08-27 (browser-verified): search.codal.ir/api/search/v2/q با
+    Category=1 بدون فیلتر نماد، ALL صورتهای مالی کل بازار را برمیگرداند
+    (Total=196,029؛ صفحهبندی 20 تایی، جدیدترین اول، بدون 429 در مرورگر) و
+    FromDate=1404/01/01 (شمسی با /) بازه را محدود میکند (Category=3: 138k).
+
+    mode="update":   FromDate = max(publish_date) دیتابیس → هر اطلاعیهٔ جدید
+                     بازار-wide (هر دو دسته 1+3) با چند صفحه گرفته میشود —
+                     جایگزین ~۷۵۰ کوئری نماد-به-نماد حالت --update قدیم.
+    mode="discover": FromDate=1400/01/01 (پنج سال اخیر) → همهٔ اطلاعیههای
+                     مالی که نداریم مستقیم دانلود/استخراج میشوند — جایگزین
+                     چرخهٔ ۲۱۳۲ پراب خالی discovery قدیم (96.6% empty).
+    """
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS, _PROXY_DISABLED
+    _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
+    _PROXY_DISABLED = True  # direct-only: پول مرده ~40s/cycle هدر میداد
+    _FA = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
+
+    print(f"=== Global-feed Codal sync (mode={mode}) ===")
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    create_schema(conn)
+    migrate_schema(conn)
+    known = {r[0] for r in conn.execute("SELECT tracing_no FROM codal_notices")}
+    known_pe = {r[0] for r in conn.execute("SELECT DISTINCT period_end FROM financial_statements")}
+    known_ms_pe = {r[0] for r in conn.execute("SELECT DISTINCT period_end FROM monthly_sales")}
+    fs_done = {r[0] for r in conn.execute("SELECT tracing_no FROM financial_statements")}
+    ms_done = {r[0] for r in conn.execute("SELECT tracing_no FROM monthly_sales")}
+    if mode == "update":
+        max_dt = conn.execute("SELECT MAX(publish_date) FROM codal_notices").fetchone()[0]
+        from_date = ((max_dt or "")[:10]).translate(_FA) or "1400/01/01"
+        cats = ["1", "3"]
+        page_budget = 50
+        if optimized:
+            page_budget = 8   # بهینه: فقط آخرین صفحه‌های فید (تغییرپذیر) — ۶ برابر درخواست کمتر
+        # تعداد نمادهای موجود که بروزرسانی می‌شوند (پوشش ۵ شاخصی)
+        n_syms = conn.execute(
+            "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
+        label = f"بروزرسانی نمادهای موجود ({n_syms} نماد) از {from_date}"
+        if optimized:
+            label += " [حالت بهینه: فقط داده‌های تغییرپذیر]"
+    else:
+        from_date = "1400/01/01"
+        cats = ["1", "3"]
+        page_budget = 120
+        n_syms = conn.execute(
+            "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
+        label = f"کشف از فید سراسری (۵ سال اخیر) — {n_syms} نماد موجود"
+    conn.close()
+
+    sess = make_session()
+    counters = {"notices": 0, "fs": 0, "ms": 0, "pages": 0}
+    total_pages = page_budget * len(cats)
+    write_progress("codal_sync", f"{label} — شروع...", total_pages, 0, "")
+    for cat in cats:
+        page = 1
+        cat_notices = 0
+        while page <= page_budget:
+            c = _control_cmd()
+            if c == "stop":
+                write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
+                print("=== Feed sync stopped by user ===", flush=True)
+                return
+            while c == "pause":
+                write_progress("codal_paused",
+                               f"اسکن در حال مکث است (دسته {cat}، صفحه {page}) — برای ادامه دکمه ادامه را بزنید",
+                               100, page, "")
+                time.sleep(5)
+                c = _control_cmd()
+                if c == "stop":
+                    write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
+                    return
+            q = {"Audited": "true", "AuditorRef": "-1", "Category": cat,
+                 "Childs": "true", "CompanyState": "-1", "CompanyType": "-1",
+                 "Consolidatable": "true", "IsNotAudited": "false", "Length": "-1",
+                 "LetterType": "-1", "Mains": "true", "NotAudited": "true",
+                 "NotConsolidatable": "true", "PageNumber": str(page),
+                 "Publisher": "false", "ReportingType": "-1", "TracingNo": "-1",
+                 "search": "false", "FromDate": from_date}
+            _jitter()
+            letters = fetch_page(sess, page, q, quiet=False, max_429_retries=2)
+            if letters is None:
+                print(f"  [feed] cat{cat} page {page}: blocked — pausing feed scan", flush=True)
+                # FIX: بدون این، sync_status.json در state «codal_sync» میماند و UI
+                # تا ابد «در حال بروزرسانی» را نشان میدهد (اسکن مرده از صبح)
+                write_progress("codal_stopped",
+                               f"اسکن متوقف شد: محدودیت موقت Codal (429) — بعداً دوباره امتحان کنید",
+                               100, page, "")
+                break
+            if not letters:
+                print(f"  [feed] cat{cat} page {page}: empty — end of feed", flush=True)
+                break
+            new_rows = []
+            for x in letters:
+                t = x.get("TracingNo")
+                if t is None or t in known:
+                    continue
+                title = (x.get("Title") or "").strip()
+                if SAVE_USEFUL_ONLY and not _positive_title(title):
+                    continue
+                known.add(t)
+                pdf_raw = (x.get("PdfUrl") or "").strip()
+                excel_raw = (x.get("ExcelUrl") or "").strip()
+                if pdf_raw and not pdf_raw.startswith("http"):
+                    pdf_raw = "https://codal.ir/" + pdf_raw
+                if excel_raw and not excel_raw.startswith("http"):
+                    excel_raw = "https://codal.ir/" + excel_raw
+                new_rows.append((t, (x.get("Symbol") or "").strip(),
+                                 (x.get("CompanyName") or "").strip(), title,
+                                 (x.get("LetterCode") or "").strip(),
+                                 (x.get("PublishDateTime") or "").strip(),
+                                 (x.get("SentDateTime") or "").strip(),
+                                 "https://codal.ir" + (x.get("Url") or ""),
+                                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                 pdf_raw, excel_raw))
+            counters["pages"] += 1
+            if new_rows:
+                counters["notices"] += len(new_rows)
+                conn2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+                try:
+                    nf, nm = _deep_extract(new_rows, known_pe, known_ms_pe,
+                                           fs_done, ms_done, conn2)
+                    counters["fs"] += nf
+                    counters["ms"] += nm
+                finally:
+                    conn2.close()
+            cat_notices += len(new_rows)
+            print(f"  [feed] cat{cat} page {page}: +{len(new_rows)} new "
+                  f"(fs={counters['fs']} ms={counters['ms']} new={counters['notices']})",
+                  flush=True)
+            write_progress("codal_sync",
+                           f"{label} — دسته {cat} صفحه {page}/{page_budget} | {counters['notices']} اطلاعیهٔ جدید، "
+                           f"FS: {counters['fs']}، ماهانه: {counters['ms']}",
+                           total_pages, counters["pages"] + page, "")
+            # مرز دادههای شناختهشده: فقط اگر این صفحه کاملاً تکراری باشد (هر ۲۵ رکورد known)
+            if len(new_rows) == 0 and page >= 2:
+                print(f"  [feed] cat{cat} boundary reached at page {page}", flush=True)
+                break
+            page += 1
+    print(f"=== Feed sync done: {counters['notices']} new notices, "
+          f"{counters['fs']} FS, {counters['ms']} monthly "
+          f"({counters['pages']} pages) ===", flush=True)
+
+
+def repair_broken_rows(limit=None):
+    """حالت ترمیم کیفیت: ردیف‌های MS/FS که وجود دارند ولی مبالغ کلیدی‌شان NULL است
+    را دوباره scrape میکند (پارسرهای جدید، بانک/جمع‌ردیفی را میفهمند).
+    این باگ «ردیف هست ولی خالی» را که feed عادی هرگز ترمیم نمیکند، صاف میکند."""
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    s = make_session()
+    ms = conn.execute(
+        "SELECT ms.tracing_no, cn.url FROM monthly_sales ms "
+        "JOIN codal_notices cn ON cn.tracing_no = ms.tracing_no "
+        "WHERE ms.monthly_revenue IS NULL AND ms.ytd_revenue IS NULL"
+        + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
+    print(f"[repair] MS بدون مبلغ: {len(ms)}", flush=True)
+    ok = 0
+    for t, url in ms:
+        try:
+            vals, _pe = scrape_monthly_report(s, url)
+        except Exception:
+            continue
+        mv, yv = vals.get("monthly_revenue"), vals.get("ytd_revenue")
+        if mv is not None or yv is not None:
+            conn.execute(
+                "UPDATE monthly_sales SET monthly_revenue=?, ytd_revenue=?, "
+                "monthly_revenue_prev=?, ytd_revenue_prev=? WHERE tracing_no=?",
+                (mv, yv, vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"), t))
+            ok += 1
+        time.sleep(0.4)
+    print(f"[repair] MS ترمیم شد: {ok}", flush=True)
+    fs = conn.execute(
+        "SELECT f.tracing_no, cn.url FROM financial_statements f "
+        "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
+        "WHERE f.revenue IS NULL AND f.net_profit IS NULL AND f.basic_eps IS NULL"
+        + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
+    print(f"[repair] FS بدون هیچ فیلد کلیدی: {len(fs)}", flush=True)
+    ok2 = 0
+    for t, url in fs:
+        try:
+            out, _meta, _unit = scrape_report(s, url)
+        except Exception:
+            continue
+        if out and (out.get("revenue") or out.get("net_profit") or out.get("basic_eps")):
+            conn.execute(
+                "UPDATE financial_statements SET revenue=?, gross_profit=?, operating_profit=?, "
+                "net_profit=?, total_assets=?, total_liabilities=?, total_equity=?, capital=?, "
+                "retained_earnings=?, basic_eps=? WHERE tracing_no=?",
+                (out.get("revenue"), out.get("gross_profit"), out.get("operating_profit"),
+                 out.get("net_profit"), out.get("total_assets"), out.get("total_liabilities"),
+                 out.get("total_equity"), out.get("capital"), out.get("retained_earnings"),
+                 out.get("basic_eps"), t))
+            ok2 += 1
+        time.sleep(0.4)
+    print(f"[repair] FS ترمیم شد: {ok2}", flush=True)
+    conn.close()
+    return ok, ok2
+
+
+def backfill_missing_fs(limit=None):
+    """Backfill صورتهای مالی برای نمادهایی که در codal_notices عنوان
+    'صورت مالی' دارند ولی هنوز در financial_statements استخراج نشدهاند.
+    هدف: رساندن پوشش ۵-شاخصی از ~۳۷۴ نماد به ~۷۷۹ نماد (۹.۷% → ۲۰% بازار).
+    فقط کوئری نماد-به-نماد روی Category=1/3 (با مرورگر/Camoufox — بن نمیخورد)."""
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS, _PROXY_DISABLED
+    _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
+    _PROXY_DISABLED = True
+    print("=== Backfill FS/MS for symbols with codal financial-statement titles ===", flush=True)
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    create_schema(conn)
+    migrate_schema(conn)
+    # نمادهایی که عنوان صورت مالی دارند ولی FS ندارند — هر دو: داخل بازار + جدید (خارج بازار)
+    # (قبلاً فقط IN instruments بود → ۱۳۷ نماد جدیدِ خارج از بازار هرگز پردازش نمیشدند)
+    targets = []
+    for r in conn.execute("""
+        SELECT DISTINCT n.symbol, n.company_name FROM codal_notices n
+        WHERE (n.title LIKE '%صورت%مالی%' OR n.title LIKE '%صورتهای مالی%')
+          AND n.symbol NOT IN (SELECT symbol FROM financial_statements)
+    """):
+        sym, comp = r[0], r[1] or ""
+        # استاندارد قبلی: صندوق/مشتقهها/اوراق رد میشوند (فقط نمادهای شرکتی)
+        if _is_fund(sym, comp) or _is_derivative(sym, comp):
+            continue
+        targets.append(sym)
+    targets = list(dict.fromkeys(targets))  # dedupe + حفظ ترتیب
+    known = {r[0] for r in conn.execute("SELECT tracing_no FROM codal_notices")}
+    # period_end های FS/MS موجود — در backfill باید PER-SYMBOL باشد، وگرنه
+    # دورههای عمومی (مثل ۱۴۰۳/۱۲/۳۰) که در نمادهای دیگر موجودند، برای این
+    # نماد هم skip میشوند و هیچ FS ای استخراج نمیشود
+    fs_done_sym = {}
+    ms_done_sym = {}
+    for sym in targets:
+        fs_done_sym[sym] = {r[0] for r in conn.execute(
+            "SELECT DISTINCT period_end FROM financial_statements WHERE symbol=?", (sym,))}
+        ms_done_sym[sym] = {r[0] for r in conn.execute(
+            "SELECT DISTINCT period_end FROM monthly_sales WHERE symbol=?", (sym,))}
+    conn.close()
+    total = len(targets)
+    if limit:
+        targets = targets[:limit]
+        total = len(targets)
+    print(f"  targets: {total} symbols", flush=True)
+    sess = make_session()
+    seen = set()  # dedupe در همین اجرا — رکوردهای قدیمی DB باید دوباره پردازش شوند
+    done = 0
+    for sym in targets:
+        c = _control_cmd()
+        if c == "stop":
+            print("=== Backfill stopped by user ===", flush=True)
+            return
+        while c == "pause":
+            time.sleep(5)
+            c = _control_cmd()
+        for cat in ("1", "3"):
+            page = 1
+            while page <= 5:  # هر نماد حداکثر ۵ صفحه (۱۲۵ اطلاعیه)
+                _jitter()
+                q = {"Audited": "true", "AuditorRef": "-1", "Category": cat,
+                     "Childs": "true", "CompanyState": "-1", "CompanyType": "-1",
+                     "Consolidatable": "true", "IsNotAudited": "false", "Length": "-1",
+                     "LetterType": "-1", "Mains": "true", "NotAudited": "true",
+                     "NotConsolidatable": "true", "PageNumber": str(page),
+                     "Publisher": "false", "ReportingType": "-1", "TracingNo": "-1",
+                     "search": "false", "Symbol": sym, "FromDate": "1395/01/01"}
+                letters = fetch_page(sess, page, q, quiet=True, max_429_retries=4)
+                if letters is None:
+                    break
+                if not letters:
+                    break
+                new_rows = []
+                for x in letters:
+                    t = x.get("TracingNo")
+                    if t is None or t in seen:
+                        continue
+                    title = (x.get("Title") or "").strip()
+                    if SAVE_USEFUL_ONLY and not _positive_title(title):
+                        continue
+                    # فیلتر صندوق/مشتقه: عناوین «صورت وضعیت پورتفوی» یا «صندوق»
+                    # صورت مالی شرکتی نیستند — فقط نمادهای واقعی را نگه دار
+                    if any(k in title for k in ("صورت وضعیت پورتفوی", "صندوق سرمایه", "افزایش سرمایه")):
+                        continue
+                    seen.add(t)
+                    pdf_raw = (x.get("PdfUrl") or "").strip()
+                    excel_raw = (x.get("ExcelUrl") or "").strip()
+                    if pdf_raw and not pdf_raw.startswith("http"):
+                        pdf_raw = "https://codal.ir/" + pdf_raw
+                    if excel_raw and not excel_raw.startswith("http"):
+                        excel_raw = "https://codal.ir/" + excel_raw
+                    new_rows.append((t, sym, (x.get("CompanyName") or "").strip(), title,
+                                     (x.get("LetterCode") or "").strip(),
+                                     (x.get("PublishDateTime") or "").strip(),
+                                     (x.get("SentDateTime") or "").strip(),
+                                     "https://codal.ir" + (x.get("Url") or ""),
+                                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                     pdf_raw, excel_raw))
+                if new_rows:
+                    conn2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+                    try:
+                        nf, nm = _deep_extract(new_rows, fs_done_sym[sym],
+                                               ms_done_sym[sym],
+                                               fs_done_sym[sym], ms_done_sym[sym], conn2)
+                        fs_done_sym[sym].update({r[0] for r in conn2.execute(
+                            "SELECT DISTINCT period_end FROM financial_statements WHERE symbol=?", (sym,))})
+                        ms_done_sym[sym].update({r[0] for r in conn2.execute(
+                            "SELECT DISTINCT period_end FROM monthly_sales WHERE symbol=?", (sym,))})
+                    finally:
+                        conn2.close()
+                if len(new_rows) < 25:
+                    break
+                page += 1
+        done += 1
+        write_progress("codal_sync",
+                       f"Backfill FS — {done}/{total} نماد پردازش شد",
+                       total, done, sym)
+        print(f"  [{done}/{total}] {sym} done", flush=True)
+    try:
+        tmp = STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"stage": "done", "phase": "codal_done",
+                       "detail": f"Backfill FS کامل شد — {done}/{total} نماد پردازش شد",
+                       "total": total, "current": done, "symbol": "",
+                       "percent": 100.0,
+                       "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False)
+        os.replace(tmp, STATUS_PATH)
+    except Exception:
+        pass
+    print(f"=== Backfill done: {done}/{total} symbols processed ===", flush=True)
+
+
+def main(mode="missing"):
+    """Bulk Codal sync — PER-SYMBOL targeted scan (Laser-Scan).
+    mode="missing": نمادهای ناقص (اطلاعیه دارد ولی FS/MS استخراج نشده + بدون اطلاعیه)
+    mode="update":  فقط نمادهایی که قبلاً استخراج شدهاند (FS/MS دارند) — بروزرسانی همانها
+
+    The global feed pagination (PageNumber=1,2,...) gets permanently blocked
+    (429) by the WAF. Instead we iterate EVERY symbol in the database and query
+    Category=1 (financials) + Category=3 (monthly activity) directly — 2 pages
+    each — with a 3-worker thread pool, per-request jitter (1-3s) and a shared
+    429-backoff gate. Progress is written to sync_status.json so the UI overlay
+    shows which symbol is being scanned and the running percentage.
+    """
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS
+    _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
+
+    print(f"=== Bulk Codal sync (per-symbol targeted scan | mode={mode}) ===")
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    create_schema(conn)
+    migrate_schema(conn)
+
+    if mode == "update":
+        # فقط نمادهایی که قبلاً کامل استخراج شدهاند (داخل جدول هستند):
+        symbol_rows = conn.execute("""
+            SELECT DISTINCT i.l_val18, i.l_val30 FROM instruments i
+            WHERE i.l_val18 IS NOT NULL
+              AND (
+                EXISTS (SELECT 1 FROM financial_statements f WHERE f.symbol = i.l_val18)
+                OR EXISTS (SELECT 1 FROM monthly_sales m WHERE m.symbol = i.l_val18)
+              )
+        """).fetchall()
+    else:
+        # فقط نمادهایی که واقعاً کار دارند اسکن میشوند:
+        #   (a) نماد با اطلاعیهای که هنوز FS/MS ناقص دارد (fallback از notices)
+        #   (b) نماد بدون هیچ اطلاعیهای (نیاز به search API)
+        # نمادهای کاملاً استخراجشده اصلاً در لیست نیستند → اجرای مجدد = چند دقیقه.
+        symbol_rows = conn.execute("""
+        SELECT DISTINCT i.l_val18, i.l_val30 FROM instruments i
+        WHERE i.l_val18 IS NOT NULL
+          AND (
+            -- (b) بدون هیچ اطلاعیه
+            NOT EXISTS (SELECT 1 FROM codal_notices c WHERE c.symbol = i.l_val18)
+            OR
+            -- (a) اطلاعیه دارد ولی برخی FS/MS هنوز استخراج نشده
+            EXISTS (
+                SELECT 1 FROM codal_notices c
+                WHERE c.symbol = i.l_val18
+                  AND (
+                    (c.title LIKE '%صورت%مالی%' AND NOT EXISTS
+                        (SELECT 1 FROM financial_statements f WHERE f.symbol = i.l_val18 AND f.tracing_no = c.tracing_no))
+                    OR
+                    (c.title LIKE '%فعالیت%ماهانه%' AND NOT EXISTS
+                        (SELECT 1 FROM monthly_sales m WHERE m.symbol = i.l_val18 AND m.tracing_no = c.tracing_no))
+                  )
+            )
+          )
+    """).fetchall()
+    # مشتقهها (اختیار/حق تقدم/ضهرم) در کدال نماد شرکتی ندارند → بیفایدهاند و
+    # قبلاً بهخاطر (0,0,0) گیت سراسری را قفل میکردند؛ صندوقها هم Category 1
+    # ندارند (فقط پورتفوی ماهانه) → هر دو کنار گذاشته میشوند تا scan فقط شرکتها.
+    symbols = [s for s, n in symbol_rows
+               if not _is_derivative(s, n) and not _is_fund(s, n)]
+    with_notices = {r[0] for r in conn.execute(
+        "SELECT DISTINCT symbol FROM codal_notices")}
+    conn.close()
+    # فاز ۱: نمادهای با اطلاعیه (fallback scrape مؤثر) — اول
+    # فاز ۲: نمادهای بدون اطلاعیه (فقط search API که 429 میخورد) — آخر
+    symbols.sort(key=lambda s: 0 if s in with_notices else 1)
+    total = len(symbols)
+    if mode == "update":
+        print(f"Scanning {total} EXISTING symbols (already extracted; refresh mode)")
+        _mode_label = "بروزرسانی نمادهای موجود"
+    else:
+        print(f"Scanning {total} symbols that actually need work (rest already extracted)")
+        _mode_label = "در حال اسکن نمادها"
+    # استخر پروکسی تأییدشده برای مسیر search (در شکست → ادامهٔ مستقیم، بدون آسیب)
+    build_proxy_pool()
+
+    counters = {"notices": 0, "fs": 0, "ms": 0}
+    write_progress("codal_sync",
+                   f"{_mode_label} (0 از {total})... نماد فعلی: -",
+                   total, 0, "")
+
+    search_blocked = False  # (حذف شد — نمادهای بدون اطلاعیه با _SEARCH_LOCK سریال میروند)
+
+    def _worker(sym):
+        sess = make_session()  # requests.Session is not thread-safe -> one per worker
+        try:
+            if sym not in with_notices:
+                # نماد بدون اطلاعیه → search API (فقط سریال؛ موازی = بن فوری)
+                with _SEARCH_LOCK:
+                    res = _process_symbol(sym, sess)
+            else:
+                # نماد با اطلاعیه → scrape از codal.ir/Reports (بدون WAF) — موازی OK
+                res = _process_symbol(sym, sess)
+            return sym, res
+        except Exception as e:
+            print(f"  [worker] {sym}: {type(e).__name__}: {e}")
+            return sym, (0, 0, 0, "blocked")
+
+    # ۲ کارگر: هر کارگر یک مرورگر Camoufox و جیتر ۱.۲-۲.۴ ثانیه — ۳ مرورگر
+    # همزمان دوباره 429 گرفت، ۲ مرورگر با بکآف مشترک امن است (WAF کدال حساس)
+    w = 2
+    st_counts = {"new": 0, "done": 0, "empty": 0, "blocked": 0}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=w) as ex:
+        for i, (sym, (nn, nf, nm, st4)) in enumerate(ex.map(_worker, symbols), 1):
+            counters["notices"] += nn
+            counters["fs"] += nf
+            counters["ms"] += nm
+            st_counts[st4] = st_counts.get(st4, 0) + 1
+            write_progress("codal_sync",
+                           f"در حال اسکن نمادها ({i} از {total})... نماد فعلی: {sym}",
+                           total, i, sym, extra=dict(st_counts))
+            if i % 100 == 0 or i == total:
+                print(f"  [{i}/{total}] notices={counters['notices']} "
+                      f"fs={counters['fs']} monthly={counters['ms']}")
+
+    write_progress("codal_sync",
+                   f"پایان اسکن {total} نماد: {counters['fs']} صورت مالی + "
+                   f"{counters['ms']} گزارش ماهانه جدید.",
+                   total, total, "")
+    print(f"=== Per-symbol sync complete: {counters['notices']} notices, "
+          f"fs={counters['fs']}, monthly={counters['ms']} ===")
+
+
+
+def fetch_symbol(symbol):
+    """On-demand: fetch ALL missing historical Codal reports for one symbol.
+
+    Targets only `symbol`, bypasses the general queue and DEEP_LIMIT, and writes
+    progress to a dedicated on-demand status file so the dashboard can show an
+    isolated, non-blocking loading state. Runs as a background subprocess from
+    the UI (invoked via `codal_fetcher.py --symbol SYM`)."""
+    symbol = (symbol or "").strip()
+    if not symbol:
+        return
+    print(f"On-demand fetch for symbol: {symbol}")
+    write_od_status(symbol, "codal", f"آمادهسازی و دریافت اطلاعیههای {symbol} ...")
+    s = make_session()
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    create_schema(conn)
+    migrate_schema(conn)
+
+    # 1) pull targeted notices for this symbol (only the categories we need)
+    #    Category 1 = صورتهای مالی, Category 3 = گزارش فعالیت ماهانه
+    #    (discovered empirically via www.codal.ir/ReportList.aspx + JS analysis)
+    categories = {"1": "Financial Statements", "3": "Monthly Activity Report"}
+    sym_rows, seen, extra = [], set(), {}  # extra[t] = (pdf_url, excel_url)
+    for cat, cat_name in categories.items():
+        q = dict(QUERY, Symbol=symbol, Category=cat, LetterType="-1")
+        for page in range(1, 3):  # on-demand: حداکثر ۲ صفحه در هر دسته (صرفهجویی)
+            if page > 1:
+                _jitter(4.5, 7.5)
+            letters = fetch_page(s, page, q, quiet=True)
+            if letters is None:  # persistent 429 — ride out the cooldown
+                print(f"  cat={cat} page {page}: rate-limited, riding out cooldown ...")
+                for _ in range(3):
+                    if _control_sleep(120) == "stop":
+                        write_od_status(symbol, "done", "متوقف شد")
+                        return
+                    letters = fetch_page(s, page, q, quiet=True)
+                    if letters is not None:
+                        break
+                if letters is None:
+                    print(f"  cat={cat} page {page}: still blocked, skipping.")
+                    continue
+            if not letters:
+                break
+            for x in letters:
+                t = x.get("TracingNo")
+                if t is None or t in seen:
+                    continue
+                # whitelist خودآموز: عنوان نامطبوع → همانجا رد (بدون scrape)
+                if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
+                    continue
+                seen.add(t)
+                pdf_raw = (x.get("PdfUrl") or "").strip()
+                excel_raw = (x.get("ExcelUrl") or "").strip()
+                # Codal's PdfUrl/ExcelUrl are often relative → make them absolute
+                if pdf_raw and not pdf_raw.startswith("http"):
+                    pdf_raw = "https://codal.ir/" + pdf_raw
+                if excel_raw and not excel_raw.startswith("http"):
+                    excel_raw = "https://codal.ir/" + excel_raw
+                extra[t] = (pdf_raw, excel_raw)
+                sym_rows.append((
+                    t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
+                    (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
+                    (x.get("PublishDateTime") or "").strip(), (x.get("SentDateTime") or "").strip(),
+                    "https://codal.ir" + (x.get("Url") or ""), now,
+                    extra[t][0], extra[t][1],
+                ))
+            write_od_status(symbol, "codal",
+                            f"دریافت فهرست اطلاعیهها ({cat_name}) — "
+                            f"{nfmt(len(sym_rows))} مورد ({symbol})")
+            if len(sym_rows) >= TARGET:
+                break
+    conn.executemany(NOTICE_UPSERT, sym_rows)
+    conn.commit()
+
+    # Self-healing: حذف ردیفهای صورت مالیِ دارای ترازنامهٔ ناقص (total_assets
+    # IS NULL) تا با واژگان جدید (IFRS: حقوق مالکانه و…) دوباره استخراج شوند
+    try:
+        conn.execute("DELETE FROM financial_statements "
+                     "WHERE symbol = ? AND total_assets IS NULL", (symbol,))
+        conn.commit()
+    except Exception:
+        pass
+
+    # 2) Targeted extraction: ONLY monthly-activity + financial-statement reports
+    #    (board-assignment / assembly notices are stored as notices but never
+    #    deep-extracted — keeps bandwidth low and avoids IP bans)
+    ms_done = {r[0] for r in conn.execute(
+        "SELECT tracing_no FROM monthly_sales "
+        "WHERE (monthly_revenue IS NOT NULL AND monthly_revenue != 0) "
+        "OR (ytd_revenue IS NOT NULL AND ytd_revenue != 0)")}
+    fs_done = {r[0] for r in conn.execute(
+        "SELECT tracing_no FROM financial_statements "
+        "WHERE revenue IS NOT NULL OR total_assets IS NOT NULL")}
+    pool = sym_rows or [tuple(r) for r in conn.execute(
+        """SELECT tracing_no, symbol, company_name, title, letter_code,
+                  publish_date, sent_date, url, fetched_at, pdf_url, excel_url
+           FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC""", (symbol,))]
+    ms_targets = [n for n in pool
+                  if kind_of(n[3]) == "Monthly Activity Report" and n[0] not in ms_done]
+    fs_targets = [n for n in pool
+                  if kind_of(n[3]) == "Financial Statements" and n[0] not in fs_done]
+    print(f"On-demand extraction for {symbol}: {nfmt(len(ms_targets))} monthly + "
+          f"{nfmt(len(fs_targets))} financial reports ...")
+
+    # ---- Scenario 1: monthly activity sales ----
+    total = len(ms_targets)
+    ms, ok_ms = [], 0
+    for i, n in enumerate(ms_targets, 1):
+        t, sym = n[0], n[1]
+        title, url = n[3], n[7]
+        write_od_status(symbol, "codal",
+                        f"گزارش فعالیت ماهانه {nfmt(i)}/{nfmt(total)} — {sym}")
+        vals, period_end = scrape_monthly_report(s, url)
+        if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
+            ok_ms += 1
+        year = month = None
+        if period_end:
+            mm = re.match(r"(\d{4})[-/](\d{1,2})", str(period_end))
+            if mm:
+                year, month = int(mm.group(1)), int(mm.group(2))
+        pdf, excel = extra.get(t, ("", ""))
+        ms.append((t, sym, title, period_end, year, month,
+                   vals.get("monthly_revenue"), vals.get("ytd_revenue"),
+                   vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"),
+                   pdf, excel))
+    if ms:
+        conn.executemany(MS_UPSERT, ms)
+
+    # ---- Scenario 2: financial statements (profile ratios) ----
+    total = len(fs_targets)
+    fs, ok_fs = [], 0
+    for i, n in enumerate(fs_targets, 1):
+        t, sym, comp, title = n[0], n[1], n[2], n[3]
+        pub, url = n[5], n[7]
+        write_od_status(symbol, "codal",
+                        f"صورت مالی {nfmt(i)}/{nfmt(total)} — {sym}")
+        try:
+            vals, meta, unit = scrape_report(s, url)
+        except Exception as e:
+            print(f"  [{i}] {sym}: error - {e}")
+            vals, meta, unit = {}, {}, None
+        if vals.get("revenue") is not None:
+            ok_fs += 1
+        row = (t, sym, comp, title, kind_of(title), meta.get("period"),
+               meta.get("end"), pub) + tuple(vals.get(k) for k in FS_KEYS) + (unit, url, now)
+        fs.append(row)
+    if fs:
+        conn.executemany(FS_UPSERT, fs)
+
+    conn.commit()
+    conn.close()
+
+    # ---- Phase 3: سابقهٔ قیمت (OHLCV) برای نمودار تکنیکال ----
+    write_od_status(symbol, "codal", f"دریافت سابقهٔ قیمتی {symbol} ...")
+    try:
+        import test_tsetmc
+        test_tsetmc.fetch_price_history(symbol)
+    except Exception as e:
+        print(f"  [history] {symbol}: {type(e).__name__}: {e}")
+
+    write_od_status(symbol, "done",
+                    f"{symbol}: {nfmt(len(fs))} صورت مالی + "
+                    f"{nfmt(len(ms))} گزارش فعالیت ماهانه")
+    print(f"On-demand done for {symbol}: {nfmt(len(fs))} financial + "
+          f"{nfmt(len(ms))} monthly-sales rows added/updated.")
+
+
+def discovery_scan(limit=None):
+    """Active Discovery Scan: every instrument NOT in financial_statements.
+
+    Iterates ALL such symbols through the self-learned positive-whitelist:
+    non-matching letters are rejected at title level (URL never opened), so a
+    data-less symbol costs ONE search request (~3-4s) and a matched symbol a
+    second request + extraction. Runs SERIAL (single thread): the WAF bans
+    parallel search requests instantly.
+
+    Returns (scanned, fs_rows, ms_rows, new_fs_symbols)."""
+
+    global _PROXY_DISABLED
+    _PROXY_DISABLED = True  # discovery: direct-only — dead pool proxies cost ~40s/cycle
+
+    t0 = time.time()
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    create_schema(conn)
+    migrate_schema(conn)
+    # Candidate: symbols without financial statements, minus the playbook's
+    # rejected industries (only when sector is known — unknown stays included,
+    # so 'سایر' symbols are still scanned).
+    pre = conn.execute("""
+        SELECT COUNT(DISTINCT i.l_val18) FROM instruments i
+        WHERE i.l_val18 IS NOT NULL AND i.l_val18 != ''
+          AND i.l_val18 NOT IN (SELECT DISTINCT symbol FROM financial_statements)"""
+        ).fetchone()[0]
+    rows = conn.execute("""
+        SELECT DISTINCT i.l_val18, i.l_val30 FROM instruments i
+        WHERE i.l_val18 IS NOT NULL AND i.l_val18 != ''
+          AND i.l_val18 NOT IN (SELECT DISTINCT symbol FROM financial_statements)
+          AND COALESCE(NULLIF(i.sector_name, ''), '')
+              NOT IN (%s)""" % ",".join("?" * len(REJECTED_SECTORS)),
+        list(REJECTED_SECTORS)).fetchall()
+    # Cumulative progress basis (survives WAF-abort + relaunch): the scan
+    # universe = all instruments minus rejected sectors. Symbols that no longer
+    # need scanning (already have FS / are deriv-fund excluded) = done_base,
+    # derived from the DB on every start → the % never resets to 0.
+    tot_all = conn.execute("""
+        SELECT COUNT(DISTINCT i.l_val18) FROM instruments i
+        WHERE i.l_val18 IS NOT NULL AND i.l_val18 != ''
+          AND COALESCE(NULLIF(i.sector_name, ''), '')
+              NOT IN (%s)""" % ",".join("?" * len(REJECTED_SECTORS)),
+        list(REJECTED_SECTORS)).fetchone()[0]
+    conn.close()
+    symbols = [s for s, n in rows
+               if not _is_derivative(s, n) and not _is_fund(s, n)]
+    if limit:
+        symbols = symbols[:limit]
+    total = len(symbols)
+    done_base = max(tot_all - len(symbols), 0)
+    print(f"Discovery scan: {total} symbols not in financial_statements "
+          f"(of {len(rows)} candidates; deriv/fund excluded; "
+          f"{pre - total} skipped: rejected industries of the 5-step playbook)")
+    global _CONSEC_429, _DISCOVERY_ABORTED, _CB_TOTAL, _CB_DONE, _CB_SYM
+    _CONSEC_429 = 0
+    _DISCOVERY_ABORTED = False
+    _CB_TOTAL, _CB_DONE, _CB_SYM = tot_all, done_base, ""
+    write_progress("codal_sync", f"کشف فعال: 0 از {total} ...", tot_all, done_base, "")
+
+    fs_rows = ms_rows = 0
+    new_fs_syms = []
+    st_counts = {"done": 0, "new": 0, "empty": 0, "blocked": 0}
+    # --- parallel discovery: 2 workers share the global 429 gate. The
+    # per-request jitter floor stays (2.5-4s); the overlap is the win.
+    N_WORKERS = 2
+    _ctx_i = [0]
+    _p_lock = threading.Lock()
+
+    def _worker():
+        global _USER_STOPPED, _DISCOVERY_ABORTED, _CB_TOTAL, _CB_DONE, _CB_SYM
+        nonlocal fs_rows, ms_rows, new_fs_syms
+        wsess = make_session()
+        try:
+            while True:
+                c = _control_cmd()
+                if c == "stop":
+                    with _p_lock:
+                        _USER_STOPPED = True
+                    return
+                while c == "pause":
+                    with _p_lock:
+                        i_p = _ctx_i[0]
+                    sym_p = symbols[i_p] if i_p < len(symbols) else ""
+                    write_progress("codal_paused",
+                                   f"اسکن در حال مکث است ({i_p + 1} از {total}) - نماد بعدی: {sym_p}؛ برای ادامه دکمه ادامه را بزنید",
+                                   tot_all, done_base + i_p, sym_p, extra=dict(st_counts))
+                    time.sleep(5)
+                    c = _control_cmd()
+                    if c == "stop":
+                        with _p_lock:
+                            _USER_STOPPED = True
+                        return
+                with _p_lock:
+                    if _USER_STOPPED:
+                        return
+                    if _CONSEC_429 >= 8:
+                        if not _DISCOVERY_ABORTED:
+                            _DISCOVERY_ABORTED = True
+                            write_progress("codal_backoff",
+                                           "مسدودی WAF همچنان فعال — توقف اسكن (قابل ادامه)",
+                                           tot_all, done_base + _ctx_i[0], _CB_SYM,
+                                           extra=dict(st_counts))
+                        return
+                    _ctx_i[0] += 1
+                    i = _ctx_i[0] - 1
+                    if i >= total:
+                        return
+                    sym = symbols[i]
+                try:
+                    _nn, nf, nm, st4 = _process_symbol(sym, wsess)
+                except Exception as e:
+                    print(f"  [discover] {sym}: {type(e).__name__}: {e}")
+                    nf = nm = 0
+                    st4 = "blocked"
+                with _p_lock:
+                    fs_rows += nf
+                    ms_rows += nm
+                    st_counts[st4] = st_counts.get(st4, 0) + 1
+                    if nf:
+                        new_fs_syms.append(sym)
+                    _CB_TOTAL, _CB_DONE, _CB_SYM = tot_all, done_base + i, sym
+                    if i % 100 == 0 or i == total - 1:
+                        print(f"  [{i + 1}/{total}] fs_rows={fs_rows} ms_rows={ms_rows} "
+                              f"new_fs_symbols={len(new_fs_syms)} st={st_counts}", flush=True)
+                    write_progress("codal_sync",
+                                   f"کشف فعال: {i + 1} از {total} ... نماد فعلی: {sym}",
+                                   tot_all, done_base + i, sym, extra=dict(st_counts))
+        finally:
+            try:
+                wsess.close()
+            except Exception:
+                pass
+
+    _thr = [threading.Thread(target=_worker, daemon=True) for _ in range(N_WORKERS)]
+    for _t in _thr:
+        _t.start()
+    for _t in _thr:
+        _t.join()
+
+    if _USER_STOPPED:
+        write_progress("codal_stopped", "اسکن اكتشافی توسط کاربر متوقف شد",
+                       tot_all, _CB_DONE, _CB_SYM, extra=dict(st_counts))
+        print("=== Discovery stopped by user ===", flush=True)
+        return total, fs_rows, ms_rows, new_fs_syms
+    mins = round((time.time() - t0) / 60, 1)
+    print(f"=== Discovery done in {mins} min: fs_rows={fs_rows} "
+          f"(+{len(new_fs_syms)} symbols: {', '.join(new_fs_syms[:15])}"
+          f"{'...' if len(new_fs_syms) > 15 else ''}), ms_rows={ms_rows} ===")
+    return total, fs_rows, ms_rows, new_fs_syms
+
+
+if __name__ == "__main__":
+    # تعمیر قطعی: stdout/stderr پایپ ویندوز cp1252 است و نام فارسی نمادها
+    # (طتاص7007 و ...) در print کرش UnicodeEncodeError میداد → کارگر قبل از
+    # ذخیرهسازی داده میمرد و نمادِ با-داده از دست میرفت (fs_rows همیشه صفر).
+    # reconfigure با errors="replace" یعنی چاپ هرگز کرش نمیکند.
+    import sys as _sys
+    try:
+        _sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        _sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--symbol", default=None, help="On-demand fetch for one symbol")
+    ap.add_argument("--discover", action="store_true",
+                    help="Active Discovery Scan (symbols missing from financial_statements)")
+    ap.add_argument("--update", action="store_true",
+                    help="Refresh only symbols already extracted (FS/MS in the table)")
+    ap.add_argument("--feed", choices=["update", "discover"], default=None,
+                    help="Smart global-feed sync (no per-symbol search; browser-verified 2026-08-27)")
+    ap.add_argument("--repair", action="store_true",
+                    help="ترمیم ردیف‌های MS/FS موجود ولی خالی (re-scrape با پارسر جدید)")
+    ap.add_argument("--backfill", action="store_true",
+                    help="Backfill FS/MS for symbols with codal financial-statement titles but no FS row")
+    ap.add_argument("--update-symbols", type=int, default=0,
+                    help="Task 2: incremental update on N existing symbols (FromDate delta + dedupe)")
+    ap.add_argument("--polite", action="store_true",
+                    help="بدون ADB/IP-روتاریشن: مکث ~1.7s بین هر درخواست + تک-کارگر")
+    ap.add_argument("--limit", type=int, default=None,
+                    help="Stop after N symbols (testing only)")
+    ap.add_argument("--no-tether", action="store_true",
+                    help="از Wi-Fi خانه بهجای IP تترینگ استفاده کن (کدال IP تترینگ را سریعتر 429 میکند)")
+    ap.add_argument("--no-camoufox", action="store_true",
+                    help="فقط requests — بدون مرورگر Camoufox (پیشفرض از 09-01؛ legacy compat)")
+    ap.add_argument("--camoufox", action="store_true",
+                    help="فعالسازی مرورگر Camoufox (در صورت لزوم — پیشفرض خاموش)")
+    ap.add_argument("--optimized", action="store_true",
+                    help="فقط داده‌های تغییرپذیر از Codal: новые اطلاعیه‌ها + FS های قدیمی/فاسد + نمادهای جدید (حداقل درخواست — برای IP های بدون ADB)")
+    args = ap.parse_args()
+    _NO_TETHER = bool(args.no_tether)
+    set_polite(getattr(args, "polite", False))
+    _NO_CAM = True if not args.camoufox else False   # پیشفرض: بدون مرورگر (09-01)
+    if args.symbol:
+        fetch_symbol(args.symbol)
+    elif args.repair:
+        repair_broken_rows(limit=args.limit)
+    elif args.update_symbols:
+        conn = sqlite3.connect(DB_PATH, timeout=60)
+        syms = [r[0] for r in conn.execute(
+            "SELECT DISTINCT symbol FROM financial_statements ORDER BY symbol LIMIT ?",
+            (args.update_symbols,))]
+        conn.close()
+        sess = make_session()
+        import concurrent.futures
+        # بدون مودب: 3 کارگر (کندتر) — با --polite: تک-کارگر (بدون ADB امن)
+        _w = 1 if POLITE else 3
+        with concurrent.futures.ThreadPoolExecutor(max_workers=_w) as _ex:
+            for s, res in _ex.map(lambda s_: (s_, update_symbol_incremental(s_, sess)), syms):
+                print(f"=== {s} update: {res}", flush=True)
+    elif args.discover:
+        try:
+            discovery_scan(limit=args.limit)
+            raise SystemExit(2 if _DISCOVERY_ABORTED else 0)
+        except SystemExit:
+            raise
+        except Exception as e:
+            # NEVER die silently: log it, surface the abort to the UI status
+            # channel, and exit 1 so the cron relauncher picks it back up.
+            print(f"  [discover] FATAL: {type(e).__name__}: {e}", flush=True)
+            try:
+                write_progress("codal_backoff",
+                               f"پایان غيرمنتظره اسكن ({type(e).__name__}) - قابل ادامه",
+                               globals().get("_CB_TOTAL", 0),
+                               globals().get("_CB_DONE", 0),
+                               globals().get("_CB_SYM", ""))
+            except Exception:
+                pass
+            raise SystemExit(1)
+
+    elif args.update:
+        main("update")
+
+    elif args.feed:
+        feed_sync(args.feed, optimized=bool(args.optimized))
+
+    elif args.optimized:
+        feed_sync("update", optimized=True)
+
+    elif args.backfill:
+        backfill_missing_fs(limit=args.limit)
+
+    else:
+        main()

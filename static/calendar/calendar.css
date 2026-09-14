@@ -1,0 +1,179 @@
+/* =====================================================================
+   BorsTerminal — Calendar Tab Styles (v1.0)
+   هم‌راستا با تم پروژه (متغیرهای styles.css + data-chart-theme)
+   ===================================================================== */
+#calView { padding: 12px 10px; overflow: auto; }
+/* v9.6 — نمای تمام‌عرض: سقف ۱۴۰۰ پیکسلی حذف شد تا فضای خالی چپ/راست پر شود */
+.cal-shell { width: 100%; max-width: 100%; margin: 0; }
+
+/* نوار ابزار */
+.cal-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.cal-nav { display: flex; align-items: center; gap: 6px; }
+.cal-title { font-size: 17px; font-weight: 700; color: var(--text-primary, #f0f3fa); margin: 0 8px; min-width: 170px; }
+.cal-btn {
+  background: var(--bg-card, #1e2438); border: 1px solid var(--border-color, #2a2e39); color: var(--text-secondary, #b2b5be);
+  border-radius: 6px; padding: 5px 12px; cursor: pointer; font-family: inherit; font-size: 12.5px; transition: background .15s, color .15s;
+}
+.cal-btn:hover { background: rgba(140, 152, 180, .15); color: var(--text-primary, #fff); }
+.cal-btn.on { background: var(--accent-blue, #2962ff); color: #fff; border-color: var(--accent-blue, #2962ff); }
+.cal-today { font-weight: 700; }
+.cal-modes { display: flex; gap: 4px; }
+.cal-filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-inline-start: auto; }
+.cal-select, .cal-input {
+  background: var(--bg-card, #1e2438); border: 1px solid var(--border-color, #2a2e39); color: var(--text-primary, #d1d4dc);
+  border-radius: 6px; padding: 6px 9px; font-family: inherit; font-size: 12.5px; outline: none;
+}
+.cal-select:focus, .cal-input:focus { border-color: var(--accent-blue, #2962ff); }
+
+/* راهنمای دسته‌ها */
+.cal-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; font-size: 11.5px; color: var(--text-secondary, #b2b5be); }
+.cal-leg { display: inline-flex; align-items: center; gap: 5px; }
+.cal-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cal-count { margin-inline-start: auto; opacity: .8; }
+
+/* گرید */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; width: 100%; }
+.cal-head-row { margin-bottom: 4px; }
+.cal-hd {
+  text-align: center; font-size: 13px; font-weight: 800; letter-spacing: .3px;
+  color: var(--text-primary, #f0f3fa); padding: 7px 0;
+  background: var(--bg-card, #1e2438); border-radius: 6px;
+}
+.cal-month { grid-auto-rows: minmax(120px, auto); }
+.cal-week { grid-auto-rows: minmax(420px, auto); }
+/* سلول روز: ستونه تا سربرگ عدد ثابت بماند و فقط لیست رویدادها اسکرول شود */
+.cal-cell {
+  display: flex; flex-direction: column;
+  background: var(--bg-card, #1e2438); border: 1px solid var(--border-color, #2a2e39); border-radius: 8px;
+  padding: 6px; min-width: 0; min-height: 120px; overflow: hidden; transition: border-color .15s;
+}
+.cal-cell:hover { border-color: var(--accent-blue, #2962ff); }
+.cal-empty { background: transparent; border-color: transparent; }
+.cal-fri .cal-daynum { color: #f23645; }
+.cal-today-cell { border-color: var(--accent-blue, #2962ff) !important; box-shadow: 0 0 0 1px var(--accent-blue, #2962ff) inset; }
+.cal-today-cell .cal-daynum { color: var(--accent-blue, #2962ff); font-weight: 800; }
+.cal-daynum { font-size: 13.5px; font-weight: 800; color: var(--text-primary, #f0f3fa); margin-bottom: 5px; flex-shrink: 0; }
+.cal-weekcell .cal-daynum { font-size: 14px; }
+/* روزهای پررویداد: به‌جای بریدن، داخل خود سلول اسکرول می‌شوند.
+   سقف ارتفاع گذاشته‌ایم تا یک روز شلوغ کل ردیف هفته را باد نکند. */
+.cal-evs {
+  display: flex; flex-direction: column; gap: 3px;
+  flex: 1 1 auto; min-height: 0; max-height: 150px;
+  overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(56,189,248,.45) transparent;
+}
+.cal-evs::-webkit-scrollbar { width: 6px; }
+.cal-evs::-webkit-scrollbar-track { background: transparent; }
+.cal-evs::-webkit-scrollbar-thumb { background: rgba(56,189,248,.4); border-radius: 999px; }
+.cal-evs::-webkit-scrollbar-thumb:hover { background: rgba(56,189,248,.65); }
+
+/* چیپ رویداد */
+.cal-ev {
+  display: block; flex-shrink: 0; font-size: .72rem; padding: 2px 6px; border-radius: 5px; cursor: pointer;
+  color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95;
+}
+.cal-ev b { margin-inline-end: 4px; }
+.cal-ev:hover { opacity: 1; filter: brightness(1.12); }
+.cal-evf { display: flex; gap: 7px; align-items: baseline; white-space: normal; }
+.cal-ev-time { font-size: 10px; opacity: .85; direction: ltr; }
+.cal-more { font-size: 10px; color: var(--text-secondary, #868993); cursor: pointer; }
+
+/* رنگ دسته‌ها */
+.cal-cat-assembly        { background: #2962ff; }
+.cal-cat-assemblyExtra   { background: #9c27b0; }
+.cal-cat-dividend        { background: #089981; }
+.cal-cat-assemblyChange  { background: #e91e63; }
+.cal-cat-capitalIncrease { background: #f59e0b; color: #1e222d !important; }
+.cal-cat-ipo             { background: #00bcd4; color: #1e222d !important; }
+.cal-cat-bondMaturity    { background: #f23645; }
+.cal-cat-other           { background: #787b86; }
+.cal-dot.cal-cat-capitalIncrease, .cal-dot.cal-cat-ipo { background: #f59e0b; }
+.cal-dot.cal-cat-ipo { background: #00bcd4; }
+
+/* پاپ‌آور جزئیات */
+.cal-detail { position: fixed; z-index: 100050; }
+.cal-detail-card {
+  width: 360px; max-width: 92vw; background: var(--bg-card, #1e2438); border: 1px solid var(--border-color, #2a2e39);
+  border-radius: 10px; box-shadow: 0 14px 38px rgba(0, 0, 0, .5); padding: 12px 14px; direction: rtl;
+}
+.cal-detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.cal-cat-badge { font-size: 10.5px; color: #fff; border-radius: 4px; padding: 2px 9px; }
+.cal-detail-x { background: none; border: none; color: var(--text-secondary, #b2b5be); cursor: pointer; font-size: 13px; }
+.cal-detail-x:hover { color: #fff; }
+.cal-detail-card h3 { font-size: 14px; color: var(--text-primary, #f0f3fa); margin: 4px 0 8px; line-height: 1.6; }
+.cal-detail-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-secondary, #b2b5be); margin-bottom: 8px; }
+.cal-detail-meta b { color: var(--text-primary, #f0f3fa); }
+.cal-detail-desc {
+  font-family: inherit; font-size: 11.5px; color: var(--text-primary, #d1d4dc); background: var(--bg-primary, #131722);
+  border: 1px solid var(--border-color, #2a2e39); border-radius: 7px; padding: 8px 10px; white-space: pre-wrap;
+  max-height: 200px; overflow: auto; margin: 0;
+}
+
+/* تم روشن (data-chart-theme="light") */
+[data-chart-theme="light"] .cal-btn,
+[data-chart-theme="light"] .cal-select,
+[data-chart-theme="light"] .cal-input { background: #fff; border-color: #e0e3eb; color: #131722; }
+[data-chart-theme="light"] .cal-btn:hover { background: #f0f3fa; }
+[data-chart-theme="light"] .cal-title,
+[data-chart-theme="light"] .cal-daynum { color: #131722; }
+[data-chart-theme="light"] .cal-cell { background: #fff; border-color: #e0e3eb; }
+[data-chart-theme="light"] .cal-detail-card { background: #fff; border-color: #e0e3eb; }
+[data-chart-theme="light"] .cal-detail-card h3 { color: #131722; }
+[data-chart-theme="light"] .cal-detail-desc { background: #f8f9fd; border-color: #e0e3eb; color: #131722; }
+[data-chart-theme="light"] .cal-cat-capitalIncrease,
+[data-chart-theme="light"] .cal-cat-ipo { color: #131722 !important; }
+
+@media (max-width: 900px) {
+  .cal-month { grid-auto-rows: minmax(72px, auto); }
+  .cal-filters { margin-inline-start: 0; }
+}
+
+/* ================= v1.4 — لیست روز + مودال روز + خانه‌های مجاور ================= */
+/* خانه‌های ماه قبل/بعد — مات */
+.cal-cell.cal-out { opacity: .45; background: transparent; border-style: dashed; }
+.cal-cell.cal-out:hover { opacity: .8; }
+.cal-cell.cal-out .cal-daynum { color: var(--text-secondary, #868993); }
+
+/* بج ساعت داخل چیپ */
+.cal-ev-t { font-style: normal; font-size: 9.5px; opacity: .85; margin-inline-end: 4px; direction: ltr; }
+
+/* نمای لیستی روز — v9.6: تمام‌عرض مثل گرید ماهانه */
+.cal-daylist { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 100%; margin: 0; }
+.cal-empty-day { text-align: center; color: var(--text-secondary, #868993); padding: 40px 0; font-size: 13px; }
+.cal-ls { display: flex; gap: 12px; align-items: flex-start; background: var(--bg-card, #1e2438);
+  border: 1px solid var(--border-color, #2a2e39); border-inline-start: 3px solid #2962ff;
+  border-radius: 8px; padding: 9px 12px; cursor: pointer; transition: border-color .15s; }
+.cal-ls:hover { border-color: var(--accent-blue, #2962ff); }
+.cal-ls.cal-cat-assembly { border-inline-start-color: #2962ff; }
+.cal-ls.cal-cat-assemblyExtra { border-inline-start-color: #9c27b0; }
+.cal-ls.cal-cat-dividend { border-inline-start-color: #089981; }
+.cal-ls.cal-cat-assemblyChange { border-inline-start-color: #e91e63; }
+.cal-ls.cal-cat-capitalIncrease { border-inline-start-color: #f59e0b; }
+.cal-ls.cal-cat-ipo { border-inline-start-color: #00bcd4; }
+.cal-ls.cal-cat-bondMaturity { border-inline-start-color: #f23645; }
+.cal-ls.cal-cat-other { border-inline-start-color: #787b86; }
+.cal-ls-time { font-size: 13px; font-weight: 700; color: var(--accent-blue, #5b8cff); min-width: 48px; direction: ltr; text-align: center; }
+.cal-ls-body { flex: 1; min-width: 0; }
+.cal-ls-top { display: flex; gap: 8px; align-items: center; }
+.cal-ls-top b { color: var(--text-primary, #f0f3fa); font-size: 13px; }
+.cal-ls-cat { font-size: 10px; background: rgba(140,152,180,.16); color: var(--text-secondary, #b2b5be); border-radius: 4px; padding: 1px 7px; }
+.cal-ls-title { font-size: 12.5px; color: var(--text-primary, #d1d4dc); margin-top: 3px; line-height: 1.7; }
+.cal-ls-link { font-size: 11px; color: var(--accent-blue, #5b8cff); text-decoration: none; display: inline-block; margin-top: 4px; }
+.cal-ls-link:hover { text-decoration: underline; }
+[data-chart-theme="light"] .cal-ls { background: #fff; border-color: #e0e3eb; }
+[data-chart-theme="light"] .cal-ls-time { color: #2962ff; }
+[data-chart-theme="light"] .cal-ls-top b, [data-chart-theme="light"] .cal-ls-title { color: #131722; }
+
+/* مودال رویدادهای روز */
+#calDayModal { position: fixed; inset: 0; z-index: 100060; }
+.cal-dm-back { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+.cal-dm-card { position: absolute; top: 8vh; left: 50%; transform: translateX(-50%); width: 560px; max-width: 94vw;
+  max-height: 80vh; display: flex; flex-direction: column; background: var(--bg-card, #1e2438);
+  border: 1px solid var(--border-color, #2a2e39); border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,.55); direction: rtl; }
+.cal-dm-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #2a2e39); color: var(--text-primary, #f0f3fa); font-size: 13.5px; }
+.cal-dm-x { background: none; border: none; color: var(--text-secondary, #b2b5be); font-size: 15px; cursor: pointer; }
+.cal-dm-x:hover { color: #fff; }
+.cal-dm-list { overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 7px; }
+[data-chart-theme="light"] .cal-dm-card { background: #fff; border-color: #e0e3eb; }
+[data-chart-theme="light"] .cal-dm-head { color: #131722; }

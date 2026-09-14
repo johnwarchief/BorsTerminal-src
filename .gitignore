@@ -1,0 +1,114 @@
+# ============================================================
+#  BorsTerminal_Ultimate — .gitignore
+#  دسته‌بندی: Python | بسته‌بندی | رازها | دیتا | وضعیت اجرا |
+#             لاگ | اسکرچ | ویرایشگر
+# ============================================================
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- محیط مجازی / خروجی بسته‌بندی ----
+venv/
+venv_*/
+*venv/
+.venv/
+env/
+build/
+dist/
+portable/
+releases/
+android/
+backups/
+.v2cache/
+*.spec.bak
+
+# ---- رازها و تنظیمات دستگاه (محلی — هرگز commit نشود) ----
+.env
+.env.*
+*.pem
+*.key
+adb_config.json
+xray_config.json
+v2ray*.json
+sb_config.local.json
+
+# ---- دیتابیس و کش (بازسازی‌شدنی؛ حجم بالا) ----
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
+*.lzma
+*.rar
+*.zip
+*.7z
+
+# ---- وضعیت زمان اجرا (توسط syncها بازنویسی می‌شود) ----
+market_sync.json
+sync_status.json
+sync_ondemand.json
+sync_summary.json
+codal_state.json
+codal_control.json
+dev/fts_update_state.json
+
+# ---- لاگ و خروجی ابزار ----
+logs/
+*.log
+*.err
+*.out
+*.tmp
+*.bak
+# app.py.bak = the pristine pre-refactor monolith, kept deliberately as the
+# audit trail for MIGRATED_LINES.txt and the api/ split. It must stay
+# UNignored: CI's repo-hygiene job fails on any tracked-but-ignored file.
+!app.py.bak
+WT
+
+# ---- اسکرچ توسعه ----
+dev/_*
+# فایل‌های موقت ریشه با پیشوند _ و پسوند متنی.
+# عمداً «/_*» خالی نیست: آن حالت «__pycache__/» را هم می‌گرفت و
+# هر فایل مشروعِ ریشه‌ای با پیشوند _ را بی‌صدا نادیده می‌زد.
+/_*.txt
+/_*.json
+/_*.log
+/_*.py
+/_*.md
+
+# ---- ویرایشگر / سیستم ----
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- ابزار ایجنت (Agent Browser) ----
+# خروجی ضبط/اسکرینشات/موسیقی ابزار خودکار: هرگز بخشی از مخزن نیست.
+.agent_browser/
+screenshots/
+music_cache/
+recordings/
+node_modules/
+
+# ---- رسانهٔ تولیدشده (ویدیو/صدا) ----
+*.webm
+*.mp4
+*.mp3
+
+# ---- پوشش تست ----
+.coverage
+coverage.xml
+htmlcov/
+
+# ---- کرشداپ پایتون روی ویندوز ----
+*.stackdump
+
+nimbalyst-local/attachments/

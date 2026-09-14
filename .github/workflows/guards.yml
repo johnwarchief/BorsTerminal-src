@@ -1,0 +1,91 @@
+name: guards
+
+# This repo's correctness lives in dev/*.py guard scripts, not in unit tests.
+# CI runs exactly what a developer runs locally, so a green PR locally is green here.
+#
+#   python dev/run_all_tests.py     -> 12 offline guard suites
+#   node --check static/*.js        -> JS syntax (no bundler in this project)
+#
+# The server smoke test (dev/serve_check_v95.py) needs a live uvicorn on :8012
+# and a market.db, so it is intentionally NOT part of CI.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  python-guards:
+    name: offline guard suites (python dev/run_all_tests.py)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run all offline guard suites
+        run: python dev/run_all_tests.py
+
+  js-syntax:
+    name: node --check on our bundles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Syntax-check first-party JS
+        run: |
+          set -e
+          for f in \
+            static/app.js \
+            static/fundamental_ui.js \
+            static/portfolio_ui.js \
+            static/tech_rtv.js \
+            static/tech_tools.js \
+            static/tech_365.js \
+            static/mstat.js \
+            static/selection.js \
+            static/calendar/calendar.js \
+            static/calendar/calendarService.js \
+            static/vendor/drawing_math.js
+          do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+  repo-hygiene:
+    name: EOL / attributes / no tracked junk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: .gitattributes must exist and pin LF + CRLF launchers
+        run: |
+          set -e
+          test -f .gitattributes
+          git check-attr eol -- app.py | grep -q 'eol: lf'
+          git check-attr eol -- run_terminal.bat | grep -q 'eol: crlf'
+
+      - name: No tracked file may be gitignored
+        run: |
+          set -e
+          out=$(git ls-files -i -c --exclude-standard)
+          if [ -n "$out" ]; then echo "ignored but tracked:"; echo "$out"; exit 1; fi
+
+      - name: Nothing untracked may have crept in
+        run: |
+          set -e
+          out=$(git ls-files --others --exclude-standard)
+          if [ -n "$out" ]; then echo "untracked files:"; echo "$out"; exit 1; fi

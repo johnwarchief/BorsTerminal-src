@@ -1,0 +1,162 @@
+// features/technical/components/FtsBadgeStrip.tsx -- نوار نشان های تحلیل FTS سمت سرور
+// معادل بج استریپ v10 در tech_rtv.js: روند D/W/M، هم راستایی، فیبو، جت، CHoCH،
+// شکار نقطه، دابل باتم، جعبه رنج و حکم موتور خروج. وضعیت خالی صادقانه نشان داده می شود.
+import { Badge } from '@shared/components/Badge';
+import { toFaDigits } from '@shared/lib/fmt';
+import type { FtsAnalysisData } from '../api/useFtsAnalysis';
+
+export const TREND_FA: Record<string, string> = {
+  up: 'صعودی',
+  down: 'نزولی',
+  range: 'رنج',
+  na: 'نامشخص',
+};
+
+export function trendTone(t: string | null | undefined): 'green' | 'red' | 'yellow' | 'gray' {
+  if (t === 'up') return 'green';
+  if (t === 'down') return 'red';
+  if (t === 'range') return 'yellow';
+  return 'gray';
+}
+
+export const VERDICT_META: Record<string, { label: string; tone: 'red' | 'yellow' | 'gray' }> = {
+  stop: { label: 'حد ضرر', tone: 'red' },
+  exit: { label: 'خروج', tone: 'red' },
+  caution: { label: 'احتیاط', tone: 'yellow' },
+  hold: { label: 'نگهداری', tone: 'gray' },
+};
+
+export function verdictMeta(v: string | null | undefined): { label: string; tone: 'red' | 'yellow' | 'gray' } {
+  return VERDICT_META[v ?? 'hold'] ?? VERDICT_META.hold;
+}
+
+/** جت استریپ: وضعیت ستاپ شکست سقف ایستا یا ATH */
+export function jetBadges(f: FtsAnalysisData): { label: string; tone: 'green' | 'blue' | 'gray'; title: string }[] {
+  const jet = f.jet;
+  if (!jet) return [];
+  if (!jet.active) return [];
+  const isAth = jet.ath === true;
+  const pct = jet.pct_above_res;
+  return [
+    {
+      label: isAth ? 'جت (ATH)' : 'جت فعال',
+      tone: 'green',
+      title: isAth
+        ? 'شکست سقف تاریخی با تایید بدنه روزانه'
+        : pct != null
+          ? `شکست مقاومت ${toFaDigits(jet.resistance?.toFixed(0) ?? '-')} با ${toFaDigits(pct.toFixed(1))}٪ فاصله`
+          : 'شکست مقاومت با تایید بدنه روزانه',
+    },
+  ];
+}
+
+/** نشان های روند چند تایم فریمی + هم راستایی */
+export function trendBadges(f: FtsAnalysisData): { label: string; value: string; tone: 'green' | 'red' | 'yellow' | 'gray'; title: string }[] {
+  const t = f.trend;
+  const out: { label: string; value: string; tone: 'green' | 'red' | 'yellow' | 'gray'; title: string }[] = [];
+  const legs: [string, 'D' | 'W' | 'M'][] = [
+    ['روند روزانه', 'D'],
+    ['روند هفتگی', 'W'],
+    ['روند ماهانه', 'M'],
+  ];
+  for (const [label, legKey] of legs) {
+    const leg = t?.[legKey] ?? null;
+    const tr = leg?.trend ?? 'na';
+    out.push({ label, value: TREND_FA[tr] ?? TREND_FA.na, tone: trendTone(tr), title: `${label}: ${TREND_FA[tr] ?? '-'}` });
+  }
+  const align = t?.alignment;
+  if (align === 'up' || align === 'down') {
+    out.push({
+      label: 'هم راستایی',
+      value: align === 'up' ? 'صعودی' : 'نزولی',
+      tone: align === 'up' ? 'green' : 'red',
+      title: 'هر سه تایم فریم هم جهت هستند',
+    });
+  }
+  return out;
+}
+
+export function FtsBadgeStrip({ data, empty }: { data: FtsAnalysisData | null | undefined; empty: boolean }) {
+  if (empty) {
+    return (
+      <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-empty">
+        <Badge tone="gray">FTS</Badge>
+        <span>تحلیل سمت سرور برای این نماد موجود نیست (تاریخچه خالی)</span>
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-loading">
+        <Badge tone="gray">FTS</Badge>
+        <span>در حال دریافت نشان های تحلیل...</span>
+      </div>
+    );
+  }
+
+  const items: { label: string; value?: string; tone: 'green' | 'red' | 'yellow' | 'blue' | 'gray'; title: string }[] = [];
+
+  for (const b of trendBadges(data)) {
+    items.push({ label: b.label, value: b.value, tone: b.tone, title: b.title });
+  }
+
+  const fib = data.fib;
+  if (fib?.zone_33_40?.in_zone) {
+    items.push({ label: 'فیبو', value: '۳۳-۴۰٪', tone: 'blue', title: 'قیمت داخل کمربند اصلاح ۳۳ تا ۴۰ درصد است' });
+  }
+  if (fib?.zone_618_70?.in_zone) {
+    items.push({ label: 'فیبو', value: '۶۱.۸-۷۰٪', tone: 'blue', title: 'قیمت داخل کمربند طلایی اصلاح است' });
+  }
+
+  for (const b of jetBadges(data)) {
+    items.push({ label: b.label, tone: b.tone, title: b.title });
+  }
+
+  const choch = data.choch;
+  if (choch?.bullish) {
+    items.push({ label: 'CHoCH', value: 'صعودی', tone: 'green', title: 'شکست صعودی ساختار؛ برگشت روند' });
+  }
+  if (choch?.bearish) {
+    items.push({ label: 'CHoCH', value: 'نزولی', tone: 'red', title: 'شکست نزولی ساختار؛ هشدار خروج' });
+  }
+
+  const ph = data.point_hunt;
+  if (ph?.active) {
+    items.push({
+      label: 'شکار نقطه',
+      value: `${toFaDigits(ph.touches ?? 0)} لمس`,
+      tone: 'blue',
+      title: 'کف دایامتریک کانال دست کم سه بار لمس شده؛ خرید در کف با حد ضرر کوتاه',
+    });
+  }
+
+  if (data.double_bottom?.active) {
+    items.push({ label: 'دابل باتم', tone: 'green', title: 'شکست یقه دابل باتم تایید شد' });
+  }
+
+  if (data.range_box?.active) {
+    items.push({ label: 'شکست جعبه', tone: 'green', title: 'پایانی بالای سقف جعبه رنج بسته شد' });
+  }
+
+  const ex = data.exit_engine;
+  const vm = verdictMeta(ex?.verdict);
+  items.push({
+    label: 'موتور خروج',
+    value: vm.label,
+    tone: vm.tone,
+    title: ex?.signals?.length ? `لایه های فعال: ${ex.signals.join('، ')}` : 'هیچ لایه خروجی فعال نیست',
+  });
+
+  return (
+    <div className="glass-panel flex flex-wrap items-center gap-1.5 rounded-2xl p-3" data-testid="fts-badges" role="status" aria-label="نشان های تحلیل FTS">
+      {items.map((it, i) => (
+        <Badge key={`${it.label}-${i}`} tone={it.tone}>
+          <span title={it.title}>
+            {it.label}
+            {it.value ? <span className="num"> {it.value}</span> : null}
+          </span>
+        </Badge>
+      ))}
+    </div>
+  );
+}

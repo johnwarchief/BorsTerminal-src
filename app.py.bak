@@ -1,0 +1,2700 @@
+import json
+import math
+import os
+import re
+import sqlite3
+import subprocess
+import threading
+import sys
+import datetime
+import time
+import importlib.util
+
+import numpy as np
+import pandas as pd
+import uvicorn
+import codal_fetcher
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
+try:
+    import orjson as _orjson_mod  # noqa: F401 — کلاس ORJSONResponse بدون orjson import میشود ولی در render میترکد
+    from fastapi.responses import ORJSONResponse
+    _ORJ = True
+except Exception:
+    ORJSONResponse = None
+    _ORJ = False
+
+# ---------- Notification Dispatcher (Telegram + Bale) ----------
+try:
+    import notifier
+    NOTIFIER_AVAILABLE = True
+except Exception as _e:
+    # httpx نصب نباشد یا فایل ناقص باشد — اپ نباید کرش کند
+    NOTIFIER_AVAILABLE = False
+    print(f"[notifier] unavailable: {_e}")
+
+app = FastAPI(title="BorsAgent Modern Terminal",
+              default_response_class=ORJSONResponse if _ORJ else None)
+# GZip: پاسخهای >1KB فشرده میشوند — /api/market از 4.2MB به ~450KB
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+
+# ---------------------------------------------------------------------------
+# Path & configuration constants -- single source of truth.
+#
+# Everything here is resolved relative to APP_DIR (the repo root, which is also
+# the folder the packaged EXE expects market.db / *.json to sit in -- see
+# scripts/build_exe.py and bors_entry.py). Runtime state files (sync_status,
+# market_sync, codal_control, sync_summary) are written by app.py,
+# test_tsetmc.py and codal_fetcher.py independently, so they must keep
+# resolving to this same directory; do not relocate them into a subdir.
+# ---------------------------------------------------------------------------
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_PATH = "../market.db" if os.path.exists("../market.db") else "market.db"
+STATUS_PATH = os.path.join(APP_DIR, "sync_status.json")
+OD_STATUS_PATH = os.path.join(APP_DIR, "sync_ondemand.json")
+MARKET_STATUS_PATH = os.path.join(APP_DIR, "market_sync.json")
+CONTROL_PATH = os.path.join(APP_DIR, "codal_control.json")
+FTS_CONFIG_PATH = os.path.join(APP_DIR, "fts_thresholds.json")
+_ADB_CFG = os.path.join(APP_DIR, "adb_config.json")
+
+# پیش‌شرط‌های ۵ شاخص FTS (جزوهٔ استاد — قابل ویرایش از تنظیمات کدال)
+# v8: کلیدها با متدولوژی ۵ محوره هم‌راستا شدند؛ کلیدهای قدیمی در load_fts_config مهاجرت می‌یابند.
+FTS_DEFAULTS = {
+    # ۱) رشد فروش تجمیعی ÷ همان دورهٔ سال قبل
+    "growth_min": 40.0,            # Min_Sales_Growth = ۴۰٪
+    "inflation_min": 58.0,         # بنچ‌مارک تورم سالانه = ۵۸٪ (بالای آن = عالی)
+    # ۲) روند EPS — صورت مالی ۱۲ماههٔ حسابرسی‌شدهٔ شرکت اصلی
+    "eps_years": 3,                # EPS_Consecutive_Growth_Years = ۳
+    # ۳) حاشیه سود ناخالص = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰
+    "margin_min": 20.0,            # Min_Gross_Margin = ۲۰٪
+    "margin_optimal": 30.0,        # ایده‌آل = ۳۰٪
+    # ۴) فروش سالانهٔ Annualized به ارزش بازار + پتانسیل سود ناخالص
+    "sales_to_mcap_min": 1.0,      # Min_Annualized_Sales_To_MarketCap = ۱.۰
+    "profit_potential_min": 30.0,  # Min_Profit_Potential_To_MarketCap = ۳۰٪
+    # ۵) فیلتر صنعت — تفکیک قیمت‌گذاری آزاد/بورس کالا از دستوری
+    "industry_mode": "Exclude_Mandatory_Pricing",
+    "mandatory_sectors": ["خودرو", "دارو", "نیروگاه", "غذا", "لاستیک", "شوینده", "بیمه"],
+    "free_sectors": ["سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک",
+                     "کانه", "معادن", "نفت", "محصولات فلزی"],
+    # غربالگری نهایی
+    "watchlist_max": 50,           # سقف واچ‌لیست (جزوه: نهایتاً ۵۰ سهم)
+    "mcap_min_hmt": 0.0,           # پیش‌شرط: حداقل ارزش بازار (همت)
+    "suspended_max_stale_sessions": 3,   # نماد با ≥ این تعداد نشست عقب‌مانده = تعلیق
+    # v9.7 — دو پارامتر کمکی بنیادی/تابلوخوانی
+    # ماده ۱۴۱ قانون تجارت: زیان انباشته > نصف سرمایه → حذف از واچ‌لیست.
+    # تشخیص از آخرین صورت مالی ۱۲ماهه: total_equity <= 0.5 * capital
+    "filter_m141": False,
+    # نقدشوندگی: حداقل میانگین ارزش معاملات روزانه (همت = ۱۰^۱۰ ریال)؛ ۰ = بدون فیلتر
+    "min_trade_val": 0.0,
+}
+
+# کلیدهای منسوخ v7.3 → معادل v8 (برای fts_thresholds.jsonهای قدیمی)
+FTS_LEGACY_SCALARS = {
+    "streak_periods": "eps_years",
+    "ps_good": "sales_to_mcap_min",       # P/S ≤ 1  ⇔  Sales/Mcap ≥ 1.0
+    "potential_min": "profit_potential_min",
+}
+FTS_LEGACY_LISTS = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
+FTS_LIST_KEYS = ("mandatory_sectors", "free_sectors")
+FTS_STR_KEYS = ("industry_mode",)
+
+
+def load_fts_config() -> dict:
+    """پیش‌شرط‌ها را میخواند و کلیدهای نسل قدیم را به ساختار v8 مهاجرت میدهد."""
+    try:
+        with open(FTS_CONFIG_PATH, encoding="utf-8") as f:
+            raw = json.load(f)
+    except Exception:
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    cfg = dict(FTS_DEFAULTS)
+    # ۱) نگاشت مستقیم کلیدهای معتبر v8
+    # v9.1 رفع باگ: شرط قبلی «k not in FTS_LEGACY_LISTS.values()» بود؛ مقادیر آن
+    # دقیقاً mandatory_sectors/free_sectors است، پس لیست صنایع هرگز از فایل
+    # خوانده نمی‌شد و «فیلتر صنعت» هیچ‌وقت ذخیره نمی‌شد. کلیدهای قدیمی
+    # (bad_sectors/good_sectors) از قبل با «k in FTS_DEFAULTS» رد می‌شوند.
+    for k, v in raw.items():
+        if k in FTS_DEFAULTS:
+            cfg[k] = v
+    # ۲) مهاجرت کلیدهای عددی قدیمی (فقط اگر کلید جدید در فایل نباشد)
+    for old, new in FTS_LEGACY_SCALARS.items():
+        if old in raw and new not in raw:
+            try:
+                cfg[new] = float(raw[old])
+            except (TypeError, ValueError):
+                pass
+    # ۳) مهاجرت لیست‌های صنایع
+    for old, new in FTS_LEGACY_LISTS.items():
+        if old in raw and new not in raw:
+            cfg[new] = raw[old]
+    # ۴) پاک‌سازی نوع
+    for k in FTS_LIST_KEYS:
+        v = cfg.get(k)
+        if isinstance(v, str):
+            v = [s.strip() for s in v.replace("،", ",").split(",") if s.strip()]
+        cfg[k] = [str(s).strip() for s in (v or []) if str(s).strip()]
+    for k, v in list(cfg.items()):
+        if k in FTS_STR_KEYS:
+            cfg[k] = str(v)
+        elif k in FTS_LIST_KEYS:
+            continue
+        elif isinstance(FTS_DEFAULTS[k], bool):
+            cfg[k] = bool(v)
+        elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
+            try:
+                cfg[k] = int(float(v))
+            except (TypeError, ValueError):
+                cfg[k] = FTS_DEFAULTS[k]
+        else:
+            try:
+                cfg[k] = float(v)
+            except (TypeError, ValueError):
+                cfg[k] = FTS_DEFAULTS[k]
+    return cfg
+
+
+
+def _count_procs(pattern):
+    """تعداد پروسههای python در حال اجرا که CommandLine شامل pattern است.
+    کراس-پلتفرم: ویندوز → PowerShell/CimInstance؛ لینوکس/macOS → pgrep."""
+    try:
+        if os.name == "nt":
+            out = subprocess.run(
+                ["powershell.exe", "-NoProfile", "-Command",
+                 f"(Get-CimInstance Win32_Process | Where-Object {{ $_.Name -eq 'python.exe' -and $_.CommandLine -match '{pattern}' }}).Count"],
+                capture_output=True, text=True, timeout=15,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            return out.returncode == 0 and out.stdout.strip().isdigit() and int(out.stdout.strip()) > 0
+        out = subprocess.run(["pgrep", "-f", pattern],
+                             capture_output=True, text=True, timeout=15)
+        return bool(out.stdout.strip())
+    except Exception:
+        return False
+
+
+def _kill_procs(pattern):
+    """کشتن همه پروسههای python دارای pattern در CommandLine — کراس-پلتفرم."""
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["powershell.exe", "-NoProfile", "-Command",
+                 f"Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | "
+                 f"Where-Object {{ $_.CommandLine -match '{pattern}' }} | "
+                 f"ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}"],
+                capture_output=True, timeout=20,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        else:
+            subprocess.run(["pkill", "-f", pattern],
+                           capture_output=True, timeout=20)
+    except Exception:
+        pass
+
+
+def _market_running():
+    """True when at least one test_tsetmc (بازار) process is alive."""
+    return _count_procs("test_tsetmc")
+
+
+@app.get("/api/market/sync-state")
+def market_sync_state():
+    """جزئیات زنده/آخرین بروزرسانی تابلو بازار (برای پنل جزئیات UI).
+
+    NOTE (v9.7.1 cleanup): this path used to be registered a second time further
+    down the module, returning `_market_sync_alive()` (in-process thread) instead
+    of `_market_running()` (external test_tsetmc process). Starlette matches the
+    first registered route, so that later copy was unreachable and has been
+    removed. If the UI should reflect the in-process sync thread rather than a
+    standalone syncer process, swap the call below to `_market_sync_alive()` --
+    that is a behaviour change, not a no-op.
+    """
+    try:
+        with open(MARKET_STATUS_PATH, encoding="utf-8") as f:
+            d = json.load(f)
+    except Exception:
+        d = {}
+    return {"status": "success", "running": _market_running(), "last": d}
+
+
+
+def _safe_read_json(path):
+    try:
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+
+def _num(v):
+    """تبدیل مطمئن به float: None/NaN/Inf → 0 (چون pandas NULL ها را NaN میکند نه None)."""
+    try:
+        f = float(v)
+        return f if math.isfinite(f) else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_db():
+    if not os.path.exists(DB_PATH):
+        raise HTTPException(status_code=500, detail="Database market.db not found.")
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.row_factory = sqlite3.Row
+    # WAL: خواندنیها همزمان با نوشتن (sync های پسزمینه) قفل DB را نمیگیرند
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    # v7.3: cache 64MB برای کوئریهای سنگین اسکرینر/چارت (دستور بهینهسازی دیتابیس)
+    conn.execute("PRAGMA cache_size=-64000")
+    conn.execute("PRAGMA temp_store=MEMORY")
+    conn.execute("PRAGMA mmap_size=268435456")
+    # v9.7.3: norm_fa به‌عنوان تابع SQL ثبت می‌شود تا هر فیلترِ سمتِ SQL روی
+    # نوشتارِ عربی/فارسی safe باشد. توجه: در کوئری‌های تک‌نمادیِ پرتکرار استفاده
+    # نمی‌شود (اندازه‌گیری: 5.74ms در برابر 0.01ms با ایندکس) — fts_engine برای
+    # آن مسیر symbol_aliases/sym_in را می‌فرستد. اینجا برای فیلترهای کل‌بازاری
+    # ثبت می‌شود که از قبل جدول را کامل می‌خوانند.
+    try:
+        import fts_engine as _fts
+        _fts.register_sql(conn)
+    except Exception:
+        pass
+    # ایندکسهای پرفورمنس (یک‌بار، idempotent)
+    try:
+        conn.execute("CREATE INDEX IF NOT EXISTS ix_ct_ins_deven ON client_type(ins_code, d_even)")
+        conn.execute("CREATE INDEX IF NOT EXISTS ix_ph_sym_date2 ON price_history(symbol, date DESC)")
+    except Exception:
+        pass
+    # v9.0 — جدول سبک تصمیمات سبد (Accept/Reject/Monitor). idempotent و هم‌جای
+    # ایندکسها؛ با «هر اتصال» تضمین میشود موجود است بدون نیاز به مایگریشن جدا.
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS selection_decisions (
+                symbol       TEXT PRIMARY KEY,
+                name         TEXT DEFAULT '',
+                status       TEXT NOT NULL DEFAULT 'pending',
+                reason       TEXT DEFAULT '',
+                note         TEXT DEFAULT '',
+                stop_loss    TEXT DEFAULT '',
+                asset_kind   TEXT DEFAULT '',
+                weight_pct   REAL DEFAULT 0,
+                price        REAL DEFAULT 0,
+                score        INTEGER DEFAULT 0,
+                pricing_mode TEXT DEFAULT '',
+                sector       TEXT DEFAULT '',
+                updated_at   TEXT DEFAULT ''
+            )
+        """)
+    except Exception:
+        pass
+    # v9.7.3 — واچ‌لیست کاربر. همان الگوی بالا: idempotent و همراه هر اتصال،
+    # بدون مایگریشن جدا. DDL داخل watchlist_store است تا تست‌ها بدون FastAPI
+    # بتوانند همان جدول را بسازند.
+    try:
+        import watchlist_store
+        watchlist_store.ensure_table(conn)
+    except Exception:
+        pass
+    # v9.7.5 فاز ۱ — ستون‌های عمق/paper_type و جدول نقطه‌های تایم‌لاین. همان
+    # الگوی «همراه هر اتصال»: درخواستِ mstat روی بانکِ نسخهٔ قبلی هم کار می‌کند
+    # (فقط آن پنل‌ها «بی‌داده» می‌شوند، نه ۵۰۰).
+    try:
+        import mstat_engine
+        mstat_engine.ensure_schema(conn)
+    except Exception:
+        pass
+    return conn
+
+
+MARKET_CACHE = {}   # {"t": ts, "body": bytes, "etag": str}
+MARKET_CACHE_TTL = 20.0   # ثانیه — دادهٔ تابلو هر ۳۰ثانیه سینک میشود، ۲۰ کافی است
+
+@app.get("/api/market")
+def get_market(request: Request):
+    import time as _t
+    now = _t.time()
+    hit = MARKET_CACHE.get("body")
+    if hit and (now - MARKET_CACHE.get("t", 0)) < MARKET_CACHE_TTL:
+        inm = request.headers.get("if-none-match")
+        if inm and inm == MARKET_CACHE.get("etag"):
+            return Response(status_code=304)
+        return Response(content=hit, media_type="application/json",
+                        headers={"Cache-Control": "max-age=15", "X-Cache": "HIT",
+                                 "ETag": MARKET_CACHE.get("etag", "")})
+    conn = get_db()
+    try:
+        # Left join for 30-session Avg Volume (سوال suspicious volume) + prev-day volume
+        # rn <= 30 => آخرین ۳۰ جلسه (بدون ردیفهای قدیمیتر)؛ rn=1 => آخرین روز (پایه روند حجم)
+        query = """
+            SELECT m.ins_code, i.l_val18 AS symbol, i.l_val30 AS name,
+                   COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector_name,
+                   m.p_closing, m.p_last, m.q_tot_tran, m.z_tot_tran, m.price_yesterday,
+                   m.q_tot_cap, m.price_change, m.d_even,
+                   m.pe, m.eps, b.board AS board, m.price_max AS p_max, m.price_min AS p_min,
+                   COALESCE(ct.buy_i_vol, 0)  AS buy_i_vol,
+                   COALESCE(ct.buy_n_vol, 0)  AS buy_n_vol,
+                   COALESCE(ct.sell_i_vol, 0) AS sell_i_vol,
+                   COALESCE(ct.sell_n_vol, 0) AS sell_n_vol,
+                   COALESCE(ct.buy_count_i, 0)  AS buy_count_i,
+                   COALESCE(ct.sell_count_i, 0) AS sell_count_i,
+                   v.month_avg_vol, v.prev_day_vol,
+                   v.h1_max, v.h5_max, v.h9_max, v.h19_max, v.h29_max,
+                   v.h39_max, v.h49_max, v.h59_max,
+                   v.min30_low, v.max30_high, v.d1_vol
+            FROM market_watch m
+            JOIN instruments i ON i.ins_code = m.ins_code
+            LEFT JOIN boards b ON b.ins_code = m.ins_code
+            LEFT JOIN (SELECT ins_code, MAX(d_even) AS d FROM client_type GROUP BY ins_code) ctm
+                 ON ctm.ins_code = m.ins_code
+            LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
+            LEFT JOIN (
+                SELECT symbol,
+                       AVG(volume) AS month_avg_vol,
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS prev_day_vol,
+                       -- فیلترهای TSETMC: [ih][k].PriceMax / PriceMin
+                       MAX(CASE WHEN rn = 1 THEN high END) AS h1_max,
+                       MAX(CASE WHEN rn = 5 THEN high END) AS h5_max,
+                       MAX(CASE WHEN rn = 9 THEN high END) AS h9_max,
+                       MAX(CASE WHEN rn = 19 THEN high END) AS h19_max,
+                       MAX(CASE WHEN rn = 29 THEN high END) AS h29_max,
+                       MAX(CASE WHEN rn = 39 THEN high END) AS h39_max,
+                       MAX(CASE WHEN rn = 49 THEN high END) AS h49_max,
+                       MAX(CASE WHEN rn = 59 THEN high END) AS h59_max,
+                       MIN(low) AS min30_low,
+                       MAX(high) AS max30_high,
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
+                FROM (
+                    SELECT symbol, volume, high, low,
+                           ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY date DESC) AS rn
+                    FROM price_history
+                ) WHERE rn <= 60
+                GROUP BY symbol
+            ) v ON v.symbol = i.l_val18
+            WHERE m.ins_code IS NOT NULL
+            ORDER BY m.d_even DESC, i.l_val18 ASC
+        """
+        df = pd.read_sql_query(query, conn)
+        last_deven = df["d_even"].max() if "d_even" in df.columns and len(df) else None
+        # نمادهای خارج از تابلو (دEVEN قدیمی) با اولویت آخر — ولی هنوز قابل نمایشاند
+        df["is_live"] = (df["d_even"] == last_deven) if last_deven else True
+
+        # ---------- cast حجم به float؛ NULL/NaN → 0 ----------
+        df["tvol"] = pd.to_numeric(df["q_tot_tran"], errors="coerce").astype(float).fillna(0.0)
+        df["month_avg_vol"] = pd.to_numeric(df["month_avg_vol"], errors="coerce").astype(float)
+        df["prev_day_vol"] = pd.to_numeric(df["prev_day_vol"], errors="coerce").astype(float)
+
+        # ---------- درصد تغییر (محافظت تقسیم بر صفر) ----------
+        py_last = df["price_yesterday"].astype(float).where(df["price_yesterday"].astype(float) > 0)
+        df["percent_change"] = np.where(
+            py_last > 0, ((df["p_closing"] - py_last) / py_last * 100).round(2), None)
+
+        buy_per_i = df["buy_i_vol"] / df["buy_count_i"].replace(0, 1)
+        sell_per_i = df["sell_i_vol"] / df["sell_count_i"].replace(0, 1)
+        # cap 10x: وقتی فروش حقیقی صفر است، نسبت بینهایت میشود — سقف ۱۰ منطقی است
+        df["buyer_power"] = (buy_per_i / sell_per_i.replace(0, 1)).round(2).fillna(1.0).clip(upper=10.0)
+        # قدرت خالص خریدار/فروشنده (حجم به ازای هر معامله) — برای ستون مقایسهای
+        df["buy_power_i"] = buy_per_i.round(0).fillna(0)
+        df["sell_power_i"] = sell_per_i.round(0).fillna(0)
+
+        # ---------- حجم مشکوک: tvol >= 2.5 * month_avg_vol (DivByZero/Null-safe) ----------
+        mav = df["month_avg_vol"].where(df["month_avg_vol"] > 0)   # <=0/NaN → NaN
+        df["vol_ratio"] = (df["tvol"] / mav).round(1)              # NaN where no history
+        df["suspicious_vol"] = (df["vol_ratio"] >= 2.5)            # NaN → False
+
+        # ---------- روند حجم: tvol vs آخرین روز معاملاتی (day-over-day, Null-safe) ----------
+        pdv = df["prev_day_vol"].where(df["prev_day_vol"] > 0)     # <=0/NaN → NaN
+        df["vol_dod"] = (df["tvol"] / pdv).round(2)                # NaN where no prev day
+        df["vol_trend"] = np.where(df["vol_dod"].isna(), None,
+                           np.where(df["vol_dod"] >= 1.10, "up",
+                           np.where(df["vol_dod"] <= 0.90, "down", "flat")))
+
+        # ============================================================
+        # فیلترهای TSETMC (جایگزین فیلترهای قبلی تابلوخوانی)
+        # متغیرها: pl=پایانی، pc=آخرین معامله، plp=درصد تغییر، tmin=کف روز،
+        #          tvol=حجم، tno=تعداد معاملات، zd1/qd1=دیروز، [ih][k]=تاریخچه
+        # ============================================================
+        V = lambda s: df[s].astype(float)
+        df["f_roobi"] = (np.isclose(V("p_closing"), V("p_min"), atol=0.5) & (V("prev_day_vol") > 1) & (V("percent_change") < -1) & (V("z_tot_tran") > 100)).fillna(False)
+        # حجم مشکوک: tvol > 3*avg30 و tno > 50
+        df["f_susp"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 50)).fillna(False)
+        # الگوی ساعت: pl >= pc*1.02 و tvol > 1*avg30 و tno > 30
+        df["f_clock"] = ((V("p_closing") >= V("p_last") * 1.02) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 30)).fillna(False)
+        # فیلتر جت: tvol > 3*avg30 و قدرت خریدار حقوقی >= 1.5*فروشنده و pl>=pc و plp>0
+        #            و همهٔ سقفهای ۲تا۵۹ روز قبل < pl و tno > 100
+        buy_pow = V("buy_i_vol") / V("buy_count_i").replace(0, 1)
+        sell_pow = V("sell_i_vol") / V("sell_count_i").replace(0, 1)
+        jet_hist_ok = True
+        for k in (5, 9, 19, 29, 39, 49, 59):
+            jet_hist_ok = jet_hist_ok & (df[f"h{k}_max"].isna() | (df[f"h{k}_max"] < V("p_closing")))
+        df["f_jet"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0)))
+                       & (buy_pow >= 1.5 * sell_pow)
+                       & (V("p_closing") >= V("p_last"))
+                       & (V("percent_change") > 0)
+                       & (V("z_tot_tran") > 100)
+                       & jet_hist_ok).fillna(False)
+        # نقطه زنی: (pc - min30)/pc*100 < 3 و tvol > 1*avg30 و tno > 5
+        min30 = df["min30_low"].where(df["min30_low"] > 0)
+        df["dist_min30_pct"] = np.where(V("p_closing") > 0, (V("p_closing") - min30) / V("p_closing") * 100, np.nan)
+        df["f_noqteh"] = ((df["dist_min30_pct"] < 3) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 5)).fillna(False)
+
+        # Fail-safe: NaN/Inf → 0 (JSON safety)؛ سپس NaN حجمی → واقعاً null
+        # (تا sort و نمایش «حجم مشکوک» درست بماند).
+        # نکته: ستونهای حجمی از نسخهٔ خام بازیابی میشوند چون fillna(0)
+        # روی object-column (vol_trend) None را به 0 تبدیل میکند.
+        _vr = df["vol_ratio"].copy()
+        _vd = df["vol_dod"].copy()
+        _vt = df["vol_trend"].copy()
+        _filters_tbl = {k: df[k].copy() for k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh")}
+        _dist = df["dist_min30_pct"].copy()
+        df = df.replace([np.inf, -np.inf], 0).fillna(0)
+        df["vol_ratio"] = _vr   # NaN باقی میماند → _clean → null
+        df["vol_dod"] = _vd
+        df["vol_trend"] = _vt   # None سرجایش میماند
+        for _k, _s in _filters_tbl.items():
+            df[_k] = _s.fillna(False)
+        df["dist_min30_pct"] = _dist
+
+        records = df.to_dict(orient="records")
+
+        def _clean(v):
+            if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))):
+                return None
+            return v
+
+        for rec in records:
+            for k in list(rec.keys()):
+                rec[k] = _clean(rec[k])
+        # meta: تاریخ/زمان معاملات برای نمایش شمسی (دادهٔ تابلو متعلق به کدام روز است)
+        meta = {"d_even": None, "h_even": None, "last_sync": None}
+        try:
+            _r = conn.execute(
+                "SELECT d_even, h_even, fetched_at FROM market_watch "
+                "ORDER BY fetched_at DESC LIMIT 1").fetchone()
+            if _r:
+                meta = {"d_even": int(_r[0] or 0), "h_even": int(_r[1] or 0), "last_sync": _r[2]}
+        except Exception:
+            pass
+        payload = {"status": "success", "count": len(df), "data": records, "meta": meta,
+                   "live_count": int(df["is_live"].sum()) if "is_live" in df.columns else len(df),
+                   "fossil_count": int((~df["is_live"]).sum()) if "is_live" in df.columns else 0}
+        import hashlib, json as _json
+        if _ORJ:
+            import orjson
+            body = orjson.dumps(payload)
+        else:
+            body = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        etag = '"' + hashlib.md5(body).hexdigest()[:16] + '"'
+        MARKET_CACHE["body"] = body
+        MARKET_CACHE["t"] = now
+        MARKET_CACHE["etag"] = etag
+        return Response(content=body, media_type="application/json",
+                        headers={"Cache-Control": "max-age=15", "X-Cache": "MISS", "ETag": etag})
+    finally:
+        conn.close()
+
+
+@app.middleware("http")
+async def no_cache_middleware(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+# کش سادهٔ در-حافظه برای دادهٔ چارت (TTL ۶۰ دقیقه) — CDN TSETMC اضافه‌بارش کم می‌شود
+CHART_CACHE = {}   # {symbol: (fetch_time, json_data)}
+# v8.7 FIX-2: حداقل انحراف نسبی «قیمت پایه» نسبت به پایانیِ دیروز که رویداد تعدیل شمرده
+# می‌شود. ۰.۱٪ زیر کوچک‌ترین رویداد واقعی است (خساپا ۱۳۹۶: ۰.۵۷٪) و بالای نویز گردکردن.
+ADJ_TOL = 0.001
+
+CHART_CACHE_TTL = 3600.0
+
+@app.get("/api/chart/{symbol}")
+def get_chart_tsetmc(symbol: str):
+    """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست)."""
+    import time as _t
+    _cached = CHART_CACHE.get(symbol)
+    if _cached and (_t.time() - _cached[0]) < CHART_CACHE_TTL:
+        return _cached[1]
+    import requests as _rq
+    from urllib.parse import quote
+    try:
+        # نرمال‌سازی کاراکترهای عربی/فارسی ('ك'→'ک'، 'ي'→'ی'، 'ى'→'ی') چون DB ممکن است عربی ذخیره کند
+        _norm = lambda s: str(s).translate(str.maketrans({'ك': 'ک', 'ي': 'ی', 'ى': 'ی', 'ك': 'ک'}))
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        # DETERMINISM FIX (2026-09-09): نمادهای بازانتشار‌یافته (مانند «حيان072» که
+        # دو ins_code دارد — سری قدیمی و سری جدید) با LIMIT 1 بدون ORDER BY هر بار
+        # ردیفِ دلخواهِ SQLite را می‌گرفتند → در دو اجرا، نمودارِ یک اوراقِ «دیگر»
+        # با همان نام سرو می‌شد. اکنون newest-first: ردیفِ به‌روزتر (ابزارِ فعلیِ
+        # بازار) به‌صورت قطعی انتخاب می‌شود.
+        ins = conn.execute(
+            "SELECT ins_code FROM instruments WHERE l_val18 = ? ORDER BY updated_at DESC LIMIT 1", (symbol,)
+        ).fetchone()
+        if not ins:
+            ins = conn.execute(
+                "SELECT ins_code FROM instruments WHERE REPLACE(REPLACE(REPLACE(l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ? ORDER BY updated_at DESC LIMIT 1",
+                (symbol,)
+            ).fetchone()
+        conn.close()
+        if not ins:
+            return {"status": "error", "message": "نماد در تابلوی بازار یافت نشد (ممکن است خیلی جدید باشد و هنوز در بروزرسانی تابلو قرار نگرفته؛ دکمهٔ «بروزرسانی تابلو» را بزنید و دوباره تلاش کنید)"}
+        ins_code = ins[0]
+        hdr = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+        # ۱) تاریخچهٔ روزانه — از ۱۳۸۰ (API همهٔ تاریخ را از ابتدا می‌دهد؛ مثل نهایت‌نگر)
+        r = _rq.get(
+            f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/19900101",
+            headers=hdr, timeout=30,
+        )
+        if r.status_code != 200:
+            return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
+        candles, volumes = [], []
+        all_rows = []  # همهٔ ردیف‌های خام (حتی روزهای بدون معامله H=L=0 که کندل نمی‌شوند)
+        lines = r.text.splitlines()
+        # v9.7: ایندکس ستون‌ها از خودِ هدر خوانده میشود، نه عدد ثابت.
+        # هدر رسمی TSETMC:
+        #  <TICKER>,<DTYYYYMMDD>,<FIRST>,<HIGH>,<LOW>,<CLOSE>,<VALUE>,
+        #  <VOL>,<OPENINT>,<PER>,<OPEN>,<LAST>
+        # <LAST> = «قیمت آخرین معامله» — در ۹۰٪ روزها با <CLOSE> (قیمت پایانی)
+        # متفاوت است (خساپا: ۳۶۱۴ ردیف از ۳۹۹۹). تا پیش از v9.7 این ستون
+        # نادیده گرفته می‌شد و «آخرین قیمت» همان پایانی را نشان می‌داد.
+        _hdr = {}
+        if lines and lines[0].strip().startswith('<'):
+            _hdr = {nm.strip().upper(): i for i, nm in enumerate(lines[0].split(','))}
+        i_last = _hdr.get('<LAST>', 11)
+        for ln in lines[1:]:
+            if not ln.strip():
+                continue
+            p = [x.strip() for x in ln.split(",")]
+            if len(p) < 11:
+                continue
+            try:
+                d = p[1]
+                dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+                first = float(p[2] or 0)   # <FIRST> = اولین معاملهٔ روز
+                hi = float(p[3]); lo = float(p[4]); c = float(p[5])
+                base = float(p[10] or 0)   # <OPEN>  = «قیمت پایه» (= پایانی دیروز، یا پس از تعدیل)
+                v = float(p[7]) if p[7] else 0
+                # آخرین معامله؛ اگر ستون نبود یا صفر بود به پایانی برمی‌گردد
+                last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else 0.0
+            except (ValueError, IndexError):
+                continue
+            # v8.7 FIX-1: بدنهٔ کندل = «اولین معامله» (ستون ۲). ستون <OPEN> که قبلاً استفاده
+            # می‌شد قیمت «پایه» است نه یک قیمت معاملاتی؛ همیشه ≈ پایانی دیروز بود در نتیجه
+            # (الف) هیچ گپ معاملاتی روی چارت دیده نمی‌شد (۹۹.۸٪ کندل‌ها open==closeِ دیروز)
+            # و (ب) در ~۴۹٪ روزها open بیرون بازهٔ [low, high] می‌افتاد (وضعیت هندسی ناممکن).
+            # اگر روزی FIRST صفر/خالی بود (روز بدون معامله) به قیمت پایه و سپس به پایانی برمی‌گردد.
+            # v8.7 FIX-1b: در روزهای کمیاب که CDN ستون <FIRST> را صفر می‌دهد ولی معامله
+            # رخ داده (خساپا ۲۰۲۱-۱۲-۰۸: پایه=۱۷۵۶ در برابر H=L=C=۱۸۲۵)، پایه می‌تواند
+            # بیرون بازه بیفتد و کندلِ ناممکن بسازد؛ پس داخل [low, high] clamp می‌شود.
+            o = first if first > 0 else (min(max(base, lo), hi) if base > 0 else c)
+            if c > 0 and base > 0:
+                all_rows.append({"time": dt, "base": base, "close": c})
+
+            if hi <= 0 or c <= 0 or o <= 0 or lo <= 0:
+                continue
+            if last <= 0:
+                last = c          # <LAST> معتبر نبود → پایانی جانشین می‌شود
+            # LAST-CLAMP FIX (2026-09-09): «آخرین معامله» قیمتِ معاملاتی است و
+            # ریاضیاتاً باید داخل [low, high] باشد. اگر CDN مقدار معیوب داد (همان
+            # گونه که برای FIRST در v8.7 FIX-1b می‌داد)، clamp می‌شود تا سریِ
+            # «آخرین قیمت» در نمای خطی بیرون از سایهٔ کندل خط نکشد.
+            last = min(max(last, lo), hi)
+            candles.append({"time": dt, "open": o, "high": hi, "low": lo,
+                            "close": c, "last": last})
+            volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
+        # ۲) رویدادهای تعدیل — v8.7 FIX-2 (رویکرد FIX C): فقط از گسست «قیمت پایه» در همین CSV.
+        #    قیمت پایهٔ هر روز (ستون <OPEN>) ذاتاً پایانیِ آخرین روز معاملاتی است؛ تنها در روز
+        #    اجرای افزایش سرمایه / تقسیم / سود نقدی عمداً جابه‌جا می‌شود. پس:
+        #        رویداد  ⇔  base(day) != close(prev trading day)
+        #        ratio   =  base(day) / close(prev trading day)
+        #    این روش هم تقسیم و هم سود نقدی را می‌گیرد (هر دو قیمت پایه را می‌کوبند) و برخلاف
+        #    GetPriceAdjustList، تاریخ «روز اجرای واقعی» را می‌دهد نه تاریخ وقوع مصوبه.
+        #    چرا APF از محاسبهٔ فاکتور حذف شد (آمار خساپا/فولاد، فایل r12.txt):
+        #      (الف) جابه‌جایی تاریخ: ۱۲ رویداد APF خساپا → ۷ مورد بی‌ارتباط، تا ۴۳ روز خطا
+        #          (فولاد: ۱۵ مورد جابه‌جا، بدترین ۱۳۱ روز).
+        #      (ب) ناقص است: رویدادهای ۲۰۰۳–۲۰۰۸ و ۲۰۲۵ را ندارد.
+        #      (ج) ترکیبش با gap-detectorِ پایین، همان رویداد را دوباره می‌شمرد (۲۰ رویداد
+        #          در برابر ۹ تغییر واقعی قیمت پایه) و پرش‌های واقعی بازار را پاک می‌کرد.
+        #    gap-detector ساختگی (close ratio < 0.8) کامل حذف شد: آن پرش‌های ۲۰۰۳–۲۰۰۸
+        #    ریزش واقعی بازار بودند، نه تقسیم — و «روز تحریف» (تغییر فاکتور بدون تغییر پایه)
+        #    می‌ساختند: ۸ روز در خساپا، ۱ روز در فولاد.
+        adj_events = []
+        asc = sorted((x for x in all_rows if x["close"] > 0 and x["base"] > 0),
+                     key=lambda x: x["time"])
+        prev = None
+        for row in asc:
+            if prev:
+                ratio = row["base"] / prev["close"]
+                # آستانه دوتایی: هم ≥ یک واحد قیمت، هم > ADJ_TOL نسبی — تا گردکردنِ عددِ
+                # قیمت، رویداد جعلی نسازد و در عین حال کوچک‌ترین تقسیم واقعی هم حذف نشود.
+                if abs(row["base"] - prev["close"]) >= 1.0 and abs(ratio - 1.0) > ADJ_TOL:
+                    adj_events.append({"date": row["time"], "ratio": round(ratio, 6)})
+            prev = row
+        adj_events.sort(key=lambda e: e["date"])
+        # ۳) فاکتور تعدیل (back-adjustment، مقیاس روز آخر):
+        #        factor(t) = ∏ ratio  برای همهٔ رویدادهایی که date > t
+        #    → آخرین کندل دقیقاً خام می‌ماند (factor=1)، قیمت‌های قدیمی‌تر کوچک‌تر، و هیچ
+        #      پرش مصنوعی ساخته نمی‌شود چون فاکتور فقط در همان روزِ تغییر پایه جابه‌جا می‌شود.
+        #    v8.7: یک پیمایش معکوس O(n+m) به‌جای حلقهٔ تو‌در‌توی n×m (۵۲۸۸×۲۰) قبلی؛ round هم
+        #    از ۶ رقم به ۱۰ رقم (فاکتور قدیمی‌ترین کندل به ~۱e-4 می‌رسد و با ۶ رقم دقتش می‌مرد).
+        ev_dates = [e["date"] for e in adj_events]
+        ev_ratios = [e["ratio"] for e in adj_events]
+        factors = [None] * len(candles)
+        # ترتیب‌مستقل: CSV امروز نزولی است (تازه‌به‌قدیم) ولی نباید به آن اعتماد کرد؛
+        # ایندکس‌ها را یک‌بار صعودی مرتب می‌کنیم و از جدیدترین به قدیمی‌ترین می‌رویم.
+        order = sorted(range(len(candles)), key=lambda i: candles[i]["time"])
+        f = 1.0
+        j = len(ev_dates) - 1
+        for i in reversed(order):
+            t = candles[i]["time"]
+            while j >= 0 and ev_dates[j] > t:
+                f *= ev_ratios[j]
+                j -= 1
+            factors[i] = {"time": t, "factor": round(f, 10)}
+
+        result = {
+            "status": "success",
+            "candles": candles,
+            "volumes": volumes,
+            "factors": factors,
+            "adjustEvents": adj_events,
+            "adjustSource": "base-price-discontinuity",   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
+            "count": len(candles),
+        }
+        CHART_CACHE[symbol] = (time.time(), result)
+        return result
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+KEY_LEVELS_CACHE = {}
+KEY_LEVELS_TTL = 300  # ۵ دقیقه — محاسبه گران نیست ولی دوباره پول نشود
+
+
+def _swing_extremes(rows, k=3, min_strength=2):
+    """Swing highs/lows با rolling extremes:
+    نقطهٔ i اگر max/min (در پنجرهٔ [i-k, i+k]) باشد و تعداد تکرارش ≥ min_strength.
+    خروجی: [(idx, price, strength, kind)] — kind: 'high'|'low'"""
+    n = len(rows)
+    out = []
+    if n < 2 * k + 1:
+        return out
+    for i in range(k, n - k):
+        win_hi = rows[i - k: i + k + 1]
+        win_lo = rows[i - k: i + k + 1]
+        r = rows[i]
+        # سقف/کف واقعی پنجره — و باید خودش maximum/minimum باشد
+        hi = max(x["high"] for x in win_hi)
+        lo = min(x["low"] for x in win_lo)
+        cnt_hi = sum(1 for x in win_hi if abs(x["high"] - r["high"]) <= r["high"] * 0.005)
+        cnt_lo = sum(1 for x in win_lo if abs(x["low"] - r["low"]) <= r["low"] * 0.005)
+        if r["high"] >= hi * 0.995 and cnt_hi >= min_strength:
+            out.append({"idx": i, "price": r["high"], "strength": cnt_hi, "kind": "high"})
+        elif r["low"] <= lo * 1.005 and cnt_lo >= min_strength:
+            out.append({"idx": i, "price": r["low"], "strength": cnt_lo, "kind": "low"})
+    return out
+
+
+def _merge_levels(ext, merge_pct=0.008, keep=10):
+    """ادغام پیکهای نزدیک (در بازهٔ merge_pct) → سطحهای متمایز؛ نزولی، keep تا."""
+    if not ext:
+        return []
+    ext = sorted(ext, key=lambda e: e["price"])
+    merged = []
+    for e in ext:
+        if merged and abs(e["price"] - merged[-1]["price"]) / merged[-1]["price"] <= merge_pct:
+            # نزدیک → قویتر برنده
+            if e["strength"] > merged[-1]["strength"]:
+                merged[-1] = e
+            continue
+        merged.append(e)
+    # نگهداشتن keep تا آخرین سطح (نزدیکترین به قیمت فعلی)
+    merged.sort(key=lambda e: e["idx"], reverse=True)
+    return merged[:keep]
+
+
+def _order_blocks(rows, ext, lookback=2, vol_mult=1.5, keep=3):
+    """Demand/Supply Order Blocks ساده:
+    Demand: آخرین کندل نزولیای که کفش ≈ swing low است و حجمش ≥ vol_mult× میانگین
+    Supply: آخرین کندل صعودیای که سقفش ≈ swing high است و حجمش ≥ vol_mult× میانگین
+    مستطیل = [کمترین low، بیشترین high] در بازهٔ lookback کندل قبل/بعد."""
+    if not rows or not ext:
+        return []
+    avg_vol = sum(r["volume"] for r in rows) / max(1, len(rows))
+    out = []
+    off = sorted(ext, key=lambda e: e["idx"], reverse=True)
+    used_idx = set()
+    for e in off:
+        if len(out) >= keep * 2 or e["idx"] in used_idx:
+            break
+        i = e["idx"]
+        body = rows[i]
+        w = rows[max(0, i - lookback): min(len(rows), i + lookback + 1)]
+        if body["volume"] < avg_vol * vol_mult:
+            continue
+        if e["kind"] == "high" and body["close"] >= body["open"]:
+            # Supply: سقف swing + کندل صعودی در آن
+            top = max(x["high"] for x in w)
+            bot = min(x["low"] for x in w)
+            out.append({"type": "supply", "time_start": rows[max(0, i - lookback)]["date"],
+                        "time_end": rows[min(len(rows) - 1, i + lookback)]["date"],
+                        "top": top, "bottom": bot, "strength": e["strength"]})
+            used_idx.add(e["idx"])
+        elif e["kind"] == "low" and body["close"] <= body["open"]:
+            # Demand: کف swing + کندل نزولی در آن
+            top = max(x["high"] for x in w)
+            bot = min(x["low"] for x in w)
+            out.append({"type": "demand", "time_start": rows[max(0, i - lookback)]["date"],
+                        "time_end": rows[min(len(rows) - 1, i + lookback)]["date"],
+                        "top": top, "bottom": bot, "strength": e["strength"]})
+            used_idx.add(e["idx"])
+    return out[:keep]
+
+
+def _key_levels_from_history(rows):
+    """محاسبهٔ سطوح کلیدی + بلاکهای Demand/Supply از دهات تاریخچه.
+    FIX: فقط ۳ مقاومت + ۳ حمایت برتر (قویترینها) — نه ۱۰ سطح که چارت را شلوغ میکند."""
+    if not rows:
+        return {"levels": [], "blocks": [], "count": 0}
+    ext = _swing_extremes(rows)
+    merged = _merge_levels(ext)
+    if not merged:
+        return {"levels": [], "blocks": [], "count": 0}
+    # تفکیک حمایت/مقاومت و هرکدام ۳ تای قویتر (strength بیشتر، بعد idx اخیر)
+    res = sorted([e for e in merged if e["kind"] == "high"],
+                 key=lambda e: (e["strength"], e["idx"]), reverse=True)[:3]
+    sup = sorted([e for e in merged if e["kind"] == "low"],
+                 key=lambda e: (e["strength"], e["idx"]), reverse=True)[:3]
+    levels = []
+    for e in sorted(res + sup, key=lambda e: e["idx"], reverse=True):
+        levels.append({"price": round(e["price"], 0), "strength": e["strength"],
+                       "kind": e["kind"], "date": rows[e["idx"]]["date"]})
+    blocks = _order_blocks(rows, ext)
+    return {"levels": levels, "blocks": blocks, "count": len(levels) + len(blocks)}
+
+
+@app.get("/api/chart/{symbol}/key-levels")
+def get_key_levels(symbol: str):
+    """سطوح کلیدی (Swing High/Low) + بلوکهای تقاضا/عرضه — از تاریخچهٔ قیمت DB (price_history)."""
+    import time as _t
+    _cached = KEY_LEVELS_CACHE.get(symbol)
+    if _cached and (_t.time() - _cached[0]) < KEY_LEVELS_TTL:
+        return _cached[1]
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        rows = [{"date": r[1], "open": r[2], "high": r[3], "low": r[4], "close": r[5],
+                 "volume": r[6]} for r in conn.execute(
+            "SELECT symbol, date, open, high, low, close, volume FROM price_history "
+            "WHERE symbol=? ORDER BY date DESC LIMIT 250", (symbol,))]
+        conn.close()
+        rows.reverse()  # صعودی
+        if len(rows) < 60:
+            return {"status": "ok", "symbol": symbol, "levels": [], "blocks": [],
+                    "count": 0, "message": "تاریخچهٔ کافی نیست (< 60 روز)"}
+        result = _key_levels_from_history(rows)
+        result.update({"status": "ok", "symbol": symbol,
+                       "message": f"{len(rows)} روز آخر"})
+        KEY_LEVELS_CACHE[symbol] = (time.time(), result)
+        return result
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ===== v9.7.6 — /api/ma: میانگینهای متحرک + رویدادهای تقویم بازار یک نماد =====
+# خروجی برای تب تکنیکال: سریهای MA (روی کندل) + رویدادهای cache.json تقویم
+# با mبنای زمانی یکسانِ کندل‌ها (ظهر UTC آن روز) تا مارکر دقیقاً روی بار بنشیند.
+MA_CACHE = {}
+MA_TTL = 900  # ۱۵ دقیقه
+MA_WINDOWS = [5, 20, 50, 120]
+_CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
+_cal_cache = {"mtime": 0.0, "events": []}
+
+
+def _cal_classify(title, tid):
+    """تکرار حداقلِ منطق calendarService.js سمت سرور (دسته برای رنگ/آیکون مارکر)."""
+    import re as _re
+    t = str(title or "").replace("\u200c", "").replace("\u064a", "\u06cc").replace("\u0643", "\u06a9")
+    if _re.search("لغو|عدم برگزاری|به تعویق|تغییر زمان|انتقال مجمع|موافقت با تغییر", t):
+        return "assemblyChange"
+    if tid == 1:
+        return "assembly"
+    if tid == 2:
+        return "assemblyExtra"
+    if tid == 3:
+        return "dividend"
+    if _re.search("افزایش\\s*سرمایه", t):
+        return "capitalIncrease"
+    if _re.search("عرضه\\s*اولیه|عرضه\\s*در\\s*بازار", t):
+        return "ipo"
+    if _re.search("سررسید|اخزا|صکوک|اوراق", t):
+        return "bondMaturity"
+    return "other"
+
+
+def _cal_events_for(symbol):
+    """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
+    try:
+        mtime = os.path.getmtime(_CAL_CACHE_PATH)
+    except Exception:
+        return []
+    if mtime != _cal_cache["mtime"]:
+        try:
+            with open(_CAL_CACHE_PATH, encoding="utf-8") as f:
+                _cal_cache["events"] = (json.load(f) or {}).get("events") or []
+            _cal_cache["mtime"] = mtime
+        except Exception:
+            return []
+    _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
+    want = _norm(symbol)
+    out, seen = [], set()
+    _tg = __import__("calendar").timegm
+    for ev in _cal_cache["events"]:
+        if _norm(ev.get("asset_symbol_trade")) != want:
+            continue
+        try:
+            dt = datetime.datetime.fromisoformat(str(ev.get("date_time")))
+        except Exception:
+            continue
+        title = str(ev.get("event_title") or "")[:140]
+        key = (dt.date().isoformat(), title)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({
+            "date": dt.date().isoformat(),
+            # مبنای کندل: ظهر UTC — هم‌قرارداد rvDateToTs در فرانت
+            "ts": int(_tg((dt.year, dt.month, dt.day, 12, 0, 0, 0, 0, 0))) * 1000,
+            "title": title,
+            "cat": _cal_classify(title, int(ev.get("event_type_id") or 0)),
+        })
+    out.sort(key=lambda x: x["ts"])
+    return out
+
+
+@app.get("/api/ma/{symbol}")
+def get_ma_events(symbol: str, days: int = Query(730)):
+    """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) از price_history + رویدادهای تقویم نماد."""
+    import time as _t
+    days = max(120, min(int(days or 730), 2000))
+    ck = f"{symbol}|{days}"
+    _cached = MA_CACHE.get(ck)
+    if _cached and (_t.time() - _cached[0]) < MA_TTL:
+        return _cached[1]
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        rows = conn.execute(
+            "SELECT date, close FROM price_history WHERE symbol=? ORDER BY date DESC LIMIT ?",
+            (symbol, days)).fetchall()
+        conn.close()
+        rows.reverse()  # صعودی
+        closes = [(r[0], float(r[1])) for r in rows if r[1] is not None]
+        ma = {}
+        for w in MA_WINDOWS:
+            ser, acc = [], 0.0
+            for i, (d, c) in enumerate(closes):
+                acc += c
+                if i >= w:
+                    acc -= closes[i - w][1]
+                ser.append([d, round(acc / (i + 1), 2) if i >= w - 1 else None])
+            ma[f"ma{w}"] = ser
+        result = {"status": "ok", "symbol": symbol, "periods": MA_WINDOWS,
+                  "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes)}
+        MA_CACHE[ck] = (_t.time(), result)
+        return result
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+PATTERNS_CACHE = {}
+
+
+
+def _adjust_events_for(symbol, rows):
+    """رویدادهای تعدیل — از همان منطق /api/chart (APF + gap-detection) reuse میشود."""
+    try:
+        import test_tsetmc  # noqa — نه لازم؛ فقط اگر importError
+    except Exception:
+        pass
+    try:
+        j = get_chart_tsetmc(symbol)
+        return j.get("adjustEvents") or []
+    except Exception:
+        return []
+
+
+@app.get("/api/fts")
+def get_fts_scan(limit: int = 0):
+    """اسکن کامل ۵ شاخص FTS روی همهٔ نمادهای FS-دار — مرتب بر اساس score."""
+    try:
+        import fts_engine
+        _cfg = load_fts_config()
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        try:
+            results = fts_engine.scan_all(conn, limit=limit, cfg=_cfg)
+        finally:
+            conn.close()
+        return {"status": "success", "count": len(results), "data": results}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/fts/config")
+def get_fts_config():
+    return {"status": "success", "config": load_fts_config()}
+
+
+@app.post("/api/fts/config")
+def set_fts_config(payload: dict = None):
+    """ذخیرهٔ پیش‌شرط‌های ۵ شاخص (از پنل تنظیمات کدال).
+
+    v8: نوع‌سنجی بر پایهٔ FTS_DEFAULTS — `industry_mode` رشته است و نباید به float
+    تبدیل شود؛ لیست صنایع با نام‌های جدید mandatory_sectors/free_sectors میآید و
+    نام‌های قدیمی (bad_sectors/good_sectors) هم پذیرفته میشود (backward compat).
+    """
+    if not payload:
+        return {"status": "error", "message": "بدون داده"}
+    aliases = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
+    cfg = dict(FTS_DEFAULTS)
+    for key, v in payload.items():
+        k = aliases.get(key, key)
+        if k not in FTS_DEFAULTS:
+            continue
+        if k in FTS_LIST_KEYS:
+            if isinstance(v, str):
+                v = [s.strip() for s in v.replace("،", ",").split(",") if s.strip()]
+            cfg[k] = [str(s).strip() for s in (v or []) if str(s).strip()]
+        elif k in FTS_STR_KEYS:
+            cfg[k] = str(v)
+        elif isinstance(FTS_DEFAULTS[k], bool):
+            cfg[k] = bool(v)
+        elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
+            try:
+                cfg[k] = int(float(v))
+            except (TypeError, ValueError):
+                pass
+        else:
+            try:
+                cfg[k] = float(v)
+            except (TypeError, ValueError):
+                pass
+    try:
+        with open(FTS_CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        return {"status": "success", "config": cfg}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:160]}
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# v9.0 — سازوکار انتخابگر سبد: تصمیم Accept / Reject / Monitor روی هر نماد
+# ══════════════════════════════════════════════════════════════════════════
+
+SELECTION_STATUSES = {"accept", "reject", "monitor", "pending"}
+PORTFOLIO_MIN = 5          # حداقل سهمهای سبد
+PORTFOLIO_MAX = 7          # حداکثر سهمهای سبد
+PORTFOLIO_WEIGHT_CAP_PCT = 20.0   # سقف وزن هر سهم (٪) — بازهٔ راهبردی ۱۰ تا ۲۰
+
+# نگاشت حالت قیمت‌گذاری FTS به نوع دارایی (دلاری/ریالی). این فقط «پیش‌فرض» است و
+# کاربر میتواند در مودال سبد اصلاحش کند؛ مبنای دلاری/ریالی بودن ساختار درآمد
+# شرکت است نه صرفاً آزاد/دستوری بودن قیمت.
+ASSET_KIND_BY_MODE = {"free": "dollar", "mandatory": "rial", "neutral": ""}
+
+
+def _sel_to_dict(r) -> dict:
+    d = {k: r[k] for k in r.keys()}
+    d["asset_kind"] = d.get("asset_kind") or ASSET_KIND_BY_MODE.get(
+        (d.get("pricing_mode") or "").strip().lower(), "")
+    return d
+
+
+@app.get("/api/selection/portfolio")
+def get_selection_portfolio():
+    """تصمیمات سبد: سبد نهایی (accept) + رادار زیر نظر (monitor) + شمارش وضعیتها."""
+    try:
+        conn = get_db()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM selection_decisions ORDER BY updated_at DESC").fetchall()
+        finally:
+            conn.close()
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+
+    decisions = [_sel_to_dict(r) for r in rows]
+    counts = {"accept": 0, "reject": 0, "monitor": 0, "pending": 0}
+    for d in decisions:
+        if d.get("status") in counts:
+            counts[d.get("status")] += 1
+
+    accepted = [d for d in decisions if d.get("status") == "accept"]
+    # وزن: اگر کاربر وزن دستی ثبت کرده همان، وگرنه پیشنهاد وزن مساوی سبد.
+    eq = round(100.0 / len(accepted), 1) if accepted else 0.0
+    for d in accepted:
+        w = float(d.get("weight_pct") or 0)
+        d["weight_eff_pct"] = round(w if w > 0 else eq, 1)
+        d["weight_manual"] = bool(w > 0)
+        d["over_cap"] = d["weight_eff_pct"] > PORTFOLIO_WEIGHT_CAP_PCT
+    sum_w = round(sum(d["weight_eff_pct"] for d in accepted), 1)
+    kinds = {"dollar": 0, "rial": 0, "mixed": 0}
+    for d in accepted:
+        k = d.get("asset_kind") or ""
+        kinds[k if k in ("dollar", "rial") else "mixed"] += 1
+
+    return {
+        "status": "success",
+        "decisions": decisions,
+        "portfolio": accepted,
+        "monitor": [d for d in decisions if d.get("status") == "monitor"],
+        "counts": counts,
+        "limits": {
+            "min": PORTFOLIO_MIN, "max": PORTFOLIO_MAX,
+            "weight_cap_pct": PORTFOLIO_WEIGHT_CAP_PCT,
+            "equal_weight_pct": eq, "sum_weight_pct": sum_w,
+        },
+        "kind_mix": kinds,
+    }
+
+
+@app.post("/api/selection/decision")
+def post_selection_decision(payload: dict = None):
+    """ثبت/بروزرسانی تصمیم روی یک نماد (upsert با کلید نماد).
+
+    وضعیت `pending` یعنی «انصراف از تصمیم» → رکورد حذف میشود تا بج جدول
+    به حالت «بررسی‌نشده» برگردد (به‌جای نگه‌داشتن ردیف بی‌اثر).
+    """
+    if not payload:
+        return {"status": "error", "message": "بدون داده"}
+    symbol = str(payload.get("symbol") or "").strip()
+    if not symbol:
+        return {"status": "error", "message": "نماد ارسال نشده"}
+    status = str(payload.get("status") or "").strip().lower()
+    if status not in SELECTION_STATUSES:
+        return {"status": "error", "message": "وضعیت نامعتبر: " + status}
+
+    def _num(key, cast, default=0):
+        v = payload.get(key)
+        if v in (None, ""):
+            return cast(default)
+        try:
+            return cast(float(v))
+        except (TypeError, ValueError):
+            return cast(default)
+
+    rec = {
+        "symbol": symbol,
+        "name": str(payload.get("name") or "")[:120],
+        "status": status,
+        "reason": str(payload.get("reason") or "")[:200],
+        "note": str(payload.get("note") or "")[:500],
+        "stop_loss": str(payload.get("stop_loss") or "")[:120],
+        "asset_kind": str(payload.get("asset_kind") or "")[:10],
+        "weight_pct": _num("weight_pct", float),
+        "price": _num("price", float),
+        "score": _num("score", int),
+        "pricing_mode": str(payload.get("pricing_mode") or "")[:20],
+        "sector": str(payload.get("sector") or "")[:80],
+        "updated_at": datetime.datetime.now().isoformat(timespec="seconds"),
+    }
+    try:
+        conn = get_db()
+        try:
+            if status == "pending":
+                conn.execute("DELETE FROM selection_decisions WHERE symbol = ?", (symbol,))
+            else:
+                conn.execute("""
+                    INSERT INTO selection_decisions
+                        (symbol, name, status, reason, note, stop_loss, asset_kind,
+                         weight_pct, price, score, pricing_mode, sector, updated_at)
+                    VALUES (:symbol, :name, :status, :reason, :note, :stop_loss, :asset_kind,
+                            :weight_pct, :price, :score, :pricing_mode, :sector, :updated_at)
+                    ON CONFLICT(symbol) DO UPDATE SET
+                        name=excluded.name, status=excluded.status, reason=excluded.reason,
+                        note=excluded.note, stop_loss=excluded.stop_loss,
+                        asset_kind=excluded.asset_kind, weight_pct=excluded.weight_pct,
+                        price=excluded.price, score=excluded.score,
+                        pricing_mode=excluded.pricing_mode, sector=excluded.sector,
+                        updated_at=excluded.updated_at
+                """, rec)
+            conn.commit()
+            row = conn.execute("SELECT * FROM selection_decisions WHERE symbol = ?",
+                               (symbol,)).fetchone()
+        finally:
+            conn.close()
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+
+    return {"status": "success",
+            "decision": (_sel_to_dict(row) if row else None),
+            "symbol": symbol, "saved_status": status}
+
+
+@app.delete("/api/selection/decision/{symbol}")
+def delete_selection_decision(symbol: str):
+    """پاک کردن تصمیم یک نماد (بازگشت به «بررسی‌نشده»)."""
+    try:
+        conn = get_db()
+        try:
+            cur = conn.execute("DELETE FROM selection_decisions WHERE symbol = ?", (symbol,))
+            conn.commit()
+            n = cur.rowcount
+        finally:
+            conn.close()
+        return {"status": "success", "deleted": n}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+
+
+# ══════════════════════ v9.7.3 — واچ‌لیست کاربر + ماتریس تایید سه‌گانه ══════════════════════
+# منطق در watchlist_store.py است؛ اینجا فقط HTTP است. سه نکته که عمدی‌اند:
+#  ۱) ماتریس «محاسبی» است و چیزی ذخیره نمی‌کند — فقط انتخابِ کاربر می‌ماند.
+#  ۲) یک build_ctx + یک bulk_scan برای کل واچ‌لیست (ضدِ N+1؛ بی‌fund_rows
+#     هر نماد ~۲۰ کوئری FTS می‌زد و ۶۰ نماد ≈ ۱۲۰۰ کوئری در یک درخواست).
+#  ۳) نمادها نرمال‌سازی می‌شوند، پس «داريك» و «داریک» یک ردیف‌اند (باگ v9.7.3).
+
+@app.get("/api/watchlist")
+def get_watchlist():
+    """واچ‌لیست کاربر، تازه‌ترین اول."""
+    try:
+        import watchlist_store
+        conn = get_db()
+        try:
+            rows = watchlist_store.list_rows(conn)
+        finally:
+            conn.close()
+        return {"status": "success", "count": len(rows), "data": rows,
+                "limit": watchlist_store.MAX_WATCHLIST}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+
+
+@app.post("/api/watchlist")
+def post_watchlist(payload: dict = None):
+    """افزودن/بروزرسانی یک نماد در واچ‌لیست (upsert با کلید نرمال)."""
+    if not payload:
+        return {"status": "error", "message": "بدون داده"}
+    symbol = str(payload.get("symbol") or "").strip()
+    if not symbol:
+        return {"status": "error", "message": "نماد ارسال نشده"}
+    try:
+        import watchlist_store
+        conn = get_db()
+        try:
+            rec = watchlist_store.add(conn, symbol, name=str(payload.get("name") or ""),
+                                      note=str(payload.get("note") or ""))
+            conn.commit()
+            n = watchlist_store.count(conn)
+        finally:
+            conn.close()
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+    if rec is None:
+        return {"status": "error", "message": "نماد نامعتبر (تهی پس از نرمال‌سازی)"}
+    return {"status": "success", "watch": rec, "count": n}
+
+
+@app.delete("/api/watchlist/{symbol}")
+def delete_watchlist(symbol: str):
+    """حذف با هر نوشتاری (عربی/فارسی) — همان کلیدِ نرمالِ افزودن."""
+    try:
+        import watchlist_store
+        conn = get_db()
+        try:
+            n = watchlist_store.remove(conn, symbol)
+            conn.commit()
+        finally:
+            conn.close()
+        return {"status": "success", "deleted": n}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
+
+
+@app.get("/api/watchlist/matrix")
+def get_watchlist_matrix(symbols: str = Query(None)):
+    """ماتریس «تایید سه‌گانه» برای واچ‌لیست — read-only و محاسبی.
+
+    `symbols` (اختیاری): فهرست کاما-جدا برای دیدن نتیجهٔ نمادهایی که
+    هنوز ذخیره نشده‌اند (مثلاً ردیف‌های مرئی اسکرینر). بدون آن، خودِ جدول.
+    خروجی: سه ستون pass|warn|fail|nodata + verdict نهایی (CONFIRMED/PROBABLE/
+    WATCH/WEAK/INSUFFICIENT) + conf_reasons (متن هر هشدار) + یادداشت کاربر + asof
+    هر ستون. هیچ وضعیتی سهم را از ماتریس حذف نمی‌کند.
+    """
+    try:
+        import watchlist_store
+        # «symbols» فقط وقتی رشته است معنا دارد. اگر route مستقیم صدا زده شود
+        # (بدون HTTP) مقدار پیش‌فرض خودش شیءِ Query(None) است و truthy هم هست؛
+        # بدون این محافظ، آن شیء به فهرست نماد تبدیل می‌شد و ماتریس به‌جای
+        # خواندن جدول واچ‌لیست، یک «نماد» بی‌ربط داوری می‌کرد.
+        raw = symbols if isinstance(symbols, str) else None
+        probe = None
+        if raw and raw.strip():
+            probe = [s.strip() for s in raw.split(",") if s.strip()]
+            probe = probe[:watchlist_store.MAX_WATCHLIST]
+        conn = get_db()
+        try:
+            out = watchlist_store.matrix(conn, symbols=probe,
+                                         cfg=None, fts_cfg=load_fts_config())
+        finally:
+            conn.close()
+        return out
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200], "count": 0, "rows": []}
+
+
+def _fts_market_ctx(conn, symbol: str) -> tuple:
+    """(market_cap_rials, sector, total_market_cap_rials) برای یک نماد."""
+    row = conn.execute(
+        "SELECT COALESCE(m.p_closing * i.total_shares, 0), COALESCE(i.sector_name, 'سایر') "
+        "FROM instruments i LEFT JOIN market_watch m ON m.ins_code = i.ins_code "
+        "WHERE i.l_val18=? OR i.l_val30=? "
+        "ORDER BY i.updated_at DESC LIMIT 1", (symbol, symbol)).fetchone()
+    mcap = float(row[0] or 0) if row else 0.0
+    sector = (row[1] if row else "") or "سایر"
+    total = conn.execute(
+        "SELECT SUM(p_closing * total_shares) FROM market_watch").fetchone()[0] or 0.0
+    return mcap, sector, float(total)
+
+
+@app.get("/api/fts/{symbol}")
+def get_fts_symbol(symbol: str):
+    """۵ شاخص FTS برای یک نماد + جزئیات کامل هر شاخص."""
+    try:
+        import fts_engine
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        try:
+            mcap, sector, total_mcap = _fts_market_ctx(conn, symbol)
+            result = fts_engine.scan_symbol(conn, symbol, mcap, total_mcap, sector,
+                                            cfg=load_fts_config())
+            result["market_cap_rials"] = mcap
+            return {"status": "success", "data": result}
+        finally:
+            conn.close()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+
+@app.get("/api/chart-db/{symbol}")
+def get_chart_db(symbol: str, adjustment: int = 3):
+    """(v7.3.2 — Hybrid Data Fusion) تمام تاریخچه از price_history + تزریق کندل امروز از تابلوخوانی.
+
+    - تاریخچه کامل (بدون limit) — اندیکاتورها به عمق نیاز دارند
+    - کندل امروز (اگر در price_history نیست یا کهنه است) از market_watch زنده تزریق میشود
+    - adjustment: 0=خام، 3=عملکردی (فقط برای فرانت که factor را اعمال میکند؛ اینجا raw میفرستیم)
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        try:
+            rows = conn.execute(
+                "SELECT date, open, high, low, close, volume FROM price_history "
+                "WHERE symbol = ? ORDER BY date ASC", (symbol,)).fetchall()
+            # v9.7: price_history ستون «آخرین معامله» ندارد (فقط OHLCV)؛ پس last
+            # روی همان close می‌نشیند و گمراه‌کننده نیست — مسیر واقعیِ last،
+            # /api/chart (CSV تکمیل‌شده با <LAST>) است.
+            candles = [{"time": r[0], "open": float(r[1]), "high": float(r[2]),
+                        "low": float(r[3]), "close": float(r[4]),
+                        "last": float(r[4]),
+                        "volume": float(r[5] or 0)} for r in rows]
+        finally:
+            conn.close()
+
+        # ---- تزریق کندل امروز از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
+        today = datetime.date.today().strftime("%Y-%m-%d")
+        last_db_date = candles[-1]["time"] if candles else ""
+        live_injected = False
+        live_error = None
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=15)
+            try:
+                # v8.7 FIX-4: نام ستون‌ها با اسکیمای واقعی market_watch تطبیق داده شد
+                # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
+                #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
+                #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
+                row = conn.execute(
+                    "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, i.l_val18, m.p_last "
+                    "FROM instruments i LEFT JOIN market_watch m ON i.ins_code = m.ins_code "
+                    "WHERE i.l_val18 = ? OR i.l_val30 = ? ORDER BY m.d_even DESC LIMIT 1",
+                    (symbol, symbol)).fetchone()
+            finally:
+                conn.close()
+            if row and row[3] and float(row[3]) > 0:   # p_closing موجود و معتبر
+                p_first, p_max, p_min, p_close, vol = (
+                    float(row[0] or 0), float(row[1] or 0), float(row[2] or 0),
+                    float(row[3]), float(row[4] or 0))
+                p_last = float(row[6] or 0) if len(row) > 6 else 0.0   # v9.7
+                # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
+                o_l = p_first if p_first > 0 else p_close
+                h_l = p_max if p_max > 0 else max(o_l, p_close)
+                l_l = p_min if p_min > 0 else min(o_l, p_close)
+                h_l = max(h_l, o_l, p_close)          # high باید بالای بدنه باشد
+                l_l = min(l_l, o_l, p_close) if l_l > 0 else min(o_l, p_close)
+                bar = {"time": today, "open": o_l, "high": h_l, "low": l_l,
+                       "close": p_close, "volume": vol,
+                       # v9.7: «آخرین معامله» زنده از market_watch.p_last
+                       "last": p_last if p_last > 0 else p_close}
+                if last_db_date < today:
+                    candles.append(bar)
+                    live_injected = True
+                elif candles and candles[-1]["time"] == today:
+                    # جایگزینی با دادهٔ زندهٔ تازه‌تر
+                    candles[-1] = bar
+                    live_injected = True
+            elif row:
+                live_error = "no_valid_p_closing"
+        except Exception as e:
+            # v8.7 FIX-4: خطا دیگر خاموش نیست — در پاسخ منعکس می‌شود تا در لاگ/دیباگ دیده شود
+            live_error = f"{type(e).__name__}: {e}"
+
+        return {"status": "success", "symbol": symbol, "count": len(candles),
+                "candles": candles, "liveInjected": live_injected,
+                "liveError": live_error,
+                "adjustment": adjustment}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/patterns/{symbol}")
+def get_patterns(symbol: str):
+    """نقاط [time, price] الگوها برای KLineChart.createOverlay — بدون drift.
+
+    خروجی: support/resistance (خط افقی از swing levels)، trendlines (خط از دو pivot)،
+    breakout zone (آستانهٔ آخرین رنج) — همه با timestamp میلی‌ثانیه (ظهر UTC؛ فرمت overlay v10).
+    """
+    import time as _t
+    cached = PATTERNS_CACHE.get(symbol)
+    if cached and (_t.time() - cached[0]) < KEY_LEVELS_TTL:
+        return cached[1]
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        rows = [{"date": r[1], "open": r[2], "high": r[3], "low": r[4], "close": r[5],
+                 "volume": r[6]} for r in conn.execute(
+            "SELECT symbol, date, open, high, low, close, volume FROM price_history "
+            "WHERE symbol=? ORDER BY date DESC LIMIT 250", (symbol,))]
+        conn.close()
+        rows.reverse()
+        if len(rows) < 60:
+            return {"status": "ok", "symbol": symbol, "overlays": [], "count": 0,
+                    "message": "تاریخچه کافی نیست"}
+        # FIX v7.2: سطحها باید در فضای تعدیلشده باشند (chart با factor رسم میکند) — وگرنه Y-mismatch
+        evs = _adjust_events_for(symbol, rows)
+        for r in rows:
+            f = 1.0
+            for e in evs:
+                if e["date"] > r["date"]:
+                    f *= e["ratio"]
+            r["high"] *= f; r["low"] *= f; r["close"] *= f
+        ext = _swing_extremes(rows, k=3, min_strength=2)
+        levels = _merge_levels(ext, keep=6)
+        # v8.7 FIX-3: خروجی باید میلی‌ثانیه باشد (سند KLineChart v10) — قبلاً ثانیه بود و
+        # نقاط overlay قبل از اولین کندل می‌افتادند. +43200 → ظهر UTC تا خوانش تقویمی
+        # در هر منطقهٔ زمانی همان روز بماند.
+        ts_of = lambda d: (int(__import__("calendar").timegm(
+            __import__("datetime").datetime.strptime(d, "%Y-%m-%d").timetuple())) + 43200) * 1000
+        overlays = []
+        # S/R خط افقی — دو نقطه (اول/آخر) برای کشش کامل
+        for lv in levels:
+            overlays.append({
+                "name": "horizontalStraightLine", "kind": "sr",
+                "points": [{"timestamp": ts_of(rows[0]["date"]), "value": lv["price"]}],
+                "styles": {"line": {"style": "dashed", "size": 1,
+                                     "color": "#f59e0b" if lv["kind"] == "high" else "#38bdf8"}},
+                "meta": {"strength": lv["strength"], "kind": lv["kind"]},
+            })
+        # Trendline: دو pivot high آخر → خط روند نزولی/صعودی سقف؛ دو pivot low → کف
+        highs = [e for e in ext if e["kind"] == "high"][-2:]
+        lows = [e for e in ext if e["kind"] == "low"][-2:]
+        for pts, kind, color in ((highs, "trend-high", "#ef4444"), (lows, "trend-low", "#22c55e")):
+            if len(pts) == 2:
+                overlays.append({
+                    "name": "trendLine", "kind": kind,
+                    "points": [{"timestamp": ts_of(rows[p["idx"]]["date"]), "value": p["price"]}
+                               for p in pts],
+                    "styles": {"line": {"color": color, "size": 2}},
+                })
+        # Breakout zone: مستطیل از آخرین رنج تراکم (min/max ۲۰ کندل آخر)
+        last20 = rows[-20:]
+        hi = max(r["high"] for r in last20)
+        lo = min(r["low"] for r in last20)
+        overlays.append({
+            "name": "rect", "kind": "breakout-zone",
+            "points": [{"timestamp": ts_of(last20[0]["date"]), "value": hi},
+                       {"timestamp": ts_of(last20[-1]["date"]), "value": lo}],
+            "styles": {"color": "#2962ff"},
+        })
+        result = {"status": "ok", "symbol": symbol, "overlays": overlays, "count": len(overlays)}
+        PATTERNS_CACHE[symbol] = (_t.time(), result)
+        return result
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ================= وضعیت بازار (TradersArena — polling proxy) =================
+TA_BASE = "https://tradersarena.ir"
+TA_CACHE = {}          # path → (ts, data)
+TA_TTL = 30            # ثانیه — polling سبک (UI هم interval خودش را دارد)
+
+
+def _ta_fetch(path: str, force: bool = False):
+    """GET tradersarena.ir/data/<path> با کش کوتاه (TTL 30s) — بدون کرش در قطعی."""
+    import requests as _rq
+    now = time.time()
+    if not force:
+        c = TA_CACHE.get(path)
+        if c and (now - c[0]) < TA_TTL:
+            return c[1]
+    try:
+        r = _rq.get(TA_BASE + path, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+                    timeout=15)
+        j = r.json()
+        TA_CACHE[path] = (now, j)
+        return j
+    except Exception as e:
+        # کش کهنه را نگه دار (حالت قطعی اینترنت → آخرین داده)
+        c = TA_CACHE.get(path)
+        if c:
+            return c[1]
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/market-status/overview")
+def ta_overview():
+    """وضعیت کلی بازار: M0 + totals0 + industries (برای پنل وضعیت بازار)."""
+    m0 = _ta_fetch("/data/market0")
+    tot = _ta_fetch("/data/market/chart/totals0")
+    return {"status": "ok", "market": m0, "timeline": tot}
+
+
+@app.get("/api/market-status/timeline")
+def ta_timeline():
+    return {"status": "ok", "data": _ta_fetch("/data/market/chart/totals0")}
+
+
+@app.get("/api/market-status/industries")
+def ta_industries():
+    return {"status": "ok", "data": _ta_fetch("/data/industries-csv")}
+
+
+@app.get("/api/market-status/mainwatch")
+def ta_mainwatch():
+    return {"status": "ok", "data": _ta_fetch("/data/mainwatch/symbols")}
+
+
+@app.get("/api/market-status/histo")
+def ta_histo():
+    return {"status": "ok", "data": _ta_fetch("/data/market/histo-status")}
+
+
+# ============ v9.7.5 فاز ۱ — داشبورد وضعیت بازار، محاسبه از market.db ============
+# این مسیرها جانشینِ پروکسیِ تریدرزآرنا شده‌اند: همان پنل‌ها، اما از
+# market_watch + client_type + instrumentsِ خودِ بانک. تنها چیزی که از بیرون
+# نمی‌آید «عدد» است؛ خطِ زمانِ درون‌روزی از mstat_snap خوانده می‌شود که هر
+# همگام‌سازی یک نقطه‌اش می‌کند (بازار که بسته باشد، تایم‌لاین آماده نیست و
+# UI همین را می‌گوید — عددِ جعلی روی نمودار نمی‌نشیند).
+import mstat_engine as _mstat
+
+
+def _mstat_call(fn, *args, **kw):
+    """یک اتصال، یک فراخوانی، همیشه بسته. خطای موتور ⇒ status=error نه ۵۰۰،
+    چون یک پنلِ خراب نباید کل تب وضعیت بازار را از کار بیندازد."""
+    conn = get_db()
+    try:
+        out = fn(conn, *args, **kw)
+        out.setdefault("source", "local:market.db")
+        return out
+    except Exception as e:
+        return {"status": "error", "message": str(e), "source": "local:market.db"}
+    finally:
+        conn.close()
+
+
+@app.get("/api/mstat/summary")
+def mstat_summary():
+    """گام ۱ — جدول نه‌سطری خلاصهٔ معاملات خرد + برچسب سلامت کلان."""
+    return _mstat_call(_mstat.summary)
+
+
+@app.get("/api/mstat/histogram")
+def mstat_histogram(group: str = Query("all")):
+    """گام ۲.۱ و ۳.۳ — توزیع بازدهی ۱۲بازه + محدودهٔ قیمتی ۷بازه."""
+    return _mstat_call(_mstat.histogram, group)
+
+
+@app.get("/api/mstat/thermometer")
+def mstat_thermometer(group: str = Query("all")):
+    """گام ۲.۲ — نوار مثبت/منفی و قانون فرصت ورود."""
+    return _mstat_call(_mstat.thermometer, group)
+
+
+@app.get("/api/mstat/depth")
+def mstat_depth(group: str = Query("all")):
+    """گام ۲.۳ و ۳.۱ — ارزش ۵ خط اول + تفکیک صف‌ها."""
+    return _mstat_call(_mstat.depth, group)
+
+
+@app.get("/api/mstat/clientsplit")
+def mstat_clientsplit(tab: str = Query("all")):
+    """گام ۲.۴ و ۵.۱ — تفکیک حقیقی/حقوقی به تفکیک تب."""
+    return _mstat_call(_mstat.client_split, tab)
+
+
+@app.get("/api/mstat/mainwatch")
+def mstat_mainwatch(group: str = Query("eq_all"), industry: str = Query(""),
+                    sort: str = Query("clock"), desc: bool = Query(True),
+                    limit: int = Query(120)):
+    """گام ۵.۲ — تابلوی نمادها؛ ستونِ اختلاف آخرین/پایانی مرتب‌شدنی است."""
+    return _mstat_call(_mstat.mainwatch, group, industry, sort, desc, limit)
+
+
+@app.get("/api/mstat/industries")
+def mstat_industries():
+    """گام ۵.۳ — خلاصهٔ صنایع (کلیک ⇒ فیلتر جدول پایین)."""
+    return _mstat_call(_mstat.industries)
+
+
+@app.get("/api/mstat/smart-money")
+def mstat_smart_money():
+    """v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند FTS.
+
+    سه خروجی دارد: شاخص نقدینگی (همت) با برچسب مساعد/نامساعد، شرط هشدار ۸۰٪
+    (فرصت پایش برای ورود)، و مقایسهٔ ورود/خروج پولِ خردِ سهام ⇄ صندوق درآمد ثابت
+    با برچسب «حالت ایده‌آل FTS». در board هم می‌نشیند تا رندرِ تب همان
+    round-tripِ واحدِ همیشگی بماند.
+    """
+    return _mstat_call(_mstat.smart_money)
+
+
+@app.get("/api/mstat/timeline")
+def mstat_timeline(mode: str = Query("cum")):
+    """گام ۴ — تایم‌لاین‌های ۰۹:۰۰ تا ۱۳:۰۰ (مجموع | لحظه‌ای).
+
+    v9.8.1 — فیلتر پنجرهٔ رسمی بازار: mstat_engine._points فقط نقاطِ
+    ۰۸:۵۵–۱۳:۰۰ را از mstat_snap برمی‌دارد؛ نقاطِ شبانه/تستیِ خارج از ساعات
+    معاملات (که افتِ دروغین به صفر و خطوط مورب روی چارت میساختند) هرگز به
+    فرانت‌اند ارسال نمیشوند — نه در تایم‌لاین، نه در شمارندهٔ فازها.
+    """
+    return _mstat_call(_mstat.timeline, mode)
+
+
+@app.get("/api/mstat/phases")
+def mstat_phases():
+    """گام ۳.۲ — شمارندهٔ چرخش وضعیت‌ها (صف↼مثبت↼منفی)."""
+    return _mstat_call(_mstat.phases)
+
+
+@app.get("/api/mstat/board")
+def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
+    """تک‌درخواستِ کل تب. polling هر ۳۰–۶۰ ثانیه است و ۹ درخواستِ جدا هم
+    شبکه را درگیر می‌کند هم مرورگر را؛ این یکی باعث می‌شود هر بارِ رندر،
+    یک round-trip باشد (خط قرمز: رندر روان بدون افت فریم)."""
+    conn = get_db()
+    try:
+        return {"status": "ok", "source": "local:market.db",
+                "summary": _mstat.summary(conn),
+                "thermometer": _mstat.thermometer(conn, group),
+                "histogram": _mstat.histogram(conn, group),
+                "depth": _mstat.depth(conn, group),
+                "clientsplit": _mstat.client_split(conn, "all"),
+                "mainwatch": _mstat.mainwatch(conn, group, "", "clock", True, limit),
+                "industries": _mstat.industries(conn),
+                "smartmoney": _mstat.smart_money(conn),
+                "timeline": _mstat.timeline(conn, "cum"),
+                "phases": _mstat.phases(conn)}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "source": "local:market.db"}
+    finally:
+        conn.close()
+
+
+@app.post("/api/mstat/snapshot")
+def mstat_snapshot_now():
+    """یک نقطهٔ تایم‌لاین همین لحظه — دستیارِ تست و «بروزرسانی» دستی."""
+    conn = get_db()
+    try:
+        return dict({"status": "ok"}, **_mstat.save_mstat_snapshot(conn))
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+
+
+@app.get("/api/history/{symbol}")
+def get_history(symbol: str):
+    conn = get_db()
+    try:
+        query = """
+            SELECT date, open, high, low, close, volume
+            FROM price_history WHERE symbol = ? ORDER BY date ASC
+        """
+        df = pd.read_sql_query(query, conn, params=(symbol,))
+        if df.empty:
+            return {"status": "empty", "candles": [], "volumes": []}
+
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        # پاکسازی OHLC: NULL/صفر → حذف (کندل با 0 نمودار را خراب میکند و NaN در JSON خطا میدهد)
+        df = df.dropna(subset=["date", "open", "high", "low", "close"]).sort_values("date")
+        df = df[(df["close"] > 0) & (df["high"] > 0)]
+        df["volume"] = df["volume"].fillna(0)
+
+        # v7.3 برداری‌سازی: iterrows حذف — list-comprehension روی آنپی آرایه (~۲۰x سریعتر)
+        times = df["date"].dt.strftime("%Y-%m-%d")
+        opens = df["open"].astype(float).tolist()
+        highs = df["high"].astype(float).tolist()
+        lows = df["low"].astype(float).tolist()
+        closes = df["close"].astype(float).tolist()
+        vols = df["volume"].astype(float).tolist()
+        up_c, dn_c = "rgba(34, 197, 94, 0.4)", "rgba(239, 68, 68, 0.4)"
+        candles = [{"time": t, "open": o, "high": h, "low": l, "close": c}
+                   for t, o, h, l, c in zip(times, opens, highs, lows, closes)]
+        volumes = [{"time": t, "value": v, "color": up_c if c >= o else dn_c}
+                   for t, v, o, c in zip(times, vols, opens, closes)]
+        return {"status": "success", "candles": candles, "volumes": volumes}
+    finally:
+        conn.close()
+
+
+@app.get("/api/screener")
+def get_screener():
+    """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8).
+
+    در v7.3 این endpoint امتیاز را روی مقیاس ۰..۷ و با معیارهای خارج از ۵ محور
+    می‌بست (ROE>15، mcap>1e13، شمارش دوبارهٔ رشد فروش، P/S به‌جای فروش÷ارزش بازار،
+    «سودآوری مستمر» بر پایهٔ net_profit به‌جای EPS سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی).
+    اکنون امتیاز دقیقاً تعداد پنج محور است (۰..۵) و نمادهای تعلیق/بیمه/دستوری
+    با پرچم excluded علامت می‌خورند.
+    """
+    conn = get_db()
+    try:
+        import fts_engine
+        cfg = load_fts_config()
+        rows = fts_engine.bulk_scan(conn, cfg=cfg)
+
+        # نام کامل + نوع ابزار از instruments (bulk_scan فقط نماد برمی‌گرداند)
+        names, boards = {}, {}
+        for l18, l30 in conn.execute("SELECT l_val18, l_val30 FROM instruments"):
+            k = fts_engine.norm_fa(l18)
+            if k and k not in names:
+                names[k] = l30 or l18
+        for r in rows:
+            r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
+            r["growth_pass"] = r["rev_growth"] is not None and r["rev_growth"] >= cfg["growth_min"]
+            r["eps_data_gap"] = bool(r.get("eps_data_gap"))
+
+        # واچ‌لیست: حداکثر watchlist_max سهمِ غیرمردود، مرتب بر اساس امتیاز
+        cap = int(cfg.get("watchlist_max", 50) or 50)
+        eligible = [r for r in rows if not r["excluded"]]
+        for i, r in enumerate(eligible):
+            r["watchlist"] = i < cap
+        for r in rows:
+            r.setdefault("watchlist", False)
+
+        # پیش‌شرط همت (اختیاری) — خارج از پنج محور، فقط علامت می‌خورد
+        floor = _num(cfg.get("mcap_min_hmt", 0)) * 1e12
+        if floor > 0:
+            for r in rows:
+                if r["mcap"] < floor:
+                    r["excluded"] = True
+                    r["exclusion_reasons"] = (r["exclusion_reasons"] + " · " if
+                                              r["exclusion_reasons"] else "") + "ارزش بازار زیر حد"
+        return {"status": "success", "count": len(rows), "data": rows,
+                "thresholds": cfg, "max_score": 5}
+    finally:
+        conn.close()
+
+
+def _sector_from_company(company_name):
+    """سکتور از name شرکت (همان منطق SectorGuess برای نمادهای فقط-کدال)."""
+    n = str(company_name or "")
+    if "صندوق" in n:
+        return "صندوق سرمایه گذاری"
+    if "بیمه" in n or "بيمه" in n:
+        return "بیمه"
+    if "لیزینگ" in n or "ليزينگ" in n:
+        return "لیزینگ"
+    if "بانک" in n or "بانك" in n:
+        return "بانک"
+    return "سایر"
+
+
+@app.get("/api/fundamental/{symbol}")
+def get_fundamental(symbol: str, months: int = 0):
+    """کارت بنیادی ۵ شاخص FTS — v8.
+
+    تمام محاسبات به fts_engine (منبع یگانه حقیقت) واگذار شده است. در v7.3 این
+    endpoint منطق ۵ شاخص را موازی و متفاوت دوباره پیاده میکرد:
+      * مرحلهٔ ۲ از net_profit استفاده میکرد نه EPS سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی
+      * مرحلهٔ ۴ فروش ۳ماهه را به‌جای فروش سالانهٔ Annualized در نسبت می‌گذاشت
+      * مرحلهٔ ۵ لیست صنایع هاردکد داشت و fts_thresholds.json را نمیخواند
+      * کارت اضافی «ارزش بازار (تکمیلی)» با step خالی در میان ۵ محور نمایش داده میشد
+    اکنون خروجی دقیقاً ۵ کارت است و داده‌های جانبی به `secondary` منتقل شده‌اند.
+    `months` فقط برای سازگاری با فراخوانی‌های قدیمی پذیرفته میشود و در داوری اثر ندارد.
+    """
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
+            FROM instruments i
+            LEFT JOIN market_watch m ON i.ins_code = m.ins_code
+            WHERE REPLACE(REPLACE(REPLACE(i.l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ?
+            ORDER BY i.updated_at DESC LIMIT 1
+        """, (symbol,))
+        inst = cur.fetchone()
+
+        # نمادهای فقط-کدال (صندوقها و…): در instruments نیستند ولی اسکرینر نشانشان میدهد
+        if not inst:
+            cur.execute("SELECT company_name FROM financial_statements "
+                        "WHERE symbol = ? ORDER BY period_end DESC LIMIT 1", (symbol,))
+            fs_meta = cur.fetchone()
+            if not fs_meta:
+                raise HTTPException(status_code=404, detail="Symbol not found")
+            sector = _sector_from_company(fs_meta["company_name"])
+        else:
+            sector = str(inst["sector_name"] or "")
+
+        # نرمال‌سازی پسوند عددی (TSETMC: «آ س پ3» → کدال: «آ س پ»)
+        norm_symbol = symbol
+        _m_und = re.match(r"^(.*?)\d+$", symbol)
+        base_cand = _m_und.group(1) if _m_und else None
+        if base_cand and base_cand != symbol and inst is None:
+            cur.execute("""
+                SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
+                FROM instruments i
+                LEFT JOIN market_watch m ON i.ins_code = m.ins_code
+                WHERE REPLACE(REPLACE(REPLACE(i.l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ?
+                ORDER BY i.updated_at DESC LIMIT 1
+            """, (base_cand,))
+            inst = cur.fetchone()
+            if inst:
+                sector = str(inst["sector_name"] or "")
+                norm_symbol = base_cand
+
+        mcap, _, total_mcap = _fts_market_ctx(conn, norm_symbol)
+        if not mcap and inst:
+            mcap = float(inst["total_shares"] or 0) * float(inst["p_closing"] or 0)
+
+        import fts_engine
+        cfg = load_fts_config()
+        res = fts_engine.scan_symbol(conn, norm_symbol, mcap, total_mcap, sector, cfg=cfg)
+        d = res["detail"]
+
+        # ارجاع نماد اصلی (قرارداد اختیار / نماد بدون صورت مالی)
+        ref_symbol, ref_reason = None, None
+        if norm_symbol != symbol:
+            ref_symbol, ref_reason = norm_symbol, "نماد با پسوند عددی — دادهٔ کدال روی نماد پایه"
+        if inst and str(inst["l_val18"] or "").startswith("ض") and inst["l_val30"]:
+            m30 = re.search(r"\S+\s+([^\s-]+)[\s-]?", str(inst["l_val30"]))
+            probe = m30.group(1) if m30 else None
+            if probe and conn.execute("SELECT 1 FROM instruments WHERE l_val18 = ?",
+                                      (probe,)).fetchone():
+                ref_symbol, ref_reason = probe, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
+
+
+        # ---------------- دقیقاً ۵ کارت (بدون فیلد اضافی در محور اصلی) ----------------
+        insights, details = [], {}
+        g, e, gm, s2m, pot, sec = (d.get("growth"), d.get("eps_trend"), d.get("gross_margin"),
+                                   d.get("sales_to_mcap"), d.get("profit_potential"),
+                                   d.get("sector"))
+
+        # ۱) رشد فروش تجمیعی
+        if not g or g.get("data_gap"):
+            insights.append({"step": "۱", "title": "رشد فروش (تجمیعی ÷ همان دورهٔ سال قبل)",
+                             "type": "warning",
+                             "text": "⚠️ دادهٔ تجمیعی همان دورهٔ سال قبل موجود نیست — شاخص رد محاسبه نمیشود."})
+        else:
+            ok, inf = g["pass"], g["beats_inflation"]
+            t = ("success" if inf else "info" if ok else "warning")
+            mark = ("✅ عالی — از تورم سالانه بیشتر" if inf
+                    else "✅ پاس — ≥ آستانهٔ رشد" if ok else "⚠️ زیر آستانهٔ رشد")
+            insights.append({"step": "۱", "title": "رشد فروش (تجمیعی ÷ همان دورهٔ سال قبل)",
+                             "type": t,
+                             "text": f"{mark} — رشد {g['growth_pct']:+.1f}٪ "
+                                     f"({g['ytd_now_bt']:,.0f} ÷ {g['ytd_prev_bt']:,.0f} میلیارد تومان)"})
+            details["۱"] = {
+                "title": "رشد فروش",
+                "formula": f"رشد = (فروش تجمیعی دوره ÷ فروش تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ "
+                           f"· پاس ≥{cfg['growth_min']:g}٪ · عالی ≥ تورم {cfg['inflation_min']:g}٪",
+                "source": f"کدال — گزارش فعالیت ماهانه منتهی به {g['period']} | مخرج: {g['denominator_basis']}",
+                "calc": f"تجمیعی {g['period']}: {g['ytd_now_bt']:,.1f} میلیارد تومان ÷ "
+                        f"سال قبل: {g['ytd_prev_bt']:,.1f} × ۱۰۰ − ۱۰۰ = {g['growth_pct']:+.1f}٪ | حکم: {mark}",
+                "what": f"مبنای درآمد: {g['revenue_basis']}. بانک‌ها «فروش» ندارند؛ جمع درآمدهای "
+                        "تسهیلات اعطایی + سپرده‌گذاری + سرمایه‌گذاری + اوراق + کارمزد از ابتدای سال "
+                        "مالی تا ماه آخر، در برابر همین ماه سال قبل.",
+            }
+
+        # ۲) روند ۳ سالهٔ EPS
+        if not e:
+            insights.append({"step": "۲", "title": "روند ۳ سالهٔ EPS (سالانهٔ حسابرسی‌شدهٔ اصلی)",
+                             "type": "warning", "text": "⚠️ قابل محاسبه نیست (صنعت بیمه یا کمبود صورت مالی سالانه)."})
+        else:
+            if e["pass"]:
+                seq = " < ".join(f"{v:,.0f}" for v in e["eps_series"])
+                insights.append({"step": "۲", "title": "روند ۳ سالهٔ EPS (سالانهٔ حسابرسی‌شدهٔ اصلی)",
+                                 "type": "success",
+                                 "text": f"✅ تایید شد — EPS {seq} ریال در سال‌های "
+                                         f"{' ← '.join(e['fiscal_years'])}"})
+            else:
+                insights.append({"step": "۲", "title": "روند ۳ سالهٔ EPS (سالانهٔ حسابرسی‌شدهٔ اصلی)",
+                                 "type": "danger", "text": f"🚫 مردود — {e['reason'] or 'شرط صعودی بودن برقرار نیست'}"})
+            if e.get("data_gap"):
+                _e_calc = ("بدون داده — "
+                           + (e.get("reason")
+                              or "صورت مالی سالانهُ معتبر کافی نیست")
+                           + f" (موجود: {e.get('years_available', 0)} دوره، "
+                           + f"لازم: {e.get('years_required', cfg['eps_years'])} دوره)")
+            else:
+                _e_calc = ("EPS: "
+                           + " | ".join(f"{v:,.0f}" for v in (e.get("eps_series") or []))
+                           + " | متوالی: "
+                           + ("بله" if e.get("consecutive_years") else "خیر")
+                           + " | مثبت: "
+                           + ("بله" if e.get("all_profitable") else "خیر"))
+
+            details["۲"] = {
+                "title": "روند ۳ سالهٔ EPS",
+                "formula": f"EPS_y > EPS_y-1 > EPS_y-2 · {cfg['eps_years']} سال مالی متوالی · "
+                           "فقط صورت مالی ۱۲ماههٔ حسابرسی‌شدهٔ شرکت اصلی (غیرتلفیقی)",
+                "source": e.get("source") or "کدال — صورت‌های مالی سالانه",
+                "calc": _e_calc,
+                "what": "صورت‌های مالی تلفیقی و میاندوره‌ای و حسابرسی‌نشده در این شاخص مجاز نیستند؛ "
+                        "دادهٔ هر سه سال باید از یک مبدأ (شرکت اصلی) باشد تا مقایسه معنا داشته باشد.",
+            }
+
+        # ۳) حاشیه سود ناخالص
+        if not gm:
+            insights.append({"step": "۳", "title": "حاشیه سود ناخالص", "type": "info",
+                             "text": "ℹ️ سود ناخالص در صورت مالی این شرکت درج نشده "
+                                     "(بانکی/مالی/صندوق — بهای تمام‌شده ندارند). طبق جزوه شاخص ۳ "
+                                     "فقط برای شرکت‌های تولیدی معنا دارد."})
+        else:
+            t = ("success" if gm["optimal"] else "info" if gm["pass"] else "warning")
+            mark = ("✅ عالی" if gm["optimal"] else "✅ پاس" if gm["pass"] else "⚠️ زیر آستانه")
+            insights.append({"step": "۳", "title": "حاشیه سود ناخالص", "type": t,
+                             "text": f"{mark} — {gm['margin_pct']:.1f}٪ "
+                                     f"(پاس ≥{gm['threshold']:g}٪ · ایده‌آل ≥{gm['optimal_threshold']:g}٪)"})
+            details["۳"] = {
+                "title": "حاشیه سود ناخالص",
+                "formula": f"حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰ · حداقل "
+                           f"{gm['threshold']:g}٪ · ایده‌آل {gm['optimal_threshold']:g}٪",
+                "source": f"کدال — صورت سود و زیان سالانه ({gm['period_end']}) — {gm['basis']}",
+                "calc": f"سود ناخالص {gm['gross_profit_bt']:,.0f} ÷ درآمدهای عملیاتی "
+                        f"{gm['revenue_bt']:,.0f} × ۱۰۰ = {gm['margin_pct']:.1f}٪",
+                "what": "سود ناخالص = درآمدهای عملیاتی − بهای تمام‌شدهٔ کالای فروش‌رفته. "
+                        "سود عملیاتی و سود خالص در این شاخص هیچ نقشی ندارند.",
+            }
+
+
+        # ۴) فروش سالانه به ارزش بازار + پتانسیل سود ناخالص
+        if not s2m:
+            insights.append({"step": "۴", "title": "فروش سالانه به ارزش بازار", "type": "warning",
+                             "text": "⚠️ قابل محاسبه نیست (فروش سالانه یا ارزش بازار موجود نیست)."})
+        else:
+            t = "success" if s2m["pass"] else "warning"
+            mark = "✅ پاس" if s2m["pass"] else "⚠️ زیر آستانه"
+            insights.append({"step": "۴", "title": "فروش سالانه به ارزش بازار", "type": t,
+                             "text": f"{mark} — فروش سالانه ÷ ارزش بازار = {s2m['sales_to_mcap']:.2f} "
+                                     f"(حداقل {s2m['threshold']:g})"})
+            details["۴"] = {
+                "title": "فروش سالانه به ارزش بازار",
+                "formula": f"نسبت = فروش سالانهٔ Annualized ÷ ارزش بازار روز · پاس ≥{s2m['threshold']:g}",
+                "source": "ارزش بازار: TSETMC (تعداد سهام × قیمت پایانی) | فروش: کدال — گزارش فعالیت ماهانه",
+                "calc": f"فروش سالانه {s2m['annual_sales_bt']:,.0f} میلیارد تومان ÷ ارزش بازار "
+                        f"{s2m['mcap_ht']:,.2f} همت = {s2m['sales_to_mcap']:.2f} | "
+                        f"مبنای Annualize: {s2m['annualize_basis']}",
+                "what": "فروش ماه‌های موجود در سال مالی جاری × ۱۲ ÷ تعداد ماه؛ با فروش صورت مالی "
+                        "سالانه راستی‌آزمایی میشود تا خطای واحد گزارش ماهانه وارد نشود.",
+            }
+        if pot:
+            details["۴ب"] = {
+                "title": "پتانسیل سود ناخالص به ارزش بازار",
+                "formula": f"(فروش سالانه × حاشیه سود ناخالص) ÷ ارزش بازار × ۱۰۰ · "
+                           f"پاس ≥{pot['threshold']:g}٪",
+                "source": "کدال — گزارش فعالیت ماهانه + صورت سود و زیان سالانه | ارزش بازار: TSETMC",
+                "calc": f"سود ناخالص برآوردی {pot['est_gross_profit_bt']:,.0f} میلیارد تومان "
+                        f"(حاشیه {pot['margin_used_pct']:.1f}٪) ÷ ارزش بازار {pot['mcap_ht']:,.2f} همت "
+                        f"= {pot['potential_pct']:.1f}٪ | "
+                        f"{'✅ پاس' if pot['pass'] else '⚠️ زیر آستانه'}",
+            }
+
+        # ۵) فیلتر صنعت — قیمت‌گذاری آزاد/بورس کالا در برابر دستوری
+        mode_lbl = sec["label"]
+        if sec["verdict"] == "mandatory":
+            insights.append({"step": "۵", "title": "فیلتر صنعت (نوع قیمت‌گذاری)", "type": "danger",
+                             "text": f"🚫 مردود — گروه «{sector}»: {mode_lbl}. "
+                                     f"تگ: {'، '.join(sec['matched_tokens']) or '—'}"})
+        elif sec["verdict"] == "free":
+            insights.append({"step": "۵", "title": "فیلتر صنعت (نوع قیمت‌گذاری)", "type": "success",
+                             "text": f"✅ تایید شد — گروه «{sector}»: {mode_lbl}. "
+                                     f"تگ: {'، '.join(sec['matched_tokens']) or '—'}"})
+        else:
+            insights.append({"step": "۵", "title": "فیلتر صنعت (نوع قیمت‌گذاری)", "type": "info",
+                             "text": f"ℹ️ خنثی — گروه «{sector}»: {mode_lbl}."})
+        details["۵"] = {
+            "title": "فیلتر صنعت",
+            "formula": f"حالت: {cfg['industry_mode']} · صنایع دستوری مردود هستند مگر حالت "
+                       "Rank_Only انتخاب شود",
+            "source": "گروه صنعت: TSETMC (sector_name) | فهرست صنایع: پنل تنظیمات کدال",
+            "calc": f"طبقه: {sec['verdict']} | تگ خورده: {'، '.join(sec['matched_tokens']) or '—'} | "
+                    f"حکم: {'پاس' if sec['pass'] else 'مردود'}",
+            "what": "دستوری: خودرو، دارو، نیروگاه/برق، غذا، لاستیک، شوینده، بیمه — "
+                    "آزاد/بورس کالا: سیمان، پتروشیمی، فلزات، کانی، کاشی، فرآورده‌های نفتی و معدنی.",
+        }
+
+        # حذف خودکار از غربالگری (تعلیق / بیمه / قیمت‌گذاری دستوری)
+        if res["excluded"]:
+            insights.insert(0, {"step": "۰", "title": "حذف خودکار از غربالگری FTS", "type": "danger",
+                                "text": "⚠️ " + " · ".join(res["exclusion_reasons"])})
+
+
+        # مرجع شاخص‌های ۳ و ۴ (برای جزییات ثانویه و جدول تاریخچه)
+        ref_row = fts_engine.reference_annual(conn, norm_symbol)
+
+        # ---------------- جزییات ثانویه (خارج از ۵ محور غربالگری) ----------------
+        secondary = {}
+        if inst:
+            shares = float(inst["total_shares"] or 0)
+            p_cl = float(inst["p_closing"] or 0)
+            if mcap > 0:
+                secondary["ارزش بازار"] = (f"{shares:,.0f} سهم × {p_cl:,.0f} ریال = "
+                                           f"{mcap / 1e13:,.2f} هزار میلیارد تومان")
+            secondary["سهم بازار"] = f"{sec['market_share_pct']:.3f}٪ از کل بازار (تکمیلی)"
+        if ref_row:
+            te = conn.execute("SELECT total_equity FROM financial_statements WHERE symbol=? "
+                              "AND period_end=?", (norm_symbol, ref_row["period_end"])).fetchone()
+            if te and _num(te[0]) > 0 and _num(ref_row.get("net_profit")):
+                secondary["ROE"] = f"{_num(ref_row['net_profit']) / _num(te[0]) * 100:.1f}٪ (تکمیلی)"
+
+        # تاریخچهٔ صورت‌های مالی مرجع (سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی)
+        history = [{"period_end": str(r["period_end"])[:10], "fiscal_year": r["fiscal_year"],
+                    "revenue": r["revenue"], "gross_profit": r["gross_profit"],
+                    "net_profit": r["net_profit"], "eps": r["basic_eps"],
+                    "audited": r["audited"], "consolidated": r["consolidated"]}
+                   for r in fts_engine.annual_statements(conn, norm_symbol, limit=6)]
+
+        return {
+            "symbol": symbol, "sector": sector, "pricing_mode": res["pricing_mode"],
+            "score": res["score"], "verdict": res["verdict"],
+            "excluded": res["excluded"], "exclusion_reasons": res["exclusion_reasons"],
+            "passes": res["passes"],
+            "metrics": {"mcap": mcap,
+                        "annual_sales_bt": (s2m or {}).get("annual_sales_bt"),
+                        "sales_to_mcap": (s2m or {}).get("sales_to_mcap"),
+                        "gross_margin": (gm or {}).get("margin_pct"),
+                        "growth_pct": (g or {}).get("growth_pct"),
+                        "eps_series": (e or {}).get("eps_series"),
+                        "profit_potential_pct": (pot or {}).get("potential_pct")},
+            "indicators": d, "details": details, "insights": insights,
+            "secondary": secondary, "history": history, "thresholds": cfg,
+            "ref_symbol": ref_symbol, "ref_reason": ref_reason,
+            "fs_count": len(history),
+        }
+    finally:
+        conn.close()
+
+
+# Mount Static UI
+def _static_dir():
+    """در حالت EXE: static داخل _MEIPASS است؛ وگرنه کنار اسکریپت"""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        p = os.path.join(sys._MEIPASS, "static")
+        if os.path.isdir(p):
+            return p
+    return "static"
+
+app.mount("/static", StaticFiles(directory=_static_dir()), name="static")
+
+
+# ============ بروزرسانی تابلو: درون‌پروسه‌ای (در EXE هم کار می‌کند) ============
+import test_tsetmc as _tsetmc_mod
+_MARKET_SYNC_LOCK = threading.Lock()
+
+
+@app.on_event("startup")
+def _startup_sync_market():
+    """هوک استارت FastAPI: اجرای uvicorn (باش با bat) → تابلو در هر اجرا آپدیت می‌شود.
+    (قبلاً فقط در __main__ بود و start_dashboard.py هرگز فراخوانی‌اش نمی‌کرد.)"""
+    try:
+        threading.Thread(target=_sync_market_on_start, daemon=True).start()
+        print("[startup] market sync thread spawned")
+    except Exception as e:
+        print(f"[startup] market sync thread failed: {e}")
+
+
+def _run_market_sync():
+    """اجرای همگام‌سازی بازار درون همین پروسه (thread).
+    نکته: Popen([sys.executable, ...]) در EXE شکست می‌خورد (EXE دوباره اجرا می‌شود)
+    — بنابراین main() را مستقیم import و در thread صدا می‌زنیم."""
+    if not _MARKET_SYNC_LOCK.acquire(blocking=False):
+        print("[market-sync] already running — skip")
+        return
+    try:
+        print("[market-sync] thread started")
+        _tsetmc_mod.main()
+        print("[market-sync] done")
+        MARKET_CACHE.clear()   # داده تازه → کش پاسخ قدیمی باطل
+    except Exception as e:
+        print(f"[market-sync] FAILED: {e}")
+    finally:
+        _MARKET_SYNC_LOCK.release()
+
+
+def _market_sync_alive():
+    """True اگر همگام‌سازی بازار در حال اجراست (thread زنده یا پروسهٔ قدیمی)."""
+    # پروسهٔ تست (برای نسخهٔ قدیمی/کد — اگر بررسی powershell در دسترس بود)
+    try:
+        out = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command",
+             "(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'test_tsetmc' -and $_.Name -ne 'pythonw.exe' }).Count"],
+            capture_output=True, text=True, timeout=15)
+        n = int(out.stdout.strip()) if out.returncode == 0 and out.stdout.strip().isdigit() else 0
+        if n:
+            return True
+    except Exception:
+        pass
+    return not _MARKET_SYNC_LOCK.acquire(blocking=False) or (_MARKET_SYNC_LOCK.release() or False)
+
+
+@app.post("/api/sync/market")
+def sync_market():
+    threading.Thread(target=_run_market_sync, daemon=True).start()
+    return {"status": "success", "message": "Market sync started."}
+
+
+@app.post("/api/export")
+def export_data_post(payload: dict = None):
+    """دانلود خروجی با دادهٔ بستهبندیشده از UI (فیلترهای فعال اعمال شده)
+    body: {fmt, title, rows: [[...], ...]}"""
+    if payload is None:
+        return {"status": "error", "message": "empty body"}
+    return _export_build(payload.get("fmt", "xlsx"), payload.get("title", "export"), payload.get("rows") or [])
+
+
+def _export_build(fmt: str, title: str, rows_data):
+    """ساخت واقعی فایل خروجی از rows آماده (پس از اعمال فیلترها) + سازگاری GET قدیمی"""
+    import io
+    import datetime as _dt
+    rows = rows_data
+    ts = _dt.datetime.now().strftime("%Y%m%d_%H%M")
+    name = f"borsagent_{title}_{ts}"
+    if fmt in ("docx", "pdf") and len(rows) > 201:
+        header = rows[0]
+        rows = header + [["..."] * len(header)] + rows[1:201]
+
+    if fmt == "xlsx":
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "export"
+        for r in rows:
+            ws.append(["" if c is None else c for c in r])
+        for col in ws.columns:
+            ws.column_dimensions[col[0].column_letter].width = 22
+        buf = io.BytesIO()
+        wb.save(buf)
+        return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        headers={"Content-Disposition": f"attachment; filename={name}.xlsx"})
+    elif fmt == "docx":
+        import docx
+        from docx.oxml.ns import qn
+        from docx.oxml import OxmlElement
+        d = docx.Document()
+        d.add_heading(f"BorsTerminal - {title}", 0)
+        if rows:
+            ncols = max(len(r) for r in rows)
+            tblEl = OxmlElement('w:tbl')
+            grid = OxmlElement('w:tblGrid')
+            for _ in range(ncols):
+                grid.append(OxmlElement('w:gridCol'))
+            tblEl.append(grid)
+            styleEl = OxmlElement('w:tblPr')
+            b = OxmlElement('w:tblBorders'); b.set(qn('w:val'), 'single'); b.set(qn('w:sz'), '4'); b.set(qn('w:color'), '94a3b8')
+            styleEl.append(b)
+            tblEl.append(styleEl)
+            for r in rows:
+                tr = OxmlElement('w:tr')
+                for c in r:
+                    tc = OxmlElement('w:tc')
+                    tcp = OxmlElement('w:tcPr')
+                    w_el = OxmlElement('w:tcW'); w_el.set(qn('w:w'), '2200'); tcp.append(w_el)
+                    tc.append(tcp)
+                    p = OxmlElement('w:p')
+                    rEl = OxmlElement('w:r')
+                    txt = OxmlElement('w:t'); txt.text = str("" if c is None else c)
+                    rEl.append(txt); p.append(rEl); tc.append(p)
+                    tr.append(tc)
+                tblEl.append(tr)
+            d._element.body.append(tblEl)
+        buf = io.BytesIO()
+        d.save(buf)
+        return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        headers={"Content-Disposition": f"attachment; filename={name}.docx"})
+    elif fmt == "pdf":
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=landscape(A4), leftMargin=18, rightMargin=18, topMargin=18, bottomMargin=18)
+        styles = getSampleStyleSheet()
+        story = [Paragraph(f"<b>BorsTerminal - {title}</b>", styles["Title"]), Spacer(1, 8)]
+        if rows:
+            data = [[str("" if c is None else c) for c in r] for r in rows]
+            tbl = Table(data, repeatRows=1)
+            tbl.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0ea5e9")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTSIZE", (0, 0), (-1, -1), 7),
+                ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#94a3b8")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f1f5f9")]),
+            ]))
+            story.append(tbl)
+        doc.build(story)
+        return Response(buf.getvalue(), media_type="application/pdf",
+                        headers={"Content-Disposition": f"attachment; filename={name}.pdf"})
+    else:
+        import csv as _csv
+        buf = io.StringIO()
+        w = _csv.writer(buf)
+        w.writerows(rows)
+        return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f"attachment; filename={name}.csv"})
+
+
+@app.get("/api/export")
+def export_data(fmt: str = Query("csv"), view: str = Query("market"), symbol: str = Query(None)):
+    """دانلود خروجی قدیمی (بدون فیلتر): market|fundamental — برای backward compat"""
+    conn = get_db()
+    try:
+        rows = []
+        if view == "fundamental" and symbol:
+            j = get_fundamental(symbol)
+            if j.get("metrics"):
+                m = j["metrics"]
+                rows.append(["شاخص", "مقدار"])
+                rows.append(["ارزش بازار (ریال)", m.get("mcap")])
+                rows.append(["فروش (میلیون ریال)", m.get("revenue")])
+                rows.append(["حاشیه ناخالص ٪", m.get("gross_margin")])
+                rows.append(["ROE ٪", m.get("roe")])
+                rows.append(["نسبت P/S", m.get("ps")])
+                rows.append(["تعداد صورت‌های مالی", j.get("fs_count")])
+                rows.append(["مرجع", j.get("ref_symbol") or "-"])
+            for ins in j.get("insights", []):
+                rows.append([f"شاخص {ins.get('step','')}".strip(), ins.get("title"), ins.get("text")])
+        else:
+            df = pd.read_sql_query("""
+                SELECT i.l_val18 AS symbol, i.l_val30 AS name,
+                       COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector,
+                       m.p_closing AS closing, m.p_last AS last,
+                       m.price_change AS change, m.q_tot_tran AS volume,
+                       m.q_tot_cap AS value, m.pe, m.eps, m.z_tot_tran AS trades
+                FROM market_watch m LEFT JOIN instruments i ON i.ins_code = m.ins_code
+                WHERE i.l_val18 IS NOT NULL
+                ORDER BY i.l_val18
+            """, conn)
+            rows = [df.columns.tolist()] + df.values.tolist()
+        return _export_build(fmt, f"{view}_{symbol or ''}", rows)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/sync/codal")
+def sync_codal(mode: str = Query("update")):
+    # گارد: اگر اسکنی در حال اجراست، فرایند جدید اجرا نکن (۲ اسکن همزمان = ۴۲۹ دائمی)
+    if _codal_running():
+        return {"status": "already_running",
+                "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود.",
+                "mode": mode}
+    # پاکسازی فرمان stop ماندگار؛ وگرنه نمونهٔ تازهٔ codal_fetcher فوراً خودش را متوقف میکند
+    try:
+        with open(CONTROL_PATH, "w", encoding="utf-8") as f:
+            json.dump({"cmd": "resume", "ts": datetime.datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
+    except Exception:
+        pass
+    args = [sys.executable, "codal_fetcher.py"]
+    if mode == "new":
+        args += ["--backfill"]         # نمادهای قابل معامله با عنوان مالی ولی بدون FS → ۵ شاخص پرشدنی
+    elif mode == "update":
+        args += ["--feed", "update"]   # فید سراسری افزایشی از آخرین تاریخ DB (نمادهای موجود)
+    elif mode == "optimized":
+        args += ["--feed", "update", "--optimized"]   # بهینه: فقط FS قدیمی/خالی + نمادهای جدید (حداقل درخواست — بدون بلاک IP)
+    elif mode == "backfill":
+        args += ["--backfill"]         # Backfill FS/MS برای نمادهای دارای عنوان صورت مالی
+    subprocess.Popen(args)
+    return {"status": "success", "message": "Codal sync started.", "mode": mode}
+
+
+@app.get("/api/sync/status")
+def get_sync_status():
+    """Live status for the Codal/Market sync progress overlay."""
+    od = _safe_read_json(OD_STATUS_PATH) or {}
+    st = _safe_read_json(STATUS_PATH) or {}
+    ms = _safe_read_json(MARKET_STATUS_PATH) or {}   # کانال اختصاصی بازار
+    # On-demand channel (sync_ondemand.json) wins ONLY while a manual sync is
+    # actively running; once it ends in "done", fall back to the global channel
+    # so background scans (discovery/codal) stay visible in the UI.
+    # FIX: اگر فایل یک-روزه/قدیمی باشد (باقیماندهٔ اجرای قبلی بدون "done")،
+    # od_active نباید true شود — با timestamp تصمیم میگیریم نه فقط stage.
+    od_active = od.get("stage") not in (None, "done")
+    if od_active and od.get("ts"):
+        try:
+            age = (datetime.datetime.now() - datetime.datetime.fromisoformat(od["ts"])).total_seconds()
+            if age > 600:  # ۱۰ دقیقه — خیلی قدیمی؛ ignore
+                od_active = False
+        except Exception:
+            od_active = False
+    # بازار: اگر market_sync.json در ۱۰ دقیقهٔ اخیر تازه است (sync فعال)، گزارشش کن
+    ms_active = False
+    try:
+        if ms.get("stage") not in (None, "done") and ms.get("ts"):
+            age = (datetime.datetime.now() - datetime.datetime.fromisoformat(ms["ts"])).total_seconds()
+            ms_active = age <= 600
+    except Exception:
+        ms_active = False
+    if od_active:
+        active = True
+        merged = {
+            "source": "od",
+            "active": active,
+            "symbol": od.get("symbol", ""),
+            "stage": od.get("stage", "idle"),
+            "detail": od.get("detail", ""),
+            "phase": st.get("phase", ""),
+            "total": st.get("total", 0),
+            "current": st.get("current", 0),
+            "percent": st.get("percent", 0.0),
+            "elapsed": st.get("elapsed", 0.0),
+            "ts": od.get("ts", ""),
+        }
+    else:
+        # No active on-demand sync -> reflect the background/global channel
+        # FIX: با timestamp تصمیم میگیریم — اگر پروسهٔ اسکن مرده و فایل
+        # sync_status.json قدیمی (فریز > ~1 دقیقه) باشد، active=false نشان بده
+        # وگرنه UI تا ابد «در حال بروزرسانی» را نشان میدهد.
+        st_alive = False
+        try:
+            if st.get("stage") not in (None, "done", "idle") and st.get("phase") not in (None, "codal_stopped"):
+                age = (datetime.datetime.now() - datetime.datetime.fromisoformat(st["ts"])).total_seconds()
+                st_alive = age <= 60  # هر tick اسکن در <۱ دقیقه آپدیت میکند
+        except Exception:
+            st_alive = False
+        active = st_alive
+        merged = {
+            "source": "global",
+            "active": active,
+            "symbol": st.get("symbol", ""),
+            "stage": st.get("stage", "idle"),
+            "detail": st.get("detail", ""),
+            "phase": st.get("phase", ""),
+            "total": st.get("total", 0),
+            "current": st.get("current", 0),
+            "percent": st.get("percent", 0.0),
+            "elapsed": st.get("elapsed", 0.0),
+            "ts": st.get("ts", ""),
+        }
+        # اگر بازار در حال sync است (market_sync.json تازه)، آن را ضمیمه کن
+        if ms_active and not active:
+            active = True
+            merged.update({
+                "source": "market",
+                "symbol": ms.get("symbol", ""),
+                "stage": ms.get("stage", "tsetmc"),
+                "detail": ms.get("detail", ""),
+                "phase": ms.get("phase", ""),
+                "total": ms.get("total", 0),
+                "current": ms.get("current", 0),
+                "percent": ms.get("percent", 0.0),
+                "elapsed": ms.get("elapsed", 0.0),
+                "ts": ms.get("ts", ""),
+            })
+    merged["v2ray"] = st.get("v2ray", {}) or {}
+    merged["ban_until"] = st.get("ban_until", "")
+    return {"status": "success", "sync": merged}
+
+
+@app.get("/api/sync/diagnose")
+def diagnose_sync():
+    """تشخیص باگ: آیا codal_fetcher واقعاً اجرا میشود؟ آیا sync_status.json
+    فریز شده؟ وضعیت ADB؟ — UI این را برای نمایش هشدار استفاده میکند."""
+    import time as _t
+    info = {"codal_process_running": bool(_count_procs("codal_fetcher")),
+            "app_processes": _count_procs("app.py"),
+            "adb_found": bool(codal_fetcher._find_adb()),
+            "adb_device": False, "adb_enabled": codal_fetcher._adb_enabled()}
+    # چک دستگاه ADB
+    try:
+        adb = codal_fetcher._find_adb()
+        if adb:
+            import subprocess
+            r = subprocess.run([adb, "devices"], capture_output=True, text=True, timeout=8)
+            info["adb_device"] = any(ln.split("\t")[-1].strip() == "device"
+                                     for ln in (r.stdout or "").splitlines())
+    except Exception:
+        pass
+    # سن sync_status.json
+    try:
+        mtime = os.path.getmtime(STATUS_PATH)
+        age = _t.time() - mtime
+        info["status_file_age_sec"] = round(age, 1)
+        info["status_frozen"] = age > 60 and bool(_count_procs("codal_fetcher"))
+    except Exception:
+        info["status_file_age_sec"] = -1
+        info["status_frozen"] = False
+    # وضعیت تترینگ: آیا adapter ویندوز IP واقعی از تلفن گرفته؟
+    info["adb_tether_up"] = bool(codal_fetcher._detect_tether_ip())
+    # مرحله فعلی
+    st = _safe_read_json(STATUS_PATH) or {}
+    info["phase"] = st.get("phase", "")
+    info["detail"] = st.get("detail", "")
+    info["symbol"] = st.get("symbol", "")
+    info["ts"] = st.get("ts", "")
+    return {"status": "success", "diag": info}
+
+
+def _write_control(cmd):
+    """Write the user's pause/resume/stop intent for codal_fetcher.py to poll."""
+    try:
+        tmp = CONTROL_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"cmd": cmd,
+                       "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False)
+        os.replace(tmp, CONTROL_PATH)
+    except Exception:
+        pass
+
+
+def _codal_running():
+    """True when at least one codal_fetcher python process is alive."""
+    return _count_procs("codal_fetcher")
+
+
+def _launch_codal_scan():
+    """Launch run_discovery.sh through pinned Git Bash (WSL bash cannot cd to C:/).
+    On POSIX (Linux/macOS) falls back to the system bash on PATH."""
+    try:
+        bash = None
+        for p in ("C:/Program Files/Git/usr/bin/bash.exe",
+                  "C:/Program Files/Git/bin/bash.exe",
+                  "C:/Program Files (x86)/Git/usr/bin/bash.exe"):
+            if os.path.isfile(p):
+                bash = p
+                break
+        if not bash:
+            import shutil
+            bash = shutil.which("bash")
+        if not bash:
+            return False
+        proj = APP_DIR
+        logs_dir = os.path.join(proj, "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        with open(os.path.join(logs_dir, "relauncher.log"), "a", encoding="utf-8") as lf:
+            lf.write("[app] %s - resume: launching discovery scan\n"
+                     % datetime.datetime.now().isoformat(timespec="seconds"))
+        out = open(os.path.join(logs_dir, "relauncher.log"), "ab", buffering=0)
+        subprocess.Popen([bash, "run_discovery.sh"], cwd=proj,
+                         stdin=subprocess.DEVNULL, stdout=out,
+                         stderr=subprocess.STDOUT,
+                         creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                         | getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return True
+    except Exception:
+        return False
+
+
+def _kill_codal_fetchers():
+    """Force-stop every codal_fetcher process — کراس-پلتفرم."""
+    _kill_procs("codal_fetcher")
+
+
+def _mark_codal_stopped():
+    """Write the stopped phase into sync_status.json so the UI shows
+    ⏹️ کدال: متوقفشده and active=false even for a force-killed scan."""
+    try:
+        st = _safe_read_json(STATUS_PATH) or {}
+        st["phase"] = "codal_stopped"
+        st["detail"] = "اسکن توسط کاربر متوقف شد"
+        st["ts"] = datetime.datetime.now().isoformat(timespec="seconds")
+        tmp = STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(st, f, ensure_ascii=False)
+        os.replace(tmp, STATUS_PATH)
+    except Exception:
+        pass
+
+
+@app.post("/api/codal/control")
+async def codal_control(request: Request):
+    """Pause / resume / stop the Codal discovery scan from the dashboard."""
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "error", "message": "invalid JSON body"}
+    cmd = str((body or {}).get("cmd", "")).strip().lower()
+    if cmd not in ("pause", "resume", "stop"):
+        return {"status": "error", "message": "unknown cmd: %s" % cmd}
+    _write_control(cmd)
+    if cmd == "stop":
+        _kill_codal_fetchers()
+        _mark_codal_stopped()
+    elif cmd == "resume" and not _codal_running():
+        _launch_codal_scan()
+    return {"status": "success", "cmd": cmd, "running": _codal_running()}
+
+
+@app.get("/")
+def serve_home():
+    return FileResponse(os.path.join(_static_dir(), "index.html"))
+
+
+@app.get("/api/adb/state")
+def adb_state():
+    """وضعیت راهنمای اینترنت/چرخش IP: adb + گوشی + تنظیم کاربر."""
+    try:
+        with open(_ADB_CFG, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except Exception:
+        cfg = {}
+    adb_path = None
+    for p in (r"C:\adb\platform-tools\adb.exe", r"C:\adb\adb.exe",
+              os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe")):
+        if os.path.exists(p):
+            adb_path = p
+            break
+    phone = False
+    if adb_path:
+        try:
+            out = subprocess.run([adb_path, "devices"], capture_output=True,
+                                 text=True, timeout=10)
+            phone = bool(out.stdout) and "device" in (out.stdout or "")
+        except Exception:
+            pass
+    return {"status": "success",
+            "enabled": bool(cfg.get("enabled", True)),
+            "seen": bool(cfg.get("seen", False)),
+            "adb_found": bool(adb_path),
+            "phone": phone}
+
+
+@app.post("/api/adb/set")
+async def adb_set(request: Request):
+    """تنظیم toggle چرخش IP + فلگ دیدهشدن راهنما."""
+    try:
+        body = await request.json()
+    except Exception:
+        return {"status": "error", "message": "invalid JSON body"}
+    cfg = {}
+    try:
+        with open(_ADB_CFG, encoding="utf-8") as f:
+            cfg = json.load(f)
+    except Exception:
+        pass
+    if "enabled" in body:
+        cfg["enabled"] = bool(body["enabled"])
+    if "seen" in body:
+        cfg["seen"] = bool(body["seen"])
+    try:
+        tmp = _ADB_CFG + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False)
+        os.replace(tmp, _ADB_CFG)
+    except Exception:
+        pass
+    return {"status": "success", "config": cfg}
+
+
+def _sync_market_on_start():
+    """بروزرسانی زنده تابلو هنگام هر اجرای برنامه (هوک استارت).
+    dedup: اگر سینک بازار از قبل در حال اجراست صبر کن — اجرای درون‌پروسه‌ای (EXE-safe)."""
+    if _market_sync_alive():
+        print("[startup] market sync already running — skip")
+        return
+    try:
+        threading.Thread(target=_run_market_sync, daemon=True).start()
+        print("[startup] market sync thread spawned")
+    except Exception as e:
+        print(f"[startup] market sync failed to start: {e}")
+
+
+# ---------- Notification API (test endpoints) ----------
+
+@app.get("/api/notify/status")
+def notify_status():
+    """وضعیت پیکربندی کانالها — بدون توکن (وضعیت امن)."""
+    if not NOTIFIER_AVAILABLE:
+        return {"status": "error", "message": "notifier module unavailable (httpx?)"}
+    return {"status": "success", "channels": notifier.status()}
+
+
+def _msg_ok(res, channel: str):
+    """خلاصهٔ ارسال (dict از notifier) → پاسخ API گزارشهای عددی."""
+    if isinstance(res, dict):
+        return {"status": "success" if res.get("ok") else "error",
+                "channel": channel,
+                "success": int(res.get("success", 0)),
+                "failed": int(res.get("failed", 0)),
+                "detail": res.get("detail", "")}
+    return {"status": "success" if res else "error",
+            "channel": channel,
+            "detail": ("پیام ارسال شد" if res else f"ارسال ناموفق — logهای [{channel}] را ببینید")}
+
+
+@app.post("/api/notify/test-telegram")
+async def notify_test_telegram():
+    if not NOTIFIER_AVAILABLE:
+        return {"status": "error", "message": "notifier unavailable"}
+    ok = await notifier.send_telegram_msg("🚀 BorsTerminal Notification Test Successful.")
+    return _msg_ok(ok, "notifier-telegram")
+
+
+@app.post("/api/notify/test-bale")
+async def notify_test_bale():
+    if not NOTIFIER_AVAILABLE:
+        return {"status": "error", "message": "notifier unavailable"}
+    ok = await notifier.send_bale_msg("🚀 BorsTerminal Notification Test Successful.")
+    return _msg_ok(ok, "notifier-bale")
+
+
+@app.post("/api/notify/test-all")
+async def notify_test_all():
+    """ارسال نمونه به همهٔ کانالهای فعال (همزمان)."""
+    if not NOTIFIER_AVAILABLE:
+        return {"status": "error", "message": "notifier unavailable"}
+    res = await notifier.dispatch_alert("🚀 BorsTerminal Notification Test Successful.")
+    return res
+
+
+# ---------- Screener API: update-existing / discover (Codal pipeline v6) ----------
+
+# Non-blocking job registry: subprocess + polling
+_PIPELINE_JOBS = {}
+
+
+def _spawn_pipeline(kind, limit, args):
+    """اجرای پسزمینهٔ pipeline (subprocess.Popen) + ثبت job برای poll."""
+    import subprocess, sys, os
+    pid = None
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, "codal_fetcher.py", *args],
+            cwd=APP_DIR,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        pid = proc.pid
+    except Exception as e:
+        _PIPELINE_JOBS[kind] = {"status": "error", "message": str(e)[:160],
+                                "started": datetime.datetime.now().isoformat()}
+        return _PIPELINE_JOBS[kind]
+    _PIPELINE_JOBS[kind] = {"status": "running", "pid": pid, "limit": limit,
+                            "started": datetime.datetime.now().isoformat()}
+    return _PIPELINE_JOBS[kind]
+
+
+@app.post("/api/sync/update-existing")
+def api_update_existing(limit: int = Query(50, ge=1, le=500)):
+    """v6 — update افزایشی در پسزمینه؛ فوراً برمیگردد (poll: /api/sync/pipeline)."""
+    return _spawn_pipeline("update", limit, ["--update-symbols", str(limit)])
+
+
+@app.post("/api/sync/discover")
+def api_discover(limit: int = Query(25, ge=1, le=200)):
+    """v7.4 — دریافت نمادهای جدید = فید سراسری discover (بهینه‌ترین روش:
+    یک فید بازار-wide به‌جای ~۲۰۰۰ پراب نماد-به-نماد؛ ۹۶٪ پراب‌های قدیمی خالی بود).
+    گارد ۲-اسکن همزمان + پاکسازی stop ماندگار مثل sync_codal."""
+    if _codal_running():
+        return {"status": "already_running",
+                "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}
+    try:
+        with open(CONTROL_PATH, "w", encoding="utf-8") as f:
+            json.dump({"cmd": "resume", "ts": datetime.datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
+    except Exception:
+        pass
+    try:
+        proc = subprocess.Popen([sys.executable, "codal_fetcher.py", "--feed", "discover"],
+                                cwd=APP_DIR,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        _PIPELINE_JOBS["discover"] = {"status": "running", "pid": proc.pid, "limit": limit,
+                                      "started": datetime.datetime.now().isoformat()}
+        return _PIPELINE_JOBS["discover"]
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:160]}
+
+
+
+# ===== v9.7.7 — اندپوینت‌های موتور کدال (ADB rotation) =====
+# پاک‌سازی: codal_engine دیگر استاب نیست؛ لایهٔ نازک روی codal_fetcher است.
+# adb_available از وضعیت واقعی adb می‌آید (v9.7.7 مقدار True هاردکد بود) و
+# run_sync_job پاسخ «ok» جعلی نمی‌سازد — job واقعی codal_fetcher اجرا می‌کند.
+from codal_engine import run_sync_job, _adb_rotate, adb_status
+
+@app.post("/api/sync/delta")
+def api_delta_sync(payload: dict = None):
+    """دلتای کدال؛ بدنهٔ اختیاری JSON: {"symbols": ["خودرو", ...]}"""
+    try:
+        return run_sync_job("delta", symbols=(payload or {}).get("symbols"))
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/sync/backfill")
+def api_backfill_missing(days: int = 30):
+    try:
+        return run_sync_job("backfill", days=days)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/sync/watchlist")
+def api_watchlist_sync(user_id: int = 1):
+    try:
+        return run_sync_job("watchlist", user_id=user_id)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/sync/full")
+def api_full_sync():
+    try:
+        return run_sync_job("full")
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/adb/status")
+def api_adb_status():
+    return adb_status()
+
+@app.post("/api/adb/rotate")
+def api_adb_rotate():
+    new_ip = _adb_rotate()
+    return {"status": "success" if new_ip else "error", "new_ip": new_ip}
+
+@app.get("/api/sync/pipeline")
+def api_pipeline_status():
+    """Poll وضعیت job های pipeline (update/discover)."""
+    return {"status": "success", "jobs": _PIPELINE_JOBS}
+
+
+if __name__ == "__main__":
+    # فقط وضعیت پیش‌نیازها را نشان بده (نه اسکن، نه دانلود) — خروجی/دانلود با دکمه‌های UI
+    try:
+        _need_check = (not os.path.exists(DB_PATH)
+                       or os.path.getsize(DB_PATH) < 10_000_000
+                       or any(importlib.util.find_spec(m) is None
+                              for m in ("fastapi", "uvicorn", "pandas", "numpy", "requests")))
+        if _need_check:
+            _rc = subprocess.run([sys.executable, "bootstrap_first_run.py"],
+                                 cwd=APP_DIR)
+    except Exception:
+        pass
+    # تابلو: هر بار اجرا، تازه‌سازی بازار در ترد جدا (شروع بلافاصله، بدون مسدود کردن UI)
+    try:
+        threading.Thread(target=_sync_market_on_start, daemon=True).start()
+    except Exception as e:
+        print(f"[startup] market sync thread failed: {e}")
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=False)

@@ -1,0 +1,37 @@
+{
+  "growth_min": 40.0,
+  "inflation_min": 58.0,
+  "eps_years": 3,
+  "margin_min": 20.0,
+  "margin_optimal": 30.0,
+  "sales_to_mcap_min": 1.0,
+  "profit_potential_min": 30.0,
+  "industry_mode": "Exclude_Mandatory_Pricing",
+  "mandatory_sectors": [
+    "خودرو",
+    "دارو",
+    "نیروگاه",
+    "غذا",
+    "لاستیک",
+    "شوینده",
+    "بیمه"
+  ],
+  "free_sectors": [
+    "سیمان",
+    "پتروشیمی",
+    "شیمیایی",
+    "فلزات",
+    "کانی",
+    "کاشی",
+    "سرامیک",
+    "کانه",
+    "معادن",
+    "نفت",
+    "محصولات فلزی"
+  ],
+  "watchlist_max": 50,
+  "mcap_min_hmt": 0.0,
+  "suspended_max_stale_sessions": 3,
+  "filter_m141": false,
+  "min_trade_val": 0.0
+}

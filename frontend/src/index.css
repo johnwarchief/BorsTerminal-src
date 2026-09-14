@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+@import './shared/styles/tokens.css';
+
+/* توکن های تم فعلی به Tailwind 4 (بدون تغییر نام متغیرها) */
+@theme {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-card: var(--bg-card);
+  --color-border-c: var(--border-color);
+  --color-border-accent: var(--border-accent);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-green: var(--accent-green);
+  --color-accent-red: var(--accent-red);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-susp: var(--accent-susp);
+  --color-accent-susp-bg: var(--accent-susp-bg);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-red: var(--neon-red);
+  --font-sans: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+html,
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* پس زمینه چندلایه Obsidian با هاله های محو فیروزه ای */
+body {
+  background-image:
+    radial-gradient(1100px 520px at 88% -12%, color-mix(in srgb, var(--neon-cyan) 7%, transparent), transparent 62%),
+    radial-gradient(900px 480px at 6% 112%, color-mix(in srgb, var(--accent-blue) 6%, transparent), transparent 58%),
+    radial-gradient(700px 360px at 50% 40%, color-mix(in srgb, #06b6d4 3%, transparent), transparent 65%);
+  background-attachment: fixed;
+}
+
+/* ---------- شیشه عمیق ---------- */
+.glass-panel {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid var(--hairline);
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
+  backdrop-filter: blur(12px) saturate(1.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--glass-shadow);
+}
+
+.glass-strip {
+  border-bottom: 1px solid var(--hairline);
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+
+/* ---------- ارقام تک عرضه بدون لرزش ---------- */
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ---------- انیمیشن ها ---------- */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.panel-in {
+  animation: panel-in 0.28s ease-out both;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.scale-in {
+  animation: scale-in 0.18s ease-out both;
+}
+
+@keyframes conflict-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-susp) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+.conflict-pulse {
+  animation: conflict-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes flash-up {
+  from {
+    background: color-mix(in srgb, var(--accent-green) 30%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+@keyframes flash-down {
+  from {
+    background: color-mix(in srgb, var(--accent-red) 30%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+.flash-up {
+  animation: flash-up 0.9s ease-out both;
+}
+.flash-down {
+  animation: flash-down 0.9s ease-out both;
+}
+
+@keyframes beam-sweep {
+  from {
+    opacity: 0.25;
+    transform: rotate(var(--beam-from, -90deg));
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--beam-to, 0deg));
+  }
+}
+.hud-beam {
+  transform-origin: 65px 65px;
+  animation: beam-sweep 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+/* نور حاشیه ای المان های مهم */
+.neon-edge-cyan {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--neon-cyan) 35%, transparent), inset 0 0 6px color-mix(in srgb, var(--neon-cyan) 12%, transparent);
+}
+
+/* احترام به کاهش حرکت کاربر */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

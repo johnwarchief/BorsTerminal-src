@@ -1,0 +1,42 @@
+# ============================================================
+#  BorsTerminal_Ultimate — .gitattributes
+#  Normalises line endings so a Windows working tree and a
+#  Linux/CI checkout produce byte-identical blobs.
+#
+#  Rules:
+#    * everything is normalised to LF in the index
+#    * the working tree gets LF, except Windows-only launchers
+#    * known-binary assets are never touched
+# ============================================================
+
+* text=auto eol=lf
+
+# ---- Windows launchers must keep CRLF in the working tree ----
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# ---- POSIX shell launchers must keep LF ----
+*.sh   text eol=lf
+
+# ---- Generated / vendored payloads: never normalise or diff ----
+*.ttf       -text
+*.woff      -text
+*.woff2     -text
+*.otf       -text
+*.eot       -text
+*.png       -text
+*.jpg       -text
+*.jpeg      -text
+*.gif       -text
+*.ico       -text
+*.xlsx      -text
+*.zip       -text
+*.rar       -text
+*.7z        -text
+*.lzma      -text
+
+# ---- SQLite databases are binary blobs ----
+*.db        -text
+*.db-shm    -text
+*.db-wal    -text
