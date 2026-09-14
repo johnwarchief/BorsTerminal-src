@@ -1,4 +1,4 @@
-// تست badge «مجمع نزدیک» — از رویدادهای تقویم واقعی بک‌اند (events در /api/ma).
+// تست badge «مجمع نزدیک» — از رویدادهای تقویم واقعی بک‌اند (endpoint سبک /api/calendar/{symbol}).
 // دو حالت خواستهٔ کاربر: مجمع نزدیک (≤۱۴ روز) و تغییر مجمع (لغو/تعویق/انتقال)
 // که باید صادقانه نشان داده شود، نه تاریخ قدیمی. بدون رویداد ⇒ بدون badge.
 import { render, screen, waitFor } from '@testing-library/react';
@@ -145,9 +145,9 @@ describe('AssemblyBadge — رندر با دادهٔ واقعی /api/ma', () => 
     const el = await screen.findByTestId('assembly-near-badge');
     expect(el.textContent).toBe('مجمع نزدیک — امروز (۱۴۰۵/۰۶/۲۳)');
     expect(el.getAttribute('title')).toContain('آگهی دعوت به مجمع');
-    // درخواست به اندپوینت رویدادها زده شده باشد
+    // درخواست به endpoint سبک تقویم زده شده باشد
     const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain('/api/ma/');
+    expect(url).toContain('/api/calendar/');
     expect(url).toContain(encodeURIComponent('پست بازار'));
   });
 

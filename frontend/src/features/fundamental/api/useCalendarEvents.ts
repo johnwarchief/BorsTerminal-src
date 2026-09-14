@@ -1,8 +1,9 @@
 // features/fundamental/api/useCalendarEvents.ts -- رویدادهای تقویم نماد (مجمع و…)
-// منبع واقعیِ رویدادهای تقویم بک‌اند فیلد `events` در /api/ma/{symbol} است
-// (خروجی _cal_events_for در api/chart.py). این endpoint نسبتاً سنگین است
-// (سری MA را هم می‌فرستد)، برای همین با days=120 و staleTime بلند کش میشود؛
-// endpoint سبک اختصاصی تقویم به هد بک‌اند پیشنهاد شده است.
+// منبع: endpoint سبک اختصاصی `GET /api/calendar/{symbol}` بک‌اند —
+// خروجی `_cal_events_for` در api/chart.py:
+// {status, symbol, count, events:[{date, ts, title, cat}]}
+// با cat ∈ assembly | assemblyExtra | assemblyChange | dividend | capitalIncrease | ipo | bondMaturity | other.
+// (قبلاً از events در /api/ma/{symbol} می‌آمد که سری MA سنگین را هم می‌فرستد.)
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
@@ -16,7 +17,7 @@ export const CalEventSchema = z.object({
 
 export type CalEventRow = z.infer<typeof CalEventSchema>;
 
-/** فقط فیلدهای لازم را مدل می‌کند؛ بقیهٔ پاسخ (سریهای MA) نادیده گرفته میشود */
+/** فقط فیلدهای لازم را مدل می‌کند؛ فیلدهای اضافی پاسخ نادیده گرفته میشود */
 const MaEventsSchema = z.object({
   status: z.string().nullish(),
   symbol: z.string().nullish(),
@@ -27,7 +28,7 @@ export function useCalendarEvents(symbol: string) {
   return useQuery({
     queryKey: ['cal-events', symbol],
     queryFn: ({ signal }) =>
-      http<z.infer<typeof MaEventsSchema>>(`/api/ma/${encodeURIComponent(symbol)}?days=120`, {
+      http<z.infer<typeof MaEventsSchema>>(`/api/calendar/${encodeURIComponent(symbol)}`, {
         schema: MaEventsSchema,
         signal,
       }),
