@@ -1,0 +1,124 @@
+// تست کاتالوگ ابزارهای ترسیم به سبک TradingView (T-07): پوشش، پیشفرضها، فیبوی لگاریتمی
+import { describe, expect, it } from 'vitest';
+import type { OverlayFigureCtx, RegisterOverlayDef } from '@vendor/klinecharts';
+import { DRAWING_CATALOG, buildDrawingGroups, toolDefaults, toolLabel } from '@features/technical/lib/drawingTools';
+import { FTS_FIB_BANDS, FTS_FIB_LEVELS, registerFtsOverlays } from '@features/technical/lib/ftsOverlays';
+
+/** ثبت اورلیها با api قلابی و برگرداندن تعریفها */
+function captureRegistered(): RegisterOverlayDef[] {
+  const defs: RegisterOverlayDef[] = [];
+  registerFtsOverlays({
+    registerOverlay: (def) => defs.push(def),
+    getSupportedOverlays: () => [],
+  });
+  return defs;
+}
+
+function figuresOf(def: RegisterOverlayDef, ctx: OverlayFigureCtx) {
+  const figs = def.createPointFigures?.(ctx) ?? [];
+  return figs.filter((f) => f.type === 'text').map((f) => String((f.attrs as { text: string }).text));
+}
+
+describe('پوشش کاتالوگ ابزارهای رسم (TV)', () => {
+  it('ابزارهای فهرست مأموریت همه در کاتالوگاند', () => {
+    const names = DRAWING_CATALOG.flatMap((g) => g.tools.map((t) => t.name));
+    for (const n of [
+      'straightLine',
+      'horizontalStraightLine',
+      'verticalStraightLine',
+      'rayLine',
+      'parallelStraightLine',
+      'ftsFib',
+      'ftsFibLog',
+      'ftsMeasure',
+      'ftsPosition',
+      'simpleAnnotation',
+      'simpleTag',
+    ]) {
+      expect(names).toContain(n);
+    }
+  });
+
+  it('فیبوی FTS سطوح ۰/۳۳/۴۰/۶۱.۸/۷۰/۱۰۰ را دارد', () => {
+    expect([...FTS_FIB_LEVELS]).toEqual([0, 0.33, 0.4, 0.618, 0.7, 1]);
+    expect(FTS_FIB_BANDS.map((b) => [...b])).toEqual([
+      [0.33, 0.4],
+      [0.618, 0.7],
+    ]);
+  });
+
+  it('برچسب فارسی هر ابزار از کاتالوگ میآید', () => {
+    expect(toolLabel('ftsFibLog')).toBe('فیبوی لگاریتمی FTS');
+    expect(toolLabel('straightLine')).toBe('خط روند');
+    expect(toolLabel('unknown-thing')).toBe('unknown-thing');
+  });
+
+  it('buildDrawingGroups سفارشیها را همیشه نگه میدارد', () => {
+    const groups = buildDrawingGroups([]);
+    const names = groups.flatMap((g) => g.tools.map((t) => t.name));
+    expect(names).toContain('ftsFib');
+    expect(names).toContain('ftsFibLog');
+  });
+});
+
+describe('پیشفرض هر ابزار (رنگ/ضخامت/امتداد/متن)', () => {
+  it('خط روند: رنگ و ضخامت و نوع خط', () => {
+    expect(toolDefaults('straightLine')).toEqual({ styles: { color: '#38bdf8', size: 1.5, style: 'solid' } });
+  });
+
+  it('فیبوی لگاریتمی رنگ متمایز از فیبوی خطی دارد', () => {
+    const lin = toolDefaults('ftsFib');
+    const log = toolDefaults('ftsFibLog');
+    expect((lin.styles as { color: string }).color).not.toBe((log.styles as { color: string }).color);
+  });
+
+  it('متن/یادداشت برچسب پیشفرض دارند', () => {
+    expect(toolDefaults('simpleAnnotation').extendData).toEqual({ text: 'یادداشت' });
+    expect(toolDefaults('simpleTag').extendData).toEqual({ text: 'برچسب' });
+  });
+
+  it('نام ناشناخته ⇒ پیشفرض خالی (بدون ساختگی)', () => {
+    expect(toolDefaults('nope')).toEqual({});
+  });
+});
+
+describe('فیبوی FTS: خطی در برابر لگاریتمی', () => {
+  const defs = captureRegistered();
+  const lin = defs.find((d) => d.name === 'ftsFib');
+  const log = defs.find((d) => d.name === 'ftsFibLog');
+  const ctx = {
+    chart: {},
+    overlay: { points: [{ value: 200 }, { value: 100 }] },
+    coordinates: [
+      { x: 10, y: 50 },
+      { x: 110, y: 150 },
+    ],
+    bounding: { width: 300, height: 200 },
+    barSpace: { bar: 10, halfBar: 5, gapBar: 4, halfGapBar: 2 },
+  } as unknown as OverlayFigureCtx;
+
+  it('هر دو اورلی ثبت میشوند', () => {
+    expect(lin).toBeTruthy();
+    expect(log).toBeTruthy();
+  });
+
+  it('حالت خطی: سطح ۴۰٪ = ۱۴۰', () => {
+    const texts = figuresOf(lin as RegisterOverlayDef, ctx);
+    expect(texts.some((t) => t.includes('140') && t.includes('40.0%'))).toBe(true);
+    expect(texts.some((t) => t.includes('132') && t.includes('40.0%'))).toBe(false);
+  });
+
+  it('حالت لگاریتمی: سطح ۴۰٪ = ۱۳۲ (۱۰۰×۲^۰٫۴)', () => {
+    const texts = figuresOf(log as RegisterOverlayDef, ctx);
+    expect(texts.some((t) => t.includes('132') && t.includes('40.0%'))).toBe(true);
+    expect(texts.some((t) => t.includes('140') && t.includes('40.0%'))).toBe(false);
+  });
+
+  it('سطوح مبنا در هر دو حالت یکی است (۱۰۰٪ و ۰٪)', () => {
+    for (const def of [lin, log] as RegisterOverlayDef[]) {
+      const texts = figuresOf(def, ctx);
+      expect(texts.some((t) => t.includes('200') && t.includes('100.0%'))).toBe(true);
+      expect(texts.some((t) => t.includes('100') && t.includes('0.0%'))).toBe(true);
+    }
+  });
+});
