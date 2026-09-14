@@ -74,3 +74,14 @@ export function filterFtsSignals(rows: ScreenerRow[], q: string, limit = DEFAULT
     })
     .slice(0, limit);
 }
+
+/**
+ * نماد پیش‌فرض (fallback) وقتی نمادی انتخاب نشده: اولین ردیف واچ‌لیست اسکرینر،
+ * وگرنه اولین ردیف غیرمردود. null یعنی اسکرینر خالی است.
+ */
+export function firstScreenerSymbol(rows: ScreenerRow[]): string | null {
+  const wl = rows.find((r) => r.watchlist && !r.excluded && r.symbol);
+  if (wl) return wl.symbol;
+  const any = rows.find((r) => !r.excluded && r.symbol);
+  return any ? any.symbol : null;
+}

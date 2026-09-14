@@ -1,25 +1,45 @@
 // features/technical/api/useCandleFeed.ts -- کندل های روزانه با قالب klinecharts
+// منبع اول: /api/chart/{symbol} (کندل تعدیل‌شدهٔ TSETMC؛ نرمال‌سازی عربی/فارسی و LAST).
+// fallback: /api/history/{symbol} (DB محلی) وقتی منبع اول خطا/خالی برگرداند (بدون رگرسیون).
+// علت: /api/history تطبیق نماد را دقیق می‌کند و برای نمادهای ذخیره‌شده با «ك» عربی خالی
+// برمی‌گرداند، در حالی که /api/chart سالم است (نمونهٔ تأییدشده: کانسار).
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import type { KLineData } from '../../../vendor/klinecharts';
 
+const RawCandle = z.object({
+  time: z.string(),
+  open: z.number(),
+  high: z.number(),
+  low: z.number(),
+  close: z.number(),
+});
+const RawVolume = z.object({ time: z.string(), value: z.number() });
+
+/** /api/chart/{symbol} — کندل تعدیل‌شده؛ خطا شکل {status:'error', message} دارد */
+const ChartSchema = z.object({
+  status: z.string(),
+  candles: z.array(RawCandle).nullish(),
+  volumes: z.array(RawVolume).nullish(),
+  count: z.number().nullish(),
+});
+
+/** /api/history/{symbol} — تاریخچهٔ محلی */
 const HistorySchema = z.object({
   status: z.string(),
-  candles: z
-    .array(
-      z.object({
-        time: z.string(),
-        open: z.number(),
-        high: z.number(),
-        low: z.number(),
-        close: z.number(),
-      }),
-    )
-    .nullish(),
-  volumes: z.array(z.object({ time: z.string(), value: z.number() })).nullish(),
+  candles: z.array(RawCandle).nullish(),
+  volumes: z.array(RawVolume).nullish(),
 });
+
+export type CandleSource = 'chart' | 'history';
+export type CandleFeedResult = {
+  status: string;
+  source: CandleSource;
+  candles: { time: string; open: number; high: number; low: number; close: number }[];
+  volumes: { time: string; value: number }[];
+};
 
 export function toKLineData(
   candles: { time: string; open: number; high: number; low: number; close: number }[],
@@ -36,18 +56,42 @@ export function toKLineData(
   return out.sort((a, b) => a.timestamp - b.timestamp);
 }
 
+/**
+ * زنجیرهٔ منبع داده: /api/chart (تعدیل‌شده) → در صورت خطا/خالی، /api/history (محلی).
+ * خالص‌سازی‌شده از هوک تا در تست با fetch ماک قابل آزمون باشد.
+ */
+export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Promise<CandleFeedResult> {
+  try {
+    const chart = await http<z.infer<typeof ChartSchema>>(`/api/chart/${encodeURIComponent(symbol)}`, {
+      schema: ChartSchema,
+      signal,
+    });
+    if (chart.status === 'success' && (chart.candles?.length ?? 0) > 0) {
+      return { status: 'success', source: 'chart', candles: chart.candles ?? [], volumes: chart.volumes ?? [] };
+    }
+  } catch {
+    // منبع اول در دسترس نیست — به تاریخچهٔ محلی برمی‌گردیم
+  }
+  const history = await http<z.infer<typeof HistorySchema>>(`/api/history/${encodeURIComponent(symbol)}`, {
+    schema: HistorySchema,
+    signal,
+  });
+  return {
+    status: history.status,
+    source: 'history',
+    candles: history.candles ?? [],
+    volumes: history.volumes ?? [],
+  };
+}
+
 export function useCandleFeed(symbol: string) {
   const query = useQuery({
     queryKey: ['candles', symbol],
-    queryFn: ({ signal }) =>
-      http<z.infer<typeof HistorySchema>>(`/api/history/${encodeURIComponent(symbol)}`, { schema: HistorySchema, signal }),
+    queryFn: ({ signal }) => fetchCandleFeed(symbol, signal),
     enabled: symbol.length > 0,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
-  const data = useMemo(
-    () => toKLineData(query.data?.candles ?? [], query.data?.volumes ?? []),
-    [query.data],
-  );
-  return { ...query, candles: data };
+  const data = useMemo(() => toKLineData(query.data?.candles ?? [], query.data?.volumes ?? []), [query.data]);
+  return { ...query, candles: data, source: query.data?.source ?? null };
 }
