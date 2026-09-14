@@ -7,6 +7,7 @@ export type DrawingTool = { name: string; label: string; custom?: boolean; hint?
 export type DrawingGroup = { label: string; glyph: string; tools: DrawingTool[] };
 
 import { FTS_FIB_LOG_OVERLAY, FTS_FIB_OVERLAY, FTS_MEASURE_OVERLAY, FTS_POSITION_OVERLAY } from './ftsOverlays';
+import { TV_OVERLAY_TOOLS, TV_TOOL_NAMES } from './tvToolList';
 
 export const DRAWING_CATALOG: DrawingGroup[] = [
   {
@@ -56,6 +57,12 @@ export const DRAWING_CATALOG: DrawingGroup[] = [
       { name: 'simpleTag', label: 'برچسب' },
       { name: 'brush', label: 'قلم' },
     ],
+  },
+  {
+    // ابزارهای آمادهٔ TradingView از بستهٔ react-klinecharts-ui (ثبت روی همان نمونهٔ klinecharts ما)
+    label: 'پیشرفته (TV)',
+    glyph: 'پ',
+    tools: TV_OVERLAY_TOOLS.map((t) => ({ name: t.name, label: t.label, custom: true, hint: t.hint })),
   },
 ];
 
@@ -157,6 +164,7 @@ export function toolDefaults(name: string): ToolDefault {
     case 'brush':
       return line('#fbbf24', 2);
     default:
-      return {};
+      // ابزارهای پیشرفتهٔ TV از بستهٔ react-klinecharts-ui
+      return TV_TOOL_NAMES.includes(name) ? line('#22d3ee', 1.4) : {};
   }
 }
