@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `007b9d2` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `f077d6f` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۴۸۲ سبز (۴۵ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -68,4 +68,10 @@
 ## به‌روزرسانی ۶ (ایجنتهد main, 2026-09-14 ~20:20)
 - **agent/technical (T-02 / باقیماندهٔ فاز 3)** مرج شد: `1a89d54` + merge commit `007b9d2`. (نمای «کل‌بورس» به سری واقعی `/api/index/tedpix?limit=0` → 4284 کندل + fallback؛ ابزارهای ترسیم vendor + سفارشی FTS؛ دیالوگ تنظیمات چارت + پنل تنظیمات ابزار.) اعتبارسنجی روی درخت تمیز `007b9d2`: vitest 482/45 سبز · eslint صفر · build سالم.
 - باقیماندهٔ شناخته‌شده: ویرایش مختصات، تب هشدار (هشدار سرور).
-- ⚠️ ورکتریِ تمیزِ موقتِ اعتبارسنجی هنوز باقی است: `BorsTerminal_Ultimate_Base_worktrees\_verify-head` (detached @007b9d2) که داخل `frontend/node_modules` یک junction به node_modules اصلی دارد. برای حذف امن: اول `cmd /c rmdir "...\_verify-head\frontend\node_modules"` و بعد `git worktree remove --force`. حذف با PowerShell `-Recurse` روی junction خطرناک است (محتوای node_modules اصلی را پاک می‌کند).
+- ⚠️ ورکتریِ تمیزِ موقتِ اعتبارسنجی در به‌روزرسانی ۷ امن حذف شد: `BorsTerminal_Ultimate_Base_worktrees\_verify-head` (detached @007b9d2) که داخل `frontend/node_modules` یک junction به node_modules اصلی دارد. برای حذف امن: اول `cmd /c rmdir "...\_verify-head\frontend\node_modules"` و بعد `git worktree remove --force`. حذف با PowerShell `-Recurse` روی junction خطرناک است (محتوای node_modules اصلی را پاک می‌کند).
+
+
+## به‌روزرسانی ۷ (ایجنتهد main, 2026-09-14 ~20:30)
+- هولد-مرجِ مالک مأموریت برداشته شد (رفکتور UI `f077d6f` + فیکس نماد `c831b6e` لند شدند). مرج‌های ایجنتی از سر گرفته شد.
+- ورکتریِ موقتِ `_verify-head` **به‌صورت امن حذف شد** (junction با `cmd rmdir` سپس `git worktree remove --force`؛ node_modules اصلی سالم).
+- master HEAD = `f077d6f` — اعتبارسنجی: vitest 482/482 (45 فایل) · eslint صفر · build سالم. هیچ برنچ ایجنتی الان جلوتر از master نیست (همه مرج‌شده؛ tape/master-portfolio هنوز روی snapshot پایه).
