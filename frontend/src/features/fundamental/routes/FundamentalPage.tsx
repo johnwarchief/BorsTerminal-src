@@ -163,7 +163,7 @@ export default function FundamentalPage() {
           <h2 className="text-base font-black text-text-primary">{symbol}</h2>
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </div>
-        <EmptyState title={`بدون داده — کارت بنیادی ${symbol}`} hint={hint} />
+        <EmptyState title={`دادهٔ کارت بنیادی ${symbol} نیامد`} hint={hint} />
       </div>
     );
   }

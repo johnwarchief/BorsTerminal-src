@@ -288,7 +288,7 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
     expect(label.textContent).toContain('۲ از ۳ سال');
   });
 
-  it('سابقهٔ ناقص ۱ ساله: همان «شکاف داده» قبلی می‌ماند — برچسب جدید نمی‌آید', () => {
+  it('سابقهٔ ناقص ۱ ساله: برچسب علت‌دار می‌گیرد — برچسب سابقهٔ ناقص نمی‌آید', () => {
     const card = baseCard();
     card.indicators!['2'] = {
       ...card.indicators!['2']!,
@@ -298,7 +298,8 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
     };
     render(<FtsDrillDown card={card} active="2" quarters={FISCAL} physicalApplicable />);
     expect(screen.queryByTestId('eps-partial-rejected')).not.toBeInTheDocument();
-    // برچسب شکاف داده با tooltip علت (title) — ۱ سالِ موجود صادقانه ذکر می‌شود
+    // برچسب علت‌دار + tooltip علت و راه‌حل — ۱ سالِ موجود صادقانه ذکر می‌شود
+    expect(screen.getAllByText('سابقهٔ EPS کمتر از ۲ سال').length).toBeGreaterThanOrEqual(1);
     const hint = screen.getAllByTestId('gap-hint')[0];
     expect(hint.getAttribute('title')).toContain('فقط ۱ سال از ۳ سال');
   });
@@ -359,14 +360,17 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     expect(block.textContent).toContain('۲۸.۷٪');
   });
 
-  it('متغیر غایب فقط در جای خود «بدون داده» می‌شود — بقیهٔ فرمول سالم می‌ماند', () => {
+  it('متغیر غایب فقط در جای خود علت‌دار می‌شود — بقیهٔ فرمول سالم می‌ماند', () => {
     const card = baseCard();
     const ind4 = card.indicators!['4']!;
     card.indicators!['4'] = { ...ind4, margin_used_pct: null, potential_pct: null };
     card.metrics = { ...card.metrics!, gross_margin: null, profit_potential_pct: null };
     render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
     const block = screen.getByTestId('potential-formula');
-    expect(within(block).getAllByText('بدون داده').length).toBe(2);
+    // جای برچسب عمومی «بدون داده» / «شکاف داده»، علتِ همان متغیر می‌آید
+    expect(within(block).getByText('حاشیهٔ ناخالص ثبت نشده')).toBeInTheDocument();
+    expect(within(block).getByText('خروجی قابل محاسبه نیست')).toBeInTheDocument();
+    expect(within(block).queryByText('بدون داده')).not.toBeInTheDocument();
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
     expect(within(block).getByText(/مارکت‌کپ/).textContent).toContain('۲.۷۲');
   });

@@ -1,7 +1,7 @@
 // تست شاخص ۲ (سابقهٔ ۳ سالهٔ EPS) — منبع واحدِ lib/epsHistory + سازگاری سه نما.
 // باگ گزارش‌شدهٔ کاربر: نمادی که فقط ۲ سال سابقهٔ EPS دارد، در «جدول غربالگری»
 // باید همان ۲ سال را نشان دهد و روشن باشد که به‌خاطر سابقهٔ ناقص (۲ از ۳ سال)
-// مردود است — نه اینکه «شکاف داده» بخورد. شکاف فقط برای <۲ سال.
+// مردود است — نه اینکه برچسب شکاف بخورد. شکاف فقط برای <۲ سال.
 // دادهٔ واقعیِ مرجع: /api/fundamental/احيا → years_available=2، series=[null,590,990]
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -116,7 +116,7 @@ describe('lib/epsHistory — شمارش و وضعیت سابقهٔ EPS', () => {
 });
 
 describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', () => {
-  it('۲ سال: همان دو سال نمایش + برچسب «مردود — سابقهٔ ناقص (۲ از ۳ سال)» — نه شکاف داده', () => {
+  it('۲ سال: همان دو سال نمایش + برچسب «مردود — سابقهٔ ناقص (۲ از ۳ سال)» — نه برچسب شکاف', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const tr = screen.getByTestId('fts-screen-row');
     // همان دو سالِ موجود (۱۴۰۴ و ۱۴۰۵) دیده می‌شود
@@ -124,8 +124,8 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     const label = within(tr).getByTestId(EPS_PARTIAL_TESTID);
     expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
     expect(label.textContent).toContain('۲ از ۳ سال');
-    // سلول شاخص ۲ «شکاف داده» نمی‌گیرد (پانوشت جدول بیرون از ردیف است)
-    expect(within(tr).queryByText('شکاف داده')).not.toBeInTheDocument();
+    // سلول شاخص ۲ برچسب علت‌دارِ سابقهٔ ناکافی نمی‌گیرد (پانوشت جدول بیرون از ردیف است)
+    expect(within(tr).queryByText('سابقهٔ EPS کمتر از ۲ سال')).not.toBeInTheDocument();
     // سطر حذف نشده و امتیاز خودش را دارد
     expect(within(tr).getByText('احيا')).toBeInTheDocument();
   });
@@ -156,20 +156,20 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     expect(within(tr).getByText('✗')).toBeInTheDocument();
   });
 
-  it('۱ سال: همان «شکاف داده» می‌ماند (داده برای قضاوت نیست)', () => {
+  it('۱ سال: برچسب علت‌دار «سابقهٔ EPS کمتر از ۲ سال» (داده برای قضاوت نیست)', () => {
     render(
       <FtsScreenTable rows={[row({ symbol: 'یک‌ساله', eps_series: [50, null, null] })]} onSelect={() => {}} />,
     );
     const tr = screen.getByTestId('fts-screen-row');
     expect(within(tr).queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
-    expect(within(tr).getByText('شکاف داده')).toBeInTheDocument();
+    expect(within(tr).getByText('سابقهٔ EPS کمتر از ۲ سال')).toBeInTheDocument();
   });
 
-  it('۰ سال (سری تهی/null): «شکاف داده» — سطر حذف نمی‌شود', () => {
+  it('۰ سال (سری تهی/null): «سابقهٔ EPS سالانه ثبت نشده» — سطر حذف نمی‌شود', () => {
     render(<FtsScreenTable rows={[row({ symbol: 'بی‌داده', eps_series: null, eps_last: null })]} onSelect={() => {}} />);
     const tr = screen.getByTestId('fts-screen-row');
     expect(within(tr).queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
-    expect(within(tr).getByText('شکاف داده')).toBeInTheDocument();
+    expect(within(tr).getByText('سابقهٔ EPS سالانه ثبت نشده')).toBeInTheDocument();
     expect(within(tr).getByText('بی‌داده')).toBeInTheDocument();
   });
 
@@ -183,7 +183,7 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     const tr = screen.getByTestId('fts-screen-row');
     const label = within(tr).getByTestId(EPS_PARTIAL_TESTID);
     expect(label.textContent).toContain('۲ از ۳ سال');
-    expect(within(tr).queryByText('شکاف داده')).not.toBeInTheDocument();
+    expect(within(tr).queryByText('سابقهٔ EPS کمتر از ۲ سال')).not.toBeInTheDocument();
   });
 });
 

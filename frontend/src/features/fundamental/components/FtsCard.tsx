@@ -5,9 +5,11 @@
 import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
+import { GapHint } from './GapHint';
+import { gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
 import type { DrillDownKey } from './FtsDrillDown';
 
-const LAYERS: { key: string; drill: DrillDownKey | null; label: string; hint: string }[] = [
+const LAYERS: { key: GapAxis; drill: DrillDownKey | null; label: string; hint: string }[] = [
   { key: '1a_monetary_growth', drill: '1', label: '1 الف رشد ریالی', hint: 'رشد درآمد ریالی — کلیک: نمودار و فرمول' },
   { key: '1b_volume_growth', drill: '1', label: '1 ب رشد فیزیکی', hint: 'رشد حجم فروش — N/A برای غیرتولیدی' },
   { key: '2_eps_trend', drill: '2', label: '2 سودسازی', hint: 'روند سه ساله EPS — کلیک: نمودار پله‌ای' },
@@ -74,7 +76,14 @@ export function FtsCard({
               }`}
             >
               <div className="mb-1 text-xs font-bold text-text-secondary">{l.label}</div>
-              <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v == null ? 'بدون داده' : v ? 'قبول' : 'مردود'}</Badge>
+              {!na && v == null ? (
+                /* جای برچسب عمومی «شکاف داده»: علتِ واقعیِ همان شاخص (tooltip: علت + راه‌حل) */
+                <GapHint reason={gapTooltip(l.key)}>
+                  <span className="text-[10px] font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
+                </GapHint>
+              ) : (
+                <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v ? 'قبول' : 'مردود'}</Badge>
+              )}
             </button>
           );
         })}

@@ -11,10 +11,15 @@ import { toFaDigits } from '@shared/lib/fmt';
 
 /** سابقهٔ لازم شاخص ۲ (جزوهٔ FTS) */
 export const EPS_REQUIRED_YEARS = 3;
-/** کفِ نمایش: با کمتر از این تعداد سال، «شکاف داده» — نه قضاوت */
+/** کفِ نمایش: با کمتر از این تعداد سال، داده برای قضاوت کافی نیست */
 export const EPS_MIN_SHOWN_YEARS = 2;
-/** برچسب رسمیِ شکاف داده در کل نمای بنیادی */
-export const EPS_GAP_LABEL = 'شکاف داده';
+/** برچسب‌های علت‌دار شاخص ۲ — جای برچسب عمومی «شکاف داده» */
+export const EPS_GAP_LABEL_LT2 = 'سابقهٔ EPS کمتر از ۲ سال';
+export const EPS_GAP_LABEL_NONE = 'سابقهٔ EPS سالانه ثبت نشده';
+/** برچسب علت‌دار سابقهٔ EPS بر اساس تعداد سال‌های واقعیِ موجود */
+export function epsGapLabel(realYears: number): string {
+  return realYears >= 1 ? EPS_GAP_LABEL_LT2 : EPS_GAP_LABEL_NONE;
+}
 /** testid یکسان برای برچسب «سابقهٔ ناقص» در جدول، نردبان و drill-down */
 export const EPS_PARTIAL_TESTID = 'eps-partial-rejected';
 
