@@ -16,6 +16,7 @@ import {
 } from '../lib/masterMath';
 import { buildTradePlan, riskLevel } from '../lib/tradePlanMath';
 import { useFtsPlan } from '../api/useFtsPlan';
+import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { MasterVerdictCard } from '../ui/MasterVerdictCard';
 import { AgentMatrix } from '../ui/AgentMatrix';
 import { ConflictBanner } from '../ui/ConflictBanner';
@@ -74,9 +75,13 @@ export default function MasterPage() {
     <div className="flex w-full max-w-none flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
-        <span className="text-[10px] uppercase tracking-widest text-text-muted">
-          {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}
-        </span>
+        <div className="flex items-center gap-2">
+          {/* اقدام سریع سبد: افزودن/ویرایش/حذف تصمیم این نماد */}
+          <SymbolBasketAction symbol={symbol} />
+          <span className="text-[10px] uppercase tracking-widest text-text-muted">
+            {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}
+          </span>
+        </div>
       </div>
 
       {empty ? (
