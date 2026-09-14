@@ -38,3 +38,17 @@
 - «معیار پذیرش صریح» + «گزارش X خطی» بگذار؛ «تا کامیت تمام نشده» ته همه پیام‌ها
 - متن PDF/جزوه کاربر را همیشه به `docs/FTS_SPEC.md` ارجاع بده، نه paste مجدد
 - مأموریت‌های موازی روی یک تب = صف (dispatch دوم interrupt نکند؛ ایجنت بعد اتمام turn اول تحویل می‌گیرد)
+
+
+---
+
+## محیط OpenClaw — ایجنت‌هد این ماشین
+- ایجنت‌هد در این محیط، سشن `main` است. چهار ایجنت دامنه‌ای:
+  - `bors-tape` → ورکتری `silky-arch` (برنچ `agent/tape`) → قلمرو `frontend/src/features/market/**`
+  - `bors-fundamental` → `serene-mountain` (`agent/fundamental`) → `frontend/src/features/fundamental/**`
+  - `bors-technical` → `neat-plateau` (`agent/technical`) → `frontend/src/features/technical/**`
+  - `bors-master-portfolio` → `mellow-brook` (`agent/master-portfolio`) → `features/master/**` + `features/portfolio/**`
+- ریپو: `Desktop\BorsTerminal_Ultimate_Base` · ورکتری‌ها: `Desktop\BorsTerminal_Ultimate_Base_worktrees\`
+- ارسال بین‌ایجنتی فعال است (`tools.agentToAgent.enabled=true` و `tools.sessions.visibility=all`).
+- ایجنت وقتی ویرایشی خارج از قلمرو لازم داشت، با `sessions_send(agentId="main")` درخواست می‌دهد؛ هد بررسی و خودش اعمال می‌کند (ایجنت نباید خودش بزند).
+- مرج نهایی: در `BorsTerminal_Ultimate_Base` (برنچ master) هر برنچ با `git merge agent/<x> --no-edit` مرج می‌شود، سپس تست → eslint → build؛ تعارض‌ها را هد حل می‌کند.
