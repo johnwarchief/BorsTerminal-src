@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@klinecharts/extension": "^0.1.0",
     "@klinecharts/pro": "^0.1.1",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-table": "^8.21.3",
