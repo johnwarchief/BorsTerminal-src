@@ -8,6 +8,7 @@ import { Badge } from '@shared/components/Badge';
 import { GapHint, epsGapReason, GENERIC_GAP_REASON, PHYSICAL_NA_REASON, VALUATION_GAP_REASON } from './GapHint';
 import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
+import { EPS_PARTIAL_TESTID, epsHistory, epsRealYears } from '../lib/epsHistory';
 
 export type DrillDownKey = '1' | '2' | '3' | '4' | '5';
 
@@ -128,9 +129,10 @@ function Panel2({ card }: { card: FtsCard }) {
   const span = max - min || 1;
   const rising = ind?.strictly_rising ?? null;
   const required = ind?.years_required ?? card.metrics?.eps_required ?? 3;
-  const realYears = series.filter((v) => v != null).length;
-  /** ≥۲ سالِ واقعی موجود است ولی سابقهٔ کامل نیست → نمایش داده + برچسب مردودِ ناقص */
-  const partialShown = ind?.partial == true && realYears >= 2 && realYears < required;
+  const realYears = epsRealYears(series);
+  /** همان منطق و برچسبِ جدولِ غربالگری/نردبان (lib/epsHistory) */
+  const hist = epsHistory(series, required);
+  const partialShown = ind?.partial == true && hist.state === 'partial';
   const gapReason = epsGapReason({
     available: realYears,
     required,
@@ -145,10 +147,10 @@ function Panel2({ card }: { card: FtsCard }) {
           </GapHint>
         ) : partialShown ? (
           <span
-            data-testid="eps-partial-rejected"
+            data-testid={EPS_PARTIAL_TESTID}
             className="inline-flex items-center rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2.5 py-0.5 text-xs font-semibold text-accent-susp"
           >
-            مردود در شاخص ۲ — سابقهٔ ناقص ({toFaDigits(realYears)} از {toFaDigits(required)} سال)
+            {hist.label}
           </span>
         ) : (
           <Badge tone={rising == null ? 'gray' : rising ? 'green' : 'red'}>
