@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
+import { HttpError } from '@shared/api/http';
 import { toFaDigits } from '@shared/lib/fmt';
 import { statementAgeDays } from '@shared/lib/jalaali';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -148,16 +149,21 @@ export default function FundamentalPage() {
   }
 
   if (card.isError || !card.data) {
+    /** Circuit Breaker: علت واقعیِ نبودِ داده را صادقانه بگو، نه رندر خالی بی‌پیام */
+    const status = card.error instanceof HttpError ? card.error.status : null;
+    const hint =
+      status === 0
+        ? 'پاسخ بک‌اند با قرارداد دادهٔ فرانت ناسازگار است — قرارداد را بررسی کن'
+        : status === 404
+          ? `نماد ${symbol} در کدال صورت مالی ندارد`
+          : 'سرور بنیادی پاسخ نداد یا خطای شبکه رخ داد';
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-black text-text-primary">{symbol}</h2>
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </div>
-        <EmptyState
-          title={`کارت بنیادی ${symbol} در دسترس نیست`}
-          hint="نماد در کدال صورت مالی ندارد یا خطای شبکه رخ داد"
-        />
+        <EmptyState title={`بدون داده — کارت بنیادی ${symbol}`} hint={hint} />
       </div>
     );
   }

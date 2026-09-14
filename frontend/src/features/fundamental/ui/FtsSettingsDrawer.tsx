@@ -256,12 +256,19 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           className="fixed inset-0 z-[9998] bg-black/25"
         />
       ) : null}
+      {/* ⚠️ CSS: عمداً کلاس glass-panel روی این پنل نیست.
+          در index.css قاعدهٔ `.glass-panel{position:relative; ...}` بیرون از
+          @layer نوشته شده؛ در آبشار CSS، استایل بیرون از layer بر utilities
+          تیلویند (که داخل @layer utilities هستند) مقدم است و `fixed` را
+          باطل می‌کند — نتیجه: پنل به‌جای دراور ثابت سمت راست، داخل جریان
+          صفحه و در پایین ظاهر می‌شود. ظاهر شیشه‌ای با utilityهای صریح
+          بازسازی شده تا positioning زیر هیچ قاعدهٔ بیرون‌از‌layer نرود. */}
       <aside
         aria-label="پنل تنظیمات پیش‌شرط‌های FTS"
         aria-hidden={!open}
         role="dialog"
         data-testid="fts-settings-panel"
-        className={`glass-panel fixed inset-y-0 right-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-y-0 border-r-0 p-0 transition-all duration-200 ease-out ${
+        className={`fixed inset-y-0 right-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-l border-[var(--hairline)] bg-[var(--glass-tint)] shadow-[var(--glass-shadow)] backdrop-blur-md backdrop-saturate-125 transition-all duration-200 ease-out ${
           open ? 'visible translate-x-0 opacity-100' : 'invisible translate-x-full opacity-0'
         }`}
         {...{ inert: !open ? ('' as unknown as boolean) : undefined }}
