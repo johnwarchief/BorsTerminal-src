@@ -6,7 +6,7 @@ import { ToolPropertiesPanel } from '@features/technical/components/ToolProperti
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
 import type { ChartDrawApi } from '@features/technical/components/KLineChartWrapper';
 
-function api(): ChartDrawApi & { updateLast: ReturnType<typeof vi.fn> } {
+function api(): ChartDrawApi & { updateLast: ReturnType<typeof vi.fn>; saveAsDefault: ReturnType<typeof vi.fn> } {
   return {
     startDraw: vi.fn(),
     undo: vi.fn(),
@@ -14,7 +14,9 @@ function api(): ChartDrawApi & { updateLast: ReturnType<typeof vi.fn> } {
     clearDrawings: vi.fn(),
     hideDrawings: vi.fn(),
     updateLast: vi.fn(),
-  } as unknown as ChartDrawApi & { updateLast: ReturnType<typeof vi.fn> };
+    getLastPoints: vi.fn(() => []),
+    saveAsDefault: vi.fn(),
+  } as unknown as ChartDrawApi & { updateLast: ReturnType<typeof vi.fn>; saveAsDefault: ReturnType<typeof vi.fn> };
 }
 
 describe('دیالوگ تنظیمات چارت', () => {
@@ -47,6 +49,32 @@ describe('دیالوگ تنظیمات چارت', () => {
     fireEvent.click(screen.getByRole('button', { name: 'klinecharts (فعلی)' }));
     expect(useFtsConfigStore.getState().chartEngine).toBe('klinecharts');
   });
+
+  it('تب ظاهر: پس‌زمینه و رنگ کندل روی view اثر می‌گذارد', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} />);
+    fireEvent.click(screen.getByTestId('settings-tab-appearance'));
+    fireEvent.click(screen.getByRole('button', { name: 'کلاسیک تیره' }));
+    expect(useFtsConfigStore.getState().view.background).toBe('classic');
+    fireEvent.click(screen.getByTestId('up-#26a69a'));
+    expect(useFtsConfigStore.getState().view.candleUp).toBe('#26a69a');
+    fireEvent.click(screen.getByTestId('reset-up'));
+    expect(useFtsConfigStore.getState().view.candleUp).toBeNull();
+  });
+
+  it('تب مقیاس‌ها: معکوس‌سازی و قفل درگ محور', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} />);
+    const before = useFtsConfigStore.getState().view.yAxisReverse;
+    fireEvent.click(screen.getByRole('button', { name: /معکوس‌سازی/ }));
+    expect(useFtsConfigStore.getState().view.yAxisReverse).toBe(!before);
+    fireEvent.click(screen.getByRole('button', { name: /قفل درگ محور/ }));
+    expect(useFtsConfigStore.getState().view.axisDragLock).toBe(true);
+  });
+
+  it('تب رویدادها صادقانه خالی است', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} />);
+    fireEvent.click(screen.getByTestId('settings-tab-events'));
+    expect(screen.getByTestId('settings-events-note')).toBeInTheDocument();
+  });
 });
 
 describe('پنل تنظیمات ابزار ترسیم', () => {
@@ -67,6 +95,26 @@ describe('پنل تنظیمات ابزار ترسیم', () => {
     render(<ToolPropertiesPanel api={api()} last={{ id: 'x', name: 'ftsFib' }} />);
     fireEvent.click(screen.getByTestId('tool-tab-alerts'));
     expect(screen.getByTestId('tool-alerts-note')).toBeInTheDocument();
+  });
+
+  it('تب مختصات نقطه‌های آخرین ترسیم را نشان می‌دهد', () => {
+    const a = api();
+    (a.getLastPoints as unknown as ReturnType<typeof vi.fn>).mockReturnValue([
+      { price: 1234, date: '1404/06/23' },
+      { price: 987, date: '1404/06/20' },
+    ]);
+    render(<ToolPropertiesPanel api={a} last={{ id: 'x', name: 'straightLine' }} />);
+    fireEvent.click(screen.getByTestId('tool-tab-coords'));
+    expect(screen.getByTestId('tool-coords').textContent).toContain('1404/06/23');
+    expect(screen.getByTestId('tool-coords').textContent).toContain('1234');
+  });
+
+  it('ذخیره به‌عنوان پیش‌فرض api را صدا می‌زند', () => {
+    const a = api();
+    render(<ToolPropertiesPanel api={a} last={{ id: 'x', name: 'straightLine' }} />);
+    fireEvent.click(screen.getByTestId('tool-color-#38bdf8'));
+    fireEvent.click(screen.getByTestId('tool-save-default'));
+    expect(a.saveAsDefault).toHaveBeenCalledWith({ styles: { color: '#38bdf8' }, extendData: {} });
   });
 
   it('تب نمایان مقدار visible را override می‌کند', () => {

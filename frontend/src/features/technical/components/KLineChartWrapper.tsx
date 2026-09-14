@@ -8,7 +8,9 @@ import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData } from '../../../vendor/klinecharts';
 import { epochToJalali } from '../lib/jalaliDate';
 import { isChartTransform } from '../lib/chartTypes';
-import { toolDefaults } from '../lib/drawingTools';
+import { backgroundFor } from '../lib/chartPalette';
+import type { ChartView } from '../stores/ftsConfigStore';
+import { defaultFor, saveToolDefault } from '../lib/drawingTools';
 import {
   FTS_OVERLAY_COLORS,
   JET_LINE_OVERLAY,
@@ -207,6 +209,10 @@ export type ChartDrawApi = {
   hideDrawings: (hide: boolean) => void;
   /** به‌روزرسانی استایل/متن آخرین ترسیم (پنل تنظیمات ابزار) */
   updateLast: (patch: { styles?: Record<string, unknown>; extendData?: Record<string, unknown> }) => void;
+  /** نقاط آخرین ترسیم (قیمت/زمان) برای تب Coordinates */
+  getLastPoints: () => { price: number | null; date: string | null }[];
+  /** ذخیرهٔ استایل فعلی به‌عنوان پیشفرض همان ابزار */
+  saveAsDefault: (patch: { styles?: Record<string, unknown>; extendData?: Record<string, unknown> }) => void;
 };
 
 export type LastDraw = { id: string; name: string } | null;
@@ -222,6 +228,7 @@ export function KLineChartWrapper({
   priceScale = 'normal',
   showGrid = true,
   showCrosshair = true,
+  view,
   onCrosshairInfo,
   onApi,
   onDrawChange,
@@ -240,6 +247,8 @@ export function KLineChartWrapper({
   priceScale?: 'normal' | 'logarithm' | 'percentage';
   showGrid?: boolean;
   showCrosshair?: boolean;
+  /** گزینه‌های ظاهری TV-style (مقیاس/محور/کندل) */
+  view?: ChartView;
   onCrosshairInfo?: (info: { data: KLineData | null; visibleCount: number }) => void;
   /** افشای API ابزارهای ترسیم */
   onApi?: (api: ChartDrawApi | null) => void;
@@ -258,6 +267,7 @@ export function KLineChartWrapper({
 
   // صعودی‌سازی قطعی — همین لیست فید می شود و همین برای legend خوانده می شود
   const rows = useMemo(() => sortAscending(data), [data]);
+  const bg = backgroundFor(view?.background ?? 'theme', palette.background);
   const rowsRef = useRef<KLineData[]>(rows);
   const paletteRef = useRef(palette);
   const onCrosshairRef = useRef(onCrosshairInfo);
@@ -288,7 +298,11 @@ export function KLineChartWrapper({
     }
     let chart: KLineChart | null = null;
     try {
-      chart = api.init(el, { locale: 'fa-IR', timezone: 'Asia/Tehran' });
+      chart = api.init(el, {
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+        layout: { background: { type: 'solid', color: bg }, textColor: paletteRef.current.text },
+      });
     } catch {
       setLibMissing(true);
       return;
@@ -427,7 +441,7 @@ export function KLineChartWrapper({
       }
       chartRef.current = null;
     };
-  }, []);
+  }, [bg]);
 
   // پالت تم
   useEffect(() => {
@@ -493,7 +507,7 @@ export function KLineChartWrapper({
         const chart = chartRef.current;
         if (!chart) return;
         try {
-          const d = toolDefaults(name);
+          const d = defaultFor(name);
           const id = chart.createOverlay({
             name,
             groupId: DRAW_GROUP,
@@ -566,6 +580,35 @@ export function KLineChartWrapper({
           // نادیده بگیر
         }
       },
+      getLastPoints: () => {
+        const chart = chartRef.current;
+        const last = drawHistory.current[drawHistory.current.length - 1];
+        if (!chart || !last) return [];
+        try {
+          const ovs = chart.getOverlays({ id: last.id }) as { points?: { value?: number; timestamp?: number }[] }[];
+          const pts = ovs?.[0]?.points ?? [];
+          return pts.map((p) => ({
+            price: typeof p.value === 'number' ? p.value : null,
+            date: typeof p.timestamp === 'number' ? epochToJalali(p.timestamp) : null,
+          }));
+        } catch {
+          return [];
+        }
+      },
+      saveAsDefault: (patch) => {
+        const last = drawHistory.current[drawHistory.current.length - 1];
+        if (!last) return;
+        saveToolDefault(last.name, patch);
+        const d = defaultFor(last.name);
+        const chart = chartRef.current;
+        if (chart) {
+          try {
+            chart.overrideOverlay({ id: last.id, ...d });
+          } catch {
+            // نادیده بگیر
+          }
+        }
+      },
     };
     onApi(api);
     return () => onApi(null);
@@ -599,6 +642,55 @@ export function KLineChartWrapper({
     }
   }, [showRsi]);
 
+  // گزینه‌های ظاهری (مقیاس/محور/کندل) — نگاشت مستقیم به Styles واقعی klinecharts v10
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !view) return;
+    const up = view.candleUp ?? palette.up;
+    const down = view.candleDown ?? palette.down;
+    const wick = view.wickGray ? '#8b94a2' : null;
+    try {
+      chart.setStyles({
+        yAxis: {
+          reverse: view.yAxisReverse,
+          inside: view.yAxisInside,
+          position: view.priceScalePos,
+          scrollZoomEnabled: !view.axisDragLock,
+          show: view.showYAxis,
+          tickText: {
+            color: palette.text,
+            size: 10,
+            family: 'Vazirmatn, sans-serif',
+            marginStart: view.axisTickMargin,
+            marginEnd: view.axisTickMargin,
+          },
+        },
+        xAxis: {
+          show: view.showXAxis,
+          tickText: {
+            color: palette.text,
+            size: 10,
+            family: 'Vazirmatn, sans-serif',
+            marginStart: view.axisTickMargin,
+            marginEnd: view.axisTickMargin,
+          },
+        },
+        candle: {
+          bar: {
+            upColor: up,
+            downColor: down,
+            upBorderColor: up,
+            downBorderColor: down,
+            upWickColor: wick ?? up,
+            downWickColor: wick ?? down,
+          },
+        },
+      });
+    } catch {
+      // نادیده بگیر
+    }
+  }, [view, palette]);
+
   // داده: resetData تا چارت از dataLoader آرایه صعودی تازه را بگیرد
   useEffect(() => {
     const chart = chartRef.current;
@@ -609,7 +701,7 @@ export function KLineChartWrapper({
     } catch {
       // نادیده بگیر
     }
-  }, [rows]);
+  }, [rows, bg]);
 
   // لایه مووینگ ها — روی پنل کندل (paneId: candle_pane + isStack) با رنگ استاندارد FTS
   useEffect(() => {
@@ -758,6 +850,7 @@ export function KLineChartWrapper({
     <div className="glass-panel relative overflow-hidden rounded-2xl p-px" dir="ltr" data-testid="kline-wrap">
       <div ref={containerRef} style={{ height }} data-testid="kline-host" />
       {/* legend شیشه‌ای گوشه بالا: OHLCV فارسی + MA های فعال با رنگ خودشان */}
+      {(view?.showLegend ?? true) ? (
       <div
         className="pointer-events-none absolute left-2 top-1 z-10 flex max-w-full flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg border border-[var(--hairline)] bg-bg-card/80 px-2.5 py-1 text-[10px] shadow-sm backdrop-blur-md"
         data-testid="kline-legend"
@@ -782,6 +875,7 @@ export function KLineChartWrapper({
           <span className="text-text-muted">برای دیدن OHLCV نشانگر را روی چارت ببرید</span>
         )}
       </div>
+      ) : null}
       {/* کنترل نما: شمارش کندل + Auto-fit + اسکرین‌شات + تمام‌صفحه */}
       <div className="absolute right-2 top-1 z-10 flex items-center gap-2 text-[10px] text-text-muted">
         <span data-testid="kline-zoom-state">{barCount > 0 ? `${barCount} کندل در نما` : ''}</span>

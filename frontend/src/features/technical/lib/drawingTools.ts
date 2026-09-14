@@ -78,6 +78,44 @@ export function toolLabel(name: string): string {
 
 export type ToolDefault = { styles?: Record<string, unknown>; extendData?: Record<string, unknown> };
 
+const SAVED_KEY = '***';
+
+/** پیشفرض‌های ذخیره‌شدهٔ کاربر برای هر ابزار (localStorage) */
+export function savedToolDefaults(): Record<string, ToolDefault> {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, ToolDefault>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** ذخیرهٔ استایل فعلی به‌عنوان پیشفرض همان ابزار */
+export function saveToolDefault(name: string, patch: ToolDefault): void {
+  try {
+    const all = savedToolDefaults();
+    const prev = all[name] ?? {};
+    all[name] = {
+      styles: { ...(prev.styles ?? {}), ...(patch.styles ?? {}) },
+      extendData: { ...(prev.extendData ?? {}), ...(patch.extendData ?? {}) },
+    };
+    localStorage.setItem(SAVED_KEY, JSON.stringify(all));
+  } catch {
+    // حافظه در دسترس نیست
+  }
+}
+
+/** پیشفرض نهایی هر ابزار = پیشفرض کاتالوگ + پیشفرض ذخیره‌شدهٔ کاربر */
+export function defaultFor(name: string): ToolDefault {
+  const base = toolDefaults(name);
+  const saved = savedToolDefaults()[name];
+  if (!saved) return base;
+  return {
+    styles: { ...(base.styles ?? {}), ...(saved.styles ?? {}) },
+    extendData: { ...(base.extendData ?? {}), ...(saved.extendData ?? {}) },
+  };
+}
+
 const line = (color: string, size = 1.5): ToolDefault => ({ styles: { color, size, style: 'solid' } });
 
 /**

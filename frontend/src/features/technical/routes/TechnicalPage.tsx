@@ -59,6 +59,7 @@ export default function TechnicalPage() {
   const showFtsCard = useFtsConfigStore((s) => s.showFtsCard);
   const chartType = useFtsConfigStore((s) => s.chartType);
   const chartEngine = useFtsConfigStore((s) => s.chartEngine);
+  const view = useFtsConfigStore((s) => s.view);
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const showRsi = useFtsConfigStore((s) => s.showRsi);
   const showVolMa = useFtsConfigStore((s) => s.showVolMa);
@@ -262,6 +263,7 @@ export default function TechnicalPage() {
                       priceScale={priceScale}
                       showGrid={showGrid}
                       showCrosshair={showCrosshair}
+                      view={view}
                       onApi={setChartApi}
                       onDrawChange={setLastDraw}
                     />
@@ -298,7 +300,7 @@ export default function TechnicalPage() {
         )}
       </main>
 
-      <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} symbol={symbol} />
     </div>
   );
 }

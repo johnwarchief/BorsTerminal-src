@@ -24,6 +24,40 @@ export type ChartType =
   | 'renko'
   | 'kagi'
   | 'pnf';
+/** گزینه‌های ظاهری چارت (همه به استایل‌های واقعی klinecharts v10 نگاشت می‌شوند) */
+export type ChartView = {
+  yAxisReverse: boolean;
+  yAxisInside: boolean;
+  priceScalePos: 'right' | 'left';
+  /** قفل تغییر مقیاس با درگ محور قیمت (yAxis.scrollZoomEnabled) */
+  axisDragLock: boolean;
+  /** حاشیهٔ برچسب‌های محور (tickText.marginStart/End) */
+  axisTickMargin: number;
+  background: 'theme' | 'classic';
+  candleUp: string | null;
+  candleDown: string | null;
+  /** سایهٔ کندل خاکستری (وگرنه هم‌رنگ بدنه) */
+  wickGray: boolean;
+  showLegend: boolean;
+  showXAxis: boolean;
+  showYAxis: boolean;
+};
+
+export const VIEW_DEFAULTS: ChartView = {
+  yAxisReverse: false,
+  yAxisInside: false,
+  priceScalePos: 'right',
+  axisDragLock: false,
+  axisTickMargin: 3,
+  background: 'theme',
+  candleUp: null,
+  candleDown: null,
+  wickGray: false,
+  showLegend: true,
+  showXAxis: true,
+  showYAxis: true,
+};
+
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
 export type ChartEngine = 'klinecharts' | 'lightweight';
 /** تایم‌فریم — روزانه/هفتگی/ماهانه (بازنمونه‌گیری سمت کلاینت از کندل روزانه) */
@@ -38,6 +72,7 @@ type FtsFlags = Record<FtsLayerKey, boolean>;
 type FtsConfigState = FtsFlags & {
   chartType: ChartType;
   chartEngine: ChartEngine;
+  view: ChartView;
   timeframe: Timeframe;
   priceScale: PriceScale;
   showGrid: boolean;
@@ -47,6 +82,7 @@ type FtsConfigState = FtsFlags & {
   toggle: (k: FtsLayerKey) => void;
   setChartType: (t: ChartType) => void;
   setChartEngine: (e: ChartEngine) => void;
+  setView: (patch: Partial<ChartView>) => void;
   setTimeframe: (t: Timeframe) => void;
   setPriceScale: (p: PriceScale) => void;
   toggleDisplay: (k: DisplayKey) => void;
@@ -68,6 +104,7 @@ export const DEFAULTS: FtsFlags = {
 type PersistedState = FtsFlags & {
   chartType: ChartType;
   chartEngine: ChartEngine;
+  view: ChartView;
   timeframe: Timeframe;
   priceScale: PriceScale;
   showGrid: boolean;
@@ -80,6 +117,7 @@ const PERSIST_DEFAULTS: PersistedState = {
   ...DEFAULTS,
   chartType: 'candle_solid',
   chartEngine: 'klinecharts',
+  view: VIEW_DEFAULTS,
   timeframe: 'day',
   priceScale: 'normal',
   showGrid: true,
@@ -99,6 +137,7 @@ function pick(s: PersistedState): PersistedState {
     showSetupMarkers: s.showSetupMarkers,
     chartType: s.chartType,
     chartEngine: s.chartEngine,
+    view: s.view,
     timeframe: s.timeframe,
     priceScale: s.priceScale,
     showGrid: s.showGrid,
@@ -113,7 +152,7 @@ function initial(): PersistedState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...PERSIST_DEFAULTS };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
-    return { ...PERSIST_DEFAULTS, ...parsed };
+    return { ...PERSIST_DEFAULTS, ...parsed, view: { ...VIEW_DEFAULTS, ...(parsed.view ?? {}) } };
   } catch {
     return { ...PERSIST_DEFAULTS };
   }
@@ -144,6 +183,12 @@ export const useFtsConfigStore = create<FtsConfigState>((set) => ({
   setChartEngine: (e) =>
     set((s) => {
       const next = { ...pick(s), chartEngine: e };
+      persist(next);
+      return { ...s, ...next };
+    }),
+  setView: (patch) =>
+    set((s) => {
+      const next = { ...pick(s), view: { ...s.view, ...patch } };
       persist(next);
       return { ...s, ...next };
     }),
