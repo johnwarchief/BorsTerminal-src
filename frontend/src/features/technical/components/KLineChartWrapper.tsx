@@ -4,6 +4,7 @@
 // v10 داده را با setDataLoader می گیرد (applyNewData در این نسخه وجود ندارد).
 // ترتیب: بک اند (api/chart) نزولی است؛ نرمال‌سازی صعودی همین‌جا قبل از feed انجام می شود.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData } from '../../../vendor/klinecharts';
 import { epochToJalali } from '../lib/jalaliDate';
 import {
@@ -24,6 +25,8 @@ export type ChartPalette = {
   grid: string;
   text: string;
   background: string;
+  /** رنگ خط محور/جداساز (اختیاری؛ پیشفرض grid) */
+  axis?: string;
 };
 
 const FA_LOCALE: Record<string, unknown> = {
@@ -41,6 +44,7 @@ const FA_LOCALE: Record<string, unknown> = {
 };
 
 function applyPalette(chart: KLineChart, p: ChartPalette) {
+  const axis = p.axis ?? p.grid;
   chart.setStyles({
     grid: {
       horizontal: { color: p.grid, style: 'solid' },
@@ -59,16 +63,21 @@ function applyPalette(chart: KLineChart, p: ChartPalette) {
       priceMark: { high: { color: p.text }, low: { color: p.text }, last: { upColor: p.up, downColor: p.down } },
       tooltip: { showRule: 'none', showType: 'standard' },
     },
-    xAxis: { axisLine: { color: p.grid }, tickText: { color: p.text, size: 11 } },
+    xAxis: {
+      axisLine: { color: axis },
+      tickLine: { color: axis },
+      tickText: { color: p.text, size: 10, family: 'Vazirmatn, sans-serif' },
+    },
     yAxis: {
-      axisLine: { color: p.grid },
-      tickText: { color: p.text, size: 11 },
+      axisLine: { color: axis },
+      tickLine: { color: axis },
+      tickText: { color: p.text, size: 10, family: 'Vazirmatn, sans-serif' },
       position: 'right',
     },
-    separator: { color: 'rgba(139,148,158,0.22)' },
+    separator: { color: axis },
     crosshair: {
-      horizontal: { line: { color: '#8b94a2' }, text: { color: '#fff', borderColor: '#8b94a2', backgroundColor: '#3b4351' } },
-      vertical: { line: { color: '#8b94a2' }, text: { color: '#fff', borderColor: '#8b94a2', backgroundColor: '#3b4351' } },
+      horizontal: { line: { color: axis, style: 'dashed' }, text: { color: '#fff', borderColor: axis, backgroundColor: '#2a2e39' } },
+      vertical: { line: { color: axis, style: 'dashed' }, text: { color: '#fff', borderColor: axis, backgroundColor: '#2a2e39' } },
     },
     indicator: {
       bars: [{ upColor: p.up, downColor: p.down, noChangeColor: '#888888' }],
@@ -150,15 +159,15 @@ function smaAt(rows: KLineData[], idx: number, period: number): number | null {
 }
 
 function fmtL(v: number): string {
-  return Number.isFinite(v) ? v.toFixed(0) : '-';
+  return Number.isFinite(v) ? toFaDigits(v.toFixed(0)) : '-';
 }
 
 function fmtVol(v: number): string {
   if (!Number.isFinite(v)) return '-';
-  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-  return String(Math.round(v));
+  if (v >= 1e9) return `${toFaDigits((v / 1e9).toFixed(1))}B`;
+  if (v >= 1e6) return `${toFaDigits((v / 1e6).toFixed(1))}M`;
+  if (v >= 1e3) return `${toFaDigits((v / 1e3).toFixed(1))}K`;
+  return toFaDigits(Math.round(v));
 }
 
 const MARKER_STYLE: Record<ChartMarkerKind, { color: string; fill: string }> = {
@@ -739,9 +748,9 @@ export function KLineChartWrapper({
   return (
     <div className="glass-panel relative overflow-hidden rounded-2xl p-px" dir="ltr" data-testid="kline-wrap">
       <div ref={containerRef} style={{ height }} data-testid="kline-host" />
-      {/* legend شناور گوشه بالا: OHLCV + MA های فعال با رنگ خودشان */}
+      {/* legend شیشه‌ای گوشه بالا: OHLCV فارسی + MA های فعال با رنگ خودشان */}
       <div
-        className="pointer-events-none absolute left-2 top-1 z-10 flex max-w-full flex-wrap items-center gap-x-3 gap-y-0.5 rounded-md bg-bg-card/70 px-2 py-1 text-[10px] backdrop-blur-sm"
+        className="pointer-events-none absolute left-2 top-1 z-10 flex max-w-full flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg border border-[var(--hairline)] bg-bg-card/80 px-2.5 py-1 text-[10px] shadow-sm backdrop-blur-md"
         data-testid="kline-legend"
       >
         {hoverInfo ? (
@@ -756,7 +765,7 @@ export function KLineChartWrapper({
             <span className="text-text-secondary">V:{fmtVol(hoverInfo.volume)}</span>
             {hoverInfo.mas.map((m) => (
               <span key={m.period} className="font-bold" style={{ color: m.color }} data-testid={`kline-legend-ma-${m.period}`}>
-                MA{m.period}:{m.value == null ? '-' : m.value.toFixed(0)}
+                MA{m.period}:{m.value == null ? '-' : toFaDigits(m.value.toFixed(0))}
               </span>
             ))}
           </>

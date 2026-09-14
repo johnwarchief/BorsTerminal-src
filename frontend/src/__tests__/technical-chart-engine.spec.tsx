@@ -2,6 +2,7 @@
 // klinecharts واقعی از vendor اسکریپت تگ می آید؛ در jsdom با ماک وفادار به قرارداد v10 (setDataLoader) جایگزین می شود.
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData, KLineChartsApi } from '@vendor/klinecharts';
 import { KLineChartWrapper, sortAscending, type ChartDrawApi, type ChartPalette, type FtsChartLayers } from '@features/technical/components/KLineChartWrapper';
 import { FtsBottomStrip } from '@features/technical/components/FtsBottomStrip';
@@ -245,14 +246,14 @@ describe('موتور چارت FTS', () => {
       expect(screen.getByTestId('kline-legend')).toBeInTheDocument();
     });
     const legend = screen.getByTestId('kline-legend');
-    expect(legend.textContent).toContain(`O:${hovered.open.toFixed(0)}`);
-    expect(legend.textContent).toContain(`H:${hovered.high.toFixed(0)}`);
-    expect(legend.textContent).toContain(`C:${hovered.close.toFixed(0)}`);
+    expect(legend.textContent).toContain(`O:${toFaDigits(hovered.open.toFixed(0))}`);
+    expect(legend.textContent).toContain(`H:${toFaDigits(hovered.high.toFixed(0))}`);
+    expect(legend.textContent).toContain(`C:${toFaDigits(hovered.close.toFixed(0))}`);
     expect(legend.textContent).toContain('V:');
     // MA14 روی کندل ایندکس ۲۰ = میانگین ۱۴ بسته آخر
     const closes = data.map((c) => c.close);
     const expected = closes.slice(20 - 13, 21).reduce((a, b) => a + b, 0) / 14;
-    expect(legend.textContent).toContain(`MA14:${expected.toFixed(0)}`);
+    expect(legend.textContent).toContain(`MA14:${toFaDigits(expected.toFixed(0))}`);
     const ma14 = screen.getByTestId('kline-legend-ma-14');
     expect(ma14.getAttribute('style')).toContain('color');
   });

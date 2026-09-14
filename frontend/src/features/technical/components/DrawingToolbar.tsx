@@ -1,11 +1,13 @@
 // features/technical/components/DrawingToolbar.tsx -- ریل عمودی ابزارهای ترسیم (سبک TradingView)
-// گروه‌های بازشو (flyout) شامل خطوط/کانال/فیبوناچی/حاشیه‌نویسی — همه از overlayهای
-// پشتیبانی‌شدهٔ klinecharts v10. به‌همراه واگرد/ازنو/پاک‌کردن/پنهان‌کردن.
-import { useEffect, useState } from 'react';
+// گروه‌های بازشو (flyout) شامل خطوط/کانال/فیبوناچی/اندازه‌گیری/حاشیه‌نویسی — همه از
+// overlayهای پشتیبانی‌شدهٔ klinecharts v10 + ابزارهای سفارشی FTS.
+// پولیش ظاهری: آیکون SVG یکدست (بدون ایموجی)، حالت hover/active/selected،
+// flyout فشرده با بستنِ بیرون‌کلیک.
+import { useEffect, useRef, useState } from 'react';
 import { buildDrawingGroups, type DrawingGroup } from '../lib/drawingTools';
 import type { ChartDrawApi } from './KLineChartWrapper';
 
-/** آیکون‌های سادهٔ SVG هر گروه (بدون ایموجی) — هم‌خوانی ظاهری با تولبار تریدینگ‌ویو */
+/** آیکون‌های سادهٔ SVG هر گروه (بدون ایموجی) */
 const GROUP_ICONS: Record<string, React.ReactNode> = {
   خطوط: (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
@@ -42,6 +44,37 @@ const GROUP_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
+/** آیکون‌های عملیات ریل (واگرد/ازنو/پاک/پنهان) */
+const ICON_UNDO = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M6 3 2 7l4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M2 7h7a4 4 0 0 1 0 8H6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+const ICON_REDO = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M10 3l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M14 7H7a4 4 0 0 0 0 8h1" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+const ICON_TRASH = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M3 5h10M6 5V3h4v2M5 5l1 9h4l1-9" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+  </svg>
+);
+const ICON_EYE = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M1.5 8S4 4 8 4s6.5 4 6.5 4S12 12 8 12 1.5 8 1.5 8z" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    <circle cx="8" cy="8" r="1.8" fill="currentColor" />
+  </svg>
+);
+const ICON_EYE_OFF = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M1.5 8S4 4 8 4s6.5 4 6.5 4S12 12 8 12 1.5 8 1.5 8z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+    <line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+
 function RailButton({
   label,
   icon,
@@ -64,12 +97,14 @@ function RailButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-pressed={active}
+      aria-pressed={active === true}
       aria-label={title}
       title={title}
       data-testid={testId}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-bold transition-colors disabled:opacity-40 ${
-        active ? 'border-border-accent bg-accent-blue/15 text-accent-blue' : 'border-border-c bg-bg-card text-text-secondary hover:text-accent-blue'
+      className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-40 ${
+        active
+          ? 'border-border-accent bg-accent-blue/15 text-accent-blue shadow-[inset_0_0_10px_rgba(56,189,248,0.15)]'
+          : 'border-border-c bg-bg-card text-text-secondary hover:border-border-accent hover:bg-bg-card/80 hover:text-accent-blue'
       }`}
     >
       {icon ?? label}
@@ -81,63 +116,103 @@ export function DrawingToolbar({ api }: { api: ChartDrawApi | null }) {
   const [groups, setGroups] = useState<DrawingGroup[]>([]);
   const [open, setOpen] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supported = window.klinecharts?.getSupportedOverlays?.() ?? [];
     setGroups(buildDrawingGroups(supported));
   }, [api]);
 
+  // بستن flyout با کلیک بیرون از ریل (مثل TradingView)
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(null);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const groupActive = (g: DrawingGroup): boolean => g.tools.some((t) => t.name === activeTool);
+
   return (
     <div
+      ref={rootRef}
       data-testid="drawing-toolbar"
       aria-label="ابزارهای ترسیم چارت"
-      className="glass-panel flex w-11 shrink-0 flex-col items-center gap-1 self-start rounded-2xl p-1.5"
+      className="glass-panel flex w-10 shrink-0 flex-col items-center gap-0.5 self-start rounded-2xl p-1"
     >
-      {groups.map((g) => (
-        <div key={g.label} className="relative">
-          <RailButton
-            label={g.glyph}
-            icon={GROUP_ICONS[g.label]}
-            title={g.label}
-            active={open === g.label}
-            onClick={() => setOpen(open === g.label ? null : g.label)}
-            testId={`draw-group-${g.tools[0].name}`}
-          />
-          {open === g.label ? (
-            <div
-              role="menu"
-              className="glass-panel absolute right-11 top-0 z-40 flex w-36 flex-col gap-0.5 rounded-xl p-1"
-              data-testid="draw-flyout"
-            >
-              <span className="px-2 py-1 text-[10px] font-bold text-text-muted">{g.label}</span>
-              {g.tools.map((t) => (
-                <button
-                  key={t.name}
-                  type="button"
-                  role="menuitem"
-                  disabled={!api}
-                  onClick={() => {
-                    api?.startDraw(t.name);
-                    setOpen(null);
-                  }}
-                  data-testid={`draw-${t.name}`}
-                  className="rounded-lg px-2 py-1 text-right text-xs text-text-secondary transition-colors hover:bg-bg-card hover:text-accent-blue disabled:opacity-40"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ))}
+      {groups.map((g) => {
+        const active = groupActive(g);
+        return (
+          <div key={g.label} className="relative">
+            <RailButton
+              label={g.glyph}
+              icon={GROUP_ICONS[g.label]}
+              title={g.label}
+              active={open === g.label || active}
+              onClick={() => setOpen(open === g.label ? null : g.label)}
+              testId={`draw-group-${g.tools[0].name}`}
+            />
+            {active ? <span aria-hidden className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-accent-blue" /> : null}
+            {open === g.label ? (
+              <div
+                role="menu"
+                className="glass-panel absolute right-11 top-0 z-40 flex max-h-72 w-44 flex-col gap-0.5 overflow-y-auto rounded-xl border border-[var(--hairline)] p-1 shadow-lg"
+                data-testid="draw-flyout"
+              >
+                <span className="flex items-baseline justify-between px-2 py-1">
+                  <span className="text-[10px] font-bold text-text-muted">{g.label}</span>
+                  <span className="num text-[9px] text-text-muted">{g.tools.length}</span>
+                </span>
+                {g.tools.map((t) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    role="menuitem"
+                    disabled={!api}
+                    onClick={() => {
+                      api?.startDraw(t.name);
+                      setActiveTool(t.name);
+                      setOpen(null);
+                    }}
+                    title={t.hint}
+                    data-testid={`draw-${t.name}`}
+                    className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-right text-xs transition-colors disabled:opacity-40 ${
+                      activeTool === t.name
+                        ? 'bg-accent-blue/15 text-accent-blue'
+                        : 'text-text-secondary hover:bg-bg-card hover:text-accent-blue'
+                    }`}
+                  >
+                    <span>{t.label}</span>
+                    {activeTool === t.name ? <span aria-hidden className="text-[9px]">●</span> : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
 
       <span aria-hidden className="my-0.5 h-px w-6 bg-border-c" />
 
-      <RailButton label="وا" title="واگرد (Undo)" disabled={!api} onClick={() => api?.undo()} testId="draw-undo" />
-      <RailButton label="از" title="ازنو (Redo)" disabled={!api} onClick={() => api?.redo()} testId="draw-redo" />
-      <RailButton label="پاک" title="پاک‌کردن همهٔ ترسیم‌ها" disabled={!api} onClick={() => api?.clearDrawings()} testId="draw-clear" />
+      <RailButton label="وا" icon={ICON_UNDO} title="واگرد (Undo)" disabled={!api} onClick={() => api?.undo()} testId="draw-undo" />
+      <RailButton label="از" icon={ICON_REDO} title="ازنو (Redo)" disabled={!api} onClick={() => api?.redo()} testId="draw-redo" />
+      <RailButton
+        label="پاک"
+        icon={ICON_TRASH}
+        title="پاک‌کردن همهٔ ترسیم‌ها"
+        disabled={!api}
+        onClick={() => {
+          api?.clearDrawings();
+          setActiveTool(null);
+        }}
+        testId="draw-clear"
+      />
       <RailButton
         label={hidden ? 'نمایان' : 'پنهان'}
+        icon={hidden ? ICON_EYE_OFF : ICON_EYE}
         title={hidden ? 'نمایش ترسیم‌ها' : 'پنهان‌کردن همهٔ ترسیم‌ها'}
         disabled={!api}
         active={hidden}
