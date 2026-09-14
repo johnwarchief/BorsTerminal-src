@@ -619,7 +619,11 @@ describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', ()
       expect(api).not.toBeNull();
     });
     (api as unknown as ChartDrawApi).startDraw('straightLine');
-    expect(mock?.chart.createOverlay).toHaveBeenCalledWith({ name: 'straightLine', groupId: 'fts-draw' });
+    expect(mock?.chart.createOverlay).toHaveBeenCalledWith({
+      name: 'straightLine',
+      groupId: 'fts-draw',
+      styles: { color: '#38bdf8', size: 1.5, style: 'solid' },
+    });
     (api as unknown as ChartDrawApi).clearDrawings();
     expect(mock?.chart.removeOverlay).toHaveBeenCalledWith({ groupId: 'fts-draw' });
   });
@@ -632,6 +636,7 @@ describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', ()
       };
       const names = reg.mock.calls.map((c) => (c[0] as { name: string }).name);
       expect(names).toContain('ftsFib');
+      expect(names).toContain('ftsFibLog');
       expect(names).toContain('ftsMeasure');
       expect(names).toContain('ftsPosition');
     });

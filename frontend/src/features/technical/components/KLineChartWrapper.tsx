@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData } from '../../../vendor/klinecharts';
 import { epochToJalali } from '../lib/jalaliDate';
+import { toolDefaults } from '../lib/drawingTools';
 import {
   FTS_OVERLAY_COLORS,
   JET_LINE_OVERLAY,
@@ -490,7 +491,13 @@ export function KLineChartWrapper({
         const chart = chartRef.current;
         if (!chart) return;
         try {
-          const id = chart.createOverlay({ name, groupId: DRAW_GROUP }) as string | null;
+          const d = toolDefaults(name);
+          const id = chart.createOverlay({
+            name,
+            groupId: DRAW_GROUP,
+            ...(d.styles ? { styles: d.styles } : {}),
+            ...(d.extendData ? { extendData: d.extendData } : {}),
+          }) as string | null;
           const entry = { id: typeof id === 'string' ? id : '', name };
           drawHistory.current = [...drawHistory.current, entry];
           redoStack.current = [];

@@ -44,6 +44,8 @@ export const JET_LINE_OVERLAY = 'ftsJetLine';
 
 /** ابزارهای ترسیمی سفارشیِ تعاملی FTS — نگاشتِ نبودشان در klinecharts v10 */
 export const FTS_FIB_OVERLAY = 'ftsFib';
+/** حالت لگاریتمی فیبوی FTS (سطوح روی ln قیمت) */
+export const FTS_FIB_LOG_OVERLAY = 'ftsFibLog';
 export const FTS_MEASURE_OVERLAY = 'ftsMeasure';
 export const FTS_POSITION_OVERLAY = 'ftsPosition';
 
@@ -210,12 +212,6 @@ export function registerFtsOverlays(api: {
 function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
   const ptsOf = (ctx: { overlay: Record<string, unknown> }) =>
     (ctx.overlay.points ?? []) as { value?: number; timestamp?: number }[];
-  const priceAt = (pts: { value?: number }[], t: number): number | null => {
-    const v0 = pts[0]?.value;
-    const v1 = pts[1]?.value;
-    if (typeof v0 !== 'number' || typeof v1 !== 'number') return null;
-    return v1 + (v0 - v1) * t;
-  };
   const label = (x: number, y: number, text: string, color: string, align: 'left' | 'right' | 'center' = 'right'): OverlayFigure => ({
     type: 'text',
     attrs: { x, y, text, align, baseline: 'bottom' },
@@ -229,8 +225,8 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
     ignoreEvent: true,
   });
 
-  reg({
-    name: FTS_FIB_OVERLAY,
+  const fibDef = (name: string, log: boolean, textColor: string): RegisterOverlayDef => ({
+    name,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,
@@ -241,6 +237,17 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       const w = ctx.bounding.width;
       const pts = ptsOf(ctx);
       const yOf = (t: number) => (c[1].y as number) + ((c[0].y as number) - (c[1].y as number)) * t;
+      // قیمت سطح: حالت عادی خطی؛ حالت لگاریتمی هندسی (درست روی محور log)
+      const v0 = typeof pts[0]?.value === 'number' ? (pts[0].value as number) : null;
+      const v1 = typeof pts[1]?.value === 'number' ? (pts[1].value as number) : null;
+      const priceOf = (t: number): number | null => {
+        if (v0 == null || v1 == null) return null;
+        if (log) {
+          if (v0 <= 0 || v1 <= 0) return null;
+          return Math.exp(Math.log(v1) + t * (Math.log(v0) - Math.log(v1)));
+        }
+        return v1 + (v0 - v1) * t;
+      };
       const figs: OverlayFigure[] = [];
       for (const [b0, b1] of FTS_FIB_BANDS) {
         const shallow = b0 < 0.5;
@@ -256,12 +263,14 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
           styles: { style: 'solid', color: FTS_OVERLAY_COLORS.fibText, size: 1 },
           ignoreEvent: true,
         });
-        const p = priceAt(pts, t);
-        figs.push(label(w - 4, y - 4, `${p == null ? '-' : p.toFixed(0)} (${(t * 100).toFixed(1)}%)`, FTS_OVERLAY_COLORS.fibText));
+        const p = priceOf(t);
+        figs.push(label(w - 4, y - 4, `${p == null ? '-' : p.toFixed(0)} (${(t * 100).toFixed(1)}%)`, textColor));
       }
       return figs;
     },
   });
+  reg(fibDef(FTS_FIB_OVERLAY, false, FTS_OVERLAY_COLORS.fibText));
+  reg(fibDef(FTS_FIB_LOG_OVERLAY, true, FTS_OVERLAY_COLORS.fibText2));
 
   reg({
     name: FTS_MEASURE_OVERLAY,

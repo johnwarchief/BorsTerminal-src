@@ -6,6 +6,8 @@
 export type DrawingTool = { name: string; label: string; custom?: boolean; hint?: string };
 export type DrawingGroup = { label: string; glyph: string; tools: DrawingTool[] };
 
+import { FTS_FIB_LOG_OVERLAY, FTS_FIB_OVERLAY, FTS_MEASURE_OVERLAY, FTS_POSITION_OVERLAY } from './ftsOverlays';
+
 export const DRAWING_CATALOG: DrawingGroup[] = [
   {
     label: 'خطوط',
@@ -33,7 +35,8 @@ export const DRAWING_CATALOG: DrawingGroup[] = [
     label: 'فیبوناچی',
     glyph: 'ف',
     tools: [
-      { name: 'ftsFib', label: 'فیبوی بازگشتی FTS', custom: true, hint: 'سطوح ۳۳/۴۰/۶۱.۸/۷۰/۱۰۰ لگاریتمی (FTS_SPEC بند ۳)' },
+      { name: FTS_FIB_OVERLAY, label: 'فیبوی بازگشتی FTS', custom: true, hint: 'سطوح ۳۳/۴۰/۶۱.۸/۷۰/۱۰۰ (خطی)' },
+      { name: FTS_FIB_LOG_OVERLAY, label: 'فیبوی لگاریتمی FTS', custom: true, hint: 'همان سطوح، محاسبه روی ln قیمت (FTS_SPEC بند ۳)' },
       { name: 'fibonacciLine', label: 'فیبوی استاندارد' },
     ],
   },
@@ -71,4 +74,51 @@ export function toolLabel(name: string): string {
     if (t) return t.label;
   }
   return name;
+}
+
+export type ToolDefault = { styles?: Record<string, unknown>; extendData?: Record<string, unknown> };
+
+const line = (color: string, size = 1.5): ToolDefault => ({ styles: { color, size, style: 'solid' } });
+
+/**
+ * پیش‌فرض هر ابزار ترسیم (رنگ/ضخامت/نوع خط/متن) — هنگام ساخت اورلی اعمال می‌شود
+ * تا هر ابزار ظاهر معنادار پیشفرض داشته باشد (رنگ/ضخامت/امتداد/برچسب قیمت).
+ */
+export function toolDefaults(name: string): ToolDefault {
+  switch (name) {
+    case 'straightLine':
+    case 'segment':
+    case 'rayLine':
+      return line('#38bdf8');
+    case 'horizontalStraightLine':
+      return line('#10b981', 1.2);
+    case 'verticalStraightLine':
+      return line('#a78bfa', 1.2);
+    case 'horizontalRayLine':
+    case 'verticalRayLine':
+      return line('#38bdf8', 1.2);
+    case 'priceLine':
+      return line('#10b981', 1.2);
+    case 'parallelStraightLine':
+    case 'priceChannelLine':
+      return line('#22d3ee', 1.4);
+    case 'fibonacciLine':
+      return { styles: { color: '#fbbf24', size: 1.2 } };
+    case FTS_FIB_OVERLAY:
+      return { styles: { color: '#22d3ee' } };
+    case FTS_FIB_LOG_OVERLAY:
+      return { styles: { color: '#a78bfa' } };
+    case FTS_MEASURE_OVERLAY:
+      return { styles: { color: '#10b981' } };
+    case FTS_POSITION_OVERLAY:
+      return { styles: { color: '#38bdf8' } };
+    case 'simpleAnnotation':
+      return { styles: { color: '#fbbf24' }, extendData: { text: 'یادداشت' } };
+    case 'simpleTag':
+      return { styles: { color: '#fbbf24' }, extendData: { text: 'برچسب' } };
+    case 'brush':
+      return line('#fbbf24', 2);
+    default:
+      return {};
+  }
 }
