@@ -557,3 +557,42 @@ describe('نوار HUD پایین چارت', () => {
     expect(screen.queryByTestId('strip-setups')).toBeNull();
   });
 });
+
+describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', () => {
+  it('نوع چارت روی استایل candle.type اعمال می‌شود', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} chartType="line" />);
+    await waitFor(() => {
+      expect(mock?.chart.setStyles).toHaveBeenCalledWith({ candle: { type: 'line' } });
+    });
+  });
+
+  it('میانگین متحرک حجم (۲۱) روی پنل حجم ساخته می‌شود', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} showVolMa />);
+    await waitFor(() => {
+      const ma = mock?.state.indicators.find((i) => i.name === 'MA' && i.paneId === 'vol_pane');
+      expect(ma).toBeTruthy();
+      expect(ma?.calcParams).toEqual([21]);
+    });
+  });
+
+  it('RSI(14) در پنل جدا ساخته می‌شود', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} showRsi />);
+    await waitFor(() => {
+      const rsi = mock?.state.indicators.find((i) => i.name === 'RSI');
+      expect(rsi).toBeTruthy();
+      expect(rsi?.paneId).toBe('rsi_pane');
+    });
+  });
+
+  it('دکمه اسکرین‌شات تصویر چارت را می‌گیرد', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} />);
+    const btn = await screen.findByTestId('kline-screenshot');
+    fireEvent.click(btn);
+    expect(mock?.chart.getConvertPictureUrl).toHaveBeenCalled();
+  });
+
+  it('دکمه تمام‌صفحه وجود دارد', async () => {
+    render(<KLineChartWrapper data={candles(6)} palette={PALETTE} />);
+    expect(await screen.findByTestId('kline-fullscreen')).toBeInTheDocument();
+  });
+});

@@ -181,18 +181,30 @@ export type HoverLegendInfo = {
 /** شناسه پنل کندل در klinecharts v10 — اندیکاتور بدون paneId در پنل جدا می افتد */
 const CANDLE_PANE = 'candle_pane';
 const VOL_PANE = 'vol_pane';
+const RSI_PANE = 'rsi_pane';
+const VOL_MA_PERIOD = 21;
+const RSI_PERIOD = 14;
 
 export function KLineChartWrapper({
   data,
   palette,
   height = 600,
   layers = DEFAULT_FTS_LAYERS,
+  chartType = 'candle',
+  showRsi = false,
+  showVolMa = false,
   onCrosshairInfo,
 }: {
   data: KLineData[];
   palette: ChartPalette;
   height?: number;
   layers?: FtsChartLayers;
+  /** نوع نمایش کندل — مقادیر candle.type در klinecharts v10 */
+  chartType?: 'candle' | 'ohlc' | 'line' | 'area';
+  /** نمایش RSI وایلدر (۱۴) در پنل جدا */
+  showRsi?: boolean;
+  /** نمایش میانگین متحرک حجم (۲۱) روی پنل حجم */
+  showVolMa?: boolean;
   onCrosshairInfo?: (info: { data: KLineData | null; visibleCount: number }) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -385,6 +397,45 @@ export function KLineChartWrapper({
     }
   }, [palette]);
 
+  // نوع چارت (کندل/بار/خط/اریا) — candle.type در klinecharts v10
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setStyles({ candle: { type: chartType } });
+    } catch {
+      // نادیده بگیر
+    }
+  }, [chartType]);
+
+  // میانگین متحرک حجم (۲۱) روی پنل حجم
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.removeIndicator({ name: 'MA', paneId: VOL_PANE });
+      if (showVolMa) {
+        chart.createIndicator({ name: 'MA', calcParams: [VOL_MA_PERIOD], paneId: VOL_PANE }, true);
+      }
+    } catch {
+      // اندیکاتور اختیاری است
+    }
+  }, [showVolMa]);
+
+  // RSI وایلدر (۱۴) در پنل جدا
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.removeIndicator({ name: 'RSI', paneId: RSI_PANE });
+      if (showRsi) {
+        chart.createIndicator({ name: 'RSI', id: RSI_PANE, calcParams: [RSI_PERIOD], paneId: RSI_PANE }, true);
+      }
+    } catch {
+      // اندیکاتور اختیاری است
+    }
+  }, [showRsi]);
+
   // داده: resetData تا چارت از dataLoader آرایه صعودی تازه را بگیرد
   useEffect(() => {
     const chart = chartRef.current;
@@ -501,6 +552,33 @@ export function KLineChartWrapper({
     }
   };
 
+  /** ذخیرهٔ تصویر چارت — از getConvertPictureUrl خود کتابخانه (شامل اورلی‌ها) */
+  const screenshot = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      const url = chart.getConvertPictureUrl({ includeOverlay: true, type: 'png', backgroundColor: palette.background });
+      if (!url) return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'chart.png';
+      a.click();
+    } catch {
+      // نادیده بگیر
+    }
+  };
+
+  /** تمام‌صفحهٔ رپر چارت */
+  const toggleFullscreen = () => {
+    const el = containerRef.current?.parentElement;
+    try {
+      if (document.fullscreenElement) void document.exitFullscreen();
+      else void el?.requestFullscreen?.();
+    } catch {
+      // نادیده بگیر
+    }
+  };
+
   if (libMissing) {
     return (
       <div
@@ -541,7 +619,7 @@ export function KLineChartWrapper({
           <span className="text-text-muted">برای دیدن OHLCV نشانگر را روی چارت ببرید</span>
         )}
       </div>
-      {/* کنترل نما: شمارش کندل + Auto-fit */}
+      {/* کنترل نما: شمارش کندل + Auto-fit + اسکرین‌شات + تمام‌صفحه */}
       <div className="absolute right-2 top-1 z-10 flex items-center gap-2 text-[10px] text-text-muted">
         <span data-testid="kline-zoom-state">{barCount > 0 ? `${barCount} کندل در نما` : ''}</span>
         <button
@@ -551,6 +629,24 @@ export function KLineChartWrapper({
           data-testid="kline-autofit"
         >
           Auto-fit
+        </button>
+        <button
+          type="button"
+          onClick={screenshot}
+          title="ذخیره تصویر چارت"
+          className="pointer-events-auto rounded border border-border-c bg-bg-card/80 px-2 py-0.5 text-[10px] text-text-secondary backdrop-blur-sm transition-colors hover:text-text-primary"
+          data-testid="kline-screenshot"
+        >
+          📷
+        </button>
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          title="تمام‌صفحه"
+          className="pointer-events-auto rounded border border-border-c bg-bg-card/80 px-2 py-0.5 text-[10px] text-text-secondary backdrop-blur-sm transition-colors hover:text-text-primary"
+          data-testid="kline-fullscreen"
+        >
+          ⛶
         </button>
       </div>
     </div>

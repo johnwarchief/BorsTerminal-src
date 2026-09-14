@@ -23,6 +23,7 @@ import { MarketOverview } from '../components/MarketOverview';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { computeTradeLevels } from '../lib/levels';
+import { resample } from '../lib/resample';
 
 const MA_PERIODS = [14, 21, 52, 100];
 
@@ -61,6 +62,10 @@ export default function TechnicalPage() {
   const showSetupMarkers = useFtsConfigStore((s) => s.showSetupMarkers);
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const showFtsCard = useFtsConfigStore((s) => s.showFtsCard);
+  const chartType = useFtsConfigStore((s) => s.chartType);
+  const timeframe = useFtsConfigStore((s) => s.timeframe);
+  const showRsi = useFtsConfigStore((s) => s.showRsi);
+  const showVolMa = useFtsConfigStore((s) => s.showVolMa);
 
   const feed = useCandleFeed(symbol);
   const candles = feed.candles;
@@ -77,6 +82,9 @@ export default function TechnicalPage() {
     }),
     [candles],
   );
+
+  // تایم‌فریم نمایشی: بازنمونه‌گیری کلاینتی از کندل روزانه (روزانه/هفتگی/ماهانه)
+  const displayed = useMemo(() => resample(candles, timeframe), [candles, timeframe]);
 
   const signal = useMemo(
     () =>
@@ -206,7 +214,15 @@ export default function TechnicalPage() {
               />
             ) : (
               <>
-                <KLineChartWrapper data={candles} palette={theme === 'dark' ? DARK : LIGHT} layers={layers} height={600} />
+                <KLineChartWrapper
+                  data={displayed}
+                  palette={theme === 'dark' ? DARK : LIGHT}
+                  layers={layers}
+                  height={600}
+                  chartType={chartType}
+                  showRsi={showRsi}
+                  showVolMa={showVolMa}
+                />
                 <FtsBottomStrip
                   data={{
                     mas: { 14: maPanel.m14, 21: maPanel.m21, 52: maPanel.m52, 100: maPanel.m100 },
