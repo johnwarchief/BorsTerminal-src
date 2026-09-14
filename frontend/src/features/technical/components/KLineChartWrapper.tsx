@@ -187,14 +187,18 @@ const RSI_PERIOD = 14;
 /** گروه اورلی‌های ترسیمی کاربر — برای undo/redo/pاک‌کردن گروهی */
 export const DRAW_GROUP = 'fts-draw';
 
-/** API imperative ابزارهای ترسیم — به DrawingToolbar داده می‌شود */
+/** API imperative ابزارهای ترسیم — به DrawingToolbar و پنل تنظیمات ابزار داده می‌شود */
 export type ChartDrawApi = {
   startDraw: (name: string) => void;
   undo: () => void;
   redo: () => void;
   clearDrawings: () => void;
   hideDrawings: (hide: boolean) => void;
+  /** به‌روزرسانی استایل/متن آخرین ترسیم (پنل تنظیمات ابزار) */
+  updateLast: (patch: { styles?: Record<string, unknown>; extendData?: Record<string, unknown> }) => void;
 };
+
+export type LastDraw = { id: string; name: string } | null;
 
 export function KLineChartWrapper({
   data,
@@ -209,6 +213,7 @@ export function KLineChartWrapper({
   showCrosshair = true,
   onCrosshairInfo,
   onApi,
+  onDrawChange,
 }: {
   data: KLineData[];
   palette: ChartPalette;
@@ -227,11 +232,15 @@ export function KLineChartWrapper({
   onCrosshairInfo?: (info: { data: KLineData | null; visibleCount: number }) => void;
   /** افشای API ابزارهای ترسیم */
   onApi?: (api: ChartDrawApi | null) => void;
+  /** اطلاع از تغییر آخرین ترسیم (برای پنل تنظیمات ابزار) */
+  onDrawChange?: (last: LastDraw) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<KLineChart | null>(null);
   const drawHistory = useRef<{ id: string; name: string }[]>([]);
   const redoStack = useRef<{ id: string; name: string }[]>([]);
+  const onDrawChangeRef = useRef(onDrawChange);
+  onDrawChangeRef.current = onDrawChange;
   const [libMissing, setLibMissing] = useState(false);
   const [barCount, setBarCount] = useState(0);
   const [hoverInfo, setHoverInfo] = useState<HoverLegendInfo | null>(null);
@@ -473,8 +482,10 @@ export function KLineChartWrapper({
         if (!chart) return;
         try {
           const id = chart.createOverlay({ name, groupId: DRAW_GROUP }) as string | null;
-          drawHistory.current = [...drawHistory.current, { id: typeof id === 'string' ? id : '', name }];
+          const entry = { id: typeof id === 'string' ? id : '', name };
+          drawHistory.current = [...drawHistory.current, entry];
           redoStack.current = [];
+          onDrawChangeRef.current?.(entry);
         } catch {
           // نادیده بگیر
         }
@@ -487,6 +498,7 @@ export function KLineChartWrapper({
           chart.removeOverlay({ id: last.id });
           drawHistory.current = drawHistory.current.slice(0, -1);
           redoStack.current = [...redoStack.current, { id: '', name: last.name }];
+          onDrawChangeRef.current?.(null);
         } catch {
           // نادیده بگیر
         }
@@ -497,8 +509,10 @@ export function KLineChartWrapper({
         if (!chart || !item) return;
         try {
           const id = chart.createOverlay({ name: item.name, groupId: DRAW_GROUP }) as string | null;
-          drawHistory.current = [...drawHistory.current, { id: typeof id === 'string' ? id : '', name: item.name }];
+          const entry = { id: typeof id === 'string' ? id : '', name: item.name };
+          drawHistory.current = [...drawHistory.current, entry];
           redoStack.current = redoStack.current.slice(0, -1);
+          onDrawChangeRef.current?.(entry);
         } catch {
           // نادیده بگیر
         }
@@ -513,12 +527,23 @@ export function KLineChartWrapper({
         }
         drawHistory.current = [];
         redoStack.current = [];
+        onDrawChangeRef.current?.(null);
       },
       hideDrawings: (hide: boolean) => {
         const chart = chartRef.current;
         if (!chart) return;
         try {
           chart.overrideOverlay({ groupId: DRAW_GROUP, styles: { visible: !hide } });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      updateLast: (patch) => {
+        const chart = chartRef.current;
+        const last = drawHistory.current[drawHistory.current.length - 1];
+        if (!chart || !last) return;
+        try {
+          chart.overrideOverlay({ id: last.id, ...patch });
         } catch {
           // نادیده بگیر
         }

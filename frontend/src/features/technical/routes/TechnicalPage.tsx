@@ -13,8 +13,11 @@ import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
-import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type ChartPalette, type FtsChartLayers } from '../components/KLineChartWrapper';
+import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type FtsChartLayers, type LastDraw } from '../components/KLineChartWrapper';
 import { DrawingToolbar } from '../components/DrawingToolbar';
+import { ToolPropertiesPanel } from '../components/ToolPropertiesPanel';
+import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
+import { paletteFor } from '../lib/chartPalette';
 import { FtsToolbar } from '../components/FtsToolbar';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
@@ -27,22 +30,6 @@ import { computeTradeLevels } from '../lib/levels';
 import { resample } from '../lib/resample';
 
 const MA_PERIODS = [14, 21, 52, 100];
-
-const DARK: ChartPalette = {
-  up: '#10b981',
-  down: '#f43f5e',
-  grid: 'rgba(148, 163, 184, 0.07)',
-  text: '#93a3ba',
-  background: '#0a0e17',
-};
-
-const LIGHT: ChartPalette = {
-  up: '#089981',
-  down: '#f23645',
-  grid: '#e0e3eb',
-  text: '#4a4b52',
-  background: '#ffffff',
-};
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
@@ -71,6 +58,8 @@ export default function TechnicalPage() {
   const showGrid = useFtsConfigStore((s) => s.showGrid);
   const showCrosshair = useFtsConfigStore((s) => s.showCrosshair);
   const [chartApi, setChartApi] = useState<ChartDrawApi | null>(null);
+  const [lastDraw, setLastDraw] = useState<LastDraw>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const feed = useCandleFeed(symbol);
   const candles = feed.candles;
@@ -213,7 +202,7 @@ export default function TechnicalPage() {
 
             <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
 
-            <FtsToolbar />
+            <FtsToolbar onOpenSettings={() => setSettingsOpen(true)} />
 
             {noData ? (
               <EmptyState
@@ -221,12 +210,15 @@ export default function TechnicalPage() {
                 hint="سرور برای این نماد کندلی برنگرداند؛ ممکن است نماد جدید باشد یا هنوز همگام سازی نشده"
               />
             ) : (
-              <div className="flex items-start gap-2">
+              <>
+                <ToolPropertiesPanel api={chartApi} last={lastDraw} />
+
+                <div className="flex items-start gap-2">
                 <DrawingToolbar api={chartApi} />
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                   <KLineChartWrapper
                     data={displayed}
-                    palette={theme === 'dark' ? DARK : LIGHT}
+                    palette={paletteFor(theme)}
                     layers={layers}
                     height={600}
                     chartType={chartType}
@@ -236,6 +228,7 @@ export default function TechnicalPage() {
                     showGrid={showGrid}
                     showCrosshair={showCrosshair}
                     onApi={setChartApi}
+                    onDrawChange={setLastDraw}
                   />
                   <FtsBottomStrip
                     data={{
@@ -250,6 +243,7 @@ export default function TechnicalPage() {
                   />
                 </div>
               </div>
+              </>
             )}
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -267,6 +261,8 @@ export default function TechnicalPage() {
           </>
         )}
       </main>
+
+      <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

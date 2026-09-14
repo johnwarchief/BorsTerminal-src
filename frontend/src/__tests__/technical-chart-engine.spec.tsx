@@ -622,4 +622,38 @@ describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', ()
     (api as unknown as ChartDrawApi).clearDrawings();
     expect(mock?.chart.removeOverlay).toHaveBeenCalledWith({ groupId: 'fts-draw' });
   });
+
+  it('اورلی‌های سفارشی FTS ثبت می‌شوند (فیبو/اندازه‌گیری/پوزیشن)', async () => {
+    render(<KLineChartWrapper data={candles(5)} palette={PALETTE} />);
+    await waitFor(() => {
+      const reg = mock!.chart && (window as unknown as { klinecharts: KLineChartsApi }).klinecharts.registerOverlay as unknown as {
+        mock: { calls: unknown[][] };
+      };
+      const names = reg.mock.calls.map((c) => (c[0] as { name: string }).name);
+      expect(names).toContain('ftsFib');
+      expect(names).toContain('ftsMeasure');
+      expect(names).toContain('ftsPosition');
+    });
+  });
+  it('onDrawChange و updateLast روی آخرین ترسیم', async () => {
+    const cb = vi.fn();
+    let api: ChartDrawApi | null = null;
+    render(
+      <KLineChartWrapper
+        data={candles(6)}
+        palette={PALETTE}
+        onApi={(a) => {
+          api = a;
+        }}
+        onDrawChange={cb}
+      />,
+    );
+    await waitFor(() => {
+      expect(api).not.toBeNull();
+    });
+    (api as unknown as ChartDrawApi).startDraw('straightLine');
+    expect(cb).toHaveBeenCalledWith({ id: '', name: 'straightLine' });
+    (api as unknown as ChartDrawApi).updateLast({ styles: { color: '#fff' } });
+    expect(mock?.chart.overrideOverlay).toHaveBeenCalledWith({ id: '', styles: { color: '#fff' } });
+  });
 });
