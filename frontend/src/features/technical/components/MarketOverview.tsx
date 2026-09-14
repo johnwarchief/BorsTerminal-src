@@ -91,15 +91,15 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
         ) : market?.kind === 'macro' ? (
           <>
             <MacroLineChart
-              values={market.series.points.map((p) => p.value)}
-              labels={market.series.points.map((p) => p.label)}
-              title={market.series.title}
-              unit={market.series.unit}
+              values={market.points.map((p) => p.value)}
+              labels={market.points.map((p) => p.label)}
+              title={market.title}
+              unit={market.unit}
               testId="macro-val"
             />
-            {market.series.note ? (
+            {market.note ? (
               <span className="mt-1 block text-[10px] text-text-muted" data-testid="macro-note">
-                {market.series.note}
+                {market.note}
               </span>
             ) : null}
           </>
