@@ -1,0 +1,177 @@
+// رگرسیون دو باگ گزارش‌شدهٔ کاربر در نمای بنیادی:
+// ۱) کارت خالی FTS وقتی بک‌اند سال مالی `history[].fiscal_year` را «رشته»
+//    می‌فرستد (کدال: "1404") ولی اسکیمای فرانت `z.number()` خشک داشت؛
+//    parse کل کارت می‌افتاد و صفحه به‌جای کارت، حالت «بدون داده» می‌داد.
+// ۲) پنل تنظیمات به‌جای دراور ثابت سمت راست، در جریان صفحه/پایین ظاهر می‌شد؛
+//    ریشه: قاعدهٔ بیرون‌از‌layer `.glass-panel{position:relative}` در index.css
+//    بر utilities تیلویند (داخل @layer utilities) مقدم است و `fixed` را باطل
+//    می‌کند. پس پنل نباید کلاس glass-panel داشته باشد.
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import FundamentalPage from '@features/fundamental/routes/FundamentalPage';
+import { FtsCardSchema } from '@features/fundamental/api/useFtsCard';
+import { FtsSettingsTrigger } from '@features/fundamental/ui/FtsSettingsDrawer';
+import { FTS_GUIDE_DEFAULTS } from '@features/fundamental/api/useFtsConfig';
+
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
+
+/** کارت واقعیِ بک‌اند برای شفارس — عیناً از /api/fundamental/شفارس گرفته شده
+ *  (سال مالی `history[].fiscal_year` = "1404" رشته‌ای — همان چیزی که باگ را می‌ساخت) */
+function realCard() {
+  const p = path.resolve(import.meta.dirname, 'fixtures/fts-card-shfars.json');
+  return JSON.parse(readFileSync(p, 'utf8')) as Record<string, unknown>;
+}
+
+/** کارت حداقلیِ معتبر با تنها فیلدی که رگرسیون را می‌سازد: fiscal_year رشته‌ای */
+function minimalCard(fiscalYear: unknown) {
+  return {
+    status: 'success',
+    symbol: 'شفارس',
+    sector: 'محصولات شيميايي',
+    score: 4,
+    verdict: 'STRONG',
+    pricing_mode: 'free',
+    excluded: false,
+    exclusion_reasons: [],
+    passes: {
+      '1a_monetary_growth': true,
+      '1b_volume_growth': true,
+      '2_eps_trend': true,
+      '3_gross_margin': true,
+      '4_sales_to_mcap': false,
+      '5_industry': true,
+    },
+    profile: { kind: 'production', volume_applicable: true },
+    metrics: { eps_series: [91, 96, 202], eps_slots: ['1402', '1403', '1404'], eps_partial: false },
+    indicators: {},
+    data_gaps: [],
+    history: [
+      {
+        period_end: '1404/12/29',
+        fiscal_year: fiscalYear,
+        revenue: 19860726,
+        gross_profit: 4206191,
+        net_profit: 2410320,
+        eps: 202,
+        audited: true,
+        consolidated: false,
+      },
+    ],
+    fs_count: 4,
+  };
+}
+
+function mockJson(url: string): unknown {
+  const u = decodeURIComponent(url.split('?')[0]);
+  if (u === '/api/screener') {
+    return {
+      status: 'success',
+      count: 1,
+      data: [{ symbol: 'شفارس', sector_name: 'محصولات شيميايي', score: 4, eps_data_gap: false }],
+      thresholds: {},
+      max_score: 5,
+    };
+  }
+  if (u === '/api/market') return { status: 'success', data: [] };
+  if (u.endsWith('/quarters')) return { status: 'success', symbol: 'شفارس', count: 0, quarters: [] };
+  if (u === '/api/fts/config') return { status: 'success', config: { ...FTS_GUIDE_DEFAULTS } };
+  if (u.startsWith('/api/fundamental/')) return minimalCard('1404');
+  return { status: 'success', data: [] };
+}
+
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/fundamental/شفارس']}>
+        <Routes>
+          <Route path="/fundamental/:symbol?" element={<FundamentalPage />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+describe('اسکیمای کارت FTS — تحمل سال مالی رشته‌ای (رگرسیون کارت خالی)', () => {
+  it('سال مالی «رشته‌ای» کدال را می‌پذیرد (و کل کارت را نمی‌اندازد)', () => {
+    const parsed = FtsCardSchema.safeParse(minimalCard('1404'));
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.history?.[0]?.fiscal_year).toBe(1404);
+    }
+  });
+
+  it('سال مالی عددی و تهی را هم می‌پذیرد', () => {
+    for (const v of [1404, null, undefined]) {
+      const parsed = FtsCardSchema.safeParse(minimalCard(v));
+      expect(parsed.success, `fiscal_year=${String(v)}`).toBe(true);
+    }
+    expect(FtsCardSchema.safeParse(minimalCard(null)).success).toBe(true);
+    const nullCase = FtsCardSchema.safeParse(minimalCard(null));
+    if (nullCase.success) expect(nullCase.data.history?.[0]?.fiscal_year).toBeNull();
+  });
+
+  it('کارت واقعیِ بک‌اند (شفارس) بدون خطا parse می‌شود', () => {
+    const parsed = FtsCardSchema.safeParse(realCard());
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.score).toBe(4);
+      expect(parsed.data.verdict).toBe('STRONG');
+      expect(parsed.data.passes?.['5_industry']).toBe(true);
+    }
+  });
+});
+
+describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته‌ای پر می‌شود', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockJson(typeof url === 'string' ? url : '')),
+      } as unknown as Response),
+    );
+  });
+
+  it('امتیاز، verdict و شش سلول شاخص را نشان می‌دهد (نه حالت بدون داده)', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
+    expect(screen.getByText('STRONG')).toBeInTheDocument();
+    expect(screen.getByTestId('fts-card-cell-1a_monetary_growth')).toHaveTextContent('قبول');
+    expect(screen.getByTestId('fts-card-cell-2_eps_trend')).toHaveTextContent('قبول');
+    expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap')).toHaveTextContent('مردود');
+    expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('قبول');
+    // حالت «بدون داده» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
+    expect(screen.queryByText(/بدون داده — کارت بنیادی/)).not.toBeInTheDocument();
+  });
+});
+
+describe('پنل تنظیمات FTS — دراور ثابت سمت راست (رگرسیون جای‌گیری)', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: 'success', config: { ...FTS_GUIDE_DEFAULTS } }),
+    } as unknown as Response);
+  });
+
+  it('کلاس glass-panel ندارد (position:relative بیرون‌از‌layer، `fixed` را باطل می‌کند)', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FtsSettingsTrigger open onToggle={() => {}} />
+      </QueryClientProvider>,
+    );
+    const panel = screen.getByTestId('fts-settings-panel');
+    expect(panel.parentElement).toBe(document.body);
+    expect(panel.className).toContain('fixed');
+    expect(panel.className).toContain('inset-y-0');
+    expect(panel.className).toContain('right-0');
+    expect(panel.className).not.toContain('glass-panel');
+  });
+});

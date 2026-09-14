@@ -12,7 +12,10 @@ const GapSchema = z.object({
 
 const HistoryRowSchema = z.object({
   period_end: z.string(),
-  fiscal_year: z.number().nullish(),
+  /** سال مالی را بک‌اند/کدال رشته می‌فرستد ("1404") — عدد هم بپذیرد.
+   *  رگرسیون: z.number() خشک باعث می‌شد کل کارت FTS در parse بیفتد و صفحه
+   *  به‌جای کارت، فقط «در دسترس نیست» نشان دهد (کارت خالی). */
+  fiscal_year: z.coerce.number().nullish(),
   revenue: z.number().nullish(),
   gross_profit: z.number().nullish(),
   net_profit: z.number().nullish(),
