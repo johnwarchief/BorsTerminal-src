@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `2f6eb81` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۵۱۸ سبز (۴۸ فایل) · eslint صفر · build سالم
+- **master HEAD:** `f302825` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۵۳۰ سبز (۴۹ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -108,3 +108,9 @@
 - **agent/fundamental (F-04)** مرج شد: `af04d56` + merge commit `2f6eb81`. بج «مجمع نزدیک» از رویدادهای تقویم؛ منبع واقعی: فیلد `events` در `/api/ma/{symbol}` (نه `/api/chart` که فقط adjustEvents دارد)؛ منطق انتخاب خالص در `lib/assemblyEvent.ts`؛ برچسب صادقانه برای لغو/تعویق/تغییر زمان؛ بدون رویداد/خطا ⇒ بدون بج. اعتبارسنجی: vitest 518/518 (48 فایل)، eslint صفر، build سالم.
 - نیاز بک‌اند (پیشنهاد ایجنت): اندپوینت سبک `GET /api/calendar/{symbol}` که فقط `_cal_events_for(symbol)` را بدهد — الان بج ناچار سری MA را هم می‌کشد. فرانت یک‌خطی url عوض می‌کند.
 - نکته node_modules: ورکتری serene-mountain (بنیادی) node_modules **خصوصی** دارد؛ neat-plateau (تکنیکال) با junction به Base مشترک است. قاعده: فقط در ورکتریِ با junction هرگز npm install نزن (چک: ReparsePoint).
+
+
+## به‌روزرسانی ۱۴ (ایجنتهد main, 2026-09-14 ~23:30)
+- هد اندپوینت سبک تقویم را لند کرد (`a36f954`: `GET /api/calendar/{symbol}` + اسکریپت نرمال‌سازی نماد) — دقیقاً نیازِ F-04.
+- **agent/technical (T-07)** مرج شد: `4ccb7de` + merge commit `f302825`. کاتالوگ ابزار ترسیم TV-style: فیبوی بازگشتی FTS خطی/لگاریتمی با builder مشترک (log: p(t)=exp(ln p1 + t·(ln p0 − ln p1)))، اندازه‌گیری، پوزیشن لانگ/شورت، toolDefaults برای هر ابزار، تزریق پیش‌فرض در createOverlay. اعتبارسنجی: vitest 530/530 (49 فایل)، eslint صفر، build سالم.
+- باقی‌مانده: سوییچ `useCalendarEvents` به `/api/calendar/{symbol}` (یک خط، سمت بنیادی)؛ ویرایش ترسیم‌های قدیمی نیازمند `onOverlaySelected` (خارج d.ts ما).
