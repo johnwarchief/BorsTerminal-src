@@ -13,8 +13,17 @@ export type FtsLayerKey =
   | 'showFibZones'
   | 'showSetupMarkers';
 
-/** نوع نمایش چارت — مقادیر معتبر candle.type در klinecharts v10 */
-export type ChartType = 'candle_solid' | 'candle_stroke' | 'ohlc' | 'line' | 'area';
+/** نوع نمایش چارت — مقادیر معتبر candle.type در klinecharts v10 + انواع ترنسفورم داخلی */
+export type ChartType =
+  | 'candle_solid'
+  | 'candle_stroke'
+  | 'ohlc'
+  | 'line'
+  | 'area'
+  | 'heikin_ashi'
+  | 'renko'
+  | 'kagi'
+  | 'pnf';
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
 export type ChartEngine = 'klinecharts' | 'lightweight';
 /** تایم‌فریم — روزانه/هفتگی/ماهانه (بازنمونه‌گیری سمت کلاینت از کندل روزانه) */

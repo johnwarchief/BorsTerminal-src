@@ -34,6 +34,7 @@ import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { computeTradeLevels } from '../lib/levels';
 import { resample } from '../lib/resample';
+import { isChartTransform, transformCandles } from '../lib/chartTypes';
 
 const MA_PERIODS = [14, 21, 52, 100];
 
@@ -86,6 +87,12 @@ export default function TechnicalPage() {
 
   // تایم‌فریم نمایشی: بازنمونه‌گیری کلاینتی از کندل روزانه (روزانه/هفتگی/ماهانه)
   const displayed = useMemo(() => resample(candles, timeframe), [candles, timeframe]);
+
+  // نوع چارت ترنسفورمی (HA/Renko/Kagi/PnF): تبدیل در لایهٔ داده، موتور همان کندل را می‌کشد
+  const chartData = useMemo(
+    () => (isChartTransform(chartType) ? transformCandles(chartType, displayed) : displayed),
+    [chartType, displayed],
+  );
 
   const signal = useMemo(
     () =>
@@ -236,7 +243,7 @@ export default function TechnicalPage() {
                       }
                     >
                       <LwChartWrapper
-                        data={displayed}
+                        data={chartData}
                         palette={paletteFor(theme)}
                         height={600}
                         showRsi={showRsi}
@@ -245,7 +252,7 @@ export default function TechnicalPage() {
                     </Suspense>
                   ) : (
                     <KLineChartWrapper
-                      data={displayed}
+                      data={chartData}
                       palette={paletteFor(theme)}
                       layers={layers}
                       height={600}

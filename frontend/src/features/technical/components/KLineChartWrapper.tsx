@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData } from '../../../vendor/klinecharts';
 import { epochToJalali } from '../lib/jalaliDate';
+import { isChartTransform } from '../lib/chartTypes';
 import { toolDefaults } from '../lib/drawingTools';
 import {
   FTS_OVERLAY_COLORS,
@@ -229,8 +230,8 @@ export function KLineChartWrapper({
   palette: ChartPalette;
   height?: number;
   layers?: FtsChartLayers;
-  /** نوع نمایش کندل — مقادیر candle.type در klinecharts v10 */
-  chartType?: 'candle_solid' | 'candle_stroke' | 'ohlc' | 'line' | 'area';
+  /** نوع نمایش کندل — مقادیر candle.type در klinecharts v10 (+ انواع ترنسفورم داخلی) */
+  chartType?: 'candle_solid' | 'candle_stroke' | 'ohlc' | 'line' | 'area' | 'heikin_ashi' | 'renko' | 'kagi' | 'pnf';
   /** نمایش RSI وایلدر (۱۴) در پنل جدا */
   showRsi?: boolean;
   /** نمایش میانگین متحرک حجم (۲۱) روی پنل حجم */
@@ -440,11 +441,12 @@ export function KLineChartWrapper({
   }, [palette]);
 
   // نوع چارت (کندل/کندل توخالی/بار/خط/اریا) — candle.type در klinecharts v10
+  // انواع ترنسفورم (HA/Renko/Kagi/PnF) در لایهٔ داده تبدیل می‌شوند و موتور همان کندل را می‌کشد
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
     try {
-      chart.setStyles({ candle: { type: chartType } });
+      chart.setStyles({ candle: { type: isChartTransform(chartType) ? 'candle_solid' : chartType } });
     } catch {
       // نادیده بگیر
     }
