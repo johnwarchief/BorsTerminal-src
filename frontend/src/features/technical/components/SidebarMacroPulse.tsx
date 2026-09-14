@@ -2,6 +2,7 @@
 // ارزش معاملات خرد، سرانهٔ خرید/فروش، تراز صف‌ها — از /api/mstat/* (همان هوک فیچر).
 import { toFaDigits } from '@shared/lib/fmt';
 import { macroEqRow, macroHemat, useMarketMacro } from '../api/useMarketMacro';
+import { SidebarRadar } from './SidebarRadar';
 
 function f(x: number | null | undefined, digits = 1): string {
   return x == null || !Number.isFinite(x) ? '—' : toFaDigits(x.toFixed(digits));
@@ -29,6 +30,7 @@ export function SidebarMacroPulse() {
 
   return (
     <div className="flex flex-col gap-2" data-testid="sidebar-macro">
+      <SidebarRadar />
       {isLoading ? <span className="px-1 text-[11px] text-text-secondary">در حال دریافت نبض کلان...</span> : null}
       <dl className="rounded-xl border border-border-c bg-bg-card/40 px-2.5" data-testid="sidebar-macro-list">
         <Line

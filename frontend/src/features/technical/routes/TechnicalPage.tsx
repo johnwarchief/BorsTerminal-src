@@ -191,12 +191,15 @@ export default function TechnicalPage() {
       <main className="flex min-w-0 flex-1 flex-col gap-4">
         {!symbol ? (
           // بدون نماد: چارت کل بورس (نمای کلان بازار)، نه صفحهٔ خالی/بن‌بست
-          <MarketOverview />
+          <MarketOverview onSelect={selectSymbol} />
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-black text-text-primary">{symbol}</h2>
               <Badge tone="blue">{toFaDigits(candles.length)} کندل روزانه</Badge>
+              {feed.source ? (
+                <Badge tone="gray">{feed.source === 'chart' ? 'کندل تعدیل‌شدهٔ TSETMC' : 'تاریخچهٔ محلی'}</Badge>
+              ) : null}
               {signal ? (
                 <>
                   <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>

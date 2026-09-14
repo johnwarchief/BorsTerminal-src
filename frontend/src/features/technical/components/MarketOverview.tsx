@@ -1,11 +1,13 @@
 // features/technical/components/MarketOverview.tsx -- نمای «کل بورس» وقتی نمادی انتخاب نشده
-// قبلاً تب تکنیکال بدون نماد بن‌بست بود؛ اکنون نمای کلان کل بازار (نبض + سری تایم‌لاین).
-// صادقانه: هیچ سری OHLC شاخص کل در بک‌اند نیست، پس چارت خطی از سری کلان mstat رسم می‌شود
-// و کارت‌های پهنای بازار از اسنپ‌شات‌های mstat می‌آیند. غایب ⇒ «بدون داده» (Circuit Breaker).
+// قبلاً تب تکنیکال بدون نماد بن‌بست بود؛ اکنون نمای کلان کل بازار (نبض + سری «کل بورس»).
+// سری از لایهٔ دادهٔ واحد (useMarketSeries) می‌آید تا بعداً «شاخص کل واقعی» بدون refactor
+// جایگزین شود. صادقانه: هیچ OHLC شاخص کل در بک‌اند نیست؛ غایب ⇒ «بدون داده» (Circuit Breaker).
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { MacroLineChart } from './MacroLineChart';
 import { macroEqRow, macroHemat, useMarketMacro } from '../api/useMarketMacro';
+import { useMarketSeries } from '../api/useMarketSeries';
+import { firstScreenerSymbol, useFtsScreener } from '../api/useScreener';
 
 function fmt(x: number | null | undefined, digits = 1): string {
   return x == null || !Number.isFinite(x) ? '—' : toFaDigits(x.toFixed(digits));
@@ -28,20 +30,22 @@ function Stat({ label, hint, tone, children }: { label: string; hint?: string; t
   );
 }
 
-export function MarketOverview() {
-  const { data, isLoading } = useMarketMacro();
-  const timeline = data?.timeline ?? null;
-  const thermo = data?.thermometer ?? null;
-  const depth = data?.depth ?? null;
-  const sm = data?.smartMoney ?? null;
-  const eq = macroEqRow(data?.summary);
+export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void }) {
+  const { data: macro, isLoading } = useMarketMacro();
+  const { data: series } = useMarketSeries();
+  const { data: screener } = useFtsScreener();
+
+  const thermo = macro?.thermometer ?? null;
+  const depth = macro?.depth ?? null;
+  const sm = macro?.smartMoney ?? null;
+  const eq = macroEqRow(macro?.summary);
   const hemat = macroHemat(sm);
   const allMarket = sm?.macro?.value_hemat_all_market ?? null;
   const flowEq = sm?.flow?.eq_flow_b_toman ?? null;
   const flowFixed = sm?.flow?.fixed_flow_b_toman ?? null;
 
-  const day = timeline?.day ?? data?.summary?.asof?.d_even ?? null;
-  const series = timeline?.series ?? null;
+  const fallbackSymbol = firstScreenerSymbol(screener?.data ?? []);
+  const day = series?.day ?? macro?.summary?.asof?.d_even ?? null;
   const negPct = thermo?.negative_pct ?? null;
   const breadthWarn = typeof negPct === 'number' && thermo?.entry_rule_pct != null ? negPct >= thermo.entry_rule_pct : false;
 
@@ -51,25 +55,37 @@ export function MarketOverview() {
         <h2 className="text-base font-black text-text-primary">کل بورس</h2>
         {day != null ? <Badge tone="blue">روز {toFaDigits(String(day))}</Badge> : null}
         <Badge tone="gray">نمای کلان بازار</Badge>
+        {series?.source ? <Badge tone="gray">{series.source}</Badge> : null}
         {isLoading ? <span className="text-xs text-text-secondary">در حال دریافت نبض بازار...</span> : null}
       </div>
 
       <p className="text-[11px] leading-5 text-text-muted">
-        سری OHLC «شاخص کل (TEDPIX)» در بک‌اند نیست؛ نمای کل‌بازار از سری کلان <span className="num">/api/mstat/timeline</span> و
+        سری OHLC «شاخص کل (TEDPIX)» در بک‌اند نیست؛ نمای کل‌بازار از لایهٔ دادهٔ واحد (فعلاً <span className="num">/api/mstat/timeline</span>) و
         اسنپ‌شات‌های <span className="num">/api/mstat/*</span> ساخته می‌شود. برای انتخاب نماد از سایدبار «دیده‌بان» استفاده کن.
       </p>
 
+      {fallbackSymbol && onSelect ? (
+        <button
+          type="button"
+          onClick={() => onSelect(fallbackSymbol)}
+          data-testid="market-fallback-symbol"
+          className="self-start rounded-full border border-border-accent bg-accent-blue/10 px-3 py-1 text-xs font-bold text-accent-blue transition-colors hover:bg-accent-blue/20"
+        >
+          تحلیل نماد پیشنهادی (اولین screener): {fallbackSymbol}
+        </button>
+      ) : null}
+
       <div className="glass-panel rounded-2xl p-3">
         <MacroLineChart
-          values={series?.val_bt ?? []}
-          labels={series?.t ?? []}
-          title="ارزش معاملات خرد (سری تجمعی درون‌روزی)"
-          unit="سری کلان"
+          values={series?.points.map((p) => p.value) ?? []}
+          labels={series?.points.map((p) => p.label) ?? []}
+          title={series?.title ?? 'سری کل بورس'}
+          unit={series?.unit}
           testId="macro-val"
         />
-        {timeline?.note ? (
+        {series?.note ? (
           <span className="mt-1 block text-[10px] text-text-muted" data-testid="macro-note">
-            {timeline.note}
+            {series.note}
           </span>
         ) : null}
       </div>
