@@ -131,17 +131,18 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(gaps.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('۲ سال EPS: سری دو ساله نمایش + برچسب «مردود — سابقهٔ ناقص» با علت در title', () => {
+  it('۲ سال EPS: سری دو ساله نمایش + برچسب یکسانِ «مردود در شاخص ۲ — سابقهٔ ناقص» با علت در title', () => {
     render(
       <FtsScreenTable
         rows={[row({ symbol: 'دوساله', eps_series: [100, 150, null], eps_data_gap: true, i2_pass: false })]}
         onSelect={() => {}}
       />,
     );
-    // همان دو سالِ موجود رندر می‌شود (سال غایب «؟')
-    expect(screen.getByText('۱۰۰ ← ۱۵۰ ← ؟')).toBeInTheDocument();
+    // همان دو سالِ موجود رندر می‌شود (سال غایب «—»)
+    expect(screen.getByText('۱۰۰ ← ۱۵۰ ← —')).toBeInTheDocument();
     const label = screen.getByTestId('eps-partial-rejected');
-    expect(label.textContent).toContain('مردود — سابقهٔ ناقص');
+    // برچسب عیناً همان نردبان EPS و drill-down است (منبع واحد: lib/epsHistory)
+    expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
     expect(label.textContent).toContain('۲ از ۳ سال');
     // علت شکاف با hover ظاهر می‌شود
     expect(label.getAttribute('title')).toContain('فقط ۲ سال از ۳ سال');

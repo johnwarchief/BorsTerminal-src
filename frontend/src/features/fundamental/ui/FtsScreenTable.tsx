@@ -12,6 +12,13 @@ import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
+import {
+  EPS_GAP_LABEL,
+  EPS_PARTIAL_TESTID,
+  EPS_REQUIRED_YEARS,
+  epsHistory,
+  epsSeriesText,
+} from '../lib/epsHistory';
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
@@ -25,8 +32,8 @@ const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: 'score', label: 'امتیاز', title: 'نردبان بنیادی ۰ تا ۵' },
 ];
 
-/** سه‌حالتهٔ هر شاخص: قبول / مردود / شکاف داده */
-type CellState = 'pass' | 'fail' | 'gap';
+/** چهارحالتهٔ شاخص ۲ (قبول / سابقهٔ ناقص / مردود / شکاف) و سه‌حالتهٔ بقیهٔ شاخص‌ها */
+type CellState = 'pass' | 'fail' | 'gap' | 'partial';
 
 function cellState(pass: boolean | null | undefined, value: number | null | undefined): CellState {
   if (pass == null || value == null) return 'gap';
@@ -36,7 +43,9 @@ function cellState(pass: boolean | null | undefined, value: number | null | unde
 const STATE_BADGE: Record<CellState, { tone: 'green' | 'red' | 'gray'; label: string }> = {
   pass: { tone: 'green', label: '✓' },
   fail: { tone: 'red', label: '✗' },
-  gap: { tone: 'gray', label: 'شکاف داده' },
+  gap: { tone: 'gray', label: EPS_GAP_LABEL },
+  // برچسب «سابقهٔ ناقص» با span اختصاصی رندر می‌شود (نه Badge) — اینجا فقط پشتیبانِ نوع است
+  partial: { tone: 'gray', label: EPS_GAP_LABEL },
 };
 
 function PassMark({ state }: { state: CellState }) {
@@ -161,20 +170,34 @@ export function FtsScreenTable({
           <tbody>
             {sorted.map((r) => {
               const i1 = cellState(r.i1_pass, r.rev_growth);
-              const i2: CellState = r.eps_data_gap ? 'gap' : r.i2_pass ? 'pass' : 'fail';
+              /** شاخص ۲ — چهاردحالته از روی خودِ داده (lib/epsHistory):
+               *  pass / partial «مردود — سابقهٔ ناقص (۲ از ۳ سال)» / fail / gap (<۲ سال) */
+              const epsHist = epsHistory(
+                r.eps_series,
+                r.eps_years_required ?? EPS_REQUIRED_YEARS,
+                r.eps_years_available,
+              );
+              const i2: CellState =
+                epsHist.state === 'partial'
+                  ? 'partial'
+                  : epsHist.state === 'insufficient'
+                    ? r.eps_data_gap === false
+                      ? r.i2_pass
+                        ? 'pass'
+                        : 'fail'
+                      : 'gap'
+                    : r.i2_pass
+                      ? 'pass'
+                      : 'fail';
               const i3 = cellState(r.i3_pass, r.gross_margin);
               const i4Value = r.profit_potential_pct ?? r.sales_to_mcap ?? null;
               const i4 = cellState(r.i4_pass, i4Value);
               const i5: CellState = r.pricing_mode == null ? 'gap' : r.i5_pass ? 'pass' : 'fail';
-              const epsRealYears = (r.eps_series ?? []).filter((v) => v != null).length;
-              const epsTrend = r.eps_series?.length
-                ? r.eps_series.map((v) => (v == null ? '؟' : toFaDigits(v.toFixed(0)))).join(' ← ')
-                : null;
-              /** سابقهٔ ناقصِ ≥۲ ساله: برچسب «مردود — سابقهٔ ناقص» به‌جای «شکاف داده» —
-               *  داده نمایش داده می‌شود، ولی ردِ گیت سه‌ساله صریح می‌ماند. */
-              const epsPartialRejected = r.eps_data_gap && epsRealYears >= 2;
-              const epsGapReason = epsRealYears
-                ? `فقط ${toFaDigits(epsRealYears)} سال از ۳ سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
+              const epsTrend = epsSeriesText(r.eps_series);
+              /** برچسب و علت از همان منبع حقیقتِ نردبان EPS و drill-down */
+              const epsPartialRejected = i2 === 'partial';
+              const epsGapReason = epsHist.realYears
+                ? `فقط ${toFaDigits(epsHist.realYears)} سال از ${toFaDigits(epsHist.requiredYears)} سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
                 : 'هیچ صورت مالی ۱۲ماههٔ EPS در کدال ثبت نشده است.';
               return (
                 <tr
@@ -210,11 +233,11 @@ export function FtsScreenTable({
                       </span>
                       {epsPartialRejected ? (
                         <span
-                          data-testid="eps-partial-rejected"
+                          data-testid={EPS_PARTIAL_TESTID}
                           title={epsGapReason}
                           className="rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2 py-0.5 text-[10px] font-bold text-accent-susp"
                         >
-                          مردود — سابقهٔ ناقص ({toFaDigits(epsRealYears)} از ۳ سال) ⓘ
+                          {epsHist.label} ⓘ
                         </span>
                       ) : (
                         <PassMark state={i2} />
@@ -263,8 +286,8 @@ export function FtsScreenTable({
         </table>
       </div>
       <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-[10px] text-text-muted">
-        ✓ قبول · ✗ مردود · «شکاف داده» = صورت مالی/گزارش ماهانهٔ کدال برای آن شاخص نیست — سطر حذف نمی‌شود
-        · «سابقهٔ ناقص» = EPS دو سالِ موجود نشان داده می‌شود ولی گیت سه‌سالهٔ شاخص ۲ رد است
+        ✓ قبول · ✗ مردود · «{EPS_GAP_LABEL}» = صورت مالی/گزارش ماهانهٔ کدال برای آن شاخص نیست — سطر حذف نمی‌شود
+        · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است
         {excludedCount > 0 && !showExcluded
           ? ` · ${toFaDigits(excludedCount)} ردیفِ مشمول دروازه‌های سخت پنهان شد`
           : ''}

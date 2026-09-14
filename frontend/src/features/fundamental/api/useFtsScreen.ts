@@ -18,6 +18,11 @@ export const FtsScreenRowSchema = z.object({
   eps_series: z.array(z.number().nullable()).nullish(),
   eps_last: z.number().nullable().nullish(),
   eps_data_gap: z.boolean().nullish(),
+  /** اگر بک‌اند در ردیف اسکنر هم تعداد سال‌های EPS را بدهد (هم‌شکل با
+   *  indicators['2'] اندپوینت جزئیات)، جدول همان‌ها را مبنا می‌گیرد؛ وگرنه
+   *  طول سری eps_series. هر دو اختیاری‌اند — نبودشان یعنی «داده نیست». */
+  eps_years_available: z.number().nullish(),
+  eps_years_required: z.number().nullish(),
   /** شاخص ۳: حاشیه سود ناخالص (٪) */
   gross_margin: z.number().nullable().nullish(),
   /** شاخص ۴: فروش سالانه ÷ ارزش بازار و پتانسیل سود ناخالص (٪) */

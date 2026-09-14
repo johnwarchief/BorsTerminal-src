@@ -7,6 +7,12 @@
 // <۲ سال: همان «ناقص» قبلی (شکاف داده) می‌ماند — هیچ چیز جدید نمایش داده نمی‌شود.
 import { toFaDigits } from '@shared/lib/fmt';
 import { GapHint, epsGapReason } from './GapHint';
+import {
+  EPS_PARTIAL_TESTID,
+  EPS_REQUIRED_YEARS,
+  epsHistory,
+  epsRealYears,
+} from '../lib/epsHistory';
 
 export type InterimInfo = {
   available: boolean;
@@ -35,21 +41,23 @@ export function EpsLadder({
     slot: slots[i] ?? '',
     value: series[i] ?? null,
   }));
-  const realYears = series.filter((v) => v != null).length;
-  /** ≥۲ سالِ واقعی: داده نمایش + برچسب مردودِ ناقص؛ <۲ سال: شکاف داده ساده */
-  const partialRejected = partial && realYears >= 2 && realYears < requiredYears;
-  const gapReason = epsGapReason({ available: realYears, required: requiredYears, interimAvailable: interim?.available ?? false });
+  const realYears = epsRealYears(series);
+  /** همان منطق و برچسب جدولِ غربالگری (lib/epsHistory):
+   *  ≥۲ سالِ واقعی ولی سابقهٔ ناقص ⇒ داده نمایش + برچسب مردودِ ناقص */
+  const hist = epsHistory(series, requiredYears ?? EPS_REQUIRED_YEARS);
+  const partialRejected = partial && hist.state === 'partial';
+  const gapReason = epsGapReason({ available: realYears, required: hist.requiredYears, interimAvailable: interim?.available ?? false });
   return (
     <div className="glass-panel panel-in p-4" data-testid="eps-ladder">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-black text-text-primary">نردبان EPS</h3>
         {partialRejected ? (
           <span
-            data-testid="eps-partial-rejected"
+            data-testid={EPS_PARTIAL_TESTID}
             title={gapReason}
             className="rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2.5 py-0.5 text-xs font-bold text-accent-susp"
           >
-            مردود در شاخص ۲ — سابقهٔ ناقص ({toFaDigits(realYears)} از {toFaDigits(requiredYears)} سال) ⓘ
+            {hist.label} ⓘ
           </span>
         ) : partial ? (
           <GapHint reason={gapReason}>
