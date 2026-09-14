@@ -17,6 +17,9 @@ import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type FtsChartLa
 import { DrawingToolbar } from '../components/DrawingToolbar';
 import { ToolPropertiesPanel } from '../components/ToolPropertiesPanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
+import { ReplayBar } from '../components/ReplayBar';
+import { useReplayStore } from '../stores/replayStore';
+import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
 
 /** موتور Lightweight Charts فقط زمانی بارگذاری می‌شود که کاربر آن را انتخاب کند
     (مسیر قدیم klinecharts دست‌نخورده و ایزوله از خطای احتمالی LW می‌ماند). */
@@ -67,6 +70,12 @@ export default function TechnicalPage() {
   const showGrid = useFtsConfigStore((s) => s.showGrid);
   const showCrosshair = useFtsConfigStore((s) => s.showCrosshair);
   const [chartApi, setChartApi] = useState<ChartDrawApi | null>(null);
+  const replayActive = useReplayStore((s) => s.active);
+  const replayCursor = useReplayStore((s) => s.cursor);
+  const replayPlaying = useReplayStore((s) => s.playing);
+  const replaySpeed = useReplayStore((s) => s.speedMs);
+  const setReplayCursor = useReplayStore((s) => s.setCursor);
+  const setReplayPlaying = useReplayStore((s) => s.setPlaying);
   const [lastDraw, setLastDraw] = useState<LastDraw>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -94,6 +103,26 @@ export default function TechnicalPage() {
     () => (isChartTransform(chartType) ? transformCandles(chartType, displayed) : displayed),
     [chartType, displayed],
   );
+
+  // بازپخش: فقط کندل‌های تا مکان‌نما نمایش داده می‌شوند
+  const replayRows = useMemo(
+    () => (replayActive ? replaySlice(chartData, replayCursor) : chartData),
+    [replayActive, chartData, replayCursor],
+  );
+
+  // پخش خودکار: هر speedMs یک کندل جلو؛ در انتها متوقف می‌شود
+  useEffect(() => {
+    if (!replayActive || !replayPlaying) return;
+    const t = setInterval(() => {
+      const cur = clampCursor(replayCursor, chartData.length);
+      if (isAtEnd(cur, chartData.length)) {
+        setReplayPlaying(false);
+        return;
+      }
+      setReplayCursor(stepCursor(cur, chartData.length, 1));
+    }, Math.max(50, replaySpeed));
+    return () => clearInterval(t);
+  }, [replayActive, replayPlaying, replayCursor, replaySpeed, chartData.length, setReplayCursor, setReplayPlaying]);
 
   const signal = useMemo(
     () =>
@@ -219,6 +248,8 @@ export default function TechnicalPage() {
 
             <FtsToolbar onOpenSettings={() => setSettingsOpen(true)} />
 
+            <ReplayBar total={chartData.length} />
+
             {noData ? (
               <EmptyState
                 title="تاریخچه قیمتی برای این نماد نیست"
@@ -244,7 +275,7 @@ export default function TechnicalPage() {
                       }
                     >
                       <LwChartWrapper
-                        data={chartData}
+                        data={replayRows}
                         palette={paletteFor(theme)}
                         height={600}
                         showRsi={showRsi}
@@ -253,7 +284,7 @@ export default function TechnicalPage() {
                     </Suspense>
                   ) : (
                     <KLineChartWrapper
-                      data={chartData}
+                      data={replayRows}
                       palette={paletteFor(theme)}
                       layers={layers}
                       height={600}
