@@ -7,12 +7,18 @@ import type { SetupKind, TechnicalPayload } from '@contracts/technical';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
   avgVolume,
+  bearishDivergence,
   detectChoch,
+  fibZones,
+  FTS_RSI_PERIOD,
   ftsMAs,
   lastValid,
   majorResistance,
   majorSupport,
+  ma14TrailingExit,
   maStack,
+  rsi,
+  swingLows,
 } from '../lib/indicators';
 
 /** کمینه کندل معتبر برای داوری کامل */
@@ -121,8 +127,34 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
     bits.push(`خط چین قرمز صعودی در ${choch.level != null ? faNum(choch.level, 0) : '-'}؛ بازگشت روند`);
   }
 
+  // RSI(14) وایلدر + واگرایی منفی (RD−) — FTS_SPEC بخش اول بند ۵
+  const rsiSeries = rsi(input.closes, FTS_RSI_PERIOD);
+  const divBear = bearishDivergence(input.highs, rsiSeries);
+  if (divBear) {
+    total -= 2;
+    setups.add('bearish_div');
+    bits.push('واگرایی منفی RSI (سقف قیمتی بالاتر با سقف RSI پایین‌تر)');
+  }
+
+  // کمربند فیبوی لگاریتمی — FTS_SPEC بخش اول بند ۳: داخل زون = کاندید ورود پله‌ای
+  const fib = fibZones(input.highs, input.lows, input.closes);
+  const inFibZone = fib != null && (fib.zone3340.inZone || fib.zone61870.inZone);
+  if (fib && inFibZone) {
+    total += 1;
+    setups.add('fibonacci');
+    bits.push(fib.zone61870.inZone ? 'قیمت داخل کمربند طلایی ۶۱.۸-۷۰٪' : 'قیمت داخل کمربند ۳۳-۴۰٪');
+  }
+
+  // خروج با «کندل کامل زیر MA(14)» — FTS_SPEC بخش اول بند ۵
+  const ma14Exit = ma14TrailingExit(input.opens, input.highs, input.lows, input.closes, mas[14]);
+  if (ma14Exit.exit) {
+    total -= 3;
+    bits.push('کندل کامل زیر MA(14) — سیگنال خروج');
+  }
+
   const score = Math.max(0, Math.min(100, Math.round(50 + 8 * total)));
   let direction: Direction = total >= 2 ? 'bullish' : total <= -2 ? 'bearish' : 'neutral';
+  if (ma14Exit.exit && direction === 'bullish') direction = 'neutral';
   if (direction === 'neutral' && !short) setups.add('range');
 
   // دروازه ریسک: سهم مردود یعنی پرواز صادر نمی شود
@@ -136,6 +168,14 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
   const confidence: Confidence = gateBlocked ? 'low' : short ? 'low' : score >= 70 ? 'high' : score >= 45 ? 'medium' : 'low';
   if (short) bits.push(`فقط ${faNum(valid, 0)} کندل معتبر؛ داوری احتیاطی است`);
   if (gateBlocked) bits.push('سهم در گیت ریسک بنیادی مردود است؛ سیگنال پرواز صادر نشد');
+
+  // حد ضرر نوسان‌گیر: ۵٪ زیر آخرین کف سوینگ روند صعودی (FTS_SPEC بند ۵)؛
+  // در نبود کف سوینگ، مرجع به MA(14) تنزل می‌کند.
+  const swingArr = swingLows(input.lows, 3);
+  const swingLow = swingArr.length > 0 ? swingArr[swingArr.length - 1].price : null;
+  const risingLowStop = swingLow != null ? swingLow * 0.95 : null;
+  const bullStopRef = risingLowStop != null ? 'rising_low' : 'ma14';
+  const bullStopPrice = risingLowStop ?? m14;
 
   return {
     id: `technical:${symbol}:setup:${ts}`,
@@ -156,7 +196,14 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
     score: gateBlocked ? 50 : score,
     evidence: gateBlocked
       ? ['tech:risk_gate_block']
-      : ['tech:ma_stack', 'tech:jet_trigger', 'tech:choch'],
+      : [
+          'tech:ma_stack',
+          'tech:jet_trigger',
+          'tech:choch',
+          ...(divBear ? ['tech:rsi_div'] : []),
+          ...(inFibZone ? ['tech:fib_zone'] : []),
+          ...(ma14Exit.exit ? ['tech:ma14_exit'] : []),
+        ],
     sourceView: 'technical',
     sourceRef: ['API'],
     validForMs: TECH_VALID_MS,
@@ -164,8 +211,8 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
       kind: 'setup',
       timeframe: 'daily',
       setups: [...setups],
-      stopLossRef: direction === 'neutral' ? null : direction === 'bullish' ? 'ma14' : 'swing_stop',
-      stopLossPrice: direction === 'bullish' ? m14 : direction === 'bearish' ? (support?.price ?? null) : null,
+      stopLossRef: direction === 'neutral' ? null : direction === 'bullish' ? bullStopRef : 'swing_stop',
+      stopLossPrice: direction === 'bullish' ? bullStopPrice : direction === 'bearish' ? (support?.price ?? null) : null,
       keyLevels: [
         ...(jet != null ? [{ type: 'resistance', price: jet.price }] : []),
         ...(support != null ? [{ type: 'support', price: support.price }] : []),
