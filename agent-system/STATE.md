@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `fe784aa` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۴۸۴ سبز (۴۵ فایل) · eslint صفر · build سالم
+- **master HEAD:** `b28a2fd` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۴۹۵ سبز (۴۶ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -79,3 +79,10 @@
 
 ## به‌روزرسانی ۸ (ایجنتهد main, 2026-09-14 ~20:40)
 - **agent/technical (T-02)** مرج شد: `157fd7f` + merge commit `fe784aa`. منطق انتخاب سری در `useMarketMacro` متمرکز شد (اول `/api/index/tedpix` با status==success و کندل معتبر → چارت شاخص کل؛ وگرنه fallback صادقانه به `/api/mstat/timeline`)؛ `useMarketSeries` به re‌export تبدیل شد (import پایدار)؛ `MarketOverview` ادعای «شاخص کل نیست» را حذف و منبع TEDPIX را نشان می‌دهد. اعتبارسنجی روی master: vitest 484/484 (45 فایل) · eslint صفر · build سالم.
+
+
+## به‌روزرسانی ۹ (ایجنتهد main, 2026-09-14 ~20:55)
+- هد پچ `fts_engine.py::bulk_scan` را لند کرد (`ea1b7d7`: نگه‌داشتن سری ۲ساله + eps_years_available/required).
+- **agent/technical (T-03 بخش 1)** مرج شد: `20c947a` + merge commit `b28a2fd`. (MA14 = کندل کامل زیر خط؛ آستانهٔ CHoCH 0.3%؛ RSI(14) وایلدر + واگرایی؛ ستاپ fibonacci لوگ؛ حد ضرر سوینگ؛ تست technical-fts-spec.) اعتبارسنجی: vitest 495/495 (46 فایل)، eslint صفر، build سالم.
+- ⚠️ نکته: `app-shell.spec` زیر بار موازی کامل گاهی فلیک می‌کند (یک‌بار قرمز شد؛ رانِ تنها و ران مجدد سبز).
+- T-03 بخش 2 (شکاف‌سنجی TradingView) اطلاعاتی است؛ نیازمند تصمیم کاربر دربارهٔ موتور چارت (نبود onOverlaySelected در klinecharts v10، نبود دادهٔ درون‌روزی، و Alerts/Trade نیازمند بک‌اند).
