@@ -19,7 +19,7 @@ import { useQuarters } from '../api/useQuarters';
 import { useSectorBoard } from '../api/useSectorBoard';
 import { useFtsScreen } from '../api/useFtsScreen';
 import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
-import { isPhysicalGrowthApplicable } from '../lib/assetScope';
+import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { AssemblyBadge } from '../components/AssemblyBadge';
@@ -35,16 +35,9 @@ import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
 
-/** شرکت سرمایه‌گذاری/هلدینگ؟ — نام یا گروه صنعت */
-const HOLDING_NAME_RE = /هلدينگ|هلدینگ|سرمايه گذاري|سرمايه‌گذاري|سرمایه‌گذاری|سرمایه گذاری/;
-const HOLDING_SECTOR_RE = /سرمايه گذاريها|سرمايه‌گذاريها|شرکتهاي چند رشته اي/;
+/** گروه صنعتی نامرتبط برای مقایسه (هلدینگ‌ها با آن سنجیده نمی‌شوند) */
 const OTHER_GROUP = 'سایر';
 
-function isHoldingCompany(name: string | null | undefined, sector: string | null | undefined): boolean {
-  if (name && HOLDING_NAME_RE.test(name)) return true;
-  if (sector && HOLDING_SECTOR_RE.test(sector)) return true;
-  return false;
-}
 
 export default function FundamentalPage() {
   const params = useParams();
@@ -79,20 +72,16 @@ export default function FundamentalPage() {
   const rawSector = card.data?.sector ?? peRow?.sector_name ?? '';
   /** هلدینگ‌ها با گروه «سایر» مقایسه صنعتی نمی‌شوند — گروه نامربوط است */
   const isHolding = useMemo(
-    () => isHoldingCompany(companyName, rawSector),
+    () => isFinancialOrHolding({ name: companyName, sector_name: rawSector }),
     [companyName, rawSector],
   );
   const sector = isHolding && rawSector.trim() === OTHER_GROUP ? '' : rawSector;
-  /** P/NAV جانشین برای هلدینگ‌ها: P/E بر مبنای آخرین EPS ۱۲ماهه؛ ستون NAV در بک‌اند نیست */
-  const holdingNavEps = useMemo(() => {
-    if (!isHolding) return null;
-    const hist = card.data?.metrics?.eps_series ?? [];
-    return hist.length > 0 ? hist[hist.length - 1] : null;
-  }, [isHolding, card.data]);
   const median = useMemo(() => (sector ? sectorMedianPE(boardRows, sector) : null), [boardRows, sector]);
   const pe = isHolding ? null : peRow?.pe ?? null;
   /** رشد فیزیکی صرفاً برای تولیدی — profile بک‌اند یا طبقه‌بندی نام/گروه */
   const physicalApplicable = useMemo(() => {
+    /** مالی/بانکی/هلدینگ/سرمایه‌گذاری: رشد فیزیکی هرگز فعال نمی‌شود (مخفی کامل) */
+    if (isFinancialOrHolding({ name: companyName, sector_name: rawSector })) return false;
     const prof = card.data?.profile;
     if (prof?.volume_applicable != null) return prof.volume_applicable;
     return isPhysicalGrowthApplicable({ name: companyName, sector_name: rawSector });
@@ -196,6 +185,7 @@ export default function FundamentalPage() {
           score={card.data.score ?? null}
           passes={card.data.passes ?? {}}
           verdict={card.data.verdict ?? null}
+          industryMode={card.data.pricing_mode ?? null}
           physicalApplicable={physicalApplicable}
           activeDrill={drillKey}
           onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
@@ -203,15 +193,13 @@ export default function FundamentalPage() {
         {isHolding ? (
           <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-black text-text-primary">P/NAV — ارزش‌گذاری هلدینگ</h3>
-              <Badge tone={holdingNavEps != null && peRow?.pe != null && peRow.pe < 1 ? 'green' : 'gray'}>
-                {holdingNavEps != null ? 'جانشین EPS' : 'شکاف NAV'}
-              </Badge>
+              <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند NAV پرتفوی</h3>
+              <Badge tone="yellow">N/A</Badge>
             </div>
-            <p className="text-[11px] leading-relaxed text-text-secondary">
-              {holdingNavEps != null && peRow?.pe != null
-                ? `این شرکت هلدینگ/سرمایه‌گذاری است؛ مقایسهٔ P/E با گروه «سایر» معنا ندارد. تا وقتی ستون NAV (ارزش خالص دارایی‌ها) از بک‌اند منتشر شود، آخرین EPS ۱۲ماههٔ حسابرسی‌شده (${toFaDigits(holdingNavEps)} ریال) به‌عنوان جانشین NAV استفاده می‌شود: P/NAV ≈ ${toFaDigits(peRow.pe.toFixed(1))}`
-                : 'این شرکت هلدینگ/سرمایه‌گذاری است؛ مقایسه با میانهٔ P/E گروه‌های تولیدی نامربوط است. دادهٔ NAV (ارزش خالص دارایی‌ها) در بک‌اند موجود نیست — با انتشار فیلد NAV، P/NAV دقیق محاسبه می‌شود.'}
+            <p className="text-[11px] leading-relaxed text-text-secondary" data-testid="holding-nav-na">
+              نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
+              نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
+              «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
             </p>
           </div>
         ) : (
@@ -228,7 +216,7 @@ export default function FundamentalPage() {
         mcapStale={metrics?.mcap_stale ?? false}
       />
 
-      <DataGapBanner gaps={card.data.data_gaps ?? []} />
+      <DataGapBanner gaps={card.data.data_gaps ?? []} eps={card.data.indicators?.['2']} />
 
       <EpsLadder
         slots={metrics?.eps_slots ?? []}

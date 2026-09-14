@@ -1,6 +1,6 @@
 // features/fundamental/components/QuarterlyTrend.tsx -- روند ۸ فصل درآمد و سود
 // اعداد منفی درست رندر می‌شوند (میله به پایین خط صفر)، محور Y با مقیاس
-// همت/میلیارد ریال برچسب‌خورده است و فصل‌ها با نام فارسی (بهار/تابستان/…)
+// همت/میلیارد تومان برچسب‌خورده است و فصل‌ها با نام فارسی (بهار/تابستان/…)
 // نمایش می‌یابند.
 import { useMemo } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
@@ -23,16 +23,16 @@ function niceMax(v: number): number {
   return Math.ceil(v / p) * p;
 }
 
-/** قالب مقادیر محور: میلیارد ریال یا همت */
-function fmtAxis(rial: number): string {
-  const abs = Math.abs(rial);
-  if (abs >= 1e13) return `${toFaDigits((rial / 1e13).toFixed(1))} همت`;
-  if (abs >= 1e9) return `${toFaDigits((rial / 1e9).toFixed(0))} م‌ر`;
-  return fmtInt(rial);
+/** قالب مقادیر محور: میلیارد تومان یا همت */
+function fmtAxisBt(bt: number): string {
+  const abs = Math.abs(bt);
+    if (abs >= 1000) return `${toFaDigits((bt / 1000).toFixed(1))} همت`;
+    if (abs >= 1) return `${toFaDigits(bt.toFixed(0))} م.ت`;
+  return toFaDigits(bt.toFixed(2));
 }
 
 /** واحد سری: میلیون ریال از بک‌اند — به ریال برای مقیاس‌بندی محور */
-const MRL = 1e6;
+const MRL_TO_BT = 1e6 / 1e10;
 
 export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
   const geom = useMemo(() => {
@@ -75,7 +75,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-sm bg-accent-green" /> سود خالص
           </span>
-          {yoy != null ? <span>تغییر فصل: {fmtInt(yoy)}</span> : null}
+          {yoy != null ? <span>تغییر فصل: {fmtInt(yoy * MRL_TO_BT)} میلیارد تومان</span> : null}
         </span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="نمودار روند فصلی" data-testid="quarterly-trend-chart">
@@ -84,7 +84,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           <g key={v}>
             <line x1={PAD} x2={W - PAD} y1={geom.y(v)} y2={geom.y(v)} stroke="var(--border-color)" strokeWidth="0.8" opacity="0.6" />
             <text x={PAD - 4} y={geom.y(v) + 3} textAnchor="end" fontSize="8.5" fill="var(--text-muted)">
-              {fmtAxis(v * MRL)}
+              {fmtAxisBt(v * MRL_TO_BT)}
             </text>
           </g>
         ))}
@@ -101,7 +101,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           const netH = Math.max(1, Math.abs(geom.y(net) - geom.zeroY));
           return (
             <g key={q.key}>
-              <title>{`${q.key}: درآمد ${fmtInt(q.revenue)} -- سود ${fmtInt(q.netProfit)}`}</title>
+              <title>{`${q.key}: درآمد ${fmtInt((q.revenue ?? 0) * MRL_TO_BT)} -- ${fmtInt((q.netProfit ?? 0) * MRL_TO_BT)}`}</title>
               <rect
                 x={x + geom.slot / 2 - bw - 1}
                 y={rev >= 0 ? revTop : geom.zeroY}
@@ -125,7 +125,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           );
         })}
       </svg>
-      <div className="mt-1 text-[11px] text-text-muted">{toFaDigits(quarters.length)} فصل آخر (ارقام میلیون ریال)</div>
+      <div className="mt-1 text-[11px] text-text-muted">{toFaDigits(quarters.length)} فصل آخر (ارقام میلیارد تومان)</div>
     </div>
   );
 }

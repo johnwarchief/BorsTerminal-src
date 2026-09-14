@@ -1,5 +1,6 @@
 // features/fundamental/components/RiskGatesPanel.tsx -- چهار دروازه ریسک از کارت
 import { Badge } from '@shared/components/Badge';
+import { industryGateDetail, industryGateTone } from '../lib/industryGate';
 
 export function RiskGatesPanel({
   excluded,
@@ -17,7 +18,8 @@ export function RiskGatesPanel({
       <h3 className="mb-2 text-sm font-black text-text-primary">دروازه های ریسک</h3>
       <div className="flex flex-wrap gap-2">
         <Badge tone={excluded ? 'red' : 'green'}>{excluded ? 'حذف از غربالگری' : 'مجاز در غربالگری'}</Badge>
-        {pricingMode ? <Badge tone={pricingMode === 'mandatory' ? 'red' : 'blue'}>صنعت: {pricingMode}</Badge> : null}
+        {/* وضعیت صنعت با همان متن/رنگ کارت FTS و drill-down شاخص ۵ */}
+        {pricingMode ? <Badge tone={industryGateTone(pricingMode)}>{industryGateDetail(pricingMode)}</Badge> : null}
         {mcapStale ? <Badge tone="yellow">ارزش بازار کهنه</Badge> : <Badge tone="green">ارزش بازار تازه</Badge>}
       </div>
       {reasons.length > 0 && (

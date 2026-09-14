@@ -13,6 +13,40 @@ import { toFaDigits } from '@shared/lib/fmt';
 export const EPS_REQUIRED_YEARS = 3;
 /** کفِ نمایش: با کمتر از این تعداد سال، داده برای قضاوت کافی نیست */
 export const EPS_MIN_SHOWN_YEARS = 2;
+/**
+ * دلیلِ واقعیِ ردِ شاخص ۲ وقتی همهٔ سال‌های لازم موجودند (شکست گیت — نه شکاف داده).
+ * کاربر: «علت رد باید دقیقاً همان شکست واقعی باشد»؛ مثال ویسا با سری
+ * [742, 1140, -8] ⇒ «شکست روند سودآوری — سقوط سود به زیان در سال آخر (‎-۸ ریال)».
+ * اگر دلیلی قابل استنتاج نبود null برمی‌گردد (هیچ متن ساختگی).
+ */
+export function epsFailReason(opts: {
+  series?: readonly (number | null | undefined)[] | null;
+  slots?: readonly string[] | null;
+  strictlyRising?: boolean | null;
+  allProfitable?: boolean | null;
+}): string | null {
+  const series = Array.isArray(opts.series) ? opts.series : [];
+  const real = series.filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  if (real.length === 0) return null;
+  const slots = Array.isArray(opts.slots) ? opts.slots : [];
+  const lastIdx = series.length - 1 - [...series].reverse().findIndex((v) => typeof v === 'number' && Number.isFinite(v));
+  const last = series[lastIdx] as number;
+  const slot = slots[lastIdx] ?? '';
+  const slotFa = slot ? `سال ${toFaDigits(slot)}` : 'سال آخر';
+  if (last < 0) {
+    return `شکست روند سودآوری — سقوط سود به زیان در ${slotFa} (${toFaDigits(last)} ریال)`;
+  }
+  const anyLoss = opts.allProfitable === false || real.some((v) => v <= 0);
+  if (anyLoss) {
+    return 'شکست روند سودآوری — یکی از سال‌های سابقه زیان‌ده (یا صفر) بوده است';
+  }
+  if (opts.strictlyRising === false) {
+    const prev = real[real.length - 2];
+    return `روند EPS صعودی نیست — سود ${slotFa} (${toFaDigits(last)}) از سال قبل (${toFaDigits(prev)}) کمتر است`;
+  }
+  return null;
+}
+
 /** برچسب‌های علت‌دار شاخص ۲ — جای برچسب عمومی «شکاف داده» */
 export const EPS_GAP_LABEL_LT2 = 'سابقهٔ EPS کمتر از ۲ سال';
 export const EPS_GAP_LABEL_NONE = 'سابقهٔ EPS سالانه ثبت نشده';

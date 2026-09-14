@@ -109,19 +109,22 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     );
   });
 
-  it('هلدینگ: پنل P/NAV جای SectorPePanel می‌نشیند و مقایسه با گروه «سایر» نمی‌آید', async () => {
+  it('هلدینگ: پنل «نیازمند ارزیابی پرتفوی هلدینگ (N/A)» جای SectorPePanel می‌نشیند — بدون P/NAV ساختگی', async () => {
     renderPage('وغدير');
     await waitFor(() => expect(screen.getByTestId('holding-pnav-panel')).toBeInTheDocument());
     // عنوان P/E در برابر صنعت برای هلدینگ رندر نمی‌شود
     expect(screen.queryByText(/P\/E در برابر صنعت/)).not.toBeInTheDocument();
-    // متن جانشین EPS (آخرین EPS ۱۲ماهه = ۱۸۸۸) و P/E ۱۱.۳ نمایش می‌یابد
     const panel = screen.getByTestId('holding-pnav-panel');
-    expect(panel.textContent).toContain('P/NAV');
-    expect(panel.textContent).toContain('۱۸۸۸');
-    expect(panel.textContent).toContain('۱۱.۳');
+    // برچسب رسمی N/A و علت آن
+    expect(panel.textContent).toContain('نیازمند ارزیابی پرتفوی هلدینگ (N/A)');
+    // هیچ نسبت جانشینی (EPS به‌جای NAV) محاسبه/نمایش داده نمی‌شود
+    expect(panel.textContent).not.toContain('P/NAV ≈');
+    expect(panel.textContent).not.toContain('جانشین EPS');
+    expect(panel.textContent).not.toContain('۱۸۸۸');
+    expect(panel.textContent).not.toContain('۱۱.۳');
   });
 
-  it('هلدینگ بدون دادهٔ EPS: پیغام شکاف NAV کاربرپسند (نه خطای خام)', async () => {
+  it('هلدینگ بدون دادهٔ EPS: همان برچسب N/A می‌ماند (بدون undefined/NaN)', async () => {
     fetchMock.mockImplementation((url: string) => {
       const base = mockJson(typeof url === 'string' ? decodeURIComponent(url) : '') as Record<string, unknown>;
       if ((typeof url === 'string' ? decodeURIComponent(url) : '').startsWith('/api/fundamental/وغدير') && !url.includes('quarters')) {
@@ -132,7 +135,7 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     renderPage('وغدير');
     await waitFor(() => expect(screen.getByTestId('holding-pnav-panel')).toBeInTheDocument());
     const panel = screen.getByTestId('holding-pnav-panel');
-    expect(panel.textContent).toContain('NAV');
+    expect(panel.textContent).toContain('N/A');
     expect(panel.textContent).not.toContain('undefined');
     expect(panel.textContent).not.toContain('NaN');
   });
