@@ -90,6 +90,8 @@ export function FtsToolbar({ onOpenSettings }: { onOpenSettings?: () => void }) 
   const showRsi = useFtsConfigStore((s) => s.showRsi);
   const showVolMa = useFtsConfigStore((s) => s.showVolMa);
   const showFtsCard = useFtsConfigStore((s) => s.showFtsCard);
+  const layout = useFtsConfigStore((s) => s.view.splitLayout);
+  const setView = useFtsConfigStore((s) => s.setView);
   const showMAs = useFtsConfigStore((s) => s.showMAs);
   const showJetTrigger = useFtsConfigStore((s) => s.showJetTrigger);
   const showChoch = useFtsConfigStore((s) => s.showChoch);
@@ -164,6 +166,19 @@ export function FtsToolbar({ onOpenSettings }: { onOpenSettings?: () => void }) 
           active={layerStates[it.key]}
           label={`${it.label}: ${layerStates[it.key] ? 'روشن' : 'خاموش'}`}
           onClick={() => toggle(it.key)}
+        />
+      ))}
+
+      <Divider />
+
+      <GroupLabel>چیدمان</GroupLabel>
+      {([1, 2, 4] as const).map((n) => (
+        <Chip
+          key={n}
+          active={layout === n}
+          label={n === 1 ? 'تک' : n === 2 ? '۲ چارت' : '۴ چارت'}
+          onClick={() => setView({ splitLayout: n })}
+          title="چیدمان چارت با همگام‌سازی کراس‌هیر/زوم"
         />
       ))}
 

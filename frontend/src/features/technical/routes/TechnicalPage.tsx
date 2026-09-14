@@ -17,6 +17,7 @@ import { KLineChartWrapper, type ChartDrawApi, type ChartMarker, type FtsChartLa
 import { DrawingToolbar } from '../components/DrawingToolbar';
 import { ToolPropertiesPanel } from '../components/ToolPropertiesPanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
+import { SplitChartView } from '../components/SplitChartView';
 import { ReplayBar } from '../components/ReplayBar';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
@@ -257,9 +258,21 @@ export default function TechnicalPage() {
               />
             ) : (
               <>
-                <ToolPropertiesPanel api={chartApi} last={lastDraw} />
+                {view.splitLayout > 1 ? (
+                  <SplitChartView
+                    layout={view.splitLayout}
+                    data={replayRows}
+                    palette={paletteFor(theme)}
+                    layers={layers}
+                    view={view}
+                    showRsi={showRsi}
+                    showVolMa={showVolMa}
+                  />
+                ) : (
+                  <>
+                    <ToolPropertiesPanel api={chartApi} last={lastDraw} />
 
-                <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2">
                 <DrawingToolbar api={chartApi} />
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                   {chartEngine === 'lightweight' ? (
@@ -310,8 +323,10 @@ export default function TechnicalPage() {
                       stopLoss: signal?.payload.stopLossPrice ?? null,
                     }}
                   />
-                </div>
-              </div>
+                    </div>
+                  </div>
+                  </>
+                )}
               </>
             )}
 
