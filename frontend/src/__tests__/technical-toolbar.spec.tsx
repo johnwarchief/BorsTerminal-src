@@ -115,7 +115,7 @@ describe('کاتالوگ و ریل ابزارهای ترسیم', () => {
       getSupportedOverlays: () => ['straightLine', 'fibonacciLine'],
     };
     const startDraw = vi.fn();
-    const api = { startDraw, undo: vi.fn(), redo: vi.fn(), clearDrawings: vi.fn(), hideDrawings: vi.fn(), updateLast: vi.fn() } as ChartDrawApi;
+    const api = { startDraw, undo: vi.fn(), redo: vi.fn(), clearDrawings: vi.fn(), hideDrawings: vi.fn(), updateLast: vi.fn(), getLastPoints: vi.fn(() => []), saveAsDefault: vi.fn() } as unknown as ChartDrawApi;
     render(<DrawingToolbar api={api} />);
     fireEvent.click(screen.getByTestId('draw-group-straightLine'));
     fireEvent.click(screen.getByTestId('draw-straightLine'));

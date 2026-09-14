@@ -33,6 +33,10 @@ const CHART_TYPES: { key: ChartType; label: string }[] = [
   { key: 'ohlc', label: 'بار' },
   { key: 'line', label: 'خط' },
   { key: 'area', label: 'اریا' },
+  { key: 'heikin_ashi', label: 'Heikin-Ashi' },
+  { key: 'renko', label: 'Renko' },
+  { key: 'kagi', label: 'Kagi' },
+  { key: 'pnf', label: 'Point & Figure' },
 ];
 
 const PRICE_SCALES: { key: PriceScale; label: string }[] = [

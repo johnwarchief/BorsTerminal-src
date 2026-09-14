@@ -26,3 +26,8 @@ export const LIGHT_PALETTE: ChartPalette = {
 export function paletteFor(theme: string): ChartPalette {
   return theme === 'dark' ? DARK_PALETTE : LIGHT_PALETTE;
 }
+
+/** پس‌زمینهٔ چارت: «همراه تم» یا پریست کلاسیک تیره (تنظیمات ظاهر) */
+export function backgroundFor(preset: 'theme' | 'classic', paletteBg: string): string {
+  return preset === 'classic' ? '#0a0e17' : paletteBg;
+}
