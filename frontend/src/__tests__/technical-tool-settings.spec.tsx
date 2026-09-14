@@ -16,6 +16,13 @@ function api(): ChartDrawApi & { updateLast: ReturnType<typeof vi.fn>; saveAsDef
     updateLast: vi.fn(),
     getLastPoints: vi.fn(() => []),
     saveAsDefault: vi.fn(),
+    setLockAll: vi.fn(),
+    copyLast: vi.fn(),
+    resizeAll: vi.fn(),
+    listGroups: vi.fn(() => []),
+    setGroupVisible: vi.fn(),
+    removeGroup: vi.fn(),
+    setTargetGroup: vi.fn(),
   } as unknown as ChartDrawApi & { updateLast: ReturnType<typeof vi.fn>; saveAsDefault: ReturnType<typeof vi.fn> };
 }
 

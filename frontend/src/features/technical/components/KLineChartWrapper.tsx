@@ -214,7 +214,27 @@ export type ChartDrawApi = {
   getLastPoints: () => { price: number | null; date: string | null }[];
   /** ذخیرهٔ استایل فعلی به‌عنوان پیشفرض همان ابزار */
   saveAsDefault: (patch: { styles?: Record<string, unknown>; extendData?: Record<string, unknown> }) => void;
+  /** قفل/بازکردن همهٔ ترسیم‌ها (lock در klinecharts v10) */
+  setLockAll: (locked: boolean) => void;
+  /** کپی آخرین ترسیم با جابه‌جایی افقی */
+  copyLast: () => void;
+  /** تغییر اندازهٔ خط همهٔ ترسیم‌ها (styles.size) */
+  resizeAll: (size: number) => void;
+  /** فهرست گروه‌ها (پوشه‌های اشکال) */
+  listGroups: () => DrawGroup[];
+  /** پنهان/نمایان کردن یک گروه */
+  setGroupVisible: (id: string, visible: boolean) => void;
+  /** حذف کل یک گروه */
+  removeGroup: (id: string) => void;
+  /** گروه هدف برای ترسیم‌های بعدی (null = گروه پیشفرض) */
+  setTargetGroup: (id: string | null) => void;
 };
+
+/** یک گروه ترسیم (پوشهٔ اشکال) با تعداد عضو */
+export type DrawGroup = { id: string; count: number };
+
+/** جابه‌جایی افقی برای «کپی ترسیم» (≈ ۵ روز) */
+export const COPY_SHIFT_MS = 5 * 86_400_000;
 
 export type LastDraw = { id: string; name: string } | null;
 
@@ -263,6 +283,7 @@ export function KLineChartWrapper({
   const chartRef = useRef<KLineChart | null>(null);
   const drawHistory = useRef<{ id: string; name: string }[]>([]);
   const redoStack = useRef<{ id: string; name: string }[]>([]);
+  const targetGroupRef = useRef<string | null>(null);
   const onDrawChangeRef = useRef(onDrawChange);
   onDrawChangeRef.current = onDrawChange;
   const [libMissing, setLibMissing] = useState(false);
@@ -578,7 +599,7 @@ export function KLineChartWrapper({
           const d = defaultFor(name);
           const id = chart.createOverlay({
             name,
-            groupId: DRAW_GROUP,
+            groupId: targetGroupRef.current ?? DRAW_GROUP,
             ...(d.styles ? { styles: d.styles } : {}),
             ...(d.extendData ? { extendData: d.extendData } : {}),
           }) as string | null;
@@ -676,6 +697,90 @@ export function KLineChartWrapper({
             // نادیده بگیر
           }
         }
+      },
+      setLockAll: (locked) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.overrideOverlay({ groupId: DRAW_GROUP, lock: locked });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      copyLast: () => {
+        const chart = chartRef.current;
+        const last = drawHistory.current[drawHistory.current.length - 1];
+        if (!chart || !last) return;
+        try {
+          const ovs = chart.getOverlays({ id: last.id }) as {
+            points?: { timestamp?: number; value?: number }[];
+            styles?: Record<string, unknown>;
+            extendData?: Record<string, unknown>;
+          }[];
+          const src = ovs?.[0];
+          if (!src) return;
+          const points = (src.points ?? []).map((p) => ({
+            ...p,
+            timestamp: typeof p.timestamp === 'number' ? p.timestamp + COPY_SHIFT_MS : p.timestamp,
+          }));
+          const id = chart.createOverlay({
+            name: last.name,
+            groupId: targetGroupRef.current ?? DRAW_GROUP,
+            points,
+            ...(src.styles ? { styles: src.styles } : {}),
+            ...(src.extendData ? { extendData: src.extendData } : {}),
+          }) as string | null;
+          const entry = { id: typeof id === 'string' ? id : '', name: last.name };
+          drawHistory.current = [...drawHistory.current, entry];
+          onDrawChangeRef.current?.(entry);
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      resizeAll: (size: number) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.overrideOverlay({ groupId: DRAW_GROUP, styles: { size } });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      listGroups: () => {
+        const chart = chartRef.current;
+        if (!chart) return [];
+        try {
+          const all = chart.getOverlays() as { groupId?: string }[];
+          const m = new Map<string, number>();
+          for (const o of all) {
+            const g = o.groupId ?? DRAW_GROUP;
+            m.set(g, (m.get(g) ?? 0) + 1);
+          }
+          return [...m.entries()].map(([id, count]) => ({ id, count }));
+        } catch {
+          return [];
+        }
+      },
+      setGroupVisible: (id, visible) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.overrideOverlay({ groupId: id, styles: { visible } });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      removeGroup: (id) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.removeOverlay({ groupId: id });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      setTargetGroup: (id) => {
+        targetGroupRef.current = id;
       },
     };
     onApi(api);

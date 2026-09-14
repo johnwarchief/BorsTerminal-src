@@ -5,7 +5,7 @@
 // flyout فشرده با بستنِ بیرون‌کلیک.
 import { useEffect, useRef, useState } from 'react';
 import { buildDrawingGroups, type DrawingGroup } from '../lib/drawingTools';
-import type { ChartDrawApi } from './KLineChartWrapper';
+import type { ChartDrawApi, DrawGroup } from './KLineChartWrapper';
 
 /** آیکون‌های سادهٔ SVG هر گروه (بدون ایموجی) */
 const GROUP_ICONS: Record<string, React.ReactNode> = {
@@ -74,6 +74,28 @@ const ICON_EYE_OFF = (
     <line x1="2" y1="14" x2="14" y2="2" stroke="currentColor" strokeWidth="1.4" />
   </svg>
 );
+const ICON_LOCK = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <rect x="3.5" y="7" width="9" height="6.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" strokeWidth="1.4" />
+  </svg>
+);
+const ICON_COPY = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <rect x="2.5" y="2.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3" />
+    <rect x="5.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3" />
+  </svg>
+);
+const ICON_RESIZE = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M2 14L14 2M2 14h5M2 14v-5M14 2h-5M14 2v5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+  </svg>
+);
+const ICON_FOLDER = (
+  <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden>
+    <path d="M2 4.5h4l1.2 1.5H14v6.5H2z" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+  </svg>
+);
 
 function RailButton({
   label,
@@ -115,7 +137,13 @@ function RailButton({
 export function DrawingToolbar({ api }: { api: ChartDrawApi | null }) {
   const [groups, setGroups] = useState<DrawingGroup[]>([]);
   const [open, setOpen] = useState<string | null>(null);
+  const [showGroups, setShowGroups] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [width, setWidth] = useState(1);
+  const [shapeGroups, setShapeGroups] = useState<DrawGroup[]>([]);
+  const [targetGroup, setTargetGroup] = useState('');
+  const [hiddenGroups, setHiddenGroups] = useState<string[]>([]);
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -223,6 +251,125 @@ export function DrawingToolbar({ api }: { api: ChartDrawApi | null }) {
         }}
         testId="draw-hide"
       />
+      <RailButton
+        label="قفل"
+        icon={ICON_LOCK}
+        title={locked ? 'بازکردن قفل ترسیم‌ها' : 'قفل ترسیم‌ها (دیگر قابل ویرایش نیستند)'}
+        disabled={!api}
+        active={locked}
+        onClick={() => {
+          const next = !locked;
+          setLocked(next);
+          api?.setLockAll(next);
+        }}
+        testId="draw-lock"
+      />
+      <RailButton
+        label="کپی"
+        icon={ICON_COPY}
+        title="کپی آخرین ترسیم (با جابه‌جایی افقی)"
+        disabled={!api}
+        onClick={() => api?.copyLast()}
+        testId="draw-copy"
+      />
+      <RailButton
+        label="اندازه"
+        icon={ICON_RESIZE}
+        title={`تغییر ضخامت همهٔ ترسیم‌ها (فعلی: ${width})`}
+        disabled={!api}
+        onClick={() => {
+          const next = width >= 3 ? 1 : width + 1;
+          setWidth(next);
+          api?.resizeAll(next);
+        }}
+        testId="draw-resize"
+      />
+      <div className="relative">
+        <RailButton
+          label="پوشه"
+          icon={ICON_FOLDER}
+          title="گروه‌های اشکال (پوشه)"
+          disabled={!api}
+          active={showGroups}
+          onClick={() => {
+            const next = !showGroups;
+            setShowGroups(next);
+            if (next) setShapeGroups(api?.listGroups() ?? []);
+          }}
+          testId="draw-groups"
+        />
+        {showGroups ? (
+          <div
+            role="menu"
+            data-testid="draw-groups-flyout"
+            className="glass-panel absolute right-11 bottom-0 z-40 flex max-h-72 w-56 flex-col gap-0.5 overflow-y-auto rounded-xl border border-[var(--hairline)] p-1 shadow-lg"
+          >
+            <span className="px-2 py-1 text-[10px] font-bold text-text-muted">گروه‌های اشکال</span>
+            {shapeGroups.length === 0 ? (
+              <span className="px-2 py-1 text-[10px] text-text-muted">گروهی ثبت نشده</span>
+            ) : (
+              shapeGroups.map((g) => {
+                const isHidden = hiddenGroups.includes(g.id);
+                return (
+                  <div key={g.id} className="flex items-center justify-between gap-1 rounded-lg px-2 py-1 text-[11px] text-text-secondary">
+                    <span className="num truncate" title={g.id}>
+                      {g.id} · {g.count}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <button
+                        type="button"
+                        data-testid={`group-toggle-${g.id}`}
+                        onClick={() => {
+                          const next = !isHidden;
+                          setHiddenGroups((prev) => (next ? [...prev, g.id] : prev.filter((x) => x !== g.id)));
+                          api?.setGroupVisible(g.id, !next);
+                        }}
+                        className="rounded border border-border-c px-1.5 text-[10px] hover:text-accent-blue"
+                      >
+                        {isHidden ? 'نمایان' : 'پنهان'}
+                      </button>
+                      <button
+                        type="button"
+                        data-testid={`group-remove-${g.id}`}
+                        onClick={() => {
+                          api?.removeGroup(g.id);
+                          setShapeGroups((prev) => prev.filter((x) => x.id !== g.id));
+                        }}
+                        className="rounded border border-border-c px-1.5 text-[10px] hover:border-accent-red/50 hover:text-accent-red"
+                      >
+                        حذف
+                      </button>
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div className="mt-0.5 flex items-center gap-1 border-t border-[var(--hairline)] px-2 pt-1">
+              <input
+                value={targetGroup}
+                onChange={(e) => setTargetGroup(e.target.value)}
+                placeholder="گروه جدید..."
+                aria-label="گروه هدف ترسیم"
+                data-testid="group-target-input"
+                className="w-24 rounded border border-border-c bg-bg-card px-1.5 py-0.5 text-[11px] text-text-primary outline-none focus:border-border-accent"
+              />
+              <button
+                type="button"
+                data-testid="group-target-apply"
+                onClick={() => {
+                  const id = targetGroup.trim();
+                  api?.setTargetGroup(id ? id : null);
+                  setShapeGroups(api?.listGroups() ?? []);
+                }}
+                className="rounded border border-border-c px-1.5 py-0.5 text-[10px] text-text-secondary hover:text-accent-blue"
+              >
+                گروه هدف
+              </button>
+            </div>
+            <span className="px-2 pb-1 text-[9px] leading-4 text-text-muted">ترسیم‌های بعدی در گروه هدف ثبت می‌شوند (klinecharts گروه = برچسب، نه پوشهٔ واقعی).</span>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

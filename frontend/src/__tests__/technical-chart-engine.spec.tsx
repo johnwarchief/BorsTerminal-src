@@ -641,6 +641,51 @@ describe('ابزارهای تریدینگ‌ویویی چارت (فاز ۳)', ()
       expect(names).toContain('ftsPosition');
     });
   });
+  it('قفل/کپی/اندازه/گروه‌های اشکال روی چارت (mock)', async () => {
+    let api: ChartDrawApi | null = null;
+    render(
+      <KLineChartWrapper
+        data={candles(6)}
+        palette={PALETTE}
+        onApi={(a) => {
+          api = a;
+        }}
+      />,
+    );
+    await waitFor(() => {
+      expect(api).not.toBeNull();
+    });
+    const a = api as unknown as ChartDrawApi;
+
+    a.setLockAll(true);
+    expect(mock?.chart.overrideOverlay).toHaveBeenCalledWith({ groupId: 'fts-draw', lock: true });
+
+    a.resizeAll(3);
+    expect(mock?.chart.overrideOverlay).toHaveBeenCalledWith({ groupId: 'fts-draw', styles: { size: 3 } });
+
+    a.setGroupVisible('g1', false);
+    expect(mock?.chart.overrideOverlay).toHaveBeenCalledWith({ groupId: 'g1', styles: { visible: false } });
+
+    a.removeGroup('g1');
+    expect(mock?.chart.removeOverlay).toHaveBeenCalledWith({ groupId: 'g1' });
+
+    // گروه هدف: ترسیم بعدی در گروه انتخاب‌شده ثبت می‌شود
+    a.setTargetGroup('گروه‌۲');
+    a.startDraw('segment');
+    expect(mock?.chart.createOverlay).toHaveBeenLastCalledWith(
+      expect.objectContaining({ name: 'segment', groupId: 'گروه‌۲' }),
+    );
+
+    // کپی آخرین ترسیم، اورلی جدید می‌سازد
+    const before = mock!.state.overlays.length;
+    a.copyLast();
+    expect(mock!.state.overlays.length).toBeGreaterThan(before);
+
+    // فهرست گروه‌ها از اورلی‌های موجود ساخته می‌شود
+    const groups = a.listGroups();
+    expect(groups.some((g) => g.id === 'گروه‌۲')).toBe(true);
+  });
+
   it('onDrawChange و updateLast روی آخرین ترسیم', async () => {
     const cb = vi.fn();
     let api: ChartDrawApi | null = null;
