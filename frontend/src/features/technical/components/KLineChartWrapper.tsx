@@ -184,31 +184,54 @@ const VOL_PANE = 'vol_pane';
 const RSI_PANE = 'rsi_pane';
 const VOL_MA_PERIOD = 21;
 const RSI_PERIOD = 14;
+/** گروه اورلی‌های ترسیمی کاربر — برای undo/redo/pاک‌کردن گروهی */
+export const DRAW_GROUP = 'fts-draw';
+
+/** API imperative ابزارهای ترسیم — به DrawingToolbar داده می‌شود */
+export type ChartDrawApi = {
+  startDraw: (name: string) => void;
+  undo: () => void;
+  redo: () => void;
+  clearDrawings: () => void;
+  hideDrawings: (hide: boolean) => void;
+};
 
 export function KLineChartWrapper({
   data,
   palette,
   height = 600,
   layers = DEFAULT_FTS_LAYERS,
-  chartType = 'candle',
+  chartType = 'candle_solid',
   showRsi = false,
   showVolMa = false,
+  priceScale = 'normal',
+  showGrid = true,
+  showCrosshair = true,
   onCrosshairInfo,
+  onApi,
 }: {
   data: KLineData[];
   palette: ChartPalette;
   height?: number;
   layers?: FtsChartLayers;
   /** نوع نمایش کندل — مقادیر candle.type در klinecharts v10 */
-  chartType?: 'candle' | 'ohlc' | 'line' | 'area';
+  chartType?: 'candle_solid' | 'candle_stroke' | 'ohlc' | 'line' | 'area';
   /** نمایش RSI وایلدر (۱۴) در پنل جدا */
   showRsi?: boolean;
   /** نمایش میانگین متحرک حجم (۲۱) روی پنل حجم */
   showVolMa?: boolean;
+  /** مقیاس محور قیمت — yAxis.type در klinecharts v10 */
+  priceScale?: 'normal' | 'logarithm' | 'percentage';
+  showGrid?: boolean;
+  showCrosshair?: boolean;
   onCrosshairInfo?: (info: { data: KLineData | null; visibleCount: number }) => void;
+  /** افشای API ابزارهای ترسیم */
+  onApi?: (api: ChartDrawApi | null) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<KLineChart | null>(null);
+  const drawHistory = useRef<{ id: string; name: string }[]>([]);
+  const redoStack = useRef<{ id: string; name: string }[]>([]);
   const [libMissing, setLibMissing] = useState(false);
   const [barCount, setBarCount] = useState(0);
   const [hoverInfo, setHoverInfo] = useState<HoverLegendInfo | null>(null);
@@ -397,7 +420,7 @@ export function KLineChartWrapper({
     }
   }, [palette]);
 
-  // نوع چارت (کندل/بار/خط/اریا) — candle.type در klinecharts v10
+  // نوع چارت (کندل/کندل توخالی/بار/خط/اریا) — candle.type در klinecharts v10
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -407,6 +430,103 @@ export function KLineChartWrapper({
       // نادیده بگیر
     }
   }, [chartType]);
+
+  // مقیاس محور قیمت (خطی/لگاریتمی/درصدی) — yAxis.type
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setStyles({ yAxis: { type: priceScale } });
+    } catch {
+      // نادیده بگیر
+    }
+  }, [priceScale]);
+
+  // نمایش شبکه
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setStyles({ grid: { show: showGrid } });
+    } catch {
+      // نادیده بگیر
+    }
+  }, [showGrid]);
+
+  // نمایش کراس‌هیر
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setStyles({ crosshair: { show: showCrosshair } });
+    } catch {
+      // نادیده بگیر
+    }
+  }, [showCrosshair]);
+
+  // API ابزارهای ترسیم (undo/redo/پاک‌کردن) روی اورلی‌های گروه fts-draw
+  useEffect(() => {
+    if (!onApi) return;
+    const api: ChartDrawApi = {
+      startDraw: (name: string) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          const id = chart.createOverlay({ name, groupId: DRAW_GROUP }) as string | null;
+          drawHistory.current = [...drawHistory.current, { id: typeof id === 'string' ? id : '', name }];
+          redoStack.current = [];
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      undo: () => {
+        const chart = chartRef.current;
+        const last = drawHistory.current[drawHistory.current.length - 1];
+        if (!chart || !last) return;
+        try {
+          chart.removeOverlay({ id: last.id });
+          drawHistory.current = drawHistory.current.slice(0, -1);
+          redoStack.current = [...redoStack.current, { id: '', name: last.name }];
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      redo: () => {
+        const chart = chartRef.current;
+        const item = redoStack.current[redoStack.current.length - 1];
+        if (!chart || !item) return;
+        try {
+          const id = chart.createOverlay({ name: item.name, groupId: DRAW_GROUP }) as string | null;
+          drawHistory.current = [...drawHistory.current, { id: typeof id === 'string' ? id : '', name: item.name }];
+          redoStack.current = redoStack.current.slice(0, -1);
+        } catch {
+          // نادیده بگیر
+        }
+      },
+      clearDrawings: () => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.removeOverlay({ groupId: DRAW_GROUP });
+        } catch {
+          // نادیده بگیر
+        }
+        drawHistory.current = [];
+        redoStack.current = [];
+      },
+      hideDrawings: (hide: boolean) => {
+        const chart = chartRef.current;
+        if (!chart) return;
+        try {
+          chart.overrideOverlay({ groupId: DRAW_GROUP, styles: { visible: !hide } });
+        } catch {
+          // نادیده بگیر
+        }
+      },
+    };
+    onApi(api);
+    return () => onApi(null);
+  }, [onApi]);
 
   // میانگین متحرک حجم (۲۱) روی پنل حجم
   useEffect(() => {
