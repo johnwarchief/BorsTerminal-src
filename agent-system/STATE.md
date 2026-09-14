@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `2156092` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۴۳۷ سبز (۴۱ فایل) · eslint صفر · build سالم
+- **master HEAD:** `2a4e4c2` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۴۴۴ سبز (۴۱ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -38,10 +38,15 @@
 
 ## به‌روزرسانی (ایجنتهد main — 2026-09-14 ~19:00)
 - **agent/fundamental (F-01)** مرج شد: `git merge agent/fundamental` → `b261abe` (کارت خالی FTS + جای پنل تنظیمات). vitest ۴۰۸/۳۸ سبز، eslint صفر، build سالم.
-- **فیکس سیستمیک `frontend/src/index.css`** (خارج قلمرو ایجنت‌ها، اعمال هد): کلاس‌های `.glass-panel/.glass-strip/.num/.panel-in/.scale-in/.conflict-pulse/.flash-up/.flash-down/.hud-beam/.neon-edge-cyan` داخل `@layer components` رفتند تا utilities تیلویند (`fixed/sticky/rounded-*`) دیگر باطل نشوند → Sidebar (sticky) و widgets/SymbolInspector (fixed) و کارت‌های rounded-* هم اصلاح شدند. کامیت `2156092`.
+- **فیکس سیستمیک `frontend/src/index.css`** (خارج قلمرو ایجنت‌ها، اعمال هد): کلاس‌های `.glass-panel/.glass-strip/.num/.panel-in/.scale-in/.conflict-pulse/.flash-up/.flash-down/.hud-beam/.neon-edge-cyan` داخل `@layer components` رفتند تا utilities تیلویند (`fixed/sticky/rounded-*`) دیگر باطل نشوند → Sidebar (sticky) و widgets/SymbolInspector (fixed) و کارت‌های rounded-* هم اصلاح شدند. کامیت `2a4e4c2`.
 - ⚠️ **سرور 8012 الان از ریپوی `Desktop\BorsTerminal_Ultimate` (دیست قدیمی، 3:08PM) سرو می‌کند، نه از `_Base`.** برای دیدن فیکس‌ها یا سرور را از ریشهٔ `_Base` بالا بیاورید یا `frontend/dist` همان ریپو را rebuild کنید.
 
 
 ## به‌روزرسانی ۲ (ایجنتهد main - 2026-09-14 ~19:20)
-- **agent/technical (T-01)** مرج شد: fast-forward به `2156092` (فاز 1-2 کامل + شروع فاز 3). نمای «کل بورس» بدون نماد + سایدبار راست ۴تب (دیده‌بان/سیگنال FTS/ترازها/نبض کلان). vitest 437/41 سبز · eslint صفر · build سالم.
+- **agent/technical (T-01)** مرج شد: fast-forward به `2a4e4c2` (فاز 1-2 کامل + شروع فاز 3). نمای «کل بورس» بدون نماد + سایدبار راست ۴تب (دیده‌بان/سیگنال FTS/ترازها/نبض کلان). vitest 437/41 سبز · eslint صفر · build سالم.
 - باقیمانده‌ی فاز 3: ابزارهای رسم + دیالوگ تنظیمات (طبق docs/CHART-PARITY-REFERENCE.md). نیاز خارج‌قلمرو: اندپوینت OHLC «شاخص کل» (اختیاری/جایگزین نمای کلان).
+
+
+## به‌روزرسانی ۳ (ایجنتهد main, 2026-09-14 ~19:40)
+- **agent/technical (ادامه‌ی فاز 3)** مرج شد (`efef9c3` + merge commit `2a4e4c2`). ریل ابزار ترسیم (خطوط/کانال/فیبوناچی/حاشیه‌نویسی + واگرد/ازنو/پاک/پنهان)، مقیاس قیمت/شبکه/کراس‌هیر، اصلاح candle.type به مقادیر معتبر vendor، DrawingToolbar + lib/drawingTools. vitest 444/41 سبز · eslint صفر · build سالم.
+- باقیمانده‌ی فاز 3 (آگاهانه): مقایسه نماد، هشدار، بازپخش، انتشار، چیدمان‌ها، دیالوگ کامل Settings، Properties هر ابزار، میان‌برها، magnet/stay-in-draw، Heikin-Ashi/Renko/Kagi/PnF، تایم‌فریم‌های درون‌روزی.
