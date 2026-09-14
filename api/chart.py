@@ -6,6 +6,7 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
+from ._core import sym_pred
 from fastapi import APIRouter
 from fastapi import Query
 import datetime
@@ -286,10 +287,18 @@ def get_key_levels(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        rows = [{"date": r[1], "open": r[2], "high": r[3], "low": r[4], "close": r[5],
-                 "volume": r[6]} for r in conn.execute(
+        _pred, _params = sym_pred("symbol", symbol)
+        _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume FROM price_history "
-            "WHERE symbol=? ORDER BY date DESC LIMIT 250", (symbol,))]
+            "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
+            _params).fetchall()
+        _seen, rows = set(), []
+        for r in _raw:            # حذف تکراریِ روز (نمادِ دو-املا): پرحجم‌تر می‌ماند
+            if r[1] in _seen:
+                continue
+            _seen.add(r[1])
+            rows.append({"date": r[1], "open": r[2], "high": r[3], "low": r[4],
+                         "close": r[5], "volume": r[6]})
         conn.close()
         rows.reverse()  # صعودی
         if len(rows) < 60:
@@ -374,10 +383,18 @@ def get_ma_events(symbol: str, days: int = Query(730)):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        rows = conn.execute(
-            "SELECT date, close FROM price_history WHERE symbol=? ORDER BY date DESC LIMIT ?",
-            (symbol, days)).fetchall()
+        _pred, _params = sym_pred("symbol", symbol)
+        _raw = conn.execute(
+            "SELECT date, close, volume FROM price_history WHERE %s "
+            "ORDER BY date DESC, volume DESC LIMIT ?" % _pred,
+            (*_params, days)).fetchall()
         conn.close()
+        _seen, rows = set(), []
+        for r in _raw:            # حذف تکراریِ روز (نمادِ دو-املا): پرحجم‌تر می‌ماند
+            if r[0] in _seen:
+                continue
+            _seen.add(r[0])
+            rows.append(r)
         rows.reverse()  # صعودی
         closes = [(r[0], float(r[1])) for r in rows if r[1] is not None]
         ma = {}
@@ -420,9 +437,19 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
         try:
-            rows = conn.execute(
+            _pred, _params = sym_pred("symbol", symbol)
+            _raw = conn.execute(
                 "SELECT date, open, high, low, close, volume FROM price_history "
-                "WHERE symbol = ? ORDER BY date ASC", (symbol,)).fetchall()
+                "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
+            # حذف تکراریِ روز: کلید price_history = (symbol,date)؛ نمادِ دو-املا
+            # می‌تواند همان روز را در دو نوشتار داشته باشد — پرحجم‌تر می‌ماند.
+            _seen, rows = set(), []
+            for r in _raw:
+                if r[0] in _seen:
+                    continue
+                _seen.add(r[0])
+                rows.append(r)
+            rows.reverse()          # صعودی (قرارداد پیشین: ORDER BY date ASC)
             # v9.7: price_history ستون «آخرین معامله» ندارد (فقط OHLCV)؛ پس last
             # روی همان close می‌نشیند و گمراه‌کننده نیست — مسیر واقعیِ last،
             # /api/chart (CSV تکمیل‌شده با <LAST>) است.
@@ -445,11 +472,13 @@ def get_chart_db(symbol: str, adjustment: int = 3):
                 # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
                 #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
                 #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
+                _p18, _a18 = sym_pred("i.l_val18", symbol)
+                _p30, _a30 = sym_pred("i.l_val30", symbol)
                 row = conn.execute(
                     "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, i.l_val18, m.p_last "
                     "FROM instruments i LEFT JOIN market_watch m ON i.ins_code = m.ins_code "
-                    "WHERE i.l_val18 = ? OR i.l_val30 = ? ORDER BY m.d_even DESC LIMIT 1",
-                    (symbol, symbol)).fetchone()
+                    "WHERE %s OR %s ORDER BY m.d_even DESC LIMIT 1" % (_p18, _p30),
+                    (*_a18, *_a30)).fetchone()
             finally:
                 conn.close()
             if row and row[3] and float(row[3]) > 0:   # p_closing موجود و معتبر
@@ -511,10 +540,18 @@ def get_patterns(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        rows = [{"date": r[1], "open": r[2], "high": r[3], "low": r[4], "close": r[5],
-                 "volume": r[6]} for r in conn.execute(
+        _pred, _params = sym_pred("symbol", symbol)
+        _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume FROM price_history "
-            "WHERE symbol=? ORDER BY date DESC LIMIT 250", (symbol,))]
+            "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
+            _params).fetchall()
+        _seen, rows = set(), []
+        for r in _raw:            # حذف تکراریِ روز (نمادِ دو-املا): پرحجم‌تر می‌ماند
+            if r[1] in _seen:
+                continue
+            _seen.add(r[1])
+            rows.append({"date": r[1], "open": r[2], "high": r[3], "low": r[4],
+                         "close": r[5], "volume": r[6]})
         conn.close()
         rows.reverse()
         if len(rows) < 60:

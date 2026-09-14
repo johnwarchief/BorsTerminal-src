@@ -132,3 +132,27 @@ def _kill_procs(pattern):
                            capture_output=True, timeout=20)
     except Exception:
         pass
+
+
+# ==================================== تطبیق نمادِ چند-نویشتاری (رفع باگ ک/ي عربی)
+# ستون symbol در price_history/instruments برای شماری از نمادها با «ك/ي» عربی
+# ذخیره شده (۳۴۴ نماد با ك عربی و ۵۵۴ با ي عربی، از ۲۵۱۵ نماد price_history)
+# ولی ورودیِ کاربر/واچلیست/اسکرینر نوشتار فارسی می‌دهد (fts_engine.norm_fa).
+# تطبیقِ دقیقِ `symbol = ?` برای این نمادها بی‌صدا صفر ردیف برمی‌گرداند →
+# تاریخچهٔ خالی، بج/تحلیل FTS خالی، چارت بی‌سری. sym_pred همهٔ نوشتارهای یک
+# نماد را در پایتون می‌سازد و به شکل `col IN (?,?)` به SQL می‌فرستد تا از
+# ایندکس (ix_ph_sym_date2) استفاده شود — نه `norm_fa(col) = ?` که اسکن کامل
+# می‌خورد (۵۷۴× کندتر؛ همان اندازه‌گیریِ fts_engine). این همان الگوی
+# موردتأییدِ پروژه است: confidence_engine._bars و fundamental.sym_in.
+def sym_pred(col: str, symbol):
+    """(شرطِ SQL, پارامترها) برای تطبیق «هر نوشتارِ» نماد روی ستونِ نماد.
+
+    مثال: pred, params = sym_pred("symbol", "داریک")
+           f"... WHERE {pred}"  →  "symbol IN (?,?)"  (فارسی + عربی).
+    ورودیِ تهی → شرطی که هرگز درست نمی‌شود (رفتار «بدون داده» حفظ می‌شود).
+    """
+    try:
+        import fts_engine
+        return fts_engine.sym_in(col, symbol)
+    except Exception:
+        return "%s = ?" % col, [symbol]

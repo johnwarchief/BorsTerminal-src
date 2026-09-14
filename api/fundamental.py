@@ -1924,9 +1924,11 @@ def get_fundamental(symbol: str, months: int = 0):
             sec.get("market_share_pct") or 0.0, 3)
         ref_row = res.get("ref")
         if ref_row:
-            te = conn.execute("SELECT total_equity FROM financial_statements WHERE symbol=? "
-                              "AND period_end=?",
-                              (norm_symbol, ref_row["period_end"])).fetchone()
+            # تطبیق چند-نویشتاری: norm_symbol ممکن است فارسی باشد و DB عربی نگه دارد
+            _fp, _fa = fts_engine.sym_in("symbol", norm_symbol)
+            te = conn.execute("SELECT total_equity FROM financial_statements WHERE %s "
+                              "AND period_end=? ORDER BY tracing_no DESC LIMIT 1" % _fp,
+                              (*_fa, ref_row["period_end"])).fetchone()
             if te and _num(te[0]) > 0 and _num(ref_row.get("net_profit")):
                 roe_pct = round(_num(ref_row["net_profit"]) / _num(te[0]) * 100.0, 1)
                 secondary["ROE"] = "%s٪ (تکمیلی)" % _n(roe_pct, 1)
@@ -1962,11 +1964,23 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
     """
     conn = get_db()
     try:
-        rows = conn.execute(
+        # تطبیق چند-نویشتاری (ك/ي عربی ↔ فارسی): ورودیِ کاربر ممکن است فارسی
+        # باشد و رکوردهای کدالِ همان نماد با نوشتار عربی ذخیره شده باشند.
+        _fp, _fa = fts_engine.sym_in("symbol", symbol)
+        _raw = conn.execute(
             "SELECT period_end, period_months, revenue, operating_profit,"
             " net_profit, basic_eps, publish_date FROM financial_statements"
-            " WHERE symbol = ? ORDER BY period_end DESC LIMIT ?",
-            (symbol, max(1, min(limit, 40)))).fetchall()
+            " WHERE %s ORDER BY period_end DESC, publish_date DESC LIMIT ?" % _fp,
+            (*_fa, max(1, min(limit, 40)))).fetchall()
+        # حذف تکراریِ (period_end, period_months): نمادِ دو-املا می‌تواند یک دوره را
+        # در دو نوشتار داشته باشد؛ تازه‌ترین ردیف می‌ماند.
+        _seen, rows = set(), []
+        for r in _raw:
+            k = (r[0], r[1])
+            if k in _seen:
+                continue
+            _seen.add(k)
+            rows.append(r)
         return {"status": "success", "symbol": symbol, "count": len(rows),
                 "quarters": [dict(r) for r in rows]}
     finally:

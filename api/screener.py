@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import _num, get_db
+from ._core import _num, get_db, sym_pred
 from .market import load_fts_config
 from .chart import _fts_analyze_symbol
 from fastapi import APIRouter
@@ -19,11 +19,15 @@ router = APIRouter()
 def get_history(symbol: str):
     conn = get_db()
     try:
+        # تطبیق چند-نویشتاری (ك/ي عربی ↔ ک/ی فارسی): ورودیِ کاربر/واچلیست
+        # ممکن است فارسی باشد ولی DB همان نماد را عربی نگه داشته باشد —
+        # بدون این، `WHERE symbol = ?` صفر ردیف می‌دهد و تاریخچه خالی می‌ماند.
+        _pred, _params = sym_pred("symbol", symbol)
         query = """
             SELECT date, open, high, low, close, volume
-            FROM price_history WHERE symbol = ? ORDER BY date ASC
-        """
-        df = pd.read_sql_query(query, conn, params=(symbol,))
+            FROM price_history WHERE %s ORDER BY date ASC
+        """ % _pred
+        df = pd.read_sql_query(query, conn, params=_params)
         if df.empty:
             return {"status": "empty", "candles": [], "volumes": []}
 
@@ -31,6 +35,10 @@ def get_history(symbol: str):
         # پاکسازی OHLC: NULL/صفر → حذف (کندل با 0 نمودار را خراب میکند و NaN در JSON خطا میدهد)
         df = df.dropna(subset=["date", "open", "high", "low", "close"]).sort_values("date")
         df = df[(df["close"] > 0) & (df["high"] > 0)]
+        # حذف تکراریِ روز: کلید price_history = (symbol,date)، پس یک شرکتِ
+        # دو-املا می‌تواند همان روز را دو بار بدهد؛ رکورد پرحجم‌تر می‌ماند.
+        df = df.sort_values(["date", "volume"], ascending=[True, False]) \
+               .drop_duplicates("date", keep="first")
         df["volume"] = df["volume"].fillna(0)
 
         # v7.3 برداری‌سازی: iterrows حذف — list-comprehension روی آنپی آرایه (~۲۰x سریعتر)
