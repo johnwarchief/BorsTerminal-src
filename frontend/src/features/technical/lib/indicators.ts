@@ -100,41 +100,32 @@ export function maStack(m14: number | null, m21: number | null, m52: number | nu
 
 export type Ma14Exit = { exit: boolean; pending: boolean; ma14: number | null };
 
-/** خروج تعقیبی MA14 — قرینهٔ _fts_exit_layer1 (api/chart.py:947).
-    شرط: «بدنه» یعنی max(open, close) < MA14 (نه سایه/wick) تا سکه‌های سایه‌دار
-    یک‌روزه علامت اشتباه ندهند؛ کندل اول = pending (هشدار)، دوم = exit (تأیید).
+/** خروج تعقیبی MA14 — مطابق FTS_SPEC بخش اول بند ۵.
+    شرط: «یک کندل کامل» یعنی همهٔ اجزای OHLC (Open/High/Low/Close) زیر خط MA14
+    (چون high بیشینه است، high < MA14 کل کندل را زیر خط می‌گذارد).
+    pending = بدنه زیر خط ولی سایهٔ بالا بالای خط (کندل کامل نیست).
     ma14Series اختیاری: پیش‌فرض SMA روی بسته‌ها با دورهٔ 14. */
 export function ma14TrailingExit(
   opens: (number | null)[],
+  highs: (number | null)[],
+  lows: (number | null)[],
   closes: (number | null)[],
   ma14Series?: (number | null)[],
 ): Ma14Exit {
   const ma = ma14Series ?? sma(closes, 14);
-  const n = Math.min(opens.length, closes.length, ma.length);
-  let idx = -1;
-  let bodyTop = 0;
-  let m = 0;
+  const n = Math.min(opens.length, highs.length, lows.length, closes.length, ma.length);
   for (let i = n - 1; i >= 0; i--) {
     const o = num(opens[i]);
+    const h = num(highs[i]);
+    const l = num(lows[i]);
     const c = num(closes[i]);
-    const v = num(ma[i]);
-    if (o != null && c != null && v != null) {
-      idx = i;
-      bodyTop = Math.max(o, c);
-      m = v;
-      break;
-    }
+    const m = num(ma[i]);
+    if (o == null || h == null || l == null || c == null || m == null) continue;
+    const fullBelow = o < m && h < m && l < m && c < m;
+    const bodyBelow = Math.max(o, c) < m;
+    return { exit: fullBelow, pending: !fullBelow && bodyBelow, ma14: m };
   }
-  if (idx < 0) return { exit: false, pending: false, ma14: lastValid(ma) };
-  const bodyBelow = bodyTop < m;
-  let prevBelow = false;
-  if (idx >= 1) {
-    const po = num(opens[idx - 1]);
-    const pc = num(closes[idx - 1]);
-    const pm = num(ma[idx - 1]);
-    if (po != null && pc != null && pm != null) prevBelow = Math.max(po, pc) < pm;
-  }
-  return { exit: bodyBelow && prevBelow, pending: bodyBelow && !prevBelow, ma14: m };
+  return { exit: false, pending: false, ma14: lastValid(ma) };
 }
 
 export type SwingPoint = { index: number; price: number };
@@ -342,11 +333,12 @@ export function detectChoch(
   const hasLowerLow = recentL.some((s, i) => i > 0 && s.price < recentL[i - 1].price);
   if (recentH.length >= 2 && sl.length >= 1 && hasHigherHigh) {
     const l = sl[sl.length - 1];
-    if (last < l.price) return { type: 'bearish', level: l.price };
+    // آستانهٔ قطعی CHoCH: بستهٔ فراتر از سطح دست‌کم FTS_CHOCH_DECISIVE (۰٫۳٪)
+    if (last < l.price * (1 - FTS_CHOCH_DECISIVE)) return { type: 'bearish', level: l.price };
   }
   if (recentL.length >= 2 && sh.length >= 1 && hasLowerLow) {
     const h = sh[sh.length - 1];
-    if (last > h.price) return { type: 'bullish', level: h.price };
+    if (last > h.price * (1 + FTS_CHOCH_DECISIVE)) return { type: 'bullish', level: h.price };
   }
   return { type: null, level: null };
 }
@@ -368,4 +360,70 @@ export function avgVolume(volumes: (number | null)[], n: number): number | null 
   const vals = volumes.slice(-n).filter((v): v is number => v != null && v >= 0);
   if (vals.length === 0) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+/**
+ * RSI وایلدر با هموارسازی Wilder (نه میانگین ساده) — FTS_SPEC بخش اول بند ۲ و ۵.
+ * بذر: میانگین سادهٔ دورهٔ نخست؛ سپس هموارسازی (n-1)/n. null یعنی دادهٔ ناکافی.
+ */
+export function rsi(values: (number | null)[], period = FTS_RSI_PERIOD): (number | null)[] {
+  const out: (number | null)[] = new Array(values.length).fill(null);
+  if (period < 1) return out;
+  const fromRs = (g: number, l: number): number => (l === 0 ? 100 : 100 - 100 / (1 + g / l));
+  let avgGain = 0;
+  let avgLoss = 0;
+  let seed = 0;
+  let prev: number | null = null;
+  for (let i = 0; i < values.length; i++) {
+    const v = num(values[i]);
+    if (v == null) {
+      out[i] = null;
+      continue;
+    }
+    if (prev == null) {
+      prev = v;
+      continue;
+    }
+    const change = v - prev;
+    prev = v;
+    const gain = Math.max(0, change);
+    const loss = Math.max(0, -change);
+    if (seed < period) {
+      avgGain += gain;
+      avgLoss += loss;
+      seed += 1;
+      if (seed === period) {
+        avgGain /= period;
+        avgLoss /= period;
+        out[i] = fromRs(avgGain, avgLoss);
+      }
+      continue;
+    }
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    out[i] = fromRs(avgGain, avgLoss);
+  }
+  return out;
+}
+
+/**
+ * واگرایی منفی (RD−) — FTS_SPEC بخش اول بند ۵: سقف قیمتی بالاتر هم‌زمان با سقف
+ * پایین‌ترِ RSI. آخرین دو سوینگ‌های سقفِ فرکتالی مقایسه می‌شوند و سقف دوم باید
+ * تازه باشد (داخل پنجرهٔ FTS_DIV_BACK کندل آخر).
+ */
+export function bearishDivergence(
+  highs: (number | null)[],
+  rsiSeries: (number | null)[],
+  order = 3,
+  lookback = FTS_DIV_BACK,
+): boolean {
+  const sh = swingHighs(highs, order);
+  if (sh.length < 2) return false;
+  const prev = sh[sh.length - 2];
+  const last = sh[sh.length - 1];
+  if (last.index < highs.length - lookback - 1) return false;
+  const rPrev = num(rsiSeries[prev.index]);
+  const rLast = num(rsiSeries[last.index]);
+  if (rPrev == null || rLast == null) return false;
+  return last.price > prev.price && rLast < rPrev;
 }
