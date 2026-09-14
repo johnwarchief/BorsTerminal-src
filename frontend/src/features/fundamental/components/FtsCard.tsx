@@ -7,6 +7,7 @@ import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { GapHint } from './GapHint';
 import { gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
+import { industryGateLabel, industryGatePassLabel, industryGateTone } from '../lib/industryGate';
 import type { DrillDownKey } from './FtsDrillDown';
 
 const LAYERS: { key: GapAxis; drill: DrillDownKey | null; label: string; hint: string }[] = [
@@ -29,14 +30,18 @@ export function FtsCard({
   passes,
   verdict,
   physicalApplicable = true,
+  industryMode,
   activeDrill = null,
   onDrill,
 }: {
   score: number | null;
   passes: Record<string, boolean>;
   verdict: string | null;
-  /** رشد فیزیکی صرفاً برای تولیدی معنا دارد — هلدینگ/خدماتی N/A */
+  /** رشد فیزیکی صرفاً برای تولیدی معنا دارد — هلدینگ/خدماتی/مالی N/A */
   physicalApplicable?: boolean;
+  /** رژیم قیمت‌گذاری صنعت (free|mandatory|neutral) — سلول ۵ با همین وضعیت
+   *  یکدست می‌شود (هم‌رنگ و هم‌متن با «دروازه‌های ریسک») */
+  industryMode?: string | null;
   activeDrill?: DrillDownKey | null;
   onDrill?: (k: DrillDownKey) => void;
 }) {
@@ -60,6 +65,15 @@ export function FtsCard({
           const v = passes[l.key];
           const na = l.key === '1b_volume_growth' && !physicalApplicable;
           const isActive = l.drill != null && l.drill === activeDrill;
+          /** سلول ۵ (صنعت): همان متن/رنگ «دروازه‌های ریسک» — نه برچسب کلی «قبول» */
+          const isIndustry = l.key === '5_industry' && industryMode !== undefined;
+          const industryBadge = isIndustry ? (
+            <span title={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}>
+              <Badge tone={v === false ? 'red' : industryGateTone(industryMode)}>
+                {v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
+              </Badge>
+            </span>
+          ) : null;
           return (
             <button
               key={l.key}
@@ -76,14 +90,15 @@ export function FtsCard({
               }`}
             >
               <div className="mb-1 text-xs font-bold text-text-secondary">{l.label}</div>
-              {!na && v == null ? (
-                /* جای برچسب عمومی «شکاف داده»: علتِ واقعیِ همان شاخص (tooltip: علت + راه‌حل) */
-                <GapHint reason={gapTooltip(l.key)}>
-                  <span className="text-[10px] font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
-                </GapHint>
-              ) : (
-                <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v ? 'قبول' : 'مردود'}</Badge>
-              )}
+              {industryBadge ??
+                (!na && v == null ? (
+                  /* جای برچسب عمومی «شکاف داده»: علتِ واقعیِ همان شاخص (tooltip: علت + راه‌حل) */
+                  <GapHint reason={gapTooltip(l.key)}>
+                    <span className="text-[10px] font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
+                  </GapHint>
+                ) : (
+                  <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v ? 'قبول' : 'مردود'}</Badge>
+                ))}
             </button>
           );
         })}

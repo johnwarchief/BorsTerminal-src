@@ -79,11 +79,13 @@ describe('کامپوننت های بنیادی', () => {
     expect(labelNodes.some((t) => /^تابستان ۰۴$/.test(t))).toBe(true);
   });
 
-  it('روند فصلی: محور Y با برچسب مقیاس (م‌ر/همت) رندر می‌شود', () => {
+  it('روند فصلی: محور Y با برچسب مقیاس (میلیارد تومان/همت) رندر می‌شود', () => {
     render(<QuarterlyTrend quarters={QUARTERS} />);
     const svg = screen.getByTestId('quarterly-trend-chart');
     const labelNodes = Array.from(svg.querySelectorAll('text')).map((t) => t.textContent ?? '');
-    expect(labelNodes.some((t) => t.includes('م‌ر'))).toBe(true);
+    expect(labelNodes.some((t) => t.includes('م.ت') || t.includes('همت'))).toBe(true);
+    // واحد زیر نمودار هم میلیارد تومان است (نه میلیون ریال)
+    expect(screen.getByText(/ارقام میلیارد تومان/)).toBeInTheDocument();
   });
 
   it('روند خالی حالت خالی تمیز دارد', () => {

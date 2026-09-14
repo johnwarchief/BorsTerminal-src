@@ -5,10 +5,11 @@
 // کامپوننت فقط شفاف‌سازی می‌کند، نه محاسبهٔ دوباره.
 import { toFaDigits, fmtPct, fmtInt } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
-import { GapHint, epsGapReason, GENERIC_GAP_REASON, PHYSICAL_NA_REASON, VALUATION_GAP_REASON } from './GapHint';
+import { GapHint, epsGapReason, GENERIC_GAP_REASON, VALUATION_GAP_REASON } from './GapHint';
 import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
-import { EPS_PARTIAL_TESTID, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
+import { EPS_PARTIAL_TESTID, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
+import { industryGateTone } from '../lib/industryGate';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,
@@ -104,25 +105,20 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
         فرمول: رشد = (فروش تجمیعی دورهٔ امسال ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
         {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
       </p>
-      <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2.5">
-        <div className="mb-1 flex items-center gap-2">
-          <span className="text-[11px] font-bold text-text-primary">رشد مقداری (تناژ فیزیکی)</span>
-          {!physicalApplicable ? (
-            <GapHint reason={PHYSICAL_NA_REASON}>
-              <Badge tone="gray">N/A — غیرقابل اعمال</Badge>
-            </GapHint>
-          ) : null}
-        </div>
-        <p className="text-[11px] leading-relaxed text-text-secondary">
-          {!physicalApplicable
-            ? 'این شرکت تولیدی نیست و گزارش فیزیکی/تناژ ندارد؛ رشد مقداری برای هلدینگ و شرکت خدماتی معنا ندارد و خودکار نادیده گرفته می‌شود.'
-            : realGrowth != null
+      {physicalApplicable ? (
+        <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2.5">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-[11px] font-bold text-text-primary">رشد مقداری (تناژ فیزیکی)</span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-text-secondary">
+            {realGrowth != null
               ? `رشد واقعی پس از کسر اثر نرخ: ${fmtPct(realGrowth)} (اثر تقریبی نرخ ${fmtPct(vol?.implied_price_pct ?? null, 0)})`
               : vol?.data_gap
-                ? `${axisGapReason('1b_volume_growth').why} رشد مقداری از این گزارش حساب نمیشود.`
+                ? `${axisGapReason('1b_volume_growth').why} رشد مقداری از این گزارش حساب نمی‌شود.`
                 : 'رشد مقداری قابل محاسبه نیست — گزارش ماهانهٔ فیزیکی کدال ناقص است.'}
-        </p>
-      </div>
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -148,6 +144,16 @@ function Panel2({ card }: { card: FtsCard }) {
     required,
     interimAvailable: ind?.interim?.available ?? false,
   });
+  /** سابقهٔ کامل ولی گیت رد ⇒ دلیل واقعی شکست (نه شکاف داده) */
+  const failReason =
+    ind != null && (ind.years_available ?? realYears) >= required && ind.data_gap !== true && ind.pass !== true
+      ? epsFailReason({
+          series,
+          slots: ind.period_slots ?? ind.fiscal_years,
+          strictlyRising: ind.strictly_rising,
+          allProfitable: ind.all_profitable,
+        })
+      : null;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -166,9 +172,11 @@ function Panel2({ card }: { card: FtsCard }) {
             {hist.label}
           </span>
         ) : (
+          <span title={failReason ?? undefined}>
           <Badge tone={rising == null ? 'gray' : rising ? 'green' : 'red'}>
             {rising == null ? epsGapLabel(realYears) : rising ? 'صعودی ✓' : 'صعودی نیست ✗'}
           </Badge>
+          </span>
         )}
         {ind?.evidence_tier ? <Badge tone="blue">{ind.evidence_tier}</Badge> : null}
         {ind?.interim?.eps_interim != null ? (
@@ -204,6 +212,10 @@ function Panel2({ card }: { card: FtsCard }) {
         <p className="text-[11px] leading-relaxed text-accent-susp">
           دادهٔ موجود ({toFaDigits(realYears)} سال) نمایش داده می‌شود، اما چون سابقهٔ کامل {toFaDigits(required)} ساله
           ندارد، این نماد در شاخص ۲ مردود است — داده حیف نمی‌شود ولی گیت سه‌ساله پاس نمی‌شود.
+        </p>
+      ) : failReason != null ? (
+        <p className="text-[11px] leading-relaxed text-accent-red" data-testid="eps-fail-reason">
+          دلیل رد: {failReason}
         </p>
       ) : null}
     </div>
@@ -406,7 +418,7 @@ function Panel5({ card }: { card: FtsCard }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={isFree ? 'green' : isMandatory ? 'red' : 'yellow'}>{ind?.regime_label ?? ind?.label ?? regime}</Badge>
+        <Badge tone={industryGateTone(regime)}>{ind?.regime_label ?? ind?.label ?? regime}</Badge>
         {sector ? <Badge tone="gray">{sector}</Badge> : null}
         {ind?.market_share_pct != null ? <Badge tone="blue">سهم بازار {fmtPct(ind.market_share_pct)}</Badge> : null}
       </div>

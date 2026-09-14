@@ -18,18 +18,36 @@ export function isFundamentalCompany(row: Pick<FtsScreenRow, 'symbol' | 'name' |
   return true;
 }
 
-export type CompanyClass = 'production' | 'service' | 'financial' | 'holding' | 'other';
+/** نرمال‌سازی حروف عربی/نیم‌فاصله برای تطبیق نام و صنعت — کدال/TSETMC یک گروه را
+ *  با دو املا می‌دهد («سرمايه گذاريها» عربی در برابر «سرمایه‌گذاری‌ها» فارسی) */
+export function normalizeFa(s: string | null | undefined): string {
+  return String(s ?? '')
+    .replace(/\u064a/g, '\u06cc')
+    .replace(/\u0643/g, '\u06a9')
+    .replace(/\u200c/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 /** بخش‌هایی که فیزیکی/تناژ ندارند: خدماتی، مالی/بانکی، بیمه، هلدینگ و سرمایه‌گذاری */
 const NON_PHYSICAL_SECTOR_RE =
-  /مخابرات|بانك|بانک|بیمه|بيمه|حمل|انبوه|رايانه|فعاليتهاي كمكي|سرمايه گذاريها|سرمايه‌گذاريها|هلدينگ|هلدینگ|سرمايه گذاري |سرمايه‌گذاري /;
+  /مخابرات|بانك|بانک|بيمه|بیمه|حمل|انبوه|رايانه|رایانه|فعاليتهاي كمكي|فعالیتهای کمکی|سرمايه گذاريها|سرمایه گذاریها|هلدينگ|هلدینگ|سرمايه گذاري |سرمایه گذاری |واسطه گري|واسطهگری|ليزينگ|لیزینگ|بورس|فرابورس|تامين سرمايه|تأمین سرمایه/;
+
+/** شرکت مالی/هلدینگ/سرمایه‌گذاری/بانکی/بیمه/صندوق؟
+ *  برای این‌ها «رشد فیزیکی» کاملاً مخفی می‌شود و ارزش‌گذاری NAV لازم است. */
+const FINANCIAL_HOLDING_RE =
+  /هلدينگ|هلدینگ|سرمايه گذاري|سرمایه گذاري|سرمایه‌گذاری|سرمایه گذاری|واسطه گري|واسطهگری|بانك|بانک|بيمه|بیمه|ليزينگ|لیزینگ|صندوق|تامين سرمايه|تأمین سرمایه/;
+export function isFinancialOrHolding(row: Pick<FtsScreenRow, 'name' | 'sector_name'>): boolean {
+  const name = normalizeFa(row.name);
+  const sector = normalizeFa(row.sector_name);
+  return FINANCIAL_HOLDING_RE.test(name) || FINANCIAL_HOLDING_RE.test(sector);
+}
 
 /** آیا رشد فیزیکی/تناژ برای این ردیف اصلاً «قابل اعمال» است؟
- *  هلدینگ و سرمایه‌گذاری: نام؛ خدمات/مالی: گروه صنعت */
+ *  هلدینگ/سرمایه‌گذاری/مالی/بانکی: هرگز؛ خدمات: گروه صنعت */
 export function isPhysicalGrowthApplicable(row: Pick<FtsScreenRow, 'name' | 'sector_name'>): boolean {
-  const name = row.name ?? '';
-  const sector = row.sector_name ?? '';
-  if (/هلدينگ|هلدینگ|سرمايه گذاري|سرمايه‌گذاري|سرمایه‌گذاری|سرمایه گذاری/.test(name)) return false;
+  if (isFinancialOrHolding(row)) return false;
+  const sector = normalizeFa(row.sector_name);
   if (NON_PHYSICAL_SECTOR_RE.test(sector)) return false;
   return true;
 }

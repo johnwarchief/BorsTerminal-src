@@ -234,11 +234,15 @@ describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
     expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
   });
 
-  it('شرکت خدماتی/هلدینگ: رشد فیزیکی N/A با توضیح غیرقابل اعمال', () => {
+  it('شرکت خدماتی/هلدینگ: کادر رشد فیزیکی کاملاً حذف می‌شود (نه کادر خالی/نه N/A)', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable={false} />);
     const panel = screen.getByTestId('fts-drilldown-1');
-    expect(within(panel).getByText('N/A — غیرقابل اعمال')).toBeTruthy();
-    expect(within(panel).getByText(/این شرکت تولیدی نیست/)).toBeTruthy();
+    // نه برچسب N/A، نه متن توضیح — کادر تناژ اصلاً رندر نمی‌شود
+    expect(within(panel).queryByText('N/A — غیرقابل اعمال')).toBeNull();
+    expect(within(panel).queryByText(/تناژ فیزیکی/)).toBeNull();
+    expect(within(panel).queryByText(/این شرکت تولیدی نیست/)).toBeNull();
+    // داده‌های دیگر شاخص ۱ سرجایشان هستند
+    expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
   });
 
   it('تولیدی: رشد واقعی پس از کسر اثر نرخ نمایش می‌شود', () => {

@@ -84,6 +84,9 @@ const Indicator2Schema = z
     all_profitable: z.boolean().nullish(),
     pass: z.boolean().nullish(),
     partial: z.boolean().nullish(),
+    /** پرچم شکاف دادهٔ شاخص ۲ — بک‌اند آن را می‌فرستد ولی در جدول فیلدهای
+     *  UI لازم است تا «ردِ گیت» از «نقص داده» تفکیک شود */
+    data_gap: z.boolean().nullish(),
     reason: z.string().nullish(),
     evidence_tier: z.string().nullish(),
     interim: z

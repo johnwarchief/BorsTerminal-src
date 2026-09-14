@@ -145,7 +145,7 @@ describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته
     expect(screen.getByTestId('fts-card-cell-1a_monetary_growth')).toHaveTextContent('قبول');
     expect(screen.getByTestId('fts-card-cell-2_eps_trend')).toHaveTextContent('قبول');
     expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap')).toHaveTextContent('مردود');
-    expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('قبول');
+    expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('صنعت آزاد');
     // حالت «داده نیامد» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
     expect(screen.queryByText(/دادهٔ کارت بنیادی/)).not.toBeInTheDocument();
   });
