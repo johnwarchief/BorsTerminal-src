@@ -8,6 +8,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import type { KLineChart, KLineData } from '../../../vendor/klinecharts';
 import { epochToJalali } from '../lib/jalaliDate';
 import { isChartTransform } from '../lib/chartTypes';
+import { syncBus } from '../lib/chartSync';
 import { backgroundFor } from '../lib/chartPalette';
 import type { ChartView } from '../stores/ftsConfigStore';
 import { defaultFor, saveToolDefault } from '../lib/drawingTools';
@@ -229,6 +230,7 @@ export function KLineChartWrapper({
   showGrid = true,
   showCrosshair = true,
   view,
+  syncKey,
   onCrosshairInfo,
   onApi,
   onDrawChange,
@@ -249,6 +251,8 @@ export function KLineChartWrapper({
   showCrosshair?: boolean;
   /** گزینه‌های ظاهری TV-style (مقیاس/محور/کندل) */
   view?: ChartView;
+  /** کلید گروه همگام‌سازی (Split View): کراس‌هیر/زوم بین چارت‌های هم‌گروه */
+  syncKey?: string;
   onCrosshairInfo?: (info: { data: KLineData | null; visibleCount: number }) => void;
   /** افشای API ابزارهای ترسیم */
   onApi?: (api: ChartDrawApi | null) => void;
@@ -270,6 +274,12 @@ export function KLineChartWrapper({
   const bg = backgroundFor(view?.background ?? 'theme', palette.background);
   const rowsRef = useRef<KLineData[]>(rows);
   const paletteRef = useRef(palette);
+  const syncGroupRef = useRef(syncKey);
+  const syncIdRef = useRef<string | null>(null);
+  const applyingSyncRef = useRef(false);
+  const lastSyncCrosshairRef = useRef<number | null>(null);
+  const barSpaceRef = useRef(10);
+  syncGroupRef.current = syncKey;
   const onCrosshairRef = useRef(onCrosshairInfo);
   const layersRef = useRef<FtsChartLayers>(layers);
   rowsRef.current = rows;
@@ -386,6 +396,12 @@ export function KLineChartWrapper({
           const vr = ch.getVisibleRange();
           const count = Math.max(0, vr.realTo - vr.realFrom + 1);
           setBarCount(count);
+          // همگام‌سازی زوم/بازه با چارت‌های هم‌گروه
+          const g = syncGroupRef.current;
+          if (g && !applyingSyncRef.current) {
+            const anchorTs = rowsRef.current[vr.realFrom]?.timestamp ?? null;
+            syncBus(g).broadcast(syncIdRef.current ?? '', { kind: 'range', barSpace: barSpaceRef.current, anchorTimestamp: anchorTs });
+          }
         } catch {
           // نادیده بگیر
         }
@@ -423,6 +439,13 @@ export function KLineChartWrapper({
             setHoverInfo(null);
           }
           onCrosshairRef.current?.({ data: k ?? null, visibleCount });
+          // همگام‌سازی کراس‌هیر با چارت‌های هم‌گروه
+          const g = syncGroupRef.current;
+          const ts = k?.timestamp ?? null;
+          if (g && !applyingSyncRef.current && ts !== lastSyncCrosshairRef.current) {
+            lastSyncCrosshairRef.current = ts;
+            syncBus(g).broadcast(syncIdRef.current ?? '', { kind: 'crosshair', timestamp: ts });
+          }
         } catch {
           // نادیده بگیر
         }
@@ -455,6 +478,38 @@ export function KLineChartWrapper({
       chartRef.current = null;
     };
   }, [bg]);
+
+  // همگام‌سازی Split View: عضویت در باس گروه و اعمال فرمان‌های دیگران
+  useEffect(() => {
+    const chart = chartRef.current;
+    const g = syncKey;
+    if (!chart || !g) return;
+    const id = `${g}-${Math.random().toString(36).slice(2)}`;
+    syncIdRef.current = id;
+    const off = syncBus(g).register(id, (cmd) => {
+      applyingSyncRef.current = true;
+      try {
+        if (cmd.kind === 'crosshair') {
+          // استاب تایپ vendor فیلد timestamp را ندارد؛ قرارداد واقعی v10 دارد
+          const ch = cmd.timestamp == null ? undefined : ({ timestamp: cmd.timestamp } as unknown as Parameters<KLineChart['setCrosshair']>[0]);
+          chart.setCrosshair(ch, true);
+          lastSyncCrosshairRef.current = cmd.timestamp;
+        } else {
+          chart.setBarSpace(cmd.barSpace);
+          if (cmd.anchorTimestamp != null) chart.scrollToTimestamp(cmd.anchorTimestamp);
+        }
+      } catch {
+        // نادیده بگیر
+      }
+      setTimeout(() => {
+        applyingSyncRef.current = false;
+      }, 0);
+    });
+    return () => {
+      off();
+      syncIdRef.current = null;
+    };
+  }, [syncKey]);
 
   // پالت تم
   useEffect(() => {
@@ -815,6 +870,7 @@ export function KLineChartWrapper({
     try {
       chartRef.current?.scrollToRealTime();
       chartRef.current?.setBarSpace(10);
+      barSpaceRef.current = 10;
     } catch {
       // نادیده بگیر
     }
