@@ -19,6 +19,7 @@ import { ToolPropertiesPanel } from '../components/ToolPropertiesPanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import { SplitChartView } from '../components/SplitChartView';
 import { ReplayBar } from '../components/ReplayBar';
+import { ComparePanel } from '../components/ComparePanel';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
 
@@ -329,6 +330,8 @@ export default function TechnicalPage() {
                 )}
               </>
             )}
+
+            <ComparePanel activeSymbol={symbol} />
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <FtsTrendPanel data={analysis.data?.fts ?? null} />
