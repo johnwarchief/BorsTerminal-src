@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `214fa70` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `7a7f338` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۵۰۴ سبز (۴۷ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -98,3 +98,7 @@
 - **agent/technical (T-04 فاز 1)** مرج شد (fast-forward): `214fa70`. رندرر `lightweight-charts` + datafeed پشت سوییچ موتور (`ftsConfigStore.chartEngine`، پیش‌فرض klinecharts؛ LW با React.lazy در چانک جدای 179KB). از همان هوک‌های موجود (useCandleFeed / هوک کلان / دیده‌بان) بدون اندپوینت جدید. اعتبارسنجی: vitest 504/504 (47 فایل)، eslint صفر، build سالم.
 - `npm install` لازم نشد (lightweight-charts از قبل در node_modules بود). ورکتری‌ها frontend/node_modules را با junction به Base به اشتراک می‌گذارند ⇒ ایجنت‌ها نباید npm install بزنند.
 - فاز 2 T-04 (ابزار ترسیم/دیالوگ ابزار روی LW) هنوز شروع نشده.
+
+
+## به‌روزرسانی ۱۲ (ایجنتهد main, 2026-09-14 ~22:40)
+- **agent/technical (T-06)** مرج شد (fast-forward): `7a7f338`. پولیش ظاهری شل چارت به سمت TV (پالت پس‌زمینه/گرید hairline، محورها و کراس‌هیر، افسانهٔ شیشه‌ای با اعداد فارسی و چیدمان LTR، ریل ترسیم با آیکون‌های SVG یکدست و flyout فشرده با شمارنده) — فقط استایل/markup؛ مسیر داده و رندر دست‌نخورده. اعتبارسنجی: vitest 504/504 (47 فایل)، eslint صفر، build سالم.
