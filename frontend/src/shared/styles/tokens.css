@@ -20,6 +20,19 @@
   --hairline: rgba(255, 255, 255, 0.1);
   --glass-tint: rgba(18, 26, 43, 0.66);
   --glass-shadow: 0 8px 30px rgba(2, 6, 17, 0.45);
+
+  /* ---------- مقیاس تایپوگرافی سراسری -- کف خوانا 12px (0.75rem) ---------- */
+  --fs-2xs: 0.75rem; /* 12px */
+  --fs-xs: 0.8125rem; /* 13px */
+  --fs-sm: 0.875rem; /* 14px */
+  --fs-base: 1rem; /* 16px */
+  --fs-lg: 1.125rem; /* 18px */
+  --fs-xl: 1.25rem; /* 20px */
+  --fs-2xl: 1.5rem; /* 24px */
+
+  /* ---------- فوکوس سراسری ---------- */
+  --focus-ring: var(--accent-blue);
+  --focus-ring-offset: 2px;
 }
 
 [data-theme='light'] {
@@ -42,4 +55,7 @@
   --hairline: rgba(15, 23, 42, 0.12);
   --glass-tint: rgba(255, 255, 255, 0.72);
   --glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+
+  /* فوکوس روی زمینه روشن نیاز به کنتراست بیشتر دارد */
+  --focus-ring: #2563eb;
 }

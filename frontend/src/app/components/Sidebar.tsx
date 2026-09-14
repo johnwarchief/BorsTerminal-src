@@ -17,7 +17,7 @@ export function Sidebar() {
         </div>
         <div>
           <span className="block text-sm font-bold text-text-primary">ترمینال بورس</span>
-          <span className="block text-[10px] tracking-wide text-text-muted">CYBER TERMINAL v1</span>
+          <span className="block text-2xs tracking-wide text-text-muted">CYBER TERMINAL v1</span>
         </div>
       </div>
       <nav className="flex flex-col gap-1.5">
@@ -47,7 +47,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="mt-auto rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3 text-[10px] leading-5 text-text-muted">
+      <div className="mt-auto rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3 text-2xs leading-5 text-text-muted">
         میانبر سریع: <kbd className="num rounded border border-border-c px-1">Ctrl</kbd> +
         <kbd className="num mr-1 rounded border border-border-c px-1">K</kbd>
         <span className="block">جستجوی نماد و پرش بین نماها</span>

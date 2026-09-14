@@ -20,6 +20,10 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-red: var(--neon-red);
   --font-sans: 'Vazirmatn', Tahoma, sans-serif;
+
+  /* ---------- مقیاس تایپوگرافی سراسری (کف خوانا: 12px) ---------- */
+  --text-2xs: var(--fs-2xs);
+  --text-2xs--line-height: 1.2;
 }
 
 html,
@@ -41,6 +45,14 @@ body {
 }
 
 /* ---------- شیشه عمیق ---------- */
+/* ---------- نشانگر فوکوس سراسری (فقط ناوبری با کیبرد) ---------- */
+@layer base {
+  :where(a, button, input, select, textarea, [tabindex], [role='button'], summary):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+}
+
 @layer components {
 .glass-panel {
   position: relative;
@@ -179,5 +191,16 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* انیمیشن های نامدار پوسته: کاملا خاموش */
+  .panel-in,
+  .scale-in,
+  .conflict-pulse,
+  .flash-up,
+  .flash-down,
+  .hud-beam {
+    animation: none !important;
   }
 }

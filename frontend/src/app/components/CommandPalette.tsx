@@ -6,6 +6,7 @@ import { http } from '@shared/api/http';
 import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { toFaDigits } from '@shared/lib/fmt';
+import { Skeleton } from '@shared/components/Skeleton';
 
 type Dest = 'master' | 'technical' | 'market';
 
@@ -146,11 +147,11 @@ export function CommandPalette() {
             className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
             aria-label="جستجوی نماد"
           />
-          <kbd className="rounded-md border border-border-c px-1.5 py-0.5 text-[10px] text-text-muted">Esc</kbd>
+          <kbd className="rounded-md border border-border-c px-1.5 py-0.5 text-2xs text-text-muted">Esc</kbd>
         </div>
 
         <div className="flex items-center gap-2 px-4 py-2">
-          <span className="text-[11px] text-text-muted">مقصد:</span>
+          <span className="text-xs text-text-muted">مقصد:</span>
           {DESTS.map((d) => (
             <button
               key={d.id}
@@ -168,7 +169,16 @@ export function CommandPalette() {
         </div>
 
         <div className="max-h-[46vh] overflow-y-auto pb-2">
-          {loading && <div className="px-4 py-6 text-center text-xs text-text-secondary">در حال دریافت فهرست نمادها...</div>}
+          {loading && (
+            <div className="flex flex-col gap-2 px-4 py-4" role="status" aria-live="polite">
+              <span className="sr-only">در حال دریافت فهرست نمادها...</span>
+              <div className="flex flex-col gap-2" aria-hidden="true">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-5/6" />
+                <Skeleton className="h-8 w-2/3" />
+              </div>
+            </div>
+          )}
           {error && <div className="px-4 py-6 text-center text-xs text-accent-red">خطا در دریافت فهرست نمادها</div>}
           {!loading && !error && results.length === 0 && (
             <div className="px-4 py-6 text-center text-xs text-text-muted">نتیجه ای نیست</div>
@@ -187,12 +197,12 @@ export function CommandPalette() {
                 <span className="font-black text-text-primary">{r.symbol}</span>
                 <span className="mr-2 text-xs text-text-muted">{r.name}</span>
               </span>
-              <span className="text-[10px] text-text-muted">{r.sector}</span>
+              <span className="text-2xs text-text-muted">{r.sector}</span>
             </button>
           ))}
         </div>
 
-        <div className="border-t border-[var(--hairline)] px-4 py-2 text-[10px] text-text-muted">
+        <div className="border-t border-[var(--hairline)] px-4 py-2 text-2xs text-text-muted">
           {toFaDigits(results.length)} نتیجه · Enter برای پرش به {DESTS.find((d) => d.id === dest)?.label}
         </div>
       </div>
