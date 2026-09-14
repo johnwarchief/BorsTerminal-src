@@ -1021,7 +1021,15 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         if is_insurance_sector(sector):
             data_gap2 = False
         elif len(solo) < eps_years:
-            data_gap2 = True                      # «بدون داده» نه «مردود» — تفکیک برای UI
+            if len(solo) >= 2:
+                # ۲ سال از ۳: داده هست ولی گیتِ ۳ساله رد است — «سابقهٔ ناقص»، نه شکاف.
+                # سری به بلندای eps_years ساخته می‌شود؛ جای سالِ غایب None می‌ماند
+                # (قاعدهٔ «سطر هرگز حذف نمی‌شود» — همان الگوی /api/fundamental).
+                ser = [round(r["basic_eps"], 1) for r in reversed(solo)]
+                eps_series = ([None] * (eps_years - len(ser)) + ser) or None
+                i2, data_gap2 = False, True
+            else:
+                data_gap2 = True                  # «بدون داده» نه «مردود» — تفکیک برای UI
         else:
             win = solo[:eps_years]
             gap_ok = all(int(win[i]["fiscal_year"]) - int(win[i + 1]["fiscal_year"]) == 1
@@ -1095,6 +1103,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "eps_series": eps_series,
             "eps_last": (eps_series[-1] if eps_series else None),
             "eps_data_gap": bool(data_gap2),
+            "eps_years_available": min(len(solo), eps_years),
+            "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),
             "sales_to_mcap": None if s2m is None else round(s2m, 2),
             "profit_potential_pct": None if pot is None else round(pot, 1),
