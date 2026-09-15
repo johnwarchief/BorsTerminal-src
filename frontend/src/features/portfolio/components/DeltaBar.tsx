@@ -42,13 +42,13 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
               </div>
               <span className="min-w-32 text-left">
                 <span
-                  className={`num text-[11px] font-black ${
+                  className={`num text-2xs font-black ${
                     tone === 'green' ? 'text-accent-green' : tone === 'red' ? 'text-accent-red' : 'text-text-muted'
                   }`}
                 >
                   {deltaLabel(r.delta)}
                 </span>
-                <span className="num block text-[10px] text-text-muted">
+                <span className="num block text-2xs text-text-muted">
                   هدف {toFaDigits(r.targetPct)}٪ · فعلی {toFaDigits(r.currentPct)}٪
                 </span>
               </span>

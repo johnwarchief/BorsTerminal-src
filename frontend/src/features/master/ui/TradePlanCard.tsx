@@ -47,17 +47,17 @@ function LevelRow({
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--hairline)] bg-bg-secondary/40 px-3 py-2">
       <div className="min-w-0">
         <div className="text-xs font-bold text-text-primary">{label}</div>
-        <div className="text-[10px] leading-4 text-text-muted">{hint}</div>
+        <div className="text-2xs leading-4 text-text-muted">{hint}</div>
       </div>
       <div className={`num text-left ${has ? toneCls : 'text-text-muted'}`} dir="ltr">
         {has ? (
           hi != null && lo != null && hi !== lo ? (
             <span>
-              {rial(lo)} — {rial(hi)} <span className="text-[10px]">ریال</span>
+              {rial(lo)} — {rial(hi)} <span className="text-2xs">ریال</span>
             </span>
           ) : (
             <span>
-              {rial(lo ?? hi)} <span className="text-[10px]">ریال</span>
+              {rial(lo ?? hi)} <span className="text-2xs">ریال</span>
             </span>
           )
         ) : (
@@ -75,7 +75,7 @@ export function TradePlanCard({ symbol, action, plan }: { symbol: string; action
       <div className="relative mb-3 flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-black text-text-primary">برنامه معاملاتی {symbol}</h3>
         <Badge tone={ACTION_TONE[action]}>{ACTION_FA[action]}</Badge>
-        <span className="text-[10px] uppercase tracking-widest text-text-muted">Trade Execution Blueprint</span>
+        <span className="text-2xs uppercase tracking-widest text-text-muted">Trade Execution Blueprint</span>
       </div>
       <div className="grid gap-2 md:grid-cols-2">
         <LevelRow label="پله اول (DCA 1)" hint="تراز فیبو ۳۳ تا ۴۰ درصد اصلاحی" lo={plan.step1?.lo ?? null} hi={plan.step1?.hi ?? null} tone="green" />
@@ -85,7 +85,7 @@ export function TradePlanCard({ symbol, action, plan }: { symbol: string; action
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] pt-3">
         <Badge tone="blue">وزن هر پله: {toFaDigits(plan.weight.pct)}٪ سرمایه</Badge>
-        <span className="text-[11px] leading-5 text-text-secondary">
+        <span className="text-2xs leading-5 text-text-secondary">
           مدیریت سرمایه FTS: ۲ تا ۵ درصد سرمایه در هر پله بر اساس سطح ریسک داوری — مجموع پله‌ها و حد ضرر تصمیم خروج را می‌سازند.
         </span>
       </div>

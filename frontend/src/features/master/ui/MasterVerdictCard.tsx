@@ -153,13 +153,13 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
               />
             ))}
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-text-muted">Master Decision · HUD</div>
+          <div className="text-2xs uppercase tracking-widest text-text-muted">Master Decision · HUD</div>
         </div>
       </div>
 
       {activeContribs.length > 0 ? (
         <div className="relative mt-4 flex flex-col gap-2 border-t border-[var(--hairline)] pt-3">
-          <div className="text-[10px] uppercase tracking-widest text-text-muted">سهم هر ایجنت در برآیند</div>
+          <div className="text-2xs uppercase tracking-widest text-text-muted">سهم هر ایجنت در برآیند</div>
           {activeContribs.map((c) => {
             const s = inputs?.[c.agentId];
             return (
@@ -184,7 +184,7 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
                   {toFaDigits(c.score)}
                 </span>
                 <Badge tone={CONF_TONE[c.confidence]}>{CONF_FA[c.confidence]}</Badge>
-                {s ? <span className="truncate text-[11px] text-text-muted" title={s.title}>{s.title}</span> : null}
+                {s ? <span className="truncate text-2xs text-text-muted" title={s.title}>{s.title}</span> : null}
               </div>
             );
           })}

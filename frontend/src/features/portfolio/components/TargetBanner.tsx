@@ -15,7 +15,7 @@ export function TargetBanner() {
           <p className="mt-1 break-words text-xs leading-6 text-text-secondary">
             سعی کنید ترکیب دارایی‌های خود را با سیگنال‌های دریافتی به این ترکیب دارایی نزدیک کنید.
           </p>
-          <p className="mt-1.5 break-words text-[11px] leading-5 text-text-muted">
+          <p className="mt-1.5 break-words text-2xs leading-5 text-text-muted">
             فرمول ریسک سیستماتیک: حداکثر ۲۰٪ سهام + دو تا سه برابر طلا جهت پوشش ریسک تورمی/جنگی.
           </p>
         </div>

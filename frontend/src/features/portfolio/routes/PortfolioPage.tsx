@@ -172,21 +172,21 @@ export default function PortfolioPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="rounded-full border border-accent-blue/40 bg-accent-blue/10 px-3 py-1 text-[11px] font-bold text-accent-blue hover:bg-accent-blue/20"
+                  className="rounded-full border border-accent-blue/40 bg-accent-blue/10 px-3 py-1 text-2xs font-bold text-accent-blue hover:bg-accent-blue/20"
                 >
                   ویرایش دارایی
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditOpen(true)}
-                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-[11px] font-bold text-text-secondary hover:text-text-primary"
+                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary hover:text-text-primary"
                 >
                   افزودن دارایی
                 </button>
                 <button
                   type="button"
                   onClick={() => resetTarget()}
-                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-[11px] font-bold text-text-secondary hover:text-text-primary"
+                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary hover:text-text-primary"
                 >
                   بازنشانی به پیش‌فرض FTS
                 </button>
@@ -197,8 +197,8 @@ export default function PortfolioPage() {
               {classes.map((c: TargetClass) => (
                 <li key={c.id} className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-bg-secondary/40 px-2.5 py-1.5">
                   <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: c.color }} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-text-primary" title={c.label}>{c.label}</span>
-                  {c.hint ? <span className="hidden max-w-40 truncate text-[10px] text-text-muted sm:block" title={c.hint}>{c.hint}</span> : null}
+                  <span className="min-w-0 flex-1 truncate text-2xs font-bold text-text-primary" title={c.label}>{c.label}</span>
+                  {c.hint ? <span className="hidden max-w-40 truncate text-2xs text-text-muted sm:block" title={c.hint}>{c.hint}</span> : null}
                   <span className="num text-xs font-black text-text-primary">{toFaDigits(c.pct)}٪</span>
                 </li>
               ))}
@@ -236,7 +236,7 @@ export default function PortfolioPage() {
               {signal.payload.alerts.length > 0 ? (
                 <ul className="mt-1.5 flex list-inside list-disc flex-col gap-0.5">
                   {signal.payload.alerts.map((a, i) => (
-                    <li key={i} className="text-[11px] font-bold text-accent-susp">{a}</li>
+                    <li key={i} className="text-2xs font-bold text-accent-susp">{a}</li>
                   ))}
                 </ul>
               ) : null}
@@ -264,7 +264,7 @@ export default function PortfolioPage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="bg-bg-card/70 text-right text-[11px] uppercase tracking-wider text-text-secondary">
+                  <tr className="bg-bg-card/70 text-right text-2xs uppercase tracking-wider text-text-secondary">
                     <th className="px-3 py-2.5 font-bold">نماد</th>
                     <th className="px-3 py-2.5 font-bold">وضعیت</th>
                     <th className="px-3 py-2.5 font-bold">وزن در سبد</th>
@@ -325,7 +325,7 @@ export default function PortfolioPage() {
                           <td className="px-3 py-2.5">
                             {stop != null ? (
                               <span className="num text-xs text-text-secondary" title={stopCell.techBasis}>
-                                {toFaDigits(stop)} <span className="text-[10px] text-text-muted">({stopCell.techBasis})</span>
+                                {toFaDigits(stop)} <span className="text-2xs text-text-muted">({stopCell.techBasis})</span>
                               </span>
                             ) : (
                               <span className="text-xs text-text-muted">بدون داده</span>
@@ -355,7 +355,7 @@ export default function PortfolioPage() {
                             )}
                           </td>
                           <td className="px-3 py-2.5">
-                            <span className="num text-[11px] text-text-secondary" title={dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}>
+                            <span className="num text-2xs text-text-secondary" title={dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}>
                               {dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}
                             </span>
                           </td>
