@@ -1,0 +1,45 @@
+﻿#define AppName "BorsTerminal Ultimate"
+#define AppVersion "1.0.0"
+#define AppPublisher "BorsTerminal"
+#define AppExe "BorsTerminal_Ultimate.exe"
+
+[Setup]
+AppId={{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher={#AppPublisher}
+DefaultDirName={autopf}\{#AppName}
+DefaultGroupName={#AppName}
+DisableProgramGroupPage=no
+UninstallDisplayIcon={app}\{#AppExe}
+SetupIconFile=..\assets\bors.ico
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+OutputDir=out
+OutputBaseFilename=BorsTerminal_Ultimate_Setup_{#AppVersion}
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+PrivilegesRequiredOverridesAllowed=dialog
+AllowNoIcons=yes
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "ساخت آیکون روی دسکتاپ"; GroupDescription: "آیکون‌های اضافه:"; Flags: checkedonce
+Name: "startmenuicon"; Description: "ساخت آیکون در منوی استارت"; GroupDescription: "آیکون‌های اضافه:"; Flags: checkedonce
+
+[Files]
+Source: "..\dist\BorsTerminal_Ultimate\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+
+[Icons]
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: startmenuicon
+Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{app}\logs"
+Type: filesandordirs; Name: "{app}\backups"

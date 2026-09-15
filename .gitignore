@@ -112,3 +112,9 @@ htmlcov/
 *.stackdump
 
 nimbalyst-local/attachments/
+
+# ---- نصب‌کننده (خروجی بیلد) ----
+installer/out/
+build/
+dist/
+
