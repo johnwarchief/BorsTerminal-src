@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `3d3e47c` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۶۲۲ سبز (۵۹ فایل) · eslint صفر · build سالم
+- **master HEAD:** `7a666a8` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۶۲۷ سبز (۵۹ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -203,3 +203,8 @@
 ## به‌روزرسانی ۲۹ (ایجنتهد main, 2026-09-15 ~06:10)
 - **agent/fundamental (F-06)** مرج شد: `f66863c` + merge commit `3d3e47c`. `AuditBadge` + `AuditReasonCard` + `auditDeviation` + `lib/auditEvidence`؛ بازشوی explainability با `createPortal`/`fixed` (بدون Radix؛ بسته با Esc/بیرون‌کلیک/اسکرول؛ stopPropagation). نصب روی ۶ سلول کارت + ۵ ستون جدول غربالگری؛ target‌ها از `thresholds` پاسخ `/api/screener`. رفتار دفاعی: فیلدهای نبوده فقط موجودها نمایش، بدون عدد ساختگی. `widgets/SymbolInspector` دست‌نخورده. اعتبارسنجی: vitest 622/622 (59 فایل)، eslint صفر، build سالم.
 - ⚠️ فلِیکِ بار‌محور تشدید شد: در دو رانِ کندِ متوالی (62s و 78.7s) به‌ترتیب ۶ و **۱۲** تست قرمز شد (پراکنده در همهٔ تب‌ها)؛ همه در رانِ تکی سبز و رانِ کاملِ مجدد 622/622 در 20.3s سبز ⇒ قطعاً محیطی. توصیه: قبل از باور به قرمزِ پراکنده، ران مجدد/تکی بگیرید (سیستم زیر بار سنگین — احتمالاً فرآیندهای موازی).
+
+
+## به‌روزرسانی ۳۰ (ایجنتهد main, 2026-09-15 ~06:40)
+- **agent/fundamental (F-07)** مرج شد: `a8ade67` + merge commit `7a666a8`. کنترل‌های v2.1 در FtsSettingsDrawer: توگل ۱ب «فقط تولیدی» (بانک/بیمه/خدمات/هلدینگ N/A)؛ **رفع باگ واقعی**: خاموش‌کردن توگل قبلاً `v10_volume_growth_min=-1` می‌فرستاد و بک‌اند (`api/market.py`) رد می‌کرد ⇒ حالا `0` + `v10_volume_breadth_min=0` می‌فرستد؛ شاخص 4 با OR + `potential_min=40` (نوشتن هر دو کلید `profit_potential_min` و `v10_potential_min`)؛ دروازه‌های سخت (حذف بیمه، N/A نسبت فروش هلدینگ، استثنای دارویی >50%، حذف بازار پایه). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0 error/3 warning، build سالم.
+- نیاز بک‌اند (کلیدهای ناشناخته در POST دور ریخته می‌شوند ⇒ باید به `FTS_DEFAULTS` اضافه شوند تا ماندگار شوند): `holdings_sales_na` (bool, true)، `pharma_margin_exempt_min` (float, 0/50)، `exclude_base_market` (bool, true). بیمه فعلاً از مسیر `mandatory_sectors` کار می‌کند.
