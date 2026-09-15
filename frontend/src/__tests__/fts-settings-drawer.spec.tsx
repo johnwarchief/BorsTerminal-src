@@ -349,3 +349,106 @@ describe('پنل تنظیمات FTS', () => {
     expect(toggle!.className).toContain('py-2.5');
   });
 });
+
+
+// ---------------------------------------------------------------------------
+// سند v2.1 — کنترل‌های جدید/اصلاح‌شدهٔ دراور: تناژ فقط تولیدی، ورودی دوم شاخص ۴
+// (پوشش سود ناخالص با منطق OR) و چهار دروازهٔ سختِ تازه.
+// ---------------------------------------------------------------------------
+describe('دراور تنظیمات FTS — سند v2.1', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(configPayload()),
+    } as unknown as Response);
+  });
+
+  /** آخرین body ارسالی به POST را برمی‌گرداند */
+  async function lastPosted(): Promise<Record<string, unknown>> {
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some((c) => (c[1] as RequestInit | undefined)?.method === 'POST')).toBe(true);
+    });
+    const posts = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
+    return JSON.parse((posts[posts.length - 1][1] as RequestInit).body as string) as Record<string, unknown>;
+  }
+
+  it('شاخص ۴ — ورودی دوم «حداقل پوشش سود ناخالص تخمینی» با پیش‌فرض ۴۰٪ و منطق OR', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByRole('button', { name: /ذخیره/ })).toBeInTheDocument());
+    const slider = screen.getByLabelText('حداقل پوشش سود ناخالص تخمینی') as HTMLInputElement;
+    // ابتدا مقدار کانفیگ (۳۰٪ پیش‌فرض فایل) می‌آید، بعد کاربر تغییرش می‌دهد
+    await waitFor(() => expect(slider.value).toBe('30'));
+    expect(screen.getByText(/منطق OR/)).toBeInTheDocument();
+    fireEvent.change(slider, { target: { value: '55' } });
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    const body = await lastPosted();
+    expect(body.profit_potential_min).toBe(55);
+    expect(body.v10_potential_min).toBe(55);
+  });
+
+  it('تناژ فیزیکی فقط برای تولیدی است و خاموش‌کردنش عدد منفی نمی‌فرستد', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByRole('button', { name: /ذخیره/ })).toBeInTheDocument());
+    const label = screen.getByText(/الزام رشد مقداری/);
+    const toggle = label.closest('button');
+    expect(toggle).not.toBeNull();
+    // دامنهٔ اعمال روی خودِ ردیف نشان داده می‌شود
+    expect(toggle!.textContent).toContain('فقط تولیدی');
+    expect(toggle!.textContent).toContain('بانک');
+    // روشن: رشد غیرمنفی + گسترهٔ ۶۰٪
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    let body = await lastPosted();
+    expect(body.v10_volume_growth_min).toBe(0);
+    expect(body.v10_volume_breadth_min).toBe(0.6);
+    // خاموش: هیچ عدد منفی‌ای (بک‌اند منفی را رد می‌کند) — الزام گستره برداشته می‌شود
+    fireEvent.click(toggle!);
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    body = await lastPosted();
+    expect(body.v10_volume_growth_min).toBe(0);
+    expect(body.v10_volume_breadth_min).toBe(0);
+    expect(Number(body.v10_volume_growth_min)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('دروازهٔ سخت «حذف کامل بیمه» پیش‌فرض روشن است و بیمه را در فهرست صنایع دستوری نگه می‌دارد', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('حذف کامل نمادهای صنعت بیمه')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    let body = await lastPosted();
+    expect(body.mandatory_sectors).toContain('بیمه');
+    // خاموش‌کردن توگل، Insurance را از فهرست دستوری بیرون می‌برد ولی بقیه می‌مانند
+    fireEvent.click(screen.getByText('حذف کامل نمادهای صنعت بیمه').closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    body = await lastPosted();
+    expect(body.mandatory_sectors).not.toContain('بیمه');
+    expect((body.mandatory_sectors as string[]).length).toBeGreaterThan(0);
+  });
+
+  it('دروازه‌های سخت جدید (هلدینگ N/A، استثنای دارو، بازار پایه) در payload می‌آیند', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('حذف نمادهای بازار پایه فرابورس')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    let body = await lastPosted();
+    expect(body.holdings_sales_na).toBe(true);
+    expect(body.exclude_base_market).toBe(true);
+    expect(body.pharma_margin_exempt_min).toBe(0);
+    // روشن‌کردن استثنای دارویی‌ها ⇒ آستانهٔ ۵۰٪
+    fireEvent.click(screen.getByText('آزادسازی دارویی‌های با حاشیهٔ ناخالص بالای ۵۰٪').closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    body = await lastPosted();
+    expect(body.pharma_margin_exempt_min).toBe(50);
+  });
+
+  it('Reset مقادیر سند v2.1 را برمی‌گرداند (پوشش ۴۰٪ و دروازه‌های سخت پیش‌فرض)', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('Reset to FTS Defaults')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Reset to FTS Defaults'));
+    const body = await lastPosted();
+    expect(body.profit_potential_min).toBe(40);
+    expect(body.v10_potential_min).toBe(40);
+    expect(body.holdings_sales_na).toBe(true);
+    expect(body.exclude_base_market).toBe(true);
+    expect(body.pharma_margin_exempt_min).toBe(0);
+    expect(body.v10_volume_breadth_min).toBe(0.6);
+  });
+});
