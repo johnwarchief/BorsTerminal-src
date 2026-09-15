@@ -1,0 +1,43 @@
+/* features/technical/styles/tvTheme.css -- تم دارک یکپارچه TradingView، محدود به میزکار تکنیکال
+   فقط متغیرهای CSS را در دامنهٔ همین کانتینر بازنویسی می‌کند تا ظاهر چندتکه یکدست شود. */
+.tv-workbench {
+  --bg-primary: #131722;
+  --bg-secondary: #1e222d;
+  --bg-card: #1e222d;
+  --bg-tertiary: #1e222d;
+  --text-primary: #d1d4dc;
+  --text-secondary: #b2b5be;
+  --text-muted: #787b86;
+  --border-color: #2a2e39;
+  --hairline: #2a2e39;
+  --border-accent: #2962ff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* سطح‌ها و کارت‌ها */
+.tv-workbench .glass-panel,
+.tv-workbench .glass-strip {
+  background: #1e222d !important;
+  border-color: #2a2e39 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+/* بج‌ها و چیپ‌ها همرنگ پالت */
+.tv-workbench [class*='rounded-full'] {
+  border-color: #2a2e39;
+}
+
+/* نوارهای جداکننده/اسکرول‌بار تیره */
+.tv-workbench ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.tv-workbench ::-webkit-scrollbar-thumb {
+  background: #363a45;
+  border-radius: 4px;
+}
+.tv-workbench ::-webkit-scrollbar-track {
+  background: transparent;
+}
