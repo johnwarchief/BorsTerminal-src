@@ -175,7 +175,7 @@ export default function FundamentalPage() {
           </>
         ) : null}
         <span className="mr-auto flex items-center gap-2">
-          <span className="text-[11px] text-text-muted">{signal?.rationale ?? ''}</span>
+          <span className="text-2xs text-text-muted">{signal?.rationale ?? ''}</span>
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </span>
       </div>
@@ -196,7 +196,7 @@ export default function FundamentalPage() {
               <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند NAV پرتفوی</h3>
               <Badge tone="yellow">N/A</Badge>
             </div>
-            <p className="text-[11px] leading-relaxed text-text-secondary" data-testid="holding-nav-na">
+            <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
               نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
               نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
               «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.

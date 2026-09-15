@@ -68,7 +68,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
     <div className="glass-panel panel-in p-4">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-black text-text-primary">روند فصلی درآمد و سود خالص</h3>
-        <span className="flex items-center gap-3 text-[11px] text-text-muted">
+        <span className="flex items-center gap-3 text-2xs text-text-muted">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-sm bg-accent-blue" /> درآمد
           </span>
@@ -125,7 +125,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           );
         })}
       </svg>
-      <div className="mt-1 text-[11px] text-text-muted">{toFaDigits(quarters.length)} فصل آخر (ارقام میلیارد تومان)</div>
+      <div className="mt-1 text-2xs text-text-muted">{toFaDigits(quarters.length)} فصل آخر (ارقام میلیارد تومان)</div>
     </div>
   );
 }

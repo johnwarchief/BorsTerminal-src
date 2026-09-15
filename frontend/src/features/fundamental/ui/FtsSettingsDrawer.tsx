@@ -80,7 +80,7 @@ function Slider({
         className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-bg-card accent-[var(--accent-blue)]"
         aria-label={label}
       />
-      {hint ? <span className="break-words text-[10px] leading-snug text-text-muted">{hint}</span> : null}
+      {hint ? <span className="break-words text-2xs leading-snug text-text-muted">{hint}</span> : null}
     </div>
   );
 }
@@ -105,7 +105,7 @@ function ToggleRow({
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="break-words text-xs font-bold leading-snug text-text-primary">{label}</span>
-        {hint ? <span className="break-words text-[10px] leading-snug text-text-muted">{hint}</span> : null}
+        {hint ? <span className="break-words text-2xs leading-snug text-text-muted">{hint}</span> : null}
       </span>
       <span
         aria-hidden
@@ -347,7 +347,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                   role="radio"
                   aria-checked={pricingGate === m}
                   onClick={() => setPricingGate(m)}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-right text-[11px] font-bold transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-right text-2xs font-bold transition-colors ${
                     pricingGate === m
                       ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue'
                       : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary hover:border-border-accent'
@@ -365,7 +365,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                 </button>
               ))}
             </div>
-            <span className="break-words text-[10px] leading-snug text-text-muted">
+            <span className="break-words text-2xs leading-snug text-text-muted">
               خودرو، دارو، نیروگاه، غذا و… بسته به حالت انتخابی از غربالگری کنار گذاشته می‌شوند
             </span>
           </div>
@@ -381,15 +381,15 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         {save.isError ? (
-          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-[11px] text-accent-red">
+          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs text-accent-red">
             ذخیره نشد — سرور در دسترس نیست
           </div>
         ) : save.data && !save.data.ok ? (
-          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-[11px] text-accent-red">
+          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs text-accent-red">
             {save.data.message ?? 'برخی مقادیر معتبر نیستند'}
           </div>
         ) : save.isSuccess && save.data?.ok ? (
-          <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-[11px] text-accent-green">
+          <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-2xs text-accent-green">
             پیش‌شرط‌ها در fts_thresholds.json ذخیره شد
           </div>
         ) : null}

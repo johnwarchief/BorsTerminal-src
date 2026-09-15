@@ -60,7 +60,7 @@ function PassMark({ state }: { state: CellState }) {
 function GapMark({ label, tooltip, testId }: { label: string; tooltip: string; testId?: string }) {
   return (
     <GapHint reason={tooltip}>
-      <span data-testid={testId} className="max-w-[9.5rem] text-[9px] font-bold leading-snug text-accent-yellow">
+      <span data-testid={testId} className="max-w-[9.5rem] text-2xs font-bold leading-snug text-accent-yellow">
         {label}
       </span>
     </GapHint>
@@ -136,7 +136,7 @@ export function FtsScreenTable({
               onClick={() => setShowExcluded((v) => !v)}
               aria-pressed={showExcluded}
               title={`دروازه‌های سخت: ${toFaDigits(excludedCount)} ردیف حذف‌شده ${showExcluded ? 'نمایش داده' : 'پنهان'} می‌شود`}
-              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors ${
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
                 showExcluded
                   ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
                   : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
@@ -157,7 +157,7 @@ export function FtsScreenTable({
               {showExcluded ? 'پنهان‌سازی ردیف‌های حذف‌شده' : 'نمایش ردیف‌های حذف‌شده'}
             </button>
           ) : null}
-          <span className="num text-[11px] text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
+          <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
         </div>
@@ -165,7 +165,7 @@ export function FtsScreenTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-right text-xs">
           <thead>
-            <tr className="bg-bg-card/70 text-[11px] text-text-secondary">
+            <tr className="bg-bg-card/70 text-2xs text-text-secondary">
               {COLS.map((c, i) =>
                 c.key ? (
                   <th key={c.label} className="px-2 py-2 font-bold">
@@ -234,7 +234,7 @@ export function FtsScreenTable({
                       <span className={`font-bold text-text-primary ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                         {r.symbol}
                       </span>
-                      <span className="truncate text-[10px] text-text-muted">{r.name || r.sector_name || ''}</span>
+                      <span className="truncate text-2xs text-text-muted">{r.name || r.sector_name || ''}</span>
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -254,7 +254,7 @@ export function FtsScreenTable({
                         <span
                           data-testid={EPS_PARTIAL_TESTID}
                           title={epsGapReason}
-                          className="rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2 py-0.5 text-[10px] font-bold text-accent-susp"
+                          className="rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2 py-0.5 text-2xs font-bold text-accent-susp"
                         >
                           {epsHist.label} ⓘ
                         </span>
@@ -288,14 +288,14 @@ export function FtsScreenTable({
                       {i5 === 'gap' ? <AxisGapMark axis="5_industry" /> : <PassMark state={i5} />}
                     </div>
                     {r.excluded ? (
-                      <span className="mr-1 text-[9px] text-accent-red" title={r.exclusion_reasons ?? ''}>
+                      <span className="mr-1 text-2xs text-accent-red" title={r.exclusion_reasons ?? ''}>
                         {r.exclusion_reasons}
                       </span>
                     ) : null}
                   </td>
                   <td className="px-2 py-2">
                     <span
-                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-[11px] font-black ${
+                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-2xs font-black ${
                         r.score >= 4
                           ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
                           : r.score >= 3
@@ -312,7 +312,7 @@ export function FtsScreenTable({
           </tbody>
         </table>
       </div>
-      <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-[10px] text-text-muted">
+      <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-2xs text-text-muted">
         ✓ قبول · ✗ مردود · سلول بی‌داده به‌جای برچسب عمومی، علت را می‌نویسد (مثلاً «{gapLabel('1a_monetary_growth')}»
         ⇒ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
         · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است

@@ -56,7 +56,7 @@ export function GapHint({
       tabIndex={0}
     >
       {children}
-      <span aria-hidden className="text-[9px] leading-none text-text-muted transition-colors group-hover:text-accent-blue">
+      <span aria-hidden className="text-2xs leading-none text-text-muted transition-colors group-hover:text-accent-blue">
         ⓘ
       </span>
     </span>

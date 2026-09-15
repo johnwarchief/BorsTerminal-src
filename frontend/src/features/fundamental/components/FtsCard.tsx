@@ -94,7 +94,7 @@ export function FtsCard({
                 (!na && v == null ? (
                   /* جای برچسب عمومی «شکاف داده»: علتِ واقعیِ همان شاخص (tooltip: علت + راه‌حل) */
                   <GapHint reason={gapTooltip(l.key)}>
-                    <span className="text-[10px] font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
+                    <span className="text-2xs font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
                   </GapHint>
                 ) : (
                   <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v ? 'قبول' : 'مردود'}</Badge>
