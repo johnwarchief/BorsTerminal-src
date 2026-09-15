@@ -25,6 +25,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 AllowNoIcons=yes
 
 [Languages]
+Name: "farsi"; MessagesFile: "Farsi.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
