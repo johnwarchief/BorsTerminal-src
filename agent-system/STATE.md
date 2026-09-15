@@ -156,3 +156,9 @@
 - (میان این و قبلی، هد کامیت‌های زیادی لند کرد: `104f854` portfolio basket، `e150dce` responsive shell فاز 2، `3b0141b` UI فاز 3 (type floor مشترک + کنتراست تم روشن)، و `1d4f963` که هر ۴ موردِ F-05 را پیاده کرد: آستانهٔ sales/mcap=1.0، هلدینگ + مخفی‌کردن رشد حجم، reason شاخص 2 مبتنی بر trend، گارد سالانه‌سازی 12ماهه.)
 - **agent/fundamental (UI-1)** مرج شد (fast-forward): `3e5ff33`. ۵۸ مورد `text-[9/10/11px]` در ۱۰ فایل features/fundamental به `text-2xs` (کف 12px). اعتبارسنجی: vitest 605/605 (57 فایل)، eslint صفر، build سالم. تأیید شد در fundamental صفر مورد باقی است.
 - ⚠️ باقی‌مانده: ۲۰۹ مورد `text-[9-11px]` در سایر تب‌ها (market/technical/master/portfolio/app) هنوز هست — type floor فقط fundamental + shared اعمال شده.
+
+
+## به‌روزرسانی ۲۲ (ایجنتهد main, 2026-09-15 ~03:00)
+- **agent/technical (T-13)**: جایگزینی drop-in پکیج «جمینای» ممکن نیست — برای klinecharts v9 نوشته شده و روی v10 کامپایل نمی‌شود (≌13 خطا: applyNewData/setOverlayOptions نبود، امضای createIndicator v9، LineType تم). هیچ کامیتی نزده شد (درست).
+- ⚠️ حادثه و پاک‌سازی: ایجنت پوشهٔ untracked `frontend/src/features/technical/nahayatnegar/` را در ورکتری neat-plateau جا گذاشته بود که `tsc -b`/build را قرمز می‌کرد؛ حذفِ او با گارد ایمنی رد شد. من پوشه را حذف کردم و `npx tsc -b` ورکتری الان exit=0 (سبز). چک‌اوت اصلی Base از اول تمیز بود (فقط `dev/eval/` untracked).
+- پورت پیشنهادی (مرحلهٔ بعد، ~۱ پاس، تصمیم با هد): applyNewData→setDataLoader؛ امضای createIndicator؛ setOverlayOptions→overrideOverlay/styles؛ اصلاح شکل تم به LineType؛ افزودن corporateActions + اتصال lib/adjustments به adjustEvents؛ اتصال دوبارهٔ اورلی‌های FTS.
