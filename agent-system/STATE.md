@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `3e5ff33` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۶۰۵ سبز (۵۷ فایل) · eslint صفر · build سالم
+- **master HEAD:** `754277d` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -162,3 +162,9 @@
 - **agent/technical (T-13)**: جایگزینی drop-in پکیج «جمینای» ممکن نیست — برای klinecharts v9 نوشته شده و روی v10 کامپایل نمی‌شود (≌13 خطا: applyNewData/setOverlayOptions نبود، امضای createIndicator v9، LineType تم). هیچ کامیتی نزده شد (درست).
 - ⚠️ حادثه و پاک‌سازی: ایجنت پوشهٔ untracked `frontend/src/features/technical/nahayatnegar/` را در ورکتری neat-plateau جا گذاشته بود که `tsc -b`/build را قرمز می‌کرد؛ حذفِ او با گارد ایمنی رد شد. من پوشه را حذف کردم و `npx tsc -b` ورکتری الان exit=0 (سبز). چک‌اوت اصلی Base از اول تمیز بود (فقط `dev/eval/` untracked).
 - پورت پیشنهادی (مرحلهٔ بعد، ~۱ پاس، تصمیم با هد): applyNewData→setDataLoader؛ امضای createIndicator؛ setOverlayOptions→overrideOverlay/styles؛ اصلاح شکل تم به LineType؛ افزودن corporateActions + اتصال lib/adjustments به adjustEvents؛ اتصال دوبارهٔ اورلی‌های FTS.
+
+
+## به‌روزرسانی ۲۳ (ایجنتهد main, 2026-09-15 ~03:30)
+- **agent/technical (T-14)** مرج شد (fast-forward): `754277d`. جایگزینی کامل چارت تب تکنیکال با نسخهٔ NahayatNegar-سبکِ ساختهٔ جمینای + پورت ۶ نقطه‌ای به v10 (applyNewData→setDataLoader/resetData؛ createIndicator شیئی v10؛ setOverlayOptions→overrideOverlay؛ yAxis log با setStyles؛ setFormatter جلالی؛ corporateActions از adjustEvents + lib/adjustments). اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم.
+- ⚠️ رگرسیون‌های موقت (خود‌گزارش): اورلی‌های FTS روی چارت جدید **وصل نشدند**؛ Split View موقتاً **غیرفعال** شد. اندازهٔ چانک `TechnicalPage` ~367KB (klinecharts داخلش؛ قابل lazy در مرحلهٔ بعد).
+- حفظ‌شده: سایدبار راست، بازپخش، مقایسه، پنل‌های تحلیل FTS. هیچ فایل موقتِ untracked نمانده (اسکرچ فقط در .openclaw/tmp).
