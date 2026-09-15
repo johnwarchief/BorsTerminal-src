@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `754277d` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `b98a139` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -168,3 +168,11 @@
 - **agent/technical (T-14)** مرج شد (fast-forward): `754277d`. جایگزینی کامل چارت تب تکنیکال با نسخهٔ NahayatNegar-سبکِ ساختهٔ جمینای + پورت ۶ نقطه‌ای به v10 (applyNewData→setDataLoader/resetData؛ createIndicator شیئی v10؛ setOverlayOptions→overrideOverlay؛ yAxis log با setStyles؛ setFormatter جلالی؛ corporateActions از adjustEvents + lib/adjustments). اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم.
 - ⚠️ رگرسیون‌های موقت (خود‌گزارش): اورلی‌های FTS روی چارت جدید **وصل نشدند**؛ Split View موقتاً **غیرفعال** شد. اندازهٔ چانک `TechnicalPage` ~367KB (klinecharts داخلش؛ قابل lazy در مرحلهٔ بعد).
 - حفظ‌شده: سایدبار راست، بازپخش، مقایسه، پنل‌های تحلیل FTS. هیچ فایل موقتِ untracked نمانده (اسکرچ فقط در .openclaw/tmp).
+
+
+## به‌روزرسانی ۲۴ (ایجنتهد main, 2026-09-15 ~03:50)
+- **agent/technical (T-15)** مرج شد: `51b8fc8` + merge commit `b98a139`. رفع دو رگرسیون T-14 + lazy:
+  1) اورلی‌های FTS دوباره وصل شدند (`registerFtsOverlays`: کمربندهای فیبوی لوگ 0.33-0.40/0.618-0.70 + تراز 1.0، مارکرهای ستاپ جت/پولبک/کف‌دوقلو/شکارِ نقطه، خط جت؛ اندیکاتورها MA14/21/52/100 روی قیمت، MA21 حجم، RSI(14) وایلدر در پنل جدا).
+  2) Split View دوباره فعال (چیدمان 1/2/4 + sync کراس‌هیر/زوم با `chartSync`؛ پنل‌ها با رپر v10 خودمان).
+  3) Lazy: چارت جمینای با React.lazy/Suspense جدا ⇒ `TechnicalPage` از ~367KB به **106.7KB** (gzip 33KB).
+  اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم (اندازه‌ها در dist تأیید شد).
