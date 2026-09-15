@@ -52,20 +52,20 @@
   --bg-primary: #eef2f8;
   --bg-secondary: #ffffff;
   --bg-card: #e2e8f0;
-  --border-color: #cbd5e1;
+  --border-color: #c3cedc;
   --border-accent: #72aecf;
   --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-secondary: #3f4c5c;
+  --text-muted: #556172;
   --accent-green: #15803d;
   --accent-red: #dc2626;
   --accent-yellow: #b45309;
-  --accent-blue: #7db9db;
+  --accent-blue: #0b6fa4;
   --accent-susp: #ea580c;
   --accent-susp-bg: rgba(251, 146, 60, 0.22);
-  --neon-cyan: #0891b2;
+  --neon-cyan: #0e7490;
   --neon-red: #e11d48;
-  --hairline: rgba(15, 23, 42, 0.12);
+  --hairline: rgba(15, 23, 42, 0.18);
   --glass-tint: rgba(255, 255, 255, 0.72);
   --glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 
