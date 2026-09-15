@@ -1,74 +1,78 @@
-/**
- * الگوریتم‌های تعدیل قیمت در بورس تهران (مطابق سیستم نهایت‌نگر و ره‌آورد ۳۶۵)
- * انواع تعدیل:
- * 1. none: بدون تعدیل (Raw unadjusted prices)
- * 2. capital: افزایش سرمایه (Capital increase only)
- * 3. cash: سود نقدی (DPS only)
- * 4. capital_cash: افزایش سرمایه و سود نقدی (Total Return standard)
- * 5. operational: تعدیل عملکردی (جامع‌ترین متد بازار سرمایه ایران با اثر بازگشایی واقعی)
- */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
+import type { KLineData } from 'klinecharts';
 
+/**
+ * انواع رویدادهای مجمع و شرکتی بورس تهران
+ */
 export interface CorporateAction {
-  timestamp: number; // تاریخ مجمع یا بازگشایی به میلی‌ثانیه
-  dateStr: string;   // تاریخ شمسی / میلادی
-  type: 'dps' | 'capital_bonus' | 'capital_cash' | 'combined';
-  dpsAmount?: number;         // سود نقدی تقسیمی به ریال
-  bonusPercent?: number;      // درصد افزایش سرمایه از انباشته / تجدید ارزیابی (سهام جایزه)
-  cashPercent?: number;       // درصد افزایش سرمایه از آورده نقدی و مطالبات (حق تقدم ۱۰۰۰ ریالی)
-  preMeetingPrice: number;    // قیمت پایانی قبل از بسته شدن مجمع
-  postMeetingPrice: number;   // قیمت مچینگ بازگشایی سهم بعد از مجمع
-}
-
-export interface Candle {
   timestamp: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  turnover?: number;
+  dateStr: string;
+  type: 'dps' | 'capital_bonus' | 'capital_cash' | 'combined';
+  dpsAmount?: number;
+  bonusPercent?: number; // درصد سهام جایزه از انباشته/تجدید ارزیابی
+  cashPercent?: number;  // درصد افزایش سرمایه از آورده نقدی و مطالبات
+  preMeetingPrice: number;  // قیمت پایانی پیش از مجمع
+  postMeetingPrice: number; // قیمت بازگشایی پس از مجمع
 }
 
 /**
- * محاسبه ضریب تعدیل عملکردی (Operational Adjustment Factor)
- * فرمول رسمی نهایت‌نگر / ره‌آورد:
- * در این روش، اثر سود نقدی و افزایش سرمایه بر اساس قیمت واقعی بازگشایی (Post Meeting Price)
- * و لحاظ ارزش اسمی آورده (۱۰۰۰ ریال به ازای حق تقدم) در کل قیمت‌های ماقبل مجمع ضرب می‌شود.
+ * حالت‌های ۶‌گانه تعدیل قیمت در بورس تهران
  */
-export function getAdjustmentFactor(action: CorporateAction, mode: 'none' | 'capital' | 'cash' | 'capital_cash' | 'operational'): number {
+export type AdjustmentMode =
+  | 'none'          // بدون تعدیل (قیمت خام تابلو)
+  | 'capital'       // افزایش سرمایه (فقط سهام جایزه و آورده)
+  | 'cash'          // سود نقدی (فقط DPS)
+  | 'capital_cash'  // افزایش سرمایه و سود نقدی (مجموع بازده تئوریک)
+  | 'with_rights'   // با احتساب آورده (لحاظ ارزش اسمی ۱۰۰۰ ریالی حق تقدم)
+  | 'operational';  // تعدیل عملکردی (بر مبنای قیمت کشف‌شده در بازگشایی واقعی)
+
+/**
+ * محاسبه ضریب تعدیل هر رویداد شرکتی
+ */
+export function getAdjustmentFactor(action: CorporateAction, mode: AdjustmentMode): number {
   if (mode === 'none') return 1.0;
 
   const P_pre = action.preMeetingPrice;
   const P_post = action.postMeetingPrice;
-  const dps = action.dpsAmount || 0;
-  const a_bonus = (action.bonusPercent || 0) / 100;
-  const a_cash = (action.cashPercent || 0) / 100;
+  const dps = action.dpsAmount ?? 0;
+  const a_bonus = (action.bonusPercent ?? 0) / 100;
+  const a_cash = (action.cashPercent ?? 0) / 100;
   const total_alpha = a_bonus + a_cash;
 
   switch (mode) {
     case 'cash':
-      // نسبت تغییر قیمت ناشی از DPS
+      // فقط اثر سود نقدی
       if (P_pre <= 0) return 1.0;
-      return Math.max(0.01, (P_pre - dps) / P_pre);
+      return Math.max(0.001, (P_pre - dps) / P_pre);
 
     case 'capital':
-      // فقط نسبت افزایش سرمایه
+      // فقط اثر افزایش سرمایه
+      if (total_alpha <= 0) return 1.0;
       return 1 / (1 + total_alpha);
 
     case 'capital_cash': {
-      // افزایش سرمایه و سود نقدی کلاسیک تئوریک
+      // فرمول استاندارد مجموع بازده (بدون لحاظ آورده ۱۰۰۰ ریالی)
+      if (P_pre <= 0) return 1.0;
+      const p_theo = (P_pre - dps) / (1 + total_alpha);
+      return Math.max(0.001, p_theo / P_pre);
+    }
+
+    case 'with_rights': {
+      // فرمول با احتساب ارزش اسمی آورده (۱۰۰۰ ریال به ازای حق تقدم)
       if (P_pre <= 0) return 1.0;
       const p_theo = (P_pre - dps + a_cash * 1000) / (1 + total_alpha);
-      return p_theo / P_pre;
+      return Math.max(0.001, p_theo / P_pre);
     }
 
     case 'operational': {
-      // تعدیل عملکردی جامع:
-      // مبنای محاسبه: بازدهی واقعی دارایی سهامدار با لحاظ قیمت پس از مجمع
-      // K_op = P_post / [ P_post * (1 + total_alpha) + dps - (1000 * a_cash) ]
-      const denominator = P_post * (1 + total_alpha) + dps - (1000 * a_cash);
-      if (denominator <= 0) return 1 / (1 + total_alpha);
-      return Math.max(0.001, P_post / denominator);
+      // تعدیل عملکردی (روش نهایت‌نگر و ره‌آورد):
+      // بر مبنای بازده واقعی پس از بازگشایی سهم در بازار
+      // مخرج: P_post * (1 + alpha) + dps - (1000 * a_cash)
+      const denom = P_post * (1 + total_alpha) + dps - (1000 * a_cash);
+      if (denom <= 0) {
+        return total_alpha > 0 ? 1 / (1 + total_alpha) : 1.0;
+      }
+      return Math.max(0.001, P_post / denom);
     }
 
     default:
@@ -77,40 +81,71 @@ export function getAdjustmentFactor(action: CorporateAction, mode: 'none' | 'cap
 }
 
 /**
- * اعمال ضرایب تعدیل بر روی سری زمانی کندل‌ها
- * کندل‌های قبل از هر رویداد شرکتی در حاصل‌ضرب ضرایب مجمع‌های بعدی ضرب می‌شوند.
+ * اعمال ضرایب تعدیل بر روی سری زمانی کندل‌ها (KLineData v10)
  */
 export function applyAdjustmentToCandles(
-  rawCandles: Candle[],
+  rawCandles: KLineData[],
   actions: CorporateAction[],
-  mode: 'none' | 'capital' | 'cash' | 'capital_cash' | 'operational'
-): Candle[] {
-  if (mode === 'none' || actions.length === 0) {
+  mode: AdjustmentMode
+): KLineData[] {
+  if (mode === 'none' || !actions || actions.length === 0 || !rawCandles || rawCandles.length === 0) {
     return rawCandles.map(c => ({ ...c }));
   }
 
-  // مرتب‌سازی رویدادها بر اساس زمان از قدیم به جدید
+  // مرتب‌سازی زمانی رویدادها از قدیم به جدید
   const sortedActions = [...actions].sort((a, b) => a.timestamp - b.timestamp);
 
-  // محاسبه ضرایب تجمعی رویدادها
   return rawCandles.map(candle => {
     let cumulativeFactor = 1.0;
 
+    // کندل‌های ماقبل هر مجمع، در ضریب آن مجمع ضرب می‌شوند
     for (const act of sortedActions) {
       if (candle.timestamp < act.timestamp) {
-        const factor = getAdjustmentFactor(act, mode);
-        cumulativeFactor *= factor;
+        cumulativeFactor *= getAdjustmentFactor(act, mode);
       }
     }
 
+    // قیمت‌ها ضرب و حجم معاملات بر ضریب تقسیم می‌شود تا ارزش معامله ثابت بماند
+    const factor = cumulativeFactor;
     return {
       timestamp: candle.timestamp,
-      open: Math.round(candle.open * cumulativeFactor),
-      high: Math.round(candle.high * cumulativeFactor),
-      low: Math.round(candle.low * cumulativeFactor),
-      close: Math.round(candle.close * cumulativeFactor),
-      volume: Math.round(candle.volume / cumulativeFactor),
+      open: Math.round(candle.open * factor),
+      high: Math.round(candle.high * factor),
+      low: Math.round(candle.low * factor),
+      close: Math.round(candle.close * factor),
+      volume: candle.volume !== undefined ? Math.round(candle.volume / factor) : undefined,
       turnover: candle.turnover
+    };
+  });
+}
+
+/**
+ * نگاشت رویدادهای خام بک‌اند adjustEvents به CorporateAction
+ */
+export function mapBackendAdjustEvents(rawEvents: any[]): CorporateAction[] {
+  if (!Array.isArray(rawEvents)) return [];
+
+  return rawEvents.map(e => {
+    let ts = 0;
+    if (typeof e.timestamp === 'number') {
+      ts = e.timestamp < 1e11 ? e.timestamp * 1000 : e.timestamp;
+    } else if (typeof e.time === 'number') {
+      ts = e.time < 1e11 ? e.time * 1000 : e.time;
+    } else if (typeof e.date === 'string' || typeof e.dateStr === 'string') {
+      ts = new Date(e.dateStr || e.date).getTime();
+    } else {
+      ts = Date.now();
+    }
+
+    return {
+      timestamp: ts,
+      dateStr: e.dateStr || e.date || '',
+      type: e.type || (e.bonusPercent ? 'capital_bonus' : e.dpsAmount ? 'dps' : 'combined'),
+      dpsAmount: Number(e.dpsAmount ?? e.dps ?? 0),
+      bonusPercent: Number(e.bonusPercent ?? e.bonus ?? 0),
+      cashPercent: Number(e.cashPercent ?? e.cash ?? 0),
+      preMeetingPrice: Number(e.preMeetingPrice ?? e.pPre ?? e.p_pre ?? 0),
+      postMeetingPrice: Number(e.postMeetingPrice ?? e.pPost ?? e.p_post ?? 0)
     };
   });
 }

@@ -1,6 +1,6 @@
 /**
- * Nahayat Negar (TradingView style) Theme for KLineCharts
- * Matches color palette, fonts (Vazirmatn), and grid styling of nahayatnegar.com/tv
+ * پالت رنگی و استایل دارک‌مود اختصاصی چارت نهایت‌نگر (TradingView Style)
+ * سازگار با KlineCharts v10.0.3
  */
 
 export const nahayatNegarDarkTheme = {
@@ -10,19 +10,19 @@ export const nahayatNegarDarkTheme = {
       show: true,
       size: 1,
       color: '#242832',
-      style: 'dashed',
+      style: 'dashed' as const,
       dashedValue: [2, 2]
     },
     vertical: {
       show: true,
       size: 1,
       color: '#242832',
-      style: 'dashed',
+      style: 'dashed' as const,
       dashedValue: [2, 2]
     }
   },
   candle: {
-    type: 'candle_solid',
+    type: 'candle_solid' as const,
     bar: {
       upColor: '#089981',
       downColor: '#f23645',
@@ -37,28 +37,14 @@ export const nahayatNegarDarkTheme = {
     area: {
       lineSize: 2,
       lineColor: '#2962ff',
-      value: 'close',
-      backgroundColor: [
+      value: 'close' as const,
+      fillColor: [
         { offset: 0, color: 'rgba(41, 98, 255, 0.28)' },
-        { offset: 1, color: 'rgba(41, 98, 255, 0.02)' }
+        { offset: 1, color: 'rgba(41, 98, 255, 0.00)' }
       ]
     },
     priceMark: {
       show: true,
-      high: {
-        show: true,
-        color: '#787b86',
-        textMargin: 5,
-        textSize: 10,
-        textFamily: 'Vazirmatn, sans-serif'
-      },
-      low: {
-        show: true,
-        color: '#787b86',
-        textMargin: 5,
-        textSize: 10,
-        textFamily: 'Vazirmatn, sans-serif'
-      },
       last: {
         show: true,
         upColor: '#089981',
@@ -66,58 +52,57 @@ export const nahayatNegarDarkTheme = {
         noChangeColor: '#888888',
         line: {
           show: true,
-          style: 'dashed',
-          dashedValue: [4, 4],
+          style: 'dashed' as const,
+          dashedValue: [3, 3],
           size: 1
         },
         text: {
           show: true,
-          style: 'fill',
-          size: 12,
-          paddingLeft: 4,
-          paddingTop: 4,
-          paddingRight: 4,
-          paddingBottom: 4,
-          borderColor: 'transparent',
-          borderRadius: 2,
-          color: '#ffffff',
-          family: 'Vazirmatn, sans-serif'
+          size: 11,
+          family: 'Vazirmatn',
+          color: '#ffffff'
         }
+      },
+      high: {
+        show: true,
+        color: '#d1d4dc',
+        text: { size: 10, family: 'Vazirmatn' }
+      },
+      low: {
+        show: true,
+        color: '#d1d4dc',
+        text: { size: 10, family: 'Vazirmatn' }
       }
     },
     tooltip: {
-      showRule: 'always',
-      showType: 'standard',
-      labels: ['زمان: ', 'باز: ', 'بسته: ', 'بیشترین: ', 'کمترین: ', 'حجم: '],
-      values: null,
-      defaultValue: 'n/a',
-      rect: {
-        paddingLeft: 4,
-        paddingRight: 4,
-        paddingTop: 4,
-        paddingBottom: 4,
-        offsetLeft: 8,
-        offsetTop: 8,
-        offsetRight: 8,
-        borderRadius: 4,
-        borderSize: 1,
-        borderColor: '#2a2e39',
-        color: 'rgba(19, 23, 34, 0.85)'
-      },
-      text: {
-        size: 12,
-        family: 'Vazirmatn, sans-serif',
-        color: '#d1d4dc',
-        marginLeft: 8,
-        marginTop: 6,
-        marginRight: 8,
-        marginBottom: 0
+      showRule: 'always' as const,
+      showType: 'standard' as const,
+      legend: {
+        template: '{time}  باز: {open}  بیشترین: {high}  کمترین: {low}  بسته: {close}  حجم: {volume}'
       }
+    }
+  },
+  indicator: {
+    ohlc: {
+      upColor: '#089981',
+      downColor: '#f23645',
+      noChangeColor: '#888888'
+    },
+    lines: [
+      { style: 'solid' as const, size: 1.5, color: '#2962ff' },
+      { style: 'solid' as const, size: 1.5, color: '#ff9800' },
+      { style: 'solid' as const, size: 1.5, color: '#ab47bc' },
+      { style: 'solid' as const, size: 1.5, color: '#00bcd4' },
+      { style: 'solid' as const, size: 1.5, color: '#e91e63' }
+    ],
+    tooltip: {
+      showRule: 'always' as const,
+      showType: 'standard' as const
     }
   },
   xAxis: {
     show: true,
-    size: 'auto',
+    size: 'auto' as const,
     axisLine: {
       show: true,
       color: '#2a2e39',
@@ -126,10 +111,8 @@ export const nahayatNegarDarkTheme = {
     tickText: {
       show: true,
       color: '#787b86',
-      family: 'Vazirmatn, sans-serif',
       size: 11,
-      marginStart: 4,
-      marginEnd: 4
+      family: 'Vazirmatn'
     },
     tickLine: {
       show: true,
@@ -140,10 +123,7 @@ export const nahayatNegarDarkTheme = {
   },
   yAxis: {
     show: true,
-    size: 'auto',
-    position: 'right',
-    type: 'normal',
-    inside: false,
+    size: 'auto' as const,
     axisLine: {
       show: true,
       color: '#2a2e39',
@@ -152,10 +132,8 @@ export const nahayatNegarDarkTheme = {
     tickText: {
       show: true,
       color: '#787b86',
-      family: 'Vazirmatn, sans-serif',
       size: 11,
-      marginStart: 4,
-      marginEnd: 4
+      family: 'Vazirmatn'
     },
     tickLine: {
       show: true,
@@ -164,36 +142,22 @@ export const nahayatNegarDarkTheme = {
       color: '#2a2e39'
     }
   },
-  separator: {
-    size: 1,
-    color: '#2a2e39',
-    fill: true,
-    activeBackgroundColor: 'rgba(41, 98, 255, 0.15)'
-  },
   crosshair: {
     show: true,
     horizontal: {
       show: true,
       line: {
         show: true,
-        style: 'dashed',
-        dashedValue: [4, 4],
+        style: 'dashed' as const,
+        dashedValue: [3, 3],
         size: 1,
         color: '#787b86'
       },
       text: {
         show: true,
-        style: 'fill',
         color: '#ffffff',
         size: 11,
-        family: 'Vazirmatn, sans-serif',
-        paddingLeft: 4,
-        paddingRight: 4,
-        paddingTop: 2,
-        paddingBottom: 2,
-        borderSize: 1,
-        borderColor: '#2a2e39',
-        borderRadius: 2,
+        family: 'Vazirmatn',
         backgroundColor: '#2a2e39'
       }
     },
@@ -201,24 +165,16 @@ export const nahayatNegarDarkTheme = {
       show: true,
       line: {
         show: true,
-        style: 'dashed',
-        dashedValue: [4, 4],
+        style: 'dashed' as const,
+        dashedValue: [3, 3],
         size: 1,
         color: '#787b86'
       },
       text: {
         show: true,
-        style: 'fill',
         color: '#ffffff',
         size: 11,
-        family: 'Vazirmatn, sans-serif',
-        paddingLeft: 4,
-        paddingRight: 4,
-        paddingTop: 2,
-        paddingBottom: 2,
-        borderSize: 1,
-        borderColor: '#2a2e39',
-        borderRadius: 2,
+        family: 'Vazirmatn',
         backgroundColor: '#2a2e39'
       }
     }
@@ -226,36 +182,35 @@ export const nahayatNegarDarkTheme = {
   overlay: {
     point: {
       color: '#2962ff',
-      borderColor: 'rgba(41, 98, 255, 0.35)',
+      borderColor: 'rgba(41, 98, 255, 0.4)',
       borderSize: 1,
       radius: 4,
       activeColor: '#2962ff',
-      activeBorderColor: 'rgba(41, 98, 255, 0.5)',
+      activeBorderColor: '#ffffff',
       activeBorderSize: 2,
       activeRadius: 5
     },
     line: {
-      style: 'solid',
-      smooth: false,
-      color: '#2962ff',
-      size: 1,
-      dashedValue: [2, 2]
+      style: 'solid' as const,
+      size: 1.5,
+      color: '#2962ff'
     },
-    rect: {
-      style: 'fill',
+    polygon: {
+      style: 'solid' as const,
       color: 'rgba(41, 98, 255, 0.15)',
       borderColor: '#2962ff',
-      borderSize: 1,
-      borderRadius: 0
+      borderSize: 1.5
+    },
+    circle: {
+      style: 'solid' as const,
+      color: 'rgba(41, 98, 255, 0.15)',
+      borderColor: '#2962ff',
+      borderSize: 1.5
     },
     text: {
       color: '#d1d4dc',
       size: 12,
-      family: 'Vazirmatn, sans-serif',
-      marginLeft: 2,
-      marginRight: 2,
-      marginTop: 2,
-      marginBottom: 2
+      family: 'Vazirmatn'
     }
   }
 };

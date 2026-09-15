@@ -32,9 +32,7 @@ import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
 
 /** چارت پورت‌شدهٔ جمینای با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
-const NnChart = lazy(() =>
-  import('../nahayatnegar/components/KLineChartWrapper').then((m) => ({ default: m.KLineChartNahayatNegar })),
-);
+const NnChart = lazy(() => import('../nahayatnegar/components/KLineChartWrapper'));
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
@@ -227,9 +225,6 @@ export default function TechnicalPage() {
                 initialSymbol={symbol || 'شاخص کل'}
                 initialName={symbol || 'شاخص کل'}
                 initialMarket="بورس"
-                data={chartRows}
-                corporateActions={symbol ? nn.actions : []}
-                layers={layers}
                 onSymbolChange={(s) => selectSymbol(s.symbol)}
               />
             </Suspense>

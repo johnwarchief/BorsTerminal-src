@@ -1,183 +1,234 @@
-import React, { useEffect, useRef, useState } from 'react';
-// پورت‌شده به klinecharts v10: init/setDataLoader/resetData، createIndicator با امضای شیئی،
-// overrideOverlay به‌جای setOverlayOptions، و formatter جلالی به‌جای customApi.
-import { init, dispose, registerOverlay, getSupportedOverlays } from 'klinecharts';
-import type { Chart, KLineData, Styles, DeepPartial } from 'klinecharts';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { init, dispose, Chart, KLineData } from 'klinecharts';
 import { nahayatNegarDarkTheme } from '../lib/chartTheme';
-import { applyAdjustmentToCandles, type CorporateAction } from '../lib/adjustments';
 import {
-  fibZoneOverlayObj,
-  fibZoneSpecs,
-  jetLineOverlayObj,
-  markerOverlayObj,
-  registerFtsOverlays,
-  PULLBACK_MARKER_OVERLAY,
-  JET_MARKER_OVERLAY,
-  JET_LINE_OVERLAY,
-} from '../../lib/ftsOverlays';
-import type { FtsChartLayers } from '../../components/KLineChartWrapper';
-import {
-  IconCrosshair, IconTrendLine, IconRay, IconHorizontalLine, IconVerticalLine,
-  IconParallelChannel, IconFibRetracement, IconPitchfork, IconRectangle,
-  IconCircle, IconText, IconRuler, IconMagnet, IconLock, IconTrash,
-  IconCandles, IconFx, IconSettings, IconCamera, IconFullscreen, IconChevronDown
-} from './TradingViewIcons';
-import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
+  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
+} from '../lib/adjustments';
+import { analyzeFts, FtsAnalysisResult } from '../lib/ftsOverlays';
+import { FtsToolbar } from './FtsToolbar';
+import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
+import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
+import { IconClose } from './TradingViewIcons';
 import '../styles/nahayatNegarStyles.css';
 
 export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
   initialMarket?: string;
-  data?: KLineData[];
-  /** رویدادهای تعدیل (از adjustEvents اندپوینت /api/chart) برای موتور lib/adjustments */
-  corporateActions?: CorporateAction[];
-  /** لایه‌های FTS (فیبو/مارکر/خط جت/MA) — همان ساختار رپر قدیمی */
-  layers?: FtsChartLayers;
-  /** RSI(14) وایلدر در پنل جدا (پیش‌فرض: روشن) */
-  showRsi?: boolean;
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: string) => void;
-  onAdjustmentChange?: (adj: string) => void;
+  onAdjustmentChange?: (adj: AdjustmentMode) => void;
 }
 
-export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
+// فرمت‌بندی تاریخ شمسی (جلالی) بدون پکیج اضافه با استفاده از Intl نیتیو جاوااسکریپت
+function formatJalali(timestamp: number, type?: string): string {
+  try {
+    const date = new Date(timestamp);
+    const isIntraday = type === 'minute' || type === 'hour';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: isIntraday ? '2-digit' : undefined,
+      minute: isIntraday ? '2-digit' : undefined,
+    }).format(date);
+  } catch (e) {
+    return new Date(timestamp).toLocaleDateString('fa-IR');
+  }
+}
+
+export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialSymbol = 'خودرو',
   initialName = 'ایران خودرو',
   initialMarket = 'بورس',
-  data = [],
-  corporateActions = [],
-  layers,
-  showRsi = true,
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
-  /** دادهٔ تعدیل‌شدهٔ جاری (v10 از dataLoader این ref را می‌خواند) */
-  const adaptedRef = useRef<KLineData[]>([]);
 
-  // States
+  // استیت‌های نماد جاری
   const [currentSymbol, setCurrentSymbol] = useState<string>(initialSymbol);
   const [currentName, setCurrentName] = useState<string>(initialName);
   const [currentMarket, setCurrentMarket] = useState<string>(initialMarket);
+  const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
 
+  // استیت‌های نوار بالا
   const [activeTimeframe, setActiveTimeframe] = useState<string>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  const [activeAdjustment, setActiveAdjustment] = useState<string>('capital_cash');
-  const [activeToolSlot, setActiveToolSlot] = useState<string>('crosshair');
-  const [openFlyout, setOpenFlyout] = useState<string | null>(null);
-
-  const [showSymbolSearch, setShowSymbolSearch] = useState<boolean>(false);
-  const [showCandleMenu, setShowCandleMenu] = useState<boolean>(false);
-  const [showAdjMenu, setShowAdjMenu] = useState<boolean>(false);
+  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('operational');
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
-  const [showFloatingProps, setShowFloatingProps] = useState<boolean>(false);
 
-  const [isLogScale, setIsLogScale] = useState<boolean>(false);
-  const [isAutoFit, setIsAutoFit] = useState<boolean>(true);
-  const [isPctScale, setIsPctScale] = useState<boolean>(false);
+  // استیت‌های نوار رسم چپ
+  const [activeToolId, setActiveToolId] = useState<string | null>('crosshair');
+  const [isMagnetActive, setIsMagnetActive] = useState<boolean>(false);
+  const [isDrawingLocked, setIsDrawingLocked] = useState<boolean>(false);
+  const [isDrawingsHidden, setIsDrawingsHidden] = useState<boolean>(false);
+
+  // نوار شناور تنظیمات المان انتخاب‌شده
+  const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
+  const [selectedOverlayName, setSelectedOverlayName] = useState<string>('');
+  const [overlayColor, setOverlayColor] = useState<string>('#2962ff');
+  const [overlayWidth, setOverlayWidth] = useState<number>(2);
+  const [overlayStyle, setOverlayStyle] = useState<'solid' | 'dashed'>('solid');
+  const [isOverlayLocked, setIsOverlayLocked] = useState<boolean>(false);
+
+  // نوار پایین و مقیاس
   const [activeRange, setActiveRange] = useState<string>('1Y');
+  const [isLogScale, setIsLogScale] = useState<boolean>(false);
 
-  // توجه: در سورس جمینای state «indicators/setIndicators» تعریف شده بود ولی هیچ‌جا استفاده نمی‌شد
-  // (منوی اندیکاتورها در تولبار به handler وصل نبود) — در پورت حذف شد تا tsc سبز بماند.
+  // داده‌های چارت
+  const [rawCandles, setRawCandles] = useState<KLineData[]>([]);
+  const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasData, setHasData] = useState<boolean>(true);
 
-  // Timeframes list
-  const timeframes = ['1m', '5m', '15m', '30m', '1h', 'D', 'W', 'M'];
+  // استراتژی FTS
+  const [isFtsActive, setIsFtsActive] = useState<boolean>(true);
+  const [ftsAnalysis, setFtsAnalysis] = useState<FtsAnalysisResult | null>(null);
 
-  // Adjustments list
-  const adjustments = [
-    { label: 'افزایش سرمایه و سود نقدی', value: 'capital_cash' },
-    { label: 'بدون تعدیل', value: 'none' },
-    { label: 'افزایش سرمایه', value: 'capital' },
-    { label: 'سود نقدی', value: 'cash' },
-    { label: 'تعدیل عملکردی', value: 'operational' },
-  ];
+  // اندیکاتورهای فعال
+  const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
+    VOL: true,
+    MA: false,
+    EMA: false,
+    RSI: false,
+    MACD: false,
+    BOLL: false,
+  });
 
-  // Candle types list
-  const candleTypes = [
-    { label: 'کندل شمعی (Candles)', value: 'candle_solid' },
-    { label: 'کندل توخالی (Hollow)', value: 'candle_stroke' },
-    { label: 'میله‌ای (Bars)', value: 'ohlc' },
-    { label: 'ناحیه‌ای (Area)', value: 'area' },
-  ];
+  // مپ کردن داده‌های تعدیل‌شده
+  const adjustedCandles = useMemo(() => {
+    return applyAdjustmentToCandles(rawCandles, corporateActions, activeAdjustment);
+  }, [rawCandles, corporateActions, activeAdjustment]);
 
-  // Initialize KlineChart
+  // اجرای تحلیل FTS روی داده‌های تعدیل‌شده
+  useEffect(() => {
+    if (adjustedCandles.length > 0) {
+      const result = analyzeFts(adjustedCandles);
+      setFtsAnalysis(result);
+    } else {
+      setFtsAnalysis(null);
+    }
+  }, [adjustedCandles]);
+
+  // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد و نگاشت دفاعی)
+  const fetchCandleData = useCallback(async (symbol: string) => {
+    setIsLoading(true);
+    try {
+      let url = `/api/chart/${encodeURIComponent(symbol)}`;
+      if (symbol === 'شاخص کل' || symbol === 'TEDPIX') {
+        url = '/api/index/tedpix?limit=0';
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        setRawCandles([]);
+        setHasData(false);
+        setIsLoading(false);
+        return;
+      }
+
+      const json = await res.json();
+      const rawList = Array.isArray(json) ? json : (json.candles || json.data || []);
+      const rawEvents = json.adjustEvents || json.adjust_events || [];
+
+      if (!Array.isArray(rawList) || rawList.length === 0) {
+        setRawCandles([]);
+        setHasData(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // نگاشت دفاعی به KLineData استاندارد v10
+      const parsedCandles: KLineData[] = rawList.map((c: any) => {
+        let ts = 0;
+        if (typeof c.time === 'number') {
+          ts = c.time < 1e11 ? c.time * 1000 : c.time;
+        } else if (typeof c.timestamp === 'number') {
+          ts = c.timestamp < 1e11 ? c.timestamp * 1000 : c.timestamp;
+        } else if (typeof c.time === 'string' || typeof c.date === 'string') {
+          ts = new Date(c.time || c.date).getTime();
+        } else {
+          ts = Date.now();
+        }
+
+        const open = Number(c.open ?? c.o ?? 0);
+        const high = Number(c.high ?? c.h ?? open);
+        const low = Number(c.low ?? c.l ?? open);
+        const close = Number(c.close ?? c.c ?? open);
+        const volume = c.volume !== undefined ? Number(c.volume ?? c.v ?? 0) : undefined;
+        const turnover = c.turnover !== undefined ? Number(c.turnover ?? 0) : undefined;
+
+        return { timestamp: ts, open, high, low, close, volume, turnover };
+      }).sort((a, b) => a.timestamp - b.timestamp);
+
+      // نگاشت رویدادهای مجمع و تعدیل
+      const parsedActions = mapBackendAdjustEvents(rawEvents);
+
+      setCorporateActions(parsedActions);
+      setRawCandles(parsedCandles);
+      setHasData(parsedCandles.length > 0);
+    } catch (e) {
+      setRawCandles([]);
+      setHasData(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // واکشی اولیه دیتا هنگام تغییر نماد
+  useEffect(() => {
+    fetchCandleData(currentSymbol);
+  }, [currentSymbol, fetchCandleData]);
+
+  // ۲. راه‌اندازی اولیه KLineChart مطابق با KlineCharts v10.0.3
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    // init در v10 با layout.yAxis و formatter
     const chart = init(chartContainerRef.current, {
-      styles: nahayatNegarDarkTheme as unknown as DeepPartial<Styles>,
+      layout: {
+        barSpaceLimit: { min: 2, max: 40 },
+        yAxis: { position: 'right', inside: false }
+      },
+      thousandsSeparator: { sign: ',' },
+      formatter: {
+        formatDate: ({ timestamp, type }) => formatJalali(timestamp, type)
+      },
       timezone: 'Asia/Tehran',
-      locale: 'fa-IR',
+      styles: nahayatNegarDarkTheme as never
     });
 
-    if (chart) {
-      chartRef.current = chart;
-      // v10: خوراک داده فقط از setDataLoader؛ applyNewData حذف شده است
-      chart.setDataLoader({
-        getBars: (req) => {
-          if (req.type !== 'init') {
-            req.callback([]);
-            return;
-          }
-          req.callback(adaptedRef.current, false);
-        },
-      });
-      chart.setSymbol({ ticker: currentSymbol || 'nn' });
-      chart.setPeriod({ span: 1, type: 'day' });
-      // formatter جلالی (جای customApi حذف‌شدهٔ v9)
-      try {
-        chart.setFormatter({
-          formatDate: (p: { timestamp?: number | null; type?: string }) => {
-            const ts = p?.timestamp;
-            if (ts == null || !Number.isFinite(ts)) return '';
-            try {
-              return new Intl.DateTimeFormat('fa-IR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: p.type && (p.type.includes('minute') || p.type.includes('hour')) ? '2-digit' : undefined,
-                minute: p.type && p.type.includes('minute') ? '2-digit' : undefined,
-              }).format(new Date(ts));
-            } catch {
-              return new Date(ts).toLocaleDateString('fa-IR');
-            }
-          },
-        });
-      } catch {
-        // formatter اختیاری است
-      }
-      // پنل حجم (امضای شیئی v10) + ارتفاع پنل
-      try {
-        chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
-        chart.setPaneOptions({ id: 'sub_pane_vol', height: 95 });
-        // MA(21) روی حجم (FTS_SPEC بند ۲)
-        chart.createIndicator({ name: 'MA', calcParams: [21], paneId: 'sub_pane_vol' }, true);
-      } catch {
-        // اندیکاتور اختیاری است
-      }
-      // RSI(14) وایلدر در پنل جدا
-      if (showRsi) {
-        try {
-          chart.createIndicator({ name: 'RSI', calcParams: [14], id: 'sub_rsi', paneId: 'sub_rsi' }, false);
-          chart.setPaneOptions({ id: 'sub_rsi', height: 90 });
-        } catch {
-          // اندیکاتور اختیاری است
-        }
-      }
-      // ثبت اورلی‌های سفارشی FTS روی همان نمونهٔ klinecharts
-      try {
-        registerFtsOverlays({ registerOverlay: registerOverlay as unknown as Parameters<typeof registerFtsOverlays>[0]['registerOverlay'], getSupportedOverlays });
-      } catch {
-        // ثبت تکراری خطا نیست
-      }
-      chart.resetData();
-    }
+    if (!chart) return;
+    chartRef.current = chart;
 
-    const handleResize = () => chartRef.current?.resize();
+    // ثبت دیتا لودر در v10 (جایگزین قطعی applyNewData)
+    chart.setDataLoader({
+      getBars: ({ callback }) => {
+        // بازگرداندن کندل‌های فعلی به چارت
+        callback(adjustedCandles, { forward: false, backward: false });
+      }
+    });
+
+    // تنظیم سمبل و بازه زمانی
+    chart.setSymbol({
+      ticker: currentSymbol,
+      pricePrecision: 0,
+      volumePrecision: 0
+    });
+    chart.setPeriod({ span: 1, type: 'day' });
+
+    // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
+    chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
+    chart.setPaneOptions({ id: 'sub_pane_vol', height: 100 });
+
+    // پاسخ به تغییر سایز
+    const handleResize = () => chart.resize();
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -187,403 +238,390 @@ export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
       }
       chartRef.current = null;
     };
-  }, []);
+  }, []); // فقط یک‌بار هنگام Mount شدن کامپوننت
 
-  // Update Data (v10: داده از ref خوانده می‌شود و با resetData دوباره خوراک می‌گیرد)
-  useEffect(() => {
-    adaptedRef.current = applyAdjustmentToCandles(
-      (data ?? []).map((c) => ({
-        timestamp: c.timestamp,
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        volume: c.volume ?? 0,
-      })),
-      corporateActions,
-      activeAdjustment as 'none' | 'capital' | 'cash' | 'capital_cash' | 'operational',
-    ) as unknown as KLineData[];
-    try {
-      chartRef.current?.resetData();
-    } catch {
-      // نادیده بگیر
-    }
-  }, [data, corporateActions, activeAdjustment]);
-
-  // اورلی‌های FTS روی چارت جدید (فیبو/مارکر/خط جت + MAهای قیمت)
+  // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart || !layers) return;
-    const rows = adaptedRef.current.map((c) => ({ timestamp: c.timestamp, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume }));
-    const lastTs = rows.length > 0 ? rows[rows.length - 1].timestamp : 0;
-    try {
-      // MA روی پنل قیمت با دوره‌های FTS
-      chart.removeIndicator({ name: 'MA', paneId: 'candle_pane' });
-      if (layers.maPeriods) {
-        chart.createIndicator({ name: 'MA', calcParams: layers.maPeriods, paneId: 'candle_pane' }, true);
-      }
-    } catch {
-      // اختیاری
-    }
-    // کمربندهای فیبوی لگاریتمی
-    try {
-      chart.removeOverlay({ groupId: 'fts-fib' });
-      const specs = fibZoneSpecs(layers.fib ?? null);
-      if (specs.length > 0 && lastTs > 0) {
-        for (const s of specs) chart.createOverlay(fibZoneOverlayObj(s, lastTs, 'fts-fib') as unknown as Parameters<Chart['createOverlay']>[0]);
-      }
-    } catch {
-      // اختیاری
-    }
-    // مارکرهای ستاپ (جت/پولبک/کف دوقلو/شکار نقطه)
-    try {
-      chart.removeOverlay({ groupId: 'fts-markers' });
-      for (const m of layers.markers ?? []) {
-        if (!m || m.timestamp <= 0) continue;
-        chart.createOverlay(
-          markerOverlayObj(
-            m.kind === 'jet' ? JET_MARKER_OVERLAY : PULLBACK_MARKER_OVERLAY,
-            { label: m.label, color: m.kind === 'jet' ? '#22d3ee' : '#10b981', fill: m.kind === 'jet' ? 'rgba(34,211,238,0.10)' : 'rgba(16,185,129,0.12)', dir: m.dir },
-            m.timestamp,
-            m.price,
-            'fts-markers',
-          ) as unknown as Parameters<Chart['createOverlay']>[0],
-        );
-      }
-    } catch {
-      // اختیاری
-    }
-    // خط جت (مقاومت)
-    try {
-      chart.removeOverlay({ groupId: 'fts-jet' });
-      if (layers.jet && layers.jet.timestamp > 0) {
-        chart.createOverlay(jetLineOverlayObj(layers.jet.price, layers.jet.timestamp, 'fts-jet') as unknown as Parameters<Chart['createOverlay']>[0]);
-      }
-    } catch {
-      // اختیاری
-    }
-    void JET_LINE_OVERLAY;
-  }, [layers, data, corporateActions, activeAdjustment]);
+    if (!chart) return;
 
-  // Symbol Selection
-  const handleSelectSymbol = (s: SymbolInfo) => {
-    setCurrentSymbol(s.symbol);
-    setCurrentName(s.name);
-    setCurrentMarket(s.market);
-    onSymbolChange?.(s);
+    // بازنشانی و فراخوانی مجدد لودر دیتا در v10
+    chart.setDataLoader({
+      getBars: ({ callback }) => {
+        callback(adjustedCandles, { forward: false, backward: false });
+      }
+    });
+
+    chart.setSymbol({
+      ticker: currentSymbol,
+      pricePrecision: 0,
+      volumePrecision: 0
+    });
+
+    chart.resetData();
+    chart.scrollToRealTime();
+  }, [adjustedCandles, currentSymbol]);
+
+  // ۴. رسم و پاک‌سازی اورلی‌های تحلیلی استراتژی FTS
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !isFtsActive || !ftsAnalysis) return;
+
+    // شناسه گروه اورلی‌های FTS
+    const ftsGroupId = 'fts_strategy_overlays';
+    chart.removeOverlay({ groupId: ftsGroupId } as never);
+
+    // رسم زون‌های فیبوی لگاریتمی FTS (زون ۰.۳۳ تا ۰.۴۰ و زون ۰.۶۱۸ تا ۰.۷۰)
+    try {
+      ftsAnalysis.logFiboZones.forEach((z) => {
+        if (z.priceStart > 0 && z.priceEnd > 0) {
+          chart.createOverlay({
+            name: 'straightLine',
+            groupId: ftsGroupId,
+            lock: true,
+            points: [
+              { timestamp: Date.now(), value: z.priceStart },
+              { timestamp: Date.now(), value: z.priceEnd }
+            ],
+            styles: {
+              line: {
+                style: 'dashed',
+                size: 1,
+                color: z.ratioStart >= 0.6 ? '#2962ff' : '#ffab00'
+              }
+            }
+          } as never);
+        }
+      });
+
+      // رسم مارکرهای ستاپ FTS (جت، پولبک، CHoCH، نقطه‌زنی، کف‌دوقلو)
+      ftsAnalysis.setupMarkers.forEach((m) => {
+        chart.createOverlay({
+          name: 'simpleAnnotation',
+          groupId: ftsGroupId,
+          lock: true,
+          points: [{ timestamp: m.timestamp, value: m.price }],
+          extendData: m.name,
+          styles: {
+            text: {
+              color: m.type === 'buy' ? '#089981' : '#ffab00',
+              size: 11,
+              family: 'Vazirmatn'
+            }
+          }
+        } as never);
+      });
+    } catch (e) {
+      // مدیریت خطا
+    }
+
+    return () => {
+      chart.removeOverlay({ groupId: ftsGroupId } as never);
+    };
+  }, [isFtsActive, ftsAnalysis]);
+
+  // هندلر تغییر نماد
+  const handleSelectSymbol = (sym: SymbolInfo) => {
+    setCurrentSymbol(sym.symbol);
+    setCurrentName(sym.name);
+    setCurrentMarket(sym.market);
+    if (onSymbolChange) onSymbolChange(sym);
   };
 
-  // Drawing overlay creation
-  const triggerOverlay = (overlayName: string, slotId: string) => {
-    if (!chartRef.current) return;
-    setActiveToolSlot(slotId);
-    setOpenFlyout(null);
-    // v10: createOverlay شیء می‌گیرد (نه نام رشته‌ای)
-    chartRef.current.createOverlay({ name: overlayName });
-    setShowFloatingProps(true);
+  // هندلر تغییر تایم‌فریم
+  const handleTimeframeChange = (tf: string) => {
+    setActiveTimeframe(tf);
+    const chart = chartRef.current;
+    if (chart) {
+      let span = 1;
+      let type: any = 'day';
+      if (tf === '1m') { span = 1; type = 'minute'; }
+      else if (tf === '5m') { span = 5; type = 'minute'; }
+      else if (tf === '15m') { span = 15; type = 'minute'; }
+      else if (tf === '30m') { span = 30; type = 'minute'; }
+      else if (tf === '1h') { span = 60; type = 'minute'; }
+      else if (tf === 'D') { span = 1; type = 'day'; }
+      else if (tf === 'W') { span = 1; type = 'week'; }
+      else if (tf === 'M') { span = 1; type = 'month'; }
+
+      chart.setPeriod({ span, type });
+      chart.resetData();
+    }
+    if (onTimeframeChange) onTimeframeChange(tf);
   };
 
-  // Fullscreen
-  const handleToggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      chartContainerRef.current?.parentElement?.requestFullscreen();
+  // هندلر تغییر استایل کندل
+  const handleCandleTypeChange = (type: string) => {
+    setActiveCandleType(type);
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    if (type === 'area') {
+      chart.setStyles({ candle: { type: 'area' as never } });
     } else {
-      document.exitFullscreen();
+      chart.setStyles({ candle: { type: type as never } });
     }
   };
 
-  // Log scale
-  const toggleLog = () => {
-    if (!chartRef.current) return;
+  // هندلر تغییر حالت تعدیل
+  const handleAdjustmentChange = (mode: AdjustmentMode) => {
+    setActiveAdjustment(mode);
+    if (onAdjustmentChange) onAdjustmentChange(mode);
+  };
+
+  // هندلر ابزارهای رسم در نوار چپ
+  const handleSelectTool = (toolId: string, overlayType: string) => {
+    setActiveToolId(toolId);
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    if (overlayType === 'crosshair') {
+      setSelectedOverlayId(null);
+      return;
+    }
+
+    if (overlayType === 'eraser') {
+      chart.removeOverlay();
+      setSelectedOverlayId(null);
+      return;
+    }
+
+    // ایجاد Overlay در KlineCharts v10 با استفاده از overrideOverlay و styles
+    try {
+      const id = chart.createOverlay({
+        name: overlayType,
+        lock: isDrawingLocked,
+        styles: {
+          line: {
+            color: overlayColor,
+            size: overlayWidth,
+            style: overlayStyle // 'solid' | 'dashed'
+          },
+          polygon: {
+            color: overlayColor + '22'
+          }
+        }
+      } as never);
+
+      if (id) {
+        setSelectedOverlayId(typeof id === 'string' ? id : String(id));
+        setSelectedOverlayName(toolId);
+      }
+    } catch (e) {
+      console.warn('Error creating overlay:', e);
+    }
+  };
+
+  // هندلرهای نوار شناور تنظیمات المان با overrideOverlay در v10
+  const handleColorChange = (c: string) => {
+    setOverlayColor(c);
+    if (chartRef.current && selectedOverlayId) {
+      chartRef.current.overrideOverlay({
+        id: selectedOverlayId,
+        styles: { line: { color: c }, polygon: { color: c + '22' } }
+      } as never);
+    }
+  };
+
+  const handleWidthChange = (w: number) => {
+    setOverlayWidth(w);
+    if (chartRef.current && selectedOverlayId) {
+      chartRef.current.overrideOverlay({
+        id: selectedOverlayId,
+        styles: { line: { size: w } }
+      } as never);
+    }
+  };
+
+  const handleStyleChange = (s: 'solid' | 'dashed') => {
+    setOverlayStyle(s);
+    if (chartRef.current && selectedOverlayId) {
+      chartRef.current.overrideOverlay({
+        id: selectedOverlayId,
+        styles: { line: { style: s } }
+      } as never);
+    }
+  };
+
+  const handleToggleOverlayLock = () => {
+    const next = !isOverlayLocked;
+    setIsOverlayLocked(next);
+    if (chartRef.current && selectedOverlayId) {
+      chartRef.current.overrideOverlay({
+        id: selectedOverlayId,
+        lock: next
+      } as never);
+    }
+  };
+
+  const handleDeleteSelectedOverlay = () => {
+    if (chartRef.current && selectedOverlayId) {
+      chartRef.current.removeOverlay({ id: selectedOverlayId } as never);
+      setSelectedOverlayId(null);
+    }
+  };
+
+  // پاک‌سازی تمام ترسیم‌ها
+  const handleClearDrawings = () => {
+    if (chartRef.current) {
+      chartRef.current.removeOverlay();
+      setSelectedOverlayId(null);
+    }
+  };
+
+  // کنترل اندیکاتورها در v10: createIndicator / removeIndicator
+  const toggleIndicator = (indName: string) => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const currentState = indicators[indName];
+
+    if (currentState) {
+      chart.removeIndicator({ name: indName });
+      setIndicators(prev => ({ ...prev, [indName]: false }));
+    } else {
+      if (['MA', 'EMA', 'BOLL'].includes(indName)) {
+        chart.createIndicator({ name: indName, paneId: 'candle_pane' }, true);
+      } else {
+        chart.createIndicator({ name: indName, paneId: `sub_pane_${indName.toLowerCase()}` });
+      }
+      setIndicators(prev => ({ ...prev, [indName]: true }));
+    }
+  };
+
+  // تغییر مقیاس لگاریتمی در v10 با overrideYAxis
+  const toggleLogScale = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
     const next = !isLogScale;
     setIsLogScale(next);
-    chartRef.current.setStyles({ yAxis: { type: next ? 'logarithm' : 'normal' } } as unknown as DeepPartial<Styles>);
+    chart.overrideYAxis({
+      paneId: 'candle_pane',
+      type: next ? 'log' : 'normal'
+    } as never);
+  };
+
+  // ریست اسکیل خودکار با اسکرول به زمان حال
+  const handleAutoScale = () => {
+    chartRef.current?.scrollToRealTime();
+  };
+
+  // تمام‌صفحه
+  const handleToggleFullscreen = () => {
+    const el = chartContainerRef.current?.parentElement;
+    if (!document.fullscreenElement) {
+      el?.requestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
+  // عکس‌برداری با متد رسمی v10
+  const handleTakeSnapshot = () => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const url = chart.getConvertPictureUrl(true);
+    if (url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentSymbol}_chart.png`;
+      a.click();
+    }
   };
 
   return (
-    <div className="nahayat-negar-container" onClick={() => { setOpenFlyout(null); setShowCandleMenu(false); setShowAdjMenu(false); }}>
-      {/* 1. TOP TOOLBAR */}
-      <header className="nn-top-toolbar" onClick={e => e.stopPropagation()}>
-        <div className="nn-toolbar-group">
-          {/* Symbol Search Capsule */}
-          <div className="nn-symbol-badge" onClick={() => setShowSymbolSearch(true)} style={{ cursor: 'pointer' }} title="جستجوی نماد">
-            <span>{currentSymbol}</span>
-            <span style={{ color: '#787b86', fontWeight: 'normal' }}>({currentName})</span>
-            <span className="market-state">{currentMarket}</span>
-          </div>
+    <div className="nahayat-negar-container">
+      {/* نوار ابزار بالا */}
+      <FtsToolbar
+        symbolName={currentSymbol}
+        companyName={currentName}
+        marketName={currentMarket}
+        onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
+        activeTimeframe={activeTimeframe}
+        onTimeframeChange={handleTimeframeChange}
+        activeCandleType={activeCandleType}
+        onCandleTypeChange={handleCandleTypeChange}
+        activeAdjustment={activeAdjustment}
+        onAdjustmentChange={handleAdjustmentChange}
+        onOpenIndicators={() => setShowIndicatorsModal(!showIndicatorsModal)}
+        isFtsActive={isFtsActive}
+        onToggleFts={() => setIsFtsActive(!isFtsActive)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
+        onTakeSnapshot={handleTakeSnapshot}
+      />
 
-          <div className="nn-separator" />
+      {/* نوار شناور تنظیمات المان */}
+      <FloatingPropertiesBar
+        visible={!!selectedOverlayId}
+        selectedToolName={selectedOverlayName}
+        currentColor={overlayColor}
+        currentWidth={overlayWidth}
+        currentStyle={overlayStyle}
+        isLocked={isOverlayLocked}
+        onColorChange={handleColorChange}
+        onWidthChange={handleWidthChange}
+        onStyleChange={handleStyleChange}
+        onToggleLock={handleToggleOverlayLock}
+        onDelete={handleDeleteSelectedOverlay}
+        onClose={() => setSelectedOverlayId(null)}
+      />
 
-          {/* Timeframes */}
-          <div className="nn-toolbar-group">
-            {timeframes.map(tf => (
-              <button
-                key={tf}
-                className={`nn-btn ${activeTimeframe === tf ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveTimeframe(tf);
-                  onTimeframeChange?.(tf);
-                }}
-              >
-                {tf}
-              </button>
-            ))}
-          </div>
-
-          <div className="nn-separator" />
-
-          {/* Candle Types */}
-          <div className="nn-select-dropdown">
-            <button className="nn-btn" onClick={() => setShowCandleMenu(!showCandleMenu)}>
-              <IconCandles size={16} />
-              <span>کندل</span>
-              <IconChevronDown size={10} />
-            </button>
-            {showCandleMenu && (
-              <div className="nn-dropdown-menu">
-                {candleTypes.map(ct => (
-                  <div
-                    key={ct.value}
-                    className={`nn-dropdown-item ${activeCandleType === ct.value ? 'selected' : ''}`}
-                    onClick={() => {
-                      setActiveCandleType(ct.value);
-                      chartRef.current?.setStyles({ candle: { type: ct.value } } as unknown as DeepPartial<Styles>);
-                      setShowCandleMenu(false);
-                    }}
-                  >
-                    <span>{ct.label}</span>
-                    {activeCandleType === ct.value && <span>✓</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="nn-separator" />
-
-          {/* Adjustment Selector */}
-          <div className="nn-select-dropdown">
-            <button className="nn-btn" onClick={() => setShowAdjMenu(!showAdjMenu)}>
-              <span>{adjustments.find(a => a.value === activeAdjustment)?.label}</span>
-              <IconChevronDown size={10} />
-            </button>
-            {showAdjMenu && (
-              <div className="nn-dropdown-menu" style={{ minWidth: '185px' }}>
-                {adjustments.map(adj => (
-                  <div
-                    key={adj.value}
-                    className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''}`}
-                    onClick={() => {
-                      setActiveAdjustment(adj.value);
-                      onAdjustmentChange?.(adj.value);
-                      setShowAdjMenu(false);
-                    }}
-                  >
-                    <span>{adj.label}</span>
-                    {activeAdjustment === adj.value && <span>✓</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="nn-separator" />
-
-          {/* Indicators Button */}
-          <button
-            className={`nn-btn ${showIndicatorsModal ? 'active' : ''}`}
-            onClick={() => setShowIndicatorsModal(!showIndicatorsModal)}
-            style={{ color: '#2962ff' }}
-          >
-            <IconFx size={16} />
-            <span style={{ fontWeight: 'bold' }}>اندیکاتورها</span>
-          </button>
-        </div>
-
-        {/* Right Tools */}
-        <div className="nn-toolbar-group">
-          <button className="nn-btn" title="ذخیره چارت">ذخیره <IconChevronDown size={10} /></button>
-          <div className="nn-separator" />
-          <button className="nn-btn nn-icon-btn" title="تنظیمات چارت"><IconSettings size={16} /></button>
-          <button className="nn-btn nn-icon-btn" title="عکس چارت"><IconCamera size={16} /></button>
-          <button className="nn-btn nn-icon-btn" title="تمام‌صفحه" onClick={handleToggleFullscreen}><IconFullscreen size={16} /></button>
-        </div>
-      </header>
-
-      {/* 2. MAIN BODY */}
+      {/* بدنه چارت: نوار رسم چپ + بوم چارت */}
       <div className="nn-chart-body">
-        {/* Left Drawing Toolbar */}
-        <aside className="nn-left-toolbar" onClick={e => e.stopPropagation()}>
-          {/* Crosshair Slot */}
-          <div className="tv-tool-slot">
-            <div
-              className={`nn-left-toolbar-item ${activeToolSlot === 'crosshair' ? 'active' : ''}`}
-              onClick={() => setActiveToolSlot('crosshair')}
-              title="نشانگر چلیپایی"
-            >
-              <IconCrosshair size={18} />
-            </div>
-          </div>
+        <DrawingToolbar
+          activeToolId={activeToolId}
+          onSelectTool={handleSelectTool}
+          onClearDrawings={handleClearDrawings}
+          isMagnetActive={isMagnetActive}
+          onToggleMagnet={() => setIsMagnetActive(!isMagnetActive)}
+          isLocked={isDrawingLocked}
+          onToggleLock={() => {
+            const next = !isDrawingLocked;
+            setIsDrawingLocked(next);
+            chartRef.current?.setStyles({ overlay: { lock: next } } as never);
+          }}
+          isHideActive={isDrawingsHidden}
+          onToggleHide={() => {
+            const next = !isDrawingsHidden;
+            setIsDrawingsHidden(next);
+            chartRef.current?.setStyles({ overlay: { visible: !next } } as never);
+          }}
+        />
 
-          {/* Lines Slot */}
-          <div className="tv-tool-slot">
-            <div
-              className={`nn-left-toolbar-item ${activeToolSlot === 'lines' ? 'active' : ''}`}
-              onClick={() => setOpenFlyout(openFlyout === 'lines' ? null : 'lines')}
-              title="خطوط روند"
-            >
-              <IconTrendLine size={18} />
-              <span className="tv-tool-arrow" />
-            </div>
-            {openFlyout === 'lines' && (
-              <div className="tv-flyout open">
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('segment', 'lines')}>
-                  <IconTrendLine size={16} /> خط روند (Trend Line)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('rayLine', 'lines')}>
-                  <IconRay size={16} /> پرتو (Ray)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('straightLine', 'lines')}>
-                  <IconHorizontalLine size={16} /> خط افقی (Horizontal)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('verticalStraightLine', 'lines')}>
-                  <IconVerticalLine size={16} /> خط عمودی (Vertical)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('priceChannelLine', 'lines')}>
-                  <IconParallelChannel size={16} /> کانال موازی
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Fib Slot */}
-          <div className="tv-tool-slot">
-            <div
-              className={`nn-left-toolbar-item ${activeToolSlot === 'fib' ? 'active' : ''}`}
-              onClick={() => setOpenFlyout(openFlyout === 'fib' ? null : 'fib')}
-              title="فیبوناچی و چنگال"
-            >
-              <IconFibRetracement size={18} />
-              <span className="tv-tool-arrow" />
-            </div>
-            {openFlyout === 'fib' && (
-              <div className="tv-flyout open">
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('fibonacciLine', 'fib')}>
-                  <IconFibRetracement size={16} /> فیبوناچی ریتریسمنت
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('parallelStraightLine', 'fib')}>
-                  <IconPitchfork size={16} /> چنگال اندروز
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Shapes Slot */}
-          <div className="tv-tool-slot">
-            <div
-              className={`nn-left-toolbar-item ${activeToolSlot === 'shapes' ? 'active' : ''}`}
-              onClick={() => setOpenFlyout(openFlyout === 'shapes' ? null : 'shapes')}
-              title="اشکال هندسی"
-            >
-              <IconRectangle size={18} />
-              <span className="tv-tool-arrow" />
-            </div>
-            {openFlyout === 'shapes' && (
-              <div className="tv-flyout open">
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('rect', 'shapes')}>
-                  <IconRectangle size={16} /> مستطیل (Rectangle)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('circle', 'shapes')}>
-                  <IconCircle size={16} /> دایره (Circle)
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Text Slot */}
-          <div className="tv-tool-slot">
-            <div
-              className={`nn-left-toolbar-item ${activeToolSlot === 'text' ? 'active' : ''}`}
-              onClick={() => setOpenFlyout(openFlyout === 'text' ? null : 'text')}
-              title="متن و یادداشت"
-            >
-              <IconText size={18} />
-              <span className="tv-tool-arrow" />
-            </div>
-            {openFlyout === 'text' && (
-              <div className="tv-flyout open">
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('simpleAnnotation', 'text')}>
-                  <IconText size={16} /> متن تحلیلی (Text)
-                </div>
-                <div className="tv-flyout-item" onClick={() => triggerOverlay('priceLine', 'text')}>
-                  برچسب قیمت (Price Tag)
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="nn-tool-divider" />
-
-          {/* Utilities */}
-          <div className="tv-tool-slot">
-            <div className="nn-left-toolbar-item" title="خط‌کش اندازه‌گیری"><IconRuler size={18} /></div>
-          </div>
-          <div className="tv-tool-slot">
-            <div className="nn-left-toolbar-item" title="آهنربا"><IconMagnet size={18} /></div>
-          </div>
-          <div className="tv-tool-slot">
-            <div className="nn-left-toolbar-item" title="قفل کردن"><IconLock size={18} /></div>
-          </div>
-
-          <div className="nn-tool-divider" />
-
-          {/* Trash */}
-          <div className="tv-tool-slot">
-            <div
-              className="nn-left-toolbar-item"
-              title="حذف تمام ترسیمات"
-              style={{ color: '#f23645' }}
-              onClick={() => {
-                chartRef.current?.removeOverlay();
-                setShowFloatingProps(false);
-              }}
-            >
-              <IconTrash size={18} />
-            </div>
-          </div>
-        </aside>
-
-        {/* Canvas Area */}
         <main className="nn-canvas-area">
+          {/* هشدار خروج استراتژی FTS */}
+          {isFtsActive && ftsAnalysis?.exitSignalMA14 && (
+            <div className="nn-fts-exit-alert">
+              <span>هشدار خروج FTS: کل کندل زیر میانگین ۱۴ قرار گرفت.</span>
+            </div>
+          )}
+
+          {/* کانتینر اصلی کتابخانه KlineCharts */}
           <div ref={chartContainerRef} className="nn-kline-chart" />
 
-          {/* Floating Tool Properties Bar */}
-          <FloatingPropertiesBar
-            visible={showFloatingProps}
-            onColorChange={c => {
-              // v10: setOverlayOptions حذف شده؛ overrideOverlay جای آن است (روی همهٔ ترسیم‌ها)
-              chartRef.current?.overrideOverlay({ styles: { color: c } });
-            }}
-            onWidthChange={w => {
-              chartRef.current?.overrideOverlay({ styles: { size: w } });
-            }}
-            onDelete={() => {
-              chartRef.current?.removeOverlay();
-              setShowFloatingProps(false);
-            }}
-          />
+          {/* وضعیت صادقانه بدون دیتا (بدون ساخت دیتای تقلبی/mock) */}
+          {!isLoading && !hasData && (
+            <div className="nn-no-data-banner">
+              اطلاعات کندل‌استیک برای نماد «{currentSymbol}» در دسترس نیست.
+            </div>
+          )}
         </main>
       </div>
 
-      {/* 3. BOTTOM BAR */}
+      {/* نوار پایینی */}
       <footer className="nn-bottom-bar">
         <div className="nn-range-buttons">
           <span style={{ marginLeft: '6px' }}>بازه زمانی:</span>
-          {['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'].map(rng => (
+          {['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'].map((rng) => (
             <button
               key={rng}
               className={`nn-range-btn ${activeRange === rng ? 'active' : ''}`}
-              onClick={() => setActiveRange(rng)}
+              onClick={() => {
+                setActiveRange(rng);
+                chartRef.current?.scrollToRealTime();
+              }}
             >
               {rng}
             </button>
@@ -593,20 +631,99 @@ export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
         <div className="nn-scale-controls">
           <span>تهران (UTC+3:30)</span>
           <div className="nn-separator" />
-          <button className={`nn-scale-toggle ${isPctScale ? 'active' : ''}`} onClick={() => setIsPctScale(!isPctScale)}>%</button>
-          <button className={`nn-scale-toggle ${isLogScale ? 'active' : ''}`} onClick={toggleLog}>log</button>
-          <button className={`nn-scale-toggle ${isAutoFit ? 'active' : ''}`} onClick={() => setIsAutoFit(!isAutoFit)}>auto</button>
+          <button
+            className={`nn-scale-toggle ${isLogScale ? 'active' : ''}`}
+            onClick={toggleLogScale}
+            title="مقیاس لگاریتمی"
+          >
+            لگاریتمی
+          </button>
+          <button
+            className="nn-scale-toggle active"
+            onClick={handleAutoScale}
+            title="تنظیم خودکار مقیاس"
+          >
+            خودکار
+          </button>
         </div>
       </footer>
 
-      {/* 4. MODALS */}
+      {/* پنجره جستجوی نماد */}
       <SymbolSearchModal
-        isOpen={showSymbolSearch}
-        onClose={() => setShowSymbolSearch(false)}
+        isOpen={isSymbolSearchOpen}
+        onClose={() => setIsSymbolSearchOpen(false)}
         onSelectSymbol={handleSelectSymbol}
+        currentSymbol={currentSymbol}
       />
+
+      {/* پنل مودال اندیکاتورها */}
+      {showIndicatorsModal && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '48px',
+            right: '260px',
+            backgroundColor: '#1e222d',
+            border: '1px solid #2a2e39',
+            borderRadius: '8px',
+            padding: '14px',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
+            zIndex: 150,
+            width: '280px',
+            direction: 'rtl'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '10px',
+              borderBottom: '1px solid #2a2e39',
+              paddingBottom: '6px'
+            }}
+          >
+            <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#ffffff' }}>اندیکاتورها و اسیلاتورها</span>
+            <button
+              onClick={() => setShowIndicatorsModal(false)}
+              style={{ background: 'none', border: 'none', color: '#787b86', cursor: 'pointer' }}
+            >
+              <IconClose size={16} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[
+              { id: 'VOL', label: 'حجم معاملات (Volume)' },
+              { id: 'MA', label: 'میانگین متحرک ساده (MA 14/100)' },
+              { id: 'EMA', label: 'میانگین متحرک نمایی (EMA 50)' },
+              { id: 'RSI', label: 'شاخص قدرت نسبی (RSI 14 Wilder)' },
+              { id: 'MACD', label: 'مکدی (MACD)' },
+              { id: 'BOLL', label: 'باندهای بولینگر (Bollinger)' },
+            ].map((ind) => (
+              <label
+                key={ind.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  color: indicators[ind.id] ? '#2962ff' : '#d1d4dc'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!indicators[ind.id]}
+                  onChange={() => toggleIndicator(ind.id)}
+                />
+                <span>{ind.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default KLineChartNahayatNegar;
+export default KLineChartWrapper;
