@@ -8,6 +8,7 @@ import { fmtPct } from '@shared/lib/fmt';
 import { FlashNum } from '@shared/components/FlashNum';
 import { Badge } from '@shared/components/Badge';
 import { aggregateSignals } from '@features/master/lib/masterMath';
+import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { useInspectorBoard } from './useInspectorBoard';
 
 const ACTION_FA = {
@@ -217,6 +218,7 @@ export function SymbolInspector() {
 
         {/* دسترسی مستقیم */}
         <div className="mt-1 flex flex-col gap-2">
+          <SymbolBasketAction symbol={symbol} compact />
           <Link
             to={`/technical/${encodeURIComponent(symbol)}`}
             className="rounded-full border border-[var(--hairline)] bg-bg-card/60 px-3 py-1.5 text-center text-[11px] font-bold text-accent-blue transition-all duration-200 hover:border-border-accent hover:text-neon-cyan"
