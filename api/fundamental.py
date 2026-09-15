@@ -64,7 +64,7 @@ FTS_V10_DEFAULTS = {
     "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالص
     "margin_ideal": 30.0,           # ۳ — حاشیهٔ ایده‌آل
     "sales_to_mcap_min": 1.0,       # ۴الف — فروش سالانه ÷ ارزش بازار (۱۰۰٪ = ۱×، استاندارد جزوه)
-    "potential_min": 33.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
+    "potential_min": 40.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
 }
 
 MRL_TO_RIAL = 1e6      # جداول کدال «میلیون ریال» هستند
@@ -1048,7 +1048,7 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
 
 
 def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
-    """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۳۳٪).
+    """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۴۰٪).
 
     سود ناخالص پتانسیل = فروش سالانهٔ annualized × حاشیهٔ ناخالص.
     برای شرکت مالی که «سود ناخالص» ندارد، حاشیهٔ سود خالص به‌عنوان «مبنای
@@ -1086,8 +1086,12 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
             "est_gross_profit_bt": (_bt(annual["annual_sales_mrl"] * (margin / 100.0))
                                     if margin is not None else None),
             "potential_pct": pot_pct, "potential_threshold": th["potential_min"],
-            "potential_pass": pot_pass, "pass": bool(sales_pass and pot_pass),
-            "reason": ("" if margin is not None else
+            "potential_pass": pot_pass, "rule_ref": "F-04", "gate": "OR",
+            "pass": bool(sales_pass or pot_pass),
+            "reason": (("قبولی با نسبت فروش/ارزش‌بازار" if sales_pass else
+                        "قبولی با پوشش پتانسیل سود" if pot_pass else
+                        "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.")
+                       if margin is not None else
                        "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.")}
 
 
