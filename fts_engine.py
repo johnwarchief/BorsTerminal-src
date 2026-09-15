@@ -1070,7 +1070,20 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         if is_insurance_sector(sector):
             data_gap2 = False
         elif len(solo) < eps_years:
-            if len(solo) >= 2:
+            # هم‌راستاسازی با مسیر جزئیات: اگر سطرهای سالانهٔ اسکنر کافی نبود،
+            # همان محاسبهٔ eps_trend_3y برای این نماد صدا زده می‌شود (منبع واحد حقیقت)
+            # تا شاخص ۲ بین /api/screener و /api/fundamental واگرا نشود.
+            _det = None
+            if not is_insurance_sector(sector):
+                try:
+                    _det = eps_trend_3y(conn, key, years=eps_years, sector=sector)
+                except Exception:
+                    _det = None
+            if _det and _det.get("eps_series"):
+                eps_series = _det["eps_series"]
+                i2 = bool(_det.get("pass"))
+                data_gap2 = bool(_det.get("data_gap"))
+            elif len(solo) >= 2:
                 # ۲ سال از ۳: داده هست ولی گیتِ ۳ساله رد است — «سابقهٔ ناقص»، نه شکاف.
                 # سری به بلندای eps_years ساخته می‌شود؛ جای سالِ غایب None می‌ماند
                 # (قاعدهٔ «سطر هرگز حذف نمی‌شود» — همان الگوی /api/fundamental).
