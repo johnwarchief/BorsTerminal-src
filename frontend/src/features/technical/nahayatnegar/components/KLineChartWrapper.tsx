@@ -230,9 +230,31 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // پاسخ به تغییر سایز
     const handleResize = () => chart.resize();
     window.addEventListener('resize', handleResize);
+    // ResizeObserver روی کانتینر تا چارت فوراً کل فضای آزاد را بگیرد (چیدمان flex)
+    let ro: ResizeObserver | null = null;
+    try {
+      if (chartContainerRef.current) {
+        ro = new ResizeObserver(() => {
+          try {
+            chart.resize();
+          } catch (e) {
+            void e;
+          }
+        });
+        ro.observe(chartContainerRef.current);
+      }
+    } catch (e) {
+      ro = null;
+      void e;
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      try {
+        ro?.disconnect();
+      } catch (e) {
+        void e;
+      }
       if (chartContainerRef.current) {
         dispose(chartContainerRef.current);
       }

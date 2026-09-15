@@ -1,6 +1,6 @@
-// features/technical/components/FtsDock.tsx -- داک کشویی پایین چارت (سبک Pine Editor)
-// کارت‌های حجیم (وضعیت FTS / تحلیل ساختاری / مقایسه / داوری) به تب‌های جمع‌شونده منتقل
-// شده‌اند تا در حالت پیش‌فرض چارت تقریباً تمام ارتفاع را بگیرد و اسکرول عمودی نباشد.
+// features/technical/components/FtsDock.tsx -- داک پایین چارت به سبک Trading Panel / Pine Editor
+// پیش‌فرض: استاتوس‌بار باریک (~۲۸px). با کلیک روی هر تب باز می‌شود و با «جمع کردن» به همان نوار برمی‌گردد
+// تا چارت در حالت عادی تقریباً تمام ارتفاع را بگیرد.
 import { useState } from 'react';
 
 export type DockTab = { id: string; label: string; node: React.ReactNode };
@@ -14,19 +14,20 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
     <section
       data-testid="fts-dock"
       data-open={open ? 'true' : 'false'}
-      className={`glass-panel flex shrink-0 flex-col overflow-hidden rounded-2xl ${
-        open ? 'h-[46%] min-h-[240px]' : 'h-10'
+      className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--hairline)] bg-bg-secondary ${
+        open ? 'h-[42%] min-h-[220px]' : 'h-7'
       }`}
     >
-      <div className="flex h-10 shrink-0 items-center gap-1 px-2" role="tablist" aria-label="داک پایین چارت">
+      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="داک پایین چارت">
         <button
           type="button"
           data-testid="fts-dock-toggle"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="rounded-full border border-border-c bg-bg-card px-2.5 py-1 text-[11px] font-bold text-text-secondary hover:text-accent-blue"
+          className="px-1.5 text-[11px] font-bold text-text-muted hover:text-accent-blue"
+          title={open ? 'جمع کردن پنل‌ها' : 'باز کردن پنل‌ها'}
         >
-          {open ? 'جمع کردن ⌄' : 'پنل‌های تحلیل ⌃'}
+          {open ? '⌄' : '⌃'}
         </button>
         {tabs.map((t) => (
           <button
@@ -39,18 +40,17 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
               setActive(t.id);
               setOpen(true);
             }}
-            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-              open && active === t.id
-                ? 'border-border-accent bg-accent-blue/15 text-accent-blue'
-                : 'border-border-c bg-bg-card text-text-muted hover:text-text-secondary'
+            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+              open && active === t.id ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
             }`}
           >
             {t.label}
           </button>
         ))}
+        <span className="mr-auto pr-1 text-[10px] text-text-muted">{open ? '' : 'پنل‌های تحلیل'}</span>
       </div>
       {open ? (
-        <div role="tabpanel" data-testid="fts-dock-body" className="min-h-0 flex-1 overflow-y-auto p-3 pt-1">
+        <div role="tabpanel" data-testid="fts-dock-body" className="min-h-0 flex-1 overflow-y-auto p-2">
           {current?.node}
         </div>
       ) : null}

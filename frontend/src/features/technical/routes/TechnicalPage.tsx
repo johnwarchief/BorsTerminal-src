@@ -1,12 +1,11 @@
-// features/technical/routes/TechnicalPage.tsx -- میزکار تمام‌صفحهٔ تب تکنیکال (T-18)
-// چیدمان full-bleed بدون اسکرول عمودی: هدر فشرده + چارت flex-1 + داک کشویی پایین + سایدبار راست.
+// features/technical/routes/TechnicalPage.tsx -- میزکار چارت‌محور تب تکنیکال (T-19)
+// چارت‌محور: هدر تک‌خطی مینیمال + چارت تمام‌فضا + داک استاتوس‌بار باریک (۲۸px) + سایدبار جمع‌شو.
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useUiStore } from '@shared/stores/uiStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
@@ -40,7 +39,6 @@ export default function TechnicalPage() {
   const stored = useSymbolStore((s) => s.symbol);
   const setStored = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
-  const theme = useUiStore((s) => s.theme);
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -128,39 +126,43 @@ export default function TechnicalPage() {
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
   return (
-    <div className="tv-workbench flex h-[calc(100vh-3.25rem)] min-h-0 flex-col gap-2 overflow-hidden p-2 xl:flex-row">
+    <div className="tv-workbench flex h-[calc(100vh-3rem)] min-h-0 flex-col gap-1 overflow-hidden p-1.5 xl:flex-row">
       <TechnicalSidebar active={activeLevels} onSelect={selectSymbol} />
 
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-sm font-black text-text-primary">{symbol || 'کل بورس'}</h2>
-          <Badge tone="blue">{toFaDigits(replayRows.length)} کندل</Badge>
-          {signal ? (
-            <>
-              <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
-              {signal.score != null ? <Badge tone="blue">امتیاز {toFaDigits(signal.score)}</Badge> : null}
-            </>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            data-testid="open-chart-settings"
-            className="mr-auto rounded-full border border-border-accent bg-bg-card px-3 py-1 text-xs font-bold text-accent-blue hover:bg-accent-blue/15"
-          >
-            تنظیمات چارت
-          </button>
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
+        {/* هدر تک‌خطی مینیمال (سبک نوار تریدینگ‌ویو) */}
+        <div className="flex h-8 shrink-0 items-center gap-2 px-1" data-testid="tech-header">
+          <span className="truncate text-sm font-black text-text-primary">{symbol || 'کل بورس'}</span>
+          <span className="num text-[11px] text-text-muted">{toFaDigits(replayRows.length)} کندل</span>
+          {signal ? <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge> : null}
+          <div className="mr-auto flex items-center gap-1">
+            {analysis.data?.fts ? (
+              <span className="hidden md:inline" data-testid="header-fts-summary">
+                <Badge tone="gray">
+                  FTS
+                  {signal?.payload.setups.length ? ` · ${toFaDigits(signal.payload.setups.length)} ستاپ` : ''}
+                </Badge>
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              data-testid="open-chart-settings"
+              className="rounded border border-border-c bg-bg-card px-2 py-0.5 text-[11px] font-bold text-text-secondary hover:border-border-accent hover:text-accent-blue"
+            >
+              تنظیمات
+            </button>
+          </div>
         </div>
 
-        {symbol ? <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} /> : null}
-        {symbol ? <ReplayBar total={nn.data.length} /> : null}
-
-        <div className="min-h-0 min-w-0 flex-1" data-testid="chart-area">
+        {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
+        <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
           {noData ? (
-            <div className="glass-panel flex h-full items-center justify-center rounded-2xl text-xs text-text-muted" data-testid="nn-no-data">
+            <div className="flex h-full items-center justify-center text-xs text-text-muted" data-testid="nn-no-data">
               دادهٔ کندلی برای این نماد از سرور برنگشت (بدون داده — نه ساختگی)
             </div>
           ) : (
-            <div className="glass-panel h-full overflow-hidden rounded-2xl" data-testid="nn-chart-host">
+            <div className="h-full w-full overflow-hidden" data-testid="nn-chart-host">
               <Suspense
                 fallback={
                   <div className="flex h-full items-center justify-center text-xs text-text-muted" data-testid="nn-loading">
@@ -182,14 +184,24 @@ export default function TechnicalPage() {
         {symbol ? (
           <FtsDock
             tabs={[
-              { id: 'status', label: 'وضعیت FTS', node: <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={null} /> },
+              {
+                id: 'status',
+                label: 'وضعیت FTS',
+                node: (
+                  <div className="flex flex-col gap-2">
+                    <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
+                    <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={null} />
+                  </div>
+                ),
+              },
               { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
+              { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
               { id: 'compare', label: 'مقایسهٔ نمادها', node: <ComparePanel activeSymbol={symbol} /> },
               {
                 id: 'verdict',
-                label: 'داوری ایجنت',
+                label: 'داوری',
                 node: (
-                  <div className="glass-panel p-3">
+                  <div className="p-1">
                     <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
                   </div>
                 ),
@@ -204,8 +216,6 @@ export default function TechnicalPage() {
       </main>
 
       <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} symbol={symbol} />
-      {/* theme در پالت چارت استفاده می‌شود */}
-      <span className="hidden" data-theme={theme} />
     </div>
   );
 }
