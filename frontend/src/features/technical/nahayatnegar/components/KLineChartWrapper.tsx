@@ -1,10 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 // پورت‌شده به klinecharts v10: init/setDataLoader/resetData، createIndicator با امضای شیئی،
 // overrideOverlay به‌جای setOverlayOptions، و formatter جلالی به‌جای customApi.
-import { init, dispose } from 'klinecharts';
+import { init, dispose, registerOverlay, getSupportedOverlays } from 'klinecharts';
 import type { Chart, KLineData, Styles, DeepPartial } from 'klinecharts';
 import { nahayatNegarDarkTheme } from '../lib/chartTheme';
 import { applyAdjustmentToCandles, type CorporateAction } from '../lib/adjustments';
+import {
+  fibZoneOverlayObj,
+  fibZoneSpecs,
+  jetLineOverlayObj,
+  markerOverlayObj,
+  registerFtsOverlays,
+  PULLBACK_MARKER_OVERLAY,
+  JET_MARKER_OVERLAY,
+  JET_LINE_OVERLAY,
+} from '../../lib/ftsOverlays';
+import type { FtsChartLayers } from '../../components/KLineChartWrapper';
 import {
   IconCrosshair, IconTrendLine, IconRay, IconHorizontalLine, IconVerticalLine,
   IconParallelChannel, IconFibRetracement, IconPitchfork, IconRectangle,
@@ -22,6 +33,10 @@ export interface ChartProps {
   data?: KLineData[];
   /** رویدادهای تعدیل (از adjustEvents اندپوینت /api/chart) برای موتور lib/adjustments */
   corporateActions?: CorporateAction[];
+  /** لایه‌های FTS (فیبو/مارکر/خط جت/MA) — همان ساختار رپر قدیمی */
+  layers?: FtsChartLayers;
+  /** RSI(14) وایلدر در پنل جدا (پیش‌فرض: روشن) */
+  showRsi?: boolean;
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: string) => void;
   onAdjustmentChange?: (adj: string) => void;
@@ -33,6 +48,8 @@ export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
   initialMarket = 'بورس',
   data = [],
   corporateActions = [],
+  layers,
+  showRsi = true,
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
@@ -137,8 +154,25 @@ export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
       try {
         chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
         chart.setPaneOptions({ id: 'sub_pane_vol', height: 95 });
+        // MA(21) روی حجم (FTS_SPEC بند ۲)
+        chart.createIndicator({ name: 'MA', calcParams: [21], paneId: 'sub_pane_vol' }, true);
       } catch {
         // اندیکاتور اختیاری است
+      }
+      // RSI(14) وایلدر در پنل جدا
+      if (showRsi) {
+        try {
+          chart.createIndicator({ name: 'RSI', calcParams: [14], id: 'sub_rsi', paneId: 'sub_rsi' }, false);
+          chart.setPaneOptions({ id: 'sub_rsi', height: 90 });
+        } catch {
+          // اندیکاتور اختیاری است
+        }
+      }
+      // ثبت اورلی‌های سفارشی FTS روی همان نمونهٔ klinecharts
+      try {
+        registerFtsOverlays({ registerOverlay: registerOverlay as unknown as Parameters<typeof registerFtsOverlays>[0]['registerOverlay'], getSupportedOverlays });
+      } catch {
+        // ثبت تکراری خطا نیست
       }
       chart.resetData();
     }
@@ -175,6 +209,61 @@ export const KLineChartNahayatNegar: React.FC<ChartProps> = ({
       // نادیده بگیر
     }
   }, [data, corporateActions, activeAdjustment]);
+
+  // اورلی‌های FTS روی چارت جدید (فیبو/مارکر/خط جت + MAهای قیمت)
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !layers) return;
+    const rows = adaptedRef.current.map((c) => ({ timestamp: c.timestamp, open: c.open, high: c.high, low: c.low, close: c.close, volume: c.volume }));
+    const lastTs = rows.length > 0 ? rows[rows.length - 1].timestamp : 0;
+    try {
+      // MA روی پنل قیمت با دوره‌های FTS
+      chart.removeIndicator({ name: 'MA', paneId: 'candle_pane' });
+      if (layers.maPeriods) {
+        chart.createIndicator({ name: 'MA', calcParams: layers.maPeriods, paneId: 'candle_pane' }, true);
+      }
+    } catch {
+      // اختیاری
+    }
+    // کمربندهای فیبوی لگاریتمی
+    try {
+      chart.removeOverlay({ groupId: 'fts-fib' });
+      const specs = fibZoneSpecs(layers.fib ?? null);
+      if (specs.length > 0 && lastTs > 0) {
+        for (const s of specs) chart.createOverlay(fibZoneOverlayObj(s, lastTs, 'fts-fib') as unknown as Parameters<Chart['createOverlay']>[0]);
+      }
+    } catch {
+      // اختیاری
+    }
+    // مارکرهای ستاپ (جت/پولبک/کف دوقلو/شکار نقطه)
+    try {
+      chart.removeOverlay({ groupId: 'fts-markers' });
+      for (const m of layers.markers ?? []) {
+        if (!m || m.timestamp <= 0) continue;
+        chart.createOverlay(
+          markerOverlayObj(
+            m.kind === 'jet' ? JET_MARKER_OVERLAY : PULLBACK_MARKER_OVERLAY,
+            { label: m.label, color: m.kind === 'jet' ? '#22d3ee' : '#10b981', fill: m.kind === 'jet' ? 'rgba(34,211,238,0.10)' : 'rgba(16,185,129,0.12)', dir: m.dir },
+            m.timestamp,
+            m.price,
+            'fts-markers',
+          ) as unknown as Parameters<Chart['createOverlay']>[0],
+        );
+      }
+    } catch {
+      // اختیاری
+    }
+    // خط جت (مقاومت)
+    try {
+      chart.removeOverlay({ groupId: 'fts-jet' });
+      if (layers.jet && layers.jet.timestamp > 0) {
+        chart.createOverlay(jetLineOverlayObj(layers.jet.price, layers.jet.timestamp, 'fts-jet') as unknown as Parameters<Chart['createOverlay']>[0]);
+      }
+    } catch {
+      // اختیاری
+    }
+    void JET_LINE_OVERLAY;
+  }, [layers, data, corporateActions, activeAdjustment]);
 
   // Symbol Selection
   const handleSelectSymbol = (s: SymbolInfo) => {
