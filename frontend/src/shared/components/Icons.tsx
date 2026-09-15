@@ -37,3 +37,56 @@ export function SearchIcon({ className, size = 16 }: IconProps) {
     </svg>
   );
 }
+
+export function ChevronIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="m15 6-6 6 6 6" />
+    </svg>
+  );
+}
+
+export function MarketIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M3 3v18h18" />
+      <path d="m7 14 3-3 3 3 5-6" />
+    </svg>
+  );
+}
+
+export function FundamentalIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" />
+      <path d="M14 2v6h6M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+export function TechnicalIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M4 4v16M9 4v16M14 4v16M19 4v16" />
+      <rect x="6.5" y="8" width="5" height="6" rx="1" />
+      <rect x="11.5" y="6" width="5" height="8" rx="1" />
+    </svg>
+  );
+}
+
+export function PortfolioIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" />
+    </svg>
+  );
+}
+
+export function MasterIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3Z" />
+    </svg>
+  );
+}

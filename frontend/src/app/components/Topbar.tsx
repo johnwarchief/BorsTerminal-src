@@ -17,8 +17,8 @@ export function Topbar() {
   const title = TITLES[base] ?? 'ترمینال بورس';
 
   return (
-    <header className="glass-strip sticky top-0 z-40 mb-1 flex items-center justify-between px-5 py-3">
-      <h1 className="text-base font-black text-text-primary">
+    <header className="glass-strip sticky top-0 z-40 mb-1 flex items-center justify-between px-3 py-3 sm:px-5">
+      <h1 className="text-sm font-black text-text-primary sm:text-base">
         {title}
         <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent-green align-middle" />
       </h1>
