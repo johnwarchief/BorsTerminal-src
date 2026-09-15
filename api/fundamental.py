@@ -1122,6 +1122,7 @@ def ind5_industry(sector, cfg=None, market_cap_rials=0.0, total_market_cap_rials
     sec["outlook"] = _PRICING_OUTLOOK.get(verdict, _PRICING_OUTLOOK["neutral"])
     sec["regime_label"] = {"free": "آزاد / بورس کالا", "mandatory": "دستوری",
                            "neutral": "مخلوط / بی‌طرف"}[verdict]
+    sec["rule_ref"] = "F-05"
     return sec
 
 
