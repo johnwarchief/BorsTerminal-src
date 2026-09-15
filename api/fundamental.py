@@ -1047,7 +1047,7 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
                             for m in ANNUALIZATION_SCALE]}
 
 
-def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
+def ind4_valuation(annual, gm, market_cap_rials, th=None, kind=None) -> dict:
     """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۴۰٪).
 
     سود ناخالص پتانسیل = فروش سالانهٔ annualized × حاشیهٔ ناخالص.
@@ -1055,6 +1055,11 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
     جایگزین» مصرف و صریحاً برچسب می‌خورد تا با عددِ شرکت تولیدی اشتباه نشود.
     """
     th = th or v10_thresholds()
+    # سند v2.1: برای هلدینگ/سرمایه‌گذاری، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
+    if kind == "holding":
+        return {"available": False, "na": True, "pass": False, "potential_pass": False,
+                "sales_pass": False, "rule_ref": "F-04",
+                "reason": "هلدینگ/سرمایه‌گذاری: اعمال نسبت فروش به ارزش بازار و جانشین NAV مجاز نیست (N/A)."}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
@@ -1288,7 +1293,8 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         elif rev > 0 and net:
             gm["net_margin_rejected_pct"] = round(net / rev * 100.0, 1)
     annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref, profile=prof)
-    val = ind4_valuation(annual, gm, market_cap_rials, th=th)
+    val = ind4_valuation(annual, gm, market_cap_rials, th=th,
+                         kind=(prof.get("kind") if prof else None))
     sec = ind5_industry(sector, cfg=cfg, market_cap_rials=market_cap_rials,
                         total_market_cap_rials=total_market_cap_rials)
 
