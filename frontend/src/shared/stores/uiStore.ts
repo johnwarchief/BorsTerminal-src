@@ -5,9 +5,12 @@ import { create } from 'zustand';
 type UiState = {
   theme: 'dark' | 'light';
   sidebarOpen: boolean;
+  sidebarCollapsed: boolean;
   toggleTheme: () => void;
   setTheme: (t: 'dark' | 'light') => void;
   toggleSidebar: () => void;
+  setSidebarCollapsed: (v: boolean) => void;
+  toggleSidebarCollapsed: () => void;
 };
 
 const STORAGE_KEY = 'bors-theme';
@@ -24,6 +27,7 @@ function applyTheme(t: 'dark' | 'light') {
 export const useUiStore = create<UiState>((set, get) => ({
   theme: initialTheme(),
   sidebarOpen: true,
+  sidebarCollapsed: false,
   toggleTheme: () => get().setTheme(get().theme === 'dark' ? 'light' : 'dark'),
   setTheme: (t) => {
     applyTheme(t);
@@ -31,6 +35,8 @@ export const useUiStore = create<UiState>((set, get) => ({
     set({ theme: t });
   },
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
+  toggleSidebarCollapsed: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 }));
 
 applyTheme(useUiStore.getState().theme);

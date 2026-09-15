@@ -114,9 +114,18 @@ export function SymbolInspector() {
   const port = entry?.portfolio;
 
   return (
-    <aside
+    <>
+      {/* لایهی پشتزمینه؛ فقط در نمایشگرهای کوچک (<۱۰۲۴px) دیده میشود */}
+      <div
+        aria-hidden="true"
+        onClick={clearSymbol}
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      />
+      <aside
       aria-label={`بازرسی نماد ${symbol}`}
-      className={`glass-panel fixed bottom-0 left-0 top-0 z-50 flex w-[264px] shrink-0 flex-col overflow-y-auto rounded-none border-y-0 border-l-0 p-0 transition-transform duration-200 ease-out ${
+      className={`glass-panel fixed bottom-0 left-0 top-0 z-50 flex w-[var(--inspector-w)] max-w-[88vw] shrink-0 flex-col overflow-y-auto rounded-none border-y-0 border-l-0 p-0 transition-transform duration-200 ease-out ${
         open ? 'translate-x-0' : '-translate-x-full'
       }`}
       style={{ borderRight: '1px solid var(--hairline)' }}
@@ -238,5 +247,6 @@ export function SymbolInspector() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

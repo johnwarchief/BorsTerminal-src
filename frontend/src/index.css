@@ -184,6 +184,25 @@ body {
 }
 
 /* احترام به کاهش حرکت کاربر */
+/* ---------- کمککلاسهای واکنشی (فاز ۲) ---------- */
+@layer components {
+  /* فاصلهی افقی main؛ در دسکتاپ بزرگ (≥۱۲۸۰px) صفر است تا رگرسیون بصری نباشد. */
+  .app-main {
+    padding-inline: var(--gutter-x);
+  }
+
+  /* محتوای صفحه: زیر ۱۰۲۴px داور نماد بهصورت overlay باز میشود (بدون فاصلهگذاری). */
+  .app-content[data-inspector='open'] {
+    padding-left: var(--inspector-w);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .app-content[data-inspector='open'] {
+    padding-left: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

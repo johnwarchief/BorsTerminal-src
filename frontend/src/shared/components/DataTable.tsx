@@ -23,7 +23,7 @@ export function DataTable<T>({
   if (data.length === 0) return <EmptyState title={emptyTitle} hint={emptyHint} />;
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border-c">
+    <div className="max-xl:max-h-[70vh] overflow-auto rounded-2xl border border-border-c">
       <table className="w-full border-collapse text-sm">
         <thead>
           {table.getHeaderGroups().map((hg) => (
@@ -31,7 +31,7 @@ export function DataTable<T>({
               {hg.headers.map((h) => (
                 <th
                   key={h.id}
-                  className="border-b border-border-c px-3 py-2 text-right text-xs font-bold text-text-secondary"
+                  className="sticky top-0 z-[1] border-b border-border-c bg-bg-card px-3 py-2 text-right text-xs font-bold text-text-secondary"
                   onClick={h.column.getCanSort() ? h.column.getToggleSortingHandler() : undefined}
                   style={h.column.getCanSort() ? { cursor: 'pointer' } : undefined}
                 >
