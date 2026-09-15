@@ -23,6 +23,7 @@ import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetSc
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { AssemblyBadge } from '../components/AssemblyBadge';
+import { cardAuditEvidence } from '../lib/auditEvidence';
 import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 import { EpsLadder } from '../components/EpsLadder';
@@ -87,6 +88,9 @@ export default function FundamentalPage() {
     return isPhysicalGrowthApplicable({ name: companyName, sector_name: rawSector });
   }, [card.data, companyName, rawSector]);
 
+  /** شاهد ممیزی هر محور — برای کارت «چرا این وضعیت؟» در سلول‌های FtsCard */
+  const audit = useMemo(() => (card.data ? cardAuditEvidence(card.data) : null), [card.data]);
+
   const signal = useMemo(
     () =>
       symbol
@@ -124,6 +128,7 @@ export default function FundamentalPage() {
         ) : (
           <FtsScreenTable
             rows={screen.data?.data ?? []}
+            thresholds={screen.data?.thresholds ?? null}
             onSelect={(s) => {
               setSymbol(s);
               setDrawerOpen(false);
@@ -186,6 +191,7 @@ export default function FundamentalPage() {
           passes={card.data.passes ?? {}}
           verdict={card.data.verdict ?? null}
           industryMode={card.data.pricing_mode ?? null}
+          audit={audit}
           physicalApplicable={physicalApplicable}
           activeDrill={drillKey}
           onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
