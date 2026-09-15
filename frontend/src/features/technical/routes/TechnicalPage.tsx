@@ -1,12 +1,17 @@
 // features/technical/routes/TechnicalPage.tsx -- تب تکنیکال با چارت پورت‌شدهٔ جمینای (NahayatNegar)
 // چارت سطح‌نما: KLineChartNahayatNegar (پورت‌شده به klinecharts v10) با دادهٔ واقعی ما.
 // سایدبار راست، بازپخش، مقایسه و پنل‌های FTS (تحلیل سمت سرور) ما حفظ شده‌اند.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useUiStore } from '@shared/stores/uiStore';
+import { majorResistance } from '../lib/indicators';
+import { paletteFor } from '../lib/chartPalette';
+import { SplitChartView } from '../components/SplitChartView';
+import type { ChartMarker, FtsChartLayers } from '../components/KLineChartWrapper';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
@@ -24,8 +29,12 @@ import { ComparePanel } from '../components/ComparePanel';
 import { MarketOverview } from '../components/MarketOverview';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
-import { KLineChartNahayatNegar } from '../nahayatnegar/components/KLineChartWrapper';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
+
+/** چارت پورت‌شدهٔ جمینای با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
+const NnChart = lazy(() =>
+  import('../nahayatnegar/components/KLineChartWrapper').then((m) => ({ default: m.KLineChartNahayatNegar })),
+);
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
@@ -36,6 +45,8 @@ export default function TechnicalPage() {
   const stored = useSymbolStore((s) => s.symbol);
   const setStored = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
+  const theme = useUiStore((s) => s.theme);
+  const view = useFtsConfigStore((s) => s.view);
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const showFtsCard = useFtsConfigStore((s) => s.showFtsCard);
@@ -135,6 +146,30 @@ export default function TechnicalPage() {
     };
   }, [analysis.data, series.lows, maPanel, signal, symbol, candles]);
 
+  // لایه‌های FTS (فیبو/مارکر/خط جت + MA) برای چارت جدید و پنل‌های اسپلیت
+  const layers = useMemo<FtsChartLayers>(() => {
+    const jet = majorResistance(series.highs.slice(0, -1), 120)?.price ?? null;
+    const fts = analysis.data?.fts ?? null;
+    const last = candles.length > 0 ? candles[candles.length - 1] : null;
+    const lastTs = last?.timestamp ?? 0;
+    const markers: ChartMarker[] = [];
+    if (last && signal?.payload.setups.includes('breakout')) {
+      markers.push({ kind: 'jet', label: 'جت', timestamp: last.timestamp, price: last.high, dir: 'up' });
+    }
+    if (last && fts?.double_bottom?.active && fts.double_bottom.neckline != null) {
+      markers.push({ kind: 'pullback', label: 'کف دوقلو', timestamp: last.timestamp, price: last.low, dir: 'down' });
+    } else if (last && fts?.point_hunt?.active && fts.point_hunt.floor_price != null) {
+      markers.push({ kind: 'pullback', label: 'شکار نقطه', timestamp: last.timestamp, price: fts.point_hunt.floor_price, dir: 'down' });
+    }
+    return {
+      maPeriods: [14, 21, 52, 100],
+      jet: jet != null && lastTs > 0 ? { price: jet, timestamp: lastTs } : null,
+      choch: fts?.choch?.bearish && fts.choch.level != null && lastTs > 0 ? { price: fts.choch.level, timestamp: lastTs, bearish: true } : null,
+      fib: fts?.fib ?? null,
+      markers,
+    };
+  }, [series, candles, signal, analysis.data]);
+
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
   return (
@@ -169,16 +204,35 @@ export default function TechnicalPage() {
           <div className="glass-panel rounded-2xl p-6 text-center text-xs text-text-muted" data-testid="nn-no-data">
             دادهٔ کندلی برای این نماد از سرور برنگشت (بدون داده — نه ساختگی)
           </div>
+        ) : view.splitLayout > 1 ? (
+          <SplitChartView
+            layout={view.splitLayout}
+            data={chartRows}
+            palette={paletteFor(theme)}
+            layers={layers}
+            view={view}
+            showRsi
+            showVolMa
+          />
         ) : (
           <div className="glass-panel overflow-hidden rounded-2xl" data-testid="nn-chart-host">
-            <KLineChartNahayatNegar
-              initialSymbol={symbol || 'شاخص کل'}
-              initialName={symbol || 'شاخص کل'}
-              initialMarket="بورس"
-              data={chartRows}
-              corporateActions={symbol ? nn.actions : []}
-              onSymbolChange={(s) => selectSymbol(s.symbol)}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center p-10 text-xs text-text-muted" style={{ height: 420 }} data-testid="nn-loading">
+                  در حال بارگذاری چارت...
+                </div>
+              }
+            >
+              <NnChart
+                initialSymbol={symbol || 'شاخص کل'}
+                initialName={symbol || 'شاخص کل'}
+                initialMarket="بورس"
+                data={chartRows}
+                corporateActions={symbol ? nn.actions : []}
+                layers={layers}
+                onSymbolChange={(s) => selectSymbol(s.symbol)}
+              />
+            </Suspense>
           </div>
         )}
 
