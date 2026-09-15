@@ -270,7 +270,7 @@ describe('ناهنجاری‌های تابلو: کف‌روبی و خروج از
         onSelect={() => {}}
       />,
     );
-    const title = screen.getByText('خرا').closest('button')!.getAttribute('title') ?? '';
+    const title = screen.getByText('خرا').closest('[data-testid="tape-row"]')!.getAttribute('title') ?? '';
     expect(title).toContain('۵.۰ برابر حجم ماهانه');
     expect(title).toContain('اختلاف آخرین و پایانی');
     expect(title).toContain('اعتبار الگو');
