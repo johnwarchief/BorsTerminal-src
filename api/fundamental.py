@@ -63,7 +63,7 @@ FTS_V10_DEFAULTS = {
     "eps_years": 3,                 # ۲ — طول سابقهٔ سودسازی (سالِ متوالی سودآور)
     "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالص
     "margin_ideal": 30.0,           # ۳ — حاشیهٔ ایده‌آل
-    "sales_to_mcap_min": 0.33,      # ۴الف — فروش سالانه ÷ ارزش بازار (۳۳٪)
+    "sales_to_mcap_min": 1.0,       # ۴الف — فروش سالانه ÷ ارزش بازار (۱۰۰٪ = ۱×، استاندارد جزوه)
     "potential_min": 33.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
 }
 
@@ -323,13 +323,19 @@ def board_total_market_cap(conn) -> tuple:
 # «فروش داخلی + صادراتی». این تابع همان تفکیک را از sector_name/نام شرکت می‌سازد
 # تا هر دو چکِ لایهٔ ۱ روی مبنای درستِ همان طبقه اجرا شوند.
 _FIN_TOKENS = tuple(fts_engine.norm_fa(x) for x in
-                    ("بانك", "بانک", "اعتباري", "اعتباری", "بيمه", "بیمه",
+                    ("اعتباري", "اعتباری", "بيمه", "بیمه",
                      "ليزينگ", "لیزینگ", "کارگزاري", "کارگزاری", "اوراق"))
+# هلدینگ/سرمایه‌گذاری/واسطه‌گری مالی/بانکی: «فروش کالا» و رشد فیزیکی/تناژ
+# معنا ندارد؛ درآمد از پرتفوی/تسهیلات/سپرده می‌آید → رشد فیزیکی کاملاً مخفی.
+_HOLD_TOKENS = tuple(fts_engine.norm_fa(x) for x in
+                     ("بانک", "سرمایه گذاری", "سرمایه‌گذاری", "هلدینگ",
+                      "واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"))
 _SVC_TOKENS = tuple(fts_engine.norm_fa(x) for x in
                     ("خدمات", "حمل", "ترابری", "فناوري", "فناوری", "مخابرات",
                      "بازرگاني", "بازرگانی", "پخش", "رستوران", "گردش"))
 _PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "مالی و بانکی",
-                  "service": "خدماتی", "fund": "صندوق"}
+                  "service": "خدماتی", "fund": "صندوق",
+                  "holding": "هلدینگ / سرمایه‌گذاری"}
 
 
 def company_profile(sector: str = "", company_name: str = "") -> dict:
@@ -338,6 +344,11 @@ def company_profile(sector: str = "", company_name: str = "") -> dict:
     if "صندوق" in both:
         kind = "fund"
         basis = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
+        applicable = False
+    elif any(t in both for t in _HOLD_TOKENS):
+        kind = "holding"
+        basis = ("هلدینگ/سرمایه‌گذاری/بانکی — درآمد عملیاتی از پرتفوی، سود "
+                 "تسهیلات/سپرده و سرمایه‌گذاری‌ها (بدون «فروش کالا» و تناژ فیزیکی)")
         applicable = False
     elif any(t in both for t in _FIN_TOKENS):
         kind = "financial"
@@ -781,13 +792,16 @@ def _eps_track_blended(conn, symbol, years: int = 3) -> dict:
     # نیست (۶۲ ریالِ فصل اول ≠ سال کامل). این را soft_gap می‌نامیم: عدد نشان داده
     # میشود ولی رابط کاربری نباید آن را «ردِ قطعیِ روند» بخواند.
     out["soft_gap"] = bool(not out["pass"] and ev[-1] == "annualized_interim_short")
-    if out["soft_gap"]:
-        out["reason"] = ("سابقه با میاندورهٔ کوتاهِ سالِ جاری تکمیل شده — "
-                         "نتیجه قابل استناد قطعی نیست")
+    if out["pass"]:
+        out["reason"] = ""
     else:
-        out["reason"] = ("" if out["pass"] else
-                         ("EPS زیان‌ده در بازه" if not out["all_profitable"]
-                          else "روند اکیداً صعودی نیست"))
+        # شکستِ واقعیِ روند (هر ۳ دوره موجود) → علت از خودِ سری ساخته میشود،
+        # نه متنِ عمومیِ «دیتا ناقص»؛ مثال: «سقوط سود به زیان در سال آخر».
+        out["reason"] = fts_engine.eps_trend_reason(
+            series, [str(y) for y in reversed(window)])
+        if out["soft_gap"]:
+            out["reason"] += (" — سالِ آخر تنها میاندورهٔ کوتاهِ سال‌سازی‌شده است "
+                              "(قطعیتِ کمتر)")
     return out
 
 
@@ -992,7 +1006,8 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
     ref_row = ref if ref is not None else fts_engine.reference_annual(conn, symbol)
     fs_rev = _f((ref_row or {}).get("revenue"))
     prof = profile or company_profile()
-    op_basis = (prof.get("kind") in ("financial", "service", "fund")) and fs_rev > 0
+    op_basis = ((prof.get("kind") in ("financial", "service", "fund", "holding"))
+                and fs_rev > 0)
     annual, months, basis, reconciled = 0.0, 0, "", True
     if op_basis:
         annual, months = fs_rev, 12
@@ -1014,7 +1029,10 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
         basis = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
     if annual <= 0:
         return None
-    if fs_rev > 0 and not op_basis and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25):
+    # گیتِ «واحد مشکوک» فقط برای سالانه‌سازیِ واقعی (ماهِ سپری‌شده < ۱۲) معنا دارد؛
+    # گزارشی که خودش ۱۲ ماه کامل را پوشش می‌دهد مستقیم پذیرفته می‌شود، نه مشکوک.
+    if (fs_rev > 0 and not op_basis and 0 < months < 12
+            and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25)):
         reconciled = False
         annual, months = fs_rev, 12
         basis = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"

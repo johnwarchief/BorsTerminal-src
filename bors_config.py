@@ -76,7 +76,7 @@ FTS_DEFAULTS = {
     "v10_eps_years": 3,
     "v10_margin_min": 20.0,
     "v10_margin_ideal": 30.0,
-    "v10_sales_to_mcap_min": 0.33,     # جزوهٔ جدید: فروش سالانه ÷ ارزش بازار ≥ ۳۳٪
+    "v10_sales_to_mcap_min": 1.0,      # پیشفرضِ جزوه: فروش سالانه ÷ ارزش بازار ≥ ۱× (۱۰۰٪)
     "v10_potential_min": 33.0,
     # v10 — فیلترِ دستیِ صنایع از پنل (جدا از رژیم قیمت‌گذاری).
     # industry_mode = Include_Industries → فقط فهرستِ include می‌ماند

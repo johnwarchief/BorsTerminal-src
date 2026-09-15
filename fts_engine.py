@@ -392,6 +392,44 @@ def _revenue_basis(sector: str) -> str:
         return "صندوق — درآمد پرتفوی"
     return "تولیدی/خدماتی — جمع فروش داخلی + صادراتی"
 
+
+def eps_trend_reason(series, years=None) -> str:
+    """دلیلِ شکستِ روند EPS از خودِ سری ساخته میشود (نه متنِ عمومیِ «دیتا ناقص»).
+
+    خروجی به نقطهٔ واقعیِ شکست اشاره میکند — مثلاً «سقوط سود به زیان در سال آخر» —
+    تا کاربر علتِ رد را ببیند، نه یک پیامِ مبهمِ کمبودِ داده. یک منبعِ حقیقتِ
+    مشترک برای مسیرِ سختِ v8 و مسیرِ ترکیبیِ v10.
+    """
+    vals = [_f(v) for v in (series or []) if v is not None]
+    yrs = [str(y) for y in (years or [])]
+    if not vals:
+        return "سابقهٔ EPS محاسبه نشد"
+    n = len(vals)
+
+    def _ylab(i):
+        return yrs[i] if 0 <= i < len(yrs) else "سال %d" % (i + 1)
+
+    # ۱) زیاندهی — مهمترین دلیلِ رد
+    if not all(v > 0 for v in vals):
+        if all(v <= 0 for v in vals):
+            return "سودسازی منفی در تمام دورهها"
+        if vals[-1] <= 0 and (n < 2 or vals[-2] > 0):
+            return "سقوط سود به زیان در سال آخر"
+        if vals[-1] <= 0:
+            return "زیاندهی در سال آخر (%s)" % _ylab(n - 1)
+        for i, v in enumerate(vals):
+            if v <= 0:
+                return "زیاندهی در %s" % _ylab(i)
+    # ۲) همه مثبت ولی اکیداً صعودی نیست → نقطهٔ افت/توقف
+    for i in range(n - 1):
+        if vals[i + 1] <= vals[i]:
+            if vals[i + 1] == vals[i]:
+                return "توقف رشد سود در %s (بدون افزایش نسبت به سال قبل)" % _ylab(i + 1)
+            pct = round((vals[i + 1] / vals[i] - 1.0) * 100.0, 1) if vals[i] else None
+            tail = (" (%.1f٪ افت)" % pct) if pct is not None else ""
+            return "افت سود در %s نسبت به سال قبل%s" % (_ylab(i + 1), tail)
+    return "روند اکیداً صعودی نیست"
+
 # ============================================ شاخص ۲: روند ۳ سالهٔ EPS (اصلی)
 def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
                  sector: str = "") -> Optional[dict]:
@@ -426,10 +464,8 @@ def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
     if not gap_ok:
         reason = "سال‌های مالی متوالی نیست (" + " ← ".join(
             w["fiscal_year"] for w in reversed(window)) + ")"
-    elif not positive:
-        reason = "EPS زیان‌ده در بازه"
-    elif not rising:
-        reason = "روند اکیداً صعودی نیست"
+    elif not (rising and positive):
+        reason = eps_trend_reason(series, [w["fiscal_year"] for w in reversed(window)])
     else:
         reason = ""
     return {
@@ -536,7 +572,9 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
         return None
 
     reconciled = True
-    if fs_rev > 0 and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25):
+    # گیتِ «واحد مشکوک» فقط برای سالانهسازیِ واقعی (۰ < ماه < ۱۲) معنا دارد؛
+    # گزارشی که خودش ۱۲ ماه کامل را پوشش میدهد مستقیم پذیرفته میشود.
+    if fs_rev > 0 and 0 < months < 12 and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25):
         reconciled = False
         annual, months, basis = fs_rev, 12, "Annualized ماهانه مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
     return {"annual_sales_mrl": annual,
@@ -1068,7 +1106,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         fs_rev = _f(ref["revenue"]) if ref else 0.0
         if annual_sales <= 0:
             annual_sales, months_used = fs_rev, 12
-        elif fs_rev > 0 and (annual_sales > fs_rev * 4.0 or annual_sales < fs_rev * 0.25):
+        elif (fs_rev > 0 and 0 < months_used < 12
+              and (annual_sales > fs_rev * 4.0 or annual_sales < fs_rev * 0.25)):
             annual_sales, months_used = fs_rev, 12      # واحد مشکوک → فروش سالانهٔ کدال
         s2m = (annual_sales * MRL_TO_RIAL / mcap) if mcap > 0 and annual_sales > 0 else None
         pot = None

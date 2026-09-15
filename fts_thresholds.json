@@ -5,6 +5,7 @@
   "margin_min": 20.0,
   "margin_optimal": 30.0,
   "sales_to_mcap_min": 1.0,
+  "v10_sales_to_mcap_min": 1.0,
   "profit_potential_min": 30.0,
   "industry_mode": "Exclude_Mandatory_Pricing",
   "mandatory_sectors": [
