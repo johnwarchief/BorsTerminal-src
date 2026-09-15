@@ -33,7 +33,7 @@ export function WatchDrawer({ rows, onSelect }: { rows: MarketRow[]; onSelect: (
   return (
     <div data-testid="watch-drawer" className="glass-panel panel-in flex w-full max-w-none flex-col gap-2 rounded-2xl p-2">
       <div className="flex h-8 items-center gap-2" aria-label="دیده‌بان‌های تابلو">
-        <span className="shrink-0 text-[11px] font-black text-text-muted">دیده‌بان‌ها</span>
+        <span className="shrink-0 text-2xs font-black text-text-muted">دیده‌بان‌ها</span>
         {WATCH_TABS.map((t) => (
           <button
             key={t.id}
@@ -56,7 +56,7 @@ export function WatchDrawer({ rows, onSelect }: { rows: MarketRow[]; onSelect: (
             type="button"
             data-testid="watch-close"
             onClick={() => setOpen(false)}
-            className="mr-auto shrink-0 rounded-full border border-border-c px-2 py-0.5 text-[11px] text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
+            className="mr-auto shrink-0 rounded-full border border-border-c px-2 py-0.5 text-2xs text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
           >
             بستن ✕
           </button>

@@ -83,7 +83,7 @@ function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone:
       data-testid={`badge-${pattern}`}
       data-pattern={pattern}
       title={title}
-      className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${MICRO_TONES[tone]}`}
+      className={`shrink-0 rounded-md px-1.5 py-0.5 text-2xs font-bold ${MICRO_TONES[tone]}`}
     >
       {children}
     </span>
@@ -171,10 +171,10 @@ const TapeRow = memo(function TapeRow({
       } ${atLimitUp ? 'border-r-2 border-r-accent-green' : atLimitDown ? 'border-r-2 border-r-accent-red' : ''}`}
       style={{ height: 40 }}
     >
-      <span className="num text-center text-[10px] text-text-muted">{toFaDigits(index + 1)}</span>
+      <span className="num text-center text-2xs text-text-muted">{toFaDigits(index + 1)}</span>
       <span className="font-bold text-text-primary">
         {row.symbol}
-        <span className="block truncate text-[10px] font-normal text-text-muted">{row.name ?? ''}</span>
+        <span className="block truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
       <span className="num text-text-primary">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
@@ -263,7 +263,7 @@ export function TapeTable({
 
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-right text-[11px] font-bold text-text-secondary backdrop-blur`}>
+      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-right text-2xs font-bold text-text-secondary backdrop-blur`}>
         <span className="text-center">#</span>
         {HEADERS.map((h) => (
           <button key={h.key} type="button" onClick={() => toggle(h.key)} className="text-right hover:text-accent-blue">
@@ -294,7 +294,7 @@ export function TapeTable({
           })}
         </div>
       </div>
-      <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-[11px] text-text-muted num">
+      <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted num">
         {toFaDigits(sorted.length)} نماد
       </div>
     </div>

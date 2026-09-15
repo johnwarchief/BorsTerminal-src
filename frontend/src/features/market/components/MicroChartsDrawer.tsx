@@ -35,7 +35,7 @@ function MiniLineChart({ series, times }: { series: Series[]; times: string[] })
           <polyline key={s.name} points={toPoints(s.values)} fill="none" stroke={s.color} strokeWidth="2" />
         ))}
       </svg>
-      <div className="mt-0.5 flex items-center justify-between text-[9px] text-text-muted num" dir="rtl">
+      <div className="mt-0.5 flex items-center justify-between text-2xs text-text-muted num" dir="rtl">
         <span>{times[0] ?? ''}</span>
         <span>{times[times.length - 1] ?? ''}</span>
       </div>
@@ -61,11 +61,11 @@ function ChartCard({
   return (
     <div data-testid={testId} className="glass-panel flex min-w-0 flex-col gap-1 rounded-xl border border-border-c p-3">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-[11px] font-black text-text-primary">{title}</h4>
+        <h4 className="text-2xs font-black text-text-primary">{title}</h4>
         {badge}
       </div>
       {body}
-      <div className="flex flex-wrap items-center gap-3 text-[10px] text-text-secondary">
+      <div className="flex flex-wrap items-center gap-3 text-2xs text-text-secondary">
         {legend.map((l) => (
           <span key={l.label} className="inline-flex items-center gap-1">
             <span className="inline-block h-0.5 w-4 rounded" style={{ background: l.color }} />
@@ -131,7 +131,7 @@ export function MicroChartsDrawer() {
                   <span
                     data-testid="bullish-cross"
                     title="Bullish Cross: عبور ارزش صف خرید از فروش + فاصله گرفتن"
-                    className="rounded-full border border-accent-green/50 bg-accent-green/15 px-2 py-0.5 text-[10px] font-black text-accent-green"
+                    className="rounded-full border border-accent-green/50 bg-accent-green/15 px-2 py-0.5 text-2xs font-black text-accent-green"
                   >
                     ▲ برتری تقاضا
                   </span>
@@ -141,7 +141,7 @@ export function MicroChartsDrawer() {
                 model.ready ? (
                   <MiniLineChart series={[{ name: 'bq_bt', color: '#3b82f6', values: model.bq }, { name: 'sq_bt', color: '#f97316', values: model.sq }]} times={model.times} />
                 ) : (
-                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-[11px] text-text-muted">
+                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-2xs text-text-muted">
                     بدون داده
                   </div>
                 )
@@ -159,7 +159,7 @@ export function MicroChartsDrawer() {
                 model.flip ? (
                   <span
                     data-testid="breadth-flip"
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-black ${
+                    className={`rounded-full border px-2 py-0.5 text-2xs font-black ${
                       model.flip === 'bull' ? 'border-accent-green/50 bg-accent-green/15 text-accent-green' : 'border-accent-red/50 bg-accent-red/15 text-accent-red'
                     }`}
                   >
@@ -171,7 +171,7 @@ export function MicroChartsDrawer() {
                 model.ready ? (
                   <MiniLineChart series={[{ name: 'pos', color: '#22c55e', values: model.pos }, { name: 'neg', color: '#ef4444', values: model.neg }]} times={model.times} />
                 ) : (
-                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-[11px] text-text-muted">
+                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-2xs text-text-muted">
                     بدون داده
                   </div>
                 )
@@ -180,7 +180,7 @@ export function MicroChartsDrawer() {
           </div>
         )
       ) : null}
-      {open && data?.note ? <p className="text-[10px] text-text-muted">{data.note}</p> : null}
+      {open && data?.note ? <p className="text-2xs text-text-muted">{data.note}</p> : null}
     </div>
   );
 }

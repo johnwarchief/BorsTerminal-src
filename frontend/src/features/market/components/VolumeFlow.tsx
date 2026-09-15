@@ -21,7 +21,7 @@ export function VolumeFlow({ symbol }: { symbol: string }) {
     <div className="glass-panel panel-in p-4">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-sm font-black text-text-primary">جریان حجم {symbol}</h3>
-        <span className="text-[11px] text-text-muted">میانگین: {fmtInt(avg)}</span>
+        <span className="text-2xs text-text-muted">میانگین: {fmtInt(avg)}</span>
       </div>
       {isLoading && <div className="py-8 text-center text-xs text-text-secondary">در حال بارگذاری...</div>}
       {isError && <div className="py-8 text-center text-xs text-accent-red">خطا در دریافت تاریخچه</div>}
@@ -45,7 +45,7 @@ export function VolumeFlow({ symbol }: { symbol: string }) {
           ))}
         </div>
       )}
-      <div className="mt-1 flex items-center justify-between text-[11px] text-text-muted">
+      <div className="mt-1 flex items-center justify-between text-2xs text-text-muted">
         <span>{toFaDigits(volumes.length)} جلسه آخر</span>
         {volumes.length > 0 && (
           <span>

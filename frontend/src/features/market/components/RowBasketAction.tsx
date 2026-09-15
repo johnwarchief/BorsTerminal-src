@@ -27,7 +27,7 @@ export const RowBasketAction = memo(function RowBasketAction({
         (onBasket ?? emitBasketIntent)(symbol);
       }}
       onKeyDown={(e) => e.stopPropagation()}
-      className="num shrink-0 rounded-full border border-border-c bg-bg-card/60 px-2 py-0.5 text-[10px] font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-accent-green"
+      className="num shrink-0 rounded-full border border-border-c bg-bg-card/60 px-2 py-0.5 text-2xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-accent-green"
     >
       سبد+
     </button>
