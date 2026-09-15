@@ -963,15 +963,23 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         annual[key].sort(key=lambda r: str(r["period_end"] or ""), reverse=True)
 
     def _solo_annual(sym):
-        out, seen = [], set()
-        for r in annual.get(sym, []):
-            if r["consolidated"] or not r["audited"]:
-                continue
-            if not r["fiscal_year"] or r["fiscal_year"] in seen:
-                continue
-            seen.add(r["fiscal_year"])
-            out.append(r)
-        return out
+        # همراستا با مسیر جزئیات (eps_trend_3y): اول سالانهٔ حسابرسی‌شده را ترجیح بده،
+        # و اگر کافی نبود، ردیف‌های میان‌دوره/سالانه‌شده را هم بپذیر تا شاخص ۲ بین
+        # اسکرینر و /api/fundamental واگرا نشود.
+        last = []
+        for req_aud in (True, False):
+            out, seen = [], set()
+            for r in annual.get(sym, []):
+                if r["consolidated"] or (req_aud and not r["audited"]):
+                    continue
+                if not r["fiscal_year"] or r["fiscal_year"] in seen:
+                    continue
+                seen.add(r["fiscal_year"])
+                out.append(r)
+            last = out
+            if len(out) >= 2:
+                return out
+        return last
 
     def _ref(sym):
         for req_aud in (True, False):
