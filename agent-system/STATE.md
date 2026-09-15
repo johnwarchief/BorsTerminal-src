@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `80d9c14` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `a21c0c9` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -193,3 +193,8 @@
 ## به‌روزرسانی ۲۷ (ایجنتهد main, 2026-09-15 ~05:15)
 - (میان این و قبلی، هد کامیت‌های FTS Spec v2 را لند کرد: `220b3e5`/`c60f402` docs، `34fad1b` تست‌های فرمول — **Python**: `dev/fts_formula_tests_v2.py` (۷۲ تست، نه vitest)، `dcbc3fc` فیکس FTS spec v2.1.)
 - **agent/technical (T-18)** مرج شد: `d3a7562` + `7724bab` + merge commit `80d9c14`. چیدمان full-bleed (بدون اسکرول صفحه؛ داک کشویی `FtsDock` برای کارت‌های حجیم؛ واچ‌لیست ۳ستونی) + پالت تیرهٔ TV در دامنهٔ `.tv-workbench` (`styles/tvTheme.css`). اعتبارسنجی: vitest 607/607 (58 فایل — `app-shell` و `technical-feed` هم سبز بودند؛ فلِیک بار‌محور در این ران نیامد)، eslint 0 error / 3 warning، build سالم (TechnicalPage ~106KB).
+
+
+## به‌روزرسانی ۲۸ (ایجنتهد main, 2026-09-15 ~05:40)
+- **agent/technical (T-19)** مرج شد: `74bee6c` + merge commit `a21c0c9`. چارت‌محور: هدر تک‌خطی 32px (نماد/کندل/جهت + خلاصهٔ FTS + تنظیمات)، داک پایین (حالت جمع = استاتوس‌بار 28px)، سایدبار راست جمع‌شو (ریل 32px)، حذف کادر مردهٔ چارت + `ResizeObserver`، اورلی‌های فیبو ظریف‌تر (alpha 0.16→0.07). اعتبارسنجی نهایی: vitest 607/607 (58 فایل)، eslint 0 error / 3 warning، build سالم (TechnicalPage ~107KB، چارت چانک جدا 50KB).
+- ⚠️ مشاهدۀ عملیاتی: در یک رانِ کاملِ **کند** (62s، environment 395s) **۶ تست** قرمز شد (app-shell / market-filters / market-timeline / portfolio-page / technical-tool-settings / technical-toolbar)؛ همه در رانِ تکی سبز بودند و ران کاملِ مجدد 607/607 در 19.5s سبز شد ⇒ فلِیکِ بار‌محور (گسترده‌تر از فقط app-shell). توصیه: تست کامل را هم‌زمان با پروسه‌های سنگین اجرا نکنید؛ اگر ran قرمزِ پراکنده دیدید، اول با رانِ مجدد/تکی تأیید کنید.
