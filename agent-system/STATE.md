@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `01a5e54` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `80d9c14` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -188,3 +188,8 @@
 - **agent/technical (T-17)** مرج شد (fast-forward): `01a5e54`. تکمیل پورت چارت جمینای به v10: رفع ۵ خطا (createIndicator شیئی v10 + setPaneOptions؛ getConvertPictureUrl(true)؛ حذف IconCheck/body بی‌استفاده؛ as never؛ هدر eslint-disable برای کد vendored)، وصل صفحه به default export جدید `KLineChartWrapper` + حذف پراپ‌های قدیمی، به‌روزرسانی تست `technical-nn-chart`. سایدبار/Replay/Compare/Split دست‌نخورده.
 - اعتبارسنجی روی master: vitest 607/58 سبز (کامیت‌شده؛ رانِ محلی با probe سرگردانِ هد = 609/59)، build سالم (TechnicalPage 106.6KB، چارت در چانک جدا 49.9KB)، eslint **0 error / 3 warning** (disableهای بلااستفاده در کد vendored — فقط cosmetic).
 - ⚠️ درخت Base فعلاً WIP هد دارد: `fts_engine.py` تغییر و `frontend/src/__tests__/zzuiprobe.spec.tsx` untracked — دست نزدم.
+
+
+## به‌روزرسانی ۲۷ (ایجنتهد main, 2026-09-15 ~05:15)
+- (میان این و قبلی، هد کامیت‌های FTS Spec v2 را لند کرد: `220b3e5`/`c60f402` docs، `34fad1b` تست‌های فرمول — **Python**: `dev/fts_formula_tests_v2.py` (۷۲ تست، نه vitest)، `dcbc3fc` فیکس FTS spec v2.1.)
+- **agent/technical (T-18)** مرج شد: `d3a7562` + `7724bab` + merge commit `80d9c14`. چیدمان full-bleed (بدون اسکرول صفحه؛ داک کشویی `FtsDock` برای کارت‌های حجیم؛ واچ‌لیست ۳ستونی) + پالت تیرهٔ TV در دامنهٔ `.tv-workbench` (`styles/tvTheme.css`). اعتبارسنجی: vitest 607/607 (58 فایل — `app-shell` و `technical-feed` هم سبز بودند؛ فلِیک بار‌محور در این ران نیامد)، eslint 0 error / 3 warning، build سالم (TechnicalPage ~106KB).
