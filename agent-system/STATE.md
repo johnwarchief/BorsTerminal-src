@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `b98a139` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `072c14a` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -176,3 +176,9 @@
   2) Split View دوباره فعال (چیدمان 1/2/4 + sync کراس‌هیر/زوم با `chartSync`؛ پنل‌ها با رپر v10 خودمان).
   3) Lazy: چارت جمینای با React.lazy/Suspense جدا ⇒ `TechnicalPage` از ~367KB به **106.7KB** (gzip 33KB).
   اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم (اندازه‌ها در dist تأیید شد).
+
+
+## به‌روزرسانی ۲۵ (ایجنتهد main, 2026-09-15 ~04:15)
+- **agent/technical (T-16)**: ادغام پکیج `gem13_003154` انجام نشد — هنوز کامل پورت نشده؛ با v10.0.3 پنج خطا می‌دهد (`createIndicator` 3‌آرگومانی، `{type:string}` به‌جای boolean، `IconCheck` بی‌استفاده، `body` بی‌استفاده). ایجنت تغییرات را با `git checkout` برگرداند و درخت سبز ماند؛ master دست‌نخورده (`072c14a`). هیچ کامیتی نزده شد (درست).
+- ⚠️ پاک‌سازی: یک فایل یتیمِ untracked `frontend/src/features/technical/nahayatnegar/lib/ftsOverlays.ts` در ورکتری neat-plateau مانده بود (حذفِ ایجنت با گارد ایمنی رد شد). من حذفش کردم و `npx tsc -b` ورکتری الان exit=0 (سبز).
+- مرحلهٔ بعد (با dispatch، ~۱ پاس): همان ۵ خطا در nahayatnegar فیکس؛ صفحه به `KLineChartWrapper` جدید (default export) وصل؛ تست `technical-nn-chart` به نام جدید به‌روز. سایدبار/Replay/مقایسه/Split دست‌نخورده می‌مانند.
