@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `072c14a` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `01a5e54` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۰۷ سبز (۵۸ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -182,3 +182,9 @@
 - **agent/technical (T-16)**: ادغام پکیج `gem13_003154` انجام نشد — هنوز کامل پورت نشده؛ با v10.0.3 پنج خطا می‌دهد (`createIndicator` 3‌آرگومانی، `{type:string}` به‌جای boolean، `IconCheck` بی‌استفاده، `body` بی‌استفاده). ایجنت تغییرات را با `git checkout` برگرداند و درخت سبز ماند؛ master دست‌نخورده (`072c14a`). هیچ کامیتی نزده شد (درست).
 - ⚠️ پاک‌سازی: یک فایل یتیمِ untracked `frontend/src/features/technical/nahayatnegar/lib/ftsOverlays.ts` در ورکتری neat-plateau مانده بود (حذفِ ایجنت با گارد ایمنی رد شد). من حذفش کردم و `npx tsc -b` ورکتری الان exit=0 (سبز).
 - مرحلهٔ بعد (با dispatch، ~۱ پاس): همان ۵ خطا در nahayatnegar فیکس؛ صفحه به `KLineChartWrapper` جدید (default export) وصل؛ تست `technical-nn-chart` به نام جدید به‌روز. سایدبار/Replay/مقایسه/Split دست‌نخورده می‌مانند.
+
+
+## به‌روزرسانی ۲۶ (ایجنتهد main, 2026-09-15 ~04:45)
+- **agent/technical (T-17)** مرج شد (fast-forward): `01a5e54`. تکمیل پورت چارت جمینای به v10: رفع ۵ خطا (createIndicator شیئی v10 + setPaneOptions؛ getConvertPictureUrl(true)؛ حذف IconCheck/body بی‌استفاده؛ as never؛ هدر eslint-disable برای کد vendored)، وصل صفحه به default export جدید `KLineChartWrapper` + حذف پراپ‌های قدیمی، به‌روزرسانی تست `technical-nn-chart`. سایدبار/Replay/Compare/Split دست‌نخورده.
+- اعتبارسنجی روی master: vitest 607/58 سبز (کامیت‌شده؛ رانِ محلی با probe سرگردانِ هد = 609/59)، build سالم (TechnicalPage 106.6KB، چارت در چانک جدا 49.9KB)، eslint **0 error / 3 warning** (disableهای بلااستفاده در کد vendored — فقط cosmetic).
+- ⚠️ درخت Base فعلاً WIP هد دارد: `fts_engine.py` تغییر و `frontend/src/__tests__/zzuiprobe.spec.tsx` untracked — دست نزدم.
