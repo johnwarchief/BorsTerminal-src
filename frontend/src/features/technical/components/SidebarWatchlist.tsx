@@ -43,12 +43,12 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
                 type="button"
                 onClick={() => onSelect(r.symbol)}
                 title={r.name ?? ''}
-                className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg border border-transparent px-2 py-0.5 text-right transition-colors hover:border-border-c hover:bg-bg-card"
+                className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 rounded-lg border border-transparent px-2 py-0.5 text-right transition-colors hover:border-border-c hover:bg-bg-card"
               >
                 <span className="truncate text-xs font-bold text-text-primary">{r.symbol}</span>
                 <span className="num text-xs font-bold text-text-primary">{fmtPrice(r.p_last ?? r.p_closing)}</span>
                 <span
-                  className={`num w-14 text-left text-[11px] font-bold ${up ? 'text-accent-green' : 'text-accent-red'}`}
+                  className={`num w-16 text-left text-[11px] font-bold ${up ? 'text-accent-green' : 'text-accent-red'}`}
                 >
                   {r.percent_change == null ? '-' : fmtPct(r.percent_change)}
                 </span>

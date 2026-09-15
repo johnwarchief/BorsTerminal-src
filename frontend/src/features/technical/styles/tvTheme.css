@@ -1,5 +1,7 @@
-/* features/technical/styles/tvTheme.css -- تم دارک یکپارچه TradingView، محدود به میزکار تکنیکال
-   فقط متغیرهای CSS را در دامنهٔ همین کانتینر بازنویسی می‌کند تا ظاهر چندتکه یکدست شود. */
+/* features/technical/styles/tvTheme.css -- تم دارک TradingView + اصلاحات چیدمان میزکار تکنیکال
+   - بازنویسی متغیرهای پالت در دامنهٔ .tv-workbench
+   - تضمین پرکردن کامل ارتفاع/عرض توسط چارت (رفع فضای مردهٔ بین چارت و پنل حجم)
+   - جلوگیری از سرریز افقی در ستون‌های flex */
 .tv-workbench {
   --bg-primary: #131722;
   --bg-secondary: #1e222d;
@@ -13,9 +15,30 @@
   --border-accent: #2962ff;
   background: var(--bg-primary);
   color: var(--text-primary);
+  overflow: hidden;
 }
 
-/* سطح‌ها و کارت‌ها */
+.tv-workbench > main,
+.tv-workbench [data-testid='chart-area'],
+.tv-workbench [data-testid='nn-chart-host'] {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* چارت باید تمام فضای آزاد را پر کند (رفع فضای مرده و اسکرول اضافه) */
+.tv-workbench [data-testid='nn-chart-host'],
+.tv-workbench [data-testid='nn-chart-host'] > *,
+.tv-workbench .nahayat-negar-container {
+  height: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+}
+
+/* پنل‌های داخلی چارت هم نباید ارتفاع ثابت بزرگ‌تر از کانتینر بگیرند */
+.tv-workbench .nahayat-negar-container * {
+  box-sizing: border-box;
+}
+
 .tv-workbench .glass-panel,
 .tv-workbench .glass-strip {
   background: #1e222d !important;
@@ -24,12 +47,10 @@
   backdrop-filter: none !important;
 }
 
-/* بج‌ها و چیپ‌ها همرنگ پالت */
 .tv-workbench [class*='rounded-full'] {
   border-color: #2a2e39;
 }
 
-/* نوارهای جداکننده/اسکرول‌بار تیره */
 .tv-workbench ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

@@ -226,6 +226,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
     chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
     chart.setPaneOptions({ id: 'sub_pane_vol', height: 100 });
+        chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
 
     // پاسخ به تغییر سایز
     const handleResize = () => chart.resize();
