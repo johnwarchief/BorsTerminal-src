@@ -118,3 +118,7 @@ installer/out/
 build/
 dist/
 
+
+*.lzma
+releases/
+

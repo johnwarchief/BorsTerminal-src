@@ -13,8 +13,9 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=no
 UninstallDisplayIcon={app}\{#AppExe}
 SetupIconFile=..\assets\bors.ico
-Compression=lzma2
+Compression=lzma2/max
 SolidCompression=yes
+LZMANumBlockThreads=4
 WizardStyle=modern
 OutputDir=out
 OutputBaseFilename=BorsTerminal_Ultimate_Setup_{#AppVersion}
@@ -32,6 +33,7 @@ Name: "startmenuicon"; Description: "ساخت آیکون در منوی استا�
 
 [Files]
 Source: "..\dist\BorsTerminal_Ultimate\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\market.db.lzma"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: startmenuicon
