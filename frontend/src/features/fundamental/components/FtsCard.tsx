@@ -5,9 +5,9 @@
 import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
-import { GapHint } from './GapHint';
-import { gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
-import { industryGateLabel, industryGatePassLabel, industryGateTone } from '../lib/industryGate';
+import { gapReason, gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
+import { AuditBadge, type AuditEvidence } from './AuditBadge';
+import { industryGateLabel, industryGatePassLabel } from '../lib/industryGate';
 import type { DrillDownKey } from './FtsDrillDown';
 
 const LAYERS: { key: GapAxis; drill: DrillDownKey | null; label: string; hint: string }[] = [
@@ -19,18 +19,13 @@ const LAYERS: { key: GapAxis; drill: DrillDownKey | null; label: string; hint: s
   { key: '5_industry', drill: '5', label: '5 صنعت', hint: 'رژیم قیمت گذاری صنعت — کلیک: ماتریس چشم‌انداز' },
 ];
 
-function cellTone(v: boolean | undefined, na: boolean): 'green' | 'red' | 'gray' {
-  if (na) return 'gray';
-  if (v == null) return 'gray';
-  return v ? 'green' : 'red';
-}
-
 export function FtsCard({
   score,
   passes,
   verdict,
   physicalApplicable = true,
   industryMode,
+  audit,
   activeDrill = null,
   onDrill,
 }: {
@@ -42,6 +37,8 @@ export function FtsCard({
   /** رژیم قیمت‌گذاری صنعت (free|mandatory|neutral) — سلول ۵ با همین وضعیت
    *  یکدست می‌شود (هم‌رنگ و هم‌متن با «دروازه‌های ریسک») */
   industryMode?: string | null;
+  /** شاهد ممیزی هر محور برای کارت «چرا این وضعیت؟» (lib/auditEvidence) */
+  audit?: Partial<Record<GapAxis, AuditEvidence>> | null;
   activeDrill?: DrillDownKey | null;
   onDrill?: (k: DrillDownKey) => void;
 }) {
@@ -68,11 +65,13 @@ export function FtsCard({
           /** سلول ۵ (صنعت): همان متن/رنگ «دروازه‌های ریسک» — نه برچسب کلی «قبول» */
           const isIndustry = l.key === '5_industry' && industryMode !== undefined;
           const industryBadge = isIndustry ? (
-            <span title={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}>
-              <Badge tone={v === false ? 'red' : industryGateTone(industryMode)}>
-                {v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
-              </Badge>
-            </span>
+            <AuditBadge
+              state={v === false ? 'fail' : 'pass'}
+              label={v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
+              hintTitle={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
+              evidence={audit?.['5_industry'] ?? null}
+              testId={`fts-cell-audit-${l.key}`}
+            />
           ) : null;
           return (
             <button
@@ -90,15 +89,19 @@ export function FtsCard({
               }`}
             >
               <div className="mb-1 text-xs font-bold text-text-secondary">{l.label}</div>
-              {industryBadge ??
-                (!na && v == null ? (
-                  /* جای برچسب عمومی «شکاف داده»: علتِ واقعیِ همان شاخص (tooltip: علت + راه‌حل) */
-                  <GapHint reason={gapTooltip(l.key)}>
-                    <span className="text-2xs font-bold leading-snug text-accent-yellow">{gapLabel(l.key)}</span>
-                  </GapHint>
-                ) : (
-                  <Badge tone={cellTone(v, na)}>{na ? 'N/A' : v ? 'قبول' : 'مردود'}</Badge>
-                ))}
+              {industryBadge ?? (
+                <AuditBadge
+                  state={na ? 'na' : v == null ? 'na' : v ? 'pass' : 'fail'}
+                  label={na ? 'N/A' : v == null ? gapLabel(l.key) : undefined}
+                  hintTitle={v == null && !na ? gapTooltip(l.key) : undefined}
+                  evidence={
+                    v == null && !na
+                      ? { ...(audit?.[l.key] ?? {}), reason: audit?.[l.key]?.reason ?? gapReason(l.key).why }
+                      : (audit?.[l.key] ?? null)
+                  }
+                  testId={`fts-cell-audit-${l.key}`}
+                />
+              )}
             </button>
           );
         })}
