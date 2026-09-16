@@ -62,7 +62,8 @@ describe('سایدبار بازرسی نماد', () => {
     renderInspector();
     const aside = screen.getByLabelText('بازرسی نماد شپنا');
     expect(aside.className).toContain('translate-x-0');
-    expect(screen.getByText('شپنا')).toBeInTheDocument();
+    // نماد ممکن است در هدر و برچسب‌های تحلیلی (VolumeFlow) هم بیاید
+    expect(screen.getAllByText('شپنا').length).toBeGreaterThan(0);
     expect(screen.getByText('پرش به چارت تکنیکال ↗')).toBeInTheDocument();
     expect(screen.getByText('بررسی کدال ↗')).toBeInTheDocument();
   });
