@@ -312,9 +312,9 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
 describe('پنل شاخص ۳ — حاشیه سود ناخالص', () => {
   it('فرمول شفاف + سه آستانه (مردود/مشروط/مطلوب) رندر می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="3" quarters={FISCAL} physicalApplicable />);
-    expect(screen.getByText(/زیر ۲۰٪ → مردود/)).toBeInTheDocument();
-    expect(screen.getByText(/۲۰–۳۰٪ → مشروط/)).toBeInTheDocument();
-    expect(screen.getByText(/بالای ۳۰٪ → مطلوب/)).toBeInTheDocument();
+    expect(screen.getByText(/زیر ۲۰٪ ← مردود/)).toBeInTheDocument();
+    expect(screen.getByText(/۲۰–۳۰٪ ← مشروط/)).toBeInTheDocument();
+    expect(screen.getByText(/بالای ۳۰٪ ← مطلوب/)).toBeInTheDocument();
     expect(screen.getByText(/حاشیه = \(سود ناخالص ÷ درآمدهای عملیاتی\) × ۱۰۰/)).toBeInTheDocument();
   });
 
@@ -345,8 +345,8 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
 
   it('نسبت فروش/ارزش بازار با کف و پتانسیل سود هم‌زمان نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
-    expect(screen.getByText(/فروش\/ارزش بازار ۱\.۳۵×/)).toBeInTheDocument();
-    expect(screen.getByText(/پتانسیل سود ۲۸\.۷٪/)).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/فروش\/ارزش بازار ۱\.۳۵×/);
+    expect(document.body.textContent).toMatch(/پتانسیل سود ۲۸\.۷٪/);
   });
 
   it('جدول ضرایب پویا نشان می‌دهد ضریب ثابت ۴ نیست (۳ماهه×4، ۵ماهه×2.4)', () => {

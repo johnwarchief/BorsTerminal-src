@@ -86,7 +86,7 @@ export function EpsLadder({
             <div className="text-2xs text-text-muted">
               میاندوره {interim.months != null ? `${toFaDigits(interim.months)} ماهه` : ''}
             </div>
-            <div className="text-sm font-black text-accent-blue">{toFaDigits(interim.eps)}</div>
+            <div className="num text-sm font-black text-accent-blue">{toFaDigits(interim.eps)}</div>
             <div className="text-2xs text-text-muted">جزئی — با ۱۲ماهه مقایسه نشود</div>
           </div>
         ) : null}

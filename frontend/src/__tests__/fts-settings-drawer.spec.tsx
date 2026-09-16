@@ -77,7 +77,7 @@ describe('پنل تنظیمات FTS', () => {
     // پنل کناری ثابت سمت راست — بدون anchor-math، مستقل از اسکرول کانتینر داخلی
     expect(panel.className).toContain('fixed');
     expect(panel.className).toContain('inset-y-0');
-    expect(panel.className).toContain('right-0');
+    expect(panel.className).toContain('start-0'); // منطقی: در RTL یعنی لبهٔ راست (به‌جای right-0 فیزیکی)
     expect(panel.className).toContain('w-[420px]');
     expect(panel.className).toContain('z-[9999]');
     // backdrop نیمه‌شف زیر پنل روی همه‌چیز

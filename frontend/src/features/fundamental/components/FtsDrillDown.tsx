@@ -53,7 +53,7 @@ function Bar({
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-card">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${w}%` }} />
       </div>
-      <span className="num w-16 shrink-0 text-left text-2xs font-bold text-text-primary">{valueLabel}</span>
+      <span className="num w-16 shrink-0 text-end text-2xs font-bold text-text-primary">{valueLabel}</span>
     </div>
   );
 }
@@ -78,12 +78,12 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </span>
           </GapHint>
         ) : (
-          <Badge tone={growth >= (inflation ?? 0) ? 'green' : 'yellow'}>رشد {fmtPct(growth)}</Badge>
+          <Badge tone={growth >= (inflation ?? 0) ? 'green' : 'yellow'}>رشد <span className="num">{fmtPct(growth)}</span></Badge>
         )}
         {mon?.months != null ? (
-          <Badge tone="blue">{toFaDigits(mon.months)} ماهه · {toFaDigits(mon.period ?? '')}</Badge>
+          <Badge tone="blue"><span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span></Badge>
         ) : null}
-        {inflation != null ? <Badge tone="gray">مبنای تورم {fmtPct(inflation, 0)}</Badge> : null}
+        {inflation != null ? <Badge tone="gray">مبنای تورم <span className="num">{fmtPct(inflation, 0)}</span></Badge> : null}
       </div>
       <div className="flex flex-col gap-2">
         <Bar
@@ -181,7 +181,7 @@ function Panel2({ card }: { card: FtsCard }) {
         {ind?.evidence_tier ? <Badge tone="blue">{ind.evidence_tier}</Badge> : null}
         {ind?.interim?.eps_interim != null ? (
           <Badge tone="gray">
-            میاندوره: {toFaDigits(ind.interim.eps_interim)} ({toFaDigits(ind.interim.period_months ?? 0)} ماهه)
+            میاندوره: <span className="num">{toFaDigits(ind.interim.eps_interim)}</span> (<span className="num">{toFaDigits(ind.interim.period_months ?? 0)}</span> ماهه)
           </Badge>
         ) : null}
       </div>
@@ -210,7 +210,7 @@ function Panel2({ card }: { card: FtsCard }) {
       </p>
       {partialShown ? (
         <p className="text-2xs leading-relaxed text-accent-susp">
-          دادهٔ موجود ({toFaDigits(realYears)} سال) نمایش داده می‌شود، اما چون سابقهٔ کامل {toFaDigits(required)} ساله
+          دادهٔ موجود (<span className="num">{toFaDigits(realYears)}</span> سال) نمایش داده می‌شود، اما چون سابقهٔ کامل <span className="num">{toFaDigits(required)}</span> ساله
           ندارد، این نماد در شاخص ۲ مردود است — داده حیف نمی‌شود ولی گیت سه‌ساله پاس نمی‌شود.
         </p>
       ) : failReason != null ? (
@@ -278,13 +278,13 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
       ) : null}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'rejected' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          زیر ۲۰٪ → مردود
+          زیر ۲۰٪ ← مردود
         </div>
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'conditional' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          ۲۰–۳۰٪ → مشروط
+          ۲۰–۳۰٪ ← مشروط
         </div>
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'ideal' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          بالای ۳۰٪ → مطلوب
+          بالای ۳۰٪ ← مطلوب
         </div>
       </div>
       <p className="text-2xs leading-relaxed text-text-secondary">
@@ -311,15 +311,15 @@ function Panel4({ card }: { card: FtsCard }) {
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="blue">م = {toFaDigits(m)} ماه · ضریب ×{toFaDigits(scale.toFixed(2))}</Badge>
+        <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
         {s2m != null ? (
           <Badge tone={s2m >= salesThresh ? 'green' : 'yellow'}>
-            فروش/ارزش بازار {toFaDigits(s2m.toFixed(2))}× (کف {fmtPct(salesThresh * 100, 0)})
+            فروش/ارزش بازار <span className="num">{toFaDigits(s2m.toFixed(2))}</span>× (کف <span className="num">{fmtPct(salesThresh * 100, 0)}</span>)
           </Badge>
         ) : null}
         {potential != null ? (
           <Badge tone={potential >= (ind?.potential_threshold ?? 33) ? 'green' : 'yellow'}>
-            پتانسیل سود {fmtPct(potential)}
+            پتانسیل سود <span className="num">{fmtPct(potential)}</span>
           </Badge>
         ) : null}
       </div>
@@ -420,7 +420,7 @@ function Panel5({ card }: { card: FtsCard }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={industryGateTone(regime)}>{ind?.regime_label ?? ind?.label ?? regime}</Badge>
         {sector ? <Badge tone="gray">{sector}</Badge> : null}
-        {ind?.market_share_pct != null ? <Badge tone="blue">سهم بازار {fmtPct(ind.market_share_pct)}</Badge> : null}
+        {ind?.market_share_pct != null ? <Badge tone="blue">سهم بازار <span className="num">{fmtPct(ind.market_share_pct)}</span></Badge> : null}
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <div className={`rounded-xl border p-2.5 ${isFree ? 'border-accent-green/40 bg-accent-green/10' : 'border-border-c bg-bg-primary'}`}>
