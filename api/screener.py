@@ -83,6 +83,23 @@ def get_screener():
             r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
             r["growth_pass"] = r["rev_growth"] is not None and r["rev_growth"] >= cfg["growth_min"]
             r["eps_data_gap"] = bool(r.get("eps_data_gap"))
+            # سند v2.1: اگر سطرهای سالانهٔ اسکنر کافی نبود، همان نردبانِ EPSِ
+            # مسیر جزئیات صدا زده می‌شود تا شاخص ۲ بین اسکرینر و /api/fundamental
+            # واگرا نشود (ریشهٔ گزارش کاربر: «بدون داده» برای نمادهایی که داده دارند).
+            if r["eps_data_gap"]:
+                try:
+                    from .fundamental import _eps_track_blended
+                    _tr = _eps_track_blended(conn, r["symbol"], years=3) or {}
+                    _ser = _tr.get("eps_series")
+                    if _ser:
+                        r["eps_series"] = _ser
+                        r["eps_last"] = _ser[-1]
+                        r["eps_data_gap"] = bool(_tr.get("data_gap"))
+                        r["eps_years_available"] = len([v for v in _ser if v is not None])
+                        if isinstance(_tr.get("pass"), bool):
+                            r["i2_pass"] = _tr["pass"]
+                except Exception:
+                    pass
 
         # واچ‌لیست: حداکثر watchlist_max سهمِ غیرمردود، مرتب بر اساس امتیاز
         cap = int(cfg.get("watchlist_max", 50) or 50)
