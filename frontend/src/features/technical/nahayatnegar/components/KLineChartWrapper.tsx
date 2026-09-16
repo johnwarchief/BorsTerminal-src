@@ -80,39 +80,69 @@ function patternOverlayColor(spec: PatternOverlaySpec): string {
 function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<string, unknown> {
   const color = patternOverlayColor(spec);
   const p0 = spec.points[0];
-  // کمربند دو نقطه‌ای (فیبو/سقف سوم/ساعت شنی) ⇒ مستطیل تمام‌عرض
-  if (spec.points.length >= 2) {
-    const p1 = spec.points[1];
-    return {
-      name: 'rect',
-      groupId: PATTERN_GROUP_ID,
-      lock: true,
-      points: [
-        { timestamp: startTs, value: p0.value },
-        { timestamp: p1.timestamp, value: p1.value },
-      ],
-      styles: { polygon: { color, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
-    };
-  }
-  // مارکر روی کندل (نقطه‌زنی/ضربدر MA14)
+
+  // گرامرِ بصریِ per-pattern — هر الگو شکل/استایلِ مخصوصِ خودش را دارد (فاز ۴+).
+  // ۱) مارکرها (نقطه‌زنی ◎ / خروج زیر MA14 ⨯): چیپِ برچسب‌دار روی خودِ کندل.
   if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross') {
+    const glyph = spec.kind === 'ma14exit' ? '⨯' : '◎';
     return {
       name: 'simpleAnnotation',
       groupId: PATTERN_GROUP_ID,
       lock: true,
       points: [{ timestamp: p0.timestamp, value: p0.value }],
-      extendData: spec.label,
-      styles: { text: { color, size: 11, family: 'Vazirmatn' } },
+      extendData: `${glyph} ${spec.label}`,
+      styles: {
+        text: {
+          color,
+          size: 11,
+          family: 'Vazirmatn',
+          backgroundColor: 'rgba(11,17,28,0.78)',
+          borderColor: color,
+          borderSize: 1,
+          borderRadius: 4,
+          paddingLeft: 4,
+          paddingRight: 4,
+          paddingTop: 1,
+          paddingBottom: 1,
+        },
+      },
     };
   }
-  // خط افقی تمام‌عرض (جت/CHoCH/خط گردن)
-  const dashed = (spec.styles as { style?: unknown } | undefined)?.style === 'dashed';
+
+  // ۲) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی): مستطیلِ تمام‌عرض با پرِ ملایم و بوردرِ خط‌چین.
+  if (spec.points.length >= 2) {
+    const a = spec.points[0].value;
+    const b = spec.points[1].value;
+    const hi = Math.max(a, b);
+    const lo = Math.min(a, b);
+    const lastTs = spec.points[1].timestamp || p0.timestamp;
+    return {
+      name: 'rect',
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [
+        { timestamp: startTs, value: hi },
+        { timestamp: lastTs, value: lo },
+      ],
+      styles: { polygon: { color, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
+    };
+  }
+
+  // ۳) خطِ افقیِ تمام‌عرض: ضخامت/نوعِ خط مخصوصِ هر الگو
+  //    جت و خطِ گردنِ دوقلو پررنگ و ممتد؛ CHoCH و خطِ گردنِ سر‌و‌شانه نازک و خط‌چین.
+  const lineStyleByKind: Record<string, { size: number; style: 'solid' | 'dashed' | 'dotted' }> = {
+    jet: { size: 2, style: 'solid' },
+    double: { size: 2, style: 'solid' },
+    choch: { size: 1, style: 'dashed' },
+    headshoulders: { size: 1, style: 'dashed' },
+  };
+  const ls = lineStyleByKind[spec.kind] ?? { size: 1, style: 'solid' as const };
   return {
     name: 'horizontalStraightLine',
     groupId: PATTERN_GROUP_ID,
     lock: true,
     points: [{ timestamp: p0.timestamp, value: p0.value }],
-    styles: { line: { color, size: 1, style: dashed ? 'dashed' : 'solid' } },
+    styles: { line: { color, size: ls.size, style: ls.style } },
   };
 }
 
