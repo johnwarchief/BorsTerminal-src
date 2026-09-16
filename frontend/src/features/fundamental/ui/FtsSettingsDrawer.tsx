@@ -13,6 +13,15 @@ import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { FTS_GUIDE_DEFAULTS, SALES_TO_MCAP_GUIDE_DEFAULT, useFtsConfig, useSaveFtsConfig, type FtsConfig } from '../api/useFtsConfig';
+import {
+  EXCLUDE_AXES,
+  EXCLUDE_CONFIG_KEY,
+  EXCLUDE_LABEL,
+  NO_ROW_FLAG,
+  resetExcludeAxes,
+  toggleExcludeAxis,
+  useExcludeAxes,
+} from '../lib/exclusionFilter';
 
 /** فیلدهایی که کشو ویرایش می‌کند — بقیهٔ کلیدها هنگام ذخیره از config فعلی می‌آیند */
 type DraftConfig = Pick<
@@ -203,6 +212,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
   const [holdingsNa, setHoldingsNa] = useState(true);
   const [pharmaExempt, setPharmaExempt] = useState(false);
   const [baseMarketGate, setBaseMarketGate] = useState(true);
+  /** فیلتر حذف بر اساس شاخص — منبع حقیقت در lib/exclusionFilter (localStorage + کلید کانفیگ) */
+  const excludeAxes = useExcludeAxes();
 
   /** Esc در حالت باز می‌بندد — بدون هیچ anchor-math؛ پنل fixed سمت راست است */
   useEffect(() => {
@@ -280,6 +291,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       [GATE_KEYS.holdingsNa]: holdingsNa,
       [GATE_KEYS.pharmaExempt]: pharmaExempt ? PHARMA_MARGIN_EXEMPT_MIN : 0,
       [GATE_KEYS.baseMarket]: baseMarketGate,
+      /** فیلتر حذف بر اساس شاخص — تا وقتی بک‌اند کلید را به FTS_DEFAULTS اضافه کند، مقدار سمت سرور ذخیره نمی‌شود (localStorage نگه‌دارنده است) */
+      [EXCLUDE_CONFIG_KEY]: [...excludeAxes],
     };
     save.mutate(payload);
   };
@@ -296,6 +309,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       [GATE_KEYS.holdingsNa]: true,
       [GATE_KEYS.pharmaExempt]: 0,
       [GATE_KEYS.baseMarket]: true,
+      /** فیلتر شاخصی جزو پیش‌فرض‌ها نیست */
     };
     save.mutate(payload, {
       onSuccess: () => {
@@ -488,6 +502,39 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
             checked={baseMarketGate}
             onChange={setBaseMarketGate}
           />
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-xl border border-[var(--hairline)] bg-bg-card/30 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-black text-text-primary">فیلتر حذف بر اساس شاخص</span>
+            {excludeAxes.length > 0 ? (
+              <button
+                type="button"
+                onClick={resetExcludeAxes}
+                data-testid="fts-drawer-axis-reset"
+                className="rounded-md border border-[var(--hairline)] px-2 py-0.5 text-2xs font-bold text-text-secondary transition-colors hover:border-accent-red hover:text-accent-red"
+              >
+                بازنشانی فیلترها
+              </button>
+            ) : null}
+          </div>
+          <span className="break-words text-2xs leading-snug text-text-muted">
+            برای هر شاخص می‌توانید انتخاب کنید که نمادهای «ناقص یا مردود» آن شاخص از جدول غربالگری حذف
+            شوند. پیش‌فرض: هیچ حذفی انجام نمی‌شود.
+          </span>
+          {EXCLUDE_AXES.map((axis) => {
+            const noFlag = NO_ROW_FLAG[axis] ?? null;
+            return (
+            <ToggleRow
+              key={axis}
+              label={EXCLUDE_LABEL[axis]}
+              scope={noFlag ? 'بدون داده' : 'حذف از جدول'}
+              hint={noFlag ?? 'ردیف‌هایی که این شاخص در آن‌ها ناقص یا مردود است، از خروجی جدول حذف می‌شوند.'}
+              checked={excludeAxes.includes(axis)}
+              onChange={() => toggleExcludeAxis(axis)}
+            />
+            );
+          })}
         </div>
 
         {save.isError ? (

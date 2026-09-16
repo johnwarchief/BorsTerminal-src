@@ -23,6 +23,12 @@ import {
 import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
 import { AuditBadge, type AuditEvidenceInput } from '../components/AuditBadge';
 import { screenAuditEvidence } from '../lib/auditEvidence';
+import {
+  EXCLUDE_LABEL,
+  applyExcludeFilter,
+  resetExcludeAxes,
+  useExcludeAxes,
+} from '../lib/exclusionFilter';
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
@@ -305,6 +311,8 @@ export function FtsScreenTable({
   const [desc, setDesc] = useState(true);
   /** دروازه‌های سخت فعال‌اند → ردیف‌های excluded پیش‌فرض حذف می‌شوند؛ سوییچ فقط برای بازرسی */
   const [showExcluded, setShowExcluded] = useState(false);
+  /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
+  const excludeAxes = useExcludeAxes();
 
   /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
@@ -313,15 +321,21 @@ export function FtsScreenTable({
     [rows],
   );
 
+  /** فیلتر «حذف بر اساس شاخص» روی ردیف‌های مجاز اعمال می‌شود (شمار حذف‌شده‌ها برای نمایش) */
+  const { rows: rowsAfterAxisFilter, hidden: hiddenByAxes } = useMemo(
+    () => applyExcludeFilter(rows, excludeAxes),
+    [rows, excludeAxes],
+  );
+
   const visible = useMemo(
     () => {
-      const base = showExcluded ? rows : rows.filter((r) => r.excluded !== true);
+      const base = showExcluded ? rowsAfterAxisFilter : rowsAfterAxisFilter.filter((r) => r.excluded !== true);
       // حتی در حالت بازرسی excluded، صندوق‌ها/کارگزاری‌ها/مشتقه‌ها می‌مانند؟ نه —
       // «نمایش ردیف‌های حذف‌شده» فقط دروازه‌های سخت را برمی‌گرداند؛ قلمرو
       // شرکت‌محورِ جدول بنیادی روی هر دو حالت اعمال می‌شود.
       return base.filter((r) => isFundamentalCompany(r));
     },
-    [rows, showExcluded],
+    [rowsAfterAxisFilter, showExcluded],
   );
 
   const sorted = useMemo(() => {
@@ -399,6 +413,34 @@ export function FtsScreenTable({
           </span>
         </div>
       </div>
+      {excludeAxes.length > 0 ? (
+        <div
+          className="flex flex-wrap items-center gap-2 border-b border-[var(--hairline)] bg-accent-yellow/5 px-4 py-1.5"
+          data-testid="fts-axis-filter-bar"
+        >
+          <span
+            className="num text-2xs font-bold text-accent-yellow"
+            data-testid="fts-axis-filter-count"
+            title={excludeAxes.map((a) => EXCLUDE_LABEL[a]).join(' · ')}
+          >
+            {hiddenByAxes > 0
+              ? `${toFaDigits(hiddenByAxes)} نماد با فیلتر شاخصی حذف شد`
+              : 'فیلتر شاخصی فعال — نمادی حذف نشد'}
+          </span>
+          <span className="text-2xs text-text-muted">
+            ({excludeAxes.map((a) => EXCLUDE_LABEL[a]).join(' · ')})
+          </span>
+          <button
+            type="button"
+            onClick={resetExcludeAxes}
+            data-testid="fts-axis-filter-reset"
+            title="همهٔ فیلترهای حذف بر اساس شاخص خاموش شوند"
+            className="ms-auto rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-2xs font-bold text-text-secondary transition-colors hover:border-accent-red hover:text-accent-red"
+          >
+            بازنشانی فیلترها
+          </button>
+        </div>
+      ) : null}
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto">
         <table className="w-full min-w-[720px] text-start text-xs">
           <thead className="sticky top-0 z-10 bg-bg-card/95 backdrop-blur">
