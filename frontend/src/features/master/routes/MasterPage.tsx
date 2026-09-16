@@ -1,6 +1,6 @@
-// features/master/routes/MasterPage.tsx -- داشبورد ایجنت ارشد (بازطراحی)
-// v2: گیج تجمیعی با آرا/وزن‌های واقعی + کارت برنامه معاملاتی + گیتینگ سه‌گانه
-// + باکس synthesis قانون‌محور. تمام‌عرض داخل صفحه خودش.
+// features/master/routes/MasterPage.tsx -- داشبورد ایجنت ارشد (بازطراحی M-03)
+// v3: لایوت full-bleed (گیج + خلاصهٔ تحلیلی مدیریتی آفلاین) + استپر چهار گیتی سخت‌گیرانه
+// + ماشین وتو (بدون میانگین خطی) + ماشین‌حساب برنامهٔ معاملاتی/DCA + خروج ۵۰٪ + اکشن‌های سبد/واچ‌لیست.
 import { useMemo } from 'react';
 import { useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
@@ -8,6 +8,9 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { AGENT_WEIGHTS } from '@contracts/signal';
+import { usePortfolio, useMarketCloses } from '@features/portfolio/api/usePortfolio';
+import { SECTOR_BANDS, matchSectorBand, normalizeSector } from '@features/portfolio/model/sectorAllocation';
+import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import {
   aggregateSignals,
   effectiveWeights,
@@ -15,14 +18,29 @@ import {
   synthesizeVerdict,
 } from '../lib/masterMath';
 import { buildTradePlan, riskLevel } from '../lib/tradePlanMath';
+import { buildTradeBlueprint } from '../lib/dcaCalc';
+import {
+  DEFAULT_INDUSTRY_CAP_PCT,
+  definiteDecision,
+  hasDirectEntrySetup,
+  hourglassSwitch,
+  isSuperFundamental,
+  runStrictGates,
+  weeklyTrendFromSignal,
+  warRegimeCap,
+} from '../lib/strictGates';
+import { buildManagementSummary, halfExitPlan } from '../lib/managementSummary';
+import { useCapitalStore } from '../stores/capitalStore';
 import { useFtsPlan } from '../api/useFtsPlan';
-import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { MasterVerdictCard } from '../ui/MasterVerdictCard';
 import { AgentMatrix } from '../ui/AgentMatrix';
 import { ConflictBanner } from '../ui/ConflictBanner';
 import { TradePlanCard } from '../ui/TradePlanCard';
+import { TradeBlueprint } from '../ui/TradeBlueprint';
 import { GatePipeline } from '../ui/GatePipeline';
 import { SynthesisBox } from '../ui/SynthesisBox';
+import { DecisionBadge } from '../ui/DecisionBadge';
+import { ManagementSummary } from '../ui/ManagementSummary';
 
 const AGENT_FA: Record<string, string> = {
   fundamental: 'بنیادی',
@@ -39,24 +57,137 @@ export default function MasterPage() {
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
   const inputs = useMemo(() => (symbol ? getActiveSignals(symbol) : {}), [symbol, entry]);
   const verdict = useMemo(() => (symbol ? aggregateSignals(symbol, inputs) : null), [symbol, inputs]);
-  const gates = useMemo(() => runGatingPipeline(inputs), [inputs]);
+  const gates3 = useMemo(() => runGatingPipeline(inputs), [inputs]);
   const weights = useMemo(() => effectiveWeights(inputs), [inputs]);
 
   const planFeed = useFtsPlan(symbol);
   const plan = useMemo(() => {
-    const gateFails = gates.filter((g) => g.status === 'fail').length;
-    const gateWaits = gates.filter((g) => g.status === 'wait').length;
+    const gateFails = gates3.filter((g) => g.status === 'fail').length;
+    const gateWaits = gates3.filter((g) => g.status === 'wait').length;
     return buildTradePlan({
       fib: planFeed.data?.fts?.fib ?? null,
       jet: planFeed.data?.fts?.jet ?? null,
       exit: planFeed.data?.fts?.exit_engine ?? null,
       risk: riskLevel({ hasConflict: verdict?.hasConflict ?? false, gateFails, gateWaits }),
     });
-  }, [planFeed.data, gates, verdict]);
+  }, [planFeed.data, gates3, verdict]);
 
   const synthesis = useMemo(
-    () => (symbol && verdict ? synthesizeVerdict(symbol, inputs, verdict, gates) : ''),
-    [symbol, verdict, inputs, gates],
+    () => (symbol && verdict ? synthesizeVerdict(symbol, inputs, verdict, gates3) : ''),
+    [symbol, verdict, inputs, gates3],
+  );
+
+  // ─── دادهٔ سبد/صنعت و رژیم ریسک ───────────────────────────────────
+  const portfolio = usePortfolio();
+  const closes = useMarketCloses();
+  const warRegime = useCapitalStore((s) => s.warRegime);
+  const totalToman = useCapitalStore((s) => s.totalToman);
+  const setWarRegime = useCapitalStore((s) => s.setWarRegime);
+
+  const regime = useMemo(() => {
+    const decisions = portfolio.data?.decisions ?? [];
+    const mine = decisions.find((d) => d.symbol === symbol) ?? null;
+    const status = (mine?.status ?? '').toLowerCase();
+    const inBasket = mine ? status === 'accept' : null;
+    const sector = mine?.sector ?? null;
+    const band = SECTOR_BANDS.find((b) => b.id === matchSectorBand(sector)) ?? null;
+    const industryCapPct = band?.max ?? DEFAULT_INDUSTRY_CAP_PCT;
+    const industryUsedPct =
+      sector != null
+        ? Math.round(
+            decisions
+              .filter(
+                (d) =>
+                  (d.status ?? '').toLowerCase() === 'accept' &&
+                  d.symbol !== symbol &&
+                  normalizeSector(d.sector ?? '') === normalizeSector(sector),
+              )
+              .reduce((s, d) => s + (typeof d.weight_eff_pct === 'number' ? d.weight_eff_pct : 0), 0) * 10,
+          ) / 10
+        : null;
+    const symbolWeightPct = typeof mine?.weight_eff_pct === 'number' ? mine.weight_eff_pct : null;
+    return { inBasket, industryCapPct, industryUsedPct, symbolWeightPct, bandLabel: band?.label ?? null };
+  }, [portfolio.data, symbol]);
+
+  const weekly = useMemo(() => weeklyTrendFromSignal(inputs.technical), [inputs.technical]);
+
+  const strict = useMemo(
+    () =>
+      runStrictGates(
+        inputs,
+        {
+          inBasket: regime.inBasket,
+          industryUsedPct: regime.industryUsedPct,
+          industryCapPct: regime.industryCapPct,
+          warRegime,
+          symbolWeightPct: regime.symbolWeightPct,
+        },
+        weekly,
+      ),
+    [inputs, regime, weekly, warRegime],
+  );
+
+  const decision = useMemo(() => definiteDecision(strict), [strict]);
+  const superFundamental = useMemo(() => isSuperFundamental(inputs.fundamental), [inputs.fundamental]);
+  const warCap = warRegimeCap(warRegime);
+
+  const currentPrice = (symbol ? closes.data?.get(symbol) : null) ?? null;
+  const resistance = planFeed.data?.fts?.jet?.resistance ?? null;
+
+  const blueprint = useMemo(
+    () =>
+      buildTradeBlueprint({
+        capitalToman: totalToman > 0 ? totalToman : null,
+        baseStepWeightPct: plan.weight.pct,
+        industryCapPct: regime.industryCapPct,
+        industryUsedPct: regime.industryUsedPct,
+        step1: plan.step1,
+        step2: plan.step2,
+        breakout: plan.breakout,
+        priceActionStop: plan.stop.price,
+        resistance,
+        currentPrice,
+        warCapPct: warCap?.max ?? null,
+      }),
+    [totalToman, plan, regime, resistance, currentPrice, warCap],
+  );
+
+  const hourglass = useMemo(
+    () =>
+      hourglassSwitch({
+        superFundamental,
+        weekly,
+        fundScore: typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null,
+      }),
+    [superFundamental, weekly, inputs.fundamental],
+  );
+
+  const halfExit = useMemo(
+    () =>
+      halfExitPlan({
+        resistance,
+        setupActive: hasDirectEntrySetup(inputs.technical),
+        fundamentalOk: strict.gates.find((g) => g.id === 'fundamental')?.state === 'passed',
+        currentPrice,
+      }),
+    [resistance, inputs.technical, strict.gates, currentPrice],
+  );
+
+  const summaryLines = useMemo(
+    () =>
+      symbol && verdict
+        ? buildManagementSummary({
+            symbol,
+            verdict,
+            input: inputs,
+            strict,
+            decision,
+            warRegime,
+            superFundamental,
+            industryCapPct: regime.industryCapPct,
+          })
+        : [],
+    [symbol, verdict, inputs, strict, decision, warRegime, superFundamental, regime.industryCapPct],
   );
 
   if (!symbol) {
@@ -72,11 +203,10 @@ export default function MasterPage() {
   const activeCount = verdict.usedSignalIds.length;
 
   return (
-    <div className="flex w-full max-w-none flex-col gap-4">
+    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
-        <div className="flex items-center gap-2">
-          {/* اقدام سریع سبد: افزودن/ویرایش/حذف تصمیم این نماد */}
+        <div className="flex flex-wrap items-center gap-2">
           <SymbolBasketAction symbol={symbol} />
           <span className="text-2xs uppercase tracking-widest text-text-muted">
             {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}
@@ -92,9 +222,31 @@ export default function MasterPage() {
       ) : (
         <>
           <ConflictBanner verdict={verdict} />
-          <MasterVerdictCard verdict={verdict} inputs={inputs} />
+
+          {/* Full-bleed: گیج + حکم قطعی در یک ستون، خلاصهٔ تحلیلی مدیریتی فضای خالی کنار گیج */}
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+            <div className="flex flex-col gap-3">
+              <MasterVerdictCard verdict={verdict} inputs={inputs} />
+              <div className="glass-panel relative overflow-hidden p-4">
+                <DecisionBadge decision={decision} />
+              </div>
+            </div>
+            <ManagementSummary lines={summaryLines} />
+          </div>
+
           <TradePlanCard symbol={symbol} action={verdict.finalAction} plan={plan} />
-          <GatePipeline gates={gates} />
+
+          <TradeBlueprint
+            symbol={symbol}
+            plan={blueprint}
+            hourglass={hourglass}
+            halfExit={halfExit}
+            superFundamental={superFundamental}
+            warRegime={warRegime}
+            onToggleWarRegime={setWarRegime}
+          />
+
+          <GatePipeline gates={strict.gates} />
           <SynthesisBox text={synthesis} />
         </>
       )}
@@ -124,7 +276,7 @@ export default function MasterPage() {
         <p className="mt-2 text-2xs leading-5 text-text-muted">
           علت نهایی: {empty ? 'هیچ رأی فعالی موجود نیست.' : activeCount < 4 ? `فقط ${toFaDigits(activeCount)} رأی فعال — وزن‌ها بین آرای فعال بازتوزیع شده‌اند.` : 'هر چهار ایجنت رای داده‌اند؛ وزن‌ها کامل اعمال شد.'}
           {verdict.hasConflict ? ' تضاد افق زمانی باعث تنزیل اطمینان شد.' : ''}
-          {gates.some((g) => g.status === 'fail') ? ' رد گیت بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}
+          {gates3.some((g) => g.status === 'fail') ? ' رد گیت بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}
         </p>
       </div>
     </div>
