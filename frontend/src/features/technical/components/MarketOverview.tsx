@@ -125,7 +125,11 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
         >
           {negPct == null ? MISSING : <>{fmt(negPct)}<span className="text-[10px] font-bold text-text-muted">٪ منفی</span></>}
         </Stat>
-        <Stat label="تعادل صف‌ها" hint="نسبت ارزش صف خرید به فروش" tone={depth?.ratio != null && depth.ratio >= 1 ? 'green' : 'red'}>
+        <Stat
+          label="تعادل صف‌ها"
+          hint="نسبت ارزش صف خرید به فروش"
+          tone={depth?.depth_available !== true || depth?.ratio == null ? undefined : depth.ratio >= 1 ? 'green' : 'red'}
+        >
           {depth?.depth_available !== true || depth.ratio == null ? MISSING : <>{fmt(depth.ratio)}<span className="text-[10px] font-bold text-text-muted">×</span></>}
         </Stat>
         <Stat

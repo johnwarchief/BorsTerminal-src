@@ -30,25 +30,29 @@ const EventSchema = z.object({
 });
 type RawEvent = z.infer<typeof EventSchema>;
 
+const VolSchema = z.object({ time: z.string(), value: z.number() });
+
 const ChartSchema = z.object({
   status: z.string(),
   candles: z.array(CandleSchema).nullish(),
+  volumes: z.array(VolSchema).nullish(),
   adjustEvents: z.array(EventSchema).nullish(),
 });
 
 const TedpixSchema = z.object({
   status: z.string(),
   candles: z.array(CandleSchema).nullish(),
+  volumes: z.array(VolSchema).nullish(),
 });
 
 /** کندل‌های API (رشته تاریخ) → KLineData (میلی‌ثانیه) */
-export function toKLine(candles: { time: string; open: number; high: number; low: number; close: number }[]): KLineData[] {
+export function toKLine(candles: { time: string; open: number; high: number; low: number; close: number }[], volByTime: Record<string, number> = {}): KLineData[] {
   const out: KLineData[] = [];
   for (const c of candles) {
     const ts = Date.parse(`${c.time}T00:00:00Z`);
     if (!Number.isFinite(ts)) continue;
     if (![c.open, c.high, c.low, c.close].every((v) => Number.isFinite(v) && v > 0)) continue;
-    out.push({ timestamp: ts, open: c.open, high: c.high, low: c.low, close: c.close, volume: 0 } as unknown as KLineData);
+    out.push({ timestamp: ts, open: c.open, high: c.high, low: c.low, close: c.close, volume: volByTime[c.time] ?? 0 } as unknown as KLineData);
   }
   return out.sort((a, b) => a.timestamp - b.timestamp);
 }
@@ -86,7 +90,12 @@ export function useNnChartData(symbol: string, enabled = true) {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
-  const data = useMemo(() => toKLine(q.data?.candles ?? []), [q.data]);
+  const volMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const v of q.data?.volumes ?? []) m[v.time] = v.value;
+    return m;
+  }, [q.data]);
+  const data = useMemo(() => toKLine(q.data?.candles ?? [], volMap), [q.data, volMap]);
   const actions = useMemo(() => toCorporateActions(q.data?.adjustEvents), [q.data]);
   return { data, actions, isLoading: q.isLoading, isError: q.isError, status: q.data?.status ?? null };
 }
@@ -100,6 +109,11 @@ export function useNnTedipx() {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
-  const data = useMemo(() => toKLine(q.data?.candles ?? []), [q.data]);
+  const volMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const v of q.data?.volumes ?? []) m[v.time] = v.value;
+    return m;
+  }, [q.data]);
+  const data = useMemo(() => toKLine(q.data?.candles ?? [], volMap), [q.data, volMap]);
   return { data, isLoading: q.isLoading };
 }
