@@ -171,6 +171,24 @@ def get_screener():
                 r["verdict"] = res["verdict"]
                 r["pricing_mode"] = res.get("pricing_mode")
                 r["panel_industry"] = (res.get("profile") or {}).get("kind")
+                # v10 (منبعِ واحدِ حقیقت): ستون‌های «مقدار»ِ جدول هم باید از همان
+                # مسیرِ کارت بیایند، نه سالانه‌سازیِ legacy مسیر bulk_scan. بدونِ
+                # این، «۴ پتانسیل»ِ جدول (فروش ۳ماهه×۴) با potential_pctِ کارت
+                # (تجمیعی × ۱۲÷م) واگرا می‌شد — شاهد: شملی جدول ۳۳٫۲٪ در برابر کارت
+                # ۶۱٫۳٪؛ ۵۲۳ ردیف از ۸۶۵ ناهم‌خوان بودند. امتیاز/پرچم دست‌نخورده است.
+                _ind = res.get("indicators") or {}
+                _g1 = ((_ind.get("1") or {}).get("monetary") or {})
+                _g3 = _ind.get("3") or {}
+                _v4 = _ind.get("4") or {}
+                _an4 = _v4.get("annual") or {}
+                r["rev_growth"] = _g1.get("monetary_pct")
+                r["gross_margin"] = _g3.get("margin_pct")
+                r["sales_to_mcap"] = _v4.get("sales_to_mcap")
+                r["profit_potential_pct"] = _v4.get("potential_pct")
+                r["annual_sales_bt"] = (_v4.get("annual_sales_bt")
+                                         if _v4.get("annual_sales_bt") is not None
+                                         else _an4.get("annual_sales_bt"))
+                r["annualize_months"] = _an4.get("months_used")
             # رتبه‌بندی مجدد بر پایهٔ امتیازِ یکسان‌شده (مردودها آخر، سپس امتیاز نزولی)
             rows.sort(key=lambda r: (r["excluded"], -r["score"],
                                      -_num(r.get("mcap")), r["symbol"]))
