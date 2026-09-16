@@ -40,7 +40,7 @@ export const PATTERN_PREFS_DEFAULT: PatternPrefs = {
   double: { enabled: true, color: '#10b981', opacity: 0.2 },
   headshoulders: { enabled: true, color: '#f43f5e', opacity: 0.2 },
   thirdpeak: { enabled: true, color: '#facc15', opacity: 0.12 },
-  ma14exit: { enabled: true, color: '#f43f5e', opacity: 0.9 },
+  ma14exit: { enabled: true, color: '#fb7185', opacity: 0.9 },
   hourglass: { enabled: true, color: '#38bdf8', opacity: 0.12 },
 };
 
@@ -127,7 +127,7 @@ export function buildPatternOverlays(
         { timestamp: lastTs, value: inputs.fib.entry2.to },
         { timestamp: lastTs, value: inputs.fib.entry2.from },
       ],
-      styles: { color: alpha('#22d3ee', op('fib')), borderColor: '#22d3ee', borderSize: 1, borderStyle: 'dashed' },
+      styles: { color: alpha('#f59e0b', op('fib')), borderColor: '#f59e0b', borderSize: 1, borderStyle: 'dashed' },
       extendData: { label: 'Fibo Entry 2 (61.8-70%)' },
     });
   }
