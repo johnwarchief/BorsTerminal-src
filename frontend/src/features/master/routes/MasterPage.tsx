@@ -78,7 +78,7 @@ export default function MasterPage() {
         <div className="flex items-center gap-2">
           {/* اقدام سریع سبد: افزودن/ویرایش/حذف تصمیم این نماد */}
           <SymbolBasketAction symbol={symbol} />
-          <span className="text-[10px] uppercase tracking-widest text-text-muted">
+          <span className="text-2xs uppercase tracking-widest text-text-muted">
             {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}
           </span>
         </div>
@@ -111,17 +111,17 @@ export default function MasterPage() {
             return (
               <span
                 key={a}
-                className={`num rounded-full border px-3 py-1 text-[11px] font-bold ${
+                className={`rounded-full border px-3 py-1 text-2xs font-bold ${
                   active ? 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan' : 'border-border-c bg-bg-card text-text-muted'
                 }`}
                 title={active ? `وزن خام ${toFaDigits(AGENT_WEIGHTS[a])} از ${toFaDigits(AGENT_WEIGHTS[a])}` : 'رأی فعال ندارد'}
               >
-                {AGENT_FA[a]}: {active ? `${toFaDigits(Math.round(w * 1000) / 10)}٪ موثر` : 'غیرفعال'}
+                {AGENT_FA[a]}: {active ? <><span className="num">{toFaDigits(Math.round(w * 1000) / 10)}٪</span> موثر</> : 'غیرفعال'}
               </span>
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] leading-5 text-text-muted">
+        <p className="mt-2 text-2xs leading-5 text-text-muted">
           علت نهایی: {empty ? 'هیچ رأی فعالی موجود نیست.' : activeCount < 4 ? `فقط ${toFaDigits(activeCount)} رأی فعال — وزن‌ها بین آرای فعال بازتوزیع شده‌اند.` : 'هر چهار ایجنت رای داده‌اند؛ وزن‌ها کامل اعمال شد.'}
           {verdict.hasConflict ? ' تضاد افق زمانی باعث تنزیل اطمینان شد.' : ''}
           {gates.some((g) => g.status === 'fail') ? ' رد گیت بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}

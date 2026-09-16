@@ -49,7 +49,7 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
   return (
     <Modal title="ویرایش دارایی‌های هدف" onClose={onClose}>
       <div className="flex flex-col gap-3">
-        <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto pl-1">
+        <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto ps-1">
           {draft.map((c) => (
             <li key={c.id} className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ background: c.color }} aria-hidden />
@@ -64,7 +64,7 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
                 value={c.pct}
                 onChange={(e) => editPct(c.id, Number(e.target.value))}
                 aria-label={`درصد ${c.label}`}
-                className="num w-20 rounded-lg border border-border-c bg-bg-secondary px-2 py-1 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                className="num w-20 rounded-lg border border-border-c bg-bg-secondary px-2 py-1 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 dir="ltr"
               />
               <span className="text-xs text-text-muted">٪</span>
@@ -94,15 +94,15 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
           <button
             type="button"
             onClick={add}
-            className="rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1 text-[11px] font-bold text-neon-cyan hover:bg-neon-cyan/20"
+            className="rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1 text-2xs font-bold text-neon-cyan hover:bg-neon-cyan/20"
           >
             افزودن دارایی
           </button>
         </div>
 
         <div className="flex items-center justify-between border-t border-[var(--hairline)] pt-3">
-          <span className={`num text-xs font-bold ${total > 100 ? 'text-accent-red' : 'text-text-secondary'}`}>
-            جمع: {toFaDigits(Math.round(total * 10) / 10)}٪
+          <span className={`text-xs font-bold ${total > 100 ? 'text-accent-red' : 'text-text-secondary'}`}>
+            جمع: <span className="num">{toFaDigits(Math.round(total * 10) / 10)}٪</span>
           </span>
           <div className="flex gap-2">
             <button
@@ -112,21 +112,21 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
                 setDraft(useTargetAllocation.getState().classes.map((c) => ({ ...c })));
                 setErr(null);
               }}
-              className="rounded-full border border-border-c px-3 py-1.5 text-[11px] font-bold text-text-secondary hover:text-text-primary"
+              className="rounded-full border border-border-c px-3 py-1.5 text-2xs font-bold text-text-secondary hover:text-text-primary"
             >
               بازنشانی به پیش‌فرض FTS
             </button>
             <button
               type="button"
               onClick={save}
-              className="rounded-full border border-accent-green/40 bg-accent-green/15 px-4 py-1.5 text-[11px] font-bold text-accent-green hover:bg-accent-green/25"
+              className="rounded-full border border-accent-green/40 bg-accent-green/15 px-4 py-1.5 text-2xs font-bold text-accent-green hover:bg-accent-green/25"
             >
               ذخیره
             </button>
           </div>
         </div>
-        {err ? <p className="text-[11px] font-bold text-accent-red">{err}</p> : null}
-        <p className="text-[10px] leading-4 text-text-muted">
+        {err ? <p className="text-2xs font-bold text-accent-red">{err}</p> : null}
+        <p className="text-2xs leading-4 text-text-muted">
           ذخیره با نرمال‌سازی جمع به ۱۰۰٪ انجام می‌شود. حذف فقط برای دارایی‌های افزوده‌شده فعال است.
         </p>
       </div>
