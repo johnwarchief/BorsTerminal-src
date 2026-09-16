@@ -22,7 +22,7 @@ import threading
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -33,8 +33,11 @@ from api.market import load_fts_config            # re-export (dev/ consumer)
 from api._sync_market import _sync_market_on_start
 from api import api_router
 
+# اگر orjson نصب نباشد ORJSONResponse=None است؛ هیچ‌وقت None را به
+# default_response_class نده — وگرنه هر مسیر با «TypeError: NoneType is not
+# callable» → 500 می‌شود. در نبودِ orjson به JSONResponse استاندارد برگرد.
 app = FastAPI(title="BorsAgent Modern Terminal",
-              default_response_class=ORJSONResponse if _ORJ else None)
+              default_response_class=(ORJSONResponse or JSONResponse))
 # GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
