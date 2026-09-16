@@ -141,7 +141,7 @@ describe('کامپوننت ماتریس صنایع', () => {
     expect(await screen.findByText(/نقض تنوع‌بخشی \(Overweight\)/)).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('فلزات اساسی');
     expect(screen.getByRole('alert')).toHaveTextContent('۱۸٪');
-    expect(screen.getAllByText(/Overweight · ۳٪\+/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/نقض سقف وزنی \(Overweight\)/).length).toBeGreaterThan(0);
   });
 
   it('خطای بک‌اند ⇒ پیام صادقانه و بدون هشدار ساختگی', async () => {

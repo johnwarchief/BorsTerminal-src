@@ -1,8 +1,10 @@
-// features/portfolio/components/DeltaBar.tsx -- نوار شکاف و ری‌بالانس (نسخهٔ متراکم)
-// جک اول دید: یک نوار پیشرفت خلاصه (پوشش فعلی در برابر هدف) + شمارش مازاد/کسری.
-// جزئیات هر طبقه داخل یک دراور کشویی (پیش‌فرض بسته) است تا جدول نمادها اولویت دید بماند.
+// features/portfolio/components/DeltaBar.tsx -- نوار شکاف و ری‌بالانس (متراکم)
+// خلاصهٔ همیشه‌دیده: یک نوار پیشرفت + شمارش کسری/مازاد. جزئیات در دراور کشویی باز می‌شود و
+// آیتم‌های کسری در شبکهٔ کارتی متراکم ۲/۳ ستونی نمایش داده می‌شوند:
+// [دارایی | وزن هدف | وزن فعلی | نوار مینیاتوری کسری/مازاد (+ مبلغ ریالی در صورت وجود ارزش کل)]
 import { useMemo, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useAssetValues } from '../stores/assetValues';
 import type { DeltaRow } from '../stores/targetAllocation';
 
 export function deltaTone(delta: number): 'green' | 'red' | 'gray' {
@@ -24,14 +26,66 @@ export function deltaTotals(rows: DeltaRow[]): { target: number; current: number
   return { target, current, hasData: current > 0 };
 }
 
+/** مبلغ ریالی کسری/مازاد یک طبقه؛ null یعنی ارزش کل ثبت نشده */
+export function deltaToman(deltaPct: number, totalValueToman: number): number | null {
+  if (!(totalValueToman > 0)) return null;
+  return Math.round((Math.abs(deltaPct) / 100) * totalValueToman);
+}
+
+function RebalanceCard({ row, totalValueToman, maxAbs }: { row: DeltaRow; totalValueToman: number; maxAbs: number }) {
+  const tone = deltaTone(row.delta);
+  const amount = deltaToman(row.delta, totalValueToman);
+  const width = Math.min(100, (Math.abs(row.delta) / Math.max(maxAbs, 20)) * 100);
+  return (
+    <li className="flex flex-col gap-1.5 rounded-xl border border-[var(--hairline)] bg-bg-secondary/40 px-2.5 py-2">
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: row.color }} aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-2xs font-bold text-text-primary" title={row.label}>
+          {row.label}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-2 text-2xs text-text-muted">
+        <span>
+          هدف <span className="num text-text-secondary">{toFaDigits(row.targetPct)}٪</span>
+        </span>
+        <span>
+          فعلی <span className="num text-text-secondary">{toFaDigits(row.currentPct)}٪</span>
+        </span>
+      </div>
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-bg-card" dir="ltr" aria-hidden>
+        <span
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
+            tone === 'red' ? 'bg-accent-red' : tone === 'green' ? 'bg-accent-green/80' : 'bg-border-c'
+          }`}
+          style={{ width: `${tone === 'gray' ? 0 : width}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`text-2xs font-black ${
+            tone === 'red' ? 'text-accent-red' : tone === 'green' ? 'text-accent-green' : 'text-text-muted'
+          }`}
+        >
+          {deltaLabel(row.delta)}
+        </span>
+        <span className="shrink-0 text-2xs text-text-muted">
+          {tone === 'gray' ? '—' : amount != null ? <><span className="num">{toFaDigits(amount)}</span> تومان</> : 'مبلغ: بدون داده'}
+        </span>
+      </div>
+    </li>
+  );
+}
+
 export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
   const [open, setOpen] = useState(false);
+  const totalValueToman = useAssetValues((s) => s.totalToman);
   const { target, current, hasData } = useMemo(() => deltaTotals(rows), [rows]);
   const deficits = useMemo(() => rows.filter((r) => r.delta < -0.05), [rows]);
   const surplus = useMemo(() => rows.filter((r) => r.delta > 0.05), [rows]);
 
-  // نسبت پوشش برای نوار (فقط اگر داده داشته باشیم؛ در غیر این صورت نوار خالی صادقانه می‌ماند)
   const coverPct = hasData && target > 0 ? Math.min(100, Math.round(((current / target) * 100 + Number.EPSILON) * 10) / 10) : 0;
+  const outstanding = useMemo(() => [...deficits, ...surplus], [deficits, surplus]);
+  const maxAbsDelta = useMemo(() => Math.max(...rows.map((r) => Math.abs(r.delta)), 1), [rows]);
 
   return (
     <div className="glass-panel relative overflow-hidden p-4" aria-label="نوار شکاف و ری‌بالانس">
@@ -53,12 +107,12 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
             aria-expanded={open}
             className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary"
           >
-            جزئیات ری‌بالانس ({toFaDigits(rows.length)} طبقه) {open ? '▴' : '▾'}
+            جزئیات ری‌بالانس ({toFaDigits(outstanding.length)} مورد) {open ? '▴' : '▾'}
           </button>
         </div>
       </div>
 
-      {/* نوار پیشرفت خلاصه: پوشش فعلی نسبت به هدف */}
+      {/* نوار پیشرفت خلاصه */}
       <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-bg-card" dir="ltr" aria-hidden>
         <span className="absolute inset-y-0 left-0 rounded-full bg-neon-cyan/70 transition-all duration-500" style={{ width: `${coverPct}%` }} />
         <span className="absolute inset-y-0 left-1/2 w-px bg-border-c" />
@@ -77,31 +131,19 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
         )}
       </p>
 
-      {/* دراور کشویی: جزئیات هر طبقه */}
+      {/* دراور: شبکهٔ کارتی متراکم ۲/۳ ستونی */}
       {open ? (
-        <ul className="mt-3 flex max-h-60 flex-col gap-1.5 overflow-y-auto border-t border-[var(--hairline)] pt-3">
-          {rows.map((r) => {
-            const tone = deltaTone(r.delta);
-            return (
-              <li key={r.id} className="flex flex-wrap items-center gap-2 text-2xs">
-                <span className="inline-block h-2 w-2 shrink-0 rounded-sm" style={{ background: r.color }} aria-hidden />
-                <span className="min-w-0 flex-1 truncate font-bold text-text-secondary" title={r.label}>
-                  {r.label}
-                </span>
-                <span className="shrink-0 text-text-muted">
-                  هدف <span className="num">{toFaDigits(r.targetPct)}٪</span> · فعلی <span className="num">{toFaDigits(r.currentPct)}٪</span>
-                </span>
-                <span
-                  className={`w-28 shrink-0 text-end font-black ${
-                    tone === 'green' ? 'text-accent-green' : tone === 'red' ? 'text-accent-red' : 'text-text-muted'
-                  }`}
-                >
-                  {deltaLabel(r.delta)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-3 border-t border-[var(--hairline)] pt-3">
+          {outstanding.length > 0 ? (
+            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {outstanding.map((r) => (
+                <RebalanceCard key={r.id} row={r} totalValueToman={totalValueToman} maxAbs={maxAbsDelta} />
+              ))}
+            </ul>
+          ) : (
+            <p className="text-2xs text-text-muted">همهٔ طبقات در هدف‌اند؛ دستور ری‌بالانسی لازم نیست.</p>
+          )}
+        </div>
       ) : null}
     </div>
   );
