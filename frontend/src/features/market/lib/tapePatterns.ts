@@ -4,6 +4,10 @@
 // پس از آفرِ پایانی قیمت را به مثبت برگردانده و شانس صف خرید فردا بالاست.
 
 export const STRONG_HOUR_LABEL = 'ساعت قوی — شانس صف فردا';
+/** برچسب «ساعت طلایی»: پایانی منفی و آخرین مثبت (بازگشت خریدار بدون شرط دلتا) */
+export const GOLDEN_HOUR_LABEL = 'ساعت طلایی — پایانی منفی و آخرین مثبت';
+export const GOLDEN_HOUR_HINT =
+  'ساعت طلایی: پایانی زیر دیروز بسته شده ولی آخرین معامله بالای دیروز است — خریدار پس از آفرِ پایانی قیمت را به مثبت برگردانده';
 /** حداقل دلتای آخرین/پایانی برای «الگوی ساعت پیشرفته» (درصد) */
 export const CLOCK_DELTA_MIN_PCT = 1;
 /** برچسب احتمالِ ساعت قویِ پیشرفته (سند تابلوخوانی -- بازگشایی مثبت فردا) */
@@ -35,6 +39,20 @@ export type StrongHourResult = { hit: boolean; label: string | null };
 
 export function strongHour(r: StrongHourInput): StrongHourResult {
   return detectStrongHour(r) ? { hit: true, label: STRONG_HOUR_LABEL } : { hit: false, label: null };
+}
+
+/**
+ * الگوی «ساعت طلایی»: پایانی زیر دیروز (منفی) و آخرین بالای دیروز (مثبت).
+ * نسخهٔ سخت‌گیرانه‌تر (با دلتای ≥ ۱٪) همان detectStrongHour است؛ این تابع
+ * لایهٔ پایه را جدا می‌کند تا بج «ساعت طلایی» از «ساعت معمولی» تفکیک شود.
+ */
+export function detectGoldenHour(r: StrongHourInput): boolean {
+  const close = r.p_closing;
+  const last = r.p_last;
+  const yesterday = r.price_yesterday;
+  if (typeof close !== 'number' || typeof last !== 'number' || typeof yesterday !== 'number') return false;
+  if (!Number.isFinite(close) || !Number.isFinite(last) || !Number.isFinite(yesterday)) return false;
+  return close < yesterday && last > yesterday;
 }
 
 /**

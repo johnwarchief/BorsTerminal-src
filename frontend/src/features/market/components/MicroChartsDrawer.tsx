@@ -102,6 +102,10 @@ export function MicroChartsDrawer() {
     };
   }, [data]);
 
+  // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
+  // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند.
+  if (isLoading || !data) return null;
+
   return (
     <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
       <button
@@ -114,10 +118,7 @@ export function MicroChartsDrawer() {
         <span className={`transition-transform ${open ? '-rotate-90' : ''}`}>‹</span>
       </button>
       {open ? (
-        isLoading && !data ? (
-          <span className="text-xs text-text-secondary">در حال دریافت تایم‌لاین...</span>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <ChartCard
               testId="micro-orderbook"
               title="Order Book Flow (تجمعی امروز)"
@@ -178,9 +179,8 @@ export function MicroChartsDrawer() {
               }
             />
           </div>
-        )
       ) : null}
-      {open && data?.note ? <p className="text-2xs text-text-muted">{data.note}</p> : null}
+      {open && data.note ? <p className="text-2xs text-text-muted">{data.note}</p> : null}
     </div>
   );
 }

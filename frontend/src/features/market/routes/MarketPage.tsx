@@ -6,7 +6,9 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { useMarketFeed } from '../api/useMarketFeed';
 import { useMarketPulse } from '../api/useMarketPulse';
+import { buildScreenerMap, useFtsScreener } from '../api/useFtsScreener';
 import { classifyAssetType, type AssetType } from '../lib/assetType';
+import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
 import { countQuickMatches, MarketFilters } from '../components/MarketFilters';
@@ -57,7 +59,11 @@ export default function MarketPage({
 } = {}) {
   const { data, isLoading, isError, refetch, dataUpdatedAt, isFetching } = useMarketFeed();
   const { data: pulse, isLoading: pulseLoading } = useMarketPulse();
+  const { data: screener } = useFtsScreener();
   const rows = useMemo(() => data?.data ?? [], [data]);
+
+  /** نقشهٔ وضعیت FTS (تأیید/رد/N/A) از همان منبع غربالگری FTS */
+  const ftsMap = useMemo(() => buildScreenerMap(screener), [screener]);
 
   const query = useTapeStore((s) => s.query);
   const assetTypes = useTapeStore((s) => s.assetTypes);
@@ -71,14 +77,18 @@ export default function MarketPage({
 
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
+  const clearSymbol = useSymbolStore((s) => s.clearSymbol);
+  const setSector = useTapeStore((s) => s.setSector);
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const setRefetchIntervalMs = useMarketStore((s) => s.setRefetchIntervalMs);
 
   const sectors = useMemo(() => {
     const set = new Set<string>();
     for (const r of rows) if (r.sector_name) set.add(r.sector_name);
+    // صنعتِ انتخاب‌شدهٔ پنل inflow حتی اگر در ردیف‌های فعلی نبود در گزینه‌ها بماند
+    if (sector) set.add(sector);
     return [...set].sort((a, b) => a.localeCompare(b, 'fa'));
-  }, [rows]);
+  }, [rows, sector]);
 
   /** شمارش عبور هر فیلتر سریع -- فقط روی ردیف های زنده تا چیپ ها معنادار باشند */
   const quickMatches = useMemo(() => {
@@ -97,17 +107,19 @@ export default function MarketPage({
 
   const filtered = useMemo(
     () =>
-      applyFilters(
-        rows,
-        query,
-        assetTypes,
-        quickFilters,
-        sector,
-        liveOnly,
-        direction,
-        volRatioOn,
-        volRatioMin,
-        exitAccum,
+      dropNumericSuffixRows(
+        applyFilters(
+          rows,
+          query,
+          assetTypes,
+          quickFilters,
+          sector,
+          liveOnly,
+          direction,
+          volRatioOn,
+          volRatioMin,
+          exitAccum,
+        ),
       ),
     [rows, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum],
   );
@@ -156,9 +168,15 @@ export default function MarketPage({
 
       {/* جدول تمام‌عرض؛ دیده‌بان‌ها به دراور زیر جدول منتقل شدند */}
       <MicroChartsDrawer />
-      <TapeTable rows={filtered} selected={symbol} onSelect={setSymbol} renderBasketAction={renderBasketAction} />
-      <WatchDrawer rows={filtered} onSelect={setSymbol} />
-      <VolumeFlow symbol={symbol} />
+      <TapeTable
+        rows={filtered}
+        selected={symbol}
+        onSelect={setSymbol}
+        renderBasketAction={renderBasketAction}
+        ftsMap={ftsMap}
+      />
+      <WatchDrawer rows={filtered} onSelect={setSymbol} onPickSector={setSector} />
+      <VolumeFlow symbol={symbol} onClose={clearSymbol} />
     </div>
   );
 }

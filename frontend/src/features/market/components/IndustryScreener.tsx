@@ -9,10 +9,18 @@ type Mode = 'flow' | 'pct';
 
 const fa1 = (x: number): string => toFaDigits(x.toFixed(1));
 
-function IndustryLine({ row, leader }: { row: IndustryRow; leader: string | null }) {
+function IndustryLine({
+  row,
+  leader,
+  onPick,
+}: {
+  row: IndustryRow;
+  leader: string | null;
+  onPick?: (industry: string) => void;
+}) {
   const flow = typeof row.flow_b_toman === 'number' ? row.flow_b_toman : null;
-  return (
-    <li className="flex items-center justify-between gap-2 px-1 py-1">
+  const body = (
+    <>
       <span className="min-w-0 truncate text-sm font-bold text-text-primary">
         {row.industry}
         {leader && row.industry === leader ? <span className="ms-1 text-2xs text-accent-yellow">★ پیشرو</span> : null}
@@ -29,11 +37,28 @@ function IndustryLine({ row, leader }: { row: IndustryRow; leader: string | null
           {typeof row.avg_pct === 'number' ? `٪${fa1(row.avg_pct)}` : '—'}
         </span>
       </span>
+    </>
+  );
+  return (
+    <li>
+      {onPick ? (
+        <button
+          type="button"
+          data-testid={`industry-pick-${row.industry}`}
+          onClick={() => onPick(row.industry)}
+          title={`فیلتر جدول تابلو روی صنعت ${row.industry}`}
+          className="flex w-full items-center justify-between gap-2 rounded-lg px-1 py-1 text-start transition-colors hover:bg-bg-card/70"
+        >
+          {body}
+        </button>
+      ) : (
+        <div className="flex items-center justify-between gap-2 px-1 py-1">{body}</div>
+      )}
     </li>
   );
 }
 
-export function IndustryScreener() {
+export function IndustryScreener({ onPick }: { onPick?: (industry: string) => void } = {}) {
   const { data, isLoading, isError } = useIndustries();
   const [mode, setMode] = useState<Mode>('flow');
 
@@ -41,7 +66,7 @@ export function IndustryScreener() {
   const top = (mode === 'flow' ? topIndustriesByFlow(rows) : topIndustriesByPct(rows)) ?? [];
 
   return (
-    <div data-testid="industry-screener" className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
+    <div data-testid="sector-inflow" className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-black text-text-primary">صنعت داغ</h3>
         <div className="flex gap-1" role="group" aria-label="مبنای سورت صنایع">
@@ -74,10 +99,13 @@ export function IndustryScreener() {
       ) : (
         <ul className="flex flex-col divide-y divide-border-c/40">
           {top.map((r) => (
-            <IndustryLine key={r.industry} row={r} leader={data?.leader ?? null} />
+            <IndustryLine key={r.industry} row={r} leader={data?.leader ?? null} onPick={onPick} />
           ))}
         </ul>
       )}
+      {onPick && rows && rows.length > 0 ? (
+        <span className="text-2xs text-text-muted">کلیک روی صنعت، جدول را روی همان صنعت فیلتر می‌کند.</span>
+      ) : null}
     </div>
   );
 }
