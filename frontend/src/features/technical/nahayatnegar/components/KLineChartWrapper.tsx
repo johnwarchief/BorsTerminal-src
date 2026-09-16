@@ -129,6 +129,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // استیت‌های نماد جاری
   const [currentSymbol, setCurrentSymbol] = useState<string>(initialSymbol);
+  // همگام‌سازی با تغییرِ نماد از بیرون (سایدبار/واچ‌لیست/URL):
+  // بدونِ این، چارت نمادِ اولیه را قفل می‌کرد و انتخاب‌های بیرونی بی‌اثر بودند.
+  useEffect(() => {
+    setCurrentSymbol((prev) => (initialSymbol && initialSymbol !== prev ? initialSymbol : prev));
+  }, [initialSymbol]);
   const [currentName, setCurrentName] = useState<string>(initialName);
   const [currentMarket, setCurrentMarket] = useState<string>(initialMarket);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
