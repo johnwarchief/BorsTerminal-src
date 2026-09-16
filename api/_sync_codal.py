@@ -46,6 +46,25 @@ def sync_codal(mode: str = Query("update")):
     subprocess.Popen(args)
     return {"status": "success", "message": "Codal sync started.", "mode": mode}
 
+
+@router.post("/api/sync/codal/fts-refresh")
+def sync_codal_fts_refresh(mode: str = Query("monthly")):
+    """تازه‌سازیِ فقط ۵ شاخصِ FTS از کدال (dev/codal_fts_updater.py) با چرخشِ IP.
+    گارد: اجرای هم‌زمان ممنوع (ریسکِ ۴۲۹/بن)."""
+    if _codal_running():
+        return {"status": "already_running",
+                "message": "اسکن کدال در حال اجراست — صبر کنید.", "mode": mode}
+    try:
+        with open(CONTROL_PATH, "w", encoding="utf-8") as f:
+            json.dump({"cmd": "resume", "ts": datetime.datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
+    except Exception:
+        pass
+    script = os.path.join(APP_DIR, "dev", "codal_fts_updater.py")
+    if not os.path.isfile(script):
+        return {"status": "error", "message": "dev/codal_fts_updater.py یافت نشد."}
+    subprocess.Popen([sys.executable, script, "--mode", mode, "--adb-rotate", "--resume"], cwd=APP_DIR)
+    return {"status": "success", "message": "FTS 5-indicator refresh started.", "mode": mode}
+
 @router.get("/api/sync/status")
 def get_sync_status():
     """Live status for the Codal/Market sync progress overlay."""

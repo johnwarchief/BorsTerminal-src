@@ -335,11 +335,15 @@ export function FtsScreenTable({
   rows,
   onSelect,
   thresholds,
+  onRefresh,
+  refreshing,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
   /** تارگت‌های کانفیگ FTS (پاسخ /api/screener) برای کارت «چرا این وضعیت؟» */
   thresholds?: Record<string, unknown> | null;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
@@ -414,6 +418,17 @@ export function FtsScreenTable({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
         <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onRefresh?.()}
+            disabled={!onRefresh || refreshing}
+            data-testid="fts-refresh"
+            title="تازه‌سازیِ ۵ شاخص FTS از کدال (فقط دِلتا، با چرخش IP) و بازخوانیِ جدول"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2.5 py-1 text-2xs font-bold text-text-secondary transition-colors hover:border-border-accent hover:text-accent-blue disabled:opacity-50"
+          >
+            <span aria-hidden>{refreshing ? "…" : "↻"}</span>
+            {refreshing ? "در حال بروزرسانی…" : "بروزرسانی"}
+          </button>
           {excludedCount > 0 ? (
             <button
               type="button"
@@ -477,8 +492,8 @@ export function FtsScreenTable({
       ) : null}
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto">
         <table className="w-full min-w-[720px] text-start text-xs">
-          <thead className="sticky top-0 z-10 bg-bg-card/95 backdrop-blur">
-            <tr className="bg-bg-card/70 text-2xs text-text-secondary">
+          <thead className="sticky top-0 z-20 bg-bg-card">
+            <tr className="bg-bg-card text-2xs text-text-secondary">
               {COLS.map((c, i) =>
                 c.key ? (
                   <th key={c.label} className="px-2 py-2 font-bold">
