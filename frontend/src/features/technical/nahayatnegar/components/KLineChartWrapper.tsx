@@ -24,6 +24,7 @@ import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
 import { IconClose } from './TradingViewIcons';
 import {
   buildPatternOverlays,
+  PATTERN_LABELS,
   type PatternOverlaySpec,
 } from '../../lib/patternOverlays';
 import {
@@ -170,6 +171,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onAdjustmentChange,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  // لِجِندِ الگوهای فعالِ FTS روی چارت (رنگِ هر الگو از تنظیماتِ کاربر)
+  const [activePatterns, setActivePatterns] = useState<{ kind: string; color: string; label: string }[]>([]);
   const chartRef = useRef<Chart | null>(null);
 
   // استیت‌های نماد جاری
@@ -602,6 +605,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
     if (adjustedCandles.length === 0) {
       clearPatterns();
+      setActivePatterns([]);
       return;
     }
 
@@ -625,6 +629,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       inputs,
       patternPrefs,
       adjustedCandles.map((c) => ({ timestamp: c.timestamp })),
+    );
+
+    setActivePatterns(
+      Array.from(
+        new Map(
+          specs.map((s) => [
+            s.kind,
+            { kind: s.kind, color: patternOverlayColor(s), label: PATTERN_LABELS[s.kind] ?? s.kind },
+          ]),
+        ).values(),
+      ),
     );
 
     clearPatterns();
@@ -943,6 +958,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           )}
 
           {/* کانتینر اصلی کتابخانه KlineCharts */}
+          {activePatterns.length > 0 ? (
+            <div className="nn-pattern-legend" data-testid="fts-pattern-legend">
+              {activePatterns.map((p) => (
+                <span key={p.kind} className="nn-legend-chip">
+                  <span className="nn-legend-dot" style={{ background: p.color }} />
+                  {p.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div ref={chartContainerRef} className="nn-kline-chart" />
 
           {/* وضعیت صادقانه بدون دیتا (بدون ساخت دیتای تقلبی/mock) */}
