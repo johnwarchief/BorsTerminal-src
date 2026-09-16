@@ -434,3 +434,7 @@
   color: var(--nn-text-active);
   border-color: rgba(41, 98, 255, 0.4);
 }
+
+/* حالت‌های تعدیلِ بدون دادهٔ تفکیکی — غیرفعال و با شفافیت کم */
+.nn-dropdown-item.nn-disabled { opacity: .38; cursor: not-allowed; }
+.nn-dropdown-item.nn-disabled:hover { background-color: transparent; }

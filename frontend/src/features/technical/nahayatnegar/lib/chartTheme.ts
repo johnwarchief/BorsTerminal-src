@@ -10,15 +10,13 @@ export const nahayatNegarDarkTheme = {
       show: true,
       size: 1,
       color: '#242832',
-      style: 'dashed' as const,
-      dashedValue: [2, 2]
+      style: 'solid' as const
     },
     vertical: {
       show: true,
       size: 1,
       color: '#242832',
-      style: 'dashed' as const,
-      dashedValue: [2, 2]
+      style: 'solid' as const
     }
   },
   candle: {

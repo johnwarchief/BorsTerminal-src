@@ -213,6 +213,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       const json = await res.json();
       const rawList = Array.isArray(json) ? json : (json.candles || json.data || []);
       const rawEvents = json.adjustEvents || json.adjust_events || [];
+      // حجم: سرور حجم را جدا در volumes=[{time,value}] می‌دهد؛ با کلیدِ تاریخ به کندل‌ها
+      // می‌چسبانیم تا پنل حجم (VOL) مثل تریدینگ‌ویو پر شود.
+      const volByTime: Record<string, number> = {};
+      const rawVols = Array.isArray(json.volumes) ? json.volumes : [];
+      for (const v of rawVols) {
+        if (v && typeof v.time === 'string') volByTime[v.time] = Number(v.value ?? v.volume ?? 0);
+      }
 
       if (!Array.isArray(rawList) || rawList.length === 0) {
         setRawCandles([]);
@@ -238,7 +245,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         const high = Number(c.high ?? c.h ?? open);
         const low = Number(c.low ?? c.l ?? open);
         const close = Number(c.close ?? c.c ?? open);
-        const volume = c.volume !== undefined ? Number(c.volume ?? c.v ?? 0) : undefined;
+        const volume = (typeof c.time === 'string' && volByTime[c.time] !== undefined)
+          ? volByTime[c.time]
+          : (c.volume !== undefined ? Number(c.volume ?? c.v ?? 0) : undefined);
         const turnover = c.turnover !== undefined ? Number(c.turnover ?? 0) : undefined;
 
         return { timestamp: ts, open, high, low, close, volume, turnover };

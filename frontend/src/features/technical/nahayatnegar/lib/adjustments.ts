@@ -12,7 +12,9 @@ export interface CorporateAction {
   bonusPercent?: number; // درصد سهام جایزه از انباشته/تجدید ارزیابی
   cashPercent?: number;  // درصد افزایش سرمایه از آورده نقدی و مطالبات
   preMeetingPrice: number;  // قیمت پایانی پیش از مجمع
-  postMeetingPrice: number; // قیمت بازگشایی پس از مجمع
+  postMeetingPrice: number;
+  /** نسبت گسست قیمت پایهٔ سرور (adjustEvents: {date,ratio}) — تنها منبع تعدیلِ واقعی */
+  ratio?: number; // قیمت بازگشایی پس از مجمع
 }
 
 /**
@@ -31,6 +33,13 @@ export type AdjustmentMode =
  */
 export function getAdjustmentFactor(action: CorporateAction, mode: AdjustmentMode): number {
   if (mode === 'none') return 1.0;
+
+  // منبع واحد حقیقت: سرور فقط «نسبت گسست قیمت پایه» را می‌دهد (adjustEvents=[{date,ratio}]).
+  // هر تعدیلِ واقعی همان ratio است؛ در داده تفکیک سود/سهام/آورده نیست، پس همان ratio اعمال می‌شود
+  // (نه فرمول ساختگی). این تنها مسیرِ داده‌پشتیبان است.
+  if (typeof action.ratio === 'number' && action.ratio > 0) {
+    return Math.max(0.0001, action.ratio);
+  }
 
   const P_pre = action.preMeetingPrice;
   const P_post = action.postMeetingPrice;
@@ -145,7 +154,8 @@ export function mapBackendAdjustEvents(rawEvents: any[]): CorporateAction[] {
       bonusPercent: Number(e.bonusPercent ?? e.bonus ?? 0),
       cashPercent: Number(e.cashPercent ?? e.cash ?? 0),
       preMeetingPrice: Number(e.preMeetingPrice ?? e.pPre ?? e.p_pre ?? 0),
-      postMeetingPrice: Number(e.postMeetingPrice ?? e.pPost ?? e.p_post ?? 0)
+      postMeetingPrice: Number(e.postMeetingPrice ?? e.pPost ?? e.p_post ?? 0),
+      ratio: typeof e.ratio === 'number' && e.ratio > 0 ? e.ratio : undefined
     };
   });
 }

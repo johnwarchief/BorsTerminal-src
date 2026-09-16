@@ -67,6 +67,9 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
     { label: 'بدون تعدیل', value: 'none', desc: 'قیمت‌های خام و واقعی تابلوی معاملات' },
   ];
 
+  // حالت‌هایی که به دادهٔ تفکیکی سود/سهام/آورده نیاز دارند و سرور فقط «نسبت گسست قیمت
+  // پایه» را می‌دهد ⇒ فعلاً داده‌پشتیبان نیستند و غیرفعال می‌شوند (صادقانه، بدون عدد ساختگی).
+  const UNAVAILABLE_MODES: AdjustmentMode[] = ['capital', 'cash', 'capital_cash', 'with_rights'];
   const currentAdj = adjustments.find(a => a.value === activeAdjustment) || adjustments[0];
   const currentCandle = candleTypes.find(c => c.value === activeCandleType) || candleTypes[0];
 
@@ -162,8 +165,12 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
               {adjustments.map(adj => (
                 <div
                   key={adj.value}
-                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''}`}
+                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''} ${UNAVAILABLE_MODES.includes(adj.value) ? 'nn-disabled' : ''}`}
+                  title={UNAVAILABLE_MODES.includes(adj.value)
+                    ? 'این حالت به دادهٔ تفکیکی سود نقدی/سهام جایزه نیاز دارد که فعلاً از سرور نمی‌آید'
+                    : (adj.value === 'operational' ? 'تعدیل عملکردی: حالتِ داده‌پشتیبان (نسبت گسست قیمت پایه)' : '')}
                   onClick={() => {
+                    if (UNAVAILABLE_MODES.includes(adj.value)) return;
                     onAdjustmentChange(adj.value);
                     setShowAdjMenu(false);
                   }}
