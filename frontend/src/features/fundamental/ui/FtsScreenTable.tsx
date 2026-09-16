@@ -9,7 +9,6 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { useMemo, useState } from 'react';
 import { toFaDigits, fmtPct } from '@shared/lib/fmt';
-import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
@@ -21,7 +20,8 @@ import {
   epsSeriesText,
 } from '../lib/epsHistory';
 import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
-import { GapHint } from '../components/GapHint';
+import { AuditBadge, type AuditEvidence } from '../components/AuditBadge';
+import { screenAuditEvidence } from '../lib/auditEvidence';
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
@@ -50,34 +50,73 @@ const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: strin
 
 /** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
  *  (پیش از آن با برچسب علت‌دار یا برچسب سابقهٔ ناقص رندر می‌شوند). */
-function PassMark({ state }: { state: CellState }) {
+function PassMark({
+  state,
+  evidence,
+  testId,
+}: {
+  state: CellState;
+  evidence?: AuditEvidence;
+  testId?: string;
+}) {
   const b = STATE_BADGE[state === 'pass' ? 'pass' : 'fail'];
-  return <Badge tone={b.tone}>{b.label}</Badge>;
+  return (
+    <AuditBadge
+      state={state === 'pass' ? 'pass' : 'fail'}
+      label={b.label}
+      evidence={evidence}
+      compact
+      testId={testId ?? `fts-mark-${state === 'pass' ? 'pass' : 'fail'}`}
+    />
+  );
 }
 
 /** سلول بی‌داده: جای برچسب عمومی «شکاف داده»، علتِ واقعی را می‌نویسد
  *  (برچسب کوتاه + tooltip علت و راه‌حل — الگوی GapHint) */
-function GapMark({ label, tooltip, testId }: { label: string; tooltip: string; testId?: string }) {
+function GapMark({
+  label,
+  tooltip,
+  evidence,
+  testId,
+}: {
+  label: string;
+  tooltip: string;
+  evidence?: AuditEvidence;
+  testId?: string;
+}) {
   return (
-    <GapHint reason={tooltip}>
-      <span data-testid={testId} className="max-w-[9.5rem] text-[9px] font-bold leading-snug text-accent-yellow">
-        {label}
-      </span>
-    </GapHint>
+    <AuditBadge
+      state="na"
+      label={<span className="max-w-[9.5rem] leading-snug text-accent-yellow">{label}</span>}
+      hintTitle={tooltip}
+      evidence={evidence}
+      compact
+      testId={testId}
+    />
   );
 }
 
 /** سلول بی‌داده با علتِ همان محور */
-function AxisGapMark({ axis }: { axis: GapAxis }) {
-  return <GapMark label={gapLabel(axis)} tooltip={gapTooltip(axis)} testId={`fts-gap-reason-${axis}`} />;
+function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEvidence }) {
+  return (
+    <GapMark
+      label={gapLabel(axis)}
+      tooltip={gapTooltip(axis)}
+      evidence={evidence}
+      testId={`fts-gap-reason-${axis}`}
+    />
+  );
 }
 
 export function FtsScreenTable({
   rows,
   onSelect,
+  thresholds,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
+  /** تارگت‌های کانفیگ FTS (پاسخ /api/screener) برای کارت «چرا این وضعیت؟» */
+  thresholds?: Record<string, unknown> | null;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
@@ -136,7 +175,7 @@ export function FtsScreenTable({
               onClick={() => setShowExcluded((v) => !v)}
               aria-pressed={showExcluded}
               title={`دروازه‌های سخت: ${toFaDigits(excludedCount)} ردیف حذف‌شده ${showExcluded ? 'نمایش داده' : 'پنهان'} می‌شود`}
-              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors ${
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
                 showExcluded
                   ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
                   : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
@@ -157,7 +196,7 @@ export function FtsScreenTable({
               {showExcluded ? 'پنهان‌سازی ردیف‌های حذف‌شده' : 'نمایش ردیف‌های حذف‌شده'}
             </button>
           ) : null}
-          <span className="num text-[11px] text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
+          <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
         </div>
@@ -165,7 +204,7 @@ export function FtsScreenTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-right text-xs">
           <thead>
-            <tr className="bg-bg-card/70 text-[11px] text-text-secondary">
+            <tr className="bg-bg-card/70 text-2xs text-text-secondary">
               {COLS.map((c, i) =>
                 c.key ? (
                   <th key={c.label} className="px-2 py-2 font-bold">
@@ -234,7 +273,7 @@ export function FtsScreenTable({
                       <span className={`font-bold text-text-primary ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                         {r.symbol}
                       </span>
-                      <span className="truncate text-[10px] text-text-muted">{r.name || r.sector_name || ''}</span>
+                      <span className="truncate text-2xs text-text-muted">{r.name || r.sector_name || ''}</span>
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -242,7 +281,15 @@ export function FtsScreenTable({
                       <span className={`num ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                         {r.rev_growth == null ? '—' : fmtPct(r.rev_growth)}
                       </span>
-                      {i1 === 'gap' ? <AxisGapMark axis="1a_monetary_growth" /> : <PassMark state={i1} />}
+                      {i1 === 'gap' ? (
+                        <AxisGapMark axis="1a_monetary_growth" evidence={screenAuditEvidence('1a_monetary_growth', r, thresholds)} />
+                      ) : (
+                        <PassMark
+                          state={i1}
+                          evidence={screenAuditEvidence('1a_monetary_growth', r, thresholds)}
+                          testId="fts-mark-1a_monetary_growth"
+                        />
+                      )}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -251,15 +298,20 @@ export function FtsScreenTable({
                         {epsTrend ?? '—'}
                       </span>
                       {epsPartialRejected ? (
-                        <span
-                          data-testid={EPS_PARTIAL_TESTID}
-                          title={epsGapReason}
-                          className="rounded-full border border-accent-susp/40 bg-accent-susp-bg px-2 py-0.5 text-[10px] font-bold text-accent-susp"
-                        >
-                          {epsHist.label} ⓘ
-                        </span>
+                        <AuditBadge
+                          state="fail"
+                          label={epsHist.label}
+                          hintTitle={epsGapReason}
+                          evidence={{
+                            ...screenAuditEvidence('2_eps_trend', r, thresholds),
+                            reason: epsGapReason,
+                          }}
+                          compact
+                          testId={EPS_PARTIAL_TESTID}
+                        />
                       ) : i2 === 'gap' ? (
                         <GapMark
+                          evidence={screenAuditEvidence('2_eps_trend', r, thresholds)}
                           label={epsGapLabel(epsHist.realYears)}
                           tooltip={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
                           testId="eps-gap-reason"
@@ -272,7 +324,15 @@ export function FtsScreenTable({
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
                       <span className="num text-text-primary">{r.gross_margin == null ? '—' : fmtPct(r.gross_margin)}</span>
-                      {i3 === 'gap' ? <AxisGapMark axis="3_gross_margin" /> : <PassMark state={i3} />}
+                      {i3 === 'gap' ? (
+                        <AxisGapMark axis="3_gross_margin" evidence={screenAuditEvidence('3_gross_margin', r, thresholds)} />
+                      ) : (
+                        <PassMark
+                          state={i3}
+                          evidence={screenAuditEvidence('3_gross_margin', r, thresholds)}
+                          testId="fts-mark-3_gross_margin"
+                        />
+                      )}
                     </div>
                   </td>
                   <td className="px-2 py-2">
@@ -280,22 +340,38 @@ export function FtsScreenTable({
                       <span className="num text-text-primary">
                         {r.profit_potential_pct == null ? '—' : fmtPct(r.profit_potential_pct)}
                       </span>
-                      {i4 === 'gap' ? <AxisGapMark axis="4_sales_to_mcap" /> : <PassMark state={i4} />}
+                      {i4 === 'gap' ? (
+                        <AxisGapMark axis="4_sales_to_mcap" evidence={screenAuditEvidence('4_sales_to_mcap', r, thresholds)} />
+                      ) : (
+                        <PassMark
+                          state={i4}
+                          evidence={screenAuditEvidence('4_sales_to_mcap', r, thresholds)}
+                          testId="fts-mark-4_sales_to_mcap"
+                        />
+                      )}
                     </div>
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
-                      {i5 === 'gap' ? <AxisGapMark axis="5_industry" /> : <PassMark state={i5} />}
+                      {i5 === 'gap' ? (
+                        <AxisGapMark axis="5_industry" evidence={screenAuditEvidence('5_industry', r, thresholds)} />
+                      ) : (
+                        <PassMark
+                          state={i5}
+                          evidence={screenAuditEvidence('5_industry', r, thresholds)}
+                          testId="fts-mark-5_industry"
+                        />
+                      )}
                     </div>
                     {r.excluded ? (
-                      <span className="mr-1 text-[9px] text-accent-red" title={r.exclusion_reasons ?? ''}>
+                      <span className="mr-1 text-2xs text-accent-red" title={r.exclusion_reasons ?? ''}>
                         {r.exclusion_reasons}
                       </span>
                     ) : null}
                   </td>
                   <td className="px-2 py-2">
                     <span
-                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-[11px] font-black ${
+                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-2xs font-black ${
                         r.score >= 4
                           ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
                           : r.score >= 3
@@ -312,7 +388,7 @@ export function FtsScreenTable({
           </tbody>
         </table>
       </div>
-      <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-[10px] text-text-muted">
+      <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-2xs text-text-muted">
         ✓ قبول · ✗ مردود · سلول بی‌داده به‌جای برچسب عمومی، علت را می‌نویسد (مثلاً «{gapLabel('1a_monetary_growth')}»
         ⇒ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
         · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است

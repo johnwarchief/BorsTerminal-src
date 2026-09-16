@@ -161,14 +161,17 @@ def register_sql(conn):
 #   خودرو و ساخت قطعات · مواد و محصولات دارویی · محصولات غذایی و آشامیدنی · قند و شکر
 #   لاستیک و پلاستیک · عرضه برق، گاز، بخار و آب گرم (نیروگاه) · بیمه و صندوق بازنشستگی
 #   شوینده‌ها (تگ مستقل در TSETMC ندارد؛ برای پوشش نام‌های شرکتی نگه داشته شده)
+# سند v2.1: «دارو» و «غذای عمومی» دیگر یک‌جا رد نمی‌شوند؛
+#   دارو فقط با حاشیهٔ ناخالص > ۵۰٪ مجاز است (توسط گیت GPM در F-03 سنجیده می‌شود)،
+#   و غذا تنها در صورت کنترل شدید — که «قند و شکر» نمایندهٔ آن است.
 MANDATORY_PRICING_TOKENS = (
-    "خودرو", "نقلیه موتور", "دارو", "غذا", "قند و شکر", "لاستیک",
+    "خودرو", "نقلیه موتور", "قند و شکر", "لاستیک",
     "شوینده", "نیروگاه", "عرضه برق", "تولید برق", "توزیع برق", "بیمه",
 )
 
 # قیمت‌گذاری آزاد / بورس کالا (اولویت مثبت):
 FREE_PRICING_TOKENS = (
-    "سیمان", "آهک", "شیمیایی", "پتروشیمی", "فلزات", "کانه", "کانی", "کاشی", "سرامیک",
+    "سیمان", "آهک", "شیمیایی", "پتروشیمی", "فلزات", "کانه", "کانی", "کاشی", "سرامیک", "شیشه",
     "فرآورده‌های نفتی", "نفت", "زغال سنگ", "معادن", "محصولات فلزی",
     "مس", "فولاد", "سرب و روی",
 )
@@ -963,15 +966,23 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         annual[key].sort(key=lambda r: str(r["period_end"] or ""), reverse=True)
 
     def _solo_annual(sym):
-        out, seen = [], set()
-        for r in annual.get(sym, []):
-            if r["consolidated"] or not r["audited"]:
-                continue
-            if not r["fiscal_year"] or r["fiscal_year"] in seen:
-                continue
-            seen.add(r["fiscal_year"])
-            out.append(r)
-        return out
+        # همراستا با مسیر جزئیات (eps_trend_3y): اول سالانهٔ حسابرسی‌شده را ترجیح بده،
+        # و اگر کافی نبود، ردیف‌های میان‌دوره/سالانه‌شده را هم بپذیر تا شاخص ۲ بین
+        # اسکرینر و /api/fundamental واگرا نشود.
+        last = []
+        for req_aud in (True, False):
+            out, seen = [], set()
+            for r in annual.get(sym, []):
+                if r["consolidated"] or (req_aud and not r["audited"]):
+                    continue
+                if not r["fiscal_year"] or r["fiscal_year"] in seen:
+                    continue
+                seen.add(r["fiscal_year"])
+                out.append(r)
+            last = out
+            if len(out) >= 2:
+                return out
+        return last
 
     def _ref(sym):
         for req_aud in (True, False):
@@ -1059,7 +1070,20 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         if is_insurance_sector(sector):
             data_gap2 = False
         elif len(solo) < eps_years:
-            if len(solo) >= 2:
+            # هم‌راستاسازی با مسیر جزئیات: اگر سطرهای سالانهٔ اسکنر کافی نبود،
+            # همان محاسبهٔ eps_trend_3y برای این نماد صدا زده می‌شود (منبع واحد حقیقت)
+            # تا شاخص ۲ بین /api/screener و /api/fundamental واگرا نشود.
+            _det = None
+            if not is_insurance_sector(sector):
+                try:
+                    _det = eps_trend_3y(conn, key, years=eps_years, sector=sector)
+                except Exception:
+                    _det = None
+            if _det and _det.get("eps_series"):
+                eps_series = _det["eps_series"]
+                i2 = bool(_det.get("pass"))
+                data_gap2 = bool(_det.get("data_gap"))
+            elif len(solo) >= 2:
                 # ۲ سال از ۳: داده هست ولی گیتِ ۳ساله رد است — «سابقهٔ ناقص»، نه شکاف.
                 # سری به بلندای eps_years ساخته می‌شود؛ جای سالِ غایب None می‌ماند
                 # (قاعدهٔ «سطر هرگز حذف نمی‌شود» — همان الگوی /api/fundamental).

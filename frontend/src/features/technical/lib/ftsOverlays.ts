@@ -5,10 +5,10 @@ import type { OverlayFigure, RegisterOverlayDef } from '../../../vendor/klinecha
 
 /** رنگ های ثالت لایه ها (خنثی نسبت به تم؛ پالت رنگ از setStyles می آید) */
 export const FTS_OVERLAY_COLORS = {
-  fibStep1: 'rgba(34, 211, 238, 0.16)',
-  fibStep1Edge: 'rgba(34, 211, 238, 0.75)',
-  fibStep2: 'rgba(251, 191, 36, 0.18)',
-  fibStep2Edge: 'rgba(251, 191, 36, 0.85)',
+  fibStep1: 'rgba(34, 211, 238, 0.07)',
+  fibStep1Edge: 'rgba(34, 211, 238, 0.35)',
+  fibStep2: 'rgba(251, 191, 36, 0.08)',
+  fibStep2Edge: 'rgba(251, 191, 36, 0.38)',
   fibText: '#22d3ee',
   fibText2: '#fbbf24',
   jet: '#22d3ee',

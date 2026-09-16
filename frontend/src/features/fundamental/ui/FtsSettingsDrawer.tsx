@@ -17,7 +17,7 @@ import { FTS_GUIDE_DEFAULTS, SALES_TO_MCAP_GUIDE_DEFAULT, useFtsConfig, useSaveF
 /** فیلدهایی که کشو ویرایش می‌کند — بقیهٔ کلیدها هنگام ذخیره از config فعلی می‌آیند */
 type DraftConfig = Pick<
   FtsConfig,
-  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min'
+  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min'
 > & { v10_sales_to_mcap_min: number };
 
 /** حالت گیت نرخ‌گذاری دستوری — چندگزینه‌ای به‌جای تاگل خشک */
@@ -32,6 +32,21 @@ const PRICING_GATE_LABEL: Record<PricingGateMode, string> = {
 /** صنایع دستوری جزوه؛ در حالت «جهش نرخ» دارو و غذا از فهرست حذف می‌شوند */
 const JUMP_ALLOWED_SECTORS = ['دارو', 'غذا'];
 
+/** سند v2.1 — حداقل پوشش سود ناخالص تخمینی (منطق OR با نسبت فروش) */
+const POTENTIAL_GUIDE_DEFAULT = 40;
+/** سند v2.1 — آستانهٔ آزادسازی دارویی‌ها (حاشیهٔ ناخالص > ۵۰٪) */
+const PHARMA_MARGIN_EXEMPT_MIN = 50;
+/** سند v2.1 — کلیدهای کانفیگِ دروازه‌های سختِ جدید.
+ *  تا وقتی بک‌اند این کلیدها را به FTS_DEFAULTS اضافه نکند، POST آن‌ها را دور می‌ریزد
+ *  (api/market.py: «if k not in FTS_DEFAULTS: continue») و مقدار در فایل ذخیره نمی‌شود. */
+const GATE_KEYS = {
+  holdingsNa: 'holdings_sales_na',
+  pharmaExempt: 'pharma_margin_exempt_min',
+  baseMarket: 'exclude_base_market',
+} as const;
+/** صنعت بیمه — در فهرست صنایع دستوری؛ توگل «حذف کامل بیمه» همین را روشن/خاموش می‌کند */
+const INSURANCE_TOKEN = 'بیمه';
+
 function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
   return {
     growth_min: c?.growth_min ?? FTS_GUIDE_DEFAULTS.growth_min,
@@ -40,6 +55,7 @@ function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
     suspended_max_stale_sessions: c?.suspended_max_stale_sessions ?? FTS_GUIDE_DEFAULTS.suspended_max_stale_sessions,
     v10_eps_years: c?.v10_eps_years ?? FTS_GUIDE_DEFAULTS.v10_eps_years,
     v10_sales_to_mcap_min: c?.v10_sales_to_mcap_min ?? SALES_TO_MCAP_GUIDE_DEFAULT,
+    profit_potential_min: c?.profit_potential_min ?? POTENTIAL_GUIDE_DEFAULT,
   };
 }
 
@@ -80,7 +96,7 @@ function Slider({
         className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-bg-card accent-[var(--accent-blue)]"
         aria-label={label}
       />
-      {hint ? <span className="break-words text-[10px] leading-snug text-text-muted">{hint}</span> : null}
+      {hint ? <span className="break-words text-2xs leading-snug text-text-muted">{hint}</span> : null}
     </div>
   );
 }
@@ -88,10 +104,13 @@ function Slider({
 function ToggleRow({
   label,
   hint,
+  scope,
   checked,
   onChange,
 }: {
   label: string;
+  /** برچسب دامنهٔ اعمال این گزینه (مثلاً «فقط تولیدی») */
+  scope?: string;
   hint?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
@@ -104,8 +123,18 @@ function ToggleRow({
       className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--hairline)] bg-bg-card/40 px-3.5 py-2.5 text-right transition-colors hover:border-border-accent"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="break-words text-xs font-bold leading-snug text-text-primary">{label}</span>
-        {hint ? <span className="break-words text-[10px] leading-snug text-text-muted">{hint}</span> : null}
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="break-words text-xs font-bold leading-snug text-text-primary">{label}</span>
+          {scope ? (
+            <span
+              data-testid="fts-toggle-scope"
+              className="shrink-0 rounded-full border border-border-c bg-bg-card px-1.5 py-0.5 text-2xs font-bold text-text-muted"
+            >
+              {scope}
+            </span>
+          ) : null}
+        </span>
+        {hint ? <span className="break-words text-2xs leading-snug text-text-muted">{hint}</span> : null}
       </span>
       <span
         aria-hidden
@@ -169,6 +198,11 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
   const [epsGate, setEpsGate] = useState(true);
   /** گیت نرخ‌گذاری دستوری — چندگزینه‌ای */
   const [pricingGate, setPricingGate] = useState<PricingGateMode>('free_only');
+  /** سند v2.1 — دروازه‌های سختِ جدید (پیش‌فرض‌ها طبق سند) */
+  const [insuranceGate, setInsuranceGate] = useState(true);
+  const [holdingsNa, setHoldingsNa] = useState(true);
+  const [pharmaExempt, setPharmaExempt] = useState(false);
+  const [baseMarketGate, setBaseMarketGate] = useState(true);
 
   /** Esc در حالت باز می‌بندد — بدون هیچ anchor-math؛ پنل fixed سمت راست است */
   useEffect(() => {
@@ -187,6 +221,13 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       setEpsGate((d.v10_eps_years ?? 3) >= 3);
       // جهش‌مجاز یعنی جزوه-دستوری منهای دارو/غذا؛ همه یعنی Rank_Only
       const mandatory = cfg.data.config.mandatory_sectors ?? FTS_GUIDE_DEFAULTS.mandatory_sectors;
+      // سند v2.1 — بیمه از فهرست صنایع دستوری؛ باقی دروازه‌ها از کلیدهای جدید
+      // (اگر بک‌اند آن کلیدها را نداشته باشد، POST دورشان می‌ریزد و پیش‌فرض UI می‌ماند)
+      setInsuranceGate(mandatory.some((s) => s.includes(INSURANCE_TOKEN)));
+      const rawCfg = cfg.data.config as unknown as Record<string, unknown>;
+      setHoldingsNa(rawCfg[GATE_KEYS.holdingsNa] == null ? true : Boolean(rawCfg[GATE_KEYS.holdingsNa]));
+      setPharmaExempt(Number(rawCfg[GATE_KEYS.pharmaExempt] ?? 0) > 0);
+      setBaseMarketGate(rawCfg[GATE_KEYS.baseMarket] == null ? true : Boolean(rawCfg[GATE_KEYS.baseMarket]));
       if (cfg.data.config.industry_mode === 'Rank_Only') {
         setPricingGate('all');
       } else if (JUMP_ALLOWED_SECTORS.every((s) => !mandatory.includes(s))) {
@@ -210,6 +251,14 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         : pricingGate === 'jump_allowed'
           ? [...FTS_GUIDE_DEFAULTS.mandatory_sectors].filter((s) => !JUMP_ALLOWED_SECTORS.includes(s))
           : [...(base.mandatory_sectors ?? FTS_GUIDE_DEFAULTS.mandatory_sectors)];
+    // سند v2.1 — «حذف کامل صنعت بیمه»: بیمه از فهرست صنایع دستوری (که با Exclude_Mandatory_Pricing حذف می‌شوند)
+    if (insuranceGate) {
+      if (!mandatorySectors.some((s) => s.includes(INSURANCE_TOKEN))) mandatorySectors.push(INSURANCE_TOKEN);
+    } else {
+      for (let i = mandatorySectors.length - 1; i >= 0; i -= 1) {
+        if (mandatorySectors[i].includes(INSURANCE_TOKEN)) mandatorySectors.splice(i, 1);
+      }
+    }
     const nextIndustryMode = pricingGate === 'all' ? 'Rank_Only' : 'Exclude_Mandatory_Pricing';
     const payload: Record<string, unknown> = {
       ...base,
@@ -217,13 +266,21 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       industry_mode: nextIndustryMode,
       mandatory_sectors: mandatorySectors,
       v10_eps_years: epsGate ? 3 : 1,
-      v10_volume_growth_min: volumeGate ? 0 : -1,
+      /** ۱ب — فِیزیکی: رشد غیرمنفی + گستره؛ خاموش = برداشتن هر دو الزام (عدد منفی بک‌اند را رد می‌کند) */
+      v10_volume_growth_min: 0,
+      v10_volume_breadth_min: volumeGate ? FTS_GUIDE_DEFAULTS.v10_volume_breadth_min : 0,
       v10_monetary_growth_min: draft.growth_min,
       /** اسلایدر شاخص ۴: کف نسبت فروش سالانه‌شده به ارزش بازار (۰.۱۰..۱.۰۰) */
       v10_sales_to_mcap_min: draft.v10_sales_to_mcap_min,
       margin_optimal: Math.max(draft.margin_min, FTS_GUIDE_DEFAULTS.margin_optimal),
+      /** سند v2.1 — شاخص ۴: پوشش سود ناخالص تخمینی (منطق OR با نسبت فروش) */
+      profit_potential_min: draft.profit_potential_min,
+      v10_potential_min: draft.profit_potential_min,
+      /** سند v2.1 — دروازه‌های سختِ جدید */
+      [GATE_KEYS.holdingsNa]: holdingsNa,
+      [GATE_KEYS.pharmaExempt]: pharmaExempt ? PHARMA_MARGIN_EXEMPT_MIN : 0,
+      [GATE_KEYS.baseMarket]: baseMarketGate,
     };
-    if (volumeGate) delete payload.v10_volume_growth_min_error;
     save.mutate(payload);
   };
 
@@ -233,6 +290,12 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       v10_monetary_growth_min: FTS_GUIDE_DEFAULTS.growth_min,
       v10_volume_growth_min: 0,
       v10_sales_to_mcap_min: SALES_TO_MCAP_GUIDE_DEFAULT,
+      v10_volume_breadth_min: FTS_GUIDE_DEFAULTS.v10_volume_breadth_min,
+      profit_potential_min: POTENTIAL_GUIDE_DEFAULT,
+      v10_potential_min: POTENTIAL_GUIDE_DEFAULT,
+      [GATE_KEYS.holdingsNa]: true,
+      [GATE_KEYS.pharmaExempt]: 0,
+      [GATE_KEYS.baseMarket]: true,
     };
     save.mutate(payload, {
       onSuccess: () => {
@@ -240,6 +303,10 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         setPricingGate('free_only');
         setVolumeGate(true);
         setEpsGate(true);
+        setInsuranceGate(true);
+        setHoldingsNa(true);
+        setPharmaExempt(false);
+        setBaseMarketGate(true);
       },
     });
   };
@@ -298,7 +365,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
 
         <ToggleRow
           label="الزام رشد مقداری / تناژ فیزیکی"
-          hint="صرفاً برای شرکت‌های تولیدی — هلدینگ‌ها و خدماتی‌ها خودکار نادیده گرفته می‌شوند (N/A)"
+          scope="فقط تولیدی"
+          hint="رشد مقداری (تناژ فیزیکی) فقط برای شرکت‌های تولیدی/کالایی اعمال می‌شود؛ بانک، بیمه، خدمات و هلدینگ/سرمایه‌گذاری این شاخص را ندارند (N/A). خاموش‌کردن، الزام گسترهٔ فیزیکی (۶۰٪ ماه‌های بهتر) را هم برمی‌دارد."
           checked={volumeGate}
           onChange={setVolumeGate}
         />
@@ -331,6 +399,16 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           onChange={(v) => setDraft((d) => ({ ...d, v10_sales_to_mcap_min: v / 100 }))}
         />
 
+        <Slider
+          label="حداقل پوشش سود ناخالص تخمینی"
+          value={draft.profit_potential_min}
+          min={0}
+          max={100}
+          step={5}
+          hint={`منطق OR (سند v2.1): شاخص ۴ قبول می‌شود اگر «نسبت فروش سالانه‌شده ÷ ارزش بازار ≥ ${toFaDigits(Math.round(draft.v10_sales_to_mcap_min * 100))}٪» یا «پوشش سود ناخالص تخمینی ÷ ارزش بازار ≥ ${toFaDigits(draft.profit_potential_min)}٪» باشد؛ پیش‌فرض سند ${toFaDigits(POTENTIAL_GUIDE_DEFAULT)}٪.`}
+          onChange={(v) => setDraft((d) => ({ ...d, profit_potential_min: v }))}
+        />
+
         <div className="flex flex-col gap-3 rounded-xl border border-[var(--hairline)] bg-bg-card/30 p-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-text-primary">دروازه‌های سخت</span>
@@ -347,7 +425,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                   role="radio"
                   aria-checked={pricingGate === m}
                   onClick={() => setPricingGate(m)}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-right text-[11px] font-bold transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-right text-2xs font-bold transition-colors ${
                     pricingGate === m
                       ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue'
                       : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary hover:border-border-accent'
@@ -365,7 +443,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                 </button>
               ))}
             </div>
-            <span className="break-words text-[10px] leading-snug text-text-muted">
+            <span className="break-words text-2xs leading-snug text-text-muted">
               خودرو، دارو، نیروگاه، غذا و… بسته به حالت انتخابی از غربالگری کنار گذاشته می‌شوند
             </span>
           </div>
@@ -378,18 +456,50 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
               setDraft((d) => ({ ...d, suspended_max_stale_sessions: v ? FTS_GUIDE_DEFAULTS.suspended_max_stale_sessions : 0 }))
             }
           />
+
+          <ToggleRow
+            label="حذف کامل نمادهای صنعت بیمه"
+            scope="دروازهٔ سخت"
+            hint="«بیمه» در فهرست صنایع دستوری می‌ماند؛ با حالت «حذف صنایع دستوری» بیمه کامل از واچلیست بیرون می‌رود."
+            checked={insuranceGate}
+            onChange={setInsuranceGate}
+          />
+
+          <ToggleRow
+            label="عدم اعمال نسبت فروش بر هلدینگ‌ها و سرمایه‌گذاری‌ها (N/A)"
+            scope="دروازهٔ سخت"
+            hint="برای هلدینگ/سرمایه‌گذاری/واسطهٔ مالی، شاخص ۴ به‌جای عدد ساختگی N/A می‌ماند (کلید کانفیگ: holdings_sales_na)."
+            checked={holdingsNa}
+            onChange={setHoldingsNa}
+          />
+
+          <ToggleRow
+            label="آزادسازی دارویی‌های با حاشیهٔ ناخالص بالای ۵۰٪"
+            scope="استثنا"
+            hint="داروسازی‌ها به‌شرط حاشیهٔ ناخالص > ۵۰٪ از دروازهٔ قیمت‌گذاری دستوری/رشد آزاد می‌شوند (کلید کانفیگ: pharma_margin_exempt_min)."
+            checked={pharmaExempt}
+            onChange={setPharmaExempt}
+          />
+
+          <ToggleRow
+            label="حذف نمادهای بازار پایه فرابورس"
+            scope="دروازهٔ سخت"
+            hint="نمادهای بازار پایه (پایه/توافقی) از واچلیست حذف می‌شوند (کلید کانفیگ: exclude_base_market)."
+            checked={baseMarketGate}
+            onChange={setBaseMarketGate}
+          />
         </div>
 
         {save.isError ? (
-          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-[11px] text-accent-red">
+          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs text-accent-red">
             ذخیره نشد — سرور در دسترس نیست
           </div>
         ) : save.data && !save.data.ok ? (
-          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-[11px] text-accent-red">
+          <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs text-accent-red">
             {save.data.message ?? 'برخی مقادیر معتبر نیستند'}
           </div>
         ) : save.isSuccess && save.data?.ok ? (
-          <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-[11px] text-accent-green">
+          <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-2xs text-accent-green">
             پیش‌شرط‌ها در fts_thresholds.json ذخیره شد
           </div>
         ) : null}

@@ -50,15 +50,19 @@ FTS_DEFAULTS = {
     "margin_optimal": 30.0,        # ایده‌آل = ۳۰٪
     # ۴) فروش سالانهٔ Annualized به ارزش بازار + پتانسیل سود ناخالص
     "sales_to_mcap_min": 1.0,      # Min_Annualized_Sales_To_MarketCap = ۱.۰
-    "profit_potential_min": 30.0,  # Min_Profit_Potential_To_MarketCap = ۳۰٪
+    "profit_potential_min": 40.0,  # Min_Profit_Potential_To_MarketCap = ۳۰٪
     # ۵) فیلتر صنعت — تفکیک قیمت‌گذاری آزاد/بورس کالا از دستوری
     "industry_mode": "Exclude_Mandatory_Pricing",
-    "mandatory_sectors": ["خودرو", "دارو", "نیروگاه", "غذا", "لاستیک", "شوینده", "بیمه"],
-    "free_sectors": ["سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک",
+    "mandatory_sectors": ["خودرو", "نیروگاه", "قند و شکر", "لاستیک", "شوینده", "بیمه"],
+    "free_sectors": ["سیمان", "پتروشیمی", "شیمیایی", "فلزات", "کانی", "کاشی", "سرامیک", "شیشه",
                      "کانه", "معادن", "نفت", "محصولات فلزی"],
     # غربالگری نهایی
     "watchlist_max": 50,           # سقف واچ‌لیست (جزوه: نهایتاً ۵۰ سهم)
     "mcap_min_hmt": 0.0,           # پیش‌شرط: حداقل ارزش بازار (همت)
+    # سند v2.1 / فرم تنظیمات: کلیدهای دروازهٔ سخت و استثنائات
+    "holdings_sales_na": True,          # عدم اعمال نسبت فروش بر هلدینگ/سرمایه‌گذاری (N/A)
+    "pharma_margin_exempt_min": 50.0,   # آستانهٔ استثنای دارویی (٪ حاشیهٔ ناخالص)؛ ۰ = غیرفعال
+    "exclude_base_market": True,        # حذف نمادهای بازار پایهٔ فرابورس
     "suspended_max_stale_sessions": 3,   # نماد با ≥ این تعداد نشست عقب‌مانده = تعلیق
     # v9.7 — دو پارامتر کمکی بنیادی/تابلوخوانی
     # ماده ۱۴۱ قانون تجارت: زیان انباشته > نصف سرمایه → حذف از واچ‌لیست.
@@ -77,7 +81,7 @@ FTS_DEFAULTS = {
     "v10_margin_min": 20.0,
     "v10_margin_ideal": 30.0,
     "v10_sales_to_mcap_min": 1.0,      # پیشفرضِ جزوه: فروش سالانه ÷ ارزش بازار ≥ ۱× (۱۰۰٪)
-    "v10_potential_min": 33.0,
+    "v10_potential_min": 40.0,
     # v10 — فیلترِ دستیِ صنایع از پنل (جدا از رژیم قیمت‌گذاری).
     # industry_mode = Include_Industries → فقط فهرستِ include می‌ماند
     # industry_mode = Exclude_Industries  → فهرستِ exclude حذف میشود

@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router';
 import { useUiStore } from '@shared/stores/uiStore';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
+import { MEDIA_SMALL } from '@shared/lib/breakpoints';
 import {
   ChevronIcon,
   FundamentalIcon,
@@ -18,8 +20,12 @@ const NAV_ITEMS = [
 ];
 
 export function Sidebar() {
-  const collapsed = useUiStore((s) => s.sidebarCollapsed);
-  const toggleSidebarCollapsed = useUiStore((s) => s.toggleSidebarCollapsed);
+  // ریسپانسیو: در نمایشگر کوچک (<۱۲۸۰px) بهطور خودکار جمع میشود؛
+  // کاربر میتواند با دکمهٔ بالای نوار، جمع/باز بودن را دستی تعیین کند.
+  const isSmall = useMediaQuery(MEDIA_SMALL);
+  const collapsedOverride = useUiStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
+  const collapsed = collapsedOverride ?? isSmall;
 
   return (
     <aside
@@ -39,7 +45,7 @@ export function Sidebar() {
         </div>
         <button
           type="button"
-          onClick={toggleSidebarCollapsed}
+          onClick={() => setSidebarCollapsed(!collapsed)}
           aria-label={collapsed ? 'بازکردن نوار کناری' : 'جمعکردن نوار کناری'}
           aria-expanded={!collapsed}
           className="ml-auto shrink-0 rounded-lg border border-[var(--hairline)] p-1 text-text-muted transition-colors hover:border-border-accent hover:text-accent-blue"

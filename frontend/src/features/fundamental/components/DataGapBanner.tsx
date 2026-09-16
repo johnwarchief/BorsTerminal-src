@@ -47,7 +47,7 @@ export function DataGapBanner({
         <div className="rounded-2xl border border-accent-red/40 bg-accent-red/10 p-4" data-testid="reject-reason-banner">
           <h3 className="mb-2 text-sm font-black text-accent-red">دلیل ردِ شاخص ۲ — سابقهٔ کامل است</h3>
           <p className="text-xs text-text-primary">{epsReason}</p>
-          <p className="mt-1 text-[11px] text-text-secondary">
+          <p className="mt-1 text-2xs text-text-secondary">
             این رد با داده‌ی ناقص نبوده؛ فقط بازگشت روند صعودی سود در دورهٔ بعدی آن را برمی‌گرداند.
           </p>
         </div>
@@ -62,7 +62,7 @@ export function DataGapBanner({
               <li key={`${g.layer}-${i}`} className="text-xs text-text-primary" title={`${g.why} — راه‌حل: ${g.fix}`} data-testid="data-gap-item">
                 <span className="font-bold">شاخص {g.layer}: </span>
                 {g.why} <span className="text-text-secondary">راه‌حل: {g.fix}</span>
-                <span aria-hidden className="text-[9px] leading-none text-text-muted"> ⓘ</span>
+                <span aria-hidden className="text-2xs leading-none text-text-muted"> ⓘ</span>
               </li>
             ))}
           </ul>

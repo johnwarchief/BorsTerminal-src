@@ -49,11 +49,11 @@ function Bar({
     tone === 'blue' ? 'bg-accent-blue' : tone === 'green' ? 'bg-accent-green' : tone === 'red' ? 'bg-accent-red' : 'bg-accent-yellow';
   return (
     <div className="flex items-center gap-2">
-      <span className="w-20 shrink-0 text-[11px] text-text-secondary">{label}</span>
+      <span className="w-20 shrink-0 text-2xs text-text-secondary">{label}</span>
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-card">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${w}%` }} />
       </div>
-      <span className="num w-16 shrink-0 text-left text-[11px] font-bold text-text-primary">{valueLabel}</span>
+      <span className="num w-16 shrink-0 text-left text-2xs font-bold text-text-primary">{valueLabel}</span>
     </div>
   );
 }
@@ -101,16 +101,16 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           valueLabel={prev == null ? '—' : `${fmtInt(prev)} m‌ت`}
         />
       </div>
-      <p className="text-[11px] leading-relaxed text-text-secondary">
+      <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: رشد = (فروش تجمیعی دورهٔ امسال ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
         {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
       </p>
       {physicalApplicable ? (
         <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2.5">
           <div className="mb-1 flex items-center gap-2">
-            <span className="text-[11px] font-bold text-text-primary">رشد مقداری (تناژ فیزیکی)</span>
+            <span className="text-2xs font-bold text-text-primary">رشد مقداری (تناژ فیزیکی)</span>
           </div>
-          <p className="text-[11px] leading-relaxed text-text-secondary">
+          <p className="text-2xs leading-relaxed text-text-secondary">
             {realGrowth != null
               ? `رشد واقعی پس از کسر اثر نرخ: ${fmtPct(realGrowth)} (اثر تقریبی نرخ ${fmtPct(vol?.implied_price_pct ?? null, 0)})`
               : vol?.data_gap
@@ -191,30 +191,30 @@ function Panel2({ card }: { card: FtsCard }) {
             const h = v == null || v <= 0 ? 4 : Math.max(6, ((v - min) / span) * 90);
             return (
               <div key={i} className="flex min-w-14 flex-1 flex-col items-center gap-1">
-                <span className="num text-[11px] font-bold text-text-primary">{v == null ? '؟' : toFaDigits(v.toFixed(0))}</span>
+                <span className="num text-2xs font-bold text-text-primary">{v == null ? '؟' : toFaDigits(v.toFixed(0))}</span>
                 <div
                   className={`w-full rounded-t-lg ${v == null ? 'bg-text-muted/20' : rising === false && i > 0 && (series[i - 1] ?? 0) > v ? 'bg-accent-red/70' : 'bg-accent-green/70'}`}
                   style={{ height: `${h}px` }}
                 />
-                <span className="num text-[10px] text-text-muted">{toFaDigits(slots[i] ?? '—')}</span>
+                <span className="num text-2xs text-text-muted">{toFaDigits(slots[i] ?? '—')}</span>
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-[11px] text-text-muted">سری EPS سالانهٔ حسابرسی‌شده موجود نیست.</p>
+        <p className="text-2xs text-text-muted">سری EPS سالانهٔ حسابرسی‌شده موجود نیست.</p>
       )}
-      <p className="text-[11px] leading-relaxed text-text-secondary">
+      <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: EPS هر سال مالی (صورت سود و زیان ۱۲ماههٔ حسابرسی‌شدهٔ ۱۲/۲۹) — باید سه سال متوالی صعودی باشد.
         {ind?.interim?.annualize_label ? ` · میاندوره: ${ind.interim.annualize_label}` : ''}
       </p>
       {partialShown ? (
-        <p className="text-[11px] leading-relaxed text-accent-susp">
+        <p className="text-2xs leading-relaxed text-accent-susp">
           دادهٔ موجود ({toFaDigits(realYears)} سال) نمایش داده می‌شود، اما چون سابقهٔ کامل {toFaDigits(required)} ساله
           ندارد، این نماد در شاخص ۲ مردود است — داده حیف نمی‌شود ولی گیت سه‌ساله پاس نمی‌شود.
         </p>
       ) : failReason != null ? (
-        <p className="text-[11px] leading-relaxed text-accent-red" data-testid="eps-fail-reason">
+        <p className="text-2xs leading-relaxed text-accent-red" data-testid="eps-fail-reason">
           دلیل رد: {failReason}
         </p>
       ) : null}
@@ -277,17 +277,17 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         </svg>
       ) : null}
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className={`rounded-lg border px-2 py-1.5 text-[10px] font-bold ${band === 'rejected' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red' : 'border-border-c bg-bg-primary text-text-muted'}`}>
+        <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'rejected' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red' : 'border-border-c bg-bg-primary text-text-muted'}`}>
           زیر ۲۰٪ → مردود
         </div>
-        <div className={`rounded-lg border px-2 py-1.5 text-[10px] font-bold ${band === 'conditional' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow' : 'border-border-c bg-bg-primary text-text-muted'}`}>
+        <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'conditional' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow' : 'border-border-c bg-bg-primary text-text-muted'}`}>
           ۲۰–۳۰٪ → مشروط
         </div>
-        <div className={`rounded-lg border px-2 py-1.5 text-[10px] font-bold ${band === 'ideal' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green' : 'border-border-c bg-bg-primary text-text-muted'}`}>
+        <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'ideal' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green' : 'border-border-c bg-bg-primary text-text-muted'}`}>
           بالای ۳۰٪ → مطلوب
         </div>
       </div>
-      <p className="text-[11px] leading-relaxed text-text-secondary">
+      <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰{ind?.period_end ? ` · دوره: ${toFaDigits(ind.period_end)}` : ''}
         {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — N/A' : ''}
       </p>
@@ -324,15 +324,15 @@ function Panel4({ card }: { card: FtsCard }) {
         ) : null}
       </div>
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3">
-        <div className="mb-1.5 text-[11px] font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
+        <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
         <div dir="ltr" className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
           Annualized Sales = (Cumulative Sales / {m}) × 12
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-text-muted">
+        <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
           N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
         </p>
         {ytd != null ? (
-          <p className="num mt-1.5 text-[11px] text-text-secondary">
+          <p className="num mt-1.5 text-2xs text-text-secondary">
             فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
           </p>
         ) : null}
@@ -342,7 +342,7 @@ function Panel4({ card }: { card: FtsCard }) {
           {scaleTable.map((s) => (
             <span
               key={s.months}
-              className={`num rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${
+              className={`num rounded-md border px-1.5 py-0.5 text-2xs font-bold ${
                 s.months === m ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue' : 'border-border-c bg-bg-primary text-text-muted'
               }`}
             >
@@ -352,7 +352,7 @@ function Panel4({ card }: { card: FtsCard }) {
         </div>
       ) : null}
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3" data-testid="potential-formula">
-        <div className="mb-2 text-[11px] font-bold text-text-primary">فرمول پتانسیل سود — شاخص ۴</div>
+        <div className="mb-2 text-2xs font-bold text-text-primary">فرمول پتانسیل سود — شاخص ۴</div>
         <div dir="rtl" className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 rounded-lg bg-bg-primary px-3 py-2.5 text-xs font-black leading-relaxed">
           <span className="text-text-secondary">پتانسیل سود =</span>
           <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
@@ -396,7 +396,7 @@ function Panel4({ card }: { card: FtsCard }) {
             )}
           </span>
         </div>
-        <p className="mt-1.5 text-[10px] leading-relaxed text-text-muted">
+        <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
           A از سالانه‌سازی داینامیک N ماهه می‌آید؛ B حاشیهٔ ناخالص آخرین دورهٔ حسابرسی‌شده؛ D ارزش لحظه‌ای بازار. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
         </p>
       </div>
@@ -424,28 +424,28 @@ function Panel5({ card }: { card: FtsCard }) {
       </div>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
         <div className={`rounded-xl border p-2.5 ${isFree ? 'border-accent-green/40 bg-accent-green/10' : 'border-border-c bg-bg-primary'}`}>
-          <div className="text-[11px] font-bold text-text-primary">نوع قیمت‌گذاری</div>
-          <div className={`mt-1 text-[10px] leading-snug ${isFree ? 'text-accent-green' : isMandatory ? 'text-accent-red' : 'text-text-secondary'}`}>
+          <div className="text-2xs font-bold text-text-primary">نوع قیمت‌گذاری</div>
+          <div className={`mt-1 text-2xs leading-snug ${isFree ? 'text-accent-green' : isMandatory ? 'text-accent-red' : 'text-text-secondary'}`}>
             {isFree ? 'آزاد / بورس کالا — نرخ از بازار' : isMandatory ? 'دستوری — نرخ با مصوبهٔ دولت' : 'مختلط / موردی'}
           </div>
         </div>
         <div className="rounded-xl border border-border-c bg-bg-primary p-2.5">
-          <div className="text-[11px] font-bold text-text-primary">ریسک ناترازی انرژی</div>
-          <div className="mt-1 text-[10px] leading-snug text-text-secondary">
+          <div className="text-2xs font-bold text-text-primary">ریسک ناترازی انرژی</div>
+          <div className="mt-1 text-2xs leading-snug text-text-secondary">
             {/نیروگاه|برق|فولاد|پتروشیمی|پترو شیمی|سیمان|سيمان|فولاد|مجتمع فولاد/.test(fxText)
               ? 'انرژی‌بر — ناترازی گاز تابستان (توقف خطوط) و برق زمستان ریسک تولید است.'
               : 'صنعت انرژی‌بر نیست — ناترازی فصلی انرژی اثر محدودی دارد.'}
           </div>
         </div>
         <div className="rounded-xl border border-border-c bg-bg-primary p-2.5">
-          <div className="text-[11px] font-bold text-text-primary">پتانسیل ارزی</div>
-          <div className={`mt-1 text-[10px] leading-snug ${fxExposure ? 'text-accent-green' : 'text-text-secondary'}`}>
+          <div className="text-2xs font-bold text-text-primary">پتانسیل ارزی</div>
+          <div className={`mt-1 text-2xs leading-snug ${fxExposure ? 'text-accent-green' : 'text-text-secondary'}`}>
             {fxExposure ? 'صادراتی/دلاری — درآمد به دلار گره خورده؛ پتانسیل نرخ ارز بالا.' : 'درآمد ریالی — پتانسیل ارزی مستقیم ندارد.'}
           </div>
         </div>
       </div>
-      {outlook ? <p className="text-[11px] leading-relaxed text-text-secondary">چشم‌انداز: {outlook}</p> : null}
-      <p className="text-[11px] leading-relaxed text-text-secondary">
+      {outlook ? <p className="text-2xs leading-relaxed text-text-secondary">چشم‌انداز: {outlook}</p> : null}
+      <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: صنعت دستوری (خودرو، دارو، نیروگاه، غذا، لاستیک، شوینده) مردود · آزاد (سیمان، فلزات، پتروشیمی، کانی، کاشی) مطلوب
       </p>
     </div>

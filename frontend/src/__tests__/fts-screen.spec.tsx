@@ -125,13 +125,13 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(screen.queryByText('شکاف داده')).not.toBeInTheDocument();
   });
 
-  it('سلول بی‌داده tooltip علت + راه‌حل دارد (الگوی GapHint)', () => {
+  it('سلول بی‌داده tooltip علت + راه‌حل دارد (بازشوی ممیزی AuditBadge)', () => {
     render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null })]} onSelect={() => {}} />);
     const cell = screen.getByTestId('fts-gap-reason-1a_monetary_growth');
-    const hint = cell.closest('[data-testid="gap-hint"]');
-    expect(hint).not.toBeNull();
-    const title = hint?.getAttribute('title') ?? '';
-    expect(title).toContain('گزارش فروش دورهٔ مشابه سال قبل در کدال موجود نیست');
+    // از F-06: خودِ برچسبِ علت یک بج ممیزی است و متن tooltip کوتاه روی همان بج می‌ماند
+    const title = cell.getAttribute('title') ?? '';
+    expect(title).toContain('گزارش ماهانه');
+    expect(title).toContain('مشابه');
     expect(title).toContain('راه‌حل');
   });
 

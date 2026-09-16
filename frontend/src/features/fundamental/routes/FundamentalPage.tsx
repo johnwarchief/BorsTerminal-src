@@ -23,6 +23,7 @@ import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetSc
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { AssemblyBadge } from '../components/AssemblyBadge';
+import { cardAuditEvidence } from '../lib/auditEvidence';
 import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 import { EpsLadder } from '../components/EpsLadder';
@@ -87,6 +88,9 @@ export default function FundamentalPage() {
     return isPhysicalGrowthApplicable({ name: companyName, sector_name: rawSector });
   }, [card.data, companyName, rawSector]);
 
+  /** شاهد ممیزی هر محور — برای کارت «چرا این وضعیت؟» در سلول‌های FtsCard */
+  const audit = useMemo(() => (card.data ? cardAuditEvidence(card.data) : null), [card.data]);
+
   const signal = useMemo(
     () =>
       symbol
@@ -124,6 +128,7 @@ export default function FundamentalPage() {
         ) : (
           <FtsScreenTable
             rows={screen.data?.data ?? []}
+            thresholds={screen.data?.thresholds ?? null}
             onSelect={(s) => {
               setSymbol(s);
               setDrawerOpen(false);
@@ -175,7 +180,7 @@ export default function FundamentalPage() {
           </>
         ) : null}
         <span className="mr-auto flex items-center gap-2">
-          <span className="text-[11px] text-text-muted">{signal?.rationale ?? ''}</span>
+          <span className="text-2xs text-text-muted">{signal?.rationale ?? ''}</span>
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </span>
       </div>
@@ -186,6 +191,7 @@ export default function FundamentalPage() {
           passes={card.data.passes ?? {}}
           verdict={card.data.verdict ?? null}
           industryMode={card.data.pricing_mode ?? null}
+          audit={audit}
           physicalApplicable={physicalApplicable}
           activeDrill={drillKey}
           onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
@@ -196,7 +202,7 @@ export default function FundamentalPage() {
               <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند NAV پرتفوی</h3>
               <Badge tone="yellow">N/A</Badge>
             </div>
-            <p className="text-[11px] leading-relaxed text-text-secondary" data-testid="holding-nav-na">
+            <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
               نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
               نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
               «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
