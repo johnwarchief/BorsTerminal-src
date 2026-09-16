@@ -974,8 +974,9 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
                            "حاشیهٔ ناخالص فقط برای شرکت‌های تولیدی معنا دارد."
                            % prof["label"])}
     margin = _sane(gm.get("margin_pct"), -99.0, 200.0)  # حاشیهٔ ۱۸۸۵٪- ⇒ None
-    gm["band"] = ("ideal" if margin >= th["margin_ideal"] else
-                  "acceptable" if margin >= th["margin_min"] else "below")
+    # حاشیه غایب یا نامعتبر: زیر باند (بدون داده) و نه کرش مقایسه با None
+    gm["band"] = ("ideal" if margin is not None and margin >= th["margin_ideal"] else
+                  "acceptable" if margin is not None and margin >= th["margin_min"] else "below")
     gm["ideal"] = bool(gm.get("optimal"))
     gm["ideal_threshold"] = th["margin_ideal"]
     gm["na"] = False
