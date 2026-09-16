@@ -640,6 +640,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         if ((spec.kind === 'pointhunt' || spec.kind === 'ma14exit') && !(spec.points[0].value > 0)) {
           spec.points[0].value = priceAt(spec.points[0].timestamp, spec.kind === 'ma14exit' ? 'close' : 'low');
         }
+        // زونِ بی‌داده (مثلِ MA52=۰) رسم نشود تا باندِ تختِ بی‌معنا نسازد.
+        if (spec.points.length >= 2 && !(spec.points[0].value > 0 || spec.points[1].value > 0)) continue;
         const made = chart.createOverlay(toChartOverlay(spec, startTs) as never);
         // اگر overlayِ زون در این نسخه ثبت نشده بود (مثلاً rect صرفاً figure است) کانال رسم می‌شود.
         if (!made && spec.points.length >= 2) {
