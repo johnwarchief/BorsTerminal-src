@@ -105,6 +105,21 @@ def _startup_sync_market():
     except Exception as e:
         print(f"[startup] market sync thread failed: {e}")
 
+    # گرم‌کردنِ کشِ اسکنر در پس‌زمینه تا اولین بارگذاریِ تبِ بنیادی ~۲۷s معطل نماند.
+    def _warm_screener():
+        try:
+            import time as _t
+            _t.sleep(25)          # بگذار سینکِ بازار تمام شود، بعد کش را گرم کن
+            from api.screener import warm_screener_cache
+            warm_screener_cache()
+        except Exception as _e:
+            print(f"[startup] screener warm failed: {_e}")
+    try:
+        threading.Thread(target=_warm_screener, daemon=True).start()
+        print("[startup] screener warm thread spawned")
+    except Exception as _e:
+        print(f"[startup] screener warm thread failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():

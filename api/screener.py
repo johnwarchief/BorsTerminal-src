@@ -23,6 +23,16 @@ _SCREENER_CACHE = {"key": None, "payload": None}
 router = APIRouter()
 
 
+def warm_screener_cache():
+    """گرم‌کردنِ کشِ پاسخِ اسکنر در پس‌زمینه (اولین بارگذاریِ تبِ بنیادی سریع شود؛
+    اجرای single-source روی ۸۶۵ نماد بارِ سرد ~۲۷s است)."""
+    try:
+        get_screener()
+        print("[screener] cache warmed")
+    except Exception as e:  # pragma: no cover
+        print(f"[screener] warm-up failed: {e}")
+
+
 @router.get("/api/history/{symbol}")
 def get_history(symbol: str):
     conn = get_db()

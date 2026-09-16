@@ -53,7 +53,7 @@ export function TechnicalSidebar({
     <aside
       data-testid="technical-sidebar"
       aria-label="سایدبار تحلیل تکنیکال"
-      className="glass-panel flex h-full min-h-0 w-[300px] shrink-0 flex-col gap-1 overflow-hidden rounded-xl p-1.5"
+      className="glass-panel flex h-full min-h-0 w-[248px] shrink-0 flex-col gap-1 overflow-hidden rounded-xl p-1.5"
     >
       <div className="flex shrink-0 items-center gap-0.5" role="tablist" aria-label="تب‌های سایدبار تکنیکال">
         <button
