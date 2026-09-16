@@ -3,6 +3,7 @@
 // (pos در برابر neg). سری کمتر از ۲ نقطه = «بدون داده»؛ عدد ساختگی رندر نمی‌شود.
 import { useMemo, useState } from 'react';
 import { useMarketTimeline } from '../api/useTimeline';
+import { useIntradayCache } from '../api/useIntradayCache';
 import {
   MIN_CHART_POINTS,
   detectBreadthFlip,
@@ -10,6 +11,8 @@ import {
   timelinePoints,
   toSeriesColumns,
 } from '../lib/timelineMath';
+import { mergePoints } from '../lib/intradayCache';
+import { BreadthGauge, OrderBookGauge } from './SnapshotGauge';
 
 type Series = { name: string; color: string; values: (number | null)[] };
 
@@ -82,9 +85,15 @@ export function MicroChartsDrawer() {
   const { data, isLoading } = useMarketTimeline();
   const [open, setOpen] = useState(false);
 
+  /** نقاط تایم‌لاین بک‌اند */
+  const backendPoints = useMemo(() => timelinePoints(toSeriesColumns(data?.series)), [data]);
+
+  // ثبت ~۳۰ثانیه‌ایِ آخرین اسنپ‌شات در کش محلی (فقط ساعات بازار) و ادغام با بک‌اند
+  const latest = backendPoints.length > 0 ? backendPoints[backendPoints.length - 1] : null;
+  const cached = useIntradayCache(latest);
+  const points = useMemo(() => mergePoints(backendPoints, cached), [backendPoints, cached]);
+
   const model = useMemo(() => {
-    const series = toSeriesColumns(data?.series);
-    const points = timelinePoints(series);
     const times = points.map((p) => p.t);
     const bq = points.map((p) => p.bq);
     const sq = points.map((p) => p.sq);
@@ -97,10 +106,11 @@ export function MicroChartsDrawer() {
       pos,
       neg,
       ready: points.length >= MIN_CHART_POINTS,
+      snapshot: points.length > 0 ? points[points.length - 1] : null,
       cross: detectBullishCross(bq, sq),
       flip: detectBreadthFlip(pos, neg),
     };
-  }, [data]);
+  }, [points]);
 
   // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
   // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند.
@@ -126,7 +136,7 @@ export function MicroChartsDrawer() {
                 { color: '#3b82f6', label: 'ارزش صف خرید' },
                 { color: '#f97316', label: 'ارزش صف فروش' },
               ]}
-              note={model.ready ? null : 'بدون داده'}
+              note={model.ready ? null : 'حالت لحظه‌ای — نمودار خطی با رسیدن به ۲ نقطه'}
               badge={
                 model.cross.hit ? (
                   <span
@@ -142,9 +152,7 @@ export function MicroChartsDrawer() {
                 model.ready ? (
                   <MiniLineChart series={[{ name: 'bq_bt', color: '#3b82f6', values: model.bq }, { name: 'sq_bt', color: '#f97316', values: model.sq }]} times={model.times} />
                 ) : (
-                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-2xs text-text-muted">
-                    بدون داده
-                  </div>
+                  <OrderBookGauge bq={model.snapshot?.bq ?? null} sq={model.snapshot?.sq ?? null} />
                 )
               }
             />
@@ -155,7 +163,7 @@ export function MicroChartsDrawer() {
                 { color: '#22c55e', label: 'مثبت‌ها' },
                 { color: '#ef4444', label: 'منفی‌ها' },
               ]}
-              note={model.ready ? null : 'بدون داده'}
+              note={model.ready ? null : 'حالت لحظه‌ای — نمودار خطی با رسیدن به ۲ نقطه'}
               badge={
                 model.flip ? (
                   <span
@@ -172,9 +180,7 @@ export function MicroChartsDrawer() {
                 model.ready ? (
                   <MiniLineChart series={[{ name: 'pos', color: '#22c55e', values: model.pos }, { name: 'neg', color: '#ef4444', values: model.neg }]} times={model.times} />
                 ) : (
-                  <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border-c text-2xs text-text-muted">
-                    بدون داده
-                  </div>
+                  <BreadthGauge pos={model.snapshot?.pos ?? null} neg={model.snapshot?.neg ?? null} />
                 )
               }
             />

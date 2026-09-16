@@ -7,6 +7,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { SNAPSHOT_POLL_MS, isMarketOpen } from '../lib/intradayCache';
 
 const cell = z.union([z.number(), z.string(), z.null()]);
 const arrCell = z.array(cell).nullish();
@@ -46,6 +47,8 @@ export function useMarketTimeline() {
     queryFn: ({ signal }) => http<Timeline>('/api/mstat/timeline?mode=cum', { schema: TimelineSchema, signal }),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
+    // پولینگ زنده در ساعات بازار (~۳۰ثانیه) برای ساخت نقاط t1,t2,…؛ خارج بازار خاموش
+    refetchInterval: () => (isMarketOpen() ? SNAPSHOT_POLL_MS : false),
     refetchOnWindowFocus: false,
   });
 }

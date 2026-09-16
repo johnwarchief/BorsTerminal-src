@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MicroChartsDrawer } from '@features/market/components/MicroChartsDrawer';
+import { dayKey } from '@features/market/lib/intradayCache';
 import {
   MIN_CHART_POINTS,
   detectBreadthFlip,
@@ -161,6 +162,7 @@ describe('detectBreadthFlip -- معکوس جهت روز', () => {
 describe('دراور میکروچارت با تایم‌لاین ماک‌شده', () => {
   beforeEach(() => {
     fetchMock.mockReset();
+    localStorage.clear();
   });
 
   function renderDrawer() {
@@ -197,14 +199,39 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
     expect(screen.getByTestId('micro-breadth').querySelectorAll('polyline')).toHaveLength(2);
   });
 
-  it('سری تک‌نقطه‌ای Circuit Breaker می‌خورد: بدون داده', async () => {
+  it('سری تک‌نقطه‌ای ⇒ نمایشگر لحظه‌ای (نه کادر خالی)', async () => {
     mockTimeline({ t: ['12:58'], bq_bt: [64935], sq_bt: [16198], pos: [1147], neg: [807] });
     renderDrawer();
     fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
-    await waitFor(() => expect(screen.getByTestId('micro-orderbook')).toBeInTheDocument());
-    expect(screen.getByTestId('micro-orderbook').textContent).toContain('بدون داده');
-    expect(screen.getByTestId('micro-breadth').textContent).toContain('بدون داده');
+    await waitFor(() => expect(screen.getByTestId('orderbook-gauge')).toBeInTheDocument());
+    // نوار دوتایی صف خرید/فروش با اعداد خوانا
+    expect(screen.getByTestId('orderbook-gauge').textContent).toContain('۶۴٬۹۳۵');
+    expect(screen.getByTestId('orderbook-gauge').textContent).toContain('۱۶٬۱۹۸');
+    // باکس مقایسهٔ مثبت/منفی
+    expect(screen.getByTestId('breadth-gauge').textContent).toContain('۱٬۱۴۷');
+    expect(screen.getByTestId('breadth-gauge').textContent).toContain('۸۰۷');
     expect(screen.queryByTestId('bullish-cross')).not.toBeInTheDocument();
+  });
+
+  it('تک‌نقطهٔ همه-null ⇒ نمایشگر لحظه‌ای «بدون داده» صادقانه', async () => {
+    mockTimeline({ t: ['12:58'], bq_bt: [null], sq_bt: [null], pos: [null], neg: [null] });
+    renderDrawer();
+    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    await waitFor(() => expect(screen.getByTestId('orderbook-gauge-empty')).toBeInTheDocument());
+    expect(screen.getByTestId('breadth-gauge-empty')).toHaveTextContent('بدون داده');
+  });
+
+  it('نقطهٔ کش‌شدهٔ محلی + تک‌پیلود بک‌اند ⇒ نمودار خطی (فالبک کش)', async () => {
+    localStorage.setItem(
+      'bors:market:intraday:v1',
+      JSON.stringify({ day: dayKey(), points: [{ t: '09:10', bq: 10, sq: 5, pos: 100, neg: 50 }] }),
+    );
+    mockTimeline({ t: ['12:58'], bq_bt: [64935], sq_bt: [16198], pos: [1147], neg: [807] });
+    renderDrawer();
+    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    await waitFor(() =>
+      expect(screen.getByTestId('micro-orderbook').querySelectorAll('polyline')).toHaveLength(2),
+    );
   });
 
   it('معکوس breadth در حالت ماک نمایش داده می‌شود', async () => {
