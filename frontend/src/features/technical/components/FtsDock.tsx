@@ -15,7 +15,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
       data-testid="fts-dock"
       data-open={open ? 'true' : 'false'}
       className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--hairline)] bg-bg-secondary ${
-        open ? 'h-[42%] min-h-[220px]' : 'h-7'
+        open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >
       <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="داک پایین چارت">
