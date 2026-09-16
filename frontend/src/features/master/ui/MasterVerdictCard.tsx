@@ -2,6 +2,7 @@
 import type { AgentId, AgentSignal } from '@contracts/signal';
 import type { MasterVerdict } from '@contracts/master';
 import { toFaDigits } from '@shared/lib/fmt';
+import { fa0, fa1 } from '../lib/fmtNum';
 import { Badge } from '@shared/components/Badge';
 
 const ACTION_FA = {
@@ -137,8 +138,8 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
             {verdict.hasConflict ? <Badge tone="orange">تضاد افق زمانی</Badge> : null}
           </div>
           <div className="text-xs leading-6 text-text-secondary">
-            <span className="num text-base font-black text-text-primary">{toFaDigits(pct)}٪</span> توافق ایجنت ها ·{' '}
-            <span className="num">{toFaDigits(activeCount)}</span> از <span className="num">۴</span> سیگنال فعال
+            <span className="num text-base font-black text-text-primary">{fa1(pct)}٪</span> توافق ایجنت ها ·{' '}
+            <span className="num">{fa0(activeCount)}</span> از <span className="num">۴</span> سیگنال فعال
             {verdict.discardedSignalIds.length > 0 ? (
               <span className="text-text-muted"> ({toFaDigits(verdict.discardedSignalIds.length)} کنارگذاشته شده)</span>
             ) : null}
@@ -182,7 +183,7 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
                 </div>
                 <span className={`num w-14 shrink-0 text-end font-bold ${c.score > 0 ? 'text-accent-green' : c.score < 0 ? 'text-accent-red' : 'text-text-muted'}`}>
                   {c.score > 0 ? '+' : ''}
-                  {toFaDigits(c.score)}
+                  {fa0(c.score)}
                 </span>
                 <Badge tone={CONF_TONE[c.confidence]}>{CONF_FA[c.confidence]}</Badge>
                 {s ? <span className="truncate text-2xs text-text-muted" title={s.title}>{s.title}</span> : null}

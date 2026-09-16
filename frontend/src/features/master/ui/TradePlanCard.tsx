@@ -2,7 +2,7 @@
 // حکم نهایی + پارامترهای قیمتی FTS با عدد دقیق ریالی + مدیریت سرمایه.
 // داده فیبو/باکس فقط از /api/fts/{symbol} — بازتولید نمی‌شود (Circuit Breaker).
 import { Badge } from '@shared/components/Badge';
-import { toFaDigits } from '@shared/lib/fmt';
+import { fa1 } from '../lib/fmtNum';
 import { rial, type TradePlan } from '../lib/tradePlanMath';
 
 export const ACTION_FA = {
@@ -82,7 +82,7 @@ export function TradePlanCard({ symbol, action, plan }: { symbol: string; action
         <LevelRow label="حد ضرر" hint={plan.stop.basis} lo={plan.stop.price} hi={null} tone="red" />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] pt-3">
-        <Badge tone="blue">وزن هر پله: {toFaDigits(plan.weight.pct)}٪ سرمایه</Badge>
+        <Badge tone="blue">وزن هر پله: {fa1(plan.weight.pct)}٪ سرمایه</Badge>
         <span className="text-2xs leading-5 text-text-secondary">
           مدیریت سرمایه FTS: ۲ تا ۵ درصد سرمایه در هر پله بر اساس سطح ریسک داوری — مجموع پله‌ها و حد ضرر تصمیم خروج را می‌سازند.
         </span>

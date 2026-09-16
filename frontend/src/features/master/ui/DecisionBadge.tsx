@@ -8,6 +8,8 @@ const TONE: Record<DefiniteDecision['action'], 'green' | 'yellow' | 'blue' | 're
   high_risk_swing: 'yellow',
   watch: 'blue',
   veto: 'red',
+  veto_gate1: 'red',
+  veto_gate2: 'red',
 };
 
 export function DecisionBadge({ decision }: { decision: DefiniteDecision }) {

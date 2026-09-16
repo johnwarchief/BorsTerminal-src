@@ -229,8 +229,8 @@ describe('ماشین وتو سخت‌گیرانه (بدون میانگین خط�
     );
     const g = res.gates.find((x) => x.id === 'fundamental')!;
     expect(g.state).toBe('blocked');
-    expect(g.reason).toContain('18');
-    expect(g.reason).toContain('20');
+    expect(g.reason).toContain('۱۸.۰');
+    expect(g.reason).toContain('۲۰');
   });
 
   it('نبود دادهٔ هفتگی ⇒ وتو صادر نمی‌شود و صادقانه pending می‌ماند', () => {
@@ -304,7 +304,7 @@ describe('خلاصهٔ تحلیلی مدیریتی (کاملاً آفلاین)',
 
   it('برچسب لایه‌ها جای خط تیره را می‌گیرد', () => {
     expect(layerStatusLabel('technical', techSig('bullish', 60, ['trend'])).text).toBe('در انتظار شکست مقاومت');
-    expect(layerStatusLabel('tape', tapeSig('suspicious_volume', 3)).text).toContain('حجم مشکوک ۳ برابر');
+    expect(layerStatusLabel('tape', tapeSig('suspicious_volume', 3)).text).toContain('حجم مشکوک ۳.۰ برابر');
     expect(layerStatusLabel('fundamental', { ...fundSig('bullish', 70), payload: { ...fundSig('bullish', 70).payload, margin_pct: 24 } } as AgentSignal).text).toContain('حاشیهٔ سود تایید');
     expect(layerStatusLabel('portfolio', undefined).text).toContain('منتشر نشده');
   });
