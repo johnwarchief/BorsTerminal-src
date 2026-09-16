@@ -1384,6 +1384,18 @@ def _pct_txt(v, signed=True) -> str:
     return (("%+.1f" if signed else "%.1f") % v) + "٪"
 
 
+def _sane(v, lo=None, hi=None):
+    """گارد مقادیر غیرمعقول منبع: خارج از بازه ⇒ None (بدون حذف بی‌صدا)."""
+    x = _f(v)
+    if x is None:
+        return None
+    if lo is not None and x < lo:
+        return None
+    if hi is not None and x > hi:
+        return None
+    return x
+
+
 def _n(v, nd=0) -> str:
     """عددِ خوانا با جداکنندهٔ هزارگان — None/خطا → «—» (نه صفرِ گمراه‌کننده)."""
     try:
