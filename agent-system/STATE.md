@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `7a666a8` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `b3e2144` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۲۷ سبز (۵۹ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -208,3 +208,8 @@
 ## به‌روزرسانی ۳۰ (ایجنتهد main, 2026-09-15 ~06:40)
 - **agent/fundamental (F-07)** مرج شد: `a8ade67` + merge commit `7a666a8`. کنترل‌های v2.1 در FtsSettingsDrawer: توگل ۱ب «فقط تولیدی» (بانک/بیمه/خدمات/هلدینگ N/A)؛ **رفع باگ واقعی**: خاموش‌کردن توگل قبلاً `v10_volume_growth_min=-1` می‌فرستاد و بک‌اند (`api/market.py`) رد می‌کرد ⇒ حالا `0` + `v10_volume_breadth_min=0` می‌فرستد؛ شاخص 4 با OR + `potential_min=40` (نوشتن هر دو کلید `profit_potential_min` و `v10_potential_min`)؛ دروازه‌های سخت (حذف بیمه، N/A نسبت فروش هلدینگ، استثنای دارویی >50%، حذف بازار پایه). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0 error/3 warning، build سالم.
 - نیاز بک‌اند (کلیدهای ناشناخته در POST دور ریخته می‌شوند ⇒ باید به `FTS_DEFAULTS` اضافه شوند تا ماندگار شوند): `holdings_sales_na` (bool, true)، `pharma_margin_exempt_min` (float, 0/50)، `exclude_base_market` (bool, true). بیمه فعلاً از مسیر `mandatory_sectors` کار می‌کند.
+
+
+## به‌روزرسانی ۳۱ (ایجنتهد main, 2026-09-15 ~07:05)
+- (هد `AuditBadge` را داخل `SymbolInspector` نصب کرد: `ad21945`.)
+- **agent/technical (T-20)** مرج شد: `e13ada7` + merge commit `b3e2144`. پاس QA بصری (autoglm روی :8012): رفع فضای مردهٔ عمودی چارت، سرریز افقی واچ‌لیست (`min-width:0` + `minmax(0,1fr)` + ستون درصد w-16)، رنگ میله‌های حجم سبز/قرمز، مهار اسکرول/ارتفاع. رفع‌نشده (صادقانه): تراز RTL و بریدگی‌های داخل کامپوننت vendoredِ چارت جمینای + کیفیت رندر مارکر «T» (نیازمند پاس جداگانه). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0/3، build سالم.
