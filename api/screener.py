@@ -10,6 +10,14 @@ from .market import load_fts_config
 from .chart import _fts_analyze_symbol
 from fastapi import APIRouter
 import pandas as pd
+import os
+import json
+from bors_config import DB_PATH
+
+# کشِ کوتاه‌مدتِ پاسخ اسکنر — کلید = (mtime دیتابیس‌ها، محتوای cfg).
+# اجرای evaluate_v10 برای هر نماد گران است؛ این کش فقط از تکرارِ همان محاسبه
+# در کلیک‌های پیاپی جلوگیری می‌کند و با هر تغییرِ دیتابیس/تنظیمات باطل می‌شود.
+_SCREENER_CACHE = {"key": None, "payload": None}
 
 
 router = APIRouter()
@@ -71,6 +79,14 @@ def get_screener():
     try:
         import fts_engine
         cfg = load_fts_config()
+        _cache_key = None
+        try:
+            _cache_key = (round(os.path.getmtime(DB_PATH), 2),
+                          json.dumps(cfg, sort_keys=True, ensure_ascii=False, default=str))
+        except Exception:
+            _cache_key = None
+        if _cache_key is not None and _SCREENER_CACHE.get("key") == _cache_key:
+            return _SCREENER_CACHE["payload"]
         rows = fts_engine.bulk_scan(conn, cfg=cfg)
 
         # نام کامل + نوع ابزار از instruments (bulk_scan فقط نماد برمی‌گرداند)
@@ -101,6 +117,65 @@ def get_screener():
                 except Exception:
                     pass
 
+        # ---- v10: یکسان‌سازی امتیاز/پرچم اسکرینر با کارت جزئیات (منبع واحد حقیقت) ----
+        # قاعدهٔ v10 (بالای api/fundamental.py): هیچ مسیرِ خواندنی — کارت،
+        # واچلیست، اسکرینر، خروجی و UI — حق ندارد ارزش بازار را دوباره بسازد
+        # (p_closing × total_shares). عدد یک‌بار از ستونِ رسمیِ تابلو می‌آید و
+        # امتیاز/پرچمِ اسکرینر هم دقیقاً با همان evaluate_v10 کارت محاسبه می‌شود
+        # تا شاخص‌ها بین /api/screener و /api/fundamental واگرا نشوند.
+        try:
+            from .fundamental import (
+                evaluate_v10, board_total_market_cap,
+                ensure_market_cap_schema, _has_mcap_col,
+            )
+        except Exception:
+            evaluate_v10 = None
+        if evaluate_v10 is not None:
+            if not _has_mcap_col(conn, "market_watch"):
+                ensure_market_cap_schema(conn)
+            mcap_official = {}
+            for _l18, _mc in conn.execute(
+                    "SELECT i.l_val18, m.market_cap FROM instruments i "
+                    "JOIN market_watch m ON m.ins_code = i.ins_code"):
+                _k = fts_engine.norm_fa(_l18)
+                if _k and _k not in mcap_official:
+                    mcap_official[_k] = _num(_mc)
+            total_mcap, _mcap_src = board_total_market_cap(conn)
+            _m141m = fts_engine.m141_map(conn)
+            _liqm = fts_engine.avg_trade_value_hmt(conn)
+            cname_of = {}
+            for _sym, _cn in conn.execute(
+                    "SELECT symbol, company_name FROM financial_statements "
+                    "ORDER BY period_end DESC"):
+                _k = fts_engine.norm_fa(_sym)
+                if _k and _k not in cname_of:
+                    cname_of[_k] = _cn or ""
+            for r in rows:
+                key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
+                res = evaluate_v10(conn, key, mcap_official.get(key, 0.0),
+                                   total_mcap, r.get("sector_name", ""),
+                                   cfg=cfg, company_name=cname_of.get(key, ""),
+                                   m141_map=_m141m, liq_map=_liqm)
+                p = res["passes"]
+                r["score"] = res["score"]
+                r["i1_pass"] = p["1_growth"]
+                r["i2_pass"] = p["2_eps_trend"]
+                r["i3_pass"] = p["3_gross_margin"]
+                r["i4_pass"] = p["4_sales_to_mcap"]
+                r["i5_pass"] = p["5_industry"]
+                r["i1a_pass"] = p.get("1a_monetary_growth")
+                r["i1b_pass"] = p.get("1b_volume_growth")
+                r["i4a_pass"] = p.get("4a_sales_to_mcap")
+                r["i4b_pass"] = p.get("4b_profit_potential")
+                r["excluded"] = res["excluded"]
+                r["exclusion_reasons"] = " · ".join(res["exclusion_reasons"])
+                r["verdict"] = res["verdict"]
+                r["pricing_mode"] = res.get("pricing_mode")
+                r["panel_industry"] = (res.get("profile") or {}).get("kind")
+            # رتبه‌بندی مجدد بر پایهٔ امتیازِ یکسان‌شده (مردودها آخر، سپس امتیاز نزولی)
+            rows.sort(key=lambda r: (r["excluded"], -r["score"],
+                                     -_num(r.get("mcap")), r["symbol"]))
+
         # واچ‌لیست: حداکثر watchlist_max سهمِ غیرمردود، مرتب بر اساس امتیاز
         cap = int(cfg.get("watchlist_max", 50) or 50)
         eligible = [r for r in rows if not r["excluded"]]
@@ -108,15 +183,6 @@ def get_screener():
             r["watchlist"] = i < cap
         for r in rows:
             r.setdefault("watchlist", False)
-
-        # پیش‌شرط همت (اختیاری) — خارج از پنج محور، فقط علامت می‌خورد
-        floor = _num(cfg.get("mcap_min_hmt", 0)) * 1e12
-        if floor > 0:
-            for r in rows:
-                if r["mcap"] < floor:
-                    r["excluded"] = True
-                    r["exclusion_reasons"] = (r["exclusion_reasons"] + " · " if
-                                              r["exclusion_reasons"] else "") + "ارزش بازار زیر حد"
 
         # ---- v10: FTS technical methodology columns (tech_*) ----
         # Only watchlist rows are enriched (cap <= watchlist_max): the full
@@ -155,7 +221,11 @@ def get_screener():
             r["tech_exit_verdict"] = ex.get("verdict")
             r["tech_exit_signals"] = ex.get("signals") or []
 
-        return {"status": "success", "count": len(rows), "data": rows,
-                "thresholds": cfg, "max_score": 5}
+        payload = {"status": "success", "count": len(rows), "data": rows,
+                   "thresholds": cfg, "max_score": 5}
+        if _cache_key is not None:
+            _SCREENER_CACHE["key"] = _cache_key
+            _SCREENER_CACHE["payload"] = payload
+        return payload
     finally:
         conn.close()
