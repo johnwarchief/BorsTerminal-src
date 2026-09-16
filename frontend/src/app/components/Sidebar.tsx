@@ -48,7 +48,7 @@ export function Sidebar() {
           onClick={() => setSidebarCollapsed(!collapsed)}
           aria-label={collapsed ? 'بازکردن نوار کناری' : 'جمعکردن نوار کناری'}
           aria-expanded={!collapsed}
-          className="ml-auto shrink-0 rounded-lg border border-[var(--hairline)] p-1 text-text-muted transition-colors hover:border-border-accent hover:text-accent-blue"
+          className="ms-auto shrink-0 rounded-lg border border-[var(--hairline)] p-1 text-text-muted transition-colors hover:border-border-accent hover:text-accent-blue"
         >
           <ChevronIcon size={16} className={collapsed ? 'rotate-180' : ''} />
         </button>
@@ -62,7 +62,7 @@ export function Sidebar() {
             title={item.label}
             aria-label={item.label}
             className={({ isActive }) =>
-              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-sm font-semibold transition-all duration-200 ${collapsed ? 'justify-center px-0 py-3' : 'justify-end px-3 py-2.5'} ${
+              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-sm font-semibold transition-all duration-200 ${collapsed ? 'justify-center px-0 py-3' : 'justify-start px-3 py-2.5'} ${
                 isActive
                   ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
                   : 'text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
