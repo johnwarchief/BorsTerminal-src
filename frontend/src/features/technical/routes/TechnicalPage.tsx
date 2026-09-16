@@ -49,6 +49,8 @@ export default function TechnicalPage() {
   const replaySpeed = useReplayStore((s) => s.speedMs);
   const setReplayCursor = useReplayStore((s) => s.setCursor);
   const setReplayPlaying = useReplayStore((s) => s.setPlaying);
+  const startReplay = useReplayStore((s) => s.start);
+  const stopReplay = useReplayStore((s) => s.stop);
 
   const nn = useNnChartData(symbol);
   const tedipx = useNnTedipx();
@@ -136,14 +138,36 @@ export default function TechnicalPage() {
           <span className="num text-[11px] text-text-muted">{toFaDigits(replayRows.length)} کندل</span>
           {signal ? <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge> : null}
           <div className="mr-auto flex items-center gap-1">
-            {analysis.data?.fts ? (
-              <span className="hidden md:inline" data-testid="header-fts-summary">
-                <Badge tone="gray">
-                  FTS
-                  {signal?.payload.setups.length ? ` · ${toFaDigits(signal.payload.setups.length)} ستاپ` : ''}
-                </Badge>
-              </span>
-            ) : null}
+            <button
+              type="button"
+              data-testid="header-replay"
+              aria-pressed={replayActive}
+              onClick={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}
+              className={`rounded border px-2 py-0.5 text-[11px] font-bold transition-colors ${
+                replayActive
+                  ? 'border-border-accent bg-accent-blue/15 text-accent-blue'
+                  : 'border-border-c bg-bg-card text-text-secondary hover:border-border-accent hover:text-accent-blue'
+              }`}
+            >
+              {replayActive ? 'پایان بازپخش' : 'بازپخش'}
+            </button>
+            <details className="relative" data-testid="header-fts-popover">
+              <summary className="cursor-pointer list-none rounded border border-border-c bg-bg-card px-2 py-0.5 text-[11px] font-bold text-text-secondary hover:border-border-accent hover:text-accent-blue">
+                FTS
+                {signal?.payload.setups.length ? ` · ${toFaDigits(signal.payload.setups.length)}` : ''}
+              </summary>
+              <div className="absolute left-0 top-full z-50 mt-1 w-[340px] rounded-lg border border-[var(--hairline)] bg-bg-secondary p-2 shadow-xl">
+                <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
+                {signal ? (
+                  <p className="mt-1 text-[11px] leading-5 text-text-secondary">
+                    {DIR_LABEL[signal.direction]}
+                    {signal.score != null ? ` · امتیاز ${toFaDigits(signal.score)}` : ''} — {signal.rationale}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-text-muted">در انتظار دادهٔ کافی...</p>
+                )}
+              </div>
+            </details>
             <button
               type="button"
               onClick={() => setSettingsOpen(true)}
