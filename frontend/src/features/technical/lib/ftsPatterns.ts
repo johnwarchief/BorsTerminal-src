@@ -23,7 +23,7 @@ export function detectJet(highs: (number | null)[], closes: (number | null)[], m
   if (n < minBars + 1) return { active: false, level: null, barsSinceBreak: null };
   const oldHighs = highs.slice(0, n - minBars).filter(finite);
   if (oldHighs.length === 0) return { active: false, level: null, barsSinceBreak: null };
-  const level = Math.max(...oldHighs);
+  const level = oldHighs.reduce((m, v) => (v > m ? v : m), -Infinity);
   const recent = closes.slice(n - minBars);
   let brokenAt = -1;
   for (let i = 0; i < recent.length; i++) {
@@ -123,7 +123,7 @@ export function detectDoubleBottom(lows: (number | null)[], closes: (number | nu
   const tol = (Math.abs(a.price) * tolPct) / 100;
   if (Math.abs(a.price - b.price) > tol) return { active: false, level: null, breakout: false };
   const between = lows.slice(a.index, b.index + 1).filter(finite);
-  const neckline = between.length > 0 ? Math.max(...between) : null;
+  const neckline = between.length > 0 ? between.reduce((m, v) => (v > m ? v : m), -Infinity) : null;
   const last = closes[closes.length - 1];
   const breakout = neckline != null && finite(last) && last > neckline;
   return { active: true, level: neckline, breakout };
@@ -139,7 +139,7 @@ export function detectHeadShoulders(highs: (number | null)[], tolPct = 3): HeadS
   const ok = head.price > l.price && head.price > r.price && Math.abs(l.price - r.price) <= tol;
   if (!ok) return { active: false, neckline: null, warning: false };
   const lows = highs.slice(l.index, r.index + 1).filter(finite);
-  return { active: true, neckline: lows.length > 0 ? Math.min(...lows) : null, warning: true };
+  return { active: true, neckline: lows.length > 0 ? lows.reduce((m, v) => (v < m ? v : m), Infinity) : null, warning: true };
 }
 
 // ---------------------------------------------------------------- ۶) سقف سوم + خروج MA14

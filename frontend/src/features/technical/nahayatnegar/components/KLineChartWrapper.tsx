@@ -146,6 +146,21 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
   };
 }
 
+/** فالبکِ زون: کانالِ قیمتیِ دوانقطه‌ای (overlayِ تضمین‌شده) وقتی «rect» در این نسخه overlay نیست. */
+function toZoneFallback(spec: PatternOverlaySpec, startTs: number): Record<string, unknown> {
+  const color = patternOverlayColor(spec);
+  const a = spec.points[0].value;
+  const b = spec.points.length > 1 ? spec.points[1].value : a;
+  const lastTs = spec.points.length > 1 ? (spec.points[1].timestamp || startTs) : startTs;
+  return {
+    name: 'priceChannelLine',
+    groupId: PATTERN_GROUP_ID,
+    lock: true,
+    points: [{ timestamp: startTs, value: a }, { timestamp: lastTs, value: b }],
+    styles: { line: { color, size: 1, style: 'dashed' } },
+  };
+}
+
 export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialSymbol = 'خودرو',
   initialName = 'ایران خودرو',
@@ -614,9 +629,22 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     clearPatterns();
     const startTs = adjustedCandles[0].timestamp;
+    // ارزشِ نشانگرها: اگر مقدار صفر/نامعتبر بود از کندلِ همان زمان بگیر (نقطه‌زنی ⇒ کف، خروج ⇒ بسته)
+    // تا نشانگر روی قیمت ۰ و بیرون از دید رسم نشود.
+    const priceAt = (ts: number, pick: 'low' | 'close'): number => {
+      const row = adjustedCandles.find((c) => c.timestamp >= ts) ?? adjustedCandles[adjustedCandles.length - 1];
+      return row ? (pick === 'low' ? row.low : row.close) : 0;
+    };
     for (const spec of specs) {
       try {
-        chart.createOverlay(toChartOverlay(spec, startTs) as never);
+        if ((spec.kind === 'pointhunt' || spec.kind === 'ma14exit') && !(spec.points[0].value > 0)) {
+          spec.points[0].value = priceAt(spec.points[0].timestamp, spec.kind === 'ma14exit' ? 'close' : 'low');
+        }
+        const made = chart.createOverlay(toChartOverlay(spec, startTs) as never);
+        // اگر overlayِ زون در این نسخه ثبت نشده بود (مثلاً rect صرفاً figure است) کانال رسم می‌شود.
+        if (!made && spec.points.length >= 2) {
+          chart.createOverlay(toZoneFallback(spec, startTs) as never);
+        }
       } catch (e) {
         void e;
       }
