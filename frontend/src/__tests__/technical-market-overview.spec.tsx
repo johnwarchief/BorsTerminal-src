@@ -48,4 +48,14 @@ describe('نمای کل بورس بدون نماد', () => {
     // بدون داده‌ی fetched، کارت‌ها صادقانه «بدون داده» می‌دهند نه عدد ساختگی
     expect(screen.getAllByText('بدون داده').length).toBeGreaterThan(0);
   });
+
+  it('دادهٔ غایب باعث علامت قرمز کاذب در کارت «تعادل صف‌ها» نمی‌شود', () => {
+    withQuery(<MarketOverview />);
+    const tile = screen.getByText('تعادل صف‌ها').closest('div') as HTMLElement;
+    expect(tile).not.toBeNull();
+    const value = tile.querySelector('.num') as HTMLElement;
+    // نبود عمق بازار ⇒ «بدون داده» (نه صفر/نه قرمز کاذب)
+    expect(value.textContent).toBe('بدون داده');
+    expect(value.className).not.toContain('text-accent-red');
+  });
 });
