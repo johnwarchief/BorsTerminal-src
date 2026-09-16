@@ -1294,10 +1294,29 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         elif rev > 0 and net:
             gm["net_margin_rejected_pct"] = round(net / rev * 100.0, 1)
     annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref, profile=prof)
+    # سند v2.1: گیتِ «عدم اعمال نسبت فروش بر هلدینگ‌ها» (holdings_sales_na)
+    _holdings_na = bool((cfg or {}).get("holdings_sales_na", True))
     val = ind4_valuation(annual, gm, market_cap_rials, th=th,
-                         kind=(prof.get("kind") if prof else None))
+                         kind=(prof.get("kind") if (prof and _holdings_na) else None))
     sec = ind5_industry(sector, cfg=cfg, market_cap_rials=market_cap_rials,
                         total_market_cap_rials=total_market_cap_rials)
+    # سند v2.1: استثنای دارویی — فقط با حاشیهٔ ناخالص > آستانهٔ پیکربندی
+    # (pharma_margin_exempt_min؛ ۰ = غیرفعال) مجاز است.
+    _pm = float((cfg or {}).get("pharma_margin_exempt_min", 0) or 0)
+    try:
+        _is_pharma = "دارو" in fts_engine.norm_fa(sector)
+    except Exception:
+        _is_pharma = False
+    if _pm > 0 and _is_pharma:
+        _m = None
+        try:
+            _m = gm.get("margin_pct") if isinstance(gm, dict) else None
+        except Exception:
+            _m = None
+        if _m is None or float(_m) < _pm:
+            sec = dict(sec)
+            sec["verdict"] = "mandatory"
+            sec["reason"] = ("دارویی با حاشیهٔ ناخالص کمتر از %.0f٪ مجاز نیست (سند v2.1)." % _pm)
 
     axis1 = bool(growth.get("pass") and volume.get("pass"))
     axis2 = bool(eps.get("pass"))
