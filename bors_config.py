@@ -62,7 +62,8 @@ FTS_DEFAULTS = {
     # سند v2.1 / فرم تنظیمات: کلیدهای دروازهٔ سخت و استثنائات
     "holdings_sales_na": True,          # عدم اعمال نسبت فروش بر هلدینگ/سرمایه‌گذاری (N/A)
     "pharma_margin_exempt_min": 50.0,   # آستانهٔ استثنای دارویی (٪ حاشیهٔ ناخالص)؛ ۰ = غیرفعال
-    "exclude_base_market": True,        # حذف نمادهای بازار پایهٔ فرابورس
+    "exclude_base_market": True,
+    "exclude_rejected_indicators": [],   # کدهای شاخصی که نماد مردود/ناقص‌شان از جدول حذف شود        # حذف نمادهای بازار پایهٔ فرابورس
     "suspended_max_stale_sessions": 3,   # نماد با ≥ این تعداد نشست عقب‌مانده = تعلیق
     # v9.7 — دو پارامتر کمکی بنیادی/تابلوخوانی
     # ماده ۱۴۱ قانون تجارت: زیان انباشته > نصف سرمایه → حذف از واچ‌لیست.
@@ -97,7 +98,7 @@ FTS_LEGACY_SCALARS = {
 }
 FTS_LEGACY_LISTS = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
 FTS_LIST_KEYS = ("mandatory_sectors", "free_sectors", "include_industries",
-                 "exclude_industries")
+                 "exclude_industries", "exclude_rejected_indicators")
 FTS_STR_KEYS = ("industry_mode",)
 
 _CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
