@@ -1,10 +1,10 @@
-# setup-agents.ps1 — بازسازی ایجنت‌های BorsTerminal روی یک سیستم جدید
+﻿# setup-agents.ps1 — بازسازی ایجنت‌های BorsTerminal روی یک سیستم جدید
 # استفاده:
 #   .\setup-agents.ps1 -RepoRoot "D:\Proj\BorsTerminal" -WorktreeRoot "D:\Proj\_worktrees"
 # پس از اجرا: ۴ ورکتری + AGENTS.md هر ایجنت ساخته می‌شود و دستورات کانفیگ اپ چاپ می‌گردد.
 param(
-  [string]$RepoRoot     = "C:\Users\PCMOD\Desktop\BorsTerminal_Ultimate_Base",
-  [string]$WorktreeRoot = "C:\Users\PCMOD\Desktop\BorsTerminal_Ultimate_Base_worktrees"
+  [string]$RepoRoot     = "C:\Users\Johnkallnaya\Desktop\BorsTerminal_Ultimate_Base",
+  [string]$WorktreeRoot = "C:\Users\Johnkallnaya\Desktop\BorsTerminal_Ultimate_Base_worktrees"
 )
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path (Join-Path $RepoRoot '.git'))) { throw "ریپو پیدا نشد: $RepoRoot" }
@@ -33,7 +33,9 @@ foreach ($b in $map.Keys) {
   $p = Join-Path $WorktreeRoot $map[$b].dir
   if (-not (Test-Path $p)) {
     if (-not (git rev-parse --verify --quiet $b)) { git branch $b master }
+    $ErrorActionPreference = 'Continue'
     git worktree add $p $b 2>&1 | Out-Null
+    $ErrorActionPreference = 'Stop'
     Write-Host "worktree: $($map[$b].dir) -> $b"
   } else { Write-Host "exists: $($map[$b].dir)" }
 
