@@ -134,7 +134,7 @@ describe('فیلترهای بازطراحی شده', () => {
 });
 
 describe('جدول تابلو نسخه بهبود یافته', () => {
-  it('شماره ردیف و ستون آخرین قیمت را نشان می دهد', () => {
+  it('ستون «قیمت آخرین» و مقادیر ردیف را نشان می دهد', () => {
     render(
       <TapeTable
         rows={[row({ p_last: 5_350 }), row({ symbol: 'فولاد', name: 'فولاد مبارکه', p_last: 9_120 })]}
@@ -142,8 +142,7 @@ describe('جدول تابلو نسخه بهبود یافته', () => {
         onSelect={() => {}}
       />,
     );
-    expect(screen.getByText('۱')).toBeInTheDocument();
-    expect(screen.getByText('۲')).toBeInTheDocument();
+    expect(screen.getByText('قیمت آخرین')).toBeInTheDocument();
     expect(screen.getByText('۵٬۳۵۰')).toBeInTheDocument();
     expect(screen.getByText('۹٬۱۲۰')).toBeInTheDocument();
   });
@@ -158,8 +157,8 @@ describe('جدول تابلو نسخه بهبود یافته', () => {
 
   it('ستون ها با کلیک سرصفحه برعکس می شوند', () => {
     render(<TapeTable rows={[row({ p_last: 5_350, tvol: 100 })]} selected="" onSelect={() => {}} />);
-    fireEvent.click(screen.getByText(/^آخرین/));
+    fireEvent.click(screen.getByText(/قیمت آخرین/));
     // همان دکمه حالت نزولی می گیرد
-    expect(screen.getByText(/^آخرین/)).toBeInTheDocument();
+    expect(screen.getByText(/قیمت آخرین/)).toBeInTheDocument();
   });
 });

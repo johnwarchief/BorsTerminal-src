@@ -55,7 +55,7 @@ describe('اکشن سبد روی ردیف‌های جدول بازار', () => {
 
   it('سرصفحه ستون سبد را نشان می‌دهد', () => {
     render(<TapeTable rows={[row()]} selected="" onSelect={() => {}} />);
-    expect(screen.getByText('سبد')).toBeInTheDocument();
+    expect(screen.getByText('افزودن به سبد')).toBeInTheDocument();
   });
 
   it('کلیک روی دکمهٔ سبد قصد سبد را منتشر می‌کند و ردیف را انتخاب نمی‌کند', () => {

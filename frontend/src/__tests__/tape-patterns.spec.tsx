@@ -93,7 +93,7 @@ describe('اختلاف آخرین و پایانی', () => {
         onSelect={() => {}}
       />,
     );
-    const header = screen.getByText(/اختلاف آخرین\/پایانی/);
+    const header = screen.getByText(/الگوی ساعت/);
     expect(header).toBeInTheDocument();
     // مقدار ۱۰٪ برای الف (۱۱۰۰ در برابر ۱۰۰۰) در ستون نمایش داده می‌شود
     expect(screen.getByText('۱۰.۰٪')).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('الگوی ساعت پیشرفته: دلتا و برچسب ۹۰٪', ()
         onSelect={() => {}}
       />,
     );
-    expect(screen.getByText(/اختلاف آخرین\/پایانی \(Δ\)/)).toBeInTheDocument();
+    expect(screen.getByText(/الگوی ساعت/)).toBeInTheDocument();
   });
 });
 

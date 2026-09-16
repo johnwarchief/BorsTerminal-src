@@ -15,7 +15,6 @@ import { countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
-import { VolumeFlow } from '../components/VolumeFlow';
 import { WatchDrawer } from '../components/WatchDrawer';
 import { TapeStatusBar } from '../components/TapeStatusBar';
 
@@ -77,7 +76,6 @@ export default function MarketPage({
 
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
-  const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const setSector = useTapeStore((s) => s.setSector);
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const setRefetchIntervalMs = useMarketStore((s) => s.setRefetchIntervalMs);
@@ -176,7 +174,6 @@ export default function MarketPage({
         ftsMap={ftsMap}
       />
       <WatchDrawer rows={filtered} onSelect={setSymbol} onPickSector={setSector} />
-      <VolumeFlow symbol={symbol} onClose={clearSymbol} />
     </div>
   );
 }

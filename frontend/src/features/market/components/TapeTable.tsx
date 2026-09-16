@@ -36,20 +36,20 @@ type SortKey =
   | 'last_vs_close'
   | 'p_last';
 
-/** ۱۲ ستون: شماره + ۹ ستون سنجه + وضعیت FTS + اکشن سبد */
+/** ۱۱ ستون: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت · وضعیت FTS · افزودن به سبد */
 const ROW_GRID =
-  'grid-cols-[2rem_1.5fr_0.85fr_0.8fr_1fr_0.9fr_0.95fr_0.95fr_0.85fr_1.9fr_0.9fr_3.5rem]';
+  'grid-cols-[1.7fr_0.85fr_0.8fr_1fr_0.9fr_0.95fr_0.95fr_0.85fr_1.9fr_0.85fr_4.5rem]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
-  { key: 'symbol', label: 'نماد' },
-  { key: 'p_last', label: 'آخرین' },
-  { key: 'percent_change', label: 'تغییر' },
+  { key: 'symbol', label: 'نماد و نام' },
+  { key: 'p_last', label: 'قیمت آخرین' },
+  { key: 'percent_change', label: 'تغییر٪' },
   { key: 'tvol', label: 'حجم' },
-  { key: 'vol_ratio', label: 'نسبت حجم' },
+  { key: 'vol_ratio', label: 'نسبت حجم ماه' },
   { key: 'buy_pc', label: 'سرانه خرید' },
   { key: 'sell_pc', label: 'سرانه فروش' },
   { key: 'buyer_power', label: 'قدرت خریدار' },
-  { key: 'last_vs_close', label: 'اختلاف آخرین/پایانی (Δ)' },
+  { key: 'last_vs_close', label: 'الگوی ساعت' },
 ];
 
 const NEG = Number.NEGATIVE_INFINITY;
@@ -133,14 +133,12 @@ export function rowTooltip(r: MarketRow): string {
 
 const TapeRow = memo(function TapeRow({
   row,
-  index,
   selected,
   onSelect,
   renderBasketAction,
   ftsMap,
 }: {
   row: MarketRow;
-  index: number;
   selected: boolean;
   onSelect: (s: string) => void;
   renderBasketAction?: (symbol: string) => ReactNode;
@@ -203,7 +201,6 @@ const TapeRow = memo(function TapeRow({
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 40 }}
     >
-      <span className="num text-center text-2xs text-text-muted">{toFaDigits(index + 1)}</span>
       <span className="font-bold text-text-primary">
         {row.symbol}
         <span className="block truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
@@ -313,14 +310,19 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
-        <span className="text-center">#</span>
         {HEADERS.map((h) => (
-          <button key={h.key} type="button" onClick={() => toggle(h.key)} className="text-start hover:text-accent-blue">
+          <button
+            key={h.key}
+            type="button"
+            onClick={() => toggle(h.key)}
+            title={h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined}
+            className="text-start hover:text-accent-blue"
+          >
             {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
           </button>
         ))}
         <span className="text-center">وضعیت FTS</span>
-        <span className="text-center">سبد</span>
+        <span className="text-center">افزودن به سبد</span>
       </div>
       <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto" data-testid="tape-scroll">
         <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
@@ -334,7 +336,6 @@ export function TapeTable({
               >
                 <TapeRow
                   row={row}
-                  index={v.index}
                   selected={row.symbol === selected}
                   onSelect={onSelect}
                   renderBasketAction={renderBasketAction}
