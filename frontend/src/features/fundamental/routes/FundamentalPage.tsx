@@ -50,6 +50,15 @@ export default function FundamentalPage() {
   const [drillKey, setDrillKey] = useState<DrillDownKey | null>(null);
 
   const screen = useFtsScreen();
+  /** دکمهٔ بروزرسانی بالای جدول: تازه‌سازیِ ۵ شاخص از کدال + بازخوانیِ غربالگر */
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch('/api/sync/codal/fts-refresh?mode=monthly', { method: 'POST' });
+    } catch { /* سرور ممکن است فوراً پاسخ ندهد؛ بازخوانی را ادامه می‌دهیم */ }
+    try { await screen.refetch(); } finally { setRefreshing(false); }
+  };
 
   const card = useFtsCard(symbol);
   const quarters = useQuarters(symbol);
@@ -129,6 +138,8 @@ export default function FundamentalPage() {
           <FtsScreenTable
             rows={screen.data?.data ?? []}
             thresholds={screen.data?.thresholds ?? null}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
             onSelect={(s) => {
               setSymbol(s);
               setDrawerOpen(false);
