@@ -1007,6 +1007,13 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
     ref_row = ref if ref is not None else fts_engine.reference_annual(conn, symbol)
     fs_rev = _f((ref_row or {}).get("revenue"))
     prof = profile or company_profile()
+    # سند v2.1 (F-04): محاسبهٔ نسبتِ فروش برای هلدینگ/سرمایه‌گذاری مجاز نیست ⇒ N/A صریح
+    # (هیچ نسبتِ ساختگی ساخته نمی‌شود؛ ind4 هم مستقلاً برای هلدینگ N/A برمی‌گرداند).
+    if prof.get("kind") == "holding":
+        return {"annual_sales_mrl": 0.0, "annual_sales_bt": None, "months_used": 0,
+                "scale_factor": 0.0, "basis": "N/A — هلدینگ/سرمایه‌گذاری (سند v2.1 F-04)",
+                "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
+                "operational_revenue_basis": False, "na": True}
     op_basis = ((prof.get("kind") in ("financial", "service", "fund", "holding"))
                 and fs_rev > 0)
     annual, months, basis, reconciled = 0.0, 0, "", True

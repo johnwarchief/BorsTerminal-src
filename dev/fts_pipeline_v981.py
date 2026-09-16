@@ -164,7 +164,7 @@ conn.close()
 # ── شاخص ۵: برچسب صنعت برتر FTS ──
 for sector, want_verdict, want_top in (("فلزات اساسي", "free", True),
                                         ("سیمان، آهک و گچ", "free", True),
-                                        ("مواد و محصولات دارویی", "mandatory", True),
+                                        ("مواد و محصولات دارویی", "neutral", False),
                                         ("بانك", "neutral", False)):
     r = F.sector_filter(sector)
     ck(r["verdict"] == want_verdict,
@@ -173,8 +173,8 @@ for sector, want_verdict, want_top in (("فلزات اساسي", "free", True),
        "شاخص ۵ — برچسب صنعت برتر FTS برای «%s» = %s" % (sector, want_top))
 ck(F.sector_filter("فلزات اساسي")["pass"],
    "شاخص ۵ — فلزات (قیمت‌گذاری آزاد) پاس است")
-ck(not F.sector_filter("مواد و محصولات دارویی")["pass"],
-   "شاخص ۵ — دارو (قیمت‌گذاری دستوری) رد است")
+ck(F.sector_filter("مواد و محصولات دارویی")["pass"],
+   "شاخص ۵ — دارو استثنای مجازِ v2.1 است (نه ردِ مطلق؛ دروازهٔ GPM>۵۰٪ در F-03 اعمال می‌شود)")
 
 # ── هم‌ارزی مسیر تک‌نمادی ⇄ دسته‌ای (پاریتی شاخص ۴) ──
 conn = mk_fts_db()
