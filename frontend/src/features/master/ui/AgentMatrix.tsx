@@ -4,6 +4,7 @@ import { AGENT_WEIGHTS, isSignalExpired, type AgentId, type AgentSignal } from '
 import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import type { MasterVerdict } from '@contracts/master';
+import { layerStatusLabel } from '../lib/managementSummary';
 
 const AGENT_FA: Record<AgentId, { label: string; link: (s: string) => string }> = {
   fundamental: { label: 'بنیادی', link: (s) => `/fundamental/${s}` },
@@ -90,6 +91,7 @@ export function AgentMatrix({
             <th className="px-4 py-2.5 font-bold">ایجنت</th>
             <th className="px-4 py-2.5 font-bold">وزن اعمال شده</th>
             <th className="px-4 py-2.5 font-bold">امتیاز خام</th>
+            <th className="px-4 py-2.5 font-bold">برچسب لایه</th>
             <th className="px-4 py-2.5 font-bold">وضعیت</th>
             <th className="px-4 py-2.5 font-bold">آخرین سیگنال</th>
             <th className="px-4 py-2.5 font-bold">تب</th>
@@ -113,8 +115,33 @@ export function AgentMatrix({
                   {toFaDigits(active ? AGENT_WEIGHTS[a] : 0)}
                 </td>
                 <td className="num px-4 py-2.5 text-text-primary">
-                  {s?.score == null ? '-' : `${s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}${toFaDigits(s.score)}`}
+                  {s?.score == null ? <span className="text-2xs text-text-muted">بدون داده</span> : `${s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}${toFaDigits(s.score)}`}
                   {contrib && active ? <span className="text-text-muted"> (سهم <span className="num">{toFaDigits(contrib.score)}</span>)</span> : null}
+                </td>
+                <td className="px-4 py-2.5">
+                  {(() => {
+                    const label = layerStatusLabel(a, s, {
+                      volumeMultiple:
+                        a === 'tape' && typeof (s?.payload as { volumeMultiple?: unknown } | null)?.volumeMultiple === 'number'
+                          ? ((s?.payload as { volumeMultiple: number }).volumeMultiple)
+                          : null,
+                    });
+                    return (
+                      <span
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-bold ${
+                          label.tone === 'green'
+                            ? 'border-accent-green/30 bg-accent-green/10 text-accent-green'
+                            : label.tone === 'red'
+                              ? 'border-accent-red/30 bg-accent-red/10 text-accent-red'
+                              : label.tone === 'yellow'
+                                ? 'border-accent-yellow/30 bg-accent-yellow/10 text-accent-yellow'
+                                : 'border-border-c bg-bg-card text-text-muted'
+                        }`}
+                      >
+                        {label.text}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex flex-col items-start gap-1">
@@ -129,7 +156,7 @@ export function AgentMatrix({
                       <span className="text-2xs text-text-muted">{signalAgeLabel(s.ts)}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-text-muted">-</span>
+                    <span className="text-2xs text-text-muted">منتشرنشده — در انتظار سیگنال {AGENT_FA[a].label}</span>
                   )}
                 </td>
                 <td className="px-4 py-2.5">
