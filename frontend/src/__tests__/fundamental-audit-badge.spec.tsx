@@ -20,6 +20,22 @@ import { toFaDigits } from '@shared/lib/fmt';
 import type { FtsCard as FtsCardType } from '@features/fundamental/api/useFtsCard';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 
+// jsdom اندازه ندارد -- virtualizer را به رندر کامل وادار می‌کنیم (الگوی tape-patterns)
+vi.mock('@tanstack/react-virtual', async (orig) => {
+  const mod = await orig<typeof import('@tanstack/react-virtual')>();
+  /** jsdom اندازه ندارد؛ پنجرهٔ ۱۲ ردیفی مثل پنجرهٔ مرورگر (۷۰vh/۴۶px) شبیه‌سازی می‌شود */
+  const WINDOW = 12;
+  return {
+    ...mod,
+    useVirtualizer: ({ count }: { count: number }) => ({
+      getTotalSize: () => count * 46,
+      getVirtualItems: () =>
+        Array.from({ length: Math.min(count, WINDOW) }, (_, i) => ({ key: i, index: i, start: i * 46 })),
+    }),
+  };
+});
+
+
 const visa = JSON.parse(
   readFileSync(path.resolve(import.meta.dirname, 'fixtures/fundamental-visa.json'), 'utf8'),
 ) as FtsCardType;
@@ -79,6 +95,28 @@ describe('AuditBadge — بج وضعیت', () => {
     expect(b.textContent).toContain('سابقهٔ EPS کمتر از ۲ سال');
     expect(b.textContent).not.toContain('N/A');
     expect(b.getAttribute('title')).toBe('علت + راه‌حل');
+  });
+});
+
+describe('AuditBadge — هزینهٔ صفر در حالت بسته (F-08)', () => {
+  it('شاهدِ تابعی تا وقتی کارت باز نشده اصلاً فراخوانی نمی‌شود', () => {
+    let calls = 0;
+    render(
+      <AuditBadge
+        state="fail"
+        testId="lazy"
+        evidence={() => {
+          calls += 1;
+          return { actualValue: 1, targetThreshold: 2, unit: '٪', reason: 'علت' };
+        }}
+      />,
+    );
+    expect(calls).toBe(0);
+    expect(screen.queryByTestId('audit-popover')).toBeNull();
+    fireEvent.mouseOver(screen.getByTestId('lazy'));
+    expect(calls).toBe(1);
+    expect(screen.getByTestId('audit-popover')).toBeInTheDocument();
+    expect(screen.getByTestId('audit-reason').textContent).toContain('علت');
   });
 });
 
