@@ -1,7 +1,7 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `ca27ba3` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **master HEAD:** `3b0a904` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
 - **خط پایهٔ تست:** ۶۴۵ سبز (۶۱ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
@@ -232,3 +232,8 @@
 ## به‌روزرسانی ۳۵ (ایجنتهد main, 2026-09-15 ~08:50)
 - **agent/technical (T-23، تحویل جزئی و صادقانه)** مرج شد (fast-forward): `ca27ba3`. فقط **لایهٔ موتور** فاز 3: `lib/drawStore.ts` (persistence با کلید `fts-draw:<symbol>:<timeframe>` + پاک‌سازی نماد، undo/redo پشتهٔ خالص snapshot، `snapToOhlc` با آستانهٔ درصدی) + تست ۱۱تایی. ⚠️ **اتصال به چارت انجام نشد** (بازیابی خودکار در تعویض نماد/رفرش، Delete و Ctrl+Z/Y، سوییچ مگنت) — نقطهٔ اتصال داخل کامپوننت vendored جمینای است و بودجهٔ نوبت تمام شد. اعتبارسنجی: vitest 645/645 (61 فایل)، eslint 0/3، build سالم.
 - قدم بعدی پیشنهادی: نوبت مخصوص «wiring» روی `nahayatnegar/components/KLineChartWrapper.tsx`.
+
+
+## به‌روزرسانی ۳۶ (ایجنتهد main, 2026-09-15 ~09:30)
+- **agent/technical (T-24)** مرج شد (fast-forward): `3b0a904`. wiring فاز 3 روی `nahayatnegar/components/KLineChartWrapper.tsx`: بازیابی/ذخیره‌ی ترسیم‌ها با تغییر نماد/تایم‌فریم (اسنپ‌شات دوره‌ای 2s، فیلتر اندیکاتورها)، Delete/Backspace + Ctrl+Z/Y، مگنت واقعی (`snapToOhlc` آستانهٔ 0.4% روی آخرین ترسیم)، `onClearDrawings` + `clearSymbolDrawings`. اعتبارسنجی نهایی: vitest 645/645 (61 فایل).
+- ⚠️ فلِیک شدید: ران‌های **موازیِ** من زیر بار سنگین ماشین به‌ترتیب ۹، ۴ و ۱۳ تست قرمزِ **پراکنده** دادند (مثل همیشه در همهٔ تب‌ها)؛ رانِ **سکوئنشال** (`npx vitest run --no-file-parallelism`) **645/645 سبز** شد ⇒ قطعاً contention موازی/بار، نه رگرسیون. توصیه: تحت بار سنگین، تست کامل را سکوئنشال بگیرید (`--no-file-parallelism`).
