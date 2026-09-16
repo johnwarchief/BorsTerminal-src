@@ -171,7 +171,7 @@ describe('سوییچر دوگانه و پرتفوی هدف', () => {
     expect(await screen.findByRole('dialog', { name: 'ویرایش دارایی‌های هدف' })).toBeInTheDocument();
     // ورودی درصد طلا
     const goldInput = screen.getByLabelText('درصد طلای فیزیکی، سکه و شمش') as HTMLInputElement;
-    expect(goldInput.value).toBe('25');
+    expect(goldInput.value).toBe('30');
     // بازنشانی داخل مودال (دکمه نوار بیرونی هم هم‌نام است — داخل دیالوگ را انتخاب می‌کنیم)
     const dialog = screen.getByRole('dialog', { name: 'ویرایش دارایی‌های هدف' });
     const resetBtns = dialog.querySelectorAll('button');

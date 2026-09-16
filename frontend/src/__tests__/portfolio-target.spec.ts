@@ -17,14 +17,15 @@ describe('طبقات پیش‌فرض FTS', () => {
     expect(total).toBeCloseTo(100, 5);
   });
 
-  it('تفکیک استاندارد طلا: فیزیکی ۲۵٪ + صندوق/گواهی ۲۰٪', () => {
+  it('تفکیک استاندارد طلا طبق سند: طلا و سکه ۴۵٪ (فیزیکی ۳۰٪ + صندوق/گواهی ۱۵٪)', () => {
     const gold = FTS_DEFAULT_TARGETS.find((c) => c.id === 'gold');
     const cert = FTS_DEFAULT_TARGETS.find((c) => c.id === 'gold-cert');
     expect(gold).toBeDefined();
-    expect(gold!.pct).toBe(25);
+    expect(gold!.pct).toBe(30);
     expect(gold!.label).toBe('طلای فیزیکی، سکه و شمش');
     expect(cert).toBeDefined();
-    expect(cert!.pct).toBe(20);
+    expect(cert!.pct).toBe(15);
+    expect(gold!.pct + cert!.pct).toBe(45);
     expect(cert!.label).toBe('صندوق‌ها و گواهی سپردهٔ طلا');
   });
 

@@ -13,15 +13,14 @@ import { portfolioSignal } from '../model/portfolioSignals';
 import {
   buildDelta,
   useTargetAllocation,
-  type TargetClass,
 } from '../stores/targetAllocation';
 import { TargetBanner } from '../components/TargetBanner';
-import { TargetDonut } from '../components/TargetDonut';
 import { TargetEditModal } from '../components/TargetEditModal';
 import { DeltaBar } from '../components/DeltaBar';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
+import { TwinDonuts } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
 const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'بدون تصمیم' };
@@ -75,7 +74,6 @@ export default function PortfolioPage() {
   const view = useTargetAllocation((s) => s.view);
   const setView = useTargetAllocation((s) => s.setView);
   const classes = useTargetAllocation((s) => s.classes);
-  const resetTarget = useTargetAllocation((s) => s.reset);
 
   const holdings = useMemo(() => portfolio.data?.portfolio ?? [], [portfolio.data]);
   const monitor = useMemo(() => portfolio.data?.monitor ?? [], [portfolio.data]);
@@ -163,51 +161,15 @@ export default function PortfolioPage() {
       </div>
 
       {view === 'target' ? (
-        /* ─── بخش اول: پرتفوی هدف ─── */
+        /* ─── بخش اول: پرتفوی هدف — بدون کارت‌های عریض تکراری، جدول صنایع بالا می‌آید ─── */
         <>
-          <TargetBanner />
-          <div className="glass-panel panel-in p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-black text-text-primary">ترکیب دارایی پیشنهادی FTS</h3>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="rounded-full border border-accent-blue/40 bg-accent-blue/10 px-3 py-1 text-2xs font-bold text-accent-blue hover:bg-accent-blue/20"
-                >
-                  ویرایش دارایی
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditOpen(true)}
-                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary hover:text-text-primary"
-                >
-                  افزودن دارایی
-                </button>
-                <button
-                  type="button"
-                  onClick={() => resetTarget()}
-                  className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary hover:text-text-primary"
-                >
-                  بازنشانی به پیش‌فرض FTS
-                </button>
-              </div>
-            </div>
-            <TargetDonut classes={classes} />
-            <ul className="mt-4 grid gap-1.5 sm:grid-cols-2">
-              {classes.map((c: TargetClass) => (
-                <li key={c.id} className="flex items-center gap-2 rounded-lg border border-[var(--hairline)] bg-bg-secondary/40 px-2.5 py-1.5">
-                  <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: c.color }} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-2xs font-bold text-text-primary" title={c.label}>{c.label}</span>
-                  {c.hint ? <span className="hidden max-w-40 truncate text-2xs text-text-muted sm:block" title={c.hint}>{c.hint}</span> : null}
-                  <span className="num text-xs font-black text-text-primary">{toFaDigits(c.pct)}٪</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* پنل سه‌بخشی بالای تب: دونات دوقلو + سنجهٔ هم‌ترازی */}
+          <TwinDonuts onEdit={() => setEditOpen(true)} />
 
-          {/* ماتریس تخصیص صنایع سهام طبق سند FTS §۴ + هشدار نقض تنوع‌بخشی */}
+          {/* ماتریس تخصیص صنایع سهام (state مشتق از پوزیشن‌های سبد) */}
           <SectorMatrix />
+
+          <TargetBanner />
 
           <TargetEditModal open={editOpen} onClose={() => setEditOpen(false)} />
         </>

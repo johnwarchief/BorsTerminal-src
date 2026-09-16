@@ -97,6 +97,7 @@ export function SectorMatrix() {
                 <th className="px-3 py-2 font-bold">بازهٔ سند</th>
                 <th className="px-3 py-2 font-bold">نمونه‌ها</th>
                 <th className="px-3 py-2 font-bold">وزن فعلی سبد</th>
+                <th className="px-3 py-2 font-bold">پوزیشن‌ها</th>
                 <th className="px-3 py-2 font-bold">وضعیت</th>
               </tr>
             </thead>
@@ -122,10 +123,23 @@ export function SectorMatrix() {
                     )}
                   </td>
                   <td className="px-3 py-2">
+                    {state === 'ready' && r.members.length > 0 ? (
+                      <span className="flex flex-wrap gap-1">
+                        {r.members.map((m) => (
+                          <span key={m.symbol} className="rounded-full border border-border-c bg-bg-card px-1.5 py-0.5 text-2xs text-text-secondary">
+                            {m.symbol} <span className="num">{toFaDigits(m.weightPct)}٪</span>
+                          </span>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-text-muted">بدون پوزیشن</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2">
                     {state !== 'ready' ? (
                       <Badge tone="gray">بدون داده</Badge>
                     ) : r.overweight ? (
-                      <Badge tone="red">Overweight · {toFaDigits(r.overByPct)}٪+</Badge>
+                      <Badge tone="red">نقض سقف وزنی (Overweight) · {toFaDigits(r.overByPct)}٪+</Badge>
                     ) : (
                       <Badge tone="green">در محدوده</Badge>
                     )}
