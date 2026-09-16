@@ -22,6 +22,23 @@ import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
 import { IconClose } from './TradingViewIcons';
+import {
+  buildPatternOverlays,
+  type PatternOverlaySpec,
+} from '../../lib/patternOverlays';
+import {
+  detectChochConfirmed,
+  detectDoubleBottom,
+  detectFibZigzag,
+  detectHeadShoulders,
+  detectHourglass,
+  detectJet,
+  detectMa14Exit,
+  detectPointHunt,
+  detectThirdPeak,
+} from '../../lib/ftsPatterns';
+import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
+
 import '../styles/nahayatNegarStyles.css';
 
 export interface ChartProps {
@@ -48,6 +65,55 @@ function formatJalali(timestamp: number, type?: string): string {
   } catch (e) {
     return new Date(timestamp).toLocaleDateString('fa-IR');
   }
+}
+
+// --- فاز ۴: نگاشت خروجی موتور ۹ الگو به اورلی‌های موتور چارت (آورلی‌های توکار v10) ---
+// گروه مستقل «fts_pattern_overlays»؛ الگوی خاموش ⇒ هیچ اورلی‌ای ساخته نمی‌شود.
+const PATTERN_GROUP_ID = 'fts_pattern_overlays';
+
+function patternOverlayColor(spec: PatternOverlaySpec): string {
+  const st = spec.styles as { color?: unknown } | undefined;
+  return typeof st?.color === 'string' ? st.color : '#787b86';
+}
+
+/** یک spec الگو را به اورلی موتور چارت نگاشت می‌کند (بدون بازتولید محاسبه). */
+function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<string, unknown> {
+  const color = patternOverlayColor(spec);
+  const p0 = spec.points[0];
+  // کمربند دو نقطه‌ای (فیبو/سقف سوم/ساعت شنی) ⇒ مستطیل تمام‌عرض
+  if (spec.points.length >= 2) {
+    const p1 = spec.points[1];
+    return {
+      name: 'rect',
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [
+        { timestamp: startTs, value: p0.value },
+        { timestamp: p1.timestamp, value: p1.value },
+      ],
+      styles: { polygon: { color, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
+    };
+  }
+  // مارکر روی کندل (نقطه‌زنی/ضربدر MA14)
+  if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross') {
+    return {
+      name: 'simpleAnnotation',
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [{ timestamp: p0.timestamp, value: p0.value }],
+      extendData: spec.label,
+      styles: { text: { color, size: 11, family: 'Vazirmatn' } },
+    };
+  }
+  // خط افقی تمام‌عرض (جت/CHoCH/خط گردن)
+  const dashed = (spec.styles as { style?: unknown } | undefined)?.style === 'dashed';
+  return {
+    name: 'horizontalStraightLine',
+    groupId: PATTERN_GROUP_ID,
+    lock: true,
+    points: [{ timestamp: p0.timestamp, value: p0.value }],
+    styles: { line: { color, size: 1, style: dashed ? 'dashed' : 'solid' } },
+  };
 }
 
 export const KLineChartWrapper: React.FC<ChartProps> = ({
@@ -463,6 +529,58 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       chart.removeOverlay({ groupId: ftsGroupId } as never);
     };
   }, [isFtsActive, ftsAnalysis]);
+  // ۵. لایهٔ ۹ الگوی FTS (فاز ۴): موتور الگوها روی کندل‌های تعدیل‌شده + ترسیم واقعی روی چارت
+  const patternPrefs = usePatternPrefsStore((s) => s.prefs);
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const clearPatterns = () => {
+      try {
+        chart.removeOverlay({ groupId: PATTERN_GROUP_ID } as never);
+      } catch (e) {
+        void e;
+      }
+    };
+    if (adjustedCandles.length === 0) {
+      clearPatterns();
+      return;
+    }
+
+    const opens = adjustedCandles.map((c) => c.open);
+    const highs = adjustedCandles.map((c) => c.high);
+    const lows = adjustedCandles.map((c) => c.low);
+    const closes = adjustedCandles.map((c) => c.close);
+
+    const inputs = {
+      jet: detectJet(highs, closes),
+      fib: detectFibZigzag(highs, lows),
+      choch: detectChochConfirmed(highs, lows, closes),
+      pointHunt: detectPointHunt(lows),
+      double: detectDoubleBottom(lows, closes),
+      headShoulders: detectHeadShoulders(highs),
+      thirdPeak: detectThirdPeak(highs, closes),
+      ma14Exit: detectMa14Exit(opens, highs, lows, closes),
+      hourglass: detectHourglass(closes),
+    };
+    const specs = buildPatternOverlays(
+      inputs,
+      patternPrefs,
+      adjustedCandles.map((c) => ({ timestamp: c.timestamp })),
+    );
+
+    clearPatterns();
+    const startTs = adjustedCandles[0].timestamp;
+    for (const spec of specs) {
+      try {
+        chart.createOverlay(toChartOverlay(spec, startTs) as never);
+      } catch (e) {
+        void e;
+      }
+    }
+
+    return clearPatterns;
+  }, [adjustedCandles, patternPrefs]);
+
 
   // هندلر تغییر نماد
   const handleSelectSymbol = (sym: SymbolInfo) => {
