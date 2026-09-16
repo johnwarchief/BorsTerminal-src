@@ -166,9 +166,9 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-right text-xs ${
+      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-xs ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
-      } ${atLimitUp ? 'border-r-2 border-r-accent-green' : atLimitDown ? 'border-r-2 border-r-accent-red' : ''}`}
+      } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 40 }}
     >
       <span className="num text-center text-2xs text-text-muted">{toFaDigits(index + 1)}</span>
@@ -179,7 +179,7 @@ const TapeRow = memo(function TapeRow({
       <span className="num text-text-primary">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
-      <span className={pctTone(pct)}>
+      <span className={`num ${pctTone(pct)}`}>
         <FlashNum value={pct} render={(v) => (v == null ? '-' : fmtPct(v))} />
       </span>
       <span className="num text-text-primary">
@@ -263,10 +263,10 @@ export function TapeTable({
 
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-right text-2xs font-bold text-text-secondary backdrop-blur`}>
+      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
         <span className="text-center">#</span>
         {HEADERS.map((h) => (
-          <button key={h.key} type="button" onClick={() => toggle(h.key)} className="text-right hover:text-accent-blue">
+          <button key={h.key} type="button" onClick={() => toggle(h.key)} className="text-start hover:text-accent-blue">
             {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
           </button>
         ))}
@@ -279,7 +279,7 @@ export function TapeTable({
             return (
               <div
                 key={row.symbol}
-                className="absolute right-0 top-0 w-full"
+                className="absolute inset-x-0 top-0 w-full"
                 style={{ transform: `translateY(${v.start}px)` }}
               >
                 <TapeRow

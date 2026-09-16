@@ -4,9 +4,9 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 
 const POLL_OPTIONS = [
-  { ms: 15_000, label: '15 ثانیه' },
-  { ms: 60_000, label: '1 دقیقه' },
-  { ms: 300_000, label: '5 دقیقه' },
+  { ms: 15_000, label: '۱۵ ثانیه' },
+  { ms: 60_000, label: '۱ دقیقه' },
+  { ms: 300_000, label: '۵ دقیقه' },
 ];
 
 export function TapeStatusBar({
@@ -43,7 +43,7 @@ export function TapeStatusBar({
       ) : isError ? (
         <span className="text-accent-red">
           خطا در دریافت تابلو
-          <button type="button" onClick={onRetry} className="mr-2 underline hover:text-accent-blue">
+          <button type="button" onClick={onRetry} className="ms-2 underline hover:text-accent-blue">
             تلاش دوباره
           </button>
         </span>
@@ -59,7 +59,7 @@ export function TapeStatusBar({
           {isFetching && <span>...</span>}
         </>
       )}
-      <span className="mr-auto flex items-center gap-2">
+      <span className="ms-auto flex items-center gap-2">
         <label htmlFor="poll-ms">بازه به روز رسانی</label>
         <select
           id="poll-ms"

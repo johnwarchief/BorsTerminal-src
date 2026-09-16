@@ -15,7 +15,7 @@ function IndustryLine({ row, leader }: { row: IndustryRow; leader: string | null
     <li className="flex items-center justify-between gap-2 px-1 py-1">
       <span className="min-w-0 truncate text-sm font-bold text-text-primary">
         {row.industry}
-        {leader && row.industry === leader ? <span className="mr-1 text-2xs text-accent-yellow">★ پیشرو</span> : null}
+        {leader && row.industry === leader ? <span className="ms-1 text-2xs text-accent-yellow">★ پیشرو</span> : null}
       </span>
       <span className="num shrink-0 text-xs">
         {flow != null ? (
@@ -25,7 +25,7 @@ function IndustryLine({ row, leader }: { row: IndustryRow; leader: string | null
         ) : (
           '—'
         )}
-        <span className="mr-2 text-text-secondary">
+        <span className="ms-2 text-text-secondary">
           {typeof row.avg_pct === 'number' ? `٪${fa1(row.avg_pct)}` : '—'}
         </span>
       </span>

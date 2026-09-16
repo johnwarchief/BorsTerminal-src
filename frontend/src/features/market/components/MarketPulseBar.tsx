@@ -108,8 +108,8 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           <>
             <div className="flex items-baseline justify-center gap-2">
               <span className={`text-3xl font-black leading-8 ${TONE_TEXT[hemat.state ?? 'mid']}`}>
-                {fa(hemat.value)}
-                <span className="mr-1 text-sm font-bold">همت</span>
+                <span className="num">{fa(hemat.value)}</span>
+                <span className="ms-1 text-sm font-bold">همت</span>
               </span>
               <span className="text-sm font-black">{hematText(hemat.state ?? null)}</span>
             </div>
@@ -230,7 +230,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             </span>
             {breadthWarn ? (
               <span data-testid="pulse-breadth-warn" className="text-2xs font-black text-accent-red" title="بیش از ۸۰٪ معاملات منفی — فرصت/هشدار ورود FTS">
-                ⚠ عبور منفی از {fa(rulePct, 0)}٪
+                ⚠ عبور منفی از <span className="num">{fa(rulePct, 0)}</span>٪
               </span>
             ) : null}
           </>
@@ -242,7 +242,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             <div className="flex items-baseline justify-between gap-2" title="ارزش ۵ خط اول صف‌ها (میلیارد تومان)">
               <span className="num text-xl font-black text-accent-green">
                 {depth.buyBt != null ? fmtInt(depth.buyBt) : '—'}
-                <span className="mr-1 text-2xs font-bold text-text-muted">ب.ت خرید</span>
+                <span className="ms-1 text-2xs font-bold text-text-muted">ب.ت خرید</span>
               </span>
               {depth.buyCount != null && depth.sellCount != null ? (
                 <span className="num text-2xs text-text-secondary" title="تعداد نمادهای دارای صف خرید در برابر صف فروش">
@@ -250,7 +250,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                 </span>
               ) : null}
               <span className="num text-xl font-black text-accent-red">
-                <span className="ml-1 text-2xs font-bold text-text-muted">فروش ب.ت</span>
+                <span className="me-1 text-2xs font-bold text-text-muted">فروش ب.ت</span>
                 {depth.sellBt != null ? fmtInt(depth.sellBt) : '—'}
               </span>
             </div>
@@ -270,7 +270,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
         {eq && (eq.pcBuy != null || eq.pcSell != null) ? (
           <>
             <div className="flex items-center gap-3">
-              <span className={`text-2xl font-black leading-7 ${powerClass}`} title="≥۱.۵× سبز / <۰.۸× قرمز">
+              <span className={`num text-2xl font-black leading-7 ${powerClass}`} title="≥۱.۵× سبز / <۰.۸× قرمز">
                 {eq.power != null ? `${fa(eq.power)}×` : '—'}
               </span>
               <span className="num min-w-0 flex-1 text-2xs text-text-secondary">
