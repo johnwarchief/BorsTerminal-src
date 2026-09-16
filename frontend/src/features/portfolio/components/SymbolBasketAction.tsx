@@ -27,11 +27,27 @@ const STATE_TONE: Record<BasketState, string> = {
   none: 'text-text-secondary',
 };
 
+const STATE_DOT: Record<BasketState, string> = {
+  accept: 'bg-accent-green',
+  monitor: 'bg-accent-yellow',
+  reject: 'bg-accent-red',
+  none: 'bg-text-muted',
+};
+
+/** برچسب کوتاه حالت برای دکمهٔ فشرده (استاندارد و مینیمال) */
 const STATE_MARK: Record<BasketState, string> = {
-  accept: '✓ در سبد',
-  monitor: '👁 زیر نظر',
-  reject: '✕ حذف‌شده',
-  none: '+ افزودن به سبد',
+  accept: 'در سبد ✓',
+  monitor: 'زیر نظر 👁',
+  reject: 'حذف‌شده ✕',
+  none: 'افزودن به سبد',
+};
+
+/** برچسب دکمهٔ کامل — فعل تصمیم، بدون چسباندن متن وضعیت */
+const ACTION_LABEL: Record<BasketState, string> = {
+  accept: 'ویرایش تصمیم سبد',
+  monitor: 'ویرایش تصمیم سبد',
+  reject: 'ویرایش تصمیم سبد',
+  none: 'افزودن به سبد',
 };
 
 /** گزینه‌های وضعیت تصمیم — pending یعنی انصراف و پاک شدن رکورد در بک‌اند */
@@ -128,9 +144,10 @@ export function SymbolBasketAction({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      title={`تصمیم سبد: ${currentLabel}`}
-      className={`num rounded-full border bg-bg-card/60 px-2.5 py-1 text-2xs font-bold transition-opacity duration-200 hover:opacity-85 ${
-        isError ? 'border-border-c text-text-muted' : `border-border-c ${STATE_TONE[state]}`
+      data-testid={`basket-action-${symbol}`}
+      title={`تصمیم سبد — ${currentLabel}`}
+      className={`shrink-0 rounded-full border border-border-c bg-bg-card/60 px-2.5 py-1 text-2xs font-bold transition-opacity duration-200 hover:opacity-85 ${
+        isError ? 'text-text-muted' : STATE_TONE[state]
       }`}
     >
       {isLoading ? '…' : isError ? 'بدون داده' : STATE_MARK[state]}
@@ -139,12 +156,16 @@ export function SymbolBasketAction({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      title="ثبت یا ویرایش تصمیم این نماد در سبد"
-      className="num inline-flex items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-3 py-1.5 text-xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary"
+      data-testid={`basket-action-${symbol}`}
+      title={`تصمیم سبد — وضعیت فعلی: ${currentLabel}`}
+      className="shrink-0 rounded-full border border-border-c bg-bg-card px-3 py-1.5 text-xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary"
     >
-      <span>تصمیم سبد:</span>
-      <span className={isError ? 'text-text-muted' : STATE_TONE[state]}>
-        {isLoading ? '...' : isError ? 'بدون داده' : STATE_MARK[state]}
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${isError ? 'bg-text-muted' : isLoading ? 'animate-pulse bg-text-muted' : STATE_DOT[state]}`}
+        />
+        {isLoading ? 'در حال بارگذاری' : isError ? 'بدون داده' : ACTION_LABEL[state]}
       </span>
     </button>
   );

@@ -21,6 +21,7 @@ import { TargetEditModal } from '../components/TargetEditModal';
 import { DeltaBar } from '../components/DeltaBar';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction } from '../components/SymbolBasketAction';
+import { SectorMatrix } from '../components/SectorMatrix';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
 const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'بدون تصمیم' };
@@ -130,7 +131,7 @@ export default function PortfolioPage() {
   ];
 
   return (
-    <div className="flex w-full max-w-none flex-col gap-4">
+    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
       {/* سوییچر دوگانه */}
       <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
         <button
@@ -204,6 +205,10 @@ export default function PortfolioPage() {
               ))}
             </ul>
           </div>
+
+          {/* ماتریس تخصیص صنایع سهام طبق سند FTS §۴ + هشدار نقض تنوع‌بخشی */}
+          <SectorMatrix />
+
           <TargetEditModal open={editOpen} onClose={() => setEditOpen(false)} />
         </>
       ) : (

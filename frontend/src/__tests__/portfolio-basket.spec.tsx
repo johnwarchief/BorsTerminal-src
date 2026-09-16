@@ -45,7 +45,7 @@ function renderAction(symbol = 'شپنا', compact = false) {
 /** باز کردن دیالوگ — منتظر می‌ماند تا فید برسد و برچسب پایدار شود، بعد کلیک می‌کند */
 async function openDialog(symbol: string, mark: string): Promise<HTMLElement> {
   renderAction(symbol);
-  const btn = await screen.findByRole('button', { name: /تصمیم سبد/ });
+  const btn = await screen.findByTestId(`basket-action-${symbol}`);
   await waitFor(() => expect(btn.textContent).toContain(mark));
   fireEvent.click(btn);
   return screen.findByRole('dialog', { name: `تصمیم سبد برای ${symbol}` });
@@ -102,29 +102,30 @@ describe('deriveBasketState (خالص)', () => {
 });
 
 describe('نمایش وضعیت فعلی', () => {
-  it('نمادِ در سبد با دکمهٔ غیرکامپکت برچسب «در سبد» دارد', async () => {
-    renderAction();
-    const btn = await screen.findByRole('button', { name: /تصمیم سبد/ });
-    await waitFor(() => expect(btn.textContent).toContain('در سبد'));
-    // متن بدون داده نیست
-    expect(btn.textContent).not.toContain('بدون داده');
+  it('دکمهٔ فشرده وضعیت نماد را با برچسب نشانکی نشان می دهد', async () => {
+    renderAction('شپنا', true);
+    expect(await screen.findByText('در سبد ✓')).toBeInTheDocument();
   });
 
-  it('حالت compact برچسب نشانکی دارد', async () => {
-    renderAction('شپنا', true);
-    expect(await screen.findByText('✓ در سبد')).toBeInTheDocument();
+  it('دکمهٔ کامل فقط فعل تصمیم را نشان می دهد (بدون چسباندن متن وضعیت)', async () => {
+    renderAction('شپنا');
+    const btn = await screen.findByTestId('basket-action-شپنا');
+    await waitFor(() => expect(btn.textContent).toContain('ویرایش تصمیم سبد'));
+    expect(btn.textContent).not.toContain(':');
+    // وضعیت در title اطلاع‌رسانی می شود (بدون شلوغی متن دکمه)
+    expect(btn.getAttribute('title')).toContain('در سبد');
   });
 
   it('نمادِ خارج از سبد برچسب افزودن دارد', async () => {
     renderAction('فولاد');
-    const btn = await screen.findByRole('button', { name: /تصمیم سبد/ });
-    await waitFor(() => expect(btn.textContent).toContain('+ افزودن به سبد'));
+    const btn = await screen.findByTestId('basket-action-فولاد');
+    await waitFor(() => expect(btn.textContent).toContain('افزودن به سبد'));
   });
 });
 
 describe('افزودن/ویرایش تصمیم (POST)', () => {
   it('دیالوگ با مقادیر ثبت‌شده پر می شود و تغییر وضعیت به زیر نظر با وزن جدید POST می شود', async () => {
-    await openDialog('شپنا', 'در سبد');
+    await openDialog('شپنا', 'ویرایش تصمیم سبد');
 
     // پیش‌فرض از رکورد ثبت‌شده: وزن ۱۲ و حد ۹۰۰ و یادداشت
     const w = (await screen.findByLabelText('وزن درصدی نماد')) as HTMLInputElement;
@@ -155,12 +156,13 @@ describe('افزودن/ویرایش تصمیم (POST)', () => {
     // دیالوگ پس از ثبت موفق بسته می شود
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
-    // پس از invalidate، بج وضعیت جدید را می گیرد (refetch با دادهٔ بروز)
-    expect(await screen.findByText('👁 زیر نظر')).toBeInTheDocument();
+    // پس از invalidate، وضعیت دکمهٔ کامل به «زیر نظر» به‌روز می شود (در title)
+    const after = await screen.findByTestId('basket-action-شپنا');
+    await waitFor(() => expect(after.getAttribute('title')).toContain('زیر نظر'));
   });
 
   it('وزن خارج از بازه ۰..۱۰۰ خطای اعتبارسنجی می دهد و POST نمی زند', async () => {
-    await openDialog('فولاد', '+ افزودن به سبد');
+    await openDialog('فولاد', 'افزودن به سبد');
     const w = screen.getByLabelText('وزن درصدی نماد') as HTMLInputElement;
     fireEvent.change(w, { target: { value: '150' } });
     fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
@@ -170,7 +172,7 @@ describe('افزودن/ویرایش تصمیم (POST)', () => {
   });
 
   it('انصراف (pending) با POST status=pending ثبت می شود', async () => {
-    await openDialog('شپنا', 'در سبد');
+    await openDialog('شپنا', 'ویرایش تصمیم سبد');
     fireEvent.click(screen.getByLabelText('انصراف — بازگشت به بررسی‌نشده'));
     fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
 
@@ -186,7 +188,7 @@ describe('افزودن/ویرایش تصمیم (POST)', () => {
 
 describe('حذف کامل تصمیم (DELETE)', () => {
   it('دکمهٔ حذف برای نماد دارای تصمیم، DELETE با نماد encode شده می زند', async () => {
-    await openDialog('شپنا', 'در سبد');
+    await openDialog('شپنا', 'ویرایش تصمیم سبد');
 
     expect(screen.getByRole('button', { name: 'حذف کامل از فهرست' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'حذف کامل از فهرست' }));
@@ -201,12 +203,12 @@ describe('حذف کامل تصمیم (DELETE)', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     // رکورد پاک شد ⇒ حالت «افزودن به سبد»
-    const btn = await screen.findByRole('button', { name: /تصمیم سبد/ });
-    await waitFor(() => expect(btn.textContent).toContain('+ افزودن به سبد'));
+    const btn = await screen.findByTestId('basket-action-شپنا');
+    await waitFor(() => expect(btn.textContent).toContain('افزودن به سبد'));
   });
 
   it('نماد بدون تصمیم دکمهٔ حذف ندارد', async () => {
-    await openDialog('فولاد', '+ افزودن به سبد');
+    await openDialog('فولاد', 'افزودن به سبد');
     expect(screen.queryByRole('button', { name: 'حذف کامل از فهرست' })).toBeNull();
   });
 });
@@ -218,7 +220,7 @@ describe('Circuit Breaker — بدون داده', () => {
       Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({}) } as unknown as Response),
     );
     renderAction();
-    const btn = await screen.findByRole('button', { name: /تصمیم سبد/ });
+    const btn = await screen.findByTestId('basket-action-شپنا');
     await waitFor(() => expect(btn.textContent).toContain('بدون داده'));
   });
 
@@ -235,7 +237,7 @@ describe('Circuit Breaker — بدون داده', () => {
       return Promise.resolve(ok({ status: 'error' }));
     });
     renderAction('فولاد');
-    fireEvent.click(await screen.findByRole('button', { name: /تصمیم سبد/ }));
+    fireEvent.click(await screen.findByTestId('basket-action-فولاد'));
     await screen.findByRole('dialog', { name: 'تصمیم سبد برای فولاد' });
     expect(document.body.textContent).toContain('بدون داده');
 
