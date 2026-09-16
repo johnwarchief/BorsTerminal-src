@@ -345,18 +345,21 @@ export function detectChoch(
 
 /** سقف n کندل آخر */
 export function highestHigh(highs: (number | null)[], n: number): number | null {
+  if (!(n > 0)) return null;
   const vals = highs.slice(-n).filter((v): v is number => v != null);
   return vals.length > 0 ? Math.max(...vals) : null;
 }
 
 /** کف n کندل آخر */
 export function lowestLow(lows: (number | null)[], n: number): number | null {
+  if (!(n > 0)) return null;
   const vals = lows.slice(-n).filter((v): v is number => v != null);
   return vals.length > 0 ? Math.min(...vals) : null;
 }
 
 /** میانگین حجم n جلسه آخر */
 export function avgVolume(volumes: (number | null)[], n: number): number | null {
+  if (!(n > 0)) return null;
   const vals = volumes.slice(-n).filter((v): v is number => v != null && v >= 0);
   if (vals.length === 0) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
