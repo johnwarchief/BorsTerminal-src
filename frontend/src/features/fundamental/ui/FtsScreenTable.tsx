@@ -9,7 +9,8 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { memo, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { toFaDigits, fmtPct } from '@shared/lib/fmt';
+import { toFaDigits } from '@shared/lib/fmt';
+import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
@@ -45,10 +46,21 @@ const COLS: { key: SortKey | null; label: string; title: string }[] = [
 /** چهارحالتهٔ شاخص ۲ (قبول / سابقهٔ ناقص / مردود / بدون داده) و سه‌حالتهٔ بقیهٔ شاخص‌ها */
 type CellState = 'pass' | 'fail' | 'gap' | 'partial';
 
-function cellState(pass: boolean | null | undefined, value: number | null | undefined): CellState {
-  if (pass == null || value == null) return 'gap';
-  return pass ? 'pass' : 'fail';
+/**
+ * حکمِ سلول از پرچمِ موتور FTS می‌آید؛ «بدون داده» فقط وقتی است که هیچ حکمی نداریم.
+ * F-10: پیش از این، شرط «مقدار غایب ⇒ gap» باعث می‌شد ۲۶۳ ردیف در شاخص ۱، ۳۱۷ در شاخص ۳،
+ * ۱۸۱ در شاخص ۲ و ۶۶ در شاخص ۴ با وجود حکمِ موتور، برچسب «داده نیست» بگیرند و با امتیاز/کارت
+ * نماد ناسازگار شوند. مقدار غایب فقط نمایش «—» می‌گیرد، نه حکمِ دروغ.
+ */
+function verdictOf(flag: boolean | null | undefined): CellState {
+  if (flag === true) return 'pass';
+  if (flag === false) return 'fail';
+  return 'gap';
 }
+
+/** tooltip وقتی مقدار در پاسخ غربالگری نیست ولی حکمِ موتور برای همان شاخص وجود دارد */
+const VALUE_MISSING_WITH_VERDICT =
+  'مقدار در پاسخ غربالگری نیامده؛ حکمِ موتور FTS برای این شاخص اعمال شده است (جزئیات در کارت نماد).';
 
 const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: string }> = {
   pass: { tone: 'green', label: '✓' },
@@ -141,7 +153,7 @@ const ScreenerRow = memo(function ScreenerRow({
     }),
     [r, thresholds],
   );
-              const i1 = cellState(r.i1_pass, r.rev_growth);
+              const i1 = verdictOf(r.i1_pass);
               /** شاخص ۲ — چهاردحالته از روی خودِ داده (lib/epsHistory):
                *  pass / partial «مردود — سابقهٔ ناقص (۲ از ۳ سال)» / fail / gap (<۲ سال) */
               const epsHist = epsHistory(
@@ -149,25 +161,17 @@ const ScreenerRow = memo(function ScreenerRow({
                 r.eps_years_required ?? EPS_REQUIRED_YEARS,
                 r.eps_years_available,
               );
-              const i2: CellState =
-                epsHist.state === 'partial'
-                  ? 'partial'
-                  : epsHist.state === 'insufficient'
-                    ? r.eps_data_gap === false
-                      ? r.i2_pass
-                        ? 'pass'
-                        : 'fail'
-                      : 'gap'
-                    : r.i2_pass
-                      ? 'pass'
-                      : 'fail';
-              const i3 = cellState(r.i3_pass, r.gross_margin);
-              const i4Value = r.profit_potential_pct ?? r.sales_to_mcap ?? null;
-              const i4 = cellState(r.i4_pass, i4Value);
-              const i5: CellState = r.pricing_mode == null ? 'gap' : r.i5_pass ? 'pass' : 'fail';
+              /** شاخص ۲: برچسب «سابقهٔ ناقص» ارجح است (۲ از ۳ سال)، وگرنه حکمِ موتور */
+              const i2: CellState = epsHist.state === 'partial' ? 'partial' : verdictOf(r.i2_pass);
+              const i3 = verdictOf(r.i3_pass);
+              const i4 = verdictOf(r.i4_pass);
+              /** شاخص ۵: حکمِ موتور؛ «بدون داده» فقط اگر پرچم نبود (پیش‌تر pricing_mode=null ⇒ gap و i5_pass=null ⇒ fail بود) */
+              const i5: CellState = verdictOf(r.i5_pass);
               const epsTrend = epsSeriesText(r.eps_series);
               /** برچسب و علت از همان منبع حقیقتِ نردبان EPS و drill-down */
               const epsPartialRejected = i2 === 'partial';
+              /** سابقهٔ EPS کمتر از ۲ سال: برچسبِ علت‌دار (F-02) حفظ می‌شود ولی رنگ/حکم از پرچم موتور می‌آید */
+              const epsInsufficient = epsHist.state === 'insufficient';
               const epsGapReason = epsHist.realYears
                 ? `فقط ${toFaDigits(epsHist.realYears)} سال از ${toFaDigits(epsHist.requiredYears)} سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
                 : 'این ردیفِ اسکنر سابقهٔ EPS سالانه ندارد؛ علت دقیق در کارت نماد (دادهٔ جزئیات کدال) دیده می‌شود.';
@@ -192,8 +196,12 @@ const ScreenerRow = memo(function ScreenerRow({
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
-                      <span className={`num ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                        {r.rev_growth == null ? '—' : fmtPct(r.rev_growth)}
+                      <span
+                        className={`num whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
+                      >
+                        {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
+                        {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
                       </span>
                       {i1 === 'gap' ? (
                         <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
@@ -208,7 +216,10 @@ const ScreenerRow = memo(function ScreenerRow({
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="num text-text-secondary" title={epsTrend ?? ''}>
+                      <span
+                        className="num whitespace-nowrap text-text-secondary"
+                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
+                      >
                         {epsTrend ?? '—'}
                       </span>
                       {epsPartialRejected ? (
@@ -220,21 +231,31 @@ const ScreenerRow = memo(function ScreenerRow({
                           compact
                           testId={EPS_PARTIAL_TESTID}
                         />
-                      ) : i2 === 'gap' ? (
-                        <GapMark
+                      ) : epsInsufficient || i2 === 'gap' ? (
+                        /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید
+                           (پیش‌تر حتی وقتی موتور «مردود» داده بود، برچسب زردِ بی‌حکم نشان داده می‌شد) */
+                        <AuditBadge
+                          state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
+                          label={<span className="max-w-[9.5rem] leading-snug">{epsGapLabel(epsHist.realYears)}</span>}
+                          hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
                           evidence={ev.i2}
-                          label={epsGapLabel(epsHist.realYears)}
-                          tooltip={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
+                          compact
                           testId="eps-gap-reason"
                         />
                       ) : (
-                        <PassMark state={i2} />
+                        <PassMark state={i2} testId="fts-mark-2_eps_trend" />
                       )}
                     </div>
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="num text-text-primary">{r.gross_margin == null ? '—' : fmtPct(r.gross_margin)}</span>
+                      <span
+                        className="num whitespace-nowrap text-text-primary"
+                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
+                      >
+                        {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
+                        {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
+                      </span>
                       {i3 === 'gap' ? (
                         <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
                       ) : (
@@ -248,8 +269,18 @@ const ScreenerRow = memo(function ScreenerRow({
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
-                      <span className="num text-text-primary">
-                        {r.profit_potential_pct == null ? '—' : fmtPct(r.profit_potential_pct)}
+                      <span
+                        className="num whitespace-nowrap text-text-primary"
+                        title={
+                          r.profit_potential_pct == null
+                            ? r.sales_to_mcap != null
+                              ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
+                              : VALUE_MISSING_WITH_VERDICT
+                            : (absurdHint(r.profit_potential_pct) ?? undefined)
+                        }
+                      >
+                        {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
+                        {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
                       </span>
                       {i4 === 'gap' ? (
                         <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
@@ -275,7 +306,10 @@ const ScreenerRow = memo(function ScreenerRow({
                       )}
                     </div>
                     {r.excluded ? (
-                      <span className="ms-1 text-2xs text-accent-red" title={r.exclusion_reasons ?? ''}>
+                      <span
+                        className="ms-1 inline-block max-w-[12rem] truncate align-middle text-2xs text-accent-red"
+                        title={r.exclusion_reasons ?? ''}
+                      >
                         {r.exclusion_reasons}
                       </span>
                     ) : null}

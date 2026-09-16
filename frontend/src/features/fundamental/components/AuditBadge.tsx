@@ -9,6 +9,7 @@ import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
+import { fmtPctGrouped } from '../lib/numFmt';
 
 export type AuditState = 'pass' | 'fail' | 'na';
 
@@ -41,7 +42,14 @@ const NO_AUDIT_TEXT = 'دادهٔ ممیزی برای این وضعیت ثبت �
 function fmtValue(v: number | string | null | undefined, unit?: string | null): string | null {
   if (v == null || v === '') return null;
   if (typeof v === 'number') {
-    const s = toFaDigits(Number.isInteger(v) ? String(v) : v.toFixed(2));
+    // F-10: جداکنندهٔ هزارگان — مقادیر غول‌آسا جدول مقایسه را نمی‌شکنند
+    if (unit === '٪') {
+      const pct = fmtPctGrouped(v, 2);
+      if (pct) return pct;
+    }
+    const [int, frac] = v.toFixed(2).split('.');
+    const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
+    const s = toFaDigits(Number(frac) === 0 ? grouped : `${grouped}.${frac}`);
     return unit ? `${s}${unit}` : s;
   }
   return v;
