@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `26b125f` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** 730/730 (با fixِ uncommittedِ هد) · eslint صفر · build سالم
+- **master HEAD:** `52bc7b7` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۷۶۲ سبز (۷۳ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -259,3 +259,10 @@
 - **agent/fundamental (F-09)** مرج شد: `5f1ab6f` + merge commit `26b125f`. فیلتر حذف بر اساس شاخص (۶ سوئیچ + بازنشانی + نوار «X نماد با فیلتر شاخصی حذف شد»)؛ `lib/exclusionFilter.ts`. صداقت: شاخص 1ب بدون دادهٔ ستون/پرچم در غربالگری ⇒ دامنهٔ «بدون داده» و حذف صفر. کلید `exclude_rejected_indicators` در payload ارسال می‌شود. اعتبارسنجی: vitest 730/730 (70 فایل، سکوئنشال — شامل fixِ uncommittedِ هد روی `symbol-inspector.spec`)، eslint 0/3، build سالم.
 - نیاز بک‌اند (هد): افزودن `exclude_rejected_indicators` به `FTS_DEFAULTS`/`FTS_LIST_KEYS` برای ماندگاری سمت سرور.
 - نکته: تست `symbol-inspector` که از `ebae21f` قرمز بود، با ویرایشِ **uncommittedِ** هد (موجود در درخت) سبز شده؛ با کامیت‌شدنِ آن، baseline کامیت‌شده هم سبز می‌شود.
+
+
+## به‌روزرسانی ۴۱ (ایجنتهد main, 2026-09-15 ~12:40)
+- **F-10 (بنیادی)** و `agent/tape` و `agent/master-portfolio` را **هد خودش** مرج کرد (`00c62e1`/`75bf05f`/`52bc7b7`) ⇒ هیچ برنچی جلوتر از master نیست. F-10 (`641904d`) شامل رفع باگ‌های داده‌ای/گرافیکی جدول (حکم موتور بر مقدار غایب ⇒ «—»، اعشار EPS، جداکنندهٔ هزارگان + ⚠ اعداد غیرمعقول، رنگ شاخص 2 از حکم).
+- هد کلید بک‌اند F-09 (`exclude_rejected_indicators`) را هم افزود (`2910025`) + بستهٔ مهاجرت (`2cbfe39`, MIGRATION.md/setup-agents.ps1).
+- اعتبارسنجی master (`52bc7b7`، سکوئنشال): vitest 762/762 (73 فایل)، eslint 0/3، build سالم.
+- ابلاغ به هد: نیازهای بک‌اند F-10 (مقادیر غیرمعقول کدال + ناسازگاری امتیاز/پرچم اسکرینر با کارت) و درخواست تنظیم autoglm (`config_required`: browser/extension_confirmed/auto_approve).
