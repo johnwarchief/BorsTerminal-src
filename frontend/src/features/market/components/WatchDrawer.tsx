@@ -56,7 +56,7 @@ export function WatchDrawer({ rows, onSelect }: { rows: MarketRow[]; onSelect: (
             type="button"
             data-testid="watch-close"
             onClick={() => setOpen(false)}
-            className="mr-auto shrink-0 rounded-full border border-border-c px-2 py-0.5 text-2xs text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
+            className="ms-auto shrink-0 rounded-full border border-border-c px-2 py-0.5 text-2xs text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
           >
             بستن ✕
           </button>

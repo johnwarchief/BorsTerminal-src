@@ -5,12 +5,15 @@
 // دادهٔ ممیزی از فیلدهای بک‌اند (reason/actual_value/target_threshold/rule_ref)
 // می‌آید؛ اگر نبود، فقط همان چیزی که هست نشان داده می‌شود — هیچ عدد ساختگی.
 // Popover بدون Radix: createPortal + position:fixed (همان الگوی MarketFilters).
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 
 export type AuditState = 'pass' | 'fail' | 'na';
+
+/** شاهدِ ممیزی؛ اگر تابع داده شود فقط هنگام باز شدن کارت («چرا این وضعیت؟») محاسبه می‌شود */
+export type AuditEvidenceInput = AuditEvidence | (() => AuditEvidence | null) | null | undefined;
 
 export interface AuditEvidence {
   /** مقدار واقعی سهم (عددی یا متن آماده) */
@@ -147,7 +150,7 @@ export function AuditReasonCard({
  * وضعیت (قبول/مردود/N/A) است. کلیک روی بج با stopPropagation بسته می‌شود تا
  * داخل سلول‌های کلیک‌پذیر (کارت FTS و ردیف جدول) با رفتار میزبان تضاد نکند.
  */
-export function AuditBadge({
+export const AuditBadge = memo(function AuditBadge({
   state,
   evidence,
   label,
@@ -158,7 +161,7 @@ export function AuditBadge({
   hintTitle,
 }: {
   state: AuditState;
-  evidence?: AuditEvidence | null;
+  evidence?: AuditEvidenceInput;
   /** برچسب دلخواه به‌جای متن پیش‌فرض وضعیت */
   label?: ReactNode;
   /** سربرگ کارت بازشو */
@@ -173,6 +176,8 @@ export function AuditBadge({
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  /** شاهدِ رندرشدهٔ کارت — با تابعِ تنبل فقط لحظهٔ باز شدن محاسبه می‌شود (حالت بسته = صفر محاسبه) */
+  const [resolved, setResolved] = useState<AuditEvidence | null>(null);
   const ref = useRef<HTMLSpanElement | null>(null);
   const popId = useId();
 
@@ -185,6 +190,12 @@ export function AuditBadge({
     const top = below + 220 > window.innerHeight && rect.top > 230 ? Math.max(8, rect.top - 224) : below;
     setPos({ top, right });
   }, []);
+
+  /** evidence می‌تواند تابع باشد تا در حالت بسته هیچ محاسبه‌ای انجام نشود */
+  const resolveEvidence = useCallback(
+    () => (typeof evidence === 'function' ? (evidence() ?? null) : (evidence ?? null)),
+    [evidence],
+  );
 
   const close = useCallback(() => {
     setOpen(false);
@@ -225,6 +236,7 @@ export function AuditBadge({
       onMouseEnter={() => {
         if (!open) {
           place();
+          setResolved(resolveEvidence());
           setOpen(true);
         }
       }}
@@ -234,6 +246,7 @@ export function AuditBadge({
       onFocus={() => {
         if (!open) {
           place();
+          setResolved(resolveEvidence());
           setOpen(true);
         }
       }}
@@ -256,6 +269,7 @@ export function AuditBadge({
           if (open && pinned) close();
           else {
             place();
+            setResolved(resolveEvidence());
             setOpen(true);
             setPinned(true);
           }
@@ -267,6 +281,7 @@ export function AuditBadge({
             if (open && pinned) close();
             else {
               place();
+              setResolved(resolveEvidence());
               setOpen(true);
               setPinned(true);
             }
@@ -292,11 +307,11 @@ export function AuditBadge({
                 zIndex: 9999,
               }}
             >
-              <AuditReasonCard state={state} evidence={evidence} title={title} />
+              <AuditReasonCard state={state} evidence={resolved} title={title} />
             </span>,
             document.body,
           )
         : null}
     </span>
   );
-}
+});

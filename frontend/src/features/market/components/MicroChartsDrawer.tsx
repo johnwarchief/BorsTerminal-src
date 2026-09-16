@@ -111,7 +111,7 @@ export function MicroChartsDrawer() {
         className="flex w-full items-center justify-between text-xs font-black text-text-primary hover:text-accent-blue"
       >
         <span>نبض درون‌روز — میکروچارت اوردر‌بوک و پهنای باند</span>
-        <span className={`transition-transform ${open ? 'rotate-90' : ''}`}>‹</span>
+        <span className={`transition-transform ${open ? '-rotate-90' : ''}`}>‹</span>
       </button>
       {open ? (
         isLoading && !data ? (

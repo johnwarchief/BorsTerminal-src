@@ -52,7 +52,7 @@ function Chip({
       }`}
     >
       {children}
-      {count != null && count > 0 ? <span className="num mr-1 opacity-80">({toFaDigits(count)})</span> : null}
+      {count != null && count > 0 ? <span className="num ms-1 opacity-80">({toFaDigits(count)})</span> : null}
     </button>
   );
 }
@@ -93,8 +93,8 @@ function AssetFilterMenu() {
     ? (() => {
         const rect = ref.current?.getBoundingClientRect();
         const style = rect
-          ? { position: 'fixed' as const, top: rect.bottom + 4, right: Math.max(8, window.innerWidth - rect.right), zIndex: 9999 }
-          : { position: 'fixed' as const, top: 0, right: 0, zIndex: 9999 };
+          ? { position: 'fixed' as const, top: rect.bottom + 4, insetInlineStart: Math.max(8, window.innerWidth - rect.right), zIndex: 9999 }
+          : { position: 'fixed' as const, top: 0, insetInlineStart: 0, zIndex: 9999 };
         return createPortal(
           <div
             ref={menuRef}
@@ -370,7 +370,7 @@ export function MarketFilters({
           onClick={resetFilters}
           className="shrink-0 rounded-full border border-border-c px-2 py-0.5 text-xs text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
         >
-          پاک کردن {toFaDigits(activeCount)} فیلتر
+          پاک کردن <span className="num">{toFaDigits(activeCount)}</span> فیلتر
         </button>
       ) : null}
     </div>

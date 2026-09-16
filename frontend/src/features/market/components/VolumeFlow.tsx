@@ -21,7 +21,7 @@ export function VolumeFlow({ symbol }: { symbol: string }) {
     <div className="glass-panel panel-in p-4">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-sm font-black text-text-primary">جریان حجم {symbol}</h3>
-        <span className="text-2xs text-text-muted">میانگین: {fmtInt(avg)}</span>
+        <span className="text-2xs text-text-muted">میانگین: <span className="num">{fmtInt(avg)}</span></span>
       </div>
       {isLoading && <div className="py-8 text-center text-xs text-text-secondary">در حال بارگذاری...</div>}
       {isError && <div className="py-8 text-center text-xs text-accent-red">خطا در دریافت تاریخچه</div>}
@@ -31,7 +31,7 @@ export function VolumeFlow({ symbol }: { symbol: string }) {
       {volumes.length > 0 && (
         <div className="relative flex h-28 items-end gap-[2px]" dir="ltr">
           <div
-            className="pointer-events-none absolute right-0 w-full border-t border-dashed border-accent-yellow/50"
+            className="pointer-events-none absolute inset-x-0 w-full border-t border-dashed border-accent-yellow/50"
             style={{ bottom: `${Math.max(3, avgH)}%` }}
             title={`میانگین: ${fmtInt(avg)}`}
           />
@@ -46,7 +46,7 @@ export function VolumeFlow({ symbol }: { symbol: string }) {
         </div>
       )}
       <div className="mt-1 flex items-center justify-between text-2xs text-text-muted">
-        <span>{toFaDigits(volumes.length)} جلسه آخر</span>
+        <span><span className="num">{toFaDigits(volumes.length)}</span> جلسه آخر</span>
         {volumes.length > 0 && (
           <span>
             اوج: <span className="num">{fmtInt(volumes[peakIdx].value)}</span>
