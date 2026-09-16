@@ -10,6 +10,7 @@ import { Badge } from '@shared/components/Badge';
 import { aggregateSignals } from '@features/master/lib/masterMath';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
+import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { useInspectorBoard } from './useInspectorBoard';
 
 const ACTION_FA = {
@@ -224,6 +225,12 @@ export function SymbolInspector() {
             }
             hint={port?.rationale}
           />
+        </div>
+
+        {/* جریان حجم درون‌روزی (قلمرو هد: انتقال از دراور راست به سایدبار چپ) */}
+        <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2.5">
+          <div className="mb-1 text-[11px] font-bold text-text-secondary">جریان حجم — ۰۸:۴۵ تا ۱۲:۳۰</div>
+          <VolumeFlowMini symbol={symbol} compact />
         </div>
 
         {/* ممیزی وضعیت بنیادی (FTS) — بازشوی «چرا این وضعیت؟» */}
