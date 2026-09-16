@@ -65,7 +65,7 @@ type MarkerCtx = {
 function markerFigures(ctx: MarkerCtx) {
   const ext = (ctx.overlay.extendData ?? {}) as { label?: string; color?: string; fill?: string; dir?: string };
   const { x, y } = ctx.coordinates[0];
-  const r = Math.max(5, Math.min(9, ctx.barSpace.bar * 0.42));
+  const r = Math.max(4, Math.min(7, ctx.barSpace.bar * 0.36));
   const up = ext.dir !== 'down';
   const tip = up ? y - r * 2.4 : y + r * 2.4;
   const base = up ? y - r * 0.6 : y + r * 0.6;
@@ -83,7 +83,7 @@ function markerFigures(ctx: MarkerCtx) {
     figures.push({
       type: 'text',
       attrs: { x, y: up ? tip - 6 : tip + r * 1.6, text: label, align: 'center', baseline: up ? 'bottom' : 'top' },
-      styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+      styles: { color, size: 9, family: 'Vazirmatn, sans-serif', weight: 'normal' },
       ignoreEvent: true,
     });
   }
@@ -194,7 +194,7 @@ export function registerFtsOverlays(api: {
         figures.push({
           type: 'text',
           attrs: { x: 8, y: yRaw - 5, text: label, align: 'left', baseline: 'bottom' },
-          styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+          styles: { color, size: 9, family: 'Vazirmatn, sans-serif', weight: 'normal' },
           ignoreEvent: true,
         });
       }
@@ -215,7 +215,7 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
   const label = (x: number, y: number, text: string, color: string, align: 'left' | 'right' | 'center' = 'right'): OverlayFigure => ({
     type: 'text',
     attrs: { x, y, text, align, baseline: 'bottom' },
-    styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+    styles: { color, size: 9, family: 'Vazirmatn, sans-serif', weight: 'normal' },
     ignoreEvent: true,
   });
   const band = (x: number, y1: number, y2: number, w: number, color: string, edge: string): OverlayFigure => ({

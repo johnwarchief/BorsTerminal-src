@@ -62,3 +62,24 @@
 .tv-workbench ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* --- RTL ? ???????? ???? ???????? ???? ?????? (T-21) --- */
+.tv-workbench [data-testid='nn-chart-host'] { direction: rtl; }
+.tv-workbench [data-testid='nn-chart-host'] .nahayat-negar-container > * { min-width: 0; }
+.tv-workbench [data-testid='nn-chart-host'] header,
+.tv-workbench [data-testid='nn-chart-host'] nav,
+.tv-workbench [data-testid='nn-chart-host'] [class*='toolbar'],
+.tv-workbench [data-testid='nn-chart-host'] [class*='Toolbar'] {
+  overflow: visible !important;
+  flex-wrap: nowrap !important;
+  min-width: 0 !important;
+}
+.tv-workbench [data-testid='nn-chart-host'] [class*='toolbar'] > *,
+.tv-workbench [data-testid='nn-chart-host'] [class*='Toolbar'] > * { min-width: 0; flex: 0 1 auto; }
+.tv-workbench [data-testid='nn-chart-host'] button,
+.tv-workbench [data-testid='nn-chart-host'] label,
+.tv-workbench [data-testid='nn-chart-host'] span { white-space: nowrap; }
+.tv-workbench [data-testid='nn-chart-host'] [role='menu'],
+.tv-workbench [data-testid='nn-chart-host'] [class*='dropdown'],
+.tv-workbench [data-testid='nn-chart-host'] [class*='menu'] { z-index: 60 !important; }
+.tv-workbench [data-testid='nn-chart-host'] canvas { direction: ltr; }
