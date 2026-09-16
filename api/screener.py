@@ -97,7 +97,6 @@ def get_screener():
                 names[k] = l30 or l18
         for r in rows:
             r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
-            r["growth_pass"] = r["rev_growth"] is not None and r["rev_growth"] >= cfg["growth_min"]
             r["eps_data_gap"] = bool(r.get("eps_data_gap"))
             # سند v2.1: اگر سطرهای سالانهٔ اسکنر کافی نبود، همان نردبانِ EPSِ
             # مسیر جزئیات صدا زده می‌شود تا شاخص ۲ بین اسکرینر و /api/fundamental
