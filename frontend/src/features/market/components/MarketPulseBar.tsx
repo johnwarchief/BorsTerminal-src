@@ -37,7 +37,7 @@ function Section({
     >
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-xs font-bold text-text-muted">{title}</h3>
-        {hint ? <span className="truncate text-[10px] text-text-muted">{hint}</span> : null}
+        {hint ? <span className="truncate text-2xs text-text-muted">{hint}</span> : null}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 text-xs">{children}</div>
     </div>
@@ -118,16 +118,16 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               className="flex items-baseline justify-center gap-2 rounded-lg border border-border-c/60 bg-bg-card/40 px-2 py-1"
               title="ارزش کل بازار از macro.value_hemat_all_market (سهام + حق تقدم + ص.سهامی)"
             >
-              <span className="text-[10px] font-bold text-text-muted">ارزش کل بازار</span>
+              <span className="text-2xs font-bold text-text-muted">ارزش کل بازار</span>
               {allMarket != null ? (
                 <span className="num text-lg font-black text-text-primary">
-                  {fa(allMarket)} <span className="text-[10px] font-bold text-text-muted">همت</span>
+                  {fa(allMarket)} <span className="text-2xs font-bold text-text-muted">همت</span>
                 </span>
               ) : (
                 MISSING
               )}
             </div>
-            <span className="text-center text-[10px] text-text-muted">
+            <span className="text-center text-2xs text-text-muted">
               {hemat.state === 'bad' ? 'رکود روز — روند ۳-۴ روزه: بدون داده' : 'روند ۳-۴ روزه: بدون داده'}
             </span>
           </>
@@ -154,7 +154,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                     : 'border-accent-red/40 bg-accent-red/5'
                 }`}
               >
-                <span className="text-[11px] font-bold text-text-secondary">سهام</span>
+                <span className="text-2xs font-bold text-text-secondary">سهام</span>
                 {flow.eq_flow_b_toman != null ? (
                   <span className={`num text-xs font-black ${flow.eq_flow_b_toman >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {flow.eq_flow_b_toman >= 0 ? '▲' : '▼'} {fa(Math.abs(flow.eq_flow_b_toman))} ب.ت
@@ -171,7 +171,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                     : 'border-accent-red/40 bg-accent-red/5'
                 }`}
               >
-                <span className="text-[11px] font-bold text-text-secondary">درآمد ثابت</span>
+                <span className="text-2xs font-bold text-text-secondary">درآمد ثابت</span>
                 {flow.fixed_flow_b_toman != null ? (
                   flow.fixed_flow_b_toman < 0 ? (
                     <span className="num text-xs font-black text-accent-green">▼ {fa(Math.abs(flow.fixed_flow_b_toman))} ب.ت خروج</span>
@@ -192,7 +192,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                       : 'border-accent-yellow/40 bg-accent-yellow/5'
                 }`}
               >
-                <span className="text-[11px] font-bold text-text-secondary">طلا (پنجرهٔ ۱۲:۰۰–۱۲:۳۰)</span>
+                <span className="text-2xs font-bold text-text-secondary">طلا (پنجرهٔ ۱۲:۰۰–۱۲:۳۰)</span>
                 {gold != null ? (
                   <span className={`num text-xs font-black ${gold < 0 ? 'text-accent-green' : 'text-accent-yellow'}`}>
                     {gold < 0 ? '▼ خروج ' : '▲ ورود '}
@@ -206,7 +206,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             {trio?.active ? (
               <span
                 data-testid="pulse-alpha-trio"
-                className="mt-0.5 self-start rounded-full border border-accent-yellow/60 bg-accent-yellow/15 px-2 py-0.5 text-[10px] font-black text-accent-yellow"
+                className="mt-0.5 self-start rounded-full border border-accent-yellow/60 bg-accent-yellow/15 px-2 py-0.5 text-2xs font-black text-accent-yellow"
                 title="خروج درآمد ثابت + خروج طلا + ورود سهام"
               >
                 ✨ {ALPHA_TRIO_LABEL}
@@ -225,11 +225,11 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               <span className="h-full bg-text-muted/30" style={{ width: `${((thermo.zero as number) / thermoTotal) * 100}%` }} />
               <span className="h-full bg-accent-red" style={{ width: `${((thermo.negative as number) / thermoTotal) * 100}%` }} />
             </div>
-            <span className="num text-[10px] text-text-secondary">
+            <span className="num text-2xs text-text-secondary">
               +{fa(thermo.positive as number, 0)} / −{fa(thermo.negative as number, 0)} / ص{fa(thermo.zero as number, 0)}
             </span>
             {breadthWarn ? (
-              <span data-testid="pulse-breadth-warn" className="text-[10px] font-black text-accent-red" title="بیش از ۸۰٪ معاملات منفی — فرصت/هشدار ورود FTS">
+              <span data-testid="pulse-breadth-warn" className="text-2xs font-black text-accent-red" title="بیش از ۸۰٪ معاملات منفی — فرصت/هشدار ورود FTS">
                 ⚠ عبور منفی از {fa(rulePct, 0)}٪
               </span>
             ) : null}
@@ -242,26 +242,26 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             <div className="flex items-baseline justify-between gap-2" title="ارزش ۵ خط اول صف‌ها (میلیارد تومان)">
               <span className="num text-xl font-black text-accent-green">
                 {depth.buyBt != null ? fmtInt(depth.buyBt) : '—'}
-                <span className="mr-1 text-[9px] font-bold text-text-muted">ب.ت خرید</span>
+                <span className="mr-1 text-2xs font-bold text-text-muted">ب.ت خرید</span>
               </span>
               {depth.buyCount != null && depth.sellCount != null ? (
-                <span className="num text-[10px] text-text-secondary" title="تعداد نمادهای دارای صف خرید در برابر صف فروش">
+                <span className="num text-2xs text-text-secondary" title="تعداد نمادهای دارای صف خرید در برابر صف فروش">
                   {fa(depth.buyCount, 0)} / {fa(depth.sellCount, 0)}
                 </span>
               ) : null}
               <span className="num text-xl font-black text-accent-red">
-                <span className="ml-1 text-[9px] font-bold text-text-muted">فروش ب.ت</span>
+                <span className="ml-1 text-2xs font-bold text-text-muted">فروش ب.ت</span>
                 {depth.sellBt != null ? fmtInt(depth.sellBt) : '—'}
               </span>
             </div>
             {sellSharePct != null ? (
-              <span className="num text-[10px] text-text-muted" title="سهم ارزش صف‌های فروش از کل ارزش صف‌ها">
+              <span className="num text-2xs text-text-muted" title="سهم ارزش صف‌های فروش از کل ارزش صف‌ها">
                 فروش ٪{fa(sellSharePct)} از کل صف‌ها
               </span>
             ) : null}
           </>
         ) : (
-          <span className="text-[10px] text-text-muted">تعادل صف‌ها: بدون داده</span>
+          <span className="text-2xs text-text-muted">تعادل صف‌ها: بدون داده</span>
         )}
       </Section>
 
@@ -273,7 +273,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               <span className={`text-2xl font-black leading-7 ${powerClass}`} title="≥۱.۵× سبز / <۰.۸× قرمز">
                 {eq.power != null ? `${fa(eq.power)}×` : '—'}
               </span>
-              <span className="num min-w-0 flex-1 text-[10px] text-text-secondary">
+              <span className="num min-w-0 flex-1 text-2xs text-text-secondary">
                 خرید {eq.pcBuy != null ? fa(eq.pcBuy) : '—'} / فروش {eq.pcSell != null ? fa(eq.pcSell) : '—'} م.ت
               </span>
             </div>
@@ -287,7 +287,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               </div>
             ) : null}
             {eq.symbols != null || eq.traded != null ? (
-              <div className="flex items-center justify-between gap-2 text-[10px] text-text-muted">
+              <div className="flex items-center justify-between gap-2 text-2xs text-text-muted">
                 <span className="num" title="تعداد نمادهای گروه سهام، حق تقدم و ص.سهامی">
                   نمادها {eq.symbols != null ? fa(eq.symbols, 0) : '—'}
                 </span>

@@ -1,5 +1,5 @@
 // features/market/routes/MarketPage.tsx -- صفحه تابلو بازار (ایجنت 3)
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import type { MarketRow } from '@shared/types/marketRow';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -45,7 +45,16 @@ export function applyFilters(
   });
 }
 
-export default function MarketPage() {
+export default function MarketPage({
+  renderBasketAction,
+}: {
+  /**
+   * اسلات تزریقیِ اختیاری از پوسته برای اکشن «سبد» روی ردیف‌ها.
+   * اگر پوسته چیزی ندهد، دکمهٔ سبک پیش‌فرض (انتشار قصد سبد) استفاده می‌شود.
+   * مرز market فقط shared/contracts است، پس خودش SymbolBasketAction را import نمی‌کند.
+   */
+  renderBasketAction?: (symbol: string) => ReactNode;
+} = {}) {
   const { data, isLoading, isError, refetch, dataUpdatedAt, isFetching } = useMarketFeed();
   const { data: pulse, isLoading: pulseLoading } = useMarketPulse();
   const rows = useMemo(() => data?.data ?? [], [data]);
@@ -147,7 +156,7 @@ export default function MarketPage() {
 
       {/* جدول تمام‌عرض؛ دیده‌بان‌ها به دراور زیر جدول منتقل شدند */}
       <MicroChartsDrawer />
-      <TapeTable rows={filtered} selected={symbol} onSelect={setSymbol} />
+      <TapeTable rows={filtered} selected={symbol} onSelect={setSymbol} renderBasketAction={renderBasketAction} />
       <WatchDrawer rows={filtered} onSelect={setSymbol} />
       <VolumeFlow symbol={symbol} />
     </div>

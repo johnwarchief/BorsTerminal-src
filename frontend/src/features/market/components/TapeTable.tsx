@@ -1,6 +1,6 @@
 // features/market/components/TapeTable.tsx -- جدول مجازی تابلو
 // ردیف ها با React.memo و کلید نماد؛ فقط ردیف های دیدنی رندر می شوند.
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { MarketRow } from '@shared/types/marketRow';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
@@ -18,8 +18,12 @@ import {
   lastCloseDiff,
 } from '../lib/tapePatterns';
 import { LIMIT_PCT } from '../stores/tapeStore';
+import { RowBasketAction } from './RowBasketAction';
 
 type SortKey = 'symbol' | 'percent_change' | 'tvol' | 'vol_ratio' | 'buyer_power' | 'last_vs_close' | 'p_last';
+
+/** ۹ ستون: شماره + ۷ ستون داده + ستون اکشن سبد */
+const ROW_GRID = 'grid-cols-[2rem_1.4fr_1fr_1fr_1.1fr_0.9fr_0.9fr_1.8fr_4rem]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'symbol', label: 'نماد' },
@@ -79,7 +83,7 @@ function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone:
       data-testid={`badge-${pattern}`}
       data-pattern={pattern}
       title={title}
-      className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${MICRO_TONES[tone]}`}
+      className={`shrink-0 rounded-md px-1.5 py-0.5 text-2xs font-bold ${MICRO_TONES[tone]}`}
     >
       {children}
     </span>
@@ -108,11 +112,13 @@ const TapeRow = memo(function TapeRow({
   index,
   selected,
   onSelect,
+  renderBasketAction,
 }: {
   row: MarketRow;
   index: number;
   selected: boolean;
   onSelect: (s: string) => void;
+  renderBasketAction?: (symbol: string) => ReactNode;
 }) {
   const diff = lastCloseDiff(row);
   const strongHour = detectStrongHour(row);
@@ -148,19 +154,27 @@ const TapeRow = memo(function TapeRow({
   if (boxExit) badges.push(<MicroBadge key="box" pattern="box" tone="gray" title={BOX_EXIT_HINT} >باکس</MicroBadge>);
   if (row.is_live === false) badges.push(<MicroBadge key="off" pattern="off" tone="gray" title="بدون معاملهٔ امروز" >غیرزنده</MicroBadge>);
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      data-testid="tape-row"
       onClick={() => row.symbol && onSelect(row.symbol)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (row.symbol) onSelect(row.symbol);
+        }
+      }}
       title={tooltip}
-      className={`grid w-full grid-cols-[2rem_1.4fr_1fr_1fr_1.1fr_0.9fr_0.9fr_1.8fr] items-center gap-1 border-b border-border-c/50 px-2 text-right text-xs ${
+      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-right text-xs ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-r-2 border-r-accent-green' : atLimitDown ? 'border-r-2 border-r-accent-red' : ''}`}
       style={{ height: 40 }}
     >
-      <span className="num text-center text-[10px] text-text-muted">{toFaDigits(index + 1)}</span>
+      <span className="num text-center text-2xs text-text-muted">{toFaDigits(index + 1)}</span>
       <span className="font-bold text-text-primary">
         {row.symbol}
-        <span className="block truncate text-[10px] font-normal text-text-muted">{row.name ?? ''}</span>
+        <span className="block truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
       <span className="num text-text-primary">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
@@ -183,7 +197,14 @@ const TapeRow = memo(function TapeRow({
         </span>
         <span className="flex min-w-0 items-center gap-1 overflow-hidden">{badges}</span>
       </span>
-    </button>
+      <span className="flex items-center justify-center">
+        {row.symbol
+          ? renderBasketAction
+            ? renderBasketAction(row.symbol)
+            : <RowBasketAction symbol={row.symbol} />
+          : null}
+      </span>
+    </div>
   );
 });
 
@@ -191,10 +212,16 @@ export function TapeTable({
   rows,
   selected,
   onSelect,
+  renderBasketAction,
 }: {
   rows: MarketRow[];
   selected: string;
   onSelect: (s: string) => void;
+  /**
+   * اسلات تزریقیِ پوسته: پوسته (app/widgets) می‌تواند اینجا `SymbolBasketAction`
+   * واقعی را بدهد. اگر ندهد، دکمهٔ سبک داخلی که قصد سبد را منتشر می‌کند استفاده می‌شود.
+   */
+  renderBasketAction?: (symbol: string) => ReactNode;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
@@ -236,14 +263,14 @@ export function TapeTable({
 
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className="sticky top-0 z-10 grid grid-cols-[2rem_1.4fr_1fr_1fr_1.1fr_0.9fr_0.9fr_1.8fr] gap-1 bg-bg-card/95 px-2 py-2 text-right text-[11px] font-bold text-text-secondary backdrop-blur">
+      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-right text-2xs font-bold text-text-secondary backdrop-blur`}>
         <span className="text-center">#</span>
         {HEADERS.map((h) => (
           <button key={h.key} type="button" onClick={() => toggle(h.key)} className="text-right hover:text-accent-blue">
             {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
           </button>
         ))}
-        <span>سیگنال‌های تابلو</span>
+        <span className="text-center">سبد</span>
       </div>
       <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto" data-testid="tape-scroll">
         <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
@@ -255,13 +282,19 @@ export function TapeTable({
                 className="absolute right-0 top-0 w-full"
                 style={{ transform: `translateY(${v.start}px)` }}
               >
-                <TapeRow row={row} index={v.index} selected={row.symbol === selected} onSelect={onSelect} />
+                <TapeRow
+                  row={row}
+                  index={v.index}
+                  selected={row.symbol === selected}
+                  onSelect={onSelect}
+                  renderBasketAction={renderBasketAction}
+                />
               </div>
             );
           })}
         </div>
       </div>
-      <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-[11px] text-text-muted num">
+      <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted num">
         {toFaDigits(sorted.length)} نماد
       </div>
     </div>

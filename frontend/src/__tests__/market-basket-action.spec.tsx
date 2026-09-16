@@ -1,0 +1,119 @@
+// تست اکشن «افزودن به سبد» روی ردیف‌های جدول بازار (TapeTable)
+// مرز: market به portfolio وابسته نمی‌شود؛ دکمهٔ ردیف یک «قصد سبد» منتشر می‌کند
+// و پوسته آن را به SymbolBasketAction ترجمه می‌کند. اسلات تزریقی هم تست می‌شود.
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { MarketRow } from '@shared/types/marketRow';
+import { TapeTable } from '@features/market/components/TapeTable';
+import {
+  BASKET_INTENT_EVENT,
+  emitBasketIntent,
+  subscribeBasketIntent,
+  type BasketIntentDetail,
+} from '@features/market/lib/basketIntent';
+
+function row(patch: Partial<MarketRow> = {}): MarketRow {
+  return {
+    symbol: 'شپنا',
+    name: 'پالایش نفت اصفهان',
+    percent_change: 2.5,
+    tvol: 5_000_000,
+    month_avg_vol: 1_000_000,
+    vol_ratio: 5,
+    buyer_power: 2.1,
+    p_last: 1000,
+    p_closing: 1025,
+    z_tot_tran: 120,
+    is_live: true,
+    ...patch,
+  } as MarketRow;
+}
+
+// jsdom اندازه ندارد -- virtualizer را به رندر کامل وادار می‌کنیم
+vi.mock('@tanstack/react-virtual', async (orig) => {
+  const mod = await orig<typeof import('@tanstack/react-virtual')>();
+  return {
+    ...mod,
+    useVirtualizer: ({ count }: { count: number }) => ({
+      getTotalSize: () => count * 40,
+      getVirtualItems: () => Array.from({ length: count }, (_, i) => ({ key: i, index: i, start: i * 40 })),
+    }),
+  };
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('اکشن سبد روی ردیف‌های جدول بازار', () => {
+  it('هر ردیف یک دکمهٔ «سبد+» با label شامل نماد می‌گیرد', () => {
+    render(<TapeTable rows={[row(), row({ symbol: 'فولاد', name: 'فولاد مبارکه' })]} selected="" onSelect={() => {}} />);
+    expect(screen.getByTestId('row-basket-شپنا')).toHaveTextContent('سبد+');
+    expect(screen.getByLabelText('افزودن شپنا به سبد')).toBeInTheDocument();
+    expect(screen.getByLabelText('افزودن فولاد به سبد')).toBeInTheDocument();
+  });
+
+  it('سرصفحه ستون سبد را نشان می‌دهد', () => {
+    render(<TapeTable rows={[row()]} selected="" onSelect={() => {}} />);
+    expect(screen.getByText('سبد')).toBeInTheDocument();
+  });
+
+  it('کلیک روی دکمهٔ سبد قصد سبد را منتشر می‌کند و ردیف را انتخاب نمی‌کند', () => {
+    const onSelect = vi.fn();
+    const seen: string[] = [];
+    const onIntent = (e: Event) => seen.push((e as CustomEvent<BasketIntentDetail>).detail.symbol);
+    window.addEventListener(BASKET_INTENT_EVENT, onIntent);
+    try {
+      render(<TapeTable rows={[row({ symbol: 'خودرو' })]} selected="" onSelect={onSelect} />);
+      fireEvent.click(screen.getByTestId('row-basket-خودرو'));
+      expect(seen).toEqual(['خودرو']);
+      expect(onSelect).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener(BASKET_INTENT_EVENT, onIntent);
+    }
+  });
+
+  it('کلیک روی بدنهٔ ردیف هنوز نماد را انتخاب می‌کند', () => {
+    const onSelect = vi.fn();
+    render(<TapeTable rows={[row({ symbol: 'شپنا' })]} selected="" onSelect={onSelect} />);
+    fireEvent.click(screen.getByText('شپنا'));
+    expect(onSelect).toHaveBeenCalledWith('شپنا');
+  });
+
+  it('اسلات تزریقی پوسته، دکمهٔ پیش‌فرض را جایگزین می‌کند', () => {
+    render(
+      <TapeTable
+        rows={[row({ symbol: 'وبملت' })]}
+        selected=""
+        onSelect={() => {}}
+        renderBasketAction={(symbol) => (
+          <button type="button" data-testid="injected-basket">
+            سبد واقعی {symbol}
+          </button>
+        )}
+      />,
+    );
+    expect(screen.getByTestId('injected-basket')).toHaveTextContent('سبد واقعی وبملت');
+    expect(screen.queryByTestId('row-basket-وبملت')).not.toBeInTheDocument();
+  });
+});
+
+describe('پل قصد سبد (basketIntent)', () => {
+  it('subscribeBasketIntent نماد منتشرشده را می‌گیرد و لغو اشتراک کار می‌کند', () => {
+    const got: string[] = [];
+    const unsub = subscribeBasketIntent((s) => got.push(s));
+    emitBasketIntent('شپنا');
+    expect(got).toEqual(['شپنا']);
+    unsub();
+    emitBasketIntent('فولاد');
+    expect(got).toEqual(['شپنا']);
+  });
+
+  it('نماد خالی منتشر نمی‌شود', () => {
+    const got: string[] = [];
+    const unsub = subscribeBasketIntent((s) => got.push(s));
+    emitBasketIntent('');
+    unsub();
+    expect(got).toEqual([]);
+  });
+});

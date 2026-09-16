@@ -102,7 +102,7 @@ export function SuspiciousPanel({
         <h3 className="text-sm font-black text-text-primary">{title}</h3>
         {badge}
       </div>
-      {hint ? <p className="mb-1 text-[11px] leading-5 text-text-muted">{hint}</p> : null}
+      {hint ? <p className="mb-1 text-2xs leading-5 text-text-muted">{hint}</p> : null}
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border-c p-2 text-center text-xs text-text-muted">
           موردی نیست
@@ -120,7 +120,7 @@ export function SuspiciousPanel({
                 <span className="font-bold text-text-primary">
                   {it.symbol} <span className="font-normal text-text-muted">{it.name}</span>
                   {it.title ? (
-                    <span className="mt-0.5 block text-[10px] font-normal leading-4 text-text-muted">{it.title}</span>
+                    <span className="mt-0.5 block text-2xs font-normal leading-4 text-text-muted">{it.title}</span>
                   ) : null}
                 </span>
                 <span className="flex items-center gap-2">

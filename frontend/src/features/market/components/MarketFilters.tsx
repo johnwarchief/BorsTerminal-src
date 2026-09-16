@@ -189,7 +189,7 @@ function FtsTriToggle() {
           aria-pressed={screenOrder === key}
           title={SCREEN_ORDER_LABELS[key]}
           onClick={() => setScreenOrder(key)}
-          className={`px-2 py-1 text-[11px] font-semibold transition-colors ${
+          className={`px-2 py-1 text-2xs font-semibold transition-colors ${
             screenOrder === key ? 'bg-accent-blue/20 text-accent-blue' : 'bg-bg-card text-text-secondary hover:text-accent-blue'
           }`}
         >
@@ -347,7 +347,7 @@ export function MarketFilters({
           ≥{toFaDigits(volRatioMin.toFixed(1))}×
         </span>
         {volRatioOn && volRatioCount != null ? (
-          <span className="num text-[10px] text-text-secondary">({toFaDigits(volRatioCount)})</span>
+          <span className="num text-2xs text-text-secondary">({toFaDigits(volRatioCount)})</span>
         ) : null}
       </div>
 

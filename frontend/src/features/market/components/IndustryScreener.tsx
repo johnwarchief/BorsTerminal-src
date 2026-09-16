@@ -15,7 +15,7 @@ function IndustryLine({ row, leader }: { row: IndustryRow; leader: string | null
     <li className="flex items-center justify-between gap-2 px-1 py-1">
       <span className="min-w-0 truncate text-sm font-bold text-text-primary">
         {row.industry}
-        {leader && row.industry === leader ? <span className="mr-1 text-[9px] text-accent-yellow">★ پیشرو</span> : null}
+        {leader && row.industry === leader ? <span className="mr-1 text-2xs text-accent-yellow">★ پیشرو</span> : null}
       </span>
       <span className="num shrink-0 text-xs">
         {flow != null ? (
@@ -49,7 +49,7 @@ export function IndustryScreener() {
             type="button"
             onClick={() => setMode('flow')}
             aria-pressed={mode === 'flow'}
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+            className={`rounded-full border px-2 py-0.5 text-2xs font-semibold ${
               mode === 'flow' ? 'border-border-accent bg-accent-blue/15 text-accent-blue' : 'border-border-c text-text-secondary'
             }`}
           >
@@ -59,7 +59,7 @@ export function IndustryScreener() {
             type="button"
             onClick={() => setMode('pct')}
             aria-pressed={mode === 'pct'}
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+            className={`rounded-full border px-2 py-0.5 text-2xs font-semibold ${
               mode === 'pct' ? 'border-border-accent bg-accent-blue/15 text-accent-blue' : 'border-border-c text-text-secondary'
             }`}
           >
@@ -68,9 +68,9 @@ export function IndustryScreener() {
         </div>
       </div>
       {isLoading && !data ? (
-        <span className="text-[11px] text-text-secondary">در حال دریافت صنایع...</span>
+        <span className="text-2xs text-text-secondary">در حال دریافت صنایع...</span>
       ) : isError || !rows || rows.length === 0 ? (
-        <span className="text-[11px] text-text-muted">بدون داده</span>
+        <span className="text-2xs text-text-muted">بدون داده</span>
       ) : (
         <ul className="flex flex-col divide-y divide-border-c/40">
           {top.map((r) => (
