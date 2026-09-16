@@ -49,7 +49,7 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
   return (
     <Modal title="ویرایش دارایی‌های هدف" onClose={onClose}>
       <div className="flex flex-col gap-3">
-        <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto pl-1">
+        <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto ps-1">
           {draft.map((c) => (
             <li key={c.id} className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 shrink-0 rounded-sm" style={{ background: c.color }} aria-hidden />
@@ -64,7 +64,7 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
                 value={c.pct}
                 onChange={(e) => editPct(c.id, Number(e.target.value))}
                 aria-label={`درصد ${c.label}`}
-                className="num w-20 rounded-lg border border-border-c bg-bg-secondary px-2 py-1 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                className="num w-20 rounded-lg border border-border-c bg-bg-secondary px-2 py-1 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 dir="ltr"
               />
               <span className="text-xs text-text-muted">٪</span>
@@ -101,8 +101,8 @@ export function TargetEditModal({ open, onClose }: { open: boolean; onClose: () 
         </div>
 
         <div className="flex items-center justify-between border-t border-[var(--hairline)] pt-3">
-          <span className={`num text-xs font-bold ${total > 100 ? 'text-accent-red' : 'text-text-secondary'}`}>
-            جمع: {toFaDigits(Math.round(total * 10) / 10)}٪
+          <span className={`text-xs font-bold ${total > 100 ? 'text-accent-red' : 'text-text-secondary'}`}>
+            جمع: <span className="num">{toFaDigits(Math.round(total * 10) / 10)}٪</span>
           </span>
           <div className="flex gap-2">
             <button

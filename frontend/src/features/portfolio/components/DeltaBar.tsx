@@ -31,6 +31,7 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
               <span className="min-w-0 flex-1 truncate text-xs font-bold text-text-secondary" title={r.label}>
                 {r.label}
               </span>
+              {/* نوار واگرا داخل dir="ltr" عایق است؛ چپ/راست فیزیکی عمداً برای ثبات جهت نمودار */}
               <div className="relative h-2 w-32 overflow-hidden rounded-full bg-bg-card" dir="ltr" aria-hidden>
                 <span
                   className={`absolute inset-y-0 rounded-full transition-all duration-700 ${
@@ -40,16 +41,16 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
                 />
                 <span className="absolute inset-y-0 left-1/2 w-px bg-border-c" />
               </div>
-              <span className="min-w-32 text-left">
+              <span className="min-w-32 text-end">
                 <span
-                  className={`num text-2xs font-black ${
+                  className={`text-2xs font-black ${
                     tone === 'green' ? 'text-accent-green' : tone === 'red' ? 'text-accent-red' : 'text-text-muted'
                   }`}
                 >
                   {deltaLabel(r.delta)}
                 </span>
-                <span className="num block text-2xs text-text-muted">
-                  هدف {toFaDigits(r.targetPct)}٪ · فعلی {toFaDigits(r.currentPct)}٪
+                <span className="block text-2xs text-text-muted">
+                  هدف <span className="num">{toFaDigits(r.targetPct)}٪</span> · فعلی <span className="num">{toFaDigits(r.currentPct)}٪</span>
                 </span>
               </span>
             </li>

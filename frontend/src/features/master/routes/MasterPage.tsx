@@ -111,12 +111,12 @@ export default function MasterPage() {
             return (
               <span
                 key={a}
-                className={`num rounded-full border px-3 py-1 text-2xs font-bold ${
+                className={`rounded-full border px-3 py-1 text-2xs font-bold ${
                   active ? 'border-neon-cyan/40 bg-neon-cyan/10 text-neon-cyan' : 'border-border-c bg-bg-card text-text-muted'
                 }`}
                 title={active ? `وزن خام ${toFaDigits(AGENT_WEIGHTS[a])} از ${toFaDigits(AGENT_WEIGHTS[a])}` : 'رأی فعال ندارد'}
               >
-                {AGENT_FA[a]}: {active ? `${toFaDigits(Math.round(w * 1000) / 10)}٪ موثر` : 'غیرفعال'}
+                {AGENT_FA[a]}: {active ? <><span className="num">{toFaDigits(Math.round(w * 1000) / 10)}٪</span> موثر</> : 'غیرفعال'}
               </span>
             );
           })}

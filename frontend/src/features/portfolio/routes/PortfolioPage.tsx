@@ -264,7 +264,7 @@ export default function PortfolioPage() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="bg-bg-card/70 text-right text-2xs uppercase tracking-wider text-text-secondary">
+                  <tr className="bg-bg-card/70 text-start text-2xs uppercase tracking-wider text-text-secondary">
                     <th className="px-3 py-2.5 font-bold">نماد</th>
                     <th className="px-3 py-2.5 font-bold">وضعیت</th>
                     <th className="px-3 py-2.5 font-bold">وزن در سبد</th>
@@ -311,7 +311,8 @@ export default function PortfolioPage() {
                             </Badge>
                           </td>
                           <td className="px-3 py-2.5 text-text-primary">
-                            <FlashNum value={h.weight_eff_pct ?? null} render={(v) => (v == null ? '-' : `${toFaDigits(v)} درصد`)} />
+                            <FlashNum value={h.weight_eff_pct ?? null} render={(v) => (v == null ? '-' : toFaDigits(v))} />
+                            {h.weight_eff_pct != null ? <span className="text-2xs text-text-muted"> درصد</span> : null}
                           </td>
                           <td className="px-3 py-2.5">
                             {pnl == null ? (
@@ -324,8 +325,8 @@ export default function PortfolioPage() {
                           </td>
                           <td className="px-3 py-2.5">
                             {stop != null ? (
-                              <span className="num text-xs text-text-secondary" title={stopCell.techBasis}>
-                                {toFaDigits(stop)} <span className="text-2xs text-text-muted">({stopCell.techBasis})</span>
+                              <span className="text-xs text-text-secondary" title={stopCell.techBasis}>
+                                <span className="num">{toFaDigits(stop)}</span> <span className="text-2xs text-text-muted">({stopCell.techBasis})</span>
                               </span>
                             ) : (
                               <span className="text-xs text-text-muted">بدون داده</span>
@@ -337,7 +338,7 @@ export default function PortfolioPage() {
                             ) : (
                               <Badge tone={fundHit ? 'red' : 'green'}>
                                 {fundHit ? 'فعال' : 'سالم'}
-                                {stopCell.fundStop.margin != null ? <span className="num"> · حاشیه {toFaDigits(stopCell.fundStop.margin)}٪</span> : null}
+                                {stopCell.fundStop.margin != null ? <span> · حاشیه <span className="num">{toFaDigits(stopCell.fundStop.margin)}٪</span></span> : null}
                               </Badge>
                             )}
                           </td>
@@ -346,16 +347,16 @@ export default function PortfolioPage() {
                               <span className="text-xs text-text-muted">-</span>
                             ) : (
                               <span
-                                className={`num text-xs font-bold ${
+                                className={`text-xs font-bold ${
                                   distTone === 'red' ? 'text-accent-red' : distTone === 'yellow' ? 'text-accent-yellow' : 'text-accent-green'
                                 }`}
                               >
-                                {dist < 0 ? 'شکسته' : `${toFaDigits(Math.round(dist * 10) / 10)}٪`}
+                                {dist < 0 ? 'شکسته' : <span className="num">{toFaDigits(Math.round(dist * 10) / 10)}٪</span>}
                               </span>
                             )}
                           </td>
                           <td className="px-3 py-2.5">
-                            <span className="num text-2xs text-text-secondary" title={dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}>
+                            <span className="text-2xs text-text-secondary" title={dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}>
                               {dcaLabel(stopCell.fib1, stopCell.fib2, stopCell.jetActive)}
                             </span>
                           </td>

@@ -162,7 +162,7 @@ export function SymbolBasketAction({
           <div className="flex flex-col gap-3">
             <p className="text-xs text-text-secondary">
               وضعیت فعلی: {isError ? 'بدون داده (خطای اتصال)' : currentLabel}
-              {decision?.updated_at ? ` · آخرین ثبت: ${decision.updated_at}` : ''}
+              {decision?.updated_at ? <> · آخرین ثبت: <span className="num">{decision.updated_at}</span></> : ''}
             </p>
             {isError ? (
               <p className="rounded-lg border border-accent-red/30 bg-accent-red/10 px-2 py-1 text-2xs leading-5 text-accent-red">
@@ -202,7 +202,7 @@ export function SymbolBasketAction({
                   aria-label="وزن درصدی نماد"
                   placeholder="اختیاری"
                   dir="ltr"
-                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 />
               </label>
               <label className="flex flex-col gap-1 text-2xs font-bold text-text-secondary">
@@ -216,7 +216,7 @@ export function SymbolBasketAction({
                   aria-label="حد ضرر نماد"
                   placeholder="اختیاری"
                   dir="ltr"
-                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 />
               </label>
             </div>

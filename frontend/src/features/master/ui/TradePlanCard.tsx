@@ -49,19 +49,17 @@ function LevelRow({
         <div className="text-xs font-bold text-text-primary">{label}</div>
         <div className="text-2xs leading-4 text-text-muted">{hint}</div>
       </div>
-      <div className={`num text-left ${has ? toneCls : 'text-text-muted'}`} dir="ltr">
+      {/* واحد «ریال» بیرون از ایزولهٔ LTR اعداد می‌ماند تا ترتیب متن مخلوط RTL سالم بماند */}
+      <div className={`text-start ${has ? toneCls : 'text-text-muted'}`}>
         {has ? (
-          hi != null && lo != null && hi !== lo ? (
-            <span>
-              {rial(lo)} — {rial(hi)} <span className="text-2xs">ریال</span>
-            </span>
-          ) : (
-            <span>
-              {rial(lo ?? hi)} <span className="text-2xs">ریال</span>
-            </span>
-          )
+          <>
+            <span className="num">
+              {hi != null && lo != null && hi !== lo ? `${rial(lo)} — ${rial(hi)}` : rial(lo ?? hi)}
+            </span>{' '}
+            <span className="text-2xs">ریال</span>
+          </>
         ) : (
-          <span className="text-xs" dir="rtl">بدون داده</span>
+          <span className="text-xs">بدون داده</span>
         )}
       </div>
     </div>
@@ -71,7 +69,7 @@ function LevelRow({
 export function TradePlanCard({ symbol, action, plan }: { symbol: string; action: keyof typeof ACTION_FA; plan: TradePlan }) {
   return (
     <div className="glass-panel panel-in relative overflow-hidden p-4">
-      <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-neon-cyan/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -start-12 -top-12 h-32 w-32 rounded-full bg-neon-cyan/10 blur-3xl" aria-hidden />
       <div className="relative mb-3 flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-black text-text-primary">برنامه معاملاتی {symbol}</h3>
         <Badge tone={ACTION_TONE[action]}>{ACTION_FA[action]}</Badge>
