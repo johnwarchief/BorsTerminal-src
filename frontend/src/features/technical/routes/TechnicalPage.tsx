@@ -18,6 +18,7 @@ import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
+import { PatternToggles } from '../components/PatternToggles';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
@@ -220,6 +221,8 @@ export default function TechnicalPage() {
               },
               { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
               { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
+              { id: 'patterns', label: '??????? FTS', node: <PatternToggles /> },
+
               { id: 'compare', label: 'مقایسهٔ نمادها', node: <ComparePanel activeSymbol={symbol} /> },
               {
                 id: 'verdict',
