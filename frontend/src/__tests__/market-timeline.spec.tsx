@@ -190,7 +190,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
       sq_n: [400, 380, 360, 340, 330, 320, 313],
     });
     renderDrawer();
-    fireEvent.click(screen.getByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('bullish-cross')).toBeInTheDocument());
     expect(screen.getByTestId('micro-orderbook').textContent).toContain('▲ برتری تقاضا');
     expect(screen.getByTestId('micro-orderbook').querySelectorAll('polyline')).toHaveLength(2);
@@ -200,7 +200,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
   it('سری تک‌نقطه‌ای Circuit Breaker می‌خورد: بدون داده', async () => {
     mockTimeline({ t: ['12:58'], bq_bt: [64935], sq_bt: [16198], pos: [1147], neg: [807] });
     renderDrawer();
-    fireEvent.click(screen.getByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('micro-orderbook')).toBeInTheDocument());
     expect(screen.getByTestId('micro-orderbook').textContent).toContain('بدون داده');
     expect(screen.getByTestId('micro-breadth').textContent).toContain('بدون داده');
@@ -210,9 +210,18 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
   it('معکوس breadth در حالت ماک نمایش داده می‌شود', async () => {
     mockTimeline({ t: ['09:00', '10:00'], pos: [10, 40], neg: [20, 20], bq_bt: [5, 6], sq_bt: [9, 9] });
     renderDrawer();
-    fireEvent.click(screen.getByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('breadth-flip')).toBeInTheDocument());
     expect(screen.getByTestId('breadth-flip').textContent).toContain('معکوس به مثبت');
     expect(screen.queryByTestId('bullish-cross')).not.toBeInTheDocument();
+  });
+
+  it('تا لود قطعی تیک‌های زنده، دراور و دو کادر میان‌خالی رندر نمی‌شوند', () => {
+    // پاسخ هرگز نمی‌رسد ⇒ react-query در حالت loading می‌ماند
+    fetchMock.mockImplementation(() => new Promise<Response>(() => {}));
+    renderDrawer();
+    expect(screen.queryByTestId('micro-orderbook')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('micro-breadth')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /نبض درون‌روز/ })).not.toBeInTheDocument();
   });
 });

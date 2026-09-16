@@ -16,7 +16,16 @@ export const WATCH_TABS: WatchTab[] = [
   { id: 'industries', label: 'صنایع داغ', sections: null },
 ];
 
-export function WatchDrawer({ rows, onSelect }: { rows: MarketRow[]; onSelect: (s: string) => void }) {
+export function WatchDrawer({
+  rows,
+  onSelect,
+  onPickSector,
+}: {
+  rows: MarketRow[];
+  onSelect: (s: string) => void;
+  /** کلیک روی صنعت در پنل «صنایع داغ» ⇒ فیلتر جدول تابلو */
+  onPickSector?: (industry: string) => void;
+}) {
   const [tab, setTab] = useState<WatchTabId>('clock');
   const [open, setOpen] = useState(false);
 
@@ -64,7 +73,7 @@ export function WatchDrawer({ rows, onSelect }: { rows: MarketRow[]; onSelect: (
       </div>
       {open ? (
         <div role="tabpanel" data-testid="watch-body" className="min-w-0">
-          {active.sections ? <SuspiciousPanel rows={rows} onSelect={onSelect} sections={active.sections} /> : <IndustryScreener />}
+          {active.sections ? <SuspiciousPanel rows={rows} onSelect={onSelect} sections={active.sections} /> : <IndustryScreener onPick={onPickSector} />}
         </div>
       ) : null}
     </div>

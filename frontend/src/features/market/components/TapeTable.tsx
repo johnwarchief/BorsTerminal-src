@@ -8,22 +8,37 @@ import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
   BOX_EXIT_HINT,
+  GOLDEN_HOUR_HINT,
+  GOLDEN_HOUR_LABEL,
   STRONG_CLOCK_HINT,
   STRONG_HOUR_LABEL,
   SWEEP_HINT,
-  SWEEP_VOL_RATIO_MIN,
   detectBoxExit,
+  detectGoldenHour,
   detectStrongHour,
   detectSweep,
   lastCloseDiff,
 } from '../lib/tapePatterns';
+import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
+import { resolveFtsStatus, type ScreenerRow } from '../api/useFtsScreener';
 import { LIMIT_PCT } from '../stores/tapeStore';
 import { RowBasketAction } from './RowBasketAction';
+import { FtsStatusBadge } from './FtsStatusBadge';
 
-type SortKey = 'symbol' | 'percent_change' | 'tvol' | 'vol_ratio' | 'buyer_power' | 'last_vs_close' | 'p_last';
+type SortKey =
+  | 'symbol'
+  | 'percent_change'
+  | 'tvol'
+  | 'vol_ratio'
+  | 'buy_pc'
+  | 'sell_pc'
+  | 'buyer_power'
+  | 'last_vs_close'
+  | 'p_last';
 
-/** ۹ ستون: شماره + ۷ ستون داده + ستون اکشن سبد */
-const ROW_GRID = 'grid-cols-[2rem_1.4fr_1fr_1fr_1.1fr_0.9fr_0.9fr_1.8fr_4rem]';
+/** ۱۲ ستون: شماره + ۹ ستون سنجه + وضعیت FTS + اکشن سبد */
+const ROW_GRID =
+  'grid-cols-[2rem_1.5fr_0.85fr_0.8fr_1fr_0.9fr_0.95fr_0.95fr_0.85fr_1.9fr_0.9fr_3.5rem]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'symbol', label: 'نماد' },
@@ -31,26 +46,34 @@ const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'percent_change', label: 'تغییر' },
   { key: 'tvol', label: 'حجم' },
   { key: 'vol_ratio', label: 'نسبت حجم' },
+  { key: 'buy_pc', label: 'سرانه خرید' },
+  { key: 'sell_pc', label: 'سرانه فروش' },
   { key: 'buyer_power', label: 'قدرت خریدار' },
   { key: 'last_vs_close', label: 'اختلاف آخرین/پایانی (Δ)' },
 ];
+
+const NEG = Number.NEGATIVE_INFINITY;
 
 function sortVal(r: MarketRow, key: SortKey): number | string {
   switch (key) {
     case 'symbol':
       return r.symbol ?? '';
     case 'p_last':
-      return r.p_last ?? Number.NEGATIVE_INFINITY;
+      return r.p_last ?? NEG;
     case 'percent_change':
-      return r.percent_change ?? Number.NEGATIVE_INFINITY;
+      return r.percent_change ?? NEG;
     case 'tvol':
-      return r.tvol ?? Number.NEGATIVE_INFINITY;
+      return r.tvol ?? NEG;
     case 'vol_ratio':
-      return r.vol_ratio ?? Number.NEGATIVE_INFINITY;
+      return r.vol_ratio ?? NEG;
+    case 'buy_pc':
+      return buyPerCapitaMt(r) ?? NEG;
+    case 'sell_pc':
+      return sellPerCapitaMt(r) ?? NEG;
     case 'buyer_power':
-      return r.buyer_power ?? Number.NEGATIVE_INFINITY;
+      return r.buyer_power ?? NEG;
     case 'last_vs_close':
-      return lastCloseDiff(r) ?? Number.NEGATIVE_INFINITY;
+      return lastCloseDiff(r) ?? NEG;
   }
 }
 
@@ -100,6 +123,7 @@ export function rowTooltip(r: MarketRow): string {
   if (diff != null) bits.push(`اختلاف آخرین و پایانی ${fmtPct(diff * 100)}`);
   const active: string[] = [];
   if (detectStrongHour(r)) active.push(`ساعت قوی (${STRONG_CLOCK_HINT})`);
+  else if (detectGoldenHour(r)) active.push('ساعت طلایی');
   else if (r.f_clock) active.push('الگوی ساعت');
   if (detectSweep(r)) active.push('کف‌روبی');
   if (detectBoxExit(r)) active.push('خروج از باکس');
@@ -113,37 +137,45 @@ const TapeRow = memo(function TapeRow({
   selected,
   onSelect,
   renderBasketAction,
+  ftsMap,
 }: {
   row: MarketRow;
   index: number;
   selected: boolean;
   onSelect: (s: string) => void;
   renderBasketAction?: (symbol: string) => ReactNode;
+  ftsMap: Map<string, ScreenerRow>;
 }) {
   const diff = lastCloseDiff(row);
   const strongHour = detectStrongHour(row);
+  const goldenHour = !strongHour && detectGoldenHour(row);
   const sweep = detectSweep(row);
   const boxExit = detectBoxExit(row);
   const pct = row.percent_change;
   const atLimitUp = pct != null && pct >= LIMIT_PCT;
   const atLimitDown = pct != null && pct <= -LIMIT_PCT;
   const tooltip = rowTooltip(row);
-  const volHot = row.vol_ratio != null && row.vol_ratio >= SWEEP_VOL_RATIO_MIN;
+  const volHot = row.vol_ratio != null && row.vol_ratio > FTS_VOL_RATIO_HOT;
   const volMult = row.vol_ratio != null ? `${toFaDigits(row.vol_ratio.toFixed(1))}× میانگین ماه` : '—';
+  const buyPc = buyPerCapitaMt(row);
+  const sellPc = sellPerCapitaMt(row);
+  const fts = resolveFtsStatus(row, ftsMap);
   const badges: React.ReactNode[] = [];
-  if (strongHour || row.f_clock)
+  if (strongHour || goldenHour || row.f_clock)
     badges.push(
       <MicroBadge
         key="clock"
-        pattern={strongHour ? 'strong-hour' : 'clock'}
-        tone="violet"
+        pattern={strongHour ? 'strong-hour' : goldenHour ? 'golden-hour' : 'clock'}
+        tone={goldenHour ? 'amber' : 'violet'}
         title={
           strongHour
             ? `${STRONG_HOUR_LABEL} — ${STRONG_CLOCK_HINT}${diff != null ? ` · دلتا: ${fmtPct(diff * 100)}` : ''}`
-            : `الگوی ساعت: پایانی بالاتر از آخرین${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
+            : goldenHour
+              ? `${GOLDEN_HOUR_LABEL} — ${GOLDEN_HOUR_HINT}`
+              : `الگوی ساعت: پایانی بالاتر از آخرین${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
         }
       >
-        ساعت
+        {strongHour ? 'ساعت' : goldenHour ? 'ساعت طلایی' : 'ساعت'}
       </MicroBadge>,
     );
   if (row.f_susp) badges.push(<MicroBadge key="susp" pattern="susp" tone="amber" title={`حجم مشکوک: ${volMult}`} >مشکوک</MicroBadge>);
@@ -185,8 +217,17 @@ const TapeRow = memo(function TapeRow({
       <span className="num text-text-primary">
         <FlashNum value={row.tvol} render={fmtInt} />
       </span>
-      <span className={`num ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}>
-        <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v >= SWEEP_VOL_RATIO_MIN ? '×' : ''))} />
+      <span
+        className={`num ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
+        title={volHot ? `حجم مشکوک FTS: بیش از ${toFaDigits(FTS_VOL_RATIO_HOT)} برابر میانگین ماهانه` : undefined}
+      >
+        <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v > FTS_VOL_RATIO_HOT ? '×' : ''))} />
+      </span>
+      <span className="num text-text-secondary" title="سرانه خرید حقیقی (میلیون تومان)">
+        <FlashNum value={buyPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
+      </span>
+      <span className="num text-text-secondary" title="سرانه فروش حقیقی (میلیون تومان)">
+        <FlashNum value={sellPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
       </span>
       <span className={`num ${row.buyer_power != null && row.buyer_power >= 1.5 ? 'text-accent-green' : 'text-text-secondary'}`}>
         <FlashNum value={row.buyer_power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
@@ -196,6 +237,9 @@ const TapeRow = memo(function TapeRow({
           <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
         </span>
         <span className="flex min-w-0 items-center gap-1 overflow-hidden">{badges}</span>
+      </span>
+      <span className="flex items-center justify-center">
+        {row.symbol ? <FtsStatusBadge symbol={row.symbol} view={fts} /> : null}
       </span>
       <span className="flex items-center justify-center">
         {row.symbol
@@ -213,6 +257,7 @@ export function TapeTable({
   selected,
   onSelect,
   renderBasketAction,
+  ftsMap,
 }: {
   rows: MarketRow[];
   selected: string;
@@ -222,10 +267,14 @@ export function TapeTable({
    * واقعی را بدهد. اگر ندهد، دکمهٔ سبک داخلی که قصد سبد را منتشر می‌کند استفاده می‌شود.
    */
   renderBasketAction?: (symbol: string) => ReactNode;
+  /** نقشهٔ وضعیت FTS از /api/screener؛ اگر نباشد همهٔ ردیف‌ها N/A می‌شوند */
+  ftsMap?: Map<string, ScreenerRow>;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
   const parentRef = useRef<HTMLDivElement>(null);
+  const emptyFts = useMemo(() => new Map<string, ScreenerRow>(), []);
+  const fts = ftsMap ?? emptyFts;
 
   const sorted = useMemo(() => {
     const arr = [...rows];
@@ -270,6 +319,7 @@ export function TapeTable({
             {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
           </button>
         ))}
+        <span className="text-center">وضعیت FTS</span>
         <span className="text-center">سبد</span>
       </div>
       <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto" data-testid="tape-scroll">
@@ -288,6 +338,7 @@ export function TapeTable({
                   selected={row.symbol === selected}
                   onSelect={onSelect}
                   renderBasketAction={renderBasketAction}
+                  ftsMap={fts}
                 />
               </div>
             );
