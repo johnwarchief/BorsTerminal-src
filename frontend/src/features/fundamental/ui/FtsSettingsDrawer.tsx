@@ -1,7 +1,7 @@
 // features/fundamental/ui/FtsSettingsDrawer.tsx -- پنل تنظیمات پیش‌شرط‌های FTS
 // اتصال مستقیم به fts_thresholds.json از طریق GET/POST /api/fts/config.
 // پنل Overlay ثابت سمت راست است: با createPortal به document.body و
-// `fixed inset-y-0 right-0 w-[420px]` — مستقل از اسکرول کانتینر داخلی
+// `fixed inset-y-0 start-0 w-[420px]` — مستقل از اسکرول کانتینر داخلی
 // AppShell، همیشه داخل viewport و بدون اشغال هیچ ابعادی از layout
 // صفحه؛ backdrop نیمه‌شف z-[9998] و پنل z-[9999]. بستن: ✕ / backdrop / Esc.
 // اسلایدر رشد درآمد، کف حاشیه، اسلایدر شاخص ۴ (کف فروش سالانه‌شده به
@@ -81,7 +81,7 @@ function Slider({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <label className="min-w-0 break-words text-right text-xs font-bold leading-snug text-text-secondary">{label}</label>
+        <label className="min-w-0 break-words text-start text-xs font-bold leading-snug text-text-secondary">{label}</label>
         <span className="num shrink-0 rounded-md border border-border-c bg-bg-primary px-1.5 py-0.5 text-xs font-black text-accent-blue">
           {formatValue ? formatValue(value) : `${toFaDigits(value)}٪`}
         </span>
@@ -120,7 +120,7 @@ function ToggleRow({
       type="button"
       onClick={() => onChange(!checked)}
       aria-pressed={checked}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--hairline)] bg-bg-card/40 px-3.5 py-2.5 text-right transition-colors hover:border-border-accent"
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--hairline)] bg-bg-card/40 px-3.5 py-2.5 text-start transition-colors hover:border-border-accent"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -154,7 +154,7 @@ function ToggleRow({
 }
 
 /** دکمهٔ ⚙ + پنل Overlay ثابت سمت راست — پنل با createPortal به
- *  document.body رندر می‌شود و `fixed inset-y-0 right-0` است: مستقل از
+ *  document.body رندر می‌شود و `fixed inset-y-0 start-0` است: مستقل از
  *  هر اسکرول/جریان صفحه، همیشه داخل viewport. Esc و کلیک بیرون می‌بندند. */
 export function FtsSettingsTrigger({
   open,
@@ -335,7 +335,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         aria-hidden={!open}
         role="dialog"
         data-testid="fts-settings-panel"
-        className={`fixed inset-y-0 right-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-l border-[var(--hairline)] bg-[var(--glass-tint)] shadow-[var(--glass-shadow)] backdrop-blur-md backdrop-saturate-125 transition-all duration-200 ease-out ${
+        className={`fixed inset-y-0 start-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-e border-[var(--hairline)] bg-[var(--glass-tint)] shadow-[var(--glass-shadow)] backdrop-blur-md backdrop-saturate-125 transition-all duration-200 ease-out ${
           open ? 'visible translate-x-0 opacity-100' : 'invisible translate-x-full opacity-0'
         }`}
         {...{ inert: !open ? ('' as unknown as boolean) : undefined }}
@@ -425,7 +425,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
                   role="radio"
                   aria-checked={pricingGate === m}
                   onClick={() => setPricingGate(m)}
-                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-right text-2xs font-bold transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-start text-2xs font-bold transition-colors ${
                     pricingGate === m
                       ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue'
                       : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary hover:border-border-accent'

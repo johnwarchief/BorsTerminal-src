@@ -55,7 +55,7 @@ export function DataGapBanner({
       {gapItems.length > 0 ? (
         <div className="rounded-2xl border border-accent-yellow/40 bg-accent-yellow/10 p-4" data-testid="data-gap-banner">
           <h3 className="mb-2 text-sm font-black text-accent-yellow">
-            دادهٔ کدال برای {toFaDigits(gapItems.length)} شاخص کامل نیست
+            دادهٔ کدال برای <span className="num">{toFaDigits(gapItems.length)}</span> شاخص کامل نیست
           </h3>
           <ul className="flex flex-col gap-2">
             {gapItems.map((g, i) => (

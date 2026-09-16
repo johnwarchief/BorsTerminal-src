@@ -36,14 +36,14 @@ export function SectorPePanel({
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-card">
             <div className="h-full rounded-full bg-accent-blue" style={{ width: `${width}%` }} />
           </div>
-          <span className="w-14 text-left font-bold text-text-primary">{toFaDigits(pe.toFixed(2))}</span>
+          <span className="num w-14 text-end font-bold text-text-primary">{toFaDigits(pe.toFixed(2))}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-16 text-text-secondary">میانه صنعت</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-card">
             <div className="h-full rounded-full bg-accent-green" style={{ width: `${widthMed}%` }} />
           </div>
-          <span className="w-14 text-left font-bold text-text-primary">{toFaDigits(median.toFixed(2))}</span>
+          <span className="num w-14 text-end font-bold text-text-primary">{toFaDigits(median.toFixed(2))}</span>
         </div>
       </div>
     </div>

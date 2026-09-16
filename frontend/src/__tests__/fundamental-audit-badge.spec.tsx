@@ -124,6 +124,9 @@ describe('AuditBadge — بازشوی «چرا این وضعیت؟»', () => {
     fireEvent.click(b);
     expect(screen.getByTestId('audit-popover')).toBeInTheDocument();
     expect(b.getAttribute('aria-expanded')).toBe('true');
+    // راه‌انداز span است نه <button> تا داخل سلول‌های <button> کارت، button تودرتو نسازد
+    expect(b.tagName).toBe('SPAN');
+    expect(b.getAttribute('role')).toBe('button');
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByTestId('audit-popover')).toBeNull();
     fireEvent.click(b);

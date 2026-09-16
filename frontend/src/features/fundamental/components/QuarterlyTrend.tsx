@@ -75,7 +75,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-sm bg-accent-green" /> سود خالص
           </span>
-          {yoy != null ? <span>تغییر فصل: {fmtInt(yoy * MRL_TO_BT)} میلیارد تومان</span> : null}
+          {yoy != null ? <span>تغییر فصل: <span className="num">{fmtInt(yoy * MRL_TO_BT)}</span> میلیارد تومان</span> : null}
         </span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="نمودار روند فصلی" data-testid="quarterly-trend-chart">
@@ -125,7 +125,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
           );
         })}
       </svg>
-      <div className="mt-1 text-2xs text-text-muted">{toFaDigits(quarters.length)} فصل آخر (ارقام میلیارد تومان)</div>
+      <div className="mt-1 text-2xs text-text-muted"><span className="num">{toFaDigits(quarters.length)}</span> فصل آخر (ارقام میلیارد تومان)</div>
     </div>
   );
 }

@@ -183,6 +183,7 @@ export function FtsScreenTable({
             >
               <span
                 aria-hidden
+                dir="ltr"
                 className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
                   showExcluded ? 'bg-accent-red/70' : 'bg-bg-card'
                 }`}
@@ -202,7 +203,7 @@ export function FtsScreenTable({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-right text-xs">
+        <table className="w-full min-w-[720px] text-start text-xs">
           <thead>
             <tr className="bg-bg-card/70 text-2xs text-text-secondary">
               {COLS.map((c, i) =>
@@ -364,7 +365,7 @@ export function FtsScreenTable({
                       )}
                     </div>
                     {r.excluded ? (
-                      <span className="mr-1 text-2xs text-accent-red" title={r.exclusion_reasons ?? ''}>
+                      <span className="ms-1 text-2xs text-accent-red" title={r.exclusion_reasons ?? ''}>
                         {r.exclusion_reasons}
                       </span>
                     ) : null}
@@ -379,7 +380,7 @@ export function FtsScreenTable({
                             : 'border-accent-red/40 bg-accent-red/15 text-accent-red'
                       }`}
                     >
-                      {toFaDigits(r.score)}
+                      <span className="num">{toFaDigits(r.score)}</span>
                     </span>
                   </td>
                 </tr>
@@ -390,7 +391,7 @@ export function FtsScreenTable({
       </div>
       <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-2xs text-text-muted">
         ✓ قبول · ✗ مردود · سلول بی‌داده به‌جای برچسب عمومی، علت را می‌نویسد (مثلاً «{gapLabel('1a_monetary_growth')}»
-        ⇒ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
+        ⇐ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
         · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است
         {excludedCount > 0 && !showExcluded
           ? ` · ${toFaDigits(excludedCount)} ردیفِ مشمول دروازه‌های سخت پنهان شد`
