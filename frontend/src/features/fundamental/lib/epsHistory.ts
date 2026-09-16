@@ -80,7 +80,13 @@ export function epsSeriesText(
 ): string | null {
   if (!Array.isArray(series) || series.length === 0) return null;
   return series
-    .map((v) => (typeof v === 'number' && Number.isFinite(v) ? toFaDigits(v.toFixed(0)) : '—'))
+    /* F-10: toFixed(0) مقدار اعشاری کدال را گِرد می‌کرد (۴۵۴.۶۷ → ۴۵۵) و با کارت نماد نمی‌خواند؛
+       حالا عدد صحیح بی‌اعشار و اعشاری با حداکثر ۲ رقم (بدون صفرِ اضافی) نمایش داده می‌شود. */
+    .map((v) =>
+      typeof v === 'number' && Number.isFinite(v)
+        ? toFaDigits(Number.isInteger(v) ? String(v) : v.toFixed(2).replace(/\.?0+$/, ''))
+        : '—',
+    )
     .join(' ← ');
 }
 

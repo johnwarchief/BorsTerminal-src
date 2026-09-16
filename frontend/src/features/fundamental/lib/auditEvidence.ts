@@ -10,6 +10,9 @@ import type { GapAxis } from './gapReason';
 import { epsFailReason, epsRealYears } from './epsHistory';
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+/** F-10: مقدار غایب ولی حکمِ موتور موجود — علت باید همین را بگوید (نه «گزارش کدال نیست» بی‌قید) */
+const MISSING = 'مقدار این شاخص در پاسخ غربالگری نیامده، ولی حکمِ موتور FTS برای همان شاخص اعمال شده است (برای عدد دقیق به کارت نماد نگاه کنید).';
+
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() !== '' ? v : null);
 
 /** شاهد ممیزی هر محور از کارت نماد (indicators + metrics) */
@@ -106,7 +109,7 @@ export function screenAuditEvidence(
         targetThreshold: num(cfg.growth_min),
         unit: '٪',
         direction: 'higher',
-        reason: num(row.rev_growth) == null ? 'گزارش فروش دورهٔ مشابه سال قبل در کدال موجود نیست.' : null,
+        reason: num(row.rev_growth) == null ? MISSING : null,
         ruleRef: 'رشد فروش تجمعی ÷ همان دورهٔ سال قبل',
       };
     case '2_eps_trend': {
@@ -126,7 +129,7 @@ export function screenAuditEvidence(
         targetThreshold: num(cfg.margin_min),
         unit: '٪',
         direction: 'higher',
-        reason: num(row.gross_margin) == null ? 'سود ناخالصِ ثبت‌شده برای این نماد موجود نیست.' : null,
+        reason: num(row.gross_margin) == null ? MISSING : null,
         ruleRef: 'حاشیهٔ ناخالص = سود ناخالص ÷ درآمد عملیاتی',
       };
     case '4_sales_to_mcap':
@@ -135,14 +138,14 @@ export function screenAuditEvidence(
         targetThreshold: num(cfg.v10_sales_to_mcap_min),
         unit: '×',
         direction: 'higher',
-        reason: num(row.sales_to_mcap) == null ? 'گزارش‌های ماهانهٔ کدال برای سالانه‌سازی فروش کافی نیست.' : null,
+        reason: num(row.sales_to_mcap) == null ? MISSING : null,
         ruleRef: 'فروش سالانه‌شده ÷ ارزش بازار',
       };
     default:
       return {
         actualValue: str(row.pricing_mode),
         targetThreshold: 'غیردستوری (آزاد / بورس کالا)',
-        reason: row.pricing_mode == null ? 'رژیم قیمت‌گذاری این صنعت در کدال مشخص نیست.' : null,
+        reason: row.pricing_mode == null ? MISSING : null,
         ruleRef: 'رژیم قیمت‌گذاری صنعت',
       };
   }
