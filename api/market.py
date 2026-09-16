@@ -194,7 +194,7 @@ def get_market(request: Request):
         # ---------- حجم مشکوک: tvol >= 2.5 * month_avg_vol (DivByZero/Null-safe) ----------
         mav = df["month_avg_vol"].where(df["month_avg_vol"] > 0)   # <=0/NaN → NaN
         df["vol_ratio"] = (df["tvol"] / mav).round(1)              # NaN where no history
-        df["suspicious_vol"] = (df["vol_ratio"] >= 2.5)            # NaN → False
+        df["suspicious_vol"] = (df["vol_ratio"] >= 3.0)            # NaN → False
 
         # ---------- روند حجم: tvol vs آخرین روز معاملاتی (day-over-day, Null-safe) ----------
         pdv = df["prev_day_vol"].where(df["prev_day_vol"] > 0)     # <=0/NaN → NaN
