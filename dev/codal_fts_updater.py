@@ -486,6 +486,7 @@ def adb_rotate(long_cycle=False, deadline=ROTATE_DEADLINE):
         STATS["rotate_fail"] += 1
         return False
     serial = serials[0]
+    down_seen = False          # هیچ IP ای خوانده نشد ⇒ مسیرِ اینترنتِ PC از گوشی نیست
 
     old_ip = _public_ip()
     print("    [adb] device=%s  old IP=%s" % (serial, old_ip or "نامعلوم"))
@@ -504,6 +505,8 @@ def adb_rotate(long_cycle=False, deadline=ROTATE_DEADLINE):
                 _run_steps(adb, serial, revert)   # بیمهٔ بازگردش
                 continue
             st, ip, el = _poll_for_new_ip(old_ip, deadline, name)
+            if st == "down":
+                down_seen = True
             _run_steps(adb, serial, revert)       # همیشه حالت پرواز خاموش شود
             if st in ("changed", "unverified"):
                 STATS["rotate"] += 1
@@ -517,8 +520,13 @@ def adb_rotate(long_cycle=False, deadline=ROTATE_DEADLINE):
                 return True
             print("    [adb] «%s» نتیجه نداد (%s, %.0fs) → متد بعدی" % (name, st, el))
         STATS["rotate_fail"] += 1
-        print("    [adb] هیچ‌کدام از %d متد IP را عوض نکرد — اپراتور IP را پین "
-              "کرده؛ «--adb-long» را امتحان کنید" % len(ROTATE_METHODS))
+        if down_seen:
+            print("    [adb] با خاموش‌کردن Wi-Fi هیچ اینترنتی نیامد ⇒ مسیرِ اینترنتِ PC "
+                  "از گوشی نیست. روی گوشی «USB tethering» را روشن کن (Mobile hotspot & "
+                  "tethering → USB tethering) و دیتای موبایل فعال باشد، بعد دوباره اجرا کن.")
+        else:
+            print("    [adb] هر %d متد امتحان شد ولی IP عوض نشد — احتمالاً اپراتور IP را "
+                  "پین کرده؛ «--adb-long» را امتحان کنید." % len(ROTATE_METHODS))
         return False
     finally:
         if wifi_off:
