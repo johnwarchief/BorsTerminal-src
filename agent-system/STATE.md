@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `654b746` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۶۲۷ سبز (۵۹ فایل) · eslint صفر · build سالم
+- **master HEAD:** `5314e1f` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۶۳۴ سبز (۶۰ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -218,3 +218,8 @@
 ## به‌روزرسانی ۳۲ (ایجنتهد main, 2026-09-15 ~07:35)
 - (هد کامیت‌های FTS متعددی لند کرد: `64da1c7` هم‌ترازی screener با نردبان جزئیات (gap 730→181، series 367→692)، `aed28ab` اسکریپت تأیید لایو، `21b1939` rule_ref روی F-01/F-01b/F-02/F-03.)
 - **agent/technical (T-21)** مرج شد: `84255c2` + merge commit `654b746`. RTL/بریدگی داخل چارت vendored با CSS اسکوپ‌شده (`direction:rtl` روی کانتینر، **canvas عمداً LTR**، `min-width:0`+`nowrap`، z-index منوها 60) + مارکرهای ظریف‌تر (شعاع مثلث 5-9→4-7، برچسب size 10/bold→9/normal). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0/3، build سالم. (ران کند بود: 42.8s/env 531s ولی بدون فلِیک.)
+
+
+## به‌روزرسانی ۳۳ (ایجنتهد main, 2026-09-15 ~08:00)
+- (هد خودش `agent/master-portfolio` (`6b93f1e`) و `agent/tape` (`9d4a763`) را مرج کرد ⇒ شمارش تست به 634/60 رسید.)
+- **agent/fundamental (UI-2)** مرج شد: `d726f18` + merge commit `5314e1f`. RTL: فیزیکی→منطقی (`text-start/end`، `ms-`، دراور `start-0`/`border-e`)، ایزولاسیون LTR (`num`) روی اعداد/درصد/تاریخ، آینه‌سازی فلش‌های جهت‌دار (→⇒ به ←⇐)، و رفع هش «button داخل button» (`AuditBadge` trigger → `span` role=button). اعتبارسنجی: vitest 634/634 (60 فایل)، eslint 0/3، build سالم.
