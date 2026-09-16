@@ -1318,6 +1318,14 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
             sec["verdict"] = "mandatory"
             sec["reason"] = ("دارویی با حاشیهٔ ناخالص کمتر از %.0f٪ مجاز نیست (سند v2.1)." % _pm)
 
+    # ممیزی (سند v2.1): ارجاع قاعده روی هر شاخص بنیادی
+    try:
+        growth["rule_ref"] = "F-01"
+        volume["rule_ref"] = "F-01b"
+        eps["rule_ref"] = "F-02"
+        gm["rule_ref"] = "F-03"
+    except Exception:
+        pass
     axis1 = bool(growth.get("pass") and volume.get("pass"))
     axis2 = bool(eps.get("pass"))
     axis3 = bool(gm.get("pass"))

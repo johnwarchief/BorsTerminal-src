@@ -79,7 +79,7 @@ export function AuditReasonCard({
       role="dialog"
       aria-label={title}
       data-testid="audit-popover"
-      className="glass-panel panel-in w-[19rem] max-w-[92vw] p-3 text-right"
+      className="glass-panel panel-in w-[19rem] max-w-[92vw] p-3 text-start"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <h4 className="text-xs font-black text-text-primary">{title}</h4>
@@ -94,17 +94,17 @@ export function AuditReasonCard({
         <table className="w-full text-2xs" data-testid="audit-compare">
           <thead>
             <tr className="text-text-muted">
-              <th className="py-1 text-right font-bold">مقدار سهم</th>
-              <th className="py-1 text-right font-bold">تارگت FTS</th>
-              <th className="py-1 text-right font-bold">انحراف</th>
+              <th className="py-1 text-start font-bold">مقدار سهم</th>
+              <th className="py-1 text-start font-bold">تارگت FTS</th>
+              <th className="py-1 text-start font-bold">انحراف</th>
             </tr>
           </thead>
           <tbody>
             <tr className="num text-text-primary">
-              <td className="py-1" data-testid="audit-actual">
+              <td className="num py-1" data-testid="audit-actual">
                 {actual ?? '—'}
               </td>
-              <td className="py-1" data-testid="audit-target">
+              <td className="num py-1" data-testid="audit-target">
                 {target ?? '—'}
               </td>
               <td
@@ -241,8 +241,11 @@ export function AuditBadge({
         if (!pinned) close();
       }}
     >
-      <button
-        type="button"
+      {/* راه‌انداز با span نقش‌دار (نه <button>) — این بج داخل سلول‌های کلیک‌پذیر کارت
+          (که خودشان <button> هستند) رندر می‌شود و button تودرتو HTML نامعتبر است. */}
+      <span
+        role="button"
+        tabIndex={0}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-describedby={open ? popId : undefined}
@@ -257,7 +260,19 @@ export function AuditBadge({
             setPinned(true);
           }
         }}
-        className={`inline-flex items-center gap-1 rounded-full border text-2xs font-bold transition-colors ${
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (open && pinned) close();
+            else {
+              place();
+              setOpen(true);
+              setPinned(true);
+            }
+          }
+        }}
+        className={`inline-flex cursor-pointer items-center gap-1 rounded-full border text-2xs font-bold transition-colors ${
           compact ? 'px-1.5 py-0' : 'px-2.5 py-0.5'
         } ${style.cls}`}
       >
@@ -265,7 +280,7 @@ export function AuditBadge({
         <span aria-hidden className="text-2xs leading-none opacity-70">
           ⓘ
         </span>
-      </button>
+      </span>
       {open && typeof document !== 'undefined'
         ? createPortal(
             <span

@@ -129,7 +129,7 @@ export function SymbolBasketAction({
       type="button"
       onClick={() => setOpen(true)}
       title={`تصمیم سبد: ${currentLabel}`}
-      className={`num rounded-full border bg-bg-card/60 px-2.5 py-1 text-[11px] font-bold transition-opacity duration-200 hover:opacity-85 ${
+      className={`num rounded-full border bg-bg-card/60 px-2.5 py-1 text-2xs font-bold transition-opacity duration-200 hover:opacity-85 ${
         isError ? 'border-border-c text-text-muted' : `border-border-c ${STATE_TONE[state]}`
       }`}
     >
@@ -162,16 +162,16 @@ export function SymbolBasketAction({
           <div className="flex flex-col gap-3">
             <p className="text-xs text-text-secondary">
               وضعیت فعلی: {isError ? 'بدون داده (خطای اتصال)' : currentLabel}
-              {decision?.updated_at ? ` · آخرین ثبت: ${decision.updated_at}` : ''}
+              {decision?.updated_at ? <> · آخرین ثبت: <span className="num">{decision.updated_at}</span></> : ''}
             </p>
             {isError ? (
-              <p className="rounded-lg border border-accent-red/30 bg-accent-red/10 px-2 py-1 text-[11px] leading-5 text-accent-red">
+              <p className="rounded-lg border border-accent-red/30 bg-accent-red/10 px-2 py-1 text-2xs leading-5 text-accent-red">
                 خواندن وضعیت فعلی ناموفق بود؛ اگر بک‌اند در دسترس است می‌توانی تصمیم جدید ثبت کنی.
               </p>
             ) : null}
 
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1 text-[11px] font-bold text-text-secondary">وضعیت تصمیم</legend>
+              <legend className="mb-1 text-2xs font-bold text-text-secondary">وضعیت تصمیم</legend>
               {STATUS_OPTIONS.map(([value, label]) => (
                 <label
                   key={value}
@@ -190,7 +190,7 @@ export function SymbolBasketAction({
             </fieldset>
 
             <div className="grid grid-cols-2 gap-2">
-              <label className="flex flex-col gap-1 text-[11px] font-bold text-text-secondary">
+              <label className="flex flex-col gap-1 text-2xs font-bold text-text-secondary">
                 وزن (درصد)
                 <input
                   type="number"
@@ -202,10 +202,10 @@ export function SymbolBasketAction({
                   aria-label="وزن درصدی نماد"
                   placeholder="اختیاری"
                   dir="ltr"
-                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[11px] font-bold text-text-secondary">
+              <label className="flex flex-col gap-1 text-2xs font-bold text-text-secondary">
                 حد ضرر
                 <input
                   type="number"
@@ -216,12 +216,12 @@ export function SymbolBasketAction({
                   aria-label="حد ضرر نماد"
                   placeholder="اختیاری"
                   dir="ltr"
-                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-left text-xs text-text-primary outline-none focus:border-border-accent"
+                  className="num rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-start text-xs text-text-primary outline-none focus:border-border-accent"
                 />
               </label>
             </div>
 
-            <label className="flex flex-col gap-1 text-[11px] font-bold text-text-secondary">
+            <label className="flex flex-col gap-1 text-2xs font-bold text-text-secondary">
               یادداشت
               <input
                 type="text"
@@ -234,20 +234,20 @@ export function SymbolBasketAction({
             </label>
 
             {errText ? (
-              <p role="alert" className="text-[11px] font-bold text-accent-red">
+              <p role="alert" className="text-2xs font-bold text-accent-red">
                 {errText}
               </p>
             ) : null}
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--hairline)] pt-3">
               {state === 'none' ? (
-                <span className="text-[10px] text-text-muted">نماد هنوز تصمیمی ثبت نشده ندارد.</span>
+                <span className="text-2xs text-text-muted">نماد هنوز تصمیمی ثبت نشده ندارد.</span>
               ) : (
                 <button
                   type="button"
                   onClick={doRemove}
                   disabled={busy}
-                  className="rounded-full border border-accent-red/40 bg-accent-red/10 px-3 py-1.5 text-[11px] font-bold text-accent-red hover:bg-accent-red/20 disabled:opacity-60"
+                  className="rounded-full border border-accent-red/40 bg-accent-red/10 px-3 py-1.5 text-2xs font-bold text-accent-red hover:bg-accent-red/20 disabled:opacity-60"
                 >
                   {remove.isPending ? 'در حال حذف...' : 'حذف کامل از فهرست'}
                 </button>
@@ -257,7 +257,7 @@ export function SymbolBasketAction({
                   type="button"
                   onClick={() => setOpen(false)}
                   disabled={busy}
-                  className="rounded-full border border-border-c px-3 py-1.5 text-[11px] font-bold text-text-secondary hover:text-text-primary disabled:opacity-60"
+                  className="rounded-full border border-border-c px-3 py-1.5 text-2xs font-bold text-text-secondary hover:text-text-primary disabled:opacity-60"
                 >
                   بستن
                 </button>
@@ -265,7 +265,7 @@ export function SymbolBasketAction({
                   type="button"
                   onClick={submit}
                   disabled={busy}
-                  className="rounded-full border border-accent-green/40 bg-accent-green/15 px-4 py-1.5 text-[11px] font-bold text-accent-green hover:bg-accent-green/25 disabled:opacity-60"
+                  className="rounded-full border border-accent-green/40 bg-accent-green/15 px-4 py-1.5 text-2xs font-bold text-accent-green hover:bg-accent-green/25 disabled:opacity-60"
                 >
                   {save.isPending ? 'در حال ثبت...' : 'ثبت تصمیم'}
                 </button>

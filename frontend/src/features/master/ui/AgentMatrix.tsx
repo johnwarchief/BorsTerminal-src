@@ -86,7 +86,7 @@ export function AgentMatrix({
     <div className="glass-panel overflow-hidden">
       <table className="w-full border-collapse text-sm">
         <thead>
-          <tr className="bg-bg-card/70 text-right text-[11px] uppercase tracking-wider text-text-secondary">
+          <tr className="bg-bg-card/70 text-start text-2xs uppercase tracking-wider text-text-secondary">
             <th className="px-4 py-2.5 font-bold">ایجنت</th>
             <th className="px-4 py-2.5 font-bold">وزن اعمال شده</th>
             <th className="px-4 py-2.5 font-bold">امتیاز خام</th>
@@ -114,7 +114,7 @@ export function AgentMatrix({
                 </td>
                 <td className="num px-4 py-2.5 text-text-primary">
                   {s?.score == null ? '-' : `${s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}${toFaDigits(s.score)}`}
-                  {contrib && active ? <span className="num text-text-muted"> (سهم {toFaDigits(contrib.score)})</span> : null}
+                  {contrib && active ? <span className="text-text-muted"> (سهم <span className="num">{toFaDigits(contrib.score)}</span>)</span> : null}
                 </td>
                 <td className="px-4 py-2.5">
                   <div className="flex flex-col items-start gap-1">
@@ -126,7 +126,7 @@ export function AgentMatrix({
                   {s ? (
                     <div className="flex flex-col gap-0.5">
                       <span className="text-xs font-semibold text-text-secondary" title={s.title}>{s.title}</span>
-                      <span className="text-[10px] text-text-muted">{signalAgeLabel(s.ts)}</span>
+                      <span className="text-2xs text-text-muted">{signalAgeLabel(s.ts)}</span>
                     </div>
                   ) : (
                     <span className="text-xs text-text-muted">-</span>

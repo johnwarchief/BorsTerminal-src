@@ -33,11 +33,11 @@ describe('ویسا — محور ۱: شاخص ۴ (سالانه‌سازی دای�
   it('همان فیلدهای بک‌اند نمایش داده می‌شود: ضریب ×۱ برای ۱۲ ماه و نسبت فروش/ارزش بازار ۰.۳۱ برابر کف ۰.۳۳', () => {
     render(<FtsDrillDown card={visa} active="4" quarters={FISCAL} physicalApplicable={false} />);
     const panel = screen.getByTestId('drilldown-panel-4');
-    expect(within(panel).getByText(/م = ۱۲ ماه/)).toBeInTheDocument();
-    expect(within(panel).getByText(/ضریب ×۱/)).toBeInTheDocument();
+    expect(panel.textContent).toMatch(/م = ۱۲ ماه/);
+    expect(panel.textContent).toMatch(/ضریب ×۱/);
     // نسبت و کف از خودِ بک‌اند می‌آید (۰.۳۱ در برابر کف ۰.۳۳)
-    expect(within(panel).getByText(/۰.۳۱×/)).toBeInTheDocument();
-    expect(within(panel).getByText(/کف ۳۳٪/)).toBeInTheDocument();
+    expect(panel.textContent).toMatch(/۰.۳۱×/);
+    expect(panel.textContent).toMatch(/کف ۳۳٪/);
   });
 });
 

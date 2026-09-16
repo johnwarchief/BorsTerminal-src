@@ -171,7 +171,7 @@ describe('پنل تنظیمات FTS — دراور ثابت سمت راست (ر�
     expect(panel.parentElement).toBe(document.body);
     expect(panel.className).toContain('fixed');
     expect(panel.className).toContain('inset-y-0');
-    expect(panel.className).toContain('right-0');
+    expect(panel.className).toContain('start-0'); // RTL: inset-inline-start = لبهٔ راست
     expect(panel.className).not.toContain('glass-panel');
   });
 });

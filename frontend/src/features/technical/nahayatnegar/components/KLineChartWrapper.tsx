@@ -6,6 +6,17 @@ import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
 } from '../lib/adjustments';
 import { analyzeFts, FtsAnalysisResult } from '../lib/ftsOverlays';
+import {
+  clearSymbolDrawings,
+  commit as commitHistory,
+  initHistory,
+  loadDrawings,
+  redo as redoHistory,
+  saveDrawings,
+  snapToOhlc,
+  undo as undoHistory,
+  type StoredOverlay,
+} from '../../lib/drawStore';
 import { FtsToolbar } from './FtsToolbar';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
@@ -185,6 +196,116 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   useEffect(() => {
     fetchCandleData(currentSymbol);
   }, [currentSymbol, fetchCandleData]);
+
+  // --- فاز ۳ (wiring): ماندگاری ترسیم‌ها + میانبرها + مگنت ---
+  const magnetRef = useRef(isMagnetActive);
+  magnetRef.current = isMagnetActive;
+  const candlesRef = useRef<KLineData[]>(adjustedCandles);
+  candlesRef.current = adjustedCandles;
+  const drawHistRef = useRef(initHistory<StoredOverlay[]>([]));
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const snapshot = (): StoredOverlay[] => {
+      try {
+        const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
+        return all
+          .filter((o) => o && typeof o.name === 'string' && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL'].includes(o.name))
+          .map((o) => ({
+            name: o.name as string,
+            points: (o.points ?? []) as StoredOverlay['points'],
+            ...(o.styles ? { styles: o.styles as Record<string, unknown> } : {}),
+            ...(o.extendData ? { extendData: o.extendData as Record<string, unknown> } : {}),
+          }));
+      } catch (e) {
+        void e;
+        return [];
+      }
+    };
+
+    const applySnapshot = (rows: StoredOverlay[]) => {
+      try {
+        chart.removeOverlay({ groupId: 'fts-draw' });
+        rows.forEach((o) => chart.createOverlay(o as never));
+      } catch (e) {
+        void e;
+      }
+    };
+
+    // ۱) بازیابی ترسیم‌های ذخیره‌شدهٔ همین نماد/تایم‌فریم
+    const restored = loadDrawings(currentSymbol, activeTimeframe);
+    if (restored.length > 0) applySnapshot(restored);
+    drawHistRef.current = initHistory(restored);
+
+    const maybeSnap = () => {
+      if (!magnetRef.current) return;
+      const candles = candlesRef.current;
+      if (!candles || candles.length === 0) return;
+      try {
+        const all = chart.getOverlays() as { id?: string; points?: { timestamp?: number; value?: number }[]; name?: string }[];
+        const last = all[all.length - 1];
+        if (!last?.id || !Array.isArray(last.points) || last.points.length === 0) return;
+        const snapped = last.points.map((p) => {
+          if (typeof p.timestamp !== 'number' || typeof p.value !== 'number') return p;
+          const idx = candles.reduce((best, c, i) =>
+            Math.abs(c.timestamp - (p.timestamp as number)) < Math.abs(candles[best].timestamp - (p.timestamp as number)) ? i : best, 0);
+          const c = candles[idx];
+          const r = snapToOhlc(p.value, { open: c.open, high: c.high, low: c.low, close: c.close }, 0.4);
+          return r.snapped ? { ...p, value: r.price } : p;
+        });
+        chart.overrideOverlay({ id: last.id, points: snapped } as never);
+      } catch (e) {
+        void e;
+      }
+    };
+
+    // ۲) ذخیرهٔ خودکار تغییرات ترسیم + اعمال مگنت
+    const tick = () => {
+      maybeSnap();
+      const snap = snapshot();
+      const h = drawHistRef.current;
+      if (JSON.stringify(snap) !== JSON.stringify(h.present)) {
+        drawHistRef.current = commitHistory(h, snap);
+        saveDrawings(currentSymbol, activeTimeframe, snap);
+      }
+    };
+    const timer = setInterval(tick, 2000);
+
+    // ۳) میانبرها: Delete/Backspace حذف آخرین المان، Ctrl+Z/Y (و Ctrl+Shift+Z) Undo/Redo
+    const onKey = (ev: KeyboardEvent) => {
+      const tag = ((ev.target as HTMLElement | null)?.tagName ?? '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        try {
+          const all = chart.getOverlays() as { id?: string }[];
+          const last = all[all.length - 1];
+          if (last?.id) chart.removeOverlay({ id: last.id });
+        } catch (e) {
+          void e;
+        }
+        return;
+      }
+      if ((ev.ctrlKey || ev.metaKey) && ['z', 'Z', 'y', 'Y'].includes(ev.key)) {
+        ev.preventDefault();
+        const isRedo = ev.key.toLowerCase() === 'y' || ev.shiftKey;
+        const h = drawHistRef.current;
+        const next = isRedo ? redoHistory(h) : undoHistory(h);
+        if (next !== h) {
+          drawHistRef.current = next;
+          applySnapshot(next.present);
+          saveDrawings(currentSymbol, activeTimeframe, next.present);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [currentSymbol, activeTimeframe]);
 
   // ۲. راه‌اندازی اولیه KLineChart مطابق با KlineCharts v10.0.3
   useEffect(() => {
@@ -596,7 +717,15 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         <DrawingToolbar
           activeToolId={activeToolId}
           onSelectTool={handleSelectTool}
-          onClearDrawings={handleClearDrawings}
+          onClearDrawings={() => {
+            // ۴) پاک‌کردن ترسیم‌های همین نماد از ذخیره‌سازی هم
+            try {
+              clearSymbolDrawings(currentSymbol);
+            } catch (e) {
+              void e;
+            }
+            handleClearDrawings();
+          }}
           isMagnetActive={isMagnetActive}
           onToggleMagnet={() => setIsMagnetActive(!isMagnetActive)}
           isLocked={isDrawingLocked}

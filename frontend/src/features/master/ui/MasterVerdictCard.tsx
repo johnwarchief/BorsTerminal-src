@@ -66,7 +66,7 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
 
   return (
     <div className="glass-panel panel-in overflow-hidden p-5">
-      <div className="pointer-events-none absolute -left-16 -top-16 h-44 w-44 rounded-full bg-neon-cyan/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -start-16 -top-16 h-44 w-44 rounded-full bg-neon-cyan/10 blur-3xl" aria-hidden />
       <div className="relative flex flex-wrap items-center gap-6">
         <div className="relative" dir="ltr">
           <svg width="150" height="150" viewBox="0 0 130 130" role="img" aria-label="گیج برآیند">
@@ -153,18 +153,19 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
               />
             ))}
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-text-muted">Master Decision · HUD</div>
+          <div className="text-2xs uppercase tracking-widest text-text-muted">Master Decision · HUD</div>
         </div>
       </div>
 
       {activeContribs.length > 0 ? (
         <div className="relative mt-4 flex flex-col gap-2 border-t border-[var(--hairline)] pt-3">
-          <div className="text-[10px] uppercase tracking-widest text-text-muted">سهم هر ایجنت در برآیند</div>
+          <div className="text-2xs uppercase tracking-widest text-text-muted">سهم هر ایجنت در برآیند</div>
           {activeContribs.map((c) => {
             const s = inputs?.[c.agentId];
             return (
               <div key={c.agentId} className="flex items-center gap-2 text-xs">
                 <span className="w-14 shrink-0 font-bold text-text-primary">{AGENT_FA[c.agentId]}</span>
+                {/* نوار واگرا داخل dir="ltr" عایق است؛ چپ/راست فیزیکی عمداً برای ثبات جهت نمودار */}
                 <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-bg-card" dir="ltr">
                   <span
                     className={`absolute inset-y-0 left-1/2 w-px bg-border-c ${c.score === 0 ? 'opacity-100' : 'opacity-60'}`}
@@ -179,12 +180,12 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
                     />
                   ) : null}
                 </div>
-                <span className={`num w-14 shrink-0 text-left font-bold ${c.score > 0 ? 'text-accent-green' : c.score < 0 ? 'text-accent-red' : 'text-text-muted'}`}>
+                <span className={`num w-14 shrink-0 text-end font-bold ${c.score > 0 ? 'text-accent-green' : c.score < 0 ? 'text-accent-red' : 'text-text-muted'}`}>
                   {c.score > 0 ? '+' : ''}
                   {toFaDigits(c.score)}
                 </span>
                 <Badge tone={CONF_TONE[c.confidence]}>{CONF_FA[c.confidence]}</Badge>
-                {s ? <span className="truncate text-[11px] text-text-muted" title={s.title}>{s.title}</span> : null}
+                {s ? <span className="truncate text-2xs text-text-muted" title={s.title}>{s.title}</span> : null}
               </div>
             );
           })}
