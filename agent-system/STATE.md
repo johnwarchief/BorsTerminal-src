@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `fcfb867` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** 718/719 (۱ شکست: symbol-inspector — از ebae21f) · eslint صفر · build سالم
+- **master HEAD:** `26b125f` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** 730/730 (با fixِ uncommittedِ هد) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -253,3 +253,9 @@
 ## به‌روزرسانی ۳۹ (ایجنتهد main, 2026-09-15 ~11:30)
 - **agent/technical (T-26، فاز 4 wiring — تلاش مجدد موفق)** مرج شد: `d45bb52` + merge commit `fcfb867`. سوییچ‌های ۹ الگو (چک‌باکس + رنگ + شفافیت، localStorage `fts-pattern-prefs`) + `buildPatternOverlays` (خاموش ⇒ صفر اورلی؛ anti-clutter) + تست‌های تقویت‌شده. ⚠️ `createOverlay` واقعی داخل کامپوننت vendored هنوز وصل نشده (یک effect کوتاه مانده).
 - ⚠️ **master قرمز (پیش از T-26، از `ebae21f` هد):** `symbol-inspector.spec` حالا `getByText('شپنا')` را دوگانه می‌بیند چون VolumeFlowMini برچسب نماد (`span.num.text-2xs`) اضافه کرده و تست قدیمی به‌روز نشده. T-26 بی‌تقصیر است (فقط features/technical). اصلاح ساده: `getAllByText('شپنا')` یا scope دقیق‌تر. (به هد گزارش شد.)
+
+
+## به‌روزرسانی ۴۰ (ایجنتهد main, 2026-09-15 ~12:00)
+- **agent/fundamental (F-09)** مرج شد: `5f1ab6f` + merge commit `26b125f`. فیلتر حذف بر اساس شاخص (۶ سوئیچ + بازنشانی + نوار «X نماد با فیلتر شاخصی حذف شد»)؛ `lib/exclusionFilter.ts`. صداقت: شاخص 1ب بدون دادهٔ ستون/پرچم در غربالگری ⇒ دامنهٔ «بدون داده» و حذف صفر. کلید `exclude_rejected_indicators` در payload ارسال می‌شود. اعتبارسنجی: vitest 730/730 (70 فایل، سکوئنشال — شامل fixِ uncommittedِ هد روی `symbol-inspector.spec`)، eslint 0/3، build سالم.
+- نیاز بک‌اند (هد): افزودن `exclude_rejected_indicators` به `FTS_DEFAULTS`/`FTS_LIST_KEYS` برای ماندگاری سمت سرور.
+- نکته: تست `symbol-inspector` که از `ebae21f` قرمز بود، با ویرایشِ **uncommittedِ** هد (موجود در درخت) سبز شده؛ با کامیت‌شدنِ آن، baseline کامیت‌شده هم سبز می‌شود.
