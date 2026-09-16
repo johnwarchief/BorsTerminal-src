@@ -4,8 +4,22 @@
 // مردود است — نه اینکه برچسب شکاف بخورد. شکاف فقط برای <۲ سال.
 // دادهٔ واقعیِ مرجع: /api/fundamental/احيا → years_available=2، series=[null,590,990]
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
+
+// jsdom اندازه ندارد -- virtualizer به رندر کامل پنجره وادار می‌شود (الگوی tape-patterns/F-08)
+vi.mock('@tanstack/react-virtual', async (orig) => {
+  const mod = await orig<typeof import('@tanstack/react-virtual')>();
+  const WINDOW = 12;
+  return {
+    ...mod,
+    useVirtualizer: ({ count }: { count: number }) => ({
+      getTotalSize: () => count * 46,
+      getVirtualItems: () =>
+        Array.from({ length: Math.min(count, WINDOW) }, (_, i) => ({ key: i, index: i, start: i * 46 })),
+    }),
+  };
+});
 import { EpsLadder } from '@features/fundamental/components/EpsLadder';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';

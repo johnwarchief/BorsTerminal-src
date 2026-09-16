@@ -7,7 +7,8 @@
 // حذف می‌شوند؛ سوییچ «نمایش ردیف‌های حذف‌شده» فقط برای بازرسی آن‌هاست.
 // قلمرو جدول: فقط «شرکت‌های تولیدی و خدماتی» — صندوق‌ها، کارگزاری‌ها،
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { toFaDigits, fmtPct } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
@@ -20,7 +21,7 @@ import {
   epsSeriesText,
 } from '../lib/epsHistory';
 import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
-import { AuditBadge, type AuditEvidence } from '../components/AuditBadge';
+import { AuditBadge, type AuditEvidenceInput } from '../components/AuditBadge';
 import { screenAuditEvidence } from '../lib/auditEvidence';
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
@@ -48,6 +49,9 @@ const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: strin
   fail: { tone: 'red', label: '✗' },
 };
 
+/** ارتفاع ثابت ردیف جدول (پیکسل) — مجازی‌سازی و اسکرول روان روی همین حساب می‌شود */
+const ROW_H = 46;
+
 /** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
  *  (پیش از آن با برچسب علت‌دار یا برچسب سابقهٔ ناقص رندر می‌شوند). */
 function PassMark({
@@ -56,7 +60,7 @@ function PassMark({
   testId,
 }: {
   state: CellState;
-  evidence?: AuditEvidence;
+  evidence?: AuditEvidenceInput;
   testId?: string;
 }) {
   const b = STATE_BADGE[state === 'pass' ? 'pass' : 'fail'];
@@ -81,7 +85,7 @@ function GapMark({
 }: {
   label: string;
   tooltip: string;
-  evidence?: AuditEvidence;
+  evidence?: AuditEvidenceInput;
   testId?: string;
 }) {
   return (
@@ -97,7 +101,8 @@ function GapMark({
 }
 
 /** سلول بی‌داده با علتِ همان محور */
-function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEvidence }) {
+/** سلول بی‌داده با علتِ همان محور (شاهد تنبل از ردیف ساخته می‌شود) */
+function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEvidenceInput }) {
   return (
     <GapMark
       label={gapLabel(axis)}
@@ -108,126 +113,28 @@ function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEviden
   );
 }
 
-export function FtsScreenTable({
-  rows,
-  onSelect,
+/** ردیف جدول غربالگری — memo شده؛ فقط ردیف‌های در دید (مجازی‌سازی) رندر می‌شوند و
+ *  شاهد ممیزی هر سلول به‌صورت تابعِ تنبل ساخته می‌شود (تا وقتی کارت پاپ‌اور بسته است، هیچ محاسبه‌ای نمی‌شود). */
+const ScreenerRow = memo(function ScreenerRow({
+  row: r,
   thresholds,
+  onSelect,
 }: {
-  rows: FtsScreenRow[];
-  onSelect: (symbol: string) => void;
-  /** تارگت‌های کانفیگ FTS (پاسخ /api/screener) برای کارت «چرا این وضعیت؟» */
+  row: FtsScreenRow;
   thresholds?: Record<string, unknown> | null;
+  onSelect: (symbol: string) => void;
 }) {
-  const [sortKey, setSortKey] = useState<SortKey>('score');
-  const [desc, setDesc] = useState(true);
-  /** دروازه‌های سخت فعال‌اند → ردیف‌های excluded پیش‌فرض حذف می‌شوند؛ سوییچ فقط برای بازرسی */
-  const [showExcluded, setShowExcluded] = useState(false);
-
-  /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
-  const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
-  const nonCompanyCount = useMemo(
-    () => rows.filter((r) => !isFundamentalCompany(r)).length,
-    [rows],
+  /** شاهد ممیزی هر محور، تنبل — فقط هنگام باز شدن کارت «چرا این وضعیت؟» فراخوانی می‌شود */
+  const ev = useMemo(
+    () => ({
+      i1a: () => screenAuditEvidence('1a_monetary_growth', r, thresholds),
+      i2: () => screenAuditEvidence('2_eps_trend', r, thresholds),
+      i3: () => screenAuditEvidence('3_gross_margin', r, thresholds),
+      i4: () => screenAuditEvidence('4_sales_to_mcap', r, thresholds),
+      i5: () => screenAuditEvidence('5_industry', r, thresholds),
+    }),
+    [r, thresholds],
   );
-
-  const visible = useMemo(
-    () => {
-      const base = showExcluded ? rows : rows.filter((r) => r.excluded !== true);
-      // حتی در حالت بازرسی excluded، صندوق‌ها/کارگزاری‌ها/مشتقه‌ها می‌مانند؟ نه —
-      // «نمایش ردیف‌های حذف‌شده» فقط دروازه‌های سخت را برمی‌گرداند؛ قلمرو
-      // شرکت‌محورِ جدول بنیادی روی هر دو حالت اعمال می‌شود.
-      return base.filter((r) => isFundamentalCompany(r));
-    },
-    [rows, showExcluded],
-  );
-
-  const sorted = useMemo(() => {
-    const arr = [...visible];
-    arr.sort((a, b) => {
-      const va = (a[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
-      const vb = (b[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
-      if (va === vb) return b.score - a.score;
-      return desc ? vb - va : va - vb;
-    });
-    return arr;
-  }, [visible, sortKey, desc]);
-
-  const toggle = (k: SortKey) => {
-    if (k === sortKey) setDesc((d) => !d);
-    else {
-      setSortKey(k);
-      setDesc(true);
-    }
-  };
-
-  if (rows.length === 0) {
-    return <EmptyState title="ردیفی از غربالگری FTS نیامد" hint="کارنامهٔ ماهانهٔ کدال هنوز سینک نشده است" />;
-  }
-
-  return (
-    <div className="glass-panel panel-in overflow-hidden rounded-2xl">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
-        <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
-        <div className="flex items-center gap-3">
-          {excludedCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setShowExcluded((v) => !v)}
-              aria-pressed={showExcluded}
-              title={`دروازه‌های سخت: ${toFaDigits(excludedCount)} ردیف حذف‌شده ${showExcluded ? 'نمایش داده' : 'پنهان'} می‌شود`}
-              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
-                showExcluded
-                  ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
-                  : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
-              }`}
-            >
-              <span
-                aria-hidden
-                dir="ltr"
-                className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
-                  showExcluded ? 'bg-accent-red/70' : 'bg-bg-card'
-                }`}
-              >
-                <span
-                  className={`absolute h-3 w-3 rounded-full bg-white shadow transition-all ${
-                    showExcluded ? 'left-[14px]' : 'left-0.5'
-                  }`}
-                />
-              </span>
-              {showExcluded ? 'پنهان‌سازی ردیف‌های حذف‌شده' : 'نمایش ردیف‌های حذف‌شده'}
-            </button>
-          ) : null}
-          <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
-            {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
-          </span>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-start text-xs">
-          <thead>
-            <tr className="bg-bg-card/70 text-2xs text-text-secondary">
-              {COLS.map((c, i) =>
-                c.key ? (
-                  <th key={c.label} className="px-2 py-2 font-bold">
-                    <button
-                      type="button"
-                      onClick={() => toggle(c.key as SortKey)}
-                      title={c.title}
-                      className="hover:text-accent-blue"
-                    >
-                      {c.label} {sortKey === c.key ? (desc ? '↓' : '↑') : ''}
-                    </button>
-                  </th>
-                ) : (
-                  <th key={i} className="px-2 py-2 font-bold" title={c.title}>
-                    {c.label}
-                  </th>
-                ),
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((r) => {
               const i1 = cellState(r.i1_pass, r.rev_growth);
               /** شاخص ۲ — چهاردحالته از روی خودِ داده (lib/epsHistory):
                *  pass / partial «مردود — سابقهٔ ناقص (۲ از ۳ سال)» / fail / gap (<۲ سال) */
@@ -283,11 +190,11 @@ export function FtsScreenTable({
                         {r.rev_growth == null ? '—' : fmtPct(r.rev_growth)}
                       </span>
                       {i1 === 'gap' ? (
-                        <AxisGapMark axis="1a_monetary_growth" evidence={screenAuditEvidence('1a_monetary_growth', r, thresholds)} />
+                        <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
                       ) : (
                         <PassMark
                           state={i1}
-                          evidence={screenAuditEvidence('1a_monetary_growth', r, thresholds)}
+                          evidence={ev.i1a}
                           testId="fts-mark-1a_monetary_growth"
                         />
                       )}
@@ -303,16 +210,13 @@ export function FtsScreenTable({
                           state="fail"
                           label={epsHist.label}
                           hintTitle={epsGapReason}
-                          evidence={{
-                            ...screenAuditEvidence('2_eps_trend', r, thresholds),
-                            reason: epsGapReason,
-                          }}
+                          evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
                           compact
                           testId={EPS_PARTIAL_TESTID}
                         />
                       ) : i2 === 'gap' ? (
                         <GapMark
-                          evidence={screenAuditEvidence('2_eps_trend', r, thresholds)}
+                          evidence={ev.i2}
                           label={epsGapLabel(epsHist.realYears)}
                           tooltip={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
                           testId="eps-gap-reason"
@@ -326,11 +230,11 @@ export function FtsScreenTable({
                     <div className="flex items-center gap-1.5">
                       <span className="num text-text-primary">{r.gross_margin == null ? '—' : fmtPct(r.gross_margin)}</span>
                       {i3 === 'gap' ? (
-                        <AxisGapMark axis="3_gross_margin" evidence={screenAuditEvidence('3_gross_margin', r, thresholds)} />
+                        <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
                       ) : (
                         <PassMark
                           state={i3}
-                          evidence={screenAuditEvidence('3_gross_margin', r, thresholds)}
+                          evidence={ev.i3}
                           testId="fts-mark-3_gross_margin"
                         />
                       )}
@@ -342,11 +246,11 @@ export function FtsScreenTable({
                         {r.profit_potential_pct == null ? '—' : fmtPct(r.profit_potential_pct)}
                       </span>
                       {i4 === 'gap' ? (
-                        <AxisGapMark axis="4_sales_to_mcap" evidence={screenAuditEvidence('4_sales_to_mcap', r, thresholds)} />
+                        <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
                       ) : (
                         <PassMark
                           state={i4}
-                          evidence={screenAuditEvidence('4_sales_to_mcap', r, thresholds)}
+                          evidence={ev.i4}
                           testId="fts-mark-4_sales_to_mcap"
                         />
                       )}
@@ -355,11 +259,11 @@ export function FtsScreenTable({
                   <td className="px-2 py-2">
                     <div className="flex items-center gap-1.5">
                       {i5 === 'gap' ? (
-                        <AxisGapMark axis="5_industry" evidence={screenAuditEvidence('5_industry', r, thresholds)} />
+                        <AxisGapMark axis="5_industry" evidence={ev.i5} />
                       ) : (
                         <PassMark
                           state={i5}
-                          evidence={screenAuditEvidence('5_industry', r, thresholds)}
+                          evidence={ev.i5}
                           testId="fts-mark-5_industry"
                         />
                       )}
@@ -385,8 +289,149 @@ export function FtsScreenTable({
                   </td>
                 </tr>
               );
-            })}
-          </tbody>
+});
+
+export function FtsScreenTable({
+  rows,
+  onSelect,
+  thresholds,
+}: {
+  rows: FtsScreenRow[];
+  onSelect: (symbol: string) => void;
+  /** تارگت‌های کانفیگ FTS (پاسخ /api/screener) برای کارت «چرا این وضعیت؟» */
+  thresholds?: Record<string, unknown> | null;
+}) {
+  const [sortKey, setSortKey] = useState<SortKey>('score');
+  const [desc, setDesc] = useState(true);
+  /** دروازه‌های سخت فعال‌اند → ردیف‌های excluded پیش‌فرض حذف می‌شوند؛ سوییچ فقط برای بازرسی */
+  const [showExcluded, setShowExcluded] = useState(false);
+
+  /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
+  const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
+  const nonCompanyCount = useMemo(
+    () => rows.filter((r) => !isFundamentalCompany(r)).length,
+    [rows],
+  );
+
+  const visible = useMemo(
+    () => {
+      const base = showExcluded ? rows : rows.filter((r) => r.excluded !== true);
+      // حتی در حالت بازرسی excluded، صندوق‌ها/کارگزاری‌ها/مشتقه‌ها می‌مانند؟ نه —
+      // «نمایش ردیف‌های حذف‌شده» فقط دروازه‌های سخت را برمی‌گرداند؛ قلمرو
+      // شرکت‌محورِ جدول بنیادی روی هر دو حالت اعمال می‌شود.
+      return base.filter((r) => isFundamentalCompany(r));
+    },
+    [rows, showExcluded],
+  );
+
+  const sorted = useMemo(() => {
+    const arr = [...visible];
+    arr.sort((a, b) => {
+      const va = (a[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
+      const vb = (b[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
+      if (va === vb) return b.score - a.score;
+      return desc ? vb - va : va - vb;
+    });
+    return arr;
+  }, [visible, sortKey, desc]);
+
+  const toggle = (k: SortKey) => {
+    if (k === sortKey) setDesc((d) => !d);
+    else {
+      setSortKey(k);
+      setDesc(true);
+    }
+  };
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  /** مجازی‌سازی: فقط ردیف‌های در دید + حاشیه (overscan) رندر می‌شوند */
+  const virtualizer = useVirtualizer({
+    count: sorted.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_H,
+    overscan: 8,
+    initialRect: { width: 0, height: 640 },
+  });
+  const virtualRows = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+  const padTop = virtualRows.length ? virtualRows[0].start : 0;
+  const padBottom = virtualRows.length ? Math.max(0, totalSize - virtualRows[virtualRows.length - 1].end) : 0;
+
+  if (rows.length === 0) {
+    return <EmptyState title="ردیفی از غربالگری FTS نیامد" hint="کارنامهٔ ماهانهٔ کدال هنوز سینک نشده است" />;
+  }
+
+  return (
+    <div className="glass-panel panel-in overflow-hidden rounded-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
+        <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
+        <div className="flex items-center gap-3">
+          {excludedCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowExcluded((v) => !v)}
+              aria-pressed={showExcluded}
+              title={`دروازه‌های سخت: ${toFaDigits(excludedCount)} ردیف حذف‌شده ${showExcluded ? 'نمایش داده' : 'پنهان'} می‌شود`}
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
+                showExcluded
+                  ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
+                  : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
+              }`}
+            >
+              <span
+                aria-hidden
+                dir="ltr"
+                className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
+                  showExcluded ? 'bg-accent-red/70' : 'bg-bg-card'
+                }`}
+              >
+                <span
+                  className={`absolute h-3 w-3 rounded-full bg-white shadow transition-all ${
+                    showExcluded ? 'left-[14px]' : 'left-0.5'
+                  }`}
+                />
+              </span>
+              {showExcluded ? 'پنهان‌سازی ردیف‌های حذف‌شده' : 'نمایش ردیف‌های حذف‌شده'}
+            </button>
+          ) : null}
+          <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
+            {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
+          </span>
+        </div>
+      </div>
+      <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto">
+        <table className="w-full min-w-[720px] text-start text-xs">
+          <thead className="sticky top-0 z-10 bg-bg-card/95 backdrop-blur">
+            <tr className="bg-bg-card/70 text-2xs text-text-secondary">
+              {COLS.map((c, i) =>
+                c.key ? (
+                  <th key={c.label} className="px-2 py-2 font-bold">
+                    <button
+                      type="button"
+                      onClick={() => toggle(c.key as SortKey)}
+                      title={c.title}
+                      className="hover:text-accent-blue"
+                    >
+                      {c.label} {sortKey === c.key ? (desc ? '↓' : '↑') : ''}
+                    </button>
+                  </th>
+                ) : (
+                  <th key={i} className="px-2 py-2 font-bold" title={c.title}>
+                    {c.label}
+                  </th>
+                ),
+              )}
+            </tr>
+          </thead>
+        <tbody>
+          {padTop > 0 ? <tr aria-hidden style={{ height: padTop }} /> : null}
+          {virtualRows.map((vi) => {
+            const r = sorted[vi.index];
+            if (!r) return null;
+            return <ScreenerRow key={r.symbol} row={r} thresholds={thresholds} onSelect={onSelect} />;
+          })}
+          {padBottom > 0 ? <tr aria-hidden style={{ height: padBottom }} /> : null}
+        </tbody>
         </table>
       </div>
       <div className="border-t border-border-c bg-bg-secondary/60 px-4 py-1.5 text-2xs text-text-muted">

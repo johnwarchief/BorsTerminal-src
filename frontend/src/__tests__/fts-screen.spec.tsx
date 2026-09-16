@@ -7,6 +7,28 @@ import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
 import { isFundamentalCompany, isPhysicalGrowthApplicable } from '@features/fundamental/lib/assetScope';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 
+// jsdom اندازه ندارد -- virtualizer را به رندر کامل وادار می‌کنیم (الگوی tape-patterns)
+vi.mock('@tanstack/react-virtual', async (orig) => {
+  const mod = await orig<typeof import('@tanstack/react-virtual')>();
+  /** jsdom اندازه ندارد؛ پنجرهٔ ۱۲ ردیفی مثل پنجرهٔ مرورگر (۷۰vh/۴۶px) شبیه‌سازی می‌شود */
+  const WINDOW = 12;
+  let lastVirtualOptions: { count: number; overscan?: number; estimateSize?: (i: number) => number } | null = null;
+  return {
+    ...mod,
+    useVirtualizer: (opts: { count: number; overscan?: number; estimateSize?: (i: number) => number }) => {
+      lastVirtualOptions = opts;
+      const { count } = opts;
+      return {
+        getTotalSize: () => count * 46,
+        getVirtualItems: () =>
+          Array.from({ length: Math.min(count, WINDOW) }, (_, i) => ({ key: i, index: i, start: i * 46 })),
+      };
+    },
+    __virtualOptions: () => lastVirtualOptions,
+  };
+});
+
+
 function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
   return {
     symbol: 'شپنا',
@@ -331,5 +353,46 @@ describe('N/A رشد فیزیکی برای شرکت‌های غیرتولیدی'
   it('تولیدی/خدماتی صرفاً در گروه‌های نامرتبط → رشد فیزیکی قابل اعمال', () => {
     expect(isPhysicalGrowthApplicable({ name: 'پالایش نفت اصفهان', sector_name: 'فراورده‌هاي نفتي' })).toBe(true);
     expect(isPhysicalGrowthApplicable({ name: 'فولاد مبارکه', sector_name: 'فلزات اساسي' })).toBe(true);
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// F-08 — کارایی: جدول مجازی می‌شود (فقط پنجرهٔ در دید رندر می‌شود) و سلول‌ها ارزان‌اند
+// ---------------------------------------------------------------------------
+describe('کارایی جدول غربالگری (F-08)', () => {
+  function bigRows(n: number): FtsScreenRow[] {
+    return Array.from({ length: n }, (_, i) => row({ symbol: 'نماد' + String(i), name: 'شرکت نمونه ' + String(i) }));
+  }
+
+  it('با ۸۶۵ ردیف فقط پنجرهٔ مجازی رندر می‌شود (نه همهٔ ردیف‌ها)', () => {
+    render(<FtsScreenTable rows={bigRows(865)} onSelect={() => {}} thresholds={{ growth_min: 30 }} />);
+    const rendered = screen.getAllByTestId('fts-screen-row');
+    expect(rendered.length).toBe(12); // پنجرهٔ mock = همان چیزی که virtualizer در دید نگه می‌دارد
+    expect(rendered.length).toBeLessThan(865);
+    // هزینهٔ DOM به پنجره گره خورده، نه به داده
+    expect(document.querySelectorAll('*').length).toBeLessThan(1000);
+  });
+
+  it('virtualizer با تعداد ردیف‌های نمایان، ارتفاع ثابت ردیف و overscan پیکربندی شده است', async () => {
+    render(<FtsScreenTable rows={bigRows(200)} onSelect={() => {}} thresholds={null} />);
+    const rv = (await import('@tanstack/react-virtual')) as unknown as {
+      __virtualOptions?: () => { count: number; overscan?: number; estimateSize?: (i: number) => number } | null;
+    };
+    const opts = rv.__virtualOptions?.();
+    expect(opts).toBeTruthy();
+    expect(opts!.count).toBe(200);
+    expect(opts!.estimateSize?.(0)).toBe(46);
+    expect(opts!.overscan).toBe(8);
+  });
+
+  it('کانتینر اسکرول با ارتفاع محدود و هدر چسبان آماده است', () => {
+    render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
+    const scroll = screen.getByTestId('fts-screen-scroll');
+    expect(scroll.className).toContain('max-h-[70vh]');
+    expect(scroll.className).toContain('overflow-auto');
+    const thead = document.querySelector('thead');
+    expect(thead?.className).toContain('sticky');
+    expect(thead?.className).toContain('top-0');
   });
 });
