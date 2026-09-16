@@ -74,20 +74,20 @@ export function EpsLadder({
               c.value == null ? 'border-accent-red/40 bg-accent-red/10' : 'border-border-c bg-bg-primary'
             }`}
           >
-            <div className="text-[11px] text-text-muted">{c.slot || '-'}</div>
+            <div className="text-2xs text-text-muted">{c.slot || '-'}</div>
             <div className={`text-sm font-black ${c.value == null ? 'text-accent-red' : 'text-text-primary'}`}>
               {c.value == null ? '-' : toFaDigits(c.value)}
             </div>
-            <div className="text-[9px] text-text-muted">سال مالی کامل</div>
+            <div className="text-2xs text-text-muted">سال مالی کامل</div>
           </div>
         ))}
         {interim?.available && interim.eps != null ? (
           <div className="min-w-20 flex-1 rounded-xl border border-accent-blue/40 bg-accent-blue/10 p-2 text-center" data-testid="eps-interim-cell">
-            <div className="text-[11px] text-text-muted">
+            <div className="text-2xs text-text-muted">
               میاندوره {interim.months != null ? `${toFaDigits(interim.months)} ماهه` : ''}
             </div>
             <div className="text-sm font-black text-accent-blue">{toFaDigits(interim.eps)}</div>
-            <div className="text-[9px] text-text-muted">جزئی — با ۱۲ماهه مقایسه نشود</div>
+            <div className="text-2xs text-text-muted">جزئی — با ۱۲ماهه مقایسه نشود</div>
           </div>
         ) : null}
       </div>

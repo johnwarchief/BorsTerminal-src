@@ -42,23 +42,16 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
               <button
                 type="button"
                 onClick={() => onSelect(r.symbol)}
-                className="flex w-full items-center justify-between gap-2 rounded-lg border border-transparent px-2 py-1 text-right transition-colors hover:border-border-c hover:bg-bg-card"
+                title={r.name ?? ''}
+                className="grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 rounded-lg border border-transparent px-2 py-0.5 text-right transition-colors hover:border-border-c hover:bg-bg-card"
               >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-bold text-text-primary">{r.symbol}</span>
-                  <span className="block truncate text-[10px] text-text-muted">{r.name ?? ''}</span>
+                <span className="truncate text-xs font-bold text-text-primary">{r.symbol}</span>
+                <span className="num text-xs font-bold text-text-primary">{fmtPrice(r.p_last ?? r.p_closing)}</span>
+                <span
+                  className={`num w-16 text-left text-[11px] font-bold ${up ? 'text-accent-green' : 'text-accent-red'}`}
+                >
+                  {r.percent_change == null ? '-' : fmtPct(r.percent_change)}
                 </span>
-                <span className="flex shrink-0 flex-col items-end">
-                  <span className="num text-xs font-bold text-text-primary">{fmtPrice(r.p_last ?? r.p_closing)}</span>
-                  <span className={`num text-[10px] font-bold ${up ? 'text-accent-green' : 'text-accent-red'}`}>
-                    {r.percent_change == null ? '-' : fmtPct(r.percent_change)}
-                  </span>
-                </span>
-                {r.vol_ratio != null ? (
-                  <span className="num shrink-0 rounded border border-border-c px-1 text-[10px] text-text-secondary" title="نسبت حجم به میانگین">
-                    {toFaDigits(r.vol_ratio.toFixed(1))}×
-                  </span>
-                ) : null}
               </button>
             </li>
           );

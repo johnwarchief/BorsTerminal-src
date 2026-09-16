@@ -1,6 +1,5 @@
-// features/technical/components/TechnicalSidebar.tsx -- سایدبار راست به سبک Watchlist تریدینگ‌ویو
-// ثابت و مستقل از اسکرول (sticky) با چهار تب: دیده‌بان · سیگنال‌های FTS · ترازها و
-// حد ضرر (نماد فعال) · نبض کلان. کلیک روی نماد، چارت را عوض می‌کند (onSelect).
+// features/technical/components/TechnicalSidebar.tsx -- سایدبار راست چارت (جمع‌شو، سبک Watchlist)
+// برای جلوگیری از فشرده‌کردن دوسویهٔ چارت، در حالت جمع فقط یک ریل باریک می‌ماند.
 import { useState } from 'react';
 import { SidebarWatchlist } from './SidebarWatchlist';
 import { SidebarFtsSignals } from './SidebarFtsSignals';
@@ -26,14 +25,46 @@ export function TechnicalSidebar({
   defaultTab?: SidebarTabId;
 }) {
   const [tab, setTab] = useState<SidebarTabId>(defaultTab);
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <aside
+        data-testid="technical-sidebar-collapsed"
+        className="glass-panel flex w-8 shrink-0 flex-col items-center gap-1 self-start rounded-xl p-1"
+      >
+        <button
+          type="button"
+          data-testid="sidebar-expand"
+          onClick={() => setCollapsed(false)}
+          title="باز کردن سایدبار"
+          className="rounded border border-border-c bg-bg-card px-1 py-1 text-[10px] text-text-secondary hover:text-accent-blue"
+        >
+          ‹
+        </button>
+        <span className="text-[10px] text-text-muted" style={{ writingMode: 'vertical-rl' }}>
+          دیده‌بان
+        </span>
+      </aside>
+    );
+  }
 
   return (
     <aside
       data-testid="technical-sidebar"
       aria-label="سایدبار تحلیل تکنیکال"
-      className="glass-panel sticky top-16 z-30 flex h-[calc(100vh-4.5rem)] w-full shrink-0 flex-col gap-2 overflow-hidden rounded-2xl p-2 xl:w-[340px]"
+      className="glass-panel flex h-full min-h-0 w-[300px] shrink-0 flex-col gap-1 overflow-hidden rounded-xl p-1.5"
     >
-      <div className="flex flex-wrap gap-1" role="tablist" aria-label="تب‌های سایدبار تکنیکال">
+      <div className="flex shrink-0 items-center gap-0.5" role="tablist" aria-label="تب‌های سایدبار تکنیکال">
+        <button
+          type="button"
+          data-testid="sidebar-collapse"
+          onClick={() => setCollapsed(true)}
+          title="جمع کردن سایدبار"
+          className="rounded border border-border-c bg-bg-card px-1.5 py-0.5 text-[11px] text-text-muted hover:text-accent-blue"
+        >
+          ›
+        </button>
         {TABS.map((t) => {
           const on = t.id === tab;
           return (
@@ -44,10 +75,8 @@ export function TechnicalSidebar({
               aria-selected={on}
               data-testid={`sidebar-tab-${t.id}`}
               onClick={() => setTab(t.id)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                on
-                  ? 'border-border-accent bg-accent-blue/15 text-accent-blue'
-                  : 'border-border-c bg-bg-card text-text-secondary hover:text-accent-blue'
+              className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                on ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
               }`}
             >
               {t.label}

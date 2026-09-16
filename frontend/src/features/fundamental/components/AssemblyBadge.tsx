@@ -18,7 +18,7 @@ export function AssemblyBadge({ symbol, now }: { symbol: string; now?: Date }) {
     <span
       data-testid={badge.testId}
       title={badge.detail ? `${badge.detail} · تاریخ رویداد: ${badge.jalali}` : undefined}
-      className={`inline-flex max-w-[24rem] shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-bold leading-snug ${tone}`}
+      className={`inline-flex max-w-[24rem] shrink-0 items-center rounded-full border px-2.5 py-1 text-2xs font-bold leading-snug ${tone}`}
     >
       {badge.label}
     </span>

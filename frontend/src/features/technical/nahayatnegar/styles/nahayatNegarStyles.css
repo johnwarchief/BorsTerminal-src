@@ -1,0 +1,436 @@
+/* ==========================================================================
+   چارت تکنیکال نهایت‌نگر (TradingView Style Replica) - مخصوص KlineCharts v10.0.3
+   کاملاً راست‌چین (RTL) | فونت وزیرمتن | بدون ایموجی
+   ========================================================================== */
+
+:root {
+  --nn-bg-primary: #131722;
+  --nn-bg-secondary: #1e222d;
+  --nn-bg-hover: #2a2e39;
+  --nn-bg-active: #2962ff;
+  --nn-border: #2a2e39;
+  --nn-border-light: #363a45;
+  --nn-text-primary: #d1d4dc;
+  --nn-text-secondary: #787b86;
+  --nn-text-active: #2962ff;
+  --nn-color-up: #089981;
+  --nn-color-down: #f23645;
+  --nn-color-warning: #ffab00;
+  --nn-font: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.nahayat-negar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  background-color: var(--nn-bg-primary);
+  color: var(--nn-text-primary);
+  font-family: var(--nn-font);
+  direction: rtl;
+  user-select: none;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ================= نوار ابزار بالا (TOP TOOLBAR) ================= */
+.nn-top-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 42px;
+  min-height: 42px;
+  background-color: var(--nn-bg-primary);
+  border-bottom: 1px solid var(--nn-border);
+  padding: 0 8px;
+  gap: 6px;
+  z-index: 20;
+}
+
+.nn-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nn-separator {
+  width: 1px;
+  height: 20px;
+  background-color: var(--nn-border);
+  margin: 0 4px;
+}
+
+.nn-symbol-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  background-color: var(--nn-bg-secondary);
+  color: #ffffff;
+  border: 1px solid var(--nn-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nn-symbol-badge:hover {
+  background-color: var(--nn-bg-hover);
+  border-color: var(--nn-border-light);
+}
+
+.nn-symbol-badge .market-state {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background-color: rgba(8, 153, 129, 0.2);
+  color: var(--nn-color-up);
+  font-weight: normal;
+}
+
+.nn-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--nn-text-primary);
+  font-family: var(--nn-font);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+  gap: 5px;
+}
+
+.nn-btn:hover {
+  background-color: var(--nn-bg-hover);
+  color: #ffffff;
+}
+
+.nn-btn.active {
+  background-color: rgba(41, 98, 255, 0.15);
+  color: var(--nn-text-active);
+  border-color: rgba(41, 98, 255, 0.35);
+}
+
+.nn-btn.warning-active {
+  background-color: rgba(255, 171, 0, 0.15);
+  color: var(--nn-color-warning);
+  border-color: rgba(255, 171, 0, 0.35);
+}
+
+.nn-icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nn-chevron {
+  margin-right: 2px;
+  transition: transform 0.15s ease;
+}
+
+.nn-select-dropdown {
+  position: relative;
+}
+
+.nn-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: var(--nn-bg-secondary);
+  border: 1px solid var(--nn-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  padding: 4px 0;
+  min-width: 170px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+}
+
+.nn-dropdown-item {
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--nn-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.nn-dropdown-item:hover {
+  background-color: var(--nn-bg-hover);
+  color: #ffffff;
+}
+
+.nn-dropdown-item.selected {
+  color: var(--nn-text-active);
+  font-weight: 600;
+}
+
+/* ================= بدنه اصلی چارت و نوار سمت چپ ================= */
+.nn-chart-body {
+  display: flex;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  height: calc(100% - 74px);
+}
+
+.nn-left-toolbar {
+  width: 44px;
+  min-width: 44px;
+  background-color: var(--nn-bg-primary);
+  border-left: 1px solid var(--nn-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  gap: 2px;
+  z-index: 15;
+}
+
+.tv-slot-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nn-left-toolbar .tool-item {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--nn-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.nn-left-toolbar .tool-item:hover {
+  background-color: var(--nn-bg-hover);
+  color: var(--nn-text-primary);
+}
+
+.nn-left-toolbar .tool-item.active {
+  background-color: rgba(41, 98, 255, 0.2);
+  color: var(--nn-text-active);
+}
+
+.tv-slot-arrow {
+  position: absolute;
+  bottom: 1px;
+  left: 2px;
+  font-size: 8px;
+  line-height: 8px;
+  color: #787b86;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.tool-item:hover .tv-slot-arrow {
+  opacity: 1;
+  color: var(--nn-text-active);
+}
+
+.tv-flyout-menu {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 6px;
+  background-color: var(--nn-bg-secondary);
+  border: 1px solid var(--nn-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  padding: 4px 0;
+  min-width: 230px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  direction: rtl;
+}
+
+.tv-flyout-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--nn-text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.tv-flyout-item:hover {
+  background-color: var(--nn-bg-hover);
+  color: #ffffff !important;
+}
+
+.tv-flyout-item.active {
+  color: var(--nn-text-active);
+  font-weight: 600;
+}
+
+.nn-tool-divider {
+  width: 24px;
+  height: 1px;
+  background-color: var(--nn-border);
+  margin: 4px 0;
+}
+
+/* ================= بستر بوم چارت (CANVAS WRAPPER) ================= */
+.nn-canvas-area {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  direction: ltr; /* KlineCharts canvas coordinate space is strictly LTR */
+}
+
+.nn-kline-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* نوار هشدار عدم وجود دیتا (صادقانه) */
+.nn-no-data-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(30, 34, 45, 0.9);
+  border: 1px solid var(--nn-border-light);
+  border-radius: 8px;
+  padding: 16px 24px;
+  text-align: center;
+  color: var(--nn-text-secondary);
+  font-size: 13px;
+  direction: rtl;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* بنر هشدار سیگنال خروج FTS (کندل کامل زیر MA14) */
+.nn-fts-exit-alert {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(242, 54, 69, 0.15);
+  border: 1px solid rgba(242, 54, 69, 0.4);
+  color: var(--nn-color-down);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  direction: rtl;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ================= نوار شناور تنظیمات المان (FLOATING PROPERTIES BAR) ================= */
+.tv-floating-properties-bar {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--nn-bg-secondary);
+  border: 1px solid var(--nn-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  z-index: 150;
+  direction: rtl;
+}
+
+/* ================= نوار وضعیت و بازه‌های پایین (BOTTOM BAR) ================= */
+.nn-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  min-height: 32px;
+  background-color: var(--nn-bg-primary);
+  border-top: 1px solid var(--nn-border);
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--nn-text-secondary);
+  z-index: 10;
+}
+
+.nn-range-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nn-range-btn {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: transparent;
+  border: none;
+  color: var(--nn-text-secondary);
+  font-family: var(--nn-font);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.nn-range-btn:hover {
+  background-color: var(--nn-bg-hover);
+  color: #ffffff;
+}
+
+.nn-range-btn.active {
+  background-color: var(--nn-bg-hover);
+  color: var(--nn-text-active);
+  font-weight: 600;
+}
+
+.nn-scale-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nn-scale-toggle {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px solid var(--nn-border);
+  color: var(--nn-text-secondary);
+  font-family: var(--nn-font);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nn-scale-toggle:hover {
+  background-color: var(--nn-bg-hover);
+  color: #ffffff;
+}
+
+.nn-scale-toggle.active {
+  background-color: rgba(41, 98, 255, 0.15);
+  color: var(--nn-text-active);
+  border-color: rgba(41, 98, 255, 0.4);
+}

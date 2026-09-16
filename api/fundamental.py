@@ -64,7 +64,7 @@ FTS_V10_DEFAULTS = {
     "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالص
     "margin_ideal": 30.0,           # ۳ — حاشیهٔ ایده‌آل
     "sales_to_mcap_min": 1.0,       # ۴الف — فروش سالانه ÷ ارزش بازار (۱۰۰٪ = ۱×، استاندارد جزوه)
-    "potential_min": 33.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
+    "potential_min": 40.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
 }
 
 MRL_TO_RIAL = 1e6      # جداول کدال «میلیون ریال» هستند
@@ -1047,14 +1047,19 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
                             for m in ANNUALIZATION_SCALE]}
 
 
-def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
-    """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۳۳٪).
+def ind4_valuation(annual, gm, market_cap_rials, th=None, kind=None) -> dict:
+    """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۴۰٪).
 
     سود ناخالص پتانسیل = فروش سالانهٔ annualized × حاشیهٔ ناخالص.
     برای شرکت مالی که «سود ناخالص» ندارد، حاشیهٔ سود خالص به‌عنوان «مبنای
     جایگزین» مصرف و صریحاً برچسب می‌خورد تا با عددِ شرکت تولیدی اشتباه نشود.
     """
     th = th or v10_thresholds()
+    # سند v2.1: برای هلدینگ/سرمایه‌گذاری، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
+    if kind == "holding":
+        return {"available": False, "na": True, "pass": False, "potential_pass": False,
+                "sales_pass": False, "rule_ref": "F-04",
+                "reason": "هلدینگ/سرمایه‌گذاری: اعمال نسبت فروش به ارزش بازار و جانشین NAV مجاز نیست (N/A)."}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
@@ -1086,8 +1091,12 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None) -> dict:
             "est_gross_profit_bt": (_bt(annual["annual_sales_mrl"] * (margin / 100.0))
                                     if margin is not None else None),
             "potential_pct": pot_pct, "potential_threshold": th["potential_min"],
-            "potential_pass": pot_pass, "pass": bool(sales_pass and pot_pass),
-            "reason": ("" if margin is not None else
+            "potential_pass": pot_pass, "rule_ref": "F-04", "gate": "OR",
+            "pass": bool(sales_pass or pot_pass),
+            "reason": (("قبولی با نسبت فروش/ارزش‌بازار" if sales_pass else
+                        "قبولی با پوشش پتانسیل سود" if pot_pass else
+                        "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.")
+                       if margin is not None else
                        "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.")}
 
 
@@ -1113,6 +1122,7 @@ def ind5_industry(sector, cfg=None, market_cap_rials=0.0, total_market_cap_rials
     sec["outlook"] = _PRICING_OUTLOOK.get(verdict, _PRICING_OUTLOOK["neutral"])
     sec["regime_label"] = {"free": "آزاد / بورس کالا", "mandatory": "دستوری",
                            "neutral": "مخلوط / بی‌طرف"}[verdict]
+    sec["rule_ref"] = "F-05"
     return sec
 
 
@@ -1284,9 +1294,29 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         elif rev > 0 and net:
             gm["net_margin_rejected_pct"] = round(net / rev * 100.0, 1)
     annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref, profile=prof)
-    val = ind4_valuation(annual, gm, market_cap_rials, th=th)
+    # سند v2.1: گیتِ «عدم اعمال نسبت فروش بر هلدینگ‌ها» (holdings_sales_na)
+    _holdings_na = bool((cfg or {}).get("holdings_sales_na", True))
+    val = ind4_valuation(annual, gm, market_cap_rials, th=th,
+                         kind=(prof.get("kind") if (prof and _holdings_na) else None))
     sec = ind5_industry(sector, cfg=cfg, market_cap_rials=market_cap_rials,
                         total_market_cap_rials=total_market_cap_rials)
+    # سند v2.1: استثنای دارویی — فقط با حاشیهٔ ناخالص > آستانهٔ پیکربندی
+    # (pharma_margin_exempt_min؛ ۰ = غیرفعال) مجاز است.
+    _pm = float((cfg or {}).get("pharma_margin_exempt_min", 0) or 0)
+    try:
+        _is_pharma = "دارو" in fts_engine.norm_fa(sector)
+    except Exception:
+        _is_pharma = False
+    if _pm > 0 and _is_pharma:
+        _m = None
+        try:
+            _m = gm.get("margin_pct") if isinstance(gm, dict) else None
+        except Exception:
+            _m = None
+        if _m is None or float(_m) < _pm:
+            sec = dict(sec)
+            sec["verdict"] = "mandatory"
+            sec["reason"] = ("دارویی با حاشیهٔ ناخالص کمتر از %.0f٪ مجاز نیست (سند v2.1)." % _pm)
 
     axis1 = bool(growth.get("pass") and volume.get("pass"))
     axis2 = bool(eps.get("pass"))

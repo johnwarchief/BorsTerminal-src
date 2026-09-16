@@ -1,0 +1,287 @@
+// features/fundamental/components/AuditBadge.tsx -- بج ممیزی/شفافیت وضعیت
+// یک بجِ متراکم با وضعیت (قبول سبز · مردود قرمز · N/A خاکستری) که با hover یا
+// کلیک، کارت «چرا این وضعیت؟» را باز می‌کند: ۱) سربرگ ۲) جدول مقایسهٔ مقدار
+// واقعی سهم با تارگت FTS + انحراف ۳) متن تشریحی علت (+ مرجع قاعده).
+// دادهٔ ممیزی از فیلدهای بک‌اند (reason/actual_value/target_threshold/rule_ref)
+// می‌آید؛ اگر نبود، فقط همان چیزی که هست نشان داده می‌شود — هیچ عدد ساختگی.
+// Popover بدون Radix: createPortal + position:fixed (همان الگوی MarketFilters).
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
+import { toFaDigits } from '@shared/lib/fmt';
+
+export type AuditState = 'pass' | 'fail' | 'na';
+
+export interface AuditEvidence {
+  /** مقدار واقعی سهم (عددی یا متن آماده) */
+  actualValue?: number | string | null;
+  /** تارگت/آستانهٔ FTS */
+  targetThreshold?: number | string | null;
+  /** مرجع قاعده (جزوه/موتور) */
+  ruleRef?: string | null;
+  /** متن تشریحی علت */
+  reason?: string | null;
+  /** واحد نمایش مقدار (٪، ×، سال …) */
+  unit?: string | null;
+  /** جهت مطلوب: بالاتر بهتر (پیش‌فرض) یا پایین‌تر بهتر */
+  direction?: 'higher' | 'lower' | null;
+}
+
+const STATE_STYLE: Record<AuditState, { cls: string; label: string }> = {
+  pass: { cls: 'border-accent-green/30 bg-accent-green/15 text-accent-green', label: 'قبول' },
+  fail: { cls: 'border-accent-red/30 bg-accent-red/15 text-accent-red', label: 'مردود' },
+  na: { cls: 'border-border-c bg-bg-card text-text-secondary', label: 'N/A' },
+};
+
+const NO_AUDIT_TEXT = 'دادهٔ ممیزی برای این وضعیت ثبت نشده است — فقط وضعیت در دسترس است.';
+
+function fmtValue(v: number | string | null | undefined, unit?: string | null): string | null {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') {
+    const s = toFaDigits(Number.isInteger(v) ? String(v) : v.toFixed(2));
+    return unit ? `${s}${unit}` : s;
+  }
+  return v;
+}
+
+/** انحراف مقدار واقعی از تارگت — جهت‌آگاه (higher: bigger is better) */
+export function auditDeviation(
+  actual: number | string | null | undefined,
+  target: number | string | null | undefined,
+  direction: 'higher' | 'lower' | null = 'higher',
+): { delta: number; pct: number | null; meets: boolean } | null {
+  if (typeof actual !== 'number' || typeof target !== 'number') return null;
+  if (!Number.isFinite(actual) || !Number.isFinite(target)) return null;
+  const raw = actual - target;
+  const delta = direction === 'lower' ? -raw : raw;
+  const pct = target !== 0 ? (delta / Math.abs(target)) * 100 : null;
+  return { delta, pct, meets: delta >= 0 };
+}
+
+/** کارت «چرا این وضعیت؟» — جدول مقایسه + علت + مرجع قاعده */
+export function AuditReasonCard({
+  state,
+  evidence,
+  title = 'چرا این وضعیت؟',
+}: {
+  state: AuditState;
+  evidence?: AuditEvidence | null;
+  title?: string;
+}) {
+  const ev = evidence ?? {};
+  const actual = fmtValue(ev.actualValue, ev.unit);
+  const target = fmtValue(ev.targetThreshold, ev.unit);
+  const dev = auditDeviation(ev.actualValue, ev.targetThreshold, ev.direction ?? 'higher');
+  const hasTable = actual != null || target != null;
+  const reason = ev.reason ?? null;
+  return (
+    <div
+      role="dialog"
+      aria-label={title}
+      data-testid="audit-popover"
+      className="glass-panel panel-in w-[19rem] max-w-[92vw] p-3 text-right"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-xs font-black text-text-primary">{title}</h4>
+        <span
+          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-bold ${STATE_STYLE[state].cls}`}
+        >
+          {STATE_STYLE[state].label}
+        </span>
+      </div>
+
+      {hasTable ? (
+        <table className="w-full text-2xs" data-testid="audit-compare">
+          <thead>
+            <tr className="text-text-muted">
+              <th className="py-1 text-right font-bold">مقدار سهم</th>
+              <th className="py-1 text-right font-bold">تارگت FTS</th>
+              <th className="py-1 text-right font-bold">انحراف</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="num text-text-primary">
+              <td className="py-1" data-testid="audit-actual">
+                {actual ?? '—'}
+              </td>
+              <td className="py-1" data-testid="audit-target">
+                {target ?? '—'}
+              </td>
+              <td
+                className={`py-1 ${dev == null ? 'text-text-muted' : dev.meets ? 'text-accent-green' : 'text-accent-red'}`}
+                data-testid="audit-deviation"
+              >
+                {dev == null
+                  ? 'قابل‌محاسبه نیست'
+                  : `${dev.delta >= 0 ? '+' : '−'}${toFaDigits(Math.abs(dev.delta).toFixed(2))}${ev.unit ?? ''}${
+                      dev.pct == null ? '' : ` (${toFaDigits(Math.abs(dev.pct).toFixed(0))}٪)`
+                    }`}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      ) : null}
+
+      {dev != null ? (
+        <p className="mt-1 text-2xs text-text-muted">
+          مطلوب: مقدار {ev.direction === 'lower' ? '≤' : '≥'} تارگت — این سهم{' '}
+          {dev.meets ? 'تارگت را پوشش می‌دهد' : 'از تارگت عقب است'}.
+        </p>
+      ) : null}
+
+      <p className="mt-2 text-2xs leading-relaxed text-text-secondary" data-testid="audit-reason">
+        {reason ?? NO_AUDIT_TEXT}
+      </p>
+
+      {ev.ruleRef ? (
+        <p className="mt-1.5 text-2xs text-text-muted" data-testid="audit-rule">
+          مرجع قاعده: {ev.ruleRef}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * بج ممیزی بازیافت‌پذیر. `children` می‌تواند برچسب دلخواه باشد؛ پیش‌فرض، متن
+ * وضعیت (قبول/مردود/N/A) است. کلیک روی بج با stopPropagation بسته می‌شود تا
+ * داخل سلول‌های کلیک‌پذیر (کارت FTS و ردیف جدول) با رفتار میزبان تضاد نکند.
+ */
+export function AuditBadge({
+  state,
+  evidence,
+  label,
+  title,
+  testId = 'audit-badge',
+  className = '',
+  compact = false,
+  hintTitle,
+}: {
+  state: AuditState;
+  evidence?: AuditEvidence | null;
+  /** برچسب دلخواه به‌جای متن پیش‌فرض وضعیت */
+  label?: ReactNode;
+  /** سربرگ کارت بازشو */
+  title?: string;
+  testId?: string;
+  className?: string;
+  /** حالت متراکم جدول (بدون حاشیهٔ پُر) */
+  compact?: boolean;
+  /** متن tooltip بومی مرورگر روی خود بج (پیش از باز شدن کارت) */
+  hintTitle?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const popId = useId();
+
+  const place = useCallback(() => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const width = 320;
+    const right = Math.max(8, Math.min(window.innerWidth - rect.right, window.innerWidth - width - 8));
+    const below = rect.bottom + 4;
+    const top = below + 220 > window.innerHeight && rect.top > 230 ? Math.max(8, rect.top - 224) : below;
+    setPos({ top, right });
+  }, []);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setPinned(false);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    place();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    const onScroll = () => close();
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (ref.current?.contains(t)) return;
+      const pop = document.getElementById(popId);
+      if (pop?.contains(t)) return;
+      close();
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    document.addEventListener('mousedown', onDocClick);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+      document.removeEventListener('mousedown', onDocClick);
+    };
+  }, [open, close, place, popId]);
+
+  const style = STATE_STYLE[state];
+  return (
+    <span
+      ref={ref}
+      className={`inline-flex ${className}`}
+      onMouseEnter={() => {
+        if (!open) {
+          place();
+          setOpen(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (!pinned) close();
+      }}
+      onFocus={() => {
+        if (!open) {
+          place();
+          setOpen(true);
+        }
+      }}
+      onBlur={() => {
+        if (!pinned) close();
+      }}
+    >
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-describedby={open ? popId : undefined}
+        title={hintTitle}
+        data-testid={testId}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (open && pinned) close();
+          else {
+            place();
+            setOpen(true);
+            setPinned(true);
+          }
+        }}
+        className={`inline-flex items-center gap-1 rounded-full border text-2xs font-bold transition-colors ${
+          compact ? 'px-1.5 py-0' : 'px-2.5 py-0.5'
+        } ${style.cls}`}
+      >
+        {label ?? style.label}
+        <span aria-hidden className="text-2xs leading-none opacity-70">
+          ⓘ
+        </span>
+      </button>
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <span
+              id={popId}
+              style={{
+                position: 'fixed',
+                top: pos?.top ?? 0,
+                right: pos?.right ?? 0,
+                zIndex: 9999,
+              }}
+            >
+              <AuditReasonCard state={state} evidence={evidence} title={title} />
+            </span>,
+            document.body,
+          )
+        : null}
+    </span>
+  );
+}

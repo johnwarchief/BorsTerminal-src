@@ -9,6 +9,7 @@ import { FlashNum } from '@shared/components/FlashNum';
 import { Badge } from '@shared/components/Badge';
 import { aggregateSignals } from '@features/master/lib/masterMath';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
+import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { useInspectorBoard } from './useInspectorBoard';
 
 const ACTION_FA = {
@@ -224,6 +225,22 @@ export function SymbolInspector() {
             hint={port?.rationale}
           />
         </div>
+
+        {/* ممیزی وضعیت بنیادی (FTS) — بازشوی «چرا این وضعیت؟» */}
+        <AuditBadge
+          state={fund == null ? 'na' : fund.direction === 'bearish' ? 'fail' : 'pass'}
+          evidence={{
+            actualValue: fund?.score ?? null,
+            targetThreshold: 5,
+            ruleRef: 'FTS',
+            reason: fund?.rationale ?? null,
+            direction: 'higher',
+          }}
+          compact
+          title="چرا این وضعیت؟"
+          label={`ممیزی نمرهٔ بنیادی${fund?.score == null ? '' : ': ' + toFaDigits(fund.score)}`}
+          hintTitle="دلیل وضعیت شاخص بنیادی"
+        />
 
         {/* دسترسی مستقیم */}
         <div className="mt-1 flex flex-col gap-2">

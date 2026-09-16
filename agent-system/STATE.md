@@ -1,8 +1,8 @@
 # STATE — اسنپ‌شات سیستم (به‌روز: 2026-09-14 ۱۶:۰۰ محلی)
 
 ## Repo / سرور
-- **master HEAD:** `e94b534` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
-- **خط پایهٔ تست:** ۵۹۳ سبز (۵۶ فایل) · eslint صفر · build سالم
+- **master HEAD:** `b3e2144` (شامل همهٔ کارها + بستهٔ agent-system؛ سرِ آن `4f180ac` فیکس دراور بنیادی است)
+- **خط پایهٔ تست:** ۶۲۷ سبز (۵۹ فایل) · eslint صفر · build سالم
 - **سرور:** `python start_dashboard.py --port 8012` از ریشه (پایدار در این ماشین، PID متغیر)
 - **دیتابیس:** market.db (≈۱۰۴MB، sync خودکار صبحگاهی) + codal.db در ریشه
 
@@ -150,3 +150,66 @@
   3) گروه/پوشه — تگ `groupId`، فهرست/پنهان/حذف/گروه هدف (صادقانه در UI: گروه = برچسب است نه پوشهٔ واقعی).
   4) تغییر اندازهٔ همه — ⚠️ فقط ضخامت خط (`styles.size`، 1→2→3)؛ resize هندسی اشکال در API موتور پشتیبانی نمی‌شود ⇒ پیاده نشد (بدون ادعای کاذب).
   اعتبارسنجی: vitest 593/593 (56 فایل)، eslint صفر، build سالم (TechnicalPage ~132KB).
+
+
+## به‌روزرسانی ۲۱ (ایجنتهد main, 2026-09-15 ~02:30)
+- (میان این و قبلی، هد کامیت‌های زیادی لند کرد: `104f854` portfolio basket، `e150dce` responsive shell فاز 2، `3b0141b` UI فاز 3 (type floor مشترک + کنتراست تم روشن)، و `1d4f963` که هر ۴ موردِ F-05 را پیاده کرد: آستانهٔ sales/mcap=1.0، هلدینگ + مخفی‌کردن رشد حجم، reason شاخص 2 مبتنی بر trend، گارد سالانه‌سازی 12ماهه.)
+- **agent/fundamental (UI-1)** مرج شد (fast-forward): `3e5ff33`. ۵۸ مورد `text-[9/10/11px]` در ۱۰ فایل features/fundamental به `text-2xs` (کف 12px). اعتبارسنجی: vitest 605/605 (57 فایل)، eslint صفر، build سالم. تأیید شد در fundamental صفر مورد باقی است.
+- ⚠️ باقی‌مانده: ۲۰۹ مورد `text-[9-11px]` در سایر تب‌ها (market/technical/master/portfolio/app) هنوز هست — type floor فقط fundamental + shared اعمال شده.
+
+
+## به‌روزرسانی ۲۲ (ایجنتهد main, 2026-09-15 ~03:00)
+- **agent/technical (T-13)**: جایگزینی drop-in پکیج «جمینای» ممکن نیست — برای klinecharts v9 نوشته شده و روی v10 کامپایل نمی‌شود (≌13 خطا: applyNewData/setOverlayOptions نبود، امضای createIndicator v9، LineType تم). هیچ کامیتی نزده شد (درست).
+- ⚠️ حادثه و پاک‌سازی: ایجنت پوشهٔ untracked `frontend/src/features/technical/nahayatnegar/` را در ورکتری neat-plateau جا گذاشته بود که `tsc -b`/build را قرمز می‌کرد؛ حذفِ او با گارد ایمنی رد شد. من پوشه را حذف کردم و `npx tsc -b` ورکتری الان exit=0 (سبز). چک‌اوت اصلی Base از اول تمیز بود (فقط `dev/eval/` untracked).
+- پورت پیشنهادی (مرحلهٔ بعد، ~۱ پاس، تصمیم با هد): applyNewData→setDataLoader؛ امضای createIndicator؛ setOverlayOptions→overrideOverlay/styles؛ اصلاح شکل تم به LineType؛ افزودن corporateActions + اتصال lib/adjustments به adjustEvents؛ اتصال دوبارهٔ اورلی‌های FTS.
+
+
+## به‌روزرسانی ۲۳ (ایجنتهد main, 2026-09-15 ~03:30)
+- **agent/technical (T-14)** مرج شد (fast-forward): `754277d`. جایگزینی کامل چارت تب تکنیکال با نسخهٔ NahayatNegar-سبکِ ساختهٔ جمینای + پورت ۶ نقطه‌ای به v10 (applyNewData→setDataLoader/resetData؛ createIndicator شیئی v10؛ setOverlayOptions→overrideOverlay؛ yAxis log با setStyles؛ setFormatter جلالی؛ corporateActions از adjustEvents + lib/adjustments). اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم.
+- ⚠️ رگرسیون‌های موقت (خود‌گزارش): اورلی‌های FTS روی چارت جدید **وصل نشدند**؛ Split View موقتاً **غیرفعال** شد. اندازهٔ چانک `TechnicalPage` ~367KB (klinecharts داخلش؛ قابل lazy در مرحلهٔ بعد).
+- حفظ‌شده: سایدبار راست، بازپخش، مقایسه، پنل‌های تحلیل FTS. هیچ فایل موقتِ untracked نمانده (اسکرچ فقط در .openclaw/tmp).
+
+
+## به‌روزرسانی ۲۴ (ایجنتهد main, 2026-09-15 ~03:50)
+- **agent/technical (T-15)** مرج شد: `51b8fc8` + merge commit `b98a139`. رفع دو رگرسیون T-14 + lazy:
+  1) اورلی‌های FTS دوباره وصل شدند (`registerFtsOverlays`: کمربندهای فیبوی لوگ 0.33-0.40/0.618-0.70 + تراز 1.0، مارکرهای ستاپ جت/پولبک/کف‌دوقلو/شکارِ نقطه، خط جت؛ اندیکاتورها MA14/21/52/100 روی قیمت، MA21 حجم، RSI(14) وایلدر در پنل جدا).
+  2) Split View دوباره فعال (چیدمان 1/2/4 + sync کراس‌هیر/زوم با `chartSync`؛ پنل‌ها با رپر v10 خودمان).
+  3) Lazy: چارت جمینای با React.lazy/Suspense جدا ⇒ `TechnicalPage` از ~367KB به **106.7KB** (gzip 33KB).
+  اعتبارسنجی: vitest 607/607 (58 فایل)، eslint صفر، build سالم (اندازه‌ها در dist تأیید شد).
+
+
+## به‌روزرسانی ۲۵ (ایجنتهد main, 2026-09-15 ~04:15)
+- **agent/technical (T-16)**: ادغام پکیج `gem13_003154` انجام نشد — هنوز کامل پورت نشده؛ با v10.0.3 پنج خطا می‌دهد (`createIndicator` 3‌آرگومانی، `{type:string}` به‌جای boolean، `IconCheck` بی‌استفاده، `body` بی‌استفاده). ایجنت تغییرات را با `git checkout` برگرداند و درخت سبز ماند؛ master دست‌نخورده (`072c14a`). هیچ کامیتی نزده شد (درست).
+- ⚠️ پاک‌سازی: یک فایل یتیمِ untracked `frontend/src/features/technical/nahayatnegar/lib/ftsOverlays.ts` در ورکتری neat-plateau مانده بود (حذفِ ایجنت با گارد ایمنی رد شد). من حذفش کردم و `npx tsc -b` ورکتری الان exit=0 (سبز).
+- مرحلهٔ بعد (با dispatch، ~۱ پاس): همان ۵ خطا در nahayatnegar فیکس؛ صفحه به `KLineChartWrapper` جدید (default export) وصل؛ تست `technical-nn-chart` به نام جدید به‌روز. سایدبار/Replay/مقایسه/Split دست‌نخورده می‌مانند.
+
+
+## به‌روزرسانی ۲۶ (ایجنتهد main, 2026-09-15 ~04:45)
+- **agent/technical (T-17)** مرج شد (fast-forward): `01a5e54`. تکمیل پورت چارت جمینای به v10: رفع ۵ خطا (createIndicator شیئی v10 + setPaneOptions؛ getConvertPictureUrl(true)؛ حذف IconCheck/body بی‌استفاده؛ as never؛ هدر eslint-disable برای کد vendored)، وصل صفحه به default export جدید `KLineChartWrapper` + حذف پراپ‌های قدیمی، به‌روزرسانی تست `technical-nn-chart`. سایدبار/Replay/Compare/Split دست‌نخورده.
+- اعتبارسنجی روی master: vitest 607/58 سبز (کامیت‌شده؛ رانِ محلی با probe سرگردانِ هد = 609/59)، build سالم (TechnicalPage 106.6KB، چارت در چانک جدا 49.9KB)، eslint **0 error / 3 warning** (disableهای بلااستفاده در کد vendored — فقط cosmetic).
+- ⚠️ درخت Base فعلاً WIP هد دارد: `fts_engine.py` تغییر و `frontend/src/__tests__/zzuiprobe.spec.tsx` untracked — دست نزدم.
+
+
+## به‌روزرسانی ۲۷ (ایجنتهد main, 2026-09-15 ~05:15)
+- (میان این و قبلی، هد کامیت‌های FTS Spec v2 را لند کرد: `220b3e5`/`c60f402` docs، `34fad1b` تست‌های فرمول — **Python**: `dev/fts_formula_tests_v2.py` (۷۲ تست، نه vitest)، `dcbc3fc` فیکس FTS spec v2.1.)
+- **agent/technical (T-18)** مرج شد: `d3a7562` + `7724bab` + merge commit `80d9c14`. چیدمان full-bleed (بدون اسکرول صفحه؛ داک کشویی `FtsDock` برای کارت‌های حجیم؛ واچ‌لیست ۳ستونی) + پالت تیرهٔ TV در دامنهٔ `.tv-workbench` (`styles/tvTheme.css`). اعتبارسنجی: vitest 607/607 (58 فایل — `app-shell` و `technical-feed` هم سبز بودند؛ فلِیک بار‌محور در این ران نیامد)، eslint 0 error / 3 warning، build سالم (TechnicalPage ~106KB).
+
+
+## به‌روزرسانی ۲۸ (ایجنتهد main, 2026-09-15 ~05:40)
+- **agent/technical (T-19)** مرج شد: `74bee6c` + merge commit `a21c0c9`. چارت‌محور: هدر تک‌خطی 32px (نماد/کندل/جهت + خلاصهٔ FTS + تنظیمات)، داک پایین (حالت جمع = استاتوس‌بار 28px)، سایدبار راست جمع‌شو (ریل 32px)، حذف کادر مردهٔ چارت + `ResizeObserver`، اورلی‌های فیبو ظریف‌تر (alpha 0.16→0.07). اعتبارسنجی نهایی: vitest 607/607 (58 فایل)، eslint 0 error / 3 warning، build سالم (TechnicalPage ~107KB، چارت چانک جدا 50KB).
+- ⚠️ مشاهدۀ عملیاتی: در یک رانِ کاملِ **کند** (62s، environment 395s) **۶ تست** قرمز شد (app-shell / market-filters / market-timeline / portfolio-page / technical-tool-settings / technical-toolbar)؛ همه در رانِ تکی سبز بودند و ران کاملِ مجدد 607/607 در 19.5s سبز شد ⇒ فلِیکِ بار‌محور (گسترده‌تر از فقط app-shell). توصیه: تست کامل را هم‌زمان با پروسه‌های سنگین اجرا نکنید؛ اگر ran قرمزِ پراکنده دیدید، اول با رانِ مجدد/تکی تأیید کنید.
+
+
+## به‌روزرسانی ۲۹ (ایجنتهد main, 2026-09-15 ~06:10)
+- **agent/fundamental (F-06)** مرج شد: `f66863c` + merge commit `3d3e47c`. `AuditBadge` + `AuditReasonCard` + `auditDeviation` + `lib/auditEvidence`؛ بازشوی explainability با `createPortal`/`fixed` (بدون Radix؛ بسته با Esc/بیرون‌کلیک/اسکرول؛ stopPropagation). نصب روی ۶ سلول کارت + ۵ ستون جدول غربالگری؛ target‌ها از `thresholds` پاسخ `/api/screener`. رفتار دفاعی: فیلدهای نبوده فقط موجودها نمایش، بدون عدد ساختگی. `widgets/SymbolInspector` دست‌نخورده. اعتبارسنجی: vitest 622/622 (59 فایل)، eslint صفر، build سالم.
+- ⚠️ فلِیکِ بار‌محور تشدید شد: در دو رانِ کندِ متوالی (62s و 78.7s) به‌ترتیب ۶ و **۱۲** تست قرمز شد (پراکنده در همهٔ تب‌ها)؛ همه در رانِ تکی سبز و رانِ کاملِ مجدد 622/622 در 20.3s سبز ⇒ قطعاً محیطی. توصیه: قبل از باور به قرمزِ پراکنده، ران مجدد/تکی بگیرید (سیستم زیر بار سنگین — احتمالاً فرآیندهای موازی).
+
+
+## به‌روزرسانی ۳۰ (ایجنتهد main, 2026-09-15 ~06:40)
+- **agent/fundamental (F-07)** مرج شد: `a8ade67` + merge commit `7a666a8`. کنترل‌های v2.1 در FtsSettingsDrawer: توگل ۱ب «فقط تولیدی» (بانک/بیمه/خدمات/هلدینگ N/A)؛ **رفع باگ واقعی**: خاموش‌کردن توگل قبلاً `v10_volume_growth_min=-1` می‌فرستاد و بک‌اند (`api/market.py`) رد می‌کرد ⇒ حالا `0` + `v10_volume_breadth_min=0` می‌فرستد؛ شاخص 4 با OR + `potential_min=40` (نوشتن هر دو کلید `profit_potential_min` و `v10_potential_min`)؛ دروازه‌های سخت (حذف بیمه، N/A نسبت فروش هلدینگ، استثنای دارویی >50%، حذف بازار پایه). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0 error/3 warning، build سالم.
+- نیاز بک‌اند (کلیدهای ناشناخته در POST دور ریخته می‌شوند ⇒ باید به `FTS_DEFAULTS` اضافه شوند تا ماندگار شوند): `holdings_sales_na` (bool, true)، `pharma_margin_exempt_min` (float, 0/50)، `exclude_base_market` (bool, true). بیمه فعلاً از مسیر `mandatory_sectors` کار می‌کند.
+
+
+## به‌روزرسانی ۳۱ (ایجنتهد main, 2026-09-15 ~07:05)
+- (هد `AuditBadge` را داخل `SymbolInspector` نصب کرد: `ad21945`.)
+- **agent/technical (T-20)** مرج شد: `e13ada7` + merge commit `b3e2144`. پاس QA بصری (autoglm روی :8012): رفع فضای مردهٔ عمودی چارت، سرریز افقی واچ‌لیست (`min-width:0` + `minmax(0,1fr)` + ستون درصد w-16)، رنگ میله‌های حجم سبز/قرمز، مهار اسکرول/ارتفاع. رفع‌نشده (صادقانه): تراز RTL و بریدگی‌های داخل کامپوننت vendoredِ چارت جمینای + کیفیت رندر مارکر «T» (نیازمند پاس جداگانه). اعتبارسنجی: vitest 627/627 (59 فایل)، eslint 0/3، build سالم.
