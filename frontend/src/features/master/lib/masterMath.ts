@@ -25,7 +25,7 @@ export type GateFinding = {
 
 /** نمره علامت دار: صعودی مثبت و نزولی منفی و خنثی صفر */
 export function signedScore(s: AgentSignal): number {
-  if (s.score == null) return 0;
+  if (s.score == null || !Number.isFinite(s.score)) return 0;
   if (s.direction === 'bullish') return s.score;
   if (s.direction === 'bearish') return -s.score;
   return 0;
