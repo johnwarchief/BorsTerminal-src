@@ -5,10 +5,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Badge } from '@shared/components/Badge';
-import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useSaveBasketDecision } from '@features/portfolio/api/useSymbolBasket';
 import { toman, type BlueprintResult } from '../lib/dcaCalc';
+import { DEFAULT_ASSUMED_CAPITAL, fa0, fa1 } from '../lib/fmtNum';
 import type { HourglassSwitch } from '../lib/strictGates';
 import type { HalfExitPlan } from '../lib/managementSummary';
 import { useCapitalStore } from '../stores/capitalStore';
@@ -20,6 +20,8 @@ export type TradeBlueprintProps = {
   halfExit: HalfExitPlan;
   superFundamental: boolean;
   warRegime: boolean;
+  /** سرمایهٔ نمایش‌داده‌شده فرضی است؟ (کاربر چیزی ثبت نکرده) */
+  assumedCapital: boolean;
   onToggleWarRegime: (v: boolean) => void;
 };
 
@@ -30,6 +32,7 @@ export function TradeBlueprint({
   halfExit,
   superFundamental,
   warRegime,
+  assumedCapital,
   onToggleWarRegime,
 }: TradeBlueprintProps) {
   const navigate = useNavigate();
@@ -39,7 +42,7 @@ export function TradeBlueprint({
   const cashToman = useCapitalStore((s) => s.cashToman);
   const setTotalToman = useCapitalStore((s) => s.setTotalToman);
   const setCashToman = useCapitalStore((s) => s.setCashToman);
-  const [draft, setDraft] = useState(totalToman > 0 ? String(totalToman) : '');
+  const [draft, setDraft] = useState(totalToman > 0 ? String(totalToman) : String(DEFAULT_ASSUMED_CAPITAL));
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   const onRegisterStep = async () => {
@@ -77,13 +80,15 @@ export function TradeBlueprint({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-black text-text-primary">ماشین‌حساب برنامهٔ معاملاتی و DCA</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={plan.hasCapital ? 'blue' : 'gray'}>
-            {plan.hasCapital ? `سرمایه ${toman(plan.capitalToman)} تومان` : 'سرمایه ثبت نشده'}
+          <Badge tone={assumedCapital ? 'yellow' : 'blue'}>
+            {plan.hasCapital
+              ? `${assumedCapital ? 'سرمایهٔ فرضی' : 'سرمایه'} ${toman(plan.capitalToman)} تومان`
+              : 'سرمایه ثبت نشده'}
           </Badge>
-          <Badge tone="gray">سقف صنعت {toFaDigits(plan.industryCapPct)}٪</Badge>
+          <Badge tone="gray">سقف صنعت {fa0(plan.industryCapPct)}٪</Badge>
           {plan.industryRemainingPct != null ? (
             <Badge tone={plan.industryRemainingPct > 0 ? 'green' : 'red'}>
-              ظرفیت صنعت {toFaDigits(plan.industryRemainingPct)}٪
+              ظرفیت صنعت {fa1(plan.industryRemainingPct)}٪
             </Badge>
           ) : null}
         </div>
@@ -102,7 +107,7 @@ export function TradeBlueprint({
             onBlur={() => setTotalToman(Number(draft))}
             aria-label="سرمایهٔ کل (تومان)"
             dir="ltr"
-            placeholder="سرمایهٔ فرضی"
+            placeholder={`پیش‌فرض ${DEFAULT_ASSUMED_CAPITAL}`}
             className="num w-40 rounded-lg border border-border-c bg-bg-secondary px-2 py-1.5 text-start text-xs text-text-primary outline-none focus:border-border-accent"
           />
         </label>
@@ -133,11 +138,11 @@ export function TradeBlueprint({
           رژیم ریسک/جنگ {warRegime ? 'فعال' : 'غیرفعال'}
         </button>
         <span className="text-2xs leading-5 text-text-muted">
-          {plan.hasCapital
-            ? plan.industryRemainingPct != null
-              ? `ظرفیت باقی‌ماندهٔ صنعت و سقف ریسک، وزن هر پله را محدود می‌کند.`
-              : 'وزن هر پله از سطح ریسک استخراج شده است.'
-            : 'تا ثبت سرمایه، فقط وزن‌های درصدی نمایش داده می‌شود (بدون عدد ریالی).'}
+          {assumedCapital
+            ? `سرمایهٔ فرضی پیش‌فرض ${toman(DEFAULT_ASSUMED_CAPITAL)} تومان در نظر گرفته شد تا پله‌ها فوراً محاسبه شوند؛ همین اینپوت قابل ویرایش آنی است.`
+            : plan.industryRemainingPct != null
+              ? 'ظرفیت باقی‌ماندهٔ صنعت و سقف ریسک، وزن هر پله را محدود می‌کند.'
+              : 'وزن هر پله از سطح ریسک استخراج شده است.'}
         </span>
       </div>
 
@@ -164,16 +169,16 @@ export function TradeBlueprint({
               <tr key={s.key} className="border-b border-[var(--hairline)] odd:bg-bg-secondary/40">
                 <td className="px-3 py-2 font-bold text-text-primary">{s.label}</td>
                 <td className="px-3 py-2">
-                  {s.refPrice != null ? <span className="num text-text-secondary">{toFaDigits(s.refPrice)}</span> : <span className="text-text-muted">بدون داده</span>}
+                  {s.refPrice != null ? <span className="num text-text-secondary">{fa0(s.refPrice)}</span> : <span className="text-text-muted">بدون داده</span>}
                 </td>
                 <td className="px-3 py-2">
-                  {s.weightPct != null ? <span className="num text-text-primary">{toFaDigits(s.weightPct)}٪</span> : <span className="text-text-muted">—</span>}
+                  {s.weightPct != null ? <span className="num text-text-primary">{fa1(s.weightPct)}٪</span> : <span className="text-text-muted">—</span>}
                 </td>
                 <td className="px-3 py-2">
                   {s.amountToman != null ? <span className="num text-text-primary">{toman(s.amountToman)}</span> : <span className="text-text-muted">بدون داده</span>}
                 </td>
                 <td className="px-3 py-2">
-                  {s.shares != null ? <span className="num text-text-primary">{toFaDigits(s.shares)}</span> : <span className="text-text-muted">بدون داده</span>}
+                  {s.shares != null ? <span className="num text-text-primary">{fa0(s.shares)}</span> : <span className="text-text-muted">بدون داده</span>}
                 </td>
               </tr>
             ))}
@@ -188,7 +193,7 @@ export function TradeBlueprint({
           <div className="text-2xs leading-5 text-text-secondary">{plan.stop.basis}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <span className="num text-2xs text-text-muted">
-              −۵٪ از ورود: {plan.stop.fromPct5 != null ? toFaDigits(plan.stop.fromPct5) : 'بدون داده'}
+              −۵٪ از ورود: {plan.stop.fromPct5 != null ? fa0(plan.stop.fromPct5) : 'بدون داده'}
             </span>
             <span className="num text-2xs text-text-muted">
               کف ماژور: {plan.stop.priceAction != null ? 'ثبت‌شده (کارت بالا)' : 'بدون داده'}
@@ -199,7 +204,7 @@ export function TradeBlueprint({
           <div className="text-2xs font-bold text-text-primary">نسبت R/R</div>
           <div className="mt-0.5">
             {plan.rr != null ? (
-              <span className="num text-sm font-black text-accent-green">{toFaDigits(plan.rr)}</span>
+              <span className="num text-sm font-black text-accent-green">{fa1(plan.rr)}</span>
             ) : (
               <span className="text-2xs text-text-muted">بدون داده (مقاومت/ورود ناقص)</span>
             )}
@@ -217,7 +222,7 @@ export function TradeBlueprint({
             />
             <span className={`text-2xs font-bold ${hourglass.active ? 'text-accent-green' : 'text-text-muted'}`}>
               {hourglass.active ? 'روشن' : 'خاموش'}
-              {hourglass.active && hourglass.volumeMultiple != null ? ` · حجم ${toFaDigits(hourglass.volumeMultiple)}×` : ''}
+              {hourglass.active && hourglass.volumeMultiple != null ? ` · حجم ${fa1(hourglass.volumeMultiple)}×` : ''}
             </span>
             {!superFundamental ? <Badge tone="gray">سوپر‌بنیادی نیست</Badge> : null}
           </div>

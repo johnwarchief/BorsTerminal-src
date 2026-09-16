@@ -23,8 +23,10 @@ export type BlueprintStep = {
 };
 
 export type BlueprintInput = {
-  /** کل سرمایه/نقدینگی از استور پرتفو (تومان) — null یعنی ثبت نشده */
+  /** کل سرمایه/نقدینگی (تومان) — null یعنی ثبت نشده (در آن صورت UI سرمایهٔ فرضی می‌گذارد) */
   capitalToman: number | null;
+  /** آیا سرمایهٔ نمایش‌داده‌شده فرضی است؟ (برای یادداشت صادقانه) */
+  assumedCapital?: boolean;
   /** وزن پایهٔ هر پله بر حسب ریسک (۲ تا ۵ درصد) */
   baseStepWeightPct: number;
   /** سقف وزن صنعت طبق سند (درصد) */
@@ -93,7 +95,11 @@ const STEP_LABELS: Record<StepKey, string> = {
 export function buildTradeBlueprint(input: BlueprintInput): BlueprintResult {
   const notes: string[] = [];
   const capital = typeof input.capitalToman === 'number' && input.capitalToman > 0 ? input.capitalToman : null;
-  if (capital == null) notes.push('سرمایهٔ کل ثبت نشده است؛ برای محاسبهٔ ریالی، سرمایهٔ فرضی را وارد کن.');
+  if (capital == null) {
+    notes.push('سرمایهٔ کل ثبت نشده است؛ برای محاسبهٔ ریالی، سرمایهٔ فرضی را وارد کن.');
+  } else if (input.assumedCapital) {
+    notes.push('این محاسبه با «سرمایهٔ فرضی پیش‌فرض» انجام شده است؛ عدد واقعی را در اینپوت سرمایهٔ کل جایگزین کن.');
+  }
 
   const cap = input.industryCapPct > 0 ? input.industryCapPct : 20;
   const remaining = input.industryUsedPct != null ? Math.max(0, Math.round((cap - input.industryUsedPct) * 10) / 10) : null;

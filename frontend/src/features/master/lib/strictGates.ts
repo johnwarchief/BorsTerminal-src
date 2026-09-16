@@ -9,6 +9,7 @@
 // Circuit Breaker: نبود داده ⇒ state=pending + دلیل صادقانه؛ هرگز وتوی ساختگی.
 import type { AgentSignal } from '@contracts/signal';
 import { isActiveSignal, type BusInput } from './masterMath';
+import { fa0, fa1 } from './fmtNum';
 
 export type StrictGateId = 'fundamental' | 'technical' | 'tape' | 'portfolio';
 
@@ -207,8 +208,8 @@ export function runStrictGates(
     const marginBreach = fm.marginCheck === false || (fm.marginPct != null && fm.marginPct < FUNDAMENTAL_MARGIN_FLOOR_PCT);
     const salesBreach = fm.salesGrowthPct != null && fm.salesGrowthPct < SALES_DROP_FLOOR_PCT;
     const reasonBits: string[] = [];
-    if (fm.marginPct != null) reasonBits.push(`حاشیهٔ سود ${fm.marginPct}٪ در برابر کف ${FUNDAMENTAL_MARGIN_FLOOR_PCT}٪`);
-    if (fm.salesGrowthPct != null) reasonBits.push(`رشد فروش ${fm.salesGrowthPct}٪ در برابر کف ${SALES_DROP_FLOOR_PCT}٪`);
+    if (fm.marginPct != null) reasonBits.push(`حاشیهٔ سود ${fa1(fm.marginPct)}٪ در برابر کف ${fa0(FUNDAMENTAL_MARGIN_FLOOR_PCT)}٪`);
+    if (fm.salesGrowthPct != null) reasonBits.push(`رشد فروش ${fa1(fm.salesGrowthPct)}٪ در برابر کف ${fa0(SALES_DROP_FLOOR_PCT)}٪`);
     if (fm.marginCheck != null) reasonBits.push(`زیرشاخص حاشیه: ${fm.marginCheck ? 'تایید' : 'رد'}`);
     const basis = reasonBits.length > 0 ? reasonBits.join(' · ') : 'نمرهٔ بنیادی صعودی و بدون نقض آشکار';
     if (fm.directionBearish || marginBreach || salesBreach) {
@@ -287,7 +288,7 @@ export function runStrictGates(
       mk(
         'portfolio',
         'blocked',
-        `رژیم ریسک/جنگ فعال است و سقف ورود به سهام ۱۰٪ تا ۲۰٪ کل سرمایه است؛ وزن فعلی ${regime.symbolWeightPct}٪ مجاز نیست.`,
+        `رژیم ریسک/جنگ فعال است و سقف ورود به سهام ${fa0(WAR_EQUITY_CAP_MIN_PCT)}٪ تا ${fa0(WAR_EQUITY_CAP_MAX_PCT)}٪ کل سرمایه است؛ وزن فعلی ${fa1(regime.symbolWeightPct)}٪ مجاز نیست.`,
       ),
     );
   } else if (overIndustry) {
@@ -295,7 +296,7 @@ export function runStrictGates(
       mk(
         'portfolio',
         'blocked',
-        `وزن صنعت با این نماد از سقف ${cap}٪ می‌گذرد (مصرف فعلی ${regime.industryUsedPct}٪) ⇒ گیت سبد مسدود شد.`,
+        `وزن صنعت با این نماد از سقف ${fa0(cap)}٪ می‌گذرد (مصرف فعلی ${fa1(regime.industryUsedPct)}٪) ⇒ گیت سبد مسدود شد.`,
       ),
     );
   } else if (regime.inBasket === true) {
@@ -304,7 +305,7 @@ export function runStrictGates(
     gates.push(mk('portfolio', 'pending', 'وضعیت سبد/صنعت نامشخص است؛ گیت سبد محافظه‌کارانه در انتظار است.'));
   } else {
     gates.push(
-      mk('portfolio', 'passed', `ظرفیت صنعت آزاد است (مصرف ${regime.industryUsedPct ?? 0}٪ از سقف ${cap}٪${warCap != null ? ' · رژیم جنگی فعال' : ''}).`),
+      mk('portfolio', 'passed', `ظرفیت صنعت آزاد است (مصرف ${fa1(regime.industryUsedPct ?? 0)}٪ از سقف ${fa0(cap)}٪${warCap != null ? ' · رژیم جنگی فعال' : ''}).`),
     );
   }
 
@@ -320,13 +321,15 @@ export function runStrictGates(
 
 // ─── بج تصمیم نهایی با ۴ وضعیت قطعی ────────────────────────────────────────
 
-export type DefiniteAction = 'ladder_buy' | 'high_risk_swing' | 'watch' | 'veto';
+export type DefiniteAction = 'ladder_buy' | 'high_risk_swing' | 'watch' | 'veto' | 'veto_gate1' | 'veto_gate2';
 
 export const DEFINITE_ACTION_FA: Record<DefiniteAction, string> = {
   ladder_buy: 'خرید پله‌ای',
   high_risk_swing: 'نوسانگیری با ریسک بالا',
   watch: 'تحت پایش/انتظار',
   veto: 'رد قطعی (وتو)',
+  veto_gate1: 'وتو در گیت ۱ (توقف تا شفافیت بنیادی)',
+  veto_gate2: 'وتو در گیت ۲ (توقف تا شکست تکنیکال)',
 };
 
 export type DefiniteDecision = {
@@ -337,11 +340,13 @@ export type DefiniteDecision = {
   allGatesPassed: boolean;
 };
 
-/** تصمیم قطعی از گیت‌ها — بدون میانگین خطی، فقط قواعد قطعی */
+/** تصمیم قطعی از گیت‌ها — بدون میانگین خطی و بدون بازتوزیع وزن؛ فقط قواعد قطعی */
 export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
   const byId = new Map(res.gates.map((g) => [g.id, g]));
   const passedCount = res.gates.filter((g) => g.state === 'passed').length;
   const allGatesPassed = passedCount === res.gates.length;
+  const fund = byId.get('fundamental');
+  const tech = byId.get('technical');
 
   if (res.weeklyVeto) {
     return {
@@ -367,6 +372,26 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
       allGatesPassed: false,
     };
   }
+
+  // وتوی سخت‌گیرانه: بدون شفافیت بنیادی (گیت ۱) یا بدون شکست تکنیکال (گیت ۲)،
+  // نمرهٔ نهایی از بازتوزیع وزن تابلو/پرتفو ساخته نمی‌شود.
+  if (fund?.state === 'pending') {
+    return {
+      action: 'veto_gate1',
+      label: DEFINITE_ACTION_FA.veto_gate1,
+      reason: `گیت ۱ (بنیاد) تایید نشده است: ${fund.reason} تا شفافیت بنیادی، نمرهٔ بازتوزیعی وزن‌ها معتبر نیست و ورود متوقف می‌ماند.`,
+      allGatesPassed: false,
+    };
+  }
+  if (tech?.state === 'pending') {
+    return {
+      action: 'veto_gate2',
+      label: DEFINITE_ACTION_FA.veto_gate2,
+      reason: `گیت ۲ (تکنیکال) تایید نشده است: ${tech.reason} تا شکست/تایید تکنیکال، نمرهٔ بازتوزیعی وزن‌ها معتبر نیست.`,
+      allGatesPassed: false,
+    };
+  }
+
   if (allGatesPassed) {
     return {
       action: 'ladder_buy',
@@ -422,13 +447,13 @@ export function hourglassSwitch(args: {
     return {
       active: true,
       volumeMultiple: Math.min(HOURGLASS_VOLUME_MAX, Math.max(HOURGLASS_VOLUME_MIN, mult)),
-      reason: `قیمت هفتگی زیر MA52 و RSI هفتگی ${weekly.rsi} (≤ ${HOURGLASS_RSI_MAX}) است ⇒ خرید دورهٔ جاری ${mult} برابر${fundScore != null ? ` (نمرهٔ بنیادی ${fundScore})` : ''}.`,
+      reason: `قیمت هفتگی زیر MA52 و RSI هفتگی ${fa1(weekly.rsi)} (≤ ${fa0(HOURGLASS_RSI_MAX)}) است ⇒ خرید دورهٔ جاری ${fa1(mult)} برابر${fundScore != null ? ` (نمرهٔ بنیادی ${fa0(fundScore)})` : ''}.`,
     };
   }
   return {
     active: false,
     volumeMultiple: null,
-    reason: `شرط سوییچ برقرار نیست (زیر MA52: ${weekly.belowMa52 ? 'بله' : 'خیر'} · RSI هفتگی ${weekly.rsi}).`,
+    reason: `شرط سوییچ برقرار نیست (زیر MA52: ${weekly.belowMa52 ? 'بله' : 'خیر'} · RSI هفتگی ${fa1(weekly.rsi)}).`,
   };
 }
 

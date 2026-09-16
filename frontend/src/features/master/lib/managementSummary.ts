@@ -2,6 +2,7 @@
 // Rule-Based NLG: فقط قالب‌های شرطی روی state داوری — هیچ API یا مدل بیرونی.
 // لحن مالی شفاف؛ هر جمله از دادهٔ موجود ساخته می‌شود و در نبود داده صادقانه می‌گوید.
 import { toFaDigits } from '@shared/lib/fmt';
+import { fa0, fa1 } from './fmtNum';
 import type { MasterVerdict } from '@contracts/master';
 import type { AgentSignal } from '@contracts/signal';
 import type { BusInput } from './masterMath';
@@ -178,9 +179,9 @@ export function layerStatusLabel(
     return { text: agentId === 'fundamental' ? 'نقض بنیادی · ورود مسدود' : 'ساختار نزولی', tone: 'red' };
   }
   if (agentId === 'fundamental') {
-    const margin = typeof p.margin_pct === 'number' ? p.margin_pct : null;
-    if (margin != null && margin < 20) return { text: `حاشیهٔ سود ${toFaDigits(margin)}٪ · زیر کف`, tone: 'red' };
-    if (margin != null) return { text: `حاشیهٔ سود تایید (${toFaDigits(margin)}٪)`, tone: 'green' };
+    const margin = typeof p.margin_pct === 'number' ? (p.margin_pct as number) : null;
+    if (margin != null && margin < 20) return { text: `حاشیهٔ سود ${fa1(margin)}٪ · زیر کف`, tone: 'red' };
+    if (margin != null) return { text: `حاشیهٔ سود تایید (${fa1(margin)}٪)`, tone: 'green' };
     return { text: 'بنیاد بدون نقض آشکار', tone: 'green' };
   }
   if (agentId === 'technical') {
@@ -193,7 +194,7 @@ export function layerStatusLabel(
     const mult = extra?.volumeMultiple ?? (typeof p.volumeMultiple === 'number' ? p.volumeMultiple : null);
     if (pattern === 'closing_auction_pop') return { text: 'زمان‌سنج ورود تایید (الگوی ساعت)', tone: 'green' };
     if (pattern === 'suspicious_volume') {
-      return { text: mult != null ? `حجم مشکوک ${toFaDigits(mult)} برابر` : 'حجم مشکوک', tone: 'yellow' };
+      return { text: mult != null ? `حجم مشکوک ${fa1(mult)} برابر` : 'حجم مشکوک', tone: 'yellow' };
     }
     return { text: 'زمان‌سنج ورود بی‌تایید', tone: 'gray' };
   }
@@ -232,7 +233,7 @@ export function halfExitPlan(args: {
   }
   return {
     active: false,
-    text: `تایید بنیادی/ستاپ برای خروج در مقاومت کامل نیست ⇒ خروج ۵۰٪ هنوز فعال نیست (مقاومت مرجع ${toFaDigits(resistance)}).`,
+    text: `تایید بنیادی/ستاپ برای خروج در مقاومت کامل نیست ⇒ خروج ۵۰٪ هنوز فعال نیست (مقاومت مرجع ${fa0(resistance)}).`,
     resistance,
   };
 }

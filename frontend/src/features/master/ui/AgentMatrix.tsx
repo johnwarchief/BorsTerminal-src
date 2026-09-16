@@ -2,6 +2,7 @@
 import { Link } from 'react-router';
 import { AGENT_WEIGHTS, isSignalExpired, type AgentId, type AgentSignal } from '@contracts/signal';
 import { toFaDigits } from '@shared/lib/fmt';
+import { fa0 } from '../lib/fmtNum';
 import { Badge } from '@shared/components/Badge';
 import type { MasterVerdict } from '@contracts/master';
 import { layerStatusLabel } from '../lib/managementSummary';
@@ -112,11 +113,11 @@ export function AgentMatrix({
                   </span>
                 </td>
                 <td className="num px-4 py-2.5 text-text-primary">
-                  {toFaDigits(active ? AGENT_WEIGHTS[a] : 0)}
+                  {fa0(active ? AGENT_WEIGHTS[a] : 0)}
                 </td>
                 <td className="num px-4 py-2.5 text-text-primary">
-                  {s?.score == null ? <span className="text-2xs text-text-muted">بدون داده</span> : `${s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}${toFaDigits(s.score)}`}
-                  {contrib && active ? <span className="text-text-muted"> (سهم <span className="num">{toFaDigits(contrib.score)}</span>)</span> : null}
+                  {s?.score == null ? <span className="text-2xs text-text-muted">بدون داده</span> : <>{s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}{fa0(s.score)}</>}
+                  {contrib && active ? <span className="text-text-muted"> (سهم <span className="num">{fa0(contrib.score)}</span>)</span> : null}
                 </td>
                 <td className="px-4 py-2.5">
                   {(() => {
