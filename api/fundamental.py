@@ -973,7 +973,7 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
                 "reason": ("این شرکت «بهای تمام‌شدهٔ کالای فروش‌رفته» درج نمیکند (%s)؛ "
                            "حاشیهٔ ناخالص فقط برای شرکت‌های تولیدی معنا دارد."
                            % prof["label"])}
-    margin = _f(gm.get("margin_pct"))
+    margin = _sane(gm.get("margin_pct"), -99.0, 200.0)  # حاشیهٔ ۱۸۸۵٪- ⇒ None
     gm["band"] = ("ideal" if margin >= th["margin_ideal"] else
                   "acceptable" if margin >= th["margin_min"] else "below")
     gm["ideal"] = bool(gm.get("optimal"))
@@ -1084,7 +1084,8 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, kind=None) -> dict:
             "annual_sales_bt": annual["annual_sales_bt"],
             "months_used": annual["months_used"], "scale_factor": annual["scale_factor"],
             "annualize_basis": annual["basis"], "reconciled": annual["reconciled"],
-            "sales_to_mcap": round(sales_ratio, 2),
+            "sales_to_mcap": (round(sales_ratio, 2)
+                           if _sane(sales_ratio, -1000.0, 1000.0) is not None else None),
             "sales_threshold": th["sales_to_mcap_min"], "sales_pass": sales_pass,
             "margin_used_pct": margin, "margin_basis": margin_basis,
             "margin_label": margin_label,
