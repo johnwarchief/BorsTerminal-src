@@ -123,6 +123,7 @@ dist/
 
 
 *.lzma
+!market.db.lzma
 releases/
 .cluster/
 .opencode/

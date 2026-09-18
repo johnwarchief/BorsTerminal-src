@@ -31,6 +31,19 @@ APP_DIR = _app_dir()
 WORK_DIR = _work_dir()
 
 DB_PATH = "../market.db" if os.path.exists("../market.db") else "market.db"
+# خوداستخراج خودکار market.db.lzma در صورت نبودن market.db
+if not os.path.exists(DB_PATH):
+    for candidate in [os.path.join(APP_DIR, "market.db.lzma"), os.path.join(WORK_DIR, "market.db.lzma"), "market.db.lzma", "../market.db.lzma"]:
+        if os.path.exists(candidate):
+            try:
+                import lzma
+                target_db = os.path.join(WORK_DIR, "market.db") if not os.path.exists("market.db") else "market.db"
+                with open(candidate, "rb") as fi, open(target_db, "wb") as fo:
+                    fo.write(lzma.decompress(fi.read()))
+                DB_PATH = target_db
+                break
+            except Exception:
+                pass
 # فایل‌های چندنویسنده کنار EXE می‌مانند (در حالت frozen نه داخل _internal)
 STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")
 OD_STATUS_PATH = os.path.join(WORK_DIR, "sync_ondemand.json")
