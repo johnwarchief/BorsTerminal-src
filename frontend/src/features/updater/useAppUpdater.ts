@@ -23,7 +23,7 @@ export function isTauriEnvironment(): boolean {
 
 export function useAppUpdater() {
   const [status, setStatus] = useState<UpdaterStatus>('idle');
-  const [currentVersion, setCurrentVersion] = useState<string>('1.0.1');
+  const [currentVersion, setCurrentVersion] = useState<string>('1.0.2');
   const [newVersion, setNewVersion] = useState<string | null>(null);
   const [releaseNotes, setReleaseNotes] = useState<string | null>(null);
   const [releaseDate, setReleaseDate] = useState<string | null>(null);
@@ -43,7 +43,7 @@ export function useAppUpdater() {
       import('@tauri-apps/api/app')
         .then((mod) => mod.getVersion())
         .then((v) => setCurrentVersion(v))
-        .catch(() => setCurrentVersion('1.0.1'));
+        .catch(() => setCurrentVersion('1.0.2'));
     }
   }, []);
 
@@ -65,7 +65,7 @@ export function useAppUpdater() {
         if (update && update.available) {
           activeUpdateRef.current = update;
           setNewVersion(update.version);
-          setCurrentVersion(update.currentVersion || '1.0.1');
+          setCurrentVersion(update.currentVersion || '1.0.2');
           setReleaseNotes(update.body || 'نسخه جدید شامل بهبودهای امنیتی و عملکردی است.');
           setReleaseDate(update.date || new Date().toISOString());
           setStatus('available');

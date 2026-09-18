@@ -24,7 +24,7 @@ RELEASES_DIR = os.path.join(ROOT, "releases")
 PAYLOAD_ZIP = os.path.join(ROOT, "build", "installer_payload.zip")
 INSTALLER_RUNNER = os.path.join(ROOT, "build", "installer_runner.py")
 ICON_PATH = os.path.join(ROOT, "assets", "bors.ico")
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 def ensure_payload():
     print("[1/4] بررسی و فشرده‌سازی پکیج اجرایی (dist/BorsTerminal_Ultimate)...")
@@ -179,7 +179,7 @@ def perform_install(install_dir, create_desktop, create_start, progress_cb=None,
 class ModernSetupWizard:
     def __init__(self, root):
         self.root = root
-        self.root.title("نصاب ترمینال بورس التیمیت — BorsTerminal Setup v1.0.1")
+        self.root.title("نصاب ترمینال بورس التیمیت — BorsTerminal Setup v1.0.2")
         self.root.geometry("600x440")
         self.root.minsize(560, 420)
         self.root.configure(bg="#0f172a")
@@ -251,7 +251,7 @@ class ModernSetupWizard:
 
         subtitle = tk.Label(
             header,
-            text="BorsTerminal Ultimate Official Windows Setup v1.0.1",
+            text="BorsTerminal Ultimate Official Windows Setup v1.0.2",
             font=("Segoe UI", 9),
             fg="#94a3b8",
             bg="#0f172a",
