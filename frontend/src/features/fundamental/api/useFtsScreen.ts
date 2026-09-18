@@ -40,6 +40,24 @@ export const FtsScreenRowSchema = z.object({
   exclusion_reasons: z.string().nullish(),
   m141: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),
+  // FTS Technical Methodology Fields
+  tech_trend_d: z.string().nullish(),
+  tech_trend_w: z.string().nullish(),
+  tech_trend_m: z.string().nullish(),
+  tech_alignment: z.string().nullish(),
+  tech_jet: z.boolean().nullish(),
+  tech_choch_bull: z.boolean().nullish(),
+  tech_choch_bear: z.boolean().nullish(),
+  tech_double_bottom: z.boolean().nullish(),
+  tech_range_break: z.boolean().nullish(),
+  tech_fib_zone: z.string().nullable().nullish(),
+  tech_exit_verdict: z.string().nullable().nullish(),
+  tech_exit_signals: z.array(z.string()).nullish(),
+  tech_matrix_decision: z.string().nullable().nullish(),
+  tech_matrix_setup: z.string().nullable().nullish(),
+  tech_matrix_desc: z.string().nullable().nullish(),
+  tech_hourglass_active: z.boolean().nullish(),
+  tech_hourglass_action: z.string().nullable().nullish(),
 });
 export type FtsScreenRow = z.infer<typeof FtsScreenRowSchema>;
 

@@ -18,16 +18,8 @@ export function isFundamentalCompany(row: Pick<FtsScreenRow, 'symbol' | 'name' |
   return true;
 }
 
-/** نرمال‌سازی حروف عربی/نیم‌فاصله برای تطبیق نام و صنعت — کدال/TSETMC یک گروه را
- *  با دو املا می‌دهد («سرمايه گذاريها» عربی در برابر «سرمایه‌گذاری‌ها» فارسی) */
-export function normalizeFa(s: string | null | undefined): string {
-  return String(s ?? '')
-    .replace(/\u064a/g, '\u06cc')
-    .replace(/\u0643/g, '\u06a9')
-    .replace(/\u200c/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+import { normalizeFa } from '@shared/lib/normalizeFa';
+export { normalizeFa };
 
 /** بخش‌هایی که فیزیکی/تناژ ندارند: خدماتی، مالی/بانکی، بیمه، هلدینگ و سرمایه‌گذاری */
 const NON_PHYSICAL_SECTOR_RE =

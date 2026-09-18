@@ -33,6 +33,7 @@
     کلیدهای `insights[].{step,title,text}`، `metrics.{mcap,revenue,
     gross_margin,roe,ps}`، `fs_count` و `history[].tracing_no` حفظ شده‌اند.
 """
+from typing import Optional
 from ._core import _num, get_db
 from .market import load_fts_config
 from bors_config import DB_PATH
@@ -1852,6 +1853,84 @@ _INSTR_SQL = """
 """
 
 
+@router.get("/api/fundamental/screen")
+def api_fundamental_screen(
+    verdict: Optional[str] = None,
+    sector: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 0
+):
+    """غربالگری بازار بر اساس ۵ شاخص FTS — خواندن مستقیم از market.db با fts_engine.bulk_scan."""
+    conn = get_db()
+    try:
+        cfg = load_fts_config()
+        rows = fts_engine.bulk_scan(conn, cfg=cfg)
+
+        name_map = dict(conn.execute("SELECT l_val18, l_val30 FROM instruments").fetchall())
+
+        results = []
+        for r in rows:
+            sym = r["symbol"]
+            name = name_map.get(sym, sym)
+            r["name"] = name
+
+            if search:
+                q = fts_engine.norm_fa(search).strip().lower()
+                sym_n = fts_engine.norm_fa(sym).lower()
+                name_n = fts_engine.norm_fa(name).lower()
+                if q not in sym_n and q not in name_n:
+                    continue
+
+            if sector and r.get("sector_name") != sector:
+                continue
+
+            is_excluded = bool(r.get("excluded"))
+            score = int(r.get("score") or 0)
+            if is_excluded:
+                vrd = "REJECTED"
+            elif score == 5:
+                vrd = "SUPER_FUNDAMENTAL"
+            elif score == 4:
+                vrd = "PASSED"
+            elif score == 3:
+                vrd = "WATCHLIST"
+            else:
+                vrd = "REJECTED"
+
+            r["fts_verdict"] = vrd
+
+            if verdict and verdict != "ALL" and vrd != verdict:
+                continue
+
+            results.append(r)
+
+        if limit > 0:
+            results = results[:limit]
+
+        return {
+            "status": "success",
+            "count": len(results),
+            "data": results,
+            "symbols": results
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/api/fundamental/sectors")
+def api_fundamental_sectors():
+    """فهرست صنایع بازار برای فیلتر در تب بنیادی."""
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT sector_name FROM instruments WHERE sector_name IS NOT NULL AND sector_name != '' ORDER BY sector_name"
+        ).fetchall()
+        secs = [r[0] for r in rows]
+        return {"status": "success", "count": len(secs), "sectors": secs}
+    finally:
+        conn.close()
+
+
 @router.get("/api/fundamental/{symbol}")
 def get_fundamental(symbol: str, months: int = 0):
     """کارت بنیادی پنج‌لایهٔ FTS v10 — درآمد (ریالی+حجمی)، سودسازی، حاشیه، پتانسیل، صنعت.
@@ -1865,9 +1944,18 @@ def get_fundamental(symbol: str, months: int = 0):
     """
     conn = get_db()
     try:
-        cur = conn.cursor()
-        cur.execute(_INSTR_SQL, (symbol,))
+        _pred_i, _params_i = fts_engine.sym_in("i.l_val18", symbol)
+        cur.execute(f"""
+            SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
+            FROM instruments i
+            LEFT JOIN market_watch m ON i.ins_code = m.ins_code
+            WHERE {_pred_i}
+            ORDER BY i.updated_at DESC LIMIT 1
+        """, _params_i)
         inst = cur.fetchone()
+        if not inst:
+            cur.execute(_INSTR_SQL, (fts_engine.norm_fa(symbol),))
+            inst = cur.fetchone()
         pred, params = fts_engine.sym_in("symbol", symbol)
         cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
                           "ORDER BY period_end DESC LIMIT 1" % pred, params).fetchone()
@@ -1924,10 +2012,10 @@ def get_fundamental(symbol: str, months: int = 0):
         ref_symbol = norm_symbol if norm_symbol != symbol else None
         if inst and str(inst["l_val18"] or "").startswith("ض") and inst["l_val30"]:
             m30 = re.search(r"\S+\s+([^\s-]+)[\s-]?", str(inst["l_val30"]))
-            probe = m30.group(1) if m30 else None
-            if probe and conn.execute("SELECT 1 FROM instruments WHERE l_val18 = ?",
-                                      (probe,)).fetchone():
-                ref_symbol, ref_reason = probe, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
+            if probe:
+                _p_probe, _a_probe = fts_engine.sym_in("l_val18", probe)
+                if conn.execute(f"SELECT 1 FROM instruments WHERE {_p_probe}", _a_probe).fetchone():
+                    ref_symbol, ref_reason = probe, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
 
         # حذف خودکار از غربالگری (تعلیق / بیمه / قیمت‌گذاری دستوری)
         if res["excluded"]:
@@ -2333,16 +2421,3 @@ def get_fts_symbol(symbol: str, v10: int = 0):
             conn.close()
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-
-
-
-
-
-
-
-
-
-
-
-

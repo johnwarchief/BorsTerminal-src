@@ -195,15 +195,15 @@ export function runStrictGates(
     veto,
   });
 
-  // ── گیت ۱: بنیاد ────────────────────────────────────────────────
+  // ── فیلتر ۱: بنیاد ────────────────────────────────────────────────
   const fund = input.fundamental;
   const fm = fundamentalMetrics(fund);
   const fundActive = fund != null && isActiveSignal(fund, now);
   let fundamentalBlocked = false;
   if (!fund) {
-    gates.push(mk('fundamental', 'pending', 'سیگنال بنیادی منتشر نشده است؛ گیت بنیاد بدون داده است.'));
+    gates.push(mk('fundamental', 'pending', 'عدم ثبت صورت‌های مالی اخیر در سامانه کدال برای سنجش شاخص‌های ۵گانه.'));
   } else if (!fundActive) {
-    gates.push(mk('fundamental', 'pending', 'سیگنال بنیادی منقضی/ناقص است؛ گیت بنیاد ارزیابی نشد.'));
+    gates.push(mk('fundamental', 'pending', 'صورت‌های مالی منقضی یا ناقص است؛ فیلتر بنیاد ارزیابی نشد.'));
   } else {
     const marginBreach = fm.marginCheck === false || (fm.marginPct != null && fm.marginPct < FUNDAMENTAL_MARGIN_FLOOR_PCT);
     const salesBreach = fm.salesGrowthPct != null && fm.salesGrowthPct < SALES_DROP_FLOOR_PCT;
@@ -216,13 +216,13 @@ export function runStrictGates(
       fundamentalBlocked = true;
       gates.push(mk('fundamental', 'blocked', `نقض بنیادی ⇒ ورود روندی مسدود (${basis}).`));
     } else if (fm.marginPct == null && fm.marginCheck == null && fm.salesGrowthPct == null) {
-      gates.push(mk('fundamental', 'pending', 'دادهٔ مالی کافی برای سنجش حاشیه/فروش در دسترس نیست؛ گیت بنیاد محافظه‌کارانه در انتظار است.'));
+      gates.push(mk('fundamental', 'pending', 'دادهٔ مالی کافی برای سنجش حاشیه سود و رشد فروش در دسترس نیست؛ فیلتر بنیاد در انتظار گزارش است.'));
     } else {
       gates.push(mk('fundamental', 'passed', `شرط بنیادی برقرار است (${basis}).`));
     }
   }
 
-  // ── گیت ۲: تکنیکال ماژور/مینور + وتوی روند هفتگی ─────────────────
+  // ── فیلتر ۲: تکنیکال ماژور/مینور + وتوی روند هفتگی ─────────────────
   const tech = input.technical;
   const techActive = tech != null && isActiveSignal(tech, now);
   const weeklyHasData = weekly.uptrend != null || weekly.belowMa52 != null || weekly.rsi != null;
@@ -230,15 +230,15 @@ export function runStrictGates(
   const weeklyNotUp = weekly.uptrend === false;
   const weeklyVeto = weeklyNotUp;
   if (!tech) {
-    gates.push(mk('technical', 'pending', 'سیگنال تکنیکال منتشر نشده است؛ گیت تکنیکال بدون داده است.'));
+    gates.push(mk('technical', 'pending', 'عدم کفایت سابقه کندل‌های هفتگی برای سنجش MA-52 و RSI.'));
   } else if (!techActive) {
-    gates.push(mk('technical', 'pending', 'سیگنال تکنیکال منقضی/ناقص است؛ گیت تکنیکال ارزیابی نشد.'));
+    gates.push(mk('technical', 'pending', 'سابقه کندل‌های تکنیکال منقضی یا ناقص است؛ فیلتر تکنیکال ارزیابی نشد.'));
   } else if (weeklyNotUp) {
     gates.push(
       mk(
         'technical',
         'blocked',
-        `وتوی روند هفتگی: روند هفتگی صعودی نیست (MA52/RSI هفتگی تایید نکرد) ⇒ VETO فوری.`,
+        `روند هفتگی زیر میانگین متحرک ۵۲ هفته (MA52) یا ضعف مومنتوم RSI است ⇒ توقف ورود روندی.`,
         true,
       ),
     );
@@ -252,18 +252,18 @@ export function runStrictGates(
   if (!weeklyHasData) {
     // صادقانه: نبود منبع هفتگی ⇒ وتو صادر نمی‌شود، اما در audit شفاف گفته می‌شود.
     const last = gates[gates.length - 1];
-    last.reason += ' (دادهٔ هفتگی MA52/RSI منتشر نشده؛ وتوی هفتگی ارزیابی نشد.)';
+    last.reason += ' (دادهٔ هفتگی MA52/RSI منتشر نشده؛ نیازمند تکمیل دیتای میان‌مدت)';
   }
 
-  // ── گیت ۳: تابلوخوانی (فقط زمان‌سنج ورود) ────────────────────────
+  // ── فیلتر ۳: تابلوخوانی (فقط زمان‌سنج ورود) ────────────────────────
   const tape = input.tape;
   const tapeActive = tape != null && isActiveSignal(tape, now);
   const tapeSurge = tapeIsSurge(tape);
   const { pattern, volumeMultiple } = tapePattern(tape);
   if (!tape) {
-    gates.push(mk('tape', 'pending', 'سیگنال تابلو منتشر نشده است؛ زمان‌سنج ورود بدون داده است.'));
+    gates.push(mk('tape', 'pending', 'عدم ثبت حجم مشکوک (حداقل ۲ برابر) یا نبود الگوی ساعت معتبر.'));
   } else if (!tapeActive) {
-    gates.push(mk('tape', 'pending', 'سیگنال تابلو منقضی است؛ زمان‌سنج ورود ارزیابی نشد.'));
+    gates.push(mk('tape', 'pending', 'داده‌های جریان معاملات منقضی است؛ زمان‌سنج ورود ارزیابی نشد.'));
   } else if (pattern === 'closing_auction_pop') {
     gates.push(mk('tape', 'passed', 'الگوی ساعت فعال است ⇒ زمان‌سنج ورود تایید شد.'));
   } else if (pattern === 'suspicious_volume') {
@@ -278,7 +278,7 @@ export function runStrictGates(
     gates.push(mk('tape', 'pending', 'تایید نقدینگی تابلو وجود ندارد ⇒ ورود در انتظار زمان‌سنج.'));
   }
 
-  // ── گیت ۴: سبد و رژیم ریسک ──────────────────────────────────────
+  // ── فیلتر ۴: سبد و رژیم ریسک ──────────────────────────────────────
   const cap = regime.industryCapPct > 0 ? regime.industryCapPct : DEFAULT_INDUSTRY_CAP_PCT;
   const warCap = regime.warRegime ? 20 : null;
   const overIndustry = regime.industryUsedPct != null && regime.industryUsedPct + (regime.symbolWeightPct ?? 0) > cap;
@@ -296,13 +296,13 @@ export function runStrictGates(
       mk(
         'portfolio',
         'blocked',
-        `وزن صنعت با این نماد از سقف ${fa0(cap)}٪ می‌گذرد (مصرف فعلی ${fa1(regime.industryUsedPct)}٪) ⇒ گیت سبد مسدود شد.`,
+        `وزن صنعت با این نماد از سقف ${fa0(cap)}٪ می‌گذرد (مصرف فعلی ${fa1(regime.industryUsedPct)}٪) ⇒ فیلتر سبد مسدود شد.`,
       ),
     );
   } else if (regime.inBasket === true) {
     gates.push(mk('portfolio', 'passed', 'نماد در سبد است و ظرفیت صنعت برای پله‌بندی باز است.'));
   } else if (regime.industryUsedPct == null && regime.inBasket == null) {
-    gates.push(mk('portfolio', 'pending', 'وضعیت سبد/صنعت نامشخص است؛ گیت سبد محافظه‌کارانه در انتظار است.'));
+    gates.push(mk('portfolio', 'pending', 'وضعیت سبد/صنعت نامشخص است؛ فیلتر سبد در انتظار است.'));
   } else {
     gates.push(
       mk('portfolio', 'passed', `ظرفیت صنعت آزاد است (مصرف ${fa1(regime.industryUsedPct ?? 0)}٪ از سقف ${fa0(cap)}٪${warCap != null ? ' · رژیم جنگی فعال' : ''}).`),
@@ -328,8 +328,8 @@ export const DEFINITE_ACTION_FA: Record<DefiniteAction, string> = {
   high_risk_swing: 'نوسانگیری با ریسک بالا',
   watch: 'تحت پایش/انتظار',
   veto: 'رد قطعی (وتو)',
-  veto_gate1: 'وتو در گیت ۱ (توقف تا شفافیت بنیادی)',
-  veto_gate2: 'وتو در گیت ۲ (توقف تا شکست تکنیکال)',
+  veto_gate1: 'توقف در فیلتر اول (سد بنیادی)',
+  veto_gate2: 'توقف در فیلتر دوم (سد تکنیکال)',
 };
 
 export type DefiniteDecision = {
@@ -373,13 +373,12 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     };
   }
 
-  // وتوی سخت‌گیرانه: بدون شفافیت بنیادی (گیت ۱) یا بدون شکست تکنیکال (گیت ۲)،
-  // نمرهٔ نهایی از بازتوزیع وزن تابلو/پرتفو ساخته نمی‌شود.
+  // وتوی سخت‌گیرانه: بدون شفافیت بنیادی (فیلتر ۱) یا بدون شکست تکنیکال (فیلتر ۲)، ورود متوقف می‌ماند.
   if (fund?.state === 'pending') {
     return {
       action: 'veto_gate1',
       label: DEFINITE_ACTION_FA.veto_gate1,
-      reason: `گیت ۱ (بنیاد) تایید نشده است: ${fund.reason} تا شفافیت بنیادی، نمرهٔ بازتوزیعی وزن‌ها معتبر نیست و ورود متوقف می‌ماند.`,
+      reason: `فیلتر ۱ (بنیاد) تایید نشده است: ${fund.reason} تا شفافیت بنیادی، ورود متوقف می‌ماند.`,
       allGatesPassed: false,
     };
   }
@@ -387,7 +386,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'veto_gate2',
       label: DEFINITE_ACTION_FA.veto_gate2,
-      reason: `گیت ۲ (تکنیکال) تایید نشده است: ${tech.reason} تا شکست/تایید تکنیکال، نمرهٔ بازتوزیعی وزن‌ها معتبر نیست.`,
+      reason: `فیلتر ۲ (تکنیکال) تایید نشده است: ${tech.reason} تا تایید ساختار تکنیکال، ورود متوقف می‌ماند.`,
       allGatesPassed: false,
     };
   }
@@ -396,7 +395,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'ladder_buy',
       label: DEFINITE_ACTION_FA.ladder_buy,
-      reason: 'هر چهار گیت (بنیاد، تکنیکال، تابلو، سبد/رژیم) هم‌زمان سبز است ⇒ خرید پله‌ای مجاز.',
+      reason: 'هر چهار فیلتر (بنیاد، تکنیکال، تابلو، سبد/رژیم) هم‌زمان سبز است ⇒ خرید پله‌ای مجاز.',
       allGatesPassed: true,
     };
   }
@@ -406,7 +405,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     action: 'watch',
     label: DEFINITE_ACTION_FA.watch,
     reason:
-      `گیت‌های بدون تایید: ${blockers.map((g) => g.label).join('، ')}` +
+      `فیلترهای بدون تایید: ${blockers.map((g) => g.label).join('، ')}` +
       (tape?.state === 'pending' ? ' — تابلو فقط زمان‌سنج ورود است.' : '.'),
     allGatesPassed: false,
   };

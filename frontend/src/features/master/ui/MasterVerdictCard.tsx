@@ -1,6 +1,7 @@
 // features/master/ui/MasterVerdictCard.tsx -- گیج HUD با پرتو نور و عقربه
 import type { AgentId, AgentSignal } from '@contracts/signal';
 import type { MasterVerdict } from '@contracts/master';
+import type { DefiniteDecision } from '../lib/strictGates';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fa0, fa1 } from '../lib/fmtNum';
 import { Badge } from '@shared/components/Badge';
@@ -54,13 +55,43 @@ export function contribBarWidth(score: number, maxAbs: number): number {
   return Math.max(2, Math.min(100, (Math.abs(score) / maxAbs) * 100));
 }
 
-export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict; inputs?: Partial<Record<AgentId, AgentSignal>> }) {
+export function MasterVerdictCard({
+  verdict,
+  inputs,
+  decision,
+}: {
+  verdict: MasterVerdict;
+  inputs?: Partial<Record<AgentId, AgentSignal>>;
+  decision?: DefiniteDecision;
+}) {
+  const isVeto = Boolean(
+    decision &&
+      (decision.action === 'veto' ||
+        decision.action === 'veto_gate1' ||
+        decision.action === 'veto_gate2'),
+  );
+
+  const vetoBadgeLabel =
+    decision?.action === 'veto_gate1'
+      ? 'ورود ممنوع (توقف در فیلتر اول)'
+      : decision?.action === 'veto_gate2' || decision?.action === 'veto'
+        ? 'ورود ممنوع (توقف در فیلتر دوم)'
+        : 'ورود ممنوع (فاقد تایید)';
+
   const pct = Math.max(0, Math.min(100, (verdict.compositeScore + 100) / 2));
   const r = 52;
   const circ = 2 * Math.PI * r;
-  const color = pct >= 60 ? 'var(--accent-green)' : pct >= 40 ? 'var(--neon-cyan)' : 'var(--neon-red)';
-  // عقربه روی نیم دایره بالا: از 180- درجه (چپ) تا 0+ (راست)
-  const needleDeg = -90 + (pct / 100) * 180;
+  const color = isVeto
+    ? 'var(--accent-red)'
+    : pct >= 60
+      ? 'var(--accent-green)'
+      : pct >= 40
+        ? 'var(--neon-cyan)'
+        : 'var(--neon-red)';
+
+  // عقربه روی نیم دایره بالا: در حالت وتو روی صفر قفل می‌شود
+  const needleDeg = isVeto ? -90 : -90 + (pct / 100) * 180;
+  const strokeOffset = isVeto ? circ : circ * (1 - pct / 100);
   const activeCount = verdict.usedSignalIds.length;
   const activeContribs = verdict.contributions.filter((c) => c.signalCount > 0);
   const maxAbs = activeContribs.reduce((m, c) => Math.max(m, Math.abs(c.score)), 0);
@@ -110,7 +141,7 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
               strokeWidth="9"
               strokeLinecap="round"
               strokeDasharray={circ}
-              strokeDashoffset={circ * (1 - pct / 100)}
+              strokeDashoffset={strokeOffset}
               transform="rotate(-90 65 65)"
               filter="url(#gauge-glow)"
               style={{ transition: 'stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1)' }}
@@ -123,26 +154,56 @@ export function MasterVerdictCard({ verdict, inputs }: { verdict: MasterVerdict;
               <line x1="65" y1="65" x2="18" y2="65" stroke="url(#beam-grad)" strokeWidth="2.4" strokeLinecap="round" />
               <circle cx="18" cy="65" r="3" fill={color} filter="url(#gauge-glow)" />
             </g>
-            <text x="65" y="60" textAnchor="middle" fontSize="23" fontWeight="900" fill="var(--text-primary)" className="num">
-              {toFaDigits(Math.round(pct))}
-            </text>
-            <text x="65" y="80" textAnchor="middle" fontSize="10.5" fill="var(--text-muted)">
-              برآیند ۱۰۰ تا ۰
-            </text>
+            {isVeto ? (
+              <>
+                <text x="65" y="58" textAnchor="middle" fontSize="12" fontWeight="900" fill="var(--accent-red)">
+                  وتو / فاقد تایید
+                </text>
+                <text x="65" y="78" textAnchor="middle" fontSize="9.5" fill="var(--text-muted)">
+                  ورود متوقف
+                </text>
+              </>
+            ) : (
+              <>
+                <text x="65" y="60" textAnchor="middle" fontSize="23" fontWeight="900" fill="var(--text-primary)" className="num">
+                  {toFaDigits(Math.round(pct))}
+                </text>
+                <text x="65" y="80" textAnchor="middle" fontSize="10.5" fill="var(--text-muted)">
+                  برآیند ۱۰۰ تا ۰
+                </text>
+              </>
+            )}
           </svg>
         </div>
 
         <div className="flex min-w-52 flex-col gap-2.5">
           <div className="flex items-center gap-2">
-            <Badge tone={ACTION_TONE[verdict.finalAction]}>{ACTION_FA[verdict.finalAction]}</Badge>
-            {verdict.hasConflict ? <Badge tone="orange">تضاد افق زمانی</Badge> : null}
+            {isVeto ? (
+              <>
+                <Badge tone="red">{vetoBadgeLabel}</Badge>
+                <Badge tone="gray">فاقد تایید</Badge>
+              </>
+            ) : (
+              <>
+                <Badge tone={ACTION_TONE[verdict.finalAction]}>{ACTION_FA[verdict.finalAction]}</Badge>
+                {verdict.hasConflict ? <Badge tone="orange">تضاد افق زمانی</Badge> : null}
+              </>
+            )}
           </div>
           <div className="text-xs leading-6 text-text-secondary">
-            <span className="num text-base font-black text-text-primary">{fa1(pct)}٪</span> توافق ایجنت ها ·{' '}
-            <span className="num">{fa0(activeCount)}</span> از <span className="num">۴</span> سیگنال فعال
-            {verdict.discardedSignalIds.length > 0 ? (
-              <span className="text-text-muted"> ({toFaDigits(verdict.discardedSignalIds.length)} کنارگذاشته شده)</span>
-            ) : null}
+            {isVeto ? (
+              <>
+                <span className="text-sm font-black text-accent-red">فاقد تایید</span> · نمره تجمیعی در وضعیت وتو بی‌اعتبار است
+              </>
+            ) : (
+              <>
+                <span className="num text-base font-black text-text-primary">{fa1(pct)}٪</span> توافق ایجنت ها ·{' '}
+                <span className="num">{fa0(activeCount)}</span> از <span className="num">۴</span> سیگنال فعال
+                {verdict.discardedSignalIds.length > 0 ? (
+                  <span className="text-text-muted"> ({toFaDigits(verdict.discardedSignalIds.length)} کنارگذاشته شده)</span>
+                ) : null}
+              </>
+            )}
           </div>
           <div className="flex gap-1.5" dir="ltr" aria-hidden>
             {Array.from({ length: 4 }, (_, i) => (

@@ -6,6 +6,7 @@ import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useUiStore } from '@shared/stores/uiStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
@@ -26,6 +27,7 @@ import { MarketOverview } from '../components/MarketOverview';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
+import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import '../styles/tvTheme.css';
 
 /** چارت پورت‌شدهٔ جمینای (v10) با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
@@ -40,6 +42,26 @@ export default function TechnicalPage() {
   const stored = useSymbolStore((s) => s.symbol);
   const setStored = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
+
+  const { data: marketData } = useMarketFeed();
+  const boardRow = useMemo(() => {
+    if (!symbol || !marketData?.data) return null;
+    return marketData.data.find((item) => item.symbol === symbol) ?? null;
+  }, [symbol, marketData]);
+
+  // اگر هیچ نمادی انتخاب نشده، نماد پیش‌فرض با دیتای کامل ('فولاد') را فعال می‌کنیم
+  useEffect(() => {
+    if (!symbol) {
+      const defaultSym = 'فولاد';
+      setStored(defaultSym);
+      navigate(`/technical/${encodeURIComponent(defaultSym)}`, { replace: true });
+    }
+  }, [symbol, navigate, setStored]);
+
+  // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت
+  useEffect(() => {
+    useUiStore.getState().setSidebarCollapsed(true);
+  }, []);
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -133,12 +155,38 @@ export default function TechnicalPage() {
       <TechnicalSidebar active={activeLevels} onSelect={selectSymbol} />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-1">
-        {/* هدر تک‌خطی مینیمال (سبک نوار تریدینگ‌ویو) */}
-        <div className="flex h-8 shrink-0 items-center gap-2 px-1" data-testid="tech-header">
-          <span className="truncate text-sm font-black text-text-primary">{symbol || 'کل بورس'}</span>
-          <span className="num text-[11px] text-text-muted">{toFaDigits(replayRows.length)} کندل</span>
-          {signal ? <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge> : null}
-          <div className="mr-auto flex items-center gap-1">
+        {/* هدر تک‌خطی مینیمال و غنی از اطلاعات نماد */}
+        <div className="flex h-9 shrink-0 items-center justify-between border-b border-[var(--hairline)] px-2 bg-bg-secondary/40" data-testid="tech-header">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="truncate text-sm font-black text-text-primary">{symbol || 'کل بورس'}</span>
+            {boardRow?.name && (
+              <span className="hidden sm:inline text-xs text-text-muted truncate max-w-[170px]" title={boardRow.name}>
+                {boardRow.name}
+              </span>
+            )}
+            {boardRow && (boardRow.p_last != null || boardRow.p_closing != null) && (
+              <div className="flex items-center gap-1.5 border-r border-[var(--hairline)] pr-2">
+                <span className="num text-xs font-black text-text-primary">
+                  {toFaDigits(Math.round(boardRow.p_last ?? boardRow.p_closing ?? 0).toLocaleString('en-US'))}
+                </span>
+                {boardRow.percent_change != null && (
+                  <span
+                    className={`num text-2xs font-bold px-1.5 py-0.5 rounded ${
+                      boardRow.percent_change >= 0
+                        ? 'bg-accent-green/15 text-accent-green'
+                        : 'bg-accent-red/15 text-accent-red'
+                    }`}
+                  >
+                    {boardRow.percent_change >= 0 ? '+' : ''}{toFaDigits(boardRow.percent_change.toFixed(2))}%
+                  </span>
+                )}
+              </div>
+            )}
+            <span className="num text-[11px] text-text-muted hidden md:inline">{toFaDigits(replayRows.length)} کندل</span>
+            {signal ? <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge> : null}
+          </div>
+
+          <div className="mr-auto flex items-center gap-1 shrink-0">
             <button
               type="button"
               data-testid="header-replay"
@@ -196,8 +244,8 @@ export default function TechnicalPage() {
                 }
               >
                 <NnChart
-                  initialSymbol={symbol || 'شاخص کل'}
-                  initialName={symbol || 'شاخص کل'}
+                  initialSymbol={symbol || 'فولاد'}
+                  initialName={boardRow?.name || symbol || 'فولاد'}
                   initialMarket="بورس"
                   onSymbolChange={(s) => selectSymbol(s.symbol)}
                 />

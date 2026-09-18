@@ -1,0 +1,82 @@
+name: Release BorsTerminal (Tauri v2)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.1)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    name: Build & Release Windows App (Tauri v2)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: 'frontend/src-tauri'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Test Suite
+        run: |
+          cd frontend
+          npx vitest run
+
+      - name: Build Frontend Assets
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Build & Publish Release with Tauri Action
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+        with:
+          projectPath: './frontend'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'BorsTerminal Ultimate ${{ github.ref_name }}'
+          releaseBody: |
+            ## ایستگاه معاملاتی و داوری نخبگان بورس التیمیت ${{ github.ref_name }}
+            
+            ### تغییرات و ویژگی‌های این نسخه:
+            - پکیج رسمی ویندوزی با هسته مدرن و فوق‌سبک Tauri v2
+            - مجهز به سیستم به‌روزرسانی خودکار درون‌برنامه‌ای (In-App Auto-Updater) با امضای دیجیتال Minisign
+            - سیستم احراز هویت ایزوله محلی با حفاظت ضد بروت‌فورس و قفل هوشمند
+            - عملکرد سریع ۳۰ تا ۶۰ فریم بر ثانیه با معماری بهینه‌سازی‌شده
+            
+            ### فایل‌های نصبی پیوست‌شده:
+            - نصاب استاندارد سبک ویندوز: `Bors Terminal Ultimate_*_x64-setup.exe` (NSIS)
+            - پکیج نصبی سازمانی: `Bors Terminal Ultimate_*_x64_en-US.msi`
+            - فایل متادیتا و مانیفست آپدیتر: `latest.json`
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true

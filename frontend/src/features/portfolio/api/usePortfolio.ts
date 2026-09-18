@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 import { PortfolioDecisionSchema } from '../model/portfolioSignals';
 
 const PortfolioFeedSchema = z.object({
@@ -46,7 +47,10 @@ export function useMarketCloses() {
       http<z.infer<typeof ClosesSchema>>('/api/market', { schema: ClosesSchema, signal }).then((feed) => {
         const map = new Map<string, number>();
         for (const r of feed.data ?? []) {
-          if (r.p_closing != null) map.set(r.symbol, r.p_closing);
+          if (r.p_closing != null) {
+            map.set(r.symbol, r.p_closing);
+            map.set(normalizeFa(r.symbol), r.p_closing);
+          }
         }
         return map;
       }),

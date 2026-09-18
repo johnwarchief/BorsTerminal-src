@@ -43,7 +43,7 @@ export function PatternToggles() {
             aria-label={`شفافیت ${PATTERN_LABELS[k]}`}
             className="h-1 w-20 accent-sky-400"
           />
-          <span className="num w-8 text-left text-[10px] text-text-muted">{Math.round(prefs[k].opacity * 100)}</span>
+          <span className="num w-8 text-end text-[10px] text-text-muted">{Math.round(prefs[k].opacity * 100)}</span>
         </div>
       ))}
       <button

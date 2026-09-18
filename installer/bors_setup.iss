@@ -1,5 +1,5 @@
-﻿#define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.0"
+#define AppName "BorsTerminal Ultimate"
+#define AppVersion "1.0.1"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 

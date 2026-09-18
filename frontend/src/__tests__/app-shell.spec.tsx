@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { AppShell } from '@app/layouts/AppShell';
+import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useAuthStore } from '@shared/stores/authStore';
 import { mainRoutes } from '../routes';
 
 function renderApp(initial = '/') {
@@ -25,6 +27,20 @@ function renderApp(initial = '/') {
 }
 
 describe('AppShell smoke', () => {
+  beforeEach(() => {
+    useSymbolStore.getState().clearSymbol();
+    localStorage.clear();
+    useAuthStore.setState({ isAuthenticated: true });
+  });
+
+  it('در غیاب احراز هویت، صفحه لاگین نمایش داده می‌شود', async () => {
+    useAuthStore.setState({ isAuthenticated: false });
+    renderApp('/');
+    await waitFor(() => {
+      expect(screen.getByText('ورود به ایستگاه معاملاتی ⏎')).toBeInTheDocument();
+    });
+  });
+
   it('سایدبار فارسی رندر می شود', async () => {
     renderApp('/');
     await waitFor(() => {
@@ -33,7 +49,8 @@ describe('AppShell smoke', () => {
     });
   });
 
-  it('روت /master بدون نماد حالت خالی را نشان می دهد', async () => {
+  it('روت /master بدون نماد حالت خالی یا هاب را نشان می دهد', async () => {
+    await import('@features/master/routes/MasterPage');
     renderApp('/master');
     await waitFor(() => {
       expect(screen.getByText('نمادی انتخاب نشده')).toBeInTheDocument();

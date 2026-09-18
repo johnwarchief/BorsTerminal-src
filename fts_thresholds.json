@@ -1,38 +1,47 @@
 {
-  "growth_min": 40.0,
-  "inflation_min": 58.0,
-  "eps_years": 3,
-  "margin_min": 20.0,
-  "margin_optimal": 30.0,
-  "sales_to_mcap_min": 1.0,
-  "v10_sales_to_mcap_min": 1.0,
-  "profit_potential_min": 30.0,
-  "industry_mode": "Exclude_Mandatory_Pricing",
-  "mandatory_sectors": [
-    "خودرو",
-    "نیروگاه",
-    "لاستیک",
-    "شوینده",
-    "بیمه",
-    "قند و شکر"
-  ],
-  "free_sectors": [
-    "سیمان",
-    "پتروشیمی",
-    "شیمیایی",
-    "فلزات",
-    "کانی",
-    "کاشی",
-    "سرامیک",
-    "کانه",
-    "معادن",
-    "نفت",
-    "محصولات فلزی",
-    "شیشه"
-  ],
-  "watchlist_max": 50,
-  "mcap_min_hmt": 0.0,
-  "suspended_max_stale_sessions": 3,
-  "filter_m141": false,
-  "min_trade_val": 0.0
+  "version": "2.1",
+  "f01_sales_growth": {
+    "min_borderline_percent": 40.0,
+    "full_score_percent": 60.0,
+    "require_volume_growth_for_manufacturing": true
+  },
+  "f02_eps_trend": {
+    "years_required": 3,
+    "strict_growth": true,
+    "require_positive_latest": true
+  },
+  "f03_gross_margin": {
+    "standard_percent": 30.0,
+    "min_borderline_percent": 20.0,
+    "reject_below_percent": 20.0
+  },
+  "f04_sales_to_cap": {
+    "min_sales_to_cap_ratio": 1.0,
+    "min_gp_to_cap_ratio": 0.40,
+    "exempt_holding_companies": true
+  },
+  "f05_industry_gate": {
+    "free_pricing_sectors": [
+      "سیمان، آهک و گچ",
+      "فلزات اساسی",
+      "محصولات شیمیایی",
+      "استخراج کانه‌های فلزی",
+      "کاشی و سرامیک",
+      "شیشه"
+    ],
+    "mandatory_pricing_sectors": [
+      "خودرو و ساخت قطعات",
+      "عرضه برق، گاز، بخار و آب گرم",
+      "محصولات شوینده و بهداشتی",
+      "لاستیک و پلاستیک"
+    ],
+    "exceptions": {
+      "pharma_min_gpm": 50.0,
+      "bank_require_positive_growth": true
+    }
+  },
+  "vetoes": {
+    "reject_insurance": true,
+    "reject_suspended_symbols": true
+  }
 }

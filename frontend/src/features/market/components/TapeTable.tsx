@@ -36,9 +36,9 @@ type SortKey =
   | 'last_vs_close'
   | 'p_last';
 
-/** ۱۱ ستون: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت · وضعیت FTS · افزودن به سبد */
+/** ۱۱ ستون بهینه‌شده: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت · وضعیت FTS · افزودن به سبد */
 const ROW_GRID =
-  'grid-cols-[1.7fr_0.85fr_0.8fr_1fr_0.9fr_0.95fr_0.95fr_0.85fr_1.9fr_0.85fr_4.5rem]';
+  'grid-cols-[minmax(105px,1.3fr)_minmax(65px,0.75fr)_minmax(52px,0.65fr)_minmax(62px,0.75fr)_minmax(55px,0.7fr)_minmax(52px,0.65fr)_minmax(52px,0.65fr)_minmax(52px,0.65fr)_minmax(148px,1.7fr)_minmax(60px,0.75fr)_minmax(54px,3.8rem)]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'symbol', label: 'نماد و نام' },
@@ -88,25 +88,25 @@ function pctTone(pct: number | null | undefined): string {
 }
 
 const MICRO_TONES = {
-  violet: 'bg-[#8b5cf6]/15 text-[#c4b5fd]',
-  amber: 'bg-accent-yellow/15 text-accent-yellow',
-  cyan: 'bg-neon-cyan/15 text-neon-cyan',
-  emerald: 'bg-accent-green/15 text-accent-green',
-  green: 'bg-accent-green/15 text-accent-green',
-  red: 'bg-accent-red/15 text-accent-red',
-  gray: 'bg-bg-card text-text-muted',
+  violet: 'bg-[#8b5cf6]/25 text-[#ddd6fe] border border-[#8b5cf6]/40',
+  amber: 'bg-accent-yellow/25 text-[#fef08a] border border-accent-yellow/45',
+  cyan: 'bg-neon-cyan/20 text-[#a5f3fc] border border-neon-cyan/40',
+  emerald: 'bg-accent-green/20 text-[#bbf7d0] border border-accent-green/40',
+  green: 'bg-accent-green/20 text-[#bbf7d0] border border-accent-green/40',
+  red: 'bg-accent-red/20 text-[#fecaca] border border-accent-red/40',
+  gray: 'bg-bg-card/90 text-text-primary border border-border-c',
 } as const;
 
 type MicroTone = keyof typeof MICRO_TONES;
 
-/** میکرو-بج متنی های‌دنسیتی؛ جزئیات عددی در title (Tooltip) هر بج */
+/** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
 function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
   return (
     <span
       data-testid={`badge-${pattern}`}
       data-pattern={pattern}
       title={title}
-      className={`shrink-0 rounded-md px-1.5 py-0.5 text-2xs font-bold ${MICRO_TONES[tone]}`}
+      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
     >
       {children}
     </span>
@@ -196,22 +196,22 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-xs ${
+      className={`grid w-full min-w-[800px] ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
-      style={{ height: 40 }}
+      style={{ height: 36 }}
     >
-      <span className="font-bold text-text-primary">
+      <span className="font-bold text-sm text-text-primary flex items-baseline gap-1.5 truncate">
         {row.symbol}
-        <span className="block truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
+        <span className="truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
-      <span className="num text-text-primary">
+      <span className="num text-text-primary font-bold">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
-      <span className={`num ${pctTone(pct)}`}>
+      <span className={`num font-bold ${pctTone(pct)}`}>
         <FlashNum value={pct} render={(v) => (v == null ? '-' : fmtPct(v))} />
       </span>
-      <span className="num text-text-primary">
+      <span className="num text-text-secondary">
         <FlashNum value={row.tvol} render={fmtInt} />
       </span>
       <span
@@ -229,11 +229,11 @@ const TapeRow = memo(function TapeRow({
       <span className={`num ${row.buyer_power != null && row.buyer_power >= 1.5 ? 'text-accent-green' : 'text-text-secondary'}`}>
         <FlashNum value={row.buyer_power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
       </span>
-      <span className="flex min-w-0 items-center gap-1">
-        <span className="num shrink-0 text-text-muted">
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span className="num shrink-0 text-text-muted font-medium text-xs">
           <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
         </span>
-        <span className="flex min-w-0 items-center gap-1 overflow-hidden">{badges}</span>
+        <span className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar py-0.5">{badges}</span>
       </span>
       <span className="flex items-center justify-center">
         {row.symbol ? <FtsStatusBadge symbol={row.symbol} view={fts} /> : null}
@@ -291,7 +291,7 @@ export function TapeTable({
   const virtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 44,
+    estimateSize: () => 36,
     overscan: 12,
   });
 
@@ -309,30 +309,34 @@ export function TapeTable({
 
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className={`sticky top-0 z-10 grid ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
-        {HEADERS.map((h) => (
-          <button
-            key={h.key}
-            type="button"
-            onClick={() => toggle(h.key)}
-            title={h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined}
-            className="text-start hover:text-accent-blue"
-          >
-            {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
-          </button>
-        ))}
-        <span className="text-center">وضعیت FTS</span>
-        <span className="text-center">افزودن به سبد</span>
-      </div>
-      <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto" data-testid="tape-scroll">
-        <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+      <div className="overflow-x-auto overscroll-x-contain">
+        <div className={`sticky top-0 z-10 grid min-w-[800px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
+          {HEADERS.map((h) => (
+            <button
+              key={h.key}
+              type="button"
+              onClick={() => toggle(h.key)}
+              title={h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined}
+              className="text-start hover:text-accent-blue transition-colors"
+            >
+              {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
+            </button>
+          ))}
+          <span className="text-center">وضعیت FTS</span>
+          <span className="text-center">افزودن به سبد</span>
+        </div>
+        <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
+          <div className="relative w-full min-w-[780px]" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];
             return (
               <div
                 key={row.symbol}
-                className="absolute inset-x-0 top-0 w-full"
-                style={{ transform: `translateY(${v.start}px)` }}
+                className="absolute inset-x-0 top-0 w-full will-change-transform"
+                style={{
+                  height: `${v.size}px`,
+                  transform: `translateY(${v.start}px)`,
+                }}
               >
                 <TapeRow
                   row={row}
@@ -346,9 +350,10 @@ export function TapeTable({
           })}
         </div>
       </div>
-      <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted num">
-        {toFaDigits(sorted.length)} نماد
-      </div>
     </div>
-  );
+    <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted">
+      <span className="num font-bold">{toFaDigits(sorted.length)}</span> نماد
+    </div>
+  </div>
+);
 }

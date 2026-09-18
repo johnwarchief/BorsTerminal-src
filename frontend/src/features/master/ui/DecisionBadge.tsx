@@ -18,7 +18,7 @@ export function DecisionBadge({ decision }: { decision: DefiniteDecision }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={TONE[decision.action]}>{decision.label}</Badge>
         <span className="text-2xs text-text-muted">
-          {decision.allGatesPassed ? 'هر ۴ گیت سبز' : 'بدون میانگین خطی — قواعد قطعی'}
+          {decision.allGatesPassed ? 'هر ۴ فیلتر سبز' : 'بدون میانگین خطی — قواعد قطعی'}
         </span>
       </div>
       <p className="text-2xs leading-5 text-text-secondary">{decision.reason}</p>

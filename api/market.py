@@ -212,10 +212,9 @@ def get_market(request: Request):
         df["f_roobi"] = (np.isclose(V("p_closing"), V("p_min"), atol=0.5) & (V("prev_day_vol") > 1) & (V("percent_change") < -1) & (V("z_tot_tran") > 100)).fillna(False)
         # حجم مشکوک: tvol > 3*avg30 و tno > 50
         df["f_susp"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 50)).fillna(False)
-        # الگوی ساعت: pl >= pc*1.02 و tvol > 1*avg30 و tno > 30
-        df["f_clock"] = ((V("p_closing") >= V("p_last") * 1.02) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 30)).fillna(False)
-        # فیلتر جت: tvol > 3*avg30 و قدرت خریدار حقوقی >= 1.5*فروشنده و pl>=pc و plp>0
-        #            و همهٔ سقفهای ۲تا۵۹ روز قبل < pl و tno > 100
+        # الگوی ساعت FTS: آخرین معامله حداقل ۱٪ بالاتر از قیمت پایانی (plp - pcp >= 1.0)
+        df["f_clock"] = ((V("p_last") >= V("p_closing") * 1.01) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 30)).fillna(False)
+        # فیلتر جت FTS: tvol > 3*avg30 و قدرت خریدار حقیقی >= 1.5*فروشنده و آخرین معامله بالای پایانی و شکست سقف‌ها
         buy_pow = V("buy_i_vol") / V("buy_count_i").replace(0, 1)
         sell_pow = V("sell_i_vol") / V("sell_count_i").replace(0, 1)
         jet_hist_ok = True
@@ -223,7 +222,7 @@ def get_market(request: Request):
             jet_hist_ok = jet_hist_ok & (df[f"h{k}_max"].isna() | (df[f"h{k}_max"] < V("p_closing")))
         df["f_jet"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0)))
                        & (buy_pow >= 1.5 * sell_pow)
-                       & (V("p_closing") >= V("p_last"))
+                       & (V("p_last") >= V("p_closing"))
                        & (V("percent_change") > 0)
                        & (V("z_tot_tran") > 100)
                        & jet_hist_ok).fillna(False)

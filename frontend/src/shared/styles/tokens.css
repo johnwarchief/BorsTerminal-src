@@ -5,9 +5,9 @@
   --bg-card: #1a2438;
   --border-color: #2c3a57;
   --border-accent: #38bdf8;
-  --text-primary: #eef2f7;
-  --text-secondary: #9aa8bd;
-  --text-muted: #6d7a90;
+  --text-primary: #f8fafc;
+  --text-secondary: #a8b8cc;
+  --text-muted: #8090a8;
   --accent-blue: #38bdf8;
   --accent-green: #10b981;
   --accent-red: #f43f5e;
@@ -25,7 +25,7 @@
   /* ---------- توکنهای چیدمان/فاصلهی واکنشی (فاز ۲) ---------- */
   --sidebar-w: 13rem; /* 208px — کمی کوچک‌تر طبق درخواست */
   --sidebar-w-collapsed: 4rem; /* 64px */
-  --inspector-w: 16.5rem; /* 264px */
+  --inspector-w: 15rem; /* 240px — فشرده */
   --gutter-x: 0rem; /* فاصلهی افقی واکنشی؛ زیر ۱۲۸۰px پر میشود */
 
   --fs-2xs: 0.75rem; /* 12px */

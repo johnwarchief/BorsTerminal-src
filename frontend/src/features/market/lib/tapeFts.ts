@@ -34,15 +34,29 @@ export function perCapitaMt(
 }
 
 export function buyPerCapitaMt(
-  r: Pick<MarketRow, 'buy_i_vol' | 'buy_count_i'>,
+  r: Pick<MarketRow, 'buy_i_vol' | 'buy_count_i'> & Partial<Pick<MarketRow, 'p_closing' | 'p_last'>>,
 ): number | null {
-  return perCapitaMt(r.buy_i_vol, r.buy_count_i);
+  const pc = perCapita(r.buy_i_vol, r.buy_count_i);
+  if (pc == null) return null;
+  const mt = pc / M_TUMAN_FROM_RIAL;
+  const price = r.p_closing ?? r.p_last ?? 0;
+  if (mt < 0.05 && price > 0) {
+    return (pc * price) / M_TUMAN_FROM_RIAL;
+  }
+  return mt;
 }
 
 export function sellPerCapitaMt(
-  r: Pick<MarketRow, 'sell_i_vol' | 'sell_count_i'>,
+  r: Pick<MarketRow, 'sell_i_vol' | 'sell_count_i'> & Partial<Pick<MarketRow, 'p_closing' | 'p_last'>>,
 ): number | null {
-  return perCapitaMt(r.sell_i_vol, r.sell_count_i);
+  const pc = perCapita(r.sell_i_vol, r.sell_count_i);
+  if (pc == null) return null;
+  const mt = pc / M_TUMAN_FROM_RIAL;
+  const price = r.p_closing ?? r.p_last ?? 0;
+  if (mt < 0.05 && price > 0) {
+    return (pc * price) / M_TUMAN_FROM_RIAL;
+  }
+  return mt;
 }
 
 /** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */

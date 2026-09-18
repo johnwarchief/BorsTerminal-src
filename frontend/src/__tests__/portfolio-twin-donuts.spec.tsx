@@ -169,6 +169,13 @@ describe('کامپوننت دونات دوقلو', () => {
     expect(screen.getAllByText(/بدون داده/).length).toBeGreaterThan(0);
     expect(screen.getByText(/برای ساخت پرتفوی واقعی/)).toBeInTheDocument();
   });
+
+  it('با showActual={false} دونات واقعی حذف می‌شود تا در تب هدف تکرار نشود', async () => {
+    renderWithClient(<TwinDonuts showActual={false} />);
+    expect(await screen.findByText('تحلیل دارایی‌های پرتفو')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'چارت دونات پرتفوی هدف' })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'چارت دونات پرتفوی واقعی' })).not.toBeInTheDocument();
+  });
 });
 
 describe('state مشتق صنایع: افزودن نماد بلافاصله وزن صنعت را عوض می‌کند', () => {

@@ -207,7 +207,7 @@ export function DrawingToolbar({ api }: { api: ChartDrawApi | null }) {
                     }}
                     title={t.hint}
                     data-testid={`draw-${t.name}`}
-                    className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-right text-xs transition-colors disabled:opacity-40 ${
+                    className={`flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-start text-xs transition-colors disabled:opacity-40 ${
                       activeTool === t.name
                         ? 'bg-accent-blue/15 text-accent-blue'
                         : 'text-text-secondary hover:bg-bg-card hover:text-accent-blue'

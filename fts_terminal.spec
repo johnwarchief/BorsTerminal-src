@@ -15,7 +15,7 @@
 # قرارداد v10 قبل از فاز 7 است و "پوشه داده‌ها به مسیر اجرایی" را برآورده می‌کند.
 a = Analysis(
     ['bors_entry.py'],
-    pathex=['C:/Users/PCMOD/Desktop/BorsTerminal_Ultimate'],
+    pathex=['.'],
     binaries=[],
     datas=[
         ('frontend/dist', 'frontend/dist'),
@@ -27,11 +27,10 @@ a = Analysis(
         ('mstat_engine.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
-        ('adb_config.json', '.'),
         ('codal_control.json', '.'),
         ('watchlist_store.py', '.'),
         ('api', 'api'),
-    ],
+    ] + ([('adb_config.json', '.')] if os.path.exists('adb_config.json') else []),
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
                    'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'orjson',

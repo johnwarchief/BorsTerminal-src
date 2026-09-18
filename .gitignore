@@ -33,10 +33,13 @@ backups/
 .env.*
 *.pem
 *.key
+*.tauri_updater_key*
 adb_config.json
 xray_config.json
 v2ray*.json
 sb_config.local.json
+src-tauri/target/
+frontend/src-tauri/target/
 
 # ---- دیتابیس و کش (بازسازی‌شدنی؛ حجم بالا) ----
 *.db
@@ -121,4 +124,9 @@ dist/
 
 *.lzma
 releases/
+.cluster/
+.opencode/
+*.screener_cache.json
+.screener_cache.json
+BorsTerminal_Ultimate_Setup_*.spec
 

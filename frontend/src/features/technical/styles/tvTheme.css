@@ -18,6 +18,21 @@
   overflow: hidden;
 }
 
+[data-theme='light'] .tv-workbench {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --hairline: #e2e8f0;
+  --border-accent: #2563eb;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 .tv-workbench > main,
 .tv-workbench [data-testid='chart-area'],
 .tv-workbench [data-testid='nn-chart-host'] {
@@ -47,8 +62,20 @@
   backdrop-filter: none !important;
 }
 
+[data-theme='light'] .tv-workbench .glass-panel,
+[data-theme='light'] .tv-workbench .glass-strip {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
 .tv-workbench [class*='rounded-full'] {
   border-color: #2a2e39;
+}
+
+[data-theme='light'] .tv-workbench [class*='rounded-full'] {
+  border-color: #e2e8f0;
 }
 
 .tv-workbench ::-webkit-scrollbar {
@@ -61,6 +88,13 @@
 }
 .tv-workbench ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+[data-theme='light'] .tv-workbench ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+[data-theme='light'] .tv-workbench ::-webkit-scrollbar-track {
+  background: #f8fafc;
 }
 
 /* --- RTL ? ???????? ???? ???????? ???? ?????? (T-21) --- */

@@ -122,16 +122,13 @@ function Legend({ items }: { items: DonutSlice[] }) {
   );
 }
 
-export function TwinDonuts({ onEdit }: { onEdit?: () => void }) {
+export function useActualPortfolioData() {
   const portfolio = usePortfolio();
   const classes = useTargetAllocation((s) => s.classes);
-  const resetTarget = useTargetAllocation((s) => s.reset);
   const assetValues = useAssetValues();
-  const [showOrders, setShowOrders] = useState(false);
 
   const decisions = useMemo(() => portfolio.data?.decisions ?? [], [portfolio.data]);
 
-  // سهام: مجموع وزن پوزیشن‌های پذیرفته‌شدهٔ سبد
   const equityWeightPct = useMemo(() => {
     const accepted = decisions.filter((d) => (d.status ?? '').trim().toLowerCase() === 'accept');
     if (accepted.length === 0) return null;
@@ -150,23 +147,8 @@ export function TwinDonuts({ onEdit }: { onEdit?: () => void }) {
     [equityWeightPct, assetValues.totalToman, assetValues.values],
   );
 
-  const te = useMemo(() => trackingError(rows), [rows]);
-  const score = useMemo(() => alignmentScore(te), [te]);
-  const status = useMemo(() => alignmentStatus(rows, score), [rows, score]);
-  const coverage = useMemo(() => dataCoverage(rows), [rows]);
   const filled = useMemo(() => filledPct(rows), [rows]);
-  const orders = useMemo(() => rebalanceOrders(rows, assetValues.totalToman), [rows, assetValues.totalToman]);
 
-  // دونات راست: طبقات هدف (نسبت‌های مصوب سند به‌صورت پیش‌فرض)
-  const targetSlices: DonutSlice[] = classes.map((c: TargetClass) => ({
-    id: c.id,
-    label: c.label,
-    color: c.color,
-    pct: c.pct,
-  }));
-  const targetTotal = targetSlices.reduce((s, x) => s + x.pct, 0);
-
-  // دونات چپ: وزن واقعی هر طبقه (سهام از سبد تقسیم بر بازهٔ سهام هدف؛ سایر طبقات از ارزش ثبت‌شده)
   const actualByClass = useMemo(() => {
     const map = new Map<string, number | null>();
     const equityRow = rows.find((r) => r.bucket.id === 'equity');
@@ -193,7 +175,80 @@ export function TwinDonuts({ onEdit }: { onEdit?: () => void }) {
   });
   const actualTotal = actualSlices.reduce((s, x) => s + x.pct, 0);
 
-  const hasAnyActual = filled != null;
+  return { rows, actualSlices, actualTotal, filled, hasAnyActual: filled != null, equityWeightPct };
+}
+
+/** کامپوننت چارت دونات پرتفوی واقعی و درصد پر شده از سرمایه — قابل استفاده در تب پرتفوی فعلی */
+export function ActualPortfolioCard({ className = '' }: { className?: string }) {
+  const { actualSlices, actualTotal, filled, hasAnyActual } = useActualPortfolioData();
+
+  return (
+    <div
+      className={`glass-panel flex flex-col items-center justify-between gap-4 rounded-2xl border border-[var(--hairline)] bg-bg-card/70 p-4 shadow-sm md:flex-row ${className}`}
+      aria-label="چارت دونات پرتفوی واقعی و درصد پرشده از سرمایه"
+    >
+      <div className="flex shrink-0 flex-col items-center gap-2">
+        <Donut
+          slices={actualSlices}
+          centerLabel="درصد پرشده از سرمایه"
+          centerValue={filled != null ? `${toFaDigits(filled)}٪` : '—'}
+          ariaLabel="چارت دونات پرتفوی واقعی"
+          total={actualTotal}
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-text-primary">وضعیت تخصیص سرمایه واقعی (Actual Allocation)</span>
+            <Badge tone={filled != null && filled > 100 ? 'red' : filled != null && filled >= 80 ? 'green' : 'blue'}>
+              {filled != null ? `${toFaDigits(filled)}٪ از کل سرمایه` : 'بدون داده'}
+            </Badge>
+          </div>
+          <span className="text-2xs text-text-muted">
+            سنجهٔ FTS: سهام + طلا + درآمد ثابت + نقدینگی
+          </span>
+        </div>
+        {hasAnyActual ? (
+          <Legend items={actualSlices.filter((s) => s.pct > 0)} />
+        ) : (
+          <p className="text-2xs leading-5 text-text-muted">
+            هنوز دارایی ثبت نشده است؛ برای ساخت پرتفوی واقعی، نماد به سبد اضافه کنید یا ارزش سایر طبقات را در تب هدف ثبت کنید.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function TwinDonuts({
+  onEdit,
+  showActual = true,
+}: {
+  onEdit?: () => void;
+  showActual?: boolean;
+}) {
+  const portfolio = usePortfolio();
+  const classes = useTargetAllocation((s) => s.classes);
+  const resetTarget = useTargetAllocation((s) => s.reset);
+  const assetValues = useAssetValues();
+  const [showOrders, setShowOrders] = useState(false);
+
+  const { rows, actualSlices, actualTotal, filled, hasAnyActual } = useActualPortfolioData();
+
+  const te = useMemo(() => trackingError(rows), [rows]);
+  const score = useMemo(() => alignmentScore(te), [te]);
+  const status = useMemo(() => alignmentStatus(rows, score), [rows, score]);
+  const coverage = useMemo(() => dataCoverage(rows), [rows]);
+  const orders = useMemo(() => rebalanceOrders(rows, assetValues.totalToman), [rows, assetValues.totalToman]);
+
+  // دونات راست: طبقات هدف (نسبت‌های مصوب سند به‌صورت پیش‌فرض)
+  const targetSlices: DonutSlice[] = classes.map((c: TargetClass) => ({
+    id: c.id,
+    label: c.label,
+    color: c.color,
+    pct: c.pct,
+  }));
+  const targetTotal = targetSlices.reduce((s, x) => s + x.pct, 0);
 
   return (
     <section className="glass-panel panel-in relative overflow-hidden p-4" aria-label="دونات دوقلو و سنجهٔ هم‌ترازی">
@@ -201,7 +256,9 @@ export function TwinDonuts({ onEdit }: { onEdit?: () => void }) {
         <div className="min-w-0">
           <h3 className="text-sm font-black text-text-primary">تحلیل دارایی‌های پرتفو</h3>
           <p className="mt-0.5 text-2xs leading-5 text-text-muted">
-            دونات راست = سبد استاندارد FTS · دونات چپ = پرتفوی واقعی · باکس میانی = سنجهٔ هم‌ترازی و دستورات ری‌بالانس.
+            {showActual
+              ? 'دونات راست = سبد استاندارد FTS · دونات چپ = پرتفوی واقعی · باکس میانی = سنجهٔ هم‌ترازی و دستورات ری‌بالانس.'
+              : 'سبد استاندارد FTS و سنجهٔ هم‌ترازی دارایی‌ها به همراه دستورات ری‌بالانس.'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -233,24 +290,26 @@ export function TwinDonuts({ onEdit }: { onEdit?: () => void }) {
         </div>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        {/* دونات چپ — پرتفوی واقعی */}
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--hairline)] bg-bg-secondary/30 p-3">
-          <Donut
-            slices={actualSlices}
-            centerLabel="درصد پرشده از سرمایه"
-            centerValue={filled != null ? `${toFaDigits(filled)}٪` : '—'}
-            ariaLabel="چارت دونات پرتفوی واقعی"
-            total={actualTotal}
-          />
-          {hasAnyActual ? (
-            <Legend items={actualSlices.filter((s) => s.pct > 0)} />
-          ) : (
-            <p className="text-2xs leading-5 text-text-muted">
-              بدون داده — برای ساخت پرتفوی واقعی، نماد به سبد اضافه کن یا ارزش دارایی‌ها را ثبت کن.
-            </p>
-          )}
-        </div>
+      <div className={`grid items-start gap-4 ${showActual ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+        {/* دونات چپ — پرتفوی واقعی (فقط در صورت درخواست، وگرنه منحصراً در تب پرتفوی فعلی نمایش داده می‌شود) */}
+        {showActual ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-[var(--hairline)] bg-bg-secondary/30 p-3">
+            <Donut
+              slices={actualSlices}
+              centerLabel="درصد پرشده از سرمایه"
+              centerValue={filled != null ? `${toFaDigits(filled)}٪` : '—'}
+              ariaLabel="چارت دونات پرتفوی واقعی"
+              total={actualTotal}
+            />
+            {hasAnyActual ? (
+              <Legend items={actualSlices.filter((s) => s.pct > 0)} />
+            ) : (
+              <p className="text-2xs leading-5 text-text-muted">
+                بدون داده — برای ساخت پرتفوی واقعی، نماد به سبد اضافه کن یا ارزش دارایی‌ها را ثبت کن.
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {/* باکس میانی — سنجهٔ هم‌ترازی */}
         <div className="flex flex-col gap-2 rounded-2xl border border-[var(--hairline)] bg-bg-secondary/30 p-3">

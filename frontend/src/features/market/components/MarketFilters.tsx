@@ -25,6 +25,12 @@ import {
   type QuickFilter,
   type ScreenOrder,
 } from '../stores/tapeStore';
+import {
+  evaluateDynamicQuickFilter,
+  isConfigCustomized,
+  type TapeFilterConfig,
+} from '../lib/tapeAlgorithms';
+import { TapeFilterSettingsModal } from './TapeFilterSettingsModal';
 
 function Chip({
   active,
@@ -201,15 +207,198 @@ function FtsTriToggle() {
 }
 
 /** تعداد ردیف هایی که هر فیلتر سریع را فعال می کنند -- برای نمایش کنار چیپ */
-export function countQuickMatches(rows: MarketRowsLike): Record<QuickFilter, number> {
-  const out = { f_clock: 0, f_susp: 0, f_jet: 0, f_roobi: 0, f_noqteh: 0 };
+export function countQuickMatches(
+  rows: MarketRowsLike,
+  config?: TapeFilterConfig,
+): Record<QuickFilter, number> {
+  const out: Record<QuickFilter, number> = {
+    f_clock: 0,
+    f_susp: 0,
+    f_jet: 0,
+    f_roobi: 0,
+    f_noqteh: 0,
+    f_smart_flow: 0,
+  };
   for (const r of rows) {
-    for (const f of QUICK_FILTERS) if (r[f]) out[f] += 1;
+    for (const f of QUICK_FILTERS) {
+      if (config) {
+        if (evaluateDynamicQuickFilter(r as unknown as Parameters<typeof evaluateDynamicQuickFilter>[0], f, config)) {
+          out[f] += 1;
+        }
+      } else {
+        if (r[f]) out[f] += 1;
+      }
+    }
   }
   return out;
 }
 
 type MarketRowsLike = { [K in QuickFilter]?: boolean | null }[];
+
+function AdvancedFiltersMenu({
+  matches,
+  exitAccumCount,
+  volRatioCount,
+  onOpenSettings,
+}: {
+  matches?: Record<QuickFilter, number>;
+  exitAccumCount?: number;
+  volRatioCount?: number;
+  onOpenSettings?: () => void;
+}) {
+  const quickFilters = useTapeStore((s) => s.quickFilters);
+  const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
+  const volRatioOn = useTapeStore((s) => s.volRatioOn);
+  const setVolRatioOn = useTapeStore((s) => s.setVolRatioOn);
+  const volRatioMin = useTapeStore((s) => s.volRatioMin);
+  const setVolRatioMin = useTapeStore((s) => s.setVolRatioMin);
+  const exitAccum = useTapeStore((s) => s.exitAccum);
+  const toggleExitAccum = useTapeStore((s) => s.toggleExitAccum);
+  const liveOnly = useTapeStore((s) => s.liveOnly);
+  const setLiveOnly = useTapeStore((s) => s.setLiveOnly);
+  const filterConfig = useTapeStore((s) => s.tapeFilterConfig);
+  const isCustom = isConfigCustomized(filterConfig);
+
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onScrollOrResize = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [open]);
+
+  const activeFilters = quickFilters.length + (exitAccum ? 1 : 0) + (volRatioOn ? 1 : 0) + (liveOnly ? 1 : 0);
+
+  const menu = open
+    ? (() => {
+        const rect = ref.current?.getBoundingClientRect();
+        const style = rect
+          ? { position: 'fixed' as const, top: rect.bottom + 4, insetInlineStart: Math.max(8, window.innerWidth - rect.right), zIndex: 9999 }
+          : { position: 'fixed' as const, top: 0, insetInlineStart: 0, zIndex: 9999 };
+        return createPortal(
+          <div
+            ref={menuRef}
+            style={style}
+            data-testid="advanced-filter-menu"
+            className="w-80 rounded-xl border border-border-c bg-bg-primary p-3 shadow-2xl space-y-4"
+          >
+            <div>
+              <div className="text-xs font-bold mb-2">الگوهای تابلوخوانی</div>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_FILTERS.map((f) => (
+                  <Chip key={f} active={quickFilters.includes(f)} onClick={() => toggleQuickFilter(f)} count={matches?.[f]}>
+                    {QUICK_LABELS[f]}
+                  </Chip>
+                ))}
+                <Chip active={exitAccum} onClick={toggleExitAccum} count={exitAccumCount} title={EXIT_ACCUM_HINT}>
+                  {EXIT_ACCUM_LABEL}
+                </Chip>
+              </div>
+            </div>
+            
+            <div className="border-t border-border-c/60 pt-3">
+              <label className="flex items-center gap-1.5 text-xs font-bold mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={volRatioOn}
+                  onChange={(e) => setVolRatioOn(e.target.checked)}
+                  className="size-3.5 accent-[var(--accent-blue)]"
+                />
+                ضریب حجم مشکوک
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  aria-label="آستانهٔ ضریب حجم"
+                  min={VOL_RATIO_MIN}
+                  max={VOL_RATIO_MAX}
+                  step={0.5}
+                  value={volRatioMin}
+                  disabled={!volRatioOn}
+                  onChange={(e) => setVolRatioMin(Number(e.target.value))}
+                  className="flex-1 accent-[var(--accent-blue)] disabled:opacity-40"
+                />
+                <span aria-label="مقدار آستانهٔ ضریب حجم" className="num text-xs font-bold">
+                  ≥{toFaDigits(volRatioMin.toFixed(1))}×
+                </span>
+                {volRatioOn && volRatioCount != null ? (
+                  <span className="num text-2xs text-text-secondary">({toFaDigits(volRatioCount)})</span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="border-t border-border-c/60 pt-3">
+              <label className="flex items-center gap-1.5 text-xs font-bold cursor-pointer text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={liveOnly}
+                  onChange={(e) => setLiveOnly(e.target.checked)}
+                  className="size-3.5 accent-[var(--accent-blue)]"
+                />
+                فقط نمایش نمادهای دارای معامله امروز (زنده)
+              </label>
+            </div>
+
+            <div className="border-t border-border-c/60 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onOpenSettings?.();
+                }}
+                className="flex w-full items-center justify-between rounded-lg border border-accent-blue/40 bg-accent-blue/10 px-3 py-2 text-xs font-bold text-accent-blue hover:bg-accent-blue/20 transition-colors"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span>⚙️</span>
+                  <span>شخصی‌سازی الگوریتم‌ها و تایم‌فریم‌ها</span>
+                </span>
+                {isCustom ? (
+                  <span className="rounded-full bg-accent-blue px-1.5 py-0.5 text-3xs text-white">سفارشی</span>
+                ) : null}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        );
+      })()
+    : null;
+
+  return (
+    <div ref={ref} className="shrink-0" data-testid="advanced-filters">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={`${CONTROL_CLS} flex items-center gap-1.5 ${
+          activeFilters > 0 ? 'border-border-accent text-accent-blue' : ''
+        }`}
+      >
+        فیلترهای پیشرفته
+        {activeFilters > 0 ? (
+          <span className="num rounded-full bg-accent-blue/15 px-1.5 font-bold text-accent-blue">
+            {toFaDigits(activeFilters)}
+          </span>
+        ) : null}
+        <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      {menu}
+    </div>
+  );
+}
 
 export function MarketFilters({
   sectors,
@@ -229,20 +418,17 @@ export function MarketFilters({
   const setQuery = useTapeStore((s) => s.setQuery);
   const assetTypes = useTapeStore((s) => s.assetTypes);
   const quickFilters = useTapeStore((s) => s.quickFilters);
-  const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
   const sector = useTapeStore((s) => s.sector);
   const setSector = useTapeStore((s) => s.setSector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
-  const setLiveOnly = useTapeStore((s) => s.setLiveOnly);
   const direction = useTapeStore((s) => s.direction);
   const setDirection = useTapeStore((s) => s.setDirection);
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
-  const setVolRatioOn = useTapeStore((s) => s.setVolRatioOn);
-  const volRatioMin = useTapeStore((s) => s.volRatioMin);
-  const setVolRatioMin = useTapeStore((s) => s.setVolRatioMin);
   const exitAccum = useTapeStore((s) => s.exitAccum);
-  const toggleExitAccum = useTapeStore((s) => s.toggleExitAccum);
   const resetFilters = useTapeStore((s) => s.resetFilters);
+  const filterConfig = useTapeStore((s) => s.tapeFilterConfig);
+  const isCustom = isConfigCustomized(filterConfig);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [draft, setDraft] = useState(query);
   useEffect(() => setDraft(query), [query]);
@@ -308,61 +494,27 @@ export function MarketFilters({
         ))}
       </select>
 
-      <div className="flex shrink-0 items-center gap-1" role="group" aria-label="فیلتر سریع">
-        {QUICK_FILTERS.map((f) => (
-          <Chip key={f} active={quickFilters.includes(f)} onClick={() => toggleQuickFilter(f)} count={matches?.[f]}>
-            {QUICK_LABELS[f]}
-          </Chip>
-        ))}
-        <Chip active={exitAccum} onClick={toggleExitAccum} count={exitAccumCount} title={EXIT_ACCUM_HINT}>
-          {EXIT_ACCUM_LABEL}
-        </Chip>
-      </div>
+      <AdvancedFiltersMenu
+        matches={matches}
+        exitAccumCount={exitAccumCount}
+        volRatioCount={volRatioCount}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
 
-      <label
-        className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-text-secondary"
-        title="نمایش فقط نمادهایی که ضریب حجمشان از آستانه بالاتر است"
+      <button
+        type="button"
+        onClick={() => setSettingsOpen(true)}
+        title="شخصی‌سازی تایم‌فریم و آستانه‌های فیلترهای تابلو"
+        className={`${CONTROL_CLS} flex items-center gap-1 hover:border-accent-blue/60 ${
+          isCustom ? 'border-accent-blue bg-accent-blue/10 text-accent-blue font-bold' : 'text-text-secondary'
+        }`}
       >
-        <input
-          type="checkbox"
-          checked={volRatioOn}
-          onChange={(e) => setVolRatioOn(e.target.checked)}
-          className="size-3.5 accent-[var(--accent-blue)]"
-        />
-        ضریب حجم مشکوک
-      </label>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <input
-          type="range"
-          min={VOL_RATIO_MIN}
-          max={VOL_RATIO_MAX}
-          step={0.5}
-          value={volRatioMin}
-          disabled={!volRatioOn}
-          onChange={(e) => setVolRatioMin(Number(e.target.value))}
-          className="w-24 accent-[var(--accent-blue)] disabled:opacity-40"
-          aria-label="آستانهٔ ضریب حجم"
-        />
-        <span className="num text-xs font-bold text-text-primary" aria-label="مقدار آستانهٔ ضریب حجم">
-          ≥{toFaDigits(volRatioMin.toFixed(1))}×
-        </span>
-        {volRatioOn && volRatioCount != null ? (
-          <span className="num text-2xs text-text-secondary">({toFaDigits(volRatioCount)})</span>
-        ) : null}
-      </div>
+        <span>⚙️</span>
+        <span className="hidden xl:inline">تنظیمات فیلترها</span>
+        {isCustom ? <span className="size-1.5 rounded-full bg-accent-blue" /> : null}
+      </button>
 
-      <label
-        className="flex shrink-0 cursor-pointer items-center gap-1.5 text-xs text-text-secondary"
-        title="حذف نمادهای بدون معامله امروز"
-      >
-        <input
-          type="checkbox"
-          checked={liveOnly}
-          onChange={(e) => setLiveOnly(e.target.checked)}
-          className="size-3.5 accent-[var(--accent-blue)]"
-        />
-        فقط زنده
-      </label>
+      <TapeFilterSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {activeCount > 0 ? (
         <button

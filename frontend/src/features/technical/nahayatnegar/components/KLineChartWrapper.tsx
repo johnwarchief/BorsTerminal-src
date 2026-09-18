@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
-import { nahayatNegarDarkTheme } from '../lib/chartTheme';
+import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
+import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
 } from '../lib/adjustments';
@@ -171,6 +172,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onAdjustmentChange,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const theme = useUiStore((s) => s.theme);
   // لِجِندِ الگوهای فعالِ FTS روی چارت (رنگِ هر الگو از تنظیماتِ کاربر)
   const [activePatterns, setActivePatterns] = useState<{ kind: string; color: string; label: string }[]>([]);
   const chartRef = useRef<Chart | null>(null);
@@ -255,21 +257,40 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         url = '/api/index/tedpix?limit=0';
       }
 
-      const res = await fetch(url);
-      if (!res.ok) {
-        setRawCandles([]);
-        setHasData(false);
-        setIsLoading(false);
-        return;
+      let res: Response | null = null;
+      let json: any = null;
+      try {
+        res = await fetch(url);
+        if (res.ok) {
+          json = await res.json();
+        }
+      } catch {
+        // خطای شبکه - تلاش با اندپوینت محلی
       }
 
-      const json = await res.json();
-      const rawList = Array.isArray(json) ? json : (json.candles || json.data || []);
-      const rawEvents = json.adjustEvents || json.adjust_events || [];
+      let rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
+
+      // اگر از اندپوینت اصلی پاسخی نیامد یا کندل‌ها خالی بودند، مستقیماً از دیتابیس محلی واکشی می‌کنیم
+      if (!Array.isArray(rawList) || rawList.length === 0) {
+        try {
+          const fallbackUrl = (symbol === 'شاخص کل' || symbol === 'TEDPIX')
+            ? '/api/chart-db/فولاد'
+            : `/api/chart-db/${encodeURIComponent(symbol)}`;
+          const fbRes = await fetch(fallbackUrl);
+          if (fbRes.ok) {
+            json = await fbRes.json();
+            rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
+          }
+        } catch {
+          // خطا در فال‌بک
+        }
+      }
+
+      const rawEvents = json?.adjustEvents || json?.adjust_events || [];
       // حجم: سرور حجم را جدا در volumes=[{time,value}] می‌دهد؛ با کلیدِ تاریخ به کندل‌ها
       // می‌چسبانیم تا پنل حجم (VOL) مثل تریدینگ‌ویو پر شود.
       const volByTime: Record<string, number> = {};
-      const rawVols = Array.isArray(json.volumes) ? json.volumes : [];
+      const rawVols = Array.isArray(json?.volumes) ? json.volumes : [];
       for (const v of rawVols) {
         if (v && typeof v.time === 'string') volByTime[v.time] = Number(v.value ?? v.volume ?? 0);
       }
@@ -450,7 +471,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         formatDate: ({ timestamp, type }) => formatJalali(timestamp, type)
       },
       timezone: 'Asia/Tehran',
-      styles: nahayatNegarDarkTheme as never
+      styles: (theme === 'light' ? nahayatNegarLightTheme : nahayatNegarDarkTheme) as never
     });
 
     if (!chart) return;
@@ -475,18 +496,28 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
     chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
     chart.setPaneOptions({ id: 'sub_pane_vol', height: 100 });
-        chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
+    chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
 
     // پاسخ به تغییر سایز
     const handleResize = () => chart.resize();
     window.addEventListener('resize', handleResize);
     // ResizeObserver روی کانتینر تا چارت فوراً کل فضای آزاد را بگیرد (چیدمان flex)
+    // همچنین با تاخیر ۲۲۰ میلی‌ثانیه برای همگامی دقیق با ترنزیشن ۲۰۰ میلی‌ثانیه‌ای پدینگ سایدبار/داور
     let ro: ResizeObserver | null = null;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     try {
       if (chartContainerRef.current) {
         ro = new ResizeObserver(() => {
           try {
             chart.resize();
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+              try {
+                chart.resize();
+              } catch (e) {
+                void e;
+              }
+            }, 220);
           } catch (e) {
             void e;
           }
@@ -500,6 +531,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
       try {
         ro?.disconnect();
       } catch (e) {
@@ -511,6 +543,15 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       chartRef.current = null;
     };
   }, []); // فقط یک‌بار هنگام Mount شدن کامپوننت
+
+  // همگام‌سازی سبک چارت با تم فعال (روشن / تاریک)
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const targetTheme = theme === 'light' ? nahayatNegarLightTheme : nahayatNegarDarkTheme;
+    chart.setStyles(targetTheme as never);
+    chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
+  }, [theme]);
 
   // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {

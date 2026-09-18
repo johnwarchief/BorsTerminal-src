@@ -22,12 +22,10 @@ import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
 import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
-import { AssemblyBadge } from '../components/AssemblyBadge';
 import { cardAuditEvidence } from '../lib/auditEvidence';
 import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
-import { EpsLadder } from '../components/EpsLadder';
-import { SectorPePanel } from '../components/SectorPePanel';
+
 import { QuarterlyTrend } from '../components/QuarterlyTrend';
 import { RiskGatesPanel } from '../components/RiskGatesPanel';
 import { FtsScreenTable } from '../ui/FtsScreenTable';
@@ -175,13 +173,13 @@ export default function FundamentalPage() {
   }
 
   const metrics = card.data.metrics;
+  const passes = card.data.passes ?? {};
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}
         {isHolding ? <Badge tone="blue">هلدینگ / سرمایه‌گذاری</Badge> : null}
-        <AssemblyBadge symbol={symbol} />
         {signal ? (
           <>
             <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
@@ -199,7 +197,7 @@ export default function FundamentalPage() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <FtsCard
           score={card.data.score ?? null}
-          passes={card.data.passes ?? {}}
+          passes={passes}
           verdict={card.data.verdict ?? null}
           industryMode={card.data.pricing_mode ?? null}
           audit={audit}
@@ -210,7 +208,7 @@ export default function FundamentalPage() {
         {isHolding ? (
           <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند NAV پرتفوی</h3>
+              <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند ارزیابی پرتفوی هلدینگ (N/A)</h3>
               <Badge tone="yellow">N/A</Badge>
             </div>
             <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
@@ -218,9 +216,74 @@ export default function FundamentalPage() {
               نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
               «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
             </p>
+            <div className="mt-3 pt-3 border-t border-border-c text-2xs text-text-muted">
+              بر اساس استراتژی FTS: هلدینگ‌ها از شرط نسبت فروش به ارزش بازار معاف هستند و با P/NAV سنجیده می‌شوند.
+            </div>
           </div>
         ) : (
-          <SectorPePanel pe={pe} median={median} sector={sector} />
+          <div className="glass-panel panel-in p-4 flex flex-col justify-between" data-testid="fts-strategy-summary">
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-text-primary">تصمیم استراتژیک FTS</h3>
+                </div>
+                <Badge tone={card.data.score == null ? 'gray' : card.data.score >= 4 ? 'green' : card.data.score === 3 ? 'yellow' : 'red'}>
+                  {card.data.score == null ? 'بدون داده' : card.data.score >= 4 ? 'واجد شرایط سبد FTS' : card.data.score === 3 ? 'واچ‌لیست رصد FTS' : 'فاقد شرایط FTS'}
+                </Badge>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className={`rounded-xl border p-3 ${
+                  card.data.score == null
+                    ? 'border-border-c/70 bg-bg-card/50 text-text-primary'
+                    : card.data.score >= 4
+                    ? 'border-accent-green/40 bg-accent-green/10 text-text-primary'
+                    : card.data.score === 3
+                    ? 'border-accent-yellow/40 bg-accent-yellow/10 text-text-primary'
+                    : 'border-accent-red/40 bg-accent-red/10 text-text-primary'
+                }`}>
+                  <div className="flex items-center gap-2 font-bold text-xs mb-1">
+                    <span>{card.data.score == null ? '❓' : card.data.score >= 4 ? '🎯' : card.data.score === 3 ? '⏳' : '🚫'}</span>
+                    <span>
+                      {card.data.score == null
+                        ? 'اطلاعات کافی نیست'
+                        : card.data.score >= 4
+                        ? 'گزینه عالی برای سبد سرمایه‌گذاری'
+                        : card.data.score === 3
+                        ? 'مناسب برای زیر نظر گرفتن'
+                        : 'رد شده در بررسی بنیادی'}
+                    </span>
+                  </div>
+                  <p className="text-2xs text-text-secondary leading-relaxed mt-1">
+                    {card.data.score == null
+                      ? 'چون اطلاعات همه ۵ شاخص کامل نیست، فعلا نمی‌توان تصمیم قطعی در مورد این سهم گرفت.'
+                      : card.data.score >= 4
+                      ? 'این سهم از فیلترهای مهم سودسازی، رشد فروش و عدم قیمت‌گذاری دستوری عبور کرده و یک گزینه بسیار مستعد است.'
+                      : card.data.score === 3
+                      ? 'این سهم پتانسیل خوبی دارد اما در یک یا دو شاخص ضعیف عمل کرده. بهتر است گزارش‌های ماهانه بعدی آن را رصد کنیم.'
+                      : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border-c/70 bg-bg-card/50 p-3">
+                  <div className="text-xs font-bold text-text-primary mb-1 flex items-center gap-1.5">
+                    <span className="text-accent-blue">⚡</span>
+                    <span>گام بعدی چیست؟</span>
+                  </div>
+                  <p className="text-2xs text-text-secondary leading-relaxed">
+                    {card.data.score != null && card.data.score >= 4
+                      ? 'بنیاد سهم عالی است. حالا در تب بازار بررسی کنید که آیا خریداران قدرت کافی دارند؟ سپس در تب تکنیکال منتظر یک نقطه ورود مناسب (مثل پولبک) بمانید.'
+                      : 'با این شرایط بنیادی، نگهداری این سهم پیشنهاد نمی‌شود. اگر هم قصد خرید دارید فقط با دید نوسان‌گیری کوتاه و با رعایت سفت و سخت حد ضرر عمل کنید.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-border-c/60 flex items-center justify-between text-2xs text-text-muted">
+              <span>منطق غربالگری: کاهش ۸۰۰ نماد به ۱۰ واچ‌لیست و ۵ سبد</span>
+              <span className="font-mono text-text-secondary">{age != null ? `سن صورت مالی: ${toFaDigits(age)} روز` : 'صورت مالی معتبر'}</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -235,18 +298,6 @@ export default function FundamentalPage() {
 
       <DataGapBanner gaps={card.data.data_gaps ?? []} eps={card.data.indicators?.['2']} />
 
-      <EpsLadder
-        slots={metrics?.eps_slots ?? []}
-        series={metrics?.eps_series ?? []}
-        partial={metrics?.eps_partial ?? false}
-        requiredYears={card.data.indicators?.['2']?.years_required ?? metrics?.eps_required ?? 3}
-        interim={{
-          available: card.data.indicators?.['2']?.interim?.available ?? false,
-          periodEnd: card.data.indicators?.['2']?.interim?.period_end ?? null,
-          months: card.data.indicators?.['2']?.interim?.period_months ?? null,
-          eps: card.data.indicators?.['2']?.interim?.eps_interim ?? null,
-        }}
-      />
 
       <QuarterlyTrend quarters={fiscal} />
     </div>

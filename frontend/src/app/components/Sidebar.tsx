@@ -72,7 +72,7 @@ export function Sidebar() {
             {({ isActive }) => (
               <>
                 <span
-                  className={`absolute bottom-1.5 right-0 top-1.5 w-[2px] rounded-full bg-neon-cyan transition-opacity duration-200 ${
+                  className={`absolute bottom-1.5 start-0 top-1.5 w-[2px] rounded-full bg-neon-cyan transition-opacity duration-200 ${
                     isActive ? 'opacity-100 shadow-[0_0_8px_var(--neon-cyan)]' : 'opacity-0'
                   }`}
                 />
@@ -84,7 +84,7 @@ export function Sidebar() {
       </nav>
       <div className={`mt-auto rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3 text-2xs leading-5 text-text-muted ${collapsed ? 'hidden' : ''}`}>
         میانبر سریع: <kbd className="num rounded border border-border-c px-1">Ctrl</kbd> +
-        <kbd className="num mr-1 rounded border border-border-c px-1">K</kbd>
+        <kbd className="num ms-1 rounded border border-border-c px-1">K</kbd>
         <span className="block">جستجوی نماد و پرش بین نماها</span>
       </div>
     </aside>

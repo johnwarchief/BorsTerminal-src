@@ -85,7 +85,7 @@ export function TechnicalSidebar({
         })}
       </div>
 
-      <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto pr-0.5" data-testid="sidebar-body">
+      <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto pe-0.5" data-testid="sidebar-body">
         {tab === 'watch' ? <SidebarWatchlist onSelect={onSelect} /> : null}
         {tab === 'fts' ? <SidebarFtsSignals onSelect={onSelect} /> : null}
         {tab === 'levels' ? <SidebarActiveLevels active={active} /> : null}

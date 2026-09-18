@@ -18,11 +18,139 @@ import {
 } from './strictGates';
 
 export type SummaryLine = {
-  id: 'verdict' | 'conflict' | 'regime' | 'switch' | 'next';
+  id: 'verdict' | 'scenario' | 'conflict' | 'regime' | 'switch' | 'next';
   title: string;
   text: string;
   tone: 'green' | 'red' | 'yellow' | 'blue' | 'gray';
 };
+
+export type MarketScenario = {
+  name: string;
+  title: string;
+  description: string;
+  tone: 'green' | 'red' | 'yellow' | 'blue';
+};
+
+/** پوشش کامل حداقل ۸ سناریوی محتمل و واقع‌گرایانه بازار */
+export function detectMarketScenario(args: {
+  symbol: string;
+  input: BusInput;
+  strict: StrictGatesResult;
+  decision: DefiniteDecision;
+  superFundamental: boolean;
+  warRegime: boolean;
+  currentPrice?: number | null;
+  resistancePrice?: number | null;
+}): MarketScenario {
+  const { symbol, input, strict, decision, superFundamental, warRegime, currentPrice, resistancePrice } = args;
+  const fund = input.fundamental;
+  const tech = input.technical;
+  const tape = input.tape;
+  const tapePat = (tape?.payload as { pattern?: string } | null)?.pattern;
+
+  // ۱. سناریو ۵: فرصت خرید عمیق (Deep Hourglass)
+  if (superFundamental && strict.weekly.belowMa52 && (strict.weekly.rsi != null && strict.weekly.rsi <= 30)) {
+    return {
+      name: 'deep_hourglass',
+      title: 'فرصت خرید عمیق (Deep Hourglass)',
+      description: `نماد ${symbol} سهمی سوپربنیادی در کف ماژور با RSI هفتگی زیر ۳۰ است؛ فرصت استثنایی برای فعال‌سازی اهرم ساعت شنی با خرید سنگین (۲ تا ۴ برابر حجم عادی) مهیاست.`,
+      tone: 'green',
+    };
+  }
+
+  // ۲. سناریو ۱: تله ارزش (Value Trap)
+  const fundGood = fund != null && (fund.direction === 'bullish' || (typeof fund.score === 'number' && fund.score >= 60));
+  const techBad = strict.weeklyVeto || (tech != null && tech.direction === 'bearish');
+  if (fundGood && techBad) {
+    return {
+      name: 'value_trap',
+      title: 'تله ارزش (Value Trap)',
+      description: `بنیاد و صورت‌های مالی سهم ممتاز است، اما نمودار زیر میانگین یا درگیر ساختار نزولی است؛ خرید اکیداً ممنوع بوده و تا تایید کف و برگشت پول باید صبر کرد.`,
+      tone: 'red',
+    };
+  }
+
+  // ۳. سناریو ۲: تله پامپ تابلو (Pump Trap)
+  const isTapePump = strict.tapeSurge || tapePat === 'closing_auction_pop' || tapePat === 'suspicious_volume';
+  if (strict.fundamentalBlocked && isTapePump) {
+    return {
+      name: 'pump_trap',
+      title: 'تله پامپ تابلو (Pump Trap)',
+      description: `ورود پول سنگین و تحرکات تابلویی روی نمادی با نقص یا زیان بنیادی آشکار است؛ ورود روندی اکیداً ممنوع بوده و صرفاً نوسان‌گیری کوتاه‌مدت فوق‌العاده سبک مجاز است.`,
+      tone: 'yellow',
+    };
+  }
+
+  // ۴. سناریو ۶: رژیم جنگی (War Regime)
+  if (warRegime) {
+    return {
+      name: 'war_regime',
+      title: 'رژیم جنگی (War Regime)',
+      description: `به دلیل تنش‌های ژئوپلیتیک و ریسک سیستماتیک، سقف ورود به سهام به ۱۰٪ تا ۲۰٪ محدود شده و پوشش دارایی امن (طلا و دلار) الزامی است.`,
+      tone: 'yellow',
+    };
+  }
+
+  // ۵. سناریو ۷: سقف صنعت سبد (Industry Cap)
+  const portGate = strict.gates.find((g) => g.id === 'portfolio');
+  if (portGate?.state === 'blocked') {
+    return {
+      name: 'industry_cap',
+      title: 'سقف صنعت سبد (Industry Cap)',
+      description: `ظرفیت مجاز این صنعت در پورتفولیو تکمیل شده است؛ انضباط مدیریت ریسک، مانع خرید پله جدید در این گروه است حتی اگر سهم سیگنال مثبت داشته باشد.`,
+      tone: 'red',
+    };
+  }
+
+  // ۶. سناریو ۸: حفظ سود ۵۰٪ (Half Profit Preservation)
+  if (currentPrice != null && resistancePrice != null && resistancePrice > 0 && currentPrice >= resistancePrice * 0.98) {
+    return {
+      name: 'half_profit',
+      title: 'حفظ سود ۵۰٪ (Half Profit Preservation)',
+      description: `قیمت به تراز مقاومت ماژور (${fa0(resistancePrice)} ریال) رسیده است؛ برای مصون‌سازی سود، خروج اصل سرمایه و نگهداری ۵۰٪ سود توصیه می‌شود.`,
+      tone: 'blue',
+    };
+  }
+
+  // ۷. سناریو ۳: توقف در سد مقاومت (Resistance Wall)
+  if (currentPrice != null && resistancePrice != null && resistancePrice > currentPrice) {
+    const distPct = ((resistancePrice - currentPrice) / currentPrice) * 100;
+    if (distPct < 5) {
+      return {
+        name: 'resistance_wall',
+        title: 'توقف در سد مقاومت (Resistance Wall)',
+        description: `فاصله با مقاومت پیش‌رو کمتر از ۵٪ است (${fa1(distPct)}٪ تا ${fa0(resistancePrice)} ریال) و نسبت R/R نامساعد است؛ توقف تا شکست پرحجم سد مقاومت یا پولبک الزامی است.`,
+        tone: 'yellow',
+      };
+    }
+  }
+
+  // ۸. سناریو ۴: پرتاب ستاپ جت (Jet Breakout)
+  if (decision.action === 'ladder_buy' && isTapePump) {
+    return {
+      name: 'jet_breakout',
+      title: 'پرتاب ستاپ جت (Jet Breakout)',
+      description: `شکست معتبر سقف قیمتی همگام با حجم ۳ برابری و سرانه خریدار سنگین فعال شده است؛ فیلترهای ۴گانه تایید شده و ستاپ پرتاب جت آماده ورود است.`,
+      tone: 'green',
+    };
+  }
+
+  // حالت پیش‌فرض بر مبنای تصمیم فیلترها
+  if (decision.allGatesPassed) {
+    return {
+      name: 'four_filters_aligned',
+      title: 'هم‌پوشانی فیلترهای ۴گانه',
+      description: `هر چهار فیلتر (بنیاد، تکنیکال، تابلو و سبد) هم‌راستا هستند؛ ورود پله‌ای طبق جدول پله‌بندی مجاز است.`,
+      tone: 'green',
+    };
+  }
+  return {
+    name: 'filter_watch',
+    title: 'پایش ساختار و فیلترها',
+    description: `سهم در حال حاضر در فاز تجمیع یا انتظار تریگر فیلترها قرار دارد؛ ورود روندی تا صدور سیگنال هم‌زمان متوقف است.`,
+    tone: 'blue',
+  };
+}
 
 const AGENT_FA: Record<string, string> = {
   fundamental: 'بنیادی',
@@ -44,7 +172,7 @@ function dirFa(s: AgentSignal | undefined): string {
 
 /**
  * جملات خلاصهٔ مدیریتی — قانون‌محور و قابل تست.
- * ترتیب ثابت: حکم → تعارض لایه‌ها → رژیم ریسک → سوییچ ساعت شنی → اقدام بعدی.
+ * ترتیب: حکم → سناریوی بازار → ارکان تحلیلی → رژیم ریسک → سوییچ ساعت شنی → اقدام بعدی.
  */
 export function buildManagementSummary(args: {
   symbol: string;
@@ -55,8 +183,10 @@ export function buildManagementSummary(args: {
   warRegime: boolean;
   superFundamental: boolean;
   industryCapPct: number;
+  currentPrice?: number | null;
+  resistancePrice?: number | null;
 }): SummaryLine[] {
-  const { symbol, verdict, input, strict, decision, warRegime, superFundamental, industryCapPct } = args;
+  const { symbol, verdict, input, strict, decision, warRegime, superFundamental, industryCapPct, currentPrice, resistancePrice } = args;
   const lines: SummaryLine[] = [];
 
   // ۱) حکم قطعی
@@ -65,12 +195,12 @@ export function buildManagementSummary(args: {
     title: 'حکم مدیریتی',
     text:
       decision.action === 'ladder_buy'
-        ? `${symbol}: هر چهار گیت هم‌زمان سبز است؛ ورود پله‌ای طبق برنامهٔ زیر مجاز می‌شود.`
+        ? `${symbol}: هر چهار فیلتر هم‌زمان سبز است؛ ورود پله‌ای طبق برنامهٔ زیر مجاز می‌شود.`
         : decision.action === 'veto'
           ? `${symbol}: وتوی سخت‌گیرانه فعال است؛ تا رفع مانع، هیچ ورودی مجاز نیست.`
           : decision.action === 'high_risk_swing'
             ? `${symbol}: ورود روندی مسدود است؛ تنها نوسانگیری سبک با حجم کنترل‌شده مجاز است.`
-            : `${symbol}: در وضعیت پایش است؛ ورود تا تکمیل تایید لایه‌ها به تعویق می‌افتد.`,
+            : `${symbol}: در وضعیت پایش است؛ ورود تا تکمیل تایید ارکان تحلیلی به تعویق می‌افتد.`,
     tone:
       decision.action === 'ladder_buy'
         ? 'green'
@@ -81,7 +211,25 @@ export function buildManagementSummary(args: {
             : 'blue',
   });
 
-  // ۲) تعارض لایه‌ها با لحن مالی
+  // ۲) سناریوی محتمل بازار (یکی از ۸ سناریو)
+  const scenario = detectMarketScenario({
+    symbol,
+    input,
+    strict,
+    decision,
+    superFundamental,
+    warRegime,
+    currentPrice,
+    resistancePrice,
+  });
+  lines.push({
+    id: 'scenario',
+    title: `سناریوی بازار: ${scenario.title}`,
+    text: scenario.description,
+    tone: scenario.tone,
+  });
+
+  // ۳) تعارض ارکان تحلیلی با لحن مالی
   const fund = input.fundamental;
   const tech = input.technical;
   const tape = input.tape;
@@ -100,10 +248,10 @@ export function buildManagementSummary(args: {
     } else if (fs > 0 && ts > 0) {
       conflictBits.push('بنیادی و تکنیکال هم‌جهت‌اند؛ ریسک تناقض افق زمانی فعلاً پایین است.');
     } else if (fs < 0 && ts < 0) {
-      conflictBits.push('هر دو لایهٔ بنیادی و تکنیکال ضعیف‌اند؛ بازده ریسک‌پذیر نیست.');
+      conflictBits.push('هر دو رکن بنیادی و تکنیکال ضعیف‌اند؛ بازده ریسک‌پذیر نیست.');
     }
   } else {
-    conflictBits.push('برای سنجش تعارض لایه‌ها به هر دو سیگنال بنیادی و تکنیکال فعال نیاز است.');
+    conflictBits.push('برای سنجش هم‌راستایی ارکان تحلیلی به هر دو سیگنال بنیادی و تکنیکال فعال نیاز است.');
   }
   if (tape && (tape.payload as { pattern?: string } | null)?.pattern === 'suspicious_volume') {
     conflictBits.push('تابلو حجم مشکوک نشان می‌دهد؛ این نشانه زمان‌سنج است، نه مجوز ورود.');
@@ -113,12 +261,12 @@ export function buildManagementSummary(args: {
   }
   lines.push({
     id: 'conflict',
-    title: 'تعارض لایه‌ها',
+    title: 'ارکان تحلیلی',
     text: conflictBits.join(' '),
     tone: verdict.hasConflict ? 'yellow' : 'gray',
   });
 
-  // ۳) رژیم ریسک/جنگ
+  // ۴) رژیم ریسک/جنگ
   const cap = warRegimeCap(warRegime);
   lines.push({
     id: 'regime',
@@ -129,7 +277,7 @@ export function buildManagementSummary(args: {
     tone: cap ? 'yellow' : 'gray',
   });
 
-  // ۴) سوییچ اهرم ساعت شنی
+  // ۵) سوییچ اهرم ساعت شنی
   const sw: HourglassSwitch = hourglassSwitch({
     superFundamental,
     weekly: strict.weekly,
@@ -144,7 +292,7 @@ export function buildManagementSummary(args: {
     tone: sw.active ? 'green' : 'gray',
   });
 
-  // ۵) اقدام بعدی — کدام گیت مانع است
+  // ۶) اقدام بعدی — کدام فیلتر مانع است
   const blockers = strict.gates.filter((g) => g.state !== 'passed');
   lines.push({
     id: 'next',

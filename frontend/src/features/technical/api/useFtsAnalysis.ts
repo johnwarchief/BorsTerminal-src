@@ -106,6 +106,21 @@ const ExitEngine = z.object({
     .nullish(),
 });
 
+const MatrixDecision = z.object({
+  decision: z.string().nullish(),
+  setup: z.string().nullish(),
+  desc: z.string().nullish(),
+});
+
+const HourglassStrategy = z.object({
+  active: z.boolean().nullish(),
+  weekly_close: z.number().nullable().nullish(),
+  ma52: z.number().nullable().nullish(),
+  weekly_rsi5: z.number().nullable().nullish(),
+  action: z.string().nullish(),
+  desc: z.string().nullish(),
+});
+
 export const FtsAnalysis = z.object({
   trend: z
     .object({
@@ -113,6 +128,7 @@ export const FtsAnalysis = z.object({
       W: TrendLeg.nullish(),
       M: TrendLeg.nullish(),
       alignment: z.string().nullish(),
+      matrix: MatrixDecision.nullish(),
     })
     .nullish(),
   fib: Fib,
@@ -122,6 +138,7 @@ export const FtsAnalysis = z.object({
   double_bottom: DoubleBottom.nullish(),
   range_box: RangeBox.nullish(),
   exit_engine: ExitEngine.nullish(),
+  hourglass: HourglassStrategy.nullish(),
 });
 
 export type FtsAnalysisData = z.infer<typeof FtsAnalysis>;

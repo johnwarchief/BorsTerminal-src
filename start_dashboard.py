@@ -24,6 +24,17 @@ except Exception:
     pass
 
 
+def open_app_window(url: str) -> None:
+    """Launch the terminal as a dedicated standalone desktop app window (no tabs, no address bar)."""
+    try:
+        from launch_desktop import launch
+        launch(url)
+        return
+    except Exception:
+        pass
+    webbrowser.open(url)
+
+
 def port_in_use(port: int) -> bool:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(0.8)
@@ -67,9 +78,9 @@ def main() -> int:
 
     if port_in_use(port):
         print(f"  [OK]  A dashboard server is already running on port {port}.")
-        print(f"  [OK]  Opening browser: {url}")
-        webbrowser.open(url)
-        print("  [DONE] If the page does not load, close the old window and")
+        print(f"  [OK]  Opening standalone app window: {url}")
+        open_app_window(url)
+        print("  [DONE] If the window does not load, close it and")
         print("         kill the python process in Task Manager, then retry.")
         print("=" * 66)
         return 0
@@ -86,8 +97,8 @@ def main() -> int:
     print(f"  [..]  Waiting for server on {url} ...")
     if wait_for_server(port):
         print(f"  [OK]  Dashboard is up: {url}")
-        print("  [..]  Opening your browser ...")
-        webbrowser.open(url)
+        print("  [..]  Opening standalone app window ...")
+        open_app_window(url)
         print("  [DONE] Server is running. Close this window to stop it.")
     else:
         print(f"  [ERR] Server did not respond on port {port} within 25s.")

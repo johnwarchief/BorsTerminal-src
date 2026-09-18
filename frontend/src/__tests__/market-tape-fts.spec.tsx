@@ -69,6 +69,13 @@ describe('سنجه‌های FTS تابلو (lib/tapeFts)', () => {
     expect(sellPerCapitaMt(r)).toBe(2);
   });
 
+  it('اگر حجم به تعداد برگه باشد (عدد کوچک)، با قیمت ضرب می‌شود تا ۰.۰ نشود', () => {
+    // ۵۰ هزار برگه تقسیم بر ۵۰ خریدار = ۱۰۰۰ برگه به ازای هر نفر
+    // در قیمت ۵۰۰۰ ریال = ۵ میلیون ریال = ۰.۵ میلیون تومان
+    const r = row({ buy_i_vol: 50_000, buy_count_i: 50, p_closing: 5000 });
+    expect(buyPerCapitaMt(r)).toBe(0.5);
+  });
+
   it('پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) تشخیص و فیلتر می‌شود', () => {
     expect(isNumericSuffixSymbol('فولاد1')).toBe(true);
     expect(isNumericSuffixSymbol('وبملت۲')).toBe(true);

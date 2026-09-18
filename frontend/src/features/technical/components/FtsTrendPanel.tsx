@@ -105,6 +105,35 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         ) : null}
       </div>
 
+      {/* ماتریس تصمیم‌گیری چندزمانه FTS */}
+      {t?.matrix ? (
+        <div className={`rounded-xl border p-2.5 ${t.matrix.decision === 'PERMITTED' ? 'border-border-accent bg-accent-green/10' : 'border-border-c bg-accent-red/10'}`}>
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
+            <Badge tone={t.matrix.decision === 'PERMITTED' ? 'green' : 'red'}>
+              {t.matrix.decision === 'PERMITTED' ? 'ورود مجاز' : 'ممنوعیت ورود'}
+            </Badge>
+          </div>
+          <p className="text-[11px] text-text-secondary leading-relaxed">{t.matrix.desc}</p>
+        </div>
+      ) : null}
+
+      {/* استراتژی ساعت شنی FTS */}
+      {data.hourglass?.active ? (
+        <div className="rounded-xl border border-accent-green/40 bg-accent-green/15 p-2.5">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-accent-green">استراتژی ساعت شنی (اهرم ۲x-۴x)</span>
+            <Badge tone="green">شتاب‌دهنده</Badge>
+          </div>
+          <p className="mb-1.5 text-[10px] text-text-secondary">{data.hourglass.desc}</p>
+          <div className="flex justify-between text-[10px] text-text-secondary">
+            <span>قیمت هفتگی: <b className="num">{fmtPrice(data.hourglass.weekly_close)}</b></span>
+            <span>MA52 هفتگی: <b className="num">{fmtPrice(data.hourglass.ma52)}</b></span>
+            <span>RSI(5) هفتگی: <b className="num">{data.hourglass.weekly_rsi5 != null ? toFaDigits(data.hourglass.weekly_rsi5.toFixed(1)) : '-'}</b></span>
+          </div>
+        </div>
+      ) : null}
+
       {/* کمربند های فیبوناچی */}
       <div>
         <div className="mb-1 text-[11px] font-bold text-text-secondary">کمربند های فیبوناچی (مقیاس لگاریتمی)</div>

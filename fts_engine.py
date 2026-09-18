@@ -173,7 +173,7 @@ MANDATORY_PRICING_TOKENS = (
 FREE_PRICING_TOKENS = (
     "سیمان", "آهک", "شیمیایی", "پتروشیمی", "فلزات", "کانه", "کانی", "کاشی", "سرامیک", "شیشه",
     "فرآورده‌های نفتی", "نفت", "زغال سنگ", "معادن", "محصولات فلزی",
-    "مس", "فولاد", "سرب و روی",
+    "مس", "فولاد", "سرب و روی", "رایانه", "اطلاعات", "نرم افزار",
 )
 
 # صنعت بیمه — حذف قطعی از خروجی (بخش ۲ دستور کار).
@@ -586,12 +586,22 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
 
 
 def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: float,
-                       min_ratio: float = 1.0, annual: Optional[dict] = None) -> Optional[dict]:
+                       min_ratio: float = 1.0, annual: Optional[dict] = None,
+                       sector: str = "") -> Optional[dict]:
     """فروش سالانه ÷ ارزش بازار روز — جزوه: باید ≥ min_ratio (پیش‌فرض ۱.۰) باشد.
-
-    اصلاح v8: در v7.3 نسبت به‌صورت P/S = mcap ÷ rev محاسبه و «≤ ۳» پاس میشد —
-    یعنی هم جهت نسبت برعکس بود و هم صورت مالیِ ۳ماهه به‌جای فروش سالانه.
+    شرکت‌های سرمایه‌گذاری/هلدینگ معاف (N/A) هستند.
     """
+    s = norm_fa(sector)
+    if any(k in s for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته")):
+        mcap = _f(market_cap_rials)
+        return {"sales_to_mcap": None,
+                "annual_sales_bt": None,
+                "mcap_ht": round(mcap / 1e13, 2),
+                "annualize_basis": "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
+                "pass": True,
+                "is_exempt": True,
+                "threshold": min_ratio,
+                "formula": "معافیت هلدینگ بر مبنای P/NAV"}
     a = annual or annualized_sales(conn, symbol)
     mcap = _f(market_cap_rials)
     if not a or mcap <= 0:
@@ -607,13 +617,10 @@ def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: 
 
 
 def gross_profit_potential(conn: sqlite3.Connection, symbol: str, market_cap_rials: float,
-                           min_pct: float = 30.0, gm: Optional[dict] = None,
+                           min_pct: float = 40.0, gm: Optional[dict] = None,
                            annual: Optional[dict] = None) -> Optional[dict]:
     """پتانسیل سود ناخالص به ارزش بازار = (فروش سالانه × حاشیه ناخالص) ÷ ارزش بازار × ۱۰۰.
-
-    اصلاح v8: در v7.3 این تابع با `if not gm['pass']: return None` به شاخص ۳ قفل
-    شده بود → برای شرکت‌های با حاشیه <۲۰٪ خروجی «ناموجود» میشد نه «رد». اکنون
-    مستقل محاسبه و فقط بر پایهٔ آستانهٔ خودش داوری میشود.
+    آستانهٔ استاندارد v2.1 و جزوه: حداقل ۴۰٪.
     """
     mcap = _f(market_cap_rials)
     if mcap <= 0:
@@ -634,18 +641,11 @@ def gross_profit_potential(conn: sqlite3.Connection, symbol: str, market_cap_ria
 
 # ============================ شاخص ۵: فیلتر صنعت (قیمت‌گذاری آزاد / دستوری)
 def sector_filter(sector: str, cfg: dict = None, market_cap_rials: float = 0.0,
-                  total_market_cap_rials: float = 0.0) -> dict:
+                  total_market_cap_rials: float = 0.0,
+                  gpm: Optional[float] = None,
+                  sales_growth: Optional[float] = None) -> dict:
     """تفکیک تگ صنعت به «قیمت‌گذاری آزاد/بورس کالا» و «قیمت‌گذاری دستوری».
-
-    اصلاح v8:
-      * لیست‌های `mandatory_sectors` / `free_sectors` **از پنل تنظیمات کدال** خوانده
-        میشوند (در v7.3 `bad_sectors`/`good_sectors` هرگز به این تابع پاس نمیشد و
-        فیلدهای UI کاملاً مرده بودند).
-      * تطبیق با norm_fa → خطای ی/ک عربی-فارسی ممکن نیست.
-      * «سهم بازار» از شرط رد/قبولی شاخص ۵ **خارج** شد (جزو ۵ محور نیست) و فقط
-        به‌عنوان دادهٔ تکمیلی برمی‌گردد.
-      * `industry_mode` = Exclude_Mandatory_Pricing (پیش‌فرض) → دستوری = مردود
-        `industry_mode` = Rank_Only → دستوری فقط برچسب می‌خورد، رد نمی‌شود
+    شامل استثنای دارویی با GPM >= 50% و بانک با رشد مثبت درآمدهای تسهیلاتی.
     """
     cfg = cfg or {}
     s = norm_fa(sector)
@@ -653,29 +653,47 @@ def sector_filter(sector: str, cfg: dict = None, market_cap_rials: float = 0.0,
                                       or MANDATORY_PRICING_TOKENS)]
     free = [norm_fa(t) for t in (cfg.get("free_sectors") or FREE_PRICING_TOKENS)]
 
-    hit_mand = [t for t in mandatory if t and t in s]
-    hit_free = [t for t in free if t and t in s]
-    if hit_mand:
-        mode = "mandatory"
-    elif hit_free:
-        mode = "free"
+    # استثنای دارویی FTS v2.1 و جزوه: دارو مشمول سقف نرخ است مگر GPM >= 50%
+    if "دارو" in s:
+        if gpm is not None and gpm >= 50.0:
+            mode = "free"
+            hit_free = ["دارویی ممتاز (حاشیه ناخالص >= ۵۰٪)"]
+            hit_mand = []
+        else:
+            mode = "mandatory"
+            hit_mand = ["دارویی عادی (قیمت‌گذاری دستوری)"]
+            hit_free = []
+    # استثنای بانک‌ها: اگر رشد درآمد مثبت داشته باشد تایید می‌شود
+    elif any(k in s for k in ("بانک", "بانك", "اعتباری", "اعتباري")):
+        if sales_growth is not None and sales_growth > 0:
+            mode = "free"
+            hit_free = ["بانک رشد درآمدی و ارزی"]
+            hit_mand = []
+        else:
+            mode = "neutral"
+            hit_mand = []
+            hit_free = []
     else:
-        mode = pricing_mode(sector)
+        hit_mand = [t for t in mandatory if t and t in s]
+        hit_free = [t for t in free if t and t in s]
+        if hit_mand:
+            mode = "mandatory"
+        elif hit_free:
+            mode = "free"
+        else:
+            mode = pricing_mode(sector)
 
     exclude = str(cfg.get("industry_mode", "Exclude_Mandatory_Pricing")) != "Rank_Only"
     share = ((_f(market_cap_rials) / _f(total_market_cap_rials) * 100.0)
              if total_market_cap_rials else 0.0)
     label = {"mandatory": "قیمت‌گذاری دستوری", "free": "قیمت‌گذاری آزاد / بورس کالا",
-             "neutral": "خنثی — نیازمند بررسی موردی"}[mode]
+             "neutral": "خنثی — نیازمند بررسی موردی"}.get(mode, "سایر")
     return {"verdict": mode, "label": label, "sector": sector,
             "matched_tokens": hit_mand or hit_free,
-            # v9.8.1 — برچسب «صنعت برتر FTS»: صنعتی که در یکی از دو فهرستِ
-            # قیمت‌گذاری FTS شناخته شده (فلزات/سیمان/پتروشیمی/دارو/غذا/…) —
-            # «برتر» یعنی برچسب‌دار، نه لزوماً قبول (دارو برچسب میخورد ولی رد)
             "fts_top_industry": bool(hit_mand or hit_free),
             "pass": (mode != "mandatory") if exclude else True,
             "exclusion_active": exclude,
-            "market_share_pct": round(share, 3)}     # تکمیلی — در داوری نقشی ندارد
+            "market_share_pct": round(share, 3)}
 
 
 # ================================= فیلترهای حذف خودکار (پیش‌غربالگری خروجی)
@@ -799,17 +817,25 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     annual = annualized_sales(conn, symbol, ref=ref)
     s2m = sales_to_marketcap(conn, symbol, mcap,
                              min_ratio=_f(cfg.get("sales_to_mcap_min", 1.0)) or 1.0,
-                             annual=annual)
+                             annual=annual, sector=sector)
     pot = gross_profit_potential(conn, symbol, mcap,
-                                 min_pct=_f(cfg.get("profit_potential_min", 30.0)) or 30.0,
+                                 min_pct=_f(cfg.get("profit_potential_min", 40.0)) or 40.0,
                                  gm=gm, annual=annual)
     sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
-                        total_market_cap_rials=total_market_cap_rials)
+                        total_market_cap_rials=total_market_cap_rials,
+                        gpm=(gm.get("margin_pct") if gm else None),
+                        sales_growth=(g.get("growth_pct") if g else None))
+
+    is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+    if is_holding:
+        passes_s2m = True
+    else:
+        passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
 
     passes = {"1_growth": bool(g and g["pass"]),
               "2_eps_trend": bool(e and e["pass"]),
               "3_gross_margin": bool(gm and gm["pass"]),
-              "4_sales_to_mcap": bool(s2m and s2m["pass"]),
+              "4_sales_to_mcap": passes_s2m,
               "5_industry": bool(sec["pass"])}
     score = sum(passes.values())
 
@@ -1133,15 +1159,23 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         elif (fs_rev > 0 and 0 < months_used < 12
               and (annual_sales > fs_rev * 4.0 or annual_sales < fs_rev * 0.25)):
             annual_sales, months_used = fs_rev, 12      # واحد مشکوک → فروش سالانهٔ کدال
-        s2m = (annual_sales * MRL_TO_RIAL / mcap) if mcap > 0 and annual_sales > 0 else None
+        is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+        s2m = (annual_sales * MRL_TO_RIAL / mcap) if mcap > 0 and annual_sales > 0 and not is_holding else None
         pot = None
         if s2m is not None and margin is not None:
             pot = (annual_sales * (margin / 100.0) * MRL_TO_RIAL / mcap) * 100.0
-        i4 = s2m is not None and s2m >= s2m_min
+
+        if is_holding:
+            i4 = True
+        else:
+            pot_pass = pot is not None and pot >= pot_min
+            sales_pass = s2m is not None and s2m >= s2m_min
+            i4 = bool(sales_pass or pot_pass)
 
         # ۵) فیلتر صنعت (قیمت‌گذاری آزاد/بورس کالا در برابر دستوری)
         sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
-                            total_market_cap_rials=total_mcap)
+                            total_market_cap_rials=total_mcap,
+                            gpm=margin, sales_growth=growth)
         i5 = bool(sec["pass"])
 
         reasons = []
@@ -1183,5 +1217,89 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         })
     out.sort(key=lambda r: (r["excluded"], -r["score"], -r["mcap"], r["symbol"]))
     return out
+
+
+def load_fts_config(path: str = "fts_thresholds.json") -> dict:
+    """بارگذاری آستانه‌های FTS از فایل کانفیگ با اولویت‌بندی مسیر."""
+    import json
+    import os
+    candidates = [
+        os.path.join(os.getcwd(), path),
+        os.path.join(os.path.dirname(__file__), path),
+        os.path.join(os.path.dirname(__file__), "..", path),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            try:
+                with open(c, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+    return {}
+
+
+class FtsEngine:
+    """کلاس تطبیقی برای دسترسی شی‌گرا به توابع موتور FTS."""
+    def __init__(self, config: Optional[dict] = None):
+        self.config = config or load_fts_config()
+
+    def evaluate_symbol(self, symbol_data: dict) -> dict:
+        """ارزیابی تک‌نماد بر اساس ۵ شاخص FTS v2.1."""
+        sym = symbol_data.get("symbol", "")
+        sector = symbol_data.get("sector", "")
+        mcap = _f(symbol_data.get("market_cap", 0.0))
+        sales_curr = _f(symbol_data.get("sales_current_cumulative", 0.0))
+        sales_prev = _f(symbol_data.get("sales_previous_cumulative", 0.0))
+        rev = _f(symbol_data.get("operating_revenue", 0.0))
+        gp = _f(symbol_data.get("gross_profit", 0.0))
+        eps_hist = symbol_data.get("eps_history_3y", [])
+        months = int(symbol_data.get("months_reported", 3) or 3)
+
+        # F-01
+        growth = ((sales_curr / sales_prev - 1.0) * 100.0) if sales_prev > 0 else None
+        f01_pass = growth is not None and growth >= 40.0
+
+        # F-02
+        f02_pass = (len(eps_hist) >= 3 and eps_hist[0] < eps_hist[1] < eps_hist[2] and eps_hist[2] > 0)
+
+        # F-03
+        gpm = (gp / rev * 100.0) if rev > 0 else 0.0
+        f03_pass = gpm >= 20.0
+
+        # F-04
+        is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+        ann_sales = sales_curr * (12.0 / months) if (months > 0 and not is_holding) else 0.0
+        s2m = (ann_sales / mcap) if (mcap > 0 and not is_holding) else None
+        pot = (ann_sales * (gpm / 100.0) / mcap * 100.0) if (mcap > 0 and not is_holding) else None
+        if is_holding:
+            f04_pass = True
+        else:
+            f04_pass = bool((s2m is not None and s2m >= 1.0) or (pot is not None and pot >= 40.0))
+
+        # F-05
+        sec_res = sector_filter(sector, cfg=self.config, gpm=gpm, sales_growth=growth)
+        f05_pass = bool(sec_res.get("pass"))
+
+        passes = {
+            "F01_sales_growth": {"passed": f01_pass, "growth_pct": round(growth, 1) if growth else None},
+            "F02_eps_trend": {"passed": f02_pass, "eps_values": eps_hist},
+            "F03_gross_margin": {"passed": f03_pass, "gpm_pct": round(gpm, 1)},
+            "F04_sales_to_cap": {"passed": f04_pass, "sales_to_cap_ratio": round(s2m, 2) if s2m else None, "is_exempt": is_holding},
+            "F05_industry_gate": {"passed": f05_pass, "pricing_type": sec_res.get("label", "")}
+        }
+        passed_count = sum(1 for p in passes.values() if p["passed"])
+        verdict = "SUPER_FUNDAMENTAL" if passed_count == 5 else "PASSED" if passed_count >= 4 else "WATCHLIST" if passed_count == 3 else "REJECTED"
+
+        return {
+            "symbol": sym,
+            "name": symbol_data.get("name", sym),
+            "sector": sector,
+            "overall_passed": passed_count == 5,
+            "passed_count": passed_count,
+            "fts_verdict": verdict,
+            "total_score": round(passed_count * 20.0, 1),
+            "indicators": passes
+        }
+
 
 

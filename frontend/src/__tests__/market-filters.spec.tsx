@@ -78,6 +78,7 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
 
   it('اسلایدر ضریب حجم با بازه و گام درست، تا فعال‌سازی غیرفعال', () => {
     render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
     const slider = screen.getByLabelText('آستانهٔ ضریب حجم') as HTMLInputElement;
     expect(slider.min).toBe('1.5');
     expect(slider.max).toBe('5');
@@ -94,6 +95,7 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
 
   it('چیپ خروج از انباشت با هینت مالکیت تب تکنیکال فعال/غیرفعال می‌شود', () => {
     render(<MarketFilters sectors={[]} exitAccumCount={6} />);
+    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
     const chip = screen.getByText(EXIT_ACCUM_LABEL).closest('button');
     expect(chip).not.toBeNull();
     expect(chip!.getAttribute('title')).toContain('تب تکنیکال');

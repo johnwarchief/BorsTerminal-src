@@ -2,8 +2,8 @@
 // آینه منطق بک اند (api/market.py: f_clock و f_susp و f_jet) برای تست پذیری.
 // همه توابع خالص اند و null را امن برمی گردانند.
 
-/** شکاف الگوی ساعت: پایانی دست کم 2 درصد بالاتر از آخرین (بک اند: p_closing >= p_last * 1.02) */
-export const CLOCK_GAP = 0.02;
+/** شکاف الگوی ساعت: آخرین دست کم ۱ درصد بالاتر از پایانی (FTS Spec: plp - pcp >= 1.0) */
+export const CLOCK_GAP = 0.01;
 /** حد نصاب تعداد معاملات برای الگوی ساعت (بک اند: z_tot_tran > 30) */
 export const CLOCK_MIN_TRADES = 30;
 /** ضریب حجم مشکوک (بک اند: tvol > 3 * avg30 و tno > 50) */
@@ -20,7 +20,7 @@ function num(v: number | null | undefined): number | null {
 
 /**
  * اختلاف آخرین به پایانی به نسبت پایانی: (pLast - pClosing) / pClosing
- * همان تعریف قرارداد TapePayload.lastVsClose. مقدار منفی یعنی پایانی بالاتر.
+ * همان تعریف قرارداد TapePayload.lastVsClose. مثبت یعنی آخرین معامله بالاتر از پایانی است.
  */
 export function lastVsClose(pLast: number | null | undefined, pClosing: number | null | undefined): number | null {
   const last = num(pLast);
@@ -30,15 +30,14 @@ export function lastVsClose(pLast: number | null | undefined, pClosing: number |
 }
 
 /**
- * شکاف پایانی به آخرین: (pClosing - pLast) / pLast
- * سمت تشخیص الگوی ساعت در بک اند. مثبت یعنی حمایت پایانی.
+ * شکاف الگوی ساعت: (pLast - pClosing) / pClosing
+ * طبق FTS_SPEC: اختلاف آخرین معامله از قیمت پایانی (plp - pcp >= 1.0). مثبت یعنی قدرت خریدار در پایان بازار.
  */
-export function closingGap(pLast: number | null | undefined, pClosing: number | null | undefined): number | null {
-  const last = num(pLast);
-  const close = num(pClosing);
-  if (last == null || close == null || last === 0) return null;
-  return (close - last) / last;
+export function clockGap(pLast: number | null | undefined, pClosing: number | null | undefined): number | null {
+  return lastVsClose(pLast, pClosing);
 }
+/** نام مستعار برای سازگاری عقب‌رو با تست‌ها */
+export const closingGap = clockGap;
 
 /** سرانه: حجم تقسیم بر تعداد. تعداد صفر یا نامعتبر یعنی null */
 export function perCapita(vol: number | null | undefined, count: number | null | undefined): number | null {
@@ -82,9 +81,9 @@ export type ClockInput = {
 
 export type ClockResult = { hit: boolean; gap: number | null };
 
-/** الگوی ساعت: شکاف >= 2 درصد و حجم بالای میانگین و معاملات بالای 30 */
+/** الگوی ساعت FTS: آخرین معامله حداقل ۱٪ بالاتر از قیمت پایانی و حجم بالای میانگین */
 export function detectClockPattern(r: ClockInput): ClockResult {
-  const gap = closingGap(r.p_last, r.p_closing);
+  const gap = clockGap(r.p_last, r.p_closing);
   const t = num(r.tvol);
   const m = num(r.month_avg_vol);
   const n = num(r.z_tot_tran);

@@ -25,9 +25,6 @@ export function ManagementSummary({ lines }: { lines: SummaryLine[] }) {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-2xs leading-5 text-text-muted">
-        این متن با موتور متنی قاعده‌محور و کاملاً آفلاین ساخته شده است؛ هیچ درخواست بیرونی/مدلی در کار نیست.
-      </p>
     </section>
   );
 }

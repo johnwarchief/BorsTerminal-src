@@ -19,6 +19,21 @@
   --nn-font: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+[data-theme='light'] {
+  --nn-bg-primary: #ffffff;
+  --nn-bg-secondary: #f8fafc;
+  --nn-bg-hover: #eef2f8;
+  --nn-bg-active: #2563eb;
+  --nn-border: #e2e8f0;
+  --nn-border-light: #cbd5e1;
+  --nn-text-primary: #0f172a;
+  --nn-text-secondary: #64748b;
+  --nn-text-active: #2563eb;
+  --nn-color-up: #089981;
+  --nn-color-down: #f23645;
+  --nn-color-warning: #d97706;
+}
+
 .nahayat-negar-container {
   display: flex;
   flex-direction: column;
@@ -41,11 +56,20 @@
   justify-content: space-between;
   height: 42px;
   min-height: 42px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
   background-color: var(--nn-bg-primary);
   border-bottom: 1px solid var(--nn-border);
   padding: 0 8px;
   gap: 6px;
   z-index: 20;
+}
+
+.nn-top-toolbar::-webkit-scrollbar {
+  display: none;
 }
 
 .nn-toolbar-group {
@@ -70,7 +94,7 @@
   font-weight: 600;
   font-size: 13px;
   background-color: var(--nn-bg-secondary);
-  color: #ffffff;
+  color: var(--nn-text-primary);
   border: 1px solid var(--nn-border);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -110,7 +134,7 @@
 
 .nn-btn:hover {
   background-color: var(--nn-bg-hover);
-  color: #ffffff;
+  color: var(--nn-text-primary);
 }
 
 .nn-btn.active {
@@ -172,7 +196,7 @@
 
 .nn-dropdown-item:hover {
   background-color: var(--nn-bg-hover);
-  color: #ffffff;
+  color: var(--nn-text-primary);
 }
 
 .nn-dropdown-item.selected {
@@ -184,6 +208,8 @@
 .nn-chart-body {
   display: flex;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   position: relative;
   overflow: hidden;
   height: calc(100% - 74px);
@@ -279,7 +305,7 @@
 
 .tv-flyout-item:hover {
   background-color: var(--nn-bg-hover);
-  color: #ffffff !important;
+  color: var(--nn-text-primary) !important;
 }
 
 .tv-flyout-item.active {
@@ -298,6 +324,8 @@
 .nn-canvas-area {
   flex: 1;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   position: relative;
   direction: ltr; /* KlineCharts canvas coordinate space is strictly LTR */
 }
@@ -369,12 +397,21 @@
   justify-content: space-between;
   height: 32px;
   min-height: 32px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
   background-color: var(--nn-bg-primary);
   border-top: 1px solid var(--nn-border);
   padding: 0 12px;
   font-size: 11px;
   color: var(--nn-text-secondary);
   z-index: 10;
+}
+
+.nn-bottom-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .nn-range-buttons {
@@ -397,7 +434,7 @@
 
 .nn-range-btn:hover {
   background-color: var(--nn-bg-hover);
-  color: #ffffff;
+  color: var(--nn-text-primary);
 }
 
 .nn-range-btn.active {
@@ -426,7 +463,13 @@
 
 .nn-scale-toggle:hover {
   background-color: var(--nn-bg-hover);
-  color: #ffffff;
+  color: var(--nn-text-primary);
+}
+
+[data-theme='light'] .nn-dropdown-menu,
+[data-theme='light'] .tv-flyout-menu,
+[data-theme='light'] .tv-floating-properties-bar {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .nn-scale-toggle.active {

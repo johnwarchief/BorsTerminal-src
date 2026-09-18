@@ -2,7 +2,14 @@
 import { create } from 'zustand';
 import { ASSET_TYPES, type AssetType } from '../lib/assetType';
 
-export const QUICK_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'] as const;
+import {
+  DEFAULT_TAPE_FILTER_CONFIG,
+  TAPE_PRESETS,
+  type TapeFilterConfig,
+  type TapePresetKey,
+} from '../lib/tapeAlgorithms';
+
+export const QUICK_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh', 'f_smart_flow'] as const;
 export type QuickFilter = (typeof QUICK_FILTERS)[number];
 
 export const QUICK_LABELS: Record<QuickFilter, string> = {
@@ -11,6 +18,7 @@ export const QUICK_LABELS: Record<QuickFilter, string> = {
   f_jet: 'فیلتر جت',
   f_roobi: 'روباهی',
   f_noqteh: 'نقطه زنی',
+  f_smart_flow: 'پول هوشمند',
 };
 
 /** آستانه تقریبی صف در TSETMC (۵ درصد منهای ارف) */
@@ -92,6 +100,36 @@ export function isDefaultAssetTypes(types: AssetType[]): boolean {
   return sameAssetSets(types, DEFAULT_ASSET_TYPES);
 }
 
+function loadInitialTapeConfig(): TapeFilterConfig {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('bors_tape_filter_config_v1') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        clock: { ...DEFAULT_TAPE_FILTER_CONFIG.clock, ...(parsed.clock ?? {}) },
+        suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume, ...(parsed.suspiciousVolume ?? {}) },
+        jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, ...(parsed.jet ?? {}) },
+        roobi: { ...DEFAULT_TAPE_FILTER_CONFIG.roobi, ...(parsed.roobi ?? {}) },
+        noqteh: { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, ...(parsed.noqteh ?? {}) },
+        smartFlow: { ...DEFAULT_TAPE_FILTER_CONFIG.smartFlow, ...(parsed.smartFlow ?? {}) },
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_TAPE_FILTER_CONFIG;
+}
+
+function saveTapeConfig(cfg: TapeFilterConfig) {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bors_tape_filter_config_v1', JSON.stringify(cfg));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 type TapeState = {
   /** جستجوی نماد و نام */
   query: string;
@@ -111,6 +149,8 @@ type TapeState = {
   volRatioMin: number;
   /** فیلتر ترکیبی «خروج از انباشت» (فقط در صفحهٔ تابلو) */
   exitAccum: boolean;
+  /** کانفیگ شخصی‌سازی‌شدهٔ الگوریتم‌های تابلو */
+  tapeFilterConfig: TapeFilterConfig;
   /** ترتیب غربالگری سه‌ایجنتی */
   screenOrder: ScreenOrder;
   setQuery: (q: string) => void;
@@ -126,6 +166,9 @@ type TapeState = {
   setVolRatioOn: (v: boolean) => void;
   setVolRatioMin: (v: number) => void;
   toggleExitAccum: () => void;
+  setTapeFilterConfig: (cfg: Partial<TapeFilterConfig>) => void;
+  resetTapeFilterConfig: () => void;
+  applyTapePreset: (presetKey: TapePresetKey) => void;
   setScreenOrder: (o: ScreenOrder) => void;
   /** بازنشانی همه فیلترها به حالت پیش فرض */
   resetFilters: () => void;
@@ -145,6 +188,7 @@ const INITIAL = {
   volRatioOn: false,
   volRatioMin: VOL_RATIO_DEFAULT,
   exitAccum: false,
+  tapeFilterConfig: loadInitialTapeConfig(),
   screenOrder: 'tape_first' as ScreenOrder,
 };
 
@@ -175,6 +219,30 @@ export const useTapeStore = create<TapeState>((set) => ({
   setVolRatioOn: (volRatioOn) => set({ volRatioOn }),
   setVolRatioMin: (v) => set({ volRatioMin: clampVolRatio(v) }),
   toggleExitAccum: () => set((s) => ({ exitAccum: !s.exitAccum })),
+  setTapeFilterConfig: (partial) =>
+    set((s) => {
+      const updated: TapeFilterConfig = {
+        clock: { ...s.tapeFilterConfig.clock, ...(partial.clock ?? {}) },
+        suspiciousVolume: { ...s.tapeFilterConfig.suspiciousVolume, ...(partial.suspiciousVolume ?? {}) },
+        jet: { ...s.tapeFilterConfig.jet, ...(partial.jet ?? {}) },
+        roobi: { ...s.tapeFilterConfig.roobi, ...(partial.roobi ?? {}) },
+        noqteh: { ...s.tapeFilterConfig.noqteh, ...(partial.noqteh ?? {}) },
+        smartFlow: { ...s.tapeFilterConfig.smartFlow, ...(partial.smartFlow ?? {}) },
+      };
+      saveTapeConfig(updated);
+      return { tapeFilterConfig: updated };
+    }),
+  resetTapeFilterConfig: () => {
+    saveTapeConfig(DEFAULT_TAPE_FILTER_CONFIG);
+    set({ tapeFilterConfig: DEFAULT_TAPE_FILTER_CONFIG });
+  },
+  applyTapePreset: (presetKey) => {
+    const p = TAPE_PRESETS[presetKey];
+    if (p) {
+      saveTapeConfig(p.config);
+      set({ tapeFilterConfig: p.config });
+    }
+  },
   setScreenOrder: (screenOrder) => set({ screenOrder }),
   resetFilters: () => set({ ...INITIAL }),
 }));

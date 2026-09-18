@@ -27,7 +27,7 @@ describe('سیگنال تابلو', () => {
 
   it('الگوی ساعت با حمایت سرانه سیگنال صعودی با اعتماد بالا می دهد', () => {
     const signals = rowToTapeSignals(
-      row({ p_closing: 1025, tvol: 1_200_000, buy_i_vol: 2000, buy_count_i: 10, sell_i_vol: 500, sell_count_i: 10 }),
+      row({ p_last: 1025, p_closing: 1000, tvol: 1_200_000, buy_i_vol: 2000, buy_count_i: 10, sell_i_vol: 500, sell_count_i: 10 }),
       1726000000000,
     );
     const clock = signals.filter((s) => s.payload.pattern === 'closing_auction_pop');
@@ -42,7 +42,7 @@ describe('سیگنال تابلو', () => {
   });
 
   it('الگوی ساعت بدون سرانه اعتماد متوسط می گیرد', () => {
-    const signals = rowToTapeSignals(row({ p_closing: 1025, tvol: 1_200_000, buy_count_i: 0 }), 1726000000000);
+    const signals = rowToTapeSignals(row({ p_last: 1025, p_closing: 1000, tvol: 1_200_000, buy_count_i: 0 }), 1726000000000);
     const clock = signals.filter((s) => s.payload.pattern === 'closing_auction_pop');
     expect(clock).toHaveLength(1);
     expect(clock[0].confidence).toBe('medium');

@@ -23,6 +23,7 @@ export type TradeBlueprintProps = {
   /** سرمایهٔ نمایش‌داده‌شده فرضی است؟ (کاربر چیزی ثبت نکرده) */
   assumedCapital: boolean;
   onToggleWarRegime: (v: boolean) => void;
+  horizon?: 'swing' | 'trend' | 'hourglass';
 };
 
 export function TradeBlueprint({
@@ -34,6 +35,7 @@ export function TradeBlueprint({
   warRegime,
   assumedCapital,
   onToggleWarRegime,
+  horizon,
 }: TradeBlueprintProps) {
   const navigate = useNavigate();
   const setSymbol = useSymbolStore((s) => s.setSymbol);
@@ -210,11 +212,19 @@ export function TradeBlueprint({
             )}
           </div>
           <div className="text-2xs leading-5 text-text-muted">
-            تا اولین مقاومت استاتیک {plan.resistance != null ? '(ثبت‌شده)' : '(بدون داده)'}
+            {plan.resistance != null && plan.steps[0]?.refPrice != null && plan.resistance > plan.steps[0].refPrice
+              ? `تا اولین مقاومت استاتیک (${fa0(plan.resistance)} ریال)`
+              : 'بر مبنای تارگت پیش‌فرض ستاپ جت (+۲۰٪)'}
           </div>
         </div>
         <div className="rounded-xl border border-[var(--hairline)] bg-bg-secondary/40 px-3 py-2">
-          <div className="text-2xs font-bold text-text-primary">سوییچ اهرم ساعت شنی</div>
+          <div className="text-2xs font-bold text-text-primary">
+            {horizon === 'swing'
+              ? 'افق زمانی نوسانی'
+              : horizon === 'trend'
+                ? 'افق زمانی روندی'
+                : 'سوییچ اهرم ساعت شنی'}
+          </div>
           <div className="mt-0.5 flex items-center gap-2">
             <span
               className={`inline-block h-2 w-2 rounded-full ${hourglass.active ? 'bg-accent-green shadow-[0_0_8px_var(--accent-green)]' : 'bg-border-c'}`}
@@ -226,18 +236,28 @@ export function TradeBlueprint({
             </span>
             {!superFundamental ? <Badge tone="gray">سوپر‌بنیادی نیست</Badge> : null}
           </div>
-          <div className="text-2xs leading-5 text-text-muted">{hourglass.reason}</div>
+          <div className="text-2xs leading-5 text-text-muted">
+            {horizon !== 'hourglass' && !superFundamental
+              ? `سهم سوپربنیادی نیست؛ افق جاری: ${horizon === 'swing' ? 'کوتاه‌مدت نوسانی' : 'میان‌مدت روندی'}. سوییچ ساعت شنی غیرفعال است.`
+              : hourglass.reason}
+          </div>
         </div>
       </div>
 
-      {/* خروج ۵۰٪ */}
+      {/* خروج ۵۰٪ متناسب با افق استراتژی انتخابی */}
       <div
         className={`mt-3 rounded-xl border px-3 py-2 ${
           halfExit.active ? 'border-accent-green/40 bg-accent-green/10' : 'border-[var(--hairline)] bg-bg-secondary/40'
         }`}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-2xs font-black text-text-primary">خروج ۵۰٪ (اصل پول + حفظ نیم سود)</span>
+          <span className="text-2xs font-black text-text-primary">
+            {horizon === 'swing'
+              ? 'پلن خروج نوسانی (تارگت R1 بدون نگهداری)'
+              : horizon === 'hourglass'
+                ? 'استراتژی ساعت شنی (افق بلندمدت)'
+                : 'خروج ۵۰٪ (اصل پول + حفظ نیم سود)'}
+          </span>
           <Badge tone={halfExit.active ? 'green' : 'gray'}>{halfExit.active ? 'فعال' : 'غیرفعال'}</Badge>
         </div>
         <p className="mt-0.5 text-2xs leading-5 text-text-secondary">{halfExit.text}</p>

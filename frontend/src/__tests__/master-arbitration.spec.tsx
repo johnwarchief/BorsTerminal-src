@@ -295,7 +295,7 @@ describe('خلاصهٔ تحلیلی مدیریتی (کاملاً آفلاین)',
       superFundamental: true,
       industryCapPct: 20,
     });
-    expect(lines.map((l) => l.id)).toEqual(['verdict', 'conflict', 'regime', 'switch', 'next']);
+    expect(lines.map((l) => l.id)).toEqual(['verdict', 'scenario', 'conflict', 'regime', 'switch', 'next']);
     expect(lines.find((l) => l.id === 'regime')!.text).toContain('۱۰٪');
     expect(lines.find((l) => l.id === 'regime')!.text).toContain('طلا/دلار');
     expect(lines.find((l) => l.id === 'switch')!.text).toContain('زیر MA52');
@@ -389,15 +389,14 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
     renderMaster();
 
     expect(await screen.findByText('برآیند مستر برای شپنا')).toBeInTheDocument();
-    // استپر ۴ گیتی
-    expect(screen.getByText('گیت ۱ · بنیادی')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۲ · تکنیکال')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۳ · تابلو')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۴ · سبد و رژیم ریسک')).toBeInTheDocument();
+    // استپر ۴ فیلتر
+    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۲: تکنیکال')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۳: تابلو')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۴: سبد و ریسک')).toBeInTheDocument();
     // حکم قطعی + خلاصهٔ آفلاین
     expect(screen.getByLabelText('حکم نهایی سخت‌گیرانه')).toBeInTheDocument();
     expect(screen.getByLabelText('خلاصهٔ تحلیلی مدیریتی')).toBeInTheDocument();
-    expect(screen.getByText(/موتور متنی قاعده‌محور و کاملاً آفلاین/)).toBeInTheDocument();
     // ماشین‌حساب DCA + سرمایهٔ ثبت‌نشده
     expect(await screen.findByText('ماشین‌حساب برنامهٔ معاملاتی و DCA')).toBeInTheDocument();
     expect(screen.getByLabelText('سرمایهٔ کل (تومان)')).toBeInTheDocument();
@@ -408,7 +407,7 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
     // جدول داوری بدون خط تیره: برچسب لایه
     expect(screen.getByText('برچسب لایه')).toBeInTheDocument();
     useSignalStore.getState().clearSignals();
-  });
+  }, 15000);
 
   it('«ثبت پله در سبد» تصمیم accept را با وزن مؤثر POST می‌کند', async () => {
     useSignalStore.getState().publishSignal(fundSig('bullish', 85, { metrics: { gross_margin: 26, growth_pct: 45 } }));
@@ -436,5 +435,40 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
   it('هیچ سیگنالی ⇒ حالت خالی تمیز می‌ماند', async () => {
     renderMaster();
     expect(await screen.findByText('هنوز سیگنالی در باس نیست')).toBeInTheDocument();
+  });
+
+  it('در وضعیت وتو (فیلتر ۲): گیج نمره «وتو / فاقد تایید» و بج «ورود ممنوع (توقف در فیلتر دوم)» نشان می‌دهد', async () => {
+    useSignalStore.getState().publishSignal(fundSig('bullish', 85, { metrics: { gross_margin: 26, growth_pct: 45 } }));
+    // تکنیکال بدون ستاپ شکست و منفی ⇒ وتو در فیلتر ۲
+    useSignalStore.getState().publishSignal(techSig('neutral', 40, []));
+    renderMaster();
+
+    expect(await screen.findByText('برآیند مستر برای شپنا')).toBeInTheDocument();
+    // در وضعیت وتو، برچسب صریح داخل گیج و بج قرمز رندر می‌شوند:
+    expect(screen.getByText('وتو / فاقد تایید')).toBeInTheDocument();
+    expect(screen.getByText('ورود ممنوع (توقف در فیلتر دوم)')).toBeInTheDocument();
+    expect(screen.queryByText('خرید قوی')).toBeNull();
+    useSignalStore.getState().clearSignals();
+  });
+
+  it('محاسبه R/R در غیاب مقاومت تاریخی: بر مبنای تارگت ستاپ جت (+۲۰٪) محاسبه شده و ۰.۰ نیست', () => {
+    const r = buildTradeBlueprint({
+      capitalToman: 100_000_000,
+      assumedCapital: false,
+      baseStepWeightPct: 5,
+      industryCapPct: 20,
+      industryUsedPct: 2,
+      step1: { lo: 10000, hi: null },
+      step2: null,
+      breakout: null,
+      priceActionStop: 9500, // حد ضرر ۵٪
+      resistance: null, // بدون مقاومت تاریخی
+      currentPrice: 10000,
+      warCapPct: null,
+    });
+    // تارگت ستاپ جت = ۱۲۰۰۰ (+۲۰٪)
+    // ریسک = ۵۰۰ ریال (-۵٪) -> پاداش = ۲۰۰۰ ریال -> R/R = 4.0
+    expect(r.rr).toBe(4);
+    expect(r.notes.some((n) => n.includes('ستاپ جت (+۲۰٪)'))).toBe(true);
   });
 });

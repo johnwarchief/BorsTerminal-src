@@ -212,3 +212,217 @@ export const nahayatNegarDarkTheme = {
     }
   }
 };
+
+/**
+ * پالت رنگی و استایل لایت‌مود (روشنایی) اختصاصی چارت نهایت‌نگر (TradingView Light Style)
+ * سازگار با KlineCharts v10.0.3
+ */
+export const nahayatNegarLightTheme = {
+  grid: {
+    show: true,
+    horizontal: {
+      show: true,
+      size: 1,
+      color: '#eef2f8',
+      style: 'solid' as const,
+    },
+    vertical: {
+      show: true,
+      size: 1,
+      color: '#eef2f8',
+      style: 'solid' as const,
+    },
+  },
+  candle: {
+    type: 'candle_solid' as const,
+    bar: {
+      upColor: '#089981',
+      downColor: '#f23645',
+      noChangeColor: '#888888',
+      upBorderColor: '#089981',
+      downBorderColor: '#f23645',
+      noChangeBorderColor: '#888888',
+      upWickColor: '#089981',
+      downWickColor: '#f23645',
+      noChangeWickColor: '#888888',
+    },
+    area: {
+      lineSize: 2,
+      lineColor: '#2563eb',
+      value: 'close' as const,
+      fillColor: [
+        { offset: 0, color: 'rgba(37, 99, 235, 0.20)' },
+        { offset: 1, color: 'rgba(37, 99, 235, 0.00)' },
+      ],
+    },
+    priceMark: {
+      show: true,
+      last: {
+        show: true,
+        upColor: '#089981',
+        downColor: '#f23645',
+        noChangeColor: '#888888',
+        line: {
+          show: true,
+          style: 'dashed' as const,
+          dashedValue: [3, 3],
+          size: 1,
+        },
+        text: {
+          show: true,
+          size: 11,
+          family: 'Vazirmatn',
+          color: '#ffffff',
+        },
+      },
+      high: {
+        show: true,
+        color: '#475569',
+        text: { size: 10, family: 'Vazirmatn' },
+      },
+      low: {
+        show: true,
+        color: '#475569',
+        text: { size: 10, family: 'Vazirmatn' },
+      },
+    },
+    tooltip: {
+      showRule: 'always' as const,
+      showType: 'standard' as const,
+      legend: {
+        template: '{time}  باز: {open}  بیشترین: {high}  کمترین: {low}  بسته: {close}  حجم: {volume}',
+      },
+    },
+  },
+  indicator: {
+    ohlc: {
+      upColor: '#089981',
+      downColor: '#f23645',
+      noChangeColor: '#888888',
+    },
+    lines: [
+      { style: 'solid' as const, size: 1.5, color: '#2563eb' },
+      { style: 'solid' as const, size: 1.5, color: '#ea580c' },
+      { style: 'solid' as const, size: 1.5, color: '#9333ea' },
+      { style: 'solid' as const, size: 1.5, color: '#0891b2' },
+      { style: 'solid' as const, size: 1.5, color: '#db2777' },
+    ],
+    tooltip: {
+      showRule: 'always' as const,
+      showType: 'standard' as const,
+    },
+  },
+  xAxis: {
+    show: true,
+    size: 'auto' as const,
+    axisLine: {
+      show: true,
+      color: '#e2e8f0',
+      size: 1,
+    },
+    tickText: {
+      show: true,
+      color: '#64748b',
+      size: 11,
+      family: 'Vazirmatn',
+    },
+    tickLine: {
+      show: true,
+      size: 1,
+      length: 3,
+      color: '#e2e8f0',
+    },
+  },
+  yAxis: {
+    show: true,
+    size: 'auto' as const,
+    axisLine: {
+      show: true,
+      color: '#e2e8f0',
+      size: 1,
+    },
+    tickText: {
+      show: true,
+      color: '#64748b',
+      size: 11,
+      family: 'Vazirmatn',
+    },
+    tickLine: {
+      show: true,
+      size: 1,
+      length: 3,
+      color: '#e2e8f0',
+    },
+  },
+  crosshair: {
+    show: true,
+    horizontal: {
+      show: true,
+      line: {
+        show: true,
+        style: 'dashed' as const,
+        dashedValue: [3, 3],
+        size: 1,
+        color: '#94a3b8',
+      },
+      text: {
+        show: true,
+        color: '#ffffff',
+        size: 11,
+        family: 'Vazirmatn',
+        backgroundColor: '#334155',
+      },
+    },
+    vertical: {
+      show: true,
+      line: {
+        show: true,
+        style: 'dashed' as const,
+        dashedValue: [3, 3],
+        size: 1,
+        color: '#94a3b8',
+      },
+      text: {
+        show: true,
+        color: '#ffffff',
+        size: 11,
+        family: 'Vazirmatn',
+        backgroundColor: '#334155',
+      },
+    },
+  },
+  overlay: {
+    point: {
+      color: '#2563eb',
+      borderColor: 'rgba(37, 99, 235, 0.4)',
+      borderSize: 1,
+      radius: 4,
+      activeColor: '#2563eb',
+      activeBorderColor: '#ffffff',
+      activeBorderSize: 2,
+      activeRadius: 5,
+    },
+    line: {
+      style: 'solid' as const,
+      size: 1.5,
+      color: '#2563eb',
+    },
+    polygon: {
+      style: 'solid' as const,
+      color: 'rgba(37, 99, 235, 0.12)',
+      borderColor: '#2563eb',
+      borderSize: 1.5,
+    },
+    circle: {
+      style: 'solid' as const,
+      color: 'rgba(37, 99, 235, 0.12)',
+      borderColor: '#2563eb',
+      borderSize: 1.5,
+    },
+    text: {
+      color: '#0f172a',
+      size: 12,
+      family: 'Vazirmatn',
+    },
+  },
+};

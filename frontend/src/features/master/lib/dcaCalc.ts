@@ -152,11 +152,29 @@ export function buildTradeBlueprint(input: BlueprintInput): BlueprintResult {
 
   const resistance = input.resistance != null && Number.isFinite(input.resistance) ? input.resistance : null;
   let rr: number | null = null;
-  if (entry != null && resistance != null && operativeStop != null && entry - operativeStop > 0) {
-    rr = Math.round(((resistance - entry) / (entry - operativeStop)) * 100) / 100;
+  if (entry != null && operativeStop != null && entry - operativeStop > 0) {
+    const risk = entry - operativeStop;
+    if (resistance != null && resistance > entry) {
+      const reward = resistance - entry;
+      rr = Math.round((reward / risk) * 100) / 100;
+    } else {
+      // در صورت نبود مقاومت تاریخی یا عبور قیمت از آن (سقف تاریخی / ستاپ جت)،
+      // فرمول مبتنی بر تارگت پیش‌فرض ستاپ جت (+۲۰٪ بالای نقطه ورود) محاسبه می‌شود
+      const jetTarget = Math.round(entry * 1.20);
+      const reward = jetTarget - entry;
+      rr = Math.round((reward / risk) * 100) / 100;
+      notes.push('مقاومت تاریخی بالاتر در دسترس نیست؛ نسبت R/R بر مبنای تارگت پیش‌فرض ستاپ جت (+۲۰٪) محاسبه شد.');
+    }
+  } else if (entry != null && entry > 0) {
+    // اگر حد ضرر عملیاتی غایب باشد، حد ضرر استاندارد ۵٪ در نظر گرفته می‌شود
+    const fallbackStop = Math.round(entry * 0.95);
+    const risk = entry - fallbackStop;
+    const target = resistance != null && resistance > entry ? resistance : Math.round(entry * 1.20);
+    const reward = target - entry;
+    if (risk > 0) {
+      rr = Math.round((reward / risk) * 100) / 100;
+    }
   }
-
-  if (resistance == null) notes.push('مقاومت استاتیک در دسترس نیست؛ نسبت R/R محاسبه نشد.');
 
   return {
     capitalToman: capital,

@@ -6,6 +6,7 @@ import { http } from '@shared/api/http';
 import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { toFaDigits } from '@shared/lib/fmt';
+import { matchFa } from '@shared/lib/normalizeFa';
 import { Skeleton } from '@shared/components/Skeleton';
 
 type Dest = 'master' | 'technical' | 'market';
@@ -86,10 +87,9 @@ export function CommandPalette() {
 
   const results = useMemo<Row[]>(() => {
     if (!rows) return [];
-    const q = query.trim().toLowerCase();
-    if (!q) return rows.slice(0, 12);
+    if (!query.trim()) return rows.slice(0, 12);
     return rows
-      .filter((r) => r.symbol.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))
+      .filter((r) => matchFa(r.symbol, query) || matchFa(r.name, query))
       .slice(0, 12);
   }, [rows, query]);
 
@@ -189,13 +189,13 @@ export function CommandPalette() {
               type="button"
               onClick={() => choose(r)}
               onMouseEnter={() => setCursor(i)}
-              className={`flex w-full items-center justify-between gap-2 px-4 py-2.5 text-right text-sm transition-colors ${
+              className={`flex w-full items-center justify-between gap-2 px-4 py-2.5 text-start text-sm transition-colors ${
                 i === cursor ? 'bg-accent-blue/12 text-text-primary' : 'text-text-secondary hover:bg-bg-card/50'
               }`}
             >
               <span>
                 <span className="font-black text-text-primary">{r.symbol}</span>
-                <span className="mr-2 text-xs text-text-muted">{r.name}</span>
+                <span className="ms-2 text-xs text-text-muted">{r.name}</span>
               </span>
               <span className="text-2xs text-text-muted">{r.sector}</span>
             </button>

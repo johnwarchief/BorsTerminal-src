@@ -32,9 +32,9 @@ export interface AuditEvidence {
 }
 
 const STATE_STYLE: Record<AuditState, { cls: string; label: string }> = {
-  pass: { cls: 'border-accent-green/30 bg-accent-green/15 text-accent-green', label: 'قبول' },
-  fail: { cls: 'border-accent-red/30 bg-accent-red/15 text-accent-red', label: 'مردود' },
-  na: { cls: 'border-border-c bg-bg-card text-text-secondary', label: 'N/A' },
+  pass: { cls: 'border-accent-green/40 bg-accent-green/15 text-accent-green shadow-xs', label: 'قبول' },
+  fail: { cls: 'border-accent-red/40 bg-accent-red/15 text-accent-red shadow-xs', label: 'مردود' },
+  na: { cls: 'border-border-c bg-bg-card text-text-secondary shadow-xs', label: 'N/A' },
 };
 
 const NO_AUDIT_TEXT = 'دادهٔ ممیزی برای این وضعیت ثبت نشده است — فقط وضعیت در دسترس است.';
@@ -295,14 +295,20 @@ export const AuditBadge = memo(function AuditBadge({
             }
           }
         }}
-        className={`inline-flex cursor-pointer items-center gap-1 rounded-full border text-2xs font-bold transition-colors ${
-          compact ? 'px-1.5 py-0' : 'px-2.5 py-0.5'
+        className={`inline-flex cursor-pointer items-center justify-center font-bold transition-colors shrink-0 leading-none ${
+          compact
+            ? typeof label === 'string' && label.length <= 2
+              ? 'h-5 w-5 rounded-full text-xs font-black border'
+              : 'px-2 py-0.5 rounded-md text-2xs border'
+            : 'px-2.5 py-0.5 rounded-full border text-2xs gap-1'
         } ${style.cls}`}
       >
         {label ?? style.label}
-        <span aria-hidden className="text-2xs leading-none opacity-70">
-          ⓘ
-        </span>
+        {!compact && (
+          <span aria-hidden className="text-2xs leading-none opacity-80 select-none">
+            ⓘ
+          </span>
+        )}
       </span>
       {open && typeof document !== 'undefined'
         ? createPortal(

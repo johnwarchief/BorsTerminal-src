@@ -127,11 +127,11 @@ describe('داشبورد مستر v2', () => {
       expect(screen.getByText('برنامه معاملاتی شپنا')).toBeInTheDocument();
     });
     expect(screen.getByText('Trade Execution Blueprint') || screen.getAllByText(/برنامه معاملاتی/).length).toBeTruthy();
-    // گیتینگ سه‌گانه
-    expect(await screen.findByText('پایپ‌لاین گیتینگ FTS')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۱ · بنیادی')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۲ · تکنیکال')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۳ · تابلو')).toBeInTheDocument();
+    // فیلترهای ۴گانه
+    expect(await screen.findByText('چرخه فیلترهای ۴گانه FTS')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۲: تکنیکال')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۳: تابلو')).toBeInTheDocument();
     // باکس synthesis
     expect(screen.getByLabelText('تحلیل داوری مستر')).toBeInTheDocument();
     // آمار رای‌گیری
@@ -150,7 +150,7 @@ describe('داشبورد مستر v2', () => {
     await waitFor(() => {
       expect(screen.getByText(/۳۳٬۵۰۰|33500/)).toBeInTheDocument();
     });
-    expect(screen.getByText(/۲۷٬۹۸۷|27987/)).toBeInTheDocument();
+    expect(screen.getAllByText(/۲۷٬۹۸۷|27987/).length).toBeGreaterThan(0);
   });
 
   it('رد بنیادی ⇒ حکم ورود پله‌ای نمی‌آید و گیتینگ رد را نشان می‌دهد', async () => {

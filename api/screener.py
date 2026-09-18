@@ -14,10 +14,24 @@ import os
 import json
 from bors_config import DB_PATH
 
-# کشِ کوتاه‌مدتِ پاسخ اسکنر — کلید = (mtime دیتابیس‌ها، محتوای cfg).
-# اجرای evaluate_v10 برای هر نماد گران است؛ این کش فقط از تکرارِ همان محاسبه
-# در کلیک‌های پیاپی جلوگیری می‌کند و با هر تغییرِ دیتابیس/تنظیمات باطل می‌شود.
-_SCREENER_CACHE = {"key": None, "payload": None}
+import time
+
+# کشِ هوشمندِ پاسخ اسکنر — با کش روی دیسک برای جلوگیری از فریز شدن سرور در استارت‌آپ.
+# داده‌های بنیادی کدال دیر به دیر تغییر می‌کنند؛ پس TTL را ۱۲ ساعت (۴۳۲۰۰ ثانیه) می‌گذاریم.
+# اسکریپت آپدیت کدال در صورت نیاز این کش را باطل می‌کند.
+_SCREENER_CACHE = {"cfg_hash": None, "payload": None, "ts": 0.0}
+_SCREENER_CACHE_TTL = 43200.0  # ۱۲ ساعت
+CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", ".screener_cache.json")
+
+def invalidate_screener_cache():
+    """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال)."""
+    _SCREENER_CACHE["payload"] = None
+    _SCREENER_CACHE["ts"] = 0.0
+    if os.path.exists(CACHE_FILE):
+        try:
+            os.remove(CACHE_FILE)
+        except OSError:
+            pass
 
 
 router = APIRouter()
@@ -89,14 +103,32 @@ def get_screener():
     try:
         import fts_engine
         cfg = load_fts_config()
-        _cache_key = None
-        try:
-            _cache_key = (round(os.path.getmtime(DB_PATH), 2),
-                          json.dumps(cfg, sort_keys=True, ensure_ascii=False, default=str))
-        except Exception:
-            _cache_key = None
-        if _cache_key is not None and _SCREENER_CACHE.get("key") == _cache_key:
+        cfg_hash = json.dumps(cfg, sort_keys=True, ensure_ascii=False, default=str)
+        now = time.time()
+        
+        # 1. Check RAM cache
+        if (
+            _SCREENER_CACHE["payload"] is not None
+            and _SCREENER_CACHE.get("cfg_hash") == cfg_hash
+            and (now - _SCREENER_CACHE.get("ts", 0.0)) < _SCREENER_CACHE_TTL
+        ):
             return _SCREENER_CACHE["payload"]
+            
+        # 2. Check Disk cache
+        if os.path.exists(CACHE_FILE):
+            try:
+                with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                    disk_cache = json.load(f)
+                if disk_cache.get("cfg_hash") == cfg_hash and (now - disk_cache.get("ts", 0.0)) < _SCREENER_CACHE_TTL:
+                    _SCREENER_CACHE["payload"] = disk_cache["payload"]
+                    _SCREENER_CACHE["cfg_hash"] = disk_cache["cfg_hash"]
+                    _SCREENER_CACHE["ts"] = disk_cache["ts"]
+                    print("[screener] loaded from disk cache")
+                    return disk_cache["payload"]
+            except Exception as e:
+                print(f"[screener] Failed to load disk cache: {e}")
+        
+        print("[screener] cache miss, running heavy bulk scan...")
         rows = fts_engine.bulk_scan(conn, cfg=cfg)
 
         # نام کامل + نوع ابزار از instruments (bulk_scan فقط نماد برمی‌گرداند)
@@ -247,12 +279,27 @@ def get_screener():
                 r["tech_fib_zone"] = None
             r["tech_exit_verdict"] = ex.get("verdict")
             r["tech_exit_signals"] = ex.get("signals") or []
+            mat = tr.get("matrix") or {}
+            r["tech_matrix_decision"] = mat.get("decision")
+            r["tech_matrix_setup"] = mat.get("setup")
+            r["tech_matrix_desc"] = mat.get("desc")
+            hg = f.get("hourglass") or {}
+            r["tech_hourglass_active"] = bool(hg.get("active"))
+            r["tech_hourglass_action"] = hg.get("action")
 
         payload = {"status": "success", "count": len(rows), "data": rows,
                    "thresholds": cfg, "max_score": 5}
-        if _cache_key is not None:
-            _SCREENER_CACHE["key"] = _cache_key
-            _SCREENER_CACHE["payload"] = payload
+        _SCREENER_CACHE["cfg_hash"] = cfg_hash
+        _SCREENER_CACHE["payload"] = payload
+        _SCREENER_CACHE["ts"] = now
+        
+        try:
+            with open(CACHE_FILE, "w", encoding="utf-8") as f:
+                json.dump({"cfg_hash": cfg_hash, "payload": payload, "ts": now}, f, ensure_ascii=False)
+            print("[screener] saved to disk cache")
+        except Exception as e:
+            print(f"[screener] Failed to save disk cache: {e}")
+            
         return payload
     finally:
         conn.close()

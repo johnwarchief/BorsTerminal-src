@@ -1,15 +1,15 @@
-// features/master/ui/GatePipeline.tsx -- استپر افقی متراکم چهار گیتی
-// یک نوار تک‌ردیفه: [گیت ۱: بنیاد] ─> [گیت ۲: تکنیکال] ─> [گیت ۳: تابلو] ─> [گیت ۴: سبد]
-// هر کارت: وضعیت رنگی (عبور/رد/انتظار = Passed/Blocked/Pending) + Audit Popover با دلیل ریاضی.
+// features/master/ui/GatePipeline.tsx -- استپر افقی متراکم چرخه فیلترهای ۴گانه FTS
+// یک نوار تک‌ردیفه: [فیلتر ۱: بنیاد] ─> [فیلتر ۲: تکنیکال] ─> [فیلتر ۳: تابلو] ─> [فیلتر ۴: سبد و ریسک]
+// هر کارت: وضعیت رنگی (عبور/رد/انتظار = Passed/Blocked/Pending) + Audit Popover با دلیل تحلیلی.
 import { fa0 } from '../lib/fmtNum';
 import type { StrictGate, StrictGateState } from '../lib/strictGates';
 
 /** نام‌های پایدار هر پله (سازگاری UI) */
 const GATE_TITLE: Record<StrictGate['id'], string> = {
-  fundamental: 'گیت ۱ · بنیادی',
-  technical: 'گیت ۲ · تکنیکال',
-  tape: 'گیت ۳ · تابلو',
-  portfolio: 'گیت ۴ · سبد و رژیم ریسک',
+  fundamental: 'فیلتر ۱: بنیاد',
+  technical: 'فیلتر ۲: تکنیکال',
+  tape: 'فیلتر ۳: تابلو',
+  portfolio: 'فیلتر ۴: سبد و ریسک',
 };
 
 const GATE_SHORT: Record<StrictGate['id'], string> = {
@@ -51,7 +51,7 @@ function GateCard({ gate, index }: { gate: StrictGate; index: number }) {
             وتوی فوری
           </span>
         ) : null}
-        {/* Audit Popover — با هاور/فوکوس باز می‌شود؛ دلیل ریاضی وضعیت */}
+        {/* Audit Popover — با هاور/فوکوس باز می‌شود؛ دلیل تحلیلی وضعیت */}
         <span className="group/audit relative ms-auto shrink-0">
           <button
             type="button"
@@ -64,7 +64,7 @@ function GateCard({ gate, index }: { gate: StrictGate; index: number }) {
             role="tooltip"
             className="pointer-events-none absolute end-0 top-full z-30 mt-1 hidden w-64 rounded-xl border border-border-c bg-bg-primary/95 p-2.5 text-2xs leading-5 text-text-secondary shadow-lg backdrop-blur-md group-hover/audit:block group-focus-within/audit:block"
           >
-            <b className="text-text-primary">دلیل ریاضی وضعیت «{st.label}»:</b> {gate.reason}
+            <b className="text-text-primary">دلیل تحلیلی وضعیت «{st.label}»:</b> {gate.reason}
           </span>
         </span>
       </div>
@@ -77,13 +77,13 @@ export function GatePipeline({ gates }: { gates: StrictGate[] }) {
   return (
     <div className="glass-panel panel-in relative p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-black text-text-primary">پایپ‌لاین گیتینگ FTS</h3>
+        <h3 className="text-sm font-black text-text-primary">چرخه فیلترهای ۴گانه FTS</h3>
         <span className="num rounded-full border border-border-c bg-bg-card px-2.5 py-0.5 text-2xs font-bold text-text-secondary">
-          {fa0(passed)}/{fa0(gates.length)} گیت سبز
+          {fa0(passed)}/{fa0(gates.length)} فیلتر تاییدشده
         </span>
       </div>
       <p className="mb-3 text-2xs leading-5 text-text-muted">
-        ترتیب سلسله‌مراتبی: [بنیاد] ─&gt; [تکنیکال ماژور/مینور] ─&gt; [تابلوخوانی] ─&gt; [سبد و رژیم ریسک] — «خرید پله‌ای» فقط با سبز بودن هم‌زمان هر چهار گیت؛ تابلو تنها زمان‌سنج ورود است.
+        ترتیب سلسله‌مراتبی: [بنیاد] ─&gt; [تکنیکال ماژور/مینور] ─&gt; [تابلوخوانی] ─&gt; [سبد و رژیم ریسک] — «خرید پله‌ای» فقط با تایید هم‌زمان هر چهار فیلتر؛ تابلو تنها زمان‌سنج ورود است.
         (راهنمای وضعیت: عبور = Passed · رد = Blocked · انتظار = Pending)
       </p>
 

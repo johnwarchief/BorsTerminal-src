@@ -78,12 +78,60 @@ def wait_http(p, timeout=30):
         time.sleep(1)
     return False
 
+def find_app_browser():
+    """پیدا کردن مرورگرهای کرومیوم (Edge, Chrome, Brave) برای باز کردن پنجره اختصاصی نرم‌افزار"""
+    import shutil
+    candidates = [
+        os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        shutil.which("msedge"),
+        shutil.which("chrome"),
+        shutil.which("brave"),
+    ]
+    for c in candidates:
+        if c and os.path.exists(c):
+            return c
+    return None
+
+def open_app_window(url):
+    """باز کردن ترمینال در یک پنجره مستقل دسکتاپ (App Window Mode) بدون تب و نوار آدرس"""
+    browser_exe = find_app_browser()
+    if browser_exe:
+        profile_dir = os.path.join(
+            os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
+            "BorsTerminal_Ultimate",
+            "app_profile",
+        )
+        os.makedirs(profile_dir, exist_ok=True)
+        cmd = [
+            browser_exe,
+            f"--app={url}",
+            f"--user-data-dir={profile_dir}",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--start-maximized",
+        ]
+        try:
+            subprocess.Popen(cmd)
+            print(f"[OK] App window launched using {os.path.basename(browser_exe)}")
+            return True
+        except Exception as e:
+            print(f"[WARN] Failed to launch app window ({e}), falling back...")
+    webbrowser.open(url)
+    return False
+
 def main():
     port = int(os.environ.get('BORS_PORT', '8001'))
     for p in (port,):
         if port_open(p):
-            print(f'[OK] Server already running on {p} -> open browser')
-            webbrowser.open(f'http://localhost:{p}')
+            print(f'[OK] Server already running on {p} -> open app window')
+            open_app_window(f'http://localhost:{p}')
             return
     if not _preflight():
         input('Press Enter to close...')
@@ -95,7 +143,7 @@ def main():
     th.start()
     if wait_http(port):
         print(f'[OK] http://localhost:{port}')
-        webbrowser.open(f'http://localhost:{port}')
+        open_app_window(f'http://localhost:{port}')
     else:
         print('[ERR] server did not start')
     try:

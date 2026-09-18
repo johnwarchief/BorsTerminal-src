@@ -110,8 +110,9 @@ def post_selection_decision(payload: dict = None):
     try:
         conn = get_db()
         try:
+            _pred, _params = sym_pred("symbol", symbol)
             if status == "pending":
-                conn.execute("DELETE FROM selection_decisions WHERE symbol = ?", (symbol,))
+                conn.execute(f"DELETE FROM selection_decisions WHERE {_pred}", _params)
             else:
                 conn.execute("""
                     INSERT INTO selection_decisions
@@ -128,8 +129,8 @@ def post_selection_decision(payload: dict = None):
                         updated_at=excluded.updated_at
                 """, rec)
             conn.commit()
-            row = conn.execute("SELECT * FROM selection_decisions WHERE symbol = ?",
-                               (symbol,)).fetchone()
+            row = conn.execute(f"SELECT * FROM selection_decisions WHERE {_pred} ORDER BY updated_at DESC LIMIT 1",
+                               _params).fetchone()
         finally:
             conn.close()
     except Exception as e:
@@ -145,7 +146,8 @@ def delete_selection_decision(symbol: str):
     try:
         conn = get_db()
         try:
-            cur = conn.execute("DELETE FROM selection_decisions WHERE symbol = ?", (symbol,))
+            _pred, _params = sym_pred("symbol", symbol)
+            cur = conn.execute(f"DELETE FROM selection_decisions WHERE {_pred}", _params)
             conn.commit()
             n = cur.rowcount
         finally:

@@ -138,6 +138,39 @@ export function FtsBadgeStrip({ data, empty }: { data: FtsAnalysisData | null | 
     items.push({ label: 'شکست جعبه', tone: 'green', title: 'پایانی بالای سقف جعبه رنج بسته شد' });
   }
 
+  const mat = data.trend?.matrix;
+  if (mat?.decision === 'REJECT') {
+    items.push({
+      label: 'ماتریس روند',
+      value: 'ممنوعیت ورود',
+      tone: 'red',
+      title: mat.desc ?? 'تایم هفتگی نزولی یا خنثی؛ وتوی کامل ورود طبق FTS',
+    });
+  } else if (mat?.decision === 'PERMITTED') {
+    const setupFa =
+      mat.setup === 'JET_OR_PULLBACK_HOLD'
+        ? 'نگهداری/جت'
+        : mat.setup === 'FIB_CHOCH_STEP_ENTRY'
+          ? 'پله‌ای فیبو/CHoCH'
+          : 'نوسان کف رنج';
+    items.push({
+      label: 'ماتریس روند',
+      value: setupFa,
+      tone: 'green',
+      title: mat.desc ?? 'ورود مجاز بر اساس ماتریس هفتگی/روزانه FTS',
+    });
+  }
+
+  const hg = data.hourglass;
+  if (hg?.active) {
+    items.push({
+      label: 'استراتژی ساعت شنی',
+      value: 'اهرم ۲x-۴x',
+      tone: 'green',
+      title: hg.desc ?? 'اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش',
+    });
+  }
+
   const ex = data.exit_engine;
   const vm = verdictMeta(ex?.verdict);
   items.push({

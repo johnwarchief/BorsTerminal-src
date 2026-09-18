@@ -20,8 +20,8 @@ describe('فرمول های پایه', () => {
   });
 
   it('شکاف پایانی به آخرین', () => {
-    expect(closingGap(100, 102)).toBeCloseTo(0.02, 4);
-    expect(closingGap(0, 102)).toBeNull();
+    expect(closingGap(102, 100)).toBeCloseTo(0.02, 4);
+    expect(closingGap(102, 0)).toBeNull();
   });
 
   it('سرانه با تعداد صفر قابل محاسبه نیست', () => {
@@ -45,7 +45,7 @@ describe('فرمول های پایه', () => {
 });
 
 describe('الگوی ساعت', () => {
-  const base = { p_last: 1000, p_closing: 1020, tvol: 2_000_000, month_avg_vol: 1_000_000, z_tot_tran: 40 };
+  const base = { p_last: 1020, p_closing: 1000, tvol: 2_000_000, month_avg_vol: 1_000_000, z_tot_tran: 40 };
 
   it('شکاف 2 درصد با حجم و معاملات کافی شکار می شود', () => {
     const r = detectClockPattern(base);
@@ -54,7 +54,7 @@ describe('الگوی ساعت', () => {
   });
 
   it('شکاف کمتر از 2 درصد شکار نمی شود', () => {
-    expect(detectClockPattern({ ...base, p_closing: 1010 }).hit).toBe(false);
+    expect(detectClockPattern({ ...base, p_last: 1005 }).hit).toBe(false);
   });
 
   it('معاملات 30 یا کمتر شکار نمی شود', () => {

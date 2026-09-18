@@ -20,7 +20,7 @@ import { DeltaBar } from '../components/DeltaBar';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
-import { TwinDonuts } from '../components/TwinDonuts';
+import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
 const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'بدون تصمیم' };
@@ -163,8 +163,8 @@ export default function PortfolioPage() {
       {view === 'target' ? (
         /* ─── بخش اول: پرتفوی هدف — بدون کارت‌های عریض تکراری، جدول صنایع بالا می‌آید ─── */
         <>
-          {/* پنل سه‌بخشی بالای تب: دونات دوقلو + سنجهٔ هم‌ترازی */}
-          <TwinDonuts onEdit={() => setEditOpen(true)} />
+          {/* پنل بالای تب: دونات هدف + سنجهٔ هم‌ترازی (دونات واقعی منحصراً در تب فعلی است) */}
+          <TwinDonuts onEdit={() => setEditOpen(true)} showActual={false} />
 
           {/* ماتریس تخصیص صنایع سهام (state مشتق از پوزیشن‌های سبد) */}
           <SectorMatrix />
@@ -176,6 +176,9 @@ export default function PortfolioPage() {
       ) : (
         /* ─── بخش دوم: پرتفوی فعلی ─── */
         <>
+          {/* چارت دونات پرتفوی واقعی و درصد پر شده از کل سرمایه */}
+          <ActualPortfolioCard />
+
           <DeltaBar rows={deltaRows} />
 
           <div className="flex flex-wrap items-center gap-2 text-xs">

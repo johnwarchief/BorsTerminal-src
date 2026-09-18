@@ -84,8 +84,8 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           title="کلیک برای جستجوی نماد در بازار"
         >
           <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{symbolName}</span>
-          <span style={{ color: '#787b86', fontSize: '12px' }}>({companyName})</span>
-          <span className="market-state">{marketName}</span>
+          <span className="hidden md:inline" style={{ color: '#787b86', fontSize: '12px' }}>({companyName})</span>
+          <span className="market-state hidden lg:inline">{marketName}</span>
           <IconSearch size={14} color="#787b86" />
         </div>
 

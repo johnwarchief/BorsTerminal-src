@@ -179,7 +179,7 @@ describe('۲) وتوی سخت‌گیرانه — ممنوعیت بازتوزیع
     const res = runStrictGates({ technical: techSig('bullish', ['breakout']) }, REGIME, EMPTY_WEEKLY);
     const d = definiteDecision(res);
     expect(d.action).toBe('veto_gate1');
-    expect(d.label).toBe('وتو در گیت ۱ (توقف تا شفافیت بنیادی)');
+    expect(d.label).toBe('توقف در فیلتر اول (سد بنیادی)');
     expect(d.allGatesPassed).toBe(false);
   });
 
@@ -195,7 +195,7 @@ describe('۲) وتوی سخت‌گیرانه — ممنوعیت بازتوزیع
     );
     const d = definiteDecision(res);
     expect(d.action).toBe('veto_gate2');
-    expect(d.label).toBe('وتو در گیت ۲ (توقف تا شکست تکنیکال)');
+    expect(d.label).toBe('توقف در فیلتر دوم (سد تکنیکال)');
   });
 
   it('هر چهار گیت سبز ⇒ «خرید پله‌ای» (تنها حالت معتبر خرید)', () => {
@@ -258,23 +258,23 @@ describe('۳) ماشین‌حساب پله‌ها — سرمایهٔ فرضی پ
   });
 });
 
-describe('۴) استپر افقی متراکم چهار گیتی', () => {
+describe('۴) استپر افقی متراکم چرخه فیلترهای ۴گانه', () => {
   it('چهار کارت در یک نوار افقی (تک‌ردیفه در lg) با وضعیت رنگی', async () => {
     useSignalStore.getState().publishSignal(fundSig('bullish', 85, { metrics: { gross_margin: 26, growth_pct: 40 } }));
     useSignalStore.getState().publishSignal(techSig('bullish', ['breakout']));
     renderMaster();
-    const pipeline = (await screen.findByText('پایپ‌لاین گیتینگ FTS')).closest('div.glass-panel') as HTMLElement;
+    const pipeline = (await screen.findByText('چرخه فیلترهای ۴گانه FTS')).closest('div.glass-panel') as HTMLElement;
     expect(pipeline).toBeTruthy();
     const list = pipeline.querySelector('ol')!;
     expect(list.className).toContain('lg:flex-row');
     expect(list.querySelectorAll('li').length).toBe(4);
     // برچسب‌های پله‌ها
-    expect(screen.getByText('گیت ۱ · بنیادی')).toBeInTheDocument();
-    expect(screen.getByText('گیت ۴ · سبد و رژیم ریسک')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۴: سبد و ریسک')).toBeInTheDocument();
     // وضعیت‌های رنگی
-    expect(screen.getAllByLabelText(/وضعیت گیت .*: (عبور|رد|انتظار)/).length).toBe(4);
-    // Audit Popover در DOM هست (نمایش با هاور) — یکی برای هر گیت
+    expect(screen.getAllByLabelText(/وضعیت فیلتر .*: (عبور|رد|انتظار)/).length).toBe(4);
+    // Audit Popover در DOM هست (نمایش با هاور) — یکی برای هر فیلتر
     expect(within(pipeline).getAllByRole('tooltip').length).toBe(4);
-    expect(screen.getAllByText(/دلیل ریاضی وضعیت/).length).toBe(4);
+    expect(screen.getAllByText(/دلیل تحلیلی وضعیت/).length).toBe(4);
   });
 });

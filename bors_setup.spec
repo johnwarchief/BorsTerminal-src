@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # BorsTerminal Ultimate - PyInstaller onedir spec (Base repo)
 import os
-BASE = r"C:\Users\PCMOD\Desktop\BorsTerminal_Ultimate_Base"
+BASE = os.path.abspath(os.path.dirname(SPEC)) if 'SPEC' in locals() else os.getcwd()
 
 a = Analysis(
     ['bors_entry.py'],

@@ -4,6 +4,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { matchFa } from '@shared/lib/normalizeFa';
 
 const flag = z.boolean().nullish();
 
@@ -27,6 +28,10 @@ export const ScreenerRowSchema = z.object({
   tech_fib_zone: z.string().nullish(),
   tech_exit_verdict: z.string().nullish(),
   tech_exit_signals: z.array(z.string()).nullish(),
+  tech_matrix_decision: z.string().nullish(),
+  tech_matrix_setup: z.string().nullish(),
+  tech_hourglass_active: flag,
+  tech_hourglass_action: z.string().nullish(),
 });
 export type ScreenerRow = z.infer<typeof ScreenerRowSchema>;
 
@@ -54,23 +59,25 @@ export type FtsSignalTag = { label: string; tone: 'green' | 'red' | 'blue' };
 /** برچسب ستاپ‌های فعال از ستون‌های tech_* پاسخ اسکرینر */
 export function ftsSignalTags(r: ScreenerRow): FtsSignalTag[] {
   const t: FtsSignalTag[] = [];
+  if (r.tech_hourglass_active) t.push({ label: 'ساعت شنی (۲x-۴x)', tone: 'green' });
   if (r.tech_jet) t.push({ label: 'جت', tone: 'green' });
   if (r.tech_choch_bull) t.push({ label: 'CHoCH صعودی', tone: 'green' });
   if (r.tech_choch_bear) t.push({ label: 'CHoCH نزولی', tone: 'red' });
   if (r.tech_double_bottom) t.push({ label: 'کف دوقلو', tone: 'green' });
   if (r.tech_range_break) t.push({ label: 'خروج از انباشت', tone: 'green' });
   if (r.tech_fib_zone) t.push({ label: 'نقطه‌زنی فیبو', tone: 'blue' });
+  if (r.tech_matrix_decision === 'REJECT') t.push({ label: 'وتوی هفتگی', tone: 'red' });
   return t;
 }
 
 /** فقط نمادهای دارای دست‌کم یک ستاپ/الگو؛ جستجو روی نماد و نام */
 export function filterFtsSignals(rows: ScreenerRow[], q: string, limit = DEFAULT_LIMIT): ScreenerRow[] {
-  const term = q.trim().toLowerCase();
+  const term = q.trim();
   return rows
     .filter((r) => {
       if (ftsSignalTags(r).length === 0) return false;
       if (!term) return true;
-      return r.symbol.toLowerCase().includes(term) || (r.name ?? '').toLowerCase().includes(term);
+      return matchFa(r.symbol, term) || matchFa(r.name, term);
     })
     .slice(0, limit);
 }

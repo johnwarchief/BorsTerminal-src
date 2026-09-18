@@ -36,7 +36,7 @@ type Draft = {
   payload: TapePayload;
 };
 
-/** سیگنال الگوی ساعت: پایانی بالاتر از آخرین با حمایت سرانه */
+/** سیگنال الگوی ساعت: آخرین معامله بالاتر از پایانی با حمایت سرانه */
 function clockDraft(
   row: MarketRow,
   gap: number,
@@ -52,7 +52,7 @@ function clockDraft(
     weight: 'major',
     title: `الگوی ساعت در ${row.symbol ?? ''}`,
     rationale:
-      `قیمت پایانی ${faPct(gap)} بالاتر از آخرین معامله است` +
+      `قیمت آخرین معامله ${faPct(gap)} بالاتر از قیمت پایانی است (الگوی ساعت FTS)` +
       (power != null ? ` و سرانه خرید حقیقی ${faMult(power)} سرانه فروش است` : ' و سرانه حقیقی قابل محاسبه نبود') +
       (multiple != null ? ` با حجم ${faMult(multiple)} میانگین ماهانه.` : '.'),
     score: supported ? Math.min(100, Math.round(55 + gap * 1000)) : 55,

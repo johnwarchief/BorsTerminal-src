@@ -1,7 +1,8 @@
 // features/market/routes/MarketPage.tsx -- صفحه تابلو بازار (ایجنت 3)
 import { useEffect, useMemo, type ReactNode } from 'react';
 import type { MarketRow } from '@shared/types/marketRow';
-import { publishSignal } from '@shared/lib/signalBus';
+import { publishSignals } from '@shared/lib/signalBus';
+import { matchFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { useMarketFeed } from '../api/useMarketFeed';
@@ -18,6 +19,11 @@ import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 import { TapeStatusBar } from '../components/TapeStatusBar';
 
+import {
+  evaluateDynamicQuickFilter,
+  type TapeFilterConfig,
+} from '../lib/tapeAlgorithms';
+
 export function applyFilters(
   rows: MarketRow[],
   query: string,
@@ -29,14 +35,19 @@ export function applyFilters(
   volRatioOn: boolean,
   volRatioMin: number,
   exitAccum: boolean,
+  filterConfig?: TapeFilterConfig,
 ): MarketRow[] {
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
   return rows.filter((r) => {
-    if (q && !(r.symbol?.toLowerCase().includes(q) || (r.name ?? '').toLowerCase().includes(q))) return false;
+    if (q && !(matchFa(r.symbol, q) || matchFa(r.name, q))) return false;
     if (sector && (r.sector_name ?? '') !== sector) return false;
     if (!assetTypes.includes(classifyAssetType(r))) return false;
     for (const f of quickFilters) {
-      if (!(r as unknown as Record<string, unknown>)[f]) return false;
+      if (filterConfig) {
+        if (!evaluateDynamicQuickFilter(r, f, filterConfig)) return false;
+      } else {
+        if (!(r as unknown as Record<string, unknown>)[f]) return false;
+      }
     }
     if (liveOnly && r.is_live === false) return false;
     if (!matchesDirection(r.percent_change, direction)) return false;
@@ -73,6 +84,7 @@ export default function MarketPage({
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
   const volRatioMin = useTapeStore((s) => s.volRatioMin);
   const exitAccum = useTapeStore((s) => s.exitAccum);
+  const tapeFilterConfig = useTapeStore((s) => s.tapeFilterConfig);
 
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
@@ -91,8 +103,8 @@ export default function MarketPage({
   /** شمارش عبور هر فیلتر سریع -- فقط روی ردیف های زنده تا چیپ ها معنادار باشند */
   const quickMatches = useMemo(() => {
     const live = rows.filter((r) => r.is_live !== false);
-    return countQuickMatches(live as unknown as Parameters<typeof countQuickMatches>[0]);
-  }, [rows]);
+    return countQuickMatches(live as unknown as Parameters<typeof countQuickMatches>[0], tapeFilterConfig);
+  }, [rows, tapeFilterConfig]);
 
   const exitAccumCount = useMemo(
     () => rows.filter((r) => r.is_live !== false && matchesExitAccum(r)).length,
@@ -117,9 +129,10 @@ export default function MarketPage({
           volRatioOn,
           volRatioMin,
           exitAccum,
+          tapeFilterConfig,
         ),
       ),
-    [rows, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum],
+    [rows, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
   );
 
   const signals = useMemo(() => rowsToTapeSignals(filtered), [filtered]);
@@ -135,7 +148,7 @@ export default function MarketPage({
       const cur = bySymbol.get(s.symbol);
       if (!cur || (s.score ?? -1) > (cur.score ?? -1)) bySymbol.set(s.symbol, s);
     }
-    for (const s of bySymbol.values()) publishSignal(s);
+    publishSignals(Array.from(bySymbol.values()));
   }, [signals]);
 
   return (

@@ -235,11 +235,15 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
           ? 'conditional'
           : 'rejected';
   const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'N/A' };
-  // روند خطی ۶ فصل حاشیه: سود عملیاتی ÷ درآمد (تفکیک‌شده از fundMath)
+  // روند خطی ۶ فصل حاشیه: سود ناخالص یا مارجین فصلی (تفکیک‌شده از fundMath)
   const trend = quarters
-    .filter((q) => q.revenue != null && (q.revenue ?? 0) > 0 && q.operatingProfit != null)
+    .filter((q) => q.margin != null || (q.revenue != null && (q.revenue ?? 0) > 0 && (q as any).grossProfit != null))
     .slice(-6);
-  const maxTrend = Math.max(1, ...trend.map((q) => Math.abs(((q.operatingProfit ?? 0) / (q.revenue ?? 1)) * 100)));
+  const getMargin = (q: FiscalQuarter) =>
+    (q as any).grossProfit != null && (q.revenue ?? 0) > 0
+      ? (((q as any).grossProfit ?? 0) / (q.revenue ?? 1)) * 100
+      : (q.margin ?? 0);
+  const maxTrend = Math.max(1, ...trend.map((q) => Math.abs(getMargin(q))));
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -255,7 +259,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
             const H = 120;
             const P = 24;
             const pts = trend.map((q, i) => {
-              const m = ((q.operatingProfit ?? 0) / (q.revenue ?? 1)) * 100;
+              const m = getMargin(q);
               return { x: P + (i * (W - P * 2)) / (trend.length - 1), y: H - P - (Math.max(0, m) / maxTrend) * (H - P * 2) };
             });
             const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
@@ -306,7 +310,7 @@ function Panel4({ card }: { card: FtsCard }) {
   const potential = ind?.potential_pct ?? card.metrics?.profit_potential_pct ?? null;
   const mcapHt = ind?.mcap_ht ?? card.metrics?.mcap_hmt ?? null;
   const marginUsed = ind?.margin_used_pct ?? card.metrics?.gross_margin ?? null;
-  const salesThresh = ind?.sales_threshold ?? 0.5;
+  const salesThresh = ind?.sales_threshold ?? 1.0;
   const scaleTable = ind?.annual?.scale_table ?? [];
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
@@ -414,7 +418,7 @@ function Panel5({ card }: { card: FtsCard }) {
   const isMandatory = regime === 'mandatory';
   // پتانسیل ارزی: صنایع صادراتی/دلاری از tokens آزاد جزوه (ی/ي هر دو)
   const fxText = `${(ind?.matched_tokens ?? []).join(' ')} ${ind?.sector ?? ''}`;
-  const fxExposure = /شیمیایی|شيميايي|فلزات|کانی|كاني|کاشی|كاشي|سیمان|سيمان|نفت|صادراتی|صادراتي/.test(fxText);
+  const fxExposure = /شیشه|شيشه|شیمیایی|شيميايي|فلزات|کانی|كاني|کاشی|كاشي|سیمان|سيمان|نفت|صادراتی|صادراتي/.test(fxText);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -432,7 +436,7 @@ function Panel5({ card }: { card: FtsCard }) {
         <div className="rounded-xl border border-border-c bg-bg-primary p-2.5">
           <div className="text-2xs font-bold text-text-primary">ریسک ناترازی انرژی</div>
           <div className="mt-1 text-2xs leading-snug text-text-secondary">
-            {/نیروگاه|برق|فولاد|پتروشیمی|پترو شیمی|سیمان|سيمان|فولاد|مجتمع فولاد/.test(fxText)
+            {/شیشه|شيشه|نیروگاه|برق|فولاد|پتروشیمی|پترو شیمی|سیمان|سيمان|فولاد|مجتمع فولاد/.test(fxText)
               ? 'انرژی‌بر — ناترازی گاز تابستان (توقف خطوط) و برق زمستان ریسک تولید است.'
               : 'صنعت انرژی‌بر نیست — ناترازی فصلی انرژی اثر محدودی دارد.'}
           </div>

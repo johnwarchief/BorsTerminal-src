@@ -1,6 +1,6 @@
-// shared/components/FlashNum.tsx -- فلاش لطیف سلول هنگام تغییر مقدار
-// انیمیشن با key جدید از سر گرفته می شود؛ مقدار اولیه فلاش نمی گیرد.
-import { useEffect, useRef, useState } from 'react';
+// shared/components/FlashNum.tsx -- فلاش لطیف سلول بدون انهدام نودهای DOM و بدون رندر مضاعف
+// بهینه‌سازی عملکرد (۶۰ FPS): استفاده از انیمیشن مستقیم DOM به جای تغییر key و setState
+import { useEffect, useRef } from 'react';
 
 export function FlashNum({
   value,
@@ -12,20 +12,25 @@ export function FlashNum({
   className?: string;
 }) {
   const prev = useRef(value);
-  const [flash, setFlash] = useState<{ dir: 'up' | 'down'; n: number } | null>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const before = prev.current;
-    if (before !== value && before != null && value != null) {
-      setFlash((f) => ({ dir: value > before ? 'up' : 'down', n: (f?.n ?? 0) + 1 }));
+    if (before !== value && before != null && value != null && spanRef.current) {
+      const cls = value > before ? 'flash-up' : 'flash-down';
+      const el = spanRef.current;
+      el.classList.remove('flash-up', 'flash-down');
+      // بازنشانی لطیف انیمیشن بدون تخریب گره DOM
+      void el.offsetWidth;
+      el.classList.add(cls);
     }
     prev.current = value;
   }, [value]);
 
   return (
     <span
-      key={flash ? flash.n : 'static'}
-      className={`num inline-block rounded px-1 ${flash ? (flash.dir === 'up' ? 'flash-up' : 'flash-down') : ''} ${className}`}
+      ref={spanRef}
+      className={`num inline-block rounded px-1 ${className}`}
     >
       {render(value)}
     </span>

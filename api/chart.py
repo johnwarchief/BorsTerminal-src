@@ -20,15 +20,52 @@ import time
 router = APIRouter()
 
 
+CDN_OFFLINE_UNTIL = 0.0
+
 @router.get("/api/chart/{symbol}")
 def get_chart_tsetmc(symbol: str):
-    """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست)."""
+    """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
+    global CDN_OFFLINE_UNTIL
     _cached = CHART_CACHE.get(symbol)
     if _cached and (_t.time() - _cached[0]) < CHART_CACHE_TTL:
         return _cached[1]
     import requests as _rq
     from urllib.parse import quote
+
+    def _fallback_local():
+        try:
+            db_res = get_chart_db(symbol)
+            if db_res.get("status") == "success" and db_res.get("candles"):
+                cands = db_res["candles"]
+                vols = db_res.get("volumes") or [
+                    {"time": c["time"], "value": c.get("volume", 0),
+                     "color": "#10b981" if c.get("close", 0) >= c.get("open", 0) else "#f43f5e"}
+                    for c in cands
+                ]
+                res = {
+                    "status": "success",
+                    "symbol": symbol,
+                    "candles": cands,
+                    "volumes": vols,
+                    "factors": db_res.get("factors") or [{"time": c["time"], "factor": 1.0} for c in cands],
+                    "adjustEvents": db_res.get("adjustEvents") or [],
+                    "adjustSource": "local-db-fallback",
+                    "count": len(cands),
+                    "fts": db_res.get("fts"),
+                }
+                CHART_CACHE[symbol] = (_t.time(), res)
+                return res
+        except Exception:
+            pass
+        return None
+
+    # اگر CDN اخیراً قطع/تایم‌اوت بوده، بلافاصله از دیتابیس محلی لود کن تا کاربر معطل نشود
+    if _t.time() < CDN_OFFLINE_UNTIL:
+        fb = _fallback_local()
+        if fb:
+            return fb
+
     try:
         # نرمال‌سازی کاراکترهای عربی/فارسی ('ك'→'ک'، 'ي'→'ی'، 'ى'→'ی') چون DB ممکن است عربی ذخیره کند
         _norm = lambda s: str(s).translate(str.maketrans({'ك': 'ک', 'ي': 'ی', 'ى': 'ی', 'ك': 'ک'}))
@@ -40,25 +77,47 @@ def get_chart_tsetmc(symbol: str):
         # ردیفِ دلخواهِ SQLite را می‌گرفتند → در دو اجرا، نمودارِ یک اوراقِ «دیگر»
         # با همان نام سرو می‌شد. اکنون newest-first: ردیفِ به‌روزتر (ابزارِ فعلیِ
         # بازار) به‌صورت قطعی انتخاب می‌شود.
+        _pred, _params = sym_pred("l_val18", symbol)
         ins = conn.execute(
-            "SELECT ins_code FROM instruments WHERE l_val18 = ? ORDER BY updated_at DESC LIMIT 1", (symbol,)
+            f"SELECT ins_code FROM instruments WHERE {_pred} ORDER BY updated_at DESC LIMIT 1", _params
         ).fetchone()
         if not ins:
+            try:
+                import fts_engine
+                norm_s = fts_engine.norm_fa(symbol)
+            except Exception:
+                norm_s = symbol
             ins = conn.execute(
                 "SELECT ins_code FROM instruments WHERE REPLACE(REPLACE(REPLACE(l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ? ORDER BY updated_at DESC LIMIT 1",
-                (symbol,)
+                (norm_s,)
             ).fetchone()
         conn.close()
         if not ins:
+            fb = _fallback_local()
+            if fb:
+                return fb
             return {"status": "error", "message": "نماد در تابلوی بازار یافت نشد (ممکن است خیلی جدید باشد و هنوز در بروزرسانی تابلو قرار نگرفته؛ دکمهٔ «بروزرسانی تابلو» را بزنید و دوباره تلاش کنید)"}
         ins_code = ins[0]
         hdr = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-        # ۱) تاریخچهٔ روزانه — از ۱۳۸۰ (API همهٔ تاریخ را از ابتدا می‌دهد؛ مثل نهایت‌نگر)
-        r = _rq.get(
-            f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/19900101",
-            headers=hdr, timeout=30,
-        )
-        if r.status_code != 200:
+        # ۱) تاریخچهٔ روزانه — از ۱۳۸۰ (با سرکوب ریترای و تایم‌اوت اتصال ۱.۵ ثانیه‌ای)
+        try:
+            sess = _rq.Session()
+            sess.mount("https://", _rq.adapters.HTTPAdapter(max_retries=0))
+            r = sess.get(
+                f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/19900101",
+                headers=hdr, timeout=(1.5, 3.0),
+            )
+        except Exception:
+            CDN_OFFLINE_UNTIL = _t.time() + 120.0  # مدار قطع شد — تا ۲ دقیقه مستقیم از دیتابیس محلی بخوان
+            fb = _fallback_local()
+            if fb:
+                return fb
+            raise
+
+        if r.status_code != 200 or not r.text or len(r.text.strip()) < 20:
+            fb = _fallback_local()
+            if fb:
+                return fb
             return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
         candles, volumes = [], []
         all_rows = []  # همهٔ ردیف‌های خام (حتی روزهای بدون معامله H=L=0 که کندل نمی‌شوند)
@@ -175,8 +234,10 @@ def get_chart_tsetmc(symbol: str):
             "count": len(candles),
         }
         CHART_CACHE[symbol] = (time.time(), result)
-        return result
     except Exception as e:
+        fb = _fallback_local()
+        if fb:
+            return fb
         return {"status": "error", "message": str(e)}
 
 def _swing_extremes(rows, k=3, min_strength=2):
@@ -530,8 +591,14 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         except Exception:
             fts_payload = None
 
+        vols = [{"time": c["time"], "value": c.get("volume", 0),
+                 "color": "#10b981" if c.get("close", 0) >= c.get("open", 0) else "#f43f5e"} for c in candles]
+        facts = [{"time": c["time"], "factor": 1.0} for c in candles]
+
         return {"status": "success", "symbol": symbol, "count": len(candles),
-                "candles": candles, "liveInjected": live_injected,
+                "candles": candles, "volumes": vols, "factors": facts,
+                "adjustEvents": [], "adjustSource": "local-db",
+                "liveInjected": live_injected,
                 "liveError": live_error,
                 "adjustment": adjustment,
                 "fts": fts_payload}
@@ -1253,6 +1320,68 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     tM = out["trend"]["M"]["trend"]
     if tD != "na" and tD == tW and tW == tM and tD in ("up", "down"):
         out["trend"]["alignment"] = tD
+
+    # ماتریس روند چندزمانه FTS طبق بخش ۲ سند رسمی FTS v2.1
+    if tW == "down":
+        out["trend"]["matrix"] = {
+            "decision": "REJECT",
+            "setup": "NONE",
+            "desc": "تایم هفتگی نزولی — وتوی کامل و ممنوعیت ورود (طبق چارت درختی FTS)",
+        }
+    elif tW in ("range", "na"):
+        out["trend"]["matrix"] = {
+            "decision": "REJECT",
+            "setup": "NONE",
+            "desc": "تایم هفتگی خنثی/نامشخص — عدم ورود طبق چارت درختی FTS",
+        }
+    elif tW == "up":
+        if tD == "up":
+            out["trend"]["matrix"] = {
+                "decision": "PERMITTED",
+                "setup": "JET_OR_PULLBACK_HOLD",
+                "desc": "هفتگی صعودی + روزانه صعودی: ستاپ جت یا پولبک؛ نگهداری روندی بدون نوسان‌گیری",
+            }
+        elif tD == "down":
+            out["trend"]["matrix"] = {
+                "decision": "PERMITTED",
+                "setup": "FIB_CHOCH_STEP_ENTRY",
+                "desc": "هفتگی صعودی + روزانه نزولی: ستاپ فیبوناچی لگاریتمی و CHoCH؛ ورود پله‌ای",
+            }
+        else:
+            out["trend"]["matrix"] = {
+                "decision": "PERMITTED",
+                "setup": "SWING_DOUBLE_BOTTOM_OR_RANGE",
+                "desc": "هفتگی صعودی + روزانه خنثی: ستاپ کف دوقلو یا خرید در کف باکس رنج؛ نوسان‌گیری زیر ۳ ماه",
+            }
+
+    # استراتژی ساعت شنی پیشرفته FTS طبق بخش ۵ سند رسمی FTS v2.1
+    closes_w = [float(c["close"]) for c in w] if w else []
+    if len(closes_w) >= 15:
+        period_ma = min(52, len(closes_w))
+        ma52_w = _fts_ma(closes_w, period_ma)
+        rsi5_w = _fts_rsi(closes_w, 5)
+        last_cw = closes_w[-1]
+        last_ma52 = ma52_w[-1] if ma52_w else None
+        last_rsi5 = rsi5_w[-1] if rsi5_w else None
+        is_hg_active = bool(last_ma52 and last_cw < last_ma52 and (last_rsi5 is not None and last_rsi5 <= 30.0))
+        out["hourglass"] = {
+            "active": is_hg_active,
+            "weekly_close": round(last_cw, 2),
+            "ma52": round(last_ma52, 2) if last_ma52 else None,
+            "weekly_rsi5": round(last_rsi5, 1) if last_rsi5 is not None else None,
+            "action": "ACCELERATE_BUY_2X_4X" if is_hg_active else "NORMAL",
+            "desc": "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)" if is_hg_active else "شرایط ساعت شنی برقرار نیست",
+        }
+    else:
+        out["hourglass"] = {
+            "active": False,
+            "weekly_close": None,
+            "ma52": None,
+            "weekly_rsi5": None,
+            "action": "NORMAL",
+            "desc": "سابقه هفتگی کمتر از حد نصاب",
+        }
+
     box = _fts_double_bottom(candles, swings_d)
     out["double_bottom"] = box["double_bottom"]
     out["range_box"] = box["range_box"]

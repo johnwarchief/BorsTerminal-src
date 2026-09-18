@@ -62,4 +62,13 @@ describe('تخته سیگنال', () => {
     useSignalStore.getState().clearSignals();
     expect(getActiveSignals('فولاد', NOW).tape).toBeUndefined();
   });
+
+  it('انتشار دسته‌ای (publishSignals) چند نماد را همزمان در یک تراکنش ثبت می‌کند', () => {
+    const sig1 = sig({ symbol: 'فولاد', id: 'tape:فولاد:clock:1726000000000', score: 85 });
+    const sig2 = sig({ symbol: 'شپنا', id: 'tape:شپنا:clock:1726000000000', score: 75 });
+    useSignalStore.getState().publishSignals([sig1, sig2]);
+
+    expect(getActiveSignals('فولاد', NOW).tape?.score).toBe(85);
+    expect(getActiveSignals('شپنا', NOW).tape?.score).toBe(75);
+  });
 });

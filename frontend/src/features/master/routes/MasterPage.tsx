@@ -1,11 +1,12 @@
 // features/master/routes/MasterPage.tsx -- داشبورد ایجنت ارشد (بازطراحی M-03)
 // v3: لایوت full-bleed (گیج + خلاصهٔ تحلیلی مدیریتی آفلاین) + استپر چهار گیتی سخت‌گیرانه
 // + ماشین وتو (بدون میانگین خطی) + ماشین‌حساب برنامهٔ معاملاتی/DCA + خروج ۵۰٪ + اکشن‌های سبد/واچ‌لیست.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useStrategyStore } from '@shared/stores/strategyStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { AGENT_WEIGHTS } from '@contracts/signal';
 import { usePortfolio, useMarketCloses } from '@features/portfolio/api/usePortfolio';
@@ -30,6 +31,7 @@ import {
   warRegimeCap,
 } from '../lib/strictGates';
 import { buildManagementSummary, halfExitPlan } from '../lib/managementSummary';
+import { evaluateFtsPipeline, recommendHorizon } from '../lib/ftsPipelineEvaluator';
 import { useCapitalStore } from '../stores/capitalStore';
 import { useFtsPlan } from '../api/useFtsPlan';
 import { MasterVerdictCard } from '../ui/MasterVerdictCard';
@@ -41,6 +43,11 @@ import { GatePipeline } from '../ui/GatePipeline';
 import { SynthesisBox } from '../ui/SynthesisBox';
 import { DecisionBadge } from '../ui/DecisionBadge';
 import { ManagementSummary } from '../ui/ManagementSummary';
+import { ExplainableAuditBox } from '../ui/ExplainableAuditBox';
+import { StrategyHorizonSelector } from '../ui/StrategyHorizonSelector';
+import { StrategyTreeDrawer } from '../ui/StrategyTreeDrawer';
+import { FtsAnalystModal } from '@widgets/FtsAnalystModal';
+import { EliteFunnelHub } from '../ui/EliteFunnelHub';
 
 const AGENT_FA: Record<string, string> = {
   fundamental: 'بنیادی',
@@ -53,6 +60,11 @@ export default function MasterPage() {
   const params = useParams();
   const stored = useSymbolStore((s) => s.symbol);
   const symbol = params.symbol ?? stored;
+
+  const horizon = useStrategyStore((s) => s.horizon);
+  const setHorizon = useStrategyStore((s) => s.setHorizon);
+  const [analystModalOpen, setAnalystModalOpen] = useState(false);
+  const [treeModalOpen, setTreeModalOpen] = useState(false);
 
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
   const inputs = useMemo(() => (symbol ? getActiveSignals(symbol) : {}), [symbol, entry]);
@@ -129,7 +141,13 @@ export default function MasterPage() {
   const decision = useMemo(() => definiteDecision(strict), [strict]);
   /** وتوی سخت‌گیرانه: نمرهٔ تجمیعی نباید اعتبار پیدا کند */
   const gateVetoActive = decision.action === 'veto_gate1' || decision.action === 'veto_gate2';
+  const fundScore = typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null;
   const superFundamental = useMemo(() => isSuperFundamental(inputs.fundamental), [inputs.fundamental]);
+  const hasSetup = useMemo(() => hasDirectEntrySetup(inputs.technical), [inputs.technical]);
+  const recommendedHorizon = useMemo(
+    () => recommendHorizon(fundScore, superFundamental, hasSetup),
+    [fundScore, superFundamental, hasSetup],
+  );
   const warCap = warRegimeCap(warRegime);
 
   const currentPrice = (symbol ? closes.data?.get(symbol) : null) ?? null;
@@ -137,42 +155,72 @@ export default function MasterPage() {
 
   const blueprint = useMemo(() => {
     const userCapital = totalToman > 0 ? totalToman : null;
+    const effectiveStop =
+      horizon === 'swing' && currentPrice != null
+        ? Math.round(currentPrice * 0.95)
+        : plan.stop.price;
     return buildTradeBlueprint({
       // سرمایهٔ کاربر اگر ثبت شده باشد، وگرنه سرمایهٔ فرضی پیش‌فرض (قابل ویرایش آنی در همان اینپوت)
       capitalToman: userCapital ?? DEFAULT_ASSUMED_CAPITAL,
       assumedCapital: userCapital == null,
-      baseStepWeightPct: plan.weight.pct,
+      baseStepWeightPct: horizon === 'hourglass' ? Math.min(plan.weight.pct * 1.5, 10) : plan.weight.pct,
       industryCapPct: regime.industryCapPct,
       industryUsedPct: regime.industryUsedPct,
       step1: plan.step1,
       step2: plan.step2,
       breakout: plan.breakout,
-      priceActionStop: plan.stop.price,
+      priceActionStop: effectiveStop,
       resistance,
       currentPrice,
       warCapPct: warCap?.max ?? null,
     });
-  }, [totalToman, plan, regime, resistance, currentPrice, warCap]);
+  }, [totalToman, plan, regime, resistance, currentPrice, warCap, horizon]);
 
   const hourglass = useMemo(
     () =>
       hourglassSwitch({
         superFundamental,
         weekly,
-        fundScore: typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null,
+        fundScore,
       }),
-    [superFundamental, weekly, inputs.fundamental],
+    [superFundamental, weekly, fundScore],
   );
 
   const halfExit = useMemo(
     () =>
-      halfExitPlan({
-        resistance,
-        setupActive: hasDirectEntrySetup(inputs.technical),
-        fundamentalOk: strict.gates.find((g) => g.id === 'fundamental')?.state === 'passed',
+      horizon === 'swing'
+        ? {
+            active: true,
+            text: 'استراتژی نوسانی: خروج کامل در مقاومت اول R1 بدون نگهداری میان‌مدت.',
+          }
+        : horizon === 'hourglass'
+          ? {
+              active: false,
+              text: 'استراتژی ساعت شنی: نگهداری بلندمدت؛ بدون خروج ۵۰٪ در مقاومت‌های نوسانی.',
+            }
+          : halfExitPlan({
+              resistance,
+              setupActive: hasDirectEntrySetup(inputs.technical),
+              fundamentalOk: strict.gates.find((g) => g.id === 'fundamental')?.state === 'passed',
+              currentPrice,
+            }),
+    [resistance, inputs.technical, strict.gates, currentPrice, horizon],
+  );
+
+  const evaluation = useMemo(
+    () =>
+      evaluateFtsPipeline({
+        symbol: symbol || '',
+        horizon,
+        inputs,
+        strict,
+        decision,
         currentPrice,
+        resistancePrice: resistance,
+        supportPrice: plan.stop.price,
+        fundScore,
       }),
-    [resistance, inputs.technical, strict.gates, currentPrice],
+    [symbol, horizon, inputs, strict, decision, currentPrice, resistance, plan.stop.price, fundScore],
   );
 
   const summaryLines = useMemo(
@@ -187,15 +235,21 @@ export default function MasterPage() {
             warRegime,
             superFundamental,
             industryCapPct: regime.industryCapPct,
+            currentPrice,
+            resistancePrice: resistance,
           })
         : [],
-    [symbol, verdict, inputs, strict, decision, warRegime, superFundamental, regime.industryCapPct],
+    [symbol, verdict, inputs, strict, decision, warRegime, superFundamental, regime.industryCapPct, currentPrice, resistance],
   );
 
   if (!symbol) {
     return (
-      <div className="w-full max-w-none">
-        <EmptyState title="نمادی انتخاب نشده" hint="از تابلو یک نماد انتخاب کن تا برآیند چهار ایجنت دیده شود" />
+      <div className="flex w-full max-w-none flex-col gap-4">
+        <EliteFunnelHub />
+        <EmptyState
+          title="نمادی انتخاب نشده"
+          hint="از قیف نخبگان بالا یا جدول تابلو، یک نماد را برای داوری جامع ۴ رکن انتخاب کنید"
+        />
       </div>
     );
   }
@@ -206,6 +260,9 @@ export default function MasterPage() {
 
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
+      {/* هاب قیف غربالگری نخبگان FTS (Elite Funnel Hub) */}
+      <EliteFunnelHub />
+
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -228,10 +285,10 @@ export default function MasterPage() {
           {/* Full-bleed: گیج + حکم قطعی در یک ستون، خلاصهٔ تحلیلی مدیریتی فضای خالی کنار گیج */}
           <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <div className="flex flex-col gap-3">
-              <MasterVerdictCard verdict={verdict} inputs={inputs} />
+              <MasterVerdictCard verdict={verdict} inputs={inputs} decision={decision} />
               {gateVetoActive ? (
                 <div role="alert" className="rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs leading-5 text-accent-red">
-                  حکم قطعی مستر: نمرهٔ تجمیعی و بازتوزیع وزن‌ها در این وضعیت <b>معتبر نیست</b> — ورود تا رفع گیت متوقف است.
+                  حکم قطعی مستر: نمرهٔ تجمیعی و بازتوزیع وزن‌ها در این وضعیت <b>معتبر نیست</b> — ورود تا رفع موانع فیلترها متوقف است.
                 </div>
               ) : null}
               <div className="glass-panel relative overflow-hidden p-4">
@@ -240,6 +297,26 @@ export default function MasterPage() {
             </div>
             <ManagementSummary lines={summaryLines} />
           </div>
+
+          {/* باکس ممیزی شروط و دلایل توقف (Explainable Decision Audit) */}
+          <ExplainableAuditBox
+            symbol={symbol}
+            isVeto={gateVetoActive}
+            decision={decision}
+            strict={strict}
+            currentPrice={currentPrice}
+            resistancePrice={resistance}
+            supportPrice={plan.stop.price}
+            fundScore={fundScore}
+          />
+
+          <StrategyHorizonSelector
+            horizon={horizon}
+            recommendedHorizon={recommendedHorizon}
+            onSelectHorizon={setHorizon}
+            onOpenAnalystModal={() => setAnalystModalOpen(true)}
+            onOpenTreeModal={() => setTreeModalOpen(true)}
+          />
 
           <TradePlanCard symbol={symbol} action={verdict.finalAction} plan={plan} />
 
@@ -252,6 +329,7 @@ export default function MasterPage() {
             warRegime={warRegime}
             assumedCapital={totalToman <= 0}
             onToggleWarRegime={setWarRegime}
+            horizon={horizon}
           />
 
           <GatePipeline gates={strict.gates} />
@@ -283,9 +361,21 @@ export default function MasterPage() {
         <p className="mt-2 text-2xs leading-5 text-text-muted">
           علت نهایی: {empty ? 'هیچ رأی فعالی موجود نیست.' : activeCount < 4 ? `فقط ${fa0(activeCount)} رأی فعال — وزن‌ها بازتوزیع نمی‌شوند؛ رأی‌های غایب وزن صفر دارند.` : 'هر چهار ایجنت رای داده‌اند؛ وزن‌های مصوب کامل اعمال شد.'}
           {verdict.hasConflict ? ' تضاد افق زمانی باعث تنزیل اطمینان شد.' : ''}
-          {gates3.some((g) => g.status === 'fail') ? ' رد گیت بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}
+          {gates3.some((g) => g.status === 'fail') ? ' رد فیلتر بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}
         </p>
       </div>
+
+      <FtsAnalystModal
+        open={analystModalOpen}
+        onClose={() => setAnalystModalOpen(false)}
+        evaluation={evaluation}
+        onHorizonChange={setHorizon}
+      />
+
+      <StrategyTreeDrawer
+        open={treeModalOpen}
+        onClose={() => setTreeModalOpen(false)}
+      />
     </div>
   );
 }

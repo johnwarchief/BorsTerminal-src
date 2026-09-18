@@ -42,7 +42,7 @@ export function SidebarFtsSignals({ onSelect }: { onSelect: (s: string) => void 
               <button
                 type="button"
                 onClick={() => onSelect(r.symbol)}
-                className="flex w-full flex-col gap-1 rounded-lg border border-transparent px-2 py-1.5 text-right transition-colors hover:border-border-c hover:bg-bg-card"
+                className="flex w-full flex-col gap-1 rounded-lg border border-transparent px-2 py-1.5 text-start transition-colors hover:border-border-c hover:bg-bg-card"
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="min-w-0 truncate text-xs font-bold text-text-primary">

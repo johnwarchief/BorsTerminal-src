@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
 import { MarketFeedSchema, type MarketFeed, type MarketRow } from '@shared/types/marketRow';
 import { useMarketStore } from '@shared/stores/marketStore';
+import { matchFa } from '@shared/lib/normalizeFa';
 
 /** کفِ بازهٔ بازخوانی دیده‌بان — سبک‌تر از تابلو تا سایدبار سنگین نشود */
 const MIN_INTERVAL_MS = 30_000;
@@ -32,12 +33,12 @@ export function tradingValue(r: MarketRow): number {
 
 /** فیلتر/جستجو/مرتب‌سازی خالص — فقط ردیف‌های زنده، بر اساس ارزش معامله */
 export function filterWatchlist(rows: MarketRow[], q: string, limit = DEFAULT_LIMIT): MarketRow[] {
-  const term = q.trim().toLowerCase();
+  const term = q.trim();
   const out = rows.filter((r) => {
     if (r.is_live === false) return false;
     if (!r.symbol) return false;
     if (!term) return true;
-    return r.symbol.toLowerCase().includes(term) || (r.name ?? '').toLowerCase().includes(term);
+    return matchFa(r.symbol, term) || matchFa(r.name, term);
   });
   return out.sort((a, b) => tradingValue(b) - tradingValue(a)).slice(0, limit);
 }

@@ -47,7 +47,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
             {t.label}
           </button>
         ))}
-        <span className="mr-auto pr-1 text-[10px] text-text-muted">{open ? '' : 'پنل‌های تحلیل'}</span>
+        <span className="ms-auto pe-1 text-[10px] text-text-muted">{open ? '' : 'پنل‌های تحلیل'}</span>
       </div>
       {open ? (
         <div role="tabpanel" data-testid="fts-dock-body" className="min-h-0 flex-1 overflow-y-auto p-2">

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
 import React, { useState, useEffect } from 'react';
 import { IconSearch, IconClose, IconCheck } from './TradingViewIcons';
+import { matchFa } from '@shared/lib/normalizeFa';
 
 export interface SymbolInfo {
   symbol: string;
@@ -100,8 +100,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
 
   // فیلتر کردن نمادها بر اساس جستجو و تب فعال
   const filtered = symbols.filter(s => {
-    const q = query.trim().toLowerCase();
-    const matchQuery = !q || s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q);
+    const matchQuery = matchFa(s.symbol, query) || matchFa(s.name, query);
     if (!matchQuery) return false;
 
     if (activeTab === 'bourse') return s.market.includes('بورس') && !s.market.includes('فرابورس');
@@ -129,10 +128,10 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
         style={{
           width: '540px',
           maxWidth: '92vw',
-          backgroundColor: '#1e222d',
-          border: '1px solid #2a2e39',
+          backgroundColor: 'var(--nn-bg-secondary)',
+          border: '1px solid var(--nn-border)',
           borderRadius: '8px',
-          boxShadow: '0 16px 40px rgba(0, 0, 0, 0.75)',
+          boxShadow: 'var(--glass-shadow)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column'
@@ -140,8 +139,8 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* نوار کادر جستجو */}
-        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #2a2e39', gap: '10px' }}>
-          <IconSearch size={18} color="#787b86" />
+        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--nn-border)', gap: '10px' }}>
+          <IconSearch size={18} color="var(--nn-text-secondary)" />
           <input
             type="text"
             value={query}
@@ -152,24 +151,24 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
               flex: 1,
               background: 'transparent',
               border: 'none',
-              color: '#ffffff',
+              color: 'var(--nn-text-primary)',
               fontSize: '14px',
               outline: 'none',
               fontFamily: 'inherit'
             }}
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', color: '#787b86', cursor: 'pointer' }}>
+            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', color: 'var(--nn-text-secondary)', cursor: 'pointer' }}>
               <IconClose size={14} />
             </button>
           )}
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#787b86', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--nn-text-secondary)', cursor: 'pointer' }}>
             <IconClose size={18} />
           </button>
         </div>
 
         {/* دسته‌بندی بازارها */}
-        <div style={{ display: 'flex', padding: '0 16px', gap: '8px', borderBottom: '1px solid #2a2e39', backgroundColor: '#181b24' }}>
+        <div style={{ display: 'flex', padding: '0 16px', gap: '8px', borderBottom: '1px solid var(--nn-border)', backgroundColor: 'var(--nn-bg-primary)' }}>
           {[
             { id: 'all', label: 'همه نمادها' },
             { id: 'bourse', label: 'سهام بورس' },
@@ -182,8 +181,8 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                borderBottom: activeTab === tab.id ? '2px solid #2962ff' : '2px solid transparent',
-                color: activeTab === tab.id ? '#2962ff' : '#787b86',
+                borderBottom: activeTab === tab.id ? '2px solid var(--nn-bg-active)' : '2px solid transparent',
+                color: activeTab === tab.id ? 'var(--nn-text-active)' : 'var(--nn-text-secondary)',
                 padding: '8px 10px',
                 fontSize: '12px',
                 cursor: 'pointer',
@@ -208,24 +207,24 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '10px 16px',
-              borderBottom: '1px solid #242832',
+              borderBottom: '1px solid var(--nn-border)',
               cursor: 'pointer',
               backgroundColor: currentSymbol === 'شاخص کل' ? 'rgba(41, 98, 255, 0.12)' : 'transparent'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontWeight: 'bold', color: '#ffab00', fontSize: '13px' }}>شاخص کل</span>
-              <span style={{ color: '#787b86', fontSize: '12px' }}>نمای کلان بازار سرمایه (TEDPIX)</span>
+              <span style={{ color: 'var(--nn-text-secondary)', fontSize: '12px' }}>نمای کلان بازار سرمایه (TEDPIX)</span>
             </div>
             <span style={{ fontSize: '11px', color: '#ffab00' }}>شاخص کل</span>
           </div>
 
           {isLoading ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#787b86', fontSize: '13px' }}>
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--nn-text-secondary)', fontSize: '13px' }}>
               در حال دریافت فهرست نمادها...
             </div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#787b86', fontSize: '13px' }}>
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--nn-text-secondary)', fontSize: '13px' }}>
               {query ? 'نمادی با این عنوان یافت نشد.' : 'داده‌ای در دسترس نیست.'}
             </div>
           ) : (
@@ -245,26 +244,26 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '10px 16px',
-                    borderBottom: '1px solid #242832',
+                    borderBottom: '1px solid var(--nn-border)',
                     cursor: 'pointer',
                     backgroundColor: isSelected ? 'rgba(41, 98, 255, 0.12)' : 'transparent',
                     transition: 'background-color 0.1s'
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.backgroundColor = '#2a2e39';
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--nn-bg-hover)';
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '14px' }}>{s.symbol}</span>
-                    <span style={{ color: '#787b86', fontSize: '12px' }}>{s.name}</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--nn-text-primary)', fontSize: '14px' }}>{s.symbol}</span>
+                    <span style={{ color: 'var(--nn-text-secondary)', fontSize: '12px' }}>{s.name}</span>
                     <span
                       style={{
                         fontSize: '10px',
                         backgroundColor: s.market.includes('فرابورس') ? 'rgba(255, 171, 0, 0.15)' : 'rgba(41, 98, 255, 0.15)',
-                        color: s.market.includes('فرابورس') ? '#ffab00' : '#2962ff',
+                        color: s.market.includes('فرابورس') ? '#ffab00' : 'var(--nn-text-active)',
                         padding: '1px 5px',
                         borderRadius: '3px'
                       }}
@@ -275,7 +274,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
 
                   <div style={{ textAlign: 'left', direction: 'ltr', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {s.lastPrice ? (
-                      <span style={{ color: '#ffffff', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--nn-text-primary)', fontSize: '13px' }}>
                         {s.lastPrice.toLocaleString('fa-IR')}
                       </span>
                     ) : null}

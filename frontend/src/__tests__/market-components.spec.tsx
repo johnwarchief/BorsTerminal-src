@@ -17,8 +17,8 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     month_avg_vol: 1_000_000,
     vol_ratio: 5,
     buyer_power: 2.1,
-    p_last: 1000,
-    p_closing: 1025,
+    p_last: 1025,
+    p_closing: 1000,
     z_tot_tran: 120,
     is_live: true,
     ...patch,
@@ -51,7 +51,7 @@ describe('کامپوننت های تابلو', () => {
 
   it('پنل مشکوک الگوی ساعت را فهرست می کند', () => {
     const onSelect = vi.fn();
-    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_closing: 1001, tvol: 500_000 })]} onSelect={onSelect} />);
+    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000 })]} onSelect={onSelect} />);
     // شپنا هم در بخش ساعت هم در بخش حجم مشکوک است (حجم 5 برابر میانگین)
     expect(screen.getAllByText('شپنا')).toHaveLength(2);
     expect(screen.queryByText('خودرو')).not.toBeInTheDocument();
@@ -111,6 +111,7 @@ describe('فیلترهای بازطراحی شده', () => {
 
   it('چیپ های سریع شمارش عبور را نشان می دهند', () => {
     render(<MarketFilters sectors={[]} matches={{ f_clock: 7, f_susp: 2, f_jet: 0, f_roobi: 1, f_noqteh: 0 }} />);
+    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
     expect(screen.getByText(/الگوی ساعت/)).toBeInTheDocument();
     expect(screen.getByText('(۷)')).toBeInTheDocument();
     expect(screen.getByText('(۲)')).toBeInTheDocument();

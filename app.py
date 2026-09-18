@@ -76,23 +76,25 @@ app.mount("/static", StaticFiles(directory=_static_dir()), name="static")
 # index.html برمی‌گردند تا رفرش مسیرهای کلاینت 404 ندهد؛ /api/* چون قبل
 # از catch-all ثبت می‌شود اولویت دارد.
 _FRONTEND_DIST = _frontend_dist()
-_INDEX_HTML = os.path.join(_FRONTEND_DIST, "index.html") if os.path.isdir(_FRONTEND_DIST) else None
 
-if _INDEX_HTML and os.path.isfile(_INDEX_HTML):
-    _assets_dir = os.path.join(_FRONTEND_DIST, "assets")
-    if os.path.isdir(_assets_dir):
-        app.mount("/assets", StaticFiles(directory=_assets_dir), name="frontend-assets")
-    _vendor_dir = os.path.join(_FRONTEND_DIST, "vendor")
-    if os.path.isdir(_vendor_dir):
-        app.mount("/vendor", StaticFiles(directory=_vendor_dir), name="frontend-vendor")
+def _get_index_html():
+    if not os.path.isdir(_FRONTEND_DIST):
+        return None
+    idx = os.path.join(_FRONTEND_DIST, "index.html")
+    return idx if os.path.isfile(idx) else None
 
+_assets_dir = os.path.join(_FRONTEND_DIST, "assets")
+app.mount("/assets", StaticFiles(directory=_assets_dir, check_dir=False), name="frontend-assets")
+_vendor_dir = os.path.join(_FRONTEND_DIST, "vendor")
+app.mount("/vendor", StaticFiles(directory=_vendor_dir, check_dir=False), name="frontend-vendor")
 
 def _spa_index():
     """index.html یا 404 رسا اگر dist ساخته نشده."""
-    if not _INDEX_HTML or not os.path.isfile(_INDEX_HTML):
+    idx = _get_index_html()
+    if not idx:
         from fastapi.responses import JSONResponse
-        return JSONResponse({"detail": "frontend dist ساخته نشده؛ در frontend دستور npm run build را اجرا کن"}, status_code=404)
-    return FileResponse(_INDEX_HTML)
+        return JSONResponse({"detail": "frontend dist ساخته نشده؛ در frontend دستور npm run build را اجرا کن"}, status_code=200)
+    return FileResponse(idx)
 
 
 @app.on_event("startup")
@@ -105,11 +107,11 @@ def _startup_sync_market():
     except Exception as e:
         print(f"[startup] market sync thread failed: {e}")
 
-    # گرم‌کردنِ کشِ اسکنر در پس‌زمینه تا اولین بارگذاریِ تبِ بنیادی ~۲۷s معطل نماند.
+    # گرم‌کردنِ بلادرنگ کشِ اسکنر در پس‌زمینه تا اولین بارگذاریِ تبِ بنیادی معطل نماند.
     def _warm_screener():
         try:
             import time as _t
-            _t.sleep(25)          # بگذار سینکِ بازار تمام شود، بعد کش را گرم کن
+            _t.sleep(1)          # شروع سریع در ترد پس‌زمینه
             from api.screener import warm_screener_cache
             warm_screener_cache()
         except Exception as _e:
@@ -134,7 +136,8 @@ app.include_router(api_router())
 @app.get("/{full_path:path}", include_in_schema=False)
 def spa_catch_all(full_path: str):
     """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم)."""
-    if _INDEX_HTML and full_path:
+    idx = _get_index_html()
+    if idx and full_path:
         candidate = os.path.normpath(os.path.join(_FRONTEND_DIST, full_path))
         base = os.path.abspath(_FRONTEND_DIST)
         if candidate.startswith(base) and os.path.isfile(candidate):

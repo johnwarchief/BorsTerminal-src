@@ -67,7 +67,7 @@ const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: strin
   fail: { tone: 'red', label: '✗' },
 };
 
-/** ارتفاع ثابت ردیف جدول (پیکسل) — مجازی‌سازی و اسکرول روان روی همین حساب می‌شود */
+/** ارتفاع ثابت ردیف جدول (پیکسل) — همگام دقیق با DOM برای جلوگیری از لگ و پرش اسکرول */
 const ROW_H = 46;
 
 /** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
@@ -109,7 +109,7 @@ function GapMark({
   return (
     <AuditBadge
       state="na"
-      label={<span className="max-w-[9.5rem] leading-snug text-accent-yellow">{label}</span>}
+      label={<span className="whitespace-nowrap leading-none text-accent-yellow font-semibold">{label}</span>}
       hintTitle={tooltip}
       evidence={evidence}
       compact
@@ -119,7 +119,6 @@ function GapMark({
 }
 
 /** سلول بی‌داده با علتِ همان محور */
-/** سلول بی‌داده با علتِ همان محور (شاهد تنبل از ردیف ساخته می‌شود) */
 function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEvidenceInput }) {
   return (
     <GapMark
@@ -179,30 +178,43 @@ const ScreenerRow = memo(function ScreenerRow({
                 <tr
                   key={r.symbol}
                   onClick={() => r.symbol && !r.excluded && onSelect(r.symbol)}
-                  className={`border-b border-border-c/40 transition-colors ${
+                  style={{ height: ROW_H }}
+                  className={`h-[46px] border-b border-border-c/40 transition-colors ${
                     r.excluded
                       ? 'cursor-not-allowed bg-accent-red/5 opacity-55'
                       : 'cursor-pointer odd:bg-bg-secondary even:bg-bg-primary hover:bg-accent-blue/10'
                   }`}
                   data-testid="fts-screen-row"
                 >
-                  <td className="px-2 py-2">
-                    <div className="flex flex-col">
-                      <span className={`font-bold text-text-primary ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
-                        {r.symbol}
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex flex-col justify-center min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
+                          {r.symbol}
+                        </span>
+                        {r.tech_hourglass_active ? (
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
+                            ساعت شنی
+                          </span>
+                        ) : null}
+                        {r.tech_jet ? (
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
+                            جت
+                          </span>
+                        ) : null}
+                        {r.tech_matrix_decision === 'REJECT' ? (
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
+                            وتوی روند
+                          </span>
+                        ) : null}
+                      </div>
+                      <span className="truncate text-2xs text-text-muted leading-tight" title={r.name || r.sector_name || ''}>
+                        {r.name || r.sector_name || ''}
                       </span>
-                      <span className="truncate text-2xs text-text-muted">{r.name || r.sector_name || ''}</span>
                     </div>
                   </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`num whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
-                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
-                      >
-                        {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
-                        {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
-                      </span>
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
                       {i1 === 'gap' ? (
                         <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
                       ) : (
@@ -212,31 +224,31 @@ const ScreenerRow = memo(function ScreenerRow({
                           testId="fts-mark-1a_monetary_growth"
                         />
                       )}
+                      <span
+                        className={`num text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
+                      >
+                        {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
+                        {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="num whitespace-nowrap text-text-secondary"
-                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
-                      >
-                        {epsTrend ?? '—'}
-                      </span>
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
                       {epsPartialRejected ? (
                         <AuditBadge
                           state="fail"
-                          label={epsHist.label}
+                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
                           hintTitle={epsGapReason}
                           evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
                           compact
                           testId={EPS_PARTIAL_TESTID}
                         />
                       ) : epsInsufficient || i2 === 'gap' ? (
-                        /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید
-                           (پیش‌تر حتی وقتی موتور «مردود» داده بود، برچسب زردِ بی‌حکم نشان داده می‌شد) */
+                        /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
                         <AuditBadge
                           state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
-                          label={<span className="max-w-[9.5rem] leading-snug">{epsGapLabel(epsHist.realYears)}</span>}
+                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
                           hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
                           evidence={ev.i2}
                           compact
@@ -245,17 +257,16 @@ const ScreenerRow = memo(function ScreenerRow({
                       ) : (
                         <PassMark state={i2} testId="fts-mark-2_eps_trend" />
                       )}
+                      <span
+                        className="num text-sm font-bold whitespace-nowrap text-text-secondary"
+                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
+                      >
+                        {epsTrend ?? '—'}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="num whitespace-nowrap text-text-primary"
-                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
-                      >
-                        {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
-                        {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
-                      </span>
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
                       {i3 === 'gap' ? (
                         <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
                       ) : (
@@ -265,12 +276,28 @@ const ScreenerRow = memo(function ScreenerRow({
                           testId="fts-mark-3_gross_margin"
                         />
                       )}
+                      <span
+                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
+                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
+                      >
+                        {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
+                        {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {i4 === 'gap' ? (
+                        <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
+                      ) : (
+                        <PassMark
+                          state={i4}
+                          evidence={ev.i4}
+                          testId="fts-mark-4_sales_to_mcap"
+                        />
+                      )}
                       <span
-                        className="num whitespace-nowrap text-text-primary"
+                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
                         title={
                           r.profit_potential_pct == null
                             ? r.sales_to_mcap != null
@@ -282,19 +309,10 @@ const ScreenerRow = memo(function ScreenerRow({
                         {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
                         {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
                       </span>
-                      {i4 === 'gap' ? (
-                        <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
-                      ) : (
-                        <PassMark
-                          state={i4}
-                          evidence={ev.i4}
-                          testId="fts-mark-4_sales_to_mcap"
-                        />
-                      )}
                     </div>
                   </td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
                       {i5 === 'gap' ? (
                         <AxisGapMark axis="5_industry" evidence={ev.i5} />
                       ) : (
@@ -304,27 +322,33 @@ const ScreenerRow = memo(function ScreenerRow({
                           testId="fts-mark-5_industry"
                         />
                       )}
+                      {r.excluded ? (
+                        <span
+                          className="inline-block max-w-[14rem] truncate align-middle text-2xs font-bold text-accent-red leading-tight"
+                          title={r.exclusion_reasons ?? ''}
+                        >
+                          {r.exclusion_reasons}
+                        </span>
+                      ) : (
+                        <span className="whitespace-nowrap text-xs font-semibold text-text-secondary">
+                          {r.pricing_mode === 'free' ? 'آزاد' : r.pricing_mode === 'mandatory' ? 'دستوری' : r.pricing_mode === 'neutral' ? 'مختلط' : '—'}
+                        </span>
+                      )}
                     </div>
-                    {r.excluded ? (
-                      <span
-                        className="ms-1 inline-block max-w-[12rem] truncate align-middle text-2xs text-accent-red"
-                        title={r.exclusion_reasons ?? ''}
-                      >
-                        {r.exclusion_reasons}
-                      </span>
-                    ) : null}
                   </td>
-                  <td className="px-2 py-2">
+                  <td className="px-3 py-1.5 align-middle text-center">
                     <span
-                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-2xs font-black ${
-                        r.score >= 4
-                          ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
-                          : r.score >= 3
-                            ? 'border-accent-yellow/40 bg-accent-yellow/15 text-accent-yellow'
-                            : 'border-accent-red/40 bg-accent-red/15 text-accent-red'
+                      className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-xs font-black shadow-xs ${
+                        r.score == null
+                          ? 'border-border-c/70 bg-bg-card/50 text-text-muted'
+                          : r.score >= 4
+                            ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
+                            : r.score >= 3
+                              ? 'border-accent-yellow/40 bg-accent-yellow/15 text-accent-yellow'
+                              : 'border-accent-red/40 bg-accent-red/15 text-accent-red'
                       }`}
                     >
-                      <span className="num">{toFaDigits(r.score)}</span>
+                      <span className="num font-bold">{r.score == null ? '؟' : toFaDigits(r.score)}</span>
                     </span>
                   </td>
                 </tr>
@@ -352,6 +376,8 @@ export function FtsScreenTable({
   /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
   const excludeAxes = useExcludeAxes();
 
+  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass' | 'swing'>('all');
+
   /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
   const nonCompanyCount = useMemo(
@@ -365,15 +391,38 @@ export function FtsScreenTable({
     [rows, excludeAxes],
   );
 
+  const presetCounts = useMemo(() => {
+    const base = rowsAfterAxisFilter.filter((r) => isFundamentalCompany(r) && (showExcluded || r.excluded !== true));
+    return {
+      all: base.length,
+      super: base.filter((r) => r.score >= 4 && r.pricing_mode === 'free').length,
+      jet: base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free').length,
+      hourglass: base.filter((r) => r.score === 5 && r.excluded !== true).length,
+      swing: base.filter((r) => (r.rev_growth ?? 0) >= 40 && r.gross_margin != null && r.gross_margin >= 20).length,
+    };
+  }, [rowsAfterAxisFilter, showExcluded]);
+
   const visible = useMemo(
     () => {
-      const base = showExcluded ? rowsAfterAxisFilter : rowsAfterAxisFilter.filter((r) => r.excluded !== true);
+      let base = showExcluded ? rowsAfterAxisFilter : rowsAfterAxisFilter.filter((r) => r.excluded !== true);
       // حتی در حالت بازرسی excluded، صندوق‌ها/کارگزاری‌ها/مشتقه‌ها می‌مانند؟ نه —
       // «نمایش ردیف‌های حذف‌شده» فقط دروازه‌های سخت را برمی‌گرداند؛ قلمرو
       // شرکت‌محورِ جدول بنیادی روی هر دو حالت اعمال می‌شود.
-      return base.filter((r) => isFundamentalCompany(r));
+      base = base.filter((r) => isFundamentalCompany(r));
+
+      if (strategicPreset === 'super') {
+        base = base.filter((r) => r.score >= 4 && r.pricing_mode === 'free');
+      } else if (strategicPreset === 'jet') {
+        base = base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free');
+      } else if (strategicPreset === 'hourglass') {
+        base = base.filter((r) => r.score === 5 && r.excluded !== true);
+      } else if (strategicPreset === 'swing') {
+        base = base.filter((r) => (r.rev_growth ?? 0) >= 40 && r.gross_margin != null && r.gross_margin >= 20);
+      }
+
+      return base;
     },
-    [rowsAfterAxisFilter, showExcluded],
+    [rowsAfterAxisFilter, showExcluded, strategicPreset],
   );
 
   const sorted = useMemo(() => {
@@ -426,7 +475,9 @@ export function FtsScreenTable({
             title="تازه‌سازیِ ۵ شاخص FTS از کدال (فقط دِلتا، با چرخش IP) و بازخوانیِ جدول"
             className="flex items-center gap-1.5 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2.5 py-1 text-2xs font-bold text-text-secondary transition-colors hover:border-border-accent hover:text-accent-blue disabled:opacity-50"
           >
-            <span aria-hidden>{refreshing ? "…" : "↻"}</span>
+            <svg className={`h-3 w-3 text-text-secondary group-hover:text-accent-blue ${refreshing ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
             {refreshing ? "در حال بروزرسانی…" : "بروزرسانی"}
           </button>
           {excludedCount > 0 ? (
@@ -490,24 +541,105 @@ export function FtsScreenTable({
           </button>
         </div>
       ) : null}
-      <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto">
-        <table className="w-full min-w-[720px] text-start text-xs">
-          <thead className="sticky top-0 z-20 bg-bg-card">
-            <tr className="bg-bg-card text-2xs text-text-secondary">
+
+      {/* پری‌ست‌های استراتژیک ۱-کلیکه طبق جزوه FTS */}
+      <div
+        className="flex flex-wrap items-center gap-1.5 border-b border-[var(--hairline)] bg-bg-card/30 px-4 py-2 text-2xs"
+        data-testid="fts-strategic-presets"
+      >
+        <span className="font-bold text-text-muted me-1">پری‌ست‌های استراتژیک FTS:</span>
+        <button
+          type="button"
+          onClick={() => setStrategicPreset('all')}
+          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
+            strategicPreset === 'all'
+              ? 'border-accent-blue bg-accent-blue/15 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.2)]'
+              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          همه شرکت‌ها ({toFaDigits(presetCounts.all)})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStrategicPreset('super')}
+          title="شرکت‌های با امتیاز ۴ یا ۵ و صنعت غیردستوری"
+          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
+            strategicPreset === 'super'
+              ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan shadow-[0_0_8px_rgba(6,182,212,0.25)]'
+              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          💎 سوپر بنیادی‌ها ({toFaDigits(presetCounts.super)})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStrategicPreset('jet')}
+          title="رشد فروش بالای ۴۰٪ و صنعت آزاد"
+          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
+            strategicPreset === 'jet'
+              ? 'border-accent-green bg-accent-green/15 text-accent-green shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          🚀 نامزدهای ستاپ جت ({toFaDigits(presetCounts.jet)})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStrategicPreset('hourglass')}
+          title="امتیاز کامل ۵ از ۵ برای استراتژی ساعت شنی چندساله"
+          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
+            strategicPreset === 'hourglass'
+              ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow shadow-[0_0_8px_rgba(234,179,8,0.25)]'
+              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          ⏳ ساعت شنی FTS ({toFaDigits(presetCounts.hourglass)})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStrategicPreset('swing')}
+          title="رشد فروش بالای ۴۰٪ و حاشیه سود بالای ۲۰٪ جهت نوسان‌گیری"
+          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
+            strategicPreset === 'swing'
+              ? 'border-accent-blue bg-accent-blue/15 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.2)]'
+              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          ⚡ مهندسی معکوس نوسانی ({toFaDigits(presetCounts.swing)})
+        </button>
+      </div>
+
+      <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto overscroll-contain">
+        <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
+          <colgroup>
+            <col className="w-[19%]" />
+            <col className="w-[12%]" />
+            <col className="w-[23%]" />
+            <col className="w-[11%]" />
+            <col className="w-[12%]" />
+            <col className="w-[16%]" />
+            <col className="w-[7%]" />
+          </colgroup>
+          <thead className="sticky top-0 z-20 bg-bg-card shadow-xs">
+            <tr className="bg-bg-card text-2xs text-text-secondary border-b border-[var(--hairline)]">
               {COLS.map((c, i) =>
                 c.key ? (
-                  <th key={c.label} className="px-2 py-2 font-bold">
+                  <th key={c.label} className="px-3 py-2.5 font-bold tracking-wide text-start">
                     <button
                       type="button"
                       onClick={() => toggle(c.key as SortKey)}
                       title={c.title}
-                      className="hover:text-accent-blue"
+                      className="inline-flex items-center gap-1 hover:text-accent-blue transition-colors"
                     >
                       {c.label} {sortKey === c.key ? (desc ? '↓' : '↑') : ''}
                     </button>
                   </th>
                 ) : (
-                  <th key={i} className="px-2 py-2 font-bold" title={c.title}>
+                  <th
+                    key={i}
+                    className={`px-3 py-2.5 font-bold tracking-wide ${i === COLS.length - 1 ? 'text-center' : 'text-start'}`}
+                    title={c.title}
+                  >
                     {c.label}
                   </th>
                 ),
