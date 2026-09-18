@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import get_db
+from ._core import get_db, get_user_db
 from .market import load_fts_config
 from fastapi import APIRouter
 from fastapi import Query
@@ -20,7 +20,7 @@ def get_watchlist():
     """واچ‌لیست کاربر، تازه‌ترین اول."""
     try:
         import watchlist_store
-        conn = get_db()
+        conn = get_user_db()
         try:
             rows = watchlist_store.list_rows(conn)
         finally:
@@ -46,7 +46,7 @@ def post_watchlist(payload: dict = None):
         return {"status": "error", "message": "نماد ارسال نشده"}
     try:
         import watchlist_store
-        conn = get_db()
+        conn = get_user_db()
         try:
             cap = int(load_fts_config().get("watchlist_max", 50) or 50)
             cap = max(1, min(cap, watchlist_store.MAX_WATCHLIST))
@@ -72,7 +72,7 @@ def delete_watchlist(symbol: str):
     """حذف با هر نوشتاری (عربی/فارسی) — همان کلیدِ نرمالِ افزودن."""
     try:
         import watchlist_store
-        conn = get_db()
+        conn = get_user_db()
         try:
             n = watchlist_store.remove(conn, symbol)
             conn.commit()
@@ -103,7 +103,7 @@ def get_watchlist_matrix(symbols: str = Query(None)):
         if raw and raw.strip():
             probe = [s.strip() for s in raw.split(",") if s.strip()]
             probe = probe[:watchlist_store.MAX_WATCHLIST]
-        conn = get_db()
+        conn = get_user_db()
         try:
             out = watchlist_store.matrix(conn, symbols=probe,
                                          cfg=None, fts_cfg=load_fts_config())

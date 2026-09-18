@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from bors_config import DB_PATH
+from bors_config import DB_PATH, USER_DB_PATH
 from fastapi import HTTPException
 import json
 import math
@@ -81,6 +81,114 @@ def get_db():
     except Exception:
         pass
     return conn
+
+
+def get_user_db() -> sqlite3.Connection:
+    """اتصال به دیتابیس اختصاصی کاربر (user.db).
+
+    این فایل کنار EXE (یا ریشه ریپو در dev) قرار دارد و با هیچ آپدیتی
+    جایگزین نمی‌شود. جداول user_watchlists و selection_decisions فقط اینجا
+    ساخته و نگهداری می‌شوند.
+
+    migration خودکار: اگر این جداول داخل market.db داده دارند (نسخه‌های
+    قبلی) ردیف‌ها به user.db کپی و از market.db حذف می‌شوند تا کاربر هیچ
+    داده‌ای گم نکند.
+    """
+    conn = sqlite3.connect(USER_DB_PATH, timeout=30)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+
+    # ساخت جداول کاربر (idempotent)
+    try:
+        import watchlist_store
+        watchlist_store.ensure_table(conn)
+    except Exception:
+        pass
+
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS selection_decisions (
+                symbol       TEXT PRIMARY KEY,
+                name         TEXT DEFAULT '',
+                status       TEXT NOT NULL DEFAULT 'pending',
+                reason       TEXT DEFAULT '',
+                note         TEXT DEFAULT '',
+                stop_loss    TEXT DEFAULT '',
+                asset_kind   TEXT DEFAULT '',
+                weight_pct   REAL DEFAULT 0,
+                price        REAL DEFAULT 0,
+                score        INTEGER DEFAULT 0,
+                pricing_mode TEXT DEFAULT '',
+                sector       TEXT DEFAULT '',
+                updated_at   TEXT DEFAULT ''
+            )
+        """)
+    except Exception:
+        pass
+
+    # migration یک‌باره از market.db به user.db
+    # (برای کاربرانی که نسخهٔ قبلی نصب داشتند)
+    _migrate_user_tables_from_market(conn)
+
+    conn.commit()
+    return conn
+
+
+def _migrate_user_tables_from_market(user_conn: sqlite3.Connection) -> None:
+    """اگر جداول کاربر در market.db داده دارند → کپی به user.db → حذف از market.db.
+
+    این تابع idempotent است: بار دوم جداول market.db خالی‌اند و هیچ کاری
+    نمی‌کند. خطاها بی‌صدا نادیده گرفته می‌شوند تا باز شدن برنامه را
+    مسدود نکنند.
+    """
+    if not os.path.exists(DB_PATH):
+        return
+    try:
+        mconn = sqlite3.connect(DB_PATH, timeout=10)
+        mconn.row_factory = sqlite3.Row
+        mconn.execute("PRAGMA journal_mode=WAL")
+
+        # migration واچ‌لیست
+        try:
+            src_rows = mconn.execute(
+                "SELECT * FROM user_watchlists"
+            ).fetchall()
+            if src_rows:
+                user_conn.executemany(
+                    "INSERT OR IGNORE INTO user_watchlists"
+                    " (symbol_norm, symbol, name, note, added_at)"
+                    " VALUES (:symbol_norm, :symbol, :name, :note, :added_at)",
+                    [dict(r) for r in src_rows]
+                )
+                mconn.execute("DELETE FROM user_watchlists")
+                mconn.commit()
+        except Exception:
+            pass
+
+        # migration تصمیمات سبد
+        try:
+            src_rows = mconn.execute(
+                "SELECT * FROM selection_decisions"
+            ).fetchall()
+            if src_rows:
+                user_conn.executemany(
+                    "INSERT OR IGNORE INTO selection_decisions"
+                    " (symbol, name, status, reason, note, stop_loss, asset_kind,"
+                    "  weight_pct, price, score, pricing_mode, sector, updated_at)"
+                    " VALUES (:symbol, :name, :status, :reason, :note, :stop_loss,"
+                    "  :asset_kind, :weight_pct, :price, :score, :pricing_mode,"
+                    "  :sector, :updated_at)",
+                    [dict(r) for r in src_rows]
+                )
+                mconn.execute("DELETE FROM selection_decisions")
+                mconn.commit()
+        except Exception:
+            pass
+
+        mconn.close()
+    except Exception:
+        pass
 
 def _safe_read_json(path):
     try:

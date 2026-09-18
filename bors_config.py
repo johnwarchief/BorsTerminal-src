@@ -44,6 +44,12 @@ if not os.path.exists(DB_PATH):
                 break
             except Exception:
                 pass
+
+# دیتابیس اختصاصی کاربر — هیچ‌وقت با آپدیت بازار جایگزین نمی‌شود.
+# محل ذخیره: کنار EXE (در حالت frozen) یا ریشه ریپو (در حالت dev).
+# این فایل در .gitignore است تا داده شخصی توسعه‌دهنده push نشود.
+USER_DB_PATH = os.path.join(WORK_DIR, "user.db")
+
 # فایل‌های چندنویسنده کنار EXE می‌مانند (در حالت frozen نه داخل _internal)
 STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")
 OD_STATUS_PATH = os.path.join(WORK_DIR, "sync_ondemand.json")

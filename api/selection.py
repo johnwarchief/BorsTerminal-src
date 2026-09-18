@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import get_db
+from ._core import get_db, get_user_db, sym_pred
 from .watchlist import ASSET_KIND_BY_MODE, PORTFOLIO_MAX, PORTFOLIO_MIN, PORTFOLIO_WEIGHT_CAP_PCT, SELECTION_STATUSES
 from fastapi import APIRouter
 import datetime
@@ -24,7 +24,7 @@ def _sel_to_dict(r) -> dict:
 def get_selection_portfolio():
     """تصمیمات سبد: سبد نهایی (accept) + رادار زیر نظر (monitor) + شمارش وضعیتها."""
     try:
-        conn = get_db()
+        conn = get_user_db()
         try:
             rows = conn.execute(
                 "SELECT * FROM selection_decisions ORDER BY updated_at DESC").fetchall()
@@ -108,7 +108,7 @@ def post_selection_decision(payload: dict = None):
         "updated_at": datetime.datetime.now().isoformat(timespec="seconds"),
     }
     try:
-        conn = get_db()
+        conn = get_user_db()
         try:
             _pred, _params = sym_pred("symbol", symbol)
             if status == "pending":
@@ -144,7 +144,7 @@ def post_selection_decision(payload: dict = None):
 def delete_selection_decision(symbol: str):
     """پاک کردن تصمیم یک نماد (بازگشت به «بررسی‌نشده»)."""
     try:
-        conn = get_db()
+        conn = get_user_db()
         try:
             _pred, _params = sym_pred("symbol", symbol)
             cur = conn.execute(f"DELETE FROM selection_decisions WHERE {_pred}", _params)
