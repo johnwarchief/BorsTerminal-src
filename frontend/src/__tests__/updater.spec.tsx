@@ -16,7 +16,7 @@ describe('سیستم مدیریت به‌روزرسانی (Tauri v2 / Web Fallba
   it('هوک useAppUpdater وضعیت اولیه صحیح برمی‌گرداند', () => {
     const { result } = renderHook(() => useAppUpdater());
     expect(result.current.status).toBe('idle');
-    expect(result.current.currentVersion).toBe('1.0.1');
+    expect(result.current.currentVersion).toBe('1.0.2');
     expect(result.current.newVersion).toBeNull();
     expect(result.current.downloadProgress).toBe(0);
   });

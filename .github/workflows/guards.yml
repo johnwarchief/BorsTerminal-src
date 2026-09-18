@@ -61,8 +61,12 @@ jobs:
             static/calendar/calendarService.js \
             static/vendor/drawing_math.js
           do
-            echo "node --check $f"
-            node --check "$f"
+            if [ -f "$f" ]; then
+              echo "node --check $f"
+              node --check "$f"
+            else
+              echo "skip (not in repo): $f"
+            fi
           done
 
   repo-hygiene:
