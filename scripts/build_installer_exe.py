@@ -539,6 +539,28 @@ if __name__ == "__main__":
     print("      [✓] اسکریپت نصاب با رابط گرافیکی ایجاد شد.")
 
 def build_setup_exe():
+    # GUARD: the canonical Windows installer is the Inno Setup build produced by
+    # `release.ps1 setup` (installer/bors_setup.iss), which writes to
+    # installer/out/BorsTerminal_Ultimate_Setup_v{VERSION}.exe. This legacy
+    # PyInstaller/Tkinter pseudo-installer used to write to THAT EXACT SAME PATH
+    # and silently replaced the real installer (the v1.0.5 regression). It must
+    # never collide with the Inno output again, so it is disabled by default and
+    # writes to a distinctly-named file when explicitly enabled.
+    if os.environ.get("BORS_ALLOW_LEGACY_PYI_INSTALLER") != "1":
+        print(
+            "\n[-] این اسکریپت دیگر نصاب رسمی نیست و به‌صورت پیش‌فرض غیرفعال است.\n"
+            "    نصب رسمی توسط Inno Setup و از طریق `release.ps1 setup` ساخته می‌شود\n"
+            "    (خروجی: installer/out/BorsTerminal_Ultimate_Setup_v%s.exe).\n"
+            "    این اسکریپتِ PyInstaller در گذشته همان مسیر را بازنویسی می‌کرد و\n"
+            "    نصاب واقعی را خراب می‌کرد (علتِ باگِ v1.0.5).\n"
+            "    در صورت نیاز به ساخت نسخهٔ گرافیکی قدیمی، متغیر محیطی\n"
+            "    BORS_ALLOW_LEGACY_PYI_INSTALLER=1 را تنظیم کنید (خروجی با پیشوند\n"
+            "    legacy_pyi_ ذخیره می‌شود تا با خروجیِ Inno تداخلی نداشته باشد)." % VERSION
+        )
+        sys.exit(2)
+
+    # legacy prefix keeps this well away from the canonical Inno artifact
+    SETUP_NAME = f"legacy_pyi_BorsTerminal_Ultimate_Setup_v{VERSION}"
     print("[3/4] کامپایل نصاب گرافیکی مستقل با PyInstaller (--windowed)...")
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(RELEASES_DIR, exist_ok=True)
@@ -549,7 +571,7 @@ def build_setup_exe():
         "--noconfirm",
         "--onefile",
         "--windowed",
-        "--name", f"BorsTerminal_Ultimate_Setup_v{VERSION}",
+        "--name", SETUP_NAME,
         "--add-data", f"{PAYLOAD_ZIP};.",
         "--add-data", f"{ICON_PATH};.",
         "--icon", ICON_PATH,
@@ -564,8 +586,8 @@ def build_setup_exe():
     if res.returncode != 0:
         raise RuntimeError("کامپایل نصاب با خطا مواجه شد.")
     
-    out_exe = os.path.join(OUT_DIR, f"BorsTerminal_Ultimate_Setup_v{VERSION}.exe")
-    rel_exe = os.path.join(RELEASES_DIR, f"BorsTerminal_Ultimate_Setup_v{VERSION}.exe")
+    out_exe = os.path.join(OUT_DIR, f"{SETUP_NAME}.exe")
+    rel_exe = os.path.join(RELEASES_DIR, f"{SETUP_NAME}.exe")
     if os.path.exists(out_exe):
         shutil.copy2(out_exe, rel_exe)
         size_mb = os.path.getsize(out_exe) / (1024 * 1024)
@@ -574,6 +596,21 @@ def build_setup_exe():
         print(f"      مسیر نصاب ۲ (ریلیزها): {rel_exe}")
 
 if __name__ == "__main__":
+    # Fail fast: refuse to run (and refuse to create any build artifacts) unless
+    # explicitly enabled. See the note in build_setup_exe() for why this script
+    # is no longer the canonical installer path.
+    if os.environ.get("BORS_ALLOW_LEGACY_PYI_INSTALLER") != "1":
+        print(
+            "\n[-] این اسکریپت دیگر نصاب رسمی نیست و به‌صورت پیش‌فرض غیرفعال است.\n"
+            "    نصب رسمی توسط Inno Setup و از طریق `release.ps1 setup` ساخته می‌شود\n"
+            "    (خروجی: installer/out/BorsTerminal_Ultimate_Setup_v%s.exe).\n"
+            "    این اسکریپتِ PyInstaller در گذشته همان مسیر را بازنویسی می‌کرد و\n"
+            "    نصاب واقعی را خراب می‌کرد (علتِ باگِ v1.0.5).\n"
+            "    در صورت نیاز به ساخت نسخهٔ گرافیکی قدیمی، متغیر محیطی\n"
+            "    BORS_ALLOW_LEGACY_PYI_INSTALLER=1 را تنظیم کنید (خروجی با پیشوند\n"
+            "    legacy_pyi_ ذخیره می‌شود تا با خروجیِ Inno تداخلی نداشته باشد)." % VERSION
+        )
+        sys.exit(2)
     try:
         ensure_payload()
         generate_runner_script()

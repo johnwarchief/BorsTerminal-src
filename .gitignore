@@ -123,6 +123,9 @@ nimbalyst-local/attachments/
 installer/out/
 build/
 dist/
+# generated at publish-time by scripts/publish_github_release.py, uploaded to
+# the GitHub release; never tracked in the repo
+latest.json
 
 
 *.lzma
