@@ -1,5 +1,5 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.4"
+#define AppVersion "1.0.5"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود

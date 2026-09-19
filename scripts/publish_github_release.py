@@ -2,7 +2,7 @@
 """
 scripts/publish_github_release.py
 =================================
-ایجاد خودکار یا به‌روزرسانی ریلیز v1.0.4 در گیت‌هاب و آپلود فایل نصب Inno BorsTerminal_Ultimate_Setup_v1.0.4.exe + latest.json (آپدیت‌ر به نصب Inno اشاره می‌کند).
+ایجاد خودکار یا به‌روزرسانی ریلیز موردنظر در گیت‌هاب و آپلود فایل نصب Inno BorsTerminal_Ultimate_Setup_{tag}.exe + latest.json (آپدیت‌ر به نصب Inno اشاره می‌کند).
 """
 import os
 import sys
@@ -20,28 +20,26 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخه v1.0.4
+RELEASE_BODY = """## تغییرات نسخهٔ v1.0.5
 
-### 🔐 رفع کرش «دسترسی مجاز نیست» در نصب Program Files (مهم‌ترین تغییر)
-- **ریشهٔ باگ:** برنامه سعی می‌کرد فایل‌ها را در مسیر نصب (Program Files) می‌نوشت؛ ویندوز بدون امتیاز مدیر این نوشتن‌ها را رد می‌کرد و برنامه کرش می‌کرد.
-- **اصلاح:** تمام نوشتن‌های زمان اجرا (لاگ‌ها، کش، داده‌ها، استخراج اولیه) اکنون از طریق یک مسیر متمرکز و قابل نوشتن انجام می‌شوند (`bors_config.WORK_DIR` در `%LOCALAPPDATA%\\BorsTerminal_Ultimate\\data`) با fallback خودکار برای حالت توسعه/پرتابل.
-- **نتیجه:** نصب تمیز در Program Files بدون نیاز به اجرای برنامه به‌عنوان مدیر، و استخراج first-run بدون خطا کار می‌کند.
+### 🗄 رفع باگ پایگاهٔدادهٔ خالی (market.db با حجم صفر) (مهمّترین تغییر)
+- **ریشهٔ باگ:** در بعضی نصب‌ها فایل `market.db` با حجم ۰ بایت ساخته می‌شد؛ چون جداول `instruments` و `daily_prices` وجود نداشتند، هر اتصال به پایگاهٔداده با خطا مواجه می‌شد و داده‌های بازار نمایش داده نمی‌شدند.
+- **اصلاح:** `bors_config.ensure_market_db()` اکنون پیش از هر اتصال، جداول مورد نیاز را بررسی می‌کند و در صورت نبودن، پایگاهٔداده را به‌صورت خودکار از `market.db.lzma` بازسازی می‌کند. `bors_entry._codal_worker` نیز پیش از هر اتصال `ensure_market_db()` را فراخوانی می‌کند.
+- **نتیجه:** در اولین اجرا و پس از نصب تمیز، جداول بازار و صورت‌های مالی به‌درستی ساخته و پر می‌شوند.
 
-### 🧹 حذف کد مرده v2ray / Camoufox
-- باینری v2ray (`bin/xray`) هرگز وجود نداشت و Camoufox غیرفعال بود؛ تنها مسیر چرخش IP که کار می‌کند ADB (تترینگ گوشی) است. تمام کد مرده حذف شد تا مسیر درخواست‌ها ساده و قابل اعتماد باشد.
+### 🔧 بهبود ساخت و نشر
+- رفع ایراد PyInstaller در مورد فایل‌های `codal_control.json` و `adb_config.json` (در صورت وجود در زمان سخت گنجانده می‌شوند) و استفاده از `sys.executable` در `build_all.py`.
+- ساختار امضای آپدیتّر بررسی و تأیید شد؛ امضای نصاب v1.0.5 با کلید آپدیتّر موجود تطابق کامل دارد.
 
-### 🖥 اصلاحات رابط کاربری و عملکرد
-- بهبود پایداری تب‌ها و رفع خطاهای کوچک متعدد در جهت استانداردهای اپلیکیشن مستقل.
-
-### 🧰 به‌روزرسانی خودکار
-- فایل مانیفست آپدیت‌ر (`latest.json`) اکنون به نصب Inno درست اشاره می‌کند (قبلاً به نصاب NSIS اشتباه اشاره می‌کرد).
+### 🖥 موارد دیگر
+- افزایش نسخهٔ برنامه و مانیفست آپدیتّر به 1.0.5.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.4")
+TAG = os.environ.get("RELEASE_TAG", "v1.0.5")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"

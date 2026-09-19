@@ -92,7 +92,26 @@ def ensure_market_db(verbose=False):
     ثانیه‌ای استخراج را ببیند. بقیهٔ مسیرها از DB_PATH استفاده می‌کنند.
     """
     if os.path.exists(DB_PATH):
-        return DB_PATH
+        # فایل هست ولی ممکن است «خالی/ناقص» باشد — یعنی یک مسیر (مثل
+        # --codal-worker که preflight را دور می‌زند) با sqlite3.connect خالی
+        # آن را ساخته باشد. در آن صورت market.db واقعی هرگز استخراج نمیشد و
+        # برنامه بدون هیچ دادهٔ قیمتی بالا می‌آمد. بهبودها را حفظ کنیم.
+        try:
+            import sqlite3 as _sq
+            _probe = _sq.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+            _have = {r[0] for r in _probe.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+            _probe.close()
+        except Exception:
+            _have = set()
+        # حداقل جداول موردنیاز برای داشتن دیتای بازار معتبر.
+        if {"instruments", "daily_prices"} <= _have:
+            return DB_PATH
+        # ناقص است: کنار بگذار و دوباره از market.db.lzma بازسازی کن.
+        try:
+            os.replace(DB_PATH, DB_PATH + ".incomplete")
+        except OSError:
+            pass
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
     for candidate in [os.path.join(exe_dir, "market.db.lzma"),
                       os.path.join(WORK_DIR, "market.db.lzma"),

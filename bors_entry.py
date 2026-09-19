@@ -144,6 +144,11 @@ def _codal_worker(base):
     except Exception:
         pass
     kind = sys.argv[2] if len(sys.argv) > 2 else ""
+    # قبل از هر اتصال به دیتابیس، market.db باید از market.db.lzma استخراج
+    # شده باشد؛ وگرنه sqlite3.connect خودش یک فایل خالی میسازد و بعد
+    # ensure_market_db آن را «قبلاً موجود» فرض میکند → برنامه بدون داده.
+    import bors_config
+    bors_config.ensure_market_db(verbose=False)
     if kind == "watchlist":
         import sqlite3, codal_fetcher, watchlist_store
         conn = sqlite3.connect(codal_fetcher.DB_PATH, timeout=30)
