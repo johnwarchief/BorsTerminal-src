@@ -7,7 +7,7 @@ param([ValidateSet('setup','base','portable','all')][string]$Mode = 'setup')
 $ErrorActionPreference = 'Stop'
 
 # --- تنظیمات مسیرها (در صورت تفاوت، این‌ها را عوض کن) ---
-$PY   = 'C:\Program Files\AutoClaw\resources\python\python.exe'
+$PY   = 'C:\Users\PCMOD\AppData\Local\Python\pythoncore-3.14-64\python.exe'
 $NPM  = 'C:\Program Files\AutoClaw\resources\node\npm.cmd'
 $ISCC = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
 

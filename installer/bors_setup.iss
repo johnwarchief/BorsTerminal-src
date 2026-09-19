@@ -2,6 +2,8 @@
 #define AppVersion "1.0.3"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
+; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود
+#define SetupPassword GetFileContents(".setup_password")
 
 [Setup]
 AppId={{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}
@@ -18,11 +20,14 @@ SolidCompression=yes
 LZMANumBlockThreads=4
 WizardStyle=modern
 OutputDir=out
-OutputBaseFilename=BorsTerminal_Ultimate_Setup_{#AppVersion}
+OutputBaseFilename=BorsTerminal_Ultimate_Setup_v{#AppVersion}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequiredOverridesAllowed=dialog
 AllowNoIcons=yes
+; --- امنیت نصب‌کننده: رمزنگاری کامل payload + درخواست رمز هنگام نصب ---
+Password={#SetupPassword}
+Encryption=yes
 
 [Languages]
 Name: "farsi"; MessagesFile: "Farsi.isl"

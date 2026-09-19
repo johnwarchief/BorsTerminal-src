@@ -38,17 +38,21 @@ RELEASE_BODY = """## تغییرات نسخه v1.0.3
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETUP_EXE = os.path.join(ROOT, "installer", "out", "BorsTerminal_Ultimate_Setup_v1.0.3.exe")
+# Tauri updater needs the minisign signature next to the installer asset.
+SIG_FILE = SETUP_EXE + ".sig"
 
 def get_github_token():
+    # Feed the credential request via a pipe; an interactive helper with no
+    # controlling tty can hang indefinitely waiting for stdin.
     try:
         proc = subprocess.Popen(
             ["git", "credential", "fill"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+            stderr=subprocess.DEVNULL,
+            text=True,
         )
-        out, _ = proc.communicate(input="protocol=https\nhost=github.com\n")
+        out, _ = proc.communicate(input="protocol=https\nhost=github.com\n", timeout=30)
         for line in out.splitlines():
             if line.startswith("password="):
                 return line.split("=", 1)[1].strip()
@@ -64,6 +68,10 @@ def main():
 
     if not os.path.exists(SETUP_EXE):
         print(f"[-] فایل نصاب در {SETUP_EXE} یافت نشد!")
+        sys.exit(1)
+
+    if not os.path.exists(SIG_FILE):
+        print(f"[-] فایل امضا {SIG_FILE} یافت نشد! بدون .sig آپدیت‌ر کار نمی‌کند.")
         sys.exit(1)
 
     headers = {
@@ -110,13 +118,14 @@ def main():
     else:
         print(f"[*] ریلیز {TAG} از قبل وجود دارد. ID: {target_release['id']}")
 
-    # ۳. حذف فایل قدیمی با همین نام اگر قبلا آپلود شده
+    # ۳. حذف فایل‌های قدیمی با همین نام اگر قبلا آپلود شده‌اند
     upload_url_template = target_release["upload_url"]
     upload_url_base = upload_url_template.split("{")[0]
     assets = target_release.get("assets", [])
+    existing_names = {a.get("name") for a in assets}
     for a in assets:
-        if a.get("name") == os.path.basename(SETUP_EXE):
-            print(f"[*] در حال حذف فایل قدیمی با ID {a['id']} ...")
+        if a.get("name") in (os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE)):
+            print(f"[*] در حال حذف فایل قدیمی {a.get('name')} (ID {a['id']}) ...")
             del_req = urllib.request.Request(a["url"], headers=headers, method="DELETE")
             try:
                 with urllib.request.urlopen(del_req) as resp:
@@ -124,32 +133,51 @@ def main():
             except Exception as e:
                 print(f"[!] ناتوان در حذف: {e}")
 
-    # ۴. آپلود فایل جدید
-    asset_name = os.path.basename(SETUP_EXE)
-    file_size = os.path.getsize(SETUP_EXE)
-    size_mb = file_size / (1024 * 1024)
-    print(f"[+] در حال آپلود {asset_name} ({size_mb:.1f} MB) ...")
+    # ۴. آپلود فایل جدید + امضای آن (با retries)
+    import time
 
-    upload_url = f"{upload_url_base}?name={urllib.parse.quote(asset_name)}"
-    with open(SETUP_EXE, "rb") as f:
-        file_data = f.read()
+    def upload_asset(local_path, max_retries=4):
+        asset_name = os.path.basename(local_path)
+        file_size = os.path.getsize(local_path)
+        size_mb = file_size / (1024 * 1024)
+        upload_url = f"{upload_url_base}?name={urllib.parse.quote(asset_name)}"
 
-    upload_headers = {
-        "Authorization": f"token {token}",
-        "Content-Type": "application/octet-stream",
-        "Content-Length": str(file_size),
-        "User-Agent": "BorsTerminal-Release-Tool"
-    }
+        for attempt in range(1, max_retries + 1):
+            print(f"[+] آپلود {asset_name} ({size_mb:.2f} MB) - تلاش {attempt}/{max_retries} ...")
+            with open(local_path, "rb") as f:
+                file_data = f.read()
+            upload_headers = {
+                "Authorization": f"token {token}",
+                "Content-Type": "application/octet-stream",
+                "Content-Length": str(file_size),
+                "User-Agent": "BorsTerminal-Release-Tool",
+            }
+            req_upload = urllib.request.Request(upload_url, data=file_data, headers=upload_headers, method="POST")
+            try:
+                with urllib.request.urlopen(req_upload, timeout=900) as resp:
+                    res_data = json.loads(resp.read().decode())
+                    print(f"[✓] آپلود موفقیت‌آمیز بود! URL دانلود:")
+                    print(f"    {res_data.get('browser_download_url')}")
+                    return True
+            except urllib.error.HTTPError as e:
+                body = e.read().decode(errors="replace")
+                print(f"[-] خطای HTTP {e.code} در آپلود {asset_name}: {body[:300]}")
+                if e.code in (401, 403, 404, 422):
+                    return False
+            except Exception as e:
+                print(f"[!] خطای شبکه در آپلود {asset_name}: {e!r}")
+            if attempt < max_retries:
+                wait = 10 * attempt
+                print(f"    منتظر {wait}s قبل از تلاش مجدد ...")
+                time.sleep(wait)
+        return False
 
-    req_upload = urllib.request.Request(upload_url, data=file_data, headers=upload_headers, method="POST")
-    try:
-        with urllib.request.urlopen(req_upload) as resp:
-            res_data = json.loads(resp.read().decode())
-            print(f"[✓] آپلود موفقیت‌آمیز بود! URL دانلود:")
-            print(f"    {res_data.get('browser_download_url')}")
-    except urllib.error.HTTPError as e:
-        print(f"[-] خطا در آپلود: {e.code} - {e.read().decode()}")
-        sys.exit(1)
+    for local_path in (SETUP_EXE, SIG_FILE):
+        if not upload_asset(local_path):
+            print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
+            sys.exit(1)
+
+    print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig).")
 
 if __name__ == "__main__":
     main()
