@@ -51,9 +51,14 @@ HEADERS = {
     "Referer": "https://codal.ir/",
     "Origin": "https://codal.ir",
 }
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market.db")
-STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_status.json")
-OD_STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_ondemand.json")
+try:
+    # حالت EXE: مسیرهای نوشتنی از bors_config (WORK_DIR = %LOCALAPPDATA% در
+    # Program Files). __file__ در frozen به _MEIPASS فقط‌خواندنی اشاره می‌کند.
+    from bors_config import DB_PATH, STATUS_PATH, OD_STATUS_PATH
+except Exception:  # noqa: BLE001 — dev/standalone
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market.db")
+    STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_status.json")
+    OD_STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_ondemand.json")
 
 TARGET = 1000        # target notice count
 PER_PAGE = 20        # fixed Codal page size
@@ -126,15 +131,6 @@ def write_status(stage, detail=""):
 _CODAL_START = None
 
 
-def _v2ray_snapshot():
-    """v2ray/node status for the UI (read-only — zero Codal traffic)."""
-    try:
-        import v2ray_rotator as _vr
-        return _vr.snapshot()
-    except Exception:
-        return {}
-
-
 def _fmt_ban_until():
     """HH:MM of the shared 429 cooldown end, if a (long) backoff is armed."""
     try:
@@ -146,7 +142,10 @@ def _fmt_ban_until():
     return ""
 
 
-CONTROL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "codal_control.json")
+try:
+    from bors_config import CONTROL_PATH  # WORK_DIR (writable) در حالت EXE
+except Exception:  # noqa: BLE001
+    CONTROL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "codal_control.json")
 _USER_STOPPED = False  # set when the user hits توقف in the dashboard
 
 
@@ -196,7 +195,7 @@ def write_progress(phase, detail, total=0, current=0, symbol="", extra=None):
                 "stage": "codal", "phase": phase, "detail": detail,
                 "total": int(total), "current": int(current), "symbol": symbol,
                 "elapsed": round(elapsed, 1), "percent": percent,
-                "v2ray": _v2ray_snapshot(), "ban_until": _fmt_ban_until(),
+                "ban_until": _fmt_ban_until(),
                 "extra": extra or {},
                 "ts": datetime.datetime.now().isoformat(timespec="seconds"),
             }, f, ensure_ascii=False)
@@ -225,8 +224,7 @@ def write_summary(update):
     Each background worker writes only its own keys so the two processes never
     clobber each other's results."""
     try:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            "sync_summary.json")
+        path = _SUMMARY_PATH
         data = {}
         try:
             with open(path, encoding="utf-8") as f:
@@ -242,9 +240,20 @@ def write_summary(update):
         pass
 
 
+# ---------------------------------------------- sync summary (merged run results)
+try:
+    from bors_config import WORK_DIR as _SUMMARY_DIR
+except Exception:  # noqa: BLE001
+    _SUMMARY_DIR = os.path.dirname(os.path.abspath(__file__))
+_SUMMARY_PATH = os.path.join(_SUMMARY_DIR, "sync_summary.json")
+
+
 # ---------------------------------------------- smart resume (backlog progress)
-STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "codal_state.json")
+try:
+    from bors_config import WORK_DIR as _STATE_DIR
+except Exception:  # noqa: BLE001
+    _STATE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATE_PATH = os.path.join(_STATE_DIR, "codal_state.json")
 
 
 def load_state():
@@ -435,504 +444,12 @@ def quiet_print_global():
     return False
 
 
-# ---------------------------------------------------------------------------
-# Camoufox — anti-detect browser transport (WAF 429 killer)
-# ---------------------------------------------------------------------------
-# The Codal search API (search.codal.ir) hard 429-blocks plain requests (seen
-# live: 2495/2495 symbols rejected). Camoufox carries a real Firefox fingerprint
-# (JS, cookies, TLS) so the same calls pass. Scrape endpoints (codal.ir/Reports)
-# do NOT 429 with plain requests, so they keep the fast requests path.
 import threading
-import queue
-try:
-    import nest_asyncio
-    nest_asyncio.apply()
-except Exception:
-    pass
-
-CAM_ACTIVE = True  # search API via Camoufox; scrape stays on requests
-_NO_CAM = True    # پیشفرض خاموش (09-01: با requests+UA مرورگر، WAF کدال بدون مرورگر هم جواب میدهد)؛ --camoufox روشنش میکند
-# Detection: اگر camoufox/playwright در محیط موجود نباشد (مثلاً EXE سبک بدون آن)،
-# خودکار به حالت requests-only برو تا اسکن کدرنش کند
-_CAM_ROOT = None
-try:
-    import importlib.util as _ilu
-    _CAM_AVAILABLE = _ilu.find_spec("camoufox") is not None and _ilu.find_spec("playwright") is not None
-    # در dev: باینریها در venv جدا هستند — برای پیمودن path ماژول از آن venv
-    if _CAM_AVAILABLE:
-        _tmp = _ilu.find_spec("camoufox")
-        if _tmp is not None and _tmp.origin and "site-packages" in str(_tmp.origin).replace("\\", "/"):
-            _CAM_ROOT = str(_tmp.origin).replace("\\", "/").rsplit("/lib/site-packages", 1)[0]
-except Exception:
-    _CAM_AVAILABLE = False
-# ← در EXE باینری مرورگر وجود ندارد — همان اول از لانچ انصراف بده (بدون ۴ خطای گران)
-if _CAM_AVAILABLE:
-    try:
-        _node = None
-        for _cand in (r"C:\Users\PCMOD\AppData\Local\hermes\venvs\camoufox\Lib\site-packages\playwright\driver\node.exe",
-                      os.path.join(os.path.dirname(sys.executable), "playwright", "driver", "node.exe")):
-            if os.path.isfile(_cand):
-                _node = _cand
-                break
-        if _node is None:
-            print("  [camoufox] browser binary NOT bundled (EXE/SDK) — requests-only fallback")
-            _CAM_AVAILABLE = False
-    except Exception:
-        pass
-_CAM_LAUNCH_FAILS = 0      # consecutive launch failures (cooldown gate)
-_CAM_FAIL_LIMIT = 4        # after 4 consecutive failures -> 15min cooldown
-_CAM_DISABLED_UNTIL = 0.0  # epoch until which Camoufox is on cooldown
-
-
-class _CamoufoxResponse:
-    """requests.Response-compatible facade over a browser GET."""
-
-    def __init__(self, status, text):
-        self.status_code = int(status or 0)
-        self.text = text or ""
-
-    def json(self):
-        return json.loads(self.text)
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise requests.HTTPError(f"HTTP {self.status_code}")
-
-
-# ----------------------------------------------------------- proxy pool
-# WAF کدال (search.codal.ir) روی هر IP نرخگیری سخت میکند (429 IIS). این استخر
-# پروکسیهای عمومی HTTP/HTTPS/SOCKS5 را از لیستهای raw GitHub میگیرد (که در
-# این شبکه بازند)، مرحلهبهمرحله فیلتر میکند (زنده → تست هدفمند روی خودِ
-# کدال) و فقط پروکسیهایی که واقعاً 200 برگرداندند را در استخری با حداکثر
-# PROXY_POOL_WANT عضو نگه میدارد. اگر پروکسی سالمی نبود، مسیر بدون proxy
-# ادامه مییابد (fallback امن — بدون رگرسیون).
-PROXY_LISTS = (
-    "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
-    "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt",
-    "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt",
-    "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.txt",
-)
-PROXY_POOL_WANT = 5      # اندازهٔ هدف استخر (پروکسی تأییدشده)
-PROXY_TEST_ONLY = 12     # چند پروکسی پراستن در هر چرخه روی کدال تست میشوند (1 درخواست/هرکدام)
-PROXY_SCAN_MAX = 150     # حداکثر پروکسی در هر چرخه برای فیلتر زنده (ipify)
-PROXY_REFRESH_TTL = 900.0
-_PROXY_LOCK = threading.Lock()
-_PROXY_POOL = []         # ["http://ip:port", "socks5://ip:port", ...]
-_PROXY_BLACK = set()
-_PROXY_DISABLED = True  # پیشفرض خاموش (09-01: پروکسیها/home نقشی نداشتند؛ تترینگ/ADB کافی)؛ --proxy روشنش میکند
-#              legacy: discovery scan: direct-only (dead proxies cost ~40s/cycle)
-_NO_TETHER = False       # --no-tether: از Wi-Fi خانه بهجای IP تترینگ (کدال تترینگ را زود 429 میکند)
-_PROXY_FRESH_UNTIL = 0.0
-_PROXY_PROBE = API + "?PageNumber=1&Symbol=" + quote("خساپا") + "&Category=1&LetterType=-1"
-_PROXY_RE = re.compile(r"^[\d.]+:\d{1,5}$")
-
-
-def _norm_proxy(line):
-    """'ip:port' -> 'http://ip:port'; فرمتهای prefixدار (http/socks4/socks5) حفظ میشوند."""
-    s = (line or "").strip().replace(",", "")
-    if not s or s.startswith("#"):
-        return None
-    for proto in ("http://", "https://", "socks5://", "socks4://"):
-        if s.startswith(proto):
-            return s
-    if _PROXY_RE.match(s):
-        return "http://" + s
-    return None
-
-
-def _plist_http(url):
-    try:
-        r = requests.get(url, timeout=25, headers={"User-Agent": "Mozilla/5.0"})
-        if r.status_code == 200 and r.text:
-            return r.text.splitlines()
-    except Exception:
-        pass
-    return []
-
-
-def _proxy_alive(proxy, target=None, timeout=7):
-    """یک GET از طریق پروکسی (برای HTTPS/target، CONNECT واقعی هم سنجیده میشود)."""
-    try:
-        r = requests.get(target or "http://api.ipify.org?format=json",
-                         proxies={"http": proxy, "https": proxy},
-                         timeout=timeout, verify=False,
-                         headers={"Accept": "application/json"})
-        return r.status_code == 200
-    except Exception:
-        return False
-
-
-def build_proxy_pool(verbose=True):
-    """دانلود لیستها → فیلتر زنده (ipify) → تست هدفمند روی search.codal.ir →
-    استخر حداقل PROXY_POOL_WANT پروکسی تأییدشده. شکست ⇒ استخر خالی (fallback)."""
-    global _PROXY_POOL, _PROXY_FRESH_UNTIL
-    with _PROXY_LOCK:
-        if (time.time() < _PROXY_FRESH_UNTIL
-                and len(_PROXY_POOL) >= PROXY_POOL_WANT):
-            return _PROXY_POOL
-        _PROXY_FRESH_UNTIL = time.time() + PROXY_REFRESH_TTL
-    raw = []
-    for u in PROXY_LISTS:
-        lines = _plist_http(u)
-        if verbose:
-            print(f"  [proxy] {u.split('/')[2]}: {len(lines)} lines")
-        for ln in lines:
-            p = _norm_proxy(ln)
-            if p and p not in _PROXY_BLACK:
-                raw.append(p)
-        if len(raw) >= 600:
-            break
-    raw = list(dict.fromkeys(raw))
-    if not raw:
-        if verbose:
-            print("  [proxy] no lists available — continuing without proxy")
-        return []
-    random.shuffle(raw)
-    cands = raw[:PROXY_SCAN_MAX]
-    # مرحلهٔ ۱: فیلتر زنده روی ipify (بدون فشار روی کدال)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as ex:
-        alive = [p for p, ok in zip(cands, ex.map(_proxy_alive, cands)) if ok]
-    if verbose:
-        print(f"  [proxy] alive(ipify): {len(alive)}/{len(cands)}")
-    if not alive:
-        return []
-    # مرحلهٔ ۲: تست هدفمند روی کدال — فقط چند تای اول (1 درخواست/پروکسی)
-    verified = []
-    for p in alive[:PROXY_TEST_ONLY]:
-        if _proxy_alive(p, target=_PROXY_PROBE, timeout=12):
-            verified.append(p)
-            if verbose:
-                print(f"  [proxy] VERIFIED -> {p}")
-            if len(verified) >= PROXY_POOL_WANT:
-                break
-    with _PROXY_LOCK:
-        _PROXY_POOL = verified
-        for p in verified:
-            _PROXY_BLACK.discard(p)
-    if verbose:
-        print(f"  [proxy] pool: {len(_PROXY_POOL)} verified "
-              f"(got {len(alive)} alive from {len(cands)} candidates)")
-    return _PROXY_POOL
-
-
-def _proxy_take():
-    with _PROXY_LOCK:
-        return _PROXY_POOL[0] if _PROXY_POOL else None
-
-
-def _proxy_discard(p):
-    with _PROXY_LOCK:
-        if p in _PROXY_POOL:
-            _PROXY_POOL.remove(p)
-        _PROXY_BLACK.add(p)
-
-
-# --- v2ray IP rotation (lazy; module/xray brokenness is non-fatal) ---------
-try:
-    import v2ray_rotator as _V2
-except Exception:
-    _V2 = None
-
-
-def _v2ray_ensure():
-    """Local xray SOCKS proxy 127.0.0.1:1080 up? (starts it if needed)."""
-    global _USER_STOPPED
-    if _V2 is None or not _V2.find_xray():
-        return False
-    try:
-        return bool(_V2.ensure_running())
-    except _V2.RotatorStop:
-        _USER_STOPPED = True
-        return False
-    except Exception:
-        return False
-
-
-def _v2ray_rotate():
-    """Rotate to the next upstream config; True only if search.codal.ir answers."""
-    global _USER_STOPPED
-    if _V2 is None or not _V2.find_xray():
-        return False
-    try:
-        return bool(_V2.rotate())
-    except _V2.RotatorStop:
-        _USER_STOPPED = True
-        return False
-    except Exception:
-        return False
-
-
-def _cam_proxy():
-    """پروکسی تأییدشده به شکل dict برای Camoufox(proxy=…); None اگر استخر خالی
-    است یا پروکسی غیرفعال شده (discovery scan مسیر مستقیم).
-    اگر چرخش v2ray فعال باشد → SOCKS5 لوکال 1080 (IP عوض میشود ولی پورت لوکال
-    ثابت است؛ مرورگر بدون ریاستارت بهکار ادامه میدهد)."""
-    if _PROXY_DISABLED:
-        return None  # discovery: direct-only — rotator ensure costs minutes (dead pool)
-    if _v2ray_ensure():
-        return {"server": _V2.SOCKS_URL}
-    p = _proxy_take()
-    return {"server": p} if p else None
-
-
-class CamoufoxSession:
-    """One browser pinned to a dedicated runner thread (playwright sync API
-    requires a thread WITHOUT a running asyncio loop). ALL browser work
-    (launch / goto / proxy swap / close) executes in that thread; the caller
-    only pushes commands through a queue and waits on a future. This makes
-    destroy/recreate safe even from asyncio-owned threads (uvicorn workers,
-    asyncio.run wrappers): the launch happens in a fresh loop-free thread, so
-    the 'Playwright Sync API inside asyncio loop' guard can never fire.
-
-    recycle-safe: هر خطای صفحه/اتصال ⇒ بستن کامل page/browser/context در رانر
-    و لانچ خودکار از نو در استفادهٔ بعدی (بدون خطای asyncio).
-
-    proxy-aware: هر 429 با پروکسی ⇒ دور ریختن پروکسی و retry یکباره؛ بدون
-    پروکسی ⇒ همان 429 (لایهٔ caller بکآف مشترک را اجرا میکند).
-    """
-
-    def __init__(self):
-        self._proxy = _cam_proxy()
-        self._opts = dict(geoip=True, humanize=True, headless=True)
-        if self._proxy:
-            self._opts["proxy"] = self._proxy
-        self._q = queue.Queue()
-        self._thread = None
-        self._dead = False
-        self._err_streak = 0
-        self.browser = None  # mirror for introspection; real one lives in runner
-
-    # ---------------- runner (loop-free worker thread) ----------------
-
-    def _ensure_runner(self):
-        if self._thread is None or not self._thread.is_alive():
-            self._thread = threading.Thread(
-                target=self._runner, daemon=True, name="camoufox-session")
-            self._thread.start()
-
-    def _cmd(self, op, payload, timeout):
-        fut = queue.Queue()
-        self._q.put((op, payload, fut))
-        try:
-            res = fut.get(timeout=timeout)
-        except queue.Empty:
-            raise RuntimeError(f"camoufox command '{op}' timed out after {timeout}s")
-        if isinstance(res, Exception):
-            raise res
-        return res
-
-    def _runner(self):
-        browser = cf = page = None
-        try:
-            while True:
-                op, payload, fut = self._q.get()
-                if op is None:  # close — cleanup and exit
-                    break
-                try:
-                    if op == "launch":
-                        browser, cf, page = self._launch_runner(browser, cf, page)
-                        fut.put(True)
-                    elif op == "goto":
-                        url, headers, timeout = payload
-                        if browser is None:
-                            browser, cf, page = self._launch_runner(browser, cf, page)
-                        if page is None or page.is_closed():
-                            page = browser.new_page()
-                            page.set_extra_http_headers(
-                                {"Accept": "application/json, text/plain, */*",
-                                 "Accept-Language": "en-US,en;q=0.9"})
-                        resp = page.goto(url, wait_until="domcontentloaded",
-                                         timeout=int(timeout * 1000))
-                        text = resp.text() if resp else ""
-                        status = resp.status if resp else 0
-                        fut.put((status, text))
-                    elif op == "switch":
-                        old = payload  # server of the discarded proxy
-                        if old:
-                            print(f"  [camoufox] proxy {old} failed — cycling")
-                            _proxy_discard(old)
-                        browser, cf, page = self._recycle_runner(browser, cf, page)
-                        self._proxy = _cam_proxy()
-                        self._opts = dict(geoip=True, humanize=True, headless=True)
-                        if self._proxy:
-                            self._opts["proxy"] = self._proxy
-                        browser, cf, page = self._launch_runner(browser, cf, page)
-                        fut.put(True)
-                except Exception as e:
-                    # recycle کامل مرورگر در خود رانر؛ خطا به caller برمیگردد
-                    browser, cf, page = self._recycle_runner(browser, cf, page)
-                    fut.put(e)
-        finally:
-            self._recycle_runner(browser, cf, page)
-
-    def _launch_runner(self, browser, cf, page):
-        from camoufox.sync_api import Camoufox
-        # چک باینری مرورگر FF153/FF152 — در EXE آن را نداریم؛ اگر نبود
-        # بدون حتی تلاش، fallback به requests (پیش از این «Connection closed» کرش می‌داد)
-        try:
-            import glob as _g
-            _binary_hits = _g.glob(os.path.expandvars(r"%LOCALAPPDATA%\hermes\venvs\camoufox\Lib\site-packages\camoufox\browsers\*\*"))
-            _browser_dirs = (_g.glob(os.path.expanduser(r"~/AppData/Local/camoufox/*"))
-                             + _g.glob(os.path.expanduser(r"~/.cache/camoufox/*")))
-            if not _binary_hits and not _browser_dirs:
-                print("  [camoufox] browser binary NOT found (EXE without bundled FF) — requests-only")
-                raise RuntimeError("camoufox-binary-missing")
-        except RuntimeError:
-            raise
-        except Exception:
-            pass
-        print("  [camoufox] starting browser"
-              + (" (relaunch)" if browser is not None else "") + " ...")
-        if cf is not None:
-            # stale instance (likely dead driver) must be torn down BEFORE a
-            # new one is built, or the sync API loop stays locked in-thread
-            _teardown_camoufox(cf)
-        cf = Camoufox(**self._opts)
-        try:
-            browser = cf.__enter__()
-        except Exception:
-            # dead driver / broken instance (e.g. missing '_playwright'): tear
-            # it down fully; runner recycles and the next attempt starts fresh
-            _teardown_camoufox(cf)
-            raise
-        return browser, cf, None
-
-    def _recycle_runner(self, browser, cf, page):
-        """بستن کامل هر آنچه در رانر زنده است (page/browser/context)."""
-        try:
-            if page is not None:
-                page.close()
-        except Exception:
-            pass
-        try:
-            if browser is not None:
-                browser.close()
-        except Exception:
-            pass
-        try:
-            if cf is not None:
-                cf.__exit__(None, None, None)
-        except Exception:
-            pass
-        return None, None, None
-
-    # ---------------- public API ----------------
-
-    def get(self, url, headers=None, timeout=60):
-        if self._dead:
-            raise RuntimeError("camoufox session is dead")
-        self._ensure_runner()
-        last = None
-        for attempt in (0, 1):
-            try:
-                status, text = self._cmd("goto", (url, headers or {}, timeout),
-                                         timeout + 45)
-                self._err_streak = 0
-                _cam_launch_ok()   # success resets the module-level failure gate
-                if status == 429 and self._proxy and attempt == 0:
-                    if self._cmd("switch", self._proxy.get("server"), 120):
-                        continue
-                    return _CamoufoxResponse(429, "")
-                return _CamoufoxResponse(status, text)
-            except Exception as e:
-                last = e
-                self._err_streak += 1
-                print(f"  [camoufox] page error: {type(e).__name__}: {e}"
-                      + ("" if attempt else " (recycling)"))
-                if self._proxy and attempt == 0:
-                    try:
-                        if self._cmd("switch", self._proxy.get("server"), 120):
-                            continue
-                    except Exception:
-                        pass
-                # Runner already recycled the dead instance; the next attempt
-                # auto-launches a fresh browser (new driver) in the runner.
-                time.sleep(3)
-        # Both attempts failed -> kill the session; a fresh CamoufoxSession
-        # (new loop-free runner thread) is built on the next _cam_session().
-        self._dead = True
-        _cam_launch_failed(f"page error streak ({self._err_streak}) - "
-                           "recycling without progress")
-        raise last
-
-    def close(self):
-        """بستن کامل session: رانر + مرورگر + context (قبل از ساخت از نو)."""
-        try:
-            if self._thread is not None and self._thread.is_alive():
-                done = queue.Queue()
-                self._q.put((None, None, done))
-                done.get(timeout=20)
-        except Exception:
-            pass
-        self._thread = None
-        self._dead = True
-
-
-_CAM_TLS = threading.local()
-
-
-def _cam_launch_failed(msg):
-    """ثبت شکست لانچ؛ پس از _CAM_FAIL_LIMIT شکست پیاپی → cooldown ۹۰۰ ثانیه."""
-    global _CAM_LAUNCH_FAILS, _CAM_DISABLED_UNTIL
-    _CAM_LAUNCH_FAILS += 1
-    print(f"  [camoufox] launch failure #{_CAM_LAUNCH_FAILS}: {msg}")
-    if _CAM_LAUNCH_FAILS >= _CAM_FAIL_LIMIT:
-        print("  [camoufox] too many consecutive failures — cooldown 900s "
-              "(requests fallback active)")
-        _CAM_LAUNCH_FAILS = 0
-        _CAM_DISABLED_UNTIL = time.time() + 900
-    return None
-
-
-def _teardown_camoufox(cf):
-    """Safe teardown of a Camoufox instance even with a dead driver:
-    neither AttributeError ('_playwright') nor 'Connection closed' may block
-    cleanup (a leaked sync API loop poisons every later launch in the thread)."""
-    try:
-        cf.__exit__(None, None, None)
-    except Exception:
-        pass
-
-
-def _cam_launch_ok():
-    """A successful browser op resets the consecutive-failure gate."""
-    global _CAM_LAUNCH_FAILS
-    _CAM_LAUNCH_FAILS = 0
-
-
-def _cam_session():
-    """Thread-local Camoufox session; None if unavailable (caller falls back)."""
-    global _CAM_AVAILABLE
-    if not CAM_ACTIVE or not _CAM_AVAILABLE or _NO_CAM:
-        return None
-    if time.time() < _CAM_DISABLED_UNTIL:
-        return None  # cooldown فعال — مسیر requests امنتر است
-    sess = getattr(_CAM_TLS, "sess", None)
-    if sess is not None and sess._dead:
-        # پاکسازی کامل session مرده (رانر/مرورگر/context) پیش از ساخت از نو
-        sess.close()
-        _CAM_TLS.sess = None
-        sess = None
-    if sess is None:
-        # استخر پروکسی اگر هنوز ساخته نشده: ساخت lazy (یکبار؛ در شکست خالی میماند)
-        if not _PROXY_POOL and not _PROXY_DISABLED:
-            build_proxy_pool(verbose=False)
-        try:
-            sess = CamoufoxSession()
-            _CAM_TLS.sess = sess
-        except Exception as e:
-            _cam_launch_failed(f"session construct: {type(e).__name__}: {e}")
-            return None
-    return sess
 
 
 def _jitter(lo=4.0, hi=7.0):
-    """Between-page delay: short with Camoufox (real fingerprint does the work),
-    conservative sleep with plain requests (the WAF is watching)."""
-    if CAM_ACTIVE:
-        time.sleep(random.uniform(2.5, 4.0))
-    else:
-        time.sleep(random.uniform(lo, hi))
+    """Between-page conservative delay (plain requests path — the WAF is watching)."""
+    time.sleep(random.uniform(lo, hi))
 
 
 def create_schema(conn):
@@ -1030,21 +547,7 @@ def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
     polite_pause()      # بدون ADB: مکث ~1.7s قبل از هر درخواست
     for attempt in range(max_429_retries + 1):
         try:
-            # search API با requests دچار 429 دائمی میشود → Camoufox (مرورگر
-            # واقعی)؛ فقط در صورت در دسترس نبودن به requests برگرد
-            cam = _cam_session()
-            if cam is not None:
-                try:
-                    r = cam.get(url, timeout=60)
-                except Exception as cam_e:
-                    # Camoufox مرورگر هنوز آماده نیست/خاموش شده → fallback
-                    # مستقیم به requests همان session (تترینگ/پروکسی) — گاهی
-                    # زودتر از بالا آمدن مرورگر جواب میدهد
-                    if attempt == max_429_retries:
-                        print(f"  page {page}: camoufox failed - {cam_e}")
-                    r = s.get(url, headers=_headers(), timeout=60)
-            else:
-                r = s.get(url, headers=_headers(), timeout=60)
+            r = s.get(url, headers=_headers(), timeout=60)
         except Exception as e:
             # v9.8.1 — قطع نشست/Timeout (requests.exceptions.Timeout، ConnectionError،
             # ProxyError، ...) رویِ متوالی = تترینگ/مودم افتاده؛ کارتِ بعدی همان
@@ -1067,14 +570,7 @@ def fetch_page(s, page, query=None, max_429_retries=4, quiet=False):
             # پیش‌تر 403 بی‌صدا به raise_for_status می‌افتاد و کل صفحه دور
             # ریخته میشد بدون هیچ تلاشی برای IP تازه.
             if attempt < max_429_retries:
-                if not POLITE and not _PROXY_DISABLED and _v2ray_rotate():
-                    # discovery: direct-only — proxy rotate is dead weight
-                    # (retry stays on the direct IP); ADB below still works
-                    # IP تازه از طریق xray (SOCKS لوکال 1080) — retry تقریباً فوری
-                    wait = 5
-                    print(f"  page {page}: {r.status_code} -> v2ray rotate, retrying in "
-                          f"{wait}s ...", flush=True)
-                elif not POLITE and rotate_ip_via_adb():
+                if not POLITE and rotate_ip_via_adb():
                     # تازه IP سلولی عوض شده — retry تقریباً فوری
                     wait = 5
                     print(f"  page {page}: {r.status_code} -> ADB rotate, retrying in {wait}s ...",
@@ -1695,7 +1191,11 @@ _ADB_CANDIDATES = (
     os.path.expandvars(r"%ANDROID_HOME%\platform-tools\adb.exe"),
 )
 
-_ADB_CFG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "adb_config.json")
+try:
+    from bors_config import WORK_DIR as _ADB_CFG_DIR
+except Exception:  # noqa: BLE001
+    _ADB_CFG_DIR = os.path.dirname(os.path.abspath(__file__))
+_ADB_CFG_PATH = os.path.join(_ADB_CFG_DIR, "adb_config.json")
 _ADB_CFG_TS = 0.0
 _ADB_CFG_CACHED = True
 
@@ -2350,9 +1850,8 @@ def feed_sync(mode="update", optimized=False):
                      مالی که نداریم مستقیم دانلود/استخراج میشوند — جایگزین
                      چرخهٔ ۲۱۳۲ پراب خالی discovery قدیم (96.6% empty).
     """
-    global _BACKOFF_UNTIL, _BACKOFF_EVENTS, _PROXY_DISABLED
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS
     _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
-    _PROXY_DISABLED = True  # direct-only: پول مرده ~40s/cycle هدر میداد
     _FA = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
 
     print(f"=== Global-feed Codal sync (mode={mode}) ===")
@@ -2539,10 +2038,9 @@ def backfill_missing_fs(limit=None):
     """Backfill صورتهای مالی برای نمادهایی که در codal_notices عنوان
     'صورت مالی' دارند ولی هنوز در financial_statements استخراج نشدهاند.
     هدف: رساندن پوشش ۵-شاخصی از ~۳۷۴ نماد به ~۷۷۹ نماد (۹.۷% → ۲۰% بازار).
-    فقط کوئری نماد-به-نماد روی Category=1/3 (با مرورگر/Camoufox — بن نمیخورد)."""
-    global _BACKOFF_UNTIL, _BACKOFF_EVENTS, _PROXY_DISABLED
+    فقط کوئری نماد-به-نماد روی Category=1/3 (با requests — بن نمیخورد)."""
+    global _BACKOFF_UNTIL, _BACKOFF_EVENTS
     _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
-    _PROXY_DISABLED = True
     print("=== Backfill FS/MS for symbols with codal financial-statement titles ===", flush=True)
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
     create_schema(conn)
@@ -2740,9 +2238,6 @@ def main(mode="missing"):
     else:
         print(f"Scanning {total} symbols that actually need work (rest already extracted)")
         _mode_label = "در حال اسکن نمادها"
-    # استخر پروکسی تأییدشده برای مسیر search (در شکست → ادامهٔ مستقیم، بدون آسیب)
-    build_proxy_pool()
-
     counters = {"notices": 0, "fs": 0, "ms": 0}
     write_progress("codal_sync",
                    f"{_mode_label} (0 از {total})... نماد فعلی: -",
@@ -2765,8 +2260,8 @@ def main(mode="missing"):
             print(f"  [worker] {sym}: {type(e).__name__}: {e}")
             return sym, (0, 0, 0, "blocked")
 
-    # ۲ کارگر: هر کارگر یک مرورگر Camoufox و جیتر ۱.۲-۲.۴ ثانیه — ۳ مرورگر
-    # همزمان دوباره 429 گرفت، ۲ مرورگر با بکآف مشترک امن است (WAF کدال حساس)
+    # ۲ کارگر + جیتر ۱.۲-۲.۴ ثانیه — ۳ کارگر همزمان دوباره 429 گرفت،
+    # ۲ کارگر با بکآف مشترک امن است (WAF کدال حساس)
     w = 2
     st_counts = {"new": 0, "done": 0, "empty": 0, "blocked": 0}
     with concurrent.futures.ThreadPoolExecutor(max_workers=w) as ex:
@@ -2970,9 +2465,6 @@ def discovery_scan(limit=None):
 
     Returns (scanned, fs_rows, ms_rows, new_fs_symbols)."""
 
-    global _PROXY_DISABLED
-    _PROXY_DISABLED = True  # discovery: direct-only — dead pool proxies cost ~40s/cycle
-
     t0 = time.time()
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
     create_schema(conn)
@@ -3142,16 +2634,11 @@ if __name__ == "__main__":
                     help="Stop after N symbols (testing only)")
     ap.add_argument("--no-tether", action="store_true",
                     help="از Wi-Fi خانه بهجای IP تترینگ استفاده کن (کدال IP تترینگ را سریعتر 429 میکند)")
-    ap.add_argument("--no-camoufox", action="store_true",
-                    help="فقط requests — بدون مرورگر Camoufox (پیشفرض از 09-01؛ legacy compat)")
-    ap.add_argument("--camoufox", action="store_true",
-                    help="فعالسازی مرورگر Camoufox (در صورت لزوم — پیشفرض خاموش)")
     ap.add_argument("--optimized", action="store_true",
                     help="فقط داده‌های تغییرپذیر از Codal: новые اطلاعیه‌ها + FS های قدیمی/فاسد + نمادهای جدید (حداقل درخواست — برای IP های بدون ADB)")
     args = ap.parse_args()
     _NO_TETHER = bool(args.no_tether)
     set_polite(getattr(args, "polite", False))
-    _NO_CAM = True if not args.camoufox else False   # پیشفرض: بدون مرورگر (09-01)
     if args.symbol:
         fetch_symbol(args.symbol)
     elif args.repair:

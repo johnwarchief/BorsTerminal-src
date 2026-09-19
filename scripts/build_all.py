@@ -38,7 +38,10 @@ def main():
     if not args.skip_npm:
         run('npm run build', FRONTEND, 'frontend: npm run build')
 
-    run('python -m PyInstaller --noconfirm --clean "{}"'.format(SPEC), ROOT,
+    # NOTE: must use sys.executable, not a bare "python" — on PATH "python" may
+    # resolve to a different install whose cached __pycache__ of the .spec is
+    # stale, which makes PyInstaller fail on datas entries we already removed.
+    run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', SPEC], ROOT,
         'pyinstaller: fts_terminal.spec')
 
     if not os.path.isdir(OUT):

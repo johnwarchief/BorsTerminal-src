@@ -1,9 +1,9 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.3"
+#define AppVersion "1.0.4"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود
-#define SetupPassword GetFileContents(".setup_password")
+#include ".setup_password.iss"
 
 [Setup]
 AppId={{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}
@@ -25,6 +25,10 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequiredOverridesAllowed=dialog
 AllowNoIcons=yes
+; --- زبان پیش‌فرض: فارسی. با غیرفعال کردن تشخیص خودکار زبان سیستم، همیشه
+;     اولین زبان [Languages] (farsi) پیش‌فرض می‌شود؛ کاربر هنوز می‌تواند
+;     انگلیسی را از دیالوگ انتخاب کند ولی پیش‌فرض روی فارسی است.
+LanguageDetectionMethod=none
 ; --- امنیت نصب‌کننده: رمزنگاری کامل payload + درخواست رمز هنگام نصب ---
 Password={#SetupPassword}
 Encryption=yes

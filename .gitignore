@@ -35,6 +35,7 @@ backups/
 *.key
 *.tauri_updater_key*
 .tauri/
+installer/.setup_password.iss
 installer/.setup_password
 adb_config.json
 xray_config.json

@@ -78,5 +78,75 @@ jobs:
             - فایل متادیتا و مانیفست آپدیتر: `latest.json`
           releaseDraft: false
           prerelease: false
-          includeUpdaterJson: true
-          updaterJsonPreferNsis: true
+          # latest.json is generated and uploaded by scripts/publish_github_release.py,
+          # where it points at the Inno installer (BorsTerminal_Ultimate_Setup_v{ver}.exe)
+          # — the actual distributed build. Letting tauri-action emit it here would
+          # wrongly point the in-app updater at the NSIS bundle.
+          includeUpdaterJson: false
+
+  # ─────────────────────────────────────────────────────────────────────
+  # release-inno: build + publish the *actual* distributed installer.
+  #
+  # The Tauri/NSIS shell above cannot launch the Python backend (no sidecar),
+  # so the Inno/PyInstaller bundle built here is the only deliverable users
+  # can actually run. This job mirrors the local chain:
+  #   scripts/build_all.py (PyInstaller) → ISCC (Inno) → tauri signer (minisign)
+  #   → scripts/publish_github_release.py (upload + latest.json manifest)
+  # ─────────────────────────────────────────────────────────────────────
+  release-inno:
+    name: Build & Release Inno Installer (PyInstaller)
+    runs-on: windows-latest
+
+    env:
+      # e.g. ref_name "v1.0.4" → installer "BorsTerminal_Ultimate_Setup_v1.0.4.exe"
+      # and ISCC AppVersion define "1.0.4".
+      TAG: ${{ github.ref_name }}
+      RELEASE_TAG: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Python Backend (PyInstaller + bundle data)
+        run: python scripts/build_all.py
+
+      - name: Compile Inno Installer
+        # /D overrides AppVersion in bors_setup.iss so the tag and the built
+        # setup filename always match (OutputBaseFilename uses {#AppVersion}).
+        run: |
+          $ver = $env:TAG -replace '^v',''
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$ver" installer\bors_setup.iss
+
+      - name: Install Tauri CLI (for minisign signing)
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Sign Installer with Updater Key
+        env:
+          # .tauri/updater.key is gitignored; CI restores it from secrets.
+          # The matching pubkey (830BF752EF10076) is embedded in tauri.conf.json.
+          TAURI_SIGNING_PRIVATE_KEY_FILE: ${{ secrets.TAURI_UPDATER_KEY_FILE }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+        run: |
+          New-Item -ItemType Directory -Force -Path .tauri | Out-Null
+          $env:TAURI_SIGNING_PRIVATE_KEY_FILE | Out-File -FilePath .tauri\updater.key -Encoding ascii -NoNewline
+          cd frontend
+          npx tauri signer sign -f ../.tauri/updater.key -p "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD" "../installer/out/BorsTerminal_Ultimate_Setup_$env:TAG.exe"
+
+      - name: Publish Release (installer + .sig + latest.json)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/publish_github_release.py

@@ -9,10 +9,9 @@ a = Analysis(
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),
         ('test_tsetmc.py', '.'),
-        ('adb_config.json', '.'),
-        ('codal_control.json', '.'),
+    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'))
+         if os.path.exists(t[0])],
         # DB ها از EXE خارج شدند — در کنار exe از ZIP قرار می‌گیرند (EXE کوچک‌تر)
-    ],
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
                    'codal_fetcher', 'app', 'pandas', 'numpy',

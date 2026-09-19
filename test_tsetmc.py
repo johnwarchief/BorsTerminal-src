@@ -22,9 +22,15 @@ HEADERS = {
     "Referer": "https://tsetmc.com/",
     "Origin": "https://tsetmc.com",
 }
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market.db")
-STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_status.json")
-MARKET_STATUS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "market_sync.json")
+try:
+    # حالت EXE: مسیرهای نوشتنی از bors_config (WORK_DIR = %LOCALAPPDATA% در
+    # Program Files). __file__ در frozen به _MEIPASS فقط‌خواندنی اشاره می‌کند.
+    from bors_config import DB_PATH, STATUS_PATH, MARKET_STATUS_PATH, WORK_DIR
+except Exception:  # noqa: BLE001 — dev/standalone
+    WORK_DIR = os.path.dirname(os.path.abspath(__file__))
+    DB_PATH = os.path.join(WORK_DIR, "market.db")
+    STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")
+    MARKET_STATUS_PATH = os.path.join(WORK_DIR, "market_sync.json")
 _PT = "&".join(f"paperTypes[{i}]={i+1}" for i in range(9))
 MW_URL = f"{BASE}/ClosingPrice/GetMarketWatch?market=0&{_PT}&showTraded=false&withBestLimits=true&hEven=0"
 
@@ -457,7 +463,7 @@ def write_summary(update):
     two processes never clobber each other's results."""
     try:
         import json as _json
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sync_summary.json")
+        path = os.path.join(WORK_DIR, "sync_summary.json")
         data = {}
         try:
             with open(path, encoding="utf-8") as f:

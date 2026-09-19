@@ -20,37 +20,109 @@ def _app_dir():
     return _SRC_DIR
 
 
+def _writable(path):
+    """آیا می‌توان در این مسیر فایل نوشت؟ (Program Files برای کاربر عادی: خیر)"""
+    try:
+        os.makedirs(path, exist_ok=True)
+        probe = os.path.join(path, ".wtprobe")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+        return True
+    except OSError:
+        return False
+
+
+def _user_data_dir():
+    """%LOCALAPPDATA%\\BorsTerminal_Ultimate — داده‌های قابل‌نوشتنِ هر کاربر."""
+    return os.path.join(
+        os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
+        "BorsTerminal_Ultimate", "data")
+
+
 def _work_dir():
-    """مسیر نوشتن فایل‌های وضعیت/تنظیمات: در EXE کنار باینری، وگرنه ریشه ریپو."""
+    """مسیر نوشتن فایل‌های وضعیت/تنظیمات.
+
+    در حالت EXE اولویت با پوشهٔ کنار باینری است (حالت پرتابیل: وقتی ZIP را
+    در یک پوشهٔ نوشتنی باز می‌کنید همان‌جا کار می‌کند)، اما اگر آن پوشه
+    نوشتنی نباشد (نصب در Program Files با PrivilegesRequired=admin) تمام
+    داده‌های کاربر به %LOCALAPPDATA%\\BorsTerminal_Ultimate منتقل می‌شوند؛
+    در غیر این صورت استخراج market.db.lzma و سینک بازار با «Permission
+    denied» گیر می‌کنند. در حالت dev همان ریشهٔ ریپو است.
+    """
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
+        exe_dir = os.path.dirname(sys.executable)
+        if _writable(exe_dir):
+            return exe_dir
+        return _user_data_dir()
     return _SRC_DIR
 
 
 APP_DIR = _app_dir()
 WORK_DIR = _work_dir()
 
-DB_PATH = "../market.db" if os.path.exists("../market.db") else "market.db"
-# خوداستخراج خودکار market.db.lzma در صورت نبودن market.db
-if not os.path.exists(DB_PATH):
-    for candidate in [os.path.join(APP_DIR, "market.db.lzma"), os.path.join(WORK_DIR, "market.db.lzma"), "market.db.lzma", "../market.db.lzma"]:
-        if os.path.exists(candidate):
-            try:
-                import lzma
-                target_db = os.path.join(WORK_DIR, "market.db") if not os.path.exists("market.db") else "market.db"
-                with open(candidate, "rb") as fi, open(target_db, "wb") as fo:
-                    fo.write(lzma.decompress(fi.read()))
-                DB_PATH = target_db
-                break
-            except Exception:
-                pass
+def _resolve_market_db():
+    """مسیر market.db: فایل موجود، وگرنه مسیر برنامه‌ریزی‌شده برای استخراج.
+
+    خودِ استخراج (حدود ۴۰ ثانیه) به ensure_market_db() موکول شده تا
+    bors_entry در preflight پیشرفت را به کاربر نشان دهد؛ اینجا فقط مسیر
+    نهایی را تعیین می‌کنیم. جستجو شامل کنار EXE (محل نصب)، WORK_DIR و
+    مسیرهای نسبی (dev) می‌شود.
+    """
+    exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
+    # ۱) market.db از قبل موجود (پرتابیل کنار EXE / دادهٔ کاربر / dev)
+    for d in (exe_dir, WORK_DIR):
+        p = os.path.join(d, "market.db")
+        if os.path.exists(p):
+            return p
+    if not getattr(sys, "frozen", False):
+        for p in ("market.db", "../market.db"):
+            if os.path.exists(p):
+                return p
+    # ۲) مسیر برنامه‌ریزی‌شده برای استخراج (همیشه در WORK_DIR نوشتنی)
+    return os.path.join(WORK_DIR, "market.db")
+
+
+DB_PATH = _resolve_market_db()
+
+def ensure_market_db(verbose=False):
+    """(idempotent) اگر market.db نبود از market.db.lzma بازسازی می‌کند.
+
+    bors_entry در preflight با verbose=True صدا می‌زند تا کاربر پیشرفت ~۴۰
+    ثانیه‌ای استخراج را ببیند. بقیهٔ مسیرها از DB_PATH استفاده می‌کنند.
+    """
+    if os.path.exists(DB_PATH):
+        return DB_PATH
+    exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
+    for candidate in [os.path.join(exe_dir, "market.db.lzma"),
+                      os.path.join(WORK_DIR, "market.db.lzma"),
+                      "market.db.lzma", "../market.db.lzma"]:
+        if not os.path.exists(candidate):
+            continue
+        try:
+            import lzma
+            os.makedirs(WORK_DIR, exist_ok=True)
+            target_db = os.path.join(WORK_DIR, "market.db")
+            if verbose:
+                print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
+            with open(candidate, "rb") as fi, open(target_db, "wb") as fo:
+                fo.write(lzma.decompress(fi.read()))
+            if verbose:
+                print("  [OK]  market.db extracted from .lzma")
+            return target_db
+        except Exception as e:
+            if verbose:
+                print("  [ERR] lzma extraction failed:", e)
+            return None
+    return None
 
 # دیتابیس اختصاصی کاربر — هیچ‌وقت با آپدیت بازار جایگزین نمی‌شود.
-# محل ذخیره: کنار EXE (در حالت frozen) یا ریشه ریپو (در حالت dev).
-# این فایل در .gitignore است تا داده شخصی توسعه‌دهنده push نشود.
+# محل ذخیره: WORK_DIR (کنار EXE در حالت پرتابیل، وگرنه %LOCALAPPDATA%) یا
+# ریشه ریپو (در حالت dev). این فایل در .gitignore است تا داده شخصی
+# توسعه‌دهنده push نشود.
 USER_DB_PATH = os.path.join(WORK_DIR, "user.db")
 
-# فایل‌های چندنویسنده کنار EXE می‌مانند (در حالت frozen نه داخل _internal)
+# فایل‌های چندنویسنده در WORK_DIR می‌مانند (نوشتنی؛ نه داخل _internal)
 STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")
 OD_STATUS_PATH = os.path.join(WORK_DIR, "sync_ondemand.json")
 MARKET_STATUS_PATH = os.path.join(WORK_DIR, "market_sync.json")

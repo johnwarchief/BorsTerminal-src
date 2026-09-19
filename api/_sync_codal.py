@@ -6,7 +6,7 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from ._core import _count_procs, _kill_procs, _safe_read_json
-from bors_config import APP_DIR, CONTROL_PATH, MARKET_STATUS_PATH, OD_STATUS_PATH, STATUS_PATH
+from bors_config import APP_DIR, CONTROL_PATH, MARKET_STATUS_PATH, OD_STATUS_PATH, STATUS_PATH, WORK_DIR
 from fastapi import APIRouter
 from fastapi import Query
 from fastapi import Request
@@ -148,7 +148,6 @@ def get_sync_status():
                 "elapsed": ms.get("elapsed", 0.0),
                 "ts": ms.get("ts", ""),
             })
-    merged["v2ray"] = st.get("v2ray", {}) or {}
     merged["ban_until"] = st.get("ban_until", "")
     return {"status": "success", "sync": merged}
 
@@ -223,7 +222,9 @@ def _launch_codal_scan():
         if not bash:
             return False
         proj = APP_DIR
-        logs_dir = os.path.join(proj, "logs")
+        # logs باید در WORK_DIR نوشته‌شونده باشند (APP_DIR در نصب Program Files
+        # فقط‌خواندنی است)؛ cwd پروسه همچنان proj است تا run_discovery.sh پیدا شود.
+        logs_dir = os.path.join(WORK_DIR, "logs")
         os.makedirs(logs_dir, exist_ok=True)
         with open(os.path.join(logs_dir, "relauncher.log"), "a", encoding="utf-8") as lf:
             lf.write("[app] %s - resume: launching discovery scan\n"

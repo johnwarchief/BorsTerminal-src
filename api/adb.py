@@ -1,4 +1,4 @@
-"""ADB / v2ray device state and configuration.
+"""ADB device state and configuration.
 
 Split verbatim out of app.py (v9.8.1 modularisation).
 Every statement is byte-for-byte identical to app.py; only the route

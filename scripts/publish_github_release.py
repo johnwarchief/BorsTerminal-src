@@ -2,7 +2,7 @@
 """
 scripts/publish_github_release.py
 =================================
-ایجاد خودکار یا به‌روزرسانی ریلیز v1.0.1 در گیت‌هاب و آپلود فایل نصاب BorsTerminal_Ultimate_Setup_v1.0.3.exe
+ایجاد خودکار یا به‌روزرسانی ریلیز v1.0.4 در گیت‌هاب و آپلود فایل نصب Inno BorsTerminal_Ultimate_Setup_v1.0.4.exe + latest.json (آپدیت‌ر به نصب Inno اشاره می‌کند).
 """
 import os
 import sys
@@ -18,26 +18,31 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 REPO = "johnwarchief/BorsTerminal"
-TAG = "v1.0.3"
-RELEASE_NAME = "BorsTerminal Ultimate v1.0.3"
-RELEASE_BODY = """## تغییرات نسخه v1.0.3
+# TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
+RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
+RELEASE_BODY = """## تغییرات نسخه v1.0.4
 
-### 🐛 اصلاح طبقه‌بندی تابلوی بازار (مهم‌ترین تغییر)
-- **ریشهٔ باگ:** TSETMC قراردادهای اختیار را در فهرست `paperType=1` (همان فهرست سهام) هم برمی‌گرداند؛ `fetch_paper_types` این فهرست را منبع `instruments.paper_type` می‌سازد، پس اختیارها `paper_type=1` می‌گرفتند و `mstat_engine.classify` آن‌ها را «سهام» می‌خواند.
-- **اثر:** اختیارها با حجمِ خردِ خود به سطرِ «سهام و حق تقدم»، تجمیعِ حجمِ سهام، و جدولِ الگوی ساعت می‌رسیدند و ارقام تابلوی بازار را می‌ریختند.
-- **اصلاح (دو لایه):** ۱) `mstat_engine.classify` حالا پیش از `paperType` و از روی نام، اختیارها را جدا می‌کند. ۲) `fetch_paper_types` دیگر به اختیارها `paperType` اختصاص نمی‌دهد تا سینکِ بعدی `paper_type` آن‌ها را `NULL` نگه دارد (خود-ترمیمیِ بانک). گاردِ `dev/mstat_local_v975.py` **۱۴۰/۱۴۰ سبز**.
-- **نتیجه:** تابلوی «سهام و حق تقدم» از ۲۳۴۴ به ۲۳۱۵ نماد اصلاح شد (۲۹ اختیارِ آلوده کنار رفت) و هر ۴۰ نامزدِ الگوی ساعت اکنون حجمِ واقعی دارند.
+### 🔐 رفع کرش «دسترسی مجاز نیست» در نصب Program Files (مهم‌ترین تغییر)
+- **ریشهٔ باگ:** برنامه سعی می‌کرد فایل‌ها را در مسیر نصب (Program Files) می‌نوشت؛ ویندوز بدون امتیاز مدیر این نوشتن‌ها را رد می‌کرد و برنامه کرش می‌کرد.
+- **اصلاح:** تمام نوشتن‌های زمان اجرا (لاگ‌ها، کش، داده‌ها، استخراج اولیه) اکنون از طریق یک مسیر متمرکز و قابل نوشتن انجام می‌شوند (`bors_config.WORK_DIR` در `%LOCALAPPDATA%\\BorsTerminal_Ultimate\\data`) با fallback خودکار برای حالت توسعه/پرتابل.
+- **نتیجه:** نصب تمیز در Program Files بدون نیاز به اجرای برنامه به‌عنوان مدیر، و استخراج first-run بدون خطا کار می‌کند.
 
-### 🖥 اصلاح «رزولوشن» — فضای خالی روی مانیتورهای ۲K
-- **ریشهٔ باگ:** محتوای صفحه در نمایشگرهای ۱۹۲۰px و بالاتر به عرض ثابت ۱۶۰۰px (در ۴K: ۱۹۲۰px) محدود و وسط‌چین می‌شد، در حالی که نوار تب بالای صفحه تمام‌عرض بود؛ نتیجه، فضای خالیِ چپ/راستِ محتوا روی مانیتورهای ۲K بود.
-- **اصلاح:** سقفِ عرضِ محتوا (`--content-max-w`) در ۲K/۴K حذف شد تا جدول‌ها و چارت‌ها مثل نوار تب، تمام‌عرض رندر شوند. مقیاسِ تایپوگرافی و gutter واکنشی دست‌نخورده باقی ماند.
+### 🧹 حذف کد مرده v2ray / Camoufox
+- باینری v2ray (`bin/xray`) هرگز وجود نداشت و Camoufox غیرفعال بود؛ تنها مسیر چرخش IP که کار می‌کند ADB (تترینگ گوشی) است. تمام کد مرده حذف شد تا مسیر درخواست‌ها ساده و قابل اعتماد باشد.
+
+### 🖥 اصلاحات رابط کاربری و عملکرد
+- بهبود پایداری تب‌ها و رفع خطاهای کوچک متعدد در جهت استانداردهای اپلیکیشن مستقل.
 
 ### 🧰 به‌روزرسانی خودکار
-- نسخهٔ مرجعِ updater و فایل‌های نصاب به ۱.۰.۳ هماهنگ شدند؛ نصب‌های قبلی با امضای موجود به‌طور خودکار این نسخه را دریافت می‌کنند.
+- فایل مانیفست آپدیت‌ر (`latest.json`) اکنون به نصب Inno درست اشاره می‌کند (قبلاً به نصاب NSIS اشتباه اشاره می‌کرد).
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SETUP_EXE = os.path.join(ROOT, "installer", "out", "BorsTerminal_Ultimate_Setup_v1.0.3.exe")
+# CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
+# keeps the local single-release flow working unchanged. The installer name is
+# derived from the tag so both always agree with bors_setup.iss output.
+TAG = os.environ.get("RELEASE_TAG", "v1.0.4")
+SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
 
@@ -59,6 +64,44 @@ def get_github_token():
     except Exception as e:
         print(f"[-] Could not get git credentials: {e}")
     return os.environ.get("GITHUB_TOKEN", "")
+
+def build_latest_json():
+    """Tauri v2 updater manifest pointing at the Inno installer.
+
+    Signature is the minisign sig file content (already uploaded as .sig);
+    the in-app updater verifies the downloaded installer against the pubkey
+    embedded in tauri.conf.json.
+    """
+    import datetime
+    try:
+        from email.utils import formatdate
+        pub_date = formatdate(localtime=True, usegmt=True)
+    except Exception:
+        pub_date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    with open(SIG_FILE, "r", encoding="utf-8", errors="replace") as f:
+        signature = f.read().strip()
+
+    asset_name = os.path.basename(SETUP_EXE)
+    version = TAG[1:] if TAG.startswith("v") else TAG
+    manifest = {
+        "version": version,
+        "notes": RELEASE_BODY,
+        "pub_date": pub_date,
+        "platforms": {
+            "windows-x86_64": {
+                "signature": signature,
+                "url": f"https://github.com/{REPO}/releases/download/{TAG}/{asset_name}",
+            }
+        },
+    }
+    out_path = os.path.join(ROOT, "latest.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    print(f"[+] latest.json ساخته شد: {out_path}")
+    print(f"    url -> {manifest['platforms']['windows-x86_64']['url']}")
+    return out_path
+
 
 def main():
     token = get_github_token()
@@ -101,7 +144,7 @@ def main():
         print(f"[+] در حال ساخت ریلیز {TAG} ...")
         payload = json.dumps({
             "tag_name": TAG,
-            "name": RELEASE_NAME,
+            "name": RELEASE_NAME_TEMPLATE.format(tag=TAG),
             "body": RELEASE_BODY,
             "draft": False,
             "prerelease": False
@@ -177,7 +220,17 @@ def main():
             print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
             sys.exit(1)
 
-    print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig).")
+    # 5) build + upload latest.json (Tauri updater manifest)
+    latest_path = build_latest_json()
+    if not upload_asset(latest_path):
+        print("[-] upload of latest.json failed")
+        sys.exit(1)
+    try:
+        os.remove(latest_path)
+    except OSError:
+        pass
+
+    print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + latest.json).")
 
 if __name__ == "__main__":
     main()

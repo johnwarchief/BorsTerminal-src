@@ -27,10 +27,10 @@ a = Analysis(
         ('mstat_engine.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
-        ('codal_control.json', '.'),
         ('watchlist_store.py', '.'),
         ('api', 'api'),
-    ] + ([('adb_config.json', '.')] if os.path.exists('adb_config.json') else []),
+    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'))
+         if os.path.exists(t[0])],
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
                    'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'orjson',

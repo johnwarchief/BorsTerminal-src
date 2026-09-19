@@ -37,10 +37,6 @@ ADB_CANDIDATES = (
     os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"),
 )
 
-CAMOUFOX_VENV = os.path.expandvars(
-    r"%LOCALAPPDATA%\hermes\venvs\camoufox\Scripts\python.exe"
-)
-
 
 def _box(lines, ch="="):
     print("  " + ch * 70)
@@ -163,12 +159,6 @@ def check_all():
     else:
         print("  [WARN] ADB not installed - no IP rotation")
         print("         (optional) C:\\adb\\platform-tools, or Android platform-tools")
-
-    # 6) Camoufox (optional)
-    if os.path.isfile(CAMOUFOX_VENV):
-        print("  [OK]  Camoufox venv found - browser-based Codal scan")
-    else:
-        print("  [WARN] Camoufox not installed - Codal scan via requests (slower)")
 
     print()
     if problems:

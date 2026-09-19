@@ -3,10 +3,13 @@
 import os, sys, threading, time, webbrowser, socket, subprocess
 
 # در حالت EXE (frozen): کتابخانه‌ها/دیتاها داخل _MEIPASS (onedir: _internal)؛
-# DB ها کنار exe (از ZIP یا market.db.lzma) -- cwd همان پوشه exe می‌شود.
+# DB ها و فایل‌های وضعیت در WORK_DIR (نوشتنی) — کنار exe اگر نوشتنی باشد،
+# وگرنه %LOCALAPPDATA%\BorsTerminal_Ultimate (نصب در Program Files).
 if getattr(sys, 'frozen', False):
     BASE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-    WORK = os.path.dirname(sys.executable)
+    import bors_config
+    WORK = bors_config.WORK_DIR
+    os.makedirs(WORK, exist_ok=True)
     os.chdir(WORK)
     if WORK not in sys.path:
         sys.path.insert(0, WORK)
@@ -19,29 +22,24 @@ def _preflight():
     print("  BorsTerminal_Ultimate - smart preflight")
     print("=" * 66)
     ok = True
-    # خود استخراج market.db.lzma → market.db (فقط بار اول؛ کاملاً آفلاین)
-    if not os.path.exists("market.db") and os.path.exists("market.db.lzma"):
-        print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
-        try:
-            import lzma
-            with open("market.db.lzma", "rb") as fi, open("market.db", "wb") as fo:
-                fo.write(lzma.decompress(fi.read()))
-            print("  [OK]  market.db extracted from .lzma")
-        except Exception as e:
-            print("  [ERR] lzma extraction failed:", e)
-            ok = False
-    if not os.path.exists("market.db"):
-        print("  [ERR] market.db not found next to this EXE.")
-        print("        Keep market.db/.lzma in the SAME folder as the EXE")
-        print("        (it is inside the release ZIP, extract all files together).")
+    # خود استخراج market.db.lzma → market.db (فقط بار اول؛ کاملاً آفلاین).
+    # ensure_market_db همیشه در WORK_DIR نوشتنی می‌نویسد (نه کنار EXE در
+    # Program Files) تا با Permission_denied گیر نکند.
+    import bors_config
+    db_path = bors_config.ensure_market_db(verbose=True)
+    if not db_path or not os.path.exists(db_path):
+        print("  [ERR] market.db not found and could not be extracted.")
+        print("        market.db.lzma is shipped in the install folder (next to")
+        print("        the EXE). Reinstall or copy it there, then run again.")
         ok = False
     else:
         try:
             import sqlite3
-            c = sqlite3.connect("market.db")
+            c = sqlite3.connect(db_path)
             n = c.execute("SELECT COUNT(*) FROM instruments").fetchone()[0]
             c.close()
-            print(f"  [OK]  market.db: {n:,} instruments (TSETMC + Codal data inside)")
+            where = "next to EXE" if os.path.dirname(db_path) == os.path.dirname(sys.executable) else os.path.dirname(db_path)
+            print(f"  [OK]  market.db: {n:,} instruments ({where})")
         except Exception as e:
             print("  [WARN] market.db unreadable:", e)
     try:
@@ -126,6 +124,51 @@ def open_app_window(url):
     webbrowser.open(url)
     return False
 
+def _codal_worker(base):
+    """حالت کارگر: در حالت EXE، خودِ EXE نقش python را بازی میکند
+    (sys.executable = مسیر همین EXE، نه python.exe).
+
+      BorsTerminal_Ultimate.exe --codal-worker <mode>     → CLI واقعی codal_fetcher
+      BorsTerminal_Ultimate.exe --codal-worker watchlist → fetch_symbol برای واچ‌لیست
+
+    این شاخه باید قبل از uvicorn اجرا شود و سریع خارج شود. هیچ منطقی
+    کپی نمیشود: حالت sync از runpy.run_path روی همان codal_fetcher.py که
+    به‌صورت دیتا در _MEIPASS همراه میشود، با run_name="__main__" اجرا
+    میکند تا بلوک CLI واقعی همان فایل کار کند."""
+    import runpy
+    # ویندوز stdout/stderr را cp1252 میکند؛ نام فارسی نمادها در print کرش
+    # UnicodeEncodeError میداد → reconfigure با errors="replace".
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    kind = sys.argv[2] if len(sys.argv) > 2 else ""
+    if kind == "watchlist":
+        import sqlite3, codal_fetcher, watchlist_store
+        conn = sqlite3.connect(codal_fetcher.DB_PATH, timeout=30)
+        try:
+            watchlist_store.ensure_table(conn)
+            syms = [r["symbol"] for r in watchlist_store.list_rows(conn) if r.get("symbol")]
+        finally:
+            conn.close()
+        print("watchlist sync:", len(syms), "symbols", flush=True)
+        for s in syms:
+            codal_fetcher.fetch_symbol(s)
+        return
+    # نگاشت mode → آرگومانهای CLI واقعی codal_fetcher.py (یک منبع واحد).
+    from codal_engine import _SYNC_MODES
+    argv = _SYNC_MODES.get(kind)
+    if not argv:
+        print("[codal-worker] unknown mode:", kind, file=sys.stderr)
+        raise SystemExit(2)
+    script = os.path.join(base, "codal_fetcher.py")
+    if not os.path.exists(script):
+        print("[codal-worker] codal_fetcher.py not found:", script, file=sys.stderr)
+        raise SystemExit(3)
+    sys.argv = ["codal_fetcher.py"] + argv
+    runpy.run_path(script, run_name="__main__")
+
 def main():
     port = int(os.environ.get('BORS_PORT', '8001'))
     for p in (port,):
@@ -153,4 +196,11 @@ def main():
         pass
 
 if __name__ == '__main__':
+    # حالت کارگر: EXE خودش به‌عنوان جایگزین python برای subprocessهای codal
+    # استفاده میشود (در حالت frozen، sys.executable همین EXE است).
+    # قبل از هر چیز دیگری بررسی میشود تا uvicorn اجرا نشود.
+    if len(sys.argv) > 1 and sys.argv[1] == '--codal-worker':
+        _base = getattr(sys, '_MEIPASS', None) or os.path.dirname(os.path.abspath(__file__))
+        _codal_worker(_base)
+        raise SystemExit(0)
     main()

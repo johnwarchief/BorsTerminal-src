@@ -16,6 +16,12 @@ import re
 import subprocess
 import sys
 
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
@@ -116,7 +122,7 @@ ck('هیچ فایل track‌شده‌ای ignore نشده', not ignored_tracked,
 
 # ── ۴. ساختار پوشه‌ها ────────────────────────────────────────────────────
 MUST_EXIST = ['app.py', 'test_tsetmc.py', 'fts_engine.py', 'codal_fetcher.py',
-              'notifier.py', 'v2ray_rotator.py', 'bootstrap_first_run.py',
+              'notifier.py', 'bootstrap_first_run.py',
               'start_dashboard.py', 'bors_entry.py', 'archive/legacy_static/index.html',
               'REPO_MAP.md', 'dev/run_all_tests.py', 'scripts/build_exe.py']
 for f in MUST_EXIST:
@@ -158,7 +164,9 @@ ck('dirname(abspath(__file__)) فقط برای APP_DIR است',
 
 # ── ۸. market.db باید کنار EXE/CWD بماند ─────────────────────────────────
 ck('DB_PATH نسبی به market.db (نه data/) حل می‌شود',
-   'DB_PATH = "../market.db" if os.path.exists("../market.db") else "market.db"' in cfg_src)
+   ('DB_PATH = _resolve_market_db()' in cfg_src) and
+   ('market.db' in cfg_src) and ('data/market.db' not in cfg_src.replace('WORK_DIR', '')),
+   'باید از _resolve_market_db() استفاده کند و به data/ نپردازد')
 ck('bors_entry.py market.db را کنار EXE می‌خواهد', 'market.db' in read('bors_entry.py'))
 
 passed = sum(1 for ok, _, _ in CHECKS if ok)

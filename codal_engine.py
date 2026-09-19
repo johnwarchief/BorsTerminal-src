@@ -27,7 +27,11 @@ import requests
 
 import codal_fetcher
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# در حالت EXE، APP_DIR = _MEIPASS فقط‌خواندنی است؛ نوشتن log باید برود WORK_DIR.
+try:
+    from bors_config import WORK_DIR as _WDIR
+except Exception:  # noqa: BLE001 — dev/standalone
+    _WDIR = os.path.dirname(os.path.abspath(__file__))
 
 # نگاشت حالت همگام‌سازی → آرگومان‌های واقعی CLI codal_fetcher.py.
 # حالتی که نگاشت ندارد صادقانه error برمی‌گرداند، نه «ok» جعلی.
@@ -105,19 +109,27 @@ def run_sync_job(kind, **kwargs):
     پذیرفته میشوند تا امضای endpointهای app.py نشکند، ولی صادقانه در
     پاسخ گزارش میشوند.
     """
+    frozen = bool(getattr(sys, "frozen", False))
     if kind == "watchlist":
-        cmd = [sys.executable, "-c", _WATCHLIST_RUNNER]
-        args = ["-c <watchlist runner>"]
+        if frozen:
+            cmd = [sys.executable, "--codal-worker", "watchlist"]
+            args = ["--codal-worker watchlist"]
+        else:
+            cmd = [sys.executable, "-c", _WATCHLIST_RUNNER]
+            args = ["-c <watchlist runner>"]
         note = "fetch_symbol() برای تک‌تک نمادهای user_watchlists"
     else:
         argv = _SYNC_MODES.get(kind)
         if not argv:
             return {"status": "error", "message": "Unknown sync mode: %s" % kind}
-        cmd = [sys.executable, "codal_fetcher.py"] + argv
+        if frozen:
+            cmd = [sys.executable, "--codal-worker", kind]
+        else:
+            cmd = [sys.executable, "codal_fetcher.py"] + argv
         args = argv
         note = ""
     try:
-        proc = subprocess.Popen(cmd, cwd=APP_DIR,
+        proc = subprocess.Popen(cmd, cwd=_WDIR,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
         return {"status": "error", "message": str(e)[:160]}
