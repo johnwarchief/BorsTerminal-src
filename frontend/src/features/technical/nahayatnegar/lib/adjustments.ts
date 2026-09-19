@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
 import type { KLineData } from 'klinecharts';
 
 /**
@@ -15,6 +14,32 @@ export interface CorporateAction {
   postMeetingPrice: number;
   /** نسبت گسست قیمت پایهٔ سرور (adjustEvents: {date,ratio}) — تنها منبع تعدیلِ واقعی */
   ratio?: number; // قیمت بازگشایی پس از مجمع
+}
+
+/**
+ * ساختار خام رویدادهای مجمع از بک‌اند (adjustEvents) — همهٔ فیلدها اختیاری
+ * چون بک‌اند ممکن است نام‌های مختلفی برای یک مفهوم ارسال کند.
+ */
+interface BackendAdjustEvent {
+  timestamp?: number;
+  time?: number;
+  date?: string;
+  dateStr?: string;
+  /** بک‌اند موظف است یکی از مقادیر مجاز CorporateAction.type را ارسال کند */
+  type?: CorporateAction['type'];
+  dpsAmount?: number;
+  dps?: number;
+  bonusPercent?: number;
+  bonus?: number;
+  cashPercent?: number;
+  cash?: number;
+  preMeetingPrice?: number;
+  pPre?: number;
+  p_pre?: number;
+  postMeetingPrice?: number;
+  pPost?: number;
+  p_post?: number;
+  ratio?: number;
 }
 
 /**
@@ -131,7 +156,7 @@ export function applyAdjustmentToCandles(
 /**
  * نگاشت رویدادهای خام بک‌اند adjustEvents به CorporateAction
  */
-export function mapBackendAdjustEvents(rawEvents: any[]): CorporateAction[] {
+export function mapBackendAdjustEvents(rawEvents: BackendAdjustEvent[]): CorporateAction[] {
   if (!Array.isArray(rawEvents)) return [];
 
   return rawEvents.map(e => {
@@ -141,7 +166,8 @@ export function mapBackendAdjustEvents(rawEvents: any[]): CorporateAction[] {
     } else if (typeof e.time === 'number') {
       ts = e.time < 1e11 ? e.time * 1000 : e.time;
     } else if (typeof e.date === 'string' || typeof e.dateStr === 'string') {
-      ts = new Date(e.dateStr || e.date).getTime();
+      // این شاخه فقط وقتی اجرا می‌شود که حداقل یکی رشته باشد؛ «|| ''» صرفاً برای ارضای تایپ‌اسکریپت است
+      ts = new Date(e.dateStr || e.date || '').getTime();
     } else {
       ts = Date.now();
     }

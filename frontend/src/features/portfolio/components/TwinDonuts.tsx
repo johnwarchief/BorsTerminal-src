@@ -227,7 +227,6 @@ export function TwinDonuts({
   onEdit?: () => void;
   showActual?: boolean;
 }) {
-  const portfolio = usePortfolio();
   const classes = useTargetAllocation((s) => s.classes);
   const resetTarget = useTargetAllocation((s) => s.reset);
   const assetValues = useAssetValues();

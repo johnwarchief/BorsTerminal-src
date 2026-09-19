@@ -58,9 +58,13 @@ export default function TechnicalPage() {
     }
   }, [symbol, navigate, setStored]);
 
-  // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت
+  // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت.
+  // هنگام خروج از تب، حالت را به «خودکار» برمی‌گردانیم تا سایدبار روی سایر تب‌ها بماند.
   useEffect(() => {
     useUiStore.getState().setSidebarCollapsed(true);
+    return () => {
+      useUiStore.getState().setSidebarCollapsed(null);
+    };
   }, []);
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
@@ -269,7 +273,7 @@ export default function TechnicalPage() {
               },
               { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
               { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
-              { id: 'patterns', label: '??????? FTS', node: <PatternToggles /> },
+              { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
 
               { id: 'compare', label: 'مقایسهٔ نمادها', node: <ComparePanel activeSymbol={symbol} /> },
               {

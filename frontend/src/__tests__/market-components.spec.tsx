@@ -110,7 +110,7 @@ describe('فیلترهای بازطراحی شده', () => {
   });
 
   it('چیپ های سریع شمارش عبور را نشان می دهند', () => {
-    render(<MarketFilters sectors={[]} matches={{ f_clock: 7, f_susp: 2, f_jet: 0, f_roobi: 1, f_noqteh: 0 }} />);
+    render(<MarketFilters sectors={[]} matches={{ f_clock: 7, f_susp: 2, f_jet: 0, f_roobi: 1, f_noqteh: 0, f_smart_flow: 0 }} />);
     fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
     expect(screen.getByText(/الگوی ساعت/)).toBeInTheDocument();
     expect(screen.getByText('(۷)')).toBeInTheDocument();

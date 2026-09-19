@@ -21,7 +21,7 @@ export function normalizeFa(s: string | null | undefined): string {
     .replace(/[ً-ْـ]/g, '') // اعراب و کشیده
     .replace(/[يى]/g, 'ی')   // ي و ى -> ی
     .replace(/\u0643/g, 'ک')           // ك -> ک
-    .replace(/[‌​﻿]/g, '')   // نیم‌فاصله و کاراکترهای صفر-عرض
+    .replace(/[\u200c\u200b\ufeff]/g, '')   // نیم‌فاصله و کاراکترهای صفر-عرض
     .replace(/[۰-۹٠-٩]/g, (d) => FA_AR_DIGITS_MAP[d] ?? d) // ارقام یکدست
     .replace(/\s+/g, ' ')
     .trim()

@@ -122,7 +122,10 @@ export function SymbolInspector() {
     return runStrictGates(
       entry,
       {
-        inBasket: entry.portfolio?.payload && (entry.portfolio.payload as { decision?: unknown }).decision === 'accept',
+        inBasket: Boolean(
+          entry.portfolio?.payload &&
+            (entry.portfolio.payload as { decision?: unknown }).decision === 'accept',
+        ),
         industryUsedPct: null,
         industryCapPct: 20,
         warRegime: false,

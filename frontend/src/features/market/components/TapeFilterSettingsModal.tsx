@@ -3,11 +3,9 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
-  DEFAULT_TAPE_FILTER_CONFIG,
   TAPE_PRESETS,
   isConfigCustomized,
   type LookbackDays,
-  type TapeFilterConfig,
   type TapePresetKey,
 } from '../lib/tapeAlgorithms';
 import { useTapeStore } from '../stores/tapeStore';

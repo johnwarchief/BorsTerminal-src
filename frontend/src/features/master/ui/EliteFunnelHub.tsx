@@ -2,7 +2,7 @@
 // زنجیره کاهش نمادها بر اساس متدولوژی FTS: ۸۰۰ سهم ──> ۵۰ سهم بنیادی ──> ۱۰ سهم واچلیست داغ ──> ۵ تا ۷ سهم سبد
 import { useState, useMemo } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useFtsScreen, type FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
+import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';

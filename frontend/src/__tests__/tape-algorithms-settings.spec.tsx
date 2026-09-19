@@ -5,7 +5,6 @@ import type { MarketRow } from '@shared/types/marketRow';
 import {
   DEFAULT_TAPE_FILTER_CONFIG,
   TAPE_PRESETS,
-  evaluateDynamicQuickFilter,
   isConfigCustomized,
   matchClockPattern,
   matchJetFilter,

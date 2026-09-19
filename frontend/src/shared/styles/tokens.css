@@ -27,6 +27,7 @@
   --sidebar-w-collapsed: 4rem; /* 64px */
   --inspector-w: 15rem; /* 240px — فشرده */
   --gutter-x: 0rem; /* فاصلهی افقی واکنشی؛ زیر ۱۲۸۰px پر میشود */
+  --content-max-w: none; /* حداکثر عرض محتوای خوانا؛ در ۲K+ پر میشود */
 
   --fs-2xs: 0.75rem; /* 12px */
   --fs-xs: 0.8125rem; /* 13px */
@@ -41,10 +42,47 @@
   --focus-ring-offset: 2px;
 }
 
+/* زیر ۷۶۸px (موبایل/تبلت کوچک): سایدبار باریک‌تر، داور تقریباً تمام‌عرض، gutter کم. */
+@media (max-width: 767.98px) {
+  :root {
+    --sidebar-w: 11rem;
+    --sidebar-w-collapsed: 3.5rem;
+    --inspector-w: 92vw;
+    --gutter-x: 0.5rem;
+  }
+}
+
 /* زیر ۱۲۸۰px: فاصلهی افقی واکنشی فعال میشود (دسکتاپ بزرگ بیتغییر). */
 @media (max-width: 1279.98px) {
   :root {
     --gutter-x: 0.75rem;
+  }
+}
+
+/* ۲K (۱۹۲۰px) و بالاتر: gutter بزرگ‌تر + مقیاس خوانا. سقف عرض محتوا حذف شد
+   تا جدول‌ها و چارت‌ها مثل نوار تب، تمام‌عرض رندر شوند و فضای خالی چپ/راست
+   (باگ «رزولوشن» روی مانیتورهای ۲K) نیاید. */
+@media (min-width: 1920px) {
+  :root {
+    --gutter-x: 1.5rem;
+    --content-max-w: none;
+    --sidebar-w: 14rem;
+    --inspector-w: 16rem;
+    --fs-2xs: 0.8125rem; /* 13px */
+    --fs-xs: 0.875rem; /* 14px */
+    --fs-sm: 0.9375rem; /* 15px */
+  }
+}
+
+/* ۴K (۳۸۴۰px) و بالاتر: مقیاس تایپوگرافی کامل. عرض محتوا همچنان تمام‌عرض. */
+@media (min-width: 3840px) {
+  :root {
+    --gutter-x: 2rem;
+    --content-max-w: none;
+    --fs-2xs: 0.875rem; /* 14px */
+    --fs-xs: 0.9375rem; /* 15px */
+    --fs-sm: 1rem; /* 16px */
+    --fs-base: 1.125rem; /* 18px */
   }
 }
 

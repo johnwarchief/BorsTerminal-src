@@ -192,11 +192,13 @@ export default function MasterPage() {
         ? {
             active: true,
             text: 'استراتژی نوسانی: خروج کامل در مقاومت اول R1 بدون نگهداری میان‌مدت.',
+            resistance,
           }
         : horizon === 'hourglass'
           ? {
               active: false,
               text: 'استراتژی ساعت شنی: نگهداری بلندمدت؛ بدون خروج ۵۰٪ در مقاومت‌های نوسانی.',
+              resistance: null,
             }
           : halfExitPlan({
               resistance,

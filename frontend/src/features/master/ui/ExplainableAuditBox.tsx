@@ -19,7 +19,6 @@ export type ExplainableAuditBoxProps = {
 };
 
 export function ExplainableAuditBox({
-  symbol: _symbol,
   isVeto,
   decision,
   strict,

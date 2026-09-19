@@ -236,13 +236,11 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
           : 'rejected';
   const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'N/A' };
   // روند خطی ۶ فصل حاشیه: سود ناخالص یا مارجین فصلی (تفکیک‌شده از fundMath)
-  const trend = quarters
-    .filter((q) => q.margin != null || (q.revenue != null && (q.revenue ?? 0) > 0 && (q as any).grossProfit != null))
-    .slice(-6);
-  const getMargin = (q: FiscalQuarter) =>
-    (q as any).grossProfit != null && (q.revenue ?? 0) > 0
-      ? (((q as any).grossProfit ?? 0) / (q.revenue ?? 1)) * 100
-      : (q.margin ?? 0);
+  // نکته: قرارداد FiscalQuarter و پاسخ quartersِ بک‌اند gross_profit ندارند،
+  // پس تنها منبع موجود همان margin فصلی است (grossProfit قبلاً via `as any`
+  // خوانده می‌شد و همیشه undefined بود → آن شاخه مرده بود).
+  const trend = quarters.filter((q) => q.margin != null).slice(-6);
+  const getMargin = (q: FiscalQuarter) => q.margin ?? 0;
   const maxTrend = Math.max(1, ...trend.map((q) => Math.abs(getMargin(q))));
   return (
     <div className="flex flex-col gap-3">

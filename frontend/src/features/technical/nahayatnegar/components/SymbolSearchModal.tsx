@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconSearch, IconClose, IconCheck } from './TradingViewIcons';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { http } from '@shared/api/http';
 
 export interface SymbolInfo {
   symbol: string;
@@ -9,6 +10,41 @@ export interface SymbolInfo {
   lastPrice?: number;
   changePercent?: number;
 }
+
+/** ساختار آیتم نماد در پاسخ /api/market — همه فیلدها اختیاری چون اندپوینت‌ها ناپایدارند */
+interface MarketSymbolItem {
+  symbol?: string;
+  ticker?: string;
+  l18?: string;
+  name?: string;
+  title?: string;
+  l30?: string;
+  market?: string;
+  flow_title?: string;
+  last_price?: number;
+  pl?: number;
+  close?: number;
+  change_percent?: number;
+  plp?: number;
+}
+
+type MarketListResponse =
+  | MarketSymbolItem[]
+  | { data?: MarketSymbolItem[]; symbols?: MarketSymbolItem[]; rows?: MarketSymbolItem[] };
+
+/** ساختار آیتم نماد در پاسخ /api/screener — فال‌بک وقتی /api/market جواب نداد */
+interface ScreenerItem {
+  symbol?: string;
+  ticker?: string;
+  name?: string;
+  title?: string;
+  market?: string;
+  close?: number;
+  last?: number;
+  change?: number;
+}
+
+type ScreenerResponse = ScreenerItem[] | { data?: ScreenerItem[]; rows?: ScreenerItem[] };
 
 interface SymbolSearchModalProps {
   isOpen: boolean;
@@ -36,48 +72,46 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
     setIsLoading(true);
 
     const fetchMarketSymbols = async () => {
+      // ابتدا تلاش برای دریافت از /api/market
       try {
-        // ابتدا تلاش برای دریافت از /api/market
-        const res = await fetch('/api/market');
-        if (res.ok) {
-          const json = await res.json();
-          const items = Array.isArray(json) ? json : (json.data || json.symbols || json.rows || []);
-          if (Array.isArray(items) && items.length > 0) {
-            const mapped: SymbolInfo[] = items.map((it: any) => ({
-              symbol: String(it.symbol || it.ticker || it.l18 || ''),
-              name: String(it.name || it.title || it.l30 || it.symbol || ''),
-              market: String(it.market || (it.flow_title?.includes('فرابورس') ? 'فرابورس' : 'بورس') || 'بورس'),
-              lastPrice: Number(it.last_price || it.pl || it.close || 0),
-              changePercent: Number(it.change_percent || it.plp || 0)
-            })).filter(s => s.symbol.length > 0);
+        const json = await http<MarketListResponse>('/api/market', { retries: 0 });
+        const items = Array.isArray(json) ? json : (json.data || json.symbols || json.rows || []);
+        if (items.length > 0) {
+          const mapped: SymbolInfo[] = items.map((it) => ({
+            symbol: String(it.symbol || it.ticker || it.l18 || ''),
+            name: String(it.name || it.title || it.l30 || it.symbol || ''),
+            market: String(it.market || (it.flow_title?.includes('فرابورس') ? 'فرابورس' : 'بورس') || 'بورس'),
+            lastPrice: Number(it.last_price || it.pl || it.close || 0),
+            changePercent: Number(it.change_percent || it.plp || 0)
+          })).filter(s => s.symbol.length > 0);
 
-            if (isMounted) {
-              setSymbols(mapped);
-              setIsLoading(false);
-              return;
-            }
+          if (isMounted) {
+            setSymbols(mapped);
+            setIsLoading(false);
+            return;
           }
         }
+      } catch {
+        // /api/market پاسخ نداد یا موجود نبود → مسیر جایگزین امتحان می‌شود
+      }
 
-        // اگر /api/market موجود نبود، تلاش از /api/screener
-        const resScreener = await fetch('/api/screener');
-        if (resScreener.ok) {
-          const json = await resScreener.json();
-          const items = Array.isArray(json) ? json : (json.data || json.rows || []);
-          if (Array.isArray(items) && items.length > 0) {
-            const mapped: SymbolInfo[] = items.map((it: any) => ({
-              symbol: String(it.symbol || it.ticker || ''),
-              name: String(it.name || it.title || it.symbol || ''),
-              market: String(it.market || 'بورس'),
-              lastPrice: Number(it.close || it.last || 0),
-              changePercent: Number(it.change || 0)
-            })).filter(s => s.symbol.length > 0);
+      // اگر /api/market موجود نبود، تلاش از /api/screener
+      try {
+        const json = await http<ScreenerResponse>('/api/screener', { retries: 0 });
+        const items = Array.isArray(json) ? json : (json.data || json.rows || []);
+        if (items.length > 0) {
+          const mapped: SymbolInfo[] = items.map((it) => ({
+            symbol: String(it.symbol || it.ticker || ''),
+            name: String(it.name || it.title || it.symbol || ''),
+            market: String(it.market || 'بورس'),
+            lastPrice: Number(it.close || it.last || 0),
+            changePercent: Number(it.change || 0)
+          })).filter(s => s.symbol.length > 0);
 
-            if (isMounted) {
-              setSymbols(mapped);
-              setIsLoading(false);
-              return;
-            }
+          if (isMounted) {
+            setSymbols(mapped);
+            setIsLoading(false);
+            return;
           }
         }
       } catch {

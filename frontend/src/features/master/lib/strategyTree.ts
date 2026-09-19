@@ -1,6 +1,5 @@
 // features/master/lib/strategyTree.ts -- مدل درختی و تنظیمات استراتژی معاملاتی FTS
 // امکان کاستومایز کردن هر شاخه از ۴ مرحله به صورت درخت تصمیم‌گیری (Decision Tree)
-import { toFaDigits } from '@shared/lib/fmt';
 
 export type ConditionType = 'veto' | 'required' | 'weighted';
 

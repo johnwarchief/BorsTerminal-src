@@ -4,7 +4,6 @@ import type { AgentSignal } from '@contracts/signal';
 import {
   evaluateFtsPipeline,
   recommendHorizon,
-  type StrategyHorizon,
 } from '@features/master/lib/ftsPipelineEvaluator';
 import type { BusInput } from '@features/master/lib/masterMath';
 import { runStrictGates, definiteDecision } from '@features/master/lib/strictGates';
@@ -50,7 +49,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
         payload: { clock_pattern: true, vol_ratio: 1.5 },
       }),
     };
-    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20 });
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
     const decision = definiteDecision(strict);
     const result = evaluateFtsPipeline({
       symbol: 'شپنا',
@@ -72,7 +71,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
         payload: { weekly_uptrend: false },
       }),
     };
-    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20 });
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
     const decision = definiteDecision(strict);
     const result = evaluateFtsPipeline({
       symbol: 'شپنا',
@@ -96,7 +95,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
         payload: { weekly_uptrend: true, jet_active: true },
       }),
     };
-    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20 });
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
     const decision = definiteDecision(strict);
     const result = evaluateFtsPipeline({
       symbol: 'فولاد',
@@ -111,7 +110,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
 
   it('محاسبه حد ضرر بر اساس افق: نوسانی ۵٪ زیر ورود، روندی زیر کف ماژور، ساعت شنی بنیادی', () => {
     const inputs: BusInput = {};
-    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20 });
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
     const decision = definiteDecision(strict);
 
     // ۱) نوسان‌گیر
@@ -163,7 +162,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
         payload: { score: 5, passes: {} },
       }),
     };
-    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20 });
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
     const decision = definiteDecision(strict);
     const res = evaluateFtsPipeline({
       symbol: 'فملی',

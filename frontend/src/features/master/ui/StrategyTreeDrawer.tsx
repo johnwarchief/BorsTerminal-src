@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
   type StrategyTreeConfig,
+  type TechnicalBranchConfig,
   DEFAULT_STRATEGY_TREES,
   loadStrategyTree,
   saveStrategyTree,
@@ -267,7 +268,7 @@ export function StrategyTreeDrawer({
                       setConfig({
                         ...config,
                         presetKey: 'custom',
-                        technical: { ...config.technical, stopLossMode: e.target.value as any },
+                        technical: { ...config.technical, stopLossMode: e.target.value as TechnicalBranchConfig['stopLossMode'] },
                       })
                     }
                     className="rounded border border-border-c bg-bg-primary px-2 py-0.5 text-2xs text-text-primary"

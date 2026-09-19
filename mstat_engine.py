@@ -199,9 +199,15 @@ def ensure_schema(conn) -> None:
 
 
 # ============================================================ طبقه‌بندی ابزار
-# TSETMC تنها منبعِ معتبرِ طبقهٔ ابزار است (paperType). sector_code «68» هم
-# صندوق و هم اختیارجِ آن صندوق را در بر می‌گیرد، پس بدون paperType ردیف‌های
-# «ص.اهرمی/طلا/نقره» و «سهام و حق تقدم» ساختنی نیست.
+# اولویت: نام/سکتور، آن‌گاه paperType. دلیل: فیلترِ paperType خودِ TSETMC
+# نشت‌کننده است — یک ابزار را می‌تواند زیرِ چندین paperType برگرداند، و چون
+# fetch_paper_types نخستین دسته‌ای که می‌بیند را پیاده می‌کند، بسیاری از
+# صندوق‌ها/اوراق برای همیشه pt=1 (سهام) می‌گیرند. روی دادهٔ ۲۰۲۶-۰۹-۱۹: از
+# ۱۷۷۳ ردیفِ pt=1/2 تعداد ۸۸۲ تا غیرسهامی بودند (۳۶۳ اوراق، ۳۶۹ صندوق، ۵
+# تسهیلات) و ۶۷,۰۹۳ میلیارد تومان از سطرِ «سهام و حق تقدم» می‌ربودند؛ ضمناً
+# هر پنج سطرِ صندوقی صفر می‌شدند چون fund_kind فقط برای pt=8 اجرا می‌شد.
+# کلیدواژه‌ها همان assetType.ts سمتِ فرانت‌اند‌اند که از پیش درست کار می‌کند؛
+# اینجا فقط همان منطق به سرور آورده می‌شود تا دو طرفِ مرز یک دست بمانند.
 
 PAPER_STOCK, PAPER_RIGHT, PAPER_FUND = "stock", "right", "fund"
 
@@ -242,8 +248,80 @@ def fund_kind(l_val30: str, l_val18: str) -> str:
     return "etf"
 
 
-def classify(paper_type, l_val30: str = "", l_val18: str = "") -> tuple:
-    """(طبقه، زیرگونه) — طبقه از paperType، زیرگونهٔ صندوق از نام."""
+# v9.8.2 — قراردادهای اختیار: TSETMC در یک تغییرِ اخیر آن‌ها را در پاسخِ
+# paperType=1 (همان فهرستِ سهام) هم برمی‌گرداند، پس مقدارِ paper_type در بانک
+# ممکن است ۱ باشد در حالی که ابزار اختیار است. نامشان («اختيارخ/اختيارف/اختيارج»
+# با یِ عربی، یا «اختیار» با یِ فارسی) بی‌ابهام است. روی دادهٔ ۲۰۲۶-۰۹-۱۹:
+# ۱۹۰۸ اختیار هست که ۱۴۶۱ تایشان paper_type=1 گرفته‌اند، و هیچ نامِ غیر-اختیاری
+# این کلیدها را ندارد (سوءاثرِ صفر، تأییدشده با کوئری).
+_OPTION_KEYS = ("اختيار", "اختیار")
+
+
+def is_option(l_val30: str = "", l_val18: str = "") -> bool:
+    """نام، قرارداد اختیار را نشان می‌دهد — تنها راهِ بی‌ابهام وقتی paperType دروغ می‌گوید."""
+    name = (l_val30 or "") + " " + (l_val18 or "")
+    return any(k in name for k in _OPTION_KEYS)
+
+
+# v9.10.2 — کشفِ نام-محورِ صندوق/اوراق/تسهیلات.
+# ي/ك عربی و نیم‌فاصله: «اوراق تامين مالي» و «صندوق سرمايه گذاري» در بانک با
+# نوشتارِ عربی ذخیره شده‌اند، پس بدون یکسان‌سازی، کلیدواژهٔ فارسی هیچ‌وقت
+# تطبیق نمی‌خورد.
+_NORMALIZE = str.maketrans({"ي": "ی", "ى": "ی", "ك": "ک", "‌": "", "‍": ""})
+
+_BOND_SYM_PREFIX = ("اخزا", "اراد", "افاد", "گام")
+_BOND_NAME = ("اوراق", "اسناد")
+_BOND_SECTOR = ("اوراق تامین",)
+_FUND_NAME = ("صندوق", "ETF")
+_FUND_SECTOR = ("صندوق سرمایه",)
+_TESEH_SECTOR = ("اوراق حق تقدم",)
+
+
+def _norm(s: str) -> str:
+    """نرمال‌سازیِ نوشتار — همان norm در assetType.ts: ی/ک عربی و نیم‌فاصله."""
+    return (s or "").translate(_NORMALIZE).strip()
+
+
+def is_fund(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool:
+    """صندوق بودن از نام/سکتور — «صندوق سرمايه گذاري...» سکتورِ رسمیِ همهٔ صندهاست."""
+    n, c = _norm(l_val30), _norm(sector_name)
+    return any(k in n for k in _FUND_NAME) or any(k in c for k in _FUND_SECTOR)
+
+
+def is_bond(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool:
+    """اوراق بودن از نماد/نام/سکتور — «اوراق تامين مالي» سکتورِ رسمیِ اوراق است."""
+    s, n, c = _norm(l_val18).upper(), _norm(l_val30), _norm(sector_name)
+    return (s.startswith(_BOND_SYM_PREFIX) or any(k in n for k in _BOND_NAME)
+            or any(k in c for k in _BOND_SECTOR))
+
+
+def is_teseh(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool:
+    """اوراق حق تقدم (تسهیلات مسکن/ملی) — نه خودِ حق تقدم.
+
+    فقط از سکتور تشخیص داده می‌شود: پیشوندِ «ض»/«ط» در نماد، علاوه بر تسهیلات،
+    نمادهای اختیارِ خرید/فروش را هم پوشش می‌دهد (۱۵۶۲ نماد در ۲۰۲۶-۰۹-۱۹) و
+    آن‌ها فقط با نامشان از تمایز می‌شوند، پس پیشوند در اینجا به‌تنهایی ناایمن است."""
+    return any(k in _norm(sector_name) for k in _TESEH_SECTOR)
+
+
+def classify(paper_type, l_val30: str = "", l_val18: str = "", sector_name: str = "") -> tuple:
+    """(طبقه، زیرگونه) — اول نام/سکتور، بعد paperType.
+
+    ترتیب دقیقاً assetType.ts است: اختیار → صندوق → اوراق → تسهیلات →
+    حق تقدم → paperType. اختیارها باید اول بیایند، چون اختیارِ اهرم سکتورِ
+    «صندوق سرمایه گذاری» می‌گیرد وگرنه به جای صندوق می‌نشیند. paperType به
+    تنهایی کافی نیست (بالای این بخش توضیح داده شد)؛ نام و سکتور بی‌ابهام‌اند
+    و هر دو در همان سطرِ market_watch موجودند."""
+    if is_option(l_val30, l_val18):
+        return "other", "other"
+    if is_fund(l_val18, l_val30, sector_name):
+        return PAPER_FUND, fund_kind(l_val30, l_val18)
+    if is_bond(l_val18, l_val30, sector_name):
+        return "other", "other"
+    if is_teseh(l_val18, l_val30, sector_name):
+        return "other", "other"
+    if _norm(l_val18).upper().endswith("ح") or "حق تقدم" in _norm(l_val30):
+        return PAPER_RIGHT, "right"
     if paper_type in (1, 2):
         return PAPER_STOCK, "stock"
     if paper_type == 4:
@@ -341,7 +419,8 @@ def load_snapshot(conn, force: bool = False) -> dict:
         d = dict(zip(keys, tuple(r)))
         d["symbol"] = (d.get("symbol") or "").strip()
         d["name"] = (d.get("name") or "").strip()
-        d["cls"], d["kind"] = classify(d.get("paper_type"), d["name"], d["symbol"])
+        d["cls"], d["kind"] = classify(d.get("paper_type"), d["name"], d["symbol"],
+                                      d.get("sector_name"))
         py, pcl, plst = d.get("p_yesterday"), d.get("p_closing"), d.get("p_last")
         # بازدهیِ پایانی نسبت به دیروز — همان «مثبت/منفی» بودنِ نماد.
         # قیمتِ دیروز باید هم‌مرتبهٔ پایانی باشد، وگرنه شمارش آلوده می‌شود.
@@ -930,7 +1009,16 @@ def mainwatch(conn, group: str = "eq_all", industry: str = "", sort: str = "cloc
             "symbol": r["symbol"], "ins_code": r["ins_code"],
             "name": r["name"], "industry": (r.get("sector_name") or "").strip(),
             "cls": r["cls"], "kind": r["kind"],
-            "vol_b_shares": round(m["vol"] / B_SHARES, 4),
+            # ۶ رقمِ اعشار یعنی حداقلِ ۱۰۰۰ سهم قابل‌نمایش. با ۴ رقم، سهامِ
+            # گران‌قیمت با حجمِ کم (مثل سپامهر: ۹۹۵۹ سهم در ۶۵ معامله و ۴۸۴ میلیون
+            # ریال ارزش) به‌اشتباه ۰٫۰۰۰۰ نشان داده می‌شدند و سرتیبِ حجم هم
+            # می‌شکست — همه در ۰ قفل می‌شدند. این فیلد فقط نمایش/مرتب‌سازی است؛
+            # اعتبارسنجیِ «معامله‌شده بودن» باید از روی «trades» انجام شود.
+            "vol_b_shares": round(m["vol"] / B_SHARES, 6),
+            # تعدادِ معاملهٔ خام: سیگنالِ قابل‌اتکای «این نماد معامله شده»،
+            # فارغ از یکای نمایش. هر دو فیلد زیر JSON/جدول اضافه می‌شوند و
+            # ستون‌های ثابتِ mstat.js تحت‌تاثیر قرار نمی‌گیرند.
+            "trades": m["trades"],
             "val_b_toman": round(m["val"] / B_TUMAN_FROM_RIAL, 1),
             "p_last": _f(plst) if ok_last else None, "p_closing": _f(pcl),
             "pct_last": (100.0 * _div(_f(plst) - _f(py), py)

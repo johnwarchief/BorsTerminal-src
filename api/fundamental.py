@@ -1945,17 +1945,15 @@ def get_fundamental(symbol: str, months: int = 0):
     conn = get_db()
     try:
         _pred_i, _params_i = fts_engine.sym_in("i.l_val18", symbol)
-        cur.execute(f"""
+        inst = conn.execute(f"""
             SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
             FROM instruments i
             LEFT JOIN market_watch m ON i.ins_code = m.ins_code
             WHERE {_pred_i}
             ORDER BY i.updated_at DESC LIMIT 1
-        """, _params_i)
-        inst = cur.fetchone()
+        """, _params_i).fetchone()
         if not inst:
-            cur.execute(_INSTR_SQL, (fts_engine.norm_fa(symbol),))
-            inst = cur.fetchone()
+            inst = conn.execute(_INSTR_SQL, (fts_engine.norm_fa(symbol),)).fetchone()
         pred, params = fts_engine.sym_in("symbol", symbol)
         cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
                           "ORDER BY period_end DESC LIMIT 1" % pred, params).fetchone()
@@ -1973,8 +1971,7 @@ def get_fundamental(symbol: str, months: int = 0):
         m_und = re.match(r"^(.*?)\d+$", symbol)
         base_cand = m_und.group(1) if m_und else None
         if base_cand and base_cand != symbol and inst is None:
-            cur.execute(_INSTR_SQL, (base_cand,))
-            inst = cur.fetchone()
+            inst = conn.execute(_INSTR_SQL, (base_cand,)).fetchone()
             if inst:
                 sector = str(inst["sector_name"] or "")
                 norm_symbol = base_cand

@@ -33,7 +33,7 @@ export const useSignalStore = create<SignalBusState>((set) => ({
       if (
         current &&
         current.score === signal.score &&
-        current.action === signal.action &&
+        current.direction === signal.direction &&
         current.confidence === signal.confidence &&
         current.rationale === signal.rationale
       ) {
@@ -58,7 +58,7 @@ export const useSignalStore = create<SignalBusState>((set) => ({
         if (
           !current ||
           current.score !== signal.score ||
-          current.action !== signal.action ||
+          current.direction !== signal.direction ||
           current.confidence !== signal.confidence ||
           current.rationale !== signal.rationale
         ) {

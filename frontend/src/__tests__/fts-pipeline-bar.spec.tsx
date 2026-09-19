@@ -7,6 +7,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { FtsPipelineBar } from '../widgets/FtsPipelineBar';
 import { StrategyHorizonSelector } from '../features/master/ui/StrategyHorizonSelector';
+import type { StrategyHorizon } from '../features/master/lib/ftsPipelineEvaluator';
 
 function renderWithClient(ui: React.ReactElement, initialRoute = '/') {
   const queryClient = new QueryClient({
@@ -70,12 +71,12 @@ describe('FtsPipelineBar & StrategyHorizonSelector', () => {
   });
 
   it('انتخابگر StrategyHorizonSelector گزینه‌ها را تغییر می‌دهد و رویداد کلیک را شلیک می‌کند', () => {
-    let selectedHorizon = 'trend';
+    let selectedHorizon: StrategyHorizon = 'trend';
     let modalOpened = false;
 
-    const { rerender } = render(
+    render(
       <StrategyHorizonSelector
-        horizon={selectedHorizon as any}
+        horizon={selectedHorizon}
         recommendedHorizon="hourglass"
         onSelectHorizon={(h) => {
           selectedHorizon = h;

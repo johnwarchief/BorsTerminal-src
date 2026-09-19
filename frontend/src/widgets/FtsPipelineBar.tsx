@@ -7,7 +7,6 @@ import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { runStrictGates, definiteDecision } from '@features/master/lib/strictGates';
 import {
   evaluateFtsPipeline,
-  type StrategyHorizon,
   HORIZON_LABELS,
 } from '@features/master/lib/ftsPipelineEvaluator';
 import { useStrategyStore } from '@shared/stores/strategyStore';
@@ -41,6 +40,8 @@ export function FtsPipelineBar() {
         inBasket: null,
         industryUsedPct: null,
         industryCapPct: 20,
+        warRegime: false,
+        symbolWeightPct: null,
       }),
     [inputs],
   );
@@ -69,12 +70,6 @@ export function FtsPipelineBar() {
     pass: '✓',
     fail: '✗',
     wait: '⏳',
-  };
-
-  const statusStyles = {
-    pass: 'border-accent-green/40 bg-accent-green/15 text-accent-green',
-    fail: 'border-accent-red/40 bg-accent-red/15 text-accent-red',
-    wait: 'border-accent-yellow/40 bg-accent-yellow/15 text-accent-yellow',
   };
 
   return (

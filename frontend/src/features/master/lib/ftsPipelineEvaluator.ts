@@ -2,17 +2,12 @@
 // گام ۱ (تابلو) → گام ۲ (تکنیکال ۲ زمانه) → گام ۳ (بنیادی ۵ گیت) → گام ۴ (پلن مستر و سرمایه)
 // مطابق با مستندات رسمی docs/FTS_SYSTEM_SPECIFICATION_v2.md
 import { toFaDigits } from '@shared/lib/fmt';
-import type { AgentSignal } from '@contracts/signal';
 import type { BusInput } from './masterMath';
 import {
   type StrictGatesResult,
   type DefiniteDecision,
-  type WeeklyTrendInput,
-  weeklyTrendFromSignal,
   isSuperFundamental,
   hasDirectEntrySetup,
-  definiteDecision,
-  runStrictGates,
 } from './strictGates';
 
 export type StrategyHorizon = 'swing' | 'trend' | 'hourglass';
@@ -128,21 +123,17 @@ export function evaluateFtsPipeline(args: {
   resistancePrice?: number | null;
   supportPrice?: number | null;
   fundScore?: number | null;
-  pricingMode?: string | null;
   realYearsEps?: number | null;
   salesGrowthPct?: number | null;
   grossMarginPct?: number | null;
-  salesToMcapRatio?: number | null;
 }): PipelineEvaluation {
   const {
     symbol,
     inputs,
     strict,
     decision,
-    pricingMode = null,
     salesGrowthPct = null,
     grossMarginPct = null,
-    salesToMcapRatio = null,
   } = args;
 
   const fundScore = args.fundScore ?? (typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null);
@@ -249,10 +240,10 @@ export function evaluateFtsPipeline(args: {
   // ──────────────────────────────────────────────────────────
   const weekly = strict.weekly;
   const weeklyUptrend = weekly.uptrend ?? (techPayload.weekly_uptrend as boolean) ?? null;
-  const jetActive = Boolean(techPayload.jet_active ?? (techPayload.jet as any)?.active);
-  const chochBullish = Boolean(techPayload.choch_bullish ?? (techPayload.choch as any)?.bullish);
-  const pointHuntActive = Boolean(techPayload.point_hunt_active ?? (techPayload.point_hunt as any)?.active);
-  const doubleBottomActive = Boolean(techPayload.double_bottom_active ?? (techPayload.double_bottom as any)?.active);
+  const jetActive = Boolean(techPayload.jet_active ?? (techPayload.jet as Record<string, unknown> | undefined)?.active);
+  const chochBullish = Boolean(techPayload.choch_bullish ?? (techPayload.choch as Record<string, unknown> | undefined)?.bullish);
+  const pointHuntActive = Boolean(techPayload.point_hunt_active ?? (techPayload.point_hunt as Record<string, unknown> | undefined)?.active);
+  const doubleBottomActive = Boolean(techPayload.double_bottom_active ?? (techPayload.double_bottom as Record<string, unknown> | undefined)?.active);
 
   let techStatus: PipelineStepStatus = 'wait';
   let techHeadline = 'ساختار تکنیکال در انتظار ستاپ';
@@ -310,7 +301,7 @@ export function evaluateFtsPipeline(args: {
   // ──────────────────────────────────────────────────────────
   // گام ۳: سلامت ۵ شاخص بنیادی (Fundamental 5 Gates)
   // ──────────────────────────────────────────────────────────
-  const excluded = Boolean(fundPayload.excluded ?? (fundSig as any)?.excluded);
+  const excluded = Boolean(fundPayload.excluded ?? (fundSig as Record<string, unknown> | undefined)?.excluded);
   const exclusionReasons = Array.isArray(fundPayload.exclusion_reasons)
     ? (fundPayload.exclusion_reasons as string[])
     : [];
@@ -482,8 +473,8 @@ export function evaluateFtsPipeline(args: {
   const marginStr =
     grossMarginPct != null
       ? numFa(grossMarginPct, 1)
-      : typeof (fundPayload as any).gross_margin_pct === 'number'
-        ? numFa((fundPayload as any).gross_margin_pct, 1)
+      : typeof fundPayload.gross_margin_pct === 'number'
+        ? numFa(fundPayload.gross_margin_pct, 1)
         : '۱۸';
 
   const narrativeFund =

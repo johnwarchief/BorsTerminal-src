@@ -512,7 +512,11 @@ if os.path.exists("market.db"):
     clk = [r for r in lm["rows"] if r["clock_ok"]]
     ck(all(r["clock_pct"] >= ME.CLOCK_PCT for r in clk),
        "نامزدهای الگوی ساعت همه بالای آستانه‌اند (%d)" % len(clk))
-    ck(all(r["vol_b_shares"] > 0 for r in clk), "نامزدِ بی‌معامله نداریم")
+    # «بی‌معامله» یعنی صفرِ معامله، نه صفرِ نمایشِ حجم: سهامِ گران‌قیمت با
+    # حجمِ کم (مثل سپامهر: ۹۹۵۹ سهم در ۶۵ معامله) حجمشان در یکای «میلیارد سهم»
+    # گرد می‌شود، ولی معامله داشته‌اند — گارد روی تعدادِ معامله است.
+    ck(all(r["trades"] and r["trades"] > 0 for r in clk),
+       "نامزدِ بی‌معامله نداریم (همه معامله داشته‌اند، %d نماد)" % len(clk))
     lh = ME.histogram(conn)
     ck(sum(b["count"] for b in lh["histo12"]) == lh["known"],
        "روی دادهٔ واقعی هم جمعِ میله‌ها = known (%d)" % lh["known"])

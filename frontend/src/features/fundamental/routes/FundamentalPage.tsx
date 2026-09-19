@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
-import { HttpError } from '@shared/api/http';
+import { http, HttpError } from '@shared/api/http';
 import { toFaDigits } from '@shared/lib/fmt';
 import { statementAgeDays } from '@shared/lib/jalaali';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -53,7 +53,7 @@ export default function FundamentalPage() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch('/api/sync/codal/fts-refresh?mode=monthly', { method: 'POST' });
+      await http('/api/sync/codal/fts-refresh?mode=monthly', { method: 'POST' });
     } catch { /* سرور ممکن است فوراً پاسخ ندهد؛ بازخوانی را ادامه می‌دهیم */ }
     try { await screen.refetch(); } finally { setRefreshing(false); }
   };

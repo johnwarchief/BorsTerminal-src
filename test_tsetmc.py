@@ -182,6 +182,15 @@ def fetch_paper_types(getter, label="paperTypes"):
     به‌جای کلید رد می‌شد و نقشه همیشه خالی برمی‌گشت (Paper-type map: 0).
     """
     out = {}
+    # v9.10.2 — TSETMC یک ابزار را می‌تواند زیرِ چندین paperType برگرداند:
+    # بسیاری از صندوق‌ها (و برخی اوراق) در پاسخِ pt=1، همان فهرستِ سهام، هم
+    # می‌آیند. نسخهٔ پیشین نخستینِ طبقه‌ای را که می‌دید پیاده می‌کرد و چون
+    # pt=1 اول می‌آمد، آن‌ها برای همیشه سهام می‌ماندند — در نتیجه سطرهای
+    # «ص.سهامی/درآمد ثابت/اهرمی/طلا» همگی صفر می‌شدند و «سهام و حق تقدم»
+    # سه برابرِ واقعی. اکنون خاص‌ترین طبقه برنده می‌شود: ۸ (صندوق) > ۴
+    # (حق تقدم) > ۲/۱ (سهام). خواندن هم‌چنان از pt=1 شروع می‌شود تا اگر
+    # ابزاری فقط آن‌جاست، سهامِ ساده بماند.
+    rank = {8: 3, 4: 2, 2: 1, 1: 1}
     for pt in (1, 2, 4, 8):
         try:
             rows = getter(f"{BASE}/ClosingPrice/GetMarketWatch?market=0"
@@ -192,7 +201,18 @@ def fetch_paper_types(getter, label="paperTypes"):
             rows = []
         for x in rows:
             ic = x.get("insCode")
-            if ic and ic not in out:
+            if not ic:
+                continue
+            # v9.8.2 — TSETMC قراردادهای اختیار را در پاسخِ paperType=1 (همان
+            # فهرستِ سهام) هم می‌فرستد. آن‌ها را ثبت نمی‌کنیم تا paper_type شان
+            # NULL بماند و در mstat_engine.classify به‌جای سهام، «other» شوند
+            # (همانند mstat_engine.is_option). وگرنه حجمِ خردِ اختیارها جدولِ
+            # الگوی ساعت و تجمیعِ حجمِ سهام را آلوده می‌کرد.
+            nm = (x.get("lvc") or "") + " " + (x.get("lva") or "")
+            if "اختيار" in nm or "اختیار" in nm:
+                continue
+            cur = out.get(ic)
+            if cur is None or rank[pt] > rank[cur]:
                 out[ic] = pt
     return out
 
