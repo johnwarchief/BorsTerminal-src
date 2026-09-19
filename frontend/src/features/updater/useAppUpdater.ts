@@ -1,5 +1,7 @@
 // features/updater/useAppUpdater.ts -- هوک اختصاصی مدیریت به‌روزرسانی خودکار و درون‌برنامه‌ای Tauri v2
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { http, HttpError } from '@shared/api/http';
+import type { Update, DownloadEvent } from '@tauri-apps/plugin-updater';
 
 export interface UpdateInfo {
   version: string;
@@ -17,13 +19,20 @@ export type UpdaterStatus =
   | 'ready-to-restart'
   | 'error';
 
+/** پاسخ اندپوینت latest release گیت‌هاب — فقط فیلدهای مورد نیاز هوک */
+interface GitHubRelease {
+  tag_name?: string;
+  body?: string;
+  published_at?: string;
+}
+
 export function isTauriEnvironment(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
 export function useAppUpdater() {
   const [status, setStatus] = useState<UpdaterStatus>('idle');
-  const [currentVersion, setCurrentVersion] = useState<string>('1.0.2');
+  const [currentVersion, setCurrentVersion] = useState<string>('1.0.3');
   const [newVersion, setNewVersion] = useState<string | null>(null);
   const [releaseNotes, setReleaseNotes] = useState<string | null>(null);
   const [releaseDate, setReleaseDate] = useState<string | null>(null);
@@ -34,8 +43,7 @@ export function useAppUpdater() {
   const [manualFile, setManualFile] = useState<File | null>(null);
 
   // نگهداشت ارجاع شیء آپدیت توری برای پروسه دانلود و نصب
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activeUpdateRef = useRef<any>(null);
+  const activeUpdateRef = useRef<Update | null>(null);
 
   // تشخیص نسخه جاری در شروع
   useEffect(() => {
@@ -43,7 +51,7 @@ export function useAppUpdater() {
       import('@tauri-apps/api/app')
         .then((mod) => mod.getVersion())
         .then((v) => setCurrentVersion(v))
-        .catch(() => setCurrentVersion('1.0.2'));
+        .catch(() => setCurrentVersion('1.0.3'));
     }
   }, []);
 
@@ -65,7 +73,7 @@ export function useAppUpdater() {
         if (update && update.available) {
           activeUpdateRef.current = update;
           setNewVersion(update.version);
-          setCurrentVersion(update.currentVersion || '1.0.2');
+          setCurrentVersion(update.currentVersion || '1.0.3');
           setReleaseNotes(update.body || 'نسخه جدید شامل بهبودهای امنیتی و عملکردی است.');
           setReleaseDate(update.date || new Date().toISOString());
           setStatus('available');
@@ -75,9 +83,9 @@ export function useAppUpdater() {
           setStatus('up-to-date');
           return false;
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Tauri updater check failed:', err);
-        setErrorMessage(err?.message || 'خطا در ارتباط با سرور به‌روزرسانی.');
+        setErrorMessage(err instanceof Error ? err.message : 'خطا در ارتباط با سرور به‌روزرسانی.');
         setStatus('error');
         return false;
       }
@@ -85,19 +93,7 @@ export function useAppUpdater() {
 
     // حالت وب / فال‌بک (بررسی از طریق GitHub API عمومی)
     try {
-      const resp = await fetch('https://api.github.com/repos/johnwarchief/BorsTerminal/releases/latest', {
-        headers: { Accept: 'application/vnd.github.v3+json' },
-      });
-
-      if (!resp.ok) {
-        if (resp.status === 404) {
-          setStatus('up-to-date');
-          return false;
-        }
-        throw new Error(`خطای سرور گیت‌هاب: کد ${resp.status}`);
-      }
-
-      const data = await resp.json();
+      const data = await http<GitHubRelease>('https://api.github.com/repos/johnwarchief/BorsTerminal/releases/latest');
       const latestTag = (data.tag_name || '').replace(/^v/, '');
 
       if (latestTag && latestTag !== currentVersion) {
@@ -110,9 +106,14 @@ export function useAppUpdater() {
         setStatus('up-to-date');
         return false;
       }
-    } catch (err: any) {
+    } catch (err) {
+      // ریلیزی روی گیت‌هاب وجود ندارد → نسخهٔ جاری آخرین نسخه است
+      if (err instanceof HttpError && err.status === 404) {
+        setStatus('up-to-date');
+        return false;
+      }
       if (!silent) {
-        setErrorMessage(err?.message || 'امکان استعلام نسخه در محیط وب وجود ندارد.');
+        setErrorMessage(err instanceof Error ? err.message : 'امکان استعلام نسخه در محیط وب وجود ندارد.');
         setStatus('error');
       }
       return false;
@@ -131,14 +132,15 @@ export function useAppUpdater() {
     setTotalBytes(0);
     setErrorMessage(null);
 
+    const update = activeUpdateRef.current;
+
     // حالت نیتیو Tauri با دانلود تدریجی واقعی
-    if (isTauriEnvironment() && activeUpdateRef.current) {
+    if (isTauriEnvironment() && update) {
       try {
-        const update = activeUpdateRef.current;
         let downloaded = 0;
         let contentLength = 0;
 
-        await update.downloadAndInstall((event: any) => {
+        await update.downloadAndInstall((event: DownloadEvent) => {
           switch (event.event) {
             case 'Started':
               contentLength = event.data.contentLength ?? 0;
@@ -159,9 +161,9 @@ export function useAppUpdater() {
         });
 
         setStatus('ready-to-restart');
-      } catch (err: any) {
+      } catch (err) {
         console.error('Tauri downloadAndInstall error:', err);
-        setErrorMessage(err?.message || 'خطا حین دانلود و استقرار پکیج به‌روزرسانی.');
+        setErrorMessage(err instanceof Error ? err.message : 'خطا حین دانلود و استقرار پکیج به‌روزرسانی.');
         setStatus('error');
       }
       return;
@@ -189,7 +191,7 @@ export function useAppUpdater() {
       try {
         const { relaunch } = await import('@tauri-apps/plugin-process');
         await relaunch();
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to relaunch:', err);
         window.location.reload();
       }

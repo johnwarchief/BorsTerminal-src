@@ -158,7 +158,7 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
 
               <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                 <a
-                  href="https://github.com/johnwarchief/BorsTerminal/releases/latest/download/BorsTerminal_Ultimate_Setup_v1.0.2.exe"
+                  href="https://github.com/johnwarchief/BorsTerminal/releases/latest/download/BorsTerminal_Ultimate_Setup_v1.0.3.exe"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 rounded-xl border border-border-c bg-bg-card/70 px-3.5 py-2 text-xs font-bold text-text-secondary hover:border-accent-blue hover:text-accent-blue transition-all"
