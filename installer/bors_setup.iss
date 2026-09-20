@@ -2,6 +2,9 @@
 #define AppVersion "1.0.9"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
+; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
+; برای تشخیصِ نصبِ قبلی در بخشِ [Code].
+#define AppRegID "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}_is1"
 ; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود
 #include ".setup_password.iss"
 
@@ -68,3 +71,134 @@ Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\logs"
 Type: filesandordirs; Name: "{app}\backups"
+
+; ===========================================================================
+; حالتِ تعمیر / حذف-و-نصبِ مجدد
+; ===========================================================================
+; وقتی نسخهٔ قبلی نصب است، یک صفحهٔ انتخاب به کاربر نشان داده می‌شود:
+;   ۱) نصبِ مجدد / تعمیر فایلها در همان مسیر        (پیش‌فرض)
+;   ۲) نصبِ مجدد + بازنشانی دیتابیس بازار
+;   ۳) حذفِ کامل برنامه و نصبِ دوباره از صفر
+;   ۴) فقط حذفِ کامل برنامه (بدون نصبِ دوباره)
+;
+; توجه: آپدیتِ درون‌برنامه‌ای با /VERYSILENT اجرا می‌شود و WizardSilent() است،
+; پس هیچ‌کدام از این صفحات ساخته نمی‌شوند و مسیرِ ارتقای سایلنت دست‌نخورده
+; می‌ماند. این حالت فقط نصبِ تعاملی (دابل‌کلیک روی setup.exe) را تغییر می‌دهد.
+[Code]
+var
+  MaintenancePage: TInputOptionWizardPage;
+
+const
+  UNINST_KEY = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#AppRegID}';
+
+// آیا نصبِ قبلی وجود دارد و مسیرش روی دیسک سالم است؟
+function PriorInstallLocation(var Dir: String): Boolean;
+begin
+  Result := RegQueryStringValue(HKCU, UNINST_KEY, 'InstallLocation', Dir);
+  if not Result then
+    Result := RegQueryStringValue(HKLM, UNINST_KEY, 'InstallLocation', Dir);
+  if Result and not DirExists(Dir) then
+    Result := False;
+end;
+
+procedure InitializeWizard();
+var
+  PriorDir: String;
+begin
+  MaintenancePage := nil;
+  // در نصبِ سایلنت (آپدیتِ خودکار) هیچ صفحه‌ای نشان داده نمی‌شود.
+  if WizardSilent() then
+    Exit;
+  if not PriorInstallLocation(PriorDir) then
+    Exit;
+
+  MaintenancePage := CreateInputOptionPage(wpWelcome,
+    'تعمیر یا نصبِ مجدد',
+    'نسخهٔ قبلی برنامه در این مسیر نصب شده است:' + #13#10 + PriorDir,
+    'می‌خواهید چه کاری انجام شود؟', False, False);
+  MaintenancePage.Add('نصبِ مجدد / تعمیر فایلها در همان مسیر (توصیه‌شده)');
+  MaintenancePage.Add('نصبِ مجدد + بازنشانی دیتابیس بازار');
+  MaintenancePage.Add('حذفِ کامل برنامه و نصبِ دوباره از صفر');
+  MaintenancePage.Add('فقط حذفِ کامل برنامه (بدون نصبِ دوباره)');
+  MaintenancePage.Values[0] := True;
+end;
+
+function SelectedMaintenance: Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  if MaintenancePage = nil then
+    Exit;
+  for I := 0 to MaintenancePage.CheckListBox.Items.Count - 1 do
+    if MaintenancePage.Values[I] then
+    begin
+      Result := I;
+      Break;
+    end;
+end;
+
+// اگر برنامه در حالِ اجرا باشد uninstall نمی‌تواند فایلها را پاک کند.
+procedure EnsureAppNotRunning();
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{cmd}'), '/C "taskkill /F /IM {#AppExe} >NUL 2>NUL"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+// unins000.exe را کاملاً سایلنت اجرا می‌کند و موفقیت را برمی‌گرداند.
+function RunFullUninstall: Boolean;
+var
+  Uninstaller: String;
+  ResultCode: Integer;
+begin
+  Result := False;
+  Uninstaller := ExpandConstant('{app}\unins000.exe');
+  if not FileExists(Uninstaller) then
+    Exit;
+  EnsureAppNotRunning();
+  if Exec(Uninstaller, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '',
+      SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    Result := (ResultCode = 0);
+end;
+
+// market.db ای که برنامه در زمانِ اجرا از market.db.lzma استخراج کرده.
+procedure DeleteRuntimeDb;
+begin
+  DeleteFile(ExpandConstant('{app}\market.db'));
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Choice: Integer;
+begin
+  Result := '';
+  Choice := SelectedMaintenance;
+  if Choice < 0 then
+    Exit;
+
+  case Choice of
+    1:
+      DeleteRuntimeDb;
+    2:
+      begin
+        if not RunFullUninstall then
+          MsgBox('حذفِ کامل نسخهٔ قبلی ناموفق بود. نصبِ نسخهٔ جدید ادامه می‌یابد.',
+            mbError, MB_OK);
+        DeleteRuntimeDb;
+      end;
+    3:
+      begin
+        if RunFullUninstall then
+        begin
+          DeleteFile(ExpandConstant('{app}\market.db'));
+          DeleteFile(ExpandConstant('{app}\market.db.lzma'));
+          // برگرداندنِ متنِ غیرخالی = توقفِ نصب (با یک پیام به کاربر)
+          Result := 'برنامه به‌طور کامل حذف شد. نصبِ نسخهٔ جدید لغو شد.';
+        end
+        else
+          Result := 'حذفِ کامل ناموفق بود؛ لطفاً از Settings > Apps ویندوز حذف کنید.';
+      end;
+  end;
+end;
