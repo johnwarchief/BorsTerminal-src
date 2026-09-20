@@ -76,7 +76,53 @@ function Build-Exe {
     Write-Host '[exe] PyInstaller'
     & $PY -m PyInstaller bors_setup.spec --noconfirm --distpath "$root\dist" --workpath "$root\build"
 }
+function Assert-DistFresh {
+    # جلوگیری از بسته‌بندیِ یک distیِ قدیمی در نصابِ جدید. ریشهٔ یک کلاس
+    # باگِ خطرناک: اگر dist/ از قبل وجود داشته باشد، Build-Setup/Build-Portable
+    # بدونِ هیچ بررسی‌ای دوباره از آن استفاده می‌کنند. پس اگر اپِ فریزشده
+    # قدیمی‌تر از منابع باشد (مثلاً بعد از bumpِ نسخه یا یک فیکس، rebuild
+    # نشده باشد)، یا نسخه‌اش با bors_setup.iss یکی نباشد، اینجا متوقف می‌شویم.
+    $exe = Join-Path $root 'dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe'
+    if (-not (Test-Path $exe)) { return }
+    $built = (Get-Item $exe).LastWriteTime
+
+    $issVer = $null
+    $iss = Get-Content (Join-Path $root 'installer\bors_setup.iss') -Raw
+    if ($iss -match '(?m)^\s*#define\s+AppVersion\s+"([^"]+)"') { $issVer = $Matches[1] }
+
+    $appVer = $null
+    $cfg = Join-Path $root 'dist\BorsTerminal_Ultimate\_internal\bors_config.py'
+    if (-not (Test-Path $cfg)) { $cfg = Join-Path $root 'dist\BorsTerminal_Ultimate\bors_config.py' }
+    if (Test-Path $cfg) {
+        $m = [regex]::Match((Get-Content $cfg -Raw), 'APP_VERSION\s*=\s*"([^"]+)"')
+        if ($m.Success) { $appVer = $m.Groups[1].Value }
+    }
+    if ($issVer -and $appVer -and ($appVer -ne $issVer)) {
+        Write-Error ("[guard] stale dist: frozen app is v{0} but bors_setup.iss is v{1}. after a version bump the app MUST be rebuilt — delete dist\ and re-run. ABORT." -f $appVer, $issVer)
+        exit 1
+    }
+
+    $watch = 'bors_config.py','bors_entry.py','bors_minisign.py','bors_setup.spec','fts_terminal.spec','installer/bors_setup.iss','frontend/package.json','frontend/package-lock.json','frontend/src-tauri/tauri.conf.json'
+    $stale = @()
+    foreach ($f in $watch) {
+        $p = Join-Path $root ($f -replace '/', '\')
+        if ((Test-Path $p) -and ((Get-Item $p).LastWriteTime -gt $built)) { $stale += $f }
+    }
+    foreach ($d in 'api','frontend/src') {
+        $p = Join-Path $root $d
+        if (Test-Path $p) {
+            Get-ChildItem $p -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.LastWriteTime -gt $built } |
+                ForEach-Object { $stale += $_.FullName.Substring($root.Length + 1) }
+        }
+    }
+    if ($stale.Count) {
+        Write-Error ("[guard] dist is older than these sources: {0}. rebuild the app first (delete dist\ and re-run). ABORT." -f ($stale -join ', '))
+        exit 1
+    }
+}
 function Build-Setup {
+    Assert-DistFresh
     if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force }
     # فقط lzma باندل می‌شود. یک market.dbیِ سرگردان در dist (باقیمانده از runهای
@@ -114,6 +160,7 @@ function Build-Base {
     Write-Host ("  -> " + $out + "  (" + [math]::Round((Get-Item $out).Length/1MB,2) + " MB)")
 }
 function Build-Portable {
+    Assert-DistFresh
     if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     $stage = "$root\releases\portable_$ver"
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
