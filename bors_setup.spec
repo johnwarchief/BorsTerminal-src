@@ -3,6 +3,10 @@
 import os
 BASE = os.path.abspath(os.path.dirname(SPEC)) if 'SPEC' in locals() else os.getcwd()
 
+# رمزِ نصب‌کننده (gitignore شده، فقط محلی) برای /VERYSILENTِ آپدیتِر. بدون
+# این فایل در _MEIPASS، _setup_password() آن را نمی‌یابد و نصبِ خودکار نمی‌تواند
+# بدونِ پرسشِ رمز انجام شود.
+_pw_file = os.path.join(BASE, 'installer', '.setup_password.iss')
 a = Analysis(
     ['bors_entry.py'],
     pathex=[BASE],
@@ -24,7 +28,8 @@ a = Analysis(
         ('bors_flags.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
-    ],
+    ] + ([(os.path.join('installer', '.setup_password.iss'), '.')]
+         if os.path.exists(_pw_file) else []),
     hiddenimports=[
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
@@ -36,6 +41,7 @@ a = Analysis(
         'api.screener', 'api._sync_market', 'api._export',
         'api._sync_codal', 'api.adb', 'api.notify',
         'api._pipeline', 'api.engine', 'api.market_index',
+        'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',
         'websockets', 'packaging',

@@ -2,6 +2,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { http, HttpError } from '@shared/api/http';
 import type { Update, DownloadEvent } from '@tauri-apps/plugin-updater';
+// نسخهٔ واقعی برنامه — منبعِ واحدِ حقیقت package.json است و در زمان build درون
+// باندل اینلاین می‌شود، تا placeholderهای فرانت‌اند هرگز استیل نشوند.
+import { APP_VERSION } from '@shared/version';
 
 export interface UpdateInfo {
   version: string;
@@ -19,12 +22,77 @@ export type UpdaterStatus =
   | 'ready-to-restart'
   | 'error';
 
-/** پاسخ اندپوینت latest release گیت‌هاب — فقط فیلدهای مورد نیاز هوک */
-interface GitHubRelease {
-  tag_name?: string;
-  body?: string;
-  published_at?: string;
+/**
+ * قراردادِ فرانت‌اند با api/update.py — مسیرهای به‌روزرسانِ واقعیِ پایتون.
+ * این‌ها شبیه‌سازی نیستند؛ هر فیلد دقیقاً خروجیِ همان اندپوینت است.
+ */
+interface CheckResponse {
+  status: 'success' | 'error';
+  current_version: string;
+  latest_version?: string;
+  available?: boolean;
+  notes?: string;
+  date?: string;
+  url?: string;
+  signature?: string;
+  updater?: string;
+  message?: string;
 }
+
+interface ProgressResponse {
+  status: 'idle' | 'downloading' | 'verifying' | 'ready' | 'installing' | 'error';
+  downloaded: number;
+  total: number;
+  version: string;
+  path: string;
+  signature: string;
+  message: string;
+}
+
+interface InstallResponse {
+  status: 'installing' | 'error';
+  log?: string;
+  flags?: string[];
+  message?: string;
+}
+
+interface PendingUpdate {
+  url: string;
+  signature: string;
+  version: string;
+}
+
+/** خروجیِ /api/update/version — نسخهٔ هستهٔ پایتون */
+interface VersionResponse {
+  version: string;
+  tauri: boolean;
+}
+
+/**
+ * پیامِ خطای کاربرپسند — متنِ خامِ استثناهای پایتون (مثلاً
+ * "ValueError: signature verification failed") را به فارسیِ قابلِ فهم
+ * تبدیل می‌کند. جزئیاتِ فنیِ پیام اصلی برای دیباگ در console لاگ می‌شود
+ * ولی هرگز به کاربر نشان داده نمی‌شود.
+ */
+function friendlyErrorMessage(raw: string | null | undefined): string {
+  const msg = (raw || '').trim();
+  if (!msg) return 'عملیات ناموفق بود؛ لطفاً دوباره تلاش کنید.';
+  const low = msg.toLowerCase();
+  if (/signature verification failed|bad signature|tampered|minisign|key id|public key/.test(low)) {
+    return 'راستی‌آزمایی امضای دیجیتال ناموفق بود. بستهٔ دریافت‌شده دستکاری شده یا ناقص است؛ دوباره تلاش کنید.';
+  }
+  if (/connection|timeout|timed out|failed to fetch|network|dns|reset by peer/.test(low)) {
+    return 'اتصال به سرور برقرار نشد. اینترنت خود را بررسی کرده و دوباره تلاش کنید.';
+  }
+  if (/404|not found|یافت نشد/.test(low)) {
+    return 'بستهٔ نصبِ این نسخه روی سرور یافت نشد.';
+  }
+  if (/403|401|forbidden|unauthorized|دسترسی/.test(low)) {
+    return 'دسترسی به سرورِ به‌روزرسانی مجاز نیست.';
+  }
+  return msg;
+}
+
 
 export function isTauriEnvironment(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -32,7 +100,7 @@ export function isTauriEnvironment(): boolean {
 
 export function useAppUpdater() {
   const [status, setStatus] = useState<UpdaterStatus>('idle');
-  const [currentVersion, setCurrentVersion] = useState<string>('1.0.3');
+  const [currentVersion, setCurrentVersion] = useState<string>(APP_VERSION);
   const [newVersion, setNewVersion] = useState<string | null>(null);
   const [releaseNotes, setReleaseNotes] = useState<string | null>(null);
   const [releaseDate, setReleaseDate] = useState<string | null>(null);
@@ -44,6 +112,10 @@ export function useAppUpdater() {
 
   // نگهداشت ارجاع شیء آپدیت توری برای پروسه دانلود و نصب
   const activeUpdateRef = useRef<Update | null>(null);
+  // مانیفستِ دریافت‌شده از /api/update/check (url + signature) برای مرحلهٔ download
+  const pendingUpdateRef = useRef<PendingUpdate | null>(null);
+  // جلوگیری از نشتِ حلقهٔ نظرسنجیِ progress بعد از unmount
+  const pollingRef = useRef<AbortController | null>(null);
 
   // تشخیص نسخه جاری در شروع
   useEffect(() => {
@@ -51,9 +123,17 @@ export function useAppUpdater() {
       import('@tauri-apps/api/app')
         .then((mod) => mod.getVersion())
         .then((v) => setCurrentVersion(v))
-        .catch(() => setCurrentVersion('1.0.3'));
+        .catch(() => setCurrentVersion(APP_VERSION));
+    } else {
+      // نسخهٔ واقعیِ هستهٔ پایتون (bors_config.APP_VERSION) — منبعِ واحد حقیقت
+      http<VersionResponse>('/api/update/version', { retries: 1 })
+        .then((v) => setCurrentVersion(v.version || APP_VERSION))
+        .catch(() => setCurrentVersion(APP_VERSION));
     }
   }, []);
+
+  // توقفِ نظرسنجیِ پس‌زمینه هنگام unmount
+  useEffect(() => () => pollingRef.current?.abort(), []);
 
   /**
    * بررسی وجود نسخه جدید
@@ -73,7 +153,7 @@ export function useAppUpdater() {
         if (update && update.available) {
           activeUpdateRef.current = update;
           setNewVersion(update.version);
-          setCurrentVersion(update.currentVersion || '1.0.3');
+          setCurrentVersion(update.currentVersion || APP_VERSION);
           setReleaseNotes(update.body || 'نسخه جدید شامل بهبودهای امنیتی و عملکردی است.');
           setReleaseDate(update.date || new Date().toISOString());
           setStatus('available');
@@ -91,29 +171,36 @@ export function useAppUpdater() {
       }
     }
 
-    // حالت وب / فال‌بک (بررسی از طریق GitHub API عمومی)
+    // حالت وب / هستهٔ پایتون (api/update.py): مانیفست + مقایسهٔ semver سمتِ سرور
     try {
-      const data = await http<GitHubRelease>('https://api.github.com/repos/johnwarchief/BorsTerminal/releases/latest');
-      const latestTag = (data.tag_name || '').replace(/^v/, '');
+      const data = await http<CheckResponse>('/api/update/check');
+      if (data.status === 'error') {
+        throw new HttpError(0, '/api/update/check', data.message || 'خطا در دریافت مانیفست به‌روزرسانی.');
+      }
+      setCurrentVersion(data.current_version || currentVersion);
 
-      if (latestTag && latestTag !== currentVersion) {
-        setNewVersion(latestTag);
-        setReleaseNotes(data.body || 'تغییرات نسخه جدید در گیت‌هاب در دسترس است.');
-        setReleaseDate(data.published_at || new Date().toISOString());
+      if (data.available && data.url && data.signature) {
+        pendingUpdateRef.current = {
+          url: data.url,
+          signature: data.signature,
+          version: data.latest_version || '',
+        };
+        setNewVersion(data.latest_version || null);
+        setReleaseNotes(data.notes || 'نسخهٔ جدید شامل بهبودهای امنیتی و عملکردی است.');
+        setReleaseDate(data.date || new Date().toISOString());
         setStatus('available');
         return true;
-      } else {
-        setStatus('up-to-date');
-        return false;
       }
+
+      pendingUpdateRef.current = null;
+      setStatus('up-to-date');
+      return false;
     } catch (err) {
-      // ریلیزی روی گیت‌هاب وجود ندارد → نسخهٔ جاری آخرین نسخه است
-      if (err instanceof HttpError && err.status === 404) {
-        setStatus('up-to-date');
-        return false;
-      }
       if (!silent) {
-        setErrorMessage(err instanceof Error ? err.message : 'امکان استعلام نسخه در محیط وب وجود ندارد.');
+        console.error('[updater] check failed:', err);
+        setErrorMessage(
+          friendlyErrorMessage(err instanceof Error ? err.message : 'امکان استعلام نسخه وجود ندارد.'),
+        );
         setStatus('error');
       }
       return false;
@@ -169,18 +256,80 @@ export function useAppUpdater() {
       return;
     }
 
-    // شبیه‌سازی در محیط وب یا هنگام عدم اتصال به هسته نیتیو
-    let currentPct = 0;
-    const timer = setInterval(() => {
-      currentPct += 15;
-      if (currentPct >= 100) {
-        clearInterval(timer);
-        setDownloadProgress(100);
-        setStatus('ready-to-restart');
-      } else {
-        setDownloadProgress(currentPct);
+    // حالت وب / هستهٔ پایتون: download واقعی → نظرسنجیِ progress → install سایلنت
+    const pending = pendingUpdateRef.current;
+    if (!pending) {
+      setErrorMessage('ابتدا بررسی به‌روزرسانی را انجام دهید (check).');
+      setStatus('error');
+      return;
+    }
+
+    try {
+      // ۱) شروعِ دانلود در پس‌زمینهٔ سرور
+      await http<{ status: string; path: string }>('/api/update/download', {
+        method: 'POST',
+        body: pending,
+        retries: 1,
+      });
+
+      // ۲) نظرسنجیِ پیشرفت تا رسیدن به ready (یا error)
+      pollingRef.current?.abort();
+      const pollCtl = new AbortController();
+      pollingRef.current = pollCtl;
+      let final: ProgressResponse | null = null;
+      while (!pollCtl.signal.aborted) {
+        const p = await http<ProgressResponse>('/api/update/progress', {
+          retries: 1,
+          signal: pollCtl.signal,
+        });
+        setDownloadedBytes(p.downloaded || 0);
+        setTotalBytes(p.total || 0);
+        if (p.total > 0) {
+          setDownloadProgress(Math.min(99, Math.round((p.downloaded / p.total) * 100)));
+        }
+        if (p.status === 'verifying') {
+          setDownloadProgress(100);
+        }
+        if (p.status === 'ready' || p.status === 'error') {
+          final = p;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        if (pollCtl.signal.aborted) return;
       }
-    }, 200);
+      if (!final) return;
+
+      if (final.status === 'error') {
+        console.error('[updater] download/verify failed:', final.message);
+        setErrorMessage(friendlyErrorMessage(final.message));
+        setStatus('error');
+        return;
+      }
+
+      // ۳) راستی‌آزماییِ نهایی + اجرای نصبِ سایلنت (پاسخ، رمز را لو نمی‌دهد)
+      const install = await http<InstallResponse>('/api/update/install', {
+        method: 'POST',
+        retries: 0, // سرور کمتر از ۲ ثانیه بعد خارج می‌شود؛ تلاشِ مجدد بی‌معنی است
+      });
+      if (install.status === 'error') {
+        console.error('[updater] install failed:', install.message);
+        setErrorMessage(friendlyErrorMessage(install.message));
+        setStatus('error');
+        return;
+      }
+      // نصب‌کننده در یک پروسهٔ مستقل اجرا می‌شود و نسخهٔ جدید را دوباره
+      // بالا می‌آورد؛ کاربر می‌تواند همین الان صفحه را تازه کند.
+      setStatus('ready-to-restart');
+    } catch (err) {
+      // سرور بعد از شروعِ نصب می‌میرد → قطعِ ارتباط طبیعی است، نصب ادامه دارد.
+      const aborted = err instanceof DOMException && err.name === 'AbortError';
+      if (aborted) return;
+      console.error('[updater] download/install failed:', err);
+      setErrorMessage(
+        friendlyErrorMessage(err instanceof Error ? err.message : 'خطا در دانلود یا نصب بسته.'),
+      );
+      setStatus('error');
+    }
   }, [status]);
 
   /**
@@ -201,27 +350,60 @@ export function useAppUpdater() {
   }, []);
 
   /**
-   * آپدیت دستی آفلاین از طریق انتخاب فایل فشرده
+   * آپدیت دستی آفلاین: کاربر setup.exe و امضای همان‌نام (.sig) را می‌دهد.
+   * بدنهٔ خامِ باینری مستقیماً روی /api/update/install-local می‌رود (بدون
+   * multipart) و سرور قبل از هر کاری امضای minisign را راستی‌آزمایی می‌کند.
    */
-  const handleOfflineZipSelect = useCallback((file: File) => {
+  const handleOfflineZipSelect = useCallback(async (file: File, sigFile?: File) => {
     setManualFile(file);
     setErrorMessage(null);
     setStatus('downloading');
     setDownloadProgress(0);
+    setDownloadedBytes(0);
+    setTotalBytes(file.size);
 
-    // پردازش پکیج دستی
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 25;
-      setDownloadProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        const match = file.name.match(/(\d+\.\d+(?:\.\d+)?)/);
-        setNewVersion(match ? match[1] : 'دستی');
-        setReleaseNotes(`پکیج آفلاین با موفقیت بارگذاری شد: ${file.name}`);
-        setStatus('ready-to-restart');
+    if (!file.name.toLowerCase().endsWith('.exe')) {
+      setErrorMessage('فقط نصب‌کنندهٔ .exe برای آپدیتِ آفلاین پذیرفته می‌شود.');
+      setStatus('error');
+      return;
+    }
+    if (!sigFile) {
+      setErrorMessage('فایل امضا (.sig) را هم کنار نصب‌کننده انتخاب کنید.');
+      setStatus('error');
+      return;
+    }
+
+    try {
+      const signature = (await sigFile.text()).trim();
+      const res = await http<InstallResponse>(
+        '/api/update/install-local?signature=' + encodeURIComponent(signature) +
+          '&name=' + encodeURIComponent(file.name),
+        {
+          method: 'POST',
+          rawBody: file,
+          headers: { 'Content-Type': 'application/octet-stream' },
+          retries: 0,
+        },
+      );
+      if (res.status === 'error') {
+        console.error('[updater] offline install failed:', res.message);
+        setErrorMessage(friendlyErrorMessage(res.message));
+        setStatus('error');
+        return;
       }
-    }, 200);
+      const match = file.name.match(/(\d+\.\d+(?:\.\d+)?)/);
+      setNewVersion(match ? match[1] : 'دستی');
+      setReleaseNotes(`پکیج آفلاین تأیید و در حال نصب است: ${file.name}`);
+      setStatus('ready-to-restart');
+    } catch (err) {
+      const aborted = err instanceof DOMException && err.name === 'AbortError';
+      if (aborted) return;
+      console.error('[updater] offline upload failed:', err);
+      setErrorMessage(
+        friendlyErrorMessage(err instanceof Error ? err.message : 'بارگذاری بستهٔ آفلاین ناموفق بود.'),
+      );
+      setStatus('error');
+    }
   }, []);
 
   const resetState = useCallback(() => {

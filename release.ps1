@@ -18,10 +18,55 @@ $ver = (Get-Date -Format 'yyyy.MM.dd')
 Write-Host "== BorsTerminal release: mode=$Mode  root=$root" -ForegroundColor Cyan
 
 function Ensure-Db {
-    if (Test-Path 'market.db') {
-        Write-Host '[db] compressing market.db -> market.db.lzma'
-        & $PY -c "import lzma,os;d=open('market.db','rb').read();open('market.db.lzma','wb').write(lzma.compress(d,preset=9));print('  lzma MB', round(os.path.getsize('market.db.lzma')/1048576,1))"
-    } else { Write-Host '[db] market.db not found (skip)' }
+    # تا به حال این تابع هر market.dbی را با هر محتوایی فشرده می‌کرد. اگر dbِ
+    # محلی ناقص باشد (سینکِ نیمه‌تمام، یا یک dbیِ خالیِ ساخته‌شده توسط مسیری
+    # که preflight را دور می‌زند)، همان چیز به‌عنوانِ market.db.lzmaیِ ریلیز
+    # بسته می‌شد — دقیقاً ریشهٔ باگِ v1.0.7/8. اکنون ابتدا منبع اعتبارسنجی
+    # می‌شود؛ اگر ناقص بود با خطا متوقف می‌شویم تا baselineیِ commit‌شده
+    # دست‌نخورده بماند.
+    if (-not (Test-Path 'market.db')) { Write-Host '[db] market.db not found (skip)'; return }
+
+    Write-Host '[db] validating source market.db'
+    & $PY -c 'import sqlite3,sys
+need={"instruments","daily_prices","financial_statements"}
+try:
+    cur=sqlite3.connect("file:market.db?mode=ro",uri=True)
+    have={r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type=\"table\"")}
+    fs=cur.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0] if "financial_statements" in have else 0
+    cur.close()
+except Exception as e:
+    print("SRC_BAD: %r"%e); sys.exit(1)
+miss=sorted(need-have)
+if miss:
+    print("SRC_INCOMPLETE missing=%s"%",".join(miss)); sys.exit(1)
+if fs<1000:
+    print("SRC_TOO_SMALL financial_statements rows=%d"%fs); sys.exit(1)
+print("SRC_OK financial_statements rows=%d"%fs)'
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error '[db] source market.db is incomplete — refusing to overwrite the committed market.db.lzma baseline. ABORT.'
+        exit 1
+    }
+
+    if (Test-Path 'market.db.lzma') {
+        Copy-Item 'market.db.lzma' 'market.db.lzma.bak' -Force
+        Write-Host '[db] backed up previous market.db.lzma -> market.db.lzma.bak'
+    }
+    Write-Host '[db] compressing market.db -> market.db.lzma'
+    & $PY -c 'import lzma,os
+d=open("market.db","rb").read()
+open("market.db.lzma","wb").write(lzma.compress(d,preset=9))
+print("  lzma MB", round(os.path.getsize("market.db.lzma")/1048576,1))'
+    # round-trip: lzma باید دقیقاً همانیِ منبع را برگرداند؛ وگرنه baselineیِ
+    # قبلی را برگردان و متوقف شو.
+    & $PY -c 'import lzma
+d=open("market.db.lzma","rb").read(); s=open("market.db","rb").read()
+assert lzma.decompress(d)==s, "round-trip mismatch"
+print("  round-trip OK")'
+    if ($LASTEXITCODE -ne 0) {
+        if (Test-Path 'market.db.lzma.bak') { Copy-Item 'market.db.lzma.bak' 'market.db.lzma' -Force }
+        Write-Error '[db] market.db.lzma round-trip verification FAILED — restored previous baseline. ABORT.'
+        exit 1
+    }
 }
 function Build-Frontend {
     Write-Host '[fe] npm install + build'
@@ -34,9 +79,32 @@ function Build-Exe {
 function Build-Setup {
     if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force }
+    # فقط lzma باندل می‌شود. یک market.dbیِ سرگردان در dist (باقیمانده از runهای
+    # قبلی یا ابزارهای تست) نباید سرازیرِ نصب شود؛ در غیر این صورت نصب یک dbیِ
+    # خام/ناقص را هم می‌گیرد و ensure_market_db ممکن است همان را بپذیرد.
+    $stray = "$root\dist\BorsTerminal_Ultimate\market.db"
+    if (Test-Path $stray) { Remove-Item $stray -Force; Write-Host '[setup] removed stray dist market.db' }
     Write-Host '[setup] Inno Setup'
     & $ISCC "$root\installer\bors_setup.iss"
     Get-ChildItem "$root\installer\out\*.exe" | ForEach-Object { Write-Host ("  -> " + $_.FullName + "  (" + [math]::Round($_.Length/1MB,1) + " MB)") }
+    Sign-Setup
+}
+
+function Sign-Setup {
+    # امضای minisign (Ed25519 روی blake2b-512) که آپدیتِرِ tauri لازم دارد.
+    # کلِ منطق در scripts/sign_setup.py: اول tauri signer (با timeout سخت)،
+    # سپس fallbackِ minisignِ خالصِ پایتون، و در پایان تأییدِ امضا. بدونِ امضای
+    # معتبر آپدیتِر این بیلد را رد می‌کند — پس بیلد را اینجا متوقف می‌کنیم.
+    $setup = Get-ChildItem "$root\installer\out\BorsTerminal_Ultimate_Setup_*.exe" |
+             Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not $setup) { Write-Host '[sign] no installer found (skip)'; return }
+    Write-Host '[sign] minisign (tauri-first, python fallback, verify)'
+    & $PY "$root\scripts\sign_setup.py" $setup.FullName
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error '[sign] signature missing or invalid — the updater would reject this build. ABORT.'
+        exit 1
+    }
+    Get-ChildItem "$root\installer\out\*.sig" | ForEach-Object { Write-Host ("  -> " + $_.Name + "  (" + [math]::Round($_.Length/1KB,1) + " KB)") }
 }
 function Build-Base {
     $out = "$root\..\BorsTerminal_BaseCode_$ver.zip"

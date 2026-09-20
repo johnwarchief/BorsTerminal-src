@@ -12,7 +12,7 @@ from fastapi import APIRouter
 import pandas as pd
 import os
 import json
-from bors_config import DB_PATH
+from bors_config import DB_PATH, WORK_DIR
 
 import time
 
@@ -21,7 +21,11 @@ import time
 # اسکریپت آپدیت کدال در صورت نیاز این کش را باطل می‌کند.
 _SCREENER_CACHE = {"cfg_hash": None, "payload": None, "ts": 0.0}
 _SCREENER_CACHE_TTL = 43200.0  # ۱۲ ساعت
-CACHE_FILE = os.path.join(os.path.dirname(__file__), "..", ".screener_cache.json")
+# کش باید داخلِ WORK_DIR (محلِ نوشتنی) باشد: کنارِ EXE در حالتِ پرتابیل،
+# وگرنه %LOCALAPPDATA%\BorsTerminal_Ultimate\data. نوشتنِ کنارِ مسیرِ نصب
+# (Program Files) با «Permission denied» شکست می‌خورد و در هر استارت‌آپ خطا
+# لاگ می‌شد و کشِ دیسک عملاً از کار می‌افتاد.
+CACHE_FILE = os.path.join(WORK_DIR, ".screener_cache.json")
 
 def invalidate_screener_cache():
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال)."""
@@ -294,6 +298,7 @@ def get_screener():
         _SCREENER_CACHE["ts"] = now
         
         try:
+            os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
             with open(CACHE_FILE, "w", encoding="utf-8") as f:
                 json.dump({"cfg_hash": cfg_hash, "payload": payload, "ts": now}, f, ensure_ascii=False)
             print("[screener] saved to disk cache")

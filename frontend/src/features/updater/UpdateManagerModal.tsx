@@ -16,6 +16,8 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
     releaseNotes,
     releaseDate,
     downloadProgress,
+    downloadedBytes,
+    totalBytes,
     errorMessage,
     isTauri,
     checkForUpdates,
@@ -27,6 +29,13 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fmtBytes = (n: number): string => {
+    if (!n) return '0 B';
+    const u = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.min(u.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+    return (n / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
+  };
+
   React.useEffect(() => {
     if (open && status === 'idle') {
       checkForUpdates(false);
@@ -36,10 +45,15 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
   if (!open) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleOfflineZipSelect(file);
+    const files = Array.from(e.target.files || []);
+    const exe = files.find((f) => f.name.toLowerCase().endsWith('.exe'));
+    const sig = files.find((f) => f.name.toLowerCase().endsWith('.sig'));
+    if (exe) {
+      handleOfflineZipSelect(exe, sig);
+    } else if (files.length) {
+      handleOfflineZipSelect(files[0], undefined);
     }
+    e.target.value = ''; // اجازهٔ انتخابِ مجددِ همان فایل
   };
 
   return createPortal(
@@ -80,7 +94,7 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
                 <span>•</span>
                 <span className={`inline-flex items-center gap-1 font-bold ${isTauri ? 'text-accent-green' : 'text-accent-blue'}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${isTauri ? 'bg-accent-green animate-pulse' : 'bg-accent-blue'}`} />
-                  {isTauri ? 'محیط نیتیو Tauri v2' : 'محیط وب / ایزوله'}
+                  {isTauri ? 'محیط نیتیو Tauri v2' : 'مرورگر · هستهٔ پایتون'}
                 </span>
               </div>
             </div>
@@ -158,7 +172,11 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
 
               <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
                 <a
-                  href="https://github.com/johnwarchief/BorsTerminal/releases/latest/download/BorsTerminal_Ultimate_Setup_v1.0.3.exe"
+                  href={
+                    newVersion
+                      ? `https://github.com/johnwarchief/BorsTerminal/releases/download/v${newVersion}/BorsTerminal_Ultimate_Setup_v${newVersion}.exe`
+                      : 'https://github.com/johnwarchief/BorsTerminal/releases/latest'
+                  }
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 rounded-xl border border-border-c bg-bg-card/70 px-3.5 py-2 text-xs font-bold text-text-secondary hover:border-accent-blue hover:text-accent-blue transition-all"
@@ -191,8 +209,13 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
                   style={{ width: `${downloadProgress}%` }}
                 />
               </div>
-              <div className="mt-2 text-center text-2xs text-text-muted">
-                امضای دیجیتال بسته به‌صورت بلادرنگ اعتبارسنجی می‌شود
+              <div className="mt-2 flex items-center justify-between text-2xs text-text-muted">
+                <span className="font-mono">
+                  {totalBytes > 0
+                    ? `${fmtBytes(downloadedBytes)} / ${fmtBytes(totalBytes)}`
+                    : 'در حال اتصال به سرور...'}
+                </span>
+                <span>امضای دیجیتال بسته قبل از اجرا تأیید می‌شود</span>
               </div>
             </div>
           )}
@@ -246,7 +269,8 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".zip,.msi,.exe,.tar.gz"
+                accept=".exe,.sig,.zip,.msi,.tar.gz"
+                multiple
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -257,6 +281,10 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
               >
                 انتخاب فایل...
               </button>
+            </div>
+            <div className="mt-2 text-2xs text-text-muted">
+              هر دو فایل را با هم انتخاب کنید: نصب‌کننده (setup.exe) و امضای آن (setup.exe.sig).
+              نصب فقط در صورتِ تأییدِ امضای دیجیتال اجرا می‌شود.
             </div>
           </div>
         </div>

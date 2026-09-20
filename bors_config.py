@@ -67,11 +67,17 @@ def _resolve_market_db():
     خودِ استخراج (حدود ۴۰ ثانیه) به ensure_market_db() موکول شده تا
     bors_entry در preflight پیشرفت را به کاربر نشان دهد؛ اینجا فقط مسیر
     نهایی را تعیین می‌کنیم. جستجو شامل کنار EXE (محل نصب)، WORK_DIR و
-    مسیرهای نسبی (dev) می‌شود.
+    مسیرهای نسبی (dev) می‌شود. کنارِ EXE فقط در صورتی انتخاب می‌شود که
+    پوشهٔ نصب نوشتنی باشد؛ در غیر این صورت WAL نمی‌تواند -wal/-shm بسازد.
     """
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
-    # ۱) market.db از قبل موجود (پرتابیل کنار EXE / دادهٔ کاربر / dev)
-    for d in (exe_dir, WORK_DIR):
+    # ۱) market.db از قبل موجود (پرتابیل کنار EXE / دادهٔ کاربر / dev).
+    # exe_dir فقط وقتی در نظر گرفته می‌شود که نوشتنی باشد: در نصبِ
+    # all-users پوشهٔ نصب فقط‌خواندنی است و sqlite برای WAL باید -wal/-shm
+    # را کنارِ db بسازد که ممکن نیست → «unable to open database file» روی
+    # هر اتصال. مثلِ _work_dir() از exe_dirِ غیرنوشتنی صرف‌نظر می‌کنیم.
+    dirs = [exe_dir, WORK_DIR] if _writable(exe_dir) else [WORK_DIR]
+    for d in dirs:
         p = os.path.join(d, "market.db")
         if os.path.exists(p):
             return p
@@ -104,8 +110,12 @@ def ensure_market_db(verbose=False):
             _probe.close()
         except Exception:
             _have = set()
-        # حداقل جداول موردنیاز برای داشتن دیتای بازار معتبر.
-        if {"instruments", "daily_prices"} <= _have:
+        # حداقل جداول موردنیاز برای داشتن دیتای بازار معتبر. financial_statements
+        # حتماً لازم است: اسکرینر بدون آن ۵۰۰ می‌دهد. در market.db.lzmaیِ ناقصِ
+        # v1.0.7/8 این جدول غایب بود ولی instruments+daily_prices موجود بودند،
+        # پس این نگهبان دیتای ناقص را می‌پذیرفت — و چون فایلِ قدیمی روی دیسک
+        # محفوظ می‌ماند، حتی ارتقا هم آن را اصلاح نمی‌کرد.
+        if {"instruments", "daily_prices", "financial_statements"} <= _have:
             return DB_PATH
         # ناقص است: کنار بگذار و دوباره از market.db.lzma بازسازی کن.
         try:
@@ -215,3 +225,9 @@ _CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
 _cal_cache = {"mtime": 0.0, "events": []}
 
 MA_WINDOWS = [5, 20, 50, 120]
+
+# v1.0.9 — نسخهٔ برنامه؛ منبعِ واحد برای api/update.py (مقایسهٔ semver).
+# هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
+# اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
+# در latest.json می‌نویسد).
+APP_VERSION = "1.0.9"

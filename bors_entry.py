@@ -23,8 +23,11 @@ def _preflight():
     print("=" * 66)
     ok = True
     # خود استخراج market.db.lzma → market.db (فقط بار اول؛ کاملاً آفلاین).
-    # ensure_market_db همیشه در WORK_DIR نوشتنی می‌نویسد (نه کنار EXE در
-    # Program Files) تا با Permission_denied گیر نکند.
+    # ensure_market_db در صورتِ نیاز market.db را در WORK_DIR نوشتنی
+    # می‌سازد. اکنون DB_PATH هم فقط به محل‌های نوشتنی اشاره می‌کند
+    # (_resolve_market_db از exe_dirِ فقط‌خواندنی صرف‌نظر می‌کند) تا WAL
+    # بتواند -wal/-shm را بسازد و هیچ endpointای با Permission denied گیر
+    # نکند.
     import bors_config
     db_path = bors_config.ensure_market_db(verbose=True)
     if not db_path or not os.path.exists(db_path):

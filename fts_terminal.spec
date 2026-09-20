@@ -29,7 +29,19 @@ a = Analysis(
         ('test_tsetmc.py', '.'),
         ('watchlist_store.py', '.'),
         ('api', 'api'),
-    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'))
+        # آپدیتِ درون‌برنامه‌ای: bors_minisign در ریشهٔ ریپو است و فقط از داخلِ
+        # api.update استفاده می‌شود که خود درونِ تابعِ api_router ایمپورت
+        # می‌شود → اسکنِ ایستایِ PyInstaller آن را نمی‌بیند، پس صریحاً باندل
+        # می‌کنیم تا نصبِ سایلنتِ آپدیت در نسخهٔ باندل‌شده کار کند.
+        ('bors_minisign.py', '.'),
+    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
+                    # setup.pw: رمزِ نصب‌کنندهٔ Inno برای /VERYSILENT (gitignored؛
+                    # فقط اگر موجود باشد باندل می‌شود — بدون آن آپدیت به /SILENT
+                    # تنزل می‌کند و کاربر یک‌بار رمز را وارد می‌کند).
+                    # مقصدِ '.' یعنی فایلِ .setup_password.iss در _internal/
+                    # می‌نشیند — که _setup_password() دقیقاً همان نام را می‌گردد
+                    # (نکته: عنصر دومِ datas یک پوشهٔ مقصد است، نه نام فایل).
+                    ('installer/.setup_password.iss', '.'))
          if os.path.exists(t[0])],
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
@@ -46,6 +58,9 @@ a = Analysis(
                    'api.screener', 'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
                    'api._pipeline', 'api.engine', 'watchlist_store',
+                   # آپدیتِ درون‌برنامه‌ای: مثلِ بقیه درونِ خودِ api_router
+                   # ایمپورت می‌شود و اسکنِ ایستا آن را نمی‌بیند.
+                   'api.update', 'bors_minisign',
                    'pandas._libs.tslibs.np_datetime', 'pandas._libs.tslibs.offsets',
                    'docx', 'openpyxl', 'reportlab',
                    'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',

@@ -20,26 +20,27 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخهٔ v1.0.5
+RELEASE_BODY = """## تغییرات نسخهٔ v1.0.9
 
-### 🗄 رفع باگ پایگاهٔدادهٔ خالی (market.db با حجم صفر) (مهمّترین تغییر)
-- **ریشهٔ باگ:** در بعضی نصب‌ها فایل `market.db` با حجم ۰ بایت ساخته می‌شد؛ چون جداول `instruments` و `daily_prices` وجود نداشتند، هر اتصال به پایگاهٔداده با خطا مواجه می‌شد و داده‌های بازار نمایش داده نمی‌شدند.
-- **اصلاح:** `bors_config.ensure_market_db()` اکنون پیش از هر اتصال، جداول مورد نیاز را بررسی می‌کند و در صورت نبودن، پایگاهٔداده را به‌صورت خودکار از `market.db.lzma` بازسازی می‌کند. `bors_entry._codal_worker` نیز پیش از هر اتصال `ensure_market_db()` را فراخوانی می‌کند.
-- **نتیجه:** در اولین اجرا و پس از نصب تمیز، جداول بازار و صورت‌های مالی به‌درستی ساخته و پر می‌شوند.
+### 🐛 رفعِ باگ (بحرانی)
+- **دیتابیسِ ناقص در v1.0.7/8:** `market.db.lzma`یِ ارسالی در آن دو نسخه پس از استخراج فقط جداولِ پایه را داشت و `financial_statements` غایب بود؛ نتیجه خطای ۵۰۰ در اسکرینر («no such table: financial_statements»). دو ریشه اصلاح شد:
+  1. `release.ps1` هر `market.db`ی را بی‌تفتش فشرده می‌کرد — حالا قبل از فشرده‌سازی منبع را اعتبارسنجی می‌کند (جداولِ موردنیاز + تعدادِ ردیف)، از baselineیِ فعلی بکاپ می‌گیرد و round-tripِ lzma را تأیید می‌کند.
+  2. `ensure_market_db()` برای پذیرشِ یک دیتابیسِ موجود روی دیسک، اکنون `financial_statements` را هم الزامی می‌کند؛ دیتابیسهای ناقص کنار گذاشته و دوباره از `market.db.lzma` استخراج می‌شوند. این یعنی **ارتقا از روی v1.0.7/8 هم دیتای ناقص را اصلاح می‌کند** (قبلاً فایلِ قدیمی محفوظ می‌ماند و باگ سر جایش می‌ماند).
+- **دیتابیسِ این نسخه:** یکپارچگیِ `market.db.lzma` تأیید شده (حدود ۱۰۳ مگابایت پس از استخراج: instruments=۵۱۲۹، daily_prices=۶۰۶۳۷، financial_statements=۸۰۰۹).
 
-### 🔧 بهبود ساخت و نشر
-- رفع ایراد PyInstaller در مورد فایل‌های `codal_control.json` و `adb_config.json` (در صورت وجود در زمان سخت گنجانده می‌شوند) و استفاده از `sys.executable` در `build_all.py`.
-- ساختار امضای آپدیتّر بررسی و تأیید شد؛ امضای نصاب v1.0.5 با کلید آپدیتّر موجود تطابق کامل دارد.
+### ⚙️ آپدیتِ خودکار
+- رمزِ نصب‌کننده داخلِ باندل (در `_internal`) قرار گرفت تا `/VERYSILENT` آپدیتِر بدونِ پرسش کار کند؛ `api.update` و `bors_minisign` به hiddenimports اضافه شدند.
+- مسیرِ امضای minisign به `scripts/sign_setup.py` منتقل و به `release.ps1` متصل شد: اول `tauri signer sign` با timeoutِ ۱۲۰ ثانیه، سپس fallbackِ minisign خالصِ پایتون، و در پایان تأییدِ امضا مقابلِ `updater.key.pub` — بدونِ امضای معتبر بیلد متوقف می‌شود.
 
 ### 🖥 موارد دیگر
-- افزایش نسخهٔ برنامه و مانیفست آپدیتّر به 1.0.5.
+- افزایش نسخهٔ برنامه و مانیفست آپدیتِ درون‌برنامه‌ای به 1.0.9.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.5")
+TAG = os.environ.get("RELEASE_TAG", "v1.0.9")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
@@ -66,9 +67,11 @@ def get_github_token():
 def build_latest_json():
     """Tauri v2 updater manifest pointing at the Inno installer.
 
-    Signature is the minisign sig file content (already uploaded as .sig);
-    the in-app updater verifies the downloaded installer against the pubkey
-    embedded in tauri.conf.json.
+    Signature is the minisign sig file content (already uploaded as .sig).
+    The tauri CLI writes that .sig as a single base64-wrapped line, which is
+    exactly the form the updater wants in this field (v1.0.6 shipped the same);
+    bors_minisign.parse_minisign_signature decodes it internally, and the raw
+    4-line block is recoverable by base64-decoding once if ever needed.
     """
     import datetime
     try:
@@ -165,7 +168,9 @@ def main():
     assets = target_release.get("assets", [])
     existing_names = {a.get("name") for a in assets}
     for a in assets:
-        if a.get("name") in (os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE)):
+        # latest.json is regenerated per-publish and embeds the current .sig,
+        # so a stale copy must be deleted too (GitHub 422s on duplicate names).
+        if a.get("name") in (os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"):
             print(f"[*] در حال حذف فایل قدیمی {a.get('name')} (ID {a['id']}) ...")
             del_req = urllib.request.Request(a["url"], headers=headers, method="DELETE")
             try:

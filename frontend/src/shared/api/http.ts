@@ -21,9 +21,17 @@ export interface HttpOptions {
   baseDelayMs?: number;
   signal?: AbortSignal;
   /** متد HTTP — پیش‌فرض GET؛ POST برای ذخیرهٔ تنظیمات (B5 داخل http.ts مجاز است) */
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT';
   /** بدنهٔ درخواست — همراه با method: 'POST' به صورت JSON ارسال می‌شود */
   body?: unknown;
+  /**
+   * بدینهٔ خام (Blob/ArrayBuffer/string) — مستقیماً و بدونِ JSON.stringify به
+   * fetch داده می‌شود. کاربرد: بارگذاریِ باینری مثل نصب‌کنندهٔ آفلاین روی
+   * /api/update/install-local (بدون نیاز به python-multipart).
+   */
+  rawBody?: BodyInit;
+  /** هدرهای اضافه یا رونویسی (مثلاً Content-Type برای rawBody) */
+  headers?: Record<string, string>;
 }
 
 const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
@@ -40,15 +48,24 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /** fetch با retry نمایی + Zod parse — الگوی codal_fetcher (backoff روی 429/403) */
 export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
-  const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET', body } = opts;
+  const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET',
+          body, rawBody, headers } = opts;
   let lastErr: unknown;
+
+  // JSON body فقط وقتی build می‌شود که بدنهٔ خام نیامده باشد (rawBody اولویت دارد).
+  const payload: BodyInit | undefined = rawBody ?? (body != null ? JSON.stringify(body) : undefined);
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetch(url, {
-        headers: body != null ? { Accept: 'application/json', 'Content-Type': 'application/json' } : { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          // برای بدینهٔ خام، Content-Type را فراخواننده تعیین می‌کند (در headers).
+          ...(payload && rawBody == null ? { 'Content-Type': 'application/json' } : {}),
+          ...headers,
+        },
         method,
-        ...(body != null ? { body: JSON.stringify(body) } : {}),
+        ...(payload != null ? { body: payload } : {}),
         signal,
       });
       if (!res.ok) {

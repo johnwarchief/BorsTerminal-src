@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateManagerModal } from '../features/updater/UpdateManagerModal';
 import { useAppUpdater, isTauriEnvironment } from '../features/updater/useAppUpdater';
 import { renderHook, act } from '@testing-library/react';
+// منبعِ واحدِ حقیقتِ نسخه: همان فایلی که vite در زمان build می‌خواند.
+import pkg from '../../package.json';
 
 describe('سیستم مدیریت به‌روزرسانی (Tauri v2 / Web Fallback)', () => {
   beforeEach(() => {
@@ -16,7 +18,7 @@ describe('سیستم مدیریت به‌روزرسانی (Tauri v2 / Web Fallba
   it('هوک useAppUpdater وضعیت اولیه صحیح برمی‌گرداند', () => {
     const { result } = renderHook(() => useAppUpdater());
     expect(result.current.status).toBe('idle');
-    expect(result.current.currentVersion).toBe('1.0.3');
+    expect(result.current.currentVersion).toBe(pkg.version);
     expect(result.current.newVersion).toBeNull();
     expect(result.current.downloadProgress).toBe(0);
   });

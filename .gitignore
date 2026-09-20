@@ -47,6 +47,8 @@ frontend/src-tauri/target/
 # ---- دیتابیس و کش (بازسازی‌شدنی؛ حجم بالا) ----
 *.db
 *.db-shm
+.cline_state/
+
 *.db-wal
 *.db-journal
 *.sqlite

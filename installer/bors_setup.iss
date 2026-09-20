@@ -1,5 +1,5 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.5"
+#define AppVersion "1.0.9"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود
@@ -11,6 +11,17 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\{#AppName}
+; --- نصبِ پیش‌فرض per-user: بدون نیاز به حقِ مدیر و بدون پنجرهٔ UAC. کاربر در
+;     نصبِ تعاملی هنوز می‌تواند «برای همهٔ کاربران» را انتخاب کند (آنگاه UAC
+;     می‌آید). وجودِ commandline ضروری است تا آپدیتِ درون‌برنامه‌ای بتواند با
+;     /CURRENTUSER یک نصبِ کاملاً سایلنت و بدونِ UAC انجام دهد؛ بدونِ آن، Inno
+;     این فلگ را نادیده می‌گیرد و به حالتِ admin (با UAC) برمی‌گردد.
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed="dialog commandline"
+; --- مسیرِ نصب همیشه از کاربر پرسیده می‌شود، حتی هنگام ارتقا (در نصبِ
+;     تعاملی). مقدارِ پیش‌فرضِ صفحه، مسیرِ نصبِ قبلی است (UsePreviousDir).
+DisableDirPage=no
+UsePreviousAppDir=yes
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=no
 UninstallDisplayIcon={app}\{#AppExe}
@@ -23,7 +34,6 @@ OutputDir=out
 OutputBaseFilename=BorsTerminal_Ultimate_Setup_v{#AppVersion}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequiredOverridesAllowed=dialog
 AllowNoIcons=yes
 ; --- زبان پیش‌فرض: فارسی. با غیرفعال کردن تشخیص خودکار زبان سیستم، همیشه
 ;     اولین زبان [Languages] (farsi) پیش‌فرض می‌شود؛ کاربر هنوز می‌تواند
@@ -50,7 +60,10 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{ap
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
+; آپدیتِ درون‌برنامه‌ای نصب را با /VERYSILENT اجرا می‌کند. در حالتِ سایلنت
+; skipifsilent جلوی اجرای برنامه را می‌گرفت و نسخهٔ جدید بالا نمی‌آمد؛
+; nowait یعنی Inno منتظرِ بسته‌شدنِ برنامه نمی‌ماند.
+Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\logs"
