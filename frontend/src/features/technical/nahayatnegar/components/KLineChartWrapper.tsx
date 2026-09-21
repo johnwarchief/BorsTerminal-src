@@ -748,7 +748,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       : ftsChartType === 'candle_down_stroke' ? 'candle_down_stroke'
       : 'candle_solid';
 
-    // ۳. رنگ و سبک خطوط گرید و نشانگر کراس‌هیر
+    // ۳. استخراج رنگ پس‌زمینه چارت بر مبنای تنظیمات ftsView و هماهنگی با تم
+    const bgSetting = ftsView?.background || 'dark';
+    const chartBgColor =
+      bgSetting === 'light' ? '#ffffff'
+      : bgSetting === 'classic' ? '#1e222d'
+      : bgSetting === 'custom' ? (ftsView?.customBgColor || '#131722')
+      : bgSetting === 'theme' ? (isLight ? '#ffffff' : '#131722')
+      : '#131722';
+
+    if (chartContainerRef.current) {
+      chartContainerRef.current.style.backgroundColor = chartBgColor;
+    }
+
+    // ۴. رنگ و سبک خطوط گرید و نشانگر کراس‌هیر
     const defaultGridColor = isLight ? '#f0f3fa' : '#242731';
     const gridColor = ftsView?.gridColor || defaultGridColor;
     const gridStyle = ftsView?.gridStyle === 'dashed' ? 'dashed'
@@ -768,8 +781,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     try {
       chart.setStyles({
         ...baseTheme,
+        separator: {
+          size: 1,
+          color: gridColor,
+          fill: true,
+          activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
+        },
         xAxis: {
-          size: 30,
+          size: 32,
+          axisLine: {
+            show: true,
+            color: isLight ? '#e0e3eb' : '#2a2e39',
+            size: 1
+          },
           tickText: {
             size: 12,
             family: 'Vazirmatn',
@@ -778,6 +802,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             marginEnd: 4
           },
           tickLine: {
+            show: true,
             length: 4,
             color: isLight ? '#e0e3eb' : '#2a2e39'
           }
@@ -879,18 +904,40 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           ],
           tooltip: {
             showRule: ftsView?.statusShowIndicators === false ? 'none' : 'always',
-            showType: 'standard'
+            showType: 'standard',
+            text: {
+              size: 11,
+              family: 'Vazirmatn',
+              color: isLight ? '#131722' : '#d1d4dc',
+              marginStart: 6,
+              marginEnd: 6
+            }
           }
         },
         yAxis: {
           reverse: !!ftsView?.yAxisReverse,
           inside: !!ftsView?.yAxisInside,
-          position: ftsView?.priceScalePos ?? 'right'
+          position: ftsView?.priceScalePos ?? 'right',
+          axisLine: {
+            show: true,
+            color: isLight ? '#e0e3eb' : '#2a2e39',
+            size: 1
+          },
+          tickLine: {
+            show: true,
+            length: 3,
+            color: isLight ? '#e0e3eb' : '#2a2e39'
+          },
+          tickText: {
+            color: isLight ? '#64748b' : '#d1d4dc',
+            size: 11,
+            family: 'Vazirmatn'
+          }
         }
       } as never);
 
       try {
-        chart.setPaneOptions({ id: 'sub_pane_vol', height: 100, minHeight: 85 });
+        chart.setPaneOptions({ id: 'sub_pane_vol', height: 110, minHeight: 90 });
       } catch (e) {
         void e;
       }
@@ -1294,8 +1341,42 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   };
 
 
+  // ذخیره فوری ترسیمات جاری در حافظه پیش از تغییر نماد یا تایم‌فریم
+  const flushDrawings = useCallback(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      const all = chart.getOverlays() as {
+        id?: string;
+        name?: string;
+        groupId?: string;
+        points?: { timestamp?: number; value?: number }[];
+        lock?: boolean;
+        styles?: unknown;
+        extendData?: unknown;
+      }[];
+      const snap: StoredOverlay[] = all
+        .filter((o) => o?.groupId === 'fts-draw' && o?.name && Array.isArray(o.points))
+        .map((o) => ({
+          id: o.id ?? `d_${Math.random().toString(36).slice(2, 8)}`,
+          name: o.name as string,
+          points: o.points as { timestamp: number; value: number }[],
+          lock: !!o.lock,
+          styles: o.styles,
+          extendData: o.extendData,
+        }));
+      if (snap.length > 0) {
+        saveSymbolDrawings(currentSymbol, snap);
+        saveDrawings(currentSymbol, activeTimeframe, snap);
+      }
+    } catch {
+      // safe
+    }
+  }, [currentSymbol, activeTimeframe]);
+
   // هندلر تغییر نماد
   const handleSelectSymbol = (sym: SymbolInfo) => {
+    flushDrawings();
     setCurrentSymbol(sym.symbol);
     setCurrentName(sym.name);
     setCurrentMarket(sym.market);
@@ -1304,6 +1385,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // هندلر تغییر تایم‌فریم
   const handleTimeframeChange = (tf: string) => {
+    flushDrawings();
     setActiveTimeframe(tf);
     const chart = chartRef.current;
     if (chart) {
@@ -1349,7 +1431,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const chart = chartRef.current;
     if (!chart) return;
 
-    if (overlayType === 'crosshair' || toolId === 'ruler') {
+    if (overlayType === 'crosshair') {
       setSelectedOverlayId(null);
       return;
     }
@@ -1357,6 +1439,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (overlayType === 'eraser') {
       chart.removeOverlay({ groupId: 'fts-draw' });
       setSelectedOverlayId(null);
+      flushDrawings();
       return;
     }
 
@@ -1367,9 +1450,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (isLogFib) {
         finalOverlayType = 'tvFibLog';
       }
+    } else if (toolId === 'ruler') {
+      finalOverlayType = 'ftsMeasure';
+    } else if (toolId === 'longPosition' || toolId === 'shortPosition') {
+      finalOverlayType = 'ftsPosition';
     }
 
     // ایجاد Overlay در KlineCharts v10 با انتساب قطعی به groupId: 'fts-draw'
+    // و جلوگیری از Pan/Scroll شدن بوم چارت در حین رسم و جابجایی المان
     try {
       const lineStyleObj = overlayStyle === 'solid'
         ? { style: 'solid' as const }
@@ -1389,6 +1477,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           },
           polygon: {
             color: overlayColor + '22'
+          }
+        },
+        onDrawStart: () => {
+          chart.setScrollEnabled(false);
+        },
+        onDrawEnd: () => {
+          chart.setScrollEnabled(true);
+          flushDrawings();
+        },
+        onPressedMoveStart: () => {
+          chart.setScrollEnabled(false);
+        },
+        onPressedMoveEnd: () => {
+          chart.setScrollEnabled(true);
+          flushDrawings();
+        },
+        onSelected: (params: any) => {
+          if (params?.overlay?.id) {
+            setSelectedOverlayId(String(params.overlay.id));
+            setSelectedOverlayName(params.overlay.name || toolId);
           }
         }
       } as never);
@@ -1773,7 +1881,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
               type="button"
               className={`nn-axis-btn ${isLogScale || ftsPriceScale === 'logarithm' ? 'active' : ''}`}
               onClick={toggleLogScale}
-              title="مقیاس لگاریتمی (log)"
+              title="مقیاس لگاریتمی"
               data-testid="axis-btn-log"
             >
               log
@@ -1785,7 +1893,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
                 setIsAutoScale(true);
                 handleAutoScale();
               }}
-              title="تنظیم خودکار مقیاس (auto)"
+              title="تنظیم خودکار مقیاس"
               data-testid="axis-btn-auto"
             >
               auto
@@ -1801,13 +1909,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         </main>
       </div>
 
-      {/* نوار پایینی */}
+      {/* نوار پایینی تفکیک‌شده و هماهنگ */}
       <footer className="nn-bottom-bar">
         <div className="nn-range-buttons">
-          <span style={{ marginLeft: '6px' }}>بازه زمانی:</span>
+          <span className="pe-1 text-[11px] font-semibold text-[var(--nn-text-secondary)]">بازه زمانی:</span>
           {['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'].map((rng) => (
             <button
               key={rng}
+              type="button"
               className={`nn-range-btn ${activeRange === rng ? 'active' : ''}`}
               onClick={() => {
                 setActiveRange(rng);
@@ -1819,23 +1928,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           ))}
         </div>
 
-        <div className="nn-scale-controls">
+        <div className="nn-timezone-badge">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#089981]" />
           <span>تهران (UTC+3:30)</span>
-          <div className="nn-separator" />
-          <button
-            className={`nn-scale-toggle ${isLogScale ? 'active' : ''}`}
-            onClick={toggleLogScale}
-            title="مقیاس لگاریتمی"
-          >
-            لگاریتمی
-          </button>
-          <button
-            className="nn-scale-toggle active"
-            onClick={handleAutoScale}
-            title="تنظیم خودکار مقیاس"
-          >
-            خودکار
-          </button>
         </div>
       </footer>
 

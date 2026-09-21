@@ -417,16 +417,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
-  min-height: 32px;
+  height: 30px;
+  min-height: 30px;
+  max-height: 30px;
   flex-shrink: 0;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   scrollbar-width: none;
-  background-color: var(--nn-bg-primary);
+  background-color: var(--nn-bg-secondary);
   border-top: 1px solid var(--nn-border);
-  padding: 0 12px;
+  padding: 0 10px;
   font-size: 11px;
   color: var(--nn-text-secondary);
   z-index: 10;
@@ -439,19 +440,20 @@
 .nn-range-buttons {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .nn-range-btn {
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
   background: transparent;
   border: none;
   color: var(--nn-text-secondary);
   font-family: var(--nn-font);
   font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.12s ease;
 }
 
 .nn-range-btn:hover {
@@ -462,25 +464,17 @@
 .nn-range-btn.active {
   background-color: var(--nn-bg-hover);
   color: var(--nn-text-active);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.nn-scale-controls {
+.nn-timezone-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.nn-scale-toggle {
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: transparent;
-  border: 1px solid var(--nn-border);
-  color: var(--nn-text-secondary);
-  font-family: var(--nn-font);
   font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  color: var(--nn-text-secondary);
+  font-weight: 500;
+  padding: 0 4px;
 }
 
 .nn-scale-toggle:hover {

@@ -1,8 +1,9 @@
-﻿// src/__tests__/technical-toggle-verification.spec.tsx -- تست جامع دوطرفه (Two-Way Toggle) کلیه گزینه‌های تنظیمات چارت
+// src/__tests__/technical-toggle-verification.spec.tsx -- تست جامع دوطرفه (Two-Way Toggle) کلیه گزینه‌های تنظیمات چارت
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ChartSettingsDialog } from '@features/technical/components/ChartSettingsDialog';
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
+import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '@features/technical/nahayatnegar/lib/chartTheme';
 
 const STORAGE_KEY = 'fts.chart.settings.v1';
 
@@ -254,6 +255,51 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     expect(useFtsConfigStore.getState().view.gridStyle).toBe('solid');
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     expect(saved.view.gridStyle).toBe('solid');
+
+    unmount();
+  });
+
+  it('۶. اعتبارسنجی تم‌های چارت نهایت‌نگر: پیوستگی گرید با separator، اندازه ۳۲px محور زمان و خوانایی تولتیپ اندیکاتور', () => {
+    // تم دارک
+    expect(nahayatNegarDarkTheme.separator.size).toBe(1);
+    expect(nahayatNegarDarkTheme.separator.fill).toBe(true);
+    expect(nahayatNegarDarkTheme.separator.color).toBe('#242731');
+    expect(nahayatNegarDarkTheme.xAxis.size).toBe(32);
+    expect(nahayatNegarDarkTheme.indicator.tooltip.text.size).toBe(11);
+    expect(nahayatNegarDarkTheme.indicator.tooltip.text.color).toBe('#d1d4dc');
+
+    // تم لایت
+    expect(nahayatNegarLightTheme.separator.size).toBe(1);
+    expect(nahayatNegarLightTheme.separator.fill).toBe(true);
+    expect(nahayatNegarLightTheme.separator.color).toBe('#f0f3fa');
+    expect(nahayatNegarLightTheme.xAxis.size).toBe(32);
+    expect(nahayatNegarLightTheme.indicator.tooltip.text.size).toBe(11);
+    expect(nahayatNegarLightTheme.indicator.tooltip.text.color).toBe('#131722');
+  });
+
+  it('۷. تست دوطرفه تغییر پس‌زمینه چارت (دارک / لایت / کلاسیک) در دیالوگ تنظیمات و ذخیره آن', () => {
+    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="appearance" />);
+
+    // انتخاب تم روشن
+    const lightBgBtn = screen.getByRole('button', { name: 'روشن' });
+    fireEvent.click(lightBgBtn);
+    expect(useFtsConfigStore.getState().view.background).toBe('light');
+    let saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    expect(saved.view.background).toBe('light');
+
+    // انتخاب تم کلاسیک
+    const classicBgBtn = screen.getByRole('button', { name: 'کلاسیک تیره' });
+    fireEvent.click(classicBgBtn);
+    expect(useFtsConfigStore.getState().view.background).toBe('classic');
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    expect(saved.view.background).toBe('classic');
+
+    // انتخاب تم تیره
+    const darkBgBtn = screen.getByRole('button', { name: 'تیره مات (#131722)' });
+    fireEvent.click(darkBgBtn);
+    expect(useFtsConfigStore.getState().view.background).toBe('dark');
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    expect(saved.view.background).toBe('dark');
 
     unmount();
   });

@@ -95,12 +95,25 @@ export const nahayatNegarDarkTheme = {
     ],
     tooltip: {
       showRule: 'always' as const,
-      showType: 'standard' as const
+      showType: 'standard' as const,
+      text: {
+        size: 11,
+        family: 'Vazirmatn',
+        color: '#d1d4dc',
+        marginStart: 6,
+        marginEnd: 6
+      }
     }
+  },
+  separator: {
+    size: 1,
+    color: '#242731',
+    fill: true,
+    activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
   },
   xAxis: {
     show: true,
-    size: 30,
+    size: 32,
     axisLine: {
       show: true,
       color: '#2a2e39',
@@ -312,11 +325,24 @@ export const nahayatNegarLightTheme = {
     tooltip: {
       showRule: 'always' as const,
       showType: 'standard' as const,
+      text: {
+        size: 11,
+        family: 'Vazirmatn',
+        color: '#131722',
+        marginStart: 6,
+        marginEnd: 6
+      }
     },
+  },
+  separator: {
+    size: 1,
+    color: '#f0f3fa',
+    fill: true,
+    activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
   },
   xAxis: {
     show: true,
-    size: 30,
+    size: 32,
     axisLine: {
       show: true,
       color: '#e2e8f0',

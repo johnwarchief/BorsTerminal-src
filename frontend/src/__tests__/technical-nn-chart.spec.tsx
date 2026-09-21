@@ -25,6 +25,8 @@ const chartStub = () => {
     subscribeAction: vi.fn(),
     scrollToRealTime: vi.fn(),
     getDataList: vi.fn(() => []),
+    setScrollEnabled: vi.fn(),
+    getOverlays: vi.fn(() => []),
   };
   lastChartInstance = instance;
   return instance;
@@ -141,5 +143,89 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
       })
     );
     expect(useFtsConfigStore.getState().priceScale).toBe('normal');
+  });
+
+  it('تنظیمات تم شامل separator به اندازه 1 و xAxis با ارتفاع 32px است', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    const setStylesCalls = lastChartInstance.setStyles.mock.calls;
+    const lastCall = setStylesCalls[setStylesCalls.length - 1][0];
+    expect(lastCall?.separator?.size).toBe(1);
+    expect(lastCall?.xAxis?.size).toBe(32);
+    expect(lastCall?.separator?.fill).toBe(true);
+  });
+
+  it('نوار پایینی شامل بازه‌های زمانی و بج تایم‌زون تهران است و دکمه تکراری ندارد', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    expect(screen.getByText(/تهران \(UTC\+3:30\)/)).toBeInTheDocument();
+    expect(screen.getByText('بازه زمانی:')).toBeInTheDocument();
+    expect(screen.getByText('1D')).toBeInTheDocument();
+    expect(screen.getByText('1Y')).toBeInTheDocument();
+    expect(screen.getByText('All')).toBeInTheDocument();
+    expect(document.querySelector('.nn-bottom-bar')).toBeInTheDocument();
+  });
+
+  it('انتخاب ابزار خط‌کش (ruler) اورلی ftsMeasure را در گروه fts-draw ایجاد کرده و کنترل اسکرول را متصل می‌کند', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    const rulerBtn = screen.getByTitle('خط‌کش اندازه‌گیری');
+    expect(rulerBtn).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(rulerBtn);
+    });
+
+    expect(lastChartInstance?.createOverlay).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'ftsMeasure',
+        groupId: 'fts-draw',
+        onDrawStart: expect.any(Function),
+        onDrawEnd: expect.any(Function),
+        onPressedMoveStart: expect.any(Function),
+        onPressedMoveEnd: expect.any(Function),
+      })
+    );
+
+    // بررسی هوک‌های اسکرول
+    const overlayCall = lastChartInstance.createOverlay.mock.calls.find(
+      (c: any[]) => c[0]?.name === 'ftsMeasure'
+    );
+    const opts = overlayCall[0];
+
+    opts.onDrawStart();
+    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(false);
+
+    opts.onDrawEnd();
+    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(true);
+
+    opts.onPressedMoveStart();
+    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(false);
+
+    opts.onPressedMoveEnd();
+    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('تغییر تایم‌فریم متد flushDrawings را فراخوانی کرده و ترسیم‌های جاری را در localStorage ذخیره می‌کند', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+
+    lastChartInstance.getOverlays.mockReturnValue([
+      {
+        id: 'overlay_test_1',
+        name: 'segment',
+        groupId: 'fts-draw',
+        points: [{ timestamp: 1600000000000, value: 5000 }],
+        lock: false,
+      },
+    ]);
+
+    const weekBtn = screen.getByRole('button', { name: 'W' });
+
+    act(() => {
+      fireEvent.click(weekBtn);
+    });
+
+    const saved = localStorage.getItem('fts.drawings.v1.فولاد');
+    expect(saved).toBeTruthy();
+    const parsed = JSON.parse(saved || '[]');
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].name).toBe('segment');
   });
 });
