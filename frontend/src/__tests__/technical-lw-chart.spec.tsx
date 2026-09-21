@@ -20,8 +20,12 @@ const chartStub = () => ({
   panes: () => [],
 });
 
+const mockTextWatermark = { applyOptions: vi.fn(), detach: vi.fn() };
+const createTextWatermarkMock = vi.fn(() => mockTextWatermark);
+
 vi.mock('lightweight-charts', () => ({
   createChart: vi.fn(() => chartStub()),
+  createTextWatermark: (...args: unknown[]) => createTextWatermarkMock(...args),
   CandlestickSeries: 'candlestick',
   HistogramSeries: 'histogram',
   LineSeries: 'line',
@@ -105,5 +109,31 @@ describe('رندر LwChartWrapper', () => {
   it('بدون خطا با دادهٔ خالی رندر می‌شود', async () => {
     render(<LwChartWrapper data={[]} palette={PALETTE} />);
     expect(screen.getByTestId('lw-host')).toBeInTheDocument();
+  });
+
+  it('تنظیمات استاندارد بوم چارت (فونت ۱۲، گرید خط‌چین، پدینگ زمان و آپشن‌های کندل) را اعمال می‌کند', async () => {
+    render(<LwChartWrapper data={candles(10)} palette={PALETTE} symbol="فولاد" timeframe="D" />);
+    const lastCall = vi.mocked(createChart).mock.calls[vi.mocked(createChart).mock.calls.length - 1];
+    const opts = lastCall[1] as Record<string, any>;
+
+    // ۱. محور تاریخ شمسی (fontSize: 12, minimumHeight: 28, allowBoldLabels: true)
+    expect(opts.layout.fontSize).toBe(12);
+    expect(opts.timeScale.minimumHeight).toBe(28);
+    expect(opts.timeScale.allowBoldLabels).toBe(true);
+
+    // ۳. خطوط گرید به‌صورت خط‌چین
+    expect(opts.grid.vertLines.style).toBe(2); // LineStyle.Dashed
+    expect(opts.grid.horzLines.style).toBe(2);
+
+    // ۵. واترمارک نماد و تایم‌فریم
+    const watermarkEl = screen.getByTestId('lw-watermark');
+    expect(watermarkEl).toBeInTheDocument();
+    expect(watermarkEl.textContent).toContain('فولاد · D');
+  });
+
+  it('پراپ‌های نماد و تایم‌فریم سفارشی در واترمارک منعکس می‌شوند', async () => {
+    render(<LwChartWrapper data={[]} palette={PALETTE} symbol="خودرو" timeframe="1h" />);
+    const watermarkEl = screen.getByTestId('lw-watermark');
+    expect(watermarkEl.textContent).toContain('خودرو · 1h');
   });
 });

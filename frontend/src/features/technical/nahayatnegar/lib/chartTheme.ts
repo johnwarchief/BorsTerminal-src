@@ -9,14 +9,14 @@ export const nahayatNegarDarkTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#242832',
-      style: 'solid' as const
+      color: '#1e222d',
+      style: 'dashed' as const
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#242832',
-      style: 'solid' as const
+      color: '#1e222d',
+      style: 'dashed' as const
     }
   },
   candle: {
@@ -108,8 +108,8 @@ export const nahayatNegarDarkTheme = {
     },
     tickText: {
       show: true,
-      color: '#787b86',
-      size: 11,
+      color: '#d1d4dc',
+      size: 12,
       family: 'Vazirmatn'
     },
     tickLine: {
@@ -129,7 +129,7 @@ export const nahayatNegarDarkTheme = {
     },
     tickText: {
       show: true,
-      color: '#787b86',
+      color: '#d1d4dc',
       size: 11,
       family: 'Vazirmatn'
     },
