@@ -85,12 +85,12 @@ const TABS: { id: Tab; label: string }[] = [
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1.5 border-b border-[#2a2e39]/50 py-2.5 last:border-b-0">
+    <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5 transition-colors hover:border-[#363a45]">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-text-primary">{label}</span>
-        {hint ? <span className="text-[10px] text-text-muted">{hint}</span> : null}
+        <span className="text-xs font-bold text-white tracking-wide">{label}</span>
+        {hint ? <span className="text-[10.5px] font-medium text-[#9aa0a6]">{hint}</span> : null}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+      <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
 }
@@ -105,24 +105,27 @@ function Choice<T extends string>({
   onPick: (v: T) => void;
 }) {
   return (
-    <>
-      {options.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          title={o.hint}
-          aria-pressed={value === o.key}
-          onClick={() => onPick(o.key)}
-          className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-            value === o.key
-              ? 'border-accent-blue bg-accent-blue/15 text-accent-blue shadow-sm'
-              : 'border-[#2a2e39] bg-[#1e222d] text-text-muted hover:text-text-primary'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </>
+    <div className="flex flex-wrap items-center gap-1.5">
+      {options.map((o) => {
+        const isActive = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            title={o.hint}
+            aria-pressed={isActive}
+            onClick={() => onPick(o.key)}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+              isActive
+                ? 'border-[#2962ff] bg-[#2962ff]/25 text-white shadow-sm ring-1 ring-[#2962ff]/40'
+                : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -132,13 +135,27 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+      className={`group inline-flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
         on
-          ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-          : 'border-[#2a2e39] bg-[#1e222d] text-text-muted hover:text-text-secondary'
+          ? 'border-[#089981]/50 bg-[#089981]/15 text-white shadow-sm'
+          : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
       }`}
     >
-      {label}: {on ? 'روشن' : 'خاموش'}
+      <span
+        className={`relative inline-flex h-3.5 w-6 shrink-0 items-center rounded-full transition-colors ${
+          on ? 'bg-[#089981]' : 'bg-[#363a45]'
+        }`}
+      >
+        <span
+          className={`inline-block h-2.5 w-2.5 rounded-full bg-white transition-transform ${
+            on ? '-translate-x-3' : '-translate-x-0.5'
+          }`}
+        />
+      </span>
+      <span>{label}</span>
+      <span className={`text-[10px] font-bold ${on ? 'text-[#089981]' : 'text-[#9aa0a6]'}`}>
+        ({on ? 'روشن' : 'خاموش'})
+      </span>
     </button>
   );
 }
@@ -178,7 +195,7 @@ export function ChartSettingsDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="تنظیمات چارت"
@@ -186,15 +203,15 @@ export function ChartSettingsDialog({
       onClick={onClose}
     >
       <div
-        className="glass-panel flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#2a2e39] bg-[#131722] shadow-2xl"
+        className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#2a2e39] bg-[#1e222d] shadow-2xl shadow-black/80"
         onClick={(e) => e.stopPropagation()}
       >
         {/* هدر پنجره */}
-        <div className="flex items-center justify-between border-b border-[#2a2e39] px-5 py-3.5">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-text-primary">تنظیمات چارت</span>
+        <div className="flex items-center justify-between border-b border-[#2a2e39] bg-[#1a1e29] px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-black text-white">تنظیمات چارت</span>
             {symbol && (
-              <span className="rounded bg-accent-blue/15 px-2 py-0.5 text-xs font-bold text-accent-blue">
+              <span className="rounded-md border border-[#2962ff]/30 bg-[#2962ff]/15 px-2.5 py-0.5 text-xs font-bold text-[#2962ff]">
                 {symbol}
               </span>
             )}
@@ -204,38 +221,42 @@ export function ChartSettingsDialog({
             onClick={onClose}
             aria-label="بستن"
             data-testid="chart-settings-close"
-            className="rounded-lg p-1 text-text-muted transition-colors hover:bg-[#2a2e39] hover:text-accent-red"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#9aa0a6] transition-colors hover:bg-[#2a2e39] hover:text-white"
           >
             ✕
           </button>
         </div>
 
         {/* نوار تب‌های استاندارد */}
-        <div className="flex flex-wrap gap-1 border-b border-[#2a2e39] bg-[#1a1e29] px-4 py-2" role="tablist">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              data-testid={`settings-tab-${t.id}`}
-              onClick={() => setTab(t.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-                tab === t.id
-                  ? 'bg-accent-blue text-white shadow'
-                  : 'text-text-muted hover:bg-[#2a2e39]/60 hover:text-text-primary'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-1.5 border-b border-[#2a2e39] bg-[#141720] px-4 py-2.5" role="tablist">
+          {TABS.map((t) => {
+            const isActive = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                data-testid={`settings-tab-${t.id}`}
+                onClick={() => setTab(t.id)}
+                className={`relative rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-[#2962ff] text-white shadow-md shadow-[#2962ff]/20'
+                    : 'text-[#9aa0a6] hover:bg-[#2a2e39]/60 hover:text-[#d1d4dc]'
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* محتوای تب فعال */}
-        <div className="flex-1 overflow-y-auto p-5 text-text-secondary">
+        <div className="flex-1 overflow-y-auto p-5 text-[#d1d4dc]">
+
           {/* ۱. تب نماد (Symbol) */}
           {tab === 'symbol' && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <Row label="رنگ بدنه کندل صعودی" hint="candle.upColor">
                 {UP_COLORS.map((c) => (
                   <button
@@ -255,7 +276,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-full border border-[#2a2e39] px-2.5 py-0.5 text-[11px] text-text-muted hover:text-text-primary"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -280,7 +301,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-full border border-[#2a2e39] px-2.5 py-0.5 text-[11px] text-text-muted hover:text-text-primary"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -334,35 +355,51 @@ export function ChartSettingsDialog({
 
           {/* ۲. تب خط وضعیت (Status Line) */}
           {tab === 'status' && (
-            <div className="flex flex-col gap-2">
-              <Row label="کنترل‌های خط وضعیت و افسانه">
-                <Toggle
-                  on={view.statusShowSymbol}
-                  label="نام نماد و قیمت زنده"
-                  onClick={() => setView({ statusShowSymbol: !view.statusShowSymbol })}
-                />
-                <Toggle
-                  on={view.statusShowOhlc}
-                  label="مقادیر OHLC کندل جاری"
-                  onClick={() => setView({ statusShowOhlc: !view.statusShowOhlc })}
-                />
-                <Toggle
-                  on={view.statusShowVolume}
-                  label="حجم معاملات"
-                  onClick={() => setView({ statusShowVolume: !view.statusShowVolume })}
-                />
-                <Toggle
-                  on={view.statusShowIndicators}
-                  label="مقادیر اندیکاتورها"
-                  onClick={() => setView({ statusShowIndicators: !view.statusShowIndicators })}
-                />
-                <Toggle
-                  on={view.showLegend}
-                  label="افسانه گوشه چارت"
-                  onClick={() => setView({ showLegend: !view.showLegend })}
-                />
-              </Row>
-              <p className="mt-2 rounded-lg bg-[#1a1e29] p-3 text-[11px] leading-5 text-text-muted">
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white tracking-wide">اطلاعات نماد و ارقام زنده</span>
+                  <span className="text-[10.5px] font-medium text-[#9aa0a6]">Symbol, OHLC & Volume</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Toggle
+                    on={view.statusShowSymbol}
+                    label="نام نماد و قیمت زنده"
+                    onClick={() => setView({ statusShowSymbol: !view.statusShowSymbol })}
+                  />
+                  <Toggle
+                    on={view.statusShowOhlc}
+                    label="مقادیر OHLC کندل جاری"
+                    onClick={() => setView({ statusShowOhlc: !view.statusShowOhlc })}
+                  />
+                  <Toggle
+                    on={view.statusShowVolume}
+                    label="حجم معاملات"
+                    onClick={() => setView({ statusShowVolume: !view.statusShowVolume })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white tracking-wide">اندیکاتورها و افسانه چارت</span>
+                  <span className="text-[10.5px] font-medium text-[#9aa0a6]">Indicator Values & Legend</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Toggle
+                    on={view.statusShowIndicators}
+                    label="مقادیر اندیکاتورها"
+                    onClick={() => setView({ statusShowIndicators: !view.statusShowIndicators })}
+                  />
+                  <Toggle
+                    on={view.showLegend}
+                    label="افسانه گوشه چارت"
+                    onClick={() => setView({ showLegend: !view.showLegend })}
+                  />
+                </div>
+              </div>
+
+              <p className="rounded-xl border border-[#2a2e39]/60 bg-[#161922]/50 p-3.5 text-xs leading-6 text-[#9aa0a6]">
                 با فعال‌بودن خط وضعیت، هنگام حرکت نشانگر موس روی کندل‌ها مقادیر باز، بالاترین، پایین‌ترین، پایانی و حجم به
                 صورت تبولار و بدون پرش به‌روزرسانی می‌شوند.
               </p>
@@ -371,7 +408,7 @@ export function ChartSettingsDialog({
 
           {/* ۳. تب مقیاس‌ها (Scales) */}
           {tab === 'scales' && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <Row label="نوع چارت">
                 <Choice options={TYPES} value={chartType} onPick={setChartType} />
               </Row>
@@ -425,10 +462,10 @@ export function ChartSettingsDialog({
                     type="button"
                     aria-pressed={view.axisTickMargin === m}
                     onClick={() => setView({ axisTickMargin: m })}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
                       view.axisTickMargin === m
-                        ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                        : 'border-[#2a2e39] bg-[#1e222d] text-text-muted hover:text-text-primary'
+                        ? 'border-[#2962ff] bg-[#2962ff]/25 text-white ring-1 ring-[#2962ff]/40 shadow-sm'
+                        : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
                     }`}
                   >
                     {m}px
@@ -444,7 +481,7 @@ export function ChartSettingsDialog({
 
           {/* ۴. تب ظاهر (Appearance) */}
           {tab === 'appearance' && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               <Row label="پس‌زمینه چارت">
                 <Choice
                   options={BACKGROUNDS}
@@ -459,7 +496,7 @@ export function ChartSettingsDialog({
                       onChange={(e) => setView({ customBgColor: e.target.value })}
                       className="h-7 w-7 cursor-pointer rounded border border-[#2a2e39] bg-transparent"
                     />
-                    <span className="font-mono text-xs text-text-muted">{view.customBgColor || '#131722'}</span>
+                    <span className="font-mono text-xs text-[#9aa0a6]">{view.customBgColor || '#131722'}</span>
                   </div>
                 )}
               </Row>
@@ -483,7 +520,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-full border border-[#2a2e39] px-2.5 py-0.5 text-[11px] text-text-muted hover:text-text-primary"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -508,7 +545,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-full border border-[#2a2e39] px-2.5 py-0.5 text-[11px] text-text-muted hover:text-text-primary"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -557,17 +594,17 @@ export function ChartSettingsDialog({
                   onClick={() => setView({ showWatermark: !view.showWatermark })}
                 />
                 <div className="flex items-center gap-2 pr-2">
-                  <span className="text-xs text-text-muted">شفافیت:</span>
+                  <span className="text-xs font-semibold text-[#9aa0a6]">شفافیت:</span>
                   {[5, 10, 20, 50].map((op) => (
                     <button
                       key={op}
                       type="button"
                       aria-pressed={view.watermarkOpacity === op}
                       onClick={() => setView({ watermarkOpacity: op })}
-                      className={`rounded px-2 py-0.5 text-xs font-bold transition-colors ${
+                      className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
                         view.watermarkOpacity === op
-                          ? 'bg-accent-blue text-white'
-                          : 'bg-[#1e222d] text-text-muted hover:text-text-primary'
+                          ? 'border-[#2962ff] bg-[#2962ff] text-white shadow-sm'
+                          : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:text-white'
                       }`}
                     >
                       {op}%
@@ -595,7 +632,7 @@ export function ChartSettingsDialog({
           {tab === 'events' && (
             <div className="py-2">
               <p
-                className="rounded-lg bg-[#1a1e29] p-4 text-xs leading-6 text-text-muted"
+                className="rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-4 text-xs leading-6 text-[#d1d4dc]"
                 data-testid="settings-events-note"
               >
                 رویدادهای سود نقدی، مجامع و افزایش سرمایه به صورت زنده از سامانه کدال در سرور ثبت می‌شوند؛
@@ -606,14 +643,14 @@ export function ChartSettingsDialog({
         </div>
 
         {/* فوتر پنجره */}
-        <div className="flex items-center justify-between border-t border-[#2a2e39] bg-[#1a1e29] px-5 py-3">
-          <span className="text-[11px] text-text-muted">
+        <div className="flex items-center justify-between border-t border-[#2a2e39] bg-[#1a1e29] px-5 py-3.5">
+          <span className="text-xs font-medium text-[#9aa0a6]">
             کلیه تنظیمات به صورت خودکار در حافظه مرورگر ذخیره می‌شوند.
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-accent-blue px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-accent-blue/80"
+            className="rounded-lg bg-[#2962ff] px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-[#2962ff]/20 transition-all hover:bg-[#1e53e5] active:scale-95"
           >
             بستن و اعمال
           </button>
@@ -622,3 +659,4 @@ export function ChartSettingsDialog({
     </div>
   );
 }
+

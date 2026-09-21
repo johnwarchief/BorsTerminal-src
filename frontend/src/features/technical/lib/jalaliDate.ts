@@ -81,6 +81,16 @@ export function gregorianToJalaali(gy: number, gm: number, gd: number): { jy: nu
   return d2j(g2d(gy, gm, gd));
 }
 
+function j2d(jy: number, jm: number, jd: number): number {
+  const r = jalCal(jy);
+  return g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
+}
+
+/** تبدیل تاریخ جلالی به میلادی [gy, gm, gd] */
+export function jalaaliToGregorian(jy: number, jm: number, jd: number): [number, number, number] {
+  return d2g(j2d(jy, jm, jd));
+}
+
 /** تاریخ epoch میلی ثانیه به رشته جلالی YYYY/MM/DD؛ ورودی نامعتبر رشته خالی */
 export function epochToJalali(ts: number): string {
   const d = new Date(ts);
@@ -90,3 +100,47 @@ export function epochToJalali(ts: number): string {
   const jd = String(j.jd).padStart(2, '0');
   return `${j.jy}/${jm}/${jd}`;
 }
+
+/**
+ * پارس مقاوم و جامع زمان به میلی‌ثانیه UTC
+ * پشتیبانی از عدد ms/s، فرمت YYYYMMDD، رشته‌های استاندارد میلادی و تاریخ‌های شمسی
+ */
+export function parseCandleTimestamp(raw: unknown): number {
+  if (typeof raw === 'number') {
+    if (!Number.isFinite(raw) || raw <= 0) return Number.NaN;
+    return raw < 1e11 ? raw * 1000 : raw;
+  }
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return Number.NaN;
+    if (/^\d{10,13}$/.test(s)) {
+      const num = Number(s);
+      return num < 1e11 ? num * 1000 : num;
+    }
+    if (/^\d{8}$/.test(s)) {
+      const y = Number(s.slice(0, 4));
+      const m = Number(s.slice(4, 6));
+      const d = Number(s.slice(6, 8));
+      if (y >= 1300 && y <= 1500) {
+        const [gy, gm, gd] = jalaaliToGregorian(y, m, d);
+        return Date.UTC(gy, gm - 1, gd);
+      }
+      return Date.UTC(y, m - 1, d);
+    }
+    const match = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (match) {
+      const y = Number(match[1]);
+      const m = Number(match[2]);
+      const d = Number(match[3]);
+      if (y >= 1300 && y <= 1500) {
+        const [gy, gm, gd] = jalaaliToGregorian(y, m, d);
+        return Date.UTC(gy, gm - 1, gd);
+      }
+      return Date.UTC(y, m - 1, d);
+    }
+    const parsed = Date.parse(s);
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+  return Number.NaN;
+}
+

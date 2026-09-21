@@ -49,6 +49,7 @@ import {
 } from '../../lib/ftsPatterns';
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
 import { useFtsConfigStore } from '../../stores/ftsConfigStore';
+import { parseCandleTimestamp } from '../../lib/jalaliDate';
 
 import '../styles/nahayatNegarStyles.css';
 
@@ -300,7 +301,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   }, [adjustedCandles]);
 
-  // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد و نگاشت دفاعی)
+  // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد، فال‌بک چندلایه و نگاشت دفاعی)
   const fetchCandleData = useCallback(async (symbol: string) => {
     setIsLoading(true);
     try {
@@ -322,7 +323,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
       let rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
 
-      // اگر از اندپوینت اصلی پاسخی نیامد یا کندل‌ها خالی بودند، مستقیماً از دیتابیس محلی واکشی می‌کنیم
+      // فال‌بک لایه ۲: اگر از اندپوینت اول پاسخی نیامد، خطا داد، یا فقط یک کندل برگشت (باگ تک‌خط عمودی):
+      // فوراً از اندپوینت /api/history (دیتابیس محلی چند صد کندلی) واکشی می‌کنیم
+      if (!Array.isArray(rawList) || rawList.length <= 1) {
+        try {
+          const histUrl = `/api/history/${encodeURIComponent(symbol)}`;
+          const histRes = await fetch(histUrl);
+          if (histRes.ok) {
+            const histJson = await histRes.json();
+            const histList = Array.isArray(histJson) ? histJson : (histJson?.candles || histJson?.data || []);
+            if (Array.isArray(histList) && histList.length > 1) {
+              json = histJson;
+              rawList = histList;
+            }
+          }
+        } catch {
+          // خطا در فال‌بک دوم
+        }
+      }
+
+      // فال‌بک لایه ۳: اگر هنوز داده‌ای یافت نشد، تلاش با /api/chart-db
       if (!Array.isArray(rawList) || rawList.length === 0) {
         try {
           const fallbackUrl = (symbol === 'شاخص کل' || symbol === 'TEDPIX')
@@ -330,11 +350,15 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             : `/api/chart-db/${encodeURIComponent(symbol)}`;
           const fbRes = await fetch(fallbackUrl);
           if (fbRes.ok) {
-            json = await fbRes.json();
-            rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
+            const fbJson = await fbRes.json();
+            const fbList = Array.isArray(fbJson) ? fbJson : (fbJson?.candles || fbJson?.data || []);
+            if (Array.isArray(fbList) && fbList.length > 0) {
+              json = fbJson;
+              rawList = fbList;
+            }
           }
         } catch {
-          // خطا در فال‌بک
+          // خطا در فال‌بک سوم
         }
       }
 
@@ -354,30 +378,30 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         return;
       }
 
-      // نگاشت دفاعی به KLineData استاندارد v10
-      const parsedCandles: KLineData[] = rawList.map((c: any) => {
-        let ts = 0;
-        if (typeof c.time === 'number') {
-          ts = c.time < 1e11 ? c.time * 1000 : c.time;
-        } else if (typeof c.timestamp === 'number') {
-          ts = c.timestamp < 1e11 ? c.timestamp * 1000 : c.timestamp;
-        } else if (typeof c.time === 'string' || typeof c.date === 'string') {
-          ts = new Date(c.time || c.date).getTime();
-        } else {
-          ts = Date.now();
-        }
+      // نگاشت دفاعی به KLineData استاندارد v10 با استفاده از parseCandleTimestamp و فیلتر کندل‌های نامعتبر
+      const parsedCandles: KLineData[] = rawList
+        .map((c: any) => {
+          const ts = parseCandleTimestamp(c.timestamp ?? c.time ?? c.date ?? c.dateStr);
 
-        const open = Number(c.open ?? c.o ?? 0);
-        const high = Number(c.high ?? c.h ?? open);
-        const low = Number(c.low ?? c.l ?? open);
-        const close = Number(c.close ?? c.c ?? open);
-        const volume = (typeof c.time === 'string' && volByTime[c.time] !== undefined)
-          ? volByTime[c.time]
-          : (c.volume !== undefined ? Number(c.volume ?? c.v ?? 0) : undefined);
-        const turnover = c.turnover !== undefined ? Number(c.turnover ?? 0) : undefined;
+          const open = Number(c.open ?? c.o ?? 0);
+          const high = Number(c.high ?? c.h ?? open);
+          const low = Number(c.low ?? c.l ?? open);
+          const close = Number(c.close ?? c.c ?? open);
+          const volume = (typeof c.time === 'string' && volByTime[c.time] !== undefined)
+            ? volByTime[c.time]
+            : (c.volume !== undefined ? Number(c.volume ?? c.v ?? 0) : undefined);
+          const turnover = c.turnover !== undefined ? Number(c.turnover ?? 0) : undefined;
 
-        return { timestamp: ts, open, high, low, close, volume, turnover };
-      }).sort((a, b) => a.timestamp - b.timestamp);
+          return { timestamp: ts, open, high, low, close, volume, turnover };
+        })
+        .filter((c: KLineData) =>
+          Number.isFinite(c.timestamp) && c.timestamp > 0 &&
+          Number.isFinite(c.open) && c.open > 0 &&
+          Number.isFinite(c.high) && c.high > 0 &&
+          Number.isFinite(c.low) && c.low > 0 &&
+          Number.isFinite(c.close) && c.close > 0
+        )
+        .sort((a: KLineData, b: KLineData) => a.timestamp - b.timestamp);
 
       // نگاشت رویدادهای مجمع و تعدیل
       const parsedActions = mapBackendAdjustEvents(rawEvents);
@@ -392,6 +416,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       setIsLoading(false);
     }
   }, []);
+
 
   // واکشی اولیه دیتا هنگام تغییر نماد
   useEffect(() => {
@@ -808,6 +833,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           }
         });
         chart.resetData();
+        chart.scrollToRealTime();
       }
     } catch (e) {
       void e;
@@ -833,8 +859,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     });
 
     chart.resetData();
+    chart.setOffsetRightDistance?.(50);
     chart.scrollToRealTime();
+
+    const raf = requestAnimationFrame(() => {
+      try {
+        chart.resize();
+        chart.scrollToRealTime();
+      } catch (e) {
+        void e;
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [adjustedCandles, currentSymbol]);
+
 
   // ۴. رسم و پاک‌سازی اورلی‌های تحلیلی استراتژی FTS
   useEffect(() => {
@@ -1308,10 +1346,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     } as never);
   };
 
-  // ریست اسکیل خودکار با اسکرول به زمان حال
+  // ریست اسکیل خودکار با اسکرول به زمان حال و بازنشانی محور قیمت
   const handleAutoScale = () => {
-    chartRef.current?.scrollToRealTime();
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setOffsetRightDistance?.(50);
+      chart.scrollToRealTime();
+      chart.resize();
+    } catch {
+      chart.scrollToRealTime();
+    }
   };
+
 
   // تمام‌صفحه
   const handleToggleFullscreen = () => {
