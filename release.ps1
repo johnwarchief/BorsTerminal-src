@@ -41,22 +41,14 @@ function Ensure-Db {
     # دست‌نخورده بماند.
     if (-not (Test-Path 'market.db')) { Write-Host '[db] market.db not found (skip)'; return }
 
+    # توجه: PowerShell 5.1 هنگامِ ارسالِ آرگومان به یک EXE بومی، کوتیشنهایِ
+    # دوتاییِ جاسازی‌شده را می‌بلعد و کدِ پایتونِ زیر می‌شکست:
+    #   sqlite3.connect(file:market.db?mode=ro,uri=True)  ← SyntaxError
+    # و سپس Ensure-Db بهاشتباه «دیتابیسِ ناقص» تشخیص می‌داد و ریلیز را
+    # متوقف می‌کرد. راه‌حل: کلِّ اسکریپتِ درون‌خطی فقط کوتیشنِ تکی است؛
+    # برایِ رشتهٔ تحتِاللفظیِ SQL از chr(34) ساخته می‌شود.
     Write-Host '[db] validating source market.db'
-    & $PY -c 'import sqlite3,sys
-need={"instruments","daily_prices","financial_statements"}
-try:
-    cur=sqlite3.connect("file:market.db?mode=ro",uri=True)
-    have={r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type=\"table\"")}
-    fs=cur.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0] if "financial_statements" in have else 0
-    cur.close()
-except Exception as e:
-    print("SRC_BAD: %r"%e); sys.exit(1)
-miss=sorted(need-have)
-if miss:
-    print("SRC_INCOMPLETE missing=%s"%",".join(miss)); sys.exit(1)
-if fs<1000:
-    print("SRC_TOO_SMALL financial_statements rows=%d"%fs); sys.exit(1)
-print("SRC_OK financial_statements rows=%d"%fs)'
+    & $PY scripts\check_release_db.py
     if ($LASTEXITCODE -ne 0) {
         Write-Error '[db] source market.db is incomplete — refusing to overwrite the committed market.db.lzma baseline. ABORT.'
         exit 1
@@ -66,19 +58,11 @@ print("SRC_OK financial_statements rows=%d"%fs)'
         Copy-Item 'market.db.lzma' 'market.db.lzma.bak' -Force
         Write-Host '[db] backed up previous market.db.lzma -> market.db.lzma.bak'
     }
+    # فشرده‌سازی + round-trip هم در همان فایل انجام می‌شود (دلیل: همان
+    # مشکلِ بلعیده‌شدنِ کوتیشن توسطِ PowerShell 5.1).
     Write-Host '[db] compressing market.db -> market.db.lzma'
-    & $PY -c 'import lzma,os
-d=open("market.db","rb").read()
-open("market.db.lzma","wb").write(lzma.compress(d,preset=9))
-print("  lzma MB", round(os.path.getsize("market.db.lzma")/1048576,1))'
-    # round-trip: lzma باید دقیقاً همانیِ منبع را برگرداند؛ وگرنه baselineیِ
-    # قبلی را برگردان و متوقف شو.
-    & $PY -c 'import lzma
-d=open("market.db.lzma","rb").read(); s=open("market.db","rb").read()
-assert lzma.decompress(d)==s, "round-trip mismatch"
-print("  round-trip OK")'
+    & $PY scripts\check_release_db.py --pack
     if ($LASTEXITCODE -ne 0) {
-        if (Test-Path 'market.db.lzma.bak') { Copy-Item 'market.db.lzma.bak' 'market.db.lzma' -Force }
         Write-Error '[db] market.db.lzma round-trip verification FAILED — restored previous baseline. ABORT.'
         exit 1
     }
