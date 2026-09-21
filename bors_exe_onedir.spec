@@ -15,7 +15,11 @@ a = Analysis(
         ('fts_engine.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
-    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'))
+    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
+                     # v1.0.15: بدونِ این فایل، preflight می‌میرد و
+                     # «market.db not found» می‌دهد — یعنی نصبِ تمیز
+                     # یک پوستهٔ خالی است. این منبعِ دادهٔ آفلاین است.
+                     ('market.db.lzma', '.'), ('market_sync.json', '.'))
          if os.path.exists(t[0])],
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
