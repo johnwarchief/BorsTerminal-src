@@ -220,27 +220,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [overlayStyle, setOverlayStyle] = useState<'solid' | 'dashed' | 'dotted'>('solid');
   const [isOverlayLocked, setIsOverlayLocked] = useState<boolean>(false);
 
-  // استیت‌های جامع تنظیمات چارت از ftsConfigStore
-  const ftsCandleUpColor = useFtsConfigStore((s) => s.candleUpColor);
-  const ftsCandleDownColor = useFtsConfigStore((s) => s.candleDownColor);
-  const ftsBorderUpColor = useFtsConfigStore((s) => s.borderUpColor);
-  const ftsBorderDownColor = useFtsConfigStore((s) => s.borderDownColor);
-  const ftsWickUpColor = useFtsConfigStore((s) => s.wickUpColor);
-  const ftsWickDownColor = useFtsConfigStore((s) => s.wickDownColor);
-  const ftsShowBorders = useFtsConfigStore((s) => s.showBorders);
-  const ftsShowWicks = useFtsConfigStore((s) => s.showWicks);
-  const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
-  const ftsGridColor = useFtsConfigStore((s) => s.gridColor);
-  const ftsGridStyle = useFtsConfigStore((s) => s.gridStyle);
-  const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
-  const ftsCrosshairStyle = useFtsConfigStore((s) => s.crosshairStyle);
+  // استیت‌های جامع تنظیمات چارت از ftsConfigStore (با دسترسی مستقیم به view و مقیاس‌ها)
+  const ftsView = useFtsConfigStore((s) => s.view);
   const ftsPriceScale = useFtsConfigStore((s) => s.priceScale);
   const ftsChartType = useFtsConfigStore((s) => s.chartType);
-  const ftsTimezone = useFtsConfigStore((s) => s.timezone);
+  const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
+  const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
 
   // نوار پایین و مقیاس
   const [activeRange, setActiveRange] = useState<string>('1Y');
-  const [isLogScale, setIsLogScale] = useState<boolean>(false);
+  const [isLogScale, setIsLogScale] = useState<boolean>(ftsPriceScale === 'logarithm');
+
+  useEffect(() => {
+    setIsLogScale(ftsPriceScale === 'logarithm');
+  }, [ftsPriceScale]);
 
   // داده‌های چارت
   const [rawCandles, setRawCandles] = useState<KLineData[]>([]);
@@ -266,6 +259,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const adjustedCandles = useMemo(() => {
     return applyAdjustmentToCandles(rawCandles, corporateActions, activeAdjustment);
   }, [rawCandles, corporateActions, activeAdjustment]);
+
+  // رفرنس پایدار به دیتای جاری کندل‌ها جهت پیشگیری از closure قدیمی در دیتا لودر
+  const adjustedCandlesRef = useRef<KLineData[]>(adjustedCandles);
+  adjustedCandlesRef.current = adjustedCandles;
 
   // اجرای تحلیل FTS روی داده‌های تعدیل‌شده
   useEffect(() => {
@@ -522,8 +519,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // ثبت دیتا لودر در v10 (جایگزین قطعی applyNewData)
     chart.setDataLoader({
       getBars: ({ callback }) => {
-        // بازگرداندن کندل‌های فعلی به چارت
-        callback(adjustedCandles, { forward: false, backward: false });
+        // بازگرداندن دیتای جاری کندل‌ها از طریق ref جهت پیشگیری از آرایه خالی
+        callback(adjustedCandlesRef.current, { forward: false, backward: false });
       }
     });
 
@@ -534,6 +531,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       volumePrecision: 0
     });
     chart.setPeriod({ span: 1, type: 'day' });
+
+    if (adjustedCandlesRef.current.length > 0) {
+      chart.resetData();
+      chart.scrollToRealTime();
+    }
 
     // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
     chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
@@ -586,52 +588,120 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
   }, []); // فقط یک‌بار هنگام Mount شدن کامپوننت
 
-  // همگام‌سازی سبک چارت با تم فعال (روشن / تاریک)
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-    const targetTheme = theme === 'light' ? nahayatNegarLightTheme : nahayatNegarDarkTheme;
-    chart.setStyles(targetTheme as never);
-    chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
-  }, [theme]);
-
-  // همگام‌سازی زنده استایل‌های چارت با تنظیمات پایدار ftsConfigStore
+  // همگام‌سازی زنده سبک چارت با تم فعال (روشن/تاریک) و تنظیمات پیشرفته ftsConfigStore
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
-    const gridLineStyle = ftsGridStyle === 'solid' ? 'solid' : 'dashed';
-    const gridDashedValue = ftsGridStyle === 'dotted' ? [2, 2] : [4, 4];
+    const isLight = theme === 'light';
+    const baseTheme = isLight ? nahayatNegarLightTheme : nahayatNegarDarkTheme;
 
-    const crosshairLineStyle = ftsCrosshairStyle === 'solid' ? 'solid' : 'dashed';
-    const crosshairDashedValue = ftsCrosshairStyle === 'dotted' ? [2, 2] : [4, 4];
+    // ۱. استخراج رنگ‌های کندل با پیش‌فرض‌های امن و شفافیت صفر (کنتراست بالا در هر دو تم)
+    const rawUp = ftsView?.candleUp;
+    const rawDown = ftsView?.candleDown;
+    const candleUpColor = (rawUp && rawUp !== 'transparent') ? rawUp : '#089981';
+    const candleDownColor = (rawDown && rawDown !== 'transparent') ? rawDown : '#f23645';
+
+    const showBorders = ftsView?.showBorders !== false;
+    const rawBorderUp = ftsView?.borderUp;
+    const rawBorderDown = ftsView?.borderDown;
+    const borderUpColor = showBorders
+      ? ((rawBorderUp && rawBorderUp !== 'transparent') ? rawBorderUp : candleUpColor)
+      : candleUpColor;
+    const borderDownColor = showBorders
+      ? ((rawBorderDown && rawBorderDown !== 'transparent') ? rawBorderDown : candleDownColor)
+      : candleDownColor;
+
+    const showWicks = ftsView?.showWicks !== false;
+    const rawWickUp = ftsView?.wickUp;
+    const rawWickDown = ftsView?.wickDown;
+    const wickUpColor = showWicks
+      ? ((rawWickUp && rawWickUp !== 'transparent') ? rawWickUp : candleUpColor)
+      : 'transparent';
+    const wickDownColor = showWicks
+      ? ((rawWickDown && rawWickDown !== 'transparent') ? rawWickDown : candleDownColor)
+      : 'transparent';
+
+    // ۲. نگاشت قطعی نوع کندل به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
+    const validCandleType: 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' =
+      ftsChartType === 'area' ? 'area'
+      : ftsChartType === 'ohlc' ? 'ohlc'
+      : ftsChartType === 'candle_stroke' ? 'candle_stroke'
+      : ftsChartType === 'candle_up_stroke' ? 'candle_up_stroke'
+      : ftsChartType === 'candle_down_stroke' ? 'candle_down_stroke'
+      : 'candle_solid';
+
+    // ۳. رنگ و سبک خطوط گرید و نشانگر کراس‌هیر
+    const defaultGridColor = isLight ? '#eef2f8' : '#1e222d';
+    const gridColor = ftsView?.gridColor || defaultGridColor;
+    const gridStyle = ftsView?.gridStyle === 'solid' ? 'solid' : 'dashed';
+    const gridDashedValue = ftsView?.gridStyle === 'dotted' ? [2, 2] : [4, 4];
+
+    const crosshairStyle = ftsView?.crosshairStyle === 'solid' ? 'solid' : 'dashed';
+    const crosshairDashedValue = ftsView?.crosshairStyle === 'dotted' ? [2, 2] : [4, 4];
 
     try {
       chart.setStyles({
+        ...baseTheme,
         grid: {
           show: ftsShowGrid,
           horizontal: {
             show: ftsShowGrid,
-            color: ftsGridColor || '#1e222d',
-            style: gridLineStyle,
-            dashedValue: gridDashedValue
+            color: gridColor,
+            style: gridStyle,
+            dashedValue: gridDashedValue,
+            size: 1
           },
           vertical: {
             show: ftsShowGrid,
-            color: ftsGridColor || '#1e222d',
-            style: gridLineStyle,
-            dashedValue: gridDashedValue
+            color: gridColor,
+            style: gridStyle,
+            dashedValue: gridDashedValue,
+            size: 1
           }
         },
         candle: {
-          type: ftsChartType as never,
+          type: validCandleType,
           bar: {
-            upColor: ftsCandleUpColor,
-            downColor: ftsCandleDownColor,
-            upBorderColor: ftsShowBorders ? ftsBorderUpColor : 'transparent',
-            downBorderColor: ftsShowBorders ? ftsBorderDownColor : 'transparent',
-            upWickColor: ftsShowWicks ? ftsWickUpColor : 'transparent',
-            downWickColor: ftsShowWicks ? ftsWickDownColor : 'transparent',
+            upColor: candleUpColor,
+            downColor: candleDownColor,
+            noChangeColor: '#888888',
+            upBorderColor: borderUpColor,
+            downBorderColor: borderDownColor,
+            noChangeBorderColor: '#888888',
+            upWickColor: wickUpColor,
+            downWickColor: wickDownColor,
+            noChangeWickColor: '#888888'
+          },
+          area: {
+            lineSize: 2,
+            lineColor: '#2962ff',
+            value: 'close',
+            fillColor: [
+              { offset: 0, color: 'rgba(41, 98, 255, 0.28)' },
+              { offset: 1, color: 'rgba(41, 98, 255, 0.00)' }
+            ]
+          },
+          priceMark: {
+            show: true,
+            last: {
+              show: true,
+              upColor: candleUpColor,
+              downColor: candleDownColor,
+              noChangeColor: '#888888',
+              line: { show: true, style: 'dashed', dashedValue: [3, 3], size: 1 },
+              text: { show: true, size: 11, family: 'Vazirmatn', color: '#ffffff' }
+            },
+            high: {
+              show: true,
+              color: isLight ? '#64748b' : '#d1d4dc',
+              text: { size: 10, family: 'Vazirmatn' }
+            },
+            low: {
+              show: true,
+              color: isLight ? '#64748b' : '#d1d4dc',
+              text: { size: 10, family: 'Vazirmatn' }
+            }
           }
         },
         crosshair: {
@@ -640,56 +710,57 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             show: ftsShowCrosshair,
             line: {
               show: ftsShowCrosshair,
-              style: crosshairLineStyle,
-              dashedValue: crosshairDashedValue
+              style: crosshairStyle,
+              dashedValue: crosshairDashedValue,
+              size: 1,
+              color: isLight ? '#94a3b8' : '#787b86'
             }
           },
           vertical: {
             show: ftsShowCrosshair,
             line: {
               show: ftsShowCrosshair,
-              style: crosshairLineStyle,
-              dashedValue: crosshairDashedValue
+              style: crosshairStyle,
+              dashedValue: crosshairDashedValue,
+              size: 1,
+              color: isLight ? '#94a3b8' : '#787b86'
             }
           }
+        },
+        indicator: {
+          bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }]
         }
       } as never);
 
-      if (ftsTimezone) {
-        (chart as any).setTimezone?.(ftsTimezone);
+      if (ftsView?.timezone) {
+        (chart as any).setTimezone?.(ftsView.timezone);
       }
 
-      // مقیاس قیمت
-      const yAxisType = ftsPriceScale === 'logarithm'
-        ? 'log'
+      // ۴. مقیاس قیمت — استفاده از نام استاندارد رجیسترشده در v10 (normal / logarithm / percentage)
+      const yAxisName = ftsPriceScale === 'logarithm'
+        ? 'logarithm'
         : ftsPriceScale === 'percentage'
         ? 'percentage'
         : 'normal';
+
       chart.overrideYAxis({
         paneId: 'candle_pane',
-        type: yAxisType
+        name: yAxisName
       } as never);
+
+      // ۵. تزریق فوری و بازنشانی کندل‌های جاری جهت رندر بی‌درنگ و تضمین عدم خالی ماندن بوم
+      if (adjustedCandlesRef.current && adjustedCandlesRef.current.length > 0) {
+        chart.setDataLoader({
+          getBars: ({ callback }) => {
+            callback(adjustedCandlesRef.current, { forward: false, backward: false });
+          }
+        });
+        chart.resetData();
+      }
     } catch (e) {
       void e;
     }
-  }, [
-    ftsCandleUpColor,
-    ftsCandleDownColor,
-    ftsBorderUpColor,
-    ftsBorderDownColor,
-    ftsWickUpColor,
-    ftsWickDownColor,
-    ftsShowBorders,
-    ftsShowWicks,
-    ftsShowGrid,
-    ftsGridColor,
-    ftsGridStyle,
-    ftsShowCrosshair,
-    ftsCrosshairStyle,
-    ftsPriceScale,
-    ftsChartType,
-    ftsTimezone
-  ]);
+  }, [theme, ftsView, ftsPriceScale, ftsChartType, ftsShowGrid, ftsShowCrosshair]);
 
   // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {
@@ -1030,15 +1101,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   };
 
-  // تغییر مقیاس لگاریتمی در v10 با overrideYAxis
+  // تغییر مقیاس لگاریتمی در v10 با overrideYAxis (name: 'logarithm' | 'normal')
   const toggleLogScale = () => {
     const chart = chartRef.current;
     if (!chart) return;
     const next = !isLogScale;
     setIsLogScale(next);
+    useFtsConfigStore.getState().setPriceScale(next ? 'logarithm' : 'normal');
     chart.overrideYAxis({
       paneId: 'candle_pane',
-      type: next ? 'log' : 'normal'
+      name: next ? 'logarithm' : 'normal'
     } as never);
   };
 

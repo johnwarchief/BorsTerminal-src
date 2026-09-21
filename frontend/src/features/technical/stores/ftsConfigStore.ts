@@ -194,7 +194,35 @@ function initial(): PersistedState {
     const raw = (typeof localStorage !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)) : null);
     if (!raw) return { ...PERSIST_DEFAULTS };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
-    return { ...PERSIST_DEFAULTS, ...parsed, view: { ...VIEW_DEFAULTS, ...(parsed.view ?? {}) } };
+
+    // اعتبارسنجی مقیاس قیمت (سازگاری عقب‌رو با 'log' یا مقادیر ناشناخته)
+    const rawScale = parsed.priceScale as string | undefined;
+    const priceScale: PriceScale =
+      rawScale === 'log' ? 'logarithm'
+      : (rawScale === 'logarithm' || rawScale === 'percentage' || rawScale === 'normal')
+      ? rawScale
+      : PERSIST_DEFAULTS.priceScale;
+
+    // پالایش و ایمن‌سازی مقادیر نمایشی
+    const parsedView = parsed.view ?? {};
+    const safeView: ChartView = {
+      ...VIEW_DEFAULTS,
+      ...parsedView,
+      candleUp: (parsedView.candleUp && parsedView.candleUp !== 'transparent') ? parsedView.candleUp : VIEW_DEFAULTS.candleUp,
+      candleDown: (parsedView.candleDown && parsedView.candleDown !== 'transparent') ? parsedView.candleDown : VIEW_DEFAULTS.candleDown,
+      borderUp: (parsedView.borderUp && parsedView.borderUp !== 'transparent') ? parsedView.borderUp : (parsedView.candleUp || VIEW_DEFAULTS.borderUp),
+      borderDown: (parsedView.borderDown && parsedView.borderDown !== 'transparent') ? parsedView.borderDown : (parsedView.candleDown || VIEW_DEFAULTS.borderDown),
+      wickUp: (parsedView.wickUp && parsedView.wickUp !== 'transparent') ? parsedView.wickUp : (parsedView.candleUp || VIEW_DEFAULTS.wickUp),
+      wickDown: (parsedView.wickDown && parsedView.wickDown !== 'transparent') ? parsedView.wickDown : (parsedView.candleDown || VIEW_DEFAULTS.wickDown),
+      gridColor: parsedView.gridColor || VIEW_DEFAULTS.gridColor,
+    };
+
+    return {
+      ...PERSIST_DEFAULTS,
+      ...parsed,
+      priceScale,
+      view: safeView,
+    };
   } catch {
     return { ...PERSIST_DEFAULTS };
   }
