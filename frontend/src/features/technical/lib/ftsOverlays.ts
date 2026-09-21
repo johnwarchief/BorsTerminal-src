@@ -48,6 +48,7 @@ export const FTS_FIB_OVERLAY = 'ftsFib';
 export const FTS_FIB_LOG_OVERLAY = 'ftsFibLog';
 export const FTS_MEASURE_OVERLAY = 'ftsMeasure';
 export const FTS_POSITION_OVERLAY = 'ftsPosition';
+export const FTS_CORP_ACTION_OVERLAY = 'ftsCorpAction';
 
 /** سطوح فیبوی FTS (FTS_SPEC بخش اول بند ۳): دو کمربند + مبنا ۱.۰ */
 export const FTS_FIB_LEVELS = [0, 0.33, 0.4, 0.618, 0.7, 1] as const;
@@ -55,6 +56,18 @@ export const FTS_FIB_BANDS: readonly (readonly [number, number])[] = [
   [0.33, 0.4],
   [0.618, 0.7],
 ];
+
+/** ترازهای استاندارد فیبوناچی تریدینگ‌ویو (۲۳.۶٪، ۳۸.۲٪، ۵۰٪، ۶۱.۸٪، ۷۸.۶٪ و ۱۶۱.۸٪) */
+export const TV_FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.618] as const;
+
+/** محاسبه تراز فیبوناچی بر پایه خطی یا فرمول لگاریتمی تریدینگ‌ویو: p1 * (p0 / p1)^ratio */
+export function calcFibPrice(p0: number, p1: number, ratio: number, isLog: boolean): number {
+  if (!Number.isFinite(p0) || !Number.isFinite(p1)) return 0;
+  if (isLog && p0 > 0 && p1 > 0) {
+    return p1 * Math.pow(p0 / p1, ratio);
+  }
+  return p1 + (p0 - p1) * ratio;
+}
 
 type MarkerCtx = {
   overlay: Record<string, unknown>;
@@ -96,8 +109,9 @@ export function registerFtsOverlays(api: {
   getSupportedOverlays?: () => string[];
 }): void {
   const have = api.getSupportedOverlays?.() ?? [];
+  const forceReplace = new Set(['fibonacciLine', 'fibRetracement', 'tvFibRetracement', 'tvFibLog']);
   const reg = (def: RegisterOverlayDef) => {
-    if (have.includes(def.name)) return;
+    if (!forceReplace.has(def.name) && have.includes(def.name)) return;
     api.registerOverlay(def);
   };
   reg({
@@ -204,6 +218,167 @@ export function registerFtsOverlays(api: {
   registerFtsDrawing(reg);
 }
 
+export const TV_FIB_RETRACEMENT_OVERLAY = 'tvFibRetracement';
+
+export interface FibLevelDef {
+  ratio: number;
+  label: string;
+  color: string;
+  fill?: string;
+}
+
+export const TV_FIB_LEVEL_DEFS: readonly FibLevelDef[] = [
+  { ratio: 0, label: '0', color: '#787b86' },
+  { ratio: 0.236, label: '0.236', color: '#f23645', fill: 'rgba(242, 54, 69, 0.06)' },
+  { ratio: 0.382, label: '0.382', color: '#ff9800', fill: 'rgba(255, 152, 0, 0.06)' },
+  { ratio: 0.5, label: '0.5', color: '#4caf50', fill: 'rgba(76, 175, 80, 0.06)' },
+  { ratio: 0.618, label: '0.618', color: '#089981', fill: 'rgba(8, 153, 129, 0.07)' },
+  { ratio: 0.786, label: '0.786', color: '#00bcd4', fill: 'rgba(0, 188, 212, 0.06)' },
+  { ratio: 1.0, label: '1', color: '#787b86', fill: 'rgba(120, 123, 134, 0.06)' },
+  { ratio: 1.618, label: '1.618', color: '#2962ff', fill: 'rgba(41, 98, 255, 0.06)' },
+] as const;
+
+/** ساخت اورلی فیبوناچی مطابق با استاندارد TradingView */
+export function createTradingViewFibOverlay(name: string, isLog: boolean): RegisterOverlayDef {
+  return {
+    name,
+    totalStep: 3,
+    needDefaultPointFigure: true,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createYAxisFigures: () => [],
+    createXAxisFigures: () => [],
+    styles: {
+      text: {
+        backgroundColor: 'transparent',
+        borderColor: 'transparent',
+        paddingLeft: 0,
+        paddingRight: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+      },
+    },
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (c.length < 2 || typeof c[0]?.y !== 'number' || typeof c[1]?.y !== 'number') return [];
+      const w = ctx.bounding.width;
+      const pts = (ctx.overlay.points ?? []) as { value?: number; timestamp?: number }[];
+      const v0 = typeof pts[0]?.value === 'number' ? (pts[0].value as number) : null;
+      const v1 = typeof pts[1]?.value === 'number' ? (pts[1].value as number) : null;
+
+      const y0 = c[0].y as number;
+      const y1 = c[1].y as number;
+      const x0 = typeof c[0]?.x === 'number' ? (c[0].x as number) : 0;
+      const x1 = typeof c[1]?.x === 'number' ? (c[1].x as number) : 0;
+
+      const xStart = Math.max(0, Math.min(x0, x1));
+      const xEnd = Math.max(xStart + 40, w);
+
+      const yOf = (t: number) => y1 + (y0 - y1) * t;
+      const priceOf = (t: number): number | null => {
+        if (v0 == null || v1 == null) return null;
+        return calcFibPrice(v0, v1, t, isLog);
+      };
+
+      const figures: OverlayFigure[] = [];
+
+      // ۱. چندضلعی‌های پرشده ملایم بین ترازها (شفافیت ۵٪ تا ۷٪)
+      for (let i = 1; i < TV_FIB_LEVEL_DEFS.length; i++) {
+        const prev = TV_FIB_LEVEL_DEFS[i - 1];
+        const curr = TV_FIB_LEVEL_DEFS[i];
+        const prevY = yOf(prev.ratio);
+        const currY = yOf(curr.ratio);
+        const top = Math.min(prevY, currY);
+        const height = Math.max(1, Math.abs(prevY - currY));
+
+        figures.push({
+          type: 'rect',
+          attrs: {
+            x: xStart,
+            y: top,
+            width: xEnd - xStart,
+            height,
+          },
+          styles: {
+            style: 'fill',
+            color: curr.fill ?? 'rgba(120, 123, 134, 0.05)',
+          },
+          ignoreEvent: true,
+        });
+      }
+
+      // ۲. خط روند رفرنس بین نقطه مبدا و مقصد (Trendline بین c0 و c1)
+      figures.push({
+        type: 'line',
+        attrs: {
+          coordinates: [
+            { x: x0, y: y0 },
+            { x: x1, y: y1 },
+          ],
+        },
+        styles: {
+          style: 'dashed',
+          dashedValue: [4, 4],
+          color: '#787b86',
+          size: 1,
+        },
+        ignoreEvent: true,
+      });
+
+      // ۳. خطوط ترازها و برچسب‌های متنی درصد و قیمت روی بوم (بدون کادر مات آبی)
+      const textX = Math.min(xStart + 8, Math.max(8, w - 90));
+      for (const def of TV_FIB_LEVEL_DEFS) {
+        const y = yOf(def.ratio);
+        figures.push({
+          type: 'line',
+          attrs: {
+            coordinates: [
+              { x: xStart, y },
+              { x: xEnd, y },
+            ],
+          },
+          styles: {
+            style: 'solid',
+            color: def.color,
+            size: 1,
+          },
+          ignoreEvent: true,
+        });
+
+        const p = priceOf(def.ratio);
+        const pStr = p != null && Number.isFinite(p) ? Math.round(p).toLocaleString('en-US') : '';
+        const text = pStr ? `${def.label} (${pStr})` : def.label;
+
+        figures.push({
+          type: 'text',
+          attrs: {
+            x: textX,
+            y: y - 4,
+            text,
+            align: 'left',
+            baseline: 'bottom',
+          },
+          styles: {
+            color: def.color,
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
+            paddingLeft: 0,
+            paddingRight: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+            size: 10,
+            family: 'Vazirmatn, sans-serif',
+            weight: 'normal',
+          },
+          ignoreEvent: true,
+        });
+      }
+
+      return figures;
+    },
+  };
+}
+
 /**
  * اورلی‌های ترسیمی تعاملی FTS: فیبوی بازگشتی FTS (۳۳/۴۰/۶۱.۸/۷۰/۱۰۰)،
  * اندازه‌گیری (دو نقطه) و پوزیشن لانگ/شورت (سه نقطه). قیمت/زمان از overlay.points،
@@ -225,28 +400,26 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
     ignoreEvent: true,
   });
 
-  const fibDef = (name: string, log: boolean, textColor: string): RegisterOverlayDef => ({
+  const fibDef = (name: string, log: boolean, textColor: string, customLevels?: readonly number[]): RegisterOverlayDef => ({
     name,
     totalStep: 3,
     needDefaultPointFigure: true,
-    needDefaultXAxisFigure: true,
-    needDefaultYAxisFigure: true,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createYAxisFigures: () => [],
+    createXAxisFigures: () => [],
     createPointFigures: (ctx) => {
       const c = ctx.coordinates;
       if (c.length < 2 || typeof c[0]?.y !== 'number' || typeof c[1]?.y !== 'number') return [];
       const w = ctx.bounding.width;
       const pts = ptsOf(ctx);
       const yOf = (t: number) => (c[1].y as number) + ((c[0].y as number) - (c[1].y as number)) * t;
-      // قیمت سطح: حالت عادی خطی؛ حالت لگاریتمی هندسی (درست روی محور log)
+      // قیمت سطح: در حالت عادی خطی؛ در حالت لگاریتمی طبق فرمول تریدینگ‌ویو Price = Low * ((High / Low) ^ Ratio)
       const v0 = typeof pts[0]?.value === 'number' ? (pts[0].value as number) : null;
       const v1 = typeof pts[1]?.value === 'number' ? (pts[1].value as number) : null;
       const priceOf = (t: number): number | null => {
         if (v0 == null || v1 == null) return null;
-        if (log) {
-          if (v0 <= 0 || v1 <= 0) return null;
-          return Math.exp(Math.log(v1) + t * (Math.log(v0) - Math.log(v1)));
-        }
-        return v1 + (v0 - v1) * t;
+        return calcFibPrice(v0, v1, t, log);
       };
       const figs: OverlayFigure[] = [];
       for (const [b0, b1] of FTS_FIB_BANDS) {
@@ -255,7 +428,8 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
           band(0, yOf(b0), yOf(b1), w, shallow ? FTS_OVERLAY_COLORS.fibStep1 : FTS_OVERLAY_COLORS.fibStep2, shallow ? FTS_OVERLAY_COLORS.fibStep1Edge : FTS_OVERLAY_COLORS.fibStep2Edge),
         );
       }
-      for (const t of FTS_FIB_LEVELS) {
+      const levels = customLevels ?? FTS_FIB_LEVELS;
+      for (const t of levels) {
         const y = yOf(t);
         figs.push({
           type: 'line',
@@ -269,6 +443,14 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       return figs;
     },
   });
+
+  // ثبت اورلی‌های فیبوناچی به سبک TradingView
+  reg(createTradingViewFibOverlay('fibonacciLine', false));
+  reg(createTradingViewFibOverlay('fibRetracement', false));
+  reg(createTradingViewFibOverlay(TV_FIB_RETRACEMENT_OVERLAY, false));
+  reg(createTradingViewFibOverlay('tvFibLog', true));
+
+  // اورلی‌های فیبوی استراتژی FTS
   reg(fibDef(FTS_FIB_OVERLAY, false, FTS_OVERLAY_COLORS.fibText));
   reg(fibDef(FTS_FIB_LOG_OVERLAY, true, FTS_OVERLAY_COLORS.fibText2));
 
@@ -276,8 +458,10 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
     name: FTS_MEASURE_OVERLAY,
     totalStep: 3,
     needDefaultPointFigure: true,
-    needDefaultXAxisFigure: true,
-    needDefaultYAxisFigure: true,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createYAxisFigures: () => [],
+    createXAxisFigures: () => [],
     createPointFigures: (ctx) => {
       const c = ctx.coordinates;
       if (c.length < 2 || typeof c[0]?.y !== 'number' || typeof c[1]?.y !== 'number') return [];
@@ -319,8 +503,10 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
     name: FTS_POSITION_OVERLAY,
     totalStep: 4,
     needDefaultPointFigure: true,
-    needDefaultXAxisFigure: true,
-    needDefaultYAxisFigure: true,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createYAxisFigures: () => [],
+    createXAxisFigures: () => [],
     createPointFigures: (ctx) => {
       const c = ctx.coordinates;
       if (c.length < 3) return [];
@@ -349,7 +535,44 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       ];
     },
   });
+
+  reg({
+    name: FTS_CORP_ACTION_OVERLAY,
+    totalStep: 1,
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (!c[0] || typeof c[0].x !== 'number' || typeof c[0].y !== 'number') return [];
+      const ext = (ctx.overlay.extendData ?? {}) as {
+        kind?: 'D' | 'S';
+        text?: string;
+        color?: string;
+      };
+      const x = c[0].x;
+      const y = c[0].y + 24;
+      const isDiv = ext.kind === 'D';
+      const color = ext.color ?? (isDiv ? '#2962ff' : '#f59e0b');
+      const letter = isDiv ? 'D' : 'S';
+      return [
+        {
+          type: 'circle',
+          attrs: { x, y, r: 9 },
+          styles: { style: 'fill', color: 'rgba(30, 34, 45, 0.95)', borderColor: color, borderSize: 1.5 },
+          ignoreEvent: true,
+        },
+        {
+          type: 'text',
+          attrs: { x, y, text: letter, align: 'center', baseline: 'middle' },
+          styles: { color, size: 10.5, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+          ignoreEvent: true,
+        },
+      ];
+    },
+  });
 }
+
 
 /** ساخت spec کمربند فیبو از داده ی بک اند (fib_zones) — هیچ محاسبه ای بازتولید نمی شود */
 export function fibZoneSpecs(

@@ -69,9 +69,10 @@ function applyPalette(chart: KLineChart, p: ChartPalette) {
       tooltip: { showRule: 'none', showType: 'standard' },
     },
     xAxis: {
+      size: 32,
       axisLine: { color: axis },
       tickLine: { color: axis },
-      tickText: { color: p.text, size: 10, family: 'Vazirmatn, sans-serif' },
+      tickText: { color: p.text, size: 12, family: 'Vazirmatn, sans-serif' },
     },
     yAxis: {
       axisLine: { color: axis },

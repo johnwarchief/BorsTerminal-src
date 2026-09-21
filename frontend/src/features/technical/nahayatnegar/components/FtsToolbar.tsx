@@ -4,12 +4,14 @@ import {
   IconAdjustments, IconFx, IconFts, IconSettings, IconCamera,
   IconFullscreen, IconExitFullscreen, IconChevronDown, IconCheck, IconSearch
 } from './TradingViewIcons';
+import { toFaDigits } from '@shared/lib/fmt';
 import type { AdjustmentMode } from '../lib/adjustments';
 
 interface FtsToolbarProps {
   symbolName: string;
   companyName: string;
   marketName: string;
+  boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   onOpenSymbolSearch: () => void;
   activeTimeframe: string;
   onTimeframeChange: (tf: string) => void;
@@ -20,16 +22,21 @@ interface FtsToolbarProps {
   onOpenIndicators: () => void;
   isFtsActive: boolean;
   onToggleFts: () => void;
+  replayActive?: boolean;
+  onToggleReplay?: () => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onOpenSettings?: () => void;
   onTakeSnapshot?: () => void;
+  onToggleDepth?: () => void;
+  isDepthOpen?: boolean;
 }
 
 export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   symbolName,
   companyName,
   marketName,
+  boardRow,
   onOpenSymbolSearch,
   activeTimeframe,
   onTimeframeChange,
@@ -40,15 +47,19 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   onOpenIndicators,
   isFtsActive,
   onToggleFts,
+  replayActive,
+  onToggleReplay,
   isFullscreen,
   onToggleFullscreen,
   onOpenSettings,
-  onTakeSnapshot
+  onTakeSnapshot,
+  onToggleDepth,
+  isDepthOpen,
 }) => {
   const [showCandleMenu, setShowCandleMenu] = useState(false);
   const [showAdjMenu, setShowAdjMenu] = useState(false);
 
-  const timeframes = ['1m', '5m', '15m', '30m', '1h', 'D', 'W', 'M'];
+  const timeframes = ['1m', '5m', '15m', '1h', 'D', 'W', 'M'];
 
   const candleTypes = [
     { label: 'کندل شمعی (Solid)', value: 'candle_solid', icon: <IconCandles size={16} /> },
@@ -75,19 +86,53 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
 
   return (
     <header className="nn-top-toolbar" onClick={() => { setShowCandleMenu(false); setShowAdjMenu(false); }}>
-      {/* سمت راست: بج نماد، تایم‌فریم، نوع کندل، تعدیل، اندیکاتورها و تحلیل FTS */}
+      {/* سمت راست: نماد، تایم‌فریم، نوع کندل، تعدیل، اندیکاتورها و تحلیل FTS */}
       <div className="nn-toolbar-group">
-        {/* بج نماد - کلیک برای باز شدن جستجو */}
+        {/* بج نماد + قیمت لحظه‌ای + تغییرات - کلیک برای باز شدن جستجو */}
         <div
           className="nn-symbol-badge"
           onClick={(e) => { e.stopPropagation(); onOpenSymbolSearch(); }}
           title="کلیک برای جستجوی نماد در بازار"
         >
-          <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{symbolName}</span>
-          <span className="hidden md:inline" style={{ color: '#787b86', fontSize: '12px' }}>({companyName})</span>
-          <span className="market-state hidden lg:inline">{marketName}</span>
-          <IconSearch size={14} color="#787b86" />
+          <span style={{ fontWeight: '800', color: 'var(--nn-text-primary)', fontSize: '13px' }}>{symbolName}</span>
+          {companyName && (
+            <span className="hidden xl:inline" style={{ color: 'var(--nn-text-secondary)', fontSize: '11px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              ({companyName})
+            </span>
+          )}
+          {boardRow && (boardRow.p_last != null || boardRow.p_closing != null) && (
+            <div className="flex items-center gap-1.5 border-r border-[var(--nn-border)] pr-2">
+              <span className="font-mono tabular-nums text-xs font-bold text-[var(--nn-text-primary)]">
+                {toFaDigits(Math.round(boardRow.p_last ?? boardRow.p_closing ?? 0).toLocaleString('en-US'))}
+              </span>
+              {boardRow.percent_change != null && (
+                <span
+                  className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded"
+                  style={{
+                    backgroundColor: boardRow.percent_change >= 0 ? 'rgba(8, 153, 129, 0.15)' : 'rgba(242, 54, 69, 0.15)',
+                    color: boardRow.percent_change >= 0 ? '#089981' : '#f23645',
+                  }}
+                >
+                  {boardRow.percent_change >= 0 ? '+' : ''}{toFaDigits(boardRow.percent_change.toFixed(2))}%
+                </span>
+              )}
+            </div>
+          )}
+          <IconSearch size={13} color="var(--nn-text-secondary)" />
         </div>
+
+        {onToggleDepth && (
+          <button
+            type="button"
+            className={`nn-btn ${isDepthOpen ? 'active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); onToggleDepth(); }}
+            title="نمایش تابلوی ۵ مظنه برتر (عمق بازار)"
+            data-testid="toggle-depth-btn"
+            style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 8px' }}
+          >
+            ۵ مظنه
+          </button>
+        )}
 
         <div className="nn-separator" />
 
@@ -206,8 +251,18 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
         </button>
       </div>
 
-      {/* سمت چپ: تنظیمات، عکاسی و تمام‌صفحه */}
+      {/* سمت چپ: بازپخش، تنظیمات، عکاسی و تمام‌صفحه */}
       <div className="nn-toolbar-group">
+        {onToggleReplay && (
+          <button
+            type="button"
+            className={`nn-btn ${replayActive ? 'active' : ''}`}
+            onClick={onToggleReplay}
+            title={replayActive ? 'پایان بازپخش کندل‌ها' : 'شروع بازپخش کندل‌ها'}
+          >
+            <span>{replayActive ? 'پایان بازپخش' : 'بازپخش'}</span>
+          </button>
+        )}
         {onOpenSettings && (
           <button className="nn-btn nn-icon-btn" onClick={onOpenSettings} title="تنظیمات چارت">
             <IconSettings size={16} />

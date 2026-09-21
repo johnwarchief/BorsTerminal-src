@@ -77,10 +77,40 @@ describe('دیالوگ تنظیمات چارت', () => {
     expect(useFtsConfigStore.getState().view.axisDragLock).toBe(true);
   });
 
-  it('تب رویدادها صادقانه خالی است', () => {
+  it('تب رویدادها دارای سوئیچ‌های مستقل برای سود نقدی و افزایش سرمایه است', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
     fireEvent.click(screen.getByTestId('settings-tab-events'));
     expect(screen.getByTestId('settings-events-note')).toBeInTheDocument();
+    expect(screen.getByText(/سامانه کدال/)).toBeInTheDocument();
+
+    const divBtn = screen.getByRole('button', { name: /سود نقدی مصوب \(D - DPS\)/ });
+    const splitBtn = screen.getByRole('button', { name: /افزایش سرمایه و سهام جایزه \(S\)/ });
+    expect(divBtn).toBeInTheDocument();
+    expect(splitBtn).toBeInTheDocument();
+
+    const initDiv = useFtsConfigStore.getState().view.showDividends !== false;
+    fireEvent.click(divBtn);
+    expect(useFtsConfigStore.getState().view.showDividends).toBe(!initDiv);
+
+    const initSplit = useFtsConfigStore.getState().view.showSplits !== false;
+    fireEvent.click(splitBtn);
+    expect(useFtsConfigStore.getState().view.showSplits).toBe(!initSplit);
+
+    useFtsConfigStore.getState().setView({ showDividends: true, showSplits: true });
+  });
+
+  it('حذف قطعی نام متغیرهای خام candle.upColor و candle.downColor از کلیه تب‌ها', () => {
+    const { container } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="symbol" />);
+    expect(container.textContent).not.toContain('candle.upColor');
+    expect(container.textContent).not.toContain('candle.downColor');
+    expect(screen.getByText('رنگ بدنه کندل صعودی')).toBeInTheDocument();
+    expect(screen.getByText('رنگ بدنه کندل نزولی')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('settings-tab-appearance'));
+    expect(container.textContent).not.toContain('candle.upColor');
+    expect(container.textContent).not.toContain('candle.downColor');
+    expect(screen.getByText('رنگ کندل صعودی')).toBeInTheDocument();
+    expect(screen.getByText('رنگ کندل نزولی')).toBeInTheDocument();
   });
 });
 

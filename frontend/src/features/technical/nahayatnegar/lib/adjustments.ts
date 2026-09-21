@@ -1,4 +1,5 @@
 import type { KLineData } from 'klinecharts';
+import { parseCandleTimestamp } from '../../lib/jalaliDate';
 
 /**
  * انواع رویدادهای مجمع و شرکتی بورس تهران
@@ -159,29 +160,22 @@ export function applyAdjustmentToCandles(
 export function mapBackendAdjustEvents(rawEvents: BackendAdjustEvent[]): CorporateAction[] {
   if (!Array.isArray(rawEvents)) return [];
 
-  return rawEvents.map(e => {
-    let ts = 0;
-    if (typeof e.timestamp === 'number') {
-      ts = e.timestamp < 1e11 ? e.timestamp * 1000 : e.timestamp;
-    } else if (typeof e.time === 'number') {
-      ts = e.time < 1e11 ? e.time * 1000 : e.time;
-    } else if (typeof e.date === 'string' || typeof e.dateStr === 'string') {
-      // این شاخه فقط وقتی اجرا می‌شود که حداقل یکی رشته باشد؛ «|| ''» صرفاً برای ارضای تایپ‌اسکریپت است
-      ts = new Date(e.dateStr || e.date || '').getTime();
-    } else {
-      ts = Date.now();
-    }
+  return rawEvents
+    .map(e => {
+      const ts = parseCandleTimestamp(e.timestamp ?? e.time ?? e.dateStr ?? e.date);
 
-    return {
-      timestamp: ts,
-      dateStr: e.dateStr || e.date || '',
-      type: e.type || (e.bonusPercent ? 'capital_bonus' : e.dpsAmount ? 'dps' : 'combined'),
-      dpsAmount: Number(e.dpsAmount ?? e.dps ?? 0),
-      bonusPercent: Number(e.bonusPercent ?? e.bonus ?? 0),
-      cashPercent: Number(e.cashPercent ?? e.cash ?? 0),
-      preMeetingPrice: Number(e.preMeetingPrice ?? e.pPre ?? e.p_pre ?? 0),
-      postMeetingPrice: Number(e.postMeetingPrice ?? e.pPost ?? e.p_post ?? 0),
-      ratio: typeof e.ratio === 'number' && e.ratio > 0 ? e.ratio : undefined
-    };
-  });
+      return {
+        timestamp: Number.isFinite(ts) && ts > 0 ? ts : Date.now(),
+        dateStr: e.dateStr || e.date || '',
+        type: e.type || (e.bonusPercent ? 'capital_bonus' : e.dpsAmount ? 'dps' : 'combined'),
+        dpsAmount: Number(e.dpsAmount ?? e.dps ?? 0),
+        bonusPercent: Number(e.bonusPercent ?? e.bonus ?? 0),
+        cashPercent: Number(e.cashPercent ?? e.cash ?? 0),
+        preMeetingPrice: Number(e.preMeetingPrice ?? e.pPre ?? e.p_pre ?? 0),
+        postMeetingPrice: Number(e.postMeetingPrice ?? e.pPost ?? e.p_post ?? 0),
+        ratio: typeof e.ratio === 'number' && e.ratio > 0 ? e.ratio : undefined
+      };
+    })
+    .filter(a => Number.isFinite(a.timestamp) && a.timestamp > 0);
 }
+

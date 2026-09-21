@@ -9,13 +9,13 @@ export const nahayatNegarDarkTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#242832',
+      color: '#242731',
       style: 'solid' as const
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#242832',
+      color: '#242731',
       style: 'solid' as const
     }
   },
@@ -95,12 +95,25 @@ export const nahayatNegarDarkTheme = {
     ],
     tooltip: {
       showRule: 'always' as const,
-      showType: 'standard' as const
+      showType: 'standard' as const,
+      text: {
+        size: 11,
+        family: 'Vazirmatn',
+        color: '#d1d4dc',
+        marginStart: 6,
+        marginEnd: 6
+      }
     }
+  },
+  separator: {
+    size: 1,
+    color: '#242731',
+    fill: true,
+    activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
   },
   xAxis: {
     show: true,
-    size: 'auto' as const,
+    size: 32,
     axisLine: {
       show: true,
       color: '#2a2e39',
@@ -108,14 +121,16 @@ export const nahayatNegarDarkTheme = {
     },
     tickText: {
       show: true,
-      color: '#787b86',
-      size: 11,
-      family: 'Vazirmatn'
+      color: '#d1d4dc',
+      size: 12,
+      family: 'Vazirmatn',
+      marginStart: 4,
+      marginEnd: 4
     },
     tickLine: {
       show: true,
       size: 1,
-      length: 3,
+      length: 4,
       color: '#2a2e39'
     }
   },
@@ -129,7 +144,7 @@ export const nahayatNegarDarkTheme = {
     },
     tickText: {
       show: true,
-      color: '#787b86',
+      color: '#d1d4dc',
       size: 11,
       family: 'Vazirmatn'
     },
@@ -223,13 +238,13 @@ export const nahayatNegarLightTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#eef2f8',
+      color: '#f0f3fa',
       style: 'solid' as const,
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#eef2f8',
+      color: '#f0f3fa',
       style: 'solid' as const,
     },
   },
@@ -310,11 +325,24 @@ export const nahayatNegarLightTheme = {
     tooltip: {
       showRule: 'always' as const,
       showType: 'standard' as const,
+      text: {
+        size: 11,
+        family: 'Vazirmatn',
+        color: '#131722',
+        marginStart: 6,
+        marginEnd: 6
+      }
     },
+  },
+  separator: {
+    size: 1,
+    color: '#f0f3fa',
+    fill: true,
+    activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
   },
   xAxis: {
     show: true,
-    size: 'auto' as const,
+    size: 32,
     axisLine: {
       show: true,
       color: '#e2e8f0',
@@ -322,14 +350,16 @@ export const nahayatNegarLightTheme = {
     },
     tickText: {
       show: true,
-      color: '#64748b',
-      size: 11,
+      color: '#434651',
+      size: 12,
       family: 'Vazirmatn',
+      marginStart: 4,
+      marginEnd: 4,
     },
     tickLine: {
       show: true,
       size: 1,
-      length: 3,
+      length: 4,
       color: '#e2e8f0',
     },
   },

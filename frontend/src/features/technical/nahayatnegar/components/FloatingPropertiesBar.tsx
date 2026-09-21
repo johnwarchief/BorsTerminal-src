@@ -6,11 +6,11 @@ interface FloatingPropertiesBarProps {
   selectedToolName: string;
   currentColor: string;
   currentWidth: number;
-  currentStyle: 'solid' | 'dashed';
+  currentStyle: 'solid' | 'dashed' | 'dotted';
   isLocked: boolean;
   onColorChange: (color: string) => void;
   onWidthChange: (width: number) => void;
-  onStyleChange: (style: 'solid' | 'dashed') => void;
+  onStyleChange: (style: 'solid' | 'dashed' | 'dotted') => void;
   onToggleLock: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -121,7 +121,7 @@ export const FloatingPropertiesBar: React.FC<FloatingPropertiesBarProps> = ({
         ))}
       </div>
 
-      {/* سبک خط: LineType فقط solid | dashed است */}
+      {/* سبک خط: solid | dashed | dotted */}
       <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
         <button
           onClick={() => onStyleChange('solid')}
@@ -150,6 +150,20 @@ export const FloatingPropertiesBar: React.FC<FloatingPropertiesBarProps> = ({
           }}
         >
           خط‌چین
+        </button>
+        <button
+          onClick={() => onStyleChange('dotted')}
+          style={{
+            background: currentStyle === 'dotted' ? 'rgba(41,98,255,0.2)' : 'transparent',
+            border: currentStyle === 'dotted' ? '1px solid #2962ff' : '1px solid transparent',
+            color: currentStyle === 'dotted' ? '#2962ff' : '#d1d4dc',
+            borderRadius: '3px',
+            padding: '2px 6px',
+            fontSize: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          نقطه‌چین
         </button>
       </div>
 

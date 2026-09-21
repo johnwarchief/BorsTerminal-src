@@ -22,13 +22,13 @@
 [data-theme='light'] {
   --nn-bg-primary: #ffffff;
   --nn-bg-secondary: #f8fafc;
-  --nn-bg-hover: #eef2f8;
-  --nn-bg-active: #2563eb;
-  --nn-border: #e2e8f0;
+  --nn-bg-hover: #f0f3fa;
+  --nn-bg-active: #2962ff;
+  --nn-border: #e0e3eb;
   --nn-border-light: #cbd5e1;
   --nn-text-primary: #0f172a;
   --nn-text-secondary: #64748b;
-  --nn-text-active: #2563eb;
+  --nn-text-active: #2962ff;
   --nn-color-up: #089981;
   --nn-color-down: #f23645;
   --nn-color-warning: #d97706;
@@ -38,6 +38,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 100%;
   min-height: 520px;
   background-color: var(--nn-bg-primary);
@@ -49,19 +51,39 @@
   position: relative;
 }
 
+/* تضمین عدم سرریز افقی کانتینرهای والد در تب تکنیکال */
+.app-main:has(.tv-workbench),
+.panel-in:has(.tv-workbench) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.nahayat-negar-container:fullscreen,
+.nahayat-negar-container:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
 /* ================= نوار ابزار بالا (TOP TOOLBAR) ================= */
 .nn-top-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 42px;
-  min-height: 42px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
   flex-shrink: 0;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   scrollbar-width: none;
-  background-color: var(--nn-bg-primary);
+  background-color: var(--nn-bg-secondary);
   border-bottom: 1px solid var(--nn-border);
   padding: 0 8px;
   gap: 6px;
@@ -204,28 +226,32 @@
   font-weight: 600;
 }
 
-/* ================= بدنه اصلی چارت و نوار سمت چپ ================= */
+/* ================= بدنه اصلی چارت و نوار ابزار رسم چپ ================= */
 .nn-chart-body {
   display: flex;
+  flex-direction: row;
+  direction: ltr !important; /* تضمین استقرار نوار رسم در منتهی‌الیه چپ */
   flex: 1;
   min-width: 0;
   min-height: 0;
   position: relative;
   overflow: hidden;
-  height: calc(100% - 74px);
+  height: calc(100% - 72px);
 }
 
 .nn-left-toolbar {
-  width: 44px;
-  min-width: 44px;
+  width: 48px;
+  min-width: 48px;
   background-color: var(--nn-bg-primary);
-  border-left: 1px solid var(--nn-border);
+  border-right: 1px solid var(--nn-border);
+  border-left: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 6px 0;
-  gap: 2px;
+  gap: 3px;
   z-index: 15;
+  user-select: none;
 }
 
 .tv-slot-wrapper {
@@ -236,8 +262,8 @@
 }
 
 .nn-left-toolbar .tool-item {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,7 +271,7 @@
   color: var(--nn-text-secondary);
   cursor: pointer;
   position: relative;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
 }
 
 .nn-left-toolbar .tool-item:hover {
@@ -254,17 +280,18 @@
 }
 
 .nn-left-toolbar .tool-item.active {
-  background-color: rgba(41, 98, 255, 0.2);
+  background-color: rgba(41, 98, 255, 0.18);
   color: var(--nn-text-active);
 }
 
 .tv-slot-arrow {
   position: absolute;
-  bottom: 1px;
-  left: 2px;
+  bottom: 2px;
+  right: 2px;
+  left: auto;
   font-size: 8px;
   line-height: 8px;
-  color: #787b86;
+  color: var(--nn-text-secondary);
   opacity: 0.6;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
@@ -278,8 +305,10 @@
 .tv-flyout-menu {
   position: absolute;
   top: 0;
-  right: 100%;
-  margin-right: 6px;
+  left: 100%;
+  margin-left: 6px;
+  right: auto;
+  margin-right: 0;
   background-color: var(--nn-bg-secondary);
   border: 1px solid var(--nn-border);
   border-radius: 6px;
@@ -333,6 +362,11 @@
 .nn-kline-chart {
   width: 100%;
   height: 100%;
+}
+
+.nn-kline-chart.drawing-active-crosshair,
+.nn-kline-chart.drawing-active-crosshair canvas {
+  cursor: crosshair !important;
 }
 
 /* نوار هشدار عدم وجود دیتا (صادقانه) */
@@ -395,16 +429,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 32px;
-  min-height: 32px;
+  height: 30px;
+  min-height: 30px;
+  max-height: 30px;
   flex-shrink: 0;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   scrollbar-width: none;
-  background-color: var(--nn-bg-primary);
+  background-color: var(--nn-bg-secondary);
   border-top: 1px solid var(--nn-border);
-  padding: 0 12px;
+  padding: 0 10px;
   font-size: 11px;
   color: var(--nn-text-secondary);
   z-index: 10;
@@ -417,19 +452,20 @@
 .nn-range-buttons {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .nn-range-btn {
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
   background: transparent;
   border: none;
   color: var(--nn-text-secondary);
   font-family: var(--nn-font);
   font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.12s ease;
 }
 
 .nn-range-btn:hover {
@@ -440,25 +476,17 @@
 .nn-range-btn.active {
   background-color: var(--nn-bg-hover);
   color: var(--nn-text-active);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.nn-scale-controls {
+.nn-timezone-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.nn-scale-toggle {
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: transparent;
-  border: 1px solid var(--nn-border);
-  color: var(--nn-text-secondary);
-  font-family: var(--nn-font);
   font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  color: var(--nn-text-secondary);
+  font-weight: 500;
+  padding: 0 4px;
 }
 
 .nn-scale-toggle:hover {
@@ -482,7 +510,208 @@
 .nn-dropdown-item.nn-disabled { opacity: .38; cursor: not-allowed; }
 .nn-dropdown-item.nn-disabled:hover { background-color: transparent; }
 
-/* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ تداخلی با کندل‌ها ندارد) */
-.nn-pattern-legend { position: absolute; top: 10px; left: 12px; z-index: 6; display: flex; flex-wrap: wrap; gap: 6px; max-width: 62%; pointer-events: none; }
-.nn-legend-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(120,140,170,0.35); background: rgba(11,17,28,0.72); color: #cdd6e0; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); }
-.nn-legend-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; box-shadow: 0 0 6px currentColor; }
+/* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ جمع‌شونده و کامپکت) */
+.nn-pattern-legend {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 65%;
+  pointer-events: auto;
+}
+
+.nn-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 140, 170, 0.35);
+  background: rgba(19, 23, 34, 0.85);
+  color: #cdd6e0;
+  font-size: 10px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nn-legend-summary-chip {
+  cursor: pointer;
+  border-color: rgba(41, 98, 255, 0.45);
+  background: rgba(19, 23, 34, 0.92);
+  color: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.nn-legend-summary-chip:hover {
+  background: rgba(41, 98, 255, 0.2);
+  border-color: #2962ff;
+  transform: translateY(-1px);
+}
+
+.nn-legend-chevron {
+  font-size: 10px;
+  color: #2962ff;
+  margin-right: 2px;
+}
+
+.nn-legend-toggle-btn {
+  cursor: pointer;
+  padding: 2px 6px;
+  background: rgba(30, 34, 45, 0.85);
+  color: #9aa0a6;
+  border: 1px solid #2a2e39;
+  font-size: 9px;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.nn-legend-toggle-btn:hover {
+  color: #ffffff;
+  background: #2a2e39;
+  border-color: #434857;
+}
+
+.nn-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  display: inline-block;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* ================= کلیدهای مینیاتوری محور قیمت (Log / Auto / %) سبک تریدینگ‌ویو ================= */
+.nn-price-axis-buttons,
+.dark .nn-price-axis-buttons,
+[data-theme='dark'] .nn-price-axis-buttons {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #1e222d !important;
+  border: 1px solid #2a2e39 !important;
+  border-radius: 4px;
+  padding: 2px;
+  z-index: 30;
+  user-select: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='light'] .nn-price-axis-buttons {
+  background: #ffffff !important;
+  border: 1px solid #d1d4dc !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nn-axis-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 22px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #848e9c;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-family: inherit;
+  transition: all 0.12s ease;
+  line-height: 1;
+  outline: none;
+}
+
+.nn-axis-btn:hover {
+  background: #2a2e39;
+  color: #ffffff;
+  border-color: #363a45;
+}
+
+[data-theme='light'] .nn-axis-btn {
+  color: #5f6368;
+}
+
+[data-theme='light'] .nn-axis-btn:hover {
+  background: #f0f3fa;
+  color: #1a1a1a;
+  border-color: #d1d4dc;
+}
+
+.nn-axis-btn.active,
+.dark .nn-axis-btn.active,
+[data-theme='dark'] .nn-axis-btn.active {
+  background: rgba(41, 98, 255, 0.22) !important;
+  border-color: rgba(41, 98, 255, 0.45) !important;
+  color: #2962ff !important;
+  font-weight: 800;
+}
+
+[data-theme='light'] .nn-axis-btn.active {
+  background: rgba(41, 98, 255, 0.12) !important;
+  border-color: rgba(41, 98, 255, 0.35) !important;
+  color: #2962ff !important;
+  font-weight: 800;
+}
+
+
+/* ================= ابزار اندازه‌گیری / خط‌کش (Measure / Ruler Tool) ================= */
+.nn-measure-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.nn-measure-box {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: none;
+}
+
+.nn-measure-badge {
+  position: absolute;
+  z-index: 22;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(19, 23, 34, 0.94);
+  border: 1px solid;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  font-size: 11px;
+  font-family: Vazirmatn, sans-serif;
+  direction: rtl;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+  pointer-events: auto;
+  user-select: none;
+}
+
+.nn-measure-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.nn-measure-badge-label {
+  color: var(--nn-text-secondary, #787b86);
+  font-size: 10px;
+}
+
+.nn-measure-badge-val {
+  font-weight: 700;
+  font-size: 11px;
+}

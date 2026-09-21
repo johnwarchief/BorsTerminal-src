@@ -33,16 +33,39 @@ export type ChartView = {
   axisDragLock: boolean;
   /** حاشیهٔ برچسب‌های محور (tickText.marginStart/End) */
   axisTickMargin: number;
-  background: 'theme' | 'classic';
+  background: 'theme' | 'classic' | 'dark' | 'light' | 'custom';
+  customBgColor: string;
   candleUp: string | null;
   candleDown: string | null;
+  borderUp: string | null;
+  borderDown: string | null;
+  wickUp: string | null;
+  wickDown: string | null;
+  showBorders: boolean;
+  showWicks: boolean;
   /** سایهٔ کندل خاکستری (وگرنه هم‌رنگ بدنه) */
   wickGray: boolean;
+  timezone: string;
   showLegend: boolean;
   showXAxis: boolean;
   showYAxis: boolean;
   /** چیدمان چارت: تک/۲/۴ پنل با همگام‌سازی */
   splitLayout: 1 | 2 | 4;
+  statusShowOhlc: boolean;
+  statusShowSymbol: boolean;
+  statusShowIndicators: boolean;
+  statusShowVolume: boolean;
+  gridColor: string;
+  gridStyle: 'solid' | 'dashed' | 'dotted' | 'none';
+  showGridHorz: boolean;
+  showGridVert: boolean;
+  crosshairStyle: 'dashed' | 'dotted' | 'solid';
+  watermarkOpacity: number;
+  showWatermark: boolean;
+  showCorporateActions: boolean;
+  showDividends: boolean;
+  showSplits: boolean;
+  fibLogarithmic: boolean;
 };
 
 export const VIEW_DEFAULTS: ChartView = {
@@ -51,14 +74,37 @@ export const VIEW_DEFAULTS: ChartView = {
   priceScalePos: 'right',
   axisDragLock: false,
   axisTickMargin: 3,
-  background: 'theme',
-  candleUp: null,
-  candleDown: null,
+  background: 'dark',
+  customBgColor: '#131722',
+  candleUp: '#089981',
+  candleDown: '#f23645',
+  borderUp: '#089981',
+  borderDown: '#f23645',
+  wickUp: '#089981',
+  wickDown: '#f23645',
+  showBorders: true,
+  showWicks: true,
   wickGray: false,
+  timezone: 'Asia/Tehran',
   showLegend: true,
   showXAxis: true,
   showYAxis: true,
   splitLayout: 1,
+  statusShowOhlc: true,
+  statusShowSymbol: true,
+  statusShowIndicators: true,
+  statusShowVolume: true,
+  gridColor: '#1e222d',
+  gridStyle: 'solid',
+  showGridHorz: true,
+  showGridVert: true,
+  crosshairStyle: 'dashed',
+  watermarkOpacity: 5,
+  showWatermark: true,
+  showCorporateActions: true,
+  showDividends: true,
+  showSplits: true,
+  fibLogarithmic: false,
 };
 
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
@@ -92,7 +138,8 @@ type FtsConfigState = FtsFlags & {
   toggleIndicator: (k: IndicatorKey) => void;
 };
 
-const STORAGE_KEY = '***';
+const STORAGE_KEY = 'fts.chart.settings.v1';
+const LEGACY_STORAGE_KEY = '***';
 
 export const DEFAULTS: FtsFlags = {
   showMAs: true,
@@ -152,10 +199,38 @@ function pick(s: PersistedState): PersistedState {
 
 function initial(): PersistedState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = (typeof localStorage !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)) : null);
     if (!raw) return { ...PERSIST_DEFAULTS };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
-    return { ...PERSIST_DEFAULTS, ...parsed, view: { ...VIEW_DEFAULTS, ...(parsed.view ?? {}) } };
+
+    // اعتبارسنجی مقیاس قیمت (سازگاری عقب‌رو با 'log' یا مقادیر ناشناخته)
+    const rawScale = parsed.priceScale as string | undefined;
+    const priceScale: PriceScale =
+      rawScale === 'log' ? 'logarithm'
+      : (rawScale === 'logarithm' || rawScale === 'percentage' || rawScale === 'normal')
+      ? rawScale
+      : PERSIST_DEFAULTS.priceScale;
+
+    // پالایش و ایمن‌سازی مقادیر نمایشی
+    const parsedView = parsed.view ?? {};
+    const safeView: ChartView = {
+      ...VIEW_DEFAULTS,
+      ...parsedView,
+      candleUp: (parsedView.candleUp && parsedView.candleUp !== 'transparent') ? parsedView.candleUp : VIEW_DEFAULTS.candleUp,
+      candleDown: (parsedView.candleDown && parsedView.candleDown !== 'transparent') ? parsedView.candleDown : VIEW_DEFAULTS.candleDown,
+      borderUp: (parsedView.borderUp && parsedView.borderUp !== 'transparent') ? parsedView.borderUp : (parsedView.candleUp || VIEW_DEFAULTS.borderUp),
+      borderDown: (parsedView.borderDown && parsedView.borderDown !== 'transparent') ? parsedView.borderDown : (parsedView.candleDown || VIEW_DEFAULTS.borderDown),
+      wickUp: (parsedView.wickUp && parsedView.wickUp !== 'transparent') ? parsedView.wickUp : (parsedView.candleUp || VIEW_DEFAULTS.wickUp),
+      wickDown: (parsedView.wickDown && parsedView.wickDown !== 'transparent') ? parsedView.wickDown : (parsedView.candleDown || VIEW_DEFAULTS.wickDown),
+      gridColor: parsedView.gridColor || VIEW_DEFAULTS.gridColor,
+    };
+
+    return {
+      ...PERSIST_DEFAULTS,
+      ...parsed,
+      priceScale,
+      view: safeView,
+    };
   } catch {
     return { ...PERSIST_DEFAULTS };
   }

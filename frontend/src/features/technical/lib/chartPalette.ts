@@ -5,9 +5,9 @@ import type { ChartPalette } from '../components/KLineChartWrapper';
 
 /** تم تاریک — پس‌زمینه/گرید/متن هم‌خوان TradingView dark */
 export const DARK_PALETTE: ChartPalette = {
-  up: '#10b981',
-  down: '#f43f5e',
-  grid: 'rgba(42, 46, 57, 0.85)',
+  up: '#089981',
+  down: '#f23645',
+  grid: '#1e222d',
   text: '#d1d4dc',
   background: '#131722',
   axis: '#2a2e39',

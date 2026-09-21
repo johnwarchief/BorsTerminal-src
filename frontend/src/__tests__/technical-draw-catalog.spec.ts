@@ -122,3 +122,36 @@ describe('فیبوی FTS: خطی در برابر لگاریتمی', () => {
     }
   });
 });
+
+describe('اورلی رویدادهای شرکتی (FTS_CORP_ACTION_OVERLAY)', () => {
+  const all = captureRegistered();
+  const corp = all.find((d) => d.name === 'ftsCorpAction');
+
+  it('اورلی با موفقیت ثبت می‌شود', () => {
+    expect(corp).toBeTruthy();
+  });
+
+  it('نشانگر با آفست عمودی مناسب (+24px) و استایل تفکیکی D و S رسم می‌شود', () => {
+    const ctxD = {
+      coordinates: [{ x: 100, y: 200 }],
+      overlay: { extendData: { kind: 'D', text: 'سود نقدی' } },
+    } as unknown as OverlayFigureCtx;
+
+    const figsD = corp?.createPointFigures?.(ctxD) ?? [];
+    expect(figsD.length).toBe(2);
+    // دایره با فاصله عمودی +24px از کف کندل
+    expect((figsD[0].attrs as any).y).toBe(224);
+    expect((figsD[0].attrs as any).r).toBe(9);
+    expect((figsD[1].attrs as any).text).toBe('D');
+    expect((figsD[1].styles as any).color).toBe('#2962ff');
+
+    const ctxS = {
+      coordinates: [{ x: 100, y: 200 }],
+      overlay: { extendData: { kind: 'S', text: 'افزایش سرمایه' } },
+    } as unknown as OverlayFigureCtx;
+    const figsS = corp?.createPointFigures?.(ctxS) ?? [];
+    expect((figsS[1].attrs as any).text).toBe('S');
+    expect((figsS[1].styles as any).color).toBe('#f59e0b');
+  });
+});
+

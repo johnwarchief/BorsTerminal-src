@@ -14,7 +14,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
     <section
       data-testid="fts-dock"
       data-open={open ? 'true' : 'false'}
-      className={`flex shrink-0 flex-col overflow-hidden rounded-lg border border-[var(--hairline)] bg-bg-secondary ${
+      className={`flex shrink-0 flex-col overflow-hidden border-t border-[var(--hairline)] bg-[var(--bg-secondary)] ${
         open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >

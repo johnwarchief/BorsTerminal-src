@@ -12,6 +12,12 @@ export type StoredOverlay = {
 };
 
 const PREFIX = 'fts-draw';
+export const SYMBOL_DRAW_PREFIX = 'fts.drawings.v1';
+
+/** کلید استاندارد ذخیره‌سازی اختصاصی هر نماد (fts.drawings.v1.{symbol}) */
+export function symbolDrawKey(symbol: string): string {
+  return `${SYMBOL_DRAW_PREFIX}.${symbol || '__market__'}`;
+}
 
 /** کلید ذخیره‌سازی برای یک نماد/تایم‌فریم (نماد خالی ⇒ کل بورس) */
 export function drawKey(symbol: string, timeframe: string): string {
@@ -26,12 +32,12 @@ function storage(): Storage | null {
   }
 }
 
-/** خواندن ترسیم‌های ذخیره‌شده (شکل نامعتبر ⇒ آرایهٔ خالی) */
-export function loadDrawings(symbol: string, timeframe: string): StoredOverlay[] {
+/** خواندن ترسیم‌های اختصاصی نماد از کلید استاندارد fts.drawings.v1.{symbol} */
+export function loadSymbolDrawings(symbol: string): StoredOverlay[] {
   const s = storage();
   if (!s) return [];
   try {
-    const raw = s.getItem(drawKey(symbol, timeframe));
+    const raw = s.getItem(symbolDrawKey(symbol));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -41,20 +47,57 @@ export function loadDrawings(symbol: string, timeframe: string): StoredOverlay[]
   }
 }
 
-/** ذخیرهٔ ترسیم‌ها؛ فقط موارد دارای نام معتبر */
-export function saveDrawings(symbol: string, timeframe: string, drawings: StoredOverlay[]): void {
+/** ذخیرهٔ ترسیم‌های اختصاصی نماد در کلید استاندارد fts.drawings.v1.{symbol} */
+export function saveSymbolDrawings(symbol: string, drawings: StoredOverlay[]): void {
   const s = storage();
   if (!s) return;
   try {
     const clean = drawings.filter((d) => d && typeof d.name === 'string');
-    if (clean.length === 0) s.removeItem(drawKey(symbol, timeframe));
-    else s.setItem(drawKey(symbol, timeframe), JSON.stringify(clean));
+    if (clean.length === 0) {
+      s.removeItem(symbolDrawKey(symbol));
+    } else {
+      s.setItem(symbolDrawKey(symbol), JSON.stringify(clean));
+    }
   } catch {
     // حافظه در دسترس نیست
   }
 }
 
-/** پاک‌کردن ترسیم‌های «این نماد» در همهٔ تایم‌فریم‌ها (دکمهٔ پاک‌سازی) */
+/** خواندن ترسیم‌های ذخیره‌شده بر اساس نماد و تایم‌فریم (شکل نامعتبر ⇒ آرایهٔ خالی) */
+export function loadDrawings(symbol: string, timeframe?: string): StoredOverlay[] {
+  const s = storage();
+  if (!s) return [];
+  try {
+    if (timeframe) {
+      const raw = s.getItem(drawKey(symbol, timeframe));
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((o): o is StoredOverlay => !!o && typeof (o as StoredOverlay).name === 'string');
+    }
+    return loadSymbolDrawings(symbol);
+  } catch {
+    return [];
+  }
+}
+
+/** ذخیرهٔ ترسیم‌ها بر مبنای نماد و تایم‌فریم */
+export function saveDrawings(symbol: string, timeframe: string, drawings: StoredOverlay[]): void {
+  const s = storage();
+  if (!s) return;
+  try {
+    const clean = drawings.filter((d) => d && typeof d.name === 'string');
+    if (clean.length === 0) {
+      s.removeItem(drawKey(symbol, timeframe));
+    } else {
+      s.setItem(drawKey(symbol, timeframe), JSON.stringify(clean));
+    }
+  } catch {
+    // حافظه در دسترس نیست
+  }
+}
+
+/** پاک‌کردن ترسیم‌های «این نماد» در همهٔ تایم‌فریم‌ها و کلید نماد (دکمهٔ پاک‌سازی) */
 export function clearSymbolDrawings(symbol: string): number {
   const s = storage();
   if (!s) return 0;
@@ -66,6 +109,7 @@ export function clearSymbolDrawings(symbol: string): number {
       if (k && k.startsWith(prefix)) keys.push(k);
     }
     keys.forEach((k) => s.removeItem(k));
+    s.removeItem(symbolDrawKey(symbol));
   } catch {
     return 0;
   }
