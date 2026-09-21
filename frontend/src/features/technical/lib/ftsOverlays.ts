@@ -48,6 +48,7 @@ export const FTS_FIB_OVERLAY = 'ftsFib';
 export const FTS_FIB_LOG_OVERLAY = 'ftsFibLog';
 export const FTS_MEASURE_OVERLAY = 'ftsMeasure';
 export const FTS_POSITION_OVERLAY = 'ftsPosition';
+export const FTS_CORP_ACTION_OVERLAY = 'ftsCorpAction';
 
 /** سطوح فیبوی FTS (FTS_SPEC بخش اول بند ۳): دو کمربند + مبنا ۱.۰ */
 export const FTS_FIB_LEVELS = [0, 0.33, 0.4, 0.618, 0.7, 1] as const;
@@ -55,6 +56,18 @@ export const FTS_FIB_BANDS: readonly (readonly [number, number])[] = [
   [0.33, 0.4],
   [0.618, 0.7],
 ];
+
+/** ترازهای استاندارد فیبوناچی تریدینگ‌ویو (۲۳.۶٪، ۳۸.۲٪، ۵۰٪، ۶۱.۸٪، ۷۸.۶٪ و ۱۶۱.۸٪) */
+export const TV_FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.618] as const;
+
+/** محاسبه تراز فیبوناچی بر پایه خطی یا فرمول لگاریتمی تریدینگ‌ویو: p1 * (p0 / p1)^ratio */
+export function calcFibPrice(p0: number, p1: number, ratio: number, isLog: boolean): number {
+  if (!Number.isFinite(p0) || !Number.isFinite(p1)) return 0;
+  if (isLog && p0 > 0 && p1 > 0) {
+    return p1 * Math.pow(p0 / p1, ratio);
+  }
+  return p1 + (p0 - p1) * ratio;
+}
 
 type MarkerCtx = {
   overlay: Record<string, unknown>;
@@ -225,7 +238,7 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
     ignoreEvent: true,
   });
 
-  const fibDef = (name: string, log: boolean, textColor: string): RegisterOverlayDef => ({
+  const fibDef = (name: string, log: boolean, textColor: string, customLevels?: readonly number[]): RegisterOverlayDef => ({
     name,
     totalStep: 3,
     needDefaultPointFigure: true,
@@ -237,16 +250,12 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       const w = ctx.bounding.width;
       const pts = ptsOf(ctx);
       const yOf = (t: number) => (c[1].y as number) + ((c[0].y as number) - (c[1].y as number)) * t;
-      // قیمت سطح: حالت عادی خطی؛ حالت لگاریتمی هندسی (درست روی محور log)
+      // قیمت سطح: در حالت عادی خطی؛ در حالت لگاریتمی طبق فرمول تریدینگ‌ویو Price = Low * ((High / Low) ^ Ratio)
       const v0 = typeof pts[0]?.value === 'number' ? (pts[0].value as number) : null;
       const v1 = typeof pts[1]?.value === 'number' ? (pts[1].value as number) : null;
       const priceOf = (t: number): number | null => {
         if (v0 == null || v1 == null) return null;
-        if (log) {
-          if (v0 <= 0 || v1 <= 0) return null;
-          return Math.exp(Math.log(v1) + t * (Math.log(v0) - Math.log(v1)));
-        }
-        return v1 + (v0 - v1) * t;
+        return calcFibPrice(v0, v1, t, log);
       };
       const figs: OverlayFigure[] = [];
       for (const [b0, b1] of FTS_FIB_BANDS) {
@@ -255,7 +264,8 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
           band(0, yOf(b0), yOf(b1), w, shallow ? FTS_OVERLAY_COLORS.fibStep1 : FTS_OVERLAY_COLORS.fibStep2, shallow ? FTS_OVERLAY_COLORS.fibStep1Edge : FTS_OVERLAY_COLORS.fibStep2Edge),
         );
       }
-      for (const t of FTS_FIB_LEVELS) {
+      const levels = customLevels ?? FTS_FIB_LEVELS;
+      for (const t of levels) {
         const y = yOf(t);
         figs.push({
           type: 'line',
@@ -271,6 +281,7 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
   });
   reg(fibDef(FTS_FIB_OVERLAY, false, FTS_OVERLAY_COLORS.fibText));
   reg(fibDef(FTS_FIB_LOG_OVERLAY, true, FTS_OVERLAY_COLORS.fibText2));
+  reg(fibDef('tvFibLog', true, FTS_OVERLAY_COLORS.fibText2, TV_FIB_LEVELS));
 
   reg({
     name: FTS_MEASURE_OVERLAY,
@@ -346,6 +357,42 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
           ignoreEvent: true,
         },
         label(w - 4, yEntry - 4, `ورود ${entry == null ? '-' : entry.toFixed(0)} · R/R ${rr == null ? '-' : rr.toFixed(2)}`, '#38bdf8'),
+      ];
+    },
+  });
+
+  reg({
+    name: FTS_CORP_ACTION_OVERLAY,
+    totalStep: 1,
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createPointFigures: (ctx) => {
+      const c = ctx.coordinates;
+      if (!c[0] || typeof c[0].x !== 'number' || typeof c[0].y !== 'number') return [];
+      const ext = (ctx.overlay.extendData ?? {}) as {
+        kind?: 'D' | 'S';
+        text?: string;
+        color?: string;
+      };
+      const x = c[0].x;
+      const y = c[0].y + 16;
+      const isDiv = ext.kind === 'D';
+      const color = ext.color ?? (isDiv ? '#2962ff' : '#f59e0b');
+      const letter = isDiv ? 'D' : 'S';
+      return [
+        {
+          type: 'circle',
+          attrs: { x, y, r: 8 },
+          styles: { style: 'fill', color: 'rgba(30, 34, 45, 0.92)', borderColor: color, borderSize: 1.5 },
+          ignoreEvent: true,
+        },
+        {
+          type: 'text',
+          attrs: { x, y, text: letter, align: 'center', baseline: 'middle' },
+          styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+          ignoreEvent: true,
+        },
       ];
     },
   });

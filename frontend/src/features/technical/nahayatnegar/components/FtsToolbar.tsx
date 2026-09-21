@@ -28,6 +28,8 @@ interface FtsToolbarProps {
   onToggleFullscreen: () => void;
   onOpenSettings?: () => void;
   onTakeSnapshot?: () => void;
+  onToggleDepth?: () => void;
+  isDepthOpen?: boolean;
 }
 
 export const FtsToolbar: React.FC<FtsToolbarProps> = ({
@@ -50,7 +52,9 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   isFullscreen,
   onToggleFullscreen,
   onOpenSettings,
-  onTakeSnapshot
+  onTakeSnapshot,
+  onToggleDepth,
+  isDepthOpen,
 }) => {
   const [showCandleMenu, setShowCandleMenu] = useState(false);
   const [showAdjMenu, setShowAdjMenu] = useState(false);
@@ -116,6 +120,19 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           )}
           <IconSearch size={13} color="var(--nn-text-secondary)" />
         </div>
+
+        {onToggleDepth && (
+          <button
+            type="button"
+            className={`nn-btn ${isDepthOpen ? 'active' : ''}`}
+            onClick={(e) => { e.stopPropagation(); onToggleDepth(); }}
+            title="نمایش تابلوی ۵ مظنه برتر (عمق بازار)"
+            data-testid="toggle-depth-btn"
+            style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 8px' }}
+          >
+            ۵ مظنه
+          </button>
+        )}
 
         <div className="nn-separator" />
 

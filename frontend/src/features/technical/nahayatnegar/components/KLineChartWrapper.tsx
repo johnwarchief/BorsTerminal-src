@@ -1,19 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
 import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
 import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
 } from '../lib/adjustments';
-import { analyzeFts, FtsAnalysisResult } from '../lib/ftsOverlays';
+import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
+import {
+  registerFtsOverlays,
+  FTS_CORP_ACTION_OVERLAY,
+} from '../../lib/ftsOverlays';
 import {
   clearSymbolDrawings,
   commit as commitHistory,
   initHistory,
   loadDrawings,
+  loadSymbolDrawings,
   redo as redoHistory,
   saveDrawings,
+  saveSymbolDrawings,
   snapToOhlc,
   undo as undoHistory,
   type StoredOverlay,
@@ -22,6 +29,7 @@ import { FtsToolbar } from './FtsToolbar';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
+import { MarketDepthWidget } from '../../components/MarketDepthWidget';
 import { IconClose } from './TradingViewIcons';
 import {
   buildPatternOverlays,
@@ -227,9 +235,27 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
   const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
 
-  // نوار پایین و مقیاس
   const [activeRange, setActiveRange] = useState<string>('1Y');
   const [isLogScale, setIsLogScale] = useState<boolean>(ftsPriceScale === 'logarithm');
+  const [isAutoScale, setIsAutoScale] = useState<boolean>(true);
+  const [isDepthOpen, setIsDepthOpen] = useState<boolean>(false);
+  const [isChartReady, setIsChartReady] = useState<boolean>(false);
+
+  // استیت ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
+  const [measureState, setMeasureState] = useState<{
+    isActive: boolean;
+    startX: number;
+    startY: number;
+    startPrice: number;
+    startTs: number;
+    startIdx: number;
+    currX: number;
+    currY: number;
+    currPrice: number;
+    currTs: number;
+    currIdx: number;
+  } | null>(null);
+  const isMeasuringRef = useRef<boolean>(false);
 
   useEffect(() => {
     setIsLogScale(ftsPriceScale === 'logarithm');
@@ -387,9 +413,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       try {
         const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
         return all
-          .filter((o) => o && typeof o.name === 'string' && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL'].includes(o.name))
+          .filter((o) => o && typeof o.name === 'string' &&
+            (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions'].includes(o.name))))
           .map((o) => ({
             name: o.name as string,
+            groupId: 'fts-draw',
             points: (o.points ?? []) as StoredOverlay['points'],
             ...(o.styles ? { styles: o.styles as Record<string, unknown> } : {}),
             ...(o.extendData ? { extendData: o.extendData as Record<string, unknown> } : {}),
@@ -403,15 +431,25 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const applySnapshot = (rows: StoredOverlay[]) => {
       try {
         chart.removeOverlay({ groupId: 'fts-draw' });
-        rows.forEach((o) => chart.createOverlay(o as never));
+        rows.forEach((o) => chart.createOverlay({ ...o, groupId: 'fts-draw' } as never));
       } catch (e) {
         void e;
       }
     };
 
-    // ۱) بازیابی ترسیم‌های ذخیره‌شدهٔ همین نماد/تایم‌فریم
-    const restored = loadDrawings(currentSymbol, activeTimeframe);
-    if (restored.length > 0) applySnapshot(restored);
+    // ۱) ابتدا پاکسازی قطعی ترسیم‌های نماد قبلی از روی چارت
+    try {
+      chart.removeOverlay({ groupId: 'fts-draw' });
+    } catch {
+      // safe
+    }
+
+    // ۲) بازیابی ترسیم‌های اختصاصی این نماد (کلید اختصاصی fts.drawings.v1.{symbol} یا تایم‌فریم)
+    const symDrawings = loadSymbolDrawings(currentSymbol);
+    const restored = symDrawings.length > 0 ? symDrawings : loadDrawings(currentSymbol, activeTimeframe);
+    if (restored.length > 0) {
+      applySnapshot(restored);
+    }
     drawHistRef.current = initHistory(restored);
 
     const maybeSnap = () => {
@@ -436,13 +474,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     };
 
-    // ۲) ذخیرهٔ خودکار تغییرات ترسیم + اعمال مگنت
+    // ۳) ذخیرهٔ خودکار تغییرات ترسیم در دو سطح نماد و تایم‌فریم + اعمال مگنت
     const tick = () => {
       maybeSnap();
       const snap = snapshot();
       const h = drawHistRef.current;
       if (JSON.stringify(snap) !== JSON.stringify(h.present)) {
         drawHistRef.current = commitHistory(h, snap);
+        saveSymbolDrawings(currentSymbol, snap);
         saveDrawings(currentSymbol, activeTimeframe, snap);
       }
     };
@@ -456,6 +495,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (ev.key === 'Escape') {
         setActiveToolId('crosshair');
         setSelectedOverlayId(null);
+        setMeasureState(null);
         return;
       }
 
@@ -493,11 +533,21 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       clearInterval(timer);
       window.removeEventListener('keydown', onKey);
     };
-  }, [currentSymbol, activeTimeframe]);
+  }, [currentSymbol, activeTimeframe, isChartReady]);
 
   // ۲. راه‌اندازی اولیه KLineChart مطابق با KlineCharts v10.0.3
   useEffect(() => {
     if (!chartContainerRef.current) return;
+
+    // ثبت اورلی‌های سفارشی FTS (شامل tvFibLog و ftsCorpAction)
+    try {
+      const regFn = (klinecharts as any).registerOverlay ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerOverlay : undefined);
+      if (typeof regFn === 'function') {
+        registerFtsOverlays({ registerOverlay: regFn });
+      }
+    } catch {
+      // safe idempotent
+    }
 
     // init در v10 با layout.yAxis و formatter
     const chart = init(chartContainerRef.current, {
@@ -515,6 +565,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     if (!chart) return;
     chartRef.current = chart;
+    setIsChartReady(true);
 
     // ثبت دیتا لودر در v10 (جایگزین قطعی applyNewData)
     chart.setDataLoader({
@@ -584,6 +635,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (chartContainerRef.current) {
         dispose(chartContainerRef.current);
       }
+      setIsChartReady(false);
       chartRef.current = null;
     };
   }, []); // فقط یک‌بار هنگام Mount شدن کامپوننت
@@ -920,6 +972,135 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     return clearPatterns;
   }, [adjustedCandles, patternPrefs]);
 
+  // ۶. لایهٔ رویدادهای شرکتی و مجامع (D: سود نقدی DPS، S: افزایش سرمایه سهام جایزه و آورده)
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const corpGroupId = 'fts_corp_actions';
+    try {
+      chart.removeOverlay({ groupId: corpGroupId } as never);
+    } catch {
+      // safe
+    }
+
+    if (ftsView?.showCorporateActions === false || corporateActions.length === 0 || adjustedCandles.length === 0) {
+      return;
+    }
+
+    try {
+      corporateActions.forEach((action) => {
+        const isDividend = action.type === 'dps';
+        const isSplit = action.type === 'capital_bonus' || action.type === 'capital_cash' || action.type === 'combined';
+        if (!isDividend && !isSplit) return;
+
+        const matchCandle = adjustedCandles.find((c) => Math.abs(c.timestamp - action.timestamp) < 24 * 60 * 60 * 1000)
+          ?? adjustedCandles.find((c) => c.timestamp >= action.timestamp);
+
+        if (!matchCandle) return;
+
+        const kind = isDividend ? 'D' : 'S';
+        const tooltip = isDividend
+          ? `سود نقدی: ${action.dpsAmount?.toLocaleString('fa-IR') ?? '-'} ریال`
+          : `افزایش سرمایه: ${action.bonusPercent ?? action.cashPercent ?? '-'}%`;
+
+        chart.createOverlay({
+          name: FTS_CORP_ACTION_OVERLAY,
+          groupId: corpGroupId,
+          lock: true,
+          points: [{ timestamp: matchCandle.timestamp, value: matchCandle.low }],
+          extendData: {
+            kind,
+            text: tooltip,
+            color: isDividend ? '#2962ff' : '#f59e0b',
+          },
+        } as never);
+      });
+    } catch (e) {
+      void e;
+    }
+
+    return () => {
+      try {
+        chart.removeOverlay({ groupId: corpGroupId } as never);
+      } catch (e) {
+        void e;
+      }
+    };
+  }, [corporateActions, adjustedCandles, ftsView?.showCorporateActions]);
+
+  // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.shiftKey || activeToolId === 'ruler') {
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const cross = chartRef.current?.getCrosshair();
+      const lastCandle = adjustedCandles[adjustedCandles.length - 1];
+      const startPrice = cross?.kLineData?.close ?? lastCandle?.close ?? 1000;
+      const startTs = cross?.kLineData?.timestamp ?? lastCandle?.timestamp ?? Date.now();
+      const startIdx = cross?.dataIndex ?? (adjustedCandles.length - 1);
+
+      isMeasuringRef.current = true;
+      setMeasureState({
+        isActive: true,
+        startX: x,
+        startY: y,
+        startPrice,
+        startTs,
+        startIdx,
+        currX: x,
+        currY: y,
+        currPrice: startPrice,
+        currTs: startTs,
+        currIdx: startIdx,
+      });
+      return;
+    }
+
+    if (measureState?.isActive) {
+      setMeasureState(null);
+      if (activeToolId === 'ruler') {
+        setActiveToolId('crosshair');
+      }
+    }
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMeasuringRef.current || !measureState) return;
+    const rect = chartContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const cross = chartRef.current?.getCrosshair();
+    const currPrice = cross?.kLineData?.close ?? measureState.startPrice;
+    const currTs = cross?.kLineData?.timestamp ?? measureState.startTs;
+    const currIdx = cross?.dataIndex ?? measureState.startIdx;
+
+    setMeasureState((prev) => (prev ? {
+      ...prev,
+      currX: x,
+      currY: y,
+      currPrice,
+      currTs,
+      currIdx,
+    } : null));
+  };
+
+  const handleCanvasMouseUp = () => {
+    if (isMeasuringRef.current) {
+      isMeasuringRef.current = false;
+      if (measureState && Math.abs(measureState.currX - measureState.startX) < 6 && Math.abs(measureState.currY - measureState.startY) < 6) {
+        setMeasureState(null);
+        if (activeToolId === 'ruler') {
+          setActiveToolId('crosshair');
+        }
+      }
+    }
+  };
+
 
   // هندلر تغییر نماد
   const handleSelectSymbol = (sym: SymbolInfo) => {
@@ -976,18 +1157,27 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const chart = chartRef.current;
     if (!chart) return;
 
-    if (overlayType === 'crosshair') {
+    if (overlayType === 'crosshair' || toolId === 'ruler') {
       setSelectedOverlayId(null);
       return;
     }
 
     if (overlayType === 'eraser') {
-      chart.removeOverlay();
+      chart.removeOverlay({ groupId: 'fts-draw' });
       setSelectedOverlayId(null);
       return;
     }
 
-    // ایجاد Overlay در KlineCharts v10 با استفاده از overrideOverlay و styles
+    // بررسی حالت فیبوناچی لگاریتمی (Logarithmic Fibonacci) بر مبنای تنظیمات یا مقیاس جاری
+    let finalOverlayType = overlayType;
+    const isLogFib = ftsView?.fibLogarithmic || isLogScale;
+    if (toolId.includes('fib') || overlayType === 'fibonacciLine') {
+      if (isLogFib) {
+        finalOverlayType = 'tvFibLog';
+      }
+    }
+
+    // ایجاد Overlay در KlineCharts v10 با انتساب قطعی به groupId: 'fts-draw'
     try {
       const lineStyleObj = overlayStyle === 'solid'
         ? { style: 'solid' as const }
@@ -996,7 +1186,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         : { style: 'dashed' as const, dashedValue: [6, 6] };
 
       const id = chart.createOverlay({
-        name: overlayType,
+        name: finalOverlayType,
+        groupId: 'fts-draw',
         lock: isDrawingLocked,
         styles: {
           line: {
@@ -1074,10 +1265,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   };
 
-  // پاک‌سازی تمام ترسیم‌ها
+  // پاک‌سازی تمام ترسیم‌های اختصاصی نماد
   const handleClearDrawings = () => {
     if (chartRef.current) {
-      chartRef.current.removeOverlay();
+      chartRef.current.removeOverlay({ groupId: 'fts-draw' });
+      drawHistRef.current = initHistory([]);
+      saveSymbolDrawings(currentSymbol, []);
+      saveDrawings(currentSymbol, activeTimeframe, []);
       setSelectedOverlayId(null);
     }
   };
@@ -1168,6 +1362,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onToggleFullscreen={handleToggleFullscreen}
         onOpenSettings={onOpenSettings}
         onTakeSnapshot={handleTakeSnapshot}
+        onToggleDepth={() => setIsDepthOpen((prev) => !prev)}
+        isDepthOpen={isDepthOpen}
+      />
+
+      {/* ویجت ۵ مظنه برتر عمق بازار */}
+      <MarketDepthWidget
+        symbol={currentSymbol}
+        boardRow={boardRow}
+        isOpen={isDepthOpen}
+        onClose={() => setIsDepthOpen(false)}
       />
 
       {/* نوار شناور تنظیمات المان */}
@@ -1216,7 +1420,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           }}
         />
 
-        <main className="nn-canvas-area">
+        <main
+          className="nn-canvas-area"
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+        >
           {/* هشدار خروج استراتژی FTS */}
           {isFtsActive && ftsAnalysis?.exitSignalMA14 && (
             <div className="nn-fts-exit-alert">
@@ -1239,6 +1448,107 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             ref={chartContainerRef}
             className={`nn-kline-chart ${activeToolId && !['crosshair', 'arrow', 'dot'].includes(activeToolId) ? 'drawing-active-crosshair' : ''}`}
           />
+
+          {/* ابزار اندازه‌گیری / خط‌کش تعاملی (Measure / Ruler Tool) */}
+          {measureState && (
+            <div className="nn-measure-overlay" data-testid="measure-overlay">
+              <div
+                className="nn-measure-box"
+                style={{
+                  left: `${Math.min(measureState.startX, measureState.currX)}px`,
+                  top: `${Math.min(measureState.startY, measureState.currY)}px`,
+                  width: `${Math.abs(measureState.currX - measureState.startX)}px`,
+                  height: `${Math.max(2, Math.abs(measureState.currY - measureState.startY))}px`,
+                  backgroundColor: measureState.currPrice >= measureState.startPrice
+                    ? 'rgba(8, 153, 129, 0.16)'
+                    : 'rgba(242, 54, 69, 0.16)',
+                  border: `1px dashed ${
+                    measureState.currPrice >= measureState.startPrice ? '#089981' : '#f23645'
+                  }`,
+                }}
+              />
+              <div
+                className="nn-measure-badge"
+                data-testid="measure-badge"
+                style={{
+                  left: `${Math.max(10, Math.min((chartContainerRef.current?.clientWidth ?? 350) - 160, Math.max(measureState.startX, measureState.currX) + 12))}px`,
+                  top: `${Math.max(10, Math.min(measureState.startY, measureState.currY))}px`,
+                  borderColor: measureState.currPrice >= measureState.startPrice ? '#089981' : '#f23645',
+                }}
+              >
+                {(() => {
+                  const deltaPrice = measureState.currPrice - measureState.startPrice;
+                  const pct = measureState.startPrice > 0 ? (deltaPrice / measureState.startPrice) * 100 : 0;
+                  const bars = Math.abs(measureState.currIdx - measureState.startIdx) + 1;
+                  const days = Math.max(1, Math.round(Math.abs(measureState.currTs - measureState.startTs) / (24 * 60 * 60 * 1000)));
+                  const isPos = deltaPrice >= 0;
+
+                  return (
+                    <>
+                      <div className="nn-measure-badge-row">
+                        <span className="nn-measure-badge-label">درصد تغییر:</span>
+                        <span className="nn-measure-badge-val" style={{ color: isPos ? '#089981' : '#f23645' }} dir="ltr">
+                          {isPos ? '+' : ''}{pct.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="nn-measure-badge-row">
+                        <span className="nn-measure-badge-label">اختلاف قیمت:</span>
+                        <span className="nn-measure-badge-val" style={{ color: isPos ? '#089981' : '#f23645' }}>
+                          {Math.round(deltaPrice).toLocaleString('fa-IR')} ریال
+                        </span>
+                      </div>
+                      <div className="nn-measure-badge-row">
+                        <span className="nn-measure-badge-label">تعداد بار / کندل:</span>
+                        <span className="nn-measure-badge-val">{bars.toLocaleString('fa-IR')} کندل</span>
+                      </div>
+                      <div className="nn-measure-badge-row">
+                        <span className="nn-measure-badge-label">بازه زمانی:</span>
+                        <span className="nn-measure-badge-val">{days.toLocaleString('fa-IR')} روز</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* کلیدهای مینیاتوری دائمی گوشه پایین-راست کانتینر چارت (Log / Auto / %) */}
+          <div className="nn-price-axis-buttons" data-testid="price-axis-buttons">
+            <button
+              type="button"
+              className={`nn-axis-btn ${ftsPriceScale === 'percentage' ? 'active' : ''}`}
+              onClick={() => {
+                const next = ftsPriceScale === 'percentage' ? 'normal' : 'percentage';
+                useFtsConfigStore.getState().setPriceScale(next);
+                chartRef.current?.overrideYAxis({ paneId: 'candle_pane', name: next } as never);
+              }}
+              title="مقیاس درصدی (%)"
+              data-testid="axis-btn-percent"
+            >
+              %
+            </button>
+            <button
+              type="button"
+              className={`nn-axis-btn ${isLogScale || ftsPriceScale === 'logarithm' ? 'active' : ''}`}
+              onClick={toggleLogScale}
+              title="مقیاس لگاریتمی (log)"
+              data-testid="axis-btn-log"
+            >
+              log
+            </button>
+            <button
+              type="button"
+              className={`nn-axis-btn ${isAutoScale ? 'active' : ''}`}
+              onClick={() => {
+                setIsAutoScale(true);
+                handleAutoScale();
+              }}
+              title="تنظیم خودکار مقیاس (auto)"
+              data-testid="axis-btn-auto"
+            >
+              auto
+            </button>
+          </div>
 
           {/* وضعیت صادقانه بدون دیتا (بدون ساخت دیتای تقلبی/mock) */}
           {!isLoading && !hasData && (

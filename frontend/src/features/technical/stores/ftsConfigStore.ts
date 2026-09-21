@@ -62,6 +62,10 @@ export type ChartView = {
   crosshairStyle: 'dashed' | 'dotted' | 'solid';
   watermarkOpacity: number;
   showWatermark: boolean;
+  showCorporateActions: boolean;
+  showDividends: boolean;
+  showSplits: boolean;
+  fibLogarithmic: boolean;
 };
 
 export const VIEW_DEFAULTS: ChartView = {
@@ -97,6 +101,10 @@ export const VIEW_DEFAULTS: ChartView = {
   crosshairStyle: 'dashed',
   watermarkOpacity: 5,
   showWatermark: true,
+  showCorporateActions: true,
+  showDividends: true,
+  showSplits: true,
+  fibLogarithmic: false,
 };
 
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */

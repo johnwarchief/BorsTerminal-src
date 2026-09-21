@@ -304,6 +304,24 @@ export function ChartSettingsDialog({
                 />
               </Row>
 
+              <Row label="رویدادهای شرکتی روی چارت (Corporate Actions)">
+                <Toggle
+                  on={view.showCorporateActions !== false}
+                  label="نشانگرهای مجامع"
+                  onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
+                />
+                <Toggle
+                  on={view.showDividends !== false}
+                  label="سود نقدی (D)"
+                  onClick={() => setView({ showDividends: view.showDividends === false })}
+                />
+                <Toggle
+                  on={view.showSplits !== false}
+                  label="افزایش سرمایه (S)"
+                  onClick={() => setView({ showSplits: view.showSplits === false })}
+                />
+              </Row>
+
               <Row label="تایم‌زون چارت (Timezone)">
                 <Choice
                   options={TIMEZONES}
@@ -364,6 +382,14 @@ export function ChartSettingsDialog({
 
               <Row label="مقیاس محور قیمت" hint="محور عمودی">
                 <Choice options={SCALES} value={priceScale} onPick={setPriceScale} />
+              </Row>
+
+              <Row label="محاسبه ترازهای فیبوناچی">
+                <Toggle
+                  on={view.fibLogarithmic === true}
+                  label="ترازهای فیبوناچی بر پایه لگاریتمی"
+                  onClick={() => setView({ fibLogarithmic: !view.fibLogarithmic })}
+                />
               </Row>
 
               <Row label="جایگاه و جهت محور قیمت">

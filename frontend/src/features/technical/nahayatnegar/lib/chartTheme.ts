@@ -9,13 +9,13 @@ export const nahayatNegarDarkTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#1e222d',
+      color: '#242832',
       style: 'dashed' as const
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#1e222d',
+      color: '#242832',
       style: 'dashed' as const
     }
   },
