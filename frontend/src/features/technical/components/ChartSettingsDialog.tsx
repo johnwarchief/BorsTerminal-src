@@ -85,10 +85,10 @@ const TABS: { id: Tab; label: string }[] = [
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5 transition-colors hover:border-[#363a45]">
+    <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39] bg-[#141722] p-3.5 transition-colors hover:border-[#3d4251]">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-white tracking-wide">{label}</span>
-        {hint ? <span className="text-[10.5px] font-medium text-[#9aa0a6]">{hint}</span> : null}
+        {hint ? <span className="text-[10.5px] font-medium text-[#b2b5be]">{hint}</span> : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
@@ -117,8 +117,8 @@ function Choice<T extends string>({
             onClick={() => onPick(o.key)}
             className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
               isActive
-                ? 'border-[#2962ff] bg-[#2962ff]/25 text-white shadow-sm ring-1 ring-[#2962ff]/40'
-                : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
+                ? 'border-[#2962ff] bg-[#2962ff]/30 text-white shadow-sm ring-1 ring-[#2962ff]/60'
+                : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
             }`}
           >
             {o.label}
@@ -137,8 +137,8 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
       aria-pressed={on}
       className={`group inline-flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
         on
-          ? 'border-[#089981]/50 bg-[#089981]/15 text-white shadow-sm'
-          : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
+          ? 'border-[#089981]/60 bg-[#089981]/20 text-white shadow-sm ring-1 ring-[#089981]/40'
+          : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
       }`}
     >
       <span
@@ -152,8 +152,8 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
           }`}
         />
       </span>
-      <span>{label}</span>
-      <span className={`text-[10px] font-bold ${on ? 'text-[#089981]' : 'text-[#9aa0a6]'}`}>
+      <span className="text-white font-medium">{label}</span>
+      <span className={`text-[10px] font-bold ${on ? 'text-[#34d399]' : 'text-[#b2b5be]'}`}>
         ({on ? 'روشن' : 'خاموش'})
       </span>
     </button>
@@ -241,8 +241,8 @@ export function ChartSettingsDialog({
                 onClick={() => setTab(t.id)}
                 className={`relative rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-[#2962ff] text-white shadow-md shadow-[#2962ff]/20'
-                    : 'text-[#9aa0a6] hover:bg-[#2a2e39]/60 hover:text-[#d1d4dc]'
+                    ? 'bg-[#2962ff] text-white shadow-md shadow-[#2962ff]/30 ring-1 ring-[#2962ff]'
+                    : 'text-[#c2c7d0] hover:bg-[#2a2e39] hover:text-white'
                 }`}
               >
                 {t.label}
@@ -252,12 +252,12 @@ export function ChartSettingsDialog({
         </div>
 
         {/* محتوای تب فعال */}
-        <div className="flex-1 overflow-y-auto p-5 text-[#d1d4dc]">
+        <div className="flex-1 overflow-y-auto p-5 text-[#e0e3eb]">
 
           {/* ۱. تب نماد (Symbol) */}
           {tab === 'symbol' && (
             <div className="flex flex-col gap-2.5">
-              <Row label="رنگ بدنه کندل صعودی" hint="candle.upColor">
+              <Row label="رنگ بدنه کندل صعودی" hint="رنگ رشد قیمت (سبز)">
                 {UP_COLORS.map((c) => (
                   <button
                     key={c}
@@ -276,13 +276,13 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
               </Row>
 
-              <Row label="رنگ بدنه کندل نزولی" hint="candle.downColor">
+              <Row label="رنگ بدنه کندل نزولی" hint="رنگ افت قیمت (قرمز)">
                 {DOWN_COLORS.map((c) => (
                   <button
                     key={c}
@@ -301,7 +301,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -501,7 +501,7 @@ export function ChartSettingsDialog({
                 )}
               </Row>
 
-              <Row label="رنگ کندل صعودی" hint="candle.upColor">
+              <Row label="رنگ کندل صعودی" hint="رنگ رشد قیمت (سبز)">
                 {UP_COLORS.map((c) => (
                   <button
                     key={c}
@@ -520,13 +520,13 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
               </Row>
 
-              <Row label="رنگ کندل نزولی" hint="candle.downColor">
+              <Row label="رنگ کندل نزولی" hint="رنگ افت قیمت (قرمز)">
                 {DOWN_COLORS.map((c) => (
                   <button
                     key={c}
@@ -545,7 +545,7 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1e222d] px-3 py-1 text-xs font-semibold text-[#d1d4dc] transition-colors hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white"
+                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
                 >
                   بازنشانی
                 </button>
@@ -630,27 +630,55 @@ export function ChartSettingsDialog({
 
           {/* ۵. تب رویدادها (Events) */}
           {tab === 'events' && (
-            <div className="py-2">
-              <p
-                className="rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-4 text-xs leading-6 text-[#d1d4dc]"
-                data-testid="settings-events-note"
-              >
-                رویدادهای سود نقدی، مجامع و افزایش سرمایه به صورت زنده از سامانه کدال در سرور ثبت می‌شوند؛
-                این تب فاقد هرگونه داده ساختگی یا شبیه‌سازی‌شده است.
-              </p>
+            <div className="flex flex-col gap-3 py-1">
+              <Row label="رویدادهای شرکتی و مجامع روی چارت" hint="Corporate Actions">
+                <Toggle
+                  on={view.showCorporateActions !== false}
+                  label="نمایش کلیه نشانگرهای رویداد شرکتی روی کندل‌ها"
+                  onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
+                />
+              </Row>
+
+              <Row label="تفکیک نوع رویداد" hint="فیلتر نشانگرهای D و S">
+                <Toggle
+                  on={view.showDividends !== false}
+                  label="سود نقدی مصوب (D - DPS)"
+                  onClick={() => setView({ showDividends: view.showDividends === false })}
+                />
+                <Toggle
+                  on={view.showSplits !== false}
+                  label="افزایش سرمایه و سهام جایزه (S)"
+                  onClick={() => setView({ showSplits: view.showSplits === false })}
+                />
+              </Row>
+
+              <div className="rounded-xl border border-[#2a2e39] bg-[#141722] p-4 text-xs leading-6 text-[#e0e3eb] space-y-2">
+                <div className="flex items-center gap-2 font-bold text-white">
+                  <span className="inline-block h-2 w-2 rounded-full bg-[#2962ff]" />
+                  <span>راهنمای نشانگرهای رویداد:</span>
+                </div>
+                <ul className="list-inside list-disc space-y-1 text-[#b2b5be] pr-2">
+                  <li><strong className="text-[#2962ff]">نشانگر آبی D:</strong> سود نقدی تصویب‌شده در مجمع سالیانه به همراه مقدار ریالی هر سهم.</li>
+                  <li><strong className="text-[#f59e0b]">نشانگر کهربایی S:</strong> درصد افزایش سرمایه از محل سود انباشته، آورده نقدی یا تجدید ارزیابی.</li>
+                </ul>
+                <p className="border-t border-[#2a2e39]/80 pt-2 text-[#b2b5be]" data-testid="settings-events-note">
+                  رویدادهای سود نقدی، مجامع و افزایش سرمایه به صورت زنده از سامانه کدال در سرور ثبت می‌شوند؛
+                  این تب فاقد هرگونه داده ساختگی یا شبیه‌سازی‌شده است.
+                </p>
+              </div>
             </div>
           )}
         </div>
 
         {/* فوتر پنجره */}
         <div className="flex items-center justify-between border-t border-[#2a2e39] bg-[#1a1e29] px-5 py-3.5">
-          <span className="text-xs font-medium text-[#9aa0a6]">
+          <span className="text-xs font-medium text-[#b2b5be]">
             کلیه تنظیمات به صورت خودکار در حافظه مرورگر ذخیره می‌شوند.
           </span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-[#2962ff] px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-[#2962ff]/20 transition-all hover:bg-[#1e53e5] active:scale-95"
+            className="rounded-lg bg-[#2962ff] px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-[#2962ff]/30 transition-all hover:bg-[#1e53e5] active:scale-95"
           >
             بستن و اعمال
           </button>

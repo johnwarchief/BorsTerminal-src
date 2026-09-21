@@ -495,53 +495,131 @@
 .nn-dropdown-item.nn-disabled { opacity: .38; cursor: not-allowed; }
 .nn-dropdown-item.nn-disabled:hover { background-color: transparent; }
 
-/* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ تداخلی با کندل‌ها ندارد) */
-.nn-pattern-legend { position: absolute; top: 10px; left: 12px; z-index: 6; display: flex; flex-wrap: wrap; gap: 6px; max-width: 62%; pointer-events: none; }
-.nn-legend-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(120,140,170,0.35); background: rgba(11,17,28,0.72); color: #cdd6e0; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); }
-.nn-legend-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; box-shadow: 0 0 6px currentColor; }
+/* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ جمع‌شونده و کامپکت) */
+.nn-pattern-legend {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 65%;
+  pointer-events: auto;
+}
 
-/* ================= کلیدهای مینیاتوری محور قیمت (Log / Auto / %) ================= */
-.nn-price-axis-buttons {
+.nn-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 140, 170, 0.35);
+  background: rgba(19, 23, 34, 0.85);
+  color: #cdd6e0;
+  font-size: 10px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nn-legend-summary-chip {
+  cursor: pointer;
+  border-color: rgba(41, 98, 255, 0.45);
+  background: rgba(19, 23, 34, 0.92);
+  color: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.nn-legend-summary-chip:hover {
+  background: rgba(41, 98, 255, 0.2);
+  border-color: #2962ff;
+  transform: translateY(-1px);
+}
+
+.nn-legend-chevron {
+  font-size: 10px;
+  color: #2962ff;
+  margin-right: 2px;
+}
+
+.nn-legend-toggle-btn {
+  cursor: pointer;
+  padding: 2px 6px;
+  background: rgba(30, 34, 45, 0.85);
+  color: #9aa0a6;
+  border: 1px solid #2a2e39;
+  font-size: 9px;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.nn-legend-toggle-btn:hover {
+  color: #ffffff;
+  background: #2a2e39;
+  border-color: #434857;
+}
+
+.nn-legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  display: inline-block;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* ================= کلیدهای مینیاتوری محور قیمت (Log / Auto / %) سبک تریدینگ‌ویو ================= */
+.nn-price-axis-buttons,
+.dark .nn-price-axis-buttons,
+[data-theme='dark'] .nn-price-axis-buttons {
   position: absolute;
   bottom: 4px;
   right: 4px;
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(30, 34, 45, 0.94);
-  border: 1px solid #2a2e39;
+  background: #1e222d !important;
+  border: 1px solid #2a2e39 !important;
   border-radius: 4px;
-  padding: 2px 3px;
+  padding: 2px;
   z-index: 30;
-  backdrop-filter: blur(6px);
   user-select: none;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme='light'] .nn-price-axis-buttons {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: #d1d4dc;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  background: #ffffff !important;
+  border: 1px solid #d1d4dc !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nn-axis-btn {
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 22px;
+  border: 1px solid transparent;
   background: transparent;
-  color: #9aa0a6;
+  color: #848e9c;
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 5px;
+  padding: 0 5px;
   border-radius: 3px;
   cursor: pointer;
   text-transform: uppercase;
   font-family: inherit;
   transition: all 0.12s ease;
-  line-height: 14px;
+  line-height: 1;
+  outline: none;
 }
 
 .nn-axis-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #2a2e39;
   color: #ffffff;
+  border-color: #363a45;
 }
 
 [data-theme='light'] .nn-axis-btn {
@@ -549,13 +627,24 @@
 }
 
 [data-theme='light'] .nn-axis-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: #f0f3fa;
   color: #1a1a1a;
+  border-color: #d1d4dc;
 }
 
-.nn-axis-btn.active {
-  background: rgba(41, 98, 255, 0.22);
-  color: #2962ff;
+.nn-axis-btn.active,
+.dark .nn-axis-btn.active,
+[data-theme='dark'] .nn-axis-btn.active {
+  background: rgba(41, 98, 255, 0.22) !important;
+  border-color: rgba(41, 98, 255, 0.45) !important;
+  color: #2962ff !important;
+  font-weight: 800;
+}
+
+[data-theme='light'] .nn-axis-btn.active {
+  background: rgba(41, 98, 255, 0.12) !important;
+  border-color: rgba(41, 98, 255, 0.35) !important;
+  color: #2962ff !important;
   font-weight: 800;
 }
 

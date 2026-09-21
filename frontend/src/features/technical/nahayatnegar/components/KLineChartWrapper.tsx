@@ -193,6 +193,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const theme = useUiStore((s) => s.theme);
   // لِجِندِ الگوهای فعالِ FTS روی چارت (رنگِ هر الگو از تنظیماتِ کاربر)
   const [activePatterns, setActivePatterns] = useState<{ kind: string; color: string; label: string }[]>([]);
+  const [isPatternLegendCollapsed, setIsPatternLegendCollapsed] = useState<boolean>(false);
   const chartRef = useRef<Chart | null>(null);
 
   // استیت‌های نماد جاری
@@ -750,6 +751,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             downWickColor: wickDownColor,
             noChangeWickColor: '#888888'
           },
+          tooltip: {
+            showRule: ftsView?.statusShowOhlc === false ? 'none' : 'always',
+            showType: 'standard'
+          },
           area: {
             lineSize: 2,
             lineColor: '#2962ff',
@@ -805,7 +810,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           }
         },
         indicator: {
-          bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }]
+          bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }],
+          tooltip: {
+            showRule: ftsView?.statusShowIndicators === false ? 'none' : 'always',
+            showType: 'standard'
+          }
+        },
+        yAxis: {
+          reverse: !!ftsView?.yAxisReverse,
+          inside: !!ftsView?.yAxisInside,
+          position: ftsView?.priceScalePos ?? 'right'
         }
       } as never);
 
@@ -906,21 +920,87 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         }
       });
 
-      // رسم مارکرهای ستاپ FTS (جت، پولبک، CHoCH، نقطه‌زنی، کف‌دوقلو)
-      ftsAnalysis.setupMarkers.forEach((m) => {
+      // رسم مارکرهای ستاپ FTS (جت، پولبک، CHoCH، نقطه‌زنی، کف‌دوقلو) با سیستم Collision Avoidance & Stacking Offset
+      // ۱. گروه‌بندی بر اساس زمان/کندل جهت تشخیص هم‌پوشانی
+      const markersByTime = new Map<number, typeof ftsAnalysis.setupMarkers>();
+      for (const m of ftsAnalysis.setupMarkers) {
+        const bucket = markersByTime.get(m.timestamp) ?? [];
+        bucket.push(m);
+        markersByTime.set(m.timestamp, bucket);
+      }
+
+      // ۲. تجمیع برچسب‌های هم‌زمان در یک کندل و تفکیک سطوح بالا (مقاومت/جت) و پایین (حمایت/نقطه‌زنی/کف‌دوقلو/پولبک)
+      const processedMarkers: Array<{
+        timestamp: number;
+        price: number;
+        label: string;
+        color: string;
+      }> = [];
+
+      markersByTime.forEach((group, ts) => {
+        const lowGroup = group.filter((m) => m.name !== 'جت');
+        const highGroup = group.filter((m) => m.name === 'جت');
+
+        if (lowGroup.length > 0) {
+          const uniqueNames = Array.from(new Set(lowGroup.map((m) => m.name)));
+          const combinedLabel = uniqueNames.join(' • ');
+          const basePrice = Math.min(...lowGroup.map((m) => m.price));
+          processedMarkers.push({
+            timestamp: ts,
+            price: basePrice,
+            label: combinedLabel,
+            color: '#089981',
+          });
+        }
+
+        if (highGroup.length > 0) {
+          const uniqueNames = Array.from(new Set(highGroup.map((m) => m.name)));
+          const combinedLabel = uniqueNames.join(' • ');
+          const basePrice = Math.max(...highGroup.map((m) => m.price));
+          processedMarkers.push({
+            timestamp: ts,
+            price: basePrice,
+            label: combinedLabel,
+            color: '#ffab00',
+          });
+        }
+      });
+
+      // ۳. اعمال Stacking Offset بین مارکرهای نزدیک جهت جلوگیری از برخورد بصری
+      processedMarkers.sort((a, b) => a.timestamp - b.timestamp);
+      for (let i = 1; i < processedMarkers.length; i++) {
+        const prev = processedMarkers[i - 1];
+        const curr = processedMarkers[i];
+        const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
+        if (timeDiff <= 2 * 24 * 60 * 60 * 1000 && Math.abs(curr.price - prev.price) / Math.max(1, prev.price) < 0.025) {
+          curr.price = curr.color === '#ffab00' ? curr.price * 1.028 : curr.price * 0.972;
+        }
+      }
+
+      // ۴. رندر مارکرهای مرتب با برچسب کنتراست بالا و پس‌زمینه خوانا
+      processedMarkers.forEach((m) => {
         chart.createOverlay({
           name: 'simpleAnnotation',
           groupId: ftsGroupId,
           lock: true,
           points: [{ timestamp: m.timestamp, value: m.price }],
-          extendData: m.name,
+          extendData: m.label,
           styles: {
             text: {
-              color: m.type === 'buy' ? '#089981' : '#ffab00',
-              size: 11,
-              family: 'Vazirmatn'
-            }
-          }
+              color: '#ffffff',
+              size: 10.5,
+              family: 'Vazirmatn, sans-serif',
+              weight: 'bold',
+              backgroundColor: m.color === '#089981' ? 'rgba(8, 153, 129, 0.92)' : 'rgba(255, 171, 0, 0.92)',
+              borderColor: '#1e222d',
+              borderSize: 1,
+              borderRadius: 4,
+              paddingLeft: 6,
+              paddingRight: 6,
+              paddingTop: 2,
+              paddingBottom: 2,
+            },
+          },
         } as never);
       });
     } catch (e) {
@@ -1030,6 +1110,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         const isDividend = action.type === 'dps';
         const isSplit = action.type === 'capital_bonus' || action.type === 'capital_cash' || action.type === 'combined';
         if (!isDividend && !isSplit) return;
+        if (isDividend && ftsView?.showDividends === false) return;
+        if (isSplit && ftsView?.showSplits === false) return;
 
         const matchCandle = adjustedCandles.find((c) => Math.abs(c.timestamp - action.timestamp) < 24 * 60 * 60 * 1000)
           ?? adjustedCandles.find((c) => c.timestamp >= action.timestamp);
@@ -1064,7 +1146,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         void e;
       }
     };
-  }, [corporateActions, adjustedCandles, ftsView?.showCorporateActions]);
+  }, [corporateActions, adjustedCandles, ftsView?.showCorporateActions, ftsView?.showDividends, ftsView?.showSplits]);
 
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1481,15 +1563,42 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           )}
 
           {/* کانتینر اصلی کتابخانه KlineCharts */}
+          {/* کانتینر اصلی کتابخانه KlineCharts با لِجِندِ جمع‌شوندهٔ الگوها */}
           {activePatterns.length > 0 ? (
-            <div className="nn-pattern-legend" data-testid="fts-pattern-legend">
-              {activePatterns.map((p) => (
-                <span key={p.kind} className="nn-legend-chip">
-                  <span className="nn-legend-dot" style={{ background: p.color }} />
-                  {p.label}
-                </span>
-              ))}
-            </div>
+            isPatternLegendCollapsed ? (
+              <div className="nn-pattern-legend" data-testid="fts-pattern-legend">
+                <button
+                  type="button"
+                  className="nn-legend-chip nn-legend-summary-chip"
+                  onClick={() => setIsPatternLegendCollapsed(false)}
+                  title="نمایش جزئیات الگوها"
+                  data-testid="fts-pattern-legend-toggle"
+                >
+                  <span className="nn-legend-dot" style={{ background: '#2962ff' }} />
+                  <span>{activePatterns.length.toLocaleString('fa-IR')} الگوی فعال</span>
+                  <span className="nn-legend-chevron">▾</span>
+                </button>
+              </div>
+            ) : (
+              <div className="nn-pattern-legend" data-testid="fts-pattern-legend">
+                {activePatterns.map((p) => (
+                  <span key={p.kind} className="nn-legend-chip">
+                    <span className="nn-legend-dot" style={{ background: p.color }} />
+                    {p.label}
+                  </span>
+                ))}
+                <button
+                  type="button"
+                  className="nn-legend-chip nn-legend-toggle-btn"
+                  onClick={() => setIsPatternLegendCollapsed(true)}
+                  title="جمع کردن نشانگرهای الگو"
+                  aria-label="جمع کردن"
+                  data-testid="fts-pattern-legend-collapse"
+                >
+                  ✕
+                </button>
+              </div>
+            )
           ) : null}
           <div
             ref={chartContainerRef}

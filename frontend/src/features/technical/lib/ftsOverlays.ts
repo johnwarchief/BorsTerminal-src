@@ -376,27 +376,28 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
         color?: string;
       };
       const x = c[0].x;
-      const y = c[0].y + 16;
+      const y = c[0].y + 24;
       const isDiv = ext.kind === 'D';
       const color = ext.color ?? (isDiv ? '#2962ff' : '#f59e0b');
       const letter = isDiv ? 'D' : 'S';
       return [
         {
           type: 'circle',
-          attrs: { x, y, r: 8 },
-          styles: { style: 'fill', color: 'rgba(30, 34, 45, 0.92)', borderColor: color, borderSize: 1.5 },
+          attrs: { x, y, r: 9 },
+          styles: { style: 'fill', color: 'rgba(30, 34, 45, 0.95)', borderColor: color, borderSize: 1.5 },
           ignoreEvent: true,
         },
         {
           type: 'text',
           attrs: { x, y, text: letter, align: 'center', baseline: 'middle' },
-          styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'bold' },
+          styles: { color, size: 10.5, family: 'Vazirmatn, sans-serif', weight: 'bold' },
           ignoreEvent: true,
         },
       ];
     },
   });
 }
+
 
 /** ساخت spec کمربند فیبو از داده ی بک اند (fib_zones) — هیچ محاسبه ای بازتولید نمی شود */
 export function fibZoneSpecs(
