@@ -38,6 +38,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 100%;
   min-height: 520px;
   background-color: var(--nn-bg-primary);
@@ -47,6 +49,13 @@
   user-select: none;
   overflow: hidden;
   position: relative;
+}
+
+/* تضمین عدم سرریز افقی کانتینرهای والد در تب تکنیکال */
+.app-main:has(.tv-workbench),
+.panel-in:has(.tv-workbench) {
+  min-width: 0 !important;
+  max-width: 100% !important;
 }
 
 .nahayat-negar-container:fullscreen,
@@ -63,6 +72,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 40px;
   min-height: 40px;
   max-height: 40px;

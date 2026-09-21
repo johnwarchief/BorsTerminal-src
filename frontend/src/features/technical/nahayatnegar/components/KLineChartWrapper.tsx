@@ -749,13 +749,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       : 'candle_solid';
 
     // ۳. استخراج رنگ پس‌زمینه چارت بر مبنای تنظیمات ftsView و هماهنگی با تم
-    const bgSetting = ftsView?.background || 'dark';
+    const bgSetting = ftsView?.background;
     const chartBgColor =
       bgSetting === 'light' ? '#ffffff'
       : bgSetting === 'classic' ? '#1e222d'
-      : bgSetting === 'custom' ? (ftsView?.customBgColor || '#131722')
-      : bgSetting === 'theme' ? (isLight ? '#ffffff' : '#131722')
-      : '#131722';
+      : bgSetting === 'custom' ? (ftsView?.customBgColor || (isLight ? '#ffffff' : '#131722'))
+      : (isLight ? '#ffffff' : '#131722');
 
     if (chartContainerRef.current) {
       chartContainerRef.current.style.backgroundColor = chartBgColor;
@@ -763,7 +762,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ۴. رنگ و سبک خطوط گرید و نشانگر کراس‌هیر
     const defaultGridColor = isLight ? '#f0f3fa' : '#242731';
-    const gridColor = ftsView?.gridColor || defaultGridColor;
+    const gridColor = ftsView?.gridColor && ftsView?.gridColor !== '#1e222d' && ftsView?.gridColor !== '#242731'
+      ? ftsView.gridColor
+      : defaultGridColor;
     const gridStyle = ftsView?.gridStyle === 'dashed' ? 'dashed'
       : ftsView?.gridStyle === 'dotted' ? 'dotted'
       : 'solid';
@@ -1446,10 +1447,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // بررسی حالت فیبوناچی لگاریتمی (Logarithmic Fibonacci) بر مبنای تنظیمات یا مقیاس جاری
     let finalOverlayType = overlayType;
     const isLogFib = ftsView?.fibLogarithmic || isLogScale;
-    if (toolId.includes('fib') || overlayType === 'fibonacciLine') {
-      if (isLogFib) {
-        finalOverlayType = 'tvFibLog';
-      }
+    if (toolId.includes('fib') || overlayType === 'fibonacciLine' || overlayType === 'tvFibRetracement') {
+      finalOverlayType = isLogFib ? 'tvFibLog' : 'fibonacciLine';
     } else if (toolId === 'ruler') {
       finalOverlayType = 'ftsMeasure';
     } else if (toolId === 'longPosition' || toolId === 'shortPosition') {
@@ -1469,15 +1468,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         name: finalOverlayType,
         groupId: 'fts-draw',
         lock: isDrawingLocked,
+        needDefaultYAxisFigure: toolId === 'horizontalLine' || toolId === 'priceLabel',
+        needDefaultXAxisFigure: toolId === 'verticalLine',
         styles: {
+          point: {
+            color: '#2962ff',
+            activeColor: '#1e53e5',
+            borderColor: '#ffffff',
+            activeBorderColor: '#ffffff',
+            borderSize: 1.5,
+            radius: 4.5,
+            activeRadius: 5.5,
+          },
           line: {
             color: overlayColor,
             size: overlayWidth,
-            ...lineStyleObj
+            ...lineStyleObj,
           },
           polygon: {
-            color: overlayColor + '22'
-          }
+            color: overlayColor + '22',
+          },
         },
         onDrawStart: () => {
           chart.setScrollEnabled(false);
@@ -1498,7 +1508,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             setSelectedOverlayId(String(params.overlay.id));
             setSelectedOverlayName(params.overlay.name || toolId);
           }
-        }
+        },
       } as never);
 
       if (id) {
