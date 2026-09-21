@@ -75,16 +75,20 @@ describe('پنجره تنظیمات کاربر و امنیت (UserSettingsModal)
 });
 
 describe('سازگاری تم روشنایی چارت تکنیکال (nahayatNegarLightTheme)', () => {
+  // بازطراحیِ AntiGravity (c12f88e6): پالتِ تم تغییر کرد — گریدِ روشن
+  // #eef2f8 → #f0f3fa و گریدِ تاریک #242832 → #242731. مقادیرِ زیر باید
+  // دقیقاً همانِ chartTheme.ts باشند، وگرنی این تست بهجایِ چک کردنِ کنتراست،
+  // فقط قدیمی بودنِ خودش را ثابت می‌کند.
   it('تم روشنایی دارای خطوط گرید روشن و کنتراست مناسب است', () => {
-    expect(nahayatNegarLightTheme.grid.horizontal.color).toBe('#eef2f8');
-    expect(nahayatNegarLightTheme.grid.vertical.color).toBe('#eef2f8');
+    expect(nahayatNegarLightTheme.grid.horizontal.color).toBe('#f0f3fa');
+    expect(nahayatNegarLightTheme.grid.vertical.color).toBe('#f0f3fa');
     expect(nahayatNegarLightTheme.xAxis.axisLine.color).toBe('#e2e8f0');
-    expect(nahayatNegarLightTheme.xAxis.tickText.color).toBe('#64748b');
+    expect(nahayatNegarLightTheme.xAxis.tickText.color).toBe('#434651');
     expect(nahayatNegarLightTheme.overlay.text.color).toBe('#0f172a');
   });
 
   it('تم تاریک پیشین کماکان با رنگ‌های اصیل TradingView موجود است', () => {
-    expect(nahayatNegarDarkTheme.grid.horizontal.color).toBe('#242832');
+    expect(nahayatNegarDarkTheme.grid.horizontal.color).toBe('#242731');
     expect(nahayatNegarDarkTheme.xAxis.axisLine.color).toBe('#2a2e39');
   });
 });
