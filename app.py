@@ -20,6 +20,16 @@ import subprocess
 import sys
 import threading
 
+# کدپیجِ خروجیِ ویندوز: روی یک ویندوزِ انگلیسی، stdout پیش‌فرض cp1252 است و
+# هیچ printِ فارسی‌ای قابلِ انکد نیست. اولین printِ فارسی کلِ درخواست را
+# با UnicodeEncodeError می‌کشد (دیده‌شده: api/screener.py:227 → /api/screener
+# 500). bors_entry همین کار را برایِ EXE می‌کند؛ اینجا برایِ اجرایِ dev.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError, OSError):
+    pass
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse

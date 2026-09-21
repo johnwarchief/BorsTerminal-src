@@ -2,6 +2,20 @@
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
 import os, sys, threading, time, webbrowser, socket, subprocess
 
+# ── کدپیجِ خروجیِ ویندوز (v1.0.13) ─────────────────────────────────────────
+# EXEِ فریزشده با کدپیجِ پیش‌فرضِ ویندوز (cp1252 روی انگلیسیِ محض) اجرا می‌شود.
+# هیچ‌کدام از printهای فارسیِ لایهٔ API در آن قابلِ انکد نیستند، پس اولین
+# print با متنِ فارسی کلِ درخواست را با UnicodeEncodeError می‌کشد. دیده‌شده:
+#   api/screener.py:227  print("[screener] fts_results miss — محاسبهٔ زنده...")
+#   → GET /api/screener 500 → صفحهٔ بنیادی خالی.
+# این کار را قبل از import کردنِ هر ماژولِ دیگری انجام می‌دهیم تا حتی
+# پیام‌هایِ راه‌اندازیِ خودِ بوت هم امن باشند.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError, OSError):
+    pass
+
 # در حالت EXE (onefile): کتابخانه‌ها داخل _MEIPASS؛ DB ها کنار exe (از ZIP)
 if getattr(sys, 'frozen', False):
     BASE = sys._MEIPASS
