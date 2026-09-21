@@ -2,6 +2,7 @@
 // ردیف‌های متراکم‌تر، فونت مونو/تبولار، سبز زمردی (#089981) و قرمز ملایم (#f23645)
 import { useMemo, useState } from 'react';
 import { toFaDigits, fmtPct } from '@shared/lib/fmt';
+import { FlashNum } from '@shared/components/FlashNum';
 import { filterWatchlist, useWatchlistFeed } from '../api/useWatchlist';
 
 function fmtPrice(p: number | null | undefined): string {
@@ -59,16 +60,18 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
                   <span className="truncate text-xs font-bold text-[var(--text-primary)]">{r.symbol}</span>
                   {r.name && <span className="truncate text-[10px] text-[var(--text-muted)] leading-tight">{r.name}</span>}
                 </div>
-                <span className="num font-mono tabular-nums text-xs font-semibold text-[var(--text-primary)]">
-                  {fmtPrice(r.p_last ?? r.p_closing)}
-                </span>
-                <span
+                <FlashNum
+                  value={r.p_last ?? r.p_closing}
+                  render={fmtPrice}
+                  className="num font-mono tabular-nums text-xs font-semibold text-[var(--text-primary)]"
+                />
+                <FlashNum
+                  value={r.percent_change}
+                  render={(v) => (v == null ? '-' : fmtPct(v))}
                   className={`num font-mono tabular-nums w-16 text-end text-[11px] font-bold ${
                     up ? 'text-[#089981]' : 'text-[#f23645]'
                   }`}
-                >
-                  {r.percent_change == null ? '-' : fmtPct(r.percent_change)}
-                </span>
+                />
               </button>
             </li>
           );

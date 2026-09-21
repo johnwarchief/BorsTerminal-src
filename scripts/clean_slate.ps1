@@ -55,11 +55,17 @@ Get-Process -Name 'BorsTerminal*' -ErrorAction SilentlyContinue | ForEach-Object
 Start-Sleep -Seconds 3
 
 # --- ۳) مسیرهای نصب ------------------------------------------------------
+# نصبِ Velopack در %LOCALAPPDATA%\<AppId> می‌نشیند (بدونِ فاصله/زیرخط) و
+# خودِ برنامه در current/. AppId در installer/bors_setup.iss تعریف می‌شود.
 $targets = @(
+    (Join-Path $la 'BorsTerminalUltimate'),
     (Join-Path $la 'BorsTerminal_Ultimate'),
     (Join-Path $la 'Bors Terminal Ultimate'),
+    (Join-Path $la 'Programs\BorsTerminalUltimate'),
     (Join-Path $la 'Programs\BorsTerminal Ultimate'),
+    'C:\Program Files\BorsTerminalUltimate',
     'C:\Program Files\BorsTerminal Ultimate',
+    'C:\Program Files (x86)\BorsTerminalUltimate',
     'C:\Program Files (x86)\BorsTerminal Ultimate'
 )
 foreach ($t in $targets) {

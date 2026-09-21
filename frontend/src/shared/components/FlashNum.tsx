@@ -6,10 +6,14 @@ export function FlashNum({
   value,
   render,
   className = '',
+  style,
+  ...rest
 }: {
   value: number | null | undefined;
   render: (v: number | null | undefined) => string;
   className?: string;
+  style?: React.CSSProperties;
+  [key: string]: unknown;
 }) {
   const prev = useRef(value);
   const spanRef = useRef<HTMLSpanElement>(null);
@@ -31,6 +35,8 @@ export function FlashNum({
     <span
       ref={spanRef}
       className={`num inline-block rounded px-1 ${className}`}
+      style={style}
+      {...rest}
     >
       {render(value)}
     </span>

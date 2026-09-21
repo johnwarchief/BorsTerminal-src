@@ -5,6 +5,10 @@ a = Analysis(
     binaries=[],
     datas=[
         ('static', 'static'),
+        # v1.0.13: خروجیِ بیلدِ React را هم باندل کن. بدونِ این، app.py
+        # _frontend_dist() را پیدا نمی‌کند و SPA با «frontend dist ساخته نشده»
+        # پاسخ می‌دهد — یعنی نصبِ تمیز یک پوستهٔ خالی از API است.
+        ('frontend/dist', 'frontend/dist'),
         ('app.py', '.'),
         ('bootstrap_first_run.py', '.'),
         ('codal_fetcher.py', '.'),

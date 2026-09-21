@@ -1,5 +1,6 @@
 ﻿import React, { useMemo } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
+import { FlashNum } from '@shared/components/FlashNum';
 
 export interface DepthLevel {
   buyCount: number;
@@ -211,25 +212,43 @@ export const MarketDepthWidget: React.FC<MarketDepthWidgetProps> = ({
                 }}
               />
 
-              <span style={{ color: 'var(--nn-text-secondary, #787b86)', position: 'relative' }}>
-                {toFaDigits(lvl.buyCount)}
-              </span>
-              <span style={{ fontWeight: '600', color: 'var(--nn-text-primary, #d1d4dc)', position: 'relative' }}>
-                {fmtInt(lvl.buyVolume)}
-              </span>
-              <span style={{ fontWeight: '700', color: '#089981', position: 'relative' }}>
-                {fmtInt(lvl.buyPrice)}
-              </span>
+              <FlashNum
+                value={lvl.buyCount}
+                render={(v) => toFaDigits(v ?? 0)}
+                className="depth-cell"
+                style={{ color: 'var(--nn-text-secondary, #787b86)' }}
+              />
+              <FlashNum
+                value={lvl.buyVolume}
+                render={(v) => fmtInt(v ?? 0)}
+                className="depth-cell"
+                style={{ fontWeight: '600', color: 'var(--nn-text-primary, #d1d4dc)' }}
+              />
+              <FlashNum
+                value={lvl.buyPrice}
+                render={(v) => fmtInt(v ?? 0)}
+                className="depth-cell"
+                style={{ fontWeight: '700', color: '#089981' }}
+              />
 
-              <span style={{ fontWeight: '700', color: '#f23645', position: 'relative' }}>
-                {fmtInt(lvl.sellPrice)}
-              </span>
-              <span style={{ fontWeight: '600', color: 'var(--nn-text-primary, #d1d4dc)', position: 'relative' }}>
-                {fmtInt(lvl.sellVolume)}
-              </span>
-              <span style={{ color: 'var(--nn-text-secondary, #787b86)', position: 'relative' }}>
-                {toFaDigits(lvl.sellCount)}
-              </span>
+              <FlashNum
+                value={lvl.sellPrice}
+                render={(v) => fmtInt(v ?? 0)}
+                className="depth-cell"
+                style={{ fontWeight: '700', color: '#f23645' }}
+              />
+              <FlashNum
+                value={lvl.sellVolume}
+                render={(v) => fmtInt(v ?? 0)}
+                className="depth-cell"
+                style={{ fontWeight: '600', color: 'var(--nn-text-primary, #d1d4dc)' }}
+              />
+              <FlashNum
+                value={lvl.sellCount}
+                render={(v) => toFaDigits(v ?? 0)}
+                className="depth-cell"
+                style={{ color: 'var(--nn-text-secondary, #787b86)' }}
+              />
             </div>
           );
         })}

@@ -1,5 +1,6 @@
 // features/market/components/SuspiciousPanel.tsx -- نامزدهای الگوی ساعت، حجم مشکوک و روباهی
 import { useMemo } from 'react';
+import { FlashNum } from '@shared/components/FlashNum';
 import type { MarketRow } from '@shared/types/marketRow';
 import { fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
@@ -129,7 +130,11 @@ export function SuspiciousPanel({
                       <Badge tone="green">ساعت قوی</Badge>
                     </span>
                   ) : null}
-                  <span className="text-text-secondary">{it.extra}</span>
+                  <FlashNum
+                    value={it.metric}
+                    render={() => it.extra}
+                    className="text-text-secondary"
+                  />
                   {it.power != null && it.power >= 1.5 ? (
                     <Badge tone="green">{toFaDigits(it.power.toFixed(1))}</Badge>
                   ) : null}

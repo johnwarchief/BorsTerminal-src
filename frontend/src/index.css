@@ -179,6 +179,16 @@ body::before {
 }
 }
 
+/* سلول‌های فلشِ ویجتِ عمق بازار: inline-block و relative می‌مانند تا
+   انیمیشنِ پس‌زمینه زیرِ بارهای رنگیِ مظنه دیده شود، و grid cell
+   هم تراز می‌ماند. */
+.depth-cell {
+  display: inline-block;
+  position: relative;
+  text-align: center;
+  font-family: monospace, Vazirmatn;
+}
+
 @keyframes beam-sweep {
   from {
     opacity: 0.25;
