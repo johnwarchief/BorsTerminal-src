@@ -2,6 +2,7 @@
 // ۴ تب اصلی استاندارد: نماد (Symbol) · خط وضعیت (Status Line) · مقیاس‌ها (Scales) · ظاهر (Appearance)
 // + تب رویدادها (Events). تمام گزینه‌ها بلافاصله در localStorage ماندگار می‌شوند.
 import { useState } from 'react';
+import { useUiStore } from '@shared/stores/uiStore';
 import {
   useFtsConfigStore,
   type ChartEngine,
@@ -58,8 +59,8 @@ const TIMEZONES: { key: string; label: string }[] = [
 ];
 
 const GRID_STYLES: { key: 'dashed' | 'solid' | 'dotted' | 'none'; label: string }[] = [
-  { key: 'dashed', label: 'خط‌چین' },
   { key: 'solid', label: 'ممتد' },
+  { key: 'dashed', label: 'خط‌چین' },
   { key: 'dotted', label: 'نقطه‌چین' },
   { key: 'none', label: 'بدون خط' },
 ];
@@ -84,11 +85,24 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  const isLight = useUiStore((s) => s.theme) === 'light';
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39] bg-[#141722] p-3.5 transition-colors hover:border-[#3d4251]">
+    <div
+      className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
+        isLight
+          ? 'border-[#e0e3eb] bg-[#f8f9fa] hover:border-[#d1d4dc]'
+          : 'border-[#2a2e39] bg-[#141722] hover:border-[#3d4251]'
+      }`}
+    >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-white tracking-wide">{label}</span>
-        {hint ? <span className="text-[10.5px] font-medium text-[#b2b5be]">{hint}</span> : null}
+        <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
+          {label}
+        </span>
+        {hint ? (
+          <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]'}`}>
+            {hint}
+          </span>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
@@ -104,6 +118,7 @@ function Choice<T extends string>({
   value: T;
   onPick: (v: T) => void;
 }) {
+  const isLight = useUiStore((s) => s.theme) === 'light';
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {options.map((o) => {
@@ -117,7 +132,9 @@ function Choice<T extends string>({
             onClick={() => onPick(o.key)}
             className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
               isActive
-                ? 'border-[#2962ff] bg-[#2962ff]/30 text-white shadow-sm ring-1 ring-[#2962ff]/60'
+                ? 'border-[#2962ff] bg-[#2962ff] text-white shadow-sm ring-1 ring-[#2962ff]/50'
+                : isLight
+                ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
                 : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
             }`}
           >
@@ -130,6 +147,7 @@ function Choice<T extends string>({
 }
 
 function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
+  const isLight = useUiStore((s) => s.theme) === 'light';
   return (
     <button
       type="button"
@@ -137,13 +155,17 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
       aria-pressed={on}
       className={`group inline-flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
         on
-          ? 'border-[#089981]/60 bg-[#089981]/20 text-white shadow-sm ring-1 ring-[#089981]/40'
+          ? isLight
+            ? 'border-[#089981]/50 bg-[#089981]/15 text-[#089981] shadow-sm ring-1 ring-[#089981]/30'
+            : 'border-[#089981]/60 bg-[#089981]/20 text-white shadow-sm ring-1 ring-[#089981]/40'
+          : isLight
+          ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
           : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
       }`}
     >
       <span
         className={`relative inline-flex h-3.5 w-6 shrink-0 items-center rounded-full transition-colors ${
-          on ? 'bg-[#089981]' : 'bg-[#363a45]'
+          on ? 'bg-[#089981]' : isLight ? 'bg-[#cbd5e1]' : 'bg-[#363a45]'
         }`}
       >
         <span
@@ -152,8 +174,10 @@ function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: (
           }`}
         />
       </span>
-      <span className="text-white font-medium">{label}</span>
-      <span className={`text-[10px] font-bold ${on ? 'text-[#34d399]' : 'text-[#b2b5be]'}`}>
+      <span className={isLight ? (on ? 'text-[#089981] font-semibold' : 'text-[#131722] font-semibold') : 'text-white font-medium'}>
+        {label}
+      </span>
+      <span className={`text-[10px] font-bold ${on ? (isLight ? 'text-[#089981]' : 'text-[#34d399]') : (isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]')}`}>
         ({on ? 'روشن' : 'خاموش'})
       </span>
     </button>
@@ -171,6 +195,7 @@ export function ChartSettingsDialog({
   symbol?: string;
   initialTab?: Tab;
 }) {
+  const isLight = useUiStore((s) => s.theme) === 'light';
   const [tab, setTab] = useState<Tab>(initialTab);
 
   const priceScale = useFtsConfigStore((s) => s.priceScale);
@@ -203,13 +228,23 @@ export function ChartSettingsDialog({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#2a2e39] bg-[#1e222d] shadow-2xl shadow-black/80"
+        className={`flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border shadow-2xl transition-colors ${
+          isLight
+            ? 'border-[#e0e3eb] bg-[#ffffff] shadow-black/20'
+            : 'border-[#2a2e39] bg-[#1e222d] shadow-black/80'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* هدر پنجره */}
-        <div className="flex items-center justify-between border-b border-[#2a2e39] bg-[#1a1e29] px-5 py-3.5">
+        <div
+          className={`flex items-center justify-between border-b px-5 py-3.5 transition-colors ${
+            isLight ? 'border-[#e0e3eb] bg-[#f8f9fa]' : 'border-[#2a2e39] bg-[#1a1e29]'
+          }`}
+        >
           <div className="flex items-center gap-2.5">
-            <span className="text-sm font-black text-white">تنظیمات چارت</span>
+            <span className={`text-sm font-black ${isLight ? 'text-[#131722]' : 'text-white'}`}>
+              تنظیمات چارت
+            </span>
             {symbol && (
               <span className="rounded-md border border-[#2962ff]/30 bg-[#2962ff]/15 px-2.5 py-0.5 text-xs font-bold text-[#2962ff]">
                 {symbol}
@@ -221,14 +256,23 @@ export function ChartSettingsDialog({
             onClick={onClose}
             aria-label="بستن"
             data-testid="chart-settings-close"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#9aa0a6] transition-colors hover:bg-[#2a2e39] hover:text-white"
+            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+              isLight
+                ? 'text-[#5f6368] hover:bg-[#e0e3eb] hover:text-[#131722]'
+                : 'text-[#9aa0a6] hover:bg-[#2a2e39] hover:text-white'
+            }`}
           >
             ✕
           </button>
         </div>
 
         {/* نوار تب‌های استاندارد */}
-        <div className="flex flex-wrap gap-1.5 border-b border-[#2a2e39] bg-[#141720] px-4 py-2.5" role="tablist">
+        <div
+          className={`flex flex-wrap gap-1.5 border-b px-4 py-2.5 transition-colors ${
+            isLight ? 'border-[#e0e3eb] bg-[#f0f3fa]' : 'border-[#2a2e39] bg-[#141720]'
+          }`}
+          role="tablist"
+        >
           {TABS.map((t) => {
             const isActive = tab === t.id;
             return (
@@ -242,6 +286,8 @@ export function ChartSettingsDialog({
                 className={`relative rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
                   isActive
                     ? 'bg-[#2962ff] text-white shadow-md shadow-[#2962ff]/30 ring-1 ring-[#2962ff]'
+                    : isLight
+                    ? 'text-[#434651] hover:bg-[#e0e3eb] hover:text-[#131722]'
                     : 'text-[#c2c7d0] hover:bg-[#2a2e39] hover:text-white'
                 }`}
               >
@@ -252,7 +298,7 @@ export function ChartSettingsDialog({
         </div>
 
         {/* محتوای تب فعال */}
-        <div className="flex-1 overflow-y-auto p-5 text-[#e0e3eb]">
+        <div className={`flex-1 overflow-y-auto p-5 ${isLight ? 'text-[#131722]' : 'text-[#e0e3eb]'}`}>
 
           {/* ۱. تب نماد (Symbol) */}
           {tab === 'symbol' && (
@@ -276,7 +322,11 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
+                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
+                    isLight
+                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
+                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+                  }`}
                 >
                   بازنشانی
                 </button>
@@ -301,7 +351,11 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
+                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
+                    isLight
+                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
+                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+                  }`}
                 >
                   بازنشانی
                 </button>
@@ -356,10 +410,20 @@ export function ChartSettingsDialog({
           {/* ۲. تب خط وضعیت (Status Line) */}
           {tab === 'status' && (
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5">
+              <div
+                className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
+                  isLight
+                    ? 'border-[#e0e3eb] bg-[#f8f9fa]'
+                    : 'border-[#2a2e39]/80 bg-[#161922]/70'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white tracking-wide">اطلاعات نماد و ارقام زنده</span>
-                  <span className="text-[10.5px] font-medium text-[#9aa0a6]">Symbol, OHLC & Volume</span>
+                  <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
+                    اطلاعات نماد و ارقام زنده
+                  </span>
+                  <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
+                    Symbol, OHLC & Volume
+                  </span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <Toggle
@@ -380,10 +444,20 @@ export function ChartSettingsDialog({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 rounded-xl border border-[#2a2e39]/80 bg-[#161922]/70 p-3.5">
+              <div
+                className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
+                  isLight
+                    ? 'border-[#e0e3eb] bg-[#f8f9fa]'
+                    : 'border-[#2a2e39]/80 bg-[#161922]/70'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white tracking-wide">اندیکاتورها و افسانه چارت</span>
-                  <span className="text-[10.5px] font-medium text-[#9aa0a6]">Indicator Values & Legend</span>
+                  <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
+                    اندیکاتورها و افسانه چارت
+                  </span>
+                  <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
+                    Indicator Values & Legend
+                  </span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <Toggle
@@ -399,7 +473,13 @@ export function ChartSettingsDialog({
                 </div>
               </div>
 
-              <p className="rounded-xl border border-[#2a2e39]/60 bg-[#161922]/50 p-3.5 text-xs leading-6 text-[#9aa0a6]">
+              <p
+                className={`rounded-xl border p-3.5 text-xs leading-6 transition-colors ${
+                  isLight
+                    ? 'border-[#e0e3eb] bg-[#f8f9fa] text-[#434651]'
+                    : 'border-[#2a2e39]/60 bg-[#161922]/50 text-[#9aa0a6]'
+                }`}
+              >
                 با فعال‌بودن خط وضعیت، هنگام حرکت نشانگر موس روی کندل‌ها مقادیر باز، بالاترین، پایین‌ترین، پایانی و حجم به
                 صورت تبولار و بدون پرش به‌روزرسانی می‌شوند.
               </p>
@@ -465,6 +545,8 @@ export function ChartSettingsDialog({
                     className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
                       view.axisTickMargin === m
                         ? 'border-[#2962ff] bg-[#2962ff]/25 text-white ring-1 ring-[#2962ff]/40 shadow-sm'
+                        : isLight
+                        ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
                         : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
                     }`}
                   >
@@ -494,9 +576,13 @@ export function ChartSettingsDialog({
                       type="color"
                       value={view.customBgColor || '#131722'}
                       onChange={(e) => setView({ customBgColor: e.target.value })}
-                      className="h-7 w-7 cursor-pointer rounded border border-[#2a2e39] bg-transparent"
+                      className={`h-7 w-7 cursor-pointer rounded border bg-transparent ${
+                        isLight ? 'border-[#d1d4dc]' : 'border-[#2a2e39]'
+                      }`}
                     />
-                    <span className="font-mono text-xs text-[#9aa0a6]">{view.customBgColor || '#131722'}</span>
+                    <span className={`font-mono text-xs ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
+                      {view.customBgColor || '#131722'}
+                    </span>
                   </div>
                 )}
               </Row>
@@ -520,7 +606,11 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-up"
                   onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
+                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
+                    isLight
+                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
+                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+                  }`}
                 >
                   بازنشانی
                 </button>
@@ -545,7 +635,11 @@ export function ChartSettingsDialog({
                   type="button"
                   data-testid="reset-down"
                   onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className="rounded-lg border border-[#2a2e39] bg-[#1a1e29] px-3 py-1 text-xs font-semibold text-[#e0e3eb] transition-colors hover:border-[#434857] hover:bg-[#262b3d] hover:text-white"
+                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
+                    isLight
+                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
+                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+                  }`}
                 >
                   بازنشانی
                 </button>
@@ -594,7 +688,7 @@ export function ChartSettingsDialog({
                   onClick={() => setView({ showWatermark: !view.showWatermark })}
                 />
                 <div className="flex items-center gap-2 pr-2">
-                  <span className="text-xs font-semibold text-[#9aa0a6]">شفافیت:</span>
+                  <span className={`text-xs font-semibold ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>شفافیت:</span>
                   {[5, 10, 20, 50].map((op) => (
                     <button
                       key={op}
@@ -604,6 +698,8 @@ export function ChartSettingsDialog({
                       className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
                         view.watermarkOpacity === op
                           ? 'border-[#2962ff] bg-[#2962ff] text-white shadow-sm'
+                          : isLight
+                          ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
                           : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:text-white'
                       }`}
                     >
@@ -652,16 +748,25 @@ export function ChartSettingsDialog({
                 />
               </Row>
 
-              <div className="rounded-xl border border-[#2a2e39] bg-[#141722] p-4 text-xs leading-6 text-[#e0e3eb] space-y-2">
-                <div className="flex items-center gap-2 font-bold text-white">
+              <div
+                className={`rounded-xl border p-4 text-xs leading-6 space-y-2 transition-colors ${
+                  isLight
+                    ? 'border-[#e0e3eb] bg-[#f8f9fa] text-[#131722]'
+                    : 'border-[#2a2e39] bg-[#141722] text-[#e0e3eb]'
+                }`}
+              >
+                <div className={`flex items-center gap-2 font-bold ${isLight ? 'text-[#131722]' : 'text-white'}`}>
                   <span className="inline-block h-2 w-2 rounded-full bg-[#2962ff]" />
                   <span>راهنمای نشانگرهای رویداد:</span>
                 </div>
-                <ul className="list-inside list-disc space-y-1 text-[#b2b5be] pr-2">
+                <ul className={`list-inside list-disc space-y-1 pr-2 ${isLight ? 'text-[#434651]' : 'text-[#b2b5be]'}`}>
                   <li><strong className="text-[#2962ff]">نشانگر آبی D:</strong> سود نقدی تصویب‌شده در مجمع سالیانه به همراه مقدار ریالی هر سهم.</li>
                   <li><strong className="text-[#f59e0b]">نشانگر کهربایی S:</strong> درصد افزایش سرمایه از محل سود انباشته، آورده نقدی یا تجدید ارزیابی.</li>
                 </ul>
-                <p className="border-t border-[#2a2e39]/80 pt-2 text-[#b2b5be]" data-testid="settings-events-note">
+                <p
+                  className={`border-t pt-2 ${isLight ? 'border-[#e0e3eb] text-[#5f6368]' : 'border-[#2a2e39]/80 text-[#b2b5be]'}`}
+                  data-testid="settings-events-note"
+                >
                   رویدادهای سود نقدی، مجامع و افزایش سرمایه به صورت زنده از سامانه کدال در سرور ثبت می‌شوند؛
                   این تب فاقد هرگونه داده ساختگی یا شبیه‌سازی‌شده است.
                 </p>
@@ -671,8 +776,12 @@ export function ChartSettingsDialog({
         </div>
 
         {/* فوتر پنجره */}
-        <div className="flex items-center justify-between border-t border-[#2a2e39] bg-[#1a1e29] px-5 py-3.5">
-          <span className="text-xs font-medium text-[#b2b5be]">
+        <div
+          className={`flex items-center justify-between border-t px-5 py-3.5 transition-colors ${
+            isLight ? 'border-[#e0e3eb] bg-[#f8f9fa]' : 'border-[#2a2e39] bg-[#1a1e29]'
+          }`}
+        >
+          <span className={`text-xs font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]'}`}>
             کلیه تنظیمات به صورت خودکار در حافظه مرورگر ذخیره می‌شوند.
           </span>
           <button

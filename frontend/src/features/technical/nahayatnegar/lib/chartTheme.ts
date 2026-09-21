@@ -9,14 +9,14 @@ export const nahayatNegarDarkTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#242832',
-      style: 'dashed' as const
+      color: '#242731',
+      style: 'solid' as const
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#242832',
-      style: 'dashed' as const
+      color: '#242731',
+      style: 'solid' as const
     }
   },
   candle: {
@@ -100,7 +100,7 @@ export const nahayatNegarDarkTheme = {
   },
   xAxis: {
     show: true,
-    size: 'auto' as const,
+    size: 30,
     axisLine: {
       show: true,
       color: '#2a2e39',
@@ -110,12 +110,14 @@ export const nahayatNegarDarkTheme = {
       show: true,
       color: '#d1d4dc',
       size: 12,
-      family: 'Vazirmatn'
+      family: 'Vazirmatn',
+      marginStart: 4,
+      marginEnd: 4
     },
     tickLine: {
       show: true,
       size: 1,
-      length: 3,
+      length: 4,
       color: '#2a2e39'
     }
   },
@@ -223,13 +225,13 @@ export const nahayatNegarLightTheme = {
     horizontal: {
       show: true,
       size: 1,
-      color: '#eef2f8',
+      color: '#f0f3fa',
       style: 'solid' as const,
     },
     vertical: {
       show: true,
       size: 1,
-      color: '#eef2f8',
+      color: '#f0f3fa',
       style: 'solid' as const,
     },
   },
@@ -314,7 +316,7 @@ export const nahayatNegarLightTheme = {
   },
   xAxis: {
     show: true,
-    size: 'auto' as const,
+    size: 30,
     axisLine: {
       show: true,
       color: '#e2e8f0',
@@ -322,14 +324,16 @@ export const nahayatNegarLightTheme = {
     },
     tickText: {
       show: true,
-      color: '#64748b',
-      size: 11,
+      color: '#434651',
+      size: 12,
       family: 'Vazirmatn',
+      marginStart: 4,
+      marginEnd: 4,
     },
     tickLine: {
       show: true,
       size: 1,
-      length: 3,
+      length: 4,
       color: '#e2e8f0',
     },
   },

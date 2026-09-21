@@ -95,7 +95,7 @@ export const VIEW_DEFAULTS: ChartView = {
   statusShowIndicators: true,
   statusShowVolume: true,
   gridColor: '#1e222d',
-  gridStyle: 'dashed',
+  gridStyle: 'solid',
   showGridHorz: true,
   showGridVert: true,
   crosshairStyle: 'dashed',

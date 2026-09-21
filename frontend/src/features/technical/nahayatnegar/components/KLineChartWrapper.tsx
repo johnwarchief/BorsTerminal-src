@@ -190,6 +190,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onAdjustmentChange,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const theme = useUiStore((s) => s.theme);
   // لِجِندِ الگوهای فعالِ FTS روی چارت (رنگِ هر الگو از تنظیماتِ کاربر)
   const [activePatterns, setActivePatterns] = useState<{ kind: string; color: string; label: string }[]>([]);
@@ -203,6 +204,35 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   useEffect(() => {
     setCurrentSymbol((prev) => (initialSymbol && initialSymbol !== prev ? initialSymbol : prev));
   }, [initialSymbol]);
+
+  // گوش دادن به تغییرات وضعیت تمام‌صفحه و ری‌سایز فوری و در فریم بعدی
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFs = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFs);
+      chartRef.current?.resize();
+      requestAnimationFrame(() => {
+        chartRef.current?.resize();
+      });
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
   const [currentName, setCurrentName] = useState<string>(initialName);
   const [currentMarket, setCurrentMarket] = useState<string>(initialMarket);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
@@ -616,8 +646,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
     chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
-    chart.setPaneOptions({ id: 'sub_pane_vol', height: 100 });
-    chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
+    chart.setPaneOptions({ id: 'sub_pane_vol', height: 100, minHeight: 85 });
+    chart.setStyles({
+      indicator: {
+        bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }],
+        lines: [
+          { style: 'solid', smooth: true, size: 1.5, color: '#f59e0b' },
+          { style: 'solid', smooth: true, size: 1.5, color: '#2962ff' },
+          { style: 'solid', smooth: true, size: 1.5, color: '#ab47bc' }
+        ]
+      }
+    } as never);
 
     // پاسخ به تغییر سایز
     const handleResize = () => chart.resize();
@@ -710,28 +749,50 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       : 'candle_solid';
 
     // ۳. رنگ و سبک خطوط گرید و نشانگر کراس‌هیر
-    const defaultGridColor = isLight ? '#eef2f8' : '#1e222d';
+    const defaultGridColor = isLight ? '#f0f3fa' : '#242731';
     const gridColor = ftsView?.gridColor || defaultGridColor;
-    const gridStyle = ftsView?.gridStyle === 'solid' ? 'solid' : 'dashed';
+    const gridStyle = ftsView?.gridStyle === 'dashed' ? 'dashed'
+      : ftsView?.gridStyle === 'dotted' ? 'dotted'
+      : 'solid';
     const gridDashedValue = ftsView?.gridStyle === 'dotted' ? [2, 2] : [4, 4];
+    const isGridNone = ftsView?.gridStyle === 'none';
+    const showGridLines = ftsShowGrid && !isGridNone;
+    const showHorz = showGridLines && (ftsView?.showGridHorz !== false);
+    const showVert = showGridLines && (ftsView?.showGridVert !== false);
 
-    const crosshairStyle = ftsView?.crosshairStyle === 'solid' ? 'solid' : 'dashed';
+    const crosshairStyle = ftsView?.crosshairStyle === 'solid' ? 'solid'
+      : ftsView?.crosshairStyle === 'dotted' ? 'dotted'
+      : 'dashed';
     const crosshairDashedValue = ftsView?.crosshairStyle === 'dotted' ? [2, 2] : [4, 4];
 
     try {
       chart.setStyles({
         ...baseTheme,
+        xAxis: {
+          size: 30,
+          tickText: {
+            size: 12,
+            family: 'Vazirmatn',
+            color: isLight ? '#434651' : '#d1d4dc',
+            marginStart: 4,
+            marginEnd: 4
+          },
+          tickLine: {
+            length: 4,
+            color: isLight ? '#e0e3eb' : '#2a2e39'
+          }
+        },
         grid: {
-          show: ftsShowGrid,
+          show: showGridLines,
           horizontal: {
-            show: ftsShowGrid,
+            show: showHorz,
             color: gridColor,
             style: gridStyle,
             dashedValue: gridDashedValue,
             size: 1
           },
           vertical: {
-            show: ftsShowGrid,
+            show: showVert,
             color: gridColor,
             style: gridStyle,
             dashedValue: gridDashedValue,
@@ -811,6 +872,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         },
         indicator: {
           bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }],
+          lines: [
+            { style: 'solid', smooth: true, size: 1.5, color: '#f59e0b' },
+            { style: 'solid', smooth: true, size: 1.5, color: '#2962ff' },
+            { style: 'solid', smooth: true, size: 1.5, color: '#ab47bc' }
+          ],
           tooltip: {
             showRule: ftsView?.statusShowIndicators === false ? 'none' : 'always',
             showType: 'standard'
@@ -822,6 +888,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           position: ftsView?.priceScalePos ?? 'right'
         }
       } as never);
+
+      try {
+        chart.setPaneOptions({ id: 'sub_pane_vol', height: 100, minHeight: 85 });
+      } catch (e) {
+        void e;
+      }
 
       if (ftsView?.timezone) {
         (chart as any).setTimezone?.(ftsView.timezone);
@@ -1444,12 +1516,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // تمام‌صفحه
   const handleToggleFullscreen = () => {
-    const el = chartContainerRef.current?.parentElement;
-    if (!document.fullscreenElement) {
-      el?.requestFullscreen?.();
+    const el = containerRef.current || chartContainerRef.current?.parentElement;
+    const isFs = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+    if (!isFs) {
+      if (el?.requestFullscreen) {
+        void el.requestFullscreen();
+      } else if ((el as any)?.webkitRequestFullscreen) {
+        void (el as any).webkitRequestFullscreen();
+      }
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen?.();
+      if (document.exitFullscreen) {
+        void document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        void (document as any).webkitExitFullscreen();
+      }
       setIsFullscreen(false);
     }
   };
@@ -1468,7 +1554,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   };
 
   return (
-    <div className="nahayat-negar-container">
+    <div className="nahayat-negar-container" ref={containerRef}>
       {/* نوار ابزار بالا */}
       <FtsToolbar
         symbolName={currentSymbol}
