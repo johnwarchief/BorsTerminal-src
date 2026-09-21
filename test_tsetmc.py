@@ -409,6 +409,12 @@ def create_schema(conn):
             ins_code TEXT PRIMARY KEY, l_val18 TEXT, l_val30 TEXT,
             sector_code TEXT, sector_name TEXT, total_shares REAL,
             eps REAL, pe REAL, base_vol REAL, updated_at TEXT);
+        -- l_val18 کلیدِ پیوندِ هر نماد است (financial_statements/monthly_sales/
+        -- price_history همگی با آن join می‌شوند) ولی PK روی ins_code است؛ بدون
+        -- این ایندکس، resolve() و bulk_scan مجبور به اسکنِ کاملِ ۵۱۲۹ ردیفی
+        -- می‌شوند. Data-Lifecycle گام ۳۳.
+        CREATE INDEX IF NOT EXISTS ix_instruments_lval18 ON instruments(l_val18);
+        CREATE INDEX IF NOT EXISTS ix_instruments_lval30 ON instruments(l_val30);
         CREATE TABLE IF NOT EXISTS market_watch (
             ins_code TEXT PRIMARY KEY, d_even INTEGER, h_even INTEGER,
             p_closing REAL, p_last REAL, price_min REAL, price_max REAL,

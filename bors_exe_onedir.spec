@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 a = Analysis(
     ['bors_entry.py'],
-    pathex=['C:/Users/PCMOD/Desktop/BorsTerminal_Ultimate'],
+    pathex=['C:/Users/PCMOD/Desktop/BorsTerminal'],
     binaries=[],
     datas=[
         ('static', 'static'),
@@ -22,11 +22,14 @@ a = Analysis(
                    # imports them inside the function body, so PyInstaller's
                    # static import scan cannot see them.
                    'bors_config', 'bors_flags', 'api',
+                   # هر ماژولی که api_router() import می‌کند باید اینجا باشد:
+                   # import داخلِ بدنهٔ تابع است و اسکنِ استاتیکِ PyInstaller
+                   # آن را نمی‌بیند (dev/onedir_contract_v11.py این را چک می‌کند).
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
                    'api.screener', 'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
-                   'api._pipeline', 'api.engine',
+                   'api.update', 'api._pipeline', 'api.engine', 'api.market_index',
                    'pandas._libs.tslibs.np_datetime', 'pandas._libs.tslibs.offsets', 'docx', 'openpyxl', 'reportlab',
                    'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil', 'websockets', 'packaging',
                    'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL._imaging'],

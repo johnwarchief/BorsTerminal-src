@@ -743,6 +743,17 @@ def conf_tape(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
 
 
 # ================================= ستون ۳: بنیادی (بازاستفاده از fts_engine)
+def _is_holding_sector(sector) -> bool:
+    """هلدینگ/شرکت سرمایه‌گذاری؟ — همان لیستِ fts_engine (sales_to_marketcap).
+
+    جزوه (بخش ۴): «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)». این تابع
+    فقط تشخیصِ صنعت است؛ معافیت در sales_to_marketcap / fund_from_bulk اعمال
+    می‌شود. لیست را با fts_engine نگه می‌داریم تا دو مسیر واگرا نشوند.
+    """
+    s = norm(sector or "")
+    return any(k in s for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+
+
 def _fund_has_data(d: dict) -> bool:
     """آیا واقعاً دادهٔ عددی بنیادی وجود دارد، یا فقط اسکنر «پاس نشد» داده؟
 
@@ -798,6 +809,18 @@ def fund_from_bulk(row: dict) -> dict:
     months = int(_f(row.get("annualize_months")))
     s2m_raw = row.get("sales_to_mcap")
     s2m = None if (s2m_raw is None or months <= 0) else {"ratio": s2m_raw}
+    # هلدینگ/صندوق سرمایه‌گذاری: bulk_scan برای اینها `sales_to_mcap=None` و
+    # `i4_pass=True` درمی‌آورد (معافیت N/A بر مبنای P/NAV)، ولی scan_symbol
+    # یک dictِ `is_exempt` برمی‌گرداند. بدونِ بازسازیِ همان dict، `_fund_has_data`
+    # این نمادها را «بی‌داده» می‌خواند و ستون بنیادی در مسیرِ bulk با مسیرِ
+    # تک‌نمادی واگرا می‌شد (۱۷ صندوقِ زنده: state fail ⇄ nodata). جزوه (بخش ۴):
+    # «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)» — یعنی معاف است، نه بی‌داده.
+    if s2m is None and bool(row.get("i4_pass")) and _is_holding_sector(row.get("sector_name")):
+        s2m = {"sales_to_mcap": None, "annual_sales_bt": None,
+               "mcap_ht": round(_f(row.get("mcap")) / 1e13, 2),
+               "annualize_basis": "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
+               "pass": True, "is_exempt": True, "threshold": 1.0,
+               "formula": "معافیت هلدینگ بر مبنای P/NAV"}
     return {
         "symbol": row.get("symbol"), "sector": row.get("sector_name") or "",
         "pricing_mode": row.get("pricing_mode"), "market_cap_rials": _f(row.get("mcap")),
@@ -1051,8 +1074,34 @@ def triple_many(conn: sqlite3.Connection, symbols, ctx: dict = None,
         if fts is None and covered is not None and key not in covered:
             # نه در bulk_scan و نه در financial_statements/monthly_sales:
             # بی‌دادهٔ قطعی است، پس ۲۴ کوئریِ scan_symbol بی‌مصرف می‌ماند.
-            fts = {"symbol": s, "score": 0, "passes": {}, "excluded": False,
-                   "exclusion_reasons": [], "detail": {}, "verdict": "REJECT"}
+            # یک استثنا هست: صندوق‌های سرمایه‌گذاری/هلدینگ‌ها هیچ صورتِ مالی
+            # نمی‌دهند و bulk_scan به همین دلیل آن‌ها را برنمی‌گرداند، ولی
+            # scan_symbol برایشان «معافیت N/A» می‌سازد و ستون بنیادی را
+            # قابلِ قضاوت می‌کند. بدونِ بازسازیِ همان معافیت، مسیرِ bulk
+            # این نمادها را nodata می‌گفت در حالی که مسیرِ تک‌نمادی fail
+            # می‌گفت (۵ صندوقِ زنده). جزوه: «این نسبت برای هلدینگ‌ها N/A است».
+            _sec = (resolve(x["index"], s) or {}).get("sector") or ""
+            if _is_holding_sector(_sec):
+                fts = {"symbol": s, "sector_name": _sec, "score": 2,
+                       "passes": {"1_growth": False, "2_eps_trend": False,
+                                  "3_gross_margin": False, "4_sales_to_mcap": True,
+                                  "5_industry": True},
+                       "excluded": False, "exclusion_reasons": [],
+                       "pricing_mode": "neutral",
+                       "detail": {"growth": None, "gross_margin": None,
+                                  "eps_trend": {"eps_series": [], "data_gap": True,
+                                                "years_available": 0, "pass": False},
+                                  "sales_to_mcap": {
+                                      "sales_to_mcap": None, "annual_sales_bt": None,
+                                      "annualize_basis":
+                                          "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
+                                      "pass": True, "is_exempt": True,
+                                      "threshold": 1.0,
+                                      "formula": "معافیت هلدینگ بر مبنای P/NAV"}},
+                       "verdict": "REJECT"}
+            else:
+                fts = {"symbol": s, "score": 0, "passes": {}, "excluded": False,
+                       "exclusion_reasons": [], "detail": {}, "verdict": "REJECT"}
         out.append(triple(conn, s, ctx=x, cfg=cfg, fts_cfg=fts_cfg, fts=fts))
     return out
 

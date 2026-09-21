@@ -152,6 +152,255 @@ def register_sql(conn):
     return conn
 
 
+# ================================================== FTS v2.2: جداولِ مرجعِ F-04/F-05
+# دو جدولِ نماد→صنعت و اسنپ‌شاتِ ارزشِ بازار در مهاجرتِ افزودنی ساخته شدند،
+# ولی تا پیش از این هیچ نویسنده‌ای نداشتند (داده فقط از instruments /
+# market_watchِ «همین الان» خوانده میشد). طبقِ تصمیم: نویسنده در
+# dev/codal_fts_updater است و خواننده‌هایِ زیر با fallback شفاف کار میکنند —
+# یعنی جدولِ خالی = همان رفتارِ قبلی، و هیچ مسیرِ موجودی نمی‌شکند.
+#
+# هر دو تابع نمادِ نرمال‌شده (norm_fa) را به‌عنوان کلید می‌خواهند تا با
+# کلیدِ سایرِ نقشه‌ها (m141_map و غیره) یکسان بماند.
+
+_SECTOR_CACHE: dict = {}          # (id(conn)) -> {norm_symbol: sector_name}
+_MCAP_CACHE: dict = {}            # (id(conn)) -> {norm_symbol: (date, market_cap)}
+
+
+def _table_exists(conn, name: str) -> bool:
+    try:
+        return bool(conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (name,)
+        ).fetchone())
+    except Exception:
+        return False
+
+
+def sector_of(conn, symbol: str, fallback: str = "") -> str:
+    """نامِ صنعتِ نماد — اول از جدولِ مرجعِ symbol_sectors، با fallback.
+
+    fallback: جدول خالیست / نماد در آن نیست / جدول وجود ندارد → همان
+    `fallback` برمی‌گردد (فراخواننده آن را از instruments.sector_name می‌آورد).
+    """
+    if not symbol:
+        return fallback
+    key = id(conn)
+    tab = _SECTOR_CACHE.get(key)
+    if tab is None:
+        tab = {}
+        if _table_exists(conn, "symbol_sectors"):
+            try:
+                for sym, name in conn.execute(
+                        "SELECT symbol, sector_name FROM symbol_sectors"):
+                    if sym and name:
+                        tab[norm_fa(sym)] = name
+            except Exception:
+                tab = {}
+        _SECTOR_CACHE[key] = tab
+    return tab.get(norm_fa(symbol)) or fallback
+
+
+def market_cap_at(conn, symbol: str, date: str = "",
+                  fallback: Optional[float] = None) -> Optional[float]:
+    """ارزشِ بازار در `date` (یا نزدیک‌ترین تاریخِ ماقبل آن) — ریال.
+
+    F-04 میخواهد ارزشِ بازار را در **زمانِ گزارش** بسنجد، نه فقط امروز.
+    fallback: اسنپ‌شاتی در/قبل از `date` نبود → `fallback` (فراخواننده مقدارِ
+    امروز را می‌دهد). هیچ‌وقت ۰ برنمی‌گرداند که نسبت را بی‌نهایت کند
+    (None = «قابل محاسبه نبود»).
+    """
+    if not symbol:
+        return fallback
+    key = id(conn)
+    tab = _MCAP_CACHE.get(key)
+    if tab is None:
+        tab = {}
+        if _table_exists(conn, "market_cap_snapshots"):
+            try:
+                # هر نماد ممکن است چندین اسنپ‌شات در تاریخ‌های مختلف داشته باشد
+                # (هر اجرای updater یک ردیف برای همان روز مینویسد)؛ همه را
+                # میخوانیم و به ترتیبِ تاریخ نگه میداریم.
+                buckets: dict = {}
+                for sym, d, mc in conn.execute(
+                        "SELECT symbol, date, market_cap FROM market_cap_snapshots"):
+                    if not sym or mc is None:
+                        continue
+                    buckets.setdefault(norm_fa(sym), []).append((d or "", _f(mc)))
+                for k, lst in buckets.items():
+                    lst.sort(key=lambda t: t[0])
+                    tab[k] = lst
+            except Exception:
+                tab = {}
+        _MCAP_CACHE[key] = tab
+    lst = tab.get(norm_fa(symbol))
+    if not lst:
+        return fallback
+    if not date:
+        return lst[-1][1]                    # جدیدترین اسنپ‌شات
+    # آخرین اسنپ‌شاتی که تاریخش <= تاریخِ درخواستی است («نزدیک‌ترین ماقبل»).
+    # تاریخِ درخواستی قبل از قدیمی‌ترین اسنپ‌شات است → هیچ داده‌ای در آن زمان
+    # نداشتیم → fallback، تا مقدارِ آینده به‌عنوانِ گذشته گزارش نشود.
+    best = None
+    for d, mc in lst:
+        if d and d <= date:
+            best = (d, mc)
+        else:
+            break                            # lst سورت‌شده است
+    return best[1] if best else fallback
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# لایهٔ مادی‌سازیِ خروجیِ v10 (تسک ۱۹ — جدول fts_results)
+# ═══════════════════════════════════════════════════════════════════════════
+# همان الگوی تصمیم ۴ (sector_of / market_cap_at): نویسنده در dev/codal_fts_updater،
+# خواننده با fallback اینجا. جدولِ غایب/خالی/ناهم‌خوان با cfg = همان رفتارِ قبلی
+# (محاسبهٔ زنده با evaluate_v10)، پس مسیرِ v8 اسکرینر رفتارش عوض نمیشود.
+_FTS_RESULTS_CACHE: dict = {}          # id(conn) -> {"cfg_hash": str, "rows": {norm_symbol: tuple}}
+
+# ترتیبِ ستون‌های SELECT در fts_results_of (اندیس‌های ۰-پایه):
+#   0 symbol          1 f01_growth_pct   2 f01_pass        3 f02_eps_series(JSON)
+#   4 f02_pass        5 f03_margin_pct   6 f03_pass        7 f04_ratio
+#   8 f04_pass        9 f05_verdict     10 f05_pass       11 score
+#  12 verdict        13 excluded        14 exclusion_reasons
+#  15 i1a_pass       16 i1b_pass        17 i4a_pass       18 i4b_pass
+#  19 rev_growth     20 gross_margin    21 sales_to_mcap  22 profit_potential_pct
+#  23 annual_sales_bt  24 annualize_months  25 cfg_hash
+_FTS_RESULTS_COLS = (
+    "symbol, f01_growth_pct, f01_pass, f02_eps_series, f02_pass,"
+    " f03_margin_pct, f03_pass, f04_ratio, f04_pass, f05_verdict, f05_pass,"
+    " score, verdict, excluded, exclusion_reasons,"
+    " i1a_pass, i1b_pass, i4a_pass, i4b_pass,"
+    " rev_growth, gross_margin, sales_to_mcap, profit_potential_pct,"
+    " annual_sales_bt, annualize_months, cfg_hash",
+)
+
+
+def invalidate_fts_results(conn) -> int:
+    """حذفِ همهٔ ردیف‌های مادی‌شده (و کشِ خواننده).
+
+    سینکِ کدال/تابلو هر دو کشِ اسکرینر و این جدول را کثیف می‌کند؛
+    invalidate_screener_cache این را صدا میزند. برمی‌گرداند: تعداد ردیفِ حذف‌شده.
+    """
+    n = 0
+    try:
+        n = int(conn.execute("DELETE FROM fts_results").rowcount or 0)
+        conn.commit()
+    except Exception:
+        n = 0
+    _FTS_RESULTS_CACHE.pop(id(conn), None)
+    return n
+
+
+def _fts_row_to_result(r) -> dict:
+    """تبدیلِ یک ردیفِ خامِ fts_results به همان شکلِ خروجیِ evaluate_v10.
+
+    فقط فیلدهایی که اسکرینر/واچ‌لیست می‌خوانند بازسازی میشوند؛ بقیقۀ لایه‌های
+    تشخیصی (series/ref/profile) عمداً ذخیره نمیشوند — مسیرِ کارتِ جزئیات همچنان
+    evaluate_v10 زنده را صدا میزند و جدول فقط کشِ جدولِ بازار است.
+    """
+    import json as _json
+    eps_series = None
+    try:
+        if r[3]:
+            eps_series = _json.loads(r[3])
+    except Exception:
+        eps_series = None
+    return {
+        "score": int(r[11] or 0),
+        "verdict": r[12] or "",
+        "excluded": bool(r[13]),
+        "exclusion_reasons": (r[14].split(" · ") if r[14] else []),
+        "pricing_mode": r[9],
+        "passes": {
+            "1_growth": bool(r[2]),
+            "2_eps_trend": bool(r[4]),
+            "3_gross_margin": bool(r[6]),
+            "4_sales_to_mcap": bool(r[8]),
+            "5_industry": bool(r[10]),
+            "1a_monetary_growth": bool(r[15]),
+            "1b_volume_growth": bool(r[16]),
+            "4a_sales_to_mcap": bool(r[17]),
+            "4b_profit_potential": bool(r[18]),
+        },
+        "indicators": {
+            "1": {"monetary": {"monetary_pct": r[1]}, "volume": {}},
+            "2": {"eps_series": eps_series},
+            "3": {"margin_pct": r[5]},
+            "4": {"sales_to_mcap": r[7], "potential_pct": r[22],
+                  "annual": {"annual_sales_bt": r[23], "months_used": r[24]}},
+            "5": {"verdict": r[9]},
+        },
+    }
+
+
+def _fts_results_table(conn, cfg_hash: str = "") -> Optional[dict]:
+    """خواندنِ یکبارهٔ کل جدول + بررسیِ اعتبارِ cfg_hash.
+
+    برمی‌گرداند: {"cfg_hash": str, "rows": {norm_symbol: tuple}} یا None اگر جدول
+    غایب/خالی باشد یا cfg_hashِ ذخیره‌شده با cfg_hashِ درخواستی ناهم‌خوان باشد
+    (یعنی آستانه‌ها تغییر کرده‌اند → محاسبهٔ قدیمی دیگر معتبر نیست).
+    """
+    if not _table_exists(conn, "fts_results"):
+        return None
+    try:
+        rows = conn.execute("SELECT %s FROM fts_results" % _FTS_RESULTS_COLS[0]).fetchall()
+    except Exception:
+        return None
+    if not rows:
+        return None
+    # نویسنده همهٔ ردیف‌ها را با یک cfg_hash در یک تراکنش مینویسد؛ اگر با cfgِ
+    # درخواستی نمی‌خواند، کل جدول متعلق به پیکربندیِ قدیمی است → بی‌اعتبار.
+    stored = rows[0][25]
+    if cfg_hash and stored and stored != cfg_hash:
+        return None
+    tab = {"cfg_hash": cfg_hash or stored or "", "rows": {}}
+    for r in rows:
+        k = norm_fa(r[0])
+        if k and k not in tab["rows"]:
+            tab["rows"][k] = r
+    return tab
+
+
+def fts_results_of(conn, symbol: str, cfg_hash: str = "") -> Optional[dict]:
+    """خروجیِ مادی‌شدهٔ v10 برای یک نماد — یا None (fallback به محاسبهٔ زنده).
+
+    None برمی‌گرداند اگر: جدول نباشد / خالی باشد / cfg_hash ناهم‌خوان باشد /
+    نمادی در آن نباشد. فراخواننده در آن حالت دقیقاً مسیرِ evaluate_v10 را
+    اجرا می‌کند — یعنی یک DB قدیمی یا خالی رفتارِ امروزی را دارد.
+    """
+    if not symbol:
+        return None
+    key = id(conn)
+    tab = _FTS_RESULTS_CACHE.get(key)
+    if tab is None or tab.get("cfg_hash") != (cfg_hash or ""):
+        tab = _fts_results_table(conn, cfg_hash=cfg_hash)
+        if tab is None:
+            tab = {"cfg_hash": cfg_hash or "", "rows": {}}
+        _FTS_RESULTS_CACHE[key] = tab
+    r = (tab.get("rows") or {}).get(norm_fa(symbol))
+    if r is None:
+        return None
+    return _fts_row_to_result(r)
+
+
+def fts_results_bulk(conn, cfg_hash: str = "") -> Optional[dict]:
+    """تمامِ ردیف‌های مادی‌شده به‌صورتِ norm_symbol -> نتیجه (یک SELECT).
+
+    برای مسیرِ دسته‌ای اسکرینر — به‌جای ~۲۵۰۰ فراخوانیِ evaluate_v10. همان
+    قراردادِ fts_results_of: None یعنی «جدول بی‌اعتبار/خالی → fallback زنده».
+    """
+    key = id(conn)
+    tab = _FTS_RESULTS_CACHE.get(key)
+    if tab is None or tab.get("cfg_hash") != (cfg_hash or ""):
+        tab = _fts_results_table(conn, cfg_hash=cfg_hash)
+        if tab is None:
+            _FTS_RESULTS_CACHE[key] = {"cfg_hash": cfg_hash or "", "rows": {}}
+            return None
+        _FTS_RESULTS_CACHE[key] = tab
+    rows = tab.get("rows") or {}
+    if not rows:
+        return None
+    return {k: _fts_row_to_result(v) for k, v in rows.items()}
+
 
 # ================================================== شاخص ۵: دیکشنری قیمت‌گذاری
 # همهٔ توکن‌ها به نوشتار نرمال (ی/ک فارسی) ذخیره میشوند و با norm_fa(sector) سنجیده‌اند.
@@ -653,16 +902,24 @@ def sector_filter(sector: str, cfg: dict = None, market_cap_rials: float = 0.0,
                                       or MANDATORY_PRICING_TOKENS)]
     free = [norm_fa(t) for t in (cfg.get("free_sectors") or FREE_PRICING_TOKENS)]
 
-    # استثنای دارویی FTS v2.1 و جزوه: دارو مشمول سقف نرخ است مگر GPM >= 50%
+    # استثنای دارویی FTS v2.1 و جزوه: دارو مشمول سقف نرخ است مگر GPM >= 50٪.
+    # جزوه (بخش ۵): دارویی‌های بنیادی با حاشیه سود بالای ۵۰٪ «استثنای مجازِ
+    # صنایعِ دستوری» هستند — یعنی دارو یک صنعتِ مشروط است، نه ردِ مطلق.
+    # اگر GPM معلوم نباشد، قضاوت ممکن نیست: «خنثی — نیازمند بررسی موردی»،
+    # نه وتوی سخت. این همان اصلِ «بی‌داده ≠ مردود» است که در بقیهٔ موتور
+    # حاکم است؛ وتو فقط وقتی که داده واقعاً GPM<۵۰٪ را نشان دهد.
     if "دارو" in s:
         if gpm is not None and gpm >= 50.0:
             mode = "free"
             hit_free = ["دارویی ممتاز (حاشیه ناخالص >= ۵۰٪)"]
             hit_mand = []
-        else:
+        elif gpm is not None:
             mode = "mandatory"
             hit_mand = ["دارویی عادی (قیمت‌گذاری دستوری)"]
             hit_free = []
+        else:
+            mode = "neutral"
+            hit_mand, hit_free = [], []
     # استثنای بانک‌ها: اگر رشد درآمد مثبت داشته باشد تایید می‌شود
     elif any(k in s for k in ("بانک", "بانك", "اعتباری", "اعتباري")):
         if sales_growth is not None and sales_growth > 0:

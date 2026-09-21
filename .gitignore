@@ -66,6 +66,9 @@ sync_summary.json
 codal_state.json
 codal_control.json
 dev/fts_update_state.json
+# یادداشتِ چرخشِ IP: کدام متدِ ADB آخرین بار جواب داده (dev/codal_fts_updater
+# آن را مینویسد تا دفعهٔ بعد همان را اول امتحان کند) — حالتِ دستگاه، نه کد.
+dev/fts_rotate_memo.json
 
 # ---- لاگ و خروجی ابزار ----
 logs/

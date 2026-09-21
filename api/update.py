@@ -10,9 +10,9 @@
 ------
 GET  /api/update/version         نسخهٔ فعلیِ برنامه
 GET  /api/update/check           دریافت + پردازش latest.json و مقایسهٔ semver
-POST /api/update/download        شروعِ دانلودِ نصب‌کنندهٔ امضاشده
+POST /api/update/download        شروعِ دانلودِ بستهٔ امضاشده (پچ دلتا در صورتِ وجود)
 GET  /api/update/progress        نظرسنجیِ وضعیتِ دانلود/راستی‌آزمایی
-POST /api/update/install         راستی‌آزمایی → نصبِ سایلنت → بازنگریِ برنامه
+POST /api/update/install         راستی‌آزمایی → اعمالِ پچ/نصبِ سایلنت → بازنگری
 POST /api/update/install-local   مثلِ بالا، با فایلِ نصب‌کننده + امضای دستی کاربر
 
 مدلِ اعتماد
@@ -21,6 +21,15 @@ POST /api/update/install-local   مثلِ بالا، با فایلِ نصب‌ک
 هیچ‌چیز نصب نمی‌شود مگر اینکه نصب‌کننده تحت این کلید تأیید شود؛ پس یک
 setup.exe دستکاری‌شده یا جعلی همیشه رد می‌شود - قبل از اینکه اصلاً لایهٔ
 رمزِ خودِ Inno اجرا شود.
+
+به‌روزرسانیِ دلتا (v1.0.10)
+---------------------------
+latest.json می‌تواند یک آرایهٔ اختیاریِ ``patches`` داشته باشد که هر ورودی‌اش
+یک پچِ امضاشدهٔ «رویهمگذاری» را معرفی می‌کند. آپدیتِر فقط زمانی پچ را
+برمی‌گزیند که ``from`` با نسخهٔ فعلیِ برنامه برابر باشد؛ در غیر این صورت، یا
+اگر امضا یا قابلیتِ نوشتن در مسیرِ نصب شکست بخورد، به نصبِ کاملِ Inno
+برمی‌گردد. پچ‌ها هم با همین کلیدِ minisign امضا می‌شوند، پس مرزِ امنیتی
+تغییری نکرده است.
 """
 import hashlib
 import json
@@ -76,6 +85,7 @@ _STATE = {
     "path": "",
     "signature": "",
     "message": "",
+    "is_patch": False,       # v1.0.10: بستهٔ آماده، پچِ دلتاست یا نصبِ کامل؟
 }
 _LAST_MANIFEST = None        # آخرین مانیفستِ موفق (برای download بدون پارامتر)
 _INSTALL_LOCK = threading.Lock()
@@ -173,6 +183,32 @@ def _registry_install_dir():
         except OSError:
             continue
     return None
+
+
+def _sync_display_version():
+    """DisplayVersionِ کلیدِ Uninstall را با APP_VERSION همگام می‌کند.
+
+    نصب‌کنندهٔ Inno این مقدار را می‌نویسد، ولی یک پَچ فقط فایل‌ها را
+    جایگزین می‌کند؛ پس Add/Remove Programs بدون این همگام‌سازی همچنان
+    نسخهٔ قبلی را نشان می‌دهد. این تابع خودش را رویِ هر استارتاپ تعمیر
+    می‌کند، تا حتی یک پَچ که apply_update.batِ قدیمی دارد هم درست می‌شود.
+    """
+    try:
+        import winreg
+    except ImportError:
+        return False
+    key_path = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\\" + APP_ID + "_is1"
+    for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+        try:
+            with winreg.OpenKey(hive, key_path, 0, winreg.KEY_SET_VALUE) as key:
+                cur, _ = winreg.QueryValueEx(key, "DisplayVersion")
+                if cur == APP_VERSION:
+                    return True
+                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, APP_VERSION)
+                return True
+        except OSError:
+            continue
+    return False
 
 
 def _install_dir():
@@ -328,12 +364,116 @@ def _fetch_manifest():
     """latest.json را از ریلیزِ آخرِ گیت‌هاب می‌گیرد (یا از مسیرِ محلیِ dev)."""
     local = (os.environ.get("BORS_UPDATE_MANIFEST") or "").strip()
     if local and os.path.isfile(local):
-        with open(local, encoding="utf-8") as f:
+        with open(local, encoding="utf-8-sig") as f:
             return json.load(f)
     resp = requests.get(LATEST_JSON_URL, timeout=(10, 30),
                         headers={"User-Agent": USER_AGENT})
     resp.raise_for_status()
     return resp.json()
+
+
+def _select_patch(manifest):
+    """پچِ دلتای مناسب را برمی‌گزیند یا None برمی‌گرداند.
+
+    شرایط (هر چهار باید برقرار باشند، وگرنه به نصبِ کامل برمی‌گردیم):
+      1) مانیفست آرایهٔ patches دارد
+      2) patch.from == نسخهٔ فعلیِ برنامه (پچِ 1.0.9→1.0.10 روی 1.0.8 اعمال نمی‌شود)
+      3) patch.to == نسخهٔ هدفِ مانیفست (پچِ قدیمی روی مانیفستِ جدید شکار نمی‌شود)
+      4) url + signature موجود است
+    """
+    patches = manifest.get("patches") or []
+    if not isinstance(patches, list):
+        return None
+    target = str(manifest.get("version") or "")
+    for p in patches:
+        if not isinstance(p, dict):
+            continue
+        if str(p.get("from") or "") != APP_VERSION:
+            continue
+        if str(p.get("to") or "") != target:
+            continue
+        if not (p.get("url") and p.get("signature")):
+            continue
+        return p
+    return None
+
+
+def _install_dir_writable():
+    """آیا پوشهٔ نصب نوشتنی است؟ (پرتابیل/ per-user: بله. Program Files: خیر)
+
+    پچِ overlay باید در محل extract شود؛ اگر مسیر فقط‌خواندنی باشد (نصبِ
+    all-users) بدونِ elevation نمی‌توان فایلها را جایگزین کرد، پس به نصبِ
+    کاملِ Inno برمی‌گردیم که خودش UAC را مدیریت می‌کند.
+    """
+    d = _install_dir()
+    if not d:
+        return False
+    try:
+        probe = os.path.join(d, ".wtprobe")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+        return True
+    except OSError:
+        return False
+
+
+def _extract_applier_from_patch(patch_zip, dest_bat):
+    """apply_update.bat را از داخلِ خودِ پچِ امضاشده استخراج می‌کند.
+
+    نصب‌های قدیمی‌تر از 1.0.10 این فایل را در محلِ نصب ندارند (قبل از آن به
+    [Files] نصب‌کننده اضافه نشده بود). پچ آن را همراهِ خود می‌آورد و چون پچ
+    پیش از این توسطِ minisign راستی‌آزمایی شده، استخراجِ اعمال‌کننده از آن
+    درونِ مرزِ اعتماد است.
+    """
+    import zipfile
+    try:
+        with zipfile.ZipFile(patch_zip) as zf:
+            names = zf.namelist()
+            if "apply_update.bat" not in names:
+                return False
+            with zf.open("apply_update.bat") as src, \
+                    open(dest_bat, "wb") as dst:
+                dst.write(src.read())
+        return os.path.isfile(dest_bat)
+    except (OSError, zipfile.BadZipFile, KeyError):
+        return False
+
+
+def _spawn_patch_apply(patch_zip):
+    """اعمال‌کنندهٔ پچِ shipped را spawn می‌کند و بعد از آن خارج می‌شود.
+
+    scripts/apply_update.bat در محلِ نصب وجود دارد (توسطِ [Files] نصب‌کننده
+    کپی شده) و جریانِ اثبات‌شده را دارد: کپیِ خودش به %TEMP% → توقفِ نرمِ
+    برنامه → extract درجا → مهرِ Version.txt → اجرای دوباره. ما فقط zip را
+    کنارش می‌گذاریم و BORS_UPDATE_NORELAUNCH را set نمی‌کنیم تا همان مسیر
+    استانداردِ relaunch طی شود.
+
+    اگر اعمال‌کننده در محلِ نصب نباشد (نصبِ قدیمی‌تر از 1.0.10)، از داخلِ
+    خودِ پچِ امضاشده استخراج می‌شود تا دلتا حتی برایِ نسخه‌ای که آن را
+    نمی‌شناسد هم کار کند.
+    """
+    d = _install_dir()
+    if not d:
+        return None
+    applier = os.path.join(d, "apply_update.bat")
+    if not os.path.isfile(applier):
+        if not _extract_applier_from_patch(patch_zip, applier):
+            return None
+    # apply_update.bat انتظار دارد BorsTerminal_Update.zip کنارش باشد.
+    target_zip = os.path.join(d, "BorsTerminal_Update.zip")
+    try:
+        import shutil
+        shutil.copyfile(patch_zip, target_zip)
+    except OSError as exc:
+        raise RuntimeError("کپیِ پچ به مسیرِ نصب ناموفق: %s" % exc)
+    subprocess.Popen(
+        ["cmd.exe", "/c", applier],
+        cwd=d, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP, close_fds=True)
+    _STATE.update(status="installing",
+                  message="در حال اعمالِ پچِ به‌روزرسانی")
+    _delayed_exit(2.0)
+    return applier
 
 
 
@@ -343,6 +483,13 @@ def _fetch_manifest():
 @router.get("/api/update/version")
 def update_version():
     """نسخهٔ فعلیِ برنامه (منبعِ واحد: bors_config.APP_VERSION)."""
+    # یک پَچ فقط فایل‌ها را جایگزین می‌کند، پس DisplayVersionِ رجیستری
+    # می‌تواند پشت بماند. اینجا خودش را تعمیر می‌کنیم تا Add/Remove
+    # Programs همیشه با نسخهٔ واقعیِ در حالِ اجرا موافق باشد.
+    try:
+        _sync_display_version()
+    except Exception:
+        pass
     return {"version": APP_VERSION, "tauri": False}
 
 
@@ -359,6 +506,10 @@ def update_check():
     platform = _platform_of(manifest)
     latest = str(manifest.get("version") or "")
     available = bool(latest) and _vkey(latest) > _vkey(APP_VERSION)
+    # v1.0.10: اگر پچِ دلتایی برای همین نسخه موجود باشد، مرورگر آن را به جای
+    # نصبِ کامل نشان می‌دهد (حجمِ بسیار کمتر). انتخابِ نهایی در download انجام
+    # می‌شود تا بینِ check و download تغییرِ نسخه رخ ندهد.
+    patch = _select_patch(manifest) if available else None
     return {
         "status": "success",
         "current_version": APP_VERSION,
@@ -366,9 +517,11 @@ def update_check():
         "available": available,
         "notes": manifest.get("notes") or "",
         "date": manifest.get("pub_date") or "",
-        "url": platform.get("url") or "",
-        "signature": platform.get("signature") or "",
+        "url": (patch or platform).get("url") or "",
+        "signature": (patch or platform).get("signature") or "",
         "updater": "python",
+        "delta": bool(patch),
+        "size": int((patch or platform).get("size") or 0),
     }
 
 
@@ -383,8 +536,19 @@ def update_download(req: DownloadRequest = DownloadRequest()):
     with _LOCK:
         manifest = _LAST_MANIFEST or {}
         platform = _platform_of(manifest)
-        url = req.url or platform.get("url") or ""
-        signature = req.signature or platform.get("signature") or ""
+        # v1.0.10: پچِ دلتا اولویت دارد. مرورگر url/signature را از /check برمی‌گرداند
+        # که در صورتِ وجودِ پچ، خودِ urlِ پچ است؛ پس تطبیقِ url را به جایِ
+        # «خالی‌بودنِ پارامتر» می‌سنجیم تا نصبِ کاملِ صریح هم پچ را دور نزند.
+        patch = _select_patch(manifest)
+        patch_url = (patch or {}).get("url") or ""
+        if patch and (not req.url or req.url == patch_url):
+            url = patch_url
+            signature = patch.get("signature") or ""
+            is_patch = True
+        else:
+            url = req.url or platform.get("url") or ""
+            signature = req.signature or platform.get("signature") or ""
+            is_patch = False
         version = req.version or str(manifest.get("version") or "")
     if not url or not signature:
         return {"status": "error",
@@ -392,10 +556,10 @@ def update_download(req: DownloadRequest = DownloadRequest()):
     name = os.path.basename(urlsplit(url).path) or "setup.exe"
     dest = os.path.join(CACHE_DIR, name)
     _STATE.update(status="downloading", downloaded=0, total=0, version=version,
-                  path="", signature="", message="")
+                  path="", signature="", message="", is_patch=is_patch)
     threading.Thread(target=_download_worker,
                      args=(url, signature, version, dest), daemon=True).start()
-    return {"status": "started", "path": dest}
+    return {"status": "started", "path": dest, "delta": is_patch}
 
 
 @router.get("/api/update/progress")
@@ -403,8 +567,14 @@ def update_progress():
     return dict(_STATE)
 
 
-def _run_install(installer, signature):
-    """مرحلهٔ نهایی: تأییدِ دوبارهٔ امضا → اجرای نصبِ سایلنت → خروج."""
+def _run_install(installer, signature, is_patch=False):
+    """مرحلهٔ نهایی: تأییدِ دوبارهٔ امضا → اعمالِ پچ یا نصبِ سایلنت → خروج.
+
+    اگر ``is_patch`` باشد و مسیرِ نصب نوشتنی باشد، پچِ overlay از طریقِ
+    apply_update.batِ shipped اعمال می‌شود (حجمِ بسیار کمتر). در هر شکستِ
+    منطقیِ آن مسیر، شفافاً به نصبِ کاملِ Inno برمی‌گردیم تا به‌روزرسانی هرگز
+    به‌خاطرِ وجودِ پچ انجام‌نشده باقی نماند.
+    """
     with _INSTALL_LOCK:
         if not (os.path.isfile(installer) and signature):
             return {"status": "error", "message": "بسته یا امضا موجود نیست."}
@@ -415,6 +585,26 @@ def _run_install(installer, signature):
                           message="راستی‌آزمایی امضا ناموفق: %s" % exc)
             return {"status": "error",
                     "message": "راستی‌آزمایی امضا ناموفق: %s" % exc}
+
+        if is_patch:
+            # پیش‌نیازهای پچ: مسیرِ نصبِ مشخص + نوشتنی + اعمال‌کنندهٔ shipped.
+            # هر کدام نبود → نصبِ کامل بدونِ سوال (fallback خودکار).
+            if _install_dir_writable():
+                _STATE.update(status="installing", message="در حال اعمالِ پچ")
+                try:
+                    applier = _spawn_patch_apply(installer)
+                except Exception as exc:           # noqa: BLE001
+                    applier = None
+                    _STATE.update(status="error",
+                                  message="اعمالِ پچ ناموفق: %s" % exc)
+                if applier:
+                    return {"status": "installing", "delta": True,
+                            "applier": applier}
+                # اعمال‌کننده نه در محلِ نصب بود و نه از داخلِ پچ استخراج شد
+                # (مثلاً پچِ ناقص یا خطای دیسک) → fallback به نصبِ کامل.
+            _STATE.update(status="installing",
+                          message="در حال نصبِ کامل (fallback)")
+
         log_path = os.path.join(CACHE_DIR, "install.log")
         flags = _install_flags(log_path)
         _STATE.update(status="installing", message="در حال نصبِ سایلنت")
@@ -435,7 +625,8 @@ def update_install():
     if _STATE.get("status") != "ready" or not _STATE.get("path"):
         return {"status": "error",
                 "message": "بسته‌ای آماده نیست؛ اول /api/update/download را اجرا کنید."}
-    return _run_install(_STATE["path"], _STATE.get("signature") or "")
+    return _run_install(_STATE["path"], _STATE.get("signature") or "",
+                        bool(_STATE.get("is_patch")))
 
 
 @router.post("/api/update/install-local")
@@ -451,8 +642,13 @@ async def update_install_local(request: Request, signature: str = "",
     if not sig_text:
         return {"status": "error", "message": "فایل امضا (.sig) را هم انتخاب کنید."}
     safe = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(name or "setup.exe"))
-    if not safe.lower().endswith(".exe"):
-        return {"status": "error", "message": "فقط نصب‌کنندهٔ .exe پذیرفته می‌شود."}
+    lower = safe.lower()
+    # v1.0.10: پچِ دلتا (.zip) هم مثلِ نصب‌کنندهٔ کامل پذیرفته می‌شود؛ هر دو
+    # زیرِ همان کلیدِ minisign امضا شده‌اند، پس مرزِ امنیتی یکسان است.
+    is_patch = lower.endswith(".zip")
+    if not (lower.endswith(".exe") or is_patch):
+        return {"status": "error",
+                "message": "فقط نصب‌کنندهٔ .exe یا پچِ .zip پذیرفته می‌شود."}
     dest = os.path.join(CACHE_DIR, "local_" + safe)
     received = 0
     try:
@@ -465,7 +661,7 @@ async def update_install_local(request: Request, signature: str = "",
     if received < 1024:
         return {"status": "error", "message": "فایلِ دریافت‌شده کامل نیست."}
     os.replace(dest + ".part", dest)
-    return _run_install(dest, sig_text)
+    return _run_install(dest, sig_text, is_patch)
 
 def _platform_of(manifest):
     return (manifest.get("platforms") or {}).get(PLATFORM_KEY) or {}

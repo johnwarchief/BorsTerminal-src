@@ -101,6 +101,30 @@ def _spa_index():
 def _startup_sync_market():
     """هوک استارت FastAPI: اجرای uvicorn (باش با bat) → تابلو در هر اجرا آپدیت می‌شود.
     (قبلاً فقط در __main__ بود و start_dashboard.py هرگز فراخوانی‌اش نمی‌کرد.)"""
+    # ۱) مهاجرتِ افزودنیِ اسکیما — باید قبل از هر کوئریِ fts_engine/screener
+    # اجرا شود. market.db.lzmaیِ فریزشده ستون‌های FTS v2.2 را ندارد و
+    # ensure_market_db() فقط وجودِ جداول را بررسی می‌کند، پس بدون این مرحله
+    # موتور با «no such column» (یا اسکرینر ۵۰۰) پاسخ می‌دهد. migrate_schema
+    # کاملاً یدم‌پذیر است و در صورت وجود ستون کاری نمی‌کند.
+    # import محلی: bors_config یک leaf module است و codal_fetcher از آن import
+    # می‌کند، پس نمی‌توانیم این کار را در ensure_market_db() انجام دهیم.
+    try:
+        import codal_fetcher as _cf
+        import sqlite3 as _sq
+        _db = _cf.DB_PATH
+        if _db and os.path.exists(_db):
+            _c = _sq.connect(_db, timeout=60)
+            try:
+                _cf.create_schema(_c)
+                _cf.migrate_schema(_c)
+            finally:
+                _c.close()
+            print("[startup] codal schema migrated (additive, idempotent)")
+    except Exception as e:
+        # شکستِ مهاجرت نباید سرور را پایین بیاورد؛ مسیرهای fetch خودشان دوباره
+        # migrate_schema را صدا می‌زنند.
+        print(f"[startup] codal schema migrate failed (non-fatal): {e}")
+
     try:
         threading.Thread(target=_sync_market_on_start, daemon=True).start()
         print("[startup] market sync thread spawned")

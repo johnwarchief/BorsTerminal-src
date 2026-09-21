@@ -28,7 +28,13 @@ _SCREENER_CACHE_TTL = 43200.0  # ۱۲ ساعت
 CACHE_FILE = os.path.join(WORK_DIR, ".screener_cache.json")
 
 def invalidate_screener_cache():
-    """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال)."""
+    """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
+
+    هر دو کش را باطل می‌کند: RAM/دیسکِ payload، و جدولِ مادی‌شدهٔ fts_results
+    (تسک ۱۹). هر دو از همان منبع (سینک کدال/تابلو) تغذیه میشوند، پس سینکِ
+    تازه هر دو را کثیف می‌کند. fts_results با DELETE پاک می‌شود تا دفعهٔ بعد
+    دوباره از sync_fts_results پر شود.
+    """
     _SCREENER_CACHE["payload"] = None
     _SCREENER_CACHE["ts"] = 0.0
     if os.path.exists(CACHE_FILE):
@@ -36,6 +42,15 @@ def invalidate_screener_cache():
             os.remove(CACHE_FILE)
         except OSError:
             pass
+    try:
+        import fts_engine as _fe
+        _conn = get_db()
+        try:
+            _fe.invalidate_fts_results(_conn)
+        finally:
+            _conn.close()
+    except Exception:
+        pass
 
 
 router = APIRouter()
@@ -195,12 +210,34 @@ def get_screener():
                 _k = fts_engine.norm_fa(_sym)
                 if _k and _k not in cname_of:
                     cname_of[_k] = _cn or ""
+
+            # تسک ۱۹ — مادی‌سازی: یک SELECT از fts_results به‌جای ~۲۵۰۰ فراخوانیِ
+            # evaluate_v10. قراردادِ fallback (تصمیم ۴): جدول غایب/خالی، یا
+            # cfg_hash ناهم‌خوان → _mat برمی‌گردد و مسیرِ زندهٔ زیر اجرا می‌شود،
+            # یعنی یک DB قدیمی/خالی دقیقاً همان رفتارِ قبلی را دارد.
+            _mat = None
+            try:
+                _mat = fts_engine.fts_results_bulk(conn, cfg_hash=cfg_hash)
+            except Exception:
+                _mat = None
+            if _mat is not None:
+                print("[screener] fts_results hit — %d نماد مادی‌شده (یک SELECT)"
+                      % len(_mat))
+            else:
+                print("[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10")
+
             for r in rows:
                 key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
-                res = evaluate_v10(conn, key, mcap_official.get(key, 0.0),
-                                   total_mcap, r.get("sector_name", ""),
-                                   cfg=cfg, company_name=cname_of.get(key, ""),
-                                   m141_map=_m141m, liq_map=_liqm)
+                res = None
+                if _mat is not None:
+                    # مسیرِ مادی: همان خروجی که sync_fts_results با همین cfg_hash
+                    # نوشته. نمادی که در جدول نیست → None → fallback به زنده.
+                    res = _mat.get(key)
+                if res is None:
+                    res = evaluate_v10(conn, key, mcap_official.get(key, 0.0),
+                                       total_mcap, r.get("sector_name", ""),
+                                       cfg=cfg, company_name=cname_of.get(key, ""),
+                                       m141_map=_m141m, liq_map=_liqm)
                 p = res["passes"]
                 r["score"] = res["score"]
                 r["i1_pass"] = p["1_growth"]

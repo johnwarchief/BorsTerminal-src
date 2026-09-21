@@ -43,6 +43,21 @@ raw = open(BAT, "rb").read()
 first_line = raw.split(b"\n")[0] + b"\n"
 ck("apply_update.bat: CRLF line endings", b"\r\n" in first_line and b"\r\n" in raw)
 bat = raw.decode("utf-8", "replace")
+# a patch only overlays files; without this the uninstall entry would keep
+# advertising the version that was just replaced (found by the 1.0.11 e2e).
+ck("apply_update.bat: syncs DisplayVersion so Add/Remove Programs agrees",
+   "DisplayVersion" in bat and "reg add" in bat
+   and "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}_is1" in bat)
+ck("apply_update.bat: reads the target version from the shipped Version.txt",
+   "app_version=" in bat)
+# the worker is copied to %TEMP% *before* extraction, so it is always the
+# pre-update applier; without this re-entry a fix here would only land on the
+# user's NEXT update. found by the 1.0.11 delta (registry stayed 1.0.10).
+ck("apply_update.bat: re-enters the freshly extracted copy so it can update itself",
+   "phase3" in bat and "WORKER2" in bat and "fc /b" in bat
+   and "goto finalize" in bat and "exit /b %RC2%" in bat)
+ck("apply_update.bat: finalize steps are reachable without the self-update chain",
+   ":finalize" in bat and ":noreg" in bat and ":regok" in bat)
 for token in ["taskkill /IM", "taskkill /F /IM", "BorsTerminal_Ultimate.exe",
               "tar -xf", "Expand-Archive", "phase2", "Version.txt",
               "BORS_UPDATE_NORELAUNCH", "_internal"]:
@@ -59,6 +74,45 @@ ck("UPDATE.md documents the pipeline",
                                      errors="replace").read())
 runner = io.open("dev/run_all_tests.py", encoding="utf-8", errors="replace").read()
 ck("run_all_tests.py registers patch guard", "patch_check_v10.py" in runner)
+
+# --- v1.0.10: قراردادهای بهروزرسانیِ دلتا ---------------------------------
+# این قراردادها کلِ زنجیرهٔ امنیتِ پچ را قفل میکنند: پچ باید امضا شود،
+# مانیفست باید from/to داشته باشد که آپدیتِر بر اساسش انتخاب میکند، و
+# اعمالکننده باید خودش در کنارِ نصب قرار گیرد تا آپدیتِر بتواند آن را spawn کند.
+upd = io.open("api/update.py", encoding="utf-8", errors="replace").read()
+for token in ["_select_patch", "_install_dir_writable", "_spawn_patch_apply",
+              "is_patch", '"patches"', '"from"', '"to"', "UPDATE_PUBKEY"]:
+    ck("api/update.py: delta path uses %s" % token, token in upd)
+ck("api/update.py: patch selection requires from==APP_VERSION",
+   bool(re.search(r'p\.get\(\s*"from"\s*\)\s*or\s*""\)\s*!=\s*APP_VERSION', upd)))
+ck("api/update.py: patch selection requires to==manifest version",
+   bool(re.search(r'p\.get\(\s*"to"\s*\)\s*or\s*""\)\s*!=\s*target', upd)))
+ck("api/update.py: patch needs url + signature",
+   bool(re.search(r'p\.get\(\s*"url"\s*\)\s*and\s*p\.get\(\s*"signature"\s*\)', upd)))
+ck("api/update.py: falls back to full installer",
+   "در حال نصبِ کامل (fallback)" in upd)
+ck("api/update.py: offline path accepts .zip patches",
+   bool(re.search(r'\.zip', upd)) and "is_patch" in upd)
+
+pub = io.open("scripts/publish_github_release.py", encoding="utf-8",
+              errors="replace").read()
+for token in ["patches", "PATCH_FROM", "PATCH_ZIP", "PATCH_SIG", '"size"']:
+    ck("publish_github_release.py: manifest has %s" % token, token in pub)
+ck("publish_github_release.py: patch upload is optional",
+   bool(re.search(r"os\.path\.isfile\(PATCH_ZIP\)\s+and\s+os\.path\.isfile\(PATCH_SIG\)", pub)))
+
+iss = io.open("installer/bors_setup.iss", encoding="utf-8",
+              errors="replace").read()
+ck("installer ships apply_update.bat (updater needs it on disk)",
+   "apply_update.bat" in iss and "DestDir: \"{app}\"" in iss)
+ck("installer has maintenance/repair mode",
+   "MaintenancePage" in iss and "RunFullUninstall" in iss)
+ck("make_patch.py signs the patch",
+   "sign_patch" in mp and "sign_setup.py" in mp)
+ck("make_patch.py stamps patch_from into Version.txt",
+   "patch_from" in mp)
+ck("make_patch.py rejects from==to (no-op patch)",
+   bool(re.search(r"from\s*==\s*to|from_version\s*==\s*to", mp)))
 
 if os.path.exists(ZIP):
     with zipfile.ZipFile(ZIP) as zf:

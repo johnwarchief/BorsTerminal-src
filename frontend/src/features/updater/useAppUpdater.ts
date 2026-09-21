@@ -37,6 +37,10 @@ interface CheckResponse {
   signature?: string;
   updater?: string;
   message?: string;
+  /** v1.0.10: بستهٔ پیشنهادی، پچِ دلتاست (حجمِ بسیار کمتر) یا نصبِ کامل */
+  delta?: boolean;
+  /** حجمِ بایتِ بستهٔ انتخاب‌شده (پچ یا نصب‌کننده) */
+  size?: number;
 }
 
 interface ProgressResponse {
@@ -109,6 +113,9 @@ export function useAppUpdater() {
   const [totalBytes, setTotalBytes] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [manualFile, setManualFile] = useState<File | null>(null);
+  // v1.0.10: این به‌روزرسانی پچِ دلتاست (فقط تغییرات) یا نصبِ کامل؟
+  const [isDelta, setIsDelta] = useState<boolean>(false);
+  const [packageSize, setPackageSize] = useState<number>(0);
 
   // نگهداشت ارجاع شیء آپدیت توری برای پروسه دانلود و نصب
   const activeUpdateRef = useRef<Update | null>(null);
@@ -188,6 +195,8 @@ export function useAppUpdater() {
         setNewVersion(data.latest_version || null);
         setReleaseNotes(data.notes || 'نسخهٔ جدید شامل بهبودهای امنیتی و عملکردی است.');
         setReleaseDate(data.date || new Date().toISOString());
+        setIsDelta(Boolean(data.delta));
+        setPackageSize(Number(data.size || 0));
         setStatus('available');
         return true;
       }
@@ -422,6 +431,8 @@ export function useAppUpdater() {
     downloadProgress,
     downloadedBytes,
     totalBytes,
+    isDelta,
+    packageSize,
     errorMessage,
     manualFile,
     isTauri: isTauriEnvironment(),

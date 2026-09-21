@@ -18,6 +18,8 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
     downloadProgress,
     downloadedBytes,
     totalBytes,
+    isDelta,
+    packageSize,
     errorMessage,
     isTauri,
     checkForUpdates,
@@ -154,6 +156,23 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
                     v{newVersion}
                   </span>
                   <span className="text-xs font-bold text-text-primary">نسخه جدید منتشر شده است!</span>
+                  {isDelta && (
+                    <span
+                      title="فقط تغییراتِ این نسخه دانلود می‌شود، نه کلِ نصب‌کننده"
+                      className="inline-flex items-center gap-1 rounded-md border border-accent-green/50 bg-accent-green/15 px-2 py-0.5 text-2xs font-black text-accent-green"
+                    >
+                      <span>Δ</span>
+                      <span>به‌روزرسانیِ سبک</span>
+                      {packageSize > 0 && (
+                        <span className="font-mono opacity-80">· {fmtBytes(packageSize)}</span>
+                      )}
+                    </span>
+                  )}
+                  {!isDelta && packageSize > 0 && (
+                    <span className="text-2xs font-mono text-text-muted">
+                      حجم: {fmtBytes(packageSize)}
+                    </span>
+                  )}
                 </div>
                 {releaseDate && (
                   <span className="text-2xs text-text-muted">

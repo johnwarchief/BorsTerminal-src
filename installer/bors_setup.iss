@@ -1,5 +1,5 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.9"
+#define AppVersion "1.0.11"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
@@ -57,6 +57,10 @@ Name: "startmenuicon"; Description: "ساخت آیکون در منوی استا�
 [Files]
 Source: "..\dist\BorsTerminal_Ultimate\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\market.db.lzma"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+; v1.0.10: اعمال‌کنندهٔ پچ دلتا. باید قبل از رسیدنِ هر پچ روی دیسک باشد تا
+; آپدیتِرِ درون‌برنامه‌ای بتواند آن را spawn کند. این فایل خودش را در %TEMP%
+; کپی می‌کند تا بتواند رویِ خودش را بازنویسی کند (phase2).
+Source: "..\scripts\apply_update.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: startmenuicon

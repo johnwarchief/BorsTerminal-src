@@ -27,8 +27,11 @@ static/calendar/cache.json — بدون نیاز به احراز هویت.
   (2→4→8→16→32→64، سقف ۹۰s) با احترام به هدر Retry-After.
 
 هندلینگ بلاک:
-  با --adb-rotate بعد از دو بک‌آف پیاپی، حالت پرواز adb روشن/خاموش می‌شود
-  (enable → ۲s → disable → ۸s) تا IP سیم‌کارت عوض شود و چرخهٔ backoff ریست گردد.
+  با --adb-rotate بعد از دو بک‌آف پیاپی، حالت پرواز adb روشن/خاموش می‌شود تا IP
+  سیم‌کارت عوض شود و چرخهٔ backoff ریست گردد. چرخش روی «یک تابع مرجع» انجام
+  می‌شود: codal_fetcher.rotate_ip_via_adb (enable → ۸۰s → disable → ۲۰s + تأیید
+  واقعی تغییر IP + گاردهایش). توگل کوتاه (<۶۰s) PDP context را تخریب نمی‌کند و
+  IP را پین‌شده نگه می‌دارد (اندازه‌گیری MCI) — برای جزئیات见 adb_rotate_ip.
 
 خروجی: همان فرمت cache.json قبلی — فرانت تقویم فقط classify() غنی‌تر شده است.
 
@@ -43,7 +46,6 @@ import json
 import random
 import re
 import sqlite3
-import subprocess
 import sys
 import time
 from datetime import datetime
@@ -61,6 +63,14 @@ for _s in (sys.stdout, sys.stderr):
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "static" / "calendar" / "cache.json"
+
+# v9.3 — چرخش IP روی «یک تابع مرجع» (codal_fetcher.rotate_ip_via_adb) متمرکز شد.
+# کپیِ محلیِ قبلی با توگلِ کوتاه (۲s پرواز + ۸s بازیابی) IP را **پین‌شده** نگه
+# می‌داشت: تخریب کاملِ PDP context روی MCI حداقل ~۸۰s می‌خواهد، پس چرخش بی‌اثتر
+# می‌شد، backoff ریست نمی‌گشت و اسکریپت روی بن می‌ماند. حالا فقط واگذاری می‌کنیم.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+import codal_fetcher as _cf  # noqa: E402  (rotate_ip_via_adb — منبع یگانه حقیقت)
 BASE = "https://search.codal.ir/api/search/v2/q"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
@@ -242,24 +252,25 @@ def load_industries(db_path=None):
 # «فراخوانی یک bool» → TypeError: 'bool' object is not callable.
 # یعنی سوییچ --adb-rotate در عمل هرگز کار نمی‌کرد و روی اولین 429 می‌شد
 # اسکریپت را می‌ترکاند. نام تابع به adb_rotate_ip تغییر کرد تا تداخل نباشد.
-def adb_rotate_ip(enable_wait=2.0, recover_wait=8.0):
-    """چرخش IP سیم‌کارت: airplane-mode enable → مکث → disable → مکث دریافت IP.
+#
+# v9.3 — بدنهٔ محلی حذف شد و چرخش کامل به codal_fetcher.rotate_ip_via_adb
+# واگذار گردید (دستور کار: «فقط ADB — همان rotate_ip_via_adb موجود (۸۰s+۲۰s)
+# همه‌جا استفاده شود»). کپیِ دومِ منطقِ چرخش، یعنی دو منبع حقیقت که با هم
+# همگام نمی‌مانند — و نسخهٔ اینجا از قبل هم باگِ توگلِ کوتاه را داشت.
+def adb_rotate_ip():
+    """چرخش IP سیم‌کارت — واگذارده به codal_fetcher.rotate_ip_via_adb.
 
-    enable_wait/recover_wait طبق دستور کار v9.2: ۲ ثانیه حالت پرواز و
-    ۸ ثانیه وقفه برای گرفتن IP جدید. بازگشتی: True = توگل موفق.
+    تابع مرجع این‌ها را به عاریت می‌گیرد (چیزی که نسخهٔ محلی نداشت):
+      • توگل کامل: airplane enable → ۸۰s → disable → ۲۰s (تخریب PDP؛ توگل
+        کوتاه‌تر از ۶۰s IP را پین‌شده نگه می‌دارد — اندازه‌گیری MCI)
+      • تأیید واقعی تغییر IP (api.ipify.org) — نه فقط returncode adb
+      • خاموش/روشن موقتِ Wi-Fi ویندوز (باگ ۰۹-۰۵: ترافیک از مودم می‌رففت)
+      • قفل غیرهم‌بلوک + _ADB_MIN_GAP (چرخش تکراری زدن نمی‌شود)
+      • Retry+Re-connect دستگاه روی offline/unauthorized + بازگردانی
+        تضمینی Wi-Fi در finally
+    بازگشتی: True = IP تازه (یا چرخشِ همین‌ان انجام‌شده)، False = شکست.
     """
-    try:
-        subprocess.run(["adb", "shell", "cmd", "connectivity", "airplane-mode", "enable"],
-                       check=True, capture_output=True, timeout=15)
-        time.sleep(enable_wait)
-        subprocess.run(["adb", "shell", "cmd", "connectivity", "airplane-mode", "disable"],
-                       check=True, capture_output=True, timeout=15)
-        print("[adb] airplane toggled — انتظار IP جدید (%d ثانیه)" % int(recover_wait))
-        time.sleep(recover_wait)
-        return True
-    except Exception as e:
-        print(f"[adb] خطا: {e}")
-        return False
+    return bool(_cf.rotate_ip_via_adb())
 
 
 # ---------------------------------------------------------------------- #
@@ -566,7 +577,9 @@ def main():
     ap.add_argument("--map-db", default=None,
                     help="مسیر دیتابیس برای نگاشت نماد→صنعت (پیش‌فرض: market.db کنار پروژه)")
     ap.add_argument("--adb-rotate", action="store_true",
-                    help="روی 429/بلاک WAF حالت پرواز adb → IP جدید (۲s پرواز + ۸s بازیابی)")
+                    help="روی 429/بلاک WAF حالت پرواز adb → IP جدید "
+                         "(airplane enable → 80s → disable → 20s؛ "
+                         "codal_fetcher.rotate_ip_via_adb)")
     ap.add_argument("--adb-every", type=int, default=0,
                     help="چرخش IP پیش‌دستانه هر N درخواست (۰ = فقط هنگام شکست؛ پیش‌فرض ۰)")
     ap.add_argument("--cats", default=None,
@@ -592,7 +605,8 @@ def main():
         cats = {c.strip() for c in args.cats.split(",") if c.strip()}
         print(f"[plan] دسته‌ها: {sorted(cats)}")
     if args.adb_rotate:
-        print("[plan] ADB IP-rotate روشن — airplane enable(2s) → disable → 8s بازیابی")
+        print("[plan] ADB IP-rotate روشن — codal_fetcher.rotate_ip_via_adb "
+              "(airplane enable → 80s → disable → 20s + تأیید IP)")
 
     sess = requests.Session()
     sess.headers.update({"User-Agent": UA, "accept": "application/json"})

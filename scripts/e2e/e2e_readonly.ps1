@@ -10,7 +10,8 @@
 #      read-only install dir, with no "Permission denied" / "unable to open
 #      database file" in the app log.
 # Writes a machine-readable result to %TEMP%\cline\e2e_result.json.
-param([string]$BuildVersion = '1.0.9')
+param([string]$BuildVersion = '1.0.9',
+      [string]$Manifest = '')
 
 $ErrorActionPreference = 'Continue'
 $REPO = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
@@ -69,6 +70,9 @@ if (Test-Path $simCache) { Remove-Item $simCache -Force }
 
 # ---- launch the app from the read-only dir ---------------------------------
 $env:BORS_PORT = "$PORT"
+# when verifying a build that is not the live release yet, point the updater
+# at a local manifest so the "current == latest" check can pass.
+if ($Manifest -ne '') { $env:BORS_UPDATE_MANIFEST = $Manifest }
 if (Test-Path $outLog) { Remove-Item $outLog -Force }
 if (Test-Path $errLog) { Remove-Item $errLog -Force }
 $exeSim = Join-Path $SIM 'BorsTerminal_Ultimate.exe'

@@ -20,30 +20,41 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخهٔ v1.0.9
+RELEASE_BODY = """## تغییرات نسخهٔ v1.0.10
 
-### 🐛 رفعِ باگ (بحرانی)
-- **دیتابیسِ ناقص در v1.0.7/8:** `market.db.lzma`یِ ارسالی در آن دو نسخه پس از استخراج فقط جداولِ پایه را داشت و `financial_statements` غایب بود؛ نتیجه خطای ۵۰۰ در اسکرینر («no such table: financial_statements»). دو ریشه اصلاح شد:
-  1. `release.ps1` هر `market.db`ی را بی‌تفتش فشرده می‌کرد — حالا قبل از فشرده‌سازی منبع را اعتبارسنجی می‌کند (جداولِ موردنیاز + تعدادِ ردیف)، از baselineیِ فعلی بکاپ می‌گیرد و round-tripِ lzma را تأیید می‌کند.
-  2. `ensure_market_db()` برای پذیرشِ یک دیتابیسِ موجود روی دیسک، اکنون `financial_statements` را هم الزامی می‌کند؛ دیتابیسهای ناقص کنار گذاشته و دوباره از `market.db.lzma` استخراج می‌شوند. این یعنی **ارتقا از روی v1.0.7/8 هم دیتای ناقص را اصلاح می‌کند** (قبلاً فایلِ قدیمی محفوظ می‌ماند و باگ سر جایش می‌ماند).
-- **دیتابیسِ این نسخه:** یکپارچگیِ `market.db.lzma` تأیید شده (حدود ۱۰۳ مگابایت پس از استخراج: instruments=۵۱۲۹، daily_prices=۶۰۶۳۷، financial_statements=۸۰۰۹).
+### ⚡ به‌روزرسانیِ دلتا (سبک)
+- آپدیتِرِ درون‌برنامه‌ای دیگر **کلِ نصب‌کنندهٔ ~۹۲ مگابایتی را دانلود نمی‌کند**.
+  وقتی مانیفست برای نسخهٔ شما یک پچِ امضاشده داشته باشد، فقط همان تغییرات
+  دانلود و درجا اعمال می‌شود (frontend + backend + دیتابیس).
+- انتخابِ پچ سخت‌گیرانه است: `from` باید برابرِ نسخهٔ فعلیِ شما و `to` برابرِ
+  نسخهٔ هدف باشد؛ در هر عدمِ تطابق، مسیرِ نصبِ کاملِ Inno بدونِ دخالتِ کاربر
+  فعال می‌شود. پچ‌ها هم با همان کلیدِ minisign امضا می‌شوند.
 
-### ⚙️ آپدیتِ خودکار
-- رمزِ نصب‌کننده داخلِ باندل (در `_internal`) قرار گرفت تا `/VERYSILENT` آپدیتِر بدونِ پرسش کار کند؛ `api.update` و `bors_minisign` به hiddenimports اضافه شدند.
-- مسیرِ امضای minisign به `scripts/sign_setup.py` منتقل و به `release.ps1` متصل شد: اول `tauri signer sign` با timeoutِ ۱۲۰ ثانیه، سپس fallbackِ minisign خالصِ پایتون، و در پایان تأییدِ امضا مقابلِ `updater.key.pub` — بدونِ امضای معتبر بیلد متوقف می‌شود.
+### 🛠 تعمیر و حذفِ کامل
+- نصب‌کننده حالا حالتِ نگهداری دارد: **تعمیر**، **تعمیر + بازنشانیِ
+  دیتابیس**، **حذفِ کامل و نصبِ دوباره**، و **حذفِ فقط**. حذفِ کامل، فایلها و
+  پوشه‌های باقی‌مانده از نسخهٔ قبلی را پاک می‌کند تا نتوانند نسخهٔ جدید را
+  خراب کنند. آپدیتِ سایلنت مثلِ قبل دست‌نخورده باقی می‌ماند.
 
 ### 🖥 موارد دیگر
-- افزایش نسخهٔ برنامه و مانیفست آپدیتِ درون‌برنامه‌ای به 1.0.9.
+- افزایش نسخهٔ برنامه و مانیفست آپدیتِ درون‌برنامه‌ای به 1.0.10.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.9")
+TAG = os.environ.get("RELEASE_TAG", "v1.0.11")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
+
+# v1.0.10 -- delta update. PATCH_FROM (default: the previously released
+# version) is the only version this patch is valid for; the updater refuses to
+# apply it on anything else and falls back to the full installer.
+PATCH_FROM = os.environ.get("PATCH_FROM", "1.0.9")
+PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM}_to_{TAG.lstrip('v')}.zip")
+PATCH_SIG = PATCH_ZIP + ".sig"
 
 def get_github_token():
     # Feed the credential request via a pipe; an interactive helper with no
@@ -96,6 +107,26 @@ def build_latest_json():
             }
         },
     }
+    # v1.0.10: پچِ دلتای اختیاری. فقط وقتی به مانیفست اضافه می‌شود که هم zip و
+    # هم .sig روی دیسک موجود باشند؛ آپدیتِر با غیابِ آرایه شفافاً به نصبِ کامل
+    # برمی‌گردد، پس ریلیزِ بدونِ پچ همچنان درست کار می‌کند.
+    if os.path.isfile(PATCH_ZIP) and os.path.isfile(PATCH_SIG):
+        with open(PATCH_SIG, "r", encoding="utf-8", errors="replace") as f:
+            patch_signature = f.read().strip()
+        patch_name = os.path.basename(PATCH_ZIP)
+        manifest["patches"] = [
+            {
+                "from": PATCH_FROM,
+                "to": version,
+                "signature": patch_signature,
+                "url": f"https://github.com/{REPO}/releases/download/{TAG}/{patch_name}",
+                "size": os.path.getsize(PATCH_ZIP),
+            }
+        ]
+        print(f"[+] پچِ دلتا به مانیفست اضافه شد: {PATCH_FROM} -> {version}")
+        print(f"    url -> {manifest['patches'][0]['url']}")
+    else:
+        print(f"[*] پچِ دلتا یافت نشد ({PATCH_ZIP})؛ مانیفست فقط نصبِ کامل را معرفی می‌کند.")
     out_path = os.path.join(ROOT, "latest.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
@@ -167,10 +198,16 @@ def main():
     upload_url_base = upload_url_template.split("{")[0]
     assets = target_release.get("assets", [])
     existing_names = {a.get("name") for a in assets}
+    # v1.0.10: نامِ پچ هم در لیستِ پاکسازی است تا جایگزینیِ پچ روی یک ریلیزِ
+    # موجود (GitHub روی اسمِ تکراری ۴۲۲ می‌دهد) بدونِ مانع بماند.
+    stale_names = {os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"}
+    if os.path.isfile(PATCH_ZIP):
+        stale_names.add(os.path.basename(PATCH_ZIP))
+        stale_names.add(os.path.basename(PATCH_SIG))
     for a in assets:
         # latest.json is regenerated per-publish and embeds the current .sig,
         # so a stale copy must be deleted too (GitHub 422s on duplicate names).
-        if a.get("name") in (os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"):
+        if a.get("name") in stale_names:
             print(f"[*] در حال حذف فایل قدیمی {a.get('name')} (ID {a['id']}) ...")
             del_req = urllib.request.Request(a["url"], headers=headers, method="DELETE")
             try:
@@ -223,6 +260,18 @@ def main():
             print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
             sys.exit(1)
 
+    # v1.0.10: پچِ دلتا + امضایش. اختیاری است — اگر ساخته نشده، ریلیز فقط
+    # نصبِ کامل را معرفی می‌کند و آپدیتِر شفافاً همان مسیر را می‌رود.
+    patch_uploaded = False
+    if os.path.isfile(PATCH_ZIP) and os.path.isfile(PATCH_SIG):
+        for local_path in (PATCH_ZIP, PATCH_SIG):
+            if not upload_asset(local_path):
+                print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
+                sys.exit(1)
+        patch_uploaded = True
+    else:
+        print(f"[*] پچِ دلتا موجود نیست ({PATCH_ZIP})؛ بدونِ پچ ادامه می‌دهیم.")
+
     # 5) build + upload latest.json (Tauri updater manifest)
     latest_path = build_latest_json()
     if not upload_asset(latest_path):
@@ -233,7 +282,11 @@ def main():
     except OSError:
         pass
 
-    print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + latest.json).")
+    if patch_uploaded:
+        print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + "
+              f"{os.path.basename(PATCH_ZIP)} + .sig + latest.json).")
+    else:
+        print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + latest.json).")
 
 if __name__ == "__main__":
     main()

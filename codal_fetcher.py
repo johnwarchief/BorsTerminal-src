@@ -84,6 +84,9 @@ REJECTED_SECTORS = (
 _LAST_429 = False
 _CONSEC_429 = 0          # consecutive final-429 symbols (WAF gate)
 POLITE = False           # پروفایل بدون-IP-روتاریشن: بین هر درخواست مکث امن (میانگین ~1.7s)
+# --no-tether از CLI ست میشود؛ پیش‌فرضِ ماژول لازم است تا make_session برای
+# فراخوانِ کتابخانه‌ای (api/, dev/, probeها) NameError ندهد.
+_NO_TETHER = False
 
 # الگوی burst-rest (اندازهگیری 09-01): WAF کدال ویندوزی است نه نرخ لحظهای
 # (429 در ~35-50 درخواست در تستهای امروز؛ rest 180s بعد از 50 هم هنوز 429 آمد).
@@ -297,6 +300,20 @@ QUERY = {
 # Arabic/Farsi normalization + remove ZWNJ for reliable label matching
 _NORM = str.maketrans({"ي": "ی", "ك": "ک", "\u200c": "", "\u200f": "", "\u064a": "ی"})
 
+# Persian/Arabic digits -> ASCII. کدال از ~۱۳۹۸ به بعد برای PublishDateTime /
+# SentDateTime ارقامِ فارسی می‌فرستد؛ بدونِ این نرمال‌سازی، ستونِ publish_date
+# مخلوطِ فارسی/لاتین می‌شود و ORDER BY / MAX روی رشته‌ها می‌شکند (۸۰۰۷ ردیفِ
+# FS + ۲۰۶۱۱ ردیفِ notice در market.db همین الان آسیب‌دیده‌اند).
+_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def _norm_date(s):
+    """ارقامِ فارسی/عربیِ یک تاریخِ کدال را به لاتین تبدیل میکند.
+
+    روی هر چیزی که رشته نیست هم امن است (None → ''). فقط ارقام را عوض
+    میکند تا ساختارِ 'YYYY/MM/DD HH:MM:SS' دست‌نخورده بماند."""
+    return str(s or "").strip().translate(_FA_DIGITS)
+
 # Row-label patterns (after normalization: spaces + ZWNJ stripped, ي/ك unified)
 PATTERNS = {
     "revenue": [r"^جمعدرآمدهایعملیاتی", r"^درآمدهایعملیاتی$", r"^درآمدعملیاتی",
@@ -324,8 +341,56 @@ FS_KEYS = ["revenue", "gross_profit", "operating_profit", "net_profit",
            "total_assets", "total_liabilities", "total_equity",
            "capital", "retained_earnings", "basic_eps"]
 
-FS_UPSERT = ("INSERT OR REPLACE INTO financial_statements VALUES ("
-             + ",".join("?" * (8 + len(FS_KEYS) + 3)) + ")")
+# ستون‌هایِ ترتیبِ ردیف (۸ سرستون + FS_KEYS + unit/url/fetched_at
+# + ۴ ستونِ مشتق).
+# **صریح در نام ستون**: INSERT موقعیتی روی جدولی که ALTER TABLE ADD COLUMN
+# دیده (۴ ستونِ مشتقِ FTS v2.2 در انتهای آن می‌نشینند) می‌شکند —
+# «table has 25 columns but 21 values were supplied». با لیستِ ستون،
+# SQLite مقادیر را به ستونِ درست می‌چسباند و ستون‌های جدید DEFAULT می‌گیرند.
+#
+# Data-Lifecycle گام ۳۴ — اتوماسیونِ ستون‌های مشتق:
+# این ۴ ستون قبلاً در INSERT نبودند، پس هر ردیفِ تازه با is_consolidated=0
+# و unit_norm=NULL می‌نشست و فقط یک اسکریپتِ بک‌فیلِ جداگانه (که روی یک کپیِ
+# تازه‌استخراج‌شده فراموش شده بود) آن‌ها را پر می‌کرد. حالا موقعِ درجِ خودشان
+# محاسبه می‌شوند تا هیچ ردیف جدیدی با مقدارِ خام/غلط ذخیره نشود.
+_FS_HEAD = ["tracing_no", "symbol", "company_name", "title", "report_kind",
+            "period_months", "period_end", "publish_date"]
+_FS_TAIL = ["unit", "url", "fetched_at"]
+_FS_DERIVED = ["is_audited", "is_consolidated", "fiscal_year", "unit_norm"]
+FS_COLS = _FS_HEAD + FS_KEYS + _FS_TAIL + _FS_DERIVED
+FS_UPSERT = ("INSERT OR REPLACE INTO financial_statements ("
+             + ",".join(FS_COLS) + ") VALUES ("
+             + ",".join("?" * len(FS_COLS)) + ")")
+
+
+def fs_derived(title: str, period_end: str, unit):
+    """۴ ستونِ مشتقِ یک صورتِ مالی — همان منطقی که db_backfill_derived می‌زد،
+    اما حالا موقعِ درج. برمی‌گرداند: (is_audited, is_consolidated,
+    fiscal_year, unit_norm).
+
+    قراردادِ یکسان با backfill: NULL یعنی «نامعلوم»، نه ۰ و نه 'unknown'.
+    طبقه‌بندیِ عنوان/واحد دقیقاً از همان توابعِ یگانه می‌آید
+    (_is_audited/_is_consolidated/_classify_unit) تا مسیرِ درج و مسیرِ
+    بک‌فیل هرگز از هم جدا نشوند.
+    """
+    import fts_engine as _fe
+    t = title or ""
+    audited = 1 if _fe._is_audited(t) else 0
+    consol = 1 if _fe._is_consolidated(t) else 0
+    year = None
+    pe = (period_end or "").strip()
+    if len(pe) >= 4 and pe[:4].isdigit():
+        year = pe[:4]
+    return audited, consol, year, _classify_unit(unit)
+
+
+def _fs_has_derived(conn) -> bool:
+    """آیا جدولِ financial_statements ستون‌های مشتقِ v2.2 را دارد؟"""
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(financial_statements)")}
+    except Exception:
+        return False
+    return all(c in cols for c in _FS_DERIVED)
 
 
 def nfmt(n):
@@ -366,9 +431,16 @@ def make_session():
     s = requests.Session()
     # Strict SSL interception in the region blocks plain (VPN-less) Codal access:
     # disable certificate verification and silence InsecureRequestWarning so the
-    # console stays clean. Browser-like stealth headers (incl. a randomly rotated
-    # User-Agent) are attached via the module-level HEADERS on every request.
+    # console stays clean.
     s.verify = False
+    # Browser UA as a SESSION DEFAULT (not just per-request): Codal's WAF silently
+    # DROPs the connection after TLS for the default "python-requests/x.y" UA —
+    # the socket connects, then the read times out with no status code at all.
+    # Measured A/B on the same IP: python-requests UA → read timeout; browser UA
+    # → 200 OK + 18 KB JSON. Callers that pass headers=_headers() still override
+    # this per request (rotation), but this default means a call that forgets to
+    # pass headers can never be silently black-holed again.
+    s.headers.update(_headers())
     try:
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -507,7 +579,79 @@ def create_schema(conn):
 # Migrate existing DBs to add new financial columns (safe if already present)
 _FS_NEW_COLS = ["total_assets", "total_liabilities", "total_equity",
                 "capital", "retained_earnings", "basic_eps"]
+
+# FTS v2.2 — ستون‌های مشتقِ صورتِ مالی (به جای پارس کردنِ عنوان در هر کوئری).
+# is_audited/is_consolidated: ۰/۱ (NOT NULL DEFAULT 0 تا کوئری‌های قدیمی سالم بمانند).
+# fiscal_year: '۱۴۰۴' از period_end؛ unit_norm: 'mrl'|'btl'|'unknown'.
+_FS_DERIVED_COLS = [("is_audited", "INTEGER NOT NULL DEFAULT 0"),
+                    ("is_consolidated", "INTEGER NOT NULL DEFAULT 0"),
+                    ("fiscal_year", "TEXT"),
+                    ("unit_norm", "TEXT")]
+
+# FTS v2.2 — حجم فروش از گزارش فعالیت ماهانهٔ کدال (ستون «مقدار فروش»).
+# شرطِ رشد حجمِ تولیدیِ F-01 بدون این ستون‌ها هرگز ارزیابی نمی‌شود.
+_MS_VOLUME_COLS = [("monthly_volume", "REAL"), ("ytd_volume", "REAL"),
+                   ("volume_unit", "TEXT")]
+
+# FTS v2.2 — ستون‌های افزودنیِ جدولِ نتیجه (تسک ۱۹). جدولِ پایه در
+# _FTS_NEW_TABLES ساخته میشود؛ این ستون‌ها بعداً با ALTER اضافه میشوند تا
+# DB هایی که جدولِ نسخهٔ اول را دارند هم بدون بازنویسی ارتقا یابند.
+_FTS_RESULTS_NEW_COLS = [
+    ("cfg_hash", "TEXT"),
+    ("f05_pass", "INTEGER"),
+    ("excluded", "INTEGER"),
+    ("exclusion_reasons", "TEXT"),
+    ("i1a_pass", "INTEGER"), ("i1b_pass", "INTEGER"),
+    ("i4a_pass", "INTEGER"), ("i4b_pass", "INTEGER"),
+    ("rev_growth", "REAL"), ("gross_margin", "REAL"),
+    ("sales_to_mcap", "REAL"), ("profit_potential_pct", "REAL"),
+    ("annual_sales_bt", "REAL"), ("annualize_months", "INTEGER"),
+]
+
+# FTS v2.2 — جداولِ نتیجه و کمکی. همهٔ ADDITIVE: هیچ جدول/ستونِ موجود را
+# تغییر نمی‌دهند، دیتای ۱۰۹ مگابایتی کاربر دست‌نخورده می‌ماند.
+_FTS_NEW_TABLES = """
+CREATE TABLE IF NOT EXISTS symbol_sectors (
+    symbol        TEXT PRIMARY KEY,
+    sector_name   TEXT NOT NULL,
+    sector_code   TEXT,
+    pricing_mode  TEXT NOT NULL,
+    source        TEXT NOT NULL,
+    confidence    INTEGER NOT NULL DEFAULT 0,
+    updated_at    TEXT);
+CREATE INDEX IF NOT EXISTS ix_ss_symbol ON symbol_sectors(symbol);
+
+CREATE TABLE IF NOT EXISTS market_cap_snapshots (
+    symbol       TEXT,
+    date         TEXT,
+    market_cap   REAL NOT NULL,
+    close_price  REAL,
+    total_shares REAL,
+    PRIMARY KEY (symbol, date));
+CREATE INDEX IF NOT EXISTS ix_mcs_sym_date ON market_cap_snapshots(symbol, date DESC);
+
+CREATE TABLE IF NOT EXISTS fts_results (
+    symbol         TEXT PRIMARY KEY,
+    f01_growth_pct REAL, f01_pass INTEGER,
+    f02_eps_series TEXT, f02_pass INTEGER,
+    f03_margin_pct REAL, f03_pass INTEGER,
+    f04_ratio      REAL, f04_pass INTEGER,
+    f05_verdict    TEXT,
+    score          INTEGER NOT NULL,
+    verdict        TEXT NOT NULL,
+    computed_at    TEXT NOT NULL);
+"""
+
+
 def migrate_schema(conn):
+    """مهاجرتِ افزودنیِ اسکیما — کاملاً یدم‌پذیر (idempotent).
+
+    هیچ‌گاه جدول/ستونی را حذف یا بازنویسی نمی‌کند؛ فقط با ALTER TABLE ...
+    ADD COLUMN و CREATE TABLE IF NOT EXISTS ستون/جدولِ تازه می‌افزاید،
+    پس دیتای موجود محفوظ می‌ماند. اجرای مکرر آن بی‌خطر است (در هر استارتاپ
+    صدا زده می‌شود) چون پیش از هر ALTER با PRAGMA table_info وجود ستون را
+    بررسی می‌کند.
+    """
     # مقایسه سال قبل (جزوه ۱۴۰۵: ستون «مقایسه با دوره مشابه سال قبل»)
     mcols = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
     for c in ("monthly_revenue_prev", "ytd_revenue_prev"):
@@ -516,10 +660,16 @@ def migrate_schema(conn):
                 conn.execute(f"ALTER TABLE monthly_sales ADD COLUMN {c} REAL")
             except Exception:
                 pass
+    # توجه: روی یک DB جوان/جزئی (یا ابزارِ تستی) ممکن است financial_statements
+    # هنوز وجود نداشته باشد؛ PRAGMA table_info در آن حالت تهی برمی‌گرداند و
+    # ALTER مستقیم با «no such table» می‌کشد. همین‌طور که سایرین try/except دارند.
     cols = {r[1] for r in conn.execute("PRAGMA table_info(financial_statements)")}
     for c in _FS_NEW_COLS:
         if c not in cols:
-            conn.execute(f"ALTER TABLE financial_statements ADD COLUMN {c} REAL")
+            try:
+                conn.execute(f"ALTER TABLE financial_statements ADD COLUMN {c} REAL")
+            except Exception:
+                pass
     # لینکهای مستقیم PDF/اکسل روی اطلاعیهها (ارتقای امن DB های قدیمی)
     ncols = {r[1] for r in conn.execute("PRAGMA table_info(codal_notices)")}
     for c in ("pdf_url", "excel_url"):
@@ -528,7 +678,176 @@ def migrate_schema(conn):
                 conn.execute(f"ALTER TABLE codal_notices ADD COLUMN {c} TEXT")
             except Exception:
                 pass
+
+    # ── FTS v2.2: ستون‌های مشتقِ صورتِ مالی ──────────────────────────────
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(financial_statements)")}
+    for name, decl in _FS_DERIVED_COLS:
+        if name not in cols:
+            try:
+                conn.execute(f"ALTER TABLE financial_statements ADD COLUMN {name} {decl}")
+            except Exception:
+                pass
+
+    # ── FTS v2.2: حجم فروشِ ماهانه (شرطِ رشد حجمِ F-01) ───────────────────
+    mcols = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+    for name, decl in _MS_VOLUME_COLS:
+        if name not in mcols:
+            try:
+                conn.execute(f"ALTER TABLE monthly_sales ADD COLUMN {name} {decl}")
+            except Exception:
+                pass
+
+    # ── FTS v2.2: ایندکسِ مرکزیِ F-02/F-03 (نماد + پایان دوره + حسابرسی) ──
+    have_fs_ix = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='financial_statements'")}
+    if "ix_fs_sym_pe_aud" not in have_fs_ix:
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_fs_sym_pe_aud ON "
+                         "financial_statements(symbol, period_end DESC, is_audited, is_consolidated)")
+        except Exception:
+            pass
+
+    have_ms_ix = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='monthly_sales'")}
+    if "ix_ms_sym_ym" not in have_ms_ix:
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_ms_sym_ym ON "
+                         "monthly_sales(symbol, year DESC, month DESC)")
+        except Exception:
+            pass
+
+    # ── FTS v2.2: جداولِ نتیجه و کمکی (symbol_sectors / market_cap_snapshots
+    #    / fts_results) — همه IF NOT EXISTS ────────────────────────────────
+    conn.executescript(_FTS_NEW_TABLES)
     conn.commit()
+    # ستون‌های افزودنیِ fts_results (تسک ۱۹): جدولِ پایه را نسخهٔ اولِ مهاجرت
+    # ساخته؛ این ستون‌ها را دیرتر اضافه کردیم. ALTER با PRAGMA table_info
+    # گارد میشود تا روی DBِ تازه همانند DBِ قدیمی یدم‌پذیر بماند.
+    fcols = {r[1] for r in conn.execute("PRAGMA table_info(fts_results)")}
+    for _c, _t in _FTS_RESULTS_NEW_COLS:
+        if _c not in fcols:
+            try:
+                conn.execute("ALTER TABLE fts_results ADD COLUMN %s %s" % (_c, _t))
+            except Exception:
+                pass
+    conn.commit()
+
+
+# ── FTS v2.2: پر کردنِ ستون‌های مشتق (آفلاین، بدون شبکه) ─────────────────────
+# طبقِ تصمیم: حجمِ F-01 از ستون «مقدار فروش» گزارش ماهانه. اینجا فقط
+# ستون‌های مشتقِ صورتِ مالی + year/month ماهانه را پر می‌کنیم (حجم نیازمندِ
+# اسکنِ زنده است → در scrape_monthly_report).
+#
+# قراردادِ NULL: ستونِ مشتق NULL یعنی «نامعلوم»، نه «صفر». is_audited=0 یعنی
+    # «حسابرسی‌نشده» (یک verdict واقعی)؛ NULL یعنی عنوان نبود/غیرقابل‌طبقه‌بندی.
+# fts_engine در کوئری باید NULL را به پارسِ عنوان برگرداند، نه به‌جای ۰.
+def _classify_unit(unit):
+    """ستون unit کدال → 'mrl' | 'btl' | None.
+
+    دادهٔ واقعی market.db: ۹ نوشتارِ متفاوتِ عربی/فارسی/ZWNJ همگی «میلیون
+    ریال» می‌گویند (۳۲۸۶+۱۴۹۶+۱۰۵۱+۸۵۵+۱۰۴+۱۰۰+۶۳+۷ = ۶۹۶۲ ردیف) و ۱۰۴۷ ردیف
+    NULL. هیچ ردیفی «میلیارد تومان» نیست، ولی برای امنیتِ آینده هر دو را
+    می‌شناسیم. NULL → None (نامعلوم؛ موتور به عنوانِ unknown رفتار می‌کند).
+
+    از norm() خودِ همین ماژول استفاده می‌کند (یونیکدِ عربی/فارسی + حذفِ
+    فاصله)؛ norm_fa مالِ fts_engine است و اینجا import نمی‌کنیم.
+    """
+    if unit is None:
+        return None
+    t = norm(unit)                       # ي→ی ، ك→ک ، حذفِ فاصله/نیم‌فاصله
+    if "میلیارد" in t and "تومان" in t:
+        return "btl"
+    if "میلیون" in t and "ریال" in t:    # norm() «ريال» عربی را هم «ریال» می‌کند
+        return "mrl"
+    return None
+
+
+def backfill_derived(conn, verbose=True):
+    """پر کردنِ ستون‌های مشتقِ FTS v2.2 روی ردیف‌های موجود — کاملاً آفلاین.
+
+    یدم‌پذیر است: فقط ردیف‌هایی را به‌روز می‌کند که هنوز NULL هستند
+    (WHERE unit_norm IS NULL)، پس اجرای مکرر آن تغییری ایجاد نمی‌کند و
+    ردیف‌های تازه‌ fetch‌شده را دست‌نخورده می‌گذارد (آن‌ها در زمانِ insert
+    مقدار می‌گیرند).
+
+    منبعِ طبقه‌بندی fts_engine است (همان توابعی که در زمانِ کوئری استفاده
+    می‌شوند) تا منطقِ موازی و متناقض نسازیم. برمی‌گرداند: dict آمار.
+    """
+    import fts_engine as fe  # noqa: WPS433 — همان مسیرِ app.py (leaf-safe)
+
+    stats = {"fs_total": 0, "fs_filled": 0, "fs_unit_mrl": 0, "fs_unit_btl": 0,
+             "fs_unit_none": 0, "fs_year": 0, "ms_total": 0, "ms_ym_filled": 0}
+
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(financial_statements)")}
+    if "unit_norm" not in cols:
+        return stats  # هنوز مهاجرت نکرده — چیزی برای پر کردن نیست
+
+    # WHERE unit_norm IS NULL ردیف‌های «هنوز پرنشده» را پیدا می‌کند. توجه:
+    # ردیفی که unit آن NULL است به‌حق unit_norm=NULL می‌گیرد و برای همیشه
+    # match می‌ماند؛ پس UPDATE فقط وقتی اجرا می‌شود که مقدارِ جدید واقعاً
+    # متفاوت باشد (تفاوتِ واقعی، نه فقط match شدنِ WHERE).
+    rows = conn.execute(
+        "SELECT tracing_no, title, period_end, unit, is_audited, is_consolidated, "
+        "fiscal_year FROM financial_statements WHERE unit_norm IS NULL").fetchall()
+    stats["fs_total"] = len(rows)
+    upd, mrl = [], 0
+    for tn, title, period_end, unit, aud_old, con_old, yr_old in rows:
+        audited = 1 if fe._is_audited(title or "") else 0
+        consol = 1 if fe._is_consolidated(title or "") else 0
+        year = None
+        pe = str(period_end or "")
+        if len(pe) >= 4 and pe[:4].isdigit():
+            year = pe[:4]
+        un = _classify_unit(unit)
+        if un == "mrl":
+            mrl += 1
+        # فقط هنگامِ تغییرِ واقعی بنویس → اجرای دوم کاملاً no-op می‌شود.
+        if (audited, consol, year, un) != (aud_old, con_old, yr_old, None):
+            upd.append((audited, consol, year, un, tn))
+    if upd:
+        conn.executemany(
+            "UPDATE financial_statements SET is_audited=?, is_consolidated=?, "
+            "fiscal_year=?, unit_norm=? WHERE tracing_no=?", upd)
+        stats["fs_filled"] = len(upd)
+        stats["fs_unit_mrl"] = mrl
+        stats["fs_unit_btl"] = sum(1 for u in upd if u[3] == "btl")
+        stats["fs_unit_none"] = sum(1 for u in upd if u[3] is None)
+        stats["fs_year"] = sum(1 for u in upd if u[2] is not None)
+    else:
+        stats["fs_unit_mrl"] = mrl
+        stats["fs_unit_none"] = sum(1 for r in rows if _classify_unit(r[3]) is None)
+        stats["fs_year"] = sum(1 for r in rows if str(r[2] or "")[:4].isdigit())
+
+    # monthly_sales: year/month روی ردیف‌های قدیمی NULL است (ix_ms_sym_ym
+    # بدون آن‌ها بی‌فایده است). منبعِ اصلی period_end است ('1404/06/31')، ولی
+    # ۳۰ ردیفِ قدیمی period_end را NULL ذخیره کرده‌اند و تاریخ فقط در عنوانِ
+    # گزارش دیده می‌شود → fallback به _ym_from_title.
+    mcols = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+    if "year" in mcols:
+        mrows = conn.execute(
+            "SELECT tracing_no, period_end, title FROM monthly_sales "
+            "WHERE year IS NULL OR month IS NULL").fetchall()
+        stats["ms_total"] = len(mrows)
+        mupd = []
+        for tn, period_end, title in mrows:
+            y, mo = _parse_year_month(period_end)
+            if y is None:
+                y, mo = _ym_from_title(title)
+            if y is not None:
+                mupd.append((y, mo, tn))
+        if mupd:
+            conn.executemany(
+                "UPDATE monthly_sales SET year=?, month=? WHERE tracing_no=?", mupd)
+            stats["ms_ym_filled"] = len(mupd)
+
+    conn.commit()
+    if verbose:
+        print(f"[backfill] fs rows filled: {stats['fs_filled']}/{stats['fs_total']} "
+              f"(unit mrl={stats['fs_unit_mrl']} btl={stats['fs_unit_btl']} "
+              f"unknown={stats['fs_unit_none']}, fiscal_year={stats['fs_year']})")
+        print(f"[backfill] monthly_sales year/month filled: {stats['ms_ym_filled']}/"
+              f"{stats['ms_total']}")
+    return stats
 
 
 # Module-level progress context so fetch_page's 429 backoff can report progress.
@@ -703,7 +1022,7 @@ def fetch_notices(s, now, max_saved_tn=0, resume_from=0):
             rows.append((
                 t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
                 (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
-                (x.get("PublishDateTime") or "").strip(), (x.get("SentDateTime") or "").strip(),
+                _norm_date(x.get("PublishDateTime")), _norm_date(x.get("SentDateTime")),
                 "https://codal.ir" + (x.get("Url") or ""), now,
                 (x.get("PdfUrl") or ""), (x.get("ExcelUrl") or ""),
             ))
@@ -968,8 +1287,10 @@ def _positive_title(title):
 
 MS_UPSERT = """INSERT OR REPLACE INTO monthly_sales
     (tracing_no, symbol, title, period_end, year, month,
-     monthly_revenue, ytd_revenue, monthly_revenue_prev, ytd_revenue_prev, pdf_url, excel_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+     monthly_revenue, ytd_revenue, monthly_revenue_prev, ytd_revenue_prev,
+     monthly_volume, ytd_volume, volume_unit,
+     pdf_url, excel_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
 
 
 def _bank_fallback(grid, rows):
@@ -1094,6 +1415,18 @@ def scrape_monthly_report(s, url):
             _ms = sorted(mcols); _ys = sorted(ycols)
             mcol_prev = _ms[1] if len(_ms) > 1 else None
             ycol_prev = _ys[1] if len(_ys) > 1 else None
+            # --- حجمِ فروش (تعداد فروش) + واحدِ آن — تصمیمِ تصویب‌شدهٔ F-01:
+            # حجم از همین جدولِ «شرح محصول» و ستونِ «تعداد فروش» گرفته میشود.
+            # ستون‌های «تعداد فروش» دقیقاً موازیِ «مبلغ فروش» در همان گروه‌های
+            # زمانی می‌ایستند (تولید/فروش/نرخ/مبلغ در یک گروهِ ۴تایی).
+            vmcols = [ci for ci in sub if "تعدادفروش" in sub[ci]
+                      and "دورهیکماهه" in _group_of(ci)]
+            vycols = [ci for ci in sub if "تعدادفروش" in sub[ci]
+                      and "ازابتدایسالمالی" in _group_of(ci)
+                      and (not vmcols or ci > min(vmcols))]
+            vmcol = min(vmcols) if vmcols else None
+            vycol = min(vycols) if vycols else None
+            vunit_col = next((ci for ci in sub if sub[ci] == "واحد"), None)
             # Total row: prefer the exact «جمع»/«جمع کل», then any «جمع…»
             total_row = None
             for r2 in rows:
@@ -1113,11 +1446,47 @@ def scrape_monthly_report(s, url):
             y = num(grid[total_row].get(ycol)) if ycol is not None else None
             mp = num(grid[total_row].get(mcol_prev)) if mcol_prev is not None else None
             yp = num(grid[total_row].get(ycol_prev)) if ycol_prev is not None else None
+
+            def _vol_from(col):
+                """تعدادِ فروشِ ردیفِ «جمع»؛ اگر آن خالی است، جمعِ ردیف‌هایِ
+                جزئی. برخی گزارش‌ها تعدادِ فروش را فقط رویِ ردیف‌هایِ محصول
+                میدهند و ردیفِ جمع فقط مبلغ فروش دارد (و برعکس)."""
+                if col is None:
+                    return None
+                v = num(grid[total_row].get(col))
+                if v is not None:
+                    return v
+                tot = 0.0
+                for r2 in rows:
+                    if r2 == total_row:
+                        continue
+                    lab = norm(grid[r2].get(1))
+                    if not lab or lab.startswith(("جمع", "مجموع", "سرفصل")) \
+                            or lab.endswith(":"):
+                        continue
+                    d = num(grid[r2].get(col))
+                    if d is not None:
+                        tot += d
+                return tot if tot else None
+
+            # واحدِ حجم از اولین ردیفِ جزئی که واحدِ غیرخالی دارد (مثلاً «تن»)
+            vunit = None
+            if vunit_col is not None:
+                for r2 in rows:
+                    if r2 == total_row:
+                        continue
+                    u = norm(grid[r2].get(vunit_col))
+                    if u and u != "واحد":
+                        vunit = u
+                        break
             if m is None and y is None:
                 continue
             if mcol is not None or ycol is not None:
                 return {"monthly_revenue": m, "ytd_revenue": y,
-                        "monthly_revenue_prev": mp, "ytd_revenue_prev": yp}, period_end
+                        "monthly_revenue_prev": mp, "ytd_revenue_prev": yp,
+                        "monthly_volume": _vol_from(vmcol),
+                        "ytd_volume": _vol_from(vycol),
+                        "volume_unit": vunit}, period_end
             if best is None:
                 best = (m, y)
     if best:
@@ -1470,13 +1839,37 @@ def _trigger_backoff(seconds=60):
           + (" via ADB rotate" if rotated else ""), flush=True)
 
 
+_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
 def _parse_year_month(period_end):
-    """'1404/06/31' -> (1404, 6) or (None, None)."""
+    """'1404/06/31' -> (1404, 6) or (None, None).
+
+    ارقامِ فارسی/عربی را هم می‌پذیرد: برخی گزارش‌های ماهانهٔ قدیمی period_end
+    را با «۱۳۹۴/۰۹/۳۰» ذخیره کرده‌اند و int() خام روی آن شکست می‌خورد →
+    year/month NULL می‌ماند و ix_ms_sym_ym برایشان بی‌فایده می‌شود.
+    """
     try:
-        parts = str(period_end or "").split("/")
+        s = str(period_end or "").translate(_FA_DIGITS)
+        parts = s.split("/")
         return int(parts[0]), int(parts[1])
     except (ValueError, IndexError):
         return None, None
+
+
+# «گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۳۹۴/۰۹/۳۰» — برخی ردیف‌های قدیمی
+# period_end را NULL ذخیره کرده‌اند و تاریخ فقط در عنوان دیده می‌شود (گاهی با
+# دو فاصله قبل از تاریخ). بدون این fallback، year/month برایشان NULL می‌ماند و
+# ix_ms_sym_ym آن‌ها را پوشش نمی‌دهد.
+_YM_IN_TITLE = re.compile(r"(\d{4})\s*/\s*(\d{1,2})")
+
+
+def _ym_from_title(title):
+    """سال/ماه را از عنوانِ گزارش ماهانه استخراج می‌کند یا (None, None)."""
+    m = _YM_IN_TITLE.search(str(title or "").translate(_FA_DIGITS))
+    if not m:
+        return None, None
+    return int(m.group(1)), int(m.group(2))
 
 
 def _period_from_title(title):
@@ -1525,7 +1918,10 @@ def _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn):
                                vals.get("monthly_revenue"),
                                vals.get("ytd_revenue"),
                                vals.get("monthly_revenue_prev"),
-                               vals.get("ytd_revenue_prev"), n[9], n[10]))
+                               vals.get("ytd_revenue_prev"),
+                               vals.get("monthly_volume"),
+                               vals.get("ytd_volume"),
+                               vals.get("volume_unit"), n[9], n[10]))
             return None
         elif kind == "Financial Statements":
             pe_title = _period_from_title(n[3])
@@ -1546,7 +1942,8 @@ def _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn):
                 return ("fs", (n[0], n[1], n[2], n[3], kind, meta.get("period"),
                                meta.get("end"), n[5])
                         + tuple(vals.get(k) for k in FS_KEYS)
-                        + (unit, n[7], now))
+                        + (unit, n[7], now)
+                        + fs_derived(n[3], meta.get("end"), unit))
             return None
         return None
 
@@ -1560,9 +1957,7 @@ def _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn):
             conn.execute(MS_UPSERT, row)
             n_ms += 1
         else:
-            conn.execute(
-                "INSERT OR REPLACE INTO financial_statements VALUES ("
-                + ",".join("?" * (8 + len(FS_KEYS) + 3)) + ")", row)
+            conn.execute(FS_UPSERT, row)
             n_fs += 1
     conn.commit()
     return n_fs, n_ms
@@ -1636,8 +2031,8 @@ def update_symbol_incremental(sym, sess):
             new_rows.append((t, (x.get("Symbol") or "").strip(),
                              (x.get("CompanyName") or "").strip(), title,
                              (x.get("LetterCode") or "").strip(),
-                             (x.get("PublishDateTime") or "").strip(),
-                             (x.get("SentDateTime") or "").strip(),
+                             _norm_date(x.get("PublishDateTime")),
+                             _norm_date(x.get("SentDateTime")),
                              "https://codal.ir" + (x.get("Url") or ""),
                              datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                              pdf_raw, excel_raw))
@@ -1763,8 +2158,8 @@ def _process_symbol(sym, sess):
                     rows.append((t, sym, (x.get("CompanyName") or "").strip(),
                                  (x.get("Title") or "").strip(),
                                  (x.get("LetterCode") or "").strip(),
-                                 (x.get("PublishDateTime") or "").strip(),
-                                 (x.get("SentDateTime") or "").strip(),
+                                 _norm_date(x.get("PublishDateTime")),
+                                 _norm_date(x.get("SentDateTime")),
                                  "https://codal.ir" + (x.get("Url") or ""), now,
                                  pdf_raw, excel_raw))
     if not rows:
@@ -1945,8 +2340,8 @@ def feed_sync(mode="update", optimized=False):
                 new_rows.append((t, (x.get("Symbol") or "").strip(),
                                  (x.get("CompanyName") or "").strip(), title,
                                  (x.get("LetterCode") or "").strip(),
-                                 (x.get("PublishDateTime") or "").strip(),
-                                 (x.get("SentDateTime") or "").strip(),
+                                 _norm_date(x.get("PublishDateTime")),
+                                 _norm_date(x.get("SentDateTime")),
                                  "https://codal.ir" + (x.get("Url") or ""),
                                  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                  pdf_raw, excel_raw))
@@ -2124,8 +2519,8 @@ def backfill_missing_fs(limit=None):
                         excel_raw = "https://codal.ir/" + excel_raw
                     new_rows.append((t, sym, (x.get("CompanyName") or "").strip(), title,
                                      (x.get("LetterCode") or "").strip(),
-                                     (x.get("PublishDateTime") or "").strip(),
-                                     (x.get("SentDateTime") or "").strip(),
+                                     _norm_date(x.get("PublishDateTime")),
+                                     _norm_date(x.get("SentDateTime")),
                                      "https://codal.ir" + (x.get("Url") or ""),
                                      datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                      pdf_raw, excel_raw))
@@ -2349,7 +2744,8 @@ def fetch_symbol(symbol):
                 sym_rows.append((
                     t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
                     (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
-                    (x.get("PublishDateTime") or "").strip(), (x.get("SentDateTime") or "").strip(),
+                    _norm_date(x.get("PublishDateTime")),
+                    _norm_date(x.get("SentDateTime")),
                     "https://codal.ir" + (x.get("Url") or ""), now,
                     extra[t][0], extra[t][1],
                 ))
@@ -2411,6 +2807,8 @@ def fetch_symbol(symbol):
         ms.append((t, sym, title, period_end, year, month,
                    vals.get("monthly_revenue"), vals.get("ytd_revenue"),
                    vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"),
+                   vals.get("monthly_volume"), vals.get("ytd_volume"),
+                   vals.get("volume_unit"),
                    pdf, excel))
     if ms:
         conn.executemany(MS_UPSERT, ms)
@@ -2431,7 +2829,8 @@ def fetch_symbol(symbol):
         if vals.get("revenue") is not None:
             ok_fs += 1
         row = (t, sym, comp, title, kind_of(title), meta.get("period"),
-               meta.get("end"), pub) + tuple(vals.get(k) for k in FS_KEYS) + (unit, url, now)
+               meta.get("end"), pub) + tuple(vals.get(k) for k in FS_KEYS) \
+            + (unit, url, now) + fs_derived(title, meta.get("end"), unit)
         fs.append(row)
     if fs:
         conn.executemany(FS_UPSERT, fs)

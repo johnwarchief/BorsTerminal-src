@@ -2,8 +2,23 @@
 #   .\release.ps1 setup      → فقط نصب‌کننده (setup.exe)
 #   .\release.ps1 base       → فقط آرشیو بیس‌کد خام
 #   .\release.ps1 portable   → باندل قابل‌حمل (بدون نصب)
+#   .\release.ps1 patch      → پچِ دلتای امضاشده (فقط تغییرات، بدونِ نصبِ کامل)
 #   .\release.ps1 all        → هر سه
-param([ValidateSet('setup','base','portable','all')][string]$Mode = 'setup')
+#   .\release.ps1 allpatch   → همه + پچِ دلتا
+#   .\release.ps1 vpk        → مسیرِ اصلی: تست + فرانت + onedir + Velopack
+#
+# v1.0.11 (Phase B/C): بیلدِ اصلی onedir + Velopack شد. onefile یک blobِ
+# فشردهٔ واحد است، پس «دلتا»ی قبلی (22.9 MB) از خودِ exe (22.8 MB) هم
+# بزرگتر بود. onedir + Velopack دلتای 3.2 MB رویِ پکیجِ 82.4 MB می‌دهد.
+# جزئیات: plans/production-packaging-and-unpark-plan.md
+#
+# v1.0.10: پچِ دلتا. PATCH_FROM نسخهٔ قبلیِ منتشرشده است (پیش‌فرض 1.0.9)؛
+# آپدیتِرِ درون‌برنامه‌ای فقط روی همان نسخه پچ را اعمال می‌کند و در غیر این
+# صورت شفافاً به نصبِ کامل برمی‌گردد. پچ با همان کلیدِ minisign امضا می‌شود.
+param([ValidateSet('setup','base','portable','all','patch','allpatch','vpk')][string]$Mode = 'setup',
+      [string]$PatchFrom = '1.0.9',
+      [string]$Baseline = '',
+      [switch]$SkipTests = $false)
 $ErrorActionPreference = 'Stop'
 
 # --- تنظیمات مسیرها (در صورت تفاوت، این‌ها را عوض کن) ---
@@ -72,9 +87,20 @@ function Build-Frontend {
     Write-Host '[fe] npm install + build'
     Push-Location frontend; & $NPM install --no-audit --no-fund; & $NPM run build; Pop-Location
 }
+# v1.0.11 (Phase B): بیلدِ اصلی onedir شد. onefile یک CArchiveِ فشردهٔ واحد
+# است → diffِ دو بیلد تقریباً هیچ پس‌اندازی ندارد (به همین دلیل «دلتای»
+# فعلی از خودِ exe هم بزرگتر است). onedir هر DLL/PYD را جدا نگه می‌دارد،
+# پس باینری‌های تغییرنکرده به ~0 دیف می‌شوند. specِ onefile برای نسخهٔ
+# portable نگه داشته شده است.
+$ExeSpec = 'bors_exe_onedir.spec'
+
 function Build-Exe {
-    Write-Host '[exe] PyInstaller'
-    & $PY -m PyInstaller bors_setup.spec --noconfirm --distpath "$root\dist" --workpath "$root\build"
+    Write-Host "[exe] PyInstaller ($ExeSpec)"
+    & $PY -m PyInstaller $ExeSpec --noconfirm --distpath "$root\dist" --workpath "$root\build"
+    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] PyInstaller failed. ABORT.'; exit 1 }
+    # قراردادِ onedir: _internal/ باید باشد و همهٔ api.* در hiddenimports.
+    & $PY dev/onedir_contract_v11.py --dist "$root\dist"
+    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
 }
 function Assert-DistFresh {
     # جلوگیری از بسته‌بندیِ یک distیِ قدیمی در نصابِ جدید. ریشهٔ یک کلاس
@@ -111,8 +137,13 @@ function Assert-DistFresh {
     foreach ($d in 'api','frontend/src') {
         $p = Join-Path $root $d
         if (Test-Path $p) {
+            # __pycache__/*.pyc فقط محصولِ اجرایِ تست‌ها/کامپایل هستند، نه
+            # تغییرِ منبع. بدونِ این فیلتر، صرفِ «python dev\test_*.py» کردن
+            # گارد را به‌اشتباه روشن می‌کرد و rebuildِ بی‌دلیل می‌خواست.
             Get-ChildItem $p -Recurse -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.LastWriteTime -gt $built } |
+                Where-Object { $_.LastWriteTime -gt $built -and
+                               $_.FullName -notmatch '\\__pycache__\\' -and
+                               $_.Extension -ne '.pyc' } |
                 ForEach-Object { $stale += $_.FullName.Substring($root.Length + 1) }
         }
     }
@@ -121,6 +152,32 @@ function Assert-DistFresh {
         exit 1
     }
 }
+function Assert-TestsGreen {
+    # درگاهِ سبزِ سوئیت‌ها: هیچ ریلیزی نباید با تستِ قرمز بیرون برود.
+    # این همان قراردادی که plans/production-packaging-and-unpark-plan.md
+    # در هر ریزمرحلهٔ آن را تعهد کردیم. -SkipTests فقط برایِ دیباگِ محلی است.
+    if ($SkipTests) { Write-Host '[tests] skipped (-SkipTests)'; return }
+    Write-Host '[tests] dev/run_all_tests.py'
+    & $PY dev/run_all_tests.py
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error '[tests] SUITES FAILED — a red suite cannot ship. ABORT.'
+        exit 1
+    }
+    Write-Host '[tests] ALL SUITES PASSED' -ForegroundColor Green
+}
+
+function Build-Velopack {
+    # Phase C: یک دستور → فرانت + بک‌اند + پکیجِ Velopack + درگاهِ تست.
+    Assert-TestsGreen
+    Build-Frontend
+    Build-Exe
+    if (Test-Path 'market.db.lzma') {
+        Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force
+    }
+    & "$root\scripts\build_velopack.ps1"
+    if ($LASTEXITCODE -ne 0) { Write-Error '[vpk] build_velopack.ps1 failed. ABORT.'; exit 1 }
+}
+
 function Build-Setup {
     Assert-DistFresh
     if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
@@ -169,10 +226,41 @@ function Build-Portable {
     Write-Host "[portable] staged: $stage"
 }
 
+function Build-Patch {
+    # v1.0.10: پچِ دلتای امضاشده. scripts/make_patch.py کلِ distِ تازه را به
+    # یک zipِ overlay تبدیل می‌کند (بدونِ دیتای کاربر)، Version.txt را مهر
+    # می‌زند و با همان کلیدِ minisign امضا می‌کند. این پچ فقط رویِ
+    # $PatchFrom اعمال می‌شود؛ آپدیتِر در غیر این صورت نصبِ کامل را می‌زند.
+    #
+    # $Baseline مسیرِ نصبِ نسخهٔ مبدأ است. وقتی داده شود، پچ فقط فایلهای
+    # تغییرکرده/جدید را شامل می‌شود (دلتای واقعی)؛ در غیر این صورت همهٔ
+    # فایلها (overlayِ کامل) که برای نصبِ قدیمیِ فاقدِ apply_update.bat
+    # سازگار می‌ماند.
+    Assert-DistFresh
+    if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if ($Baseline) {
+        Write-Host "[patch] delta $PatchFrom -> (current)  baseline=$Baseline  signed"
+        & $PY "$root\scripts\make_patch.py" --from $PatchFrom --baseline $Baseline
+    } else {
+        Write-Host "[patch] delta $PatchFrom -> (current)  full-overlay  signed"
+        & $PY "$root\scripts\make_patch.py" --from $PatchFrom
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error '[patch] make_patch.py failed — the delta update would be broken. ABORT.'
+        exit 1
+    }
+    Get-ChildItem "$root\dist\BorsTerminal_Patch_*.zip", "$root\dist\BorsTerminal_Patch_*.zip.sig" -ErrorAction SilentlyContinue |
+        ForEach-Object { Write-Host ("  -> " + $_.Name + "  (" + [math]::Round($_.Length/1MB,2) + " MB)") }
+}
+
 switch ($Mode) {
-    'base'     { Build-Base }
-    'setup'    { Ensure-Db; Build-Setup }
-    'portable' { Ensure-Db; Build-Portable }
-    'all'      { Ensure-Db; Build-Base; Build-Setup; Build-Portable }
+    'base'      { Build-Base }
+    'setup'     { Ensure-Db; Build-Setup }
+    'portable'  { Ensure-Db; Build-Portable }
+    'patch'     { Ensure-Db; Build-Patch }
+    'all'       { Ensure-Db; Build-Base; Build-Setup; Build-Portable }
+    'allpatch'  { Ensure-Db; Build-Base; Build-Setup; Build-Portable; Build-Patch }
+    # Phase C: یک دستور → تست + فرانت + onedir + Velopack. مسیرِ اصلیِ ریلیز.
+    'vpk'       { Ensure-Db; Build-Velopack }
 }
 Write-Host '== done' -ForegroundColor Green

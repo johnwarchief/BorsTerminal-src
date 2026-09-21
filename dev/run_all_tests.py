@@ -20,9 +20,33 @@ SUITES = [
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
     ('dev/watchlist_matrix_v973.py',  'watchlist store + triple matrix + parity'),
     ('dev/patch_check_v10.py',        'patch/update system guard'),
+    ('dev/test_arg_parse_v10.py',     'make_patch --from arg parsing'),
+    ('dev/test_delta_update.py',      'delta patch select/apply + fallback'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
+    ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
+    ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
+    # Data-Lifecycle (گام ۳۴/۳۵): ستون‌های مشتقِ خودکار + تاب‌آوریِ سینکِ افزایشی.
+    # نکته: run() مسیر را با os.sep می‌سازد و سپس split می‌کند، پس آرگومانِ
+    # اضافی باید در همان رشته باشد (درست مثل test_arg_parse_v10).
+    ('dev/db_backfill_derived.py --selftest',
+                                      'derived columns at insert (backfill selftest)'),
+    ('dev/incremental_sync_resilience.py',
+                                       'incremental sync: new symbol + new monthly report'),
+    # R1/R2 housekeeping (plans/codal-final-audit.md): dedupe اصلاحیه‌ها +
+    # backfill ستون‌های «سال قبل». یدم‌پذیر و روی کپیِ تازه اجرا می‌شود.
+    ('dev/db_housekeeping.py --selftest',
+                                       'R1/R2 housekeeping: dedupe + prev-year backfill'),
+    # Phase B (plans/production-packaging-and-unpark-plan.md): onedir build.
+    # api_router() ماژول‌ها را داخلِ بدنهٔ تابع import می‌کند → اسکنِ استاتیکِ
+    # PyInstaller آن‌ها را نمی‌بیند. این چک جلویِ مرگِ سایلنت را می‌گیرد.
+    ('dev/onedir_contract_v11.py',  'onedir build contract: hiddenimports + shape'),
+    # گام ۲ (ممیزی زندهٔ تابلو): حالتِ آفلاین فقط حالاتِ مرزی را می‌سنجد —
+    # حجم/تعدادِ صفر، نبودِ ClientType، معاملهٔ بلوکی. حالتِ کاملِ زنده
+    # (--symbols ...) به شبکه نیاز دارد و در CI سبز نمی‌ماند، پس جداست.
+    ('dev/live_market_board_audit.py --offline',
+                                    'live board audit: zero-volume / no-CT edge cases'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
@@ -64,8 +88,10 @@ def run(argv, label):
               .encode('ascii', 'replace').decode('ascii'))
 
 
+# Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
+# script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
 for script, label in SUITES:
-    run([sys.executable, script.replace('/', os.sep)], label)
+    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:

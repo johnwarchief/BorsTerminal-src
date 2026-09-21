@@ -3,6 +3,12 @@
 
 اگر این دو نسخه از هم فاصله بگیرند، رویدادی که در cache.json دسته‌بندی شده
 در UI دسته‌ای دیگر می‌نشیند (دقیقاً همان کلاس باگی که در v2.2 دیدیم).
+
+v9.3 — بخش ۳: گاردِ تمرکزِ چرخش IP. adb_rotate_ip نباید منطقِ توگلِ خودی
+بنویسد؛ باید codal_fetcher.rotate_ip_via_adb (۸۰s+۲۰s + تأیید IP) را صدا
+بزند. کپیِ محلیِ قبلی توگلِ کوتاه (۲s+۸s) می‌زد که PDP context را تخریب
+نمی‌کرد → IP پین می‌ماند → backoff ریست نمی‌گشت → اسکریپت روی بن می‌ماند.
+این بخش با stub کردنِ تابع مرجع کار می‌کند — هیچ دستگاهی لمس نمی‌شود.
 """
 import io, os, subprocess, sys, tempfile
 
@@ -91,10 +97,71 @@ try:
 finally:
     os.unlink(tf.name); os.unlink(jf.name)
 
+# ── ۳) چرخش IP روی یک تابع مرجع (v9.3) ──────────────────────────────────────
+print("\n" + "─" * 74)
+print("۳) تمرکز چرخش IP — adb_rotate_ip → codal_fetcher.rotate_ip_via_adb")
+print("─" * 74)
+
+
+def _check(cond, msg):
+    print("  %s %s" % ("PASS" if cond else "FAIL", msg))
+    if not cond:
+        fails.append(msg)
+
+
+# بدنهٔ محلی حذف شده و فقط واگذاری می‌کند — نه توگلِ خودی.
+_src = __import__("inspect").getsource(cf.adb_rotate_ip)
+_check("rotate_ip_via_adb(" in _src,
+       "adb_rotate_ip به codal_fetcher.rotate_ip_via_adb واگذار می‌کند")
+_check("subprocess.run" not in _src,
+       "بدنهٔ محلیِ توگلِ adb حذف شده (دو منبع حقیقت نبود)")
+_check("time.sleep" not in _src,
+       "هیچ مکثِ توگلِ محلی‌ای باقی نمانده — تأخیرها مالِ تابع مرجع هستند")
+_check(not getattr(cf.adb_rotate_ip, "__defaults__", None),
+       "پارامترهای enable_wait/recover_waitِ توگلِ کوتاه حذف شده‌اند")
+
+# واگذاری واقعاً به همان تابع می‌رود و خروجی‌اش bool است.
+_calls = []
+_orig = cf._cf.rotate_ip_via_adb
+cf._cf.rotate_ip_via_adb = lambda quiet=False: (_calls.append(quiet) or True)
+try:
+    _r = cf.adb_rotate_ip()
+    _check(_r is True, "adb_rotate_ip() خروجیِ تابع مرجع را bool برمی‌گرداند")
+    _check(len(_calls) == 1, "تابع مرجع دقیقاً یک‌بار فراخوانی شد (نه بیشتر)")
+finally:
+    cf._cf.rotate_ip_via_adb = _orig
+
+# مسیرِ واقعیِ مصرف‌کننده: polite_get روی ۴۲۹/WAF باید به همان تابع مرجع برسد.
+# نکته: polite_get ابتدا session.get(...) را صدا می‌زند، پس فیک باید متد get
+# داشته باشد که یک response با status_code=429 برمی‌گرداند (بدنهٔ HTMLِ WAF).
+_calls.clear()
+cf._cf.rotate_ip_via_adb = lambda quiet=False: (_calls.append(quiet) or True)
+try:
+    class _Resp429:
+        status_code, headers = 429, {}
+
+        def json(self):
+            raise ValueError("WAF html")
+
+    class _BlockedSession:
+        def get(self, *a, **k):
+            return _Resp429()
+
+    _st = {"req": 0}
+    try:
+        cf.polite_get(_BlockedSession(), {}, rotate=True,
+                      max_backoffs=2, stats=_st)
+    except RuntimeError:
+        pass            # انتظار می‌رود — همهٔ تلاش‌ها ۴۲۹ می‌شوند
+    _check(len(_calls) >= 1,
+           "polite_get روی ۴۲۹/WAF به تابع مرجع می‌رسد (rotate واقعاً وصل است)")
+finally:
+    cf._cf.rotate_ip_via_adb = _orig
+
 print("\n" + "=" * 74)
 if fails:
     print("❌ %d شکست:" % len(fails))
     for f in fails:
         print("   - " + f)
     sys.exit(1)
-print("✅ همهٔ %d حالت + یکای JS پاس شد" % len(CASES))
+print("✅ همهٔ %d حالت + یکای JS + تمرکز چرخش IP پاس شد" % len(CASES))

@@ -86,6 +86,8 @@ sys.path.insert(0, ROOT)
 
 import codal_fetcher as cf          # noqa: E402  (ماشین‌افزار HTTP + تجزیه)
 import fts_engine                    # noqa: E402  (۵ شاخص — منبع یگانه حقیقت)
+# api.fundamental به‌صورتِ محلی (داخل sync_fts_results) import می‌شود تا
+# بارِ fastapi فقط موقعِ نیازِ واقعی بیاید — همان الگوی test_fts_market_cap.py.
 
 DB_PATH = os.path.join(ROOT, "market.db")
 STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -645,6 +647,8 @@ def save_monthly(conn, L, vals, period_end):
         (L.get("Title") or "").strip(), period_end, year, month,
         vals.get("monthly_revenue"), vals.get("ytd_revenue"),
         vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"),
+        vals.get("monthly_volume"), vals.get("ytd_volume"),
+        vals.get("volume_unit"),
         letter_url(L.get("PdfUrl")), letter_url(L.get("ExcelUrl"))))
     return year, month
 
@@ -779,6 +783,203 @@ def local_market_ctx(conn):
     return ctx, total_mcap
 
 
+# ─── FTS v2.2: نویسندهٔ یکپارچهٔ جداولِ مرجعِ F-04/F-05 ─────────────── #
+# symbol_sectors / market_cap_snapshots در مهاجرت ساخته شدند ولی تا پیش از این
+# نویسنده‌ای نداشتند (داده فقط از instruments/market_watchِ همین‌الان خوانده
+# میشد). این تابع همان داده‌ای را که local_market_ctx از هر دو جدول لوکال
+# می‌خواند، یک‌بار هم در جداولِ مرجع مینویسد تا fts_engine.sector_of /
+# market_cap_at بتوانند «صنعت در زمانِ گزارش» و «ارزش بازار در تاریخِ گزارش»
+# را هم برگردانند (نه فقط امروز را).
+#
+# pricing_mode در اینجا محاسبه نمیشود: sector_filter آن را با gpm/sales_growth
+# میسازد و کش کردنِ یک verdictِ بدونِ آن دو عدد، گمراه‌کننده است.
+_SECTOR_UPSERT = "INSERT OR REPLACE INTO symbol_sectors " \
+                 "(symbol, sector_name, sector_code, pricing_mode, source, " \
+                 "confidence, updated_at) VALUES (?,?,?,?,?,?,?)"
+_MCAP_UPSERT = "INSERT OR REPLACE INTO market_cap_snapshots " \
+               "(symbol, date, market_cap, close_price, total_shares) " \
+               "VALUES (?,?,?,?,?)"
+
+# ─── مادی‌سازیِ خروجیِ v10 (تسک ۱۹) ─────────────────────────────────── #
+# ستون‌های fts_results — دقیقاً همان ترتیبی که fts_engine._FTS_RESULTS_COLS
+# می‌خواند (اندیس‌های ۰..۲۵). هر تغییر در آنجا باید اینجا هم بیاید.
+_FTSR_COLS = ("symbol, f01_growth_pct, f01_pass, f02_eps_series, f02_pass,"
+              " f03_margin_pct, f03_pass, f04_ratio, f04_pass, f05_verdict, f05_pass,"
+              " score, verdict, excluded, exclusion_reasons,"
+              " i1a_pass, i1b_pass, i4a_pass, i4b_pass,"
+              " rev_growth, gross_margin, sales_to_mcap, profit_potential_pct,"
+              " annual_sales_bt, annualize_months, cfg_hash, computed_at")
+_FTSR_PLACE = ",".join(["?"] * 27)   # ۲۷ ستون = ۲۷ placeholder (computed_at داخلِ _FTSR_COLS)
+_FTSR_UPSERT = "INSERT OR REPLACE INTO fts_results (%s) VALUES (%s)" % (_FTSR_COLS, _FTSR_PLACE)
+
+
+def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
+    """خروجیِ evaluate_v10 را در fts_results مادی می‌کند (تسک ۱۹ — نویسنده).
+
+    قرارداد (تصمیم ۴ — همان sector_of/market_cap_at): این تابع **تنها نویسندهٔ**
+    fts_results است و خوانندهٔ آن fts_engine.fts_results_of/bulk با fallback به
+    evaluate_v10 زنده است. یعنی:
+
+      * هیچ منطقِ شاخصی اینجا بازنویسی نمی‌شود — دقیقاً همان evaluate_v10 که
+        get_screener صدا میزند، با همان آرگومان‌ها (mcap رسمی تابلو، total_mcap،
+        sector، company_name، m141_map، liq_map) صدا زده می‌شود.
+      * همهٔ ردیف‌ها در **یک تراکنش** و با **یک cfg_hash** نوشته می‌شوند. اگر
+        آستانه‌ها در پنل تغییر کنند، cfg_hashِ ذخیره‌شده با cfg_hashِ درخواستی
+        اسکرینر ناهم‌خوان می‌شود و خواننده None برمی‌گرداند → fallback زنده.
+      * جدول غایب/خالی = همان رفتارِ قبلی (محاسبهٔ زنده).
+
+    `symbols`: محدودکردنِ دامنه (برای تست). None = کل universeِ bulk_scan.
+    برمی‌گرداند: (نوشته‌شده، ردیفِ ارزیابی‌شده).
+    """
+    import json as _json
+    from api.fundamental import evaluate_v10, board_total_market_cap, _has_mcap_col, \
+        ensure_market_cap_schema
+    from api._core import _num
+
+    cfg_hash = _json.dumps(cfg or {}, sort_keys=True, ensure_ascii=False, default=str)
+    # همان مقدماتی که get_screener انجام میدهد: ارزش بازارِ رسمیِ تابلو.
+    if not _has_mcap_col(conn, "market_watch"):
+        ensure_market_cap_schema(conn)
+    mcap_official = {}
+    for _l18, _mc in conn.execute(
+            "SELECT i.l_val18, m.market_cap FROM instruments i "
+            "JOIN market_watch m ON m.ins_code = i.ins_code"):
+        _k = fts_engine.norm_fa(_l18)
+        if _k and _k not in mcap_official:
+            mcap_official[_k] = _num(_mc)
+    _tot, _src = board_total_market_cap(conn)
+    if not total_mcap:
+        total_mcap = _tot
+    _m141m = fts_engine.m141_map(conn)
+    _liqm = fts_engine.avg_trade_value_hmt(conn)
+    cname_of = {}
+    for _sym, _cn in conn.execute(
+            "SELECT symbol, company_name FROM financial_statements "
+            "ORDER BY period_end DESC"):
+        _k = fts_engine.norm_fa(_sym)
+        if _k and _k not in cname_of:
+            cname_of[_k] = _cn or ""
+
+    # universe: همان مسیرِ اسکرینر (bulk_scan) نمادها را می‌سازد؛ اینجا فقط
+    # کپیِ آن لیست را می‌گیریم تا universeِ دو مسیر هرگز واگرا نشود.
+    if symbols is None:
+        try:
+            rows = fts_engine.bulk_scan(conn, cfg=cfg)
+        except Exception:
+            rows = []
+        symbols = [r.get("symbol") for r in rows if r.get("symbol")]
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    written, evaluated, errors = 0, 0, 0
+    batch = []
+    for sym in symbols:
+        key = fts_engine.norm_fa(sym)
+        if not key:
+            continue
+        mcap = mcap_official.get(key) or (ctx.get(key, (0.0, ""))[0] if ctx else 0.0)
+        sector = (ctx.get(key, (0.0, ""))[1] if ctx else "")
+        try:
+            res = evaluate_v10(conn, key, mcap or 0.0, total_mcap, sector,
+                               cfg=cfg, company_name=cname_of.get(key, ""),
+                               m141_map=_m141m, liq_map=_liqm)
+        except Exception as e:
+            errors += 1
+            if verbose:
+                print("    ✗ %s: %s: %s" % (sym, type(e).__name__, e))
+            continue
+        evaluated += 1
+        p = res.get("passes") or {}
+        _ind = res.get("indicators") or {}
+        _g1 = ((_ind.get("1") or {}).get("monetary") or {})
+        _i2 = _ind.get("2") or {}
+        _i3 = _ind.get("3") or {}
+        _i4 = _ind.get("4") or {}
+        _an4 = _i4.get("annual") or {}
+        _ser = _i2.get("eps_series")
+        batch.append((
+            key,                                  # symbol (نرمال‌شده — کلیدِ join)
+            _g1.get("monetary_pct"),              # f01_growth_pct
+            bool(p.get("1_growth")),              # f01_pass
+            (_json.dumps(_ser, ensure_ascii=False) if _ser else None),  # f02_eps_series
+            bool(p.get("2_eps_trend")),           # f02_pass
+            _i3.get("margin_pct"),                # f03_margin_pct
+            bool(p.get("3_gross_margin")),        # f03_pass
+            _i4.get("sales_to_mcap"),             # f04_ratio
+            bool(p.get("4_sales_to_mcap")),       # f04_pass
+            res.get("pricing_mode"),              # f05_verdict
+            bool(p.get("5_industry")),            # f05_pass
+            int(res.get("score") or 0),           # score
+            res.get("verdict") or "",             # verdict
+            bool(res.get("excluded")),            # excluded
+            " · ".join(res.get("exclusion_reasons") or []),  # exclusion_reasons
+            bool(p.get("1a_monetary_growth")),    # i1a_pass
+            bool(p.get("1b_volume_growth")),      # i1b_pass
+            bool(p.get("4a_sales_to_mcap")),      # i4a_pass
+            bool(p.get("4b_profit_potential")),   # i4b_pass
+            _g1.get("monetary_pct"),              # rev_growth
+            _i3.get("margin_pct"),                # gross_margin
+            _i4.get("sales_to_mcap"),             # sales_to_mcap
+            _i4.get("potential_pct"),             # profit_potential_pct
+            (_i4.get("annual_sales_bt")
+             if _i4.get("annual_sales_bt") is not None
+             else _an4.get("annual_sales_bt")),   # annual_sales_bt
+            _an4.get("months_used"),              # annualize_months
+            cfg_hash,                             # cfg_hash
+            now,                                  # computed_at
+        ))
+    # یک تراکنشِ واحد: یا همه می‌نشینند یا هیچ‌کدام (همان قراردادِ یکپارچه).
+    try:
+        conn.execute("DELETE FROM fts_results")
+        conn.executemany(_FTSR_UPSERT, batch)
+        conn.commit()
+        written = len(batch)
+    except Exception as e:
+        conn.rollback()
+        if verbose:
+            print("    ✗ نوشتن fts_results ناموفق: %s: %s" % (type(e).__name__, e))
+        return 0, evaluated
+    # کشِ RAMِ خواننده را بی‌اعتبار کن تا سطرِ تازه دیده شود — ولی توجه:
+    # invalidate_fts_results خودش «DELETE FROM fts_results» میزند و مخصوصِ
+    # مسیرِ سینک است (جدولِ کثیف → fallback زنده). اینجا فقط کشِ حافظه را
+    # پاک میکنیم؛ خودِ ردیفها همین الان نوشته شده و باید باقی بمانند.
+    try:
+        fts_engine._FTS_RESULTS_CACHE.pop(id(conn), None)
+    except Exception:
+        pass
+    if verbose:
+        print("    fts_results: %d ردیف نوشته شد (%d ارزیابی، %d خطا) cfg_hash=%.8s"
+              % (written, evaluated, errors, cfg_hash))
+    return written, evaluated
+
+
+def sync_reference_tables(conn, ctx, today=None):
+    """پر کردنِ symbol_sectors + market_cap_snapshots از ctx لوکال.
+
+    `ctx` همان خروجیِ local_market_ctx است ({norm_symbol: (mcap, sector)})،
+    پس هیچ کوئریِ اضافه‌ای به جز خودِ upsertها زده نمیشود. خروجی: تعدادِ
+    ردیفِ نوشته‌شده در هر جدول. Idempotent است (INSERT OR REPLACE).
+    """
+    today = today or now_str()[:10]
+    n_sec = n_mcap = 0
+    try:
+        for k, (mcap, sector) in ctx.items():
+            if not k or not sector:
+                continue
+            conn.execute(_SECTOR_UPSERT,
+                         (k, sector, None, "neutral", "tsetmc", 0, today))
+            n_sec += 1
+            if mcap and mcap > 0:
+                conn.execute(_MCAP_UPSERT, (k, today, float(mcap), None, None))
+                n_mcap += 1
+        conn.commit()
+    except Exception as e:
+        print("  [ref] نوشتن جداول مرجع ناموفق (%s) — ادامه بدون آن‌ها" % e)
+    # کشِ fts_engine را بی‌اعتبار کن تا خواننده‌ها جدولِ تازه را ببینند
+    for cache in (fts_engine._SECTOR_CACHE, fts_engine._MCAP_CACHE):
+        cache.pop(id(conn), None)
+    return n_sec, n_mcap
+
+
 def load_fts_cfg():
     """آستانه‌های کاربر از fts_thresholds.json (از طریق app.load_fts_config)."""
     try:
@@ -861,10 +1062,21 @@ def main():
                     help="فقط چرخش IP را اجرا کن و زمان کشف را گزارش بده (بدون واکشی)")
     ap.add_argument("--resume", action="store_true", help="ادامه از نقطهٔ توقفِ state")
     ap.add_argument("--verify", action="store_true", help="در پایان ۵ شاخص را چاپ کن")
+    ap.add_argument("--materialize", action="store_true",
+                    help="خروجیِ evaluate_v10 را در fts_results بنویس (تسک ۱۹ — "
+                         "اسکرینر دیگر N+1 محاسبه نمی‌کند). با --mode local "
+                         "ترکیبپذیر است: بدون شبکه")
     ap.add_argument("--db", default=DB_PATH)
     args = ap.parse_args()
 
     conn = sqlite3.connect(args.db, timeout=60)
+    # اسکیما را افزودنیِ امن میسازد (همان مهاجرتِ استارتاپِ app.py). اگر جداولِ
+    # FTS از قبل باشند، هیچ کاری نمیکند؛ اگر نباشند، updater روی هر DBای
+    # — حتی یک market.db جوان — بدون وابستگی به استارتاپ کار میکند.
+    try:
+        cf.migrate_schema(conn)
+    except Exception as e:
+        print("[schema] مهاجرت افزودنی ناموفق (%s) — ادامه" % e)
     print("═" * 78)
     print("Codal FTS Updater v1.0 — مود: %s" % args.mode)
     print("═" * 78)
@@ -893,12 +1105,26 @@ def main():
     print(f"[local] ارزش بازار/صنعت از market_watch×instruments: {len(ctx)} نماد، "
           f"کل بازار {total_mcap / 1e13:.0f}h تومان (شاخص ۴ و ۵ — صفر درخواست شبکه)")
 
+    # جداولِ مرجعِ F-04/F-05 را از همان ctx پر کن (نویسندهٔ یکپارچه — تصمیم ۴).
+    # Idempotent است و در صورتِ نبودِ جداول (DB قدیمی) فقط اخطار میدهد.
+    n_sec, n_mcap = sync_reference_tables(conn, ctx)
+    print(f"[ref] symbol_sectors={n_sec} ردیف، market_cap_snapshots={n_mcap} ردیف به‌روز شد")
+
     syms = [s.strip() for s in args.symbols.split(",") if s.strip()]
     if not syms:
         syms = pick_symbols(conn, args.limit)
         print(f"[plan] نمادهای منتخب خودکار: {', '.join(syms)}")
 
     if args.mode == "local":
+        if args.materialize:
+            # بدون هیچ درخواست شبکه‌ای: کل universeِ bulk_scan را مادی می‌کند.
+            # این همان مسیرِ گرم‌کردنِ اسکرینر است، ولی صریح و قابل‌تکرار.
+            print("\n" + "─" * 78)
+            print("[materialize] نوشتن fts_results از evaluate_v10 (بدون شبکه)")
+            print("─" * 78)
+            t0 = time.monotonic()
+            n, ev = sync_fts_results(conn, ctx, total_mcap, load_fts_cfg())
+            print("[materialize] %d ردیف در %.1fs" % (n, time.monotonic() - t0))
         verify(conn, syms, ctx, total_mcap, load_fts_cfg())
         conn.close()
         return 0
@@ -931,6 +1157,17 @@ def main():
     if interrupted:
         print("⚠ اجرا ناتمام ماند. وضعیت در dev/fts_update_state.json ذخیره است؛ "
               "با همان فرمان + --resume ادامه می‌یابد.")
+
+    # دادهٔ خامِ تازه وارد شد → خروجیِ v10 را هم مادی کن تا اسکرینر روی
+    # cache-missِ بعدی به‌جای ~۱۵٬۰۰۰ کوئری، یک SELECT بخواند. فقط در صورتِ
+    # موفقیتِ کاملِ اجرا (interrupted نباشد) یا --verify صریح.
+    if args.materialize and not interrupted:
+        print("\n" + "─" * 78)
+        print("[materialize] بازنویسیِ fts_results بعد از واکشیِ تازه")
+        print("─" * 78)
+        t0 = time.monotonic()
+        n, ev = sync_fts_results(conn, ctx, total_mcap, load_fts_cfg())
+        print("[materialize] %d ردیف در %.1fs" % (n, time.monotonic() - t0))
 
     if args.verify or not interrupted:
         verify(conn, syms, ctx, total_mcap, load_fts_cfg())
