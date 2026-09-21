@@ -9,8 +9,8 @@ from fastapi import APIRouter
 
 def api_router() -> APIRouter:
     """Aggregate every module router into one APIRouter."""
-    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, _sync_market, _export, _sync_codal, adb, notify, update, _pipeline, engine, market_index)
+    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, _sync_market, _export, _sync_codal, adb, notify, update, _pipeline, engine, market_index, diagnostics)
     agg = APIRouter()
-    for mod in (market, chart, selection, watchlist, fundamental, market_status, screener, _sync_market, _export, _sync_codal, adb, notify, update, _pipeline, engine, market_index):
+    for mod in (market, chart, selection, watchlist, fundamental, market_status, screener, _sync_market, _export, _sync_codal, adb, notify, update, _pipeline, engine, market_index, diagnostics):
         agg.include_router(mod.router)
     return agg

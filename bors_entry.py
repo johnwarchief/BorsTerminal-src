@@ -2,27 +2,56 @@
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
 import os, sys, threading, time, webbrowser, socket, subprocess
 
-# ── کدپیجِ خروجیِ ویندوز (v1.0.13) ─────────────────────────────────────────
-# EXEِ فریزشده با کدپیجِ پیش‌فرضِ ویندوز (cp1252 روی انگلیسیِ محض) اجرا می‌شود.
-# هیچ‌کدام از printهای فارسیِ لایهٔ API در آن قابلِ انکد نیستند، پس اولین
-# print با متنِ فارسی کلِ درخواست را با UnicodeEncodeError می‌کشد. دیده‌شده:
-#   api/screener.py:227  print("[screener] fts_results miss — محاسبهٔ زنده...")
-#   → GET /api/screener 500 → صفحهٔ بنیادی خالی.
-# این کار را قبل از import کردنِ هر ماژولِ دیگری انجام می‌دهیم تا حتی
-# پیام‌هایِ راه‌اندازیِ خودِ بوت هم امن باشند.
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-except (AttributeError, ValueError, OSError):
-    pass
+# ── بدونِ پنجرهٔ کنسول + کدپیجِ خروجی (v1.0.13) ──────────────────────────
+# با console=False در spec، sys.stdout/sys.stderr می‌توانند None باشند
+# (PyInstaller در حالتِ windowless آن‌ها را می‌بندد). هر دست‌زدنی به آن‌ها
+# AttributeError می‌شود، پس اول یک فایلِ لاگِ UTF-8 می‌سازیم و می‌بندیمش.
+#
+# دو هدفِ همزمان:
+#   ۱) کدپیجِ پیش‌فرضِ ویندوز رویِ EXEِ فریزشده cp1252 است و هیچ حرفِ
+#      فارسی‌ای قابلِ انکد نیست. اولین printِ فارسی کلِ درخواست را با
+#      UnicodeEncodeError می‌کشد (دیده‌شده: api/screener.py:227 →
+#      GET /api/screener 500 → صفحهٔ بنیادی خالی).
+#   ۲) هیچ پنجرهٔ ترمینالی باز نشود و لاگی رویِ صفحه نباشد.
+#
+# BORS_SHOW_CONSOLE=1 در محیط، کنسول را برمی‌گرداند برایِ دیباگِ دستی.
+def _setup_streams():
+    if os.environ.get("BORS_SHOW_CONSOLE") == "1":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass
+        return
+    try:
+        _logdir = os.path.join(WORK, "logs")
+        os.makedirs(_logdir, exist_ok=True)
+        _logpath = os.path.join(_logdir, "bors.log")
+        # حالتِ append: کرش‌هایِ قبلی حفظ شوند و چرخهٔ اجراها دیده شود.
+        _f = open(_logpath, "a", encoding="utf-8", errors="replace")
+        sys.stdout = _f
+        sys.stderr = _f
+    except (AttributeError, ValueError, OSError, FileNotFoundError):
+        # اگر نوشتن ممکن نبود، جریان‌ها را بی‌خطرِ صفر کن تا کرش ندهیم.
+        class _Null:
+            def write(self, *a, **k): return 0
+            def flush(self): pass
+            def reconfigure(self, **k): pass
+            def close(self): pass
+        sys.stdout = _Null()
+        sys.stderr = _Null()
 
 # در حالت EXE (onefile): کتابخانه‌ها داخل _MEIPASS؛ DB ها کنار exe (از ZIP)
+# توجه: _setup_streams() به WORK نیاز دارد (پوشهٔ لاگ کنارِ exe است)، پس
+# این بلوک باید قبل از فراخوانیِ آن باشد.
 if getattr(sys, 'frozen', False):
     BASE = sys._MEIPASS
     WORK = os.path.dirname(sys.executable)
     os.chdir(WORK)
 else:
     WORK = os.path.dirname(os.path.abspath(__file__))
+
+_setup_streams()
 
 # ── گاردِ سازگاریِ ویندوز (v1.0.12) ───────────────────────────────────────
 # ویندوزهایِ قدیمی (۷/۸/۸.۱) کرش‌های نامفهوم می‌دهند: TLSِ مدرن، فونت‌های

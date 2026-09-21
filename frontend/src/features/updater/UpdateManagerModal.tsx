@@ -311,16 +311,33 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
         {/* فوتر مودال */}
         <div className="mt-5 flex items-center justify-between border-t border-[var(--hairline)] pt-3 text-2xs text-text-muted">
           <span>Tauri v2 · In-App Secure Updater Engine</span>
-          <button
-            type="button"
-            onClick={() => {
-              resetState();
-              onClose();
-            }}
-            className="rounded-lg px-3 py-1 text-xs font-bold text-text-muted hover:text-text-primary"
-          >
-            بستن
-          </button>
+          <div className="flex items-center gap-2">
+            {/* v1.0.13: کنسول دیگر باز نمی‌شود؛ لاگ‌ها از اینجا دیده می‌شوند. */}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await fetch('/api/diagnostics/log/open', { method: 'POST' });
+                } catch {
+                  /* در محیطِ تستِ بدونِ سرور بی‌خثر است */
+                }
+              }}
+              title="باز کردن فایل لاگ برنامه (logs/bors.log)"
+              className="rounded-lg px-3 py-1 text-xs font-bold text-text-muted hover:text-text-primary"
+            >
+              مشاهدهٔ لاگ
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetState();
+                onClose();
+              }}
+              className="rounded-lg px-3 py-1 text-xs font-bold text-text-muted hover:text-text-primary"
+            >
+              بستن
+            </button>
+          </div>
         </div>
       </div>
     </div>,

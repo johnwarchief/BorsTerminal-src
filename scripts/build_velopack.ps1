@@ -104,9 +104,9 @@ Get-ChildItem -Path $OutputDir -Recurse -File -ErrorAction SilentlyContinue |
 # ستونِ اصلیِ موفقیت: دلتا باید از پکیجِ کامل کوچکتر باشد. در onefile
 # این‌طور نبود (دلتا از خودِ exe بزرگتر بود) — این کلِ دلیلِ این ریفاکتور است.
 $full = Get-ChildItem -Path $OutputDir -Filter '*-full.nupkg' -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+    Sort-Object Name -Descending | Select-Object -First 1
 $delta = Get-ChildItem -Path $OutputDir -Filter '*-delta.nupkg' -ErrorAction SilentlyContinue |
-    Select-Object -First 1
+    Sort-Object Name -Descending | Select-Object -First 1
 if ($full) {
     Write-Host ("`n  full package:   {0:N1} MB" -f ($full.Length / 1048576.0))
 }
@@ -120,5 +120,20 @@ if ($delta) {
     }
 } else {
     Write-Host '  (no previous version found - first full package; deltas appear from the next release)'
+}
+
+# ── زنجیرهٔ تجمعی (v1.0.13) ─────────────────────────────────────────────
+# از این به بعد هر ریلیز شاملِ تغییراتِ قبلی هم هست: نسخه‌های قدیمی در
+# OutputDir نگه داشته می‌شوند تا Velopack از هر نسخه‌ای به هر نسخهٔ جدیدتری
+# برسد. این گزارشِ زنجیره را نشان می‌دهد تا قابلِ دیدن باشد.
+$chain = Get-ChildItem -Path $OutputDir -Filter '*.nupkg' -ErrorAction SilentlyContinue |
+    Sort-Object Name
+if ($chain.Count -gt 0) {
+    Write-Host "`n== cumulative release chain (older -> newer) ==" -ForegroundColor Cyan
+    foreach ($p in $chain) {
+        $kind = if ($p.Name -match '-delta-') { 'delta' } elseif ($p.Name -match '-full-') { 'full ' } else { ' ?   ' }
+        Write-Host ("  [{0}] {1,-52} {2,8:N1} MB" -f $kind, $p.Name, ($p.Length / 1048576.0))
+    }
+    Write-Host ("  releases.win.json lists {0} package(s) - any older install can delta forward." -f $chain.Count)
 }
 Write-Host "`n== Velopack pack DONE: v$Version ==" -ForegroundColor Green

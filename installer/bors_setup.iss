@@ -1,5 +1,5 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.13"
+#define AppVersion "1.0.14"
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
