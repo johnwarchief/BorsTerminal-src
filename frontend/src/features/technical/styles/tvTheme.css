@@ -26,9 +26,9 @@
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
-  --border-color: #e2e8f0;
-  --hairline: #e2e8f0;
-  --border-accent: #2563eb;
+  --border-color: #e0e3eb;
+  --hairline: #e0e3eb;
+  --border-accent: #2962ff;
   background: var(--bg-primary);
   color: var(--text-primary);
 }
@@ -97,8 +97,9 @@
   background: #f8fafc;
 }
 
-/* --- RTL ? ???????? ???? ???????? ???? ?????? (T-21) --- */
+/* --- RTL & LTR layout coordination --- */
 .tv-workbench [data-testid='nn-chart-host'] { direction: rtl; }
+.tv-workbench [data-testid='nn-chart-host'] .nn-chart-body { direction: ltr !important; }
 .tv-workbench [data-testid='nn-chart-host'] .nahayat-negar-container > * { min-width: 0; }
 .tv-workbench [data-testid='nn-chart-host'] header,
 .tv-workbench [data-testid='nn-chart-host'] nav,

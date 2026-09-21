@@ -47,6 +47,10 @@ export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
   initialMarket?: string;
+  boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
+  replayActive?: boolean;
+  onToggleReplay?: () => void;
+  onOpenSettings?: () => void;
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: string) => void;
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
@@ -167,6 +171,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialSymbol = 'خودرو',
   initialName = 'ایران خودرو',
   initialMarket = 'بورس',
+  boardRow,
+  replayActive,
+  onToggleReplay,
+  onOpenSettings,
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
@@ -929,6 +937,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         symbolName={currentSymbol}
         companyName={currentName}
         marketName={currentMarket}
+        boardRow={boardRow}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
         activeTimeframe={activeTimeframe}
         onTimeframeChange={handleTimeframeChange}
@@ -939,8 +948,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onOpenIndicators={() => setShowIndicatorsModal(!showIndicatorsModal)}
         isFtsActive={isFtsActive}
         onToggleFts={() => setIsFtsActive(!isFtsActive)}
+        replayActive={replayActive}
+        onToggleReplay={onToggleReplay}
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
+        onOpenSettings={onOpenSettings}
         onTakeSnapshot={handleTakeSnapshot}
       />
 
@@ -960,8 +972,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onClose={() => setSelectedOverlayId(null)}
       />
 
-      {/* بدنه چارت: نوار رسم چپ + بوم چارت */}
-      <div className="nn-chart-body">
+      {/* بدنه چارت: نوار رسم در منتهی‌الیه چپ + بوم چارت */}
+      <div className="nn-chart-body" dir="ltr">
         <DrawingToolbar
           activeToolId={activeToolId}
           onSelectTool={handleSelectTool}
