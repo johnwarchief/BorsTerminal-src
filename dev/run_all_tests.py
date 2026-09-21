@@ -47,6 +47,9 @@ SUITES = [
     # (--symbols ...) به شبکه نیاز دارد و در CI سبز نمی‌ماند، پس جداست.
     ('dev/live_market_board_audit.py --offline',
                                     'live board audit: zero-volume / no-CT edge cases'),
+    # v1.0.12: گاردِ سازگاریِ ویندوز + رندرِ نرم‌افزاری. رویِ سیستم‌های بدونِ
+    # GPU اختصاصی کرومیوم صفحهٔ سفید می‌زد؛ حالا SwiftShader می‌زند.
+    ('dev/test_compat_guard_v1012.py', 'Windows + GPU/software-render guard'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند

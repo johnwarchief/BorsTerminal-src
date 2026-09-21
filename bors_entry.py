@@ -10,6 +10,124 @@ if getattr(sys, 'frozen', False):
 else:
     WORK = os.path.dirname(os.path.abspath(__file__))
 
+# ── گاردِ سازگاریِ ویندوز (v1.0.12) ───────────────────────────────────────
+# ویندوزهایِ قدیمی (۷/۸/۸.۱) کرش‌های نامفهوم می‌دهند: TLSِ مدرن، فونت‌های
+# فارسی، و رندرِ GPUِ کرومیوم رویِ درایورهایِ قدیمی. به‌جایِ کرشِ سایلنت،
+# یک پیامِ واضح نشان می‌دهیم.
+WIN_TOO_OLD = False
+WIN_VER_NAME = "unknown"
+try:
+    _wv = sys.getwindowsversion()          # فقط رویِ ویندوز موجود است
+    WIN_VER_NAME = "Windows %d.%d (build %d)" % (_wv.major, _wv.minor, _wv.build)
+    if _wv.major < 10:
+        WIN_TOO_OLD = True
+except AttributeError:
+    pass                                   # غیرِ ویندوز → هیچ گاردی لازم نیست
+
+
+def _warn_old_windows():
+    """پیامِ کاربرپسند برای ویندوزِ پشتیبانی‌نشده (به‌جای کرش)."""
+    msg = (
+        "⚠ این ویندوز برای اجرای کامل BorsTerminal پشتیبانی نمی‌شود.\n\n"
+        "نسخهٔ سیستم‌عامل شما: %s\n"
+        "حداقل نسخهٔ موردنیاز: Windows 10 (64-bit)\n\n"
+        "برنامه اجرا می‌شود اما ممکن است:\n"
+        "  • فونت‌های فارسی ناقص نمایش داده شوند\n"
+        "  • رابط کاربری کند یا ناپایدار باشد\n"
+        "  • برخی صفحات سفید شوند\n\n"
+        "پیشنهاد: به Windows 10/11 ارتقا دهید." % WIN_VER_NAME
+    )
+    print("[WARN] unsupported Windows:", WIN_VER_NAME)
+    try:
+        # پیامِ نیتیو (نه کنسول) — کاربرِ دسکتاپ کنسول را نمی‌بیند.
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(0, msg, "BorsTerminal — هشدار سازگاری", 0x30)
+    except Exception:
+        print(msg)
+
+
+# ── گاردِ رندرینگ (v1.0.12): GPU ضعیف/نبود GPU → رندرِ نرم‌افزاری ─────────
+# رویِ سیستم‌های بدونِ GPU اختصاصی (Intel HD قدیمی، Microsoft Basic Display)
+# یا رمِ کم، کرومیوم صفحهٔ سفید یا کرش می‌دهد. SwiftShader (رندرِ
+# نرم‌افزاریِ رسمیِ کرومیوم) این حالت را نجات می‌دهد.
+def _probe_gpu():
+    """(has_dedicated, adapter_names, ram_gb) — از WMI. در صورتِ شکست، محتاطانه.
+
+    wmic رویِ Windows 11 حذف شده (deprecation) و خروجیِ خالی برمی‌گرداند،
+    پس powershell را امتحان می‌کنیم و wmic فقط جایگزینِ آخر است.
+    """
+    adapters, ram_gb = [], 0.0
+    ps = None
+    try:
+        ps = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "$ErrorActionPreference='SilentlyContinue';"
+             "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name;"
+             "[Environment]::PhysicalMemory"],
+            capture_output=True, text=True, timeout=20, shell=True)
+    except Exception:
+        ps = None
+    if ps is not None:
+        lines = [ln.strip() for ln in (ps.stdout or "").splitlines() if ln.strip()]
+        # خطِ آخر می‌تواند بایتِ کلِ رم باشد (یک عددِ بزرگ)
+        for ln in lines:
+            if ln.isdigit() and len(ln) >= 9:
+                ram_gb = int(ln) / 1073741824.0
+            elif ln.lower() not in ("name",):
+                adapters.append(ln)
+    if not adapters:
+        try:                                   # جایگزینِ wmic برای ویندوزهای قدیمی
+            out = subprocess.run(
+                ["wmic", "path", "win32_VideoController", "get", "name"],
+                capture_output=True, text=True, timeout=15, shell=True)
+            for ln in (out.stdout or "").splitlines():
+                ln = ln.strip()
+                if ln and ln.lower() != "name":
+                    adapters.append(ln)
+        except Exception:
+            pass
+    if not adapters:
+        return None, adapters, ram_gb
+    dedicated = False
+    for a in adapters:
+        low = a.lower()
+        # آداپتورهایِ اختصاصی (نه یکپارچهٔ رویِ پردازنده)
+        if any(k in low for k in ("nvidia", "geforce", "quadro", "radeon",
+                                  "amd radeon", "firepro", "arc a")):
+            if not any(k in low for k in ("basic display", "microsoft")):
+                dedicated = True
+    return dedicated, adapters, ram_gb
+
+
+def _needs_software_rendering():
+    """True اگر GPU اختصاصی نیست یا رم کم است → پرچم‌هایِ رندرِ نرم‌افزاری.
+
+    در صورتِ شکستِ تشخیص (پروب خالی برگرداند) «True» برمی‌گرداند: یک صفحهٔ
+    سفیدِ غیرقابلِ استفاده بدتر از کمی کندیِ رندرِ نرم‌افزاری است. این
+    انتخابِ محتاطانه است، نه یک باگ.
+    """
+    dedicated, adapters, ram_gb = _probe_gpu()
+    if not adapters:
+        return True                            # تشخیص ناموفق → محتاطانه
+    if dedicated:
+        return False                           # GPU اختصاصی هست → GPU بزن
+    if ram_gb and ram_gb < 4.0:
+        return True                            # رمِ کم → نرم‌افزاری
+    if any("basic display" in a.lower() for a in adapters):
+        return True                            # درایورِ ویندوزِ پیش‌فرض
+    return True                                # فقط Intel HD یکپارچه
+
+
+def _render_flags():
+    """پرچم‌هایِ مرورگر بر اساسِ سخت‌افزار — برای جلوگیری از صفحهٔ سفید."""
+    if _needs_software_rendering():
+        print("[render] no dedicated GPU / low RAM -> software rendering (SwiftShader)")
+        return ["--disable-gpu",
+                "--use-angle=swiftshader",      # کرومیوم ۸۶+
+                "--use-gl=swiftshader",         # نسخه‌های قدیمی‌تر
+                "--disable-software-rasterizer=false"]
+    return []
+
 def _preflight():
     """هوشمند: پیش‌اجرا + چک DB ها (مثل run_terminal)"""
     print("=" * 66)
@@ -113,7 +231,7 @@ def open_app_window(url):
             "--no-first-run",
             "--no-default-browser-check",
             "--start-maximized",
-        ]
+        ] + _render_flags()
         try:
             subprocess.Popen(cmd)
             print(f"[OK] App window launched using {os.path.basename(browser_exe)}")
@@ -124,6 +242,10 @@ def open_app_window(url):
     return False
 
 def main():
+    # v1.0.12: گاردِ ویندوز — قبل از هر چیز، تا روی ویندوزِ قدیمی کرشِ
+    # نامفهوم ندهیم. هشدار نمایش می‌دهیم و ادامه می‌دهیم (نه مسدود).
+    if WIN_TOO_OLD:
+        _warn_old_windows()
     port = int(os.environ.get('BORS_PORT', '8001'))
     for p in (port,):
         if port_open(p):
