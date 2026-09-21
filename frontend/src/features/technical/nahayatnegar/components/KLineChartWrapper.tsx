@@ -40,6 +40,7 @@ import {
   detectThirdPeak,
 } from '../../lib/ftsPatterns';
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
+import { useFtsConfigStore } from '../../stores/ftsConfigStore';
 
 import '../styles/nahayatNegarStyles.css';
 
@@ -211,11 +212,31 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // نوار شناور تنظیمات المان انتخاب‌شده
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
+  const selectedOverlayIdRef = useRef<string | null>(selectedOverlayId);
+  selectedOverlayIdRef.current = selectedOverlayId;
   const [selectedOverlayName, setSelectedOverlayName] = useState<string>('');
   const [overlayColor, setOverlayColor] = useState<string>('#2962ff');
   const [overlayWidth, setOverlayWidth] = useState<number>(2);
-  const [overlayStyle, setOverlayStyle] = useState<'solid' | 'dashed'>('solid');
+  const [overlayStyle, setOverlayStyle] = useState<'solid' | 'dashed' | 'dotted'>('solid');
   const [isOverlayLocked, setIsOverlayLocked] = useState<boolean>(false);
+
+  // استیت‌های جامع تنظیمات چارت از ftsConfigStore
+  const ftsCandleUpColor = useFtsConfigStore((s) => s.candleUpColor);
+  const ftsCandleDownColor = useFtsConfigStore((s) => s.candleDownColor);
+  const ftsBorderUpColor = useFtsConfigStore((s) => s.borderUpColor);
+  const ftsBorderDownColor = useFtsConfigStore((s) => s.borderDownColor);
+  const ftsWickUpColor = useFtsConfigStore((s) => s.wickUpColor);
+  const ftsWickDownColor = useFtsConfigStore((s) => s.wickDownColor);
+  const ftsShowBorders = useFtsConfigStore((s) => s.showBorders);
+  const ftsShowWicks = useFtsConfigStore((s) => s.showWicks);
+  const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
+  const ftsGridColor = useFtsConfigStore((s) => s.gridColor);
+  const ftsGridStyle = useFtsConfigStore((s) => s.gridStyle);
+  const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
+  const ftsCrosshairStyle = useFtsConfigStore((s) => s.crosshairStyle);
+  const ftsPriceScale = useFtsConfigStore((s) => s.priceScale);
+  const ftsChartType = useFtsConfigStore((s) => s.chartType);
+  const ftsTimezone = useFtsConfigStore((s) => s.timezone);
 
   // نوار پایین و مقیاس
   const [activeRange, setActiveRange] = useState<string>('1Y');
@@ -430,15 +451,28 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
     const timer = setInterval(tick, 2000);
 
-    // ۳) میانبرها: Delete/Backspace حذف آخرین المان، Ctrl+Z/Y (و Ctrl+Shift+Z) Undo/Redo
+    // ۳) میانبرها: Delete/Backspace حذف المان انتخاب‌شده، Esc لغو رسم، Ctrl+Z/Y (و Ctrl+Shift+Z) Undo/Redo
     const onKey = (ev: KeyboardEvent) => {
       const tag = ((ev.target as HTMLElement | null)?.tagName ?? '').toUpperCase();
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      if (ev.key === 'Escape') {
+        setActiveToolId('crosshair');
+        setSelectedOverlayId(null);
+        return;
+      }
+
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
         try {
-          const all = chart.getOverlays() as { id?: string }[];
-          const last = all[all.length - 1];
-          if (last?.id) chart.removeOverlay({ id: last.id });
+          const selectedId = selectedOverlayIdRef.current;
+          if (selectedId) {
+            chart.removeOverlay({ id: selectedId } as never);
+            setSelectedOverlayId(null);
+          } else {
+            const all = chart.getOverlays() as { id?: string }[];
+            const last = all[all.length - 1];
+            if (last?.id) chart.removeOverlay({ id: last.id });
+          }
         } catch (e) {
           void e;
         }
@@ -560,6 +594,102 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     chart.setStyles(targetTheme as never);
     chart.setStyles({ indicator: { bars: [{ upColor: '#26a69a', downColor: '#ef5350', noChangeColor: '#787b86' }] } } as never);
   }, [theme]);
+
+  // همگام‌سازی زنده استایل‌های چارت با تنظیمات پایدار ftsConfigStore
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const gridLineStyle = ftsGridStyle === 'solid' ? 'solid' : 'dashed';
+    const gridDashedValue = ftsGridStyle === 'dotted' ? [2, 2] : [4, 4];
+
+    const crosshairLineStyle = ftsCrosshairStyle === 'solid' ? 'solid' : 'dashed';
+    const crosshairDashedValue = ftsCrosshairStyle === 'dotted' ? [2, 2] : [4, 4];
+
+    try {
+      chart.setStyles({
+        grid: {
+          show: ftsShowGrid,
+          horizontal: {
+            show: ftsShowGrid,
+            color: ftsGridColor || '#1e222d',
+            style: gridLineStyle,
+            dashedValue: gridDashedValue
+          },
+          vertical: {
+            show: ftsShowGrid,
+            color: ftsGridColor || '#1e222d',
+            style: gridLineStyle,
+            dashedValue: gridDashedValue
+          }
+        },
+        candle: {
+          type: ftsChartType as never,
+          bar: {
+            upColor: ftsCandleUpColor,
+            downColor: ftsCandleDownColor,
+            upBorderColor: ftsShowBorders ? ftsBorderUpColor : 'transparent',
+            downBorderColor: ftsShowBorders ? ftsBorderDownColor : 'transparent',
+            upWickColor: ftsShowWicks ? ftsWickUpColor : 'transparent',
+            downWickColor: ftsShowWicks ? ftsWickDownColor : 'transparent',
+          }
+        },
+        crosshair: {
+          show: ftsShowCrosshair,
+          horizontal: {
+            show: ftsShowCrosshair,
+            line: {
+              show: ftsShowCrosshair,
+              style: crosshairLineStyle,
+              dashedValue: crosshairDashedValue
+            }
+          },
+          vertical: {
+            show: ftsShowCrosshair,
+            line: {
+              show: ftsShowCrosshair,
+              style: crosshairLineStyle,
+              dashedValue: crosshairDashedValue
+            }
+          }
+        }
+      } as never);
+
+      if (ftsTimezone) {
+        (chart as any).setTimezone?.(ftsTimezone);
+      }
+
+      // مقیاس قیمت
+      const yAxisType = ftsPriceScale === 'logarithm'
+        ? 'log'
+        : ftsPriceScale === 'percentage'
+        ? 'percentage'
+        : 'normal';
+      chart.overrideYAxis({
+        paneId: 'candle_pane',
+        type: yAxisType
+      } as never);
+    } catch (e) {
+      void e;
+    }
+  }, [
+    ftsCandleUpColor,
+    ftsCandleDownColor,
+    ftsBorderUpColor,
+    ftsBorderDownColor,
+    ftsWickUpColor,
+    ftsWickDownColor,
+    ftsShowBorders,
+    ftsShowWicks,
+    ftsShowGrid,
+    ftsGridColor,
+    ftsGridStyle,
+    ftsShowCrosshair,
+    ftsCrosshairStyle,
+    ftsPriceScale,
+    ftsChartType,
+    ftsTimezone
+  ]);
 
   // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {
@@ -788,6 +918,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ایجاد Overlay در KlineCharts v10 با استفاده از overrideOverlay و styles
     try {
+      const lineStyleObj = overlayStyle === 'solid'
+        ? { style: 'solid' as const }
+        : overlayStyle === 'dotted'
+        ? { style: 'dashed' as const, dashedValue: [2, 2] }
+        : { style: 'dashed' as const, dashedValue: [6, 6] };
+
       const id = chart.createOverlay({
         name: overlayType,
         lock: isDrawingLocked,
@@ -795,7 +931,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           line: {
             color: overlayColor,
             size: overlayWidth,
-            style: overlayStyle // 'solid' | 'dashed'
+            ...lineStyleObj
           },
           polygon: {
             color: overlayColor + '22'
@@ -833,12 +969,18 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   };
 
-  const handleStyleChange = (s: 'solid' | 'dashed') => {
+  const handleStyleChange = (s: 'solid' | 'dashed' | 'dotted') => {
     setOverlayStyle(s);
     if (chartRef.current && selectedOverlayId) {
+      const lineStyleObj = s === 'solid'
+        ? { style: 'solid' as const, dashedValue: [] }
+        : s === 'dotted'
+        ? { style: 'dashed' as const, dashedValue: [2, 2] }
+        : { style: 'dashed' as const, dashedValue: [6, 6] };
+
       chartRef.current.overrideOverlay({
         id: selectedOverlayId,
-        styles: { line: { style: s } }
+        styles: { line: lineStyleObj }
       } as never);
     }
   };
@@ -1021,7 +1163,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
               ))}
             </div>
           ) : null}
-          <div ref={chartContainerRef} className="nn-kline-chart" />
+          <div
+            ref={chartContainerRef}
+            className={`nn-kline-chart ${activeToolId && !['crosshair', 'arrow', 'dot'].includes(activeToolId) ? 'drawing-active-crosshair' : ''}`}
+          />
 
           {/* وضعیت صادقانه بدون دیتا (بدون ساخت دیتای تقلبی/mock) */}
           {!isLoading && !hasData && (

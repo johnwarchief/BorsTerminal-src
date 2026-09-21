@@ -33,16 +33,35 @@ export type ChartView = {
   axisDragLock: boolean;
   /** حاشیهٔ برچسب‌های محور (tickText.marginStart/End) */
   axisTickMargin: number;
-  background: 'theme' | 'classic';
+  background: 'theme' | 'classic' | 'dark' | 'light' | 'custom';
+  customBgColor: string;
   candleUp: string | null;
   candleDown: string | null;
+  borderUp: string | null;
+  borderDown: string | null;
+  wickUp: string | null;
+  wickDown: string | null;
+  showBorders: boolean;
+  showWicks: boolean;
   /** سایهٔ کندل خاکستری (وگرنه هم‌رنگ بدنه) */
   wickGray: boolean;
+  timezone: string;
   showLegend: boolean;
   showXAxis: boolean;
   showYAxis: boolean;
   /** چیدمان چارت: تک/۲/۴ پنل با همگام‌سازی */
   splitLayout: 1 | 2 | 4;
+  statusShowOhlc: boolean;
+  statusShowSymbol: boolean;
+  statusShowIndicators: boolean;
+  statusShowVolume: boolean;
+  gridColor: string;
+  gridStyle: 'solid' | 'dashed' | 'dotted' | 'none';
+  showGridHorz: boolean;
+  showGridVert: boolean;
+  crosshairStyle: 'dashed' | 'dotted' | 'solid';
+  watermarkOpacity: number;
+  showWatermark: boolean;
 };
 
 export const VIEW_DEFAULTS: ChartView = {
@@ -51,14 +70,33 @@ export const VIEW_DEFAULTS: ChartView = {
   priceScalePos: 'right',
   axisDragLock: false,
   axisTickMargin: 3,
-  background: 'theme',
-  candleUp: null,
-  candleDown: null,
+  background: 'dark',
+  customBgColor: '#131722',
+  candleUp: '#089981',
+  candleDown: '#f23645',
+  borderUp: '#089981',
+  borderDown: '#f23645',
+  wickUp: '#089981',
+  wickDown: '#f23645',
+  showBorders: true,
+  showWicks: true,
   wickGray: false,
+  timezone: 'Asia/Tehran',
   showLegend: true,
   showXAxis: true,
   showYAxis: true,
   splitLayout: 1,
+  statusShowOhlc: true,
+  statusShowSymbol: true,
+  statusShowIndicators: true,
+  statusShowVolume: true,
+  gridColor: '#1e222d',
+  gridStyle: 'dashed',
+  showGridHorz: true,
+  showGridVert: true,
+  crosshairStyle: 'dashed',
+  watermarkOpacity: 5,
+  showWatermark: true,
 };
 
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
@@ -92,7 +130,8 @@ type FtsConfigState = FtsFlags & {
   toggleIndicator: (k: IndicatorKey) => void;
 };
 
-const STORAGE_KEY = '***';
+const STORAGE_KEY = 'fts.chart.settings.v1';
+const LEGACY_STORAGE_KEY = '***';
 
 export const DEFAULTS: FtsFlags = {
   showMAs: true,
@@ -152,7 +191,7 @@ function pick(s: PersistedState): PersistedState {
 
 function initial(): PersistedState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = (typeof localStorage !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY)) : null);
     if (!raw) return { ...PERSIST_DEFAULTS };
     const parsed = JSON.parse(raw) as Partial<PersistedState>;
     return { ...PERSIST_DEFAULTS, ...parsed, view: { ...VIEW_DEFAULTS, ...(parsed.view ?? {}) } };

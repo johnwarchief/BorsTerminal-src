@@ -250,7 +250,15 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       <div
         className="tool-item"
         title="حذف تمام ترسیم‌ها"
-        onClick={onClearDrawings}
+        onClick={() => {
+          if (typeof window !== 'undefined' && window.confirm) {
+            if (window.confirm('آیا از حذف تمام ترسیم‌های این نماد اطمینان دارید؟')) {
+              onClearDrawings();
+            }
+          } else {
+            onClearDrawings();
+          }
+        }}
         style={{ color: '#f23645' }}
       >
         <IconTrash />

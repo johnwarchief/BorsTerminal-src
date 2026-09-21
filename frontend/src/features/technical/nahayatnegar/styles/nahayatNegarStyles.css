@@ -343,6 +343,11 @@
   height: 100%;
 }
 
+.nn-kline-chart.drawing-active-crosshair,
+.nn-kline-chart.drawing-active-crosshair canvas {
+  cursor: crosshair !important;
+}
+
 /* نوار هشدار عدم وجود دیتا (صادقانه) */
 .nn-no-data-banner {
   position: absolute;
