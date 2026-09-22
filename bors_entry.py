@@ -247,6 +247,27 @@ def port_open(p):
     finally:
         s.close()
 
+def server_is_ours(p):
+    """آیا سرورِ در حال اجرا مالِ همین برنامه است (نه سرویس دیگر روی همان پورت)؟"""
+    import urllib.request, json
+    try:
+        with urllib.request.urlopen(f'http://127.0.0.1:{p}/api/update/version', timeout=2) as r:
+            data = json.loads(r.read().decode('utf-8', 'replace'))
+            return 'version' in data
+    except Exception:
+        return False
+
+def pick_free_port(preferred=8001):
+    """پورت ترجیحی اگر آزاد بود؛ وگرنه یک پورت آزادِ سیستمی می‌گیرد تا هرگز
+    با پورتِ اشغال تداخل نکند (پایانِ ماجرای «پورت اشغال است»)."""
+    if not port_open(preferred):
+        return preferred
+    s = socket.socket()
+    s.bind(('127.0.0.1', 0))
+    p = s.getsockname()[1]
+    s.close()
+    return p
+
 def wait_http(p, timeout=30):
     import urllib.request
     t0 = time.time()
@@ -279,6 +300,26 @@ def find_app_browser():
         if c and os.path.exists(c):
             return c
     return None
+
+def open_native_window(url):
+    """پنجرهٔ مستقلِ بومی با WebView2 (pywebview): بدون مرورگر/تب/نوار آدرس و
+    بدون نامِ Edge در تسک‌بار — شبیهِ یک اپ دسکتاپ واقعی. اگر pywebview یا
+    WebView2 نبود، False برمی‌گرداند تا مسیر مرورگرِ فعلی fallback شود."""
+    if os.environ.get('BORS_NATIVE_WINDOW', '1') == '0':
+        return False
+    try:
+        import webview  # pywebview
+    except Exception as e:
+        print(f'[native] pywebview unavailable ({e}) -> browser fallback')
+        return False
+    try:
+        webview.create_window('بورس‌ترمینال — BorsTerminal', url,
+                              width=1440, height=900, min_size=(1024, 640))
+        webview.start()          # تا بستهٔ شدن پنجره بلاق میکند
+        return True
+    except Exception as e:
+        print(f'[native] window failed ({e}) -> browser fallback')
+        return False
 
 def open_app_window(url):
     """باز کردن ترمینال در یک پنجره مستقل دسکتاپ (App Window Mode) بدون تب و نوار آدرس"""
@@ -313,11 +354,17 @@ def main():
     if WIN_TOO_OLD:
         _warn_old_windows()
     port = int(os.environ.get('BORS_PORT', '8001'))
-    for p in (port,):
-        if port_open(p):
-            print(f'[OK] Server already running on {p} -> open app window')
-            open_app_window(f'http://localhost:{p}')
+    if port_open(port) and server_is_ours(port):
+        print(f'[OK] Server already running on {port} -> open window')
+        url = f'http://127.0.0.1:{port}'
+        if open_native_window(url):
             return
+        open_app_window(url)
+        return
+    if port_open(port):
+        # پورت اشغال است ولی سرورِ ما نیست → پورت آزادِ دیگر
+        port = pick_free_port(port)
+        print(f'[OK] port busy -> using free port {port}')
     if not _preflight():
         # v1.0.15: console=False → sys.stdin می‌تواند None باشد و input()
         # با «RuntimeError: lost sys.stdin» کلِ برنامه را می‌کشد. فقط در
@@ -334,8 +381,11 @@ def main():
     th = threading.Thread(target=run, daemon=True)
     th.start()
     if wait_http(port):
-        print(f'[OK] http://localhost:{port}')
-        open_app_window(f'http://localhost:{port}')
+        print(f'[OK] http://127.0.0.1:{port}')
+        url = f'http://127.0.0.1:{port}'
+        if open_native_window(url):
+            return  # پنجرهٔ بومی بسته شد → خروج
+        open_app_window(url)
     else:
         print('[ERR] server did not start')
     try:

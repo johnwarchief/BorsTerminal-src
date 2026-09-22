@@ -13,7 +13,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
-import { isFundamentalCompany } from '../lib/assetScope';
+import { isFundamentalCompany, isFinancialOrHolding } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
@@ -287,7 +287,17 @@ const ScreenerRow = memo(function ScreenerRow({
                       </span>
                       <span className="shrink-0">
                         {i3 === 'gap' ? (
-                          <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
+                          isFinancialOrHolding(r) ? (
+                            /* مؤسسهٔ مالی/هلدینگ: سود ناخالص ماهیتاً وجود ندارد → N/A نه «شکاف داده» */
+                            <GapMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip="بانک/بیمه/هلدینگ «سود ناخالص» گزارش نمی‌کند؛ این شاخص برای این ماهیت کاربرد ندارد — شکاف داده نیست."
+                              evidence={ev.i3}
+                              testId="fts-na-3_gross_margin"
+                            />
+                          ) : (
+                            <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
+                          )
                         ) : (
                           <PassMark
                             state={i3}
@@ -316,7 +326,16 @@ const ScreenerRow = memo(function ScreenerRow({
                       </span>
                       <span className="shrink-0">
                         {i4 === 'gap' ? (
-                          <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
+                          isFinancialOrHolding(r) ? (
+                            <GapMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip="نسبت فروش/ارزش بازار برای بانک/بیمه/هلدینگ معنا ندارد؛ شکاف داده نیست."
+                              evidence={ev.i4}
+                              testId="fts-na-4_sales_to_mcap"
+                            />
+                          ) : (
+                            <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
+                          )
                         ) : (
                           <PassMark
                             state={i4}

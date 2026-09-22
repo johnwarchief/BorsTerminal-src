@@ -43,6 +43,9 @@ a = Analysis(
                    'api.update', 'api._pipeline', 'api.engine', 'api.market_index',
                   # v1.0.13: مشاهدهٔ لاگ در UI وقتی کنسول مخفی است (console=False).
                   'api.diagnostics',
+                  # پنجرهٔ مستقلِ بومی (Edge WebView2) — pywebview روی ویندوز به
+                  # pythonnet/clr نیاز دارد؛ نبودشان هم مشکلی نیست (fallback مرورگر).
+                  'webview', 'webview.platforms.edgechromium', 'clr', 'pythonnet', 'clr_loader',
                    'pandas._libs.tslibs.np_datetime', 'pandas._libs.tslibs.offsets', 'docx', 'openpyxl', 'reportlab',
                    'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil', 'websockets', 'packaging',
                    'PIL', 'PIL.Image', 'PIL.ImageDraw', 'PIL.ImageFont', 'PIL._imaging'],
