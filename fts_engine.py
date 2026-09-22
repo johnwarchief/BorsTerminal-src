@@ -1264,22 +1264,54 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # همراستا با مسیر جزئیات (eps_trend_3y): اول سالانهٔ حسابرسی‌شده را ترجیح بده،
         # و اگر کافی نبود، ردیف‌های میان‌دوره/سالانه‌شده را هم بپذیر تا شاخص ۲ بین
         # اسکرینر و /api/fundamental واگرا نشود.
-        last = []
-        for req_aud in (True, False):
+        #
+        # v1.0.18: «تلفیقی» به‌عنوان لایهٔ آخر اضافه شد. ۲۷۴ شرکت (فولاد، وبملت،
+        # اخابر، اسیاتک، ...) فقط صورت‌های مالی تلفیقی ۱۲ماهه منتشر می‌کنند؛ با
+        # ردِ آن‌ها ستونِ EPS کاملاً خالی می‌شد در حالی که داده در DB موجود بود.
+        #
+        # ترتیبِ لایه‌ها دقیقاً مثلِ قبل است و تلفیقی فقط وقتی استفاده می‌شود که
+        # هیچ‌کدام از لایه‌های غیرتلفیقی ≥۲ ردیف ندهند → هیچ سریِ کارآمدی تغییر
+        # نمی‌کند. سری باید همگن بماند (EPSِ تلفیقی و غیرتلفیقی پایهٔ سهمِ
+        # متفاوتی دارند) پس ترکیبِ آن‌ها ممنوع است.
+        def _pick(req_aud, want_cons):
             out, seen = [], set()
             for r in annual.get(sym, []):
-                if r["consolidated"] or (req_aud and not r["audited"]):
+                if r["consolidated"] != want_cons:
+                    continue
+                if req_aud and not r["audited"]:
                     continue
                 if not r["fiscal_year"] or r["fiscal_year"] in seen:
                     continue
                 seen.add(r["fiscal_year"])
                 out.append(r)
-            last = out
+            return out
+
+        # لایه‌های قبلی (دقیقاً همان رفتارِ v1.0.17): غیرتلفیقی، حسابرسی سپس غیرحسابرسی
+        for req_aud in (True, False):
+            out = _pick(req_aud, False)
             if len(out) >= 2:
                 return out
-        return last
+        # لایهٔ جدید: تلفیقی، حسابرسی سپس غیرحسابرسی — فقط برای نمادهایی که
+        # تا اینجا سریِ ۲تایی نیامده است.
+        for req_aud in (True, False):
+            out = _pick(req_aud, True)
+            if len(out) >= 2:
+                return out
+        # کمتر از ۲ ردیفِ همگن: بهترین چیزی که هست را برگردان (مسیرِ جزئیات
+        # با eps_trend_3y باز هم fallback می‌زند).
+        for req_aud in (True, False):
+            for want_cons in (False, True):
+                out = _pick(req_aud, want_cons)
+                if out:
+                    return out
+        return []
 
     def _ref(sym):
+        # v1.0.18: تغییر نکرد. این تابع از قبل ردیف‌های تلفیقی را از طریق
+        # fallbackِ dedup (جدیدترین ردیف بدون توجه به حسابرسی) برمی‌گرداند،
+        # پس حاشیهٔ سود برای نمادهای فقط-تلفیقی از قبل پر می‌شود. بازنویسیِ
+        # ترتیبِ لایه‌ها مرجع را برای رمپنا/سیسکو/آریان تغییر می‌داد و
+        # annual_sales_bt و score را خراب می‌کرد.
         for req_aud in (True, False):
             out, seen = [], set()
             for r in annual.get(sym, []):
