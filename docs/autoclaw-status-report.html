@@ -46,6 +46,8 @@
     <div class="card"><div class="k">ممیزی زندهٔ TSETMC (نبض بازار/تابلو)</div><div class="v" style="color:var(--ok)">۴۶ / ۰</div></div>
     <div class="card"><div class="k">ممیزی زندهٔ کدال (فولاد/وبملت)</div><div class="v" style="color:var(--ok)">۱۴ / ۰ PASSED</div></div>
     <div class="card"><div class="k">تطبیق با آرنا</div><div class="v" style="color:var(--bad)">۴۰۴ (مسیر API عوض شده)</div></div>
+    <div class="card"><div class="k">بیلد onedir + اجرای EXE</div><div class="v" style="color:var(--ok)">PASS</div></div>
+    <div class="card"><div class="k">دلتای آپدیت cumulative</div><div class="v" style="color:var(--gold)">۰.۵۷ MB</div></div>
     <div class="card"><div class="k">گارد محلی تب نبض بازار</div><div class="v" style="color:var(--ok)">۱۲۹ / ۰</div></div>
     <div class="card"><div class="k">تست‌های FTS/بنیادی</div><div class="v" style="color:var(--ok)">۷۶ سبز</div></div>
     <div class="card"><div class="k">سلامت دیتابیس</div><div class="v" style="color:var(--ok)">integrity ok</div></div>
@@ -69,6 +71,7 @@
     <tr><td>کامیت دیتابیس</td><td><code>f48bd89</code> — پرشدن رشد دورهٔ سال قبل + ابزار بازرسی</td></tr>
     <tr><td>کامیت گزارش</td><td><code>de46bc4</code> — گزارش HTML مستقل</td></tr>
     <tr><td>کامیت تابلو</td><td><code>1ca80af</code> — تراز راستِ اعداد جدول تابلو</td></tr>
+    <tr><td>کامیت بیلد</td><td><code>1efd4dc</code> — داینامیک‌کردن <code>pathex</code> در spec بیلد</td></tr>
   </table>
 
   <h2>۳) نواقص و وضعیت</h2>
@@ -117,7 +120,18 @@
     <li>ساخت دو اسکیلِ گارد: <code>bors-frontend-ui-guard</code> و <code>bors-build-install-guard</code>.</li>
   </ul>
 
-  <h2>۷) گارد بیلد/نصب (سیستم ضعیف و ویندوز قدیمی)</h2>
+  <h2>۷) بیلد، اجرا و آپدیت — تست‌شده در همین محیط</h2>
+  <div class="box">
+    <p><strong>محیط بیلد ساخته شد:</strong> پایتون ۳.۱۲.۱۴ با <code>uv</code> + نصب کامل <code>requirements.txt</code> (numpy 2.0.2 / pandas 2.2.3) + PyInstaller 6.22.3. (dotnet SDK 8.0.425 و <code>vpk</code> 1.2.0 موجود بودند.)</p>
+    <p><strong>اجرای منبع:</strong> <code>app.py</code> بالا آمد و همهٔ اندپوینت‌ها ۲۰۰ با دادهٔ واقعی دادند: نسخهٔ ۱.۰.۱۷، نبض بازار (n=۳۷۴۴)، تابلو (۵۲۸۰)، اسکرینر (۸۷۲).</p>
+    <p><strong>بیلد onedir:</strong> <code>PyInstaller bors_exe_onedir.spec</code> موفق؛ <code>dev/onedir_contract_v11.py</code> → <span class="pill ok">PASS</span> (همهٔ ماژول‌های <code>api.*</code> در hiddenimports + شکل درست onedir).</p>
+    <p><strong>اجرای EXE فریز‌شده:</strong> <code>dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe</code> اجرا شد و روی پورت جداگانه همهٔ اندپوینت‌ها ۲۰۰ دادند → <span class="pill ok">PASS</span>.</p>
+    <p><strong>آپدیت cumulative (Velopack):</strong> نسخهٔ ۱.۰.۱۷ و ۱.۰.۱۸ بسته‌بندی شد؛ دلتای <code>1.0.17 → 1.0.18</code> برابر <strong>۰.۵۷ MB</strong> در برابر پکیج کامل ۷۸ MB (۰.۷٪)، و <code>releases.win.json</code> هر دو نسخه را دارد → هر نصب قدیمی می‌تواند دلتا بگیرد. <span class="pill ok">cumulative OK</span></p>
+    <p><strong>رفع باگ بیلد:</strong> <code>pathex</code> در spec به مسیر دسکتاپ هاردکد بود؛ داینامیک شد (<code>SPECPATH</code>) و بیلد از خود ریپو تایید شد.</p>
+    <p><strong>باقی‌مانده:</strong> امضای کد (نیازمند <code>BORS_SIGN_PARAMS</code>)، نصب/اجرا روی ویندوز ۱۰ خام + سیستم ضعیف، و تطبیق آرنا (مسیر API فعلی یا رندر مرورگری).</p>
+  </div>
+
+  <h2>۷.۱) گارد بیلد/نصب (سیستم ضعیف و ویندوز قدیمی)</h2>
   <div class="box">
     <p><strong>موجود و سالم:</strong> <code>WIN_TOO_OLD</code> · رندر نرم‌افزاری SwiftShader برای GPU ضعیف/Intel HD/RAM کم · پین <code>numpy==2.0.2</code> · پکیجینگ onedir · آپدیتر Velopack · فیکس cp1252 و lost sys.stdin.</p>
     <p><strong>گپ‌ها:</strong> ناسازگاری npm v12/Node 22.22.0، گیت install-scripts روی esbuild، و ۴۴ خطای تایپ‌چکِ از قبل موجود در <code>features/technical/*</code>.</p>
