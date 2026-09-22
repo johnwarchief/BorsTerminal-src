@@ -18,6 +18,7 @@ jobs:
   release-windows:
     name: Build & Release Windows App (Tauri v2)
     runs-on: windows-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout repository
