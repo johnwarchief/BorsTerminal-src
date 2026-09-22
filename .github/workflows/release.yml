@@ -118,6 +118,15 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
       - name: Build Python Backend (PyInstaller + bundle data)
         run: python scripts/build_all.py
 
