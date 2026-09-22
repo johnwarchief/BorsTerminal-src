@@ -44,6 +44,8 @@
 
   <div class="cards">
     <div class="card"><div class="k">ممیزی زندهٔ TSETMC (نبض بازار/تابلو)</div><div class="v" style="color:var(--ok)">۴۶ / ۰</div></div>
+    <div class="card"><div class="k">ممیزی زندهٔ کدال (فولاد/وبملت)</div><div class="v" style="color:var(--ok)">۱۴ / ۰ PASSED</div></div>
+    <div class="card"><div class="k">تطبیق با آرنا</div><div class="v" style="color:var(--bad)">۴۰۴ (مسیر API عوض شده)</div></div>
     <div class="card"><div class="k">گارد محلی تب نبض بازار</div><div class="v" style="color:var(--ok)">۱۲۹ / ۰</div></div>
     <div class="card"><div class="k">تست‌های FTS/بنیادی</div><div class="v" style="color:var(--ok)">۷۶ سبز</div></div>
     <div class="card"><div class="k">سلامت دیتابیس</div><div class="v" style="color:var(--ok)">integrity ok</div></div>
@@ -65,6 +67,8 @@
     <tr><td>شاخه</td><td><code>autoclaw/ui-fixes</code> (پایه <code>7e754a8</code>)</td></tr>
     <tr><td>کامیت نمایش جدول</td><td><code>51522ec</code> — تراز ستون‌های عددی ماتریس FTS</td></tr>
     <tr><td>کامیت دیتابیس</td><td><code>f48bd89</code> — پرشدن رشد دورهٔ سال قبل + ابزار بازرسی</td></tr>
+    <tr><td>کامیت گزارش</td><td><code>de46bc4</code> — گزارش HTML مستقل</td></tr>
+    <tr><td>کامیت تابلو</td><td><code>1ca80af</code> — تراز راستِ اعداد جدول تابلو</td></tr>
   </table>
 
   <h2>۳) نواقص و وضعیت</h2>
@@ -72,6 +76,7 @@
     <tr><th>کد</th><th>بخش</th><th>علت ریشه‌ای</th><th>وضعیت</th></tr>
     <tr><td>UI-1</td><td>بنیادی — ماتریس FTS</td><td>نشان قبول/مردود/شکاف <em>قبل</em> از عدد بود و عرض متفاوت برچسب‌ها اعداد را جابه‌جا می‌کرد</td><td><span class="pill ok">رفع شد</span></td></tr>
     <tr><td>UI-2</td><td>بنیادی — اورفلو</td><td>جدول <code>min-w-[1240px]</code> کل صفحه را بیرون می‌زد؛ <code>.app-main</code> بدون <code>width:100%</code></td><td><span class="pill ok">در بیس رفع شده</span></td></tr>
+    <tr><td>UI-7</td><td><strong>تابلو</strong> — تراز اعداد</td><td>هدرها راست‌چین (RTL start) ولی اعداد با <code>.num</code> (<code>direction:ltr</code>) خودکار <strong>چپ‌چین</strong> می‌شدند → زیر هدر نمی‌نشستند</td><td><span class="pill ok">رفع شد</span></td></tr>
     <tr><td>UI-3</td><td>تکنیکال — واچ‌لیست</td><td>هدر <code>text-end</code> ولی سلول قیمت بدون تراز صریح؛ «کد+نام» بدون فاصله</td><td><span class="pill warn">باقی</span></td></tr>
     <tr><td>UI-4</td><td>متن‌های بریده</td><td><code>truncate</code> تک‌خطی روی نام‌های بلند (۴۴ technical / ۱۶ market)</td><td><span class="pill warn">باقی</span></td></tr>
     <tr><td>UI-5</td><td>جریان حجم / برترین</td><td>داده‌ی زندهٔ intraday موجود نبود (نه باگ رندر)</td><td><span class="pill warn">داده‌ای</span></td></tr>
@@ -86,7 +91,8 @@
     <ul>
       <li><strong>ممیزی زندهٔ تابلو</strong> (<code>dev/live_market_board_audit.py</code>): منابع <em>GetMarketWatch</em> + <em>GetClientTypeAll</em> + تطبیق متقاطعِ Arena — نتیجه <span class="pill ok">۴۶ چک، ۰ شکست</span>. برای «فولاد»، «وبملت» و «طتوان918»: حجم، ارزش، تعداد معامله، VWAP، عمق ۵ خطی، سرانهٔ خرید/فروش، قدرت خریدار و جریان پول مو‌به‌مو با تابلو یکی است.</li>
       <li><strong>گارد محلی نبض بازار</strong> (<code>dev/mstat_local_v975.py</code>): <span class="pill ok">۱۲۹ چک، ۰ شکست</span> و تایید شد <code>mstat.js</code> هیچ فراخوانیِ خارجی (از جمله تریدرزآرنا) ندارد.</li>
-      <li><span class="pill warn">توجه</span> آرنا (تریدرزآرنا) در اجرای زنده ۰ نماد برگرداند (anti-scrape)، پس تطبیق متقاطعِ آرنا ممکن نشد؛ منبع حقیقتِ TSETMC کامل سبز است.</li>
+      <li><strong>ممیزی زندهٔ کدال</strong> (<code>dev/live_codal_audit.py</code>): <span class="pill ok">۱۴ چک، ۰ شکست — PASSED</span>. فروش ماهانه/تجمعی «فولاد» (۵۴۴٬۲۷۱٬۹۲۹ / ۱٬۸۷۰٬۰۰۴٬۰۲۶) و «وبملت» (۴۲۴٬۳۸۴٬۰۰۴ / ۲٬۰۲۸٬۸۱۴٬۱۷۰) مو‌به‌مو با دیتابیس یکی است؛ ۲۰/۲۰ درخواست بدون WAF. یعنی «پروندهٔ کدال» از نظر درآمد/رشد بسته و سازگار است.</li>
+      <li><span class="pill bad">علت خطای آرنا</span> اندپوینتِ کدشده <code>api.tradersarena.ir/api/v1/market/quote</code> الان <strong>HTTP 404</strong> می‌دهد (مسیر API عوض/حذف شده)؛ به‌همین‌دلیل تطبیق متقاطعِ آرنا بی‌صدا رد شد. برای تطبیق باید مسیر فعلیِ API آرنا از روی شبکهٔ مرورگر پیدا شود. توجه: آرنا فقط منبعِ <em>تطبیق</em> است، نه منبع داده.</li>
     </ul>
   </div>
 
