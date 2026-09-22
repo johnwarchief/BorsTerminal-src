@@ -168,7 +168,10 @@ jobs:
             exit 1
           }
           New-Item -ItemType Directory -Force -Path .tauri | Out-Null
-          [System.IO.File]::WriteAllText("$PWD\.tauri\updater.key", $env:KEY.Trim() + "`n")
+          # The tauri signer's base64 decoder is strict: ANY whitespace (even a
+          # trailing newline) fails with "Invalid symbol 10". Write the key as
+          # one continuous line with no newline at all.
+          [System.IO.File]::WriteAllText("$PWD\.tauri\updater.key", ($env:KEY -replace '\s',''))
 
       - name: Sign Installer with Updater Key
         shell: pwsh
