@@ -1,7 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 a = Analysis(
     ['bors_entry.py'],
-    pathex=['C:/Users/PCMOD/Desktop/BorsTerminal'],
+    # pathex باید داینامیک باشد: قبلاً به «C:/Users/PCMOD/Desktop/BorsTerminal»
+    # هاردکد بود؛ بیلد از هر ورک‌تری/کلون دیگر، ماژول‌ها را اشتباهی از آن مسیر
+    # برمی‌داشت. SPECPATH = پوشهٔ همین spec (ریشهٔ ریپو).
+    pathex=[SPECPATH],
     binaries=[],
     datas=[
         ('static', 'static'),
