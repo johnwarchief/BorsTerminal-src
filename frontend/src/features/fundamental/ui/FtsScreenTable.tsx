@@ -634,7 +634,9 @@ export function FtsScreenTable({
         </button>
       </div>
 
-      <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto overscroll-contain">
+      {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت (نه ۷۰vhِ ثابت) تا پایینِ
+          جدول فضای خالی نماند و در هر رزولوشنی درست پر شود. */}
+      <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-260px)] min-h-[320px] overflow-auto overscroll-contain">
         <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
           <colgroup>
             <col className="w-[19%]" />

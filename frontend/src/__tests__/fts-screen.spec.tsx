@@ -389,7 +389,7 @@ describe('کارایی جدول غربالگری (F-08)', () => {
   it('کانتینر اسکرول با ارتفاع محدود و هدر چسبان آماده است', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const scroll = screen.getByTestId('fts-screen-scroll');
-    expect(scroll.className).toContain('max-h-[70vh]');
+    expect(scroll.className).toMatch(/h-\[calc\(100dvh-260px\)\]/); // ارتفاع کشسانِ متناسب با ویوپورت (بدون فضای خالی پایین)
     expect(scroll.className).toContain('overflow-auto');
     const thead = document.querySelector('thead');
     expect(thead?.className).toContain('sticky');
