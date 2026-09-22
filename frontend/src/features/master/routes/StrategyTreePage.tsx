@@ -7,6 +7,7 @@ import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
+import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import {
   evaluateFtsPipeline,
   type StrategyHorizon,
@@ -22,6 +23,7 @@ export default function StrategyTreePage() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
   const [viewMode, setViewMode] = useState<ViewMode>('both');
+  const { params } = useStrategyParamsStore();
 
   // انتخاب‌های سفارشی کاربر در هر مرحله
   const [customFund, setCustomFund] = useState<'super' | 'good' | 'medium' | 'weak'>('good');
@@ -810,12 +812,12 @@ export default function StrategyTreePage() {
             <span className="text-text-muted block mb-1">۱. شرط ورود و زمان‌سنج:</span>
             <p className="text-text-primary font-medium leading-relaxed">
               {selectedPreset === 'swing'
-                ? 'شکست مقاومت استاتیک با ستاپ جت یا تراز ۳۳-۴۰ فیبو + تایید الگوی ساعت یا حجم ۳ برابری.'
+                ? `شکست مقاومت استاتیک با ستاپ جت (${toFaDigits(params.jetStabilizationDays)} روزه) یا فیبو + تایید الگوی ساعت (${toFaDigits(params.clockPriceDiffPct)}٪) یا حجم ${toFaDigits(params.minVolumeRatio)}×.`
                 : selectedPreset === 'trend'
-                  ? 'روند هفتگی صعودی + تایید ۵ شاخص بنیادی کدال + ورود پول حقیقی از صندوق درآمد ثابت.'
+                  ? `روند هفتگی صعودی + تایید ۵ شاخص بنیادی کدال (حاشیه > ${toFaDigits(params.minGrossMarginPct)}٪) + ورود پول حقیقی.`
                   : selectedPreset === 'hourglass'
-                    ? 'نماد سوپربنیادی شاخص‌ساز در تایم هفتگی زیر MA-52 و اشباع عمیق RSI زیر ۷.'
-                    : 'ترکیب سفارشی شاخص‌های انتخاب‌شده در درخت بالا.'}
+                    ? `نماد سوپربنیادی در تایم هفتگی زیر MA-52 و اشباع عمیق RSI زیر ${toFaDigits(params.hourglassWeeklyRsi)}.`
+                    : 'ترکیب سفارشی شاخص‌ها و پارامترهای ویرایش‌شده در بالا.'}
             </p>
           </div>
 
@@ -823,12 +825,12 @@ export default function StrategyTreePage() {
             <span className="text-text-muted block mb-1">۲. حد ضرر و مدیریت ریسک:</span>
             <p className="text-accent-red font-bold leading-relaxed">
               {selectedPreset === 'swing'
-                ? 'تشکیل یک کندل کامل زیر MA-14 یا افت ۵٪ زیر نقطه ورود (خروج قطعی).'
+                ? `تشکیل یک کندل کامل زیر MA-${toFaDigits(params.stopLossMaPeriod)} یا افت ${toFaDigits(params.stopLossFixedPct)}٪ زیر نقطه ورود (خروج قطعی).`
                 : selectedPreset === 'trend'
-                  ? 'حد ضرر بنیادی در صورت‌های مالی فصلی کدال (افت رشد فروش یا حاشیه سود).'
+                  ? `حد ضرر بنیادی در صورت‌های مالی کدال (افت حاشیه سود به زیر ${toFaDigits(params.minGrossMarginPct)}٪ یا افت فروش).`
                   : selectedPreset === 'hourglass'
                     ? 'بدون حد ضرر نوسانی کوتاه‌مدت؛ پله‌بندی سنگین در افت‌های هیجانی بازار.'
-                    : 'پایبندی به حد ضرر انتخاب‌شده در گام چهارم.'}
+                    : 'پایبندی به حد ضرر تعیین‌شده در پنل پارامترها.'}
             </p>
           </div>
 
@@ -836,12 +838,12 @@ export default function StrategyTreePage() {
             <span className="text-text-muted block mb-1">۳. هدف سود و خروج ۵۰٪:</span>
             <p className="text-accent-green font-bold leading-relaxed">
               {selectedPreset === 'swing'
-                ? 'خروج کامل در مقاومت اول R1 یا خروج ۵۰٪ جهت آزادسازی اصل سرمایه.'
+                ? `خروج در مقاومت اول R1 با ذخیره سود ${toFaDigits(params.exitHalfPct)}٪ جهت بدون ریسک شدن معامله.`
                 : selectedPreset === 'trend'
-                  ? 'خروج ۵۰٪ در سقف مقاومت ماژور اول و نگهداری ۵۰٪ سود تا سقف سوم یا تغییر ساختار.'
+                  ? `خروج ${toFaDigits(params.exitHalfPct)}٪ در سقف مقاومت ماژور اول و نگهداری مابقی تا سقف سوم یا تغییر ساختار.`
                   : selectedPreset === 'hourglass'
-                    ? 'نگهداری ۳ تا ۱۰ ساله و خروج در سقف تاریخی بعد از چرخه‌های صعودی بازار.'
-                    : 'خروج ۵۰٪ در اولین سد مقاومتی سهم.'}
+                    ? 'نگهداری ۳ تا ۱۰ ساله و خروج در سقف تاریخی بعد از چرخه‌های صعودی کلان.'
+                    : `خروج ${toFaDigits(params.exitHalfPct)}٪ در اولین سد مقاومتی.`}
             </p>
           </div>
 
@@ -849,12 +851,12 @@ export default function StrategyTreePage() {
             <span className="text-text-muted block mb-1">۴. وزن و سقف مجاز سبد:</span>
             <p className="text-text-primary font-medium leading-relaxed">
               {selectedPreset === 'swing'
-                ? 'حداکثر ۲ تا ۳.۵ درصد کل پورتفوی به هر تک‌سهم نوسانی.'
+                ? `حداکثر ${toFaDigits(params.singleStockMaxWeightPct)} درصد سبد به هر تک‌سهم نوسانی (سقف صنعت: ${toFaDigits(params.maxIndustryWeightPct)}٪).`
                 : selectedPreset === 'trend'
-                  ? 'وزن ۵ تا ۱۰ درصد برای هر تک‌سهم بنیادی (سقف هر صنعت ۲۰٪).'
+                  ? `وزن ۵ تا ۱۰ درصد برای هر تک‌سهم بنیادی (سقف هر صنعت ${toFaDigits(params.maxIndustryWeightPct)}٪).`
                   : selectedPreset === 'hourglass'
-                    ? 'اهرم خرید ۲ تا ۴ برابری نسبت به پله عادی؛ تا ۲۰٪ سبد در نمادهای مادر.'
-                    : 'رعایت سقف ۲۰٪ صنعت و سقف ۷۰٪ کل دارایی در بورس.'}
+                    ? `اهرم خرید ${toFaDigits(params.hourglassLeverageMultiplier)} برابری نسبت به پله عادی؛ تا ${toFaDigits(params.maxIndustryWeightPct)}٪ سبد در نمادهای مادر.`
+                    : `رعایت سقف ${toFaDigits(params.maxIndustryWeightPct)}٪ صنعت و نسبت R/R حداقل ${toFaDigits(params.minRiskRewardRatio)}.`}
             </p>
           </div>
         </div>

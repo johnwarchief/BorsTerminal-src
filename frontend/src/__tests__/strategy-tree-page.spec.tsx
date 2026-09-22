@@ -88,6 +88,24 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
   });
 
+  it('ویرایشگر تعاملی پارامترها: تغییر مقادیر استراتژی در استور و نمایش در دستورالعمل', () => {
+    renderWithProviders(<StrategyTreePage />);
+
+    // بررسی اسلایدر ضریب حجم مشکوک پیش‌فرض
+    expect(screen.getByText(/ضریب حجم مشکوک:/i)).toBeInTheDocument();
+    expect(screen.getByText(/جزوه: ۳\.۰×/i)).toBeInTheDocument();
+
+    // تغییر مقدار ضریب حجم مشکوک
+    const sliders = screen.getAllByRole('slider');
+    expect(sliders.length).toBeGreaterThanOrEqual(1);
+    fireEvent.change(sliders[0], { target: { value: '2.5' } });
+
+    // دکمه بازنشانی به جزوه وجود دارد
+    const resetBtn = screen.getByRole('button', { name: /بازنشانی به جزوه/i });
+    expect(resetBtn).toBeInTheDocument();
+    fireEvent.click(resetBtn);
+  });
+
   it('لینک منوی درخت استراتژی FTS در سایدبار وجود دارد', () => {
     renderWithProviders(<Sidebar />);
     const link = screen.getByRole('link', { name: /درخت استراتژی FTS/i });
@@ -95,4 +113,5 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(link).toHaveAttribute('href', '/strategy-tree');
   });
 });
+
 
