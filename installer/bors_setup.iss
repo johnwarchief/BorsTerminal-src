@@ -1,5 +1,11 @@
 #define AppName "BorsTerminal Ultimate"
-#define AppVersion "1.0.17"
+; AppVersion can be overridden from the command line (ISCC /DAppVersion=x.y.z,
+; used by CI so the release tag and the built filename always agree). Because a
+; bare #define always wins over a command-line define, guard it with #ifndef and
+; keep the default in sync with bors_config.APP_VERSION for local builds.
+#ifndef AppVersion
+#define AppVersion "1.0.18"
+#endif
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
 ; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
