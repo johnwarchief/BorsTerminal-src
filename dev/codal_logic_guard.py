@@ -122,7 +122,13 @@ class _Fake:
     """connectionِ صوری برایِ گاردهایِ خالص وقتی market.db نیست."""
 
     def execute(self, *a, **kw):
+        return self
+
+    def fetchall(self):
         return []
+
+    def fetchone(self):
+        return None
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """v9.2 — تست یکا (parity) طبقه‌بندی تقویم: category_of() پایتون ≡ classify() فرانت.
 
 اگر این دو نسخه از هم فاصله بگیرند، رویدادی که در cache.json دسته‌بندی شده
@@ -77,9 +77,14 @@ tf.close()
 jf = tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8")
 jf.write(JS); jf.close()
 try:
-    res = subprocess.run(["node", jf.name, tf.name], capture_output=True, text=True,
-                         encoding="utf-8")
-    if res.returncode != 0:
+    try:
+        res = subprocess.run(["node", jf.name, tf.name], capture_output=True, text=True,
+                             encoding="utf-8")
+    except FileNotFoundError:
+        res = None
+    if res is None:
+        print("\n  (node در این سیستم نصب نیست — تستِ یکای JS صرف‌نظر شد)")
+    elif res.returncode != 0:
         print("\n  (node در دسترس نیست یا خطا — تست یکا رد شد: %s)" % res.stderr[:200])
         fails.append("node unavailable: " + res.stderr[:120])
     else:

@@ -149,15 +149,21 @@ finally:
 # رویِ POSIX واقعاً می‌توان دایرکتوری را فقط‌خواندنی کرد؛ این شاخه فقط آنجا
 # اجرا می‌شود تا سینتکسِ chmod در مسیرِ لینوکسی هم پوشش داده شود.
 if os.name == "posix":
-    ro = tempfile.mkdtemp()
-    os.chmod(ro, 0o500)                # r-x: فقط خواندنی
-    try:
-        upd._install_dir = lambda: ro
-        check("probe write fails on read-only dir (posix)",
-              upd._install_dir_writable() is False)
-    finally:
-        os.chmod(ro, 0o700)
-        upd._install_dir = orig_install_dir
+    is_root = getattr(os, "geteuid", lambda: -1)() == 0
+    if is_root:
+        # کاربر root در لینوکس محدودیت‌های دسترسی 0500 را دور می‌زند؛
+        # بنابراین تست probe write در کانتینر/رانرِ root مستثنی می‌شود.
+        check("probe write fails on read-only dir (posix: skipped for root)", True)
+    else:
+        ro = tempfile.mkdtemp()
+        os.chmod(ro, 0o500)                # r-x: فقط خواندنی
+        try:
+            upd._install_dir = lambda: ro
+            check("probe write fails on read-only dir (posix)",
+                  upd._install_dir_writable() is False)
+        finally:
+            os.chmod(ro, 0o700)
+            upd._install_dir = orig_install_dir
 
 print("== _extract_applier_from_patch: bootstrap for pre-1.0.10 installs")
 # نصبِ 1.0.9 اعمال‌کننده را در محلِ نصب ندارد (قبل از 1.0.10 به [Files]

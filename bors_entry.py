@@ -284,14 +284,14 @@ def find_app_browser():
     """پیدا کردن مرورگرهای کرومیوم (Edge, Chrome, Brave) برای باز کردن پنجره اختصاصی نرم‌افزار"""
     import shutil
     candidates = [
-        os.path.expandvars("%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
-        os.path.expandvars("%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
-        os.path.expandvars("%LOCALAPPDATA%\Microsoft\Edge\Application\msedge.exe"),
-        os.path.expandvars("%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
-        os.path.expandvars("%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
-        os.path.expandvars("%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
-        os.path.expandvars("%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
-        os.path.expandvars("%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\Application\msedge.exe"),
+        os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        os.path.expandvars(r"%ProgramFiles%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
         shutil.which("msedge"),
         shutil.which("chrome"),
         shutil.which("brave"),
