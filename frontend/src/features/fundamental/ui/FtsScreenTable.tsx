@@ -214,90 +214,95 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
+                    {/* تراز ستون (v1.0.18-fix): مقدارِ عددی اول می‌آید و با flex-1+text-start به
+                        لبهٔ startِ سلول (هم‌راستا با هدرِ text-start) می‌چسبد؛ نشانِ قبول/مردود
+                        بعد از آن قرار می‌گیرد. پیش‌تر نشان جلوتر بود و چون عرضِ برچسب‌های
+                        قبول/مردود/شکاف در هر سطر متفاوت است، اعداد هر ردیف افقی جابه‌جا
+                        می‌شدند و زیر هدر نمی‌نشستند. */}
                     <div className="flex items-center gap-2 min-w-0">
-                      {i1 === 'gap' ? (
-                        <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
-                      ) : (
-                        <PassMark
-                          state={i1}
-                          evidence={ev.i1a}
-                          testId="fts-mark-1a_monetary_growth"
-                        />
-                      )}
                       <span
-                        className={`num text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        className={`num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
                         title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
                         {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {epsPartialRejected ? (
-                        <AuditBadge
-                          state="fail"
-                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
-                          hintTitle={epsGapReason}
-                          evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
-                          compact
-                          testId={EPS_PARTIAL_TESTID}
-                        />
-                      ) : epsInsufficient || i2 === 'gap' ? (
-                        /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
-                        <AuditBadge
-                          state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
-                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
-                          hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
-                          evidence={ev.i2}
-                          compact
-                          testId="eps-gap-reason"
-                        />
-                      ) : (
-                        <PassMark state={i2} testId="fts-mark-2_eps_trend" />
-                      )}
-                      <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-secondary"
-                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
-                      >
-                        {epsTrend ?? '—'}
+                      <span className="shrink-0">
+                        {i1 === 'gap' ? (
+                          <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
+                        ) : (
+                          <PassMark
+                            state={i1}
+                            evidence={ev.i1a}
+                            testId="fts-mark-1a_monetary_growth"
+                          />
+                        )}
                       </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center gap-2 min-w-0">
-                      {i3 === 'gap' ? (
-                        <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
-                      ) : (
-                        <PassMark
-                          state={i3}
-                          evidence={ev.i3}
-                          testId="fts-mark-3_gross_margin"
-                        />
-                      )}
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-secondary"
+                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
+                      >
+                        {epsTrend ?? '—'}
+                      </span>
+                      <span className="shrink-0">
+                        {epsPartialRejected ? (
+                          <AuditBadge
+                            state="fail"
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
+                            hintTitle={epsGapReason}
+                            evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
+                            compact
+                            testId={EPS_PARTIAL_TESTID}
+                          />
+                        ) : epsInsufficient || i2 === 'gap' ? (
+                          /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
+                          <AuditBadge
+                            state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
+                            hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
+                            evidence={ev.i2}
+                            compact
+                            testId="eps-gap-reason"
+                          />
+                        ) : (
+                          <PassMark state={i2} testId="fts-mark-2_eps_trend" />
+                        )}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
+                      <span
+                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-primary"
                         title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
                       </span>
+                      <span className="shrink-0">
+                        {i3 === 'gap' ? (
+                          <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
+                        ) : (
+                          <PassMark
+                            state={i3}
+                            evidence={ev.i3}
+                            testId="fts-mark-3_gross_margin"
+                          />
+                        )}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center gap-2 min-w-0">
-                      {i4 === 'gap' ? (
-                        <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
-                      ) : (
-                        <PassMark
-                          state={i4}
-                          evidence={ev.i4}
-                          testId="fts-mark-4_sales_to_mcap"
-                        />
-                      )}
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-primary"
                         title={
                           r.profit_potential_pct == null
                             ? r.sales_to_mcap != null
@@ -308,6 +313,17 @@ const ScreenerRow = memo(function ScreenerRow({
                       >
                         {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
                         {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                      </span>
+                      <span className="shrink-0">
+                        {i4 === 'gap' ? (
+                          <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
+                        ) : (
+                          <PassMark
+                            state={i4}
+                            evidence={ev.i4}
+                            testId="fts-mark-4_sales_to_mcap"
+                          />
+                        )}
                       </span>
                     </div>
                   </td>
