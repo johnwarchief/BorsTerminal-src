@@ -274,3 +274,37 @@ body::before {
   will-change: transform;
 }
 
+
+/* ── PERFORMANCE MODE (v1.0.18) ─────────────────────────────────────────
+   دلایل مصرف بالای گرافیک:
+   ۱) backdrop-filter: blur روی پنل‌های شیشه‌ای (۲۵ مورد) — هنگام اسکرول/پولینگ
+      هر فریم پس‌زمینه دوباره بلور می‌شود (گران‌ترین افکتِ GPU در وب).
+   ۲) انیمیشن‌های بینهایت (animate-pulse / conflict-pulse / نئون) که همیشه
+      لایهٔ کامپوزیت را بیدار نگه می‌دارند.
+   این بلوک در حالتِ کم‌مصرف (data-perf="low") بلور را حذف و انیمیشن‌های
+   پیوسته را خاموش می‌کند و ظاهر را با پس‌زمینهٔ مات جبران می‌کند. */
+html[data-perf='low'] .glass-panel,
+html[data-perf='low'] .glass-strip {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: color-mix(in srgb, var(--bg-card, #171a22) 94%, transparent) !important;
+}
+html[data-perf='low'] [class*='backdrop-blur'] {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html[data-perf='low'] .animate-pulse,
+html[data-perf='low'] .conflict-pulse,
+html[data-perf='low'] .neon-edge-cyan,
+html[data-perf='low'] .hud-beam {
+  animation: none !important;
+}
+html[data-perf='low'] .will-change-transform { will-change: auto !important; }
+
+/* وقتی پنجره مخفی/مینیمایز است، هیچ انیمیشنی نباید GPU را بیدار نگه دارد. */
+html[data-idle='1'] *,
+html[data-idle='1'] *::before,
+html[data-idle='1'] *::after {
+  animation-play-state: paused !important;
+  transition: none !important;
+}

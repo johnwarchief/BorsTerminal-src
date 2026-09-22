@@ -19,9 +19,27 @@ export function AppShell() {
   useEffect(() => {
     const handleVisibility = () => {
       useMarketStore.getState().setPaused(document.hidden);
+      // وقتی پنجره مخفی/مینیمایز است، انیمیشن‌های پیوسته را متوقف کن تا GPU بیدار نماند.
+      document.documentElement.dataset.idle = document.hidden ? '1' : '0';
     };
+    handleVisibility();
     document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
+
+    // تشخیص سیستم کم‌توان → حالت کم‌مصرف (حذف backdrop-blur و انیمیشن‌های پیوسته).
+    // قابل بازنویسی با localStorage('perf-low'='0'|'1').
+    try {
+      const nav = navigator as Navigator & { deviceMemory?: number };
+      const tiny = (nav.hardwareConcurrency ?? 8) <= 4 || (nav.deviceMemory ?? 8) <= 4;
+      const override = localStorage.getItem('perf-low');
+      const low = override != null ? override === '1' : tiny;
+      document.documentElement.dataset.perf = low ? 'low' : 'high';
+    } catch {
+      /* نادیده بگیر */
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   if (!isAuthenticated) {
