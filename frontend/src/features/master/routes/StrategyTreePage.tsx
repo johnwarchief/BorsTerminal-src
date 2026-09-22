@@ -780,6 +780,34 @@ export default function StrategyTreePage() {
                 در برخورد با مقاومت اول R1 یا سقف موج، ۵۰٪ سهم فروخته می‌شود تا اصل سرمایه آزاد شده و ادامه معامله بدون ریسک شود.
               </p>
             </div>
+
+            {/* خروج در سقف سوم کانال صعودی */}
+            <div
+              className={`rounded-xl border p-3 transition-all duration-200 ${
+                selectedPreset === 'swing' || selectedPreset === 'trend'
+                  ? 'border-orange-500/70 bg-orange-500/10 opacity-100'
+                  : 'border-border-c/60 bg-bg-primary/60 opacity-40'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <strong className="text-xs font-black text-orange-400">🏔️ خروج در سقف سوم (صفحه ۴)</strong>
+                <span className="text-3xs text-orange-400 font-bold">خروج ۱۰۰٪</span>
+              </div>
+              <p className="text-2xs text-text-muted leading-relaxed">
+                برخورد به سقف سوم کانال یا خط روند (فاصله {toFaDigits(params.thirdPeakWeeklyPct)}٪ هفتگی یا {toFaDigits(params.thirdPeakDailyPct)}٪ روزانه)؛ خروج کامل از سهم.
+              </p>
+            </div>
+
+            {/* سقف کل دارایی در بورس و شرایط جنگی */}
+            <div className="rounded-xl border border-border-c/70 bg-bg-primary/70 p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <strong className="text-xs font-black text-accent-yellow">🏛️ قانون سبد دارایی</strong>
+                <span className="text-3xs text-accent-yellow font-bold">مدیریت کلان</span>
+              </div>
+              <p className="text-2xs text-text-muted leading-relaxed">
+                حداکثر {toFaDigits(params.maxTotalPortfolioCapPct)}٪ کل دارایی در بورس (۳۰٪ طلا/فیکس)؛ در شرایط جنگی حداکثر {toFaDigits(params.warConditionCapPct)}٪ در بورس.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -835,12 +863,12 @@ export default function StrategyTreePage() {
           </div>
 
           <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۳. هدف سود و خروج ۵۰٪:</span>
+            <span className="text-text-muted block mb-1">۳. هدف سود و خروج ۵۰٪ / سقف ۳:</span>
             <p className="text-accent-green font-bold leading-relaxed">
               {selectedPreset === 'swing'
-                ? `خروج در مقاومت اول R1 با ذخیره سود ${toFaDigits(params.exitHalfPct)}٪ جهت بدون ریسک شدن معامله.`
+                ? `خروج ۵۰٪ در R1 + خروج کامل در سقف ۳ کانال یا اخطار واگرایی منفی RSI.`
                 : selectedPreset === 'trend'
-                  ? `خروج ${toFaDigits(params.exitHalfPct)}٪ در سقف مقاومت ماژور اول و نگهداری مابقی تا سقف سوم یا تغییر ساختار.`
+                  ? `خروج ${toFaDigits(params.exitHalfPct)}٪ در مقاومت ماژور اول و نگهداری مابقی تا سقف سوم یا تغییر ساختار.`
                   : selectedPreset === 'hourglass'
                     ? 'نگهداری ۳ تا ۱۰ ساله و خروج در سقف تاریخی بعد از چرخه‌های صعودی کلان.'
                     : `خروج ${toFaDigits(params.exitHalfPct)}٪ در اولین سد مقاومتی.`}
@@ -848,12 +876,12 @@ export default function StrategyTreePage() {
           </div>
 
           <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۴. وزن و سقف مجاز سبد:</span>
+            <span className="text-text-muted block mb-1">۴. قوانین سبد دارایی و شرایط جنگ:</span>
             <p className="text-text-primary font-medium leading-relaxed">
               {selectedPreset === 'swing'
-                ? `حداکثر ${toFaDigits(params.singleStockMaxWeightPct)} درصد سبد به هر تک‌سهم نوسانی (سقف صنعت: ${toFaDigits(params.maxIndustryWeightPct)}٪).`
+                ? `تک‌سهم حداکثر ${toFaDigits(params.singleStockMaxWeightPct)}٪ (سقف صنعت ${toFaDigits(params.maxIndustryWeightPct)}٪) | سقف کل بورس ${toFaDigits(params.maxTotalPortfolioCapPct)}٪ (جنگ: ${toFaDigits(params.warConditionCapPct)}٪).`
                 : selectedPreset === 'trend'
-                  ? `وزن ۵ تا ۱۰ درصد برای هر تک‌سهم بنیادی (سقف هر صنعت ${toFaDigits(params.maxIndustryWeightPct)}٪).`
+                  ? `وزن ۵ تا ۱۰ درصد برای هر تک‌سهم بنیادی (سقف صنعت ${toFaDigits(params.maxIndustryWeightPct)}٪) | سقف کل بورس ${toFaDigits(params.maxTotalPortfolioCapPct)}٪.`
                   : selectedPreset === 'hourglass'
                     ? `اهرم خرید ${toFaDigits(params.hourglassLeverageMultiplier)} برابری نسبت به پله عادی؛ تا ${toFaDigits(params.maxIndustryWeightPct)}٪ سبد در نمادهای مادر.`
                     : `رعایت سقف ${toFaDigits(params.maxIndustryWeightPct)}٪ صنعت و نسبت R/R حداقل ${toFaDigits(params.minRiskRewardRatio)}.`}
