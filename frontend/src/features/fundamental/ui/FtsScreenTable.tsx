@@ -221,7 +221,7 @@ const ScreenerRow = memo(function ScreenerRow({
                         می‌شدند و زیر هدر نمی‌نشستند. */}
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className={`num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        className={`num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
                         title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
@@ -244,7 +244,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center gap-2 min-w-0">
                       {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-secondary"
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-secondary"
                         title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
                       >
                         {epsTrend ?? '—'}
@@ -279,7 +279,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center gap-2 min-w-0">
                       {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                         title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
@@ -302,7 +302,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center gap-2 min-w-0">
                       {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num block min-w-0 flex-1 text-start text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                         title={
                           r.profit_potential_pct == null
                             ? r.sales_to_mcap != null
