@@ -16,6 +16,10 @@ export const mainRoutes: RouteObject[] = [
     path: 'technical/:symbol?',
     element: page(() => import('@features/technical/routes/TechnicalPage')),
   },
+  {
+    path: 'strategy-tree/:symbol?',
+    element: page(() => import('@features/master/routes/StrategyTreePage')),
+  },
   { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
   {
     path: 'master/:symbol?',

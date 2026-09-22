@@ -9,12 +9,14 @@ import {
   MasterIcon,
   PortfolioIcon,
   TechnicalIcon,
+  TreeIcon,
 } from '@shared/components/Icons';
 
 const NAV_ITEMS = [
   { to: '/market', icon: MarketIcon, label: 'تابلو بازار', end: false },
   { to: '/fundamental', icon: FundamentalIcon, label: 'تحلیل بنیادی', end: false },
   { to: '/technical', icon: TechnicalIcon, label: 'تحلیل تکنیکال', end: false },
+  { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },
   { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
   { to: '/master', icon: MasterIcon, label: 'ایجنت ارشد', end: false },
 ];

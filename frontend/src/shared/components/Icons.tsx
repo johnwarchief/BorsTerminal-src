@@ -90,3 +90,16 @@ export function MasterIcon({ className, size = 16 }: IconProps) {
     </svg>
   );
 }
+
+export function TreeIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <circle cx="18" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M18 9a9 9 0 0 1-9 9H6" />
+      <path d="M12 12a6 6 0 0 0 6 6" />
+      <circle cx="18" cy="18" r="3" />
+    </svg>
+  );
+}
+
