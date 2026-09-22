@@ -5,6 +5,17 @@
 > توجه: این فایل بین v7.4.5 تا v9.7.1 پرش دارد (بخش‌های v8/v9 هرگز نوشته نشدند).
 > منبع معتبر آن بازه، جدول «بدهی فنی شناخته‌شده» در `REPO_MAP.md` و لاگ کامیت‌هاست.
 
+## [v1.0.19] — 2026-09-23 — دکمهٔ دیتابیس کدال از گیت‌هاب + رفعِ امضای CI
+
+- **دکمهٔ «دیتابیس کدال» روی جدول بنیادی:** با یک کلیک، اسنپ‌شاتِ فشردهٔ سه جدول کدال (`codal_notices`، `financial_statements`، `monthly_sales`) را **فقط از ریلیزِ گیت‌هاب** (`releases/latest/download/codal.db.lzma`) دانلود و با `market.db` محلی ادغام می‌کند — بدونِ خزشِ مستقیمِ کدال و بدونِ بارِ اسکنِ کامل.
+- **ادغامِ افزاینده و idempotent:** هر سه جدول کلیدِ اصلی `tracing_no` دارند؛ ادغام با `ATTACH DATABASE` + `INSERT OR REPLACE` روی اشتراکِ ستون‌ها انجام می‌شود، پس دادهٔ موجود حفظ و ردیف‌های تازه اضافه/جایگزین می‌شوند. پس از ادغام، `fts_engine.invalidate_fts_results` کشِ `fts_results` را بی‌اعتبار می‌کند تا جدول بنیادی فوراً تازه شود.
+- **راستی‌آزماییِ امضا پیش از ادغام:** worker ابتدا `codal.db.lzma.sig` را هم دانلود و با `bors_minisign.verify_minisign` در برابرِ کلید عمومیِ خودِ برنامه (`api.update.UPDATE_PUBKEY`) و سپس `PRAGMA integrity_check` و حضورِ جداول را بررسی می‌کند. اسنپ‌شاتِ بی‌امضا/دستکاری‌شده **هرگز** ادغام نمی‌شود (بدونِ retry روی tamper).
+- **چرخشِ IP هنگامِ بلاک:** اگر دانلود از گیت‌هاب شکست بخورد، worker `codal_fetcher.rotate_ip_via_adb` (حالتِ پرواز via ADB روی گوشیِ متصل) را صدا می‌زند و تا سه بار تلاش مجدد می‌کند. مسیرِ اجرا در یک thread جداگانه (daemon) است؛ endpoint هم‌زمانی را با `_dbdl_running` و گاردِ اسکنِ فعال رد می‌کند.
+- **UX زنده:** `POST /api/sync/codal/db-download` + `GET /api/sync/codal/db-status`؛ فرانت هر ۲ ثانیه poll می‌کند و درصد، مرحله (دریافت/چرخش IP/ادغام)، جزئیات و خطا را روی دکمه نشان می‌دهد. در mount هم وضعیتِ یک دانلودِ از‌قبل‌در‌جریان را برمی‌دارد.
+- **ابزار ساختِ اسنپ‌شات:** `scripts/build_codal_snapshot.py` یک snapshot باریک (فقط سه جدول + ایندکس‌ها، DDL عیناً از `sqlite_master`) با `VACUUM` و `integrity_check` و lzma preset=9 می‌سازد؛ امضا با `scripts/sign_setup.py` و آپلود با `gh release upload ... --clobber`.
+- **رفعِ باگِ امضای نصاب در CI:** در `release.yml`، فایلِ `updater.key` اکنون با `[System.IO.File]::WriteAllText` و `-replace '\s',''` **بدونِ هیچ فاصله/خطِ جدید** نوشته می‌شود. رمزگشایِ سخت‌گیرانهٔ base64 در `tauri signer` پیش‌تر با یک خطِ جدیدِ انتهایی و خطای «Invalid symbol 10, offset 348» شکست می‌خورد و jobِ `release-inno` قرمز می‌شد — این نخستین باری است که زنجیرهٔ انتشارِ CI کامل سبز می‌شود.
+- **هماهنگیِ نسخه‌گذاری:** `bors_config.py` (منبعِ واحدِ `/api/update/version`)، `installer/bors_setup.iss`، `frontend/src-tauri/tauri.conf.json` (از ۱.۰.۹ِ قدیمی) و `frontend/package.json` (+ lock) همه به ۱.۰.۱۹؛ `RELEASE_BODY` و `TAG` پیش‌فرض در `scripts/publish_github_release.py` هم به v1.0.19.
+
 ## [v1.0.18] — 2026-09-22 — تراز جدول‌ها، پنجرهٔ مستقل، کارایی، ریلیزِ امضاشده
 
 - **تراز ستون‌ها:** در ماتریس FTS و جدول تابلو، مقادیر عددی (کلاس `.num` با `direction:ltr`) با `text-end` دقیقاً زیر هدر ستون نشستند (پیش‌تر چپ‌چین می‌شدند).

@@ -11,7 +11,7 @@ financial_statements، monthly_sales + ایندکس‌هایشان) و آن را
 استفاده:
     python scripts/build_codal_snapshot.py [path/to/market.db] [-o codal.db.lzma]
     python scripts/sign_setup.py codal.db.lzma          # → codal.db.lzma.sig (minisign)
-    gh release upload v1.0.18 codal.db.lzma codal.db.lzma.sig \
+    gh release upload v1.0.19 codal.db.lzma codal.db.lzma.sig \
         --repo johnwarchief/BorsTerminal --clobber
 
 بدون .sig معتبر، worker سمت اپ (verify_minisign با UPDATE_PUBKEY) دانلود را رد

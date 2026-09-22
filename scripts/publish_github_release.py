@@ -20,28 +20,26 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخهٔ v1.0.18
+RELEASE_BODY = """## تغییرات نسخهٔ v1.0.19
 
-### 📈 ارتقای چارت تکنیکال و استانداردهای تریدینگ‌ویو
-- **بازطراحی کامل ابزار فیبوناچی:** محاسبه دقیق ترازهای لگاریتمی/حسابی، نمایش درصدها روی خطوط، پالت رنگی استاندارد تریدینگ‌ویو و حذف همپوشانی برچسب‌های قیمتی روی محور راست.
-- **تراز گرید و محور زمان:** خطوط پیوسته گرید در پنل بالا و پنل حجم، ارتفاع استاندارد ۳۰ پیکسلی محور زمان و هماهنگی کامل دیالوگ تنظیمات چارت در هر دو تم تیره و روشن.
-- **بهبود نوار ابزار و ترسیم:** رفع سرریز و کشیدگی نوار ابزار در حالت RTL، خط‌کش با درصد تغییرات و پالت شناور تنظیمات ترسیم.
+### 📊 دیتابیس کدال از گیت‌هاب (جدول بنیادی)
+- **دکمهٔ «دیتابیس کدال» روی جدول بنیادی:** یک کلیک، اسنپ‌شاتِ فشردهٔ سه جدول کدال (`codal_notices`، `financial_statements`، `monthly_sales`) را فقط از ریلیزِ گیت‌هاب دانلود و با دیتابیسِ محلی ادغام می‌کند — بی‌نیاز به خزشِ مستقیمِ کدال.
+- **ادغامِ افزاینده و بی‌خطر:** هر سه جدول کلیدِ اصلی `tracing_no` دارند، پس ادغام با `ATTACH` + `INSERT OR REPLACE` افزاینده و idempotent است؛ کشِ `fts_results` هم پس از ادغام بی‌اعتبار می‌شود تا جدول بنیادی فوراً تازه شود.
+- **راستی‌آزماییِ امضای دیجیتال:** اسنپ‌شات پیش از ادغام با کلید عمومی Minisignِ خودِ برنامه (`UPDATE_PUBKEY`) و `PRAGMA integrity_check` اعتبارسنجی می‌شود؛ اسنپ‌شاتِ بی‌امضا یا دستکاری‌شده هرگز ادغام نمی‌شود.
+- **چرخشِ IP هنگامِ بلاک:** اگر دانلود از گیت‌هاب بلاک شود، worker به‌طور خودکار `rotate_ip_via_adb` (حالتِ پرواز via ADB روی گوشیِ وصل) را صدا می‌زند و تا سه بار تلاش مجدد می‌کند. نوارِ پیشرفت، درصد، مرحله (دریافت/چرخش IP/ادغام) و خطا را زنده نشان می‌دهد.
 
-### 📊 تحلیل بنیادی و کدال (FTS)
-- **پشتیبانی از صورت‌های مالی تلفیقی:** رفع باگ خالی شدن جدول بنیادی و EPS نمادهایی که صرفاً گزارش تلفیقی ارائه می‌دهند (با Fallback به اطلاعات تلفیقی/حسابرسی‌شده).
-- **ممیزی شاخص‌های F-01 تا F-05:** اعتبارسنجی کامل داده‌های صورت مالی و ممیزی فرمول‌های فروش، رشد و مارجین.
+### 🛠 پایداریِ زنجیرهٔ انتشار (CI)
+- **رفعِ باگِ امضای نصاب در GitHub Actions:** فایلِ کلیدِ `updater.key` اکنون بدونِ هیچ فاصله/خطِ جدید نوشته می‌شود — رمزگشایِ سخت‌گیرانهٔ base64 در tauri signer پیش‌تر با یک خطِ جدیدِ انتهایی و خطای «Invalid symbol 10, offset 348» شکست می‌خورد و job امضا قرمز می‌شد.
 
-### 🛡 پایداری و رفع باگ‌های سیستم
-- **رفع کرش در نصب تازه:** برطرف شدن خطای `lost sys.stdin` در اجرای بدون پنجره و محافظت از انتخاب دیتابیس معتبر در لایه DB resolver.
-- **رفع خطای انکودینگ:** حل مشکل `cp1252 UnicodeEncodeError` در اسکرینر برای ویندوزهای انگلیسی.
-- **افزایش نسخه برنامه:** ارتقا به نسخه ۱.۰.۱۷ به همراه امضای دیجیتال معتبر Minisign و مانیفست آپدیت خودکار درون‌برنامه‌ای.
+### 🔢 هماهنگیِ نسخه
+- نسخه در `bors_config.py`، `installer/bors_setup.iss`، `frontend/src-tauri/tauri.conf.json` (از ۱.۰.۹ِ قدیمی) و `frontend/package.json` به ۱.۰.۱۹ هم‌تراز شد.
 """
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.18")
+TAG = os.environ.get("RELEASE_TAG", "v1.0.19")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
