@@ -184,13 +184,15 @@ export function FtsSettingsTrigger({
         aria-haspopup="dialog"
         aria-label="تنظیمات پیش‌شرط‌های FTS"
         title="تنظیمات پیش‌شرط‌های FTS"
-        className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-sm transition-all duration-200 ${
+        data-testid="fts-settings-btn"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold transition-all duration-200 ${
           open
             ? 'border-border-accent bg-bg-card/80 text-accent-blue'
             : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
         }`}
       >
-        ⚙
+        <span aria-hidden className="text-base leading-none">⚙</span>
+        تنظیمات
       </button>
       <FtsSettingsDrawer open={open} onClose={close} />
     </span>

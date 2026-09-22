@@ -1419,9 +1419,10 @@ def scrape_monthly_report(s, url):
             # حجم از همین جدولِ «شرح محصول» و ستونِ «تعداد فروش» گرفته میشود.
             # ستون‌های «تعداد فروش» دقیقاً موازیِ «مبلغ فروش» در همان گروه‌های
             # زمانی می‌ایستند (تولید/فروش/نرخ/مبلغ در یک گروهِ ۴تایی).
-            vmcols = [ci for ci in sub if "تعدادفروش" in sub[ci]
+            _VOL_HDR = ("تعدادفروش", "مقدارفروش")
+            vmcols = [ci for ci in sub if any(h in sub[ci] for h in _VOL_HDR)
                       and "دورهیکماهه" in _group_of(ci)]
-            vycols = [ci for ci in sub if "تعدادفروش" in sub[ci]
+            vycols = [ci for ci in sub if any(h in sub[ci] for h in _VOL_HDR)
                       and "ازابتدایسالمالی" in _group_of(ci)
                       and (not vmcols or ci > min(vmcols))]
             vmcol = min(vmcols) if vmcols else None

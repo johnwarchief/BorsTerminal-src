@@ -205,28 +205,30 @@ const TapeRow = memo(function TapeRow({
         {row.symbol}
         <span className="truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
-      <span className="num text-text-primary font-bold">
+      {/* تراز ستون (fix): محتوای عددی با `.num` (direction:ltr) به‌صورت خودکار چپ‌چین می‌شد
+          و زیر هدرِ راست‌چین نمی‌نشست؛ `text-end` آن را با لبهٔ راست (جای هدر) هم‌تراز می‌کند. */}
+      <span className="num text-end text-text-primary font-bold">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
-      <span className={`num font-bold ${pctTone(pct)}`}>
+      <span className={`num text-end font-bold ${pctTone(pct)}`}>
         <FlashNum value={pct} render={(v) => (v == null ? '-' : fmtPct(v))} />
       </span>
-      <span className="num text-text-secondary">
+      <span className="num text-end text-text-secondary">
         <FlashNum value={row.tvol} render={fmtInt} />
       </span>
       <span
-        className={`num ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
+        className={`num text-end ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
         title={volHot ? `حجم مشکوک FTS: بیش از ${toFaDigits(FTS_VOL_RATIO_HOT)} برابر میانگین ماهانه` : undefined}
       >
         <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v > FTS_VOL_RATIO_HOT ? '×' : ''))} />
       </span>
-      <span className="num text-text-secondary" title="سرانه خرید حقیقی (میلیون تومان)">
+      <span className="num text-end text-text-secondary" title="سرانه خرید حقیقی (میلیون تومان)">
         <FlashNum value={buyPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
       </span>
-      <span className="num text-text-secondary" title="سرانه فروش حقیقی (میلیون تومان)">
+      <span className="num text-end text-text-secondary" title="سرانه فروش حقیقی (میلیون تومان)">
         <FlashNum value={sellPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
       </span>
-      <span className={`num ${row.buyer_power != null && row.buyer_power >= 1.5 ? 'text-accent-green' : 'text-text-secondary'}`}>
+      <span className={`num text-end ${row.buyer_power != null && row.buyer_power >= 1.5 ? 'text-accent-green' : 'text-text-secondary'}`}>
         <FlashNum value={row.buyer_power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
       </span>
       <span className="flex min-w-0 items-center gap-1.5">

@@ -4,7 +4,7 @@ import { create } from 'zustand';
 /** بازه به روزرسانی تابلو -- هم ارز اسلایدر 1 ثانیه تا 30 دقیقه */
 export const POLL_MIN_MS = 1_000;
 export const POLL_MAX_MS = 30 * 60_000;
-export const POLL_DEFAULT_MS = 60_000;
+export const POLL_DEFAULT_MS = 5_000;
 
 type MarketState = {
   /** فاصله پولینگ به میلی ثانیه */

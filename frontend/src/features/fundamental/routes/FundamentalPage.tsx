@@ -126,12 +126,7 @@ export default function FundamentalPage() {
     // min-w-0: زنجیرهٔ flex تا جدول ادامه دارد؛ بدون این، min-w-[1240px]ِ
     // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
-      <div className="flex flex-col gap-4 min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-base font-black text-text-primary">دیده‌بان کلان بنیادی بازار</h2>
-          <span className="text-xs text-text-secondary">ماتریس ۵ شاخص جزوهٔ FTS</span>
-          <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
-        </div>
+      <div className="flex flex-col gap-2 min-w-0">
         {screen.isError ? (
           <EmptyState title="غربالگری FTS در دسترس نیست" hint="سرور اسکرینر پاسخ نداد — بعداً تلاش کن" />
         ) : (
@@ -140,6 +135,7 @@ export default function FundamentalPage() {
             thresholds={screen.data?.thresholds ?? null}
             onRefresh={handleRefresh}
             refreshing={refreshing}
+            settingsSlot={<FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />}
             onSelect={(s) => {
               setSymbol(s);
               setDrawerOpen(false);

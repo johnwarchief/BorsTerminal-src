@@ -63,7 +63,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
   it('پنج شاخص و امتیاز را رندر می کند', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     expect(screen.getByText('شپنا')).toBeInTheDocument();
-    expect(screen.getByText('دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS')).toBeInTheDocument();
+    expect(screen.getByText('۱ رشد کدال')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
     // toFaDigits فقط ارقام را عوض می‌کند؛ ممیز لاتین می‌ماند: ۴۵.۲٪
     expect(screen.getByText('۴۵.۲٪')).toBeInTheDocument();
     expect(screen.getAllByText('✓').length).toBeGreaterThanOrEqual(4);
@@ -389,7 +389,7 @@ describe('کارایی جدول غربالگری (F-08)', () => {
   it('کانتینر اسکرول با ارتفاع محدود و هدر چسبان آماده است', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const scroll = screen.getByTestId('fts-screen-scroll');
-    expect(scroll.className).toContain('max-h-[70vh]');
+    expect(scroll.className).toMatch(/h-\[calc\(100dvh-260px\)\]/); // ارتفاع کشسانِ متناسب با ویوپورت (بدون فضای خالی پایین)
     expect(scroll.className).toContain('overflow-auto');
     const thead = document.querySelector('thead');
     expect(thead?.className).toContain('sticky');

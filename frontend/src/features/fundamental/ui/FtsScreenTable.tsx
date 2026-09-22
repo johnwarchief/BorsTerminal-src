@@ -7,13 +7,13 @@
 // حذف می‌شوند؛ سوییچ «نمایش ردیف‌های حذف‌شده» فقط برای بازرسی آن‌هاست.
 // قلمرو جدول: فقط «شرکت‌های تولیدی و خدماتی» — صندوق‌ها، کارگزاری‌ها،
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toFaDigits } from '@shared/lib/fmt';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
-import { isFundamentalCompany } from '../lib/assetScope';
+import { isFundamentalCompany, isFinancialOrHolding } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
@@ -214,90 +214,105 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
+                    {/* تراز ستون (v1.0.18-fix): مقدارِ عددی اول می‌آید و با flex-1+text-start به
+                        لبهٔ startِ سلول (هم‌راستا با هدرِ text-start) می‌چسبد؛ نشانِ قبول/مردود
+                        بعد از آن قرار می‌گیرد. پیش‌تر نشان جلوتر بود و چون عرضِ برچسب‌های
+                        قبول/مردود/شکاف در هر سطر متفاوت است، اعداد هر ردیف افقی جابه‌جا
+                        می‌شدند و زیر هدر نمی‌نشستند. */}
                     <div className="flex items-center gap-2 min-w-0">
-                      {i1 === 'gap' ? (
-                        <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
-                      ) : (
-                        <PassMark
-                          state={i1}
-                          evidence={ev.i1a}
-                          testId="fts-mark-1a_monetary_growth"
-                        />
-                      )}
                       <span
-                        className={`num text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        className={`num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
                         title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
                         {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {epsPartialRejected ? (
-                        <AuditBadge
-                          state="fail"
-                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
-                          hintTitle={epsGapReason}
-                          evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
-                          compact
-                          testId={EPS_PARTIAL_TESTID}
-                        />
-                      ) : epsInsufficient || i2 === 'gap' ? (
-                        /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
-                        <AuditBadge
-                          state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
-                          label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
-                          hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
-                          evidence={ev.i2}
-                          compact
-                          testId="eps-gap-reason"
-                        />
-                      ) : (
-                        <PassMark state={i2} testId="fts-mark-2_eps_trend" />
-                      )}
-                      <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-secondary"
-                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
-                      >
-                        {epsTrend ?? '—'}
+                      <span className="shrink-0">
+                        {i1 === 'gap' ? (
+                          <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
+                        ) : (
+                          <PassMark
+                            state={i1}
+                            evidence={ev.i1a}
+                            testId="fts-mark-1a_monetary_growth"
+                          />
+                        )}
                       </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center gap-2 min-w-0">
-                      {i3 === 'gap' ? (
-                        <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
-                      ) : (
-                        <PassMark
-                          state={i3}
-                          evidence={ev.i3}
-                          testId="fts-mark-3_gross_margin"
-                        />
-                      )}
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-secondary"
+                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
+                      >
+                        {epsTrend ?? '—'}
+                      </span>
+                      <span className="shrink-0">
+                        {epsPartialRejected ? (
+                          <AuditBadge
+                            state="fail"
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
+                            hintTitle={epsGapReason}
+                            evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
+                            compact
+                            testId={EPS_PARTIAL_TESTID}
+                          />
+                        ) : epsInsufficient || i2 === 'gap' ? (
+                          /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
+                          <AuditBadge
+                            state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
+                            hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
+                            evidence={ev.i2}
+                            compact
+                            testId="eps-gap-reason"
+                          />
+                        ) : (
+                          <PassMark state={i2} testId="fts-mark-2_eps_trend" />
+                        )}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-1.5 align-middle">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
+                      <span
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                         title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
                       </span>
+                      <span className="shrink-0">
+                        {i3 === 'gap' ? (
+                          isFinancialOrHolding(r) ? (
+                            /* مؤسسهٔ مالی/هلدینگ: سود ناخالص ماهیتاً وجود ندارد → N/A نه «شکاف داده» */
+                            <GapMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip="بانک/بیمه/هلدینگ «سود ناخالص» گزارش نمی‌کند؛ این شاخص برای این ماهیت کاربرد ندارد — شکاف داده نیست."
+                              evidence={ev.i3}
+                              testId="fts-na-3_gross_margin"
+                            />
+                          ) : (
+                            <AxisGapMark axis="3_gross_margin" evidence={ev.i3} />
+                          )
+                        ) : (
+                          <PassMark
+                            state={i3}
+                            evidence={ev.i3}
+                            testId="fts-mark-3_gross_margin"
+                          />
+                        )}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center gap-2 min-w-0">
-                      {i4 === 'gap' ? (
-                        <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
-                      ) : (
-                        <PassMark
-                          state={i4}
-                          evidence={ev.i4}
-                          testId="fts-mark-4_sales_to_mcap"
-                        />
-                      )}
+                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                         title={
                           r.profit_potential_pct == null
                             ? r.sales_to_mcap != null
@@ -308,6 +323,26 @@ const ScreenerRow = memo(function ScreenerRow({
                       >
                         {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
                         {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                      </span>
+                      <span className="shrink-0">
+                        {i4 === 'gap' ? (
+                          isFinancialOrHolding(r) ? (
+                            <GapMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip="نسبت فروش/ارزش بازار برای بانک/بیمه/هلدینگ معنا ندارد؛ شکاف داده نیست."
+                              evidence={ev.i4}
+                              testId="fts-na-4_sales_to_mcap"
+                            />
+                          ) : (
+                            <AxisGapMark axis="4_sales_to_mcap" evidence={ev.i4} />
+                          )
+                        ) : (
+                          <PassMark
+                            state={i4}
+                            evidence={ev.i4}
+                            testId="fts-mark-4_sales_to_mcap"
+                          />
+                        )}
                       </span>
                     </div>
                   </td>
@@ -361,6 +396,7 @@ export function FtsScreenTable({
   thresholds,
   onRefresh,
   refreshing,
+  settingsSlot,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
@@ -368,6 +404,8 @@ export function FtsScreenTable({
   thresholds?: Record<string, unknown> | null;
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
+  settingsSlot?: ReactNode;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
@@ -468,9 +506,11 @@ export function FtsScreenTable({
     // در دیدگاه‌های کوچک‌تر از ۱۲۴۰px (مثلاً ۷۶۸px) ۵۶۲px بیرون از کادر
     // می‌افتد و کاربر به ستون‌ها نمی‌رسد.
     <div className="glass-panel panel-in overflow-hidden rounded-2xl min-w-0 max-w-full">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
-        <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
-        <div className="flex items-center gap-3">
+      {/* نوار جدول: دکمهٔ تنظیمات (کشوی پیش‌شرط‌ها) + بروزرسانی/شمارش. عنوانِ
+          بالای جدول حذف شد تا فضای عمودی آزاد شود و تنظیمات روی خودِ نوار بیاید. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2">
+        {settingsSlot ?? <span />}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => onRefresh?.()}
@@ -613,7 +653,9 @@ export function FtsScreenTable({
         </button>
       </div>
 
-      <div ref={scrollRef} data-testid="fts-screen-scroll" className="max-h-[70vh] overflow-auto overscroll-contain">
+      {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت (نه ۷۰vhِ ثابت) تا پایینِ
+          جدول فضای خالی نماند و در هر رزولوشنی درست پر شود. */}
+      <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-260px)] min-h-[320px] overflow-auto overscroll-contain">
         <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
           <colgroup>
             <col className="w-[19%]" />

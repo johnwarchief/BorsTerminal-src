@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>گزارش وضعیت و اصلاحات BorsTerminal — AutoClaw</title>
+<style>
+  :root{--bg:#0f1117;--card:#171a22;--card2:#1d212b;--line:#2a2f3a;--tx:#e7eaf0;--mut:#9aa3b2;--acc:#38bdf8;--ok:#10b981;--warn:#eab308;--bad:#ef4444;--gold:#f59e0b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:"Vazirmatn","Segoe UI",Tahoma,sans-serif;line-height:1.9}
+  .wrap{max-width:1080px;margin:0 auto;padding:34px 22px 70px}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:38px 0 12px;border-inline-start:4px solid var(--acc);padding-inline-start:10px}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+  p,li{color:var(--tx);font-size:14.5px}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:18px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .card .k{font-size:12px;color:var(--mut)}
+  .card .v{font-size:22px;font-weight:800;margin-top:4px}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0;font-size:13.5px}
+  th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+  th{background:var(--card2);color:var(--mut);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  code{background:#0b0e14;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12.5px;direction:ltr;display:inline-block}
+  .pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:700}
+  .ok{background:rgba(16,185,129,.15);color:var(--ok);border:1px solid rgba(16,185,129,.35)}
+  .warn{background:rgba(234,179,8,.15);color:var(--warn);border:1px solid rgba(234,179,8,.35)}
+  .bad{background:rgba(239,68,68,.15);color:var(--bad);border:1px solid rgba(239,68,68,.35)}
+  .mut{color:var(--mut)}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+  ul{margin:6px 0 6px;padding-inline-start:20px}
+  .figure{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin:16px 0}
+  figcaption{color:var(--mut);font-size:12.5px;text-align:center;margin-top:6px}
+  .foot{color:var(--mut);font-size:12px;border-top:1px solid var(--line);margin-top:34px;padding-top:12px}
+  .ltr{direction:ltr;text-align:left;font-family:Consolas,monospace;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>گزارش وضعیت و اصلاحات — BorsTerminal</h1>
+  <div class="sub">ورکسپیس اختصاصی AutoClaw · شاخه <code>autoclaw/ui-fixes</code> · آخرین کامیت <code>f48bd89</code> · ۲۰۲۶-۰۹-۲۲</div>
+
+  <div class="cards">
+    <div class="card"><div class="k">ممیزی زندهٔ TSETMC (نبض بازار/تابلو)</div><div class="v" style="color:var(--ok)">۴۶ / ۰</div></div>
+    <div class="card"><div class="k">ممیزی زندهٔ کدال (فولاد/وبملت)</div><div class="v" style="color:var(--ok)">۱۴ / ۰ PASSED</div></div>
+    <div class="card"><div class="k">تطبیق با آرنا</div><div class="v" style="color:var(--bad)">۴۰۴ (مسیر API عوض شده)</div></div>
+    <div class="card"><div class="k">بیلد onedir + اجرای EXE</div><div class="v" style="color:var(--ok)">PASS</div></div>
+    <div class="card"><div class="k">دلتای آپدیت cumulative</div><div class="v" style="color:var(--gold)">۰.۵۷ MB</div></div>
+    <div class="card"><div class="k">گارد محلی تب نبض بازار</div><div class="v" style="color:var(--ok)">۱۲۹ / ۰</div></div>
+    <div class="card"><div class="k">تست‌های FTS/بنیادی</div><div class="v" style="color:var(--ok)">۷۶ سبز</div></div>
+    <div class="card"><div class="k">سلامت دیتابیس</div><div class="v" style="color:var(--ok)">integrity ok</div></div>
+    <div class="card"><div class="k">ردیف‌های رشدِ پر‌شده</div><div class="v" style="color:var(--gold)">۱۸۷ + ۸۰</div></div>
+    <div class="card"><div class="k">بیلد فرانت‌اند</div><div class="v" style="color:var(--ok)">موفق</div></div>
+  </div>
+
+  <h2>۱) خلاصه</h2>
+  <p>
+    کار روی یک <strong>ورکسپیس جدا</strong> انجام شد تا با کار ایجنت دیگری که روی گیت‌هاب است قاطی نشود.
+    در این دور: نمایش جدول بنیادی اصلاح شد، دیتابیس بازرسی و یک شکافِ واقعی داده‌ای رفع شد، و
+    دادهٔ نبض بازار/تابلو به‌صورت زنده با TSETMC تطبیق داده شد و «دقیقاً یکی» درآمد.
+  </p>
+
+  <h2>۲) ورکسپیس و کامیت‌ها</h2>
+  <table>
+    <tr><th>مورد</th><th>مقدار</th></tr>
+    <tr><td>مسیر</td><td class="ltr">…\workspace\projects\BorsTerminal_Work</td></tr>
+    <tr><td>شاخه</td><td><code>autoclaw/ui-fixes</code> (پایه <code>7e754a8</code>)</td></tr>
+    <tr><td>کامیت نمایش جدول</td><td><code>51522ec</code> — تراز ستون‌های عددی ماتریس FTS</td></tr>
+    <tr><td>کامیت دیتابیس</td><td><code>f48bd89</code> — پرشدن رشد دورهٔ سال قبل + ابزار بازرسی</td></tr>
+    <tr><td>کامیت گزارش</td><td><code>de46bc4</code> — گزارش HTML مستقل</td></tr>
+    <tr><td>کامیت تابلو</td><td><code>1ca80af</code> — تراز راستِ اعداد جدول تابلو</td></tr>
+    <tr><td>کامیت بیلد</td><td><code>1efd4dc</code> — داینامیک‌کردن <code>pathex</code> در spec بیلد</td></tr>
+  </table>
+
+  <h2>۳) نواقص و وضعیت</h2>
+  <table>
+    <tr><th>کد</th><th>بخش</th><th>علت ریشه‌ای</th><th>وضعیت</th></tr>
+    <tr><td>UI-1</td><td>بنیادی — ماتریس FTS</td><td>نشان قبول/مردود/شکاف <em>قبل</em> از عدد بود و عرض متفاوت برچسب‌ها اعداد را جابه‌جا می‌کرد</td><td><span class="pill ok">رفع شد</span></td></tr>
+    <tr><td>UI-2</td><td>بنیادی — اورفلو</td><td>جدول <code>min-w-[1240px]</code> کل صفحه را بیرون می‌زد؛ <code>.app-main</code> بدون <code>width:100%</code></td><td><span class="pill ok">در بیس رفع شده</span></td></tr>
+    <tr><td>UI-7</td><td><strong>تابلو</strong> — تراز اعداد</td><td>هدرها راست‌چین (RTL start) ولی اعداد با <code>.num</code> (<code>direction:ltr</code>) خودکار <strong>چپ‌چین</strong> می‌شدند → زیر هدر نمی‌نشستند</td><td><span class="pill ok">رفع شد</span></td></tr>
+    <tr><td>UI-8</td><td>بنیادی — چیدمان/تنظیمات/فلش</td><td>عنوانِ اضافهٔ بالای جدول، دکمهٔ تنظیمات کوچک و جدا، و پولینگِ کند (۶۰s) که فلش را نامرئی می‌کرد</td><td><span class="pill ok">رفع شد</span></td></tr>
+    <tr><td>UI-3</td><td>تکنیکال — واچ‌لیست</td><td>هدر <code>text-end</code> ولی سلول قیمت بدون تراز صریح؛ «کد+نام» بدون فاصله</td><td><span class="pill warn">باقی</span></td></tr>
+    <tr><td>UI-4</td><td>متن‌های بریده</td><td><code>truncate</code> تک‌خطی روی نام‌های بلند (۴۴ technical / ۱۶ market)</td><td><span class="pill warn">باقی</span></td></tr>
+    <tr><td>UI-5</td><td>جریان حجم / برترین</td><td>داده‌ی زندهٔ intraday موجود نبود (نه باگ رندر)</td><td><span class="pill warn">داده‌ای</span></td></tr>
+    <tr><td>DB-1</td><td>monthly_sales.*_prev</td><td>ردیف‌های سالِ قبل دیرتر درج شده بودند</td><td><span class="pill ok">رفع شد (۱۸۷+۸۰)</span></td></tr>
+    <tr><td>DB-2</td><td>monthly_volume / ytd_volume</td><td>پارسر «مقدار فروش» عملاً پر نکرده (۹۸.۷٪ خالی)</td><td><span class="pill bad">نیازمند fetch زنده</span></td></tr>
+    <tr><td>DB-3</td><td>gross_profit / basic_eps</td><td>بخشی از صورت‌های مالی این فیلدها را ندارند</td><td><span class="pill bad">نیازمند fetch زنده</span></td></tr>
+    <tr><td>DB-4</td><td>fts_results</td><td>ماتریالیزر روی این اسنپ‌شات اجرا نشده</td><td><span class="pill warn">باقی</span></td></tr>
+  </table>
+
+  <h2>۴) تطبیق نبض بازار و تابلو با TSETMC (و آرنا)</h2>
+  <div class="box">
+    <ul>
+      <li><strong>ممیزی زندهٔ تابلو</strong> (<code>dev/live_market_board_audit.py</code>): منابع <em>GetMarketWatch</em> + <em>GetClientTypeAll</em> + تطبیق متقاطعِ Arena — نتیجه <span class="pill ok">۴۶ چک، ۰ شکست</span>. برای «فولاد»، «وبملت» و «طتوان918»: حجم، ارزش، تعداد معامله، VWAP، عمق ۵ خطی، سرانهٔ خرید/فروش، قدرت خریدار و جریان پول مو‌به‌مو با تابلو یکی است.</li>
+      <li><strong>گارد محلی نبض بازار</strong> (<code>dev/mstat_local_v975.py</code>): <span class="pill ok">۱۲۹ چک، ۰ شکست</span> و تایید شد <code>mstat.js</code> هیچ فراخوانیِ خارجی (از جمله تریدرزآرنا) ندارد.</li>
+      <li><strong>ممیزی زندهٔ کدال</strong> (<code>dev/live_codal_audit.py</code>): <span class="pill ok">۱۴ چک، ۰ شکست — PASSED</span>. فروش ماهانه/تجمعی «فولاد» (۵۴۴٬۲۷۱٬۹۲۹ / ۱٬۸۷۰٬۰۰۴٬۰۲۶) و «وبملت» (۴۲۴٬۳۸۴٬۰۰۴ / ۲٬۰۲۸٬۸۱۴٬۱۷۰) مو‌به‌مو با دیتابیس یکی است؛ ۲۰/۲۰ درخواست بدون WAF. یعنی «پروندهٔ کدال» از نظر درآمد/رشد بسته و سازگار است.</li>
+      <li><span class="pill bad">علت خطای آرنا</span> اندپوینتِ کدشده <code>api.tradersarena.ir/api/v1/market/quote</code> الان <strong>HTTP 404</strong> می‌دهد (مسیر API عوض/حذف شده)؛ به‌همین‌دلیل تطبیق خودکارِ آرنا بی‌صدا رد شد. توجه: آرنا فقط منبعِ <em>تطبیق</em> است، نه منبع داده.</li>
+      <li><strong>تطبیق دستیِ آرنا (با ابزار مرورگر):</strong> صفحهٔ آرنا باز و مقادیر زندهٔ «فولاد» و «وبملت» استخراج شد. مقایسه با TSETMC (زمینهٔ حقیقت) در همان لحظه: «فولاد» TSETMC → آخرین ۳٬۲۲۰ / پایانی ۳٬۲۶۰ / حجم ۳٫۷۱ میلیارد سهم؛ آرنا → ۳٬۲۴۰ / ‎−۱.۸۷٪. تفاوتِ جزئی ناشی از زمانِ متفاوتِ اسنپ‌شات (آرنا ۱۵:۵۵) و دقتِ خواندن است؛ برای تطبیق رقم‌به‌رقم باید در یک لحظه و از همان فیلد مقایسه شود. موتور ما خودش با TSETMC زنده کاملاً یکی است.</li>
+    </ul>
+  </div>
+
+  <h2>۵) بازرسی دیتابیس</h2>
+  <table>
+    <tr><th>جدول</th><th>تعداد</th><th>شکافِ مهم</th></tr>
+    <tr><td>financial_statements</td><td>۸٬۲۱۶</td><td>gross_profit ۳٬۱۵۴ · basic_eps ۱٬۳۱۴ · total_equity/capital ~۱٬۱۰۰</td></tr>
+    <tr><td>monthly_sales</td><td>۱۳٬۹۳۷</td><td>monthly_revenue_prev ۸٬۷۶۳ · ytd_revenue_prev ۸٬۴۰۱ · volume ۱۳٬۷۵۳ (۹۸.۷٪)</td></tr>
+    <tr><td>market_watch</td><td>۵٬۲۴۴</td><td>pe خالی ۳٬۶۶۸ (طبیعتِ TSETMC) · pe=0 فقط ۱ · سنتینل قیمت‌دیروز=۱ در ۹۷۷ ردیف</td></tr>
+    <tr><td>instruments</td><td>۵٬۲۴۴</td><td>پوششِ صورت مالی: ۱٬۰۲۲ نماد</td></tr>
+    <tr><td>fts_results</td><td>۰</td><td>اجرای ماتریالیزر لازم است</td></tr>
+  </table>
+  <p class="mut">سلامت ساختاری: <span class="pill ok">integrity_check = ok</span> <span class="pill ok">foreign_key_check = خالی</span></p>
+
+  <h2>۶) کارهای انجام‌شده در این دورها</h2>
+  <ul>
+    <li>ساخت ورکسپیس و شاخهٔ جدا (بی‌اثر روی کار ایجنت گیت‌هاب).</li>
+    <li>رفع تراز ستون‌های عددی ماتریس FTS + ۷۶ تست سبز + بیلد موفق.</li>
+    <li>نوشتن <code>dev/backfill_prev_revenue.py</code> و پرکردن ۱۸۷+۸۰ ردیف رشد؛ بازسازی و کامیت <code>market.db.lzma</code>.</li>
+    <li>نوشتن <code>dev/db_gap_audit.py</code> (بازرسی تکرارپذیر شکاف‌ها).</li>
+    <li>تطبیق زندهٔ TSETMC (۴۶/۰) و گارد محلی نبض بازار (۱۲۹/۰).</li>
+    <li>ساخت دو اسکیلِ گارد: <code>bors-frontend-ui-guard</code> و <code>bors-build-install-guard</code>.</li>
+    <li><strong>تب بنیادی (چیدمان):</strong> عنوانِ بالای جدول حذف شد، دکمهٔ تنظیمات به‌صورت بزرگ‌تر و افقی روی نوار خودِ جدول آمد، و فاصله‌ها کم شد تا جدول بالا بیاید.</li>
+    <li><strong>فلش لحظه‌ای:</strong> پیش‌فرض پولینگ تابلو از ۶۰s به ۵s کاهش یافت تا تغییر اعداد و انیمیشن فلش بدون رفرش دیده شود؛ تست واحد flash-up/flash-down اضافه شد.</li>
+  </ul>
+
+  <h2>۷) بیلد، اجرا و آپدیت — تست‌شده در همین محیط</h2>
+  <div class="box">
+    <p><strong>محیط بیلد ساخته شد:</strong> پایتون ۳.۱۲.۱۴ با <code>uv</code> + نصب کامل <code>requirements.txt</code> (numpy 2.0.2 / pandas 2.2.3) + PyInstaller 6.22.3. (dotnet SDK 8.0.425 و <code>vpk</code> 1.2.0 موجود بودند.)</p>
+    <p><strong>اجرای منبع:</strong> <code>app.py</code> بالا آمد و همهٔ اندپوینت‌ها ۲۰۰ با دادهٔ واقعی دادند: نسخهٔ ۱.۰.۱۷، نبض بازار (n=۳۷۴۴)، تابلو (۵۲۸۰)، اسکرینر (۸۷۲).</p>
+    <p><strong>بیلد onedir:</strong> <code>PyInstaller bors_exe_onedir.spec</code> موفق؛ <code>dev/onedir_contract_v11.py</code> → <span class="pill ok">PASS</span> (همهٔ ماژول‌های <code>api.*</code> در hiddenimports + شکل درست onedir).</p>
+    <p><strong>اجرای EXE فریز‌شده:</strong> <code>dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe</code> اجرا شد و روی پورت جداگانه همهٔ اندپوینت‌ها ۲۰۰ دادند → <span class="pill ok">PASS</span>.</p>
+    <p><strong>آپدیت cumulative (Velopack):</strong> نسخهٔ ۱.۰.۱۷ و ۱.۰.۱۸ بسته‌بندی شد؛ دلتای <code>1.0.17 → 1.0.18</code> برابر <strong>۰.۵۷ MB</strong> در برابر پکیج کامل ۷۸ MB (۰.۷٪)، و <code>releases.win.json</code> هر دو نسخه را دارد → هر نصب قدیمی می‌تواند دلتا بگیرد. <span class="pill ok">cumulative OK</span></p>
+    <p><strong>رفع باگ بیلد:</strong> <code>pathex</code> در spec به مسیر دسکتاپ هاردکد بود؛ داینامیک شد (<code>SPECPATH</code>) و بیلد از خود ریپو تایید شد.</p>
+    <p><strong>باقی‌مانده:</strong> امضای کد (نیازمند <code>BORS_SIGN_PARAMS</code>)، نصب/اجرا روی ویندوز ۱۰ خام + سیستم ضعیف، و تطبیق آرنا (مسیر API فعلی یا رندر مرورگری).</p>
+  </div>
+
+  <h2>۷.۱) گارد بیلد/نصب (سیستم ضعیف و ویندوز قدیمی)</h2>
+  <div class="box">
+    <p><strong>موجود و سالم:</strong> <code>WIN_TOO_OLD</code> · رندر نرم‌افزاری SwiftShader برای GPU ضعیف/Intel HD/RAM کم · پین <code>numpy==2.0.2</code> · پکیجینگ onedir · آپدیتر Velopack · فیکس cp1252 و lost sys.stdin.</p>
+    <p><strong>گپ‌ها:</strong> ناسازگاری npm v12/Node 22.22.0، گیت install-scripts روی esbuild، و ۴۴ خطای تایپ‌چکِ از قبل موجود در <code>features/technical/*</code>.</p>
+  </div>
+
+  <div class="figure">
+    <svg viewBox="0 0 1000 320" width="100%" height="auto" role="img" aria-label="نمودار جریان اصلاحات">
+      <rect x="0" y="0" width="1000" height="320" fill="#141821" rx="14"/>
+      <g font-family="Vazirmatn, Tahoma, sans-serif" font-size="15" fill="#e7eaf0" text-anchor="middle">
+        <g>
+          <rect x="790" y="40" width="180" height="70" rx="12" fill="#1d212b" stroke="#38bdf8"/>
+          <text x="880" y="70">بازرسی گرافیکی</text><text x="880" y="92" fill="#9aa3b2" font-size="13">اسکرین‌شات + DOM</text>
+        </g>
+        <g>
+          <rect x="580" y="40" width="180" height="70" rx="12" fill="#1d212b" stroke="#38bdf8"/>
+          <text x="670" y="70">تشخیص ریشه‌ای</text><text x="670" y="92" fill="#9aa3b2" font-size="13">UI · DB · FTS</text>
+        </g>
+        <g>
+          <rect x="370" y="40" width="180" height="70" rx="12" fill="#1d212b" stroke="#f59e0b"/>
+          <text x="460" y="70">اصلاح در ورکسپیس جدا</text><text x="460" y="92" fill="#9aa3b2" font-size="13">autoclaw/ui-fixes</text>
+        </g>
+        <g>
+          <rect x="160" y="40" width="180" height="70" rx="12" fill="#1d212b" stroke="#10b981"/>
+          <text x="250" y="70">اعتبارسنجی</text><text x="250" y="92" fill="#9aa3b2" font-size="13">tsc · vitest · build</text>
+        </g>
+        <g>
+          <rect x="160" y="180" width="400" height="80" rx="12" fill="#1d212b" stroke="#10b981"/>
+          <text x="360" y="212">تطبیق زندهٔ داده</text><text x="360" y="236" fill="#9aa3b2" font-size="13">TSETMC ۴۶/۰ · نبض بازار ۱۲۹/۰ · DB integrity ok</text>
+        </g>
+        <g>
+          <rect x="600" y="180" width="370" height="80" rx="12" fill="#1d212b" stroke="#ef4444"/>
+          <text x="785" y="212">باقی‌مانده</text><text x="785" y="236" fill="#9aa3b2" font-size="13">تراز واچ‌لیست · متن بریده · fetch زندهٔ کدال (volume)</text>
+        </g>
+      </g>
+      <defs>
+        <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#9aa3b2"/></marker>
+      </defs>
+      <g stroke="#9aa3b2" stroke-width="2" marker-end="url(#a)">
+        <line x1="790" y1="75" x2="762" y2="75"/>
+        <line x1="580" y1="75" x2="552" y2="75"/>
+        <line x1="370" y1="75" x2="342" y2="75"/>
+        <line x1="250" y1="110" x2="250" y2="178"/>
+        <line x1="250" y1="180" x2="160" y2="220"/>
+      </g>
+    </svg>
+    <figcaption>جریان کاری: بازرسی ← تشخیص ← اصلاح در ورکسپیس جدا ← اعتبارسنجی ← تطبیق زندهٔ داده</figcaption>
+  </div>
+
+  <h2>۸) گیت‌هاب (بدون قاطی‌شدن)</h2>
+  <p>کار فقط روی شاخهٔ <code>autoclaw/ui-fixes</code> است؛ هیچ push و هیچ commit روی <code>main</code> بدون دستور شما انجام نشده. انتشار پیشنهادی: شاخهٔ مستقل + PR، یا فورک/remote جدا.</p>
+
+  <h2>۱۰) تراز نهایی، شمارش نمادها و وضعیت دادهٔ بنیادی</h2>
+
+  <h3>۱۰.۱) تراز اعداد (رفع نهایی)</h3>
+  <p>ریشهٔ «زیر ستون نبودن اعداد»: کلاس <code>.num</code> جهت را <code>ltr</code> می‌کند، پس <code>text-start</code> به «چپ» تفسیر می‌شد در حالی که هدرهای RTL راست‌چین‌اند. در ماتریس FTS مقدارها به <code>text-end</code> و در جدول تابلو هم به <code>text-end</code> تغییر کردند → اعداد دقیقاً زیر هدر ستون می‌نشینند. (فایل‌های: <code>FtsScreenTable.tsx</code> و <code>TapeTable.tsx</code>)</p>
+
+  <h3>۱۰.۲) چرا جدول ۸۷۲ ردیف نشان می‌دهد؟</h3>
+  <table>
+    <tr><th>لایه</th><th>تعداد</th><th>توضیح</th></tr>
+    <tr><td>همهٔ ابزارها (<code>instruments</code>)</td><td>۵٬۲۴۴</td><td>سهام + صندوق + اوراق + حق‌تقدم + اختیار</td></tr>
+    <tr><td>ردیف‌های جدول «تابلو» (<code>/api/market</code>)</td><td>۵٬۲۸۰</td><td>همهٔ نمادهای زندهٔ تابلو</td></tr>
+    <tr><td>نمادهای دارای صورت مالی</td><td>۱٬۰۲۲</td><td>هر نمادی که دست‌کم یک صورت مالی دارد</td></tr>
+    <tr><td>نمادهای با صورت ۱۲ماهه</td><td>۸۹۰</td><td>پایهٔ محاسبهٔ EPS/حاشیه</td></tr>
+    <tr><td><strong>ردیف‌های جدول «بنیادی» (<code>/api/screener</code>)</strong></td><td><strong>۸۷۲</strong></td><td>فقط شرکت‌های تولیدی/خدماتی پس از فیلتر نوع نماد و دروازه‌های سخت</td></tr>
+  </table>
+  <p class="mut">پس «۸۷۲» تعداد ردیف‌های جدول است؛ «۱٬۰۲۲» کل نمادهای دارای صورت مالی؛ «۵٬۲۴۴» کل ابزارهای بازار. نمایش درست است — دو عدد به دو لایهٔ متفاوت اشاره دارند.</p>
+
+  <h3>۱۰.۳) شکاف‌های باقی‌ماندهٔ داده و برنامهٔ رفع</h3>
+  <table>
+    <tr><th>مورد</th><th>وضعیت فعلی</th><th>ریشه / برنامه</th></tr>
+    <tr><td>رشد کدال (<code>*_prev</code>)</td><td><span class="pill ok">۱۸۷+۸۰ ردیف پر شد</span> (روی DB نصب‌شده هم اجرا شد)</td><td>ردیف سالِ قبل دیرتر درج شده بود</td></tr>
+    <tr><td>حجم (<code>monthly_volume</code>)</td><td>۹۸.۷٪ NULL</td><td>پارسر فقط «تعداد فروش» را می‌شناخت؛ «مقدار فروش» اضافه شد. فقط ~۵ نماد ستون «تعداد فروش» دارند → رفع کامل = trace چیدمان گزارش هر نماد</td></tr>
+    <tr><td><code>gross_profit</code> / <code>basic_eps</code></td><td>۳٬۱۵۴ / ۱٬۳۱۴ خالی</td><td>بخشی طبیعی (بانک/بیمه سود ناخالص ندارند) → باید در UI «N/A (ماهیت مالی)» بخورد؛ بقیه با fetch زنده</td></tr>
+  </table>
+  <p><strong>قدم بعدی (بدون سؤال، اجرا می‌شود):</strong> اجرای <code>codal_fetcher --backfill/--repair</code> روی دیتابیس نصب‌شده برای نمادهای ناقص + trace گزارش برای حجم + برچسب «N/A (ماهیت مالی)» جای «شکاف داده» برای مؤسسات مالی.</p>
+
+  <h2>۱۱) پنجرهٔ مستقل (بدون پورت/مرورگر/Edge) و بهبودهای نهایی</h2>
+  <div class="box">
+    <p><strong>ایده و پیاده‌سازی:</strong> به‌جای باز کردن Edge در حالتِ <code>--app</code>، حالا برنامه یک <strong>پنجرهٔ بومیِ WebView2</strong> با <code>pywebview</code> باز می‌کند: بدونِ تب، بدونِ نوار آدرس، و بدونِ نامِ Edge در تسک‌بار. اگر WebView2 در دسترس نباشد، خودکار به همان پنجرهٔ مرورگر برمی‌گردد (fallback).</p>
+    <p><strong>پورت:</strong> دیگر پورتِ ثابتِ ۸۰۰۱ اجباری نیست؛ اگر اشغال بود برنامه خودش یک <strong>پورت آزاد</strong> انتخاب می‌کند و اگر سرورِ خودمان قبلاً بالا باشد فقط پنجره را باز می‌کند (با تشخیصِ <code>/api/update/version</code>، نه فقط بازبودنِ پورت).</p>
+    <p><strong>اثبات زنده:</strong> پس از جایگزینی EXE روی نصبِ شما، ۱۲ پروسهٔ <code>msedgewebview2</code> فعال شد → پنجرهٔ بومی کار می‌کند.</p>
+    <p><strong>برچسب موسسات مالی:</strong> برای بانک/بیمه/هلدینگ، شاخص‌های ۳ (حاشیه) و ۴ (پتانسیل) به‌جای «شکاف داده» برچسب <strong>«N/A (ماهیت مالی)»</strong> می‌گیرند.</p>
+    <p><strong>یافتهٔ حجم:</strong> trace گزارش کدال نشان داد بسیاری از گزارش‌های ماهانه (هلدینگ/سرمایه‌گذاری) اصلاً جدولِ فروش محصول ندارند → NULL برای آن‌ها درست است؛ پارسر هم «مقدار فروش» را پذیرفت.</p>
+    <p><strong>گام بعدی برای کاملِ مستقل شدن:</strong> بسته‌بندیِ نهایی با Velopack (نسخهٔ بعدی) تا پنجرهٔ بومی از نصابِ امضاشده هم بیاید.</p>
+  </div>
+
+  <div class="foot">تهیه‌شده توسط AutoClaw از روی شواهد واقعی روی دیسک و اجرای زندهٔ منابع. شکاف‌های «نیازمند fetch زنده» با اجرای فیچر کدال (چرخش IP/ADB) قابل رفع‌اند.</div>
+</div>
+</body>
+</html>

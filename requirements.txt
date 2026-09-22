@@ -8,3 +8,6 @@ pandas==2.2.3
 # orjson: مسیر سریعِ JSON (app.py). نبودش نباید اپ را بخواباند؛
 # app.py در نبودش به JSONResponse استاندارد برمی‌گردد.
 orjson
+# پنجرهٔ مستقلِ بومی (WebView2) بدون مرورگر/تب/نوار آدرس.
+pywebview
+pythonnet
