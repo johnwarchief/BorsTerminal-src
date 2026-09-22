@@ -141,4 +141,6 @@ releases/
 *.screener_cache.json
 .screener_cache.json
 BorsTerminal_Ultimate_Setup_*.spec
+_audit/_screen_*.json
+frontend/_audit/
 
