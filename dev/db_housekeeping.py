@@ -271,7 +271,35 @@ def selftest():
     else:
         print("  [ok] dedupe idempotent")
 
-    # ۴) backfill باید ستون‌ها را پر کند و دوباره صفر تغییر دهد
+    # ۴) backfill باید ستون‌ها را پر کند و دوباره صفر تغییر دهد.
+    #
+    # نکته: اسنپ‌شاتِ واقعیِ market.db.lzma ممکن است از قبل کاملاً backfill
+    # شده باشد (این ابزار رویِ خودِ DB اجرا شده). در آن حالت اجرای دوبارهٔ
+    # backfill مشروعاً «صفر» تغییر می‌دهد و تستِ «باید پر شود» بی‌معنا می‌شود.
+    # پس اول رویِ کپی یک شکافِ مصنوعی می‌سازیم: فقط ردیف‌هایی را NULL می‌کنیم
+    # که مخرجِ سالِ قبلشان موجود است؛ سپس خروجیِ backfill باید دقیقاً همان‌ها
+    # را پر کند و اجرای بعدی صفر تغییر بدهد.
+    gap_conn = sqlite3.connect(db)
+    gap_conn.execute("PRAGMA foreign_keys = ON")
+    gap = 0
+    for prev_col, src_col in _PREV_COLS:
+        cur = gap_conn.execute(
+            f"""UPDATE monthly_sales SET {prev_col} = NULL
+                WHERE {prev_col} IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM monthly_sales p
+                              WHERE p.symbol = monthly_sales.symbol
+                                AND p.year = monthly_sales.year - 1
+                                AND p.month = monthly_sales.month
+                                AND p.{src_col} IS NOT NULL)""")
+        gap += cur.rowcount
+    gap_conn.commit()
+    gap_conn.close()
+    print(f"  [setup] artificial prev-year gap: {gap} cells nulled")
+    if gap == 0:
+        print("  [FAIL] no eligible rows to backfill (snapshot has no prior-year data)")
+        ok = False
+
+    stats, cov = run(db, apply=True, verbose=False)
     filled = sum(stats["prev"].values())
     if filled == 0:
         print("  [FAIL] backfill filled nothing")

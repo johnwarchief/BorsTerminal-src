@@ -20,7 +20,7 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخهٔ v1.0.17
+RELEASE_BODY = """## تغییرات نسخهٔ v1.0.18
 
 ### 📈 ارتقای چارت تکنیکال و استانداردهای تریدینگ‌ویو
 - **بازطراحی کامل ابزار فیبوناچی:** محاسبه دقیق ترازهای لگاریتمی/حسابی، نمایش درصدها روی خطوط، پالت رنگی استاندارد تریدینگ‌ویو و حذف همپوشانی برچسب‌های قیمتی روی محور راست.
@@ -41,7 +41,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.17")
+TAG = os.environ.get("RELEASE_TAG", "v1.0.18")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
@@ -54,8 +54,16 @@ PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM}_to_{TAG
 PATCH_SIG = PATCH_ZIP + ".sig"
 
 def get_github_token():
-    # Feed the credential request via a pipe; an interactive helper with no
-    # controlling tty can hang indefinitely waiting for stdin.
+    # Prefer an explicit token from the environment. The release is published to
+    # the *public* distribution repo (see REPO), but CI runs in the private
+    # source mirror whose default GITHUB_TOKEN is scoped to that mirror only and
+    # therefore cannot create releases on the public repo. A PAT (RELEASE_TOKEN)
+    # passed in via the environment must win over the persisted git credential.
+    env_token = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
+    if env_token:
+        return env_token
+    # Local fallback: ask the git credential helper. Feed the request via a
+    # pipe; an interactive helper with no controlling tty can hang on stdin.
     try:
         proc = subprocess.Popen(
             ["git", "credential", "fill"],

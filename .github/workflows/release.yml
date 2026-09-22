@@ -61,10 +61,10 @@ jobs:
           TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
         with:
           projectPath: './frontend'
-          tagName: ${{ github.ref_name }}
-          releaseName: 'BorsTerminal Ultimate ${{ github.ref_name }}'
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: 'BorsTerminal Ultimate ${{ github.event.inputs.tag || github.ref_name }}'
           releaseBody: |
-            ## ایستگاه معاملاتی و داوری نخبگان بورس التیمیت ${{ github.ref_name }}
+            ## ایستگاه معاملاتی و داوری نخبگان بورس التیمیت ${{ github.event.inputs.tag || github.ref_name }}
             
             ### تغییرات و ویژگی‌های این نسخه:
             - پکیج رسمی ویندوزی با هسته مدرن و فوق‌سبک Tauri v2
@@ -100,8 +100,11 @@ jobs:
     env:
       # e.g. ref_name "v1.0.4" → installer "BorsTerminal_Ultimate_Setup_v1.0.4.exe"
       # and ISCC AppVersion define "1.0.4".
-      TAG: ${{ github.ref_name }}
-      RELEASE_TAG: ${{ github.ref_name }}
+      # Resolve the release tag the same way for the manual dispatch
+      # (inputs.tag) and tag-push (ref_name) triggers; TAG drives the
+      # ISCC AppVersion define, the installer filename and the release.
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
     steps:
       - name: Checkout repository
@@ -127,6 +130,19 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Restore installer password include
+        shell: pwsh
+        env:
+          BORS_SETUP_PASSWORD: ${{ secrets.BORS_SETUP_PASSWORD }}
+        run: |
+          # bors_setup.iss does `#include ".setup_password.iss"` (gitignored),
+          # so ISCC cannot compile without it. Restore it from the secret and
+          # use the same value fts_terminal.spec bundles into _internal, so the
+          # in-app /VERYSILENT updater can pass /PASSWORD=... automatically.
+          $pw = $env:BORS_SETUP_PASSWORD
+          if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
+          "#define SetupPassword ""$pw""" | Out-File -FilePath installer\.setup_password.iss -Encoding ascii -NoNewline
+
       - name: Build Python Backend (PyInstaller + bundle data)
         run: python scripts/build_all.py
 
@@ -137,25 +153,35 @@ jobs:
           $ver = $env:TAG -replace '^v',''
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$ver" installer\bors_setup.iss
 
-      - name: Install Tauri CLI (for minisign signing)
+      - name: Restore updater signing key
+        shell: pwsh
+        env:
+          # .tauri/updater.key is gitignored; CI restores it from the repo
+          # secret. This is the same base64 minisign key the in-app updater
+          # trusts (api/update.py UPDATE_PUBKEY / tauri.conf.json pubkey
+          # 830BF752EF10076). The key has no password.
+          KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
-          cd frontend
-          npm ci
+          if ([string]::IsNullOrWhiteSpace($env:KEY)) {
+            Write-Error "secret TAURI_SIGNING_PRIVATE_KEY is empty - cannot sign the updater artifact"
+            exit 1
+          }
+          New-Item -ItemType Directory -Force -Path .tauri | Out-Null
+          [System.IO.File]::WriteAllText("$PWD\.tauri\updater.key", $env:KEY.Trim() + "`n")
 
       - name: Sign Installer with Updater Key
+        shell: pwsh
         env:
-          # .tauri/updater.key is gitignored; CI restores it from secrets.
-          # The matching pubkey (830BF752EF10076) is embedded in tauri.conf.json.
-          TAURI_SIGNING_PRIVATE_KEY_FILE: ${{ secrets.TAURI_UPDATER_KEY_FILE }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
         run: |
-          New-Item -ItemType Directory -Force -Path .tauri | Out-Null
-          $env:TAURI_SIGNING_PRIVATE_KEY_FILE | Out-File -FilePath .tauri\updater.key -Encoding ascii -NoNewline
           cd frontend
-          npx tauri signer sign -f ../.tauri/updater.key -p "$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD" "../installer/out/BorsTerminal_Ultimate_Setup_$env:TAG.exe"
+          npx tauri signer sign -f ..\.tauri\updater.key "..\installer\out\BorsTerminal_Ultimate_Setup_$env:TAG.exe"
 
       - name: Publish Release (installer + .sig + latest.json)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          # The release lives on the public distribution repo, so the source
+          # mirror's default GITHUB_TOKEN cannot write there. RELEASE_TOKEN is a
+          # PAT with access to both repos; fall back to GITHUB_TOKEN when unset.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: python scripts/publish_github_release.py
