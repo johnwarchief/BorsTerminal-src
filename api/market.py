@@ -178,10 +178,28 @@ def get_market(request: Request):
         df["month_avg_vol"] = pd.to_numeric(df["month_avg_vol"], errors="coerce").astype(float)
         df["prev_day_vol"] = pd.to_numeric(df["prev_day_vol"], errors="coerce").astype(float)
 
-        # ---------- درصد تغییر (محافظت تقسیم بر صفر) ----------
-        py_last = df["price_yesterday"].astype(float).where(df["price_yesterday"].astype(float) > 0)
-        df["percent_change"] = np.where(
-            py_last > 0, ((df["p_closing"] - py_last) / py_last * 100).round(2), None)
+        # ---------- درصد تغییر ----------
+        # TSETMC برای نمادهای حق‌تقدم/اختیار (پیشوند ض/ط) و نمادهای تازه‌لیست‌شده
+        # price_yesterday را برابر ۱ می‌فرستد — این یک مقدار نگهبان است، نه
+        # قیمت واقعیِ دیروز. تقسیم بر ۱ درصد‌های بی‌معنی مثل +۴٬۱۹۵٬۶۰۰٪
+        # می‌سازد (تأییدشده: این نمادها هیچ ردیفی در price_history ندارند).
+        # شرطِ قدیمیِ «> ۰» این حالت را نمی‌گرفت.
+        _py = pd.to_numeric(df["price_yesterday"], errors="coerce")
+        # قیمت دیروزِ معتبر: بزرگ‌تر از ۱ است (کفِ قانونیِ تابلو) و منطقی‌تر
+        # از قیمت پایانیِ امروز — اگر قیمت دیروز نامعتبر باشد اما خودِ
+        # price_change معتبر باشد، از همان نسبتِ رسمیِ TSETMC استفاده می‌کنیم.
+        _pc = pd.to_numeric(df["p_closing"], errors="coerce")
+        _chg = pd.to_numeric(df["price_change"], errors="coerce")
+        py_ok = _py.where(_py > 1.0)
+        pct_from_close = ((_pc - py_ok) / py_ok * 100).round(2)
+        # fallback: price_change / price_yesterday (نسبت رسمی TSETMC)
+        pct_from_change = (_chg / py_ok * 100).round(2)
+        df["percent_change"] = pct_from_close.where(pct_from_close.notna(), pct_from_change)
+        # هرچه هنوز NaN ماند یعنی قیمت دیروزِ معتبری وجود ندارد → نمایش نمی‌شود
+        df["percent_change"] = df["percent_change"].where(df["percent_change"].notna(), None)
+        # دفاعِ نهایی: درصدِ غیرممکن (بزرگ‌تر از بازهٔ مجازِ تابلو) را مخفی کن
+        _pct = pd.to_numeric(df["percent_change"], errors="coerce")
+        df["percent_change"] = np.where(_pct.abs() <= 100.0, df["percent_change"], None)
 
         buy_per_i = df["buy_i_vol"] / df["buy_count_i"].replace(0, 1)
         sell_per_i = df["sell_i_vol"] / df["sell_count_i"].replace(0, 1)

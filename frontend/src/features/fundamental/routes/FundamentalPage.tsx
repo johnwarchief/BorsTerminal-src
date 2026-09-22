@@ -123,8 +123,10 @@ export default function FundamentalPage() {
 
   if (!symbol) {
     // دیده‌بان کلان: ماتریس ۵ شاخص FTS روی کل بازار + کشوی تنظیمات
+    // min-w-0: زنجیرهٔ flex تا جدول ادامه دارد؛ بدون این، min-w-[1240px]ِ
+    // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-base font-black text-text-primary">دیده‌بان کلان بنیادی بازار</h2>
           <span className="text-xs text-text-secondary">ماتریس ۵ شاخص جزوهٔ FTS</span>

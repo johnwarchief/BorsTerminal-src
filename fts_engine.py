@@ -100,6 +100,18 @@ def symbol_aliases(symbol, limit: int = 27) -> tuple:
         if cand and cand not in seen:
             seen.add(cand)
             out.append(cand)
+    # v9.10.4 — TSETMC یک رقمِ انتهایی به نماد می‌چسباند تا ردیفِ تابلو را از
+    # شرکت جدا کند (مبين / مبين3 همان صادرکننده‌اند). صورت‌های مالی فقط زیرِ
+    # نامِ بی‌رقم ذخیره می‌شوند، پس مبين3 هیچ‌وقت به دادهٔ CODAL نمی‌رسید:
+    # ۳۹۶ نماد از ۱۴۳۹ سهام به‌نظر می‌رسید «دادهٔ بنیادی ندارد» در حالی که
+    # شرکتشان کامل بود. فقط یک رقمِ تکی (نه دنبالهٔ چندرقمی مثل صشرق512)
+    # و فقط وقتی پایه ≥۲ حرف باشد. تأییدِ ایمنی روی همین بانک: ۳۹۶/۳۹۶
+    # تعدادِ سهامِ کاملاً یکسان = همان صادرکننده، ۰ مثالِ نادرست.
+    if len(base) >= 3 and base[-1] in "0123456789" and base[-2] not in "0123456789":
+        stripped = base[:-1]
+        if len(stripped) >= 2 and stripped not in seen:
+            seen.add(stripped)
+            out.append(stripped)
     pos = [i for i, ch in enumerate(base) if ch in _CHAR_CLASS]
     variants = [base]
     for i in pos:

@@ -327,7 +327,22 @@ def classify(paper_type, l_val30: str = "", l_val18: str = "", sector_name: str 
     if paper_type == 4:
         return PAPER_RIGHT, "right"
     if paper_type == 8:
-        return PAPER_FUND, fund_kind(l_val30, l_val18)
+        # v9.10.3 — فیلترِ paperTypeِ TSETMC پایدار نیست: در یک همگام‌سازی
+        # واقعی (۲۰۲۶-۰۹-۲۲) پاسخِ pt=8 شاملِ ۱۱۶۸ سهامِ عادیِ واقعی بود —
+        # فولاد، وبملت، شستا، شپنا، فملي، خگستر — در حالی که پاسخِ pt=1 همان
+        # نمادها را سهام می‌نمایاند. چون fetch_paper_types خاص‌ترین طبقه را
+        # برنده می‌کند (rank ۸ > ۱)، این شرکت‌ها برای همیشه «صندوق» ذخیره
+        # می‌شدند. نتیجه: سطرِ «پنجاه شرکت بزرگ» همیشه صفر (هیچ سهامی وجود
+        # نداشت) و سطرهای صندوق ~۴۷ برابرِ واقعی متورم می‌شدند.
+        # راهِ درست: pt=8 فقط وقتی صندوق می‌سازد که نام/سکتور هم تأییدش کند.
+        # در غیرِ این صورت به طبقهٔ سهام می‌غلتد (یا اگر نشانهٔ حق‌تقدم/اختیار
+        # دارد، همان طبقه). این عکسِ باگِ قبلی نیست — نام بی‌ابهام است و
+        # paperType فقط در صورتِ تأیید اعتبار می‌گیرد.
+        if is_fund(l_val18, l_val30, sector_name):
+            return PAPER_FUND, fund_kind(l_val30, l_val18)
+        if _norm(l_val18).upper().endswith("ح") or "حق تقدم" in _norm(l_val30):
+            return PAPER_RIGHT, "right"
+        return PAPER_STOCK, "stock"
     return "other", "other"
 
 

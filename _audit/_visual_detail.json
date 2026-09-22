@@ -1,0 +1,178 @@
+{
+ "fundamental": {
+  "vw": 768,
+  "overflow": [
+   {
+    "tag": "MAIN",
+    "cls": "app-main flex-1 py-2",
+    "left": -562,
+    "right": 704,
+    "w": 1266,
+    "txt": "دیده‌بان کلان بنیادی بازارماتریس ۵ شاخص "
+   },
+   {
+    "tag": "DIV",
+    "cls": "panel-in flex w-full flex-col gap-4",
+    "left": -550,
+    "right": 692,
+    "w": 1242,
+    "txt": "دیده‌بان کلان بنیادی بازارماتریس ۵ شاخص "
+   },
+   {
+    "tag": "DIV",
+    "cls": "flex flex-col gap-4 min-w-0",
+    "left": -550,
+    "right": 692,
+    "w": 1242,
+    "txt": "دیده‌بان کلان بنیادی بازارماتریس ۵ شاخص "
+   },
+   {
+    "tag": "DIV",
+    "cls": "flex flex-wrap items-center gap-2",
+    "left": -550,
+    "right": 692,
+    "w": 1242,
+    "txt": "دیده‌بان کلان بنیادی بازارماتریس ۵ شاخص "
+   },
+   {
+    "tag": "DIV",
+    "cls": "glass-panel panel-in overflow-hidden rounded-2xl min-w-0 max-w-full",
+    "left": -550,
+    "right": 692,
+    "w": 1242,
+    "txt": "دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS"
+   },
+   {
+    "tag": "DIV",
+    "cls": "flex flex-wrap items-center justify-between gap-2 border-b border-[var",
+    "left": -549,
+    "right": 691,
+    "w": 1240,
+    "txt": "دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS"
+   },
+   {
+    "tag": "DIV",
+    "cls": "flex flex-wrap items-center gap-1.5 border-b border-[var(--hairline)] ",
+    "left": -549,
+    "right": 691,
+    "w": 1240,
+    "txt": "پری‌ست‌های استراتژیک FTS:همه شرکت‌ها (۵۸"
+   },
+   {
+    "tag": "DIV",
+    "cls": "max-h-[70vh] overflow-auto overscroll-contain",
+    "left": -549,
+    "right": 691,
+    "w": 1240,
+    "txt": "نماد۱ رشد کدال ۲ روند EPS۳ حاشیه ۴ پتانس"
+   },
+   {
+    "tag": "TABLE",
+    "cls": "w-full min-w-[1240px] table-fixed text-start text-xs",
+    "left": -549,
+    "right": 691,
+    "w": 1240,
+    "txt": "نماد۱ رشد کدال ۲ روند EPS۳ حاشیه ۴ پتانس"
+   },
+   {
+    "tag": "COLGROUP",
+    "cls": "",
+    "left": -549,
+    "right": 691,
+    "w": 1240,
+    "txt": ""
+   }
+  ],
+  "clipped": []
+ },
+ "technical": {
+  "vw": 768,
+  "overflow": [],
+  "clipped": [
+   {
+    "txt": "مرابحه عام دولت163-ش.خ051229",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "اسنادخزانه-م10بودجه02-051112",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 137,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت213-ش.خ060728",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت285-ش.خ070419",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت251-ش.خ070405",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت252-ش.خ070905",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه دولت عام218-ش.خ070328",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت301-ش.خ080627",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت295-ش.خ070630",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "صندوق س.درآمد ثابت پاسارگاد-د",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 130,
+    "cw": 125
+   },
+   {
+    "txt": "مرابحه عام دولت258-ش.خ070302",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت300-ش.خ080527",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت244-ش.خ070913",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   },
+   {
+    "txt": "مرابحه عام دولت196-ش.خ050924",
+    "cls": "truncate text-[10px] text-[var(--text-muted)] ",
+    "sw": 143,
+    "cw": 117
+   }
+  ]
+ }
+}

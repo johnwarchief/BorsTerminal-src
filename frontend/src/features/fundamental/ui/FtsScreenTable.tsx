@@ -463,7 +463,11 @@ export function FtsScreenTable({
   }
 
   return (
-    <div className="glass-panel panel-in overflow-hidden rounded-2xl">
+    // min-w-0 + max-w-full: بدون این دو، پنل به اندازهٔ min-w-[1240px]ِ جدول
+    // پهن می‌شود و overflow-autoِ درونش هرگز فعال نمی‌شود — نتیجه: کلِ صفحه
+    // در دیدگاه‌های کوچک‌تر از ۱۲۴۰px (مثلاً ۷۶۸px) ۵۶۲px بیرون از کادر
+    // می‌افتد و کاربر به ستون‌ها نمی‌رسد.
+    <div className="glass-panel panel-in overflow-hidden rounded-2xl min-w-0 max-w-full">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
         <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
         <div className="flex items-center gap-3">

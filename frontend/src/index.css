@@ -223,6 +223,12 @@ body::before {
     padding-inline: var(--gutter-x);
     max-inline-size: var(--content-max-w);
     margin-inline: auto;
+    /* v1.0.18 — app-main فرزندِ flex است و min-width: 0 به‌تنهایی کافی نیست
+       (اندازه‌گیریِ زنده: همچنان ۱۲۶۶px). width: 100% آن را به عرضِ
+       app-content می‌بندد؛ اینجا min-w-[1240px]ِ ماتریس FTS دیگر کلِ صفحه
+       را بیرون نمی‌زند و overflow-autoیِ درونِ پنل فعال می‌شود. */
+    width: 100%;
+    min-width: 0;
   }
 
   /* محتوای صفحه: زیر ۱۰۲۴px داور نماد بهصورت overlay باز میشود (بدون فاصلهگذاری). */
