@@ -585,9 +585,10 @@ def _spawn_patch_apply(patch_zip):
         shutil.copyfile(patch_zip, target_zip)
     except OSError as exc:
         raise RuntimeError("کپیِ پچ به مسیرِ نصب ناموفق: %s" % exc)
-    subprocess.Popen(
-        ["cmd.exe", "/c", applier],
-        cwd=d, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP, close_fds=True)
+    kw = {"cwd": d, "close_fds": True}
+    if sys.platform == "win32":
+        kw["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    subprocess.Popen(["cmd.exe", "/c", applier], **kw)
     _STATE.update(status="installing",
                   message="در حال اعمالِ پچِ به‌روزرسانی")
     _delayed_exit(2.0)
