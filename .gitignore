@@ -131,6 +131,9 @@ dist/
 # generated at publish-time by scripts/publish_github_release.py, uploaded to
 # the GitHub release; never tracked in the repo
 latest.json
+# codal snapshot signature — uploaded to the release beside codal.db.lzma
+# (the .lzma itself is covered by *.lzma below); never tracked
+codal.db.lzma.sig
 
 
 *.lzma

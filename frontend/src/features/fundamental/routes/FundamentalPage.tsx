@@ -58,6 +58,37 @@ export default function FundamentalPage() {
     try { await screen.refetch(); } finally { setRefreshing(false); }
   };
 
+  /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب: POST + polling وضعیت تا پایان */
+  type DbStatus = { running: boolean; stage: string; percent?: number; detail?: string; error?: string };
+  const [dbUpd, setDbUpd] = useState<DbStatus | null>(null);
+  const { refetch: refetchScreen } = screen;
+  const handleDbUpdate = async () => {
+    setDbUpd({ running: true, stage: 'starting' });
+    try {
+      await http('/api/sync/codal/db-download', { method: 'POST' });
+    } catch { /* وضعیت واقعی از polling می‌آید */ }
+  };
+  useEffect(() => {
+    if (!dbUpd?.running) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await http<{ db: DbStatus }>('/api/sync/codal/db-status');
+        setDbUpd(r.db);
+        if (!r.db.running && r.db.stage === 'done') void refetchScreen();
+      } catch { /* سرور مشغول است — تیک بعدی */ }
+    }, 2000);
+    return () => clearInterval(id);
+  }, [dbUpd?.running, refetchScreen]);
+  // اگر دانلود از قبل در جریان است (مثلاً کاربر وسط آن صفحه را عوض کرده)،
+  // وضعیت را یک‌بار بخوان تا دکمه و polling از همان ابتدا زنده باشند.
+  useEffect(() => {
+    let alive = true;
+    http<{ db: DbStatus }>('/api/sync/codal/db-status')
+      .then((r) => { if (alive && r.db.running) setDbUpd(r.db); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   const card = useFtsCard(symbol);
   const quarters = useQuarters(symbol);
   const board = useSectorBoard();
@@ -135,6 +166,8 @@ export default function FundamentalPage() {
             thresholds={screen.data?.thresholds ?? null}
             onRefresh={handleRefresh}
             refreshing={refreshing}
+            onDbUpdate={handleDbUpdate}
+            dbUpdate={dbUpd}
             settingsSlot={<FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />}
             onSelect={(s) => {
               setSymbol(s);

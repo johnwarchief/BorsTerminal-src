@@ -6,16 +6,22 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from ._core import _count_procs, _kill_procs, _safe_read_json
-from bors_config import APP_DIR, CONTROL_PATH, MARKET_STATUS_PATH, OD_STATUS_PATH, STATUS_PATH, WORK_DIR
+from bors_config import APP_DIR, CONTROL_PATH, DB_PATH, MARKET_STATUS_PATH, OD_STATUS_PATH, STATUS_PATH, WORK_DIR
 from fastapi import APIRouter
 from fastapi import Query
 from fastapi import Request
 import codal_fetcher
 import datetime
 import json
+import lzma
 import os
+import requests
+import shutil
+import sqlite3
 import subprocess
 import sys
+import threading
+import time
 
 
 router = APIRouter()
@@ -64,6 +70,190 @@ def sync_codal_fts_refresh(mode: str = Query("monthly")):
         return {"status": "error", "message": "dev/codal_fts_updater.py یافت نشد."}
     subprocess.Popen([sys.executable, script, "--mode", mode, "--adb-rotate", "--resume"], cwd=APP_DIR)
     return {"status": "success", "message": "FTS 5-indicator refresh started.", "mode": mode}
+
+
+# ---------------------------------------------------------------------------
+# بروزرسانی دیتابیس کدال از snapshot گیت‌هاب (بدون خزندهٔ زنده)
+#
+# چرا از گیت‌هاب: search.codal.ir پشت WAF/فیلتر است و خزندهٔ زنده روی بنِ IP
+# گیر می‌کند؛ snapshot امضانشدهٔ ریلیز تنها منبعِ قابل اتکا برای کاربر است.
+# اگر دانلود بلاک شود، همان مکانیزم چرخش IP سلولی codal_fetcher (ADB
+# airplane-mode toggle) فعال می‌شود — گوشیِ tether شده IP تازه می‌گیرد.
+# ---------------------------------------------------------------------------
+CODAL_DB_URL = ("https://github.com/johnwarchief/BorsTerminal/releases/"
+                "latest/download/codal.db.lzma")
+CODAL_DB_STATUS_PATH = os.path.join(WORK_DIR, "codal_db_status.json")
+_CODAL_TABLES = ("codal_notices", "financial_statements", "monthly_sales")
+_dbdl_lock = threading.Lock()
+_dbdl_running = False
+
+
+def _write_db_status(stage, percent=0.0, detail="", error=""):
+    try:
+        tmp = CODAL_DB_STATUS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"stage": stage, "percent": percent, "detail": detail,
+                       "error": error,
+                       "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False)
+        os.replace(tmp, CODAL_DB_STATUS_PATH)
+    except Exception:
+        pass
+
+
+def _codal_db_worker(dest_lzma, tmp_db):
+    global _dbdl_running
+    try:
+        # ۱) دانلود با retry + چرخش IP (rotate_ip_via_adb خودش gate دارد:
+        #    adb_config.json enabled + دستگاه متصل + حداقل فاصلهٔ ۱۲۰ ثانیه)
+        attempt = 0
+        sig_text = ""
+        while True:
+            attempt += 1
+            try:
+                _write_db_status("downloading", 0.0,
+                                 "دریافت codal.db.lzma از گیت‌هاب (تلاش %d)" % attempt)
+                with requests.get(CODAL_DB_URL, stream=True, timeout=(10, 60),
+                                  headers={"User-Agent": "BorsTerminal-CodalDB"}) as resp:
+                    resp.raise_for_status()
+                    total = int(resp.headers.get("Content-Length") or 0)
+                    n = 0
+                    part = dest_lzma + ".part"
+                    with open(part, "wb") as dst:
+                        for chunk in resp.iter_content(1 << 20):
+                            dst.write(chunk)
+                            n += len(chunk)
+                            if total:
+                                _write_db_status(
+                                    "downloading", round(100.0 * n / total, 1),
+                                    "دریافت %d از %d مگابایت" % (n >> 20, total >> 20))
+                    os.replace(part, dest_lzma)
+                sig_resp = requests.get(CODAL_DB_URL + ".sig", timeout=(10, 60),
+                                        headers={"User-Agent": "BorsTerminal-CodalDB"})
+                sig_resp.raise_for_status()
+                sig_text = sig_resp.text.strip()
+                break
+            except Exception as exc:
+                if attempt >= 3:
+                    raise
+                _write_db_status("rotating", 0.0,
+                                 "دانلود ناموفق (%s) — چرخش IP با ADB"
+                                 % type(exc).__name__)
+                try:
+                    codal_fetcher.rotate_ip_via_adb(quiet=True)
+                except Exception:
+                    pass
+                time.sleep(5)
+
+        # ۱٫۵) راستی‌آزمایی امضای minisign — همان قراردادِ آپدیتِرِ درون‌برنامه‌ای
+        #      (api/update.py): snapshot بی‌امضا یا دستکاری‌شده هرگز merge نمی‌شود.
+        #      خطای امضا retry/rotate نمی‌گیرد — مستقیم به وضعیت error می‌رود.
+        _write_db_status("verifying", 0.0, "راستی‌آزمایی امضای دیجیتال snapshot")
+        from bors_minisign import verify_minisign
+        from .update import UPDATE_PUBKEY
+        with open(dest_lzma, "rb") as f:
+            verify_minisign(f.read(), sig_text, UPDATE_PUBKEY)
+
+        # ۲) بازکردن lzma + راستی‌آزمایی snapshot قبل از هر نوشتن روی market.db
+        _write_db_status("decompressing", 0.0, "بازکردن فشرده‌سازی lzma")
+        with lzma.open(dest_lzma, "rb") as src, open(tmp_db, "wb") as out:
+            shutil.copyfileobj(src, out, 1 << 20)
+        snap = sqlite3.connect(tmp_db, timeout=30)
+        try:
+            ic = snap.execute("PRAGMA integrity_check").fetchone()
+            if not ic or ic[0] != "ok":
+                raise ValueError("snapshot integrity_check failed: %r" % (ic,))
+            have = {r[0] for r in snap.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+            missing = [t for t in _CODAL_TABLES if t not in have]
+            if missing:
+                raise ValueError("snapshot lacks tables: %s" % ",".join(missing))
+        finally:
+            snap.close()
+
+        # ۳) merge افزایشی در market.db — هر سه جدول PK=tracing_no دارند، پس
+        #    INSERT OR REPLACE هم ردیف‌های کهنه را تازه می‌کند هم جدید را اضافه.
+        _write_db_status("merging", 0.0, "ادغام در market.db")
+        main = sqlite3.connect(DB_PATH, timeout=60)
+        try:
+            main.execute("PRAGMA busy_timeout=60000")
+            main.execute("ATTACH DATABASE ? AS src", (tmp_db,))
+            merged = {}
+            for t in _CODAL_TABLES:
+                src_cols = {r[1] for r in main.execute('PRAGMA src.table_info("%s")' % t)}
+                dst_cols = [r[1] for r in main.execute('PRAGMA main.table_info("%s")' % t)]
+                common = [c for c in dst_cols if c in src_cols]
+                if not common:
+                    raise ValueError("no common columns for table %s" % t)
+                collist = ",".join('"%s"' % c.replace('"', '""') for c in common)
+                cur = main.execute(
+                    'INSERT OR REPLACE INTO main."%s" (%s) SELECT %s FROM src."%s"'
+                    % (t, collist, collist, t))
+                merged[t] = cur.rowcount
+            main.commit()
+            # fts_results کش‌شده با دادهٔ تازه کهنه شد — اسکرینر زنده بازمحاسبه کند
+            try:
+                import fts_engine
+                fts_engine.invalidate_fts_results(main)
+                main.commit()
+            except Exception:
+                pass
+            main.execute("DETACH DATABASE src")
+        finally:
+            main.close()
+
+        _write_db_status("done", 100.0,
+                         "دیتابیس کدال بروزرسانی شد — "
+                         + " · ".join("%s: %d ردیف" % kv for kv in merged.items()))
+    except Exception as exc:                                   # noqa: BLE001
+        _write_db_status("error", 0.0, "",
+                         "خطا در بروزرسانی دیتابیس کدال — %s: %s"
+                         % (type(exc).__name__, exc))
+    finally:
+        for p in (dest_lzma, tmp_db, dest_lzma + ".part"):
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+        with _dbdl_lock:
+            _dbdl_running = False
+
+
+@router.post("/api/sync/codal/db-download")
+def sync_codal_db_download():
+    """بروزرسانی دیتابیس کدال فقط از snapshot گیت‌هاب (بدون خزندهٔ زندهٔ codal.ir)."""
+    global _dbdl_running
+    with _dbdl_lock:
+        if _dbdl_running:
+            return {"status": "already_running",
+                    "message": "دانلود دیتابیس کدال در حال اجراست — صبر کنید."}
+        if _codal_running():
+            # merge همزمان با اسکن زنده = دو نویسنده روی جدول‌های کدال؛ ممنوع
+            return {"status": "already_running",
+                    "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}
+        _dbdl_running = True
+    dest = os.path.join(WORK_DIR, "codal_snapshot.db.lzma")
+    tmp = os.path.join(WORK_DIR, "codal_snapshot.db")
+    threading.Thread(target=_codal_db_worker, args=(dest, tmp), daemon=True).start()
+    return {"status": "success",
+            "message": "دانلود دیتابیس کدال از گیت‌هاب آغاز شد.",
+            "url": CODAL_DB_URL}
+
+
+@router.get("/api/sync/codal/db-status")
+def sync_codal_db_status():
+    """وضعیت زندهٔ دانلود/ادغام برای دکمهٔ بروزرسانی جدول بنیادی."""
+    st = _safe_read_json(CODAL_DB_STATUS_PATH) or {}
+    with _dbdl_lock:
+        running = _dbdl_running
+    return {"status": "success",
+            "db": {"running": running,
+                   "stage": st.get("stage", "idle"),
+                   "percent": st.get("percent", 0.0),
+                   "detail": st.get("detail", ""),
+                   "error": st.get("error", ""),
+                   "ts": st.get("ts", "")}}
+
 
 @router.get("/api/sync/status")
 def get_sync_status():

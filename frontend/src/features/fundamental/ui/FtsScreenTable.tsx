@@ -396,6 +396,8 @@ export function FtsScreenTable({
   thresholds,
   onRefresh,
   refreshing,
+  onDbUpdate,
+  dbUpdate,
   settingsSlot,
 }: {
   rows: FtsScreenRow[];
@@ -404,6 +406,10 @@ export function FtsScreenTable({
   thresholds?: Record<string, unknown> | null;
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب (POST /api/sync/codal/db-download) */
+  onDbUpdate?: () => void;
+  /** وضعیت زندهٔ دانلود/ادغام برای لیبل دکمه (GET /api/sync/codal/db-status) */
+  dbUpdate?: { running: boolean; stage: string; percent?: number; detail?: string; error?: string } | null;
   /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
   settingsSlot?: ReactNode;
 }) {
@@ -511,6 +517,35 @@ export function FtsScreenTable({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2">
         {settingsSlot ?? <span />}
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onDbUpdate?.()}
+            disabled={!onDbUpdate || dbUpdate?.running}
+            data-testid="fts-db-update"
+            title={dbUpdate?.error
+              ? dbUpdate.error
+              : 'دانلود snapshot دیتابیس کدال از گیت‌هاب و ادغام در دیتابیس محلی — اگر بلاک شود، IP با ADB چرخانده می‌شود'}
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
+              dbUpdate?.error
+                ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
+                : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue disabled:opacity-50'
+            }`}
+          >
+            <svg className={`h-3 w-3 ${dbUpdate?.running ? 'animate-pulse' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            {dbUpdate?.running
+              ? dbUpdate.stage === 'downloading' && dbUpdate.percent
+                ? `دیتابیس کدال ${toFaDigits(Math.round(dbUpdate.percent))}٪`
+                : dbUpdate.stage === 'rotating'
+                  ? 'چرخش IP…'
+                  : dbUpdate.stage === 'merging'
+                    ? 'در حال ادغام…'
+                    : 'در حال دریافت…'
+              : dbUpdate?.error
+                ? 'خطای دیتابیس کدال'
+                : 'دیتابیس کدال'}
+          </button>
           <button
             type="button"
             onClick={() => onRefresh?.()}
