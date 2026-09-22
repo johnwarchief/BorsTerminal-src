@@ -165,6 +165,28 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] screener warm thread failed: {_e}")
 
+    # ── اسنپ‌شاتِ دوره‌ایِ نبض بازار ─────────────────────────────────────
+    # مstat_snap قبلاً فقط پراکنده پر می‌شد (چند نقطه) و به‌همین‌دلیل «روند ۳-۴
+    # روزه» و نمودار درون‌روز «بدون داده» بود. این حلقه هر ۵ دقیقه یک نقطه
+    # می‌سازد؛ خودِ save_mstat_snapshot خارجِ ساعت بازار چیزی نمی‌نویسد.
+    def _pulse_snapshot_loop():
+        import time as _t
+        while True:
+            try:
+                import sqlite3 as _sq, mstat_engine as _ME
+                from bors_config import DB_PATH as _DB
+                _c = _sq.connect(_DB, timeout=30)
+                _ME.save_mstat_snapshot(_c)
+                _c.close()
+            except Exception as _e:
+                print(f"[startup] pulse snapshot loop: {_e}")
+            _t.sleep(300)
+    try:
+        threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
+        print("[startup] pulse snapshot loop spawned")
+    except Exception as _e:
+        print(f"[startup] pulse snapshot loop failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():
