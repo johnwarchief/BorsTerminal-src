@@ -25,8 +25,7 @@ import sqlite3
 import sys
 
 TABLES = ("codal_notices", "financial_statements", "monthly_sales")
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def main():
