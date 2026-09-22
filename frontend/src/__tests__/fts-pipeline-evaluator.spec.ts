@@ -178,4 +178,68 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
     expect(res.narrative.fundamental).toBeTruthy();
     expect(res.narrative.tradePlan).toBeTruthy();
   });
+
+  it('تولید سناریوهای ۳گانه FTS (صعودی، رنج، نزولی) و جمع ۱۰۰٪ احتمالات', () => {
+    const inputs: BusInput = {
+      fundamental: dummySignal({
+        agentId: 'fundamental',
+        score: 5,
+        payload: { score: 5, passes: {} },
+      }),
+      technical: dummySignal({
+        agentId: 'technical',
+        direction: 'bullish',
+        payload: { weekly_uptrend: true, jet_active: true },
+      }),
+      tape: dummySignal({
+        agentId: 'tape',
+        payload: { clock_pattern: true, vol_ratio: 3.5 },
+      }),
+    };
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
+    const decision = definiteDecision(strict);
+    const res = evaluateFtsPipeline({
+      symbol: 'فولاد',
+      inputs,
+      strict,
+      decision,
+      fundScore: 5,
+      currentPrice: 5_000,
+      resistancePrice: 5_800,
+    });
+
+    const sc = res.narrative.scenarios;
+    expect(sc.bullish.probabilityPct + sc.neutral.probabilityPct + sc.bearish.probabilityPct).toBe(100);
+    expect(sc.bullish.title).toContain('صعودی');
+    expect(sc.bullish.targetOrStop).toContain('ذخیره سود ۵۰٪');
+    expect(sc.neutral.title).toContain('رنج');
+    expect(sc.bearish.title).toContain('نزولی');
+    expect(sc.bearish.targetOrStop).toContain('MA-14');
+  });
+
+  it('سنجش نقدشوندگی و صف‌های بازار: الگوی کف‌روبی و الگوی ساعت', () => {
+    const inputs: BusInput = {
+      tape: dummySignal({
+        agentId: 'tape',
+        payload: {
+          is_sell_queue: true,
+          floor_sweep: true,
+          buyer_power: 1.8,
+        },
+      }),
+    };
+    const strict = runStrictGates(inputs, { inBasket: null, industryUsedPct: null, industryCapPct: 20, warRegime: false, symbolWeightPct: null });
+    const decision = definiteDecision(strict);
+    const res = evaluateFtsPipeline({
+      symbol: 'خکاوه',
+      inputs,
+      strict,
+      decision,
+    });
+
+    expect(res.narrative.liquidity.queueStatus).toBe('sell_queue');
+    expect(res.narrative.liquidity.headline).toContain('کف‌روبی');
+    expect(res.narrative.readinessCondition).toBeTruthy();
+    expect(res.narrative.traderAdvice).toContain('نوسان‌گیر');
+  });
 });
