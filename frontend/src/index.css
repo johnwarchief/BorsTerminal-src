@@ -19,6 +19,7 @@
   --color-accent-susp-bg: var(--accent-susp-bg);
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-red: var(--neon-red);
+  --color-on-accent: var(--on-accent);
   --font-sans: 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
   --font-mono: 'Vazirmatn', monospace;
 

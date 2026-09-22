@@ -107,7 +107,7 @@ export function FtsPipelineBar() {
                       s.status === 'pass'
                         ? 'bg-accent-green text-black'
                         : s.status === 'fail'
-                          ? 'bg-accent-red text-white'
+                          ? 'bg-accent-red text-on-accent'
                           : 'bg-accent-yellow/30 text-accent-yellow'
                     }`}
                   >

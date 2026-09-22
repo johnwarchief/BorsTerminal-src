@@ -633,7 +633,7 @@ export function TapeFilterSettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-accent-blue px-6 py-2 text-xs font-black text-white hover:opacity-90 active:scale-98 transition-all shadow-md"
+            className="rounded-xl bg-accent-blue px-6 py-2 text-xs font-black text-on-accent hover:opacity-90 active:scale-98 transition-all shadow-md"
           >
             تایید و بستن
           </button>

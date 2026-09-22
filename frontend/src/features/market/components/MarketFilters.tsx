@@ -367,7 +367,7 @@ function AdvancedFiltersMenu({
                   <span>شخصی‌سازی الگوریتم‌ها و تایم‌فریم‌ها</span>
                 </span>
                 {isCustom ? (
-                  <span className="rounded-full bg-accent-blue px-1.5 py-0.5 text-3xs text-white">سفارشی</span>
+                  <span className="rounded-full bg-accent-blue px-1.5 py-0.5 text-3xs text-on-accent">سفارشی</span>
                 ) : null}
               </button>
             </div>

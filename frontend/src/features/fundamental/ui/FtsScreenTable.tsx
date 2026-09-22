@@ -544,7 +544,7 @@ export function FtsScreenTable({
                 }`}
               >
                 <span
-                  className={`absolute h-3 w-3 rounded-full bg-white shadow transition-all ${
+                  className={`absolute h-3 w-3 rounded-full bg-white border border-border-c shadow transition-all ${
                     showExcluded ? 'left-[14px]' : 'left-0.5'
                   }`}
                 />

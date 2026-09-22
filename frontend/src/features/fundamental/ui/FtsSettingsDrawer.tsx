@@ -153,7 +153,7 @@ function ToggleRow({
         }`}
       >
         <span
-          className={`absolute h-3.5 w-3.5 rounded-full bg-white shadow transition-all duration-200 ${
+          className={`absolute h-3.5 w-3.5 rounded-full bg-white border border-border-c shadow transition-all duration-200 ${
             checked ? 'left-[18px]' : 'left-1'
           }`}
         />

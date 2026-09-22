@@ -14,6 +14,8 @@
   --accent-yellow: #f59e0b;
   --accent-susp: #f97316;
   --accent-susp-bg: rgba(249, 115, 22, 0.16);
+  /* متنِ مناسبِ روی سطوحِ accent — در تم تاریک accent روشن است پس متن تیره لازم است */
+  --on-accent: #0b1220;
   /* لایه سایبر: نئون و خطوط مویی */
   --neon-cyan: #22d3ee;
   --neon-red: #ff3860;
@@ -101,6 +103,7 @@
   --accent-blue: #0b6fa4;
   --accent-susp: #ea580c;
   --accent-susp-bg: rgba(251, 146, 60, 0.22);
+  --on-accent: #ffffff;
   --neon-cyan: #0e7490;
   --neon-red: #e11d48;
   --hairline: rgba(15, 23, 42, 0.18);
