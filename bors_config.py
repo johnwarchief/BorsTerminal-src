@@ -61,6 +61,26 @@ def _work_dir():
 APP_DIR = _app_dir()
 WORK_DIR = _work_dir()
 
+def _db_has_codal(path):
+    """True اگر این market.db دادهٔ کدال دارد (financial_statements/monthly_sales).
+
+    v1.0.16: همگام‌سازیِ زندهٔ تابلو یک market.db کوچک می‌سازد که فقط
+    instruments/market_watch دارد و صورت‌های مالی درش نیستند. بدون این
+    بررسی، آن فایلِ تهی از کدال بر فایلِ ۹۵ مگابایتیِ باندل‌شده ترجیح
+    داده می‌شود و کلِ تب بنیادی «بدون داده» می‌ماند.
+    """
+    try:
+        import sqlite3 as _sq
+        con = _sq.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            n = con.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+            return int(n or 0) > 0
+        finally:
+            con.close()
+    except Exception:
+        return False
+
+
 def _resolve_market_db():
     """مسیر market.db: فایل موجود، وگرنه مسیر برنامه‌ریزی‌شده برای استخراج.
 
@@ -77,6 +97,19 @@ def _resolve_market_db():
     # را کنارِ db بسازد که ممکن نیست → «unable to open database file» روی
     # هر اتصال. مثلِ _work_dir() از exe_dirِ غیرنوشتنی صرف‌نظر می‌کنیم.
     dirs = [exe_dir, WORK_DIR] if _writable(exe_dir) else [WORK_DIR]
+    # v1.0.16: در بیلدِ onedir، PyInstaller داده‌ها را در _internal می‌گذارد.
+    # اگر آنجا market.db با دادهٔ کدال هست، باید بر فایلِ کوچکِ کنارِ EXE
+    # (که همگام‌سازیِ زندهٔ تابلو می‌سازد) ارجح باشد.
+    if getattr(sys, "frozen", False):
+        internal = os.path.join(exe_dir, "_internal")
+        if os.path.isdir(internal):
+            dirs.append(internal)
+    for d in dirs:
+        p = os.path.join(d, "market.db")
+        if os.path.exists(p) and _db_has_codal(p):
+            return p
+    # هیچ کدام دادهٔ کدال نداشتند: فایلِ موجود را برگردان (همگام‌سازیِ زنده
+    # هنوز در حال نوشتنش است) تا ensure_market_db() بعداً استخراج کند.
     for d in dirs:
         p = os.path.join(d, "market.db")
         if os.path.exists(p):
@@ -230,4 +263,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.0.16"
+APP_VERSION = "1.0.17"
