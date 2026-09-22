@@ -33,7 +33,21 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run all offline guard suites
-        run: python dev/run_all_tests.py
+        # Run the suites through tee so, on failure, the tail can be surfaced as
+        # check-run annotations (readable via the check-runs API even when the
+        # raw job-log blob host is unreachable from a given network).
+        run: |
+          set +e
+          python dev/run_all_tests.py 2>&1 | tee "$RUNNER_TEMP/guards.log"
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "===== tail of guard output ====="
+            tail -n 60 "$RUNNER_TEMP/guards.log"
+            tail -n 10 "$RUNNER_TEMP/guards.log" | while IFS= read -r l; do
+              echo "::error title=guards::$l"
+            done
+          fi
+          exit "$rc"
 
   js-syntax:
     name: node --check on our bundles
