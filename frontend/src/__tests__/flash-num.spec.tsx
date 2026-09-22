@@ -1,74 +1,37 @@
-// __tests__/flash-num.spec.tsx -- رفتارِ فلشِ نوسان: سبز برای افزایش، قرمز برای کاهش
-//
-// مکانیزم: FlashNum کلاسِ flash-up/flash-down را روی همان DOM node می‌گذارد
-// (بدونِ key-change یا re-mount) تا در ترافیکِ بالا فریم نیفتد. این تست
-// مستقیماً همان کلاس‌ها را رویِ span می‌خواند.
-import { describe, it, expect } from 'vitest';
+// تست فلش بدون رفرش: وقتی مقدار prop عوض می‌شود، کلاس flash-up/flash-down
+// باید روی همان گره DOM اعمال شود (بدون تخریب نود) تا کاربر تغییر را «در آن واحد» ببیند.
 import { render, screen } from '@testing-library/react';
-import { FlashNum } from '../shared/components/FlashNum';
+import { describe, expect, it } from 'vitest';
+import { FlashNum } from '@shared/components/FlashNum';
 
-function Cell({ value }: { value: number | null | undefined }) {
-  return <FlashNum value={value} render={(v) => (v == null ? '-' : String(v))} data-testid="cell" />;
-}
+const r = (v: number | null | undefined) => String(v ?? '-');
 
-describe('FlashNum — فلشِ نوسانِ بهینه', () => {
-  it('مقدارِ اولیه را بدونِ فلش رندر می‌کند', () => {
-    render(<Cell value={100} />);
-    const el = screen.getByTestId('cell');
-    expect(el.textContent).toBe('100');
-    expect(el.className).not.toMatch(/flash-(up|down)/);
-  });
-
-  it('افزایش → flash-up (سبز)', () => {
-    const { rerender } = render(<Cell value={100} />);
-    rerender(<Cell value={110} />);
-    const el = screen.getByTestId('cell');
-    expect(el.textContent).toBe('110');
-    expect(el.className).toContain('flash-up');
-    expect(el.className).not.toContain('flash-down');
-  });
-
-  it('کاهش → flash-down (قرمز)', () => {
-    const { rerender } = render(<Cell value={100} />);
-    rerender(<Cell value={95} />);
-    const el = screen.getByTestId('cell');
-    expect(el.textContent).toBe('95');
-    expect(el.className).toContain('flash-down');
+describe('FlashNum — فلش لحظه‌ای بدون رفرش', () => {
+  it('با افزایش مقدار، کلاس flash-up می‌گیرد', () => {
+    const { rerender } = render(<FlashNum value={100} render={r} />);
+    const el = screen.getByText('100');
     expect(el.className).not.toContain('flash-up');
+    rerender(<FlashNum value={125} render={r} />);
+    expect(screen.getByText('125').className).toContain('flash-up');
   });
 
-  it('مقدارِ یکسان فلش نمی‌زند (ترافیکِ بالا بدونِ انیمیشنِ بی‌مورد)', () => {
-    const { rerender } = render(<Cell value={100} />);
-    rerender(<Cell value={100} />);
-    const el = screen.getByTestId('cell');
-    expect(el.className).not.toMatch(/flash-(up|down)/);
+  it('با کاهش مقدار، کلاس flash-down می‌گیرد', () => {
+    const { rerender } = render(<FlashNum value={200} render={r} />);
+    rerender(<FlashNum value={150} render={r} />);
+    expect(screen.getByText('150').className).toContain('flash-down');
   });
 
-  it('null → عدد فلش نمی‌زند و برعکس', () => {
-    const { rerender } = render(<Cell value={null} />);
-    rerender(<Cell value={50} />);
-    const el = screen.getByTestId('cell');
-    expect(el.textContent).toBe('50');
-    expect(el.className).not.toMatch(/flash-(up|down)/);
+  it('همان گره DOM حفظ می‌شود (بدون key/بازسازی)', () => {
+    const { rerender } = render(<FlashNum value={10} render={r} />);
+    const before = screen.getByText('10');
+    rerender(<FlashNum value={20} render={r} />);
+    const after = screen.getByText('20');
+    expect(after.isSameNode(before)).toBe(true);
   });
 
-  it('همان DOM node حفظ می‌شود (بدونِ re-mount، یعنی بدونِ re-renderِ سنگین)', () => {
-    const { rerender } = render(<Cell value={100} />);
-    const before = screen.getByTestId('cell');
-    rerender(<Cell value={110} />);
-    const after = screen.getByTestId('cell');
-    // همان مرجعِ آبجکت ⇒ React نود را تخریب/ساختن نکرده است.
-    expect(after).toBe(before);
-  });
-
-  it('دو فلشِ پشتِ سر هم بازنشانی می‌شوند (انیمیشنِ دوم هم اجرا می‌شود)', () => {
-    const { rerender } = render(<Cell value={100} />);
-    rerender(<Cell value={110} />);
-    expect(screen.getByTestId('cell').className).toContain('flash-up');
-    // کاهشِ بعدی باید کلاسِ flash-up را پاک کند و flash-down بگذارد.
-    rerender(<Cell value={105} />);
-    const el = screen.getByTestId('cell');
-    expect(el.className).toContain('flash-down');
-    expect(el.className).not.toContain('flash-up');
+  it('مقدار null→عدد فلش نمی‌زند (فقط تغییر واقعی عدد)', () => {
+    const { rerender } = render(<FlashNum value={null} render={r} />);
+    rerender(<FlashNum value={5} render={r} />);
+    expect(screen.getByText('5').className).not.toMatch(/flash-(up|down)/);
   });
 });

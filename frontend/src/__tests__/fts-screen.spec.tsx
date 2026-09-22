@@ -63,7 +63,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
   it('پنج شاخص و امتیاز را رندر می کند', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     expect(screen.getByText('شپنا')).toBeInTheDocument();
-    expect(screen.getByText('دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS')).toBeInTheDocument();
+    expect(screen.getByText('۱ رشد کدال')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
     // toFaDigits فقط ارقام را عوض می‌کند؛ ممیز لاتین می‌ماند: ۴۵.۲٪
     expect(screen.getByText('۴۵.۲٪')).toBeInTheDocument();
     expect(screen.getAllByText('✓').length).toBeGreaterThanOrEqual(4);

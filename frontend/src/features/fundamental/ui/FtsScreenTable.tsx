@@ -7,7 +7,7 @@
 // حذف می‌شوند؛ سوییچ «نمایش ردیف‌های حذف‌شده» فقط برای بازرسی آن‌هاست.
 // قلمرو جدول: فقط «شرکت‌های تولیدی و خدماتی» — صندوق‌ها، کارگزاری‌ها،
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toFaDigits } from '@shared/lib/fmt';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
@@ -377,6 +377,7 @@ export function FtsScreenTable({
   thresholds,
   onRefresh,
   refreshing,
+  settingsSlot,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
@@ -384,6 +385,8 @@ export function FtsScreenTable({
   thresholds?: Record<string, unknown> | null;
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
+  settingsSlot?: ReactNode;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
@@ -484,9 +487,11 @@ export function FtsScreenTable({
     // در دیدگاه‌های کوچک‌تر از ۱۲۴۰px (مثلاً ۷۶۸px) ۵۶۲px بیرون از کادر
     // می‌افتد و کاربر به ستون‌ها نمی‌رسد.
     <div className="glass-panel panel-in overflow-hidden rounded-2xl min-w-0 max-w-full">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2.5">
-        <h3 className="text-sm font-black text-text-primary">دیده‌بان کلان بنیادی — ماتریس ۵ شاخص FTS</h3>
-        <div className="flex items-center gap-3">
+      {/* نوار جدول: دکمهٔ تنظیمات (کشوی پیش‌شرط‌ها) + بروزرسانی/شمارش. عنوانِ
+          بالای جدول حذف شد تا فضای عمودی آزاد شود و تنظیمات روی خودِ نوار بیاید. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2">
+        {settingsSlot ?? <span />}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => onRefresh?.()}
