@@ -6,6 +6,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
+import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
 import {
   evaluateFtsPipeline,
   type StrategyHorizon,
@@ -14,11 +15,13 @@ import {
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
 
 type PresetMode = 'swing' | 'trend' | 'hourglass' | 'custom';
+type ViewMode = 'obsidian' | 'grid' | 'both';
 
 export default function StrategyTreePage() {
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
+  const [viewMode, setViewMode] = useState<ViewMode>('both');
 
   // انتخاب‌های سفارشی کاربر در هر مرحله
   const [customFund, setCustomFund] = useState<'super' | 'good' | 'medium' | 'weak'>('good');
@@ -110,6 +113,61 @@ export default function StrategyTreePage() {
     };
   }, [selectedPreset, customFund, customWeekly, customSetup, customTape, customStop]);
 
+  // نودهای فعال در حالت سفارشی جهت ارسال به گراف ابسیدین
+  const activeCustomNodeIds = useMemo(() => {
+    const stopId =
+      customStop === 'ma14_fixed5' ? 'stop_swing' : customStop === 'codal_fund' ? 'stop_trend' : 'stop_hourglass';
+    const tapeId =
+      customTape === 'suspicious_vol'
+        ? 'tape_volume'
+        : customTape === 'box_break'
+          ? 'tape_breakout'
+          : customTape === 'floor_sweep'
+            ? 'tape_floor_sweep'
+            : 'tape_clock';
+    const weeklyId = customWeekly === 'up' ? 'tech_weekly_up' : 'tech_weekly_reject';
+
+    return [
+      `fund_${customFund}`,
+      weeklyId,
+      `setup_${customSetup}`,
+      tapeId,
+      stopId,
+      'exit_half',
+      'rule_rr',
+    ];
+  }, [customFund, customWeekly, customSetup, customTape, customStop]);
+
+  // کلیک روی نودهای گراف در حالت سفارشی
+  const handleToggleCustomNode = (nodeId: string) => {
+    setSelectedPreset('custom');
+    if (nodeId.startsWith('fund_')) {
+      const fundKey = nodeId.replace('fund_', '') as 'super' | 'good' | 'medium' | 'weak';
+      if (['super', 'good', 'medium', 'weak'].includes(fundKey)) setCustomFund(fundKey);
+    } else if (nodeId === 'tech_weekly_up') {
+      setCustomWeekly('up');
+    } else if (nodeId === 'tech_weekly_reject') {
+      setCustomWeekly('reject');
+    } else if (nodeId.startsWith('setup_')) {
+      const setupKey = nodeId.replace('setup_', '') as any;
+      setCustomSetup(setupKey);
+    } else if (nodeId === 'tape_clock') {
+      setCustomTape('clock');
+    } else if (nodeId === 'tape_volume') {
+      setCustomTape('suspicious_vol');
+    } else if (nodeId === 'tape_breakout') {
+      setCustomTape('box_break');
+    } else if (nodeId === 'tape_floor_sweep') {
+      setCustomTape('floor_sweep');
+    } else if (nodeId === 'stop_swing') {
+      setCustomStop('ma14_fixed5');
+    } else if (nodeId === 'stop_trend') {
+      setCustomStop('codal_fund');
+    } else if (nodeId === 'stop_hourglass') {
+      setCustomStop('hourglass_deep');
+    }
+  };
+
   // تطبیق خودکار با وضعیت واقعی نماد
   const handleSyncWithSymbol = () => {
     setSelectedPreset('custom');
@@ -175,10 +233,10 @@ export default function StrategyTreePage() {
           </div>
         </div>
 
-        {/* سوییچر سبک معامله / حالت بازی (Persona & Game Switcher) */}
+        {/* سوییچر سبک معامله / حالت بازی (Persona & Game Switcher) + سوییچ نحوه نما */}
         <div className="mt-4 pt-4 border-t border-border-c/60 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-text-secondary">انتخاب سبک و مسیر بازی:</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-text-secondary">سبک و مسیر بازی:</span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
@@ -234,14 +292,62 @@ export default function StrategyTreePage() {
             </div>
           </div>
 
-          <span className="text-2xs text-text-muted hidden md:inline">
-            راهنما: با کلیک روی هر مرحله، وضعیت آن در درخت برجسته و مسیر معامله شکل می‌گیرد.
-          </span>
+          {/* سوییچ نما: نمودار شبکه ابسیدین vs نمای گرید ۴ چارت */}
+          <div className="flex items-center gap-1 rounded-xl border border-border-c/70 bg-bg-primary/90 p-1 ms-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode('obsidian')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
+                viewMode === 'obsidian'
+                  ? 'bg-accent-blue/20 border border-accent-blue/50 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.25)]'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>🕸️</span>
+              <span>نمودار شبکه ابسیدین</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-accent-green/20 border border-accent-green/50 text-accent-green shadow-[0_0_8px_rgba(34,197,94,0.25)]'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>📊</span>
+              <span>نمای گرید ۴ ستونه</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('both')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
+                viewMode === 'both'
+                  ? 'bg-neon-cyan/20 border border-neon-cyan/50 text-neon-cyan shadow-[0_0_8px_rgba(6,182,212,0.25)]'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>🔀</span>
+              <span>ترکیبی (هر دو)</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ۲. چارت درختی ۴ مرحله‌ای بصری و پیوسته (Unified 4-Stage Tree Canvas) */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      {/* ۲. نمودار شبکه تعاملی سبک ابسیدین (Obsidian Strategy Graph) */}
+      {(viewMode === 'obsidian' || viewMode === 'both') && (
+        <ObsidianStrategyGraph
+          selectedPreset={selectedPreset}
+          onSelectPreset={setSelectedPreset}
+          symbol={symbol}
+          activeCustomNodes={activeCustomNodeIds}
+          onToggleCustomNode={handleToggleCustomNode}
+        />
+      )}
+
+      {/* ۳. چارت درختی ۴ مرحله‌ای بصری و ستونی (Unified 4-Stage Tree Column Grid) */}
+      {(viewMode === 'grid' || viewMode === 'both') && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* ═══════════ فاز ۱: بنیادی F (۵ شاخص FTS) ═══════════ */}
         <div className="glass-panel rounded-2xl border border-border-c/80 bg-bg-card/30 p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
@@ -675,6 +781,7 @@ export default function StrategyTreePage() {
           </div>
         </div>
       </div>
+    )}
 
       {/* ۳. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
       <div className="glass-panel rounded-2xl border border-border-c p-5 bg-bg-card/40 shadow-xl space-y-3">

@@ -32,11 +32,14 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(screen.getByText(/نقشه راه و درخت جامع استراتژی FTS/i)).toBeInTheDocument();
     expect(screen.getByText(/۴ چارت در یک نما/i)).toBeInTheDocument();
 
-    // ۴ ستون متناظر با ۴ صفحه جزوه
+    // نمودار بوم ابسیدین
+    expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
+
+    // ارکان متناظر با ۴ صفحه جزوه در نما
     expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/۲\. فیلتر تکنیکال ۲ زمانه/i)).toBeInTheDocument();
-    expect(screen.getByText(/۳\. تابلوخوانی و زمان‌سنج \(S\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/۴\. مدیریت سرمایه و خروج/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/۲\. فیلتر تکنیکال ۲ زمانه/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/۳\. تابلوخوانی و زمان‌سنج/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/۴\. مدیریت سرمایه و خروج/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('تغییر سبک بازی: کلیک روی شخص روندگیر و ساعت شنی مسیرها را به‌روزرسانی می‌کند', () => {
@@ -64,6 +67,27 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(screen.getByText(/پلن سفارشی معامله‌گر/i)).toBeInTheDocument();
   });
 
+  it('سوییچ نما: تغییر حالت نمایش بین گراف ابسیدین و تفکیک ۴ چارت کار می‌کند', () => {
+    renderWithProviders(<StrategyTreePage />);
+
+    // سوییچ به نمای خالص ابسیدین
+    const obsidianTab = screen.getByRole('button', { name: /نمودار شبکه ابسیدین/i });
+    fireEvent.click(obsidianTab);
+    expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
+
+    // سوییچ به نمای گرید ۴ ستونه
+    const gridTab = screen.getByRole('button', { name: /نمای گرید ۴ ستونه/i });
+    fireEvent.click(gridTab);
+    expect(screen.queryByTestId('obsidian-strategy-canvas')).not.toBeInTheDocument();
+    expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
+
+    // سوییچ مجدد به ترکیبی
+    const bothTab = screen.getByRole('button', { name: /ترکیبی/i });
+    fireEvent.click(bothTab);
+    expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
+    expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
+  });
+
   it('لینک منوی درخت استراتژی FTS در سایدبار وجود دارد', () => {
     renderWithProviders(<Sidebar />);
     const link = screen.getByRole('link', { name: /درخت استراتژی FTS/i });
@@ -71,3 +95,4 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(link).toHaveAttribute('href', '/strategy-tree');
   });
 });
+
