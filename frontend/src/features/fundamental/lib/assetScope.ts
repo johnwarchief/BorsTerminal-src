@@ -8,6 +8,9 @@ import type { FtsScreenRow } from '../api/useFtsScreen';
 
 /** نام‌های دارای «کارگزاری» — سهم رفاهی کارگزاران (گپارس) صندوق/کارگزار نیست */
 const BROKER_RE = /کارگزاری|كارگزاری/;
+/** صندوق/ETF/اوراق — ماهیتاً سود ناخالص/رشد فروشِ شرکت ندارند و جای‌شان در ماتریس
+ *  بنیادی نیست؛ فیلترِ نوعِ دارایی همه را نمی‌گیرد (برخی با نام/صنعتِ فارسی می‌آیند). */
+const FUND_RE = /صندوق|قابل معامله|اهرمی|اهرمى|شاخصی|شاخصى|کالایی|کامودیتی|کاموديتي|درآمد ثابت|ارز دیجیتال/;
 
 /** آیا این ردیف اصلاً «شرکت» است و جای جدول غربالگری بنیادی را دارد؟ */
 export function isFundamentalCompany(row: Pick<FtsScreenRow, 'symbol' | 'name' | 'sector_name'>): boolean {
@@ -15,6 +18,8 @@ export function isFundamentalCompany(row: Pick<FtsScreenRow, 'symbol' | 'name' |
   if (type !== 'stock') return false;
   // کارگزاری‌ها روی بورس مثل شرکت می‌آیند (نوع دارایی stock) — با نام جدا می‌شوند
   if (BROKER_RE.test(row.name ?? '')) return false;
+  // صندوق/ETF: با نام یا صنعتِ فارسی جدا می‌شوند (حتی اگر نوعِ دارایی stock دیده شده باشد)
+  if (FUND_RE.test(row.name ?? '') || FUND_RE.test(row.sector_name ?? '')) return false;
   return true;
 }
 

@@ -55,6 +55,15 @@ app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 @app.middleware("http")
 async def no_cache_middleware(request, call_next):
     response = await call_next(request)
+    path = request.url.path
+    # performance: باندل‌های هش‌دارِ فرانت (assets/vendor) تغییرناپذیرند؛ no-store
+    # روی آن‌ها یعنی هر بار دانلودِ دوبارهٔ ~۵۰۰KB JS و مصرف CPU/شبکه. برای این
+    # مسیرها کش طولانی می‌گذاریم؛ برای API و index.html همان no-store می‌ماند.
+    if path.startswith("/assets/") or path.startswith("/vendor/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        if "Pragma" in response.headers:
+            del response.headers["Pragma"]
+        return response
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     return response
