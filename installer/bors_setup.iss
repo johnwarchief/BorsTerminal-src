@@ -78,6 +78,16 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app
 ; nowait یعنی Inno منتظرِ بسته‌شدنِ برنامه نمی‌ماند.
 Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall
 
+[InstallDelete]
+; پاک‌سازی *پیش از* کپیِ فایل‌هایِ جدید. ریشه: Inno فقط فایل‌هایِ Listِ نصبِ
+; خودش را بازنویسی/حذف می‌کند؛ اگر نسخهٔ جدید ماژولی را دیگر نیاورد، فایلِ
+; .pyd/.dllِ کهنه در _internal می‌ماند و باندلِ فریزشده را می‌شکاند (یک
+; آپدیتِ درجا، بیلدِ مخلوط). همین را حذفِ برنامه هم نشان داد: بعد از
+; Uninstall پوشهٔ _internal با ده‌ها فایلِ Runtime-added روی دیسک ماند.
+; market.db عمداً در این فهرست نیست: مرحلهٔ cumulative همان را می‌خواند تا
+; جدول‌هایِ کاربر را به دیتابیسِ تازه منتقل کند.
+Type: filesandordirs; Name: "{app}\_internal"
+
 [UninstallDelete]
 ; --- محصولِ اجرا، نه فایلِ نصب ---
 ; market.dbِ استخراج‌شده ~۱۰۰ مگابایت است و با هر نسخهٔ باندل عوض می‌شود؛
@@ -94,9 +104,23 @@ Type: files; Name: "{app}\market.db.stale-wal"
 Type: files; Name: "{app}\market.db.stale-shm"
 Type: files; Name: "{app}\codal.db"
 Type: files; Name: "{app}\*.db.part"
+; `-wal` و `-shm`ِ فایلِ موقتِ استخراج هم باید بروند: تستِ واقعی نشان داد
+; market.db.part-shm/-wal بعد از حذف روی دیسک می‌مانند.
+Type: files; Name: "{app}\market.db.part*"
+Type: files; Name: "{app}\codal.db.part*"
 Type: filesandordirs; Name: "{app}\logs"
 Type: filesandordirs; Name: "{app}\backups"
 Type: filesandordirs; Name: "{app}\__pycache__"
+; --- باقی‌مانده‌هایی که یک حذفِ واقعی روی دیسک نگه داشت (شواهدِ v1.0.19) ---
+; کشِ اسکرینر و وضعیتِ سینک/کدال هنگامِ اجرا نوشته می‌شوند؛ فایل‌هایِ Listِ
+; نصب نیستند، پس بدونِ این خطوط Inno آن‌ها و پوشهٔ _internal (پیای‌تُن در
+; زمانِ اجرا .pyc می‌سازد) را بی‌صدا رها می‌کند.
+Type: files; Name: "{app}\.screener_cache.json"
+Type: files; Name: "{app}\codal_control.json"
+Type: files; Name: "{app}\codal_db_status.json"
+Type: files; Name: "{app}\market_sync.json"
+Type: files; Name: "{app}\sync_summary.json"
+Type: filesandordirs; Name: "{app}\_internal"
 ; --- ریشهٔ دومِ داده: %LOCALAPPDATA%\BorsTerminal_Ultimate\data ---
 ; وقتی پوشهٔ نصب نوشتنی نباشد (نصبِ «برای همهٔ کاربران» در Program Files) کلِ
 ; داده‌ها به اینجا منتقل می‌شود؛ حذفِ برنامه بدونِ این خطوط همان ~۱۰۰ مگابایت
@@ -113,6 +137,11 @@ Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\codal.db"
 Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\*.db.part"
 Type: filesandordirs; Name: "{localappdata}\BorsTerminal_Ultimate\data\logs"
 Type: filesandordirs; Name: "{localappdata}\BorsTerminal_Ultimate\data\backups"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\.screener_cache.json"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\codal_control.json"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\codal_db_status.json"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market_sync.json"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\sync_summary.json"
 ; نکته: user.db (واچ‌لیست و تصمیم‌های کاربر) و fts_thresholds.json (آستانه‌هایی
 ; که خودش در پنل چیده) هرگز در این فهرست نیستند — آن‌ها نوشتهٔ کاربرند، نه
 ; باقی‌ماندهٔ برنامه.
@@ -192,11 +221,11 @@ begin
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
-; باقی‌ماندهٔ نصب‌هایِ قدیمی را پاک می‌کند: پوشه‌ای که نامش شبیهِ برنامه است و
-; فایلِ EXE یا market.dbِ بزرگ دارد ولی unins000.exe ندارد — یعنی نصابش حذف
-; شده یا هرگز درست نصب نشده بوده. نصبِ سالم (ثبت‌شده در رجیستری) همیشه
-; unins000.exe دارد، پس این شرط هرگز به نصبِ فعلی دست نمی‌زند.
-; user.db هیچ‌جا حذف نمی‌شود: نوشتهٔ خودِ کاربر است.
+// باقی‌ماندهٔ نصب‌هایِ قدیمی را پاک می‌کند: پوشه‌ای که نامش شبیهِ برنامه است و
+// فایلِ EXE یا market.dbِ بزرگ دارد ولی unins000.exe ندارد — یعنی نصابش حذف
+// شده یا هرگز درست نصب نشده بوده. نصبِ سالم (ثبت‌شده در رجیستری) همیشه
+// unins000.exe دارد، پس این شرط هرگز به نصبِ فعلی دست نمی‌زند.
+// user.db هیچ‌جا حذف نمی‌شود: نوشتهٔ خودِ کاربر است.
 function SweepOrphanLeftovers(): Boolean;
 var
   FindRec: TFindRec;
