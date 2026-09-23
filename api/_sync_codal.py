@@ -171,25 +171,48 @@ def _codal_db_worker(dest_lzma, tmp_db):
         finally:
             snap.close()
 
-        # ۳) merge افزایشی در market.db — هر سه جدول PK=tracing_no دارند، پس
-        #    INSERT OR REPLACE هم ردیف‌های کهنه را تازه می‌کند هم جدید را اضافه.
+        # ۳) merge افزایشی در market.db — هر سه جدول PK=tracing_no دارند.
+        #    از UPSERT استفاده می‌شود نه INSERT OR REPLACE: آن دستور ردیفِ
+        #    موجود را حذف و دوباره درج می‌کند، پس هر ستونی که در snapshot نباشد
+        #    (مثلاً has_operating_sales که بعد از ساخته‌شدن snapshot اضافه شده)
+        #    بی‌صدا به NULL برمی‌گردد و کاربر پیام «موفق» می‌بیند. UPSERT فقط
+        #    ستون‌های مشترک را لمس می‌کند و بقیه را دست‌نخورده می‌گذارد.
         _write_db_status("merging", 0.0, "ادغام در market.db")
         main = sqlite3.connect(DB_PATH, timeout=60)
         try:
             main.execute("PRAGMA busy_timeout=60000")
             main.execute("ATTACH DATABASE ? AS src", (tmp_db,))
             merged = {}
+            stale = []
             for t in _CODAL_TABLES:
                 src_cols = {r[1] for r in main.execute('PRAGMA src.table_info("%s")' % t)}
                 dst_cols = [r[1] for r in main.execute('PRAGMA main.table_info("%s")' % t)]
                 common = [c for c in dst_cols if c in src_cols]
                 if not common:
                     raise ValueError("no common columns for table %s" % t)
+                dropped = [c for c in dst_cols if c not in src_cols]
+                if dropped:
+                    stale.append("%s: %s" % (t, ",".join(dropped)))
                 collist = ",".join('"%s"' % c.replace('"', '""') for c in common)
-                cur = main.execute(
-                    'INSERT OR REPLACE INTO main."%s" (%s) SELECT %s FROM src."%s"'
-                    % (t, collist, collist, t))
+                # دو مرحله، نه INSERT OR REPLACE (که ردیف را حذف/درج می‌کند و
+                # ستون‌های فقط-مقصد را NULL می‌کند) و نه UPSERT (SQLite کلمهٔ ON
+                # را بعد از SELECT به JOIN نسبت می‌دهد و ON CONFLICT فقط با VALUES
+                # قابل‌پارس است). UPDATE...FROM فقط ستون‌های مشترک را لمس می‌کند.
+                upd = ",".join('"%s"=sr."%s"' % (c, c.replace('"', '""'))
+                               for c in common)
+                main.execute('UPDATE main."%s" SET %s FROM src."%s" AS sr '
+                             'WHERE sr."tracing_no" = main."%s"."tracing_no"'
+                             % (t, upd, t, t))
+                cur = main.execute('INSERT INTO main."%s" (%s) SELECT %s FROM src."%s" '
+                                   'WHERE "tracing_no" NOT IN '
+                                   '(SELECT "tracing_no" FROM main."%s")'
+                                   % (t, collist, collist, t, t))
                 merged[t] = cur.rowcount
+            if stale:
+                # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
+                _write_db_status(
+                    "merging", 0.5,
+                    "snapshot قدیمی است؛ ستون‌های تازه حفظ شدند: " + " | ".join(stale))
             main.commit()
             # fts_results کش‌شده با دادهٔ تازه کهنه شد — اسکرینر زنده بازمحاسبه کند
             try:
