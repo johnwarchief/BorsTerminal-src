@@ -792,15 +792,19 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
                      ref: Optional[dict] = None) -> Optional[dict]:
     """فروش سالانه از گزارش‌های فعالیت ماهانه (Annualize) — شرط صریح جزوه.
 
-    روش (v9.8.1 — اولویتِ فرمول دستور کار «فروش ۳ ماهه × ۴»):
-      ۱. سه گزارش ماهانهٔ متوالیِ آخرِ همان سال مالی → فروش فصلی؛
-         Annualized = فروش ۳ ماهه × ۴
-      ۲. بدون سه ماه متوالی → تجمیعی YTD × ۱۲ ÷ ماه (روش قبلی؛ پوششِ بانک
-         و نمادی که ماهش پرش دارد)
-      ۳. اگر ۱۲ ماه کامل باشد، خودِ YTD همان فروش سالانه است
+    قاعده (تصمیمِ مالک، OWNER_RULINGS ردیف ۴): «تخمین فروش ۱۲ ماهه». عبارت
+    «فروش ۳ ماهه × ۴» در جزوه فقط مثالِ عینیِ گزارش خرداد است، نه ضریب ثابت؛
+    تعمیمِ درستِ همان قاعده YTD × ۱۲ ÷ م است. ضریبِ ۳×۴ برای سالی که سه
+    ماهِ آخرش فصلِ پرفروش بوده تا ۴× فروش واقعی سال را باد می‌کرد (۳۸۰ نماد
+    بازار با >۱۰٪ واگرایی)، پس حذف شده و تنها یک مبنا مانده:
+      ۱. تجمیعی YTDِ آخرین ماهِ دارای گزارش × ۱۲ ÷ م  (م = همان ماه)
+      ۲. اگر ۱۲ ماه کامل باشد، خودِ YTD همان فروش سالانه است (×۱٫۰)
+      ۳. بدون گزارش ماهانه → فروش صورت مالی سالانهٔ کدال
       ۴. راستی‌آزمایی با فروش صورت مالی سالانه: اگر Annualized بیش از ۴× یا
          کمتر از ۰.۲۵× فروش سالانهٔ مرجع باشد، واحد/ساختار گزارش مشکوک است →
          مبنا به فروش سالانهٔ کدال برمی‌گردد و `reconciled=False` ثبت میشود.
+    م از «بزرگ‌ترین ماهِ دارای گزارش تجمیعی در آخرین سال مالی» خوانده میشود،
+    نه از تقویم — تا نمادی که ماهِ جاافتاده دارد درست annualize شود.
     """
     pred, params = sym_in("symbol", symbol)
     rows = conn.execute(
@@ -816,23 +820,12 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
         year = int(rows[0][0] or 0)
         cur_year = [r for r in rows if int(r[0] or 0) == year]
         cur_year.sort(key=lambda r: -int(r[1] or 0))     # جدیدترین ماه اول
-        # ۱) فرمول دستور کار: فروش ۳ ماههٔ متوالی × ۴ (پلِ دی/بهمن مرز سال مالی
-        #    را میشکند → همان‌جا به YTD برمی‌گردیم)
-        if len(cur_year) >= 3:
-            m0, m1, m2 = (int(cur_year[i][1] or 0) for i in range(3))
-            tri = [_f(cur_year[i][2]) for i in range(3)]     # monthly_revenue
-            if m0 - m1 == 1 and m1 - m2 == 1 and all(v > 0 for v in tri):
-                annual = sum(tri) * 4.0
-                months = 3
-                basis = f"فروش ۳ ماهه ({m2:02d}–{m0:02d}/{year}) × ۴"
-        # ۲) تنزل به YTD × ۱۲ ÷ ماه — مبنای عمومی (بانک/سال ناقص/ماه پرش‌دار)
-        if annual <= 0:
-            months = max(int(r[1] or 0) for r in cur_year)
-            ytd = _f(cur_year[0][3])
-            if ytd > 0 and months >= 1:
-                annual = ytd if months >= 12 else ytd * 12.0 / months
-                basis = (f"تجمیعی {months:02d}/{year} × ۱۲÷{months}" if months < 12
-                         else f"تجمیعی ۱۲ ماه سال مالی {year}")
+        months = max(int(r[1] or 0) for r in cur_year)
+        ytd = _f(cur_year[0][3])
+        if ytd > 0 and months >= 1:
+            annual = ytd if months >= 12 else ytd * 12.0 / months
+            basis = (f"تجمیعی {months:02d}/{year} × ۱۲÷{months} (=×{12.0 / months:.2f})"
+                     if months < 12 else f"تجمیعی ۱۲ ماهِ کاملِ سال مالی {year}")
     if annual <= 0 and fs_rev > 0:
         annual, months, basis = fs_rev, 12, "مراجعه به فروش صورت مالی سالانه (بدون گزارش ماهانه)"
     if annual <= 0:
@@ -1535,23 +1528,17 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         i3 = margin is not None and margin >= m_min
 
         # ۴) فروش سالانهٔ Annualized ÷ ارزش بازار (+ پتانسیل سود ناخالص)
-        # v9.8.1: همان اولویتِ annualized_sales — اول «فروش ۳ ماههٔ متوالی × ۴»،
-        # بعد YTD × ۱۲ ÷ ماه. بدون این، پاریتیِ scan_symbol ⇄ bulk_scan روی
-        # شاخص ۴ میشکست (گارد ۱۳ confidence_engine_v973).
+        # همان مبنای annualized_sales: YTD × ۱۲ ÷ ماه (بی‌ضریبِ ثابتِ ۳×۴).
+        # بدون این، پاریتیِ scan_symbol ⇄ bulk_scan روی شاخص ۴ میشکست
+        # (گارد ۱۳ confidence_engine_v973).
         annual_sales, months_used = 0.0, 0
         if recs:
             y = recs[0][0]
             cy = sorted([r for r in recs if r[0] == y],
                          key=lambda r: -int(r[1] or 0))
-            tri = [_f(r[2]) for r in cy[:3]]
-            if len(cy) >= 3:
-                m0, m1, m2 = (int(cy[i][1] or 0) for i in range(3))
-                if m0 - m1 == 1 and m1 - m2 == 1 and all(v > 0 for v in tri):
-                    annual_sales = sum(tri) * 4.0
-                    months_used = 3
-            if annual_sales <= 0:
-                months_used = max(r[1] for r in cy)
-                ytd = cy[0][3]
+            if cy:
+                months_used = int(cy[0][1] or 0)
+                ytd = _f(cy[0][3])
                 if ytd > 0 and months_used >= 1:
                     annual_sales = ytd if months_used >= 12 else ytd * 12.0 / months_used
         fs_rev = _f(ref["revenue"]) if ref else 0.0

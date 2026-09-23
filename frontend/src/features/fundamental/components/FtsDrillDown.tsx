@@ -325,7 +325,7 @@ function Panel4({ card }: { card: FtsCard }) {
           </Badge>
         ) : null}
         {potential != null ? (
-          <Badge tone={potential >= (ind?.potential_threshold ?? 33) ? 'green' : 'yellow'}>
+          <Badge tone={potential >= (ind?.potential_threshold ?? 40) ? 'green' : 'yellow'}>
             پتانسیل سود <span className="num">{fmtPct(potential)}</span>
           </Badge>
         ) : null}
@@ -341,6 +341,15 @@ function Panel4({ card }: { card: FtsCard }) {
         {ytd != null ? (
           <p className="num mt-1.5 text-2xs text-text-secondary">
             فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
+          </p>
+        ) : null}
+        <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
+          مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
+          {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
+        </p>
+        {ind?.annual?.reconciled === false ? (
+          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
+            برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
           </p>
         ) : null}
       </div>

@@ -149,6 +149,7 @@ const Indicator4Schema = z
         months_used: z.number().nullish(),
         scale_factor: z.number().nullish(),
         basis: z.string().nullish(),
+        reconciled: z.boolean().nullish(),
         ytd_sales_bt: z.number().nullish(),
         scale_table: z.array(z.object({ months: z.number(), factor: z.number() })).nullish(),
       })

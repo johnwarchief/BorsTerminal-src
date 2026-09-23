@@ -191,7 +191,7 @@ describe('پنل تنظیمات FTS', () => {
       const body = JSON.parse((post![1] as RequestInit).body as string) as Record<string, unknown>;
       expect(body.industry_mode).toBe('Exclude_Mandatory_Pricing');
       expect(body.v10_volume_growth_min).toBe(0);
-      expect(body.v10_sales_to_mcap_min).toBe(0.5);
+      expect(body.v10_sales_to_mcap_min).toBe(0.33);
       expect(body.v10_eps_years).toBe(3);
     });
   });
@@ -200,7 +200,7 @@ describe('پنل تنظیمات FTS', () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByText('همه صنایع')).toBeInTheDocument());
     // صبر تا config از سرور بیاید و state اولیه ست شود
-    await waitFor(() => expect(screen.getByText('۵۰٪')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
     fireEvent.click(screen.getByText('همه صنایع'));
     fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
     await waitFor(() => {
@@ -213,7 +213,7 @@ describe('پنل تنظیمات FTS', () => {
   it('گیت چندگزینه‌ای: «جهش نرخ» دارو و غذا را از صنایع دستوری خارج می‌کند', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText('۵۰٪')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
     fireEvent.click(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)'));
     fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
     await waitFor(() => {
@@ -229,12 +229,12 @@ describe('پنل تنظیمات FTS', () => {
   it('اسلایدر شاخص ۴ کف فروش/ارزش بازار را ۱۰٪ تا ۱۰۰٪ نگاشت می‌کند', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByLabelText('کف نسبت فروش سالانه‌شده به ارزش بازار')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText('۵۰٪')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
     const slider = screen.getByLabelText('کف نسبت فروش سالانه‌شده به ارزش بازار') as HTMLInputElement;
     expect(slider.min).toBe('10');
     expect(slider.max).toBe('100');
-    // مقدار پیش‌فرض جزوه: ۵۰٪
-    expect(screen.getByText('۵۰٪')).toBeInTheDocument();
+    // مقدار پیش‌فرض جزوه: ۳۳٪ (تصمیمِ مالک: کف ۰.۳۳، مطلوب ۱.۰)
+    expect(screen.getByText('۳۳٪')).toBeInTheDocument();
     fireEvent.change(slider, { target: { value: '80' } });
     fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
     await waitFor(() => {
@@ -247,7 +247,7 @@ describe('پنل تنظیمات FTS', () => {
   it('تاگل شاخص ۲ خاموش یعنی v10_eps_years=1', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByText('الزام سابقه عملکرد سودسازی ۳ ساله')).toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText('۵۰٪')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
     fireEvent.click(screen.getByText('الزام سابقه عملکرد سودسازی ۳ ساله'));
     fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
     await waitFor(() => {
@@ -268,7 +268,7 @@ describe('پنل تنظیمات FTS', () => {
       expect(body.growth_min).toBe(FTS_GUIDE_DEFAULTS.growth_min);
       expect(body.margin_min).toBe(FTS_GUIDE_DEFAULTS.margin_min);
       expect(body.suspended_max_stale_sessions).toBe(3);
-      expect(body.v10_sales_to_mcap_min).toBe(0.5);
+      expect(body.v10_sales_to_mcap_min).toBe(0.33);
       expect(body.v10_eps_years).toBe(3);
     });
   });
@@ -377,8 +377,8 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByRole('button', { name: /ذخیره/ })).toBeInTheDocument());
     const slider = screen.getByLabelText('حداقل پوشش سود ناخالص تخمینی') as HTMLInputElement;
-    // ابتدا مقدار کانفیگ (۳۰٪ پیش‌فرض فایل) می‌آید، بعد کاربر تغییرش می‌دهد
-    await waitFor(() => expect(slider.value).toBe('30'));
+    // کانفیگِ ماک این کلید را ندارد ⇒ پیش‌فرضِ راهنما (۴۰٪، همان سرور) نمایش می‌یابد
+    await waitFor(() => expect(slider.value).toBe('40'));
     expect(screen.getByText(/منطق OR/)).toBeInTheDocument();
     fireEvent.change(slider, { target: { value: '55' } });
     fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));

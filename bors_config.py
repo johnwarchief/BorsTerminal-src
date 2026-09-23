@@ -335,8 +335,12 @@ FTS_DEFAULTS = {
     "margin_min": 20.0,            # Min_Gross_Margin = ۲۰٪
     "margin_optimal": 30.0,        # ایده‌آل = ۳۰٪
     # ۴) فروش سالانهٔ Annualized به ارزش بازار + پتانسیل سود ناخالص
-    "sales_to_mcap_min": 1.0,      # Min_Annualized_Sales_To_MarketCap = ۱.۰
-    "profit_potential_min": 40.0,  # Min_Profit_Potential_To_MarketCap = ۳۰٪
+    # حکمِ مالک جزوه (ص ۶): کفِ قبولی «حداقل ۱/۳ ارزش بازار» = ۰٫۳۳ است و
+    # ۱٫۰ حالتِ ایده‌آل — نه آستانهٔ رد. پیش از این هر دو جا ۱٫۰ به‌عنوان
+    # «پیش‌فرضِ جزوه» نوشته شده بود و نمادهای سالمِ ۰٫۳۳ تا  رد می‌شدند.
+    "sales_to_mcap_min": 0.33,     # Min_Annualized_Sales_To_MarketCap = ⅓× (کف قبولی)
+    "sales_to_mcap_ideal": 1.0,    # ایده‌آل = ۱× — نمایشی، نه گیتِ رد
+    "profit_potential_min": 40.0,  # Min_Profit_Potential_To_MarketCap = ۴۰٪ (سند v2.1)
     # ۵) فیلتر صنعت — تفکیک قیمت‌گذاری آزاد/بورس کالا از دستوری
     "industry_mode": "Exclude_Mandatory_Pricing",
     "mandatory_sectors": ["خودرو", "نیروگاه", "قند و شکر", "لاستیک", "شوینده", "بیمه"],
@@ -367,7 +371,7 @@ FTS_DEFAULTS = {
     "v10_eps_years": 3,
     "v10_margin_min": 20.0,
     "v10_margin_ideal": 30.0,
-    "v10_sales_to_mcap_min": 1.0,      # پیشفرضِ جزوه: فروش سالانه ÷ ارزش بازار ≥ ۱× (۱۰۰٪)
+    "v10_sales_to_mcap_min": 0.33,      # ص ۶ جزوه: کف قبولی ⅓× ارزش بازار (ایده‌آل ۱× در سطر بعد)
     "v10_potential_min": 40.0,
     # v10 — فیلترِ دستیِ صنایع از پنل (جدا از رژیم قیمت‌گذاری).
     # industry_mode = Include_Industries → فقط فهرستِ include می‌ماند
@@ -379,7 +383,7 @@ FTS_DEFAULTS = {
 
 FTS_LEGACY_SCALARS = {
     "streak_periods": "eps_years",
-    "ps_good": "sales_to_mcap_min",       # P/S ≤ 1  ⇔  Sales/Mcap ≥ 1.0
+    "ps_good": "sales_to_mcap_ideal",       # P/S ≤ 1  ⇔  Sales/Mcap ≥ 1.0
     "potential_min": "profit_potential_min",
 }
 FTS_LEGACY_LISTS = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}

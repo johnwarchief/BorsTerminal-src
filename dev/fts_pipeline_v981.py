@@ -6,7 +6,7 @@
       ۱. رشد فروش تجمیعی YTD نسبت به دورهٔ مشابه سال قبل — شرط > ۴۰٪
       ۲. روند EPS ۳ ساله + ثبت «سود خالص و EPS برای ۳ سال اخیر»
       ۳. حاشیه سود ناخالص (دوره‌ای/سالانه) — شرط > ۳۰٪ (optimal)
-      ۴. فروش به ارزش بازار — فرمول «فروش ۳ ماهه × ۴ ÷ مارکت‌کپ»
+      ۴. فروش به ارزش بازار — فرمول «تجمیعی × ۱۲÷ماه ÷ مارکت‌کپ»
       ۵. برچسب «صنعت برتر FTS» (فلزات/سیمان/پتروشیمی/دارو/غذا/…)
   ب) مکانیزم فال‌بک ADB: fetch_page روی 403/429 چرخش IP میزند و با IP
       تازه retry میکند؛ روی Timeout/قطع نشست همان کارت را بازی میکند.
@@ -138,27 +138,36 @@ ck(bool(gm and gm["pass"]) and bool(gm and gm["optimal"]),
    "شاخص ۳ — 35٪ هم پاس است هم optimal (> ۳۰٪)")
 
 
-# ── شاخص ۴: فرمول «فروش ۳ ماهه × ۴ ÷ مارکت‌کپ» ──
+# ── شاخص ۴: فرمول «تجمیعی × ۱۲÷ماه ÷ مارکت‌کپ» (تصمیمِ مالک: ضریب ثابت ۳×۴ ممنوع) ──
 a = F.annualized_sales(conn, "تستF")
-ck(a is not None and a["months_used"] == 3,
-   "شاخص ۴ — مبنای فروش ۳ ماههٔ متوالی انتخاب میشود (months_used=3، گرفتیم %s)"
+ck(a is not None and a["months_used"] == 5,
+   "شاخص ۴ — مبنای YTD×۱۲÷ماه انتخاب میشود، نه پنجرهٔ ۳ ماهه (months_used=5، گرفتیم %s)"
    % (a or {}).get("months_used"))
-ck(a is not None and abs(a["annual_sales_mrl"] - 180000.0) < 1.0,
-   "شاخص ۴ — Annualized = (14000+15000+16000) × ۴ = 180٬000 (گرفتیم %s)"
+ck(a is not None and abs(a["annual_sales_mrl"] - 108000.0) < 1.0,
+   "شاخص ۴ — Annualized = YTD(45٬000) × ۱۲÷۵ = 108٬000 (گرفتیم %s)"
    % (a or {}).get("annual_sales_mrl"))
-ck(a is not None and "۳ ماهه" in (a.get("basis") or ""),
-   "شاخص ۴ — basis فرمول دستور کار را توضیح میدهد: %s" % (a or {}).get("basis"))
+ck(a is not None and "× ۱۲÷5" in (a.get("basis") or ""),
+   "شاخص ۴ — basis برچسبِ مبنا را توضیح میدهد: %s" % (a or {}).get("basis"))
 s2m = F.sales_to_marketcap(conn, "تستF", 500_000.0, min_ratio=1.0, annual=a)
-ck(s2m is not None and abs(s2m["sales_to_mcap"] - 360000.0) < 0.5,
-   "شاخص ۴ — نسبت = 180000×1e6÷500000 = 360٬000 (گرفتیم %s)"
+ck(s2m is not None and abs(s2m["sales_to_mcap"] - 216000.0) < 0.5,
+   "شاخص ۴ — نسبت = 108000×1e6÷500000 = 216٬000 (گرفتیم %s)"
    % (s2m or {}).get("sales_to_mcap"))
-# ماه پرش‌دار → تنزل به YTD (پوششِ بانک/سالِ ناقص)
+# ستونِ فروشِ ماهانهٔ جاافتاده: YTD دست‌نخورده می‌ماند، پس مبنا هم همان است.
 conn.execute("UPDATE monthly_sales SET monthly_revenue=NULL WHERE month=4")
 conn.commit()
 a2 = F.annualized_sales(conn, "تستF")
-ck(a2 is not None and a2["months_used"] == 5,
-   "شاخص ۴ — ماه پرش‌دار ⇒ تنزل به YTD×12÷ماه (months_used=5، گرفتیم %s)"
-   % (a2 or {}).get("months_used"))
+ck(a2 is not None and a2["months_used"] == 5
+   and abs(a2["annual_sales_mrl"] - 108000.0) < 1.0,
+   "شاخص ۴ — ماهِ پرش‌دار بی‌اعتبار، YTD سالم (months=5، گرفتیم %s / %s)"
+   % ((a2 or {}).get("months_used"), (a2 or {}).get("annual_sales_mrl")))
+# آخرین ماهِ دارای گزارش حذف شود → م از همان‌جا ۴ read میشود، نه از تقویم.
+conn.execute("DELETE FROM monthly_sales WHERE month=5")
+conn.commit()
+a3 = F.annualized_sales(conn, "تستF")
+ck(a3 is not None and a3["months_used"] == 4
+   and abs(a3["annual_sales_mrl"] - 87000.0) < 1.0,
+   "شاخص ۴ — م = بزرگ‌ترین ماهِ دارای گزارش (۴ ⇒ YTD 29٬000×۳ = 87٬000، گرفتیم %s / %s)"
+   % ((a3 or {}).get("months_used"), (a3 or {}).get("annual_sales_mrl")))
 conn.close()
 
 # ── شاخص ۵: برچسب صنعت برتر FTS ──
@@ -186,8 +195,8 @@ ck(bool(bulk) and bulk[0]["sales_to_mcap"]
    "پاریتی شاخص ۴: scan_symbol (%s) == bulk_scan (%s)"
    % (single["detail"]["sales_to_mcap"]["sales_to_mcap"],
       bulk[0]["sales_to_mcap"] if bulk else None))
-ck(bool(bulk) and bulk[0]["annualize_months"] == 3,
-   "bulk_scan هم فرمول ۳ ماهه × ۴ را برمی‌دارد (months=3)")
+ck(bool(bulk) and bulk[0]["annualize_months"] == 5,
+   "bulk_scan هم همان مبنای YTD×۱۲÷ماه را برمی‌دارد (months=5)")
 conn.close()
 
 

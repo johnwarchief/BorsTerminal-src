@@ -343,6 +343,31 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     expect(screen.getByTestId('annualize-formula').textContent).toBe('Annualized Sales = (Cumulative Sales / 12) × 12');
   });
 
+  it('برچسب مبنا: «سالانه‌شده از دورهٔ ۵ ماهه» + متن خام مبنا', () => {
+    render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
+    const basis = screen.getByTestId('annualize-basis').textContent || '';
+    expect(basis).toContain('سالانه‌شده از دورهٔ ۵ ماهه');
+    expect(basis).toContain('× ۱۲÷۵');
+  });
+
+  it('مبنای ۱۲ ماهه می‌گوید سال کامل است، نه سالانه‌شده', () => {
+    const card = baseCard();
+    card.indicators!['4'] = { ...card.indicators!['4']!, months_used: 12, scale_factor: 1 };
+    render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByTestId('annualize-basis').textContent).toContain('۱۲ ماه کاملِ سال مالی');
+  });
+
+  it('ناهمخوانی با فروش سالانهِ کدال صریحاً هشدار می‌دهد (reconciled=false)', () => {
+    const card = baseCard();
+    card.indicators!['4'] = {
+      ...card.indicators!['4']!,
+      annual: { ...card.indicators!['4']!.annual!, reconciled: false },
+    };
+    render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByTestId('annualize-unreconciled')).toBeInTheDocument();
+  });
+
+
   it('نسبت فروش/ارزش بازار با کف و پتانسیل سود هم‌زمان نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
     expect(document.body.textContent).toMatch(/فروش\/ارزش بازار ۱\.۳۵×/);

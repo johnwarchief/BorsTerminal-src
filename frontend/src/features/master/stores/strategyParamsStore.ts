@@ -25,7 +25,6 @@ export interface StrategyParameters {
   minMonthlySalesGrowthPct: number; // حداقل رشد فروش ماهانه کدال (پیش‌فرض: 40%)
   minFundScore: number; // حداقل امتیاز بنیادی از ۵ (پیش‌فرض: 4)
   excludePriceControlled: boolean; // حذف صنایع مشمول نرخ دستوری شدید نظیر خودرو
-  psAnnualMultiplier: number; // ضریب سالانه کردن فروش ۳ ماهه (پیش‌فرض جزوه: 4)
 
   // فاز ۴: مدیریت سرمایه، مهندسی معکوس و خروج M (صفحه ۴)
   exitHalfPct: number; // درصد ذخیره سود در مقاومت اول R1 (پیش‌فرض جزوه: 50%)
@@ -60,7 +59,6 @@ export const FTS_DEFAULT_PARAMS: StrategyParameters = {
   minMonthlySalesGrowthPct: 40,
   minFundScore: 4,
   excludePriceControlled: true,
-  psAnnualMultiplier: 4,
 
   // مدیریت سرمایه
   exitHalfPct: 50,

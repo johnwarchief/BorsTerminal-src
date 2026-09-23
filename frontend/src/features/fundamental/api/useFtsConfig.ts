@@ -49,16 +49,17 @@ export const FTS_GUIDE_DEFAULTS = {
   eps_years: 3,
   margin_min: 20.0,
   margin_optimal: 30.0,
-  sales_to_mcap_min: 1.0,
-  profit_potential_min: 30.0,
+  sales_to_mcap_min: 0.33,
+  profit_potential_min: 40.0,
   industry_mode: 'Exclude_Mandatory_Pricing',
   watchlist_max: 50,
   mcap_min_hmt: 0.0,
   suspended_max_stale_sessions: 3,
   filter_m141: false,
   min_trade_val: 0.0,
-  mandatory_sectors: ['خودرو', 'دارو', 'نیروگاه', 'غذا', 'لاستیک', 'شوینده', 'بیمه'],
-  free_sectors: ['سیمان', 'پتروشیمی', 'شیمیایی', 'فلزات', 'کانی', 'کاشی', 'سرامیک', 'کانه', 'معادن', 'نفت', 'محصولات فلزی'],
+  /** فهرستِ **سخت‌گیرانه**: کلید «همهٔ صنایعِ دستوری» همین را POST می‌کند و «صنایع مجاز با جهش نرخ» دارو/غذا را از آن کم می‌کند. به همین دلیل با پیش‌فرضِ سرور (که دارو/غذا را ندارد) برابر نیست — گاردِ parity همین یک کلید را به‌جای برابری، زیرمجموعه‌بودنِ سرور بررسی می‌کند. */
+  mandatory_sectors: ['خودرو', 'دارو', 'نیروگاه', 'قند و شکر', 'غذا', 'لاستیک', 'شوینده', 'بیمه'],
+  free_sectors: ['سیمان', 'پتروشیمی', 'شیمیایی', 'فلزات', 'کانی', 'کاشی', 'سرامیک', 'شیشه', 'کانه', 'معادن', 'نفت', 'محصولات فلزی'],
   include_industries: [] as string[],
   exclude_industries: [] as string[],
   v10_monetary_growth_min: 60,
@@ -67,13 +68,13 @@ export const FTS_GUIDE_DEFAULTS = {
   v10_eps_years: 3,
   v10_margin_min: 20,
   v10_margin_ideal: 30,
-  /** کف نسبت فروش سالانه‌شده به ارزش بازار — ۰.۵ = ۵۰٪ (جزوه) */
-  v10_sales_to_mcap_min: 0.5,
-  v10_potential_min: 33,
+  /** کف نسبت فروش سالانه‌شده به ارزش بازار — ۰.۳۳ = ۳۳٪ (تصمیمِ مالک؛ مطلوب ۱.۰) */
+  v10_sales_to_mcap_min: 0.33,
+  v10_potential_min: 40,
 } as const;
 
-/** پیش‌فرضِ جزوه برای کشوی تنظیمات: کف فروش/ارزش بازار ۵۰٪ */
-export const SALES_TO_MCAP_GUIDE_DEFAULT = 0.5;
+/** پیش‌فرضِ کشوی تنظیمات: کف فروش/ارزش بازار ۳۳٪ (مطلوب ۱۰۰٪) */
+export const SALES_TO_MCAP_GUIDE_DEFAULT = 0.33;
 
 export function useFtsConfig() {
   return useQuery({
