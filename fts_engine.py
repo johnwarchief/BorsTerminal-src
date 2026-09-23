@@ -862,9 +862,14 @@ def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
       None → با پارسرِ جدید بازخوانی نشده (یا ستون هنوز مهاجرت نشده).
     """
     try:
+        # sym_in، نه `symbol = ?`: دیتابیس بعضی نمادها را با ي/ك عربی ذخیره کرده
+        # و با مقایسهٔ خام، همان نماد بسته به نوشتارِ ورودی دو جواب متفاوت
+        # می‌گرفت (امتیاز ۲ در برابر ۳ روی شارپيلن/شارپیلن و هانيكو/هانیکو).
+        # norm_fa سمت SQL هم راه‌حل نیست — v9.7.3 روی همین بانک اندازه گرفت.
+        pred, params = sym_in("symbol", symbol)
         row = conn.execute(
             "SELECT has_operating_sales FROM financial_statements "
-            "WHERE symbol = ? ORDER BY tracing_no DESC LIMIT 1", (symbol,)).fetchone()
+            "WHERE %s ORDER BY tracing_no DESC LIMIT 1" % pred, params).fetchone()
     except sqlite3.OperationalError:
         return None            # DB قدیمی که هنوز migrate_schema ندیده است
     return None if row is None else row[0]
@@ -886,16 +891,30 @@ def no_sales_symbols(conn: sqlite3.Connection) -> set:
     """نمادهایی که جدیدترین صورتِ مالی‌شان سطرِ درآمدِ عملیاتی ندارد (۰).
 
     تک‌کوئریِ کل‌بازاری — همان الگوی m141_map/avg_trade_value_hmt؛ اسکنِ ۶۰۹
-    نماد نباید ۶۰۹ کوئری بسازد."""
+    نماد نباید ۶۰۹ کوئری بسازد.
+
+    «آخرین» باید دقیقاً همان قاعدهٔ has_operating_sales باشد: بزرگ‌ترین
+    tracing_no روی **همهٔ املايِ یک نماد**. اگر به‌ازای نوشتارِ خام گروه ببندیم،
+    نمادی که دو املا دارد یک‌جا معاف و جای دیگر معاف نمی‌شود و bulk_scan با
+    scan_symbol می‌جنگد (dev/confidence_engine_v973.py این را می‌گیرد)."""
     try:
         rows = conn.execute(
-            "SELECT f.symbol FROM financial_statements f "
+            "SELECT f.symbol, f.has_operating_sales, f.tracing_no "
+            "FROM financial_statements f "
             "JOIN (SELECT symbol, MAX(tracing_no) mt FROM financial_statements "
             "      GROUP BY symbol) m ON m.mt = f.tracing_no "
-            "WHERE f.has_operating_sales = 0").fetchall()
+            "WHERE f.has_operating_sales IS NOT NULL").fetchall()
     except sqlite3.OperationalError:
         return set()
-    return {norm_fa(r[0]) for r in rows if r[0]}
+    best = {}
+    for sym, flag, tn in rows:
+        if not sym:
+            continue
+        key = norm_fa(sym)
+        cur = best.get(key)
+        if cur is None or (tn or 0) > cur[1]:
+            best[key] = (flag, tn or 0)
+    return {k for k, (flag, _tn) in best.items() if flag == 0}
 
 
 def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: float,
