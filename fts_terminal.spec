@@ -58,6 +58,17 @@ a = Analysis(
                    'api.screener', 'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
                    'api._pipeline', 'api.engine', 'watchlist_store',
+                   # api/__init__.py:12 از api_router دو ماژولِ دیگر را هم import
+                   # می‌کند؛ تا حالا فقط به‌عنوان فایلِ کنارِ _internal روی دیسک
+                   # بودند و در آرشیوِ PYZ نیستند. اگر مسیرِ import هرگز به دیسک
+                   # نرسد، EXE با ModuleNotFoundError می‌میرد.
+                   'api.market_index', 'api.diagnostics',
+                   # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
+                   # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
+                   # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ
+                   # بومیِ از پیش تست‌شده را تضمین می‌کند.
+                   'webview', 'webview.platforms.edgechromium', 'webview.platforms.win32',
+                   'clr', 'pythonnet', 'clr_loader',
                    # آپدیتِ درون‌برنامه‌ای: مثلِ بقیه درونِ خودِ api_router
                    # ایمپورت می‌شود و اسکنِ ایستا آن را نمی‌بیند.
                    'api.update', 'bors_minisign',
