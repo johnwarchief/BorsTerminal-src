@@ -170,7 +170,7 @@ if __name__ == '__main__':
     print("==> launcher written")
 
     # مشخصات PyInstaller (ONEDIR بهینه برای ZIP — مرتبه کمتر از onefile)
-    spec = "bors_exe_onedir.spec"
+    spec = "fts_terminal.spec"
     root_f = ROOT.replace("\\", "/")
     with open(spec, "w", encoding="utf-8") as f:
         f.write(f'''# -*- mode: python ; coding: utf-8 -*-
@@ -227,7 +227,7 @@ col = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='BorsTermin
     if r.returncode != 0:
         print("BUILD FAILED")
         sys.exit(1)
-    # bors_exe_onedir.spec builds a COLLECT (onedir) target, so the EXE lives
+    # fts_terminal.spec builds a COLLECT (onedir) target, so the EXE lives
     # inside dist/BorsTerminal_Ultimate/, not next to it. Accept both layouts so
     # this script reports the size instead of dying on getsize().
     exe = os.path.join(ROOT, "dist", "BorsTerminal_Ultimate",

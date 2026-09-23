@@ -1,18 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateManagerModal } from '../features/updater/UpdateManagerModal';
-import { useAppUpdater, isTauriEnvironment } from '../features/updater/useAppUpdater';
+import { useAppUpdater } from '../features/updater/useAppUpdater';
 import { renderHook, act } from '@testing-library/react';
 // منبعِ واحدِ حقیقتِ نسخه: همان فایلی که vite در زمان build می‌خواند.
 import pkg from '../../package.json';
 
-describe('سیستم مدیریت به‌روزرسانی (Tauri v2 / Web Fallback)', () => {
+describe('سیستم مدیریت به‌روزرسانی (هستۀ پایتون)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it('تشخیص محیط غیر Tauri در تست یا مرورگر معمولی', () => {
-    expect(isTauriEnvironment()).toBe(false);
   });
 
   it('هوک useAppUpdater وضعیت اولیه صحیح برمی‌گرداند', () => {
@@ -50,9 +46,8 @@ describe('سیستم مدیریت به‌روزرسانی (Tauri v2 / Web Fallba
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('مدیریت به‌روزرسانی سیستم')).toBeInTheDocument();
     expect(screen.getByText(/نسخه فعلی:/)).toBeInTheDocument();
-    // برچسبِ محیط در حالتِ غیرِ Tauri: «مرورگر · هستهٔ پایتون» (قبلاً
-    // «محیط وب / ایزوله» بود). این تست را باِ کدِ واقعی هماهنگ کردیم.
-    expect(screen.getByText(/مرورگر · هستهٔ پایتون/)).toBeInTheDocument();
+    // برچسبِ موتورِ آپدیت. شاخه‌های Tauri حذف شدند، پس این دیگر شرطی نیست.
+    expect(screen.getByText(/هستهٔ پایتون · آپدیترِ درون‌برنامه‌ای/)).toBeInTheDocument();
     expect(screen.getByText(/بارگذاری دستی بسته آفلاین/)).toBeInTheDocument();
 
     const closeBtn = screen.getByLabelText('بستن پنجره');

@@ -1,7 +1,9 @@
-// features/updater/useAppUpdater.ts -- هوک اختصاصی مدیریت به‌روزرسانی خودکار و درون‌برنامه‌ای Tauri v2
+// features/updater/useAppUpdater.ts -- هوکِ مدیریتِ به‌روزرسانیِ درون‌برنامه‌ای
+// تنها آپدیترِ واقعی، هستهٔ پایتون (api/update.py) است. شاخه‌های Tauri حذف
+// شدند: بیلدِ منتشرشده از bors_entry.py بالا می‌آید و هرگز __TAURI_INTERNALS__
+// ندارد، پس آن مسیرها در عمل اجرا نمی‌شدند ولی در باندل می‌ماندند.
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { http, HttpError } from '@shared/api/http';
-import type { Update, DownloadEvent } from '@tauri-apps/plugin-updater';
 // نسخهٔ واقعی برنامه — منبعِ واحدِ حقیقت package.json است و در زمان build درون
 // باندل اینلاین می‌شود، تا placeholderهای فرانت‌اند هرگز استیل نشوند.
 import { APP_VERSION } from '@shared/version';
@@ -98,10 +100,6 @@ function friendlyErrorMessage(raw: string | null | undefined): string {
 }
 
 
-export function isTauriEnvironment(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-}
-
 export function useAppUpdater() {
   const [status, setStatus] = useState<UpdaterStatus>('idle');
   const [currentVersion, setCurrentVersion] = useState<string>(APP_VERSION);
@@ -117,8 +115,6 @@ export function useAppUpdater() {
   const [isDelta, setIsDelta] = useState<boolean>(false);
   const [packageSize, setPackageSize] = useState<number>(0);
 
-  // نگهداشت ارجاع شیء آپدیت توری برای پروسه دانلود و نصب
-  const activeUpdateRef = useRef<Update | null>(null);
   // مانیفستِ دریافت‌شده از /api/update/check (url + signature) برای مرحلهٔ download
   const pendingUpdateRef = useRef<PendingUpdate | null>(null);
   // جلوگیری از نشتِ حلقهٔ نظرسنجیِ progress بعد از unmount
@@ -126,17 +122,10 @@ export function useAppUpdater() {
 
   // تشخیص نسخه جاری در شروع
   useEffect(() => {
-    if (isTauriEnvironment()) {
-      import('@tauri-apps/api/app')
-        .then((mod) => mod.getVersion())
-        .then((v) => setCurrentVersion(v))
-        .catch(() => setCurrentVersion(APP_VERSION));
-    } else {
-      // نسخهٔ واقعیِ هستهٔ پایتون (bors_config.APP_VERSION) — منبعِ واحد حقیقت
-      http<VersionResponse>('/api/update/version', { retries: 1 })
-        .then((v) => setCurrentVersion(v.version || APP_VERSION))
-        .catch(() => setCurrentVersion(APP_VERSION));
-    }
+    // نسخهٔ واقعیِ هستهٔ پایتون (bors_config.APP_VERSION) — منبعِ واحد حقیقت
+    http<VersionResponse>('/api/update/version', { retries: 1 })
+      .then((v) => setCurrentVersion(v.version || APP_VERSION))
+      .catch(() => setCurrentVersion(APP_VERSION));
   }, []);
 
   // توقفِ نظرسنجیِ پس‌زمینه هنگام unmount
@@ -151,34 +140,7 @@ export function useAppUpdater() {
       setErrorMessage(null);
     }
 
-    // حالت اجرای درون محیط نیتیو Tauri
-    if (isTauriEnvironment()) {
-      try {
-        const { check } = await import('@tauri-apps/plugin-updater');
-        const update = await check();
-
-        if (update && update.available) {
-          activeUpdateRef.current = update;
-          setNewVersion(update.version);
-          setCurrentVersion(update.currentVersion || APP_VERSION);
-          setReleaseNotes(update.body || 'نسخه جدید شامل بهبودهای امنیتی و عملکردی است.');
-          setReleaseDate(update.date || new Date().toISOString());
-          setStatus('available');
-          return true;
-        } else {
-          activeUpdateRef.current = null;
-          setStatus('up-to-date');
-          return false;
-        }
-      } catch (err) {
-        console.error('Tauri updater check failed:', err);
-        setErrorMessage(err instanceof Error ? err.message : 'خطا در ارتباط با سرور به‌روزرسانی.');
-        setStatus('error');
-        return false;
-      }
-    }
-
-    // حالت وب / هستهٔ پایتون (api/update.py): مانیفست + مقایسهٔ semver سمتِ سرور
+    // مانیفست + مقایسهٔ semver سمتِ سرور (api/update.py)
     try {
       const data = await http<CheckResponse>('/api/update/check');
       if (data.status === 'error') {
@@ -228,44 +190,7 @@ export function useAppUpdater() {
     setTotalBytes(0);
     setErrorMessage(null);
 
-    const update = activeUpdateRef.current;
-
-    // حالت نیتیو Tauri با دانلود تدریجی واقعی
-    if (isTauriEnvironment() && update) {
-      try {
-        let downloaded = 0;
-        let contentLength = 0;
-
-        await update.downloadAndInstall((event: DownloadEvent) => {
-          switch (event.event) {
-            case 'Started':
-              contentLength = event.data.contentLength ?? 0;
-              setTotalBytes(contentLength);
-              break;
-            case 'Progress':
-              downloaded += event.data.chunkLength;
-              setDownloadedBytes(downloaded);
-              if (contentLength > 0) {
-                const pct = Math.min(100, Math.round((downloaded / contentLength) * 100));
-                setDownloadProgress(pct);
-              }
-              break;
-            case 'Finished':
-              setDownloadProgress(100);
-              break;
-          }
-        });
-
-        setStatus('ready-to-restart');
-      } catch (err) {
-        console.error('Tauri downloadAndInstall error:', err);
-        setErrorMessage(err instanceof Error ? err.message : 'خطا حین دانلود و استقرار پکیج به‌روزرسانی.');
-        setStatus('error');
-      }
-      return;
-    }
-
-    // حالت وب / هستهٔ پایتون: download واقعی → نظرسنجیِ progress → install سایلنت
+    // download واقعی → نظرسنجیِ progress → install سایلنت (api/update.py)
     const pending = pendingUpdateRef.current;
     if (!pending) {
       setErrorMessage('ابتدا بررسی به‌روزرسانی را انجام دهید (check).');
@@ -342,20 +267,11 @@ export function useAppUpdater() {
   }, [status]);
 
   /**
-   * راه‌اندازی مجدد برنامه جهت اعمال نسخه جدید
+   * راه‌اندازی مجددِ صفحه — نصبِ واقعی در پروسهٔ مستقلِ نصب‌کننده انجام می‌شود
+   * و همان پروسه نسخهٔ تازه را دوباره بالا می‌آورد.
    */
   const relaunchApp = useCallback(async () => {
-    if (isTauriEnvironment()) {
-      try {
-        const { relaunch } = await import('@tauri-apps/plugin-process');
-        await relaunch();
-      } catch (err) {
-        console.error('Failed to relaunch:', err);
-        window.location.reload();
-      }
-    } else {
-      window.location.reload();
-    }
+    window.location.reload();
   }, []);
 
   /**
@@ -435,7 +351,6 @@ export function useAppUpdater() {
     packageSize,
     errorMessage,
     manualFile,
-    isTauri: isTauriEnvironment(),
     checkForUpdates,
     startDownloadAndInstall,
     relaunchApp,

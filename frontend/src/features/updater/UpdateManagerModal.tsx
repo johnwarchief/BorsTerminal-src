@@ -21,7 +21,6 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
     isDelta,
     packageSize,
     errorMessage,
-    isTauri,
     checkForUpdates,
     startDownloadAndInstall,
     relaunchApp,
@@ -94,9 +93,9 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
               <div className="mt-0.5 flex items-center gap-2 text-2xs text-text-muted">
                 <span>نسخه فعلی: <strong className="font-mono text-text-secondary">v{currentVersion}</strong></span>
                 <span>•</span>
-                <span className={`inline-flex items-center gap-1 font-bold ${isTauri ? 'text-accent-green' : 'text-accent-blue'}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${isTauri ? 'bg-accent-green animate-pulse' : 'bg-accent-blue'}`} />
-                  {isTauri ? 'محیط نیتیو Tauri v2' : 'مرورگر · هستهٔ پایتون'}
+                <span className="inline-flex items-center gap-1 font-bold text-accent-blue">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-blue" />
+                  هستهٔ پایتون · آپدیترِ درون‌برنامه‌ای
                 </span>
               </div>
             </div>
@@ -310,7 +309,7 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
 
         {/* فوتر مودال */}
         <div className="mt-5 flex items-center justify-between border-t border-[var(--hairline)] pt-3 text-2xs text-text-muted">
-          <span>Tauri v2 · In-App Secure Updater Engine</span>
+          <span>In-App Secure Updater · minisign</span>
           <div className="flex items-center gap-2">
             {/* v1.0.13: کنسول دیگر باز نمی‌شود؛ لاگ‌ها از اینجا دیده می‌شوند. */}
             <button

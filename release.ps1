@@ -5,17 +5,17 @@
 #   .\release.ps1 patch      → پچِ دلتای امضاشده (فقط تغییرات، بدونِ نصبِ کامل)
 #   .\release.ps1 all        → هر سه
 #   .\release.ps1 allpatch   → همه + پچِ دلتا
-#   .\release.ps1 vpk        → مسیرِ اصلی: تست + فرانت + onedir + Velopack
 #
-# v1.0.11 (Phase B/C): بیلدِ اصلی onedir + Velopack شد. onefile یک blobِ
-# فشردهٔ واحد است، پس «دلتا»ی قبلی (22.9 MB) از خودِ exe (22.8 MB) هم
-# بزرگتر بود. onedir + Velopack دلتای 3.2 MB رویِ پکیجِ 82.4 MB می‌دهد.
+# v1.0.20: کانالِ Velopack و bors_exe_onedir.spec حذف شدند. آن‌ها هرگز منتشر
+# نشدند — چیزی که کاربر اجرا می‌کند onedirِ fts_terminal.spec با نصب‌کنندهٔ Inno و
+# آپدیترِ درون‌برنامه‌ایِ پایتون (api/update.py) است. کامنتِ قبلی می‌گفت «بیلدِ
+# اصلی onedir + Velopack شد» که نادرست بود و همین، سه مسیرِ متضادِ ریلیز ساخته بود.
 # جزئیات: plans/production-packaging-and-unpark-plan.md
 #
 # v1.0.10: پچِ دلتا. PATCH_FROM نسخهٔ قبلیِ منتشرشده است (پیش‌فرض 1.0.9)؛
 # آپدیتِرِ درون‌برنامه‌ای فقط روی همان نسخه پچ را اعمال می‌کند و در غیر این
 # صورت شفافاً به نصبِ کامل برمی‌گردد. پچ با همان کلیدِ minisign امضا می‌شود.
-param([ValidateSet('setup','base','portable','all','patch','allpatch','vpk')][string]$Mode = 'setup',
+param([ValidateSet('setup','base','portable','all','patch','allpatch')][string]$Mode = 'setup',
       [string]$PatchFrom = '1.0.9',
       [string]$Baseline = '',
       [switch]$SkipTests = $false)
@@ -76,7 +76,7 @@ function Build-Frontend {
 # فعلی از خودِ exe هم بزرگتر است). onedir هر DLL/PYD را جدا نگه می‌دارد،
 # پس باینری‌های تغییرنکرده به ~0 دیف می‌شوند. specِ onefile برای نسخهٔ
 # portable نگه داشته شده است.
-$ExeSpec = 'bors_exe_onedir.spec'
+$ExeSpec = 'fts_terminal.spec'
 
 function Build-Exe {
     Write-Host "[exe] PyInstaller ($ExeSpec)"
@@ -150,17 +150,6 @@ function Assert-TestsGreen {
     Write-Host '[tests] ALL SUITES PASSED' -ForegroundColor Green
 }
 
-function Build-Velopack {
-    # Phase C: یک دستور → فرانت + بک‌اند + پکیجِ Velopack + درگاهِ تست.
-    Assert-TestsGreen
-    Build-Frontend
-    Build-Exe
-    if (Test-Path 'market.db.lzma') {
-        Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force
-    }
-    & "$root\scripts\build_velopack.ps1"
-    if ($LASTEXITCODE -ne 0) { Write-Error '[vpk] build_velopack.ps1 failed. ABORT.'; exit 1 }
-}
 
 function Build-Setup {
     Assert-DistFresh
@@ -244,7 +233,5 @@ switch ($Mode) {
     'patch'     { Ensure-Db; Build-Patch }
     'all'       { Ensure-Db; Build-Base; Build-Setup; Build-Portable }
     'allpatch'  { Ensure-Db; Build-Base; Build-Setup; Build-Portable; Build-Patch }
-    # Phase C: یک دستور → تست + فرانت + onedir + Velopack. مسیرِ اصلیِ ریلیز.
-    'vpk'       { Ensure-Db; Build-Velopack }
 }
 Write-Host '== done' -ForegroundColor Green

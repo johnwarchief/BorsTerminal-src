@@ -32,7 +32,7 @@ try:
 except Exception:
     pass
 
-SPEC = os.path.join(_ROOT, "bors_exe_onedir.spec")
+SPEC = os.path.join(_ROOT, "fts_terminal.spec")
 API_INIT = os.path.join(_ROOT, "api", "__init__.py")
 
 
@@ -63,7 +63,7 @@ def check_hiddenimports():
     if ok:
         print("  [ok] every api.* router module is in hiddenimports")
     else:
-        print("  [FAIL] missing from bors_exe_onedir.spec: %s" % missing)
+        print("  [FAIL] missing from fts_terminal.spec: %s" % missing)
         print("         api_router() imports these inside a function body, so")
         print("         PyInstaller cannot see them -> ModuleNotFoundError at")
         print("         runtime. Add them to hiddenimports.")
