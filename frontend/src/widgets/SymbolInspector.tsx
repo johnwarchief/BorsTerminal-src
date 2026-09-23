@@ -6,6 +6,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
+import { ftsScoreOf } from '@contracts/fundamental';
 import { FlashNum } from '@shared/components/FlashNum';
 import { Badge } from '@shared/components/Badge';
 import { aggregateSignals } from '@features/master/lib/masterMath';
@@ -154,6 +155,8 @@ export function SymbolInspector() {
         : 'var(--neon-red)';
 
   const fund = entry?.fundamental;
+  // امتیاز شمار شاخص‌های بنیادی ۰ تا ۵ (payload.score) — نه نمرهٔ ۰ تا ۱۰۰٬ اعتماد ترکیبی
+  const fundFts = ftsScoreOf(fund);
   const tech = entry?.technical;
   const port = entry?.portfolio;
 
@@ -287,7 +290,7 @@ export function SymbolInspector() {
         <AuditBadge
           state={fund == null ? 'na' : fund.direction === 'bearish' ? 'fail' : 'pass'}
           evidence={{
-            actualValue: fund?.score ?? null,
+            actualValue: fundFts,
             targetThreshold: 5,
             ruleRef: 'FTS',
             reason: fund?.rationale ?? null,
@@ -295,7 +298,7 @@ export function SymbolInspector() {
           }}
           compact
           title="چرا این وضعیت؟"
-          label={`ممیزی بنیاد${fund?.score == null ? '' : ': ' + toFaDigits(fund.score)}`}
+          label={`ممیزی بنیاد${fundFts == null ? '' : ': ' + toFaDigits(fundFts) + ' از ۵'}`}
           hintTitle="دلیل وضعیت شاخص بنیادی"
         />
 
