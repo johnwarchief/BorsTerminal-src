@@ -71,11 +71,24 @@ export function EpsLadder({
           <div
             key={i}
             className={`min-w-20 flex-1 rounded-xl border p-2 text-center ${
-              c.value == null ? 'border-accent-red/40 bg-accent-red/10' : 'border-border-c bg-bg-primary'
+              // قرمز یعنی «زیان»، نه «نبودِ داده». سالِ بدون EPS خنثی و کم‌رنگ
+              // می‌ماند و شکافش را بجِ بالای همان پانل می‌گوید؛ اگر روزی
+              // EPS منفی شد، همان قرمزِ واقعی را می‌گیرد.
+              c.value != null && c.value < 0
+                ? 'border-accent-red/40 bg-accent-red/10'
+                : 'border-border-c bg-bg-primary'
             }`}
           >
             <div className="text-2xs text-text-muted">{c.slot || '-'}</div>
-            <div className={`text-sm font-black ${c.value == null ? 'text-accent-red' : 'text-text-primary'}`}>
+            <div
+              className={`text-sm font-black ${
+                c.value == null
+                  ? 'text-text-muted'
+                  : c.value < 0
+                    ? 'text-accent-red'
+                    : 'text-text-primary'
+              }`}
+            >
               {c.value == null ? '-' : toFaDigits(c.value)}
             </div>
             <div className="text-2xs text-text-muted">سال مالی کامل</div>

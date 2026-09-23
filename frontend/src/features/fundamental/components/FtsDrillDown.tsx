@@ -78,7 +78,12 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </span>
           </GapHint>
         ) : (
-          <Badge tone={growth >= (inflation ?? 0) ? 'green' : 'yellow'}>رشد <span className="num">{fmtPct(growth)}</span></Badge>
+          // بدون مبنای تورم، «رشد» فقط اسمی است — سبز شدن یعنی از تورم جلو زده
+          // و این ادعا بدون آستانه قابل اتکا نیست (همان قاعدهٔ «نبود داده ≠ سبز»).
+          <Badge tone={inflation != null && growth >= inflation ? 'green' : 'yellow'}>
+            رشد <span className="num">{fmtPct(growth)}</span>
+            {inflation == null ? <span className="text-2xs font-normal"> / بدون مبنای تورم</span> : null}
+          </Badge>
         )}
         {mon?.months != null ? (
           <Badge tone="blue"><span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span></Badge>
