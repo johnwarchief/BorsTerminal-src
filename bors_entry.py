@@ -353,7 +353,12 @@ def open_app_window(url):
             "--start-maximized",
         ] + _render_flags()
         try:
-            subprocess.Popen(cmd)
+            # cwd = پروفایلِ مرورگر، نه پوشهٔ برنامه. مرورگرِ --app پس از
+            # بستنِ سرور هم مدتی زنده می‌ماند و پوشهٔ جاریِ خودش را قفل
+            # نگه می‌دارد؛ اگر آن پوشه {app} باشد، پایدارکنندهٔ درون‌برنامه
+            # و نصب‌کننده نمی‌توانند فایل‌ها را جایگزین کنند (همین رویِ ماشین
+            # توسعه، بیلد را با WinError 5/32 خواباند).
+            subprocess.Popen(cmd, cwd=profile_dir)
             print(f"[OK] App window launched using {os.path.basename(browser_exe)}")
             return True
         except Exception as e:
