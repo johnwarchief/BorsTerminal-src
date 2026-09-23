@@ -77,5 +77,9 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True,
           name='BorsTerminal_Ultimate', debug=False, bootloader_ignore_signals=False,
           strip=False, upx=False,
-          console=True, icon='assets/bors.ico')
+          # console=False: پنجرهٔ کنسولِ خالی حذف. بی‌خطر است چون bors_entry._setup_streams()
+          # از v1.0.13 هر stdout/stderr را به logs/bors.log می‌بَرَد (و در نبودِ نوشتن به
+          # _Null)، پس None‌شدنِ جریان‌ها هیچ print فارسی‌ را نمی‌شکند. با BORS_SHOW_CONSOLE=1
+          # در محیط، همان بیلد کنسول‌دارِ دیباگ می‌شود.
+          console=False, icon='assets/bors.ico')
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='BorsTerminal_Ultimate')
