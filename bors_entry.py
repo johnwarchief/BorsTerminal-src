@@ -312,6 +312,20 @@ def open_native_window(url):
     except Exception as e:
         print(f'[native] pywebview unavailable ({e}) -> browser fallback')
         return False
+    # خودِ pywebview وقتی رانتایم WebView2 نباشد بی‌صدا به MSHTML (IE) می‌افتد و
+    # فقط یک warning می‌زند؛ پنجره باز می‌شود ولی SPA در حالت IE11 می‌شکند و این
+    # except هیچ‌وقت فراخوانی نمی‌شود. پس تصمیمِ خودِ کتابخانه را می‌خوانیم و اگر
+    # edgechromium نبود عمداً به مسیرِ مرورگر برمی‌گردیم.
+    try:
+        from webview.platforms import winforms as _wf
+        _renderer = getattr(_wf, 'renderer', None)
+        if _renderer != 'edgechromium':
+            print(f'[native] webview backend is {_renderer!r}, not edgechromium '
+                  '-> browser fallback')
+            return False
+    except Exception as e:
+        print(f'[native] cannot resolve webview backend ({e}) -> browser fallback')
+        return False
     try:
         webview.create_window('بورس‌ترمینال — BorsTerminal', url,
                               width=1440, height=900, min_size=(1024, 640))
