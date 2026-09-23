@@ -34,13 +34,21 @@ function Resolve-Tool([string]$envName, [string]$cmd, [string]$fallback) {
     Write-Error "tool '$cmd' not found - set environment variable $envName to its full path. ABORT."
     exit 1
 }
-$PY   = Resolve-Tool 'BORS_PY'   'python' 'C:\Users\PCMOD\AppData\Local\Python\pythoncore-3.14-64\python.exe'
-$NPM  = Resolve-Tool 'BORS_NPM'  'npm'    'C:\Program Files\AutoClaw\resources\node\npm.cmd'
-$ISCC = Resolve-Tool 'BORS_ISCC' 'iscc'   'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not (Test-Path (Join-Path $root 'bors_entry.py'))) { $root = (Get-Location).Path }
 Set-Location $root
+
+# مفسرِ بیلد = مفسرِ CI. .venvِ پروژه همان 3.12 + requirements.txt است؛
+# پایتونِ PATH می‌تواند مفسری بدونِ pywebview باشد، و بیلدِ چنین مفسری EXEیِ
+# «سالم» می‌دهد که فقط پنجرهٔ بومی‌اش حذف شده و بی‌صدا به msedge --app
+# می‌افتد. پس venv مقدم است و BORS_PY راهِ فرارِ صریح می‌ماند.
+$venvPy = Join-Path $root '.venv\Scripts\python.exe'
+if ($env:BORS_PY) { $PY = $env:BORS_PY }
+elseif (Test-Path $venvPy) { $PY = $venvPy }
+else { $PY = Resolve-Tool 'BORS_PY' 'python' 'C:\Users\PCMOD\AppData\Local\Python\pythoncore-3.14-64\python.exe' }
+$NPM  = Resolve-Tool 'BORS_NPM'  'npm'    'C:\Program Files\AutoClaw\resources\node\npm.cmd'
+$ISCC = Resolve-Tool 'BORS_ISCC' 'iscc'   'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+
 $ver = (Get-Date -Format 'yyyy.MM.dd')
 Write-Host "== BorsTerminal release: mode=$Mode  root=$root" -ForegroundColor Cyan
 
@@ -92,11 +100,15 @@ $ExeSpec = 'fts_terminal.spec'
 
 function Build-Exe {
     Write-Host "[exe] PyInstaller ($ExeSpec)"
+    # پیش‌چکِ مفسر: یک دقیقه زودتر از چکِ پسازبیلد می‌گوید کدام پکیج در این
+    # مفسر نیست (بودجهٔ بیلد ~۲ دقیقه است و بیلدِ ناقص، ریلیزِ ناقص).
+    & $PY scripts\check_build_env.py
+    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] build interpreter is missing a declared dependency. ABORT.'; exit 1 }
     & $PY -m PyInstaller $ExeSpec --noconfirm --distpath "$root\dist" --workpath "$root\build"
     if ($LASTEXITCODE -ne 0) { Write-Error '[exe] PyInstaller failed. ABORT.'; exit 1 }
-    # قراردادِ onedir: _internal/ باید باشد و همهٔ api.* در hiddenimports.
-    & $PY dev/onedir_contract_v11.py --dist "$root\dist"
-    if ($LASTEXITCODE -ne 0) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
+    # قراردادِ onedir: _internal/ باید باشد، همهٔ api.* در hiddenimports،
+    # و پنجرهٔ بومی (webview/pythonnet) داخلِ باندل باشد.
+    if (-not (Test-DistBundle)) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
 }
 function Move-StaleDist([string]$why, [string]$detail) {
     # دیستارِ قدیمی را دور نمی‌اندازیم و ریلیز را هم با آن نمی‌سازیم: یک‌بار
@@ -116,6 +128,19 @@ function Move-StaleDist([string]$why, [string]$detail) {
         Write-Error ("[dist] could not move the stale output aside: " + $_.Exception.Message + " - remove dist\BorsTerminal_Ultimate and re-run. ABORT.")
         exit 1
     }
+}
+
+function Test-DistBundle {
+    # آیا خروجیِ موجود، همان باندلِ موردِ توافق است؟ چک در Build-Exe فقط
+    # مسیرِ «بیلدِ نو» را می‌پوشاند، ولی Build-Setup/Portable/Patch می‌توانند
+    # یک distیِ از پیش موجود را بسته‌بندی کنند — همان راهی که باندلِ بی‌پنجره
+    # (بدونِ webview) را به نصابِ امضاشده رساند.
+    # توجه: خروجیِ stdoutِ فرمانِ بومی بخشی از مقدارِ بازگشتیِ تابع می‌شود،
+    # پس گرفتنش در $out و چاپِ دستی با Write-Host الزامی است.
+    $out = & $PY dev/onedir_contract_v11.py --dist "$root\dist" 2>&1
+    $ok = ($LASTEXITCODE -eq 0)
+    $out | ForEach-Object { Write-Host ("  " + $_) }
+    return $ok
 }
 
 function Assert-DistFresh {
@@ -148,7 +173,25 @@ function Assert-DistFresh {
         return
     }
 
-    $watch = 'bors_config.py','bors_entry.py','bors_minisign.py','bors_setup.spec','fts_terminal.spec','installer/bors_setup.iss','frontend/package.json','frontend/package-lock.json','frontend/src-tauri/tauri.conf.json'
+    # آنچه داخلِ باندل می‌رود، تازگی‌اش هم باید بررسی شود. فهرست را از خودِ
+    # spec می‌خوانیم: فهرستِ دستی (بورس‌کانفیک/انتری/…) تغییرِ fts_engine.py
+    # را «تازه» نمی‌دانست و نصاب با کدِ کهنهٔ موتورِ FTS بسته می‌شد.
+    $specSrc = ''
+    if (Test-Path (Join-Path $root 'fts_terminal.spec')) {
+        $specSrc = Get-Content (Join-Path $root 'fts_terminal.spec') -Raw
+    }
+    # bors_setup.iss در این فهرست نیست: داخلِ باندل نمی‌رود، پس تغییرش نباید
+    # rebuildِ PyInstaller بخواهد (تطابقِ نسخه‌اش پایین‌تر چک می‌شود).
+    $watch = @('bors_config.py','bors_entry.py','bors_minisign.py','codal_fetcher.py',
+               'fts_engine.py','mstat_engine.py','watchlist_store.py','app.py',
+               'bootstrap_first_run.py','bors_flags.py',
+               'fts_terminal.spec','bors_setup.spec',
+               'frontend/package.json','frontend/package-lock.json',
+               'frontend/src-tauri/tauri.conf.json')
+    $watch += @([regex]::Matches($specSrc, "\('([A-Za-z0-9_./-]+\.(?:py|json))',\s*'\.'\)") |
+                 ForEach-Object { $_.Groups[1].Value })
+    $watch = @($watch | Sort-Object -Unique)
+
     $stale = @()
     foreach ($f in $watch) {
         $p = Join-Path $root ($f -replace '/', '\')
@@ -173,6 +216,11 @@ function Assert-DistFresh {
         Move-StaleDist 'dist is older than these sources' $shown
         return
     }
+    Clear-DistRuntime          # هر سه مسیرِ بسته‌بندی از اینجا می‌گذرند
+    if (-not (Test-DistBundle)) {
+        Move-StaleDist 'the existing bundle fails the onedir contract' `
+                       'the packaged app is missing what the contract requires - rebuilding'
+    }
 }
 function Assert-TestsGreen {
     # درگاهِ سبزِ سوئیت‌ها: هیچ ریلیزی نباید با تستِ قرمز بیرون برود.
@@ -189,17 +237,59 @@ function Assert-TestsGreen {
 }
 
 
+function Clear-DistRuntime {
+    # هر چه هنگامِ *اجرای* باندل در پوشهٔ آن نوشته شده، از بسته‌بندی بیرون
+    # می‌ماند. شواهد: بعد از یک تستِ دودِ محلی، نصابِ v1.0.20 پوشهٔ logs/،
+    # .screener_cache.json (822 کیب)، market.db.baseline، market.db.part-shm/-wal
+    # و market_sync/sync_summary را با خودش به ماشینِ کاربر برد. بدترین‌شان
+    # baseline است: یک *مُهرِ* نسخهٔ دیگر را روی نصبِ تازه می‌گذارد.
+    $b = "$root\dist\BorsTerminal_Ultimate"
+    if (-not (Test-Path $b)) { return }
+    $files = 'market.db','market.db-wal','market.db-shm','market.db.baseline',
+             'market.db.stale','market.db.stale-wal','market.db.stale-shm',
+             'codal.db','.screener_cache.json','market_sync.json','sync_summary.json',
+             'codal_control.json','codal_db_status.json','user.db','fts_thresholds.json'
+    $dirs = 'logs','backups','__pycache__'
+    $gone = @()
+    foreach ($f in $files) {
+        $p = Join-Path $b $f
+        if (Test-Path $p) { Remove-Item $p -Force -Recurse -ErrorAction SilentlyContinue; $gone += $f }
+    }
+    foreach ($d in $dirs) {
+        $p = Join-Path $b $d
+        if (Test-Path $p) { Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue; $gone += ($d + '/') }
+    }
+    foreach ($p in (Get-Item (Join-Path $b '*.db.part*') -ErrorAction SilentlyContinue)) {
+        Remove-Item $p -Force -ErrorAction SilentlyContinue; $gone += $p.Name
+    }
+    if ($gone.Count) { Write-Host ('[dist] removed runtime artifacts from the bundle: ' + ($gone -join ', ')) -ForegroundColor Yellow }
+}
+
 function Build-Setup {
     Assert-DistFresh
     if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force }
-    # فقط lzma باندل می‌شود. یک market.dbیِ سرگردان در dist (باقیمانده از runهای
-    # قبلی یا ابزارهای تست) نباید سرازیرِ نصب شود؛ در غیر این صورت نصب یک dbیِ
-    # خام/ناقص را هم می‌گیرد و ensure_market_db ممکن است همان را بپذیرد.
-    $stray = "$root\dist\BorsTerminal_Ultimate\market.db"
-    if (Test-Path $stray) { Remove-Item $stray -Force; Write-Host '[setup] removed stray dist market.db' }
+    # هر باقی‌ماندهٔ زمانِ اجرا از باندل بیرون می‌ماند؛ خودِ این پاک‌سازی در
+    # Assert-DistFresh است تا مسیرهایِ portable/patch هم از آن بی‌بهره نمانند.
+    # بازارِ داده کنارِ EXE باندل می‌شود، داخلِ آن نه. نبودش یعنی اپ بالا
+    # می‌آید ولی تابلو خالی است — و نصاب هم ساخته می‌شود، پس این تنها جایی است
+    # که می‌توان جلویِ ریلیزِ بی‌داده را گرفت.
+    $distLzma = "$root\dist\BorsTerminal_Ultimate\market.db.lzma"
+    if (-not (Test-Path $distLzma) -or (Get-Item $distLzma).Length -lt 1MB) {
+        Write-Error '[setup] market.db.lzma is not beside the EXE (missing or under 1 MB) - nothing would be installed. ABORT.'
+        exit 1
+    }
+    Write-Host ('[setup] market.db.lzma beside exe: ' + [math]::Round((Get-Item $distLzma).Length / 1MB, 1) + ' MB')
     Write-Host '[setup] Inno Setup'
     & $ISCC "$root\installer\bors_setup.iss"
+    if ($LASTEXITCODE -ne 0) {
+        # پیش از این خط نبود: ISCC با «Compile aborted» برمی‌گشت، اسکریپت به
+        # Sign-Setup می‌رفت و نصابِ نسخهٔ *قبلی* را که هنوز در out/ مانده بود
+        # امضا می‌کرد و «انجام شد» می‌گفت. یعنی ریلیزِ شکسته، ریلیز خوانده
+        # می‌شد. خروجِ ISCC تنها معیارِ موفقیت است.
+        Write-Error '[setup] Inno compilation FAILED - nothing new was produced. ABORT.'
+        exit 1
+    }
     Get-ChildItem "$root\installer\out\*.exe" | ForEach-Object { Write-Host ("  -> " + $_.FullName + "  (" + [math]::Round($_.Length/1MB,1) + " MB)") }
     Sign-Setup
 }
@@ -209,9 +299,20 @@ function Sign-Setup {
     # کلِ منطق در scripts/sign_setup.py: اول tauri signer (با timeout سخت)،
     # سپس fallbackِ minisignِ خالصِ پایتون، و در پایان تأییدِ امضا. بدونِ امضای
     # معتبر آپدیتِر این بیلد را رد می‌کند — پس بیلد را اینجا متوقف می‌کنیم.
-    $setup = Get-ChildItem "$root\installer\out\BorsTerminal_Ultimate_Setup_*.exe" |
-             Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $setup) { Write-Host '[sign] no installer found (skip)'; return }
+    # نامِ فایل باید نسخهٔ همان بیلد را داشته باشد، وگرنه «تازه‌ترین فایل» می‌تواند
+    # نصابِ دو نسخه قبل باشد و امضاشودگیش به‌عنوانِ آپدیتِ جدید منتشر شود.
+    $iss = Get-Content (Join-Path $root 'installer\bors_setup.iss') -Raw
+    $want = $null
+    if ($iss -match '(?m)^\s*#define\s+AppVersion\s+"([^"]+)"') { $want = $Matches[1] }
+    $cands = Get-ChildItem "$root\installer\out\BorsTerminal_Ultimate_Setup_*.exe" |
+             Sort-Object LastWriteTime -Descending
+    if (-not $cands) { Write-Host '[sign] no installer found (skip)'; return }
+    $setup = $cands | Select-Object -First 1
+    if ($want -and ($setup.Name -notlike ("*_v" + $want + "*.exe"))) {
+        Write-Error ("[sign] newest installer is " + $setup.Name + " but the build is v" + $want +
+                     " - the compile did not produce it. ABORT.")
+        exit 1
+    }
     Write-Host '[sign] minisign (tauri-first, python fallback, verify)'
     & $PY "$root\scripts\sign_setup.py" $setup.FullName
     if ($LASTEXITCODE -ne 0) {

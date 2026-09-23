@@ -20,6 +20,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)   # برای import bors_minisign — همان وریفایرِ اپ
 KEY = os.path.join(ROOT, ".tauri", "updater.key")
 PUB = os.path.join(ROOT, ".tauri", "updater.key.pub")
 TAURI = os.path.join(ROOT, "frontend", "node_modules", ".bin", "tauri.cmd")
@@ -73,10 +74,28 @@ def parse_public(bin_):
     return {"alg": bin_[:2], "keyid": bin_[2:10], "pub": bin_[10:42]}, "ok"
 
 
+def verify(pubinfo, blob, setup):
+    # تأیید با همان وریفایرِ خالص‌پایتونی که اپِ فریزشده اجرا می‌کند
+    # (bors_minisign)، نه با cryptography. «VERIFY: PASS» باید یعنی *کاربر*
+    # این امضا را می‌پذیرد — نه اینکه مفسرِ بیلد شانسی پکیج را دارد؛ این
+    # بررسی در .venvِ بدونِ cryptography هم باید کار کند.
+    import bors_minisign
+    if blob[:2] not in (b"Ed", b"ED"):
+        raise ValueError("sig alg=%r" % blob[:2])
+    if blob[2:10] != pubinfo["keyid"]:
+        raise ValueError("keyid mismatch sig=%s pub=%s" % (blob[2:10].hex(), pubinfo["keyid"].hex()))
+    if not bors_minisign._ed25519_verify(pubinfo["pub"], blake2b_file(setup), blob[10:74]):
+        raise ValueError("ed25519 verify failed (bad signature or tampered file)")
+
+
 def sign_python(sec, keyid, setup, sig):
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    priv = Ed25519PrivateKey.from_private_bytes(sec)
-    blob = b"Ed" + keyid + priv.sign(blake2b_file(setup))
+    """Fallback signing without the tauri CLI.
+
+    در minisign دو اَلف هست: ED یعنی امضا روی blake2b-512 و Ed یعنی روی
+    خامِ فایل. این تابع دیژست می‌سازد پس ED می‌نویسد؛ با «Ed» دروغین،
+    bors_minisign مسیرِ raw را می‌رفت و آپدیت رد می‌شد.
+    """
+    blob = b"ED" + keyid + _ed25519_sign(sec, blake2b_file(setup))
     with open(sig, "wb") as f:
         f.write(b"untrusted comment: tauri signature\n")
         f.write(base64.b64encode(blob))
@@ -84,13 +103,9 @@ def sign_python(sec, keyid, setup, sig):
     return blob
 
 
-def verify(pubinfo, blob, setup):
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-    if blob[:2] not in (b"Ed", b"ED"):
-        raise ValueError("sig alg=%r" % blob[:2])
-    if blob[2:10] != pubinfo["keyid"]:
-        raise ValueError("keyid mismatch sig=%s pub=%s" % (blob[2:10].hex(), pubinfo["keyid"].hex()))
-    Ed25519PublicKey.from_public_bytes(pubinfo["pub"]).verify(blob[10:74], blake2b_file(setup))
+def _ed25519_sign(sec, msg):
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    return Ed25519PrivateKey.from_private_bytes(sec).sign(msg)
 
 
 def try_tauri(setup, sig):

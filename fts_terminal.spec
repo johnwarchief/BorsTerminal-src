@@ -81,7 +81,16 @@ a = Analysis(
               'setuptools', 'pip',
               'boto3', 'botocore', 's3transfer',
               'camoufox', 'playwright',
-              'engineio', 'socketio'],
+              'engineio', 'socketio',
+              # هوکِ pywebview در PyInstaller همهٔ بک‌ندهایِ گرافیکی را جمع می‌کند،
+              # نه فقط همان که رویِ ویندوز استفاده می‌شود: PySide6 به‌تنهایی ۴۴ مگ
+              # (از آن ۲۰ مگ opengl32sw.dll) و jedi+parso ۲۳ مگ به _internal راه
+              # می‌دادند. بک‌اندِ واقعیِ این برنامه winforms/edgechromium +
+              # pythonnet است (در hiddenimports صریح listed شده) و هیچ کدِ پروژه
+              # Qt یا IPython را import نمی‌کند. حجمِ نصاب و اندازهٔ پچِ دلتا
+              # مستقیماً از همین‌جا کم می‌شود.
+              'PySide6', 'PySide2', 'PyQt5', 'PyQt6', 'PyQt4',
+              'jedi', 'parso', 'IPython', 'prompt_toolkit'],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

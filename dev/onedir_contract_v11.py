@@ -14,7 +14,9 @@
 
   ۲) شکلِ خروجی onedir است:
      _internal/ باید وجود داشته باشد (تفاوتِ onedir با onefile). بدونِ این،
-     مسیردهیِ bors_config._app_dir() درست کار نمی‌کند.
+     مسیردهیِ bors_config._app_dir() درست کار نمی‌کند. با --dist محتوایِ
+     باندل هم چک می‌شود: پنجرهٔ بومی (webview/pythonnet) باید داخلش
+     باشد و Qt/jedi (excludes) نباید باشد.
 
 استفاده:
     python dev/onedir_contract_v11.py                 # فقط چکِ سورس (سریع)
@@ -70,22 +72,44 @@ def check_hiddenimports():
     return ok, missing
 
 
+REQUIRED_PACKAGES = ("webview", "pythonnet", "clr_loader")
+BANNED_PACKAGES = ("PySide6", "PyQt5", "PyQt6", "jedi", "IPython")
+
+
 def check_dist(dist_dir):
-    """چکِ ۲: خروجیِ onedir باید _internal/ داشته باشد."""
+    """چکِ ۲: شکلِ onedir + محتوایِ باندل.
+
+    اجباری‌ها از یک باگِ واقعی می‌آیند: بیلد با مفسرِ بدونِ pywebview، EXEیِ
+    سالم‌نما می‌دهد که فقط به‌جای پنجرهٔ بومی، msedge --app باز می‌کند. نه
+    تستی قرمز می‌شود نه بیلدی می‌شکند؛ فقط کاربر، پنجره‌اش را از دست می‌دهد.
+    """
     if not dist_dir or not os.path.isdir(dist_dir):
         print("  [skip] no dist dir given (--dist)")
         return True, None
-    internal = os.path.join(dist_dir, "BorsTerminal_Ultimate", "_internal")
-    exe = os.path.join(dist_dir, "BorsTerminal_Ultimate",
-                       "BorsTerminal_Ultimate.exe")
-    ok = os.path.isdir(internal) and os.path.isfile(exe)
-    if ok:
-        print("  [ok] onedir shape: %s + %s" % (
-            os.path.relpath(exe, _ROOT), os.path.relpath(internal, _ROOT)))
-    else:
-        print("  [FAIL] not an onedir build: missing %s or %s" % (
-            internal, exe))
-    return ok, None
+    bundle = os.path.join(dist_dir, "BorsTerminal_Ultimate")
+    internal = os.path.join(bundle, "_internal")
+    exe = os.path.join(bundle, "BorsTerminal_Ultimate.exe")
+    if not (os.path.isdir(internal) and os.path.isfile(exe)):
+        print("  [FAIL] not an onedir build: missing %s or %s" % (internal, exe))
+        return False, None
+    print("  [ok] onedir shape: %s + %s" % (
+        os.path.relpath(exe, _ROOT), os.path.relpath(internal, _ROOT)))
+
+    failures = []
+    for pkg in REQUIRED_PACKAGES:
+        if os.path.isdir(os.path.join(internal, pkg)):
+            print("  [ok] bundled: %s" % pkg)
+        else:
+            failures.append("required package missing from bundle: %s" % pkg)
+            print("  [FAIL] required package missing: %s" % pkg)
+    for pkg in BANNED_PACKAGES:
+        if os.path.isdir(os.path.join(internal, pkg)):
+            failures.append("excluded package shipped anyway: %s" % pkg)
+            print("  [FAIL] excluded package shipped anyway: %s" % pkg)
+    # market.db.lzma اینجا چک نمی‌شود: کارِ PyInstaller نیست، بلکه مرحلهٔ
+    # بسته‌بندی (Build-Setup در release.ps1) کنارِ EXE می‌گذارد؛ همان‌جا هم
+    # بررسی می‌شود. زورِ این چک در این مرحله، هر بیلدِ سالم را FAIL می‌کرد.
+    return not failures, failures
 
 
 def main():

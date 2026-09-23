@@ -67,17 +67,24 @@ def pack():
         print("[pack] backed up previous market.db.lzma -> market.db.lzma.bak")
 
     raw = open(src, "rb").read()
-    with open(dst, "wb") as f:
+    # اتمی: رویِ .new فشرده می‌کنیم، round-trip را همان‌جا می‌سنجیم و فقط بعد
+    # جای baseline می‌گذاریم. پیش از این، باز کردنِ dst با "wb" فایلِ
+    # commit‌شده را همان اولِ کار صفر بایت می‌کرد؛ یک Ctrl+C (یا کرش) وسطِ
+    # فشرده‌سازی، بیس‌لاینِ ریلیز را نابود می‌کرد — و در run بعدی همان فایلِ
+    # صفر‌بایتی رویِ .bakِ سالم کپی می‌شد، یعنی مسیرِ از‌دست‌رفتنِ کامل.
+    tmp = dst + ".new"
+    with open(tmp, "wb") as f:
         f.write(lzma.compress(raw, preset=9))
-    print("  lzma MB %.1f" % (os.path.getsize(dst) / 1048576.0))
+    print("  lzma MB %.1f" % (os.path.getsize(tmp) / 1048576.0))
 
     # round-trip: باید دقیقاً همانیِ منبع را برگرداند؛ وگرنه baselineیِ
-    # قبلی را برگردان و متوقف شو.
-    if lzma.decompress(open(dst, "rb").read()) != raw:
-        print("[pack] round-trip mismatch — restoring previous baseline")
-        if os.path.exists(dst + ".bak"):
-            shutil.copy2(dst + ".bak", dst)
+    # قبلی دست‌نخورده می‌ماند.
+    ok = lzma.decompress(open(tmp, "rb").read()) == raw
+    if not ok:
+        os.remove(tmp)
+        print("[pack] round-trip mismatch — baseline left untouched")
         return 1
+    os.replace(tmp, dst)
     print("  round-trip OK")
     return 0
 
