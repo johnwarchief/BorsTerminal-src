@@ -136,12 +136,18 @@ export default function TechnicalPage() {
   const activeLevels = useMemo<ActiveLevelsView>(() => {
     const fib = analysis.data?.fts?.fib ?? null;
     const { swingLow, stop5pct } = computeTradeLevels(series.lows);
+    // MA(100) خط ماژور: میانگین ۱۰۰ بستهٔ آخر؛ null اگر تاریخچه کمتر از ۱۰۰ کندل است
+    const closes = series.closes.filter((x) => Number.isFinite(x));
+    const ma100 =
+      closes.length >= 100
+        ? Math.round(closes.slice(-100).reduce((a, b) => a + b, 0) / 100)
+        : null;
     return {
       symbol,
       zone3340: fib?.zone_33_40 ? { lo: fib.zone_33_40.lo ?? null, hi: fib.zone_33_40.hi ?? null } : null,
       zone61870: fib?.zone_618_70 ? { lo: fib.zone_618_70.lo ?? null, hi: fib.zone_618_70.hi ?? null } : null,
       baseLevel: fib?.retrace_base_low ?? null,
-      ma100: null,
+      ma100,
       swingLow,
       stop5pct,
       keyLevels: signal?.payload.keyLevels ?? [],
@@ -150,7 +156,7 @@ export default function TechnicalPage() {
       setups: signal?.payload.setups ?? [],
       direction: signal?.direction ?? null,
     };
-  }, [analysis.data, series.lows, signal, symbol, candles]);
+  }, [analysis.data, series.lows, series.closes, signal, symbol, candles]);
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
@@ -198,7 +204,7 @@ export default function TechnicalPage() {
                 node: (
                   <div className="flex flex-col gap-2">
                     <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
-                    <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={null} />
+                    <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={analysis.data?.fts?.jet?.resistance ?? null} />
                   </div>
                 ),
               },
