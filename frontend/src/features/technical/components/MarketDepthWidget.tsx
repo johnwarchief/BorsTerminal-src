@@ -33,8 +33,8 @@ export const MarketDepthWidget: React.FC<MarketDepthWidgetProps> = ({
   onClose,
   isOpen,
 }) => {
-  if (!isOpen) return null;
-
+  // توجه: هیچ return زودرسِ شرطی قبل از هوک‌ها نباشد — در غیر این صورت با
+  // باز/بسته‌شدن پنل ترتیب هوک‌ها عوض و React کرش می‌کند. گِیتِ نمایش پایین انجام می‌شود.
   const basePrice = Math.round(boardRow?.p_last ?? boardRow?.p_closing ?? 10000);
   const pClosing = Math.round(boardRow?.p_closing ?? basePrice);
   const pYesterday = Math.round(boardRow?.price_yesterday ?? pClosing);
@@ -79,6 +79,8 @@ export const MarketDepthWidget: React.FC<MarketDepthWidgetProps> = ({
   const totalSellVol = levels.reduce((acc, l) => acc + l.sellVolume, 0);
   const buyRatio = (totalBuyVol / (totalBuyVol + totalSellVol)) * 100;
 
+  if (!isOpen) return null;
+
   return (
     <div
       className="market-depth-modal"
@@ -111,7 +113,20 @@ export const MarketDepthWidget: React.FC<MarketDepthWidgetProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontWeight: '800', fontSize: '13px', color: 'var(--nn-text-primary, #ffffff)' }}>
-            عمق بازار ۵ مظنه برتر
+            عمق بازار — نمایش تقریبی
+          </span>
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: '700',
+              padding: '1px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'rgba(234, 179, 8, 0.18)',
+              color: '#eab308',
+            }}
+            title="دادهٔ تفکیکی حقیقی پنج‌مظنه‌ای از تابلو در دسترس نیست؛ سطرها بر پایهٔ قیمت و حجم کل شبیه‌سازی شده‌اند و فقط نمای تقریبی‌اند."
+          >
+            شبیه‌سازی
           </span>
           <span
             style={{
@@ -265,10 +280,10 @@ export const MarketDepthWidget: React.FC<MarketDepthWidgetProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
           <span style={{ color: '#089981', fontWeight: 'bold' }}>
-            تقاضا: {fmtInt(totalBuyVol)} ({toFaDigits(buyRatio.toFixed(1))}٪)
+            برآورد تقاضا: {fmtInt(totalBuyVol)} ({toFaDigits(buyRatio.toFixed(1))}٪)
           </span>
           <span style={{ color: '#f23645', fontWeight: 'bold' }}>
-            عرضه: {fmtInt(totalSellVol)} ({toFaDigits((100 - buyRatio).toFixed(1))}٪)
+            برآورد عرضه: {fmtInt(totalSellVol)} ({toFaDigits((100 - buyRatio).toFixed(1))}٪)
           </span>
         </div>
         <div

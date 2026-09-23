@@ -247,7 +247,7 @@ describe('۷ قابلیت کلیدی چارت سامانه نهایت‌نگر (
 
       const widget = screen.getByTestId('market-depth-widget');
       expect(widget).toBeTruthy();
-      expect(screen.getByText('عمق بازار ۵ مظنه برتر')).toBeTruthy();
+      expect(screen.getByText('عمق بازار — نمایش تقریبی')).toBeTruthy();
       expect(screen.getByText('فولاد')).toBeTruthy();
 
       // دکمه بستن
