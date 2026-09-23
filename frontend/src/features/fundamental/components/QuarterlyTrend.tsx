@@ -23,11 +23,11 @@ function niceMax(v: number): number {
   return Math.ceil(v / p) * p;
 }
 
-/** قالب مقادیر محور: میلیارد تومان یا همت */
+/** قالب مقادیر محور: میلیارد تومان (ب.ت) یا همت */
 function fmtAxisBt(bt: number): string {
   const abs = Math.abs(bt);
     if (abs >= 1000) return `${toFaDigits((bt / 1000).toFixed(1))} همت`;
-    if (abs >= 1) return `${toFaDigits(bt.toFixed(0))} م.ت`;
+    if (abs >= 1) return `${toFaDigits(bt.toFixed(0))} ب.ت`;
   return toFaDigits(bt.toFixed(2));
 }
 

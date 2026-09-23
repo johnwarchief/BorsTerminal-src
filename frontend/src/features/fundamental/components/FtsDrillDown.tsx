@@ -91,14 +91,14 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           value={now ?? 0}
           max={maxBar}
           tone="blue"
-          valueLabel={now == null ? '—' : `${fmtInt(now)} m‌ت`}
+          valueLabel={now == null ? '—' : `${fmtInt(now)} ب.ت`}
         />
         <Bar
           label="دورهٔ مشابه سال قبل"
           value={prev ?? 0}
           max={maxBar}
           tone="green"
-          valueLabel={prev == null ? '—' : `${fmtInt(prev)} m‌ت`}
+          valueLabel={prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
         />
       </div>
       <p className="text-2xs leading-relaxed text-text-secondary">
@@ -360,7 +360,7 @@ function Panel4({ card }: { card: FtsCard }) {
           <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
             A: فروش سالانه‌شده{' '}
             {annualSales != null ? (
-              `${toFaDigits(fmtInt(annualSales))} m‌ت`
+              `${toFaDigits(fmtInt(annualSales))} ب.ت`
             ) : (
               <GapHint reason={VALUATION_GAP_REASON}>
                 <span className="text-accent-red">{NO_ANNUAL_SALES}</span>

@@ -166,9 +166,9 @@ export function FtsCard({
             const isIndustry = key === '5_industry' && industryMode !== undefined;
             const industryBadge = isIndustry ? (
               <AuditBadge
-                state={v === false ? 'fail' : 'pass'}
-                label={v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
-                hintTitle={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
+                state={v == null ? 'na' : v ? 'pass' : 'fail'}
+                label={v == null ? gapLabel(key) : v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
+                hintTitle={v == null ? gapTooltip(key) : `${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
                 evidence={audit?.['5_industry'] ?? null}
                 testId={`fts-cell-audit-${key}`}
               />

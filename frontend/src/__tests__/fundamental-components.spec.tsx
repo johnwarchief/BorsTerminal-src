@@ -83,7 +83,7 @@ describe('کامپوننت های بنیادی', () => {
     render(<QuarterlyTrend quarters={QUARTERS} />);
     const svg = screen.getByTestId('quarterly-trend-chart');
     const labelNodes = Array.from(svg.querySelectorAll('text')).map((t) => t.textContent ?? '');
-    expect(labelNodes.some((t) => t.includes('م.ت') || t.includes('همت'))).toBe(true);
+    expect(labelNodes.some((t) => t.includes('ب.ت') || t.includes('همت'))).toBe(true);
     // واحد زیر نمودار هم میلیارد تومان است (نه میلیون ریال)
     expect(screen.getByText(/ارقام میلیارد تومان/)).toBeInTheDocument();
   });
