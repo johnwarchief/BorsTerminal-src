@@ -846,14 +846,64 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
             "months_used": months, "basis": basis, "reconciled": reconciled}
 
 
+_HOLDING_SECTOR_KEYS = ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته")
+
+
+def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
+    """آیا جدیدترین صورتِ مالیِ این نماد سطرِ «درآمد عملیاتی» دارد؟
+
+    سه‌مقدار و از شواهدِ خودِ اسکرپ (نه از نامِ صنعت/نماد):
+      1    → «جمع درآمدهای عملیاتی» مچ شد؛ مفهومِ فروش وجود دارد.
+      0    → شیتِ سود و زیان خوانده شد ولی چنین سطری نداشت — یعنی صندوق/
+             سبدگردانی که فقط «جمع درآمدها»ی سرمایه‌گذاری منتشر می‌کند.
+      None → با پارسرِ جدید بازخوانی نشده (یا ستون هنوز مهاجرت نشده).
+    """
+    try:
+        row = conn.execute(
+            "SELECT has_operating_sales FROM financial_statements "
+            "WHERE symbol = ? ORDER BY tracing_no DESC LIMIT 1", (symbol,)).fetchone()
+    except sqlite3.OperationalError:
+        return None            # DB قدیمی که هنوز migrate_schema ندیده است
+    return None if row is None else row[0]
+
+
+def no_sales_concept(conn: sqlite3.Connection, symbol: str, sector: str = "",
+                     _precomputed: Optional[set] = None) -> bool:
+    """رژیمِ «سندِ فروش ندارد»: یا نامِ صنعت (همان مسیرِ guarded هلدینگ)، یا
+    شواهدِ صورتِ مالی که سطرِ درآمدِ عملیاتی وجود ندارد."""
+    s = norm_fa(sector)
+    if any(k in s for k in _HOLDING_SECTOR_KEYS):
+        return True
+    if _precomputed is not None:
+        return norm_fa(symbol) in _precomputed
+    return has_operating_sales(conn, symbol) == 0
+
+
+def no_sales_symbols(conn: sqlite3.Connection) -> set:
+    """نمادهایی که جدیدترین صورتِ مالی‌شان سطرِ درآمدِ عملیاتی ندارد (۰).
+
+    تک‌کوئریِ کل‌بازاری — همان الگوی m141_map/avg_trade_value_hmt؛ اسکنِ ۶۰۹
+    نماد نباید ۶۰۹ کوئری بسازد."""
+    try:
+        rows = conn.execute(
+            "SELECT f.symbol FROM financial_statements f "
+            "JOIN (SELECT symbol, MAX(tracing_no) mt FROM financial_statements "
+            "      GROUP BY symbol) m ON m.mt = f.tracing_no "
+            "WHERE f.has_operating_sales = 0").fetchall()
+    except sqlite3.OperationalError:
+        return set()
+    return {norm_fa(r[0]) for r in rows if r[0]}
+
+
 def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: float,
                        min_ratio: float = 1.0, annual: Optional[dict] = None,
-                       sector: str = "") -> Optional[dict]:
+                       sector: str = "", _no_sales: Optional[set] = None) -> Optional[dict]:
     """فروش سالانه ÷ ارزش بازار روز — جزوه: باید ≥ min_ratio (پیش‌فرض ۱.۰) باشد.
     شرکت‌های سرمایه‌گذاری/هلدینگ معاف (N/A) هستند.
+    `_no_sales` مجموعهٔ از پیش ساخته‌شده (no_sales_symbols) است تا اسکنِ کل بازار
+    به ازای هر نماد یک کوئری نزند.
     """
-    s = norm_fa(sector)
-    if any(k in s for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته")):
+    if no_sales_concept(conn, symbol, sector, _precomputed=_no_sales):
         mcap = _f(market_cap_rials)
         return {"sales_to_mcap": None,
                 "annual_sales_bt": None,
@@ -1066,7 +1116,8 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
                 total_market_cap_rials: float = 0.0, sector: str = "",
                 cfg: dict = None, _sessions: list = None,
                 m141_hit: Optional[bool] = None,
-                avg_trade_val: Optional[float] = None) -> dict:
+                avg_trade_val: Optional[float] = None,
+                _no_sales: Optional[set] = None) -> dict:
     """اجرای هر ۵ شاخص روی یک نماد → خروجی کارت بنیادی (endpoint /api/fts/{symbol}).
 
     cfg = پیش‌شرط‌های fts_thresholds.json (None = پیش‌فرض جزوه).
@@ -1086,7 +1137,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     annual = annualized_sales(conn, symbol, ref=ref)
     s2m = sales_to_marketcap(conn, symbol, mcap,
                              min_ratio=_f(cfg.get("sales_to_mcap_min", 1.0)) or 1.0,
-                             annual=annual, sector=sector)
+                             annual=annual, sector=sector, _no_sales=_no_sales)
     pot = gross_profit_potential(conn, symbol, mcap,
                                  min_pct=_f(cfg.get("profit_potential_min", 40.0)) or 40.0,
                                  gm=gm, annual=annual)
@@ -1095,7 +1146,10 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
                         gpm=(gm.get("margin_pct") if gm else None),
                         sales_growth=(g.get("growth_pct") if g else None))
 
-    is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+    # رژیمِ «سندِ فروش ندارد» (گارد F-04b): هلدینگ/سرمایه‌گذاری بر مبنای P/NAV
+    # داوری می‌شود، و از این رو صندوق/سبدگردانی که صورتِ مالی‌شان اصلاً سطرِ
+    # «درآمد عملیاتی» ندارد هم — تا رقمِ سرمایه‌گذاری به‌جای فروش حساب نشود.
+    is_holding = no_sales_concept(conn, symbol, sector, _precomputed=_no_sales)
     if is_holding:
         passes_s2m = True
     else:
@@ -1174,6 +1228,7 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
     # v9.7: نقشه‌های ماده ۱۴۱ و نقدشوندگی یک‌بار ساخته میشوند (نه به ازای نماد)
     m141 = m141_map(conn)
     liq = avg_trade_value_hmt(conn)
+    no_sales = no_sales_symbols(conn)
 
     # v9.7.3: یک نماد = یک ردیف. حلقهٔ قبلاً روی «DISTINCT symbol» خام می‌چرخید
     # و برای هر گروهِ دودیک (۲۱ گروه در financial_statements) دو بار امتیاز
@@ -1204,7 +1259,8 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
         out.append(scan_symbol(conn, sym, mcap or 0.0, total_mcap, sector,
                                cfg=cfg, _sessions=sessions,
                                m141_hit=bool(m141.get(key, False)),
-                               avg_trade_val=liq.get(key)))
+                               avg_trade_val=liq.get(key),
+                               _no_sales=no_sales))
     out.sort(key=lambda r: (-r["score"], -_f(r.get("market_cap_rials")), r["symbol"]))
     # فیلتر نهایی: ردیفهای excluded (تعلیق/بیمه/دستوری) جای واچ‌لیست را نمیگیرند
     clean = [r for r in out if not r["excluded"]]
@@ -1369,6 +1425,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     # v9.7: ماده ۱۴۱ + نقدشوندگی — دو نقشهٔ تک‌کوئری، بیرون حلقه
     m141 = m141_map(conn)
     liq = avg_trade_value_hmt(conn)
+    no_sales = no_sales_symbols(conn)
     do_m141 = bool(cfg.get("filter_m141"))
     min_liq = _f(cfg.get("min_trade_val", 0.0)) or 0.0
 
@@ -1460,7 +1517,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         elif (fs_rev > 0 and 0 < months_used < 12
               and (annual_sales > fs_rev * 4.0 or annual_sales < fs_rev * 0.25)):
             annual_sales, months_used = fs_rev, 12      # واحد مشکوک → فروش سالانهٔ کدال
-        is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+        is_holding = (any(k in norm_fa(sector) for k in _HOLDING_SECTOR_KEYS)
+                      or key in no_sales)
         s2m = (annual_sales * MRL_TO_RIAL / mcap) if mcap > 0 and annual_sales > 0 and not is_holding else None
         pot = None
         if s2m is not None and margin is not None:
@@ -1568,7 +1626,10 @@ class FtsEngine:
         f03_pass = gpm >= 20.0
 
         # F-04
-        is_holding = any(k in norm_fa(sector) for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+        # توجه: این مسیرِ کلاسِ FTSEngine است و فقط دیکشنریِ نماد را می‌بیند؛
+        # مجموعهٔ no_sales (که به conn نیاز دارد) اینجا در دسترس نیست، پس همان
+        # معافیتِ نامِ صنعت می‌ماند.
+        is_holding = any(k in norm_fa(sector) for k in _HOLDING_SECTOR_KEYS)
         ann_sales = sales_curr * (12.0 / months) if (months > 0 and not is_holding) else 0.0
         s2m = (ann_sales / mcap) if (mcap > 0 and not is_holding) else None
         pot = (ann_sales * (gpm / 100.0) / mcap * 100.0) if (mcap > 0 and not is_holding) else None

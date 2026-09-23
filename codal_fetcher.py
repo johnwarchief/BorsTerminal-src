@@ -688,6 +688,17 @@ def migrate_schema(conn):
                 conn.execute(f"ALTER TABLE financial_statements ADD COLUMN {c} REAL")
             except Exception:
                 pass
+    # «آیا این صورتِ مالی سطرِ درآمدِ عملیاتی دارد؟» — سه‌مقدار و از شواهدِ
+    # خودِ اسکرپ (نه از نامِ صنعت): 1 = «جمع درآمدهای عملیاتی» مچ شد؛
+    # 0 = شیتِ سود و زیان خوانده شد ولی چنین سطری نداشت (صندوق/سبدگردان که
+    # «جمع درآمدها»ی سرمایه‌گذاری دارد)؛ NULL = هنوز با پارسرِ جدید بازخوانی
+    # نشده. ستون جدا چون اَفینیتیِ INTEGER لازم است، نه REAL.
+    if "has_operating_sales" not in cols:
+        try:
+            conn.execute("ALTER TABLE financial_statements "
+                         "ADD COLUMN has_operating_sales INTEGER")
+        except Exception:
+            pass
     # لینکهای مستقیم PDF/اکسل روی اطلاعیهها (ارتقای امن DB های قدیمی)
     ncols = {r[1] for r in conn.execute("PRAGMA table_info(codal_notices)")}
     for c in ("pdf_url", "excel_url"):
@@ -2677,13 +2688,15 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False, workers
         except Exception:
             return item, None
 
-    def _stamp(t):
+    def _stamp(t, has_os):
         # fetched_at = «آخرین خواندنِ واقعیِ این نامه از کدال». حتی نامه‌ای که
         # دیتاسورس ندارد یا درآمدش منفی است خوانده شده، پس مُهر می‌خورد و در
         # از‌سرگیریِ --resume-since دوباره بارگذاری نمی‌شود؛ فقط استثنا/خطای
         # شبکه مُهر نمی‌خورد تا حتماً دوباره امتحان شود.
-        conn.execute("UPDATE financial_statements SET fetched_at=? WHERE tracing_no=?",
-                     (refetch_ts, t))
+        # has_os=None یعنی «نمی‌دانیم» → مقدارِ شناخته‌شدهٔ قبلی پاک نمی‌شود.
+        conn.execute("UPDATE financial_statements SET fetched_at=?, "
+                     "has_operating_sales=COALESCE(?,has_operating_sales) "
+                     "WHERE tracing_no=?", (refetch_ts, has_os, t))
 
     def _apply(item, res):
         """همهٔ نوشتن‌ها رویِ تردِ اصلی (تک‌نویسنده) + همان قراردادِ ایمنیِ قبلی.
@@ -2692,7 +2705,15 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False, workers
         if res is None:
             return "error"
         out, meta, unit = res
-        _stamp(t)
+        if out.get("revenue") is not None:
+            has_os = 1
+        elif meta.get("has_income"):
+            # شیتِ سود و زیان خوانده شد ولی هیچ الگوی «درآمد عملیاتی» مچ نشد:
+            # این «نبودِ مفهومِ فروش» است، نه «نبودِ داده».
+            has_os = 0
+        else:
+            has_os = None
+        _stamp(t, has_os)
         # system-error page / no datasource -> out empty or no revenue: SKIP
         if not out or out.get("revenue") is None:
             return "skipped"
