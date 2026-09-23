@@ -11,7 +11,7 @@
     "margin_ideal": 30.0,
     "sales_to_mcap_min": 0.33,
     "potential_min": 40.0,
-    "inflation_benchmark": 58.0
+    "inflation_benchmark": 60.0
    }
   },
   "score": 3,
@@ -141,7 +141,7 @@
     "margin_ideal": 30.0,
     "sales_to_mcap_min": 0.33,
     "potential_min": 40.0,
-    "inflation_benchmark": 58.0
+    "inflation_benchmark": 60.0
    }
   },
   "score": 0,
@@ -281,7 +281,7 @@
     "margin_ideal": 30.0,
     "sales_to_mcap_min": 0.33,
     "potential_min": 40.0,
-    "inflation_benchmark": 58.0
+    "inflation_benchmark": 60.0
    }
   },
   "score": 1,
