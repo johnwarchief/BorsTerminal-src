@@ -2,25 +2,50 @@
 // بر پایه جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
 import { useMemo, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
+import { ftsScoreOf } from '@contracts/fundamental';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
-import {
-  evaluateFtsPipeline,
-  type StrategyHorizon,
-  HORIZON_LABELS,
-} from '../lib/ftsPipelineEvaluator';
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
+import { evaluateFtsPipeline, type PipelineStep } from '../lib/ftsPipelineEvaluator';
 
 type PresetMode = 'swing' | 'trend' | 'hourglass' | 'custom';
 type ViewMode = 'obsidian' | 'grid' | 'both';
 
+/** رنگ/برچسب وضعیت زندهٔ هر گیت FTS از خروجی evaluateFtsPipeline */
+const LIVE_STATUS_STYLE: Record<PipelineStep['status'], { dot: string; text: string; label: string; ring: string }> = {
+  pass: { dot: 'bg-accent-green', text: 'text-accent-green', label: 'تایید', ring: 'border-accent-green/50 bg-accent-green/5' },
+  wait: { dot: 'bg-accent-yellow', text: 'text-accent-yellow', label: 'در انتظار', ring: 'border-accent-yellow/50 bg-accent-yellow/5' },
+  fail: { dot: 'bg-accent-red', text: 'text-accent-red', label: 'رد / وتو', ring: 'border-accent-red/50 bg-accent-red/5' },
+};
+
+/** نوار وضعیت زندهٔ نماد در سرستون هر فیلتر — خروجی واقعی evaluateFtsPipeline */
+function LiveColumnStatus({ step }: { step: PipelineStep }) {
+  const s = LIVE_STATUS_STYLE[step.status];
+  return (
+    <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-2xs ${s.ring}`}>
+      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${s.dot}`} aria-hidden />
+      <div className="min-w-0 space-y-0.5">
+        <div className="flex items-center gap-1.5">
+          <span className="font-black text-text-secondary">وضعیت واقعی نماد:</span>
+          <span className={`font-black ${s.text}`}>{s.label}</span>
+        </div>
+        <p className="leading-relaxed text-text-muted">{step.headline}</p>
+        {step.evidence.length > 0 && (
+          <p className="truncate text-text-muted/80" title={step.evidence.join(' · ')}>
+            {step.evidence.join(' · ')}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function StrategyTreePage() {
   const symbol = useSymbolStore((s) => s.symbol);
-  const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
   const [viewMode, setViewMode] = useState<ViewMode>('both');
   const { params } = useStrategyParamsStore();
@@ -40,7 +65,8 @@ export default function StrategyTreePage() {
   const currentPrice = (symbol ? closes.data?.get(symbol) : null) ?? null;
   const resistance = ftsPlan.data?.fts?.jet?.resistance ?? null;
   const support = ftsPlan.data?.fts?.fib?.zone_33_40?.lo ?? null;
-  const fundScore = typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null;
+  // امتیاز شمار شاخص‌های بنیادی ۰ تا ۵ (payload.score) — نه نمرهٔ ۰ تا ۱۰۰٬ اعتماد ترکیبی.
+  const fundScore = ftsScoreOf(inputs.fundamental);
 
   const strict = useMemo(
     () =>
@@ -71,6 +97,15 @@ export default function StrategyTreePage() {
       }),
     [symbol, selectedPreset, inputs, strict, decision, currentPrice, resistance, support, fundScore],
   );
+
+  // نگاشت وضعیت زندهٔ هر گیت به سرستونِ همان ستون (F/T/S/M) از خروجی واقعی evaluateFtsPipeline
+  // بدون نماد انتخابی ⇒ نقشه خالی ⇒ نوارهای «وضعیت واقعی نماد» نمایش داده نمی‌شوند.
+  const stepsById = useMemo(() => {
+    const m = {} as Record<PipelineStep['id'], PipelineStep | undefined>;
+    if (!symbol) return m;
+    for (const s of evaluation.steps) m[s.id] = s;
+    return m;
+  }, [symbol, evaluation]);
 
   // تعیین نودهای فعال بر مبنای پری‌ست یا نماد
   const activeNodes = useMemo(() => {
@@ -151,8 +186,11 @@ export default function StrategyTreePage() {
     } else if (nodeId === 'tech_weekly_reject') {
       setCustomWeekly('reject');
     } else if (nodeId.startsWith('setup_')) {
-      const setupKey = nodeId.replace('setup_', '') as any;
-      setCustomSetup(setupKey);
+      const setupKey = nodeId.replace('setup_', '');
+      const allowed = ['jet', 'fib', 'choch', 'double_bottom', 'point_hunt'] as const;
+      if ((allowed as readonly string[]).includes(setupKey)) {
+        setCustomSetup(setupKey as (typeof allowed)[number]);
+      }
     } else if (nodeId === 'tape_clock') {
       setCustomTape('clock');
     } else if (nodeId === 'tape_volume') {
@@ -366,6 +404,8 @@ export default function StrategyTreePage() {
             </span>
           </div>
 
+          {stepsById.fundamental && <LiveColumnStatus step={stepsById.fundamental} />}
+
           <div className="space-y-2">
             {/* شاخص سوپربنیادی ۵ از ۵ */}
             <div
@@ -472,6 +512,8 @@ export default function StrategyTreePage() {
               چارت صفحه ۲
             </span>
           </div>
+
+          {stepsById.technical && <LiveColumnStatus step={stepsById.technical} />}
 
           <div className="space-y-2">
             {/* شاخه هفتگی صعودی */}
@@ -597,6 +639,8 @@ export default function StrategyTreePage() {
             </span>
           </div>
 
+          {stepsById.tape && <LiveColumnStatus step={stepsById.tape} />}
+
           <div className="space-y-2">
             {/* الگوی ساعت */}
             <div
@@ -699,6 +743,8 @@ export default function StrategyTreePage() {
               چارت صفحه ۴
             </span>
           </div>
+
+          {stepsById.master && <LiveColumnStatus step={stepsById.master} />}
 
           <div className="space-y-2">
             {/* حد ضرر نوسان‌گیر */}
