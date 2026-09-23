@@ -2590,7 +2590,8 @@ def repair_broken_rows(limit=None):
     return ok, ok2
 
 
-def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
+def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False, workers=None,
+               resume_since=None):
     """بازسازیِ از نوِ financial_statements با پارسرِ اصلاح‌شدهٔ «نام‌محور /
     مبنای غیرتلفیقی».
 
@@ -2602,14 +2603,25 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
     می‌گردد.
 
     قراردادِ ایمنی: نامه‌هایی که «خطای سیستمی» می‌دهند یا datasource ندارند
-    SKIP می‌شوند و ردیفِ موجود دست‌نخورده می‌ماند — هرگز عدد جعلی نمی‌سازیم و
+    SKIP می‌شوند و ردیفِ موجود دست‌نخورده می‌ماند (فقط مُهرِ زمانیِ fetched_at
+    تازه می‌شود، که معنایش «این نامه خوانده شد» است نه «داده تغییر کرد») —
+    هرگز عدد جعلی نمی‌سازیم و
     هرگز مقدار را به صفر/NULL برگردانده «تمیز» نمی‌کنیم. فقط ردیفی به‌روز
     می‌شود که revenue واقعاً parse شده باشد. idempotent و قابلِ ازسرگیری.
+
+    workers: تعدادِ درخواست‌های همزمان (پیش‌فرض ۴؛ با --polite ۱؛ سقف ۶).
+    resume_since: «%Y-%m-%d %H:%M:%S» — نامه‌هایی که بعد از آن لحظه خوانده شده‌اند
+    (fetched_at تازه) رد می‌شوند؛ برای ادامه‌دادنِ اجرای قطع‌شده بدون تکرارِ شبکه.
     """
     if polite is None:
         polite = 1.7 if POLITE else 0.4
+    # ستونِ fetched_at در این جدول «آخرین خواندنِ واقعی از کدال» است؛ قالبش با
+    # بقیهٔ مسیرها (%Y-%m-%d %H:%M:%S) یکی می‌ماند تا مقایسهٔ متنیِ --resume-since
+    # درست بماند.
+    refetch_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if resume_since:
+        resume_since = resume_since.replace("T", " ")
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
-    s = make_session()
     if latest_only:
         # Only the NEWEST FS letter per symbol — the row the FTS screen and the
         # fundamental table actually display. Codal is currently degraded
@@ -2631,6 +2643,11 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
     if symbols:
         q += f" AND f.symbol IN ({','.join('?' * len(symbols))})"
         params += list(symbols)
+    if resume_since:
+        # هر نامه‌ای که بعد از این لحظه دوباره scrape شده، fetched_at‌اش تازه شده؛
+        # پس از‌سرگیریِ اجراهای قطع‌شده بدون تکرارِ درخواست‌های بی‌فایده.
+        q += " AND (f.fetched_at IS NULL OR f.fetched_at < ?)"
+        params.append(resume_since)
     q += " ORDER BY f.tracing_no DESC" if latest_only else " ORDER BY f.tracing_no"
     if limit:
         q += f" LIMIT {int(limit)}"
@@ -2638,18 +2655,47 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
     print(f"[rebuild-fs] candidates: {len(rows)} "
           f"({len(symbols) if symbols else 'all'} symbol scope"
           f"{', latest-per-symbol' if latest_only else ''})", flush=True)
-    changed = skipped = errors = 0
-    skipped_neg = 0
-    for t, sym, url, old_rev, old_consol in rows:
+    if workers is None:
+        workers = 1 if POLITE else 4
+    workers = max(1, min(int(workers), 6))
+    print(f"[rebuild-fs] workers: {workers}", flush=True)
+
+    _tls = threading.local()
+
+    def _fetch(item):
+        """شبکه فقط. یک session به‌ازایِ ترد (نه session مشترکِ چندتردی)."""
+        t, sym, url, old_rev, old_consol = item
+        # حالتِ --polite (IP ثابتِ بدون ADB) همان مکثِ بین‌نامه‌ای را نگه می‌دارد؛
+        # در حالتِ عادی ریتمِ کارگر خودش خودش را تنظیم می‌کند.
+        if POLITE:
+            time.sleep(polite)
+        s = getattr(_tls, "s", None)
+        if s is None:
+            s = _tls.s = make_session()
         try:
-            out, meta, unit = scrape_report(s, url)
+            return item, scrape_report(s, url)
         except Exception:
-            errors += 1
-            continue
+            return item, None
+
+    def _stamp(t):
+        # fetched_at = «آخرین خواندنِ واقعیِ این نامه از کدال». حتی نامه‌ای که
+        # دیتاسورس ندارد یا درآمدش منفی است خوانده شده، پس مُهر می‌خورد و در
+        # از‌سرگیریِ --resume-since دوباره بارگذاری نمی‌شود؛ فقط استثنا/خطای
+        # شبکه مُهر نمی‌خورد تا حتماً دوباره امتحان شود.
+        conn.execute("UPDATE financial_statements SET fetched_at=? WHERE tracing_no=?",
+                     (refetch_ts, t))
+
+    def _apply(item, res):
+        """همهٔ نوشتن‌ها رویِ تردِ اصلی (تک‌نویسنده) + همان قراردادِ ایمنیِ قبلی.
+        بازگشت: 'changed' | 'skipped' | 'neg' | 'error'"""
+        t, sym, url, old_rev, old_consol = item
+        if res is None:
+            return "error"
+        out, meta, unit = res
+        _stamp(t)
         # system-error page / no datasource -> out empty or no revenue: SKIP
         if not out or out.get("revenue") is None:
-            skipped += 1
-            continue
+            return "skipped"
         # SAFEGUARD: a negative «جمع درآمدهای عملیاتی» means a bank / financial
         # institution, whose operating-revenue total is net of interest expense
         # and can legitimately go negative. That is NOT the jozve's industrial
@@ -2658,8 +2704,7 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
         # fabricate). Banks lack a «سود ناخالص» row anyway, so the FTS margin
         # screen already excludes them via gross_profit = NULL.
         if out.get("revenue") < 0:
-            skipped_neg += 1
-            continue
+            return "neg"
         consol = 1 if meta.get("is_consolidated") else 0
         # Income-statement fields are replaced WHOLESALE so a basis switch
         # (consolidated -> standalone) never leaves a mixed-basis row (e.g. a
@@ -2681,11 +2726,56 @@ def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
              out.get("total_equity"), out.get("capital"), out.get("retained_earnings"),
              consol, _classify_unit(unit), t))
         if old_rev != out.get("revenue") or (old_consol or 0) != consol:
-            changed += 1
             print(f"  [{sym}] {t}: revenue {old_rev} -> {out.get('revenue')} | "
                   f"consol {old_consol}->{consol} | gross={out.get('gross_profit')}", flush=True)
-        time.sleep(polite)
-    print(f"[rebuild-fs] changed={changed} skipped(no-data/system-error)={skipped} "
+            return "changed"
+        return "same"
+
+    changed = skipped = errors = skipped_neg = same = done = 0
+    total = len(rows)
+    t0 = time.monotonic()
+    stopped = False
+    # چرا همزمانی: تأخیرِ کدال per-request و سمتِ سرور است (۱۷-۱۲۳ ثانیه روی
+    # Decision.aspx؛ چرخشِ IP با ADB هیچ‌کدام را کم نکرد، پس گلوگاه لوکال نیست).
+    # تنها اهرمِ باقی‌مانده روی‌هم‌انداختنِ همان انتظارهاست. ورکرها فقط I/O
+    # می‌کنند و تک‌نویسندهٔ SQLite حفظ می‌شود، بنابراین idempotency و قراردادِ
+    # skip هیچ‌کدام تغییر نمی‌کنند.
+    #
+    # shutdown(cancel_futures=True) لازم است چون فهرست ~۱۰۰۰ نامه یک‌جا submit
+    # می‌شود؛ بدون آن، «توقف» یا هر استثنا روی صفِ ~۹۵۰ درخواستِ در انتظار می‌ماند
+    # و فرآیند ساعت‌ها تمام نمی‌شود.
+    ex = concurrent.futures.ThreadPoolExecutor(max_workers=workers)
+    futs = []
+    try:
+        futs = [ex.submit(_fetch, r) for r in rows]
+        for fut in concurrent.futures.as_completed(futs):
+            item, res = fut.result()
+            done += 1
+            state = _apply(item, res)
+            if state == "changed":
+                changed += 1
+            elif state == "skipped":
+                skipped += 1
+            elif state == "neg":
+                skipped_neg += 1
+            elif state == "error":
+                errors += 1
+            else:
+                same += 1
+            if done % 10 == 0 or done == total:
+                hr = done / max(time.monotonic() - t0, 1e-9) * 3600
+                eta = (total - done) / max(hr, 1e-9)
+                print(f"[rebuild-fs] {done}/{total} | {hr:.0f}/h | ETA {eta:.1f}h | "
+                      f"changed={changed} same={same} skipped={skipped} "
+                      f"neg={skipped_neg} errors={errors}", flush=True)
+            if _control_cmd() == "stop":
+                stopped = True
+                break
+    finally:
+        ex.shutdown(wait=False, cancel_futures=True)
+    tag = " stopped by user" if stopped else ""
+    print(f"[rebuild-fs]{tag} changed={changed} same={same} "
+          f"skipped(no-data/system-error)={skipped} "
           f"skipped(neg-revenue/bank)={skipped_neg} exceptions={errors}", flush=True)
     conn.close()
     return changed
@@ -3302,6 +3392,12 @@ if __name__ == "__main__":
                     help="بدون ADB/IP-روتاریشن: مکث ~1.7s بین هر درخواست + تک-کارگر")
     ap.add_argument("--limit", type=int, default=None,
                     help="Stop after N symbols (testing only)")
+    ap.add_argument("--workers", type=int, default=None,
+                    help="تعدادِ همزمانِ اسکرپ در --rebuild-fs (پیش‌فرض ۴؛ با --polite ۱). "
+                         "ورکرها فقط شبکه می‌خوانند، نوشتن در SQLite همیشه تک‌نویسنده است.")
+    ap.add_argument("--resume-since", default=None, metavar="TS",
+                    help="در --rebuild-fs: نامه‌هایی که بعد از این زمان دوباره scrape شده‌اند "
+                         "(fetched_at تازه) را رد کن — برای ازسرگیریِ اجرای قطع‌شده")
     ap.add_argument("--no-tether", action="store_true",
                     help="از Wi-Fi خانه بهجای IP تترینگ استفاده کن (کدال IP تترینگ را سریعتر 429 میکند)")
     ap.add_argument("--optimized", action="store_true",
@@ -3315,7 +3411,8 @@ if __name__ == "__main__":
         repair_broken_rows(limit=args.limit)
     elif args.rebuild_fs:
         syms = [x.strip() for x in args.symbols.split(",")] if args.symbols else None
-        rebuild_fs(limit=args.limit, symbols=syms, latest_only=args.latest_only)
+        rebuild_fs(limit=args.limit, symbols=syms, latest_only=args.latest_only,
+                   workers=args.workers, resume_since=args.resume_since)
     elif args.update_symbols:
         conn = sqlite3.connect(DB_PATH, timeout=60)
         syms = [r[0] for r in conn.execute(
