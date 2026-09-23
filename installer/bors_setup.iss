@@ -79,8 +79,43 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app
 Filename: "{app}\{#AppExe}"; Description: "اجرای {#AppName}"; WorkingDir: "{app}"; Flags: nowait postinstall
 
 [UninstallDelete]
+; --- محصولِ اجرا، نه فایلِ نصب ---
+; market.dbِ استخراج‌شده ~۱۰۰ مگابایت است و با هر نسخهٔ باندل عوض می‌شود؛
+; archivelِ .stale و .part هم بی‌ارنده. Inno فقط فایل‌هایِ Listِ نصب را پاک
+; می‌کند، پس این‌ها باید صریحlisted شوند وگرنه بعد از حذفِ برنامه روی دیسک
+; می‌مانند (همان «باقی‌مانده»ای که کاربر شکایت کرد).
+Type: files; Name: "{app}\market.db"
+Type: files; Name: "{app}\market.db-wal"
+Type: files; Name: "{app}\market.db-shm"
+Type: files; Name: "{app}\market.db.lzma"
+Type: files; Name: "{app}\market.db.baseline"
+Type: files; Name: "{app}\market.db.stale"
+Type: files; Name: "{app}\market.db.stale-wal"
+Type: files; Name: "{app}\market.db.stale-shm"
+Type: files; Name: "{app}\codal.db"
+Type: files; Name: "{app}\*.db.part"
 Type: filesandordirs; Name: "{app}\logs"
 Type: filesandordirs; Name: "{app}\backups"
+Type: filesandordirs; Name: "{app}\__pycache__"
+; --- ریشهٔ دومِ داده: %LOCALAPPDATA%\BorsTerminal_Ultimate\data ---
+; وقتی پوشهٔ نصب نوشتنی نباشد (نصبِ «برای همهٔ کاربران» در Program Files) کلِ
+; داده‌ها به اینجا منتقل می‌شود؛ حذفِ برنامه بدونِ این خطوط همان ~۱۰۰ مگابایت
+; را بی‌صدا روی دیسک نگه می‌داشت.
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db-wal"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db-shm"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.lzma"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.baseline"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.stale"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.stale-wal"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\market.db.stale-shm"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\codal.db"
+Type: files; Name: "{localappdata}\BorsTerminal_Ultimate\data\*.db.part"
+Type: filesandordirs; Name: "{localappdata}\BorsTerminal_Ultimate\data\logs"
+Type: filesandordirs; Name: "{localappdata}\BorsTerminal_Ultimate\data\backups"
+; نکته: user.db (واچ‌لیست و تصمیم‌های کاربر) و fts_thresholds.json (آستانه‌هایی
+; که خودش در پنل چیده) هرگز در این فهرست نیستند — آن‌ها نوشتهٔ کاربرند، نه
+; باقی‌ماندهٔ برنامه.
 
 ; ===========================================================================
 ; حالتِ تعمیر / حذف-و-نصبِ مجدد
@@ -155,6 +190,63 @@ var
 begin
   Exec(ExpandConstant('{cmd}'), '/C "taskkill /F /IM {#AppExe} >NUL 2>NUL"',
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+; باقی‌ماندهٔ نصب‌هایِ قدیمی را پاک می‌کند: پوشه‌ای که نامش شبیهِ برنامه است و
+; فایلِ EXE یا market.dbِ بزرگ دارد ولی unins000.exe ندارد — یعنی نصابش حذف
+; شده یا هرگز درست نصب نشده بوده. نصبِ سالم (ثبت‌شده در رجیستری) همیشه
+; unins000.exe دارد، پس این شرط هرگز به نصبِ فعلی دست نمی‌زند.
+; user.db هیچ‌جا حذف نمی‌شود: نوشتهٔ خودِ کاربر است.
+function SweepOrphanLeftovers(): Boolean;
+var
+  FindRec: TFindRec;
+  Roots: TArrayOfString;
+  Base, Dir, ExePath, UninstPath: String;
+  I, Killed: Integer;
+  HasPayload: Boolean;
+begin
+  Result := True;
+  SetArrayLength(Roots, 3);
+  Roots[0] := ExpandConstant('{autopf}');
+  Roots[1] := ExpandConstant('{commonpf32}');
+  Roots[2] := ExpandConstant('{localappdata}\Programs');
+  Killed := 0;
+  for I := 0 to GetArrayLength(Roots) - 1 do
+  begin
+    Base := Roots[I];
+    if (Base = '') or not DirExists(Base) then
+      Continue;
+    if FindFirst(Base + '\*', FindRec) then
+    begin
+      try
+        repeat
+          if (FindRec.Name = '.') or (FindRec.Name = '..') then
+            Continue;
+          Dir := Base + '\' + FindRec.Name;
+          if Pos('BorsTerminal', FindRec.Name) = 0 then
+            Continue;
+          // مسیرِ همان نصبی که داریم رویش کار می‌کنیم هرگز پاک نمی‌شود
+          if CompareText(Dir, RemoveBackslashUnlessRoot(
+               ExpandConstant('{app}'))) = 0 then
+            Continue;
+          UninstPath := Dir + '\unins000.exe';
+          if FileExists(UninstPath) then
+            Continue;                       // نصبِ ثبت‌شده — به آن دست نزن
+          ExePath := Dir + '\BorsTerminal_Ultimate.exe';
+          HasPayload := FileExists(ExePath) or FileExists(Dir + '\market.db')
+                        or FileExists(Dir + '\market.db.lzma');
+          if not HasPayload then
+            Continue;                       // پوشهٔ بی‌ربطِ همنام
+          if DelTree(Dir, True, True, True) then
+            Killed := Killed + 1;
+        until not FindNext(FindRec);
+      finally
+        FindClose(FindRec);
+      end;
+    end;
+  end;
+  if Killed > 0 then
+    Log(Format('[sweep] %d orphan leftover folder(s) removed', [Killed]));
 end;
 
 // unins000.exe را کاملاً سایلنت اجرا می‌کند و موفقیت را برمی‌گرداند.

@@ -15,16 +15,28 @@
 # v1.0.10: پچِ دلتا. PATCH_FROM نسخهٔ قبلیِ منتشرشده است (پیش‌فرض 1.0.9)؛
 # آپدیتِرِ درون‌برنامه‌ای فقط روی همان نسخه پچ را اعمال می‌کند و در غیر این
 # صورت شفافاً به نصبِ کامل برمی‌گردد. پچ با همان کلیدِ minisign امضا می‌شود.
-param([ValidateSet('setup','base','portable','all','patch','allpatch')][string]$Mode = 'setup',
+param([ValidateSet('setup','base','portable','all','patch','allpatch','release')][string]$Mode = 'setup',
       [string]$PatchFrom = '1.0.9',
       [string]$Baseline = '',
       [switch]$SkipTests = $false)
 $ErrorActionPreference = 'Stop'
 
 # --- تنظیمات مسیرها (در صورت تفاوت، این‌ها را عوض کن) ---
-$PY   = 'C:\Users\PCMOD\AppData\Local\Python\pythoncore-3.14-64\python.exe'
-$NPM  = 'C:\Program Files\AutoClaw\resources\node\npm.cmd'
-$ISCC = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+# ابزارها: اگر متغیرِ محیطی داده نشده باشد از PATH پیدا می‌شوند. مسیرهایِ
+# مطلقِ دست‌نویس رویِ هر ماشینِ دیگر (و رویِ CI) می‌شکستند و ریلیز را وسطِ کار
+# می‌خواباندند؛ پس حالا فقط فال‌بک‌اند، نه پیش‌فرضِ اجباری.
+function Resolve-Tool([string]$envName, [string]$cmd, [string]$fallback) {
+    $fromEnv = (Get-Item -Path "Env:$envName" -ErrorAction SilentlyContinue).Value
+    if ($fromEnv) { return $fromEnv }
+    $g = Get-Command $cmd -ErrorAction SilentlyContinue
+    if ($g) { return $g.Source }
+    if ($fallback -and (Test-Path $fallback)) { return $fallback }
+    Write-Error "tool '$cmd' not found - set environment variable $envName to its full path. ABORT."
+    exit 1
+}
+$PY   = Resolve-Tool 'BORS_PY'   'python' 'C:\Users\PCMOD\AppData\Local\Python\pythoncore-3.14-64\python.exe'
+$NPM  = Resolve-Tool 'BORS_NPM'  'npm'    'C:\Program Files\AutoClaw\resources\node\npm.cmd'
+$ISCC = Resolve-Tool 'BORS_ISCC' 'iscc'   'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not (Test-Path (Join-Path $root 'bors_entry.py'))) { $root = (Get-Location).Path }
@@ -182,11 +194,25 @@ function Sign-Setup {
     }
     Get-ChildItem "$root\installer\out\*.sig" | ForEach-Object { Write-Host ("  -> " + $_.Name + "  (" + [math]::Round($_.Length/1KB,1) + " KB)") }
 }
+function Publish-Release {
+    # ریلیز + آپلودِ نصاب، .sig و latest.json رویِ گیت‌هاب. نسخه را خودِ اسکریپت
+    # از bors_config.APP_VERSION می‌خواند (دست‌نویس نیست) و متنِ یادداشت‌ها را از
+    # docs/RELEASE_NOTES.md برمی‌دارد.
+    Write-Host '[publish] github release + latest.json'
+    & $PY "$root\scripts\publish_github_release.py"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error '[publish] release failed - the updater endpoint still serves the previous version. ABORT.'
+        exit 1
+    }
+}
+
 function Build-Base {
     $out = "$root\..\BorsTerminal_BaseCode_$ver.zip"
     Write-Host "[base] git archive -> $out"
     if (Test-Path $out) { Remove-Item $out -Force }
-    git archive --format=zip --output="$out" master
+    # 'master' دیگر وجود ندارد (شاخه main است) و این خط هر بار بی‌صدا
+    # آرشیوِ ناقص می‌ساخت؛ HEAD یعنی همان چیزی که بیلد می‌شود.
+    git archive --format=zip --output="$out" HEAD
     Write-Host ("  -> " + $out + "  (" + [math]::Round((Get-Item $out).Length/1MB,2) + " MB)")
 }
 function Build-Portable {
@@ -226,6 +252,11 @@ function Build-Patch {
         ForEach-Object { Write-Host ("  -> " + $_.Name + "  (" + [math]::Round($_.Length/1MB,2) + " MB)") }
 }
 
+# حلقهٔ نگهبان: تا سوئیتِ گاردها سبز نشود هیچ خروجی‌ای ساخته نمی‌شود.
+# این تابع قبلاً تعریف شده بود ولی هیچ‌جا صدا زده نمی‌شد، یعنی ریلیز با تستِ
+# قرمز از نظرِ ظاهری کاملاً ممکن بود.
+Assert-TestsGreen
+
 switch ($Mode) {
     'base'      { Build-Base }
     'setup'     { Ensure-Db; Build-Setup }
@@ -233,5 +264,9 @@ switch ($Mode) {
     'patch'     { Ensure-Db; Build-Patch }
     'all'       { Ensure-Db; Build-Base; Build-Setup; Build-Portable }
     'allpatch'  { Ensure-Db; Build-Base; Build-Setup; Build-Portable; Build-Patch }
+    'release'   {
+        # تک‌دستوریِ کامل: دیتابیس ← بیلد ← نصاب ← امضا ← انتشارِ گیت‌هاب.
+        Ensure-Db; Build-Setup; Publish-Release
+    }
 }
 Write-Host '== done' -ForegroundColor Green

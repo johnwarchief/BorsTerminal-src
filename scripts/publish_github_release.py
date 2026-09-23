@@ -20,26 +20,62 @@ for _s in (sys.stdout, sys.stderr):
 REPO = "johnwarchief/BorsTerminal"
 # TAG is resolved below from RELEASE_TAG (see ROOT block) so CI can override it.
 RELEASE_NAME_TEMPLATE = "BorsTerminal Ultimate {tag}"
-RELEASE_BODY = """## تغییرات نسخهٔ v1.0.19
+RELEASE_NOTES_FILE = "docs/RELEASE_NOTES.md"
 
-### 📊 دیتابیس کدال از گیت‌هاب (جدول بنیادی)
-- **دکمهٔ «دیتابیس کدال» روی جدول بنیادی:** یک کلیک، اسنپ‌شاتِ فشردهٔ سه جدول کدال (`codal_notices`، `financial_statements`، `monthly_sales`) را فقط از ریلیزِ گیت‌هاب دانلود و با دیتابیسِ محلی ادغام می‌کند — بی‌نیاز به خزشِ مستقیمِ کدال.
-- **ادغامِ افزاینده و بی‌خطر:** هر سه جدول کلیدِ اصلی `tracing_no` دارند، پس ادغام با `ATTACH` + `INSERT OR REPLACE` افزاینده و idempotent است؛ کشِ `fts_results` هم پس از ادغام بی‌اعتبار می‌شود تا جدول بنیادی فوراً تازه شود.
-- **راستی‌آزماییِ امضای دیجیتال:** اسنپ‌شات پیش از ادغام با کلید عمومی Minisignِ خودِ برنامه (`UPDATE_PUBKEY`) و `PRAGMA integrity_check` اعتبارسنجی می‌شود؛ اسنپ‌شاتِ بی‌امضا یا دستکاری‌شده هرگز ادغام نمی‌شود.
-- **چرخشِ IP هنگامِ بلاک:** اگر دانلود از گیت‌هاب بلاک شود، worker به‌طور خودکار `rotate_ip_via_adb` (حالتِ پرواز via ADB روی گوشیِ وصل) را صدا می‌زند و تا سه بار تلاش مجدد می‌کند. نوارِ پیشرفت، درصد، مرحله (دریافت/چرخش IP/ادغام) و خطا را زنده نشان می‌دهد.
 
-### 🛠 پایداریِ زنجیرهٔ انتشار (CI)
-- **رفعِ باگِ امضای نصاب در GitHub Actions:** فایلِ کلیدِ `updater.key` اکنون بدونِ هیچ فاصله/خطِ جدید نوشته می‌شود — رمزگشایِ سخت‌گیرانهٔ base64 در tauri signer پیش‌تر با یک خطِ جدیدِ انتهایی و خطای «Invalid symbol 10, offset 348» شکست می‌خورد و job امضا قرمز می‌شد.
+def release_body(tag):
+    """بخشِ همان نسخه از docs/RELEASE_NOTES.md.
 
-### 🔢 هماهنگیِ نسخه
-- نسخه در `bors_config.py`، `installer/bors_setup.iss`، `frontend/src-tauri/tauri.conf.json` (از ۱.۰.۹ِ قدیمی) و `frontend/package.json` به ۱.۰.۱۹ هم‌تراز شد.
-"""
+    متنِ ثابتِ v1.0.19 در کدِ اسکریپت دست‌نویس مانده بود، پس ریلیزِ ۱٫۰٫۲۰ هم
+    همان یادداشت‌های ۱٫۰٫۱۹ را به کاربر نشان می‌داد. حالا اگر بخشِ نسخه پیدا
+    نشود صریحاً همان را می‌گوید، نه متنِ نسخهٔ دیگر.
+    """
+    path = os.path.join(ROOT, RELEASE_NOTES_FILE)
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        want = ("## " + tag, "## v" + tag.lstrip("v"), "## " + tag.lstrip("v"))
+        lines = text.splitlines()
+        out, hit = [], False
+        for ln in lines:
+            if ln.startswith("## "):
+                if hit:
+                    break
+                hit = ln.strip() in [w.strip() for w in want] or any(
+                    ln.strip().startswith(w) for w in want)
+                continue
+            if hit:
+                out.append(ln)
+        if hit and any(x.strip() for x in out):
+            return "\n".join(out).strip()
+        return ("یادداشتِ نسخه‌ای برای %s در %s پیدا نشد. "
+                "پیش از انتشارِ نهایی همین فایل را به‌روز کنید." % (tag, RELEASE_NOTES_FILE))
+    return "%s ساخته شد؛ %s موجود نیست." % (tag, RELEASE_NOTES_FILE)
+
+
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # CI / CLI may override the tag being published (RELEASE_TAG=v1.0.5). Default
 # keeps the local single-release flow working unchanged. The installer name is
 # derived from the tag so both always agree with bors_setup.iss output.
-TAG = os.environ.get("RELEASE_TAG", "v1.0.19")
+def _app_version():
+    """نسخه از bors_config.APP_VERSION — تنها لنگه‌ای که کاربر اجرا می‌کند.
+
+    پیش‌تر اینجا یک "v1.0.19" دست‌نویس بود؛ یعنی اسکریپتِ انتشار می‌توانست
+    مانیفستِ نسخهٔ قبلی را بسازد و هیچ‌کس متوجه نشود.
+    """
+    import re
+    with open(os.path.join(ROOT, "bors_config.py"), encoding="utf-8") as f:
+        m = re.search(r'^APP_VERSION\s*=\s*"([^"]+)"', f.read(), re.M)
+    if not m:
+        raise SystemExit("APP_VERSION in bors_config.py not found - cannot publish")
+    return m.group(1)
+
+
+TAG = os.environ.get("RELEASE_TAG") or ("v" + _app_version())
+RELEASE_BODY = release_body(TAG)
+print(f"[=] ریلیزِ هدف: {TAG}  (RELEASE_TAG unset means bors_config.APP_VERSION)")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
@@ -47,8 +83,21 @@ SIG_FILE = SETUP_EXE + ".sig"
 # v1.0.10 -- delta update. PATCH_FROM (default: the previously released
 # version) is the only version this patch is valid for; the updater refuses to
 # apply it on anything else and falls back to the full installer.
-PATCH_FROM = os.environ.get("PATCH_FROM", "1.0.9")
-PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM}_to_{TAG.lstrip('v')}.zip")
+# نسخهٔ مبدأِ پچ دیگر دست‌نویس نیست («1.0.9» کهنه): اگر PATCH_FROM داده نشود،
+# پچِ ساخته‌شده در dist بر اساسِ همان نسخهٔ مقصد پیدا می‌شود.
+PATCH_FROM = os.environ.get("PATCH_FROM", "")
+if not PATCH_FROM:
+    import glob as _glob
+    _cands = [x for x in _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*_to_%s.zip"
+                                                 % TAG.lstrip("v")))
+              if not x.endswith(".sig")]
+    if len(_cands) == 1:
+        _stem = os.path.basename(_cands[0]).replace("BorsTerminal_Patch_", "").split("_to_")[0]
+        PATCH_FROM = _stem
+        print(f"[=] مبدأِ پچ از رویِ فایلِ dist خوانده شد: {PATCH_FROM}")
+    elif len(_cands) > 1:
+        raise SystemExit("چند پچِ مختلف در dist است؛ PATCH_FROM را صریح بده: %s" % _cands)
+PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM or 'NONE'}_to_{TAG.lstrip('v')}.zip")
 PATCH_SIG = PATCH_ZIP + ".sig"
 
 def get_github_token():
