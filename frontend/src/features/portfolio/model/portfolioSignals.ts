@@ -7,6 +7,7 @@ import { z } from 'zod';
 import type { AgentSignal, Confidence, Direction } from '@contracts/signal';
 import type { PortfolioPayload } from '@contracts/portfolio';
 import { toFaDigits } from '@shared/lib/fmt';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 
 /** سقف تمرکز مجاز یک نماد در سبد به درصد */
 export const CONCENTRATION_CAP_PCT = 25;
@@ -44,11 +45,19 @@ function faNum(x: number, digits = 1): string {
   return toFaDigits(x.toFixed(digits));
 }
 
-function stopAsNumber(v: number | string | null | undefined): number | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
+/**
+ * حد ضرر آزادِ TEXT را به عدد می‌خواند. ارقام فارسی/عربی و جداکننده‌های هزارگان
+ * را نرمال می‌کند و در هر حالتِ غیرقابل‌تفسیر («—»، «بدون داده»، رشتهٔ خالی، یا
+ * صرفاً جداکننده) null برمی‌گرداند — صفر جعلی هرگز تولید نمی‌شود، چون صفر در
+ * مصرف‌کننده‌ها «حد ضررِ واقعیِ صفر» تلقی و hard_stop سرور را سایه می‌کند.
+ */
+export function stopAsNumber(v: number | string | null | undefined): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   if (typeof v === 'string') {
-    const n = Number(v.replace(/[^\d.-]/g, ''));
-    return Number.isFinite(n) && v.trim() !== '' ? n : null;
+    const cleaned = normalizeFa(v).replace(/[\s,،٬٫]/g, '');
+    if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
   }
   return null;
 }

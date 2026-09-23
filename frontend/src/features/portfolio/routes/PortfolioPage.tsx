@@ -9,7 +9,7 @@ import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useMarketCloses, usePortfolio } from '../api/usePortfolio';
-import { portfolioSignal } from '../model/portfolioSignals';
+import { portfolioSignal, stopAsNumber } from '../model/portfolioSignals';
 import {
   buildDelta,
   useTargetAllocation,
@@ -39,15 +39,6 @@ export function stopStatusTone(dist: number | null): 'red' | 'yellow' | 'green' 
   if (dist < 0) return 'red';
   if (dist < 5) return 'yellow';
   return 'green';
-}
-
-function stopAsNumber(v: number | string | null | undefined): number | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
-  if (typeof v === 'string') {
-    const n = Number(v.replace(/[^\d.-]/g, ''));
-    return Number.isFinite(n) && v.trim() !== '' ? n : null;
-  }
-  return null;
 }
 
 function faNum(x: number, digits = 1): string {
