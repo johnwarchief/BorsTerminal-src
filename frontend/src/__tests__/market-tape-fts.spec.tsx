@@ -63,17 +63,28 @@ describe('سنجه‌های FTS تابلو (lib/tapeFts)', () => {
     expect(perCapitaMt(100, 0)).toBeNull();
   });
 
-  it('سرانه خرید/فروش از ردیف تابلو', () => {
-    const r = row();
-    expect(buyPerCapitaMt(r)).toBe(5);
-    expect(sellPerCapitaMt(r)).toBe(2);
+  it('سرانه خرید/فروش از ردیف تابلو — (سهم÷تعداد)×vwap÷1e7', () => {
+    const r = row({
+      buy_i_vol: 1_000_000, // سهمِ خرید حقیقی (نه ریال)
+      buy_count_i: 100,
+      sell_i_vol: 200_000,
+      sell_count_i: 40,
+      q_tot_cap: 5_000_000_000, // ارزش کل ریالی
+      q_tot_tran: 500_000, // حجم کل سهمی ⇒ vwap = 10000 ریال
+    });
+    expect(buyPerCapitaMt(r)).toBe(10); // (1e6/100)*10000/1e7
+    expect(sellPerCapitaMt(r)).toBe(5); // (2e5/40)*10000/1e7
   });
 
-  it('اگر حجم به تعداد برگه باشد (عدد کوچک)، با قیمت ضرب می‌شود تا ۰.۰ نشود', () => {
-    // ۵۰ هزار برگه تقسیم بر ۵۰ خریدار = ۱۰۰۰ برگه به ازای هر نفر
-    // در قیمت ۵۰۰۰ ریال = ۵ میلیون ریال = ۰.۵ میلیون تومان
-    const r = row({ buy_i_vol: 50_000, buy_count_i: 50, p_closing: 5000 });
-    expect(buyPerCapitaMt(r)).toBe(0.5);
+  it('vwap غایب ⇒ قیمت پایانی؛ همیشه به‌ارزش تبدیل می‌شود (بدون حدسِ بزرگی)', () => {
+    // q_tot_cap/q_tot_tran غایب → vwap = p_closing = 5000 → (1000/2)*5000/1e7 = 0.25
+    const r = row({ buy_i_vol: 1000, buy_count_i: 2, p_closing: 5000, p_last: 5000 });
+    expect(buyPerCapitaMt(r)).toBe(0.25);
+  });
+
+  it('قیمت صفر/غایب ⇒ null، نه صفرِ جعلی', () => {
+    const r = row({ buy_i_vol: 1000, buy_count_i: 2, p_closing: 0, p_last: 0 });
+    expect(buyPerCapitaMt(r)).toBeNull();
   });
 
   it('پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) تشخیص و فیلتر می‌شود', () => {
@@ -130,7 +141,13 @@ describe('حل وضعیت FTS', () => {
 
 describe('جدول تابلو بهینه‌شده', () => {
   it('ستون‌های سرانه خرید/فروش و وضعیت FTS را نشان می‌دهد', () => {
-    render(<TapeTable rows={[row()]} selected="" onSelect={() => {}} />);
+    // buy_i_vol/sell_i_vol سهم‌اند؛ vwap = q_tot_cap÷q_tot_tran = 10000 ریال
+    const r = row({
+      buy_i_vol: 500_000, buy_count_i: 100,
+      sell_i_vol: 200_000, sell_count_i: 100,
+      q_tot_cap: 1_000_000_000, q_tot_tran: 100_000,
+    });
+    render(<TapeTable rows={[r]} selected="" onSelect={() => {}} />);
     expect(screen.getByText('سرانه خرید')).toBeInTheDocument();
     expect(screen.getByText('سرانه فروش')).toBeInTheDocument();
     expect(screen.getByText('وضعیت FTS')).toBeInTheDocument();

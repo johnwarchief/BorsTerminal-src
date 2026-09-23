@@ -33,30 +33,44 @@ export function perCapitaMt(
   return pc == null ? null : pc / M_TUMAN_FROM_RIAL;
 }
 
-export function buyPerCapitaMt(
-  r: Pick<MarketRow, 'buy_i_vol' | 'buy_count_i'> & Partial<Pick<MarketRow, 'p_closing' | 'p_last'>>,
-): number | null {
-  const pc = perCapita(r.buy_i_vol, r.buy_count_i);
-  if (pc == null) return null;
-  const mt = pc / M_TUMAN_FROM_RIAL;
-  const price = r.p_closing ?? r.p_last ?? 0;
-  if (mt < 0.05 && price > 0) {
-    return (pc * price) / M_TUMAN_FROM_RIAL;
-  }
-  return mt;
+/**
+ * قیمت میانگین وزنی (vwap) به ریال — آینهٔ mstat_engine:599.
+ * ارزش کل ÷ حجم کل = ریال هر سهم؛ اگر نبود، قیمت پایانی/آخرین.
+ */
+function vwapRial(r: Partial<Pick<MarketRow, 'q_tot_cap' | 'q_tot_tran' | 'p_closing' | 'p_last'>>): number {
+  const cap = r.q_tot_cap;
+  const vol = r.q_tot_tran;
+  if (cap != null && vol != null && vol > 0) return cap / vol;
+  return r.p_closing ?? r.p_last ?? 0;
 }
 
-export function sellPerCapitaMt(
-  r: Pick<MarketRow, 'sell_i_vol' | 'sell_count_i'> & Partial<Pick<MarketRow, 'p_closing' | 'p_last'>>,
-): number | null {
-  const pc = perCapita(r.sell_i_vol, r.sell_count_i);
-  if (pc == null) return null;
-  const mt = pc / M_TUMAN_FROM_RIAL;
-  const price = r.p_closing ?? r.p_last ?? 0;
-  if (mt < 0.05 && price > 0) {
-    return (pc * price) / M_TUMAN_FROM_RIAL;
-  }
-  return mt;
+type PerCapitaRow = Partial<
+  Pick<MarketRow, 'buy_i_vol' | 'sell_i_vol' | 'buy_count_i' | 'sell_count_i' | 'q_tot_cap' | 'q_tot_tran' | 'p_closing' | 'p_last'>
+>;
+
+/**
+ * سرانهٔ خرید حقیقی به میلیون تومان — (سهمِ خرید حقیقی ÷ تعدادِ معامله) × vwap ÷ 1e7.
+ * آینهٔ mstat_engine pc_buy: buy_i_vol تعدادِ سهم است (نه ریال)، پس یک‌بار و
+ * بدون هیچ حدسِ بزرگی، به‌ارزشِ ریالی تبدیل و سپس به م.ت می‌رسد. قیمتِ فاقد/صفر
+ * ⇒ null (هرگز عددِ جعلی نه).
+ */
+export function buyPerCapitaMt(r: PerCapitaRow): number | null {
+  const count = r.buy_count_i;
+  const vol = r.buy_i_vol;
+  if (count == null || count <= 0 || vol == null) return null;
+  const price = vwapRial(r);
+  if (!(price > 0)) return null;
+  return ((vol / count) * price) / M_TUMAN_FROM_RIAL;
+}
+
+/** سرانهٔ فروش حقیقی به میلیون تومان — قرینهٔ buyPerCapitaMt (آینهٔ pc_sell). */
+export function sellPerCapitaMt(r: PerCapitaRow): number | null {
+  const count = r.sell_count_i;
+  const vol = r.sell_i_vol;
+  if (count == null || count <= 0 || vol == null) return null;
+  const price = vwapRial(r);
+  if (!(price > 0)) return null;
+  return ((vol / count) * price) / M_TUMAN_FROM_RIAL;
 }
 
 /** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */
