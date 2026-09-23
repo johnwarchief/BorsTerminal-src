@@ -195,22 +195,21 @@ def _preflight():
     print("  BorsTerminal_Ultimate - smart preflight")
     print("=" * 66)
     ok = True
-    # v1.0.15: مسیرها باید نسبت به ریشهٔ داده باشد، نه cwd.
+    # v1.0.20: این بلوکِ inline حذف شد و همان bors_config.ensure_market_db() صدا
+    # زده می‌شود. شرطِ قبلی «فقط اگر وجود نداشت استخراج کن» بود، پس baselineِ تازهٔ
+    # هر نسخهٔ جدید هرگز جای فایلِ استخراج‌شدهٔ قدیمی را نمی‌گرفت و دادهٔ بازار
+    # برای کاربرِ ارتقا‌یافته کهنه می‌ماند. ensure_market_db حالا اثرِ انگشتیِ
+    # market.db.lzma را با مُهرِ کنارِ فایل مقایسه می‌کند و در صورتِ تفاوت
+    # بازمی‌گرداند، با نقلِ جدول‌هایِ کاربر.
+    try:
+        import bors_config
+        db = bors_config.ensure_market_db(verbose=True)
+    except Exception as e:
+        print("  [ERR] ensure_market_db failed:", e)
+        db = os.path.join(_data_root(), "market.db")
+        ok = False
     root = _data_root()
     print(f"  data root: {root}")
-    db = os.path.join(root, "market.db")
-    lzma_path = os.path.join(root, "market.db.lzma")
-    # خود استخراج market.db.lzma → market.db (فقط بار اول؛ کاملاً آفلاین)
-    if not os.path.exists(db) and os.path.exists(lzma_path):
-        print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
-        try:
-            import lzma
-            with open(lzma_path, "rb") as fi, open(db, "wb") as fo:
-                fo.write(lzma.decompress(fi.read()))
-            print("  [OK]  market.db extracted from .lzma")
-        except Exception as e:
-            print("  [ERR] lzma extraction failed:", e)
-            ok = False
     if not os.path.exists(db):
         print("  [ERR] market.db not found next to this EXE.")
         print("        Keep market.db/.lzma in the SAME folder as the EXE")

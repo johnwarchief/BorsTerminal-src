@@ -124,59 +124,192 @@ def _resolve_market_db():
 
 DB_PATH = _resolve_market_db()
 
-def ensure_market_db(verbose=False):
-    """(idempotent) اگر market.db نبود از market.db.lzma بازسازی می‌کند.
+# جدول‌هایی از market.db که نوشتهٔ خودِ کاربرند، نه دادهٔ بازار. هنگامِ
+# جایگزینیِ baseline این‌ها از فایلِ قدیمی به فایلِ تازه منتقل می‌شوند؛ در غیر
+# این صورت یک ارتقای ساده، واچ‌لیست و تصمیماتِ کاربر را پاک می‌کرد.
+MARKET_DB_USER_TABLES = ("user_watchlists", "selection_decisions")
 
-    bors_entry در preflight با verbose=True صدا می‌زند تا کاربر پیشرفت ~۴۰
-    ثانیه‌ای استخراج را ببیند. بقیهٔ مسیرها از DB_PATH استفاده می‌کنند.
-    """
-    if os.path.exists(DB_PATH):
-        # فایل هست ولی ممکن است «خالی/ناقص» باشد — یعنی یک مسیر (مثل
-        # --codal-worker که preflight را دور می‌زند) با sqlite3.connect خالی
-        # آن را ساخته باشد. در آن صورت market.db واقعی هرگز استخراج نمیشد و
-        # برنامه بدون هیچ دادهٔ قیمتی بالا می‌آمد. بهبودها را حفظ کنیم.
+_REQUIRED_MARKET_TABLES = {"instruments", "daily_prices", "financial_statements"}
+
+
+def _market_db_tables(path):
+    """مجموعهٔ جدول‌های یک فایل DB (بدون نوشتن). خطا ⇒ مجموعهٔ خالی."""
+    try:
+        import sqlite3 as _sq
+        probe = _sq.connect("file:%s?mode=ro" % path, uri=True)
         try:
-            import sqlite3 as _sq
-            _probe = _sq.connect(f"file:{DB_PATH}?mode=ro", uri=True)
-            _have = {r[0] for r in _probe.execute(
+            return {r[0] for r in probe.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'")}
-            _probe.close()
-        except Exception:
-            _have = set()
-        # حداقل جداول موردنیاز برای داشتن دیتای بازار معتبر. financial_statements
-        # حتماً لازم است: اسکرینر بدون آن ۵۰۰ می‌دهد. در market.db.lzmaیِ ناقصِ
-        # v1.0.7/8 این جدول غایب بود ولی instruments+daily_prices موجود بودند،
-        # پس این نگهبان دیتای ناقص را می‌پذیرفت — و چون فایلِ قدیمی روی دیسک
-        # محفوظ می‌ماند، حتی ارتقا هم آن را اصلاح نمی‌کرد.
-        if {"instruments", "daily_prices", "financial_statements"} <= _have:
-            return DB_PATH
-        # ناقص است: کنار بگذار و دوباره از market.db.lzma بازسازی کن.
-        try:
-            os.replace(DB_PATH, DB_PATH + ".incomplete")
-        except OSError:
-            pass
+        finally:
+            probe.close()
+    except Exception:
+        return set()
+
+
+def _sha256_file(path, chunk=1 << 20):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(chunk), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def _find_bundled_db_lzma():
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
-    for candidate in [os.path.join(exe_dir, "market.db.lzma"),
+    for candidate in (os.path.join(exe_dir, "market.db.lzma"),
                       os.path.join(WORK_DIR, "market.db.lzma"),
-                      "market.db.lzma", "../market.db.lzma"]:
-        if not os.path.exists(candidate):
-            continue
-        try:
-            import lzma
-            os.makedirs(WORK_DIR, exist_ok=True)
-            target_db = os.path.join(WORK_DIR, "market.db")
-            if verbose:
-                print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
-            with open(candidate, "rb") as fi, open(target_db, "wb") as fo:
-                fo.write(lzma.decompress(fi.read()))
-            if verbose:
-                print("  [OK]  market.db extracted from .lzma")
-            return target_db
-        except Exception as e:
-            if verbose:
-                print("  [ERR] lzma extraction failed:", e)
-            return None
+                      "market.db.lzma", "../market.db.lzma"):
+        if candidate and os.path.exists(candidate):
+            return candidate
     return None
+
+
+def _baseline_stamp_path():
+    return os.path.join(os.path.dirname(DB_PATH) or ".", "market.db.baseline")
+
+
+def _read_baseline_stamp():
+    try:
+        with open(_baseline_stamp_path(), encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return None
+
+
+def _write_baseline_stamp(value):
+    try:
+        with open(_baseline_stamp_path(), "w", encoding="utf-8") as f:
+            f.write(value)
+    except OSError:
+        pass
+
+
+def _carry_user_tables(old_db, new_db, verbose=False):
+    """جدول‌های کاربر را از baselineِ قدیمی به تازه کپی می‌کند. بی‌صدا رد می‌شود
+    اگر جدولی در هیچ‌کدام نبود — نبودنش شکافِ داده نیست، فقط بی‌اهمیت است."""
+    import sqlite3 as _sq
+    try:
+        # عمدیِ read-only نیست: فایلِ .stale ممکن است WALِ خودش را داشته باشد و
+        # بازکردنِ ro بدونِ ability to build -shm شکست می‌خورد و نقلِ دادهٔ کاربر
+        # بی‌صدا رد می‌شد.
+        src = _sq.connect(old_db)
+    except Exception:
+        return
+    try:
+        have = {r[0] for r in src.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        dst_have = _market_db_tables(new_db)
+        dst = _sq.connect(new_db)
+        try:
+            for t in MARKET_DB_USER_TABLES:
+                if t not in have or t not in dst_have:
+                    continue
+                cols = [r[1] for r in dst.execute('PRAGMA table_info("%s")' % t)]
+                collist = ",".join('"%s"' % c for c in cols)
+                rows = src.execute('SELECT %s FROM "%s"' % (collist, t)).fetchall()
+                if not rows:
+                    continue
+                dst.execute('DELETE FROM "%s"' % t)
+                dst.executemany(
+                    'INSERT INTO "%s" (%s) VALUES (%s)'
+                    % (t, collist, ",".join("?" * len(cols))), rows)
+                if verbose:
+                    print("  [OK]  carried %s: %d rows" % (t, len(rows)))
+            dst.commit()
+        finally:
+            dst.close()
+    except Exception as e:
+        if verbose:
+            print("  [WARN] could not carry user tables:", e)
+    finally:
+        src.close()
+
+
+def ensure_market_db(verbose=False):
+    """(idempotent) market.db را از market.db.lzma می‌سازد یا تازه می‌کند.
+
+    دو شرطِ جدا گلوگاه بودند:
+      ۱) ناقص‌بودن — یک مسیرِ فرعی (مثل --codal-worker) با connect خالی فایل
+         می‌ساخت و اسکرینر تا ابد «داده نیست» می‌داد.
+      ۲) کهنه‌بودن — استخراج فقط با «وجود نداشتن فایل» فعال می‌شد، پس baselineِ
+         تازهٔ یک نسخهٔ جدید هرگز جای فایلِ استخراج‌شدهٔ قدیمی را نمی‌گرفت و
+         «ارتقای انباشته» برای دادهٔ بازار عملاً دروغ بود.
+    راهِ دوم: اثرِ انگشتی (sha256) از .lzma کنارِ فایل نگه می‌داریم؛ اگر عوض شد،
+    baselineِ تازه استخراج و جدول‌هایِ کاربر از نسخهٔ قدیمی منتقل می‌شود. فایلِ
+    قدیمی با پسوندِ .stale-<ts> نگه داشته می‌شود، نه حذف.
+    """
+    src_lzma = _find_bundled_db_lzma()
+    want = None
+    if src_lzma:
+        try:
+            want = _sha256_file(src_lzma)
+        except OSError:
+            want = None
+
+    if os.path.exists(DB_PATH):
+        tables = _market_db_tables(DB_PATH)
+        complete = _REQUIRED_MARKET_TABLES <= tables
+        current = bool(want) and _read_baseline_stamp() == want
+        if complete and current:
+            return DB_PATH
+        reason = "incomplete" if not complete else "stale baseline"
+        if verbose:
+            print("  [..]  market.db is %s — re-extracting from market.db.lzma" % reason)
+        stale_path = DB_PATH + ".stale"
+        try:
+            os.replace(DB_PATH, stale_path)
+        except OSError:
+            return DB_PATH
+        # sidecar‌های WAL حتماً باید با فایلِ اصلی جابه‌جا شوند. اگر بمانند،
+        # SQLite آن‌ها را به baselineِ تازه می‌چسباند و محتوای قدیمی دوباره
+        # بازپخش می‌شود — یعنی جایگزینیِ تازه بی‌صدا به همان دادهٔ کهنه برمی‌گردد.
+        for suffix in ("-wal", "-shm"):
+            try:
+                if os.path.exists(DB_PATH + suffix):
+                    os.replace(DB_PATH + suffix, stale_path + suffix)
+            except OSError:
+                pass
+        # baselineِ تازه را استخراج کن، بعد دادهٔ کاربر را از نسخهٔ قدیمی برگردان
+        new_db = _extract_market_db(src_lzma, verbose=verbose)
+        if new_db:
+            _carry_user_tables(stale_path, new_db, verbose=verbose)
+            _write_baseline_stamp(want or "")
+        return new_db or DB_PATH
+
+    new_db = _extract_market_db(src_lzma, verbose=verbose)
+    if new_db:
+        _write_baseline_stamp(want or "")
+    return new_db or DB_PATH
+
+
+def _extract_market_db(src_lzma, verbose=False):
+    """market.db.lzma را به WORK_DIR/market.db باز می‌کند. None یعنی نشد."""
+    if not src_lzma:
+        return None
+    try:
+        import lzma
+        os.makedirs(WORK_DIR, exist_ok=True)
+        target_db = os.path.join(WORK_DIR, "market.db")
+        tmp = target_db + ".part"
+        if verbose:
+            print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
+        with open(src_lzma, "rb") as fi, open(tmp, "wb") as fo:
+            fo.write(lzma.decompress(fi.read()))
+        if not _REQUIRED_MARKET_TABLES <= _market_db_tables(tmp):
+            if verbose:
+                print("  [ERR] extracted market.db is missing required tables")
+            os.remove(tmp)
+            return None
+        os.replace(tmp, target_db)
+        if verbose:
+            print("  [OK]  market.db extracted from .lzma")
+        return target_db
+    except Exception as e:
+        if verbose:
+            print("  [ERR] lzma extraction failed:", e)
+        return None
+
 
 # دیتابیس اختصاصی کاربر — هیچ‌وقت با آپدیت بازار جایگزین نمی‌شود.
 # محل ذخیره: WORK_DIR (کنار EXE در حالت پرتابیل، وگرنه %LOCALAPPDATA%) یا

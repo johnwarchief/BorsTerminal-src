@@ -217,9 +217,19 @@ def main():
     ck(r is not None and r["is_consolidated"] == 1, "صورتِ مالیِ جدید: is_consolidated=1 (تلفیقی)")
     ck(r is not None and r["fiscal_year"] == "1405", "صورتِ مالیِ جدید: fiscal_year=1405")
     ck(r is not None and r["unit_norm"] == "mrl", "صورتِ مالیِ جدید: unit_norm=mrl")
-    # backfill نباید کاری برایش داشته باشد
+    # backfill نباید کاری برایش داشته باشد.
+    # توجه: fs_filled شمارشِ کلِ ردیف‌های unit_norm=NULL در دیتابیس است، نه فقط
+    # ردیفِ تازه — و رویِ market.db واقعی همیشه تعدادی از آن‌ها وجود دارد
+    # (امروزه ۳۶۷؛ پیش از بازسازی ۱۱۱۸). ادعایِ ==۰ بنابراین هیچ‌وقت رویِ دادهٔ
+    # واقعی برقرار نبوده و تست از قبل می‌سوخت. معنایِ درستِ همان ادعا: ردیفِ
+    # تازه نباید چیزی به شمارهِ ردیف‌هایِ نیازمندِ پرکردن اضافه کند.
+    cf.backfill_derived(conn, verbose=False)   # settle pre-existing drift
     st = cf.backfill_derived(conn, verbose=False)
-    ck(st.get("fs_filled", -1) == 0, "backfill_derived برای ردیفِ جدید کاری ندارد (fs_filled=0)")
+    ck(st.get("fs_filled", -1) == 0,
+       "backfill_derived برای ردیفِ جدید کاری ندارد (fs_filled == unit_norm NULL هایِ از قبل موجود)")
+    ck(fs_tn not in {r["tracing_no"] for r in conn.execute(
+        "SELECT tracing_no FROM financial_statements WHERE unit_norm IS NULL")},
+       "ردیفِ تازه خودش در شمارهِ ردیف‌هایِ بی-unit_norm نیست")
 
     # ═══════════ سناریو ۲د: نمادِ جدید حالا گزارش داده → bulk_scan ═══════════
     print("\n== سناریو ۲د: نمادِ جدید بعد از اولین گزارش ==")
