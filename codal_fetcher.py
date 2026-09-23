@@ -1231,6 +1231,48 @@ def _pick_sheets(opts):
     return income, income_consol, balance
 
 
+def _resilient_get(s, url, tries=4, timeout=60, quiet=False):
+    """GET `url` with the same block-recovery path fetch_page uses.
+
+    scrape_report/rebuild_fs previously called s.get() directly, so a 429/403
+    WAF ban during the long crawl aborted the letter instead of rotating the
+    cellular IP. Here a genuine block (429/403) or a network stall rotates via
+    ADB (when enabled and not POLITE) and retries with a short cooldown; other
+    HTTP errors just retry with jitter. Returns a Response, or None when the
+    block persists after `tries` attempts."""
+    for attempt in range(tries):
+        try:
+            r = s.get(url, headers=_headers(), timeout=timeout)
+        except Exception as e:
+            if attempt == tries - 1:
+                if not quiet:
+                    print(f"  [get] failed {url[-40:]} - {type(e).__name__}: {e}",
+                          flush=True)
+                return None
+            if not POLITE and rotate_ip_via_adb():
+                _control_sleep(8)
+            else:
+                time.sleep(random.uniform(2.5, 5.0))
+            continue
+        if r.status_code in (429, 403):
+            if attempt < tries - 1:
+                if not POLITE and rotate_ip_via_adb():
+                    wait = 6
+                else:
+                    wait = 20 * (2 ** attempt)
+                if not quiet:
+                    print(f"  [get] {r.status_code} on {url[-40:]} - retry in {wait}s",
+                          flush=True)
+                _control_sleep(wait)
+                continue
+            if not quiet:
+                print(f"  [get] {r.status_code} persists on {url[-40:]} - giving up",
+                      flush=True)
+            return None
+        return r
+    return None
+
+
 def scrape_report(s, url):
     """Fetch report page and extract numbers from the correct sheets.
 
@@ -1242,7 +1284,9 @@ def scrape_report(s, url):
     rows carry the true basis rather than the (often misleading) letter title."""
     out, meta, unit = {}, {}, None
     rank = {}
-    r = s.get(url, headers=_headers(), timeout=60)
+    r = _resilient_get(s, url)
+    if r is None:
+        return out, meta, unit
     r.raise_for_status()
     html = r.text
 
@@ -1257,8 +1301,8 @@ def scrape_report(s, url):
     if targets:
         for role, sid, consol in targets:
             try:
-                ds = datasource(s.get(f"{url}&sheetId={sid}",
-                                      headers=_headers(), timeout=60).text)
+                sr = _resilient_get(s, f"{url}&sheetId={sid}")
+                ds = datasource(sr.text) if sr is not None else None
             except Exception:
                 ds = None
             if not ds:
@@ -2546,7 +2590,7 @@ def repair_broken_rows(limit=None):
     return ok, ok2
 
 
-def rebuild_fs(limit=None, symbols=None, polite=None):
+def rebuild_fs(limit=None, symbols=None, polite=None, latest_only=False):
     """بازسازیِ از نوِ financial_statements با پارسرِ اصلاح‌شدهٔ «نام‌محور /
     مبنای غیرتلفیقی».
 
@@ -2566,20 +2610,34 @@ def rebuild_fs(limit=None, symbols=None, polite=None):
         polite = 1.7 if POLITE else 0.4
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
     s = make_session()
-    q = ("SELECT f.tracing_no, f.symbol, cn.url, f.revenue, f.is_consolidated "
-         "FROM financial_statements f "
-         "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
-         "WHERE cn.url IS NOT NULL")
+    if latest_only:
+        # Only the NEWEST FS letter per symbol — the row the FTS screen and the
+        # fundamental table actually display. Codal is currently degraded
+        # (~45-90s per Decision.aspx, proven server-side not IP-throttle), so a
+        # full 8324-letter historical rebuild cannot finish in one night; this
+        # maximises corrected symbol coverage within the latency budget.
+        q = ("SELECT f.tracing_no, f.symbol, cn.url, f.revenue, f.is_consolidated "
+             "FROM financial_statements f "
+             "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
+             "JOIN (SELECT symbol, MAX(tracing_no) AS mt FROM financial_statements "
+             "      GROUP BY symbol) m ON m.mt = f.tracing_no "
+             "WHERE cn.url IS NOT NULL")
+    else:
+        q = ("SELECT f.tracing_no, f.symbol, cn.url, f.revenue, f.is_consolidated "
+             "FROM financial_statements f "
+             "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
+             "WHERE cn.url IS NOT NULL")
     params = []
     if symbols:
         q += f" AND f.symbol IN ({','.join('?' * len(symbols))})"
         params += list(symbols)
-    q += " ORDER BY f.tracing_no"
+    q += " ORDER BY f.tracing_no DESC" if latest_only else " ORDER BY f.tracing_no"
     if limit:
         q += f" LIMIT {int(limit)}"
     rows = conn.execute(q, params).fetchall()
     print(f"[rebuild-fs] candidates: {len(rows)} "
-          f"({len(symbols) if symbols else 'all'} symbol scope)", flush=True)
+          f"({len(symbols) if symbols else 'all'} symbol scope"
+          f"{', latest-per-symbol' if latest_only else ''})", flush=True)
     changed = skipped = errors = 0
     skipped_neg = 0
     for t, sym, url, old_rev, old_consol in rows:
@@ -3233,6 +3291,9 @@ if __name__ == "__main__":
                          "(re-scrape همهٔ نامه‌های در دسترس؛ جایگزینی مبالغ+مبنا؛ skip روی خطای کدال)")
     ap.add_argument("--symbols", default=None,
                     help="لیست نمادها (جدا با کاما) برای محدودکردن --rebuild-fs")
+    ap.add_argument("--latest-only", action="store_true",
+                    help="فقط جدیدترین نامهٔ صورتمالی هر نماد (ردیفی که صفحهٔ FTS نشان میدهد) — "
+                         "برای بازسازی شبانه وقتی کدال کند است")
     ap.add_argument("--backfill", action="store_true",
                     help="Backfill FS/MS for symbols with codal financial-statement titles but no FS row")
     ap.add_argument("--update-symbols", type=int, default=0,
@@ -3254,7 +3315,7 @@ if __name__ == "__main__":
         repair_broken_rows(limit=args.limit)
     elif args.rebuild_fs:
         syms = [x.strip() for x in args.symbols.split(",")] if args.symbols else None
-        rebuild_fs(limit=args.limit, symbols=syms)
+        rebuild_fs(limit=args.limit, symbols=syms, latest_only=args.latest_only)
     elif args.update_symbols:
         conn = sqlite3.connect(DB_PATH, timeout=60)
         syms = [r[0] for r in conn.execute(
