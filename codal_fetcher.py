@@ -316,13 +316,23 @@ def _norm_date(s):
 
 # Row-label patterns (after normalization: spaces + ZWNJ stripped, ي/ك unified)
 PATTERNS = {
+    # NOTE: patterns are RANK-ORDERED — index 0 is the most authoritative. The
+    # rank-based parse_tables picks the lowest-rank match across the whole sheet,
+    # so the total row «جمع درآمدهای عملیاتی» (rank 0) always beats a component
+    # line like «درآمدهای سود سهام». The final catch-all now excludes ANY label
+    # containing سودسهام/سرمایهگذاری (dividend / investment-sale components),
+    # which previously leaked into `revenue` for holdings and understated it.
     "revenue": [r"^جمعدرآمدهایعملیاتی", r"^درآمدهایعملیاتی$", r"^درآمدعملیاتی",
                 r"^فروشخالص", r"^مبلغفروش", r"^بهایفروش", r"^جمعفروش",
-                r"^درآمدهعملیاتی", r"^فروش", r"^درآمد(?!سرمایهگذاری|سودسهام)"],
+                r"^درآمدهعملیاتی", r"^فروش$",
+                r"^درآمد(?!.*سودسهام)(?!.*سرمایهگذاری)"],
     "gross_profit": [r"سود\(?زیان\)?ناخالص", r"سودناخالص", r"سودوزيانناخالص"],
     "operating_profit": [r"سود\(?زیان\)?عملیات", r"سودعملیاتی", r"سودوزيانعملياتي"],
-    "net_profit": [r"سود\(?زیان\)?خالص", r"سودخالص", r"سودوزيانخالص", r"سود\(?زیان\)?قابلتخصیصبهصاحبان",
-                   r"^زیانخالص"],
+    # Exact-anchored «سود(زیان) خالص» first so the final net-profit row wins over
+    # «سود خالص عملیات در حال تداوم» / «سود خالص هر سهم» (both looser matches).
+    "net_profit": [r"^سود\(?زیان\)?خالص$", r"^سودخالص$", r"^زیانخالص$",
+                   r"سود\(?زیان\)?قابلتخصیصبهصاحبان",
+                   r"سود\(?زیان\)?خالص", r"سودخالص", r"سودوزيانخالص", r"^زیانخالص"],
     "total_assets": [r"^جمعداراییها$", r"^جمع داراییها$", r"^جمع داراییها", r"کل داراییها", r"مجموع داراییها",
                      r"^جمعدارایی(?!های)", r"^مجموعدارایی(?!های)"],
     "total_liabilities": [r"^جمعبدهیها$", r"^جمع بدهیها$", r"^جمعبدیها", r"کل بدهیها", r"مجموع بدهیها",
@@ -363,7 +373,7 @@ FS_UPSERT = ("INSERT OR REPLACE INTO financial_statements ("
              + ",".join("?" * len(FS_COLS)) + ")")
 
 
-def fs_derived(title: str, period_end: str, unit):
+def fs_derived(title: str, period_end: str, unit, consol_override=None):
     """۴ ستونِ مشتقِ یک صورتِ مالی — همان منطقی که db_backfill_derived می‌زد،
     اما حالا موقعِ درج. برمی‌گرداند: (is_audited, is_consolidated,
     fiscal_year, unit_norm).
@@ -372,11 +382,19 @@ def fs_derived(title: str, period_end: str, unit):
     طبقه‌بندیِ عنوان/واحد دقیقاً از همان توابعِ یگانه می‌آید
     (_is_audited/_is_consolidated/_classify_unit) تا مسیرِ درج و مسیرِ
     بک‌فیل هرگز از هم جدا نشوند.
+
+    consol_override: وقتی scrape_report برگردانده، مبنایِ واقعیِ شیتِ
+    استخراج‌شده است (۰=غیرتلفیقی/standalone، ۱=تلفیقی). این بر عنوانِ نامه
+    اولویت دارد — چون یک نامهٔ «تلفیقی» می‌تواند شیتِ سودوزیانِ غیرتلفیقی
+    (sheetId=1) را هم در خود داشته باشد و جزوه مبنایِ غیرتلفیقی را می‌خواهد.
     """
     import fts_engine as _fe
     t = title or ""
     audited = 1 if _fe._is_audited(t) else 0
-    consol = 1 if _fe._is_consolidated(t) else 0
+    if consol_override is not None:
+        consol = 1 if consol_override else 0
+    else:
+        consol = 1 if _fe._is_consolidated(t) else 0
     year = None
     pe = (period_end or "").strip()
     if len(pe) >= 4 and pe[:4].isdigit():
@@ -1106,12 +1124,24 @@ _BS_SIDE_KEYS = {"total_liabilities", "total_equity", "capital",
                  "retained_earnings"}
 
 
-def parse_tables(ds, out):
-    """Walk table cells and pick key items.
+def parse_tables(ds, out, rank=None):
+    """Walk table cells and pick key items using RANK-BASED selection.
+
+    Each PATTERNS list is rank-ordered (index 0 = most authoritative). For every
+    key we keep the value from the LOWEST-rank matching row across the whole
+    datasource, so a definitive total row («جمع درآمدهای عملیاتی») always wins
+    over a component line («درآمدهای سود سهام») regardless of sheet order.
+
+    `rank` is an optional dict {key: best_rank_seen} that persists ACROSS calls
+    (scrape_report parses several sheets into one `out`); passing it lets a later
+    sheet's better-ranked row overwrite an earlier sheet's weaker one. When None,
+    a fresh dict is used (single-call/back-compat behaviour).
 
     Handles BOTH classic vertical tables (label in col 1, values col 2+) AND
     Codal's side-by-side balance sheets (assets label in col 1, liabilities/
     equity label in col 5 with values col 6+)."""
+    if rank is None:
+        rank = {}
     unit = None
     for sheet in ds.get("sheets", []):
         for tbl in sheet.get("tables", []):
@@ -1125,59 +1155,133 @@ def parse_tables(ds, out):
                 if not label and not rlabel:
                     continue
                 for key, pats in PATTERNS.items():
-                    if out.get(key) is not None:
+                    # find the best (lowest-index) pattern this row matches
+                    best, side = None, False
+                    if label:
+                        for i, p in enumerate(pats):
+                            if re.search(p, label):
+                                best = i
+                                break
+                    if best is None and rlabel and key in _BS_SIDE_KEYS:
+                        for i, p in enumerate(pats):
+                            if re.search(p, rlabel):
+                                best, side = i, True
+                                break
+                    if best is None:
                         continue
-                    # left side: col 1 label, values from col 2+
-                    if label and any(re.search(p, label) for p in pats):
-                        for ci in sorted(k for k in grid[r] if k)[1:]:
-                            v = num(grid[r][ci])
-                            if v not in (None, 0.0):
-                                out[key] = v
-                                break
-                        break
-                    # right side: col 5 label, values from col 6+
-                    # (BS keys only — IS rows never live in side-by-side tables)
-                    if rlabel and key in _BS_SIDE_KEYS and any(re.search(p, rlabel) for p in pats):
-                        for ci in sorted(k for k in grid[r] if k):
-                            if ci <= 5:
-                                continue
-                            v = num(grid[r][ci])
-                            if v not in (None, 0.0):
-                                out[key] = v
-                                break
-                        break
+                    # already have an equal-or-better candidate for this key?
+                    if out.get(key) is not None and rank.get(key, 1 << 30) <= best:
+                        continue
+                    cols = sorted(k for k in grid[r] if k)
+                    cols = [ci for ci in cols if ci > 5] if side else cols[1:]
+                    val = None
+                    for ci in cols:
+                        v = num(grid[r][ci])
+                        if v not in (None, 0.0):
+                            val = v
+                            break
+                    if val is None:
+                        continue
+                    out[key] = val
+                    rank[key] = best
     return unit
 
 
+def _sheet_options(html):
+    """Parse the report's sheet dropdown into [(sheetId, name), ...].
+
+    Codal's <option> tags are NOT closed with </option> (they run into the next
+    <option>), so we capture the value plus the text up to the following
+    option/select. Returns [] when the page carries no dropdown."""
+    out = []
+    for m in re.finditer(
+            r'<option[^>]*value="(\d+)"[^>]*>(.*?)(?=<option|</select>)',
+            html, re.S):
+        name = re.sub(r"<[^>]+>", "", m.group(2))
+        name = re.sub(r"\s+", " ", name.replace("\u200c", " ")).strip()
+        if name:
+            out.append((m.group(1), name))
+    return out
+
+
+def _pick_sheets(opts):
+    """Choose the sheetIds we need, honouring the FTS jozve's STANDALONE basis.
+
+    Returns (income_sid, income_is_consolidated, balance_sid). Standalone
+    («صورت سود و زیان» / «صورت وضعیت مالی», no «تلفیقی») is preferred; we fall
+    back to the consolidated sheet only when no standalone one exists. The
+    «جامع» (comprehensive-income) variants are ignored."""
+    inc_s = inc_c = bs_s = bs_c = None
+    for val, name in opts:
+        n = name.replace("\u200c", " ")
+        consol = "تلفیقی" in n
+        if ("سود و زیان" in n) and ("جامع" not in n):
+            if consol:
+                inc_c = inc_c or val
+            else:
+                inc_s = inc_s or val
+        elif ("وضعیت مالی" in n) or ("ترازنامه" in n):
+            if consol:
+                bs_c = bs_c or val
+            else:
+                bs_s = bs_s or val
+    income = inc_s or inc_c
+    income_consol = bool(income and inc_s is None and inc_c is not None)
+    balance = bs_s or bs_c
+    return income, income_consol, balance
+
+
 def scrape_report(s, url):
-    """Fetch report page and extract numbers; crawl inner sheets if needed."""
+    """Fetch report page and extract numbers from the correct sheets.
+
+    Codal renders the base Decision.aspx page WITHOUT the embedded datasource;
+    the numbers live on per-sheet pages reached via `&sheetId=N`. We read the
+    sheet dropdown, then fetch the STANDALONE income statement and STANDALONE
+    balance sheet (falling back to consolidated only when standalone is absent).
+    The parsed basis is reported back in meta['is_consolidated'] so downstream
+    rows carry the true basis rather than the (often misleading) letter title."""
     out, meta, unit = {}, {}, None
+    rank = {}
     r = s.get(url, headers=_headers(), timeout=60)
     r.raise_for_status()
     html = r.text
-    ds = datasource(html)
-    if ds:
-        unit = parse_tables(ds, out)
-        meta = {"period": ds.get("period"), "end": ds.get("periodEndToDate")}
-    if (out.get("revenue") is None or out.get("gross_profit") is None
-            or out.get("total_assets") is None
-            or out.get("total_liabilities") is None
-            or out.get("total_equity") is None):
-        for sid in re.findall(r'<option[^>]*value="(\d+)"', html)[:6]:
+
+    income_sid, income_consol, balance_sid = _pick_sheets(_sheet_options(html))
+    targets = []
+    if income_sid is not None:
+        targets.append(("income", income_sid, income_consol))
+    if balance_sid is not None:
+        targets.append(("balance", balance_sid, None))
+
+    basis_consol = None
+    if targets:
+        for role, sid, consol in targets:
             try:
-                ds2 = datasource(s.get(f"{url}&sheetId={sid}", headers=_headers(), timeout=60).text)
+                ds = datasource(s.get(f"{url}&sheetId={sid}",
+                                      headers=_headers(), timeout=60).text)
             except Exception:
+                ds = None
+            if not ds:
                 continue
-            if not ds2:
-                continue
-            unit = parse_tables(ds2, out) or unit
-            meta = meta or {"period": ds2.get("period"), "end": ds2.get("periodEndToDate")}
-            if (out.get("revenue") is not None and out.get("gross_profit") is not None
-                    and out.get("total_assets") is not None
-                    and out.get("total_liabilities") is not None
-                    and out.get("total_equity") is not None):
-                break
+            unit = parse_tables(ds, out, rank) or unit
+            meta.setdefault("period", ds.get("period"))
+            meta.setdefault("end", ds.get("periodEndToDate"))
+            if role == "income":
+                meta["has_income"] = True
+                if consol is not None:
+                    basis_consol = consol
+            elif role == "balance":
+                meta["has_balance"] = True
+    else:
+        # Legacy single-sheet page: datasource embedded in the base HTML.
+        ds = datasource(html)
+        if ds:
+            unit = parse_tables(ds, out, rank) or unit
+            meta = {"period": ds.get("period"), "end": ds.get("periodEndToDate")}
+
+    meta["is_consolidated"] = 1 if basis_consol else 0
     return out, meta, unit
+
 
 
 def kind_of(title):
@@ -1944,7 +2048,8 @@ def _deep_extract(rows, known_pe, known_ms_pe, fs_done, ms_done, conn):
                                meta.get("end"), n[5])
                         + tuple(vals.get(k) for k in FS_KEYS)
                         + (unit, n[7], now)
-                        + fs_derived(n[3], meta.get("end"), unit))
+                        + fs_derived(n[3], meta.get("end"), unit,
+                                     meta.get("is_consolidated")))
             return None
         return None
 
@@ -1970,13 +2075,24 @@ def dedupe_symbol(sym):
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
     try:
         removed = removed_ms = 0
-        latest = dict(conn.execute(
-            "SELECT period_end, MAX(tracing_no) FROM financial_statements "
-            "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
-        for pe, mx in latest.items():
+        # FTS jozve basis = STANDALONE (غیرتلفیقی). Per period_end keep the
+        # standalone row when one exists, else the consolidated; tie-break on the
+        # latest tracing_no (اصلاحیه). Previously this kept MAX(tracing_no)
+        # blindly, which could delete the standalone row and keep a consolidated
+        # one — the opposite of the required basis.
+        keep = {}
+        for pe, tno, consol in conn.execute(
+                "SELECT period_end, tracing_no, COALESCE(is_consolidated,0) "
+                "FROM financial_statements WHERE symbol=? AND period_end IS NOT NULL",
+                (sym,)).fetchall():
+            cur = keep.get(pe)
+            # prefer lower is_consolidated (0=standalone), then higher tracing_no
+            if cur is None or (consol, -tno) < (cur[1], -cur[0]):
+                keep[pe] = (tno, consol)
+        for pe, (tno, _c) in keep.items():
             cur = conn.execute(
                 "DELETE FROM financial_statements WHERE symbol=? AND period_end=? AND tracing_no<>?",
-                (sym, pe, mx))
+                (sym, pe, tno))
             removed += cur.rowcount
         latest_ms = dict(conn.execute(
             "SELECT period_end, MAX(tracing_no) FROM monthly_sales "
@@ -2430,6 +2546,93 @@ def repair_broken_rows(limit=None):
     return ok, ok2
 
 
+def rebuild_fs(limit=None, symbols=None, polite=None):
+    """بازسازیِ از نوِ financial_statements با پارسرِ اصلاح‌شدهٔ «نام‌محور /
+    مبنای غیرتلفیقی».
+
+    چرا این لازم است: پارسرِ قدیمی فقط ۶ شیتِ اولِ کرک‌شونده را می‌خواند و
+    «اولین ردیفِ درآمدی» را برمی‌داشت؛ برای هلدینگ‌ها این یعنی «درآمد سود
+    سهام» به‌جای «جمع درآمدهای عملیاتی»، و چون شیتِ غیرتلفیقی (sheetId=1) هرگز
+    در ۶ گزینهٔ اول نبود، مبنای تلفیقی ذخیره می‌شد. حالا هر نامهٔ در دسترس
+    دوباره scrape می‌شود و هم مبالغ و هم مبنای واقعی (is_consolidated) جایگزین
+    می‌گردد.
+
+    قراردادِ ایمنی: نامه‌هایی که «خطای سیستمی» می‌دهند یا datasource ندارند
+    SKIP می‌شوند و ردیفِ موجود دست‌نخورده می‌ماند — هرگز عدد جعلی نمی‌سازیم و
+    هرگز مقدار را به صفر/NULL برگردانده «تمیز» نمی‌کنیم. فقط ردیفی به‌روز
+    می‌شود که revenue واقعاً parse شده باشد. idempotent و قابلِ ازسرگیری.
+    """
+    if polite is None:
+        polite = 1.7 if POLITE else 0.4
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    s = make_session()
+    q = ("SELECT f.tracing_no, f.symbol, cn.url, f.revenue, f.is_consolidated "
+         "FROM financial_statements f "
+         "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
+         "WHERE cn.url IS NOT NULL")
+    params = []
+    if symbols:
+        q += f" AND f.symbol IN ({','.join('?' * len(symbols))})"
+        params += list(symbols)
+    q += " ORDER BY f.tracing_no"
+    if limit:
+        q += f" LIMIT {int(limit)}"
+    rows = conn.execute(q, params).fetchall()
+    print(f"[rebuild-fs] candidates: {len(rows)} "
+          f"({len(symbols) if symbols else 'all'} symbol scope)", flush=True)
+    changed = skipped = errors = 0
+    skipped_neg = 0
+    for t, sym, url, old_rev, old_consol in rows:
+        try:
+            out, meta, unit = scrape_report(s, url)
+        except Exception:
+            errors += 1
+            continue
+        # system-error page / no datasource -> out empty or no revenue: SKIP
+        if not out or out.get("revenue") is None:
+            skipped += 1
+            continue
+        # SAFEGUARD: a negative «جمع درآمدهای عملیاتی» means a bank / financial
+        # institution, whose operating-revenue total is net of interest expense
+        # and can legitimately go negative. That is NOT the jozve's industrial
+        # «فروش / درآمد عملیاتی» concept, so we must not overwrite the row with
+        # it — skip and leave the existing value intact (never corrupt, never
+        # fabricate). Banks lack a «سود ناخالص» row anyway, so the FTS margin
+        # screen already excludes them via gross_profit = NULL.
+        if out.get("revenue") < 0:
+            skipped_neg += 1
+            continue
+        consol = 1 if meta.get("is_consolidated") else 0
+        # Income-statement fields are replaced WHOLESALE so a basis switch
+        # (consolidated -> standalone) never leaves a mixed-basis row (e.g. a
+        # stale consolidated gross_profit sitting beside a standalone revenue).
+        # Balance-sheet fields use COALESCE(new, old) so a letter whose standalone
+        # balance sheet is missing/unreachable can never null out good existing
+        # data — we only ever improve them.
+        conn.execute(
+            "UPDATE financial_statements SET revenue=?, gross_profit=?, operating_profit=?, "
+            "net_profit=?, basic_eps=?, "
+            "total_assets=COALESCE(?,total_assets), "
+            "total_liabilities=COALESCE(?,total_liabilities), "
+            "total_equity=COALESCE(?,total_equity), capital=COALESCE(?,capital), "
+            "retained_earnings=COALESCE(?,retained_earnings), "
+            "is_consolidated=?, unit_norm=COALESCE(?,unit_norm) WHERE tracing_no=?",
+            (out.get("revenue"), out.get("gross_profit"), out.get("operating_profit"),
+             out.get("net_profit"), out.get("basic_eps"),
+             out.get("total_assets"), out.get("total_liabilities"),
+             out.get("total_equity"), out.get("capital"), out.get("retained_earnings"),
+             consol, _classify_unit(unit), t))
+        if old_rev != out.get("revenue") or (old_consol or 0) != consol:
+            changed += 1
+            print(f"  [{sym}] {t}: revenue {old_rev} -> {out.get('revenue')} | "
+                  f"consol {old_consol}->{consol} | gross={out.get('gross_profit')}", flush=True)
+        time.sleep(polite)
+    print(f"[rebuild-fs] changed={changed} skipped(no-data/system-error)={skipped} "
+          f"skipped(neg-revenue/bank)={skipped_neg} exceptions={errors}", flush=True)
+    conn.close()
+    return changed
+
+
 def backfill_missing_fs(limit=None):
     """Backfill صورتهای مالی برای نمادهایی که در codal_notices عنوان
     'صورت مالی' دارند ولی هنوز در financial_statements استخراج نشدهاند.
@@ -2831,7 +3034,8 @@ def fetch_symbol(symbol):
             ok_fs += 1
         row = (t, sym, comp, title, kind_of(title), meta.get("period"),
                meta.get("end"), pub) + tuple(vals.get(k) for k in FS_KEYS) \
-            + (unit, url, now) + fs_derived(title, meta.get("end"), unit)
+            + (unit, url, now) + fs_derived(title, meta.get("end"), unit,
+                                            meta.get("is_consolidated"))
         fs.append(row)
     if fs:
         conn.executemany(FS_UPSERT, fs)
@@ -3024,6 +3228,11 @@ if __name__ == "__main__":
                     help="Smart global-feed sync (no per-symbol search; browser-verified 2026-08-27)")
     ap.add_argument("--repair", action="store_true",
                     help="ترمیم ردیف‌های MS/FS موجود ولی خالی (re-scrape با پارسر جدید)")
+    ap.add_argument("--rebuild-fs", action="store_true",
+                    help="بازسازی financial_statements با پارسرِ نام‌محور/مبنای غیرتلفیقی "
+                         "(re-scrape همهٔ نامه‌های در دسترس؛ جایگزینی مبالغ+مبنا؛ skip روی خطای کدال)")
+    ap.add_argument("--symbols", default=None,
+                    help="لیست نمادها (جدا با کاما) برای محدودکردن --rebuild-fs")
     ap.add_argument("--backfill", action="store_true",
                     help="Backfill FS/MS for symbols with codal financial-statement titles but no FS row")
     ap.add_argument("--update-symbols", type=int, default=0,
@@ -3043,6 +3252,9 @@ if __name__ == "__main__":
         fetch_symbol(args.symbol)
     elif args.repair:
         repair_broken_rows(limit=args.limit)
+    elif args.rebuild_fs:
+        syms = [x.strip() for x in args.symbols.split(",")] if args.symbols else None
+        rebuild_fs(limit=args.limit, symbols=syms)
     elif args.update_symbols:
         conn = sqlite3.connect(DB_PATH, timeout=60)
         syms = [r[0] for r in conn.execute(
