@@ -71,9 +71,9 @@ FTS_V10_DEFAULTS = {
 MRL_TO_RIAL = 1e6      # جداول کدال «میلیون ریال» هستند
 BT_FACTOR = 1e-4       # میلیون ریال → میلیارد تومان (حذف ۴ رقم راست)
 
-# مبنای تورم/افزایش قیمت — همان عددی که fts_engine به‌عنوان «تورم سالانه» در
-# شاخص ۱ به کار می‌برد (fts_thresholds.json → inflation_min).
-_INFLATION_FALLBACK = 58.0
+# مبنای «رشد بیش از تورم» عددِ مستقلی نیست: همان هدفِ ۶۰٪ جزوه است (حکم ۳ —
+# کف ۴۰٪ برای قبولی، ۶۰٪ برای پوشش تورم). ثابتِ ۵۸٪ بی‌منبع بود و حذف شد.
+_INFLATION_FALLBACK = 60.0
 
 
 def v10_thresholds(cfg: dict = None) -> dict:
@@ -109,7 +109,7 @@ def v10_thresholds(cfg: dict = None) -> dict:
                     break
                 except (TypeError, ValueError):
                     pass
-    out["inflation_benchmark"] = _f(cfg.get("inflation_min")) or _INFLATION_FALLBACK
+    out["inflation_benchmark"] = _f(cfg.get("v10_monetary_growth_min")) or _INFLATION_FALLBACK
     return out
 
 

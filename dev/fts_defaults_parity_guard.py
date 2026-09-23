@@ -104,6 +104,14 @@ def main():
         ck(srv <= ui and (ui - srv) == set(extra),
            f"{key}: اختلافِ کشو دقیقاً {list(extra)} است (استثنای v2.1)، نه چیزی دیگر")
 
+    # سومین لایه: فال‌بک‌هایِ متنِ fts_engine (وقتی کلید از config بیفتد) هم باید
+    # همان عددِ سرور باشند — واگراییِ این‌ها scoresِ scan_symbol و bulk_scan را
+    # از هم دور می‌کند و گاردِ پاریتی آن را می‌گیرد، اما دیر.
+    import fts_engine
+    for key, dflt in sorted(fts_engine.DEFAULT_TH.items()):
+        ck(key in py and _same(py[key], dflt),
+           f"fts_engine.DEFAULT_TH[{key}] == سرور ({dflt!r} ⇄ {py.get(key)!r})")
+
     ck(_same(ts.get("__SALES_TO_MCAP_GUIDE_DEFAULT"), py.get("sales_to_mcap_min")),
        "SALES_TO_MCAP_GUIDE_DEFAULT == sales_to_mcap_min سرور"
        f" ({ts.get('__SALES_TO_MCAP_GUIDE_DEFAULT')!r} ⇄ {py.get('sales_to_mcap_min')!r})")

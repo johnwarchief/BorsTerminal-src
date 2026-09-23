@@ -8,7 +8,6 @@ import { http } from '@shared/api/http';
 
 export const FtsConfigPayloadSchema = z.object({
   growth_min: z.number(),
-  inflation_min: z.number(),
   eps_years: z.number(),
   margin_min: z.number(),
   margin_optimal: z.number(),
@@ -45,7 +44,6 @@ export type FtsConfig = z.infer<typeof FtsConfigPayloadSchema>;
 /** پیش‌فرض‌های جزوهٔ FTS — مرجع Reset و seed اسلایدرها */
 export const FTS_GUIDE_DEFAULTS = {
   growth_min: 40.0,
-  inflation_min: 58.0,
   eps_years: 3,
   margin_min: 20.0,
   margin_optimal: 30.0,

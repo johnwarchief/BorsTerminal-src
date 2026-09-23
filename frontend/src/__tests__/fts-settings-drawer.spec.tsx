@@ -244,6 +244,26 @@ describe('پنل تنظیمات FTS', () => {
     });
   });
 
+  it('کف رشد و هدف رشد دو عددِ مستقلند (۴۰ در برابر ۶۰)، ذخیره هدف را نباید به کف بررساند', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('ذخیرهٔ پیش‌شرط‌ها')).toBeInTheDocument());
+    // مانعِ «کانفیگ از سرور رسید»: draft یک‌بار با پاسخِ GET بازنشانی می‌شود و
+    // تغییرِ پیشِ آن لحظه گم می‌شود (همان مانعی که تست‌های همسایه می‌گذارند)
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
+    const floor = screen.getByLabelText('حداقل درصد رشد درآمد کدال') as HTMLInputElement;
+    const target = screen.getByLabelText('هدف درصد رشد (پوشش تورم)') as HTMLInputElement;
+    expect(floor.value).toBe('40');
+    expect(target.value).toBe('60');
+    fireEvent.change(floor, { target: { value: '45' } });
+    fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
+    await waitFor(() => {
+      const posts = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
+      const body = JSON.parse((posts[posts.length - 1][1] as RequestInit).body as string) as Record<string, unknown>;
+      expect(body.growth_min).toBe(45);
+      expect(body.v10_monetary_growth_min).toBe(60);
+    });
+  });
+
   it('تاگل شاخص ۲ خاموش یعنی v10_eps_years=1', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByText('الزام سابقه عملکرد سودسازی ۳ ساله')).toBeInTheDocument());

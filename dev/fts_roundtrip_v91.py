@@ -24,7 +24,7 @@ ck('filter_m141' in orig, 'filter_m141 exposed by GET /api/fts/config')
 ck('min_trade_val' in orig, 'min_trade_val exposed by GET /api/fts/config')
 
 # همان مجموعه‌ای که saveFtsConfig() می‌فرستد
-patch = {'growth_min': 41.0, 'inflation_min': 59.0, 'eps_years': 4, 'margin_min': 21.0,
+patch = {'growth_min': 41.0, 'v10_monetary_growth_min': 61.0, 'eps_years': 4, 'margin_min': 21.0,
          'margin_optimal': 31.0, 'sales_to_mcap_min': 1.1, 'profit_potential_min': 31.0,
          'mcap_min_hmt': 1.0, 'watchlist_max': 51, 'suspended_max_stale_sessions': 4,
          'min_trade_val': 2.5, 'filter_m141': True,

@@ -590,9 +590,34 @@ def _dedupe_ym(rows, ytd_idx: int = 3):
 MRL_TO_RIAL = 1e6                        # جداول کدال همگی «میلیون ریال» هستند
 
 
+# فالۀبکِ آستانه‌ها وقتی کلید در cfg نباشد، فقط همین‌جا
+# نوشته می‌شود: پیش از این scan_symbol برای sales_to_mcap_min
+# «۱ٮ۰» و bulk_scan «۰ٮ۳۳» در فالۀبک داشت؛ گاردِ پاریتی
+# (confidence_engine_v973) همان واگرایی را می‌گرفت.
+DEFAULT_TH = {
+    "growth_min": 40.0,                # حکم ۳: کف قبولیِ رشد
+    "v10_monetary_growth_min": 60.0,   # حکم ۳: هدفِ پوشش تورم
+    "eps_years": 3,
+    "margin_min": 20.0,                # حکم ۲: کف حاشیهٔ ناخالص
+    "margin_optimal": 30.0,            # حکم ۲: استاندارد
+    "sales_to_mcap_min": 0.33,         # حکم ۴: کف فروش سالانه ÷ ارزش بازار
+    "profit_potential_min": 40.0,
+}
+
+
+def _th(cfg, key):
+    """آستانه از cfg، وگرنه DEFAULT_TH. صفرِ عمدی (「بدون گیت」) را حفظ می‌کند —
+    برخلافِ `or DEFAULT` که صفر را بی‌صدا به آستانهٔ پیش‌فرض برمی‌گرداند."""
+    try:
+        v = float((cfg or {}).get(key))
+    except (TypeError, ValueError):
+        return DEFAULT_TH[key]
+    return v if v == v else DEFAULT_TH[key]
+
+
 # =============================================== شاخص ۱: رشد فروش تجمیعی (YoY)
 def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float = 40.0,
-                       inflation_min: float = 58.0, sector: str = "") -> Optional[dict]:
+                       growth_target: float = 60.0, sector: str = "") -> Optional[dict]:
     """رشد فروش/درآمد تجمیعیِ «از ابتدای سال مالی تا ماه آخر» نسبت به همان دورهٔ سال قبل.
 
     قاعدهٔ جزوه (تأیید ممیزی): مخرج کسر **فروش تجمیعی دورهٔ متناظر سال قبل** است،
@@ -644,8 +669,10 @@ def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float 
         "revenue_basis": _revenue_basis(sector),
         "pass": growth >= min_growth,
         "threshold": min_growth,
-        "beats_inflation": growth >= inflation_min,
-        "inflation_min": inflation_min,
+        # «بیش از تورم» دیگر عددِ ۵۸ دست‌چین نیست: همان هدفِ ۶۰٪ جزوه است
+        # (کف ۴۰٪ برای قبولی، ۶۰٪ برای پوشش تورم — حکم ۳ مالک).
+        "beats_inflation": growth >= growth_target,
+        "growth_target": growth_target,
         "data_gap": False,
     }
 
@@ -1143,18 +1170,18 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     mcap = _f(market_cap_rials)
     ref = reference_annual(conn, symbol)
 
-    g = revenue_growth_yoy(conn, symbol, min_growth=_f(cfg.get("growth_min", 40.0)) or 40.0,
-                           inflation_min=_f(cfg.get("inflation_min", 58.0)) or 58.0,
+    g = revenue_growth_yoy(conn, symbol, min_growth=_th(cfg, "growth_min"),
+                           growth_target=_th(cfg, "v10_monetary_growth_min"),
                            sector=sector)
     e = eps_trend_3y(conn, symbol, years=int(cfg.get("eps_years", 3) or 3), sector=sector)
     gm = gross_margin(conn, symbol, min_margin=_f(cfg.get("margin_min", 20.0)) or 20.0,
                       optimal=_f(cfg.get("margin_optimal", 30.0)) or 30.0, ref=ref)
     annual = annualized_sales(conn, symbol, ref=ref)
     s2m = sales_to_marketcap(conn, symbol, mcap,
-                             min_ratio=_f(cfg.get("sales_to_mcap_min", 1.0)) or 1.0,
+                             min_ratio=_th(cfg, "sales_to_mcap_min"),
                              annual=annual, sector=sector, _no_sales=_no_sales)
     pot = gross_profit_potential(conn, symbol, mcap,
-                                 min_pct=_f(cfg.get("profit_potential_min", 40.0)) or 40.0,
+                                 min_pct=_th(cfg, "profit_potential_min"),
                                  gm=gm, annual=annual)
     sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
                         total_market_cap_rials=total_market_cap_rials,
@@ -1302,13 +1329,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     جدول بنیادی کدال است: پنج محور + score (۰..۵) + excluded.
     """
     cfg = cfg or {}
-    g_min = _f(cfg.get("growth_min", 40.0)) or 40.0
-    inf_min = _f(cfg.get("inflation_min", 58.0)) or 58.0
-    eps_years = int(cfg.get("eps_years", 3) or 3)
-    m_min = _f(cfg.get("margin_min", 20.0)) or 20.0
-    m_opt = _f(cfg.get("margin_optimal", 30.0)) or 30.0
-    s2m_min = _f(cfg.get("sales_to_mcap_min", 1.0)) or 1.0
-    pot_min = _f(cfg.get("profit_potential_min", 30.0)) or 30.0
+    g_min = _th(cfg, "growth_min")
+    g_target = _th(cfg, "v10_monetary_growth_min")
+    eps_years = max(1, int(_th(cfg, "eps_years")))
+    m_min = _th(cfg, "margin_min")
+    m_opt = _th(cfg, "margin_optimal")
+    s2m_min = _th(cfg, "sales_to_mcap_min")
+    pot_min = _th(cfg, "profit_potential_min")
 
     # ۱) صورت‌های مالی سالانه — مرجع + سری EPS
     # v9.7.3: کلید = norm_fa(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
@@ -1604,7 +1631,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "m141": hit141,
             "avg_trade_val_hmt": None if liq_hmt is None else round(liq_hmt, 3),
             "margin_optimal": margin is not None and margin >= m_opt,
-            "growth_excellent": growth is not None and growth >= inf_min,
+            "growth_excellent": growth is not None and growth >= g_target,
         })
     out.sort(key=lambda r: (r["excluded"], -r.get("primary_score", 0), -r["score"],
                             -r["mcap"], r["symbol"]))

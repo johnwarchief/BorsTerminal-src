@@ -64,7 +64,7 @@ def mrl_to_btom(value_million_rials):          # / 10,000  ("drop 4 digits")
 # ============================================================================
 GROWTH_MIN = 40.0
 GROWTH_FULL = 60.0
-INFLATION_BENCH = 58.0
+INFLATION_BENCH = 60.0   # هدفِ رشدِ جزوه (حکم ۳) — پیش‌تر ۵۸ بی‌منبع بود
 
 
 def sales_growth(current, prev):
@@ -249,10 +249,13 @@ def run_tests():
     T("G1", "F-01 prev=0 -> None (data gap, not pass)",
       is_none(sales_growth(100, 0)) and not growth_pass(sales_growth(100, 0)))
     T("G1", "F-01 prev=None -> None", is_none(sales_growth(100, None)))
+    g = sales_growth(165, 100)
+    T("G1", "F-01 65% meets the 60% growth target", approx(g, 65.0) and growth_beats_inflation(g), "got=%s" % g)
     g = sales_growth(158, 100)
-    T("G1", "F-01 58% meets inflation benchmark", approx(g, 58.0) and growth_beats_inflation(g), "got=%s" % g)
+    T("G1", "F-01 58% is below the 60% target (the old 58 benchmark is gone)",
+      approx(g, 58.0) and not growth_beats_inflation(g), "got=%s" % g)
     g = sales_growth(150, 100)
-    T("G1", "F-01 50% below inflation benchmark", not growth_beats_inflation(g), "got=%s" % g)
+    T("G1", "F-01 50% below growth target", not growth_beats_inflation(g), "got=%s" % g)
 
     # ---------------- G2: dynamic annualization (F-04) ----------------
     T("G2", "F-04 annualize n=3 -> x4", approx(annualize(1000, 3), 4000.0), "got=%s" % annualize(1000, 3))

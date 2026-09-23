@@ -328,7 +328,6 @@ _ADB_CFG = os.path.join(WORK_DIR, "adb_config.json")
 FTS_DEFAULTS = {
     # ۱) رشد فروش تجمیعی ÷ همان دورهٔ سال قبل
     "growth_min": 40.0,            # Min_Sales_Growth = ۴۰٪
-    "inflation_min": 58.0,         # بنچ‌مارک تورم سالانه = ۵۸٪ (بالای آن = عالی)
     # ۲) روند EPS — صورت مالی ۱۲ماههٔ حسابرسی‌شدهٔ شرکت اصلی
     "eps_years": 3,                # EPS_Consecutive_Growth_Years = ۳
     # ۳) حاشیه سود ناخالص = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰

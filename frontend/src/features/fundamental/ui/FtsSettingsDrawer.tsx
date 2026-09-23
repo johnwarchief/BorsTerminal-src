@@ -27,7 +27,7 @@ import {
 type DraftConfig = Pick<
   FtsConfig,
   'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min'
-> & { v10_sales_to_mcap_min: number };
+> & { v10_sales_to_mcap_min: number; v10_monetary_growth_min: number };
 
 /** حالت گیت نرخ‌گذاری دستوری — چندگزینه‌ای به‌جای تاگل خشک */
 type PricingGateMode = 'free_only' | 'jump_allowed' | 'all';
@@ -59,6 +59,8 @@ const INSURANCE_TOKEN = 'بیمه';
 function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
   return {
     growth_min: c?.growth_min ?? FTS_GUIDE_DEFAULTS.growth_min,
+    v10_monetary_growth_min:
+      c?.v10_monetary_growth_min ?? FTS_GUIDE_DEFAULTS.v10_monetary_growth_min,
     margin_min: c?.margin_min ?? FTS_GUIDE_DEFAULTS.margin_min,
     industry_mode: c?.industry_mode ?? FTS_GUIDE_DEFAULTS.industry_mode,
     suspended_max_stale_sessions: c?.suspended_max_stale_sessions ?? FTS_GUIDE_DEFAULTS.suspended_max_stale_sessions,
@@ -282,7 +284,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       /** ۱ب — فِیزیکی: رشد غیرمنفی + گستره؛ خاموش = برداشتن هر دو الزام (عدد منفی بک‌اند را رد می‌کند) */
       v10_volume_growth_min: 0,
       v10_volume_breadth_min: volumeGate ? FTS_GUIDE_DEFAULTS.v10_volume_breadth_min : 0,
-      v10_monetary_growth_min: draft.growth_min,
+      v10_monetary_growth_min: draft.v10_monetary_growth_min,
       /** اسلایدر شاخص ۴: کف نسبت فروش سالانه‌شده به ارزش بازار (۰.۱۰..۱.۰۰) */
       v10_sales_to_mcap_min: draft.v10_sales_to_mcap_min,
       margin_optimal: Math.max(draft.margin_min, FTS_GUIDE_DEFAULTS.margin_optimal),
@@ -302,7 +304,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
   const onReset = () => {
     const payload: Record<string, unknown> = {
       ...FTS_GUIDE_DEFAULTS,
-      v10_monetary_growth_min: FTS_GUIDE_DEFAULTS.growth_min,
+      v10_monetary_growth_min: FTS_GUIDE_DEFAULTS.v10_monetary_growth_min,
       v10_volume_growth_min: 0,
       v10_sales_to_mcap_min: SALES_TO_MCAP_GUIDE_DEFAULT,
       v10_volume_breadth_min: FTS_GUIDE_DEFAULTS.v10_volume_breadth_min,
@@ -375,8 +377,18 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           min={0}
           max={150}
           step={5}
-          hint={`پیش‌فرض جزوه: ${toFaDigits(FTS_GUIDE_DEFAULTS.growth_min)}٪ (یا تورم سالانه)`}
+          hint={`کف قبولی جزوه: ${toFaDigits(FTS_GUIDE_DEFAULTS.growth_min)}٪`}
           onChange={(v) => setDraft((d) => ({ ...d, growth_min: v }))}
+        />
+
+        <Slider
+          label="هدف درصد رشد (پوشش تورم)"
+          value={draft.v10_monetary_growth_min}
+          min={0}
+          max={150}
+          step={5}
+          hint="جزوه ۴۰٪ را کف می‌گیرد و ۶۰٪ را هدف؛ رشدی که به این نردست نرسد صرفاً تورمی است، پس این شماره را بین نهادید"
+          onChange={(v) => setDraft((d) => ({ ...d, v10_monetary_growth_min: v }))}
         />
 
         <ToggleRow
