@@ -77,5 +77,5 @@ pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True,
           name='BorsTerminal_Ultimate', debug=False, bootloader_ignore_signals=False,
           strip=False, upx=False,
-          console=True, icon=None)
+          console=True, icon='assets/bors.ico')
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='BorsTerminal_Ultimate')
