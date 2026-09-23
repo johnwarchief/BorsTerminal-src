@@ -37,6 +37,36 @@ vi.mock('@features/fundamental/api/useFtsScreen', () => ({
           tech_fib_zone: '38.2%',
           excluded: false,
         },
+        {
+          // ستاپِ روزانه دارد ولی وتوی سختِ هفتگی (چارت ۳) بر آن حاکم است
+          symbol: 'خار',
+          name: 'فولاد خار‌ساز',
+          sector_name: 'محصولات فلزی',
+          pricing_mode: 'آزاد',
+          score: 5,
+          rev_growth: 61.0,
+          gross_margin: 34.0,
+          sales_to_mcap: 1.8,
+          tech_trend_w: 'down',
+          tech_matrix_decision: 'REJECT',
+          tech_jet: true,
+          excluded: false,
+        },
+        {
+          // روند هفتگی قابل تشخیص نیست ⇒ وتو نیست، فقط نظر داده نمی‌شود
+          symbol: 'نوین',
+          name: 'تازه‌وارد بدون دو پیوت',
+          sector_name: 'فلزات اساسی',
+          pricing_mode: 'آزاد',
+          score: 4,
+          rev_growth: 45.0,
+          gross_margin: 26.0,
+          sales_to_mcap: 0.9,
+          tech_trend_w: 'na',
+          tech_matrix_decision: 'UNKNOWN',
+          tech_fib_zone: '61.8-70',
+          excluded: false,
+        },
       ],
     },
   }),
@@ -113,6 +143,17 @@ describe('ماژول قیف غربالگری نخبگان FTS (EliteFunnelHub)',
     fireEvent.click(screen.getByText('۱۰ واچلیست داغ 🔥'));
     expect(screen.getByText('ستاپ معاملاتی')).toBeInTheDocument();
     expect(screen.getByText('پرتاب ستاپ جت')).toBeInTheDocument();
+  });
+
+  it('وتوی سختِ هفتگی با ستاپِ روزانه دور زده نمی‌شود؛ بی‌داده وتو نیست', () => {
+    renderHub();
+    // هر چهار نماد در مرحلهٔ ۵۰تایی بنیادی دیده می‌شوند (هیچ‌کس پنهان نمی‌شود)
+    expect(screen.getAllByText('خار').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByText('۱۰ واچلیست داغ 🔥'));
+    // ولی سهمِ نزولیِ هفتگی با وجود f_jet وارد مرحلهٔ ۱۰نفره نمی‌شود
+    expect(screen.queryAllByText('خار')).toHaveLength(0);
+    // سهمِ تازه‌وارد (trend=na / decision=UNKNOWN) وتو نمی‌شود و باقی می‌ماند
+    expect(screen.getAllByText('نوین').length).toBeGreaterThan(0);
   });
 
   it('سوییچ به تب پورتفوی فعال، وضعیت وزن و سقف ۲۰٪ را نمایش می‌دهد', () => {

@@ -29,6 +29,7 @@ SUITES = [
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
+    ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
     ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
     # Data-Lifecycle (گام ۳۴/۳۵): ستون‌های مشتقِ خودکار + تاب‌آوریِ سینکِ افزایشی.
     # نکته: run() مسیر را با os.sep می‌سازد و سپس split می‌کند، پس آرگومانِ

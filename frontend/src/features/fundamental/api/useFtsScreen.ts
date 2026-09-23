@@ -40,6 +40,8 @@ export const FtsScreenRowSchema = z.object({
   exclusion_reasons: z.string().nullish(),
   m141: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),
+  /** وتوی سختِ روند هفتگی (چارت ۳) — اسکرینر جای خالیِ واچ‌لیست را پر نمی‌کند */
+  weekly_veto: z.boolean().nullish(),
   // FTS Technical Methodology Fields
   tech_trend_d: z.string().nullish(),
   tech_trend_w: z.string().nullish(),

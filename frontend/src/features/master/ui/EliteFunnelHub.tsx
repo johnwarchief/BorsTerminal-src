@@ -76,7 +76,10 @@ export function EliteFunnelHub() {
 
     const candidates = pool.filter((r) => {
       const mrk = marketMap.get(r.symbol);
-      const isWeeklyUp = r.tech_trend_w === 'up' || r.tech_matrix_decision === 'buy';
+      // وتوی سختِ هفتگی (چارت ۳): نزولی و خنثی هر دو ردند — هیچ ستاپِ روزانه‌ای
+      // آن را دور نمی‌زند. 'na' (بی‌داده) وتو نیست.
+      if (r.weekly_veto || r.tech_matrix_decision === 'REJECT') return false;
+      const isWeeklyUp = r.tech_trend_w === 'up' || r.tech_matrix_decision === 'PERMITTED';
       const hasFtsSetup = r.tech_jet || !!r.tech_fib_zone || r.tech_hourglass_active || mrk?.f_jet || mrk?.f_clock;
       return isWeeklyUp || hasFtsSetup;
     });

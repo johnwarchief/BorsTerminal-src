@@ -107,11 +107,11 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
 
       {/* ماتریس تصمیم‌گیری چندزمانه FTS */}
       {t?.matrix ? (
-        <div className={`rounded-xl border p-2.5 ${t.matrix.decision === 'PERMITTED' ? 'border-border-accent bg-accent-green/10' : 'border-border-c bg-accent-red/10'}`}>
+        <div className={`rounded-xl border p-2.5 ${t.matrix.decision === 'PERMITTED' ? 'border-border-accent bg-accent-green/10' : t.matrix.decision === 'REJECT' ? 'border-border-c bg-accent-red/10' : 'border-border-c bg-bg-card/40'}`}>
           <div className="mb-1 flex items-center justify-between">
             <span className="text-[11px] font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
-            <Badge tone={t.matrix.decision === 'PERMITTED' ? 'green' : 'red'}>
-              {t.matrix.decision === 'PERMITTED' ? 'ورود مجاز' : 'ممنوعیت ورود'}
+            <Badge tone={t.matrix.decision === 'PERMITTED' ? 'green' : t.matrix.decision === 'REJECT' ? 'red' : 'gray'}>
+              {t.matrix.decision === 'PERMITTED' ? 'ورود مجاز' : t.matrix.decision === 'REJECT' ? 'ممنوعیت ورود' : 'بدون رأی'}
             </Badge>
           </div>
           <p className="text-[11px] text-text-secondary leading-relaxed">{t.matrix.desc}</p>

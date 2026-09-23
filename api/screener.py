@@ -330,6 +330,29 @@ def get_screener():
             r["tech_hourglass_active"] = bool(hg.get("active"))
             r["tech_hourglass_action"] = hg.get("action")
 
+        # ---- وتوی روند هفتگی (چارت ۳: هم نزولی و هم خنثی ⇒ reject) ----
+        # داورِ انحصاری همین وتو `trend.matrix.decision` در api/chart.py است — همان
+        # چیزی که جدول بنیادی و نوارِ بج‌ها قرمز می‌کنند (useScreener.ts:69).
+        # پیش از این وتو فقط *نمایش* داده می‌شد و سهمِ وتو‌شده جای واچ‌لیستِ خود
+        # را نگه می‌داشت. «بی‌داده» وتو نیست: decision == UNKNOWN (کمتر از دو پیوت
+        # کاملِ هفتگی) واچ‌لیست را نمی‌سوزاند.
+        # نکتهٔ دانستن: تحلیل تکنیکال فقط روی حداکثر `watchlist_max` ردیفِ اول
+        # انجام می‌شود (هر ردیف یک fetchِ کاملِ تاریخچه است، نه یک کوئری)؛ پس
+        # ردیفِ وتوشده با ردیفِ رتبهٔ بعدی پر نمی‌شود و واچ‌لیست می‌تواند کوتاه‌تر
+        # از سقف بماند — این همان انقباضِ عمدیِ قیف است، نه باگ.
+        for r in rows:
+            if not r.get("watchlist"):
+                continue
+            if r.get("tech_matrix_decision") == "REJECT":
+                r["watchlist"] = False
+                r["weekly_veto"] = True
+                why = ("وتوی هفتگی — روند نزولی" if r.get("tech_trend_w") == "down"
+                       else "وتوی هفتگی — روند خنثی")
+                r["exclusion_reasons"] = " · ".join(
+                    [x for x in (str(r.get("exclusion_reasons") or "").strip(), why) if x])
+            else:
+                r["weekly_veto"] = False
+
         payload = {"status": "success", "count": len(rows), "data": rows,
                    "thresholds": cfg, "max_score": 5}
         _SCREENER_CACHE["cfg_hash"] = cfg_hash

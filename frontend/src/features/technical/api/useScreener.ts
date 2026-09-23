@@ -16,6 +16,7 @@ export const ScreenerRowSchema = z.object({
   score: z.number().nullish(),
   excluded: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),
+  weekly_veto: z.boolean().nullish(),
   tech_trend_d: z.string().nullish(),
   tech_trend_w: z.string().nullish(),
   tech_trend_m: z.string().nullish(),

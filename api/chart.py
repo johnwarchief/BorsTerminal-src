@@ -1328,11 +1328,20 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
             "setup": "NONE",
             "desc": "تایم هفتگی نزولی — وتوی کامل و ممنوعیت ورود (طبق چارت درختی FTS)",
         }
-    elif tW in ("range", "na"):
+    elif tW == "range":
         out["trend"]["matrix"] = {
             "decision": "REJECT",
             "setup": "NONE",
-            "desc": "تایم هفتگی خنثی/نامشخص — عدم ورود طبق چارت درختی FTS",
+            "desc": "تایم هفتگی خنثی — عدم ورود طبق چارت درختی FTS",
+        }
+    elif tW == "na":
+        # کمبود داده رأی نیست: دو پیوتِ کاملِ هفتگی نداریم (نماد تازه‌وارد یا
+        # سابقهٔ کوتاه). قبلاً همین حالت با «خنثی» یک‌جا REJECT می‌شد و سهمِ سالم
+        # بی‌دلیل خط قرمز می‌گرفت.
+        out["trend"]["matrix"] = {
+            "decision": "UNKNOWN",
+            "setup": "NONE",
+            "desc": "روند هفتگی قابل تشخیص نیست (کمتر از دو پیوت کامل) — نظر داده نمی‌شود",
         }
     elif tW == "up":
         if tD == "up":
