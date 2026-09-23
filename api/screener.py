@@ -240,6 +240,7 @@ def get_screener():
                                        m141_map=_m141m, liq_map=_liqm)
                 p = res["passes"]
                 r["score"] = res["score"]
+                r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
                 r["i2_pass"] = p["2_eps_trend"]
                 r["i3_pass"] = p["3_gross_margin"]
@@ -272,8 +273,9 @@ def get_screener():
                                          if _v4.get("annual_sales_bt") is not None
                                          else _an4.get("annual_sales_bt"))
                 r["annualize_months"] = _an4.get("months_used")
-            # رتبه‌بندی مجدد بر پایهٔ امتیازِ یکسان‌شده (مردودها آخر، سپس امتیاز نزولی)
-            rows.sort(key=lambda r: (r["excluded"], -r["score"],
+            # رتبه‌بندی: اول سه محورِ بلاکر (جزوه ص ۶)، بعد امتیازِ پنج‌تایی
+            rows.sort(key=lambda r: (r["excluded"], -int(r.get("primary_score") or 0),
+                                     -r["score"],
                                      -_num(r.get("mcap")), r["symbol"]))
 
         # واچ‌لیست: حداکثر watchlist_max سهمِ غیرمردود، مرتب بر اساس امتیاز

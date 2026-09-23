@@ -318,6 +318,9 @@ def _fts_row_to_result(r) -> dict:
         eps_series = None
     return {
         "score": int(r[11] or 0),
+        # مسیرِ مادی‌شده جدول fts_results را می‌خواند و ستونِ primary ندارد؛ از
+        # همان سه بیتِ ذخیره‌شده مشتق می‌شود تا پاریتیِ scan_symbol حفظ شود.
+        "primary_score": int(bool(r[2])) + int(bool(r[4])) + int(bool(r[6])),
         "verdict": r[12] or "",
         "excluded": bool(r[13]),
         "exclusion_reasons": (r[14].split(" · ") if r[14] else []),
@@ -1161,6 +1164,12 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
               "4_sales_to_mcap": passes_s2m,
               "5_industry": bool(sec["pass"])}
     score = sum(passes.values())
+    # جزوه ص ۶ در مقایسهٔ دزاگرس/هجرت: «سه آیتم اول مهم‌تر هستند پس اولویت ما
+    # دزاگرس است» — یعنی سه‌از‌پنج می‌تواند بر چهار‌از‌پنج ببرد. پس شمارشِ تختِ
+    # پنج‌تایی تنها معیارِ داوری نیست: F1-F3 بلاک‌اند و F4/F5 فقط مرتب‌سازیِ دوم.
+    # مقیاسِ ۰-۵ دست‌نخورده می‌ماند (مصرف‌کننده‌های ftsScoreOf به آن وابسته‌اند)؛
+    # چیزی که عوض می‌شود معنای رتبه‌بندی و «STRONG» است.
+    primary = sum(1 for k in ("1_growth", "2_eps_trend", "3_gross_margin") if passes[k])
 
     reasons = []
     if is_insurance_sector(sector):
@@ -1189,13 +1198,15 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     return {
         "symbol": symbol, "sector": sector, "pricing_mode": sec["verdict"],
         "market_cap_rials": mcap, "score": score, "passes": passes,
+        "primary_score": primary,
         "excluded": bool(reasons), "exclusion_reasons": reasons,
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
                    "sales_to_mcap": s2m, "profit_potential": pot, "sector": sec},
         "verdict": ("EXCLUDED" if reasons else
-                    "STRONG" if score >= 4 else "WATCH" if score >= 3 else "REJECT"),
+                    "STRONG" if score >= 4 and primary == 3 else
+                    "WATCH" if score >= 3 else "REJECT"),
     }
 
 
@@ -1261,7 +1272,10 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
                                m141_hit=bool(m141.get(key, False)),
                                avg_trade_val=liq.get(key),
                                _no_sales=no_sales))
-    out.sort(key=lambda r: (-r["score"], -_f(r.get("market_cap_rials")), r["symbol"]))
+    # رتبهٔ اول = سه محورِ بلاکر (جزوه ص ۶)، رتبهٔ دوم = جمعِ پنج‌تایی، بعد ارزش
+    # بازار و در نهایت نماد — تا ترتیبِ پایدار بماند.
+    out.sort(key=lambda r: (-r.get("primary_score", 0), -r["score"],
+                            -_f(r.get("market_cap_rials")), r["symbol"]))
     # فیلتر نهایی: ردیفهای excluded (تعلیق/بیمه/دستوری) جای واچ‌لیست را نمیگیرند
     clean = [r for r in out if not r["excluded"]]
     cap = int(cfg.get("watchlist_max", 50) or 50)
@@ -1567,6 +1581,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             "annualize_months": months_used,
             "mcap": mcap, "score": int(sum([i1, i2, i3, i4, i5])),
+            # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
+            "primary_score": int(sum([i1, i2, i3])),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
             "m141": hit141,
@@ -1574,7 +1590,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "margin_optimal": margin is not None and margin >= m_opt,
             "growth_excellent": growth is not None and growth >= inf_min,
         })
-    out.sort(key=lambda r: (r["excluded"], -r["score"], -r["mcap"], r["symbol"]))
+    out.sort(key=lambda r: (r["excluded"], -r.get("primary_score", 0), -r["score"],
+                            -r["mcap"], r["symbol"]))
     return out
 
 

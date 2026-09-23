@@ -1349,6 +1349,9 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
               "4b_profit_potential": bool(val.get("potential_pass"))}
     score = sum(1 for k in ("1_growth", "2_eps_trend", "3_gross_margin",
                             "4_sales_to_mcap", "5_industry") if passes[k])
+    # جزوه ص ۶: «سه آیتم اول مهم‌تر هستند» — F1-F3 بلاک‌اند، F4/F5 مرتب‌سازیِ دوم.
+    primary_score = sum(1 for k in ("1_growth", "2_eps_trend", "3_gross_margin")
+                        if passes[k])
 
     reasons = []
     if sec.get("verdict") == "mandatory" and sec.get("exclusion_active"):
@@ -1361,8 +1364,9 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
 
     return {"symbol": symbol, "sector": sector, "pricing_mode": sec.get("verdict"),
             "market_cap_rials": _f(market_cap_rials), "score": score,
+            "primary_score": primary_score,
             "passes": passes, "excluded": bool(reasons), "exclusion_reasons": reasons,
-            "verdict": ("EXCLUDED" if reasons else "STRONG" if score >= 4
+            "verdict": ("EXCLUDED" if reasons else "STRONG" if score >= 4 and primary_score == 3
                         else "WATCH" if score >= 3 else "REJECT"),
             "methodology": {"version": "FTS-v10", "axes": 5,
                             "layer_1_subchecks": ("1a_monetary", "1b_volume"),
