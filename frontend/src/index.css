@@ -67,13 +67,15 @@ body::before {
 }
 
 @layer components {
+/* گران‌ترین افکتِ کامپوزیت، روی همین کلاس و ۷۸ بار در صفحهٔ تابلو دیده می‌شود؛
+   اندازه‌گیریِ واقعی ~۲۵٪ موتورِ سه‌بعدی GPU را بی‌کار می‌گرفت (با حذفش ۰٫۳٪).
+   بلور فقط رویِ سطوحِ شناور (نوار چسبان، مودال‌ها، درُورها) می‌ماند که
+   واقعاً محتوایِ متحرک زیرشان می‌رود؛ آن‌ها یکی‌دو عددند. */
 .glass-panel {
   position: relative;
   border-radius: 1rem;
   border: 1px solid var(--hairline);
-  background: var(--glass-tint);
-  -webkit-backdrop-filter: blur(8px) saturate(1.2);
-  backdrop-filter: blur(8px) saturate(1.2);
+  background: var(--glass-tint-solid);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--glass-shadow);
   contain: paint;
   transform: translateZ(0);

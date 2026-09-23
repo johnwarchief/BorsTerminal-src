@@ -6,6 +6,7 @@ import { http } from '@shared/api/http';
 import { MarketFeedSchema, type MarketFeed, type MarketRow } from '@shared/types/marketRow';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { effectivePollMs } from '@shared/lib/marketHours';
 
 /** کفِ بازهٔ بازخوانی دیده‌بان — سبک‌تر از تابلو تا سایدبار سنگین نشود */
 const MIN_INTERVAL_MS = 30_000;
@@ -17,7 +18,7 @@ export function useWatchlistFeed() {
   return useQuery({
     queryKey: ['technical-watchlist'],
     queryFn: ({ signal }) => http<MarketFeed>('/api/market', { schema: MarketFeedSchema, signal }),
-    refetchInterval: paused ? false : Math.max(MIN_INTERVAL_MS, refetchIntervalMs),
+    refetchInterval: paused ? false : () => effectivePollMs(Math.max(MIN_INTERVAL_MS, refetchIntervalMs)),
     staleTime: 10_000,
     gcTime: 5 * 60_000,
     refetchOnWindowFocus: false,

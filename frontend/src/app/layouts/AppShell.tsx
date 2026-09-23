@@ -15,11 +15,13 @@ export function AppShell() {
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
 
-  // بهینه‌سازی پرفورمنس: تعلیق هوشمند پولینگ هنگام مینیمایز بودن پنجره یا عدم فوکوس
+  // بهینه‌سازی پرفورمنس: تعلیق هوشمند پولینگ هنگام مینیمایز بودن پنجره
+  // (فقطِ «بی‌فوکوس بودن» کمکی نمی‌کند: اندازه‌گیری نشان داد پنجرهٔ blur شده
+  // همان ۲۵٪ موتورِ سه‌بعدی را می‌خورد؛ مصرف از خودِ رندرِ صفحه است.)
   useEffect(() => {
     const handleVisibility = () => {
       useMarketStore.getState().setPaused(document.hidden);
-      // وقتی پنجره مخفی/مینیمایز است، انیمیشن‌های پیوسته را متوقف کن تا GPU بیدار نماند.
+      // وقتی پنجره مخفی/مینیمایز است، هیچ انیمیشنی نباید GPU را بیدار نگه دارد.
       document.documentElement.dataset.idle = document.hidden ? '1' : '0';
     };
     handleVisibility();

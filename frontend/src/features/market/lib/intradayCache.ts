@@ -22,13 +22,10 @@ export function dayKey(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-/** ساعات بازار ایران: شنبه..چهارشنبه، ۰۸:۴۵ تا ۱۲:۳۰ (زمان محلی) */
-export function isMarketOpen(d: Date = new Date()): boolean {
-  const wd = d.getDay(); // 0=Sun … 6=Sat
-  if (wd === 4 || wd === 5) return false; // پنجشنبه/جمعه
-  const mins = d.getHours() * 60 + d.getMinutes();
-  return mins >= 8 * 60 + 45 && mins <= 12 * 60 + 30;
-}
+/** ساعت معاملات به shared/lib/marketHours منتقل شد (واچ‌لیستِ تکنیکال هم به آن
+ *  نیاز دارد و importِ بینِ ویژگی‌ها در FSD ممنوع است). بازانتشار برایِ این است
+ *  که مصرف‌کننده‌هایِ این ماژول و تستشان همان مسیر را ببینند. */
+export { isMarketOpen } from '@shared/lib/marketHours';
 
 function storageOrNull(storage?: Storage): Storage | null {
   if (storage) return storage;
