@@ -2,6 +2,7 @@
 // بر مبنای جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
 // گام ۱ (تابلو و انتخاب S) → گام ۲ (تکنیکال ۲ زمانه T) → گام ۳ (بنیادی ۵ شاخصه F) → گام ۴ (مدیریت سرمایه و پلن معامله)
 import { toFaDigits } from '@shared/lib/fmt';
+import { ftsScoreOf } from '@contracts/fundamental';
 import type { BusInput } from './masterMath';
 import {
   type StrictGatesResult,
@@ -120,7 +121,7 @@ function numFa(n: number | null | undefined, digits = 1): string {
 /**
  * پیشنهاد خودکار افق بر اساس منطق جزوه FTS:
  * - ساعت شنی (۳ تا ۱۰ ساله): صرفاً برای نمادهای بزرگ و سوپربنیادی در کف تاریخی
- * - شخص روندگیر (بالای ۳ ماه): تایید ۵ شاخص بنیادی (امتیاز بالای ۴ یا ۷۰) و روند هفتگی صعودی
+ * - شخص روندگیر (بالای ۳ ماه): تایید ۵ شاخص بنیادی (امتیاز بنیادی ≥ ۴ از ۵) و روند هفتگی صعودی
  * - شخص نوسان‌گیر (زیر ۳ ماه): وجود ستاپ مستقیم ورود (جت، فیبو ۳۳-۴۰، یا کف دوقلو)
  */
 export function recommendHorizon(
@@ -130,7 +131,7 @@ export function recommendHorizon(
 ): StrategyHorizon {
   if (isSuper) return 'hourglass';
   if (hasSetup) return 'swing';
-  if (fundScore != null && (fundScore >= 4 || fundScore >= 70)) return 'trend';
+  if (fundScore != null && fundScore >= 4) return 'trend';
   return 'swing';
 }
 
@@ -173,7 +174,8 @@ export function evaluateFtsPipeline(args: {
     grossMarginPct = null,
   } = args;
 
-  const fundScore = args.fundScore ?? (typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null);
+  // امتیاز ۰ تا ۵ شمار شاخص‌های بنیادی (payload.score) — نه نمره ۰ تا ۱۰۰ اعتماد ترکیبی.
+  const fundScore = args.fundScore ?? ftsScoreOf(inputs.fundamental);
 
   const superFund = isSuperFundamental(inputs.fundamental);
   const hasSetup = hasDirectEntrySetup(inputs.technical);

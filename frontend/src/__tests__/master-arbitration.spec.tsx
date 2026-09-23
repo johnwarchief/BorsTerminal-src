@@ -363,21 +363,23 @@ describe('ماشین‌حساب برنامهٔ معاملاتی و DCA', () => {
 
 describe('سوییچ اهرم ساعت شنی', () => {
   it('سوپر‌بنیادی + زیر MA52 و RSI≤۳۰ ⇒ روشن با حجم ۲ تا ۴ برابر', () => {
-    const sw = hourglassSwitch({ superFundamental: true, weekly: { uptrend: false, belowMa52: true, rsi: 20 }, fundScore: 88 });
+    const sw = hourglassSwitch({ superFundamental: true, weekly: { uptrend: false, belowMa52: true, rsi: 20 }, fundScore: 5 });
     expect(sw.active).toBe(true);
     expect(sw.volumeMultiple).toBeGreaterThanOrEqual(2);
     expect(sw.volumeMultiple).toBeLessThanOrEqual(4);
   });
 
   it('نبود دادهٔ هفتگی ⇒ خاموش با دلیل صادقانه', () => {
-    const sw = hourglassSwitch({ superFundamental: true, weekly: EMPTY_WEEKLY, fundScore: 88 });
+    const sw = hourglassSwitch({ superFundamental: true, weekly: EMPTY_WEEKLY, fundScore: 5 });
     expect(sw.active).toBe(false);
     expect(sw.reason).toContain('منتشر نشده');
   });
 
-  it('سنجش سوپر‌بنیادی از نمرهٔ بنیادی صعودی', () => {
-    expect(isSuperFundamental(fundSig('bullish', 85))).toBe(true);
-    expect(isSuperFundamental(fundSig('bullish', 60))).toBe(false);
+  it('سوپر‌بنیادی فقط با تایید هر ۵ شاخص FTS (۵ از ۵) و جهت صعودی', () => {
+    // نمرهٔ بنیادی ۰ تا ۵ از payload.score خوانده می‌شود، نه نمرهٔ ۰ تا ۱۰۰٬ اعتماد ترکیبی
+    expect(isSuperFundamental(fundSig('bullish', 85, { score: 5 }))).toBe(true);
+    expect(isSuperFundamental(fundSig('bullish', 95, { score: 4 }))).toBe(false);
+    expect(isSuperFundamental(fundSig('bearish', 95, { score: 5 }))).toBe(false);
     expect(isSuperFundamental(undefined)).toBe(false);
   });
 });

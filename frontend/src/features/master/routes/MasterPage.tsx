@@ -9,6 +9,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { AGENT_WEIGHTS } from '@contracts/signal';
+import { ftsScoreOf } from '@contracts/fundamental';
 import { usePortfolio, useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { SECTOR_BANDS, matchSectorBand, normalizeSector } from '@features/portfolio/model/sectorAllocation';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
@@ -141,7 +142,7 @@ export default function MasterPage() {
   const decision = useMemo(() => definiteDecision(strict), [strict]);
   /** وتوی سخت‌گیرانه: نمرهٔ تجمیعی نباید اعتبار پیدا کند */
   const gateVetoActive = decision.action === 'veto_gate1' || decision.action === 'veto_gate2';
-  const fundScore = typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null;
+  const fundScore = ftsScoreOf(inputs.fundamental);
   const superFundamental = useMemo(() => isSuperFundamental(inputs.fundamental), [inputs.fundamental]);
   const hasSetup = useMemo(() => hasDirectEntrySetup(inputs.technical), [inputs.technical]);
   const recommendedHorizon = useMemo(

@@ -43,3 +43,16 @@ export const FundamentalPayload = z.object({
   profitYoY: z.number().nullable().default(null),
 });
 export type FundamentalPayload = z.infer<typeof FundamentalPayload>;
+
+/**
+ * امتیاز ۰ تا ۵ «شمار شاخص‌های تاییدشده FTS» از سیگنال بنیادی.
+ *
+ * دو نمره در سیگنال بنیادی وجود دارد و اشتباه گرفتنشان باگ زا است:
+ * - `signal.score` → ۰ تا ۱۰۰: اعتماد ترکیبی (مخصوص `AgentSignal`، مصرف در masterMath/گیت‌ها).
+ * - `signal.payload.score` → ۰ تا ۵: تعداد شاخص‌های بنیادی تاییدشده (مصرف در FTS/«از ۵»).
+ * هر جا منطق «امتیاز از ۵» یا سوپربنیادیِ «۵ از ۵» می‌خواهید، از این تابع بخوانید نه `signal.score`.
+ */
+export function ftsScoreOf(fund: { payload?: unknown } | null | undefined): number | null {
+  const p = fund?.payload as { score?: unknown } | null | undefined;
+  return typeof p?.score === 'number' ? p.score : null;
+}

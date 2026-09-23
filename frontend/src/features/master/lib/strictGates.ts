@@ -8,6 +8,7 @@
 // ۴) «خرید پله‌ای» فقط با سبز بودن هم‌زمان هر چهار گیت.
 // Circuit Breaker: نبود داده ⇒ state=pending + دلیل صادقانه؛ هرگز وتوی ساختگی.
 import type { AgentSignal } from '@contracts/signal';
+import { ftsScoreOf } from '@contracts/fundamental';
 import { isActiveSignal, type BusInput } from './masterMath';
 import { fa0, fa1 } from './fmtNum';
 
@@ -470,11 +471,16 @@ export function effectiveStepWeightPct(stepWeightPct: number, industryRemainingP
   return Math.max(0, Math.round(Math.min(stepWeightPct, industryRemainingPct) * 10) / 10);
 }
 
-/** آستانهٔ «سهام سوپر‌بنیادی» برای سوییچ اهرم ساعت شنی */
-export const SUPER_FUNDAMENTAL_SCORE = 80;
+/** آستانهٔ «سهام سوپر‌بنیادی» = تایید هر ۵ شاخص FTS (۵ از ۵) برای سوییچ اهرم ساعت شنی */
+export const SUPER_FUNDAMENTAL_FTS = 5;
 
+/**
+ * سوپربنیادی یعنی تایید هر ۵ شاخص بنیادی FTS (۵ از ۵) در جهت صعودی.
+ * نمرهٔ ۰ تا ۵ از `payload.score` خوانده می‌شود نه `signal.score` (که ۰ تا ۱۰۰ و
+ * اعتماد ترکیبی است) — دیدن `ftsScoreOf` در `@contracts/fundamental`.
+ */
 export function isSuperFundamental(fund: AgentSignal | undefined): boolean {
   if (!fund) return false;
   if (fund.direction !== 'bullish') return false;
-  return typeof fund.score === 'number' && fund.score >= SUPER_FUNDAMENTAL_SCORE;
+  return ftsScoreOf(fund) === SUPER_FUNDAMENTAL_FTS;
 }

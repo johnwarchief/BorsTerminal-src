@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { toFaDigits } from '@shared/lib/fmt';
+import { ftsScoreOf } from '@contracts/fundamental';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { runStrictGates, definiteDecision } from '@features/master/lib/strictGates';
@@ -32,7 +33,7 @@ export function FtsPipelineBar() {
   const currentPrice = (symbol ? closes.data?.get(symbol) : null) ?? null;
   const resistance = ftsPlan.data?.fts?.jet?.resistance ?? null;
   const support = ftsPlan.data?.fts?.fib?.zone_33_40?.lo ?? null;
-  const fundScore = typeof inputs.fundamental?.score === 'number' ? inputs.fundamental.score : null;
+  const fundScore = ftsScoreOf(inputs.fundamental);
 
   const strict = useMemo(
     () =>

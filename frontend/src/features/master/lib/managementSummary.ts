@@ -5,6 +5,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { fa0, fa1 } from './fmtNum';
 import type { MasterVerdict } from '@contracts/master';
 import type { AgentSignal } from '@contracts/signal';
+import { ftsScoreOf } from '@contracts/fundamental';
 import type { BusInput } from './masterMath';
 import { signedScore } from './masterMath';
 import {
@@ -281,7 +282,7 @@ export function buildManagementSummary(args: {
   const sw: HourglassSwitch = hourglassSwitch({
     superFundamental,
     weekly: strict.weekly,
-    fundScore: typeof fund?.score === 'number' ? fund.score : null,
+    fundScore: ftsScoreOf(fund),
   });
   lines.push({
     id: 'switch',
