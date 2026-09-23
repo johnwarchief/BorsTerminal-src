@@ -98,12 +98,33 @@ function Build-Exe {
     & $PY dev/onedir_contract_v11.py --dist "$root\dist"
     if ($LASTEXITCODE -ne 0) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
 }
+function Move-StaleDist([string]$why, [string]$detail) {
+    # دیستارِ قدیمی را دور نمی‌اندازیم و ریلیز را هم با آن نمی‌سازیم: یک‌بار
+    # به dist\BorsTerminal_Ultimate.stale قرنطینه می‌شود (برگشت‌پذیر) و همان
+    # مرحله، بیلدِ تازه را روِ همان مسیر می‌سازد. پیش‌تر این نقطه با
+    # «dist\ را خودت پاک کن و دوباره بزن» می‌ایستاد و تک‌دستوری‌بودنِ
+    # ریلیز را می‌شکست.
+    $dir = Join-Path $root 'dist\BorsTerminal_Ultimate'
+    $quar = $dir + '.stale'
+    Write-Host ("[dist] stale build output -> " + $why) -ForegroundColor Yellow
+    if ($detail) { Write-Host ("[dist] " + $detail) -ForegroundColor Yellow }
+    if (Test-Path $quar) { Remove-Item $quar -Recurse -Force }
+    try {
+        Move-Item $dir $quar -Force
+        Write-Host ("[dist] previous output kept for rollback at " + $quar)
+    } catch {
+        Write-Error ("[dist] could not move the stale output aside: " + $_.Exception.Message + " - remove dist\BorsTerminal_Ultimate and re-run. ABORT.")
+        exit 1
+    }
+}
+
 function Assert-DistFresh {
     # جلوگیری از بسته‌بندیِ یک distیِ قدیمی در نصابِ جدید. ریشهٔ یک کلاس
     # باگِ خطرناک: اگر dist/ از قبل وجود داشته باشد، Build-Setup/Build-Portable
     # بدونِ هیچ بررسی‌ای دوباره از آن استفاده می‌کنند. پس اگر اپِ فریزشده
     # قدیمی‌تر از منابع باشد (مثلاً بعد از bumpِ نسخه یا یک فیکس، rebuild
-    # نشده باشد)، یا نسخه‌اش با bors_setup.iss یکی نباشد، اینجا متوقف می‌شویم.
+    # نشده باشد)، یا نسخه‌اش با bors_setup.iss یکی نباشد، اینجا همان خروجیِ کهنه
+# قرنطینه و از نو ساخته می‌شود — بسته‌بندیِ distِ قدیمی هرگز رخ نمی‌دهد.
     $exe = Join-Path $root 'dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe'
     if (-not (Test-Path $exe)) { return }
     $built = (Get-Item $exe).LastWriteTime
@@ -120,8 +141,11 @@ function Assert-DistFresh {
         if ($m.Success) { $appVer = $m.Groups[1].Value }
     }
     if ($issVer -and $appVer -and ($appVer -ne $issVer)) {
-        Write-Error ("[guard] stale dist: frozen app is v{0} but bors_setup.iss is v{1}. after a version bump the app MUST be rebuilt — delete dist\ and re-run. ABORT." -f $appVer, $issVer)
-        exit 1
+        # نصابی که نسخه‌اش با سرِ نصب‌کننده نمی‌خواند هرگز نباید بسته شود؛
+        # ولی پاسخ درست «بیلدِ دوباره» است نه «دستورِ دستی به کاربر».
+        Move-StaleDist ("frozen app is v" + $appVer + " but bors_setup.iss is v" + $issVer) `
+                       "after a version bump the app is rebuilt from source"
+        return
     }
 
     $watch = 'bors_config.py','bors_entry.py','bors_minisign.py','bors_setup.spec','fts_terminal.spec','installer/bors_setup.iss','frontend/package.json','frontend/package-lock.json','frontend/src-tauri/tauri.conf.json'
@@ -144,8 +168,10 @@ function Assert-DistFresh {
         }
     }
     if ($stale.Count) {
-        Write-Error ("[guard] dist is older than these sources: {0}. rebuild the app first (delete dist\ and re-run). ABORT." -f ($stale -join ', '))
-        exit 1
+        $shown = ($stale | Select-Object -First 8) -join ', '
+        if ($stale.Count -gt 8) { $shown += (" … (+{0} more)" -f ($stale.Count - 8)) }
+        Move-StaleDist 'dist is older than these sources' $shown
+        return
     }
 }
 function Assert-TestsGreen {
