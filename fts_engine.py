@@ -1514,8 +1514,18 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             gap_ok = all(int(win[i]["fiscal_year"]) - int(win[i + 1]["fiscal_year"]) == 1
                          for i in range(len(win) - 1))
             ser = [w["basic_eps"] for w in reversed(win)]
-            i2 = bool(gap_ok and all(ser[k] < ser[k + 1] for k in range(len(ser) - 1))
-                      and all(v > 0 for v in ser))
+            rising_positive = bool(gap_ok
+                                   and all(ser[k] < ser[k + 1] for k in range(len(ser) - 1))
+                                   and all(v > 0 for v in ser))
+            # لایۀ تلفیقیِ _solo_annual برای «نمایش» لازم است (۲۷۴ شرکت مثل
+            # فولاد/وبملت فقط تلفیقیِ ۱۲ماهه منتشر می‌کنند و ستون EPS خالی
+            # می‌شد) ولی نمی‌تواند شاخص ۲ را سبز کند: جزوه صریح است
+            # «اطلاعات و صورت‌های مالی تلفیقی مدنظر ما نیست». پیش از این،
+            # اسکرینر از همین لایه i2=True می‌داد در حالی که eps_trend_3y برای
+            # همان نماد data_gap می‌داد — دو جواب برای یک نماد (مبين).
+            basis_ok = not any(r.get("consolidated") for r in win)
+            i2 = bool(rising_positive and basis_ok)
+            data_gap2 = not basis_ok
             eps_series = [round(v, 1) for v in ser]
 
         # ۳) حاشیه سود ناخالص = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰
