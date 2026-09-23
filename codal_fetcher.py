@@ -1310,12 +1310,19 @@ def scrape_report(s, url):
 
     basis_consol = None
     if targets:
-        for role, sid, consol in targets:
-            try:
-                sr = _resilient_get(s, f"{url}&sheetId={sid}")
-                ds = datasource(sr.text) if sr is not None else None
-            except Exception:
-                ds = None
+        # دو شیت به هم وابسته نیستند، ولی هر دو در تأخیرِ per-request کدال
+        # شریک‌اند. فقط GETها موازی می‌شوند و پایش/ادغام دست‌نخورده و روی همین
+        # ترد می‌ماند، چون parse_tables روی out/rank مشترک می‌نویسد.
+        if len(targets) > 1:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(targets)) as sh:
+                responses = list(sh.map(
+                    lambda tg: _resilient_get(s, f"{url}&sheetId={tg[1]}")
+                    if tg[1] is not None else None, targets))
+        else:
+            responses = [_resilient_get(s, f"{url}&sheetId={tg[1]}")
+                         if tg[1] is not None else None for tg in targets]
+        for (role, sid, consol), sr in zip(targets, responses):
+            ds = datasource(sr.text) if sr is not None else None
             if not ds:
                 continue
             unit = parse_tables(ds, out, rank) or unit
