@@ -41,7 +41,9 @@ def say(step, ok, detail=""):
 
 def find_artifacts(dist):
     root = os.path.join(ROOT, dist)
-    patches = sorted(glob.glob(os.path.join(root, "BorsTerminal_Patch_*_to_*.zip")))
+    # تازه‌ترینِ ساخته‌شده، نه «آخرِ ترتیبِ الفبایی»: 1.0.21 پیش از 1.0.9 مرتب می‌شود
+    patches = sorted(glob.glob(os.path.join(root, "BorsTerminal_Patch_*_to_*.zip")),
+                     key=os.path.getmtime)
     setups = sorted(glob.glob(os.path.join(root, "**", "BorsTerminal_Ultimate_Setup_v*.exe"),
                               recursive=True))
     if not patches:
@@ -71,8 +73,9 @@ def restart_with_manifest(base, manifest_path):
                    capture_output=True)
     time.sleep(3.0)
     env = dict(os.environ, BORS_UPDATE_MANIFEST=manifest_path)
-    subprocess.Popen([APP_EXE], cwd=APP_DIR, env=env,
-                     creationflags=0x00000008 | 0x00000010)  # DETACHED | NEW_PROCESS_GROUP
+    # پرچمِ DETACHED_PROCESS با CREATE_NEW_CONSOLE با هم نامعتبرند (WinError 87)؛
+    # برای یک اپ GUI هیچ‌کدام لازم نیست — Popen بی‌درنگ برمی‌گردد.
+    subprocess.Popen([APP_EXE], cwd=APP_DIR, env=env, close_fds=True)
     return wait_http(base)
 
 
@@ -106,7 +109,11 @@ def main():
     }, open(MANIFEST, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     say("مانیفستِ تستی نوشته شد", True, "%s (patch %.2f MB)" % (MANIFEST, size / 1e6))
 
-    cur = wait_http(args.base, timeout=20) or restart_with_manifest(args.base, MANIFEST)
+    # مانیفست فقط هنگامِ شروعِ پروسه خوانده می‌شود، پس همیشه از نو بالا می‌آید؛
+    # وگرنه یک نسخهٔ در حالِ اجرا با مانیفستِ دیگری جواب را تحریف می‌کند.
+    cur = restart_with_manifest(args.base, MANIFEST)
+    if not cur:
+        return say("برنامهٔ نصب‌شده بالا نیامد", False, APP_EXE) or 1
     say("نسخهٔ در حالِ اجرا", cur == from_ver, "current=%s patch_from=%s" % (cur, from_ver))
 
     chk = requests.get(args.base + "/api/update/check", timeout=60).json()
@@ -135,7 +142,10 @@ def main():
         print("\n(--apply ندادی: چیزی نصب نشد)")
         return 0 if all(ok for _, ok in results) else 1
 
-    requests.post(args.base + "/api/update/install", timeout=60)
+    try:                       # /install عمداً برنامه را می‌بندد: قطعِ اتصال طبیعی است
+        requests.post(args.base + "/api/update/install", timeout=60)
+    except requests.RequestException as exc:
+        print("      (اتصال بسته شد — همان انتظارِ اعمال‌کننده: %s)" % type(exc).__name__)
     print("      اعمال‌کننده اجرا شد؛ منتظرِ بالا آمدنِ نسخهٔ تازه…")
     new = wait_http(args.base, timeout=300)
     say("اعمال و اجرای دوباره", new == to_ver, "after install version=%s expected=%s" % (new, to_ver))
