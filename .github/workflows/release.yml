@@ -196,11 +196,15 @@ jobs:
           BORS_SETUP_PASSWORD: ${{ secrets.BORS_SETUP_PASSWORD }}
         run: |
           $ver = $env:TAG -replace '^v',''
-          # قبلی = جدیدترین ریلیزِ منتشرشده به‌جز خودِ همین تگ (بازپخشِ تگ —
-          # مثلاً پس از شکستِ گامِ انتشار — نباید خودش را مبدأ بگیرد).
-          $rels = Invoke-RestMethod -Uri 'https://api.github.com/repos/johnwarchief/BorsTerminal/releases' -Headers @{ 'User-Agent' = 'BorsTerminal-CI' }
-          $prevRel = $rels | Where-Object { $_.tag_name -ne $env:TAG } | Select-Object -First 1
-          $prev = $prevRel.tag_name -replace '^v',''
+          # قبلی = بالاترین تگِ نسخه‌ایِ ریپو به‌جز این یکی. از ls-remote
+          # (پروتکلِ git) می‌آید نه API گیت‌هاب — فراخوانیِ بدونِ توکن از
+          # IP مشترکِ رانر مرتب با rate-limit می‌خورد؛ checkout هم shallow
+          # است و تگ‌های قدیمی را محلی ندارد.
+          $prev = git ls-remote --tags origin | ForEach-Object { ($_ -split '\s+')[1] } |
+            ForEach-Object { $_ -replace '^refs/tags/','' -replace '\^\{\}$','' -replace '^v','' } |
+            Where-Object { $_ -match '^\d+\.\d+\.\d+$' -and $_ -ne $ver } |
+            Sort-Object { [version]$_ } -Descending -Unique | Select-Object -First 1
+          Write-Host "نسخهٔ جاری: $ver — مبدأِ پچ: $prev"
           if (-not $prev -or $prev -eq $ver) {
             Write-Host "نسخهٔ قبلی برای diff نیست؛ بدونِ پچ ادامه می‌دهیم"
             exit 0
@@ -218,6 +222,11 @@ jobs:
             exit 1
           }
           python scripts/make_patch.py --from $prev --baseline $base
+          $patchZip = Get-ChildItem dist/BorsTerminal_Patch_*.zip -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch '\.sig$' } | Select-Object -First 1
+          if (-not $patchZip) {
+            Write-Error "make_patch هیچ zip ای نساخت؛ پچ از ریلیز جا می‌ماند"
+            exit 1
+          }
           Get-ChildItem dist/BorsTerminal_Patch_*.zip, dist/BorsTerminal_Patch_*.zip.sig -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "patch artifact: $($_.FullName) $($_.Length) bytes" }
 
       - name: Publish Release (installer + .sig + latest.json)
