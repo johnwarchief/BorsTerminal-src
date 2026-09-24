@@ -5,7 +5,6 @@ import { MarketFilters } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
 import {
   DEFAULT_ASSET_TYPES,
-  EXIT_ACCUM_LABEL,
   VOL_RATIO_DEFAULT,
   VOL_RATIO_MAX,
   VOL_RATIO_MIN,
@@ -76,43 +75,29 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
     useTapeStore.getState().resetFilters();
   });
 
-  it('اسلایدر ضریب حجم با بازه و گام درست، تا فعال‌سازی غیرفعال', () => {
-    render(<MarketFilters sectors={[]} />);
-    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
-    const slider = screen.getByLabelText('آستانهٔ ضریب حجم') as HTMLInputElement;
-    expect(slider.min).toBe('1.5');
-    expect(slider.max).toBe('5');
-    expect(slider.step).toBe('0.5');
-    expect(slider.value).toBe('3');
-    expect(slider.disabled).toBe(true);
-    fireEvent.click(screen.getByText('ضریب حجم مشکوک'));
-    expect(useTapeStore.getState().volRatioOn).toBe(true);
-    expect((screen.getByLabelText('آستانهٔ ضریب حجم') as HTMLInputElement).disabled).toBe(false);
-    fireEvent.change(slider, { target: { value: '4' } });
-    expect(useTapeStore.getState().volRatioMin).toBe(4);
-    expect(screen.getByLabelText('مقدار آستانهٔ ضریب حجم').textContent).toContain('۴.۰×');
+  it('چیپ‌های سریع FTS مستقیماً روی نوار رندر شده و فعال/غیرفعال می‌شوند', () => {
+    render(<MarketFilters sectors={[]} matches={{ f_clock: 5, f_susp: 2, f_jet: 1, f_roobi: 3, f_noqteh: 0, f_smart_flow: 4 }} />);
+    const clockChip = screen.getByText(/الگوی ساعت/);
+    expect(clockChip).toBeInTheDocument();
+    expect(screen.getByText('(۵)')).toBeInTheDocument();
+    expect(screen.getByText(/کف‌روبی/)).toBeInTheDocument();
+    expect(screen.getByText('(۳)')).toBeInTheDocument();
+
+    fireEvent.click(clockChip.closest('button')!);
+    expect(useTapeStore.getState().quickFilters).toContain('f_clock');
+
+    fireEvent.click(clockChip.closest('button')!);
+    expect(useTapeStore.getState().quickFilters).not.toContain('f_clock');
   });
 
-  it('چیپ خروج از انباشت با هینت مالکیت تب تکنیکال فعال/غیرفعال می‌شود', () => {
-    render(<MarketFilters sectors={[]} exitAccumCount={6} />);
-    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
-    const chip = screen.getByText(EXIT_ACCUM_LABEL).closest('button');
-    expect(chip).not.toBeNull();
-    expect(chip!.getAttribute('title')).toContain('تب تکنیکال');
-    expect(chip!.textContent).toContain('(۶)');
-    fireEvent.click(chip!);
-    expect(useTapeStore.getState().exitAccum).toBe(true);
-  });
-
-  it('فیلترهای جدید در شمارندهٔ «پاک کردن» شمرده و با ریست پاک می‌شوند', () => {
-    useTapeStore.getState().setVolRatioOn(true);
-    useTapeStore.getState().toggleExitAccum();
+  it('فیلترهای فعال در شمارندهٔ «پاک کردن» شمرده و با ریست پاک می‌شوند', () => {
+    useTapeStore.getState().toggleQuickFilter('f_clock');
+    useTapeStore.getState().toggleQuickFilter('f_susp');
     render(<MarketFilters sectors={[]} />);
     const reset = screen.getByText(/پاک کردن/);
     expect(reset.textContent).toContain('۲');
     fireEvent.click(reset);
-    expect(useTapeStore.getState().volRatioOn).toBe(false);
-    expect(useTapeStore.getState().exitAccum).toBe(false);
+    expect(useTapeStore.getState().quickFilters).toEqual([]);
   });
 });
 
@@ -144,11 +129,10 @@ describe('نوار تک‌خطی فیلترها و dropdown بازارها', () 
   const optionBox = (label: string) =>
     screen.getByRole('checkbox', { name: label }) as HTMLInputElement;
 
-  it('نوار فیلتر یک‌خطی و محدود به h-11 است (بدون ستونِ چیپ‌های پراکنده)', () => {
+  it('نوار فیلتر دو سطحی کامپکت است (شامل وضعیت و فیلترها)', () => {
     render(<MarketFilters sectors={[]} />);
     const bar = screen.getByTestId('market-filters-bar');
-    expect(bar.className).toContain('h-11');
-    expect(bar.className).not.toContain('flex-col');
+    expect(bar.className).toContain('flex-col');
     // ۱۱ چیپ بازار دیگر بیرون از dropdown رندر نمی‌شوند
     expect(screen.queryByText('اختیار معامله')).not.toBeInTheDocument();
   });
@@ -207,17 +191,5 @@ describe('نوار تک‌خطی فیلترها و dropdown بازارها', () 
     openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'فقط سهام بورس/فرابورس' }));
     expect(useTapeStore.getState().assetTypes).toEqual(['stock', 'payeh']);
-  });
-
-  it('سوییچ‌های سه‌گانهٔ FTS تک‌کلیکه‌اند و ترتیب غربالگری را ست می‌کنند', () => {
-    render(<MarketFilters sectors={[]} />);
-    const group = screen.getByRole('group', { name: 'ترتیب غربالگری FTS' });
-    expect(group.querySelectorAll('button')).toHaveLength(3);
-    const tech = screen.getByRole('button', { name: 'تکنیکال' });
-    expect(tech.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(tech);
-    expect(useTapeStore.getState().screenOrder).toBe('technical_first');
-    expect(screen.getByRole('button', { name: 'تکنیکال' }).getAttribute('aria-pressed')).toBe('true');
-    expect(tech.getAttribute('title')).toContain('تکنیکال → تابلو → بنیادی');
   });
 });

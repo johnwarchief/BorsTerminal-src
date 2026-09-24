@@ -15,8 +15,8 @@ export function useMarketFeed() {
     queryFn: ({ signal }) => http<MarketFeed>('/api/market', { schema: MarketFeedSchema, signal }),
     // تابع باشد یعنی هر تیک دوباره سنجیده می‌شود: بازِ شدنِ بازار بدونِ remount
     // به ریتمِ سریع برمی‌گردد.
-    refetchInterval: paused ? false : () => effectivePollMs(refetchIntervalMs),
-    staleTime: 10_000,
+    refetchInterval: paused ? false : refetchIntervalMs,
+    staleTime: Math.min(Math.max(refetchIntervalMs - 1_000, 1_000), 4_000),
     gcTime: 5 * 60_000,
   });
 }

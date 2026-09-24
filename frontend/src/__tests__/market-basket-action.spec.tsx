@@ -5,6 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MarketRow } from '@shared/types/marketRow';
 import { TapeTable } from '@features/market/components/TapeTable';
+import { RowBasketAction } from '@features/market/components/RowBasketAction';
 import {
   BASKET_INTENT_EVENT,
   emitBasketIntent,
@@ -45,56 +46,43 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('اکشن سبد روی ردیف‌های جدول بازار', () => {
-  it('هر ردیف یک دکمهٔ «سبد+» با label شامل نماد می‌گیرد', () => {
-    render(<TapeTable rows={[row(), row({ symbol: 'فولاد', name: 'فولاد مبارکه' })]} selected="" onSelect={() => {}} />);
+describe('اکشن سبد و کامپوننت RowBasketAction', () => {
+  it('کامپوننت RowBasketAction یک دکمهٔ «سبد+» با label شامل نماد رندر می‌کند', () => {
+    render(
+      <div>
+        <RowBasketAction symbol="شپنا" />
+        <RowBasketAction symbol="فولاد" />
+      </div>,
+    );
     expect(screen.getByTestId('row-basket-شپنا')).toHaveTextContent('سبد+');
     expect(screen.getByLabelText('افزودن شپنا به سبد')).toBeInTheDocument();
     expect(screen.getByLabelText('افزودن فولاد به سبد')).toBeInTheDocument();
   });
 
-  it('سرصفحه ستون سبد را نشان می‌دهد', () => {
+  it('در جدول تابلو ستون «افزودن به سبد» حذف شده و جدول خلوت‌تر است', () => {
     render(<TapeTable rows={[row()]} selected="" onSelect={() => {}} />);
-    expect(screen.getByText('افزودن به سبد')).toBeInTheDocument();
+    expect(screen.queryByText('افزودن به سبد')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('row-basket-شپنا')).not.toBeInTheDocument();
   });
 
-  it('کلیک روی دکمهٔ سبد قصد سبد را منتشر می‌کند و ردیف را انتخاب نمی‌کند', () => {
-    const onSelect = vi.fn();
+  it('کلیک روی دکمهٔ RowBasketAction قصد سبد را منتشر می‌کند', () => {
     const seen: string[] = [];
     const onIntent = (e: Event) => seen.push((e as CustomEvent<BasketIntentDetail>).detail.symbol);
     window.addEventListener(BASKET_INTENT_EVENT, onIntent);
     try {
-      render(<TapeTable rows={[row({ symbol: 'خودرو' })]} selected="" onSelect={onSelect} />);
+      render(<RowBasketAction symbol="خودرو" />);
       fireEvent.click(screen.getByTestId('row-basket-خودرو'));
       expect(seen).toEqual(['خودرو']);
-      expect(onSelect).not.toHaveBeenCalled();
     } finally {
       window.removeEventListener(BASKET_INTENT_EVENT, onIntent);
     }
   });
 
-  it('کلیک روی بدنهٔ ردیف هنوز نماد را انتخاب می‌کند', () => {
+  it('کلیک روی بدنهٔ ردیف در جدول هنوز نماد را انتخاب می‌کند', () => {
     const onSelect = vi.fn();
     render(<TapeTable rows={[row({ symbol: 'شپنا' })]} selected="" onSelect={onSelect} />);
     fireEvent.click(screen.getByText('شپنا'));
     expect(onSelect).toHaveBeenCalledWith('شپنا');
-  });
-
-  it('اسلات تزریقی پوسته، دکمهٔ پیش‌فرض را جایگزین می‌کند', () => {
-    render(
-      <TapeTable
-        rows={[row({ symbol: 'وبملت' })]}
-        selected=""
-        onSelect={() => {}}
-        renderBasketAction={(symbol) => (
-          <button type="button" data-testid="injected-basket">
-            سبد واقعی {symbol}
-          </button>
-        )}
-      />,
-    );
-    expect(screen.getByTestId('injected-basket')).toHaveTextContent('سبد واقعی وبملت');
-    expect(screen.queryByTestId('row-basket-وبملت')).not.toBeInTheDocument();
   });
 });
 

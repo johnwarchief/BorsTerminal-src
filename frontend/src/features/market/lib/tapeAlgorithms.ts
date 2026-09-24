@@ -25,12 +25,14 @@ export type TapeFilterConfig = {
     minVolRatio: number;          // حداقل ضریب حجم
     requireLastAboveClose: boolean; // آخرین بالاتر از پایانی
     minChangePct: number;         // حداقل درصد تغییر قیمت
+    minTradeCount: number;        // حداقل تعداد معاملات
   };
-  /** ۴. روباهی و جمع‌آوری صف (Roobi / Sweep) */
+  /** ۴. کف‌روبی و جمع‌آوری صف (Kef Roobi / Sweep) */
   roobi: {
     maxChangePct: number;         // سقف درصد افت قیمت (مثلاً -۱.۰٪)
     minVolRatio: number;          // ضریب حجم جمع‌آوری
     minBuyerPower: number;        // قدرت خریدار جمع‌کننده
+    minTradeCount: number;        // حداقل تعداد معاملات (>۲۰۰ طبق جزوه)
   };
   /** ۵. نقطه‌زنی و کف‌یابی (Sniper / Near Low) */
   noqteh: {
@@ -58,16 +60,18 @@ export const DEFAULT_TAPE_FILTER_CONFIG: TapeFilterConfig = {
     minTradeCount: 50,
   },
   jet: {
-    lookbackDays: 19,
+    lookbackDays: 59,
     minBuyerPower: 1.5,
-    minVolRatio: 2.5,
+    minVolRatio: 3.0,
     requireLastAboveClose: true,
     minChangePct: 0.0,
+    minTradeCount: 100,
   },
   roobi: {
     maxChangePct: -1.0,
     minVolRatio: 2.0,
     minBuyerPower: 1.2,
+    minTradeCount: 200,
   },
   noqteh: {
     maxDistPct: 3.0,
@@ -208,10 +212,14 @@ export function matchJetFilter(r: MarketRow, cfg: TapeFilterConfig['jet']): bool
     if (close <= targetHigh) return false;
   }
 
+  if (cfg.minTradeCount > 0 && typeof r.z_tot_tran === 'number') {
+    if (r.z_tot_tran < cfg.minTradeCount) return false;
+  }
+
   return true;
 }
 
-/** ۴. روباهی و جمع‌آوری صف */
+/** ۴. کف‌روبی و جمع‌آوری صف */
 export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): boolean {
   if (typeof r.percent_change === 'number' && r.percent_change > cfg.maxChangePct) {
     return false;
@@ -228,6 +236,10 @@ export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): 
   // تاییدیه کف قیمتی روز (نزدیک به کف روزانه)
   if (typeof r.p_min === 'number' && typeof r.p_closing === 'number') {
     if (r.p_closing > r.p_min * 1.025) return false;
+  }
+
+  if (cfg.minTradeCount > 0 && typeof r.z_tot_tran === 'number') {
+    if (r.z_tot_tran < cfg.minTradeCount) return false;
   }
 
   return true;

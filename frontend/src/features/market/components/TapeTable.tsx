@@ -20,10 +20,8 @@ import {
   lastCloseDiff,
 } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
-import { resolveFtsStatus, type ScreenerRow } from '../api/useFtsScreener';
+import type { ScreenerRow } from '../api/useFtsScreener';
 import { LIMIT_PCT } from '../stores/tapeStore';
-import { RowBasketAction } from './RowBasketAction';
-import { FtsStatusBadge } from './FtsStatusBadge';
 
 type SortKey =
   | 'symbol'
@@ -36,9 +34,9 @@ type SortKey =
   | 'last_vs_close'
   | 'p_last';
 
-/** ۱۱ ستون بهینه‌شده: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت · وضعیت FTS · افزودن به سبد */
+/** ۹ ستون بهینه‌شده: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت */
 const ROW_GRID =
-  'grid-cols-[minmax(105px,1.3fr)_minmax(65px,0.75fr)_minmax(52px,0.65fr)_minmax(62px,0.75fr)_minmax(55px,0.7fr)_minmax(52px,0.65fr)_minmax(52px,0.65fr)_minmax(52px,0.65fr)_minmax(148px,1.7fr)_minmax(60px,0.75fr)_minmax(54px,3.8rem)]';
+  'grid-cols-[minmax(115px,1.4fr)_minmax(65px,0.75fr)_minmax(52px,0.65fr)_minmax(65px,0.75fr)_minmax(60px,0.7fr)_minmax(65px,0.75fr)_minmax(65px,0.75fr)_minmax(60px,0.7fr)_minmax(160px,2fr)]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'symbol', label: 'نماد و نام' },
@@ -46,8 +44,8 @@ const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'percent_change', label: 'تغییر٪' },
   { key: 'tvol', label: 'حجم' },
   { key: 'vol_ratio', label: 'نسبت حجم ماه' },
-  { key: 'buy_pc', label: 'سرانه خرید' },
-  { key: 'sell_pc', label: 'سرانه فروش' },
+  { key: 'buy_pc', label: 'سرانه خرید (م.ت)' },
+  { key: 'sell_pc', label: 'سرانه فروش (م.ت)' },
   { key: 'buyer_power', label: 'قدرت خریدار' },
   { key: 'last_vs_close', label: 'الگوی ساعت' },
 ];
@@ -88,12 +86,12 @@ function pctTone(pct: number | null | undefined): string {
 }
 
 const MICRO_TONES = {
-  violet: 'bg-[#8b5cf6]/25 text-[#ddd6fe] border border-[#8b5cf6]/40',
-  amber: 'bg-accent-yellow/25 text-[#fef08a] border border-accent-yellow/45',
-  cyan: 'bg-neon-cyan/20 text-[#a5f3fc] border border-neon-cyan/40',
-  emerald: 'bg-accent-green/20 text-[#bbf7d0] border border-accent-green/40',
-  green: 'bg-accent-green/20 text-[#bbf7d0] border border-accent-green/40',
-  red: 'bg-accent-red/20 text-[#fecaca] border border-accent-red/40',
+  violet: 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
+  amber: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
+  cyan: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
+  emerald: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
+  green: 'bg-green-100 text-green-900 border-green-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
+  red: 'bg-red-100 text-red-900 border-red-300 dark:bg-accent-red/20 dark:text-[#fecaca] dark:border-accent-red/40',
   gray: 'bg-bg-card/90 text-text-primary border border-border-c',
 } as const;
 
@@ -135,14 +133,10 @@ const TapeRow = memo(function TapeRow({
   row,
   selected,
   onSelect,
-  renderBasketAction,
-  ftsMap,
 }: {
   row: MarketRow;
   selected: boolean;
   onSelect: (s: string) => void;
-  renderBasketAction?: (symbol: string) => ReactNode;
-  ftsMap: Map<string, ScreenerRow>;
 }) {
   const diff = lastCloseDiff(row);
   const strongHour = detectStrongHour(row);
@@ -157,7 +151,6 @@ const TapeRow = memo(function TapeRow({
   const volMult = row.vol_ratio != null ? `${toFaDigits(row.vol_ratio.toFixed(1))}× میانگین ماه` : '—';
   const buyPc = buyPerCapitaMt(row);
   const sellPc = sellPerCapitaMt(row);
-  const fts = resolveFtsStatus(row, ftsMap);
   const badges: React.ReactNode[] = [];
   if (strongHour || goldenHour || row.f_clock)
     badges.push(
@@ -182,7 +175,6 @@ const TapeRow = memo(function TapeRow({
   if (atLimitUp) badges.push(<MicroBadge key="lu" pattern="limit-up" tone="green" title="صف خرید (تغییر ≥ ۴.۹٪)" >صف+</MicroBadge>);
   if (atLimitDown) badges.push(<MicroBadge key="ld" pattern="limit-down" tone="red" title="صف فروش (تغییر ≤ −۴.۹٪)" >صف−</MicroBadge>);
   if (boxExit) badges.push(<MicroBadge key="box" pattern="box" tone="gray" title={BOX_EXIT_HINT} >باکس</MicroBadge>);
-  if (row.is_live === false) badges.push(<MicroBadge key="off" pattern="off" tone="gray" title="بدون معاملهٔ امروز" >غیرزنده</MicroBadge>);
   return (
     <div
       role="button"
@@ -196,7 +188,7 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full min-w-[800px] ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
+      className={`grid w-full min-w-[760px] ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 36 }}
@@ -237,16 +229,6 @@ const TapeRow = memo(function TapeRow({
         </span>
         <span className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar py-0.5">{badges}</span>
       </span>
-      <span className="flex items-center justify-center">
-        {row.symbol ? <FtsStatusBadge symbol={row.symbol} view={fts} /> : null}
-      </span>
-      <span className="flex items-center justify-center">
-        {row.symbol
-          ? renderBasketAction
-            ? renderBasketAction(row.symbol)
-            : <RowBasketAction symbol={row.symbol} />
-          : null}
-      </span>
     </div>
   );
 });
@@ -255,25 +237,22 @@ export function TapeTable({
   rows,
   selected,
   onSelect,
-  renderBasketAction,
-  ftsMap,
+  renderBasketAction: _renderBasketAction,
+  ftsMap: _ftsMap,
 }: {
   rows: MarketRow[];
   selected: string;
   onSelect: (s: string) => void;
   /**
-   * اسلات تزریقیِ پوسته: پوسته (app/widgets) می‌تواند اینجا `SymbolBasketAction`
-   * واقعی را بدهد. اگر ندهد، دکمهٔ سبک داخلی که قصد سبد را منتشر می‌کند استفاده می‌شود.
+   * اسلات تزریقیِ پوسته: حفظ سازگاری تایپ با فرخواننده‌ها
    */
   renderBasketAction?: (symbol: string) => ReactNode;
-  /** نقشهٔ وضعیت FTS از /api/screener؛ اگر نباشد همهٔ ردیف‌ها N/A می‌شوند */
+  /** نقشهٔ وضعیت FTS از /api/screener؛ حفظ سازگاری تایپ با فرخواننده‌ها */
   ftsMap?: Map<string, ScreenerRow>;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
   const parentRef = useRef<HTMLDivElement>(null);
-  const emptyFts = useMemo(() => new Map<string, ScreenerRow>(), []);
-  const fts = ftsMap ?? emptyFts;
 
   const sorted = useMemo(() => {
     const arr = [...rows];
@@ -312,7 +291,7 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid min-w-[800px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
+        <div className={`sticky top-0 z-10 grid min-w-[760px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => (
             <button
               key={h.key}
@@ -324,11 +303,9 @@ export function TapeTable({
               {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
             </button>
           ))}
-          <span className="text-center">وضعیت FTS</span>
-          <span className="text-center">افزودن به سبد</span>
         </div>
         <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
-          <div className="relative w-full min-w-[780px]" style={{ height: virtualizer.getTotalSize() }}>
+          <div className="relative w-full min-w-[760px]" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];
             return (
@@ -344,8 +321,6 @@ export function TapeTable({
                   row={row}
                   selected={row.symbol === selected}
                   onSelect={onSelect}
-                  renderBasketAction={renderBasketAction}
-                  ftsMap={fts}
                 />
               </div>
             );

@@ -11,13 +11,12 @@ import { buildScreenerMap, useFtsScreener } from '../api/useFtsScreener';
 import { classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
-import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
+import { matchesDirection, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
 import { countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
-import { TapeStatusBar } from '../components/TapeStatusBar';
 
 import {
   evaluateDynamicQuickFilter,
@@ -34,7 +33,7 @@ export function applyFilters(
   direction: ReturnType<typeof useTapeStore.getState>['direction'],
   volRatioOn: boolean,
   volRatioMin: number,
-  exitAccum: boolean,
+  exitAccum = false,
   filterConfig?: TapeFilterConfig,
 ): MarketRow[] {
   const q = query.trim();
@@ -106,10 +105,6 @@ export default function MarketPage({
     return countQuickMatches(live as unknown as Parameters<typeof countQuickMatches>[0], tapeFilterConfig);
   }, [rows, tapeFilterConfig]);
 
-  const exitAccumCount = useMemo(
-    () => rows.filter((r) => r.is_live !== false && matchesExitAccum(r)).length,
-    [rows],
-  );
   const volRatioCount = useMemo(
     () => rows.filter((r) => r.is_live !== false && matchesVolRatio(r.vol_ratio, volRatioMin)).length,
     [rows, volRatioMin],
@@ -158,23 +153,13 @@ export default function MarketPage({
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}
-        exitAccumCount={exitAccumCount}
         volRatioCount={volRatioCount}
-      />
-
-      <TapeStatusBar
         shown={filtered.length}
         total={rows.length}
-        liveCount={data?.live_count ?? 0}
-        fossilCount={data?.fossil_count ?? 0}
-        signals={signals.length}
-        isLoading={isLoading}
-        isError={isError}
-        isFetching={isFetching}
-        dataUpdatedAt={dataUpdatedAt}
         pollMs={refetchIntervalMs}
         onPollChange={setRefetchIntervalMs}
-        onRetry={() => refetch()}
+        dataUpdatedAt={dataUpdatedAt}
+        isFetching={isFetching}
       />
 
       {/* جدول تمام‌عرض؛ دیده‌بان‌ها به دراور زیر جدول منتقل شدند */}

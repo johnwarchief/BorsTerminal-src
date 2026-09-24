@@ -22,7 +22,7 @@ export function TapeFilterSettingsModal({
   const resetConfig = useTapeStore((s) => s.resetTapeFilterConfig);
   const applyPreset = useTapeStore((s) => s.applyTapePreset);
 
-  const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'noqteh' | 'smart'>('presets');
+  const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart'>('presets');
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
@@ -106,6 +106,17 @@ export function TapeFilterSettingsModal({
             }`}
           >
             🚀 فیلتر جت (سقف)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('roobi')}
+            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
+              activeTab === 'roobi'
+                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
+                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
+            }`}
+          >
+            🧹 کف‌روبی صف
           </button>
           <button
             type="button"
@@ -480,6 +491,110 @@ export function TapeFilterSettingsModal({
                     آخرین معامله بالاتر یا مساوی پایانی باشد
                   </span>
                 </label>
+              </div>
+            </div>
+          )}
+
+          {/* تب کف‌روبی و جمع‌آوری صف */}
+          {activeTab === 'roobi' && (
+            <div className="space-y-5">
+              <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-text-primary">
+                    حداقل نسبت قدرت خریدار به فروشنده جمع‌کننده
+                  </label>
+                  <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
+                    <span className="num">{toFaDigits(config.roobi.minBuyerPower.toFixed(1))}</span>
+                    <span className="text-2xs">برابر</span>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={1.0}
+                  max={4.0}
+                  step={0.1}
+                  value={config.roobi.minBuyerPower}
+                  onChange={(e) =>
+                    setConfig({
+                      roobi: { ...config.roobi, minBuyerPower: Number(e.target.value) },
+                    })
+                  }
+                  className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
+                />
+                <p className="text-2xs text-text-muted leading-4">
+                  حضور خریدار درشت با قدرت سرانه بالا در صف فروش نشان‌دهنده بلعیدن سفارش‌های فروش توسط بازیگر است.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-text-primary">
+                    حداقل ضریب حجم معاملات جمع‌آوری به میانگین ماه
+                  </label>
+                  <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
+                    <span className="num">{toFaDigits(config.roobi.minVolRatio.toFixed(1))}</span>
+                    <span className="text-2xs">برابر</span>
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={1.0}
+                  max={5.0}
+                  step={0.2}
+                  value={config.roobi.minVolRatio}
+                  onChange={(e) =>
+                    setConfig({
+                      roobi: { ...config.roobi, minVolRatio: Number(e.target.value) },
+                    })
+                  }
+                  className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
+                  <label className="text-xs font-bold text-text-primary block">
+                    سقف درصد افت قیمت (درصد منفی)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      max={0}
+                      min={-7}
+                      step={0.5}
+                      value={config.roobi.maxChangePct}
+                      onChange={(e) =>
+                        setConfig({
+                          roobi: { ...config.roobi, maxChangePct: Number(e.target.value) },
+                        })
+                      }
+                      className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
+                    />
+                    <span className="text-xs text-text-secondary shrink-0">درصد</span>
+                  </div>
+                  <p className="text-3xs text-text-muted mt-1">سهم باید در محدوده منفی یا صف فروش باشد.</p>
+                </div>
+                <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
+                  <label className="text-xs font-bold text-text-primary block">
+                    حداقل تعداد معاملات (&gt;۲۰۰ طبق جزوه)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={10}
+                      max={1000}
+                      step={10}
+                      value={config.roobi.minTradeCount}
+                      onChange={(e) =>
+                        setConfig({
+                          roobi: { ...config.roobi, minTradeCount: Number(e.target.value) },
+                        })
+                      }
+                      className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
+                    />
+                    <span className="text-xs text-text-secondary shrink-0">معامله</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

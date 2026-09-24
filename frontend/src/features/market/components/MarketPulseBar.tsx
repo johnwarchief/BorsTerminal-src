@@ -235,8 +235,8 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
         )}
       </Section>
 
-      {/* بخش ۳ -- تراز صف‌ها و پهنای باند */}
-      <Section testId="pulse-queues" title="تراز صف‌ها و پهنای باند" hint="دماسنج + اردر‌بوک">
+      {/* بخش ۳ -- جو بازار و ارزش صف‌ها */}
+      <Section testId="pulse-queues" title="جو بازار و ارزش صف‌ها" hint="نسبت مثبت/منفی + ارزش صف‌ها">
         {thermoTotal != null && thermo ? (
           <>
             <div className="flex h-2 w-full overflow-hidden rounded-full border border-border-c/70" title="تعداد مثبت/خنثی/منفی">

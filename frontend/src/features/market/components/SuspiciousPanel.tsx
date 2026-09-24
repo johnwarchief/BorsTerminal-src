@@ -159,7 +159,7 @@ export function SuspiciousPanel({
         ? section(
             `کف‌روبی (${toFaDigits(roobis.length)})`,
             roobis,
-            <Badge tone="gray">روباهی</Badge>,
+            <Badge tone="gray">کف‌روبی</Badge>,
             ROOBI_LABEL,
           )
         : null}
