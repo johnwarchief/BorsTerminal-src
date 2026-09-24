@@ -152,7 +152,13 @@ def fetch_market_total(s):
 
 
 def save_market_total(conn, total_rials, d_even, now=None):
-    """عددِ رسمی را برای همان نشست ذخیره می‌کند؛ True اگر واقعاً نوشته شد."""
+    """عددِ رسمی را برای همان نشست ذخیره می‌کند؛ True اگر واقعاً نوشته شد.
+
+    commit درونِ همین تابع است، نه در فراخوان. دو فراخوان دارد (main و
+    _save_market_snapshot) و نسخهٔ اول در یکی commit نداشت؛ روی EXE نصب‌شده
+    تست شد و لاگ می‌گفت «نوشته شد» ولی sqlite هنگام بستنِ اتصال rollback
+    می‌کرد و جدول تا ابد بی‌عددِ رسمی می‌ماند.
+    """
     if not total_rials or total_rials <= 0 or not d_even:
         return False
     ensure_market_totals_schema(conn)
@@ -161,6 +167,7 @@ def save_market_total(conn, total_rials, d_even, now=None):
         " (d_even, market_value, source, updated_at) VALUES (?, ?, 'tse_market_overview', ?)",
         (int(d_even), float(total_rials),
          now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
     return True
 
 

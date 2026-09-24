@@ -183,6 +183,20 @@ ck(tot2 != tot, "مبنای رسمی با جمعِ تابلو یکی نیست �
 ck(FD.board_total_market_cap(con)[0] == 2.48567e17,
    "خواندنِ دوباره همان عدد می‌دهد (نه یک‌بارمصرف)")
 
+# قفلِ رگرسیونِ واقعی: در EXE نصب‌شده لاگِ سینک می‌گفت «نوشته شد» ولی مسیرِ
+# main() هیچ commit‌ی نداشت و sqlite هنگام بستنِ اتصال rollback می‌کرد. پس
+# نوشتن باید بی‌commitِ بیرونی و با اتصالِ تازه/بسته‌شده هم دوام بیاورد.
+_path2 = con.execute("PRAGMA database_list").fetchone()[2]
+_w = sqlite3.connect(_path2)
+ck(TT.save_market_total(_w, 1.9e17, 20260924), "ذخیره روی اتصالِ تازه")
+_w.close()                                    # بدون commitِ بیرونی — همینجا می‌میرد اگر باگ برگردد
+_r = sqlite3.connect(_path2)
+_row = _r.execute("SELECT market_value FROM market_totals WHERE d_even=20260924").fetchone()
+ck(_row is not None and abs(_row[0] - 1.9e17) < 1,
+   "سطر پس از بستنِ اتصال هم پابرجاست (rollback نشد)")
+ck(FD.board_total_market_cap(_r)[0] == 1.9e17, "مصرف‌کننده از اتصالِ تازه همان عدد را می‌خواند")
+_r.close()
+
 # نوشتارِ عربیِ همان نماد باید به همان سطر برسد (تلهٔ کلاسیکِ norm_fa)
 ck(FD.get_tsetmc_market_cap("داریک", db=con) == 4.0e13, "Persian spelling resolves")
 con.execute("UPDATE instruments SET l_val18='داريك' WHERE ins_code='C4'")   # ي عربی
