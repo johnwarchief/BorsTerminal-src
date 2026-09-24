@@ -182,7 +182,7 @@ def _codal_db_worker(dest_lzma, tmp_db):
         try:
             main.execute("PRAGMA busy_timeout=60000")
             main.execute("ATTACH DATABASE ? AS src", (tmp_db,))
-            merged = {}
+            stats = {}
             stale = []
             for t in _CODAL_TABLES:
                 src_cols = {r[1] for r in main.execute('PRAGMA src.table_info("%s")' % t)}
@@ -200,14 +200,16 @@ def _codal_db_worker(dest_lzma, tmp_db):
                 # قابل‌پارس است). UPDATE...FROM فقط ستون‌های مشترک را لمس می‌کند.
                 upd = ",".join('"%s"=sr."%s"' % (c, c.replace('"', '""'))
                                for c in common)
-                main.execute('UPDATE main."%s" SET %s FROM src."%s" AS sr '
-                             'WHERE sr."tracing_no" = main."%s"."tracing_no"'
-                             % (t, upd, t, t))
-                cur = main.execute('INSERT INTO main."%s" (%s) SELECT %s FROM src."%s" '
-                                   'WHERE "tracing_no" NOT IN '
-                                   '(SELECT "tracing_no" FROM main."%s")'
-                                   % (t, collist, collist, t, t))
-                merged[t] = cur.rowcount
+                cur_upd = main.execute(
+                    'UPDATE main."%s" SET %s FROM src."%s" AS sr '
+                    'WHERE sr."tracing_no" = main."%s"."tracing_no"'
+                    % (t, upd, t, t))
+                cur_ins = main.execute(
+                    'INSERT INTO main."%s" (%s) SELECT %s FROM src."%s" '
+                    'WHERE "tracing_no" NOT IN '
+                    '(SELECT "tracing_no" FROM main."%s")'
+                    % (t, collist, collist, t, t))
+                stats[t] = (cur_upd.rowcount or 0, cur_ins.rowcount or 0)
             if stale:
                 # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
                 _write_db_status(
@@ -225,9 +227,25 @@ def _codal_db_worker(dest_lzma, tmp_db):
         finally:
             main.close()
 
-        _write_db_status("done", 100.0,
-                         "دیتابیس کدال بروزرسانی شد — "
-                         + " · ".join("%s: %d ردیف" % kv for kv in merged.items()))
+        # پیامِ پایان باید صادقانه باشد. پیش‌تر فقط ردیف‌های *درج‌شده* شمرده
+        # می‌شدند، پس هر حالتی که ردیفِ تازه‌ای نداشت (از جمله به‌روزرسانیِ درجا)
+        # «codal_notices: 0 ردیف · …» نشان می‌داد در حالی که سرِ کاربر
+        # «بروزرسانی شد» می‌خواند — کاربر نمی‌فهمید داده‌اش عوض شده یا نه.
+        # SQLite ردیف‌های UPDATE...FROM را حتی وقتی مقدار عوض نشود می‌شمارد، پس
+        # «به‌سازی» به معنی «تازه‌ای اضافه نشد» است، نه «داده تغییر کرد».
+        ins_n = sum(i for _, i in stats.values())
+        upd_n = sum(u for u, _ in stats.values())
+        if ins_n:
+            detail = ("دیتابیس کدال به‌روز شد — %d ردیف تازه، %d ردیف به‌سازی"
+                      % (ins_n, upd_n))
+        elif upd_n:
+            detail = ("دیتابیس کدال به‌روز است — %d ردیف بررسی شد و دادهٔ تازه‌ای "
+                      "اضافه نشد" % upd_n)
+        else:
+            detail = "دیتابیس کدال به‌روز است — ردیف مشترکی برای به‌روزرسانی نبود"
+        if stale:
+            detail += " · snapshot کهنه بود؛ ستون‌های تازهٔ محلی حفظ شدند"
+        _write_db_status("done", 100.0, detail)
     except Exception as exc:                                   # noqa: BLE001
         _write_db_status("error", 0.0, "",
                          "خطا در بروزرسانی دیتابیس کدال — %s: %s"
