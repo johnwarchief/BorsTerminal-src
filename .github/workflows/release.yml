@@ -261,69 +261,63 @@ jobs:
                 Sort-Object { [version]$_ } -Descending -Unique
               Note "تگ‌ها از ls-remote: $($tags -join ' ')"
             }
-            $prev = $tags | Where-Object { $_ -ne $ver } | Select-Object -First 1
-            if (-not $prev) { Fail "نسخهٔ قبلیِ v$ver در تگ‌ها نیست ($($tags -join ' '))" }
-            Note "مبدأِ پچ: v$prev -> v$ver"
-            # دو راه برایِ داشتنِ «وضعیتِ فایل‌هایِ نسخهٔ قبلی»:
-            #  ۱) manifest: ریلیزِ قبلی خودش فهرستِ sha256ِ فایل‌هایش را
-            #     منتشر می‌کند (چند صد کیلوبایت، بدونِ اجرا). این مسیر
-            #     اصلی است.
-            #  ۲) باس‌لاین: نصابِ ۶۰ مگابایتیِ قبل دانلود و *اجرا* می‌شود.
-            #     فقط برایِ نسخه‌هایی که پیش ازِ manifest منتشر شده‌اند می‌ماند
-            #     — اجرایِ installer روی رانر شکننده است (v1.0.23: همان فایلِ
-            #     سالم روی ماشینِ توسعه exit 0، روی رانر exit 1).
-            $mfName = "BorsTerminal_Manifest_v$prev.json"
-            $mfPath = Join-Path $env:RUNNER_TEMP $mfName
-            $haveManifest = $false
-            try {
-              Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$mfName" -OutFile $mfPath
-              $haveManifest = $true
-              Note "manifestِ $prev دریافت شد: $((Get-Item $mfPath).Length) بایت"
-            } catch {
-              Note "manifestِ $prev روی ریلیز نیست؛ باس‌لاین نصب می‌شود"
-            }
-            $mpArgs = @("scripts/make_patch.py", "--from", $prev)
-            if (-not $haveManifest) {
-              $setup = "BorsTerminal_Ultimate_Setup_v$prev.exe"
-              $dl = Join-Path $env:RUNNER_TEMP $setup
-              Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$setup" -OutFile $dl
-              Note "نصابِ مبدأ دانلود شد: $((Get-Item $dl).Length) بایت"
-              $base = Join-Path $env:RUNNER_TEMP "baseline_$prev"
-              $pw = $env:BORS_SETUP_PASSWORD
-              if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
-              # /LOG: خودِ Inno جزئیاتِ شکست را می‌نویسد. بدونِ آن یک exit code
-              # بی‌متن می‌مانیم (لاگ رانر از این شبکه باز نمی‌شود) و حدس می‌زنیم.
-              $innoLog = Join-Path $env:RUNNER_TEMP "baseline_$prev.log"
-              $drive = $base.Substring(0, 1)
-              Note "فضای آزاد دیسک $drive : $([math]::Round((Get-PSDrive $drive).Free/1GB,1)) GB"
-              $innoArgs = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',
-                            '/CURRENTUSER',"/DIR=$base","/LOG=$innoLog",'/PASSWORD=' + $pw)
-              $p = Start-Process -FilePath $dl -ArgumentList $innoArgs -Wait -PassThru
-              if ($p.ExitCode -ne 0) {
-                # 0=موفق 1=خطای حافظه 2=abortِ کاربر (رمز غلط هم اینجا) 3=مسیرِ
-                # نامعتبر 4=خطای ویندوزی 5=خطای command line — خودِ لاگ می‌گوید.
-                $lt = ((Get-Content $innoLog -Tail 6 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
-                Fail "نصبِ باس‌لاین exit=$($p.ExitCode) :: $lt"
+            # کاربری که دو سه نسخه عقب است هم باید آپدیتِ کوچک بگیرد، نه نصابِ
+            # ۵۷ مگابایتی: برایِ هر یک از سه نسخهٔ اخیر که manifest دارد یک پچِ
+            # مستقل ساخته می‌شود. هر پچ diffِ کاملِ همان مبدأ با بیلدِ تازه است
+            # (پچ‌ها زنجیره‌ای اعمال نمی‌شوند)، پس 1.0.22→1.0.25 خودش cumulative
+            # است و آپدیتِر از آرایهٔ patches فقط ورودیِ نسخهٔ خودش را برمی‌دارد.
+            #
+            # مسیرِ قدیمی «نصابِ قبلی را روی رانر نصب کن و فرق بگیر» حذف شد:
+            # از v1.0.23 هر ریلیز manifest خودش را منتشر می‌کند، و همان مسیر روی
+            # رانر شکننده بود (خودِ فایلِ سالم exit 1 با «گذرواژه اشتباه است»).
+            $prevs = @($tags | Where-Object { $_ -ne $ver } | Select-Object -First 3)
+            if ($prevs.Count -eq 0) { Fail "نسخهٔ قبلیِ v$ver در تگ‌ها نیست ($($tags -join ' '))" }
+            Note "مبدأهایِ پچ: $(($prevs | ForEach-Object { "v$_" }) -join ' ') -> v$ver"
+            $built = @()
+            for ($i = 0; $i -lt $prevs.Count; $i++) {
+              $prev = $prevs[$i]
+              # نخستِ فهرست = نسخهٔ بلافاصلهٔ قبل. نبودِ پچِ آن وعدهٔ «آپدیتِ
+              # کوچک» را می‌شکند، پس شکستش خطاست؛ مبدأهایِ قدیمی‌تر best-effort
+              # می‌مانند (نبودشان فقط یعنی آن کاربر به نصبِ کامل برمی‌گردد).
+              $primary = ($i -eq 0)
+              $mfName = "BorsTerminal_Manifest_v$prev.json"
+              $mfPath = Join-Path $env:RUNNER_TEMP $mfName
+              if (-not (Test-Path $mfPath)) {
+                try {
+                  Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$mfName" -OutFile $mfPath
+                } catch {
+                  if ($primary) { Fail "manifestِ $prev روی ریلیز نیست؛ پچِ اصلی ساخته نمی‌شود" }
+                  Note "manifestِ $prev نیست؛ از $prev پچ ساخته نمی‌شود"
+                  continue
+                }
               }
-              Note "باس‌لاین نصب شد: $((Get-ChildItem $base -Recurse -File).Count) فایل"
-              $mpArgs += @("--baseline", $base)
-            } else {
-              $mpArgs += @("--baseline-manifest", $mfPath)
+              Note "manifestِ $prev دریافت شد: $((Get-Item $mfPath).Length) بایت"
+              $mpArgs = @("scripts/make_patch.py", "--from", $prev,
+                          "--baseline-manifest", $mfPath)
+              $mpLog = Join-Path $env:RUNNER_TEMP "make_patch_$prev.log"
+              # خروجیِ non-zero یک دستورِ native در pwsh خطا محسوب نمی‌شود، پس
+              # $LASTEXITCODE صریحاً خوانده می‌شود و لاگ در فایل می‌ماند.
+              $ErrorActionPreference = 'Continue'
+              & python @mpArgs *> $mpLog
+              $mpExit = $LASTEXITCODE
+              $ErrorActionPreference = 'Stop'
+              $tail = ((Get-Content $mpLog -Tail 5 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
+              Note "make_patch($prev) exit=$mpExit :: $tail"
+              if ($mpExit -ne 0) {
+                if ($primary) { Fail "make_patch برایِ $prev با کدِ $mpExit خارج شد" }
+                continue
+              }
+              $patchZip = "dist/BorsTerminal_Patch_${prev}_to_${ver}.zip"
+              if (-not (Test-Path $patchZip)) {
+                if ($primary) { Fail "make_patch برایِ $prev zip نساخت (exit=$mpExit)" }
+                continue
+              }
+              $sz = [math]::Round((Get-Item $patchZip).Length / 1MB, 2)
+              $built += "$prev=$sz MB"
+              Note "artifact: $(Split-Path -Leaf $patchZip) $sz MB"
             }
-            # <- لاگِ make_patch در فایل؛ خودِ exit code هم حتماً بررسی می‌شود،
-            # چون در pwsh خروجیِ non-zero یک دستورِ native خطا محسوب نمی‌شود.
-            $mpLog = Join-Path $env:RUNNER_TEMP "make_patch_$prev.log"
-            $ErrorActionPreference = 'Continue'
-            & python @mpArgs *> $mpLog
-            $mpExit = $LASTEXITCODE
-            $ErrorActionPreference = 'Stop'
-            $tail = ((Get-Content $mpLog -Tail 5 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
-            Note "make_patch exit=$mpExit :: $tail"
-            if ($mpExit -ne 0) { Fail "make_patch با کدِ $mpExit خارج شد" }
-            $patchZip = Get-ChildItem dist/BorsTerminal_Patch_*.zip -ErrorAction SilentlyContinue |
-              Where-Object { $_.Name -notmatch '\.sig$' } | Select-Object -First 1
-            if (-not $patchZip) { Fail "make_patch zip نساخت (exit=$mpExit)" }
-            Note "artifact: $($patchZip.Name) $([math]::Round($patchZip.Length/1MB,2)) MB"
+            if ($built.Count -eq 0) { Fail "هیچ پچی ساخته نشد؛ همه به نصبِ کامل می‌افتند" }
+            Note "پچ‌هایِ منتشرشدنی: $($built -join ' | ')"
           } catch {
             Fail "استثنایِ پیش‌بینی‌نشده: $($_.Exception.Message)"
           }

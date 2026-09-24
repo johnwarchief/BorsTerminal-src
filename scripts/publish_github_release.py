@@ -86,35 +86,43 @@ SIG_FILE = SETUP_EXE + ".sig"
 # دوباره باس‌لاین نصب کند.
 MANIFEST_JSON = os.path.join(ROOT, "dist", f"BorsTerminal_Manifest_{TAG}.json")
 
-# v1.0.10 -- delta update. PATCH_FROM (default: the previously released
-# version) is the only version this patch is valid for; the updater refuses to
-# apply it on anything else and falls back to the full installer.
-# نسخهٔ مبدأِ پچ دیگر دست‌نویس نیست («1.0.9» کهنه): اگر PATCH_FROM داده نشود،
-# پچِ ساخته‌شده در dist بر اساسِ همان نسخهٔ مقصد پیدا می‌شود.
-PATCH_FROM = os.environ.get("PATCH_FROM", "")
-if not PATCH_FROM:
-    import glob as _glob
-    _cands = [x for x in _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*_to_%s.zip"
-                                                 % TAG.lstrip("v")))
+# v1.0.10 -- delta update. هر پچ فقط برای یک نسخهٔ مبدأ اعتبار دارد؛ اگر
+# نسخهٔ کاربر با `from` نخواند، آپدیتِر شفافاً به نصبِ کامل برمی‌گردد.
+# چندنسخه‌ای (v1.0.25 به بعد): کاربری که دو سه نسخه عقب است باید همان آپدیتِ
+# کوچک را بگیرد، نه نصابِ ۵۷ مگابایتی. چون هر پچ diff کاملِ درختِ مبدأ با بیلدِ
+# تازه است (نه پچِ زنجیره‌ای)، پچِ 1.0.22→1.0.25 به‌خودِ خودِ cumulative است و
+# آرایهٔ patches جای بیش از یک ورودی را دارد. `PATCH_FROM` (اگر داده شود) فقط
+# همان یک مبدأ را نگه می‌دارد — برای اجرایِ دستیِ محلی.
+import glob as _glob
+
+TARGET_VER = TAG.lstrip("v")
+_patch_paths = sorted(_glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*_to_%s.zip"
+                                              % TARGET_VER)))
+_wanted = (os.environ.get("PATCH_FROM") or "").strip()
+PATCHES = []
+for _p in _patch_paths:
+    _stem = os.path.basename(_p).replace("BorsTerminal_Patch_", "").split("_to_")[0]
+    if _wanted and _stem != _wanted:
+        print(f"[=] پچِ {_stem} نادیده گرفته شد (PATCH_FROM={_wanted})")
+        continue
+    PATCHES.append({"from": _stem, "zip": _p, "sig": _p + ".sig"})
+
+# فقط پچ‌هایی که امضایشان هم ساخته شده واقعاً منتشر می‌شوند.
+for _e in PATCHES:
+    if not os.path.isfile(_e["sig"]):
+        print("::error::[publish] امضایِ %s نیست؛ این پچ منتشر نمی‌شود"
+              % os.path.basename(_e["zip"]))
+PATCHES = [e for e in PATCHES if os.path.isfile(e["sig"])]
+
+if not PATCHES:
+    _other = [os.path.basename(x) for x in
+              _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*.zip"))
               if not x.endswith(".sig")]
-    if len(_cands) == 1:
-        _stem = os.path.basename(_cands[0]).replace("BorsTerminal_Patch_", "").split("_to_")[0]
-        PATCH_FROM = _stem
-        print(f"[=] مبدأِ پچ از رویِ فایلِ dist خوانده شد: {PATCH_FROM}")
-    elif len(_cands) > 1:
-        raise SystemExit("چند پچِ مختلف در dist است؛ PATCH_FROM را صریح بده: %s" % _cands)
-    else:
-        # v1.0.23 پچ بی‌صدا جا ماند: مرحلهٔ CI سبز بود و اینجا هم فقط یک خطِ
-        # [*] چاپ می‌شد. حالا نبودِ پچ صریحاً هشدار می‌گیرد و نامِ هر پچی که
-        # روی دیسک هست چاپ می‌شود تا عدمِ تطابقِ نسخهٔ مقصد هم دیده شود.
-        _other = [os.path.basename(x) for x in
-                  _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*.zip"))
-                  if not x.endswith(".sig")]
-        print("[!] هشدار: پچِ دلتایی با مقصدِ %s در dist نیست؛ ریلیز فقط نصبِ "
-              "کامل را معرفی می‌کند.%s"
-              % (TAG, (" (روی دیسک: %s)" % ", ".join(_other)) if _other else ""))
-PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM or 'NONE'}_to_{TAG.lstrip('v')}.zip")
-PATCH_SIG = PATCH_ZIP + ".sig"
+    print("[!] هشدار: پچِ دلتایی با مقصدِ %s در dist نیست؛ ریلیز فقط نصبِ "
+          "کامل را معرفی می‌کند.%s"
+          % (TAG, (" (روی دیسک: %s)" % ", ".join(_other)) if _other else ""))
+else:
+    print("[=] پچ‌های قابل‌انتشار: %s" % ", ".join(e["from"] for e in PATCHES))
 
 def get_github_token():
     # Prefer an explicit token from the environment. The release is published to
@@ -175,26 +183,26 @@ def build_latest_json():
             }
         },
     }
-    # v1.0.10: پچِ دلتای اختیاری. فقط وقتی به مانیفست اضافه می‌شود که هم zip و
-    # هم .sig روی دیسک موجود باشند؛ آپدیتِر با غیابِ آرایه شفافاً به نصبِ کامل
-    # برمی‌گردد، پس ریلیزِ بدونِ پچ همچنان درست کار می‌کند.
-    if os.path.isfile(PATCH_ZIP) and os.path.isfile(PATCH_SIG):
-        with open(PATCH_SIG, "r", encoding="utf-8", errors="replace") as f:
-            patch_signature = f.read().strip()
-        patch_name = os.path.basename(PATCH_ZIP)
-        manifest["patches"] = [
-            {
-                "from": PATCH_FROM,
+    # v1.0.10: پچ‌های دلتای اختیاری. آپدیتِر با غیابِ آرایه شفافاً به نصبِ کامل
+    # برمی‌گردد، پس ریلیزِ بدونِ پچ همچنان درست کار می‌کند. هر ورودی یک مبدأ
+    # است؛ کاربرِ دو سه نسخه عقب از همین‌ها نسخهٔ خودش را برمی‌دارد.
+    if PATCHES:
+        manifest["patches"] = []
+        for e in PATCHES:
+            with open(e["sig"], "r", encoding="utf-8", errors="replace") as f:
+                patch_signature = f.read().strip()
+            patch_name = os.path.basename(e["zip"])
+            manifest["patches"].append({
+                "from": e["from"],
                 "to": version,
                 "signature": patch_signature,
                 "url": f"https://github.com/{REPO}/releases/download/{TAG}/{patch_name}",
-                "size": os.path.getsize(PATCH_ZIP),
-            }
-        ]
-        print(f"[+] پچِ دلتا به مانیفست اضافه شد: {PATCH_FROM} -> {version}")
-        print(f"    url -> {manifest['patches'][0]['url']}")
+                "size": os.path.getsize(e["zip"]),
+            })
+            print(f"[+] پچِ دلتا به مانیفست اضافه شد: {e['from']} -> {version}"
+                  f" ({os.path.getsize(e['zip']):,} بایت)")
     else:
-        print(f"[*] پچِ دلتا یافت نشد ({PATCH_ZIP})؛ مانیفست فقط نصبِ کامل را معرفی می‌کند.")
+        print("[*] پچِ دلتایی نیست؛ مانیفست فقط نصبِ کامل را معرفی می‌کند.")
     out_path = os.path.join(ROOT, "latest.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
@@ -269,9 +277,9 @@ def main():
     # v1.0.10: نامِ پچ هم در لیستِ پاکسازی است تا جایگزینیِ پچ روی یک ریلیزِ
     # موجود (GitHub روی اسمِ تکراری ۴۲۲ می‌دهد) بدونِ مانع بماند.
     stale_names = {os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"}
-    if os.path.isfile(PATCH_ZIP):
-        stale_names.add(os.path.basename(PATCH_ZIP))
-        stale_names.add(os.path.basename(PATCH_SIG))
+    for e in PATCHES:
+        stale_names.add(os.path.basename(e["zip"]))
+        stale_names.add(os.path.basename(e["sig"]))
     if os.path.isfile(MANIFEST_JSON):
         stale_names.add(os.path.basename(MANIFEST_JSON))
     for a in assets:
@@ -330,17 +338,18 @@ def main():
             print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
             sys.exit(1)
 
-    # v1.0.10: پچِ دلتا + امضایش. اختیاری است — اگر ساخته نشده، ریلیز فقط
-    # نصبِ کامل را معرفی می‌کند و آپدیتِر شفافاً همان مسیر را می‌رود.
-    patch_uploaded = False
-    if os.path.isfile(PATCH_ZIP) and os.path.isfile(PATCH_SIG):
-        for local_path in (PATCH_ZIP, PATCH_SIG):
+    # v1.0.10: پچ‌های دلتا + امضاهایشان. اختیاری‌اند — اگر ساخته نشده باشند،
+    # ریلیز فقط نصبِ کامل را معرفی می‌کند و آپدیتِر شفافاً همان مسیر را می‌رود.
+    # یک پچِ ناموفق آپلود نشود کل ریلیز را متوقف می‌کند: کاربرِ آن مبدأ باید
+    # بداند که پچ ندارد، نه اینکه مانیفست نصفه‌نیمه بماند.
+    for e in PATCHES:
+        for local_path in (e["zip"], e["sig"]):
             if not upload_asset(local_path):
                 print(f"[-] آپلود {os.path.basename(local_path)} پس از چندین تلاش ناموفق بود.")
                 sys.exit(1)
-        patch_uploaded = True
-    else:
-        print(f"[*] پچِ دلتا موجود نیست ({PATCH_ZIP})؛ بدونِ پچ ادامه می‌دهیم.")
+    patch_uploaded = bool(PATCHES)
+    if not patch_uploaded:
+        print("[*] پچِ دلتایی نیست؛ بدونِ پچ ادامه می‌دهیم.")
 
     # manifestِ فایل‌های همین بیلد: لنگهٔ مقایسهٔ پچِ نسخهٔ بعد. نبودش ریلیز را
     # متوقف نمی‌کند (فقط نسخهٔ بعد مجبور می‌شود نصابِ این نسخه را دانلود و نصب
@@ -370,7 +379,8 @@ def main():
 
     if patch_uploaded:
         print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + "
-              f"{os.path.basename(PATCH_ZIP)} + .sig + latest.json).")
+              f"{len(PATCHES)} پچ + .sig‌هایشان + latest.json) "
+              f"[{', '.join(e['from'] for e in PATCHES)}]).")
     else:
         print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + latest.json).")
 
@@ -448,13 +458,13 @@ def main():
                               os.path.basename(SETUP_EXE)):
         verify_ok = False
 
-    if patch_uploaded:
-        remote_patch = verify_asset_bytes(PATCH_ZIP, os.path.basename(PATCH_ZIP))
-        remote_patch_sig = verify_asset_bytes(PATCH_SIG, os.path.basename(PATCH_SIG))
+    for e in (PATCHES if patch_uploaded else []):
+        remote_patch = verify_asset_bytes(e["zip"], os.path.basename(e["zip"]))
+        remote_patch_sig = verify_asset_bytes(e["sig"], os.path.basename(e["sig"]))
         if remote_patch is None or remote_patch_sig is None:
             verify_ok = False
         elif not verify_signature(remote_patch, remote_patch_sig,
-                                  os.path.basename(PATCH_ZIP)):
+                                  os.path.basename(e["zip"])):
             verify_ok = False
 
     # manifest را هم راستی‌آزمایی می‌کنیم: نسخهٔ بعد پچش را از رویِ همین فایل
