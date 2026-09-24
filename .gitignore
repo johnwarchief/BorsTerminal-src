@@ -128,12 +128,16 @@ nimbalyst-local/attachments/
 installer/out/
 build/
 dist/
+# second/alternate PyInstaller output trees (same nature as dist/, ~340 MB)
+dist2/
 # generated at publish-time by scripts/publish_github_release.py, uploaded to
 # the GitHub release; never tracked in the repo
 latest.json
 # scratch DB backups written by the rebuild/migration scripts (market.db.pre_*).
 # They are ~100 MB each and are pure local rollback state — never a commit target.
 market.db.pre_*
+# manual pre-migration snapshots (market.db.bak-<tag>) — same nature, local only
+market.db.bak-*
 
 # codal snapshot signature — uploaded to the release beside codal.db.lzma
 # (the .lzma itself is covered by *.lzma below); never tracked

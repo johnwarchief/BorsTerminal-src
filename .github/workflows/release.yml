@@ -200,14 +200,24 @@ jobs:
           # (پروتکلِ git) می‌آید نه API گیت‌هاب — فراخوانیِ بدونِ توکن از
           # IP مشترکِ رانر مرتب با rate-limit می‌خورد؛ checkout هم shallow
           # است و تگ‌های قدیمی را محلی ندارد.
-          $prev = git ls-remote --tags origin | ForEach-Object { ($_ -split '\s+')[1] } |
+          $raw = git ls-remote --tags origin 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "ls-remote --tags origin شکست خورد (exit $LASTEXITCODE): $raw"
+            exit 1
+          }
+          $tags = $raw | ForEach-Object { ($_ -split '\s+')[1] } |
             ForEach-Object { $_ -replace '^refs/tags/','' -replace '\^\{\}$','' -replace '^v','' } |
-            Where-Object { $_ -match '^\d+\.\d+\.\d+$' -and $_ -ne $ver } |
-            Sort-Object { [version]$_ } -Descending -Unique | Select-Object -First 1
-          Write-Host "نسخهٔ جاری: $ver — مبدأِ پچ: $prev"
-          if (-not $prev -or $prev -eq $ver) {
-            Write-Host "نسخهٔ قبلی برای diff نیست؛ بدونِ پچ ادامه می‌دهیم"
-            exit 0
+            Where-Object { $_ -match '^\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]$_ } -Descending -Unique
+          Write-Host "نسخهٔ جاری: $ver — تگ‌هایِ نسخه‌ای: $($tags -join ', ')"
+          # v1.0.23 این مرحله را «موفق» زد ولی هیچ پچ ریلیز نشد: مسیرِ خاموشِ
+          # exit 0 بدونِ مبدأ. پچِ دلتا خواستهٔ صریح کاربر است، پس نبودِ مبدأ
+          # خطاست؛ step روی continue-on-error است پس ریلیز نمی‌افتد، فقط
+          # صادقاً قرمز می‌شود.
+          $prev = $tags | Where-Object { $_ -ne $ver } | Select-Object -First 1
+          if (-not $prev) {
+            Write-Error "نسخهٔ قبلیِ $ver در تگ‌ها نیست؛ مبدأِ پچ مشخص نمی‌شود"
+            exit 1
           }
           Write-Host "مبدأِ پچ: v$prev"
           $setup = "BorsTerminal_Ultimate_Setup_v$prev.exe"

@@ -98,6 +98,16 @@ if not PATCH_FROM:
         print(f"[=] مبدأِ پچ از رویِ فایلِ dist خوانده شد: {PATCH_FROM}")
     elif len(_cands) > 1:
         raise SystemExit("چند پچِ مختلف در dist است؛ PATCH_FROM را صریح بده: %s" % _cands)
+    else:
+        # v1.0.23 پچ بی‌صدا جا ماند: مرحلهٔ CI سبز بود و اینجا هم فقط یک خطِ
+        # [*] چاپ می‌شد. حالا نبودِ پچ صریحاً هشدار می‌گیرد و نامِ هر پچی که
+        # روی دیسک هست چاپ می‌شود تا عدمِ تطابقِ نسخهٔ مقصد هم دیده شود.
+        _other = [os.path.basename(x) for x in
+                  _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*.zip"))
+                  if not x.endswith(".sig")]
+        print("[!] هشدار: پچِ دلتایی با مقصدِ %s در dist نیست؛ ریلیز فقط نصبِ "
+              "کامل را معرفی می‌کند.%s"
+              % (TAG, (" (روی دیسک: %s)" % ", ".join(_other)) if _other else ""))
 PATCH_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Patch_{PATCH_FROM or 'NONE'}_to_{TAG.lstrip('v')}.zip")
 PATCH_SIG = PATCH_ZIP + ".sig"
 
