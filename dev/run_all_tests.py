@@ -25,6 +25,11 @@ SUITES = [
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
+    # شاخص ۴: حکمِ معافیت/N/A باید بین fts_engine (اسکرینر) و api/fundamental
+    # (کارت) یکی باشد — پیش از این این سوئیت اصلاً در SUITES نبود و پاریتیِ
+    # اسکرینر/کارت هم کارت را با خودش می‌سنجد (۲۳۱ نماد واگرایی بی‌صدا ماند).
+    ('dev/fts_screener_card_parity_v10.py',
+                                      'screener<->card parity + ind-4 exemption engine vs card'),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),

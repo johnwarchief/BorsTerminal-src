@@ -29,6 +29,10 @@
     `scan_symbol`/`bulk_scan` را قفل کرده‌اند. از آنجا فقط پریمیتیرهای عمومی
     (norm_fa، sym_in، annual_statements، gross_margin، sector_filter) مصرف
     میشوند.
+  * تنها استثنا — معافیتِ شاخص ۴: تک‌مرجعش `fts_engine.ind4_exempt` است و
+    هر دو مسیر (اسکرینر و کارت) همان را می‌خوانند؛ این فایل دیگر هیچ
+    معیارِ نام/طبقهٔ دومی برای N/A ندارد. قفلش:
+    dev/fts_screener_card_parity_v10.py.
   * `static/index.html` و `static/app.js` مصرف‌کنندهٔ فرجمد این payload هستند؛
     کلیدهای `insights[].{step,title,text}`، `metrics.{mcap,revenue,
     gross_margin,roe,ps}`، `fs_count` و `history[].tracing_no` حفظ شده‌اند.
@@ -1002,7 +1006,8 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
 ANNUALIZATION_SCALE = (3, 4, 5, 6, 9, 12)
 
 
-def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) -> dict:
+def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None,
+                             exempt=None) -> dict:
     """فروش سالانه = فروش تجمیعی × (۱۲ ÷ م)، م = ماه‌های سپری‌شدهٔ سال مالی.
 
     ضریب ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۵ ماه ×۲٫۴، ۶ ماه ×۲ و… (شرطِ صریحِ
@@ -1014,16 +1019,23 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
 
     طبقهٔ مالی/خدماتی/صندوق: «فروش کالا» معنا ندارد، پس مبنا **درآمد عملیاتیِ
     صورت مالی سالانه** است و گزارش ماهانه جای آن را نمی‌گیرد (قاعدهٔ جزوه).
+
+    `exempt` = حکمِ fts_engine.ind4_exempt (تک‌مرجعِ معافیتِ شاخص ۴). اگر
+    داده نشود رفتارِ نام‌محورِ پیشین می‌ماند؛ evaluate_v10 همیشه می‌دهد تا
+    «سالانه‌سازی N/A» و «خودِ شاخص ۴» یک تصمیم را دو جور نگویند (بی‌این،
+    نمادی که طبقه‌اش هلدینگ است ولی معاف نیست فروشِ ۰٫۰ می‌گرفت).
     """
     series = series if series is not None else monthly_series(conn, symbol)
     ref_row = ref if ref is not None else fts_engine.reference_annual(conn, symbol)
     fs_rev = _f((ref_row or {}).get("revenue"))
     prof = profile or company_profile()
-    # سند v2.1 (F-04): محاسبهٔ نسبتِ فروش برای هلدینگ/سرمایه‌گذاری مجاز نیست ⇒ N/A صریح
-    # (هیچ نسبتِ ساختگی ساخته نمی‌شود؛ ind4 هم مستقلاً برای هلدینگ N/A برمی‌گرداند).
-    if prof.get("kind") == "holding":
+    # سند v2.1 (F-04): محاسبهٔ نسبتِ فروش برای طبقهٔ معاف مجاز نیست ⇒ N/A صریح
+    # (هیچ نسبتِ ساختگی ساخته نمی‌شود؛ ind4_valuation هم همان حکم را می‌گیرد).
+    _na = (prof.get("kind") == "holding") if exempt is None else bool(exempt)
+    if _na:
         return {"annual_sales_mrl": 0.0, "annual_sales_bt": None, "months_used": 0,
-                "scale_factor": 0.0, "basis": "N/A — هلدینگ/سرمایه‌گذاری (سند v2.1 F-04)",
+                "scale_factor": 0.0,
+                "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطهٔ مالی (سند v2.1 F-04)",
                 "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
                 "operational_revenue_basis": False, "na": True}
     op_basis = ((prof.get("kind") in ("financial", "service", "fund", "holding"))
@@ -1067,19 +1079,26 @@ def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None) 
                             for m in ANNUALIZATION_SCALE]}
 
 
-def ind4_valuation(annual, gm, market_cap_rials, th=None, kind=None) -> dict:
+def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     """۴الف فروش سالانه ÷ ارزش بازار (≥۱×) + ۴ب پتانسیل سود ناخالص ÷ ارزش بازار (≥۴۰٪).
 
     سود ناخالص پتانسیل = فروش سالانهٔ annualized × حاشیهٔ ناخالص.
     برای شرکت مالی که «سود ناخالص» ندارد، حاشیهٔ سود خالص به‌عنوان «مبنای
     جایگزین» مصرف و صریحاً برچسب می‌خورد تا با عددِ شرکت تولیدی اشتباه نشود.
+
+    `exempt` تنها ورودیِ تصمیمِ N/A است و باید از fts_engine.ind4_exempt بیاید
+    (تک‌مرجعِ مشترکِ اسکرینر و کارت). این تابع دیگر خودش هیچ معیارِ نام/طبقه‌ای
+    ندارد — پیش از این `kind == "holding"` را می‌دید و با معافیتِ موتور
+    (صنعت + شاهدِ درآمدِ عملیاتی) در ۲۳۱ نماد واگرا بود.
     """
     th = th or v10_thresholds()
-    # سند v2.1: برای هلدینگ/سرمایه‌گذاری، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
-    if kind == "holding":
-        return {"available": False, "na": True, "pass": False, "potential_pass": False,
-                "sales_pass": False, "rule_ref": "F-04",
-                "reason": "هلدینگ/سرمایه‌گذاری: اعمال نسبت فروش به ارزش بازار و جانشین NAV مجاز نیست (N/A)."}
+    # سند v2.1: برای طبقهٔ معاف، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
+    if exempt:
+        return {"available": False, "na": True, "exempt": True, "pass": False,
+                "potential_pass": False, "sales_pass": False, "rule_ref": "F-04",
+                "reason": ("هلدینگ/سرمایه‌گذاری/واسطهٔ مالی (یا نبودِ سطرِ درآمدِ "
+                           "عملیاتی در صورتِ مالی): اعمال نسبت فروش به ارزش بازار و "
+                           "جانشین NAV مجاز نیست (N/A).")}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
@@ -1314,11 +1333,15 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
             gm["net_margin_period"] = str(ref.get("period_end") or "")[:10]
         elif rev > 0 and net:
             gm["net_margin_rejected_pct"] = round(net / rev * 100.0, 1)
-    annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref, profile=prof)
-    # سند v2.1: گیتِ «عدم اعمال نسبت فروش بر هلدینگ‌ها» (holdings_sales_na)
+    # سند v2.1: گیتِ «عدم اعمال نسبت فروش بر هلدینگ‌ها» (holdings_sales_na).
+    # و حکمِ معافیت از fts_engine.ind4_exempt می‌آید — همان تابعی که
+    # bulk_scan/scan_symbol (مسیرِ اسکرینر) صدا می‌زنند. `conn` همین‌جا باز است،
+    # پس نه کوئریِ دوباره‌ای لازم است و نه منطقِ موازیِ دوم که بتواند واگرا شود.
     _holdings_na = bool((cfg or {}).get("holdings_sales_na", True))
-    val = ind4_valuation(annual, gm, market_cap_rials, th=th,
-                         kind=(prof.get("kind") if (prof and _holdings_na) else None))
+    ind4_na = fts_engine.ind4_exempt(conn, symbol, sector, holdings_na=_holdings_na)
+    annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref,
+                                      profile=prof, exempt=ind4_na)
+    val = ind4_valuation(annual, gm, market_cap_rials, th=th, exempt=ind4_na)
     sec = ind5_industry(sector, cfg=cfg, market_cap_rials=market_cap_rials,
                         total_market_cap_rials=total_market_cap_rials)
     # سند v2.1: استثنای دارویی — فقط با حاشیهٔ ناخالص > آستانهٔ پیکربندی
@@ -2403,33 +2426,3 @@ def _fts_market_ctx(conn, symbol: str) -> tuple:
     return info["rials"], sector, total, info
 
 
-
-@router.get("/api/fts/{symbol}")
-def get_fts_symbol(symbol: str, v10: int = 0):
-    """۵ شاخص FTS برای یک نماد + جزئیات کامل هر شاخص.
-
-    `v10=1` خلاصهٔ پنج‌لایهٔ نسخهٔ ۱۰ را هم اضافه میکند (یک ارزیابی اضافه؛
-    پیش‌فرض خاموش است تا هزینهٔ مصرف‌کننده‌های فعلی دو برابر نشود).
-    """
-    try:
-        conn = sqlite3.connect(DB_PATH, timeout=30)
-        conn.execute("PRAGMA journal_mode=WAL")
-        try:
-            cfg = load_fts_config()
-            mcap, sector, total_mcap, mcap_info = _fts_market_ctx(conn, symbol)
-            result = fts_engine.scan_symbol(conn, symbol, mcap or 0.0, total_mcap, sector, cfg=cfg)
-            result["market_cap_rials"] = mcap
-            result["market_cap_src"] = mcap_info["source"]
-            result["market_cap_error"] = mcap_info["error"]
-
-            if int(v10 or 0):
-                res = evaluate_v10(conn, symbol, mcap, total_mcap, sector, cfg=cfg)
-                result["fts_v10"] = {"score": res["score"], "passes": res["passes"],
-                                     "verdict": res["verdict"], "profile": res["profile"],
-                                     "methodology": res["methodology"],
-                                     "indicators": res["indicators"]}
-            return {"status": "success", "data": result}
-        finally:
-            conn.close()
-    except Exception as e:
-        return {"status": "error", "message": str(e)}

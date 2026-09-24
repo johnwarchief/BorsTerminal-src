@@ -871,7 +871,57 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
             "months_used": months, "basis": basis, "reconciled": reconciled}
 
 
-_HOLDING_SECTOR_KEYS = ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته")
+# ═══════════════════════════════════════════════════════════════════════════
+#  شاخص ۴ — تک‌مرجعِ «سندِ فروش ندارد» (معافیت/ N/A)
+# ═══════════════════════════════════════════════════════════════════════════
+# برای این طبقه «فروش» معنا ندارد؛ سند v2.1 (F-04) محاسبهٔ نسبتِ فروش÷ارزشِ
+# بازار را برایشان «غیرمجاز» می‌داند و حکمِ جزوه «N/A به‌جای عدد ساختگی» است
+# (کلیدِ کانفیگ: holdings_sales_na). این فهرست، اشتراکِ دو فهرستِ پیشین است:
+# fts_engine (سرمایه‌گذاری/چندرشته) و api/fundamental._HOLD_TOKENS
+# (بانک/واسطه‌گری/نهادهای مالی واسط/هلدینگ) — تا اسکرینر و کارت جزئیات روی
+# یک نماد دو جواب متفاوت ندهند. از این پس تنها ind4_exempt این را می‌سنجد.
+_HOLDING_SECTOR_KEYS = ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته", "هلدینگ",
+                        "بانک", "واسطه گری", "واسطه‌گری", "نهادهای مالی واسط")
+
+
+def _hold_norm(text) -> str:
+    """نرمالِ مقایسهٔ طبقه: norm_fa + حذفِ فاصله.
+
+    norm_fa نیم‌فاصله را می‌اندازد ولی فاصلهٔ معمولی را نه؛ دادهٔ واقعی
+    «سرمايه گذاري» و «چند رشته اي» را با فاصله می‌نویسد. بی‌این‌گام، دو توکنِ
+    «سرمایه‌گذاری» و «چندرشته» در فهرست بالا هرگز به داده نمی‌خوردند (توکنِ
+    مرده) و نوشتارِ هر نماد جواب را عوض می‌کرد.
+    """
+    return norm_fa(text).replace(" ", "")
+
+
+_HOLDING_SECTOR_TOKENS = tuple(_hold_norm(k) for k in _HOLDING_SECTOR_KEYS)
+
+
+def holding_class_match(sector_norm, company_name: str = "") -> bool:
+    """آیا نامِ طبقه (صنعت یا نامِ شرکت) در طبقهٔ معافِ شاخص ۴ است؟"""
+    s = _hold_norm(sector_norm) + " " + _hold_norm(company_name)
+    return any(t in s for t in _HOLDING_SECTOR_TOKENS)
+
+
+def company_name_of(conn, symbol) -> str:
+    """نامِ شرکت از خودِ دیتابیس (نه از رشته‌ای که فراخوان آورده).
+
+    چرا داخلِ قاعده و نه به‌عنوانِ آرگومان: کارت جزئیات نام را از فراخوان
+    (cname_of با ترتیبِ period_end) می‌گرفت و اسکرینر هرگز نامی نمی‌دید؛ با
+    تک‌منبعِ DB هر دو مسیر دقیقاً یک رشته مقایسه می‌کنند.
+    """
+    if conn is None:
+        return ""
+    try:
+        pred, params = sym_in("symbol", symbol)
+        row = conn.execute(
+            "SELECT company_name FROM financial_statements "
+            "WHERE %s AND company_name IS NOT NULL "
+            "ORDER BY period_end DESC, tracing_no DESC LIMIT 1" % pred, params).fetchone()
+    except sqlite3.Error:
+        return ""
+    return (row[0] if row else "") or ""
 
 
 def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
@@ -897,16 +947,48 @@ def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
     return None if row is None else row[0]
 
 
-def no_sales_concept(conn: sqlite3.Connection, symbol: str, sector: str = "",
-                     _precomputed: Optional[set] = None) -> bool:
-    """رژیمِ «سندِ فروش ندارد»: یا نامِ صنعت (همان مسیرِ guarded هلدینگ)، یا
-    شواهدِ صورتِ مالی که سطرِ درآمدِ عملیاتی وجود ندارد."""
-    s = norm_fa(sector)
-    if any(k in s for k in _HOLDING_SECTOR_KEYS):
+def ind4_exempt(conn, symbol: str, sector_norm: str = "", *,
+                holdings_na: bool = True,
+                _precomputed: Optional[set] = None) -> bool:
+    """تک‌مرجعِ معافیتِ شاخص ۴ («تخمین فروش ۱۲ ماهه ÷ ارزش بازار»).
+
+    قاعده = (نامِ طبقه در صنعت یا در نامِ شرکت) **یا** (شاهدِ صورتِ مالی:
+    has_operating_sales == 0 — صندوق/سبدگردانی که فقط «جمع درآمدها» را منتشر
+    می‌کند). هر دو مسیرِ اسکرینر (bulk_scan/scan_symbol) و کارت جزئیات
+    (api/fundamental) همین یک تابع را صدا می‌زنند، پس داوری نمی‌تواند واگرا
+    شود.
+
+      * شاهدِ None («با پارسرِ جدید بازخوانی نشده») معافیت **نمی‌آورد** — صفرِ
+        بی‌داده به‌جای عدد ساختگی هم نیست؛ همان سه‌مقدارهٔ has_operating_sales.
+      * holdings_na=False یعنی کاربر کلیدِ کانفیگِ معافیت را خاموش کرده (مثل
+        امروز فقط مسیرِ کارت این گیت را می‌گذراند؛ مسیرهای موتور پیش‌فرض
+        روشن‌اند).
+      * conn=None یعنی اتصال در دسترس نیست (مسیرِ کلاسِ FTSEngine که فقط
+        دیکشنریِ نماد را می‌بیند) — آن‌جا فقط شاهدِ نامی سنجیده می‌شود.
+      * _precomputed مجموعهٔ no_sales_symbols است تا اسکنِ کل بازار به‌ازای هر
+        نماد یک کوئری نزند (الگوی ضدِN+1ِ همان‌جا).
+    """
+    if not holdings_na:
+        return False
+    # اولِ صنعت (بی‌کوئری)، بعدِ نامِ شرکت از DB — تا اسکنِ کل بازار برای
+    # نمادهایی که صنعتشان در طبقهٔ معاف است، کوئریِ اضافه نزند.
+    if holding_class_match(sector_norm):
+        return True
+    if holding_class_match("", company_name_of(conn, symbol)):
         return True
     if _precomputed is not None:
         return norm_fa(symbol) in _precomputed
+    if conn is None:
+        return False
     return has_operating_sales(conn, symbol) == 0
+
+
+def no_sales_concept(conn: sqlite3.Connection, symbol: str, sector: str = "",
+                     _precomputed: Optional[set] = None,
+                     holdings_na: bool = True) -> bool:
+    """نامِ قدیمیِ همان قاعده — فقط واگرد به ind4_exempt (منطق این‌جا نیست)."""
+    return ind4_exempt(conn, symbol, sector, holdings_na=holdings_na,
+                       _precomputed=_precomputed)
 
 
 def no_sales_symbols(conn: sqlite3.Connection) -> set:
@@ -941,13 +1023,15 @@ def no_sales_symbols(conn: sqlite3.Connection) -> set:
 
 def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: float,
                        min_ratio: float = 1.0, annual: Optional[dict] = None,
-                       sector: str = "", _no_sales: Optional[set] = None) -> Optional[dict]:
+                       sector: str = "", _no_sales: Optional[set] = None,
+                       holdings_na: bool = True) -> Optional[dict]:
     """فروش سالانه ÷ ارزش بازار روز — جزوه: باید ≥ min_ratio (پیش‌فرض ۱.۰) باشد.
     شرکت‌های سرمایه‌گذاری/هلدینگ معاف (N/A) هستند.
     `_no_sales` مجموعهٔ از پیش ساخته‌شده (no_sales_symbols) است تا اسکنِ کل بازار
     به ازای هر نماد یک کوئری نزند.
     """
-    if no_sales_concept(conn, symbol, sector, _precomputed=_no_sales):
+    if no_sales_concept(conn, symbol, sector, _precomputed=_no_sales,
+                        holdings_na=holdings_na):
         mcap = _f(market_cap_rials)
         return {"sales_to_mcap": None,
                 "annual_sales_bt": None,
@@ -1179,9 +1263,14 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     gm = gross_margin(conn, symbol, min_margin=_f(cfg.get("margin_min", 20.0)) or 20.0,
                       optimal=_f(cfg.get("margin_optimal", 30.0)) or 30.0, ref=ref)
     annual = annualized_sales(conn, symbol, ref=ref)
+    # گیتِ کانفیگِ معافیت (holdings_sales_na) — همان که مسیرِ کارت می‌گذراند:
+    # خاموش یعنی «معافیتِ N/A اعمال نشود»، تا زیرِ هر حالتِ کانفیگ دو مسیر
+    # یک داوری بدهند (پیش از این فقط کارت آن را می‌خواند).
+    _hold_na = bool(cfg.get("holdings_sales_na", True))
     s2m = sales_to_marketcap(conn, symbol, mcap,
                              min_ratio=_th(cfg, "sales_to_mcap_min"),
-                             annual=annual, sector=sector, _no_sales=_no_sales)
+                             annual=annual, sector=sector, _no_sales=_no_sales,
+                             holdings_na=_hold_na)
     pot = gross_profit_potential(conn, symbol, mcap,
                                  min_pct=_th(cfg, "profit_potential_min"),
                                  gm=gm, annual=annual)
@@ -1193,7 +1282,8 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # رژیمِ «سندِ فروش ندارد» (گارد F-04b): هلدینگ/سرمایه‌گذاری بر مبنای P/NAV
     # داوری می‌شود، و از این رو صندوق/سبدگردانی که صورتِ مالی‌شان اصلاً سطرِ
     # «درآمد عملیاتی» ندارد هم — تا رقمِ سرمایه‌گذاری به‌جای فروش حساب نشود.
-    is_holding = no_sales_concept(conn, symbol, sector, _precomputed=_no_sales)
+    is_holding = no_sales_concept(conn, symbol, sector, _precomputed=_no_sales,
+                                  holdings_na=_hold_na)
     if is_holding:
         passes_s2m = True
     else:
@@ -1485,6 +1575,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     no_sales = no_sales_symbols(conn)
     do_m141 = bool(cfg.get("filter_m141"))
     min_liq = _f(cfg.get("min_trade_val", 0.0)) or 0.0
+    _hold_na = bool(cfg.get("holdings_sales_na", True))
 
     out = []
     for key in sorted(annual.keys()):
@@ -1578,8 +1669,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         elif (fs_rev > 0 and 0 < months_used < 12
               and (annual_sales > fs_rev * 4.0 or annual_sales < fs_rev * 0.25)):
             annual_sales, months_used = fs_rev, 12      # واحد مشکوک → فروش سالانهٔ کدال
-        is_holding = (any(k in norm_fa(sector) for k in _HOLDING_SECTOR_KEYS)
-                      or key in no_sales)
+        is_holding = ind4_exempt(conn, key, sector, holdings_na=_hold_na,
+                                 _precomputed=no_sales)
         s2m = (annual_sales * MRL_TO_RIAL / mcap) if mcap > 0 and annual_sales > 0 and not is_holding else None
         pot = None
         if s2m is not None and margin is not None:
@@ -1691,9 +1782,11 @@ class FtsEngine:
 
         # F-04
         # توجه: این مسیرِ کلاسِ FTSEngine است و فقط دیکشنریِ نماد را می‌بیند؛
-        # مجموعهٔ no_sales (که به conn نیاز دارد) اینجا در دسترس نیست، پس همان
-        # معافیتِ نامِ صنعت می‌ماند.
-        is_holding = any(k in norm_fa(sector) for k in _HOLDING_SECTOR_KEYS)
+        # conn ندارد، پس شاهدِ صورتِ مالی (no_sales/has_operating_sales) اینجا
+        # سنجیده نمی‌شود — ولی سیبِ معاف و گیتِ holdings_sales_na از همان
+        # تک‌مرجعِ مشترکِ ind4_exempt می‌آیند تا فهرستِ دومِ دست‌ساز نسازیم.
+        is_holding = ind4_exempt(None, sym, sector, holdings_na=bool(
+            self.config.get("holdings_sales_na", True)))
         ann_sales = sales_curr * (12.0 / months) if (months > 0 and not is_holding) else 0.0
         s2m = (ann_sales / mcap) if (mcap > 0 and not is_holding) else None
         pot = (ann_sales * (gpm / 100.0) / mcap * 100.0) if (mcap > 0 and not is_holding) else None

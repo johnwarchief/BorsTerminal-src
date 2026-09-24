@@ -744,14 +744,13 @@ def conf_tape(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
 
 # ================================= ستون ۳: بنیادی (بازاستفاده از fts_engine)
 def _is_holding_sector(sector) -> bool:
-    """هلدینگ/شرکت سرمایه‌گذاری؟ — همان لیستِ fts_engine (sales_to_marketcap).
+    """طبقهٔ معافِ شاخص ۴؟ — تنها از فهرستِ fts_engine خوانده می‌شود.
 
     جزوه (بخش ۴): «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)». این تابع
-    فقط تشخیصِ صنعت است؛ معافیت در sales_to_marketcap / fund_from_bulk اعمال
-    می‌شود. لیست را با fts_engine نگه می‌داریم تا دو مسیر واگرا نشوند.
+    فقط شاهدِ نامِ صنعت است؛ قاعدهٔ کامل (صنعت + نامِ شرکت + نبودِ سطرِ درآمدِ
+    عملیاتی) `fts_engine.ind4_exempt` است و هر سه مسیر از همان می‌خوانند.
     """
-    s = norm(sector or "")
-    return any(k in s for k in ("سرمایه گذاری", "سرمایه‌گذاری", "چندرشته"))
+    return fts_engine.holding_class_match(sector or "")
 
 
 def _fund_has_data(d: dict) -> bool:
@@ -774,7 +773,7 @@ def _fund_has_data(d: dict) -> bool:
     return False
 
 
-def fund_from_bulk(row: dict) -> dict:
+def fund_from_bulk(row: dict, conn=None) -> dict:
     """رکورد `fts_engine.bulk_scan` → همان شکل `scan_symbol` که ستون بنیادی می‌خورد.
 
     چرا لازم است: scan_symbol به‌ازای هر نماد ~۲۴ کوئری می‌زند (۱۹تایش روی
@@ -815,7 +814,11 @@ def fund_from_bulk(row: dict) -> dict:
     # این نمادها را «بی‌داده» می‌خواند و ستون بنیادی در مسیرِ bulk با مسیرِ
     # تک‌نمادی واگرا می‌شد (۱۷ صندوقِ زنده: state fail ⇄ nodata). جزوه (بخش ۴):
     # «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)» — یعنی معاف است، نه بی‌داده.
-    if s2m is None and bool(row.get("i4_pass")) and _is_holding_sector(row.get("sector_name")):
+    # تشخیص با همان تک‌مرجعِ fts_engine.ind4_exempt (صنعت + نامِ شرکتِ DB +
+    # نبودِ سطرِ درآمدِ عملیاتی) — یک فهرستِ سومِ دست‌ساز اینجا نباید بماند.
+    if (s2m is None and bool(row.get("i4_pass"))
+            and fts_engine.ind4_exempt(conn, row.get("symbol") or "",
+                                       row.get("sector_name") or "")):
         s2m = {"sales_to_mcap": None, "annual_sales_bt": None,
                "mcap_ht": round(_f(row.get("mcap")) / 1e13, 2),
                "annualize_basis": "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
@@ -931,7 +934,7 @@ def conf_fund(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
                 break
 
     if "i1_pass" in fts:        # رکوردِ bulk_scan → به شکل scan_symbol درمی‌آید
-        fts = fund_from_bulk(fts)
+        fts = fund_from_bulk(fts, conn)
     d = fts.get("detail") or {}
     passes = fts.get("passes") or {}
     score = int(_f(fts.get("score")))
