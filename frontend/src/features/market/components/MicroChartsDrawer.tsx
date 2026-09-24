@@ -124,14 +124,14 @@ export function MicroChartsDrawer() {
         aria-expanded={open}
         className="flex w-full items-center justify-between text-xs font-black text-text-primary hover:text-accent-blue"
       >
-        <span>نبض درون‌روز — میکروچارت اوردر‌بوک و پهنای باند</span>
+        <span>نمودارهای جریان سفارش‌ها و جو بازار</span>
         <span className={`transition-transform ${open ? '-rotate-90' : ''}`}>‹</span>
       </button>
       {open ? (
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <ChartCard
               testId="micro-orderbook"
-              title="Order Book Flow (تجمعی امروز)"
+              title="جریان ارزش سفارش‌های خرید و فروش (تجمعی امروز)"
               legend={[
                 { color: '#3b82f6', label: 'ارزش صف خرید' },
                 { color: '#f97316', label: 'ارزش صف فروش' },
@@ -158,7 +158,7 @@ export function MicroChartsDrawer() {
             />
             <ChartCard
               testId="micro-breadth"
-              title="Market Sentiment Breadth (معاملات مثبت/منفی)"
+              title="نمودار نمادهای مثبت و منفی (جو بازار)"
               legend={[
                 { color: '#22c55e', label: 'مثبت‌ها' },
                 { color: '#ef4444', label: 'منفی‌ها' },

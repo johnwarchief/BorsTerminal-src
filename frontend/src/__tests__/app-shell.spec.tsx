@@ -44,8 +44,8 @@ describe('AppShell smoke', () => {
   it('سایدبار فارسی رندر می شود', async () => {
     renderApp('/');
     await waitFor(() => {
-      expect(screen.getByText('تابلو بازار')).toBeInTheDocument();
-      expect(screen.getByText('ایجنت ارشد')).toBeInTheDocument();
+      expect(screen.getByText('تابلوخوانی/بازار')).toBeInTheDocument();
+      expect(screen.getByText('استراتژی FTS')).toBeInTheDocument();
     });
   });
 

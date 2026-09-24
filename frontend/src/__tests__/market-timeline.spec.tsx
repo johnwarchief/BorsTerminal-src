@@ -192,7 +192,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
       sq_n: [400, 380, 360, 340, 330, 320, 313],
     });
     renderDrawer();
-    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نمودارهای جریان سفارش‌ها|نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('bullish-cross')).toBeInTheDocument());
     expect(screen.getByTestId('micro-orderbook').textContent).toContain('▲ برتری تقاضا');
     expect(screen.getByTestId('micro-orderbook').querySelectorAll('polyline')).toHaveLength(2);
@@ -202,7 +202,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
   it('سری تک‌نقطه‌ای ⇒ نمایشگر لحظه‌ای (نه کادر خالی)', async () => {
     mockTimeline({ t: ['12:58'], bq_bt: [64935], sq_bt: [16198], pos: [1147], neg: [807] });
     renderDrawer();
-    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نمودارهای جریان سفارش‌ها|نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('orderbook-gauge')).toBeInTheDocument());
     // نوار دوتایی صف خرید/فروش با اعداد خوانا
     expect(screen.getByTestId('orderbook-gauge').textContent).toContain('۶۴٬۹۳۵');
@@ -216,7 +216,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
   it('تک‌نقطهٔ همه-null ⇒ نمایشگر لحظه‌ای «بدون داده» صادقانه', async () => {
     mockTimeline({ t: ['12:58'], bq_bt: [null], sq_bt: [null], pos: [null], neg: [null] });
     renderDrawer();
-    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نمودارهای جریان سفارش‌ها|نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('orderbook-gauge-empty')).toBeInTheDocument());
     expect(screen.getByTestId('breadth-gauge-empty')).toHaveTextContent('بدون داده');
   });
@@ -228,7 +228,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
     );
     mockTimeline({ t: ['12:58'], bq_bt: [64935], sq_bt: [16198], pos: [1147], neg: [807] });
     renderDrawer();
-    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نمودارهای جریان سفارش‌ها|نبض درون‌روز/ }));
     await waitFor(() =>
       expect(screen.getByTestId('micro-orderbook').querySelectorAll('polyline')).toHaveLength(2),
     );
@@ -237,7 +237,7 @@ describe('دراور میکروچارت با تایم‌لاین ماک‌شده
   it('معکوس breadth در حالت ماک نمایش داده می‌شود', async () => {
     mockTimeline({ t: ['09:00', '10:00'], pos: [10, 40], neg: [20, 20], bq_bt: [5, 6], sq_bt: [9, 9] });
     renderDrawer();
-    fireEvent.click(await screen.findByRole('button', { name: /نبض درون‌روز/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /نمودارهای جریان سفارش‌ها|نبض درون‌روز/ }));
     await waitFor(() => expect(screen.getByTestId('breadth-flip')).toBeInTheDocument());
     expect(screen.getByTestId('breadth-flip').textContent).toContain('معکوس به مثبت');
     expect(screen.queryByTestId('bullish-cross')).not.toBeInTheDocument();

@@ -126,7 +126,7 @@ describe('کف‌روبی در پنل مشکوک', () => {
       month_avg_vol: 1_000_000,
     });
     render(<SuspiciousPanel rows={[roobi]} onSelect={onSelect} />);
-    expect(screen.getByText(/کف‌روبی/)).toBeInTheDocument();
+    expect(screen.getAllByText(/کف‌روبی/)[0]).toBeInTheDocument();
     expect(screen.getByText('روباه')).toBeInTheDocument();
     expect(screen.getAllByText(ROOBI_LABEL).length).toBeGreaterThanOrEqual(2);
     expect(ROOBI_LABEL).toBe('در صف فروش قفل + خریدار درشت در حال جمع‌آوری');
@@ -134,7 +134,7 @@ describe('کف‌روبی در پنل مشکوک', () => {
 
   it('بدون ردیف روباهی، بخش کف‌روبی حالت خالی دارد', () => {
     render(<SuspiciousPanel rows={[row({ symbol: 'سالم', f_roobi: false })]} onSelect={() => {}} />);
-    expect(screen.getByText(/کف‌روبی/)).toBeInTheDocument();
+    expect(screen.getAllByText(/کف‌روبی/)[0]).toBeInTheDocument();
   });
 
   it('الگوی ساعت با برچسب ساعت قوی در پنل نشان داده می‌شود', () => {

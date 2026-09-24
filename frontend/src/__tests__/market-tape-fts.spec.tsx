@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MarketRow } from '@shared/types/marketRow';
 import { TapeTable } from '@features/market/components/TapeTable';
+import { FtsStatusBadge } from '@features/market/components/FtsStatusBadge';
 import {
   buyPerCapitaMt,
   dropNumericSuffixRows,
@@ -140,7 +141,7 @@ describe('حل وضعیت FTS', () => {
 });
 
 describe('جدول تابلو بهینه‌شده', () => {
-  it('ستون‌های سرانه خرید/فروش و وضعیت FTS را نشان می‌دهد', () => {
+  it('ستون‌های سرانه خرید/فروش را با واحد م.ت نشان می‌دهد و ستون وضعیت FTS حذف شده است', () => {
     // buy_i_vol/sell_i_vol سهم‌اند؛ vwap = q_tot_cap÷q_tot_tran = 10000 ریال
     const r = row({
       buy_i_vol: 500_000, buy_count_i: 100,
@@ -148,9 +149,9 @@ describe('جدول تابلو بهینه‌شده', () => {
       q_tot_cap: 1_000_000_000, q_tot_tran: 100_000,
     });
     render(<TapeTable rows={[r]} selected="" onSelect={() => {}} />);
-    expect(screen.getByText('سرانه خرید')).toBeInTheDocument();
-    expect(screen.getByText('سرانه فروش')).toBeInTheDocument();
-    expect(screen.getByText('وضعیت FTS')).toBeInTheDocument();
+    expect(screen.getByText('سرانه خرید (م.ت)')).toBeInTheDocument();
+    expect(screen.getByText('سرانه فروش (م.ت)')).toBeInTheDocument();
+    expect(screen.queryByText('وضعیت FTS')).not.toBeInTheDocument();
     expect(screen.getByText('۵.۰')).toBeInTheDocument();
     expect(screen.getByText('۲.۰')).toBeInTheDocument();
   });
@@ -162,13 +163,16 @@ describe('جدول تابلو بهینه‌شده', () => {
         { symbol: 'فولاد', excluded: true, score: 0, exclusion_reasons: 'صنعت بیمه — حذف خودکار' },
       ]),
     );
+    const shpnaView = resolveFtsStatus(row({ symbol: 'شپنا' }), map);
+    const fooladView = resolveFtsStatus(row({ symbol: 'فولاد' }), map);
+    const khodroView = resolveFtsStatus(row({ symbol: 'خودرو' }), map);
+
     render(
-      <TapeTable
-        rows={[row({ symbol: 'شپنا' }), row({ symbol: 'فولاد' }), row({ symbol: 'خودرو' })]}
-        selected=""
-        onSelect={() => {}}
-        ftsMap={map}
-      />,
+      <div>
+        <FtsStatusBadge symbol="شپنا" view={shpnaView} />
+        <FtsStatusBadge symbol="فولاد" view={fooladView} />
+        <FtsStatusBadge symbol="خودرو" view={khodroView} />
+      </div>,
     );
     expect(screen.getByTestId('fts-badge-شپنا')).toHaveTextContent('تأیید');
     expect(screen.getByTestId('fts-badge-فولاد')).toHaveAttribute('data-fts-status', 'reject');
@@ -177,10 +181,9 @@ describe('جدول تابلو بهینه‌شده', () => {
     expect(screen.getByTestId('fts-card-فولاد')).toHaveTextContent('صنعت بیمه — حذف خودکار');
   });
 
-  it('وتوی بیمه در جدول: ردیف بیمه بدون اسکرینر هم «رد» می‌شود', () => {
-    render(
-      <TapeTable rows={[row({ symbol: 'اسب', sector_name: 'بیمه' })]} selected="" onSelect={() => {}} />,
-    );
+  it('وتوی بیمه در اسکرینر: ردیف بیمه بدون اسکرینر هم «رد» می‌شود', () => {
+    const asbView = resolveFtsStatus(row({ symbol: 'اسب', sector_name: 'بیمه' }), new Map());
+    render(<FtsStatusBadge symbol="اسب" view={asbView} />);
     expect(screen.getByTestId('fts-badge-اسب')).toHaveAttribute('data-fts-status', 'reject');
   });
 

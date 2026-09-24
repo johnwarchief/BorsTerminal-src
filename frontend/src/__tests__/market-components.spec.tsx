@@ -59,7 +59,7 @@ describe('کامپوننت های تابلو', () => {
 });
 
 describe('نوار وضعیت تابلو', () => {
-  it('شمارش نمایش/کل و زنده را نشان می دهد', () => {
+  it('شمارش نمایش/کل را نشان می دهد', () => {
     render(
       <TapeStatusBar
         shown={10}
@@ -77,8 +77,6 @@ describe('نوار وضعیت تابلو', () => {
       />,
     );
     expect(screen.getByText('۱۰ از ۵۰ نماد')).toBeInTheDocument();
-    expect(screen.getByText('زنده ۴۰')).toBeInTheDocument();
-    expect(screen.getByText('۳ سیگنال تابلو')).toBeInTheDocument();
   });
 
   it('در خطا دکمه تلاش دوباره فراخوانی می شود', () => {
@@ -111,7 +109,6 @@ describe('فیلترهای بازطراحی شده', () => {
 
   it('چیپ های سریع شمارش عبور را نشان می دهند', () => {
     render(<MarketFilters sectors={[]} matches={{ f_clock: 7, f_susp: 2, f_jet: 0, f_roobi: 1, f_noqteh: 0, f_smart_flow: 0 }} />);
-    fireEvent.click(screen.getByText('فیلترهای پیشرفته'));
     expect(screen.getByText(/الگوی ساعت/)).toBeInTheDocument();
     expect(screen.getByText('(۷)')).toBeInTheDocument();
     expect(screen.getByText('(۲)')).toBeInTheDocument();

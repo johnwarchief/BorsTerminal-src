@@ -156,19 +156,23 @@ body::before {
 }
 
 @keyframes flash-up {
-  from {
-    background: color-mix(in srgb, var(--accent-green) 30%, transparent);
+  0% {
+    background: color-mix(in srgb, var(--accent-green) 50%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-green) 40%, transparent);
   }
-  to {
+  100% {
     background: transparent;
+    box-shadow: none;
   }
 }
 @keyframes flash-down {
-  from {
-    background: color-mix(in srgb, var(--accent-red) 30%, transparent);
+  0% {
+    background: color-mix(in srgb, var(--accent-red) 50%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-red) 40%, transparent);
   }
-  to {
+  100% {
     background: transparent;
+    box-shadow: none;
   }
 }
 @layer components {

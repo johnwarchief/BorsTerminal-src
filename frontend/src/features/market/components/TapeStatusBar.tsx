@@ -4,6 +4,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 
 const POLL_OPTIONS = [
+  { ms: 5_000, label: '۵ ثانیه' },
   { ms: 15_000, label: '۱۵ ثانیه' },
   { ms: 60_000, label: '۱ دقیقه' },
   { ms: 300_000, label: '۵ دقیقه' },
@@ -12,9 +13,9 @@ const POLL_OPTIONS = [
 export function TapeStatusBar({
   shown,
   total,
-  liveCount,
-  fossilCount,
-  signals,
+  liveCount: _liveCount,
+  fossilCount: _fossilCount,
+  signals: _signals,
   isLoading,
   isError,
   isFetching,
@@ -52,9 +53,6 @@ export function TapeStatusBar({
           <Badge tone="blue">
             {toFaDigits(shown)} از {toFaDigits(total)} نماد
           </Badge>
-          <Badge tone="green">زنده {toFaDigits(liveCount)}</Badge>
-          {fossilCount > 0 && <Badge tone="gray">غیرزنده {toFaDigits(fossilCount)}</Badge>}
-          <Badge tone="orange">{toFaDigits(signals)} سیگنال تابلو</Badge>
           <span>آخرین به روز رسانی: {dataUpdatedAt ? fmtAge(dataUpdatedAt) : '-'}</span>
           {isFetching && <span>...</span>}
         </>

@@ -16,7 +16,7 @@ export const QUICK_LABELS: Record<QuickFilter, string> = {
   f_clock: 'الگوی ساعت',
   f_susp: 'حجم مشکوک',
   f_jet: 'فیلتر جت',
-  f_roobi: 'روباهی',
+  f_roobi: 'کف‌روبی',
   f_noqteh: 'نقطه زنی',
   f_smart_flow: 'پول هوشمند',
 };
