@@ -196,7 +196,11 @@ jobs:
           BORS_SETUP_PASSWORD: ${{ secrets.BORS_SETUP_PASSWORD }}
         run: |
           $ver = $env:TAG -replace '^v',''
-          $prev = (Invoke-RestMethod -Uri 'https://api.github.com/repos/johnwarchief/BorsTerminal/releases/latest' -Headers @{ 'User-Agent' = 'BorsTerminal-CI' }).tag_name -replace '^v',''
+          # قبلی = جدیدترین ریلیزِ منتشرشده به‌جز خودِ همین تگ (بازپخشِ تگ —
+          # مثلاً پس از شکستِ گامِ انتشار — نباید خودش را مبدأ بگیرد).
+          $rels = Invoke-RestMethod -Uri 'https://api.github.com/repos/johnwarchief/BorsTerminal/releases' -Headers @{ 'User-Agent' = 'BorsTerminal-CI' }
+          $prevRel = $rels | Where-Object { $_.tag_name -ne $env:TAG } | Select-Object -First 1
+          $prev = $prevRel.tag_name -replace '^v',''
           if (-not $prev -or $prev -eq $ver) {
             Write-Host "نسخهٔ قبلی برای diff نیست؛ بدونِ پچ ادامه می‌دهیم"
             exit 0

@@ -391,6 +391,10 @@ def main():
 
     def verify_signature(remote_data, remote_sig_bytes, label):
         try:
+            # api.update و bors_minisign در ریشهٔ ریپو هستند؛ اسکریپت از
+            # scripts/ اجرا می‌شود و sys.path[0] همان پوشهٔ scripts است.
+            if ROOT not in sys.path:
+                sys.path.insert(0, ROOT)
             from api.update import UPDATE_PUBKEY
             from bors_minisign import verify_minisign
             verify_minisign(remote_data,
