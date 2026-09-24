@@ -194,50 +194,78 @@ jobs:
         continue-on-error: true
         env:
           BORS_SETUP_PASSWORD: ${{ secrets.BORS_SETUP_PASSWORD }}
+          # توکنِ خودِ رانر برای خواندنِ تگ‌ها از API. قبلاً بدونِ توکن پرسیده
+          # می‌شد و IP مشترکِ رانر rate-limit می‌خورد.
+          TAGS_TOKEN: ${{ github.token }}
         run: |
+          # continue-on-error نتیجه را در API به‌صورت success نشان می‌دهد و
+          # لاگ‌های رانر از این شبکه باز نمی‌شوند، پس هر مرحله با ::notice:: در
+          # annotations ثبت می‌شود: «پچ ساخته شد و اندازه‌اش چقدر بود» باید بدون
+          # بازکردنِ لاگ قابل دیدن باشد (v1.0.23 سه بار سبز شد و پچ نداشت).
+          function Note([string]$m) { Write-Output "::notice::[patch] $m" }
+          function Fail([string]$m) { Write-Output "::error::[patch] $m"; exit 1 }
           $ver = $env:TAG -replace '^v',''
-          # قبلی = بالاترین تگِ نسخه‌ایِ ریپو به‌جز این یکی. از ls-remote
-          # (پروتکلِ git) می‌آید نه API گیت‌هاب — فراخوانیِ بدونِ توکن از
-          # IP مشترکِ رانر مرتب با rate-limit می‌خورد؛ checkout هم shallow
-          # است و تگ‌های قدیمی را محلی ندارد.
-          $raw = git ls-remote --tags origin 2>&1
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "ls-remote --tags origin شکست خورد (exit $LASTEXITCODE): $raw"
-            exit 1
+          try {
+            $tags = @()
+            try {
+              $rel = Invoke-RestMethod `
+                -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/tags?per_page=100" `
+                -Headers @{ Authorization = "Bearer $env:TAGS_TOKEN";
+                           "User-Agent"   = "bors-ci";
+                           Accept         = "application/vnd.github+json" }
+              $tags = $rel.name | ForEach-Object { $_ -replace '^v','' } |
+                Where-Object { $_ -match '^\d+\.\d+\.\d+$' } |
+                Sort-Object { [version]$_ } -Descending -Unique
+              Note "تگ‌ها از API: $($tags -join ' ')"
+            } catch {
+              Note "API تگ‌ها کار نکرد: $($_.Exception.Message)"
+            }
+            if (-not $tags) {
+              # git برای هر چه‌چه‌ای stderr می‌نویسد و $ErrorActionPreference=Stop
+              # آن را به exception تبدیل می‌کند؛ این مسیر عمداً Continue است.
+              $ErrorActionPreference = 'Continue'
+              $raw = (& git ls-remote --tags origin) 2>$null
+              $lsCode = $LASTEXITCODE
+              $ErrorActionPreference = 'Stop'
+              if ($lsCode -ne 0) { Fail "هم API و هم ls-remote (exit $lsCode) مبدأ را ندادند" }
+              $tags = $raw | ForEach-Object { ($_ -split '\s+')[1] } |
+                ForEach-Object { $_ -replace '^refs/tags/','' -replace '\^\{\}$','' -replace '^v','' } |
+                Where-Object { $_ -match '^\d+\.\d+\.\d+$' } |
+                Sort-Object { [version]$_ } -Descending -Unique
+              Note "تگ‌ها از ls-remote: $($tags -join ' ')"
+            }
+            $prev = $tags | Where-Object { $_ -ne $ver } | Select-Object -First 1
+            if (-not $prev) { Fail "نسخهٔ قبلیِ v$ver در تگ‌ها نیست ($($tags -join ' '))" }
+            Note "مبدأِ پچ: v$prev -> v$ver"
+            $setup = "BorsTerminal_Ultimate_Setup_v$prev.exe"
+            $dl = Join-Path $env:RUNNER_TEMP $setup
+            Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$setup" -OutFile $dl
+            Note "نصابِ مبدأ دانلود شد: $((Get-Item $dl).Length) بایت"
+            $base = Join-Path $env:RUNNER_TEMP "baseline_$prev"
+            $pw = $env:BORS_SETUP_PASSWORD
+            if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
+            $innoArgs = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',
+                          '/CURRENTUSER',"/DIR=$base",'/PASSWORD=' + $pw)
+            $p = Start-Process -FilePath $dl -ArgumentList $innoArgs -Wait -PassThru
+            if ($p.ExitCode -ne 0) { Fail "نصبِ باس‌لاین exit=$($p.ExitCode)" }
+            Note "باس‌لاین نصب شد: $((Get-ChildItem $base -Recurse -File).Count) فایل"
+            # <- لاگِ make_patch در فایل؛ خودِ exit code هم حتماً بررسی می‌شود،
+            # چون در pwsh خروجیِ non-zero یک دستورِ native خطا محسوب نمی‌شود.
+            $mpLog = Join-Path $env:RUNNER_TEMP "make_patch_$prev.log"
+            $ErrorActionPreference = 'Continue'
+            python scripts/make_patch.py --from $prev --baseline $base *> $mpLog
+            $mpExit = $LASTEXITCODE
+            $ErrorActionPreference = 'Stop'
+            $tail = ((Get-Content $mpLog -Tail 5 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
+            Note "make_patch exit=$mpExit :: $tail"
+            if ($mpExit -ne 0) { Fail "make_patch با کدِ $mpExit خارج شد" }
+            $patchZip = Get-ChildItem dist/BorsTerminal_Patch_*.zip -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -notmatch '\.sig$' } | Select-Object -First 1
+            if (-not $patchZip) { Fail "make_patch zip نساخت (exit=$mpExit)" }
+            Note "artifact: $($patchZip.Name) $([math]::Round($patchZip.Length/1MB,2)) MB"
+          } catch {
+            Fail "استثنایِ پیش‌بینی‌نشده: $($_.Exception.Message)"
           }
-          $tags = $raw | ForEach-Object { ($_ -split '\s+')[1] } |
-            ForEach-Object { $_ -replace '^refs/tags/','' -replace '\^\{\}$','' -replace '^v','' } |
-            Where-Object { $_ -match '^\d+\.\d+\.\d+$' } |
-            Sort-Object { [version]$_ } -Descending -Unique
-          Write-Host "نسخهٔ جاری: $ver — تگ‌هایِ نسخه‌ای: $($tags -join ', ')"
-          # v1.0.23 این مرحله را «موفق» زد ولی هیچ پچ ریلیز نشد: مسیرِ خاموشِ
-          # exit 0 بدونِ مبدأ. پچِ دلتا خواستهٔ صریح کاربر است، پس نبودِ مبدأ
-          # خطاست؛ step روی continue-on-error است پس ریلیز نمی‌افتد، فقط
-          # صادقاً قرمز می‌شود.
-          $prev = $tags | Where-Object { $_ -ne $ver } | Select-Object -First 1
-          if (-not $prev) {
-            Write-Error "نسخهٔ قبلیِ $ver در تگ‌ها نیست؛ مبدأِ پچ مشخص نمی‌شود"
-            exit 1
-          }
-          Write-Host "مبدأِ پچ: v$prev"
-          $setup = "BorsTerminal_Ultimate_Setup_v$prev.exe"
-          Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$setup" -OutFile "$env:RUNNER_TEMP\$setup"
-          $base = Join-Path $env:RUNNER_TEMP "baseline_$prev"
-          $pw = $env:BORS_SETUP_PASSWORD
-          if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
-          $args = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/CURRENTUSER',"/DIR=$base",'/PASSWORD=' + $pw)
-          $p = Start-Process -FilePath "$env:RUNNER_TEMP\$setup" -ArgumentList $args -Wait -PassThru
-          if ($p.ExitCode -ne 0) {
-            Write-Error "نصبِ باس‌لاین شکست خورد (exit $($p.ExitCode))"
-            exit 1
-          }
-          python scripts/make_patch.py --from $prev --baseline $base
-          $patchZip = Get-ChildItem dist/BorsTerminal_Patch_*.zip -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch '\.sig$' } | Select-Object -First 1
-          if (-not $patchZip) {
-            Write-Error "make_patch هیچ zip ای نساخت؛ پچ از ریلیز جا می‌ماند"
-            exit 1
-          }
-          Get-ChildItem dist/BorsTerminal_Patch_*.zip, dist/BorsTerminal_Patch_*.zip.sig -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "patch artifact: $($_.FullName) $($_.Length) bytes" }
 
       - name: Publish Release (installer + .sig + latest.json)
         env:
