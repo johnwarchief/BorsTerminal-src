@@ -172,6 +172,16 @@ jobs:
           # trailing newline) fails with "Invalid symbol 10". Write the key as
           # one continuous line with no newline at all.
           [System.IO.File]::WriteAllText("$PWD\.tauri\updater.key", ($env:KEY -replace '\s',''))
+          # .tauri/updater.key.pub هم لازم است: scripts/sign_setup.py بعد از
+          # امضا، امضای ساخته‌شده را با همین فایل راستی‌آزمایی می‌کند و اگر
+          # نبود با FileNotFoundError می‌مرد — یعنی پچِ CI ساخته می‌شد ولی
+          # بی‌امضا می‌ماند و ریلیز بدونِ دلتا منتشر می‌شد (v1.0.23، run 6).
+          # کلیدِ عمومی همان UPDATE_PUBKEYِ خودِ آپدیتِر است (۱۵۲ کاراکتر، بدون
+          # newline)، پس این‌را از همان‌جا می‌نویسیم تا امضا قطعاً با همان کلیدی
+          # که کاربر می‌شناسد بررسی شود.
+          python -c "import sys; sys.path.insert(0, '.'); from api.update import UPDATE_PUBKEY; open(r'.tauri/updater.key.pub', 'w', encoding='ascii', newline='').write(UPDATE_PUBKEY)"
+          if ($LASTEXITCODE -ne 0) { Write-Error "cannot write .tauri/updater.key.pub from UPDATE_PUBKEY"; exit 1 }
+          Write-Host "updater.key.pub: $((Get-Item .tauri/updater.key.pub).Length) bytes"
 
       - name: Sign Installer with Updater Key
         shell: pwsh
