@@ -80,6 +80,11 @@ print(f"[=] ریلیزِ هدف: {TAG}  (RELEASE_TAG unset means bors_config.APP
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
 SIG_FILE = SETUP_EXE + ".sig"
+# فهرستِ sha256ِ فایل‌های همین بیلد. نسخهٔ بعد پچِ دلتایش را از رویِ همین فایل
+# می‌سازد — بدونِ دانلودکردنِ نصاب و بدونِ اجرایِ installer روی رانیِر، که منبعِ
+# شکستِ خاموش بود. نبودش ریلیز را متوقف نمی‌کند؛ فقط نسخهٔ بعد مجبور می‌شود
+# دوباره باس‌لاین نصب کند.
+MANIFEST_JSON = os.path.join(ROOT, "dist", f"BorsTerminal_Manifest_{TAG}.json")
 
 # v1.0.10 -- delta update. PATCH_FROM (default: the previously released
 # version) is the only version this patch is valid for; the updater refuses to
@@ -267,6 +272,8 @@ def main():
     if os.path.isfile(PATCH_ZIP):
         stale_names.add(os.path.basename(PATCH_ZIP))
         stale_names.add(os.path.basename(PATCH_SIG))
+    if os.path.isfile(MANIFEST_JSON):
+        stale_names.add(os.path.basename(MANIFEST_JSON))
     for a in assets:
         # latest.json is regenerated per-publish and embeds the current .sig,
         # so a stale copy must be deleted too (GitHub 422s on duplicate names).
@@ -334,6 +341,18 @@ def main():
         patch_uploaded = True
     else:
         print(f"[*] پچِ دلتا موجود نیست ({PATCH_ZIP})؛ بدونِ پچ ادامه می‌دهیم.")
+
+    # manifestِ فایل‌های همین بیلد: لنگهٔ مقایسهٔ پچِ نسخهٔ بعد. نبودش ریلیز را
+    # متوقف نمی‌کند (فقط نسخهٔ بعد مجبور می‌شود نصابِ این نسخه را دانلود و نصب
+    # کند تا فرقِ فایل‌ها را بفهمد)، پس اینجا هشدار است نه خطای مرگبار.
+    manifest_path = MANIFEST_JSON
+    manifest_uploaded = False
+    if os.path.isfile(manifest_path):
+        manifest_uploaded = bool(upload_asset(manifest_path))
+        if not manifest_uploaded:
+            print("[!] آپلودِ manifest ناموفق بود؛ پچِ نسخهٔ بعد به نصبِ باس‌لاین برمی‌گردد.")
+    else:
+        print(f"[!] {manifest_path} ساخته نشده؛ این ریلیز لنگهٔ مقایسهٔ پچِ بعد را ندارد.")
 
     # 5) build + upload latest.json (Tauri updater manifest)
     latest_path = build_latest_json()
@@ -432,6 +451,12 @@ def main():
             verify_ok = False
         elif not verify_signature(remote_patch, remote_patch_sig,
                                   os.path.basename(PATCH_ZIP)):
+            verify_ok = False
+
+    # manifest را هم راستی‌آزمایی می‌کنیم: نسخهٔ بعد پچش را از رویِ همین فایل
+    # می‌سازد، پس manifestِ نیمه‌کاره یا کهنه یعنی پچِ اشتباه برایِ همهٔ کاربران.
+    if manifest_uploaded:
+        if verify_asset_bytes(manifest_path, os.path.basename(manifest_path)) is None:
             verify_ok = False
 
     # ۷. منتقل‌کردنِ codal.db.lzma به این ریلیز.

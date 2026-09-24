@@ -77,10 +77,22 @@ def _parse_args(argv):
     --baseline DIR: پوشهٔ نصبِ نسخهٔ مبدأ. اگر داده شود، پچ فقط فایلهای تغییر
     کرده/جدید را شامل می‌شود (دلتای واقعی). در غیر این صورت، همهٔ فایلها
     (رفتارِ قدیمی، سازگار با نصبِ قدیمی که apply_update.bat ندارد).
+
+    --baseline-manifest FILE: جایِ دیگرِ --baseline: به‌جایِ نصب‌کردنِ نسخهٔ
+    مبدأ در CI، فایلِ sha256ِ همان نسخه (BorsTerminal_Manifest_v<from>.json که
+    خودِ همین اسکریپت با --emit-manifest می‌سازد و ریلیز منتشر می‌کند) خوانده
+    می‌شود. نصب‌کردنِ نصابِ ۶۰ مگابایتی در رانر همزمانِ download+install چند
+    دقیقه وقت می‌گیرد و به environment حساس است؛ مقایسهٔ هش این خطر را ندارد.
+
+    --emit-manifest FILE: فقط نقشهٔ relpath -> sha256ِ بیلدِ فعلی را می‌نویسد و
+    هیچ پچی نمی‌سازد (برایِ اینکه ریلیز، لنگهٔ مقایسهٔ نسخهٔ بعد را با خودش
+    بفرستد).
     """
     from_version = "1.0.9"
     baseline = ""
     dist = DEFAULT_DIST
+    baseline_manifest = ""
+    emit_manifest = ""
     # i نسبت به خودِ args اندیس‌گذاری می‌شود، نه نسبت به argvیِ کامل؛ وگرنه
     # argv[i+1] به جایِ مقدار، خودِ پرچم را برمی‌دارد (باگِ نام‌گذاریٔ پچ).
     args = argv[1:]
@@ -95,6 +107,14 @@ def _parse_args(argv):
             baseline = args[i + 1]
             i += 2
             continue
+        if a == "--baseline-manifest" and i + 1 < len(args):
+            baseline_manifest = args[i + 1]
+            i += 2
+            continue
+        if a == "--emit-manifest" and i + 1 < len(args):
+            emit_manifest = args[i + 1]
+            i += 2
+            continue
         if a == "--dist" and i + 1 < len(args):
             dist = args[i + 1]
             i += 2
@@ -103,7 +123,7 @@ def _parse_args(argv):
     if not re.match(r"^\d+\.\d+\.\d+$", from_version):
         print("[ERR] --from must look like X.Y.Z, got %r" % from_version)
         sys.exit(1)
-    return from_version, baseline, dist
+    return from_version, baseline, dist, baseline_manifest, emit_manifest
 
 
 def _file_sha256(path, chunk=1 << 20):
@@ -151,14 +171,60 @@ def sign_patch(patch_path):
     return sig
 
 
+def _walk_bundle(bundle):
+    """relpath -> مسیرِ کامل، با همان قاعدهٔ حذفِ فایل‌هایِ وضعیتِ کاربر."""
+    out = {}
+    for dirpath, dirnames, filenames in os.walk(bundle):
+        dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
+        for fn in filenames:
+            if fn in EXCLUDE_FILES or os.path.splitext(fn)[1].lower() in EXCLUDE_EXT:
+                continue
+            full = os.path.join(dirpath, fn)
+            out[os.path.relpath(full, bundle).replace("\\", "/")] = full
+    return out
+
+
+def write_manifest(bundle, out_path, version):
+    """فهرستِ هشِ بیلدِ فعلی — لنگهٔ مقایسهٔ پچِ نسخهٔ بعد، بدونِ نصب‌کردنِ چیزی.
+
+    چرا: ساختنِ پچ در CI تا پیش‌از‌این یعنی دانلودِ نصابِ ۶۰ مگابایتیِ نسخهٔ
+    قبلی و اجرایِ سایلنتِ آن روی رانر. آن کار چند دقیقه طول می‌کشد و به
+    محیطِ رانر حساس است (نصبِ همان فایلِ سالم روی رانر با کد ۱ شکست خورد، در
+    حالی که روی ماشینِ توسعه کد ۰ می‌دهد). فایلِ JSON چند صد کیلوبایت است و
+    هیچ اجرایی ندارد.
+    """
+    import json
+    files = {}
+    for rel, full in sorted(_walk_bundle(bundle).items()):
+        try:
+            files[rel] = _file_sha256(full)
+        except OSError:
+            continue
+    if not files:
+        print("[ERR] manifest خالی شد: %s" % bundle)
+        sys.exit(1)
+    payload = {"version": version, "git": git_short(),
+               "generated": datetime.datetime.now().isoformat(timespec="seconds"),
+               "files": files}
+    parent = os.path.dirname(os.path.abspath(out_path))
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=True, indent=0, sort_keys=True)
+    print("[OK] manifest نوشته شد: %s (%d فایل، نسخهٔ %s)" % (out_path, len(files), version))
+
+
 def main():
-    from_version, baseline, dist_arg = _parse_args(sys.argv)
+    from_version, baseline, dist_arg, baseline_manifest, emit_manifest = _parse_args(sys.argv)
     dist_root = dist_arg if os.path.isabs(dist_arg) else os.path.join(ROOT, dist_arg)
     bundle = os.path.join(dist_root, "BorsTerminal_Ultimate")
     exe = os.path.join(bundle, "BorsTerminal_Ultimate.exe")
     if not os.path.exists(exe):
         print("[ERR] %s missing - run scripts/build_exe.py first" % exe)
         sys.exit(1)
+    if emit_manifest:
+        write_manifest(bundle, emit_manifest, app_version())
+        return
     bat = open(BAT, "rb").read()
     if b"\r\n" not in bat:
         print("[ERR] apply_update.bat must keep CRLF line endings")
@@ -182,7 +248,26 @@ def main():
     # می‌فرستیم. این تنها راهِ رسیدن به «فقط تغییرات دانلود شود» است؛ وگرنه
     # پچِ overlayِ کامل تقریباً به اندازهٔ نصبِ کامل است و فایده‌ای ندارد.
     base_hashes = {}
-    if baseline:
+    if baseline_manifest:
+        import json
+        try:
+            with open(baseline_manifest, encoding="utf-8") as f:
+                manifest = json.load(f)
+        except (OSError, ValueError) as exc:
+            print("[ERR] --baseline-manifest خوانده نشد (%s): %s"
+                  % (baseline_manifest, exc))
+            sys.exit(1)
+        base_hashes = dict(manifest.get("files") or {})
+        if not base_hashes:
+            print("[ERR] --baseline-manifest هیچ فایلی ندارد: %s" % baseline_manifest)
+            sys.exit(1)
+        if str(manifest.get("version") or "") != from_version:
+            print("[ERR] manifestِ مبدأ نسخهٔ %r دارد ولی --from=%r است؛ "
+                  "پچِ اشتباه ساخته نشود" % (manifest.get("version"), from_version))
+            sys.exit(1)
+        print("[delta] manifest: %s  (%d فایل، نسخهٔ %s)"
+              % (baseline_manifest, len(base_hashes), manifest.get("version")))
+    elif baseline:
         if not os.path.isdir(baseline):
             print("[ERR] --baseline dir not found: %s" % baseline)
             sys.exit(1)
