@@ -18,6 +18,7 @@
 param([ValidateSet('setup','base','portable','all','patch','allpatch','release')][string]$Mode = 'setup',
       [string]$PatchFrom = '1.0.9',
       [string]$Baseline = '',
+      [string]$Dist = 'dist',
       [switch]$SkipTests = $false)
 $ErrorActionPreference = 'Stop'
 
@@ -37,6 +38,13 @@ function Resolve-Tool([string]$envName, [string]$cmd, [string]$fallback) {
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not (Test-Path (Join-Path $root 'bors_entry.py'))) { $root = (Get-Location).Path }
 Set-Location $root
+
+# Where the build output goes. Windows sometimes keeps a handle on
+# dist\BorsTerminal_Ultimate (search indexer / Defender / IDE watcher) and
+# PyInstaller then dies in rmtree. A release must not wedge on that:
+#     .\release.ps1 setup -Dist dist2
+$DistRoot = Join-Path $root $Dist
+$Bundle   = Join-Path $DistRoot 'BorsTerminal_Ultimate'
 
 # مفسرِ بیلد = مفسرِ CI. .venvِ پروژه همان 3.12 + requirements.txt است؛
 # پایتونِ PATH می‌تواند مفسری بدونِ pywebview باشد، و بیلدِ چنین مفسری EXEیِ
@@ -104,7 +112,7 @@ function Build-Exe {
     # مفسر نیست (بودجهٔ بیلد ~۲ دقیقه است و بیلدِ ناقص، ریلیزِ ناقص).
     & $PY scripts\check_build_env.py
     if ($LASTEXITCODE -ne 0) { Write-Error '[exe] build interpreter is missing a declared dependency. ABORT.'; exit 1 }
-    & $PY -m PyInstaller $ExeSpec --noconfirm --distpath "$root\dist" --workpath "$root\build"
+    & $PY -m PyInstaller $ExeSpec --noconfirm --distpath "$DistRoot" --workpath "$root\build"
     if ($LASTEXITCODE -ne 0) { Write-Error '[exe] PyInstaller failed. ABORT.'; exit 1 }
     # قراردادِ onedir: _internal/ باید باشد، همهٔ api.* در hiddenimports،
     # و پنجرهٔ بومی (webview/pythonnet) داخلِ باندل باشد.
@@ -116,7 +124,7 @@ function Move-StaleDist([string]$why, [string]$detail) {
     # مرحله، بیلدِ تازه را روِ همان مسیر می‌سازد. پیش‌تر این نقطه با
     # «dist\ را خودت پاک کن و دوباره بزن» می‌ایستاد و تک‌دستوری‌بودنِ
     # ریلیز را می‌شکست.
-    $dir = Join-Path $root 'dist\BorsTerminal_Ultimate'
+    $dir = Join-Path $DistRoot 'BorsTerminal_Ultimate'
     $quar = $dir + '.stale'
     Write-Host ("[dist] stale build output -> " + $why) -ForegroundColor Yellow
     if ($detail) { Write-Host ("[dist] " + $detail) -ForegroundColor Yellow }
@@ -137,7 +145,7 @@ function Test-DistBundle {
     # (بدونِ webview) را به نصابِ امضاشده رساند.
     # توجه: خروجیِ stdoutِ فرمانِ بومی بخشی از مقدارِ بازگشتیِ تابع می‌شود،
     # پس گرفتنش در $out و چاپِ دستی با Write-Host الزامی است.
-    $out = & $PY dev/onedir_contract_v11.py --dist "$root\dist" 2>&1
+    $out = & $PY dev/onedir_contract_v11.py --dist "$DistRoot" 2>&1
     $ok = ($LASTEXITCODE -eq 0)
     $out | ForEach-Object { Write-Host ("  " + $_) }
     return $ok
@@ -150,7 +158,7 @@ function Assert-DistFresh {
     # قدیمی‌تر از منابع باشد (مثلاً بعد از bumpِ نسخه یا یک فیکس، rebuild
     # نشده باشد)، یا نسخه‌اش با bors_setup.iss یکی نباشد، اینجا همان خروجیِ کهنه
 # قرنطینه و از نو ساخته می‌شود — بسته‌بندیِ distِ قدیمی هرگز رخ نمی‌دهد.
-    $exe = Join-Path $root 'dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe'
+    $exe = Join-Path $DistRoot 'BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe'
     if (-not (Test-Path $exe)) { return }
     $built = (Get-Item $exe).LastWriteTime
 
@@ -159,8 +167,8 @@ function Assert-DistFresh {
     if ($iss -match '(?m)^\s*#define\s+AppVersion\s+"([^"]+)"') { $issVer = $Matches[1] }
 
     $appVer = $null
-    $cfg = Join-Path $root 'dist\BorsTerminal_Ultimate\_internal\bors_config.py'
-    if (-not (Test-Path $cfg)) { $cfg = Join-Path $root 'dist\BorsTerminal_Ultimate\bors_config.py' }
+    $cfg = Join-Path $DistRoot 'BorsTerminal_Ultimate\_internal\bors_config.py'
+    if (-not (Test-Path $cfg)) { $cfg = Join-Path $DistRoot 'BorsTerminal_Ultimate\bors_config.py' }
     if (Test-Path $cfg) {
         $m = [regex]::Match((Get-Content $cfg -Raw), 'APP_VERSION\s*=\s*"([^"]+)"')
         if ($m.Success) { $appVer = $m.Groups[1].Value }
@@ -243,7 +251,7 @@ function Clear-DistRuntime {
     # .screener_cache.json (822 کیب)، market.db.baseline، market.db.part-shm/-wal
     # و market_sync/sync_summary را با خودش به ماشینِ کاربر برد. بدترین‌شان
     # baseline است: یک *مُهرِ* نسخهٔ دیگر را روی نصبِ تازه می‌گذارد.
-    $b = "$root\dist\BorsTerminal_Ultimate"
+    $b = "$Bundle"
     if (-not (Test-Path $b)) { return }
     $files = 'market.db','market.db-wal','market.db-shm','market.db.baseline',
              'market.db.stale','market.db.stale-wal','market.db.stale-shm',
@@ -267,14 +275,14 @@ function Clear-DistRuntime {
 
 function Build-Setup {
     Assert-DistFresh
-    if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
-    if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$root\dist\BorsTerminal_Ultimate\market.db.lzma" -Force }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$Bundle\market.db.lzma" -Force }
     # هر باقی‌ماندهٔ زمانِ اجرا از باندل بیرون می‌ماند؛ خودِ این پاک‌سازی در
     # Assert-DistFresh است تا مسیرهایِ portable/patch هم از آن بی‌بهره نمانند.
     # بازارِ داده کنارِ EXE باندل می‌شود، داخلِ آن نه. نبودش یعنی اپ بالا
     # می‌آید ولی تابلو خالی است — و نصاب هم ساخته می‌شود، پس این تنها جایی است
     # که می‌توان جلویِ ریلیزِ بی‌داده را گرفت.
-    $distLzma = "$root\dist\BorsTerminal_Ultimate\market.db.lzma"
+    $distLzma = "$Bundle\market.db.lzma"
     if (-not (Test-Path $distLzma) -or (Get-Item $distLzma).Length -lt 1MB) {
         Write-Error '[setup] market.db.lzma is not beside the EXE (missing or under 1 MB) - nothing would be installed. ABORT.'
         exit 1
@@ -344,10 +352,10 @@ function Build-Base {
 }
 function Build-Portable {
     Assert-DistFresh
-    if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     $stage = "$root\releases\portable_$ver"
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
-    Copy-Item "$root\dist\BorsTerminal_Ultimate\*" $stage -Recurse -Force
+    Copy-Item "$Bundle\*" $stage -Recurse -Force
     if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$stage\market.db.lzma" -Force }
     Write-Host "[portable] staged: $stage"
 }
@@ -363,7 +371,7 @@ function Build-Patch {
     # فایلها (overlayِ کامل) که برای نصبِ قدیمیِ فاقدِ apply_update.bat
     # سازگار می‌ماند.
     Assert-DistFresh
-    if (-not (Test-Path "$root\dist\BorsTerminal_Ultimate\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     if ($Baseline) {
         Write-Host "[patch] delta $PatchFrom -> (current)  baseline=$Baseline  signed"
         & $PY "$root\scripts\make_patch.py" --from $PatchFrom --baseline $Baseline
@@ -375,7 +383,7 @@ function Build-Patch {
         Write-Error '[patch] make_patch.py failed — the delta update would be broken. ABORT.'
         exit 1
     }
-    Get-ChildItem "$root\dist\BorsTerminal_Patch_*.zip", "$root\dist\BorsTerminal_Patch_*.zip.sig" -ErrorAction SilentlyContinue |
+    Get-ChildItem "$DistRoot\BorsTerminal_Patch_*.zip", "$DistRoot\BorsTerminal_Patch_*.zip.sig" -ErrorAction SilentlyContinue |
         ForEach-Object { Write-Host ("  -> " + $_.Name + "  (" + [math]::Round($_.Length/1MB,2) + " MB)") }
 }
 

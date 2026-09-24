@@ -115,7 +115,7 @@ def board_market_cap(row, price=None, shares=None):
 #      دو ردیف با دو insCode ولی یک ISIN (IRO1FOLD0009) و یک تعداد سهام‌اند؛
 #   ۲) ردیفِ نشست‌های قدیمی از market_watch حذف نمی‌شود (۵٬۲۰ ردیف در برابر
 #      ۳٬۷۸ ردیفِ زندهٔ تابلو).
-# جمعِ دستی پس ۷۰٬۸۶ همت شد؛ عددِ رسمیِ خودِ TSETMC ۲۴٬۸۵۷ همت. پس عدد از
+# جمعِ دستی پس ۷۰۳۸۶ همت شد؛ عددِ رسمیِ خودِ TSETMC ۲۴٬۸۵۷ همت. پس عدد از
 # MarketData/GetMarketOverview خوانده و یک‌بار اینجا ذخیره می‌شود؛ بقیه فقط
 # می‌خوانند (mstat_engine.market_total_rials).
 MARKET_TOTALS_TABLE = "market_totals"
