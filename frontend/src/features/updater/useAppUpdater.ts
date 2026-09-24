@@ -122,10 +122,13 @@ export function useAppUpdater() {
 
   // تشخیص نسخه جاری در شروع
   useEffect(() => {
+    let alive = true;
+    const settle = (v: string) => { if (alive) setCurrentVersion(v); };
     // نسخهٔ واقعیِ هستهٔ پایتون (bors_config.APP_VERSION) — منبعِ واحد حقیقت
     http<VersionResponse>('/api/update/version', { retries: 1 })
-      .then((v) => setCurrentVersion(v.version || APP_VERSION))
-      .catch(() => setCurrentVersion(APP_VERSION));
+      .then((v) => settle(v.version || APP_VERSION))
+      .catch(() => settle(APP_VERSION));
+    return () => { alive = false; };
   }, []);
 
   // توقفِ نظرسنجیِ پس‌زمینه هنگام unmount

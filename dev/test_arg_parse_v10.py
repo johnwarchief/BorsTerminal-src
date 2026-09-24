@@ -73,9 +73,18 @@ check("baseline defaults to empty (full overlay, backward compatible)",
 check("reads --baseline value",
       make_patch._parse_args(["make_patch.py", "--baseline",
                               "C:\\old"])[1] == "C:\\old")
-check("from + baseline together",
+check("from + baseline + dist together",
       make_patch._parse_args(["make_patch.py", "--from", "1.0.8",
-                              "--baseline", "C:\\old"]) == ("1.0.8", "C:\\old"))
+                              "--baseline", "C:\\old", "--dist", "dist2"])
+      == ("1.0.8", "C:\\old", "dist2"))
+
+print("== --dist: read the patch from the dir release.ps1 actually built into")
+check("dist defaults to the classic dist/",
+      make_patch._parse_args(["make_patch.py"])[2] == "dist")
+check("release.ps1 form: --dist dist2 -> dist2",
+      make_patch._parse_args(["make_patch.py", "--dist", "dist2"])[2] == "dist2")
+check("--dist without a value keeps the default",
+      make_patch._parse_args(["make_patch.py", "--dist"])[2] == "dist")
 
 print("== reject malformed versions (a bad name must never reach the zip)")
 for bad in ("--from", "", "abc", "1.2", "1.2.3.4", "v1.0.9"):

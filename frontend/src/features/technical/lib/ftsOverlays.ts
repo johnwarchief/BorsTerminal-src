@@ -567,6 +567,13 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
           styles: { color, size: 10.5, family: 'Vazirmatn, sans-serif', weight: 'bold' },
           ignoreEvent: true,
         },
+        // خودِ نسبت هم نوشته می‌شود؛ وگرنه نشانگر فقط یک نقطهٔ بی‌توضیح است.
+        ...(ext.text ? [{
+          type: 'text',
+          attrs: { x: x + 12, y, text: ext.text, align: 'left' as const, baseline: 'middle' as const },
+          styles: { color, size: 10, family: 'Vazirmatn, sans-serif', weight: 'normal' },
+          ignoreEvent: true,
+        }] : []),
       ];
     },
   });

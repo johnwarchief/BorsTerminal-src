@@ -40,7 +40,7 @@ body {
 /* پس‌زمینه چندلایه Obsidian شتاب‌یافته با GPU (جلوگیری از Repaint در اسکرول برای حفظ ۶۰ FPS) */
 body {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body::before {

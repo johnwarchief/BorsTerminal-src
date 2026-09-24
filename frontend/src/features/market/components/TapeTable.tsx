@@ -327,7 +327,7 @@ export function TapeTable({
           <span className="text-center">وضعیت FTS</span>
           <span className="text-center">افزودن به سبد</span>
         </div>
-        <div ref={parentRef} className="h-[calc(100vh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
+        <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
           <div className="relative w-full min-w-[780px]" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];

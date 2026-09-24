@@ -36,13 +36,18 @@ function bucketKey(ts: number, tf: Timeframe): number {
 export function aggregateCandles(candles: KLineData[], tf: Timeframe): KLineData[] {
   if (tf === 'D' || candles.length === 0) return candles;
 
+  // ترتیبِ صعودی پیش‌شرطِ پیمایشِ تک‌پاس است؛ ماژول باید مستقل از فراخوان هم درست باشد.
+  const src = candles.every((c, i) => i === 0 || c.timestamp >= candles[i - 1].timestamp)
+    ? candles
+    : [...candles].sort((a, b) => a.timestamp - b.timestamp);
+
   const out: KLineData[] = [];
   let key = NaN;
   let bar: KLineData | null = null;
 
   const closeBar = () => { if (bar) out.push(bar); };
 
-  for (const c of candles) {
+  for (const c of src) {
     const k = bucketKey(c.timestamp, tf);
     if (k !== key) {
       closeBar();
@@ -57,8 +62,12 @@ export function aggregateCandles(candles: KLineData[], tf: Timeframe): KLineData
       high: Math.max(bar.high, c.high),
       low: Math.min(bar.low, c.low),
       close: c.close,
-      volume: (bar.volume ?? 0) + (c.volume ?? 0),
-      turnover: (bar.turnover ?? 0) + (c.turnover ?? 0)
+      // هیچ‌داده ≠ صفرِ معاملاتی: اگر هیچ دو میله‌ای حجم نداشت، میلهٔ تجمیعی هم
+      // باید undefined بماند و در پنل حجم جای خالی نشان دهد.
+      volume: bar.volume === undefined && c.volume === undefined
+        ? undefined : (bar.volume ?? 0) + (c.volume ?? 0),
+      turnover: bar.turnover === undefined && c.turnover === undefined
+        ? undefined : (bar.turnover ?? 0) + (c.turnover ?? 0)
     };
   }
   closeBar();

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Bors Terminal Ultimate",
-  "version": "1.0.21",
+  "version": "1.0.22",
   "identifier": "com.borsterminal.app",
   "build": {
     "frontendDist": "../dist",
@@ -18,7 +18,8 @@
         "minWidth": 1024,
         "minHeight": 700,
         "resizable": true,
-        "fullscreen": false
+        "fullscreen": false,
+        "maximized": true
       }
     ],
     "security": {

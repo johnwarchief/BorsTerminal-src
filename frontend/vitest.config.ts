@@ -20,5 +20,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
+    // تجمیع کندل و فرمتِ جلالی بر اساسِ UTC ساخته شده‌اند؛ بدونِ پین‌کردنِ
+    // منطقهٔ زمانی، نتایجِ تست به منطقهٔ زمانیِ ماشینِ اجرا بستگی می‌کرد.
+    env: { TZ: 'Asia/Tehran' },
   },
 });

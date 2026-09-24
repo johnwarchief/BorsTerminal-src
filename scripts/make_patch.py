@@ -33,8 +33,7 @@ import sys
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
-DIST = os.path.join(ROOT, "dist", "BorsTerminal_Ultimate")
-OUT = os.path.join(ROOT, "dist", "BorsTerminal_Update.zip")
+DEFAULT_DIST = "dist"
 BAT = os.path.join(ROOT, "scripts", "apply_update.bat")
 SIG = os.path.join(ROOT, "scripts", "sign_setup.py")
 
@@ -81,6 +80,7 @@ def _parse_args(argv):
     """
     from_version = "1.0.9"
     baseline = ""
+    dist = DEFAULT_DIST
     # i نسبت به خودِ args اندیس‌گذاری می‌شود، نه نسبت به argvیِ کامل؛ وگرنه
     # argv[i+1] به جایِ مقدار، خودِ پرچم را برمی‌دارد (باگِ نام‌گذاریٔ پچ).
     args = argv[1:]
@@ -95,11 +95,15 @@ def _parse_args(argv):
             baseline = args[i + 1]
             i += 2
             continue
+        if a == "--dist" and i + 1 < len(args):
+            dist = args[i + 1]
+            i += 2
+            continue
         i += 1
     if not re.match(r"^\d+\.\d+\.\d+$", from_version):
         print("[ERR] --from must look like X.Y.Z, got %r" % from_version)
         sys.exit(1)
-    return from_version, baseline
+    return from_version, baseline, dist
 
 
 def _file_sha256(path, chunk=1 << 20):
@@ -148,8 +152,10 @@ def sign_patch(patch_path):
 
 
 def main():
-    from_version, baseline = _parse_args(sys.argv)
-    exe = os.path.join(DIST, "BorsTerminal_Ultimate.exe")
+    from_version, baseline, dist_arg = _parse_args(sys.argv)
+    dist_root = dist_arg if os.path.isabs(dist_arg) else os.path.join(ROOT, dist_arg)
+    bundle = os.path.join(dist_root, "BorsTerminal_Ultimate")
+    exe = os.path.join(bundle, "BorsTerminal_Ultimate.exe")
     if not os.path.exists(exe):
         print("[ERR] %s missing - run scripts/build_exe.py first" % exe)
         sys.exit(1)
@@ -165,8 +171,9 @@ def main():
         sys.exit(1)
     # v1.0.10: نامِ پچ نسخه‌دار است تا چند پچ روی یک ریلیز بتوانند کنار هم
     # باشند و latest.json دقیقاً به همین فایل اشاره کند.
-    out = os.path.join(ROOT, "dist",
+    out = os.path.join(dist_root,
                        "BorsTerminal_Patch_%s_to_%s.zip" % (from_version, version))
+    alias = os.path.join(dist_root, "BorsTerminal_Update.zip")
     stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     version_txt = "app_version=%s\npatch_from=%s\ngit_commit=%s\nbuilt=%s\n" % (
         version, from_version, sha, stamp)
@@ -186,14 +193,14 @@ def main():
         os.remove(out)
     kept = skipped = unchanged = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
-        for dirpath, dirnames, filenames in os.walk(DIST):
+        for dirpath, dirnames, filenames in os.walk(bundle):
             dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
             for fn in filenames:
                 if fn in EXCLUDE_FILES or os.path.splitext(fn)[1].lower() in EXCLUDE_EXT:
                     skipped += 1
                     continue
                 full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, DIST).replace("\\", "/")
+                rel = os.path.relpath(full, bundle).replace("\\", "/")
                 if base_hashes:
                     try:
                         if base_hashes.get(rel) == _file_sha256(full):
@@ -211,10 +218,10 @@ def main():
     # نامِ ثابتِ قدیمی را هم نگه می‌داریم تا ابزارهای قدیمی (و گاردِ فعلی) که
     # dist/BorsTerminal_Update.zip را می‌شناسند همچنان کار کنند.
     import shutil
-    shutil.copyfile(out, OUT)
+    shutil.copyfile(out, alias)
 
     print("patch  : %s" % out)
-    print("  alias: %s" % OUT)
+    print("  alias: %s" % alias)
     if sig:
         print("  sig  : %s" % sig)
     if unchanged:

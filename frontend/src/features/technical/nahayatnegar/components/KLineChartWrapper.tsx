@@ -5,7 +5,7 @@ import { init, dispose, Chart, KLineData } from 'klinecharts';
 import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
 import { useUiStore } from '@shared/stores/uiStore';
 import {
-  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
+  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor, mapBackendAdjustEvents
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, type Timeframe } from '../lib/timeframe';
 import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
@@ -73,6 +73,7 @@ function formatJalali(timestamp: number, type?: string): string {
     const date = new Date(timestamp);
     const isIntraday = type === 'minute' || type === 'hour';
     return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      timeZone: 'Asia/Tehran',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -80,7 +81,7 @@ function formatJalali(timestamp: number, type?: string): string {
       minute: isIntraday ? '2-digit' : undefined,
     }).format(date);
   } catch (e) {
-    return new Date(timestamp).toLocaleDateString('fa-IR');
+    return new Date(timestamp).toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });
   }
 }
 
@@ -468,8 +469,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // --- فاز ۳ (wiring): ماندگاری ترسیم‌ها + میانبرها + مگنت ---
   const magnetRef = useRef(isMagnetActive);
   magnetRef.current = isMagnetActive;
-  const candlesRef = useRef<KLineData[]>(adjustedCandles);
-  candlesRef.current = adjustedCandles;
+  // مگنت باید به OHLCِ همان میله‌ای بچسبد که کاربر می‌بیند، نه به سریِ روزانه‌ای
+  // که در نمای هفتگی/ماهانه پنهان است.
+  const candlesRef = useRef<KLineData[]>(displayCandles);
+  candlesRef.current = displayCandles;
   const drawHistRef = useRef(initHistory<StoredOverlay[]>([]));
 
   useEffect(() => {
@@ -1017,7 +1020,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [displayCandles, currentSymbol]);
+  }, [displayCandles, currentSymbol, activeTimeframe]);
 
 
   // ۴. رسم و پاک‌سازی اورلی‌های تحلیلی استراتژی FTS
@@ -1222,7 +1225,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     return clearPatterns;
   }, [adjustedCandles, patternPrefs]);
 
-  // ۶. لایهٔ رویدادهای شرکتی و مجامع (D: سود نقدی DPS، S: افزایش سرمایه سهام جایزه و آورده)
+  // ۶. لایهٔ نشانگرهای تعدیل — سرور فقط {date,ratio} می‌دهد، پس یک نشانگرِ واحد
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
@@ -1248,7 +1251,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         if (!matchCandle) return;
 
         const tooltip = `تعدیل قیمت پایه · ×${
-          action.ratio.toLocaleString('fa-IR', { maximumFractionDigits: 4 })
+          getAdjustmentFactor(action).toLocaleString('fa-IR', { maximumSignificantDigits: 4 })
         }`;
 
         chart.createOverlay({
@@ -1285,10 +1288,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       const y = e.clientY - rect.top;
 
       const cross = chartRef.current?.getCrosshair();
-      const lastCandle = adjustedCandles[adjustedCandles.length - 1];
+      // خط‌کش روی میله‌های دیده‌شده اندازه می‌گیرد، پس شمارشِ کندل‌ها هم باید
+      // در همان فضا باشد (در نمای هفتگی، indexِ سریِ روزانه تعداد را ~۵× می‌کند).
+      const bars = displayCandlesRef.current;
+      const lastCandle = bars[bars.length - 1];
       const startPrice = cross?.kLineData?.close ?? lastCandle?.close ?? 1000;
       const startTs = cross?.kLineData?.timestamp ?? lastCandle?.timestamp ?? Date.now();
-      const startIdx = cross?.dataIndex ?? (adjustedCandles.length - 1);
+      const startIdx = cross?.dataIndex ?? (bars.length - 1);
 
       isMeasuringRef.current = true;
       setMeasureState({

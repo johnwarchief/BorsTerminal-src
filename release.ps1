@@ -374,10 +374,10 @@ function Build-Patch {
     if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
     if ($Baseline) {
         Write-Host "[patch] delta $PatchFrom -> (current)  baseline=$Baseline  signed"
-        & $PY "$root\scripts\make_patch.py" --from $PatchFrom --baseline $Baseline
+        & $PY "$root\scripts\make_patch.py" --from $PatchFrom --baseline $Baseline --dist "$DistRoot"
     } else {
         Write-Host "[patch] delta $PatchFrom -> (current)  full-overlay  signed"
-        & $PY "$root\scripts\make_patch.py" --from $PatchFrom
+        & $PY "$root\scripts\make_patch.py" --from $PatchFrom --dist "$DistRoot"
     }
     if ($LASTEXITCODE -ne 0) {
         Write-Error '[patch] make_patch.py failed — the delta update would be broken. ABORT.'

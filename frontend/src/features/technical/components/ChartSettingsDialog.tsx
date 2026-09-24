@@ -737,8 +737,8 @@ export function ChartSettingsDialog({
                   <span>راهنمای نشانگرهای رویداد:</span>
                 </div>
                 <ul className={`list-inside list-disc space-y-1 pr-2 ${isLight ? 'text-[#434651]' : 'text-[#b2b5be]'}`}>
-                  <li><strong className="text-[#2962ff]">نشانگر آبی D:</strong> سود نقدی تصویب‌شده در مجمع سالیانه به همراه مقدار ریالی هر سهم.</li>
-                  <li><strong className="text-[#f59e0b]">نشانگر کهربایی S:</strong> درصد افزایش سرمایه از محل سود انباشته، آورده نقدی یا تجدید ارزیابی.</li>
+                  <li><strong className="text-[#f59e0b]">نشانگر کهربایی A:</strong> روزِ اجرایِ تعدیل — نسبتِ گسستِ «قیمت پایه» همان چیزی است که به سریِ قیمت اعمال می‌شود.</li>
+                  <li>تفکیکِ «سود نقدی» از «افزایش سرمایه» روی چارت نمایش داده نمی‌شود: TSETMC برایِ رویدادهای تاریخی فقط همین یک نسبت را منتشر می‌کند و عددِ جداگانه ساختگی می‌شد.</li>
                 </ul>
                 <p
                   className={`border-t pt-2 ${isLight ? 'border-[#e0e3eb] text-[#5f6368]' : 'border-[#2a2e39]/80 text-[#b2b5be]'}`}

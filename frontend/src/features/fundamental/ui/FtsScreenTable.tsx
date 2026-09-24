@@ -186,7 +186,10 @@ const ScreenerRow = memo(function ScreenerRow({
                   }`}
                   data-testid="fts-screen-row"
                 >
-                  <td className="px-3 py-1.5 align-middle">
+                  {/* ستونِ چسبان (RTL): نماد در لبهٔ start می‌چسبد تا با اسکرول افقی، ردیف گم نشود.
+                      پس‌زمینهٔ توپر لازم است چون بک‌گراندِ ردیف رویِ <tr> است و ستون‌های دیگر از زیرش رد می‌شوند؛
+                      z-10 زیرِ هدرِ چسبان (z-20) می‌ماند تا در محور عمودی هدر برنده باشد. */}
+                  <td className="sticky start-0 z-10 border-e border-[var(--hairline)] bg-bg-card px-3 py-1.5 align-middle">
                     <div className="flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
@@ -718,7 +721,7 @@ export function FtsScreenTable({
                 ) : (
                   <th
                     key={i}
-                    className={`px-3 py-2.5 font-bold tracking-wide ${i === COLS.length - 1 ? 'text-center' : 'text-start'}`}
+                    className={`px-3 py-2.5 font-bold tracking-wide ${i === 0 ? 'sticky start-0 z-30 border-e border-[var(--hairline)] bg-bg-card' : ''} ${i === COLS.length - 1 ? 'text-center' : 'text-start'}`}
                     title={c.title}
                   >
                     {c.label}

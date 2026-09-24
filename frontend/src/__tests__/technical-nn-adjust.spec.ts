@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyAdjustmentToCandles,
+  getAdjustmentFactor,
   mapBackendAdjustEvents,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
@@ -41,5 +42,23 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
   it('بدون رویداد ⇒ همان سری (بدون تغییر)', () => {
     const out = applyAdjustmentToCandles(candles, [], 'combined');
     expect(out.map((c) => c.close)).toEqual([100, 100, 50]);
+  });
+
+  it('رویدادِ بی‌تاریخ یا نسبتِ نامعقول حذف می‌شود — نه «امروز»', () => {
+    // با timestamp=امروز، هر کندلِ موجود زیرِ رویداد می‌افتاد و کل سری مقیاس می‌شد
+    expect(mapBackendAdjustEvents([{ date: null, ratio: 0.5 }])).toEqual([]);
+    expect(mapBackendAdjustEvents([{ date: 'not-a-date', ratio: 0.5 }])).toEqual([]);
+    expect(mapBackendAdjustEvents([{ date: '2020-01-11', ratio: 0 }])).toEqual([]);
+    expect(mapBackendAdjustEvents([{ date: '2020-01-11', ratio: 1e-9 }])).toEqual([]);
+    expect(mapBackendAdjustEvents([{ date: '2020-01-11', ratio: 900 }])).toEqual([]);
+    const series = applyAdjustmentToCandles(candles, mapBackendAdjustEvents([{ date: null, ratio: 0.5 }]), 'combined');
+    expect(series.map((c) => c.close)).toEqual([100, 100, 50]);
+  });
+
+  it('نسبتِ سالم می‌ماند و فاکتورِ اعمال‌شده همان چیزی است که نشانگر نشان می‌دهد', () => {
+    const [a] = mapBackendAdjustEvents([{ date: '2020-01-11', ratio: 0.5 }]);
+    expect(getAdjustmentFactor(a)).toBe(0.5);
+    expect(getAdjustmentFactor({ ...a, ratio: 0.00005 })).toBe(0.0001);   // clamp پایین
+    expect(getAdjustmentFactor({ ...a, ratio: 500 })).toBe(50);        // clamp بالا
   });
 });

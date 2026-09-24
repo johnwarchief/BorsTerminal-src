@@ -136,11 +136,15 @@ describe('اورلی رویدادهای شرکتی (FTS_CORP_ACTION_OVERLAY)', (
       coordinates: [{ x: 100, y: 200 }],
       overlay: { extendData: { kind: 'A', text: 'تعدیل قیمت پایه · ×۰٫۷۴' } },
     } as unknown as OverlayFigureCtx) ?? [];
-    expect(figs.length).toBe(2);
-    expect((figs[0].attrs as any).y).toBe(224);
-    expect((figs[0].attrs as any).r).toBe(9);
-    expect((figs[1].attrs as any).text).toBe('A');
-    expect((figs[1].styles as any).color).toBe('#f59e0b');
+    const at = (i: number) => figs[i].attrs as { x?: number; y?: number; r?: number; text?: string };
+    expect(figs.length).toBe(3);
+    expect(at(0).y).toBe(224);
+    expect(at(0).r).toBe(9);
+    expect(at(1).text).toBe('A');
+    expect((figs[1].styles as { color?: string }).color).toBe('#f59e0b');
+    // خودِ نسبت هم کنارِ نشانگر خوانده می‌شود (وگرنه نقطه بی‌توضیح است)
+    expect(at(2).text).toBe('تعدیل قیمت پایه · ×۰٫۷۴');
+    expect(at(2).x).toBe(112);
   });
 });
 

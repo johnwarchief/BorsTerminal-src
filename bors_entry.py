@@ -161,6 +161,32 @@ def _needs_software_rendering():
     return True                                # فقط Intel HD یکپارچه
 
 
+def _set_dpi_awareness():
+    """Per-Monitor V2 پیش از ساختِ هر پنجره.
+
+    بدونِ اعلامِ آگاهیِ DPI، ویندوز کلِ پروسه را «ناآگاه» می‌گیرد و روی
+    مانیتور ۲K/۴K با مقیاس ۱۲۵–۲۰۰٪ تصویر را بیت‌مپ می‌کند: نوشته‌ها و
+    کندل‌ها تار می‌شوند و عرضِ در دسترس هم اشتباه محاسبه می‌شود. با این
+    فراخوانی، ویندوز خودش مقیاس را به Chromium می‌دهد و چیدمانِ رزولوشنیِ
+    tokens.css (۱۹۲۰/۲۵۶۰/۳۸۴۰) روی اندازهٔ واقعی باز می‌شود.
+    """
+    if sys.platform != 'win32':
+        return
+    try:
+        import ctypes
+        try:                                            # ویندوز ۱۰ نسخهٔ ۱۷۰۳ به بعد
+            if ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4)):
+                return
+        except AttributeError:
+            pass
+        try:                                            # ویندوز ۸.۱/۱۰ قدیمی‌تر
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)   # PROCESS_PER_MONITOR_DPI_AWARE
+        except AttributeError:
+            ctypes.windll.user32.SetProcessDPIAware()
+    except Exception as e:                              # noqa: BLE001
+        print(f'[dpi] awareness not set ({e}) - rendering may be scaled by Windows')
+
+
 def _render_flags():
     """پرچم‌هایِ مرورگر بر اساسِ سخت‌افزار — برای جلوگیری از صفحهٔ سفید."""
     if _needs_software_rendering():
@@ -326,8 +352,11 @@ def open_native_window(url):
         print(f'[native] cannot resolve webview backend ({e}) -> browser fallback')
         return False
     try:
+        # maximized: روی ۱۳۶۶×۷۶۸ هم ۱۴۴۰×۹۰۰ از صفحه بیرون می‌زند، و روی
+        # ۲K/۴K نصف مانیتور را بی‌دلیل خالی می‌گذارد.
         webview.create_window('بورس‌ترمینال — BorsTerminal', url,
-                              width=1440, height=900, min_size=(1024, 640))
+                              width=1440, height=900, min_size=(1024, 640),
+                              maximized=True)
         webview.start()          # تا بستهٔ شدن پنجره بلاق میکند
         return True
     except Exception as e:
@@ -367,6 +396,7 @@ def open_app_window(url):
     return False
 
 def main():
+    _set_dpi_awareness()
     # v1.0.12: گاردِ ویندوز — قبل از هر چیز، تا روی ویندوزِ قدیمی کرشِ
     # نامفهوم ندهیم. هشدار نمایش می‌دهیم و ادامه می‌دهیم (نه مسدود).
     if WIN_TOO_OLD:

@@ -17,7 +17,7 @@ export interface CorporateAction {
 export type AdjustmentMode = 'none' | 'combined';
 
 export function getAdjustmentFactor(action: CorporateAction): number {
-  return action.ratio > 0 ? Math.max(0.0001, action.ratio) : 1.0;
+  return action.ratio > 0 ? Math.min(Math.max(action.ratio, 0.0001), 50) : 1.0;
 }
 
 /**
@@ -61,20 +61,23 @@ export function applyAdjustmentToCandles(
 
 /**
  * نگاشت رویدادهای خام بک‌اند adjustEvents ([{date,ratio}]) به CorporateAction
+ *
+ * رویدادِ بی‌تاریخ حذف می‌شود، نه «الان»: اگر timestamp به امروز بیفتد، حلقهٔ
+ * applyAdjustmentToCandles هر کندلِ موجود را زیرِ آن تاریخ می‌بیند و کلِ سری را
+ * یک‌جا مقیاس می‌کند. نسبتِ بیرونِ بازهٔ باورپذیر هم حذف می‌شود.
  */
 export function mapBackendAdjustEvents(
-  rawEvents: Array<{ timestamp?: number; time?: number; date?: string; dateStr?: string; ratio?: number }>
+  rawEvents: Array<{ timestamp?: number | null; time?: number | null; date?: string | null;
+                    dateStr?: string | null; ratio?: number | null }>
 ): CorporateAction[] {
   if (!Array.isArray(rawEvents)) return [];
 
   return rawEvents
-    .map(e => {
-      const ts = parseCandleTimestamp(e.timestamp ?? e.time ?? e.dateStr ?? e.date);
-      return {
-        timestamp: Number.isFinite(ts) && ts > 0 ? ts : Date.now(),
-        dateStr: e.dateStr || e.date || '',
-        ratio: Number(e.ratio ?? 0)
-      };
-    })
-    .filter(a => Number.isFinite(a.ratio) && a.ratio > 0);
+    .map(e => ({
+      timestamp: parseCandleTimestamp(e.timestamp ?? e.time ?? e.dateStr ?? e.date),
+      dateStr: e.dateStr || e.date || '',
+      ratio: Number(e.ratio ?? 0)
+    }))
+    .filter(a => Number.isFinite(a.timestamp) && a.timestamp > 0 &&
+                 a.ratio > 0.02 && a.ratio < 50);
 }
