@@ -930,6 +930,17 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
     base["consolidated_used"] = bool(base.get("consolidated_used"))
     base["low_quality_track"] = bool(base.get("low_quality_track"))
     base["soft_gap"] = bool(base.get("soft_gap"))
+    # رأیِ مالک (۱۴۰۵/۰۷): سوابقِ EPS که *فقط* از صورتهای تلفیقی ساخته شده باشد
+    # «رد» نیست و «سبز» هم نیست — قابلِ محاسبه روی مبنای جزوه نیست. جزوه صریح
+    # است «اطلاعات و صورت‌های مالی تلفیقی مدنظر ما نیست»، و اسکرینر همین را
+    # data_gap می‌شمارد؛ تا پیش از این همین نماد در کارتِ جزئیات با
+    # relaxed_evidence سبز می‌شد (مبين و شسپا — همان واگرایی #50).
+    if tier == "consolidated_year_end":
+        base["pass"] = False
+        base["na"] = True
+        base["data_gap"] = True
+        base["reason"] = ("سابقهٔ سه‌ساله فقط از صورت‌های مالی تلفیقی است — "
+                          "جزوه تلفیقی را مبنای داوری نمی‌داند.")
     # حالتِ «ناقص»: دوره‌های موجود نشان داده میشوند و جایِ غایب «-»
     _ser = base.get("eps_series") or []
     _real = [v for v in _ser if v is not None]
