@@ -37,6 +37,7 @@ from typing import Optional
 # norm_fa تنها راه امن مقایسهٔ نام‌های این بانک است (ی عربی/فارسی، کاف، نیم‌فاصله).
 # import در سطح ماژول نهاده می‌شود چون fts_engine وابستگی شبکه/HTTP ندارد.
 import fts_engine
+import mstat_engine
 
 
 # ============================================================ آستانه‌ها
@@ -171,8 +172,7 @@ def symbol_index(conn: sqlite3.Connection) -> dict:
             m.setdefault(norm(name), {
                 "ins_code": ins_code, "l_val18": l18 or "",
                 "sector": sector or "سایر", "total_shares": _f(shares)})
-    total = _f(conn.execute(
-        "SELECT SUM(p_closing * total_shares) FROM market_watch").fetchone()[0])
+    total = mstat_engine.market_total_rials(conn)[0]
     return {"map": m, "total_mcap_rials": total}
 
 

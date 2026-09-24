@@ -32,6 +32,7 @@ import base64
 import datetime
 import json
 import math
+import sqlite3
 import zlib
 from typing import Optional
 
@@ -40,6 +41,7 @@ B_TUMAN_FROM_RIAL = 1e10     # ریال → میلیارد تومان
 M_TUMAN_FROM_RIAL = 1e7      # ریال → میلیون تومان
 B_SHARES = 1e9               # سهم → میلیارد سهم
 HEMAT_IN_B_TUMAN = 1e3       # همت → میلیارد تومان
+HEMAT_FROM_RIAL = 1e13       # ریال → همت (هزار میلیارد تومان)
 
 # آستانهٔ سلامت کلان بازار (سند FTS صفحهٔ ۳)
 HEMAT_GOOD = 20.0            # ≥ ۲۰ همت → مساعد
@@ -737,10 +739,46 @@ def summary(conn) -> dict:
             "money_flow_b_toman": round(a["flow_bt"], 1),
         })
     return {"status": "ok", "asof": meta, "rows": out,
-            "health": macro_health_from(_agg(buckets["eq_all"]), _agg(buckets["all"]))}
+            "health": macro_health_from(_agg(buckets["eq_all"]), _agg(buckets["all"]),
+                                        *market_total_rials(conn))}
 
 
-def macro_health_from(eq: dict, allmkt: dict = None) -> dict:
+def market_total_rials(conn) -> tuple:
+    """(کل ارزش بازار به ریال, منبع) — تنها نقطهٔ خواندنِ این عدد در کل مخزن.
+
+    «ارزش کل بازار» عددِ خودِ TSETMC است که سینک از MarketData/GetMarketOverview
+    می‌گیرد و در جدولِ market_totals می‌نشیند (توضیحِ کامل در test_tsetmc.py،
+    بخشِ MARKET TOTALS). جمعِ دستیِ ستونِ market_cap آن را نمی‌سازد: یک شرکت
+    به ازای هر بازارِ معاملاتی‌اش ردیفِ جدا دارد (فولاد و فولاد3 — یک ISIN، یک
+    تعدادِ سهام) و ردیفِ نشست‌های قدیمی هم از تابلو حذف نمی‌شود. اندازه‌گیریِ
+    واقعی: جمعِ دستی ۷۰۳۸۶ همت در برابر ۲۴٬۸۵۷ همتِ رسمی — ۲.۸ برابرِ خطا،
+    و همین «سهم از کل بازار» را در شاخص ۵ سه‌برابرِ واقعیت کوچک نشان می‌داد.
+
+    پیش از نخستین سینکِ موفق عددی نیست (نصبِ تازه روی پایگاهِ بسته‌بندی‌شده)؛
+    آن‌گاه از آخرین نشستِ تابلو با حذفِ ردیف‌هایِ هم‌تعدادِ سهام برمی‌گردد و
+    منبعِ متفاوتی گزارش می‌کند تا مصرف‌کننده بداند عدد پشتیبان است.
+    """
+    try:
+        v = _f(conn.execute("SELECT market_value FROM market_totals"
+                            " ORDER BY d_even DESC LIMIT 1").fetchone()[0])
+        if v > 0:
+            return v, "tse_market_overview"
+    except (sqlite3.Error, TypeError, IndexError):
+        pass                          # جدول هنوز ساخته نشده — پایگاهِ کهنه
+    try:
+        row = conn.execute(
+            "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch"
+            "  WHERE market_cap > 0 AND d_even = (SELECT MAX(d_even) FROM market_watch)"
+            "  GROUP BY total_shares)").fetchone()
+        if row and _f(row[0]) > 0:
+            return _f(row[0]), "board_sum_deduped"
+    except (sqlite3.Error, TypeError, IndexError):
+        pass
+    return 0.0, "unavailable"
+
+
+def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
+                      total_source: str = "") -> dict:
     """برچسب سلامت کلان از ارزش معاملات (سند FTS صفحهٔ ۳): ≥۲۰ همت مساعد.
 
     مبنای برچسب «سهام، حق تقدم و ص.سهامی» است، نه کلِ جدول. کل بازار با
@@ -748,6 +786,11 @@ def macro_health_from(eq: dict, allmkt: dict = None) -> dict:
     صندوق درآمد ثابت است) و آن‌وقت آستانهٔ ۲۰ همت همیشه سبز می‌ماند و
     شاخصِ سلامت هیچ‌گاه نمی‌تواند قرمز شود — یعنی بی‌اثر. عددِ کل هم
     گزارش می‌شود، فقط داور نیست.
+
+    نامِ کلیدها عمدتاً از «ارزش معاملات» می‌آید، نه «ارزش بازار»:
+    trade_value_* = گردشِ همان روز، و market_value_* = کلِ ارزشِ بازارِ عددِ
+    رسمیِ TSETMC. پیش‌تر این دو یکی پنداشته شده بودند و نبض بازار گردشِ روز را
+    زیرِ تیترِ «ارزش کل بازار» می‌برد.
     """
     hemat = eq["val_hemat"]
     if hemat >= HEMAT_GOOD:
@@ -758,13 +801,16 @@ def macro_health_from(eq: dict, allmkt: dict = None) -> dict:
         state, label = "mid", "متوسط"
     return {"value_hemat": round(hemat, 2), "state": state, "label": label,
             "basis": "eq_all",
-            "value_hemat_all_market": round(allmkt["val_hemat"], 2) if allmkt else None,
+            "trade_value_all_market_hemat": round(allmkt["val_hemat"], 2) if allmkt else None,
+            "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
+            "market_value_source": total_source or None,
             "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD}
 
 
 def macro_health(conn) -> dict:
     rows, _meta = enrich(conn)
-    return macro_health_from(_agg(_select(rows, "eq_all")), _agg(_select(rows, "all")))
+    return macro_health_from(_agg(_select(rows, "eq_all")), _agg(_select(rows, "all")),
+                             *market_total_rials(conn))
 
 
 # ================================ v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند =================
@@ -790,7 +836,7 @@ def smart_money(conn) -> dict:
     allm = _agg(buckets["all"])
 
     # --- شاخص نقدینگی کلان (همان داورِ macro_health_from؛ فقط برچسب‌ها با آن یکی است)
-    macro = macro_health_from(eq, allm)
+    macro = macro_health_from(eq, allm, *market_total_rials(conn))
 
     # --- شرط هشدار ۸۰٪: منفی یا صف فروش در میانِ نمادهای معامله‌شدهٔ سهام/حق‌تقدم
     sel = [r for r in buckets["stock_right"] if r["_m"]["vol"] > 0]
@@ -812,7 +858,9 @@ def smart_money(conn) -> dict:
             "macro": {"value_hemat": macro["value_hemat"],
                       "state": macro["state"], "label": macro["label"],
                       "basis": macro["basis"],
-                      "value_hemat_all_market": macro["value_hemat_all_market"],
+                      "trade_value_all_market_hemat": macro["trade_value_all_market_hemat"],
+                      "market_value_hemat": macro["market_value_hemat"],
+                      "market_value_source": macro["market_value_source"],
                       "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD},
             "watch_entry": {"active": watch_entry, "bearish_pct": None if bear_pct is None else round(bear_pct, 1),
                             "rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,

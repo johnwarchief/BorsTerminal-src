@@ -8,7 +8,8 @@ import {
   GOLD_WINDOW_LABEL,
   computeAlphaTrio,
   powerTone,
-  pulseAllMarketHemat,
+  pulseMarketValueHemat,
+  pulseTradeValueAllMarketHemat,
   pulseDepth,
   pulseEqAll,
   pulseGoldFlowB,
@@ -68,7 +69,8 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
   const eq = pulseEqAll(pulse);
   const gold = pulseGoldFlowB(pulse);
   const trio = computeAlphaTrio(pulse);
-  const allMarket = pulseAllMarketHemat(pulse);
+  const allMarket = pulseTradeValueAllMarketHemat(pulse);
+  const marketValue = pulseMarketValueHemat(pulse);
 
   const thermoTotal =
     thermo != null &&
@@ -116,11 +118,25 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             <div
               data-testid="pulse-market-cap"
               className="flex items-baseline justify-center gap-2 rounded-lg border border-border-c/60 bg-bg-card/40 px-2 py-1"
-              title="ارزش کل بازار از macro.value_hemat_all_market (سهام + حق تقدم + ص.سهامی)"
+              title="همان «ارزش بازار» صفحهٔ TSETMC — مبنای «سهم از کل بازار» در شاخص ۵"
             >
               <span className="text-2xs font-bold text-text-muted">ارزش کل بازار</span>
-              {allMarket != null ? (
+              {marketValue != null ? (
                 <span className="num text-lg font-black text-text-primary">
+                  {fa(marketValue)} <span className="text-2xs font-bold text-text-muted">همت</span>
+                </span>
+              ) : (
+                MISSING
+              )}
+            </div>
+            <div
+              data-testid="pulse-trade-value"
+              className="flex items-baseline justify-center gap-2"
+              title="گردشِ امروزِ تمامِ تابلو (سهام + حق تقدم + ص.سهامی + صندوق‌ها) — این ارزشِ بازار نیست"
+            >
+              <span className="text-2xs font-bold text-text-muted">گردش امروزِ کل بازار</span>
+              {allMarket != null ? (
+                <span className="num text-sm font-black text-text-secondary">
                   {fa(allMarket)} <span className="text-2xs font-bold text-text-muted">همت</span>
                 </span>
               ) : (
@@ -134,7 +150,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
         ) : (
           <div data-testid="pulse-market-cap">
             {MISSING}
-            {allMarket == null ? <span className="sr-only">ارزش کل بازار بدون داده</span> : null}
+            {marketValue == null ? <span className="sr-only">ارزش کل بازار بدون داده</span> : null}
           </div>
         )}
       </Section>

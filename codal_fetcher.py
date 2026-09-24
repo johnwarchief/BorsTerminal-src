@@ -1720,6 +1720,13 @@ _ADB_LOCK = threading.Lock()
 _ADB_ROTATED_AT = 0.0      # monotonic ts آخرین چرخش موفق
 _ADB_MIN_GAP = 120.0      # کل چرخه چرخش (enable+80s+disable+20s) — جلوگیری از توگل تکراری
 
+# ADB ابزارِ **توسعه‌دهنده** است، نه بخشی از محصول. کاری که می‌کند روی ماشینِ
+# کاربر مخرب است: `Disable-NetAdapter 'Wi-Fi'` وای‌فایِ کاربر را خاموش می‌کند و
+# حالتِ پرواز گوشیِ اندرویدِ متصل به او را توگل می‌کند. تنها درِ ورودی: اجرای
+# مستقیم از سورس (بیلدِ توسعه) یا BORS_ADB=1. در EXE باندل‌شده همیشه خاموش است
+# و مسیرهای HTTPِ /api/adb هم ثبت نمی‌شوند.
+ADB_CONTROL_AVAILABLE = (not getattr(sys, "frozen", False)) or os.environ.get("BORS_ADB") == "1"
+
 _ADB_CANDIDATES = (
     r"C:\adb\platform-tools\adb.exe",
     r"C:\adb\adb.exe",
@@ -1737,7 +1744,13 @@ _ADB_CFG_CACHED = True
 
 
 def _adb_enabled():
-    """تنظیم کاربر از راهنمای UI (adb_config.json): خاموش = چرخش IP ممنوع."""
+    """تنظیم کاربر از راهنمای UI (adb_config.json): خاموش = چرخش IP ممنوع.
+
+    در نسخهٔ باندل‌شده بی‌قیدوشرط False — toggleِ کاربر معنایی ندارد وقتی
+    خودِ قابلیت روی ماشینِ کاربر نباید اجرا شود.
+    """
+    if not ADB_CONTROL_AVAILABLE:
+        return False
     global _ADB_CFG_TS, _ADB_CFG_CACHED
     if time.monotonic() - _ADB_CFG_TS < 5.0:
         return _ADB_CFG_CACHED

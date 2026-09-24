@@ -25,7 +25,9 @@ import shutil
 import sqlite3
 import sys
 
-REQUIRED = {"instruments", "daily_prices", "financial_statements"}
+# market_totals = کلِ ارزشِ بازارِ رسمیِ TSETMC. بدون آن، نصبِ تازه تا نخستین
+# سینکِ موفق روی جمعِ تابلو می‌نشیند که ۲.۸ برابرِ عددِ واقعی است.
+REQUIRED = {"instruments", "daily_prices", "financial_statements", "market_totals"}
 MIN_FS = 1000
 
 

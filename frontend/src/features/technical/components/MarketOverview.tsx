@@ -44,7 +44,8 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
   const sm = macro?.smartMoney ?? null;
   const eq = macroEqRow(macro?.summary);
   const hemat = macroHemat(sm);
-  const allMarket = sm?.macro?.value_hemat_all_market ?? null;
+  const allMarket = sm?.macro?.trade_value_all_market_hemat ?? null;
+  const marketValue = sm?.macro?.market_value_hemat ?? null;
   const flowEq = sm?.flow?.eq_flow_b_toman ?? null;
   const flowFixed = sm?.flow?.fixed_flow_b_toman ?? null;
 
@@ -115,8 +116,11 @@ export function MarketOverview({ onSelect }: { onSelect?: (s: string) => void })
         <Stat label="ارزش معاملات خرد" hint="سهام + حق تقدم + ص.سهامی (همت)" tone={hemat.state === 'good' ? 'green' : hemat.state === 'bad' ? 'red' : undefined}>
           {hemat.value == null ? MISSING : <>{fmt(hemat.value)} <span className="text-[10px] font-bold text-text-muted">همت</span></>}
         </Stat>
-        <Stat label="ارزش کل بازار" hint="macro.value_hemat_all_market (همت)">
+        <Stat label="گردش امروزِ کل بازار" hint="ارزش معاملاتِ تمامِ تابلو، نه ارزش بازار (همت)">
           {allMarket == null ? MISSING : <>{fmt(allMarket)} <span className="text-[10px] font-bold text-text-muted">همت</span></>}
+        </Stat>
+        <Stat label="ارزش کل بازار" hint="همان «ارزش بازار»ِ TSETMC — مبنای سهم از کل بازار (همت)">
+          {marketValue == null ? MISSING : <>{fmt(marketValue)} <span className="text-[10px] font-bold text-text-muted">همت</span></>}
         </Stat>
         <Stat
           label="پهنای بازار"

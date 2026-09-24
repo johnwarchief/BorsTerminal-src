@@ -178,7 +178,11 @@ s = ME.summary(DB)
 by = {r["key"]: r for r in s["rows"]}
 ck(abs(by["all"]["value_b_toman"] - TOTAL_RIAL / 1e10) < 0.5,
    "ارزش کل = مجموعِ ریال ÷ 1e10 (میلیارد تومان)")
-ck(s["health"]["value_hemat_all_market"] > 0, "همتِ کل بازار گزارش می‌شود")
+ck(s["health"]["trade_value_all_market_hemat"] > 0, "گردشِ کل بازار گزارش می‌شود")
+ck(s["health"]["market_value_hemat"] is None,
+   "ارزشِ بازار بی‌دادِ رسمی صفر نمی‌شود (market_totals هنوز نیست → null)")
+ck("value_hemat_all_market" not in s["health"],
+   "کلِ کهنهٔ «ارزش کل بازار = گردشِ روز» برگشته نیست")
 ck(abs(ME.B_TUMAN_FROM_RIAL - 1e10) == 0, "یکای ریال→میلیارد تومان قفل است")
 ck(abs(ME.M_TUMAN_FROM_RIAL - 1e7) == 0, "یکای ریال→میلیون تومان قفل است")
 ck(abs(ME.HEMAT_IN_B_TUMAN - 1e3) == 0, "۱ همت = ۱۰۰۰ میلیارد تومان")

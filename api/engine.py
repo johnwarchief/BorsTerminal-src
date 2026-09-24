@@ -13,6 +13,12 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
+def _adb_control_available() -> bool:
+    """ADB فقط روی ماشینِ توسعه‌دهنده؛ در EXE باندل‌شده همیشه False."""
+    import codal_fetcher
+    return bool(codal_fetcher.ADB_CONTROL_AVAILABLE)
+
+
 @router.post("/api/sync/delta")
 def api_delta_sync(payload: dict = None):
     """دلتای کدال؛ بدنهٔ اختیاری JSON: {"symbols": ["خودرو", ...]}"""
@@ -44,10 +50,14 @@ def api_full_sync():
 
 @router.get("/api/adb/status")
 def api_adb_status():
+    if not _adb_control_available():
+        return {"status": "unavailable", "enabled": False, "reason": "dev_only"}
     return adb_status()
 
 @router.post("/api/adb/rotate")
 def api_adb_rotate():
+    if not _adb_control_available():
+        return {"status": "unavailable", "new_ip": None, "reason": "dev_only"}
     new_ip = _adb_rotate()
     return {"status": "success" if new_ip else "error", "new_ip": new_ip}
 

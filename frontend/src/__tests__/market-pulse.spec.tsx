@@ -30,7 +30,9 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
       value_hemat: hemat,
       good_min: 20,
       bad_max: 10,
-      ...(allMarket != null ? { value_hemat_all_market: allMarket } : {}),
+      ...(allMarket != null ? { trade_value_all_market_hemat: allMarket } : {}),
+      market_value_hemat: 24856.7,
+      market_value_source: 'tse_market_overview',
     },
     watch_entry: { active: false, bearish_pct: 29.9, rule_pct: 80, bearish: 341, known: 1142 },
     flow: {
@@ -261,7 +263,7 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     await waitFor(() => expect(screen.getByText('تا ۱۲:۳۰')).toBeInTheDocument());
   });
 
-  it('کارت ارزش کل بازار از macro.value_hemat_all_market همان payload تغذیه می‌شود', async () => {
+  it('کارت ارزش کل بازار عددِ رسمی را می‌برد و گردشِ روز تیترِ خودش را دارد', async () => {
     mockRoutes({
       'mstat/smart-money': () => jsonResponse(smartMoney(22.5, 300.5, -120.2, 172.2)),
       'mstat/summary': () => jsonResponse(summary()),
@@ -269,9 +271,12 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
       'mstat/thermometer': () => jsonResponse(thermo()),
     });
     renderPulse();
-    await waitFor(() => expect(screen.getByTestId('pulse-market-cap').textContent).toContain('۱۷۲.۲'));
+    // دو عدد هرگز یکی نمی‌شوند: ۲۴٬۸۵۶.۷ همت ارزشِ بازار است، ۱۷۲.۲ همت گردشِ روز.
+    await waitFor(() => expect(screen.getByTestId('pulse-market-cap').textContent).toContain('۲۴۸۵۶.۷'));
     expect(screen.getByTestId('pulse-market-cap').textContent).toContain('ارزش کل بازار');
-    expect(screen.getByTestId('pulse-market-cap').textContent).toContain('همت');
+    expect(screen.getByTestId('pulse-market-cap').textContent).not.toContain('۱۷۲.۲');
+    expect(screen.getByTestId('pulse-trade-value').textContent).toContain('گردش امروزِ کل بازار');
+    expect(screen.getByTestId('pulse-trade-value').textContent).toContain('۱۷۲.۲');
   });
 
   it('ارزش کل بازار غایب → «بدون داده» در همان بلوک، نه صفر', async () => {

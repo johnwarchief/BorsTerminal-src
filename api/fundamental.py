@@ -40,6 +40,7 @@ from bors_config import DB_PATH
 from fastapi import APIRouter
 from fastapi import HTTPException
 import fts_engine
+import mstat_engine
 import datetime
 import os
 import re
@@ -303,7 +304,17 @@ def get_tsetmc_market_cap(symbol, db=None):
 
 
 def board_total_market_cap(conn) -> tuple:
-    """(کل ارزش بازارِ ریال, منبع) — مجموعِ همان ستونِ رسمی، نه ضربِ دستی."""
+    """(کل ارزش بازارِ ریال, منبع).
+
+    جمعِ ستونِ market_cap روی market_watch **ممنوع** است: یک شرکت چند ردیفِ
+    تابلو دارد و ردیفِ نشست‌های قدیمی حذف نمی‌شود، پس جمعِ دستی ۲.۸ برابرِ
+    عددِ واقعی می‌شود. عدد از mstat_engine.market_total_rials می‌آید (همان
+    marketValue خودِ TSETMC)؛ اگر هنوز نیامده، خودِ تابع به جمعِ تابلو
+    بازمی‌گردد و منبعِ پشتیبان را اعلام می‌کند.
+    """
+    total, src = mstat_engine.market_total_rials(conn)
+    if total > 0:
+        return total, src
     if _has_mcap_col(conn, "market_watch"):
         try:
             row = conn.execute("SELECT SUM(market_cap) FROM market_watch "

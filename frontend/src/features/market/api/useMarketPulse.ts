@@ -32,7 +32,9 @@ export const SmartMoneySchema = z.object({
       label: z.string().nullish(),
       good_min: num,
       bad_max: num,
-      value_hemat_all_market: num,
+      trade_value_all_market_hemat: num,
+      market_value_hemat: num,
+      market_value_source: z.string().nullish(),
     })
     .nullish(),
   watch_entry: z
@@ -76,6 +78,9 @@ export const SummarySchema = z.object({
       value_hemat: num,
       state: HematStateSchema.nullish(),
       label: z.string().nullish(),
+      trade_value_all_market_hemat: num,
+      market_value_hemat: num,
+      market_value_source: z.string().nullish(),
     })
     .nullish(),
 });
@@ -125,11 +130,22 @@ export function pulseHemat(d: MarketPulseData | null | undefined) {
 }
 
 /**
- * ارزش کل بازار (همت) از macro.value_hemat_all_market -- همان fetch پول هوشمند.
+ * گردشِ روزِ کل بازار (همت) — ارزشِ معاملات، نه ارزشِ بازار.
  * نبود عدد = null تا کارت «بدون داده» بخورد، نه صفر ساختگی.
  */
-export function pulseAllMarketHemat(d: MarketPulseData | null | undefined): number | null {
-  const v = d?.smartMoney?.macro?.value_hemat_all_market;
+export function pulseTradeValueAllMarketHemat(d: MarketPulseData | null | undefined): number | null {
+  const v = (d?.smartMoney?.macro ?? d?.summary?.health)?.trade_value_all_market_hemat;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * کل ارزش بازار (همت) — همان عددی که TSETMC ذیلِ «ارزش بازار» نشان می‌دهد و
+ * همان مبنای «سهم از کل بازار» در شاخص ۵ است. تا پیش از این، نبض بازار
+ * گردشِ روز را با همین تیتر نمایش می‌داد و عددِ FTS از جمعِ ردیف‌های تابلو
+ * ساخته می‌شد (۲.۸ برابرِ واقعیت) — دو عددِ بی‌ربط، یک نام.
+ */
+export function pulseMarketValueHemat(d: MarketPulseData | null | undefined): number | null {
+  const v = (d?.smartMoney?.macro ?? d?.summary?.health)?.market_value_hemat;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 

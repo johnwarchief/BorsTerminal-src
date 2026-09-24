@@ -31,6 +31,8 @@ from __future__ import annotations
 import sqlite3
 from typing import Optional
 
+import mstat_engine
+
 
 # ============================================================ نرمال‌سازی نوشتار
 _YA_AR, _YA_FA = "\u064a", "\u06cc"      # ي  → ی
@@ -1255,8 +1257,10 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
     نمادهای تعلیق و صنعت بیمه پیش از رتبه‌بندی حذف میشوند (بخش ۲ دستور کار).
     """
     cfg = cfg or {}
-    total_mcap = conn.execute(
-        "SELECT SUM(p_closing * total_shares) FROM market_watch").fetchone()[0] or 0.0
+    # مخرجِ کسرِ «سهم از کل بازار» — عددِ رسمیِ TSETMC، نه جمعِ ردیف‌های تابلو.
+    # جمعِ دستی یک شرکت را چند بار می‌شمرد (فولاد و فولاد3 یک ISIN) و نشست‌های
+    # قدیمی را هم نگه می‌داشت: ۷۰۳۸۶ همت در برابر ۲۴۸۵۷ همتِ واقعی.
+    total_mcap = mstat_engine.market_total_rials(conn)[0]
     rows = conn.execute("""
         SELECT f.symbol, COALESCE(m.p_closing * i.total_shares, 0) AS mcap,
                COALESCE(i.sector_name, sg.sector_name, 'سایر') AS sector,
@@ -1457,7 +1461,6 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
 
     # ۳) تابلو + صنعت + ارزش بازار
     mcap_of, sector_of, dev_of, board_of = {}, {}, {}, {}
-    total_mcap = 0.0
     for sym, mcap, sector, d_even in conn.execute("""
         SELECT i.l_val18, COALESCE(m.p_closing * i.total_shares, 0),
                COALESCE(i.sector_name, ''), m.d_even
@@ -1471,7 +1474,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # price_history هم‌خوان بماند؛ نوشتار فارسی اولویت دارد.
         if key and (key not in board_of or sym == key):
             board_of[key] = sym
-        total_mcap += _f(mcap)
+    # همان مبنای scan_symbol/scan_all: کلِ ارزشِ بازار از عددِ رسمیِ TSETMC.
+    total_mcap = mstat_engine.market_total_rials(conn)[0]
     sessions = market_sessions(conn)
     stale_cut = (sessions[min(int(cfg.get("suspended_max_stale_sessions", 3) or 3),
                               len(sessions) - 1)] if len(sessions) > 1 else 0)

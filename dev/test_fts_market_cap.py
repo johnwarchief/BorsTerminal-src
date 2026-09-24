@@ -167,8 +167,21 @@ ck(FD.get_tsetmc_market_cap("خودرو", db=con) is None,
    "thin accessor returns None (not 0.0) when the board has no valid cap")
 
 tot, src = FD.board_total_market_cap(con)
-ck(abs(tot - (5.57e15 + 4.0e13)) < 1 and src == "market_watch.market_cap",
-   "total market cap is the SUM of the stored column only (%r, %r)" % (tot, src))
+ck(abs(tot - (5.57e15 + 4.0e13)) < 1 and src == "board_sum_deduped",
+   "بی‌عددِ رسمی، مبنای پشتیبان جمعِ تابلوست و همین اعلام می‌شود (%r, %r)" % (tot, src))
+
+# v11.0: «کل ارزش بازار» عددِ خودِ TSETMC است، نه جمعِ ردیف‌های تابلو. تابلو یک
+# شرکت را چند بار می‌شمارد (فولاد و فولاد3 یک ISIN) و نشست‌های قدیمی را هم
+# نگه می‌دارد — روی پایگاهِ واقعی ۷۰۳۸۶ همت در برابر ۲۴۸۵۷ همتِ رسمی.
+import test_tsetmc as TT  # noqa: E402
+ck(TT.save_market_total(con, 2.48567e17, 20260923), "سینک عددِ رسمی را ذخیره می‌کند")
+con.commit()
+tot2, src2 = FD.board_total_market_cap(con)
+ck(abs(tot2 - 2.48567e17) < 1 and src2 == "tse_market_overview",
+   "با عددِ رسمی، همان عدد مبنای همه‌مصرف‌کننده‌ها می‌شود (%r, %r)" % (tot2, src2))
+ck(tot2 != tot, "مبنای رسمی با جمعِ تابلو یکی نیست — اگر برابر شدند، فیکسچر عوض شده")
+ck(FD.board_total_market_cap(con)[0] == 2.48567e17,
+   "خواندنِ دوباره همان عدد می‌دهد (نه یک‌بارمصرف)")
 
 # نوشتارِ عربیِ همان نماد باید به همان سطر برسد (تلهٔ کلاسیکِ norm_fa)
 ck(FD.get_tsetmc_market_cap("داریک", db=con) == 4.0e13, "Persian spelling resolves")

@@ -91,7 +91,9 @@ export const MacroSmartMoneySchema = z.object({
       value_hemat: num,
       state: z.string().nullish(),
       label: z.string().nullish(),
-      value_hemat_all_market: num,
+      trade_value_all_market_hemat: num,
+      market_value_hemat: num,
+      market_value_source: z.string().nullish(),
     })
     .nullish(),
   flow: z

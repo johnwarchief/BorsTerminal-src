@@ -107,6 +107,63 @@ def board_market_cap(row, price=None, shares=None):
     return None, ""
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  کل ارزش بازار — تنها نقطهٔ ساختِ این عدد در کل مخزن
+# ═══════════════════════════════════════════════════════════════════════════
+# «کل ارزش بازار» را **نمی‌توان** از جمعِ ردیف‌های تابلو ساخت. دو دلیلِ اندازه‌گیری‌شده:
+#   ۱) یک شرکت به ازای هر بازارِ معاملاتی‌اش ردیف جدا دارد — «فولاد» و «فولاد3»
+#      دو ردیف با دو insCode ولی یک ISIN (IRO1FOLD0009) و یک تعداد سهام‌اند؛
+#   ۲) ردیفِ نشست‌های قدیمی از market_watch حذف نمی‌شود (۵٬۲۰ ردیف در برابر
+#      ۳٬۷۸ ردیفِ زندهٔ تابلو).
+# جمعِ دستی پس ۷۰٬۸۶ همت شد؛ عددِ رسمیِ خودِ TSETMC ۲۴٬۸۵۷ همت. پس عدد از
+# MarketData/GetMarketOverview خوانده و یک‌بار اینجا ذخیره می‌شود؛ بقیه فقط
+# می‌خوانند (mstat_engine.market_total_rials).
+MARKET_TOTALS_TABLE = "market_totals"
+# ۱=بورس، ۲=فرابورس؛ «بازار پایهٔ فرابورس» در marketValueBase همان پاسخ است.
+MARKET_TOTAL_MARKETS = (1, 2)
+
+
+def ensure_market_totals_schema(conn):
+    """جدولِ کل ارزش بازار را idempotent می‌سازد (پایگاه‌دادهٔ کهنه ستون ندارد)."""
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {MARKET_TOTALS_TABLE} ("
+        " d_even INTEGER PRIMARY KEY, market_value REAL, source TEXT, updated_at TEXT)")
+
+
+def fetch_market_total(s):
+    """(ارزش_بازار_ریال, d_even) از خودِ TSETMC — یا (0.0, 0) اگر عددی نیامد.
+
+    صفرِ جعلی نمی‌سازد: اگر هر دو بازار پاسخ ندادند (۴۲۹/قطعی) همان (0.0, 0)
+    برمی‌گردد و مصرف‌کننده روی مسیرِ پشتیبان می‌نشیند.
+    """
+    total, d_even = 0.0, 0
+    for m in MARKET_TOTAL_MARKETS:
+        ov = polite_get(s, f"{BASE}/MarketData/GetMarketOverview/{m}", "marketOverview")
+        if isinstance(ov, list):
+            ov = ov[0] if ov else {}
+        if not isinstance(ov, dict):
+            continue
+        v = num(ov.get("marketValue")) or 0.0
+        v += num(ov.get("marketValueBase")) or 0.0
+        if v > 0:
+            total += v
+        d_even = max(d_even, int(num(ov.get("marketActivityDEven")) or 0))
+    return (total, d_even) if total > 0 else (0.0, 0)
+
+
+def save_market_total(conn, total_rials, d_even, now=None):
+    """عددِ رسمی را برای همان نشست ذخیره می‌کند؛ True اگر واقعاً نوشته شد."""
+    if not total_rials or total_rials <= 0 or not d_even:
+        return False
+    ensure_market_totals_schema(conn)
+    conn.execute(
+        f"INSERT OR REPLACE INTO {MARKET_TOTALS_TABLE}"
+        " (d_even, market_value, source, updated_at) VALUES (?, ?, 'tse_market_overview', ?)",
+        (int(d_even), float(total_rials),
+         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    return True
+
+
 def ensure_market_cap_schema(conn):
     """ستونهایِ market_cap را idempotent می‌سازد و سطرهایِ کهنه را پر می‌کند.
 
@@ -678,6 +735,8 @@ def _save_market_snapshot(s, conn):
             d_even = int(mo.get("marketActivityDEven") or 0) or int(mo.get("lastDataDEven") or 0) or last_d_even
     except Exception:
         pass
+    # کل ارزش بازار — عددِ رسمیِ خودِ TSETMC، نه جمعِ تابلو (بخشِ MARKET TOTALS بالا)
+    total_value, total_deven = fetch_market_total(s)
     inst, watch, daily = [], [], []
     for r in mw_raw:
         ins = r.get("insCode")
@@ -711,6 +770,11 @@ def _save_market_snapshot(s, conn):
     c.executemany(_DP_INSERT, daily)
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)", [(k, v) for k, v in boards.items()])
+    conn.commit()
+    if save_market_total(conn, total_value, total_deven or d_even, now):
+        print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview, d_even {total_deven or d_even})")
+    else:
+        print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
     conn.commit()
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): اسنپ‌شاتِ عمق/صف/سرانه فقط
     # داخل ساعات رسمی ثبت میشود؛ بعد از بسته شدن بازار، دادهٔ خالی «افت به
@@ -814,6 +878,8 @@ def main():
             d_even_today = int(mo.get("marketActivityDEven") or 0) or int(mo.get("lastDataDEven") or 0) or 0
     except Exception:
         pass
+    # کل ارزش بازار — عددِ رسمیِ خودِ TSETMC، نه جمعِ تابلو (بخشِ MARKET TOTALS بالا)
+    total_value, total_deven = fetch_market_total(s)
     if d_even_today:
         last_d_even = d_even_today
         print(f"  market date: {d_even_today} (from GetMarketOverview)")
@@ -919,6 +985,10 @@ def main():
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)",
                   [(k, v) for k, v in boards.items()])
     conn.commit()
+    if save_market_total(conn, total_value, total_deven or d_even_today, now):
+        print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview)")
+    else:
+        print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ
     # جدیدی در mstat_snap نمی‌نشیند تا دادهٔ خالی شبانه به‌عنوان «افت شدید
     # به صفر» در تایم‌لاین درون‌روزی ثبت نشود. (پنجشنبه/جمعه همه‌روز بسته؛
