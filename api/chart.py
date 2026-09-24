@@ -224,6 +224,15 @@ def get_chart_tsetmc(symbol: str):
                 j -= 1
             factors[i] = {"time": t, "factor": round(f, 10)}
 
+        # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
+        # status=success با count=0 برمی‌گشت و چارت بی‌توضیح خالی می‌ماند.
+        if not candles:
+            fb = _fallback_local()
+            if fb:
+                return fb
+            return {"status": "error",
+                    "message": "هیچ کندلِ معاملاتی برای این نماد منتشر نشده است "
+                               "(اوراقِ منقضی یا نمادی که هرگز معامله نشده)."}
         result = {
             "status": "success",
             "candles": candles,
@@ -234,6 +243,7 @@ def get_chart_tsetmc(symbol: str):
             "count": len(candles),
         }
         CHART_CACHE[symbol] = (time.time(), result)
+        return result
     except Exception as e:
         fb = _fallback_local()
         if fb:
