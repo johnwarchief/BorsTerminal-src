@@ -434,6 +434,58 @@ def main():
                                   os.path.basename(PATCH_ZIP)):
             verify_ok = False
 
+    # ۷. منتقل‌کردنِ codal.db.lzma به این ریلیز.
+    #
+    # چرا: دکمهٔ «بروزرسانی دیتابیس کدال» درونِ برنامه از
+    # releases/latest/download/codal.db.lzma می‌خواند، و «latest» همیشه همین
+    # ریلیزِ تازه است — یعنی هر ریلیزی که این فایل را نداشته باشد آن دکمه را
+    # ۴۰۴ می‌کند (v1.0.20 تا v1.0.23 دقیقاً همین بود). فایل در ریپو نیست
+    # (gitignore)، پس از آخرین ریلیزی که دارد کپی می‌شود. نبودش ریلیز را
+    # متوقف نمی‌کند، ولی صریح و با هشدار گزارش می‌شود.
+    try:
+        _codal = ("codal.db.lzma", "codal.db.lzma.sig")
+        have = {a.get("name") for a in target_release.get("assets", [])}
+        if set(_codal) <= have:
+            print("[=] codal.db.lzma از قبل روی این ریلیز است؛ دوباره آپلود نمی‌شود.")
+        else:
+            src = next((r for r in releases
+                        if r.get("tag_name") != TAG
+                        and set(_codal) <= {a.get("name") for a in r.get("assets", [])}),
+                       None)
+            if src is None:
+                print("[!] در هیچ ریلیزِ دیگری codal.db.lzma نیست؛ دکمهٔ کدال ۴۰۴ "
+                      "می‌گیرد. بساز: scripts/build_codal_snapshot.py")
+            else:
+                import tempfile
+                import shutil as _sh
+                print(f"[=] در حال منتقل‌کردن codal.db.lzma از {src['tag_name']} "
+                      f"به {TAG} …")
+                tmpdir = tempfile.mkdtemp(prefix="codal_carry_")
+                try:
+                    for name in _codal:
+                        a = next(x for x in src["assets"] if x.get("name") == name)
+                        blob = _fetch_remote(a.get("browser_download_url"))
+                        if blob is None:
+                            print(f"[!] دانلودِ {name} از {src['tag_name']} نشد.")
+                            continue
+                        path = os.path.join(tmpdir, name)
+                        with open(path, "wb") as f:
+                            f.write(blob)
+                        if not upload_asset(path):
+                            print(f"[!] آپلودِ {name} روی {TAG} ناموفق بود.")
+                            continue
+                        back = _fetch_remote(
+                            f"https://github.com/{REPO}/releases/download/{TAG}/{name}")
+                        if back == blob:
+                            print(f"[✓] {name}: بایت‌های منتشرشده با مبدأ یکسان است "
+                                  f"({len(blob)} بایت).")
+                        else:
+                            print(f"[!] {name}: مقایسهٔ پس از آپلود ناموفق بود.")
+                finally:
+                    _sh.rmtree(tmpdir, ignore_errors=True)
+    except Exception as e:
+        print(f"[!] انتقالِ codal.db.lzma خطا داد (ریلیز متوقف نمی‌شود): {e!r}")
+
     # latest.json از همان URLای که آپدیتِرِ کاربر می‌خواند (releases/latest)
     # بررسی می‌شود: نسخه باید همین TAG باشد.
     manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
