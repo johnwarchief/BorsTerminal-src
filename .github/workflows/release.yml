@@ -244,10 +244,20 @@ jobs:
             $base = Join-Path $env:RUNNER_TEMP "baseline_$prev"
             $pw = $env:BORS_SETUP_PASSWORD
             if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
+            # /LOG: خودِ Inno جزئیاتِ شکست را می‌نویسد. بدونِ آن یک exit code
+            # بی‌متن می‌مانیم (لاگ رانر از این شبکه باز نمی‌شود) و حدس می‌زنیم.
+            $innoLog = Join-Path $env:RUNNER_TEMP "baseline_$prev.log"
+            $drive = $base.Substring(0, 1)
+            Note "فضای آزاد دیسک $drive : $([math]::Round((Get-PSDrive $drive).Free/1GB,1)) GB"
             $innoArgs = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',
-                          '/CURRENTUSER',"/DIR=$base",'/PASSWORD=' + $pw)
+                          '/CURRENTUSER',"/DIR=$base","/LOG=$innoLog",'/PASSWORD=' + $pw)
             $p = Start-Process -FilePath $dl -ArgumentList $innoArgs -Wait -PassThru
-            if ($p.ExitCode -ne 0) { Fail "نصبِ باس‌لاین exit=$($p.ExitCode)" }
+            if ($p.ExitCode -ne 0) {
+              # 0=موفق 1=خطای حافظه 2=abortِ کاربر (رمز غلط هم اینجا) 3=مسیرِ
+              # نامعتبر 4=خطای ویندوزی 5=خطای command line — خودِ لاگ می‌گوید.
+              $lt = ((Get-Content $innoLog -Tail 6 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
+              Fail "نصبِ باس‌لاین exit=$($p.ExitCode) :: $lt"
+            }
             Note "باس‌لاین نصب شد: $((Get-ChildItem $base -Recurse -File).Count) فایل"
             # <- لاگِ make_patch در فایل؛ خودِ exit code هم حتماً بررسی می‌شود،
             # چون در pwsh خروجیِ non-zero یک دستورِ native خطا محسوب نمی‌شود.
