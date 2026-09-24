@@ -158,7 +158,12 @@ export default function FundamentalPage() {
     // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
       <div className="flex flex-col gap-2 min-w-0">
-        {screen.isError ? (
+        {screen.isLoading ? (
+          /* پیش از این در حینِ بارگذاری، rows=[] بود و جدول پیامِ
+           * «ردیفی از غربالگری FTS نیامد» نشان می‌داد — اولین اسکنِ بازار
+           * ده‌ها ثانیه طول می‌کشد، پس کاربر پیامِ خطا را واقعی می‌خواند. */
+          <EmptyState title="در حال بارگذاری غربالگری FTS…" hint="اولین اسکنِ کل بازار ممکن است تا یک دقیقه طول بکشد؛ جدول همین‌جا ظاهر می‌شود" />
+        ) : screen.isError ? (
           <EmptyState title="غربالگری FTS در دسترس نیست" hint="سرور اسکرینر پاسخ نداد — بعداً تلاش کن" />
         ) : (
           <FtsScreenTable

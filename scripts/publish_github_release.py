@@ -7,6 +7,7 @@ scripts/publish_github_release.py
 import os
 import sys
 import json
+import hashlib
 import subprocess
 import urllib.request
 import urllib.parse
@@ -339,6 +340,111 @@ def main():
               f"{os.path.basename(PATCH_ZIP)} + .sig + latest.json).")
     else:
         print(f"[✓] تمام فایل‌ها آپلود شدند ({os.path.basename(SETUP_EXE)} + .sig + latest.json).")
+
+    # ۶. راستی‌آزماییِ پس از آپلود — هر فایل از رویِ URLِ خودِ ریلیز دوباره دانلود
+    # می‌شود و هشِ آن با فایلِ محلی مقایسه می‌گردد؛ نصب‌کننده و پچ علاوه بر آن
+    # با کلیدِ عمومیِ minisign (همان کلیدی که آپدیتِرِ درون‌برنامه‌ای می‌شناسد)
+    # تأیید می‌شوند — یعنی دقیقاً همان چیزی که روی دستگاهِ کاربر راستی‌آزمایی
+    # می‌شود، اینجا هم راستی‌آزمایی می‌شود.
+    # انگیزه: حادثهٔ v1.0.22 — مانتِ autoclaw بایت‌های کهنهٔ exe و .sig را تحویل
+    # داد و آپلودِ «موفق»، فایلِ کهنه را منتشر کرد؛ بدونِ این مرحله کسی نمی‌فهمید.
+    print("[=] راستی‌آزماییِ پس از آپلود …")
+
+    def _sha256(path):
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    def _fetch_remote(url, attempts=3):
+        for attempt in range(1, attempts + 1):
+            try:
+                req = urllib.request.Request(
+                    url, headers={"User-Agent": "BorsTerminal-Release-Tool"})
+                with urllib.request.urlopen(req, timeout=600) as resp:
+                    return resp.read()
+            except Exception as e:
+                print(f"[!] خطا در دانلودِ {url} (تلاش {attempt}/{attempts}): {e!r}")
+                if attempt < attempts:
+                    time.sleep(5 * attempt)
+        return None
+
+    def verify_asset_bytes(local_path, asset_name):
+        """دانلودِ همان فایل از ریلیز + مقایسهٔ SHA-256 با فایلِ محلی.
+
+        برمی‌گرداند بایت‌هایِ از راه دور (برای راستی‌آزماییِ امضا) یا None."""
+        url = (f"https://github.com/{REPO}/releases/download/{TAG}/"
+               + urllib.parse.quote(asset_name))
+        remote = _fetch_remote(url)
+        if remote is None:
+            print(f"[-] {asset_name}: دانلود از راه دور ممکن نشد.")
+            return None
+        local_hash = _sha256(local_path)
+        remote_hash = hashlib.sha256(remote).hexdigest()
+        if local_hash != remote_hash:
+            print(f"[-] {asset_name}: هشِ محلی و از راه دور ناهم‌خوان است!\n"
+                  f"    local  {local_hash}\n    remote {remote_hash}")
+            return None
+        print(f"[✓] {asset_name}: هش یکسان ({local_hash[:16]}…)")
+        return remote
+
+    def verify_signature(remote_data, remote_sig_bytes, label):
+        try:
+            from api.update import UPDATE_PUBKEY
+            from bors_minisign import verify_minisign
+            verify_minisign(remote_data,
+                            remote_sig_bytes.decode("utf-8", errors="replace"),
+                            UPDATE_PUBKEY)
+            print(f"[✓] امضای minisignِ {label} با کلیدِ عمومیِ آپدیتِر تأیید شد.")
+            return True
+        except Exception as e:
+            print(f"[-] راستی‌آزماییِ minisign برای {label} شکست خورد: {e!r}")
+            return False
+
+    verify_ok = True
+    remote_setup = verify_asset_bytes(SETUP_EXE, os.path.basename(SETUP_EXE))
+    remote_setup_sig = verify_asset_bytes(SIG_FILE, os.path.basename(SIG_FILE))
+    if remote_setup is None or remote_setup_sig is None:
+        verify_ok = False
+    elif not verify_signature(remote_setup, remote_setup_sig,
+                              os.path.basename(SETUP_EXE)):
+        verify_ok = False
+
+    if patch_uploaded:
+        remote_patch = verify_asset_bytes(PATCH_ZIP, os.path.basename(PATCH_ZIP))
+        remote_patch_sig = verify_asset_bytes(PATCH_SIG, os.path.basename(PATCH_SIG))
+        if remote_patch is None or remote_patch_sig is None:
+            verify_ok = False
+        elif not verify_signature(remote_patch, remote_patch_sig,
+                                  os.path.basename(PATCH_ZIP)):
+            verify_ok = False
+
+    # latest.json از همان URLای که آپدیتِرِ کاربر می‌خواند (releases/latest)
+    # بررسی می‌شود: نسخه باید همین TAG باشد.
+    manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
+    remote_manifest_bytes = _fetch_remote(manifest_url)
+    if remote_manifest_bytes is None:
+        print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
+        verify_ok = False
+    else:
+        try:
+            remote_manifest = json.loads(remote_manifest_bytes.decode("utf-8", errors="replace"))
+        except Exception as e:
+            print(f"[-] latest.json از راه دور JSON نیست: {e!r}")
+            remote_manifest = {}
+        if remote_manifest.get("version") != TAG.lstrip("v"):
+            print(f"[-] latest.json از راه دور نسخهٔ {remote_manifest.get('version')!r} "
+                  f"دارد (انتظار: {TAG.lstrip('v')!r}).")
+            verify_ok = False
+        else:
+            print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
+                  f"را اعلام می‌کند.")
+
+    if not verify_ok:
+        print("[-] راستی‌آزماییِ پس از آپلود شکست خورد؛ ریلیز را دستی بررسی کن.")
+        sys.exit(1)
+    print("[✓] راستی‌آزماییِ پس از آپلود کامل شد — فایل‌های منتشرشده با محلی یکسان‌اند و امضاها معتبرند.")
 
 if __name__ == "__main__":
     main()

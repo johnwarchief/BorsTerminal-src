@@ -136,10 +136,14 @@ const ScreenerRow = memo(function ScreenerRow({
   row: r,
   thresholds,
   onSelect,
+  stripe,
 }: {
   row: FtsScreenRow;
   thresholds?: Record<string, unknown> | null;
   onSelect: (symbol: string) => void;
+  /** زبرا از ایندکسِ ردیف در آرایهٔ مرتب‌شده می‌آید — نه از :nth-child.
+   *  اسپیسرهای مجازی‌ساز (padTop) برابریِ CSS را جابه‌جا می‌کنند. */
+  stripe: 'odd' | 'even';
 }) {
   /** شاهد ممیزی هر محور، تنبل — فقط هنگام باز شدن کارت «چرا این وضعیت؟» فراخوانی می‌شود */
   const ev = useMemo(
@@ -182,14 +186,22 @@ const ScreenerRow = memo(function ScreenerRow({
                   className={`h-[46px] border-b border-border-c/40 transition-colors ${
                     r.excluded
                       ? 'cursor-not-allowed bg-accent-red/5 opacity-55'
-                      : 'cursor-pointer odd:bg-bg-secondary even:bg-bg-primary hover:bg-accent-blue/10'
+                      : `cursor-pointer group ${stripe === 'odd' ? 'bg-bg-secondary' : 'bg-bg-primary'} hover:bg-accent-blue/10`
                   }`}
                   data-testid="fts-screen-row"
                 >
                   {/* ستونِ چسبان (RTL): نماد در لبهٔ start می‌چسبد تا با اسکرول افقی، ردیف گم نشود.
                       پس‌زمینهٔ توپر لازم است چون بک‌گراندِ ردیف رویِ <tr> است و ستون‌های دیگر از زیرش رد می‌شوند؛
+                      ولی باید دقیقاً هم‌رنگِ زبرایِ همان ردیف باشد — پیش‌تر bg-bg-cardِ ثابت بود و
+                      کاربر «خط‌چینی» را در ستونِ نماد نمی‌دید. group-hover همان hoverِ ردیف را دنبال می‌کند.
                       z-10 زیرِ هدرِ چسبان (z-20) می‌ماند تا در محور عمودی هدر برنده باشد. */}
-                  <td className="sticky start-0 z-10 border-e border-[var(--hairline)] bg-bg-card px-3 py-1.5 align-middle">
+                  <td className={`sticky start-0 z-10 border-e border-[var(--hairline)] px-3 py-1.5 align-middle transition-colors ${
+                    r.excluded
+                      ? 'bg-accent-red/5'
+                      : stripe === 'odd'
+                        ? 'bg-bg-secondary group-hover:bg-accent-blue/10'
+                        : 'bg-bg-primary group-hover:bg-accent-blue/10'
+                  }`}>
                     <div className="flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
@@ -735,7 +747,15 @@ export function FtsScreenTable({
           {virtualRows.map((vi) => {
             const r = sorted[vi.index];
             if (!r) return null;
-            return <ScreenerRow key={r.symbol} row={r} thresholds={thresholds} onSelect={onSelect} />;
+            return (
+              <ScreenerRow
+                key={r.symbol}
+                row={r}
+                thresholds={thresholds}
+                onSelect={onSelect}
+                stripe={vi.index % 2 === 0 ? 'odd' : 'even'}
+              />
+            );
           })}
           {padBottom > 0 ? <tr aria-hidden style={{ height: padBottom }} /> : null}
         </tbody>

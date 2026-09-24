@@ -15,6 +15,7 @@ import json
 from bors_config import DB_PATH, WORK_DIR
 
 import time
+import threading
 
 # کشِ هوشمندِ پاسخ اسکنر — با کش روی دیسک برای جلوگیری از فریز شدن سرور در استارت‌آپ.
 # داده‌های بنیادی کدال دیر به دیر تغییر می‌کنند؛ پس TTL را ۱۲ ساعت (۴۳۲۰۰ ثانیه) می‌گذاریم.
@@ -26,6 +27,14 @@ _SCREENER_CACHE_TTL = 43200.0  # ۱۲ ساعت
 # (Program Files) با «Permission denied» شکست می‌خورد و در هر استارت‌آپ خطا
 # لاگ می‌شد و کشِ دیسک عملاً از کار می‌افتاد.
 CACHE_FILE = os.path.join(WORK_DIR, ".screener_cache.json")
+
+# قفلِ اسکنِ سنگین: هرگز دو اسکنِ همزمان (رشتهٔ گرم + اولین درخواستِ صفحه) اجرا
+# نشود — روی ماشینِ کند ۲× CPU می‌سوزاند و با نوشتنِ سینکِ بازار در WAL،
+# «database is locked» هم می‌دهد. درخواستِ رسیده وسطِ اسکنِ گرم منتظرِ رویدادِ
+# پایانی می‌ماند و پاسخِ همان اسکن را برمی‌گرداند.
+_SCAN_LOCK = threading.Lock()
+_WARM_EVENT = threading.Event()
+_WARM_THREAD = None
 
 def invalidate_screener_cache():
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
@@ -59,11 +68,17 @@ router = APIRouter()
 def warm_screener_cache():
     """گرم‌کردنِ کشِ پاسخِ اسکنر در پس‌زمینه (اولین بارگذاریِ تبِ بنیادی سریع شود؛
     اجرای single-source روی ۸۶۵ نماد بارِ سرد ~۲۷s است)."""
+    global _WARM_THREAD
+    _WARM_THREAD = threading.current_thread()
+    _WARM_EVENT.clear()
     try:
         get_screener()
         print("[screener] cache warmed")
     except Exception as e:  # pragma: no cover
         print(f"[screener] warm-up failed: {e}")
+    finally:
+        _WARM_THREAD = None
+        _WARM_EVENT.set()
 
 
 @router.get("/api/history/{symbol}")
@@ -147,6 +162,19 @@ def get_screener():
             except Exception as e:
                 print(f"[screener] Failed to load disk cache: {e}")
         
+        # اولین درخواستِ تبِ بنیادی معمولاً وسطِ اسکنِ گرمِ استارت‌آپ می‌رسد.
+        # اسکنِ دومِ همزمان، CPU را دو برابر می‌کند و روی ماشینِ کند با WALِ
+        # سینکِ بازار قفلِ SQLite هم می‌خورد. پس منتظرِ پایانِ اسکنِ گرم بمان
+        # و پاسخِ همان را بده؛ فقط اگر اسکنِ گرم شکست خورد، خودمان اسکن می‌کنیم.
+        if _WARM_THREAD is not None and threading.current_thread() is not _WARM_THREAD:
+            _WARM_EVENT.wait(timeout=300.0)
+            if (
+                _SCREENER_CACHE["payload"] is not None
+                and _SCREENER_CACHE.get("cfg_hash") == cfg_hash
+                and (time.time() - _SCREENER_CACHE.get("ts", 0.0)) < _SCREENER_CACHE_TTL
+            ):
+                return _SCREENER_CACHE["payload"]
+
         print("[screener] cache miss, running heavy bulk scan...")
         rows = fts_engine.bulk_scan(conn, cfg=cfg)
 
