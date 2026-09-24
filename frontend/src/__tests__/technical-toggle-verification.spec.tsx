@@ -50,8 +50,10 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         watermarkOpacity: 5,
         showWatermark: true,
         showCorporateActions: true,
-        showDividends: true,
-        showSplits: true,
+        timezone: 'Asia/Tehran',
+        showXAxis: true,
+        showYAxis: true,
+        splitLayout: 1,
         fibLogarithmic: false,
       },
     });
@@ -155,14 +157,10 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     unmount();
   });
 
-  it('۴. تست دوطرفه نشانگرهای رویداد شرکتی D و S در تب رویدادها', () => {
+  it('۴. تست دوطرفه نشانگر رویدادهای تعدیل در تب رویدادها', () => {
     const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="events" />);
 
     const allEventsBtn = screen.getByRole('button', { name: /نمایش کلیه نشانگرهای رویداد شرکتی روی کندل‌ها/ });
-    const dividendBtn = screen.getByRole('button', { name: /سود نقدی مصوب \(D - DPS\)/ });
-    const splitBtn = screen.getByRole('button', { name: /افزایش سرمایه و سهام جایزه \(S\)/ });
-
-    // تست دوطرفه کلیه رویدادها (روشن -> خاموش -> روشن)
     fireEvent.click(allEventsBtn);
     expect(useFtsConfigStore.getState().view.showCorporateActions).toBe(false);
     let saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -172,28 +170,6 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     expect(useFtsConfigStore.getState().view.showCorporateActions).toBe(true);
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     expect(saved.view.showCorporateActions).toBe(true);
-
-    // تست دوطرفه سود نقدی D
-    fireEvent.click(dividendBtn);
-    expect(useFtsConfigStore.getState().view.showDividends).toBe(false);
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    expect(saved.view.showDividends).toBe(false);
-
-    fireEvent.click(dividendBtn);
-    expect(useFtsConfigStore.getState().view.showDividends).toBe(true);
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    expect(saved.view.showDividends).toBe(true);
-
-    // تست دوطرفه افزایش سرمایه S
-    fireEvent.click(splitBtn);
-    expect(useFtsConfigStore.getState().view.showSplits).toBe(false);
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    expect(saved.view.showSplits).toBe(false);
-
-    fireEvent.click(splitBtn);
-    expect(useFtsConfigStore.getState().view.showSplits).toBe(true);
-    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    expect(saved.view.showSplits).toBe(true);
 
     unmount();
   });

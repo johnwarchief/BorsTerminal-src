@@ -6,6 +6,7 @@ import {
 } from './TradingViewIcons';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { AdjustmentMode } from '../lib/adjustments';
+import { SUPPORTED_TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from '../lib/timeframe';
 
 interface FtsToolbarProps {
   symbolName: string;
@@ -13,8 +14,8 @@ interface FtsToolbarProps {
   marketName: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   onOpenSymbolSearch: () => void;
-  activeTimeframe: string;
-  onTimeframeChange: (tf: string) => void;
+  activeTimeframe: Timeframe;
+  onTimeframeChange: (tf: Timeframe) => void;
   activeCandleType: string;
   onCandleTypeChange: (type: string) => void;
   activeAdjustment: AdjustmentMode;
@@ -59,7 +60,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   const [showCandleMenu, setShowCandleMenu] = useState(false);
   const [showAdjMenu, setShowAdjMenu] = useState(false);
 
-  const timeframes = ['1m', '5m', '15m', '1h', 'D', 'W', 'M'];
+  const timeframes: Timeframe[] = [...SUPPORTED_TIMEFRAMES];
 
   const candleTypes = [
     { label: 'کندل شمعی (Solid)', value: 'candle_solid', icon: <IconCandles size={16} /> },
@@ -69,18 +70,18 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
     { label: 'هایکن آشی (Heikin Ashi)', value: 'heikin_ashi', icon: <IconHeikinAshi size={16} /> },
   ];
 
-  const adjustments: { label: string; value: AdjustmentMode; desc: string }[] = [
-    { label: 'تعدیل عملکردی (نهایت‌نگر)', value: 'operational', desc: 'مبنای قیمت بازگشایی مجمع بورس تهران' },
-    { label: 'افزایش سرمایه و سود نقدی', value: 'capital_cash', desc: 'تعدیل استاندارد مجموع بازده تئوریک' },
-    { label: 'با احتساب آورده', value: 'with_rights', desc: 'با لحاظ ارزش اسمی ۱۰۰۰ ریالی حق‌تقدم' },
-    { label: 'افزایش سرمایه', value: 'capital', desc: 'فقط سهام جایزه و تجدید ارزیابی' },
-    { label: 'سود نقدی', value: 'cash', desc: 'فقط سود نقدی تقسیمی (DPS)' },
+  // فهرستِ کاملِ حالت‌های نهایت‌نگار؛ تنها دو تای اول با دادهٔ سرورِ ما قابل محاسبه‌اند.
+  // سرور فقط «نسبت گسست قیمت پایه» را می‌دهد = اثرِ ترکیبیِ افزایش سرمایه و سود نقدی
+  // (همان حالتِ پیش‌فرضِ نهایت‌نگار). تفکیکِ سود نقدی از سهام جایزه از یک نسبتِ واحد
+  // استخراج نمی‌شود، پس سه حالتِ آخر غیرفعال‌اند (نه عددِ ساختگی).
+  const adjustments: { label: string; value: AdjustmentMode | 'capital' | 'cash' | 'operational'; desc: string }[] = [
+    { label: 'افزایش سرمایه و سود نقدی', value: 'combined', desc: 'حالتِ پیش‌فرضِ نهایت‌نگار — مبنای گسست قیمتِ پایهٔ TSETMC' },
     { label: 'بدون تعدیل', value: 'none', desc: 'قیمت‌های خام و واقعی تابلوی معاملات' },
+    { label: 'افزایش سرمایه', value: 'capital', desc: 'نهی — به دادهٔ تفکیکیِ درصدِ افزایش سرمایه نیاز دارد' },
+    { label: 'سود نقدی', value: 'cash', desc: 'نهی — به دادهٔ تفکیکیِ DPS نیاز دارد' },
+    { label: 'تعدیل عملکردی', value: 'operational', desc: 'نهی — به دادهٔ تفکیکیِ سود و سهامِ جایزه نیاز دارد' },
   ];
-
-  // حالت‌هایی که به دادهٔ تفکیکی سود/سهام/آورده نیاز دارند و سرور فقط «نسبت گسست قیمت
-  // پایه» را می‌دهد ⇒ فعلاً داده‌پشتیبان نیستند و غیرفعال می‌شوند (صادقانه، بدون عدد ساختگی).
-  const UNAVAILABLE_MODES: AdjustmentMode[] = ['capital', 'cash', 'capital_cash', 'with_rights'];
+  const AVAILABLE_MODES: AdjustmentMode[] = ['combined', 'none'];
   const currentAdj = adjustments.find(a => a.value === activeAdjustment) || adjustments[0];
   const currentCandle = candleTypes.find(c => c.value === activeCandleType) || candleTypes[0];
 
@@ -143,8 +144,10 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
               key={tf}
               className={`nn-btn ${activeTimeframe === tf ? 'active' : ''}`}
               onClick={() => onTimeframeChange(tf)}
+              title={`نمای ${TIMEFRAME_LABELS[tf]}`}
+              data-testid={`timeframe-${tf}`}
             >
-              {tf}
+              {TIMEFRAME_LABELS[tf]}
             </button>
           ))}
         </div>
@@ -207,16 +210,16 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           </button>
           {showAdjMenu && (
             <div className="nn-dropdown-menu" style={{ minWidth: '250px' }}>
-              {adjustments.map(adj => (
+              {adjustments.map(adj => {
+                const available = AVAILABLE_MODES.includes(adj.value as AdjustmentMode);
+                return (
                 <div
                   key={adj.value}
-                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''} ${UNAVAILABLE_MODES.includes(adj.value) ? 'nn-disabled' : ''}`}
-                  title={UNAVAILABLE_MODES.includes(adj.value)
-                    ? 'این حالت به دادهٔ تفکیکی سود نقدی/سهام جایزه نیاز دارد که فعلاً از سرور نمی‌آید'
-                    : (adj.value === 'operational' ? 'تعدیل عملکردی: حالتِ داده‌پشتیبان (نسبت گسست قیمت پایه)' : '')}
+                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''} ${!available ? 'nn-disabled' : ''}`}
+                  title={available ? adj.desc : 'این حالت به دادهٔ تفکیکیِ سود نقدی و سهام جایزه نیاز دارد که TSETMC آن را منتشر نمی‌کند'}
                   onClick={() => {
-                    if (UNAVAILABLE_MODES.includes(adj.value)) return;
-                    onAdjustmentChange(adj.value);
+                    if (!available) return;
+                    onAdjustmentChange(adj.value as AdjustmentMode);
                     setShowAdjMenu(false);
                   }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
@@ -227,7 +230,8 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
                   </div>
                   <span style={{ fontSize: '10px', color: '#787b86' }}>{adj.desc}</span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -63,8 +63,6 @@ export type ChartView = {
   watermarkOpacity: number;
   showWatermark: boolean;
   showCorporateActions: boolean;
-  showDividends: boolean;
-  showSplits: boolean;
   fibLogarithmic: boolean;
 };
 
@@ -102,8 +100,6 @@ export const VIEW_DEFAULTS: ChartView = {
   watermarkOpacity: 5,
   showWatermark: true,
   showCorporateActions: true,
-  showDividends: true,
-  showSplits: true,
   fibLogarithmic: false,
 };
 

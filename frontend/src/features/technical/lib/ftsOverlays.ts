@@ -546,15 +546,14 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       const c = ctx.coordinates;
       if (!c[0] || typeof c[0].x !== 'number' || typeof c[0].y !== 'number') return [];
       const ext = (ctx.overlay.extendData ?? {}) as {
-        kind?: 'D' | 'S';
+        kind?: 'A';
         text?: string;
         color?: string;
       };
       const x = c[0].x;
       const y = c[0].y + 24;
-      const isDiv = ext.kind === 'D';
-      const color = ext.color ?? (isDiv ? '#2962ff' : '#f59e0b');
-      const letter = isDiv ? 'D' : 'S';
+      const color = ext.color ?? '#f59e0b';
+      const letter = 'A';
       return [
         {
           type: 'circle',

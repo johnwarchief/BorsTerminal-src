@@ -216,7 +216,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
       },
     ]);
 
-    const weekBtn = screen.getByRole('button', { name: 'W' });
+    const weekBtn = screen.getByRole('button', { name: 'هفتگی' });
 
     act(() => {
       fireEvent.click(weekBtn);

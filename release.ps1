@@ -289,7 +289,7 @@ function Build-Setup {
     }
     Write-Host ('[setup] market.db.lzma beside exe: ' + [math]::Round((Get-Item $distLzma).Length / 1MB, 1) + ' MB')
     Write-Host '[setup] Inno Setup'
-    & $ISCC "$root\installer\bors_setup.iss"
+    & $ISCC "/DBundleDir=$Bundle" "$root\installer\bors_setup.iss"
     if ($LASTEXITCODE -ne 0) {
         # پیش از این خط نبود: ISCC با «Compile aborted» برمی‌گشت، اسکریپت به
         # Sign-Setup می‌رفت و نصابِ نسخهٔ *قبلی* را که هنوز در out/ مانده بود

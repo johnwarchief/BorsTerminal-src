@@ -379,21 +379,11 @@ export function ChartSettingsDialog({
                 />
               </Row>
 
-              <Row label="رویدادهای شرکتی روی چارت (Corporate Actions)">
+              <Row label="نشانگر رویدادهای تعدیل (Corporate Actions)">
                 <Toggle
                   on={view.showCorporateActions !== false}
-                  label="نشانگرهای مجامع"
+                  label="نشانگرهای تعدیل قیمت پایه"
                   onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
-                />
-                <Toggle
-                  on={view.showDividends !== false}
-                  label="سود نقدی (D)"
-                  onClick={() => setView({ showDividends: view.showDividends === false })}
-                />
-                <Toggle
-                  on={view.showSplits !== false}
-                  label="افزایش سرمایه (S)"
-                  onClick={() => setView({ showSplits: view.showSplits === false })}
                 />
               </Row>
 
@@ -732,19 +722,6 @@ export function ChartSettingsDialog({
                   on={view.showCorporateActions !== false}
                   label="نمایش کلیه نشانگرهای رویداد شرکتی روی کندل‌ها"
                   onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
-                />
-              </Row>
-
-              <Row label="تفکیک نوع رویداد" hint="فیلتر نشانگرهای D و S">
-                <Toggle
-                  on={view.showDividends !== false}
-                  label="سود نقدی مصوب (D - DPS)"
-                  onClick={() => setView({ showDividends: view.showDividends === false })}
-                />
-                <Toggle
-                  on={view.showSplits !== false}
-                  label="افزایش سرمایه و سهام جایزه (S)"
-                  onClick={() => setView({ showSplits: view.showSplits === false })}
                 />
               </Row>
 

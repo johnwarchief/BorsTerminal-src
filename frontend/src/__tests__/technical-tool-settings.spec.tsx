@@ -77,26 +77,13 @@ describe('دیالوگ تنظیمات چارت', () => {
     expect(useFtsConfigStore.getState().view.axisDragLock).toBe(true);
   });
 
-  it('تب رویدادها دارای سوئیچ‌های مستقل برای سود نقدی و افزایش سرمایه است', () => {
+  it('تب رویدادها: سوئیچ‌های مستقل D/S حذف‌اند، چون سرور نوعِ رویداد را نمی‌فرستد', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
     fireEvent.click(screen.getByTestId('settings-tab-events'));
     expect(screen.getByTestId('settings-events-note')).toBeInTheDocument();
     expect(screen.getByText(/سامانه کدال/)).toBeInTheDocument();
-
-    const divBtn = screen.getByRole('button', { name: /سود نقدی مصوب \(D - DPS\)/ });
-    const splitBtn = screen.getByRole('button', { name: /افزایش سرمایه و سهام جایزه \(S\)/ });
-    expect(divBtn).toBeInTheDocument();
-    expect(splitBtn).toBeInTheDocument();
-
-    const initDiv = useFtsConfigStore.getState().view.showDividends !== false;
-    fireEvent.click(divBtn);
-    expect(useFtsConfigStore.getState().view.showDividends).toBe(!initDiv);
-
-    const initSplit = useFtsConfigStore.getState().view.showSplits !== false;
-    fireEvent.click(splitBtn);
-    expect(useFtsConfigStore.getState().view.showSplits).toBe(!initSplit);
-
-    useFtsConfigStore.getState().setView({ showDividends: true, showSplits: true });
+    expect(screen.queryByRole('button', { name: /سود نقدی مصوب/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /افزایش سرمایه و سهام جایزه/ })).not.toBeInTheDocument();
   });
 
   it('حذف قطعی نام متغیرهای خام candle.upColor و candle.downColor از کلیه تب‌ها', () => {

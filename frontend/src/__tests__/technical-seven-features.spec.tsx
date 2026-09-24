@@ -220,15 +220,11 @@ describe('۷ قابلیت کلیدی چارت سامانه نهایت‌نگر (
     it('فیلدهای کنترل رویدادهای شرکتی در استور پیکربندی ftsConfigStore فعال هستند', () => {
       const state = useFtsConfigStore.getState();
       expect(state.view.showCorporateActions).toBe(true);
-      expect(state.view.showDividends).toBe(true);
-      expect(state.view.showSplits).toBe(true);
 
-      useFtsConfigStore.getState().setView({ showCorporateActions: false, showDividends: false, showSplits: false });
+      useFtsConfigStore.getState().setView({ showCorporateActions: false });
       expect(useFtsConfigStore.getState().view.showCorporateActions).toBe(false);
-      expect(useFtsConfigStore.getState().view.showDividends).toBe(false);
-      expect(useFtsConfigStore.getState().view.showSplits).toBe(false);
 
-      useFtsConfigStore.getState().setView({ showCorporateActions: true, showDividends: true, showSplits: true });
+      useFtsConfigStore.getState().setView({ showCorporateActions: true });
     });
   });
 

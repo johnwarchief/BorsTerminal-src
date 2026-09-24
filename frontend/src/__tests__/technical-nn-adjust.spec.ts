@@ -23,8 +23,8 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
     expect(out[2].close).toBe(50);
   });
 
-  it('«تعدیل عملکردی» ⇒ کندل‌های پیش از رویداد در نسبت ضرب، حجم تقسیم، پس از رویداد خام', () => {
-    const out = applyAdjustmentToCandles(candles, events, 'operational');
+  it('تعدیل ترکیبی ⇒ کندل‌های پیش از رویداد در نسبت ضرب، حجم تقسیم، پس از رویداد خام', () => {
+    const out = applyAdjustmentToCandles(candles, events, 'combined');
     expect(out[0].close).toBe(50);       // 100 × 0.5
     expect(out[1].close).toBe(50);
     expect(out[0].volume).toBe(2000);    // 1000 ÷ 0.5
@@ -39,7 +39,7 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
   });
 
   it('بدون رویداد ⇒ همان سری (بدون تغییر)', () => {
-    const out = applyAdjustmentToCandles(candles, [], 'operational');
+    const out = applyAdjustmentToCandles(candles, [], 'combined');
     expect(out.map((c) => c.close)).toEqual([100, 100, 50]);
   });
 });

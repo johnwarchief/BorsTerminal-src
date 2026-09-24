@@ -7,6 +7,7 @@ import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, mapBackendAdjustEvents
 } from '../lib/adjustments';
+import { aggregateCandles, timeframePeriod, type Timeframe } from '../lib/timeframe';
 import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
 import {
   registerFtsOverlays,
@@ -62,7 +63,7 @@ export interface ChartProps {
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
   onSymbolChange?: (sym: SymbolInfo) => void;
-  onTimeframeChange?: (tf: string) => void;
+  onTimeframeChange?: (tf: Timeframe) => void;
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
 }
 
@@ -238,9 +239,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
 
   // استیت‌های نوار بالا
-  const [activeTimeframe, setActiveTimeframe] = useState<string>('D');
+  const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('operational');
+  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('combined');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
 
@@ -321,6 +322,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // رفرنس پایدار به دیتای جاری کندل‌ها جهت پیشگیری از closure قدیمی در دیتا لودر
   const adjustedCandlesRef = useRef<KLineData[]>(adjustedCandles);
   adjustedCandlesRef.current = adjustedCandles;
+
+  // کندل‌های نمایشی: سریِ روزانهٔ تعدیل‌شده روی بازهٔ انتخابی تجمیع می‌شود.
+  // KLineCharts خودش هیچ بازآرایی‌ای انجام نمی‌دهد؛ setPeriod فقط برچسب محور را
+  // عوض می‌کند، پس اگر تجمیع اینجا انجام نشود نمای هفتگی همان کندل روزانه است.
+  const displayCandles = useMemo(
+    () => aggregateCandles(adjustedCandles, activeTimeframe),
+    [adjustedCandles, activeTimeframe]
+  );
+  const displayCandlesRef = useRef<KLineData[]>(displayCandles);
+  displayCandlesRef.current = displayCandles;
 
   // اجرای تحلیل FTS روی داده‌های تعدیل‌شده
   useEffect(() => {
@@ -627,7 +638,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     chart.setDataLoader({
       getBars: ({ callback }) => {
         // بازگرداندن دیتای جاری کندل‌ها از طریق ref جهت پیشگیری از آرایه خالی
-        callback(adjustedCandlesRef.current, { forward: false, backward: false });
+        callback(displayCandlesRef.current, { forward: false, backward: false });
       }
     });
 
@@ -637,9 +648,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       pricePrecision: 0,
       volumePrecision: 0
     });
-    chart.setPeriod({ span: 1, type: 'day' });
+    chart.setPeriod(timeframePeriod(activeTimeframe));
 
-    if (adjustedCandlesRef.current.length > 0) {
+    if (displayCandlesRef.current.length > 0) {
       chart.resetData();
       chart.scrollToRealTime();
     }
@@ -960,10 +971,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       } as never);
 
       // ۵. تزریق فوری و بازنشانی کندل‌های جاری جهت رندر بی‌درنگ و تضمین عدم خالی ماندن بوم
-      if (adjustedCandlesRef.current && adjustedCandlesRef.current.length > 0) {
+      if (displayCandlesRef.current && displayCandlesRef.current.length > 0) {
         chart.setDataLoader({
           getBars: ({ callback }) => {
-            callback(adjustedCandlesRef.current, { forward: false, backward: false });
+            callback(displayCandlesRef.current, { forward: false, backward: false });
           }
         });
         chart.resetData();
@@ -982,7 +993,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // بازنشانی و فراخوانی مجدد لودر دیتا در v10
     chart.setDataLoader({
       getBars: ({ callback }) => {
-        callback(adjustedCandles, { forward: false, backward: false });
+        callback(displayCandles, { forward: false, backward: false });
       }
     });
 
@@ -991,6 +1002,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       pricePrecision: 0,
       volumePrecision: 0
     });
+    chart.setPeriod(timeframePeriod(activeTimeframe));
 
     chart.resetData();
     chart.setOffsetRightDistance?.(50);
@@ -1005,7 +1017,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [adjustedCandles, currentSymbol]);
+  }, [displayCandles, currentSymbol]);
 
 
   // ۴. رسم و پاک‌سازی اورلی‌های تحلیلی استراتژی FTS
@@ -1221,27 +1233,23 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       // safe
     }
 
-    if (ftsView?.showCorporateActions === false || corporateActions.length === 0 || adjustedCandles.length === 0) {
+    if (ftsView?.showCorporateActions === false || corporateActions.length === 0 || displayCandles.length === 0) {
       return;
     }
 
     try {
       corporateActions.forEach((action) => {
-        const isDividend = action.type === 'dps';
-        const isSplit = action.type === 'capital_bonus' || action.type === 'capital_cash' || action.type === 'combined';
-        if (!isDividend && !isSplit) return;
-        if (isDividend && ftsView?.showDividends === false) return;
-        if (isSplit && ftsView?.showSplits === false) return;
-
-        const matchCandle = adjustedCandles.find((c) => Math.abs(c.timestamp - action.timestamp) < 24 * 60 * 60 * 1000)
-          ?? adjustedCandles.find((c) => c.timestamp >= action.timestamp);
+        // سرور نوعِ رویداد را نمی‌فرستد (فقط نسبتِ گسست قیمت پایه)، پس برچسبِ
+        // «سود نقدی» یا «افزایش سرمایه» روی این مارکر ساختگی می‌شد؛ تنها عددِ
+        // واقعیِ موجود همان نسبت است و همان نمایش داده می‌شود.
+        const matchCandle = displayCandles.find((c) => Math.abs(c.timestamp - action.timestamp) < 24 * 60 * 60 * 1000)
+          ?? displayCandles.find((c) => c.timestamp >= action.timestamp);
 
         if (!matchCandle) return;
 
-        const kind = isDividend ? 'D' : 'S';
-        const tooltip = isDividend
-          ? `سود نقدی: ${action.dpsAmount?.toLocaleString('fa-IR') ?? '-'} ریال`
-          : `افزایش سرمایه: ${action.bonusPercent ?? action.cashPercent ?? '-'}%`;
+        const tooltip = `تعدیل قیمت پایه · ×${
+          action.ratio.toLocaleString('fa-IR', { maximumFractionDigits: 4 })
+        }`;
 
         chart.createOverlay({
           name: FTS_CORP_ACTION_OVERLAY,
@@ -1249,9 +1257,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           lock: true,
           points: [{ timestamp: matchCandle.timestamp, value: matchCandle.low }],
           extendData: {
-            kind,
+            kind: 'A',
             text: tooltip,
-            color: isDividend ? '#2962ff' : '#f59e0b',
+            color: '#f59e0b',
           },
         } as never);
       });
@@ -1266,7 +1274,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         void e;
       }
     };
-  }, [corporateActions, adjustedCandles, ftsView?.showCorporateActions, ftsView?.showDividends, ftsView?.showSplits]);
+  }, [corporateActions, displayCandles, ftsView?.showCorporateActions]);
 
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1384,26 +1392,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (onSymbolChange) onSymbolChange(sym);
   };
 
-  // هندلر تغییر تایم‌فریم
-  const handleTimeframeChange = (tf: string) => {
+  // هندلر تغییر تایم‌فریم — تجمیع در displayCandles انجام می‌شود و افکتِ دیتا آن را
+  // به چارت می‌دهد؛ این‌جا فقط وضعیت و برچسب محور عوض می‌شود.
+  const handleTimeframeChange = (tf: Timeframe) => {
     flushDrawings();
     setActiveTimeframe(tf);
-    const chart = chartRef.current;
-    if (chart) {
-      let span = 1;
-      let type: any = 'day';
-      if (tf === '1m') { span = 1; type = 'minute'; }
-      else if (tf === '5m') { span = 5; type = 'minute'; }
-      else if (tf === '15m') { span = 15; type = 'minute'; }
-      else if (tf === '30m') { span = 30; type = 'minute'; }
-      else if (tf === '1h') { span = 60; type = 'minute'; }
-      else if (tf === 'D') { span = 1; type = 'day'; }
-      else if (tf === 'W') { span = 1; type = 'week'; }
-      else if (tf === 'M') { span = 1; type = 'month'; }
-
-      chart.setPeriod({ span, type });
-      chart.resetData();
-    }
+    chartRef.current?.setPeriod(timeframePeriod(tf));
     if (onTimeframeChange) onTimeframeChange(tf);
   };
 

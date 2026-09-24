@@ -4,10 +4,18 @@
 ; bare #define always wins over a command-line define, guard it with #ifndef and
 ; keep the default in sync with bors_config.APP_VERSION for local builds.
 #ifndef AppVersion
-#define AppVersion "1.0.21"
+#define AppVersion "1.0.22"
 #endif
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
+; Where the compiled onedir bundle lives, relative to this file. release.ps1
+; overrides it with ISCC /DBundleDir=... when the default dist is unusable
+; (Windows can hold an unbreakable handle on dist\BorsTerminal_Ultimate and the
+; build then goes to dist2). Guarded the same way as AppVersion: a bare
+; #define would silently beat the command-line define.
+#ifndef BundleDir
+#define BundleDir "..\dist\BorsTerminal_Ultimate"
+#endif
 ; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
 ; برای تشخیصِ نصبِ قبلی در بخشِ [Code].
 #define AppRegID "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}_is1"
@@ -61,7 +69,7 @@ Name: "desktopicon"; Description: "ساخت آیکون روی دسکتاپ"; Gro
 Name: "startmenuicon"; Description: "ساخت آیکون در منوی استارت"; GroupDescription: "آیکون‌های اضافه:"; Flags: checkedonce
 
 [Files]
-Source: "..\dist\BorsTerminal_Ultimate\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{#BundleDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\market.db.lzma"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 ; v1.0.10: اعمال‌کنندهٔ پچ دلتا. باید قبل از رسیدنِ هر پچ روی دیسک باشد تا
 ; آپدیتِرِ درون‌برنامه‌ای بتواند آن را spawn کند. این فایل خودش را در %TEMP%

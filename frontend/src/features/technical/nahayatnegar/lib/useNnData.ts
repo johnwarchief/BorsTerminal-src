@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import type { KLineData } from 'klinecharts';
-import type { CorporateAction } from './adjustments';
+import { mapBackendAdjustEvents } from './adjustments';
 
 const CandleSchema = z.object({
   time: z.string(),
@@ -18,17 +18,9 @@ const CandleSchema = z.object({
 });
 
 const EventSchema = z.object({
-  time: z.string().nullish(),
-  dateStr: z.string().nullish(),
-  timestamp: z.number().nullish(),
-  type: z.string().nullish(),
-  dpsAmount: z.number().nullish(),
-  bonusPercent: z.number().nullish(),
-  cashPercent: z.number().nullish(),
-  preMeetingPrice: z.number().nullish(),
-  postMeetingPrice: z.number().nullish(),
+  date: z.string().nullish(),
+  ratio: z.number().nullish(),
 });
-type RawEvent = z.infer<typeof EventSchema>;
 
 const VolSchema = z.object({ time: z.string(), value: z.number() });
 
@@ -57,30 +49,6 @@ export function toKLine(candles: { time: string; open: number; high: number; low
   return out.sort((a, b) => a.timestamp - b.timestamp);
 }
 
-const VALID_TYPES = new Set(['dps', 'capital_bonus', 'capital_cash', 'combined']);
-
-/** نگاشت tolerant رویدادهای تعدیل؛ موارد ناقص حذف می‌شوند */
-export function toCorporateActions(events: RawEvent[] | null | undefined): CorporateAction[] {
-  if (!events) return [];
-  const out: CorporateAction[] = [];
-  for (const e of events) {
-    const ts = typeof e.timestamp === 'number' ? e.timestamp : e.time ? Date.parse(`${e.time}T00:00:00Z`) : Number.NaN;
-    const type = (e.type ?? '').trim();
-    if (!Number.isFinite(ts) || !VALID_TYPES.has(type)) continue;
-    out.push({
-      timestamp: ts,
-      dateStr: e.dateStr ?? e.time ?? '',
-      type: type as CorporateAction['type'],
-      dpsAmount: e.dpsAmount ?? undefined,
-      bonusPercent: e.bonusPercent ?? undefined,
-      cashPercent: e.cashPercent ?? undefined,
-      preMeetingPrice: e.preMeetingPrice ?? 0,
-      postMeetingPrice: e.postMeetingPrice ?? 0,
-    });
-  }
-  return out;
-}
-
 export function useNnChartData(symbol: string, enabled = true) {
   const q = useQuery({
     queryKey: ['nn-chart', symbol],
@@ -96,7 +64,7 @@ export function useNnChartData(symbol: string, enabled = true) {
     return m;
   }, [q.data]);
   const data = useMemo(() => toKLine(q.data?.candles ?? [], volMap), [q.data, volMap]);
-  const actions = useMemo(() => toCorporateActions(q.data?.adjustEvents), [q.data]);
+  const actions = useMemo(() => mapBackendAdjustEvents(q.data?.adjustEvents ?? []), [q.data]);
   return { data, actions, isLoading: q.isLoading, isError: q.isError, status: q.data?.status ?? null };
 }
 
