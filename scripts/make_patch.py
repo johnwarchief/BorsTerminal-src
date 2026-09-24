@@ -32,6 +32,15 @@ import subprocess
 import sys
 import zipfile
 
+# کنسولِ رانیِرِ ویندوز cp1252 است و اولین چاپِ فارسیِ این اسکریپت با
+# UnicodeEncodeError می‌مرد (مرحلهٔ manifest در CI همین‌طور شکست خورد و
+# چیزی جز «exit code 1» در annotation نگذاشت). publish هم همین بلاک را دارد.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 DEFAULT_DIST = "dist"
 BAT = os.path.join(ROOT, "scripts", "apply_update.bat")

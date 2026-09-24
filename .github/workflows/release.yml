@@ -193,7 +193,18 @@ jobs:
         # فهرستِ sha256ِ همین بیلد کنارِ نصاب منتشر می‌شود تا نسخهٔ بعد
         # بتواند پچِ دلتا را بدونِ دانلودکردنِ نصاب و بدونِ اجرایِ installer
         # روی رانر بسازد.
-        run: python scripts/make_patch.py --emit-manifest "dist/BorsTerminal_Manifest_$env:TAG.json"
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          # نبودِ این فایل نباید ریلیز را متوقف کند، ولی باید در annotations
+          # دیده شود: لاگ رانر از این شبکه باز نمی‌شود و continue-on-error
+          # نتیجه را در API سبز نشان می‌دهد.
+          $f = "dist/BorsTerminal_Manifest_$env:TAG.json"
+          python scripts/make_patch.py --emit-manifest $f
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { Write-Output "::error::[manifest] make_patch exit=$code"; exit 1 }
+          if (-not (Test-Path $f)) { Write-Output "::error::[manifest] $f ساخته نشد"; exit 1 }
+          Write-Output "::notice::[manifest] $f = $((Get-Item $f).Length) بایت"
 
       - name: Build Delta Patch (previous installer -> this build)
         shell: pwsh

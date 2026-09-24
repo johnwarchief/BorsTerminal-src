@@ -351,8 +351,12 @@ def main():
         manifest_uploaded = bool(upload_asset(manifest_path))
         if not manifest_uploaded:
             print("[!] آپلودِ manifest ناموفق بود؛ پچِ نسخهٔ بعد به نصبِ باس‌لاین برمی‌گردد.")
+            # workflow command: در annotations ثبت می‌شود (لاگ رانر خوانده نمی‌شود)
+            print("::error::[publish] آپلودِ %s ناموفق بود" % os.path.basename(manifest_path))
     else:
         print(f"[!] {manifest_path} ساخته نشده؛ این ریلیز لنگهٔ مقایسهٔ پچِ بعد را ندارد.")
+        print("::error::[publish] %s نیست؛ نسخهٔ بعد مجبور به نصبِ باس‌لاین می‌شود"
+              % os.path.basename(manifest_path))
 
     # 5) build + upload latest.json (Tauri updater manifest)
     latest_path = build_latest_json()
