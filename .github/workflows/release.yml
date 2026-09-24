@@ -181,6 +181,41 @@ jobs:
           cd frontend
           npx tauri signer sign -f ..\.tauri\updater.key "..\installer\out\BorsTerminal_Ultimate_Setup_$env:TAG.exe"
 
+      # دلتای واقعی فقط وقتی کوچک می‌ماند که هر دو طرفِ diff با همان زنجیره
+      # (پایتونِ 3.12ِ همین CI) ساخته شده باشند — بیلدِ محلی روی 3.14 صدها
+      # باینریِ ناهمسان تولید می‌کند و پچ ۵۵ مگابایتیِ بی‌فایده. پس بیلدِ پچ
+      # هم اینجا انجام می‌شود: نصابِ نسخهٔ قبلی به یک پوشهٔ موقت نصبِ سایلنت
+      # می‌شود (پسوندِ postinstall یعنی برنامه بالا نمی‌آید) و make_patch
+      # با همان کلیدِ updater امضا می‌کند. continue-on-error: اگر هر مرحله‌ای
+      # شکست بخورد، ریلیز بدونِ پچ منتشر می‌شود (همان رفتارِ v1.0.22) —
+      # publish_github_release.py با غیابِ پچ شفافاً نصبِ کامل را معرفی می‌کند.
+      - name: Build Delta Patch (previous installer -> this build)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          BORS_SETUP_PASSWORD: ${{ secrets.BORS_SETUP_PASSWORD }}
+        run: |
+          $ver = $env:TAG -replace '^v',''
+          $prev = (Invoke-RestMethod -Uri 'https://api.github.com/repos/johnwarchief/BorsTerminal/releases/latest' -Headers @{ 'User-Agent' = 'BorsTerminal-CI' }).tag_name -replace '^v',''
+          if (-not $prev -or $prev -eq $ver) {
+            Write-Host "نسخهٔ قبلی برای diff نیست؛ بدونِ پچ ادامه می‌دهیم"
+            exit 0
+          }
+          Write-Host "مبدأِ پچ: v$prev"
+          $setup = "BorsTerminal_Ultimate_Setup_v$prev.exe"
+          Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$setup" -OutFile "$env:RUNNER_TEMP\$setup"
+          $base = Join-Path $env:RUNNER_TEMP "baseline_$prev"
+          $pw = $env:BORS_SETUP_PASSWORD
+          if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
+          $args = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-','/CURRENTUSER',"/DIR=$base",'/PASSWORD=' + $pw)
+          $p = Start-Process -FilePath "$env:RUNNER_TEMP\$setup" -ArgumentList $args -Wait -PassThru
+          if ($p.ExitCode -ne 0) {
+            Write-Error "نصبِ باس‌لاین شکست خورد (exit $($p.ExitCode))"
+            exit 1
+          }
+          python scripts/make_patch.py --from $prev --baseline $base
+          Get-ChildItem dist/BorsTerminal_Patch_*.zip, dist/BorsTerminal_Patch_*.zip.sig -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "patch artifact: $($_.FullName) $($_.Length) bytes" }
+
       - name: Publish Release (installer + .sig + latest.json)
         env:
           # The release lives on the public distribution repo, so the source
