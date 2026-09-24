@@ -11,7 +11,7 @@ import { buildScreenerMap, useFtsScreener } from '../api/useFtsScreener';
 import { classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
-import { matchesDirection, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
+import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
 import { countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
@@ -99,25 +99,19 @@ export default function MarketPage({
     return [...set].sort((a, b) => a.localeCompare(b, 'fa'));
   }, [rows, sector]);
 
-  /** شمارش عبور هر فیلتر سریع -- فقط روی ردیف های زنده تا چیپ ها معنادار باشند */
-  const quickMatches = useMemo(() => {
-    const live = rows.filter((r) => r.is_live !== false);
-    return countQuickMatches(live as unknown as Parameters<typeof countQuickMatches>[0], tapeFilterConfig);
-  }, [rows, tapeFilterConfig]);
-
-  const volRatioCount = useMemo(
-    () => rows.filter((r) => r.is_live !== false && matchesVolRatio(r.vol_ratio, volRatioMin)).length,
-    [rows, volRatioMin],
-  );
-
-  const filtered = useMemo(
+  /**
+   * پایهٔ شمارش چیپ‌ها: همان ردیف‌هایی که جدول بی‌فیلترِ سریع نشان می‌دهد.
+   * بدون این، چیپ روی کل تابلو می‌شمرد (۱۷۹) و کلیک روی همان چیپ ۸۰ ردیف
+   * از بازارهای فعال را نشان می‌داد — عددِ وعده‌دهنده با نتیجه یکی نبود.
+   */
+  const filterBase = useMemo(
     () =>
       dropNumericSuffixRows(
         applyFilters(
           rows,
           query,
           assetTypes,
-          quickFilters,
+          [],
           sector,
           liveOnly,
           direction,
@@ -127,7 +121,41 @@ export default function MarketPage({
           tapeFilterConfig,
         ),
       ),
-    [rows, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
+    [rows, query, assetTypes, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
+  );
+
+  const quickMatches = useMemo(
+    () =>
+      countQuickMatches(
+        filterBase as unknown as Parameters<typeof countQuickMatches>[0],
+        tapeFilterConfig,
+      ),
+    [filterBase, tapeFilterConfig],
+  );
+
+  const volRatioCount = useMemo(
+    () => filterBase.filter((r) => matchesVolRatio(r.vol_ratio, volRatioMin)).length,
+    [filterBase, volRatioMin],
+  );
+
+  const filtered = useMemo(
+    () =>
+      quickFilters.length === 0
+        ? filterBase
+        : applyFilters(
+            filterBase,
+            query,
+            assetTypes,
+            quickFilters,
+            sector,
+            liveOnly,
+            direction,
+            volRatioOn,
+            volRatioMin,
+            exitAccum,
+            tapeFilterConfig,
+          ),
+    [filterBase, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
   );
 
   const signals = useMemo(() => rowsToTapeSignals(filtered), [filtered]);
