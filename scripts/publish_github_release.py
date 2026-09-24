@@ -114,6 +114,29 @@ for _e in PATCHES:
               % os.path.basename(_e["zip"]))
 PATCHES = [e for e in PATCHES if os.path.isfile(e["sig"])]
 
+# سقفِ اندازه: پچ «رویهمگذاری» است و هیچ فایلی را پاک نمی‌کند. هرچه مبدأ دورتر
+# باشد هم حجم به نصاب نزدیک‌تر می‌شود (بیشترش همان exe است) و هم فایل‌های بیاتِ
+# آن نسخه روی دیسک می‌ماند — نصاب برعکس، پیشِ نصب پوشهٔ قدیمی را پاک می‌کند.
+# پس پچی که از سقفِ PATCH_MAX_RATIO نصاب را بگیرد دیگر نه «آپدیتِ کوچک» است و نه
+# تمیز: آن مبدأ صریحاً به نصبِ کامل برمی‌گردد (کلاینت نبودِ ورودی‌اش را خودش
+# می‌فهمد، پس سمتِ برنامه هیچ تغییری لازم نیست).
+PATCH_MAX_RATIO = float(os.environ.get("PATCH_MAX_RATIO") or 0.60)
+_setup_size = os.path.getsize(SETUP_EXE) if os.path.isfile(SETUP_EXE) else 0
+if _setup_size:
+    for _e in list(PATCHES):
+        _sz = os.path.getsize(_e["zip"])
+        _ratio = _sz / _setup_size
+        _e["ratio"] = _ratio
+        if _ratio > PATCH_MAX_RATIO:
+            PATCHES.remove(_e)
+            print("[!] پچِ %s → %s equals %d%% of the installer; that source "
+                  "version takes the full installer instead (a patch never "
+                  "deletes files)" % (_e["from"], TARGET_VER, int(round(_ratio * 100))))
+            print("::error::[patch] %s→%s = %d%% of installer — پچ منتشر نشد"
+                  % (_e["from"], TARGET_VER, int(round(_ratio * 100))))
+        else:
+            print("[=] پچِ %s: %d%% از اندازهٔ نصاب" % (_e["from"], int(round(_ratio * 100))))
+
 if not PATCHES:
     _other = [os.path.basename(x) for x in
               _glob.glob(os.path.join(ROOT, "dist", "BorsTerminal_Patch_*.zip"))
