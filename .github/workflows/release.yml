@@ -19,6 +19,14 @@ jobs:
     name: Build & Release Windows App (Tauri v2)
     runs-on: windows-latest
     continue-on-error: true
+    # دستی است: روی پوشِ تگ اجرا نمی‌شود. دلیلِ اندازه‌گیری‌شده (میانگین پنج
+    # رانِ اخیر): این job ۱۱.۷ دقیقه از ۱۱.۸ دقیقهٔ کل ران را می‌گیرد در حالی که
+    # هیچ فایلِ لازمِ محصول در ریلیز عمومی از آن نیست — تنها خروجی‌های
+    # BorsTerminal_Setup/.sig/Manifest/Patch/codal.db.lzma/latest.json را jobِ
+    # Inno آپلود می‌کند و Tauri روی mirror خصوصی می‌گذارد. مسیرِ به‌روزرسانیِ
+    # واقعی هم همان latest.json عمومی است که به exeِ Inno اشاره می‌کند.
+    # تستِ فرانت‌اند که فقط اینجا اجرا می‌شد به jobِ Inno منتقل شد.
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout repository
@@ -115,6 +123,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Install Python Dependencies
         run: |
@@ -126,10 +136,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci
+
+      # دروازهٔ تستِ فرانت‌اند: قبلاً فقط در jobِ Tauri بود که از مسیرِ تگ حذف
+      # شده؛ بی‌این مرحله ریلیزِ بدونِ تست می‌سازیم.
+      - name: Run Frontend Tests
+        working-directory: frontend
+        run: npm test
 
       - name: Restore installer password include
         shell: pwsh

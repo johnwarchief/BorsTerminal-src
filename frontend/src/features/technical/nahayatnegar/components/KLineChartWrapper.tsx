@@ -610,13 +610,33 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (!chartContainerRef.current) return;
 
     // ثبت اورلی‌های سفارشی FTS (شامل tvFibLog و ftsCorpAction)
+    let registerOverlayFn: ((o: unknown) => void) | undefined;
     try {
       const regFn = (klinecharts as any).registerOverlay ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerOverlay : undefined);
       if (typeof regFn === 'function') {
+        registerOverlayFn = regFn;
         registerFtsOverlays({ registerOverlay: regFn });
       }
     } catch {
       // safe idempotent
+    }
+
+    // ابزارهای ترسیم پیشرفته (گن، الیوت، هارمونیک، اندازه‌گیری، فیبوی گسترش و
+    // بادبزن، پوزیشن لانگ/شورت، مثلث و فلش). عمداً lazy import است: بستهٔ
+    // تمپلیت‌ها سنگین است و پیش از این هرگز در این چارت ثبت نمی‌شد — تولبار
+    // فقط نامشان را نشان می‌داد و createOverlay بی‌صدا هیچی می‌ساخت.
+    if (registerOverlayFn) {
+      void import('../../lib/tvTools')
+        .then(({ registerTvOverlays }) => {
+          registerTvOverlays({
+            registerOverlay: registerOverlayFn,
+            getSupportedOverlays: () =>
+              ((klinecharts as any).getSupportedOverlays?.() as string[] | undefined) ?? [],
+          });
+        })
+        .catch(() => {
+          // تمپلیتی ثبت نشد: همان تولبارِ قبلی بدونِ ابزارهای پیشرفته
+        });
     }
 
     // init در v10 با layout.yAxis و formatter
@@ -1445,9 +1465,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     // بررسی حالت فیبوناچی لگاریتمی (Logarithmic Fibonacci) بر مبنای تنظیمات یا مقیاس جاری
+    // بازنگاشت فقط مالِ «بازگشتی» است؛ ابزارهای دیگرِ فیبو (گسترش، بادبزن،
+    // مارپیچ) تمپلیتِ خودشان را دارند و قبلاً به‌خاطر toolId.includes('fib')
+    // به یک بازگشتیِ ساده تبدیل می‌شدند.
     let finalOverlayType = overlayType;
     const isLogFib = ftsView?.fibLogarithmic || isLogScale;
-    if (toolId.includes('fib') || overlayType === 'fibonacciLine' || overlayType === 'tvFibRetracement') {
+    if (overlayType === 'fibonacciLine' || overlayType === 'tvFibRetracement') {
       finalOverlayType = isLogFib ? 'tvFibLog' : 'fibonacciLine';
     } else if (toolId === 'ruler') {
       finalOverlayType = 'ftsMeasure';

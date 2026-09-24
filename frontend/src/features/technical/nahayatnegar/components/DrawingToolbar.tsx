@@ -89,8 +89,9 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       defaultTool: { id: 'fibRetracement', name: 'بازگشتی فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
       items: [
         { id: 'fibRetracement', name: 'بازگشتی فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
-        { id: 'fibExtension', name: 'اکستنشن فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
-        { id: 'pitchfork', name: 'چنگال اندروز', overlayType: 'priceChannelLine', icon: <IconPitchfork /> },
+        { id: 'fibExtension', name: 'اکستنشن فیبوناچی', overlayType: 'fibonacciExtension', icon: <IconFibRetracement /> },
+        { id: 'fibFan', name: 'بادبزن فیبوناچی', overlayType: 'fibonacciSpeedResistanceFan', icon: <IconFibRetracement /> },
+        { id: 'pitchfork', name: 'کانال موازی (پیشرفته)', overlayType: 'parallelChannel', icon: <IconPitchfork /> },
       ]
     },
     {
@@ -101,6 +102,8 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         { id: 'brush', name: 'قلم‌مو (Brush)', overlayType: 'brush', icon: <IconBrush /> },
         { id: 'rectangle', name: 'مستطیل', overlayType: 'rect', icon: <IconRectangle /> },
         { id: 'circle', name: 'دایره', overlayType: 'circle', icon: <IconCircle /> },
+        { id: 'triangle', name: 'مثلث', overlayType: 'triangle', icon: <IconPatterns /> },
+        { id: 'drawArrow', name: 'فلش', overlayType: 'arrow', icon: <IconRay /> },
       ]
     },
     {
@@ -114,12 +117,21 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     },
     {
       slotId: 'patterns',
-      name: 'الگوها',
-      defaultTool: { id: 'xabcd', name: 'الگوی هارمونیک', overlayType: 'segment', icon: <IconPatterns /> },
+      name: 'الگوها و امواج',
+      defaultTool: { id: 'xabcd', name: 'الگوی هارمونیک', overlayType: 'xabcd', icon: <IconPatterns /> },
       items: [
-        { id: 'xabcd', name: 'الگوی هارمونیک', overlayType: 'segment', icon: <IconPatterns /> },
-        { id: 'headShoulders', name: 'سر و شانه', overlayType: 'segment', icon: <IconPatterns /> },
-        { id: 'elliott', name: 'امواج الیوت', overlayType: 'segment', icon: <IconPatterns /> },
+        { id: 'xabcd', name: 'الگوی هارمونیک (XABCD)', overlayType: 'xabcd', icon: <IconPatterns /> },
+        { id: 'elliott', name: 'امواج الیوت', overlayType: 'elliottWave', icon: <IconPatterns /> },
+        { id: 'threeWaves', name: 'سه‌موجه', overlayType: 'threeWaves', icon: <IconPatterns /> },
+      ]
+    },
+    {
+      slotId: 'gann',
+      name: 'جعبه و بادبزن گن',
+      defaultTool: { id: 'gannBox', name: 'جعبهٔ گن', overlayType: 'gannBox', icon: <IconRectangle /> },
+      items: [
+        { id: 'gannBox', name: 'جعبهٔ گن', overlayType: 'gannBox', icon: <IconRectangle /> },
+        { id: 'gannFan', name: 'بادبزن گن', overlayType: 'gannFan', icon: <IconFibRetracement /> },
       ]
     },
     {
@@ -129,8 +141,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       items: [
         { id: 'longPosition', name: 'موقعیت خرید (Long)', overlayType: 'rect', icon: <IconLongPosition /> },
         { id: 'shortPosition', name: 'موقعیت فروش (Short)', overlayType: 'rect', icon: <IconShortPosition /> },
-        { id: 'priceRange', name: 'محدوده قیمت', overlayType: 'rect', icon: <IconRuler /> },
-        { id: 'dateRange', name: 'محدوده زمان', overlayType: 'rect', icon: <IconRuler /> },
+        { id: 'measureRange', name: 'اندازه‌گیری (قیمت/زمان)', overlayType: 'measure', icon: <IconRuler /> },
       ]
     },
   ];
