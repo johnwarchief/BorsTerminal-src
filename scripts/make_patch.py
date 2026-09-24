@@ -42,6 +42,11 @@ EXCLUDE_FILES = {
     "market.db", "market.db.lzma", "adb_config.json", "codal_control.json",
     "codal_state.json", "market_sync.json", "sync_status.json",
     "sync_ondemand.json", "sync_summary.json", "fts_update_state.json",
+    # دو موردِ فقط-زمان-اجرا؛ اگر بیلدِ سازنده قبلاً اجرا کرده باشد، وگرنه اینها
+    # به کاربر سفر می‌کنند: کشِ غربالگریِ ماشینِ سازنده جای کشِ کاربر را می‌گیرد،
+    # و market.db.baselineِ آن ماشین به برنامه می‌فهماند دیتابیسِ باندل‌شده تازه
+    # است و استخراجِ دوبله رد می‌شود.
+    ".screener_cache.json", "market.db.baseline",
 }
 EXCLUDE_EXT = {".db", ".db-shm", ".db-wal", ".lzma", ".log", ".pyc", ".pyo",
                ".tmp", ".bak", ".err", ".out"}
