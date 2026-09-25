@@ -27,6 +27,7 @@ import {
   type StoredOverlay,
 } from '../../lib/drawStore';
 import { FtsToolbar } from './FtsToolbar';
+import { TV_INDICATORS } from '../../lib/tvIndicatorCatalog';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
@@ -245,6 +246,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('combined');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
+  // فقط نام‌هایی که واقعاً روی این نمونهٔ چارت ثبت شده‌اند در منو می‌آیند؛
+  // منوی hardcode همین باگ را داشت که کلیک روی نامِ ثبت‌نشده بی‌صدا هیچی
+  // می‌ساخت.
+  const [tvIndicatorNames, setTvIndicatorNames] = useState<string[]>([]);
 
   // استیت‌های نوار رسم چپ
   const [activeToolId, setActiveToolId] = useState<string | null>('crosshair');
@@ -637,6 +642,29 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         .catch(() => {
           // تمپلیتی ثبت نشد: همان تولبارِ قبلی بدونِ ابزارهای پیشرفته
         });
+    }
+
+    // اندیکاتورهای آمادهٔ همان بسته (VWAP، سوپرترند، ایچیموکو، HMA، نوار
+    // میانگین، پیوت‌پوینت، استوکستیک، CCI و نسخه‌های TV از MACD/RSI). منو پیش
+    // از این فقط شش اندیکاتورِ درونی klinecharts را می‌شناخت.
+    try {
+      const indFn = (klinecharts as any).registerIndicator ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerIndicator : undefined);
+      if (typeof indFn === 'function') {
+        void import('../../lib/tvIndicators')
+          .then(({ registerTvIndicators, TV_INDICATORS: catalog }) => {
+            registerTvIndicators({
+              registerIndicator: indFn,
+              getSupportedIndicators: () =>
+                ((klinecharts as any).getSupportedIndicators?.() as string[] | undefined) ?? [],
+            });
+            const supported = new Set(
+              ((klinecharts as any).getSupportedIndicators?.() as string[] | undefined) ?? []);
+            setTvIndicatorNames(catalog.filter((t) => supported.has(t.name)).map((t) => t.name));
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // supported نیست: همان منوی شش‌تایی قبلی
     }
 
     // init در v10 با layout.yAxis و formatter
@@ -1619,7 +1647,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       chart.removeIndicator({ name: indName });
       setIndicators(prev => ({ ...prev, [indName]: false }));
     } else {
-      if (['MA', 'EMA', 'BOLL'].includes(indName)) {
+      // رویِ کندل می‌نشینند؛ بقیه پنلِ جدا می‌گیرند. فهرستِ TV از کاتالوگ می‌آید
+      // تا منو و این گارد یک منبع داشته باشند (نامِ additions = کلیکِ بی‌نتیجه).
+      const OVERLAY_INDICATORS = ['MA', 'EMA', 'BOLL', ...TV_INDICATORS.filter((t) => t.overlay).map((t) => t.name)];
+      if (OVERLAY_INDICATORS.includes(indName)) {
         chart.createIndicator({ name: indName, paneId: 'candle_pane' }, true);
       } else {
         chart.createIndicator({ name: indName, paneId: `sub_pane_${indName.toLowerCase()}` });
@@ -2018,6 +2049,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
               { id: 'RSI', label: 'شاخص قدرت نسبی (RSI 14 Wilder)' },
               { id: 'MACD', label: 'مکدی (MACD)' },
               { id: 'BOLL', label: 'باندهای بولینگر (Bollinger)' },
+              ...TV_INDICATORS
+                .filter((t) => tvIndicatorNames.includes(t.name))
+                .map((t) => ({ id: t.name, label: t.label })),
             ].map((ind) => (
               <label
                 key={ind.id}
