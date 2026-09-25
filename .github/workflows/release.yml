@@ -126,6 +126,33 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'requirements.txt'
 
+      - name: Check shipped data age
+        # DATA-AGE-1. دیتابیسِ ریلیز هرگز در CI ساخته نمی‌شود:
+        # market.db.lzma از خودِ ریپو می‌آید و codal.db.lzma از تازه‌ترین
+        # ریلیزِ دارایِ فایل جلو برده می‌شود. پس این تنها جایی است که می‌شود
+        # دید رویِ ماشینِ کاربر چه قدمتی می‌نشیند — پیش ازِ ساختنِ نصاب.
+        #
+        # عمداً continue-on-error: کهنه‌بودنِ داده دلیلِ بستنِ ریلیز نیست
+        # (تعطیلاتِ نوروزی و ریلیزِ صرفاً UI هر دو مشروع‌اند). ولی
+        # continue-on-error در API سبز گزارش می‌شود، پس پیام‌ها صریحاً به
+        # ::warning::/::error:: تبدیل می‌شوند تا در annotations بمانند.
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $out = python scripts/check_release_db.py --baseline 2>&1
+          $out | ForEach-Object { Write-Output $_ }
+          $out | Select-String -Pattern '^(AGE_STALE|AGE_UNKNOWN|AGE_FUTURE|BASELINE_MISSING)' |
+            ForEach-Object { Write-Output "::warning::[data-age] $($_.Line)" }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Output "::error::[data-age] baselineیِ commit‌شده سالم نیست (exit=$LASTEXITCODE) — نصاب با همین داده منتشر می‌شود"
+          }
+          # خودِ مرحله هم باید راستی‌آزمایی شود: اگر پایتون یا اسکریپت اجرا نشود،
+          # هیچ AGE_* تولید نمی‌شود و «هشدار ندادن» با «سکوت» یکی می‌شود.
+          if (-not ($out -match 'BASELINE_(OK|INCOMPLETE|TOO_SMALL|MISSING|BAD|NEWER)')) {
+            Write-Output "::error::[data-age] مرحله هیچ خروجیِ اعتبارسنجی‌ای تولید نکرد؛ تازگیِ داده اصلاً سنجیده نشد"
+          }
+          exit 0
+
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip

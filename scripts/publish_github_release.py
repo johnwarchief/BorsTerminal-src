@@ -234,6 +234,79 @@ def build_latest_json():
     return out_path
 
 
+CODAL_MAX_AGE_DAYS = 21  # سقفِ codal.db.lzmaیِ منتقل‌شده؛ همان مقدارِ STAMPS
+
+
+def _days_since(iso):
+    """سنِ یک ریلیز/asset به روز؛ None اگر تاریخ قابل خواندن نبود.
+
+    None با 0 قاطی نمی‌شود: «نمی‌دانیم» نباید به‌شکلِ «فایل کاملاً تازه است»
+    گزارش شود.
+    """
+    if not iso:
+        return None
+    from datetime import datetime, timezone
+    s = str(iso).strip().replace("Z", "+00:00")
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - dt).total_seconds() / 86400.0
+
+
+def _snapshot_age_days(lzma_path):
+    """سنِ خودِ اسنپ‌شات از codal_notices.fetched_at — نه تاریخِ ریلیز.
+
+    تاریخِ ریلیز فقط proxy است: اگر یک فایلِ چندماهه رویِ ریلیزِ امروز
+    آپلود شود (دقیقاً کاری که برای v1.0.28 کردیم)، published_at «۰ روز»
+    می‌گوید در حالی که داده چند روزه است. هیچ‌وقت صفر برنمی‌گرداند اگر
+    خوانده نشد — «نمی‌دانیم» با «تازه است» یکی نمی‌شود.
+    """
+    import lzma
+    import sqlite3
+    import tempfile
+    from datetime import datetime
+    fd, tmp = tempfile.mkstemp(suffix=".db", prefix="codal_age_")
+    os.close(fd)
+    try:
+        with open(lzma_path, "rb") as f:
+            raw = lzma.decompress(f.read())
+        with open(tmp, "wb") as f:
+            f.write(raw)
+        conn = sqlite3.connect("file:%s?mode=ro" % tmp.replace(os.sep, "/"), uri=True)
+        try:
+            stamp = conn.execute(
+                "SELECT MAX(fetched_at) FROM codal_notices").fetchone()[0]
+        finally:
+            conn.close()
+        if not stamp:
+            return None
+        dt = datetime.strptime(str(stamp).strip().replace("T", " ")[:19],
+                               "%Y-%m-%d %H:%M:%S")
+        return (datetime.now() - dt).total_seconds() / 86400.0
+    except Exception:
+        return None
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+
+def _codal_age_line(age, label):
+    if age is None:
+        print(f"[!] سنِ codal.db.lzma ({label}) خوانده نشد — قدمتی گزارش نمی‌شود.")
+    elif age > CODAL_MAX_AGE_DAYS:
+        print(f"::warning::[data-age] codal.db.lzmaیِ منتقل‌شده ({label}) "
+              f"{age:.1f} روز قدیمی است (سقف {CODAL_MAX_AGE_DAYS} روز) — "
+              f"بساز: scripts/build_codal_snapshot.py")
+    else:
+        print(f"[=] codal.db.lzmaیِ منتقل‌شده ({label}) {age:.1f} روز سابقه دارد "
+              f"(سقف {CODAL_MAX_AGE_DAYS} روز).")
+
+
 def main():
     token = get_github_token()
     if not token:
@@ -518,6 +591,13 @@ def main():
                 print("[!] در هیچ ریلیزِ دیگری codal.db.lzma نیست؛ دکمهٔ کدال ۴۰۴ "
                       "می‌گیرد. بساز: scripts/build_codal_snapshot.py")
             else:
+                # سِن فایلِ جلو‌برده‌شده: تا پیش از این، codal.db.lzmaیِ یک
+                # نسخهٔ قدیمی بی‌صدا به هر ریلیزِ بعدی منتقل می‌شد و «بروزرسانی
+                # دیتابیس کدال» درونِ برنامه همان اسنپ‌شاتِ چندماهه را می‌داد.
+                # ریلیز را نمی‌بندیم (کدال را نمی‌توان در CI ساخت)، فقط اعلام
+                # می‌کنیم و در CI ::warning:: می‌شود.
+                age = _days_since(src.get("published_at"))
+                _codal_age_line(age, f"تاریخ ریلیز مبدأ {src['tag_name']}")
                 import tempfile
                 import shutil as _sh
                 print(f"[=] در حال منتقل‌کردن codal.db.lzma از {src['tag_name']} "
@@ -533,6 +613,11 @@ def main():
                         path = os.path.join(tmpdir, name)
                         with open(path, "wb") as f:
                             f.write(blob)
+                        if name == "codal.db.lzma":
+                            # عددِ واقعی: سِنِ داده‌ای که رویِ همین ریلیز می‌نشیند،
+                            # نه سِنِ ریلیزی که از آن کپی شد.
+                            _codal_age_line(_snapshot_age_days(path),
+                                            "خودِ اسنپ‌شات")
                         if not upload_asset(path):
                             print(f"[!] آپلودِ {name} روی {TAG} ناموفق بود.")
                             continue

@@ -67,7 +67,18 @@ function Ensure-Db {
     # بسته می‌شد — دقیقاً ریشهٔ باگِ v1.0.7/8. اکنون ابتدا منبع اعتبارسنجی
     # می‌شود؛ اگر ناقص بود با خطا متوقف می‌شویم تا baselineیِ commit‌شده
     # دست‌نخورده بماند.
-    if (-not (Test-Path 'market.db')) { Write-Host '[db] market.db not found (skip)'; return }
+    if (-not (Test-Path 'market.db')) {
+        # منبعی برایِ بسته‌شدن نیست؛ ولی baselineیِ commit‌شده همان است که به
+        # دستِ کاربر می‌رسد، پس سنش باید رویِ کنسول دیده شود (نه سکوت).
+        # هشدار می‌دهیم و ادامه می‌دهیم: بستنِ یک hotfixِ صرفاً کدی به‌خاطرِ
+        # داده‌ای که در همین ماشین قابلِ ساختن نیست، ضررش بیشتر است.
+        Write-Host '[db] market.db not found - reporting the committed baseline age'
+        & $PY scripts\check_release_db.py --baseline
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning '[db] baseline market.db.lzma ناسالم است — کاربران این نسخه دادهٔ سالم تحویل نمی‌گیرند'
+        }
+        return
+    }
 
     # توجه: PowerShell 5.1 هنگامِ ارسالِ آرگومان به یک EXE بومی، کوتیشنهایِ
     # دوتاییِ جاسازی‌شده را می‌بلعد و کدِ پایتونِ زیر می‌شکست:
@@ -91,7 +102,10 @@ function Ensure-Db {
     Write-Host '[db] compressing market.db -> market.db.lzma'
     & $PY scripts\check_release_db.py --pack
     if ($LASTEXITCODE -ne 0) {
-        Write-Error '[db] market.db.lzma round-trip verification FAILED — restored previous baseline. ABORT.'
+        # دو علتِ ممکن و پیامِ تفکیک‌نشده گمراه‌کننده است: round-trip، یا
+        # آنکه market.dbِ محلی از baseline کهنه‌تر است (PACK_REFUSED). در هیچ
+        # کدام baselineیِ commit‌شده تغییر نمی‌کند.
+        Write-Error '[db] pack refused by scripts/check_release_db.py — committed market.db.lzma left untouched. پیامِ بالا را بخوان (PACK_REFUSED یا round-trip). ABORT.'
         exit 1
     }
 }
