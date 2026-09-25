@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useAuthStore } from '@shared/stores/authStore';
 import { useMarketStore } from '@shared/stores/marketStore';
+import { startIdleGate } from '@shared/lib/idleGate';
 import { LoginScreen } from '../../widgets/LoginScreen';
 
 export function AppShell() {
@@ -15,17 +16,16 @@ export function AppShell() {
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
 
-  // بهینه‌سازی پرفورمنس: تعلیق هوشمند پولینگ هنگام مینیمایز بودن پنجره
-  // (فقطِ «بی‌فوکوس بودن» کمکی نمی‌کند: اندازه‌گیری نشان داد پنجرهٔ blur شده
-  // همان ۲۵٪ موتورِ سه‌بعدی را می‌خورد؛ مصرف از خودِ رندرِ صفحه است.)
+  // پولینگ هنگام مینیمایز متوقف می‌شود (فقط hidden؛ «بی‌فوکوس» کمکی نمی‌کند).
   useEffect(() => {
-    const handleVisibility = () => {
-      useMarketStore.getState().setPaused(document.hidden);
-      // وقتی پنجره مخفی/مینیمایز است، هیچ انیمیشنی نباید GPU را بیدار نگه دارد.
-      document.documentElement.dataset.idle = document.hidden ? '1' : '0';
-    };
+    const handleVisibility = () => useMarketStore.getState().setPaused(document.hidden);
     handleVisibility();
     document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
+  useEffect(() => {
+    const stopIdleGate = startIdleGate();
 
     // تشخیص سیستم کم‌توان → حالت کم‌مصرف (حذف backdrop-blur و انیمیشن‌های پیوسته).
     // قابل بازنویسی با localStorage('perf-low'='0'|'1').
@@ -39,9 +39,7 @@ export function AppShell() {
       /* نادیده بگیر */
     }
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
+    return stopIdleGate;
   }, []);
 
   if (!isAuthenticated) {

@@ -75,8 +75,11 @@ check("reads --baseline value",
                               "C:\\old"])[1] == "C:\\old")
 check("from + baseline + dist together",
       make_patch._parse_args(["make_patch.py", "--from", "1.0.8",
-                              "--baseline", "C:\\old", "--dist", "dist2"])
+                              "--baseline", "C:\\old", "--dist", "dist2"])[:3]
       == ("1.0.8", "C:\\old", "dist2"))
+check("--baseline-manifest را هم جدا از --baseline می‌خواند",
+      make_patch._parse_args(["make_patch.py", "--from", "1.0.8",
+                              "--baseline-manifest", "m.json"])[3] == "m.json")
 
 print("== --dist: read the patch from the dir release.ps1 actually built into")
 check("dist defaults to the classic dist/",

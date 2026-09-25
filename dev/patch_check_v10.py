@@ -96,10 +96,19 @@ ck("api/update.py: offline path accepts .zip patches",
 
 pub = io.open("scripts/publish_github_release.py", encoding="utf-8",
               errors="replace").read()
-for token in ["patches", "PATCH_FROM", "PATCH_ZIP", "PATCH_SIG", '"size"']:
+# v1.0.26: به‌جایِ «یک پچ»، آرایه‌ای از پچ‌ها منتشر می‌شود (یک ورودی به ازای هر
+# نسخهٔ مبدأِ ریلیز‌شده) تا کاربرِ دو سه نسخه عقب هم آپدیتِ کوچک بگیرد.
+# قراردادِ همان سه چیز است، فقط به‌صورتِ چندتایی: امضا الزامی، هر ورودی
+# from/to/url/signature/size دارد، و نبودِ پچ یعنی نصبِ کامل.
+for token in ['manifest["patches"]', '"from"', '"to"', '"url"', '"signature"',
+              '"size"', "PATCH_FROM"]:
     ck("publish_github_release.py: manifest has %s" % token, token in pub)
+ck("publish_github_release.py: a patch without its .sig is never published",
+   'PATCHES = [e for e in PATCHES if os.path.isfile(e["sig"])]' in pub)
 ck("publish_github_release.py: patch upload is optional",
-   bool(re.search(r"os\.path\.isfile\(PATCH_ZIP\)\s+and\s+os\.path\.isfile\(PATCH_SIG\)", pub)))
+   "patch_uploaded = bool(PATCHES)" in pub)
+ck("publish_github_release.py: a patch near the installer size falls back to setup",
+   "PATCH_MAX_RATIO" in pub and 'PATCHES.remove(_e)' in pub)
 
 iss = io.open("installer/bors_setup.iss", encoding="utf-8",
               errors="replace").read()
