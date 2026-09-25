@@ -130,7 +130,7 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
     );
     const cell = screen.getByTestId('fts-card-cell-5_industry');
     // وضعیت صنعت ویسا neutral است ⇒ برچسب «صنعت مختلط» با تُن yellow در هر دو جا
-    expect(within(cell).getByText(industryGateLabel('neutral'))).toBeInTheDocument();
+    expect(within(cell).getAllByText(industryGateLabel('neutral')).length).toBeGreaterThanOrEqual(1);
     expect(industryGateTone('neutral')).toBe('yellow');
     const gates = screen.getByText(/مجاز در غربالگری/).closest('.glass-panel');
     expect(gates?.textContent).toContain(industryGateLabel('neutral'));

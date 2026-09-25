@@ -228,82 +228,83 @@ export default function FundamentalPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <FtsCard
-          score={card.data.score ?? null}
-          passes={passes}
-          verdict={card.data.verdict ?? null}
-          industryMode={card.data.pricing_mode ?? null}
-          indicators={card.data.indicators ?? null}
-          audit={audit}
-          physicalApplicable={physicalApplicable}
-          activeDrill={drillKey}
-          onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
-        />
-        {isHolding ? (
-          <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند ارزیابی پرتفوی هلدینگ (N/A)</h3>
-              <Badge tone="yellow">N/A</Badge>
-            </div>
-            <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
-              نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
-              نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
-              «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
-            </p>
-            <div className="mt-3 pt-3 border-t border-border-c text-2xs text-text-muted">
-              بر اساس استراتژی FTS: هلدینگ‌ها از شرط نسبت فروش به ارزش بازار معاف هستند و با P/NAV سنجیده می‌شوند.
-            </div>
+      {/* تصمیم استراتژیک FTS یا ارزیابی هلدینگ در بالا به‌صورت بنر عریض، خوانا و مدرن */}
+      {isHolding ? (
+        <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند ارزیابی پرتفوی هلدینگ (N/A)</h3>
+            <Badge tone="yellow">N/A</Badge>
           </div>
-        ) : (
-          <div className="glass-panel panel-in p-4 flex flex-col justify-between" data-testid="fts-strategy-summary">
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-black text-text-primary">تصمیم استراتژیک FTS</h3>
-                </div>
-                <Badge tone={card.data.score == null ? 'gray' : card.data.score >= 4 ? 'green' : card.data.score === 3 ? 'yellow' : 'red'}>
-                  {card.data.score == null ? 'بدون داده' : card.data.score >= 4 ? 'واجد شرایط سبد FTS' : card.data.score === 3 ? 'واچ‌لیست رصد FTS' : 'فاقد شرایط FTS'}
-                </Badge>
-              </div>
-
-              <div className="space-y-2.5">
-                <div className={`rounded-xl border p-3 ${
-                  card.data.score == null
-                    ? 'border-border-c/70 bg-bg-card/50 text-text-primary'
-                    : card.data.score >= 4
-                    ? 'border-accent-green/40 bg-accent-green/10 text-text-primary'
-                    : card.data.score === 3
-                    ? 'border-accent-yellow/40 bg-accent-yellow/10 text-text-primary'
-                    : 'border-accent-red/40 bg-accent-red/10 text-text-primary'
-                }`}>
-                  <div className="flex items-center gap-2 font-bold text-xs mb-1">
-                    <span>{card.data.score == null ? '❓' : card.data.score >= 4 ? '🎯' : card.data.score === 3 ? '⏳' : '🚫'}</span>
-                    <span>
-                      {card.data.score == null
-                        ? 'اطلاعات کافی نیست'
-                        : card.data.score >= 4
-                        ? 'گزینه عالی برای سبد سرمایه‌گذاری'
-                        : card.data.score === 3
-                        ? 'مناسب برای زیر نظر گرفتن'
-                        : 'رد شده در بررسی بنیادی'}
-                    </span>
-                  </div>
-                  <p className="text-2xs text-text-secondary leading-relaxed mt-1">
-                    {card.data.score == null
-                      ? 'چون اطلاعات همه ۵ شاخص کامل نیست، فعلا نمی‌توان تصمیم قطعی در مورد این سهم گرفت.'
+          <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
+            نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
+            نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
+            «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
+          </p>
+          <div className="mt-2.5 pt-2.5 border-t border-border-c/50 text-2xs text-text-muted">
+            بر اساس استراتژی FTS: هلدینگ‌ها از شرط نسبت فروش به ارزش بازار معاف هستند و با P/NAV سنجیده می‌شوند.
+          </div>
+        </div>
+      ) : (
+        <div className="glass-panel panel-in p-3.5 sm:p-4" data-testid="fts-strategy-summary">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="text-2xl shrink-0 p-1.5 rounded-xl bg-bg-card border border-border-c/60 shadow-xs">
+                {card.data.score == null ? '❓' : card.data.score >= 4 ? '🎯' : card.data.score === 3 ? '⏳' : '🚫'}
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-xs sm:text-sm font-black text-text-primary">تصمیم استراتژیک FTS:</h3>
+                  <span className={`text-xs sm:text-sm font-black ${
+                    card.data.score == null
+                      ? 'text-text-muted'
                       : card.data.score >= 4
-                      ? 'این سهم از فیلترهای مهم سودسازی، رشد فروش و عدم قیمت‌گذاری دستوری عبور کرده و یک گزینه بسیار مستعد است.'
+                      ? 'text-accent-green'
                       : card.data.score === 3
-                      ? 'این سهم پتانسیل خوبی دارد اما در یک یا دو شاخص ضعیف عمل کرده. بهتر است گزارش‌های ماهانه بعدی آن را رصد کنیم.'
-                      : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
-                  </p>
+                      ? 'text-amber-400'
+                      : 'text-accent-red'
+                  }`}>
+                    {card.data.score == null
+                      ? 'اطلاعات کافی نیست'
+                      : card.data.score >= 4
+                      ? 'گزینه عالی برای سبد سرمایه‌گذاری'
+                      : card.data.score === 3
+                      ? 'مناسب برای زیر نظر گرفتن (واچ‌لیست)'
+                      : 'رد شده در بررسی بنیادی'}
+                  </span>
                 </div>
+                <p className="text-2xs text-text-secondary leading-relaxed mt-1">
+                  {card.data.score == null
+                    ? 'چون اطلاعات همه ۵ شاخص کامل نیست، فعلا نمی‌توان تصمیم قطعی در مورد این سهم گرفت.'
+                    : card.data.score >= 4
+                    ? 'این سهم از فیلترهای مهم سودسازی، رشد فروش و عدم قیمت‌گذاری دستوری عبور کرده و یک گزینه بسیار مستعد است.'
+                    : card.data.score === 3
+                    ? 'این سهم پتانسیل خوبی دارد اما در یک یا دو شاخص ضعیف عمل کرده. بهتر است گزارش‌های ماهانه بعدی آن را رصد کنیم.'
+                    : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
+                </p>
               </div>
             </div>
+
+            <div className="shrink-0 flex items-center gap-2 self-start sm:self-center">
+              <Badge tone={card.data.score == null ? 'gray' : card.data.score >= 4 ? 'green' : card.data.score === 3 ? 'yellow' : 'red'}>
+                {card.data.score == null ? 'بدون داده' : card.data.score >= 4 ? 'واجد شرایط سبد FTS' : card.data.score === 3 ? 'واچ‌لیست رصد FTS' : 'فاقد شرایط FTS'}
+              </Badge>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* ۵ کارت بنیادی FTS — اکنون تمام‌عرض و گشوده به سمت چپ با چیدمان واکنش‌گرا */}
+      <FtsCard
+        score={card.data.score ?? null}
+        passes={passes}
+        verdict={card.data.verdict ?? null}
+        industryMode={card.data.pricing_mode ?? null}
+        indicators={card.data.indicators ?? null}
+        audit={audit}
+        physicalApplicable={physicalApplicable}
+        activeDrill={drillKey}
+        onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
+      />
 
       <FtsDrillDown card={card.data} active={drillKey} quarters={fiscal} physicalApplicable={physicalApplicable} />
 

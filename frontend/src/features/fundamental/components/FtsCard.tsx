@@ -1,10 +1,11 @@
-// features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج لایه FTS
+// features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
 import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { gapReason, gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
 import { AuditBadge, type AuditEvidence } from './AuditBadge';
-import { industryGateLabel, industryGatePassLabel } from '../lib/industryGate';
+import { industryGateLabel, industryGatePassLabel, industryGateTone } from '../lib/industryGate';
+import { MathFraction } from './MathFormula';
 import type { DrillDownKey } from './FtsDrillDown';
 import type { FtsCardIndicators } from '../api/useFtsCard';
 
@@ -13,33 +14,46 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
     key: '1_growth',
     drill: '1',
     label: '۱. رشد فروش کدال',
-    hint: 'رشد درآمد ریالی و مقداری نسبت به دوره مشابه سال قبل — کلیک: نمودار و فرمول',
+    hint: 'رشد درآمد ریالی و مقداری نسبت به دوره مشابه سال قبل — کلیک: نمودار و جزئیات',
   },
   {
     key: '2_eps_trend',
     drill: '2',
     label: '۲. سودآوری ۳ ساله',
-    hint: 'روند ۳ سال متوالی سود هر سهم از صورت‌های حسابرسی‌شده',
+    hint: 'روند ۳ سال متوالی سود هر سهم از صورت‌های حسابرسی‌شده — کلیک: نمودار و جزئیات',
   },
   {
     key: '3_gross_margin',
     drill: '3',
     label: '۳. حاشیه سود ناخالص',
-    hint: 'سود ناخالص ÷ درآمد عملیاتی — کلیک: نمودار و فرمول',
+    hint: 'سود ناخالص ÷ درآمد عملیاتی — کلیک: نمودار و جزئیات',
   },
   {
     key: '4_sales_to_mcap',
     drill: '4',
     label: '۴. ارزش بازار',
-    hint: 'نسبت سالانه‌شده فروش یا پتانسیل سود ناخالص به ارزش بازار',
+    hint: 'نسبت سالانه‌شده فروش یا پتانسیل سود به ارزش بازار — کلیک: نمودار و جزئیات',
   },
   {
     key: '5_industry',
     drill: '5',
     label: '۵. رژیم صنعت',
-    hint: 'عدم شمول قیمت‌گذاری دستوری (سیمان، فلزات، پتروشیمی، شیشه، IT)',
+    hint: 'عدم شمول قیمت‌گذاری دستوری (بورس کالا و نرخ‌های آزاد) — کلیک: نمودار و جزئیات',
   },
 ];
+
+function getCardToneClasses(pass: boolean | null | undefined, isActive: boolean): string {
+  if (isActive) {
+    return 'border-accent-blue bg-accent-blue/15 shadow-[0_0_18px_rgba(56,189,248,0.25)] ring-1 ring-accent-blue/50';
+  }
+  if (pass === true) {
+    return 'border-emerald-500/30 bg-emerald-500/[0.04] hover:border-emerald-500/60 hover:bg-emerald-500/[0.08]';
+  }
+  if (pass === false) {
+    return 'border-rose-500/30 bg-rose-500/[0.04] hover:border-rose-500/60 hover:bg-rose-500/[0.08]';
+  }
+  return 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card';
+}
 
 export function FtsCard({
   score,
@@ -67,29 +81,66 @@ export function FtsCard({
   onDrill?: (k: DrillDownKey) => void;
 }) {
   return (
-    <div className="glass-panel panel-in p-4 flex flex-col justify-between">
+    <div className="glass-panel panel-in p-4 flex flex-col justify-between" dir="rtl">
       <div>
-        <div className="mb-3 flex items-center justify-between">
+        {/* سربرگ کارت ارزیابی ۵ شاخص */}
+        <div className="mb-3.5 flex items-center justify-between border-b border-border-c/40 pb-2.5">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-black text-text-primary tracking-wide">کارت ارزیابی ۵ شاخص FTS</h3>
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-blue/15 text-accent-blue border border-accent-blue/30 font-black text-2xs">
+              FTS
+            </span>
+            <h3 className="text-xs sm:text-sm font-black text-text-primary tracking-wide">
+              کارت ارزیابی ۵ شاخص FTS
+            </h3>
           </div>
-          <span className="flex items-center gap-2">
-            {score != null ? (
-              <Badge tone={score >= 4 ? 'green' : score >= 3 ? 'yellow' : 'red'}>
-                امتیاز {toFaDigits(score)} از ۵
+
+          <div className="flex items-center gap-2">
+            {/* امتیاز با پیپ‌های بصری و متن */}
+            <div className="flex items-center gap-2 rounded-lg border border-border-c/80 bg-bg-card/90 px-2.5 py-1 shadow-xs">
+              {score != null ? (
+                <>
+                  <div className="flex items-center gap-1" aria-hidden="true">
+                    {[1, 2, 3, 4, 5].map((idx) => {
+                      const filled = idx <= score;
+                      return (
+                        <span
+                          key={idx}
+                          className={`h-2 w-2 rounded-full transition-all ${
+                            filled
+                              ? score >= 4
+                                ? 'bg-accent-green shadow-[0_0_6px_rgba(34,197,94,0.6)]'
+                                : score >= 3
+                                  ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]'
+                                  : 'bg-accent-red shadow-[0_0_6px_rgba(239,68,68,0.5)]'
+                              : 'bg-border-c/70'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs font-black text-text-primary">
+                    امتیاز {toFaDigits(score)} از ۵
+                  </span>
+                </>
+              ) : (
+                <span className="text-xs font-bold text-text-muted">بدون امتیاز</span>
+              )}
+            </div>
+
+            {verdict ? (
+              <Badge tone={score != null && score >= 4 ? 'green' : score != null && score >= 3 ? 'yellow' : 'red'}>
+                {verdict}
               </Badge>
-            ) : (
-              <Badge tone="gray">بدون امتیاز</Badge>
-            )}
-            {verdict ? <Badge tone="blue">{verdict}</Badge> : null}
-          </span>
+            ) : null}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        {/* شبکه ۵ کارت شاخص — چیدمان مدرن با اولویت قرارگیری عدد و نتیجه در کنار هم + فرمول ریاضی */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
           {LAYERS.map((l) => {
             const isActive = l.drill != null && l.drill === activeDrill;
-            
-            // Special handling for merged indicator 1
+
+            // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و مقداری)
             if (l.key === '1_growth') {
               const v1a = passes['1a_monetary_growth'];
               const v1b = passes['1b_volume_growth'];
@@ -106,7 +157,14 @@ export function FtsCard({
                 (typeof audit?.['1b_volume_growth']?.actualValue === 'number'
                   ? (audit?.['1b_volume_growth']?.actualValue as number)
                   : null);
-              
+
+              const card1Pass =
+                v1a === false || (physicalApplicable && v1b === false)
+                  ? false
+                  : v1a === true && (!physicalApplicable || v1b === true)
+                    ? true
+                    : null;
+
               return (
                 <button
                   key={l.key}
@@ -116,85 +174,144 @@ export function FtsCard({
                   aria-pressed={isActive}
                   data-testid={`fts-card-cell-${l.key}`}
                   title={l.hint}
-                  className={`col-span-2 sm:col-span-2 group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 ${
-                    isActive
-                      ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_15px_rgba(56,189,248,0.2)]'
-                      : 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card disabled:cursor-default'
-                  }`}
+                  className={`col-span-1 sm:col-span-2 xl:col-span-2 group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                    card1Pass,
+                    isActive,
+                  )}`}
                 >
+                  {/* سربرگ کارت ۱ */}
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs font-black text-text-primary group-hover:text-accent-blue transition-colors">
                       {l.label}
                     </span>
                     {mon?.months ? (
-                      <span className="text-3xs px-1.5 py-0.5 rounded bg-bg-card/80 text-text-muted border border-border-c/40 font-mono">
+                      <span className="text-3xs px-1.5 py-0.5 rounded bg-bg-card/90 text-text-muted border border-border-c/50 font-mono">
                         {toFaDigits(mon.months)} ماهه
                       </span>
                     ) : null}
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div data-testid="fts-card-cell-1a_monetary_growth" className="inline-flex items-center gap-1.5">
-                      <span className="text-2xs font-semibold text-text-secondary">۱-الف (ریالی):</span>
-                      {monPct != null ? (
-                        <span
-                          className={`font-mono text-xs font-black ${
-                            v1a ? 'text-accent-green' : v1a === false ? 'text-accent-red' : 'text-text-primary'
-                          }`}
-                        >
-                          {monPct >= 0 ? '+' : '−'}
-                          {toFaDigits(Math.abs(monPct).toFixed(1))}٪
-                        </span>
-                      ) : null}
-                      <AuditBadge
-                        state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
-                        label={v1a == null ? gapLabel('1a_monetary_growth') : undefined}
-                        hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
-                        evidence={
-                          v1a == null
-                            ? { ...(audit?.['1a_monetary_growth'] ?? {}), reason: audit?.['1a_monetary_growth']?.reason ?? gapReason('1a_monetary_growth').why }
-                            : (audit?.['1a_monetary_growth'] ?? null)
-                        }
-                        testId="fts-cell-audit-1a_monetary_growth"
-                        compact
-                      />
+
+                  {/* بدنه کارت ۱: دو ستون متقارن با نتیجه و درصد در کنار بج وضعیت */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* ستون ۱-الف: ریالی */}
+                    <div
+                      data-testid="fts-card-cell-1a_monetary_growth"
+                      className="flex flex-col justify-between rounded-lg border border-border-c/40 bg-bg-card/50 p-2"
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-2xs font-bold text-text-secondary">درآمد ریالی</span>
+                        {/* نتیجه: عدد و درصد دقیقاً پهلو به پهلوی بج وضعیت */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {monPct != null ? (
+                            <span
+                              className={`font-mono text-xs font-black ${
+                                v1a ? 'text-accent-green' : v1a === false ? 'text-accent-red' : 'text-text-primary'
+                              }`}
+                            >
+                              {monPct >= 0 ? '+' : '−'}
+                              {toFaDigits(Math.abs(monPct).toFixed(1))}٪
+                            </span>
+                          ) : (
+                            <span className="font-mono text-2xs font-bold text-text-muted">—</span>
+                          )}
+                          <AuditBadge
+                            state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
+                            label={v1a == null ? gapLabel('1a_monetary_growth') : undefined}
+                            hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
+                            evidence={
+                              v1a == null
+                                ? {
+                                    ...(audit?.['1a_monetary_growth'] ?? {}),
+                                    reason: audit?.['1a_monetary_growth']?.reason ?? gapReason('1a_monetary_growth').why,
+                                  }
+                                : (audit?.['1a_monetary_growth'] ?? null)
+                            }
+                            testId="fts-cell-audit-1a_monetary_growth"
+                            compact
+                          />
+                        </div>
+                      </div>
+
+                      {/* فرمول ریاضی واقعی */}
+                      <div className="my-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
+                        <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                          <MathFraction
+                            numerator={<span className="text-4xs px-0.5 whitespace-nowrap">فروش امسال</span>}
+                            denominator={<span className="text-4xs px-0.5 whitespace-nowrap">فروش سال قبل</span>}
+                          />
+                          <span>− 1</span>
+                          <span className={`font-bold ${v1a ? 'text-accent-green' : 'text-accent-red'}`}>≥ تورم (۴۰٪)</span>
+                        </div>
+                      </div>
+
+                      <span className="text-3xs text-text-muted">کف: نرخ تورم سالانه</span>
                     </div>
-                    <div data-testid="fts-card-cell-1b_volume_growth" className="inline-flex items-center gap-1.5">
-                      <span className="text-2xs font-semibold text-text-secondary">۱-ب (تولیدی):</span>
-                      {!physicalApplicable ? (
-                        <span className="text-2xs text-text-muted">غیرتولیدی</span>
-                      ) : volPct != null ? (
-                        <span
-                          className={`font-mono text-xs font-black ${
-                            v1b ? 'text-accent-green' : v1b === false ? 'text-accent-red' : 'text-text-primary'
-                          }`}
-                        >
-                          {volPct >= 0 ? '+' : '−'}
-                          {toFaDigits(Math.abs(volPct).toFixed(1))}٪
-                        </span>
-                      ) : null}
-                      <AuditBadge
-                        state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
-                        label={!physicalApplicable ? undefined : v1b == null ? gapLabel('1b_volume_growth') : undefined}
-                        hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد تولیدی'}
-                        evidence={
-                          !physicalApplicable
-                            ? null
-                            : v1b == null
-                            ? { ...(audit?.['1b_volume_growth'] ?? {}), reason: audit?.['1b_volume_growth']?.reason ?? gapReason('1b_volume_growth').why }
-                            : (audit?.['1b_volume_growth'] ?? null)
-                        }
-                        testId="fts-cell-audit-1b_volume_growth"
-                        compact
-                      />
-                    </div>
-                    {l.drill ? (
-                      <span className="ms-auto text-text-muted opacity-40 group-hover:opacity-100 group-hover:text-accent-blue transition-all">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <circle cx="11" cy="11" r="8" />
-                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
+
+                    {/* ستون ۱-ب: رشد مقداری / فیزیکی */}
+                    <div
+                      data-testid="fts-card-cell-1b_volume_growth"
+                      className="flex flex-col justify-between rounded-lg border border-border-c/40 bg-bg-card/50 p-2"
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-2xs font-bold text-text-secondary">رشد مقداری</span>
+                        {/* نتیجه: عدد و درصد دقیقاً پهلو به پهلوی بج وضعیت */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {!physicalApplicable ? (
+                            <span className="text-2xs font-semibold text-text-muted">غیرتولیدی</span>
+                          ) : volPct != null ? (
+                            <span
+                              className={`font-mono text-xs font-black ${
+                                v1b ? 'text-accent-green' : v1b === false ? 'text-accent-red' : 'text-text-primary'
+                              }`}
+                            >
+                              {volPct >= 0 ? '+' : '−'}
+                              {toFaDigits(Math.abs(volPct).toFixed(1))}٪
+                            </span>
+                          ) : (
+                            <span className="font-mono text-2xs font-bold text-text-muted">—</span>
+                          )}
+                          <AuditBadge
+                            state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
+                            label={!physicalApplicable ? undefined : v1b == null ? gapLabel('1b_volume_growth') : undefined}
+                            hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد مقداری'}
+                            evidence={
+                              !physicalApplicable
+                                ? null
+                                : v1b == null
+                                  ? {
+                                      ...(audit?.['1b_volume_growth'] ?? {}),
+                                      reason: audit?.['1b_volume_growth']?.reason ?? gapReason('1b_volume_growth').why,
+                                    }
+                                  : (audit?.['1b_volume_growth'] ?? null)
+                            }
+                            testId="fts-cell-audit-1b_volume_growth"
+                            compact
+                          />
+                        </div>
+                      </div>
+
+                      {/* فرمول ریاضی واقعی */}
+                      <div className="my-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
+                        <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                          {!physicalApplicable ? (
+                            <span className="text-3xs text-text-muted">معاف از شرط فیزیکی</span>
+                          ) : (
+                            <>
+                              <MathFraction
+                                numerator={<span className="text-4xs px-0.5 whitespace-nowrap">تولید امسال</span>}
+                                denominator={<span className="text-4xs px-0.5 whitespace-nowrap">تولید سال قبل</span>}
+                              />
+                              <span>− 1</span>
+                              <span className={`font-bold ${v1b ? 'text-accent-green' : 'text-accent-red'}`}>≥ ۰٪</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <span className="text-3xs text-text-muted">
+                        {!physicalApplicable ? 'معاف از رشد فیزیکی' : 'کف: حفظ حجم تولید (رشد مقداری)'}
                       </span>
-                    ) : null}
+                    </div>
                   </div>
                 </button>
               );
@@ -204,48 +321,158 @@ export function FtsCard({
             const v = passes[key];
             const isIndustry = key === '5_industry' && industryMode !== undefined;
 
-            let resultNode: React.ReactNode = null;
+            let resultNumberNode: React.ReactNode = null;
+            let mathFormulaNode: React.ReactNode = null;
+            let benchmarkHint: string = '';
+
             if (key === '2_eps_trend') {
               const i2 = indicators?.['2'];
               const epsRising = i2?.strictly_rising ?? v;
-              const epsYears = i2?.years_available ?? (typeof audit?.['2_eps_trend']?.actualValue === 'number' ? (audit?.['2_eps_trend']?.actualValue as number) : null);
-              const label = epsRising ? 'روند ۳ سال صعودی' : epsYears ? `${toFaDigits(epsYears)} سال سودده` : 'سودآوری';
-              resultNode = <span className="text-2xs font-bold text-accent-blue truncate">{label}</span>;
+              const epsYears =
+                i2?.years_available ??
+                (typeof audit?.['2_eps_trend']?.actualValue === 'number'
+                  ? (audit?.['2_eps_trend']?.actualValue as number)
+                  : null);
+
+              resultNumberNode = (
+                <span
+                  className={`text-xs font-black ${
+                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
+                  }`}
+                >
+                  {epsRising ? '۳ سال صعودی' : epsYears ? `${toFaDigits(epsYears)} سال` : 'شکست روند'}
+                </span>
+              );
+
+              mathFormulaNode = (
+                <div className="flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whitespace-nowrap" dir="ltr">
+                  <span>EPS<sub>t</sub></span>
+                  <span className={v ? 'text-accent-green' : 'text-accent-red'}>&gt;</span>
+                  <span>EPS<sub>t-1</sub></span>
+                  <span className={v ? 'text-accent-green' : 'text-accent-red'}>&gt;</span>
+                  <span>EPS<sub>t-2</sub></span>
+                  <span className={v ? 'text-accent-green' : 'text-accent-red'}>&gt;</span>
+                  <span>0</span>
+                </div>
+              );
+              benchmarkHint = 'شرط: ۳ سال متوالی سوددهی صعودی';
             } else if (key === '3_gross_margin') {
               const i3 = indicators?.['3'];
-              const marginPct = i3?.margin_pct ?? (typeof audit?.['3_gross_margin']?.actualValue === 'number' ? (audit?.['3_gross_margin']?.actualValue as number) : null);
-              resultNode = (
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xs text-text-muted">حاشیه:</span>
-                  <span className={`font-mono text-xs font-black ${v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}`}>
-                    {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
-                  </span>
+              const marginPct =
+                i3?.margin_pct ??
+                (typeof audit?.['3_gross_margin']?.actualValue === 'number'
+                  ? (audit?.['3_gross_margin']?.actualValue as number)
+                  : null);
+
+              resultNumberNode = (
+                <span
+                  className={`font-mono text-xs sm:text-sm font-black ${
+                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
+                  }`}
+                >
+                  {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
+                </span>
+              );
+
+              mathFormulaNode = (
+                <div className="flex items-center justify-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                  <MathFraction
+                    numerator={<span className="text-4xs text-text-primary px-0.5 whitespace-nowrap">سود ناخالص</span>}
+                    denominator={<span className="text-4xs text-text-primary px-0.5 whitespace-nowrap">درآمد عملیاتی</span>}
+                  />
+                  <span className="text-3xs text-text-muted">× 100</span>
+                  <span className={`text-2xs font-black ms-0.5 ${v ? 'text-accent-green' : 'text-accent-red'}`}>≥ ۲۰٪</span>
                 </div>
               );
+              benchmarkHint = 'کف استاندارد: ۲۰٪ (ایده‌آل ۳۰٪)';
             } else if (key === '4_sales_to_mcap') {
               const i4 = indicators?.['4'];
-              const salesRatio = i4?.sales_to_mcap ?? (typeof audit?.['4_sales_to_mcap']?.actualValue === 'number' ? (audit?.['4_sales_to_mcap']?.actualValue as number) : null);
+              const salesRatio =
+                i4?.sales_to_mcap ??
+                (typeof audit?.['4_sales_to_mcap']?.actualValue === 'number'
+                  ? (audit?.['4_sales_to_mcap']?.actualValue as number)
+                  : null);
               const potPct = i4?.potential_pct;
-              resultNode = (
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xs text-text-muted">فروش/ارزش:</span>
-                  <span className="font-mono text-xs font-black text-text-primary">
-                    {salesRatio != null ? `${toFaDigits(salesRatio.toFixed(2))}×` : potPct != null ? `${toFaDigits(potPct.toFixed(0))}٪` : '—'}
-                  </span>
+
+              resultNumberNode = (
+                <span
+                  className={`font-mono text-xs sm:text-sm font-black ${
+                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
+                  }`}
+                >
+                  {salesRatio != null
+                    ? `${toFaDigits(salesRatio.toFixed(2))}×`
+                    : potPct != null
+                      ? `${toFaDigits(potPct.toFixed(0))}٪`
+                      : '—'}
+                </span>
+              );
+
+              mathFormulaNode = (
+                <div className="flex items-center justify-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                  <MathFraction
+                    numerator={<span className="text-4xs text-text-primary px-0.5 whitespace-nowrap">فروش سالانه</span>}
+                    denominator={<span className="text-4xs text-text-primary px-0.5 whitespace-nowrap">ارزش روز بازار</span>}
+                  />
+                  <span className={`text-2xs font-black ms-0.5 ${v ? 'text-accent-green' : 'text-accent-red'}`}>≥ ۰٫۳۳×</span>
                 </div>
               );
+              benchmarkHint = 'کف نسبت: ۰.۳۳× (۳۳٪)';
             } else if (key === '5_industry') {
-              const label = industryMode !== undefined ? industryGateLabel(industryMode) : (typeof audit?.['5_industry']?.actualValue === 'string' ? (audit?.['5_industry']?.actualValue as string) : 'نرخ‌گذاری آزاد');
-              resultNode = <span className="text-2xs font-bold text-accent-blue truncate">{label}</span>;
+              const indLabel =
+                industryMode !== undefined
+                  ? industryGateLabel(industryMode)
+                  : typeof audit?.['5_industry']?.actualValue === 'string'
+                    ? (audit?.['5_industry']?.actualValue as string)
+                    : 'صنعت آزاد';
+              const indTone = industryGateTone(industryMode);
+
+              resultNumberNode = (
+                <span
+                  className={`text-2xs sm:text-xs font-bold truncate ${
+                    indTone === 'green'
+                      ? 'text-accent-green'
+                      : indTone === 'yellow'
+                        ? 'text-amber-400'
+                        : indTone === 'red'
+                          ? 'text-accent-red'
+                          : 'text-text-primary'
+                  }`}
+                >
+                  {indLabel}
+                </span>
+              );
+
+              mathFormulaNode = (
+                <div className="flex items-center justify-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                  <span>نرخ</span>
+                  <span className="text-accent-blue font-bold">∈</span>
+                  <span className="font-bold text-text-primary">&#123;بورس کالا, آزاد&#125;</span>
+                  <span className="text-accent-red font-bold">≠</span>
+                  <span className="text-text-muted">دستوری</span>
+                </div>
+              );
+              benchmarkHint = 'بورس کالا / نرخ آزاد';
             }
 
             const industryBadge = isIndustry ? (
               <AuditBadge
                 state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                label={v == null ? gapLabel(key) : v === false ? industryGatePassLabel(false) : industryGateLabel(industryMode)}
-                hintTitle={v == null ? gapTooltip(key) : `${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
+                label={
+                  v == null
+                    ? gapLabel(key)
+                    : v === false
+                      ? industryGatePassLabel(false)
+                      : industryGateLabel(industryMode)
+                }
+                hintTitle={
+                  v == null
+                    ? gapTooltip(key)
+                    : `${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`
+                }
                 evidence={audit?.['5_industry'] ?? null}
                 testId={`fts-cell-audit-${key}`}
+                compact
               />
             ) : null;
 
@@ -258,55 +485,56 @@ export function FtsCard({
                 aria-pressed={isActive}
                 data-testid={`fts-card-cell-${key}`}
                 title={l.hint}
-                className={`group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 ${
-                  isActive
-                    ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_15px_rgba(56,189,248,0.2)]'
-                    : 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card disabled:cursor-default'
-                }`}
+                className={`col-span-1 group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                  v,
+                  isActive,
+                )}`}
               >
-                <div className="mb-1.5 flex flex-col">
+                {/* ردیف بالا: نام شاخص در راست + نتیجه (درصد/عدد + تایید/قبول) در چپ در کنار هم */}
+                <div className="mb-2 flex items-center justify-between gap-1">
                   <span className="text-xs font-black text-text-primary group-hover:text-accent-blue transition-colors">
                     {l.label}
                   </span>
-                  <div className="mt-0.5">{resultNode}</div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {resultNumberNode}
+                    {industryBadge ?? (
+                      <AuditBadge
+                        state={v == null ? 'na' : v ? 'pass' : 'fail'}
+                        label={v == null ? gapLabel(key) : undefined}
+                        hintTitle={v == null ? gapTooltip(key) : undefined}
+                        evidence={
+                          v == null
+                            ? { ...(audit?.[key] ?? {}), reason: audit?.[key]?.reason ?? gapReason(key).why }
+                            : (audit?.[key] ?? null)
+                        }
+                        testId={`fts-cell-audit-${key}`}
+                        compact
+                      />
+                    )}
+                  </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between">
-                  {industryBadge ?? (
-                    <AuditBadge
-                      state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                      label={v == null ? gapLabel(key) : undefined}
-                      hintTitle={v == null ? gapTooltip(key) : undefined}
-                      evidence={
-                        v == null
-                          ? { ...(audit?.[key] ?? {}), reason: audit?.[key]?.reason ?? gapReason(key).why }
-                          : (audit?.[key] ?? null)
-                      }
-                      testId={`fts-cell-audit-${key}`}
-                    />
-                  )}
-                  {l.drill ? (
-                    <span className="text-text-muted opacity-40 group-hover:opacity-100 group-hover:text-accent-blue transition-all">
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      </svg>
-                    </span>
-                  ) : null}
+
+                {/* ردیف وسط: فرمول ریاضی واقعی با کسر و نمادهای دقیق */}
+                <div className="my-1.5 flex items-center justify-center rounded-lg border border-border-c/30 bg-bg-card/40 py-1.5 px-1.5 overflow-hidden">
+                  {mathFormulaNode}
                 </div>
+
+                {/* ردیف پایین: شرط مرجع */}
+                <span className="text-3xs text-text-muted mt-1 truncate">{benchmarkHint}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-border-c/60 flex items-center justify-between">
+      {/* نوار پایین: ضریب اطمینان بنیادی */}
+      <div className="mt-3.5 pt-2.5 border-t border-border-c/50 flex items-center justify-between">
         <div className="flex items-center gap-2 text-2xs text-text-secondary">
           <span className="h-2 w-2 rounded-full bg-accent-blue animate-pulse"></span>
-          <span>ضریب اطمینان بنیادی:</span>
+          <span className="font-medium">ضریب اطمینان بنیادی:</span>
         </div>
         <ConfidenceDial value={score == null ? 'nodata' : score >= 4 ? 'high' : score >= 3 ? 'medium' : 'low'} />
       </div>
     </div>
   );
 }
-

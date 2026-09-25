@@ -1,11 +1,13 @@
 // features/master/routes/StrategyTreePage.tsx -- صفحه جامع درخت استراتژی FTS (۴ چارت در یک نما)
 // بر پایه جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
-import { useMemo, useState } from 'react';
-import { toFaDigits } from '@shared/lib/fmt';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { toFaDigits, fmtInt } from '@shared/lib/fmt';
+import { matchFa } from '@shared/lib/normalizeFa';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
+import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
@@ -17,25 +19,25 @@ type ViewMode = 'obsidian' | 'grid' | 'both';
 
 /** رنگ/برچسب وضعیت زندهٔ هر گیت FTS از خروجی evaluateFtsPipeline */
 const LIVE_STATUS_STYLE: Record<PipelineStep['status'], { dot: string; text: string; label: string; ring: string }> = {
-  pass: { dot: 'bg-accent-green', text: 'text-accent-green', label: 'تایید', ring: 'border-accent-green/50 bg-accent-green/5' },
-  wait: { dot: 'bg-accent-yellow', text: 'text-accent-yellow', label: 'در انتظار', ring: 'border-accent-yellow/50 bg-accent-yellow/5' },
-  fail: { dot: 'bg-accent-red', text: 'text-accent-red', label: 'رد / وتو', ring: 'border-accent-red/50 bg-accent-red/5' },
+  pass: { dot: 'bg-accent-green', text: 'text-accent-green', label: 'تایید', ring: 'border-accent-green/50 bg-accent-green/10' },
+  wait: { dot: 'bg-accent-yellow', text: 'text-accent-yellow', label: 'در انتظار', ring: 'border-accent-yellow/50 bg-accent-yellow/10' },
+  fail: { dot: 'bg-accent-red', text: 'text-accent-red', label: 'رد / وتو', ring: 'border-accent-red/50 bg-accent-red/10' },
 };
 
 /** نوار وضعیت زندهٔ نماد در سرستون هر فیلتر — خروجی واقعی evaluateFtsPipeline */
 function LiveColumnStatus({ step }: { step: PipelineStep }) {
   const s = LIVE_STATUS_STYLE[step.status];
   return (
-    <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-2xs ${s.ring}`}>
-      <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${s.dot}`} aria-hidden />
-      <div className="min-w-0 space-y-0.5">
-        <div className="flex items-center gap-1.5">
-          <span className="font-black text-text-secondary">وضعیت واقعی نماد:</span>
-          <span className={`font-black ${s.text}`}>{s.label}</span>
+    <div className={`flex items-start gap-2.5 rounded-xl border px-3 py-2 text-xs ${s.ring}`}>
+      <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} aria-hidden />
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="font-black text-text-primary text-xs">وضعیت زنده سهم:</span>
+          <span className={`font-black text-xs ${s.text}`}>{s.label}</span>
         </div>
-        <p className="leading-relaxed text-text-muted">{step.headline}</p>
+        <p className="leading-relaxed text-text-secondary font-medium text-xs">{step.headline}</p>
         {step.evidence.length > 0 && (
-          <p className="truncate text-text-muted/80" title={step.evidence.join(' · ')}>
+          <p className="truncate text-text-muted text-2xs font-semibold" title={step.evidence.join(' · ')}>
             {step.evidence.join(' · ')}
           </p>
         )}
@@ -46,9 +48,40 @@ function LiveColumnStatus({ step }: { step: PipelineStep }) {
 
 export default function StrategyTreePage() {
   const symbol = useSymbolStore((s) => s.symbol);
+  const setSymbol = useSymbolStore((s) => s.setSymbol);
+  const clearSymbol = useSymbolStore((s) => s.clearSymbol);
+
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
   const [viewMode, setViewMode] = useState<ViewMode>('both');
   const { params } = useStrategyParamsStore();
+
+  // وضعیت جستجوی نماد
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // خوراک بازار برای اتوکامپلیت نماد
+  const marketFeed = useMarketFeed();
+  const marketRows = useMemo(() => marketFeed.data?.data ?? [], [marketFeed.data]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.trim();
+    return marketRows
+      .filter((r) => r.symbol && (matchFa(r.symbol, q) || matchFa(r.name, q)))
+      .slice(0, 8);
+  }, [marketRows, searchQuery]);
+
+  // بستن منوی نتایج با کلیک بیرون از اینپوت
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // انتخاب‌های سفارشی کاربر در هر مرحله
   const [customFund, setCustomFund] = useState<'super' | 'good' | 'medium' | 'weak'>('good');
@@ -65,7 +98,7 @@ export default function StrategyTreePage() {
   const currentPrice = (symbol ? closes.data?.get(symbol) : null) ?? null;
   const resistance = ftsPlan.data?.fts?.jet?.resistance ?? null;
   const support = ftsPlan.data?.fts?.fib?.zone_33_40?.lo ?? null;
-  // امتیاز شمار شاخص‌های بنیادی ۰ تا ۵ (payload.score) — نه نمرهٔ ۰ تا ۱۰۰٬ اعتماد ترکیبی.
+  // امتیاز شمار شاخص‌های بنیادی ۰ تا ۵ (payload.score)
   const fundScore = ftsScoreOf(inputs.fundamental);
 
   const strict = useMemo(
@@ -98,8 +131,37 @@ export default function StrategyTreePage() {
     [symbol, selectedPreset, inputs, strict, decision, currentPrice, resistance, support, fundScore],
   );
 
-  // نگاشت وضعیت زندهٔ هر گیت به سرستونِ همان ستون (F/T/S/M) از خروجی واقعی evaluateFtsPipeline
-  // بدون نماد انتخابی ⇒ نقشه خالی ⇒ نوارهای «وضعیت واقعی نماد» نمایش داده نمی‌شوند.
+  // تطبیق خودکار با وضعیت واقعی نماد
+  const handleSyncWithSymbol = () => {
+    setSelectedPreset('custom');
+    if (fundScore && fundScore >= 5) setCustomFund('super');
+    else if (fundScore && fundScore >= 4) setCustomFund('good');
+    else if (fundScore && fundScore >= 3) setCustomFund('medium');
+    else setCustomFund('weak');
+
+    if (strict.weekly.uptrend === false) setCustomWeekly('reject');
+    else setCustomWeekly('up');
+
+    setCustomSetup('jet');
+    setCustomTape('clock');
+    setCustomStop('ma14_fixed5');
+  };
+
+  // اعمال مستقیم نماد بر درخت به محض انتخاب از سرچ
+  const handleSelectSymbol = (sym: string) => {
+    setSymbol(sym);
+    setSearchQuery('');
+    setSearchOpen(false);
+  };
+
+  // تطبیق خودکار درخت با نماد انتخاب‌شده
+  useEffect(() => {
+    if (symbol) {
+      handleSyncWithSymbol();
+    }
+  }, [symbol, fundScore, strict.weekly.uptrend]);
+
+  // نگاشت وضعیت زندهٔ هر گیت به سرستونِ همان ستون (F/T/S/M)
   const stepsById = useMemo(() => {
     const m = {} as Record<PipelineStep['id'], PipelineStep | undefined>;
     if (!symbol) return m;
@@ -208,144 +270,119 @@ export default function StrategyTreePage() {
     }
   };
 
-  // تطبیق خودکار با وضعیت واقعی نماد
-  const handleSyncWithSymbol = () => {
-    setSelectedPreset('custom');
-    if (fundScore && fundScore >= 5) setCustomFund('super');
-    else if (fundScore && fundScore >= 4) setCustomFund('good');
-    else if (fundScore && fundScore >= 3) setCustomFund('medium');
-    else setCustomFund('weak');
-
-    if (strict.weekly.uptrend === false) setCustomWeekly('reject');
-    else setCustomWeekly('up');
-
-    setCustomSetup('jet');
-    setCustomTape('clock');
-    setCustomStop('ma14_fixed5');
-  };
-
   return (
-    <div className="flex flex-col gap-5 p-3 sm:p-5 max-w-[1700px] mx-auto w-full">
-      {/* ۱. سربرگ و نوار کنترل */}
-      <div className="glass-panel relative overflow-hidden rounded-2xl border border-border-c p-5 bg-bg-card/40 shadow-xl">
-        <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-accent-blue/15 blur-3xl" aria-hidden />
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-blue/20 text-lg font-black text-accent-blue shadow-[0_0_12px_rgba(56,189,248,0.25)]">
+    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-[1700px] mx-auto w-full">
+      {/* ۱. نوار ابزار فشرده، سریع و سبک بالای نمودار (حذف نوار بزرگ و تکراری) */}
+      <div className="rounded-2xl border border-border-c bg-bg-card/70 p-3 sm:p-4 shadow-sm flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* سمت راست: عنوان و جستجوی تعاملی نماد با اعمال زنده */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent-blue/15 text-sm font-black text-accent-blue">
                 🌳
               </span>
-              <h1 className="text-base sm:text-lg font-black text-text-primary">
+              <h1 className="text-xs sm:text-sm font-black text-text-primary">
                 نقشه راه و درخت جامع استراتژی FTS
               </h1>
-              <span className="rounded-full border border-accent-blue/40 bg-accent-blue/10 px-2.5 py-0.5 text-2xs font-bold text-accent-blue">
+              <span className="hidden sm:inline-block rounded-full border border-accent-blue/40 bg-accent-blue/10 px-2 py-0.5 text-2xs font-bold text-accent-blue">
                 ۴ چارت در یک نما
               </span>
             </div>
-            <p className="text-xs text-text-muted leading-relaxed">
-              بر پایه آموزه‌های رسمی دوره نوسان‌گیری و سرمایه‌گذاری FTS (عرفان نصرتی)؛ با انتخاب هر استراتژی، مسیرهای مجاز روشن و بقیه کمرنگ می‌شوند.
-            </p>
-          </div>
 
-          {/* نشانگر نماد فعال و دکمه تطبیق */}
-          <div className="flex flex-wrap items-center gap-2.5">
+            {/* اینپوت جستجوی نماد با اتوکامپلیت */}
+            <div ref={searchContainerRef} className="relative min-w-[210px] sm:min-w-[260px]">
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onFocus={() => setSearchOpen(true)}
+                  placeholder="🔍 جستجوی نماد یا شرکت..."
+                  className="w-full rounded-xl border border-border-c bg-bg-primary px-3 py-1.5 pe-7 text-xs font-bold text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:outline-none transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchOpen(false);
+                    }}
+                    className="absolute end-2 text-text-muted hover:text-text-primary text-xs"
+                    title="پاک کردن متن"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* نتایج دراپ‌داون */}
+              {searchOpen && searchResults.length > 0 && (
+                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border-c bg-bg-card p-1 shadow-2xl">
+                  {searchResults.map((r) => (
+                    <button
+                      key={r.symbol}
+                      type="button"
+                      onClick={() => handleSelectSymbol(r.symbol)}
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs hover:bg-accent-blue/15 transition-colors text-start"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-accent-blue">{r.symbol}</span>
+                        <span className="text-text-muted text-2xs truncate max-w-[130px]">{r.name}</span>
+                      </div>
+                      {r.close && (
+                        <span className="font-mono text-2xs text-text-secondary">
+                          {toFaDigits(fmtInt(r.close))} ریال
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* نشانگر نماد فعال و وضعیت عینی */}
             {symbol ? (
-              <div className="flex items-center gap-2 rounded-xl border border-border-c bg-bg-primary/80 px-3 py-1.5 text-xs">
-                <span className="text-text-muted">نماد فعال:</span>
+              <div className="flex items-center gap-2 rounded-xl border border-accent-blue/40 bg-accent-blue/10 px-2.5 py-1 text-xs">
+                <span className="text-text-muted text-2xs">نماد فعال:</span>
                 <strong className="text-accent-blue font-black">{symbol}</strong>
                 {currentPrice && (
-                  <span className="text-text-secondary font-mono">({toFaDigits(currentPrice)} ریال)</span>
+                  <span className="text-text-secondary font-mono text-2xs">({toFaDigits(fmtInt(currentPrice))} ریال)</span>
+                )}
+                {fundScore != null && (
+                  <span className="rounded bg-accent-green/20 px-1.5 py-0.5 text-3xs font-black text-accent-green">
+                    بنیادی {toFaDigits(fundScore)}/۵
+                  </span>
                 )}
                 <button
                   type="button"
                   onClick={handleSyncWithSymbol}
-                  className="rounded-lg bg-accent-blue/15 border border-accent-blue/40 px-2 py-0.5 text-2xs font-bold text-accent-blue hover:bg-accent-blue hover:text-black transition-colors"
+                  className="rounded-md bg-accent-blue/20 px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:bg-accent-blue hover:text-black transition-colors"
+                  title="تطبیق مجدد وضعیت سهم با درخت"
                 >
-                  ⚡ تطبیق درخت با {symbol}
+                  ⚡ تطبیق
+                </button>
+                <button
+                  type="button"
+                  onClick={() => clearSymbol()}
+                  aria-label="حذف نماد"
+                  title="حذف نماد و نمایش راهنمای کلان"
+                  className="ms-1 text-text-muted hover:text-accent-red text-xs font-bold"
+                >
+                  ✕
                 </button>
               </div>
             ) : (
-              <div className="text-2xs text-text-muted rounded-xl border border-border-c bg-bg-primary/60 px-3 py-1.5">
-                نمادی انتخاب نشده؛ درخت به عنوان راهنمای کلان استراتژی در دسترس است.
-              </div>
+              <span className="text-2xs text-text-muted hidden md:inline-block">
+                (راهنمای کلان — با سرچ نماد، وضعیت سهم روی درخت اعمال می‌شود)
+              </span>
             )}
           </div>
-        </div>
 
-        {/* سوییچر سبک معامله / حالت بازی (Persona & Game Switcher) + سوییچ نحوه نما */}
-        <div className="mt-4 pt-4 border-t border-border-c/60 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-text-secondary">سبک و مسیر بازی:</span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedPreset('swing')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
-                  selectedPreset === 'swing'
-                    ? 'border-accent-blue bg-accent-blue/20 text-accent-blue shadow-[0_0_12px_rgba(56,189,248,0.25)]'
-                    : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
-                }`}
-              >
-                <span>⚡</span>
-                <span>شخص نوسان‌گیر (زیر ۳ ماه)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedPreset('trend')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
-                  selectedPreset === 'trend'
-                    ? 'border-accent-green bg-accent-green/20 text-accent-green shadow-[0_0_12px_rgba(34,197,94,0.25)]'
-                    : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
-                }`}
-              >
-                <span>📈</span>
-                <span>شخص روندگیر (بالای ۳ ماه)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedPreset('hourglass')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
-                  selectedPreset === 'hourglass'
-                    ? 'border-accent-yellow bg-accent-yellow/20 text-accent-yellow shadow-[0_0_12px_rgba(234,179,8,0.25)]'
-                    : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
-                }`}
-              >
-                <span>⏳</span>
-                <span>استراتژی ساعت شنی (۳ تا ۱۰ ساله)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSelectedPreset('custom')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${
-                  selectedPreset === 'custom'
-                    ? 'border-neon-cyan bg-neon-cyan/20 text-neon-cyan shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                    : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
-                }`}
-              >
-                <span>🛠</span>
-                <span>مسیر سفارشی (انتخاب دستی)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* سوییچ نما: نمودار شبکه ابسیدین vs نمای گرید ۴ چارت */}
-          <div className="flex items-center gap-1 rounded-xl border border-border-c/70 bg-bg-primary/90 p-1 ms-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode('obsidian')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-                viewMode === 'obsidian'
-                  ? 'bg-accent-blue/20 border border-accent-blue/50 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.25)]'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <span>🕸️</span>
-              <span>نمودار شبکه ابسیدین</span>
-            </button>
+          {/* سمت چپ: سوییچ نما */}
+          <div className="flex items-center gap-1 rounded-xl border border-border-c/70 bg-bg-primary p-1 ms-auto">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
@@ -360,6 +397,18 @@ export default function StrategyTreePage() {
             </button>
             <button
               type="button"
+              onClick={() => setViewMode('obsidian')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
+                viewMode === 'obsidian'
+                  ? 'bg-accent-blue/20 border border-accent-blue/50 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.25)]'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>🕸️</span>
+              <span>نمودار شبکه ابسیدین</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setViewMode('both')}
               className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
                 viewMode === 'both'
@@ -368,7 +417,65 @@ export default function StrategyTreePage() {
               }`}
             >
               <span>🔀</span>
-              <span>ترکیبی (هر دو)</span>
+              <span>ترکیبی</span>
+            </button>
+          </div>
+        </div>
+
+        {/* سوییچر سبک معامله / مسیر بازی */}
+        <div className="pt-2 border-t border-border-c/50 flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-text-secondary">سبک و مسیر بازی FTS:</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedPreset('swing')}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all ${
+                selectedPreset === 'swing'
+                  ? 'border-accent-blue bg-accent-blue/20 text-accent-blue shadow-[0_0_10px_rgba(56,189,248,0.2)]'
+                  : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>⚡</span>
+              <span>شخص نوسان‌گیر (زیر ۳ ماه)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPreset('trend')}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all ${
+                selectedPreset === 'trend'
+                  ? 'border-accent-green bg-accent-green/20 text-accent-green shadow-[0_0_10px_rgba(34,197,94,0.2)]'
+                  : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>📈</span>
+              <span>شخص روندگیر (بالای ۳ ماه)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPreset('hourglass')}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all ${
+                selectedPreset === 'hourglass'
+                  ? 'border-accent-yellow bg-accent-yellow/20 text-accent-yellow shadow-[0_0_10px_rgba(234,179,8,0.2)]'
+                  : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>⏳</span>
+              <span>استراتژی ساعت شنی (۳ تا ۱۰ ساله)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPreset('custom')}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 text-xs font-bold transition-all ${
+                selectedPreset === 'custom'
+                  ? 'border-neon-cyan bg-neon-cyan/20 text-neon-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]'
+                  : 'border-border-c/70 bg-bg-primary text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>🛠</span>
+              <span>مسیر سفارشی (انتخاب دستی)</span>
             </button>
           </div>
         </div>
@@ -385,482 +492,482 @@ export default function StrategyTreePage() {
         />
       )}
 
-      {/* ۳. چارت درختی ۴ مرحله‌ای بصری و ستونی (Unified 4-Stage Tree Column Grid) */}
+      {/* ۳. چارت درختی ۴ مرحله‌ای بصری و ستونی با فونت‌های درشت و کاملاً خوانا */}
       {(viewMode === 'grid' || viewMode === 'both') && (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        {/* ═══════════ فاز ۱: بنیادی F (۵ شاخص FTS) ═══════════ */}
-        <div className="glass-panel rounded-2xl border border-border-c/80 bg-bg-card/30 p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-green/20 text-xs font-black text-accent-green">
-                F
+          {/* ═══════════ فاز ۱: بنیادی F (۵ شاخص FTS) ═══════════ */}
+          <div className="rounded-2xl border border-border-c/80 bg-bg-card/40 p-4 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-green/20 text-xs font-black text-accent-green">
+                  F
+                </span>
+                <h2 className="text-sm font-black text-text-primary">
+                  ۱. فیلتر بنیادی (۵ شاخص کدال)
+                </h2>
+              </div>
+              <span className="text-2xs font-bold rounded bg-bg-primary px-2 py-0.5 text-text-muted">
+                چارت صفحه ۱
               </span>
-              <h2 className="text-xs font-black text-text-primary">
-                ۱. فیلتر بنیادی (۵ شاخص کدال)
-              </h2>
             </div>
-            <span className="text-3xs rounded bg-bg-primary px-1.5 py-0.5 text-text-muted">
-              چارت صفحه ۱
-            </span>
+
+            {stepsById.fundamental && <LiveColumnStatus step={stepsById.fundamental} />}
+
+            <div className="space-y-2.5">
+              {/* شاخص سوپربنیادی ۵ از ۵ */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomFund('super');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.fund.includes('fund_super')
+                    ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">💎 سوپربنیادی (امتیاز ۵ از ۵)</strong>
+                  <span className="text-2xs text-accent-green font-black">عالی</span>
+                </div>
+                <ul className="text-xs text-text-secondary space-y-1 leading-relaxed font-medium">
+                  <li>● ۱- رشد فروش ماهانه کدال نسبت به پارسال &gt; ۴۰٪ با تورم (الف: ریالی + ب: تولیدی)</li>
+                  <li>● ۲- سابقه عملکرد ۳ ساله سودآوری (روند صعودی متوالی EPS هر سهم)</li>
+                  <li>● ۳- حاشیه سود ناخالص مطلوب &gt; ۳۰٪ (حداقل کف ۲۰٪)</li>
+                  <li>● ۴- نسبت فروش سالانه‌شده (تجمیعی × ۱۲÷م) به ارزش بازار (حداقل ۱ برابر یا پوشش &gt; ۴۰٪)</li>
+                  <li>● ۵- صنایع آزاد و بورس کالا بدون قیمت‌گذاری دستوری</li>
+                </ul>
+              </div>
+
+              {/* بنیادی مطلوب ۴ از ۵ */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomFund('good');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.fund.includes('fund_good')
+                    ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">بنیادی مطلوب (۴ از ۵ FTS)</strong>
+                  <span className="text-2xs text-accent-blue font-black">تایید روندی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  رشد فروش ماهانه کدال و روند صعودی EPS تایید، حاشیه ناخالص بالای ۲۰٪؛ مناسب برای ورود روندی بالای ۳ ماه.
+                </p>
+              </div>
+
+              {/* بنیادی متوسط ۳ از ۵ */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomFund('medium');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.fund.includes('fund_medium')
+                    ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">بنیاد متوسط (۳ از ۵ FTS)</strong>
+                  <span className="text-2xs text-accent-yellow font-black">صرفاً نوسانی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  فاقد سودآوری متوالی ۳ ساله اما دارای رشد فروش فصلی؛ صرفاً نوسان‌گیری سریع با ستاپ جت مجاز است.
+                </p>
+              </div>
+
+              {/* رد بنیادی */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomFund('weak');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.fund.includes('fund_weak')
+                    ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-accent-red">⛔ رد بنیادی (زیر ۳ از ۵ یا زیان‌ده)</strong>
+                  <span className="text-2xs text-accent-red font-black">توقف / وتو</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  صنایع با نرخ‌گذاری دستوری شدید (خودرو/قطعات) یا افت شدید حاشیه سود به زیر ۲۰٪ یا زیان‌دهی؛ ورود ممنوع.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {stepsById.fundamental && <LiveColumnStatus step={stepsById.fundamental} />}
-
-          <div className="space-y-2">
-            {/* شاخص سوپربنیادی ۵ از ۵ */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomFund('super');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.fund.includes('fund_super')
-                  ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">💎 سوپربنیادی (امتیاز ۵ از ۵)</strong>
-                <span className="text-3xs text-accent-green font-bold">عالی</span>
+          {/* ═══════════ فاز ۲: تکنیکال دو زمانه T ═══════════ */}
+          <div className="rounded-2xl border border-border-c/80 bg-bg-card/40 p-4 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-neon-cyan/20 text-xs font-black text-neon-cyan">
+                  T
+                </span>
+                <h2 className="text-sm font-black text-text-primary">
+                  ۲. فیلتر تکنیکال ۲ زمانه
+                </h2>
               </div>
-              <ul className="text-2xs text-text-muted space-y-0.5 leading-relaxed">
-                <li>● رشد فروش ماهانه کدال نسبت به پارسال &gt; ۴۰٪</li>
-                <li>● سودآوری ۳ ساله (EPS صعودی)</li>
-                <li>● حاشیه سود ناخالص &gt; ۳۰٪ (حداقل ۲۰٪)</li>
-                <li>● نسبت فروش سالانه‌شده (تجمیعی × ۱۲÷م) به ارزش بازار</li>
-                <li>● صنایع دلاری/جهانی بدون قیمت‌گذاری دستوری</li>
-              </ul>
+              <span className="text-2xs font-bold rounded bg-bg-primary px-2 py-0.5 text-text-muted">
+                چارت صفحه ۲
+              </span>
             </div>
 
-            {/* بنیادی خوب ۴ از ۵ */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomFund('good');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.fund.includes('fund_good')
-                  ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">بنیادی مطلوب (۴ از ۵ FTS)</strong>
-                <span className="text-3xs text-accent-blue font-bold">تایید روندی</span>
+            {stepsById.technical && <LiveColumnStatus step={stepsById.technical} />}
+
+            <div className="space-y-2.5">
+              {/* شاخه هفتگی صعودی */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomWeekly('up');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.weekly.includes('tech_weekly_up') || activeNodes.weekly.includes('tech_weekly_hourglass')
+                    ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">تایم هفتگی صعودی (تایید ماژور)</strong>
+                  <span className="text-2xs text-accent-green font-black">مجوز ورود</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  تشکیل سقف‌ها و کف‌های بالاتر در تایم هفتگی؛ شرط صلب اولیه و لازم برای ورود به ستاپ‌های روزانه.
+                </p>
               </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                رشد فروش و سودآوری ۳ ساله مثبت، حاشیه سود بالای ۲۰٪؛ مناسب برای ورود روندی بالای ۳ ماه.
-              </p>
+
+              {/* ستاپ جت روزانه */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomSetup('jet');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.setup.includes('setup_jet')
+                    ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-neon-cyan">🚀 استراتژی جت (Jet Breakout)</strong>
+                  <span className="text-2xs text-neon-cyan font-black">ستاپ پرتاب</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  عبور از سقف تاریخی یا مقاومت استاتیک با کندل پرقدرت؛ تا ۳ روز فرصت ورود پله‌ای وجود دارد.
+                </p>
+              </div>
+
+              {/* ستاپ فیبوناچی و پولبک */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomSetup('fib');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.setup.includes('setup_fib')
+                    ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-accent-blue">ستاپ فیبوناچی ۳۳-۴۰ و ۶۱.۸-۷۰</strong>
+                  <span className="text-2xs text-accent-blue font-black">پله‌های ورود</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  پله اول در تراز ۳۳ تا ۴۰ فیبو، پله دوم در تراز ۶۱.۸ تا ۷۰ درصد؛ اصلاح سالم در روند صعودی.
+                </p>
+              </div>
+
+              {/* ستاپ CHoCH و کف دوقلو */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomSetup('choch');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.setup.includes('setup_choch') || activeNodes.setup.includes('setup_double_bottom')
+                    ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">تغییر ساختار CHoCH / کف دوقلو</strong>
+                  <span className="text-2xs text-purple-400 font-black">بازگشتی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  شکست آخرین سقف در روند نزولی یا شکست خط گردن (Neckline) کف دوقلو با پولبک و تثبیت ۲ روزه.
+                </p>
+              </div>
+
+              {/* ریجکت هفتگی */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomWeekly('reject');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.weekly.includes('tech_weekly_reject')
+                    ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-accent-red">ریجکت هفتگی (Reject صلب)</strong>
+                  <span className="text-2xs text-accent-red font-black">وتو</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  روند هفتگی نزولی یا خنثی؛ طبق صفحه ۲ و ۷ جزوه هرگونه ورود اکیداً ممنوع و وتوی صلب است.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════ فاز ۳: تابلوخوانی و غربالگری S ═══════════ */}
+          <div className="rounded-2xl border border-border-c/80 bg-bg-card/40 p-4 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-yellow/20 text-xs font-black text-accent-yellow">
+                  S
+                </span>
+                <h2 className="text-sm font-black text-text-primary">
+                  ۳. تابلوخوانی و زمان‌سنج (S)
+                </h2>
+              </div>
+              <span className="text-2xs font-bold rounded bg-bg-primary px-2 py-0.5 text-text-muted">
+                چارت صفحه ۳
+              </span>
             </div>
 
-            {/* بنیادی متوسط ۳ از ۵ */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomFund('medium');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.fund.includes('fund_medium')
-                  ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">بنیاد متوسط (۳ از ۵ FTS)</strong>
-                <span className="text-3xs text-accent-yellow font-bold">صرفاً نوسانی</span>
+            {stepsById.tape && <LiveColumnStatus step={stepsById.tape} />}
+
+            <div className="space-y-2.5">
+              {/* الگوی ساعت */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomTape('clock');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.tape.includes('tape_clock')
+                    ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">⏰ الگوی ساعت FTS</strong>
+                  <span className="text-2xs text-accent-green font-black">زمان‌سنج ورود</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  قیمت آخرین معامله بیش از ۱٪ بالاتر از قیمت پایانی (ایده‌آل: پایانی منفی و آخرین مثبت)؛ احتمال بالای بازگشایی مثبت فردا.
+                </p>
               </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                فاقد سودآوری ۳ ساله اما دارای رشد فروش فصلی؛ صرفاً نوسان‌گیری با ستاپ جت مجاز است.
-              </p>
+
+              {/* حجم مشکوک ۳ برابری */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomTape('suspicious_vol');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.tape.includes('tape_volume')
+                    ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-neon-cyan">حجم مشکوک (۳ برابر میانگین)</strong>
+                  <span className="text-2xs text-neon-cyan font-black">ورود پول هوشمند</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  حجم معاملات امروز حداقل ۳ برابر میانگین ۲۱ روزه ماهانه؛ نشانه ورود کدهای درشت و دست‌به‌دست شدن سهم.
+                </p>
+              </div>
+
+              {/* خروج از باکس رنج */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomTape('box_break');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.tape.includes('tape_breakout')
+                    ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">خروج از باکس رنج (Breakout)</strong>
+                  <span className="text-2xs text-accent-blue font-black">آغاز موج</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  شکست سقف باکس رنج با کندل پرقدرت + رشد حجم معاملات + پر شدن حجم مبنا و الگوی ساعت.
+                </p>
+              </div>
+
+              {/* کف‌روبی و خشک کردن سهم */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomTape('floor_sweep');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.tape.includes('tape_floor_sweep')
+                    ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">کف‌روبی صف فروش / جمع‌آوری</strong>
+                  <span className="text-2xs text-purple-400 font-black">جمع‌آوری کف</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  سهم در صف فروش یا کف قیمت است اما سفارش‌های خرید قوی در حال بلعیدن صف هستند و فروشنده‌ها کاملاً خشک شده‌اند.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════ فاز ۴: مدیریت سرمایه و پلن خروج ═══════════ */}
+          <div className="rounded-2xl border border-border-c/80 bg-bg-card/40 p-4 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-blue/20 text-xs font-black text-accent-blue">
+                  M
+                </span>
+                <h2 className="text-sm font-black text-text-primary">
+                  ۴. مدیریت سرمایه و خروج
+                </h2>
+              </div>
+              <span className="text-2xs font-bold rounded bg-bg-primary px-2 py-0.5 text-text-muted">
+                چارت صفحه ۴
+              </span>
             </div>
 
-            {/* رد بنیادی */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomFund('weak');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.fund.includes('fund_weak')
-                  ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-accent-red">⛔ رد بنیادی (زیر ۳ از ۵ یا زیان‌ده)</strong>
-                <span className="text-3xs text-accent-red font-bold">توقف</span>
+            {stepsById.master && <LiveColumnStatus step={stepsById.master} />}
+
+            <div className="space-y-2.5">
+              {/* حد ضرر نوسان‌گیر */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomStop('ma14_fixed5');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.stop.includes('stop_swing')
+                    ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">حد ضرر صلب نوسان‌گیر</strong>
+                  <span className="text-2xs text-accent-red font-black">استاپ تکنیکالی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  تشکیل یک کندل کامل زیر میانگین متحرک ۱۴ (MA=14) یا افت ۵٪ زیر نقطه ورود یا آخرین کف صعودی؛ خروج بی‌چون‌وچرا.
+                </p>
               </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                صنایع مشمول نرخ‌گذاری دستوری شدید (خودرو/قطعات) یا افت شدید حاشیه سود به زیر ۲۰٪.
-              </p>
+
+              {/* حد ضرر روندگیر */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomStop('codal_fund');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.stop.includes('stop_trend')
+                    ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-text-primary">حد ضرر بنیادی روندگیر</strong>
+                  <span className="text-2xs text-accent-green font-black">کدال و فصلی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  شخص روندگیر حد ضرر تکنیکالی ندارد؛ حد ضرر در صورت‌های مالی است: توقف رشد فروش ماهانه، افت حاشیه سود به زیر ۲۰٪ یا نزولی شدن EPS.
+                </p>
+              </div>
+
+              {/* استراتژی ساعت شنی */}
+              <div
+                onClick={() => {
+                  setSelectedPreset('custom');
+                  setCustomStop('hourglass_deep');
+                }}
+                className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.stop.includes('stop_hourglass')
+                    ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-accent-yellow">اهرم ساعت شنی (۲ تا ۴ برابر)</strong>
+                  <span className="text-2xs text-accent-yellow font-black">کف تاریخی</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  سهام بزرگ بنیادی در تایم هفتگی زیر MA=52 و RSI زیر ۷ در اشباع عمیق؛ خرید سنگین پله‌ای به دید ۳ تا ۱۰ ساله.
+                </p>
+              </div>
+
+              {/* قانون ذخیره سود ۵۰٪ */}
+              <div
+                className={`rounded-xl border p-3.5 transition-all duration-200 ${
+                  activeNodes.exit.includes('exit_half')
+                    ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-accent-blue">قانون ذخیره سود ۵۰٪ FTS</strong>
+                  <span className="text-2xs text-accent-blue font-black">خروج اصل پول</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  در برخورد با مقاومت اول R1 یا سقف موج، ۵۰٪ سهم فروخته می‌شود تا اصل سرمایه آزاد شده و ادامه معامله بدون ریسک شود.
+                </p>
+              </div>
+
+              {/* خروج در سقف سوم کانال صعودی */}
+              <div
+                className={`rounded-xl border p-3.5 transition-all duration-200 ${
+                  selectedPreset === 'swing' || selectedPreset === 'trend'
+                    ? 'border-orange-500/70 bg-orange-500/10 opacity-100'
+                    : 'border-border-c/60 bg-bg-primary/60 opacity-40'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <strong className="text-sm font-black text-orange-400">🏔️ خروج در سقف سوم (صفحه ۴)</strong>
+                  <span className="text-2xs text-orange-400 font-black">خروج ۱۰۰٪</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  برخورد به سقف سوم کانال یا خط روند (فاصله {toFaDigits(params.thirdPeakWeeklyPct)}٪ هفتگی یا {toFaDigits(params.thirdPeakDailyPct)}٪ روزانه)؛ خروج کامل از سهم.
+                </p>
+              </div>
+
+              {/* سقف کل دارایی در بورس و شرایط جنگی */}
+              <div className="rounded-xl border border-border-c/70 bg-bg-primary/70 p-3.5 space-y-1">
+                <div className="flex items-center justify-between mb-1">
+                  <strong className="text-sm font-black text-accent-yellow">🏛️ قانون سبد دارایی</strong>
+                  <span className="text-2xs text-accent-yellow font-black">مدیریت کلان</span>
+                </div>
+                <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                  حداکثر {toFaDigits(params.maxTotalPortfolioCapPct)}٪ کل دارایی در بورس (۳۰٪ طلا/فیکس)؛ در شرایط جنگی حداکثر {toFaDigits(params.warConditionCapPct)}٪ در بورس.
+                </p>
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* ═══════════ فاز ۲: تکنیکال دو زمانه T ═══════════ */}
-        <div className="glass-panel rounded-2xl border border-border-c/80 bg-bg-card/30 p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-neon-cyan/20 text-xs font-black text-neon-cyan">
-                T
-              </span>
-              <h2 className="text-xs font-black text-text-primary">
-                ۲. فیلتر تکنیکال ۲ زمانه
-              </h2>
-            </div>
-            <span className="text-3xs rounded bg-bg-primary px-1.5 py-0.5 text-text-muted">
-              چارت صفحه ۲
-            </span>
-          </div>
-
-          {stepsById.technical && <LiveColumnStatus step={stepsById.technical} />}
-
-          <div className="space-y-2">
-            {/* شاخه هفتگی صعودی */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomWeekly('up');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.weekly.includes('tech_weekly_up') || activeNodes.weekly.includes('tech_weekly_hourglass')
-                  ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">تایم هفتگی صعودی (تایید ماژور)</strong>
-                <span className="text-3xs text-accent-green font-bold">مجوز ورود</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                تشکیل سقف‌ها و کف‌های بالاتر؛ شرط لازم برای ورود به ستاپ‌های روزانه.
-              </p>
-            </div>
-
-            {/* ستاپ جت روزانه */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomSetup('jet');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.setup.includes('setup_jet')
-                  ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-neon-cyan">🚀 استراتژی جت (Jet Breakout)</strong>
-                <span className="text-3xs text-neon-cyan font-bold">ستاپ پرتاب</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                عبور از سقف تاریخی یا مقاومت استاتیک با کندل پرقدرت؛ تا ۳ روز فرصت ورود پله‌ای وجود دارد.
-              </p>
-            </div>
-
-            {/* ستاپ فیبوناچی و پولبک */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomSetup('fib');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.setup.includes('setup_fib')
-                  ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-accent-blue">ستاپ فیبوناچی ۳۳-۴۰ و ۶۱.۸-۷۰</strong>
-                <span className="text-3xs text-accent-blue font-bold">پله‌های ورود</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                پله اول در تراز ۳۳ تا ۴۰ فیبو، پله دوم در تراز ۶۱.۸ تا ۷۰ درصد؛ اصلاح سالم در روند صعودی.
-              </p>
-            </div>
-
-            {/* ستاپ CHoCH و کف دوقلو */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomSetup('choch');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.setup.includes('setup_choch') || activeNodes.setup.includes('setup_double_bottom')
-                  ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">تغییر ساختار CHoCH / کف دوقلو</strong>
-                <span className="text-3xs text-purple-400 font-bold">بازگشتی</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                شکست آخرین سقف در روند نزولی یا شکست خط گردن کف دوقلو با پولبک.
-              </p>
-            </div>
-
-            {/* ریجکت هفتگی */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomWeekly('reject');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.weekly.includes('tech_weekly_reject')
-                  ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-accent-red">ریجکت هفتگی (Reject صلب)</strong>
-                <span className="text-3xs text-accent-red font-bold">وتو</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                روند هفتگی نزولی یا خنثی؛ طبق صفحه ۲ جزوه هرگونه ورود اکیداً ممنوع و ریجکت است.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══════════ فاز ۳: تابلوخوانی و غربالگری S ═══════════ */}
-        <div className="glass-panel rounded-2xl border border-border-c/80 bg-bg-card/30 p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-yellow/20 text-xs font-black text-accent-yellow">
-                S
-              </span>
-              <h2 className="text-xs font-black text-text-primary">
-                ۳. تابلوخوانی و زمان‌سنج (S)
-              </h2>
-            </div>
-            <span className="text-3xs rounded bg-bg-primary px-1.5 py-0.5 text-text-muted">
-              چارت صفحه ۳
-            </span>
-          </div>
-
-          {stepsById.tape && <LiveColumnStatus step={stepsById.tape} />}
-
-          <div className="space-y-2">
-            {/* الگوی ساعت */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomTape('clock');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.tape.includes('tape_clock')
-                  ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">⏰ الگوی ساعت FTS</strong>
-                <span className="text-3xs text-accent-green font-bold">زمان‌سنج ورود</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                قیمت آخرین معامله بیش از ۱٪ بالاتر از قیمت پایانی (بهترین حالت: پایانی منفی و آخرین مثبت)؛ احتمال بالای بازگشایی مثبت فردا.
-              </p>
-            </div>
-
-            {/* حجم مشکوک ۳ برابری */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomTape('suspicious_vol');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.tape.includes('tape_volume')
-                  ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-neon-cyan">حجم مشکوک (۳ برابر میانگین)</strong>
-                <span className="text-3xs text-neon-cyan font-bold">ورود پول هوشمند</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                حجم معاملات امروز حداقل ۳ برابر میانگین ۲۱ روزه ماهانه؛ نشانه ورود کدهای درشت و دست‌به‌دست شدن سهم.
-              </p>
-            </div>
-
-            {/* خروج از باکس رنج */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomTape('box_break');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.tape.includes('tape_breakout')
-                  ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">خروج از باکس رنج (Breakout)</strong>
-                <span className="text-3xs text-accent-blue font-bold">آغاز موج</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                شکست سقف باکس رنج با کندل پرقدرت + رشد حجم معاملات + ورود پول و الگوی ساعت.
-              </p>
-            </div>
-
-            {/* کف‌روبی و خشک کردن سهم */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomTape('floor_sweep');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.tape.includes('tape_floor_sweep')
-                  ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">کف‌روبی صف فروش / خشک کردن</strong>
-                <span className="text-3xs text-purple-400 font-bold">جمع‌آوری</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                سهم صف فروش است اما سفارش‌های خرید قوی در حال بلعیدن صف هستند؛ یا فروشنده‌ها کاملاً خشک شده‌اند.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ═══════════ فاز ۴: مدیریت سرمایه و پلن خروج ═══════════ */}
-        <div className="glass-panel rounded-2xl border border-border-c/80 bg-bg-card/30 p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-border-c/60 pb-2.5">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-accent-blue/20 text-xs font-black text-accent-blue">
-                M
-              </span>
-              <h2 className="text-xs font-black text-text-primary">
-                ۴. مدیریت سرمایه و خروج
-              </h2>
-            </div>
-            <span className="text-3xs rounded bg-bg-primary px-1.5 py-0.5 text-text-muted">
-              چارت صفحه ۴
-            </span>
-          </div>
-
-          {stepsById.master && <LiveColumnStatus step={stepsById.master} />}
-
-          <div className="space-y-2">
-            {/* حد ضرر نوسان‌گیر */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomStop('ma14_fixed5');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.stop.includes('stop_swing')
-                  ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">حد ضرر صلب نوسان‌گیر</strong>
-                <span className="text-3xs text-accent-red font-bold">استاپ تکنیکالی</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                تشکیل یک کندل کامل زیر میانگین متحرک ۱۴ (MA=14) یا افت ۵٪ زیر نقطه ورود یا آخرین کف صعودی؛ خروج بی‌چون‌وچرا.
-              </p>
-            </div>
-
-            {/* حد ضرر روندگیر */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomStop('codal_fund');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.stop.includes('stop_trend')
-                  ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-text-primary">حد ضرر بنیادی روندگیر</strong>
-                <span className="text-3xs text-accent-green font-bold">کدال و فصلی</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                شخص روندگیر حد ضرر تکنیکالی ندارد؛ حد ضرر در صورت‌های مالی است: توقف رشد فروش ماهانه یا افت حاشیه سود به زیر ۲۰٪.
-              </p>
-            </div>
-
-            {/* استراتژی ساعت شنی */}
-            <div
-              onClick={() => {
-                setSelectedPreset('custom');
-                setCustomStop('hourglass_deep');
-              }}
-              className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.stop.includes('stop_hourglass')
-                  ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35 hover:opacity-75'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-accent-yellow">اهرم ساعت شنی (۲ تا ۴ برابر)</strong>
-                <span className="text-3xs text-accent-yellow font-bold">کف تاریخی</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                سهام بزرگ بنیادی در تایم هفتگی زیر MA=52 و RSI زیر ۷ در اشباع عمیق؛ خرید سنگین پله‌ای به دید ۳ تا ۱۰ ساله.
-              </p>
-            </div>
-
-            {/* قانون ذخیره سود ۵۰٪ */}
-            <div
-              className={`rounded-xl border p-3 transition-all duration-200 ${
-                activeNodes.exit.includes('exit_half')
-                  ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-35'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-accent-blue">قانون ذخیره سود ۵۰٪ FTS</strong>
-                <span className="text-3xs text-accent-blue font-bold">خروج اصل پول</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                در برخورد با مقاومت اول R1 یا سقف موج، ۵۰٪ سهم فروخته می‌شود تا اصل سرمایه آزاد شده و ادامه معامله بدون ریسک شود.
-              </p>
-            </div>
-
-            {/* خروج در سقف سوم کانال صعودی */}
-            <div
-              className={`rounded-xl border p-3 transition-all duration-200 ${
-                selectedPreset === 'swing' || selectedPreset === 'trend'
-                  ? 'border-orange-500/70 bg-orange-500/10 opacity-100'
-                  : 'border-border-c/60 bg-bg-primary/60 opacity-40'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <strong className="text-xs font-black text-orange-400">🏔️ خروج در سقف سوم (صفحه ۴)</strong>
-                <span className="text-3xs text-orange-400 font-bold">خروج ۱۰۰٪</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                برخورد به سقف سوم کانال یا خط روند (فاصله {toFaDigits(params.thirdPeakWeeklyPct)}٪ هفتگی یا {toFaDigits(params.thirdPeakDailyPct)}٪ روزانه)؛ خروج کامل از سهم.
-              </p>
-            </div>
-
-            {/* سقف کل دارایی در بورس و شرایط جنگی */}
-            <div className="rounded-xl border border-border-c/70 bg-bg-primary/70 p-3 space-y-1">
-              <div className="flex items-center justify-between">
-                <strong className="text-xs font-black text-accent-yellow">🏛️ قانون سبد دارایی</strong>
-                <span className="text-3xs text-accent-yellow font-bold">مدیریت کلان</span>
-              </div>
-              <p className="text-2xs text-text-muted leading-relaxed">
-                حداکثر {toFaDigits(params.maxTotalPortfolioCapPct)}٪ کل دارایی در بورس (۳۰٪ طلا/فیکس)؛ در شرایط جنگی حداکثر {toFaDigits(params.warConditionCapPct)}٪ در بورس.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-
-      {/* ۳. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
-      <div className="glass-panel rounded-2xl border border-border-c p-5 bg-bg-card/40 shadow-xl space-y-3">
+      {/* ۴. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
+      <div className="rounded-2xl border border-border-c p-4 sm:p-5 bg-bg-card/50 shadow-sm space-y-3">
         <div className="flex items-center justify-between border-b border-border-c/60 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-base">📋</span>
@@ -881,9 +988,9 @@ export default function StrategyTreePage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-2xs">
-          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۱. شرط ورود و زمان‌سنج:</span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3.5 space-y-1">
+            <span className="text-text-muted block text-2xs font-bold">۱. شرط ورود و زمان‌سنج:</span>
             <p className="text-text-primary font-medium leading-relaxed">
               {selectedPreset === 'swing'
                 ? `شکست مقاومت استاتیک با ستاپ جت (${toFaDigits(params.jetStabilizationDays)} روزه) یا فیبو + تایید الگوی ساعت (${toFaDigits(params.clockPriceDiffPct)}٪) یا حجم ${toFaDigits(params.minVolumeRatio)}×.`
@@ -895,8 +1002,8 @@ export default function StrategyTreePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۲. حد ضرر و مدیریت ریسک:</span>
+          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3.5 space-y-1">
+            <span className="text-text-muted block text-2xs font-bold">۲. حد ضرر و مدیریت ریسک:</span>
             <p className="text-accent-red font-bold leading-relaxed">
               {selectedPreset === 'swing'
                 ? `تشکیل یک کندل کامل زیر MA-${toFaDigits(params.stopLossMaPeriod)} یا افت ${toFaDigits(params.stopLossFixedPct)}٪ زیر نقطه ورود (خروج قطعی).`
@@ -908,8 +1015,8 @@ export default function StrategyTreePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۳. هدف سود و خروج ۵۰٪ / سقف ۳:</span>
+          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3.5 space-y-1">
+            <span className="text-text-muted block text-2xs font-bold">۳. هدف سود و خروج ۵۰٪ / سقف ۳:</span>
             <p className="text-accent-green font-bold leading-relaxed">
               {selectedPreset === 'swing'
                 ? `خروج ۵۰٪ در R1 + خروج کامل در سقف ۳ کانال یا اخطار واگرایی منفی RSI.`
@@ -921,8 +1028,8 @@ export default function StrategyTreePage() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3">
-            <span className="text-text-muted block mb-1">۴. قوانین سبد دارایی و شرایط جنگ:</span>
+          <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3.5 space-y-1">
+            <span className="text-text-muted block text-2xs font-bold">۴. قوانین سبد دارایی و شرایط جنگ:</span>
             <p className="text-text-primary font-medium leading-relaxed">
               {selectedPreset === 'swing'
                 ? `تک‌سهم حداکثر ${toFaDigits(params.singleStockMaxWeightPct)}٪ (سقف صنعت ${toFaDigits(params.maxIndustryWeightPct)}٪) | سقف کل بورس ${toFaDigits(params.maxTotalPortfolioCapPct)}٪ (جنگ: ${toFaDigits(params.warConditionCapPct)}٪).`
