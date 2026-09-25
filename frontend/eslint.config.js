@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import boundaries from 'eslint-plugin-boundaries';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
@@ -13,6 +14,7 @@ export default tseslint.config(
     },
     plugins: {
       boundaries,
+      'react-hooks': reactHooks,
     },
     settings: {
       'boundaries/include': ['src/app', 'src/shared', 'src/contracts', 'src/widgets', 'src/features'],
@@ -43,6 +45,9 @@ export default tseslint.config(
           ],
         },
       ],
+      // هوک بعد از return nullِ زودهنگام = «Rendered more hooks than during the
+      // previous render» و صفحهٔ «Unexpected Application Error»؛ همان باگِ چرخ‌دندهٔ تابلو.
+      'react-hooks/rules-of-hooks': 'error',
       // B5: fetch فقط در api/ یا http.ts
       'no-restricted-syntax': [
         'error',

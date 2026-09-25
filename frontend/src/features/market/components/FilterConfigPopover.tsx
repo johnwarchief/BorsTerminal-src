@@ -22,6 +22,8 @@ export function FilterConfigPopover({
 }) {
   const config = useTapeStore((s) => s.tapeFilterConfig);
   const setConfig = useTapeStore((s) => s.setTapeFilterConfig);
+  const quickFilters = useTapeStore((s) => s.quickFilters);
+  const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,9 +49,6 @@ export function FilterConfigPopover({
   // موقعیت‌سنجی هوشمند زیر چیپ
   const top = anchorRect.bottom + 6;
   const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - 290));
-
-  const quickFilters = useTapeStore((s) => s.quickFilters);
-  const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
 
   const isActive = quickFilters.includes(filter);
 

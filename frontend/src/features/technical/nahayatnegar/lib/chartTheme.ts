@@ -76,7 +76,16 @@ export const nahayatNegarDarkTheme = {
       showRule: 'always' as const,
       showType: 'standard' as const,
       legend: {
-        template: '{time}  باز: {open}  بیشترین: {high}  کمترین: {low}  بسته: {close}  حجم: {volume}'
+        // klinecharts v10 این را آرایهٔ {title,value} می‌خواهد؛ رشته دادنی
+        // باعث «legends.map is not a function» در هر فریمِ بوم می‌شود.
+        template: [
+          { title: '', value: '{time}' },
+          { title: 'باز', value: '{open}' },
+          { title: 'بیشترین', value: '{high}' },
+          { title: 'کمترین', value: '{low}' },
+          { title: 'بسته', value: '{close}' },
+          { title: 'حجم', value: '{volume}' },
+        ],
       }
     }
   },
@@ -305,7 +314,14 @@ export const nahayatNegarLightTheme = {
       showRule: 'always' as const,
       showType: 'standard' as const,
       legend: {
-        template: '{time}  باز: {open}  بیشترین: {high}  کمترین: {low}  بسته: {close}  حجم: {volume}',
+        template: [
+          { title: '', value: '{time}' },
+          { title: 'باز', value: '{open}' },
+          { title: 'بیشترین', value: '{high}' },
+          { title: 'کمترین', value: '{low}' },
+          { title: 'بسته', value: '{close}' },
+          { title: 'حجم', value: '{volume}' },
+        ],
       },
     },
   },
