@@ -913,7 +913,17 @@ _FUND_TOKEN = _hold_norm("صندوق")
 
 
 def fund_class_match(sector_norm, company_name: str = "") -> bool:
-    """آیا نماد صندوقِ سرمایه‌گذاری است (از صنعت یا از نامِ شرکت)؟"""
+    """آیا نماد صندوقِ سرمایه‌گذاری است (از صنعت یا از نامِ شرکت)؟
+
+    استثنا: صنعتِ بیمه و صندوقِ بازنشستگی (۱۲۹ نماد، کدِ صنعت ۶۶). نامِ آن
+    صنعت «بيمه وصندوق بازنشستگي به جزتامين اجتماعي» است و توکنِ «صندوق» در وسطش
+    می‌نشیند، ولی این‌ها شرکتِ عملیاتیِ دارای صورتِ مالی‌اند، نه سبدِ دارایی.
+    رأی ۱ برای بیمه «وتو/هشدار» را لازم می‌داند نه «معافیت» — پس نمادی که
+    بیمه است هیچ‌جهت صندوقِ FTS-نامزود نیست. بی‌این استثنا، دو شرکتِ بیمه‌ایِ
+    دارایِ داده (آسیا، اتكام) بی‌صدا از پنج‌شاخصه خارج می‌شدند.
+    """
+    if is_insurance_sector(sector_norm):
+        return False
     return _FUND_TOKEN in (_hold_norm(sector_norm) + " " + _hold_norm(company_name))
 
 
@@ -961,6 +971,29 @@ def company_name_map(conn: sqlite3.Connection) -> dict:
     for key, (_rank, name) in best.items():
         out[key] = name or ""
     return out
+
+
+def company_name_for(conn: sqlite3.Connection, symbol: str) -> str:
+    """نامِ شرکتِ یک نماد — همان ردیفی که company_name_map برای کل بازار می‌دهد.
+
+    رتبه‌بندی باید عیناً یکی باشد (period_end DESC سپس tracing_no DESC)، و
+    ردیفِ بی‌نام هم «برنده» شمرده می‌شود و ته‌اش رشتهٔ خالی است — دقیقاً مثلِ
+    company_name_map. اگر این دو فرق کنند (مثلاً فیلترکردنِ NULL)، «صندوق بودن»
+    یک نماد بین اسکرینر و کارت دو جواب می‌شود، و رأی ۱۵ همان واگرایی را ممنوع
+    کرده است.
+    """
+    al = [a for a in symbol_aliases(symbol) if a]
+    if not al:
+        return ""
+    try:
+        row = conn.execute(
+            "SELECT company_name FROM financial_statements "
+            "WHERE symbol IN (%s) "
+            "ORDER BY period_end DESC, tracing_no DESC LIMIT 1" % ",".join("?" * len(al)),
+            al).fetchone()
+    except sqlite3.Error:
+        return ""
+    return (row[0] if row else "") or ""
 
 
 def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
@@ -1076,7 +1109,10 @@ def sales_to_marketcap(conn: sqlite3.Connection, symbol: str, market_cap_rials: 
                 "annual_sales_bt": None,
                 "mcap_ht": round(mcap / 1e13, 2),
                 "annualize_basis": "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
-                "pass": True,
+                # رأی ۱۶: «pass» برایِ شاخصی که سنجیده نشده معنا ندارد؛ True بودنش
+                # در این dict تنها منبعِ امتیازِ رایگانِ باقی‌مانده بود (داوریِ
+                # واقعی را ind4_exempt/applicable می‌کند، نه این کلید).
+                "pass": None,
                 "is_exempt": True,
                 "threshold": min_ratio,
                 "formula": "معافیت هلدینگ بر مبنای P/NAV"}
@@ -1324,7 +1360,12 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     is_holding = no_sales_concept(conn, symbol, sector, _precomputed=_no_sales,
                                   holdings_na=_hold_na)
     if is_holding:
-        passes_s2m = True
+        # رأی ۱۶ (۱۴۰۵/۰۷/۰۳): معافیت یعنی «نظر نمی‌دهد»، نه پاسِ رایگان. نمادی
+        # که مدلِ کسب‌وکارش فروشِ عملیاتیِ ماهانه ندارد، معیارِ سنجشِ این شاخص را
+        # ندارد؛ تظاهر به پاس‌شدن، نمرهٔ ۲۹۷ نماد را کاذب بالا می‌برد و قیفِ
+        # ص ۲ (۸۰۰ → ۵۰ → ۱۰ → ۵-۷) را مخدوش می‌کند. کارتِ جزئیات همین را
+        # می‌کرد و موتور به آن تراز شد.
+        passes_s2m = None
     else:
         passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
 
@@ -1333,7 +1374,8 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
               "3_gross_margin": bool(gm and gm["pass"]),
               "4_sales_to_mcap": passes_s2m,
               "5_industry": bool(sec["pass"])}
-    score = sum(passes.values())
+    # شمارش فقط پاس‌های *واقعی* است؛ None (معاف/بی‌داده) امتیاز نمی‌گیرد.
+    score = sum(1 for v in passes.values() if v)
     # جزوه ص ۶ در مقایسهٔ دزاگرس/هجرت: «سه آیتم اول مهم‌تر هستند پس اولویت ما
     # دزاگرس است» — یعنی سه‌از‌پنج می‌تواند بر چهار‌از‌پنج ببرد. پس شمارشِ تختِ
     # پنج‌تایی تنها معیارِ داوری نیست: F1-F3 بلاک‌اند و F4/F5 فقط مرتب‌سازیِ دوم.
@@ -1370,6 +1412,11 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         "market_cap_rials": mcap, "score": score, "passes": passes,
         "primary_score": primary,
         "excluded": bool(reasons), "exclusion_reasons": reasons,
+        # رأی ۱۵: تک‌مرجعِ «صندوق است؟» برایِ این مسیر هم ثبت می‌شود. بی‌این،
+        # مصرف‌کننده‌هایی که scan_symbol می‌خوانند (ماتریسِ تایید سه‌گانه) صندوق را
+        # «مردود» داوری می‌کردند در حالی که bulk_scan همان نماد را applicable=False
+        # می‌داد — دو جواب برایِ یک نماد، درست همان چیزی که رأی ممنوعش کرد.
+        "applicable": not fund_class_match(sector, company_name_for(conn, symbol)),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -1718,7 +1765,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             pot = (annual_sales * (margin / 100.0) * MRL_TO_RIAL / mcap) * 100.0
 
         if is_holding:
-            i4 = True
+            # رأی ۱۶: معاف = «نظر نمی‌دهد» (None)، نه امتیازِ رایگان — همان چیزی
+            # که کارتِ جزئیات می‌داد؛ موتور بالاخره به آن تراز شد.
+            i4 = None
         else:
             pot_pass = pot is not None and pot >= pot_min
             sales_pass = s2m is not None and s2m >= s2m_min
@@ -1759,7 +1808,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             "annualize_months": months_used,
-            "mcap": mcap, "score": int(sum([i1, i2, i3, i4, i5])),
+            "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
             "primary_score": int(sum([i1, i2, i3])),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,

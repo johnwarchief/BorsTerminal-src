@@ -417,9 +417,11 @@ else:
     per_b = (n_b - n_one) / float(max(len(syms) - 1, 1))
     ck(per_b < per, "fund_rows collapses FTS queries/symbol: %.2f vs %.2f" % (per_b, per))
     ck(per_b <= 3.0, "bulk path stays at %.2f queries/symbol (price_history only)" % per_b)
-    ck([r["states"] for r in mat_b] == [r["states"] for r in mat],
+    mat_diff = [(x.get("symbol"), x["states"], y["states"])
+                for x, y in zip(mat, mat_b) if x["states"] != y["states"]]
+    ck(not mat_diff,
        "matrix is identical whether fund comes from scan_symbol or bulk_scan "
-       "(%d rows differ)" % sum(1 for x, y in zip(mat, mat_b) if x["states"] != y["states"]))
+       "(%d rows differ: %s)" % (len(mat_diff), mat_diff[:3]))
     ck(True, "with fund_rows: %.2f queries/symbol (was %.2f)" % (per_b, per))
     conn.close()
 

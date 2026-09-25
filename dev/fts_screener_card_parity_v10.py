@@ -81,20 +81,23 @@ checked = 0
 mismatches = []
 # ── بندِ دوم: موتور ⇄ کارت، شاخص ۴ ────────────────────────────────────────
 # مسیرِ موتور یک‌بارِ کل‌بازاری خوانده میشود (همان bulk_scan که /api/screener
-# مصرف می‌کند)؛ ردیفِ آن `is_exempt` را جدا نمی‌دهد و معافیت را دو علامتِ
-# مستقل می‌سازد: نسبت N/A و i4_pass=True (معاف یعنی «رد نیست، نظر نمی‌دهم»).
+# مصرف می‌کند)؛ از رأی ۱۶ معافیت در موتور با یک علامتِ تنها نشان داده می‌شود:
+# نسبت N/A و `i4_pass is None` («نظر نمی‌دهد» — نه True و نه False).
 eng_of = {r["symbol_norm"]: r for r in fts_engine.bulk_scan(conn, cfg=cfg)}
 print("موتور (bulk_scan): %d ردیف" % len(eng_of))
 
 
 def eng_exempt(b):
-    return b["sales_to_mcap"] is None and bool(b["i4_pass"])
+    # رأی ۱۶ (۱۴۰۵/۰۷/۰۳): پیش از این معافیت را `i4_pass=True` علامت می‌زد، یعنی
+    # امتیازِ رایگانِ ۲۹۷ نماد. حالا علامت، None است — همان چیزی که کارت می‌داد.
+    return b["sales_to_mcap"] is None and b["i4_pass"] is None
 
 
 ind4_checked = 0
 ind4_missing = 0
 exempt_disagree = []      # حکمِ معافیت واگرا — خطای قطعی
 value_disagree = []       # هر دو «معاف نیستند» ولی یکی عدد دارد و دیگری نه
+score_inflation = []      # امتیازِ موتور چیزی جز شمارشِ پاس‌های واقعی نیست
 ratio_far = 0             # اختلافِ عددی (غیرِکشنده؛ مبنای سالانه‌سازی متفاوت)
 ind4_rows = []
 scan_probe = []           # نمونه‌ای از مسیرِ تک‌نمادیِ موتور (scan_symbol)
@@ -127,6 +130,12 @@ for r in rows:
     elif er is not None and cr is not None and abs(er - cr) > 0.05:
         ratio_far += 1
     ind4_rows.append((r["symbol"], ee, er, ce, cr))
+    # رأی ۱۶ (قفلِ عددی): امتیازِ موتور باید دقیقاً شمارشِ پاس‌های True باشد.
+    # اگر روزی معافیت دوباره True شود (یا None داخلِ جمع بیفتد)، همین‌جا قرمز
+    # می‌شود — نه رویِ صفحه‌ای که کاربر نمرهٔ ۴ از ۵ را می‌خواند.
+    _flags = tuple(b.get("i%d_pass" % i) for i in (1, 2, 3, 4, 5))
+    if b.get("score") != sum(1 for x in _flags if x is True):
+        score_inflation.append((r["symbol"], b.get("score"), _flags))
     # نمونه‌ای از مسیرِ تک‌نمادیِ موتور (/api/fts/{symbol} = scan_symbol) هم
     # سنجیده می‌شود: bulk_scan و scan_symbol دو ورودیِ ind4_exempt‌اند.
     if ind4_checked % 25 == 0:
@@ -145,25 +154,34 @@ print("\nشاخص ۴ — موتور ⇄ کارت: مقایسه‌شده %d (بی
 for sym, sector, ee, er, ce, cr, why in exempt_disagree[:20]:
     print("  ✗ %-14s موتور: exempt=%s نسبت=%s | کارت: na=%s نسبت=%s | %s"
           % (sym, ee, er, ce, cr, why[:70]))
+for sym, sc, flags in score_inflation[:20]:
+    print("  ✗ %-14s امتیازِ موتور %s با شمارشِ پاس‌های واقعی نمی‌خواند: %s"
+          % (sym, sc, "".join("1" if x is True else ("n" if x is None else "0")
+                              for x in flags)))
 for sym, sector, er, cr in value_disagree[:20]:
     print("  ✗ %-14s هیچ‌کدام معاف نیست ولی یکی عدد ندارد: موتور=%s کارت=%s (%s)"
           % (sym, er, cr, sector))
 scan_bad = []
 for key, sym, mcap, total, sector, ce in scan_probe:
-    d = (fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg)
-         .get("detail") or {}).get("sales_to_mcap") or {}
+    _rec = fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg)
+    d = (_rec.get("detail") or {}).get("sales_to_mcap") or {}
     if bool(d.get("is_exempt")) != ce:
         scan_bad.append((sym, bool(d.get("is_exempt")), ce))
+    # رأی ۱۶ رویِ مسیرِ تک‌نمادی هم قفل می‌شود: معاف = None، و امتیاز = شمارشِ Trueها.
+    if bool(d.get("is_exempt")) and _rec.get("passes", {}).get("4_sales_to_mcap") is not None:
+        scan_bad.append((sym, "معاف ولی پاسِ شاخص ۴ سنجیده شد",
+                         _rec.get("passes", {}).get("4_sales_to_mcap")))
+    if _rec.get("score") != sum(1 for v in (_rec.get("passes") or {}).values() if v is True):
+        scan_bad.append((sym, "امتیازِ scan_symbol ≠ شمارشِ پاس‌ها", _rec.get("score")))
 for sym, ee, ce in scan_bad[:20]:
-    print("  ✗ %-14s scan_symbol: exempt=%s | کارت: na=%s" % (sym, ee, ce))
+    print("  ✗ %-14s scan_symbol: %s | %s" % (sym, ee, ce))
 print("نمونهٔ scan_symbol: %d | واگرایی: %d" % (len(scan_probe), len(scan_bad)))
 print("توضیح: اختلافِ مبنای سالانه‌سازیِ عددی (>۰٫۰۵) خارج از حکمِ معافیت: %d ردیف"
       % ratio_far)
-# یادداشت — عمداً قفل نشده و فقط گزارش می‌شود: «معاف بودن یعنی پاس؟» در دو
-# مسیر یکی نیست (موتور معافیت را پاسِ نرم می‌شمارد: i4_pass=True؛ کارت N/A را
-# پاس نمی‌شمارد). تغییرِ یکی از دو طرف امتیازِ صدها نماد را جابه‌جا می‌کند و
-# تصمیمِ مالک است، نه بخشی از رفعِ این واگرایی.
-print("یادداشت: معافِ هر-دو-مسیر که کارت آن‌ها را پاس نمی‌شمارد: %d ردیف" % n_ex)
+# رأی ۱۶ (۱۴۰۵/۰۷/۰۳) بحثِ «معاف بودن یعنی پاس؟» را بست: معافیت به هیچ‌وجه
+# امتیازِ رایگان نیست و در هر سه مسیر همان None می‌ماند. پیش از این این بند
+# عمداً قفل نشده و فقط گزارش می‌شد؛ حالا score_inflation و scan_bad می‌بندندش.
+print("معافِ هر-دو-مسیر که هیچ‌کدام امتیاز نمی‌گیرد: %d ردیف" % n_ex)
 
 # ── بندِ سوم: /api/fundamental/screen نباید اصلاً خودش محاسبه کند ──────────
 # ریشهٔ #75: این endpoint دومین پیاده‌سازیِ امتیازدهی بود (bulk_scanِ خام) و
@@ -217,13 +235,15 @@ print("بندِ سوم (endpoint): %d ردیف | ناهم‌خوانی: %d | ص�
       % (len(ep_rows), len(ep_diff),
          sum(1 for r in ep_rows if r.get("fts_verdict") == "NOT_APPLICABLE"), len(band3)))
 
-if mismatches or exempt_disagree or value_disagree or scan_bad or band3:
+if (mismatches or exempt_disagree or value_disagree or scan_bad
+        or score_inflation or band3):
     print("RESULT: FAIL — اسکرینر/موتور و کارت جزئیات هم‌راستا نیستند "
-          "(امتیاز=%d، معافیت=%d، عدد-vs-N/A=%d، scan_symbol=%d، endpoint=%d)."
-          % (len(mismatches), len(exempt_disagree), len(value_disagree), len(scan_bad),
-             len(band3)))
+          "(امتیاز=%d، معافیت=%d، عدد-vs-N/A=%d، scan_symbol=%d، تورمِ امتیاز=%d، "
+          "endpoint=%d)."
+          % (len(mismatches), len(exempt_disagree), len(value_disagree),
+             len(scan_bad), len(score_inflation), len(band3)))
     sys.exit(1)
-print("RESULT: PASS — امتیاز/پرچم اسکرینر == کارت، حکمِ معافیتِ شاخص ۴ یکسان است، "
-      "و /api/fundamental/screen همان پاسخِ کارت را فیلتر می‌کند (%d نماد)."
-      % len(ep_rows))
+print("RESULT: PASS — امتیاز/پرچم اسکرینر == کارت، معافیتِ شاخص ۴ در هر سه مسیر "
+      "None است (نه پاسِ رایگانِ امتیاز)، و /api/fundamental/screen همان "
+      "پاسخِ کارت را فیلتر می‌کند (%d نماد)." % len(ep_rows))
 sys.exit(0)

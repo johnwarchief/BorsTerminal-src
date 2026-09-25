@@ -97,14 +97,26 @@ def main():
         chk(not bad, "bulk_scan ⇄ card agree on every symbol", bad[:4])
         chk(n_na > 50, "the fund class is actually present in the bank", n_na)
         # طبقه‌بندی باید از صنعت *یا* نامِ شرکت بیاید، نه فقط یکی‌شان
-        by_sector = [r for r in rows if "صندوق" in fts_engine._hold_norm(r["sector_name"])]
+        _secn = lambda r: fts_engine._hold_norm(r["sector_name"] or "")
+        by_sector = [r for r in rows if "صندوق" in _secn(r)
+                     and not fts_engine.is_insurance_sector(r["sector_name"] or "")]
         by_name = [r for r in rows
                    if "صندوق" in fts_engine._hold_norm(name_of.get(r["symbol_norm"], ""))
-                   and "صندوق" not in fts_engine._hold_norm(r["sector_name"])]
+                   and "صندوق" not in _secn(r)]
         chk(by_sector and by_name, "both evidence paths are exercised",
             (len(by_sector), len(by_name)))
         chk(all(r["applicable"] is False for r in by_sector + by_name),
             "every fund evidence row is marked not-applicable")
+        # رأی ۱ در برابرِ رأی ۱۵: صنعتِ «صندوق بازنشستگی» (۱۲۹ نماد) کلمهٔ
+        # «صندوق» را در نامش دارد ولی صندوقِ سرمایه‌گذاری نیست — شرکتِ
+        # عملیاتیِ دارایِ صورتِ مالی است و حکمش وتویِ بیمه است نه «FTS ندارد».
+        # بی‌این قفل، بیمه آسیا و بیمه اتکایی امین بی‌صدا از پنج‌شاخصه خارج
+        # می‌شدند (نامِ صنعتشان «بيمه وصندوق بازنشستگي» است).
+        by_ins = [r for r in rows if "صندوق" in _secn(r)
+                  and fts_engine.is_insurance_sector(r["sector_name"] or "")]
+        chk(bool(by_ins) and all(r["applicable"] is not False for r in by_ins),
+            "an insurance sector is never FTS-inapplicable for the word fund",
+            [r["symbol"] for r in by_ins if r["applicable"] is False][:3])
         chk_conn = conn
     else:
         chk_conn = None
@@ -126,8 +138,13 @@ def main():
     # ── ۴) امتیاز: کارت None، موتور عدد ──────────────────────────────────
     chk('"score": (res["score"] if res.get("applicable", True) else None)' in src,
         "card detail nulls a fund score")
-    chk(re.search(r'"mcap": mcap, "score": int\(sum\(\[i1, i2, i3, i4, i5\]\)\)', eng)
-        is not None, "bulk_scan keeps a numeric score (sort stays total)")
+    # رأی ۱۶: معافیت حالا None است، پس جمعِ امتیاز هم نباید آن را پاس بشمارد.
+    # دو شرط لازم: عددی ماندنِ امتیاز (سورتِ اسکرینر کلّی بماند) و فیلترِ
+    # داخلِ sum — بی‌فیلتر، sumِ پنج‌تایی با None یا می‌شکند یا True کاذب می‌دهد.
+    _sc = re.search(
+        r'"score": int\(sum\(1 for \w+ in \(i1, i2, i3, i4, i5\) if \w+\)\)', eng)
+    chk(_sc is not None, "bulk_scan keeps a numeric score that skips None")
+    chk("i4 = None" in eng, "bulk_scan reads an exempt axis as abstain")
     chk("out.sort(key=lambda r: (r[\"excluded\"]" in eng, "sort key still uses excluded+score")
 
     # ── ۵) مصرف‌کننده‌های فرانت ───────────────────────────────────────────

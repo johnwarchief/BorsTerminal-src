@@ -743,16 +743,6 @@ def conf_tape(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
 
 
 # ================================= ستون ۳: بنیادی (بازاستفاده از fts_engine)
-def _is_holding_sector(sector) -> bool:
-    """طبقهٔ معافِ شاخص ۴؟ — تنها از فهرستِ fts_engine خوانده می‌شود.
-
-    جزوه (بخش ۴): «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)». این تابع
-    فقط شاهدِ نامِ صنعت است؛ قاعدهٔ کامل (صنعت + نامِ شرکت + نبودِ سطرِ درآمدِ
-    عملیاتی) `fts_engine.ind4_exempt` است و هر سه مسیر از همان می‌خوانند.
-    """
-    return fts_engine.holding_class_match(sector or "")
-
-
 def _fund_has_data(d: dict) -> bool:
     """آیا واقعاً دادهٔ عددی بنیادی وجود دارد، یا فقط اسکنر «پاس نشد» داده؟
 
@@ -763,9 +753,15 @@ def _fund_has_data(d: dict) -> bool:
     «خنثی» است و پاس می‌شود) و ستون بنیادی «مردود» اعلام می‌کند — درحالی‌که
     پاسخ درست «نظر نمی‌دهم» است. پس شاخص صنعت را دلیلِ داده نمی‌دانیم.
     """
-    for k in ("growth", "gross_margin", "sales_to_mcap"):
+    for k in ("growth", "gross_margin"):
         if d.get(k) is not None:
             return True
+    s = d.get("sales_to_mcap")
+    # dictِ «معافیت» عددی ندارد (sales_to_mcap=None)؛ رأی ۱۶: معافیت یعنی «نظر
+    # نمی‌دهد»، پس نباید به‌عنوانِ «داده هست» شمرده شود — بی‌این شرط، نمادی با
+    # هیچِ رقمِ بنیادی از یک مسیر fail و از مسیرِ دیگر nodata می‌شد.
+    if isinstance(s, dict) and s.get("sales_to_mcap") is not None:
+        return True
     e = d.get("eps_trend") or {}
     if isinstance(e, dict) and not e.get("data_gap"):
         if _f(e.get("years_available")) > 0 or (e.get("eps_series") or []):
@@ -773,7 +769,7 @@ def _fund_has_data(d: dict) -> bool:
     return False
 
 
-def fund_from_bulk(row: dict, conn=None) -> dict:
+def fund_from_bulk(row: dict) -> dict:
     """رکورد `fts_engine.bulk_scan` → همان شکل `scan_symbol` که ستون بنیادی می‌خورد.
 
     چرا لازم است: scan_symbol به‌ازای هر نماد ~۲۴ کوئری می‌زند (۱۹تایش روی
@@ -785,11 +781,17 @@ def fund_from_bulk(row: dict, conn=None) -> dict:
     dev/confidence_engine_v973.py هم‌ارزی دو مسیر را روی نماد زنده می‌سنجد؛
     یعنی اگر روزی آستانه‌ها عوض شود، این‌جا بی‌صدا از قضا در نمی‌رود.
     """
-    passes = {"1_growth": bool(row.get("i1_pass")),
-              "2_eps_trend": bool(row.get("i2_pass")),
-              "3_gross_margin": bool(row.get("i3_pass")),
-              "4_sales_to_mcap": bool(row.get("i4_pass")),
-              "5_industry": bool(row.get("i5_pass"))}
+    def _tri(v):
+        # None یعنی «نظر نمی‌دهد» (معافیتِ شاخص ۴ — رأی ۱۶، یا صندوق — رأی ۱۵).
+        # bool(None) → False آن را به «مردود» تبدیل می‌کرد و ستون بنیادی دلیلِ
+        # «رد: 4_sales_to_mcap» را برای شاخصی نشان می‌داد که اصلاً سنجیده نشده.
+        return None if v is None else bool(v)
+
+    passes = {"1_growth": _tri(row.get("i1_pass")),
+              "2_eps_trend": _tri(row.get("i2_pass")),
+              "3_gross_margin": _tri(row.get("i3_pass")),
+              "4_sales_to_mcap": _tri(row.get("i4_pass")),
+              "5_industry": _tri(row.get("i5_pass"))}
     reasons = row.get("exclusion_reasons") or ""
     if isinstance(reasons, str):
         reasons = [x.strip() for x in reasons.split("·") if x.strip()]
@@ -807,27 +809,24 @@ def fund_from_bulk(row: dict, conn=None) -> dict:
     # می‌پذیریم که واقعاً فروش سالانهٔ Annualized ساخته شده باشد.
     months = int(_f(row.get("annualize_months")))
     s2m_raw = row.get("sales_to_mcap")
-    s2m = None if (s2m_raw is None or months <= 0) else {"ratio": s2m_raw}
-    # هلدینگ/صندوق سرمایه‌گذاری: bulk_scan برای اینها `sales_to_mcap=None` و
-    # `i4_pass=True` درمی‌آورد (معافیت N/A بر مبنای P/NAV)، ولی scan_symbol
-    # یک dictِ `is_exempt` برمی‌گرداند. بدونِ بازسازیِ همان dict، `_fund_has_data`
-    # این نمادها را «بی‌داده» می‌خواند و ستون بنیادی در مسیرِ bulk با مسیرِ
-    # تک‌نمادی واگرا می‌شد (۱۷ صندوقِ زنده: state fail ⇄ nodata). جزوه (بخش ۴):
-    # «این نسبت برای هلدینگ‌ها محاسبه نمی‌شود (N/A)» — یعنی معاف است، نه بی‌داده.
-    # تشخیص با همان تک‌مرجعِ fts_engine.ind4_exempt (صنعت + نامِ شرکتِ DB +
-    # نبودِ سطرِ درآمدِ عملیاتی) — یک فهرستِ سومِ دست‌ساز اینجا نباید بماند.
-    if (s2m is None and bool(row.get("i4_pass"))
-            and fts_engine.ind4_exempt(conn, row.get("symbol") or "",
-                                       row.get("sector_name") or "")):
-        s2m = {"sales_to_mcap": None, "annual_sales_bt": None,
-               "mcap_ht": round(_f(row.get("mcap")) / 1e13, 2),
-               "annualize_basis": "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
-               "pass": True, "is_exempt": True, "threshold": 1.0,
-               "formula": "معافیت هلدینگ بر مبنای P/NAV"}
+    # نامِ کلید عمداً «sales_to_mcap» است (نه «ratio»): همان کلیدی که scan_symbol
+    # می‌دهد. `_fund_has_data` و مصرف‌کننده‌هایِ detail بر اساسِ همین کلید قضاوت
+    # می‌کنند، پس یک نامِ دیگر در این مسیر یعنی دو پاسخِ ناهم‌سان از دو مسیر.
+    s2m = None if (s2m_raw is None or months <= 0) else {
+        "sales_to_mcap": s2m_raw,
+        "annual_sales_bt": row.get("annual_sales_bt"),
+        "mcap_ht": round(_f(row.get("mcap")) / 1e13, 2)}
+    # رأی ۱۶: ردیفِ معافِ قبلی (s2mِ ساختگی با «pass: True») حذف شد. bulk_scan
+    # امروز برایِ نمادِ معاف `i4_pass=None` می‌دهد — یعنی دقیقاً همان «نظر
+    # نمی‌دهد»ِ کارت — و دیگر چیزی نیست که اینجا بازسازی شود.
     return {
         "symbol": row.get("symbol"), "sector": row.get("sector_name") or "",
         "pricing_mode": row.get("pricing_mode"), "market_cap_rials": _f(row.get("mcap")),
         "score": score, "passes": passes, "excluded": excluded,
+        # رأی ۱۵: «صندوق است؟» باید از رکوردِ منبع عبور کند؛ بی‌این، conf_fund
+        # صندوق را مردود داوری می‌کرد در حالی که bulk_scan همان ردیف را
+        # applicable=False می‌داد.
+        "applicable": row.get("applicable", True),
         "exclusion_reasons": list(reasons), "m141": bool(row.get("m141")),
         "avg_trade_val_hmt": row.get("avg_trade_val_hmt"),
         "detail": {
@@ -934,10 +933,20 @@ def conf_fund(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
                 break
 
     if "i1_pass" in fts:        # رکوردِ bulk_scan → به شکل scan_symbol درمی‌آید
-        fts = fund_from_bulk(fts, conn)
+        fts = fund_from_bulk(fts)
     d = fts.get("detail") or {}
     passes = fts.get("passes") or {}
     score = int(_f(fts.get("score")))
+    if fts.get("applicable") is False:
+        # رأی ۱۵: پنج‌شاخصه برایِ شرکتِ عملیاتی نوشته شده؛ صندوق نه تأیید می‌شود
+        # نه رد. بی‌این شاخه، ستونِ بنیادیِ ماتریسِ تایید سه‌گانه صندوق را «✗»
+        # می‌زد — و از یک مسیر fail و از مسیرِ دیگر nodata، یعنی دو جوابِ ناهم‌سان
+        # برایِ یک سؤال.
+        return _pillar("fund", "nodata",
+                       reasons=["FTS ندارد — پنج‌شاخصه بر این نماد نمی‌گنجد (صندوق)"],
+                       detail={"score": score, "verdict": "NOT_APPLICABLE",
+                               "applicable": False, "passes": passes,
+                               "db_symbol": db_symbol})
     if not _fund_has_data(d):
         return _pillar("fund", "nodata",
                        reasons=["صورت مالی/گزارش ماهانه‌ای برای این نماد نیست"],
@@ -957,12 +966,17 @@ def conf_fund(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
 
     need_score = int(c["fund_min_score"])
     hit = [k for k, v in passes.items() if v]
-    miss = [k for k, v in passes.items() if not v]
+    na = [k for k, v in passes.items() if v is None]
+    miss = [k for k, v in passes.items() if v is False]
     reasons = ["امتیاز %d از ۵ (لازم ≥ %d)" % (score, need_score)]
     if hit:
         reasons.append("موفق: " + "، ".join(hit))
     if miss:
         reasons.append("رد: " + "، ".join(miss))
+    if na:
+        # رأی ۱۶: معافیت/بی‌معیاری «رد» نیست؛ اگر در ردیفِ miss بیفتد، کاربر
+        # می‌خواند که شاخص ۴ رد شده در حالی که اصلاً سنجیده نشده است.
+        reasons.append("نظر نمی‌دهد: " + "، ".join(na))
     return _pillar("fund", "pass" if score >= need_score else "fail",
                    score=score, max_score=5, reasons=reasons,
                    detail={"score": score, "verdict": fts.get("verdict"),
@@ -1077,34 +1091,23 @@ def triple_many(conn: sqlite3.Connection, symbols, ctx: dict = None,
         if fts is None and covered is not None and key not in covered:
             # نه در bulk_scan و نه در financial_statements/monthly_sales:
             # بی‌دادهٔ قطعی است، پس ۲۴ کوئریِ scan_symbol بی‌مصرف می‌ماند.
-            # یک استثنا هست: صندوق‌های سرمایه‌گذاری/هلدینگ‌ها هیچ صورتِ مالی
-            # نمی‌دهند و bulk_scan به همین دلیل آن‌ها را برنمی‌گرداند، ولی
-            # scan_symbol برایشان «معافیت N/A» می‌سازد و ستون بنیادی را
-            # قابلِ قضاوت می‌کند. بدونِ بازسازیِ همان معافیت، مسیرِ bulk
-            # این نمادها را nodata می‌گفت در حالی که مسیرِ تک‌نمادی fail
-            # می‌گفت (۵ صندوقِ زنده). جزوه: «این نسبت برای هلدینگ‌ها N/A است».
+            # داوریِ ستونِ بنیادی از همین‌جا «نظر نمی‌دهد» است و فقط *دلیلش*
+            # فرق می‌کند: صندوق بودن (رأی ۱۵) یا نبودنِ صورتِ مالی.
+            # پیش از این، این شاخه برایِ طبقهٔ هلدینگ ردیفِ ساخته‌دستی می‌بافت
+            # با «۴_sales_to_mcap: True» و امتیازِ ۲. رأی ۱۶ آن امتیازِ رایگان
+            # را مردود دانست («معافیت یعنی نظر نمی‌دهد»)، و خودِ ردیفِ ساختگی
+            # هم واگراییِ دو مسیر را زنده نگه داشته بود: همان صندوقی که
+            # scan_symbol آن nodata می‌شد اینجا fail می‌خورد، چون «applicable»
+            # در ردیفِ دستی ثبت نمی‌شد (اعتماد و داريك).
             _sec = (resolve(x["index"], s) or {}).get("sector") or ""
-            if _is_holding_sector(_sec):
-                fts = {"symbol": s, "sector_name": _sec, "score": 2,
-                       "passes": {"1_growth": False, "2_eps_trend": False,
-                                  "3_gross_margin": False, "4_sales_to_mcap": True,
-                                  "5_industry": True},
-                       "excluded": False, "exclusion_reasons": [],
-                       "pricing_mode": "neutral",
-                       "detail": {"growth": None, "gross_margin": None,
-                                  "eps_trend": {"eps_series": [], "data_gap": True,
-                                                "years_available": 0, "pass": False},
-                                  "sales_to_mcap": {
-                                      "sales_to_mcap": None, "annual_sales_bt": None,
-                                      "annualize_basis":
-                                          "معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)",
-                                      "pass": True, "is_exempt": True,
-                                      "threshold": 1.0,
-                                      "formula": "معافیت هلدینگ بر مبنای P/NAV"}},
-                       "verdict": "REJECT"}
-            else:
-                fts = {"symbol": s, "score": 0, "passes": {}, "excluded": False,
-                       "exclusion_reasons": [], "detail": {}, "verdict": "REJECT"}
+            # بی‌صورتِ‌مالی یعنی company_name_for هم رشتهٔ خالی می‌دهد (نام از
+            # جدولِ صورتِ مالی می‌آید)، پس طبقه‌سنجیِ فقط-صنعت اینجا دقیقاً
+            # همان چیزی است که scan_symbol می‌دید.
+            _fund = fts_engine.fund_class_match(_sec)
+            fts = {"symbol": s, "sector_name": _sec, "score": 0, "passes": {},
+                   "excluded": False, "exclusion_reasons": [], "detail": {},
+                   "applicable": not _fund,
+                   "verdict": "NOT_APPLICABLE" if _fund else "REJECT"}
         out.append(triple(conn, s, ctx=x, cfg=cfg, fts_cfg=fts_cfg, fts=fts))
     return out
 
