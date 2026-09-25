@@ -40,4 +40,4 @@ echo ""
 # Open browser in background (ignore failure)
 (sleep 3; xdg-open http://localhost:8000 2>/dev/null || true) &
 
-exec python3 -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+exec python3 -m uvicorn app:app --reload --host 127.0.0.1 --port 8000

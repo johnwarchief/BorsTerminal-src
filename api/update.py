@@ -547,8 +547,17 @@ def update_download(req: DownloadRequest = DownloadRequest()):
             signature = patch.get("signature") or ""
             is_patch = True
         else:
-            url = req.url or platform.get("url") or ""
-            signature = req.signature or platform.get("signature") or ""
+            # نشانی و امضا تنها از مانیفستِ رسمی گرفته می‌شوند. اگر کلاینت
+            # نشانیِ دیگری بفرستد که با مانیفست نمی‌خواند، درخواست رد می‌شود —
+            # وگرنه هر صفحهٔ وبی می‌تواند یک باینریِ دلخواه (حتی نسخهٔ قدیمیِ
+            # امضاشدهٔ خودش) را به مسیرِ نصبِ بی‌صدای Inno بفرستد.
+            expected = platform.get("url") or ""
+            if req.url and expected and req.url != expected:
+                return {"status": "error",
+                        "message": "نشانیِ داده‌شده با مانیفستِ به‌روزرسانی "
+                                   "هم‌خوان نیست؛ اول /api/update/check را بزنید."}
+            url = expected
+            signature = platform.get("signature") or ""
             is_patch = False
         version = req.version or str(manifest.get("version") or "")
     if not url or not signature:

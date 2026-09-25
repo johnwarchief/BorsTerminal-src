@@ -34,6 +34,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from urllib.parse import urlsplit
 from fastapi.middleware.gzip import GZipMiddleware
 
 from bors_config import (APP_DIR, DB_PATH, FTS_CONFIG_PATH, MARKET_STATUS_PATH,
@@ -50,6 +51,43 @@ app = FastAPI(title="BorsAgent Modern Terminal",
               default_response_class=(ORJSONResponse or JSONResponse))
 # GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+
+
+# میزبان‌هایی که «همین ماشین» شمرده می‌شوند. '::1' در برخی مسیرها با کروشه
+# می‌آید، پس کروشه‌ها قبلِ مقایسه کنارجدا می‌شوند.
+_LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+@app.middleware("http")
+async def loopback_guard(request, call_next):
+    """دروازهٔ حلقهٔ محروی روی /api/* — لاگینِ محلی مرزِ امنیتی نیست.
+
+    صفحهٔ ورود فقط UI است (authStore در مرورگر) و هیچ مسیری در API هیچ
+    کوکی/توکنی نمی‌خواهد؛ پس هر وب‌پیجی که کاربر باز می‌کند می‌تواند با یک
+    POST ساده به http://127.0.0.1:8001/api/... درخواست بفرستد (CORS جلوی
+    *خواندن* پاسخ را می‌گیرد، نه *انجام* اثر جانبیِ آن). آن مسیرها اثر
+    جانبیِ واقعی دارند: بازنویسی market.db، رانِ نصاب، و انداختنِ IP با ADB.
+    راه‌حلِ کوچکِ همان‌جا: هر درخواستی که میزبان یا Originش حلقهٔ محلی نیست
+    رد شود. «Origin: null» هم رد می‌شود: کروم/ادج آن را برای سندِ file://
+    می‌فرستند، یعنی یک HTMLِ دانلودشدهٔ محلی هم می‌توانست به API درخواست بزند.
+    درخواستِ بیِ Origin (کالِ درونِ فرآیند، curl، خودِ اپ) رد نمی‌شود — مرزِ
+    ما «مرورگرِ بیرونی» است، نه «هر کلاینتی».
+    """
+    if request.url.path.startswith("/api/"):
+        host = (request.headers.get("host") or "").split(":")[0].strip("[]")
+        if host not in _LOOPBACK_HOSTS:
+            return JSONResponse({"status": "error",
+                                 "message": "دسترسی از میزبانِ محلی مجاز است"},
+                                status_code=403)
+        origin = (request.headers.get("origin") or "").strip()
+        if origin:
+            oh = (urlsplit(origin).hostname or "").lower()
+            if not oh or oh not in _LOOPBACK_HOSTS:
+                # oh خالی = «null» یا مقدارِ غیرآدرسی → بیرونی شمرده می‌شود
+                return JSONResponse({"status": "error",
+                                     "message": "Originِ غیرمحلی رد شد"},
+                                    status_code=403)
+    return await call_next(request)
 
 
 @app.middleware("http")
