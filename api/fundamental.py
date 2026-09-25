@@ -1933,64 +1933,74 @@ def api_fundamental_screen(
     search: Optional[str] = None,
     limit: int = 0
 ):
-    """غربالگری بازار بر اساس ۵ شاخص FTS — خواندن مستقیم از market.db با fts_engine.bulk_scan."""
-    conn = get_db()
-    try:
-        cfg = load_fts_config()
-        rows = fts_engine.bulk_scan(conn, cfg=cfg)
+    """غربالگری بازار بر اساس ۵ شاخص FTS — فیلتری رویِ همان payload که کارت می‌سازد.
 
-        name_map = dict(conn.execute("SELECT l_val18, l_val30 FROM instruments").fetchall())
+    چرا (SCORE-PATH-1): این endpoint دومین پیاده‌سازیِ امتیازدهی بود. کارتِ
+    جزئیات و /api/screener با evaluate_v10 می‌سنجند و bulk_scanِ خام هیچ‌یک از
+    الحاقه‌هایِ بعدی را ندارد: نردبانِ EPSِ تلفیقی، معافیتِ شاخص ۴ (که به
+    بانک/هلدینگ یک امتیازِ رایگان می‌داد)، استثنای حاشیهٔ دارویی، وتوی هفتگی.
+    اندازه‌گیریِ ۱۴۰۵/۰۷/۰۳ رویِ کلِ بازار (۸۷۳ نماد، هر دو مسیر درونِ پروسه):
+    امتیاز در ۴۵۶ نماد واگرا بود — محور ۲: ۱۴۵، محور ۴: ۳۰۶، محور ۵: ۲۵،
+    محور ۱: ۸۵، محور ۳: صفر، و `applicable` صفر (رأی ۱۵ از پیش هم‌راستاست).
+    یک سؤالِ روش‌شناسی دو جواب ندارد، پس این‌جا چیزی محاسبه نمی‌شود.
 
-        results = []
-        for r in rows:
-            sym = r["symbol"]
-            name = name_map.get(sym, sym)
-            r["name"] = name
+    مزیتِ دوم: اسکنِ سنگینِ دوم حذف شد. get_screener کشِ رم/دیسک و
+    سریال‌سازیِ اسکنِ گرم دارد و این مسیر دورِ هر دو اجرا می‌شد — همان شکلی
+    که در v1.0.22 «ردیفی نیامد» شد.
 
-            if search:
-                q = fts_engine.norm_fa(search).strip().lower()
-                sym_n = fts_engine.norm_fa(sym).lower()
-                name_n = fts_engine.norm_fa(name).lower()
-                if q not in sym_n and q not in name_n:
-                    continue
+    سطرها را کپیِ سطحی می‌کنیم: `fts_verdict` رویِ آبجکتِ کش‌شده نمی‌نشیند،
+    وگرنه پاسخِ /api/screener آلوده می‌شود.
+    """
+    from .screener import get_screener
+    rows = get_screener().get("data") or []
 
-            if sector and r.get("sector_name") != sector:
+    results = []
+    for r in rows:
+        sym = str(r.get("symbol") or "")
+        name = str(r.get("name") or sym)
+
+        if search:
+            q = fts_engine.norm_fa(search).strip().lower()
+            if q not in fts_engine.norm_fa(sym).lower() and q not in fts_engine.norm_fa(name).lower():
                 continue
 
-            is_excluded = bool(r.get("excluded"))
-            score = int(r.get("score") or 0)
-            if r.get("applicable") is False:
-                # رأی ۱۵: صندوق در پنج‌شاخصه نمی‌گنجد — داوری ندارد، نه مردود
-                vrd = "NOT_APPLICABLE"
-            elif is_excluded:
-                vrd = "REJECTED"
-            elif score == 5:
-                vrd = "SUPER_FUNDAMENTAL"
-            elif score == 4:
-                vrd = "PASSED"
-            elif score == 3:
-                vrd = "WATCHLIST"
-            else:
-                vrd = "REJECTED"
+        if sector and r.get("sector_name") != sector:
+            continue
 
-            r["fts_verdict"] = vrd
+        is_excluded = bool(r.get("excluded"))
+        score = int(r.get("score") or 0)
+        if r.get("applicable") is False:
+            # رأی ۱۵: صندوق در پنج‌شاخصه نمی‌گنجد — داوری ندارد، نه مردود
+            vrd = "NOT_APPLICABLE"
+        elif is_excluded:
+            vrd = "REJECTED"
+        elif score == 5:
+            vrd = "SUPER_FUNDAMENTAL"
+        elif score == 4:
+            vrd = "PASSED"
+        elif score == 3:
+            vrd = "WATCHLIST"
+        else:
+            vrd = "REJECTED"
 
-            if verdict and verdict != "ALL" and vrd != verdict:
-                continue
+        item = dict(r)
+        item["name"] = name
+        item["fts_verdict"] = vrd
 
-            results.append(r)
+        if verdict and verdict != "ALL" and vrd != verdict:
+            continue
 
-        if limit > 0:
-            results = results[:limit]
+        results.append(item)
 
-        return {
-            "status": "success",
-            "count": len(results),
-            "data": results,
-            "symbols": results
-        }
-    finally:
-        conn.close()
+    if limit > 0:
+        results = results[:limit]
+
+    return {
+        "status": "success",
+        "count": len(results),
+        "data": results,
+        "symbols": results
+    }
 
 
 @router.get("/api/fundamental/sectors")

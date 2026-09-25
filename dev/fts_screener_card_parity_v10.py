@@ -165,11 +165,65 @@ print("توضیح: اختلافِ مبنای سالانه‌سازیِ عددی 
 # تصمیمِ مالک است، نه بخشی از رفعِ این واگرایی.
 print("یادداشت: معافِ هر-دو-مسیر که کارت آن‌ها را پاس نمی‌شمارد: %d ردیف" % n_ex)
 
-if mismatches or exempt_disagree or value_disagree or scan_bad:
+# ── بندِ سوم: /api/fundamental/screen نباید اصلاً خودش محاسبه کند ──────────
+# ریشهٔ #75: این endpoint دومین پیاده‌سازیِ امتیازدهی بود (bulk_scanِ خام) و
+# هیچ‌یک از الحاقه‌هایِ مسیرِ کارت را نمی‌داشت — نردبانِ EPSِ تلفیقی،
+# معافیتِ شاخص ۴، استثنای حاشیهٔ دارویی، وتوی هفتگی. اندازه‌گیری: امتیاز در
+# ۴۵۶ نماد از ۸۷۳ واگرا (محور ۲: ۱۴۵ | محور ۴: ۳۰۶ | محور ۵: ۲۵ | محور ۱: ۸۵).
+# رفع: endpoint حالا فیلتری رویِ همان payload است. این بند همِ ساختار و همِ
+# عدد را قفل می‌کند، تا یک ویرایشِ بعدی نتواند بی‌صدا موتورِ دوم را برگرداند.
+import inspect as _ins                                    # noqa: E402
+band3 = []
+
+
+def c3(cond, label, extra=""):
+    if not cond:
+        band3.append(label)
+        print("  ✗ band3 %s %s" % (label, extra))
+
+
+_body = _ins.getsource(F.api_fundamental_screen)
+c3("bulk_scan(" not in _body,
+   "endpoint دیگر fts_engine.bulk_scan را صدا نمی‌زند")
+c3("from .screener import get_screener" in _body,
+   "endpoint از همان get_screener می‌خواند")
+c3("dict(r)" in _body,
+   "ردیف‌ها کپیِ سطحی می‌شوند (fts_verdict روی کشِ مشترک نمی‌نشیند)")
+
+ep = F.api_fundamental_screen()
+ep_rows = ep.get("data") or []
+by_sym = {r.get("symbol"): r for r in rows}
+c3(len(ep_rows) == len(rows), "تعدادِ ردیفِ endpoint == اسکرینر",
+   "%d vs %d" % (len(ep_rows), len(rows)))
+ep_diff = []
+for r in ep_rows:
+    o = by_sym.get(r.get("symbol"))
+    if o is None:
+        ep_diff.append((r.get("symbol"), "not in screener"))
+        continue
+    for k in ("score", "name", "excluded", "applicable") + tuple("i%d_pass" % i for i in (1, 2, 3, 4, 5)):
+        if r.get(k) != o.get(k):
+            ep_diff.append((r.get("symbol"), k, o.get(k), r.get(k)))
+c3(not ep_diff, "هر امتیاز/پرچمِ endpoint == اسکرینر (بی‌محاسبهٔ دوم)", str(ep_diff[:4]))
+c3(all("fts_verdict" in r for r in ep_rows) and not any("fts_verdict" in r for r in rows),
+   "fts_verdict فقط رویِ کپیِ endpoint است و کشِ اسکرینر آلوده نشده")
+na_bad = [r.get("symbol") for r in ep_rows
+          if r.get("fts_verdict") == "NOT_APPLICABLE" and r.get("applicable") is not False]
+c3(not na_bad, "NOT_APPLICABLE فقط برایِ نمادی که واقعاً پنج‌شاخصه ندارد", str(na_bad[:4]))
+rej_fund = [r.get("symbol") for r in ep_rows
+            if r.get("applicable") is False and r.get("fts_verdict") != "NOT_APPLICABLE"]
+c3(not rej_fund, "هیچ صندوقی در این endpoint مردود نمی‌شود (رأی ۱۵)", str(rej_fund[:4]))
+print("بندِ سوم (endpoint): %d ردیف | ناهم‌خوانی: %d | صندوقِ NOT_APPLICABLE: %d | خطا: %d"
+      % (len(ep_rows), len(ep_diff),
+         sum(1 for r in ep_rows if r.get("fts_verdict") == "NOT_APPLICABLE"), len(band3)))
+
+if mismatches or exempt_disagree or value_disagree or scan_bad or band3:
     print("RESULT: FAIL — اسکرینر/موتور و کارت جزئیات هم‌راستا نیستند "
-          "(امتیاز=%d، معافیت=%d، عدد-vs-N/A=%d، scan_symbol=%d)."
-          % (len(mismatches), len(exempt_disagree), len(value_disagree), len(scan_bad)))
+          "(امتیاز=%d، معافیت=%d، عدد-vs-N/A=%d، scan_symbol=%d، endpoint=%d)."
+          % (len(mismatches), len(exempt_disagree), len(value_disagree), len(scan_bad),
+             len(band3)))
     sys.exit(1)
-print("RESULT: PASS — امتیاز/پرچم اسکرینر == کارت، و حکمِ معافیتِ شاخص ۴ "
-      "برای هر %d نماد بین موتور و کارت یکسان است." % ind4_checked)
+print("RESULT: PASS — امتیاز/پرچم اسکرینر == کارت، حکمِ معافیتِ شاخص ۴ یکسان است، "
+      "و /api/fundamental/screen همان پاسخِ کارت را فیلتر می‌کند (%d نماد)."
+      % len(ep_rows))
 sys.exit(0)
