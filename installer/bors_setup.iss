@@ -4,7 +4,7 @@
 ; bare #define always wins over a command-line define, guard it with #ifndef and
 ; keep the default in sync with bors_config.APP_VERSION for local builds.
 #ifndef AppVersion
-#define AppVersion "1.0.26"
+#define AppVersion "1.0.27"
 #endif
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
