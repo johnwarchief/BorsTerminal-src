@@ -61,6 +61,9 @@ STAMPS = (
 )
 
 _EPOCH = datetime(1970, 1, 1)
+# نصفِ روز، نه صفر: تهران ۳:۳۰+ است و رانرِ CI صفرِ UTC؛ تازگیِ داده نباید
+# به‌خاطرِ ساعتِ ماشین «آینده» خوانده شود.
+FUTURE_TOLERANCE = 0.5
 SRC = "market.db"
 DST = "market.db.lzma"
 
@@ -105,7 +108,11 @@ def report(conn, now=None, tag="src"):
     """چاپِ سن و برگرداندنِ کلیدهایی که از سقفِ خود رد شده‌اند.
 
     کلیدِ نامعلوم به فهرستِ ردشده اضافه نمی‌شود: نبودِ داده، پیر بودن نیست.
-    سنِ منفی (ساعتِ جلوتر یا stampِ آینده) نشانهٔ خرابی است و رد می‌شود.
+    سنِ منفی تا اندازهٔ یک اختلافِ منطقهٔ زمانی (FUTURE_TOLERANCE) خطا نیست:
+    ساعتِ رانرِ CI برابر UTC است و stampها محلیِ تهران (+۳:۳۰)، پس baselineای
+    که همین چند دقیقه پیش بسته شده «−۰٫۱ روز» می‌شود. بدونِ این تلورانس،
+    دقیقاً تازه‌ترین — و بهترین — داده «خراب» گزارش می‌شد و دروازه به نویز
+    تبدیل می‌گشت. چیزی که بیشتر از تلورانس در آینده باشد واقعاً غلط است.
     """
     a = ages(conn, now)
     over = []
@@ -113,10 +120,11 @@ def report(conn, now=None, tag="src"):
         d = a.get(key)
         if d is None:
             print("AGE_UNKNOWN %s.%s (no usable Gregorian stamp)" % (tag, key))
-        elif d < 0:
+        elif d < -FUTURE_TOLERANCE:
             print("AGE_FUTURE %s.%s days=%.1f (clock or stamp is wrong)" % (tag, key, d))
             over.append(key)
         else:
+            d = max(d, 0.0)
             print("AGE_%s %s.%s days=%.1f limit=%d" %
                   ("STALE" if d > lim else "OK", tag, key, d, lim))
             if d > lim:

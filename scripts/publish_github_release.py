@@ -285,7 +285,9 @@ def _snapshot_age_days(lzma_path):
             return None
         dt = datetime.strptime(str(stamp).strip().replace("T", " ")[:19],
                                "%Y-%m-%d %H:%M:%S")
-        return (datetime.now() - dt).total_seconds() / 86400.0
+        # stamp محلیِ تهران و ساعتِ رانر UTC؛ اسنپ‌شاتِ همین‌لحظه «−۰٫۱ روز»
+        # می‌شود که نباید عددِ منفی رویِ کنسول برود.
+        return max(0.0, (datetime.now() - dt).total_seconds() / 86400.0)
     except Exception:
         return None
     finally:

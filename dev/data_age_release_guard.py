@@ -268,11 +268,59 @@ def helper_semantics(work):
            "age=%s" % age)
 
 
+def clock_semantics():
+    """report() با ساعتِ ثابت — تنها راهی که اختلافِ منطقهٔ زمانی آزموده می‌شود.
+
+    رانرِ CI روی UTC است و stampها محلیِ تهران (+۳:۳۰). بی‌تلورانس، baselineای
+    که همین چند دقیقه پیش بسته شده «−۰٫۱ روز» و پس از آن AGE_FUTURE می‌شد؛
+    یعنی تازه‌ترین داده بدترین گزارش را می‌گرفت و دروازه به نویز تبدیل می‌شد.
+    """
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    import check_release_db as crd
+    from contextlib import redirect_stdout
+    from datetime import datetime, timedelta
+
+    ck(crd.FUTURE_TOLERANCE >= 0.25,
+       "the future tolerance covers the +3:30 Tehran offset",
+       "tolerance=%s" % crd.FUTURE_TOLERANCE)
+    now = datetime(2026, 9, 25, 12, 0, 0)
+
+    def verdict(days_from_now):
+        when = now + timedelta(days=days_from_now)
+        stamp = when.strftime("%Y-%m-%d %H:%M:%S")
+        dayint = int(when.strftime("%Y%m%d"))   # d_evenِ میلادیِ واقعی، نه روزِ نسبی
+        c = sqlite3.connect(":memory:")
+        c.executescript(DDL)
+        c.execute("INSERT INTO daily_prices VALUES('x',?,?)", (dayint, stamp))
+        c.execute("INSERT INTO market_totals VALUES(?,?,?)", (dayint, 1.0, stamp))
+        c.execute("INSERT INTO codal_notices VALUES(1,?)", (stamp,))
+        c.executemany("INSERT INTO financial_statements DEFAULT VALUES", [()] * 1200)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            over = crd.report(c, now=now, tag="t")
+        text = buf.getvalue()
+        c.close()
+        return text, over
+
+    text, over = verdict(0.14)          # ۳:۳۰+ جلوتر از ساعتِ رانر
+    ck("AGE_FUTURE" not in text and over == [] and "AGE_OK" in text
+       and "days=-" not in text and "AGE_UNKNOWN" not in text,
+       "a just-packed baseline is fresh, not a clock error", text.splitlines()[:2])
+
+    text, over = verdict(10)            # واقعاً آینده
+    ck("AGE_FUTURE" in text and len(over) >= 1, "ten days into the future is an error")
+
+    text, over = verdict(-8)            # هشت روز پیش
+    ck(over == ["last_trading_day", "market_synced_at", "market_totals_at"],
+       "eight days trips the 7d limits and not the 21d codal limit", str(over))
+
+
 def main():
     work = tempfile.mkdtemp(prefix="data_age_guard_")
     try:
         behavior(work)
         helper_semantics(work)
+        clock_semantics()
     finally:
         shutil.rmtree(work, ignore_errors=True)
     wiring()
