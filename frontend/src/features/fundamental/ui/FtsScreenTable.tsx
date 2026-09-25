@@ -629,7 +629,7 @@ export function FtsScreenTable({
             onClick={() => onRefresh?.()}
             disabled={!onRefresh || refreshing}
             data-testid="fts-refresh"
-            title="تازه‌سازیِ ۵ شاخص FTS از کدال (فقط دِلتا، با چرخش IP) و بازخوانیِ جدول"
+            title="بازخوانیِ ۵ شاخص FTS از دیتابیسِ موجود — دادهٔ تازه با دکمهٔ «دیتابیس کدال» می‌آید"
             className="flex items-center gap-1.5 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2.5 py-1 text-2xs font-bold text-text-secondary transition-colors hover:border-border-accent hover:text-accent-blue disabled:opacity-50"
           >
             <svg className={`h-3 w-3 text-text-secondary group-hover:text-accent-blue ${refreshing ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

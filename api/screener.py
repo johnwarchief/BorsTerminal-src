@@ -36,13 +36,18 @@ _SCAN_LOCK = threading.Lock()
 _WARM_EVENT = threading.Event()
 _WARM_THREAD = None
 
-def invalidate_screener_cache():
+def invalidate_screener_cache(drop_materialized: bool = True):
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
 
-    هر دو کش را باطل می‌کند: RAM/دیسکِ payload، و جدولِ مادی‌شدهٔ fts_results
-    (تسک ۱۹). هر دو از همان منبع (سینک کدال/تابلو) تغذیه میشوند، پس سینکِ
-    تازه هر دو را کثیف می‌کند. fts_results با DELETE پاک می‌شود تا دفعهٔ بعد
-    دوباره از sync_fts_results پر شود.
+    با `drop_materialized=True` هر دو کش را باطل می‌کند: RAM/دیسکِ payload، و
+    جدولِ مادی‌شدهٔ fts_results (تسک ۱۹). هر دو از همان منبع (سینک کدال/تابلو)
+    تغذیه میشوند، پس سینکِ تازه هر دو را کثیف می‌کند. fts_results با DELETE پاک
+    می‌شود تا دفعهٔ بعد دوباره از sync_fts_results پر شود.
+
+    `drop_materialized=False` فقط payload را می‌برد. این برایِ بیلدِ فریزشده
+    لازم است: تنها نویسندهٔ fts_results اسکریپتِ `dev/codal_fts_updater.py` است
+    که در EXE وجود ندارد، پس یک پاک‌کردنِ بی‌مورد جدول را تا همیشه از بین
+    می‌برد و هر بار اسکرینر را به محاسبهٔ زندهٔ ~۲۷ثانیه‌ای می‌انداخت.
     """
     _SCREENER_CACHE["payload"] = None
     _SCREENER_CACHE["ts"] = 0.0
@@ -51,6 +56,8 @@ def invalidate_screener_cache():
             os.remove(CACHE_FILE)
         except OSError:
             pass
+    if not drop_materialized:
+        return
     try:
         import fts_engine as _fe
         _conn = get_db()

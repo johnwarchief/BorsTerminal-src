@@ -60,14 +60,28 @@ def sync_codal_fts_refresh(mode: str = Query("monthly")):
     if _codal_running():
         return {"status": "already_running",
                 "message": "اسکن کدال در حال اجراست — صبر کنید.", "mode": mode}
+    script = os.path.join(APP_DIR, "dev", "codal_fts_updater.py")
+    if not os.path.isfile(script):
+        # بیلدِ فریزشده پوشهٔ dev/ را ندارد (در نصبِ زنده راستی‌آزمایی شد)، پس
+        # خزندهٔ کدال اینجا وجود ندارد و نباید هم باشد: چرخشِ IP با ADB ابزارِ
+        # ماشینِ خودِ مالک است، نه کاربر. پیش از این همان‌جا «یافت نشد» برمی‌گشت
+        # و فرانت پاسخ را دور می‌ریخت — یعنی دکمهٔ «بروزرسانی» بی‌صدا هیچ‌کار
+        # نمی‌کرد. حالا دستِ‌کم کشِ محلی پاک می‌شود تا اسکرینر از همین
+        # دیتابیسِ موجود دوباره محاسبه کند و پیام، راهِ گرفتنِ دادهٔ تازه را
+        # بگوید (دکمهٔ «بروزرسانی دیتابیس کدال» از snapshot گیت‌هاب).
+        from .screener import invalidate_screener_cache
+        # fts_results را نمی‌پاک کند: در این بیلد هیچ نویسنده‌ای برایش نیست و
+        # پاک‌کردنش اسکرینر را برای همیشه به محاسبهٔ زندهٔ ~۲۷ثانیه‌ای می‌انداخت.
+        invalidate_screener_cache(drop_materialized=False)
+        return {"status": "local_recompute", "mode": mode,
+                "message": "خزندهٔ کدال در این نسخه نیست؛ شاخص‌ها از دیتابیسِ "
+                           "محلی دوباره محاسبه می‌شوند. برای دادهٔ تازه دکمهٔ "
+                           "«بروزرسانی دیتابیس کدال» را بزنید."}
     try:
         with open(CONTROL_PATH, "w", encoding="utf-8") as f:
             json.dump({"cmd": "resume", "ts": datetime.datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
     except Exception:
         pass
-    script = os.path.join(APP_DIR, "dev", "codal_fts_updater.py")
-    if not os.path.isfile(script):
-        return {"status": "error", "message": "dev/codal_fts_updater.py یافت نشد."}
     subprocess.Popen([sys.executable, script, "--mode", mode, "--adb-rotate", "--resume"], cwd=APP_DIR)
     return {"status": "success", "message": "FTS 5-indicator refresh started.", "mode": mode}
 

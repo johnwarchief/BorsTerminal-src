@@ -172,6 +172,26 @@ def main():
     ck("ردیفِ محلی تازه‌تر از snapshot بود" in src,
        "the honest end message says how many local rows were kept")
 
+    # ── FTS-REFRESH-1: دکمهٔ «بروزرسانی» در بیلدِ فریزشده مُرده نباشد ──────────
+    # بیلدِ PyInstaller پوشهٔ dev/ را ندارد (رویِ نصبِ زنده دیده شد)، پس
+    # `/api/sync/codal/fts-refresh` هرگز خزنده را پیدا نمی‌کند. پیش از این
+    # «یافت نشد» برمی‌گرداند و FundamentalPage پاسخ را دور می‌ریخت: اسپینر،
+    # بعد هیچ. خزنده نباید به ماشینِ کاربر برود (ADB/چرخشِ IP ابزارِ ماشینِ
+    # مالک است)، پس مسیرِ نبودِ خزنده کشِ محلی را پاک می‌کند و صادقانه می‌گوید
+    # دادهٔ تازه از دکمهٔ «بروزرسانی دیتابیس کدال» می‌آید.
+    _f = src.index("def sync_codal_fts_refresh")
+    _body = src[_f:src.index("@router", _f + 10)]
+    ck("from .screener import invalidate_screener_cache" in _body,
+       "fts-refresh clears the local cache when the crawler is absent")
+    ck('"status": "local_recompute"' in _body,
+       "fts-refresh returns an honest status in a frozen build")
+    ck('return {"status": "error", "message": "dev/codal_fts_updater.py' not in _body,
+       "the silent dead-end «یافت نشد» is gone")
+    ck("invalidate_screener_cache(drop_materialized=False)" in _body,
+       "the frozen path keeps fts_results (nothing in the EXE can rebuild it)")
+    ck(_body.index("invalidate_screener_cache(") < _body.index("CONTROL_PATH"),
+       "no control-file write and no ADB rotate when the script is missing")
+
     print("codal_merge_recency_v1029: %d passed, %d failed" % (PASS, FAIL))
     return 1 if FAIL else 0
 
