@@ -76,7 +76,7 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
   });
 
   it('چیپ‌های سریع FTS مستقیماً روی نوار رندر شده و فعال/غیرفعال می‌شوند', () => {
-    render(<MarketFilters sectors={[]} matches={{ f_clock: 5, f_susp: 2, f_jet: 1, f_roobi: 3, f_noqteh: 0, f_smart_flow: 4 }} />);
+    render(<MarketFilters sectors={[]} matches={{ f_clock: 5, f_susp: 2, f_jet: 1, f_roobi: 3, f_noqteh: 0 }} />);
     const clockChip = screen.getByText(/الگوی ساعت/);
     expect(clockChip).toBeInTheDocument();
     expect(screen.getByText('(۵)')).toBeInTheDocument();

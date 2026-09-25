@@ -134,7 +134,7 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const tr = screen.getByTestId('fts-screen-row');
     // همان دو سالِ موجود (۱۴۰۴ و ۱۴۰۵) دیده می‌شود
-    expect(within(tr).getByText('— ← ۵۹۰ ← ۹۹۰')).toBeInTheDocument();
+    expect(within(tr).getByTitle('— ← ۵۹۰ ← ۹۹۰')).toBeInTheDocument();
     const label = within(tr).getByTestId(EPS_PARTIAL_TESTID);
     expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
     expect(label.textContent).toContain('۲ از ۳ سال');
@@ -155,7 +155,7 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     expect(within(tr).queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
     // هر پنج شاخص قبول ⇒ پنج ✓ در همان ردیف
     expect(within(tr).getAllByText('✓')).toHaveLength(5);
-    expect(within(tr).getByText('۹۱ ← ۹۶ ← ۲۰۲')).toBeInTheDocument();
+    expect(within(tr).getByTitle('۹۱ ← ۹۶ ← ۲۰۲')).toBeInTheDocument();
   });
 
   it('۳ سال کامل ولی غیرصعودی → ✗ (مردودِ واقعی، نه سابقهٔ ناقص)', () => {

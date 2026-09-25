@@ -185,7 +185,7 @@ describe('AuditBadge — رفتار دفاعی (نبود فیلدهای ممیز
     render(<AuditReasonCard state="fail" evidence={null} />);
     expect(screen.queryByTestId('audit-compare')).toBeNull();
     expect(screen.queryByTestId('audit-rule')).toBeNull();
-    expect(screen.getByTestId('audit-reason').textContent).toContain('دادهٔ ممیزی برای این وضعیت ثبت نشده است');
+    expect(screen.getByTestId('audit-reason').textContent).toContain('توضیحات تکمیلی برای این وضعیت ثبت نشده است');
   });
 
   it('auditDeviation: جهت پایین‌بهتر، جفت غیرعددی و تارگت صفر', () => {

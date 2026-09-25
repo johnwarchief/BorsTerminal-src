@@ -22,6 +22,13 @@ function initialTheme(): 'dark' | 'light' {
 
 function applyTheme(t: 'dark' | 'light') {
   document.documentElement.dataset.theme = t;
+  if (t === 'dark') {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }
 }
 
 export const useUiStore = create<UiState>((set, get) => ({

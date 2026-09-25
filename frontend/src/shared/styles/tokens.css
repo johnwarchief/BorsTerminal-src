@@ -29,7 +29,7 @@
 
   /* ---------- مقیاس تایپوگرافی سراسری -- کف خوانا 12px (0.75rem) ---------- */
   /* ---------- توکنهای چیدمان/فاصلهی واکنشی (فاز ۲) ---------- */
-  --sidebar-w: 11.5rem; /* 184px — نازک‌تر طبق درخواست کاربر */
+  --sidebar-w: 10.5rem; /* 168px — کمی باریک‌تر طبق درخواست کاربر */
   --sidebar-w-collapsed: 3.75rem; /* 60px */
   --inspector-w: 15rem; /* 240px — فشرده */
   --gutter-x: 0rem; /* فاصلهی افقی واکنشی؛ زیر ۱۲۸۰px پر میشود */
@@ -51,7 +51,7 @@
 /* زیر ۷۶۸px (موبایل/تبلت کوچک): سایدبار باریک‌تر، داور تقریباً تمام‌عرض، gutter کم. */
 @media (max-width: 767.98px) {
   :root {
-    --sidebar-w: 11rem;
+    --sidebar-w: 10rem;
     --sidebar-w-collapsed: 3.5rem;
     --inspector-w: 92vw;
     --gutter-x: 0.5rem;
@@ -72,7 +72,7 @@
   :root {
     --gutter-x: 1.5rem;
     --content-max-w: none;
-    --sidebar-w: 14rem;
+    --sidebar-w: 12.5rem;
     --inspector-w: 16rem;
     --fs-2xs: 0.8125rem; /* 13px */
     --fs-xs: 0.875rem; /* 14px */
@@ -106,28 +106,29 @@
   }
 }
 
-[data-theme='light'] {
-  --bg-primary: #eef2f8;
+[data-theme='light'],
+.light {
+  --bg-primary: #f1f5f9;
   --bg-secondary: #ffffff;
   --bg-card: #e2e8f0;
-  --border-color: #c3cedc;
-  --border-accent: #72aecf;
-  --text-primary: #1e293b;
-  --text-secondary: #3f4c5c;
-  --text-muted: #556172;
-  --accent-green: #166534;
+  --border-color: #cbd5e1;
+  --border-accent: #3b82f6;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --accent-green: #15803d;
   --accent-red: #b91c1c;
-  --accent-yellow: #92400e;
-  --accent-blue: #0a5f8e;
+  --accent-yellow: #b45309;
+  --accent-blue: #0284c7;
   --accent-susp: #ea580c;
   --accent-susp-bg: rgba(251, 146, 60, 0.22);
   --on-accent: #ffffff;
   --neon-cyan: #0e7490;
   --neon-red: #e11d48;
-  --hairline: rgba(15, 23, 42, 0.18);
-  --glass-tint: rgba(255, 255, 255, 0.72);
-  --glass-tint-solid: rgba(255, 255, 255, 0.94);
-  --glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --hairline: rgba(15, 23, 42, 0.14);
+  --glass-tint: rgba(255, 255, 255, 0.85);
+  --glass-tint-solid: rgba(255, 255, 255, 0.96);
+  --glass-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
 
   /* فوکوس روی زمینه روشن نیاز به کنتراست بیشتر دارد */
   --focus-ring: #2563eb;

@@ -131,7 +131,7 @@ export function MicroChartsDrawer() {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <ChartCard
               testId="micro-orderbook"
-              title="جریان ارزش سفارش‌های خرید و فروش (تجمعی امروز)"
+              title="ارزش سفارش های خرید و فروش (سهام، حق تقدم و ص.سهامی)"
               legend={[
                 { color: '#3b82f6', label: 'ارزش صف خرید' },
                 { color: '#f97316', label: 'ارزش صف فروش' },
@@ -158,7 +158,7 @@ export function MicroChartsDrawer() {
             />
             <ChartCard
               testId="micro-breadth"
-              title="نمودار نمادهای مثبت و منفی (جو بازار)"
+              title="نمادهای مثبت و منفی (سهام، حق تقدم و ص.سهامی)"
               legend={[
                 { color: '#22c55e', label: 'مثبت‌ها' },
                 { color: '#ef4444', label: 'منفی‌ها' },

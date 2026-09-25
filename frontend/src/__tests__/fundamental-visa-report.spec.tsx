@@ -129,13 +129,15 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
       </>,
     );
     const cell = screen.getByTestId('fts-card-cell-5_industry');
-    // وضعیت صنعت ویسا neutral است ⇒ برچسب «صنعت مختلط» با تُن yellow در هر دو جا
-    expect(within(cell).getByText(industryGateLabel('neutral'))).toBeInTheDocument();
+    // صنعت ویسا neutral است: سلولِ کارت نامِ طبقه را می‌گوید و بجِ ممیزی حکمِ
+    // غربالگری را — دو متنِ متفاوت، هر دو از یک منبع (lib/industryGate)
+    expect(within(cell).getByText('سایر صنایع')).toBeInTheDocument();
+    expect(within(cell).getByTestId('fts-cell-audit-5_industry').textContent)
+      .toContain('مجاز در غربالگری');
     expect(industryGateTone('neutral')).toBe('yellow');
-    const gates = screen.getByText(/مجاز در غربالگری/).closest('.glass-panel');
-    expect(gates?.textContent).toContain(industryGateLabel('neutral'));
-    // برچسب کلی «قبول» برای صنعت دیگر استفاده نمی‌شود
+    // دروازه‌های ریسک همان حکم را می‌دهد (بدونِ برچسب کلی «قبول»)
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
+    expect(screen.getAllByText('مجاز در غربالگری').length).toBeGreaterThan(0);
   });
 
   it('نمودار فصلی: محور با واحد میلیارد تومان/همت برچسب می‌خورد', () => {

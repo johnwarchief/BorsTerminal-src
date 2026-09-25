@@ -202,24 +202,24 @@ export function runStrictGates(
   const fundActive = fund != null && isActiveSignal(fund, now);
   let fundamentalBlocked = false;
   if (!fund) {
-    gates.push(mk('fundamental', 'pending', 'عدم ثبت صورت‌های مالی اخیر در سامانه کدال برای سنجش شاخص‌های ۵گانه.'));
+    gates.push(mk('fundamental', 'pending', 'عدم انتشار صورت مالی معتبر در سامانه کدال.'));
   } else if (!fundActive) {
-    gates.push(mk('fundamental', 'pending', 'صورت‌های مالی منقضی یا ناقص است؛ فیلتر بنیاد ارزیابی نشد.'));
+    gates.push(mk('fundamental', 'pending', 'صورت‌های مالی منقضی یا ناقص است.'));
   } else {
     const marginBreach = fm.marginCheck === false || (fm.marginPct != null && fm.marginPct < FUNDAMENTAL_MARGIN_FLOOR_PCT);
     const salesBreach = fm.salesGrowthPct != null && fm.salesGrowthPct < SALES_DROP_FLOOR_PCT;
     const reasonBits: string[] = [];
-    if (fm.marginPct != null) reasonBits.push(`حاشیهٔ سود ${fa1(fm.marginPct)}٪ در برابر کف ${fa0(FUNDAMENTAL_MARGIN_FLOOR_PCT)}٪`);
-    if (fm.salesGrowthPct != null) reasonBits.push(`رشد فروش ${fa1(fm.salesGrowthPct)}٪ در برابر کف ${fa0(SALES_DROP_FLOOR_PCT)}٪`);
+    if (fm.marginPct != null) reasonBits.push(`حاشیهٔ سود ${fa1(fm.marginPct)}٪ (کف ${fa0(FUNDAMENTAL_MARGIN_FLOOR_PCT)}٪)`);
+    if (fm.salesGrowthPct != null) reasonBits.push(`رشد فروش ${fa1(fm.salesGrowthPct)}٪ (کف ${fa0(SALES_DROP_FLOOR_PCT)}٪)`);
     if (fm.marginCheck != null) reasonBits.push(`زیرشاخص حاشیه: ${fm.marginCheck ? 'تایید' : 'رد'}`);
-    const basis = reasonBits.length > 0 ? reasonBits.join(' · ') : 'نمرهٔ بنیادی صعودی و بدون نقض آشکار';
+    const basis = reasonBits.length > 0 ? reasonBits.join(' · ') : 'نمرهٔ بنیادی صعودی';
     if (fm.directionBearish || marginBreach || salesBreach) {
       fundamentalBlocked = true;
-      gates.push(mk('fundamental', 'blocked', `نقض بنیادی ⇒ ورود روندی مسدود (${basis}).`));
+      gates.push(mk('fundamental', 'blocked', `سد بنیادی: ${basis}؛ ورود روندی مسدود.`));
     } else if (fm.marginPct == null && fm.marginCheck == null && fm.salesGrowthPct == null) {
-      gates.push(mk('fundamental', 'pending', 'دادهٔ مالی کافی برای سنجش حاشیه سود و رشد فروش در دسترس نیست؛ فیلتر بنیاد در انتظار گزارش است.'));
+      gates.push(mk('fundamental', 'pending', 'دادهٔ مالی کافی برای سنجش حاشیه سود و رشد فروش در دسترس نیست.'));
     } else {
-      gates.push(mk('fundamental', 'passed', `شرط بنیادی برقرار است (${basis}).`));
+      gates.push(mk('fundamental', 'passed', `تایید فیلتر بنیاد (${basis}).`));
     }
   }
 
@@ -231,29 +231,28 @@ export function runStrictGates(
   const weeklyNotUp = weekly.uptrend === false;
   const weeklyVeto = weeklyNotUp;
   if (!tech) {
-    gates.push(mk('technical', 'pending', 'عدم کفایت سابقه کندل‌های هفتگی برای سنجش MA-52 و RSI.'));
+    gates.push(mk('technical', 'pending', 'سابقه کندل‌های هفتگی برای سنجش MA52 و RSI کافی نیست.'));
   } else if (!techActive) {
-    gates.push(mk('technical', 'pending', 'سابقه کندل‌های تکنیکال منقضی یا ناقص است؛ فیلتر تکنیکال ارزیابی نشد.'));
+    gates.push(mk('technical', 'pending', 'دیتای تکنیکال منقضی یا ناقص است.'));
   } else if (weeklyNotUp) {
     gates.push(
       mk(
         'technical',
         'blocked',
-        `روند هفتگی زیر میانگین متحرک ۵۲ هفته (MA52) یا ضعف مومنتوم RSI است ⇒ توقف ورود روندی.`,
+        `روند هفتگی زیر MA52 یا ضعف مومنتوم RSI است (توقف ورود روندی).`,
         true,
       ),
     );
   } else if (tech.direction === 'bearish') {
-    gates.push(mk('technical', 'blocked', 'ساختار تکنیکال نزولی است ⇒ ورود ممنوع (ماژور/مینور نزولی).'));
+    gates.push(mk('technical', 'blocked', 'ساختار تکنیکال نزولی است؛ ورود ممنوع.'));
   } else if (!hasDirectEntrySetup(tech)) {
-    gates.push(mk('technical', 'pending', 'ستاپ ورود مستقیم (جت/پولبک/CHoCH) فعال نیست؛ در انتظار تریگر.'));
+    gates.push(mk('technical', 'pending', 'در انتظار تریگر ورود مستقیم (جت/پولبک/CHoCH).'));
   } else {
     gates.push(mk('technical', 'passed', 'ستاپ ورود مستقیم روی ساختار ماژور/مینور فعال است.'));
   }
-  if (!weeklyHasData) {
-    // صادقانه: نبود منبع هفتگی ⇒ وتو صادر نمی‌شود، اما در audit شفاف گفته می‌شود.
+  if (!weeklyHasData && techActive && !weeklyNotUp) {
     const last = gates[gates.length - 1];
-    last.reason += ' (دادهٔ هفتگی MA52/RSI منتشر نشده؛ نیازمند تکمیل دیتای میان‌مدت)';
+    last.reason += ' (دادهٔ هفتگی در انتظار تکمیل)';
   }
 
   // ── فیلتر ۳: تابلوخوانی (فقط زمان‌سنج ورود) ────────────────────────
@@ -262,21 +261,21 @@ export function runStrictGates(
   const tapeSurge = tapeIsSurge(tape);
   const { pattern, volumeMultiple } = tapePattern(tape);
   if (!tape) {
-    gates.push(mk('tape', 'pending', 'عدم ثبت حجم مشکوک (حداقل ۲ برابر) یا نبود الگوی ساعت معتبر.'));
+    gates.push(mk('tape', 'pending', 'عدم ثبت حجم مشکوک یا الگوی ساعت معتبر.'));
   } else if (!tapeActive) {
-    gates.push(mk('tape', 'pending', 'داده‌های جریان معاملات منقضی است؛ زمان‌سنج ورود ارزیابی نشد.'));
+    gates.push(mk('tape', 'pending', 'دیتای جریان معاملات منقضی است.'));
   } else if (pattern === 'closing_auction_pop') {
-    gates.push(mk('tape', 'passed', 'الگوی ساعت فعال است ⇒ زمان‌سنج ورود تایید شد.'));
+    gates.push(mk('tape', 'passed', 'الگوی ساعت فعال است؛ زمان‌سنج ورود تایید شد.'));
   } else if (pattern === 'suspicious_volume') {
     gates.push(
       mk(
         'tape',
         'pending',
-        `حجم مشکوک${volumeMultiple != null ? ` ${volumeMultiple} برابر میانگین` : ''} ⇒ تابلو فقط زمان‌سنج است؛ تصمیم‌ساز نیست.`,
+        `حجم مشکوک${volumeMultiple != null ? ` ${volumeMultiple}× میانگین` : ''} ثبت شد (زمان‌سنج ورود فعال).`,
       ),
     );
   } else {
-    gates.push(mk('tape', 'pending', 'تایید نقدینگی تابلو وجود ندارد ⇒ ورود در انتظار زمان‌سنج.'));
+    gates.push(mk('tape', 'pending', 'تایید نقدینگی تابلو وجود ندارد؛ در انتظار زمان‌سنج.'));
   }
 
   // ── فیلتر ۴: سبد و رژیم ریسک ──────────────────────────────────────
@@ -353,7 +352,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'veto',
       label: DEFINITE_ACTION_FA.veto,
-      reason: 'روند هفتگی صعودی نیست ⇒ وتوی فوری؛ هر ورودی رد می‌شود.',
+      reason: 'روند هفتگی صعودی نیست؛ وتوی فوری و توقف هرگونه ورود.',
       allGatesPassed: false,
     };
   }
@@ -362,14 +361,14 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
       return {
         action: 'high_risk_swing',
         label: DEFINITE_ACTION_FA.high_risk_swing,
-        reason: 'نقض بنیادی، ورود روندی را مسدود کرده است؛ تنها با جهش تابلو، «نوسانگیری صرفاً با حجم سبک» مجاز است.',
+        reason: 'نقض بنیادی: ورود روندی مسدود است؛ نوسان‌گیری سبک با تکیه بر جهش تابلو مجاز است.',
         allGatesPassed: false,
       };
     }
     return {
       action: 'watch',
       label: DEFINITE_ACTION_FA.watch,
-      reason: 'نقض بنیادی ⇒ ورود روندی مسدود و جهش تابلویی هم دیده نشده؛ سهم فقط تحت پایش است.',
+      reason: 'نقض بنیادی: ورود روندی مسدود و جهش تابلویی هم دیده نشده؛ سهم صرفاً تحت پایش است.',
       allGatesPassed: false,
     };
   }
@@ -379,7 +378,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'veto_gate1',
       label: DEFINITE_ACTION_FA.veto_gate1,
-      reason: `فیلتر ۱ (بنیاد) تایید نشده است: ${fund.reason} تا شفافیت بنیادی، ورود متوقف می‌ماند.`,
+      reason: `${fund.reason.replace(/[.\s]+$/, '')} (ورود تا شفافیت بنیادی متوقف است).`,
       allGatesPassed: false,
     };
   }
@@ -387,7 +386,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'veto_gate2',
       label: DEFINITE_ACTION_FA.veto_gate2,
-      reason: `فیلتر ۲ (تکنیکال) تایید نشده است: ${tech.reason} تا تایید ساختار تکنیکال، ورود متوقف می‌ماند.`,
+      reason: `${tech.reason.replace(/[.\s]+$/, '')} (ورود تا تایید ساختار تکنیکال متوقف است).`,
       allGatesPassed: false,
     };
   }
@@ -396,7 +395,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'ladder_buy',
       label: DEFINITE_ACTION_FA.ladder_buy,
-      reason: 'هر چهار فیلتر (بنیاد، تکنیکال، تابلو، سبد/رژیم) هم‌زمان سبز است ⇒ خرید پله‌ای مجاز.',
+      reason: 'هر چهار فیلتر (بنیاد، چارت، تابلو و سبد) هم‌زمان سبز است؛ خرید پله‌ای مجاز.',
       allGatesPassed: true,
     };
   }
@@ -406,8 +405,8 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     action: 'watch',
     label: DEFINITE_ACTION_FA.watch,
     reason:
-      `فیلترهای بدون تایید: ${blockers.map((g) => g.label).join('، ')}` +
-      (tape?.state === 'pending' ? ' — تابلو فقط زمان‌سنج ورود است.' : '.'),
+      `فیلترهای در انتظار تایید: ${blockers.map((g) => g.label).join('، ')}` +
+      (tape?.state === 'pending' ? ' (تابلو صرفاً زمان‌سنج ورود است).' : '.'),
     allGatesPassed: false,
   };
 }

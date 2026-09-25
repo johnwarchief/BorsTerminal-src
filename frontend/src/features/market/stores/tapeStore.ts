@@ -9,7 +9,7 @@ import {
   type TapePresetKey,
 } from '../lib/tapeAlgorithms';
 
-export const QUICK_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh', 'f_smart_flow'] as const;
+export const QUICK_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'] as const;
 export type QuickFilter = (typeof QUICK_FILTERS)[number];
 
 export const QUICK_LABELS: Record<QuickFilter, string> = {
@@ -18,7 +18,6 @@ export const QUICK_LABELS: Record<QuickFilter, string> = {
   f_jet: 'فیلتر جت',
   f_roobi: 'کف‌روبی',
   f_noqteh: 'نقطه زنی',
-  f_smart_flow: 'پول هوشمند',
 };
 
 /** آستانه تقریبی صف در TSETMC (۵ درصد منهای ارف) */

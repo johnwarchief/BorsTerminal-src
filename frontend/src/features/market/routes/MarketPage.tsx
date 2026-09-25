@@ -178,6 +178,9 @@ export default function MarketPage({
     <div className="flex w-full max-w-none flex-col gap-2">
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
 
+      {/* نمودارهای جریان سفارش‌ها بالای نوار تابلو */}
+      <MicroChartsDrawer />
+
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}
@@ -190,8 +193,6 @@ export default function MarketPage({
         isFetching={isFetching}
       />
 
-      {/* جدول تمام‌عرض؛ دیده‌بان‌ها به دراور زیر جدول منتقل شدند */}
-      <MicroChartsDrawer />
       <TapeTable
         rows={filtered}
         selected={symbol}

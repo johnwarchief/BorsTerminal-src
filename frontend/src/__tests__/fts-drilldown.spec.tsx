@@ -226,12 +226,13 @@ describe('Drill-Down تعاملی ۵ شاخص FTS', () => {
 });
 
 describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
-  it('درآمد دوره امسال/سال قبل + درصد رشد + مبنای تورم رندر می‌شود', () => {
+  it('درآمد دوره امسال/سال قبل + درصد رشد + کفِ آستانه رندر می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
     const panel = screen.getByTestId('fts-drilldown-1');
-    expect(within(panel).getByText(/۱۳۰٫۷٪|130.7%|۱۳۰\.۷٪/)).toBeTruthy();
-    expect(within(panel).getByText(/مبنای تورم/)).toBeTruthy();
-    expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
+    expect(within(panel).getAllByText(/۱۳۰٫۷٪|130.7%|۱۳۰\.۷٪/).length).toBeGreaterThan(0);
+    expect(within(panel).getByTestId('fts-floor-criterion').textContent).toContain('۶۰');
+    expect(within(panel).getByText('دوره جاری (امسال)')).toBeInTheDocument();
+    expect(within(panel).getByText('دوره مشابه سال قبل')).toBeInTheDocument();
   });
 
   it('شرکت خدماتی/هلدینگ: کادر رشد فیزیکی کاملاً حذف می‌شود (نه کادر خالی/نه N/A)', () => {
@@ -242,13 +243,25 @@ describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
     expect(within(panel).queryByText(/تناژ فیزیکی/)).toBeNull();
     expect(within(panel).queryByText(/این شرکت تولیدی نیست/)).toBeNull();
     // داده‌های دیگر شاخص ۱ سرجایشان هستند
-    expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
+    expect(within(panel).getByText('دوره جاری (امسال)')).toBeInTheDocument();
+    expect(within(panel).getByText('دوره مشابه سال قبل')).toBeInTheDocument();
   });
 
   it('تولیدی: رشد واقعی پس از کسر اثر نرخ نمایش می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
     const panel = screen.getByTestId('fts-drilldown-1');
     expect(within(panel).getByText(/رشد واقعی پس از کسر اثر نرخ/)).toBeTruthy();
+  });
+
+  it('رشد واقعی همان شاهدِ تناژِ موتور است، نه کسرِ آستانه از رشدِ ریالی', () => {
+    render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
+    const panel = screen.getByTestId('fts-drilldown-1');
+    // fixture: monetary_pct=130.7، threshold=60، volume.real_pct=46 — اگر پنل
+    // خودش تقسیم می‌کرد ۴۴٫۲٪ نشان می‌داد و با داوریِ کارت دو جواب می‌شد.
+    expect(within(panel).getAllByText(/۴۶\.۰٪/).length).toBeGreaterThan(0);
+    expect(within(panel).queryByText(/۴۴\.۲٪/)).toBeNull();
+    // هیچ ورودیِ ویرایش‌پذیری برای مبنای تورم در این پنل نیست
+    expect(within(panel).queryAllByRole('spinbutton')).toHaveLength(0);
   });
 });
 

@@ -37,7 +37,7 @@ const STATE_STYLE: Record<AuditState, { cls: string; label: string }> = {
   na: { cls: 'border-border-c bg-bg-card text-text-secondary shadow-xs', label: 'N/A' },
 };
 
-const NO_AUDIT_TEXT = 'دادهٔ ممیزی برای این وضعیت ثبت نشده است — فقط وضعیت در دسترس است.';
+const NO_AUDIT_TEXT = 'توضیحات تکمیلی برای این وضعیت ثبت نشده است.';
 
 function fmtValue(v: number | string | null | undefined, unit?: string | null): string | null {
   if (v == null || v === '') return null;
@@ -90,6 +90,7 @@ export function AuditReasonCard({
       role="dialog"
       aria-label={title}
       data-testid="audit-popover"
+      dir="rtl"
       className="glass-panel panel-in w-[19rem] max-w-[92vw] p-3 text-start"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -105,7 +106,7 @@ export function AuditReasonCard({
         <table className="w-full text-2xs" data-testid="audit-compare">
           <thead>
             <tr className="text-text-muted">
-              <th className="py-1 text-start font-bold">مقدار سهم</th>
+              <th className="py-1 text-start font-bold">مقدار نماد</th>
               <th className="py-1 text-start font-bold">تارگت FTS</th>
               <th className="py-1 text-start font-bold">انحراف</th>
             </tr>
@@ -131,13 +132,6 @@ export function AuditReasonCard({
             </tr>
           </tbody>
         </table>
-      ) : null}
-
-      {dev != null ? (
-        <p className="mt-1 text-2xs text-text-muted">
-          مطلوب: مقدار {ev.direction === 'lower' ? '≤' : '≥'} تارگت — این سهم{' '}
-          {dev.meets ? 'تارگت را پوشش می‌دهد' : 'از تارگت عقب است'}.
-        </p>
       ) : null}
 
       <p className="mt-2 text-2xs leading-relaxed text-text-secondary" data-testid="audit-reason">

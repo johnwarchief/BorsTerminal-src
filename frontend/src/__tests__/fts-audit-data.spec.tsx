@@ -4,7 +4,7 @@
 // ۳) قالب درصد با جداکنندهٔ هزارگان + هشدار برای اعداد غیرمعقول (بدون حذف/دستکاری عدد)
 // ۴) علت حذف ردیف سرریز نمی‌کند و متن کامل در tooltip می‌ماند
 // ۵) علتِ کارت ممیزی وقتی مقدار نیست، همان حقیقت را می‌گوید («حکمِ موتور اعمال شده»)
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
 import { screenAuditEvidence } from '@features/fundamental/lib/auditEvidence';
@@ -137,18 +137,14 @@ describe('F-10 — قالب‌بندی و دقت اعداد', () => {
     expect(isAbsurdPct(999.9)).toBe(false);
   });
 
-  it('علت حذف ردیف بریده می‌شود ولی متن کامل در tooltip می‌ماند', () => {
+  it('ردیف‌های مشمول دروازه‌های سخت در دیده‌بان پنهان می‌مانند', () => {
     render(
       <FtsScreenTable
         rows={[row({ symbol: 'فولاد', excluded: true, exclusion_reasons: 'صنعت بیمه · نماد تعلیق · قیمت‌گذاری دستوری' })]}
         onSelect={() => {}}
       />,
     );
-    // ردیف‌های حذف‌شده پیش‌فرض پنهان‌اند؛ برای دیدن علت، توگل نمایش را روشن می‌کنیم
-    fireEvent.click(screen.getByRole('button', { name: /نمایش ردیف‌های حذف‌شده/ }));
-    const span = screen.getByText('صنعت بیمه · نماد تعلیق · قیمت‌گذاری دستوری');
-    expect(span.className).toContain('truncate');
-    expect(span.getAttribute('title')).toContain('قیمت‌گذاری دستوری');
+    expect(screen.queryByText('فولاد')).not.toBeInTheDocument();
   });
 
   it('شاهدِ ممیزی وقتی مقدار نیست، دلیلش را صادقانه می‌گوید', () => {

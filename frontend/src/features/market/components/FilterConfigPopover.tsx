@@ -48,6 +48,11 @@ export function FilterConfigPopover({
   const top = anchorRect.bottom + 6;
   const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - 290));
 
+  const quickFilters = useTapeStore((s) => s.quickFilters);
+  const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
+
+  const isActive = quickFilters.includes(filter);
+
   const updateSubConfig = <K extends keyof TapeFilterConfig>(
     key: K,
     patch: Partial<TapeFilterConfig[K]>,
@@ -56,6 +61,10 @@ export function FilterConfigPopover({
       ...config,
       [key]: { ...config[key], ...patch },
     });
+    // اگر فیلتر غیرفعال است، با تغییر اسلایدر فوراً فعال شود تا تغییرات در جدول و بج‌ها اعمال گردد
+    if (!useTapeStore.getState().quickFilters.includes(filter)) {
+      toggleQuickFilter(filter);
+    }
   };
 
   const resetSingleFilter = () => {
@@ -75,9 +84,6 @@ export function FilterConfigPopover({
       case 'f_noqteh':
         updateSubConfig('noqteh', DEFAULT_TAPE_FILTER_CONFIG.noqteh);
         break;
-      case 'f_smart_flow':
-        updateSubConfig('smartFlow', DEFAULT_TAPE_FILTER_CONFIG.smartFlow);
-        break;
     }
   };
 
@@ -94,12 +100,25 @@ export function FilterConfigPopover({
       role="dialog"
       aria-label={`تنظیمات فیلتر ${QUICK_LABELS[filter]}`}
     >
-      {/* هدر پاپ‌اور */}
+      {/* هدر پاپ‌اور با کلید وضعیت فعال/غیرفعال */}
       <div className="flex items-center justify-between border-b border-border-c/60 pb-2 mb-2.5">
-        <span className="text-xs font-black text-text-primary flex items-center gap-1.5">
-          <span>⚙️</span>
-          <span>تنظیمات {QUICK_LABELS[filter]}</span>
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-black text-text-primary flex items-center gap-1">
+            <span>⚙️</span>
+            <span>{QUICK_LABELS[filter]}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => toggleQuickFilter(filter)}
+            className={`rounded px-1.5 py-0.5 text-3xs font-black transition-colors ${
+              isActive
+                ? 'bg-accent-green/20 text-accent-green border border-accent-green/40'
+                : 'bg-bg-secondary text-text-muted border border-border-c'
+            }`}
+          >
+            {isActive ? 'فعال ✓' : 'خاموش'}
+          </button>
+        </div>
         <button
           type="button"
           onClick={onClose}
@@ -305,30 +324,6 @@ export function FilterConfigPopover({
                   updateSubConfig('noqteh', { maxDistPct: parseFloat(e.target.value) })
                 }
                 className="w-full accent-[var(--accent-yellow)] cursor-pointer"
-              />
-            </div>
-          </>
-        )}
-
-        {filter === 'f_smart_flow' && (
-          <>
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-text-primary">حداقل قدرت خریدار نخبگان:</span>
-                <span className="num font-bold text-accent-green">
-                  {toFaDigits(config.smartFlow.minBuyerPower.toFixed(1))}×
-                </span>
-              </div>
-              <input
-                type="range"
-                min="1.2"
-                max="3.0"
-                step="0.2"
-                value={config.smartFlow.minBuyerPower}
-                onChange={(e) =>
-                  updateSubConfig('smartFlow', { minBuyerPower: parseFloat(e.target.value) })
-                }
-                className="w-full accent-[var(--accent-green)] cursor-pointer"
               />
             </div>
           </>
