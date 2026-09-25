@@ -124,4 +124,32 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
     fireEvent.click(screen.getByText('۱ روزه'));
     expect(useTapeStore.getState().tapeFilterConfig.jet.lookbackDays).toBe(1);
   });
+  // ── رأیِ مالک (۱۴۰۵-۰۷-۰۳): جت هیچ شرطِ «حداقل تعدادِ معامله» ندارد ──────
+  it('جت هیچ‌جایش تعدادِ معامله را شرط نمی‌کند (رأیِ مالک)', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.jet).not.toHaveProperty('minTradeCount');
+    for (const preset of Object.values(TAPE_PRESETS)) {
+      expect(preset.config.jet).not.toHaveProperty('minTradeCount');
+    }
+    // نمادی با پنجِ معامله که بقیهٔ شروطِ جت را دارد باید پاس شود؛ اگر گیتِ
+    // تعدادِ معامله برگردد، همین‌جا مردود می‌شود.
+    const row = mockRow({ z_tot_tran: 5, p_closing: 1000, p_last: 1020, percent_change: 2,
+                          buyer_power: 2, vol_ratio: 4, h5_max: 900 });
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 5 }))
+      .toBe(true);
+  });
+
+  // ── ریشهٔ TAPE-1: کلیدِ نیامده در literal یعنی undefined، یعنی گیتِ خاموش ─
+  it('هیچ پرستیژی گیتِ فیلتری را با جاانداختنِ فیلد بی‌صدا خاموش نمی‌کند', () => {
+    const defaults = DEFAULT_TAPE_FILTER_CONFIG as unknown as
+      Record<string, Record<string, unknown>>;
+    for (const [name, preset] of Object.entries(TAPE_PRESETS)) {
+      const cfg = preset.config as unknown as Record<string, Record<string, unknown>>;
+      for (const block of Object.keys(defaults)) {
+        const missing = Object.keys(defaults[block])
+          .filter((field) => cfg[block]?.[field] === undefined);
+        expect(missing, name + '.' + block + ' فیلدِ از‌دست‌رفته دارد: '
+               + missing.join(',')).toEqual([]);
+      }
+    }
+  });
 });

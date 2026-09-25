@@ -25,7 +25,8 @@ export type TapeFilterConfig = {
     minVolRatio: number;          // حداقل ضریب حجم
     requireLastAboveClose: boolean; // آخرین بالاتر از پایانی
     minChangePct: number;         // حداقل درصد تغییر قیمت
-    minTradeCount: number;        // حداقل تعداد معاملات
+    // رأیِ مالک (۱۴۰۵-۰۷-۰۳): جت هیچ شرطِ «حداقل تعدادِ معامله» ندارد — نه
+    // در جزوه و نه در چارت ۳ عددی برایِ آن هست. بازگرداندنش ممنوع است.
   };
   /** ۴. کف‌روبی و جمع‌آوری صف (Kef Roobi / Sweep) */
   roobi: {
@@ -65,7 +66,6 @@ export const DEFAULT_TAPE_FILTER_CONFIG: TapeFilterConfig = {
     minVolRatio: 3.0,
     requireLastAboveClose: true,
     minChangePct: 0.0,
-    minTradeCount: 100,
   },
   roobi: {
     maxChangePct: -1.0,
@@ -92,9 +92,12 @@ export const TAPE_PRESETS: Record<TapePresetKey, { label: string; desc: string; 
     desc: 'دلتای ساعت ۱.۵٪ + شکست سقف کوتاه‌مدت ۵ روزه با حجم ۲×',
     config: {
       ...DEFAULT_TAPE_FILTER_CONFIG,
-      clock: { minDeltaPct: 1.5, requireGoldenHour: false, minVolRatio: 1.2, minTradeCount: 40 },
-      jet: { lookbackDays: 5, minBuyerPower: 1.3, minVolRatio: 2.0, requireLastAboveClose: true, minChangePct: 1.0 },
-      suspiciousVolume: { timeframe: 'prev_day_dod', minRatio: 2.0, minTradeCount: 30 },
+      clock: { ...DEFAULT_TAPE_FILTER_CONFIG.clock, minDeltaPct: 1.5, requireGoldenHour: false,
+               minVolRatio: 1.2, minTradeCount: 40 },
+      jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 5, minBuyerPower: 1.3,
+             minVolRatio: 2.0, requireLastAboveClose: true, minChangePct: 1.0 },
+      suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume,
+                          timeframe: 'prev_day_dod', minRatio: 2.0, minTradeCount: 30 },
     },
   },
   jet_trend: {
@@ -102,8 +105,10 @@ export const TAPE_PRESETS: Record<TapePresetKey, { label: string; desc: string; 
     desc: 'شکست سقف ۳۰ روزه + قدرت خریدار ۲× و حجم مشکوک ۳×',
     config: {
       ...DEFAULT_TAPE_FILTER_CONFIG,
-      jet: { lookbackDays: 29, minBuyerPower: 2.0, minVolRatio: 3.0, requireLastAboveClose: true, minChangePct: 2.0 },
-      suspiciousVolume: { timeframe: 'monthly_30d', minRatio: 3.0, minTradeCount: 50 },
+      jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 29, minBuyerPower: 2.0,
+             minVolRatio: 3.0, requireLastAboveClose: true, minChangePct: 2.0 },
+      suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume,
+                          timeframe: 'monthly_30d', minRatio: 3.0, minTradeCount: 50 },
     },
   },
   sniper: {
@@ -111,8 +116,10 @@ export const TAPE_PRESETS: Record<TapePresetKey, { label: string; desc: string; 
     desc: 'فاصله زیر ۲٪ از کف ۳۰ روزه با خریدار قوی و حجم کنترل‌شده',
     config: {
       ...DEFAULT_TAPE_FILTER_CONFIG,
-      noqteh: { maxDistPct: 2.0, minTradeCount: 10, minVolRatio: 1.2 },
-      roobi: { maxChangePct: -2.0, minVolRatio: 2.5, minBuyerPower: 1.5 },
+      noqteh: { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, maxDistPct: 2.0, minTradeCount: 10,
+                minVolRatio: 1.2 },
+      roobi: { ...DEFAULT_TAPE_FILTER_CONFIG.roobi, maxChangePct: -2.0, minVolRatio: 2.5,
+               minBuyerPower: 1.5 },
     },
   },
   smart_money: {
@@ -120,9 +127,12 @@ export const TAPE_PRESETS: Record<TapePresetKey, { label: string; desc: string; 
     desc: 'قدرت خریدار بالای ۲.۵× و حجم معاملات بالای ۳ برابر میانگین',
     config: {
       ...DEFAULT_TAPE_FILTER_CONFIG,
-      smartFlow: { minBuyerPower: 2.5, minVolRatio: 3.0 },
-      suspiciousVolume: { timeframe: 'monthly_30d', minRatio: 3.0, minTradeCount: 60 },
-      jet: { lookbackDays: 19, minBuyerPower: 2.2, minVolRatio: 3.0, requireLastAboveClose: true, minChangePct: 1.0 },
+      smartFlow: { ...DEFAULT_TAPE_FILTER_CONFIG.smartFlow, minBuyerPower: 2.5,
+                   minVolRatio: 3.0 },
+      suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume,
+                          timeframe: 'monthly_30d', minRatio: 3.0, minTradeCount: 60 },
+      jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 19, minBuyerPower: 2.2,
+             minVolRatio: 3.0, requireLastAboveClose: true, minChangePct: 1.0 },
     },
   },
 };
@@ -212,9 +222,7 @@ export function matchJetFilter(r: MarketRow, cfg: TapeFilterConfig['jet']): bool
     if (close <= targetHigh) return false;
   }
 
-  if (cfg.minTradeCount > 0 && typeof r.z_tot_tran === 'number') {
-    if (r.z_tot_tran < cfg.minTradeCount) return false;
-  }
+  // تعدادِ معامله اینجا عمداً شرط نیست (رأیِ مالک ۱۴۰۵-۰۷-۰۳).
 
   return true;
 }
