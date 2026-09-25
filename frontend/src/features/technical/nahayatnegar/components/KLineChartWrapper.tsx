@@ -2,6 +2,27 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
+
+/** کراس‌هیرِ فعلی، از مسیری که در این باندل واقعاً وجود دارد.
+ *
+ * در klinecharts 10 (همان نسخه‌ای که از npm import می‌شود) getCrosshair روی
+ * Store است نه Chart — `chart.getCrosshair()` داخلِ هندلرِ ماوس با
+ * «is not a function» می‌شکند. باندلِ public/vendor که کامپوننتِ otherِ
+ * فنی از window.klinecharts مصرف می‌کند آن متد را *رویِ Chart* دارد، پس دو
+ * چارتِ این برنامه یک API ندارند و کپی‌کردنِ کد بینشان سمّی است.
+ * اگر روزی هر دو نباشند، null برمی‌گردد و فراخوان‌ها همان fallbackِ
+ * «کندل آخر» را نگه می‌دارند — نه throw، نه عددِ ساختگی.
+ */
+type CrosshairLike = { dataIndex?: number; kLineData?: { close?: number; timestamp?: number } };
+
+function readCrosshair(ch: Chart | null | undefined): CrosshairLike | null {
+  if (!ch) return null;
+  const store = (ch as unknown as {
+    getChartStore?: () => { getCrosshair?: () => CrosshairLike | null } | null;
+    getCrosshair?: () => CrosshairLike | null;
+  });
+  return store.getChartStore?.()?.getCrosshair?.() ?? store.getCrosshair?.() ?? null;
+}
 import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
 import { useUiStore } from '@shared/stores/uiStore';
 import {
@@ -1335,7 +1356,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
-      const cross = chartRef.current?.getCrosshair();
+      const cross = readCrosshair(chartRef.current);
       // خط‌کش روی میله‌های دیده‌شده اندازه می‌گیرد، پس شمارشِ کندل‌ها هم باید
       // در همان فضا باشد (در نمای هفتگی، indexِ سریِ روزانه تعداد را ~۵× می‌کند).
       const bars = displayCandlesRef.current;
@@ -1376,7 +1397,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const cross = chartRef.current?.getCrosshair();
+    const cross = readCrosshair(chartRef.current);
     const currPrice = cross?.kLineData?.close ?? measureState.startPrice;
     const currTs = cross?.kLineData?.timestamp ?? measureState.startTs;
     const currIdx = cross?.dataIndex ?? measureState.startIdx;

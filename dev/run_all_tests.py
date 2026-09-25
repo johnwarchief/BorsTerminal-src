@@ -33,6 +33,9 @@ SUITES = [
     # ردیفِ تازهٔ محلی را با عددِ قدیمی جایگزین کند. رویِ DBهایِ موقتِ کوچک
     # اجرا می‌شود، پس در CI هم واقعاً می‌دود (بی‌SKIP).
     ('dev/codal_merge_recency_v1029.py', 'ادغامِ کدال: محلیِ تازه‌تر هرگز بازنویسی نمی‌شود'),
+    # دو باندلِ KLineCharts (public/vendor روی window و پکیجِ npm) دو API دارند؛
+    # getCrosshair فقط در یکی روی Chart است. بی‌این گارد، خط‌کشِ نهایات‌نگر کرش کرد.
+    ('dev/chart_two_bundles_v1029.py', 'هر متدِ Chart باید در باندلِ همان فایل وجود داشته باشد'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
