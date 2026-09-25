@@ -101,6 +101,68 @@ def _write_db_status(stage, percent=0.0, detail="", error=""):
         pass
 
 
+def _merge_codal_snapshot(main, tmp_db):
+    """ادغامِ افزایشیِ snapshot کدال در market.db. برمی‌گرداند: (stats, stale).
+
+    stats[جدول] = (به‌سازی‌شده، درج‌شده، ردیفِ محلیِ تازه‌تر که دست‌نخورده ماند)
+    stale = ستون‌هایی که در snapshot نیستند و więc حفظ شدند.
+
+    دو محافظِ داده، هر دو تصادفی نبودند:
+      ۱) فقط ستون‌های مشترک لمس می‌شوند. INSERT OR REPLACE ردیف را حذف و دوباره
+         درج می‌کند، پس هر ستونی که snapshot نمی‌شناسد (مثل has_operating_sales)
+         بی‌صدا NULL می‌شد و کاربر پیام «موفق» می‌دید. UPDATE...FROM این کار را
+         نمی‌کند و UPSERT هم در SQLite با SELECT قابلِ پارس نیست.
+      ۲) ردیفی که در DB محلی *تازه‌تر* از snapshot است بازنویسی نمی‌شود
+         (CODAL-MERGE-1): تا پیش از این، فشردنِ «بروزرسانی دیتابیس کدال» رویِ
+         اسنپ‌شاتِ کهنهٔ گیت‌هاب صورت‌مالیِ اصلاحیهٔ همان هفتهٔ کاربر را با عددِ
+         قدیمی جایگزین می‌کرد — یعنی خودِ دکمه داده را عقب می‌برد.
+         مقایسه رویِ رشتهٔ 'YYYY-MM-DD HH:MM:SS' است که هر دو مسیر با همان قالب
+         می‌نویسند، پس ترتیبِ لغت‌نگاشتی == ترتیبِ زمانی. اگر یکی از دو طرف
+         stamped نباشد، داوری محافظه‌کارانه است: محلیِ بی‌تاریخ جای خود را
+         می‌دهد، ولی snapshotِ بی‌تاریخ محلیِ تاریخ‌دار را نمی‌بلعد.
+         جدولِ بی‌fetched_at (monthly_sales) دقیقاً همان رفتارِ قبلی دارد.
+    """
+    main.execute("ATTACH DATABASE ? AS src", (tmp_db,))
+    stats, stale = {}, []
+    try:
+        for t in _CODAL_TABLES:
+            src_cols = {r[1] for r in main.execute('PRAGMA src.table_info("%s")' % t)}
+            dst_cols = [r[1] for r in main.execute('PRAGMA main.table_info("%s")' % t)]
+            common = [c for c in dst_cols if c in src_cols]
+            if not common:
+                raise ValueError("no common columns for table %s" % t)
+            dropped = [c for c in dst_cols if c not in src_cols]
+            if dropped:
+                stale.append("%s: %s" % (t, ",".join(dropped)))
+            collist = ",".join('"%s"' % c.replace('"', '""') for c in common)
+            upd = ",".join('"%s"=sr."%s"' % (c, c.replace('"', '""')) for c in common)
+            recency = ""
+            if "fetched_at" in common:
+                recency = (' AND (main."%s".fetched_at IS NULL OR main."%s".fetched_at = ""'
+                           ' OR sr.fetched_at >= main."%s".fetched_at)' % (t, t, t))
+            overlap = int(main.execute(
+                'SELECT COUNT(*) FROM src."%s" sr JOIN main."%s" m'
+                ' ON sr."tracing_no" = m."tracing_no"' % (t, t)).fetchone()[0])
+            cur_upd = main.execute(
+                'UPDATE main."%s" SET %s FROM src."%s" AS sr '
+                'WHERE sr."tracing_no" = main."%s"."tracing_no"%s'
+                % (t, upd, t, t, recency))
+            cur_ins = main.execute(
+                'INSERT INTO main."%s" (%s) SELECT %s FROM src."%s" '
+                'WHERE "tracing_no" NOT IN '
+                '(SELECT "tracing_no" FROM main."%s")'
+                % (t, collist, collist, t, t))
+            upd_n = cur_upd.rowcount or 0
+            stats[t] = (upd_n, cur_ins.rowcount or 0, max(0, overlap - upd_n))
+    finally:
+        main.commit()
+        try:
+            main.execute("DETACH DATABASE src")
+        except sqlite3.Error:
+            pass
+    return stats, stale
+
+
 def _codal_db_worker(dest_lzma, tmp_db):
     global _dbdl_running
     try:
@@ -181,35 +243,9 @@ def _codal_db_worker(dest_lzma, tmp_db):
         main = sqlite3.connect(DB_PATH, timeout=60)
         try:
             main.execute("PRAGMA busy_timeout=60000")
-            main.execute("ATTACH DATABASE ? AS src", (tmp_db,))
-            stats = {}
-            stale = []
-            for t in _CODAL_TABLES:
-                src_cols = {r[1] for r in main.execute('PRAGMA src.table_info("%s")' % t)}
-                dst_cols = [r[1] for r in main.execute('PRAGMA main.table_info("%s")' % t)]
-                common = [c for c in dst_cols if c in src_cols]
-                if not common:
-                    raise ValueError("no common columns for table %s" % t)
-                dropped = [c for c in dst_cols if c not in src_cols]
-                if dropped:
-                    stale.append("%s: %s" % (t, ",".join(dropped)))
-                collist = ",".join('"%s"' % c.replace('"', '""') for c in common)
-                # دو مرحله، نه INSERT OR REPLACE (که ردیف را حذف/درج می‌کند و
-                # ستون‌های فقط-مقصد را NULL می‌کند) و نه UPSERT (SQLite کلمهٔ ON
-                # را بعد از SELECT به JOIN نسبت می‌دهد و ON CONFLICT فقط با VALUES
-                # قابل‌پارس است). UPDATE...FROM فقط ستون‌های مشترک را لمس می‌کند.
-                upd = ",".join('"%s"=sr."%s"' % (c, c.replace('"', '""'))
-                               for c in common)
-                cur_upd = main.execute(
-                    'UPDATE main."%s" SET %s FROM src."%s" AS sr '
-                    'WHERE sr."tracing_no" = main."%s"."tracing_no"'
-                    % (t, upd, t, t))
-                cur_ins = main.execute(
-                    'INSERT INTO main."%s" (%s) SELECT %s FROM src."%s" '
-                    'WHERE "tracing_no" NOT IN '
-                    '(SELECT "tracing_no" FROM main."%s")'
-                    % (t, collist, collist, t, t))
-                stats[t] = (cur_upd.rowcount or 0, cur_ins.rowcount or 0)
+            # خودِ ادغام در _merge_codal_snapshot نشسته تا در تستِ آفلاین (دو DBِ
+            # موقت، بدونِ شبکه) قابلِ سنجیدن باشد.
+            stats, stale = _merge_codal_snapshot(main, tmp_db)
             if stale:
                 # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
                 _write_db_status(
@@ -233,8 +269,9 @@ def _codal_db_worker(dest_lzma, tmp_db):
         # «بروزرسانی شد» می‌خواند — کاربر نمی‌فهمید داده‌اش عوض شده یا نه.
         # SQLite ردیف‌های UPDATE...FROM را حتی وقتی مقدار عوض نشود می‌شمارد، پس
         # «به‌سازی» به معنی «تازه‌ای اضافه نشد» است، نه «داده تغییر کرد».
-        ins_n = sum(i for _, i in stats.values())
-        upd_n = sum(u for u, _ in stats.values())
+        ins_n = sum(i for _, i, _k in stats.values())
+        upd_n = sum(u for u, _, _k in stats.values())
+        keep_n = sum(k for _, _, k in stats.values())
         if ins_n:
             detail = ("دیتابیس کدال به‌روز شد — %d ردیف تازه، %d ردیف به‌سازی"
                       % (ins_n, upd_n))
@@ -245,6 +282,8 @@ def _codal_db_worker(dest_lzma, tmp_db):
             detail = "دیتابیس کدال به‌روز است — ردیف مشترکی برای به‌روزرسانی نبود"
         if stale:
             detail += " · snapshot کهنه بود؛ ستون‌های تازهٔ محلی حفظ شدند"
+        if keep_n:
+            detail += (" · %d ردیفِ محلی تازه‌تر از snapshot بود و دست‌نخورده ماند" % keep_n)
         _write_db_status("done", 100.0, detail)
     except Exception as exc:                                   # noqa: BLE001
         _write_db_status("error", 0.0, "",
