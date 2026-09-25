@@ -229,9 +229,10 @@ describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
   it('درآمد دوره امسال/سال قبل + درصد رشد + مبنای تورم رندر می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
     const panel = screen.getByTestId('fts-drilldown-1');
-    expect(within(panel).getByText(/۱۳۰٫۷٪|130.7%|۱۳۰\.۷٪/)).toBeTruthy();
-    expect(within(panel).getByText(/مبنای تورم/)).toBeTruthy();
-    expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
+    expect(within(panel).getAllByText(/۱۳۰٫۷٪|130.7%|۱۳۰\.۷٪/).length).toBeGreaterThan(0);
+    expect(within(panel).getByTestId('inflation-control')).toBeInTheDocument();
+    expect(within(panel).getByText('دوره جاری (امسال)')).toBeInTheDocument();
+    expect(within(panel).getByText('دوره مشابه سال قبل')).toBeInTheDocument();
   });
 
   it('شرکت خدماتی/هلدینگ: کادر رشد فیزیکی کاملاً حذف می‌شود (نه کادر خالی/نه N/A)', () => {
@@ -242,13 +243,22 @@ describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
     expect(within(panel).queryByText(/تناژ فیزیکی/)).toBeNull();
     expect(within(panel).queryByText(/این شرکت تولیدی نیست/)).toBeNull();
     // داده‌های دیگر شاخص ۱ سرجایشان هستند
-    expect(within(panel).getAllByText(/دورهٔ مشابه/).length).toBe(2);
+    expect(within(panel).getByText('دوره جاری (امسال)')).toBeInTheDocument();
+    expect(within(panel).getByText('دوره مشابه سال قبل')).toBeInTheDocument();
   });
 
   it('تولیدی: رشد واقعی پس از کسر اثر نرخ نمایش می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
     const panel = screen.getByTestId('fts-drilldown-1');
     expect(within(panel).getByText(/رشد واقعی پس از کسر اثر نرخ/)).toBeTruthy();
+  });
+
+  it('تغییر مبنای تورم به صورت پویا اثر و رشد واقعی را تغییر می‌دهد', () => {
+    render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable />);
+    const panel = screen.getByTestId('fts-drilldown-1');
+    const btn40 = within(panel).getByText('۴۰٪');
+    fireEvent.click(btn40);
+    expect(within(panel).getByText(/با مبنای تورم ۴۰٪/)).toBeInTheDocument();
   });
 });
 

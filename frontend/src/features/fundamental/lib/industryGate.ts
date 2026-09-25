@@ -9,17 +9,17 @@ export function industryGateTone(mode: string | null | undefined): IndustryGateT
   if (mode == null || mode === '') return 'gray';
   if (mode === 'free') return 'green';
   if (mode === 'mandatory') return 'red';
-  return 'yellow'; // neutral / مختلط
+  return 'yellow'; // neutral / سایر صنایع
 }
 
 export function industryGateLabel(mode: string | null | undefined): string {
   if (mode == null || mode === '') return 'صنعت نامشخص';
   if (mode === 'free') return 'صنعت آزاد';
   if (mode === 'mandatory') return 'صنعت دستوری';
-  return 'صنعت مختلط';
+  return 'سایر صنایع';
 }
 
-/** متن مشترک دروازه‌های ریسک: «صنعت مختلط (neutral)» — از همان برچسب کارت */
+/** متن مشترک وضعیت صنعت: «سایر صنایع (neutral)» — از همان برچسب کارت */
 export function industryGateDetail(mode: string | null | undefined): string {
   if (mode == null || mode === '') return industryGateLabel(mode);
   return `${industryGateLabel(mode)} (${mode})`;

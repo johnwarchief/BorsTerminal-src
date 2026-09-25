@@ -816,8 +816,7 @@ def _eps_track_blended(conn, symbol, years: int = 3) -> dict:
         out["reason"] = fts_engine.eps_trend_reason(
             series, [str(y) for y in reversed(window)])
         if out["soft_gap"]:
-            out["reason"] += (" — سالِ آخر تنها میاندورهٔ کوتاهِ سال‌سازی‌شده است "
-                              "(قطعیتِ کمتر)")
+            out["reason"] += " (برآورد میاندوره)"
     return out
 
 
@@ -1096,16 +1095,14 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     if exempt:
         return {"available": False, "na": True, "exempt": True, "pass": False,
                 "potential_pass": False, "sales_pass": False, "rule_ref": "F-04",
-                "reason": ("هلدینگ/سرمایه‌گذاری/واسطهٔ مالی (یا نبودِ سطرِ درآمدِ "
-                           "عملیاتی در صورتِ مالی): اعمال نسبت فروش به ارزش بازار و "
-                           "جانشین NAV مجاز نیست (N/A).")}
+                "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
                 "sales_pass": False, "mcap_ht": round(mcap / 1e13, 2),
                 "potential_threshold": th["potential_min"],
                 "sales_threshold": th["sales_to_mcap_min"],
-                "reason": "فروش سالانه یا ارزش بازار موجود نیست."}
+                "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."}
     ann_rial = _f(annual["annual_sales_mrl"]) * MRL_TO_RIAL
     sales_ratio = ann_rial / mcap
     margin = None
@@ -1149,7 +1146,7 @@ _PRICING_OUTLOOK = {
     "mandatory": ("قیمت‌گذاری دستوری — نرخ توسط شورای رقابت/دولت تعیین میشود؛ "
                   "رشد فروش بدون مجوز افزایش نرخ عملاً ممکن نیست و حاشیه تحت "
                   "سرکوب نرخ است. استراتژی FTS این گروه را از سبد بیرون می‌گذارد."),
-    "neutral": ("رژیم مخلوط/بی‌طرف — نیازمند بررسی موردیِ نرخ محصول و مجوز "
+    "neutral": ("سایر صنایع (غیردستوری) — نیازمند بررسی موردیِ نرخ محصول و مجوز "
                 "افزایش قیمت."),
 }
 
@@ -1161,7 +1158,7 @@ def ind5_industry(sector, cfg=None, market_cap_rials=0.0, total_market_cap_rials
     verdict = sec.get("verdict", "neutral")
     sec["outlook"] = _PRICING_OUTLOOK.get(verdict, _PRICING_OUTLOOK["neutral"])
     sec["regime_label"] = {"free": "آزاد / بورس کالا", "mandatory": "دستوری",
-                           "neutral": "مخلوط / بی‌طرف"}[verdict]
+                           "neutral": "سایر صنایع"}[verdict]
     sec["rule_ref"] = "F-05"
     return sec
 
@@ -1274,7 +1271,7 @@ def risk_gates(conn, symbol, sector, mcap_rials, cfg=None, th=None,
     if floor > 0:
         mcap = _f(mcap_rials)
         if mcap <= 0:
-            reasons.append("ارزش بازار نامشخص — پیش‌شرطِ کفِ ارزش بازار قابلِ بررسی نیست")
+            reasons.append("ارزش بازار نامشخص (کف ارزش بازار قابل بررسی نیست)")
         elif mcap < floor:
             reasons.append("ارزش بازار (%s همت) زیرِ کفِ %s همت"
                            % (_n(mcap / HEMMAT_RIAL, 2), _n(_f(cfg.get("mcap_min_hmt")), 2)))
@@ -1283,9 +1280,9 @@ def risk_gates(conn, symbol, sector, mcap_rials, cfg=None, th=None,
     if min_liq > 0:
         tv = trade_value_hmt(conn, symbol, liq_map=liq_map)
         if tv <= 0:
-            reasons.append("میانگین ارزش معاملات روزانه ناموجود — پیش‌شرطِ نقدشوندگی برقرار نیست")
+            reasons.append("ارزش معاملات ناموجود (پیش‌شرط نقدشوندگی احراز نشد)")
         elif tv < min_liq:
-            reasons.append("نقدشوندگی (%s همت) زیرِ آستانهٔ %s همت"
+            reasons.append("نقدشوندگی (%s همت) زیرِ کفِ %s همت"
                            % (_n(tv, 4), _n(min_liq, 4)))
 
     # ۴) فیلتر صنعت Include/Exclude
@@ -1517,20 +1514,31 @@ def build_insights(res: dict) -> tuple:
     # ── لایهٔ ۱: درآمد/فروش (۱الف ریالی + ۱ب فیزیکی) ──────────────────────
     axis1 = bool(g.get("pass") and v.get("pass"))
     if g.get("data_gap"):
-        txt1 = "⚠️ ۱الف رشد ریالی محاسبه نمیشود — %s" % (g.get("reason") or "مخرج YoY موجود نیست")
+        txt1 = "⚠️ ۱الف رشد ریالی: داده موجود نیست (%s)" % (g.get("reason") or "مخرج YoY غایب")
     elif g.get("pass"):
-        txt1 = "✅ ۱الف رشد ریالی %s — آستانهٔ %g٪ پاس شد" % (
+        txt1 = "✅ ۱الف رشد ریالی: %s (کف %g٪ احراز شد)" % (
             _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
     else:
-        txt1 = "⚠️ ۱الف رشد ریالی %s — زیر آستانهٔ %g٪" % (
+        txt1 = "⚠️ ۱الف رشد ریالی: %s (زیر کف %g٪)" % (
             _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
+
+    _BASIS_FA = {
+        "price_effect_decomposition": "تعدیل اثر تورمی",
+        "reported_quantity": "تناژ گزارش‌شده",
+        "direct_quantity": "تناژ مستقیم",
+        "quantity_verified": "تناژ تأییدشده",
+    }
+    basis_str = _BASIS_FA.get(str(v.get("basis")), str(v.get("basis") or "تعدیل تورمی"))
+
     if v.get("data_gap"):
-        txt1b = "⚠️ ۱ب حجم/تناژ قابل راستی‌آزمایی نیست — %s" % (v.get("reason") or "بدون داده")
+        txt1b = "⚠️ ۱ب رشد فیزیکی: عدم دسترسی به داده" if not v.get("reason") else ("⚠️ ۱ب رشد فیزیکی: %s" % v.get("reason"))
     elif v.get("pass"):
-        txt1b = "✅ ۱ب رشد فیزیکی تأیید شد (مبنای %s، اطمینان %s)" % (
-            v.get("basis"), v.get("confidence"))
+        txt1b = "✅ ۱ب رشد فیزیکی: تأیید شد (%s)" % basis_str
     else:
-        txt1b = "🚫 ۱ب رد شد — %s" % (v.get("reason") or "رشد فقط از افزایش نرخ آمده است")
+        v_reason = v.get("reason") or "رشد صرفاً از افزایش نرخ است (فاقد رشد حجم)"
+        if "رشد واقعی کافی است" in v_reason:
+            v_reason = "عدم فراگیری در ماه‌های سپری‌شده"
+        txt1b = "🚫 ۱ب رشد فیزیکی: %s" % v_reason
     insights.append({"step": "۱", "title": "لایهٔ ۱ — درآمد/فروش (رشد ریالی + تأیید حجم)",
                      "type": "success" if axis1 else "warning",
                      "text": "%s<br>%s" % (txt1, txt1b)})
@@ -1568,7 +1576,7 @@ def build_insights(res: dict) -> tuple:
              "threshold": "≥ %g٪" % th["volume_growth_min"],
              "verified": bool(v.get("quantity_verified")),
              "confidence": v.get("confidence"),
-             "detail": "%s · اطمینان %s" % (v.get("basis") or "—", v.get("confidence") or "—")}]}
+             "detail": "%s (اطمینان %s)" % (basis_str, {"high": "بالا", "medium": "متوسط", "low": "پایین"}.get(str(v.get("confidence")), str(v.get("confidence") or "—")))}]}
 
 
     # ── لایهٔ ۲: سابقهٔ ۳ سالهٔ سودسازی ───────────────────────────────────
@@ -1602,9 +1610,9 @@ def build_insights(res: dict) -> tuple:
               "insufficient": "مبنای معتبری یافت نشد"}
     ev_fa = _EV_FA.get(e.get("evidence_tier") or "", "")
     ev_badge = ("" if e.get("strict_evidence") or e.get("data_gap")
-                else " 〔شاهدِ جایگزین: %s〕" % (
+                else " (%s)" % (
                     "تلفیقی" if e.get("consolidated_used") else
-                    "میاندورهٔ سال‌سازی‌شده" if e.get("low_quality_track") else
+                    "میاندوره" if e.get("low_quality_track") else
                     "حسابرسی‌نشده"))
     if e.get("data_gap") and _partial:
         # قاعدهٔ جدول: سطر هرگز حذف نمیشود — مقادیرِ موجود + «-» برایِ دورهٔ
@@ -1612,30 +1620,30 @@ def build_insights(res: dict) -> tuple:
         insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
                          "type": "danger", "partial": True,
                          "row": _row["markdown"],
-                         "text": "🚫 شاخص ۲ (تنها %s دوره موجود است) — EPS %s ریال · %s"
+                         "text": "🚫 شاخص ۲ (تنها %s دوره موجود است) — سابقه EPS: %s ریال · %s"
                                  % (_fa(_avail), " ← ".join(_cells),
                                     e.get("reason") or "کمبود صورت مالی")})
     elif e.get("data_gap"):
         insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
                          "type": "warning",
-                         "text": "⚠️ محاسبه نمیشود — %s" % (e.get("reason") or "کمبود صورت مالی")})
+                         "text": "⚠️ سابقه EPS در دسترس نیست — %s" % (e.get("reason") or "کمبود صورت مالی")})
     elif e.get("pass"):
         insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
                          "type": "success",
-                         "text": "✅ EPS %s ریال در سال‌های %s%s%s"
+                         "text": "✅ روند سودسازی صعودی — EPS: %s ریال (%s)%s%s"
                                  % (" ← ".join(_cells),
                                     " ← ".join(str(y) for y in (e.get("fiscal_years") or [])),
                                     ev_badge,
                                     "" if e.get("interim_confirms") is not False
-                                    else " — ⚠️ برآورد میاندوره‌ای روند را تأیید نمیکند")})
+                                    else " — ⚠️ عدم تأیید در میاندوره")})
     else:
         _vals = " ← ".join(_cells)
         insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
                          "type": "warning" if e.get("soft_gap") else "danger",
                          "text": "%s%s%s" % (
                              "⚠️ " if e.get("soft_gap") else "🚫 ",
-                             (("EPS %s ریال — %s" % (_vals, e.get("reason")))
-                              if e.get("soft_gap") and _vals
+                             (("%s | سابقه EPS: %s ریال" % (e.get("reason"), _vals))
+                              if _vals and e.get("reason")
                               else (e.get("reason") or "روند صعودی سه‌ساله برقرار نیست")),
                              ev_badge)})
     details["۲"] = {
@@ -1689,19 +1697,19 @@ def build_insights(res: dict) -> tuple:
     elif gm.get("band") == "ideal":
         insights.append({"step": "۳", "title": "لایهٔ ۳ — حاشیهٔ سود ناخالص",
                          "type": "success",
-                         "text": "✅ حاشیهٔ %s — ایده‌آل (≥ %g٪)"
+                         "text": "✅ حاشیهٔ ناخالص: %s (ایده‌آل ≥ %g٪)"
                                  % (_pct_txt(gm.get("margin_pct"), signed=False),
                                     th["margin_ideal"])})
     elif gm.get("pass"):
         insights.append({"step": "۳", "title": "لایهٔ ۳ — حاشیهٔ سود ناخالص",
                          "type": "info",
-                         "text": "✅ حاشیهٔ %s — قابل‌قبول (≥ %g٪، ایده‌آل ≥ %g٪)"
+                         "text": "✅ حاشیهٔ ناخالص: %s (قابل‌قبول ≥ %g٪)"
                                  % (_pct_txt(gm.get("margin_pct"), signed=False),
-                                    th["margin_min"], th["margin_ideal"])})
+                                    th["margin_min"])})
     else:
         insights.append({"step": "۳", "title": "لایهٔ ۳ — حاشیهٔ سود ناخالص",
                          "type": "warning",
-                         "text": "⚠️ حاشیهٔ %s — زیر کف %g٪"
+                         "text": "⚠️ حاشیهٔ ناخالص: %s (زیر کف %g٪)"
                                  % (_pct_txt(gm.get("margin_pct"), signed=False),
                                     th["margin_min"])})
     details["۳"] = {
@@ -1733,21 +1741,19 @@ def build_insights(res: dict) -> tuple:
     else:
         pot_ok = "✅" if val.get("potential_pass") else "⚠️"
         s_ok = "✅" if val.get("sales_pass") else "⚠️"
-        # «—» و «0×» دو چیز متفاوت‌اند: نبودِ حاشیه یعنی نسبت محاسبه نشده، نه صفر
-        pot_txt = ("محاسبه نمیشود (حاشیهٔ ناخالص ندارد)" if val.get("potential_pct") is None
-                   else "%s از ارزش بازار (≥ %g٪)"
+        pot_txt = ("نامشخص" if val.get("potential_pct") is None
+                   else "%s ارزش بازار (کف %g٪)"
                         % (_pct_txt(val.get("potential_pct"), signed=False),
                            val.get("potential_threshold") or 0))
-        s_txt = ("محاسبه نمیشود" if val.get("sales_to_mcap") is None
-                 else "= %g× (≥ %g×)" % (val.get("sales_to_mcap"),
-                                         val.get("sales_threshold") or 0))
+        s_txt = ("نامشخص" if val.get("sales_to_mcap") is None
+                 else "%g× (کف %g×)" % (val.get("sales_to_mcap"),
+                                        val.get("sales_threshold") or 0))
         insights.append({
             "step": "۴", "title": "لایهٔ ۴ — پتانسیل سود سالانه به ارزش بازار",
             "type": "success" if val.get("pass") else "warning",
-            "text": ("%s پتانسیل سود ناخالص %s · %s فروش سالانه ÷ ارزش بازار %s · "
-                     "ضریب پویا ×%g برای %d ماه"
+            "text": ("%s پتانسیل سود: %s · %s فروش به ارزش بازار: %s (سالانه‌سازی %d ماهه)"
                      % (pot_ok, pot_txt, s_ok, s_txt,
-                        _f(ann.get("scale_factor")), int(_f(ann.get("months_used")))))})
+                        int(_f(ann.get("months_used")))))})
     details["۴"] = {
         "title": "پتانسیل سود با سالانه‌سازیِ پویا",
         "formula": ("م = ماه‌های سپری‌شده از گزارش ماهانه (۱…۱۲) · فروش سالانه = تجمیعی × "
@@ -1789,22 +1795,28 @@ def build_insights(res: dict) -> tuple:
     # ── لایهٔ ۵: رژیم قیمت‌گذاری صنعت ─────────────────────────────────────
     sec = ind["5"]
     verdict5 = sec.get("verdict")
-    tagline = "تگ: %s" % ("، ".join(sec.get("matched_tokens") or []) or "—")
+    sector_name = (res.get("sector") or "").strip()
+    has_sector = bool(sector_name and sector_name != "—")
+    sec_display = sector_name if has_sector else "صنعت نامشخص"
+    matched = sec.get("matched_tokens") or []
+    tagline = (" · تگ: %s" % "، ".join(matched)) if matched else ""
+
     if verdict5 == "mandatory":
         insights.append({"step": "۵", "title": "لایهٔ ۵ — رژیم قیمت‌گذاری صنعت و چشم‌انداز",
                          "type": "danger",
-                         "text": "🚫 مردود — گروه «%s» دستوری است. %s"
-                                 % (res.get("sector") or "—", tagline)})
+                         "text": "🚫 قیمت‌گذاری دستوری: گروه «%s» مشمول نرخ‌گذاری دستوری است%s"
+                                 % (sec_display, tagline)})
     elif verdict5 == "free":
         insights.append({"step": "۵", "title": "لایهٔ ۵ — رژیم قیمت‌گذاری صنعت و چشم‌انداز",
                          "type": "success",
-                         "text": "✅ تایید شد — گروه «%s» آزاد/بورس‌کالایی است. %s"
-                                 % (res.get("sector") or "—", tagline)})
+                         "text": "✅ صنعت آزاد: گروه «%s» آزاد / بورس‌کالایی است%s"
+                                 % (sec_display, tagline)})
     else:
         insights.append({"step": "۵", "title": "لایهٔ ۵ — رژیم قیمت‌گذاری صنعت و چشم‌انداز",
                          "type": "info",
-                         "text": "ℹ️ بی‌طرف — گروه «%s» در هیچ‌یک از دو فهرست نیست؛ "
-                                 "بررسی موردی لازم است." % (res.get("sector") or "—")})
+                         "text": ("ℹ️ وضعیت صنعت: گروه «%s» غیردستوری (بررسی تکمیلی)%s"
+                                  % (sec_display, tagline)) if has_sector else
+                                 "ℹ️ صنعت نامشخص در تابلو؛ بررسی موردی"})
     details["۵"] = {
         "title": "رژیم قیمت‌گذاری صنعت",
         "formula": ("حالتِ پنل: %s · «دستوری» مردود است مگر حالت Rank_Only انتخاب شود"

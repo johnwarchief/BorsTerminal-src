@@ -27,7 +27,6 @@ import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 
 import { QuarterlyTrend } from '../components/QuarterlyTrend';
-import { RiskGatesPanel } from '../components/RiskGatesPanel';
 import { FtsScreenTable } from '../ui/FtsScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 
@@ -224,8 +223,7 @@ export default function FundamentalPage() {
             {signal.payload.dataQuality === 'incomplete' ? <Badge tone="red">داده ناقص</Badge> : null}
           </>
         ) : null}
-        <span className="mr-auto flex items-center gap-2">
-          <span className="text-2xs text-text-muted">{signal?.rationale ?? ''}</span>
+        <span className="ms-auto flex items-center gap-2">
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </span>
       </div>
@@ -236,6 +234,7 @@ export default function FundamentalPage() {
           passes={passes}
           verdict={card.data.verdict ?? null}
           industryMode={card.data.pricing_mode ?? null}
+          indicators={card.data.indicators ?? null}
           audit={audit}
           physicalApplicable={physicalApplicable}
           activeDrill={drillKey}
@@ -300,37 +299,13 @@ export default function FundamentalPage() {
                       : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
                   </p>
                 </div>
-
-                <div className="rounded-xl border border-border-c/70 bg-bg-card/50 p-3">
-                  <div className="text-xs font-bold text-text-primary mb-1 flex items-center gap-1.5">
-                    <span className="text-accent-blue">⚡</span>
-                    <span>گام بعدی چیست؟</span>
-                  </div>
-                  <p className="text-2xs text-text-secondary leading-relaxed">
-                    {card.data.score != null && card.data.score >= 4
-                      ? 'بنیاد سهم عالی است. حالا در تب بازار بررسی کنید که آیا خریداران قدرت کافی دارند؟ سپس در تب تکنیکال منتظر یک نقطه ورود مناسب (مثل پولبک) بمانید.'
-                      : 'با این شرایط بنیادی، نگهداری این سهم پیشنهاد نمی‌شود. اگر هم قصد خرید دارید فقط با دید نوسان‌گیری کوتاه و با رعایت سفت و سخت حد ضرر عمل کنید.'}
-                  </p>
-                </div>
               </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-border-c/60 flex items-center justify-between text-2xs text-text-muted">
-              <span>منطق غربالگری: کاهش ۸۰۰ نماد به ۱۰ واچ‌لیست و ۵ سبد</span>
-              <span className="font-mono text-text-secondary">{age != null ? `سن صورت مالی: ${toFaDigits(age)} روز` : 'صورت مالی معتبر'}</span>
             </div>
           </div>
         )}
       </div>
 
       <FtsDrillDown card={card.data} active={drillKey} quarters={fiscal} physicalApplicable={physicalApplicable} />
-
-      <RiskGatesPanel
-        excluded={card.data.excluded ?? false}
-        reasons={card.data.exclusion_reasons ?? []}
-        pricingMode={card.data.pricing_mode ?? null}
-        mcapStale={metrics?.mcap_stale ?? false}
-      />
 
       <DataGapBanner gaps={card.data.data_gaps ?? []} eps={card.data.indicators?.['2']} />
 

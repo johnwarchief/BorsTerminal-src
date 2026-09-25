@@ -21,8 +21,8 @@ const NAV_ITEMS = [
   { to: '/market', icon: MarketIcon, label: 'تابلوخوانی/بازار', end: false },
   { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
   { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
-  { to: '/portfolio', icon: PortfolioIcon, label: 'پرتفوی', end: false },
   { to: '/master', icon: MasterIcon, label: 'استراتژی FTS', end: false },
+  { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
   { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },
 ];
 
@@ -78,8 +78,8 @@ export function Sidebar() {
             title={item.label}
             aria-label={item.label}
             className={({ isActive }) =>
-              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-xs font-semibold transition-all duration-200 ${
-                collapsed ? 'justify-center px-0 py-2' : 'justify-start px-2 py-1.5'
+              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-[13px] font-bold transition-all duration-200 ${
+                collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2.5 py-2'
               } ${
                 isActive
                   ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
@@ -94,7 +94,7 @@ export function Sidebar() {
                     isActive ? 'opacity-100 shadow-[0_0_8px_var(--neon-cyan)]' : 'opacity-0'
                   }`}
                 />
-                {collapsed ? <item.icon size={17} /> : item.label}
+                {collapsed ? <item.icon size={19} /> : <span className="flex items-center gap-2"><item.icon size={18} /><span>{item.label}</span></span>}
               </>
             )}
           </NavLink>

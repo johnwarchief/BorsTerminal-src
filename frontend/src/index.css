@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import './shared/styles/tokens.css';
 
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *, .dark, .dark *));
+
 /* توکن های تم فعلی به Tailwind 4 (بدون تغییر نام متغیرها) */
 @theme {
   --color-bg-primary: var(--bg-primary);

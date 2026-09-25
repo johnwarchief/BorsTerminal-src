@@ -86,7 +86,7 @@ export function resolveFtsStatus(
       status: 'reject',
       label: FTS_STATUS_LABEL.reject,
       score: null,
-      reasons: ['صنعت بیمه — حذف خودکار (REJECT_ALL_INSURANCE سند v2.1)'],
+      reasons: ['صنعت بیمه (حذف بر اساس استراتژی FTS — REJECT_ALL_INSURANCE)'],
     };
   }
   const hit = map.get(normSymbol(row.symbol));

@@ -3,6 +3,7 @@
 // فرمول شفافِ همان شاخص نمایش می‌یابد. همهٔ داده‌ها از card.indicators
 // می‌آیند ( همان چیزی که موتور FTS v10 بک‌اند محاسبه کرده ) — این
 // کامپوننت فقط شفاف‌سازی می‌کند، نه محاسبهٔ دوباره.
+import { useState } from 'react';
 import { toFaDigits, fmtPct, fmtInt } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { GapHint, epsGapReason, GENERIC_GAP_REASON, VALUATION_GAP_REASON } from './GapHint';
@@ -65,62 +66,149 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
   const growth = mon?.monetary_pct ?? null;
   const now = mon?.ytd_now_bt ?? null;
   const prev = mon?.ytd_prev_bt ?? null;
-  const inflation = mon?.threshold ?? null;
-  const realGrowth = vol?.real_pct ?? null;
+  const initialInflation = mon?.threshold ?? 60;
+  const [inflation, setInflation] = useState<number>(initialInflation);
+
+  // محاسبه پویای رشد واقعی بر اساس نرخ تورم انتخابی کاربر
+  const realGrowth =
+    growth != null && inflation != null
+      ? (((1 + growth / 100) / (1 + inflation / 100)) - 1) * 100
+      : (vol?.real_pct ?? null);
+
   const maxBar = Math.max(now ?? 0, prev ?? 0, 1);
+  const beatsInflation = growth != null && inflation != null && growth >= inflation;
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        {growth == null ? (
-          <GapHint reason={axisGapTooltip('1a_monetary_growth')}>
-            <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
-              {axisGapReason('1a_monetary_growth').label}
-            </span>
-          </GapHint>
-        ) : (
-          // بدون مبنای تورم، «رشد» فقط اسمی است — سبز شدن یعنی از تورم جلو زده
-          // و این ادعا بدون آستانه قابل اتکا نیست (همان قاعدهٔ «نبود داده ≠ سبز»).
-          <Badge tone={inflation != null && growth >= inflation ? 'green' : 'yellow'}>
-            رشد <span className="num">{fmtPct(growth)}</span>
-            {inflation == null ? <span className="text-2xs font-normal"> / بدون مبنای تورم</span> : null}
-          </Badge>
-        )}
-        {mon?.months != null ? (
-          <Badge tone="blue"><span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span></Badge>
-        ) : null}
-        {inflation != null ? <Badge tone="gray">مبنای تورم <span className="num">{fmtPct(inflation, 0)}</span></Badge> : null}
+    <div className="flex flex-col gap-3.5">
+      {/* نوار وضعیت و ابزار تنظیم مبنای تورم */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-c/40 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {growth == null ? (
+            <GapHint reason={axisGapTooltip('1a_monetary_growth')}>
+              <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
+                {axisGapReason('1a_monetary_growth').label}
+              </span>
+            </GapHint>
+          ) : (
+            <Badge tone={beatsInflation ? 'green' : 'yellow'}>
+              رشد <span className="num font-black">{fmtPct(growth)}</span>
+              {inflation == null ? (
+                <span className="text-2xs font-normal"> / بدون مبنای تورم</span>
+              ) : beatsInflation ? (
+                <span className="text-2xs font-bold text-accent-green"> (+{toFaDigits((growth - inflation).toFixed(1))}٪ مازاد بر تورم)</span>
+              ) : (
+                <span className="text-2xs font-bold text-accent-yellow"> ({toFaDigits((growth - inflation).toFixed(1))}٪ کمتر از تورم)</span>
+              )}
+            </Badge>
+          )}
+          {mon?.months != null ? (
+            <Badge tone="blue">
+              <span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span>
+            </Badge>
+          ) : null}
+        </div>
+
+        {/* تنظیمات سریع مبنای تورم */}
+        <div className="flex items-center gap-2 rounded-xl border border-border-c/60 bg-bg-card/60 px-2.5 py-1" data-testid="inflation-control">
+          <span className="text-2xs font-bold text-text-secondary">مبنای تورم:</span>
+          <div className="flex items-center gap-1">
+            {[40, 50, 60].map((rate) => (
+              <button
+                key={rate}
+                type="button"
+                onClick={() => setInflation(rate)}
+                className={`rounded-md px-1.5 py-0.5 text-2xs font-mono font-bold transition-all ${
+                  inflation === rate
+                    ? 'bg-accent-blue text-black shadow-xs'
+                    : 'text-text-muted hover:bg-bg-hover hover:text-text-primary'
+                }`}
+              >
+                {toFaDigits(rate)}٪
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 border-s border-border-c/60 ps-1.5">
+            <input
+              type="number"
+              min={0}
+              max={200}
+              step={5}
+              value={inflation}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) setInflation(val);
+              }}
+              className="w-11 rounded border border-border-c bg-bg-primary px-1 py-0.5 text-center font-mono text-2xs font-bold text-text-primary outline-none focus:border-accent-blue"
+              aria-label="مبنای تورم سفارشی"
+            />
+            <span className="text-2xs text-text-muted">٪</span>
+          </div>
+        </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <Bar
-          label="دورهٔ مشابه امسال"
-          value={now ?? 0}
-          max={maxBar}
-          tone="blue"
-          valueLabel={now == null ? '—' : `${fmtInt(now)} ب.ت`}
-        />
-        <Bar
-          label="دورهٔ مشابه سال قبل"
-          value={prev ?? 0}
-          max={maxBar}
-          tone="green"
-          valueLabel={prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
-        />
+
+      {/* ۱-الف: مقایسه فروش ریالی و درصد رشد */}
+      <div className="rounded-xl border border-border-c/60 bg-bg-card/30 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-text-primary">۱-الف. مقایسه فروش ریالی</span>
+            <span className="text-2xs text-text-muted">(دوره جاری در برابر دوره مشابه سال قبل)</span>
+          </div>
+          {growth != null ? (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xs text-text-muted">نرخ رشد ریالی:</span>
+              <span className={`font-mono text-sm font-black ${beatsInflation ? 'text-accent-green' : 'text-accent-yellow'}`}>
+                {growth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(growth).toFixed(1))}٪
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-2 my-2">
+          <Bar
+            label="دوره جاری (امسال)"
+            value={now ?? 0}
+            max={maxBar}
+            tone="blue"
+            valueLabel={now == null ? '—' : `${fmtInt(now)} ب.ت`}
+          />
+          <Bar
+            label="دوره مشابه سال قبل"
+            value={prev ?? 0}
+            max={maxBar}
+            tone="green"
+            valueLabel={prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
+          />
+        </div>
+
+        <p className="mt-2 text-2xs leading-relaxed text-text-muted">
+          فرمول: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
+          {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
+        </p>
       </div>
-      <p className="text-2xs leading-relaxed text-text-secondary">
-        فرمول: رشد = (فروش تجمیعی دورهٔ امسال ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
-        {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
-      </p>
+
+      {/* ۱-ب: رشد تولیدی (مقداری/تناژ) */}
       {physicalApplicable ? (
-        <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2.5">
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-2xs font-bold text-text-primary">رشد مقداری (تناژ فیزیکی)</span>
+        <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-text-primary">۱-ب. رشد تولیدی (مقداری/تناژ)</span>
+              <span className="text-2xs text-text-muted">(حذف اثر نرخ تورم و سنجش تناژ واقعی)</span>
+            </div>
+            {realGrowth != null ? (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xs text-text-muted">رشد واقعی/حجمی:</span>
+                <span className={`font-mono text-sm font-black ${realGrowth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                  {realGrowth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(realGrowth).toFixed(1))}٪
+                </span>
+              </div>
+            ) : null}
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary">
             {realGrowth != null
-              ? `رشد واقعی پس از کسر اثر نرخ: ${fmtPct(realGrowth)} (اثر تقریبی نرخ ${fmtPct(vol?.implied_price_pct ?? null, 0)})`
+              ? `رشد واقعی پس از کسر اثر نرخ: ${realGrowth >= 0 ? '+' : '−'}${toFaDigits(Math.abs(realGrowth).toFixed(1))}٪ (با مبنای تورم ${toFaDigits(inflation)}٪)`
               : vol?.data_gap
                 ? `${axisGapReason('1b_volume_growth').why} رشد مقداری از این گزارش حساب نمی‌شود.`
-                : 'رشد مقداری قابل محاسبه نیست — گزارش ماهانهٔ فیزیکی کدال ناقص است.'}
+                : 'رشد مقداری قابل محاسبه نیست — گزارش ماهانهٔ تولیدی کدال ناقص است.'}
           </p>
         </div>
       ) : null}
@@ -442,7 +530,7 @@ function Panel5({ card }: { card: FtsCard }) {
         <div className={`rounded-xl border p-2.5 ${isFree ? 'border-accent-green/40 bg-accent-green/10' : 'border-border-c bg-bg-primary'}`}>
           <div className="text-2xs font-bold text-text-primary">نوع قیمت‌گذاری</div>
           <div className={`mt-1 text-2xs leading-snug ${isFree ? 'text-accent-green' : isMandatory ? 'text-accent-red' : 'text-text-secondary'}`}>
-            {isFree ? 'آزاد / بورس کالا — نرخ از بازار' : isMandatory ? 'دستوری — نرخ با مصوبهٔ دولت' : 'مختلط / موردی'}
+            {isFree ? 'آزاد / بورس کالا — نرخ از بازار' : isMandatory ? 'دستوری — نرخ با مصوبهٔ دولت' : 'سایر صنایع — بررسی موردی'}
           </div>
         </div>
         <div className="rounded-xl border border-border-c bg-bg-primary p-2.5">

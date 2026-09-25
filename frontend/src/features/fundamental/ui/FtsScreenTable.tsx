@@ -35,13 +35,76 @@ type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'prof
 
 const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: 'نماد', title: '' },
-  { key: 'rev_growth', label: '۱ رشد کدال', title: 'رشد فروش تجمعی نسبت به دوره مشابه سال قبل' },
-  { key: null, label: '۲ روند EPS', title: 'وضعیت سه سال اخیر EPS' },
-  { key: 'gross_margin', label: '۳ حاشیه', title: 'سود ناخالص ÷ درآمد عملیاتی' },
-  { key: 'profit_potential_pct', label: '۴ پتانسیل', title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار' },
+  { key: 'rev_growth', label: '۱ رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد تولیدی' },
+  { key: null, label: '۲ روند EPS', title: 'وضعیت و رشد سال‌به‌سال EPS' },
+  { key: 'gross_margin', label: '۳ حاشیه سود ناخالص', title: 'سود ناخالص ÷ درآمد عملیاتی' },
+  { key: 'profit_potential_pct', label: '۴ ارزش بازار', title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
   { key: null, label: '۵ صنعت', title: 'رژیم قیمت‌گذاری صنعت' },
   { key: 'score', label: 'امتیاز', title: 'نردبان بنیادی ۰ تا ۵' },
 ];
+
+/** نمایش جریان سال‌به‌سال EPS همراه با اتصال فلش و درصد رشد YoY */
+function EpsFlow({
+  series,
+  trendText,
+}: {
+  series?: (number | null)[] | null;
+  trendText?: string | null;
+}) {
+  if (!Array.isArray(series) || series.length === 0) {
+    return <span>—</span>;
+  }
+  const clean = series.map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : null));
+  if (clean.every((v) => v === null)) {
+    return <span>—</span>;
+  }
+
+  return (
+    <div
+      dir="rtl"
+      className="inline-flex items-center gap-1 text-xs font-bold text-text-primary"
+      title={trendText ?? undefined}
+    >
+      {clean.map((val, idx) => {
+        const nextVal = clean[idx + 1];
+        let growthPct: number | null = null;
+        if (val != null && nextVal != null) {
+          if (val !== 0) {
+            growthPct = Math.round(((nextVal - val) / Math.abs(val)) * 100);
+          } else {
+            growthPct = nextVal > 0 ? 100 : nextVal < 0 ? -100 : 0;
+          }
+        }
+        const valStr =
+          val != null
+            ? toFaDigits(Number.isInteger(val) ? String(val) : val.toFixed(2).replace(/\.?0+$/, ''))
+            : '—';
+
+        return (
+          <span key={idx} className="inline-flex items-center gap-1">
+            <span className="whitespace-nowrap">{valStr}</span>
+            {idx < clean.length - 1 ? (
+              <span className="inline-flex flex-col items-center justify-center px-0.5" aria-hidden>
+                {growthPct != null ? (
+                  <span
+                    className={`text-[8.5px] font-black leading-none ${
+                      growthPct > 0 ? 'text-accent-green' : growthPct < 0 ? 'text-accent-red' : 'text-text-muted'
+                    }`}
+                  >
+                    {growthPct > 0 ? `+${toFaDigits(growthPct)}٪` : `${toFaDigits(growthPct)}٪`}
+                  </span>
+                ) : (
+                  <span className="text-[8.5px] text-text-muted leading-none">—</span>
+                )}
+                <span className="text-text-muted text-[10px] leading-none">←</span>
+              </span>
+            ) : null}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 /** چهارحالتهٔ شاخص ۲ (قبول / سابقهٔ ناقص / مردود / بدون داده) و سه‌حالتهٔ بقیهٔ شاخص‌ها */
 type CellState = 'pass' | 'fail' | 'gap' | 'partial';
@@ -157,6 +220,8 @@ const ScreenerRow = memo(function ScreenerRow({
     [r, thresholds],
   );
               const i1 = verdictOf(r.i1_pass);
+              const i1a = verdictOf(r.i1a_pass ?? r.i1_pass);
+              const i1b = verdictOf(r.i1b_pass);
               /** شاخص ۲ — چهاردحالته از روی خودِ داده (lib/epsHistory):
                *  pass / partial «مردود — سابقهٔ ناقص (۲ از ۳ سال)» / fail / gap (<۲ سال) */
               const epsHist = epsHistory(
@@ -229,42 +294,46 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    {/* تراز ستون (v1.0.18-fix): مقدارِ عددی اول می‌آید و با flex-1+text-start به
-                        لبهٔ startِ سلول (هم‌راستا با هدرِ text-start) می‌چسبد؛ نشانِ قبول/مردود
-                        بعد از آن قرار می‌گیرد. پیش‌تر نشان جلوتر بود و چون عرضِ برچسب‌های
-                        قبول/مردود/شکاف در هر سطر متفاوت است، اعداد هر ردیف افقی جابه‌جا
-                        می‌شدند و زیر هدر نمی‌نشستند. */}
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
                       <span
-                        className={`num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        className={`num block min-w-0 text-start text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
                         title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
                         {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
                       </span>
-                      <span className="shrink-0">
-                        {i1 === 'gap' ? (
-                          <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
-                        ) : (
-                          <PassMark
-                            state={i1}
-                            evidence={ev.i1a}
-                            testId="fts-mark-1a_monetary_growth"
-                          />
-                        )}
-                      </span>
+                      <div className="ms-auto shrink-0 flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
+                          <span className="text-[10px] text-text-muted font-bold">الف</span>
+                          {i1a === 'gap' ? (
+                            <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
+                          ) : (
+                            <PassMark
+                              state={i1a}
+                              evidence={ev.i1a}
+                              testId="fts-mark-1a_monetary_growth"
+                            />
+                          )}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی">
+                          <span className="text-[10px] text-text-muted font-bold">ب</span>
+                          {isFinancialOrHolding(r) ? (
+                            <span className="text-[9px] text-text-muted">N/A</span>
+                          ) : i1b === 'gap' ? (
+                            <AxisGapMark axis="1b_volume_growth" />
+                          ) : (
+                            <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
-                      <span
-                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-secondary"
-                        title={epsTrend ?? VALUE_MISSING_WITH_VERDICT}
-                      >
-                        {epsTrend ?? '—'}
-                      </span>
-                      <span className="shrink-0">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="min-w-0 text-start overflow-hidden">
+                        <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
+                      </div>
+                      <span className="ms-auto shrink-0">
                         {epsPartialRejected ? (
                           <AuditBadge
                             state="fail"
@@ -291,16 +360,16 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      {/* تراز ستون: مقدار اول (text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 text-start text-sm font-bold whitespace-nowrap text-text-primary"
                         title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
                       </span>
-                      <span className="shrink-0">
+                      <span className="ms-auto shrink-0">
                         {i3 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
                             /* مؤسسهٔ مالی/هلدینگ: سود ناخالص ماهیتاً وجود ندارد → N/A نه «شکاف داده» */
@@ -324,10 +393,10 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {/* تراز ستون: مقدار اول (flex-1 + text-start) تا زیر هدر بنشیند */}
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      {/* تراز ستون: مقدار اول (text-start) تا زیر هدر بنشیند */}
                       <span
-                        className="num block min-w-0 flex-1 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                        className="num block min-w-0 text-start text-sm font-bold whitespace-nowrap text-text-primary"
                         title={
                           r.profit_potential_pct == null
                             ? r.sales_to_mcap != null
@@ -339,7 +408,7 @@ const ScreenerRow = memo(function ScreenerRow({
                         {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
                         {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
                       </span>
-                      <span className="shrink-0">
+                      <span className="ms-auto shrink-0">
                         {i4 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
                             <GapMark
@@ -362,16 +431,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {i5 === 'gap' ? (
-                        <AxisGapMark axis="5_industry" evidence={ev.i5} />
-                      ) : (
-                        <PassMark
-                          state={i5}
-                          evidence={ev.i5}
-                          testId="fts-mark-5_industry"
-                        />
-                      )}
+                    <div className="flex items-center justify-between gap-2 min-w-0">
                       {r.excluded ? (
                         <span
                           className="inline-block max-w-[14rem] truncate align-middle text-2xs font-bold text-accent-red leading-tight"
@@ -380,10 +440,21 @@ const ScreenerRow = memo(function ScreenerRow({
                           {r.exclusion_reasons}
                         </span>
                       ) : (
-                        <span className="whitespace-nowrap text-xs font-semibold text-text-secondary">
-                          {r.pricing_mode === 'free' ? 'آزاد' : r.pricing_mode === 'mandatory' ? 'دستوری' : r.pricing_mode === 'neutral' ? 'مختلط' : '—'}
+                        <span className="whitespace-nowrap text-xs font-semibold text-text-secondary text-start">
+                          {r.pricing_mode === 'free' ? 'آزاد' : r.pricing_mode === 'mandatory' ? 'دستوری' : r.pricing_mode === 'neutral' ? 'سایر صنایع' : '—'}
                         </span>
                       )}
+                      <span className="ms-auto shrink-0">
+                        {i5 === 'gap' ? (
+                          <AxisGapMark axis="5_industry" evidence={ev.i5} />
+                        ) : (
+                          <PassMark
+                            state={i5}
+                            evidence={ev.i5}
+                            testId="fts-mark-5_industry"
+                          />
+                        )}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle text-center">
@@ -430,15 +501,15 @@ export function FtsScreenTable({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
-  /** دروازه‌های سخت فعال‌اند → ردیف‌های excluded پیش‌فرض حذف می‌شوند؛ سوییچ فقط برای بازرسی */
-  const [showExcluded, setShowExcluded] = useState(false);
   /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
   const excludeAxes = useExcludeAxes();
 
-  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass' | 'swing'>('all');
+  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass'>('all');
+
+  /** تعداد ردیف‌های حذف‌شده توسط دروازه‌های سخت */
+  const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
 
   /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
-  const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
   const nonCompanyCount = useMemo(
     () => rows.filter((r) => !isFundamentalCompany(r)).length,
     [rows],
@@ -451,23 +522,18 @@ export function FtsScreenTable({
   );
 
   const presetCounts = useMemo(() => {
-    const base = rowsAfterAxisFilter.filter((r) => isFundamentalCompany(r) && (showExcluded || r.excluded !== true));
+    const base = rowsAfterAxisFilter.filter((r) => isFundamentalCompany(r) && r.excluded !== true);
     return {
       all: base.length,
       super: base.filter((r) => r.score >= 4 && r.pricing_mode === 'free').length,
       jet: base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free').length,
       hourglass: base.filter((r) => r.score === 5 && r.excluded !== true).length,
-      swing: base.filter((r) => (r.rev_growth ?? 0) >= 40 && r.gross_margin != null && r.gross_margin >= 20).length,
     };
-  }, [rowsAfterAxisFilter, showExcluded]);
+  }, [rowsAfterAxisFilter]);
 
   const visible = useMemo(
     () => {
-      let base = showExcluded ? rowsAfterAxisFilter : rowsAfterAxisFilter.filter((r) => r.excluded !== true);
-      // حتی در حالت بازرسی excluded، صندوق‌ها/کارگزاری‌ها/مشتقه‌ها می‌مانند؟ نه —
-      // «نمایش ردیف‌های حذف‌شده» فقط دروازه‌های سخت را برمی‌گرداند؛ قلمرو
-      // شرکت‌محورِ جدول بنیادی روی هر دو حالت اعمال می‌شود.
-      base = base.filter((r) => isFundamentalCompany(r));
+      let base = rowsAfterAxisFilter.filter((r) => r.excluded !== true && isFundamentalCompany(r));
 
       if (strategicPreset === 'super') {
         base = base.filter((r) => r.score >= 4 && r.pricing_mode === 'free');
@@ -475,13 +541,11 @@ export function FtsScreenTable({
         base = base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free');
       } else if (strategicPreset === 'hourglass') {
         base = base.filter((r) => r.score === 5 && r.excluded !== true);
-      } else if (strategicPreset === 'swing') {
-        base = base.filter((r) => (r.rev_growth ?? 0) >= 40 && r.gross_margin != null && r.gross_margin >= 20);
       }
 
       return base;
     },
-    [rowsAfterAxisFilter, showExcluded, strategicPreset],
+    [rowsAfterAxisFilter, strategicPreset],
   );
 
   const sorted = useMemo(() => {
@@ -574,34 +638,6 @@ export function FtsScreenTable({
             </svg>
             {refreshing ? "در حال بروزرسانی…" : "بروزرسانی"}
           </button>
-          {excludedCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setShowExcluded((v) => !v)}
-              aria-pressed={showExcluded}
-              title={`دروازه‌های سخت: ${toFaDigits(excludedCount)} ردیف حذف‌شده ${showExcluded ? 'نمایش داده' : 'پنهان'} می‌شود`}
-              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
-                showExcluded
-                  ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
-                  : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
-              }`}
-            >
-              <span
-                aria-hidden
-                dir="ltr"
-                className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${
-                  showExcluded ? 'bg-accent-red/70' : 'bg-bg-card'
-                }`}
-              >
-                <span
-                  className={`absolute h-3 w-3 rounded-full bg-white border border-border-c shadow transition-all ${
-                    showExcluded ? 'left-[14px]' : 'left-0.5'
-                  }`}
-                />
-              </span>
-              {showExcluded ? 'پنهان‌سازی ردیف‌های حذف‌شده' : 'نمایش ردیف‌های حذف‌شده'}
-            </button>
-          ) : null}
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
@@ -689,23 +725,11 @@ export function FtsScreenTable({
         >
           ⏳ ساعت شنی FTS ({toFaDigits(presetCounts.hourglass)})
         </button>
-        <button
-          type="button"
-          onClick={() => setStrategicPreset('swing')}
-          title="رشد فروش بالای ۴۰٪ و حاشیه سود بالای ۲۰٪ جهت نوسان‌گیری"
-          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
-            strategicPreset === 'swing'
-              ? 'border-accent-blue bg-accent-blue/15 text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.2)]'
-              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          ⚡ مهندسی معکوس نوسانی ({toFaDigits(presetCounts.swing)})
-        </button>
       </div>
 
-      {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت (نه ۷۰vhِ ثابت) تا پایینِ
-          جدول فضای خالی نماند و در هر رزولوشنی درست پر شود. */}
-      <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-260px)] min-h-[320px] overflow-auto overscroll-contain">
+      {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت تا پایینِ
+          جدول فضای خالی نماند و در هر رزولوشنی (به‌ویژه لپ‌تاپ) درست و کامل پر شود. */}
+      <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-200px)] min-h-[320px] overflow-auto overscroll-contain">
         <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
           <colgroup>
             <col className="w-[19%]" />
@@ -765,7 +789,7 @@ export function FtsScreenTable({
         ✓ قبول · ✗ مردود · سلول بی‌داده به‌جای برچسب عمومی، علت را می‌نویسد (مثلاً «{gapLabel('1a_monetary_growth')}»
         ⇐ همان شاخص در کدال داده ندارد؛ با نگه‌داشتن ماوس علت و راه‌حل کامل می‌آید) — سطر حذف نمی‌شود
         · «سابقهٔ ناقص» = {toFaDigits(2)} سالِ موجودِ EPS (شاخص ۲) نمایش داده می‌شود ولی گیت {toFaDigits(EPS_REQUIRED_YEARS)} ساله رد است
-        {excludedCount > 0 && !showExcluded
+        {excludedCount > 0
           ? ` · ${toFaDigits(excludedCount)} ردیفِ مشمول دروازه‌های سخت پنهان شد`
           : ''}
         {nonCompanyCount > 0

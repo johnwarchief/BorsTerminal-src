@@ -32,6 +32,8 @@ export const FtsScreenRowSchema = z.object({
   mcap: z.number().nullish(),
   score: z.number().min(0).max(5),
   i1_pass: z.boolean().nullish(),
+  i1a_pass: z.boolean().nullish(),
+  i1b_pass: z.boolean().nullish(),
   i2_pass: z.boolean().nullish(),
   i3_pass: z.boolean().nullish(),
   i4_pass: z.boolean().nullish(),

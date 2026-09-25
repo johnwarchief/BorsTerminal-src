@@ -92,8 +92,8 @@ function SplitFilterChip({
       ref={chipRef}
       className={`inline-flex shrink-0 items-center rounded-full border text-xs font-bold transition-all shadow-2xs select-none ${
         active
-          ? 'border-accent-blue bg-accent-blue/15 text-accent-blue dark:bg-accent-blue/25'
-          : 'border-border-c bg-bg-card text-text-primary/85 hover:border-accent-blue hover:text-accent-blue'
+          ? 'border-accent-blue bg-accent-blue/15 text-accent-blue font-black dark:bg-accent-blue/25'
+          : 'border-border-c bg-bg-card text-text-primary hover:border-accent-blue hover:text-accent-blue font-bold'
       }`}
     >
       <button
@@ -105,7 +105,7 @@ function SplitFilterChip({
       >
         <span>{QUICK_LABELS[filter]}</span>
         {count != null && count > 0 ? (
-          <span className="num ms-1 font-black opacity-90">({toFaDigits(count)})</span>
+          <span className="num ms-1 font-black opacity-95">({toFaDigits(count)})</span>
         ) : null}
       </button>
 
@@ -114,7 +114,7 @@ function SplitFilterChip({
         onClick={handleOpenConfig}
         title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
         aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
-        className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[10px] text-text-muted hover:text-accent-blue border-s border-border-c/50 focus:outline-none"
+        className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
       >
         ⚙
       </button>
@@ -246,7 +246,6 @@ export function countQuickMatches(
     f_jet: 0,
     f_roobi: 0,
     f_noqteh: 0,
-    f_smart_flow: 0,
   };
   for (const r of rows) {
     for (const f of QUICK_FILTERS) {

@@ -21,7 +21,8 @@ import {
 } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
 import type { ScreenerRow } from '../api/useFtsScreener';
-import { LIMIT_PCT } from '../stores/tapeStore';
+import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
+import { evaluateDynamicQuickFilter } from '../lib/tapeAlgorithms';
 
 type SortKey =
   | 'symbol'
@@ -34,9 +35,9 @@ type SortKey =
   | 'last_vs_close'
   | 'p_last';
 
-/** ۹ ستون بهینه‌شده: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت */
+/** ۹ ستون بهینه‌شده و متوازن: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت */
 const ROW_GRID =
-  'grid-cols-[minmax(115px,1.4fr)_minmax(65px,0.75fr)_minmax(52px,0.65fr)_minmax(65px,0.75fr)_minmax(60px,0.7fr)_minmax(65px,0.75fr)_minmax(65px,0.75fr)_minmax(60px,0.7fr)_minmax(160px,2fr)]';
+  'grid-cols-[minmax(130px,1.8fr)_minmax(75px,0.9fr)_minmax(65px,0.8fr)_minmax(80px,1fr)_minmax(80px,1fr)_minmax(85px,1.1fr)_minmax(85px,1.1fr)_minmax(75px,0.9fr)_minmax(115px,1.3fr)]';
 
 const HEADERS: { key: SortKey; label: string }[] = [
   { key: 'symbol', label: 'نماد و نام' },
@@ -86,13 +87,13 @@ function pctTone(pct: number | null | undefined): string {
 }
 
 const MICRO_TONES = {
-  violet: 'bg-purple-100 text-purple-900 border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
-  amber: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
-  cyan: 'bg-sky-100 text-sky-900 border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
-  emerald: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
-  green: 'bg-green-100 text-green-900 border-green-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
-  red: 'bg-red-100 text-red-900 border-red-300 dark:bg-accent-red/20 dark:text-[#fecaca] dark:border-accent-red/40',
-  gray: 'bg-bg-card/90 text-text-primary border border-border-c',
+  violet: 'bg-purple-100 text-purple-950 border border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
+  amber: 'bg-amber-100 text-amber-950 border border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
+  cyan: 'bg-sky-100 text-sky-950 border border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
+  emerald: 'bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
+  green: 'bg-green-100 text-green-950 border border-green-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
+  red: 'bg-red-100 text-red-950 border border-red-300 dark:bg-accent-red/20 dark:text-[#fecaca] dark:border-accent-red/40',
+  gray: 'bg-slate-200 text-slate-900 border border-slate-300 dark:bg-bg-card/90 dark:text-text-primary dark:border-border-c',
 } as const;
 
 type MicroTone = keyof typeof MICRO_TONES;
@@ -138,6 +139,7 @@ const TapeRow = memo(function TapeRow({
   selected: boolean;
   onSelect: (s: string) => void;
 }) {
+  const tapeFilterConfig = useTapeStore((s) => s.tapeFilterConfig);
   const diff = lastCloseDiff(row);
   const strongHour = detectStrongHour(row);
   const goldenHour = !strongHour && detectGoldenHour(row);
@@ -151,8 +153,15 @@ const TapeRow = memo(function TapeRow({
   const volMult = row.vol_ratio != null ? `${toFaDigits(row.vol_ratio.toFixed(1))}× میانگین ماه` : '—';
   const buyPc = buyPerCapitaMt(row);
   const sellPc = sellPerCapitaMt(row);
+
+  const isSusp = evaluateDynamicQuickFilter(row, 'f_susp', tapeFilterConfig) || !!row.f_susp;
+  const isJet = evaluateDynamicQuickFilter(row, 'f_jet', tapeFilterConfig) || !!row.f_jet;
+  const isRoobi = evaluateDynamicQuickFilter(row, 'f_roobi', tapeFilterConfig) || sweep;
+  const isNoqteh = evaluateDynamicQuickFilter(row, 'f_noqteh', tapeFilterConfig);
+  const isClock = evaluateDynamicQuickFilter(row, 'f_clock', tapeFilterConfig) || strongHour || goldenHour || !!row.f_clock;
+
   const badges: React.ReactNode[] = [];
-  if (strongHour || goldenHour || row.f_clock)
+  if (isClock)
     badges.push(
       <MicroBadge
         key="clock"
@@ -169,9 +178,10 @@ const TapeRow = memo(function TapeRow({
         {strongHour ? 'ساعت' : goldenHour ? 'ساعت طلایی' : 'ساعت'}
       </MicroBadge>,
     );
-  if (row.f_susp) badges.push(<MicroBadge key="susp" pattern="susp" tone="amber" title={`حجم مشکوک: ${volMult}`} >مشکوک</MicroBadge>);
-  if (row.f_jet) badges.push(<MicroBadge key="jet" pattern="jet" tone="cyan" title={`جت: شکست مقاومت با سرانه خرید ${row.buyer_power != null ? toFaDigits(row.buyer_power.toFixed(2)) : '—'}×`} >جت</MicroBadge>);
-  if (sweep) badges.push(<MicroBadge key="sweep" pattern="sweep" tone="emerald" title={`کف‌روب: ${SWEEP_HINT}`} >کف‌روب</MicroBadge>);
+  if (isSusp) badges.push(<MicroBadge key="susp" pattern="susp" tone="amber" title={`حجم مشکوک: ${volMult}`} >مشکوک</MicroBadge>);
+  if (isJet) badges.push(<MicroBadge key="jet" pattern="jet" tone="cyan" title={`جت: شکست مقاومت با سرانه خرید ${row.buyer_power != null ? toFaDigits(row.buyer_power.toFixed(2)) : '—'}×`} >جت</MicroBadge>);
+  if (isRoobi) badges.push(<MicroBadge key="sweep" pattern="sweep" tone="emerald" title={`کف‌روب: ${SWEEP_HINT}`} >کف‌روب</MicroBadge>);
+  if (isNoqteh) badges.push(<MicroBadge key="noqteh" pattern="noqteh" tone="amber" title="نقطه‌زنی: فاصله نزدیک از کف ۳۰ روزه" >نقطه</MicroBadge>);
   if (atLimitUp) badges.push(<MicroBadge key="lu" pattern="limit-up" tone="green" title="صف خرید (تغییر ≥ ۴.۹٪)" >صف+</MicroBadge>);
   if (atLimitDown) badges.push(<MicroBadge key="ld" pattern="limit-down" tone="red" title="صف فروش (تغییر ≤ −۴.۹٪)" >صف−</MicroBadge>);
   if (boxExit) badges.push(<MicroBadge key="box" pattern="box" tone="gray" title={BOX_EXIT_HINT} >باکس</MicroBadge>);
@@ -188,7 +198,7 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full min-w-[760px] ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
+      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 36 }}
@@ -291,7 +301,7 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid min-w-[760px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
+        <div className={`sticky top-0 z-10 grid w-full min-w-[760px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => (
             <button
               key={h.key}

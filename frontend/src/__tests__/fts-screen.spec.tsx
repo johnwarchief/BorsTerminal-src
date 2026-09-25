@@ -63,7 +63,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
   it('پنج شاخص و امتیاز را رندر می کند', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     expect(screen.getByText('شپنا')).toBeInTheDocument();
-    expect(screen.getByText('۱ رشد کدال')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
+    expect(screen.getByText('۱ رشد فروش (الف/ب)')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
     // toFaDigits فقط ارقام را عوض می‌کند؛ ممیز لاتین می‌ماند: ۴۵.۲٪
     expect(screen.getByText('۴۵.۲٪')).toBeInTheDocument();
     expect(screen.getAllByText('✓').length).toBeGreaterThanOrEqual(4);
@@ -176,7 +176,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
       />,
     );
     // همان دو سالِ موجود رندر می‌شود (سال غایب «—»)
-    expect(screen.getByText('۱۰۰ ← ۱۵۰ ← —')).toBeInTheDocument();
+    expect(screen.getByTitle('۱۰۰ ← ۱۵۰ ← —')).toBeInTheDocument();
     const label = screen.getByTestId('eps-partial-rejected');
     // برچسب عیناً همان نردبان EPS و drill-down است (منبع واحد: lib/epsHistory)
     expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
@@ -240,36 +240,14 @@ describe('دروازه‌های سخت (Hard Gates) در دیده‌بان', () 
     expect(screen.getByText(/۲ ردیفِ مشمول دروازه‌های سخت پنهان شد/)).toBeInTheDocument();
   });
 
-  it('سوییچ «نمایش ردیف‌های حذف‌شده» ردیف‌های excluded را با ظاهر محو برمی‌گرداند', () => {
-    render(
-      <FtsScreenTable rows={[...healthyRows, mandatoryRow, suspendedRow]} onSelect={() => {}} />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'نمایش ردیف‌های حذف‌شده' }));
-    const cells = screen.getAllByTestId('fts-screen-row');
-    expect(cells).toHaveLength(4);
-    expect(screen.getByText('خودرو')).toBeInTheDocument();
-    expect(screen.getByText('معلق')).toBeInTheDocument();
-    expect(screen.getByText('۴ شرکت از ۴')).toBeInTheDocument();
-    // ردیف excluded محو و خط‌خورده است
-    const excludedCell = cells.find((c) => (c.textContent ?? '').includes('خودرو'));
-    expect(excludedCell?.className).toContain('opacity-55');
-    // دکمه به حالت «پنهان‌سازی» برمی‌گردد
-    expect(screen.getByRole('button', { name: 'پنهان‌سازی ردیف‌های حذف‌شده' })).toBeInTheDocument();
-  });
-
-  it('کلیک روی ردیف excluded نماد را فعال نمی‌کند', () => {
+  it('دکمهٔ «نمایش ردیف‌های حذف‌شده» حذف شده و ردیف‌های مشمول دروازه همواره پنهان هستند', () => {
     const onSelect = vi.fn();
     render(
-      <FtsScreenTable rows={[...healthyRows, mandatoryRow]} onSelect={onSelect} />,
+      <FtsScreenTable rows={[...healthyRows, mandatoryRow, suspendedRow]} onSelect={onSelect} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'نمایش ردیف‌های حذف‌شده' }));
-    fireEvent.click(screen.getByText('خودرو'));
-    expect(onSelect).not.toHaveBeenCalledWith('خودرو');
-  });
-
-  it('بدون ردیف excluded سوییچ نمایش رندر نمی‌شود', () => {
-    render(<FtsScreenTable rows={healthyRows} onSelect={() => {}} />);
-    expect(screen.queryByRole('button', { name: 'نمایش ردیف‌های حذف‌شده' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ردیف‌های حذف‌شده/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('خودرو')).not.toBeInTheDocument();
+    expect(screen.queryByText('معلق')).not.toBeInTheDocument();
   });
 });
 
@@ -389,7 +367,7 @@ describe('کارایی جدول غربالگری (F-08)', () => {
   it('کانتینر اسکرول با ارتفاع محدود و هدر چسبان آماده است', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const scroll = screen.getByTestId('fts-screen-scroll');
-    expect(scroll.className).toMatch(/h-\[calc\(100dvh-260px\)\]/); // ارتفاع کشسانِ متناسب با ویوپورت (بدون فضای خالی پایین)
+    expect(scroll.className).toMatch(/h-\[calc\(100dvh-200px\)\]/); // ارتفاع کشسانِ متناسب با ویوپورت (بدون فضای خالی پایین)
     expect(scroll.className).toContain('overflow-auto');
     const thead = document.querySelector('thead');
     expect(thead?.className).toContain('sticky');

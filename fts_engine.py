@@ -720,11 +720,11 @@ def eps_trend_reason(series, years=None) -> str:
     for i in range(n - 1):
         if vals[i + 1] <= vals[i]:
             if vals[i + 1] == vals[i]:
-                return "توقف رشد سود در %s (بدون افزایش نسبت به سال قبل)" % _ylab(i + 1)
+                return "توقف رشد سود در %s" % _ylab(i + 1)
             pct = round((vals[i + 1] / vals[i] - 1.0) * 100.0, 1) if vals[i] else None
-            tail = (" (%.1f٪ افت)" % pct) if pct is not None else ""
-            return "افت سود در %s نسبت به سال قبل%s" % (_ylab(i + 1), tail)
-    return "روند اکیداً صعودی نیست"
+            tail = (" (افت %.1f٪)" % abs(pct)) if pct is not None else ""
+            return "افت سود در %s%s" % (_ylab(i + 1), tail)
+    return "روند سودسازی صعودی نیست"
 
 # ============================================ شاخص ۲: روند ۳ سالهٔ EPS (اصلی)
 def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
