@@ -304,6 +304,19 @@ def invalidate_fts_results(conn) -> int:
     return n
 
 
+def ind4_na(card_ind4) -> bool:
+    """آیا کارتِ جزئیات، شاخص ۴ را «کاربرد ندارد» اعلام کرده؟
+
+    رأیِ مالک (۱۴۰۵-۰۷-۰۳): معافیت = نظر نمی‌دهد، نه پاسِ رایگان و نه رد.
+    کارت این را در `na`/`exempt` می‌گوید و `passes` را bool نگه می‌دارد
+    (امتیاز همان ۰ می‌ماند). هر کسی که حکمِ کارت را به ستونِ جدولِ غربالگری
+    کپی می‌کند — اسکرینرِ زنده و نویسندهٔ fts_results — باید همین را بپرسد،
+    وگرنه یک نماد با کشِ سرد «مردود» و با کشِ گرم «N/A» می‌شود.
+    """
+    return bool(card_ind4) and (card_ind4.get("na") is True
+                                or card_ind4.get("exempt") is True)
+
+
 def _tp(v):
     """ستونِ پاسِ جدول → سه‌حاله (None همان «نظر نمی‌دهد» می‌ماند — رأی ۱۶)."""
     return None if v is None else bool(v)

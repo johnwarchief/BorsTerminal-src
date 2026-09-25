@@ -26,7 +26,7 @@ export const FundamentalPayload = z.object({
   kind: z.literal('fts_card'),
   /** امتیاز 5 لایه FTS */
   score: z.number().min(0).max(5),
-  passes: z.record(z.string(), z.boolean()),
+  passes: z.record(z.string(), z.boolean().nullish()),
   riskGates: z.array(RiskGate).default([]),
   /** نردبان EPS -- مقدار null یعنی دوره بدون داده */
   epsSeries: z.array(z.number().nullable()).default([]),

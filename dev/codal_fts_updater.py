@@ -912,7 +912,8 @@ def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
             _i3.get("margin_pct"),                # f03_margin_pct
             _tp(p.get("3_gross_margin")),         # f03_pass
             _i4.get("sales_to_mcap"),             # f04_ratio
-            _tp(p.get("4_sales_to_mcap")),        # f04_pass
+            (None if fts_engine.ind4_na(_i4)      # f04_pass — رأی ۱۶: معاف = None
+             else _tp(p.get("4_sales_to_mcap"))),
             res.get("pricing_mode"),              # f05_verdict
             _tp(p.get("5_industry")),             # f05_pass
             int(res.get("score") or 0),           # score

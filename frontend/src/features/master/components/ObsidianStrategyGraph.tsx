@@ -1113,14 +1113,9 @@ export function ObsidianStrategyGraph({
           data-testid="obsidian-strategy-canvas"
         >
           <defs>
-            {/* الگوی شبکه ابسیدین متناسب با تم لایت و دارک */}
-            <pattern id="gridPatternFts" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle
-                cx="20"
-                cy="20"
-                r={isLight ? 1.0 : 0.8}
-                fill={isLight ? 'rgba(100, 116, 139, 0.25)' : 'rgba(148, 163, 184, 0.15)'}
-              />
+            {/* الگوی بهینه‌شده شبکه ابسیدین جهت کارایی روان و مصرف کم در سیستم‌های معمولی */}
+            <pattern id="gridPatternFts" width="60" height="60" patternUnits="userSpaceOnUse">
+              <rect width="60" height="60" fill="none" stroke={isLight ? 'rgba(148, 163, 184, 0.18)' : 'rgba(51, 65, 85, 0.25)'} strokeWidth="0.5" />
             </pattern>
           </defs>
 
@@ -1315,25 +1310,25 @@ export function ObsidianStrategyGraph({
                     {/* مغز داخلی نود */}
                     <circle r={node.radius * 0.4} fill={node.color} />
 
-                    {/* پلاک عنوان نود: فوق‌العاده خوانا در هر دو تم روشن و تاریک */}
-                    <g transform={`translate(0, ${node.radius + 15})`} pointerEvents="none">
+                    {/* پلاک عنوان نود: فوق‌العاده خوانا، عریض‌تر با فونت درشت و پرکنتراست در هر دو تم روشن و تاریک */}
+                    <g transform={`translate(0, ${node.radius + 16})`} pointerEvents="none">
                       <rect
-                        x="-76"
-                        y="-11"
-                        width="152"
-                        height="20"
-                        rx="6"
+                        x="-88"
+                        y="-12"
+                        width="176"
+                        height="24"
+                        rx="7"
                         fill={isLight ? '#ffffff' : '#0b1329'}
-                        fillOpacity={isLight ? 0.98 : 0.92}
-                        stroke={isSelected ? node.color : isLight ? '#cbd5e1' : 'rgba(51, 65, 85, 0.7)'}
-                        strokeWidth={isSelected ? '1.5' : '1'}
+                        fillOpacity={isLight ? 0.98 : 0.94}
+                        stroke={isSelected ? node.color : isLight ? '#cbd5e1' : 'rgba(71, 85, 105, 0.85)'}
+                        strokeWidth={isSelected ? '2' : '1.2'}
                       />
                       <text
                         x="0"
-                        y="3"
+                        y="4"
                         textAnchor="middle"
                         fill={isLight ? '#0f172a' : '#f8fafc'}
-                        className="text-[10px] font-black"
+                        className="text-[12px] font-black"
                       >
                         {node.label}
                       </text>
@@ -1359,15 +1354,15 @@ export function ObsidianStrategyGraph({
 
       {/* ۳. پنل جامع ویرایشگر پارامترها و بازرسی نود انتخاب‌شده (Interactive Parameter Editor) */}
       <div
-        className={`border-t p-4 sm:p-5 backdrop-blur-xl transition-colors ${
-          isLight ? 'bg-white/95 border-slate-200 text-slate-800' : 'bg-bg-card/95 border-border-c/80 text-text-primary'
+        className={`border-t p-4 sm:p-5 transition-colors ${
+          isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-bg-card border-border-c/80 text-text-primary'
         }`}
       >
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           {/* سمت راست: مشخصات، فرمول و توضیحات نود */}
           <div className="flex items-start gap-3.5">
             <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-lg"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg font-black shadow-md"
               style={{
                 backgroundColor: `${inspectedNode.color}22`,
                 border: `1.5px solid ${inspectedNode.color}77`,
@@ -1385,13 +1380,13 @@ export function ObsidianStrategyGraph({
                       : '★'}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className={`text-xs sm:text-sm font-black ${isLight ? 'text-slate-900' : 'text-text-primary'}`}>
+                <h3 className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-text-primary'}`}>
                   {inspectedNode.fullTitle}
                 </h3>
                 <span
-                  className={`rounded px-2 py-0.5 text-3xs font-bold border ${
+                  className={`rounded px-2 py-0.5 text-2xs font-bold border ${
                     isLight
                       ? 'bg-sky-50 text-sky-700 border-sky-200'
                       : 'bg-bg-primary text-accent-blue border-border-c'
@@ -1400,7 +1395,7 @@ export function ObsidianStrategyGraph({
                   {inspectedNode.page}
                 </span>
                 <span
-                  className={`rounded px-2 py-0.5 text-3xs font-bold border ${
+                  className={`rounded px-2 py-0.5 text-2xs font-bold border ${
                     isLight
                       ? 'bg-slate-100 text-slate-600 border-slate-200'
                       : 'bg-bg-primary text-text-muted border-border-c'
@@ -1410,7 +1405,7 @@ export function ObsidianStrategyGraph({
                 </span>
                 {symbol && (
                   <span
-                    className={`rounded px-2 py-0.5 text-3xs font-bold border ${
+                    className={`rounded px-2 py-0.5 text-2xs font-bold border ${
                       isLight
                         ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
                         : 'bg-bg-primary text-accent-cyan border-border-c'
@@ -1421,17 +1416,17 @@ export function ObsidianStrategyGraph({
                 )}
               </div>
               <p
-                className={`text-2xs max-w-3xl leading-relaxed ${
-                  isLight ? 'text-slate-600' : 'text-text-muted'
+                className={`text-xs max-w-3xl leading-relaxed font-medium ${
+                  isLight ? 'text-slate-700' : 'text-text-secondary'
                 }`}
               >
                 {inspectedNode.description}
               </p>
-              <div className="text-3xs font-mono flex items-center gap-1 pt-0.5">
-                <span className={`font-sans font-bold ${isLight ? 'text-slate-500' : 'text-text-muted'}`}>
+              <div className="text-xs font-mono flex items-center gap-1.5 pt-0.5">
+                <span className={`font-sans font-bold text-xs ${isLight ? 'text-slate-500' : 'text-text-muted'}`}>
                   فرمول و شرط قانون:
                 </span>
-                <span className={isLight ? 'text-slate-800' : 'text-text-secondary'}>
+                <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-accent-blue'}`}>
                   {inspectedNode.ruleFormula}
                 </span>
               </div>

@@ -16,7 +16,7 @@ export const NODATA_VALID_MS = 7 * 24 * 3600_000;
 export type FundamentalInput = {
   symbol: string;
   ftsScore: number | null;
-  passes: Record<string, boolean>;
+  passes: Record<string, boolean | null | undefined>;
   epsSeries: (number | null)[];
   pe: number | null;
   sectorMedianPE: number | null;

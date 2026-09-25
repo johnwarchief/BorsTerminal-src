@@ -278,8 +278,12 @@ def get_screener():
                 r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
                 r["i2_pass"] = p["2_eps_trend"]
+                # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
+                # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
+                # «مردود» و با کشِ گرم «N/A» می‌شد.
                 r["i3_pass"] = p["3_gross_margin"]
-                r["i4_pass"] = p["4_sales_to_mcap"]
+                r["i4_pass"] = (None if fts_engine.ind4_na((res.get("indicators") or {}).get("4"))
+                                else p["4_sales_to_mcap"])
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
                 r["i1b_pass"] = p.get("1b_volume_growth")

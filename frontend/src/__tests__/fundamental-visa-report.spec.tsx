@@ -16,7 +16,11 @@ import { QuarterlyTrend } from '@features/fundamental/components/QuarterlyTrend'
 import type { FtsCard as FtsCardType } from '@features/fundamental/api/useFtsCard';
 import type { FiscalQuarter } from '@features/fundamental/lib/fundMath';
 import { epsFailReason } from '@features/fundamental/lib/epsHistory';
-import { industryGateTone } from '@features/fundamental/lib/industryGate';
+import {
+  industryGateLabel,
+  industryGatePassLabel,
+  industryGateTone,
+} from '@features/fundamental/lib/industryGate';
 import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '@features/fundamental/lib/assetScope';
 
 const visa = JSON.parse(
@@ -120,11 +124,13 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
       />,
     );
     const cell = screen.getByTestId('fts-card-cell-5_industry');
-    // صنعت ویسا neutral است: سلولِ کارت نامِ طبقه را می‌گوید و بجِ ممیزی حکمِ
-    // غربالگری را — دو متنِ متفاوت، هر دو از یک منبع (lib/industryGate)
-    expect(within(cell).getByText('سایر صنایع')).toBeInTheDocument();
-    expect(within(cell).getByTestId('fts-cell-audit-5_industry').textContent)
-      .toContain('مجاز در غربالگری');
+    // صنعت ویسا neutral است: سلولِ کارت نامِ طبقه را می‌گوید و titleِ بجِ ممیزی
+    // حکمِ غربالگری را — دو متنِ متفاوت، هر دو از یک منبع (lib/industryGate)
+    const gate = within(cell).getByTestId('fts-cell-audit-5_industry');
+    expect(within(cell).getByTestId('fts-card-label-5_industry').textContent)
+      .toContain(industryGateLabel('neutral'));
+    expect(gate.getAttribute('title')).toContain(industryGateLabel('neutral'));
+    expect(gate.getAttribute('title')).toContain(industryGatePassLabel(true));
     expect(industryGateTone('neutral')).toBe('yellow');
     // برچسب کلی «قبول» برای صنعت دیگر استفاده نمی‌شود
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();

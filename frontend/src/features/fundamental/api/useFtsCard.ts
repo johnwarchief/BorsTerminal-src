@@ -53,6 +53,9 @@ const Indicator1VolumeSchema = z
     real_pct: z.number().nullish(),
     implied_price_pct: z.number().nullish(),
     price_benchmark_pct: z.number().nullish(),
+    /** کفِ رشد مقداری (volume_growth_min) — بک‌اند می‌فرستد؛ بدونِ این کلید
+     *  zod آن را دور می‌ریخت و کارت مجبور بود عددِ ثابتِ خودش را بنویسد. */
+    threshold: z.number().nullish(),
     applicable: z.boolean().nullish(),
     pass: z.boolean().nullish(),
     data_gap: z.boolean().nullish(),
@@ -117,6 +120,9 @@ const Indicator3Schema = z
     optimal: z.boolean().nullish(),
     threshold: z.number().nullish(),
     optimal_threshold: z.number().nullish(),
+    /** بک‌اند «ideal_threshold» می‌فرستد (margin_ideal)؛ optimal_threshold هیچ‌وقت
+     *  نمی‌رسید، پس کارت همیشه به پیش‌فرض ۳۰٪ می‌افتاد. */
+    ideal_threshold: z.number().nullish(),
     band: z.string().nullish(),
     na: z.boolean().nullish(),
     reason: z.string().nullish(),
@@ -142,6 +148,9 @@ const Indicator4Schema = z
     potential_threshold: z.number().nullish(),
     potential_pass: z.boolean().nullish(),
     pass: z.boolean().nullish(),
+    na: z.boolean().nullish(),
+    exempt: z.boolean().nullish(),
+    reason: z.string().nullish(),
     annual: z
       .object({
         annual_sales_mrl: z.number().nullish(),
@@ -203,7 +212,9 @@ export const FtsCardSchema = z.object({
   /** false = شرکت عملیاتی نیست (صندوق)؛ FTS روی آن اعمال نمی‌شود */
   applicable: z.boolean().nullish(),
   pricing_mode: z.string().nullish(),
-  passes: z.record(z.string(), z.boolean()).nullish(),
+  /** سه‌حاله (رأیِ مالک ۱۴۰۵-۰۷-۰۳): null = «نظر نمی‌دهد». رکوردِ خشکِ boolean
+   *  کل کارت را در parse می‌انداخت و صفحه به‌جای کارت «در دسترس نیست» می‌داد. */
+  passes: z.record(z.string(), z.boolean().nullish()).nullish(),
   indicators: IndicatorsSchema,
   profile: ProfileSchema,
   metrics: z

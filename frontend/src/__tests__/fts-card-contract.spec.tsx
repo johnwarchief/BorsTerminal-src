@@ -191,6 +191,84 @@ describe('علت حذف از غربالگری — داخل جعبهٔ تصمیم
   });
 });
 
+describe('کف‌های کارت FTS — از پاسخِ بک‌اند، نه عددِ ثابتِ UI', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockJson(typeof url === 'string' ? url : '')),
+      } as unknown as Response),
+    );
+  });
+
+  afterEach(() => {
+    cardOverride = null;
+  });
+
+  it('آستانهٔ غیرپیش‌فرض در همان سلول دیده می‌شود (اسلایدرِ تنظیمات کارت را بی‌روغن نمی‌کند)', async () => {
+    cardOverride = {
+      ...minimalCard('1404'),
+      indicators: {
+        '1': { volume: { threshold: 11, applicable: true, pass: true } },
+        '2': { years_required: 4, strictly_rising: true, eps_series: [1, 2, 3, 4], pass: true },
+        '3': { margin_pct: 31.5, threshold: 26, ideal_threshold: 28, pass: true },
+        '4': { sales_to_mcap: 0.9, sales_threshold: 0.77, pass: true },
+        '5': { verdict: 'free', pass: true },
+      },
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
+    expect(screen.getByTestId('fts-card-cell-1_growth').textContent).toMatch(/≥\s*۱۱٪/);
+    expect(screen.getByTestId('fts-card-cell-2_eps_trend').textContent).toContain('۴ سال صعودی');
+    const m = screen.getByTestId('fts-card-cell-3_gross_margin').textContent ?? '';
+    expect(m).toMatch(/≥\s*۲۶٪/);
+    expect(m).toContain('ایده‌آل ۲۸٪');
+    expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap').textContent).toMatch(/۰[./]۷۷×/);
+    // هیچ‌کدام از کف‌های پیش‌فرض نباید جای عددِ بک‌اند نشسته باشد
+    expect(m).not.toMatch(/≥\s*۲۰٪/);
+  });
+
+  it('هلدینگِ معاف: پنلِ P/NAV می‌آید هرچند نام/گروه را هیچ طبقه‌بندی نشناسد', async () => {
+    cardOverride = {
+      ...minimalCard('1404'),
+      sector: 'فعاليتهاي كمكي به نهادهاي مالي واسط',
+      indicators: { '4': { na: true, exempt: true, reason: 'هلدینگ؛ N/A' } },
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('holding-pnav-panel')).toBeInTheDocument());
+    expect(screen.queryByTestId('fts-strategy-summary')).not.toBeInTheDocument();
+  });
+
+  it('صندوق (رأی ۱۵): «FTS ندارد» نشان داده می‌شود نه متنِ «هلدینگ/سرمایه‌گذاری»', async () => {
+    cardOverride = {
+      ...minimalCard('1404'),
+      sector: 'صندوق‌های سرمایه‌گذاری',
+      applicable: false,
+      verdict: 'FTS ندارد',
+      indicators: { '4': { na: true, exempt: true, reason: 'صندوق؛ N/A' } },
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('fts-strategy-summary')).toBeInTheDocument());
+    expect(screen.queryByTestId('holding-pnav-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('fts-strategy-summary').textContent).toContain('FTS ندارد');
+  });
+
+  it('شاخصِ «نظر نمی‌دهد» (رأیِ مالک ۱۴۰۵-۰۷-۰۳) به‌جای «مردود» سرخ نمی‌شود', async () => {
+    const base = minimalCard('1404');
+    cardOverride = {
+      ...base,
+      passes: { ...base.passes, '4_sales_to_mcap': null },
+      indicators: { '4': { na: true, exempt: true, reason: 'هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).' } },
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
+    const cell = screen.getByTestId('fts-card-cell-4_sales_to_mcap');
+    expect(cell.textContent).not.toContain('مردود');
+    expect(cell.className).not.toContain('accent-red');
+  });
+});
+
 describe('پنل تنظیمات FTS — دراور ثابت سمت راست (رگرسیون جای‌گیری)', () => {
   beforeEach(() => {
     fetchMock.mockReset();

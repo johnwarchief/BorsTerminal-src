@@ -10,6 +10,7 @@ import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
 import { EPS_PARTIAL_TESTID, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
 import { industryGateTone } from '../lib/industryGate';
+import { MathFraction } from './MathFormula';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,
@@ -74,6 +75,9 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
   const floorDelta = growth != null && floor != null ? growth - floor : null;
   const gapFloor = floorDelta == null ? null : Math.abs(Math.round(floorDelta * 10) / 10);
   const passes1a = card.passes?.['1a_monetary_growth'];
+  // «جلو زدن از تارگت» را بک‌اند با همان آستانهٔ جزوه می‌سنجد؛ نرخِ تورمِ
+  // جدا در UI یعنی دو جواب برای یک نماد، پس نشانه از حکمِ شاخص ۱ می‌آید.
+  const beatsTarget = passes1a ?? beatsFloor;
   const passes1b = card.passes?.['1b_volume_growth'];
 
   return (
@@ -120,8 +124,8 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
       </div>
 
       {/* ۱-الف: مقایسه فروش ریالی و درصد رشد */}
-      <div className="rounded-xl border border-border-c/60 bg-bg-card/30 p-3">
-        <div className="mb-2 flex items-center justify-between">
+      <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-3.5">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-text-primary">۱-الف. مقایسه فروش ریالی</span>
             <span className="text-2xs text-text-muted">(دوره جاری در برابر دوره مشابه سال قبل)</span>
@@ -136,7 +140,76 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-2 my-2">
+        {/* کارت‌های مقایسه شفاف دو دوره در کنار هم */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 my-2.5">
+          {/* دوره جاری */}
+          <div className="flex flex-col justify-between rounded-xl border border-accent-blue/30 bg-accent-blue/5 p-2.5">
+            <div className="flex items-center justify-between text-2xs text-text-muted mb-1">
+              <span className="font-bold text-accent-blue">عملکرد دوره جاری</span>
+              {mon?.period ? <span className="font-mono">{toFaDigits(mon.period)}</span> : null}
+            </div>
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
+              <span className="font-mono text-sm font-black text-text-primary">
+                {now == null ? '—' : `${fmtInt(now)} ب.ت`}
+              </span>
+            </div>
+            {mon?.months ? (
+              <span className="text-3xs text-text-muted mt-1 font-mono">
+                {toFaDigits(mon.months)} ماهه از ابتدای سال مالی
+              </span>
+            ) : null}
+          </div>
+
+          {/* دوره مشابه سال قبل */}
+          <div className="flex flex-col justify-between rounded-xl border border-border-c/60 bg-bg-card/60 p-2.5">
+            <div className="flex items-center justify-between text-2xs text-text-muted mb-1">
+              <span className="font-bold text-text-secondary">عملکرد سال قبل</span>
+              {mon?.year && mon?.period ? (
+                <span className="font-mono">{toFaDigits(mon.period.replace(String(mon.year), String(mon.year - 1)))}</span>
+              ) : null}
+            </div>
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
+              <span className="font-mono text-sm font-black text-text-primary">
+                {prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
+              </span>
+            </div>
+            {mon?.months ? (
+              <span className="text-3xs text-text-muted mt-1 font-mono">
+                همان بازهٔ {toFaDigits(mon.months)} ماهه در سال قبل
+              </span>
+            ) : null}
+          </div>
+
+          {/* اختلاف و تغییرات */}
+          <div className={`flex flex-col justify-between rounded-xl border p-2.5 ${
+            beatsTarget ? 'border-accent-green/30 bg-accent-green/5' : 'border-amber-400/30 bg-amber-400/5'
+          }`}>
+            <div className="flex items-center justify-between text-2xs mb-1">
+              <span className="font-bold text-text-secondary">تغییر ریالی دوره</span>
+              <span className={`font-mono text-2xs font-bold ${now == null || prev == null ? 'text-text-muted' : now >= prev ? 'text-accent-green' : 'text-accent-red'}`}>
+                {now != null && prev != null ? (now >= prev ? 'رشد مثبت' : 'کاهش فروش') : '—'}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between mt-1">
+              <span className="text-2xs text-text-secondary">اختلاف فروش:</span>
+              <span className={`font-mono text-sm font-black ${now == null || prev == null ? 'text-text-muted' : now >= prev ? 'text-accent-green' : 'text-accent-red'}`}>
+                {now != null && prev != null ? `${now >= prev ? '+' : '−'}${fmtInt(Math.abs(now - prev))} ب.ت` : '—'}
+              </span>
+            </div>
+            <span className="text-3xs text-text-muted mt-1">
+              {floor == null
+                ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
+                : beatsTarget
+                  ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
+                  : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
+            </span>
+          </div>
+        </div>
+
+        {/* نمودار میله‌ای افقی مقایسه تصویری دو دوره */}
+        <div className="flex flex-col gap-2 my-3 rounded-lg border border-border-c/40 bg-bg-card/30 p-2.5">
           <Bar
             label="دوره جاری (امسال)"
             value={now ?? 0}
@@ -153,23 +226,52 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           />
         </div>
 
-        <p className="mt-2 text-2xs leading-relaxed text-text-muted">
-          فرمول: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
+        {/* نمایش استاندارد فرمول ریاضی با جاگذاری دقیق مقادیر سهم */}
+        <div className="my-2 flex flex-wrap items-center justify-center gap-1.5 rounded-lg border border-border-c/50 bg-bg-primary/50 py-2 px-3 font-mono text-2xs sm:text-xs" dir="ltr">
+          <span className="font-bold text-accent-blue">Growth = </span>
+          <span className="text-sm text-text-muted">(</span>
+          <MathFraction
+            numerator={
+              <span className="text-3xs text-text-primary px-1 font-bold whitespace-nowrap">
+                {now != null ? `${fmtInt(now)} ب.ت` : 'فروش دوره جاری'}
+              </span>
+            }
+            denominator={
+              <span className="text-3xs text-text-primary px-1 font-bold whitespace-nowrap">
+                {prev != null ? `${fmtInt(prev)} ب.ت` : 'فروش دوره مشابه قبل'}
+              </span>
+            }
+          />
+          <span className="text-xs text-text-secondary">− 1</span>
+          <span className="text-sm text-text-muted">)</span>
+          <span className="text-xs text-text-secondary">× 100</span>
+          {growth != null ? (
+            <>
+              <span className="text-text-muted">=</span>
+              <span className={`font-bold ${beatsTarget ? 'text-accent-green' : 'text-accent-yellow'}`}>
+                {growth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(growth).toFixed(1))}٪
+              </span>
+            </>
+          ) : null}
+        </div>
+
+        <p className="mt-1 text-3xs leading-relaxed text-text-muted">
+          فرمول FTS: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
           {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
         </p>
       </div>
 
-      {/* ۱-ب: رشد تولیدی (مقداری/تناژ) */}
+      {/* ۱-ب: رشد مقداری / فیزیکی */}
       {physicalApplicable ? (
         <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-3">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-text-primary">۱-ب. رشد تولیدی (مقداری/تناژ)</span>
-              <span className="text-2xs text-text-muted">(حذف اثر نرخ تورم و سنجش تناژ واقعی)</span>
+              <span className="text-xs font-bold text-text-primary">۱-ب. رشد مقداری / فیزیکی</span>
+              <span className="text-2xs text-text-muted">(حذف اثر نرخ تورم و ارزیابی رشد واقعی تولید)</span>
             </div>
             {realGrowth != null ? (
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xs text-text-muted">رشد واقعی/حجمی:</span>
+                <span className="text-2xs text-text-muted">رشد واقعی/مقداری:</span>
                 <span className={`font-mono text-sm font-black ${(passes1b ?? realGrowth >= 0) ? 'text-accent-green' : 'text-accent-red'}`}>
                   {realGrowth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(realGrowth).toFixed(1))}٪
                 </span>
@@ -273,6 +375,12 @@ function Panel2({ card }: { card: FtsCard }) {
       ) : (
         <p className="text-2xs text-text-muted">سری EPS سالانهٔ حسابرسی‌شده موجود نیست.</p>
       )}
+      {/* نمایش استاندارد شرط ریاضی */}
+      <div className="my-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
+        <span className="text-accent-blue font-bold">EPS Trend Condition:</span>
+        <span className="text-text-primary font-bold">EPS<sub>t</sub> &gt; EPS<sub>t-1</sub> &gt; EPS<sub>t-2</sub> &gt; 0</span>
+      </div>
+
       <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: EPS هر سال مالی (صورت سود و زیان ۱۲ماههٔ حسابرسی‌شدهٔ ۱۲/۲۹) — باید سه سال متوالی صعودی باشد.
         {ind?.interim?.annualize_label ? ` · میاندوره: ${ind.interim.annualize_label}` : ''}
@@ -358,6 +466,18 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
           بالای ۳۰٪ ← مطلوب
         </div>
       </div>
+
+      {/* نمایش استاندارد فرمول ریاضی */}
+      <div className="my-1.5 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
+        <span className="font-bold text-accent-blue">Gross Margin % = </span>
+        <MathFraction
+          numerator={<span className="text-2xs text-text-primary px-1">سود ناخالص</span>}
+          denominator={<span className="text-2xs text-text-primary px-1">درآمدهای عملیاتی</span>}
+        />
+        <span className="text-xs text-text-secondary">× 100</span>
+        <span className="text-accent-green font-bold ms-2">≥ 20%</span>
+      </div>
+
       <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰{ind?.period_end ? ` · دوره: ${toFaDigits(ind.period_end)}` : ''}
         {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — N/A' : ''}
@@ -398,6 +518,14 @@ function Panel4({ card }: { card: FtsCard }) {
         <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
         <div dir="ltr" className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
           Annualized Sales = (Cumulative Sales / {m}) × 12
+        </div>
+        <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
+          <span className="font-bold text-accent-blue">Sales / Mcap = </span>
+          <MathFraction
+            numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
+            denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
+          />
+          <span className="text-accent-green font-bold ms-2">≥ 0.33</span>
         </div>
         <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
           N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.

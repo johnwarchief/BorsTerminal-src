@@ -221,6 +221,16 @@ ck(fts_engine.fts_results_of(_con, "X", cfg_hash=_cfg_hash) is None,
 # می‌گوید — دو جوابِ ناهم‌سان، این بار وابسته به وضعیتِ کش.
 ck("_tp(p.get(" in _body and 'bool(p.get("' not in _body,
    "نویسنده پاس‌ها را با _tp می‌نویسد (None → NULL، نه bool() → 0)")
+
+# کارتِ جزئیات passes["4"] را bool نگه می‌دارد و معافیت را در na/exempt می‌فرستد؛
+# پس هر کپی‌کارِ آن حکم به ستونِ جدول، باید از fts_engine.ind4_na بپرسد — وگرنه
+# همان نماد با کشِ سرد «مردود» و با کشِ گرم «N/A» می‌شود (رأی ۱۶).
+ck("ind4_na(_i4)" in _body,
+   "نویسندهٔ fts_results معافیتِ کارت را به NULL می‌گرداند (ind4_na)")
+ck(fts_engine.ind4_na({"na": True}) and fts_engine.ind4_na({"exempt": True})
+   and not fts_engine.ind4_na({"na": False, "exempt": False})
+   and not fts_engine.ind4_na(None),
+   "fts_engine.ind4_na سه حالتِ na/exempt/غایب را درست می‌خواند")
 _null_row = [None] * 27
 _null_row[0] = "Y"            # symbol
 _null_row[9] = "neutral"      # f05_verdict

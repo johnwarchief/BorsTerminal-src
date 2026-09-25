@@ -1,11 +1,22 @@
 // __tests__/strategy-tree-page.spec.tsx -- تست‌های صفحه جامع درخت استراتژی FTS
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import StrategyTreePage from '../features/master/routes/StrategyTreePage';
 import { useSymbolStore } from '../shared/stores/symbolStore';
 import { Sidebar } from '../app/components/Sidebar';
+
+vi.mock('@features/market/api/useMarketFeed', () => ({
+  useMarketFeed: () => ({
+    data: {
+      data: [
+        { symbol: 'فولاد', name: 'فولاد مبارکه اصفهان', p_closing: 6200 },
+        { symbol: 'شپنا', name: 'پالایش نفت اصفهان', p_closing: 4800 },
+      ],
+    },
+  }),
+}));
 
 function renderWithProviders(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -111,6 +122,32 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     const link = screen.getByRole('link', { name: /درخت استراتژی FTS/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/strategy-tree');
+  });
+
+  it('جستجوی تعاملی نماد و اعمال خودکار آن بر درخت استراتژی', () => {
+    renderWithProviders(<StrategyTreePage />);
+
+    // فیلد جستجو وجود دارد
+    const searchInput = screen.getByPlaceholderText(/جستجوی نماد یا شرکت/i);
+    expect(searchInput).toBeInTheDocument();
+
+    // تایپ نماد فولاد
+    fireEvent.change(searchInput, { target: { value: 'فولاد' } });
+
+    // انتخاب نماد از لیست کشویی
+    const resultItem = screen.getByRole('button', { name: /فولاد مبارکه/i });
+    expect(resultItem).toBeInTheDocument();
+    fireEvent.click(resultItem);
+
+    // سهم در استور و به عنوان نماد فعال ست شده
+    expect(useSymbolStore.getState().symbol).toBe('فولاد');
+    expect(screen.getAllByText(/نماد فعال:/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /تطبیق/i })).toBeInTheDocument();
+
+    // دکمه پاک کردن نماد
+    const clearBtn = screen.getByRole('button', { name: /حذف نماد/i });
+    fireEvent.click(clearBtn);
+    expect(useSymbolStore.getState().symbol).toBe('');
   });
 });
 
