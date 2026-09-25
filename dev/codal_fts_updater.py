@@ -813,6 +813,13 @@ _FTSR_PLACE = ",".join(["?"] * 27)   # ۲۷ ستون = ۲۷ placeholder (compute
 _FTSR_UPSERT = "INSERT OR REPLACE INTO fts_results (%s) VALUES (%s)" % (_FTSR_COLS, _FTSR_PLACE)
 
 
+def _tp(v):
+    """ستونِ پاس → ۰/۱ یا NULL. رأی ۱۶: None یعنی «سنجیده نشد» (معافیت/صندوق)؛
+    با bool() به ۰ تبدیل می‌شد و اسکرینرِ کش‌دار همان نماد را «رد» می‌گفت که
+    مسیرِ زنده «نظر نمی‌دهد» می‌گفت. ستون‌ها nullable‌اند."""
+    return None if v is None else bool(v)
+
+
 def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
     """خروجیِ evaluate_v10 را در fts_results مادی می‌کند (تسک ۱۹ — نویسنده).
 
@@ -899,23 +906,23 @@ def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
         batch.append((
             key,                                  # symbol (نرمال‌شده — کلیدِ join)
             _g1.get("monetary_pct"),              # f01_growth_pct
-            bool(p.get("1_growth")),              # f01_pass
+            _tp(p.get("1_growth")),               # f01_pass
             (_json.dumps(_ser, ensure_ascii=False) if _ser else None),  # f02_eps_series
-            bool(p.get("2_eps_trend")),           # f02_pass
+            _tp(p.get("2_eps_trend")),            # f02_pass
             _i3.get("margin_pct"),                # f03_margin_pct
-            bool(p.get("3_gross_margin")),        # f03_pass
+            _tp(p.get("3_gross_margin")),         # f03_pass
             _i4.get("sales_to_mcap"),             # f04_ratio
-            bool(p.get("4_sales_to_mcap")),       # f04_pass
+            _tp(p.get("4_sales_to_mcap")),        # f04_pass
             res.get("pricing_mode"),              # f05_verdict
-            bool(p.get("5_industry")),            # f05_pass
+            _tp(p.get("5_industry")),             # f05_pass
             int(res.get("score") or 0),           # score
             res.get("verdict") or "",             # verdict
             bool(res.get("excluded")),            # excluded
             " · ".join(res.get("exclusion_reasons") or []),  # exclusion_reasons
-            bool(p.get("1a_monetary_growth")),    # i1a_pass
-            bool(p.get("1b_volume_growth")),      # i1b_pass
-            bool(p.get("4a_sales_to_mcap")),      # i4a_pass
-            bool(p.get("4b_profit_potential")),   # i4b_pass
+            _tp(p.get("1a_monetary_growth")),     # i1a_pass
+            _tp(p.get("1b_volume_growth")),       # i1b_pass
+            _tp(p.get("4a_sales_to_mcap")),       # i4a_pass
+            _tp(p.get("4b_profit_potential")),    # i4b_pass
             _g1.get("monetary_pct"),              # rev_growth
             _i3.get("margin_pct"),                # gross_margin
             _i4.get("sales_to_mcap"),             # sales_to_mcap

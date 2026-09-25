@@ -214,6 +214,39 @@ ck(_n == 1, "invalidate_fts_results ردیفها را پاک می‌کند (rowc
 ck(fts_engine.fts_results_of(_con, "X", cfg_hash=_cfg_hash) is None,
    "بعد از invalidate → None → مسیرِ سینکِ کثیف به fallback زنده میرود")
 
+# ── رأی ۱۶: سه‌حالگیِ ستونِ پاس ─────────────────────────────────────────────
+# None در ستونِ پاس یعنی «این شاخص سنجیده نشد» (معافیتِ شاخص ۴ یا صندوق). اگر
+# نویسنده bool() بزند یا خواننده bool() بکند، 0/False از جدول بیرون می‌آید و
+# اسکرینرِ کش‌دار همان نمادی را «رد» می‌کند که مسیرِ زنده برایش «نظر نمی‌دهد»
+# می‌گوید — دو جوابِ ناهم‌سان، این بار وابسته به وضعیتِ کش.
+ck("_tp(p.get(" in _body and 'bool(p.get("' not in _body,
+   "نویسنده پاس‌ها را با _tp می‌نویسد (None → NULL، نه bool() → 0)")
+_null_row = [None] * 27
+_null_row[0] = "Y"            # symbol
+_null_row[9] = "neutral"      # f05_verdict
+_null_row[11] = 0             # score
+_null_row[12] = ""            # verdict
+_null_row[13] = 0             # excluded
+_null_row[14] = ""            # exclusion_reasons
+_null_row[24] = 0             # annualize_months
+_null_row[25] = _cfg_hash
+_null_row[26] = "t"
+_con.execute(cu._FTSR_UPSERT, tuple(_null_row))
+_con.commit()
+# نوشتنِ دور‌زدنیِ نویسنده نباید کشِ RAMِ خواننده را ببیند؛ sync_fts_results هم
+# پس از نوشتن همین کش را می‌اندازد (چکِ بالاتر)، پس اینجا همان کار را می‌کنیم.
+fts_engine._FTS_RESULTS_CACHE.pop(id(_con), None)
+_nul = fts_engine.fts_results_of(_con, "Y", cfg_hash=_cfg_hash)
+ck(_nul is not None and _nul["passes"]["4_sales_to_mcap"] is None,
+   "NULL در f04_pass → None در passesِ شاخص ۴")
+ck(_nul is not None and all(_nul["passes"][k] is None for k in
+                            ("1_growth", "2_eps_trend", "3_gross_margin",
+                             "5_industry", "1a_monetary_growth", "1b_volume_growth",
+                             "4a_sales_to_mcap", "4b_profit_potential")),
+   "همهٔ ستون‌های پاس NULL را نگه می‌دارند (خواننده هیچ‌جا bool() نمی‌زند)")
+ck(_nul is not None and _nul["excluded"] is False,
+   "excluded سه‌حاله نیست: 0 همان False می‌ماند")
+
 _con.close()
 
 # جدولِ غایب و جدولِ قدیمیِ ۴ستونی: خواننده باید None بدهد، نه کرش.

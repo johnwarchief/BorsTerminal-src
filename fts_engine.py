@@ -304,6 +304,11 @@ def invalidate_fts_results(conn) -> int:
     return n
 
 
+def _tp(v):
+    """ستونِ پاسِ جدول → سه‌حاله (None همان «نظر نمی‌دهد» می‌ماند — رأی ۱۶)."""
+    return None if v is None else bool(v)
+
+
 def _fts_row_to_result(r) -> dict:
     """تبدیلِ یک ردیفِ خامِ fts_results به همان شکلِ خروجیِ evaluate_v10.
 
@@ -327,16 +332,20 @@ def _fts_row_to_result(r) -> dict:
         "excluded": bool(r[13]),
         "exclusion_reasons": (r[14].split(" · ") if r[14] else []),
         "pricing_mode": r[9],
+        # رأی ۱۶: None در ستونِ پاس یعنی «این شاخص سنجیده نشد» (معافیت/صندوق)؛
+        # جدول ستون‌هایش را nullable ساخته، پس باز هم None می‌ماند. بی‌این،
+        # اسکرینر با کشِ مادی‌شده همان نماد را «رد» می‌گفت که بی‌کش «نظر
+        # نمی‌دهد» می‌گفت.
         "passes": {
-            "1_growth": bool(r[2]),
-            "2_eps_trend": bool(r[4]),
-            "3_gross_margin": bool(r[6]),
-            "4_sales_to_mcap": bool(r[8]),
-            "5_industry": bool(r[10]),
-            "1a_monetary_growth": bool(r[15]),
-            "1b_volume_growth": bool(r[16]),
-            "4a_sales_to_mcap": bool(r[17]),
-            "4b_profit_potential": bool(r[18]),
+            "1_growth": _tp(r[2]),
+            "2_eps_trend": _tp(r[4]),
+            "3_gross_margin": _tp(r[6]),
+            "4_sales_to_mcap": _tp(r[8]),
+            "5_industry": _tp(r[10]),
+            "1a_monetary_growth": _tp(r[15]),
+            "1b_volume_growth": _tp(r[16]),
+            "4a_sales_to_mcap": _tp(r[17]),
+            "4b_profit_potential": _tp(r[18]),
         },
         "indicators": {
             "1": {"monetary": {"monetary_pct": r[1]}, "volume": {}},
