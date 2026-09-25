@@ -27,7 +27,6 @@ import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 
 import { QuarterlyTrend } from '../components/QuarterlyTrend';
-import { RiskGatesPanel } from '../components/RiskGatesPanel';
 import { FtsScreenTable } from '../ui/FtsScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 
@@ -305,6 +304,17 @@ export default function FundamentalPage() {
                       : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
                   </p>
                 </div>
+
+                {/* علتِ حذف از غربالگری داخلِ همان جعبهٔ تصمیم — پنلِ جدا ندارد،
+                    ولی امتیازِ ۴ و ۵ بدونِ ذکرِ وتو «گزینه عالی» خوانده می‌شد */}
+                {card.data.excluded ? (
+                  <div className="rounded-xl border border-accent-red/40 bg-accent-red/10 p-3 text-2xs leading-relaxed text-text-primary"
+                       data-testid="fts-exclusion-line">
+                    <span className="font-black">حذف از غربالگری: </span>
+                    {(card.data.exclusion_reasons ?? []).join(' · ') || 'وتوی استراتژی FTS'}
+                    {metrics?.mcap_stale ? ' · ارزش بازار کهنه' : ''}
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -319,12 +329,6 @@ export default function FundamentalPage() {
 
       <FtsDrillDown card={card.data} active={drillKey} quarters={fiscal} physicalApplicable={physicalApplicable} />
 
-      <RiskGatesPanel
-        excluded={card.data.excluded ?? false}
-        reasons={card.data.exclusion_reasons ?? []}
-        pricingMode={card.data.pricing_mode ?? null}
-        mcapStale={metrics?.mcap_stale ?? false}
-      />
 
       <DataGapBanner gaps={card.data.data_gaps ?? []} eps={card.data.indicators?.['2']} />
 

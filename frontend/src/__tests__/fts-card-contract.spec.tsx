@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import FundamentalPage from '@features/fundamental/routes/FundamentalPage';
@@ -18,6 +18,8 @@ import { FtsSettingsTrigger } from '@features/fundamental/ui/FtsSettingsDrawer';
 import { FTS_GUIDE_DEFAULTS } from '@features/fundamental/api/useFtsConfig';
 
 const fetchMock = vi.fn();
+// کارتِ سفارشیِ هر تست (برای حالت‌هایی مثل «excluded با امتیاز ۴»)
+let cardOverride: Record<string, unknown> | null = null;
 vi.stubGlobal('fetch', fetchMock);
 
 /** کارت واقعیِ بک‌اند برای شفارس — عیناً از /api/fundamental/شفارس گرفته شده
@@ -80,7 +82,7 @@ function mockJson(url: string): unknown {
   if (u === '/api/market') return { status: 'success', data: [] };
   if (u.endsWith('/quarters')) return { status: 'success', symbol: 'شفارس', count: 0, quarters: [] };
   if (u === '/api/fts/config') return { status: 'success', config: { ...FTS_GUIDE_DEFAULTS } };
-  if (u.startsWith('/api/fundamental/')) return minimalCard('1404');
+  if (u.startsWith('/api/fundamental/')) return cardOverride ?? minimalCard('1404');
   return { status: 'success', data: [] };
 }
 
@@ -148,6 +150,44 @@ describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته
     expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('صنعت آزاد');
     // حالت «داده نیامد» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
     expect(screen.queryByText(/دادهٔ کارت بنیادی/)).not.toBeInTheDocument();
+  });
+});
+
+describe('علت حذف از غربالگری — داخل جعبهٔ تصمیم، بی پنلِ جدا', () => {
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockJson(typeof url === 'string' ? url : '')),
+      } as unknown as Response),
+    );
+  });
+
+  afterEach(() => {
+    cardOverride = null;
+  });
+
+  it('امتیاز ۴ + وتوی ماده ۱۴۱ ⇒ علتِ حذف هم کنارِ «گزینه مستعد» دیده می‌شود', async () => {
+    cardOverride = {
+      ...minimalCard('1404'),
+      score: 4,
+      excluded: true,
+      exclusion_reasons: ['ماده ۱۴۱ — زیان انباشته', 'نماد تعلیق'],
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('fts-exclusion-line')).toBeInTheDocument());
+    const line = screen.getByTestId('fts-exclusion-line');
+    expect(line.textContent).toContain('ماده ۱۴۱');
+    expect(line.textContent).toContain('نماد تعلیق');
+    // پنلِ دروازه‌های ریسک حذف است (درخواست کاربر) — فقط همین خط می‌ماند
+    expect(screen.queryByText('دروازه های ریسک')).not.toBeInTheDocument();
+  });
+
+  it('بدون وتو، خطِ حذف ساخته نمی‌شود', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
+    expect(screen.queryByTestId('fts-exclusion-line')).not.toBeInTheDocument();
   });
 });
 

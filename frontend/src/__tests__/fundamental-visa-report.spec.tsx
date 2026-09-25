@@ -12,12 +12,11 @@ import { describe, expect, it } from 'vitest';
 import { FtsCard } from '@features/fundamental/components/FtsCard';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
 import { DataGapBanner } from '@features/fundamental/components/DataGapBanner';
-import { RiskGatesPanel } from '@features/fundamental/components/RiskGatesPanel';
 import { QuarterlyTrend } from '@features/fundamental/components/QuarterlyTrend';
 import type { FtsCard as FtsCardType } from '@features/fundamental/api/useFtsCard';
 import type { FiscalQuarter } from '@features/fundamental/lib/fundMath';
 import { epsFailReason } from '@features/fundamental/lib/epsHistory';
-import { industryGateLabel, industryGateTone } from '@features/fundamental/lib/industryGate';
+import { industryGateTone } from '@features/fundamental/lib/industryGate';
 import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '@features/fundamental/lib/assetScope';
 
 const visa = JSON.parse(
@@ -110,23 +109,15 @@ describe('ویسا — محور ۳: علت واقعی ردِ شاخص ۲ (نه �
 });
 
 describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و واحدها', () => {
-  it('سلول ۵ کارت همان وضعیت صنعت در «دروازه‌های ریسک» را می‌گوید (متن و رنگ یکی)', () => {
+  it('سلول ۵ کارت هم طبقهٔ صنعت را می‌گوید و هم حکم غربالگری (از یک منبع)', () => {
     render(
-      <>
-        <FtsCard
-          score={visa.score ?? null}
-          passes={visa.passes ?? {}}
-          verdict={visa.verdict ?? null}
-          physicalApplicable={false}
-          industryMode={visa.pricing_mode ?? null}
-        />
-        <RiskGatesPanel
-          excluded={visa.excluded ?? false}
-          reasons={visa.exclusion_reasons ?? []}
-          pricingMode={visa.pricing_mode ?? null}
-          mcapStale={visa.metrics?.mcap_stale ?? false}
-        />
-      </>,
+      <FtsCard
+        score={visa.score ?? null}
+        passes={visa.passes ?? {}}
+        verdict={visa.verdict ?? null}
+        physicalApplicable={false}
+        industryMode={visa.pricing_mode ?? null}
+      />,
     );
     const cell = screen.getByTestId('fts-card-cell-5_industry');
     // صنعت ویسا neutral است: سلولِ کارت نامِ طبقه را می‌گوید و بجِ ممیزی حکمِ
@@ -135,9 +126,8 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
     expect(within(cell).getByTestId('fts-cell-audit-5_industry').textContent)
       .toContain('مجاز در غربالگری');
     expect(industryGateTone('neutral')).toBe('yellow');
-    // دروازه‌های ریسک همان حکم را می‌دهد (بدونِ برچسب کلی «قبول»)
+    // برچسب کلی «قبول» برای صنعت دیگر استفاده نمی‌شود
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
-    expect(screen.getAllByText('مجاز در غربالگری').length).toBeGreaterThan(0);
   });
 
   it('نمودار فصلی: محور با واحد میلیارد تومان/همت برچسب می‌خورد', () => {
