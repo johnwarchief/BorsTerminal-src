@@ -24,6 +24,8 @@ export type FundamentalInput = {
   statementAgeDays: number | null;
   hasStatements: boolean;
   epsPartial: boolean;
+  /** رأی ۱۵ — صندوق در پنج‌شاخصه نمی‌گنجد؛ هیچ داوری صادر نمی‌شود */
+  applicable?: boolean;
 };
 
 function faNum(x: number, digits = 1): string {
@@ -59,6 +61,42 @@ function nodataSignal(symbol: string, ts: number): AgentSignal<FundamentalPayloa
       dataQuality: 'incomplete',
       peVsSector: null,
       profitYoY: null,
+      applicable: true,
+    },
+  };
+}
+
+/** سیگنال «FTS ندارد»: خنثی، بدون داوری، با دلیلِ درست (نه «داده ناقص») */
+function notApplicableSignal(symbol: string, ts: number): AgentSignal<FundamentalPayload> {
+  return {
+    id: `fundamental:${symbol}:not_applicable:${ts}`,
+    agentId: 'fundamental',
+    symbol,
+    ts,
+    direction: 'neutral',
+    confidence: 'nodata',
+    weight: 'major',
+    title: `FTS برای ${symbol} داوری ندارد`,
+    rationale: 'این نماد صندوقِ سرمایه‌گذاری است؛ رشد فروش، حاشیه سود و نسبت فروش به ارزش '
+      + 'بازار بر سبدِ دارایی معنا ندارد، پس پنج‌شاخصه مردود یا تأیید نمی‌شود.',
+    score: null,
+    evidence: ['fts:not_applicable'],
+    sourceView: 'fundamental',
+    sourceRef: ['API', 'CODAL'],
+    validForMs: FUND_VALID_MS,
+    payload: {
+      kind: 'fts_card',
+      score: 0,
+      passes: {},
+      riskGates: [],
+      epsSeries: [],
+      dataGaps: [],
+      staleness: false,
+      statementAgeDays: null,
+      dataQuality: 'complete',
+      peVsSector: null,
+      profitYoY: null,
+      applicable: false,
     },
   };
 }
@@ -66,6 +104,7 @@ function nodataSignal(symbol: string, ts: number): AgentSignal<FundamentalPayloa
 export function fundamentalSignal(input: FundamentalInput, ts = Date.now()): AgentSignal<FundamentalPayload> {
   const { symbol } = input;
   if (!symbol || !input.hasStatements) return nodataSignal(symbol || 'unknown', ts);
+  if (input.applicable === false) return notApplicableSignal(symbol, ts);
 
   const age = input.statementAgeDays;
   const stale = age != null && age > STALE_AFTER_DAYS;
@@ -133,6 +172,8 @@ export function fundamentalSignal(input: FundamentalInput, ts = Date.now()): Age
       dataQuality,
       peVsSector: pe != null && med != null && med > 0 ? pe / med : null,
       profitYoY: yoy,
+      // تا اینجا از گیتِ بالا رد شده، پس داوری معنا داشته است
+      applicable: true,
     },
   };
 }

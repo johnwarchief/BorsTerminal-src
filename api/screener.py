@@ -278,6 +278,8 @@ def get_screener():
                 r["i1b_pass"] = p.get("1b_volume_growth")
                 r["i4a_pass"] = p.get("4a_sales_to_mcap")
                 r["i4b_pass"] = p.get("4b_profit_potential")
+                # r["applicable"] از خودِ bulk_scan می‌آید (تک‌مرجعِ
+                # fts_engine.fund_class_match) — اینجا دوباره حساب نمی‌شود.
                 r["excluded"] = res["excluded"]
                 r["exclusion_reasons"] = " · ".join(res["exclusion_reasons"])
                 r["verdict"] = res["verdict"]

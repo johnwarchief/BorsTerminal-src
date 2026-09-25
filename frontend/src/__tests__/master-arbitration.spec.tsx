@@ -380,6 +380,8 @@ describe('سوییچ اهرم ساعت شنی', () => {
     expect(isSuperFundamental(fundSig('bullish', 85, { score: 5 }))).toBe(true);
     expect(isSuperFundamental(fundSig('bullish', 95, { score: 4 }))).toBe(false);
     expect(isSuperFundamental(fundSig('bearish', 95, { score: 5 }))).toBe(false);
+    // صندوق حتی با ۵ از ۵ هم سوپربنیادی نیست: داوری FTS برایش صادر نشده (رأی ۱۵)
+    expect(isSuperFundamental(fundSig('bullish', 85, { score: 5, applicable: false }))).toBe(false);
     expect(isSuperFundamental(undefined)).toBe(false);
   });
 });

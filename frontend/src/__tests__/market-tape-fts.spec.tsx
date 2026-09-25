@@ -114,6 +114,7 @@ describe('حل وضعیت FTS', () => {
     feed([
       { symbol: 'شپنا', excluded: false, score: 4 },
       { symbol: 'فولاد', excluded: true, score: 1, exclusion_reasons: 'قیمت‌گذاری دستوری · نماد تعلیق' },
+      { symbol: 'عيار', excluded: false, score: 2, applicable: false },
     ]),
   );
 
@@ -127,6 +128,13 @@ describe('حل وضعیت FTS', () => {
     const v = resolveFtsStatus({ symbol: 'فولاد' }, map);
     expect(v.status).toBe('reject');
     expect(v.reasons).toContain('نماد تعلیق');
+  });
+
+  it('صندوقِ غیرمردود ⇒ N/A، نه «تأیید» با امتیاز', () => {
+    const v = resolveFtsStatus({ symbol: 'عيار' }, map);
+    expect(v.status).toBe('na');
+    expect(v.score).toBeNull();
+    expect(v.reasons[0]).toContain('صندوق');
   });
 
   it('نبود در اسکرینر ⇒ N/A صادقانه', () => {

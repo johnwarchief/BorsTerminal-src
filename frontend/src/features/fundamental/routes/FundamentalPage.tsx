@@ -143,6 +143,7 @@ export default function FundamentalPage() {
             statementAgeDays: age,
             hasStatements,
             epsPartial: card.data?.metrics?.eps_partial ?? false,
+            applicable: card.data?.applicable !== false,
           })
         : null,
     [symbol, card.data, pe, median, yoy, age, hasStatements],

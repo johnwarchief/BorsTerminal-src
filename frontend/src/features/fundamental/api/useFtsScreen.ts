@@ -39,6 +39,8 @@ export const FtsScreenRowSchema = z.object({
   i4_pass: z.boolean().nullish(),
   i5_pass: z.boolean().nullish(),
   excluded: z.boolean().nullish(),
+  /** صندوق در پنج‌شاخصه نمی‌گنجد ⇒ حکمِ NOT_APPLICABLE، نه REJECTED */
+  applicable: z.boolean().nullish(),
   exclusion_reasons: z.string().nullish(),
   m141: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),

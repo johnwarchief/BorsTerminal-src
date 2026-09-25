@@ -1,7 +1,7 @@
 // تست موتور تجمیع مستر: وزن دهی و تضاد و آستانه ها
 import { describe, expect, it } from 'vitest';
 import { MasterVerdict } from '@contracts/master';
-import { aggregateSignals, isActiveSignal, signedScore } from '@features/master/lib/masterMath';
+import { aggregateSignals, fundamentalGate, isActiveSignal, signedScore } from '@features/master/lib/masterMath';
 import type { AgentSignal } from '@contracts/signal';
 
 const NOW = 1726000000000;
@@ -26,6 +26,33 @@ function sig(agent: AgentSignal['agentId'], direction: AgentSignal['direction'],
     ...patch,
   };
 }
+
+describe('گیت بنیادیِ قیف', () => {
+  it('صندوق ⇒ nodata با دلیلِ «صندوق»، نه «داده ناقص» (رأی ۱۵)', () => {
+    const g = fundamentalGate(
+      sig('fundamental', 'neutral', null, {
+        confidence: 'nodata',
+        payload: { kind: 'fts_card', score: 0, applicable: false },
+      }),
+      NOW,
+    );
+    expect(g.status).toBe('nodata');
+    expect(g.note).toContain('صندوق');
+    expect(g.note).not.toContain(' ناقص ');
+  });
+
+  it('دادهٔ ناقص ⇒ همان دلیلِ قبلی', () => {
+    const g = fundamentalGate(
+      sig('fundamental', 'neutral', null, {
+        confidence: 'nodata',
+        payload: { kind: 'fts_card', score: 0 },
+      }),
+      NOW,
+    );
+    expect(g.status).toBe('nodata');
+    expect(g.note).toContain('ناقص');
+  });
+});
 
 describe('نمره علامت دار و فعالی', () => {
   it('صعودی مثبت و نزولی منفی و خنثی صفر', () => {

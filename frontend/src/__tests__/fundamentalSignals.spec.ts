@@ -56,6 +56,19 @@ describe('سیگنال بنیادی', () => {
     expect(s.rationale).toContain('۱۵۰');
   });
 
+  it('صندوق: هیچ داوری صادر نمی‌شود (نه صعودی نه نزولی) — رأی ۱۵', () => {
+    const s = fundamentalSignal(input({ ftsScore: null, applicable: false }), 1726000000000);
+    expect(s.direction).toBe('neutral');
+    expect(s.confidence).toBe('nodata');
+    expect(s.score).toBeNull();
+    expect(s.evidence).toContain('fts:not_applicable');
+    expect(s.payload.applicable).toBe(false);
+    // دلیلِ بی‌داوری باید «صندوق» باشد، نه «دادهٔ ناقص»
+    expect(s.rationale).toContain('صندوق');
+    expect(s.payload.dataQuality).toBe('complete');
+    expect(FundamentalPayload.safeParse(s.payload).success).toBe(true);
+  });
+
   it('گرانی به صنعت با افت سود سیگنال نزولی می دهد', () => {
     const s = fundamentalSignal(input({ pe: 12, profitYoY: -10 }), 1726000000000);
     expect(s.direction).toBe('bearish');

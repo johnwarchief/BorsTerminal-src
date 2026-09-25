@@ -41,6 +41,9 @@ export const FundamentalPayload = z.object({
   peVsSector: z.number().nullable().default(null),
   /** رشد سود خالص فصل جاری به فصل مشابه پارسال (درصد) */
   profitYoY: z.number().nullable().default(null),
+  /** رأی ۱۵: پنج‌شاخصه برای صندوق معنا ندارد — داوری صادر نمی‌شود، نه رد.
+   *  غایب = نامعلوم ⇒ «می‌گنجد» (ftsApplicable همان‌جا تفسیر می‌کند). */
+  applicable: z.boolean().optional(),
 });
 export type FundamentalPayload = z.infer<typeof FundamentalPayload>;
 
@@ -52,6 +55,11 @@ export type FundamentalPayload = z.infer<typeof FundamentalPayload>;
  * - `signal.payload.score` → ۰ تا ۵: تعداد شاخص‌های بنیادی تاییدشده (مصرف در FTS/«از ۵»).
  * هر جا منطق «امتیاز از ۵» یا سوپربنیادیِ «۵ از ۵» می‌خواهید، از این تابع بخوانید نه `signal.score`.
  */
+/** آیا اصلاً ارزیابی FTS بر این نماد می‌گنجد؟ (صندوق ⇒ خیر) */
+export function ftsApplicable(fund: { payload?: unknown } | null | undefined): boolean {
+  return (fund?.payload as { applicable?: unknown } | undefined)?.applicable !== false;
+}
+
 export function ftsScoreOf(fund: { payload?: unknown } | null | undefined): number | null {
   const p = fund?.payload as { score?: unknown } | null | undefined;
   return typeof p?.score === 'number' ? p.score : null;

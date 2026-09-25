@@ -904,6 +904,19 @@ def holding_class_match(sector_norm, company_name: str = "") -> bool:
     return any(t in s for t in _HOLDING_SECTOR_TOKENS)
 
 
+# صندوقِ سرمایه‌گذاری پنج‌شاخصهٔ FTS را نمی‌گذراند: «رشد فروش»، «حاشیهٔ سود
+# ناخالص» و «فروش ÷ ارزش بازار» برای سبدِ دارایی معنا ندارد. رأی ۱۵ (صاحبِ
+# جزوه) داوری را «FTS ندارد» می‌کند نه REJECT. تک‌مرجع همین تابع است — کارتِ
+# جزئیات (api/fundamental.company_profile)، اسکرینر (bulk_scan/screener) و
+# دروازهٔ مستر همگی همین را می‌خوانند تا یک نماد دو جواب نگیرد.
+_FUND_TOKEN = _hold_norm("صندوق")
+
+
+def fund_class_match(sector_norm, company_name: str = "") -> bool:
+    """آیا نماد صندوقِ سرمایه‌گذاری است (از صنعت یا از نامِ شرکت)؟"""
+    return _FUND_TOKEN in (_hold_norm(sector_norm) + " " + _hold_norm(company_name))
+
+
 def company_name_of(conn, symbol) -> str:
     """نامِ شرکت از خودِ دیتابیس (نه از رشته‌ای که فراخوان آورده).
 
@@ -922,6 +935,32 @@ def company_name_of(conn, symbol) -> str:
     except sqlite3.Error:
         return ""
     return (row[0] if row else "") or ""
+
+
+def company_name_map(conn: sqlite3.Connection) -> dict:
+    """نقشهٔ norm_fa(symbol) -> نامِ شرکت، تک‌کوئری (همان ردیفِ company_name_of).
+
+    «آخرین» اینجا هم دقیقاً period_end DESC سپس tracing_no DESC است؛ اگر
+    ترتیبش فرق کند، اسکرینر و کارت برای یک نماد دو طبقهٔ مختلف می‌بینند.
+    """
+    out = {}
+    try:
+        rows = conn.execute(
+            "SELECT symbol, company_name, period_end, tracing_no "
+            "FROM financial_statements WHERE company_name IS NOT NULL").fetchall()
+    except sqlite3.Error:
+        return out
+    best = {}
+    for sym, name, pe, tn in rows:
+        key = norm_fa(sym)
+        if not key:
+            continue
+        rank = (str(pe or ""), int(tn or 0))
+        if key not in best or rank > best[key][0]:
+            best[key] = (rank, name)
+    for key, (_rank, name) in best.items():
+        out[key] = name or ""
+    return out
 
 
 def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
@@ -1573,6 +1612,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     m141 = m141_map(conn)
     liq = avg_trade_value_hmt(conn)
     no_sales = no_sales_symbols(conn)
+    # نامِ شرکت برای طبقهٔ صندوق (رأی ۱۵) — تک‌کوئری، بیرون حلقه
+    cname_of = company_name_map(conn)
     do_m141 = bool(cfg.get("filter_m141"))
     min_liq = _f(cfg.get("min_trade_val", 0.0)) or 0.0
     _hold_na = bool(cfg.get("holdings_sales_na", True))
@@ -1723,6 +1764,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "primary_score": int(sum([i1, i2, i3])),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
+            # رأی ۱۵: صندوق داوری FTS ندارد (نه رد). امتیازِ عددی دست‌نخورده
+            # می‌ماند چون sortِ پایین و ستونِ «امتیاز» عدد می‌خواهند.
+            "applicable": not fund_class_match(sector, cname_of.get(key, "")),
             "m141": hit141,
             "avg_trade_val_hmt": None if liq_hmt is None else round(liq_hmt, 3),
             "margin_optimal": margin is not None and margin >= m_opt,

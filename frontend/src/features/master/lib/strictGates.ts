@@ -8,7 +8,7 @@
 // ۴) «خرید پله‌ای» فقط با سبز بودن هم‌زمان هر چهار گیت.
 // Circuit Breaker: نبود داده ⇒ state=pending + دلیل صادقانه؛ هرگز وتوی ساختگی.
 import type { AgentSignal } from '@contracts/signal';
-import { ftsScoreOf } from '@contracts/fundamental';
+import { ftsApplicable, ftsScoreOf } from '@contracts/fundamental';
 import { isActiveSignal, type BusInput } from './masterMath';
 import { fa0, fa1 } from './fmtNum';
 
@@ -481,5 +481,7 @@ export const SUPER_FUNDAMENTAL_FTS = 5;
 export function isSuperFundamental(fund: AgentSignal | undefined): boolean {
   if (!fund) return false;
   if (fund.direction !== 'bullish') return false;
+  // صندوق حتی با امتیاز ۵ هم سوپربنیادی نیست (رأی ۱۵)
+  if (!ftsApplicable(fund)) return false;
   return ftsScoreOf(fund) === SUPER_FUNDAMENTAL_FTS;
 }

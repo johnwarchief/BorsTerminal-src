@@ -357,7 +357,9 @@ _PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "�
 def company_profile(sector: str = "", company_name: str = "") -> dict:
     """طبقهٔ شرکت + مبنای درآمد + اینکه چکِ فیزیکی (تناژ) برایش معنا دارد یا نه."""
     both = fts_engine.norm_fa(sector) + " " + fts_engine.norm_fa(company_name)
-    if "صندوق" in both:
+    # طبقهٔ صندوق از تک‌مرجعِ موتور خوانده می‌شود تا اسکرینر و کارت یک نماد را
+    # دو جور طبقه نکنند (bulk_scan همان تابع را می‌خواند).
+    if fts_engine.fund_class_match(sector, company_name):
         kind = "fund"
         basis = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
         applicable = False
@@ -1957,7 +1959,10 @@ def api_fundamental_screen(
 
             is_excluded = bool(r.get("excluded"))
             score = int(r.get("score") or 0)
-            if is_excluded:
+            if r.get("applicable") is False:
+                # رأی ۱۵: صندوق در پنج‌شاخصه نمی‌گنجد — داوری ندارد، نه مردود
+                vrd = "NOT_APPLICABLE"
+            elif is_excluded:
                 vrd = "REJECTED"
             elif score == 5:
                 vrd = "SUPER_FUNDAMENTAL"

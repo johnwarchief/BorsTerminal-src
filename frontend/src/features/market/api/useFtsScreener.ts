@@ -14,6 +14,8 @@ const ScreenerRowSchema = z.object({
   name: z.string().nullish(),
   score: z.number().nullish(),
   excluded: z.boolean().nullish(),
+  /** رأی ۱۵ — صندوق داوری FTS ندارد (نه رد، نه تأیید) */
+  applicable: z.boolean().nullish(),
   exclusion_reasons: ReasonsSchema,
   verdict: z.string().nullish(),
   watchlist: z.boolean().nullish(),
@@ -94,6 +96,10 @@ export function resolveFtsStatus(
 
   const reasons = splitReasons(hit.exclusion_reasons);
   const score = typeof hit.score === 'number' ? hit.score : null;
+  if (hit.applicable === false) {
+    return { status: 'na', label: FTS_STATUS_LABEL.na, score: null,
+             reasons: ['FTS ندارد — صندوقِ سرمایه‌گذاری در پنج‌شاخصه نمی‌گنجد'] };
+  }
   if (hit.excluded) {
     return {
       status: 'reject',

@@ -70,7 +70,11 @@ export function effectiveWeights(input: BusInput, now = Date.now()): Record<Agen
 
 // ─── گیتینگ سه‌گانه FTS ──────────────────────────────────────────────────
 
-type FundPayloadish = { passes?: Record<string, boolean> | null; dataQuality?: string };
+type FundPayloadish = {
+  passes?: Record<string, boolean> | null;
+  dataQuality?: string;
+  applicable?: boolean;
+};
 type TechPayloadish = { setups?: string[]; stopLossPrice?: number | null; dataQuality?: string };
 type TapePayloadish = { pattern?: string; volumeMultiple?: number | null };
 
@@ -78,6 +82,8 @@ type TapePayloadish = { pattern?: string; volumeMultiple?: number | null };
 export function fundamentalGate(fund: AgentSignal | undefined, now = Date.now()): GateFinding {
   if (!fund) return { gate: 'fundamental', status: 'missing', note: 'سیگنال بنیادی هنوز منتشر نشده است.' };
   if (isSignalExpired(fund, now)) return { gate: 'fundamental', status: 'missing', note: 'سیگنال بنیادی منقضی شده است.' };
+  if ((fund.payload as FundPayloadish | undefined)?.applicable === false)
+    return { gate: 'fundamental', status: 'nodata', note: 'پنج‌شاخصه FTS بر این نماد نمی‌گنجد (صندوق)؛ داوری بنیادی صادر نمی‌شود.' };
   if (fund.confidence === 'nodata') return { gate: 'fundamental', status: 'nodata', note: 'داده بنیادی ناقص است؛ داوری بنیادی ممکن نیست.' };
   const p = fund.payload as FundPayloadish;
   if (p?.dataQuality === 'incomplete') return { gate: 'fundamental', status: 'nodata', note: 'داده بنیادی ناقص است؛ داوری بنیادی ممکن نیست.' };
