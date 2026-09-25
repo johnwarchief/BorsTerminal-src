@@ -227,6 +227,18 @@ ck("_tp(p.get(" in _body and 'bool(p.get("' not in _body,
 # همان نماد با کشِ سرد «مردود» و با کشِ گرم «N/A» می‌شود (رأی ۱۶).
 ck("ind4_na(_i4)" in _body,
    "نویسندهٔ fts_results معافیتِ کارت را به NULL می‌گرداند (ind4_na)")
+# کشِ payloadِ اسکرینر باید با نسخهٔ برنامه باطل شود: فایلِ .screener_cache.json
+# در پوشهٔ نصب می‌ماند و اگر فقط به کانفیگ ببنددش، کاربرِ آپدیت‌کرده تا ۱۲ ساعت
+# حکمِ نسخهٔ قبلی را می‌بیند (در ۱٫۰٫۲۹ که حکم ۸۸ نماد عوض شد همین رخ داد).
+# ولی fts_results باید با cfg_hashِ خالص سنجیده بماند — نسخه به آن راه ندارد،
+# چون نویسنده‌اش (dev/codal_fts_updater) همان خالص را می‌نویسد.
+import api.screener as _scr_mod  # noqa: E402
+_scr_src = _inspect.getsource(_scr_mod.get_screener)
+ck('APP_VERSION' in _scr_src and 'payload_key' in _scr_src,
+   "هویتِ کشِ payload نسخهٔ برنامه را دارد (با آپدیت باطل می‌شود)")
+ck('fts_results_bulk(conn, cfg_hash=cfg_hash)' in _scr_src,
+   "مقایسهٔ fts_results هنوز با cfg_hashِ خالص است (بدونِ نسخه)")
+
 ck(fts_engine.ind4_na({"na": True}) and fts_engine.ind4_na({"exempt": True})
    and not fts_engine.ind4_na({"na": False, "exempt": False})
    and not fts_engine.ind4_na(None),

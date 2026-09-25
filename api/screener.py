@@ -12,7 +12,7 @@ from fastapi import APIRouter
 import pandas as pd
 import os
 import json
-from bors_config import DB_PATH, WORK_DIR
+from bors_config import APP_VERSION, DB_PATH, WORK_DIR
 
 import time
 import threading
@@ -20,7 +20,7 @@ import threading
 # کشِ هوشمندِ پاسخ اسکنر — با کش روی دیسک برای جلوگیری از فریز شدن سرور در استارت‌آپ.
 # داده‌های بنیادی کدال دیر به دیر تغییر می‌کنند؛ پس TTL را ۱۲ ساعت (۴۳۲۰۰ ثانیه) می‌گذاریم.
 # اسکریپت آپدیت کدال در صورت نیاز این کش را باطل می‌کند.
-_SCREENER_CACHE = {"cfg_hash": None, "payload": None, "ts": 0.0}
+_SCREENER_CACHE = {"key": None, "payload": None, "ts": 0.0}
 _SCREENER_CACHE_TTL = 43200.0  # ۱۲ ساعت
 # کش باید داخلِ WORK_DIR (محلِ نوشتنی) باشد: کنارِ EXE در حالتِ پرتابیل،
 # وگرنه %LOCALAPPDATA%\BorsTerminal_Ultimate\data. نوشتنِ کنارِ مسیرِ نصب
@@ -145,12 +145,18 @@ def get_screener():
         import fts_engine
         cfg = load_fts_config()
         cfg_hash = json.dumps(cfg, sort_keys=True, ensure_ascii=False, default=str)
+        # هویتِ کشِ payload = کانفیگ + نسخهٔ برنامه. fts_results با cfg_hashِ خالص
+        # سنجیده می‌شود (نویسنده‌اش همان را می‌نویسد)، پس نسخه به آن راه ندارد؛
+        # ولی کشِ دیسکیِ payload بدونِ نسخه، تا ۱۲ ساعت بعد از آپدیت هم معتبر
+        # می‌ماند — در ۱٫۰٫۲۹ که حکم ۸۸ نماد عوض شد، کاربرِ آپدیت‌کرده همان
+        # جدولِ قدیمی را دید.
+        payload_key = "%s#v%s" % (cfg_hash, APP_VERSION)
         now = time.time()
         
         # 1. Check RAM cache
         if (
             _SCREENER_CACHE["payload"] is not None
-            and _SCREENER_CACHE.get("cfg_hash") == cfg_hash
+            and _SCREENER_CACHE.get("key") == payload_key
             and (now - _SCREENER_CACHE.get("ts", 0.0)) < _SCREENER_CACHE_TTL
         ):
             return _SCREENER_CACHE["payload"]
@@ -160,9 +166,9 @@ def get_screener():
             try:
                 with open(CACHE_FILE, "r", encoding="utf-8") as f:
                     disk_cache = json.load(f)
-                if disk_cache.get("cfg_hash") == cfg_hash and (now - disk_cache.get("ts", 0.0)) < _SCREENER_CACHE_TTL:
+                if disk_cache.get("key") == payload_key and (now - disk_cache.get("ts", 0.0)) < _SCREENER_CACHE_TTL:
                     _SCREENER_CACHE["payload"] = disk_cache["payload"]
-                    _SCREENER_CACHE["cfg_hash"] = disk_cache["cfg_hash"]
+                    _SCREENER_CACHE["key"] = disk_cache["key"]
                     _SCREENER_CACHE["ts"] = disk_cache["ts"]
                     print("[screener] loaded from disk cache")
                     return disk_cache["payload"]
@@ -177,7 +183,7 @@ def get_screener():
             _WARM_EVENT.wait(timeout=300.0)
             if (
                 _SCREENER_CACHE["payload"] is not None
-                and _SCREENER_CACHE.get("cfg_hash") == cfg_hash
+                and _SCREENER_CACHE.get("key") == payload_key
                 and (time.time() - _SCREENER_CACHE.get("ts", 0.0)) < _SCREENER_CACHE_TTL
             ):
                 return _SCREENER_CACHE["payload"]
@@ -396,14 +402,15 @@ def get_screener():
 
         payload = {"status": "success", "count": len(rows), "data": rows,
                    "thresholds": cfg, "max_score": 5}
-        _SCREENER_CACHE["cfg_hash"] = cfg_hash
+        _SCREENER_CACHE["key"] = payload_key
         _SCREENER_CACHE["payload"] = payload
         _SCREENER_CACHE["ts"] = now
         
         try:
             os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
             with open(CACHE_FILE, "w", encoding="utf-8") as f:
-                json.dump({"cfg_hash": cfg_hash, "payload": payload, "ts": now}, f, ensure_ascii=False)
+                json.dump({"key": payload_key, "payload": payload, "ts": now},
+                          f, ensure_ascii=False)
             print("[screener] saved to disk cache")
         except Exception as e:
             print(f"[screener] Failed to save disk cache: {e}")
