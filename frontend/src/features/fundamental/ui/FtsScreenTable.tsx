@@ -33,13 +33,14 @@ import {
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
+/** شمارهٔ شاخص با «—» از نامش جدا می‌شود؛ بی‌جداکننده، «۳ حاشیه…» یک عددِ بخشی از نام خوانده می‌شد. */
 const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: 'نماد', title: '' },
-  { key: 'rev_growth', label: '۱ رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد تولیدی' },
-  { key: null, label: '۲ روند EPS', title: 'وضعیت و رشد سال‌به‌سال EPS' },
-  { key: 'gross_margin', label: '۳ حاشیه سود ناخالص', title: 'سود ناخالص ÷ درآمد عملیاتی' },
-  { key: 'profit_potential_pct', label: '۴ ارزش بازار', title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
-  { key: null, label: '۵ صنعت', title: 'رژیم قیمت‌گذاری صنعت' },
+  { key: 'rev_growth', label: '۱ — رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد تولیدی' },
+  { key: null, label: '۲ — روند EPS', title: 'وضعیت و رشد سال‌به‌سال EPS' },
+  { key: 'gross_margin', label: '۳ — حاشیه سود ناخالص', title: 'سود ناخالص ÷ درآمد عملیاتی' },
+  { key: 'profit_potential_pct', label: '۴ — ارزش بازار', title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
+  { key: null, label: '۵ — صنعت', title: 'رژیم قیمت‌گذاری صنعت' },
   { key: 'score', label: 'امتیاز', title: 'نردبان بنیادی ۰ تا ۵' },
 ];
 
@@ -62,7 +63,7 @@ function EpsFlow({
   return (
     <div
       dir="rtl"
-      className="inline-flex items-center gap-1 text-xs font-bold text-text-primary"
+      className="inline-flex items-center gap-1 text-sm font-bold text-text-primary"
       title={trendText ?? undefined}
     >
       {clean.map((val, idx) => {
@@ -87,16 +88,16 @@ function EpsFlow({
               <span className="inline-flex flex-col items-center justify-center px-0.5" aria-hidden>
                 {growthPct != null ? (
                   <span
-                    className={`text-[8.5px] font-black leading-none ${
+                    className={`text-2xs font-black leading-none ${
                       growthPct > 0 ? 'text-accent-green' : growthPct < 0 ? 'text-accent-red' : 'text-text-muted'
                     }`}
                   >
                     {growthPct > 0 ? `+${toFaDigits(growthPct)}٪` : `${toFaDigits(growthPct)}٪`}
                   </span>
                 ) : (
-                  <span className="text-[8.5px] text-text-muted leading-none">—</span>
+                  <span className="text-2xs text-text-muted leading-none">—</span>
                 )}
-                <span className="text-text-muted text-[10px] leading-none">←</span>
+                <span className="text-text-muted text-2xs leading-none">←</span>
               </span>
             ) : null}
           </span>
@@ -294,14 +295,7 @@ const ScreenerRow = memo(function ScreenerRow({
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      <span
-                        className={`num block min-w-0 text-start text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
-                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
-                      >
-                        {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
-                        {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
-                      </span>
-                      <div className="ms-auto shrink-0 flex items-center gap-1.5">
+                      <div className="shrink-0 flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
                           <span className="text-[10px] text-text-muted font-bold">الف</span>
                           {i1a === 'gap' ? (
@@ -325,14 +319,18 @@ const ScreenerRow = memo(function ScreenerRow({
                           )}
                         </span>
                       </div>
+                      <span
+                        className={`num block min-w-0 text-end text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
+                      >
+                        {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
+                        {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      <div className="min-w-0 text-start overflow-hidden">
-                        <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
-                      </div>
-                      <span className="ms-auto shrink-0">
+                      <span className="shrink-0">
                         {epsPartialRejected ? (
                           <AuditBadge
                             state="fail"
@@ -356,19 +354,15 @@ const ScreenerRow = memo(function ScreenerRow({
                           <PassMark state={i2} testId="fts-mark-2_eps_trend" />
                         )}
                       </span>
+                      <div className="min-w-0 text-end overflow-hidden">
+                        <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      {/* تراز ستون: مقدار اول (text-start) تا زیر هدر بنشیند */}
-                      <span
-                        className="num block min-w-0 text-start text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
-                      >
-                        {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
-                        {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
-                      </span>
-                      <span className="ms-auto shrink-0">
+                      {/* تیکِ حکم در لبهٔ start (راست، زیرِ هدر) و عدد در سمت مقابل */}
+                      <span className="shrink-0">
                         {i3 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
                             /* مؤسسهٔ مالی/هلدینگ: سود ناخالص ماهیتاً وجود ندارد → N/A نه «شکاف داده» */
@@ -389,25 +383,18 @@ const ScreenerRow = memo(function ScreenerRow({
                           />
                         )}
                       </span>
+                      <span
+                        className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
+                      >
+                        {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
+                        {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      {/* تراز ستون: مقدار اول (text-start) تا زیر هدر بنشیند */}
-                      <span
-                        className="num block min-w-0 text-start text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={
-                          r.profit_potential_pct == null
-                            ? r.sales_to_mcap != null
-                              ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
-                              : VALUE_MISSING_WITH_VERDICT
-                            : (absurdHint(r.profit_potential_pct) ?? undefined)
-                        }
-                      >
-                        {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
-                        {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
-                      </span>
-                      <span className="ms-auto shrink-0">
+                      <span className="shrink-0">
                         {i4 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
                             <GapMark
@@ -427,23 +414,24 @@ const ScreenerRow = memo(function ScreenerRow({
                           />
                         )}
                       </span>
+                      <span
+                        className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                        title={
+                          r.profit_potential_pct == null
+                            ? r.sales_to_mcap != null
+                              ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
+                              : VALUE_MISSING_WITH_VERDICT
+                            : (absurdHint(r.profit_potential_pct) ?? undefined)
+                        }
+                      >
+                        {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
+                        {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                      </span>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      {r.excluded ? (
-                        <span
-                          className="inline-block max-w-[14rem] truncate align-middle text-2xs font-bold text-accent-red leading-tight"
-                          title={r.exclusion_reasons ?? ''}
-                        >
-                          {r.exclusion_reasons}
-                        </span>
-                      ) : (
-                        <span className="whitespace-nowrap text-xs font-semibold text-text-secondary text-start">
-                          {r.pricing_mode === 'free' ? 'آزاد' : r.pricing_mode === 'mandatory' ? 'دستوری' : r.pricing_mode === 'neutral' ? 'سایر صنایع' : '—'}
-                        </span>
-                      )}
-                      <span className="ms-auto shrink-0">
+                      <span className="shrink-0">
                         {i5 === 'gap' ? (
                           <AxisGapMark axis="5_industry" evidence={ev.i5} />
                         ) : (
@@ -454,6 +442,18 @@ const ScreenerRow = memo(function ScreenerRow({
                           />
                         )}
                       </span>
+                      {r.excluded ? (
+                        <span
+                          className="block max-w-[14rem] truncate text-end text-2xs font-bold text-accent-red leading-tight"
+                          title={r.exclusion_reasons ?? ''}
+                        >
+                          {r.exclusion_reasons}
+                        </span>
+                      ) : (
+                        <span className="whitespace-nowrap text-xs font-semibold text-text-secondary text-end">
+                          {r.pricing_mode === 'free' ? 'آزاد' : r.pricing_mode === 'mandatory' ? 'دستوری' : r.pricing_mode === 'neutral' ? 'سایر صنایع' : '—'}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle text-center">
@@ -731,12 +731,16 @@ export function FtsScreenTable({
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-200px)] min-h-[320px] overflow-auto overscroll-contain">
         <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
           <colgroup>
-            <col className="w-[19%]" />
-            <col className="w-[12%]" />
-            <col className="w-[23%]" />
+            <col className="w-[18%]" />
+            {/* ستون شاخص ۱ دو تیک (الف/ب) + عددِ تا ۴ رقم دارد؛ با ۱۲٪ عددِ ۲۴۴.۷٪
+                از خانه بیرون می‌زد (اندازه‌گیری روی مرورگر واقعی). */}
+            <col className="w-[13%]" />
+            {/* شاخص ۲ سری EPS دارد (سه عدد + درصد رشد) — با بزرگ‌ترشدنِ فونتِ این ستون،
+                عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. */}
+            <col className="w-[25%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />
-            <col className="w-[16%]" />
+            <col className="w-[14%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-20 bg-bg-card shadow-xs">

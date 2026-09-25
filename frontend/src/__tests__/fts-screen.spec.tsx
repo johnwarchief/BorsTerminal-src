@@ -63,10 +63,34 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
   it('پنج شاخص و امتیاز را رندر می کند', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     expect(screen.getByText('شپنا')).toBeInTheDocument();
-    expect(screen.getByText('۱ رشد فروش (الف/ب)')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
+    expect(screen.getByText('۱ — رشد فروش (الف/ب)')).toBeInTheDocument(); // عنوانِ بالای جدول عمداً حذف شد؛ هدرِ ستون‌ها می‌ماند
     // toFaDigits فقط ارقام را عوض می‌کند؛ ممیز لاتین می‌ماند: ۴۵.۲٪
     expect(screen.getByText('۴۵.۲٪')).toBeInTheDocument();
     expect(screen.getAllByText('✓').length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('شمارهٔ هر شاخص در هدر با «—» از نامش جدا شده', () => {
+    render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
+    for (const label of ['۱ —', '۲ —', '۳ —', '۴ —', '۵ —']) {
+      expect(screen.getAllByText(new RegExp(`^${label}`)).length).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('تیکِ حکم در لبهٔ راستِ هر سلول است (RTL: فرزندِ اولِ ظرف سلول) و عدد بعد از آن می‌آید', () => {
+    render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
+    const tds = screen.getAllByTestId('fts-screen-row')[0].querySelectorAll('td');
+    // [۰]=نماد [۱]=شاخص۱ [۲]=شاخص۲ [۳]=شاخص۳ [۴]=شاخص۴ [۵]=شاخص۵
+    for (const idx of [1, 2, 3, 4, 5]) {
+      const box = tds[idx].firstElementChild;
+      expect(box, `سلول ${idx} ظرفِ چیدمان ندارد`).not.toBeNull();
+      expect(box!.children.length, `سلول ${idx} دو بخش ندارد`).toBeGreaterThanOrEqual(2);
+      const first = box!.firstElementChild as HTMLElement;
+      expect(
+        first.querySelector('[data-testid*="fts-mark"],[data-testid*="fts-gap"],[data-testid*="fts-na"],[data-testid="eps-partial-rejected"],[data-testid="eps-gap-reason"]') ??
+          (first.getAttribute('data-testid') ? first : null),
+        `سلول ${idx}: تیکِ حکم اولین عنصر نیست`,
+      ).not.toBeNull();
+    }
   });
 
   it('سورت امتیاز از بیشترین به کمترین', () => {

@@ -42,21 +42,16 @@ export default function TechnicalPage() {
   const stored = useSymbolStore((s) => s.symbol);
   const setStored = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
+  // نماد پیش‌فرضِ نمایشی («فولاد») فقط به چارت داده می‌شود؛ هرگز در استورِ سراسری
+  // یا آدرس نوشته نمی‌شود — پیش از این اینجا نوشته می‌شد و همان نماد در تب تابلو
+  // و سایدبار «انتخاب‌شده» می‌ماند، هرچند کاربر هیچ‌وقت آن را انتخاب نکرده بود.
+  const viewSymbol = symbol || 'فولاد';
 
   const { data: marketData } = useMarketFeed();
   const boardRow = useMemo(() => {
-    if (!symbol || !marketData?.data) return null;
-    return marketData.data.find((item) => item.symbol === symbol) ?? null;
-  }, [symbol, marketData]);
-
-  // اگر هیچ نمادی انتخاب نشده، نماد پیش‌فرض با دیتای کامل ('فولاد') را فعال می‌کنیم
-  useEffect(() => {
-    if (!symbol) {
-      const defaultSym = 'فولاد';
-      setStored(defaultSym);
-      navigate(`/technical/${encodeURIComponent(defaultSym)}`, { replace: true });
-    }
-  }, [symbol, navigate, setStored]);
+    if (!marketData?.data) return null;
+    return marketData.data.find((item) => item.symbol === viewSymbol) ?? null;
+  }, [viewSymbol, marketData]);
 
   // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت.
   // هنگام خروج از تب، حالت را به «خودکار» برمی‌گردانیم تا سایدبار روی سایر تب‌ها بماند.
@@ -181,8 +176,8 @@ export default function TechnicalPage() {
                 }
               >
                 <NnChart
-                  initialSymbol={symbol || 'فولاد'}
-                  initialName={boardRow?.name || symbol || 'فولاد'}
+                  initialSymbol={viewSymbol}
+                  initialName={boardRow?.name || viewSymbol}
                   initialMarket="بورس"
                   boardRow={boardRow}
                   replayActive={replayActive}

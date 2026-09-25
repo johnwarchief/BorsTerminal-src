@@ -7,7 +7,6 @@ import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
-  BOX_EXIT_HINT,
   GOLDEN_HOUR_HINT,
   GOLDEN_HOUR_LABEL,
   STRONG_CLOCK_HINT,
@@ -144,7 +143,6 @@ const TapeRow = memo(function TapeRow({
   const strongHour = detectStrongHour(row);
   const goldenHour = !strongHour && detectGoldenHour(row);
   const sweep = detectSweep(row);
-  const boxExit = detectBoxExit(row);
   const pct = row.percent_change;
   const atLimitUp = pct != null && pct >= LIMIT_PCT;
   const atLimitDown = pct != null && pct <= -LIMIT_PCT;
@@ -184,7 +182,6 @@ const TapeRow = memo(function TapeRow({
   if (isNoqteh) badges.push(<MicroBadge key="noqteh" pattern="noqteh" tone="amber" title="نقطه‌زنی: فاصله نزدیک از کف ۳۰ روزه" >نقطه</MicroBadge>);
   if (atLimitUp) badges.push(<MicroBadge key="lu" pattern="limit-up" tone="green" title="صف خرید (تغییر ≥ ۴.۹٪)" >صف+</MicroBadge>);
   if (atLimitDown) badges.push(<MicroBadge key="ld" pattern="limit-down" tone="red" title="صف فروش (تغییر ≤ −۴.۹٪)" >صف−</MicroBadge>);
-  if (boxExit) badges.push(<MicroBadge key="box" pattern="box" tone="gray" title={BOX_EXIT_HINT} >باکس</MicroBadge>);
   return (
     <div
       role="button"

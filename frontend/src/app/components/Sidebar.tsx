@@ -78,8 +78,8 @@ export function Sidebar() {
             title={item.label}
             aria-label={item.label}
             className={({ isActive }) =>
-              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-[13px] font-bold transition-all duration-200 ${
-                collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2.5 py-2'
+              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${
+                collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
               } ${
                 isActive
                   ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
