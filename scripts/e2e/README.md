@@ -17,6 +17,15 @@ Run with PowerShell (bash mangles `/FLAG` style arguments, so always use
 | `e2e_readonly.ps1` | runs the frozen build from a **read-only** dir (simulates `Program Files` for a standard user): screener must still return 200 with `market.db` + cache landing under `%LOCALAPPDATA%`, and nothing written into the read-only dir | `%TEMP%\cline\e2e_result.json` |
 
 Notes
+- **A test install into a throwaway folder steals the real icon.** `[Icons]` in
+  `installer/bors_setup.iss` writes to the shared names `{autodesktop}\BorsTerminal Ultimate`
+  and `{autoprograms}\BorsTerminal Ultimate`, and `/VERYSILENT` accepts the default-checked
+  `desktopicon`/`startmenuicon` tasks — so installing anywhere else silently repoints the
+  user's desktop and start-menu shortcuts at that folder, and deleting the folder afterwards
+  leaves icons that do nothing. Use `install_silent.ps1 -NoIcons` (or pass
+  `/TASKS=!desktopicon,!startmenuicon` by hand) for any scratch or parallel install.
+  Hit for real on 2026-09-25: a v1.0.22-era scratch install into `scratch/base_1022`
+  orphaned both shortcuts on the owner's machine.
 - `install_silent.ps1` reads the installer password the same way the app's own
   updater does (`installer/.setup_password.iss`, gitignored). If the file is
   missing it fails fast instead of silently degrading to a visible wizard.

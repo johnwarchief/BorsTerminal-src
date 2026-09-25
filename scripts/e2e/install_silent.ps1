@@ -4,7 +4,8 @@
 #   3. registry DisplayVersion + exe FileVersion must say $SetupVersion
 #   4. the [Run] section already launched the app: /api/update/version -> ver, /api/screener -> 200
 # Writes %TEMP%\cline\install_e2e_result.json.
-param([string]$SetupVersion = '1.0.9')
+param([string]$SetupVersion = '1.0.9',
+      [switch]$NoIcons)
 $ErrorActionPreference = 'Continue'
 $REPO   = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $SETUP  = Join-Path $REPO "installer/out/BorsTerminal_Ultimate_Setup_v$SetupVersion.exe"
@@ -53,6 +54,12 @@ else {
     $hive = 'HKCU:'
 }
 $flags += "/DIR=`"$dir`"", "/LOG=`"$innoLog`""
+if ($NoIcons) {
+  # [Icons] در bors_setup.iss روی نامِ مشترکِ {autodesktop}\{#AppName} می‌نویسد،
+  # پس هر اجرای آزمایشی (مخصوصاً با /DIR دست‌سازی‌شده) آیکونِ واقعیِ کاربر را
+  # به همان پوشهٔ موقت می‌چرخاند و با پاک‌شدنِ پوشه، آیکون می‌شکند.
+  $flags += '/TASKS=!desktopicon,!startmenuicon'
+}
 
 Log ("[1/6] setup $VER ($($res.mode)) -> $dir")
 # NOTE: no -Wait on Start-Process (it hangs here once the [Run] section has
