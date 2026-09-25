@@ -200,6 +200,8 @@ export const FtsCardSchema = z.object({
   sector: z.string().nullish(),
   score: z.number().nullish(),
   verdict: z.string().nullish(),
+  /** false = شرکت عملیاتی نیست (صندوق)؛ FTS روی آن اعمال نمی‌شود */
+  applicable: z.boolean().nullish(),
   pricing_mode: z.string().nullish(),
   passes: z.record(z.string(), z.boolean()).nullish(),
   indicators: IndicatorsSchema,

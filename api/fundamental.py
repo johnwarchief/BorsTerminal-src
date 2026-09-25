@@ -1407,12 +1407,22 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     reasons += risk_gates(conn, symbol, sector, market_cap_rials, cfg=cfg, th=th,
                           m141_map=m141_map, liq_map=liq_map, gate=gate)
 
+    # رأیِ مالک (۱۴۰۵-۰۷-۰۳): FTS برای شرکت‌های عملیاتی است؛ صندوق باید
+    # «FTS ندارد» بگیرد نه REJECT با جدولِ خالی. عددِ امتیاز همین‌جا دست‌نخورده
+    # می‌ماند (اسکرینر روی آن sort می‌کند و None آن را می‌شکند) — فقط مسیرِ
+    # پاسخِ جزئیات آن را خالی نشان می‌دهد.
+    applicable = (prof or {}).get("kind") != "fund"
+    verdict = ("FTS ندارد" if not applicable else
+               ("EXCLUDED" if reasons else
+                "STRONG" if score >= 4 and primary_score == 3 else
+                "WATCH" if score >= 3 else "REJECT"))
+
     return {"symbol": symbol, "sector": sector, "pricing_mode": sec.get("verdict"),
             "market_cap_rials": _f(market_cap_rials), "score": score,
             "primary_score": primary_score,
+            "applicable": applicable,
             "passes": passes, "excluded": bool(reasons), "exclusion_reasons": reasons,
-            "verdict": ("EXCLUDED" if reasons else "STRONG" if score >= 4 and primary_score == 3
-                        else "WATCH" if score >= 3 else "REJECT"),
+            "verdict": verdict,
             "methodology": {"version": "FTS-v10", "axes": 5,
                             "layer_1_subchecks": ("1a_monetary", "1b_volume"),
                             "annualization": "sales_ytd * (12 / elapsed_months)",
@@ -2153,7 +2163,9 @@ def get_fundamental(symbol: str, months: int = 0):
 
         return {"status": "success",
                 "symbol": symbol, "sector": sector, "pricing_mode": res["pricing_mode"],
-                "score": res["score"], "verdict": res["verdict"],
+                "score": (res["score"] if res.get("applicable", True) else None),
+                "verdict": res["verdict"],
+                "applicable": res.get("applicable", True),
                 "excluded": res["excluded"], "exclusion_reasons": res["exclusion_reasons"],
                 "passes": res["passes"], "methodology": res["methodology"],
                 "profile": res["profile"], "indicators": ind,

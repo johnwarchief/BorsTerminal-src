@@ -264,7 +264,7 @@ export default function FundamentalPage() {
                   <h3 className="text-sm font-black text-text-primary">تصمیم استراتژیک FTS</h3>
                 </div>
                 <Badge tone={card.data.score == null ? 'gray' : card.data.score >= 4 ? 'green' : card.data.score === 3 ? 'yellow' : 'red'}>
-                  {card.data.score == null ? 'بدون داده' : card.data.score >= 4 ? 'واجد شرایط سبد FTS' : card.data.score === 3 ? 'واچ‌لیست رصد FTS' : 'فاقد شرایط FTS'}
+                  {card.data.applicable === false ? 'FTS ندارد' : card.data.score == null ? 'بدون داده' : card.data.score >= 4 ? 'واجد شرایط سبد FTS' : card.data.score === 3 ? 'واچ‌لیست رصد FTS' : 'فاقد شرایط FTS'}
                 </Badge>
               </div>
 
@@ -279,9 +279,11 @@ export default function FundamentalPage() {
                     : 'border-accent-red/40 bg-accent-red/10 text-text-primary'
                 }`}>
                   <div className="flex items-center gap-2 font-bold text-xs mb-1">
-                    <span>{card.data.score == null ? '❓' : card.data.score >= 4 ? '🎯' : card.data.score === 3 ? '⏳' : '🚫'}</span>
+                    <span>{card.data.applicable === false ? '➖' : card.data.score == null ? '❓' : card.data.score >= 4 ? '🎯' : card.data.score === 3 ? '⏳' : '🚫'}</span>
                     <span>
-                      {card.data.score == null
+                      {card.data.applicable === false
+                        ? 'FTS ندارد'
+                        : card.data.score == null
                         ? 'اطلاعات کافی نیست'
                         : card.data.score >= 4
                         ? 'گزینه عالی برای سبد سرمایه‌گذاری'
@@ -291,7 +293,9 @@ export default function FundamentalPage() {
                     </span>
                   </div>
                   <p className="text-2xs text-text-secondary leading-relaxed mt-1">
-                    {card.data.score == null
+                    {card.data.applicable === false
+                      ? 'ارزیابی پنج‌شاخصهٔ FTS برای شرکت‌های عملیاتی نوشته شده؛ این یک صندوق است، پس داوری برایش صادر نمی‌شود (نه تأیید، نه رد).'
+                      : card.data.score == null
                       ? 'چون اطلاعات همه ۵ شاخص کامل نیست، فعلا نمی‌توان تصمیم قطعی در مورد این سهم گرفت.'
                       : card.data.score >= 4
                       ? 'این سهم از فیلترهای مهم سودسازی، رشد فروش و عدم قیمت‌گذاری دستوری عبور کرده و یک گزینه بسیار مستعد است.'

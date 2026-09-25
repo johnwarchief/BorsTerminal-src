@@ -22,6 +22,7 @@ SUITES = [
     ('dev/patch_check_v10.py',        'patch/update system guard'),
     ('dev/test_arg_parse_v10.py',     'make_patch --from arg parsing'),
     ('dev/test_delta_update.py',      'delta patch select/apply + fallback'),
+    ('dev/test_fund_revenue_v1027.py', 'fund sheet: سود سهام هرگز «فروش» نمی‌شود'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
