@@ -25,7 +25,9 @@
   --font-sans: 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
   --font-mono: 'Vazirmatn', monospace;
 
-  /* ---------- مقیاس تایپوگرافی سراسری (کف خوانا: 12px) ---------- */
+  /* ---------- مقیاس تایپوگرافی سراسری (کفِ متنِ داده: 12px) ---------- */
+  --text-3xs: var(--fs-3xs);
+  --text-3xs--line-height: 1.25;
   --text-2xs: var(--fs-2xs);
   --text-2xs--line-height: 1.2;
 }
