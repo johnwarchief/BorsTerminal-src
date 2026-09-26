@@ -5,7 +5,8 @@ import { parseCandleTimestamp } from '../../lib/jalaliDate';
  * رویداد تعدیل. سرور (api/chart.py) برای هر رویداد فقط یک عدد می‌دهد:
  * نسبتِ گسستِ «قیمت پایه» در روزِ بازگشایی = اثرِ **ترکیبیِ** افزایش سرمایه و سود نقدی.
  * تفکیکِ سهمِ هر کدام از این یک عدد ممکن نیست (یک معادله، دو مجهول)، پس حالت‌های
- * جداگانهٔ «سود نقدی» / «افزایش سرمایه» / «عملکردی» دادهٔ پشتیبان ندارند.
+ * جداگانهٔ «سود نقدی» و «افزایش سرمایه» دادهٔ پشتیبان ندارند. «عملکردی» با همان
+ * یک عدد ساختنی است ولی نه به شکلِ ره‌آورد — توضیحِ خودِ حالت پایین.
  */
 export interface CorporateAction {
   timestamp: number;
@@ -13,11 +14,54 @@ export interface CorporateAction {
   ratio: number;
 }
 
-/** حالت‌های تعدیلی که واقعاً با دادهٔ سرور قابل محاسبه‌اند */
-export type AdjustmentMode = 'none' | 'combined';
+/**
+ * حالت‌های تعدیلی که واقعاً با دادهٔ سرور قابل محاسبه‌اند:
+ *   none        — قیمتِ خامِ تابلو
+ *   combined    — ضریبِ گسستِ «قیمت پایه» روی کندل‌هایِ ماقبلِ رویداد (محور ریال)
+ *   performance — همان سریِ تعدیل‌شده، ولی رویِ **مقیاسِ بازدهی**: نخستین کندل = ۱۰۰
+ *
+ * «عملکردی» اینجا با «درصد» یکی است، نه با فرمولِ اختصاصیِ ره‌آورد/نهایات‌نگر: آن‌ها
+ * سودِ نقدی را **سرمایه‌گذاریِ دوباره** می‌کنند (history را تا ده برابر پایین‌تر
+ * می‌کشند — docs/CHART-PARITY-REFERENCE.md §۸) و این به DPSِ تفکیکیِ هر رویداد
+ * نیاز دارد که در بانکِ ما نیست. پس این حالت صادقانه «نمایِ بازدهی» است، نه
+ * بازتولیدِ عددِ آن‌ها؛ تفکیکِ آورده/سودِ نقدی از یک نسبتِ واحد ساختنی نیست.
+ */
+export type AdjustmentMode = 'none' | 'combined' | 'performance';
+
+/** پایهٔ نمایِ بازدهی — همان چیزی که رویِ محورِ عمودی خوانده می‌شود */
+export const PERFORMANCE_BASE = 100;
+
+/** ده‌دقیقه‌ایِ ممیز برای عددِ بازدهی؛ قیمتِ ریالی گردِ صحیح می‌ماند */
+function round2(v: number): number {
+  return Math.round(v * 100) / 100;
+}
 
 export function getAdjustmentFactor(action: CorporateAction): number {
   return action.ratio > 0 ? Math.min(Math.max(action.ratio, 0.0001), 50) : 1.0;
+}
+
+/**
+ * تبدیلِ سریِ قیمت به شاخصِ بازدهی: هر کندل ÷ پایانیِ نخستین کندل × ۱۰۰.
+ *
+ * حجم و گردشِ ارزش **دست‌نخورده** می‌مانند — آن‌ها قیمت نیستند که مقیاس شوند.
+ * سریِ بی‌پایه (نخستین close صفر یا تهی) بدونِ تغییر برمی‌گردد: تقسیمِ بر صفر
+ * یعنی بی‌نهایتِ سبزِ جعلی رویِ محور، نه «۰٪».
+ */
+export function toPerformanceSeries(candles: KLineData[]): KLineData[] {
+  const base = candles.length ? Number(candles[0].close) : 0;
+  if (!(base > 0)) return candles.map(c => ({ ...c }));
+  return candles.map(c => ({
+    ...c,
+    open: round2(Number(c.open) / base * PERFORMANCE_BASE),
+    high: round2(Number(c.high) / base * PERFORMANCE_BASE),
+    low: round2(Number(c.low) / base * PERFORMANCE_BASE),
+    close: round2(Number(c.close) / base * PERFORMANCE_BASE),
+  }));
+}
+
+/** دقتِ محورِ قیمت برای هر حالت — «عملکردی» بدونِ دو رقمِ ممیز خوانده نمی‌شود */
+export function pricePrecisionFor(mode: AdjustmentMode): number {
+  return mode === 'performance' ? 2 : 0;
 }
 
 /**
@@ -29,13 +73,14 @@ export function applyAdjustmentToCandles(
   mode: AdjustmentMode
 ): KLineData[] {
   if (mode === 'none' || !actions || actions.length === 0 || !rawCandles || rawCandles.length === 0) {
-    return rawCandles.map(c => ({ ...c }));
+    return mode === 'performance' ? toPerformanceSeries(rawCandles.map(c => ({ ...c })))
+                                  : rawCandles.map(c => ({ ...c }));
   }
 
   // مرتب‌سازی زمانی رویدادها از قدیم به جدید
   const sortedActions = [...actions].sort((a, b) => a.timestamp - b.timestamp);
 
-  return rawCandles.map(candle => {
+  const scaled = rawCandles.map(candle => {
     let cumulativeFactor = 1.0;
 
     // کندل‌های ماقبل هر مجمع، در ضریب آن مجمع ضرب می‌شوند
@@ -57,6 +102,9 @@ export function applyAdjustmentToCandles(
       turnover: candle.turnover
     };
   });
+
+  // «عملکردی» رویِ همان سریِ تعدیل‌شده می‌نشیند؛ بی‌ضریبِ قیمتی، درصدِ بازدهی
+  return mode === 'performance' ? toPerformanceSeries(scaled) : scaled;
 }
 
 /**

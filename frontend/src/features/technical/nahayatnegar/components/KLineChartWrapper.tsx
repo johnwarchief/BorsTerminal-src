@@ -26,7 +26,8 @@ function readCrosshair(ch: Chart | null | undefined): CrosshairLike | null {
 import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
 import { useUiStore } from '@shared/stores/uiStore';
 import {
-  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor, mapBackendAdjustEvents
+  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
+  mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, type Timeframe } from '../lib/timeframe';
 import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
@@ -360,15 +361,25 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const displayCandlesRef = useRef<KLineData[]>(displayCandles);
   displayCandlesRef.current = displayCandles;
 
+  // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود، حتی وقتی نمایش
+  // روی نمایِ بازدهی است. بی‌این تفکیک، شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گیرد
+  // و منطقِ قیمت‌محور بی‌صدا یک تحلیلِ بی‌معنا تولید می‌کند.
+  const analysisCandles = useMemo(
+    () => activeAdjustment === 'performance'
+      ? applyAdjustmentToCandles(rawCandles, corporateActions, 'combined')
+      : adjustedCandles,
+    [activeAdjustment, adjustedCandles, rawCandles, corporateActions]
+  );
+
   // اجرای تحلیل FTS روی داده‌های تعدیل‌شده
   useEffect(() => {
-    if (adjustedCandles.length > 0) {
-      const result = analyzeFts(adjustedCandles);
+    if (analysisCandles.length > 0) {
+      const result = analyzeFts(analysisCandles);
       setFtsAnalysis(result);
     } else {
       setFtsAnalysis(null);
     }
-  }, [adjustedCandles]);
+  }, [analysisCandles]);
 
   // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد، فال‌بک چندلایه و نگاشت دفاعی)
   const fetchCandleData = useCallback(async (symbol: string) => {
@@ -717,7 +728,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // تنظیم سمبل و بازه زمانی
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: 0,
+      pricePrecision: pricePrecisionFor(activeAdjustment),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -1031,7 +1042,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
 
       // ۴. مقیاس قیمت — استفاده از نام استاندارد رجیسترشده در v10 (normal / logarithm / percentage)
-      const yAxisName = ftsPriceScale === 'logarithm'
+      // در «تعدیل عملکردی» خودِ دیتا شاخصِ بازدهی است (نخستین کندل = ۱۰۰). اگر محور
+      // هم‌زمان percentage بماند، دو تبدیل روی یک عدد می‌نشیند و نمودار ۰٫۰۱٪ نشان
+      // می‌دهد — پس اینجا محور عادی/لگاریتمی می‌ماند و درصد را داده می‌سازد.
+      const yAxisName = activeAdjustment === 'performance'
+        ? (ftsPriceScale === 'logarithm' ? 'logarithm' : 'normal')
+        : ftsPriceScale === 'logarithm'
         ? 'logarithm'
         : ftsPriceScale === 'percentage'
         ? 'percentage'
@@ -1055,7 +1071,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     } catch (e) {
       void e;
     }
-  }, [theme, ftsView, ftsPriceScale, ftsChartType, ftsShowGrid, ftsShowCrosshair]);
+  }, [theme, ftsView, ftsPriceScale, ftsChartType, ftsShowGrid, ftsShowCrosshair, activeAdjustment]);
 
   // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {
@@ -1071,7 +1087,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: 0,
+      pricePrecision: pricePrecisionFor(activeAdjustment),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));

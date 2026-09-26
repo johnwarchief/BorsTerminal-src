@@ -70,20 +70,27 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
     { label: 'هایکن آشی (Heikin Ashi)', value: 'heikin_ashi', icon: <IconHeikinAshi size={16} /> },
   ];
 
-  // فهرستِ کاملِ حالت‌های نهایت‌نگار؛ تنها دو تای اول با دادهٔ سرورِ ما قابل محاسبه‌اند.
+  // فهرستِ کاملِ حالت‌های نهایات‌نگار/ره‌آورد؛ سه‌تا با دادهٔ سرورِ ما ساختنی‌اند.
   // سرور فقط «نسبت گسست قیمت پایه» را می‌دهد = اثرِ ترکیبیِ افزایش سرمایه و سود نقدی
-  // (همان حالتِ پیش‌فرضِ نهایت‌نگار). تفکیکِ سود نقدی از سهام جایزه از یک نسبتِ واحد
-  // استخراج نمی‌شود، پس سه حالتِ آخر غیرفعال‌اند (نه عددِ ساختگی).
+  // (همان حالتِ پیش‌فرضِ نهایات‌نگار). تفکیکِ سودِ نقدی از سهامِ جایزه از یک نسبتِ واحد
+  // استخراج نمی‌شود، پس دو حالتِ آخر غیرفعال‌اند (نه عددِ ساختگی).
   // شماره‌هایِ adjustmentType و سنجشِ کمیِ فاکتورِ ما با هر پنج حالت:
   // docs/CHART-PARITY-REFERENCE.md §۸ (ابزار: tools/nn_adjust_parity.py).
-  const adjustments: { label: string; value: AdjustmentMode | 'capital' | 'cash' | 'operational'; desc: string }[] = [
+  const adjustments: { label: string; value: AdjustmentMode | 'capital' | 'cash'; desc: string }[] = [
     { label: 'افزایش سرمایه و سود نقدی', value: 'combined', desc: 'حالتِ پیش‌فرضِ نهایت‌نگار — مبنای گسست قیمتِ پایهٔ TSETMC' },
     { label: 'بدون تعدیل', value: 'none', desc: 'قیمت‌های خام و واقعی تابلوی معاملات' },
+    {
+      label: 'تعدیل عملکردی',
+      value: 'performance',
+      desc: 'نمایِ بازدهی رویِ سریِ تعدیل‌شده — نخستین کندل = ۱۰۰ و محور Percent است. ' +
+            'افزایشِ سرمایه و سودِ نقدی هر دو لحاظ می‌شوند، اما سودِ نقدی اینجا ' +
+            'سرمایه‌گذاریِ دوباره نمی‌شود (آن کار به DPSِ تفکیکیِ هر رویداد نیاز دارد ' +
+            'که در بانکِ ما نیست)، پس عدد با «عملکردیِ» ره‌آورد و نهایت‌نگر یک‌سان نیست.',
+    },
     { label: 'افزایش سرمایه', value: 'capital', desc: 'نهی — به دادهٔ تفکیکیِ درصدِ افزایش سرمایه نیاز دارد' },
     { label: 'سود نقدی', value: 'cash', desc: 'نهی — به دادهٔ تفکیکیِ DPS نیاز دارد' },
-    { label: 'تعدیل عملکردی', value: 'operational', desc: 'نهی — به دادهٔ تفکیکیِ سود و سهامِ جایزه نیاز دارد' },
   ];
-  const AVAILABLE_MODES: AdjustmentMode[] = ['combined', 'none'];
+  const AVAILABLE_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
   const currentAdj = adjustments.find(a => a.value === activeAdjustment) || adjustments[0];
   const currentCandle = candleTypes.find(c => c.value === activeCandleType) || candleTypes[0];
 

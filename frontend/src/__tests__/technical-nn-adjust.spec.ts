@@ -4,6 +4,8 @@ import {
   applyAdjustmentToCandles,
   getAdjustmentFactor,
   mapBackendAdjustEvents,
+  pricePrecisionFor,
+  toPerformanceSeries,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
 
@@ -60,5 +62,39 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
     expect(getAdjustmentFactor(a)).toBe(0.5);
     expect(getAdjustmentFactor({ ...a, ratio: 0.00005 })).toBe(0.0001);   // clamp پایین
     expect(getAdjustmentFactor({ ...a, ratio: 500 })).toBe(50);        // clamp بالا
+  });
+
+  // ── تعدیل عملکردی (نمایِ بازدهی) ───────────────────────────────────────
+  it('«عملکردی» رویِ سریِ تعدیل‌شده می‌نشیند، نه رویِ قیمتِ خام', () => {
+    // ترکیبی: [50,50,50] — سهمِ افزایش سرمایه در قیمتِ پایه خنثی شده
+    // عملکردی: همان سری ÷ ۵۰ × ۱۰۰ ⇒ [۱۰۰،۱۰۰،۱۰۰]
+    const out = applyAdjustmentToCandles(candles, events, 'performance');
+    expect(out.map((c) => c.close)).toEqual([100, 100, 100]);
+    expect(out[0].timestamp).toBe(candles[0].timestamp);
+  });
+
+  it('«عملکردی» بی‌رویداد ⇒ بازدهیِ خام، و حجم/گردش دست‌نخورده (قیمت نیستند)', () => {
+    const out = applyAdjustmentToCandles(candles, [], 'performance');
+    expect(out.map((c) => c.close)).toEqual([100, 100, 50]);
+    expect(out[2].volume).toBe(2000);
+  });
+
+  it('پایهٔ صفر یا تهی ⇒ سری بی‌تغییر برمی‌گردد، نه صفرِ جعلی یا بی‌نهایت', () => {
+    const zero = [{ timestamp: t('2020-01-08'), open: 0, high: 0, low: 0, close: 0 }] as unknown as KLineData[];
+    expect(toPerformanceSeries(zero)[0].close).toBe(0);
+    expect(toPerformanceSeries([])).toEqual([]);
+  });
+
+  it('بازدهی دو رقمِ ممیز دارد — گردکردنِ صحیح یعنی ۱۰۰٫۴٪ بشود ۱۰۰٪', () => {
+    const mild = [{ timestamp: t('2020-01-08'), open: 1000, high: 1000, low: 1000, close: 1000 },
+                  { timestamp: t('2020-01-09'), open: 1004, high: 1004, low: 1004, close: 1004 }] as unknown as KLineData[];
+    const out = applyAdjustmentToCandles(mild, [], 'performance');
+    expect(out[1].close).toBe(100.4);
+  });
+
+  it('دقتِ محور با حالت عوض می‌شود (عملکردی ۲ رقم، بقیه صحیح)', () => {
+    expect(pricePrecisionFor('performance')).toBe(2);
+    expect(pricePrecisionFor('combined')).toBe(0);
+    expect(pricePrecisionFor('none')).toBe(0);
   });
 });
