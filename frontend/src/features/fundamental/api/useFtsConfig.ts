@@ -31,6 +31,7 @@ export const FtsConfigPayloadSchema = z.object({
   v10_margin_ideal: z.number().nullish(),
   v10_sales_to_mcap_min: z.number().nullish(),
   v10_potential_min: z.number().nullish(),
+  v10_inflation_basis: z.number().nullish(),
 });
 
 export const FtsConfigSchema = z.object({
@@ -69,6 +70,8 @@ export const FTS_GUIDE_DEFAULTS = {
   /** کف نسبت فروش سالانه‌شده به ارزش بازار — ۰.۳۳ = ۳۳٪ (تصمیمِ مالک؛ مطلوب ۱.۰) */
   v10_sales_to_mcap_min: 0.33,
   v10_potential_min: 40,
+  /** مبنای تورمِ داخلِ فرمولِ ۱ب (٪). مالک ۱۴۰۵-۰۷-۰۴ خواست این عدد درِ دستِ کاربر باشد؛ پیش‌فرض = هدفِ ۶۰٪ جزوه. */
+  v10_inflation_basis: 60,
 } as const;
 
 /** پیش‌فرضِ کشوی تنظیمات: کف فروش/ارزش بازار ۳۳٪ (مطلوب ۱۰۰٪) */

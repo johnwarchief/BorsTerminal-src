@@ -6,7 +6,7 @@
 
   لایهٔ ۱  درآمد/فروش — دو چکِ الزامی:
            ۱الف رشد ریالی: فروش تجمیعی ÷ همان دورهٔ سال قبل ≥ ۶۰٪
-           ۱ب رشد فیزیکی (تناژ/تعداد): ردِ سودی که صرفاً از تورم و افزایش
+           ۱ب رشد تولیدی (تناژ/تعداد): ردِ سودی که صرفاً از تورم و افزایش
               قیمت میآید؛ برای شرکت‌های مالی «تناژ» معنا ندارد و مبنای
               درآمد، تسهیلات اعطایی + سپرده‌گذاری + سرمایه‌گذاری + اوراق +
               کارمزد است.
@@ -64,20 +64,25 @@ router = APIRouter()
 # را بی‌صدا شل نکند.
 FTS_V10_DEFAULTS = {
     "monetary_growth_min": 60.0,    # ۱الف — رشد ریالی تجمیعی (٪)
-    "volume_growth_min": 0.0,       # ۱ب — رشد فیزیکی باید غیرمنفی باشد (٪)
+    "volume_growth_min": 0.0,       # ۱ب — رشد تولیدی باید غیرمنفی باشد (٪)
     "volume_breadth_min": 0.60,     # ۱ب — حداقل share ماههایی که واقعاً بهتر شده‌اند
     "eps_years": 3,                 # ۲ — طول سابقهٔ سودسازی (سالِ متوالی سودآور)
     "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالص
     "margin_ideal": 30.0,           # ۳ — حاشیهٔ ایده‌آل
     "sales_to_mcap_min": 0.33,      # ۴الف — فروش سالانه ÷ ارزش بازار (۳۳٪ = ۰٫۳۳×، استاندارد جزوه)
     "potential_min": 40.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
+    # ۱ب — مبنای تورمِ داخلِ فرمولِ «رشد تولیدی». حکمِ مالک (۱۴۰۵/۰۷/۰۴):
+    # این عدد از هدفِ ۶۰٪ جدا شد و خودش در پنلِ تنظیمات قابل تغییر است.
+    "inflation_basis": 60.0,
 }
 
 MRL_TO_RIAL = 1e6      # جداول کدال «میلیون ریال» هستند
 BT_FACTOR = 1e-4       # میلیون ریال → میلیارد تومان (حذف ۴ رقم راست)
 
-# مبنای «رشد بیش از تورم» عددِ مستقلی نیست: همان هدفِ ۶۰٪ جزوه است (حکم ۳ —
-# کف ۴۰٪ برای قبولی، ۶۰٪ برای پوشش تورم). ثابتِ ۵۸٪ بی‌منبع بود و حذف شد.
+# پیش‌فرضِ «مبنای تورم» وقتی کاربر هنوز عددی نگذاشته: همان هدفِ ۶۰٪ جزوه
+# (حکم ۳ — کف ۴۰٪ قبولی، ۶۰٪ پوشش تورم). ثابتِ ۵۸٪ بی‌منبع حذف شده است.
+# از حکم ۱۴۰۵/۰۷/۰۴ این عدد کلیدِ مستقلِ خودش را دارد (`v10_inflation_basis`)
+# و دیگر از `v10_monetary_growth_min` قرض گرفته نمی‌شود.
 _INFLATION_FALLBACK = 60.0
 
 
@@ -114,7 +119,10 @@ def v10_thresholds(cfg: dict = None) -> dict:
                     break
                 except (TypeError, ValueError):
                     pass
-    out["inflation_benchmark"] = _f(cfg.get("v10_monetary_growth_min")) or _INFLATION_FALLBACK
+    # مبنای تورم: کلیدِ مستقلِ خودش، نه قرض‌گرفته از هدفِ رشدِ ۱الف. صفرِ کاربر
+    # «بدون تعدیلِ تورم» است و باید همان بماند — پس `or` اینجا ممنوع است.
+    infl = _num_or_none(cfg.get("v10_inflation_basis"))
+    out["inflation_benchmark"] = infl if infl is not None and infl >= 0 else _INFLATION_FALLBACK
     return out
 
 
@@ -373,8 +381,8 @@ def board_total_market_cap(conn) -> tuple:
 _FIN_TOKENS = tuple(fts_engine.norm_fa(x) for x in
                     ("اعتباري", "اعتباری", "بيمه", "بیمه",
                      "ليزينگ", "لیزینگ", "کارگزاري", "کارگزاری", "اوراق"))
-# هلدینگ/سرمایه‌گذاری/واسطه‌گری مالی/بانکی: «فروش کالا» و رشد فیزیکی/تناژ
-# معنا ندارد؛ درآمد از پرتفوی/تسهیلات/سپرده می‌آید → رشد فیزیکی کاملاً مخفی.
+# هلدینگ/سرمایه‌گذاری/واسطه‌گری مالی/بانکی: «فروش کالا» و رشد تولیدی/تناژ
+# معنا ندارد؛ درآمد از پرتفوی/تسهیلات/سپرده می‌آید → رشد تولیدی کاملاً مخفی.
 _HOLD_TOKENS = tuple(fts_engine.norm_fa(x) for x in
                      ("بانک", "سرمایه گذاری", "سرمایه‌گذاری", "هلدینگ",
                       "واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"))
@@ -596,7 +604,7 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  لایهٔ ۱ب — رشد فیزیکی/تناژ (ردِ سودِ صرفاً تورمی)
+#  لایهٔ ۱ب — رشد تولیدی/تناژ (ردِ سودِ صرفاً تورمی)
 # ═══════════════════════════════════════════════════════════════════════════
 def _is_consolidated_title(title) -> bool:
     """عنوان صورت مالی تلفیقی است؟ (همان قاعدهٔ fts_engine، بدون وابستگی خصوصی)"""
@@ -630,7 +638,7 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
            "pass": False, "data_gap": True, "revenue_basis": prof["revenue_basis"],
            "note": prof["volume_note"]}
     if g.get("data_gap") or g.get("monetary_pct") is None:
-        out["reason"] = "رشد ریالی محاسبه نشد؛ رشد مقداری هم قابل بررسی نیست."
+        out["reason"] = "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست."
         return out
     year, month, monetary_pct = g["year"], g["months"], g["monetary_pct"]
     series = series if series is not None else monthly_series(conn, symbol)
@@ -648,7 +656,7 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
                     "source_detail": "ستون %s در گزارش فعالیت ماهانهٔ کدال" % col})
         out["pass"] = vol is not None and vol >= th["volume_growth_min"]
         out["reason"] = ("" if out["pass"] else
-                         "فروش مقداری کم شده یا ثابت مانده؛ رشد ریالی فقط از افزایش نرخ آمده است.")
+                         "فروش تولیدی کم شده یا ثابت مانده؛ رشد ریالی فقط از افزایش نرخ آمده است.")
         return out
 
     # ── سطح B: تجزیهٔ اثر قیمت + پهنای رشد ────────────────────────────────
@@ -1619,14 +1627,14 @@ def build_insights(res: dict) -> tuple:
     basis_str = _BASIS_FA.get(str(v.get("basis")), str(v.get("basis") or "تعدیل تورمی"))
 
     if v.get("data_gap"):
-        txt1b = "⚠️ ۱ب رشد فیزیکی: عدم دسترسی به داده" if not v.get("reason") else ("⚠️ ۱ب رشد فیزیکی: %s" % v.get("reason"))
+        txt1b = "⚠️ ۱ب رشد تولیدی: عدم دسترسی به داده" if not v.get("reason") else ("⚠️ ۱ب رشد تولیدی: %s" % v.get("reason"))
     elif v.get("pass"):
-        txt1b = "✅ ۱ب رشد فیزیکی: تأیید شد (%s)" % basis_str
+        txt1b = "✅ ۱ب رشد تولیدی: تأیید شد (%s)" % basis_str
     else:
         v_reason = v.get("reason") or "رشد صرفاً از افزایش نرخ است (فاقد رشد حجم)"
         if "رشد واقعی کافی است" in v_reason:
             v_reason = "عدم فراگیری در ماه‌های سپری‌شده"
-        txt1b = "🚫 ۱ب رشد فیزیکی: %s" % v_reason
+        txt1b = "🚫 ۱ب رشد تولیدی: %s" % v_reason
     insights.append({"step": "۱", "title": "لایهٔ ۱ — درآمد/فروش (رشد ریالی + تأیید حجم)",
                      "type": "success" if axis1 else "warning",
                      "text": "%s<br>%s" % (txt1, txt1b)})
@@ -1657,7 +1665,7 @@ def build_insights(res: dict) -> tuple:
              "detail": "تجمیعی %s ÷ %s میلیارد تومان (%s)"
                        % (_n(g.get("ytd_now_bt")), _n(g.get("ytd_prev_bt")),
                           g.get("period") or "—")},
-            {"key": "1b", "label": "رشد فیزیکی / تناژ",
+            {"key": "1b", "label": "رشد تولیدی / تناژ",
              "state": _state(v.get("pass"), gap=bool(v.get("data_gap"))),
              "value": _pct_txt(v.get("volume_pct") if v.get("quantity_verified")
                                else v.get("real_pct")),
@@ -2099,7 +2107,7 @@ def get_fundamental(symbol: str, months: int = 0):
 
     برخلاف v8 که فقط خروجیِ `fts_engine.scan_symbol` را بازآرایی میکرد، اینجا هر
     پنج لایه با قواعدِ نسخهٔ ۱۰ محاسبه میشوند: آستانهٔ ۶۰٪ برای رشد ریالی، چکِ
-    الزامیِ رشد فیزیکی، سابقهٔ ۳ سالهٔ EPS + تداوم میاندوره‌ای، حاشیهٔ ۲۰/۳۰٪،
+    الزامیِ رشد تولیدی، سابقهٔ ۳ سالهٔ EPS + تداوم میاندوره‌ای، حاشیهٔ ۲۰/۳۰٪،
     سالانه‌سازیِ پویا ×۱۲÷م با آستانهٔ ۳۳٪ پتانسیل سود، و رژیم قیمت‌گذاری صنعت.
     `months` برای سازگاری با فراخوانی‌های قدیمی پذیرفته میشود و در داوری اثر
     ندارد — «م» از خودِ گزارش‌های ماهانه خوانده میشود، نه از پارامتر کاربر.

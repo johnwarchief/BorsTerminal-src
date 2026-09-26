@@ -1,4 +1,4 @@
-// تست Drill-Down تعاملی ۵ شاخص + سالانه‌سازی N ماهه + P/NAV هلدینگ + N/A رشد فیزیکی
+// تست Drill-Down تعاملی ۵ شاخص + سالانه‌سازی N ماهه + P/NAV هلدینگ + N/A رشد تولیدی
 // شفاف‌سازی محاسبات موتور FTS v10 بک‌اند — این تست فقط رندر را می‌سنجد.
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -236,7 +236,7 @@ describe('پنل شاخص ۱ — رشد فروش و درآمد', () => {
     expect(within(panel).getByText('دوره مشابه سال قبل')).toBeInTheDocument();
   });
 
-  it('شرکت خدماتی/هلدینگ: کادر رشد فیزیکی کاملاً حذف می‌شود (نه کادر خالی/نه N/A)', () => {
+  it('شرکت خدماتی/هلدینگ: کادر رشد تولیدی کاملاً حذف می‌شود (نه کادر خالی/نه N/A)', () => {
     render(<FtsDrillDown card={baseCard()} active="1" quarters={FISCAL} physicalApplicable={false} />);
     const panel = screen.getByTestId('fts-drilldown-1');
     // نه برچسب N/A، نه متن توضیح — کادر تناژ اصلاً رندر نمی‌شود
@@ -277,9 +277,9 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
     expect(chart.textContent).toContain('۱۴۰۴');
   });
 
-  it('برچسب صعودی/غیرصعودی و شاهد حسابرسی‌شده نمایش می‌یابد', () => {
+  it('برچسب رشد متوالی و شاهد حسابرسی‌شده نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="2" quarters={FISCAL} physicalApplicable />);
-    expect(screen.getByText('صعودی ✓')).toBeInTheDocument();
+    expect(screen.getByText('سه سالِ متوالی بالاتر ✓')).toBeInTheDocument();
     // کلیدِ موتور («audited_year_end») برای کاربر بی‌معناست — فارسیِ معادلِ خودش را می‌خواهیم
     const tier = screen.getByTestId('drilldown-evidence-tier');
     expect(tier.textContent).toContain('۱۲ماهه حسابرسی‌شده');
@@ -387,7 +387,7 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
 
   it('نسبت فروش/ارزش بازار با کف و پتانسیل سود هم‌زمان نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
-    expect(document.body.textContent).toMatch(/فروش\/ارزش بازار ۱\.۳۵×/);
+    expect(document.body.textContent).toMatch(/نسبت فروش ÷ ارزش بازار ۱\.۳۵×/);
     expect(document.body.textContent).toMatch(/پتانسیل سود ۲۸\.۷٪/);
   });
 
@@ -402,7 +402,7 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     const block = screen.getByTestId('potential-formula');
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
     expect(within(block).getByText(/حاشیه ناخالص/).textContent).toContain('۲۱.۲٪');
-    expect(within(block).getByText(/مارکت‌کپ/).textContent).toContain('۲.۷۲');
+    expect(within(block).getByText(/D: ارزش بازار/).textContent).toContain('۲.۷۲');
     expect(block.textContent).toContain('۲۸.۷٪');
   });
 
@@ -418,7 +418,7 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     expect(within(block).getByText('خروجی قابل محاسبه نیست')).toBeInTheDocument();
     expect(within(block).queryByText('بدون داده')).not.toBeInTheDocument();
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
-    expect(within(block).getByText(/مارکت‌کپ/).textContent).toContain('۲.۷۲');
+    expect(within(block).getByText(/D: ارزش بازار/).textContent).toContain('۲.۷۲');
   });
 });
 
@@ -437,7 +437,7 @@ describe('پنل شاخص ۵ — چشم‌انداز صنعت و نرخ‌گذا
   });
 });
 
-describe('N/A رشد فیزیکی در کارت FTS', () => {
+describe('N/A رشد تولیدی در کارت FTS', () => {
   it('کارت شرکت خدماتی: سلول ۱ب برچسب N/A می‌گیرد نه مردود', () => {
     render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} verdict="WATCH" physicalApplicable={false} />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
@@ -447,7 +447,7 @@ describe('N/A رشد فیزیکی در کارت FTS', () => {
   it('کارت تولیدی: همان مقدار قبول/مردود می‌ماند', () => {
     render(<FtsCard score={4} passes={FTS_PASSES} verdict="STRONG" physicalApplicable />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
-    expect(within(cell).getByText('قبول')).toBeInTheDocument();
+    expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toContain('قبول');
   });
 });
 

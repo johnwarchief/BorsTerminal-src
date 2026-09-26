@@ -43,7 +43,7 @@ const Indicator1MonetarySchema = z
   })
   .nullish();
 
-/** لایه ۱ب — رشد فیزیکی/تناژ (قابل‌اعمال بودن + مبنا) */
+/** لایه ۱ب — رشد تولیدی/تناژ (قابل‌اعمال بودن + مبنا) */
 const Indicator1VolumeSchema = z
   .object({
     quantity_verified: z.boolean().nullish(),
@@ -53,10 +53,10 @@ const Indicator1VolumeSchema = z
     real_pct: z.number().nullish(),
     implied_price_pct: z.number().nullish(),
     price_benchmark_pct: z.number().nullish(),
-    /** کفِ رشد مقداری (volume_growth_min) — بک‌اند می‌فرستد؛ بدونِ این کلید
+    /** کفِ رشد تولیدی (volume_growth_min) — بک‌اند می‌فرستد؛ بدونِ این کلید
      *  zod آن را دور می‌ریخت و کارت مجبور بود عددِ ثابتِ خودش را بنویسد. */
     threshold: z.number().nullish(),
-    /** پهنای رشد ماهانه — وقتی کفِ درصدیِ رشد مقداری صفر است، همین عدد
+    /** پهنای رشد ماهانه — وقتی کفِ درصدیِ رشد تولیدی صفر است، همین عدد
      *  در واقع الزامِ ۱ب را تعیین می‌کند؛ بدونِ آن کارت «≥ ۰٪» نشان می‌داد. */
     breadth: z
       .object({

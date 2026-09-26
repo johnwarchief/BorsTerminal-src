@@ -6,7 +6,7 @@
 // صفحه؛ backdrop نیمه‌شف z-[9998] و پنل z-[9999]. بستن: ✕ / backdrop / Esc.
 // اسلایدر رشد درآمد، کف حاشیه، اسلایدر شاخص ۴ (کف فروش سالانه‌شده به
 // ارزش بازار ۱۰٪..۱۰۰٪)، تاگل شاخص ۲ (سابقه ۳ ساله سودسازی)، گیت
-// چندگزینه‌ای نرخ‌گذاری دستوری، تاگل هوشمند رشد فیزیکی (صرفاً تولیدی)،
+// چندگزینه‌ای نرخ‌گذاری دستوری، تاگل هوشمند رشد تولیدی (صرفاً تولیدی)،
 // دروازه‌های سخت (تعلیق) و کلید بازنشانی به پیش‌فرض جزوه.
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -26,8 +26,8 @@ import {
 /** فیلدهایی که کشو ویرایش می‌کند — بقیهٔ کلیدها هنگام ذخیره از config فعلی می‌آیند */
 type DraftConfig = Pick<
   FtsConfig,
-  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min'
-> & { v10_sales_to_mcap_min: number; v10_monetary_growth_min: number };
+  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min' | 'v10_inflation_basis'
+> & { v10_sales_to_mcap_min: number; v10_monetary_growth_min: number; v10_inflation_basis: number };
 
 /** حالت گیت نرخ‌گذاری دستوری — چندگزینه‌ای به‌جای تاگل خشک */
 type PricingGateMode = 'free_only' | 'jump_allowed' | 'all';
@@ -67,6 +67,8 @@ function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
     v10_eps_years: c?.v10_eps_years ?? FTS_GUIDE_DEFAULTS.v10_eps_years,
     v10_sales_to_mcap_min: c?.v10_sales_to_mcap_min ?? SALES_TO_MCAP_GUIDE_DEFAULT,
     profit_potential_min: c?.profit_potential_min ?? POTENTIAL_GUIDE_DEFAULT,
+    /** مبنای تورم در شاخص ۱ب — مالک ۱۴۰۵-۰۷-۰۴ خواست کاربر خودش عوضش کند؛ بدون این کلید = ۶۰٪ جزوه */
+    v10_inflation_basis: c?.v10_inflation_basis ?? FTS_GUIDE_DEFAULTS.v10_inflation_basis,
   };
 }
 
@@ -205,7 +207,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
   const cfg = useFtsConfig();
   const save = useSaveFtsConfig();
   const [draft, setDraft] = useState<DraftConfig>(draftFrom(null));
-  /** چک‌باکس الزام رشد مقداری/تناژ فیزیکی — v10_volume_growth_min (۰٪ = الزام فعال) */
+  /** چک‌باکس الزام رشد تولیدی/تناژ فیزیکی — v10_volume_growth_min (۰٪ = الزام فعال) */
   const [volumeGate, setVolumeGate] = useState(true);
   /** شاخص ۲: الزام عملکرد سودسازی ۳ ساله (EPS صعودی) — v10_eps_years 3=فعال، 1=غیرفعال */
   const [epsGate, setEpsGate] = useState(true);
@@ -253,7 +255,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
     }
   }, [cfg.data]);
 
-  /** چک‌باکس رشد فیزیکی روی v10_volume_growth_min سوار است (پیش‌فرض جزوه ۰٪ = روشن) */
+  /** چک‌باکس رشد تولیدی روی v10_volume_growth_min سوار است (پیش‌فرض جزوه ۰٪ = روشن) */
   useEffect(() => {
     setVolumeGate(true);
   }, [cfg.data]);
@@ -285,6 +287,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       v10_volume_growth_min: 0,
       v10_volume_breadth_min: volumeGate ? FTS_GUIDE_DEFAULTS.v10_volume_breadth_min : 0,
       v10_monetary_growth_min: draft.v10_monetary_growth_min,
+      /** شاخص ۱ب: مبنای تورم داخل کسر. کلید مستقل است و از growth_min اسکرینر ارث نمی‌برد */
+      v10_inflation_basis: draft.v10_inflation_basis,
       /** اسلایدر شاخص ۴: کف نسبت فروش سالانه‌شده به ارزش بازار (۰.۱۰..۱.۰۰) */
       v10_sales_to_mcap_min: draft.v10_sales_to_mcap_min,
       margin_optimal: Math.max(draft.margin_min, FTS_GUIDE_DEFAULTS.margin_optimal),
@@ -305,6 +309,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
     const payload: Record<string, unknown> = {
       ...FTS_GUIDE_DEFAULTS,
       v10_monetary_growth_min: FTS_GUIDE_DEFAULTS.v10_monetary_growth_min,
+      v10_inflation_basis: FTS_GUIDE_DEFAULTS.v10_inflation_basis,
       v10_volume_growth_min: 0,
       v10_sales_to_mcap_min: SALES_TO_MCAP_GUIDE_DEFAULT,
       v10_volume_breadth_min: FTS_GUIDE_DEFAULTS.v10_volume_breadth_min,
@@ -390,18 +395,27 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           hint="جزوه رشد ریالی را با تورم می‌سنجد: ۴۰٪ کف و ۶۰٪ هدف. رشدی که به این عدد نرسد، فقط تورم بوده است."
           onChange={(v) => setDraft((d) => ({ ...d, v10_monetary_growth_min: v }))}
         />
-
+        {/* مبنای تورم در فرمول رشد تولیدی صاف می‌کند — عددش را موتور با price_benchmark_pct به کارت می‌دهد */}
+        <Slider
+          label="مبنای تورم در فرمول رشد تولیدی"
+          value={draft.v10_inflation_basis}
+          min={0}
+          max={100}
+          step={5}
+          hint="شاخص ۱ب: رشد تولیدی = (۱ + رشد ریالی) ÷ (۱ + مبنای تورم) − ۱. مقدار پیش‌فرض ۶۰ درصد است."
+          onChange={(v) => setDraft((d) => ({ ...d, v10_inflation_basis: v }))}
+        />
         <ToggleRow
-          label="الزام رشد مقداری / تناژ فیزیکی"
+          label="الزام رشد تولیدی / تناژ فیزیکی"
           scope="فقط تولیدی"
-          hint="رشد مقداری (تناژ فیزیکی) فقط برای شرکت‌های تولیدی/کالایی اعمال می‌شود؛ بانک، بیمه، خدمات و هلدینگ/سرمایه‌گذاری این شاخص را ندارند (N/A). خاموش‌کردن، الزام گسترهٔ فیزیکی (۶۰٪ ماه‌های بهتر) را هم برمی‌دارد."
+          hint="رشد تولیدی (تناژ فیزیکی) فقط برای شرکت‌های تولیدی/کالایی اعمال می‌شود؛ بانک، بیمه، خدمات و هلدینگ/سرمایه‌گذاری این شاخص را ندارند (N/A). خاموش‌کردن، الزام گسترهٔ فیزیکی (۶۰٪ ماه‌های بهتر) را هم برمی‌دارد."
           checked={volumeGate}
           onChange={setVolumeGate}
         />
 
         <ToggleRow
           label="الزام سابقه عملکرد سودسازی ۳ ساله"
-          hint="شاخص ۲ — EPS باید در ۳ سال مالی گذشته صعودی باشد"
+          hint="شاخص ۲ — EPS باید در ۳ سال مالی گذشته متوالی بالتر رفته باشد"
           checked={epsGate}
           onChange={setEpsGate}
         />
@@ -423,7 +437,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           max={100}
           step={5}
           formatValue={(v) => `${toFaDigits(v)}٪`}
-          hint={`شاخص ۴ — پیش‌فرض جزوه ${toFaDigits(50)}٪ · فروش سالانه ÷ ارزش بازار نباید از این کف پایین‌تر باشد`}
+          hint={`شاخص ۴ — پیش‌فرض جزوه ${toFaDigits(Math.round(SALES_TO_MCAP_GUIDE_DEFAULT * 100))}٪ · فروش سالانه ÷ ارزش بازار نباید از این کف پایین‌تر باشد`}
           onChange={(v) => setDraft((d) => ({ ...d, v10_sales_to_mcap_min: v / 100 }))}
         />
 

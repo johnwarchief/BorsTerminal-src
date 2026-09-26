@@ -4,7 +4,7 @@
 قفل‌ها (چرا این فایل متولد شد):
   * ارزش بازار بیرون از موتور همگام‌سازی هیچ‌جا حساب نمیشود؛ API فقط ستونِ
     `market_watch.market_cap` را می‌خواند — نه p_closing*total_shares.
-  * فیلدِ خامِ تابلو (qTotCap) بر هر محاسبه‌ای اولویت دارد؛ محاسبه فقط از دو
+  * فیلدِ خامِ تابلو (marketValue) بر هر محاسبه‌ای اولویت دارد؛ محاسبه فقط از دو
     فیلدِ **همان ردیفِ تابلو** است و منبعش در market_cap_src ثبت میشود.
   * صفر/منفی/NULL/NaN هرگز «ارزش بازارِ صفر» نیست؛ None + پرچمِ خطاست، تا
     شاخص ۴ بر صفر تقسیم نکند و «رد» با «قابل محاسبه نبود» قاطی نشود.
@@ -99,8 +99,16 @@ def seed_caps(con, values):
 # ═══════════════════════════════════════════════════════════════════════════
 #  ۱) writer: board_market_cap — فیلدِ خام بر محاسبه ترجیح دارد
 # ═══════════════════════════════════════════════════════════════════════════
-v, s = T.board_market_cap({"qTotCap": 5.57e15, "pcl": 2881.0, "ztd": 1.935e12})
-ck(v == 5.57e15 and s == T.MCAP_SRC_RAW, "raw qTotCap wins over any calculation (%s/%s)" % (v, s))
+v, s = T.board_market_cap({"marketValue": 5.57e15, "pcl": 2881.0, "ztd": 1.935e12})
+ck(v == 5.57e15 and s == T.MCAP_SRC_RAW, "raw marketValue wins over any calculation (%s/%s)" % (v, s))
+
+# qTotCap/qTotValue در پاسخِ تابلو «ارزش معاملاتِ روز» است، نه ارزش بازار.
+# پذیرفتنشان یعنی فایرا به‌جای ۹٫۱e۱۴ با ۵٫۰۷e۱۱ سنجیده شود — محاسبه باید
+# از همان pcl*ztd رد شود و این دو کلید هیچ‌وقت خوانده نشوند.
+for trap in ("qTotCap", "qtotcap", "qTotValue"):
+    v, s = T.board_market_cap({trap: 5.07e11, "pcl": 14680.0, "ztd": 6.2e10})
+    ck(v == 14680.0 * 6.2e10 and s == T.MCAP_SRC_BOARD,
+       "%s is trade value, never market cap (%s/%s)" % (trap, v, s))
 
 v, s = T.board_market_cap({"pcl": 2881.0, "ztd": 1.0e9})
 ck(v is not None and abs(v - 2.881e12) < 1 and s == T.MCAP_SRC_BOARD,
@@ -114,8 +122,8 @@ for bad, label in (({"pcl": 0.0, "ztd": 1e9}, "price=0"),
     v, s = T.board_market_cap(bad)
     ck(v is None and s == "", "%s → None (never a fake zero)" % label)
 
-v, s = T.board_market_cap({"qTotCap": 0.0, "pcl": 1000.0, "ztd": 10.0})
-ck(v == 10000.0 and s == T.MCAP_SRC_BOARD, "qTotCap=0 is not a value → falls back to board row")
+v, s = T.board_market_cap({"marketValue": 0.0, "pcl": 1000.0, "ztd": 10.0})
+ck(v == 10000.0 and s == T.MCAP_SRC_BOARD, "marketValue=0 is not a value → falls back to board row")
 
 # مهاجرت idempotent است و منبعِ backfill را از مقدارِ زنده جدا علامت می‌زند
 path, con = make_db(migrate=False)

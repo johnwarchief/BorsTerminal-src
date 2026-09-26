@@ -41,7 +41,7 @@ type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'prof
 /** شمارهٔ شاخص با «—» از نامش جدا می‌شود؛ بی‌جداکننده، «۳ حاشیه…» یک عددِ بخشی از نام خوانده می‌شد. */
 const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: 'نماد', title: '' },
-  { key: 'rev_growth', label: '۱ — رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد مقداری (تناژ)' },
+  { key: 'rev_growth', label: '۱ — رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد تولیدی (تناژ)' },
   { key: null, label: '۲ — روند EPS', title: 'وضعیت و رشد سال‌به‌سال EPS' },
   { key: 'gross_margin', label: FTS_COLUMN_LABEL['gross_margin'], title: 'سود ناخالص ÷ درآمد عملیاتی' },
   { key: 'profit_potential_pct', label: FTS_COLUMN_LABEL['profit_potential'], title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
@@ -328,7 +328,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             />
                           )}
                         </span>
-                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد مقداری (تناژ)">
+                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
                           <span className="text-[10px] text-text-muted font-bold">ب</span>
                           {isFinancialOrHolding(r) ? (
                             <span className="text-[9px] text-text-muted">N/A</span>

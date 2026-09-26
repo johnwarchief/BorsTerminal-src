@@ -220,7 +220,7 @@ describe('کف‌های کارت FTS — از پاسخِ بک‌اند، نه ع
     renderPage();
     await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
     expect(screen.getByTestId('fts-card-cell-1_growth').textContent).toMatch(/≥\s*۱۱٪/);
-    expect(screen.getByTestId('fts-card-cell-2_eps_trend').textContent).toContain('۴ سال صعودی');
+    expect(screen.getByTestId('fts-card-cell-2_eps_trend').textContent).toContain('۴ سالِ رشد');
     const m = screen.getByTestId('fts-card-cell-3_gross_margin').textContent ?? '';
     expect(m).toMatch(/≥\s*۲۶٪/);
     expect(m).toContain('ایده‌آل ۲۸٪');

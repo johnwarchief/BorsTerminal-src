@@ -47,7 +47,7 @@ function build1aEvidence(
   };
 }
 
-/** ۱-ب: رشد تولیدی و مقداری (فیزیکی) */
+/** ۱-ب: رشد تولیدی (تناژ) */
 function build1bEvidence(
   actual: number | null,
   pass: boolean | null | undefined,
@@ -56,16 +56,16 @@ function build1bEvidence(
 ): AuditEvidence {
   let reason = str(backendReason);
   if (!applicable) {
-    reason = 'این نماد محصول فیزیکی ندارد؛ شرط رشد مقداری بر آن اعمال نمی‌شود.';
+    reason = 'این نماد محصول فیزیکی ندارد؛ شرط رشد تولیدی بر آن اعمال نمی‌شود.';
   } else if (!reason) {
     if (actual != null) {
       if (pass === true || (pass == null && actual >= 0)) {
-        reason = `رشد مقداری تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — مثبت.`;
+        reason = `تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — مثبت.`;
       } else {
-        reason = `رشد مقداری تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — منفی.`;
+        reason = `تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — منفی.`;
       }
     } else {
-      reason = 'ارقام مقداری در گزارش ماهانهٔ کدال تفکیک نشده است.';
+      reason = 'ارقام تولیدی در گزارش ماهانهٔ کدال تفکیک نشده است.';
     }
   }
 
@@ -75,7 +75,7 @@ function build1bEvidence(
     unit: applicable ? '٪' : null,
     direction: 'higher',
     reason,
-    ruleRef: 'جزوهٔ FTS — شاخص ۱ب (رشد مقداری / فیزیکی)',
+    ruleRef: 'جزوهٔ FTS — شاخص ۱ب (رشد تولیدی / تناژ)',
   };
 }
 
@@ -96,13 +96,13 @@ function build2Evidence(
     if (fail) {
       reason = fail;
     } else if (pass === true || (pass == null && rising && profitable && realYears >= reqYears)) {
-      reason = `سود هر سهم در ${toFaDigits(reqYears)} سال مالی متوالی مثبت و صعودی بوده است.`;
+      reason = `سود هر سهم در ${toFaDigits(reqYears)} سال مالی متوالی مثبت و روبه‌بالا بوده است.`;
     } else if (realYears < reqYears && realYears >= 2) {
       reason = `سابقهٔ EPS ${toFaDigits(realYears)} سال از ${toFaDigits(reqYears)} سال لازم.`;
     } else if (realYears < 2) {
       reason = 'صورت مالی سالانهٔ ۱۲ماهه در کدال نیست؛ سابقهٔ سودآوری بررسی نشد.';
     } else {
-      reason = 'روند سود هر سهم سه‌سالهٔ صعودی متوالی نیست.';
+      reason = 'سود هر سهم در سه سال متوالی بالتر نرفته است.';
     }
   }
 
@@ -112,7 +112,7 @@ function build2Evidence(
     unit: 'سال',
     direction: 'higher',
     reason,
-    ruleRef: 'جزوهٔ FTS — شاخص ۲ (۳ سال مالی متوالی صعودی)',
+    ruleRef: 'جزوهٔ FTS — شاخص ۲ (۳ سال مالی با رشد متوالی سود)',
   };
 }
 
@@ -241,7 +241,7 @@ export function cardAuditEvidence(card: FtsCard): Partial<Record<GapAxis, AuditE
     str(i1?.monetary?.reason)
   );
 
-  // ۱-ب: رشد مقداری
+  // ۱-ب: رشد تولیدی
   out['1b_volume_growth'] = build1bEvidence(
     num(i1?.volume?.real_pct) ?? num(i1?.volume?.volume_pct),
     passes['1b_volume_growth'],
@@ -325,7 +325,7 @@ export function screenAuditEvidence(
         unit: 'سال',
         direction: 'higher',
         reason: realYears < 2 ? 'سابقهٔ EPS کمتر از ۲ سال در کدال ثبت شده است.' : null,
-        ruleRef: 'جزوهٔ FTS — ۳ سال مالی متوالی صعودی',
+        ruleRef: 'جزوهٔ FTS — ۳ سال مالی با رشد متوالی سود',
       };
     }
 

@@ -169,7 +169,7 @@ describe('پنل تنظیمات FTS', () => {
     expect(screen.getByLabelText('حداقل درصد رشد درآمد کدال')).toBeInTheDocument();
     expect(screen.getByLabelText('کف حاشیه سود ناخالص')).toBeInTheDocument();
     expect(screen.getByLabelText('کف نسبت فروش سالانه‌شده به ارزش بازار')).toBeInTheDocument();
-    expect(screen.getByText('الزام رشد مقداری / تناژ فیزیکی')).toBeInTheDocument();
+    expect(screen.getByText('الزام رشد تولیدی / تناژ فیزیکی')).toBeInTheDocument();
     expect(screen.getByText('الزام سابقه عملکرد سودسازی ۳ ساله')).toBeInTheDocument();
     expect(screen.getByText('صنایع آزاد/صادراتی/بورس کالا')).toBeInTheDocument();
     expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument();
@@ -410,7 +410,7 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
   it('تناژ فیزیکی فقط برای تولیدی است و خاموش‌کردنش عدد منفی نمی‌فرستد', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByRole('button', { name: /ذخیره/ })).toBeInTheDocument());
-    const label = screen.getByText(/الزام رشد مقداری/);
+    const label = screen.getByText(/الزام رشد تولیدی/);
     const toggle = label.closest('button');
     expect(toggle).not.toBeNull();
     // دامنهٔ اعمال روی خودِ ردیف نشان داده می‌شود

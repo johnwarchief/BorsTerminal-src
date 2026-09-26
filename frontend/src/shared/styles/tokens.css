@@ -109,6 +109,8 @@
     --fs-2xs: 0.875rem; /* 14px */
     --fs-xs: 0.9375rem; /* 15px */
     --fs-sm: 1rem; /* 16px */
+    --fs-lg: 1.25rem; /* 20px */
+    --fs-xl: 1.375rem; /* 22px */
     --fs-base: 1.125rem; /* 18px */
   }
 }

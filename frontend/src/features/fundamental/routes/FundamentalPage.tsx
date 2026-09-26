@@ -32,7 +32,7 @@ import { FtsScreenTable } from '../ui/FtsScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
-const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
+const DIR_LABEL = { bullish: 'بنیاد روبه‌رشد', bearish: 'بنیاد روبه‌افت', neutral: 'بنیاد معادل' } as const;
 
 /** گروه صنعتی نامرتبط برای مقایسه (هلدینگ‌ها با آن سنجیده نمی‌شوند) */
 const OTHER_GROUP = 'سایر';

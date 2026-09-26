@@ -223,7 +223,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 
         {/* نمایش استاندارد فرمول ریاضی با جاگذاری دقیق مقادیر سهم */}
         <div className="my-2 flex flex-wrap items-center justify-center gap-1.5 rounded-lg border border-border-c/50 bg-bg-primary/50 py-2 px-3 font-mono text-2xs sm:text-xs" dir="ltr">
-          <span className="font-bold text-accent-blue">Growth = </span>
+          <span className="font-bold text-accent-blue">رشد = </span>
           <span className="text-sm text-text-muted">(</span>
           <MathFraction
             numerator={
@@ -256,17 +256,17 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
         </p>
       </div>
 
-      {/* ۱-ب: رشد مقداری / فیزیکی */}
+      {/* ۱-ب: رشد تولیدی / فیزیکی */}
       {physicalApplicable ? (
         <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-3">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-text-primary">۱-ب. رشد مقداری / فیزیکی</span>
+              <span className="text-xs font-bold text-text-primary">۱-ب. رشد تولیدی (تناژ)</span>
               <span className="text-2xs text-text-muted">(حذف اثر نرخ تورم و ارزیابی رشد واقعی تولید)</span>
             </div>
             {realGrowth != null ? (
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xs text-text-muted">رشد واقعی/مقداری:</span>
+                <span className="text-2xs text-text-muted">رشد تولیدی:</span>
                 <span className={`font-mono text-sm font-black ${(passes1b ?? realGrowth >= 0) ? 'text-accent-green' : 'text-accent-red'}`}>
                   {realGrowth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(realGrowth).toFixed(1))}٪
                 </span>
@@ -280,8 +280,8 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
                   ? ` (اثر تقریبی نرخ ${toFaDigits(Math.round(vol.implied_price_pct))}٪)`
                   : '')
               : vol?.data_gap
-                ? `${axisGapReason('1b_volume_growth').why} رشد مقداری از این گزارش حساب نمی‌شود.`
-                : 'رشد مقداری قابل محاسبه نیست — گزارش ماهانهٔ تولیدی کدال ناقص است.'}
+                ? `${axisGapReason('1b_volume_growth').why} رشد تولیدی از این گزارش حساب نمی‌شود.`
+                : 'رشد تولیدی قابل محاسبه نیست — گزارش ماهانهٔ تولیدی کدال ناقص است.'}
           </p>
         </div>
       ) : null}
@@ -343,7 +343,7 @@ function Panel2({ card }: { card: FtsCard }) {
         ) : (
           <span title={failReason ?? undefined}>
           <Badge tone={rising == null ? 'gray' : rising ? 'green' : 'red'}>
-            {rising == null ? epsGapLabel(realYears) : rising ? 'صعودی ✓' : 'صعودی نیست ✗'}
+            {rising == null ? epsGapLabel(realYears) : rising ? 'سه سالِ متوالی بالاتر ✓' : 'رشدِ متوالی ندارد ✗'}
           </Badge>
           </span>
         )}
@@ -403,7 +403,7 @@ function Panel2({ card }: { card: FtsCard }) {
       </div>
 
       <p className="text-2xs leading-relaxed text-text-secondary">
-        فرمول: EPS هر سال مالی (صورت سود و زیان ۱۲ماههٔ حسابرسی‌شدهٔ ۱۲/۲۹) — باید سه سال متوالی صعودی باشد.
+        فرمول: EPS هر سال مالی (صورت سود و زیان ۱۲ماههٔ حسابرسی‌شدهٔ ۱۲/۲۹) — باید سه سالِ متوالی بالاتر برود.
         {ind?.interim?.annualize_label ? ` · میاندوره: ${ind.interim.annualize_label}` : ''}
       </p>
       {partialShown ? (
@@ -514,7 +514,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
           denominator={<span className="text-2xs text-text-primary px-1">درآمدهای عملیاتی</span>}
         />
         <span className="text-xs text-text-secondary">× ۱۰۰</span>
-        <span className="text-accent-green font-bold ms-2">≥ 20%</span>
+        <span className="text-accent-green font-bold ms-2">{floor == null ? 'بی‌کف' : `≥ ${toFaDigits(floor)}٪`}</span>
       </div>
 
       <p className="text-2xs leading-relaxed text-text-secondary">
@@ -525,7 +525,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
   );
 }
 
-/** شاخص ۴: سالانه‌سازی داینامیک ×۱۲÷م + نسبت فروش/مارکت‌کپ + پتانسیل سود */
+/** شاخص ۴: سالانه‌سازی داینامیک ×۱۲÷م + نسبت فروش ÷ ارزش بازار + پتانسیل سود */
 function Panel4({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['4'];
   const m = Math.max(1, Math.round(ind?.months_used ?? card.metrics?.months_used ?? 12));
@@ -536,20 +536,25 @@ function Panel4({ card }: { card: FtsCard }) {
   const potential = ind?.potential_pct ?? card.metrics?.profit_potential_pct ?? null;
   const mcapHt = ind?.mcap_ht ?? card.metrics?.mcap_hmt ?? null;
   const marginUsed = ind?.margin_used_pct ?? card.metrics?.gross_margin ?? null;
-  const salesThresh = ind?.sales_threshold ?? 1.0;
+  /** کف‌ها از خودِ موتور (#150). نبودِشان «رد» نیست — فقط مقایسه نداریم. */
+  const salesThresh = typeof ind?.sales_threshold === 'number' ? ind.sales_threshold : null;
+  const potThresh = typeof ind?.potential_threshold === 'number' ? ind.potential_threshold : null;
+  const salesFloorLabel = salesThresh == null ? 'کفِ نسبت از بک‌اند نرسید' : `≥ ${toFaDigits(salesThresh.toFixed(2))}×`;
   const scaleTable = ind?.annual?.scale_table ?? [];
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
         {s2m != null ? (
-          <Badge tone={s2m >= salesThresh ? 'green' : 'yellow'}>
-            فروش/ارزش بازار <span className="num">{toFaDigits(s2m.toFixed(2))}</span>× (کف <span className="num">{fmtPct(salesThresh * 100, 0)}</span>)
+          <Badge tone={salesThresh == null ? 'gray' : s2m >= salesThresh ? 'green' : 'yellow'}>
+            نسبت فروش ÷ ارزش بازار <span className="num">{toFaDigits(s2m.toFixed(2))}</span>×
+            {salesThresh == null ? '' : ` (کف ${toFaDigits(salesThresh.toFixed(2))}×)`}
           </Badge>
         ) : null}
         {potential != null ? (
-          <Badge tone={potential >= (ind?.potential_threshold ?? 40) ? 'green' : 'yellow'}>
+          <Badge tone={potThresh == null ? 'gray' : potential >= potThresh ? 'green' : 'yellow'}>
             پتانسیل سود <span className="num">{fmtPct(potential)}</span>
+            {potThresh == null ? '' : ` (کف ${toFaDigits(potThresh)}٪)`}
           </Badge>
         ) : null}
       </div>
@@ -564,7 +569,7 @@ function Panel4({ card }: { card: FtsCard }) {
             numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
             denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
           />
-          <span className="text-accent-green font-bold ms-2">≥ 0.33</span>
+          <span className="text-accent-green font-bold ms-2">{salesFloorLabel}</span>
         </div>
         <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
           N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
@@ -625,7 +630,7 @@ function Panel4({ card }: { card: FtsCard }) {
           </span>
           <span className="text-text-secondary">÷</span>
           <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
-            D: مارکت‌کپ{' '}
+            D: ارزش بازار{' '}
             {mcapHt != null ? (
               `${toFaDigits(mcapHt.toFixed(2))} همت`
             ) : (
@@ -644,7 +649,7 @@ function Panel4({ card }: { card: FtsCard }) {
           </span>
         </div>
         <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
-          A از سالانه‌سازی داینامیک N ماهه می‌آید؛ B حاشیهٔ ناخالص آخرین دورهٔ حسابرسی‌شده؛ D ارزش لحظه‌ای بازار. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
+          A از سالانه‌سازیِ دورۀ N ماهه می‌آید؛ B حاشیهٔ سود ناخالصِ آخرین دورۀ حسابرسی‌شده؛ D ارزش بازارِ روز. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
         </p>
       </div>
     </div>

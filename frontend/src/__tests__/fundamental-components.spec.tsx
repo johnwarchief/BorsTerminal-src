@@ -1,6 +1,6 @@
 // تست کامپوننت های بنیادی: تاب آوری در برابر null و رندر روند
 // + تفکیک میاندوره در نردبان EPS + نردبان خالی + فارسی‌سازی نمودار فصلی
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { EpsLadder } from '@features/fundamental/components/EpsLadder';
 import { QuarterlyTrend } from '@features/fundamental/components/QuarterlyTrend';
@@ -65,6 +65,8 @@ describe('کامپوننت های بنیادی', () => {
 
   it('روند فصلی با سود منفی کرش نمی کند', () => {
     const { container } = render(<QuarterlyTrend quarters={QUARTERS} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     expect(container.querySelector('svg')).not.toBeNull();
     // #102: مبنای مقایسه با درآمد، سود **ناخالص** است — سربرگ هم همین را می‌گوید
     // (پیش از این «سود خالص» بود در حالی که جزوه سود ناخالص را می‌خواهد).
@@ -73,6 +75,8 @@ describe('کامپوننت های بنیادی', () => {
 
   it('روند فصلی: برچسب فصل‌ها فارسی است (بهار/تابستان و…)', () => {
     render(<QuarterlyTrend quarters={QUARTERS} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     const svg = screen.getByTestId('quarterly-trend-chart');
     expect(svg.textContent).toContain('بهار');
     expect(svg.textContent).toContain('تابستان');
@@ -84,11 +88,14 @@ describe('کامپوننت های بنیادی', () => {
 
   it('روند فصلی: محور Y با برچسب مقیاس (میلیارد تومان/همت) رندر می‌شود', () => {
     render(<QuarterlyTrend quarters={QUARTERS} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     const svg = screen.getByTestId('quarterly-trend-chart');
     const labelNodes = Array.from(svg.querySelectorAll('text')).map((t) => t.textContent ?? '');
     expect(labelNodes.some((t) => t.includes('ب.ت') || t.includes('همت'))).toBe(true);
     // واحد زیر نمودار هم میلیارد تومان است (نه میلیون ریال)
-    expect(screen.getByText(/ارقام میلیارد تومان/)).toBeInTheDocument();
+    // #156 — پانوشتِ «ارقام میلیارد تومان» به برچسبِ خودِ نوارِ بازشو رفت
+    expect(screen.getByTestId('qtrend-toggle').textContent).toContain('میلیارد تومان');
   });
 
   it('روند خالی حالت خالی تمیز دارد', () => {

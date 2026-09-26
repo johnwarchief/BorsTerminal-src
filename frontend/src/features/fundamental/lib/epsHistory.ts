@@ -42,7 +42,7 @@ export function epsFailReason(opts: {
   }
   if (opts.strictlyRising === false) {
     const prev = real[real.length - 2];
-    return `روند EPS صعودی نیست — سود ${slotFa} (${toFaDigits(last)}) از سال قبل (${toFaDigits(prev)}) کمتر است`;
+    return `رشد متوالی EPS نیست — سود ${slotFa} (${toFaDigits(last)}) از سال قبل (${toFaDigits(prev)}) کمتر است`;
   }
   return null;
 }

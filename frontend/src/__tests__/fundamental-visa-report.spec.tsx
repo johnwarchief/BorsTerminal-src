@@ -7,7 +7,7 @@
 // محورهای تست: (۱) شاخص ۴، (۲) حذف P/NAV ساختگی + هلدینگ، (۳) علت ردِ شاخص ۲، (۴) اصلاحات بصری.
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { FtsCard } from '@features/fundamental/components/FtsCard';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
@@ -55,7 +55,7 @@ describe('ویسا — محور ۲: هلدینگ و حذف P/NAV ساختگی', 
     expect(isPhysicalGrowthApplicable({ name: 'پالایش نفت اصفهان', sector_name: 'فراورده‌هاي نفتي' })).toBe(true);
   });
 
-  it('پروفایل تولیدیِ بک‌اند برای هلدینگ، رشد فیزیکی را فعال نمی‌کند (کارت N/A)', () => {
+  it('پروفایل تولیدیِ بک‌اند برای هلدینگ، رشد تولیدی را فعال نمی‌کند (کارت N/A)', () => {
     // پروفایل بک‌اند ویسا volume_applicable=true است — فرانت نباید آن را باور کند
     expect(visa.profile?.volume_applicable).toBe(true);
     render(
@@ -69,10 +69,11 @@ describe('ویسا — محور ۲: هلدینگ و حذف P/NAV ساختگی', 
     );
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     expect(within(cell).getByText('N/A')).toBeInTheDocument();
+    // #149 — کاشیِ N/A «نظر نمی‌دهد» می‌گیرد، نه «قبول»
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
   });
 
-  it('کادر «رشد مقداری (تناژ فیزیکی)» در drill-down شاخص ۱ برای هلدینگ وجود ندارد', () => {
+  it('کادر «رشد تولیدی (تناژ فیزیکی)» در drill-down شاخص ۱ برای هلدینگ وجود ندارد', () => {
     render(<FtsDrillDown card={visa} active="1" quarters={FISCAL} physicalApplicable={false} />);
     const panel = screen.getByTestId('fts-drilldown-1');
     expect(within(panel).queryByText(/تناژ فیزیکی/)).toBeNull();
@@ -109,8 +110,8 @@ describe('ویسا — محور ۳: علت واقعی ردِ شاخص ۲ (نه �
     render(<FtsDrillDown card={visa} active="2" quarters={FISCAL} physicalApplicable={false} />);
     const fail = screen.getByTestId('eps-fail-reason');
     expect(fail.textContent).toContain('سقوط سود به زیان در سال ۱۴۰۵');
-    // برچسب «صعودی نیست» هم می‌ماند (سیگنال سریع)
-    expect(screen.getByText(/صعودی نیست/)).toBeInTheDocument();
+    // برچسب «رشدِ متوالی ندارد» هم می‌ماند (سیگنال سریع)
+    expect(screen.getByText(/رشدِ متوالی ندارد/)).toBeInTheDocument();
   });
 });
 
@@ -134,16 +135,19 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
     expect(gate.getAttribute('title')).toContain(industryGateLabel('neutral'));
     expect(gate.getAttribute('title')).toContain(industryGatePassLabel(true));
     expect(industryGateTone('neutral')).toBe('yellow');
-    // برچسب کلی «قبول» برای صنعت دیگر استفاده نمی‌شود
-    expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
+    // #149 — حکمِ کاشی برچسبِ مستقل دارد؛ برچسبِ طبقهٔ صنعت جای دیگری است
+    expect(within(cell).getByTestId('fts-verdict-5_industry').textContent).toContain('قبول');
+    expect(within(cell).queryByText('نظر نمی‌دهد')).not.toBeInTheDocument();
   });
 
   it('نمودار فصلی: محور با واحد میلیارد تومان/همت برچسب می‌خورد', () => {
     render(<QuarterlyTrend quarters={FISCAL} />);
+    // #156 — پنل بسته است؛ نمودار با کلیکِ نوار باز می‌شود
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     const svg = screen.getByTestId('quarterly-trend-chart');
     const labels = Array.from(svg.querySelectorAll('text')).map((t) => t.textContent ?? '');
     expect(labels.some((t) => t.includes('م.ت') || t.includes('همت'))).toBe(true);
     expect(labels.every((t) => !t.includes('م ر'))).toBe(true);
-    expect(screen.getByText(/ارقام میلیارد تومان/)).toBeInTheDocument();
+    expect(screen.getByTestId('qtrend-toggle').textContent).toContain('میلیارد تومان');
   });
 });

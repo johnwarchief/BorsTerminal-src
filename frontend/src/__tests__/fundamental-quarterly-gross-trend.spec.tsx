@@ -5,7 +5,7 @@
 //   ۲) لایهٔ محاسبه (fundMath) — حاشیه/روند از سود ناخالص؛ NULL ⇒ N/A.
 //   ۳) نمایش (QuarterlyTrend / FtsDrillDown شاخص ۳) — هیچ‌جا سود خالص زیرِ
 //      برچسب «سود ناخالص» رندر نمی‌شود و نبودِ داده میلهٔ صفر نمی‌سازد.
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { QuarterlyTrend } from '@features/fundamental/components/QuarterlyTrend';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
@@ -49,6 +49,8 @@ describe('#102 نمودار روند فصلی — مقایسه با سود نا�
 
   it('سربرگ و راهنما «سود ناخالص» می‌گویند، نه سود خالص', () => {
     render(<QuarterlyTrend quarters={fiscal} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     expect(screen.getByText('روند فصلی درآمد و سود ناخالص')).toBeInTheDocument();
     expect(screen.getByText('سود ناخالص', { exact: true })).toBeInTheDocument();
     expect(screen.queryByText('سود خالص')).toBeNull();
@@ -65,6 +67,8 @@ describe('#102 نمودار روند فصلی — مقایسه با سود نا�
       { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 150, operatingProfit: null, netProfit: 20, grossProfit: null, margin: null },
     ];
     render(<QuarterlyTrend quarters={fund} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     const chart = screen.getByTestId('quarterly-trend-chart');
     // فقط میلهٔ درآمد (۲ فصل) — میلهٔ سودِ صفرِ جعلی نداریم
     expect(chart.querySelectorAll('rect')).toHaveLength(2);
@@ -77,6 +81,8 @@ describe('#102 نمودار روند فصلی — مقایسه با سود نا�
 
   it('تغییر فصل وقتی سود ناخالص هر دو فصل هست نوشته می‌شود', () => {
     render(<QuarterlyTrend quarters={fiscal} />);
+    // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
     expect(screen.getByText(/تغییر فصل/)).toBeInTheDocument();
   });
 });

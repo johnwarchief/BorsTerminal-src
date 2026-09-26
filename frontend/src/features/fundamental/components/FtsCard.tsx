@@ -1,5 +1,6 @@
 // features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
-import { toFaDigits } from '@shared/lib/fmt';
+import type { ReactNode } from 'react';
+import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FTS_LABEL } from '@shared/lib/ftsLabels';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
@@ -16,7 +17,7 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
     key: '1_growth',
     drill: '1',
     label: FTS_LABEL['1_growth'],
-    hint: 'رشد درآمد ریالی و مقداری نسبت به دوره مشابه سال قبل — کلیک: نمودار و جزئیات',
+    hint: 'رشد درآمد ریالی و تولیدی نسبت به دوره مشابه سال قبل — کلیک: نمودار و جزئیات',
   },
   {
     key: '2_eps_trend',
@@ -67,6 +68,116 @@ function cfgNum(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+/**
+ * برچسبِ نتیجه (#149): واژۀ سه‌حالۀ بک‌اند را رو‌به‌را می‌نویسد. هیچ داوریِ
+ * تازه‌ای این‌جا ساخته نمی‌شود — `pass` همان پرچمِ موتور است.
+ */
+function VerdictChip({ pass, testId }: { pass: boolean | null | undefined; testId?: string }) {
+  const word = pass === true ? 'قبول' : pass === false ? 'رد' : 'نظر نمی‌دهد';
+  const cls =
+    pass === true
+      ? 'border-accent-green/45 bg-accent-green/15 text-accent-green'
+      : pass === false
+        ? 'border-accent-red/45 bg-accent-red/15 text-accent-red'
+        : 'border-border-c bg-bg-card/80 text-text-muted';
+  return (
+    <span
+      data-testid={testId ?? 'fts-verdict'}
+      className={`shrink-0 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-2xs font-black leading-none ${cls}`}
+    >
+      {word}
+    </span>
+  );
+}
+
+/** عددِ نتیجۀ «در نگاه اول» (#149) — درشت‌ترین عنصرِ هر کاشی */
+function BigResult({ children, className = '', testId = 'fts-big-result' }: { children: ReactNode; className?: string; testId?: string }) {
+  return (
+    <span data-testid={testId} className={`num font-mono text-lg leading-none font-black sm:text-xl ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * مقایسۀ دو دورۀ شاخص ۱ (#151): دو نوارِ افقی به مقیاسِ بزرگ‌ترِ دوره‌ها،
+ * و زیرشان خطِ رشدی که کف و هدفِ جزوه روی همان خط نشسته‌اند. دورۀ غایب
+ * نوارِ صفر نمی‌گیرد — «نیست» با «صفر» یکی نیست.
+ */
+function PeriodCompare({
+  now,
+  prev,
+  months,
+  pct,
+  floor,
+  target,
+}: {
+  now: number | null;
+  prev: number | null;
+  months: number | null;
+  pct: number | null;
+  floor: number | null;
+  target: number | null;
+}) {
+  const max = Math.max(now ?? 0, prev ?? 0);
+  const rows: { id: string; label: string; full: string | null; v: number | null; fill: string }[] = [
+    { id: 'now', label: months ? `${toFaDigits(months)} ماهۀ امسال` : 'دورۀ جاری', full: null, v: now, fill: 'bg-accent-blue' },
+    { id: 'prev', label: 'سال قبل', full: 'همان دورۀ سال قبل', v: prev, fill: 'bg-text-muted/60' },
+  ];
+  return (
+    <div className="flex flex-col gap-1" data-testid="fts-period-compare">
+      {rows.map((r) => (
+        <div key={r.id} data-testid={`fts-period-${r.id}`} className="flex items-center gap-1.5">
+          <span className="w-[86px] shrink-0 truncate text-3xs text-text-secondary" title={r.full ?? r.label}>
+            {r.label}
+          </span>
+          <span className="relative h-2.5 min-w-0 flex-1 overflow-hidden rounded bg-bg-card/80">
+            {r.v == null ? null : (
+              <span
+                className={`absolute inset-y-0 start-0 rounded ${r.fill}`}
+                style={{ width: `${max > 0 ? Math.max(3, (r.v / max) * 100) : 0}%` }}
+              />
+            )}
+          </span>
+          <span className="num shrink-0 text-3xs font-bold text-text-primary">
+            {r.v == null ? '—' : fmtInt(r.v)}
+          </span>
+        </div>
+      ))}
+      <span className="text-3xs text-text-muted">میلیارد تومان · سرجمعِ دوره</span>
+      {pct != null && (floor != null || target != null) ? (
+        <GrowthScale pct={pct} floor={floor} target={target} />
+      ) : null}
+    </div>
+  );
+}
+
+/** خطِ رشد: جایِ درصدِ رشد نسبت به کف و هدفِ جزوه (#151) */
+function GrowthScale({ pct, floor, target }: { pct: number; floor: number | null; target: number | null }) {
+  const top = Math.max(pct, (target ?? 0) * 1.2, (floor ?? 0) * 1.2, 1);
+  const at = (v: number) => `${Math.min(100, Math.max(0, (v / top) * 100))}%`;
+  return (
+    <div className="mt-0.5" data-testid="fts-growth-scale">
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-bg-card/80">
+        <span className="absolute inset-y-0 start-0 rounded-full bg-accent-green/70" style={{ width: at(pct) }} />
+        {floor != null ? (
+          <span className="absolute inset-y-0 w-px bg-accent-yellow" style={{ insetInlineStart: at(floor) }} title={`کفِ قبولی ${toFaDigits(floor)}٪`} />
+        ) : null}
+        {target != null ? (
+          <span className="absolute inset-y-0 w-px bg-neon-cyan" style={{ insetInlineStart: at(target) }} title={`هدفِ پوشش تورم ${toFaDigits(target)}٪`} />
+        ) : null}
+      </div>
+      <div className="mt-0.5 flex items-center justify-between text-3xs text-text-muted">
+        <span className="num">۰٪</span>
+        <span>
+          {floor != null ? `کف ${toFaDigits(floor)}٪` : ''}
+          {target != null ? ` · هدف ${toFaDigits(target)}٪` : ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function FtsCard({
   score,
   passes,
@@ -83,7 +194,7 @@ export function FtsCard({
   /** سه‌حاله (رأی ۱۴۰۵-۰۷-۰۳): null = «نظر نمی‌دهد»، نه سبز و نه سرخ. */
   passes: Record<string, boolean | null | undefined>;
   verdict: string | null;
-  /** رشد فیزیکی صرفاً برای تولیدی معنا دارد — هلدینگ/خدماتی/مالی N/A */
+  /** رشد تولیدی صرفاً برای تولیدی معنا دارد — هلدینگ/خدماتی/مالی N/A */
   physicalApplicable?: boolean;
   /** رژیم قیمت‌گذاری صنعت (free|mandatory|neutral) */
   industryMode?: string | null;
@@ -156,7 +267,7 @@ export function FtsCard({
           {LAYERS.map((l) => {
             const isActive = l.drill != null && l.drill === activeDrill;
 
-            // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و مقداری)
+            // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و تولیدی)
             if (l.key === '1_growth') {
               const v1a = passes['1a_monetary_growth'];
               const v1b = passes['1b_volume_growth'];
@@ -168,6 +279,9 @@ export function FtsCard({
               const growthTarget = cfgNum(mon?.threshold) ?? cfgNum(thresholds?.v10_monetary_growth_min);
               const volFloor = cfgNum(vol?.threshold);
               const breadthMin = cfgNum(vol?.breadth?.min);
+              /** مبنای تورمِ داخلِ فرمولِ ۱ب — بک‌اند می‌فرستد (#153)؛ کارت فقط
+               *  آن را نشان می‌دهد و عددِ تازه‌ای نمی‌سازد. */
+              const inflationBasis = cfgNum(vol?.price_benchmark_pct);
               const monPct =
                 mon?.monetary_pct ??
                 (typeof audit?.['1a_monetary_growth']?.actualValue === 'number'
@@ -220,42 +334,43 @@ export function FtsCard({
                       data-testid="fts-card-cell-1a_monetary_growth"
                       className="flex flex-col justify-between rounded-lg border border-border-c/40 bg-bg-card/50 p-2"
                     >
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                      <div className="flex items-center justify-between gap-1">
                         <span className="text-2xs font-bold text-text-secondary">درآمد ریالی</span>
-                        {/* نتیجه: عدد و درصد دقیقاً پهلو به پهلوی بج وضعیت */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {monPct != null ? (
-                            <span
-                              className={`font-mono text-xs font-black ${
-                                v1a ? 'text-accent-green' : v1a === false ? 'text-accent-red' : 'text-text-primary'
-                              }`}
-                            >
-                              {monPct >= 0 ? '+' : '−'}
-                              {toFaDigits(Math.abs(monPct).toFixed(1))}٪
-                            </span>
-                          ) : (
-                            <span className="font-mono text-2xs font-bold text-text-muted">—</span>
-                          )}
-                          <AuditBadge
-                            state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
-                            label={v1a == null ? gapLabel('1a_monetary_growth') : undefined}
-                            hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
-                            evidence={
-                              v1a == null
-                                ? {
-                                    ...(audit?.['1a_monetary_growth'] ?? {}),
-                                    reason: audit?.['1a_monetary_growth']?.reason ?? gapReason('1a_monetary_growth').why,
-                                  }
-                                : (audit?.['1a_monetary_growth'] ?? null)
-                            }
-                            testId="fts-cell-audit-1a_monetary_growth"
-                            compact
-                          />
-                        </div>
+                        <VerdictChip pass={v1a} testId="fts-verdict-1a_monetary_growth" />
                       </div>
 
-                      {/* فرمول ریاضی واقعی */}
-                      <div className="my-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
+                      {/* نتیجۀ درشت (#149) + شاهدِ ممیزی در همان ردیف */}
+                      <div className="mb-1.5 flex items-end justify-between gap-1.5">
+                        <BigResult testId="fts-result-1a" className={v1a === false ? 'text-accent-red' : v1a == null ? 'text-text-primary' : 'text-accent-green'}>
+                          {monPct == null ? '—' : `${monPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(monPct).toFixed(1))}٪`}
+                        </BigResult>
+                        <AuditBadge
+                          state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
+                          label={v1a == null ? gapLabel('1a_monetary_growth') : undefined}
+                          hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
+                          evidence={
+                            v1a == null
+                              ? {
+                                  ...(audit?.['1a_monetary_growth'] ?? {}),
+                                  reason: audit?.['1a_monetary_growth']?.reason ?? gapReason('1a_monetary_growth').why,
+                                }
+                              : (audit?.['1a_monetary_growth'] ?? null)
+                          }
+                          testId="fts-cell-audit-1a_monetary_growth"
+                          compact
+                        />
+                      </div>
+
+                      {/* مقایسۀ دیداریِ دو دوره (#151): دو نوار + خطِ کف و هدف */}
+                      <PeriodCompare
+                        now={mon?.ytd_now_bt ?? null}
+                        prev={mon?.ytd_prev_bt ?? null}
+                        months={mon?.months ?? null}
+                        pct={monPct}
+                        floor={growthFloor}
+                        target={growthTarget}
+                      />
+                      <div className="mt-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
                         <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
                           <MathFraction
                             numerator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش امسال</span>}
@@ -263,78 +378,61 @@ export function FtsCard({
                           />
                           <span>− 1</span>
                           <span className={`font-bold ${tone(v1a)}`}>
-                            ≥ تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
+                            ≥ هدفِ پوشش تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
                           </span>
                         </div>
                       </div>
-
-                      {(growthFloor != null || growthTarget != null) && (
-                        <span className="text-3xs text-text-muted">
-                          {growthFloor != null && `کف ${toFaDigits(growthFloor)}٪`}
-                          {growthFloor != null && growthTarget != null && ' · '}
-                          {growthTarget != null && `هدف ${toFaDigits(growthTarget)}٪`}
+                      {mon?.denominator_basis ? (
+                        <span className="mt-0.5 block truncate text-3xs text-text-muted" title={mon.denominator_basis}>
+                          مبنای مقایسه: {mon.denominator_basis}
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
-                    {/* ستون ۱-ب: رشد مقداری / فیزیکی */}
+                    {/* ستون ۱-ب: رشد تولیدی (تناژ) */}
                     <div
                       data-testid="fts-card-cell-1b_volume_growth"
                       className="flex flex-col justify-between rounded-lg border border-border-c/40 bg-bg-card/50 p-2"
                     >
-                      <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <span className="text-2xs font-bold text-text-secondary">رشد مقداری</span>
-                        {/* نتیجه: عدد و درصد دقیقاً پهلو به پهلوی بج وضعیت */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {!physicalApplicable ? (
-                            <span className="text-2xs font-semibold text-text-muted">غیرتولیدی</span>
-                          ) : volPct != null ? (
-                            <span
-                              className={`font-mono text-xs font-black ${
-                                v1b ? 'text-accent-green' : v1b === false ? 'text-accent-red' : 'text-text-primary'
-                              }`}
-                            >
-                              {volPct >= 0 ? '+' : '−'}
-                              {toFaDigits(Math.abs(volPct).toFixed(1))}٪
-                            </span>
-                          ) : (
-                            <span className="font-mono text-2xs font-bold text-text-muted">—</span>
-                          )}
-                          <AuditBadge
-                            state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
-                            label={!physicalApplicable ? undefined : v1b == null ? gapLabel('1b_volume_growth') : undefined}
-                            hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد مقداری'}
-                            evidence={
-                              !physicalApplicable
-                                ? null
-                                : v1b == null
-                                  ? {
-                                      ...(audit?.['1b_volume_growth'] ?? {}),
-                                      reason: audit?.['1b_volume_growth']?.reason ?? gapReason('1b_volume_growth').why,
-                                    }
-                                  : (audit?.['1b_volume_growth'] ?? null)
-                            }
-                            testId="fts-cell-audit-1b_volume_growth"
-                            compact
-                          />
-                        </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-2xs font-bold text-text-secondary">رشد تولیدی</span>
+                        <VerdictChip pass={!physicalApplicable ? null : v1b} testId="fts-verdict-1b_volume_growth" />
                       </div>
 
-                      {/* فرمول ریاضی واقعی */}
-                      <div className="my-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
-                        <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
-                          {!physicalApplicable ? (
-                            <span className="text-3xs text-text-muted">معاف از شرط فیزیکی</span>
-                          ) : (
-                            <>
+                      <div className="mb-1.5 flex items-end justify-between gap-1.5">
+                        <BigResult testId="fts-result-1b" className={!physicalApplicable || v1b == null ? 'text-text-primary' : v1b ? 'text-accent-green' : 'text-accent-red'}>
+                          {!physicalApplicable || volPct == null ? '—' : `${volPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(volPct).toFixed(1))}٪`}
+                        </BigResult>
+                        <AuditBadge
+                          state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
+                          label={!physicalApplicable ? undefined : v1b == null ? gapLabel('1b_volume_growth') : undefined}
+                          hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد تولیدی'}
+                          evidence={
+                            !physicalApplicable
+                              ? null
+                              : v1b == null
+                                ? {
+                                    ...(audit?.['1b_volume_growth'] ?? {}),
+                                    reason: audit?.['1b_volume_growth']?.reason ?? gapReason('1b_volume_growth').why,
+                                  }
+                                : (audit?.['1b_volume_growth'] ?? null)
+                          }
+                          testId="fts-cell-audit-1b_volume_growth"
+                          compact
+                        />
+                      </div>
+
+                      {!physicalApplicable ? (
+                        <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود</span>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
+                            <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
                               <MathFraction
-                                numerator={<span className="text-3xs px-0.5 whitespace-nowrap">تولید امسال</span>}
-                                denominator={<span className="text-3xs px-0.5 whitespace-nowrap">تولید سال قبل</span>}
+                                numerator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + رشد ریالی</span>}
+                                denominator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + مبنای تورم</span>}
                               />
-                              <span>− 1</span>
-                              {/* کفِ درصدیِ رشد مقداری عمداً ۰ است؛ آن‌وقت الزامِ
-                                  واقعیِ ۱ب پهنایِ رشدِ ماهانه است. «≥ ۰٪» برای
-                                  تریدر معنایی ندارد و خرابی به‌نظر می‌رسد. */}
+                              <span>− ۱</span>
                               <span className={`font-bold ${tone(v1b)}`}>
                                 {volFloor != null && volFloor > 0
                                   ? `≥ ${toFaDigits(volFloor)}٪`
@@ -342,14 +440,16 @@ export function FtsCard({
                                     ? `پهنا ≥ ${toFaDigits(Math.round(breadthMin * 100))}٪`
                                     : 'بدون کف'}
                               </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      <span className="text-3xs text-text-muted">
-                        {!physicalApplicable ? 'معاف از رشد فیزیکی' : 'کف: حفظ حجم تولید (رشد مقداری)'}
-                      </span>
+                            </div>
+                          </div>
+                          <span className="mt-0.5 text-3xs text-text-muted">
+                            {`مبنای تورم ${inflationBasis == null ? '—' : toFaDigits(inflationBasis) + '٪'} — از پنلِ تنظیمات` +
+                              (vol?.breadth?.improved_months != null && vol?.breadth?.compared_months
+                                ? ` · ${toFaDigits(vol.breadth.improved_months)} از ${toFaDigits(vol.breadth.compared_months)} ماه بهتر`
+                                : '')}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -386,11 +486,9 @@ export function FtsCard({
 
               resultNumberNode = (
                 <span
-                  className={`text-xs font-black ${
-                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
-                  }`}
+                  className={v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}
                 >
-                  {epsRising ? `${toFaDigits(epsYearsReq)} سال صعودی` : epsYears ? `${toFaDigits(epsYears)} سال` : 'شکست روند'}
+                  {epsRising ? `${toFaDigits(epsYearsReq)} سالِ رشد` : epsYears ? `${toFaDigits(epsYears)} سال` : 'رشدِ متوالی ندارد'}
                 </span>
               );
 
@@ -453,7 +551,7 @@ export function FtsCard({
                   <span>0</span>
                 </div>
               );
-              benchmarkHint = `شرط: ${toFaDigits(epsYearsReq)} سال متوالی سوددهی صعودی`;
+              benchmarkHint = `شرط: سود هر سهم در ${toFaDigits(epsYearsReq)} سالِ متوالی بالاتر رفته باشد`;
             } else if (key === '3_gross_margin') {
               const i3 = indicators?.['3'];
               const marginFloor = i3?.threshold ?? null;
@@ -466,9 +564,7 @@ export function FtsCard({
 
               resultNumberNode = (
                 <span
-                  className={`font-mono text-xs sm:text-sm font-black ${
-                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
-                  }`}
+                  className={v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}
                 >
                   {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
                 </span>
@@ -494,38 +590,57 @@ export function FtsCard({
                     }`;
             } else if (key === '4_sales_to_mcap') {
               const i4 = indicators?.['4'];
-              const salesFloor = i4?.sales_threshold ?? 0.33;
+              /** هر دو کف از خودِ موتور (#150) — پیش‌تر ۰.۳۳ِ ثابتِ JSX بود */
+              const salesFloor = cfgNum(i4?.sales_threshold);
+              const potFloor = cfgNum(i4?.potential_threshold);
               const salesRatio =
-                i4?.sales_to_mcap ??
+                cfgNum(i4?.sales_to_mcap) ??
                 (typeof audit?.['4_sales_to_mcap']?.actualValue === 'number'
                   ? (audit?.['4_sales_to_mcap']?.actualValue as number)
                   : null);
-              const potPct = i4?.potential_pct;
+              const potPct = cfgNum(i4?.potential_pct);
 
+              // تیترِ کارت «پتانسیل سود تا آخر سال» است، پس عددِ درشت همان
+              // درصدِ پتانسیل است نه نسبتِ فروش÷ارزش (فایرا: ۲۷.۵٪ نه ۰.۹۷×).
               resultNumberNode = (
-                <span
-                  className={`font-mono text-xs sm:text-sm font-black ${
-                    v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'
-                  }`}
-                >
-                  {salesRatio != null
-                    ? `${toFaDigits(salesRatio.toFixed(2))}×`
-                    : potPct != null
-                      ? `${toFaDigits(potPct.toFixed(0))}٪`
+                <span className={v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}>
+                  {potPct != null
+                    ? `${toFaDigits(potPct.toFixed(1))}٪`
+                    : salesRatio != null
+                      ? `${toFaDigits(salesRatio.toFixed(2))}×`
                       : '—'}
                 </span>
               );
 
+              extraNode = (
+                <span className="num mt-0.5 block truncate text-3xs text-text-muted" data-testid="fts-card-4-secondary"
+                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${toFaDigits(salesFloor.toFixed(2))}×`}>
+                  {salesRatio == null
+                    ? 'نسبت فروش به ارزش بازار: بدون داده'
+                    : `نسبت فروش ÷ ارزش بازار ${toFaDigits(salesRatio.toFixed(2))}×` +
+                      (salesFloor == null ? '' : ` · کف ${toFaDigits(salesFloor.toFixed(2))}×`)}
+                </span>
+              );
+
+              // فرمولِ پتانسیل سود، ریاضی و با واژه‌هایِ خودِ جزوه (#155)
               mathFormulaNode = (
-                <div className="flex items-center justify-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
-                  <MathFraction
-                    numerator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">فروش سالانه</span>}
-                    denominator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">ارزش روز بازار</span>}
-                  />
-                  <span className={`text-2xs font-black ms-0.5 ${tone(v)}`}>≥ {toFaDigits(salesFloor.toFixed(2))}×</span>
+                <div className="flex flex-col items-center gap-0.5 text-3xs font-mono text-text-secondary" dir="ltr">
+                  <div className="flex items-center gap-1 whitespace-nowrap">
+                    <MathFraction
+                      numerator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">تخمین فروش ۱۲ ماهه × حاشیهٔ سود ناخالص</span>}
+                      denominator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">ارزش بازار</span>}
+                    />
+                    <span>× ۱۰۰</span>
+                  </div>
+                  {potFloor != null ? (
+                    <span className={`text-2xs font-black ${tone(v)}`}>≥ {toFaDigits(potFloor)}٪</span>
+                  ) : null}
                 </div>
               );
-              benchmarkHint = `کف نسبت: ${toFaDigits(salesFloor.toFixed(2))}× ارزش بازار`;
+              benchmarkHint =
+                potFloor == null
+                  ? 'کفِ پتانسیل از بک‌اند نرسید'
+                  : `کفِ پتانسیل سود ${toFaDigits(potFloor)}٪ از ارزش بازار`;
             } else if (key === '5_industry') {
               const indLabel =
                 industryMode !== undefined
@@ -538,7 +653,7 @@ export function FtsCard({
               resultNumberNode = (
                 <span
                   data-testid={`fts-card-label-${key}`}
-                  className={`text-2xs sm:text-xs font-bold truncate ${
+                  className={`truncate ${
                     indTone === 'green'
                       ? 'text-accent-green'
                       : indTone === 'yellow'
@@ -596,32 +711,35 @@ export function FtsCard({
                   isActive,
                 )}`}
               >
-                {/* ردیف بالا: نام شاخص در راست + نتیجه (درصد/عدد + تایید/قبول) در چپ در کنار هم */}
-                <div className="mb-2 flex items-center justify-between gap-1">
+                {/* ردیف ۱: نامِ شاخص + برچسبِ نتیجه (#149) */}
+                <div className="flex items-start justify-between gap-1">
                   <span className="text-xs font-black text-text-primary group-hover:text-accent-blue transition-colors">
                     {l.label}
                   </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {resultNumberNode}
-                    {industryBadge ?? (
-                      <AuditBadge
-                        state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                        label={v == null ? (axisNa ? 'N/A' : gapLabel(key)) : undefined}
-                        hintTitle={
-                          v == null
-                            ? (axisNa ? (audit?.[key]?.reason ?? gapTooltip(key)) : gapTooltip(key))
-                            : undefined
-                        }
-                        evidence={
-                          v == null
-                            ? { ...(audit?.[key] ?? {}), reason: audit?.[key]?.reason ?? gapReason(key).why }
-                            : (audit?.[key] ?? null)
-                        }
-                        testId={`fts-cell-audit-${key}`}
-                        compact
-                      />
-                    )}
-                  </div>
+                  <VerdictChip pass={v} testId={`fts-verdict-${key}`} />
+                </div>
+
+                {/* ردیف ۲: عددِ نتیجۀ درشت + شاهدِ ممیزی */}
+                <div className="mb-1 flex items-end justify-between gap-1.5">
+                  <BigResult testId={`fts-result-${l.key}`}>{resultNumberNode}</BigResult>
+                  {industryBadge ?? (
+                    <AuditBadge
+                      state={v == null ? 'na' : v ? 'pass' : 'fail'}
+                      label={v == null ? (axisNa ? 'N/A' : gapLabel(key)) : undefined}
+                      hintTitle={
+                        v == null
+                          ? (axisNa ? (audit?.[key]?.reason ?? gapTooltip(key)) : gapTooltip(key))
+                          : undefined
+                      }
+                      evidence={
+                        v == null
+                          ? { ...(audit?.[key] ?? {}), reason: audit?.[key]?.reason ?? gapReason(key).why }
+                          : (audit?.[key] ?? null)
+                      }
+                      testId={`fts-cell-audit-${key}`}
+                      compact
+                    />
+                  )}
                 </div>
 
                 {/* ردیف وسط: فرمول ریاضی واقعی با کسر و نمادهای دقیق */}
