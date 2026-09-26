@@ -228,4 +228,35 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(parsed).toHaveLength(1);
     expect(parsed[0].name).toBe('segment');
   });
+
+  // ── «تعدیل عملکردی» (نمایِ بازدهی) ─────────────────────────────────────
+  it('حالتِ «تعدیل عملکردی» در منو فعال است و با انتخاب، دقتِ محور به دو رقم می‌رود', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
+
+    const chip = screen.getByText('تعدیل عملکردی').closest('.nn-dropdown-item') as HTMLElement;
+    expect(chip.className).not.toContain('nn-disabled');
+    act(() => { fireEvent.click(chip); });
+
+    const calls = lastChartInstance.setSymbol.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[calls.length - 1][0].pricePrecision).toBe(2);
+  });
+
+  it('در حالتِ عملکردی محور percentage روی دادهٔ درصدی نمی‌نشیند (درصدِ درصد = ۰٫۰۱٪)', () => {
+    act(() => { useFtsConfigStore.getState().setPriceScale('percentage'); });
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
+    act(() => { fireEvent.click(screen.getByText('تعدیل عملکردی').closest('.nn-dropdown-item') as HTMLElement); });
+
+    const y = lastChartInstance.overrideYAxis.mock.calls;
+    expect(y[y.length - 1][0].name).toBe('normal');
+
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
+    act(() => { fireEvent.click(screen.getByText('بدون تعدیل').closest('.nn-dropdown-item') as HTMLElement); });
+    const y2 = lastChartInstance.overrideYAxis.mock.calls;
+    expect(y2[y2.length - 1][0].name).toBe('percentage');
+    act(() => { useFtsConfigStore.getState().setPriceScale('normal'); });
+  });
 });
+
