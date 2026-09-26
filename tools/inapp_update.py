@@ -68,12 +68,15 @@ def main() -> int:
     last = ""
     while time.time() < deadline:
         prog = _get("/api/update/progress")
-        cur = json.dumps({k: prog.get(k) for k in ("stage", "percent", "message", "status")},
+        cur = json.dumps({k: prog.get(k) for k in ("status", "percent", "message", "is_patch")},
                          ensure_ascii=False)
         if cur != last:
             say("progress:", cur)
             last = cur
-        if prog.get("stage") in ("ready", "downloaded") or prog.get("status") == "error":
+        # وضعیتِ سرور در `status` است (downloading → ready → installing)؛ کلیدِ
+        # `stage` در پاسخ وجود ندارد — با آن این حلقه تا مهلتِ ۹۰۰ ثانیه می‌چرخید
+        # و نصب هرگز صدا زده نمی‌شد.
+        if prog.get("status") in ("ready", "installing", "installed", "error"):
             break
         time.sleep(2)
     else:
@@ -84,11 +87,35 @@ def main() -> int:
     if prog.get("status") == "error":
         say("دانلود خطا داد:", json.dumps(prog, ensure_ascii=False)[:400])
         return 3
+    if prog.get("status") != "ready":
+        say("بسته آماده نیست:", json.dumps(prog, ensure_ascii=False)[:300])
+        return 3
 
     say("\n→ install")
-    inst = _post("/api/update/install", None)
-    say("install:", json.dumps(inst, ensure_ascii=False)[:400])
-    return 0
+    # مسیرِ پچ: برنامه برایِ اعمالِ overlay خودش خارج می‌شود، پس پاسخِ این درخواست
+    # عملاً قطع می‌شود (WinError 10054). قطعِ اتصال = شروعِ نصب، نه شکست؛ دلیلِ
+    # واقعی فقط نسخهٔ تازه‌ای است که پس از بالا آمدنِ برنامه می‌خوانیم.
+    try:
+        inst = _post("/api/update/install", None)
+        say("install:", json.dumps(inst, ensure_ascii=False)[:400])
+    except Exception as exc:  # noqa: BLE001
+        say("install: اتصال قطع شد (%s) — در مسیرِ پچ طبیعی است" % type(exc).__name__)
+
+    want = str(check.get("latest_version") or "")
+    deadline = time.time() + 240
+    while time.time() < deadline:
+        try:
+            got = str(_get("/api/update/version").get("version") or "")
+        except Exception:  # noqa: BLE001 — پنجرهٔ نصب/راه‌اندازیِ دوباره
+            time.sleep(4)
+            continue
+        if got == want:
+            say("نصب تأیید شد: نسخهٔ در حال اجرا =", got)
+            return 0
+        say("   در انتظارِ نسخهٔ %s (الان %s)" % (want, got or "-"))
+        time.sleep(5)
+    say("نسخهٔ تازه بالا نیامد.")
+    return 4
 
 
 if __name__ == "__main__":
