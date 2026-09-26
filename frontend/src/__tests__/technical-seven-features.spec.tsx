@@ -50,7 +50,10 @@ fakeGlobal.klinecharts = {
   registerOverlay: vi.fn(),
 };
 
-describe('۷ قابلیت کلیدی چارت سامانه نهایت‌نگر (TradingView Standards)', () => {
+// این اسپک KLineChartWrapperِ کامل را با importِ پویا می‌سازد؛ زیرِ بارِ موازی
+// ۵ ثانیۀ پیش‌فرض کم است و تستِ سوخته DOM را برای تستِ بعدی باز می‌گذارد
+// («Found multiple elements by [data-testid=axis-btn-log]»).
+describe('۷ قابلیت کلیدی چارت سامانه نهایت‌نگر (TradingView Standards)', { timeout: 20_000 }, () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
