@@ -157,8 +157,9 @@ describe('جدول تابلو بهینه‌شده', () => {
       q_tot_cap: 1_000_000_000, q_tot_tran: 100_000,
     });
     render(<TapeTable rows={[r]} selected="" onSelect={() => {}} />);
-    expect(screen.getByText('سرانه خرید (م.ت)')).toBeInTheDocument();
-    expect(screen.getByText('سرانه فروش (م.ت)')).toBeInTheDocument();
+    expect(screen.getByText('سرانه خرید')).toBeInTheDocument();
+    expect(screen.getByText('سرانه فروش')).toBeInTheDocument();
+    expect(screen.getByTitle('سرانه فروش حقیقی — میلیون تومان')).toBeInTheDocument();
     expect(screen.queryByText('وضعیت FTS')).not.toBeInTheDocument();
     expect(screen.getByText('۵.۰')).toBeInTheDocument();
     expect(screen.getByText('۲.۰')).toBeInTheDocument();
@@ -204,6 +205,6 @@ describe('جدول تابلو بهینه‌شده', () => {
         onSelect={() => {}}
       />,
     );
-    expect(screen.getByTestId('badge-golden-hour')).toHaveTextContent('ساعت طلایی');
+    expect(screen.getByTestId('badge-golden-hour')).toHaveTextContent('طلایی');
   });
 });

@@ -40,23 +40,30 @@ type SortKey =
 
 /** سیزده ستونِ تابلو: همان چهار عددی که تریدرز‌آرنا دارد و ما نداشتیم
  *  (پایانی، ارزش، تعداد، درصدِ آخرین) علاوه بر ستون‌هایِ همیشگی. */
+// دو ستونِ «سرانه» (۷۸px) برای عددی مثل «۴۵.۲» بیش از حد بزرگ بودند و بج‌های
+// فیلتر در ۱۰۸pxِ آخرِ ردیف جا نمی‌شدند — سرِبراهه مجبور به اسکرول افقی می‌شد.
+// ۲۴px از همان دو ستون به ستونِ بج‌ها منتقل شد.
 const ROW_GRID =
-  'grid-cols-[minmax(125px,1.6fr)_repeat(3,minmax(62px,0.8fr))_minmax(62px,0.75fr)_minmax(72px,0.9fr)_minmax(58px,0.7fr)_minmax(78px,0.95fr)_minmax(70px,0.8fr)_minmax(78px,0.95fr)_minmax(78px,0.95fr)_minmax(66px,0.8fr)_minmax(108px,1.25fr)]';
+  'grid-cols-[minmax(125px,1.6fr)_repeat(3,minmax(62px,0.8fr))_minmax(62px,0.75fr)_minmax(72px,0.9fr)_minmax(58px,0.7fr)_minmax(78px,0.95fr)_minmax(70px,0.8fr)_minmax(66px,0.8fr)_minmax(66px,0.8fr)_minmax(66px,0.8fr)_minmax(140px,1.6fr)]';
 
 const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
-  { key: 'symbol', label: 'نماد و نام' },
+  // برچسبِ ستون «فیلتر» نیست و فقط خواندنِ سرستون را می‌سازد؛ پس کوتاه‌ترین
+  // شکلِ ممکن نوشته می‌شود و نامِ کامل + واحد در title می‌ماند. رویِ
+  // نمایشگرِ ۱۳۶ این تیترهای بلند در ستونِ ۶۲-۷۸ پیکسلی می‌شکستند و
+  // سرستون افقی اسکرول می‌خورد.
+  { key: 'symbol', label: 'نماد' },
   { key: 'p_last', label: 'آخرین' },
   { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین نشست (p_closing)' },
   { key: 'percent_change', label: 'تغییر٪', hint: 'پایانی نسبت به دیروز — همان plp درِ فیلترها' },
   { key: 'percent_last', label: 'آخرین٪', hint: 'آخرین نسبت به دیروز؛ با درصدِ پایانی فرق دارد' },
   { key: 'tvol', label: 'حجم' },
   { key: 'z_tot_tran', label: 'تعداد', hint: 'تعدادِ معاملات (z_tot_tran) — tno درِ فیلترها' },
-  { key: 'q_tot_cap', label: 'ارزش (م.ریال)' },
-  { key: 'vol_ratio', label: 'نسبت حجم ماه' },
-  { key: 'buy_pc', label: 'سرانه خرید (م.ت)' },
-  { key: 'sell_pc', label: 'سرانه فروش (م.ت)' },
+  { key: 'q_tot_cap', label: 'ارزش', hint: 'ارزش معاملات — میلیارد ریال (q_tot_cap)' },
+  { key: 'vol_ratio', label: 'حجم/ماه', hint: 'نسبت حجمِ امروز به میانگینِ حجمِ ماه' },
+  { key: 'buy_pc', label: 'سرانه خرید', hint: 'سرانه خرید حقیقی — میلیون تومان' },
+  { key: 'sell_pc', label: 'سرانه فروش', hint: 'سرانه فروش حقیقی — میلیون تومان' },
   { key: 'buyer_power', label: 'قدرت خریدار', hint: 'سرانۀ خرید حقیقی ÷ سرانۀ فروش حقیقی — بدون عددِ جعلی' },
-  { key: 'last_vs_close', label: 'الگوی ساعت' },
+  { key: 'last_vs_close', label: 'ساعت', hint: 'الگوی ساعت — اختلاف آخرین و پایانی' },
 ];
 
 /** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
@@ -126,7 +133,7 @@ function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone:
       data-testid={`badge-${pattern}`}
       data-pattern={pattern}
       title={title}
-      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
+      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1 py-0.5 text-3xs font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
     >
       {children}
     </span>
@@ -195,7 +202,7 @@ const TapeRow = memo(function TapeRow({
               : `الگوی ساعت: پایانی بالاتر از آخرین${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
         }
       >
-        {strongHour ? 'ساعت' : goldenHour ? 'ساعت طلایی' : 'ساعت'}
+        {strongHour ? 'ساعت' : goldenHour ? 'طلایی' : 'ساعت'}
       </MicroBadge>,
     );
   if (isSusp) badges.push(<MicroBadge key="susp" pattern="susp" tone="amber" title={`حجم مشکوک: ${volMult}`} >مشکوک</MicroBadge>);
@@ -335,14 +342,14 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid w-full min-w-[1080px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
+        <div className={`sticky top-0 z-10 grid w-full min-w-[1080px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => (
             <button
               key={h.key}
               type="button"
               onClick={() => toggle(h.key)}
               title={h.hint ?? (h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined)}
-              className="text-start hover:text-accent-blue transition-colors"
+              className="block w-full truncate text-start whitespace-nowrap hover:text-accent-blue transition-colors"
             >
               {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
             </button>

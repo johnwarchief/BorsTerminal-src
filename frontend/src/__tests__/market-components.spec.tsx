@@ -159,7 +159,7 @@ describe('جدول تابلو نسخه بهبود یافته', () => {
     );
     expect(screen.getByText('پایانی')).toBeInTheDocument();
     expect(screen.getByText('تعداد')).toBeInTheDocument();
-    expect(screen.getByText('ارزش (م.ریال)')).toBeInTheDocument();
+    expect(screen.getByText('ارزش')).toBeInTheDocument();
     expect(screen.getByText('۵٬۳۰۰')).toBeInTheDocument();     // پایانی
     expect(screen.getByText('۲۴۰')).toBeInTheDocument();       // تعدادِ معاملات
     expect(screen.getByText('۲۵۰')).toBeInTheDocument();       // ۲۵۰ میلیارد ریال
