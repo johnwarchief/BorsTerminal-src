@@ -1,4 +1,7 @@
 // features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
+// قراردادِ واژه (#169): حکمِ هر سلول یک‌بار نوشته می‌شود — در برچسبِ VerdictChip.
+// بجِ ممیزی فقط «ⓘ» است («چرا این وضعیت؟»); آن‌جا که حکمی وجود ندارد (سلولِ
+// بی‌داده/معاف) بج همان علت را می‌نویسد («N/A»، «گزارش ماهانهٔ کدال نیست»).
 import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FTS_LABEL } from '@shared/lib/ftsLabels';
@@ -45,22 +48,57 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
   },
 ];
 
+/** سه‌حالۀ کیفیت — «ایده‌آل» فقط آن‌جا که خودِ موتور آستانۀ ایده‌آل را جدا
+ *  داده است. در نسخهٔ فعلی تنها شاخص ۳ آن را می‌فرستد (`band`: ideal/acceptable/
+ *  below). شاخص ۱ یک درِ ۶۰٪ دارد و «کف ۴۰٪» مالِ اسکرینر است نه کارت (رأیِ
+ *  مالک و کامنتِ بالای FTS_V10_DEFAULTS در api/fundamental.py) — پس آن‌جا
+ *  حالتِ سوم ساخته نمی‌شود. */
+type Quality = 'ideal' | 'ok' | 'below' | 'na';
+
+const QUALITY_WORD: Record<Quality, string> = {
+  ideal: 'ایده‌آل',
+  ok: 'قبول',
+  below: 'رد',
+  na: 'نظر نمی‌دهد',
+};
+
+const QUALITY_CHIP: Record<Quality, string> = {
+  ideal: 'border-cyan-400/50 bg-cyan-400/15 text-cyan-300',
+  ok: 'border-accent-green/45 bg-accent-green/15 text-accent-green',
+  below: 'border-accent-red/45 bg-accent-red/15 text-accent-red',
+  na: 'border-border-c bg-bg-card/80 text-text-muted',
+};
+
+const QUALITY_CARD: Record<Quality, string> = {
+  ideal: 'border-cyan-400/40 bg-cyan-400/[0.06] hover:border-cyan-400/70 hover:bg-cyan-400/[0.10]',
+  ok: 'border-emerald-500/30 bg-emerald-500/[0.04] hover:border-emerald-500/60 hover:bg-emerald-500/[0.08]',
+  below: 'border-rose-500/30 bg-rose-500/[0.04] hover:border-rose-500/60 hover:bg-rose-500/[0.08]',
+  na: 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card',
+};
+
+const QUALITY_TEXT: Record<Quality, string> = {
+  ideal: 'text-cyan-300',
+  ok: 'text-accent-green',
+  below: 'text-accent-red',
+  na: 'text-text-primary',
+};
+
+function qualityFrom(pass: boolean | null | undefined, ideal?: boolean | null): Quality {
+  if (pass == null) return 'na';
+  if (pass && ideal === true) return 'ideal';
+  return pass ? 'ok' : 'below';
+}
+
 /** سه‌حاله: رأیِ مالک ۱۴۰۵-۰۷-۰۳ — «نظر نمی‌دهد» نباید سرخِ «رد شده» دیده شود. */
 function tone(pass: boolean | null | undefined): string {
   return pass === true ? 'text-accent-green' : pass === false ? 'text-accent-red' : 'text-text-muted';
 }
 
-function getCardToneClasses(pass: boolean | null | undefined, isActive: boolean): string {
+function getCardToneClasses(q: Quality, isActive: boolean): string {
   if (isActive) {
     return 'border-accent-blue bg-accent-blue/15 shadow-[0_0_18px_rgba(56,189,248,0.25)] ring-1 ring-accent-blue/50';
   }
-  if (pass === true) {
-    return 'border-emerald-500/30 bg-emerald-500/[0.04] hover:border-emerald-500/60 hover:bg-emerald-500/[0.08]';
-  }
-  if (pass === false) {
-    return 'border-rose-500/30 bg-rose-500/[0.04] hover:border-rose-500/60 hover:bg-rose-500/[0.08]';
-  }
-  return 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card';
+  return QUALITY_CARD[q];
 }
 
 /** عددِ مالیِ کانفیگ؛ هر چیزِ دیگر ( رشته، آرایه، پنهان) «نمی‌دانیم» است. */
@@ -69,23 +107,26 @@ function cfgNum(v: unknown): number | null {
 }
 
 /**
- * برچسبِ نتیجه (#149): واژۀ سه‌حالۀ بک‌اند را رو‌به‌را می‌نویسد. هیچ داوریِ
- * تازه‌ای این‌جا ساخته نمی‌شود — `pass` همان پرچمِ موتور است.
+ * برچسبِ نتیجه (#149 و #169): واژۀ کیفیت را یک‌بار و رو‌به‌را می‌نویسد. هیچ
+ * داوریِ تازه‌ای این‌جا ساخته نمی‌شود — `pass` همان پرچمِ موتور است و «ایده‌آل»
+ * فقط وقتی گفته می‌شود که خودِ موتور آستانۀ ایده‌آل را جدا فرستاده باشد.
  */
-function VerdictChip({ pass, testId }: { pass: boolean | null | undefined; testId?: string }) {
-  const word = pass === true ? 'قبول' : pass === false ? 'رد' : 'نظر نمی‌دهد';
-  const cls =
-    pass === true
-      ? 'border-accent-green/45 bg-accent-green/15 text-accent-green'
-      : pass === false
-        ? 'border-accent-red/45 bg-accent-red/15 text-accent-red'
-        : 'border-border-c bg-bg-card/80 text-text-muted';
+function VerdictChip({
+  pass,
+  quality,
+  testId,
+}: {
+  pass: boolean | null | undefined;
+  quality?: Quality;
+  testId?: string;
+}) {
+  const q = quality ?? (pass == null ? 'na' : pass ? 'ok' : 'below');
   return (
     <span
       data-testid={testId ?? 'fts-verdict'}
-      className={`shrink-0 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-2xs font-black leading-none ${cls}`}
+      className={`shrink-0 whitespace-nowrap rounded-md border px-1.5 py-0.5 text-2xs font-black leading-none ${QUALITY_CHIP[q]}`}
     >
-      {word}
+      {QUALITY_WORD[q]}
     </span>
   );
 }
@@ -95,6 +136,28 @@ function BigResult({ children, className = '', testId = 'fts-big-result' }: { ch
   return (
     <span data-testid={testId} className={`num font-mono text-lg leading-none font-black sm:text-xl ${className}`}>
       {children}
+    </span>
+  );
+}
+
+/**
+ * نشانهٔ «کلیک کن» (#169): کل کارت از پیش کلیک‌پذیر بود ولی هیچ چیزی رویش
+ * این را نمی‌گفت — رأیِ مالک: «برای شاخص ۱ … وقتی میزنیم روش برای دیدن بیشتر
+ * جزییات بهتر باشه». متنِ ثابت، پس حدس زدنی نیست.
+ */
+function DrillAffordance({ active }: { active: boolean }) {
+  return (
+    <span
+      data-testid="fts-drill-affordance"
+      aria-hidden="true"
+      className={`mt-1.5 inline-flex shrink-0 items-center gap-1 self-start rounded-md border px-1.5 py-0.5 text-3xs font-bold transition-colors ${
+        active
+          ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
+          : 'border-border-c/70 bg-bg-primary/50 text-text-muted group-hover:border-accent-blue/50 group-hover:text-accent-blue'
+      }`}
+    >
+      نمودار و جزئیات
+      <span className="leading-none">⌄</span>
     </span>
   );
 }
@@ -262,9 +325,12 @@ export function FtsCard({
           </div>
         </div>
 
-        {/* شبکه ۵ کارت شاخص — چیدمان مدرن با اولویت قرارگیری عدد و نتیجه در کنار هم + فرمول ریاضی */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-2.5">
-          {LAYERS.map((l) => {
+        {/* شبکه ۵ کارت (#169): سه کارتِ اول بالا و درشت‌تر، دو تای بعدی پایین.
+            رأیِ داور jev-pilot: هر پنج در یک شبکهٔ شش‌ستونه، سه‌تای بالا
+            دو ستون و دوتای پایین سه ستون. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5">
+          {LAYERS.map((l, li) => {
+            const span = li <= 2 ? 'md:col-span-2' : 'md:col-span-3';
             const isActive = l.drill != null && l.drill === activeDrill;
 
             // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و تولیدی)
@@ -310,8 +376,8 @@ export function FtsCard({
                   aria-pressed={isActive}
                   data-testid={`fts-card-cell-${l.key}`}
                   title={l.hint}
-                  className={`col-span-1 sm:col-span-2 xl:col-span-2 group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
-                    card1Pass,
+                  className={`col-span-1 sm:col-span-2 ${span} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                    qualityFrom(card1Pass),
                     isActive,
                   )}`}
                 >
@@ -327,8 +393,11 @@ export function FtsCard({
                     ) : null}
                   </div>
 
-                  {/* بدنه کارت ۱: دو ستون متقارن با نتیجه و درصد در کنار بج وضعیت */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* بدنه کارت ۱: دو نیمه، هر کدام ≥۲۳۰px. چیدمان خودآزمون
+                      است نه breakpointِ نمایشگر — چون عرضِ کارت به ستونِ صفحه
+                      و باز/بسته بودن سایدبار بستگی دارد؛ در عرضِ کم دو نیمه
+                      روی هم می‌نشینند و هیچ متنِ بریده‌ای باقی نمی‌ماند. */}
+                  <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))' }}>
                     {/* ستون ۱-الف: ریالی */}
                     <div
                       data-testid="fts-card-cell-1a_monetary_growth"
@@ -346,7 +415,7 @@ export function FtsCard({
                         </BigResult>
                         <AuditBadge
                           state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
-                          label={v1a == null ? gapLabel('1a_monetary_growth') : undefined}
+                          label={v1a == null ? gapLabel('1a_monetary_growth') : 'ⓘ'}
                           hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
                           evidence={
                             v1a == null
@@ -370,20 +439,20 @@ export function FtsCard({
                         floor={growthFloor}
                         target={growthTarget}
                       />
-                      <div className="mt-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
-                        <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                      <div className="mt-1 flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5">
+                        <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-3xs font-mono text-text-secondary" dir="ltr">
                           <MathFraction
                             numerator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش امسال</span>}
                             denominator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش سال قبل</span>}
                           />
                           <span>− 1</span>
-                          <span className={`font-bold ${tone(v1a)}`}>
+                          <span className={`font-bold whitespace-nowrap ${tone(v1a)}`}>
                             ≥ هدفِ پوشش تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
                           </span>
                         </div>
                       </div>
                       {mon?.denominator_basis ? (
-                        <span className="mt-0.5 block truncate text-3xs text-text-muted" title={mon.denominator_basis}>
+                        <span className="mt-0.5 block text-3xs leading-snug text-text-muted line-clamp-2" title={mon.denominator_basis}>
                           مبنای مقایسه: {mon.denominator_basis}
                         </span>
                       ) : null}
@@ -405,7 +474,7 @@ export function FtsCard({
                         </BigResult>
                         <AuditBadge
                           state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
-                          label={!physicalApplicable ? undefined : v1b == null ? gapLabel('1b_volume_growth') : undefined}
+                          label={!physicalApplicable ? 'N/A' : v1b == null ? gapLabel('1b_volume_growth') : 'ⓘ'}
                           hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد تولیدی'}
                           evidence={
                             !physicalApplicable
@@ -426,14 +495,14 @@ export function FtsCard({
                         <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود</span>
                       ) : (
                         <>
-                          <div className="flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5 overflow-hidden">
-                            <div className="flex items-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
+                          <div className="flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5">
+                            <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-3xs font-mono text-text-secondary" dir="ltr">
                               <MathFraction
                                 numerator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + رشد ریالی</span>}
                                 denominator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + مبنای تورم</span>}
                               />
                               <span>− ۱</span>
-                              <span className={`font-bold ${tone(v1b)}`}>
+                              <span className={`font-bold whitespace-nowrap ${tone(v1b)}`}>
                                 {volFloor != null && volFloor > 0
                                   ? `≥ ${toFaDigits(volFloor)}٪`
                                   : breadthMin != null
@@ -452,6 +521,8 @@ export function FtsCard({
                       )}
                     </div>
                   </div>
+
+                  {onDrill ? <DrillAffordance active={isActive} /> : null}
                 </button>
               );
             }
@@ -467,6 +538,9 @@ export function FtsCard({
               (indicators?.['4']?.na === true || indicators?.['4']?.exempt === true);
             const v = axisNa ? null : rawPass;
             const isIndustry = key === '5_industry' && industryMode !== undefined;
+            /* رنگِ سه‌حالته فقط آن‌جا که موتور band/ideal فرستاده (شاخص ۳)؛
+               جایِ دیگر «ایده‌آل» ساخته نمی‌شود. */
+            let cardQuality = qualityFrom(v);
 
             let resultNumberNode: React.ReactNode = null;
             let mathFormulaNode: React.ReactNode = null;
@@ -556,6 +630,7 @@ export function FtsCard({
               const i3 = indicators?.['3'];
               const marginFloor = i3?.threshold ?? null;
               const marginIdeal = i3?.ideal_threshold ?? i3?.optimal_threshold ?? null;
+              cardQuality = qualityFrom(v, i3?.band === 'ideal');
               const marginPct =
                 i3?.margin_pct ??
                 (typeof audit?.['3_gross_margin']?.actualValue === 'number'
@@ -563,9 +638,7 @@ export function FtsCard({
                   : null);
 
               resultNumberNode = (
-                <span
-                  className={v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}
-                >
+                <span className={QUALITY_TEXT[cardQuality]}>
                   {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
                 </span>
               );
@@ -680,18 +753,10 @@ export function FtsCard({
             const industryBadge = isIndustry ? (
               <AuditBadge
                 state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                label={
-                  v == null
-                    ? gapLabel(key)
-                    : v === false
-                      ? industryGatePassLabel(false)
-                      : industryGateLabel(industryMode)
-                }
-                hintTitle={
-                  v == null
-                    ? gapTooltip(key)
-                    : `${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`
-                }                evidence={audit?.['5_industry'] ?? null}
+                /* متنِ کامل هم در عددِ درشت هست؛ بج فقط «چرا؟» است (#169) */
+                label="ⓘ"
+                hintTitle={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
+                evidence={audit?.['5_industry'] ?? null}
                 testId={`fts-cell-audit-${key}`}
                 compact
               />
@@ -706,8 +771,8 @@ export function FtsCard({
                 aria-pressed={isActive}
                 data-testid={`fts-card-cell-${key}`}
                 title={l.hint}
-                className={`col-span-1 group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
-                  v,
+                className={`col-span-1 ${span} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                  cardQuality,
                   isActive,
                 )}`}
               >
@@ -716,7 +781,7 @@ export function FtsCard({
                   <span className="text-xs font-black text-text-primary group-hover:text-accent-blue transition-colors">
                     {l.label}
                   </span>
-                  <VerdictChip pass={v} testId={`fts-verdict-${key}`} />
+                  <VerdictChip pass={v} quality={cardQuality} testId={`fts-verdict-${key}`} />
                 </div>
 
                 {/* ردیف ۲: عددِ نتیجۀ درشت + شاهدِ ممیزی */}
@@ -725,7 +790,7 @@ export function FtsCard({
                   {industryBadge ?? (
                     <AuditBadge
                       state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                      label={v == null ? (axisNa ? 'N/A' : gapLabel(key)) : undefined}
+                      label={v == null ? (axisNa ? 'N/A' : gapLabel(key)) : 'ⓘ'}
                       hintTitle={
                         v == null
                           ? (axisNa ? (audit?.[key]?.reason ?? gapTooltip(key)) : gapTooltip(key))
@@ -750,8 +815,11 @@ export function FtsCard({
                 {/* سطر درصد رشد EPS (#101) — بقیهٔ کارت‌ها null می‌دهند و چیزی رندر نمی‌شود */}
                 {extraNode}
 
-                {/* ردیف پایین: شرط مرجع */}
-                <span className="text-3xs text-text-muted mt-1 truncate">{benchmarkHint}</span>
+                {/* ردیف پایین: شرط مرجع + نشانهٔ کلیک (#169) */}
+                <div className="mt-1 flex items-end justify-between gap-1.5">
+                  <span className="min-w-0 flex-1 text-3xs leading-snug text-text-muted line-clamp-2">{benchmarkHint}</span>
+                  {onDrill ? <DrillAffordance active={isActive} /> : null}
+                </div>
               </button>
             );
           })}

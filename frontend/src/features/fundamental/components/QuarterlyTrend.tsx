@@ -7,10 +7,14 @@
 import { useMemo, useState } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { CollapseBody, CollapseToggle } from '@shared/components/Collapse';
+import { useElementWidth } from '@shared/hooks/useElementWidth';
 import type { FiscalQuarter } from '../lib/fundMath';
 
-const W = 640;
-const H = 200;
+/** ارتفاعِ ثابت (#169): پیش‌تر viewBox ۶۴۰×۲۰۰ با `w-full` کشیده می‌شد و روی
+ *  ظرف ۱۲۰۰ پیکسلی ≈ ۳۷۵px ارتفاع می‌داد — «زیادی بزرگ» رأیِ مالک. عرض از
+ *  ظرف خوانده می‌شود تا واحدِ SVG = پیکسلِ CSS بماند و نوشته‌ها بی‌نسبت
+ *  درشت/ریز نشوند. */
+const CHART_H = 168;
 const PAD = 34;
 
 const Q_LABEL = ['بهار', 'تابستان', 'پاییز', 'زمستان'];
@@ -38,7 +42,10 @@ function fmtAxisBt(bt: number): string {
 const MRL_TO_BT = 1e6 / 1e10;
 
 export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
+  const [boxRef, boxW] = useElementWidth<HTMLDivElement>(560);
   const geom = useMemo(() => {
+    const W = Math.max(280, boxW);
+    const H = CHART_H;
     // null یعنی «گزارش نشده» و در مقیاس محور صفر حساب نمی‌شود
     const vals = quarters.flatMap((q) =>
       [q.revenue, q.grossProfit].filter((v): v is number => typeof v === 'number' && Number.isFinite(v)),
@@ -52,8 +59,8 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
     const slot = (W - PAD * 2) / n;
     // خطوط راهنمای محور Y: صفر + سقف + میانه مثبت
     const guides = [bottom, 0, top].filter((v, i, a) => a.indexOf(v) === i && v <= top && v >= bottom);
-    return { y, zeroY, slot, top, bottom, guides };
-  }, [quarters]);
+    return { y, zeroY, slot, top, bottom, guides, W, H };
+  }, [quarters, boxW]);
   /** #156 — پنلِ بسته با بازشوندهٔ روشن: نمودار پایینِ کارت بنیادی بود و
       کاربر کلیک‌پذیری‌اش را حدس نمی‌زد. */
   const [open, setOpen] = useState(false);
@@ -109,56 +116,75 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
               (نبودِ داده، صفر نیست).
             </p>
           ) : null}
-          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="نمودار روند فصلی" data-testid="quarterly-trend-chart">
-            {/* خطوط راهنمای محور Y با برچسب مقیاس */}
-            {geom.guides.map((v) => (
-              <g key={v}>
-                <line x1={PAD} x2={W - PAD} y1={geom.y(v)} y2={geom.y(v)} stroke="var(--border-color)" strokeWidth="0.8" opacity="0.6" />
-                <text x={PAD - 4} y={geom.y(v) + 3} textAnchor="end" fontSize="8.5" fill="var(--text-muted)">
-                  {fmtAxisBt(v * MRL_TO_BT)}
-                </text>
-              </g>
-            ))}
-            <line x1={PAD} x2={W - PAD} y1={geom.zeroY} y2={geom.zeroY} stroke="var(--border-color)" strokeWidth="1.2" />
-            {quarters.map((q, i) => {
-              const x = PAD + i * geom.slot;
-              const rev = q.revenue ?? 0;
-              const gross = q.grossProfit;
-              const bw = Math.max(3, geom.slot / 4);
-              // میله از خط صفر به بالا/پایین — منفی درست رندر می‌شود
-              const revTop = geom.y(Math.max(0, rev));
-              const revH = Math.max(1, Math.abs(geom.y(rev) - geom.zeroY));
-              const grossTop = gross == null ? 0 : geom.y(Math.max(0, gross));
-              const grossH = gross == null ? 0 : Math.max(1, Math.abs(geom.y(gross) - geom.zeroY));
-              return (
-                <g key={q.key}>
-                  <title>{`${q.key}: درآمد ${fmtInt((q.revenue ?? 0) * MRL_TO_BT)} -- سود ناخالص ${gross == null ? 'گزارش نشده' : fmtInt(gross * MRL_TO_BT)}`}</title>
-                  <rect
-                    x={x + geom.slot / 2 - bw - 1}
-                    y={rev >= 0 ? revTop : geom.zeroY}
-                    width={bw}
-                    height={revH}
-                    fill={rev >= 0 ? 'var(--accent-blue)' : 'var(--accent-red)'}
-                    opacity="0.75"
+          <div ref={boxRef} className="w-full">
+            <svg
+              viewBox={`0 0 ${geom.W} ${geom.H}`}
+              width={geom.W}
+              height={geom.H}
+              style={{ width: '100%', height: `${geom.H}px` }}
+              className="block"
+              role="img"
+              aria-label="نمودار روند فصلی"
+              data-testid="quarterly-trend-chart"
+            >
+              {/* خطوط راهنمای محور Y با برچسب مقیاس */}
+              {geom.guides.map((v) => (
+                <g key={v}>
+                  <line
+                    x1={PAD}
+                    x2={geom.W - PAD}
+                    y1={geom.y(v)}
+                    y2={geom.y(v)}
+                    stroke="var(--border-color)"
+                    strokeWidth="0.8"
+                    opacity="0.6"
                   />
-                  {/* بدونِ سود ناخالص هیچ میله‌ای کشیده نمی‌شود — میلهٔ صفر یعنی «زیان صفر» */}
-                  {gross == null ? null : (
-                    <rect
-                      x={x + geom.slot / 2 + 1}
-                      y={gross >= 0 ? grossTop : geom.zeroY}
-                      width={bw}
-                      height={grossH}
-                      fill={gross >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}
-                      opacity="0.9"
-                    />
-                  )}
-                  <text x={x + geom.slot / 2} y={H - 6} textAnchor="middle" fontSize="9.5" fill="var(--text-muted)">
-                    {faQuarter(q)}
+                  <text x={PAD - 4} y={geom.y(v) + 3} textAnchor="end" fontSize="9.5" fill="var(--text-muted)">
+                    {fmtAxisBt(v * MRL_TO_BT)}
                   </text>
                 </g>
-              );
-            })}
-          </svg>
+              ))}
+              <line x1={PAD} x2={geom.W - PAD} y1={geom.zeroY} y2={geom.zeroY} stroke="var(--border-color)" strokeWidth="1.2" />
+              {quarters.map((q, i) => {
+                const x = PAD + i * geom.slot;
+                const rev = q.revenue ?? 0;
+                const gross = q.grossProfit;
+                const bw = Math.max(3, Math.min(22, geom.slot / 4));
+                // میله از خط صفر به بالا/پایین — منفی درست رندر می‌شود
+                const revTop = geom.y(Math.max(0, rev));
+                const revH = Math.max(1, Math.abs(geom.y(rev) - geom.zeroY));
+                const grossTop = gross == null ? 0 : geom.y(Math.max(0, gross));
+                const grossH = gross == null ? 0 : Math.max(1, Math.abs(geom.y(gross) - geom.zeroY));
+                return (
+                  <g key={q.key}>
+                    <title>{`${q.key}: درآمد ${fmtInt((q.revenue ?? 0) * MRL_TO_BT)} -- سود ناخالص ${gross == null ? 'گزارش نشده' : fmtInt(gross * MRL_TO_BT)}`}</title>
+                    <rect
+                      x={x + geom.slot / 2 - bw - 1}
+                      y={rev >= 0 ? revTop : geom.zeroY}
+                      width={bw}
+                      height={revH}
+                      fill={rev >= 0 ? 'var(--accent-blue)' : 'var(--accent-red)'}
+                      opacity="0.75"
+                    />
+                    {/* بدونِ سود ناخالص هیچ میله‌ای کشیده نمی‌شود — میلهٔ صفر یعنی «زیان صفر» */}
+                    {gross == null ? null : (
+                      <rect
+                        x={x + geom.slot / 2 + 1}
+                        y={gross >= 0 ? grossTop : geom.zeroY}
+                        width={bw}
+                        height={grossH}
+                        fill={gross >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}
+                        opacity="0.9"
+                      />
+                    )}
+                    <text x={x + geom.slot / 2} y={geom.H - 6} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
+                      {faQuarter(q)}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
       </CollapseBody>
     </div>
   );

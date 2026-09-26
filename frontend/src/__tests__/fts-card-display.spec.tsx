@@ -122,3 +122,83 @@ describe('#156 — روند فصلی در نوارِ بازشو', () => {
     expect(screen.getByTestId('quarterly-trend-chart')).toBeInTheDocument();
   });
 });
+
+describe('#169 — واژۀ حکم یک‌بار، رنگِ سه‌حالۀ شاخص ۳ و چیدمان ۳/۲', () => {
+  const DECIDED = ['1a_monetary_growth', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap', '5_industry'];
+
+  it('بجِ ممیزی در کاشیِ حکم‌دار فقط «ⓘ» است — واژۀ حکم تکرار نمی‌شود', () => {
+    renderCard();
+    for (const a of DECIDED) {
+      const badge = screen.getByTestId(`fts-cell-audit-${a}`);
+      expect(badge.textContent, a).toBe('ⓘ');
+      expect(screen.getByTestId(`fts-card-cell-${a}`).textContent, a).not.toContain('مردود');
+    }
+  });
+
+  it('برچسبِ نتیجه در هر کاشی یکتاست (دو برچسبِ حکم در یک کاشی نیست)', () => {
+    renderCard();
+    for (const a of DECIDED) {
+      const cell = screen.getByTestId(`fts-card-cell-${a}`);
+      expect(cell.querySelectorAll(`[data-testid="fts-verdict-${a}"]`).length, a).toBe(1);
+    }
+  });
+
+  it('باندِ «ایده‌آل» از موتور: واژه و رنگِ سوم — پذیرفت/رد نیست', () => {
+    const c = realCard();
+    const ideal = { ...c.indicators, 3: { ...c.indicators['3'], pass: true, band: 'ideal' } } as FtsCardIndicators;
+    renderCard({ indicators: ideal });
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('ایده‌آل');
+    expect(screen.getByTestId('fts-card-cell-3_gross_margin').className).toContain('cyan');
+  });
+
+  it('باندِ «acceptable» همان رنگِ قبول است — سه‌حاله هرگز بازسازی نمی‌شود', () => {
+    const c = realCard();
+    const ok = { ...c.indicators, 3: { ...c.indicators['3'], pass: true, band: 'acceptable' } } as FtsCardIndicators;
+    renderCard({ indicators: ok });
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('قبول');
+    expect(screen.getByTestId('fts-card-cell-3_gross_margin').className).not.toContain('cyan');
+  });
+
+  it('بدونِ band از موتور، رنگِ سوم ساخته نمی‌شود (قانونِ لایۀ نمایش)', () => {
+    const c = realCard();
+    const bare = { ...c.indicators, 3: { ...c.indicators['3'], pass: true } } as FtsCardIndicators;
+    delete (bare['3'] as Record<string, unknown>).band;
+    delete (bare['3'] as Record<string, unknown>).ideal_threshold;
+    renderCard({ indicators: bare });
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('قبول');
+    expect(screen.getByTestId('fts-card-cell-3_gross_margin').className).not.toContain('cyan');
+  });
+
+  it('چیدمان ۳ بالا / ۲ پایین: سه کارتِ اول دو ستون، دوتای آخر سه ستون', () => {
+    renderCard();
+    const spans = (key: string) => screen.getByTestId(`fts-card-cell-${key}`).className;
+    for (const k of ['1_growth', '2_eps_trend', '3_gross_margin']) expect(spans(k), k).toContain('md:col-span-2');
+    for (const k of ['4_sales_to_mcap', '5_industry']) expect(spans(k), k).toContain('md:col-span-3');
+  });
+
+  it('نشانهٔ «نمودار و جزئیات» روی هر پنج کارتِ کلیک‌پذیر هست', () => {
+    renderCard({ onDrill: () => {} });
+    expect(screen.getAllByTestId('fts-drill-affordance')).toHaveLength(5);
+  });
+
+  it('بی‌onDrill هیچ نشانهٔ کلیکی دروغین نیست', () => {
+    renderCard({});
+    expect(screen.queryAllByTestId('fts-drill-affordance')).toHaveLength(0);
+  });
+});
+
+describe('#169 — نمودارها در ارتفاعِ استاندارد رندر می‌شوند', () => {
+  const Q = [
+    { key: '1404-Q3', yearLabel: '1404', quarter: 3, revenue: 100, grossProfit: 20 },
+    { key: '1404-Q4', yearLabel: '1404', quarter: 4, revenue: 120, grossProfit: 26 },
+  ] as never;
+
+  it('روند فصلی: ارتفاعِ پیکسلی ثابت، نه viewBoxِ کشیده‌شده با عرض', () => {
+    render(<QuarterlyTrend quarters={Q} />);
+    fireEvent.click(screen.getByTestId('qtrend-toggle'));
+    const svg = screen.getByTestId('quarterly-trend-chart');
+    expect(svg.getAttribute('height')).toBe('168');
+    expect(svg.getAttribute('viewBox')).toMatch(/^0 0 \d+ 168$/);
+    expect(svg.getAttribute('class')).toContain('block');
+  });
+});

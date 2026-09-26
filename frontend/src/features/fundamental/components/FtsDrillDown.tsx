@@ -5,6 +5,7 @@
 // کامپوننت فقط شفاف‌سازی می‌کند، نه محاسبهٔ دوباره.
 import { toFaDigits, fmtPct, fmtInt } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
+import { useElementWidth } from '@shared/hooks/useElementWidth';
 import { GapHint, epsGapReason, GENERIC_GAP_REASON, VALUATION_GAP_REASON } from './GapHint';
 import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
@@ -422,6 +423,8 @@ function Panel2({ card }: { card: FtsCard }) {
 
 /** شاخص ۳: فرمول + روند خطی ۶ فصل + آستانه‌ها */
 function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }) {
+  /** عرضِ ظرف به‌جای viewBoxِ ثابت (#169) — ارتفاعِ نمودار ثابت می‌ماند */
+  const [mRef, mW] = useElementWidth<HTMLDivElement>(400);
   const ind = card.indicators?.['3'];
   const margin = ind?.margin_pct ?? null;
   /** کف و سقفِ نوار را موتور می‌گوید؛ اگر در JSX حک می‌شدیم، هر «ذخیره» در
@@ -460,32 +463,43 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         ) : null}
       </div>
       {trend.length >= 2 ? (
-        <svg viewBox="0 0 400 120" className="w-full" role="img" aria-label="روند ۶ فصل حاشیه سود ناخالص" data-testid="drilldown-margin-chart">
-          {(() => {
-            const W = 400;
-            const H = 120;
-            const P = 24;
-            const pts = trend.map((q, i) => {
-              const m = getMargin(q);
-              return { x: P + (i * (W - P * 2)) / (trend.length - 1), y: H - P - (Math.max(0, m) / maxTrend) * (H - P * 2) };
-            });
-            const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-            return (
-              <>
-                <line x1={P} x2={W - P} y1={H - P} y2={H - P} stroke="var(--border-color)" strokeWidth="1" />
-                {pts.map((p, i) => (
-                  <g key={i}>
-                    <circle cx={p.x} cy={p.y} r="3.5" fill="var(--accent-blue)" />
-                    <text x={p.x} y={H - 8} textAnchor="middle" fontSize="9" fill="var(--text-muted)">
-                      {`${Q_LABEL[trend[i].quarter - 1]} ${toFaDigits(trend[i].yearLabel.slice(2))}`}
-                    </text>
-                  </g>
-                ))}
-                <path d={line} fill="none" stroke="var(--accent-blue)" strokeWidth="2" />
-              </>
-            );
-          })()}
-        </svg>
+        <div ref={mRef} className="w-full">
+          <svg
+            viewBox={`0 0 ${mW} 128`}
+            width={mW}
+            height={128}
+            style={{ width: '100%', height: '128px' }}
+            className="block"
+            role="img"
+            aria-label="روند ۶ فصل حاشیه سود ناخالص"
+            data-testid="drilldown-margin-chart"
+          >
+            {(() => {
+              const W = mW;
+              const H = 128;
+              const P = 24;
+              const pts = trend.map((q, i) => {
+                const m = getMargin(q);
+                return { x: P + (i * (W - P * 2)) / (trend.length - 1), y: H - P - (Math.max(0, m) / maxTrend) * (H - P * 2) };
+              });
+              const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+              return (
+                <>
+                  <line x1={P} x2={W - P} y1={H - P} y2={H - P} stroke="var(--border-color)" strokeWidth="1" />
+                  {pts.map((p, i) => (
+                    <g key={i}>
+                      <circle cx={p.x} cy={p.y} r="3.5" fill="var(--accent-blue)" />
+                      <text x={p.x} y={H - 8} textAnchor="middle" fontSize="9.5" fill="var(--text-muted)">
+                        {`${Q_LABEL[trend[i].quarter - 1]} ${toFaDigits(trend[i].yearLabel.slice(2))}`}
+                      </text>
+                    </g>
+                  ))}
+                  <path d={line} fill="none" stroke="var(--accent-blue)" strokeWidth="2" />
+                </>
+              );
+            })()}
+          </svg>
+        </div>
       ) : (
         quarters.length > 0 ? (
           <p className="text-2xs leading-relaxed text-text-muted" data-testid="drilldown-margin-no-trend">

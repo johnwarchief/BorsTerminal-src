@@ -144,9 +144,19 @@ describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته
     renderPage();
     await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
     expect(screen.getByText('STRONG')).toBeInTheDocument();
-    expect(screen.getByTestId('fts-card-cell-1a_monetary_growth')).toHaveTextContent('قبول');
-    expect(screen.getByTestId('fts-card-cell-2_eps_trend')).toHaveTextContent('قبول');
-    expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap')).toHaveTextContent('مردود');
+    /** #169: واژۀ حکم در هر سلول یک‌بار نوشته می‌شود (برچسبِ نتیجه)، و بجِ
+     *  ممیزی دیگر همان واژه را تکرار نمی‌کند — «قبول» دوباره‌نویسی نشد. */
+    const cells: [string, string][] = [
+      ['1a_monetary_growth', 'قبول'],
+      ['2_eps_trend', 'قبول'],
+      ['4_sales_to_mcap', 'رد'],
+    ];
+    for (const [axis, word] of cells) {
+      expect(screen.getByTestId(`fts-verdict-${axis}`)).toHaveTextContent(word);
+      const cell = screen.getByTestId(`fts-card-cell-${axis}`);
+      expect(cell.textContent).toContain(word);
+      expect(cell.textContent).not.toContain('مردود');
+    }
     expect(screen.getByTestId('fts-card-cell-5_industry')).toHaveTextContent('صنعت آزاد');
     // حالت «داده نیامد» نباید فعال باشد — کارت باید واقعاً رندر شده باشد
     expect(screen.queryByText(/دادهٔ کارت بنیادی/)).not.toBeInTheDocument();

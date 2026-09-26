@@ -219,7 +219,9 @@ describe('AuditBadge در کارت بنیادی (FtsCard)', () => {
   it('سلول بدون داده، برچسب علت + بازشوی ممیزی دارد (بدون «شکاف داده»)', () => {
     render(<FtsCard score={2} passes={{ '3_gross_margin': false }} verdict="مردود" audit={null} />);
     const cell = screen.getByTestId('fts-cell-audit-3_gross_margin');
-    expect(cell.textContent).toContain('مردود');
+    /** #169: بجِ مرفوع دیگر واژۀ حکم را تکرار نمی‌کند — حکم فقط در برچسبِ نتیجه */
+    expect(cell.textContent).toBe('ⓘ');
+    expect(screen.getByTestId('fts-verdict-3_gross_margin')).toHaveTextContent('رد');
     expect(screen.queryByText('شکاف داده')).toBeNull();
     const gapCell = screen.getByTestId('fts-cell-audit-1a_monetary_growth');
     expect(gapCell.textContent).toContain('گزارش ماهانهٔ کدال نیست');
