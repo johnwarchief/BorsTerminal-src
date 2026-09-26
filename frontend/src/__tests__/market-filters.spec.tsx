@@ -1,5 +1,5 @@
 // تست فیلترهای جدید تابلو: ضریب حجم مشکوک، خروج از انباشت و ترتیب غربالگری
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MarketFilters } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
@@ -129,10 +129,21 @@ describe('نوار تک‌خطی فیلترها و dropdown بازارها', () 
   const optionBox = (label: string) =>
     screen.getByRole('checkbox', { name: label }) as HTMLInputElement;
 
-  it('نوار فیلتر دو سطحی کامپکت است (شامل وضعیت و فیلترها)', () => {
-    render(<MarketFilters sectors={[]} />);
+  /** #171: دو سطحِ روی‌هم به یک نوار تبدیل شد — صنایع و چیپ‌ها راست،
+   *  جستجو/شمارندۀ نماد/بازۀ بروزرسانی چپِ همان نوار. */
+  it('نوار فیلتر یک‌سطحی است و جستجو و شمارنده در سمتِ چپِ همان نوار', () => {
+    render(<MarketFilters sectors={[]} shown={120} total={600} pollMs={15000} onPollChange={() => {}} />);
     const bar = screen.getByTestId('market-filters-bar');
-    expect(bar.className).toContain('flex-col');
+    expect(bar.className).not.toContain('flex-col');
+    const kids = Array.from(bar.children);
+    expect(kids).toHaveLength(2);
+    expect(kids[0]).toBe(screen.getByTestId('quick-filters-bar'));
+    expect(kids[1]).toBe(screen.getByTestId('filters-side'));
+    // در RTL فرزندِ آخر سمتِ چپ می‌نشیند — جستجو، شمارنده و بازه همه آن‌جاوند
+    const side = screen.getByTestId('filters-side');
+    expect(within(side).getByLabelText('جستجوی نماد')).toBeInTheDocument();
+    expect(within(side).getByLabelText('بازه به‌روزرسانی')).toBeInTheDocument();
+    expect(within(side).getByTitle('تعداد نمادهای فعال در جدول')).toBeInTheDocument();
     // ۱۱ چیپ بازار دیگر بیرون از dropdown رندر نمی‌شوند
     expect(screen.queryByText('اختیار معامله')).not.toBeInTheDocument();
   });

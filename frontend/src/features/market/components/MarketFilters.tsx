@@ -323,10 +323,44 @@ export function MarketFilters({
   return (
     <div
       data-testid="market-filters-bar"
-      className="glass-panel panel-in flex flex-col gap-1.5 w-full rounded-2xl p-2.5 shadow-sm"
+      className="glass-panel panel-in flex flex-wrap items-center gap-2 w-full rounded-2xl p-2 shadow-sm"
     >
-      {/* ── سطح اول: جستجوی نماد، شمارنده نمادها، بازه به‌روزرسانی و ریست ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-c/50 pb-2">
+      {/* #171: یک نوار به‌جای دو سطحِ روی‌هم — صنایع و چیپ‌ها سمتِ راست،
+          جستجو/شمارندۀ نماد/بازۀ بروزرسانی سمتِ چپِ همان نوار. */}
+      <div
+        className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar"
+        data-testid="quick-filters-bar"
+      >
+        <AssetFilterMenu />
+
+        <select
+          value={sector}
+          onChange={(e) => setSector(e.target.value)}
+          className={`${CONTROL_CLS} max-w-36 truncate`}
+          aria-label="فیلتر صنعت"
+        >
+          <option value="">همه صنایع</option>
+          {sectors.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+
+        <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
+
+        {/* چیپ‌های فیلتر با پاپ‌اور اختصاصی */}
+        {QUICK_FILTERS.map((f) => (
+          <SplitFilterChip
+            key={f}
+            filter={f}
+            active={quickFilters.includes(f)}
+            onToggle={() => toggleQuickFilter(f)}
+            count={matches?.[f]}
+          />
+        ))}
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex items-center">
             <input
@@ -408,38 +442,6 @@ export function MarketFilters({
             </button>
           ) : null}
         </div>
-      </div>
-
-      {/* ── سطح دوم: بازارها/ابزارها، صنایع و فیلترهای پیشرفته با پاپ‌اور ── */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-0.5" data-testid="quick-filters-bar">
-        <AssetFilterMenu />
-
-        <select
-          value={sector}
-          onChange={(e) => setSector(e.target.value)}
-          className={`${CONTROL_CLS} max-w-36 truncate`}
-          aria-label="فیلتر صنعت"
-        >
-          <option value="">همه صنایع</option>
-          {sectors.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-
-        <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
-
-        {/* چیپ‌های فیلتر با پاپ‌اور اختصاصی */}
-        {QUICK_FILTERS.map((f) => (
-          <SplitFilterChip
-            key={f}
-            filter={f}
-            active={quickFilters.includes(f)}
-            onToggle={() => toggleQuickFilter(f)}
-            count={matches?.[f]}
-          />
-        ))}
       </div>
     </div>
   );
