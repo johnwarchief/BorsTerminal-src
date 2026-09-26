@@ -7,6 +7,8 @@ import {
 import { toFaDigits } from '@shared/lib/fmt';
 import type { AdjustmentMode } from '../lib/adjustments';
 import { SUPPORTED_TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from '../lib/timeframe';
+import { usePriceAlertStore } from '../../stores/priceAlertStore';
+import { PriceAlertsPanel } from './PriceAlertsPanel';
 
 interface FtsToolbarProps {
   symbolName: string;
@@ -30,6 +32,14 @@ interface FtsToolbarProps {
   onTakeSnapshot?: () => void;
   onToggleDepth?: () => void;
   isDepthOpen?: boolean;
+  /** همسنجیِ دو نماد روی همین چارت */
+  compareSymbol?: string | null;
+  compareBusy?: boolean;
+  compareNoOverlap?: boolean;
+  /** اختلافِ بازدهیِ همسنج با این نماد، به برچسبِ درصدِ فارسی */
+  compareGap?: string | null;
+  onOpenCompareSearch?: () => void;
+  onClearCompare?: () => void;
 }
 
 export const FtsToolbar: React.FC<FtsToolbarProps> = ({
@@ -54,9 +64,19 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   onTakeSnapshot,
   onToggleDepth,
   isDepthOpen,
+  compareSymbol,
+  compareBusy,
+  compareNoOverlap,
+  compareGap,
+  onOpenCompareSearch,
+  onClearCompare,
 }) => {
   const [showCandleMenu, setShowCandleMenu] = useState(false);
   const [showAdjMenu, setShowAdjMenu] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
+  // شمارش‌ها از خودِ استور: نوارِ بالا هیچ آستانه‌ای را داوری نمی‌کند
+  const armedCount = usePriceAlertStore((s) => s.alerts.filter((a) => a.active).length);
+  const hasUnseenFired = usePriceAlertStore((s) => s.alerts.some((a) => a.firedAt != null && !a.seen));
 
   const timeframes: Timeframe[] = [...SUPPORTED_TIMEFRAMES];
 
@@ -93,7 +113,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   const currentCandle = candleTypes.find(c => c.value === activeCandleType) || candleTypes[0];
 
   return (
-    <header className="nn-top-toolbar" onClick={() => { setShowCandleMenu(false); setShowAdjMenu(false); }}>
+    <header className="nn-top-toolbar" onClick={() => { setShowCandleMenu(false); setShowAdjMenu(false); setShowAlerts(false); }}>
       {/* سمت راست: نماد، تایم‌فریم، نوع کندل، تعدیل، اندیکاتورها و تحلیل FTS */}
       <div className="nn-toolbar-group">
         {/* بج نماد + قیمت لحظه‌ای + تغییرات - کلیک برای باز شدن جستجو */}
@@ -251,6 +271,80 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           <span>اندیکاتورها</span>
         </button>
 
+        {/* همسنجی: نمادِ دوم روی همان چارت، با مبنایِ بازدهیِ مشترک */}
+        {onOpenCompareSearch ? (
+          compareSymbol ? (
+            <span
+              className="nn-btn"
+              data-testid="compare-chip"
+              style={{ gap: '6px' }}
+              title={
+                compareNoOverlap
+                  ? 'هیچ میلۀ مشترکی با این نماد نیست — خطی رسم نمی‌شود'
+                  : compareBusy
+                    ? 'در حالِ خواندنِ سریِ دوم…'
+                    : 'نمادِ همسنج — کلیک برای انتخابِ دیگری'
+              }
+            >
+              <span>همسنج: {compareSymbol}</span>
+              {compareGap != null && !compareNoOverlap ? (
+                <span
+                  data-testid="compare-gap"
+                  style={{ color: 'var(--nn-text-secondary)', fontSize: '10px' }}
+                  title="بازدهٔ همسنج نسبت به این نماد، از نخستین میلۀ دید"
+                >
+                  {compareGap}
+                </span>
+              ) : null}
+              {compareBusy ? <span style={{ color: 'var(--nn-text-secondary)' }}>…</span> : null}
+              {compareNoOverlap ? (
+                <span data-testid="compare-no-overlap" style={{ color: '#f23645', fontSize: '10px' }}>
+                  بی‌میلهٔ مشترک
+                </span>
+              ) : null}
+              <button
+                type="button"
+                data-testid="compare-open"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenCompareSearch();
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--nn-text-secondary)', cursor: 'pointer' }}
+                title="تغییرِ نمادِ همسنج"
+              >
+                ⇄
+              </button>
+              {onClearCompare ? (
+                <button
+                  type="button"
+                  data-testid="compare-clear"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClearCompare();
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#f23645', cursor: 'pointer' }}
+                  title="برداشتنِ همسنج"
+                >
+                  ✕
+                </button>
+              ) : null}
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="nn-btn"
+              data-testid="compare-open"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenCompareSearch();
+              }}
+              title="یک نمادِ دیگر را روی همین چارت همسنجی کن"
+            >
+              <span>همسنجی</span>
+            </button>
+          )
+        ) : null}
+
         {/* کلید تحلیل FTS (زون‌های فیبو، میانگین‌های FTS و ستاپ‌ها) */}
         <button
           className={`nn-btn ${isFtsActive ? 'warning-active' : ''}`}
@@ -279,6 +373,34 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
             <IconSettings size={16} />
           </button>
         )}
+        {/* هشدارِ قیمتی: آستانه‌هایِ کاربر روی نمادها، داوری‌شده روی فیدِ تابلو */}
+        <div className="relative">
+          <button
+            type="button"
+            className="nn-btn nn-icon-btn"
+            data-testid="price-alert-bell"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowAlerts((v) => !v);
+            }}
+            title="هشدارهایِ قیمتی"
+          >
+            <span style={{ color: hasUnseenFired ? '#ffab00' : 'currentColor' }}>🔔</span>
+            {armedCount > 0 ? (
+              <span
+                className="num"
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 800,
+                  color: 'var(--nn-text-secondary)',
+                }}
+              >
+                {toFaDigits(armedCount)}
+              </span>
+            ) : null}
+          </button>
+          {showAlerts ? <PriceAlertsPanel symbol={symbolName} boardRow={boardRow} /> : null}
+        </div>
         {onTakeSnapshot && (
           <button className="nn-btn nn-icon-btn" onClick={onTakeSnapshot} title="ذخیره تصویر چارت">
             <IconCamera size={16} />

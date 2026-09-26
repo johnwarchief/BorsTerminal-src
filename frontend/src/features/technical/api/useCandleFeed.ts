@@ -18,12 +18,23 @@ const RawCandle = z.object({
 });
 const RawVolume = z.object({ time: z.string(), value: z.number() });
 
+/** رویدادِ تعدیلِ خام — همان شکلی که mapBackendAdjustEvents می‌خواند */
+export const RawAdjustEvent = z.object({
+  date: z.string().nullish(),
+  dateStr: z.string().nullish(),
+  timestamp: z.number().nullish(),
+  time: z.number().nullish(),
+  ratio: z.number().nullish(),
+});
+export type RawAdjustEvent = z.infer<typeof RawAdjustEvent>;
+
 /** /api/chart/{symbol} — کندل تعدیل‌شده؛ خطا شکل {status:'error', message} دارد */
 const ChartSchema = z.object({
   status: z.string(),
   candles: z.array(RawCandle).nullish(),
   volumes: z.array(RawVolume).nullish(),
   count: z.number().nullish(),
+  adjustEvents: z.array(RawAdjustEvent).nullish(),
 });
 
 /** /api/history/{symbol} — تاریخچهٔ محلی */
@@ -39,6 +50,11 @@ export type CandleFeedResult = {
   source: CandleSource;
   candles: { time: string; open: number; high: number; low: number; close: number }[];
   volumes: { time: string; value: number }[];
+  /**
+   * رویدادهای تعدیلِ همان نماد. بدونِ این، سریِ دومِ همسنجی با مبنای سریِ اول
+   * نمی‌آید و یک افزایشِ سرمایه وسطِ بازه، خطِ مقایسه را بی‌دلیل می‌شکند.
+   */
+  adjustEvents: RawAdjustEvent[];
 };
 
 export function toKLineData(
@@ -67,7 +83,13 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
       signal,
     });
     if (chart.status === 'success' && (chart.candles?.length ?? 0) > 0) {
-      return { status: 'success', source: 'chart', candles: chart.candles ?? [], volumes: chart.volumes ?? [] };
+      return {
+        status: 'success',
+        source: 'chart',
+        candles: chart.candles ?? [],
+        volumes: chart.volumes ?? [],
+        adjustEvents: chart.adjustEvents ?? [],
+      };
     }
   } catch {
     // منبع اول در دسترس نیست — به تاریخچهٔ محلی برمی‌گردیم
@@ -81,6 +103,7 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
     source: 'history',
     candles: history.candles ?? [],
     volumes: history.volumes ?? [],
+    adjustEvents: [],
   };
 }
 

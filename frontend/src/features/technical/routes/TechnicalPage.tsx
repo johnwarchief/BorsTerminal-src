@@ -25,6 +25,8 @@ import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
+import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
+import { PriceAlertBanner } from '../nahayatnegar/components/PriceAlertBanner';
 import '../styles/tvTheme.css';
 
 /** چارت پورت‌شدهٔ جمینای (v10) با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
@@ -47,6 +49,10 @@ export default function TechnicalPage() {
     if (!marketData?.data) return null;
     return marketData.data.find((item) => item.symbol === viewSymbol) ?? null;
   }, [viewSymbol, marketData]);
+
+  // هشدارهایِ قیمتی روی همین فید داوری می‌شوند — برای هر نمادی که کاربر
+  // آستانه گذاشته، نه فقط نمادِ بازِ چارت.
+  usePriceAlertWatch(marketData?.data);
 
   // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت.
   // هنگام خروج از تب، حالت را به «خودکار» برمی‌گردانیم تا سایدبار روی سایر تب‌ها بماند.
@@ -177,6 +183,7 @@ export default function TechnicalPage() {
               </Suspense>
             </div>
           )}
+          <PriceAlertBanner rows={marketData?.data} />
         </div>
 
         {symbol ? (

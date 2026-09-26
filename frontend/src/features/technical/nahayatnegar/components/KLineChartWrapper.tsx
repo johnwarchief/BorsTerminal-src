@@ -29,7 +29,7 @@ import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
   mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
-import { aggregateCandles, timeframePeriod, type Timeframe } from '../lib/timeframe';
+import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, type Timeframe } from '../lib/timeframe';
 import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
 import {
   registerFtsOverlays,
@@ -73,7 +73,17 @@ import {
 } from '../../lib/ftsPatterns';
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
 import { useFtsConfigStore } from '../../stores/ftsConfigStore';
+import { useChartTemplateStore, type ChartTemplate } from '../../stores/chartTemplateStore';
+import { fetchCandleFeed, toKLineData, type RawAdjustEvent } from '../../api/useCandleFeed';
+import { comparePctLabel, compareRows } from '../../lib/compareSeries';
+import {
+  COMPARE_INDICATOR,
+  COMPARE_PANE_ID,
+  registerCompareIndicator,
+  setCompareRows,
+} from '../../lib/compareIndicator';
 import { parseCandleTimestamp } from '../../lib/jalaliDate';
+import { toFaDigits } from '@shared/lib/fmt';
 
 import '../styles/nahayatNegarStyles.css';
 
@@ -89,9 +99,38 @@ export interface ChartProps {
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
 }
 
+/** فهرستِ مجازِ نوعِ کندل — همان‌ها که منو می‌سازد؛ نامِ ناشناخته اعمال نمی‌شود */
+const CHART_TYPES = [
+  'candle_solid', 'candle_stroke', 'candle_up_stroke', 'candle_down_stroke',
+  'ohlc', 'area', 'line', 'heikin_ashi', 'renko', 'kagi', 'pnf',
+];
+const ADJUSTMENT_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
+type PriceScaleName = 'normal' | 'logarithm' | 'percentage';
+const PRICE_SCALES: string[] = ['normal', 'logarithm', 'percentage'];
+
+/** شش مطالعۀ همیشگیِ منو؛ نامشان در موتور ثبت است و در کاتالوگ TV نمی‌آید */
+const BASIC_INDICATOR_NAMES = ['VOL', 'MA', 'EMA', 'BOLL', 'RSI', 'MACD'];
+const BASIC_INDICATOR_LABELS: Record<string, string> = {
+  VOL: 'حجم معاملات',
+  MA: 'میانگین متحرک ساده',
+  EMA: 'میانگین متحرک نمایی',
+  BOLL: 'باندهای بولینگر',
+  RSI: 'RSI 14',
+  MACD: 'MACD',
+};
+
+/** برچسبِ مطالعه در فهرستِ قالب — از همان کاتالوگِ منو، نه از فهرستی دستی */
+function templateEntryLabel(id: string): string {
+  return (
+    BASIC_INDICATOR_LABELS[id] ??
+    TV_INDICATORS.find((t) => t.name === id)?.label ??
+    MABNA_INDICATORS.find((t) => t.name === id)?.label ??
+    id
+  );
+}
+
 // فرمت‌بندی تاریخ شمسی (جلالی) بدون پکیج اضافه با استفاده از Intl نیتیو جاوااسکریپت
-function formatJalali(timestamp: number, type?: string): string {
-  try {
+function formatJalali(timestamp: number, type?: string): string {  try {
     const date = new Date(timestamp);
     const isIntraday = type === 'minute' || type === 'hour';
     return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
@@ -265,6 +304,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('combined');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
+  const [templateName, setTemplateName] = useState<string>('');
+  const templates = useChartTemplateStore((st) => st.templates);
+  const removeTemplate = useChartTemplateStore((st) => st.removeTemplate);
   // فقط نام‌هایی که واقعاً روی این نمونهٔ چارت ثبت شده‌اند در منو می‌آیند؛
   // منوی hardcode همین باگ را داشت که کلیک روی نامِ ثبت‌نشده بی‌صدا هیچی
   // می‌ساخت.
@@ -297,6 +339,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [isLogScale, setIsLogScale] = useState<boolean>(ftsPriceScale === 'logarithm');
   const [isAutoScale, setIsAutoScale] = useState<boolean>(true);
   const [isDepthOpen, setIsDepthOpen] = useState<boolean>(false);
+
+  // همسنجیِ دو نماد رویِ همان چارت (جاافتادۀ ره‌آورد RA-3)
+  const [compareSymbol, setCompareSymbol] = useState<string | null>(null);
+  const [compareBars, setCompareBars] = useState<{ candles: KLineData[]; events: RawAdjustEvent[] } | null>(null);
+  const [compareBusy, setCompareBusy] = useState<boolean>(false);
+  const [compareNoOverlap, setCompareNoOverlap] = useState<boolean>(false);
+  /** «همسنج منهای این نماد» از میلهٔ مبنایِ مشترک؛ null یعنی هنوز عددی معنا ندارد */
+  const [compareGap, setCompareGap] = useState<string | null>(null);
+  /** با هر جابه‌جاییِ دیدِ چارت بالا می‌رود تا مبنا از نو خوانده شود */
+  const [compareTick, setCompareTick] = useState<number>(0);
+  const comparePaneRef = useRef<boolean>(false);
+  const compareVersionRef = useRef<number>(0);
+  const [isCompareSearchOpen, setIsCompareSearchOpen] = useState<boolean>(false);
   const [isChartReady, setIsChartReady] = useState<boolean>(false);
 
   // استیت ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
@@ -733,6 +788,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (!chart) return;
     chartRef.current = chart;
     setIsChartReady(true);
+
+    // مطالعۀ «همسنج»: ثبتِ ماژولار و بی‌منو — فقط دکمۀ همسنجی آن را می‌سازد،
+    // پس در فهرستِ اندیکاتورها نامی نمی‌بیند که کلیکِ بی‌نتیجه بسازد.
+    try {
+      registerCompareIndicator({
+        registerIndicator: (klinecharts as never as { registerIndicator?: (d: unknown) => void }).registerIndicator
+          ?? ((d: unknown) => { void d; }),
+        getSupportedIndicators: () =>
+          ((klinecharts as never as { getSupportedIndicators?: () => string[] }).getSupportedIndicators?.() ?? []),
+      });
+    } catch {
+      // ثبت نشد: همسنجی خاموش می‌ماند و چارتِ اصلی بی‌خطا کار می‌کند
+    }
 
     // ثبت دیتا لودر در v10 (جایگزین قطعی applyNewData)
     chart.setDataLoader({
@@ -1499,6 +1567,18 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (onSymbolChange) onSymbolChange(sym);
   };
 
+  // هندلرهایِ همسنجی: انتخابِ نمادِ دوم و برداشتنش
+  const handleOpenCompareSearch = () => setIsCompareSearchOpen(true);
+  const handleCompareSelect = (sym: SymbolInfo) => {
+    setCompareSymbol(sym.symbol);
+    setIsCompareSearchOpen(false);
+  };
+  const handleCompareClear = () => {
+    setCompareSymbol(null);
+    setCompareBars(null);
+    setCompareNoOverlap(false);
+  };
+
   // هندلر تغییر تایم‌فریم — تجمیع در displayCandles انجام می‌شود و افکتِ دیتا آن را
   // به چارت می‌دهد؛ این‌جا فقط وضعیت و برچسب محور عوض می‌شود.
   const handleTimeframeChange = (tf: Timeframe) => {
@@ -1526,6 +1606,172 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     setActiveAdjustment(mode);
     if (onAdjustmentChange) onAdjustmentChange(mode);
   };
+
+  /**
+   * قالبِ چارت = مجموعه‌ای از مطالعه‌ها + چند تنظیمِ نمایش.
+   * اعمالِ قالب دقیقاً همان کارهایی را می‌کند که خودِ کاربر با کلیک انجام می‌دهد
+   * ( هندلرهایِ موجود )؛ پارامترِ تازه‌ای ساخته نمی‌شود و ترسیم‌ها دست
+   * نمی‌خورند. نامِ مطالعۀ ثبت‌نشده نادیده گرفته می‌شود، نه اینکه چارت را
+   * بی‌صدا به پنلِ خالی بیندازد.
+   */
+  const templateIndicatorNames = () => {
+    const on = Object.keys(indicators).filter((k) => indicators[k]);
+    return on;
+  };
+
+  const saveCurrentTemplate = (rawName: string) => {
+    const name = rawName.trim();
+    return useChartTemplateStore.getState().saveTemplate({
+      name,
+      indicators: templateIndicatorNames(),
+      timeframe: activeTimeframe,
+      candleType: activeCandleType,
+      adjustment: activeAdjustment,
+      priceScale: useFtsConfigStore.getState().priceScale,
+    });
+  };
+
+  const applyTemplate = (t: ChartTemplate) => {
+    const want = new Set(t.indicators);
+    const have = new Set(templateIndicatorNames());
+    const registered = new Set([...BASIC_INDICATOR_NAMES, ...tvIndicatorNames]);
+    // نخست خاموش‌ها، سپس روشن‌ها — پنلِ یتیم باقی نماند
+    for (const k of have) if (!want.has(k)) toggleIndicator(k);
+    for (const k of want) if (!have.has(k) && registered.has(k)) toggleIndicator(k);
+
+    const chart = chartRef.current;
+    if (t.timeframe && SUPPORTED_TIMEFRAMES.includes(t.timeframe as Timeframe) && t.timeframe !== activeTimeframe) {
+      handleTimeframeChange(t.timeframe as Timeframe);
+    }
+    if (t.candleType && t.candleType !== activeCandleType && CHART_TYPES.includes(t.candleType)) {
+      handleCandleTypeChange(t.candleType);
+    }
+    if (t.adjustment && ADJUSTMENT_MODES.includes(t.adjustment as AdjustmentMode) && t.adjustment !== activeAdjustment) {
+      handleAdjustmentChange(t.adjustment as AdjustmentMode);
+    }
+    if (t.priceScale && PRICE_SCALES.includes(t.priceScale) && chart) {
+      const scale = t.priceScale as PriceScaleName;
+      chart.overrideYAxis({ paneId: 'candle_pane', name: scale } as never);
+      useFtsConfigStore.getState().setPriceScale(scale as never);
+      setIsLogScale(scale === 'logarithm');
+    }
+  };
+
+
+  // ── همسنجی ────────────────────────────────────────────────────────────────
+  // ۱) سریِ نمادِ دوم یک‌بار با نماد عوض می‌شود؛ تعدیل و تجمیع در گامِ بعد.
+  useEffect(() => {
+    if (!compareSymbol) {
+      setCompareBars(null);
+      setCompareNoOverlap(false);
+      return;
+    }
+    let cancelled = false;
+    setCompareBusy(true);
+    void (async () => {
+      try {
+        const feed = await fetchCandleFeed(compareSymbol);
+        if (cancelled) return;
+        setCompareBars({ candles: toKLineData(feed.candles, feed.volumes), events: feed.adjustEvents ?? [] });
+      } catch {
+        if (!cancelled) setCompareBars({ candles: [], events: [] });
+      } finally {
+        if (!cancelled) setCompareBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [compareSymbol]);
+
+  // ۲) همان بازه و همان حالتِ تعدیلِ نمادِ اصلی، وگرنه دو خطِ بی‌نسبت می‌شوند.
+  // مبنا نخستین میلۀ **دید** است، نه اولِ تاریخچه: وگرنه «نسبتِ بازدهی» دو نماد
+  // قدیمی به عددی بی‌معنا مثل +۲۷۰۰٪ می‌رسد که هیچ کاربری آن را نمی‌خواند.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    if (!compareSymbol || !compareBars) {
+      setCompareRows([]);
+      setCompareGap(null);
+      if (comparePaneRef.current) {
+        try {
+          chart.removeIndicator({ name: COMPARE_INDICATOR });
+        } catch {
+          // پنلی نبود که برداشته شود
+        }
+        comparePaneRef.current = false;
+      }
+      return;
+    }
+    let anchorTs: number | null = null;
+    try {
+      const { from } = chart.getVisibleRange();
+      anchorTs = chart.getDataList()[Math.max(0, from)]?.timestamp ?? null;
+    } catch {
+      anchorTs = null;
+    }
+    const adjusted = applyAdjustmentToCandles(
+      compareBars.candles,
+      mapBackendAdjustEvents(compareBars.events),
+      activeAdjustment,
+    );
+    const other = aggregateCandles(adjusted, activeTimeframe);
+    const out = compareRows(displayCandles, other, anchorTs);
+    setCompareRows(out.rows);
+    setCompareNoOverlap(out.commonBars < 2);
+    setCompareGap(out.relativePct == null ? null : comparePctLabel(out.relativePct));
+    // calc این مطالعه داده‌اش را بیرونِ چارت می‌خواند، پس محاسبه باید دوباره
+    // اجرا شود؛ اما ساختِ دوبارۀ پنل هر بارِ اسکرولِ چارت را نمی‌پردازیم.
+    try {
+      if (out.commonBars >= 2) {
+        if (comparePaneRef.current) {
+          compareVersionRef.current += 1;
+          chart.overrideIndicator({
+            name: COMPARE_INDICATOR,
+            id: COMPARE_INDICATOR,
+            calcParams: [compareVersionRef.current],
+          });
+        } else {
+          chart.createIndicator(
+            { name: COMPARE_INDICATOR, id: COMPARE_INDICATOR, paneId: COMPARE_PANE_ID },
+            false,
+          );
+          chart.setPaneOptions({ id: COMPARE_PANE_ID, height: 110, minHeight: 70 });
+          comparePaneRef.current = true;
+        }
+      } else if (comparePaneRef.current) {
+        chart.removeIndicator({ name: COMPARE_INDICATOR });
+        comparePaneRef.current = false;
+      }
+    } catch {
+      // موتور آماده نبود؛ با دادهٔ بعدی یا نمادِ بعدی درست می‌شود
+      comparePaneRef.current = false;
+    }
+  }, [compareSymbol, compareBars, displayCandles, activeTimeframe, activeAdjustment, compareTick]);
+
+  // ۳) با اسکرول/زومِ چارت مبنا جابه‌جا می‌شود؛ با کمی تأخیر دوباره محاسبه می‌کنیم
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !compareSymbol) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onRange = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setCompareTick((t) => t + 1), 250);
+    };
+    try {
+      chart.subscribeAction('onVisibleRangeChange', onRange);
+    } catch {
+      // موتورِ قدیمی این کنش را ندارد؛ مبنا همان اولِ دیدِ نخستین نشست می‌ماند
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      try {
+        chart.unsubscribeAction('onVisibleRangeChange', onRange);
+      } catch {
+        // اشتراکی ثبت نشده بود که برداشته شود
+      }
+    };
+  }, [compareSymbol, isChartReady]);
 
   // هندلر ابزارهای رسم در نوار چپ
   const handleSelectTool = (toolId: string, overlayType: string) => {
@@ -1807,6 +2053,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onTakeSnapshot={handleTakeSnapshot}
         onToggleDepth={() => setIsDepthOpen((prev) => !prev)}
         isDepthOpen={isDepthOpen}
+        compareSymbol={compareSymbol}
+        compareBusy={compareBusy}
+        compareNoOverlap={compareNoOverlap}
+        compareGap={compareGap}
+        onOpenCompareSearch={handleOpenCompareSearch}
+        onClearCompare={handleCompareClear}
       />
 
       {/* ویجت ۵ مظنه برتر عمق بازار */}
@@ -2062,6 +2314,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         currentSymbol={currentSymbol}
       />
 
+      {/* پنجرۀ دوم: انتخابِ نمادِ همسنج، بی‌تغییرِ نمادِ اصلی */}
+      <SymbolSearchModal
+        isOpen={isCompareSearchOpen}
+        onClose={() => setIsCompareSearchOpen(false)}
+        onSelectSymbol={handleCompareSelect}
+        currentSymbol={compareSymbol ?? ''}
+      />
+
       {/* پنل مودال اندیکاتورها */}
       {showIndicatorsModal && (
         <div
@@ -2131,6 +2391,99 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
                 <span>{ind.label}</span>
               </label>
             ))}
+          </div>
+
+          {/* قالب‌هایِ چارت: ذخیرۀ همان مطالعه‌هایِ روشن + نمایش، و اعمالِ دوباره */}
+          <div
+            style={{
+              marginTop: '12px',
+              borderTop: '1px solid #2a2e39',
+              paddingTop: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+            }}
+          >
+            <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#ffffff' }}>قالب‌هایِ چارت</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                data-testid="template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="نامِ قالب"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  background: '#131722',
+                  border: '1px solid #2a2e39',
+                  borderRadius: '4px',
+                  color: '#d1d4dc',
+                  fontSize: '12px',
+                  padding: '4px 6px',
+                }}
+              />
+              <button
+                type="button"
+                data-testid="template-save"
+                onClick={() => {
+                  const saved = saveCurrentTemplate(templateName);
+                  if (saved) setTemplateName('');
+                }}
+                disabled={!templateName.trim()}
+                title="مطالعه‌هایِ روشنِ همین چارت را با این نام ذخیره کن"
+                style={{
+                  background: '#2962ff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  opacity: templateName.trim() ? 1 : 0.4,
+                }}
+              >
+                ذخیره
+              </button>
+            </div>
+            {templates.length === 0 ? (
+              <div data-testid="template-empty" style={{ fontSize: '11px', color: '#787b86' }}>
+                هنوز هیچ قالبی نساخته‌ای
+              </div>
+            ) : (
+              templates.map((tp) => (
+                <div
+                  key={tp.id}
+                  data-testid={`template-row-${tp.id}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#d1d4dc' }}
+                >
+                  <span title={tp.indicators.map(templateEntryLabel).join(' · ')} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {tp.name}
+                  </span>
+                  <span style={{ fontSize: '10px', color: '#787b86' }}>
+                    <span className="num">{toFaDigits(tp.indicators.length)}</span> مطالعه
+                  </span>
+                  <button
+                    type="button"
+                    data-testid={`template-apply-${tp.id}`}
+                    onClick={() => applyTemplate(tp)}
+                    title="اعمالِ قالب به همین چارت"
+                    style={{ background: 'none', border: '1px solid #2a2e39', borderRadius: '4px', color: '#2962ff', fontSize: '11px', padding: '2px 6px', cursor: 'pointer' }}
+                  >
+                    اعمال
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`template-remove-${tp.id}`}
+                    onClick={() => removeTemplate(tp.id)}
+                    title="حذفِ قالب"
+                    style={{ background: 'none', border: 'none', color: '#787b86', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

@@ -261,6 +261,46 @@ Qoder Browser Connector درختِ داخلِ آن iframe را نمی‌بیند
 - `enabled_features`: `indicators_dialog`، `study_templates`،
   `items_favoriting`، `chart_template_storage`.
 
+## ۱۴) سه قابلیتِ جاافتاده از ره‌آورد: همسنج، هشدارِ قیمتی، قالبِ چارت (#144)
+
+باندلِ ره‌آورد در `enabled_features` سه چیز را روشن اعلام می‌کند که ما نداشتیم:
+`items_favoriting` (≈ هشدار/علاقه‌مندی)، `study_templates` و
+`chart_template_storage` (≈ قالبِ چارت)، و مقایسۀ دو نماد رویِ یک بوم.
+هر سه ساخته شد و **روی چارتِ زنده** (بک‌اند سورس روی ۸۰۰۳، پایگاهِ دادهٔ واقعی)
+با `tools/ra3_check.py` سنجیده شد؛ خروجیِ هر سه صفر-خطا بود.
+
+| قابلیت | فایل | کلیدِ localStorage | شاهدِ زنده |
+|---|---|---|---|
+| هشدارِ قیمتی | `stores/priceAlertStore.ts` + `lib/priceAlerts.ts` + `nahayatnegar/components/PriceAlertsPanel.tsx` / `PriceAlertBanner.tsx` | `fts.price-alerts.v1` | بنر: «فولاد — پایین آمد از ۹۹۹۹۹۹۹۹ ریال (اکنون: ۳٬۲۵۰)»؛ هشدارِ شلیک‌شده `active:false` و یکیِ دست‌نیافتنی `active:true` ماند |
+| قالبِ چارت | `stores/chartTemplateStore.ts` + بخشِ قالب‌ها در مودالِ اندیکاتورها | `fts.chart.templates.v1` | ذخیره ⇒ `{VOL,EMA, D, candle_solid, performance, normal}`؛ خاموش‌کردنِ EMA و اعمالِ قالب دوباره روشنش کرد |
+| همسنج | `lib/compareSeries.ts` + `lib/compareIndicator.ts` + افکت‌های `KLineChartWrapper` | — (بدونِ حافظه) | پنلِ جدید (۱۰→۱۴ بوم)، چیپ «همسنج: شپنا +۱۱۴.۰٪» و لوایِ همان‌جا «این نماد: 148.5 · همسنج: 317.7» ⇒ ۳۱۷.۷/۱۴۸.۵−۱ = ۱۱۳.۹٪؛ با ✕ دقیقاً به حالتِ اول برگشت |
+
+سه چیزی که فقط در چارتِ زنده درآمد و در 1125 تستِ vitest نمی‌آمد:
+
+1. **`figure.styles` در klinecharts v10 تابع است، نه شیء.** موتور هر بار
+   `figure.styles.call(figure, …)` را صدا می‌زند (`index.esm.js:3140`)؛ شیءِ ساده
+   روی بومِ کاربر «l.call is not a function» می‌دهد و مطالعه رسم نمی‌شود.
+   پنل ساخته می‌شد ولی خالی. تستِ رگرسیون: `technical-compare-overlay.spec.tsx`
+   حالا `typeof figure.styles === 'function'` را می‌سنجد.
+2. **پنلِ هشدار بیرونِ صفحه باز می‌شد** (`right-0` در چیدمانِ RTL ⇒ x = −۱۹۴) و
+   **هر کلیکِ داخلش پنل را می‌بست** (حبابِ رویداد به `<header onClick>` که
+   `setShowAlerts(false)` می‌کند). اصلاح: `end-0` + `stopPropagation` روی ریشۀ
+   پنل؛ تستِ رگرسیون در `technical-price-alerts.spec.tsx` (با حذفِ
+   stopPropagation تست می‌سوزد — چک شد).
+3. **مبنایِ همسنج نمی‌توانست اولِ تاریخچه باشد.** فولاد 4232 کندل از 1386 دارد و
+   شپنا 3474 از 1387؛ اگر هر دو در نخستین میلهٔ مشترک به 100 برسند، عددِ «اختلاف»
+   2742.9%+ می‌شود — درستِ ریاضی، بی‌معنی برای کاربر. حالا مبنا نخستین میلۀ
+   **دید** است (`chart.getVisibleRange().from`) و با اسکرول، با تأخیرِ ۲۵۰ms
+   بازخوانده می‌شود؛ و برچسب به‌جای تفاضلِ دو درصد، **نسبتِ بازدهی**
+   (`other/self − 1`) را نشان می‌دهد. محاسبهٔ مستقل روی `factors` و رویدادهای
+   خودِ `/api/chart` همان ~۱۱۴٪ را داد، پس عدد ساختگی نیست.
+
+معماری: داوریِ همسنج بیرونِ چارت است (`compareRows` خالص و بدونِ DOM)، اما
+`calc` مطالعۀ ثبت‌شده همان سری را از یک `holder` می‌خواند؛ به‌همین‌دلیل هر
+تغییرِ سری با بالا بردنِ `calcParams` به موتور اعلام می‌شود
+(`overrideIndicator`) و پنلِ موجود دوباره ساخته نمی‌شود — ساختِ دوبارهٔ پنل به
+ازای هر اسکرول، چارت را می‌لرزاند.
+
 ## منابع
 - docs/FTS_SPEC.md (بخش اول) — MAها، فیبو، ستاپ‌ها، حد ضرر.
 - TradingView chart settings & drawing tools (مدل استاندارد).
