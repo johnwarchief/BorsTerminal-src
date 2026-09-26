@@ -90,7 +90,23 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
           (first.getAttribute('data-testid') ? first : null),
         `سلول ${idx}: تیکِ حکم اولین عنصر نیست`,
       ).not.toBeNull();
+      // «justify-between» عدد را به لبهٔ مقابلِ ستون می‌انداخت — رویِ نمایشگرِ ۲۵۶۰
+      // که ستونِ EPS ۶۴۷px است، رقم ۵۴۶px زیرِ عنوانِ خودش فاصله می‌گرفت و کاربر
+      // آن را متعلق به ستونِ کناری می‌خواند. گروه باید از لبهٔ start شروع کند.
+      expect(box!.className, `سلول ${idx}: چیدمان از لبهٔ start نیست`).toContain('justify-start');
+      expect(box!.className).not.toContain('justify-between');
     }
+  });
+
+  it('ستون امتیاز: هدر و مقدار هم‌راستاوند (نه عنوانِ راست و عددِ وسطِ ستون)', () => {
+    render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
+    const ths = screen.getAllByRole('columnheader');
+    const scoreTh = ths[ths.length - 1];
+    const scoreTd = screen.getAllByTestId('fts-screen-row')[0].querySelectorAll('td')[6];
+    expect(scoreTh.className).toContain('text-start');
+    expect(scoreTh.className).not.toContain('text-center');
+    expect(scoreTd.className).toContain('text-start');
+    expect(scoreTd.className).not.toContain('text-center');
   });
 
   it('سورت امتیاز از بیشترین به کمترین', () => {

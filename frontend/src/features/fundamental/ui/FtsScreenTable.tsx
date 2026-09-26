@@ -314,7 +314,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center justify-start gap-2 min-w-0">
                       <div className="shrink-0 flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
                           <span className="text-[10px] text-text-muted font-bold">الف</span>
@@ -355,7 +355,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
                         {epsPartialRejected ? (
                           <AuditBadge
@@ -386,8 +386,10 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
-                      {/* تیکِ حکم در لبهٔ start (راست، زیرِ هدر) و عدد در سمت مقابل */}
+                    <div className="flex items-center justify-start gap-2 min-w-0">
+                      {/* تیکِ حکم در لبهٔ start (راست) و عدد بی‌فاصله کنارش — هر دو
+                          زیرِ عنوانِ خودِ ستون؛ «عدد در انتهایِ مقابلِ ستون» باعث
+                          می‌شد رقمِ ۲۸٪ زیرِ ستونِ کناری خوانده شود. */}
                       <span className="shrink-0">
                         {i3 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
@@ -419,7 +421,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
                         {i4 === 'gap' ? (
                           isFinancialOrHolding(r) ? (
@@ -456,7 +458,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
                         {i5 === 'gap' ? (
                           <AxisGapMark axis="5_industry" evidence={ev.i5} />
@@ -482,7 +484,7 @@ const ScreenerRow = memo(function ScreenerRow({
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-1.5 align-middle text-center">
+                  <td className="px-3 py-1.5 align-middle text-start">
                     <span
                       className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-xs font-black shadow-xs ${
                         r.score == null
@@ -809,7 +811,7 @@ export function FtsScreenTable({
                 ) : (
                   <th
                     key={i}
-                    className={`px-3 py-2.5 font-bold tracking-wide ${i === 0 ? 'sticky start-0 z-30 border-e border-[var(--hairline)] bg-bg-card' : ''} ${i === COLS.length - 1 ? 'text-center' : 'text-start'}`}
+                    className={`px-3 py-2.5 font-bold tracking-wide text-start ${i === 0 ? 'sticky start-0 z-30 border-e border-[var(--hairline)] bg-bg-card' : ''}`}
                     title={c.title}
                   >
                     {c.label}
