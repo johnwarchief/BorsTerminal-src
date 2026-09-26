@@ -18,7 +18,8 @@ import {
   detectSweep,
   lastCloseDiff,
 } from '../lib/tapePatterns';
-import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
+import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from '../lib/tapeFts';
+import { powerTone } from '../api/useMarketPulse';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import { evaluateDynamicQuickFilter } from '../lib/tapeAlgorithms';
 
@@ -32,27 +33,22 @@ type SortKey =
   | 'z_tot_tran'
   | 'q_tot_cap'
   | 'vol_ratio'
-  | 'buy_pc'
-  | 'sell_pc'
   | 'buyer_power'
   | 'last_vs_close';
 
-/** سیزده ستونِ تابلو: همان چهار عددی که تریدرز‌آرنا دارد و ما نداشتیم
- *  (پایانی، ارزش، تعداد، درصدِ آخرین) علاوه بر ستون‌هایِ همیشگی. */
 /**
- * سیزده ستونِ تابلو — عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در
- * فونتِ ۱۶pxِ همین جدول گذاشته شده‌اند، نه حدس:
- * [نماد ۱۵۰] [آخرین/پایانی ۶۶] [تغییر٪/آخرین٪ ۶۲] [حجم ۱۳۰ — «۱۳٬۴۴۴٬۴۷۰٬۰۰۳»]
- * [تعداد ۶۴] [ارزش ۵۸] [حجم/ماه ۵۸] [سرانه‌ها ۶۰] [قدرت ۶۶ — تیترش ۶۳px است]
- * [ساعت+برچسب‌ها ۲۰۰ — بدترین نوارِ بجِ سنجیده‌شده ۱۸۷px].
- * قبلاً ستونِ بج‌ها ۱۴۰px بود و «مشکوک + کف‌روب + نقطه» ۱۴۲px می‌خواست؛
- * همان بود که کاربر به‌عنوان «برچسب‌ها اسکرول می‌خورند» دید.
+ * يازده ستونِ تابلو (۱۱). عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در فونتِ
+ * 16pxِ همین جدول گذاشته شده‌اند، نه حدس:
+ * [نماد 150] [آخرین 66] [پایانی 66] [تغییر٪ 62] [آخرین٪ 62] [حجم 130] [تعداد 64]
+ * [ارزش 58] [حجم/ماه 58] [خرید/فروش 104 — نوارِ دوسُره + عددِ نسبت] [ساعت 200].
+ * سه ستونِ «سرانۀ خرید / سرانۀ فروش / قدرتِ خریدار» در #146 به یک ستونِ دوسُره
+ * جمع شد؛ دو ستون از عرضِ جدول آزاد شد تا اسکرولِ افقی زودتر نیفتد.
  */
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(60px,0.8fr)_minmax(60px,0.8fr)_minmax(66px,0.9fr)_minmax(200px,1.5fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(104px,1.15fr)_minmax(200px,1.5fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
-const TABLE_MIN_W = 'min-w-[1198px]';
+const TABLE_MIN_W = 'min-w-[1104px]';
 
 const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
   // برچسبِ ستون «فیلتر» نیست و فقط خواندنِ سرستون را می‌سازد؛ پس کوتاه‌ترین
@@ -68,9 +64,13 @@ const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
   { key: 'z_tot_tran', label: 'تعداد', hint: 'تعدادِ معاملات (z_tot_tran) — tno درِ فیلترها' },
   { key: 'q_tot_cap', label: 'ارزش', hint: 'ارزش معاملات — میلیارد ریال (q_tot_cap)' },
   { key: 'vol_ratio', label: 'حجم/ماه', hint: 'نسبت حجمِ امروز به میانگینِ حجمِ ماه' },
-  { key: 'buy_pc', label: 'سرانه خرید', hint: 'سرانه خرید حقیقی — میلیون تومان' },
-  { key: 'sell_pc', label: 'سرانه فروش', hint: 'سرانه فروش حقیقی — میلیون تومان' },
-  { key: 'buyer_power', label: 'قدرت خریدار', hint: 'سرانۀ خرید حقیقی ÷ سرانۀ فروش حقیقی — بدون عددِ جعلی' },
+  {
+    key: 'buyer_power',
+    label: 'خرید / فروش',
+    hint:
+      'سرانۀ خرید حقیقی در برابرِ سرانۀ فروش حقیقی (میلیون تومان) — سبز = خرید، قرمز = فروش؛ ' +
+      'عددِ کنار نسبتِ خرید به فروش است (سرانۀ خرید ÷ سرانۀ فروش)',
+  },
   { key: 'last_vs_close', label: 'ساعت', hint: 'الگوی ساعت — اختلاف آخرین و پایانی' },
 ];
 
@@ -101,10 +101,6 @@ function sortVal(r: MarketRow, key: SortKey): number | string {
       return r.q_tot_cap ?? NEG;
     case 'vol_ratio':
       return r.vol_ratio ?? NEG;
-    case 'buy_pc':
-      return buyPerCapitaMt(r) ?? NEG;
-    case 'sell_pc':
-      return sellPerCapitaMt(r) ?? NEG;
     case 'buyer_power':
       return r.buyer_power ?? NEG;
     case 'last_vs_close':
@@ -133,6 +129,47 @@ const MICRO_TONES = {
 } as const;
 
 type MicroTone = keyof typeof MICRO_TONES;
+
+/** رنگِ عددِ نسبت از همان آستانه‌های ۱.۵/۰.۸ِ نبض بازار — این‌جا داوری نمی‌شود */
+function powerClass(tone: 'good' | 'mid' | 'bad' | null): string {
+  if (tone === 'good') return 'text-accent-green font-bold';
+  if (tone === 'bad') return 'text-accent-red font-bold';
+  if (tone === 'mid') return 'text-accent-yellow';
+  return 'text-text-secondary';
+}
+
+const mt = (v: number | null): string => (v == null ? '—' : `${toFaDigits(v.toFixed(1))} م.ت`);
+
+/**
+ * ستونِ یکیِ خرید/فروش (#146): نوارِ دوسُره سهمِ سرانۀ خرید (سبز، از راست) را از
+ * سرانۀ فروش (قرمز) جدا می‌کند و عددِ نسبتِ خرید به فروش کنارش می‌ماند. دو عددِ
+ * سرانه از بین نمی‌روند — در titleِ خودِ ستون‌اند.
+ * یک طرف غایب ⇒ نوار رسم نمی‌شود: نبودِ داده «فروش صفر» یا «خرید صددرصد» نیست.
+ */
+function BuySellCell({ buyPc, sellPc, power }: { buyPc: number | null; sellPc: number | null; power: number | null | undefined }) {
+  const share = buySellShare(buyPc, sellPc);
+  return (
+    <span
+      data-testid="tape-buy-sell"
+      className="flex min-w-0 items-center gap-1.5"
+      title={`سرانۀ خرید ${mt(buyPc)} · سرانۀ فروش ${mt(sellPc)} — نسبتِ خرید به فروش ${
+        power == null ? '—' : `${toFaDigits(power.toFixed(2))}×`
+      }`}
+    >
+      <span dir="rtl" aria-hidden className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-card/80">
+        {share == null ? null : (
+          <>
+            <span className="bg-accent-green transition-[width] duration-300 ease-out" style={{ width: `${share * 100}%` }} />
+            <span className="bg-accent-red transition-[width] duration-300 ease-out" style={{ width: `${(1 - share) * 100}%` }} />
+          </>
+        )}
+      </span>
+      <span className={`num shrink-0 text-2xs ${powerClass(powerTone(power))}`}>
+        <FlashNum value={power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
+      </span>
+    </span>
+  );
+}
 
 /** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
 function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
@@ -273,15 +310,7 @@ const TapeRow = memo(function TapeRow({
       >
         <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v > FTS_VOL_RATIO_HOT ? '×' : ''))} />
       </span>
-      <span className="num text-end text-text-secondary" title="سرانه خرید حقیقی (میلیون تومان)">
-        <FlashNum value={buyPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
-      </span>
-      <span className="num text-end text-text-secondary" title="سرانه فروش حقیقی (میلیون تومان)">
-        <FlashNum value={sellPc} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)))} />
-      </span>
-      <span className={`num text-end ${row.buyer_power != null && row.buyer_power >= 1.5 ? 'text-accent-green' : 'text-text-secondary'}`}>
-        <FlashNum value={row.buyer_power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
-      </span>
+      <BuySellCell buyPc={buyPc} sellPc={sellPc} power={row.buyer_power} />
       <span className="flex min-w-0 items-center gap-1.5">
         <span className="num shrink-0 text-text-muted font-medium text-xs">
           <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />

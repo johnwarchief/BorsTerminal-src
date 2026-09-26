@@ -3,6 +3,7 @@
 // آیتم‌های کسری در شبکهٔ کارتی متراکم ۲/۳ ستونی نمایش داده می‌شوند:
 // [دارایی | وزن هدف | وزن فعلی | نوار مینیاتوری کسری/مازاد (+ مبلغ ریالی در صورت وجود ارزش کل)]
 import { useMemo, useState } from 'react';
+import { Chevron, CollapseBody } from '@shared/components/Collapse';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useAssetValues } from '../stores/assetValues';
 import { mixSentence, type DeltaRow } from '../stores/targetAllocation';
@@ -127,9 +128,10 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-3 py-1 text-2xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary"
           >
-            جزئیات ری‌بالانس ({toFaDigits(outstanding.length)} مورد) {open ? '▴' : '▾'}
+            جزئیات ری‌بالانس ({toFaDigits(outstanding.length)} مورد)
+            <Chevron open={open} />
           </button>
         </div>
       </div>
@@ -173,7 +175,7 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
       </p>
 
       {/* دراور: شبکهٔ کارتی متراکم ۲/۳ ستونی */}
-      {open ? (
+      <CollapseBody open={open}>
         <div className="mt-3 border-t border-[var(--hairline)] pt-3">
           {outstanding.length > 0 ? (
             <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -185,7 +187,7 @@ export function DeltaBar({ rows }: { rows: DeltaRow[] }) {
             <p className="text-2xs text-text-muted">همهٔ طبقات در هدف‌اند؛ دستور ری‌بالانسی لازم نیست.</p>
           )}
         </div>
-      ) : null}
+      </CollapseBody>
     </div>
   );
 }

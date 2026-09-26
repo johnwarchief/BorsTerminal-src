@@ -14,7 +14,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
     <section
       data-testid="fts-dock"
       data-open={open ? 'true' : 'false'}
-      className={`flex shrink-0 flex-col overflow-hidden border-t border-[var(--hairline)] bg-[var(--bg-secondary)] ${
+      className={`flex shrink-0 flex-col overflow-hidden border-t border-[var(--hairline)] bg-[var(--bg-secondary)] transition-[height] duration-300 ease-out ${
         open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >
@@ -24,10 +24,11 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
           data-testid="fts-dock-toggle"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="px-1.5 text-[11px] font-bold text-text-muted hover:text-accent-blue"
           title={open ? 'جمع کردن پنل‌ها' : 'باز کردن پنل‌ها'}
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-2 py-0.5 text-[11px] font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-accent-blue"
         >
-          {open ? '⌄' : '⌃'}
+          <span className={`transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}>⌃</span>
+          {open ? null : <span className="text-3xs font-black text-accent-blue">باز کردنِ پنل</span>}
         </button>
         {tabs.map((t) => (
           <button
@@ -47,7 +48,6 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
             {t.label}
           </button>
         ))}
-        <span className="ms-auto pe-1 text-[10px] text-text-muted">{open ? '' : 'پنل‌های تحلیل'}</span>
       </div>
       {open ? (
         <div role="tabpanel" data-testid="fts-dock-body" className="min-h-0 flex-1 overflow-y-auto p-2">

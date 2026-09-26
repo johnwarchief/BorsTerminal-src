@@ -3,6 +3,7 @@
 // وزنِ واقعی از buildDelta می‌آید (همان منبعِ نوارِ شکاف)؛ نبود داده ⇒ «بدون داده» (Circuit Breaker).
 import { useMemo, useState } from 'react';
 import { Badge } from '@shared/components/Badge';
+import { Chevron, CollapseBody } from '@shared/components/Collapse';
 import { toFaDigits } from '@shared/lib/fmt';
 import { usePortfolio } from '../api/usePortfolio';
 import { useAssetValues } from '../stores/assetValues';
@@ -334,12 +335,13 @@ export function TwinDonuts({
             type="button"
             onClick={() => setShowOrders((v) => !v)}
             aria-expanded={showOrders}
-            className="mt-1 self-start rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1 text-2xs font-bold text-neon-cyan hover:bg-neon-cyan/20"
+            className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-3 py-1 text-2xs font-bold text-neon-cyan transition-colors duration-200 hover:bg-neon-cyan/20"
           >
-            محاسبه دستورات ری‌بالانس {showOrders ? '▴' : '▾'}
+            محاسبه دستورات ری‌بالانس
+            <Chevron open={showOrders} className="border-neon-cyan/40 bg-transparent" />
           </button>
-          {showOrders ? (
-            orders.length > 0 ? (
+          <CollapseBody open={showOrders}>
+            {orders.length > 0 ? (
               <ul className="flex flex-col gap-1 rounded-xl border border-[var(--hairline)] bg-bg-card/50 p-2">
                 {orders.map((o) => (
                   <li key={o.bucket.id} className="flex flex-wrap items-center gap-2 text-2xs">
@@ -360,8 +362,8 @@ export function TwinDonuts({
               </ul>
             ) : (
               <p className="text-2xs text-text-muted">دستور ری‌بالانسی لازم نیست یا داده کافی برای محاسبه نیست.</p>
-            )
-          ) : null}
+            )}
+          </CollapseBody>
         </div>
 
         {/* دونات راست — سبد استاندارد FTS */}
@@ -379,7 +381,10 @@ export function TwinDonuts({
 
       {/* ثبت ارزش دارایی‌ها (اختیاری) — لازمهٔ وزن واقعی طبقات غیرسهامی */}
       <details className="mt-3 rounded-xl border border-dashed border-border-c bg-bg-secondary/30 p-2">
-        <summary className="cursor-pointer text-2xs font-bold text-text-secondary">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-2.5 py-1 text-2xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-text-primary [&::-webkit-details-marker]:hidden">
+          <span aria-hidden className="disclosure-chevron inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-border-c text-3xs">
+            ⌄
+          </span>
           ثبت ارزش دارایی‌ها (تومان) — برای محاسبهٔ وزن واقعی و مبلغ ریالی ری‌بالانس
         </summary>
         <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">

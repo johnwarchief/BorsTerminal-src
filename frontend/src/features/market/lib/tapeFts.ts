@@ -73,8 +73,19 @@ export function sellPerCapitaMt(r: PerCapitaRow): number | null {
   return ((vol / count) * price) / M_TUMAN_FROM_RIAL;
 }
 
-/** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */
-export function isNumericSuffixSymbol(symbol: string | null | undefined): boolean {
+/**
+ * سهمِ بصریِ خرید از مجموعِ دو سرانه (۰ تا ۱) — فقط عرضِ نوارِ دوسُرهٔ تابلو را
+ * می‌سازد و هیچ داوریِ تازه‌ای نیست: همان دو عددی که پیش‌تر دو ستون بودند.
+ * یک طرف غایب ⇒ null؛ نبودِ داده نوارِ صددرصد نمی‌شود.
+ */
+export function buySellShare(buy: number | null, sell: number | null): number | null {
+  if (buy == null || sell == null) return null;
+  const total = buy + sell;
+  if (!(total > 0)) return null;
+  return Math.min(1, Math.max(0, buy / total));
+}
+
+/** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */export function isNumericSuffixSymbol(symbol: string | null | undefined): boolean {
   return /[0-9۰-۹]$/.test((symbol ?? '').trim());
 }
 

@@ -169,6 +169,36 @@ body::before {
 }
 }
 
+/* بازشوِ نوارها: محتوا از ارتفاعِ صفر تا ارتفاعِ طبیعی می‌آید. تریکِ
+   grid-template-rows: 0fr→1fr تنها راهِ انیمیشنِ ارتفاع بدونِ عددِ ثابتِ px است. */
+@keyframes collapse-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+@layer components {
+.collapse-in {
+  display: grid;
+  animation: collapse-in 0.24s ease-out;
+}
+.collapse-in > * {
+  min-height: 0;
+  overflow: hidden;
+}
+/* چیپِ چرخانِ خلاصهٔ <details> (همان نشانهٔ Chevron، بی‌استیتِ React) */
+.disclosure-chevron {
+  transition: transform 0.2s ease-out;
+}
+details[open] > summary .disclosure-chevron {
+  transform: rotate(180deg);
+}
+}
+
 @keyframes conflict-pulse {
   0%,
   100% {
@@ -292,6 +322,7 @@ body::before {
   /* انیمیشن های نامدار پوسته: کاملا خاموش */
   .panel-in,
   .scale-in,
+  .collapse-in,
   .conflict-pulse,
   .flash-up,
   .flash-down,

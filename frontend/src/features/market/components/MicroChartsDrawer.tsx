@@ -2,6 +2,7 @@
 // بالای جدول: اوردر‌بوک فلو (bq_bt آبی در برابر sq_bt نارنجی) و پهنای باند احساسات
 // (pos در برابر neg). سری کمتر از ۲ نقطه = «بدون داده»؛ عدد ساختگی رندر نمی‌شود.
 import { useMemo, useState } from 'react';
+import { CollapseBody, CollapseToggle } from '@shared/components/Collapse';
 import { useMarketTimeline } from '../api/useTimeline';
 import { useIntradayCache } from '../api/useIntradayCache';
 import {
@@ -118,16 +119,14 @@ export function MicroChartsDrawer() {
 
   return (
     <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between text-xs font-black text-text-primary hover:text-accent-blue"
-      >
-        <span>نمودارهای جریان سفارش‌ها و جو بازار</span>
-        <span className={`transition-transform ${open ? '-rotate-90' : ''}`}>‹</span>
-      </button>
-      {open ? (
+      <CollapseToggle
+        open={open}
+        onToggle={() => setOpen((v) => !v)}
+        testId="micro-charts-toggle"
+        label="نمودارهای جریان سفارش‌ها و جو بازار"
+        openLabel="باز کردنِ نمودارها"
+      />
+      <CollapseBody open={open}>
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <ChartCard
               testId="micro-orderbook"
@@ -184,9 +183,9 @@ export function MicroChartsDrawer() {
                 )
               }
             />
-          </div>
-      ) : null}
-      {open && data.note ? <p className="text-2xs text-text-muted">{data.note}</p> : null}
+        </div>
+        {data.note ? <p className="mt-1 text-2xs text-text-muted">{data.note}</p> : null}
+      </CollapseBody>
     </div>
   );
 }

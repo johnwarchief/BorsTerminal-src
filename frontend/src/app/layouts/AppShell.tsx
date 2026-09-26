@@ -11,6 +11,13 @@ import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
 import { LoginScreen } from '../../widgets/LoginScreen';
 
+/**
+ * نوارِ «مشاور تحلیلی FTS» که بعد از انتخابِ نماد در بالای صفحه می‌چسبد، فعلاً
+ * نمایش داده نمی‌شود (درخواستِ مالک). خودِ ویجت، مودال و تست‌هایش دست‌نخورده‌اند —
+ * برای برگرداندن همین پرچم را true کن. (#148)
+ */
+const SHOW_FTS_PIPELINE_BAR = false;
+
 export function AppShell() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const symbol = useSymbolStore((s) => s.symbol);
@@ -56,7 +63,7 @@ export function AppShell() {
         data-inspector={inspectorOpen ? 'open' : 'closed'}
       >
         <Topbar />
-        <FtsPipelineBar />
+        {SHOW_FTS_PIPELINE_BAR ? <FtsPipelineBar /> : null}
         <main className="app-main flex-1 py-2">
           <div className="panel-in flex w-full flex-col gap-4">
             <Outlet />

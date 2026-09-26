@@ -7,6 +7,7 @@ import type { MarketRow } from '@shared/types/marketRow';
 import { TapeTable } from '@features/market/components/TapeTable';
 import {
   buyPerCapitaMt,
+  buySellShare,
   dropNumericSuffixRows,
   isInsuranceSector,
   isNumericSuffixSymbol,
@@ -94,23 +95,52 @@ describe('سنجه‌های FTS تابلو (lib/tapeFts)', () => {
     expect(isInsuranceSector('بیمه و صندوق بازنشستگی')).toBe(true);
     expect(isInsuranceSector('خودرو و ساخت قطعات')).toBe(false);
   });
+
+  it('سهمِ خرید از دو سرانه — غایب یا مجموعِ صفر ⇒ null، نه «فروش صفر»ِ جعلی', () => {
+    expect(buySellShare(5, 2)).toBeCloseTo(5 / 7, 10);
+    expect(buySellShare(10, 0)).toBe(1);
+    expect(buySellShare(0, 10)).toBe(0);
+    expect(buySellShare(0, 0)).toBeNull();
+    expect(buySellShare(null, 2)).toBeNull();
+    expect(buySellShare(3, null)).toBeNull();
+  });
 });
 
 describe('جدول تابلو بهینه‌شده', () => {
-  it('ستون‌های سرانه خرید/فروش را با واحد م.ت نشان می‌دهد و ستون وضعیت FTS حذف شده است', () => {
+  it('یک ستونِ خرید/فروش: نوارِ دوسُره به نسبتِ سرانه‌ها + عددِ قدرت، و تیترهای جدا حذف شدند', () => {
     // buy_i_vol/sell_i_vol سهم‌اند؛ vwap = q_tot_cap÷q_tot_tran = 10000 ریال
+    // ⇒ سرانۀ خرید ۵ م.ت در برابر سرانۀ فروش ۲ م.ت ⇒ سهمِ خرید ۵/۷
     const r = row({
       buy_i_vol: 500_000, buy_count_i: 100,
       sell_i_vol: 200_000, sell_count_i: 100,
       q_tot_cap: 1_000_000_000, q_tot_tran: 100_000,
     });
     render(<TapeTable rows={[r]} selected="" onSelect={() => {}} />);
-    expect(screen.getByText('سرانه خرید')).toBeInTheDocument();
-    expect(screen.getByText('سرانه فروش')).toBeInTheDocument();
-    expect(screen.getByTitle('سرانه فروش حقیقی — میلیون تومان')).toBeInTheDocument();
+    expect(screen.getByText('خرید / فروش')).toBeInTheDocument();
+    expect(screen.queryByText('سرانه خرید')).not.toBeInTheDocument();
+    expect(screen.queryByText('سرانه فروش')).not.toBeInTheDocument();
+    expect(screen.queryByText('قدرت')).not.toBeInTheDocument();
     expect(screen.queryByText('وضعیت FTS')).not.toBeInTheDocument();
-    expect(screen.getByText('۵.۰')).toBeInTheDocument();
-    expect(screen.getByText('۲.۰')).toBeInTheDocument();
+
+    const cell = screen.getByTestId('tape-buy-sell');
+    const buyBar = cell.querySelector('.bg-accent-green') as HTMLElement | null;
+    const sellBar = cell.querySelector('.bg-accent-red') as HTMLElement | null;
+    expect(buyBar).not.toBeNull();
+    expect(sellBar).not.toBeNull();
+    expect(parseFloat(buyBar!.style.width)).toBeCloseTo(71.43, 1);
+    expect(parseFloat(sellBar!.style.width)).toBeCloseTo(28.57, 1);
+    // دو سرانه گم نمی‌شوند: همان اعداد با واحد در titleِ ستون می‌مانند
+    expect(cell.getAttribute('title')).toContain('م.ت');
+    // عددِ قدرت از فیلدِ بک‌اند رندر می‌شود (داوریِ مجدد در JSX نیست)
+    expect(cell.textContent).toContain('۱.۲۳');
+  });
+
+  it('سرانهٔ غایب ⇒ نوار رسم نمی‌شود؛ «۰٪ فروش» دروغ نیست', () => {
+    const r = row({ buy_count_i: null, sell_count_i: null, buyer_power: null });
+    render(<TapeTable rows={[r]} selected="" onSelect={() => {}} />);
+    const cell = screen.getByTestId('tape-buy-sell');
+    expect(cell.querySelector('.bg-accent-green')).toBeNull();
+    expect(cell.textContent).not.toContain('۱.۰۰');
   });
 
   it('ساعت طلایی (پایانی منفی و آخرین مثبت) از ساعت معمولی تفکیک می‌شود', () => {
