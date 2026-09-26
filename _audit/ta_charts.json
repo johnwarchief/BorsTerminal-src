@@ -1,0 +1,756 @@
+{
+ "url": "https://tradersarena.ir/",
+ "title": "Traders Arena",
+ "libs": {
+  "Highcharts": "undefined",
+  "echarts": "undefined",
+  "Chart": "undefined",
+  "plotly": "undefined",
+  "amcharts": "undefined",
+  "googlecharts": "undefined",
+  "d3": "undefined",
+  "apexcharts": "function",
+  "tradingview": "undefined"
+ },
+ "canvasOwners": [
+  {
+   "w": 76,
+   "h": 172,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 76,
+   "h": 172,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 172,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 172,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 76,
+   "h": 28,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 28,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 28,
+   "visible": true,
+   "containerId": "market-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 172,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 172,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 172,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 172,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 28,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 28,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 28,
+   "visible": true,
+   "containerId": "stocks-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 76,
+   "h": 172,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 76,
+   "h": 172,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 172,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 172,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 76,
+   "h": 28,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 28,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 406,
+   "h": 28,
+   "visible": true,
+   "containerId": "fixed-incomes-transfer",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 172,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 172,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 172,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 172,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 28,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 28,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 28,
+   "visible": true,
+   "containerId": "changes",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 80,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 80,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 402,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 402,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 80,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 402,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 402,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-orders",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 172,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 66,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 416,
+   "h": 28,
+   "visible": true,
+   "containerId": "total-ratio",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 172,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 172,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 172,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 172,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 70,
+   "h": 28,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 28,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 412,
+   "h": 28,
+   "visible": true,
+   "containerId": "queues",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 56,
+   "h": 772,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 56,
+   "h": 772,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 1224,
+   "h": 772,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 1224,
+   "h": 772,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 56,
+   "h": 28,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 1224,
+   "h": 28,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  },
+  {
+   "w": 1224,
+   "h": 28,
+   "visible": false,
+   "containerId": "tempChart",
+   "heading": "",
+   "legendWords": []
+  }
+ ],
+ "svgCharts": [
+  {
+   "cls": "apexcharts-svg",
+   "texts": [
+    "پایینتر از منفی 5پایینتر از منفی 5",
+    "منفی 4 تا منفی 5منفی 4 تا منفی 5",
+    "منفی 3 تا منفی 4منفی 3 تا منفی 4",
+    "منفی 2 تا منفی 3منفی 2 تا منفی 3",
+    "منفی 1 تا منفی 2منفی 1 تا منفی 2",
+    "صفر تا منفی 1صفر تا منفی 1",
+    "صفر تا مثبت 1صفر تا مثبت 1",
+    "مثبت 1 تا مثبت 2مثبت 1 تا مثبت 2",
+    "مثبت 2 تا مثبت 3مثبت 2 تا مثبت 3",
+    "مثبت 3 تا مثبت 4مثبت 3 تا مثبت 4",
+    "مثبت 4 تا مثبت 5مثبت 4 تا مثبت 5",
+    "بالاتر از مثبت 5بالاتر از مثبت 5",
+    "0",
+    "0",
+    "13",
+    "354",
+    "94",
+    "68",
+    "64",
+    "51",
+    "169",
+    "0",
+    "0",
+    "0",
+    "360360",
+    "270270",
+    "180180",
+    "9090",
+    "00"
+   ]
+  },
+  {
+   "cls": "apexcharts-svg",
+   "texts": [
+    "فروش ۵ خط اولفروش ۵ خط اول",
+    "خرید ۵ خط اولخرید ۵ خط اول",
+    "صف فروشصف فروش",
+    "صف خریدصف خرید",
+    "6,549.2 B",
+    "8,508 B",
+    "6,056.6 B",
+    "7,813.3 B",
+    "ارزش سفارش های خرید و فروش سهام، حق تقدم و ص.سهامی"
+   ]
+  },
+  {
+   "cls": "apexcharts-svg",
+   "texts": [
+    "صف فروشصف فروش",
+    "صف فروش کمتر از حجم مبناصف فروش کمتر از حجم مبنا",
+    "صف فروش بدون معاملهصف فروش بدون معامله",
+    "صف خریدصف خرید",
+    "صف خرید کمتر از حجم مبناصف خرید کمتر از حجم مبنا",
+    "صف خرید بدون معاملهصف خرید بدون معامله",
+    "204",
+    "1",
+    "1",
+    "135",
+    "3",
+    "4",
+    "تعداد صفهای خرید و فروش"
+   ]
+  },
+  {
+   "cls": "apexcharts-svg",
+   "texts": [
+    "صف خرید به صف فروشصف خرید به صف فروش",
+    "مثبت به صف فروشمثبت به صف فروش",
+    "صف خرید به منفیصف خرید به منفی",
+    "صف فروش به مثبتصف فروش به مثبت",
+    "منفی به صف خریدمنفی به صف خرید",
+    "صف فروش به صف خریدصف فروش به صف خرید",
+    "14",
+    "128",
+    "58",
+    "31",
+    "28",
+    "11",
+    "نمادهای با نوسان بالا"
+   ]
+  },
+  {
+   "cls": "apexcharts-svg",
+   "texts": [
+    "پایین منفی 5پایین منفی 5",
+    "-3 ~ -5-3 ~ -5",
+    "-1 ~ -3-1 ~ -3",
+    "-1 ~ +1-1 ~ +1",
+    "+1 ~ +3+1 ~ +3",
+    "+3 ~ +5+3 ~ +5",
+    "بالای مثبت 5بالای مثبت 5",
+    "0",
+    "13",
+    "448",
+    "132",
+    "220",
+    "0",
+    "0",
+    "خلاصه محدوده قیمتی آخرین معاملات",
+    "500500",
+    "400400",
+    "300300",
+    "200200",
+    "100100",
+    "00"
+   ]
+  }
+ ],
+ "controls": {
+  "selects": [
+   {
+    "name": "",
+    "options": [
+     "نمایش صفحه آمارهای کلیدی روز های قبل",
+     "صفحه اصلی سایت",
+     "1405/07/01",
+     "1405/06/31",
+     "1405/06/30",
+     "1405/06/29",
+     "1405/06/28",
+     "1405/06/25",
+     "1405/06/24",
+     "1405/06/23",
+     "1405/06/22",
+     "1405/06/21",
+     "1405/06/18",
+     "1405/06/17",
+     "1405/06/16",
+     "1405/06/15",
+     "1405/06/14",
+     "1405/06/11",
+     "1405/06/10",
+     "1405/06/09"
+    ]
+   },
+   {
+    "name": "industryTemplateSelector",
+    "options": [
+     "قالب پیش فرض"
+    ]
+   },
+   {
+    "name": "groupFilterSelector",
+    "options": [
+     "بدون فیلتر شخصی"
+    ]
+   },
+   {
+    "name": "chartHeight",
+    "options": [
+     "انتخاب کنید",
+     "کوتاه",
+     "نرمال",
+     "کمی بلند",
+     "بلند",
+     "خیلی بلند"
+    ]
+   }
+  ],
+  "ranges": [],
+  "buttons": [
+   {
+    "text": "صفحه های کاربردی",
+    "cls": "dropbtn"
+   },
+   {
+    "text": "دیده بان",
+    "cls": "dropbtn"
+   },
+   {
+    "text": "سابقه معاملات",
+    "cls": "dropbtn"
+   },
+   {
+    "text": "جریان نقدینگی",
+    "cls": "dropbtn"
+   },
+   {
+    "text": "آپشن",
+    "cls": "dropbtn"
+   },
+   {
+    "text": "ورود/عضویت",
+    "cls": "login nav-icon-link profile-link inline-"
+   },
+   {
+    "text": "×",
+    "cls": "inline-login-close"
+   },
+   {
+    "text": "ورود",
+    "cls": "inline-login-submit"
+   },
+   {
+    "text": "×",
+    "cls": "group-builder-close"
+   },
+   {
+    "text": "ذخیره تنظیمات",
+    "cls": "btn group-builder-button"
+   },
+   {
+    "text": "ساخت قالب جدید",
+    "cls": "btn group-builder-button"
+   },
+   {
+    "text": "برگشت به تنظیمات پیش‌فرض",
+    "cls": "btn group-builder-button group-builder-b"
+   },
+   {
+    "text": "انتخاب موارد و پشتیبان‌گیری",
+    "cls": "group-text-button"
+   },
+   {
+    "text": "انتخاب روش و بازیابی",
+    "cls": "group-text-button"
+   },
+   {
+    "text": "حذف پشتیبان سرور",
+    "cls": "group-text-button group-text-button--dan"
+   },
+   {
+    "text": "×",
+    "cls": "group-builder-close"
+   },
+   {
+    "text": "شرط مقدار ستون",
+    "cls": "group-tool-button group-tool-button--sec"
+   },
+   {
+    "text": "مقایسه دو ستون",
+    "cls": "group-tool-button group-tool-button--sec"
+   },
+   {
+    "text": "شرط ترکیبی",
+    "cls": "group-tool-button group-tool-button--sec"
+   },
+   {
+    "text": "ذخیره فیلتر",
+    "cls": "group-tool-button"
+   },
+   {
+    "text": "حذف فیلتر",
+    "cls": "group-tool-button group-tool-button--dan"
+   },
+   {
+    "text": "انتخاب موارد و پشتیبان‌گیری",
+    "cls": "group-text-button"
+   },
+   {
+    "text": "انتخاب روش و بازیابی",
+    "cls": "group-text-button"
+   },
+   {
+    "text": "حذف پشتیبان سرور",
+    "cls": "group-text-button group-text-button--dan"
+   },
+   {
+    "text": "×",
+    "cls": "group-builder-close"
+   },
+   {
+    "text": "شخصی‌سازی جدول",
+    "cls": "group-tool-button"
+   },
+   {
+    "text": "ساخت فیلتر",
+    "cls": "group-tool-button"
+   },
+   {
+    "text": "خروجی فایل",
+    "cls": "watch-export-trigger"
+   },
+   {
+    "text": "خروجی اکسل",
+    "cls": ""
+   },
+   {
+    "text": "خروجی CSV",
+    "cls": ""
+   },
+   {
+    "text": "زوم فعال است",
+    "cls": "standby selected"
+   }
+  ]
+ }
+}

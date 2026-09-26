@@ -1,0 +1,1447 @@
+{
+ "fetchedAt": "2026-09-26T06:07:57.138Z",
+ "pages": [
+  {
+   "url": "https://tradersarena.ir/",
+   "title": "Traders Arena",
+   "tables": [
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "حجم معاملات(میلیارد سهم)",
+      "ارزش معاملات(میلیارد تومان)",
+      "سرانه خرید(میلیون تومان)",
+      "سرانه فروش(میلیون تومان)",
+      "قدرت خرید",
+      "ورود پول(میلیارد تومان)"
+     ],
+     "rows": 9,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "تعداد خریداران",
+      "ارزش خرید",
+      "درصد خرید",
+      "درصد فروش",
+      "ارزش فروش",
+      "تعداد فروشندگان"
+     ],
+     "rows": 2,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "حجم",
+      "ارزش",
+      "آخرین",
+      "%آخرین",
+      "پایانی",
+      "%پایانی",
+      "سرانه خرید",
+      "سرانه فروش",
+      "قدرت خرید",
+      "ورود پول",
+      "حجم تقاضا",
+      "قیمت تقاضا",
+      "قیمت عرضه",
+      "حجم عرضه"
+     ],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "حجم",
+      "ارزش",
+      "آخرین",
+      "%آخرین",
+      "پایانی",
+      "%پایانی",
+      "سرانه خرید",
+      "سرانه فروش",
+      "قدرت خرید",
+      "ورود پول",
+      "حجم تقاضا",
+      "قیمت تقاضا",
+      "قیمت عرضه",
+      "حجم عرضه"
+     ],
+     "rows": 20,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "عملیات",
+      "بلاک",
+      "عبارت فیلتر"
+     ],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "نام گروه(تعداد نمادها)",
+      "حجم(میلیون سهم)",
+      "ارزش(میلیارد تومان)",
+      "ارزش خرید حقیقی(میلیارد تومان)",
+      "ارزش فروش حقیقی(میلیارد تومان)",
+      "ارزش سفارش های خرید(میلیارد تومان)",
+      "ارزش سفارش های فروش(میلیارد تومان)",
+      "برآیند سفارش ها(میلیارد تومان)",
+      "بازدهی گروه (هموزن)",
+      "سرانه خرید (میلیون تومان)",
+      "سرانه فروش (میلیون تومان)",
+      "قدرت خرید",
+      "درصد خرید حقیقی",
+      "درصد فروش حقیقی",
+      "ورود پول(میلیارد تومان)",
+      "درصد ارزش از معاملات خرد سهام",
+      "شاخص سهم از معاملات",
+      "ارزش به میانگین ۵ روزه",
+      "ارزش به میانگین ۲۰ روزه",
+      "ارزش معاملات ۵ روزه(میلیارد تومان)",
+      "ارزش معاملات ۲۰ روزه(میلیارد تومان)",
+      "سرانه خرید ۵ روزه(میلیون تومان)",
+      "سرانه خرید ۲۰ روزه(میلیون تومان)",
+      "سرانه فروش ۵ روزه(میلیون تومان)",
+      "سرانه فروش ۲۰ روزه(میلیون تومان)",
+      "قدرت خرید ۵ روزه",
+      "قدرت خرید ۲۰ روزه",
+      "ورود پول ۵ روزه(میلیارد تومان)",
+      "ورود پول ۲۰ روزه(میلیارد تومان)"
+     ],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "نام گروه(تعداد نمادها)",
+      "حجم(میلیون سهم)",
+      "ارزش(میلیارد تومان)",
+      "ارزش خرید حقیقی(میلیارد تومان)",
+      "ارزش فروش حقیقی(میلیارد تومان)",
+      "ارزش سفارش های خرید(میلیارد تومان)",
+      "ارزش سفارش های فروش(میلیارد تومان)",
+      "برآیند سفارش ها(میلیارد تومان)",
+      "بازدهی گروه (هموزن)",
+      "سرانه خرید (میلیون تومان)",
+      "سرانه فروش (میلیون تومان)",
+      "قدرت خرید",
+      "درصد خرید حقیقی",
+      "درصد فروش حقیقی",
+      "ورود پول(میلیارد تومان)",
+      "درصد ارزش از معاملات خرد سهام",
+      "شاخص سهم از معاملات",
+      "ارزش به میانگین ۵ روزه",
+      "ارزش به میانگین ۲۰ روزه",
+      "ارزش معاملات ۵ روزه(میلیارد تومان)",
+      "ارزش معاملات ۲۰ روزه(میلیارد تومان)",
+      "سرانه خرید ۵ روزه(میلیون تومان)",
+      "سرانه خرید ۲۰ روزه(میلیون تومان)",
+      "سرانه فروش ۵ روزه(میلیون تومان)",
+      "سرانه فروش ۲۰ روزه(میلیون تومان)",
+      "قدرت خرید ۵ روزه",
+      "قدرت خرید ۲۰ روزه",
+      "ورود پول ۵ روزه(میلیارد تومان)",
+      "ورود پول ۲۰ روزه(میلیارد تومان)"
+     ],
+     "rows": 61,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "نماد",
+      "حجم معاملات",
+      "ارزش معاملات",
+      "اولین",
+      "بیشترین",
+      "کمترین",
+      "آخرین",
+      "درصد",
+      "پایانی",
+      "درصد",
+      "سرانه خرید",
+      "سرانه فروش",
+      "قدرت خرید",
+      "ورود پول حقیقی",
+      "ارزش سفارش‌های خرید",
+      "ارزش سفارش‌های فروش"
+     ],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "عنوان",
+      "اشتراک رایگان",
+      "اشتراک نقره‌ای",
+      "اشتراک طلایی"
+     ],
+     "rows": 20,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [],
+     "rows": 10,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "تعداد خریداران",
+      "ارزش خرید",
+      "درصد خرید",
+      "درصد فروش",
+      "ارزش فروش",
+      "تعداد فروشندگان"
+     ],
+     "rows": 2,
+     "nearestTitle": ""
+    }
+   ],
+   "headings": [
+    "ورود به حساب کاربری",
+    "امکان معامله از داخل تریدرزآرنا",
+    "امکانات این طرح",
+    "طراحی قالب ستون‌ها",
+    "ساخت و ذخیره فیلتر",
+    "انتخاب ستون",
+    "خلاصه معاملات صنایع بورس(جهت مشاهده دیده بان هر گروه روی نام آن گروه کلیک کنید.)",
+    "دسترسی به این محتوا نیازمند تهیه اشتراک میباشد. ×",
+    "امکانات کاربران ویژه"
+   ],
+   "canvases": 56,
+   "svgs": 9,
+   "chartDivs": [
+    "apexcharts-css",
+    "apexchartschart",
+    "SvgjsSvg1430",
+    "SvgjsG1432",
+    "SvgjsRect1441",
+    "SvgjsG1520",
+    "SvgjsG1521",
+    "SvgjsText1523",
+    "SvgjsText1526",
+    "SvgjsText1529",
+    "SvgjsText1532",
+    "SvgjsText1535",
+    "SvgjsText1538",
+    "SvgjsText1541",
+    "SvgjsText1544",
+    "SvgjsText1547",
+    "SvgjsText1550",
+    "SvgjsText1553",
+    "SvgjsText1556",
+    "SvgjsG1575",
+    "SvgjsG1576",
+    "SvgjsLine1578",
+    "SvgjsLine1579",
+    "SvgjsLine1580",
+    "SvgjsLine1581",
+    "SvgjsLine1582",
+    "SvgjsG1577",
+    "SvgjsG1444",
+    "SvgjsG1445",
+    "SvgjsPath1449"
+   ],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرز آرنا"
+    },
+    {
+     "href": "/options-arena",
+     "text": "آپشن آرنا"
+    },
+    {
+     "href": "/money-flow",
+     "text": "نمودارهای جریانات نقدینگی لحظه ای بازار"
+    },
+    {
+     "href": "/heatmap/market",
+     "text": "نقشه بازار"
+    },
+    {
+     "href": "/compare",
+     "text": "نمودار مقایسه چندین نماد"
+    },
+    {
+     "href": "/extras/incognito-charts",
+     "text": "چارت ناشناخته (تست معامله گری)"
+    },
+    {
+     "href": "/extras/tal",
+     "text": "معاملات پایانی (TAL)"
+    },
+    {
+     "href": "/extras/tops",
+     "text": "لیست شرکت ها بر اساس فاصله تا سقف قیمت"
+    },
+    {
+     "href": "/extras/market-values",
+     "text": "لیست شرکت ها بر اساس ارزش بازار"
+    },
+    {
+     "href": "/000/chart/price",
+     "text": "نمودار شاخص کل"
+    },
+    {
+     "href": "/999/chart/price",
+     "text": "نمودار شاخص هم وزن"
+    },
+    {
+     "href": "/gold-funds/chart/price",
+     "text": "شاخص صندوق های طلا(هم وزن)"
+    },
+    {
+     "href": "/silver-funds/chart/price",
+     "text": "شاخص صندوق های نقره(هم وزن)"
+    },
+    {
+     "href": "/leveraged-funds/chart/price",
+     "text": "شاخص صندوق های اهرمی(هم وزن)"
+    },
+    {
+     "href": "/market/histo-status",
+     "text": "بازدهی های دوره ای بازار"
+    },
+    {
+     "href": "/extras/long-term-money-flow-filters",
+     "text": "فیلترهای جریان نقدینگی بلندمدت"
+    },
+    {
+     "href": "/market-watch-pro",
+     "text": "دیده بان بازار پیشرفته"
+    },
+    {
+     "href": "/market-watch",
+     "text": "دیده بان بازار نسخه سبک"
+    },
+    {
+     "href": "/pivot-watch",
+     "text": "دیده بان حمایت ها و مقاومت ها"
+    },
+    {
+     "href": "/signal-watch",
+     "text": "دیده بان جریانات نقدینگی بلندمدت"
+    },
+    {
+     "href": "/extras/techno-watch",
+     "text": "دیده بان تکنیکال"
+    },
+    {
+     "href": "/extras/orders-watch",
+     "text": "دیده بان سفارش ها"
+    },
+    {
+     "href": "/market/history?type=0",
+     "text": "سوابق بازار(سهام،حق تقدم،صندوقهای سهامی،"
+    },
+    {
+     "href": "/market/history?type=1",
+     "text": "سوابق بازار(سهام،حق تقدم،صندوقهای سهامی "
+    },
+    {
+     "href": "/market/history?type=2",
+     "text": "سوابق بازار(سهام و حق تقدم)"
+    },
+    {
+     "href": "/chart/daily/market?type=0",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=0",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/chart/daily/market?type=1",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=1",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/chart/daily/market?type=2",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=2",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/options-arena",
+     "text": "آپشن آرنا"
+    },
+    {
+     "href": "/options-arena/history",
+     "text": "سوابق بازار اختیار معامله"
+    },
+    {
+     "href": "/options-arena/watch",
+     "text": "دیده بان اختیار معامله"
+    },
+    {
+     "href": "/options-arena/strategy",
+     "text": "استراتژی ساز اختیار معامله"
+    },
+    {
+     "href": "/heatmap/market",
+     "text": "نقشه بازار"
+    },
+    {
+     "href": "/shop/",
+     "text": "خرید اشتراک"
+    },
+    {
+     "href": "/help",
+     "text": "راهنمای سایت"
+    },
+    {
+     "href": "/recover",
+     "text": "فراموشی رمز عبور"
+    },
+    {
+     "href": "/signup",
+     "text": "ثبت‌نام"
+    },
+    {
+     "href": "/industries/stock-funds",
+     "text": "صندوق سهامی و مختلط"
+    },
+    {
+     "href": "/industries/fixed-income-funds",
+     "text": "صندوق درآمد ثابت"
+    },
+    {
+     "href": "/industries/leveraged-funds",
+     "text": "صندوق اهرمی"
+    },
+    {
+     "href": "/industries/gold-funds",
+     "text": "صندوق طلا"
+    },
+    {
+     "href": "/industries/silver-funds",
+     "text": "صندوق نقره"
+    },
+    {
+     "href": "/17914401175772326",
+     "text": "اهرم"
+    },
+    {
+     "href": "/44604318643489231",
+     "text": "بیدار"
+    },
+    {
+     "href": "/44891482026867833",
+     "text": "خساپا"
+    },
+    {
+     "href": "/65883838195688438",
+     "text": "خودرو"
+    },
+    {
+     "href": "/35366681030756042",
+     "text": "شبندر"
+    },
+    {
+     "href": "/20562694899904339",
+     "text": "شپدیس"
+    },
+    {
+     "href": "/7745894403636165",
+     "text": "شپنا"
+    },
+    {
+     "href": "/2400322364771558",
+     "text": "شستا"
+    },
+    {
+     "href": "/25244329144808274",
+     "text": "فارس"
+    },
+    {
+     "href": "/35425587644337450",
+     "text": "فملی"
+    },
+    {
+     "href": "/46348559193224090",
+     "text": "فولاد"
+    },
+    {
+     "href": "/18027801615184692",
+     "text": "کچاد"
+    },
+    {
+     "href": "/35700344742885862",
+     "text": "کگل"
+    },
+    {
+     "href": "/67141987086032267",
+     "text": "موج"
+    },
+    {
+     "href": "/35831329532779850",
+     "text": "نارنج اهرم"
+    },
+    {
+     "href": "/19040514831923530",
+     "text": "نوری"
+    },
+    {
+     "href": "/28320293733348826",
+     "text": "وبصادر"
+    },
+    {
+     "href": "/778253364357513",
+     "text": "وبملت"
+    },
+    {
+     "href": "/63917421733088077",
+     "text": "وتجارت"
+    },
+    {
+     "href": "/26014913469567886",
+     "text": "وغدیر"
+    },
+    {
+     "href": "/shop",
+     "text": "خرید اشتراک‌"
+    },
+    {
+     "href": "/shop",
+     "text": "خرید اشتراک‌"
+    },
+    {
+     "href": "/industries/13",
+     "text": "استخراج کانه های فلزی (15)"
+    },
+    {
+     "href": "/industries/11",
+     "text": "استخراج نفت و گاز (1)"
+    },
+    {
+     "href": "/industries/73",
+     "text": "اطلاعات و ارتباطات (5)"
+    },
+    {
+     "href": "/industries/70",
+     "text": "انبوه سازی (31)"
+    },
+    {
+     "href": "/industries/22",
+     "text": "انتشار، چاپ و تکثیر (1)"
+    },
+    {
+     "href": "/industries/57",
+     "text": "بانکها (14)"
+    },
+    {
+     "href": "/industries/66",
+     "text": "بیمه (34)"
+    },
+    {
+     "href": "/industries/45",
+     "text": "پیمانکاری صنعتی (2)"
+    },
+    {
+     "href": "/industries/67",
+     "text": "تامین سرمایه و بورس (13)"
+    },
+    {
+     "href": "/industries/39",
+     "text": "چند رشته ای صنعتی (8)"
+    },
+    {
+     "href": "/industries/61",
+     "text": "حمل و نقل آبی (1)"
+    },
+    {
+     "href": "/industries/60",
+     "text": "حمل ونقل و انبارداری (16)"
+    },
+    {
+     "href": "/industries/74",
+     "text": "خدمات فنی و مهندسی (4)"
+    },
+    {
+     "href": "/industries/47",
+     "text": "خرده فروشی (2)"
+    },
+    {
+     "href": "/industries/34",
+     "text": "خودرو و ساخت قطعات (43)"
+    },
+    {
+     "href": "/industries/72",
+     "text": "رایانه (17)"
+    },
+    {
+     "href": "/industries/01",
+     "text": "زراعت (24)"
+    },
+    {
+     "href": "/industries/10",
+     "text": "زغال سنگ (4)"
+    },
+    {
+     "href": "/industries/32",
+     "text": "ساخت دستگاههای ارتباطی (3)"
+    },
+    {
+     "href": "/industries/31",
+     "text": "ساخت دستگاههای برقی (14)"
+    },
+    {
+     "href": "/industries/28",
+     "text": "ساخت محصولات فلزی (11)"
+    },
+    {
+     "href": "/industries/14",
+     "text": "سایر معادن (2)"
+    },
+    {
+     "href": "/industries/56",
+     "text": "سرمایه گذاریها (59)"
+    },
+    {
+     "href": "/industries/84",
+     "text": "سلامت و مددکاری (1)"
+    },
+    {
+     "href": "/industries/53",
+     "text": "سیمان (40)"
+    },
+    {
+     "href": "/industries/19",
+     "text": "صنایع چرم (1)"
+    },
+    {
+     "href": "/industries/43",
+     "text": "صنایع دارویی (52)"
+    },
+    {
+     "href": "/industries/40",
+     "text": "صنایع نیروگاهی (16)"
+    },
+    {
+     "href": "/industries/real-state-funds",
+     "text": "صندوق های املاک و مستغلات (8)"
+    },
+    {
+     "href": "/industries/energy-funds",
+     "text": "صندوق های انرژی (1)"
+    },
+    {
+     "href": "/industries/leveraged-funds",
+     "text": "صندوق های اهرمی (9)"
+    },
+    {
+     "href": "/industries/sector-funds",
+     "text": "صندوق های بخشی (63)"
+    },
+    {
+     "href": "/industries/fixed-income-funds",
+     "text": "صندوق های درآمد ثابت (90)"
+    },
+    {
+     "href": "/industries/saffron-funds",
+     "text": "صندوق های زعفران (0)"
+    },
+    {
+     "href": "/industries/stock-funds",
+     "text": "صندوق های سهامی (156)"
+    },
+    {
+     "href": "/industries/classic-stock-funds",
+     "text": "صندوق های سهامی-کلاسیک (72)"
+    },
+    {
+     "href": "/industries/index-funds",
+     "text": "صندوق های شاخصی (9)"
+    },
+    {
+     "href": "/industries/gold-funds",
+     "text": "صندوق های طلا و سکه (0)"
+    },
+    {
+     "href": "/industries/mixed-funds",
+     "text": "صندوق های مختلط (9)"
+    },
+    {
+     "href": "/industries/silver-funds",
+     "text": "صندوق های نقره (0)"
+    },
+    {
+     "href": "/industries/46",
+     "text": "عمده فروشی (1)"
+    },
+    {
+     "href": "/industries/fund-in-funds",
+     "text": "فراصندوق ها (3)"
+    },
+    {
+     "href": "/industries/23",
+     "text": "فراورده های نفتی (11)"
+    },
+    {
+     "href": "/industries/93",
+     "text": "فرهنگی و ورزشی (0)"
+    },
+    {
+     "href": "/industries/27",
+     "text": "فلزات اساسی (56)"
+    },
+    {
+     "href": "/industries/38",
+     "text": "قند و شکر (17)"
+    },
+    {
+     "href": "/industries/49",
+     "text": "کاشی و سرامیک (9)"
+    },
+    {
+     "href": "/industries/54",
+     "text": "کانی های غیرفلزی (18)"
+    },
+    {
+     "href": "/industries/25",
+     "text": "لاستیک و پلاستیک (13)"
+    },
+    {
+     "href": "/industries/58",
+     "text": "لیزینگ (12)"
+    },
+    {
+     "href": "/industries/29",
+     "text": "ماشین آلات و تجهیزات (16)"
+    },
+    {
+     "href": "/industries/20",
+     "text": "محصولات چوبی (3)"
+    },
+    {
+     "href": "/industries/44",
+     "text": "محصولات شیمیایی (58)"
+    }
+   ],
+   "loginGate": false,
+   "textLen": 25137,
+   "calls": [
+    {
+     "url": "/data/market0",
+     "status": 200,
+     "bytes": 1073
+    },
+    {
+     "url": "/data/mainwatch/symbols?_=1790402838987",
+     "status": 200,
+     "bytes": 0,
+     "shape": "array[20]",
+     "itemKeys": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19"
+     ]
+    },
+    {
+     "url": "/data/market/chart/totals0",
+     "status": 200,
+     "bytes": 0,
+     "keys": [
+      "time",
+      "transfer",
+      "stockTransfer",
+      "plus",
+      "minus",
+      "bpc",
+      "spc",
+      "bo",
+      "so",
+      "bq",
+      "sq",
+      "fixedIncomesTransfer",
+      "bpcx",
+      "spcx",
+      "upper",
+      "lower",
+      "equal",
+      "mval",
+      "val",
+      "mTransfer",
+      "msTransfer",
+      "mfixedTransfer",
+      "close",
+      "closing",
+      "green",
+      "red"
+     ]
+    },
+    {
+     "url": "/data/industries-csv?_=1790402838988",
+     "status": 200,
+     "bytes": 0,
+     "shape": "array[61]",
+     "itemKeys": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20",
+      "21",
+      "22",
+      "23",
+      "24",
+      "25",
+      "26",
+      "27",
+      "28",
+      "29",
+      "30"
+     ]
+    }
+   ]
+  },
+  {
+   "url": "https://tradersarena.ir/market",
+   "title": "404 — صفحه پیدا نشد",
+   "tables": [],
+   "headings": [
+    "صفحه پیدا نشد"
+   ],
+   "canvases": 0,
+   "svgs": 1,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرزآرنا"
+    },
+    {
+     "href": "/",
+     "text": "بازگشت به صفحه اصلی"
+    },
+    {
+     "href": "/logout",
+     "text": "خروج از سایت"
+    }
+   ],
+   "loginGate": false,
+   "textLen": 204,
+   "calls": []
+  },
+  {
+   "url": "https://tradersarena.ir/markets",
+   "title": "404 — صفحه پیدا نشد",
+   "tables": [],
+   "headings": [
+    "صفحه پیدا نشد"
+   ],
+   "canvases": 0,
+   "svgs": 1,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرزآرنا"
+    },
+    {
+     "href": "/",
+     "text": "بازگشت به صفحه اصلی"
+    },
+    {
+     "href": "/logout",
+     "text": "خروج از سایت"
+    }
+   ],
+   "loginGate": false,
+   "textLen": 204,
+   "calls": []
+  },
+  {
+   "url": "https://tradersarena.ir/industry",
+   "title": "404 — صفحه پیدا نشد",
+   "tables": [],
+   "headings": [
+    "صفحه پیدا نشد"
+   ],
+   "canvases": 0,
+   "svgs": 1,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرزآرنا"
+    },
+    {
+     "href": "/",
+     "text": "بازگشت به صفحه اصلی"
+    },
+    {
+     "href": "/logout",
+     "text": "خروج از سایت"
+    }
+   ],
+   "loginGate": false,
+   "textLen": 204,
+   "calls": []
+  },
+  {
+   "url": "http://tradersarena.ir/login",
+   "title": "ورود به تریدرزآرنا",
+   "tables": [],
+   "headings": [
+    "ورود به حساب کاربری"
+   ],
+   "canvases": 0,
+   "svgs": 0,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرز آرنا"
+    },
+    {
+     "href": "/signup",
+     "text": "ثبت‌نام"
+    },
+    {
+     "href": "/recover",
+     "text": "رمز عبور را فراموش کرده‌اید؟"
+    }
+   ],
+   "loginGate": true,
+   "textLen": 241,
+   "calls": []
+  },
+  {
+   "url": "https://tradersarena.ir/market/histo-status",
+   "title": "بازدهی های نمادها",
+   "tables": [
+    {
+     "headers": [],
+     "rows": 0,
+     "nearestTitle": ""
+    },
+    {
+     "headers": [
+      "نماد",
+      "جمع حجم معاملات",
+      "جمع ارزش معاملات",
+      "اولین",
+      "بیشترین",
+      "کمترین",
+      "آخرین",
+      "درصد",
+      "پایانی",
+      "درصد",
+      "حجم جابجایی سهام",
+      "جمع ورود پول حقیقی",
+      "بازدهی"
+     ],
+     "rows": 0,
+     "nearestTitle": ""
+    }
+   ],
+   "headings": [
+    "ورود به حساب کاربری",
+    "دسترسی به این محتوا نیازمند تهیه اشتراک میباشد. ×"
+   ],
+   "canvases": 0,
+   "svgs": 5,
+   "chartDivs": [
+    "apexcharts-css",
+    "apexchartsc5",
+    "SvgjsSvg2114",
+    "SvgjsG2116",
+    "SvgjsRect2126",
+    "SvgjsG2217",
+    "SvgjsG2218",
+    "SvgjsText2220",
+    "SvgjsText2223",
+    "SvgjsText2226",
+    "SvgjsText2229",
+    "SvgjsText2232",
+    "SvgjsText2235",
+    "SvgjsText2238",
+    "SvgjsText2241",
+    "SvgjsText2244",
+    "SvgjsText2247",
+    "SvgjsText2250",
+    "SvgjsText2253",
+    "SvgjsText2256",
+    "SvgjsText2259",
+    "SvgjsG2281",
+    "SvgjsG2282",
+    "SvgjsLine2284",
+    "SvgjsLine2285",
+    "SvgjsLine2286",
+    "SvgjsLine2287",
+    "SvgjsLine2288",
+    "SvgjsLine2289",
+    "SvgjsG2283"
+   ],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرز آرنا"
+    },
+    {
+     "href": "/options-arena",
+     "text": "آپشن آرنا"
+    },
+    {
+     "href": "/money-flow",
+     "text": "نمودارهای جریانات نقدینگی لحظه ای بازار"
+    },
+    {
+     "href": "/heatmap/market",
+     "text": "نقشه بازار"
+    },
+    {
+     "href": "/compare",
+     "text": "نمودار مقایسه چندین نماد"
+    },
+    {
+     "href": "/extras/incognito-charts",
+     "text": "چارت ناشناخته (تست معامله گری)"
+    },
+    {
+     "href": "/extras/tal",
+     "text": "معاملات پایانی (TAL)"
+    },
+    {
+     "href": "/extras/tops",
+     "text": "لیست شرکت ها بر اساس فاصله تا سقف قیمت"
+    },
+    {
+     "href": "/extras/market-values",
+     "text": "لیست شرکت ها بر اساس ارزش بازار"
+    },
+    {
+     "href": "/000/chart/price",
+     "text": "نمودار شاخص کل"
+    },
+    {
+     "href": "/999/chart/price",
+     "text": "نمودار شاخص هم وزن"
+    },
+    {
+     "href": "/gold-funds/chart/price",
+     "text": "شاخص صندوق های طلا(هم وزن)"
+    },
+    {
+     "href": "/silver-funds/chart/price",
+     "text": "شاخص صندوق های نقره(هم وزن)"
+    },
+    {
+     "href": "/leveraged-funds/chart/price",
+     "text": "شاخص صندوق های اهرمی(هم وزن)"
+    },
+    {
+     "href": "/market/histo-status",
+     "text": "بازدهی های دوره ای بازار"
+    },
+    {
+     "href": "/extras/long-term-money-flow-filters",
+     "text": "فیلترهای جریان نقدینگی بلندمدت"
+    },
+    {
+     "href": "/market-watch-pro",
+     "text": "دیده بان بازار پیشرفته"
+    },
+    {
+     "href": "/market-watch",
+     "text": "دیده بان بازار نسخه سبک"
+    },
+    {
+     "href": "/pivot-watch",
+     "text": "دیده بان حمایت ها و مقاومت ها"
+    },
+    {
+     "href": "/signal-watch",
+     "text": "دیده بان جریانات نقدینگی بلندمدت"
+    },
+    {
+     "href": "/extras/techno-watch",
+     "text": "دیده بان تکنیکال"
+    },
+    {
+     "href": "/extras/orders-watch",
+     "text": "دیده بان سفارش ها"
+    },
+    {
+     "href": "/market/history?type=0",
+     "text": "سوابق بازار(سهام،حق تقدم،صندوقهای سهامی،"
+    },
+    {
+     "href": "/market/history?type=1",
+     "text": "سوابق بازار(سهام،حق تقدم،صندوقهای سهامی "
+    },
+    {
+     "href": "/market/history?type=2",
+     "text": "سوابق بازار(سهام و حق تقدم)"
+    },
+    {
+     "href": "/chart/daily/market?type=0",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=0",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/chart/daily/market?type=1",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=1",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/chart/daily/market?type=2",
+     "text": "روزانه"
+    },
+    {
+     "href": "/market/chart?type=2",
+     "text": "پیشرفته"
+    },
+    {
+     "href": "/options-arena",
+     "text": "آپشن آرنا"
+    },
+    {
+     "href": "/options-arena/history",
+     "text": "سوابق بازار اختیار معامله"
+    },
+    {
+     "href": "/options-arena/watch",
+     "text": "دیده بان اختیار معامله"
+    },
+    {
+     "href": "/options-arena/strategy",
+     "text": "استراتژی ساز اختیار معامله"
+    },
+    {
+     "href": "/heatmap/market",
+     "text": "نقشه بازار"
+    },
+    {
+     "href": "/shop/",
+     "text": "خرید اشتراک"
+    },
+    {
+     "href": "/help",
+     "text": "راهنمای سایت"
+    },
+    {
+     "href": "/recover",
+     "text": "فراموشی رمز عبور"
+    },
+    {
+     "href": "/signup",
+     "text": "ثبت‌نام"
+    },
+    {
+     "href": "/shop",
+     "text": "برای مشاهده امکانات کاربران ویژه به فروش"
+    }
+   ],
+   "loginGate": false,
+   "textLen": 1661,
+   "calls": [
+    {
+     "url": "/data/market/histo-status",
+     "status": 200,
+     "bytes": 154
+    }
+   ]
+  },
+  {
+   "url": "http://tradersarena.ir/login",
+   "title": "ورود به تریدرزآرنا",
+   "tables": [],
+   "headings": [
+    "ورود به حساب کاربری"
+   ],
+   "canvases": 0,
+   "svgs": 0,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرز آرنا"
+    },
+    {
+     "href": "/signup",
+     "text": "ثبت‌نام"
+    },
+    {
+     "href": "/recover",
+     "text": "رمز عبور را فراموش کرده‌اید؟"
+    }
+   ],
+   "loginGate": true,
+   "textLen": 241,
+   "calls": []
+  },
+  {
+   "url": "http://tradersarena.ir/login",
+   "title": "ورود به تریدرزآرنا",
+   "tables": [],
+   "headings": [
+    "ورود به حساب کاربری"
+   ],
+   "canvases": 0,
+   "svgs": 0,
+   "chartDivs": [],
+   "nav": [
+    {
+     "href": "/",
+     "text": "تریدرز آرنا"
+    },
+    {
+     "href": "/signup",
+     "text": "ثبت‌نام"
+    },
+    {
+     "href": "/recover",
+     "text": "رمز عبور را فراموش کرده‌اید؟"
+    }
+   ],
+   "loginGate": true,
+   "textLen": 241,
+   "calls": []
+  }
+ ],
+ "endpoints": [
+  {
+   "url": "/data/industries-csv?_=1790402838988",
+   "seenOn": [
+    "https://tradersarena.ir/"
+   ],
+   "bytes": 0,
+   "keys": null,
+   "itemKeys": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30"
+   ],
+   "shape": "array[61]"
+  },
+  {
+   "url": "/data/mainwatch/symbols?_=1790402838987",
+   "seenOn": [
+    "https://tradersarena.ir/"
+   ],
+   "bytes": 0,
+   "keys": null,
+   "itemKeys": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+   ],
+   "shape": "array[20]"
+  },
+  {
+   "url": "/data/market/chart/totals0",
+   "seenOn": [
+    "https://tradersarena.ir/"
+   ],
+   "bytes": 0,
+   "keys": [
+    "time",
+    "transfer",
+    "stockTransfer",
+    "plus",
+    "minus",
+    "bpc",
+    "spc",
+    "bo",
+    "so",
+    "bq",
+    "sq",
+    "fixedIncomesTransfer",
+    "bpcx",
+    "spcx",
+    "upper",
+    "lower",
+    "equal",
+    "mval",
+    "val",
+    "mTransfer",
+    "msTransfer",
+    "mfixedTransfer",
+    "close",
+    "closing",
+    "green",
+    "red"
+   ],
+   "itemKeys": null,
+   "shape": null
+  },
+  {
+   "url": "/data/market/histo-status",
+   "seenOn": [
+    "https://tradersarena.ir/market/histo-status"
+   ],
+   "bytes": 154,
+   "keys": null,
+   "itemKeys": null,
+   "shape": null
+  },
+  {
+   "url": "/data/market0",
+   "seenOn": [
+    "https://tradersarena.ir/"
+   ],
+   "bytes": 1073,
+   "keys": null,
+   "itemKeys": null,
+   "shape": null
+  }
+ ]
+}
