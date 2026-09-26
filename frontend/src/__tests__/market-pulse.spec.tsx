@@ -25,25 +25,90 @@ const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
 
 function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket: number | null = 172.2,
-  index: Record<string, number | null> | null = null): SmartMoney {
+  index: Record<string, number | null> | null = null,
+  extra: { goldFlow?: number | null; bearishPct?: number | null } = {}): SmartMoney {
+  const bear = extra.bearishPct ?? 29.9;
+  const gold = extra.goldFlow;
+  const ideal = eqFlow > 0 && fixedFlow < 0;
+  // حکمِ ساختگی از همان اعدادِ fixture — همان کاری که موتور روی دادهٔ واقعی
+  // می‌کند. متن‌ها از payload می‌آیند، پس این‌جا «کارِ بک‌اند» تقلید می‌شود نه
+  // محاسبهٔ دوباره در لایهٔ نمایش.
+  const liqGood = hemat != null && hemat >= 20;
   return {
     status: 'ok',
     macro: {
       value_hemat: hemat,
       good_min: 20,
       bad_max: 10,
+      state: hemat == null ? 'nodata' : liqGood ? 'good' : hemat <= 10 ? 'bad' : 'mid',
+      label: hemat == null ? 'بدون داده' : liqGood ? 'مساعد' : 'متوسط',
       ...(allMarket != null ? { trade_value_all_market_hemat: allMarket } : {}),
       market_value_hemat: 24856.7,
       market_value_source: 'tse_market_overview',
       ...(index ? { index } : {}),
     },
-    watch_entry: { active: false, bearish_pct: 29.9, rule_pct: 80, bearish: 341, known: 1142 },
+    watch_entry: { active: bear >= 80, bearish_pct: bear, rule_pct: 80, bearish: 341, known: 1142 },
     flow: {
       eq_flow_b_toman: eqFlow,
       fixed_flow_b_toman: fixedFlow,
       eq_inflow: eqFlow > 0,
       fixed_outflow: fixedFlow < 0,
-      ideal_fts: false,
+      ideal_fts: ideal,
+      ...(gold != null ? { gold_flow_b_toman: gold, gold_outflow: gold < 0 } : {}),
+      trio_fts: ideal && (gold == null || gold < 0),
+    },
+    verdict: {
+      status: 'ok',
+      verdict: liqGood && ideal ? 'go' : 'wait',
+      label: liqGood && ideal ? 'روزِ ورود است' : 'صبر — نشانه‌ها مخالف‌اند',
+      reason: liqGood && ideal ? 'مساعد — بالایِ ۲۰ همت · حالتِ آرمانی' : 'موافقِ ورود: مساعد · اما پول از سهام بیرون می‌رود',
+      basis: 'fts_notes_p13_p14',
+      gates: [
+        {
+          key: 'liquidity',
+          label: 'قدمِ ۱ — ارزشِ معاملات',
+          state: liqGood ? 'ok' : 'bad',
+          label_state: liqGood ? 'مساعد — بالایِ ۲۰ همت' : 'نامساعد — زیرِ ۱۰ همت',
+          vote: liqGood ? 1 : -1,
+          detail: '۲۲.۵ همت',
+          rule: 'بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)',
+        },
+        {
+          key: 'continuity',
+          label: 'تداومِ ۳–۴ روز',
+          state: 'nodata',
+          label_state: 'بدون داده',
+          vote: 0,
+          detail: 'تاریخچه کامل نیست — ۱ نشست از ۳',
+          rule: 'همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)',
+        },
+        {
+          key: 'breadth',
+          label: 'قدمِ ۲ — درصدِ مثبت و منفی',
+          state: bear >= 80 ? 'ok' : 'mid',
+          label_state: bear >= 80 ? 'فرصتِ ورود' : 'بدونِ فرصتِ کف',
+          vote: bear >= 80 ? 1 : 0,
+          detail: '٪۸۸ منفی',
+          rule: '۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)',
+        },
+        {
+          key: 'flow',
+          label: 'قدمِ ۳ — روندِ پولِ حقیقی',
+          state: ideal ? 'ok' : 'bad',
+          label_state: ideal ? 'حالتِ آرمانی — پولِ صندوق‌ها به سهام' : 'پول از سهام بیرون می‌رود',
+          vote: ideal ? 1 : -1,
+          rule: 'خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)',
+        },
+        {
+          key: 'window',
+          label: 'پنجرهٔ ساعت',
+          state: 'mid',
+          label_state: 'خارجِ پنجره‌ها',
+          vote: 0,
+          detail: 'ساعتِ داده ۱۲:۵۹',
+          rule: 'درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)',
+        },
+      ],
     },
   };
 }
@@ -160,16 +225,22 @@ describe('مدل‌های محلی مرکز فرماندهی', () => {
     expect(pulseGoldFlowB(emptyPulse)).toBeNull();
   });
 
-  it('Alpha Trio: خروج درآمد ثابت + ورود سهام + خروج طلا (طلا فقط اگر داده باشد)', () => {
+  it('Alpha Trio: سه شرط و ترکیبشان را موتور می‌بندد؛ نمایش فقط می‌خواند', () => {
+    // gold_outflow/null سه‌مقدار از payload می‌آید (نبودِ دادهٔ طلا = لغوِ الزام).
     const withGoldOut: MarketPulseData = {
       ...emptyPulse,
-      smartMoney: smartMoney(22.5, 300, -120),
+      smartMoney: smartMoney(22.5, 300, -120, null, null, { goldFlow: -50 }),
       summary: summary(22.5, { goldFlow: -50 }),
     };
     expect(computeAlphaTrio(withGoldOut)?.active).toBe(true);
-    const goldIn: MarketPulseData = { ...withGoldOut, summary: summary(22.5, { goldFlow: 50 }) };
+    expect(computeAlphaTrio(withGoldOut)?.goldOutflow).toBe(true);
+    const goldIn: MarketPulseData = {
+      ...withGoldOut,
+      smartMoney: smartMoney(22.5, 300, -120, null, null, { goldFlow: 50 }),
+    };
     expect(computeAlphaTrio(goldIn)?.active).toBe(false);
-    const noGold: MarketPulseData = { ...withGoldOut, summary: summary(22.5, { goldFlow: null }) };
+    expect(computeAlphaTrio(goldIn)?.goldOutflow).toBe(false);
+    const noGold: MarketPulseData = { ...withGoldOut, smartMoney: smartMoney(22.5, 300, -120) };
     expect(computeAlphaTrio(noGold)?.active).toBe(true);
     expect(computeAlphaTrio(noGold)?.goldOutflow).toBeNull();
     const eqOut: MarketPulseData = { ...withGoldOut, smartMoney: smartMoney(22.5, -300, -120) };
@@ -320,7 +391,26 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(screen.getByText('۰.۸×').className).toContain('text-accent-red');
   });
 
-  it('هشدار عبور منفی از ۸۰٪ پهنای باند', async () => {
+  it('۸۰٪ منفی «فرصتِ ورود» است نه هشدار — و داورش payload است نه نمایش', async () => {
+    mockRoutes({
+      // thermometer خودش ۸۳.۵٪ منفی می‌گوید؛ اگر نمایش داوری می‌کرد این چیپ
+      // بی‌نیاز از payload روشن می‌شد. اینجا smart-money عمداً active=false را
+      // می‌فرستد تا ثابت شود چیپ فقط از رأیِ موتور باز می‌شود.
+      'mstat/smart-money': () => jsonResponse(smartMoney(22.5, 300.5, -120.2, null, null, { bearishPct: 83.5 })),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo({ negative_pct: 83.5 })),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-breadth-warn')).toBeInTheDocument());
+    const chip = screen.getByTestId('pulse-breadth-warn');
+    expect(chip.textContent).toContain('۸۰٪');
+    expect(chip.textContent).toContain('فرصتِ ورود');
+    expect(chip.className).toContain('text-accent-green');
+    expect(chip.textContent).not.toContain('⚠');
+  });
+
+  it('زیرِ آستانه هیچ «فرصت» یا «هشدار»ی نقاشی نمی‌شود', async () => {
     mockRoutes({
       'mstat/smart-money': () => jsonResponse(smartMoney()),
       'mstat/summary': () => jsonResponse(summary()),
@@ -328,8 +418,44 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
       'mstat/thermometer': () => jsonResponse(thermo({ negative_pct: 83.5 })),
     });
     renderPulse();
-    await waitFor(() => expect(screen.getByTestId('pulse-breadth-warn')).toBeInTheDocument());
-    expect(screen.getByTestId('pulse-breadth-warn').textContent).toContain('۸۰٪');
+    // عددِ دماسنج ۸۳.۵٪ است ولی رأیِ موتور active=false -- نمایش مقایسه نمی‌کند.
+    await waitFor(() => expect(screen.getByTestId('pulse-queues')).toBeInTheDocument());
+    expect(screen.queryByTestId('pulse-breadth-warn')).not.toBeInTheDocument();
+  });
+
+  it('حکمِ امروز: تیتر، علت و پنج درِ جزوه از payload نمایش داده می‌شود', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() =>
+      expect(screen.getByTestId('pulse-verdict-label').textContent).toContain('روزِ ورود است'),
+    );
+    expect(screen.getByTestId('pulse-verdict-reason').textContent).toContain('حالتِ آرمانی');
+    for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
+      expect(screen.getByTestId(`pulse-verdict-gate-${k}`)).toBeInTheDocument();
+    }
+    // درِ بی‌داده با رنگِ داوری‌شده نمی‌نشیند
+    expect(screen.getByTestId('pulse-verdict-gate-continuity').textContent).toContain('بدون داده');
+    expect(screen.getByTestId('pulse-verdict-gate-continuity').className).toContain('text-text-muted');
+  });
+
+  it('حکم نرسیده (اندپوینتِ پولِ هوشمند مرد) → «بدون داده»، نه «وارد نشو»', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse({ status: 'error', message: 'x' }),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    // کارتِ همت می‌آید (اسکیما رد نشد) ولی حکمی نیست: «بدون داده» و بی‌رنگ.
+    await waitFor(() => expect(screen.getByTestId('pulse-smart')).toBeInTheDocument());
+    expect(screen.getByTestId('pulse-verdict-label').textContent).toContain('بدون داده');
+    expect(screen.getByTestId('pulse-verdict').className).not.toContain('text-accent-red');
+    expect(screen.queryAllByTestId(/^pulse-verdict-gate-/)).toHaveLength(0);
   });
 
   it('طلا بدون داده → برچسب «تا ۱۲:۳۰»', async () => {

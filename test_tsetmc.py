@@ -241,6 +241,46 @@ def save_market_index(conn, ov, d_even, now=None):
     return True
 
 
+MARKET_LIQ_TABLE = "market_liquidity"
+
+
+def ensure_market_liquidity_schema(conn):
+    """جدولِ «ارزشِ معاملاتِ خردِ هر نشست» را idempotent می‌سازد."""
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {MARKET_LIQ_TABLE} ("
+        " d_even INTEGER PRIMARY KEY, value_hemat REAL, basis TEXT, updated_at TEXT)")
+
+
+def save_market_liquidity(conn, d_even, now=None):
+    """همتِ همان نشست را به همان مبنایِ نبض بازار ذخیره می‌کند (تاریخچۀ تداوم).
+
+    جزوه ص۱۳ می‌گوید نقدینگی را «برایِ حرانتِ ۳ الی ۴ روزِ متوالی» ببین؛ عددِ
+    امروز از تابلویِ زنده ساخته می‌شد ولی هیچ‌جا نمی‌ماند، پس آن در هرگز
+    بسته نمی‌شد. مبنایش عمداً از خودِ mstat_engine.macro_health گرفته می‌شود
+    (سهام + حق‌تقدم + ص.سهامی) تا تاریخچه با عددِ امروز سیب‌به‌سیب مقایسه
+    شود — جمعِ دستیِ z_tot_tran در تابلو مبنای دیگری است و بازارِ کل با
+    شمارشِ صندوق‌های درآمد ثابت آستانهٔ ۲۰ همت را همیشه سبز می‌کند.
+    بی‌داده هیچ نمی‌نویسد؛ صفرِ باورپذیر بدتر از هیچ است.
+    """
+    if not d_even:
+        return False
+    try:
+        import mstat_engine as _me
+        macro = _me.macro_health(conn)
+    except Exception:
+        return False
+    hemat = macro.get("value_hemat")
+    if not hemat or hemat <= 0:
+        return False
+    ensure_market_liquidity_schema(conn)
+    conn.execute(
+        f"INSERT OR REPLACE INTO {MARKET_LIQ_TABLE} VALUES (?,?,?,?)",
+        (int(d_even), float(hemat), macro.get("basis") or "eq_all",
+         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    return True
+
+
 def save_market_total(conn, total_rials, d_even, now=None):
     """عددِ رسمی را برای همان نشست ذخیره می‌کند؛ True اگر واقعاً نوشته شد.
 
@@ -884,6 +924,8 @@ def _save_market_snapshot(s, conn):
     if save_market_index(conn, bourse_ov, total_deven or d_even, now):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
               f"{bourse_ov.get('indexEqualWeightedLastValue')} (d_even {total_deven or d_even})")
+    if save_market_liquidity(conn, total_deven or d_even, now):
+        print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     conn.commit()
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): اسنپ‌شاتِ عمق/صف/سرانه فقط
     # داخل ساعات رسمی ثبت میشود؛ بعد از بسته شدن بازار، دادهٔ خالی «افت به
@@ -1106,6 +1148,8 @@ def main():
     if save_market_index(conn, bourse_ov, total_deven or d_even_today, now):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
               f"{bourse_ov.get('indexEqualWeightedLastValue')}")
+    if save_market_liquidity(conn, total_deven or d_even_today, now):
+        print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ
     # جدیدی در mstat_snap نمی‌نشیند تا دادهٔ خالی شبانه به‌عنوان «افت شدید
     # به صفر» در تایم‌لاین درون‌روزی ثبت نشود. (پنجشنبه/جمعه همه‌روز بسته؛

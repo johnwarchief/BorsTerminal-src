@@ -17,6 +17,8 @@ import {
   pulseGroupRows,
   pulseHemat,
   pulseIndex,
+  pulseVerdict,
+  type DayVerdict,
   type HematState,
   type MarketPulseData,
 } from '../api/useMarketPulse';
@@ -89,6 +91,67 @@ const TONE_TEXT = { good: 'text-accent-green', mid: 'text-accent-yellow', bad: '
 const TONE_BG = { good: 'bg-accent-green', mid: 'bg-accent-yellow', bad: 'bg-accent-red' } as const;
 const MISSING = <span className="text-text-muted">بدون داده</span>;
 
+/** رنگِ حکم؛ «بدون داده» بی‌رنگ است — نه سبزِ پیش‌فرض، نه قرمزِ تنبیهی */
+const VERDICT_TONE: Record<'go' | 'watch' | 'wait' | 'avoid' | 'nodata', string> = {
+  go: 'border-accent-green/60 bg-accent-green/10',
+  watch: 'border-accent-yellow/60 bg-accent-yellow/10',
+  wait: 'border-accent-yellow/60 bg-accent-yellow/10',
+  avoid: 'border-accent-red/60 bg-accent-red/10',
+  nodata: 'border-border-c bg-bg-card/60',
+};
+const VERDICT_TEXT: Record<'go' | 'watch' | 'wait' | 'avoid' | 'nodata', string> = {
+  go: 'text-accent-green',
+  watch: 'text-accent-yellow',
+  wait: 'text-accent-yellow',
+  avoid: 'text-accent-red',
+  nodata: 'text-text-secondary',
+};
+const GATE_TONE: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
+  ok: 'text-accent-green',
+  mid: 'text-accent-yellow',
+  bad: 'text-accent-red',
+  nodata: 'text-text-muted',
+};
+
+/**
+ * حکمِ امروز — «آیا امروز برای ورود مناسب است یا نه». سه قدمِ جزوه (ص۱۳) به‌علاوهٔ
+ * تداومِ ۳–۴ روزه و پنجره‌های ساعتیِ ص۱۴. همهٔ متن‌ها و داوری از موتور می‌آید
+ * (mstat_engine.day_verdict)؛ این‌جا فقط رنگ از state خوانده می‌شود.
+ */
+function VerdictStrip({ v }: { v: DayVerdict | null }) {
+  const kind = v?.verdict ?? 'nodata';
+  return (
+    <div
+      data-testid="pulse-verdict"
+      className={`col-span-full flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border px-3 py-1.5 shadow-xs ${VERDICT_TONE[kind]}`}
+    >
+      <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
+      <span data-testid="pulse-verdict-label" className={`text-sm font-black leading-5 ${VERDICT_TEXT[kind]}`}>
+        {v ? v.label : 'بدون داده'}
+      </span>
+      {v ? (
+        <span data-testid="pulse-verdict-reason" className="text-2xs font-medium text-text-secondary">
+          {v.reason}
+        </span>
+      ) : (
+        <span className="text-2xs text-text-muted">هنوز پولِ هوشمند نرسیده تا حکمی باشد</span>
+      )}
+      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
+        {(v?.gates ?? []).map((g) => (
+          <span
+            key={g.key}
+            data-testid={`pulse-verdict-gate-${g.key}`}
+            title={`${g.rule ?? ''}${g.detail ? ` — ${g.detail}` : ''}`}
+            className={`text-2xs font-bold ${GATE_TONE[g.state]}`}
+          >
+            {g.label}: {g.label_state}
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
 /** آستانه هشدار پهنای باند: عبور منفی‌ها از قاعده ۸۰٪ */
 export const WATCH_ENTRY_PCT = 80;
 
@@ -116,6 +179,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
   const trio = computeAlphaTrio(pulse);
   const allMarket = pulseTradeValueAllMarketHemat(pulse);
   const ix = pulseIndex(pulse);
+  const verdict = pulseVerdict(pulse);
   const marketValue = pulseMarketValueHemat(pulse);
   // آستانه‌هایِ همین دماسنج از payload خوانده می‌شوند؛ عددِ دستی در لایهٔ نمایش ممنوع.
   const hematGood = pulse?.smartMoney?.macro?.good_min ?? null;
@@ -127,9 +191,11 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
     (thermo.positive as number) + (thermo.negative as number) + (thermo.zero as number) > 0
       ? ((thermo.positive as number) + (thermo.negative as number) + (thermo.zero as number))
       : null;
-  const negativePct = typeof thermo?.negative_pct === 'number' ? thermo.negative_pct : null;
   const rulePct = typeof thermo?.entry_rule_pct === 'number' ? thermo.entry_rule_pct : WATCH_ENTRY_PCT;
-  const breadthWarn = negativePct != null ? negativePct >= rulePct : watch?.active === true;
+  // جزوه ص۱۳: «۸۰٪ منفی یعنی بازار هنوز فرصت‌های ورود دارد» — این فرصت است،
+  // نه هشدار. داورِ خودش موتور است (watch_entry.active)؛ نمایش دوباره عدد را
+  // با آستانه مقایسه نمی‌کند.
+  const entryOpportunity = watch?.active === true;
 
   const sellSharePct =
     depth && depth.buyBt != null && depth.sellBt != null && depth.buyBt + depth.sellBt > 0
@@ -152,8 +218,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
       {/* نوارِ شاخص — عددِ خامِ خودِ TSETMC برای همین نشست (سازندهٔ عدد:
           save_market_index در سینک، از MarketData/GetMarketOverview بورس).
           دو خانه کنارِ هم می‌نشینند (نه دو ستونِ ۵۰٪؛ آن چیدمان نیمۀ چپ را
-          خالی می‌گذاشت). جای خالیِ سمتِ چپ دست‌نخورده مانده: قرار است چیزِ
-          مربوطِ «آیا امروز برای ورود مناسب است» بنشیند، نه شمارشِ بنیادی. */}
+          خالی می‌گذاشت) و ردیفِ زیرشان حکمِ امروز است. */}
       <div
         data-testid="pulse-index"
         className="col-span-full flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
@@ -173,6 +238,10 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           pct={ix?.ewPct}
         />
       </div>
+
+      {/* حکمِ امروز — «آیا امروز برای ورود مناسب است؟». همان سه قدمِ جزوه +
+          تداوم و پنجرهٔ ساعت. تنها داوری‌کننده موتور است. */}
+      <VerdictStrip v={verdict} />
 
       {/* بخش ۱ -- ارزش معاملات خرد (سهام، حق تقدم و ص.سهامی) */}
       <Section
@@ -375,9 +444,13 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                 <span className="text-3xs font-medium text-text-muted">منفی</span>
               </span>
             </div>
-            {breadthWarn ? (
-              <span data-testid="pulse-breadth-warn" className="text-2xs font-black text-accent-red" title="بیش از ۸۰٪ معاملات منفی — فرصت/هشدار ورود FTS">
-                ⚠ عبور منفی از <span className="num">{fa(rulePct, 0)}</span>٪
+            {entryOpportunity ? (
+              <span
+                data-testid="pulse-breadth-warn"
+                className="text-2xs font-black text-accent-green"
+                title="عبور منفی‌ها از آستانهٔ ۸۰٪ — طبقِ جزوه «بازار هنوز فرصتِ ورود دارد»، نه هشدار"
+              >
+                🟢 فرصتِ ورود — منفی‌ها از <span className="num">{fa(rulePct, 0)}</span>٪ گذشته
               </span>
             ) : null}
           </>

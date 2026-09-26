@@ -31,6 +31,32 @@ export function hematState(v: number | null | undefined): HematState | null {
   return 'mid';
 }
 
+/**
+ * حکمِ امروز — متن و رأی از موتور می‌آید (mstat_engine.day_verdict). لایهٔ
+ * نمایش هیچ شرطی را دوباره نمی‌بندد؛ فقط رنگ را از state می‌خواند.
+ * nodata یعنی «حکمی صادر نشده»، نه «وارد نشو».
+ */
+export const VerdictGateSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  state: z.enum(['ok', 'mid', 'bad', 'nodata']),
+  label_state: z.string(),
+  vote: z.number(),
+  detail: z.string().nullish(),
+  rule: z.string().nullish(),
+});
+export type VerdictGate = z.infer<typeof VerdictGateSchema>;
+
+export const DayVerdictSchema = z.object({
+  status: z.string(),
+  verdict: z.enum(['go', 'watch', 'wait', 'avoid', 'nodata']),
+  label: z.string(),
+  reason: z.string(),
+  gates: z.array(VerdictGateSchema).nullish(),
+  basis: z.string().nullish(),
+});
+export type DayVerdict = z.infer<typeof DayVerdictSchema>;
+
 export const SmartMoneySchema = z.object({
   status: z.string(),
   macro: z
@@ -43,6 +69,7 @@ export const SmartMoneySchema = z.object({
       trade_value_all_market_hemat: num,
       market_value_hemat: num,
       market_value_source: z.string().nullish(),
+      excellent: z.boolean().nullish(),
       // شاخصِ رسمیِ همان نشست (GetMarketOverview بورس) — غایب = null، نه صفر
       index: z
         .object({
@@ -69,12 +96,16 @@ export const SmartMoneySchema = z.object({
   flow: z
     .object({
       ideal_fts: z.boolean().nullish(),
+      trio_fts: z.boolean().nullish(),
       eq_inflow: z.boolean().nullish(),
       fixed_outflow: z.boolean().nullish(),
+      gold_outflow: z.boolean().nullish(),
       eq_flow_b_toman: num,
       fixed_flow_b_toman: num,
+      gold_flow_b_toman: num,
     })
     .nullish(),
+  verdict: DayVerdictSchema.nullish(),
 });
 export type SmartMoney = z.infer<typeof SmartMoneySchema>;
 
@@ -259,18 +290,24 @@ export type AlphaTrio = {
 };
 
 /**
- * برچسب طلایی Alpha Trio: خروج از درآمد ثابت + خروج از طلا (فقط اگر داده باشد)
- * + ورود به سهام حقیقی -> «ایده‌آل‌ترین شرایط ورود نوسانی».
+ * چیپِ سه‌شرطِ ورود نوسانی (جزوه ص۱۴). هر سه شرط و خودِ ترکیبشان را موتور
+ * بسته است -- اینجا فقط خوانده می‌شود. goldOutflow=null یعنی دادهٔ طلا
+ * نداشتیم، که لغوِ الزام است نه ردِّ شرط.
  */
 export function computeAlphaTrio(d: MarketPulseData | null | undefined): AlphaTrio | null {
   const flow = d?.smartMoney?.flow ?? null;
   if (!flow) return null;
-  const eqInflow = flow.eq_inflow ?? (typeof flow.eq_flow_b_toman === 'number' ? flow.eq_flow_b_toman > 0 : false);
-  const fixedOutflow =
-    flow.fixed_outflow ?? (typeof flow.fixed_flow_b_toman === 'number' ? flow.fixed_flow_b_toman < 0 : false);
-  const gold = pulseGoldFlowB(d);
-  const goldOutflow = gold == null ? null : gold < 0;
-  return { eqInflow, fixedOutflow, goldOutflow, active: eqInflow && fixedOutflow && goldOutflow !== false };
+  return {
+    eqInflow: flow.eq_inflow === true,
+    fixedOutflow: flow.fixed_outflow === true,
+    goldOutflow: flow.gold_outflow ?? null,
+    active: flow.trio_fts === true,
+  };
+}
+
+/** حکمِ امروزِ کامل؛ null یعنی اندپوینتِ پولِ هوشمند نرسیده (نه «وارد نشو») */
+export function pulseVerdict(d: MarketPulseData | null | undefined): DayVerdict | null {
+  return d?.smartMoney?.verdict ?? null;
 }
 
 export function useMarketPulse() {

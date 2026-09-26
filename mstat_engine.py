@@ -43,11 +43,14 @@ B_SHARES = 1e9               # سهم → میلیارد سهم
 HEMAT_IN_B_TUMAN = 1e3       # همت → میلیارد تومان
 HEMAT_FROM_RIAL = 1e13       # ریال → همت (هزار میلیارد تومان)
 
-# آستانهٔ سلامت کلان بازار (سند FTS صفحهٔ ۳)
+# آستانهٔ سلامت کلان بازار (سند FTS صفحهٔ ۳ و صفحهٔ ۱۳)
 HEMAT_GOOD = 20.0            # ≥ ۲۰ همت → مساعد
 HEMAT_BAD = 10.0             # ≤ ۱۰ همت → نامساعد
-# قانون «فرصت ورود»: اگر بیش از این درصد نمادها منفی بودند، بازار در کف است
+HEMAT_EXCELLENT = 50.0       # «بالایِ ۵۰ همت هم عال[ی]» — جزوه صفحهٔ ۱۳
+# «فرصت ورود»: اگر بیش از این درصد نمادها منفی بودند، بازار در کف است
 ENTRY_OPPORTUNITY_NEG_PCT = 80.0
+# جزوه صفحهٔ ۱۳: وضعیتِ نقدینگی را «برایِ حرانتِ ۳ الی ۴ روزِ متوالی» بررسی کن
+LIQ_CONTINUITY_MIN = 3
 # الگوی ساعت: اختلاف آخرین/پایانی
 CLOCK_PCT = 1.0
 # نمادی با کمتر از این تعداد معامله، «آخرین»ش برای شکارِ الگوی ساعت قابل
@@ -861,6 +864,7 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
                 "trade_value_all_market_hemat": None,
                 "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
                 "market_value_source": total_source or None,
+                "excellent": False,
                 "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD}
     hemat = eq["val_hemat"]
     if hemat >= HEMAT_GOOD:
@@ -874,7 +878,8 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
             "trade_value_all_market_hemat": round(allmkt["val_hemat"], 2) if allmkt else None,
             "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
             "market_value_source": total_source or None,
-            "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD}
+            "excellent": hemat >= HEMAT_EXCELLENT,
+            "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD, "excellent_min": HEMAT_EXCELLENT}
 
 
 def macro_health(conn) -> dict:
@@ -897,6 +902,8 @@ def smart_money(conn) -> dict:
       در صف فروش بودند، «فرصت پایش برای ورود (FTS)» فعال می‌شود.
     - ``flow``: جریان پولِ حقیقیِ دو گروه؛ هم‌زمانیِ «ورود به سهام + خروج از
       درآمد ثابت» ⇒ «جریان نقدینگی: حالت ایده‌آل FTS» (سبز).
+    - ``verdict``: حکمِ امروز (day_verdict) — درِ همان سه قدم، تو در تو، تا
+      نبض بازار یک fetch داشته باشد نه دو.
     """
     rows, meta = enrich(conn)
     buckets = category_rows(rows)
@@ -922,26 +929,271 @@ def smart_money(conn) -> dict:
     # --- جریان پول هوشمند: ورود به سهام ⇄ خروج از درآمد ثابت
     eq_flow = round(eq["flow_bt"], 1)                  # میلیارد تومان
     fx_flow = round(fx["flow_bt"], 1)
+    _gd = _agg(buckets["gold_fund"])
+    gd_flow = round(_gd["flow_bt"], 1) if _gd["n"] else None
     ideal = bool(eq_flow > 0 and fx_flow < 0)          # پول از سودِ امن به ریسک می‌رود
 
-    return {"status": "ok", "asof": meta,
-            "macro": {"value_hemat": macro["value_hemat"],
-                      "state": macro["state"], "label": macro["label"],
-                      "basis": macro["basis"],
-                      "trade_value_all_market_hemat": macro["trade_value_all_market_hemat"],
-                      "market_value_hemat": macro["market_value_hemat"],
-                      "market_value_source": macro["market_value_source"],
-                      "index": market_index(conn),
-                      "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD},
-            "watch_entry": {"active": watch_entry, "bearish_pct": None if bear_pct is None else round(bear_pct, 1),
-                            "rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,
-                            "bearish": bearish, "known": known},
-            "flow": {"eq_flow_b_toman": eq_flow, "fixed_flow_b_toman": fx_flow,
-                     "eq_inflow": eq_flow > 0, "fixed_outflow": fx_flow < 0,
-                     "ideal_fts": ideal,
-                     "eq_value_b_toman": round(eq["val_bt"], 1),
-                     "fixed_value_b_toman": round(fx["val_bt"], 1),
-                     "sr_flow_b_toman": round(sr["flow_bt"], 1)}}
+    out = {"status": "ok", "asof": meta,
+           "macro": {"value_hemat": macro["value_hemat"],
+                     "state": macro["state"], "label": macro["label"],
+                     "basis": macro["basis"],
+                     "trade_value_all_market_hemat": macro["trade_value_all_market_hemat"],
+                     "market_value_hemat": macro["market_value_hemat"],
+                     "market_value_source": macro["market_value_source"],
+                     "excellent": macro["excellent"],
+                     "index": market_index(conn),
+                     "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD},
+           "watch_entry": {"active": watch_entry, "bearish_pct": None if bear_pct is None else round(bear_pct, 1),
+                           "rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,
+                           "bearish": bearish, "known": known},
+           "flow": {"eq_flow_b_toman": eq_flow, "fixed_flow_b_toman": fx_flow,
+                    "eq_inflow": eq_flow > 0, "fixed_outflow": fx_flow < 0,
+                    "ideal_fts": ideal,
+                    "gold_flow_b_toman": gd_flow,
+                    "gold_outflow": None if gd_flow is None else bool(gd_flow < 0),
+                    "eq_value_b_toman": round(eq["val_bt"], 1),
+                    "fixed_value_b_toman": round(fx["val_bt"], 1),
+                    "sr_flow_b_toman": round(sr["flow_bt"], 1)}}
+    # سه‌شرطِ صفحهٔ ۱۴ تنها همین‌جا بسته می‌شود (نه در لایهٔ نمایش، نه در حکم)
+    out["flow"]["trio_fts"] = _flow_trio(out["flow"])[0]
+    # حکمِ امروز (ورود / عدمِ ورود) در همان یک fetch می‌نشیند — «نبض بازار»
+    # هیچ درخواستِ دومی برایش نمی‌زند.
+    out["verdict"] = day_verdict(conn, out)
+    return out
+
+
+# ============================================================ حکمِ امروز (نبض بازار)
+# جزوه صفحهٔ ۱۳ زیرِ تیترِ «وضعیتِ کلیِ بازار را چگونه بررسی کنم؟» سه قدم
+# می‌شمارد و صفحهٔ ۱۴ دو پنجرهٔ ساعتی می‌دهد. این تابع دقیقاً همان‌ها را
+# می‌خواند و هیچ آستانه‌ای که در جزوه نیست به آن‌ها اضافه نمی‌شود:
+#   ۱) ارزشِ معاملات (همت): بالایِ ۲۰ حالِ بازار خوب، بالایِ ۵۰ عالی،
+#      زیرِ ۱۰ نامساعد — و «برایِ حرانتِ ۳ الی ۴ روزِ متوالی» بررسی شود.
+#   ۲) درصدِ منفی‌ها: ۸۰٪ منفی = «بازار هنوز فرصت‌های ورود دارد» (فرصت، نه
+#      هشدار — همین جملۀ جزوه قبلاً در UI وارونه خوانده می‌شد).
+#   ۳) روندِ پولِ حقیقی: حالت آرمانی = خروجِ صندوقِ طلا و درآمد ثابت ⇄ ورودِ
+#      سهام، حق تقدم و ص.سهامی.
+# رأیِ هر در: ‎+1 مساعد، ‎-1 نامساعد، 0 بی‌رأی (میانه یا بی‌داده). «بی‌داده»
+# هرگز رأیِ منفی نیست — همان قراری که در کل داشبورد جاری است.
+def _liq_side(hemat) -> str:
+    """سمتِ یک عددِ همت: good / bad / mid / nodata — تنها جای داوریِ همت."""
+    if hemat is None:
+        return "nodata"
+    v = _f(hemat)
+    if v <= 0:
+        return "nodata"
+    if v >= HEMAT_GOOD:
+        return "good"
+    if v <= HEMAT_BAD:
+        return "bad"
+    return "mid"
+
+
+def liquidity_history(conn, limit: int = LIQ_CONTINUITY_MIN + 2) -> list:
+    """ارزشِ معاملاتِ چند نشستِ آخر (همت) — خواندنِ تنها از market_liquidity.
+
+    نوشتارش در test_tsetmc.py است و مبنایش همان eq_allِ خودِ همین موتور، پس
+    مقایسه با عددِ امروز سیبِ‌با‌سیب است. جدول در پایگاهِ بسته‌بندی‌شده هنوز
+    نیست؛ آن‌گاه [] برمی‌گردد و درِ تداوم «بدون داده» می‌شود، نه «تأیید».
+    """
+    try:
+        rows = conn.execute(
+            "SELECT d_even, value_hemat FROM market_liquidity"
+            " ORDER BY d_even DESC LIMIT ?", (int(limit),)).fetchall()
+    except sqlite3.Error:
+        return []
+    out = []
+    for r in rows:
+        v = _f(r[1])
+        out.append({"d_even": int(_f(r[0])), "value_hemat": round(v, 2) if v > 0 else None})
+    return out
+
+
+def _gate(key, label, state, label_state, vote, detail, rule) -> dict:
+    return {"key": key, "label": label, "state": state, "label_state": label_state,
+            "vote": vote, "detail": detail, "rule": rule}
+
+
+def _flow_trio(flow: dict) -> tuple:
+    """(trio, gold_out) — تنها جای بستنِ سه‌شرطِ جزوه ص۱۴.
+
+    ورودِ سهام + خروجِ درآمد ثابت + خروجِ طلا. نبودِ دادهٔ طلا لغوِ الزام است
+    نه ردِّ شرط، پس gold_out سه‌مقداری است (True/False/None) و هیچ‌جا جای
+    دیگری این ترکیب دوباره ساخته نمی‌شود — نه در حکم، نه در لایهٔ نمایش.
+    """
+    gd = flow.get("gold_flow_b_toman")
+    gold_out = flow.get("gold_outflow")
+    if gold_out is None and gd is not None:
+        gold_out = bool(gd < 0)
+    core = bool(flow.get("eq_inflow")) and bool(flow.get("fixed_outflow"))
+    return bool(core and gold_out is not False), gold_out
+
+
+def day_verdict(conn, sm: dict = None, when=None) -> dict:
+    """حکمِ «آیا امروز روزِ ورود است؟» — سه قدمِ جزوه + پنجرهٔ ساعت."""
+    sm = sm or smart_money(conn)
+    macro = sm.get("macro") or {}
+    entry = sm.get("watch_entry") or {}
+    flow = sm.get("flow") or {}
+    asof = sm.get("asof") or {}
+    gates = []
+
+    # ---- ۱) نقدینگی -------------------------------------------------------
+    hemat = macro.get("value_hemat")
+    side = _liq_side(hemat)
+    liq_state = {"good": "ok", "bad": "bad", "mid": "mid", "nodata": "nodata"}[side]
+    if side == "good":
+        liq_label = ("عالی — بالایِ %s همت" % _fa_num(HEMAT_EXCELLENT)) if macro.get("excellent") \
+            else ("مساعد — بالایِ %s همت" % _fa_num(HEMAT_GOOD))
+    elif side == "bad":
+        liq_label = "نامساعد — زیرِ %s همت" % _fa_num(HEMAT_BAD)
+    elif side == "mid":
+        liq_label = "متوسط — میانِ دو آستانه"
+    else:
+        liq_label = "بدون داده"
+    liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
+    gates.append(_gate("liquidity", "قدمِ ۱ — ارزشِ معاملات", liq_state, liq_label,
+                       liq_vote, None if hemat is None else "%s همت" % _fa_num(hemat),
+                       "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)"))
+
+    # ---- ۱ب) تداومِ ۳–۴ روز ------------------------------------------------
+    hist = liquidity_history(conn)
+    known = [h for h in hist if h["value_hemat"] is not None]
+    if len(known) < LIQ_CONTINUITY_MIN:
+        cont_state, cont_label, cont_vote = "nodata", "بدون داده", 0
+        cont_detail = ("تاریخچه کامل نیست — %s نشست از %s"
+                       % (_fa_num(len(known)), _fa_num(LIQ_CONTINUITY_MIN)))
+    else:
+        sides = [_liq_side(h["value_hemat"]) for h in known[:LIQ_CONTINUITY_MIN]]
+        n = len(known[:LIQ_CONTINUITY_MIN])
+        if all(s == "good" for s in sides):
+            cont_state, cont_label, cont_vote = "ok", "تداومِ مساعد", 1
+        elif all(s == "bad" for s in sides):
+            cont_state, cont_label, cont_vote = "bad", "تداومِ نامساعد", -1
+        else:
+            cont_state, cont_label, cont_vote = "mid", "بدونِ تداوم", 0
+        cont_detail = "%s نشستِ اخیر: %s" % (
+            _fa_num(n), " · ".join("%s همت" % _fa_num(h["value_hemat"]) for h in known[:n]))
+    gates.append(_gate("continuity", "تداومِ ۳–۴ روز", cont_state, cont_label, cont_vote,
+                       cont_detail, "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)"))
+
+    # ---- ۲) پهنایِ بازار ---------------------------------------------------
+    bear = entry.get("bearish_pct")
+    if bear is None:
+        breadth_state, breadth_label, breadth_vote = "nodata", "بدون داده", 0
+        breadth_detail = None
+    elif entry.get("active"):
+        # جزوه: ۸۰٪ منفی یعنی «بازار هنوز فرصت‌های ورود دارد» — رأیِ مثبت.
+        breadth_state, breadth_label, breadth_vote = "ok", "فرصتِ ورود", 1
+        breadth_detail = "%s٪ از نمادهایِ معامله‌شده منفی یا در صفِ فروش" % _fa_num(bear)
+    else:
+        breadth_state, breadth_label, breadth_vote = "mid", "بدونِ فرصتِ کف", 0
+        breadth_detail = "%s٪ منفی — آستانهٔ فرصت %s٪" % (
+            _fa_num(bear), _fa_num(ENTRY_OPPORTUNITY_NEG_PCT))
+    gates.append(_gate("breadth", "قدمِ ۲ — درصدِ مثبت و منفی", breadth_state, breadth_label,
+                       breadth_vote, breadth_detail,
+                       "۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)"))
+
+    # ---- ۳) پولِ حقیقی -----------------------------------------------------
+    eq_val = flow.get("eq_flow_b_toman")
+    trio, gd_out = _flow_trio(flow)
+    gd = flow.get("gold_flow_b_toman")
+    if eq_val is None and flow.get("fixed_flow_b_toman") is None:
+        flow_state, flow_label, flow_vote, flow_detail = "nodata", "بدون داده", 0, None
+    elif trio:
+        # حالت آرمانیِ ص۱۴: پول از داراییِ امن بیرون و به سهام داخل می‌شود
+        flow_state, flow_label, flow_vote = "ok", "حالتِ آرمانی — پولِ صندوق‌ها به سهام", 1
+    elif not flow.get("eq_inflow") and _f(eq_val) < 0:
+        # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «آرمانی ندارد»
+        flow_state, flow_label, flow_vote = "bad", "پول از سهام بیرون می‌رود", -1
+    elif flow.get("eq_inflow") and flow.get("fixed_outflow"):
+        flow_state, flow_label, flow_vote = "mid", "سهام و درآمد ثابت آرمانی، طلا روشن نیست", 0
+    else:
+        flow_state, flow_label, flow_vote = "mid", "حالتِ آرمانی تکمیل نشده", 0
+    flow_detail = ("سهام %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
+        _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
+        "بدون داده" if gd_out is None else _fa_signed(gd)))
+    gates.append(_gate("flow", "قدمِ ۳ — روندِ پولِ حقیقی", flow_state, flow_label, flow_vote,
+                       flow_detail, "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)"))
+
+    # ---- پنجرهٔ ساعت -------------------------------------------------------
+    window = _clock_window(asof.get("h_even"), when)
+    gates.append(_gate("window", "پنجرهٔ ساعت", window["state"], window["label"], 0,
+                       window["detail"], "درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)"))
+
+    decisive = [g for g in gates if g["vote"]]
+    negative = [g for g in decisive if g["vote"] < 0]
+    positive = [g for g in decisive if g["vote"] > 0]
+    if not decisive:
+        verdict, vlabel = "nodata", "بدونِ حکم"
+        reason = "هیچ‌یک از سه قدمِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
+    elif negative and not positive:
+        verdict, vlabel = "avoid", "امروز وارد نشو"
+        reason = " · ".join(g["label_state"] for g in negative)
+    elif positive and not negative:
+        if any(g["key"] == "liquidity" for g in positive) and any(g["key"] == "flow" for g in positive):
+            verdict, vlabel = "go", "روزِ ورود است"
+        else:
+            verdict, vlabel = "watch", "پایِ بازار بمان"
+        reason = " · ".join(g["label_state"] for g in positive)
+    else:
+        verdict, vlabel = "wait", "صبر — نشانه‌ها مخالف‌اند"
+        reason = "موافقِ ورود: %s · اما %s" % (
+            "، ".join(g["label_state"] for g in positive),
+            "، ".join(g["label_state"] for g in negative))
+    return {"status": "ok", "verdict": verdict, "label": vlabel, "reason": reason,
+            "gates": gates, "basis": "fts_notes_p13_p14"}
+
+
+def _fa_num(v) -> str:
+    """عددِ فارسیِ بدونِ اعشارِ زائد — متنِ حکم در بک‌اند ساخته می‌شود تا
+    لایهٔ نمایش هیچ قالب‌بندیِ عددی‌ای نکند."""
+    if v is None:
+        return "—"
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return str(v)
+    s = ("%.2f" % f).rstrip("0").rstrip(".")
+    return s.translate(_FA_DIGITS)
+
+
+def _fa_signed(v) -> str:
+    if v is None:
+        return "بدون داده"
+    return ("+" if v > 0 else ("−" if v < 0 else "")) + _fa_num(abs(v))
+
+
+_FA_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
+
+def _clock_window(h_even, when=None) -> dict:
+    """کدام پنجرهٔ جزوه (ص۱۴) روی این داده باز است.
+
+    ساعت از h_evenِ خودِ داده خوانده می‌شود، نه از دیوارِ دستگاه: بعد از
+    بسته‌شدنِ بازار ساعتِ دستگاه به نشستِ امروز ربطی ندارد و پنجرهٔ دروغین
+    نشان می‌داد. `when` فقط برای تست تزریق می‌شود.
+    """
+    hm, hhmm = -1, None
+    s = "%06d" % int(_f(h_even))
+    if s != "000000":
+        hm = int(s[0:2]) * 60 + int(s[2:4])
+        hhmm = "%s:%s" % (s[0:2], s[2:4])
+    if hm < 0 and when is not None:
+        hm = when.hour * 60 + when.minute
+        hhmm = "%02d:%02d" % (when.hour, when.minute)
+    if hm < 0:
+        return {"state": "nodata", "label": "بدون داده", "detail": None}
+    hhmm = hhmm.translate(_FA_DIGITS)
+    if 540 <= hm < 570:
+        return {"state": "ok", "label": "پنجرهٔ درآمد ثابت باز است",
+                "detail": "۰۹:۰۰–۰۹:۳۰ (ساعتِ داده %s) — صندوق‌های درآمد ثابت در این"
+                          " نیم‌ساعت خرید می‌کنند" % hhmm}
+    if 735 <= hm <= 750:
+        return {"state": "ok", "label": "پنجرهٔ شفافیتِ طلا",
+                "detail": "۱۲:۱۵–۱۲:۳۰ (ساعتِ داده %s) — جریانِ صندوقِ طلا در این"
+                          " بازه روشن می‌شود" % hhmm}
+    return {"state": "mid", "label": "خارجِ پنجره‌ها",
+            "detail": "ساعتِ داده %s · پنجره‌های جزوه ۰۹:۰۰–۰۹:۳۰ و ۱۲:۱۵–۱۲:۳۰‌اند" % hhmm}
 
 
 # ============================================================ گام ۲ و ۳: هیستوگرام

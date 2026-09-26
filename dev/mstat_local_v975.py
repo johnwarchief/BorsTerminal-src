@@ -539,6 +539,91 @@ ck(ME.smart_money(_ixc)["macro"]["index"]["pct"] is not None,
 ck(_sync.count("save_market_index(conn, bourse_ov") == 2,
    "هر دو مسیرِ همگام‌سازی (main و اسنپ‌شات) شاخص را می‌نویسند")
 
+# ── حکمِ امروز (نبض بازار): نوشتنِ همتِ روز ⇔ خواندنِ درِ تداوم ⇔ رأیِ سه‌گانه ──
+# جزوه ص۱۳ زیرِ تیترِ «وضعیتِ کلیِ بازار را چگونه بررسی کنم؟» سه قدم می‌شمارد
+# (ارزشِ معاملات با تداومِ ۳–۴ روز، درصدِ منفی‌ها، روندِ پولِ حقیقی) و ص۱۴ دو
+# پنجرهٔ ساعتی می‌دهد. این‌ها همان‌ها هستند — و مهم‌تر از آن: نبودِ داده هرگز
+# رأیِ «وارد نشو» نمی‌سازد.
+_vc = new_db()
+_vday = seed(_vc)
+_mac = ME.macro_health(_vc)
+ck(_mac["value_hemat"], "نمونهٔ دستیِ mstat همتِ قابل‌داوری دارد")
+ck(TT.save_market_liquidity(_vc, _vday, now="x") is True,
+   "سینک، همتِ همان نشست را در market_liquidity ثبت می‌کند")
+_hist = ME.liquidity_history(_vc)
+ck(len(_hist) == 1 and abs(_hist[0]["value_hemat"] - _mac["value_hemat"]) < 1e-9,
+   "تاریخچه از همان مبنایِ عددِ امروز نوشته می‌شود (eq_all)، نه جمعِ دستیِ تابلو")
+ck(TT.save_market_liquidity(_vc, 0, now="x") is False,
+   "بی‌روزِ نشست هیچ سطری نوشته نمی‌شود")
+ck(ME.liquidity_history(new_db()) == [],
+   "بی‌جدولِ تاریخچه یعنی [] و درِ تداوم «بدون داده» — نه صفرِ تأییدشده")
+ck(_sync.count("if save_market_liquidity(conn,") == 2,
+   "هر دو مسیرِ همگام‌سازی همتِ روز را می‌نویسند (وگرنه تاریخچه قطع می‌شود)")
+ck("verdict" in ME.smart_money(_vc),
+   "حکم در همان یک fetchِ پولِ هوشمند می‌آید، نه در درخواستِ دومی")
+
+
+def _vd(**sm):
+    """day_verdict روی یک پول‌هوشمندِ ساختگی — درها جدا آزمایش شوند."""
+    base = {"macro": {}, "watch_entry": {}, "flow": {}, "asof": {}}
+    base.update(sm)
+    return ME.day_verdict(_vc, base)
+
+
+_empty = _vd()
+ck(_empty["verdict"] == "nodata",
+   "هیچ‌چیز ندیده‌ایم ⇒ حکم صادر نمی‌شود (نه «وارد نشو»، نه «ورود»)")
+ck(all(g["vote"] == 0 for g in _empty["gates"]),
+   "نبودِ داده در هیچ دری رأیِ منفی نیست")
+_dry = _vd(macro={"value_hemat": None, "state": "nodata"})
+_liq_dry = [g for g in _dry["gates"] if g["key"] == "liquidity"][0]
+ck(_liq_dry["label_state"] == "بدون داده" and _liq_dry["state"] == "nodata",
+   "درِ نقدینگی روی بی‌داده «بدون داده» است، نه «نامساعد»")
+_bad = _vd(macro={"value_hemat": 6.2, "state": "bad", "label": "نامساعد", "bad_max": 10.0})
+ck(_bad["verdict"] == "avoid", "همتِ ۶.۲ (زیرِ ۱۰) ⇒ «امروز وارد نشو»")
+_hi = _vd(macro={"value_hemat": 63.0, "state": "good", "label": "مساعد",
+                 "excellent": True, "good_min": 20.0})
+ck("عالی" in _hi["gates"][0]["label_state"], "بالایِ ۵۰ همت «عالی» است، نه فقط «مساعد»")
+_opp = _vd(watch_entry={"active": True, "bearish_pct": 88.0, "rule_pct": 80.0})
+_breadth = [g for g in _opp["gates"] if g["key"] == "breadth"][0]
+ck(_breadth["vote"] == 1 and "فرصت" in _breadth["label_state"],
+   "۸۰٪ منفی طبقِ جزوه «فرصتِ ورود» است — رأیِ مثبت، نه هشدار")
+ck("هشدار" not in _breadth["label_state"] and _breadth["state"] == "ok",
+   "برچسبِ دیدنیِ درِ پهنای بازار «هشدار» نیست — در جزوه «فرصت» است")
+_ideal = _vd(macro={"value_hemat": 27.0, "state": "good", "label": "مساعد"},
+             flow={"eq_inflow": True, "fixed_outflow": True, "eq_flow_b_toman": 120.0,
+                   "fixed_flow_b_toman": -80.0, "gold_flow_b_toman": -12.0})
+ck([g for g in _ideal["gates"] if g["key"] == "flow"][0]["vote"] == 1,
+   "سه‌گانهٔ پول (ورودِ سهام + خروجِ درآمد ثابت + خروجِ طلا) رأیِ مثبت دارد")
+_nogold = _vd(flow={"eq_inflow": True, "fixed_outflow": True, "eq_flow_b_toman": 120.0,
+                    "fixed_flow_b_toman": -80.0, "gold_flow_b_toman": None})
+ck([g for g in _nogold["gates"] if g["key"] == "flow"][0]["vote"] == 1,
+   "نبودِ دادهٔ طلا لغوِ الزام است، نه ردِّ شرط")
+_out = _vd(flow={"eq_inflow": False, "fixed_outflow": False, "eq_flow_b_toman": -300.0,
+                 "fixed_flow_b_toman": 90.0, "gold_flow_b_toman": 40.0})
+ck([g for g in _out["gates"] if g["key"] == "flow"][0]["vote"] == -1,
+   "خروجِ صریحِ پول از سهام رأیِ منفی است (نه فقط «حالتِ آرمانی ندارد»")
+_w1 = ME._clock_window(91500)
+_w2 = ME._clock_window(122200)
+_w3 = ME._clock_window(125900)
+ck(_w1["state"] == "ok" and "درآمد ثابت" in _w1["label"], "۰۹:۱۵ پنجرهٔ درآمد ثابت است")
+ck(_w2["state"] == "ok" and "طلا" in _w2["label"], "۱۲:۲۲ پنجرهٔ شفافیتِ طلا است")
+ck(_w3["state"] == "mid", "۱۲:۵۹ خارجِ هر دو پنجره است")
+
+
+def _human(v):
+    """همۀ متنِ دیدنیِ حکم — تیتر، علت و برچسبِ هر در."""
+    return "".join([v["label"], v["reason"]] +
+                   [g["label"] + g["label_state"] + str(g["detail"]) for g in v["gates"]])
+
+
+ck(not any(c.isascii() and c.isdigit() for c in _human(_ideal)),
+   "همۀ متنِ حکم با رقمِ فارسی نوشته می‌شود (قالبِ عددی در بک‌اند است)")
+ck(not any(c.isascii() and c.isdigit() for c in _human(_opp)),
+   "متنِ «فرصتِ ورود» هم رقمِ لاتین ندارد")
+ck(_ideal["gates"][4]["key"] == "window" and len(_ideal["gates"]) == 5,
+   "پنج در: نقدینگی، تداوم، پهنای بازار، پولِ حقیقی، پنجرهٔ ساعت")
+
 conn = new_db()
 day = seed(conn)
 # یک ردیفِ «آینده» برای i_st1 می‌گذاریم: اگر کرانِ روز کار نکند، سرانهٔ خریدِ
