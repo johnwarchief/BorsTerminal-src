@@ -612,9 +612,10 @@ ck(_w3["state"] == "mid", "۱۲:۵۹ خارجِ هر دو پنجره است")
 
 
 def _human(v):
-    """همۀ متنِ دیدنیِ حکم — تیتر، علت و برچسبِ هر در."""
+    """همۀ متنِ دیدنیِ حکم — تیتر، علت، برچسبِ هر در و جملهٔ رنگش."""
     return "".join([v["label"], v["reason"]] +
-                   [g["label"] + g["label_state"] + str(g["detail"]) for g in v["gates"]])
+                   [g["label"] + g["label_state"] + str(g["detail"]) + str(g.get("why"))
+                    for g in v["gates"]])
 
 
 ck(not any(c.isascii() and c.isdigit() for c in _human(_ideal)),
@@ -623,6 +624,20 @@ ck(not any(c.isascii() and c.isdigit() for c in _human(_opp)),
    "متنِ «فرصتِ ورود» هم رقمِ لاتین ندارد")
 ck(_ideal["gates"][4]["key"] == "window" and len(_ideal["gates"]) == 5,
    "پنج در: نقدینگی، تداوم، پهنای بازار، پولِ حقیقی، پنجرهٔ ساعت")
+# #170: شمارهٔ «قدم» از متن بیرون رفت (ترتیبی در داوری نیست) و هر در یک جملهٔ
+# «این رنگ یعنی چی» دارد — سؤالِ مالک دقیقاً همین بود.
+ck("قدمِ" not in _human(_ideal) and "قدمِ" not in _human(_opp) and "قدمِ" not in _human(_bad),
+   "هیچ «قدمِ …»ی در متنِ دیدنیِ حکم نمانده («حق تقدم» کلمه‌اش جداست)")
+ck(all(str(g.get("why") or "").strip() for g in _ideal["gates"]),
+   "هر پنج در جملهٔ توضیحِ رنگ دارند")
+ck(all(ME._gate_why(k, st, {}, {}).strip() for k in
+       ("liquidity", "continuity", "breadth", "flow", "window")
+       for st in ("ok", "mid", "bad", "nodata")),
+   "برای هر در و هر رنگ جمله هست — هیچ حالتی بی‌توضیح یا بی‌«None» نمی‌ماند")
+ck(not any("None" in ME._gate_why(k, st, {}, {}) for k in
+           ("liquidity", "continuity", "breadth", "flow", "window")
+           for st in ("ok", "mid", "bad", "nodata")),
+   "هیچ جمله‌ای «None»ی خام از پایتون ندارد")
 # ساده‌سازیِ متن (#165): دلیلِ حکم باید بگوید کدام در، نه فقط فهرستِ وضعیت‌ها.
 ck(all(g.get("short") for g in _ideal["gates"]), "هر پنج در نامِ کوتاه دارد")
 ck(all(g["short"] in _ideal["reason"] for g in _ideal["gates"] if g["vote"]),
@@ -692,6 +707,22 @@ if os.path.exists("market.db"):
     ck(abs(tb_ - 100.0) < 0.2, "درصد خرید حقیقی+حقوقی ≈ ۱۰۰ (was %s)" % tb_)
     lt = ME.timeline(conn)
     ck(lt["points"] >= 1, "حداقل یک نقطهٔ تایم‌لاین از همگام‌سازی ثبت شده")
+    # ---- #170: درِ «تداوم» باید روی دادهٔ واقعی نشست داشته باشد --------------
+    hist = ME.liquidity_history(conn)
+    hk = [h for h in hist if h["value_hemat"]]
+    ck(len(hk) >= ME.LIQ_CONTINUITY_MIN,
+       "تداوم روی دادهٔ واقعی %d نشست دارد (بک‌فیلد از daily_prices)، نه «بدون داده»" % len(hk))
+    saved = conn.execute("SELECT d_even, value_hemat FROM market_liquidity"
+                         " ORDER BY d_even DESC LIMIT 1").fetchone()
+    if saved:
+        bf = ME._liquidity_from_price_history(conn, [int(saved[0])])
+        ck(bool(bf) and abs(bf[0]["value_hemat"] - float(saved[1])) < 0.05,
+           "مبنای بک‌فیلد = مبنای سینک (%s همت در برابر %s)"
+           % (bf[0]["value_hemat"] if bf else None, float(saved[1])))
+        ck(ME._liquidity_from_price_history(conn, [int(saved[0])], min_symbols=10 ** 9) == [],
+           "روزی که نمادِ گردش‌دارش زیرِ کران باشد عدد نمی‌سازد (نصفه‌سینک)")
+    ck(ME._liquidity_from_price_history(conn, [19990101]) == [],
+       "روزی که در تاریخچۀ قیمت نیست عدد نمی‌سازد")
     conn.close()
 else:
     print("SKIP: market.db not found — گاردهای دادهٔ واقعی کنار گذاشته شد")

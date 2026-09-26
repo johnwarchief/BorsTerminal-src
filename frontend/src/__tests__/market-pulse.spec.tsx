@@ -69,52 +69,57 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
       gates: [
         {
           key: 'liquidity',
-          label: 'قدمِ ۱ — ارزشِ معاملات',
+          label: 'گردشِ پولِ امروز',
           short: 'نقدینگی',
           state: liqGood ? 'ok' : 'bad',
           label_state: liqGood ? 'مساعد' : 'نامساعد',
           vote: liqGood ? 1 : -1,
           detail: '۲۲.۵ همت',
           rule: 'بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)',
+          why: 'سبز یعنی گردشِ پولِ امروزِ سهام و حق تقدم از کفِ جزوه بالاتر رفته است.',
         },
         {
           key: 'continuity',
-          label: 'تداومِ ۳–۴ روز',
+          label: 'تداومِ سه نشستِ اخیر',
           short: 'تداوم',
           state: 'nodata',
           label_state: 'بدون داده',
           vote: 0,
           detail: 'تاریخچه کامل نیست — ۱ نشست از ۳',
           rule: 'همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)',
+          why: 'بی‌رنگ یعنی تاریخچۀ سه نشستِ اخیر کامل نشده.',
         },
         {
           key: 'breadth',
-          label: 'قدمِ ۲ — درصدِ مثبت و منفی',
+          label: 'درصدِ نمادهایِ نزولی',
           short: 'پهنایِ بازار',
           state: bear >= 80 ? 'ok' : 'mid',
           label_state: bear >= 80 ? 'فرصتِ ورود' : 'بدونِ فرصتِ کف',
           vote: bear >= 80 ? 1 : 0,
           detail: '٪۸۸ منفی',
           rule: '۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)',
+          why: 'زرد یعنی درصدِ نمادهایِ نزولی از آستانۀ ۸۰٪ پایین‌تر بوده؛ پس نشانه‌ای برای ورود نیست.',
         },
         {
           key: 'flow',
-          label: 'قدمِ ۳ — روندِ پولِ حقیقی',
+          label: 'جهتِ پولِ حقیقی',
           short: 'پولِ حقیقی',
           state: ideal ? 'ok' : 'bad',
           label_state: ideal ? 'حالتِ آرمانی' : 'خروجِ پول از سهام',
           vote: ideal ? 1 : -1,
           rule: 'خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)',
+          why: 'سبز یعنی پولِ حقیقی هم‌زمان از درآمد ثابت و طلا بیرون آمده و به سهام وارد شده است.',
         },
         {
           key: 'window',
-          label: 'پنجرهٔ ساعت',
+          label: 'پنجرهٔ زمانیِ جزوه',
           short: 'ساعت',
           state: 'mid',
           label_state: 'خارجِ پنجره‌ها',
           vote: 0,
           detail: 'ساعتِ داده ۱۲:۵۹',
           rule: 'درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)',
+          why: 'زرد یعنی بیرونِ پنجره‌هایِ جزوه‌ایم؛ این شرط رأیی در حکم ندارد.',
         },
       ],
     },
@@ -446,17 +451,23 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
       expect(screen.getByTestId(`pulse-verdict-gate-${k}`)).toBeInTheDocument();
     }
-    // چیپ‌ها نامِ کوتاه + نشانِ رأی‌اند؛ متنِ کاملِ موتور در title می‌ماند
-    // (بیرون‌کشیدنش از body تستِ همین است که نوار دو بار بلند نشود).
+    // هر شرط یک سطرِ مستقل است (#170) و یک جملهٔ «رنگش یعنی چی» دارد
+    const list = screen.getByTestId('pulse-verdict-gate-flow').parentElement;
+    expect(list?.tagName).toBe('UL');
+    expect(list?.children).toHaveLength(5);
+    for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
+      expect(screen.getByTestId(`pulse-verdict-why-${k}`).textContent).toBeTruthy();
+    }
+    // هیچ‌جا شمارهٔ «قدم» نمی‌ماند — ترتیبی در داوری نیست
+    expect(screen.getByTestId('pulse-verdict').textContent).not.toContain('قدمِ');
     const flow = screen.getByTestId('pulse-verdict-gate-flow');
-    expect(flow.textContent).toContain('پولِ حقیقی');
-    expect(flow.textContent).not.toContain('قدمِ ۳');
+    expect(flow.textContent).toContain('جهتِ پولِ حقیقی');
     expect(flow.getAttribute('title')).toContain('حالتِ آرمانی');
     // درِ بی‌داده با رنگِ داوری‌شده نمی‌نشیند
     const cont = screen.getByTestId('pulse-verdict-gate-continuity');
     expect(cont.getAttribute('title')).toContain('بدون داده');
     expect(cont.textContent).toContain('؟');
-    expect(cont.className).toContain('text-text-muted');
+    expect(screen.getByTestId('pulse-verdict-mark-continuity').className).toContain('text-text-muted');
     // دو شاخص روی هم در ستونِ راست و حکم کنارشان
     const idx = screen.getByTestId('pulse-index');
     expect(idx.className).toContain('flex-col');

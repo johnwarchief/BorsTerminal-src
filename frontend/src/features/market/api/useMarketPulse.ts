@@ -46,6 +46,8 @@ export const VerdictGateSchema = z.object({
   vote: z.number(),
   detail: z.string().nullish(),
   rule: z.string().nullish(),
+  /** یک جمله از موتور: رنگِ این شرط دقیقاً چه می‌گوید (#170). */
+  why: z.string().nullish(),
 });
 export type VerdictGate = z.infer<typeof VerdictGateSchema>;
 

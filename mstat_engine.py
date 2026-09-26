@@ -51,6 +51,10 @@ HEMAT_EXCELLENT = 50.0       # «بالایِ ۵۰ همت هم عال[ی]» — 
 ENTRY_OPPORTUNITY_NEG_PCT = 80.0
 # جزوه صفحهٔ ۱۳: وضعیتِ نقدینگی را «برایِ حرانتِ ۳ الی ۴ روزِ متوالی» بررسی کن
 LIQ_CONTINUITY_MIN = 3
+# روزهایی از تاریخچۀ قیمت که کمتر از این تعداد نمادِ گردش‌دار دارند نصفه
+# سینک شده‌اند و عددشان برای داوریِ تداوم باورپذیر نیست (تابلو کامل حدود
+# هزار و ششصد نماد معامله‌شده دارد؛ نیمه‌سینک خیلی زیرِ این می‌ماند).
+LIQ_BACKFILL_MIN_SYMBOLS = 1200
 # الگوی ساعت: اختلاف آخرین/پایانی
 CLOCK_PCT = 1.0
 # نمادی با کمتر از این تعداد معامله، «آخرین»ش برای شکارِ الگوی ساعت قابل
@@ -989,33 +993,109 @@ def _liq_side(hemat) -> str:
 
 
 def liquidity_history(conn, limit: int = LIQ_CONTINUITY_MIN + 2) -> list:
-    """ارزشِ معاملاتِ چند نشستِ آخر (همت) — خواندنِ تنها از market_liquidity.
+    """ارزشِ معاملاتِ چند نشستِ آخر (همت) — market_liquidity و، برای روزهایی
+    که هنوز ردیفی ندارند، تاریخچۀ روزانۀ قیمت.
 
     نوشتارش در test_tsetmc.py است و مبنایش همان eq_allِ خودِ همین موتور، پس
     مقایسه با عددِ امروز سیبِ‌با‌سیب است. جدول در پایگاهِ بسته‌بندی‌شده هنوز
-    نیست؛ آن‌گاه [] برمی‌گردد و درِ تداوم «بدون داده» می‌شود، نه «تأیید».
+    نیست (یا یک ردیف دارد) — آن‌گاه درِ تداوم تا پیش از این «بدون داده»
+    می‌ماند و مالک همان را «داده نداری» خواند. پس نشست‌هایِ گذشته از
+    daily_prices شمارش می‌شوند (توضیح و دقتِ همان مبنا در
+    _liquidity_from_price_history). اگر آن هم نبود [] برمی‌گردد و در «بدون
+    داده» می‌ماند، نه «تأیید».
     """
     try:
         rows = conn.execute(
             "SELECT d_even, value_hemat FROM market_liquidity"
             " ORDER BY d_even DESC LIMIT ?", (int(limit),)).fetchall()
     except sqlite3.Error:
-        return []
+        rows = []
     out = []
     for r in rows:
         v = _f(r[1])
         out.append({"d_even": int(_f(r[0])), "value_hemat": round(v, 2) if v > 0 else None})
+    if len([h for h in out if h["value_hemat"] is not None]) >= limit:
+        return out[:limit]
+    have = {h["d_even"] for h in out}
+    try:
+        days = [int(_f(r[0])) for r in conn.execute(
+            "SELECT DISTINCT d_even FROM daily_prices ORDER BY d_even DESC LIMIT ?",
+            (int(limit) * 3,)).fetchall()]
+    except sqlite3.Error:
+        days = []
+    for h in _liquidity_from_price_history(conn, [d for d in days if d not in have]):
+        out.append(h)
+    out.sort(key=lambda h: -h["d_even"])
+    return out[:limit]
+
+
+def _eq_all_codes(conn) -> set:
+    """مجموعۀ ins_code هایی که در eq_all می‌نشینند (سهام + حق تقدم + ص.سهامی).
+
+    از classifyِ خودِ همین موتور ساخته می‌شود — همان تابعی که in_category برای
+    عددِ امروز به کار می‌برد، پس تاریخچۀ بک‌فیلد با امروز هم‌مبناست. هیچ
+    حافظه‌ای بین دو صدا نگه داشته نمی‌شود: اتصالِ تست و اتصالِ برنامه یکی
+    نیستند و کشِ سراسری یک عددِ کهنه از بانکِ دیگر درمی‌آورد.
+    """
+    codes = set()
+    try:
+        rows = conn.execute(
+            "SELECT ins_code, paper_type, l_val30, l_val18, sector_name FROM instruments").fetchall()
+    except sqlite3.Error:
+        return codes
+    for code, pt, name, sym, sector in rows:
+        cls, kind = classify(pt, name or "", sym or "", sector or "")
+        if cls in (PAPER_STOCK, PAPER_RIGHT) or (cls == PAPER_FUND and kind in ("equity", "fof")):
+            codes.add(code)
+    return codes
+
+
+def _liquidity_from_price_history(conn, dates, min_symbols: int = LIQ_BACKFILL_MIN_SYMBOLS) -> list:
+    """گردشِ روزانۀ eq_all (همت) از daily_prices، برای روزهایی که
+    market_liquidity ردیف ندارد.
+
+    q_tot_cap ارزشِ معاملاتِ همان روز است (ریال)؛ جمعش روی نمادهای eq_all با
+    عددی که خودِ سینک برای همان روز می‌نویسد مو به مو می‌خواند (شاهد: نشستِ
+    ۲۰۲۶۰۹۲۶ هر دو ۳۹٫۹۸ همت). روزی که تعدادِ نمادهایِ گردش‌دارش از
+    LIQ_BACKFILL_MIN_SYMBOLS کمتر باشد نصفه‌سینک است و رد می‌شود — عددِ نصفه
+    «تداومِ نامساعد» نمی‌سازد.
+    """
+    if not dates:
+        return []
+    codes = _eq_all_codes(conn)
+    if not codes:
+        return []
+    marks = ",".join("?" * len(dates))
+    try:
+        raw = conn.execute(
+            "SELECT d_even, ins_code, q_tot_cap FROM daily_prices"
+            " WHERE q_tot_cap > 0 AND d_even IN (%s)" % marks, tuple(dates)).fetchall()
+    except sqlite3.Error:
+        return []
+    tot, cnt = {}, {}
+    for d, code, val in raw:
+        if code not in codes:
+            continue
+        d = int(_f(d))
+        tot[d] = tot.get(d, 0.0) + _f(val)
+        cnt[d] = cnt.get(d, 0) + 1
+    out = []
+    for d in dates:
+        if cnt.get(int(d), 0) < min_symbols:
+            continue
+        out.append({"d_even": int(d), "value_hemat": round(tot[int(d)] / HEMAT_FROM_RIAL, 2)})
     return out
 
 
-def _gate(key, label, short, state, label_state, vote, detail, rule) -> dict:
+def _gate(key, label, short, state, label_state, vote, detail, rule, why=None) -> dict:
     return {"key": key, "label": label, "short": short, "state": state,
-            "label_state": label_state, "vote": vote, "detail": detail, "rule": rule}
+            "label_state": label_state, "vote": vote, "detail": detail, "rule": rule,
+            "why": why}
 
 
 def _clause(gates, sep=" · ") -> str:
-    """جملهٔ دلیل: نامِ کوتاهِ در + وضعیتِ کاملش. نامِ بلندِ «قدمِ ۱ — …» فقط
-    در tooltip می‌آید؛ دلیلِ حکم باید در یک خط خوانده شود."""
+    """جملهٔ دلیل: نامِ کوتاهِ در + وضعیتِ کاملش. نامِ بلندِ هر در روی خودِ
+    سطرِ شرط می‌آید؛ دلیلِ حکم باید در یک خط خوانده شود."""
     return sep.join("%s: %s" % (g["short"], g["label_state"]) for g in gates)
 
 
@@ -1034,8 +1114,77 @@ def _flow_trio(flow: dict) -> tuple:
     return bool(core and gold_out is not False), gold_out
 
 
+def _gate_why(key: str, state: str, macro: dict, entry: dict) -> str:
+    """یک جملهٔ صریح: رنگِ این شرط دقیقاً چه می‌گوید.
+
+    رأیِ مالک (#170): «ارزش معاملات نوشتی سبزش کردی یعنی چی؟» و «درصدِ مثبت و
+    منفی با ضربدر یعنی درصدِ چه چیزی؟». داوری اینجا ساخته نمی‌شود — فقط همان
+    stateِ موتور به زبانِ ساده توضیح داده می‌شود. آستانه‌ها از ثابت‌هایِ خودِ
+    موتور خوانده می‌شوند، پس اگر کشوی تنظیمات روزی جابه‌جایشان کرد این جمله
+    هم با آن‌ها می‌آید.
+    """
+    good = macro.get("good_min") if macro.get("good_min") is not None else HEMAT_GOOD
+    bad = macro.get("bad_max") if macro.get("bad_max") is not None else HEMAT_BAD
+    bear = entry.get("bearish_pct")
+    if key == "liquidity":
+        return {
+            "ok": "سبز یعنی گردشِ پولِ امروزِ سهام و حق تقدم از کفِ جزوه (%s همت) بالاتر رفته است."
+                  % _fa_num(good),
+            "bad": "سرخ یعنی گردشِ امروز زیرِ %s همت مانده — بازار راکد است و پولِ تازه وارد نمی‌شود."
+                   % _fa_num(bad),
+            "mid": "زرد یعنی گردشِ امروز بینِ %s و %s همت است؛ نه روزِ ورود، نه رکود."
+                   % (_fa_num(bad), _fa_num(good)),
+            "nodata": "بی‌رنگ یعنی ارزشِ معاملاتِ امروز هنوز نیامده، پس داوری در کار نیست.",
+        }[state]
+    if key == "continuity":
+        n = _fa_num(LIQ_CONTINUITY_MIN)
+        return {
+            "ok": "سبز یعنی %s نشستِ پشتِ هم بالایِ کفِ %s همت بوده‌اند؛ نقدینگیِ امروز تصادفی نیست."
+                  % (n, _fa_num(good)),
+            "bad": "سرخ یعنی %s نشستِ پشتِ هم زیرِ %s همت بوده‌اند — رکودِ چند روزه." % (n, _fa_num(bad)),
+            "mid": "زرد یعنی جهتِ نقدینگی در %s نشستِ اخیر یکی نبوده؛ نه تأیید می‌شود نه رد." % n,
+            "nodata": "بی‌رنگ یعنی تاریخچۀ %s نشستِ اخیر کامل نشده." % n,
+        }[state]
+    if key == "breadth":
+        thr = _fa_num(ENTRY_OPPORTUNITY_NEG_PCT)
+        ok_why = ("سبز یعنی %s٪ از نمادهایِ معامله‌شده نزولی بودند؛ جزوه این را کفِ بازار می‌خواند، "
+                  "نه هشدار." % _fa_num(bear)) if bear is not None else (
+                      "سبز یعنی منفی‌ها از آستانۀ %s٪ گذشته‌اند — کفِ بازار، نه هشدار." % thr)
+        return {
+            "ok": ok_why,
+            "mid": "زرد یعنی درصدِ نمادهایِ نزولی از آستانۀ %s٪ پایین\u200cتر بوده" % thr
+                   + (" (همین حالا %s٪)" % _fa_num(bear) if bear is not None else "")
+                   + "؛ پس نشانه‌ای برای ورود نیست.",
+            "bad": "سرخ یعنی بیشترِ نمادها نزولی‌اند و بازار در ریزشِ عمومی است.",
+            "nodata": "بی‌رنگ یعنی شمارشِ مثبت و منفیِ امروز نیامده.",
+        }[state]
+    if key == "flow":
+        return {
+            "ok": "سبز یعنی پولِ حقیقی هم‌زمان از درآمد ثابت و طلا بیرون آمده و به سهام وارد شده "
+                  "است — حالتِ آرمانیِ جزوه.",
+            "bad": "سرخ یعنی پولِ حقیقی از سهام بیرون رفته است؛ جهتِ مخالفِ ورود.",
+            "mid": "زرد یعنی سه شرطِ آرمانی یکجا برقرار نیستند و جهتِ پول هنوز روشن نشده.",
+            "nodata": "بی‌رنگ یعنی تفکیکِ خرید و فروشِ حقیقی برای امروز نیست.",
+        }[state]
+    if key == "window":
+        return {
+            "ok": "سبز یعنی ساعتِ همین داده روی یکی از پنجره‌هایِ جزوه نشسته است؛ بازه در سطرِ "
+                  "پایینِ همین شرط نوشته شده.",
+            "mid": "زرد یعنی بیرونِ پنجره‌هایِ جزوه‌ایم. این شرط رأیی در حکم ندارد و فقط می‌گوید "
+                   "داده مربوط به کدام ساعت است.",
+            "bad": "سرخ یعنی پنجرهٔ جزوه بسته است.",
+            "nodata": "بی‌رنگ یعنی ساعتِ داده همراه نیست.",
+        }[state]
+    return ""
+
+
 def day_verdict(conn, sm: dict = None, when=None) -> dict:
-    """حکمِ «آیا امروز روزِ ورود است؟» — سه قدمِ جزوه + پنجرهٔ ساعت."""
+    """حکمِ «آیا امروز روزِ ورود است؟» — پنج شرطِ جزوه، هرکدام با توضیحِ رنگش.
+
+    شمارهٔ «قدمِ ۱/۲/۳» حذف شده (#170): کاربر آن را ترتیبِ اجرا نمی‌فهمید و
+    هیچ ترتیبی هم در داوری نیست. هر در `why` دارد — یک جمله که می‌گوید رنگش
+    دقیقاً چه می‌گوید.
+    """
     sm = sm or smart_money(conn)
     macro = sm.get("macro") or {}
     entry = sm.get("watch_entry") or {}
@@ -1052,7 +1201,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     liq_label = {"good": "عالی" if macro.get("excellent") else "مساعد",
                  "bad": "نامساعد", "mid": "متوسط", "nodata": "بدون داده"}[side]
     liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
-    gates.append(_gate("liquidity", "قدمِ ۱ — ارزشِ معاملات", "نقدینگی",
+    gates.append(_gate("liquidity", "گردشِ پولِ امروز", "نقدینگی",
                        liq_state, liq_label,
                        liq_vote, None if hemat is None else "%s همت" % _fa_num(hemat),
                        "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)"))
@@ -1075,7 +1224,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
             cont_state, cont_label, cont_vote = "mid", "بدونِ تداوم", 0
         cont_detail = "%s نشستِ اخیر: %s" % (
             _fa_num(n), " · ".join("%s همت" % _fa_num(h["value_hemat"]) for h in known[:n]))
-    gates.append(_gate("continuity", "تداومِ ۳–۴ روز", "تداوم", cont_state, cont_label, cont_vote,
+    gates.append(_gate("continuity", "تداومِ سه نشستِ اخیر", "تداوم", cont_state, cont_label, cont_vote,
                        cont_detail, "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)"))
 
     # ---- ۲) پهنایِ بازار ---------------------------------------------------
@@ -1091,7 +1240,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         breadth_state, breadth_label, breadth_vote = "mid", "بدونِ فرصتِ کف", 0
         breadth_detail = "%s٪ منفی — آستانهٔ فرصت %s٪" % (
             _fa_num(bear), _fa_num(ENTRY_OPPORTUNITY_NEG_PCT))
-    gates.append(_gate("breadth", "قدمِ ۲ — درصدِ مثبت و منفی", "پهنایِ بازار",
+    gates.append(_gate("breadth", "درصدِ نمادهایِ نزولی", "پهنایِ بازار",
                        breadth_state, breadth_label,
                        breadth_vote, breadth_detail,
                        "۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)"))
@@ -1115,21 +1264,26 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     flow_detail = ("سهام %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
         _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
         "بدون داده" if gd_out is None else _fa_signed(gd)))
-    gates.append(_gate("flow", "قدمِ ۳ — روندِ پولِ حقیقی", "پولِ حقیقی",
+    gates.append(_gate("flow", "جهتِ پولِ حقیقی", "پولِ حقیقی",
                        flow_state, flow_label, flow_vote,
                        flow_detail, "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)"))
 
     # ---- پنجرهٔ ساعت -------------------------------------------------------
     window = _clock_window(asof.get("h_even"), when)
-    gates.append(_gate("window", "پنجرهٔ ساعت", "ساعت", window["state"], window["label"], 0,
+    gates.append(_gate("window", "پنجرهٔ زمانیِ جزوه", "ساعت", window["state"], window["label"], 0,
                        window["detail"], "درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)"))
+
+    # توضیحِ رنگِ هر شرط (#170) — بعد از ساخته شدنِ همهٔ درها، چون state هایشان
+    # همان لحظه قطعی می‌شود.
+    for g in gates:
+        g["why"] = _gate_why(g["key"], g["state"], macro, entry)
 
     decisive = [g for g in gates if g["vote"]]
     negative = [g for g in decisive if g["vote"] < 0]
     positive = [g for g in decisive if g["vote"] > 0]
     if not decisive:
         verdict, vlabel = "nodata", "بدونِ حکم"
-        reason = "هیچ‌یک از سه قدمِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
+        reason = "هیچ‌یک از شرط‌هایِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
     elif negative and not positive:
         verdict, vlabel = "avoid", "امروز وارد نشو"
         reason = _clause(negative)

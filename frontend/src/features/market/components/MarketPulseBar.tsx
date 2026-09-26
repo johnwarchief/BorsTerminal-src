@@ -122,11 +122,11 @@ const GATE_MARK: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
 };
 
 /**
- * حکمِ امروز — «آیا امروز برای ورود مناسب است یا نه». سه قدمِ جزوه (ص۱۳) به‌علاوهٔ
- * تداومِ ۳–۴ روزه و پنجره‌های ساعتیِ ص۱۴. همهٔ متن‌ها و داوری از موتور می‌آید
- * (mstat_engine.day_verdict)؛ این‌جا فقط رنگ از state خوانده می‌شود.
- * خطِ اول: حکم + نامِ کوتاهِ هر در با نشانِ رأیش (نام و دلیلِ کامل در `title`)،
- * خطِ دوم: جملهٔ دلیلِ موتور.
+ * حکمِ امروز — «آیا امروز برای ورود مناسب است یا نه». پنج شرطِ جزوه (ص۱۳ و ص۱۴)
+ * همه از موتور می‌آیند (mstat_engine.day_verdict)؛ این‌جا فقط رنگ از state
+ * خوانده می‌شود. رأیِ مالک (#170): شمارهٔ «قدمِ ۱/۲/۳» برداشته شد و شرط‌ها زیرِ
+ * هم نوشته می‌شوند، هرکدام با یک جمله که می‌گوید رنگش دقیقاً چه معنی دارد —
+ * «ارزش معاملات نوشتی سبزش کردی یعنی چی؟» دیگر نباید سؤال بماند.
  */
 function VerdictStrip({ v }: { v: DayVerdict | null }) {
   const kind = v?.verdict ?? 'nodata';
@@ -135,30 +135,41 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
       data-testid="pulse-verdict"
       className={`flex min-w-0 flex-1 flex-col justify-center gap-y-1 rounded-2xl border px-3 py-1.5 shadow-xs ${VERDICT_TONE[kind]}`}
     >
-      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
-          <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
-          <span data-testid="pulse-verdict-label" className={`text-lg font-black leading-6 ${VERDICT_TEXT[kind]}`}>
-            {v ? v.label : 'بدون داده'}
-          </span>
-        </span>
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-          {(v?.gates ?? []).map((g) => (
-            <span
-              key={g.key}
-              data-testid={`pulse-verdict-gate-${g.key}`}
-              title={`${g.label_state}${g.detail ? ` — ${g.detail}` : ''}\n${g.rule ?? ''}`}
-              className={`text-2xs font-bold ${GATE_TONE[g.state]}`}
-            >
-              <span className="me-1">{GATE_MARK[g.state]}</span>
-              {g.short ?? g.label}
-            </span>
-          ))}
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+        <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
+        <span data-testid="pulse-verdict-label" className={`text-lg font-black leading-6 ${VERDICT_TEXT[kind]}`}>
+          {v ? v.label : 'بدون داده'}
         </span>
       </div>
       <span data-testid="pulse-verdict-reason" className="text-2xs font-medium text-text-secondary">
         {v ? v.reason : 'هنوز پولِ هوشمند نرسیده تا حکمی باشد'}
       </span>
+      <ul className="flex min-w-0 flex-col gap-y-1 border-t border-border-c/40 pt-1">
+        {(v?.gates ?? []).map((g) => (
+          <li
+            key={g.key}
+            data-testid={`pulse-verdict-gate-${g.key}`}
+            title={`${g.label_state}${g.detail ? ` — ${g.detail}` : ''}\n${g.rule ?? ''}`}
+            className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"
+          >
+            <span
+              aria-hidden
+              data-testid={`pulse-verdict-mark-${g.key}`}
+              className={`shrink-0 text-2xs font-black ${GATE_TONE[g.state]}`}
+            >
+              {GATE_MARK[g.state]}
+            </span>
+            <span className="text-2xs font-bold text-text-primary">{g.label}</span>
+            <span className={`text-2xs font-black ${GATE_TONE[g.state]}`}>{g.label_state}</span>
+            {g.detail ? <span className="num min-w-0 text-2xs text-text-secondary">{g.detail}</span> : null}
+            {g.why ? (
+              <span data-testid={`pulse-verdict-why-${g.key}`} className="min-w-0 text-3xs leading-snug text-text-muted">
+                — {g.why}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
