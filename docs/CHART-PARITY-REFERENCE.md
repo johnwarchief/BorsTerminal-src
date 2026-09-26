@@ -307,6 +307,59 @@ Qoder Browser Connector درختِ داخلِ آن iframe را نمی‌بیند
 (`overrideIndicator`) و پنلِ موجود دوباره ساخته نمی‌شود — ساختِ دوبارهٔ پنل به
 ازای هر اسکرول، چارت را می‌لرزاند.
 
+## ۱۵) جارویِ زندۀ دیالوگ‌های ره‌آورد (#164، با لاگینِ مالک در پروفایلِ خودمان)
+ابزار: `tools/ra_live_probe.mts` (jev-browser/Playwright، پروفایلِ `_audit/ra-profile`).
+هیچ ترسمِ از‌قبل‌موجود دست‌نخورد؛ فقط هاور/کلیکِ دکمه‌های نوار و بستنِ دیالوگ با Escape.
+خروجیِ خام: `_audit/ra_sweep2.json` و `_audit/ra_sweep4.json`.
+
+**دروغِ پیشینِ خودمان:** بندِ ۱۳ نوشته بود «دیالوگ‌ها باز نشدند». باز می‌شوند —
+فقط نه با Qoder Browser Connector؛ با `frame.evaluate` داخل همان `blob:` iframe.
+نکتهٔ فنی: `locator.click()` روی `[data-name="open-indicators-dialog"]` تایم‌اوت
+می‌داد، کلیکِ مستقیمِ DOM (`el.click()`) همان دیالوگ را باز می‌کند. و
+`offsetParent` برای گرهٔ `position:fixed` نال است — سنجهٔ زنده‌بودن باید
+`getClientRects()` باشد، وگرنه دیالوگِ تنظیمات «بسته» خوانده می‌شود.
+
+۱) **کاتالوگِ کاملِ مطالعات** (همان چیزی که مودالِ اندیکاتورها نشان می‌دهد،
+الفبایی، انگلیسی): ۵۲ Week High/Low … Zig Zag. نُه مطالعۀ اختصاصیِ §۱۳ داخلِ همین
+یک فهرست‌اند (جدا از کتابخانه نیستند). چیزهایی که ما نداریم و در این فهرست‌اند:
+Volume Profile (Fixed/Visible)، Keltner Channels، Envelopes، ADX (Average
+Directional Index)، Stochastic RSI، Connors RSI، SMI Ergodic، Vortex، McGinley
+Dynamic، Detrended Price Oscillator، Chande Kroll Stop، Know Sure Thing،
+Elder's Force Index، Fisher Transform، Guppy MMA، Hull MA (ما داریم)،
+Klinger، Mass Index، Pivot Points Standard (ما داریم)، Price Channel،
+Trend Strength Index، Ultimate Oscillator، Volatility ×۴، Williams
+Alligator/Fractal، Zig Zag، ۵۲ Week High/Low.
+
+۲) **دیالوگ تنظیمات چارت** — تب‌ها: `Symbol`، `Status line`، `Scales and lines`،
+`Canvas`، `Candles` (با بخش‌های Color bars based on previous close / Body /
+Borders / Wick)، `Data modification`، `Precision`، `Timezone`.
+محتوای سه تبِ اول از DOM خوانده شد:
+- Status line: Symbol · Title · Description · Chart values (Bar change values,
+  Volume, Indicators: Titles/Arguments/Values) · Background.
+- Scales and lines: Price Scale (Auto) · Scale modes (A and L) · Visible on
+  mouse over · Lock price to bar ratio · Scales placement · Price labels &
+  lines (No overlapping labels, Plus button, Countdown to bar close) ·
+  Symbol (Value, Line, Value according to scale, Previous day close: Hidden) ·
+  Indicators and financials (Value, High and low: Hidden) · Time Scale
+  (Date format، Time hours format 24-hours).
+- Canvas: Chart basic styles (Background: Solid) · Grid lines (Vert and horz) ·
+  Pane separators · Crosshair · Watermark · Scales (Text/Lines/Buttons) ·
+  Navigation (Pane: Visible on mouse over) · Margins (Top/Bottom/Right bars).
+`Data modification` یعنی ره‌آورد اجازهٔ ویرایشِ کندل را در تنظیمات دارد — ما
+چنین چیزی نساخته‌ایم و نباید بسازیم (دادهٔ تابلو ویرایش‌پذیر نیست).
+
+۳) **دو چیزی که نشد و حدس نزدیم:** (الف) شمارشِ ابزارهایِ داخلِ هر گروهِ
+ترسیم: نه با هاورِ واقعی، نه با دیفِ گره‌های دیدنی، نه با خواندنِ فرزندانِ
+گرهٔ گروه — flyout فرزندِ دکمهٔ گروه نیست و با هاورِ Playwright هم باز نشد.
+موجودیِ گروه‌ها همان §۹ می‌ماند. (ب) «نوعِ قیمت» قابلِ انتقال نیست:
+`daily_prices` ستونِ «آخرینِ معامله» ندارد (فقط `p_closing` و `price_first`
+و مین/ماکس)، پس کلکتورِ «آخرین قیمت / قیمت پایانی» روی کندل‌های تاریخی یا
+دروغ است یا بی‌معنی. این را نه از رهاورد، که از بانکِ خودمان فهمیدیم.
+
+۴) اولویتِ بعدی با داورِ jev-pilot سنجیده شد (price-type ۰٫۶۶ / zigzag ۰٫۳۱ /
+font-icons ۰٫۰۳): گزینهٔ اول به‌دلیلِ (ب) رد شد؛ زیگزاگ همان پیوت‌های
+`ftsSwings` است که از قبل در `lib/indicators.ts` هست و §۱۳ هم دارد.
+
 ## منابع
 - docs/FTS_SPEC.md (بخش اول) — MAها، فیبو، ستاپ‌ها، حد ضرر.
 - TradingView chart settings & drawing tools (مدل استاندارد).

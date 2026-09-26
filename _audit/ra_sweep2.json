@@ -1,0 +1,253 @@
+{
+ "action": "sweep",
+ "url": "https://rahavard365.com/asset/167/chart",
+ "frames": [
+  {
+   "name": "",
+   "href": "https://rahavard365.com/asset/167/chart"
+  },
+  {
+   "name": "tradingview_9c2ee",
+   "href": "blob:https://rahavard365.com/ee95c747-3fe4-4934-a4ad-ff35c51bce95"
+  }
+ ],
+ "chartFrameCount": 2,
+ "adjustment": {
+  "html": "بدون تعدیلافزایش سرمایهافزایش سرمایه با احتساب آوردهسود نقدی و افزایش سرمایهسود نقدی و افزایش سرمایه با احتساب آوردهکلاسیکعملکردی",
+  "opts": [
+   "بدون تعدیل = type0",
+   "افزایش سرمایه = type1",
+   "افزایش سرمایه با احتساب آورده = type2",
+   "سود نقدی و افزایش سرمایه = type3",
+   "سود نقدی و افزایش سرمایه با احتساب آورده = type4",
+   "کلاسیک = type6",
+   "عملکردی = type7"
+  ]
+ },
+ "priceType": {
+  "html": "آخرین قیمتقیمت پایانیآخرین قیمت به دلارقیمت پایانی به دلارارزش بازار (هزار میلیارد ریال)ارزش بازار (میلیون دلار)",
+  "opts": [
+   "آخرین قیمت = real_close",
+   "قیمت پایانی = close",
+   "آخرین قیمت به دلار = real_close_usd",
+   "قیمت پایانی به دلار = close_usd",
+   "ارزش بازار (هزار میلیارد ریال) = market_cap",
+   "ارزش بازار (میلیون دلار) = market_cap_usd"
+  ]
+ },
+ "drawingFlyouts": {
+  "linetool-group-cursors": [
+   "time-zone-menu@@@@۰۰:۳۸:۴۷ (UTC+3:30)"
+  ],
+  "linetool-group-trend-line": [
+   "time-zone-menu@@@@۰۰:۳۸:۴۸ (UTC+3:30)"
+  ],
+  "linetool-group-gann-and-fibonacci": [
+   "time-zone-menu@@@@۰۰:۳۸:۴۹ (UTC+3:30)"
+  ],
+  "linetool-group-patterns": [
+   "time-zone-menu@@@@۰۰:۳۸:۵۰ (UTC+3:30)"
+  ],
+  "linetool-group-prediction-and-measurement": [
+   "time-zone-menu@@@@۰۰:۳۸:۵۲ (UTC+3:30)"
+  ],
+  "linetool-group-geometric-shapes": [
+   "time-zone-menu@@@@۰۰:۳۸:۵۳ (UTC+3:30)"
+  ],
+  "linetool-group-annotation": [
+   "time-zone-menu@@@@۰۰:۳۸:۵۴ (UTC+3:30)"
+  ],
+  "linetool-group-font-icons": [
+   "time-zone-menu@@@@۰۰:۳۸:۵۵ (UTC+3:30)"
+  ]
+ },
+ "indicatorsClick": "clicked",
+ "indicatorsDialog": {
+  "cats": [],
+  "names": [],
+  "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength IndexRelative Vigor IndexRelative Volatility IndexSMI Ergodic Indicator/OscillatorSmoothed Moving AverageSpreadSqueeze Momentum IndicatorStandard DeviationStandard ErrorStandard Error BandsStochasticStochastic RSISuperTrendSupport And Resistance Levels With BreaksTrend Strength IndexTriple EMATRIXTrue Strength IndexTypical PriceUltimate OscillatorVolatility Close-to-CloseVolatility IndexVolatility O-H-L-CVolatility Zero Trend Close-to-CloseVolumeVolume OscillatorVolume Profile Fixed RangeVolume Profile Visible RangeVortex IndicatorVWAPVWMAWaveTrend Oscillator [WT]WaveTrend with CrossesWilliams %RWilliams AlligatorWilliams FractalZ ScoreZig Zag"
+ },
+ "propertiesClick": "clicked",
+ "chartPropertyTabs": {
+  "Indicators": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Script name": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "52 Week High/Low": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Accelerator Oscillator": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Accumulation/Distribution": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Accumulative Swing Index": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Advance/Decline": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Arnaud Legoux Moving Average": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Aroon": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Average Directional Index": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Average Price": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Average True Range": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Awesome Oscillator": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Balance of Power": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Bollinger Bands": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Bollinger Bands %B": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Bollinger Bands Width": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Chaikin Money Flow": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Chaikin Oscillator": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  },
+  "Chaikin Volatility": {
+   "text": "IndicatorsClose menuScript name52 Week High/LowAccelerator OscillatorAccumulation/DistributionAccumulative Swing IndexAdvance/DeclineArnaud Legoux Moving AverageAroonAverage Directional IndexAverage PriceAverage True RangeAwesome OscillatorBalance of PowerBollinger BandsBollinger Bands %BBollinger Bands WidthChaikin Money FlowChaikin OscillatorChaikin VolatilityChande Kroll StopChande Momentum OscillatorChop ZoneChoppiness IndexCM_Williams_Vix_Fix Finds Market BottomsCommodity Channel IndexConnors RSICoppock CurveCorrelation - LogCorrelation CoefficientDetrended Price OscillatorDirectional MovementDonchian ChannelsDouble EMADT OscillatorEase Of MovementElder's Force IndexEMA CrossEnvelopesFibonacci Bollinger BandsFisher TransformGuppy Multiple Moving AverageHalfTrendHistorical VolatilityHull Moving AverageIchimoku CloudKeltner ChannelsKlinger OscillatorKnow Sure ThingLeast Squares Moving AverageLinear Regression CurveLinear Regression SlopeMA CrossMA with EMA CrossMACDMajority RuleMass IndexMcGinley DynamicMedian PriceMomentumMoney Flow IndexMoving AverageMoving Average AdaptiveMoving Average ChannelMoving Average DoubleMoving Average ExponentialMoving Average HammingMoving Average MultipleMoving Average TripleMoving Average WeightedNet VolumeOn Balance VolumeParabolic SARPivot Points StandardPrice ChannelPrice OscillatorPrice Volume TrendRate Of ChangeRatioRelative Strength In",
+   "controls": [
+    {
+     "type": "text",
+     "val": ""
+    }
+   ]
+  }
+ }
+}
