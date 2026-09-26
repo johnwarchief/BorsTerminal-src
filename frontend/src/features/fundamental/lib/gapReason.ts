@@ -117,8 +117,8 @@ export function gapTooltip(axis?: string | null): string {
 type Gap = NonNullable<FtsCard['data_gaps']>[number];
 
 /** علت‌های بک‌اند که «متنِ آمادهٔ کاربر» نیستند و نباید عیناً نمایش داده شوند.
- *  اینها نامِ ستون، مسیرِ API یا نامِ تابع در خودِ متن دارند. */
-const RAW_MARKERS = /api\/|\.json|monthly_sales|fts_engine|annualize|None|NaN/i;
+ *  اینها نامِ ستون، مسیرِ API یا پارامترِ حالت در خودِ متن دارند. */
+const RAW_MARKERS = /api\/|\.json|monthly_sales|financial_statements|fts_engine|annualize|backfill|mode=|None|NaN/i;
 
 /** نگاشت ردیفِ شکافِ بک‌اند → علت + راه‌حلِ کاربرپسند.
  *  اولویت با متنِ خودِ بک‌اند است: او می‌داند چرا عدد نیست (مثلاً «سطر بهای
