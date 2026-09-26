@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppUpdater } from './useAppUpdater';
+import { openAppLog } from './api/diagnostics';
 
 interface UpdateManagerModalProps {
   open: boolean;
@@ -316,9 +317,9 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
               type="button"
               onClick={async () => {
                 try {
-                  await fetch('/api/diagnostics/log/open', { method: 'POST' });
+                  await openAppLog();
                 } catch {
-                  /* در محیطِ تستِ بدونِ سرور بی‌خثر است */
+                  /* در محیطِ تستِ بدونِ سرور بی‌اثر است */
                 }
               }}
               title="باز کردن فایل لاگ برنامه (logs/bors.log)"

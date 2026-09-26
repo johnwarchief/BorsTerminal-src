@@ -80,7 +80,6 @@ import '../styles/nahayatNegarStyles.css';
 export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
-  initialMarket?: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   replayActive?: boolean;
   onToggleReplay?: () => void;
@@ -205,7 +204,6 @@ function toZoneFallback(spec: PatternOverlaySpec, startTs: number): Record<strin
 export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialSymbol = 'خودرو',
   initialName = 'ایران خودرو',
-  initialMarket = 'بورس',
   boardRow,
   replayActive,
   onToggleReplay,
@@ -259,7 +257,6 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
   }, []);
   const [currentName, setCurrentName] = useState<string>(initialName);
-  const [currentMarket, setCurrentMarket] = useState<string>(initialMarket);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
 
   // استیت‌های نوار بالا
@@ -1499,7 +1496,6 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     flushDrawings();
     setCurrentSymbol(sym.symbol);
     setCurrentName(sym.name);
-    setCurrentMarket(sym.market);
     if (onSymbolChange) onSymbolChange(sym);
   };
 
@@ -1792,7 +1788,6 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       <FtsToolbar
         symbolName={currentSymbol}
         companyName={currentName}
-        marketName={currentMarket}
         boardRow={boardRow}
         onOpenSymbolSearch={() => setIsSymbolSearchOpen(true)}
         activeTimeframe={activeTimeframe}

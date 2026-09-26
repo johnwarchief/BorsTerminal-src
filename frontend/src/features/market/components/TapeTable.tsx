@@ -1,6 +1,6 @@
 // features/market/components/TapeTable.tsx -- جدول مجازی تابلو
 // ردیف ها با React.memo و کلید نماد؛ فقط ردیف های دیدنی رندر می شوند.
-import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { MarketRow } from '@shared/types/marketRow';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
@@ -19,7 +19,6 @@ import {
   lastCloseDiff,
 } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
-import type { ScreenerRow } from '../api/useFtsScreener';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import { evaluateDynamicQuickFilter } from '../lib/tapeAlgorithms';
 
@@ -301,18 +300,17 @@ export function TapeTable({
   rows,
   selected,
   onSelect,
-  renderBasketAction: _renderBasketAction,
-  ftsMap: _ftsMap,
+  isLoading,
+  isError,
+  onRetry,
 }: {
   rows: MarketRow[];
   selected: string;
   onSelect: (s: string) => void;
-  /**
-   * اسلات تزریقیِ پوسته: حفظ سازگاری تایپ با فرخواننده‌ها
-   */
-  renderBasketAction?: (symbol: string) => ReactNode;
-  /** نقشهٔ وضعیت FTS از /api/screener؛ حفظ سازگاری تایپ با فرخواننده‌ها */
-  ftsMap?: Map<string, ScreenerRow>;
+  /** وضعیتِ فید: جدولِ خالی نباید تقصیرِ فیلترِ کاربر باشد */
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
@@ -341,6 +339,30 @@ export function TapeTable({
   });
 
   if (rows.length === 0) {
+    // صادقانه: تا فید نرسیده یا خطا داده، «فیلتر شما غلط است» گفتن درست نیست.
+    if (isError) {
+      return (
+        <EmptyState
+          title="فیدِ تابلو برنگشت"
+          hint="اینترنت یا سرویسِ تابلو را بررسی کن، دوباره تلاش کن"
+          action={
+            onRetry ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                data-testid="tape-retry"
+                className="rounded-lg border border-accent-blue bg-accent-blue/10 px-3 py-1 text-xs font-bold text-accent-blue"
+              >
+                تلاش دوباره
+              </button>
+            ) : undefined
+          }
+        />
+      );
+    }
+    if (isLoading) {
+      return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین نشستِ داده کمی طول می‌کشد" />;
+    }
     return <EmptyState title="نمادی با این فیلترها نیست" hint="فیلترها را کم کن یا جستجو را پاک کن" />;
   }
 

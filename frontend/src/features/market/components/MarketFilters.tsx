@@ -272,6 +272,9 @@ export function MarketFilters({
   onPollChange,
   dataUpdatedAt,
   isFetching,
+  isLoading,
+  isError,
+  onRetry,
 }: {
   sectors: string[];
   matches?: Record<QuickFilter, number>;
@@ -282,6 +285,10 @@ export function MarketFilters({
   onPollChange?: (ms: number) => void;
   dataUpdatedAt?: number;
   isFetching?: boolean;
+  /** سلامتِ فید: کاربر باید بداند تابلو نرسیده، نه اینکه فیلتر غلط باشد */
+  isLoading?: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }) {
   const query = useTapeStore((s) => s.query);
   const setQuery = useTapeStore((s) => s.setQuery);
@@ -341,6 +348,25 @@ export function MarketFilters({
               <span className="text-text-muted font-normal">از</span>
               <span className="num">{toFaDigits(total)}</span>
               <span>نماد</span>
+            </span>
+          ) : null}
+
+          {isError ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              data-testid="filters-retry"
+              title="فیدِ تابلو برنگشت — کلیک برای تلاشِ دوباره"
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-accent-red/50 bg-accent-red/10 px-2 py-1 text-2xs font-bold text-accent-red transition-all hover:bg-accent-red/20"
+            >
+              ⚠ خطایِ فید — تلاشِ دوباره
+            </button>
+          ) : isLoading ? (
+            <span
+              data-testid="filters-loading"
+              className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary"
+            >
+              در حالِ خواندنِ تابلو…
             </span>
           ) : null}
 

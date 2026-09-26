@@ -1,9 +1,10 @@
-// تست بهینه‌سازی تابلو (P-02): ستون‌های سرانه/وضعیت FTS + ساعت طلایی + فیلتر پسوند عددی
-import { render, screen } from '@testing-library/react';
+// تست بهینه‌سازی تابلو (P-02): ستون‌های سرانه + ساعت طلایی + فیلتر پسوند عددی
+// وضعیت FTS روی تابلو دیگر نقاشی نمی‌شود (رأیِ مالک: ستونِ FTS از جدول حذف شد)؛
+// داوریِ FTS فقط از بک‌اند خوانده می‌شود، پس اینجا تستِ رویتِ آن ندارد.
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { MarketRow } from '@shared/types/marketRow';
 import { TapeTable } from '@features/market/components/TapeTable';
-import { FtsStatusBadge } from '@features/market/components/FtsStatusBadge';
 import {
   buyPerCapitaMt,
   dropNumericSuffixRows,
@@ -13,12 +14,6 @@ import {
   perCapitaMt,
   sellPerCapitaMt,
 } from '@features/market/lib/tapeFts';
-import {
-  buildScreenerMap,
-  resolveFtsStatus,
-  splitReasons,
-  type ScreenerFeed,
-} from '@features/market/api/useFtsScreener';
 
 // jsdom اندازه ندارد -- virtualizer را به رندر کامل وادار می‌کنیم
 vi.mock('@tanstack/react-virtual', async (orig) => {
@@ -53,8 +48,6 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     ...patch,
   } as MarketRow;
 }
-
-const feed = (data: ScreenerFeed['data']): ScreenerFeed => ({ status: 'success', data });
 
 describe('سنجه‌های FTS تابلو (lib/tapeFts)', () => {
   it('سرانه میلیون تومان = (ارزش÷تعداد)÷1e7 با محافظت صفر/ناقص', () => {
@@ -101,51 +94,6 @@ describe('سنجه‌های FTS تابلو (lib/tapeFts)', () => {
     expect(isInsuranceSector('بیمه و صندوق بازنشستگی')).toBe(true);
     expect(isInsuranceSector('خودرو و ساخت قطعات')).toBe(false);
   });
-
-  it('تفکیک دلایل رشته‌ای/آرایه‌ای', () => {
-    expect(splitReasons('صنعت بیمه · نماد تعلیق')).toEqual(['صنعت بیمه', 'نماد تعلیق']);
-    expect(splitReasons(['ماده ۱۴۱'])).toEqual(['ماده ۱۴۱']);
-    expect(splitReasons(null)).toEqual([]);
-  });
-});
-
-describe('حل وضعیت FTS', () => {
-  const map = buildScreenerMap(
-    feed([
-      { symbol: 'شپنا', excluded: false, score: 4 },
-      { symbol: 'فولاد', excluded: true, score: 1, exclusion_reasons: 'قیمت‌گذاری دستوری · نماد تعلیق' },
-      { symbol: 'عيار', excluded: false, score: 2, applicable: false },
-    ]),
-  );
-
-  it('در اسکرینر و غیرمردود ⇒ تأیید با امتیاز', () => {
-    const v = resolveFtsStatus({ symbol: 'شپنا' }, map);
-    expect(v.status).toBe('confirm');
-    expect(v.score).toBe(4);
-  });
-
-  it('excluded ⇒ رد همراه دلایل', () => {
-    const v = resolveFtsStatus({ symbol: 'فولاد' }, map);
-    expect(v.status).toBe('reject');
-    expect(v.reasons).toContain('نماد تعلیق');
-  });
-
-  it('صندوقِ غیرمردود ⇒ N/A، نه «تأیید» با امتیاز', () => {
-    const v = resolveFtsStatus({ symbol: 'عيار' }, map);
-    expect(v.status).toBe('na');
-    expect(v.score).toBeNull();
-    expect(v.reasons[0]).toContain('صندوق');
-  });
-
-  it('نبود در اسکرینر ⇒ N/A صادقانه', () => {
-    expect(resolveFtsStatus({ symbol: 'خودرو' }, map).status).toBe('na');
-  });
-
-  it('وتوی سخت‌گیرانه بیمه حتی بدون حضور در اسکرینر', () => {
-    const v = resolveFtsStatus({ symbol: 'اسب', sector_name: 'بیمه' }, new Map());
-    expect(v.status).toBe('reject');
-    expect(v.reasons[0]).toContain('REJECT_ALL_INSURANCE');
-  });
 });
 
 describe('جدول تابلو بهینه‌شده', () => {
@@ -165,37 +113,6 @@ describe('جدول تابلو بهینه‌شده', () => {
     expect(screen.getByText('۲.۰')).toBeInTheDocument();
   });
 
-  it('بج وضعیت FTS تأیید/رد/N/A و هاورکارت دلایل را رندر می‌کند', () => {
-    const map = buildScreenerMap(
-      feed([
-        { symbol: 'شپنا', excluded: false, score: 5 },
-        { symbol: 'فولاد', excluded: true, score: 0, exclusion_reasons: 'صنعت بیمه — حذف خودکار' },
-      ]),
-    );
-    const shpnaView = resolveFtsStatus(row({ symbol: 'شپنا' }), map);
-    const fooladView = resolveFtsStatus(row({ symbol: 'فولاد' }), map);
-    const khodroView = resolveFtsStatus(row({ symbol: 'خودرو' }), map);
-
-    render(
-      <div>
-        <FtsStatusBadge symbol="شپنا" view={shpnaView} />
-        <FtsStatusBadge symbol="فولاد" view={fooladView} />
-        <FtsStatusBadge symbol="خودرو" view={khodroView} />
-      </div>,
-    );
-    expect(screen.getByTestId('fts-badge-شپنا')).toHaveTextContent('تأیید');
-    expect(screen.getByTestId('fts-badge-فولاد')).toHaveAttribute('data-fts-status', 'reject');
-    expect(screen.getByTestId('fts-badge-خودرو')).toHaveTextContent('N/A');
-    // هاورکارت دلایل در DOM هست (برای hover نمایش داده می‌شود)
-    expect(screen.getByTestId('fts-card-فولاد')).toHaveTextContent('صنعت بیمه — حذف خودکار');
-  });
-
-  it('وتوی بیمه در اسکرینر: ردیف بیمه بدون اسکرینر هم «رد» می‌شود', () => {
-    const asbView = resolveFtsStatus(row({ symbol: 'اسب', sector_name: 'بیمه' }), new Map());
-    render(<FtsStatusBadge symbol="اسب" view={asbView} />);
-    expect(screen.getByTestId('fts-badge-اسب')).toHaveAttribute('data-fts-status', 'reject');
-  });
-
   it('ساعت طلایی (پایانی منفی و آخرین مثبت) از ساعت معمولی تفکیک می‌شود', () => {
     // پایانی ۹۹۵ (زیر دیروز ۱۰۰۰)، آخرین ۱۰۰۳ (بالای دیروز) ⇒ دلتا ۰.۸٪ < ۱٪ ⇒ طلایی نه قوی
     render(
@@ -206,5 +123,29 @@ describe('جدول تابلو بهینه‌شده', () => {
       />,
     );
     expect(screen.getByTestId('badge-golden-hour')).toHaveTextContent('طلایی');
+  });
+});
+
+describe('حالتِ خالیِ صادق: تا فید نرسیده، فیلترِ کاربر متهم نمی‌شود', () => {
+  it('خطایِ فید ⇒ علت + دکمهٔ تلاشِ دوباره که واقعاً تلاش می‌کند', () => {
+    const onRetry = vi.fn();
+    render(
+      <TapeTable rows={[]} selected="" onSelect={() => {}} isError onRetry={onRetry} />,
+    );
+    expect(screen.getByText('فیدِ تابلو برنگشت')).toBeInTheDocument();
+    expect(screen.queryByText('نمادی با این فیلترها نیست')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('tape-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('بارگذاریِ نخست ⇒ «در حالِ خواندن»، نه پیامِ فیلتر', () => {
+    render(<TapeTable rows={[]} selected="" onSelect={() => {}} isLoading />);
+    expect(screen.getByText('در حالِ خواندنِ تابلو…')).toBeInTheDocument();
+    expect(screen.queryByText('نمادی با این فیلترها نیست')).not.toBeInTheDocument();
+  });
+
+  it('فیدِ سالم ولی بی‌نتیجه ⇒ همان راهنمایِ فیلتر', () => {
+    render(<TapeTable rows={[]} selected="" onSelect={() => {}} />);
+    expect(screen.getByText('نمادی با این فیلترها نیست')).toBeInTheDocument();
   });
 });

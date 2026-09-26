@@ -5,7 +5,6 @@ import type { MarketRow } from '@shared/types/marketRow';
 import { TapeTable } from '@features/market/components/TapeTable';
 import { SuspiciousPanel } from '@features/market/components/SuspiciousPanel';
 import { MarketFilters } from '@features/market/components/MarketFilters';
-import { TapeStatusBar } from '@features/market/components/TapeStatusBar';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
 function row(patch: Partial<MarketRow> = {}): MarketRow {
@@ -61,47 +60,27 @@ describe('کامپوننت های تابلو', () => {
   });
 });
 
-describe('نوار وضعیت تابلو', () => {
-  it('شمارش نمایش/کل را نشان می دهد', () => {
-    render(
-      <TapeStatusBar
-        shown={10}
-        total={50}
-        liveCount={40}
-        fossilCount={10}
-        signals={3}
-        isLoading={false}
-        isError={false}
-        isFetching={false}
-        dataUpdatedAt={Date.now()}
-        pollMs={60_000}
-        onPollChange={() => {}}
-        onRetry={() => {}}
-      />,
-    );
-    expect(screen.getByText('۱۰ از ۵۰ نماد')).toBeInTheDocument();
+describe('نوارِ فیلتر: شمارش و سلامتِ فید', () => {
+  it('شمارشِ نمایش/کل را نشان می‌دهد', () => {
+    render(<MarketFilters sectors={[]} shown={10} total={50} />);
+    const chip = screen.getByTitle('تعداد نمادهای فعال در جدول');
+    expect(chip).toHaveTextContent('۱۰');
+    expect(chip).toHaveTextContent('از');
+    expect(chip).toHaveTextContent('۵۰');
+    expect(chip).toHaveTextContent('نماد');
   });
 
   it('در خطا دکمه تلاش دوباره فراخوانی می شود', () => {
     const onRetry = vi.fn();
-    render(
-      <TapeStatusBar
-        shown={0}
-        total={0}
-        liveCount={0}
-        fossilCount={0}
-        signals={0}
-        isLoading={false}
-        isError={true}
-        isFetching={false}
-        dataUpdatedAt={0}
-        pollMs={60_000}
-        onPollChange={() => {}}
-        onRetry={onRetry}
-      />,
-    );
-    fireEvent.click(screen.getByText('تلاش دوباره'));
+    render(<MarketFilters sectors={[]} shown={0} total={0} isError onRetry={onRetry} />);
+    fireEvent.click(screen.getByTestId('filters-retry'));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('پیش از رسیدنِ نخستین فید، «در حالِ خواندن» هست — نه چیپِ خطا', () => {
+    render(<MarketFilters sectors={[]} shown={0} total={0} isLoading />);
+    expect(screen.getByTestId('filters-loading')).toHaveTextContent('در حالِ خواندنِ تابلو');
+    expect(screen.queryByTestId('filters-retry')).not.toBeInTheDocument();
   });
 });
 

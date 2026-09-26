@@ -1,4 +1,3 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { calcFibPrice, TV_FIB_LEVELS } from '@features/technical/lib/ftsOverlays';
@@ -42,7 +41,10 @@ vi.mock('klinecharts', () => ({
   registerOverlay: vi.fn(),
 }));
 
-(window as any).klinecharts = {
+// سه عضو کافی است؛ بقیۀ KLineChartsApi در این تست ساخته نمی‌شود،
+// پس روی نوعِ کاملِ window نمی‌نشیند و از یک رکوردِ آزاد خوانده می‌شود.
+const fakeGlobal = window as unknown as { klinecharts: Record<string, unknown> };
+fakeGlobal.klinecharts = {
   init: vi.fn(() => mockChartInstance),
   dispose: vi.fn(),
   registerOverlay: vi.fn(),

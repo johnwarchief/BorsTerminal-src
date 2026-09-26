@@ -21,7 +21,9 @@ const chartStub = () => ({
 });
 
 const mockTextWatermark = { applyOptions: vi.fn(), detach: vi.fn() };
-const createTextWatermarkMock = vi.fn(() => mockTextWatermark);
+const createTextWatermarkMock = vi.fn<(...args: unknown[]) => typeof mockTextWatermark>(
+  () => mockTextWatermark,
+);
 
 vi.mock('lightweight-charts', () => ({
   createChart: vi.fn(() => chartStub()),
@@ -114,7 +116,11 @@ describe('رندر LwChartWrapper', () => {
   it('تنظیمات استاندارد بوم چارت (فونت ۱۲، گرید خط‌چین، پدینگ زمان و آپشن‌های کندل) را اعمال می‌کند', async () => {
     render(<LwChartWrapper data={candles(10)} palette={PALETTE} symbol="فولاد" timeframe="D" />);
     const lastCall = vi.mocked(createChart).mock.calls[vi.mocked(createChart).mock.calls.length - 1];
-    const opts = lastCall[1] as Record<string, any>;
+    const opts = lastCall[1] as unknown as {
+      layout: { fontSize: number };
+      timeScale: { minimumHeight: number; allowBoldLabels: boolean };
+      grid: { vertLines: { style: number }; horzLines: { style: number } };
+    };
 
     // ۱. محور تاریخ شمسی (fontSize: 12, minimumHeight: 28, allowBoldLabels: true)
     expect(opts.layout.fontSize).toBe(12);

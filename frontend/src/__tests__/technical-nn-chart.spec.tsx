@@ -3,7 +3,25 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
 
-let lastChartInstance: any = null;
+type OverlayCfg = {
+  name?: string;
+  groupId?: string;
+  points?: unknown[];
+  lock?: boolean;
+  onDrawStart?: () => void;
+  onDrawEnd?: () => void;
+  onPressedMoveStart?: () => void;
+  onPressedMoveEnd?: () => void;
+  [key: string]: unknown;
+};
+
+let lastChartInstance: ReturnType<typeof chartStub> | null = null;
+
+/** نمونهٔ چارتِ ساخته‌شده؛ نبودنش یعنی تست بی‌خبر از چارت رد شده است */
+function chart() {
+  if (!lastChartInstance) throw new Error('chart stub هنوز ساخته نشده');
+  return lastChartInstance;
+}
 
 const chartStub = () => {
   const instance = {
@@ -18,7 +36,7 @@ const chartStub = () => {
     overrideYAxis: vi.fn(),
     overrideOverlay: vi.fn(),
     removeOverlay: vi.fn(),
-    createOverlay: vi.fn(() => 'ov-1'),
+    createOverlay: vi.fn<(cfg: OverlayCfg) => string>(() => 'ov-1'),
     resetData: vi.fn(),
     resize: vi.fn(),
     getConvertPictureUrl: vi.fn(() => ''),
@@ -26,7 +44,7 @@ const chartStub = () => {
     scrollToRealTime: vi.fn(),
     getDataList: vi.fn(() => []),
     setScrollEnabled: vi.fn(),
-    getOverlays: vi.fn(() => []),
+    getOverlays: vi.fn(() => [] as Record<string, unknown>[]),
   };
   lastChartInstance = instance;
   return instance;
@@ -73,9 +91,9 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
 
   it('رنگ‌های کندل و بوردر همواره مقادیر معتبر و دارای کنتراست هستند (عدم تولید undefined یا شفافیت)', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
-    expect(lastChartInstance?.setStyles).toHaveBeenCalled();
+    expect(chart().setStyles).toHaveBeenCalled();
 
-    const setStylesCalls = lastChartInstance.setStyles.mock.calls;
+    const setStylesCalls = chart().setStyles.mock.calls;
     const lastStyleCall = setStylesCalls[setStylesCalls.length - 1][0];
     const candle = lastStyleCall?.candle;
 
@@ -102,7 +120,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     });
 
     render(<KLineChartWrapper initialSymbol="فولاد" />);
-    const setStylesCalls = lastChartInstance.setStyles.mock.calls;
+    const setStylesCalls = chart().setStyles.mock.calls;
     const lastStyleCall = setStylesCalls[setStylesCalls.length - 1][0];
     const candle = lastStyleCall?.candle;
 
@@ -123,7 +141,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
       fireEvent.click(logBtn);
     });
 
-    expect(lastChartInstance?.overrideYAxis).toHaveBeenCalledWith(
+    expect(chart().overrideYAxis).toHaveBeenCalledWith(
       expect.objectContaining({
         paneId: 'candle_pane',
         name: 'logarithm',
@@ -136,7 +154,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
       fireEvent.click(logBtn);
     });
 
-    expect(lastChartInstance?.overrideYAxis).toHaveBeenCalledWith(
+    expect(chart().overrideYAxis).toHaveBeenCalledWith(
       expect.objectContaining({
         paneId: 'candle_pane',
         name: 'normal',
@@ -147,7 +165,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
 
   it('تنظیمات تم شامل separator به اندازه 1 و xAxis با ارتفاع 32px است', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
-    const setStylesCalls = lastChartInstance.setStyles.mock.calls;
+    const setStylesCalls = chart().setStyles.mock.calls;
     const lastCall = setStylesCalls[setStylesCalls.length - 1][0];
     expect(lastCall?.separator?.size).toBe(1);
     expect(lastCall?.xAxis?.size).toBe(32);
@@ -173,7 +191,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
       fireEvent.click(rulerBtn);
     });
 
-    expect(lastChartInstance?.createOverlay).toHaveBeenCalledWith(
+    expect(chart().createOverlay).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'ftsMeasure',
         groupId: 'fts-draw',
@@ -185,28 +203,29 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     );
 
     // بررسی هوک‌های اسکرول
-    const overlayCall = lastChartInstance.createOverlay.mock.calls.find(
-      (c: any[]) => c[0]?.name === 'ftsMeasure'
+    const overlayCall = chart().createOverlay.mock.calls.find(
+      (c) => c[0].name === 'ftsMeasure'
     );
+    if (!overlayCall) throw new Error('پیکربندِ ftsMeasure هرگز به چارت نرسید');
     const opts = overlayCall[0];
 
-    opts.onDrawStart();
-    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(false);
+    opts.onDrawStart?.();
+    expect(chart().setScrollEnabled).toHaveBeenCalledWith(false);
 
-    opts.onDrawEnd();
-    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(true);
+    opts.onDrawEnd?.();
+    expect(chart().setScrollEnabled).toHaveBeenCalledWith(true);
 
-    opts.onPressedMoveStart();
-    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(false);
+    opts.onPressedMoveStart?.();
+    expect(chart().setScrollEnabled).toHaveBeenCalledWith(false);
 
-    opts.onPressedMoveEnd();
-    expect(lastChartInstance.setScrollEnabled).toHaveBeenCalledWith(true);
+    opts.onPressedMoveEnd?.();
+    expect(chart().setScrollEnabled).toHaveBeenCalledWith(true);
   });
 
   it('تغییر تایم‌فریم متد flushDrawings را فراخوانی کرده و ترسیم‌های جاری را در localStorage ذخیره می‌کند', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
 
-    lastChartInstance.getOverlays.mockReturnValue([
+    chart().getOverlays.mockReturnValue([
       {
         id: 'overlay_test_1',
         name: 'segment',
@@ -238,7 +257,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(chip.className).not.toContain('nn-disabled');
     act(() => { fireEvent.click(chip); });
 
-    const calls = lastChartInstance.setSymbol.mock.calls;
+    const calls = chart().setSymbol.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     expect(calls[calls.length - 1][0].pricePrecision).toBe(2);
   });
@@ -249,12 +268,12 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
     act(() => { fireEvent.click(screen.getByText('تعدیل عملکردی').closest('.nn-dropdown-item') as HTMLElement); });
 
-    const y = lastChartInstance.overrideYAxis.mock.calls;
+    const y = chart().overrideYAxis.mock.calls;
     expect(y[y.length - 1][0].name).toBe('normal');
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
     act(() => { fireEvent.click(screen.getByText('بدون تعدیل').closest('.nn-dropdown-item') as HTMLElement); });
-    const y2 = lastChartInstance.overrideYAxis.mock.calls;
+    const y2 = chart().overrideYAxis.mock.calls;
     expect(y2[y2.length - 1][0].name).toBe('percentage');
     act(() => { useFtsConfigStore.getState().setPriceScale('normal'); });
   });

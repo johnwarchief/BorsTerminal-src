@@ -1,5 +1,5 @@
 // features/market/routes/MarketPage.tsx -- صفحه تابلو بازار (ایجنت 3)
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { MarketRow } from '@shared/types/marketRow';
 import { publishSignals } from '@shared/lib/signalBus';
 import { matchFa } from '@shared/lib/normalizeFa';
@@ -7,7 +7,6 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { useMarketFeed } from '../api/useMarketFeed';
 import { useMarketPulse } from '../api/useMarketPulse';
-import { buildScreenerMap, useFtsScreener } from '../api/useFtsScreener';
 import { classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
@@ -56,23 +55,10 @@ export function applyFilters(
   });
 }
 
-export default function MarketPage({
-  renderBasketAction,
-}: {
-  /**
-   * اسلات تزریقیِ اختیاری از پوسته برای اکشن «سبد» روی ردیف‌ها.
-   * اگر پوسته چیزی ندهد، دکمهٔ سبک پیش‌فرض (انتشار قصد سبد) استفاده می‌شود.
-   * مرز market فقط shared/contracts است، پس خودش SymbolBasketAction را import نمی‌کند.
-   */
-  renderBasketAction?: (symbol: string) => ReactNode;
-} = {}) {
+export default function MarketPage() {
   const { data, isLoading, isError, refetch, dataUpdatedAt, isFetching } = useMarketFeed();
   const { data: pulse, isLoading: pulseLoading } = useMarketPulse();
-  const { data: screener } = useFtsScreener();
   const rows = useMemo(() => data?.data ?? [], [data]);
-
-  /** نقشهٔ وضعیت FTS (تأیید/رد/N/A) از همان منبع غربالگری FTS */
-  const ftsMap = useMemo(() => buildScreenerMap(screener), [screener]);
 
   const query = useTapeStore((s) => s.query);
   const assetTypes = useTapeStore((s) => s.assetTypes);
@@ -191,14 +177,18 @@ export default function MarketPage({
         onPollChange={setRefetchIntervalMs}
         dataUpdatedAt={dataUpdatedAt}
         isFetching={isFetching}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
       />
 
       <TapeTable
         rows={filtered}
         selected={symbol}
         onSelect={setSymbol}
-        renderBasketAction={renderBasketAction}
-        ftsMap={ftsMap}
+        isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
       />
       <WatchDrawer rows={filtered} onSelect={setSymbol} onPickSector={setSector} />
     </div>

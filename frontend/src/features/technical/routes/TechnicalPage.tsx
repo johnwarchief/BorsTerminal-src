@@ -168,7 +168,6 @@ export default function TechnicalPage() {
                 <NnChart
                   initialSymbol={viewSymbol}
                   initialName={boardRow?.name || viewSymbol}
-                  initialMarket="بورس"
                   boardRow={boardRow}
                   replayActive={replayActive}
                   onToggleReplay={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}

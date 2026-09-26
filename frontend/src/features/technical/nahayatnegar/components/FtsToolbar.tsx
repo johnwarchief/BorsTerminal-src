@@ -11,7 +11,6 @@ import { SUPPORTED_TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from '../lib/t
 interface FtsToolbarProps {
   symbolName: string;
   companyName: string;
-  marketName: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   onOpenSymbolSearch: () => void;
   activeTimeframe: Timeframe;
@@ -36,7 +35,6 @@ interface FtsToolbarProps {
 export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   symbolName,
   companyName,
-  marketName,
   boardRow,
   onOpenSymbolSearch,
   activeTimeframe,

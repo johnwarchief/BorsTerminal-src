@@ -260,9 +260,9 @@ export function evaluateFtsPipeline(args: {
 
   // تشخیص وضعیت صف‌ها
   const queueStatus: 'buy_queue' | 'sell_queue' | 'balanced' =
-    Boolean(tapePayload.is_sell_queue)
+    tapePayload.is_sell_queue
       ? 'sell_queue'
-      : Boolean(tapePayload.is_buy_queue)
+      : tapePayload.is_buy_queue
         ? 'buy_queue'
         : 'balanced';
 
@@ -472,7 +472,7 @@ export function evaluateFtsPipeline(args: {
 
   // هدف قیمتی و مقاومت استاتیک
   let targetPrice: number = 0;
-  let targetLabel = 'مقاومت استاتیک اول (ذخیره سود ۵۰٪)';
+  const targetLabel = 'مقاومت استاتیک اول (ذخیره سود ۵۰٪)';
 
   if (resistancePrice != null && resistancePrice > 0) {
     targetPrice = resistancePrice;
