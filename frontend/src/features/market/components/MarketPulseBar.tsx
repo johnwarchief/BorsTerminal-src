@@ -2,7 +2,7 @@
 // بخش ۱: سنجه ارزش معاملات خرد | بخش ۲: مثلث جریان پول هوشمند |
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
-import { toFaDigits, fmtInt } from '@shared/lib/fmt';
+import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
@@ -15,6 +15,7 @@ import {
   pulseEqAll,
   pulseGoldFlowB,
   pulseHemat,
+  pulseIndex,
   type HematState,
   type MarketPulseData,
 } from '../api/useMarketPulse';
@@ -42,6 +43,43 @@ function Section({
         {hint ? <span className="truncate text-3xs font-medium text-text-muted">{hint}</span> : null}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 text-xs">{children}</div>
+    </div>
+  );
+}
+
+/** یک خانهٔ شاخص: عددِ پایانی + تغییرِ عددی + درصد. هیچ‌کدام بازسازی نمی‌شود. */
+function IndexCell({
+  label,
+  hint,
+  last,
+  change,
+  pct,
+}: {
+  label: string;
+  hint: string;
+  last?: number | null;
+  change?: number | null;
+  pct?: number | null;
+}) {
+  const up = typeof pct === 'number' ? pct >= 0 : null;
+  const tone = up == null ? 'text-text-secondary' : up ? 'text-accent-green' : 'text-accent-red';
+  // جهت فقط وقتی که درصد هست؛ بی‌درصد هیچ فلشی نقاشی نمی‌شود.
+  const delta = [
+    up == null ? null : up ? '▲' : '▼',
+    change != null ? fmtInt(Math.abs(change)) : null,
+    typeof pct === 'number' ? fmtPct(pct, 2) : null,
+  ].filter(Boolean);
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5" title={hint}>
+      <span className="text-2xs font-bold text-text-secondary">{label}</span>
+      {last == null ? (
+        <span className="text-xs">{MISSING}</span>
+      ) : (
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <span className="num text-lg font-black leading-6 text-text-primary">{fmtInt(last)}</span>
+          {delta.length ? <span className={`num text-2xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
+        </span>
+      )}
     </div>
   );
 }
@@ -74,6 +112,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
   const gold = pulseGoldFlowB(pulse);
   const trio = computeAlphaTrio(pulse);
   const allMarket = pulseTradeValueAllMarketHemat(pulse);
+  const ix = pulseIndex(pulse);
   const marketValue = pulseMarketValueHemat(pulse);
 
   const thermoTotal =
@@ -103,6 +142,32 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
       data-testid="market-pulse-bar"
     >
       {isLoading && !pulse ? <span className="text-xs text-text-secondary">در حال دریافت نبض بازار...</span> : null}
+
+      {/* نوارِ شاخص — عددِ خامِ خودِ TSETMC برای همین نشست (سازندهٔ عدد:
+          save_market_index در سینک، از MarketData/GetMarketOverview بورس).
+          پیش از این این دو عدد هیچ‌جویِ برنامه نبود؛ تریدرزآرنا و ره‌آورد هر دو
+          همین‌ها را در بالای صفحه نشان می‌دهند. */}
+      <div
+        data-testid="pulse-index"
+        className="col-span-full grid grid-cols-2 gap-2 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-2 shadow-xs"
+      >
+        <IndexCell
+          label="شاخص کل"
+          hint="میانگین وزنِ ارزش بازاری"
+          last={ix?.last}
+          change={ix?.change}
+          pct={ix?.pct}
+        />
+        <div className="border-s border-border-c/60 ps-2">
+          <IndexCell
+            label="شاخص هموزن"
+            hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
+            last={ix?.ewLast}
+            change={ix?.ewChange}
+            pct={ix?.ewPct}
+          />
+        </div>
+      </div>
 
       {/* بخش ۱ -- ارزش معاملات خرد (سهام، حق تقدم و ص.سهامی) */}
       <Section

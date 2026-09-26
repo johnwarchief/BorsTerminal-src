@@ -779,6 +779,30 @@ def summary(conn) -> dict:
                                         *market_total_rials(conn))}
 
 
+def market_index(conn) -> dict | None:
+    """شاخصِ کل و هموزنِ رسمی — تنها نقطهٔ خواندنِ جدولِ market_index.
+
+    عددها را همان GetMarketOverviewِ بورس می‌سازد که market_totals را هم می‌دهد
+    (نوشتارش در test_tsetmc.py: save_market_index). درصد در نوشتار ساخته شده تا
+    این‌جا فقط خوانده شود. هیچ پیش‌بینی/میانگین‌گیری روی شاخص نمیشود و نبودِ
+    جدولِ تازه (پایگاهِ بسته‌بندی‌شده) None برمی‌گرداند، نه صفر.
+    """
+    try:
+        r = conn.execute("SELECT d_even, idx_last, idx_change, idx_pct,"
+                         " ew_last, ew_change, ew_pct FROM market_index"
+                         " ORDER BY d_even DESC LIMIT 1").fetchone()
+    except sqlite3.Error:
+        return None                          # جدول هنوز ساخته نشده
+    if not r:
+        return None
+    def _opt(v):                     # غایب = None، نه صفرِ باورپذیر
+        x = _f(v)
+        return x if x else None
+    return {"d_even": int(r[0]),
+            "last": _opt(r[1]), "change": _opt(r[2]), "pct": _opt(r[3]),
+            "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6])}
+
+
 def market_total_rials(conn) -> tuple:
     """(کل ارزش بازار به ریال, منبع) — تنها نقطهٔ خواندنِ این عدد در کل مخزن.
 
@@ -907,6 +931,7 @@ def smart_money(conn) -> dict:
                       "trade_value_all_market_hemat": macro["trade_value_all_market_hemat"],
                       "market_value_hemat": macro["market_value_hemat"],
                       "market_value_source": macro["market_value_source"],
+                      "index": market_index(conn),
                       "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD},
             "watch_entry": {"active": watch_entry, "bearish_pct": None if bear_pct is None else round(bear_pct, 1),
                             "rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,

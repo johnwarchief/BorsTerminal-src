@@ -162,12 +162,13 @@ def ensure_market_totals_schema(conn):
 
 
 def fetch_market_total(s):
-    """(ارزش_بازار_ریال, d_even) از خودِ TSETMC — یا (0.0, 0) اگر عددی نیامد.
+    """(ارزش_بازار_ریال, d_even, پاسخِ بورس) از خودِ TSETMC — یا (0.0, 0, None).
 
-    صفرِ جعلی نمی‌سازد: اگر هر دو بازار پاسخ ندادند (۴۲۹/قطعی) همان (0.0, 0)
-    برمی‌گردد و مصرف‌کننده روی مسیرِ پشتیبان می‌نشیند.
+    صفرِ جعلی نمی‌سازد: اگر هر دو بازار پاسخ ندادند (۴۲۹/قطعی) همان (0.0, 0, None)
+    برمی‌گردد و مصرف‌کننده روی مسیرِ پشتیبان می‌نشیند. سومین عضو تاپل همان
+    دیکشنریِ بورس است تا شاخصِ کل/هموزنِ همان درخواستِ رایگان دور ریخته نشود.
     """
-    total, d_even = 0.0, 0
+    total, d_even, bourse_ov = 0.0, 0, None
     for m in MARKET_TOTAL_MARKETS:
         ov = polite_get(s, f"{BASE}/MarketData/GetMarketOverview/{m}", "marketOverview")
         if isinstance(ov, list):
@@ -178,8 +179,66 @@ def fetch_market_total(s):
         v += num(ov.get("marketValueBase")) or 0.0
         if v > 0:
             total += v
+        # بورس (marketType ۱) تنها بازاری است که indexEqualWeightedLastValue دارد.
+        if bourse_ov is None and (num(ov.get("indexLastValue")) or 0) > 0:
+            bourse_ov = ov
         d_even = max(d_even, int(num(ov.get("marketActivityDEven")) or 0))
-    return (total, d_even) if total > 0 else (0.0, 0)
+    return (total if total > 0 else 0.0, d_even, bourse_ov)
+
+
+MARKET_INDEX_TABLE = "market_index"
+
+
+def ensure_market_index_schema(conn):
+    """جدولِ شاخصِ رسمی را idempotent می‌سازد.
+
+    همان GetMarketOverview که market_totals را می‌سازد indexLastValue و
+    indexEqualWeightedLastValue را هم می‌فرستد؛ تا پیش از این آن دو دور ریخته
+    می‌شدند و برنامه هیچ‌جایِ خودِ «شاخص کل» نداشت (تریدرز آرنا و ره‌آورد هر دو
+    این دو عدد را در بالای صفحه نشان می‌دهند). درصد اینجا ساخته می‌شود تا لایهٔ
+    نمایش هیچ حسابی نکند.
+    """
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {MARKET_INDEX_TABLE} ("
+        " d_even INTEGER PRIMARY KEY, idx_last REAL, idx_change REAL, idx_pct REAL,"
+        " ew_last REAL, ew_change REAL, ew_pct REAL,"
+        " z_tot_tran REAL, q_tot_cap REAL, q_tot_tran REAL, updated_at TEXT)")
+
+
+def _idx_pct(last, change):
+    """درصدِ تغییر از «آخرین» و «تغییر» — مبنای عددِ پیش از نشست."""
+    if not last or not change:
+        return None
+    base = float(last) - float(change)
+    if base <= 0:
+        return None
+    return round(float(change) / base * 100.0, 2)
+
+
+def save_market_index(conn, ov, d_even, now=None):
+    """شاخصِ کل و هموزنِ همان نشست را از پاسخِ رسمیِ بورس ذخیره می‌کند.
+
+    ov None یا بی‌شاخص باشد هیچ نمی‌نویسد — صفرِ جعلی بهتر است هیچ نباشد.
+    """
+    if not isinstance(ov, dict) or not d_even:
+        return False
+    last = num(ov.get("indexLastValue")) or 0.0
+    ew_last = num(ov.get("indexEqualWeightedLastValue")) or 0.0
+    if last <= 0 and ew_last <= 0:
+        return False
+    ensure_market_index_schema(conn)
+    conn.execute(
+        f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        (int(d_even),
+         last or None, num(ov.get("indexChange")) or None,
+         _idx_pct(last, num(ov.get("indexChange"))),
+         ew_last or None, num(ov.get("indexEqualWeightedChange")) or None,
+         _idx_pct(ew_last, num(ov.get("indexEqualWeightedChange"))),
+         num(ov.get("marketActivityZTotTran")), num(ov.get("marketActivityQTotCap")),
+         num(ov.get("marketActivityQTotTran")),
+         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit()
+    return True
 
 
 def save_market_total(conn, total_rials, d_even, now=None):
@@ -778,7 +837,7 @@ def _save_market_snapshot(s, conn):
     except Exception:
         pass
     # کل ارزش بازار — عددِ رسمیِ خودِ TSETMC، نه جمعِ تابلو (بخشِ MARKET TOTALS بالا)
-    total_value, total_deven = fetch_market_total(s)
+    total_value, total_deven, bourse_ov = fetch_market_total(s)
     inst, watch, daily = [], [], []
     for r in mw_raw:
         ins = r.get("insCode")
@@ -822,6 +881,9 @@ def _save_market_snapshot(s, conn):
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview, d_even {total_deven or d_even})")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
+    if save_market_index(conn, bourse_ov, total_deven or d_even, now):
+        print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
+              f"{bourse_ov.get('indexEqualWeightedLastValue')} (d_even {total_deven or d_even})")
     conn.commit()
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): اسنپ‌شاتِ عمق/صف/سرانه فقط
     # داخل ساعات رسمی ثبت میشود؛ بعد از بسته شدن بازار، دادهٔ خالی «افت به
@@ -926,7 +988,7 @@ def main():
     except Exception:
         pass
     # کل ارزش بازار — عددِ رسمیِ خودِ TSETMC، نه جمعِ تابلو (بخشِ MARKET TOTALS بالا)
-    total_value, total_deven = fetch_market_total(s)
+    total_value, total_deven, bourse_ov = fetch_market_total(s)
     if d_even_today:
         last_d_even = d_even_today
         print(f"  market date: {d_even_today} (from GetMarketOverview)")
@@ -1041,6 +1103,9 @@ def main():
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview)")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
+    if save_market_index(conn, bourse_ov, total_deven or d_even_today, now):
+        print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
+              f"{bourse_ov.get('indexEqualWeightedLastValue')}")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ
     # جدیدی در mstat_snap نمی‌نشیند تا دادهٔ خالی شبانه به‌عنوان «افت شدید
     # به صفر» در تایم‌لاین درون‌روزی ثبت نشود. (پنجشنبه/جمعه همه‌روز بسته؛

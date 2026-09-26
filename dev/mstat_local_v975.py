@@ -514,6 +514,31 @@ _mk = io.open(os.path.join(ROOT, "api", "market.py"), encoding="utf-8").read()
 ck("WHERE d_even <= (SELECT" in _mk or "d_even <= (SELECT d FROM iso)" in _mk,
    "کوئریِ تابلو client_type را به d_even<=روزِ تابلو کران کرده")
 
+# ── شاخصِ رسمی (market_index): نوشتنِ سینک ⇔ خواندنِ موتور ────────────────
+# همان GetMarketOverview که «کل ارزش بازار» را می‌سازد indexLastValue و
+# indexEqualWeightedLastValue را هم می‌فرستاد و دور ریخته می‌شد — برای همین
+# برنامه هیچ‌جا شاخص نداشت. ارقام زیر نشستِ واقعیِ ۱۴۰۵-۰۷-۰۴‌اند و با
+# iw/ia تریدرزآرنا و با پاسخِ خودِ TSETMC مو‌افقات‌اند.
+_ixc = new_db()
+_ov = {"indexLastValue": 7153088.29, "indexChange": -103955.13,
+       "indexEqualWeightedLastValue": 1929823.43, "indexEqualWeightedChange": -9196.9}
+ck(TT.save_market_index(_ixc, _ov, 20260926, now="x") is True,
+   "save_market_index شاخصِ رسمیِ همان نشست را می‌نویسد")
+_ix = ME.market_index(_ixc)
+ck(_ix and abs(_ix["last"] - 7153088.29) < 1e-6 and abs(_ix["ew_last"] - 1929823.43) < 1e-6,
+   "موتور هر دو شاخص را دقیقاً همان‌طور که سینک نوشته می‌خواند")
+ck(_ix and abs(_ix["pct"] + 1.43) < 0.005 and abs(_ix["ew_pct"] + 0.47) < 0.005,
+   "درصد از (آخرین − تغییر) ساخته می‌شود: کل ۱.۴۳- / هموزن ۰.۴۷-")
+ck(TT.save_market_index(_ixc, {}, 20260926) is False,
+   "پاسخِ بی‌شاخص هیچ نمی‌نویسد — نه سطرِ صفر")
+ck(ME.market_index(new_db()) is None, "بی‌جدولِ شاخص یعنی None، نه صفر")
+ck("index" in ME.smart_money(_ixc)["macro"],
+   "نبض بازار شاخص را در همان macroِ پول هوشمند می‌برد (یک fetch، نه دو)")
+ck(ME.smart_money(_ixc)["macro"]["index"]["pct"] is not None,
+   "مقدارِ ذخیره‌شده تا UI بدونِ محاسبهٔ جدید می‌رسد")
+ck(_sync.count("save_market_index(conn, bourse_ov") == 2,
+   "هر دو مسیرِ همگام‌سازی (main و اسنپ‌شات) شاخص را می‌نویسند")
+
 conn = new_db()
 day = seed(conn)
 # یک ردیفِ «آینده» برای i_st1 می‌گذاریم: اگر کرانِ روز کار نکند، سرانهٔ خریدِ

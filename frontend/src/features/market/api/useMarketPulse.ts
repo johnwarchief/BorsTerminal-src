@@ -43,6 +43,18 @@ export const SmartMoneySchema = z.object({
       trade_value_all_market_hemat: num,
       market_value_hemat: num,
       market_value_source: z.string().nullish(),
+      // شاخصِ رسمیِ همان نشست (GetMarketOverview بورس) — غایب = null، نه صفر
+      index: z
+        .object({
+          d_even: num,
+          last: num,
+          change: num,
+          pct: num,
+          ew_last: num,
+          ew_change: num,
+          ew_pct: num,
+        })
+        .nullish(),
     })
     .nullish(),
   watch_entry: z
@@ -155,6 +167,25 @@ export function pulseTradeValueAllMarketHemat(d: MarketPulseData | null | undefi
 export function pulseMarketValueHemat(d: MarketPulseData | null | undefined): number | null {
   const v = (d?.smartMoney?.macro ?? d?.summary?.health)?.market_value_hemat;
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * شاخصِ کل و هموزن — عددِ خامِ TSETMC، بدونِ هیچ بازسازی‌ای در لایهٔ نمایش.
+ * null یعنی هنوز در این پایگاه ذخیره نشده (نصبِ تازه/پایگاهِ کهنه).
+ */
+export function pulseIndex(d: MarketPulseData | null | undefined) {
+  const ix = d?.smartMoney?.macro?.index ?? null;
+  if (!ix) return null;
+  const n = (v: number | null | undefined) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  return {
+    dEven: n(ix.d_even),
+    last: n(ix.last),
+    change: n(ix.change),
+    pct: n(ix.pct),
+    ewLast: n(ix.ew_last),
+    ewChange: n(ix.ew_change),
+    ewPct: n(ix.ew_pct),
+  };
 }
 
 /** ردیف «سهام، حق تقدم و ص.سهامی» از جدول خلاصه -- سرانهٔ حقیقی و قدرت خرید */

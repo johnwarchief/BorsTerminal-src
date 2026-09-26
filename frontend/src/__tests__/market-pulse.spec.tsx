@@ -12,6 +12,7 @@ import {
   powerTone,
   pulseGoldFlowB,
   pulseHemat,
+  pulseIndex,
   useMarketPulse,
   type DepthFeed,
   type MarketPulseData,
@@ -23,7 +24,8 @@ import {
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
 
-function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket: number | null = 172.2): SmartMoney {
+function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket: number | null = 172.2,
+  index: Record<string, number | null> | null = null): SmartMoney {
   return {
     status: 'ok',
     macro: {
@@ -33,6 +35,7 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
       ...(allMarket != null ? { trade_value_all_market_hemat: allMarket } : {}),
       market_value_hemat: 24856.7,
       market_value_source: 'tse_market_overview',
+      ...(index ? { index } : {}),
     },
     watch_entry: { active: false, bearish_pct: 29.9, rule_pct: 80, bearish: 341, known: 1142 },
     flow: {
@@ -339,5 +342,64 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     fetchMock.mockImplementation(() => Promise.resolve(deadResponse()));
     renderPulse();
     await waitFor(() => expect(screen.getAllByText(/بدون داده/).length).toBeGreaterThanOrEqual(5));
+  });
+});
+
+describe('نوارِ شاخص کل و هموزن', () => {
+  it('pulseIndex فقط عددِ خام را رد می‌کند؛ شاخصِ غایب null است', () => {
+    expect(pulseIndex(null)).toBeNull();
+    expect(pulseIndex({ smartMoney: smartMoney(), summary: null, depth: null, thermometer: null })).toBeNull();
+    const withIx: MarketPulseData = {
+      smartMoney: smartMoney(22.5, 300.5, -120.2, 172.2, {
+        d_even: 20260926, last: 7153088.29, change: -103955.13, pct: -1.43,
+        ew_last: 1929823.43, ew_change: -9196.9, ew_pct: -0.48,
+      }),
+      summary: null, depth: null, thermometer: null,
+    };
+    expect(pulseIndex(withIx)).toMatchObject({ last: 7153088.29, pct: -1.43, ewLast: 1929823.43 });
+  });
+
+  it('دو عددِ رسمی با رقمِ فارسی و علامتِ درصد نمایش داده می‌شوند', async () => {
+    mockRoutes({
+      'mstat/smart-money': () =>
+        jsonResponse(smartMoney(22.5, 300.5, -120.2, 172.2, {
+          d_even: 20260926, last: 7153088.29, change: -103955.13, pct: -1.43,
+          ew_last: 1929823.43, ew_change: -9196.9, ew_pct: -0.48,
+        })),
+    });
+    renderPulse();
+    // نوار همیشه رندر می‌شود؛ باید منتظر نشستِ کوئری ماند، نه نخستین رندر
+    await waitFor(() =>
+      expect(screen.getByTestId('pulse-index').textContent).toContain('۷٬۱۵۳٬۰۸۸'),
+    );
+    const strip = screen.getByTestId('pulse-index');
+    expect(strip.textContent).toContain('۱٬۹۲۹٬۸۲۳');
+    expect(strip.textContent).toContain('-۱.۴۳٪');
+    expect(strip.querySelector('.text-accent-red')).not.toBeNull();
+  });
+
+  it('شاخصِ غایب «بدون داده» است، نه صفر — و بقیهٔ پنل می‌ماند', async () => {
+    mockRoutes({ 'mstat/smart-money': () => jsonResponse(smartMoney()) });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
+    const strip = screen.getByTestId('pulse-index');
+    expect(strip.textContent).toContain('بدون داده');
+    expect(strip.textContent).not.toMatch(/۰٫۰۰٪/);
+    expect(strip.textContent).not.toMatch(/[▲▼]/);
+  });
+
+  it('فقط عددِ پایانی بیاید: درصدِ ساختگی و فلشِ جهت ساخته نمی‌شود', async () => {
+    mockRoutes({
+      'mstat/smart-money': () =>
+        jsonResponse(smartMoney(22.5, 300.5, -120.2, 172.2, { d_even: 20260926, last: 7153088.29 })),
+    });
+    renderPulse();
+    await waitFor(() =>
+      expect(screen.getByTestId('pulse-index').textContent).toContain('۷٬۱۵۳٬۰۸۸'),
+    );
+    const strip = screen.getByTestId('pulse-index');
+    expect(strip.textContent).not.toContain('٪');
+    expect(strip.textContent).not.toMatch(/[▲▼]/);
+    expect(strip.textContent).toContain('بدون داده'); // هموزنِ بی‌عدد
   });
 });
