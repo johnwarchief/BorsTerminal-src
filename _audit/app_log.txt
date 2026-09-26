@@ -1,0 +1,400 @@
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:12064 - "GET /api/market HTTP/1.1" 200 OK
+==================================================================
+  BorsTerminal_Ultimate - smart preflight
+==================================================================
+  data root: C:\Users\PCMOD\AppData\Local\Programs\BorsTerminal Ultimate
+  [OK]  market.db: 5,302 instruments (TSETMC + Codal data inside)
+  [OK]  bundled libraries: pandas/numpy/fastapi/uvicorn/requests (self-contained)
+  [OK]  everything ready - starting ...
+==================================================================
+INFO:     Started server process [32056]
+INFO:     Waiting for application startup.
+[startup] codal schema migrated (additive, idempotent)
+[startup] market sync thread spawned
+[startup] screener warm thread spawned
+[market-sync] thread started
+Starting full market-watch fetch ...
+[startup] board refresh loop spawned (90s, session-windowed)
+[startup] pulse snapshot loop spawned
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+INFO:     127.0.0.1:14146 - "GET / HTTP/1.1" 200 OK
+[OK] http://127.0.0.1:8001
+[startup] market sync already running — skip
+[screener] cache miss, running heavy bulk scan...
+INFO:     127.0.0.1:12058 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12058 - "GET /vendor/fonts/vazirmatn.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13816 - "GET /assets/index-H6Or8TbK.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9590 - "GET /assets/index-Do7QeWFG.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1871 - "GET /vendor/klinecharts.min.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1871 - "GET /vendor/fonts/vazirmatn-900.ttf HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13816 - "GET /vendor/fonts/vazirmatn-700.ttf HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9590 - "GET /vendor/fonts/vazirmatn-400.ttf HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12058 - "GET /favicon.ico HTTP/1.1" 200 OK
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+INFO:     127.0.0.1:1879 - "GET /api/update/version HTTP/1.1" 200 OK
+Symbols fetched: 3,348
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,870
+[screener] saved to disk cache
+[screener] cache warmed
+Boards map: 3,348
+Paper-type map: 1,173
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+============================================================
+Saved symbols: 3,348 | client-type records: 1,870
+Total trade value: 1,282,297,297,037,191.0 Rials
+Total volume: 96,342,217,078.0 shares
+Updated: 2026-09-26 12:32:00
+============================================================
+[market-sync] done
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:3515 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3516 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5966 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5967 - "GET /assets/index-Do7QeWFG.js HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,348
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,871
+Boards map: 3,348
+Paper-type map: 1,173
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+============================================================
+Saved symbols: 3,348 | client-type records: 1,871
+Total trade value: 1,286,696,658,461,149.0 Rials
+Total volume: 96,501,133,062.0 shares
+Updated: 2026-09-26 12:33:42
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,349
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,870
+Boards map: 3,349
+Paper-type map: 1,174
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+============================================================
+Saved symbols: 3,349 | client-type records: 1,870
+Total trade value: 1,289,599,014,133,830.0 Rials
+Total volume: 96,636,545,100.0 shares
+Updated: 2026-09-26 12:35:15
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,350
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,870
+Boards map: 3,350
+  [warning] TSETMC fetch failed (HTTPError): 502 Server Error: Bad Gateway for url: https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch?market=0&paperTypes%5B0%5D=2&showTraded=false&withBestLimits=false&hEven=0
+Paper-type map: 1,025
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,350 | client-type records: 1,870
+Total trade value: 1,293,764,570,269,339.0 Rials
+Total volume: 96,795,353,907.0 shares
+Updated: 2026-09-26 12:36:58
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,350
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,870
+Boards map: 3,350
+Paper-type map: 1,175
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,350 | client-type records: 1,870
+Total trade value: 1,298,669,080,245,783.0 Rials
+Total volume: 96,938,738,170.0 shares
+Updated: 2026-09-26 12:38:47
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,351
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,875
+Boards map: 3,351
+Paper-type map: 1,176
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,351 | client-type records: 1,875
+Total trade value: 1,301,173,808,268,919.0 Rials
+Total volume: 97,018,797,983.0 shares
+Updated: 2026-09-26 12:40:27
+============================================================
+[market-sync] done
+INFO:     127.0.0.1:8974 - "GET /api/mstat/pulse HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8975 - "GET /api/mstat/overview HTTP/1.1" 200 OK
+fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+INFO:     127.0.0.1:8976 - "GET /api/mstat/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10273 - "GET /api/mstat/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9142 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9143 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9144 - "GET /api/mstat/histogram HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9145 - "GET /api/mstat/smart-money HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9146 - "GET /api/mstat/industries HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,393
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,875
+Boards map: 3,393
+Paper-type map: 1,847
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,393 | client-type records: 1,875
+Total trade value: 1,306,783,477,869,659.0 Rials
+Total volume: 97,125,261,887.0 shares
+Updated: 2026-09-26 12:42:01
+============================================================
+[market-sync] done
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:11777 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13729 - "GET /api/market HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,352
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,875
+Boards map: 3,352
+Paper-type map: 1,177
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,352 | client-type records: 1,875
+Total trade value: 1,306,053,376,970,173.0 Rials
+Total volume: 97,159,837,591.0 shares
+Updated: 2026-09-26 12:43:35
+============================================================
+[market-sync] done
+fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+INFO:     127.0.0.1:2128 - "GET /api/mstat/summary HTTP/1.1" 200 OK
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:1880 - "GET /api/market HTTP/1.1" 200 OK
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:9252 - "GET /api/market HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,394
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,875
+Boards map: 3,394
+Paper-type map: 1,848
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,394 | client-type records: 1,875
+Total trade value: 1,312,480,247,655,550.0 Rials
+Total volume: 97,286,989,073.0 shares
+Updated: 2026-09-26 12:45:17
+============================================================
+[market-sync] done
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:11890 - "GET /api/market HTTP/1.1" 200 OK
+fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+INFO:     127.0.0.1:10935 - "GET /api/mstat/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10936 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10937 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10940 - "GET /api/index/tedpix?limit=0 HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,789
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 1,875
+Boards map: 3,789
+Paper-type map: 2,243
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,789 | client-type records: 1,875
+Total trade value: 1,321,722,734,329,572.0 Rials
+Total volume: 97,493,195,466.0 shares
+Updated: 2026-09-26 12:46:51
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,821
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,010
+Boards map: 3,821
+Paper-type map: 2,275
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,821 | client-type records: 2,010
+Total trade value: 1,325,101,635,570,296.0 Rials
+Total volume: 97,616,098,664.0 shares
+Updated: 2026-09-26 12:48:26
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,839
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,010
+Boards map: 3,839
+Paper-type map: 2,293
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,839 | client-type records: 2,010
+Total trade value: 1,328,603,006,485,576.0 Rials
+Total volume: 97,866,213,209.0 shares
+Updated: 2026-09-26 12:50:00
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,802
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,024
+Boards map: 3,803
+Paper-type map: 1,627
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,802 | client-type records: 2,024
+Total trade value: 1,327,299,888,662,668.0 Rials
+Total volume: 97,882,561,794.0 shares
+Updated: 2026-09-26 12:51:35
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,850
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,010
+Boards map: 3,850
+Paper-type map: 2,304
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,850 | client-type records: 2,010
+Total trade value: 1,336,905,199,977,743.0 Rials
+Total volume: 98,215,839,729.0 shares
+Updated: 2026-09-26 12:53:18
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,850
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,010
+Boards map: 3,850
+Paper-type map: 2,304
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,850 | client-type records: 2,010
+Total trade value: 1,339,941,775,381,278.0 Rials
+Total volume: 98,294,309,690.0 shares
+Updated: 2026-09-26 12:54:53
+============================================================
+[market-sync] done
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,809
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,026
+Boards map: 3,809
+Paper-type map: 1,632
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,809 | client-type records: 2,026
+Total trade value: 1,337,669,817,524,137.0 Rials
+Total volume: 98,271,016,454.0 shares
+Updated: 2026-09-26 12:56:27
+============================================================
+[market-sync] done
+INFO:     127.0.0.1:10470 - "GET /api/market/status HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+INFO:     127.0.0.1:10479 - "GET /api/market/status HTTP/1.1" 200 OK
+Symbols fetched: 3,812
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,133
+Boards map: 3,812
+Paper-type map: 1,634
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,812 | client-type records: 2,133
+Total trade value: 1,341,511,737,248,165.0 Rials
+Total volume: 98,416,839,676.0 shares
+Updated: 2026-09-26 12:58:00
+============================================================
+[market-sync] done
+pandas\core\internals\blocks.py:1151: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+pandas\core\internals\blocks.py:562: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+INFO:     127.0.0.1:13565 - "GET /api/market?limit=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9569 - "GET /api/market?limit=0 HTTP/1.1" 200 OK
+[market-sync] thread started
+Starting full market-watch fetch ...
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,813
+  market date: 20260926 (from GetMarketOverview)
+Client-type records: 2,133
+Boards map: 3,814
+Paper-type map: 1,636
+  [market-total] 24,561.2 همت (TSETMC GetMarketOverview)
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+============================================================
+Saved symbols: 3,813 | client-type records: 2,133
+Total trade value: 1,343,581,552,113,603.0 Rials
+Total volume: 98,514,095,796.0 shares
+Updated: 2026-09-26 12:59:40
+============================================================
+[market-sync] done
+fastapi\routing.py:144: FastAPIDeprecationWarning: ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON bytes via Pydantic when a return type or response model is set, which is faster and doesn't need a custom response class. Read more in the FastAPI docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model and https://fastapi.tiangolo.com/tutorial/response-model/
+INFO:     127.0.0.1:3376 - "GET /api/market-status/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3379 - "GET /api/mstat/board HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14785 - "GET /api/market-status/overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2531 - "GET /api/mstat/industries HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2532 - "GET /api/mstat/mainwatch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2533 - "GET /api/mstat/histogram HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2534 - "GET /api/mstat/thermometer HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2535 - "GET /api/mstat/timeline?mode=cum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2536 - "GET /api/mstat/clientsplit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2537 - "GET /api/mstat/smart-money HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2538 - "GET /api/mstat/depth HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2539 - "GET /api/mstat/phases HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3647 - "GET /api/mstat/industries HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3648 - "GET /api/mstat/timeline?mode=cum HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10992 - "GET /api/diagnostics/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5051 - "GET /api/diagnostics/log HTTP/1.1" 200 OK
