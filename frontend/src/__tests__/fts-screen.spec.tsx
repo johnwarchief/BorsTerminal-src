@@ -388,6 +388,49 @@ describe('کارایی جدول غربالگری (F-08)', () => {
     expect(opts!.overscan).toBe(8);
   });
 
+  // ── جستجوی درونِ جدول (FUND-SEARCH) ─────────────────────────────────────
+  it('جستجو فقط همین جدول را تنگ می‌کند: «فولاد» یک ردیف می‌گذارد', () => {
+    render(
+      <FtsScreenTable
+        rows={[
+          row({ symbol: 'فولاد', name: 'فولاد مبارکه اصفهان', sector_name: 'فلزات اساسي' }),
+          row({ symbol: 'ذوب', name: 'ذوب آهن اصفهان', sector_name: 'فلزات اساسي' }),
+          row({ symbol: 'شپنا', name: 'پالایش نفت اصفهان', sector_name: 'محصولات نفتي' }),
+        ]}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getAllByTestId('fts-screen-row')).toHaveLength(3);
+    fireEvent.change(screen.getByTestId('fts-search'), { target: { value: 'فولاد' } });
+    const rows = screen.getAllByTestId('fts-screen-row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('فولاد');
+    expect(rows[0].textContent).not.toContain('ذوب');
+  });
+
+  it('جستجو با نوشتارِ عربی هم تطبیق می‌کند و با × پاک می‌شود', () => {
+    render(
+      <FtsScreenTable
+        rows={[
+          row({ symbol: 'فولاد', name: 'فولاد مبارکه اصفهان' }),
+          row({ symbol: 'شپنا', name: 'پالايش نفت اصفهان' }),
+        ]}
+        onSelect={() => {}}
+      />,
+    );
+    fireEvent.change(screen.getByTestId('fts-search'), { target: { value: 'پالايش نفت' } });
+    expect(screen.getAllByTestId('fts-screen-row')).toHaveLength(1);
+    fireEvent.click(screen.getByTestId('fts-search-clear'));
+    expect(screen.getAllByTestId('fts-screen-row')).toHaveLength(2);
+  });
+
+  it('نتیجهٔ بی‌مورد: صفر ردیف و صفرِ شمارنده، نه پیامِ خطا', () => {
+    render(<FtsScreenTable rows={[row({ symbol: 'فولاد' }), row({ symbol: 'شپنا' })]} onSelect={() => {}} />);
+    fireEvent.change(screen.getByTestId('fts-search'), { target: { value: 'نیست' } });
+    expect(screen.queryAllByTestId('fts-screen-row')).toHaveLength(0);
+    expect(screen.getByText(/۰ شرکت از ۲/)).toBeInTheDocument();
+  });
+
   it('کانتینر اسکرول با ارتفاع محدود و هدر چسبان آماده است', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const scroll = screen.getByTestId('fts-screen-scroll');

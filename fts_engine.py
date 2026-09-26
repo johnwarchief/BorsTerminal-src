@@ -823,13 +823,22 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
         return None                      # بانکی/مالی/صندوق — بهای تمام‌شده ندارد
     gp = _f(gp)
     margin = (gp / rev) * 100.0
+    parent_only = bool(row.get("audited")) and not row.get("consolidated")
+    # برچسبِ منبع از خودِ پرچم‌ها ساخته میشود، نه از بریدنِ عنوانِ کدال:
+    # `title[:60]` جمله را وسطِ کلمه می‌برید («… (حسابرسی ش») و کاربر متنِ
+    # ناقص را دلیلِ داوری می‌دید.
+    src = ("سالانهٔ حسابرسی‌شدهٔ شرکت اصلی" if parent_only else
+           "تنزل منبع: " + ("تلفیقی" if row.get("consolidated") else "شرکت اصلی") +
+           ("ِ حسابرسی‌شده" if row.get("audited") else "ِ حسابرسی‌نشده"))
+    fy = str(row.get("fiscal_year") or "").strip()
+    if fy:
+        src += " — سال مالی " + fy
     return {
         "margin_pct": round(margin, 1),
         "gross_profit_bt": round(normalize_mrl_to_btom(gp), 1),
         "revenue_bt": round(normalize_mrl_to_btom(rev), 1),
         "period_end": str(row.get("period_end"))[:10],
-        "basis": "سالانهٔ حسابرسی‌شدهٔ شرکت اصلی" if row.get("audited") and not row.get("consolidated")
-                 else "تنزل منبع: " + str(row.get("title") or "")[:60],
+        "basis": src,
         "pass": margin >= min_margin,
         "optimal": margin >= optimal,
         "threshold": min_margin,

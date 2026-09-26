@@ -137,6 +137,23 @@ ck(gm is not None and abs(gm["margin_pct"] - 35.0) < 0.01,
 ck(bool(gm and gm["pass"]) and bool(gm and gm["optimal"]),
    "شاخص ۳ — 35٪ هم پاس است هم optimal (> ۳۰٪)")
 
+# ── متنِ «مبنا» که کاربر می‌بیند: برچسب از پرچم‌ها، نه از بریدنِ عنوانِ کدال ──
+_raw_title = ("صورت‌های مالی تلفیقی سال مالی منتهی به ۱۴۰۴/۱۲/۲۹ (حسابرسی شده)"
+              " — شرکت سهامی عام فولاد مبارکهٔ اصفهان")
+gm_ref = {"period_end": "1404-12-29", "fiscal_year": "1404", "title": _raw_title,
+          "audited": True, "consolidated": True, "revenue": 120000.0, "gross_profit": 42000.0}
+gm_c = F.gross_margin(conn, "تستF", ref=gm_ref)
+ck(gm_c is not None and gm_c["basis"] == "تنزل منبع: تلفیقیِ حسابرسی‌شده — سال مالی 1404",
+   "شاخص ۳ — تنزل منبع با عنوانِ کاملِ سال و نوعِ صورت: %s" % (gm_c or {}).get("basis"))
+ck(gm_c is not None and "حسابرسی ش" not in gm_c["basis"] and "۱۴۰۴/۱۲/۲۹" not in gm_c["basis"],
+   "شاخص ۳ — هیچ‌وقت نیمه‌بریدهٔ عنوان کدال نمی‌شود: %s" % (gm_c or {}).get("basis"))
+gm_p = F.gross_margin(conn, "تستF", ref=dict(gm_ref, audited=True, consolidated=False))
+ck(gm_p is not None and gm_p["basis"].startswith("سالانهٔ حسابرسی‌شدهٔ شرکت اصلی"),
+   "شاخص ۳ — مبنای اصلی «حسابرسی‌شدهٔ شرکت اصلی» است: %s" % (gm_p or {}).get("basis"))
+gm_u = F.gross_margin(conn, "تستF", ref=dict(gm_ref, audited=False))
+ck(gm_u is not None and "حسابرسی‌نشده" in gm_u["basis"],
+   "شاخص ۳ — حسابرسی‌نشده صریح برچسب می‌گیرد: %s" % (gm_u or {}).get("basis"))
+
 
 # ── شاخص ۴: فرمول «تجمیعی × ۱۲÷ماه ÷ مارکت‌کپ» (تصمیمِ مالک: ضریب ثابت ۳×۴ ممنوع) ──
 a = F.annualized_sales(conn, "تستF")

@@ -45,10 +45,10 @@ export function DataGapBanner({
     <div className="flex flex-col gap-3">
       {epsReason != null ? (
         <div className="rounded-2xl border border-accent-red/40 bg-accent-red/10 p-4" data-testid="reject-reason-banner">
-          <h3 className="mb-2 text-sm font-black text-accent-red">دلیل ردِ شاخص ۲ — سابقهٔ کامل است</h3>
+          <h3 className="mb-2 text-sm font-black text-accent-red">چرا شاخص ۲ رد شد</h3>
           <p className="text-xs text-text-primary">{epsReason}</p>
           <p className="mt-1 text-2xs text-text-secondary">
-            این رد با داده‌ی ناقص نبوده؛ فقط بازگشت روند صعودی سود در دورهٔ بعدی آن را برمی‌گرداند.
+            سابقهٔ سه‌ساله کامل است؛ علت، خودِ روندِ سود است نه کمبود داده.
           </p>
         </div>
       ) : null}

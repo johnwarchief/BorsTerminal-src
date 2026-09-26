@@ -9,7 +9,10 @@ import { isFinancialOrHolding, isPhysicalGrowthApplicable } from './assetScope';
 import { toFaDigits } from '@shared/lib/fmt';
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
-const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() !== '' ? v : null);
+// متنِ موتور ارقام لاتین دارد («افت سود در 1404»)؛ تبدیلِ رقم لایهٔ نمایش است و
+// یک‌جا همین‌جا انجام می‌شود تا در بازِ همهٔ شاخص‌ها فارسی بماند.
+const str = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() !== '' ? toFaDigits(v.trim()) : null;
 
 /** ۱-الف: رشد فروش ریالی (درآمد) */
 function build1aEvidence(
@@ -23,14 +26,14 @@ function build1aEvidence(
   if (!reason) {
     if (actual != null) {
       if (pass === true || (pass == null && actual >= thresh)) {
-        reason = `رشد درآمد ریالی سهم (${actual >= 0 ? '+' : ''}${toFaDigits(actual.toFixed(1))}٪) بالاتر از کف تورم مبنا (${toFaDigits(thresh)}٪) است و توانایی شرکت در افزایش درآمد و حفظ قدرت فروش را تایید می‌کند.`;
+        reason = `رشد درآمد ریالی ${toFaDigits(actual.toFixed(1))}٪ — از کف ${toFaDigits(thresh)}٪ بالاتر.`;
       } else if (actual < 0) {
-        reason = `درآمد ریالی شرکت نسبت به دوره مشابه سال قبل افت کرده است (${toFaDigits(actual.toFixed(1))}٪) که نشان‌دهنده انقباض فروش است.`;
+        reason = `درآمد ریالی ${toFaDigits(actual.toFixed(1))}٪ افت کرده است (کف: رشد ≥ ${toFaDigits(thresh)}٪).`;
       } else {
-        reason = `رشد درآمد ریالی (${toFaDigits(actual.toFixed(1))}٪) کمتر از کف تورم مبنا (${toFaDigits(thresh)}٪) است؛ افزایش درآمد شرکت از تورم عقب مانده و رشد واقعی منفی تلقی می‌شود.`;
+        reason = `رشد درآمد ریالی ${toFaDigits(actual.toFixed(1))}٪ — کمتر از کف ${toFaDigits(thresh)}٪.`;
       }
     } else {
-      reason = 'گزارش فعالیت ماهانه دوره مشابه سال قبل در سامانه کدال ثبت نشده و امکان مقایسه و محاسبه نرخ رشد ریالی وجود ندارد.';
+      reason = 'گزارش فعالیت ماهانهٔ دورهٔ مشابه سال قبل در کدال نیست؛ رشد ریالی محاسبه نشد.';
     }
   }
 
@@ -53,16 +56,16 @@ function build1bEvidence(
 ): AuditEvidence {
   let reason = str(backendReason);
   if (!applicable) {
-    reason = 'این شرکت ماهیت هلدینگ، سرمایه‌گذاری یا خدماتی دارد و فاقد محصول فیزیکی است؛ لذا از شرط رشد مقداری معاف است.';
+    reason = 'این نماد محصول فیزیکی ندارد؛ شرط رشد مقداری بر آن اعمال نمی‌شود.';
   } else if (!reason) {
     if (actual != null) {
       if (pass === true || (pass == null && actual >= 0)) {
-        reason = `حجم تولید و فروش مقداری شرکت رشد مثبت داشته (${actual >= 0 ? '+' : ''}${toFaDigits(actual.toFixed(1))}٪) و نشان می‌دهد سود حاصل از جهش عملیاتی واقعی است نه صرفاً تورم قیمت‌ها.`;
+        reason = `رشد مقداری تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — مثبت.`;
       } else {
-        reason = `حجم مقداری تولید و فروش سهم کاهش یافته است (${toFaDigits(actual.toFixed(1))}٪)؛ سود حاصل صرفاً از تورم قیمت‌ها ناشی شده و شرکت جهش مقداری نداشته است.`;
+        reason = `رشد مقداری تولید و فروش ${toFaDigits(actual.toFixed(1))}٪ — منفی.`;
       }
     } else {
-      reason = 'ارقام مقداری و فیزیکی در گزارش ماهانه کدال تفکیک نشده و فقط ارقام ریالی ثبت شده است.';
+      reason = 'ارقام مقداری در گزارش ماهانهٔ کدال تفکیک نشده است.';
     }
   }
 
@@ -93,13 +96,13 @@ function build2Evidence(
     if (fail) {
       reason = fail;
     } else if (pass === true || (pass == null && rising && profitable && realYears >= reqYears)) {
-      reason = `سود خالص هر سهم (EPS) در ${toFaDigits(reqYears)} سال مالی متوالی گذشته مثبت و اکیداً صعودی بوده و پایداری سودآوری شرکت را تضمین می‌کند.`;
+      reason = `سود هر سهم در ${toFaDigits(reqYears)} سال مالی متوالی مثبت و صعودی بوده است.`;
     } else if (realYears < reqYears && realYears >= 2) {
-      reason = `سابقه صورت‌های مالی در کدال ناقص است (${toFaDigits(realYears)} سال موجود از ${toFaDigits(reqYears)} سال الزامی)؛ به دلیل عدم احراز شرط سه‌ساله مردود است.`;
+      reason = `سابقهٔ EPS ${toFaDigits(realYears)} سال از ${toFaDigits(reqYears)} سال لازم.`;
     } else if (realYears < 2) {
-      reason = 'صورت‌های مالی ۱۲ماهه حسابرسی‌شده شرکت در کدال ثبت نشده و سابقه سودآوری قابل بررسی نیست.';
+      reason = 'صورت مالی سالانهٔ ۱۲ماهه در کدال نیست؛ سابقهٔ سودآوری بررسی نشد.';
     } else {
-      reason = 'روند سود خالص هر سهم صعودی متوالی نبوده و شرط رشد مستمر ۳ ساله احراز نشد.';
+      reason = 'روند سود هر سهم سه‌سالهٔ صعودی متوالی نیست.';
     }
   }
 
@@ -125,19 +128,19 @@ function build3Evidence(
   let reason = str(backendReason);
   if (!reason) {
     if (isNa && actual == null) {
-      reason = 'این نماد فاقد بهای تمام‌شده کالای فروش‌رفته است (خدماتی/بانکی/بیمه) و از شاخص حاشیه ناخالص معاف می‌باشد.';
+      reason = 'بهای تمام‌شدهٔ کالای فروش‌رفته ندارد (خدماتی/بانکی/بیمه)؛ این شاخص کاربرد ندارد.';
     } else if (actual != null) {
       if (pass !== false && actual >= 30) {
-        reason = `حاشیه سود ناخالص شرکت (${toFaDigits(actual.toFixed(1))}٪) بالای ۳۰٪ است که نشان‌دهنده قدرت انحصاری، بهره‌وری عالی و قیمت‌گذاری قوی است.`;
+        reason = `حاشیهٔ سود ناخالص ${toFaDigits(actual.toFixed(1))}٪ — از کف ${toFaDigits(thresh)}٪ و از آستانهٔ ۳۰٪ بالاتر.`;
       } else if (pass === true || (pass == null && actual >= thresh)) {
-        reason = `حاشیه سود ناخالص (${toFaDigits(actual.toFixed(1))}٪) بالاتر از کف استاندارد ${toFaDigits(thresh)}٪ قرار دارد و کارایی عملیاتی شرکت تایید می‌شود.`;
+        reason = `حاشیهٔ سود ناخالص ${toFaDigits(actual.toFixed(1))}٪ — از کف ${toFaDigits(thresh)}٪ بالاتر.`;
       } else if (actual < 0) {
-        reason = `بهای تمام‌شده از درآمد فروش پیشی گرفته و شرکت با زیان ناخالص مواجه است (${toFaDigits(actual.toFixed(1))}٪).`;
+        reason = `سود ناخالص منفی است (${toFaDigits(actual.toFixed(1))}٪) — بهای تمام‌شده از درآمد بیشتر.`;
       } else {
-        reason = `حاشیه سود ناخالص (${toFaDigits(actual.toFixed(1))}٪) کمتر از حداقل نصاب ${toFaDigits(thresh)}٪ است و شرکت حاشیه امن کافی در برابر هزینه‌ها ندارد.`;
+        reason = `حاشیهٔ سود ناخالص ${toFaDigits(actual.toFixed(1))}٪ — کمتر از کف ${toFaDigits(thresh)}٪.`;
       }
     } else {
-      reason = 'صورت سود و زیان حسابرسی‌شده اخیر در سامانه کدال یافت نشد و حاشیه سود قابل محاسبه نیست.';
+      reason = 'صورت سود و زیانِ اخیر در کدال نیست؛ حاشیهٔ سود محاسبه نشد.';
     }
   }
 
@@ -164,14 +167,14 @@ function build4Evidence(
   if (!reason) {
     if (actual != null) {
       if (pass === true || (pass == null && actual >= thresh)) {
-        reason = `فروش سالانه‌شده سهم بیش از ${toFaDigits(Math.round(thresh * 100))}٪ ارزش بازار آن را پوشش می‌دهد (${toFaDigits(actual.toFixed(2))}× ارزش بازار) و ریسک حباب قیمت را رد می‌کند.`;
+        reason = `فروش سالانه‌شده ${toFaDigits(actual.toFixed(2))}× ارزش بازار — از کف ${toFaDigits(thresh.toFixed(2))}× بالاتر.`;
       } else {
-        reason = `فروش سالانه‌شده شرکت نسبت به ارزش بازار آن اندک است (${toFaDigits(actual.toFixed(2))}× در برابر کف ${toFaDigits(thresh.toFixed(2))}×) و ارزش‌گذاری بازار فراتر از توان فروش فعلی است.`;
+        reason = `فروش سالانه‌شده ${toFaDigits(actual.toFixed(2))}× ارزش بازار — کمتر از کف ${toFaDigits(thresh.toFixed(2))}×.`;
       }
     } else if (isHolding) {
-      reason = 'شرکت‌های سرمایه‌گذاری و مالی طبق استراتژی FTS از نسبت فروش به ارزش بازار معاف هستند و با ارزش خالص دارایی‌ها (NAV) ارزیابی می‌شوند.';
+      reason = 'این نماد از شرط فروش‌به‌ارزش‌بازار معاف است (هلدینگ/مالی).';
     } else {
-      reason = 'داده ارزش روز بازار یا درآمد سالانه‌شده در دسترس نیست و نسبت فروش به ارزش بازار قابل محاسبه نمی‌باشد.';
+      reason = 'ارزش بازار یا فروش سالانه‌شده موجود نیست؛ نسبت محاسبه نشد.';
     }
   }
 
@@ -194,13 +197,13 @@ function build5Evidence(
   let reason = str(backendReason);
   if (!reason) {
     if (mode === 'free' || pass === true) {
-      reason = 'محصولات شرکت در بورس کالا یا بازار رقابتی و آزاد کشف نرخ می‌شوند و ریسک سرکوب قیمت و قیمت‌گذاری دستوری ندارند.';
+      reason = 'رژیم قیمت‌گذاری: آزاد / بورس کالا.';
     } else if (mode === 'mandatory' || pass === false) {
-      reason = 'این صنعت مشمول قیمت‌گذاری دستوری دولتی است که حاشیه سود را سرکوب کرده و ریسک سودآوری عملیاتی بالایی ایجاد می‌کند.';
+      reason = 'رژیم قیمت‌گذاری: دستوری.';
     } else if (mode === 'neutral') {
-      reason = 'این صنعت ترکیبی از نرخ‌های توافقی و رقابتی دارد؛ حذف مستقیم نمی‌شود اما نیازمند دقت در رژیم نرخ‌گذاری قراردادهاست.';
+      reason = 'رژیم قیمت‌گذاری: ترکیبی (توافقی و رقابتی).';
     } else {
-      reason = 'صنعت این نماد در طبقه‌بندی استاندارد رژیم نرخ‌گذاری بورس کالا ثبت نشده است.';
+      reason = 'رژیم قیمت‌گذاری این صنعت در فهرست FTS ثبت نشده.';
     }
   }
 
@@ -220,7 +223,6 @@ export function cardAuditEvidence(card: FtsCard): Partial<Record<GapAxis, AuditE
   const i2 = ind?.['2'];
   const i3 = ind?.['3'];
   const i4 = ind?.['4'];
-  const i5 = ind?.['5'];
   const out: Partial<Record<GapAxis, AuditEvidence>> = {};
 
   const isHolding =
@@ -277,11 +279,10 @@ export function cardAuditEvidence(card: FtsCard): Partial<Record<GapAxis, AuditE
   );
 
   // ۵: رژیم صنعت
-  out['5_industry'] = build5Evidence(
-    card.pricing_mode,
-    passes['5_industry'],
-    str(i5?.outlook)
-  );
+  // «outlook» بک‌اند یک پاراگراف تفسیر است (۲۵ کلمه) — در جای‌گاهِ «علت» نمایش
+  // داده می‌شد و خواننده آن را دلیلِ رأی می‌خواند. علتِ کوتاهِ همین فایل جای آن
+  // را می‌گیرد؛ خودِ outlook در دریل‌دانِ منبع باقی می‌ماند.
+  out['5_industry'] = build5Evidence(card.pricing_mode, passes['5_industry']);
 
   return out;
 }

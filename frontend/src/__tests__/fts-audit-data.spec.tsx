@@ -7,7 +7,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
-import { screenAuditEvidence } from '@features/fundamental/lib/auditEvidence';
+import { cardAuditEvidence, screenAuditEvidence } from '@features/fundamental/lib/auditEvidence';
 import { gapLabel, standardizeGap } from '@features/fundamental/lib/gapReason';
 import { fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '@features/fundamental/lib/numFmt';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
@@ -196,5 +196,96 @@ describe('GAPS-1 — قراردادِ تازهٔ standardizeGap', () => {
     });
     expect(d.why).toContain('1403'.split('').map((c) => String.fromCharCode(0x06f0 + Number(c))).join(''));
     expect(d.why).not.toMatch(/[0-9]/);
+  });
+});
+
+// ── FUND-TEXT: علتِ هر شاخص باید فقط «چه عددی در برابر چه کفی» باشد ──────────
+// جمله‌های تفسیریِ علّی («قدرت انحصاری»، «ریسک حباب»، «تضمینِ پایداری») چیزی را
+// می‌گفتند که موتور هرگز اندازه نگرفته بود؛ کاربر آن‌ها را دلیلِ رأی می‌خواند.
+describe('متنِ علتِ شاخص‌ها — عدد و کف، بدون ادعای اندازه‌گیری‌نشده', () => {
+  const BANNED = [
+    'قدرت انحصاری', 'بهره‌وری عالی', 'تضمین', 'حباب', 'جهش عملیاتی',
+    'تایید می‌شود', 'قدرت فروش', 'حاشیه امن', 'نیازمند دقت', 'انقباض فروش',
+    'بی‌معنا', 'سرکوب', 'معاف می‌باشد',
+  ];
+  const CASES: Partial<FtsScreenRow>[] = [
+    {},
+    { rev_growth: -12, i1_pass: false },
+    { gross_margin: 8.5, i3_pass: false },
+    { gross_margin: null, i3_pass: null },
+    { sales_to_mcap: 0.02, i4_pass: false },
+    { sales_to_mcap: null, i4_pass: null },
+    { pricing_mode: 'mandatory', i5_pass: false },
+    { pricing_mode: null, i5_pass: null },
+    { eps_series: [100, 120, 90], i2_pass: false },
+  ];
+  const AXES = [
+    '1a_monetary_growth', '1b_volume_growth', '2_eps_trend',
+    '3_gross_margin', '4_sales_to_mcap', '5_industry',
+  ] as const;
+
+  it('هیچ علتی واژۀ تفسیریِ علّی ندارد (همهٔ ترکیب‌های مقدار/حکم)', () => {
+    for (const axis of AXES) {
+      for (const patch of CASES) {
+        const reason = String(screenAuditEvidence(axis, row(patch), null).reason ?? '');
+        for (const word of BANNED) {
+          expect(`${axis}/${patch}/${reason}`).not.toContain(word);
+        }
+      }
+    }
+  });
+
+  it('ردِ شاخص ۳ هر دو عدد را می‌گوید: مقدارِ واقعی و کف', () => {
+    const ev = screenAuditEvidence('3_gross_margin', row({ gross_margin: 8.5, i3_pass: false }), { margin_min: 20 });
+    expect(String(ev.reason)).toContain('۸.۵');
+    expect(String(ev.reason)).toContain('۲۰');
+  });
+
+  it('شاخص ۵ فقط رژیم را گزارش می‌کند، نه پیامدِ آن', () => {
+    const ev = screenAuditEvidence('5_industry', row({ pricing_mode: 'mandatory', i5_pass: false }), null);
+    expect(String(ev.reason)).toBe('رژیم قیمت‌گذاری: دستوری.');
+  });
+
+  // متنِ موتور (که بر متنِ جانشین اولویت دارد) رقمِ لاتین دارد — کارت باید
+  // یکدست فارسی بخواند، وگرنه «افت سود در 1404» کنار «۲۲٫۰٪» کج می‌ایستد.
+  it('دلیلِ ردِ ساختِ موتور با رقمِ فارسی به کاربر می‌رسد', () => {
+    const card = {
+      symbol: 'خودرو',
+      sector: 'خودرو و ساخت قطعات',
+      pricing_mode: 'mandatory',
+      passes: {},
+      indicators: {
+        '1': {
+          monetary: { monetary_pct: 52.2, threshold: 60, reason: 'رشد اسمی +52.2٪ کمتر از مبنای افزایش نرخ 60٪ است.' },
+          volume: { real_pct: -5, reason: 'فروش مقداری کم شده؛ رشد ریالی فقط از افزایش نرخ آمده است.' },
+        },
+        '2': { reason: 'افت سود در 1404 (افت 22.0٪)' },
+        '3': { margin_pct: 2.7, threshold: 20 },
+        '4': { reason: 'قبولی با نسبت فروش/ارزش‌بازار' },
+        '5': { outlook: 'قیمت‌گذاری دستوری — نرخ توسط دولت تعیین میشود.' },
+      },
+    } as unknown as Parameters<typeof cardAuditEvidence>[0];
+
+    const ev = cardAuditEvidence(card);
+    expect(String(ev['1a_monetary_growth']?.reason)).toContain('۵۲.۲');
+    expect(String(ev['2_eps_trend']?.reason)).toContain('۱۴۰۴');
+    for (const axis of ['1a_monetary_growth', '1b_volume_growth', '2_eps_trend',
+                        '3_gross_margin', '4_sales_to_mcap', '5_industry'] as const) {
+      const reason = String(ev[axis]?.reason ?? '');
+      expect(reason).not.toMatch(/[0-9]/);
+    }
+  });
+
+  // علت/راه‌حلِ پیش‌فرض هر محور must-read کاربر است، نه یادداشتِ توسعه:
+  // واژگانی مثل «بک‌اند» یا نامِ ستونِ دیتابیس معنایی برایش ندارد.
+  it('متن‌های پیش‌فرض شکاف، واژۀ فنیِ درون‌سازمانی ندارند', () => {
+    const JARGON = ['بک‌اند', 'بک اند', 'backend', 'POST', 'GET', 'monthly_sales', 'annualize', 'fts_engine'];
+    const axes = ['1a_monetary_growth', '1b_volume_growth', '2_eps_trend',
+                  '3_gross_margin', '4_sales_to_mcap', '5_industry'] as const;
+    for (const axis of axes) {
+      const g = standardizeGap({ axis, layer: axis } as never);
+      const text = `${g.label} ${g.why} ${g.fix}`;
+      for (const w of JARGON) expect(`${axis}/${text}`).not.toContain(w);
+    }
   });
 });

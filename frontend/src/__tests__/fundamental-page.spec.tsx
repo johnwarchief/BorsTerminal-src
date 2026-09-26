@@ -117,10 +117,12 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     const panel = screen.getByTestId('holding-pnav-panel');
     // برچسب رسمی N/A و علت آن — یکی در نشان، یکی در متن (بدونِ تکرارِ عینِ جمله)
     expect(screen.getByTestId('holding-pnav-panel').textContent).toContain('N/A');
-    expect(screen.getByTestId('holding-nav-na').textContent).toContain('ارزش خالص داراییِ پرتفوی (NAV)');
+    expect(screen.getByTestId('holding-nav-na').textContent).toContain('ارزش خالص دارایی (NAV)');
     // هیچ نسبت جانشینی (EPS به‌جای NAV) محاسبه/نمایش داده نمی‌شود
     expect(panel.textContent).not.toContain('P/NAV ≈');
     expect(panel.textContent).not.toContain('جانشین EPS');
+    expect(panel.textContent).not.toContain('عدد ساختگی ممنوع');
+    expect(panel.textContent).not.toContain('بی‌معناست');
     expect(panel.textContent).not.toContain('۱۸۸۸');
     expect(panel.textContent).not.toContain('۱۱.۳');
   });

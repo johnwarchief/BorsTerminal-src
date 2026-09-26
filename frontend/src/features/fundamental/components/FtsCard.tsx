@@ -525,7 +525,7 @@ export function FtsCard({
                   <span className={`text-2xs font-black ms-0.5 ${tone(v)}`}>≥ {toFaDigits(salesFloor.toFixed(2))}×</span>
                 </div>
               );
-              benchmarkHint = `کف نسبت: ${toFaDigits(salesFloor.toFixed(2))}× (${toFaDigits(Math.round(salesFloor * 100))}٪)`;
+              benchmarkHint = `کف نسبت: ${toFaDigits(salesFloor.toFixed(2))}× ارزش بازار`;
             } else if (key === '5_industry') {
               const indLabel =
                 industryMode !== undefined
@@ -552,16 +552,14 @@ export function FtsCard({
                 </span>
               );
 
+              // نماد مجموعه و ∈ در پاراگرم RTL جای اجزاش را عوض می‌کرد
+              // («دستوری: (بورس کالا + نرخ آزاد) ≠ نرخ»). صورتِ سادهٔ فارسی.
               mathFormulaNode = (
-                <div className="flex items-center justify-center gap-1 text-3xs font-mono text-text-secondary whitespace-nowrap" dir="ltr">
-                  <span>نرخ</span>
-                  <span className="text-accent-blue font-bold">∈</span>
-                  <span className="font-bold text-text-primary">&#123;بورس کالا, آزاد&#125;</span>
-                  <span className="text-accent-red font-bold">≠</span>
-                  <span className="text-text-muted">دستوری</span>
+                <div className="flex items-center justify-center text-3xs font-mono whitespace-nowrap">
+                  <span className="text-text-secondary">قیمت دستوری نباشد — آزاد / بورس کالا</span>
                 </div>
               );
-              benchmarkHint = 'بورس کالا / نرخ آزاد';
+              benchmarkHint = 'رژیم قیمت‌گذاری صنعت';
             }
 
             const industryBadge = isIndustry ? (

@@ -252,7 +252,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 
         <p className="mt-1 text-3xs leading-relaxed text-text-muted">
           فرمول FTS: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
-          {mon?.denominator_basis ? ` · مبنا: ${mon.denominator_basis}` : ''}
+          {mon?.denominator_basis ? ` · مبنا: ${toFaDigits(mon.denominator_basis)}` : ''}
         </p>
       </div>
 
@@ -347,7 +347,11 @@ function Panel2({ card }: { card: FtsCard }) {
           </Badge>
           </span>
         )}
-        {ind?.evidence_tier ? <Badge tone="blue">{ind.evidence_tier}</Badge> : null}
+        {ind?.evidence_tier ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-evidence-tier">
+            مدرک: {EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier}
+          </span>
+        ) : null}
         {ind?.interim?.eps_interim != null ? (
           <Badge tone="gray">
             میاندوره: <span className="num">{toFaDigits(ind.interim.eps_interim)}</span> (<span className="num">{toFaDigits(ind.interim.period_months ?? 0)}</span> ماهه)
@@ -391,9 +395,11 @@ function Panel2({ card }: { card: FtsCard }) {
         <p className="text-2xs text-text-muted">سری EPS سالانهٔ حسابرسی‌شده موجود نیست.</p>
       )}
       {/* نمایش استاندارد شرط ریاضی */}
-      <div className="my-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
-        <span className="text-accent-blue font-bold">EPS Trend Condition:</span>
-        <span className="text-text-primary font-bold">EPS<sub>t</sub> &gt; EPS<sub>t-1</sub> &gt; EPS<sub>t-2</sub> &gt; 0</span>
+      <div className="my-2 flex flex-col items-center justify-center gap-1 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs">
+        <span className="text-2xs font-bold text-accent-blue">شرط شاخص ۲:</span>
+        <span className="flex items-center justify-center gap-2 text-text-primary font-bold" dir="ltr">
+          EPS<sub>t</sub> &gt; EPS<sub>t-1</sub> &gt; EPS<sub>t-2</sub> &gt; 0
+        </span>
       </div>
 
       <p className="text-2xs leading-relaxed text-text-secondary">
@@ -447,7 +453,11 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
           {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
         </Badge>
-        {ind?.basis ? <Badge tone="blue">{ind.basis}</Badge> : null}
+        {ind?.basis ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
+            مبنای محاسبه: {toFaDigits(ind.basis)}
+          </span>
+        ) : null}
       </div>
       {trend.length >= 2 ? (
         <svg viewBox="0 0 400 120" className="w-full" role="img" aria-label="روند ۶ فصل حاشیه سود ناخالص" data-testid="drilldown-margin-chart">
@@ -688,6 +698,15 @@ function Panel5({ card }: { card: FtsCard }) {
     </div>
   );
 }
+
+/** لایهٔ مدرکِ EPS — آینهٔ _EV_FA در api/fundamental.py (کلیدِ موتور به فارسی) */
+const EVIDENCE_TIER_FA: Record<string, string> = {
+  audited_year_end: '۱۲ماهه حسابرسی‌شدهٔ شرکت اصلی (غیرتلفیقی)',
+  year_end_unaudited: 'سال‌پایانِ غیرتلفیقیِ حسابرسی‌نشده',
+  consolidated_year_end: 'سال‌پایانِ تلفیقی (صورت ۱۲ماههٔ غیرتلفیقی منتشر نشده)',
+  year_end_plus_interim: 'سال‌پایان + سال‌سازیِ میاندوره × ۱۲÷م برای تکمیلِ سه سال',
+  insufficient: 'مبنای معتبری یافت نشد',
+};
 
 export function FtsDrillDown({
   card,

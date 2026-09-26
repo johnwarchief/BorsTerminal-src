@@ -280,7 +280,10 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
   it('برچسب صعودی/غیرصعودی و شاهد حسابرسی‌شده نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="2" quarters={FISCAL} physicalApplicable />);
     expect(screen.getByText('صعودی ✓')).toBeInTheDocument();
-    expect(screen.getByText('audited_year_end')).toBeInTheDocument();
+    // کلیدِ موتور («audited_year_end») برای کاربر بی‌معناست — فارسیِ معادلِ خودش را می‌خواهیم
+    const tier = screen.getByTestId('drilldown-evidence-tier');
+    expect(tier.textContent).toContain('۱۲ماهه حسابرسی‌شده');
+    expect(tier.textContent).not.toContain('audited_year_end');
   });
 
   it('سابقهٔ ناقص ۲ ساله: همان دو سال رندر + برچسب «مردود در شاخص ۲ — سابقهٔ ناقص»', () => {

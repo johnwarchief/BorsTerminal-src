@@ -571,7 +571,8 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
         prev = next((r for r in series[1:] if int(_f(r[0])) == year - 1
                      and int(_f(r[1])) == month), None)
         if prev is None or _f(prev[3]) <= 0:
-            return _nodata("مخرج YoY (تجمیعیِ همان دورهٔ سال قبل) در کدال نیست.",
+            return _nodata("فروش تجمیعیِ همان دورهٔ سال قبل در کدال ثبت نشده؛ "
+                           "مقایسهٔ سال‌به‌سال ممکن نیست.",
                            months=month, year=year, ytd_now_bt=_bt(ytd_now),
                            ytd_prev_bt=None, period="%02d/%d" % (month, year),
                            denominator_basis="ناموجود — ردیف تجمیعی همان دورهٔ سال قبل نیست")
@@ -623,7 +624,7 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
            "pass": False, "data_gap": True, "revenue_basis": prof["revenue_basis"],
            "note": prof["volume_note"]}
     if g.get("data_gap") or g.get("monetary_pct") is None:
-        out["reason"] = "رشد ریالی محاسبه نشد → تأیید فیزیکی ناممکن است."
+        out["reason"] = "رشد ریالی محاسبه نشد؛ رشد مقداری هم قابل بررسی نیست."
         return out
     year, month, monetary_pct = g["year"], g["months"], g["monetary_pct"]
     series = series if series is not None else monthly_series(conn, symbol)
@@ -641,7 +642,7 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
                     "source_detail": "ستون %s در گزارش فعالیت ماهانهٔ کدال" % col})
         out["pass"] = vol is not None and vol >= th["volume_growth_min"]
         out["reason"] = ("" if out["pass"] else
-                         "کمیت فروش کاهش یافته یا ثابت مانده؛ رشد ریالی از افزایش نرخ آمده است.")
+                         "فروش مقداری کم شده یا ثابت مانده؛ رشد ریالی فقط از افزایش نرخ آمده است.")
         return out
 
     # ── سطح B: تجزیهٔ اثر قیمت + پهنای رشد ────────────────────────────────
@@ -666,11 +667,12 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
     if out["pass"]:
         out["reason"] = ""
     elif real < th["volume_growth_min"]:
-        out["reason"] = ("رشد اسمی (%+.1f٪) از مبنای افزایش نرخ (%.0f٪) کمتر است → "
-                         "سودِ صرفاً تورمی." % (monetary_pct, th["inflation_benchmark"]))
+        out["reason"] = ("رشد اسمی %+.1f٪ کمتر از مبنای افزایش نرخ %.0f٪ است؛ "
+                         "رشد واقعی منفی است (فقط قیمت بالا رفته)."
+                         % (monetary_pct, th["inflation_benchmark"]))
     else:
-        out["reason"] = ("رشد واقعی کافی است، اما فقط %d از %d ماهِ سپری‌شده بهتر شده → "
-                         "رشدِ فراگیرِ حجم تأیید نمیشود." % (improved, compared))
+        out["reason"] = ("رشد واقعی کافی است اما فقط %d از %d ماهِ سپری‌شده بهتر شده؛ "
+                         "رشد حجم فراگیر نیست." % (improved, compared))
     return out
 
 

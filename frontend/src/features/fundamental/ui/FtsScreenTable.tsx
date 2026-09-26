@@ -12,6 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { FTS_COLUMN_LABEL } from '../lib/ftsLabels';
 import { pickAssemblyBadge, type AssemblyBadgeInfo, type CalEvent } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
+import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
@@ -532,6 +533,9 @@ export function FtsScreenTable({
   const excludeAxes = useExcludeAxes();
 
   const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass'>('all');
+  /** جستجوی همین جدول — حالتِ محلی است نه سراسری: نمادی که اینجا جستجو می‌شود
+   *  فقط همین جدول را تنگ می‌کند و به تب‌های دیگر (تابلو/تکنیکال) سرریز نمی‌کند. */
+  const [query, setQuery] = useState('');
 
   /** تعداد ردیف‌های حذف‌شده توسط دروازه‌های سخت */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
@@ -565,6 +569,9 @@ export function FtsScreenTable({
     () => {
       let base = rowsAfterAxisFilter.filter((r) => r.excluded !== true && isFundamentalCompany(r));
 
+      const q = query.trim();
+      if (q) base = base.filter((r) => matchFa(r.symbol, q) || matchFa(r.name, q) || matchFa(r.sector_name, q));
+
       if (strategicPreset === 'super') {
         base = base.filter((r) => r.score >= 4 && r.pricing_mode === 'free');
       } else if (strategicPreset === 'jet') {
@@ -575,7 +582,7 @@ export function FtsScreenTable({
 
       return base;
     },
-    [rowsAfterAxisFilter, strategicPreset],
+    [rowsAfterAxisFilter, strategicPreset, query],
   );
 
   const sorted = useMemo(() => {
@@ -655,6 +662,28 @@ export function FtsScreenTable({
                 ? 'خطای دیتابیس کدال'
                 : 'دیتابیس کدال'}
           </button>
+          <label className="flex items-center gap-1 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-0.5 focus-within:border-border-accent">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              type="search"
+              placeholder="جستجوی نماد…"
+              aria-label="جستجوی نماد در جدول غربالگری"
+              data-testid="fts-search"
+              className="w-28 bg-transparent text-2xs text-text-primary outline-none placeholder:text-text-muted"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="پاک کردن جستجو"
+                data-testid="fts-search-clear"
+                className="text-2xs font-bold text-text-muted hover:text-text-primary"
+              >
+                ×
+              </button>
+            ) : null}
+          </label>
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
