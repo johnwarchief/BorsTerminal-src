@@ -55,6 +55,9 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         showYAxis: true,
         splitLayout: 1,
         fibLogarithmic: false,
+        axisScaleLock: false,
+        legendAlways: false,
+        pricePrecision: 'auto',
       },
     });
   });
@@ -84,7 +87,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
   });
 
   it('۲. تست دوطرفه اندیکاتورهای پایه‌ای: MA حجم ۲۱ و RSI (14)', () => {
-    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="appearance" />);
+    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="colors" />);
 
     // تست دوطرفه MA حجم ۲۱ (پیش‌فرض: روشن -> خاموش -> روشن)
     const volMaBtn = screen.getByRole('button', { name: /MA حجم ۲۱/ });
@@ -100,8 +103,8 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     expect(saved.showVolMa).toBe(true);
 
-    // تست دوطرفه RSI (14) (پیش‌فرض: خاموش -> روشن -> خاموش)
-    const rsiBtn = screen.getByRole('button', { name: /RSI \(14\)/ });
+    // تست دوطرفه RSI ۱۴ (پیش‌فرض: خاموش -> روشن -> خاموش)
+    const rsiBtn = screen.getByRole('button', { name: /RSI ۱۴/ });
     expect(useFtsConfigStore.getState().showRsi).toBe(false);
 
     fireEvent.click(rsiBtn);
@@ -120,21 +123,24 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
   it('۳. تست تغییر دوطرفه نوع چارت و مقیاس‌های قیمت (خطی / لگاریتمی / درصدی)', () => {
     const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="scales" />);
 
-    // نوع چارت: کندل شمعی -> خط -> کندل شمعی
-    const lineBtn = screen.getByRole('button', { name: 'خط' });
+    // نوع چارت در تبِ نماد است: کندل شمعی -> توخالی -> کندل شمعی
+    // (فقط شش مقدارِ واقعیِ candle.type در موتورِ زنده — دکمهٔ بی‌اثر ممنوع)
+    fireEvent.click(screen.getByTestId('settings-tab-symbol'));
+    const strokeBtn = screen.getByRole('button', { name: 'کندل توخالی' });
     const candleBtn = screen.getByRole('button', { name: 'کندل شمعی' });
 
-    fireEvent.click(lineBtn);
-    expect(useFtsConfigStore.getState().chartType).toBe('line');
+    fireEvent.click(strokeBtn);
+    expect(useFtsConfigStore.getState().chartType).toBe('candle_stroke');
     let saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    expect(saved.chartType).toBe('line');
+    expect(saved.chartType).toBe('candle_stroke');
 
     fireEvent.click(candleBtn);
     expect(useFtsConfigStore.getState().chartType).toBe('candle_solid');
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     expect(saved.chartType).toBe('candle_solid');
 
-    // مقیاس قیمت: خطی -> لگاریتمی -> درصدی -> خطی
+    // مقیاس قیمت در تبِ مقیاس‌ها: خطی -> لگاریتمی -> درصدی -> خطی
+    fireEvent.click(screen.getByTestId('settings-tab-scales'));
     const logBtn = screen.getByRole('button', { name: 'لگاریتمی' });
     const pctBtn = screen.getByRole('button', { name: 'درصدی' });
     const normalBtn = screen.getByRole('button', { name: 'خطی' });
@@ -160,7 +166,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
   it('۴. تست دوطرفه نشانگر رویدادهای تعدیل در تب رویدادها', () => {
     const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="events" />);
 
-    const allEventsBtn = screen.getByRole('button', { name: /نمایش کلیه نشانگرهای رویداد شرکتی روی کندل‌ها/ });
+    const allEventsBtn = screen.getByRole('button', { name: /نمایش روی کندل‌ها/ });
     fireEvent.click(allEventsBtn);
     expect(useFtsConfigStore.getState().view.showCorporateActions).toBe(false);
     let saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -175,7 +181,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
   });
 
   it('۵. تست دوطرفه واترمارک، خطوط گرید و تفکیک خطوط افقی/عمودی', () => {
-    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="appearance" />);
+    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="colors" />);
 
     // تست دوطرفه نمایش واترمارک
     const watermarkBtn = screen.getByRole('button', { name: /نمایش واترمارک/ });
@@ -190,7 +196,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     expect(saved.view.showWatermark).toBe(true);
 
     // تست دوطرفه کلیه خطوط شبکه (Grid)
-    const gridBtn = screen.getByRole('button', { name: /کلیه خطوط شبکه/ });
+    const gridBtn = screen.getByRole('button', { name: /نمایش گرید/ });
     fireEvent.click(gridBtn);
     expect(useFtsConfigStore.getState().showGrid).toBe(false);
     saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
@@ -254,7 +260,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
   });
 
   it('۷. تست دوطرفه تغییر پس‌زمینه چارت (دارک / لایت / کلاسیک) در دیالوگ تنظیمات و ذخیره آن', () => {
-    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="appearance" />);
+    const { unmount } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="colors" />);
 
     // انتخاب تم روشن
     const lightBgBtn = screen.getByRole('button', { name: 'روشن' });

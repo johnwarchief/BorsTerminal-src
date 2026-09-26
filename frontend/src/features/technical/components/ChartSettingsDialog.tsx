@@ -1,8 +1,15 @@
-// features/technical/components/ChartSettingsDialog.tsx -- دیالوگ جامع تنظیمات چارت (سبک TradingView)
-// ۴ تب اصلی استاندارد: نماد (Symbol) · خط وضعیت (Status Line) · مقیاس‌ها (Scales) · ظاهر (Appearance)
-// + تب رویدادها (Events). تمام گزینه‌ها بلافاصله در localStorage ماندگار می‌شوند.
+// features/technical/components/ChartSettingsDialog.tsx -- دیالوگ تنظیمات چارت
+//
+// شش تب، به همان ترتیبِ دیالوگِ استاندارد (بخش ۱۵ از docs/CHART-PARITY-REFERENCE.md):
+//   نماد · خط وضعیت · مقیاس‌ها · رنگ‌بندی · دقت و اعشار · رویدادها
+//
+// دو قانونِ این فایل:
+//  ۱) هر گزینه‌ای که اینجا هست، در چارتِ زنده اثر می‌گذارد. دکمهٔ بی‌اثر
+//     ممنوع (#40 همان بود که «تیک‌های مرده» را ثبت کرد).
+//  ۲) رنگ و اندازه از توکن‌هایِ تم می‌آید (bg-bg-card / border-border-c /
+//     text-text-* / accent-*)، نه از هگزِ دست‌ساز — وگرنه دیالوگ در تمِ روشن
+//     با خودِ برنامه می‌جنگید.
 import { useState } from 'react';
-import { useUiStore } from '@shared/stores/uiStore';
 import {
   useFtsConfigStore,
   type ChartEngine,
@@ -16,13 +23,19 @@ const ENGINES: { key: ChartEngine; label: string; hint: string }[] = [
   { key: 'lightweight', label: 'Lightweight Charts', hint: 'موتور متن‌باز رسمی TradingView' },
 ];
 
+/** هشت نوعِ چارتی که موتورِ زنده واقعاً رندر می‌کند: شش مقدارِ `candle.type`ِ
+ *  klinecharts v10، به‌علاوهٔ «خط» (اریای بی‌سطح) و «Heikin-Ashi» (تبدیلِ سریِ
+ *  نمایشی). Renko/Kagi/PnF عمداً نیستند: آن‌ها زمانِ کندل را می‌سازند و با
+ *  کلیدِ زمانیِ چارتِ زنده و ابزارهای ترسیم می‌جنگند. */
 const TYPES: { key: ChartType; label: string }[] = [
   { key: 'candle_solid', label: 'کندل شمعی' },
   { key: 'candle_stroke', label: 'کندل توخالی' },
+  { key: 'candle_up_stroke', label: 'توخالیِ صعودی' },
+  { key: 'candle_down_stroke', label: 'توخالیِ نزولی' },
   { key: 'ohlc', label: 'میله‌ای (OHLC)' },
   { key: 'line', label: 'خط' },
   { key: 'area', label: 'اریا' },
-  { key: 'heikin_ashi', label: 'Heikin-Ashi' },
+  { key: 'heikin_ashi', label: 'هیکین-آشی' },
 ];
 
 const TIMEFRAMES: { key: Timeframe; label: string }[] = [
@@ -74,42 +87,40 @@ const CROSSHAIR_STYLES: { key: 'dashed' | 'dotted' | 'solid'; label: string }[] 
 const UP_COLORS = ['#089981', '#10b981', '#26a69a', '#4ade80', '#00bcd4'];
 const DOWN_COLORS = ['#f23645', '#f43f5e', '#ef5350', '#fb7185', '#e91e63'];
 
-type Tab = 'symbol' | 'status' | 'scales' | 'appearance' | 'events';
+/** گزینه‌های اعشارِ محور؛ 'auto' یعنی همان چیزی که تعدیل می‌گوید */
+const PRECISIONS: { key: 'auto' | 0 | 1 | 2 | 3 | 4; label: string }[] = [
+  { key: 'auto', label: 'خودکار' },
+  { key: 0, label: '۰' },
+  { key: 1, label: '۱' },
+  { key: 2, label: '۲' },
+  { key: 3, label: '۳' },
+  { key: 4, label: '۴' },
+];
+
+type Tab = 'symbol' | 'status' | 'scales' | 'colors' | 'precision' | 'events';
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'symbol', label: 'نماد (Symbol)' },
-  { id: 'status', label: 'خط وضعیت (Status Line)' },
-  { id: 'scales', label: 'مقیاس‌ها (Scales)' },
-  { id: 'appearance', label: 'ظاهر (Appearance)' },
+  { id: 'symbol', label: 'نماد' },
+  { id: 'status', label: 'خط وضعیت' },
+  { id: 'scales', label: 'مقیاس‌ها' },
+  { id: 'colors', label: 'رنگ‌بندی' },
+  { id: 'precision', label: 'دقت و اعشار' },
   { id: 'events', label: 'رویدادها' },
 ];
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  const isLight = useUiStore((s) => s.theme) === 'light';
   return (
-    <div
-      className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
-        isLight
-          ? 'border-[#e0e3eb] bg-[#f8f9fa] hover:border-[#d1d4dc]'
-          : 'border-[#2a2e39] bg-[#141722] hover:border-[#3d4251]'
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
-          {label}
-        </span>
-        {hint ? (
-          <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]'}`}>
-            {hint}
-          </span>
-        ) : null}
+    <div className="flex flex-col gap-2 rounded-xl border border-border-c bg-bg-card/60 p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-2xs font-bold text-text-primary">{label}</span>
+        {hint ? <span className="text-3xs font-medium text-text-muted">{hint}</span> : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
 }
 
-function Choice<T extends string>({
+function Choice<T extends string | number>({
   options,
   value,
   onPick,
@@ -118,24 +129,21 @@ function Choice<T extends string>({
   value: T;
   onPick: (v: T) => void;
 }) {
-  const isLight = useUiStore((s) => s.theme) === 'light';
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {options.map((o) => {
         const isActive = value === o.key;
         return (
           <button
-            key={o.key}
+            key={String(o.key)}
             type="button"
             title={o.hint}
             aria-pressed={isActive}
             onClick={() => onPick(o.key)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+            className={`rounded-lg border px-3 py-1.5 text-2xs font-bold transition-colors ${
               isActive
-                ? 'border-[#2962ff] bg-[#2962ff] text-white shadow-sm ring-1 ring-[#2962ff]/50'
-                : isLight
-                ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+                ? 'border-accent-blue bg-accent-blue/20 text-text-primary ring-1 ring-accent-blue/50'
+                : 'border-border-c bg-bg-card/40 text-text-secondary hover:border-border-accent hover:text-text-primary'
             }`}
           >
             {o.label}
@@ -146,41 +154,78 @@ function Choice<T extends string>({
   );
 }
 
-function Toggle({ on, label, onClick }: { on: boolean; label: string; onClick: () => void }) {
-  const isLight = useUiStore((s) => s.theme) === 'light';
+function Toggle({ on, label, hint, onClick }: { on: boolean; label: string; hint?: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`group inline-flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
+      title={hint}
+      className={`inline-flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-2xs font-semibold transition-colors ${
         on
-          ? isLight
-            ? 'border-[#089981]/50 bg-[#089981]/15 text-[#089981] shadow-sm ring-1 ring-[#089981]/30'
-            : 'border-[#089981]/60 bg-[#089981]/20 text-white shadow-sm ring-1 ring-[#089981]/40'
-          : isLight
-          ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-          : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
+          ? 'border-accent-green/60 bg-accent-green/15 text-text-primary'
+          : 'border-border-c bg-bg-card/40 text-text-secondary hover:border-border-accent hover:text-text-primary'
       }`}
     >
       <span
         className={`relative inline-flex h-3.5 w-6 shrink-0 items-center rounded-full transition-colors ${
-          on ? 'bg-[#089981]' : isLight ? 'bg-[#cbd5e1]' : 'bg-[#363a45]'
+          on ? 'bg-accent-green' : 'bg-border-c'
         }`}
       >
         <span
-          className={`inline-block h-2.5 w-2.5 rounded-full bg-white transition-transform ${
+          className={`inline-block h-2.5 w-2.5 rounded-full bg-bg-primary transition-transform ${
             on ? '-translate-x-3' : '-translate-x-0.5'
           }`}
         />
       </span>
-      <span className={isLight ? (on ? 'text-[#089981] font-semibold' : 'text-[#131722] font-semibold') : 'text-white font-medium'}>
-        {label}
-      </span>
-      <span className={`text-[10px] font-bold ${on ? (isLight ? 'text-[#089981]' : 'text-[#34d399]') : (isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]')}`}>
-        ({on ? 'روشن' : 'خاموش'})
-      </span>
+      {label}
     </button>
+  );
+}
+
+/** ردیفِ انتخابِ رنگ — یک‌جا ساخته می‌شود تا صعودی/نزولی دو نسخهٔ واگرا نشوند */
+function SwatchRow({
+  label,
+  hint,
+  colors,
+  value,
+  testPrefix,
+  onPick,
+  onReset,
+}: {
+  label: string;
+  hint: string;
+  colors: string[];
+  value: string | null;
+  testPrefix: 'up' | 'down';
+  onPick: (c: string) => void;
+  onReset: () => void;
+}) {
+  return (
+    <Row label={label} hint={hint}>
+      {colors.map((c) => (
+        <button
+          key={c}
+          type="button"
+          aria-label={`${label} ${c}`}
+          data-testid={`${testPrefix}-${c}`}
+          aria-pressed={value === c}
+          onClick={() => onPick(c)}
+          className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
+            value === c ? 'border-text-primary scale-110' : 'border-border-c'
+          }`}
+          style={{ background: c }}
+        />
+      ))}
+      <button
+        type="button"
+        data-testid={`reset-${testPrefix}`}
+        onClick={onReset}
+        className="rounded-lg border border-border-c px-3 py-1 text-2xs font-semibold text-text-secondary transition-colors hover:border-border-accent hover:text-text-primary"
+      >
+        بازنشانی
+      </button>
+    </Row>
   );
 }
 
@@ -195,7 +240,6 @@ export function ChartSettingsDialog({
   symbol?: string;
   initialTab?: Tab;
 }) {
-  const isLight = useUiStore((s) => s.theme) === 'light';
   const [tab, setTab] = useState<Tab>(initialTab);
 
   const priceScale = useFtsConfigStore((s) => s.priceScale);
@@ -220,7 +264,7 @@ export function ChartSettingsDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="تنظیمات چارت"
@@ -228,49 +272,32 @@ export function ChartSettingsDialog({
       onClick={onClose}
     >
       <div
-        className={`flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border shadow-2xl transition-colors ${
-          isLight
-            ? 'border-[#e0e3eb] bg-[#ffffff] shadow-black/20'
-            : 'border-[#2a2e39] bg-[#1e222d] shadow-black/80'
-        }`}
+        dir="rtl"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* هدر پنجره */}
-        <div
-          className={`flex items-center justify-between border-b px-5 py-3.5 transition-colors ${
-            isLight ? 'border-[#e0e3eb] bg-[#f8f9fa]' : 'border-[#2a2e39] bg-[#1a1e29]'
-          }`}
-        >
+        <div className="flex items-center justify-between border-b border-border-c bg-bg-card/60 px-5 py-3">
           <div className="flex items-center gap-2.5">
-            <span className={`text-sm font-black ${isLight ? 'text-[#131722]' : 'text-white'}`}>
-              تنظیمات چارت
-            </span>
-            {symbol && (
-              <span className="rounded-md border border-[#2962ff]/30 bg-[#2962ff]/15 px-2.5 py-0.5 text-xs font-bold text-[#2962ff]">
+            <span className="text-xs font-black text-text-primary">تنظیمات چارت</span>
+            {symbol ? (
+              <span className="rounded-md border border-accent-blue/40 bg-accent-blue/15 px-2.5 py-0.5 text-2xs font-bold text-text-primary">
                 {symbol}
               </span>
-            )}
+            ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="بستن"
             data-testid="chart-settings-close"
-            className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-              isLight
-                ? 'text-[#5f6368] hover:bg-[#e0e3eb] hover:text-[#131722]'
-                : 'text-[#9aa0a6] hover:bg-[#2a2e39] hover:text-white'
-            }`}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-bg-card hover:text-text-primary"
           >
             ✕
           </button>
         </div>
 
-        {/* نوار تب‌های استاندارد */}
         <div
-          className={`flex flex-wrap gap-1.5 border-b px-4 py-2.5 transition-colors ${
-            isLight ? 'border-[#e0e3eb] bg-[#f0f3fa]' : 'border-[#2a2e39] bg-[#141720]'
-          }`}
+          className="flex flex-wrap gap-1.5 border-b border-border-c bg-bg-card/40 px-4 py-2"
           role="tablist"
         >
           {TABS.map((t) => {
@@ -283,12 +310,10 @@ export function ChartSettingsDialog({
                 aria-selected={isActive}
                 data-testid={`settings-tab-${t.id}`}
                 onClick={() => setTab(t.id)}
-                className={`relative rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+                className={`rounded-lg px-3 py-1.5 text-2xs font-bold transition-colors ${
                   isActive
-                    ? 'bg-[#2962ff] text-white shadow-md shadow-[#2962ff]/30 ring-1 ring-[#2962ff]'
-                    : isLight
-                    ? 'text-[#434651] hover:bg-[#e0e3eb] hover:text-[#131722]'
-                    : 'text-[#c2c7d0] hover:bg-[#2a2e39] hover:text-white'
+                    ? 'bg-accent-blue/25 text-text-primary ring-1 ring-accent-blue/60'
+                    : 'text-text-secondary hover:bg-bg-card hover:text-text-primary'
                 }`}
               >
                 {t.label}
@@ -297,217 +322,76 @@ export function ChartSettingsDialog({
           })}
         </div>
 
-        {/* محتوای تب فعال */}
-        <div className={`flex-1 overflow-y-auto p-5 ${isLight ? 'text-[#131722]' : 'text-[#e0e3eb]'}`}>
-
-          {/* ۱. تب نماد (Symbol) */}
+        <div className="flex-1 overflow-y-auto p-4">
           {tab === 'symbol' && (
-            <div className="flex flex-col gap-2.5">
-              <Row label="رنگ بدنه کندل صعودی" hint="رنگ رشد قیمت (سبز)">
-                {UP_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`صعودی ${c}`}
-                    data-testid={`up-${c}`}
-                    aria-pressed={view.candleUp === c}
-                    onClick={() => setView({ candleUp: c, borderUp: c, wickUp: c })}
-                    className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                      view.candleUp === c ? 'border-white scale-110' : 'border-transparent'
-                    }`}
-                    style={{ background: c }}
-                  />
-                ))}
-                <button
-                  type="button"
-                  data-testid="reset-up"
-                  onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
-                    isLight
-                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
-                  }`}
-                >
-                  بازنشانی
-                </button>
-              </Row>
-
-              <Row label="رنگ بدنه کندل نزولی" hint="رنگ افت قیمت (قرمز)">
-                {DOWN_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`نزولی ${c}`}
-                    data-testid={`down-${c}`}
-                    aria-pressed={view.candleDown === c}
-                    onClick={() => setView({ candleDown: c, borderDown: c, wickDown: c })}
-                    className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                      view.candleDown === c ? 'border-white scale-110' : 'border-transparent'
-                    }`}
-                    style={{ background: c }}
-                  />
-                ))}
-                <button
-                  type="button"
-                  data-testid="reset-down"
-                  onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
-                    isLight
-                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
-                  }`}
-                >
-                  بازنشانی
-                </button>
-              </Row>
-
-              <Row label="بوردر و سایه کندل‌ها">
-                <Toggle
-                  on={view.showBorders}
-                  label="بوردر دور کندل‌ها"
-                  onClick={() => setView({ showBorders: !view.showBorders })}
-                />
-                <Toggle
-                  on={view.showWicks}
-                  label="سایه کندل‌ها (Wicks)"
-                  onClick={() => setView({ showWicks: !view.showWicks })}
-                />
-                <Toggle
-                  on={view.wickGray}
-                  label="سایه خاکستری"
-                  onClick={() => setView({ wickGray: !view.wickGray })}
-                />
-              </Row>
-
-              <Row label="نشانگر رویدادهای تعدیل (Corporate Actions)">
-                <Toggle
-                  on={view.showCorporateActions !== false}
-                  label="نشانگرهای تعدیل قیمت پایه"
-                  onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
-                />
-              </Row>
-
-              <Row label="تایم‌زون چارت (Timezone)">
-                <Choice
-                  options={TIMEZONES}
-                  value={view.timezone || 'Asia/Tehran'}
-                  onPick={(tz) => setView({ timezone: tz })}
-                />
-              </Row>
-            </div>
-          )}
-
-          {/* ۲. تب خط وضعیت (Status Line) */}
-          {tab === 'status' && (
-            <div className="flex flex-col gap-3">
-              <div
-                className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
-                  isLight
-                    ? 'border-[#e0e3eb] bg-[#f8f9fa]'
-                    : 'border-[#2a2e39]/80 bg-[#161922]/70'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
-                    اطلاعات نماد و ارقام زنده
-                  </span>
-                  <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
-                    Symbol, OHLC & Volume
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Toggle
-                    on={view.statusShowSymbol}
-                    label="نام نماد و قیمت زنده"
-                    onClick={() => setView({ statusShowSymbol: !view.statusShowSymbol })}
-                  />
-                  <Toggle
-                    on={view.statusShowOhlc}
-                    label="مقادیر OHLC کندل جاری"
-                    onClick={() => setView({ statusShowOhlc: !view.statusShowOhlc })}
-                  />
-                  <Toggle
-                    on={view.statusShowVolume}
-                    label="حجم معاملات"
-                    onClick={() => setView({ statusShowVolume: !view.statusShowVolume })}
-                  />
-                </div>
-              </div>
-
-              <div
-                className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
-                  isLight
-                    ? 'border-[#e0e3eb] bg-[#f8f9fa]'
-                    : 'border-[#2a2e39]/80 bg-[#161922]/70'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-bold tracking-wide ${isLight ? 'text-[#131722]' : 'text-white'}`}>
-                    اندیکاتورها و افسانه چارت
-                  </span>
-                  <span className={`text-[10.5px] font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
-                    Indicator Values & Legend
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Toggle
-                    on={view.statusShowIndicators}
-                    label="مقادیر اندیکاتورها"
-                    onClick={() => setView({ statusShowIndicators: !view.statusShowIndicators })}
-                  />
-                  <Toggle
-                    on={view.showLegend}
-                    label="افسانه گوشه چارت"
-                    onClick={() => setView({ showLegend: !view.showLegend })}
-                  />
-                </div>
-              </div>
-
-              <p
-                className={`rounded-xl border p-3.5 text-xs leading-6 transition-colors ${
-                  isLight
-                    ? 'border-[#e0e3eb] bg-[#f8f9fa] text-[#434651]'
-                    : 'border-[#2a2e39]/60 bg-[#161922]/50 text-[#9aa0a6]'
-                }`}
-              >
-                با فعال‌بودن خط وضعیت، هنگام حرکت نشانگر موس روی کندل‌ها مقادیر باز، بالاترین، پایین‌ترین، پایانی و حجم به
-                صورت تبولار و بدون پرش به‌روزرسانی می‌شوند.
-              </p>
-            </div>
-          )}
-
-          {/* ۳. تب مقیاس‌ها (Scales) */}
-          {tab === 'scales' && (
             <div className="flex flex-col gap-2.5">
               <Row label="نوع چارت">
                 <Choice options={TYPES} value={chartType} onPick={setChartType} />
               </Row>
-
-              <Row label="تایم‌فریم">
+              <Row label="تایم‌فریم" hint="دقیقه‌ای در بانکِ داده نیست">
                 <Choice options={TIMEFRAMES} value={timeframe} onPick={setTimeframe} />
               </Row>
+              <Row label="موتور رندر">
+                <Choice options={ENGINES} value={chartEngine} onPick={setChartEngine} />
+              </Row>
+              <Row label="تایم‌زون" hint="ساعتِ محورِ زمانی">
+                <Choice options={TIMEZONES} value={view.timezone || 'Asia/Tehran'} onPick={(tz) => setView({ timezone: tz })} />
+              </Row>
+            </div>
+          )}
 
-              <Row label="مقیاس محور قیمت" hint="محور عمودی">
+          {tab === 'status' && (
+            <div className="flex flex-col gap-2.5">
+              <Row label="خطِ وضعیتِ کندل" hint="همان بلوکِ بالایِ چارت">
+                <Toggle
+                  on={view.statusShowOhlc}
+                  label="مقادیر OHLC کندل جاری"
+                  onClick={() => setView({ statusShowOhlc: !view.statusShowOhlc })}
+                />
+                <Toggle
+                  on={view.statusShowVolume}
+                  label="حجم معاملات"
+                  onClick={() => setView({ statusShowVolume: !view.statusShowVolume })}
+                />
+                <Toggle
+                  on={view.statusShowSymbol}
+                  label="نام نماد"
+                  onClick={() => setView({ statusShowSymbol: !view.statusShowSymbol })}
+                />
+              </Row>
+              <Row label="مقادیر اندیکاتورها">
+                <Toggle
+                  on={view.statusShowIndicators}
+                  label="ارزشِ مطالعاتِ فعال"
+                  onClick={() => setView({ statusShowIndicators: !view.statusShowIndicators })}
+                />
+                <Toggle
+                  on={view.showLegend}
+                  label="افسانهٔ گوشهٔ چارت"
+                  onClick={() => setView({ showLegend: !view.showLegend })}
+                />
+              </Row>
+              <Row label="چسبندگیِ متن" hint="جلویِ دیدِ کندل‌ها را نگیرد">
+                <Toggle
+                  on={view.legendAlways === true}
+                  label="همیشه روی بوم بماند"
+                  hint="خاموش: فقط وقتی نشانگر روی چارت است خوانده می‌شود"
+                  onClick={() => setView({ legendAlways: !(view.legendAlways === true) })}
+                />
+              </Row>
+            </div>
+          )}
+
+          {tab === 'scales' && (
+            <div className="flex flex-col gap-2.5">
+              <Row label="مقیاسِ محورِ قیمت" hint="محورِ عمودی">
                 <Choice options={SCALES} value={priceScale} onPick={setPriceScale} />
               </Row>
-
-              <Row label="محاسبه ترازهای فیبوناچی">
-                <Toggle
-                  on={view.fibLogarithmic === true}
-                  label="ترازهای فیبوناچی بر پایه لگاریتمی"
-                  onClick={() => setView({ fibLogarithmic: !view.fibLogarithmic })}
-                />
-              </Row>
-
-              <Row label="جایگاه و جهت محور قیمت">
-                <Choice
-                  options={POSITIONS}
-                  value={view.priceScalePos}
-                  onPick={(v) => setView({ priceScalePos: v })}
-                />
+              <Row label="جایگاهِ محور">
+                <Choice options={POSITIONS} value={view.priceScalePos} onPick={(v) => setView({ priceScalePos: v })} />
                 <Toggle
                   on={view.yAxisInside}
-                  label="برچسب داخل چارت"
+                  label="برچسب داخلِ چارت"
                   onClick={() => setView({ yAxisInside: !view.yAxisInside })}
                 />
                 <Toggle
@@ -516,136 +400,97 @@ export function ChartSettingsDialog({
                   onClick={() => setView({ yAxisReverse: !view.yAxisReverse })}
                 />
               </Row>
-
-              <Row label="قفل مقیاس و درگ">
+              <Row label="مقیاسِ عمودی هنگامِ جابه‌جایی" hint="درگِ افقی نباید چارت را عمودی بتکاند">
+                <Toggle
+                  on={view.axisScaleLock === true}
+                  label="قفلِ قیمت به نسبتِ کندل"
+                  hint="روشن: زوم هم مقیاس را نمی‌شکند. خاموش: فقط درگِ افقی مقیاس را نمی‌پراند."
+                  onClick={() => setView({ axisScaleLock: !(view.axisScaleLock === true) })}
+                />
+              </Row>
+              <Row label="قفلِ اسکرول و زومِ محور (موتورِ کهنه)" hint="در موتورِ lightweight اعمال می‌شود">
                 <Toggle
                   on={view.axisDragLock}
                   label="قفل درگ محور"
                   onClick={() => setView({ axisDragLock: !view.axisDragLock })}
                 />
               </Row>
-
-              <Row label="حاشیه برچسب محورها (پیکسل)">
-                {[0, 3, 6, 10].map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    aria-pressed={view.axisTickMargin === m}
-                    onClick={() => setView({ axisTickMargin: m })}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-                      view.axisTickMargin === m
-                        ? 'border-[#2962ff] bg-[#2962ff]/25 text-white ring-1 ring-[#2962ff]/40 shadow-sm'
-                        : isLight
-                        ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                        : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:bg-[#262b3d] hover:text-white'
-                    }`}
-                  >
-                    {m}px
-                  </button>
-                ))}
+              <Row label="ترازهای فیبوناچی">
+                <Toggle
+                  on={view.fibLogarithmic === true}
+                  label="بر پایۀ مقیاسِ لگاریتمی"
+                  onClick={() => setView({ fibLogarithmic: !(view.fibLogarithmic === true) })}
+                />
               </Row>
-
-              <Row label="موتور رندرینگ چارت">
-                <Choice options={ENGINES} value={chartEngine} onPick={setChartEngine} />
+              <Row label="حاشیۀ برچسبِ محورها">
+                <Choice
+                  options={[0, 3, 6, 10].map((m) => ({ key: m, label: `${m}px` }))}
+                  value={view.axisTickMargin}
+                  onPick={(m) => setView({ axisTickMargin: m })}
+                />
               </Row>
             </div>
           )}
 
-          {/* ۴. تب ظاهر (Appearance) */}
-          {tab === 'appearance' && (
+          {tab === 'colors' && (
             <div className="flex flex-col gap-2.5">
-              <Row label="پس‌زمینه چارت">
-                <Choice
-                  options={BACKGROUNDS}
-                  value={view.background}
-                  onPick={(v) => setView({ background: v })}
-                />
-                {view.background === 'custom' && (
-                  <div className="flex items-center gap-2 pr-2">
+              <Row label="پس‌زمینه">
+                <Choice options={BACKGROUNDS} value={view.background} onPick={(v) => setView({ background: v })} />
+                {view.background === 'custom' ? (
+                  <span className="flex items-center gap-2">
                     <input
                       type="color"
+                      aria-label="رنگِ پس‌زمینهٔ سفارشی"
                       value={view.customBgColor || '#131722'}
                       onChange={(e) => setView({ customBgColor: e.target.value })}
-                      className={`h-7 w-7 cursor-pointer rounded border bg-transparent ${
-                        isLight ? 'border-[#d1d4dc]' : 'border-[#2a2e39]'
-                      }`}
+                      className="h-7 w-7 cursor-pointer rounded border border-border-c bg-transparent"
                     />
-                    <span className={`font-mono text-xs ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>
-                      {view.customBgColor || '#131722'}
-                    </span>
-                  </div>
-                )}
+                    <span className="text-2xs text-text-muted">{view.customBgColor || '#131722'}</span>
+                  </span>
+                ) : null}
               </Row>
-
-              <Row label="رنگ کندل صعودی" hint="رنگ رشد قیمت (سبز)">
-                {UP_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`صعودی ${c}`}
-                    data-testid={`up-${c}`}
-                    aria-pressed={view.candleUp === c}
-                    onClick={() => setView({ candleUp: c, borderUp: c, wickUp: c })}
-                    className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                      view.candleUp === c ? 'border-white scale-110' : 'border-transparent'
-                    }`}
-                    style={{ background: c }}
-                  />
-                ))}
-                <button
-                  type="button"
-                  data-testid="reset-up"
-                  onClick={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
-                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
-                    isLight
-                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
-                  }`}
-                >
-                  بازنشانی
-                </button>
+              <SwatchRow
+                label="رنگ کندل صعودی"
+                hint="رشد قیمت"
+                colors={UP_COLORS}
+                value={view.candleUp}
+                testPrefix="up"
+                onPick={(c) => setView({ candleUp: c, borderUp: c, wickUp: c })}
+                onReset={() => setView({ candleUp: null, borderUp: null, wickUp: null })}
+              />
+              <SwatchRow
+                label="رنگ کندل نزولی"
+                hint="افت قیمت"
+                colors={DOWN_COLORS}
+                value={view.candleDown}
+                testPrefix="down"
+                onPick={(c) => setView({ candleDown: c, borderDown: c, wickDown: c })}
+                onReset={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
+              />
+              <Row label="بدنه، بوردر و سایه">
+                <Toggle
+                  on={view.showBorders}
+                  label="بوردر دور کندل"
+                  onClick={() => setView({ showBorders: !view.showBorders })}
+                />
+                <Toggle
+                  on={view.showWicks}
+                  label="سایهٔ کندل"
+                  onClick={() => setView({ showWicks: !view.showWicks })}
+                />
+                <Toggle
+                  on={view.wickGray}
+                  label="سایهٔ خاکستری"
+                  onClick={() => setView({ wickGray: !view.wickGray })}
+                />
               </Row>
-
-              <Row label="رنگ کندل نزولی" hint="رنگ افت قیمت (قرمز)">
-                {DOWN_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    aria-label={`نزولی ${c}`}
-                    data-testid={`down-${c}`}
-                    aria-pressed={view.candleDown === c}
-                    onClick={() => setView({ candleDown: c, borderDown: c, wickDown: c })}
-                    className={`h-6 w-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                      view.candleDown === c ? 'border-white scale-110' : 'border-transparent'
-                    }`}
-                    style={{ background: c }}
-                  />
-                ))}
-                <button
-                  type="button"
-                  data-testid="reset-down"
-                  onClick={() => setView({ candleDown: null, borderDown: null, wickDown: null })}
-                  className={`rounded-lg border px-3 py-1 text-xs font-semibold transition-colors ${
-                    isLight
-                      ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                      : 'border-[#2a2e39] bg-[#1a1e29] text-[#e0e3eb] hover:border-[#434857] hover:bg-[#262b3d] hover:text-white'
-                  }`}
-                >
-                  بازنشانی
-                </button>
-              </Row>
-
-              <Row label="خطوط شبکه گرید (Grid)">
+              <Row label="شبکۀ گرید">
                 <Choice
                   options={GRID_STYLES}
                   value={view.gridStyle || 'dashed'}
                   onPick={(s) => setView({ gridStyle: s })}
                 />
-                <Toggle
-                  on={showGrid}
-                  label="کلیه خطوط شبکه"
-                  onClick={() => toggleDisplay('grid')}
-                />
+                <Toggle on={showGrid} label="نمایش گرید" onClick={() => toggleDisplay('grid')} />
                 <Toggle
                   on={view.showGridHorz}
                   label="خطوط افقی"
@@ -657,114 +502,81 @@ export function ChartSettingsDialog({
                   onClick={() => setView({ showGridVert: !view.showGridVert })}
                 />
               </Row>
-
-              <Row label="استایل کراس‌هیر (Crosshair)">
+              <Row label="کراس‌هیر">
                 <Choice
                   options={CROSSHAIR_STYLES}
                   value={view.crosshairStyle || 'dashed'}
                   onPick={(s) => setView({ crosshairStyle: s })}
                 />
-                <Toggle
-                  on={showCrosshair}
-                  label="کراس‌هیر"
-                  onClick={() => toggleDisplay('crosshair')}
-                />
+                <Toggle on={showCrosshair} label="نمایش کراس‌هیر" onClick={() => toggleDisplay('crosshair')} />
               </Row>
-
-              <Row label="واترمارک نماد و تایم‌فریم (Watermark)">
+              <Row label="واترمارک">
                 <Toggle
                   on={view.showWatermark}
                   label="نمایش واترمارک"
                   onClick={() => setView({ showWatermark: !view.showWatermark })}
                 />
-                <div className="flex items-center gap-2 pr-2">
-                  <span className={`text-xs font-semibold ${isLight ? 'text-[#5f6368]' : 'text-[#9aa0a6]'}`}>شفافیت:</span>
-                  {[5, 10, 20, 50].map((op) => (
-                    <button
-                      key={op}
-                      type="button"
-                      aria-pressed={view.watermarkOpacity === op}
-                      onClick={() => setView({ watermarkOpacity: op })}
-                      className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-all ${
-                        view.watermarkOpacity === op
-                          ? 'border-[#2962ff] bg-[#2962ff] text-white shadow-sm'
-                          : isLight
-                          ? 'border-[#d1d4dc] bg-[#f0f3fa] text-[#131722] hover:border-[#b2b5be] hover:bg-[#e0e3eb]'
-                          : 'border-[#2a2e39] bg-[#1e222d] text-[#d1d4dc] hover:border-[#363a45] hover:text-white'
-                      }`}
-                    >
-                      {op}%
-                    </button>
-                  ))}
-                </div>
+                <Choice
+                  options={[5, 10, 20, 50].map((op) => ({ key: op, label: `${op}٪` }))}
+                  value={view.watermarkOpacity}
+                  onPick={(op) => setView({ watermarkOpacity: op })}
+                />
               </Row>
-
-              <Row label="اندیکاتورهای پایه‌ای">
-                <Toggle
-                  on={showVolMa}
-                  label="MA حجم ۲۱"
-                  onClick={() => toggleIndicator('volMa')}
-                />
-                <Toggle
-                  on={showRsi}
-                  label="RSI (14)"
-                  onClick={() => toggleIndicator('rsi')}
-                />
+              <Row label="مطالعۀ همیشگی" hint="پنل‌های زیرِ چارت">
+                <Toggle on={showVolMa} label="MA حجم ۲۱" onClick={() => toggleIndicator('volMa')} />
+                <Toggle on={showRsi} label="RSI ۱۴" onClick={() => toggleIndicator('rsi')} />
               </Row>
             </div>
           )}
 
-          {/* ۵. تب رویدادها (Events) */}
+          {tab === 'precision' && (
+            <div className="flex flex-col gap-2.5">
+              <Row label="اعشارِ محورِ قیمت" hint="خودکار = بر پایۀ تعدیلِ انتخابی">
+                <Choice
+                  options={PRECISIONS}
+                  value={view.pricePrecision}
+                  onPick={(p) => setView({ pricePrecision: p })}
+                />
+              </Row>
+              <p className="rounded-xl border border-border-c bg-bg-card/40 p-3 text-2xs leading-6 text-text-secondary">
+                «خودکار» یعنی همان اعشاری که تعدیلِ انتخابی می‌گوید؛ عددِ صریح بر آن
+                اولویت دارد و بی‌درنگ روی محور اعمال می‌شود. این فقط نمایش است — هیچ
+                قیمتی گرد نمی‌شود و عددِ خامِ تابلو دست‌نخورده می‌ماند.
+              </p>
+            </div>
+          )}
+
           {tab === 'events' && (
-            <div className="flex flex-col gap-3 py-1">
-              <Row label="رویدادهای شرکتی و مجامع روی چارت" hint="Corporate Actions">
+            <div className="flex flex-col gap-2.5">
+              <Row label="نشانگرهای رویداد شرکتی" hint="مجامع، سود نقدی، افزایش سرمایه">
                 <Toggle
                   on={view.showCorporateActions !== false}
-                  label="نمایش کلیه نشانگرهای رویداد شرکتی روی کندل‌ها"
+                  label="نمایش روی کندل‌ها"
                   onClick={() => setView({ showCorporateActions: view.showCorporateActions === false })}
                 />
               </Row>
-
-              <div
-                className={`rounded-xl border p-4 text-xs leading-6 space-y-2 transition-colors ${
-                  isLight
-                    ? 'border-[#e0e3eb] bg-[#f8f9fa] text-[#131722]'
-                    : 'border-[#2a2e39] bg-[#141722] text-[#e0e3eb]'
-                }`}
-              >
-                <div className={`flex items-center gap-2 font-bold ${isLight ? 'text-[#131722]' : 'text-white'}`}>
-                  <span className="inline-block h-2 w-2 rounded-full bg-[#2962ff]" />
-                  <span>راهنمای نشانگرهای رویداد:</span>
-                </div>
-                <ul className={`list-inside list-disc space-y-1 pr-2 ${isLight ? 'text-[#434651]' : 'text-[#b2b5be]'}`}>
-                  <li><strong className="text-[#f59e0b]">نشانگر کهربایی A:</strong> روزِ اجرایِ تعدیل — نسبتِ گسستِ «قیمت پایه» همان چیزی است که به سریِ قیمت اعمال می‌شود.</li>
-                  <li>تفکیکِ «سود نقدی» از «افزایش سرمایه» روی چارت نمایش داده نمی‌شود: TSETMC برایِ رویدادهای تاریخی فقط همین یک نسبت را منتشر می‌کند و عددِ جداگانه ساختگی می‌شد.</li>
-                </ul>
-                <p
-                  className={`border-t pt-2 ${isLight ? 'border-[#e0e3eb] text-[#5f6368]' : 'border-[#2a2e39]/80 text-[#b2b5be]'}`}
-                  data-testid="settings-events-note"
-                >
-                  رویدادهای سود نقدی، مجامع و افزایش سرمایه به صورت زنده از سامانه کدال در سرور ثبت می‌شوند؛
-                  این تب فاقد هرگونه داده ساختگی یا شبیه‌سازی‌شده است.
+              <div className="rounded-xl border border-border-c bg-bg-card/40 p-3 text-2xs leading-6 text-text-secondary">
+                <p data-testid="settings-events-note">
+                  رویدادهای سود نقدی، مجامع و افزایش سرمایه از همان تاریخچۀ سرور خوانده
+                  می‌شوند؛ این تب هیچ دادهٔ شبیه‌سازی‌شده‌ای ندارد.
+                </p>
+                <p className="mt-2 text-text-muted">
+                  TSETMC برای رویدادهای تاریخی فقط یک نسبتِ تعدیل منتشر می‌کند، پس تفکیکِ
+                  «سود نقدی» از «افزایش سرمایه» روی چارت نمایش داده نمی‌شود — عددِ جداگانه
+                  ساختگی می‌شد.
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* فوتر پنجره */}
-        <div
-          className={`flex items-center justify-between border-t px-5 py-3.5 transition-colors ${
-            isLight ? 'border-[#e0e3eb] bg-[#f8f9fa]' : 'border-[#2a2e39] bg-[#1a1e29]'
-          }`}
-        >
-          <span className={`text-xs font-medium ${isLight ? 'text-[#5f6368]' : 'text-[#b2b5be]'}`}>
-            کلیه تنظیمات به صورت خودکار در حافظه مرورگر ذخیره می‌شوند.
-          </span>
+        <div className="flex items-center justify-between border-t border-border-c bg-bg-card/60 px-5 py-3">
+          <span className="text-2xs text-text-muted">هر تغییر بی‌درنگ ذخیره و اعمال می‌شود.</span>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-[#2962ff] px-4 py-1.5 text-xs font-bold text-white shadow-md shadow-[#2962ff]/30 transition-all hover:bg-[#1e53e5] active:scale-95"
+            data-testid="chart-settings-done"
+            className="rounded-lg bg-accent-blue/25 px-4 py-1.5 text-2xs font-bold text-text-primary ring-1 ring-accent-blue/60 transition-colors hover:bg-accent-blue/35"
           >
             بستن و اعمال
           </button>
@@ -773,4 +585,3 @@ export function ChartSettingsDialog({
     </div>
   );
 }
-

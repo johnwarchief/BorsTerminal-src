@@ -35,8 +35,11 @@ describe('دیالوگ تنظیمات چارت', () => {
   it('باز، تغییر نوع چارت/مقیاس را به استور می‌دهد', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
     expect(screen.getByTestId('chart-settings')).toBeInTheDocument();
+    // نوع چارت در تبِ نماد است، مقیاسِ قیمت در تبِ مقیاس‌ها
+    fireEvent.click(screen.getByTestId('settings-tab-symbol'));
     fireEvent.click(screen.getByRole('button', { name: 'اریا' }));
     expect(useFtsConfigStore.getState().chartType).toBe('area');
+    fireEvent.click(screen.getByTestId('settings-tab-scales'));
     fireEvent.click(screen.getByRole('button', { name: 'لگاریتمی' }));
     expect(useFtsConfigStore.getState().priceScale).toBe('logarithm');
   });
@@ -49,7 +52,7 @@ describe('دیالوگ تنظیمات چارت', () => {
   });
 
   it('سوییچ موتور چارت: پیش‌فرض klinecharts و تغییر به lightweight', () => {
-    render(<ChartSettingsDialog open onClose={() => undefined} />);
+    render(<ChartSettingsDialog open onClose={() => undefined} initialTab="symbol" />);
     expect(['klinecharts', 'lightweight']).toContain(useFtsConfigStore.getState().chartEngine);
     fireEvent.click(screen.getByRole('button', { name: 'Lightweight Charts' }));
     expect(useFtsConfigStore.getState().chartEngine).toBe('lightweight');
@@ -57,9 +60,9 @@ describe('دیالوگ تنظیمات چارت', () => {
     expect(useFtsConfigStore.getState().chartEngine).toBe('klinecharts');
   });
 
-  it('تب ظاهر: پس‌زمینه و رنگ کندل روی view اثر می‌گذارد', () => {
+  it('تب رنگ‌بندی: پس‌زمینه و رنگ کندل روی view اثر می‌گذارد', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
-    fireEvent.click(screen.getByTestId('settings-tab-appearance'));
+    fireEvent.click(screen.getByTestId('settings-tab-colors'));
     fireEvent.click(screen.getByRole('button', { name: 'کلاسیک تیره' }));
     expect(useFtsConfigStore.getState().view.background).toBe('classic');
     fireEvent.click(screen.getByTestId('up-#26a69a'));
@@ -68,36 +71,55 @@ describe('دیالوگ تنظیمات چارت', () => {
     expect(useFtsConfigStore.getState().view.candleUp).toBeNull();
   });
 
-  it('تب مقیاس‌ها: معکوس‌سازی و قفل درگ محور', () => {
+  it('تب مقیاس‌ها: معکوس‌سازی، قفل درگ محور و قفلِ مقیاسِ عمودی (#167)', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
     const before = useFtsConfigStore.getState().view.yAxisReverse;
     fireEvent.click(screen.getByRole('button', { name: /معکوس‌سازی/ }));
     expect(useFtsConfigStore.getState().view.yAxisReverse).toBe(!before);
     fireEvent.click(screen.getByRole('button', { name: /قفل درگ محور/ }));
     expect(useFtsConfigStore.getState().view.axisDragLock).toBe(true);
+    const lock = useFtsConfigStore.getState().view.axisScaleLock;
+    fireEvent.click(screen.getByRole('button', { name: /قفلِ قیمت به نسبتِ کندل/ }));
+    expect(useFtsConfigStore.getState().view.axisScaleLock).toBe(!lock);
+  });
+
+  it('تب خط وضعیت: چسبندگیِ متن (#168) روی view نوشته می‌شود', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} initialTab="status" />);
+    const before = useFtsConfigStore.getState().view.legendAlways === true;
+    fireEvent.click(screen.getByRole('button', { name: /همیشه روی بوم بماند/ }));
+    expect(useFtsConfigStore.getState().view.legendAlways).toBe(!before);
+  });
+
+  it('تب دقت و اعشار: عددِ صریح و خودکار روی view می‌نشیند', () => {
+    render(<ChartSettingsDialog open onClose={() => undefined} initialTab="precision" />);
+    fireEvent.click(screen.getByRole('button', { name: '۲' }));
+    expect(useFtsConfigStore.getState().view.pricePrecision).toBe(2);
+    fireEvent.click(screen.getByRole('button', { name: 'خودکار' }));
+    expect(useFtsConfigStore.getState().view.pricePrecision).toBe('auto');
   });
 
   it('تب رویدادها: سوئیچ‌های مستقل D/S حذف‌اند، چون سرور نوعِ رویداد را نمی‌فرستد', () => {
     render(<ChartSettingsDialog open onClose={() => undefined} />);
     fireEvent.click(screen.getByTestId('settings-tab-events'));
     expect(screen.getByTestId('settings-events-note')).toBeInTheDocument();
-    expect(screen.getByText(/سامانه کدال/)).toBeInTheDocument();
+    expect(screen.getByText(/ساختگی/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /سود نقدی مصوب/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /افزایش سرمایه و سهام جایزه/ })).not.toBeInTheDocument();
   });
 
-  it('حذف قطعی نام متغیرهای خام candle.upColor و candle.downColor از کلیه تب‌ها', () => {
-    const { container } = render(<ChartSettingsDialog open onClose={() => undefined} initialTab="symbol" />);
+  it('شش تبِ استاندارد هست و هیچ گزینه‌ای دو بار تکرار نشده', () => {
+    const { container } = render(<ChartSettingsDialog open onClose={() => undefined} />);
+    for (const id of ['symbol', 'status', 'scales', 'colors', 'precision', 'events']) {
+      expect(screen.getByTestId(`settings-tab-${id}`)).toBeInTheDocument();
+    }
+    // نامِ متغیرِ خامِ موتور نباید به‌جای فارسیِ خوانا به کاربر نشان داده شود
     expect(container.textContent).not.toContain('candle.upColor');
     expect(container.textContent).not.toContain('candle.downColor');
-    expect(screen.getByText('رنگ بدنه کندل صعودی')).toBeInTheDocument();
-    expect(screen.getByText('رنگ بدنه کندل نزولی')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('settings-tab-appearance'));
-    expect(container.textContent).not.toContain('candle.upColor');
-    expect(container.textContent).not.toContain('candle.downColor');
-    expect(screen.getByText('رنگ کندل صعودی')).toBeInTheDocument();
-    expect(screen.getByText('رنگ کندل نزولی')).toBeInTheDocument();
+    // ردیفِ رنگ فقط یک بار، در تبِ رنگ‌بندی
+    fireEvent.click(screen.getByTestId('settings-tab-symbol'));
+    expect(screen.queryByTestId('up-#26a69a')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('settings-tab-colors'));
+    expect(screen.getByTestId('up-#26a69a')).toBeInTheDocument();
   });
 });
 

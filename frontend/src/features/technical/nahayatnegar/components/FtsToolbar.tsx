@@ -369,7 +369,13 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           </button>
         )}
         {onOpenSettings && (
-          <button className="nn-btn nn-icon-btn" onClick={onOpenSettings} title="تنظیمات چارت">
+          <button
+            type="button"
+            className="nn-btn nn-icon-btn"
+            data-testid="open-chart-settings"
+            onClick={onOpenSettings}
+            title="تنظیمات چارت"
+          >
             <IconSettings size={16} />
           </button>
         )}

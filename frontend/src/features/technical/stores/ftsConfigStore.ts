@@ -17,6 +17,8 @@ export type FtsLayerKey =
 export type ChartType =
   | 'candle_solid'
   | 'candle_stroke'
+  | 'candle_up_stroke'
+  | 'candle_down_stroke'
   | 'ohlc'
   | 'line'
   | 'area'
@@ -64,6 +66,13 @@ export type ChartView = {
   showWatermark: boolean;
   showCorporateActions: boolean;
   fibLogarithmic: boolean;
+  /** قفلِ کاملِ مقیاسِ عمودی (معادلِ «قفل قیمت به نسبت کندل»ِ ره‌آورد): زوم هم
+   *  مقیاس را نمی‌شکند. بی‌این هم درگِ افقی مقیاس را نمی‌پراند (#167). */
+  axisScaleLock: boolean;
+  /** خط وضعیتِ OHLC و افسانۀ اندیکاتورها: همیشه روی بوم، یا فقط با نشانگر (#168) */
+  legendAlways: boolean;
+  /** اعشارِ محورِ قیمت؛ 'auto' یعنی بر پایۀ همان تعدیل (#166) */
+  pricePrecision: 'auto' | 0 | 1 | 2 | 3 | 4;
 };
 
 export const VIEW_DEFAULTS: ChartView = {
@@ -101,6 +110,9 @@ export const VIEW_DEFAULTS: ChartView = {
   showWatermark: true,
   showCorporateActions: true,
   fibLogarithmic: false,
+  axisScaleLock: false,
+  legendAlways: false,
+  pricePrecision: 'auto',
 };
 
 /** موتور رندر چارت — پیش‌فرض klinecharts تا مهاجرت کامل شود */
@@ -208,7 +220,7 @@ function initial(): PersistedState {
       : PERSIST_DEFAULTS.priceScale;
 
     // پالایش و ایمن‌سازی مقادیر نمایشی
-    const parsedView = parsed.view ?? {};
+    const parsedView: Partial<ChartView> = parsed.view ?? {};
     const safeView: ChartView = {
       ...VIEW_DEFAULTS,
       ...parsedView,

@@ -69,15 +69,16 @@ describe('بازطراحی استایل و ساختار دیالوگ تنظیم�
     expect(screen.getByText('تنظیمات چارت')).toBeInTheDocument();
     expect(screen.getByText('فولاد')).toBeInTheDocument();
 
-    // بخش اطلاعات نماد و ارقام زنده
-    expect(screen.getByText(/اطلاعات نماد و ارقام زنده/)).toBeInTheDocument();
-    expect(screen.getByText(/Symbol, OHLC & Volume/)).toBeInTheDocument();
+    // بخش خطِ وضعیتِ کندل
+    expect(screen.getByText('خطِ وضعیتِ کندل')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /مقادیر OHLC/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /حجم معاملات/ })).toBeInTheDocument();
 
     // بخش اندیکاتورها و افسانه
-    expect(screen.getByText(/اندیکاتورها و افسانه چارت/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /افسانه گوشه چارت/ })).toBeInTheDocument();
+    expect(screen.getByText('مقادیر اندیکاتورها')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /افسانه/ })).toBeInTheDocument();
+    // #168: چسبندگیِ متن گزینهٔ جدا دارد، وگرنه بلوکِ متن گوشۀ بوم را می‌پوشاند
+    expect(screen.getByRole('button', { name: /همیشه روی بوم بماند/ })).toBeInTheDocument();
   });
 
   it('سوئیچ‌های مدرن Toggle در حالت روشن/خاموش درست عمل می‌کنند', () => {

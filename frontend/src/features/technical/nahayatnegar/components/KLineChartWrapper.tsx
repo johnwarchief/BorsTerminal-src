@@ -49,6 +49,8 @@ import {
   type StoredOverlay,
 } from '../../lib/drawStore';
 import { FtsToolbar } from './FtsToolbar';
+import { createScaleLock } from '../lib/axisScaleLock';
+import { heikinAshi } from '../../lib/chartTypes';
 import { TV_INDICATORS, MABNA_INDICATORS } from '../../lib/tvIndicatorCatalog';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
@@ -72,7 +74,7 @@ import {
   detectThirdPeak,
 } from '../../lib/ftsPatterns';
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
-import { useFtsConfigStore } from '../../stores/ftsConfigStore';
+import { useFtsConfigStore, type ChartView } from '../../stores/ftsConfigStore';
 import { useChartTemplateStore, type ChartTemplate } from '../../stores/chartTemplateStore';
 import { fetchCandleFeed, toKLineData, type RawAdjustEvent } from '../../api/useCandleFeed';
 import { comparePctLabel, compareRows } from '../../lib/compareSeries';
@@ -107,6 +109,21 @@ const CHART_TYPES = [
 const ADJUSTMENT_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
 type PriceScaleName = 'normal' | 'logarithm' | 'percentage';
 const PRICE_SCALES: string[] = ['normal', 'logarithm', 'percentage'];
+
+/**
+ * قاعدۀ نمایشِ خطِ وضعیت (#168). «همیشه» گوشۀ بوم را با متن پر می‌کرد و روی
+ * کندل‌ها را می‌گرفت؛ پیش‌فرضِ تازه `follow_cross` است — همان رفتارِ
+ * نهایات‌نگر/TradingView. خاموشِ صریح (`statusShow*` = false) همیشه «none».
+ */
+function legendRule(enabled: boolean | undefined, always: boolean | undefined): 'none' | 'always' | 'follow_cross' {
+  if (enabled === false) return 'none';
+  return always === true ? 'always' : 'follow_cross';
+}
+
+/** اعشارِ محورِ قیمت (#166): 'auto' همان منطقِ تعدیل است؛ عددِ صریح اولویت دارد */
+function pricePrecisionOf(precision: ChartView['pricePrecision'] | undefined, mode: AdjustmentMode): number {
+  return typeof precision === 'number' ? precision : pricePrecisionFor(mode);
+}
 
 /** شش مطالعۀ همیشگیِ منو؛ نامشان در موتور ثبت است و در کاتالوگ TV نمی‌آید */
 const BASIC_INDICATOR_NAMES = ['VOL', 'MA', 'EMA', 'BOLL', 'RSI', 'MACD'];
@@ -258,6 +275,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [activePatterns, setActivePatterns] = useState<{ kind: string; color: string; label: string }[]>([]);
   const [isPatternLegendCollapsed, setIsPatternLegendCollapsed] = useState<boolean>(false);
   const chartRef = useRef<Chart | null>(null);
+  /** نگهبانِ مقیاسِ عمودی (#167) — یک نمونهٔ پایدار، تا overrideYAxis هر بار
+   *  حالتش را از صفر نسازد */
+  const scaleLock = useRef(createScaleLock()).current;
 
   // استیت‌های نماد جاری
   const [currentSymbol, setCurrentSymbol] = useState<string>(initialSymbol);
@@ -412,6 +432,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   );
   const displayCandlesRef = useRef<KLineData[]>(displayCandles);
   displayCandlesRef.current = displayCandles;
+
+  // #166 — کندلِ «Heikin-Ashi» در کتابخانه نوعی نیست؛ با تبدیلِ سریِ نمایشی
+  // ساخته می‌شود. فقط چیزی که به موتور تزریق می‌شود این سری است — محاسباتِ
+  // FTS، الگوها و ترازها روی قیمتِ خام می‌مانند.
+  const renderCandles = useMemo(
+    () => (ftsChartType === 'heikin_ashi' ? heikinAshi(displayCandles) : displayCandles),
+    [displayCandles, ftsChartType]
+  );
+  const renderCandlesRef = useRef<KLineData[]>(renderCandles);
+  renderCandlesRef.current = renderCandles;
 
   // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود، حتی وقتی نمایش
   // روی نمایِ بازدهی است. بی‌این تفکیک، شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گیرد
@@ -806,14 +836,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     chart.setDataLoader({
       getBars: ({ callback }) => {
         // بازگرداندن دیتای جاری کندل‌ها از طریق ref جهت پیشگیری از آرایه خالی
-        callback(displayCandlesRef.current, { forward: false, backward: false });
+        callback(renderCandlesRef.current, { forward: false, backward: false });
       }
     });
 
     // تنظیم سمبل و بازه زمانی
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionFor(activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -918,9 +948,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       ? ((rawWickDown && rawWickDown !== 'transparent') ? rawWickDown : candleDownColor)
       : 'transparent';
 
-    // ۲. نگاشت قطعی نوع کندل به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
+    // ۲. نگاشت قطعی نوع چارت به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
+    // «خط» همان اریا است با بی‌رنگِ زیرِ خط؛ «Heikin-Ashi» از سریِ renderCandles
+    // می‌آید و اینجا نوعش کندلِ معمولی می‌ماند.
+    const isLineMode = ftsChartType === 'line';
     const validCandleType: 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' =
-      ftsChartType === 'area' ? 'area'
+      ftsChartType === 'area' || ftsChartType === 'line' ? 'area'
       : ftsChartType === 'ohlc' ? 'ohlc'
       : ftsChartType === 'candle_stroke' ? 'candle_stroke'
       : ftsChartType === 'candle_up_stroke' ? 'candle_up_stroke'
@@ -1018,14 +1051,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             noChangeWickColor: '#888888'
           },
           tooltip: {
-            showRule: ftsView?.statusShowOhlc === false ? 'none' : 'always',
+            // #168: «always» بلوکِ OHLC را گوشۀ بوم می‌کوبد و روی کندل‌ها را
+            // می‌پوشاند؛ پیش‌فرض حالا با نشانگر می‌آید و فقط با گزینهٔ
+            // «همیشه» چسبان می‌ماند.
+            showRule: legendRule(ftsView?.statusShowOhlc, ftsView?.legendAlways),
             showType: 'standard'
           },
           area: {
             lineSize: 2,
             lineColor: '#2962ff',
             value: 'close',
-            fillColor: [
+            // «خط» در کتابخانه نوعِ کندل نیست؛ همان اریا بدونِ سطحِ رنگی است.
+            // کلیدِ درستِ v10 «backgroundColor» است (fillColor نامِ نسخهٔ کهنه).
+            backgroundColor: isLineMode ? 'rgba(41, 98, 255, 0)' : [
               { offset: 0, color: 'rgba(41, 98, 255, 0.28)' },
               { offset: 1, color: 'rgba(41, 98, 255, 0.00)' }
             ]
@@ -1083,7 +1121,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             { style: 'solid', smooth: true, size: 1.5, color: '#ab47bc' }
           ],
           tooltip: {
-            showRule: ftsView?.statusShowIndicators === false ? 'none' : 'always',
+            showRule: legendRule(ftsView?.statusShowIndicators, ftsView?.legendAlways),
             showType: 'standard',
             text: {
               size: 11,
@@ -1140,14 +1178,16 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
       chart.overrideYAxis({
         paneId: 'candle_pane',
-        name: yAxisName
+        name: yAxisName,
+        // #167: درگِ افقی مقیاسِ عمودی را نمی‌پراند؛ زوم و دادۀ تازه آزادش می‌کنند
+        createRange: scaleLock.createRange,
       } as never);
 
       // ۵. تزریق فوری و بازنشانی کندل‌های جاری جهت رندر بی‌درنگ و تضمین عدم خالی ماندن بوم
-      if (displayCandlesRef.current && displayCandlesRef.current.length > 0) {
+      if (renderCandlesRef.current && renderCandlesRef.current.length > 0) {
         chart.setDataLoader({
           getBars: ({ callback }) => {
-            callback(displayCandlesRef.current, { forward: false, backward: false });
+            callback(renderCandlesRef.current, { forward: false, backward: false });
           }
         });
         chart.resetData();
@@ -1158,6 +1198,33 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   }, [theme, ftsView, ftsPriceScale, ftsChartType, ftsShowGrid, ftsShowCrosshair, activeAdjustment]);
 
+  // #167 — «قفل قیمت به نسبت کندل» از تنظیمات؛ با هر تغییرِ ساختاری (نماد،
+  // بازهٔ زمانی، تعدیل) مقیاس آزاد می‌شود تا پنجرۀ خودش را از نو بچیند.
+  useEffect(() => {
+    scaleLock.setFullLock(ftsView?.axisScaleLock === true);
+  }, [ftsView?.axisScaleLock, scaleLock]);
+
+  useEffect(() => {
+    scaleLock.release();
+    // مطالعۀ تازه و همسنجی دامنۀ قیمت را عوض می‌کنند؛ مقیاس باید آزاد شود
+  }, [currentSymbol, activeTimeframe, activeAdjustment, indicators, compareSymbol, scaleLock]);
+
+  // #166 — اعشارِ دستیِ محورِ قیمت بی‌درنگ اعمال می‌شود (عددِ صریح بر
+  // پیش‌فرضِ تعدیل اولویت دارد؛ 'auto' همان پیش‌فرض است).
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    try {
+      chart.setSymbol({
+        ticker: currentSymbol,
+        pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+        volumePrecision: 0,
+      });
+    } catch {
+      // چارت هنوز آماده نیست: افکتِ داده همان عدد را می‌گذارد
+    }
+  }, [currentSymbol, activeAdjustment, ftsView?.pricePrecision]);
+
   // ۳. ارسال دیتای جدید به کلاینت KLineChart از طریق setDataLoader در v10
   useEffect(() => {
     const chart = chartRef.current;
@@ -1166,13 +1233,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // بازنشانی و فراخوانی مجدد لودر دیتا در v10
     chart.setDataLoader({
       getBars: ({ callback }) => {
-        callback(displayCandles, { forward: false, backward: false });
+        callback(renderCandles, { forward: false, backward: false });
       }
     });
 
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionFor(activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -1190,7 +1257,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [displayCandles, currentSymbol, activeTimeframe]);
+  }, [renderCandles, currentSymbol, activeTimeframe]);
 
 
   // ۴. رسم و پاک‌سازی اورلی‌های تحلیلی استراتژی FTS

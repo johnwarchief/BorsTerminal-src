@@ -36,7 +36,7 @@ export const nahayatNegarDarkTheme = {
       lineSize: 2,
       lineColor: '#2962ff',
       value: 'close' as const,
-      fillColor: [
+      backgroundColor: [
         { offset: 0, color: 'rgba(41, 98, 255, 0.28)' },
         { offset: 1, color: 'rgba(41, 98, 255, 0.00)' }
       ]
@@ -274,7 +274,9 @@ export const nahayatNegarLightTheme = {
       lineSize: 2,
       lineColor: '#2563eb',
       value: 'close' as const,
-      fillColor: [
+      // کلیدِ v10 «backgroundColor» است؛ «fillColor» نامِ نسخهٔ کهنه بود و بی‌صدا
+      // نادیده گرفته می‌شد (چارتِ زنده رنگِ پیش‌فرضِ کتابخانه را می‌زد).
+      backgroundColor: [
         { offset: 0, color: 'rgba(37, 99, 235, 0.20)' },
         { offset: 1, color: 'rgba(37, 99, 235, 0.00)' },
       ],
