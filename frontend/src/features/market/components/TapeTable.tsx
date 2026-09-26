@@ -40,11 +40,20 @@ type SortKey =
 
 /** سیزده ستونِ تابلو: همان چهار عددی که تریدرز‌آرنا دارد و ما نداشتیم
  *  (پایانی، ارزش، تعداد، درصدِ آخرین) علاوه بر ستون‌هایِ همیشگی. */
-// دو ستونِ «سرانه» (۷۸px) برای عددی مثل «۴۵.۲» بیش از حد بزرگ بودند و بج‌های
-// فیلتر در ۱۰۸pxِ آخرِ ردیف جا نمی‌شدند — سرِبراهه مجبور به اسکرول افقی می‌شد.
-// ۲۴px از همان دو ستون به ستونِ بج‌ها منتقل شد.
+/**
+ * سیزده ستونِ تابلو — عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در
+ * فونتِ ۱۶pxِ همین جدول گذاشته شده‌اند، نه حدس:
+ * [نماد ۱۵۰] [آخرین/پایانی ۶۶] [تغییر٪/آخرین٪ ۶۲] [حجم ۱۳۰ — «۱۳٬۴۴۴٬۴۷۰٬۰۰۳»]
+ * [تعداد ۶۴] [ارزش ۵۸] [حجم/ماه ۵۸] [سرانه‌ها ۶۰] [قدرت ۶۶ — تیترش ۶۳px است]
+ * [ساعت+برچسب‌ها ۲۰۰ — بدترین نوارِ بجِ سنجیده‌شده ۱۸۷px].
+ * قبلاً ستونِ بج‌ها ۱۴۰px بود و «مشکوک + کف‌روب + نقطه» ۱۴۲px می‌خواست؛
+ * همان بود که کاربر به‌عنوان «برچسب‌ها اسکرول می‌خورند» دید.
+ */
 const ROW_GRID =
-  'grid-cols-[minmax(125px,1.6fr)_repeat(3,minmax(62px,0.8fr))_minmax(62px,0.75fr)_minmax(72px,0.9fr)_minmax(58px,0.7fr)_minmax(78px,0.95fr)_minmax(70px,0.8fr)_minmax(66px,0.8fr)_minmax(66px,0.8fr)_minmax(66px,0.8fr)_minmax(140px,1.6fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(60px,0.8fr)_minmax(60px,0.8fr)_minmax(66px,0.9fr)_minmax(200px,1.5fr)]';
+
+/** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
+const TABLE_MIN_W = 'min-w-[1198px]';
 
 const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
   // برچسبِ ستون «فیلتر» نیست و فقط خواندنِ سرستون را می‌سازد؛ پس کوتاه‌ترین
@@ -133,7 +142,7 @@ function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone:
       data-testid={`badge-${pattern}`}
       data-pattern={pattern}
       title={title}
-      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1 py-0.5 text-3xs font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
+      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1 py-px text-3xs font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
     >
       {children}
     </span>
@@ -224,14 +233,14 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-2 border-b border-border-c/50 px-3 text-start text-sm ${
+      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1.5 border-b border-border-c/50 px-3 text-start text-base ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
-      style={{ height: 36 }}
+      style={{ height: 40 }}
     >
-      <span className="font-bold text-sm text-text-primary flex items-baseline gap-1.5 truncate">
+      <span className="font-bold text-base text-text-primary flex items-baseline gap-1.5 truncate">
         {row.symbol}
-        <span className="truncate text-2xs font-normal text-text-muted">{row.name ?? ''}</span>
+        <span className="truncate text-xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
       {/* تراز ستون (fix): محتوای عددی با `.num` (direction:ltr) به‌صورت خودکار چپ‌چین می‌شد
           و زیر هدرِ راست‌چین نمی‌نشست؛ `text-end` آن را با لبهٔ راست (جای هدر) هم‌تراز می‌کند. */}
@@ -278,7 +287,11 @@ const TapeRow = memo(function TapeRow({
         <span className="num shrink-0 text-text-muted font-medium text-xs">
           <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
         </span>
-        <span className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar py-0.5">{badges}</span>
+        {/* `flex-wrap` به‌جای `overflow-x-auto`: نوارِ بج هیچ‌وقت اسکرول
+            افقی نمی‌شود؛ اگر روزی چهار بج با هم بیایند، در ارتفاعِ ۴۰
+            ردیف می‌شکنند و دیده می‌شوند — نه اینکه پشتِ لبهٔ ستون پنهان
+            شوند (باگِ گزارش‌شدهٔ کاربر: «برچسب‌ها قابل اسکرول‌اند»). */}
+        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden py-0.5">{badges}</span>
       </span>
     </div>
   );
@@ -323,7 +336,7 @@ export function TapeTable({
   const virtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => 40,
     overscan: 12,
   });
 
@@ -342,7 +355,7 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid w-full min-w-[1080px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
+        <div className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1.5 bg-bg-card/95 px-3 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => (
             <button
               key={h.key}
@@ -356,7 +369,7 @@ export function TapeTable({
           ))}
         </div>
         <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
-          <div className="relative w-full min-w-[1080px]" style={{ height: virtualizer.getTotalSize() }}>
+          <div className={`relative w-full ${TABLE_MIN_W}`} style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];
             return (

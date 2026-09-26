@@ -201,6 +201,22 @@ export function pulseEqAll(d: MarketPulseData | null | undefined) {
   };
 }
 
+/** گروه‌های دارایی که در جدول خلاصه هستند — برای ردیف‌های مقایسهٔ قدرت خریدار */
+export function pulseGroupRows(d: MarketPulseData | null | undefined, keys: string[]) {
+  const rows = d?.summary?.rows ?? [];
+  const n = (v: number | null | undefined) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+  return keys
+    .map((k) => rows.find((r) => r.key === k) ?? null)
+    .filter((r): r is NonNullable<typeof r> => r != null)
+    .map((r) => ({
+      key: r.key,
+      label: r.label ?? r.key,
+      power: n(r.buy_power),
+      pcBuy: n(r.pc_buy_m_toman),
+      pcSell: n(r.pc_sell_m_toman),
+    }));
+}
+
 /** تعادل صف‌ها: فقط وقتی depth_available درست است عدد معتبر است */
 export function pulseDepth(d: MarketPulseData | null | undefined) {
   const dep = d?.depth ?? null;

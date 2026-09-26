@@ -11,7 +11,7 @@ import type { FiscalQuarter } from '../lib/fundMath';
 import { EPS_PARTIAL_TESTID, epsChangeText, epsChanges, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
 import { industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
-import { FTS_PANEL_TITLE, FTS_FX_TITLE } from '../lib/ftsLabels';
+import { FTS_PANEL_TITLE, FTS_FX_TITLE } from '@shared/lib/ftsLabels';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,

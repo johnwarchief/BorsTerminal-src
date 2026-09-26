@@ -9,7 +9,7 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FTS_COLUMN_LABEL } from '../lib/ftsLabels';
+import { FTS_COLUMN_LABEL } from '@shared/lib/ftsLabels';
 import { pickAssemblyBadge, type AssemblyBadgeInfo, type CalEvent } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
 import { matchFa } from '@shared/lib/normalizeFa';

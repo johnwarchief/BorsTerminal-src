@@ -59,10 +59,20 @@ function summary(hemat = 22.5, opts: { pcBuy?: number; pcSell?: number; power?: 
       buy_power: opts.power ?? 1.17,
       buy_power_up: true,
     },
+    // چهار گروهِ واقعیِ خلاصه (اعدادِ نشستِ ۱۴۰۵/۰۷/۰۴) — کارت سرانه این‌ها را
+    // ردیف‌به‌ردیف نشان می‌دهد، پس fixture هم باید آن‌ها را داشته باشد.
+    { key: 'stock_right', label: 'سهام و حق تقدم', pc_buy_m_toman: 61, pc_sell_m_toman: 37.1, buy_power: 1.64 },
+    { key: 'eq_fund', label: 'صندوق‌های سهامی و مختلط', pc_buy_m_toman: 75.8, pc_sell_m_toman: 163.8, buy_power: 0.46 },
+    { key: 'fixed_fund', label: 'صندوق درآمد ثابت', pc_buy_m_toman: 177.7, pc_sell_m_toman: 221.3, buy_power: 0.86 },
+    {
+      key: 'gold_fund',
+      label: 'صندوق‌های طلا',
+      pc_buy_m_toman: 60.3,
+      pc_sell_m_toman: 240.1,
+      buy_power: 0.25,
+      ...(opts.goldFlow != null ? { money_flow_b_toman: opts.goldFlow } : {}),
+    },
   ];
-  if (opts.goldFlow != null) {
-    rows.push({ key: 'gold_fund', label: 'صندوق طلا', money_flow_b_toman: opts.goldFlow });
-  }
   return { status: 'ok', rows, health: { value_hemat: hemat } };
 }
 
@@ -89,6 +99,26 @@ function thermo(overrides: Partial<Thermometer> = {}): Thermometer {
     negative_pct: 21.7,
     entry_rule_pct: 80,
     ...overrides,
+  };
+}
+
+/** قیفِ پنج‌محوری — همان چیزی که /api/fundamental/funnel می‌فرستد */
+function funnel(over: Record<string, unknown> = {}) {
+  return {
+    status: 'success',
+    total: 873,
+    tested: 764,
+    not_applicable: 109,
+    vetoed: 196,
+    axes: [
+      { key: '1', column: 'i1_pass', pass: 337 },
+      { key: '2', column: 'i2_pass', pass: 167 },
+      { key: '3', column: 'i3_pass', pass: 350 },
+      { key: '4', column: 'i4_pass', pass: 372 },
+      { key: '5', column: 'i5_pass', pass: 615 },
+    ],
+    verdicts: { SUPER_FUNDAMENTAL: 32, PASSED: 102, WATCHLIST: 146, REJECTED: 484, NOT_APPLICABLE: 109 },
+    ...over,
   };
 }
 
@@ -194,15 +224,82 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
       'mstat/summary': () => jsonResponse(summary(22.5, { goldFlow: -955 })),
       'mstat/depth': () => jsonResponse(depth()),
       'mstat/thermometer': () => jsonResponse(thermo()),
+      'fundamental/funnel': () => jsonResponse(funnel()),
     });
     renderPulse();
     await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
     expect(screen.getByTestId('pulse-hemat').textContent).toContain('مساعد');
-    expect(screen.getByTestId('pulse-hemat').textContent).toContain('روند ۳-۴ روزه: بدون داده');
+    // آستانه‌های واقعیِ payload — جای خطِ «روند ۳-۴ روزه: بدون داده» را گرفت
+    // که در هر دو شاخه یکی بود و هیچ‌وقت راست نمی‌شد.
+    expect(screen.getByTestId('pulse-hemat').textContent).toContain('مساعد از ۲۰.۰ همت');
     expect(screen.getByTestId('pulse-smart').textContent).toContain('۳۰۰.۵');
     expect(screen.getByTestId('pulse-queues').textContent).toContain('۱۴۷۱');
     expect(screen.getByTestId('pulse-percapita').textContent).toContain('۱.۲×');
     expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('mstat/thermometer'))).toBe(true);
+  });
+
+  it('قیف FTS: پنج محور با شمارشِ سرور و جمعِ چهار/پنج‌امتیازی — بیرون از نوارِ شاخص', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+      'fundamental/funnel': () => jsonResponse(funnel()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('fts-funnel')).toBeTruthy());
+    const strip = screen.getByTestId('fts-funnel').textContent ?? '';
+    for (const n of ['۳۳۷', '۱۶۷', '۳۵۰', '۳۷۲', '۶۱۵']) expect(strip).toContain(n);
+    expect(strip).toContain('۷۶۴');
+    // ۳۲ سوپر + ۱۰۲ قبول = ۱۳۴ — جمع را لایهٔ نمایش نمی‌سازد، سرور هم همین را داد
+    expect(strip).toContain('۱۳۴');
+    expect(strip).toContain('۱۹۶ وتو');
+  });
+
+  it('قیف مرده: کل بارت حذف می‌شود، صفرِ ساختگی نه؛ بقیهٔ نبض دست‌نخورده', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
+    expect(screen.queryByTestId('fts-funnel')).toBeNull();
+    expect(screen.getByTestId('pulse-index').textContent).toContain('شاخص کل');
+  });
+
+  it('سه شرطِ چیپِ آلفا تک‌تک نشان داده می‌شوند (طلا بدون داده = ؟، نه ✗)', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney(22.5, 300, -120)),
+      'mstat/summary': () => jsonResponse(summary(22.5, { goldFlow: null })),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-alpha-conditions')).toBeTruthy());
+    const t = screen.getByTestId('pulse-alpha-conditions').textContent ?? '';
+    expect(t).toContain('ورود سهام');
+    expect(t).toContain('خروج درآمد ثابت');
+    expect(t).toContain('خروج طلا');
+    expect(t).toContain('؟');
+  });
+
+  it('قدرت خریدار به تفکیکِ گروه: ردیف‌های واقعیِ خلاصه، رنگ از آستانهٔ ۱.۵/۰.۸', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-groups')).toBeTruthy());
+    const t = screen.getByTestId('pulse-groups').textContent ?? '';
+    // صندوق درآمد ثابت: ۰.۸۶ → زیر ۰.۸ نیست، پس کهربایی؛ عدد را همان‌طور
+    // که دماسنج نشان می‌دهد بخوان (یک رقمِ ممیز).
+    expect(t).toContain('صندوق درآمد ثابت');
+    expect(t).toContain('۰.۹×');
+    expect(t).toContain('صندوق‌های طلا');
   });
 
   it('همتِ «بدون داده»: پاسخ را اسکیما نمی‌شکند و پنل داوری نمی‌سازد', async () => {

@@ -1,7 +1,7 @@
 // features/technical/components/ReplayBar.tsx -- نوار بازپخش کندل (Bar Replay) سبک TradingView
 // کاربر با اسلایدر یک کندل گذشته را انتخاب می‌کند؛ کندل‌های بعد پنهان می‌شوند و با
 // Play/Pause/کندل بعد/قبل به‌صورت کندل‌به‌کندل جلو می‌رود (بک‌تست دستی).
-import { REPLAY_SPEEDS } from '../lib/replay';
+import { REPLAY_SPEEDS, replaySpeedLabel } from '../lib/replay';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useReplayStore } from '../stores/replayStore';
 
@@ -69,6 +69,15 @@ export function ReplayBar({ total }: { total: number }) {
       >
         کندل بعد
       </button>
+      <button
+        type="button"
+        data-testid="replay-last"
+        onClick={() => setCursor(max)}
+        disabled={cur >= max}
+        className="rounded-full border border-border-c bg-bg-card px-3 py-1 text-xs text-text-secondary hover:text-accent-blue disabled:opacity-40"
+      >
+        آخرین کندل
+      </button>
       <label className="flex items-center gap-1 text-[10px] text-text-muted">
         موقعیت
         <input
@@ -93,7 +102,7 @@ export function ReplayBar({ total }: { total: number }) {
         >
           {REPLAY_SPEEDS.map((ms) => (
             <option key={ms} value={ms}>
-              {toFaDigits(1000 / ms)}×
+              {replaySpeedLabel(ms)}
             </option>
           ))}
         </select>

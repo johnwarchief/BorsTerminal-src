@@ -130,10 +130,14 @@ def main():
 
     # ── ۳) مسیرِ اسکرین ──────────────────────────────────────────────────
     src = _read(os.path.join("api", "fundamental.py"))
-    chk('vrd = "NOT_APPLICABLE"' in src, "screen endpoint has the not-applicable bucket")
+    chk('return "NOT_APPLICABLE"' in src, "screen endpoint has the not-applicable bucket")
     chk('r.get("applicable") is False' in src, "bucket keys off the engine field")
-    m = re.search(r'if r\.get\("applicable"\) is False:.*?elif is_excluded:', src, re.S)
+    m = re.search(r'if r\.get\("applicable"\) is False:.*?if r\.get\("excluded"\):', src, re.S)
     chk(bool(m), "NOT_APPLICABLE is decided before excluded (a fund is not REJECT)")
+    # v1.0.36: نگاشتِ داوری از بدنةِ route به `_screen_verdict` منتقل شد تا جدولِ
+    # غربالگری و قیفِ نبض بازار دو نسخهٔ یک داوری نداشته باشند. هلپر تنها
+    # جایِ نوشتنِ «NOT_APPLICABLE» است و هر دو مسیر همان را صدا می‌زنند.
+    chk(src.count("_screen_verdict(") >= 3, "screen and funnel share one verdict mapping")
 
     # ── ۴) امتیاز: کارت None، موتور عدد ──────────────────────────────────
     chk('"score": (res["score"] if res.get("applicable", True) else None)' in src,

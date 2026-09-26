@@ -1,6 +1,6 @@
 // features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
 import { toFaDigits } from '@shared/lib/fmt';
-import { FTS_LABEL } from '../lib/ftsLabels';
+import { FTS_LABEL } from '@shared/lib/ftsLabels';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { gapReason, gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';

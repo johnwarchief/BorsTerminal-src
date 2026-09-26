@@ -1997,6 +1997,27 @@ _INSTR_SQL = """
 """
 
 
+def _screen_verdict(r: dict) -> str:
+    """داوریِ نهاییِ یک ردیف — تنها یک‌جا.
+
+    جدولِ غربالگری و قیفِ نبض بازار هر دو همین را می‌خوانند؛ اگر این نگاشت
+    دو بار نوشته شود، دو نمادِ یکسان دو داوریِ مختلف می‌گیرند.
+    رأی ۱۵: صندوق در پنج‌شاخصه نمی‌گنجد — داوری ندارد، نه مردود.
+    """
+    if r.get("applicable") is False:
+        return "NOT_APPLICABLE"
+    if r.get("excluded"):
+        return "REJECTED"
+    score = int(r.get("score") or 0)
+    if score == 5:
+        return "SUPER_FUNDAMENTAL"
+    if score == 4:
+        return "PASSED"
+    if score == 3:
+        return "WATCHLIST"
+    return "REJECTED"
+
+
 @router.get("/api/fundamental/screen")
 def api_fundamental_screen(
     verdict: Optional[str] = None,
@@ -2038,27 +2059,11 @@ def api_fundamental_screen(
         if sector and r.get("sector_name") != sector:
             continue
 
-        is_excluded = bool(r.get("excluded"))
-        score = int(r.get("score") or 0)
-        if r.get("applicable") is False:
-            # رأی ۱۵: صندوق در پنج‌شاخصه نمی‌گنجد — داوری ندارد، نه مردود
-            vrd = "NOT_APPLICABLE"
-        elif is_excluded:
-            vrd = "REJECTED"
-        elif score == 5:
-            vrd = "SUPER_FUNDAMENTAL"
-        elif score == 4:
-            vrd = "PASSED"
-        elif score == 3:
-            vrd = "WATCHLIST"
-        else:
-            vrd = "REJECTED"
-
         item = dict(r)
         item["name"] = name
-        item["fts_verdict"] = vrd
+        item["fts_verdict"] = _screen_verdict(r)
 
-        if verdict and verdict != "ALL" and vrd != verdict:
+        if verdict and verdict != "ALL" and item["fts_verdict"] != verdict:
             continue
 
         results.append(item)
@@ -2071,6 +2076,45 @@ def api_fundamental_screen(
         "count": len(results),
         "data": results,
         "symbols": results
+    }
+
+
+@router.get("/api/fundamental/funnel")
+def api_fundamental_funnel():
+    """قیفِ پنج‌محوریِ بازار — چند نماد از هر شاخصِ جزوه رد می‌شوند.
+
+    چیزی که در هیچ ابزارِ بیرونی نیست و در جزوه اصلِ کار است: FTS یک قیف است،
+    نه پنج نمرهٔ جدا. این پاسخ فقط همان ردیف‌های کش‌شدهٔ /api/screener را
+    می‌شمارد؛ هیچ امتیازی این‌جا دوباره محاسبه نمی‌شود (SCORE-PATH-1) و برای
+    همین اعدادِ این قیف با ستون‌های جدولِ غربالگری می‌خوانند.
+    """
+    from .screener import get_screener
+    rows = get_screener().get("data") or []
+
+    # axes: کلیدِ ستونِ pass → شمارهٔ محورِ جزوه
+    axes = (("1", "i1_pass"), ("2", "i2_pass"), ("3", "i3_pass"),
+            ("4", "i4_pass"), ("5", "i5_pass"))
+    tested = [r for r in rows if r.get("applicable") is not False]
+    counts = {
+        key: sum(1 for r in tested if r.get(col) is True)
+        for key, col in axes
+    }
+    verdicts: dict[str, int] = {}
+    for r in rows:
+        v = _screen_verdict(r)
+        verdicts[v] = verdicts.get(v, 0) + 1
+
+    return {
+        "status": "success",
+        "total": len(rows),
+        "tested": len(tested),
+        "not_applicable": len(rows) - len(tested),
+        "vetoed": sum(1 for r in rows if r.get("excluded")),
+        "axes": [
+            {"key": key, "column": col, "pass": counts[key]}
+            for key, col in axes
+        ],
+        "verdicts": verdicts,
     }
 
 

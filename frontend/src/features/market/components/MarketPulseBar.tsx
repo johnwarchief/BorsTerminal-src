@@ -3,6 +3,7 @@
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
+import { FtsFunnelStrip } from './FtsFunnelStrip';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
@@ -14,6 +15,7 @@ import {
   pulseDepth,
   pulseEqAll,
   pulseGoldFlowB,
+  pulseGroupRows,
   pulseHemat,
   pulseIndex,
   type HematState,
@@ -36,7 +38,7 @@ function Section({
   return (
     <div
       data-testid={testId}
-      className="glass-panel flex min-w-0 flex-col justify-between gap-2 rounded-2xl border border-border-c p-3 shadow-xs"
+      className="glass-panel flex min-w-0 flex-col justify-start gap-2 rounded-2xl border border-border-c p-3 shadow-xs"
     >
       <div className="flex items-baseline justify-between gap-1.5 border-b border-border-c/40 pb-1.5">
         <h3 className="text-xs font-black text-text-primary">{title}</h3>
@@ -70,14 +72,14 @@ function IndexCell({
     typeof pct === 'number' ? fmtPct(pct, 2) : null,
   ].filter(Boolean);
   return (
-    <div className="flex min-w-0 flex-col gap-0.5" title={hint}>
-      <span className="text-2xs font-bold text-text-secondary">{label}</span>
+    <div className="flex min-w-0 shrink-0 flex-col gap-0" title={hint}>
+      <span className="text-3xs font-bold text-text-secondary">{label}</span>
       {last == null ? (
         <span className="text-xs">{MISSING}</span>
       ) : (
-        <span className="flex flex-wrap items-baseline gap-x-2">
-          <span className="num text-lg font-black leading-6 text-text-primary">{fmtInt(last)}</span>
-          {delta.length ? <span className={`num text-2xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
+        <span className="flex flex-wrap items-baseline gap-x-1.5">
+          <span className="num text-base font-black leading-5 text-text-primary">{fmtInt(last)}</span>
+          {delta.length ? <span className={`num text-3xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
         </span>
       )}
     </div>
@@ -109,11 +111,16 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
   const thermo = pulse?.thermometer ?? null;
   const depth = pulseDepth(pulse);
   const eq = pulseEqAll(pulse);
+  // چهار گروهِ دارایی که جدول خلاصه می‌فرستد — برای ردیف‌های مقایسهٔ قدرت
+  const groups = pulseGroupRows(pulse, ['stock_right', 'eq_fund', 'fixed_fund', 'gold_fund']);
   const gold = pulseGoldFlowB(pulse);
   const trio = computeAlphaTrio(pulse);
   const allMarket = pulseTradeValueAllMarketHemat(pulse);
   const ix = pulseIndex(pulse);
   const marketValue = pulseMarketValueHemat(pulse);
+  // آستانه‌هایِ همین دماسنج از payload خوانده می‌شوند؛ عددِ دستی در لایهٔ نمایش ممنوع.
+  const hematGood = pulse?.smartMoney?.macro?.good_min ?? null;
+  const hematBad = pulse?.smartMoney?.macro?.bad_max ?? null;
 
   const thermoTotal =
     thermo != null &&
@@ -145,11 +152,11 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
 
       {/* نوارِ شاخص — عددِ خامِ خودِ TSETMC برای همین نشست (سازندهٔ عدد:
           save_market_index در سینک، از MarketData/GetMarketOverview بورس).
-          پیش از این این دو عدد هیچ‌جویِ برنامه نبود؛ تریدرزآرنا و ره‌آورد هر دو
-          همین‌ها را در بالای صفحه نشان می‌دهند. */}
+          دو خانه کنارِ هم می‌نشینند (نه دو ستونِ ۵۰٪؛ آن چیدمان نیمەی چپ را
+          خالی می‌گذاشت) و باقیِ عرضِ نوار را قیفِ FTS می‌گیرد. */}
       <div
         data-testid="pulse-index"
-        className="col-span-full grid grid-cols-2 gap-2 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-2 shadow-xs"
+        className="col-span-full flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
       >
         <IndexCell
           label="شاخص کل"
@@ -158,15 +165,14 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           change={ix?.change}
           pct={ix?.pct}
         />
-        <div className="border-s border-border-c/60 ps-2">
-          <IndexCell
-            label="شاخص هموزن"
-            hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
-            last={ix?.ewLast}
-            change={ix?.ewChange}
-            pct={ix?.ewPct}
-          />
-        </div>
+        <IndexCell
+          label="شاخص هموزن"
+          hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
+          last={ix?.ewLast}
+          change={ix?.ewChange}
+          pct={ix?.ewPct}
+        />
+        <FtsFunnelStrip />
       </div>
 
       {/* بخش ۱ -- ارزش معاملات خرد (سهام، حق تقدم و ص.سهامی) */}
@@ -212,9 +218,18 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                 MISSING
               )}
             </div>
-            <span className="text-center text-3xs font-medium text-text-muted">
-              {hemat.state === 'bad' ? 'رکود روز — روند ۳-۴ روزه: بدون داده' : 'روند ۳-۴ روزه: بدون داده'}
-            </span>
+            {/* آستانه‌هایِ واقعیِ همین دماسنج (از payload) — پیش‌تر این خط
+                «روند ۳-۴ روزه: بدون داده» نوشته می‌شد و در هر دو شاخه یکی
+                بود: ادّعایی که هیچ‌وقت راست نمی‌شد. */}
+            {hematGood != null || hematBad != null ? (
+              <span className="text-center text-3xs font-medium text-text-muted">
+                <span>مساعد از </span>
+                <span className="num font-bold text-accent-green">{hematGood != null ? fa(hematGood) : '—'}</span>
+                <span> همت · رکود زیر </span>
+                <span className="num font-bold text-accent-red">{hematBad != null ? fa(hematBad) : '—'}</span>
+                <span> همت</span>
+              </span>
+            ) : null}
           </>
         ) : (
           <div data-testid="pulse-market-cap">
@@ -298,11 +313,34 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
             {trio?.active ? (
               <span
                 data-testid="pulse-alpha-trio"
-                className="mt-0.5 self-start rounded-full border border-amber-400/80 bg-amber-100 text-amber-950 px-2 py-0.5 text-3xs font-black dark:border-accent-yellow/60 dark:bg-accent-yellow/15 dark:text-accent-yellow"
+                className="self-start rounded-full border border-amber-400/80 bg-amber-100 text-amber-950 px-2 py-0.5 text-3xs font-black dark:border-accent-yellow/60 dark:bg-accent-yellow/15 dark:text-accent-yellow"
                 title="خروج درآمد ثابت + خروج طلا + ورود سهام"
               >
                 ✨ {ALPHA_TRIO_LABEL}
               </span>
+            ) : null}
+            {/* سه شرطِ همان چیپ، تک‌تک — فضایِ خالیِ پایینِ کارت را «وضعیتِ
+                واقعیِ هر شرط» پر می‌کند، نه متنِ تزئینی. بولین‌ها از لایهٔ
+                داده (computeAlphaTrio) خوانده می‌شوند و اینجا فقط نمایش‌اند. */}
+            {trio ? (
+              <div
+                data-testid="pulse-alpha-conditions"
+                className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-t border-border-c/40 pt-1 text-3xs font-bold text-text-muted"
+                title="هر تیک یکی از سه شرطِ ایده‌آلِ ورود نوسانی است"
+              >
+                {[
+                  { t: 'ورود سهام', v: trio.eqInflow },
+                  { t: 'خروج درآمد ثابت', v: trio.fixedOutflow },
+                  { t: 'خروج طلا', v: trio.goldOutflow },
+                ].map((c) => (
+                  <span key={c.t} className="inline-flex items-center gap-0.5">
+                    <span className={c.v == null ? 'text-text-muted' : c.v ? 'text-accent-green' : 'text-accent-red'}>
+                      {c.v == null ? '؟' : c.v ? '✓' : '✗'}
+                    </span>
+                    <span>{c.t}</span>
+                  </span>
+                ))}
+              </div>
             ) : null}
           </>
         )}
@@ -431,6 +469,24 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                   <span>معامله‌شده:</span>
                   <span className="num font-bold text-text-primary">{eq.traded != null ? fa(eq.traded, 0) : '—'}</span>
                 </span>
+              </div>
+            ) : null}
+            {/* قدرت خریدار به تفکیکِ گروه — همان ردیف‌هایی که جدول خلاصه
+                می‌فرستد؛ پیش‌تر این پایینِ کارت خالی می‌ماند. */}
+            {groups.length ? (
+              <div data-testid="pulse-groups" className="mt-1 flex flex-col gap-0.5 border-t border-border-c/40 pt-1">
+                {groups.map((g) => (
+                  <span
+                    key={g.key}
+                    className="flex items-baseline justify-between gap-2 text-3xs"
+                    title={`${g.label} — سرانه خرید ${g.pcBuy != null ? fa(g.pcBuy) : '—'} / فروش ${g.pcSell != null ? fa(g.pcSell) : '—'} م.ت`}
+                  >
+                    <span className="truncate text-text-muted">{g.label}</span>
+                    <span className={`num shrink-0 font-black ${powerTone(g.power) ? TONE_TEXT[powerTone(g.power) as 'good' | 'mid' | 'bad'] : 'text-text-muted'}`}>
+                      {g.power != null ? `${fa(g.power)}×` : '—'}
+                    </span>
+                  </span>
+                ))}
               </div>
             ) : null}
           </>
