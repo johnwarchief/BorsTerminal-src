@@ -49,7 +49,7 @@ import {
   type StoredOverlay,
 } from '../../lib/drawStore';
 import { FtsToolbar } from './FtsToolbar';
-import { TV_INDICATORS } from '../../lib/tvIndicatorCatalog';
+import { TV_INDICATORS, MABNA_INDICATORS } from '../../lib/tvIndicatorCatalog';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
@@ -682,6 +682,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     try {
       const indFn = (klinecharts as any).registerIndicator ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerIndicator : undefined);
       if (typeof indFn === 'function') {
+        // merge (نه replace): هر دو بلوک lazy‌اند و اگر جای ترتیبِ resolve‌شان
+        // عوض شود، replaceِ یکی نام‌های دیگری را از منو پاک می‌کرد.
+        const mergeNames = (names: string[]) =>
+          setTvIndicatorNames((prev) => Array.from(new Set([...prev, ...names])));
         void import('../../lib/tvIndicators')
           .then(({ registerTvIndicators, TV_INDICATORS: catalog }) => {
             registerTvIndicators({
@@ -691,7 +695,23 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             });
             const supported = new Set(
               ((klinecharts as any).getSupportedIndicators?.() as string[] | undefined) ?? []);
-            setTvIndicatorNames(catalog.filter((t) => supported.has(t.name)).map((t) => t.name));
+            mergeNames(catalog.filter((t) => supported.has(t.name)).map((t) => t.name));
+          })
+          .catch(() => {});
+
+        // نُه مطالعهٔ rahavard365 (DT، Z، Squeeze Momentum، HalfTrend، سطوح
+        // حمایت/مقاومت، WaveTrend، WaveTrend با تقاطع، فیبو-بولینگر، ویکس‌فیک).
+        // همان api و همان قاعده: چیزی که ثبت نشده در منو نمی‌آید.
+        void import('../../lib/mabnaIndicators')
+          .then(({ registerMabnaIndicators, MABNA_INDICATORS: catalog }) => {
+            registerMabnaIndicators({
+              registerIndicator: indFn,
+              getSupportedIndicators: () =>
+                ((klinecharts as any).getSupportedIndicators?.() as string[] | undefined) ?? [],
+            });
+            const supported = new Set(
+              ((klinecharts as any).getSupportedIndicators?.() as string[] | undefined) ?? []);
+            mergeNames(catalog.filter((t) => supported.has(t.name)).map((t) => t.name));
           })
           .catch(() => {});
       }
@@ -1686,7 +1706,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     } else {
       // رویِ کندل می‌نشینند؛ بقیه پنلِ جدا می‌گیرند. فهرستِ TV از کاتالوگ می‌آید
       // تا منو و این گارد یک منبع داشته باشند (نامِ additions = کلیکِ بی‌نتیجه).
-      const OVERLAY_INDICATORS = ['MA', 'EMA', 'BOLL', ...TV_INDICATORS.filter((t) => t.overlay).map((t) => t.name)];
+      const OVERLAY_INDICATORS = [
+        'MA', 'EMA', 'BOLL',
+        ...TV_INDICATORS.filter((t) => t.overlay).map((t) => t.name),
+        ...MABNA_INDICATORS.filter((t) => t.overlay).map((t) => t.name),
+      ];
       if (OVERLAY_INDICATORS.includes(indName)) {
         chart.createIndicator({ name: indName, paneId: 'candle_pane' }, true);
       } else {
@@ -2087,6 +2111,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
               { id: 'MACD', label: 'مکدی (MACD)' },
               { id: 'BOLL', label: 'باندهای بولینگر (Bollinger)' },
               ...TV_INDICATORS
+                .filter((t) => tvIndicatorNames.includes(t.name))
+                .map((t) => ({ id: t.name, label: t.label })),
+              ...MABNA_INDICATORS
                 .filter((t) => tvIndicatorNames.includes(t.name))
                 .map((t) => ({ id: t.name, label: t.label })),
             ].map((ind) => (

@@ -102,7 +102,7 @@ const PROBE = (ids: string[]) => {
     };
   }
   out.testids = cells;
-  out.bodyText = (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 400);
+  out.bodyText = (document.body?.innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 20000);
   out.href = location.href;
   return out;
 };
@@ -127,12 +127,40 @@ for (const width of WIDTHS) {
     assertUrlAllowed: () => undefined,
   });
   await page.waitForTimeout(500);
+  // --click-text: همان چیزی که برای سنجشِ منوها لازم است (دکمهٔ «اندیکاتور»).
+  // با locator خودِ Playwright کلیک می‌شود و شاهدِ متنش با observe() jev خوانده
+  // می‌شود؛ چیدمانِ کلیک از روی برچسبِ دیدنی است، نه selector.
+  let afterClick: { clicked: string; text: string; targets: number } | null = null;
+  for (const label of (arg('click-text', '') || '').split('||').map((s) => s.trim()).filter(Boolean)) {
+    try {
+      const byTitle = page.locator(`[title="${label}"]`).first();
+      if (await byTitle.count()) {
+        await byTitle.click({ timeout: 6000 });
+      } else {
+        await page.getByText(label, { exact: false }).first().click({ timeout: 6000 });
+      }
+      await page.waitForTimeout(1200);
+    } catch (e) {
+      afterClick = { clicked: `${label} FAILED: ${(e as Error).message.slice(0, 80)}`, text: '', targets: 0 };
+      break;
+    }
+  }
+  if (afterClick === null && arg('click-text', '')) {
+    const post = (await page.evaluate(PROBE, TESTIDS)) as { bodyText?: string };
+    afterClick = {
+      clicked: arg('click-text', ''),
+      text: (post.bodyText ?? '').slice(0, 6000),
+      targets: observation?.targets?.length ?? 0,
+    };
+  }
   const shot = OUT.replace(/\.json$/, `-${width}.png`);
   mkdirSync(OUT.replace(/[^/]*$/, ''), { recursive: true });
   await page.screenshot({ path: shot, fullPage: false });
   report.widths![width] = {
     ...(await page.evaluate(PROBE, TESTIDS)),
     targets: observation?.targets?.length ?? 0,
+    pageText: (observation?.text ?? '').replace(/\s+/g, ' ').slice(0, 1500),
+    afterClick,
     consoleErrors: consoleErrors.slice(0, 12),
     screenshot: shot,
   };
