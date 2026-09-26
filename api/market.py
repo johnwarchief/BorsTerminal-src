@@ -354,9 +354,12 @@ def get_market(request: Request):
         # meta: تاریخ/زمان معاملات برای نمایش شمسی (دادهٔ تابلو متعلق به کدام روز است)
         meta = {"d_even": None, "h_even": None, "last_sync": None}
         try:
+            # «زمان تابلو» یعنی آخرین چاپِ نشست، نه h_evenِ یک ردیفِ اتفاقی:
+            # ردیفِ برگزیده با ORDER BY fetched_at، ساعتِ معاملهٔ همان نماد است
+            # (امروز ۰۶:۱۰:۴۶ داد، در حالی که تابلو ۱۲:۵۸ بسته بود).
             _r = conn.execute(
-                "SELECT d_even, h_even, fetched_at FROM market_watch "
-                "ORDER BY fetched_at DESC LIMIT 1").fetchone()
+                "SELECT d_even, MAX(h_even), MAX(fetched_at) FROM market_watch "
+                "WHERE d_even = (SELECT MAX(d_even) FROM market_watch)").fetchone()
             if _r:
                 meta = {"d_even": int(_r[0] or 0), "h_even": int(_r[1] or 0), "last_sync": _r[2]}
         except Exception:
