@@ -61,14 +61,18 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
       status: 'ok',
       verdict: liqGood && ideal ? 'go' : 'wait',
       label: liqGood && ideal ? 'روزِ ورود است' : 'صبر — نشانه‌ها مخالف‌اند',
-      reason: liqGood && ideal ? 'مساعد — بالایِ ۲۰ همت · حالتِ آرمانی' : 'موافقِ ورود: مساعد · اما پول از سهام بیرون می‌رود',
+      reason:
+        liqGood && ideal
+          ? 'نقدینگی: مساعد · پولِ حقیقی: حالتِ آرمانی'
+          : 'موافقِ ورود — نقدینگی: مساعد · مخالفِ ورود — پولِ حقیقی: خروجِ پول از سهام',
       basis: 'fts_notes_p13_p14',
       gates: [
         {
           key: 'liquidity',
           label: 'قدمِ ۱ — ارزشِ معاملات',
+          short: 'نقدینگی',
           state: liqGood ? 'ok' : 'bad',
-          label_state: liqGood ? 'مساعد — بالایِ ۲۰ همت' : 'نامساعد — زیرِ ۱۰ همت',
+          label_state: liqGood ? 'مساعد' : 'نامساعد',
           vote: liqGood ? 1 : -1,
           detail: '۲۲.۵ همت',
           rule: 'بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)',
@@ -76,6 +80,7 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
         {
           key: 'continuity',
           label: 'تداومِ ۳–۴ روز',
+          short: 'تداوم',
           state: 'nodata',
           label_state: 'بدون داده',
           vote: 0,
@@ -85,6 +90,7 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
         {
           key: 'breadth',
           label: 'قدمِ ۲ — درصدِ مثبت و منفی',
+          short: 'پهنایِ بازار',
           state: bear >= 80 ? 'ok' : 'mid',
           label_state: bear >= 80 ? 'فرصتِ ورود' : 'بدونِ فرصتِ کف',
           vote: bear >= 80 ? 1 : 0,
@@ -94,14 +100,16 @@ function smartMoney(hemat = 22.5, eqFlow = 300.5, fixedFlow = -120.2, allMarket:
         {
           key: 'flow',
           label: 'قدمِ ۳ — روندِ پولِ حقیقی',
+          short: 'پولِ حقیقی',
           state: ideal ? 'ok' : 'bad',
-          label_state: ideal ? 'حالتِ آرمانی — پولِ صندوق‌ها به سهام' : 'پول از سهام بیرون می‌رود',
+          label_state: ideal ? 'حالتِ آرمانی' : 'خروجِ پول از سهام',
           vote: ideal ? 1 : -1,
           rule: 'خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)',
         },
         {
           key: 'window',
           label: 'پنجرهٔ ساعت',
+          short: 'ساعت',
           state: 'mid',
           label_state: 'خارجِ پنجره‌ها',
           vote: 0,
@@ -438,9 +446,21 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
       expect(screen.getByTestId(`pulse-verdict-gate-${k}`)).toBeInTheDocument();
     }
+    // چیپ‌ها نامِ کوتاه + نشانِ رأی‌اند؛ متنِ کاملِ موتور در title می‌ماند
+    // (بیرون‌کشیدنش از body تستِ همین است که نوار دو بار بلند نشود).
+    const flow = screen.getByTestId('pulse-verdict-gate-flow');
+    expect(flow.textContent).toContain('پولِ حقیقی');
+    expect(flow.textContent).not.toContain('قدمِ ۳');
+    expect(flow.getAttribute('title')).toContain('حالتِ آرمانی');
     // درِ بی‌داده با رنگِ داوری‌شده نمی‌نشیند
-    expect(screen.getByTestId('pulse-verdict-gate-continuity').textContent).toContain('بدون داده');
-    expect(screen.getByTestId('pulse-verdict-gate-continuity').className).toContain('text-text-muted');
+    const cont = screen.getByTestId('pulse-verdict-gate-continuity');
+    expect(cont.getAttribute('title')).toContain('بدون داده');
+    expect(cont.textContent).toContain('؟');
+    expect(cont.className).toContain('text-text-muted');
+    // دو شاخص روی هم در ستونِ راست و حکم کنارشان
+    const idx = screen.getByTestId('pulse-index');
+    expect(idx.className).toContain('flex-col');
+    expect(idx.parentElement).toBe(screen.getByTestId('pulse-verdict').parentElement);
   });
 
   it('حکم نرسیده (اندپوینتِ پولِ هوشمند مرد) → «بدون داده»، نه «وارد نشو»', async () => {

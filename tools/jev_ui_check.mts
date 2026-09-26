@@ -123,7 +123,7 @@ for (const width of WIDTHS) {
   await page.waitForTimeout(WAIT_MS);
   // jev-browser: مشاهدهٔ ساختاریافتهٔ DOM (هدف‌های شماره‌دار) + یک اسکرولِ واقعی
   const observation = await observe(page);
-  await executeActions(page, [{ type: 'scroll', deltaX: 0, deltaY: 420 } as never], {
+  await executeActions(page, [{ type: 'scroll', deltaX: 0, deltaY: Number.parseInt(arg('scroll', '420'), 10) } as never], {
     assertUrlAllowed: () => undefined,
   });
   await page.waitForTimeout(500);

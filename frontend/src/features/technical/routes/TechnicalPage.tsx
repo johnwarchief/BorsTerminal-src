@@ -8,7 +8,6 @@ import { useUiStore } from '@shared/stores/uiStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, stepCursor } from '../lib/replay';
-import { computeTradeLevels } from '../lib/levels';
 import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
@@ -125,9 +124,7 @@ export default function TechnicalPage() {
   );
 
   const activeLevels = useMemo<ActiveLevelsView>(() => {
-    const fib = analysis.data?.fts?.fib ?? null;
-    const { swingLow, stop5pct } = computeTradeLevels(series.lows);
-    // MA(100) خط ماژور: میانگین ۱۰۰ بستهٔ آخر؛ null اگر تاریخچه کمتر از ۱۰۰ کندل است
+    // خط ماژور MA(100): میانگین ۱۰۰ بستهٔ آخر؛ null اگر تاریخچه کمتر از ۱۰۰ کندل است
     const closes = series.closes.filter((x) => Number.isFinite(x));
     const ma100 =
       closes.length >= 100
@@ -135,19 +132,13 @@ export default function TechnicalPage() {
         : null;
     return {
       symbol,
-      zone3340: fib?.zone_33_40 ? { lo: fib.zone_33_40.lo ?? null, hi: fib.zone_33_40.hi ?? null } : null,
-      zone61870: fib?.zone_618_70 ? { lo: fib.zone_618_70.lo ?? null, hi: fib.zone_618_70.hi ?? null } : null,
-      baseLevel: fib?.retrace_base_low ?? null,
+      fts: analysis.data?.fts ?? null,
       ma100,
-      swingLow,
-      stop5pct,
-      keyLevels: signal?.payload.keyLevels ?? [],
-      stopLoss: signal?.payload.stopLossPrice ?? null,
       lastClose: candles.length > 0 ? candles[candles.length - 1].close : null,
       setups: signal?.payload.setups ?? [],
       direction: signal?.direction ?? null,
     };
-  }, [analysis.data, series.lows, series.closes, signal, symbol, candles]);
+  }, [analysis.data, series.closes, signal, symbol, candles]);
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 

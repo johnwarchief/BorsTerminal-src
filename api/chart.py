@@ -7,7 +7,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
 from tape_flags import JET_LADDER
-from ._core import sym_pred
+from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
 from fastapi import Query
 import datetime
@@ -1515,13 +1515,43 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     return out
 
 
+def _basket_entry(symbol):
+    """قیمت خریدِ ثبت‌شدهٔ کاربر در سبد — مبنای «٪۵ زیرِ قیمتِ خرید» (جزوه، بند ۵/حد ضررِ تفکیکی).
+
+    از تصمیمات سبد (user.db) خوانده می‌شود و فقط به `/api/fts/{symbol}` داده
+    می‌شود؛ غربگر عمداً بی‌آن صدا می‌زند تا حلقۀ ۶۰۰نمادی بانک کاربر را ورق نزند.
+    فقط ردیف accept با قیمتِ مثبت؛ غیر آن ⇒ None تا موتور صادقاً به کفِ ساختاری
+    برگردد و `stop_basis` همان منشأ را به UI بگوید.
+    """
+    try:
+        conn = get_user_db()
+        try:
+            row = conn.execute(
+                "SELECT price, status FROM selection_decisions WHERE symbol = ?",
+                (symbol,),
+            ).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return None
+    if row is None or row["status"] != "accept":
+        return None
+    try:
+        price = float(row["price"])
+    except (TypeError, ValueError):
+        return None
+    return price if price > 0 else None
+
+
 def _fts_analyze_symbol(symbol, entry_hint=None):
     """Cached single-symbol FTS payload for /api/fts/{symbol} and badges.
 
-    Cache key = symbol + last daily close: intra-day live-candle churn
-    recomputes freely, but repeated calls with unchanged closes (the common
-    case for the badge strip polling the same symbol) are served from cache.
-    TTL guards against a static close with drifting intraday fields.
+    Cache key = symbol + last daily close + entry hint: the hard stop is
+    entry-dependent, so a cached swing-basis payload must never answer an
+    `entry` request. Intra-day live-candle churn recomputes freely, but
+    repeated calls with unchanged closes (the common case for the badge strip
+    polling the same symbol) are served from cache. TTL guards against a
+    static close with drifting intraday fields.
     """
     import time as _t
     now = _t.time()
@@ -1533,7 +1563,7 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     if not candles:
         return {"status": "empty", "symbol": symbol, "fts": None}
     last_close = candles[-1].get("close")
-    key = f"{symbol}|{last_close}"
+    key = f"{symbol}|{last_close}|{entry_hint}"
     cached = FTS_ANALYSIS_CACHE.get(key)
     if cached and (now - cached[0]) < FTS_ANALYSIS_TTL:
         return cached[1]
@@ -1553,8 +1583,10 @@ def get_fts(symbol: str):
     """Light analysis-only payload for the tech-view badge strip.
 
     Same FTS engine as the embedded chart payload; separate endpoint so the
-    UI can refresh badges without refetching full candle history.
+    UI can refresh badges without refetching full candle history. The user's
+    saved basket price is resolved here (not in the engine) so the hard stop
+    can be «۵٪ زیرِ قیمتِ خرید» when the symbol is actually held.
     """
-    return _fts_analyze_symbol(symbol)
+    return _fts_analyze_symbol(symbol, entry_hint=_basket_entry(symbol))
 
 # __FTS_APPEND__

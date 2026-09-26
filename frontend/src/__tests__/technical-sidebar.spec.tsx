@@ -1,12 +1,12 @@
-// تست سایدبار راست تکنیکال (فاز ۲) — چهار تب، فیلترهای خالص و ترازهای نماد فعال
+// تست سایدبار راست تکنیکال (فاز ۲) — سه تب، فیلترهای خالص و ترازهای نماد فعال
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { TechnicalSidebar } from '@features/technical/components/TechnicalSidebar';
 import { SidebarActiveLevels, type ActiveLevelsView } from '@features/technical/components/SidebarActiveLevels';
 import { filterWatchlist, tradingValue } from '@features/technical/api/useWatchlist';
-import { filterFtsSignals, ftsSignalTags, type ScreenerRow } from '@features/technical/api/useScreener';
-import { computeTradeLevels, lastSwingLow } from '@features/technical/lib/levels';
+import { filterFtsSignals, firstScreenerSymbol, ftsSignalTags, type ScreenerRow } from '@features/technical/api/useScreener';
+import type { FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
 import type { MarketRow } from '@shared/types/marketRow';
 
 function withQuery(node: React.ReactNode) {
@@ -22,19 +22,38 @@ function srow(partial: Partial<ScreenerRow>): ScreenerRow {
   return { symbol: 'x', ...partial } as unknown as ScreenerRow;
 }
 
+/** پیلود نمونهٔ سرور (/api/fts/{symbol}) — همان چیزی که پنل فقط نمایش می‌دهد */
+const FTS: FtsAnalysisData = {
+  fib: {
+    retrace_base_low: 2010,
+    zone_33_40: { lo: 2739, hi: 2839, in_zone: false },
+    zone_618_70: { lo: 2346, hi: 2447, in_zone: false },
+  },
+  jet: { active: true, resistance: 2820 },
+  point_hunt: { floor_price: 2450, touches: 3 },
+  double_bottom: { neckline: 2600 },
+  exit_engine: {
+    verdict: 'caution',
+    signals: ['ma14_watch', 'rsi_divergence'],
+    l1: { hard_stop: 2819, stop_basis: 'entry', ma14: 2900, ma14_exit_pending: true, close: 2967 },
+  },
+};
+
 const ACTIVE: ActiveLevelsView = {
   symbol: 'فولاد',
-  zone3340: { lo: 2739, hi: 2839 },
-  zone61870: { lo: 2346, hi: 2447 },
-  baseLevel: 2010,
+  fts: FTS,
   ma100: 2300,
-  swingLow: 2100,
-  stop5pct: 1995,
-  keyLevels: [{ type: 'resistance', price: 2820 }],
-  stopLoss: 2573,
   lastClose: 2967,
   setups: ['breakout'],
   direction: 'bullish',
+};
+
+const ACTIVE_STOP_HIT: ActiveLevelsView = {
+  ...ACTIVE,
+  fts: {
+    ...FTS,
+    exit_engine: { verdict: 'stop', signals: ['stop_hard'], l1: { ...FTS.exit_engine?.l1, stop_hit: true } },
+  },
 };
 
 describe('فیلتر دیده‌بان', () => {
@@ -72,45 +91,67 @@ describe('فیلتر سیگنال‌های FTS', () => {
   });
 });
 
-describe('ترازها و حد ضرر', () => {
-  it('آخرین کف پیوت و حد ضرر ۵٪ زیر آن', () => {
-    const lows = [10, 9, 8, 9, 10, 11, 10, 9, 8.5, 9, 10, 11, 12];
-    const sw = lastSwingLow(lows, 2);
-    expect(sw).not.toBeNull();
-    const { stop5pct } = computeTradeLevels(lows, 2);
-    expect(stop5pct).toBeCloseTo((sw as number) * 0.95);
-  });
-
-  it('در نبود پیوت، آخرین کف موجود', () => {
-    expect(lastSwingLow([5, 4, 3], 3)).toBe(3);
-  });
-});
-
 describe('پنل ترازها', () => {
   it('بدون نماد پیام راهنما می‌دهد', () => {
     render(<SidebarActiveLevels active={{ ...ACTIVE, symbol: '' }} />);
     expect(screen.getByTestId('sidebar-levels-empty')).toBeInTheDocument();
   });
 
-  it('با نماد فعال، زون‌ها و حد ضرر رندر می‌شوند', () => {
+  it('سه سبک حد ضرر، یکی‌یکی و از دادهٔ سرور', () => {
+    render(<SidebarActiveLevels active={ACTIVE} />);
+    const swing = screen.getByTestId('levels-stop-swing');
+    const trend = screen.getByTestId('levels-stop-trend');
+    const fund = screen.getByTestId('levels-stop-fund');
+    // نوسان‌گیر = حد ضرر سختِ موتور (۵٪ زیرِ قیمتِ خریدِ سبد، نه کفِ فرکتالِ فرانت)
+    expect(swing.textContent).toContain('۲,۸۱۹');
+    expect(swing.getAttribute('title')).toContain('قیمتِ خریدِ ثبت‌شده در سبد');
+    // روندگیر = MA(14) با وضعیتِ لایهٔ ۱
+    expect(trend.textContent).toContain('MA(14)');
+    expect(trend.textContent).toContain('۲,۹۰۰');
+    expect(trend.getAttribute('title')).toContain('دورهٔ ۱۴');
+    // بنیادی هیچ حد ضرر قیمتی ندارد (حکم ۸)
+    expect(fund.textContent).toContain('بدون حد ضرر قیمتی');
+  });
+
+  it('حکمِ موتور خروج و لایه‌های فعالِ فارسی‌شده', () => {
+    render(<SidebarActiveLevels active={ACTIVE} />);
+    expect(screen.getByTestId('levels-exit-verdict').textContent).toContain('احتیاط');
+    const panel = screen.getByTestId('sidebar-levels');
+    expect(panel.textContent).toContain('نزدیکِ خروج MA(14)');
+    expect(panel.textContent).toContain('واگرایی منفی RSI');
+    // واژگانِ فنیِ انگلیسیِ سرور هرگز به چشم کاربر نمی‌آید
+    expect(panel.textContent).not.toContain('ma14_watch');
+  });
+
+  it('بی‌حدِ ضررِ خوردنشده بنر خروج نیامده؛ با stop_hit می‌آید', () => {
+    const { unmount } = render(<SidebarActiveLevels active={ACTIVE} />);
+    expect(screen.queryByTestId('levels-stop-hit')).toBeNull();
+    unmount();
+    render(<SidebarActiveLevels active={ACTIVE_STOP_HIT} />);
+    expect(screen.getByTestId('levels-stop-hit')).toBeInTheDocument();
+    expect(screen.getByTestId('levels-exit-verdict').textContent).toContain('حد ضرر');
+  });
+
+  it('ترازها، مبنای فیبو و ستاپ از همان پیلود سرور', () => {
     render(<SidebarActiveLevels active={ACTIVE} />);
     const panel = screen.getByTestId('sidebar-levels');
-    expect(panel.textContent).toContain('فولاد');
     expect(panel.textContent).toContain('کمربند طلایی');
-    expect(panel.textContent).toContain('حد ضرر نوسان‌گیر');
     expect(panel.textContent).toContain('MA(100)');
     expect(panel.textContent).toContain('جت (شکست سقف)');
+    expect(panel.textContent).toContain('۲,۴۴۷');
+    // «بدون داده» برای محوری که سرور نگفته — نه صفرِ ساختگی
+    render(<SidebarActiveLevels active={{ ...ACTIVE, fts: null }} />);
+    expect(screen.getAllByText('بدون داده').length).toBeGreaterThan(0);
   });
 });
 
 describe('شل سایدبار و تب‌ها', () => {
-  it('چهار تب و بدنهٔ پیش‌فرض دیده‌بان', () => {
+  it('سه تب و بدنهٔ پیش‌فرض دیده‌بان', () => {
     withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
     expect(screen.getByTestId('technical-sidebar')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-watch')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-fts')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-levels')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-tab-macro')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-watchlist')).toBeInTheDocument();
   });
 
@@ -121,9 +162,17 @@ describe('شل سایدبار و تب‌ها', () => {
     expect(screen.getByTestId('sidebar-levels').textContent).toContain('فولاد');
   });
 
-  it('کلیک روی تب نبض کلان پنل macro را نشان می‌دهد', () => {
+  it('تب «نبض کلان» حذف شده است', () => {
     withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
-    fireEvent.click(screen.getByTestId('sidebar-tab-macro'));
-    expect(screen.getByTestId('sidebar-macro')).toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-tab-macro')).toBeNull();
+    expect(screen.queryByText('نبض کلان')).toBeNull();
+  });
+});
+
+describe('fallback اولین screener', () => {
+  it('واچ‌لیست غیرمردود مقدم است، سپس اولین غیرمردود، وگرنه null', () => {
+    expect(firstScreenerSymbol([srow({ symbol: 'الف', excluded: true }), srow({ symbol: 'ب', watchlist: true })])).toBe('ب');
+    expect(firstScreenerSymbol([srow({ symbol: 'ج' })])).toBe('ج');
+    expect(firstScreenerSymbol([])).toBeNull();
   });
 });

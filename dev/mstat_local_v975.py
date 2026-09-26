@@ -623,6 +623,12 @@ ck(not any(c.isascii() and c.isdigit() for c in _human(_opp)),
    "متنِ «فرصتِ ورود» هم رقمِ لاتین ندارد")
 ck(_ideal["gates"][4]["key"] == "window" and len(_ideal["gates"]) == 5,
    "پنج در: نقدینگی، تداوم، پهنای بازار، پولِ حقیقی، پنجرهٔ ساعت")
+# ساده‌سازیِ متن (#165): دلیلِ حکم باید بگوید کدام در، نه فقط فهرستِ وضعیت‌ها.
+ck(all(g.get("short") for g in _ideal["gates"]), "هر پنج در نامِ کوتاه دارد")
+ck(all(g["short"] in _ideal["reason"] for g in _ideal["gates"] if g["vote"]),
+   "نامِ هر درِ قاطع در جملهٔ دلیل می‌آید")
+ck(_bad["reason"].startswith("نقدینگی:"),
+   "دلیلِ «امروز وارد نشو» با نامِ در شروع می‌شود، نه متنِ برهنه")
 
 conn = new_db()
 day = seed(conn)

@@ -126,7 +126,7 @@ export function useStopLossBoard(symbols: string[]) {
         l1?.stop_basis === 'swing_low'
           ? '۵٪ زیر آخرین کف ماژور'
           : l1?.stop_basis === 'entry'
-            ? '۵٪ زیر کف ورود'
+            ? '۵٪ زیرِ قیمتِ خریدِ سبد'
             : l1?.ma14 != null && l1?.hard_stop == null
               ? 'شکست MA-14'
               : 'بدون داده',

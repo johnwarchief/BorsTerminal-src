@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { SidebarWatchlist } from './SidebarWatchlist';
 import { SidebarFtsSignals } from './SidebarFtsSignals';
 import { SidebarActiveLevels, type ActiveLevelsView } from './SidebarActiveLevels';
-import { SidebarMacroPulse } from './SidebarMacroPulse';
 
-export type SidebarTabId = 'watch' | 'fts' | 'levels' | 'macro';
+export type SidebarTabId = 'watch' | 'fts' | 'levels';
 
 const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -36,15 +35,6 @@ const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
         <circle cx="12" cy="12" r="10" />
         <circle cx="12" cy="12" r="6" />
         <circle cx="12" cy="12" r="2" />
-      </svg>
-    ),
-  },
-  {
-    id: 'macro',
-    label: 'نبض کلان',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
   },
@@ -101,7 +91,6 @@ export function TechnicalSidebar({
             {tab === 'watch' ? <SidebarWatchlist onSelect={onSelect} /> : null}
             {tab === 'fts' ? <SidebarFtsSignals onSelect={onSelect} /> : null}
             {tab === 'levels' ? <SidebarActiveLevels active={active} /> : null}
-            {tab === 'macro' ? <SidebarMacroPulse /> : null}
           </div>
         </div>
       )}

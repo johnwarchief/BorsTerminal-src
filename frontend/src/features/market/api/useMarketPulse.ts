@@ -39,6 +39,8 @@ export function hematState(v: number | null | undefined): HematState | null {
 export const VerdictGateSchema = z.object({
   key: z.string(),
   label: z.string(),
+  /** نامِ کوتاهِ در — از موتور (day_verdict)؛ موتورِ متن، متن را می‌سازد. */
+  short: z.string().nullish(),
   state: z.enum(['ok', 'mid', 'bad', 'nodata']),
   label_state: z.string(),
   vote: z.number(),

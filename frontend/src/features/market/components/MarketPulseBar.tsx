@@ -79,7 +79,7 @@ function IndexCell({
         <span className="text-xs">{MISSING}</span>
       ) : (
         <span className="flex flex-wrap items-baseline gap-x-1.5">
-          <span className="num text-base font-black leading-5 text-text-primary">{fmtInt(last)}</span>
+          <span className="num text-sm font-black leading-5 text-text-primary">{fmtInt(last)}</span>
           {delta.length ? <span className={`num text-3xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
         </span>
       )}
@@ -113,40 +113,51 @@ const GATE_TONE: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
   nodata: 'text-text-muted',
 };
 
+/** نشانِ حالتِ هر در — رنگ و رأی از موتور است، اینجا فقط نمادش نقاشی می‌شود. */
+const GATE_MARK: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
+  ok: '✓',
+  mid: '−',
+  bad: '✕',
+  nodata: '؟',
+};
+
 /**
  * حکمِ امروز — «آیا امروز برای ورود مناسب است یا نه». سه قدمِ جزوه (ص۱۳) به‌علاوهٔ
  * تداومِ ۳–۴ روزه و پنجره‌های ساعتیِ ص۱۴. همهٔ متن‌ها و داوری از موتور می‌آید
  * (mstat_engine.day_verdict)؛ این‌جا فقط رنگ از state خوانده می‌شود.
+ * خطِ اول: حکم + نامِ کوتاهِ هر در با نشانِ رأیش (نام و دلیلِ کامل در `title`)،
+ * خطِ دوم: جملهٔ دلیلِ موتور.
  */
 function VerdictStrip({ v }: { v: DayVerdict | null }) {
   const kind = v?.verdict ?? 'nodata';
   return (
     <div
       data-testid="pulse-verdict"
-      className={`col-span-full flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border px-3 py-1.5 shadow-xs ${VERDICT_TONE[kind]}`}
+      className={`flex min-w-0 flex-1 flex-col justify-center gap-y-1 rounded-2xl border px-3 py-1.5 shadow-xs ${VERDICT_TONE[kind]}`}
     >
-      <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
-      <span data-testid="pulse-verdict-label" className={`text-sm font-black leading-5 ${VERDICT_TEXT[kind]}`}>
-        {v ? v.label : 'بدون داده'}
-      </span>
-      {v ? (
-        <span data-testid="pulse-verdict-reason" className="text-2xs font-medium text-text-secondary">
-          {v.reason}
-        </span>
-      ) : (
-        <span className="text-2xs text-text-muted">هنوز پولِ هوشمند نرسیده تا حکمی باشد</span>
-      )}
-      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
-        {(v?.gates ?? []).map((g) => (
-          <span
-            key={g.key}
-            data-testid={`pulse-verdict-gate-${g.key}`}
-            title={`${g.rule ?? ''}${g.detail ? ` — ${g.detail}` : ''}`}
-            className={`text-2xs font-bold ${GATE_TONE[g.state]}`}
-          >
-            {g.label}: {g.label_state}
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
+          <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
+          <span data-testid="pulse-verdict-label" className={`text-lg font-black leading-6 ${VERDICT_TEXT[kind]}`}>
+            {v ? v.label : 'بدون داده'}
           </span>
-        ))}
+        </span>
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+          {(v?.gates ?? []).map((g) => (
+            <span
+              key={g.key}
+              data-testid={`pulse-verdict-gate-${g.key}`}
+              title={`${g.label_state}${g.detail ? ` — ${g.detail}` : ''}\n${g.rule ?? ''}`}
+              className={`text-2xs font-bold ${GATE_TONE[g.state]}`}
+            >
+              <span className="me-1">{GATE_MARK[g.state]}</span>
+              {g.short ?? g.label}
+            </span>
+          ))}
+        </span>
+      </div>
+      <span data-testid="pulse-verdict-reason" className="text-2xs font-medium text-text-secondary">
+        {v ? v.reason : 'هنوز پولِ هوشمند نرسیده تا حکمی باشد'}
       </span>
     </div>
   );
@@ -215,33 +226,34 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
     >
       {isLoading && !pulse ? <span className="text-xs text-text-secondary">در حال دریافت نبض بازار...</span> : null}
 
-      {/* نوارِ شاخص — عددِ خامِ خودِ TSETMC برای همین نشست (سازندهٔ عدد:
-          save_market_index در سینک، از MarketData/GetMarketOverview بورس).
-          دو خانه کنارِ هم می‌نشینند (نه دو ستونِ ۵۰٪؛ آن چیدمان نیمۀ چپ را
-          خالی می‌گذاشت) و ردیفِ زیرشان حکمِ امروز است. */}
-      <div
-        data-testid="pulse-index"
-        className="col-span-full flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
-      >
-        <IndexCell
-          label="شاخص کل"
-          hint="میانگین وزنِ ارزش بازاری"
-          last={ix?.last}
-          change={ix?.change}
-          pct={ix?.pct}
-        />
-        <IndexCell
-          label="شاخص هموزن"
-          hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
-          last={ix?.ewLast}
-          change={ix?.ewChange}
-          pct={ix?.ewPct}
-        />
-      </div>
+      {/* نوارِ شاخص + حکمِ امروز — دو شاخصِ جمع‌وجور روی هم در ستونِ راستِ
+          RTL، و حکمِ بازار کنارِ آن‌ها. عددِ شاخص خامِ TSETMC است (سازندهٔ
+          عدد: save_market_index در سینک)؛ داوری هم فقط موتور می‌کند. */}
+      <div className="col-span-full flex flex-wrap items-stretch gap-2.5">
+        <div
+          data-testid="pulse-index"
+          className="flex w-44 shrink-0 flex-col justify-center gap-1.5 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
+        >
+          <IndexCell
+            label="شاخص کل"
+            hint="میانگین وزنِ ارزش بازاری"
+            last={ix?.last}
+            change={ix?.change}
+            pct={ix?.pct}
+          />
+          <IndexCell
+            label="شاخص هموزن"
+            hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
+            last={ix?.ewLast}
+            change={ix?.ewChange}
+            pct={ix?.ewPct}
+          />
+        </div>
 
-      {/* حکمِ امروز — «آیا امروز برای ورود مناسب است؟». همان سه قدمِ جزوه +
-          تداوم و پنجرهٔ ساعت. تنها داوری‌کننده موتور است. */}
-      <VerdictStrip v={verdict} />
+        {/* حکمِ امروز — «آیا امروز برای ورود مناسب است؟». همان سه قدمِ جزوه +
+            تداوم و پنجرهٔ ساعت. تنها داوری‌کننده موتور است. */}
+        <VerdictStrip v={verdict} />
+      </div>
 
       {/* بخش ۱ -- ارزش معاملات خرد (سهام، حق تقدم و ص.سهامی) */}
       <Section

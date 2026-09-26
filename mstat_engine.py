@@ -1008,9 +1008,15 @@ def liquidity_history(conn, limit: int = LIQ_CONTINUITY_MIN + 2) -> list:
     return out
 
 
-def _gate(key, label, state, label_state, vote, detail, rule) -> dict:
-    return {"key": key, "label": label, "state": state, "label_state": label_state,
-            "vote": vote, "detail": detail, "rule": rule}
+def _gate(key, label, short, state, label_state, vote, detail, rule) -> dict:
+    return {"key": key, "label": label, "short": short, "state": state,
+            "label_state": label_state, "vote": vote, "detail": detail, "rule": rule}
+
+
+def _clause(gates, sep=" · ") -> str:
+    """جملهٔ دلیل: نامِ کوتاهِ در + وضعیتِ کاملش. نامِ بلندِ «قدمِ ۱ — …» فقط
+    در tooltip می‌آید؛ دلیلِ حکم باید در یک خط خوانده شود."""
+    return sep.join("%s: %s" % (g["short"], g["label_state"]) for g in gates)
 
 
 def _flow_trio(flow: dict) -> tuple:
@@ -1041,17 +1047,13 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     hemat = macro.get("value_hemat")
     side = _liq_side(hemat)
     liq_state = {"good": "ok", "bad": "bad", "mid": "mid", "nodata": "nodata"}[side]
-    if side == "good":
-        liq_label = ("عالی — بالایِ %s همت" % _fa_num(HEMAT_EXCELLENT)) if macro.get("excellent") \
-            else ("مساعد — بالایِ %s همت" % _fa_num(HEMAT_GOOD))
-    elif side == "bad":
-        liq_label = "نامساعد — زیرِ %s همت" % _fa_num(HEMAT_BAD)
-    elif side == "mid":
-        liq_label = "متوسط — میانِ دو آستانه"
-    else:
-        liq_label = "بدون داده"
+    # وضعیت در یک کلمه؛ عددِ همت در `detail` و آستانه‌ها در `rule` (و tooltip)
+    # می‌مانند. «مساعد — بالایِ ۲۰ همت» دلیل را دو بار بلند می‌کرد و گنگ شد.
+    liq_label = {"good": "عالی" if macro.get("excellent") else "مساعد",
+                 "bad": "نامساعد", "mid": "متوسط", "nodata": "بدون داده"}[side]
     liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
-    gates.append(_gate("liquidity", "قدمِ ۱ — ارزشِ معاملات", liq_state, liq_label,
+    gates.append(_gate("liquidity", "قدمِ ۱ — ارزشِ معاملات", "نقدینگی",
+                       liq_state, liq_label,
                        liq_vote, None if hemat is None else "%s همت" % _fa_num(hemat),
                        "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)"))
 
@@ -1073,7 +1075,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
             cont_state, cont_label, cont_vote = "mid", "بدونِ تداوم", 0
         cont_detail = "%s نشستِ اخیر: %s" % (
             _fa_num(n), " · ".join("%s همت" % _fa_num(h["value_hemat"]) for h in known[:n]))
-    gates.append(_gate("continuity", "تداومِ ۳–۴ روز", cont_state, cont_label, cont_vote,
+    gates.append(_gate("continuity", "تداومِ ۳–۴ روز", "تداوم", cont_state, cont_label, cont_vote,
                        cont_detail, "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)"))
 
     # ---- ۲) پهنایِ بازار ---------------------------------------------------
@@ -1089,7 +1091,8 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         breadth_state, breadth_label, breadth_vote = "mid", "بدونِ فرصتِ کف", 0
         breadth_detail = "%s٪ منفی — آستانهٔ فرصت %s٪" % (
             _fa_num(bear), _fa_num(ENTRY_OPPORTUNITY_NEG_PCT))
-    gates.append(_gate("breadth", "قدمِ ۲ — درصدِ مثبت و منفی", breadth_state, breadth_label,
+    gates.append(_gate("breadth", "قدمِ ۲ — درصدِ مثبت و منفی", "پهنایِ بازار",
+                       breadth_state, breadth_label,
                        breadth_vote, breadth_detail,
                        "۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)"))
 
@@ -1101,23 +1104,24 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         flow_state, flow_label, flow_vote, flow_detail = "nodata", "بدون داده", 0, None
     elif trio:
         # حالت آرمانیِ ص۱۴: پول از داراییِ امن بیرون و به سهام داخل می‌شود
-        flow_state, flow_label, flow_vote = "ok", "حالتِ آرمانی — پولِ صندوق‌ها به سهام", 1
+        flow_state, flow_label, flow_vote = "ok", "حالتِ آرمانی", 1
     elif not flow.get("eq_inflow") and _f(eq_val) < 0:
         # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «آرمانی ندارد»
-        flow_state, flow_label, flow_vote = "bad", "پول از سهام بیرون می‌رود", -1
+        flow_state, flow_label, flow_vote = "bad", "خروجِ پول از سهام", -1
     elif flow.get("eq_inflow") and flow.get("fixed_outflow"):
-        flow_state, flow_label, flow_vote = "mid", "سهام و درآمد ثابت آرمانی، طلا روشن نیست", 0
+        flow_state, flow_label, flow_vote = "mid", "آرمانیِ ناقص", 0
     else:
-        flow_state, flow_label, flow_vote = "mid", "حالتِ آرمانی تکمیل نشده", 0
+        flow_state, flow_label, flow_vote = "mid", "بدونِ حالتِ آرمانی", 0
     flow_detail = ("سهام %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
         _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
         "بدون داده" if gd_out is None else _fa_signed(gd)))
-    gates.append(_gate("flow", "قدمِ ۳ — روندِ پولِ حقیقی", flow_state, flow_label, flow_vote,
+    gates.append(_gate("flow", "قدمِ ۳ — روندِ پولِ حقیقی", "پولِ حقیقی",
+                       flow_state, flow_label, flow_vote,
                        flow_detail, "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)"))
 
     # ---- پنجرهٔ ساعت -------------------------------------------------------
     window = _clock_window(asof.get("h_even"), when)
-    gates.append(_gate("window", "پنجرهٔ ساعت", window["state"], window["label"], 0,
+    gates.append(_gate("window", "پنجرهٔ ساعت", "ساعت", window["state"], window["label"], 0,
                        window["detail"], "درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)"))
 
     decisive = [g for g in gates if g["vote"]]
@@ -1128,18 +1132,17 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         reason = "هیچ‌یک از سه قدمِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
     elif negative and not positive:
         verdict, vlabel = "avoid", "امروز وارد نشو"
-        reason = " · ".join(g["label_state"] for g in negative)
+        reason = _clause(negative)
     elif positive and not negative:
         if any(g["key"] == "liquidity" for g in positive) and any(g["key"] == "flow" for g in positive):
             verdict, vlabel = "go", "روزِ ورود است"
         else:
             verdict, vlabel = "watch", "پایِ بازار بمان"
-        reason = " · ".join(g["label_state"] for g in positive)
+        reason = _clause(positive)
     else:
         verdict, vlabel = "wait", "صبر — نشانه‌ها مخالف‌اند"
-        reason = "موافقِ ورود: %s · اما %s" % (
-            "، ".join(g["label_state"] for g in positive),
-            "، ".join(g["label_state"] for g in negative))
+        reason = "موافقِ ورود — %s · مخالفِ ورود — %s" % (
+            _clause(positive, "، "), _clause(negative, "، "))
     return {"status": "ok", "verdict": verdict, "label": vlabel, "reason": reason,
             "gates": gates, "basis": "fts_notes_p13_p14"}
 
