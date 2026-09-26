@@ -102,26 +102,6 @@ function thermo(overrides: Partial<Thermometer> = {}): Thermometer {
   };
 }
 
-/** قیفِ پنج‌محوری — همان چیزی که /api/fundamental/funnel می‌فرستد */
-function funnel(over: Record<string, unknown> = {}) {
-  return {
-    status: 'success',
-    total: 873,
-    tested: 764,
-    not_applicable: 109,
-    vetoed: 196,
-    axes: [
-      { key: '1', column: 'i1_pass', pass: 337 },
-      { key: '2', column: 'i2_pass', pass: 167 },
-      { key: '3', column: 'i3_pass', pass: 350 },
-      { key: '4', column: 'i4_pass', pass: 372 },
-      { key: '5', column: 'i5_pass', pass: 615 },
-    ],
-    verdicts: { SUPER_FUNDAMENTAL: 32, PASSED: 102, WATCHLIST: 146, REJECTED: 484, NOT_APPLICABLE: 109 },
-    ...over,
-  };
-}
-
 function jsonResponse(body: unknown): Response {
   return { ok: true, json: () => Promise.resolve(body) } as unknown as Response;
 }
@@ -224,7 +204,6 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
       'mstat/summary': () => jsonResponse(summary(22.5, { goldFlow: -955 })),
       'mstat/depth': () => jsonResponse(depth()),
       'mstat/thermometer': () => jsonResponse(thermo()),
-      'fundamental/funnel': () => jsonResponse(funnel()),
     });
     renderPulse();
     await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
@@ -236,37 +215,6 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(screen.getByTestId('pulse-queues').textContent).toContain('۱۴۷۱');
     expect(screen.getByTestId('pulse-percapita').textContent).toContain('۱.۲×');
     expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('mstat/thermometer'))).toBe(true);
-  });
-
-  it('قیف FTS: پنج محور با شمارشِ سرور و جمعِ چهار/پنج‌امتیازی — بیرون از نوارِ شاخص', async () => {
-    mockRoutes({
-      'mstat/smart-money': () => jsonResponse(smartMoney()),
-      'mstat/summary': () => jsonResponse(summary()),
-      'mstat/depth': () => jsonResponse(depth()),
-      'mstat/thermometer': () => jsonResponse(thermo()),
-      'fundamental/funnel': () => jsonResponse(funnel()),
-    });
-    renderPulse();
-    await waitFor(() => expect(screen.getByTestId('fts-funnel')).toBeTruthy());
-    const strip = screen.getByTestId('fts-funnel').textContent ?? '';
-    for (const n of ['۳۳۷', '۱۶۷', '۳۵۰', '۳۷۲', '۶۱۵']) expect(strip).toContain(n);
-    expect(strip).toContain('۷۶۴');
-    // ۳۲ سوپر + ۱۰۲ قبول = ۱۳۴ — جمع را لایهٔ نمایش نمی‌سازد، سرور هم همین را داد
-    expect(strip).toContain('۱۳۴');
-    expect(strip).toContain('۱۹۶ وتو');
-  });
-
-  it('قیف مرده: کل بارت حذف می‌شود، صفرِ ساختگی نه؛ بقیهٔ نبض دست‌نخورده', async () => {
-    mockRoutes({
-      'mstat/smart-money': () => jsonResponse(smartMoney()),
-      'mstat/summary': () => jsonResponse(summary()),
-      'mstat/depth': () => jsonResponse(depth()),
-      'mstat/thermometer': () => jsonResponse(thermo()),
-    });
-    renderPulse();
-    await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
-    expect(screen.queryByTestId('fts-funnel')).toBeNull();
-    expect(screen.getByTestId('pulse-index').textContent).toContain('شاخص کل');
   });
 
   it('سه شرطِ چیپِ آلفا تک‌تک نشان داده می‌شوند (طلا بدون داده = ؟، نه ✗)', async () => {

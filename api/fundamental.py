@@ -2079,45 +2079,6 @@ def api_fundamental_screen(
     }
 
 
-@router.get("/api/fundamental/funnel")
-def api_fundamental_funnel():
-    """قیفِ پنج‌محوریِ بازار — چند نماد از هر شاخصِ جزوه رد می‌شوند.
-
-    چیزی که در هیچ ابزارِ بیرونی نیست و در جزوه اصلِ کار است: FTS یک قیف است،
-    نه پنج نمرهٔ جدا. این پاسخ فقط همان ردیف‌های کش‌شدهٔ /api/screener را
-    می‌شمارد؛ هیچ امتیازی این‌جا دوباره محاسبه نمی‌شود (SCORE-PATH-1) و برای
-    همین اعدادِ این قیف با ستون‌های جدولِ غربالگری می‌خوانند.
-    """
-    from .screener import get_screener
-    rows = get_screener().get("data") or []
-
-    # axes: کلیدِ ستونِ pass → شمارهٔ محورِ جزوه
-    axes = (("1", "i1_pass"), ("2", "i2_pass"), ("3", "i3_pass"),
-            ("4", "i4_pass"), ("5", "i5_pass"))
-    tested = [r for r in rows if r.get("applicable") is not False]
-    counts = {
-        key: sum(1 for r in tested if r.get(col) is True)
-        for key, col in axes
-    }
-    verdicts: dict[str, int] = {}
-    for r in rows:
-        v = _screen_verdict(r)
-        verdicts[v] = verdicts.get(v, 0) + 1
-
-    return {
-        "status": "success",
-        "total": len(rows),
-        "tested": len(tested),
-        "not_applicable": len(rows) - len(tested),
-        "vetoed": sum(1 for r in rows if r.get("excluded")),
-        "axes": [
-            {"key": key, "column": col, "pass": counts[key]}
-            for key, col in axes
-        ],
-        "verdicts": verdicts,
-    }
-
-
 @router.get("/api/fundamental/sectors")
 def api_fundamental_sectors():
     """فهرست صنایع بازار برای فیلتر در تب بنیادی."""

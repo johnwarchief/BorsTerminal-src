@@ -3,7 +3,6 @@
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
-import { FtsFunnelStrip } from './FtsFunnelStrip';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
@@ -152,8 +151,9 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
 
       {/* نوارِ شاخص — عددِ خامِ خودِ TSETMC برای همین نشست (سازندهٔ عدد:
           save_market_index در سینک، از MarketData/GetMarketOverview بورس).
-          دو خانه کنارِ هم می‌نشینند (نه دو ستونِ ۵۰٪؛ آن چیدمان نیمەی چپ را
-          خالی می‌گذاشت) و باقیِ عرضِ نوار را قیفِ FTS می‌گیرد. */}
+          دو خانه کنارِ هم می‌نشینند (نه دو ستونِ ۵۰٪؛ آن چیدمان نیمۀ چپ را
+          خالی می‌گذاشت). جای خالیِ سمتِ چپ دست‌نخورده مانده: قرار است چیزِ
+          مربوطِ «آیا امروز برای ورود مناسب است» بنشیند، نه شمارشِ بنیادی. */}
       <div
         data-testid="pulse-index"
         className="col-span-full flex flex-wrap items-center gap-x-5 gap-y-1 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
@@ -172,7 +172,6 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           change={ix?.ewChange}
           pct={ix?.ewPct}
         />
-        <FtsFunnelStrip />
       </div>
 
       {/* بخش ۱ -- ارزش معاملات خرد (سهام، حق تقدم و ص.سهامی) */}
