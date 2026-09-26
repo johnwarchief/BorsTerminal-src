@@ -222,6 +222,45 @@ SPA می‌دهد)، و صندوق‌ها در API رایگانِ تریدرزآ
 چهارم عملاً بی‌اثر است (#137). جای‌گزینی‌اش با z_tot_tran امروز یا با
 client_type ممنوع است.
 
+## ۱۳) پارامترهایِ ثبت‌شدۀ نُه مطالعۀ ره‌آورد (۱۴۰۵/۰۷/۰۵، از باندل)
+
+دیالوگ‌های ره‌آورد با مرورگرِ وصل‌شده باز **نشدند**: چارت در `blob:` iframe است و
+Qoder Browser Connector درختِ داخلِ آن iframe را نمی‌بیند (`take_snapshot` روی
+گرهٔ «Financial Chart» می‌ایستد، `evaluate_script` روی این سایت `{}` می‌دهد).
+منبعِ جایگزین همان **`metainfo`** است: باندل `_app-*.js` دقیقاً همان
+`inputs`/`defaults.styles`/`format` را به دیالوگ می‌دهد، پس این اعداد نه
+حدس‌اند نه بازسازی — فقط «با چشم در دیالوگ دیدن» مانده است.
+
+| مطالعه | پیش‌فرض‌هایِ اعلامی (همان چیزی که دیالوگ نشان می‌دهد) | دقتِ اعلامی |
+|---|---|---|
+| DT Oscillator | Length RSI 8 · Length Stock 5 · Smooth K 3 · Smooth D 3 | price/2 |
+| Z Score | Length 20 · StdDevs 2 · StdDevs_ 1 · src close (open…hlcc4) | price/2 |
+| Squeeze Momentum [LazyBear] | BB Length 20 · BB Mult 2 · KC Length 20 · KC Mult 1.5 · UseTrueRange ✓ | price/2 |
+| HalfTrend | Amplitude 2 · Channel Deviation 2 · Show Arrows ✓ · Show Channels ✓ · Buy/Sell Labels ✓ | price/2 |
+| SR Levels With Breaks | Show Breaks ✓ · Left Bars 15 · Right Bars 15 · Volume Treshold 20 | price/2 |
+| WaveTrend Oscillator [WT] | Channel 10 · Average 21 · OB 60/53 · OS −60/−53 | inherit |
+| WaveTrend with Crosses | همان شش مقدارِ بالا | inherit |
+| Fibonacci Bollinger Bands | length 200 · source hlc3 · mult 3 | inherit |
+| CM_Williams_Vix_Fix | LookBack SD High 22 · BB Length 20 · SD Up 2 · LookBack Pct High 50 · Highest Pct 0.85 · Lowest Pct 1.01 · Show High Range ✗ · Show SD Line ✗ | price/2 |
+
+نکته‌هایی که فقط از باندل درآمد و در UI دیده نشد:
+- `CM_Williams_Vix_Fix` دو ورودیِ `type:"integer"` دارد که مقدارِ پیش‌فرضشان
+  اعشاری است (۰.۸۵ و ۱.۰۱) — اعلامِ خودش غلط است؛ ما عدد را همان‌طور گرفتیم.
+- «تعدیل» و «نوعِ قیمت» گزینه‌های **سروری**‌اند (`symbolInfo.config.adjustments`
+  و `price_types`)؛ پیش‌فرض `type0` = «بدون تعدیل» و `real_close` = «آخرین
+  قیمت». گیتِ لایسنس اگر نباشد سلکتور به همان `type0` برمی‌گردد.
+- متنِ ثابتِ صفحهٔ تکنیکال: «کلیه اندیکاتورها بر اساس آخرین قیمت معاملات و
+  **تعدیل بصورت عملکردی** محاسبه شده است» — یعنی seriesِ ورودیِ اندیکاتورهای
+  ره‌آورد تعدیلِ عملکردی است، نه خام (#125 همان را در چارت ما پیاده کرد).
+- بازه‌های مجاز: `12M 6M 3M M W D 240 120 60 45 30 15 10 5 1`؛ دکمه‌های پایینِ
+  چارت جفتِ بازه↔رزولوشن‌اند (5y→6M، 1y→3M، 6m→1M، 3m→W، 1m→D، 5d→5، 1d→1).
+- `disabled_features` شامل `right_toolbar`، `drawing_templates`،
+  `display_market_status`، `create_volume_indicator_by_default` و
+  `symbol_search_hot_key` است. **هیچ فهرست میان‌بُر صفحه‌کلیدی در این بیلد
+  وجود ندارد** — بندِ «میان‌بُرهای ره‌آورد» در #126 پوچ بود و بسته شد.
+- `enabled_features`: `indicators_dialog`، `study_templates`،
+  `items_favoriting`، `chart_template_storage`.
+
 ## منابع
 - docs/FTS_SPEC.md (بخش اول) — MAها، فیبو، ستاپ‌ها، حد ضرر.
 - TradingView chart settings & drawing tools (مدل استاندارد).
