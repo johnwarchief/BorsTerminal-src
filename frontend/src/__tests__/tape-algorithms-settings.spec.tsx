@@ -23,19 +23,24 @@ import { JET_LADDER, resistanceLadderHigh } from '@features/market/lib/tapeMath'
 import { TapeFilterSettingsModal } from '@features/market/components/TapeFilterSettingsModal';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
-/** ردیفی که همهٔ شروطِ جزوۀِ پنج فیلتر را با هم دارد. */
+/** ردیفی که همهٔ شروطِ فایلِ پنج فیلتر را با هم دارد. */
 const passingRow = (overrides: Partial<MarketRow> = {}): MarketRow => ({
   symbol: 'تست',
   p_closing: 1000,
-  p_last: 1025,          // +۲٫۵٪ → دلتای ساعتِ جزوه
+  p_last: 1025,          // +۲٫۵٪ → دلتای ساعتِ فایل
   price_yesterday: 1000,
   percent_change: 2.5,
   q_tot_tran: 4_000_000,
   tvol: 4_000_000,
-  month_avg_vol: 1_000_000,   // → ۴× میانگین
-  prev_day_vol: 2_000_000,
+  month_avg_vol: 1_000_000,   // ستونِ نمایش «نسبت حجم ماه» → ۴×
   vol_ratio: 4,
+  vol_ratio_file: 4,          // قیدِ حجمیِ پنج فیلتر (Σ[ih][0..29]/۳۰)
+  prior29_vol: 26_000_000,
+  prior29_n: 29,              // ۲۹ نشستِ پیش + امروز = سی نشستِ کامل
+  min_low_28: 995,
+  prev_day_tran: 150,         // qd1 — قیدِ چهارمِ کف‌روبی
   vol_dod: 2,
+  prev_day_vol: 2_000_000,
   z_tot_tran: 120,
   buyer_power: 2,
   buyer_power_raw: 2,
@@ -62,12 +67,12 @@ describe('پیش‌فرض‌ها باید خودِ فرمولِ جزوه باش�
     expect(DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume.minTradeCount).toBe(50);
   });
 
-  it('جت: حجم ۳×، قدرت خریدار ۱٫۵×، آخرین بالای پایانی، پلکانِ کامل', () => {
+  it('جت: حجم ۳×، قدرت خریدار ۱٫۵×، آخرین بالای پایانی، پلکانِ کامل، tno > 100', () => {
     expect(DEFAULT_TAPE_FILTER_CONFIG.jet).toEqual({
       lookbackDays: 59, minBuyerPower: 1.5, minVolRatio: 3.0,
-      requireLastAboveClose: true, minChangePct: 0.0,
+      requireLastAboveClose: true, minChangePct: 0.0, minTradeCount: 100,
     });
-    // پلکانِ جزوه دقیقاً همین هشت نقطه است — [ih][1] درِ فرمول نیست.
+    // پلکانِ فایل دقیقاً همین هشت نقطه است — [ih][1] درِ فرمول نیست.
     expect([...JET_LADDER]).toEqual([2, 5, 9, 19, 29, 39, 49, 59]);
   });
 
@@ -86,9 +91,13 @@ describe('پیش‌فرض‌ها باید خودِ فرمولِ جزوه باش�
 });
 
 describe('نبودنِ داده هیچ‌وقت «قبول» نیست', () => {
-  it('جت بدون میانگین حجم ۳۰ روزه رد می‌شود، نه اینکه گیتِ حجم بی‌صدا بخورد', () => {
-    expect(matchJetFilter(passingRow({ month_avg_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
-    expect(matchJetFilter(passingRow({ tvol: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+  it('جت بدونِ مبنایِ حجمِ فایل رد می‌شود، نه اینکه گیتِ حجم بی‌صدا بخورد', () => {
+    expect(matchJetFilter(passingRow({ vol_ratio_file: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+    // میانگینِ ماه عدد دارد ولی مبناءِ فایل null است: دو مبناء، دو مصرف.
+    expect(matchJetFilter(passingRow({ vol_ratio_file: null, month_avg_vol: 1_000_000 }),
+                           DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+    // نبودنِ ستونِ نمایشیِ tvol فیلتر را خاموش نمی‌کند: قید، خودِ نسبت است.
+    expect(matchJetFilter(passingRow({ tvol: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(true);
   });
 
   it('جت با یک نقطۀِ غایبِ پلکان رد می‌شود (سقفِ صفر یعنی «سقفی نبود» نه «شکسته شد»)', () => {
@@ -114,14 +123,24 @@ describe('نبودنِ داده هیچ‌وقت «قبول» نیست', () => {
 
   it('ساعت، کف‌روبی، نقطه‌زنی و پول هوشمند هم با دادهٔ غایب رد می‌شوند', () => {
     expect(matchClockPattern(passingRow({ z_tot_tran: null }), DEFAULT_TAPE_FILTER_CONFIG.clock)).toBe(false);
-    expect(matchSuspiciousVolume(passingRow({ month_avg_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume)).toBe(false);
+    expect(matchSuspiciousVolume(passingRow({ vol_ratio_file: null }), DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume)).toBe(false);
     expect(matchRoobiFilter(passingRow({ prev_day_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
-    expect(matchNoqtehFilter(passingRow({ min30_low: null }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
+    expect(matchNoqtehFilter(passingRow({ min_low_28: null }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
     expect(matchSmartFlowFilter(passingRow({ buyer_power: null }), DEFAULT_TAPE_FILTER_CONFIG.smartFlow)).toBe(false);
   });
 
+  it('پنجرۀِ کوتاه سنجیده نمی‌شود؛ کفِ ۱۰ نشست (آینهٔ بک‌اند)', () => {
+    // نسبتِ حجم را بک‌اند با همان کف می‌سازد، پس سمتِ او «نبودنِ مبناء» همان
+    // vol_ratio_file = null است (تستِ پایین). اینجا کفِ پنجره درِ نقطه‌زنی است.
+    expect(matchNoqtehFilter(passingRow({ prior29_n: 8 }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
+    // با ۱۰ نشستِ کُل داوری می‌شود — مبناء میانگینِ همان ده نشست است، نه Σ÷۳۰
+    expect(matchNoqtehFilter(passingRow({ prior29_n: 9 }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(true);
+    expect(matchNoqtehFilter(passingRow({ prior29_n: null }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
+    expect(matchClockPattern(passingRow({ vol_ratio_file: null }), DEFAULT_TAPE_FILTER_CONFIG.clock)).toBe(false);
+  });
+
   it('NaN و بی‌نهایت هم «داده» حساب نمی‌شوند', () => {
-    expect(matchJetFilter(passingRow({ vol_ratio: NaN, tvol: Number.POSITIVE_INFINITY }),
+    expect(matchJetFilter(passingRow({ vol_ratio_file: NaN, tvol: Number.POSITIVE_INFINITY }),
                            DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
   });
 });
@@ -167,14 +186,34 @@ describe('شخصی‌سازی آستانه‌ها واقعاً اعمال می�
     expect(matchRoobiFilter(onFloor, DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(true);
     expect(matchRoobiFilter(passingRow({ p_last: 971, p_min: 970, percent_change: -2.0 }),
                             DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
-    expect(matchRoobiFilter(passingRow({ p_last: 970, p_min: 970, percent_change: -0.5 }),
+    expect(matchRoobiFilter(passingRow({ p_last: 970, p_min: 970, percent_change: -1.0 }),
                             DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
   });
 
-  it('نقطه‌زنی: فاصلۀِ ۳٪ و بالاتر رد می‌شود (جزوه: < 3)', () => {
-    const at3 = passingRow({ p_closing: 1000, min30_low: 970 });
+  it('کف‌روبی: قیدِ چهارم «qd1 > 100» است، نه تعدادِ معاملاتِ امروز', () => {
+    const onFloor = { p_last: 970, p_min: 970, percent_change: -2.0 };
+    // تعدادِ امروز کم است ولی qd1 شرط را دارد → فایل قبول می‌کند.
+    expect(matchRoobiFilter(passingRow({ ...onFloor, z_tot_tran: 12, prev_day_tran: 400 }),
+                            DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(true);
+    // qd1 زیر آستانه → رد، هر چقدر هم امروز پرجمعیت باشد.
+    expect(matchRoobiFilter(passingRow({ ...onFloor, z_tot_tran: 900, prev_day_tran: 40 }),
+                            DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
+    // ستونِ qd1 هنوز در بانکِ کهنه نیست: نداشتنش «رد» نمی‌کند، جای‌نشین هم نمی‌خواهد.
+    expect(matchRoobiFilter(passingRow({ ...onFloor, prev_day_tran: null }),
+                            DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(true);
+  });
+
+  it('نقطه‌زنی: فاصلۀِ ۳٪ و بالاتر رد می‌شود (فایل: < 3)', () => {
+    const at3 = passingRow({ p_closing: 1000, min_low_28: 970, p_min: 990 });
     expect(matchNoqtehFilter(at3, { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, maxDistPct: 3.5 })).toBe(true);
     expect(matchNoqtehFilter(at3, { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, maxDistPct: 3.0 })).toBe(false);
+  });
+
+  it('نقطه‌زنی: کفِ فایل کفِ [ih][0..28] است، نه ستونِ نمایشیِ min30_low', () => {
+    // min30_low (سی نشستِ پیشین) ۹۹۵ است و کفِ همین نشست ۸۰۰ → فاصله از کفِ
+    // واقعی ۲۰٪، یعنی رد. با min30_low می‌شد ۰٫۵٪ و قبول.
+    const row = passingRow({ p_closing: 1000, p_min: 800, min30_low: 995, min_low_28: 995 });
+    expect(matchNoqtehFilter(row, DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
   });
 });
 
@@ -268,15 +307,23 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
     expect(useTapeStore.getState().tapeFilterConfig.clock.minTradeCount).toBe(75);
   });
 
-  // ── رأیِ مالک (۱۴۰۵-۰۷-۰۳): جت هیچ شرطِ «حداقل تعدادِ معامله» ندارد ──────
-  it('جت هیچ‌جایش تعدادِ معامله را شرط نمی‌کند (رأیِ مالک)', () => {
-    expect(DEFAULT_TAPE_FILTER_CONFIG.jet).not.toHaveProperty('minTradeCount');
+  // ── رأیِ ۱۸ (۱۴۰۵-۰۷-۰۴): فیلترِ تابلو عینِ فایل است، پس ``tno > 100`` ─────
+  it('جتِ تابلو تعدادِ معاملات را شرط می‌کند، چون خودِ فایل می‌نویسد tno>100', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.jet.minTradeCount).toBe(100);
     for (const preset of Object.values(TAPE_PRESETS)) {
-      expect(preset.config.jet).not.toHaveProperty('minTradeCount');
+      expect(preset.config.jet.minTradeCount).toBeGreaterThan(0);
     }
-    // نمادی با پنجِ معامله که بقیۀِ شروطِ جزوه را دارد باید پاس شود؛ اگر
-    // گیتِ تعدادِ معامله برگردد، همین‌جا مردود می‌شود.
-    expect(matchJetFilter(passingRow({ z_tot_tran: 5 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(true);
+    // فایل دو قید دارد: tno > 1 و tno > 100. هر دو باید رد کنند.
+    expect(matchJetFilter(passingRow({ z_tot_tran: 5 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+    expect(matchJetFilter(passingRow({ z_tot_tran: 100 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+    expect(matchJetFilter(passingRow({ z_tot_tran: 101 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(true);
+    // آستانه‌ای که کاربر پایین می‌آورد قیدِ «> ۱» را نمی‌شکند.
+    expect(matchJetFilter(passingRow({ z_tot_tran: 1 }),
+                          { ...DEFAULT_TAPE_FILTER_CONFIG.jet, minTradeCount: 0 })).toBe(false);
+  });
+
+  it('جت با تعدادِ معاملاتِ ندارد (null) رد می‌شود، نه بی‌صدا قبول', () => {
+    expect(matchJetFilter(passingRow({ z_tot_tran: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
   });
 
   // ── ریشهٔ TAPE-1: کلیدِ نیامده در literal یعنی undefined، یعنی گیتِ خاموش ─

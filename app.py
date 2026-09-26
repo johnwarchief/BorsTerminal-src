@@ -203,6 +203,37 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] screener warm thread failed: {_e}")
 
+    # ── تازۀ‌سازیِ خودکارِ تابلو در ساعتِ بازار ──────────────────────────
+    # اندازه‌گیری ۱۴۰۵-۰۷-۰۴: برنامه ۰۷:۲۱ (پیش از بازگشایی) اجرا شده بود و تا
+    # ۱۰:۲۱ — وسطِ نشست — هیچ سینکِ دیگری نزد. TSETMC همان لحظه ۵۱ میلیارد سهم
+    # معامله‌شده داشت، ولی جدولِ ما ردیف‌هایِ صفرِ پیش‌ازگشایی را نشان می‌داد و
+    # نبض بازار «نامساعد» می‌گفت. تنها راهِ سینک، هوکِ استارت و دکمه‌ای بود که
+    # هیچ جایِ UI فراخوانی‌اش نمی‌شد. این حلقه در پنجرۀِ رسمیِ بازار هر ۹۰ ثانیه
+    # یک سینک می‌زند؛ بیرونِ آن پنجره هیچ درخواستی نمی‌فرستد.
+    def _market_in_session(now_dt=None) -> bool:
+        import datetime as _dt
+        # پنجره یک جا تعریف می‌شود: mstat_engine.in_trading_session (۰۹:۰۰–۱۳:۰۰
+        # و تعطیلی پنجشنبه/جمعه). نسخهٔ دومی از همین شرط اینجا نپزید.
+        from mstat_engine import in_trading_session
+        n = now_dt or _dt.datetime.now()
+        return in_trading_session(n.hour * 10000 + n.minute * 100 + n.second, n)
+
+    def _board_refresh_loop():
+        import time as _t
+        from api._sync_market import _run_market_sync
+        while True:
+            try:
+                if _market_in_session():
+                    _run_market_sync()     # قفلِ خودش: اگر سینکی در کار است، رد می‌کند
+            except Exception as _e:
+                print(f"[startup] board refresh loop: {_e}")
+            _t.sleep(90)
+    try:
+        threading.Thread(target=_board_refresh_loop, daemon=True).start()
+        print("[startup] board refresh loop spawned (90s, session-windowed)")
+    except Exception as _e:
+        print(f"[startup] board refresh loop failed: {_e}")
+
     # ── اسنپ‌شاتِ دوره‌ایِ نبض بازار ─────────────────────────────────────
     # مstat_snap قبلاً فقط پراکنده پر می‌شد (چند نقطه) و به‌همین‌دلیل «روند ۳-۴
     # روزه» و نمودار درون‌روز «بدون داده» بود. این حلقه هر ۵ دقیقه یک نقطه

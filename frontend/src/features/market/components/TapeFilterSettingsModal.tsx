@@ -19,7 +19,7 @@ import { useTapeStore } from '../stores/tapeStore';
 
 type Block = keyof TapeFilterConfig;
 
-/** دامنۀِ انتخابیِ پلکانِ مقاومت — همان نقاطِ جزوه. */
+/** دامنۀِ انتخابیِ پلکانِ مقاومت — همان نقاطِ فایل. */
 const LADDER_OPTIONS: { days: LookbackDays; label: string; sub: string }[] = [
   { days: 2, label: '۲ روزه', sub: 'کوتاه‌ترین' },
   { days: 5, label: '۵ روزه', sub: 'هفتگی' },
@@ -28,14 +28,14 @@ const LADDER_OPTIONS: { days: LookbackDays; label: string; sub: string }[] = [
   { days: 29, label: '۲۹ روزه', sub: '۱.۵ ماهه' },
   { days: 39, label: '۳۹ روزه', sub: 'دو ماهه' },
   { days: 49, label: '۴۹ روزه', sub: '۲.۵ ماهه' },
-  { days: 59, label: '۵۹ روزه', sub: 'فصلی (جزوه)' },
+  { days: 59, label: '۵۹ روزه', sub: 'فصلی (فایل)' },
 ];
 
 const LADDER_HINT: Record<LookbackDays, string> = {
   2: 'سقف ۲ نشستِ پیش', 5: 'سقف هفتگی (۵ نشستِ پیش)', 9: 'سقف دو هفته (۹ نشستِ پیش)',
   19: 'سقف یک ماهه (۱۹ نشستِ پیش)', 29: 'سقف ۱.۵ ماهه (۲۹ نشستِ پیش)',
   39: 'سقف دو ماهه (۳۹ نشستِ پیش)', 49: 'سقف ۲.۵ ماهه (۴۹ نشستِ پیش)',
-  59: 'پلکانِ کاملِ جزوه ([ih][2..59])',
+  59: 'پلکانِ کاملِ فایل ([ih][2..59])',
 };
 
 export function TapeFilterSettingsModal({
@@ -237,7 +237,7 @@ export function TapeFilterSettingsModal({
                 />
                 <p className="text-2xs text-text-muted leading-4">
                   فاصله آخرین معامله از قیمت پایانی نشان‌دهنده شدت بازگشت خریدار در دقایق پایانی بازار است.
-                  حدِّ جزوه ۲٫۰٪ است.
+                  حدِّ فایل ۲٫۰٪ است.
                 </p>
               </div>
 
@@ -265,12 +265,12 @@ export function TapeFilterSettingsModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
                   <label className="text-xs font-bold text-text-primary block">
-                    حداقل ضریب حجم به میانگین ماه
+                    حداقل ضریب حجم به مبنای فایل (سی نشست)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      aria-label="حداقل ضریب حجم به میانگین ماه"
+                      aria-label="حداقل ضریب حجم به مبنای فایل (سی نشست)"
                       inputMode="decimal"
                       value={config.clock.minVolRatio}
                       onChange={(e) => setField('clock', 'minVolRatio', e.target.value)}
@@ -320,7 +320,7 @@ export function TapeFilterSettingsModal({
                         : 'border-border-c bg-bg-secondary/70 text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    میانگین ۳۰ روزه (ماهانه)
+                    مبنای فایل: سی نشست (Σ[ih][0..29]/۳۰)
                   </button>
                   <button
                     type="button"
@@ -418,9 +418,12 @@ export function TapeFilterSettingsModal({
                   })}
                 </div>
                 <p className="text-2xs text-text-muted leading-4">
-                  آخرینِ معامله باید از سقفِ تک‌روزیِ همهٔ نقاطِ پلکانِ جزوه
+                  آخرینِ معامله باید از سقفِ تک‌روزیِ همهٔ نقاطِ پلکانِ فایل
                   ([ih][2] تا نقطۀِ انتخابی) بالاتر رفته باشد. نمادی که
                   تاریخچۀِ کاملِ این نقاط را ندارد، جت نمی‌خورد.
+                  مبناءِ «ضریب حجم» هم عینِ فایل است: Σ[ih][0..29]/۳۰، یعنی امروز
+                  به‌همراه ۲۹ نشستِ پیش. فایل علاوه بر حجم، «تعدادِ معاملات بالای ۱۰۰»
+                  را هم می‌خواهد؛ همان qd1 نیست، tnoیِ همین نشست است.
                 </p>
               </div>
 
@@ -488,9 +491,9 @@ export function TapeFilterSettingsModal({
           {activeTab === 'roobi' && (
             <div className="space-y-5">
               <div className="rounded-xl border border-accent-blue/20 bg-accent-blue/5 p-3 text-2xs text-text-secondary leading-5">
-                شرطِ اصلیِ کف‌روبی همیشه برقرار است و آستانه ندارد: «آخرینِ معامله دقیقاً روی کفِ روز»
-                و «حجمِ نشستِ پیش بیشتر از یک». دو اسلایدرِ زیر انتخابی‌اند و درِ جزوه نیستند؛
-                صفر یعنی بدون شرط.
+                شرطِ اصلیِ کف‌روبی عینِ فایل است و آستانه ندارد: «آخرینِ معامله دقیقاً روی کفِ روز»
+                و «حجمِ نشستِ پیش بیشتر از یک» و «تعدادِ معاملاتِ نشستِ پیش بالای ۱۰۰».
+                دو اسلایدرِ بالا انتخابی‌اند و درِ فایل نیستند؛ صفر یعنی بدون شرط.
               </div>
 
               <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
@@ -521,7 +524,7 @@ export function TapeFilterSettingsModal({
               <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-text-primary">
-                    حداقل ضریب حجم معاملات جمع‌آوری به میانگین ماه
+                    حداقل ضریب حجم معاملات جمع‌آوری به مبنای فایل
                   </label>
                   <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
                     <span className="num">{config.roobi.minVolRatio > 0
@@ -560,12 +563,12 @@ export function TapeFilterSettingsModal({
                 </div>
                 <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
                   <label className="text-xs font-bold text-text-primary block">
-                    حداقل تعداد معاملات (&gt;۱۰۰ طبق جزوه)
+                    حداقل تعداد معاملاتِ نشستِ پیش (&gt;۱۰۰ طبق فایل)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      aria-label="حداقل تعداد معاملات (کف‌روبی)"
+                      aria-label="حداقل تعداد معاملات نشست پیش (کف‌روبی)"
                       inputMode="decimal"
                       value={config.roobi.minTradeCount}
                       onChange={(e) => setField('roobi', 'minTradeCount', e.target.value)}
@@ -574,8 +577,9 @@ export function TapeFilterSettingsModal({
                     <span className="text-xs text-text-secondary shrink-0">معامله</span>
                   </div>
                   <p className="text-3xs text-text-muted mt-1">
-                    جزوه تعدادِ معاملاتِ «دیروز» را می‌خواهد؛ تابلو آن را نگه نمی‌دارد، پس
-                    تعدادِ معاملاتِ امروز جایش نشسته است.
+                    قیدِ چهارمِ فایل «qd1 &gt; ۱۰۰» است؛ یعنی تعدادِ معاملاتِ
+                    «دیروز». این عدد از نخستین نشستِ پس از این نسخه در بانک
+                    می‌نشیند، و تا نبودش رد نمی‌کند — جانشینِ «تعدادِ امروز» هم نمی‌شود.
                   </p>
                 </div>
               </div>
@@ -675,7 +679,7 @@ export function TapeFilterSettingsModal({
               <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-text-primary">
-                    حداقل ضریب حجم معاملات به میانگین ماه
+                    حداقل ضریب حجم معاملات به مبنای فایل
                   </label>
                   <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
                     <span className="text-2xs text-text-muted">حداقل:</span>

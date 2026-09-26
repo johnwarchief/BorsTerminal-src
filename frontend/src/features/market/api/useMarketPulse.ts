@@ -7,13 +7,21 @@ import { http } from '@shared/api/http';
 
 const num = z.number().nullish();
 
-export const HematStateSchema = z.enum(['good', 'mid', 'bad']);
+/**
+ * «nodata» حالتِ چهارم است، نه خطا: مоторِ کلان وقتی هیچ نمادی در نشستِ جاری
+ * معامله نشده (نشستِ پیش از بازگشایی یا روزِ تعطیل) داوری نمی‌کند. پیش از این
+ * نبودنِ داده را «نامساعد» می‌خواندیم — رأیِ مالک: هیچ‌چیز نباید از نبودِ داده
+ * سبز یا قرمز بسازد. این رشته در اسکیماست، وگرنه اعتبارسنجی کل پاسخ می‌شکند.
+ */
+export const HematStateSchema = z.enum(['good', 'mid', 'bad', 'nodata']);
 export type HematState = z.infer<typeof HematStateSchema>;
 
 /** آستانه‌های سلامت کلان (سند FTS صفحهٔ ۳ -- آینهٔ mstat_engine.HEMAT_GOOD/BAD) */
 export const HEMAT_GOOD = 20;
 export const HEMAT_BAD = 10;
-export const HEMAT_LABELS: Record<HematState, string> = { good: 'مساعد', mid: 'متوسط', bad: 'نامساعد' };
+export const HEMAT_LABELS: Record<HematState, string> = {
+  good: 'مساعد', mid: 'متوسط', bad: 'نامساعد', nodata: 'بدون داده',
+};
 
 /** دماسنج همت: ≥۲۰ سبز / میان ۱۰ و ۲۰ زرد / ≤۱۰ قرمز؛ عدد غایب یعنی null */
 export function hematState(v: number | null | undefined): HematState | null {

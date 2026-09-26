@@ -6,6 +6,7 @@ import { toFaDigits, fmtInt } from '@shared/lib/fmt';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
+  HEMAT_LABELS,
   computeAlphaTrio,
   powerTone,
   pulseMarketValueHemat,
@@ -53,10 +54,13 @@ const MISSING = <span className="text-text-muted">بدون داده</span>;
 export const WATCH_ENTRY_PCT = 80;
 
 function hematText(state: HematState | null): string {
-  if (state === 'good') return 'مساعد';
-  if (state === 'mid') return 'متوسط';
-  if (state === 'bad') return 'نامساعد';
-  return '';
+  // برچسب‌ها در لایۀِ داده‌اند (HEMAT_LABELS)؛ اینجا فقط خوانده می‌شوند.
+  return state ? HEMAT_LABELS[state] : '';
+}
+
+/** رنگِ دماسنج: «nodata» داوری ندارد، پس بی‌رنگ (همان زردِ خنثیِ نبودِ عدد) */
+function hematTone(state: HematState | null): 'good' | 'mid' | 'bad' {
+  return state === 'good' || state === 'mid' || state === 'bad' ? state : 'mid';
 }
 
 export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPulseData | null; isLoading?: boolean }) {
@@ -109,7 +113,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
         {hemat && hemat.value != null ? (
           <>
             <div className="flex items-baseline justify-center gap-2 py-0.5">
-              <span className={`text-3xl font-black leading-8 ${TONE_TEXT[hemat.state ?? 'mid']}`}>
+              <span className={`text-3xl font-black leading-8 ${TONE_TEXT[hematTone(hemat.state)]}`}>
                 <span className="num">{fa(hemat.value)}</span>
                 <span className="ms-1 text-sm font-bold">همت</span>
               </span>

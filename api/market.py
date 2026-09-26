@@ -137,10 +137,11 @@ def get_market(request: Request):
             ),
             hist AS (
                 SELECT symbol, dt,
-                       MAX(high) AS high, MAX(low) AS low, MAX(volume) AS volume
+                       MAX(high) AS high, MAX(low) AS low, MAX(volume) AS volume,
+                       MAX(tran) AS tran
                 FROM (
                     SELECT i.l_val18 AS symbol, h.date AS dt,
-                           h.high, h.low, h.volume
+                           h.high, h.low, h.volume, NULL AS tran
                     FROM price_history h
                     JOIN instruments i ON i.l_val18 = h.symbol
                     WHERE h.date < (SELECT dt FROM iso)
@@ -148,7 +149,7 @@ def get_market(request: Request):
                     SELECT i.l_val18,
                            printf('%04d-%02d-%02d', d.d_even/10000,
                                   (d.d_even/100)%100, d.d_even%100),
-                           d.price_max, d.price_min, d.q_tot_tran
+                           d.price_max, d.price_min, d.q_tot_tran, d.z_tot_tran
                     FROM daily_prices d
                     JOIN instruments i ON i.ins_code = d.ins_code
                     WHERE d.d_even < (SELECT d FROM iso)
@@ -156,7 +157,7 @@ def get_market(request: Request):
                 GROUP BY symbol, dt
             ),
             rk AS (
-                SELECT symbol, high, low, volume,
+                SELECT symbol, high, low, volume, tran,
                        ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY dt DESC) AS rn
                 FROM hist
             ),
@@ -176,9 +177,29 @@ def get_market(request: Request):
                        MAX(CASE WHEN rn = 49 THEN high END) AS h49_max,
                        MAX(CASE WHEN rn = 59 THEN high END) AS h59_max,
                        -- کفِ ۳۰ روزهٔ جزوه: [ih][0..28].PriceMin
-                       MIN(CASE WHEN rn <= 29 THEN low END) AS min30_low,
+                       -- نشستِ بدونِ معامله high/low را صفر می‌نویسد؛ صفر در
+                       -- MIN *سمّ* است (کفِ جعلیِ صفر → نقطه‌زنی رد) برعکسِ MAX
+                       -- که صفر را خودکار نادیده می‌گیرد. پس هر دو کف > 0 می‌خواهند.
+                       MIN(CASE WHEN rn <= 29 AND low > 0 THEN low END) AS min30_low,
                        MAX(CASE WHEN rn <= 29 THEN high END) AS max30_high,
-                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol,
+                       -- ── ورودی‌هایِ «عینِ فرمولِ فایل» ──────────────────────
+                       -- Σ[ih][0..29].QTotTran5J = امروز + ۲۹ نشستِ پیش. فایل
+                       -- همیشه بر ۳۰ ثابت تقسیم می‌کند؛ `month_avg_vol` میانگینِ
+                       -- واقعیِ نشست‌هایِ موجود است. هر دو می‌مانند: اولی فقط
+                       -- قیدهایِ حجمیِ پنج فیلتر را می‌سنجد، دومی ستونِ
+                       -- «نسبت حجم ماه» را (دو مبنایِ متفاوت، دو مصرفِ متفاوت).
+                       SUM(CASE WHEN rn <= 29 THEN volume END) AS prior29_vol,
+                       -- کمینۀِ [ih][1..28] — «امروز» جدا افزوده می‌شود تا
+                       -- حلقۀِ JS (`for n=1; n<29`) عیناً بازسازی شود.
+                       MIN(CASE WHEN rn <= 28 AND low > 0 THEN low END)   AS min_low_28,
+                       -- qd1 = تعدادِ معاملاتِ نشستِ پیش (قیدِ چهارمِ کف‌روبی).
+                       -- تا پیش از افزودنِ ستونش به daily_prices هیچ مقدارِ
+                       -- واقعیِ ندارد؛ صفرِ جعلی نمی‌سازیم.
+                       MAX(CASE WHEN rn = 1 THEN tran END)    AS prev_day_tran,
+                       -- چند نشستِ پیش واقعاً وجود دارد؟ نمادی که ۳۰ نشست
+                       -- ندارد مبنایِ «تقسیم بر ۳۰»اش جعلی کوچک می‌شود.
+                       COUNT(CASE WHEN rn <= 29 THEN volume END) AS prior29_n
                 FROM rk WHERE rn <= 60
                 GROUP BY symbol
             ),
@@ -198,10 +219,16 @@ def get_market(request: Request):
                    COALESCE(ct.sell_n_vol, 0) AS sell_n_vol,
                    COALESCE(ct.buy_count_i, 0)  AS buy_count_i,
                    COALESCE(ct.sell_count_i, 0) AS sell_count_i,
+                   -- تابلویِ ۵ مظنه: در بانک هست ولی هرگز به UI نمی‌رسید، پس
+                   -- ویجتِ «عمق بازار» چاره‌ای نداشت جز ساختنِ عدد.
+                   m.buy_q_vol, m.buy_q_val, m.buy_q_cnt,
+                   m.sell_q_vol, m.sell_q_val, m.sell_q_cnt,
+                   m.buy_q1_vol, m.buy_q1_px, m.sell_q1_vol, m.sell_q1_px,
                    v.month_avg_vol, v.prev_day_vol,
                    v.h1_max, v.h2_max, v.h5_max, v.h9_max, v.h19_max, v.h29_max,
                    v.h39_max, v.h49_max, v.h59_max,
-                   v.min30_low, v.max30_high, v.d1_vol
+                   v.min30_low, v.max30_high, v.d1_vol,
+                   v.prior29_vol, v.min_low_28, v.prev_day_tran, v.prior29_n
             FROM market_watch m
             JOIN instruments i ON i.ins_code = m.ins_code
             LEFT JOIN boards b ON b.ins_code = m.ins_code
@@ -244,13 +271,25 @@ def get_market(request: Request):
         _pct = pd.to_numeric(df["percent_change"], errors="coerce")
         df["percent_change"] = np.where(_pct.abs() <= 100.0, df["percent_change"], None)
 
-        buy_per_i = df["buy_i_vol"] / df["buy_count_i"].replace(0, 1)
-        sell_per_i = df["sell_i_vol"] / df["sell_count_i"].replace(0, 1)
-        # cap 10x: وقتی فروش حقیقی صفر است، نسبت بینهایت میشود — سقف ۱۰ منطقی است
-        df["buyer_power"] = (buy_per_i / sell_per_i.replace(0, 1)).round(2).fillna(1.0).clip(upper=10.0)
+        # «٪ آخرین» (آخرین به نسبتِ دیروز) — تریدرزآرنا و TSETMC این را کنارِ
+        # «٪ پایانی» می‌گذارند؛ الگویِ ساعت و جت با همین عدد معنا می‌شوند.
+        _pl = pd.to_numeric(df["p_last"], errors="coerce")
+        pct_last = ((_pl - py_ok) / py_ok * 100).round(2)
+        pct_last = pct_last.where(pct_last.abs() <= 100.0)
+        df["percent_last"] = pct_last.where(pct_last.notna(), None)
+
+        _bc = pd.to_numeric(df["buy_count_i"], errors="coerce")
+        _sc = pd.to_numeric(df["sell_count_i"], errors="coerce")
+        # مخرجِ صفر = «هیچ معاملۀِ حقیقی در آن سمت نبوده» → عدد نیست، نه بی‌نهایت
+        # و نه ۱٫۰۰ِ بی‌طرف. پیش از این fillna(1.0) همان را «قدرت خریدار ۱٫۰۰»
+        # نشان می‌داد؛ یعنی برایِ نمادی که هیچ خریدارِ حقیقی‌ای نداشت، داوریِ
+        # جعلیِ «متعادل». فیلترها از buyer_power_raw (همین NaNِ صادق) می‌خوانند.
+        buy_per_i = df["buy_i_vol"] / _bc.where(_bc > 0)
+        sell_per_i = df["sell_i_vol"] / _sc.where(_sc > 0)
+        df["buyer_power"] = (buy_per_i / sell_per_i).round(2).clip(upper=10.0)
         # قدرت خالص خریدار/فروشنده (حجم به ازای هر معامله) — برای ستون مقایسهای
-        df["buy_power_i"] = buy_per_i.round(0).fillna(0)
-        df["sell_power_i"] = sell_per_i.round(0).fillna(0)
+        df["buy_power_i"] = buy_per_i.round(0)
+        df["sell_power_i"] = sell_per_i.round(0)
 
         # ---------- روند حجم: tvol vs آخرین روز معاملاتی (day-over-day, Null-safe) ----------
         pdv = df["prev_day_vol"].where(df["prev_day_vol"] > 0)     # <=0/NaN → NaN
@@ -268,6 +307,7 @@ def get_market(request: Request):
         # ============================================================
         flags = apply_tape_flags(df)
         df["vol_ratio"] = flags["vol_ratio"].round(1)      # نمایش با همان دقتِ قبل
+        df["vol_ratio_file"] = flags["vol_ratio_file"].round(2)  # قیدِ حجمیِ پنج فیلتر (Σ[ih][0..29]÷۳۰)
         df["buyer_power_raw"] = flags["buyer_power_raw"]   # بی‌سقف، برای فیلترِ جت
         df["resistance_59"] = flags["resistance_59"]
         df["dist_min30_pct"] = flags["dist_min30_pct"]
@@ -286,6 +326,9 @@ def get_market(request: Request):
         # را جت می‌زد.
         _KEEP_NULL = ("vol_ratio", "vol_dod", "vol_trend", "dist_min30_pct",
                       "month_avg_vol", "prev_day_vol", "d1_vol",
+                      "prior29_vol", "min_low_28", "prev_day_tran", "percent_last",
+                      "vol_ratio_file", "prior29_n",
+                      "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",
                       "h1_max", "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",

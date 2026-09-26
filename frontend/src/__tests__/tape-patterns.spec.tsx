@@ -28,6 +28,9 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     tvol: 5_000_000,
     month_avg_vol: 1_000_000,
     vol_ratio: 5,
+    // قیدِ حجمیِ پنج فیلتر مبناءِ فایل است، نه میانگین ماه — در تست
+    // هم همان را می‌دهیم تا پنل و فیلتر یک عدد را ببینند.
+    vol_ratio_file: 5,
     buyer_power: 2.1,
     p_last: 1000,
     p_closing: 1025,
@@ -124,6 +127,7 @@ describe('کف‌روبی در پنل مشکوک', () => {
       p_closing: 1000,
       tvol: 100_000,
       month_avg_vol: 1_000_000,
+      vol_ratio_file: 0.1,      // حجمِ زیرِ مبناء: فقط بخشِ کف‌روبی باید ببیندش
     });
     render(<SuspiciousPanel rows={[roobi]} onSelect={onSelect} />);
     expect(screen.getAllByText(/کف‌روبی/)[0]).toBeInTheDocument();

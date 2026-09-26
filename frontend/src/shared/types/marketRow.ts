@@ -30,15 +30,38 @@ export const MarketRowSchema = z.object({
   sell_n_vol: num,
   buy_count_i: num,
   sell_count_i: num,
+  // تابلویِ ۵ مظنه (buy_q*/sell_q*) از بانک می‌آید؛ «عمق بازار» دیگر چیزی
+  // نمی‌سازد. q_cnt تعدادِ سفارش و q1 اولینِ مظنهٔ فعال است.
+  buy_q_vol: num,
+  buy_q_val: num,
+  buy_q_cnt: num,
+  buy_q1_vol: num,
+  buy_q1_px: num,
+  sell_q_vol: num,
+  sell_q_val: num,
+  sell_q_cnt: num,
+  sell_q1_vol: num,
+  sell_q1_px: num,
   month_avg_vol: num,
   prev_day_vol: num,
   tvol: num,
   vol_ratio: num,
+  // مبنایِ حجمِ پنج فیلتر: Σ[ih][0..29]/۳۰ — یعنی «امروز + ۲۹ نشستِ پیش» روی
+  // سی تقسیم ثابت. null = نماد پیشینهٔ کامل ندارد، که یعنی **سنجیده نمی‌شود**.
+  vol_ratio_file: num,
+  prior29_vol: num,
+  prior29_n: num,
+  min_low_28: num,
+  // qd1 = تعدادِ معاملاتِ نشستِ پیش (قیدِ چهارمِ کف‌روبی). تا پیش از افزودنِ
+  // ستونش به daily_prices هیچ ندارد و صفرِ جعلی نمی‌سازیم.
+  prev_day_tran: num,
   vol_dod: num,
   vol_trend: z.string().nullish(),
   buyer_power: num,
   buy_power_i: num,
   sell_power_i: num,
+  // درصدِ «آخرین» نسبت به دیروز: percent_change پایانی را می‌سنجد، این آخرین را.
+  percent_last: num,
   suspicious_vol: flag,
   f_roobi: flag,
   f_susp: flag,

@@ -59,7 +59,8 @@ CREATE TABLE client_type (ins_code TEXT, d_even INTEGER, buy_i_vol REAL, buy_n_v
 CREATE TABLE daily_prices (ins_code TEXT, d_even INTEGER, p_closing REAL, price_min REAL,
     price_max REAL, price_yesterday REAL, price_first REAL, q_tot_tran REAL,
     q_tot_cap REAL, price_change REAL, fetched_at TEXT,
-    market_cap REAL, market_cap_src TEXT, PRIMARY KEY (ins_code, d_even));
+    market_cap REAL, market_cap_src TEXT, z_tot_tran REAL,
+    PRIMARY KEY (ins_code, d_even));
 CREATE TABLE mstat_snap (d_even INTEGER NOT NULL, h_even INTEGER NOT NULL, ts TEXT,
     agg TEXT, PRIMARY KEY (d_even, h_even));
 """
@@ -505,8 +506,9 @@ ck(not missing, "هر id که JS می‌خواند در HTML هست (مفقود:
 # mstat_engine و api/market.py. هر سه همین‌جا قفل می‌شوند.
 _sync = io.open(os.path.join(ROOT, "test_tsetmc.py"), encoding="utf-8").read()
 _stamp_sites = re.findall(r"client = \[\(x\.get\(\"insCode\"\),\s*([^,]+),", _sync)
-ck(len(_stamp_sites) >= 2 and all("d_even or today" in s for s in _stamp_sites),
-   "همهٔ مسیرهای همگام‌سازی، client_type را با روزِ نشست می‌زنند نه todayِ دیواری (%s)"
+ck(len(_stamp_sites) >= 2 and all("session_day_of(watch" in s for s in _stamp_sites),
+   "همهٔ مسیرهای همگام‌سازی، client_type را با روزِ *معامله‌شده* می‌زنند "
+   "(session_day_of)، نه todayِ دیواری و نه d_evenِ خام (%s)"
    % _stamp_sites)
 _mk = io.open(os.path.join(ROOT, "api", "market.py"), encoding="utf-8").read()
 ck("WHERE d_even <= (SELECT" in _mk or "d_even <= (SELECT d FROM iso)" in _mk,

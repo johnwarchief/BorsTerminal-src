@@ -83,7 +83,38 @@ _MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
 _DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
               "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
               " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
-              " market_cap, market_cap_src) VALUES (" + ",".join("?" * 13) + ")")
+              " market_cap, market_cap_src, z_tot_tran) VALUES ("
+              + ",".join("?" * 14) + ")")
+
+
+def session_day_of(watch_rows, fallback=0):
+    """روزِ نشستی که واقعاً در آن معامله شده است.
+
+    TSETMC پیش از بازگشایی هم ردیف می‌فرستد — با `dEven`ِ همان روزِ جدید و
+    حجمِ صفر. اگر همان روز را نشستِ واقعی بگیریم، دادهٔ «کدهای حقیقی/حقوقی»
+    که مربوطِ آخرین نشست است زیرِ تاریخِ امروز نوشته می‌شود و نبض بازار یک
+    ردیفِ دوروژه می‌سازد: حجمِ امروز صفر، ولی جریانِ پول از نشستِ پیش.
+    اندازه‌گیری‌شده ۱۴۰۵-۰۷-۰۴: client_type برایِ ۲۳/۲۴/۲۵/۲۶ سپتمبر یک
+    ردیفِ بایت‌به‌بایت یکسان داشت.
+    """
+    days = [w[1] for w in watch_rows if w[1] and (w[11] or 0) > 0]
+    return max(days) if days else int(fallback or 0)
+
+
+def ensure_daily_tran_column(conn):
+    """ستونِ «تعدادِ معاملات» را رویِ daily_prices می‌سازد (idempotent).
+
+    qd1 — قیدِ چهارمِ فیلترِ کف‌روبی در فایلِ مالک — تنها از همین ستاد خوانده
+    می‌شود. CREATE TABLE IF NOT EXISTS بانکِ موجود را به‌روز نمی‌کند، پس ALTER
+    لازم است؛ فقط افزودنِ ستون، بدونِ حذف یا بازنویسیِ هیچ ردیفی.
+    """
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(daily_prices)")}
+        if cols and "z_tot_tran" not in cols:
+            conn.execute("ALTER TABLE daily_prices ADD COLUMN z_tot_tran REAL")
+    except sqlite3.Error:
+        pass
+
 
 
 
@@ -492,6 +523,10 @@ def create_schema(conn):
             price_max REAL, price_yesterday REAL, price_first REAL,
             q_tot_tran REAL, q_tot_cap REAL, price_change REAL,
             fetched_at TEXT, market_cap REAL, market_cap_src TEXT,
+            -- z_tot_tran = تعدادِ معاملات؛ قیدِ چهارمِ کف‌روبی (qd1) تنها از این
+            -- خوانده می‌شود. درِ DDL هست تا بانکِ تازه با _DP_INSERT یکی بماند،
+            -- و درِ ensure_daily_tran_column برایِ بانکِ قدیمی ALTER می‌زند.
+            z_tot_tran REAL,
             PRIMARY KEY (ins_code, d_even));
         CREATE TABLE IF NOT EXISTS client_type (
             ins_code TEXT, d_even INTEGER, buy_i_vol REAL, buy_n_vol REAL,
@@ -764,12 +799,13 @@ def _save_market_snapshot(s, conn):
                       num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
                       shares, sec, now) + (queue_agg(r) or (None,) * 10) + (mcap, mcap_src))
         daily.append((ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
-                     now, mcap, mcap_src))
+                     now, mcap, mcap_src, trd))
 
     # روزِ client_type باید همان روزِ نشستِ market_watch باشد، نه «today».
     # در تعطیلی، تابلو به آخرین نشستِ واقعی می‌خورد و ClientType به امروزِ
     # ساعتی — پس قدرت خریدار/فروشِ «نبض بازار» از روزِ دیگری می‌آمد.
-    client = [(x.get("insCode"), d_even or today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
+    client = [(x.get("insCode"), session_day_of(watch, d_even or today),
+               x.get("buy_I_Volume"), x.get("buy_N_Volume"),
                x.get("buy_DDD_Volume"), x.get("buy_CountI"), x.get("buy_CountN"),
                x.get("buy_CountDDD"), x.get("sell_I_Volume"), x.get("sell_N_Volume"),
                x.get("sell_CountI"), x.get("sell_CountN"), now)
@@ -777,6 +813,7 @@ def _save_market_snapshot(s, conn):
     c = conn.cursor()
     c.executemany("INSERT OR REPLACE INTO instruments VALUES (" + ",".join("?" * 11) + ")", inst)
     c.executemany(_MW_INSERT, watch)
+    ensure_daily_tran_column(conn)
     c.executemany(_DP_INSERT, daily)
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)", [(k, v) for k, v in boards.items()])
@@ -966,7 +1003,7 @@ def main():
                       amin, amax, py, pf, vol, val, trd, chg, eps, pe,
                       shares, sec, now) + tuple(q) + (mcap, mcap_src))
         daily.append((ins, d_even, pcl, pmn, pmx, py, pf, vol, val, chg, now,
-                      mcap, mcap_src))
+                      mcap, mcap_src, trd))
         if i % 250 == 0 or i == total:
             sym = (r.get("lva") or "").strip()
             write_progress("parse", f"در حال پردازش تابلوخوانی: نماد {sym} ...",
@@ -975,7 +1012,8 @@ def main():
     # همان قاعدهٔ _save_market_snapshot: روزِ client_type باید روزِ نشستِ
     # market_watch باشد، نه امروزِ ساعتی؛ وگرنه تابلو و قدرت خریدار/فروش از
     # دو روزِ مختلف می‌آیند (مهرِ today در تعطیلی این اختلاف را می‌ساخت).
-    client = [(x.get("insCode"), d_even or today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
+    client = [(x.get("insCode"), session_day_of(watch, d_even or today),
+               x.get("buy_I_Volume"), x.get("buy_N_Volume"),
                x.get("buy_DDD_Volume"), x.get("buy_CountI"), x.get("buy_CountN"),
                x.get("buy_CountDDD"), x.get("sell_I_Volume"), x.get("sell_N_Volume"),
                x.get("sell_CountI"), x.get("sell_CountN"), now)
@@ -993,6 +1031,7 @@ def main():
     write_progress("save", f"ذخیرهٔ {nfmt(len(watch))} نماد در پایگاه محلی ...", total, total)
     c.executemany("INSERT OR REPLACE INTO instruments VALUES (" + ",".join("?" * 11) + ")", inst)
     c.executemany(_MW_INSERT, watch)
+    ensure_daily_tran_column(conn)
     c.executemany(_DP_INSERT, daily)
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)",

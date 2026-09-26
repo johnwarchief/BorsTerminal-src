@@ -828,6 +828,16 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
     رسمیِ TSETMC. پیش‌تر این دو یکی پنداشته شده بودند و نبض بازار گردشِ روز را
     زیرِ تیترِ «ارزش کل بازار» می‌برد.
     """
+    if not eq or not eq.get("n_traded"):
+        # نشستِ هنوز-معامله‌نشده (پیش از بازگشایی، تعطیل، یا سینکِ کهنه) عددِ
+        # صفر نیست: داوری ندارد. پیش از این همین حالت «نامساعد / رکود روز»
+        # می‌شد، در حالی که همان لحظه جریانِ پولِ نشستِ پیش را مثبت نشان می‌داد.
+        return {"value_hemat": None, "state": "nodata", "label": "بدون داده",
+                "basis": "eq_all",
+                "trade_value_all_market_hemat": None,
+                "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
+                "market_value_source": total_source or None,
+                "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD}
     hemat = eq["val_hemat"]
     if hemat >= HEMAT_GOOD:
         state, label = "good", "مساعد"

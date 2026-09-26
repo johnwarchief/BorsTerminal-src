@@ -25,30 +25,44 @@ import { evaluateDynamicQuickFilter } from '../lib/tapeAlgorithms';
 
 type SortKey =
   | 'symbol'
+  | 'p_closing'
+  | 'p_last'
   | 'percent_change'
+  | 'percent_last'
   | 'tvol'
+  | 'z_tot_tran'
+  | 'q_tot_cap'
   | 'vol_ratio'
   | 'buy_pc'
   | 'sell_pc'
   | 'buyer_power'
-  | 'last_vs_close'
-  | 'p_last';
+  | 'last_vs_close';
 
-/** ۹ ستون بهینه‌شده و متوازن: نماد/نام · آخرین · تغییر · حجم · نسبت حجم · سرانه خرید · سرانه فروش · قدرت خریدار · الگوی ساعت */
+/** سیزده ستونِ تابلو: همان چهار عددی که تریدرز‌آرنا دارد و ما نداشتیم
+ *  (پایانی، ارزش، تعداد، درصدِ آخرین) علاوه بر ستون‌هایِ همیشگی. */
 const ROW_GRID =
-  'grid-cols-[minmax(130px,1.8fr)_minmax(75px,0.9fr)_minmax(65px,0.8fr)_minmax(80px,1fr)_minmax(80px,1fr)_minmax(85px,1.1fr)_minmax(85px,1.1fr)_minmax(75px,0.9fr)_minmax(115px,1.3fr)]';
+  'grid-cols-[minmax(125px,1.6fr)_repeat(3,minmax(62px,0.8fr))_minmax(62px,0.75fr)_minmax(72px,0.9fr)_minmax(58px,0.7fr)_minmax(78px,0.95fr)_minmax(70px,0.8fr)_minmax(78px,0.95fr)_minmax(78px,0.95fr)_minmax(66px,0.8fr)_minmax(108px,1.25fr)]';
 
-const HEADERS: { key: SortKey; label: string }[] = [
+const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
   { key: 'symbol', label: 'نماد و نام' },
-  { key: 'p_last', label: 'قیمت آخرین' },
-  { key: 'percent_change', label: 'تغییر٪' },
+  { key: 'p_last', label: 'آخرین' },
+  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین نشست (p_closing)' },
+  { key: 'percent_change', label: 'تغییر٪', hint: 'پایانی نسبت به دیروز — همان plp درِ فیلترها' },
+  { key: 'percent_last', label: 'آخرین٪', hint: 'آخرین نسبت به دیروز؛ با درصدِ پایانی فرق دارد' },
   { key: 'tvol', label: 'حجم' },
+  { key: 'z_tot_tran', label: 'تعداد', hint: 'تعدادِ معاملات (z_tot_tran) — tno درِ فیلترها' },
+  { key: 'q_tot_cap', label: 'ارزش (م.ریال)' },
   { key: 'vol_ratio', label: 'نسبت حجم ماه' },
   { key: 'buy_pc', label: 'سرانه خرید (م.ت)' },
   { key: 'sell_pc', label: 'سرانه فروش (م.ت)' },
-  { key: 'buyer_power', label: 'قدرت خریدار' },
+  { key: 'buyer_power', label: 'قدرت خریدار', hint: 'سرانۀ خرید حقیقی ÷ سرانۀ فروش حقیقی — بدون عددِ جعلی' },
   { key: 'last_vs_close', label: 'الگوی ساعت' },
 ];
+
+/** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
+function toBillionRial(rials: number | null | undefined): number | null {
+  return typeof rials === 'number' && Number.isFinite(rials) ? rials / 1e9 : null;
+}
 
 const NEG = Number.NEGATIVE_INFINITY;
 
@@ -58,10 +72,18 @@ function sortVal(r: MarketRow, key: SortKey): number | string {
       return r.symbol ?? '';
     case 'p_last':
       return r.p_last ?? NEG;
+    case 'p_closing':
+      return r.p_closing ?? NEG;
     case 'percent_change':
       return r.percent_change ?? NEG;
+    case 'percent_last':
+      return r.percent_last ?? NEG;
     case 'tvol':
       return r.tvol ?? NEG;
+    case 'z_tot_tran':
+      return r.z_tot_tran ?? NEG;
+    case 'q_tot_cap':
+      return r.q_tot_cap ?? NEG;
     case 'vol_ratio':
       return r.vol_ratio ?? NEG;
     case 'buy_pc':
@@ -209,11 +231,26 @@ const TapeRow = memo(function TapeRow({
       <span className="num text-end text-text-primary font-bold">
         <FlashNum value={row.p_last} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
+      <span className="num text-end text-text-secondary">
+        <FlashNum value={row.p_closing} render={(v) => (v == null ? '-' : fmtInt(v))} />
+      </span>
       <span className={`num text-end font-bold ${pctTone(pct)}`}>
         <FlashNum value={pct} render={(v) => (v == null ? '-' : fmtPct(v))} />
       </span>
+      <span className={`num text-end ${pctTone(row.percent_last)}`}>
+        <FlashNum value={row.percent_last} render={(v) => (v == null ? '-' : fmtPct(v))} />
+      </span>
       <span className="num text-end text-text-secondary">
         <FlashNum value={row.tvol} render={fmtInt} />
+      </span>
+      {/* تعدادِ معاملات: بدونش «tno > ۵۰» و «qd1 > ۱۰۰» درِ فیلترها قابلِ
+          ردیابی نبود. صفرِ جعلی نداریم؛ نبودنش «-» است. */}
+      <span className="num text-end text-text-secondary">
+        <FlashNum value={row.z_tot_tran} render={(v) => (v == null ? '-' : fmtInt(v))} />
+      </span>
+      <span className="num text-end text-text-secondary" title={row.q_tot_cap != null ? `${fmtInt(row.q_tot_cap)} ریال` : undefined}>
+        <FlashNum value={toBillionRial(row.q_tot_cap)}
+                  render={(v) => (v == null ? '-' : v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1)))} />
       </span>
       <span
         className={`num text-end ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
@@ -298,13 +335,13 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid w-full min-w-[760px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
+        <div className={`sticky top-0 z-10 grid w-full min-w-[1080px] ${ROW_GRID} gap-2 bg-bg-card/95 px-3 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => (
             <button
               key={h.key}
               type="button"
               onClick={() => toggle(h.key)}
-              title={h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined}
+              title={h.hint ?? (h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined)}
               className="text-start hover:text-accent-blue transition-colors"
             >
               {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
@@ -312,7 +349,7 @@ export function TapeTable({
           ))}
         </div>
         <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
-          <div className="relative w-full min-w-[760px]" style={{ height: virtualizer.getTotalSize() }}>
+          <div className="relative w-full min-w-[1080px]" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];
             return (

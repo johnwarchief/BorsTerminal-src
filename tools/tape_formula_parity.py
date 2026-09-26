@@ -11,19 +11,24 @@
 
 اجرا:  python tools/tape_formula_parity.py
 
-پایهٔ سنجیده‌شده روی تابلوی بستهٔ ۲۰۲۶۰۹۲۳ (۳٬۸۴۵ ردیف):
-  جت          کد=۱   فایل=۱    ✓ یکی
-  حجم مشکوک   کد=۱۱۳ فایل=۱۵۱  — هر ۵۵ ردیفِ «فقط فایل» کم‌سابقه‌اند؛ فایل همیشه
-                                بر ۳۰ تقسیم می‌کند پس مبنای نمادِ ۱۰‌روزه یک‌سوم
-                                درمی‌آید و «۳ برابر» بی‌دلیل رد می‌شود.
-  نقطه‌زنی    کد=۳۸  فایل=۷۲   — ۳۱ ردیف همان علت، بقیه به‌خاطرِ اینکه فایل کفِ
-                                امروز را هم داخلِ «کف ۳۰ روزه» می‌شمارد.
-  الگوی ساعت  کد=۷۹  فایل=۹۲   — هر ۱۵ ردیفِ «فقط فایل» کم‌سابقه‌اند؛ و دو ردیفِ
-                                «فقط کد» از همان مبنایِ معکوس: امروزِ پرحجم،
-                                میانگینِ فایل را خودش بالا می‌برد و شرط رد می‌شود.
-  کفروبی      قابلِ سنجش نیست: qd1 = تعدادِ معاملاتِ نشستِ پیش در هیچ جدولی
-                                نیست (daily_prices ستونِ z_tot_tran ندارد)؛ کد
-                                تعدادِ امروز را جانشین می‌کند → ۷۳ ردیف.
+پایهٔ سنجیده‌شده روی تابلوی *میانِ نشست* ۱۴۰۵-۰۷-۰۴ (۳٬۳۱۳ ردیفِ معامله‌شده):
+  جت          کد=۰   فایل=۰   ✓ یکی
+  حجم مشکوک   کد=۴۴  فایل=۸۲  — هر ۳۸ ردیفِ «فقط فایل» کم‌سابقه‌اند و هیچ ردیفی
+                                «فقط کد» نیست.
+  الگوی ساعت  کد=۶۰  فایل=۸۳  — همان، ۲۳ ردیفِ کم‌سابقه.
+  نقطه‌زنی    کد=۱۴  فایل=۲۶  — ۱۶ ردیفِ کم‌سابقه؛ ۴ ردیف «فقط کد» که هر چهار
+                                درِ پنجرۀِ فایل کمینۀِ صفر دارند (نشستِ
+                                بی‌معامله). کد آن صفر را از کف بیرون می‌گذارد —
+                                تنها انحرافِ ثبت‌شده به سمتِ قبولِ بیشتر، و
+                                دلیلش در api/market.py (`AND low > 0`) است.
+  کفروبی      سه قیدِ اول سنجیده می‌شود (۲۹۱ ردیف)؛ قیدِ چهارم (qd1) از
+                                نخستین نشستِ پس از این نسخه پر می‌شود، چون
+                                ستونش تازه به daily_prices افزوده شده است.
+
+دو انحرافِ عمدیِ کد از متنِ فایل (ثبت‌شده در رأیِ ۱۸):
+  ۱) مبناءِ حجم بر تعدادِ نشست‌هایِ *موجود* تقسیم می‌شود (کفِ ۱۰)، نه ۳۰ِ ثابت:
+     بانکِ ما برایِ نیمیِ تابلو ۳۰ نشستِ کامل ندارد.
+  ۲) قیدِ چهارمِ کف‌روبی تا نبودِ ستونش سنجیده نمی‌شود و جانشین هم نمی‌خواهد.
 """
 import hashlib
 import io
@@ -72,9 +77,12 @@ EXTRA_SQL = """
            FROM hist
            WHERE dt <= (SELECT printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) FROM iso))
 SELECT symbol,
-       SUM(CASE WHEN rn BETWEEN 1 AND 29 THEN volume END) AS prior29_vol,
-       MIN(CASE WHEN rn BETWEEN 1 AND 28 THEN low END)    AS min_low_1_28,
-       SUM(CASE WHEN rn BETWEEN 1 AND 29 THEN 1 END)      AS prior_n
+       -- در این پنجره rn=1 «امروز» است، پس Σ[ih][0..29] = rn BETWEEN 1 AND 30
+       SUM(CASE WHEN rn BETWEEN 1 AND 30 THEN volume END) AS x_sum30,
+       -- [ih][0..28].PriceMin = امروز + ۲۸ نشستِ پیش = rn BETWEEN 1 AND 29
+       MIN(CASE WHEN rn BETWEEN 1 AND 29 THEN low END)    AS min_low_1_28,
+       -- نشست‌هایِ **پیش** از امروز (rn>=2)؛ شرطِ «سی نشستِ کامل» روی این شمرده می‌شود
+       SUM(CASE WHEN rn BETWEEN 2 AND 30 THEN 1 END)      AS prior_n
 FROM rk GROUP BY symbol
 """
 
@@ -100,7 +108,7 @@ from tape_flags import apply_tape_flags  # noqa: E402
 
 df = apply_tape_flags(df)
 
-for col in ("z_tot_tran", "prior29_vol", "min_low_1_28", "month_avg_vol",
+for col in ("z_tot_tran", "x_sum30", "min_low_1_28", "month_avg_vol",
             "min30_low", "prev_day_vol", "p_last", "p_closing", "p_min",
             "buy_i_vol", "buy_count_i", "sell_i_vol", "sell_count_i"):
     if col in df.columns:
@@ -109,9 +117,10 @@ for col in ("z_tot_tran", "prior29_vol", "min_low_1_28", "month_avg_vol",
 # ── عبارت‌های مشترک، دقیقاً به سبکِ فایل ────────────────────────────────────
 today_vol = df["tvol"].fillna(0.0)
 # Σ[ih][0..29].QTotTran5J = امروز + ۲۹ نشستِ پیش  →  ÷30
-base_file = (today_vol + df["prior29_vol"]) / 30.0
+# Σ[ih][0..29] خودش امروز را داخل دارد → تقسیم بر ۳۰، بدون افزودنِ دوبارهٔ امروز
+base_file = df["x_sum30"] / 30.0
 # Σ[ih][0..29] برای نقطه‌زنی هم همان مخرج است
-min_file = pd.concat([df["p_min"], df["min_low_1_28"]], axis=1).min(axis=1)   # [ih][0..28].PriceMin
+min_file = df["min_low_1_28"]   # [ih][0..28].PriceMin — پنجره خودش امروز را دارد
 avg_code = df["month_avg_vol"].where(lambda s: s > 0)
 
 pl, pc, plp, tmin = df["p_last"], df["p_closing"], df["percent_change"], df["p_min"]
@@ -136,11 +145,24 @@ def rep(name, code_col, file_rule):
     if not only_code.any() and not only_file.any():
         print("   ✓ یکی‌اند")
         return
-    # علتِ اختلاف: فایل همیشه بر ۳۰ تقسیم می‌کند، پس نمادِ کم‌سابقه مبنایِ
-    # مصنوعاً کوچکی دارد و شرطِ «۳ برابر» آسان می‌شود.
+    # علتِ «فقط فایل»: فایل بر ۳۰ِ ثابت تقسیم می‌کند، پس نمادِ کم‌سابقه مبنایِ
+    # مصنوعاً کوچکی دارد و شرطِ «۳ برابر» آسان می‌شود؛ کد بر تعدادِ نشست‌هایِ
+    # موجود تقسیم می‌کند و زیرِ ۱۰ نشست اصلاً داوری نمی‌کند (هر دو سخت‌گیرانه‌تر).
     print(f"   از اینها کم‌سابقه (کمتر از ۲۹ نشستِ پیش): "
           f"فقط‌فایل={int((only_file & prior_short).sum())}/{int(only_file.sum())}   "
           f"فقط‌کد={int((only_code & prior_short).sum())}/{int(only_code.sum())}")
+    # علتِ «فقط کد» — جهتِ خطرناک، پس نامش را می‌نویسیم. تنها انحرافِ مجازِ
+    # شناخته‌شده: صفرِ نشستِ بی‌معامله درِ کمینۀِ فایل، که کد از کف بیرون
+    # می‌گذارد (api/market.py: `AND low > 0`).
+    if only_code.any():
+        zlow = only_code & (pd.to_numeric(df["min_low_1_28"], errors="coerce") == 0)
+        if int(zlow.sum()):
+            print(f"   فقط‌کد با کمینۀِ صفرِ فایل (کد صفرِ نشستِ بی‌معامله را از کف "
+                  f"بیرون می‌گذارد — انحرافِ ثبت‌شده): {int(zlow.sum())}/{int(only_code.sum())}")
+        rest = only_code & ~zlow
+        if rest.any():
+            print("   فقط‌کدِ بی‌دلیل (باید صفر باشد): "
+                  f"{int(rest.sum())} → {df.loc[rest, 'symbol'].tolist()[:8]}")
 
 
 # حجم مشکوک: tvol > 3*avg([ih][0..29]) && tno > 50
@@ -166,7 +188,9 @@ rep("نقطه‌زنی", "f_noqteh",
 # price_history و daily_prices نیست → بازگشتِ معنادار ممکن نیست، نه صفر.
 print("\n== کفروبی   (qd1 = تعداد معاملاتِ نشستِ پیش)")
 print(f"   ستونِ لازم در بانک هست؟  {'qd1' in df.columns or 'prev_day_tran' in df.columns}")
-print(f"   کد فعلاً تعدادِ معاملاتِ امروز را جانشین می‌کند → {int(df['f_roobi'].sum())} ردیف")
+print(f"   کد بدونِ قیدِ چهارم (سه قیدِ اول) → {int(df['f_roobi'].sum())} ردیف؛ "
+      f"با قیدِ qd1 سنجیده می‌شود به‌محضِ این‌که prev_day_tran پر شود "
+      f"(ردیف‌هایِ دارای qd1: {int(df['prev_day_tran'].notna().sum())} از {len(df)})")
 
 # چقدر «مبنایِ فایل» از «مبنایِ کد» سخت‌گیرانه‌تر است
 cmp_ = base_file.notna() & avg_code.notna() & (avg_code > 0)

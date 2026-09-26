@@ -2,21 +2,34 @@
 // آینهٔ منطقیِ tape_flags.py (بک‌اند) برایِ فیلترهایِ پنج‌گانهٔ تابلو. همه
 // توابع خالص‌اند و null را امن برمی‌گردانند: **نبودنِ داده هیچ‌وقت «قبول»
 // نیست** و هیچ دروازهِ‌ای با صفرِ جعلی باز نمی‌شود.
+//
+// مبنایِ حجم درِ پنج فیلتر، ستونِ `vol_ratio_file` است (مقال: Σ[ih][0..29]/30)،
+// نه `month_avg_vol`. `volumeMultiple` فقط برایِ نمایشِ «نسبت به میانگین ماه»
+// می‌ماند؛ جابه‌جا شدنِ یکی به جای دیگری همان خطایی است که کد و فیلترنویسِ
+// TSETMC را از هم دور می‌کرد (رأیِ ۱۸).
 import type { MarketRow } from '@shared/types/marketRow';
 
-/** شکاف الگوی ساعت: آخرین دست کم ۲ درصد بالاتر از پایانی (جزوه: pl >= pc*1.02) */
+/** شکاف الگوی ساعت: آخرین دست کم ۲ درصد بالاتر از پایانی (فایل: pl >= pc*1.02) */
 export const CLOCK_GAP = 0.02;
-/** حد نصاب تعداد معاملات برای الگوی ساعت (بک اند: z_tot_tran > 30) */
+/** حد نصاب تعداد معاملات برای الگوی ساعت (فایل: z_tot_tran > 30) */
 export const CLOCK_MIN_TRADES = 30;
-/** ضریب حجم مشکوک (بک اند: tvol > 3 * avg30 و tno > 50) */
+/** ضریب حجم مشکوک (فایل: tvol > 3*Σ[ih][0..29]/30 و tno > 50) */
 export const SUSP_VOL_MULT = 3;
 export const SUSP_MIN_TRADES = 50;
-/** کف نسبت سرانه خرید حقیقی به فروش (جزوه f_jet: 1.5) */
+/** سقف نسبت سرانه خرید حقیقی به فروش (فایل: 1.5 ×) */
 export const PER_CAPITA_MIN = 1.5;
 /** سقف نسبت قدرت خریدار (بک اند: clip بالای 10) */
 export const BUYER_POWER_CAP = 10;
-/** ضریب حجم فیلتر جت (جزوه: tvol > 3 * avg30) */
+/** ضریب حجم فیلتر جت (فایل: tvol > 3*Σ[ih][0..29]/30) */
 export const JET_VOL_MULT = 3;
+/** حداقل تعداد معاملات جت — فایل دو بار می‌نویسد: ``tno>1 && tno>100``.
+ *  رأیِ ۱۸ (۱۴۰۵-۰۷-۰۴): در **فیلترِ تابلو** عینِ فایل برگشت؛ رأیِ ۱۷ فقط
+ *  جتِ استراتژیک/سیگنال را بیرونِ آن نگه می‌دارد. */
+export const JET_TRADES = 1;
+export const JET_MIN_TRADES = 100;
+/** کف‌روبی: فایل ``zd1 > 1 && qd1 > 100`` */
+export const ROOBI_PREV_DAY_VOL_MIN = 1;
+export const ROOBI_PREV_DAY_TRAN_MIN = 100;
 
 /**
  * پلکانِ مقاومتِ فیلترِ جت، عینِ جزوه:
@@ -81,7 +94,7 @@ export function buyerPowerRatio(
   return Math.min(BUYER_POWER_CAP, buy / sell);
 }
 
-/** نسبت حجم امروز به میانگین ماهانه */
+/** نسبت حجم امروز به میانگین ماهانه — **فقط نمایش**، درِ هیچ فیلتری نیست */
 export function volumeMultiple(tvol: number | null | undefined, monthAvg: number | null | undefined): number | null {
   const t = num(tvol);
   const m = num(monthAvg);
@@ -89,29 +102,39 @@ export function volumeMultiple(tvol: number | null | undefined, monthAvg: number
   return t / m;
 }
 
+/**
+ * نسبتِ حجمِ فایل: tvol ÷ میانگینِ حجمِ پنجرۀِ [ih][0..29].
+ *
+ * بک‌اند آن را در ستونِ `vol_ratio_file` می‌سازد، چون مبنایش به پیشینۀِ نشست‌هایِ
+ * کارِ‌کرده نیاز دارد و آن را فقط بانک می‌داند. فایل بر ۳۰ِ ثابت تقسیم می‌کند؛
+ * بانکِ ما برایِ نیمیِ تابلو کمتر از ۳۰ نشست دارد، پس بر تعدادِ *موجود* تقسیم
+ * می‌شود و زیرِ ۱۰ نشست null می‌ماند — یعنی «سنجیده نمی‌شود»، نه «قبول».
+ */
+export function filterVolumeRatio(r: { vol_ratio_file?: number | null }): number | null {
+  return num(r.vol_ratio_file);
+}
+
 export type ClockInput = {
   p_last?: number | null;
   p_closing?: number | null;
   tvol?: number | null;
   month_avg_vol?: number | null;
+  vol_ratio_file?: number | null;
   z_tot_tran?: number | null;
 };
 
 export type ClockResult = { hit: boolean; gap: number | null };
 
-/** الگوی ساعت FTS: آخرین معامله حداقل ۱٪ بالاتر از قیمت پایانی و حجم بالای میانگین */
+/** الگوی ساعت، عینِ فایل: ``pl >= pc*1.02 && tvol > Σ[ih][0..29]/30 && tno > 30`` */
 export function detectClockPattern(r: ClockInput): ClockResult {
   const gap = clockGap(r.p_last, r.p_closing);
-  const t = num(r.tvol);
-  const m = num(r.month_avg_vol);
+  const mult = filterVolumeRatio(r);
   const n = num(r.z_tot_tran);
   const hit =
     gap != null &&
     gap >= CLOCK_GAP &&
-    t != null &&
-    m != null &&
-    m > 0 &&
-    t > m &&
+    mult != null &&
+    mult > 1.0 &&
     n != null &&
     n > CLOCK_MIN_TRADES;
   return { hit, gap };
@@ -120,14 +143,15 @@ export function detectClockPattern(r: ClockInput): ClockResult {
 export type SuspInput = {
   tvol?: number | null;
   month_avg_vol?: number | null;
+  vol_ratio_file?: number | null;
   z_tot_tran?: number | null;
 };
 
 export type SuspResult = { hit: boolean; multiple: number | null };
 
-/** حجم مشکوک: حجم بیش از 3 برابر میانگین و معاملات بالای 50 */
+/** حجم مشکوک، عینِ فایل: حجمِ بیش از ۳ برابرِ مبنایِ ۳۰ نشست و tno > 50 */
 export function detectSuspiciousVolume(r: SuspInput): SuspResult {
-  const multiple = volumeMultiple(r.tvol, r.month_avg_vol);
+  const multiple = filterVolumeRatio(r);
   const n = num(r.z_tot_tran);
   const hit = multiple != null && multiple > SUSP_VOL_MULT && n != null && n > SUSP_MIN_TRADES;
   return { hit, multiple };
@@ -152,43 +176,58 @@ export function resistanceLadderHigh(r: MarketRow, lookback: number): number | n
   return hi;
 }
 
+/** درگاه‌هایِ فیلتر جت — همان بلوکِ `jet` در TapeFilterConfig */
+export type JetGates = {
+  lookbackDays: number;
+  minBuyerPower: number;
+  minVolRatio: number;
+  requireLastAboveClose: boolean;
+  minChangePct: number;
+  minTradeCount: number;
+};
+
 /** نتیجهٔ فیلتر جت: hit به‌علاوهٔ دلیلی که برایٔ نمایشِ صادقِ «چرا نه» به کار می‌رود */
 export type JetResult = { hit: boolean; resistance: number | null; reason: string | null };
 
 /**
- * فیلتر جت، عینِ جزوه:
- *   tvol > 3*avg30 && خریدِ حقیقی/معامله >= 1.5 × فروشِ حقیقی/معامله
- *   && pl >= pc && plp > 0 && pl > [ih][2..59].PriceMax
+ * فیلتر جت، عینِ فایل:
+ *   tvol > 3*Σ[ih][0..29]/30 && خریدِ حقیقی/معامله >= 1.5 × فروشِ حقیقی/معامله
+ *   && pl >= pc && plp > 0 && pl > [ih][2..59].PriceMax && tno > 1 && tno > 100
  *
  * مقایسه با **آخرینِ** معامله است نه قیمتِ پایانی: جت یعنی «همین حالا از
- * مقاومت عبور کرده». رأیِ مالکِ ۱۴۰۵-۰۷-۰۳: هیچ گیتِ تعدادِ معاملاتی ندارد.
+ * مقاومت عبور کرده». رأیِ ۱۸ (۱۴۰۵-۰۷-۰۴): درِ فیلترِ تابلو عینِ فایل است، پس
+ * ``tno > 100`` برگشت؛ رأیِ ۱۷ فقط جتِ استراتژیک را از آن بیرون نگه داشت.
  */
-export function detectJetBreakout(r: MarketRow, lookbackDays: number, minBuyerPower: number,
-                                  minVolRatio: number, requireLastAboveClose: boolean,
-                                  minChangePct: number): JetResult {
+export function detectJetBreakout(r: MarketRow, g: JetGates): JetResult {
+  const fail = (reason: string, resistance: number | null = null): JetResult =>
+    ({ hit: false, resistance, reason });
+
   const close = num(r.p_closing);
   const last = num(r.p_last);
-  if (close == null || close <= 0) return { hit: false, resistance: null, reason: 'قیمت پایانی ندارد' };
-  if (last == null) return { hit: false, resistance: null, reason: 'آخرین معامله ندارد' };
+  if (close == null || close <= 0) return fail('قیمت پایانی ندارد');
+  if (last == null) return fail('آخرین معامله ندارد');
 
-  const mult = volumeMultiple(r.tvol, r.month_avg_vol);
-  if (mult == null) return { hit: false, resistance: null, reason: 'میانگین حجم ۳۰ روزه ندارد' };
-  if (minVolRatio > 0 && mult <= minVolRatio) {
-    return { hit: false, resistance: null, reason: 'حجم کمتر از آستانه' };
-  }
+  const mult = filterVolumeRatio(r);
+  if (mult == null) return fail('مبنای حجمِ سی نشستِ کامل را ندارد');
+  if (g.minVolRatio > 0 && mult <= g.minVolRatio) return fail('حجم کمتر از آستانه');
+
+  const tno = num(r.z_tot_tran);
+  if (tno == null) return fail('تعداد معاملات ندارد');
+  if (tno <= JET_TRADES) return fail('تعداد معاملات از ۱ بیشتر نیست');
+  if (tno <= g.minTradeCount) return fail('تعداد معاملات زیر آستانهٔ فایل');
 
   const power = r.buyer_power_raw != null ? num(r.buyer_power_raw)
     : buyerPowerRatio(r.buy_i_vol, r.buy_count_i, r.sell_i_vol, r.sell_count_i);
-  if (power == null) return { hit: false, resistance: null, reason: 'قدرت خریدار قابل محاسبه نیست' };
-  if (power < minBuyerPower) return { hit: false, resistance: null, reason: 'قدرت خریدار زیر آستانه' };
+  if (power == null) return fail('قدرت خریدار قابل محاسبه نیست');
+  if (power < g.minBuyerPower) return fail('قدرت خریدار زیر آستانه');
 
-  if (requireLastAboveClose && last < close) return { hit: false, resistance: null, reason: 'آخرین زیر پایانی' };
+  if (g.requireLastAboveClose && last < close) return fail('آخرین زیر پایانی');
   const chg = num(r.percent_change);
-  if (chg == null || chg <= 0) return { hit: false, resistance: null, reason: 'درصد تغییر مثبت نیست' };
-  if (chg < minChangePct) return { hit: false, resistance: null, reason: 'درصد تغییر زیر آستانه' };
+  if (chg == null || chg <= 0) return fail('درصد تغییر مثبت نیست');
+  if (chg < g.minChangePct) return fail('درصد تغییر زیر آستانه');
 
-  const resistance = resistanceLadderHigh(r, lookbackDays);
-  if (resistance == null) return { hit: false, resistance: null, reason: 'تاریخچهٔ کاملِ پلکان مقاومت را ندارد' };
-  if (last <= resistance) return { hit: false, resistance, reason: 'آخرین هنوز زیر مقاومت است' };
+  const resistance = resistanceLadderHigh(r, g.lookbackDays);
+  if (resistance == null) return fail('تاریخچهٔ کاملِ پلکان مقاومت را ندارد');
+  if (last <= resistance) return fail('آخرین هنوز زیر مقاومت است', resistance);
   return { hit: true, resistance, reason: null };
 }

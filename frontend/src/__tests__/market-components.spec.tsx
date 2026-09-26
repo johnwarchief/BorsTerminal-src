@@ -16,6 +16,9 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     tvol: 5_000_000,
     month_avg_vol: 1_000_000,
     vol_ratio: 5,
+    // قیدِ حجمیِ پنج فیلتر مبناءِ فایل است، نه میانگین ماه — در تست
+    // هم همان را می‌دهیم تا پنل و فیلتر یک عدد را ببینند.
+    vol_ratio_file: 5,
     buyer_power: 2.1,
     p_last: 1025,
     p_closing: 1000,
@@ -51,7 +54,7 @@ describe('کامپوننت های تابلو', () => {
 
   it('پنل مشکوک الگوی ساعت را فهرست می کند', () => {
     const onSelect = vi.fn();
-    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000 })]} onSelect={onSelect} />);
+    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000, vol_ratio_file: 0.5 })]} onSelect={onSelect} />);
     // شپنا هم در بخش ساعت هم در بخش حجم مشکوک است (حجم 5 برابر میانگین)
     expect(screen.getAllByText('شپنا')).toHaveLength(2);
     expect(screen.queryByText('خودرو')).not.toBeInTheDocument();
@@ -132,7 +135,7 @@ describe('فیلترهای بازطراحی شده', () => {
 });
 
 describe('جدول تابلو نسخه بهبود یافته', () => {
-  it('ستون «قیمت آخرین» و مقادیر ردیف را نشان می دهد', () => {
+  it('ستون «آخرین» و مقادیر ردیف را نشان می دهد', () => {
     render(
       <TapeTable
         rows={[row({ p_last: 5_350 }), row({ symbol: 'فولاد', name: 'فولاد مبارکه', p_last: 9_120 })]}
@@ -140,9 +143,26 @@ describe('جدول تابلو نسخه بهبود یافته', () => {
         onSelect={() => {}}
       />,
     );
-    expect(screen.getByText('قیمت آخرین')).toBeInTheDocument();
+    expect(screen.getByText('آخرین')).toBeInTheDocument();
     expect(screen.getByText('۵٬۳۵۰')).toBeInTheDocument();
     expect(screen.getByText('۹٬۱۲۰')).toBeInTheDocument();
+  });
+
+  // #122: چهار عددی که جدولِ تابلو نداشت و تریدرز‌آرنا دارد
+  it('ستون‌های پایانی/تعداد/ارزش/آخرین٪ مقادیرِ ردیف را نشان می‌دهند', () => {
+    render(
+      <TapeTable
+        rows={[row({ p_closing: 5_300, z_tot_tran: 240, q_tot_cap: 250_000_000_000, percent_last: 1.25 })]}
+        selected=""
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByText('پایانی')).toBeInTheDocument();
+    expect(screen.getByText('تعداد')).toBeInTheDocument();
+    expect(screen.getByText('ارزش (م.ریال)')).toBeInTheDocument();
+    expect(screen.getByText('۵٬۳۰۰')).toBeInTheDocument();     // پایانی
+    expect(screen.getByText('۲۴۰')).toBeInTheDocument();       // تعدادِ معاملات
+    expect(screen.getByText('۲۵۰')).toBeInTheDocument();       // ۲۵۰ میلیارد ریال
   });
 
   it('نماد صف خرید میکرو-بج «صف+» با تولتیپ می‌گیرد', () => {
@@ -155,8 +175,8 @@ describe('جدول تابلو نسخه بهبود یافته', () => {
 
   it('ستون ها با کلیک سرصفحه برعکس می شوند', () => {
     render(<TapeTable rows={[row({ p_last: 5_350, tvol: 100 })]} selected="" onSelect={() => {}} />);
-    fireEvent.click(screen.getByText(/قیمت آخرین/));
-    // همان دکمه حالت نزولی می گیرد
-    expect(screen.getByText(/قیمت آخرین/)).toBeInTheDocument();
+    // «پایانی» یکتا است؛ «آخرین» دو سرصفحه دارد (آخرین و آخرین٪)
+    fireEvent.click(screen.getByRole('button', { name: /^پایانی/ }));
+    expect(screen.getByRole('button', { name: /پایانی.*↓/ })).toBeInTheDocument();
   });
 });

@@ -37,10 +37,12 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tape_flags import (CLOCK_DELTA, JET_BUYER_POWER, JET_LADDER, JET_VOL_MULT,  # noqa: E402
-                        NOQTEH_MAX_DIST, ROOBI_MAX_CHANGE, ROOBI_TRADE_COUNT,
-                        SUSP_TRADES, SUSP_VOL_MULT, apply_tape_flags,
-                        resistance_ladder_high, vol_ratio)
+from tape_flags import (CLOCK_DELTA, JET_BUYER_POWER, JET_LADDER, JET_MIN_TRADES,  # noqa: E402
+                        JET_TRADES, JET_VOL_MULT,
+                        NOQTEH_MAX_DIST, ROOBI_MAX_CHANGE, ROOBI_PREV_DAY_MIN,
+                        ROOBI_QD1_MIN, SUSP_TRADES, SUSP_VOL_MULT,
+                        VOL_BASE_MIN_SESSIONS, VOL_BASE_SESSIONS, apply_tape_flags,
+                        formula_vol_ratio, resistance_ladder_high, vol_ratio)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MARKET_PY = os.path.join(ROOT, "api", "market.py")
@@ -64,12 +66,20 @@ def ck(cond, what, got=""):
 
 
 def row(**over):
-    """یک ردیفِ تابلو که هر پنج فیلتر را با هم رد می‌کند، بعد یک‌به‌یک تغییرش می‌دهیم."""
+    """یک ردیفِ تابلو که هر پنج فیلتر را با هم رد می‌کند، بعد یک‌به‌یک تغییرش می‌دهیم.
+
+    ستون‌هایِ «ورودیِ فایل» (prior29_vol/prior29_n/min_low_28/prev_day_tran) هم
+    اینجا پراند؛ بدونِ آن‌ها همهٔ فیلترها به‌دلیلِ «نسنج» رد می‌شدند و گارد
+    هیچ‌چیز را نمی‌آزمود. مبناءِ سی‌نشستیِ این ردیف:
+    (tvol 4M + prior29_vol 26M) / 30 = 1M، یعنی نسبتِ ۴.۰×.
+    """
     base = {
         "symbol": "آزمون", "p_closing": 1000.0, "p_last": 1025.0, "p_min": 1025.0,
         "percent_change": 2.5, "price_yesterday": 980.0,
         "q_tot_tran": 4_000_000.0, "tvol": 4_000_000.0, "z_tot_tran": 120.0,
         "month_avg_vol": 1_000_000.0, "prev_day_vol": 2_000_000.0,
+        "prior29_vol": 26_000_000.0, "prior29_n": 29.0,
+        "min_low_28": 995.0, "prev_day_tran": 150.0,
         "buy_i_vol": 2_000_000.0, "buy_count_i": 100.0,
         "sell_i_vol": 1_000_000.0, "sell_count_i": 100.0,
         "min30_low": 995.0,
@@ -109,8 +119,13 @@ def main():
     ck(JET_BUYER_POWER == 1.5, "جت: خرید حقیقی >= 1.5 × فروش حقیقی")
     ck(tuple(JET_LADDER) == (2, 5, 9, 19, 29, 39, 49, 59),
        "پلکان جت دقیقاً [ih][2..59] است، بدون [ih][1]", str(JET_LADDER))
-    ck(ROOBI_MAX_CHANGE == -1.0 and ROOBI_TRADE_COUNT == 100, "کف‌روبی: plp < -1 و qd1 > 100")
+    ck(ROOBI_MAX_CHANGE == -1.0 and ROOBI_QD1_MIN == 100 and ROOBI_PREV_DAY_MIN == 1,
+       "کف‌روبی: plp < -1، zd1 > 1 و qd1 > 100")
     ck(NOQTEH_MAX_DIST == 3.0 and SUSP_TRADES == 50, "نقطه‌زنی فاصله < 3 و حجم مشکوک tno > 50")
+    # رأیِ ۱۸ (۱۴۰۵-۰۷-۰۴): فیلترِ تابلو عینِ فایل است، پس ``tno > 100`` در جت.
+    ck(JET_TRADES == 1 and JET_MIN_TRADES == 100, "جت: tno > 1 و tno > 100، عینِ فایل")
+    ck(VOL_BASE_SESSIONS == 30 and VOL_BASE_MIN_SESSIONS == 10,
+       "پنجرۀ فایل ۳۰ نشاست و زیر ۱۰ نشست سنجیده نمی‌شود")
 
     # ── ۲) هر پنج فیلتر رویِ ردیفِ واجدِ شرایط قبول می‌شوند ────────────────
     print("\n[۲] حالتِ مثبتِ هر پنج فیلتر")
@@ -126,9 +141,14 @@ def main():
     ck(not one("f_clock", p_last=1019.0), "ساعت: دلتای ۱٫۹٪ زیر ۲٪ است")
     ck(one("f_clock", p_last=1020.0), "ساعت: دقیقاً ۲٪ قبول است (>=)")
     ck(not one("f_clock", z_tot_tran=30), "ساعت: tno > 30 اکید است")
-    ck(not one("f_clock", tvol=1_000_000.0), "ساعت: حجمِ برابرِ میانگین قبول نیست (>)")
+    # مبناءِ فایل «امروز + ۲۹ پیش روی ۳۰» است؛ برایِ نسبتِ درستِ ۱٫۰ باید
+    # prior29_vol را تنظیم کرد، چون tvol هم درِ صورت و هم درِ مبناء است.
+    ck(not one("f_clock", prior29_vol=116_000_000.0), "ساعت: حجمِ برابرِ مبناء قبول نیست (>)")
     # B) حجم مشکوک
-    ck(not one("f_susp", tvol=3_000_000.0), "حجم مشکوک: دقیقاً ۳× کافی نیست (>)")
+    # نسبتِ دقیقاً ۳.۰: مبناء باید tvol/3 شود، پس Σ[ih][1..29] = ۳×۴M − ۴M
+    ck(abs(float(formula_vol_ratio(row(prior29_vol=36_000_000.0)).iloc[0]) - 3.0) < 1e-9,
+       "مبناءِ فایل درست ساخته می‌شود: (تومان + ۲۹ پیش) ÷ ۳۰")
+    ck(not one("f_susp", prior29_vol=36_000_000.0), "حجم مشکوک: دقیقاً ۳× مبناء کافی نیست (>)")
     ck(not one("f_susp", z_tot_tran=50), "حجم مشکوک: tno > 50 اکید است")
     # C) جت
     ck(not one("f_jet", p_last=899.0, p_closing=890.0), "جت: آخرینِ زیرِ مقاومت قبول نیست")
@@ -139,25 +159,35 @@ def main():
     ck(not one("f_jet", sell_i_vol=3_000_000.0), "جت: قدرت خریدار زیر ۱٫۵× مردود است")
     ck(not one("f_jet", percent_change=-0.5), "جت: درصد تغییر منفی مردود است")
     ck(not one("f_jet", p_last=999.0), "جت: آخرینِ زیرِ پایانی مردود است")
+    ck(not one("f_jet", z_tot_tran=1), "جت: tno > 1 اکید است")
+    ck(not one("f_jet", z_tot_tran=100), "جت: tno > 100 (رأیِ ۱۸، عینِ فایل) مردود است")
+    ck(one("f_jet", z_tot_tran=101), "جت: یکی بالاتر از ۱۰۰ قبول است")
     # D) کف‌روبی
     ck(not roobi(p_last=971.0), "کف‌روبی: آخرین باید دقیقاً روی کفِ روز باشد")
     ck(not roobi(percent_change=-1.0), "کف‌روبی: plp < -1 اکید است")
-    ck(not roobi(z_tot_tran=100), "کف‌روبی: qd1-proxy > 100 اکید است")
+    ck(not roobi(prev_day_tran=100), "کف‌روبی: qd1 > 100 اکید است")
+    ck(roobi(z_tot_tran=12), "کف‌روبی: تعدادِ «امروز» جانشینِ qd1 نمی‌شود")
+    ck(not roobi(prev_day_vol=1), "کف‌روبی: zd1 > 1 اکید است")
     ck(not roobi(p_min=960.0), "کف‌روبی: کفِ روز جابه‌جا شد، شرطِ pl==tmin می‌شکند")
     # E) نقطه‌زنی
-    ck(not one("f_noqteh", min30_low=969.0), "نقطه‌زنی: فاصلۀِ ۳٫۱٪ از کف مردود است")
+    ck(not one("f_noqteh", min_low_28=969.0), "نقطه‌زنی: فاصلۀِ ۳٫۱٪ از کفِ فایل مردود است")
+    ck(one("f_noqteh", min30_low=800.0),
+       "ستونِ نمایشیِ min30_low درِ نقطه‌زنی نیست (کفِ فایل = [ih][0..28])")
 
     # ── ۴) نبودنِ داده هیچ‌وقت قبول نیست ───────────────────────────────────
     print("\n[۴] نبودنِ داده = رد، نه قبول")
     NULLS = {
-        "month_avg_vol": ("f_clock", "f_susp", "f_jet", "f_noqteh"),
+        # مبناءِ فایل: هر چه از سی نشستِ لازم کم باشد سنجش ممکن نیست.
+        "prior29_vol": ("f_clock", "f_susp", "f_jet", "f_noqteh"),
+        "prior29_n": ("f_clock", "f_susp", "f_jet", "f_noqteh"),
         "tvol": ("f_clock", "f_susp", "f_jet", "f_noqteh"),
-        "z_tot_tran": ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"),
+        "z_tot_tran": ("f_clock", "f_susp", "f_jet", "f_noqteh"),
         "p_last": ("f_clock", "f_jet", "f_roobi"),
         "p_closing": ("f_clock", "f_jet", "f_noqteh"),
+        "p_min": ("f_roobi",),
         "prev_day_vol": ("f_roobi",),
         "percent_change": ("f_jet", "f_roobi"),
-        "min30_low": ("f_noqteh",),
+        "min_low_28": ("f_noqteh",),
     }
     for col, dependents in NULLS.items():
         for fname in dependents:
@@ -165,6 +195,32 @@ def main():
             # صوری می‌شد (همیشه مردود، چه داده باشد چه نه).
             test = roobi(**{col: None}) if fname == "f_roobi" else one(fname, **{col: None})
             ck(not test, f"{fname} با {col} تهی مردود است")
+    # نمادِ کم‌سابقه: مبناءِ «تقسیم بر ۳۰» برایِ آن عددِ جعلی می‌سازد (۵۵ ردیف
+    # جعلیِ حجم مشکوک در اندازه‌گیریِ ۱۴۰۵-۰۷-۰۴)؛ قاعدهٔ ۱ بالای tape_flags.
+    ck(not one("f_susp", prior29_n=8.0), "نه نشستِ کُل → حجم مشکوک سنجیده نمی‌شود")
+    ck(one("f_susp", prior29_n=9.0, prior29_vol=9_000_000.0),
+       "ده نشستِ کُل → میانگینِ همان ده نشست مبناء می‌شود، نه تقسیمِ بر ۳۰")
+    ck(not one("f_noqteh", prior29_n=8.0), "کمتر از ۱۰ نشست → نقطه‌زنی سنجیده نمی‌شود")
+    ck(one("f_noqteh", prior29_n=27.0),
+       "۲۸ نشست: کفِ فایل و مبناء از نشست‌هایِ موجود ساخته می‌شوند")
+    # قیدِ چهارمِ کف‌روبی تا نبودِ ستونش رد نمی‌کند و جانشین هم نمی‌خواهد.
+    ck(roobi(prev_day_tran=None), "f_roobi با qd1 تهی سه قیدِ دیگر را می‌سنجد (رأیِ پایلوت)")
+    # نبودنِ qd1 جانشین نمی‌خواهد: تعدادِ امروز درِ کف‌روبی نیست، پس هر دو
+    # ردیفِ زیر باید یکسان داوری شوند (با سه قیدِ دیگر).
+    ck(roobi(prev_day_tran=None, z_tot_tran=2_000) == roobi(prev_day_tran=None, z_tot_tran=3),
+       "کف‌روبی به تعدادِ معاملاتِ امروز بی‌تفاوت است")
+    # ماه‌مبناء فقط ستونِ نمایش است؛ درِ هیچ فیلتری نیست.
+    for fname in ("f_clock", "f_susp", "f_jet", "f_noqteh"):
+        ck(one(fname, month_avg_vol=None), f"{fname} به month_avg_volِ نمایشی وابسته نیست")
+    # دو مبناء، دو معنا — این همان جایی است که ۵۵ ردیفِ جعلی از آمد.
+    short = row(prior29_n=9.0, prior29_vol=2_700_000.0)
+    ck(pd.isna(formula_vol_ratio(row(prior29_n=4.0)).iloc[0]),
+       "زیرِ کفِ ۱۰ نشست مبناء NaN است (نسنج، نه عددِ جعلی)")
+    ck(abs(float(formula_vol_ratio(short).iloc[0])
+             - 4_000_000.0 / ((4_000_000.0 + 2_700_000.0) / 10.0)) < 1e-9,
+       "با ده نشست، مبناء میانگینِ همان ده نشست است (Σ ÷ ۱۰، نه ÷ ۳۰)")
+    ck(float(vol_ratio(short).iloc[0]) > 3.0,
+       "مبناءِ نمایشی همان ردیف را «بیش از ۳×» می‌خواند؛ پس نباید درِ فیلتر باشد")
     for k in JET_LADDER:
         ck(not one("f_jet", **{f"h{k}_max": None}), f"f_jet با نبودنِ [ih][{k}].PriceMax مردود است")
         ck(not one("f_jet", **{f"h{k}_max": 0.0}), f"f_jet سقفِ صفرِ [ih][{k}] را «شکسته» نمی‌شمارد")
@@ -200,8 +256,20 @@ def main():
        "پنجرۀ تاریخچه از اتحادِ daily_prices و price_history ساخته می‌شود")
     ck("AVG(CASE WHEN rn <= 30 THEN volume END)" in src,
        "حجمِ مبنا میانگینِ ۳۰ نشست است، نه ۶۰ تا")
-    ck("MIN(CASE WHEN rn <= 29 THEN low END)" in src,
-       "کفِ ۳۰ روزه رویِ [ih][0..28] حساب می‌شود")
+    ck("MIN(CASE WHEN rn <= 29 AND low > 0 THEN low END)" in src,
+       "کفِ ۳۰ روزهٔ نمایشی رویِ [ih][1..29] و بدونِ صفرهایِ نشستِ بی‌معامله")
+    # ورودی‌هایِ «عینِ فایل» باید ازِ SQL بیایند؛ فرانت‌اند پنجرهٔ ۳۰ نشستی ندارد.
+    for needle, what in (
+        ("SUM(CASE WHEN rn <= 29 THEN volume END) AS prior29_vol",
+         "Σ[ih][1..29] برایِ مبناءِ فایل از SQL می‌آید (امروز درِ tvolِ تابلو هست)"),
+        ("MIN(CASE WHEN rn <= 28 AND low > 0 THEN low END)   AS min_low_28",
+         "کمینۀِ [ih][1..28] از SQL می‌آید و صفرِ نشستِ بی‌معامله کفِ جعلی نمی‌سازد"),
+        ("MAX(CASE WHEN rn = 1 THEN tran END)",
+         "qd1 = تعدادِ معاملاتِ نشستِ پیش از SQL می‌آید"),
+        ("COUNT(CASE WHEN rn <= 29 THEN volume END)",
+         "شمارشِ نشست‌هایِ پیشینه برایِ «نسنج» آمد"),
+    ):
+        ck(needle in src, what, needle)
     ck("MAX(CASE WHEN rn = 2 THEN high END) AS h2_max" in src,
        "نقطۀ [ih][2] -- که جزوه از آن شروع می‌کند -- از SQL می‌آید")
     ck("(SELECT dt FROM iso)" in src and "d.d_even < (SELECT d FROM iso)" in src,
@@ -221,17 +289,34 @@ def main():
     ck("function resistanceLadderHigh" in ts_math and "v == null || v <= 0) return null" in ts_math,
        "پلکانِ فرانت‌اند هم با نقطۀ غایب null می‌دهد")
     ck("last <= resistance" in ts_math, "جتِ فرانت‌اند هم با «آخرین» می‌سنجد")
+    ck("export function filterVolumeRatio(r: { vol_ratio_file?: number | null })" in ts_math,
+       "فرانت‌اند نسبتِ فایل را از ستونِ بک‌اند می‌خواند، نه از میانگین ماه")
+    m = re.search(r"export const JET_MIN_TRADES = (\d+)", ts_math)
+    ck(bool(m) and int(m.group(1)) == JET_MIN_TRADES, "کفِ تعدادِ معاملۀِ جت در دو سو یکی است")
+    ck("export const ROOBI_PREV_DAY_TRAN_MIN = 100" in ts_math,
+       "qd1 > 100 در فرانت‌اند هم هست")
 
     ts_algo = read(TS_ALGO)
     ck("typeof r.vol_ratio === 'number'" not in ts_algo
        and "typeof r.buyer_power === 'number'" not in ts_algo,
        "هیچ گیتی در tapeAlgorithms با «عدد نبود» بی‌صدا رد نمی‌شود")
-    ck("minDeltaPct: 2.0" in ts_algo, "پیش‌فرضِ ساعت = عددِ جزوه")
+    ck("minDeltaPct: 2.0" in ts_algo, "پیش‌فرضِ ساعت = عددِ فایل")
     ck("minTradeCount: 100" in ts_algo and "minVolRatio: 0" in ts_algo,
-       "پیش‌فرضِ کف‌روبی = جزوه، و گیت‌هایی که جزوه ندارد خاموش‌اند")
+       "پیش‌فرضِ کف‌روبی = فایل، و گیت‌هایی که فایل ندارد خاموش‌اند")
+    ck("volumeMultiple(" not in ts_algo,
+       "هیچ دروازۀِ فیلتری در tapeAlgorithms به میانگین ماه نگاه نمی‌کند")
+    ck(ts_algo.count("filterVolumeRatio") >= 3,
+       "هر پنج گیتِ حجمیِ فرانت‌اند از مبناءِ فایل می‌خوانند")
+    ck("num(r.prev_day_tran)" in ts_algo,
+       "کف‌روبیِ فرانت‌اند qd1 واقعی را می‌سنجد، نه تعدادِ امروز")
 
-    ck("h2_max: num" in read(ROW_TS),
+    row_ts = read(ROW_TS)
+    ck("h2_max: num" in row_ts,
        "zod schema باید h2_max را داشته باشد؛ کلیدِ ناشناخته‌ی zod دور ریخته می‌شود")
+    for field in ("vol_ratio_file", "prior29_vol", "prior29_n", "min_low_28",
+                  "prev_day_tran", "percent_last"):
+        ck(f"{field}: num" in row_ts,
+           f"ستونِ {field} باید در zod باشد، وگرنه از پاسخ /api/market حذف می‌شود")
 
     # ── ۷) چارت و تابلو باید یک «جت» ببینند ────────────────────────────────
     print("\n[۷] ستاپ جتِ چارت = پلکانِ جزوه")

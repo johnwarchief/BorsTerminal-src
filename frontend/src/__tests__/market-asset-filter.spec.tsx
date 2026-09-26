@@ -17,6 +17,7 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     tvol: 5_000_000,
     month_avg_vol: 1_000_000,
     vol_ratio: 5,
+    vol_ratio_file: 5,   // قیدِ پنلِ حجم مشکوک مبناءِ فایل است
     p_last: 1000,
     p_closing: 1030,
     price_yesterday: 1010,

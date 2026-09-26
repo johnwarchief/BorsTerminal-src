@@ -164,6 +164,16 @@ describe('مدل‌های محلی مرکز فرماندهی', () => {
     expect(computeAlphaTrio(emptyPulse)).toBeNull();
   });
 
+  it('«nodata» حالتِ چهارمِ داوری است، نه صفر و نه نامساعد', () => {
+    const nodata = {
+      status: 'ok',
+      rows: [],
+      health: { value_hemat: null, state: 'nodata' as const, label: 'بدون داده' },
+    };
+    expect(pulseHemat({ ...emptyPulse, summary: nodata })?.state).toBe('nodata');
+    expect(pulseHemat({ ...emptyPulse, summary: nodata })?.label).toBe('بدون داده');
+  });
+
   it('همت از health خلاصه هم تغذیه می‌شود؛ نبود هر دو null', () => {
     expect(pulseHemat({ ...emptyPulse, summary: summary(9) })?.state).toBe('bad');
     expect(pulseHemat(emptyPulse)).toBeNull();
@@ -190,6 +200,28 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(screen.getByTestId('pulse-queues').textContent).toContain('۱۴۷۱');
     expect(screen.getByTestId('pulse-percapita').textContent).toContain('۱.۲×');
     expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('mstat/thermometer'))).toBe(true);
+  });
+
+  it('همتِ «بدون داده»: پاسخ را اسکیما نمی‌شکند و پنل داوری نمی‌سازد', async () => {
+    // نشستِ باز نشده: ماکرو مقدار ندارد و state=nodata می‌فرستد. اگر این رشته
+    // در اسکیما نبود کل پاسخ دور ریخته می‌شد و جریان پول هم غیب می‌شد.
+    mockRoutes({
+      'mstat/smart-money': () =>
+        jsonResponse({
+          status: 'ok',
+          macro: { value_hemat: null, state: 'nodata', label: 'بدون داده', market_value_hemat: null },
+          watch_entry: { active: false, bearish_pct: 0, rule_pct: 80, bearish: 0, known: 0 },
+          flow: { eq_flow_b_toman: 300.5, fixed_flow_b_toman: -120.2, eq_inflow: true, fixed_outflow: true },
+        }),
+      'mstat/summary': () =>
+        jsonResponse({ status: 'ok', rows: [], health: { value_hemat: null, state: 'nodata', label: 'بدون داده' } }),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-smart').textContent).toContain('۳۰۰.۵'));
+    expect(screen.getByTestId('pulse-hemat').textContent).toContain('بدون داده');
+    expect(screen.getByTestId('pulse-hemat').textContent).not.toContain('نامساعد');
   });
 
   it('خروج درآمد ثابت: عدد منفی با رنگ سبز بولد', async () => {

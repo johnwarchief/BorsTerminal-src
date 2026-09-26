@@ -59,6 +59,24 @@ def ensure_selection_schema(conn: sqlite3.Connection) -> None:
         pass
 
 
+def ensure_market_schema(conn: sqlite3.Connection) -> None:
+    """ستونِ «تعدادِ معاملاتِ روزانه» را رویِ بانک‌هایِ قدیمی می‌سازد.
+
+    فیلترِ کف‌روبیِ جزوه چهارمین قیدش را رویِ `qd1` (تعدادِ معاملاتِ نشستِ پیش)
+    می‌بندد. `daily_prices` تا امروز فقط حجم و ارزش را نگه می‌داشت، پس آن عدد
+    هیچ‌جا وجود نداشت و کد «تعدادِ امروز» را جانشینش می‌کرد — یعنی ردیف‌هایی
+    را قبول می‌کرد که فرمولِ مالک رد می‌کند. ستون افزوده می‌شود (هیچ ردیفی
+    حذف/بازنویسی نمی‌شود) و از نخستین سینکِ موفق پر می‌گردد؛ تا وقتی پر نشده،
+    فیلتر آن قید را نمی‌سنجد و عددِ جعلی نمی‌سازد.
+    """
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(daily_prices)")}
+        if cols and "z_tot_tran" not in cols:
+            conn.execute("ALTER TABLE daily_prices ADD COLUMN z_tot_tran REAL")
+    except Exception:
+        pass
+
+
 def get_db():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail="Database market.db not found.")
@@ -87,6 +105,7 @@ def get_db():
         conn.execute("CREATE INDEX IF NOT EXISTS ix_ph_sym_date2 ON price_history(symbol, date DESC)")
     except Exception:
         pass
+    ensure_market_schema(conn)
     # v9.0 — جدول سبک تصمیمات سبد (Accept/Reject/Monitor). idempotent و هم‌جای
     # ایندکسها؛ با «هر اتصال» تضمین میشود موجود است بدون نیاز به مایگریشن جدا.
     ensure_selection_schema(conn)

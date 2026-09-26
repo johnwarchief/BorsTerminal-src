@@ -80,6 +80,11 @@ SUITES = [
     # TAPE-F / JET-BREAK / HIST-SRC: پنج فیلترِ تابلو عینِ جزوه، و «نبودنِ
     # داده» هیچ‌وقت قبول نیست. پیش از این هیچ سویتی این فرمول‌ها را نمی‌پوشاند.
     ('dev/tape_filters_v1034.py',   'tape filters: five formulas match the notebook'),
+    # #119 + #120 (مانیتورینگِ زندهٔ ۱۴۰۵-۰۷-۰۴): روزِ client_type باید روزِ
+    # نشستِ معامله‌شده باشد، پنجرۀِ بازار یک‌جا تعریف شود، و «نبودنِ داده»
+    # دماسنج را «نامساعد» نکند.
+    ('dev/client_type_date_v1034.py',
+                                     'board freshness: session day + abstaining market pulse'),
     # PORT-1: وزن از «قیمت × تعداد»، مایگریشنِ افزودنیِ «تعداد»، و پایانِ
     # صفرِ ساختگی در مقایسهٔ ترکیبِ سبد با هدف.
     ('dev/portfolio_weights_v1035.py',

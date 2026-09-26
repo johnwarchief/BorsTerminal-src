@@ -5,7 +5,7 @@ import type { MarketRow } from '@shared/types/marketRow';
 import { rowToTapeSignals, rowsToTapeSignals } from '@features/market/signals/tapeSignals';
 
 function row(patch: Partial<MarketRow> = {}): MarketRow {
-  return {
+  const merged: Partial<MarketRow> = {
     symbol: 'شپنا',
     p_last: 1000,
     p_closing: 1002,
@@ -17,7 +17,12 @@ function row(patch: Partial<MarketRow> = {}): MarketRow {
     sell_i_vol: 500,
     sell_count_i: 10,
     ...patch,
-  } as MarketRow;
+  };
+  // بک‌اند نسبتِ فایل را می‌سازد و فیلترها همان را می‌خوانند؛ در تست هم نسبت
+  // از همان tvol/month_avg_vol ساخته می‌شود تا سناریوها با حجم رانده شوند.
+  const tvol = merged.tvol as number;
+  const avg = merged.month_avg_vol as number;
+  return { ...merged, vol_ratio_file: (merged.vol_ratio_file as number) ?? tvol / avg } as MarketRow;
 }
 
 describe('سیگنال تابلو', () => {

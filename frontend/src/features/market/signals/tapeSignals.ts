@@ -54,7 +54,7 @@ function clockDraft(
     rationale:
       `قیمت آخرین معامله ${faPct(gap)} بالاتر از قیمت پایانی است (الگوی ساعت FTS)` +
       (power != null ? ` و سرانه خرید حقیقی ${faMult(power)} سرانه فروش است` : ' و سرانه حقیقی قابل محاسبه نبود') +
-      (multiple != null ? ` با حجم ${faMult(multiple)} میانگین ماهانه.` : '.'),
+      (multiple != null ? ` با حجم ${faMult(multiple)} میانگین سی نشست.` : '.'),
     score: supported ? Math.min(100, Math.round(55 + gap * 1000)) : 55,
     evidence: ['market:clock_gap', 'market:per_capita'],
     payload: {
@@ -75,7 +75,7 @@ function suspDraft(row: MarketRow, multiple: number, lvc: number, power: number 
     weight: 'major',
     title: `حجم مشکوک در ${row.symbol ?? ''}`,
     rationale:
-      `حجم معاملات ${faMult(multiple)} میانگین ماهانه است` +
+      `حجم معاملات ${faMult(multiple)} میانگین سی نشستِ اخیر است` +
       (power != null ? ` و قدرت خریدار حقیقی ${faMult(power)} است.` : ' و سرانه حقیقی قابل محاسبه نبود.'),
     score: Math.min(100, Math.round(40 + multiple * 8)),
     evidence: ['market:volume_spike'],

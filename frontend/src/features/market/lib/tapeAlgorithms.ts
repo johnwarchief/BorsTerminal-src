@@ -10,9 +10,9 @@
 import type { MarketRow } from '@shared/types/marketRow';
 import {
   JET_LADDER,
+  ROOBI_PREV_DAY_VOL_MIN,
   detectJetBreakout,
-  detectSuspiciousVolume,
-  volumeMultiple,
+  filterVolumeRatio,
 } from './tapeMath';
 
 /** نقاطِ پلکانِ مقاومتِ جزوه — همان JET_LADDER، تا انتخابِ UI گم نشود. */
@@ -23,12 +23,12 @@ export type TapeFilterConfig = {
   clock: {
     minDeltaPct: number;          // حداقل فاصله آخرین از پایانی (جزوه: ۲٫۰٪)
     requireGoldenHour: boolean;   // شرط ساعت طلایی (پایانی منفی و آخرین مثبت)
-    minVolRatio: number;          // حداقل نسبت به میانگین حجم ۳۰ روزه
+    minVolRatio: number;          // حداقل نسبت حجم به مبنای فایل (Σ[ih][0..29]/30)
     minTradeCount: number;        // حداقل تعداد معاملات
   };
   /** ۲. حجم مشکوک (Suspicious Volume) */
   suspiciousVolume: {
-    timeframe: 'monthly_30d' | 'prev_day_dod'; // تایم‌فریم مرجع حجم (۳۰ روزه یا روز قبل)
+    timeframe: 'monthly_30d' | 'prev_day_dod'; // تایم‌فریم مرجع حجم (مبنای فایل یا روز قبل)
     minRatio: number;             // آستانه ضریب حجم (پیش‌فرض: ۳.۰×)
     minTradeCount: number;        // حداقل تعداد معاملات
   };
@@ -37,20 +37,21 @@ export type TapeFilterConfig = {
     /** بلندترین نقطهٔ پلکانی که باید شکسته شود؛ همهٔ نقاطِ کوتاه‌تر هم لازم‌اند. */
     lookbackDays: LookbackDays;
     minBuyerPower: number;        // حداقل نسبت قدرت خریدار به فروشنده
-    minVolRatio: number;          // حداقل ضریب حجم
+    minVolRatio: number;          // حداقل ضریب حجم (مبنای فایل)
     requireLastAboveClose: boolean; // آخرین بالاتر از پایانی
     minChangePct: number;         // حداقل درصد تغییر قیمت
-    // رأیِ مالک (۱۴۰۵-۰۷-۰۳): جت هیچ شرطِ «حداقل تعدادِ معامله» ندارد — نه
-    // در جزوه و نه در چارت ۳ عددی برایِ آن هست. بازگرداندنش ممنوع است.
-    // جزوه «۱ بار» را رویِ ۳× حجم می‌شمارد؛ minVolRatioِ زیر ۳ اثری ندارد
-    // چون گیتِ خودِ جزوه همیشه برقرار است.
+    // ``tno > 100`` عینِ فایل. رأیِ ۱۷ (۱۴۰۵-۰۷-۰۳) آن را از جتِ *استراتژیک*
+    // بیرون گذاشت؛ رأیِ ۱۸ (۱۴۰۵-۰۷-۰۴) همان را به **فیلترِ تابلو** برگرداند،
+    // چون مالک می‌خواهد نشانِ «جت» همان چیزی باشد که فیلترنویسِ TSETMC می‌دهد.
+    minTradeCount: number;
   };
   /** ۴. کف‌روبی و جمع‌آوری صف (Kef Roobi / Sweep) */
   roobi: {
-    maxChangePct: number;         // سقف درصد افت قیمت (جزوه: -۱٫۰٪)
-    minVolRatio: number;          // ۰ = بدون شرط (جزوه چنین گیتی ندارد)
+    maxChangePct: number;         // سقف درصد افت قیمت (فایل: -۱٫۰٪)
+    minVolRatio: number;          // ۰ = بدون شرط (فایل چنین گیتی ندارد)
     minBuyerPower: number;        // ۰ = بدون شرط
-    minTradeCount: number;        // جای‌نشینِ qd1 (تعدادِ معاملاتِ نشستِ پیش منبعِ داده ندارد)
+    minTradeCount: number;        // قیدِ چهارمِ فایل: ``qd1 > 100`` — تعدادِ
+                                  // معاملاتِ **نشستِ پیش** (prev_day_tran)، نه امروز
   };
   /** ۵. نقطه‌زنی و کف‌یابی (Sniper / Near Low) */
   noqteh: {
@@ -66,19 +67,20 @@ export type TapeFilterConfig = {
 };
 
 /**
- * پیش‌فرض‌ها = فرمول‌هایِ پنج‌گانۀِ جزوه، نه سلیقۀِ برنامه‌نویس.
- * هر عددی که اینجا تغییر کند باید اول درِ جزوه پیدا شود.
+ * پیش‌فرض‌ها = خودِ پنج فایلِ مالک، نه سلیقۀِ برنامه‌نویس.
+ * هر عددی که اینجا تغییر کند باید اول درِ فایلِ فیلترنویسی پیدا شود.
+ * مبناءِ همهٔ گیت‌هایِ حجمی Σ[ih][0..29]/۳۰ است (ستونِ vol_ratio_file).
  */
 export const DEFAULT_TAPE_FILTER_CONFIG: TapeFilterConfig = {
   clock: {
     minDeltaPct: 2.0,          // pl >= pc * 1.02
-    requireGoldenHour: false,  // انتخابی، درِ جزوه نیست
-    minVolRatio: 1.0,          // tvol > 1 * avg30
+    requireGoldenHour: false,  // انتخابی، درِ فایل نیست
+    minVolRatio: 1.0,          // tvol > 1 * Σ[ih][0..29]/30
     minTradeCount: 30,         // tno > 30
   },
   suspiciousVolume: {
     timeframe: 'monthly_30d',
-    minRatio: 3.0,             // tvol > 3 * avg30
+    minRatio: 3.0,             // tvol > 3 * Σ[ih][0..29]/30
     minTradeCount: 50,         // tno > 50
   },
   jet: {
@@ -87,11 +89,12 @@ export const DEFAULT_TAPE_FILTER_CONFIG: TapeFilterConfig = {
     minVolRatio: 3.0,
     requireLastAboveClose: true,
     minChangePct: 0.0,         // plp > 0
+    minTradeCount: 100,        // tno > 100 — عینِ فایل (رأیِ ۱۸)
   },
   roobi: {
     maxChangePct: -1.0,        // plp < -1
-    minVolRatio: 0,            // جزوه گیتِ حجم ندارد
-    minBuyerPower: 0,          // جزوه گیتِ قدرت خریدار ندارد
+    minVolRatio: 0,            // فایل گیتِ حجم ندارد
+    minBuyerPower: 0,          // فایل گیتِ قدرت خریدار ندارد
     minTradeCount: 100,        // qd1 > 100
   },
   noqteh: {
@@ -194,13 +197,46 @@ function atLeast(value: number | null | undefined, min: number): boolean {
   return v != null && v >= min;
 }
 
-/** گیتِ بالا‌حد: همان قاعده، در جهتِ مخالف. */
-function atMost(value: number | null | undefined, max: number): boolean {
+/** گیتِ «اکیداً بیشتر» — فایل هر جا `>` نوشته، نه `>=`. */
+function above(value: number | null | undefined, bound: number): boolean {
   const v = num(value);
-  return v != null && v <= max;
+  return v != null && v > bound;
 }
 
-/** ۱. الگوی ساعت — جزوه: ``pl >= pc*1.02 && tvol > avg30 && tno > 30`` */
+/** گیتِ «اکیداً کمتر»: همان قاعده، در جهتِ مخالف. */
+function below(value: number | null | undefined, bound: number): boolean {
+  const v = num(value);
+  return v != null && v < bound;
+}
+
+/** گیتِ حجمیِ پنج فیلتر — مبناءِ فایل، و نبودنش **رد** است نه بی‌صدا قبول. */
+function volumeGate(r: MarketRow, minRatio: number): boolean {
+  if (!(minRatio > 0)) return true;              // آستانهٔ صفر = گیتِ خاموش
+  const mult = filterVolumeRatio(r);
+  return mult != null && mult > minRatio;
+}
+
+/** پنجرۀِ شناخته‌شده: همین نشست + تا ۲۹ نشستِ پیش (هر چه بانک دارد). */
+const HISTORY_FLOOR = 10;
+function knownSessions(r: MarketRow): number | null {
+  const n = num(r.prior29_n);
+  if (n == null) return null;
+  return 1 + Math.min(n, 29);
+}
+
+/** کمینۀِ فایل: ``min([ih][0..28].PriceMin)`` = کفِ همین نشست با نشست‌هایِ پیش.
+ *  همان کفِ ۱۰ نشستیِ بک‌اند (`tape_flags.LOW_BASE_MIN_SESSIONS`): پنجره‌ای که
+ *  بانک ندارد سنجیده نمی‌شود، نه اینکه با کمینۀِ ناقص داوری گردد. */
+function fileLow(r: MarketRow): number | null {
+  const sessions = knownSessions(r);
+  if (sessions == null || sessions < HISTORY_FLOOR) return null;
+  const today = num(r.p_min);
+  const prior = num(r.min_low_28);
+  if (today == null || prior == null) return null;
+  return Math.min(today, prior);
+}
+
+/** ۱. الگوی ساعت — فایل: ``pl >= pc*1.02 && tvol > Σ[ih][0..29]/30 && tno > 30`` */
 export function matchClockPattern(r: MarketRow, cfg: TapeFilterConfig['clock']): boolean {
   const last = num(r.p_last);
   const close = num(r.p_closing);
@@ -214,78 +250,67 @@ export function matchClockPattern(r: MarketRow, cfg: TapeFilterConfig['clock']):
     if (yest == null || !(close < yest && last > yest)) return false;
   }
 
-  if (cfg.minVolRatio > 0) {
-    const mult = volumeMultiple(r.tvol, r.month_avg_vol);
-    if (mult == null || mult <= cfg.minVolRatio) return false;
-  }
-
-  return atLeast(r.z_tot_tran, cfg.minTradeCount + 1);
+  if (!volumeGate(r, cfg.minVolRatio)) return false;
+  return above(r.z_tot_tran, cfg.minTradeCount);
 }
 
-/** ۲. حجم مشکوک — جزوه: ``tvol > 3*avg30 && tno > 50`` */
+/** ۲. حجم مشکوک — فایل: ``tvol > 3*Σ[ih][0..29]/30 && tno > 50`` */
 export function matchSuspiciousVolume(r: MarketRow, cfg: TapeFilterConfig['suspiciousVolume']): boolean {
-  const hit = cfg.timeframe === 'prev_day_dod'
-    ? atLeast(r.vol_dod, cfg.minRatio)
-    : detectSuspiciousVolume({
-        tvol: r.tvol,
-        month_avg_vol: r.month_avg_vol,
-        z_tot_tran: r.z_tot_tran,
-      }).hit;
-  if (!hit) return false;
-  if (cfg.timeframe === 'prev_day_dod') return atLeast(r.z_tot_tran, cfg.minTradeCount + 1);
-  return true;
+  if (!above(r.z_tot_tran, cfg.minTradeCount)) return false;
+  if (cfg.timeframe === 'prev_day_dod') return above(r.vol_dod, cfg.minRatio);
+  return volumeGate(r, cfg.minRatio);
 }
 
 /**
- * ۳. فیلتر جت FTS — جزوه:
- * ``tvol > 3*avg30 && خریدحقیقی/معامله >= 1.5 × فروشحقیقی/معامله
- *   && pl >= pc && plp > 0 && [ih][2..59].PriceMax < pl``
+ * ۳. فیلتر جت FTS — فایل:
+ * ``tvol > 3*Σ[ih][0..29]/30 && خریدحقیقی/معامله >= 1.5 × فروشحقیقی/معامله
+ *   && pl >= pc && plp > 0 && [ih][2..59].PriceMax < pl && tno > 1 && tno > 100``
  * مقایسه با «آخرین» است، نه «پایانی»؛ و با همهٔ نقاطِ پلکان، نه یک نقطه.
  */
 export function matchJetFilter(r: MarketRow, cfg: TapeFilterConfig['jet']): boolean {
-  return detectJetBreakout(r, cfg.lookbackDays, cfg.minBuyerPower, cfg.minVolRatio,
-                           cfg.requireLastAboveClose, cfg.minChangePct).hit;
+  return detectJetBreakout(r, cfg).hit;
 }
 
-/** ۴. کف‌روبی و جمع‌آوری صف — جزوه: ``pl == tmin && zd1 > 1 && plp < -1 && qd1 > 100`` */
+/** ۴. کف‌روبی و جمع‌آوری صف — فایل: ``pl == tmin && zd1 > 1 && plp < -1 && qd1 > 100``
+ *
+ * ``qd1`` = prev_day_tran؛ تا وقتی بانک آن را ندارد (ستونش تازه است) سه قیدِ
+ * نخست سنجیده می‌شود و قیدِ چهارم **رد نمی‌کند** — جای‌نشینش هم «تعدادِ
+ * امروز» نمی‌شود، چون آنگاه ۷۳ ردیف می‌آمد که هیچ‌کدام معادلۀِ فایل نبود.
+ */
 export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): boolean {
   const last = num(r.p_last);
   const low = num(r.p_min);
   // «روی کفِ روز نشسته» — همین گیت، ستونِ اصلیِ کف‌روبی است و حذف‌شدنی نیست.
   if (last == null || low == null || last !== low) return false;
-  if (!atLeast(r.prev_day_vol, 2)) return false;          // zd1 > 1
-  if (!atMost(r.percent_change, cfg.maxChangePct)) return false;
-  // قیدِ جزوه «>» است، پس آستانه +۰٫۰۰۱ نه؛ برایِ شمارۀِ صحیحِ معاملات همان +۱.
-  if (!atLeast(r.z_tot_tran, cfg.minTradeCount + 1)) return false;
+  if (!above(r.prev_day_vol, ROOBI_PREV_DAY_VOL_MIN)) return false;   // zd1 > 1
+  if (!below(r.percent_change, cfg.maxChangePct)) return false;       // plp < -1
+  const qd1 = num(r.prev_day_tran);
+  if (qd1 != null && !above(qd1, cfg.minTradeCount)) return false;    // qd1 > 100
 
-  if (cfg.minVolRatio > 0) {
-    const mult = volumeMultiple(r.tvol, r.month_avg_vol);
-    if (mult == null || mult <= cfg.minVolRatio) return false;
-  }
+  if (!volumeGate(r, cfg.minVolRatio)) return false;
   if (cfg.minBuyerPower > 0 && !atLeast(r.buyer_power, cfg.minBuyerPower)) return false;
   return true;
 }
 
-/** ۵. نقطه‌زنی و کف‌یابی — جزوه: ``round((pc-min29)/pc*100,2) < 3 && tvol > avg30 && tno > 5`` */
+/** ۵. نقطه‌زنی و کف‌یابی — فایل: ``round((pc-min)/pc*100*100)/100 < 3 && tvol > Σ[ih][0..29]/30 && tno > 5``
+ *  ``min`` کفِ [ih][0..28] است، نه ستونِ نمایشیِ min30_low (که دیروزها را می‌شمرد).
+ */
 export function matchNoqtehFilter(r: MarketRow, cfg: TapeFilterConfig['noqteh']): boolean {
   const close = num(r.p_closing);
-  const min30 = num(r.min30_low);
-  if (close == null || close <= 0 || min30 == null || min30 <= 0) return false;
+  const minLow = fileLow(r);
+  if (close == null || close <= 0 || minLow == null || minLow <= 0) return false;
 
-  const distPct = Math.round(((close - min30) / close) * 100 * 100) / 100;
+  const distPct = Math.round(((close - minLow) / close) * 100 * 100) / 100;
   if (distPct < 0 || distPct >= cfg.maxDistPct) return false;
 
-  if (cfg.minVolRatio > 0) {
-    const mult = volumeMultiple(r.tvol, r.month_avg_vol);
-    if (mult == null || mult <= cfg.minVolRatio) return false;
-  }
-  return atLeast(r.z_tot_tran, cfg.minTradeCount + 1);
+  if (!volumeGate(r, cfg.minVolRatio)) return false;
+  return above(r.z_tot_tran, cfg.minTradeCount);
 }
 
-/** ۶. جریان پول هوشمند نخبگان — پنلِ خودی، خارج از جزوه */
+/** ۶. جریان پول هوشمند نخبگان — پنلِ خودی، خارج از فایل */
 export function matchSmartFlowFilter(r: MarketRow, cfg: TapeFilterConfig['smartFlow']): boolean {
   if (!atLeast(r.buyer_power, cfg.minBuyerPower)) return false;
-  const mult = volumeMultiple(r.tvol, r.month_avg_vol);
+  const mult = filterVolumeRatio(r);
   return mult != null && mult >= cfg.minVolRatio;
 }
 
