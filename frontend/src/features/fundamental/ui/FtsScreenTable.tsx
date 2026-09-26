@@ -9,6 +9,8 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { FTS_COLUMN_LABEL } from '../lib/ftsLabels';
+import { pickAssemblyBadge, type AssemblyBadgeInfo, type CalEvent } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
@@ -17,6 +19,8 @@ import { isFundamentalCompany, isFinancialOrHolding } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
+  epsChangeText,
+  epsChanges,
   epsGapLabel,
   epsHistory,
   epsSeriesText,
@@ -36,15 +40,19 @@ type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'prof
 /** شمارهٔ شاخص با «—» از نامش جدا می‌شود؛ بی‌جداکننده، «۳ حاشیه…» یک عددِ بخشی از نام خوانده می‌شد. */
 const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: 'نماد', title: '' },
-  { key: 'rev_growth', label: '۱ — رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد تولیدی' },
+  { key: 'rev_growth', label: '۱ — رشد فروش (الف/ب)', title: 'الف: رشد ریالی فروش | ب: رشد مقداری (تناژ)' },
   { key: null, label: '۲ — روند EPS', title: 'وضعیت و رشد سال‌به‌سال EPS' },
-  { key: 'gross_margin', label: '۳ — حاشیه سود ناخالص', title: 'سود ناخالص ÷ درآمد عملیاتی' },
-  { key: 'profit_potential_pct', label: '۴ — ارزش بازار', title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
+  { key: 'gross_margin', label: FTS_COLUMN_LABEL['gross_margin'], title: 'سود ناخالص ÷ درآمد عملیاتی' },
+  { key: 'profit_potential_pct', label: FTS_COLUMN_LABEL['profit_potential'], title: 'سود ناخالص برآوردی ۱۲ماهه ÷ ارزش بازار یا نسبت فروش به ارزش بازار' },
   { key: null, label: '۵ — صنعت', title: 'رژیم قیمت‌گذاری صنعت' },
-  { key: 'score', label: 'امتیاز', title: 'نردبان بنیادی ۰ تا ۵' },
+  { key: 'score', label: FTS_COLUMN_LABEL['score'], title: 'نردبان بنیادی ۰ تا ۵' },
 ];
 
-/** نمایش جریان سال‌به‌سال EPS همراه با اتصال فلش و درصد رشد YoY */
+/** نمایش جریان سال‌به‌سال EPS همراه با اتصال فلش و درصد رشد YoY (#101).
+ *  درصد از lib/epsHistory می‌آید — همان منبعِ کارت FTS و نردبان EPS، تا یک
+ *  عدد در سه نما یکی خوانده شود. جایی که درصد قابل محاسبه نیست (سالِ غایب،
+ *  مبنای صفر/زیان، یا سالِ نخست) هیچ درصدی نشان داده نمی‌شود: نه ۰٪، نه
+ *  ۱۰۰٪ِ جعلی، نه فلشِ سبز/سرخ. */
 function EpsFlow({
   series,
   trendText,
@@ -59,6 +67,7 @@ function EpsFlow({
   if (clean.every((v) => v === null)) {
     return <span>—</span>;
   }
+  const changes = epsChanges(clean);
 
   return (
     <div
@@ -67,15 +76,8 @@ function EpsFlow({
       title={trendText ?? undefined}
     >
       {clean.map((val, idx) => {
-        const nextVal = clean[idx + 1];
-        let growthPct: number | null = null;
-        if (val != null && nextVal != null) {
-          if (val !== 0) {
-            growthPct = Math.round(((nextVal - val) / Math.abs(val)) * 100);
-          } else {
-            growthPct = nextVal > 0 ? 100 : nextVal < 0 ? -100 : 0;
-          }
-        }
+        // فلشِ پس از هر عدد، رشدِ آن عدد تا عددِ بعدی را می‌گوید ⇒ changes[idx+1]
+        const growthPct = changes[idx + 1] ?? null;
         const valStr =
           val != null
             ? toFaDigits(Number.isInteger(val) ? String(val) : val.toFixed(2).replace(/\.?0+$/, ''))
@@ -92,7 +94,7 @@ function EpsFlow({
                       growthPct > 0 ? 'text-accent-green' : growthPct < 0 ? 'text-accent-red' : 'text-text-muted'
                     }`}
                   >
-                    {growthPct > 0 ? `+${toFaDigits(growthPct)}٪` : `${toFaDigits(growthPct)}٪`}
+                    {epsChangeText(growthPct)}
                   </span>
                 ) : (
                   <span className="text-2xs text-text-muted leading-none">—</span>
@@ -201,8 +203,11 @@ const ScreenerRow = memo(function ScreenerRow({
   thresholds,
   onSelect,
   stripe,
+  assembly = null,
 }: {
   row: FtsScreenRow;
+  /** برچسب مجمع این نماد (از نقشهٔ انبوهٔ والد) — null یعنی رویدادی نیست */
+  assembly?: AssemblyBadgeInfo | null;
   thresholds?: Record<string, unknown> | null;
   onSelect: (symbol: string) => void;
   /** زبرا از ایندکسِ ردیف در آرایهٔ مرتب‌شده می‌آید — نه از :nth-child.
@@ -287,6 +292,20 @@ const ScreenerRow = memo(function ScreenerRow({
                             وتوی روند
                           </span>
                         ) : null}
+                        {/* مجمع نزدیک — متنِ کامل در title، روی برچسب فقط تاریخ */}
+                        {assembly ? (
+                          <span
+                            data-testid={`row-${assembly.testId}`}
+                            title={assembly.detail ? `${assembly.label} · ${assembly.detail}` : assembly.label}
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border ${
+                              assembly.kind === 'near'
+                                ? 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow/30'
+                                : 'bg-accent-blue/20 text-accent-blue border-accent-blue/30'
+                            }`}
+                          >
+                            مجمع {assembly.jalali.split('-').slice(-2).join('/')}
+                          </span>
+                        ) : null}
                       </div>
                       <span className="truncate text-2xs text-text-muted leading-tight" title={r.name || r.sector_name || ''}>
                         {r.name || r.sector_name || ''}
@@ -308,7 +327,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             />
                           )}
                         </span>
-                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی">
+                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد مقداری (تناژ)">
                           <span className="text-[10px] text-text-muted font-bold">ب</span>
                           {isFinancialOrHolding(r) ? (
                             <span className="text-[9px] text-text-muted">N/A</span>
@@ -320,7 +339,13 @@ const ScreenerRow = memo(function ScreenerRow({
                         </span>
                       </div>
                       <span
-                        className={`num block min-w-0 text-end text-sm font-bold whitespace-nowrap ${r.rev_growth != null && r.rev_growth >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                        className={`num block min-w-0 text-end text-sm font-bold whitespace-nowrap ${
+                          r.rev_growth == null
+                            ? 'text-text-muted'
+                            : r.rev_growth >= 0
+                              ? 'text-accent-green'
+                              : 'text-accent-red'
+                        }`}
                         title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
@@ -479,25 +504,28 @@ export function FtsScreenTable({
   rows,
   onSelect,
   thresholds,
-  onRefresh,
-  refreshing,
   onDbUpdate,
   dbUpdate,
+  assemblyEvents = null,
   settingsSlot,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
   /** تارگت‌های کانفیگ FTS (پاسخ /api/screener) برای کارت «چرا این وضعیت؟» */
   thresholds?: Record<string, unknown> | null;
-  onRefresh?: () => void;
-  refreshing?: boolean;
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب (POST /api/sync/codal/db-download) */
   onDbUpdate?: () => void;
   /** وضعیت زندهٔ دانلود/ادغام برای لیبل دکمه (GET /api/sync/codal/db-status) */
   dbUpdate?: { running: boolean; stage: string; percent?: number; detail?: string; error?: string } | null;
+  /** رویدادهای مجمعِ همهٔ نمادها از /api/calendar/upcoming — یک درخواست برای کل جدول */
+  assemblyEvents?: Record<string, CalEvent[]> | null;
   /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
   settingsSlot?: ReactNode;
 }) {
+  /** برچسب مجمعِ یک نماد؛ منطق انتخاب در lib/assemblyEvent.ts (آزمون‌شده) است */
+  const assemblyBadge = (sym: string) =>
+    assemblyEvents ? pickAssemblyBadge(assemblyEvents[sym] ?? []) : null;
+
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
   /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
@@ -525,7 +553,10 @@ export function FtsScreenTable({
     return {
       all: base.length,
       super: base.filter((r) => r.score >= 4 && r.pricing_mode === 'free').length,
-      jet: base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free').length,
+      // «ستاپ جت» یعنی آخرینِ کندل پلکانِ مقاومتِ جزوه را شکسته باشد --
+      // همان tech_jet که موتورِ اسکرینر از رویِ کندل‌ها حساب می‌کند. پیش از
+      // این این چیپ i1_pass را می‌شمرد و نامش را جت می‌گذاشت.
+      jet: base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free').length,
       hourglass: base.filter((r) => r.score === 5 && r.excluded !== true).length,
     };
   }, [rowsAfterAxisFilter]);
@@ -537,7 +568,7 @@ export function FtsScreenTable({
       if (strategicPreset === 'super') {
         base = base.filter((r) => r.score >= 4 && r.pricing_mode === 'free');
       } else if (strategicPreset === 'jet') {
-        base = base.filter((r) => r.i1_pass === true && r.pricing_mode === 'free');
+        base = base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free');
       } else if (strategicPreset === 'hourglass') {
         base = base.filter((r) => r.score === 5 && r.excluded !== true);
       }
@@ -581,7 +612,7 @@ export function FtsScreenTable({
   const padBottom = virtualRows.length ? Math.max(0, totalSize - virtualRows[virtualRows.length - 1].end) : 0;
 
   if (rows.length === 0) {
-    return <EmptyState title="ردیفی از غربالگری FTS نیامد" hint="کارنامهٔ ماهانهٔ کدال هنوز سینک نشده است" />;
+    return <EmptyState title="ردیفی از غربالگری FTS نیامد" hint="کارنامهٔ ماهانهٔ کدال هنوز به‌روز نشده است" />;
   }
 
   return (
@@ -602,7 +633,7 @@ export function FtsScreenTable({
             data-testid="fts-db-update"
             title={dbUpdate?.error
               ? dbUpdate.error
-              : 'دانلود snapshot دیتابیس کدال از گیت‌هاب و ادغام در دیتابیس محلی — اگر بلاک شود، IP با ADB چرخانده می‌شود'}
+              : 'جدیدترین صورت‌مالی‌های کدال را می‌گیرد و با دادهٔ همین رایانه ادغام می‌کند؛ ردیفی که تازه‌تر باشد دست‌نخورده می‌ماند.'}
             className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
               dbUpdate?.error
                 ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
@@ -623,19 +654,6 @@ export function FtsScreenTable({
               : dbUpdate?.error
                 ? 'خطای دیتابیس کدال'
                 : 'دیتابیس کدال'}
-          </button>
-          <button
-            type="button"
-            onClick={() => onRefresh?.()}
-            disabled={!onRefresh || refreshing}
-            data-testid="fts-refresh"
-            title="بازخوانیِ ۵ شاخص FTS از دیتابیسِ موجود — دادهٔ تازه با دکمهٔ «دیتابیس کدال» می‌آید"
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2.5 py-1 text-2xs font-bold text-text-secondary transition-colors hover:border-border-accent hover:text-accent-blue disabled:opacity-50"
-          >
-            <svg className={`h-3 w-3 text-text-secondary group-hover:text-accent-blue ${refreshing ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-            {refreshing ? "در حال بروزرسانی…" : "بروزرسانی"}
           </button>
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
@@ -731,13 +749,15 @@ export function FtsScreenTable({
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-200px)] min-h-[320px] overflow-auto overscroll-contain">
         <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
           <colgroup>
-            <col className="w-[18%]" />
+            {/* ستونِ نماد ۱۸٪ بود که در ۱۹۲۰ پهنای بی‌مصرف می‌گرفت؛ ۱۴٪ اندازهٔ
+                خودِ نماد + یک برچسبِ کوتاه است. عرضِ آزادشده به سری EPS رفت. */}
+            <col className="w-[14%]" />
             {/* ستون شاخص ۱ دو تیک (الف/ب) + عددِ تا ۴ رقم دارد؛ با ۱۲٪ عددِ ۲۴۴.۷٪
                 از خانه بیرون می‌زد (اندازه‌گیری روی مرورگر واقعی). */}
             <col className="w-[13%]" />
             {/* شاخص ۲ سری EPS دارد (سه عدد + درصد رشد) — با بزرگ‌ترشدنِ فونتِ این ستون،
                 عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. */}
-            <col className="w-[25%]" />
+            <col className="w-[28%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />
             <col className="w-[14%]" />
@@ -781,6 +801,7 @@ export function FtsScreenTable({
                 thresholds={thresholds}
                 onSelect={onSelect}
                 stripe={vi.index % 2 === 0 ? 'odd' : 'even'}
+                assembly={assemblyBadge(r.symbol)}
               />
             );
           })}

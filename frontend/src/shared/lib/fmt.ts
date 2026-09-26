@@ -6,6 +6,27 @@ export function toFaDigits(input: string | number): string {
   return String(input).replace(/[0-9]/g, (d) => FA_DIGITS[Number(d)]);
 }
 
+/** تبدیل ارقام فارسی/عربی به لاتین */
+export function toEnDigits(input: string): string {
+  return input
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+}
+
+/**
+ * خواندنِ عدد از ورودیِ کاربر: با ارقامِ فارسی/عربی، با جداکننده، و با علامتِ منفی.
+ * هر چیزِ دیگر null — به‌خصوص ورودیِ خالی که صفر نیست. «صفر» و «ننوشته» دو
+ * حالِتِ متفاوت‌اند و هیچ‌وقت نباید یکی جای دیگری را بگیرد.
+ */
+export function parseNum(raw: string | number | null | undefined): number | null {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+  if (typeof raw !== 'string') return null;
+  const s = toEnDigits(raw).replace(/[٬,\s]/g, '').replace('٫', '.').trim();
+  if (!s || s === '-' || s === '.' || s === '-.') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
 /** عدد با جداکننده هزارگان و ارقام فارسی */
 export function fmtInt(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return '-';

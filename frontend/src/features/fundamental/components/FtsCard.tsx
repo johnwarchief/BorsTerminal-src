@@ -1,11 +1,13 @@
 // features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
 import { toFaDigits } from '@shared/lib/fmt';
+import { FTS_LABEL } from '../lib/ftsLabels';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { gapReason, gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
 import { AuditBadge, type AuditEvidence } from './AuditBadge';
 import { industryGateLabel, industryGatePassLabel, industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
+import { epsChangeText, epsChanges, epsGrowthReason } from '../lib/epsHistory';
 import type { DrillDownKey } from './FtsDrillDown';
 import type { FtsCardIndicators } from '../api/useFtsCard';
 
@@ -13,31 +15,31 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
   {
     key: '1_growth',
     drill: '1',
-    label: '۱. رشد فروش کدال',
+    label: FTS_LABEL['1_growth'],
     hint: 'رشد درآمد ریالی و مقداری نسبت به دوره مشابه سال قبل — کلیک: نمودار و جزئیات',
   },
   {
     key: '2_eps_trend',
     drill: '2',
-    label: '۲. سودآوری ۳ ساله',
+    label: FTS_LABEL['2_eps_trend'],
     hint: 'روند ۳ سال متوالی سود هر سهم از صورت‌های حسابرسی‌شده — کلیک: نمودار و جزئیات',
   },
   {
     key: '3_gross_margin',
     drill: '3',
-    label: '۳. حاشیه سود ناخالص',
+    label: FTS_LABEL['3_gross_margin'],
     hint: 'سود ناخالص ÷ درآمد عملیاتی — کلیک: نمودار و جزئیات',
   },
   {
     key: '4_sales_to_mcap',
     drill: '4',
-    label: '۴. ارزش بازار',
+    label: FTS_LABEL['4_sales_to_mcap'],
     hint: 'نسبت سالانه‌شده فروش یا پتانسیل سود به ارزش بازار — کلیک: نمودار و جزئیات',
   },
   {
     key: '5_industry',
     drill: '5',
-    label: '۵. رژیم صنعت',
+    label: FTS_LABEL['5_industry'],
     hint: 'عدم شمول قیمت‌گذاری دستوری (بورس کالا و نرخ‌های آزاد) — کلیک: نمودار و جزئیات',
   },
 ];
@@ -60,6 +62,11 @@ function getCardToneClasses(pass: boolean | null | undefined, isActive: boolean)
   return 'border-border-c/70 bg-bg-card/70 hover:border-border-accent hover:bg-bg-card';
 }
 
+/** عددِ مالیِ کانفیگ؛ هر چیزِ دیگر ( رشته، آرایه، پنهان) «نمی‌دانیم» است. */
+function cfgNum(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 export function FtsCard({
   score,
   passes,
@@ -68,6 +75,7 @@ export function FtsCard({
   industryMode,
   audit,
   indicators,
+  thresholds = null,
   activeDrill = null,
   onDrill,
 }: {
@@ -83,6 +91,8 @@ export function FtsCard({
   audit?: Partial<Record<GapAxis, AuditEvidence>> | null;
   /** داده‌های خام شاخص‌ها برای نمایش مقادیر و درصدهای واقعی */
   indicators?: FtsCardIndicators | null;
+  /** کف/هدفِ جاریِ پیش‌شرط‌ها از بک‌اند — برچسبِ کارت باید همین را بنویسد */
+  thresholds?: Record<string, unknown> | null;
   activeDrill?: DrillDownKey | null;
   onDrill?: (k: DrillDownKey) => void;
 }) {
@@ -142,17 +152,22 @@ export function FtsCard({
         </div>
 
         {/* شبکه ۵ کارت شاخص — چیدمان مدرن با اولویت قرارگیری عدد و نتیجه در کنار هم + فرمول ریاضی */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-2.5">
           {LAYERS.map((l) => {
             const isActive = l.drill != null && l.drill === activeDrill;
 
             // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و مقداری)
             if (l.key === '1_growth') {
               const v1a = passes['1a_monetary_growth'];
-              const volThreshold = indicators?.['1']?.volume?.threshold ?? 0;
               const v1b = passes['1b_volume_growth'];
               const mon = indicators?.['1']?.monetary;
               const vol = indicators?.['1']?.volume;
+              /** کف و هدفِ واقعیِ جزوه از کانفیگِ جاری؛ عددِ دستِ JSX نبود —
+               *  رأیِ مالک: «کف ۴۰٪ · هدف ۶۰٪ درست است و باید به کانفیگ وصل شود». */
+              const growthFloor = cfgNum(thresholds?.growth_min);
+              const growthTarget = cfgNum(mon?.threshold) ?? cfgNum(thresholds?.v10_monetary_growth_min);
+              const volFloor = cfgNum(vol?.threshold);
+              const breadthMin = cfgNum(vol?.breadth?.min);
               const monPct =
                 mon?.monetary_pct ??
                 (typeof audit?.['1a_monetary_growth']?.actualValue === 'number'
@@ -247,11 +262,19 @@ export function FtsCard({
                             denominator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش سال قبل</span>}
                           />
                           <span>− 1</span>
-                          <span className={`font-bold ${v1a ? 'text-accent-green' : 'text-accent-red'}`}>≥ تورم (۴۰٪)</span>
+                          <span className={`font-bold ${tone(v1a)}`}>
+                            ≥ تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
+                          </span>
                         </div>
                       </div>
 
-                      <span className="text-3xs text-text-muted">کف: نرخ تورم سالانه</span>
+                      {(growthFloor != null || growthTarget != null) && (
+                        <span className="text-3xs text-text-muted">
+                          {growthFloor != null && `کف ${toFaDigits(growthFloor)}٪`}
+                          {growthFloor != null && growthTarget != null && ' · '}
+                          {growthTarget != null && `هدف ${toFaDigits(growthTarget)}٪`}
+                        </span>
+                      )}
                     </div>
 
                     {/* ستون ۱-ب: رشد مقداری / فیزیکی */}
@@ -309,7 +332,16 @@ export function FtsCard({
                                 denominator={<span className="text-3xs px-0.5 whitespace-nowrap">تولید سال قبل</span>}
                               />
                               <span>− 1</span>
-                              <span className={`font-bold ${tone(v1b)}`}>≥ {toFaDigits(volThreshold)}٪</span>
+                              {/* کفِ درصدیِ رشد مقداری عمداً ۰ است؛ آن‌وقت الزامِ
+                                  واقعیِ ۱ب پهنایِ رشدِ ماهانه است. «≥ ۰٪» برای
+                                  تریدر معنایی ندارد و خرابی به‌نظر می‌رسد. */}
+                              <span className={`font-bold ${tone(v1b)}`}>
+                                {volFloor != null && volFloor > 0
+                                  ? `≥ ${toFaDigits(volFloor)}٪`
+                                  : breadthMin != null
+                                    ? `پهنا ≥ ${toFaDigits(Math.round(breadthMin * 100))}٪`
+                                    : 'بدون کف'}
+                              </span>
                             </>
                           )}
                         </div>
@@ -338,7 +370,9 @@ export function FtsCard({
 
             let resultNumberNode: React.ReactNode = null;
             let mathFormulaNode: React.ReactNode = null;
-            let benchmarkHint: string = '';
+            /** سطرِ اضافیِ پایینِ فرمول — همین‌جا فقط برای کارت EPS (#101) */
+            let extraNode: React.ReactNode = null;
+            let benchmarkHint: string | null = '';
 
             if (key === '2_eps_trend') {
               const i2 = indicators?.['2'];
@@ -360,6 +394,54 @@ export function FtsCard({
                 </span>
               );
 
+              // #101 — «درصدها نوشته بشه بدونیم چقدر رشد داشته». عددِ درصد از
+              // سریِ EPSِ خودِ بک‌اند ساخته می‌شود (eps_yoy_pct اگر آمده باشد
+              // مقدم است)؛ داوریِ شاخص ۲ هرگز اینجا بازسازی نمی‌شود.
+              const growths = epsChanges(i2?.eps_series ?? [], i2?.eps_yoy_pct);
+              const interimPct = i2?.interim?.interim_yoy_pct ?? null;
+              extraNode = (
+                <div
+                  className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-3xs"
+                  data-testid="fts-card-eps-growth"
+                  title="درصد رشد سال‌به‌سالِ EPS (قدیم ← جدید) — نمایشی است، حکمِ شاخص ۲ را عوض نمی‌کند"
+                >
+                  <span className="text-text-muted">رشد سال‌به‌سال:</span>
+                  {growths.some((p) => p != null) ? (
+                    growths.map((p, gi) =>
+                      p == null ? (
+                        <span key={gi} className="num font-mono font-bold text-text-muted">
+                          —
+                        </span>
+                      ) : (
+                        <span
+                          key={gi}
+                          className={`num font-mono font-black ${
+                            p > 0 ? 'text-accent-green' : p < 0 ? 'text-accent-red' : 'text-text-secondary'
+                          }`}
+                        >
+                          {epsChangeText(p)}
+                        </span>
+                      ),
+                    )
+                  ) : (
+                    /* «داده نداریم» هیچ‌وقت ۰٪ و هیچ‌وقت فلش سبز/سرخ نمی‌شود */
+                    <span className="font-bold text-text-muted" data-testid="fts-card-eps-growth-nodata">
+                      {epsGrowthReason(i2?.eps_series ?? [])}
+                    </span>
+                  )}
+                  {interimPct != null ? (
+                    <span
+                      className={`num font-mono font-black ${
+                        interimPct > 0 ? 'text-accent-green' : interimPct < 0 ? 'text-accent-red' : 'text-text-secondary'
+                      }`}
+                      title="رشد EPS میاندوره نسبت به همان دورهٔ سال قبل (محاسبهٔ بک‌اند)"
+                    >
+                      میاندوره {epsChangeText(interimPct)}
+                    </span>
+                  ) : null}
+                </div>
+              );
+
               mathFormulaNode = (
                 <div className="flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whitespace-nowrap" dir="ltr">
                   <span>EPS<sub>t</sub></span>
@@ -374,8 +456,8 @@ export function FtsCard({
               benchmarkHint = `شرط: ${toFaDigits(epsYearsReq)} سال متوالی سوددهی صعودی`;
             } else if (key === '3_gross_margin') {
               const i3 = indicators?.['3'];
-              const marginFloor = i3?.threshold ?? 20;
-              const marginIdeal = i3?.ideal_threshold ?? i3?.optimal_threshold ?? 30;
+              const marginFloor = i3?.threshold ?? null;
+              const marginIdeal = i3?.ideal_threshold ?? i3?.optimal_threshold ?? null;
               const marginPct =
                 i3?.margin_pct ??
                 (typeof audit?.['3_gross_margin']?.actualValue === 'number'
@@ -398,11 +480,18 @@ export function FtsCard({
                     numerator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">سود ناخالص</span>}
                     denominator={<span className="text-3xs text-text-primary px-0.5 whitespace-nowrap">درآمد عملیاتی</span>}
                   />
-                  <span className="text-3xs text-text-muted">× 100</span>
-                  <span className={`text-2xs font-black ms-0.5 ${tone(v)}`}>≥ {toFaDigits(marginFloor)}٪</span>
+                  <span className="text-3xs text-text-muted">× ۱۰۰</span>
+                  {marginFloor != null && (
+                    <span className={`text-2xs font-black ms-0.5 ${tone(v)}`}>≥ {toFaDigits(marginFloor)}٪</span>
+                  )}
                 </div>
               );
-              benchmarkHint = `کف استاندارد: ${toFaDigits(marginFloor)}٪ (ایده‌آل ${toFaDigits(marginIdeal)}٪)`;
+              benchmarkHint =
+                marginFloor == null
+                  ? null
+                  : `کف استاندارد: ${toFaDigits(marginFloor)}٪${
+                      marginIdeal == null ? '' : ` (ایده‌آل ${toFaDigits(marginIdeal)}٪)`
+                    }`;
             } else if (key === '4_sales_to_mcap') {
               const i4 = indicators?.['4'];
               const salesFloor = i4?.sales_threshold ?? 0.33;
@@ -541,6 +630,9 @@ export function FtsCard({
                 <div className="my-1.5 flex items-center justify-center rounded-lg border border-border-c/30 bg-bg-card/40 py-1.5 px-1.5 overflow-hidden">
                   {mathFormulaNode}
                 </div>
+
+                {/* سطر درصد رشد EPS (#101) — بقیهٔ کارت‌ها null می‌دهند و چیزی رندر نمی‌شود */}
+                {extraNode}
 
                 {/* ردیف پایین: شرط مرجع */}
                 <span className="text-3xs text-text-muted mt-1 truncate">{benchmarkHint}</span>

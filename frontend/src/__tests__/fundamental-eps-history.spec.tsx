@@ -22,12 +22,19 @@ vi.mock('@tanstack/react-virtual', async (orig) => {
 });
 import { EpsLadder } from '@features/fundamental/components/EpsLadder';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
+import { FtsCard as EpsCardPanel } from '@features/fundamental/components/FtsCard';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { FtsCard } from '@features/fundamental/api/useFtsCard';
 import {
+  EPS_GROWTH_NO_BASE,
+  EPS_GROWTH_NO_DATA,
   EPS_MIN_SHOWN_YEARS,
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
+  epsChangePct,
+  epsChangeText,
+  epsChanges,
+  epsGrowthReason,
   epsHistory,
   epsPartialRejectLabel,
   epsRealYears,
@@ -229,3 +236,197 @@ describe('سازگاری برچسب بین جدول، نردبان EPS و drill-
     expect(screen.queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  #101 — «کارت eps: درصدها نوشته بشه بدونیم چقدر رشد داشته»
+//  درصدِ رشد نمایشی است (هیچ داوری‌ای را عوض نمی‌کند) و قاعدهٔ سختش این است:
+//  «نبودِ داده هیچ‌وقت صفر نیست» — نه ۰٪، نه ۱۰۰٪ِ جعلی، نه فلشِ سبز/سرخ.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('#101 lib/epsHistory — درصد رشد سال‌به‌سال', () => {
+  it('درصد از مبنای مثبت درست حساب می‌شود', () => {
+    expect(epsChangePct(100, 130)).toBeCloseTo(30, 6);
+    expect(epsChangePct(96, 202)).toBeCloseTo(110.4166667, 4);
+    // افت هم منفی می‌آید، نه صفر
+    expect(epsChangePct(200, 150)).toBeCloseTo(-25, 6);
+    // برابر ⇒ ۰٪ واقعی (این تنها جایِ مجازِ صفر است: داده هست و تغییر ندارد)
+    expect(epsChangePct(100, 100)).toBe(0);
+  });
+
+  it('مبنای صفر/زیان و سالِ غایب هیچ‌وقت درصد جعلی نمی‌سازند', () => {
+    expect(epsChangePct(null, 590)).toBeNull();
+    expect(epsChangePct(undefined, 590)).toBeNull();
+    expect(epsChangePct(0, 590)).toBeNull(); // ← پیش از این +۱۰۰٪ جعلی می‌داد
+    expect(epsChangePct(0, 0)).toBeNull(); //                    و ۰٪ جعلی
+    expect(epsChangePct(0, -5)).toBeNull(); //                   و −۱۰۰٪ جعلی
+    expect(epsChangePct(-8, 100)).toBeNull(); // مبنای زیان: درصد بی‌معنا
+    expect(epsChangePct(100, null)).toBeNull();
+    expect(epsChangePct(100, Number.NaN)).toBeNull();
+  });
+
+  it('سری به همان بلندای ورودی برمی‌گردد و سالِ نخست null است', () => {
+    expect(epsChanges([91, 96, 202])).toEqual([null, expect.closeTo(5.4945, 4), expect.closeTo(110.4167, 3)]);
+    // سالِ غایب بین دو سال ⇒ آن فاصله هم null (جهشِ دو‌ساله به حساب نمی‌آید)
+    expect(epsChanges([null, 590, 990])).toEqual([null, null, expect.closeTo(67.7966, 4)]);
+    expect(epsChanges(null)).toEqual([]);
+    expect(epsChanges([])).toEqual([]);
+  });
+
+  it('عددِ فرستاده‌شدهٔ بک‌اند (eps_yoy_pct) مقدم است و دوباره حک نمی‌شود', () => {
+    expect(epsChanges([91, 96, 202], [null, 5.5, 110.4])).toEqual([null, 5.5, 110.4]);
+    // طولِ ناهمسان = پاسخِ معتبر نیست → از سری حساب می‌شود
+    expect(epsChanges([91, 96, 202], [null, 5.5])).not.toEqual([null, 5.5]);
+    expect(epsChanges([91, 96, 202], [null, null, null])).toEqual([null, null, null]);
+  });
+
+  it('درصد با رقمِ فارسی و ٪ نوشته می‌شود؛ نبودِ درصد یعنی null', () => {
+    expect(epsChangeText(110.4166667)).toBe('+۱۱۰.۴٪');
+    expect(epsChangeText(-25)).toBe('-۲۵.۰٪');
+    expect(epsChangeText(0)).toBe('۰.۰٪');
+    expect(epsChangeText(null)).toBeNull();
+    expect(epsChangeText(Number.NaN)).toBeNull();
+    // هیچ رقمِ لاتینی در متنِ نمایشی نمی‌ماند
+    expect(epsChangeText(110.4166667)).not.toMatch(/[0-9]/);
+  });
+
+  it('دلیلِ نداشتنِ درصد بین «داده نداریم» و «مبنای زیان» را تفکیک می‌کند', () => {
+    expect(epsGrowthReason([])).toBe(EPS_GROWTH_NO_DATA);
+    expect(epsGrowthReason([150])).toBe(EPS_GROWTH_NO_DATA);
+    expect(epsGrowthReason([null, null, null])).toBe(EPS_GROWTH_NO_DATA);
+    expect(epsGrowthReason([-8, 100])).toBe(EPS_GROWTH_NO_BASE);
+    expect(EPS_GROWTH_NO_DATA).toBe('داده نداریم');
+  });
+});
+
+describe('#101 کارت EPS (شاخص ۲) — درصدها کنارِ عدد', () => {
+  function cardWith(patch: Record<string, unknown>) {
+    return {
+      status: 'success' as const,
+      symbol: 'شفارس',
+      indicators: { '2': { eps_years_required: 3, years_required: 3, years_available: 3, ...patch } },
+    } as unknown as FtsCard;
+  }
+
+  function renderCard(patch: Record<string, unknown>) {
+    render(
+      <EpsCardPanel
+        score={4}
+        passes={{ '2_eps_trend': true }}
+        verdict="قبول"
+        indicators={cardWith(patch).indicators ?? null}
+      />,
+    );
+    return screen.getByTestId('fts-card-cell-2_eps_trend');
+  }
+
+  it('سریِ سه‌ساله: هر دو درصد رشد نوشته می‌شود (+۵.۵٪ و +۱۱۰.۴٪)', () => {
+    const cell = renderCard({ eps_series: [91, 96, 202] });
+    const growth = within(cell).getByTestId('fts-card-eps-growth');
+    expect(growth.textContent).toContain('+۵.۵٪');
+    expect(growth.textContent).toContain('+۱۱۰.۴٪');
+    expect(within(cell).queryByTestId('fts-card-eps-growth-nodata')).not.toBeInTheDocument();
+  });
+
+  it('سریِ صعودیِ کاملِ بدون درصدِ لاتین', () => {
+    const growth = within(renderCard({ eps_series: [100, 150, 300] })).getByTestId('fts-card-eps-growth');
+    expect(growth.textContent).toContain('+۵۰.۰٪');
+    expect(growth.textContent).toContain('+۱۰۰.۰٪');
+    expect(growth.textContent).not.toMatch(/[0-9]/);
+  });
+
+  it('سریِ افت‌کرده: درصدِ منفی با همان منبع نمایش داده می‌شود', () => {
+    const growth = within(renderCard({ eps_series: [200, 150, 100] })).getByTestId('fts-card-eps-growth');
+    expect(growth.textContent).toContain('-۲۵.۰٪');
+    expect(growth.textContent).toContain('-۳۳.۳٪');
+  });
+
+  it('یک نقطه داده ⇒ «داده نداریم»، نه ۰٪ و نه فلش', () => {
+    const cell = renderCard({ eps_series: [50] });
+    expect(within(cell).getByTestId('fts-card-eps-growth-nodata').textContent).toContain(EPS_GROWTH_NO_DATA);
+    expect(within(cell).getByTestId('fts-card-eps-growth').textContent).not.toContain('٪');
+    expect(within(cell).getByTestId('fts-card-eps-growth').textContent).not.toMatch(/[▲✓↑]/);
+  });
+
+  it('بدون سری (indicators خالی) ⇒ همان «داده نداریم»', () => {
+    const cell = renderCard({ eps_series: null });
+    expect(within(cell).getByTestId('fts-card-eps-growth-nodata').textContent).toContain(EPS_GROWTH_NO_DATA);
+  });
+
+  it('سریِ آلوده به زیان: درصد جعلی نمی‌شود، دلیل نوشته می‌شود', () => {
+    const cell = renderCard({ eps_series: [-8, 100, null] });
+    const line = within(cell).getByTestId('fts-card-eps-growth');
+    expect(within(cell).getByTestId('fts-card-eps-growth-nodata').textContent).toContain(EPS_GROWTH_NO_BASE);
+    expect(line.textContent).not.toContain('۱۰۰.۰٪');
+  });
+
+  it('درصدِ خودِ بک‌اند (eps_yoy_pct) بر محاسبهٔ UI مقدم است', () => {
+    const growth = within(
+      renderCard({ eps_series: [91, 96, 202], eps_yoy_pct: [null, 5.49, 110.42] }),
+    ).getByTestId('fts-card-eps-growth');
+    expect(growth.textContent).toContain('+۵.۵٪');
+    expect(growth.textContent).toContain('+۱۱۰.۴٪');
+  });
+});
+
+describe('#101 نردبان EPS و دریل‌دان — همان درصدها، یک منبع', () => {
+  it('نردبان: درصدِ هر سال زیرِ همان سال نوشته می‌شود و سالِ نخست «—» است', () => {
+    render(<EpsLadder slots={['1403', '1404', '1405']} series={[100, 150, 300]} partial={false} />);
+    const ladder = screen.getByTestId('eps-ladder');
+    expect(ladder.textContent).toContain('+۵۰.۰٪');
+    expect(ladder.textContent).toContain('+۱۰۰.۰٪');
+    expect(within(ladder).getByTestId('eps-cell-change-0').textContent).toBe('—');
+  });
+
+  it('نردبان با سالِ غایب: هیچ درصد و هیچ رنگی برای آن فاصله نیست', () => {
+    render(<EpsLadder slots={['1403', '1404', '1405']} series={[null, 590, 990]} partial requiredYears={3} />);
+    const ladder = screen.getByTestId('eps-ladder');
+    // ۵۹۰ ← ۹۹۰ = ۶۷.۸٪ هست، ولی ۱۴۰۳ مبنای ندارد
+    expect(ladder.textContent).toContain('+۶۷.۸٪');
+    expect(within(ladder).getByTestId('eps-cell-change-1').textContent).toBe('—');
+  });
+
+  it('دریل‌دان شاخص ۲: زیرِ هر میله درصد رشد نوشته می‌شود', () => {
+    const card = {
+      status: 'success',
+      symbol: 'شفارس',
+      indicators: {
+        '2': {
+          eps_series: [91, 96, 202],
+          period_slots: ['1402', '1403', '1404'],
+          years_required: 3,
+          years_available: 3,
+          strictly_rising: true,
+          all_profitable: true,
+          pass: true,
+        },
+      },
+      metrics: {},
+    } as unknown as FtsCard;
+    render(<FtsDrillDown card={card} active="2" quarters={[]} physicalApplicable />);
+    expect(screen.getByTestId('drilldown-eps-change-0').textContent).toBe('—');
+    expect(screen.getByTestId('drilldown-eps-change-1').textContent).toBe('+۵.۵٪');
+    expect(screen.getByTestId('drilldown-eps-change-2').textContent).toBe('+۱۱۰.۴٪');
+  });
+});
+
+describe('#101 جدول غربالگری — EpsFlow دیگر درصد جعلی نمی‌سازد', () => {
+  it('سریِ نرمال: درصدها میانِ عددها نوشته می‌شود', () => {
+    render(<FtsScreenTable rows={[row({ eps_series: [100, 150, 300] })]} onSelect={() => {}} />);
+    const tr = screen.getByTestId('fts-screen-row');
+    expect(within(tr).getByText('+۵۰.۰٪')).toBeInTheDocument();
+    expect(within(tr).getByText('+۱۰۰.۰٪')).toBeInTheDocument();
+  });
+
+  it('مبنای صفر: به‌جای +۱۰۰٪ یا ۰٪ جعلی فقط خط تیره می‌آید', () => {
+    render(<FtsScreenTable rows={[row({ eps_series: [0, 590, 990] })]} onSelect={() => {}} />);
+    const tr = screen.getByTestId('fts-screen-row');
+    // هیچ درصدِ جعلیِ مبنای-صفر در ردیف نیست (±۱۰۰٪ و ۰٪)
+    expect(within(tr).queryByText('۱۰۰٪')).toBeNull();
+    expect(within(tr).queryByText('+۱۰۰.۰٪')).toBeNull();
+    expect(within(tr).queryByText('-۱۰۰.۰٪')).toBeNull();
+    expect(within(tr).queryByText('۰.۰٪')).toBeNull();
+    // تنها درصدِ ستون EPS همان ۵۹۰ ← ۹۹۰ است؛ فاصلهٔ از صفر درصدی نمی‌گیرد
+    expect(within(tr).getByText('+۶۷.۸٪')).toBeInTheDocument();
+    expect(within(tr).getAllByText('—').length).toBeGreaterThanOrEqual(1);
+  });
+});
+

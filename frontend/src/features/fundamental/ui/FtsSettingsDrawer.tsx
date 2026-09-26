@@ -387,7 +387,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           min={0}
           max={150}
           step={5}
-          hint="جزوه ۴۰٪ را کف می‌گیرد و ۶۰٪ را هدف؛ رشدی که به این نردست نرسد صرفاً تورمی است، پس این شماره را بین نهادید"
+          hint="جزوه رشد ریالی را با تورم می‌سنجد: ۴۰٪ کف و ۶۰٪ هدف. رشدی که به این عدد نرسد، فقط تورم بوده است."
           onChange={(v) => setDraft((d) => ({ ...d, v10_monetary_growth_min: v }))}
         />
 
@@ -440,7 +440,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         <div className="flex flex-col gap-3 rounded-xl border border-[var(--hairline)] bg-bg-card/30 p-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-text-primary">دروازه‌های سخت</span>
-            <Badge tone="red">Hard Gates</Badge>
+            <Badge tone="red">اجباری</Badge>
           </div>
 
           <div className="flex flex-col gap-1.5" role="group" aria-label="گیت نرخ‌گذاری دستوری">
@@ -561,7 +561,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           </div>
         ) : save.isSuccess && save.data?.ok ? (
           <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-2xs text-accent-green">
-            پیش‌شرط‌ها در fts_thresholds.json ذخیره شد
+            پیش‌شرط‌ها ذخیره شد
           </div>
         ) : null}
 
@@ -580,7 +580,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
             disabled={save.isPending}
             className="rounded-full border border-[var(--hairline)] bg-bg-card/60 px-4 py-2 text-xs font-bold text-text-secondary transition-all hover:border-accent-yellow hover:text-accent-yellow disabled:opacity-50"
           >
-            Reset to FTS Defaults
+            بازگشت به مقادیر جزوه
           </button>
         </div>
       </div>

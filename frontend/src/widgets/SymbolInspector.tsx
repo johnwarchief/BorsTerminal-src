@@ -298,7 +298,7 @@ export function SymbolInspector() {
           }}
           compact
           title="چرا این وضعیت؟"
-          label={`ممیزی بنیاد${fundFts == null ? '' : ': ' + toFaDigits(fundFts) + ' از ۵'}`}
+          label={`ممیزی بنیادی${fundFts == null ? '' : ': ' + toFaDigits(fundFts) + ' از ۵'}`}
           hintTitle="دلیل وضعیت شاخص بنیادی"
         />
 

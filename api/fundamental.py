@@ -147,6 +147,31 @@ def _real_growth(nominal_pct, price_pct) -> float:
         return None
     return round(((1.0 + nominal_pct / 100.0) / (1.0 + _f(price_pct) / 100.0) - 1.0) * 100.0, 1)
 
+
+def _num_or_none(v):
+    """عدد یا None — «داده نیست» هیچ‌وقت ۰.۰ نمی‌شود (برخلاف _f)."""
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if x == x else None
+
+
+def _eps_yoy_pct(series):
+    """درصد رشد سال‌به‌سالِ همان سری EPS (#101 — «درصدها نوشته بشه»).
+
+    حالت‌های None که باید None بمانند: نخستین دوره (مبنایی ندارد)، سالِ غایب،
+    دورهٔ جاریِ بدون عدد، و مبنای صفر/زیان (درصد از زیان معنا ندارد). هیچ‌گاه
+    جای None عدد ۰٪ نمی‌نشیند — رابط کاربری همان «داده نداریم» را می‌نویسد.
+    """
+    out = []
+    prev = None
+    for i, v in enumerate(list(series or [])):
+        cur = _num_or_none(v)
+        out.append(None if (i == 0 or cur is None or prev is None) else _pct(cur, prev))
+        prev = cur
+    return out
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  ارزش بازار — تک‌منبعِ حقیقت (ستونِ market_cap در اسنپ‌شاتِ تابلوی TSETMC)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -952,6 +977,9 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
                                            - len(_real), 0))
     if not base.get("period_slots"):
         base["period_slots"] = [str(y) for y in (base.get("fiscal_years") or [])]
+    # #101: درصد رشد سال‌به‌سالِ همین سری — موتور می‌سازد تا UI عدد را دوباره
+    # حک نکن؛ جایی که درصد قابل محاسبه نیست None می‌ماند (نه ۰٪).
+    base["eps_yoy_pct"] = _eps_yoy_pct(_ser)
     latest = None
     try:
         if _real:
@@ -994,13 +1022,42 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     gm = fts_engine.gross_margin(conn, symbol, min_margin=th["margin_min"],
                                  optimal=th["margin_ideal"], ref=ref)
     if not gm:
+        # «حاشیه نیست» با «داده نیست» یکی نیست. fts_engine.gross_margin در چند
+        # حالتِ متفاوت None می‌دهد و کاربر باید تفاوت را بفهمد، وگرنه برای نمادی
+        # که فقط همگام‌سازی نشده، «بهای تمام‌شده ندارد» می‌خواند و هرگز دکمهٔ
+        # «دیتابیس کدال» را نمی‌زند. `ref` از قبل در دست است؛ کوئریِ تازه لازم نیست.
         prof = profile or company_profile()
+        if ref is None:
+            reason = ("صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ "
+                      "تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.")
+            fix = ("با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ "
+                   "این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.")
+            data_gap = True
+        elif prof.get("kind") == "fund":
+            # رأیِ ۱۵: صندوق «رد شده» نمی‌گیرد. علت را هم باید همان‌طور گفت.
+            reason = ("این نماد صندوق است؛ صندوق «فروش» و «بهای تمام‌شده» ندارد که "
+                      "حاشیهٔ ناخالص از آن‌ها ساخته شود. نبودِ این عدد نقص نیست.")
+            fix = "برای صندوق‌ها شاخص ۳ سنجیده نمی‌شود؛ کارتِ بنیادیِ صندوق را ببینید."
+            data_gap = False
+        elif _f(ref.get("revenue")) <= 0:
+            reason = ("درآمد عملیاتیِ سالِ مرجع (%s) در کدال خالی یا صفر ثبت شده، "
+                      "پس تقسیمِ سود ناخالص بر آن ممکن نیست."
+                      % str(ref.get("period_end") or "—")[:10])
+            fix = "با همگام‌سازی کدال یا انتشار صورت سود و زیان سالانه بسته می‌شود."
+            data_gap = True
+        else:
+            # نامِ صنعت را دلیل نمی‌کنیم: وسدید در جدول «فلزات اساسي» است ولی
+            # درآمدش «سود سهام» است. آنچه قطعی است، نبودِ خودِ سطر در صورتِ مالی‌ست.
+            reason = ("در صورت سود و زیانِ سالِ مرجع (%s) سطر «سود ناخالص» یا "
+                      "«بهای تمام‌شدهٔ کالای فروش‌رفته» وجود ندارد؛ "
+                      "حاشیهٔ ناخالص فقط جایی معنا دارد که چنین سطری باشد."
+                      % str(ref.get("period_end") or "—")[:10])
+            fix = "نقص داده نیست — تا خودِ کدال این سطر را منتشر نکند، شاخص ۳ سنجیده نمی‌شود."
+            data_gap = False
         return {"margin_pct": None, "pass": False, "ideal": False, "na": True,
                 "band": "not_applicable", "threshold": th["margin_min"],
                 "ideal_threshold": th["margin_ideal"], "optimal": False,
-                "reason": ("این شرکت «بهای تمام‌شدهٔ کالای فروش‌رفته» درج نمیکند (%s)؛ "
-                           "حاشیهٔ ناخالص فقط برای شرکت‌های تولیدی معنا دارد."
-                           % prof["label"])}
+                "data_gap": data_gap, "reason": reason, "remediation": fix}
     margin = _sane(gm.get("margin_pct"), -99.0, 200.0)  # حاشیهٔ ۱۸۸۵٪- ⇒ None
     # حاشیه غایب یا نامعتبر: زیر باند (بدون داده) و نه کرش مقایسه با None
     gm["band"] = ("ideal" if margin is not None and margin >= th["margin_ideal"] else
@@ -1870,6 +1927,7 @@ def v10_data_gaps(res: dict) -> list:
     l1 = ind.get("1") or {}
     g, v = l1.get("monetary") or {}, l1.get("volume") or {}
     e, val = ind.get("2") or {}, ind.get("4") or {}
+    m = ind.get("3") or {}
     ann = val.get("annual") or {}
     gaps = []
     if g.get("data_gap"):
@@ -1895,6 +1953,13 @@ def v10_data_gaps(res: dict) -> list:
     elif e.get("soft_gap"):
         gaps.append({"layer": "۲", "axis": "2_eps_trend", "why": e.get("reason") or "",
                      "fix": "با انتشار صورت ۱۲ماههٔ سال مالی جاری، داوری قطعی میشود."})
+    if m.get("na"):
+        # شاخص ۳ هیچ‌وقت در این فهرست نبود؛ یعنی رایج‌ترین سلولِ خالیِ جدول
+        # (حاشیهٔ ناخالص) بی‌هیچ توضیحی می‌ماند. ind3_gross_margin علت را در سه
+        # حالت جدا کرده — همین‌جا همان را به‌کار می‌بریم، چیز تازه‌ای نمی‌سازیم.
+        gaps.append({"layer": "۳", "axis": "3_gross_margin",
+                     "why": m.get("reason") or "سود ناخالصِ سالِ مرجع در کدال نیست.",
+                     "fix": m.get("remediation") or "با همگام‌سازی کدال بررسی مجدد می‌شود."})
     if ann.get("reconciled") is False:
         gaps.append({"layer": "۴", "axis": "4_sales_to_mcap",
                      "why": "سالانه‌سازی ×۱۲÷م با گیتِ fts_engine سازگار نشد؛ "
@@ -2211,6 +2276,11 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
 
     ردیف‌ها تجمعی سال مالی‌اند (3/6/9/12 ماهه)؛ تفکیک فصلی در فرانت انجام میشود.
     هیچ منطق موجودی را تغییر نمیدهد.
+
+    #102 (رأیِ جزوه): «سود ناخالص» هم فرستاده میشود — روند فصلیِ درآمد باید با
+    سود ناخالص سنجیده شود نه سود خالص. ستون در کدال NULL است وقتی صورتِ مالی
+    سطر «بهای تمام‌شده» ندارد (صندوق/سرمایه‌گذاری)؛ NULL هیچ‌وقت صفر نمی‌شود و
+    هیچ‌وقت با سود خالص جایگزین نمی‌گردد — نبودش در پاسخ حفظ میشود.
     """
     conn = get_db()
     try:
@@ -2218,8 +2288,9 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
         # باشد و رکوردهای کدالِ همان نماد با نوشتار عربی ذخیره شده باشند.
         _fp, _fa = fts_engine.sym_in("symbol", symbol)
         _raw = conn.execute(
-            "SELECT period_end, period_months, revenue, operating_profit,"
-            " net_profit, basic_eps, publish_date FROM financial_statements"
+            "SELECT period_end, period_months, revenue, gross_profit,"
+            " operating_profit, net_profit, basic_eps, publish_date"
+            " FROM financial_statements"
             " WHERE %s ORDER BY period_end DESC, publish_date DESC LIMIT ?" % _fp,
             (*_fa, max(1, min(limit, 40)))).fetchall()
         # حذف تکراریِ (period_end, period_months): نمادِ دو-املا می‌تواند یک دوره را

@@ -175,7 +175,7 @@ describe('پنل تنظیمات FTS', () => {
     expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument();
     expect(screen.getByText('همه صنایع')).toBeInTheDocument();
     expect(screen.getByText('حذف نمادهای مشمول تعلیق')).toBeInTheDocument();
-    expect(screen.getByText('Reset to FTS Defaults')).toBeInTheDocument();
+    expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('ذخیرهٔ پیش‌شرط‌ها')).toBeInTheDocument();
     });
@@ -279,8 +279,8 @@ describe('پنل تنظیمات FTS', () => {
 
   it('Reset پیش‌فرض‌های جزوه را می فرستد و اسلایدرها را بازنشانی می کند', async () => {
     renderDrawer();
-    await waitFor(() => expect(screen.getByText('Reset to FTS Defaults')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('Reset to FTS Defaults'));
+    await waitFor(() => expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('بازگشت به مقادیر جزوه'));
     await waitFor(() => {
       const post = fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
       expect(post).toBeDefined();
@@ -461,8 +461,8 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
 
   it('Reset مقادیر سند v2.1 را برمی‌گرداند (پوشش ۴۰٪ و دروازه‌های سخت پیش‌فرض)', async () => {
     renderDrawer();
-    await waitFor(() => expect(screen.getByText('Reset to FTS Defaults')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('Reset to FTS Defaults'));
+    await waitFor(() => expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('بازگشت به مقادیر جزوه'));
     const body = await lastPosted();
     expect(body.profit_potential_min).toBe(40);
     expect(body.v10_potential_min).toBe(40);

@@ -8,9 +8,10 @@ import { Badge } from '@shared/components/Badge';
 import { GapHint, epsGapReason, GENERIC_GAP_REASON, VALUATION_GAP_REASON } from './GapHint';
 import type { FtsCard } from '../api/useFtsCard';
 import type { FiscalQuarter } from '../lib/fundMath';
-import { EPS_PARTIAL_TESTID, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
+import { EPS_PARTIAL_TESTID, epsChangeText, epsChanges, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
 import { industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
+import { FTS_PANEL_TITLE, FTS_FX_TITLE } from '../lib/ftsLabels';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,
@@ -22,13 +23,7 @@ import {
 
 export type DrillDownKey = '1' | '2' | '3' | '4' | '5';
 
-const PANEL_TITLE: Record<DrillDownKey, string> = {
-  '1': 'شاخص ۱ — رشد فروش و درآمد',
-  '2': 'شاخص ۲ — سابقه عملکرد سودسازی ۳ ساله',
-  '3': 'شاخص ۳ — حاشیه سود ناخالص',
-  '4': 'شاخص ۴ — فروش سالانه‌شده به ارزش بازار',
-  '5': 'شاخص ۵ — چشم‌انداز صنعت و نرخ‌گذاری',
-};
+const PANEL_TITLE: Record<DrillDownKey, string> = FTS_PANEL_TITLE;
 
 const Q_LABEL = ['بهار', 'تابستان', 'پاییز', 'زمستان'];
 
@@ -244,7 +239,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           />
           <span className="text-xs text-text-secondary">− 1</span>
           <span className="text-sm text-text-muted">)</span>
-          <span className="text-xs text-text-secondary">× 100</span>
+          <span className="text-xs text-text-secondary">× ۱۰۰</span>
           {growth != null ? (
             <>
               <span className="text-text-muted">=</span>
@@ -300,6 +295,9 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 function Panel2({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['2'];
   const series = ind?.eps_series ?? [];
+  /** #101: درصد رشدِ همان سری — اگر موتور فرستاده باشد همان مقدم است (کارت و
+   *  دریل‌دان یک عدد)، وگرنه از روی سریِ خودِ بک‌اند حساب می‌شود. */
+  const changes = epsChanges(series, ind?.eps_yoy_pct);
   const slots = ind?.period_slots ?? ind?.fiscal_years ?? [];
   const max = Math.max(1, ...series.filter((v): v is number => v != null && v > 0));
   const min = Math.min(0, ...series.filter((v): v is number => v != null));
@@ -363,6 +361,23 @@ function Panel2({ card }: { card: FtsCard }) {
             return (
               <div key={i} className="flex min-w-14 flex-1 flex-col items-center gap-1">
                 <span className="num text-2xs font-bold text-text-primary">{v == null ? '؟' : toFaDigits(v.toFixed(0))}</span>
+                {/* درصد رشد نسبت به سال قبل — جایی که محاسبه نمی‌شود هیچ عددی
+                    نیست (نه ۰٪، نه فلش)، طبق قاعدهٔ «نبودِ داده صفر نیست». */}
+                <span
+                  className={`num text-3xs font-black ${
+                    changes[i] == null
+                      ? 'text-text-muted'
+                      : changes[i]! > 0
+                        ? 'text-accent-green'
+                        : changes[i]! < 0
+                          ? 'text-accent-red'
+                          : 'text-text-secondary'
+                  }`}
+                  data-testid={`drilldown-eps-change-${i}`}
+                  title={changes[i] == null ? 'درصد رشد قابل محاسبه نیست' : 'رشد سود هر سهم نسبت به سال مالی قبل'}
+                >
+                  {epsChangeText(changes[i]) ?? '—'}
+                </span>
                 <div
                   className={`w-full rounded-t-lg ${v == null ? 'bg-text-muted/20' : rising === false && i > 0 && (series[i - 1] ?? 0) > v ? 'bg-accent-red/70' : 'bg-accent-green/70'}`}
                   style={{ height: `${h}px` }}
@@ -388,7 +403,7 @@ function Panel2({ card }: { card: FtsCard }) {
       {partialShown ? (
         <p className="text-2xs leading-relaxed text-accent-susp">
           دادهٔ موجود (<span className="num">{toFaDigits(realYears)}</span> سال) نمایش داده می‌شود، اما چون سابقهٔ کامل <span className="num">{toFaDigits(required)}</span> ساله
-          ندارد، این نماد در شاخص ۲ مردود است — داده حیف نمی‌شود ولی گیت سه‌ساله پاس نمی‌شود.
+          ندارد، این نماد در شاخص ۲ مردود است — داده دور ریخته نمی‌شود، ولی شرط سه‌ساله برآورده نمی‌شود.
         </p>
       ) : failReason != null ? (
         <p className="text-2xs leading-relaxed text-accent-red" data-testid="eps-fail-reason">
@@ -403,19 +418,26 @@ function Panel2({ card }: { card: FtsCard }) {
 function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }) {
   const ind = card.indicators?.['3'];
   const margin = ind?.margin_pct ?? null;
+  /** کف و سقفِ نوار را موتور می‌گوید؛ اگر در JSX حک می‌شدیم، هر «ذخیره» در
+   *  کشوی تنظیمات برچسبِ این پنل را خلافِ آستانهٔ واقعی می‌کرد. */
+  const floor = ind?.threshold ?? null;
+  const ceil = ind?.optimal_threshold ?? ind?.ideal_threshold ?? null;
+  /** رأیِ نهایی هم بازخوانی نمی‌شود: optimal و passِ خودِ موتور خوانده می‌شوند. */
   const band =
     margin == null
       ? 'na'
-      : margin >= (ind?.optimal_threshold ?? 30)
-        ? 'ideal'
-        : margin >= (ind?.threshold ?? 20)
-          ? 'conditional'
-          : 'rejected';
+      : ind?.pass === false
+        ? 'rejected'
+        : ind?.optimal === true
+          ? 'ideal'
+          : 'conditional';
   const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'N/A' };
-  // روند خطی ۶ فصل حاشیه: سود ناخالص یا مارجین فصلی (تفکیک‌شده از fundMath)
-  // نکته: قرارداد FiscalQuarter و پاسخ quartersِ بک‌اند gross_profit ندارند،
-  // پس تنها منبع موجود همان margin فصلی است (grossProfit قبلاً via `as any`
-  // خوانده می‌شد و همیشه undefined بود → آن شاخه مرده بود).
+  // روند خطی ۶ فصل حاشیهٔ **ناخالص** فصلی (تفکیک‌شده از fundMath).
+  // #102: مبنای مقایسه با درآمد، سود ناخالص است. FiscalQuarter.margin از
+  // سود ناخالص ساخته می‌شود و وقتی آن NULL است (صندوق/هلدینگ بدون سطر بهای
+  // تمام‌شده) null می‌ماند — پس این فیلتر آن فصل‌ها را بیرون می‌گذارد و نمودار
+  // برای نمادهای بی‌سود-ناخالص رسم نمی‌شود. دیگر هیچ‌جا سود خالص زیر برچسب
+  // «سود ناخالص» نمایش داده نمی‌شود.
   const trend = quarters.filter((q) => q.margin != null).slice(-6);
   const getMargin = (q: FiscalQuarter) => q.margin ?? 0;
   const maxTrend = Math.max(1, ...trend.map((q) => Math.abs(getMargin(q))));
@@ -454,27 +476,34 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
             );
           })()}
         </svg>
-      ) : null}
+      ) : (
+        quarters.length > 0 ? (
+          <p className="text-2xs leading-relaxed text-text-muted" data-testid="drilldown-margin-no-trend">
+            سود ناخالصِ فصلیِ این نماد در کدال ثبت نشده — روندِ حاشیهٔ ناخالص رسم نمی‌شود
+            (نبودِ داده، صفر نیست).
+          </p>
+        ) : null
+      )}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'rejected' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          زیر ۲۰٪ ← مردود
+          {floor == null ? 'بی‌کف' : `زیر ${toFaDigits(floor)}٪`} ← مردود
         </div>
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'conditional' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          ۲۰–۳۰٪ ← مشروط
+          {floor == null || ceil == null ? 'مشروط' : `${toFaDigits(floor)}–${toFaDigits(ceil)}٪`} ← مشروط
         </div>
         <div className={`rounded-lg border px-2 py-1.5 text-2xs font-bold ${band === 'ideal' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green' : 'border-border-c bg-bg-primary text-text-muted'}`}>
-          بالای ۳۰٪ ← مطلوب
+          {ceil == null ? 'بالای هدف' : `بالای ${toFaDigits(ceil)}٪`} ← مطلوب
         </div>
       </div>
 
       {/* نمایش استاندارد فرمول ریاضی */}
       <div className="my-1.5 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
-        <span className="font-bold text-accent-blue">Gross Margin % = </span>
+        <span className="font-bold text-accent-blue">حاشیهٔ ناخالص٪ = </span>
         <MathFraction
           numerator={<span className="text-2xs text-text-primary px-1">سود ناخالص</span>}
           denominator={<span className="text-2xs text-text-primary px-1">درآمدهای عملیاتی</span>}
         />
-        <span className="text-xs text-text-secondary">× 100</span>
+        <span className="text-xs text-text-secondary">× ۱۰۰</span>
         <span className="text-accent-green font-bold ms-2">≥ 20%</span>
       </div>
 
@@ -516,11 +545,11 @@ function Panel4({ card }: { card: FtsCard }) {
       </div>
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3">
         <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
-        <div dir="ltr" className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
-          Annualized Sales = (Cumulative Sales / {m}) × 12
+        <div className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
+          فروش سالانه‌شده = (فروش تجمعی ÷ {toFaDigits(m)} ماه) × {toFaDigits(12)}
         </div>
         <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
-          <span className="font-bold text-accent-blue">Sales / Mcap = </span>
+          <span className="font-bold text-accent-blue">فروش ÷ ارزش بازار = </span>
           <MathFraction
             numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
             denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
@@ -641,12 +670,12 @@ function Panel5({ card }: { card: FtsCard }) {
           <div className="text-2xs font-bold text-text-primary">ریسک ناترازی انرژی</div>
           <div className="mt-1 text-2xs leading-snug text-text-secondary">
             {/شیشه|شيشه|نیروگاه|برق|فولاد|پتروشیمی|پترو شیمی|سیمان|سيمان|فولاد|مجتمع فولاد/.test(fxText)
-              ? 'انرژی‌بر — ناترازی گاز تابستان (توقف خطوط) و برق زمستان ریسک تولید است.'
+              ? 'انرژی‌بر — ناترازی گاز در زمستان (توقف خطوط) و برق در تابستان ریسک تولید است.'
               : 'صنعت انرژی‌بر نیست — ناترازی فصلی انرژی اثر محدودی دارد.'}
           </div>
         </div>
         <div className="rounded-xl border border-border-c bg-bg-primary p-2.5">
-          <div className="text-2xs font-bold text-text-primary">پتانسیل ارزی</div>
+          <div className="text-2xs font-bold text-text-primary">{FTS_FX_TITLE}</div>
           <div className={`mt-1 text-2xs leading-snug ${fxExposure ? 'text-accent-green' : 'text-text-secondary'}`}>
             {fxExposure ? 'صادراتی/دلاری — درآمد به دلار گره خورده؛ پتانسیل نرخ ارز بالا.' : 'درآمد ریالی — پتانسیل ارزی مستقیم ندارد.'}
           </div>

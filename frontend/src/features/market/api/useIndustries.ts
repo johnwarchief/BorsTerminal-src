@@ -31,7 +31,11 @@ export const IndustriesSchema = z.object({
 });
 export type IndustriesFeed = z.infer<typeof IndustriesSchema>;
 
-/** سه صنعت با بیشترین ورود پول حقیقی (flow_b_toman نزولی؛ ردیف بدون عدد کنار می‌رود) */
+/**
+ * سه صنعت داغ بر مبنای ورود پول حقیقی (flow_b_toman نزولی).
+ * سنجهٔ غایب (null — مثلاً صنعتِ بی‌معامله) هرگز رتبه نمی‌گیرد: «بی‌داده» نه
+ * صفر است و نه یک سیگنال سبز/قرمز.
+ */
 export function topIndustriesByFlow(rows: IndustryRow[] | null | undefined, n = 3): IndustryRow[] {
   return (rows ?? [])
     .filter((r) => typeof r.flow_b_toman === 'number' && Number.isFinite(r.flow_b_toman))
@@ -39,7 +43,11 @@ export function topIndustriesByFlow(rows: IndustryRow[] | null | undefined, n = 
     .slice(0, n);
 }
 
-/** سه صنعت با بیشترین درصد تغییر (avg_pct نزولی) */
+/**
+ * سه صنعت داغ بر مبنای درصد (avg_pct نزولی)؛ avg_pct = میانگینِ تغییرِ قیمتِ
+ * پایانی نسبت به دیروز در همان صنعت (ساختهٔ موتور، نه اینجا). صنعتی که هیچ
+ * نمادِ دارای درصد ندارد avg_pct=null می‌گیرد و از رتبه‌بندی کنار می‌رود.
+ */
 export function topIndustriesByPct(rows: IndustryRow[] | null | undefined, n = 3): IndustryRow[] {
   return (rows ?? [])
     .filter((r) => typeof r.avg_pct === 'number' && Number.isFinite(r.avg_pct))

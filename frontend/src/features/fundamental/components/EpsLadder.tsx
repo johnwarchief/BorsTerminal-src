@@ -10,6 +10,8 @@ import { GapHint, epsGapReason } from './GapHint';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
+  epsChangeText,
+  epsChanges,
   epsGapLabel,
   epsHistory,
   epsRealYears,
@@ -46,6 +48,8 @@ export function EpsLadder({
   /** همان منطق و برچسب جدولِ غربالگری (lib/epsHistory):
    *  ≥۲ سالِ واقعی ولی سابقهٔ ناقص ⇒ داده نمایش + برچسب مردودِ ناقص */
   const hist = epsHistory(series, requiredYears ?? EPS_REQUIRED_YEARS);
+  /** درصد رشد هر سال نسبت به سالِ قبل (#101) — همان منبعِ جدول و کارت */
+  const changes = epsChanges(series);
   const partialRejected = partial && hist.state === 'partial';
   const gapReason = epsGapReason({ available: realYears, required: hist.requiredYears, interimAvailable: interim?.available ?? false });
   return (
@@ -90,6 +94,32 @@ export function EpsLadder({
               }`}
             >
               {c.value == null ? '-' : toFaDigits(c.value)}
+            </div>
+            {/* #101 — درصد رشد همین سال نسبت به سالِ قبل. نبودِ درصد (سالِ
+                نخست، سالِ غایب، مبنای صفر/زیان) با «—» و بی‌هیچ رنگِ
+                صعودی/نزولی نشان داده می‌شود؛ ۰٪ جعلی ممنوع. */}
+            <div
+              className="text-2xs"
+              data-testid={`eps-cell-change-${i}`}
+              title={
+                changes[i] != null
+                  ? 'رشد سود هر سهم نسبت به سال مالی قبل'
+                  : i === 0
+                    ? 'نخستین دورهٔ سری — مقایسه‌ای وجود ندارد'
+                    : 'دادهٔ کافی برای درصد رشد نیست'
+              }
+            >
+              {changes[i] != null ? (
+                <span
+                  className={`num font-black ${
+                    changes[i]! > 0 ? 'text-accent-green' : changes[i]! < 0 ? 'text-accent-red' : 'text-text-secondary'
+                  }`}
+                >
+                  {epsChangeText(changes[i])}
+                </span>
+              ) : (
+                <span className="text-text-muted">—</span>
+              )}
             </div>
             <div className="text-2xs text-text-muted">سال مالی کامل</div>
           </div>

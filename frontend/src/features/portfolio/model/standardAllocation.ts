@@ -1,8 +1,10 @@
 // features/portfolio/model/standardAllocation.ts -- سبد استاندارد FTS + سنجهٔ هم‌ترازی (Twin Donuts)
 // نسبت‌های مصوب سند: ۴۵٪ طلا و سکه · ۱۵٪ سهام مستقیم · ۱۵٪ ارز دیجیتال · ۱۰٪ نقره · ۱۵٪ درآمد ثابت/نقدینگی.
-// وزن واقعی: سهام از پوزیشن‌های ثبت‌شدهٔ سبد (٪ سرمایه) و سایر طبقات از ارزش ثبت‌شده ÷ ارزش کل.
+// وزنِ واقعی از همان buildDelta می‌آید (ترکیبِ طبقاتِ سبد ← ارزشِ دستی ← هیچ):
+// این‌جا عددی دوباره حساب نمی‌شود، پس دونات و نوارِ شکاف دو جوابِ متفاوت نمی‌دهند.
 // Circuit Breaker: نبود داده ⇒ actualPct=null («بدون داده») — هرگز صفر ساختگی.
 import { toFaDigits } from '@shared/lib/fmt';
+import type { DeltaRow } from '../stores/targetAllocation';
 
 export type StdBucketId = 'gold' | 'equity' | 'crypto' | 'silver' | 'fixed';
 
@@ -27,7 +29,7 @@ export const FTS_STANDARD_BUCKETS: StdBucket[] = [
 
 export const FTS_STANDARD_TOTAL_PCT = FTS_STANDARD_BUCKETS.reduce((s, b) => s + b.pct, 0);
 
-/** کلیدهای ارزش ثبت‌شدهٔ دارایی (به‌جز سهام که از سبد می‌آید) */
+/** کلیدهای استورِ «ارزشِ دستیِ طبقات» (تومان) — همان شناسه‌هایی که buildDelta می‌خواند */
 export type AssetValueKey = 'gold' | 'crypto' | 'silver' | 'fixed';
 export const ASSET_VALUE_KEYS: AssetValueKey[] = ['gold', 'crypto', 'silver', 'fixed'];
 
@@ -35,7 +37,7 @@ export type ActualSource = 'basket' | 'value' | null;
 
 export type BucketComparison = {
   bucket: StdBucket;
-  /** وزن هدف (درصد) */
+  /** وزن هدف (درصد) — جمعِ هدفِ ردیف‌های همان باکت در استورِ هدف */
   targetPct: number;
   /** وزن واقعی (درصد) — null یعنی بدون داده */
   actualPct: number | null;
@@ -46,43 +48,28 @@ export type BucketComparison = {
   state: 'overweight' | 'underweight' | 'ok' | 'nodata';
 };
 
-export type ActualInputs = {
-  /** مجموع وزن پوزیشن‌های پذیرفته‌شدهٔ سبد (٪ سرمایه) — null یعنی سبد بدون پوزیشن */
-  equityWeightPct: number | null;
-  /** ارزش کل دارایی‌های ثبت‌شده (تومان) — 0 یعنی ثبت‌نشده */
-  totalValueToman: number;
-  /** ارزش ثبت‌شدهٔ هر طبقه (تومان) */
-  values: Record<AssetValueKey, number>;
-};
-
 /** آستانهٔ تشخیص مازاد/کسری (درصد) */
 export const DEVIATION_EPS_PCT = 0.5;
 
+const r1 = (x: number) => Math.round(x * 10) / 10;
+
 /**
- * مقایسهٔ سبد واقعی با نسبت‌های مصوب سند.
- * سهام از پوزیشن‌های سبد؛ سایر طبقات از ارزش ثبت‌شده ÷ ارزش کل (در صورت وجود).
+ * لایهٔ نمایشِ دونات: هر باکتِ سند را از ردیف‌های buildDelta می‌خواند.
+ * دو قاعده که قبلاً اینجا می‌شد:
+ * · «سهام = جمعِ وزنِ همهٔ پوزیشن‌ها» — سبدِ تمام‌طلا را «سهام ۱۰۰٪» می‌کرد.
+ * · طبقه‌ای که چند ردیف دارد (طلا = فیزیکی + گواهی) فقط رویِ ردیفِ حمل‌کننده
+ *   عدد می‌گیرد، پس جمعِ باکت هم دوباره‌شمار نمی‌کند.
+ * ردیفِ بی‌داده هیچ‌گاه صفر نمی‌شود؛ باکتِ بی‌داده ⇒ actualPct=null.
  */
-export function compareToStandard(inputs: ActualInputs): BucketComparison[] {
-  const total = inputs.totalValueToman > 0 ? inputs.totalValueToman : null;
+export function compareToStandard(rows: DeltaRow[]): BucketComparison[] {
   return FTS_STANDARD_BUCKETS.map((bucket) => {
-    let actualPct: number | null = null;
-    let source: ActualSource = null;
-
-    if (bucket.id === 'equity') {
-      if (inputs.equityWeightPct != null) {
-        actualPct = Math.round(inputs.equityWeightPct * 10) / 10;
-        source = 'basket';
-      }
-    } else {
-      const key = bucket.id as AssetValueKey;
-      const value = inputs.values[key] ?? 0;
-      if (total != null && value > 0) {
-        actualPct = Math.round((value / total) * 1000) / 10;
-        source = 'value';
-      }
-    }
-
-    const deviationPct = actualPct != null ? Math.round((actualPct - bucket.pct) * 10) / 10 : null;
+    const members = rows.filter((r) => bucket.classIds.includes(r.id));
+    const known = members.filter((r) => r.currentPct != null);
+    const actualPct = known.length > 0 ? r1(known.reduce((s, r) => s + (r.currentPct as number), 0)) : null;
+    const targetPct = r1(members.reduce((s, r) => s + (r.targetPct > 0 ? r.targetPct : 0), 0));
+    const source: ActualSource =
+      known.length === 0 ? null : known.some((r) => r.measure === 'asset_value') ? 'value' : 'basket';
+    const deviationPct = actualPct == null ? null : r1(actualPct - targetPct);
     const state: BucketComparison['state'] =
       deviationPct == null
         ? 'nodata'
@@ -92,7 +79,7 @@ export function compareToStandard(inputs: ActualInputs): BucketComparison[] {
             ? 'underweight'
             : 'ok';
 
-    return { bucket, targetPct: bucket.pct, actualPct, source, deviationPct, state };
+    return { bucket, targetPct, actualPct, source, deviationPct, state };
   });
 }
 

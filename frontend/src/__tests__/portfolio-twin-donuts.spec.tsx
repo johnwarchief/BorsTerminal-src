@@ -6,7 +6,12 @@ import type { ReactElement } from 'react';
 import { TwinDonuts } from '@features/portfolio/components/TwinDonuts';
 import { SectorMatrix } from '@features/portfolio/components/SectorMatrix';
 import { useAssetValues } from '@features/portfolio/stores/assetValues';
-import { useTargetAllocation } from '@features/portfolio/stores/targetAllocation';
+import {
+  buildDelta,
+  FTS_DEFAULT_TARGETS,
+  useTargetAllocation,
+  type DeltaInputs,
+} from '@features/portfolio/stores/targetAllocation';
 import {
   FTS_STANDARD_BUCKETS,
   FTS_STANDARD_TOTAL_PCT,
@@ -45,6 +50,14 @@ function renderWithClient(ui: ReactElement) {
   return { ...utils, qc };
 }
 
+/** دونات دیگر وزن‌ها را خودش نمی‌سازد؛ از همان buildDelta می‌خواند (#106) — آزمون هم همین زنجیره */
+function buckets(
+  holdings: { weight_eff_pct?: number | null; asset_class?: { cls: string; kind?: string | null } | null }[],
+  inputs: DeltaInputs = {},
+) {
+  return compareToStandard(buildDelta(FTS_DEFAULT_TARGETS, holdings, inputs));
+}
+
 beforeEach(() => {
   decisions = [];
   fetchMock.mockReset();
@@ -70,12 +83,11 @@ describe('مدل سبد استاندارد و سنجهٔ هم‌ترازی', () 
     ]);
   });
 
-  it('وزن واقعی: سهام از پوزیشن‌های سبد و طلا از ارزش ثبت‌شده محاسبه می‌شود', () => {
-    const rows = compareToStandard({
-      equityWeightPct: 12,
-      totalValueToman: 1_000_000_000,
-      values: { gold: 500_000_000, crypto: 0, silver: 0, fixed: 0 },
-    });
+  it('وزن واقعی: سهام از پوزیشن‌های بی‌طبقهٔ سبد و طلا از ارزش ثبت‌شده', () => {
+    const rows = buckets(
+      [{ weight_eff_pct: 12 }],
+      { totalToman: 1_000_000_000, valuesByClass: { gold: 500_000_000 } },
+    );
     const equity = rows.find((r) => r.bucket.id === 'equity')!;
     expect(equity.actualPct).toBe(12);
     expect(equity.source).toBe('basket');
@@ -97,12 +109,30 @@ describe('مدل سبد استاندارد و سنجهٔ هم‌ترازی', () 
     expect(coverage).toEqual({ covered: 2, total: 5 });
   });
 
+  // دونات پیش از این «جمعِ وزنِ همهٔ پوزیشن‌ها» را سهام می‌خواند؛ سبدی که ۱۰۰٪
+  // آن صندوقِ طلا بود «سهام ۱۰۰٪ — مازاد ۸۵٪» می‌گرفت در حالی که نوارِ شکافِ
+  // همان صفحه طلا را اعلام می‌کرد. حالا هر دو از buildDelta می‌خوانند.
+  it('سبدِ تمام‌طلا در دونات «سهام ۱۰۰٪» نمی‌شود', () => {
+    const rows = buckets(
+      [{ weight_eff_pct: 100, asset_class: { cls: 'fund', kind: 'gold' } }],
+      { classMixPct: { gold: 100 } },
+    );
+    expect(rows.find((r) => r.bucket.id === 'equity')!.actualPct).toBeNull();
+    const gold = rows.find((r) => r.bucket.id === 'gold')!;
+    expect(gold.actualPct).toBe(100);
+    expect(gold.targetPct).toBe(45);
+    expect(gold.state).toBe('overweight');
+    expect(filledPct(rows)).toBe(100);
+  });
+
   it('خطای انحراف و نمرهٔ انطباق از انحراف معیار طبقات دارای داده', () => {
-    const rows = compareToStandard({
-      equityWeightPct: 18,
-      totalValueToman: 1_000_000_000,
-      values: { gold: 450_000_000, crypto: 150_000_000, silver: 100_000_000, fixed: 150_000_000 },
-    });
+    const rows = buckets(
+      [{ weight_eff_pct: 18 }],
+      {
+        totalToman: 1_000_000_000,
+        valuesByClass: { gold: 450_000_000, crypto: 150_000_000, silver: 100_000_000, fixed: 150_000_000 },
+      },
+    );
     // انحراف‌ها: طلا ۰ · سهام +۳ · کریپتو ۰ · نقره ۰ · نقد ۰ ⇒ TE=3
     const te = trackingError(rows);
     expect(te).toBe(3);
@@ -114,7 +144,7 @@ describe('مدل سبد استاندارد و سنجهٔ هم‌ترازی', () 
   });
 
   it('بدون داده هیچ نمره‌ای ساخته نمی‌شود', () => {
-    const rows = compareToStandard({ equityWeightPct: null, totalValueToman: 0, values: { gold: 0, crypto: 0, silver: 0, fixed: 0 } });
+    const rows = buckets([], {});
     expect(trackingError(rows)).toBeNull();
     expect(alignmentScore(null)).toBeNull();
     expect(filledPct(rows)).toBeNull();
@@ -122,11 +152,13 @@ describe('مدل سبد استاندارد و سنجهٔ هم‌ترازی', () 
   });
 
   it('دستورات ری‌بالانس: خرید کسری و فروش مازاد با مبلغ ریالی', () => {
-    const rows = compareToStandard({
-      equityWeightPct: 5,
-      totalValueToman: 1_000_000_000,
-      values: { gold: 600_000_000, crypto: 150_000_000, silver: 100_000_000, fixed: 150_000_000 },
-    });
+    const rows = buckets(
+      [{ weight_eff_pct: 5 }],
+      {
+        totalToman: 1_000_000_000,
+        valuesByClass: { gold: 600_000_000, crypto: 150_000_000, silver: 100_000_000, fixed: 150_000_000 },
+      },
+    );
     const orders = rebalanceOrders(rows, 1_000_000_000);
     const gold = orders.find((o) => o.bucket.id === 'gold')!;
     expect(gold.action).toBe('sell'); // ۶۰٪ در برابر هدف ۴۵٪

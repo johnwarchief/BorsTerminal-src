@@ -8,7 +8,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
 import { screenAuditEvidence } from '@features/fundamental/lib/auditEvidence';
-import { gapLabel } from '@features/fundamental/lib/gapReason';
+import { gapLabel, standardizeGap } from '@features/fundamental/lib/gapReason';
 import { fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '@features/fundamental/lib/numFmt';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 
@@ -151,5 +151,50 @@ describe('F-10 — قالب‌بندی و دقت اعداد', () => {
     const ev = screenAuditEvidence('1a_monetary_growth', row({ rev_growth: null }), { growth_min: 30 });
     expect(String(ev.reason)).toContain('حکمِ موتور');
     expect(String(ev.reason)).toContain('کارت نماد');
+  });
+});
+
+// GAPS-1 — علتِ نبودِ داده باید علتِ *همان نماد* باشد، نه برچسبِ عمومیِ محور.
+describe('GAPS-1 — قراردادِ تازهٔ standardizeGap', () => {
+  it('نامِ محورِ ۱بِ بک‌اند (1b_physical_volume) به علتِ درستِ ۱ب می‌رسد، نه fallback', () => {
+    expect(gapLabel('1b_physical_volume')).toBe(gapLabel('1b_volume_growth'));
+    expect(gapLabel('1b_physical_volume')).not.toBe('گزارش کدال ناقص است');
+  });
+
+  it('علتِ خاصِّ بک‌اند بر متنِ عمومیِ محور پیش‌روی می‌کند', () => {
+    const g = standardizeGap({
+      layer: '۳', axis: '3_gross_margin',
+      why: 'این نماد صندوق است؛ صندوق «فروش» و «بهای تمام‌شده» ندارد.',
+      fix: 'برای صندوق‌ها شاخص ۳ سنجیده نمی‌شود.',
+    });
+    expect(g.why).toContain('صندوق');
+    expect(g.why).not.toContain('سود ناخالصِ ثبت‌شده');
+    expect(g.fix).toContain('سنجیده نمی‌شود');
+  });
+
+  it('متنِ سرشار از نامِ ستون/مسیر API به متنِ تمیزِ محور تبدیل می‌شود', () => {
+    const g = standardizeGap({
+      layer: '۱ب', axis: '1b_physical_volume',
+      why: 'هیچ ستونِ حجم/تناژ فیزیکی در monthly_sales وجود ندارد.',
+      fix: 'با POST /api/sync/codal?mode=backfill بسته می‌شود.',
+    });
+    expect(g.why).not.toContain('monthly_sales');
+    expect(g.fix).not.toContain('/api/');
+    // افتاد به متنِ محورِ ۱ب — همان چیزی که بدونِ فیلتر، «ستونِ فنی» را به کاربر می‌داد
+    expect(g.why).toContain('ستون مقدار و حجم فیزیکی');
+    expect(g.fix).toContain('تعدیل تورمی');
+  });
+
+  it('علتِ خالی ⇒ متنِ جانشینِ محور، و ارقام لاتین به فارسی تبدیل می‌شود', () => {
+    const g = standardizeGap({
+      layer: '3', axis: '3_gross_margin', why: '', fix: '',
+    });
+    expect(g.why).toContain('سود ناخالص');
+    const d = standardizeGap({
+      layer: '۳', axis: '3_gross_margin',
+      why: 'در صورت سود و زیانِ سالِ مرجع (1403/12/30) سطر نبود.', fix: 'x',
+    });
+    expect(d.why).toContain('1403'.split('').map((c) => String.fromCharCode(0x06f0 + Number(c))).join(''));
+    expect(d.why).not.toMatch(/[0-9]/);
   });
 });

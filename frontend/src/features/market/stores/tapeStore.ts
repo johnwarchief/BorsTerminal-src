@@ -5,6 +5,7 @@ import { ASSET_TYPES, type AssetType } from '../lib/assetType';
 import {
   DEFAULT_TAPE_FILTER_CONFIG,
   TAPE_PRESETS,
+  coerceLookback,
   type TapeFilterConfig,
   type TapePresetKey,
 } from '../lib/tapeAlgorithms';
@@ -99,20 +100,33 @@ export function isDefaultAssetTypes(types: AssetType[]): boolean {
   return sameAssetSets(types, DEFAULT_ASSET_TYPES);
 }
 
+/**
+ * v2: پنج فیلتر به فرمول‌هایِ جزوه تنظیم مجدد شد. کلیدِ قدیمی اگر می‌ماند،
+ * آستانه‌هایِ غلطِ نسخهٔ قبل (مثل دلتای ۱٪ ساعت یا «۲۰۰ طبق جزوهٔ» کف‌روبی)
+ * برایِ همیشه رویِ دستگاهِ کاربر باقی می‌ماند و اصلاحِ پیش‌فرض‌ها به کاربر
+ * نمی‌رسید.
+ */
+const TAPE_CONFIG_KEY = 'bors_tape_filter_config_v2';
+
+function mergeBlock<T extends object>(base: T, saved: unknown): T {
+  const s = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
+  return { ...base, ...s } as T;
+}
+
 function loadInitialTapeConfig(): TapeFilterConfig {
   try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem('bors_tape_filter_config_v1') : null;
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return {
-        clock: { ...DEFAULT_TAPE_FILTER_CONFIG.clock, ...(parsed.clock ?? {}) },
-        suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume, ...(parsed.suspiciousVolume ?? {}) },
-        jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, ...(parsed.jet ?? {}) },
-        roobi: { ...DEFAULT_TAPE_FILTER_CONFIG.roobi, ...(parsed.roobi ?? {}) },
-        noqteh: { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, ...(parsed.noqteh ?? {}) },
-        smartFlow: { ...DEFAULT_TAPE_FILTER_CONFIG.smartFlow, ...(parsed.smartFlow ?? {}) },
-      };
-    }
+    const raw = typeof window !== 'undefined' ? localStorage.getItem(TAPE_CONFIG_KEY) : null;
+    if (!raw) return DEFAULT_TAPE_FILTER_CONFIG;
+    const parsed = JSON.parse(raw) as Partial<TapeFilterConfig>;
+    return {
+      clock: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.clock, parsed.clock),
+      suspiciousVolume: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume, parsed.suspiciousVolume),
+      jet: { ...mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.jet, parsed.jet),
+             lookbackDays: coerceLookback((parsed.jet as { lookbackDays?: unknown } | undefined)?.lookbackDays) },
+      roobi: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.roobi, parsed.roobi),
+      noqteh: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.noqteh, parsed.noqteh),
+      smartFlow: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.smartFlow, parsed.smartFlow),
+    };
   } catch {
     // ignore
   }
@@ -122,7 +136,7 @@ function loadInitialTapeConfig(): TapeFilterConfig {
 function saveTapeConfig(cfg: TapeFilterConfig) {
   try {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('bors_tape_filter_config_v1', JSON.stringify(cfg));
+      localStorage.setItem(TAPE_CONFIG_KEY, JSON.stringify(cfg));
     }
   } catch {
     // ignore

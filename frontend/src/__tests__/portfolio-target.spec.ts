@@ -4,11 +4,12 @@ import {
   FTS_DEFAULT_TARGETS,
   buildDelta,
   isValidAllocation,
+  mixSentence,
   normalizePct,
   sumPct,
 } from '@features/portfolio/stores/targetAllocation';
 import { donutSegments } from '@features/portfolio/components/TargetDonut';
-import { deltaLabel, deltaTone } from '@features/portfolio/components/DeltaBar';
+import { deltaLabel, deltaTotals, deltaTone } from '@features/portfolio/components/DeltaBar';
 
 describe('طبقات پیش‌فرض FTS', () => {
   it('شش طبقه با جمع دقیق ۱۰۰٪', () => {
@@ -135,17 +136,124 @@ describe('نوار شکاف و ری‌بالانس (Delta)', () => {
     expect(eq!.delta).toBe(0);
   });
 
-  it('سبد خالی ⇒ کسری کامل طبقه سهام', () => {
+  it('سبدِ خالی ⇒ «داده نداریم»، نه کسریِ ساخته‌شده', () => {
     const rows = buildDelta(FTS_DEFAULT_TARGETS, []);
     const eq = rows.find((r) => r.id === 'equity');
-    expect(eq!.currentPct).toBe(0);
-    expect(eq!.delta).toBeLessThan(0);
+    expect(eq!.currentPct).toBeNull();
+    expect(eq!.delta).toBeNull();
+    expect(eq!.reason).toContain('سبد خالی');
   });
 
-  it('سایر طبقات بدون داده فعلی ⇒ کسری کامل نسبت به هدف', () => {
+  // #106: پیش از این هر طبقهٔ غیرسهامی صفر می‌گرفت و «کسریِ کامل» اعلام می‌شد؛
+  // یعنی سبدی که ۸۷٪ آن صندوقِ طلاست، طلا را ۰٪ نشان می‌داد.
+  it('طبقهٔ بی‌داده ⇒ null با علت، نه صفرِ ساختگی', () => {
     const rows = buildDelta(FTS_DEFAULT_TARGETS, [{ weight_eff_pct: 10 }]);
     const gold = rows.find((r) => r.id === 'gold');
-    expect(gold!.currentPct).toBe(0);
-    expect(gold!.delta).toBe(-gold!.targetPct);
+    expect(gold!.currentPct).toBeNull();
+    expect(gold!.delta).toBeNull();
+    expect(gold!.reason).toBeTruthy();
+  });
+
+  it('ترکیبِ طبقاتِ بک‌اند، فعلیِ هر طبقه را می‌سازد («طلا ۸۷٪ از سبد»)', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [{ weight_eff_pct: 12.8 }], {
+      classMixPct: { gold: 87.2, stock: 12.8 },
+      basketValueToman: 1_732_500,
+    });
+    expect(rows.find((r) => r.id === 'gold')!.currentPct).toBe(87.2);
+    expect(rows.find((r) => r.id === 'gold')!.basis).toBe('basket');
+    // gold و gold-cert هر دو همان طلای سبد را می‌شمارند، پس یکی عدد دارد:
+    // تابلو فیزیکی را از گواهیِ سپرده جدا نمی‌کند؛ اگر هر دو ۸۷٫۲ می‌گرفتند،
+    // «پوشش» ۱۸۷٪ می‌شد و کارتِ ری‌بالانس دو برابرِ لازم فروش پیشنهاد می‌داد.
+    const cert = rows.find((r) => r.id === 'gold-cert')!;
+    expect(cert.currentPct).toBeNull();
+    expect(cert.delta).toBeNull();
+    expect(cert.reason).toContain('طلای فیزیکی، سکه و شمش');
+    // هدفِ ردیفِ حمل‌کننده، جمعِ هدفِ طبقه است (۳۰ + ۱۵)، نه هدفِ سطرِ خودش
+    expect(rows.find((r) => r.id === 'gold')!.classTargetPct).toBe(45);
+    expect(rows.find((r) => r.id === 'gold')!.delta).toBe(42.2);
+    expect(cert.classTargetPct).toBe(45);
+    expect(cert.classLabel).toContain('صندوق‌ها و گواهی سپردهٔ طلا');
+    expect(rows.find((r) => r.id === 'equity')!.currentPct).toBe(12.8);
+    // crypto هیچ نمادی در تابلو ندارد ⇒ بدون داده
+    expect(rows.find((r) => r.id === 'crypto')!.currentPct).toBeNull();
+    expect(rows.find((r) => r.id === 'crypto')!.delta).toBeNull();
+  });
+
+  // باگِ واقعیِ همین شماره: «پوشش ۱۸۷٪» — چون یک وزن دو بار جمع می‌شد.
+  it('طلا دو بار شمرده نمی‌شود: پوشش و جمعِ فعلی از یک اندازهٔ طبقه می‌آیند', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [{ weight_eff_pct: 12.8 }], {
+      classMixPct: { gold: 87.2, stock: 12.8 },
+      basketValueToman: 1_732_500,
+    });
+    const { target, current } = deltaTotals(rows);
+    expect(target).toBe(100);
+    expect(current).toBe(100); // ۸۷٫۲ + ۱۲٫۸ — نه ۱۷۴٫۴ + …
+    // کارت‌های کسری/مازاد هم نباید یک طبقه را دو بار بیاورند
+    const flagged = rows.filter((r) => r.delta != null && Math.abs(r.delta) > 0.05);
+    expect(flagged.map((r) => r.id)).toEqual(['gold', 'equity']);
+  });
+
+  // همان باگ روی سبدِ تک‌ردیفه: ردیفی که بک‌اند طبقه‌اش را می‌داند در ترکیبِ طبقات
+  // شمرده شده؛ جمعش در «جانشینِ سهام» همان وزن را دوباره سهام می‌کرد (طلا ۱۰۰٪
+  // ⇒ «سهام ۱۰۰٪» و پوشش ۲۰۰٪).
+  it('ردیفِ طبقه‌دار در جانشینِ سهام نمی‌نشیند؛ فقط ردیفِ بی‌طبقه', () => {
+    const rows = buildDelta(
+      FTS_DEFAULT_TARGETS,
+      [
+        { weight_eff_pct: 100, asset_class: { cls: 'fund', kind: 'gold' } },
+      ],
+      { classMixPct: { gold: 100 } },
+    );
+    expect(rows.find((r) => r.id === 'gold')!.currentPct).toBe(100);
+    const eq = rows.find((r) => r.id === 'equity')!;
+    expect(eq.currentPct).toBeNull();
+    expect(eq.delta).toBeNull();
+    expect(deltaTotals(rows).current).toBe(100);
+  });
+
+  // حقِ تقدم هم ادعای سهامی است؛ نگاشتِ نبودش یعنی وزنِ آن ردیف بی‌صدا از
+  // ترکیبِ فعلی می‌افتد و سهامِ سبد کم‌شمرده می‌شود.
+  it('حقِ تقدم در طبقهٔ سهام شمرده می‌شود، نه این‌که بی‌صدا دور ریخته شود', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [{ weight_eff_pct: 40 }], {
+      classMixPct: { gold: 60, right: 20, stock: 20 },
+    });
+    expect(rows.find((r) => r.id === 'equity')!.currentPct).toBe(40);
+    expect(rows.find((r) => r.id === 'gold')!.currentPct).toBe(60);
+  });
+
+  it('با سرمایهٔ کلِ ثبت‌شده، درصد به مخرجِ «سرمایه» می‌رود و برچسبش عوض می‌شود', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [], {
+      classMixPct: { gold: 50 },
+      basketValueToman: 1_000_000,
+      totalToman: 4_000_000,
+    });
+    const gold = rows.find((r) => r.id === 'gold')!;
+    expect(gold.currentPct).toBe(12.5); // ۵۰٪ از سبد = ۱م تومان = ۱۲٫۵٪ از ۴م
+    expect(gold.basis).toBe('capital');
+    expect(gold.delta).toBe(-32.5); // هدفِ *طبقهٔ* طلا ۴۵٪ (۳۰ فیزیکی + ۱۵ گواهی)
+  });
+
+  it('ارزشِ دستیِ تنها منبعِ طبقه‌ای است که تابلو نمی‌شناسد (رمز/arbitrage)', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [{ weight_eff_pct: 40 }], {
+      totalToman: 2_000_000,
+      valuesByClass: { crypto: 300_000 },
+    });
+    const crypto = rows.find((r) => r.id === 'crypto')!;
+    expect(crypto.currentPct).toBe(15);
+    expect(crypto.basis).toBe('capital');
+  });
+
+  it('جملهٔ headline بدترین انحراف را با مخرجش می‌گوید', () => {
+    const rows = buildDelta(FTS_DEFAULT_TARGETS, [], {
+      classMixPct: { gold: 87.2, stock: 12.8 },
+      basketValueToman: 1_732_500,
+    });
+    const s = mixSentence(rows);
+    expect(s).toContain('طلا');
+    expect(s).toContain('از سبد');
+    expect(s).toContain('هدف');
+    // عددِ هدف باید هدفِ جمعِ طبقه باشد؛ با ۳۰٪ِ سطرِ تنها «مازاد ۵۷٫۲٪» اعلام می‌شد
+    expect(s).toBe('طلای فیزیکی، سکه و شمش: ۸۷.۲٪ از سبد — هدف ۴۵٪ (مازاد ۴۲.۲٪)');
+    expect(mixSentence(buildDelta(FTS_DEFAULT_TARGETS, []))).toBeNull();
   });
 });

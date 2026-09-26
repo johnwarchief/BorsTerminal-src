@@ -128,7 +128,21 @@ def audit(symbol: str, con):
         try:
             page = get(abs_url(url))
             sheets = sheet_ids(page)
-            inc = [s for s in sheets if "سود و زیان" in s[1]]
+            # «صورت سود و زیان» باید دقیقاً همان شیت باشد. انتخابِ نخستین شیتی که
+            # برچسبش *شامل* «سود و زیان» است روی اطلاعیه‌های ۱۷–۲۴ شیتی «صورت سود
+            # و زیان جامع» را برمی‌داشت و بعد عددِ درستِ فروش را «در هیچ سلولی
+            # نیست» اعلام می‌کرد — هشدارِ کاذب، نه باگِ داده. (تلفیقی هم مبنای
+            # شاخص‌ها نیست؛ آخرین اولویت است.)
+            def _rank(label: str) -> int:
+                l = norm_digits(label).replace("ي", "ی")
+                if "سود و زیان" not in l:
+                    return 9
+                if "جامع" in l or "بین الف" in l or "بين الف" in l:
+                    return 3
+                if "تلفیقی" in l:
+                    return 2
+                return 0
+            inc = sorted([s for s in sheets if _rank(s[1]) < 9], key=lambda s: _rank(s[1]))
             if not inc:
                 print(f"  {period_end}: شیت سود و زیان در {len(sheets)} شیت نیست")
                 continue

@@ -1,12 +1,15 @@
 // features/market/components/FilterConfigPopover.tsx -- پاپ‌اور مدرن تنظیمات اختصاصی هر فیلتر
+// گزینه‌ها باید از همان JET_LADDER و پیش‌فرض‌هایِ جزوه بیایند؛ فهرستِ دستیِ
+// «۵، ۹، ۱۹، ۲۹، ۳۹» هیچ‌وقت ۵۹ نداشت، پس حالتِ پیش‌فرضِ جت در این پاپ‌اور
+// انتخابی‌نشانه می‌ماند و کاربر فکر می‌کرد فیلتر روی ۳۹ روزه تنظیم شده است.
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
   DEFAULT_TAPE_FILTER_CONFIG,
-  type LookbackDays,
   type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
+import { JET_LADDER } from '../lib/tapeMath';
 import { QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
 
 export function FilterConfigPopover({
@@ -242,7 +245,7 @@ export function FilterConfigPopover({
             <div>
               <span className="block font-semibold text-text-primary mb-1">تایم‌فریم شکست سقف:</span>
               <div className="flex flex-wrap gap-1">
-                {([5, 9, 19, 29, 39] as LookbackDays[]).map((d) => (
+                {JET_LADDER.map((d) => (
                   <button
                     key={d}
                     type="button"
@@ -257,6 +260,10 @@ export function FilterConfigPopover({
                   </button>
                 ))}
               </div>
+              <p className="text-3xs text-text-muted mt-1 leading-4">
+                همهٔ نقاطِ کوتاه‌تر از انتخابِ شما هم باید شکسته شوند؛ ۵۹ روزه همان
+                پلکانِ کاملِ جزوه است.
+              </p>
             </div>
           </>
         )}
@@ -286,14 +293,15 @@ export function FilterConfigPopover({
               <div className="flex justify-between items-center mb-1">
                 <span className="font-semibold text-text-primary">حداقل نسبت حجم جمع‌آوری:</span>
                 <span className="num font-bold text-accent-blue">
-                  {toFaDigits(config.roobi.minVolRatio.toFixed(1))}×
+                  {config.roobi.minVolRatio > 0
+                    ? `${toFaDigits(config.roobi.minVolRatio.toFixed(1))}×` : 'بدون شرط'}
                 </span>
               </div>
               <input
                 type="range"
-                min="0.8"
+                min="0"
                 max="3.0"
-                step="0.2"
+                step="0.1"
                 value={config.roobi.minVolRatio}
                 onChange={(e) =>
                   updateSubConfig('roobi', { minVolRatio: parseFloat(e.target.value) })

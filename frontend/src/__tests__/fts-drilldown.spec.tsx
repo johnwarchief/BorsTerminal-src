@@ -189,11 +189,12 @@ function baseCard(patch: Partial<FtsCardType> = {}): FtsCardType {
 }
 
 const FISCAL: FiscalQuarter[] = [
-  { key: '1404-Q1', yearLabel: '1404', quarter: 1, revenue: 3848, operatingProfit: 350, netProfit: 252, margin: 6.5 },
-  { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 4752, operatingProfit: 540, netProfit: 375, margin: 7.9 },
-  { key: '1404-Q3', yearLabel: '1404', quarter: 3, revenue: 5658, operatingProfit: 470, netProfit: 310, margin: 5.5 },
-  { key: '1404-Q4', yearLabel: '1404', quarter: 4, revenue: 5601, operatingProfit: 1039, netProfit: 822, margin: 14.7 },
-  { key: '1405-Q1', yearLabel: '1405', quarter: 1, revenue: 9956, operatingProfit: 856, netProfit: 604, margin: 6.1 },
+  // grossProfit هم‌راستا با margin است (#102): margin = سود ناخالص ÷ درآمد × ۱۰۰
+  { key: '1404-Q1', yearLabel: '1404', quarter: 1, revenue: 3848, operatingProfit: 350, netProfit: 252, grossProfit: 1299, margin: 33.7 },
+  { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 4752, operatingProfit: 540, netProfit: 375, grossProfit: 1645, margin: 34.6 },
+  { key: '1404-Q3', yearLabel: '1404', quarter: 3, revenue: 5658, operatingProfit: 470, netProfit: 310, grossProfit: 1867, margin: 33.0 },
+  { key: '1404-Q4', yearLabel: '1404', quarter: 4, revenue: 5601, operatingProfit: 1039, netProfit: 822, grossProfit: 2072, margin: 37.0 },
+  { key: '1405-Q1', yearLabel: '1405', quarter: 1, revenue: 9956, operatingProfit: 856, netProfit: 604, grossProfit: 3534, margin: 35.5 },
 ];
 
 describe('Drill-Down تعاملی ۵ شاخص FTS', () => {
@@ -343,17 +344,17 @@ describe('پنل شاخص ۳ — حاشیه سود ناخالص', () => {
 });
 
 describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ماهه', () => {
-  it('فرمول Annualized Sales = (Cumulative Sales / N) × 12 با N=5 رندر می‌شود', () => {
+  it('فرمول سالانه‌سازی با N=5 فارسی و با ارقام فارسی رندر می‌شود', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
     const formula = screen.getByTestId('annualize-formula');
-    expect(formula.textContent).toBe('Annualized Sales = (Cumulative Sales / 5) × 12');
+    expect(formula.textContent).toBe('فروش سالانه‌شده = (فروش تجمعی ÷ ۵ ماه) × ۱۲');
   });
 
   it('N=12 سال کامل: فرمول ضریب ۱ دارد (رفع باگ تقسیم بر ۱۲×۰م)', () => {
     const card = baseCard();
     card.indicators!['4'] = { ...card.indicators!['4']!, months_used: 12, scale_factor: 1 };
     render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
-    expect(screen.getByTestId('annualize-formula').textContent).toBe('Annualized Sales = (Cumulative Sales / 12) × 12');
+    expect(screen.getByTestId('annualize-formula').textContent).toBe('فروش سالانه‌شده = (فروش تجمعی ÷ ۱۲ ماه) × ۱۲');
   });
 
   it('برچسب مبنا: «سالانه‌شده از دورهٔ ۵ ماهه» + متن خام مبنا', () => {
@@ -468,14 +469,17 @@ describe('DataGapBanner — پاک‌سازی متون خام موتور', () =>
       />,
     );
     const banner = screen.getByTestId('data-gap-banner');
-    // متن خام موتور (fts_engine، ×۱۲÷م، گیت) هرگز نمایش نمی‌یابد
+    // قراردادِ تازه: علتِ خاصِّ بک‌اند پیش‌رویِ متنِ عمومیِ محور است، به‌شرطِ آنکه
+    // رشتهٔ فنی (نامِ تابع/ستون/مسیر API) در آن نباشد. پس از دو شکافِ همین تست،
+    // ردیفِ ۴ (که «fts_engine» و «گیتِ» دارد) به متنِ جانشینِ محور می‌افتد و
+    // ردیفِ ۲ (نثرِ تمیزِ خودِ موتور) عیناً نمایش می‌یابد.
     expect(banner.textContent).not.toContain('fts_engine');
     expect(banner.textContent).not.toContain('گیتِ');
     expect(banner.textContent).not.toContain('×۱۲÷م');
     expect(banner.textContent).toContain('شاخص ۴');
     expect(banner.textContent).toContain('گزارش‌های ماهانهٔ کدال برای سالانه‌سازی فروش کافی نیست');
     expect(banner.textContent).toContain('شاخص ۲');
-    expect(banner.textContent).toContain('سابقهٔ EPS این نماد برای قضاوت سه‌ساله کامل نیست');
+    expect(banner.textContent).toContain('سابقه با میاندورهٔ کوتاهِ سالِ جاری تکمیل شده');
   });
 
   it('بدون شکاف، بنر رندر نمی‌شود', () => {
@@ -498,9 +502,11 @@ describe('DataGapBanner — پاک‌سازی متون خام موتور', () =>
     );
     const item = screen.getByTestId('data-gap-item');
     const title = item.getAttribute('title') ?? '';
-    expect(title).toContain('سابقهٔ EPS این نماد برای قضاوت سه‌ساله کامل نیست');
+    // علتِ خاصِّ همان نماد در tooltip می‌آید، نه برچسبِ عمومیِ محور
+    expect(title).toContain('سابقه با میاندورهٔ کوتاهِ سالِ جاری تکمیل شده');
     expect(title).toContain('راه‌حل');
-    expect(title).toContain('همگام‌سازی کدال');
+    expect(title).toContain('با انتشار صورت');
+    expect(title).toContain('داوری قطعی میشود');
     // متن خام موتور در tooltip هم نمی‌آید
     expect(title).not.toContain('fts_engine');
   });

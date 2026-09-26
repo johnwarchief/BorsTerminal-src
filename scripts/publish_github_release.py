@@ -76,6 +76,11 @@ def _app_version():
 
 TAG = os.environ.get("RELEASE_TAG") or ("v" + _app_version())
 RELEASE_BODY = release_body(TAG)
+# صفحهٔ ریلیز گیت‌هاب جهتِ پیش‌فرضِ چپ‌به‌راست دارد، پس نامِ لاتینِ داخل
+# گیومه («Unexpected Application Error») و پرانتزهای پایانِ خط جابه‌جا چاپ می‌شوند.
+# فقط بدنهٔ ریلیز پاکت HTML می‌گیرد؛ «notes»ِ latest.json عیناً به آپدیترِ Tauri
+# می‌رود و اگر تگ داشته باشد همان تگ را به کاربر نشان می‌دهد.
+RELEASE_BODY_RTL = '<div dir="rtl">\n\n%s\n\n</div>' % RELEASE_BODY
 print(f"[=] ریلیزِ هدف: {TAG}  (RELEASE_TAG unset means bors_config.APP_VERSION)")
 SETUP_EXE = os.path.join(ROOT, "installer", "out", f"BorsTerminal_Ultimate_Setup_{TAG}.exe")
 # Tauri updater needs the minisign signature next to the installer asset.
@@ -351,7 +356,7 @@ def main():
         payload = json.dumps({
             "tag_name": TAG,
             "name": RELEASE_NAME_TEMPLATE.format(tag=TAG),
-            "body": RELEASE_BODY,
+            "body": RELEASE_BODY_RTL,
             "draft": False,
             "prerelease": False
         }).encode("utf-8")

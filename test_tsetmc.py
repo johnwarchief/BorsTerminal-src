@@ -766,7 +766,10 @@ def _save_market_snapshot(s, conn):
         daily.append((ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
                      now, mcap, mcap_src))
 
-    client = [(x.get("insCode"), today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
+    # روزِ client_type باید همان روزِ نشستِ market_watch باشد، نه «today».
+    # در تعطیلی، تابلو به آخرین نشستِ واقعی می‌خورد و ClientType به امروزِ
+    # ساعتی — پس قدرت خریدار/فروشِ «نبض بازار» از روزِ دیگری می‌آمد.
+    client = [(x.get("insCode"), d_even or today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
                x.get("buy_DDD_Volume"), x.get("buy_CountI"), x.get("buy_CountN"),
                x.get("buy_CountDDD"), x.get("sell_I_Volume"), x.get("sell_N_Volume"),
                x.get("sell_CountI"), x.get("sell_CountN"), now)
@@ -969,7 +972,10 @@ def main():
             write_progress("parse", f"در حال پردازش تابلوخوانی: نماد {sym} ...",
                            total, i, sym)
 
-    client = [(x.get("insCode"), today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
+    # همان قاعدهٔ _save_market_snapshot: روزِ client_type باید روزِ نشستِ
+    # market_watch باشد، نه امروزِ ساعتی؛ وگرنه تابلو و قدرت خریدار/فروش از
+    # دو روزِ مختلف می‌آیند (مهرِ today در تعطیلی این اختلاف را می‌ساخت).
+    client = [(x.get("insCode"), d_even or today, x.get("buy_I_Volume"), x.get("buy_N_Volume"),
                x.get("buy_DDD_Volume"), x.get("buy_CountI"), x.get("buy_CountN"),
                x.get("buy_CountDDD"), x.get("sell_I_Volume"), x.get("sell_N_Volume"),
                x.get("sell_CountI"), x.get("sell_CountN"), now)

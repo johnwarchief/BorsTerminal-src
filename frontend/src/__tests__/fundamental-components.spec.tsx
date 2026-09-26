@@ -8,8 +8,9 @@ import { SectorPePanel } from '@features/fundamental/components/SectorPePanel';
 import type { FiscalQuarter } from '@features/fundamental/lib/fundMath';
 
 const QUARTERS: FiscalQuarter[] = [
-  { key: '1404-Q1', yearLabel: '1404', quarter: 1, revenue: 3_848_391, operatingProfit: null, netProfit: 251_819, margin: 6.5 },
-  { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 4_751_559, operatingProfit: null, netProfit: -374_561, margin: -7.9 },
+  // grossProfit + marginِ هم‌راستا با آن (#102: margin = سود ناخالص ÷ درآمد × ۱۰۰)
+  { key: '1404-Q1', yearLabel: '1404', quarter: 1, revenue: 3_848_391, operatingProfit: null, netProfit: 251_819, grossProfit: 1_154_517, margin: 30.0 },
+  { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 4_751_559, operatingProfit: null, netProfit: -374_561, grossProfit: -332_609, margin: -7.0 },
 ];
 
 describe('کامپوننت های بنیادی', () => {
@@ -65,7 +66,9 @@ describe('کامپوننت های بنیادی', () => {
   it('روند فصلی با سود منفی کرش نمی کند', () => {
     const { container } = render(<QuarterlyTrend quarters={QUARTERS} />);
     expect(container.querySelector('svg')).not.toBeNull();
-    expect(screen.getByText('روند فصلی درآمد و سود خالص')).toBeInTheDocument();
+    // #102: مبنای مقایسه با درآمد، سود **ناخالص** است — سربرگ هم همین را می‌گوید
+    // (پیش از این «سود خالص» بود در حالی که جزوه سود ناخالص را می‌خواهد).
+    expect(screen.getByText('روند فصلی درآمد و سود ناخالص')).toBeInTheDocument();
   });
 
   it('روند فصلی: برچسب فصل‌ها فارسی است (بهار/تابستان و…)', () => {

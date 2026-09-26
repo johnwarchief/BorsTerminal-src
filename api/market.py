@@ -8,6 +8,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 from ._core import _count_procs, get_db
 from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, FTS_LEGACY_LISTS, FTS_LEGACY_SCALARS, FTS_LIST_KEYS, FTS_STR_KEYS, MARKET_STATUS_PATH
 from bors_flags import _ORJ
+from tape_flags import apply_tape_flags
 from fastapi import APIRouter
 from fastapi import Request
 from fastapi.responses import Response
@@ -118,9 +119,74 @@ def get_market(request: Request):
                                  "ETag": MARKET_CACHE.get("etag", "")})
     conn = get_db()
     try:
-        # Left join for 30-session Avg Volume (سوال suspicious volume) + prev-day volume
-        # rn <= 30 => آخرین ۳۰ جلسه (بدون ردیفهای قدیمیتر)؛ rn=1 => آخرین روز (پایه روند حجم)
+        # پنجرۀ تاریخچه از **اتحادِ** دو جدول ساخته می‌شود، نه از price_history
+        # به‌تنهایی. دلیلِ اندازه‌گیری‌شده: price_history فقط برایِ نمادهایی
+        # نوشته می‌شود که یک‌بار در چارت باز شده باشند، و حجمِ انبوه‌اش در
+        # ۱۴۰۵/۰۶/۰۱ (۲۰۲۶-۰۸-۲۳) مانده است. نتیجه پیش از این: «میانگین حجمِ
+        # ۳۰ روزه» و «سقفِ دیروز» برایِ صدها نماد یک‌ماهه کهنه، و برایِ ۴٬۲۰۰
+        # نماد کلاً غایب — یعنی فیلترهایِ حجمیِ تابلو رویِ دادهٔ تاریخ‌گذشته
+        # یا رویِ هیچ کار می‌کردند. daily_prices هر نشستِ کاملِ بازار را دارد.
+        # روزهایِ همپوشان (دو جدول همزمان یک نشست را دارند) با GROUP BY روی
+        # (نماد،تاریخ) یک‌بار شمرده می‌شوند و نشستِ جاریِ تابلو بیرون می‌ماند،
+        # تا rn=1 واقعاً «نشستِ پیش» باشد.
         query = """
+            WITH iso AS (
+                SELECT d,
+                       printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) AS dt
+                FROM (SELECT MAX(d_even) AS d FROM market_watch)
+            ),
+            hist AS (
+                SELECT symbol, dt,
+                       MAX(high) AS high, MAX(low) AS low, MAX(volume) AS volume
+                FROM (
+                    SELECT i.l_val18 AS symbol, h.date AS dt,
+                           h.high, h.low, h.volume
+                    FROM price_history h
+                    JOIN instruments i ON i.l_val18 = h.symbol
+                    WHERE h.date < (SELECT dt FROM iso)
+                    UNION ALL
+                    SELECT i.l_val18,
+                           printf('%04d-%02d-%02d', d.d_even/10000,
+                                  (d.d_even/100)%100, d.d_even%100),
+                           d.price_max, d.price_min, d.q_tot_tran
+                    FROM daily_prices d
+                    JOIN instruments i ON i.ins_code = d.ins_code
+                    WHERE d.d_even < (SELECT d FROM iso)
+                )
+                GROUP BY symbol, dt
+            ),
+            rk AS (
+                SELECT symbol, high, low, volume,
+                       ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY dt DESC) AS rn
+                FROM hist
+            ),
+            v AS (
+                SELECT symbol,
+                       AVG(CASE WHEN rn <= 30 THEN volume END) AS month_avg_vol,
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS prev_day_vol,
+                       -- فیلترهای TSETMC: [ih][k].PriceMax — سقفِ تک‌روزیِ
+                       -- kِمین نشستِ پیش. پلکانِ جت به [ih][2] نیاز دارد.
+                       MAX(CASE WHEN rn = 1 THEN high END) AS h1_max,
+                       MAX(CASE WHEN rn = 2 THEN high END) AS h2_max,
+                       MAX(CASE WHEN rn = 5 THEN high END) AS h5_max,
+                       MAX(CASE WHEN rn = 9 THEN high END) AS h9_max,
+                       MAX(CASE WHEN rn = 19 THEN high END) AS h19_max,
+                       MAX(CASE WHEN rn = 29 THEN high END) AS h29_max,
+                       MAX(CASE WHEN rn = 39 THEN high END) AS h39_max,
+                       MAX(CASE WHEN rn = 49 THEN high END) AS h49_max,
+                       MAX(CASE WHEN rn = 59 THEN high END) AS h59_max,
+                       -- کفِ ۳۰ روزهٔ جزوه: [ih][0..28].PriceMin
+                       MIN(CASE WHEN rn <= 29 THEN low END) AS min30_low,
+                       MAX(CASE WHEN rn <= 29 THEN high END) AS max30_high,
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
+                FROM rk WHERE rn <= 60
+                GROUP BY symbol
+            ),
+            ctm AS (
+                SELECT ins_code, MAX(d_even) AS d FROM client_type
+                WHERE d_even <= (SELECT d FROM iso)
+                GROUP BY ins_code
+            )
             SELECT m.ins_code, i.l_val18 AS symbol, i.l_val30 AS name,
                    COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector_name,
                    m.p_closing, m.p_last, m.q_tot_tran, m.z_tot_tran, m.price_yesterday,
@@ -133,38 +199,15 @@ def get_market(request: Request):
                    COALESCE(ct.buy_count_i, 0)  AS buy_count_i,
                    COALESCE(ct.sell_count_i, 0) AS sell_count_i,
                    v.month_avg_vol, v.prev_day_vol,
-                   v.h1_max, v.h5_max, v.h9_max, v.h19_max, v.h29_max,
+                   v.h1_max, v.h2_max, v.h5_max, v.h9_max, v.h19_max, v.h29_max,
                    v.h39_max, v.h49_max, v.h59_max,
                    v.min30_low, v.max30_high, v.d1_vol
             FROM market_watch m
             JOIN instruments i ON i.ins_code = m.ins_code
             LEFT JOIN boards b ON b.ins_code = m.ins_code
-            LEFT JOIN (SELECT ins_code, MAX(d_even) AS d FROM client_type GROUP BY ins_code) ctm
-                 ON ctm.ins_code = m.ins_code
+            LEFT JOIN ctm ON ctm.ins_code = m.ins_code
             LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
-            LEFT JOIN (
-                SELECT symbol,
-                       AVG(volume) AS month_avg_vol,
-                       MAX(CASE WHEN rn = 1 THEN volume END) AS prev_day_vol,
-                       -- فیلترهای TSETMC: [ih][k].PriceMax / PriceMin
-                       MAX(CASE WHEN rn = 1 THEN high END) AS h1_max,
-                       MAX(CASE WHEN rn = 5 THEN high END) AS h5_max,
-                       MAX(CASE WHEN rn = 9 THEN high END) AS h9_max,
-                       MAX(CASE WHEN rn = 19 THEN high END) AS h19_max,
-                       MAX(CASE WHEN rn = 29 THEN high END) AS h29_max,
-                       MAX(CASE WHEN rn = 39 THEN high END) AS h39_max,
-                       MAX(CASE WHEN rn = 49 THEN high END) AS h49_max,
-                       MAX(CASE WHEN rn = 59 THEN high END) AS h59_max,
-                       MIN(low) AS min30_low,
-                       MAX(high) AS max30_high,
-                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
-                FROM (
-                    SELECT symbol, volume, high, low,
-                           ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY date DESC) AS rn
-                    FROM price_history
-                ) WHERE rn <= 60
-                GROUP BY symbol
-            ) v ON v.symbol = i.l_val18
+            LEFT JOIN v ON v.symbol = i.l_val18
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
         """
@@ -209,11 +252,6 @@ def get_market(request: Request):
         df["buy_power_i"] = buy_per_i.round(0).fillna(0)
         df["sell_power_i"] = sell_per_i.round(0).fillna(0)
 
-        # ---------- حجم مشکوک: tvol >= 2.5 * month_avg_vol (DivByZero/Null-safe) ----------
-        mav = df["month_avg_vol"].where(df["month_avg_vol"] > 0)   # <=0/NaN → NaN
-        df["vol_ratio"] = (df["tvol"] / mav).round(1)              # NaN where no history
-        df["suspicious_vol"] = (df["vol_ratio"] >= 3.0)            # NaN → False
-
         # ---------- روند حجم: tvol vs آخرین روز معاملاتی (day-over-day, Null-safe) ----------
         pdv = df["prev_day_vol"].where(df["prev_day_vol"] > 0)     # <=0/NaN → NaN
         df["vol_dod"] = (df["tvol"] / pdv).round(2)                # NaN where no prev day
@@ -222,49 +260,43 @@ def get_market(request: Request):
                            np.where(df["vol_dod"] <= 0.90, "down", "flat")))
 
         # ============================================================
-        # فیلترهای TSETMC (جایگزین فیلترهای قبلی تابلوخوانی)
-        # متغیرها: pl=پایانی، pc=آخرین معامله، plp=درصد تغییر، tmin=کف روز،
-        #          tvol=حجم، tno=تعداد معاملات، zd1/qd1=دیروز، [ih][k]=تاریخچه
+        # پنج فیلترِ تابلو — عینِ فرمول‌هایِ جزوه، در tape_flags.apply_tape_flags
+        # (اینجا دیگر چیزی محاسبه نمی‌شود؛ تنها نتیجه رویِ ستون‌هایِ نمایشی
+        #  اعمال می‌گردد تا تابلو و نشان‌هایِ ستونی یک عدد ببینند.)
+        # متغیرها: pl=آخرین معامله، pc=قیمت پایانی، plp=درصد تغییر، tmin=کف روز،
+        #          tvol=حجم، tno=تعداد معاملات، zd1=حجم نشست پیش، [ih][k]=تاریخچه
         # ============================================================
-        V = lambda s: df[s].astype(float)
-        df["f_roobi"] = (np.isclose(V("p_closing"), V("p_min"), atol=0.5) & (V("prev_day_vol") > 1) & (V("percent_change") < -1) & (V("z_tot_tran") > 100)).fillna(False)
-        # حجم مشکوک: tvol > 3*avg30 و tno > 50
-        df["f_susp"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 50)).fillna(False)
-        # الگوی ساعت FTS: آخرین معامله حداقل ۱٪ بالاتر از قیمت پایانی (plp - pcp >= 1.0)
-        df["f_clock"] = ((V("p_last") >= V("p_closing") * 1.01) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 30)).fillna(False)
-        # فیلتر جت FTS: tvol > 3*avg30 و قدرت خریدار حقیقی >= 1.5*فروشنده و آخرین معامله بالای پایانی و شکست سقف‌ها
-        buy_pow = V("buy_i_vol") / V("buy_count_i").replace(0, 1)
-        sell_pow = V("sell_i_vol") / V("sell_count_i").replace(0, 1)
-        jet_hist_ok = True
-        for k in (5, 9, 19, 29, 39, 49, 59):
-            jet_hist_ok = jet_hist_ok & (df[f"h{k}_max"].isna() | (df[f"h{k}_max"] < V("p_closing")))
-        df["f_jet"] = ((V("tvol") > 3 * (df["month_avg_vol"].where(df["month_avg_vol"] > 0)))
-                       & (buy_pow >= 1.5 * sell_pow)
-                       & (V("p_last") >= V("p_closing"))
-                       & (V("percent_change") > 0)
-                       & (V("z_tot_tran") > 100)
-                       & jet_hist_ok).fillna(False)
-        # نقطه زنی: (pc - min30)/pc*100 < 3 و tvol > 1*avg30 و tno > 5
-        min30 = df["min30_low"].where(df["min30_low"] > 0)
-        df["dist_min30_pct"] = np.where(V("p_closing") > 0, (V("p_closing") - min30) / V("p_closing") * 100, np.nan)
-        df["f_noqteh"] = ((df["dist_min30_pct"] < 3) & (V("tvol") > (df["month_avg_vol"].where(df["month_avg_vol"] > 0))) & (V("z_tot_tran") > 5)).fillna(False)
+        flags = apply_tape_flags(df)
+        df["vol_ratio"] = flags["vol_ratio"].round(1)      # نمایش با همان دقتِ قبل
+        df["buyer_power_raw"] = flags["buyer_power_raw"]   # بی‌سقف، برای فیلترِ جت
+        df["resistance_59"] = flags["resistance_59"]
+        df["dist_min30_pct"] = flags["dist_min30_pct"]
+        df["suspicious_vol"] = flags["f_susp"]             # «ستونِ مشکوک» همان حجمِ ۳× است
+        for _k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"):
+            df[_k] = flags[_k]
 
         # Fail-safe: NaN/Inf → 0 (JSON safety)؛ سپس NaN حجمی → واقعاً null
         # (تا sort و نمایش «حجم مشکوک» درست بماند).
         # نکته: ستونهای حجمی از نسخهٔ خام بازیابی میشوند چون fillna(0)
         # روی object-column (vol_trend) None را به 0 تبدیل میکند.
-        _vr = df["vol_ratio"].copy()
-        _vd = df["vol_dod"].copy()
-        _vt = df["vol_trend"].copy()
+        #
+        # ستون‌هایِ تاریخچه هم باید بازیابی شوند: «سقفِ ۵۹ نشستِ پیش» اگر
+        # موجود نباشد باید null بماند. اگر صفر شود، فیلترِ جت آن را «سقفِ
+        # صفر» می‌بیند و ردیف را قبول می‌کند — همان حلقهٔ خاموشی که ۶۷۱ ردیف
+        # را جت می‌زد.
+        _KEEP_NULL = ("vol_ratio", "vol_dod", "vol_trend", "dist_min30_pct",
+                      "month_avg_vol", "prev_day_vol", "d1_vol",
+                      "buyer_power_raw", "resistance_59",
+                      "h1_max", "h2_max", "h5_max", "h9_max", "h19_max",
+                      "h29_max", "h39_max", "h49_max", "h59_max",
+                      "min30_low", "max30_high")
+        _kept = {k: df[k].copy() for k in _KEEP_NULL if k in df.columns}
         _filters_tbl = {k: df[k].copy() for k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh")}
-        _dist = df["dist_min30_pct"].copy()
         df = df.replace([np.inf, -np.inf], 0).fillna(0)
-        df["vol_ratio"] = _vr   # NaN باقی میماند → _clean → null
-        df["vol_dod"] = _vd
-        df["vol_trend"] = _vt   # None سرجایش میماند
+        for _k, _s in _kept.items():
+            df[_k] = _s          # NaN باقی می‌ماند → _clean → null
         for _k, _s in _filters_tbl.items():
             df[_k] = _s.fillna(False)
-        df["dist_min30_pct"] = _dist
 
         records = df.to_dict(orient="records")
 

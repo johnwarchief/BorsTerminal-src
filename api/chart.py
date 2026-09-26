@@ -6,6 +6,7 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
+from tape_flags import JET_LADDER
 from ._core import sym_pred
 from fastapi import APIRouter
 from fastapi import Query
@@ -21,6 +22,116 @@ router = APIRouter()
 
 
 CDN_OFFLINE_UNTIL = 0.0
+
+
+def _parse_tsetmc_csv(text):
+    """CSV روزانهٔ TSETMC → (candles, volumes, all_rows). خالص: بدون شبکه و دیتابیس.
+
+    `all_rows` همهٔ روزهایی است که پایه و پایانیِ معتبر دارند — حتی روزهای بدون
+    معامله (H=L=۰) که کندل نمی‌شوند؛ تشخیصِ تعدیل به آن‌ها نیاز دارد.
+    """
+    candles, volumes, all_rows = [], [], []
+    lines = text.splitlines()
+    # v9.7: ایندکس ستون‌ها از خودِ هدر خوانده میشود، نه عدد ثابت.
+    # هدر رسمی TSETMC:
+    #  <TICKER>,<DTYYYYMMDD>,<FIRST>,<HIGH>,<LOW>,<CLOSE>,<VALUE>,
+    #  <VOL>,<OPENINT>,<PER>,<OPEN>,<LAST>
+    # <LAST> = «قیمت آخرین معامله» — در ۹۰٪ روزها با <CLOSE> (قیمت پایانی)
+    # متفاوت است (خساپا: ۳۶۱۴ ردیف از ۳۹۹۹). تا پیش از v9.7 این ستون
+    # نادیده گرفته می‌شد و «آخرین قیمت» همان پایانی را نشان می‌داد.
+    _hdr = {}
+    if lines and lines[0].strip().startswith('<'):
+        _hdr = {nm.strip().upper(): i for i, nm in enumerate(lines[0].split(','))}
+    i_last = _hdr.get('<LAST>', 11)
+    for ln in lines[1:]:
+        if not ln.strip():
+            continue
+        p = [x.strip() for x in ln.split(",")]
+        if len(p) < 11:
+            continue
+        try:
+            d = p[1]
+            dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+            first = float(p[2] or 0)   # <FIRST> = اولین معاملهٔ روز
+            hi = float(p[3]); lo = float(p[4]); c = float(p[5])
+            base = float(p[10] or 0)   # <OPEN>  = «قیمت پایه» (= پایانی دیروز، یا پس از تعدیل)
+            v = float(p[7]) if p[7] else 0
+            # آخرین معامله؛ اگر ستون نبود یا صفر بود به پایانی برمی‌گردد
+            last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else 0.0
+        except (ValueError, IndexError):
+            continue
+        # v8.7 FIX-1: بدنهٔ کندل = «اولین معامله» (ستون ۲). ستون <OPEN> که قبلاً استفاده
+        # می‌شد قیمت «پایه» است نه یک قیمت معاملاتی؛ همیشه ≈ پایانی دیروز بود در نتیجه
+        # (الف) هیچ گپ معاملاتی روی چارت دیده نمی‌شد (۹۹.۸٪ کندل‌ها open==closeِ دیروز)
+        # و (ب) در ~۴۹٪ روزها open بیرون بازهٔ [low, high] می‌افتاد (وضعیت هندسی ناممکن).
+        # اگر روزی FIRST صفر/خالی بود (روز بدون معامله) به قیمت پایه و سپس به پایانی برمی‌گردد.
+        # v8.7 FIX-1b: در روزهای کمیاب که CDN ستون <FIRST> را صفر می‌دهد ولی معامله
+        # رخ داده (خساپا ۲۰۲۱-۱۲-۰۸: پایه=۱۷۵۶ در برابر H=L=C=۱۸۲۵)، پایه می‌تواند
+        # بیرون بازه بیفتد و کندلِ ناممکن بسازد؛ پس داخل [low, high] clamp می‌شود.
+        o = first if first > 0 else (min(max(base, lo), hi) if base > 0 else c)
+        if c > 0 and base > 0:
+            all_rows.append({"time": dt, "base": base, "close": c})
+
+        if hi <= 0 or c <= 0 or o <= 0 or lo <= 0:
+            continue
+        # ترمیمِ هندسه: خودِ CSV در درصدِ قابل‌توجهی از ردیف‌های تاریخی، پایانی
+        # (یا اولین‌معامله) بیرونِ [کمینه، بیشینه] می‌دهد — نمونهٔ فولاد
+        # ۲۰۰-۱۲-۲۲: H=L=۱۹۷۳ در برابر C=۱۹۱۷؛ آمارِ ۱۴۰ نماد: اخابر ۶۹۴ ردیف
+        # (۱۸٪)، اميد ۳۹۲ (۲۰٪)، البرز ۵۲۲، خودرو ۴۱۵). از آنجا که <CLOSE> به
+        # پایهٔ روزِ بعد زنجیر می‌شود (base(t+1)==close(t))، پایانی معتبر است و
+        # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
+        # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
+        hi, lo = max(hi, lo, o, c), min(hi, lo, o, c)
+        if last <= 0:
+            last = c          # <LAST> معتبر نبود → پایانی جانشین می‌شود
+        # LAST-CLAMP FIX (2026-09-09): «آخرین معامله» قیمتِ معاملاتی است و
+        # ریاضیاتاً باید داخل [low, high] باشد. اگر CDN مقدار معیوب داد (همان
+        # گونه که برای FIRST در v8.7 FIX-1b می‌داد)، clamp می‌شود تا سریِ
+        # «آخرین قیمت» در نمای خطی بیرون از سایهٔ کندل خط نکشد.
+        last = min(max(last, lo), hi)
+        candles.append({"time": dt, "open": o, "high": hi, "low": lo,
+                        "close": c, "last": last})
+        volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
+    return candles, volumes, all_rows
+
+
+def _adjust_events_from_rows(all_rows):
+    """(adj_events, anchored) — تعدیل از گسستِ «قیمت پایه»، با درِ لنگر.
+
+    درِ لنگر چرا لازم است: گسستِ پایه تنها وقتی نشانهٔ تعدیل است که پایهٔ هر روز
+    «خودِ پایانیِ دیروز» باشد. در سهام این برقرار است (۹۹٪+ روزها دقیقاً برابر)، ولی
+    صندوق‌هایی که قیمت پایه‌شان را بازارگردان/NAV می‌گذارد هر روز گسست دارند و
+    شمارشگر، تعدیلِ جعلی می‌سازد (اعتماد4: ۹۰۰، آبادا3: ۱٬۲۳۱، آسود2: ۳۴۲ «تعدیل»).
+    رویدادِ جعلی بدتر از نبودِ رویداد است: فاکتورِ تجمعی‌اش کل تاریخِ گذشته را
+    مقیاس می‌کند و چارت را می‌شکند. پس در آن حالت هیچ رویدادی نمی‌دهیم.
+    """
+    asc = sorted((x for x in all_rows if x["close"] > 0 and x["base"] > 0),
+                 key=lambda x: x["time"])
+    _anch = _pairs = 0
+    prev = None
+    for row in asc:
+        if prev and prev["close"] > 0:
+            _pairs += 1
+            if row["base"] == prev["close"]:
+                _anch += 1
+        prev = row
+    # با نمونهٔ کم داوری نمی‌کنیم: بی‌شواهد، رفتارِ پیشین (گسست = تعدیل) محترم می‌ماند.
+    anchored = not (_pairs >= 20 and _anch / _pairs < ANCHOR_MIN)
+    if not anchored:
+        return [], False
+    adj_events = []
+    prev = None
+    for row in asc:
+        if prev:
+            ratio = row["base"] / prev["close"]
+            # آستانه دوتایی: هم ≥ یک واحد قیمت، هم > ADJ_TOL نسبی — تا گردکردنِ عددِ
+            # قیمت، رویداد جعلی نسازد و در عین حال کوچک‌ترین تقسیم واقعی هم حذف نشود.
+            if abs(row["base"] - prev["close"]) >= 1.0 and abs(ratio - 1.0) > ADJ_TOL:
+                adj_events.append({"date": row["time"], "ratio": round(ratio, 6)})
+        prev = row
+    adj_events.sort(key=lambda e: e["date"])
+    return adj_events, True
+
 
 @router.get("/api/chart/{symbol}")
 def get_chart_tsetmc(symbol: str):
@@ -119,90 +230,13 @@ def get_chart_tsetmc(symbol: str):
             if fb:
                 return fb
             return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
-        candles, volumes = [], []
-        all_rows = []  # همهٔ ردیف‌های خام (حتی روزهای بدون معامله H=L=0 که کندل نمی‌شوند)
-        lines = r.text.splitlines()
-        # v9.7: ایندکس ستون‌ها از خودِ هدر خوانده میشود، نه عدد ثابت.
-        # هدر رسمی TSETMC:
-        #  <TICKER>,<DTYYYYMMDD>,<FIRST>,<HIGH>,<LOW>,<CLOSE>,<VALUE>,
-        #  <VOL>,<OPENINT>,<PER>,<OPEN>,<LAST>
-        # <LAST> = «قیمت آخرین معامله» — در ۹۰٪ روزها با <CLOSE> (قیمت پایانی)
-        # متفاوت است (خساپا: ۳۶۱۴ ردیف از ۳۹۹۹). تا پیش از v9.7 این ستون
-        # نادیده گرفته می‌شد و «آخرین قیمت» همان پایانی را نشان می‌داد.
-        _hdr = {}
-        if lines and lines[0].strip().startswith('<'):
-            _hdr = {nm.strip().upper(): i for i, nm in enumerate(lines[0].split(','))}
-        i_last = _hdr.get('<LAST>', 11)
-        for ln in lines[1:]:
-            if not ln.strip():
-                continue
-            p = [x.strip() for x in ln.split(",")]
-            if len(p) < 11:
-                continue
-            try:
-                d = p[1]
-                dt = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
-                first = float(p[2] or 0)   # <FIRST> = اولین معاملهٔ روز
-                hi = float(p[3]); lo = float(p[4]); c = float(p[5])
-                base = float(p[10] or 0)   # <OPEN>  = «قیمت پایه» (= پایانی دیروز، یا پس از تعدیل)
-                v = float(p[7]) if p[7] else 0
-                # آخرین معامله؛ اگر ستون نبود یا صفر بود به پایانی برمی‌گردد
-                last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else 0.0
-            except (ValueError, IndexError):
-                continue
-            # v8.7 FIX-1: بدنهٔ کندل = «اولین معامله» (ستون ۲). ستون <OPEN> که قبلاً استفاده
-            # می‌شد قیمت «پایه» است نه یک قیمت معاملاتی؛ همیشه ≈ پایانی دیروز بود در نتیجه
-            # (الف) هیچ گپ معاملاتی روی چارت دیده نمی‌شد (۹۹.۸٪ کندل‌ها open==closeِ دیروز)
-            # و (ب) در ~۴۹٪ روزها open بیرون بازهٔ [low, high] می‌افتاد (وضعیت هندسی ناممکن).
-            # اگر روزی FIRST صفر/خالی بود (روز بدون معامله) به قیمت پایه و سپس به پایانی برمی‌گردد.
-            # v8.7 FIX-1b: در روزهای کمیاب که CDN ستون <FIRST> را صفر می‌دهد ولی معامله
-            # رخ داده (خساپا ۲۰۲۱-۱۲-۰۸: پایه=۱۷۵۶ در برابر H=L=C=۱۸۲۵)، پایه می‌تواند
-            # بیرون بازه بیفتد و کندلِ ناممکن بسازد؛ پس داخل [low, high] clamp می‌شود.
-            o = first if first > 0 else (min(max(base, lo), hi) if base > 0 else c)
-            if c > 0 and base > 0:
-                all_rows.append({"time": dt, "base": base, "close": c})
-
-            if hi <= 0 or c <= 0 or o <= 0 or lo <= 0:
-                continue
-            if last <= 0:
-                last = c          # <LAST> معتبر نبود → پایانی جانشین می‌شود
-            # LAST-CLAMP FIX (2026-09-09): «آخرین معامله» قیمتِ معاملاتی است و
-            # ریاضیاتاً باید داخل [low, high] باشد. اگر CDN مقدار معیوب داد (همان
-            # گونه که برای FIRST در v8.7 FIX-1b می‌داد)، clamp می‌شود تا سریِ
-            # «آخرین قیمت» در نمای خطی بیرون از سایهٔ کندل خط نکشد.
-            last = min(max(last, lo), hi)
-            candles.append({"time": dt, "open": o, "high": hi, "low": lo,
-                            "close": c, "last": last})
-            volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
-        # ۲) رویدادهای تعدیل — v8.7 FIX-2 (رویکرد FIX C): فقط از گسست «قیمت پایه» در همین CSV.
-        #    قیمت پایهٔ هر روز (ستون <OPEN>) ذاتاً پایانیِ آخرین روز معاملاتی است؛ تنها در روز
-        #    اجرای افزایش سرمایه / تقسیم / سود نقدی عمداً جابه‌جا می‌شود. پس:
-        #        رویداد  ⇔  base(day) != close(prev trading day)
-        #        ratio   =  base(day) / close(prev trading day)
-        #    این روش هم تقسیم و هم سود نقدی را می‌گیرد (هر دو قیمت پایه را می‌کوبند) و برخلاف
-        #    GetPriceAdjustList، تاریخ «روز اجرای واقعی» را می‌دهد نه تاریخ وقوع مصوبه.
-        #    چرا APF از محاسبهٔ فاکتور حذف شد (آمار خساپا/فولاد، فایل r12.txt):
-        #      (الف) جابه‌جایی تاریخ: ۱۲ رویداد APF خساپا → ۷ مورد بی‌ارتباط، تا ۴۳ روز خطا
-        #          (فولاد: ۱۵ مورد جابه‌جا، بدترین ۱۳۱ روز).
-        #      (ب) ناقص است: رویدادهای ۲۰۰۳–۲۰۰۸ و ۲۰۲۵ را ندارد.
-        #      (ج) ترکیبش با gap-detectorِ پایین، همان رویداد را دوباره می‌شمرد (۲۰ رویداد
-        #          در برابر ۹ تغییر واقعی قیمت پایه) و پرش‌های واقعی بازار را پاک می‌کرد.
-        #    gap-detector ساختگی (close ratio < 0.8) کامل حذف شد: آن پرش‌های ۲۰۰۳–۲۰۰۸
-        #    ریزش واقعی بازار بودند، نه تقسیم — و «روز تحریف» (تغییر فاکتور بدون تغییر پایه)
-        #    می‌ساختند: ۸ روز در خساپا، ۱ روز در فولاد.
-        adj_events = []
-        asc = sorted((x for x in all_rows if x["close"] > 0 and x["base"] > 0),
-                     key=lambda x: x["time"])
-        prev = None
-        for row in asc:
-            if prev:
-                ratio = row["base"] / prev["close"]
-                # آستانه دوتایی: هم ≥ یک واحد قیمت، هم > ADJ_TOL نسبی — تا گردکردنِ عددِ
-                # قیمت، رویداد جعلی نسازد و در عین حال کوچک‌ترین تقسیم واقعی هم حذف نشود.
-                if abs(row["base"] - prev["close"]) >= 1.0 and abs(ratio - 1.0) > ADJ_TOL:
-                    adj_events.append({"date": row["time"], "ratio": round(ratio, 6)})
-            prev = row
-        adj_events.sort(key=lambda e: e["date"])
+        candles, volumes, all_rows = _parse_tsetmc_csv(r.text)
+        # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
+        # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
+        adj_events, anchored = _adjust_events_from_rows(all_rows)
+        adjust_source = ("base-price-discontinuity" if adj_events
+                         else "base-not-anchored" if not anchored
+                         else "no-adjustment-event")
         # ۳) فاکتور تعدیل (back-adjustment، مقیاس روز آخر):
         #        factor(t) = ∏ ratio  برای همهٔ رویدادهایی که date > t
         #    → آخرین کندل دقیقاً خام می‌ماند (factor=1)، قیمت‌های قدیمی‌تر کوچک‌تر، و هیچ
@@ -239,7 +273,7 @@ def get_chart_tsetmc(symbol: str):
             "volumes": volumes,
             "factors": factors,
             "adjustEvents": adj_events,
-            "adjustSource": "base-price-discontinuity",   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
+            "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
             "count": len(candles),
         }
         CHART_CACHE[symbol] = (time.time(), result)
@@ -403,8 +437,8 @@ def _cal_classify(title, tid):
         return "bondMaturity"
     return "other"
 
-def _cal_events_for(symbol):
-    """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
+def _cal_cache_events():
+    """رویدادهای خام از static/calendar/cache.json — با بیعه‌سازیِ mtime."""
     try:
         mtime = os.path.getmtime(_CAL_CACHE_PATH)
     except Exception:
@@ -416,11 +450,16 @@ def _cal_events_for(symbol):
             _cal_cache["mtime"] = mtime
         except Exception:
             return []
+    return _cal_cache["events"]
+
+
+def _cal_events_for(symbol):
+    """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
     _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
     want = _norm(symbol)
     out, seen = [], set()
     _tg = __import__("calendar").timegm
-    for ev in _cal_cache["events"]:
+    for ev in _cal_cache_events():
         if _norm(ev.get("asset_symbol_trade")) != want:
             continue
         try:
@@ -441,6 +480,55 @@ def _cal_events_for(symbol):
         })
     out.sort(key=lambda x: x["ts"])
     return out
+
+_ASSEMBLY_FAMILY = ("assembly", "assemblyExtra", "assemblyChange")
+
+
+@router.get("/api/calendar/upcoming")
+def get_calendar_upcoming(days: int = Query(14)):
+    """مجمع‌های پیش‌روی همهٔ نمادها در یک درخواست — برای برچسبِ ردیف‌های جدول.
+
+    `/api/calendar/{symbol}` نمادی است؛ اگر این مسیر بعد از آن تعریف می‌شد،
+    «upcoming» به‌عنوان نامِ نماد مطابق می‌شد و پاسخ خالی می‌داد.
+    منبع همان کشِ `static/calendar/cache.json` است، پس هزینه‌اش یک بار
+    خواندنِ فایل است نه کوئری به‌ازایِ ردیف — قراردادِ تعدادِ ثابتِ درخواست.
+    """
+    days = max(1, min(int(days or 14), 90))
+    try:
+        raw = _cal_cache_events()
+        today = datetime.datetime.now().date()
+        horizon = today + datetime.timedelta(days=days)
+        _norm = lambda s: str(s or "").translate(
+            str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
+        best: dict = {}
+        for ev in raw:
+            title = str(ev.get("event_title") or "")
+            cat = _cal_classify(title, int(ev.get("event_type_id") or 0))
+            if cat not in _ASSEMBLY_FAMILY:
+                continue
+            try:
+                d = datetime.datetime.fromisoformat(str(ev.get("date_time"))).date()
+            except Exception:
+                continue
+            if d < today or d > horizon:
+                continue
+            sym = _norm(ev.get("asset_symbol_trade"))
+            if not sym:
+                continue
+            cur = best.get(sym)
+            # نزدیک‌ترینِ پیش‌رو؛ در تساویِ تاریخ، لغو/تعویق برنده است تا تاریخِ
+            # مجمعِ باطل‌شده به کاربر نشان داده نشود.
+            if cur is None or d < datetime.date.fromisoformat(cur["date"]) or (
+                d == datetime.date.fromisoformat(cur["date"]) and cat == "assemblyChange"
+                and cur["cat"] != "assemblyChange"
+            ):
+                best[sym] = {"symbol": sym, "date": d.isoformat(), "cat": cat,
+                             "title": title[:140]}
+        return {"status": "ok", "days": days,
+                "count": len(best), "items": sorted(best.values(), key=lambda x: x["date"])}
+    except Exception as e:
+        return {"status": "error", "message": str(e), "items": []}
+
 
 @router.get("/api/calendar/{symbol}")
 def get_calendar_events(symbol: str):
@@ -702,6 +790,11 @@ CHART_CACHE = {}   # {symbol: (fetch_time, json_data)}
 
 ADJ_TOL = 0.001
 
+# کمینهٔ کسرِ روزهایی که «قیمت پایه = قیمت پایانیِ دیروز» تا گسستِ پایه بتواند نشانهٔ
+# تعدیل شمردل شود. پایین‌تر از این، پایه لنگرِ پایانیِ دیروز نیست (صندوق‌هایی که
+# بازارگردان/NAV قیمت پایه را می‌گذارند) و شمارشگر، تعدیلِ جعلی می‌سازد.
+ANCHOR_MIN = 0.9
+
 CHART_CACHE_TTL = 3600.0
 
 KEY_LEVELS_CACHE = {}
@@ -733,7 +826,8 @@ PATTERNS_CACHE = {}
 
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
-_FTS_ENTRY_LOOKBACK = 60  # سقف مرجع تریگر ورود (شکست ماکسِ ۶۰ کندل قبل)
+# تریگرِ ورودِ جت دیگر «ماکسِ ۶۰ کندلِ قبل» را نمی‌بیند؛ پلکانِ هشت‌نقطه‌ایِ
+# جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
 
 def _fts_resample(candles, bucket="W"):
@@ -908,27 +1002,40 @@ def _fts_fib_zones(candles, swings):
     }
 
 
-def _fts_jet_setup(candles, lookback=_FTS_ENTRY_LOOKBACK):
-    """ستاپ جت (Jet) — ورود شکست صعودی با تأیید پایانی روزانه.
+def _fts_jet_setup(candles, ladder=JET_LADDER):
+    """ستاپ جت (Jet) — شکستِ پلکانِ مقاومتِ جزوه با آخرینِ کندل.
 
-    مقاومت مرجع = max(high) در پنجرهٔ lookback کندلی «پیش از» کندل آخر؛
-    اگر آن مقاومت ≈ بیشینهٔ کل تاریخچه → پرچم ath هم روشن است (شکست سقف تاریخی).
-    تریگر: پایانیِ امروزِ (کندل آخر) بالای آن مقاومت، با بدنهٔ صعودی
-    (close > open تا کندل‌های شمشِ بالای مقاومتِ بدون تعهد تریگر نشوند).
-    خروجی: {'active', 'resistance', 'ath', 'close', 'pct_above_res'}.
+    تعریفِ جزوه: ``[ih][2].PriceMax < pl && [ih][5] < pl && … && [ih][59] < pl``
+    یعنی «آخرینِ همین نشست از سقفِ تک‌روزیِ هشتِ نشستِ مشخص بالاتر رفته»،
+    نه «بالاترینِ ۶۰ روز». این دو یکی نیستند: سقفِ متحرکِ ۶۰ روزه سخت‌گیرتر
+    است و نمادی که دیروز سقفِ ۴۰ روزه‌اش را بشکند ستاپ نمی‌گیرد، در حالی که
+    فیلترِ تابلو آن را جت می‌زند. تا پیش از این چارت و تابلو دو جوابِ متفاوت
+    به یک سؤال می‌دادند (JET-BREAK)؛ حالا هر دو همین تابع را share می‌کنند.
+
+    کندلِ آخر = نشستِ جاریِ زنده (live-bar)، پس «آخرین کندل مقاومت را شکست»
+    همان چیزی است که مالک خواسته. اگر تاریخچه به [ih][59] نرسد صادقاً
+    ``reason`` می‌دهد و false برمی‌گرداند — حدس نمی‌زند.
+    خروجی: {'active', 'resistance', 'ath', 'close', 'pct_above_res', 'reason'}.
     """
-    if len(candles) < lookback + 2:
+    need = 1 + max(ladder)
+    if len(candles) < need:
         return {"active": False, "resistance": None, "ath": False,
-                "close": None, "pct_above_res": None}
-    window = candles[-lookback - 1:-1]
-    res = max(c["high"] for c in window)
-    ath_res = max(c["high"] for c in candles[:-1])
+                "close": None, "pct_above_res": None,
+                "reason": f"تاریخچه به {need} نشست نمی‌رسد (این {len(candles)})"}
     last = candles[-1]
-    active = (last["close"] > res) and (last["close"] >= last["open"])
-    return {"active": bool(active), "resistance": round(res, 2),
+    # [ih][k] = k نشستِ پیش از امروز = candles[-1-k]
+    res = max(float(candles[-1 - k]["high"]) for k in ladder)
+    ath_res = max(float(c["high"]) for c in candles[:-1])
+    close = float(last["close"])
+    up_body = close >= float(last["open"])
+    active = bool(res > 0 and close > res and up_body)
+    return {"active": active, "resistance": round(res, 2),
             "ath": bool(abs(res - ath_res) / ath_res < 0.002 if ath_res else False),
-            "close": round(float(last["close"]), 2),
-            "pct_above_res": round((last["close"] - res) / res * 100.0, 2) if res else None}
+            "close": round(close, 2),
+            "pct_above_res": round((close - res) / res * 100.0, 2) if res else None,
+            "reason": None if active else (
+                "بدنهٔ نزولی: پایانی زیر آخرینِ بازِ همین نشست" if close > res
+                else "آخرین هنوز زیر پلکان مقاومت است")}
 
 
 def _fts_choch(candles, swings):

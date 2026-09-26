@@ -1,7 +1,9 @@
-// features/fundamental/components/QuarterlyTrend.tsx -- روند ۸ فصل درآمد و سود
-// اعداد منفی درست رندر می‌شوند (میله به پایین خط صفر)، محور Y با مقیاس
-// همت/میلیارد تومان برچسب‌خورده است و فصل‌ها با نام فارسی (بهار/تابستان/…)
-// نمایش می‌یابند.
+// features/fundamental/components/QuarterlyTrend.tsx -- روند ۸ فصل درآمد و سود ناخالص
+// #102 (رأیِ جزوه): روند فصلیِ درآمد باید با سود **ناخالص** سنجیده شود نه سود
+// خالص — پس سری دومِ همین نمودار سود ناخالص است. نبودِ سود ناخالص (صندوق/بعضی
+// هلدینگ‌ها) «صفر» نیست: آن فصل میله‌ای نمی‌گیرد و تغییر فصل هم نمایش داده
+// نمی‌شود. اعداد منفی درست رندر می‌شوند (میله به پایین خط صفر)، محور Y با
+// مقیاس همت/میلیارد تومان برچسب‌خورده و فصل‌ها با نام فارسی‌اند.
 import { useMemo } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import type { FiscalQuarter } from '../lib/fundMath';
@@ -36,7 +38,10 @@ const MRL_TO_BT = 1e6 / 1e10;
 
 export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
   const geom = useMemo(() => {
-    const vals = quarters.flatMap((q) => [q.revenue ?? 0, q.netProfit ?? 0]);
+    // null یعنی «گزارش نشده» و در مقیاس محور صفر حساب نمی‌شود
+    const vals = quarters.flatMap((q) =>
+      [q.revenue, q.grossProfit].filter((v): v is number => typeof v === 'number' && Number.isFinite(v)),
+    );
     const top = niceMax(Math.max(1, ...vals));
     const bottom = Math.min(0, ...vals);
     const span = top - bottom || 1;
@@ -57,27 +62,33 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
     );
   }
 
-  const yoy =
-    quarters.length >= 2 &&
-    quarters[quarters.length - 1].netProfit != null &&
-    quarters[quarters.length - 2].netProfit != null
-      ? quarters[quarters.length - 1].netProfit! - quarters[quarters.length - 2].netProfit!
-      : null;
+  /** سود ناخالص هیچ فصلی نیامده (صندوق/سرمایه‌گذاری/نبودِ سطر بهای تمام‌شده) —
+   *  نمودار با میله‌های صفر جعل نمی‌شود؛ N/A صریح اعلام می‌شود. */
+  const hasGross = quarters.some((q) => q.grossProfit != null);
+  const last = quarters[quarters.length - 1];
+  const prev = quarters[quarters.length - 2];
+  const yoy = last?.grossProfit != null && prev?.grossProfit != null ? last.grossProfit - prev.grossProfit : null;
 
   return (
     <div className="glass-panel panel-in p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-black text-text-primary">روند فصلی درآمد و سود خالص</h3>
+        <h3 className="text-sm font-black text-text-primary">روند فصلی درآمد و سود ناخالص</h3>
         <span className="flex items-center gap-3 text-2xs text-text-muted">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-2 rounded-sm bg-accent-blue" /> درآمد
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-sm bg-accent-green" /> سود خالص
+            <span className="inline-block h-2 w-2 rounded-sm bg-accent-green" /> سود ناخالص
           </span>
           {yoy != null ? <span>تغییر فصل: <span className="num">{fmtInt(yoy * MRL_TO_BT)}</span> میلیارد تومان</span> : null}
         </span>
       </div>
+      {!hasGross ? (
+        <p className="mb-2 text-2xs leading-relaxed text-text-muted" data-testid="qtrend-gross-na">
+          سود ناخالص در صورت‌های مالی این نماد گزارش نمی‌شود — مقایسهٔ روند درآمد با آن ممکن نیست
+          (نبودِ داده، صفر نیست).
+        </p>
+      ) : null}
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="نمودار روند فصلی" data-testid="quarterly-trend-chart">
         {/* خطوط راهنمای محور Y با برچسب مقیاس */}
         {geom.guides.map((v) => (
@@ -92,16 +103,16 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
         {quarters.map((q, i) => {
           const x = PAD + i * geom.slot;
           const rev = q.revenue ?? 0;
-          const net = q.netProfit ?? 0;
+          const gross = q.grossProfit;
           const bw = Math.max(3, geom.slot / 4);
           // میله از خط صفر به بالا/پایین — منفی درست رندر می‌شود
           const revTop = geom.y(Math.max(0, rev));
           const revH = Math.max(1, Math.abs(geom.y(rev) - geom.zeroY));
-          const netTop = geom.y(Math.max(0, net));
-          const netH = Math.max(1, Math.abs(geom.y(net) - geom.zeroY));
+          const grossTop = gross == null ? 0 : geom.y(Math.max(0, gross));
+          const grossH = gross == null ? 0 : Math.max(1, Math.abs(geom.y(gross) - geom.zeroY));
           return (
             <g key={q.key}>
-              <title>{`${q.key}: درآمد ${fmtInt((q.revenue ?? 0) * MRL_TO_BT)} -- ${fmtInt((q.netProfit ?? 0) * MRL_TO_BT)}`}</title>
+              <title>{`${q.key}: درآمد ${fmtInt((q.revenue ?? 0) * MRL_TO_BT)} -- سود ناخالص ${gross == null ? 'گزارش نشده' : fmtInt(gross * MRL_TO_BT)}`}</title>
               <rect
                 x={x + geom.slot / 2 - bw - 1}
                 y={rev >= 0 ? revTop : geom.zeroY}
@@ -110,14 +121,17 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
                 fill={rev >= 0 ? 'var(--accent-blue)' : 'var(--accent-red)'}
                 opacity="0.75"
               />
-              <rect
-                x={x + geom.slot / 2 + 1}
-                y={net >= 0 ? netTop : geom.zeroY}
-                width={bw}
-                height={netH}
-                fill={net >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}
-                opacity="0.9"
-              />
+              {/* بدونِ سود ناخالص هیچ میله‌ای کشیده نمی‌شود — میلهٔ صفر یعنی «زیان صفر» */}
+              {gross == null ? null : (
+                <rect
+                  x={x + geom.slot / 2 + 1}
+                  y={gross >= 0 ? grossTop : geom.zeroY}
+                  width={bw}
+                  height={grossH}
+                  fill={gross >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}
+                  opacity="0.9"
+                />
+              )}
               <text x={x + geom.slot / 2} y={H - 6} textAnchor="middle" fontSize="9.5" fill="var(--text-muted)">
                 {faQuarter(q)}
               </text>

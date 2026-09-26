@@ -163,10 +163,40 @@ def main():
     conn2.close()
     ck(again == got and rev2 == rev, "a second merge changes nothing further")
 
+    # ── CODAL-DL-1: ادغامِ موفق نباید «خطا» اعلام شود ───────────────────────
+    # مسیرِ واقعیِ دانلود از _merge_codal_snapshotِ تنها صدا نمی‌زند؛ یک DETACHِ
+    # دوباره در سمتِ فراخوان مانده بود و OperationalError: no such database: src
+    # می‌داد، یعنی کلِ worker به error می‌رفت در حالی که commit انجام شده بود.
+    src_txt = io.open(os.path.join(ROOT, "api", "_sync_codal.py"), encoding="utf-8").read()
+    ck(src_txt.count("DETACH DATABASE src") == 1,
+       "DETACH happens in exactly one place — the helper that did the ATTACH",
+       str(src_txt.count("DETACH DATABASE src")))
+
+    from api._sync_codal import _apply_codal_merge
+    full_db = os.path.join(work, "full.db")
+    build(full_db, DDL_MAIN, {"codal_notices": [(102, "فولاد", "محلی-کهنه", OLDER, 1)],
+                              "financial_statements": [(202, 22.0, OLDER)],
+                              "monthly_sales": [(301, 111.0)]})
+    try:
+        fstats, fstale = _apply_codal_merge(full_db, snap_db)
+        err = None
+    except Exception as exc:                                   # noqa: BLE001
+        fstats, fstale, err = None, None, exc
+    ck(err is None, "the full merge path completes without raising", repr(err))
+    if err is None:
+        fconn = sqlite3.connect(full_db, timeout=30)
+        attached = [r[1] for r in fconn.execute("PRAGMA database_list").fetchall()]
+        fgot = dict(fconn.execute("SELECT tracing_no, title FROM codal_notices").fetchall())
+        fconn.close()
+        ck(attached == ["main"], "no schema is left attached after the merge", str(attached))
+        ck(fgot.get(102) == "اسنپ-تازه", "the full path really wrote the data", str(fgot))
+        ck(sum(i for _, i, _k in fstats.values()) >= 1,
+           "the full path reports inserted rows", str(fstats))
+
     # worker هنوز همان ادغام را صدا می‌زند و عددِ «دست‌نخورده ماند» را گزارش می‌کند
-    src = io.open(os.path.join(ROOT, "api", "_sync_codal.py"), encoding="utf-8").read()
-    ck("stats, stale = _merge_codal_snapshot(main, tmp_db)" in src,
-       "the worker merges through the shared function")
+    src = src_txt
+    ck("stats, stale = _apply_codal_merge(DB_PATH, tmp_db)" in src,
+       "the worker merges through the shared full-path function")
     ck("_CODAL_TABLES" in src and src.count("ATTACH DATABASE ? AS src") == 1,
        "no second inline merge implementation was left behind")
     ck("ردیفِ محلی تازه‌تر از snapshot بود" in src,

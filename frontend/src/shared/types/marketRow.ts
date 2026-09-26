@@ -47,7 +47,11 @@ export const MarketRowSchema = z.object({
   f_noqteh: flag,
   is_live: flag,
   d_even: num,
+  // سقفِ تک‌روزیِ kِمین نشستِ پیش — [ih][k].PriceMax در فرمول‌هایِ TSETMC.
+  // نبودنش باید null بماند: صفر یعنی «سقفی نبود که شکسته شود» و فیلترِ جت
+  // را برای نمادی که تاریخچه ندارد «قبول» می‌کند.
   h1_max: num,
+  h2_max: num,
   h5_max: num,
   h9_max: num,
   h19_max: num,
@@ -55,6 +59,10 @@ export const MarketRowSchema = z.object({
   h39_max: num,
   h49_max: num,
   h59_max: num,
+  // پلکانِ مقاومتِ جت (بیشترینِ سقفِ نقاطِ [ih][2..59]) و قدرتِ خریدارِ بی‌سقف.
+  // این دو را فیلترها می‌خوانند، نه جدول؛ ستونِ buyer_power برایِ نمایش است.
+  resistance_59: num,
+  buyer_power_raw: num,
   min30_low: num,
   max30_high: num,
   d1_vol: num,

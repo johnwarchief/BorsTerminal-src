@@ -177,6 +177,30 @@ def _merge_codal_snapshot(main, tmp_db):
     return stats, stale
 
 
+def _apply_codal_merge(db_path, tmp_db):
+    """ادغامِ کاملِ snapshot در market.db — از اتصال تا commit.
+
+    این لایه عمداً تابعِ واحد است: تستِ آفلاین فقط `_merge_codal_snapshot` را
+    صدا می‌زد، پس DETACHِ دوباره در سمتِ فراخوان (که ادغامِ موفق را error
+    می‌کرد) هیچ‌وقت سنجیده نشد و به نسخهٔ منتشرشده رفت.
+    """
+    main = sqlite3.connect(db_path, timeout=60)
+    try:
+        main.execute("PRAGMA busy_timeout=60000")
+        stats, stale = _merge_codal_snapshot(main, tmp_db)
+        main.commit()
+        # fts_results کش‌شده با دادهٔ تازه کهنه شد — اسکرینر زنده بازمحاسبه کند
+        try:
+            import fts_engine
+            fts_engine.invalidate_fts_results(main)
+            main.commit()
+        except Exception:
+            pass
+        return stats, stale
+    finally:
+        main.close()
+
+
 def _codal_db_worker(dest_lzma, tmp_db):
     global _dbdl_running
     try:
@@ -254,28 +278,12 @@ def _codal_db_worker(dest_lzma, tmp_db):
         #    بی‌صدا به NULL برمی‌گردد و کاربر پیام «موفق» می‌بیند. UPSERT فقط
         #    ستون‌های مشترک را لمس می‌کند و بقیه را دست‌نخورده می‌گذارد.
         _write_db_status("merging", 0.0, "ادغام در market.db")
-        main = sqlite3.connect(DB_PATH, timeout=60)
-        try:
-            main.execute("PRAGMA busy_timeout=60000")
-            # خودِ ادغام در _merge_codal_snapshot نشسته تا در تستِ آفلاین (دو DBِ
-            # موقت، بدونِ شبکه) قابلِ سنجیدن باشد.
-            stats, stale = _merge_codal_snapshot(main, tmp_db)
-            if stale:
-                # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
-                _write_db_status(
-                    "merging", 0.5,
-                    "snapshot قدیمی است؛ ستون‌های تازه حفظ شدند: " + " | ".join(stale))
-            main.commit()
-            # fts_results کش‌شده با دادهٔ تازه کهنه شد — اسکرینر زنده بازمحاسبه کند
-            try:
-                import fts_engine
-                fts_engine.invalidate_fts_results(main)
-                main.commit()
-            except Exception:
-                pass
-            main.execute("DETACH DATABASE src")
-        finally:
-            main.close()
+        stats, stale = _apply_codal_merge(DB_PATH, tmp_db)
+        if stale:
+            # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
+            _write_db_status(
+                "merging", 0.5,
+                "snapshot قدیمی است؛ ستون‌های تازه حفظ شدند: " + " | ".join(stale))
 
         # پیامِ پایان باید صادقانه باشد. پیش‌تر فقط ردیف‌های *درج‌شده* شمرده
         # می‌شدند، پس هر حالتی که ردیفِ تازه‌ای نداشت (از جمله به‌روزرسانیِ درجا)

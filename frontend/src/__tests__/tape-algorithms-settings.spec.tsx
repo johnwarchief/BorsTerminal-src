@@ -1,84 +1,219 @@
-// __tests__/tape-algorithms-settings.spec.tsx -- تست‌های اعتبارسنجی الگوریتم‌های شخصی‌سازی تابلو
+// __tests__/tape-algorithms-settings.spec.tsx -- پنج فیلترِ تابلو، آینهٔ فرمول‌هایِ جزوه
+//
+// سه چیز اینجا تست می‌شود و هر سه قبلاً می‌سوختند:
+//   ۱) عددِ پیش‌فرضِ هر فیلتر = عددِ جزوه (دلتای ۲٪، حجم ۳×، پلکانِ [ih][2..59]).
+//   ۲) «داده نداشتن» هیچ‌وقت قبول نیست — حلقهٔ خاموشی که ۶۷۱ ردیف را جت می‌زد.
+//   ۳) آستانه‌ای که کاربر عوض می‌کند واقعاً رویِ نتیجه اثر می‌گذارد.
 import { describe, expect, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { MarketRow } from '@shared/types/marketRow';
 import {
   DEFAULT_TAPE_FILTER_CONFIG,
   TAPE_PRESETS,
+  coerceLookback,
   isConfigCustomized,
   matchClockPattern,
   matchJetFilter,
   matchNoqtehFilter,
+  matchRoobiFilter,
+  matchSmartFlowFilter,
   matchSuspiciousVolume,
 } from '@features/market/lib/tapeAlgorithms';
+import { JET_LADDER, resistanceLadderHigh } from '@features/market/lib/tapeMath';
 import { TapeFilterSettingsModal } from '@features/market/components/TapeFilterSettingsModal';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
-const mockRow = (overrides: Partial<MarketRow> = {}): MarketRow => ({
+/** ردیفی که همهٔ شروطِ جزوۀِ پنج فیلتر را با هم دارد. */
+const passingRow = (overrides: Partial<MarketRow> = {}): MarketRow => ({
   symbol: 'تست',
   p_closing: 1000,
-  p_last: 1020,
-  price_yesterday: 990,
-  percent_change: 1.0,
-  q_tot_tran: 3000000,
-  z_tot_tran: 100,
-  month_avg_vol: 1000000,
-  prev_day_vol: 1000000,
-  tvol: 3000000,
-  vol_ratio: 3.0,
-  vol_dod: 3.0,
-  buyer_power: 2.0,
-  p_min: 980,
-  min30_low: 975,
-  h5_max: 1010,
-  h9_max: 1030,
-  h19_max: 1050,
+  p_last: 1025,          // +۲٫۵٪ → دلتای ساعتِ جزوه
+  price_yesterday: 1000,
+  percent_change: 2.5,
+  q_tot_tran: 4_000_000,
+  tvol: 4_000_000,
+  month_avg_vol: 1_000_000,   // → ۴× میانگین
+  prev_day_vol: 2_000_000,
+  vol_ratio: 4,
+  vol_dod: 2,
+  z_tot_tran: 120,
+  buyer_power: 2,
+  buyer_power_raw: 2,
+  buy_i_vol: 2_000_000,
+  buy_count_i: 100,
+  sell_i_vol: 1_000_000,
+  sell_count_i: 100,
+  p_min: 1025,
+  min30_low: 995,
+  h1_max: 1010,
+  ...Object.fromEntries(JET_LADDER.map((k) => [`h${k}_max`, 900])),
   ...overrides,
 });
 
-describe('الگوریتم‌های پویا و شخصی‌سازی فیلترهای تابلو', () => {
-  it('الگوی ساعت با دلتای شخصی‌سازی‌شده و ساعت طلایی', () => {
-    const row = mockRow({ p_closing: 1000, p_last: 1015, price_yesterday: 1010 });
-    // دلتای ۱.۵٪
-    expect(matchClockPattern(row, { minDeltaPct: 1.0, requireGoldenHour: false, minVolRatio: 1.0, minTradeCount: 30 })).toBe(true);
-    expect(matchClockPattern(row, { minDeltaPct: 2.0, requireGoldenHour: false, minVolRatio: 1.0, minTradeCount: 30 })).toBe(false);
-
-    // شرط ساعت طلایی (پایانی زیر دیروز و آخرین بالای دیروز)
-    const goldenRow = mockRow({ p_closing: 990, p_last: 1010, price_yesterday: 1000 });
-    expect(matchClockPattern(goldenRow, { minDeltaPct: 1.0, requireGoldenHour: true, minVolRatio: 1.0, minTradeCount: 30 })).toBe(true);
-
-    const nonGoldenRow = mockRow({ p_closing: 1010, p_last: 1025, price_yesterday: 1000 });
-    expect(matchClockPattern(nonGoldenRow, { minDeltaPct: 1.0, requireGoldenHour: true, minVolRatio: 1.0, minTradeCount: 30 })).toBe(false);
+describe('پیش‌فرض‌ها باید خودِ فرمولِ جزوه باشند', () => {
+  it('الگوی ساعت: pl >= pc*1.02 و tno > 30', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.clock.minDeltaPct).toBe(2.0);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.clock.minTradeCount).toBe(30);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.clock.minVolRatio).toBe(1.0);
   });
 
-  it('حجم مشکوک با تایم‌فریم‌های ۳۰ روزه و روز قبل (DoD)', () => {
-    const row = mockRow({ vol_ratio: 3.5, vol_dod: 1.5, z_tot_tran: 100 });
-    // بر مبنای ۳۰ روزه
-    expect(matchSuspiciousVolume(row, { timeframe: 'monthly_30d', minRatio: 3.0, minTradeCount: 50 })).toBe(true);
-    // بر مبنای روز قبل (DoD)
-    expect(matchSuspiciousVolume(row, { timeframe: 'prev_day_dod', minRatio: 2.0, minTradeCount: 50 })).toBe(false);
+  it('حجم مشکوک: tvol > 3*avg30 و tno > 50', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume.minRatio).toBe(3.0);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume.minTradeCount).toBe(50);
   });
 
-  it('فیلتر جت با تایم‌فریم‌های مختلف شکست سقف (Lookback High)', () => {
-    // قیمت ۱۰۰۰: بالای سقف ۵ روزه (۹۹۰) اما زیر سقف ۱۹ روزه (۱۰۵۰)
-    const row = mockRow({ p_closing: 1000, p_last: 1010, h5_max: 990, h19_max: 1050, buyer_power: 2.0, vol_ratio: 3.0 });
-    
-    // در تایم‌فریم ۵ روزه شکست رخ داده است
-    expect(matchJetFilter(row, { lookbackDays: 5, minBuyerPower: 1.5, minVolRatio: 2.0, requireLastAboveClose: true, minChangePct: 0 })).toBe(true);
-    // در تایم‌فریم ۱۹ روزه هنوز سقف شکسته نشده است
-    expect(matchJetFilter(row, { lookbackDays: 19, minBuyerPower: 1.5, minVolRatio: 2.0, requireLastAboveClose: true, minChangePct: 0 })).toBe(false);
+  it('جت: حجم ۳×، قدرت خریدار ۱٫۵×، آخرین بالای پایانی، پلکانِ کامل', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.jet).toEqual({
+      lookbackDays: 59, minBuyerPower: 1.5, minVolRatio: 3.0,
+      requireLastAboveClose: true, minChangePct: 0.0,
+    });
+    // پلکانِ جزوه دقیقاً همین هشت نقطه است — [ih][1] درِ فرمول نیست.
+    expect([...JET_LADDER]).toEqual([2, 5, 9, 19, 29, 39, 49, 59]);
   });
 
-  it('نقطه‌زنی با آستانه فاصله از کف ۳۰ روزه', () => {
-    // کف ۹۷۵، قیمت ۱۰۰۰ → فاصله ۲.۵٪
-    const row = mockRow({ p_closing: 1000, min30_low: 975, vol_ratio: 1.5, z_tot_tran: 50 });
-    expect(matchNoqtehFilter(row, { maxDistPct: 3.0, minTradeCount: 5, minVolRatio: 1.0 })).toBe(true);
-    expect(matchNoqtehFilter(row, { maxDistPct: 2.0, minTradeCount: 5, minVolRatio: 1.0 })).toBe(false);
+  it('کف‌روبی: plp < -1 و qd1 > 100، و گیت‌هایی که جزوه ندارد خاموش‌اند', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.roobi.maxChangePct).toBe(-1.0);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.roobi.minTradeCount).toBe(100);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.roobi.minVolRatio).toBe(0);
+    expect(DEFAULT_TAPE_FILTER_CONFIG.roobi.minBuyerPower).toBe(0);
   });
 
-  it('تشخیص شخصی‌سازی کانفیگ', () => {
+  it('نقطه‌زنی: فاصله از کف < 3٪ و tno > 5', () => {
+    expect(DEFAULT_TAPE_FILTER_CONFIG.noqteh).toEqual({
+      maxDistPct: 3.0, minTradeCount: 5, minVolRatio: 1.0,
+    });
+  });
+});
+
+describe('نبودنِ داده هیچ‌وقت «قبول» نیست', () => {
+  it('جت بدون میانگین حجم ۳۰ روزه رد می‌شود، نه اینکه گیتِ حجم بی‌صدا بخورد', () => {
+    expect(matchJetFilter(passingRow({ month_avg_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+    expect(matchJetFilter(passingRow({ tvol: null }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+  });
+
+  it('جت با یک نقطۀِ غایبِ پلکان رد می‌شود (سقفِ صفر یعنی «سقفی نبود» نه «شکسته شد»)', () => {
+    for (const k of JET_LADDER) {
+      const missing = { [`h${k}_max`]: null } as Partial<MarketRow>;
+      expect(matchJetFilter(passingRow(missing), DEFAULT_TAPE_FILTER_CONFIG.jet))
+        .toBe(false);
+    }
+    expect(resistanceLadderHigh(passingRow({ h9_max: 0 }), 59)).toBeNull();
+  });
+
+  it('جت نقاطِ پلکانِ بلندتر از تایم‌فریمِ انتخابی را لازم ندارد', () => {
+    const row = passingRow({ h19_max: null, h29_max: null, h39_max: null, h49_max: null, h59_max: null });
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 9 })).toBe(true);
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 19 })).toBe(false);
+  });
+
+  it('قدرت خریدارِ قابل‌محاسبه = رد، حتی اگر آستانه صفر باشد', () => {
+    expect(matchJetFilter(passingRow({ buyer_power_raw: null, buyer_power: null,
+                                       buy_i_vol: null, sell_i_vol: null }),
+                           { ...DEFAULT_TAPE_FILTER_CONFIG.jet, minBuyerPower: 0 })).toBe(false);
+  });
+
+  it('ساعت، کف‌روبی، نقطه‌زنی و پول هوشمند هم با دادهٔ غایب رد می‌شوند', () => {
+    expect(matchClockPattern(passingRow({ z_tot_tran: null }), DEFAULT_TAPE_FILTER_CONFIG.clock)).toBe(false);
+    expect(matchSuspiciousVolume(passingRow({ month_avg_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume)).toBe(false);
+    expect(matchRoobiFilter(passingRow({ prev_day_vol: null }), DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
+    expect(matchNoqtehFilter(passingRow({ min30_low: null }), DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
+    expect(matchSmartFlowFilter(passingRow({ buyer_power: null }), DEFAULT_TAPE_FILTER_CONFIG.smartFlow)).toBe(false);
+  });
+
+  it('NaN و بی‌نهایت هم «داده» حساب نمی‌شوند', () => {
+    expect(matchJetFilter(passingRow({ vol_ratio: NaN, tvol: Number.POSITIVE_INFINITY }),
+                           DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+  });
+});
+
+describe('جت: مقایسه با «آخرین» است، نه «پایانی»', () => {
+  it('پایانی زیر مقاومت ولی آخرین بالای مقاومت → جت', () => {
+    const row = passingRow({ p_closing: 850, p_last: 950 });   // همه سقف‌ها ۹۰۰
+    expect(resistanceLadderHigh(row, 59)).toBe(900);
+    expect(matchJetFilter(row, DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(true);
+  });
+
+  it('آخرینِ دقیقاً روی مقاومت رد می‌شود (جزوه: > نه >=)', () => {
+    expect(matchJetFilter(passingRow({ p_last: 900 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+  });
+
+  it('آخرینِ پایین‌تر از پایانی با وجود شکستِ مقاومت رد می‌شود', () => {
+    expect(matchJetFilter(passingRow({ p_last: 700, percent_change: 2.5 }),
+                           DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(false);
+  });
+});
+
+describe('شخصی‌سازی آستانه‌ها واقعاً اعمال می‌شود', () => {
+  it('دلتای ساعت: آستانهٔ بالاتر همان ردیف را مردود می‌کند', () => {
+    const row = passingRow({ p_last: 1025 });
+    expect(matchClockPattern(row, { ...DEFAULT_TAPE_FILTER_CONFIG.clock, minDeltaPct: 2.0 })).toBe(true);
+    expect(matchClockPattern(row, { ...DEFAULT_TAPE_FILTER_CONFIG.clock, minDeltaPct: 3.0 })).toBe(false);
+  });
+
+  it('ضریب حجم جت: آستانهٔ زیر ۳× نتیجه را شل می‌کند، بالای آن سفت', () => {
+    const row = passingRow({ h59_max: 1000, p_last: 1025 });   // مقاومت ۱۰۰۰ < آخرین ۱۰۲۵
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, minVolRatio: 4.5 })).toBe(false);
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, minVolRatio: 3.0 })).toBe(true);
+  });
+
+  it('تایم‌فریم جت: نقطۀِ بلندترِ پلکان که نشکسته، رد می‌کند', () => {
+    const row = passingRow({ h19_max: 1100 });
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 9 })).toBe(true);
+    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 19 })).toBe(false);
+  });
+
+  it('کف‌روبی: آخرین باید دقیقاً روی کفِ روز باشد', () => {
+    const onFloor = passingRow({ p_last: 970, p_min: 970, percent_change: -2.0 });
+    expect(matchRoobiFilter(onFloor, DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(true);
+    expect(matchRoobiFilter(passingRow({ p_last: 971, p_min: 970, percent_change: -2.0 }),
+                            DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
+    expect(matchRoobiFilter(passingRow({ p_last: 970, p_min: 970, percent_change: -0.5 }),
+                            DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
+  });
+
+  it('نقطه‌زنی: فاصلۀِ ۳٪ و بالاتر رد می‌شود (جزوه: < 3)', () => {
+    const at3 = passingRow({ p_closing: 1000, min30_low: 970 });
+    expect(matchNoqtehFilter(at3, { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, maxDistPct: 3.5 })).toBe(true);
+    expect(matchNoqtehFilter(at3, { ...DEFAULT_TAPE_FILTER_CONFIG.noqteh, maxDistPct: 3.0 })).toBe(false);
+  });
+});
+
+describe('نشانِ «شخصی‌سازی شده» به آستانه‌ها نگاه می‌کند، نه به شیءِ کانفیگ', () => {
+  it('کانفیگِ پیش‌فرض شخصی‌سازی‌شده نیست و هر تغییرِ عددی هست', () => {
     expect(isConfigCustomized(DEFAULT_TAPE_FILTER_CONFIG)).toBe(false);
-    expect(isConfigCustomized(TAPE_PRESETS.scalp.config)).toBe(true);
+    expect(isConfigCustomized({
+      ...DEFAULT_TAPE_FILTER_CONFIG,
+      jet: { ...DEFAULT_TAPE_FILTER_CONFIG.jet, minVolRatio: 4 },
+    })).toBe(true);
+    // یک شیءِ تازه با همان مقدارها نباید «شخصی‌سازی» نشان دهد
+    expect(isConfigCustomized(JSON.parse(JSON.stringify(DEFAULT_TAPE_FILTER_CONFIG)))).toBe(false);
+  });
+});
+
+describe('کانفیگ ذخیره‌شده از نسخهٔ قبل نباید فیلتر را بی‌صدا بخواباند', () => {
+  it('«۱ روزه» که دیگر نقطۀِ پلکان نیست به نزدیک‌ترین نقطهٔ معتبر می‌رود', () => {
+    expect(coerceLookback(1)).toBe(2);
+    expect(coerceLookback(7)).toBe(9);
+    expect(coerceLookback(59)).toBe(59);
+    expect(coerceLookback(900)).toBe(59);
+    expect(coerceLookback(undefined)).toBe(59);
+    expect(coerceLookback('abc')).toBe(59);
+  });
+
+  it('کانفیگِ ذخیره‌شده با فیلدِ جاافتاده، همان فیلد را از پیش‌فرض می‌گیرد', () => {    // همان چیزی که loadInitialTapeConfig در tapeStore انجام می‌دهد:
+    // ادغامِ «ذخیره‌شده روی پیش‌فرض» به‌ازای هر بلوک. اگر روزی بلوکی
+    // سرِ خودش جایگزین شود، گیتِ جاافتاده undefined و فیلتر خاموش می‌شود.
+    const saved = { jet: { minBuyerPower: 2 }, clock: { minDeltaPct: 1.5 } };
+    const merged = Object.fromEntries(
+      Object.keys(DEFAULT_TAPE_FILTER_CONFIG).map((k) => [
+        k, { ...(DEFAULT_TAPE_FILTER_CONFIG as Record<string, object>)[k],
+             ...((saved as Record<string, object>)[k] ?? {}) },
+      ]),
+    ) as unknown as typeof DEFAULT_TAPE_FILTER_CONFIG;
+    expect(merged.jet.minVolRatio).toBe(3.0);          // از پیش‌فرضِ جزوه
+    expect(merged.jet.minBuyerPower).toBe(2);          // از کاربر
+    expect(merged.clock.minTradeCount).toBe(30);
+    expect(Object.values(merged.jet).every((v) => v !== undefined)).toBe(true);
   });
 });
 
@@ -90,52 +225,58 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
   it('اعمال پریست استراتژی آماده از مدال', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
     expect(screen.getByText('⚙️ تنظیمات فیلترها')).toBeInTheDocument();
-    
-    // کلیک روی پریست نوسان‌گیری سریع
     fireEvent.click(screen.getByText('نوسان‌گیری سریع و ساعت قوی'));
     const current = useTapeStore.getState().tapeFilterConfig;
-    expect(current.clock.minDeltaPct).toBe(1.5);
     expect(current.jet.lookbackDays).toBe(5);
+    // پریست‌ها هم مثل بقیهٔ کانفیگ باید همهٔ گیت‌ها را داشته باشند
+    expect(current.clock.minVolRatio).toBeGreaterThan(0);
   });
 
   it('تغییر مستقیم پارامتر ساعت در تب ساعت', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
     fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
-    
-    expect(screen.getByText('فقط ساعت طلایی (پایانی منفی و آخرین مثبت)')).toBeInTheDocument();
     const goldenBox = screen.getByRole('checkbox', { name: /فقط ساعت طلایی/ });
     fireEvent.click(goldenBox);
-
     expect(useTapeStore.getState().tapeFilterConfig.clock.requireGoldenHour).toBe(true);
   });
 
-  it('تغییر تایم‌فریم شکست سقف جت به دوره‌های متنوع', () => {
+  it('تغییر تایم‌فریم شکست سقف جت به نقاطِ پلکانِ جزوه', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
     fireEvent.click(screen.getByText('🚀 فیلتر جت (سقف)'));
-
     expect(screen.getByText('تایم‌فریم شکست سقف قیمتی (Lookback High)')).toBeInTheDocument();
-    expect(screen.getByText('۱ روزه')).toBeInTheDocument();
-    expect(screen.getByText('۵۰ روزه')).toBeInTheDocument();
-    expect(screen.getByText('۶۰ روزه')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText('۶۰ روزه'));
+    expect(screen.getByText('۲ روزه')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('۲۹ روزه'));
+    expect(useTapeStore.getState().tapeFilterConfig.jet.lookbackDays).toBe(29);
+    fireEvent.click(screen.getByText('۵۹ روزه'));
     expect(useTapeStore.getState().tapeFilterConfig.jet.lookbackDays).toBe(59);
-
-    fireEvent.click(screen.getByText('۱ روزه'));
-    expect(useTapeStore.getState().tapeFilterConfig.jet.lookbackDays).toBe(1);
   });
+
+  it('فیلدِ عددیِ خالی آستانه را صفر نمی‌کند (صفر = گیتِ خاموش)', () => {
+    render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
+    fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
+    const trades = screen.getByRole('textbox', { name: /حداقل تعداد معاملات/ });
+    const before = useTapeStore.getState().tapeFilterConfig.clock.minTradeCount;
+    fireEvent.change(trades, { target: { value: '' } });
+    expect(useTapeStore.getState().tapeFilterConfig.clock.minTradeCount).toBe(before);
+  });
+
+  it('ارقامِ فارسی در فیلدِ عددی خوانده می‌شوند', () => {
+    render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
+    fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
+    const trades = screen.getByRole('textbox', { name: /حداقل تعداد معاملات/ });
+    fireEvent.change(trades, { target: { value: '۷۵' } });
+    expect(useTapeStore.getState().tapeFilterConfig.clock.minTradeCount).toBe(75);
+  });
+
   // ── رأیِ مالک (۱۴۰۵-۰۷-۰۳): جت هیچ شرطِ «حداقل تعدادِ معامله» ندارد ──────
   it('جت هیچ‌جایش تعدادِ معامله را شرط نمی‌کند (رأیِ مالک)', () => {
     expect(DEFAULT_TAPE_FILTER_CONFIG.jet).not.toHaveProperty('minTradeCount');
     for (const preset of Object.values(TAPE_PRESETS)) {
       expect(preset.config.jet).not.toHaveProperty('minTradeCount');
     }
-    // نمادی با پنجِ معامله که بقیهٔ شروطِ جت را دارد باید پاس شود؛ اگر گیتِ
-    // تعدادِ معامله برگردد، همین‌جا مردود می‌شود.
-    const row = mockRow({ z_tot_tran: 5, p_closing: 1000, p_last: 1020, percent_change: 2,
-                          buyer_power: 2, vol_ratio: 4, h5_max: 900 });
-    expect(matchJetFilter(row, { ...DEFAULT_TAPE_FILTER_CONFIG.jet, lookbackDays: 5 }))
-      .toBe(true);
+    // نمادی با پنجِ معامله که بقیۀِ شروطِ جزوه را دارد باید پاس شود؛ اگر
+    // گیتِ تعدادِ معامله برگردد، همین‌جا مردود می‌شود.
+    expect(matchJetFilter(passingRow({ z_tot_tran: 5 }), DEFAULT_TAPE_FILTER_CONFIG.jet)).toBe(true);
   });
 
   // ── ریشهٔ TAPE-1: کلیدِ نیامده در literal یعنی undefined، یعنی گیتِ خاموش ─

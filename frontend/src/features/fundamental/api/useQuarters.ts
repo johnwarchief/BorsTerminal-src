@@ -7,6 +7,10 @@ export const QuarterRowSchema = z.object({
   period_end: z.string(),
   period_months: z.number().nullish(),
   revenue: z.number().nullish(),
+  /** سود ناخالصِ تجمعی (میلیون ریال). NULL یعنی صورتِ مالی سطر «بهای تمام‌شده»
+   *  ندارد (صندوق/سرمایه‌گذاری) — نه صفر. #102: روند فصلی با همین سنجیده می‌شود.
+   *  اگر این کلید در اسکیما نبود، zod آن را بی‌صدا دور می‌ریخت. */
+  gross_profit: z.number().nullish(),
   operating_profit: z.number().nullish(),
   net_profit: z.number().nullish(),
   basic_eps: z.number().nullish(),

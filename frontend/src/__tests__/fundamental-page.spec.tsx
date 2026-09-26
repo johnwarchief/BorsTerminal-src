@@ -115,8 +115,9 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     // عنوان P/E در برابر صنعت برای هلدینگ رندر نمی‌شود
     expect(screen.queryByText(/P\/E در برابر صنعت/)).not.toBeInTheDocument();
     const panel = screen.getByTestId('holding-pnav-panel');
-    // برچسب رسمی N/A و علت آن
-    expect(panel.textContent).toContain('نیازمند ارزیابی پرتفوی هلدینگ (N/A)');
+    // برچسب رسمی N/A و علت آن — یکی در نشان، یکی در متن (بدونِ تکرارِ عینِ جمله)
+    expect(screen.getByTestId('holding-pnav-panel').textContent).toContain('N/A');
+    expect(screen.getByTestId('holding-nav-na').textContent).toContain('ارزش خالص داراییِ پرتفوی (NAV)');
     // هیچ نسبت جانشینی (EPS به‌جای NAV) محاسبه/نمایش داده نمی‌شود
     expect(panel.textContent).not.toContain('P/NAV ≈');
     expect(panel.textContent).not.toContain('جانشین EPS');

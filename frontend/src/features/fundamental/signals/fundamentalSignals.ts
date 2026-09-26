@@ -140,8 +140,9 @@ export function fundamentalSignal(input: FundamentalInput, ts = Date.now()): Age
   if (pe != null && med != null && med > 0)
     bits.push(`P/E ${faNum(pe, 2)} در برابر میانه صنعت ${faNum(med, 2)}`);
   else bits.push('P/E قابل اتکا نیست');
-  if (yoy != null) bits.push(`رشد سود فصلی ${faNum(yoy)} درصد`);
-  else bits.push('رشد فصلی قابل محاسبه نیست');
+  // #102: متنِ دلیل باید مبنای واقعی را بگوید — سود ناخالص، نه خالص.
+  if (yoy != null) bits.push(`رشد سود ناخالص فصلی ${faNum(yoy)} درصد`);
+  else bits.push('رشد سود ناخالص فصلی قابل محاسبه نیست');
   if (age != null) bits.push(`سن آخرین صورت مالی ${faNum(age, 0)} روز`);
   if (stale) bits.push('داده کهنه است و اعتماد سقف متوسط گرفت');
 

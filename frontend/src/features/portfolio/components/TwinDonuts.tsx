@@ -1,12 +1,12 @@
 // features/portfolio/components/TwinDonuts.tsx -- پنل سه‌بخشی بالای تب هدف
 // [دونات چپ: پرتفوی واقعی] · [باکس میانی: سنجهٔ هم‌ترازی FTS] · [دونات راست: سبد استاندارد FTS]
-// سهام از پوزیشن‌های سبد و سایر طبقات از ارزش ثبت‌شده؛ نبود داده ⇒ «بدون داده» (Circuit Breaker).
+// وزنِ واقعی از buildDelta می‌آید (همان منبعِ نوارِ شکاف)؛ نبود داده ⇒ «بدون داده» (Circuit Breaker).
 import { useMemo, useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { usePortfolio } from '../api/usePortfolio';
 import { useAssetValues } from '../stores/assetValues';
-import { useTargetAllocation, type TargetClass } from '../stores/targetAllocation';
+import { buildDelta, useTargetAllocation, type TargetClass } from '../stores/targetAllocation';
 import {
   ASSET_VALUE_KEYS,
   alignmentScore,
@@ -127,43 +127,34 @@ export function useActualPortfolioData() {
   const classes = useTargetAllocation((s) => s.classes);
   const assetValues = useAssetValues();
 
-  const decisions = useMemo(() => portfolio.data?.decisions ?? [], [portfolio.data]);
+  const holdings = useMemo(() => portfolio.data?.portfolio ?? [], [portfolio.data]);
+  const limits = portfolio.data?.limits;
 
-  const equityWeightPct = useMemo(() => {
-    const accepted = decisions.filter((d) => (d.status ?? '').trim().toLowerCase() === 'accept');
-    if (accepted.length === 0) return null;
-    return (
-      Math.round(accepted.reduce((s, d) => s + (typeof d.weight_eff_pct === 'number' ? d.weight_eff_pct : 0), 0) * 10) / 10
-    );
-  }, [decisions]);
-
-  const rows = useMemo(
+  // تک‌منبع: همان buildDelta که نوارِ شکاف می‌خواند (#106). دونات پیش از این
+  // «جمعِ وزنِ همهٔ پوزیشن‌ها» را سهام می‌خواند و طبقات را از ارزشِ دستی؛
+  // دو پنلِ یک صفحه دو جوابِ متفاوت می‌دادند (سبدِ تمام‌طلا: «سهام ۱۰۰٪»).
+  const deltaRows = useMemo(
     () =>
-      compareToStandard({
-        equityWeightPct,
-        totalValueToman: assetValues.totalToman,
-        values: assetValues.values,
+      buildDelta(classes, holdings, {
+        classMixPct: limits?.class_mix_pct ?? null,
+        basketValueToman: limits?.portfolio_value_toman ?? null,
+        totalToman: assetValues.totalToman,
+        valuesByClass: assetValues.values,
       }),
-    [equityWeightPct, assetValues.totalToman, assetValues.values],
+    [classes, holdings, limits?.class_mix_pct, limits?.portfolio_value_toman, assetValues.totalToman, assetValues.values],
   );
 
+  const rows = useMemo(() => compareToStandard(deltaRows), [deltaRows]);
   const filled = useMemo(() => filledPct(rows), [rows]);
 
   const actualByClass = useMemo(() => {
     const map = new Map<string, number | null>();
-    const equityRow = rows.find((r) => r.bucket.id === 'equity');
-    map.set('equity', equityRow?.actualPct ?? null);
-    for (const r of rows) {
-      if (r.bucket.id === 'equity') continue;
-      for (const classId of r.bucket.classIds) {
-        map.set(classId, r.actualPct == null ? null : classId === r.bucket.classIds[0] ? r.actualPct : 0);
-      }
-    }
+    for (const r of deltaRows) map.set(r.id, r.currentPct);
     return map;
-  }, [rows]);
+  }, [deltaRows]);
 
   const actualSlices: DonutSlice[] = classes.map((c: TargetClass) => {
-    const actual = actualByClass.get(c.id);
+    const actual = actualByClass.get(c.id) ?? null;
     const bucket = rows.find((r) => r.bucket.classIds.includes(c.id)) ?? null;
     return {
       id: c.id,
@@ -175,7 +166,7 @@ export function useActualPortfolioData() {
   });
   const actualTotal = actualSlices.reduce((s, x) => s + x.pct, 0);
 
-  return { rows, actualSlices, actualTotal, filled, hasAnyActual: filled != null, equityWeightPct };
+  return { rows, actualSlices, actualTotal, filled, hasAnyActual: filled != null, deltaRows };
 }
 
 /** کامپوننت چارت دونات پرتفوی واقعی و درصد پر شده از سرمایه — قابل استفاده در تب پرتفوی فعلی */
@@ -428,7 +419,8 @@ export function TwinDonuts({
           })}
         </div>
         <p className="mt-1.5 text-2xs leading-5 text-text-muted">
-          وزن سهام به‌طور خودکار از پوزیشن‌های ثبت‌شدهٔ سبد خوانده می‌شود؛ بقیهٔ طبقات از ارزش‌های بالا محاسبه می‌شوند.
+          تا وقتی نمادِ سبد ترکیبِ طبقات داشته باشد، وزن از همان «قیمت × تعدادِ» تابلو خوانده می‌شود؛ این ارزش‌ها
+          جانشینِ طبقاتی‌اند که تابلو نمی‌شناسد (طلا/نقرهٔ فیزیکی، ارز دیجیتال، نقدینگی).
         </p>
       </details>
     </section>

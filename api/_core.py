@@ -14,6 +14,51 @@ import sqlite3
 import subprocess
 
 
+def _sel_ddl() -> str:
+    """DDL مشترک جدول تصمیمات سبد — یک متن برای هر دو بانک (market.db و user.db).
+
+    دو نسخهٔ دستی از یک DDL یعنی «ستون در یک بانک هست و در دیگری نه»؛ همین‌جا
+    منبع یکتاست. #106 (PORT-1): «تعداد» اضافه شد تا وزن از قیمت×تعداد بیاید.
+    """
+    return """
+        CREATE TABLE IF NOT EXISTS selection_decisions (
+            symbol       TEXT PRIMARY KEY,
+            name         TEXT DEFAULT '',
+            status       TEXT NOT NULL DEFAULT 'pending',
+            reason       TEXT DEFAULT '',
+            note         TEXT DEFAULT '',
+            stop_loss    TEXT DEFAULT '',
+            asset_kind   TEXT DEFAULT '',
+            weight_pct   REAL DEFAULT 0,
+            price        REAL DEFAULT 0,
+            qty          REAL DEFAULT 0,
+            score        INTEGER DEFAULT 0,
+            pricing_mode TEXT DEFAULT '',
+            sector       TEXT DEFAULT '',
+            updated_at   TEXT DEFAULT ''
+        )
+    """
+
+
+def ensure_selection_schema(conn: sqlite3.Connection) -> None:
+    """جدول تصمیمات سبد + ADD COLUMN افزایندهٔ «تعداد».
+
+    CREATE TABLE IF NOT EXISTS جدولِ موجود را به‌روز نمی‌کند، پس برای بانک‌هایی
+    که از نسخهٔ قبل مانده‌اند ALTER لازم است. ALTER فقط «افزودن» است: هیچ ستون
+    یا ردیفی حذف یا بازنویسی نمی‌شود (user.db خط‌قرمزِ حذفِ داده است).
+    """
+    try:
+        conn.execute(_sel_ddl())
+    except Exception:
+        pass
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(selection_decisions)")}
+        if cols and "qty" not in cols:
+            conn.execute("ALTER TABLE selection_decisions ADD COLUMN qty REAL DEFAULT 0")
+    except Exception:
+        pass
+
+
 def get_db():
     if not os.path.exists(DB_PATH):
         raise HTTPException(status_code=500, detail="Database market.db not found.")
@@ -44,26 +89,7 @@ def get_db():
         pass
     # v9.0 — جدول سبک تصمیمات سبد (Accept/Reject/Monitor). idempotent و هم‌جای
     # ایندکسها؛ با «هر اتصال» تضمین میشود موجود است بدون نیاز به مایگریشن جدا.
-    try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS selection_decisions (
-                symbol       TEXT PRIMARY KEY,
-                name         TEXT DEFAULT '',
-                status       TEXT NOT NULL DEFAULT 'pending',
-                reason       TEXT DEFAULT '',
-                note         TEXT DEFAULT '',
-                stop_loss    TEXT DEFAULT '',
-                asset_kind   TEXT DEFAULT '',
-                weight_pct   REAL DEFAULT 0,
-                price        REAL DEFAULT 0,
-                score        INTEGER DEFAULT 0,
-                pricing_mode TEXT DEFAULT '',
-                sector       TEXT DEFAULT '',
-                updated_at   TEXT DEFAULT ''
-            )
-        """)
-    except Exception:
-        pass
+    ensure_selection_schema(conn)
     # v9.7.3 — واچ‌لیست کاربر. همان الگوی بالا: idempotent و همراه هر اتصال،
     # بدون مایگریشن جدا. DDL داخل watchlist_store است تا تست‌ها بدون FastAPI
     # بتوانند همان جدول را بسازند.
@@ -106,26 +132,7 @@ def get_user_db() -> sqlite3.Connection:
     except Exception:
         pass
 
-    try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS selection_decisions (
-                symbol       TEXT PRIMARY KEY,
-                name         TEXT DEFAULT '',
-                status       TEXT NOT NULL DEFAULT 'pending',
-                reason       TEXT DEFAULT '',
-                note         TEXT DEFAULT '',
-                stop_loss    TEXT DEFAULT '',
-                asset_kind   TEXT DEFAULT '',
-                weight_pct   REAL DEFAULT 0,
-                price        REAL DEFAULT 0,
-                score        INTEGER DEFAULT 0,
-                pricing_mode TEXT DEFAULT '',
-                sector       TEXT DEFAULT '',
-                updated_at   TEXT DEFAULT ''
-            )
-        """)
-    except Exception:
-        pass
+    ensure_selection_schema(conn)
 
     # migration یک‌باره از market.db به user.db
     # (برای کاربرانی که نسخهٔ قبلی نصب داشتند)
@@ -175,11 +182,14 @@ def _migrate_user_tables_from_market(user_conn: sqlite3.Connection) -> None:
                 user_conn.executemany(
                     "INSERT OR IGNORE INTO selection_decisions"
                     " (symbol, name, status, reason, note, stop_loss, asset_kind,"
-                    "  weight_pct, price, score, pricing_mode, sector, updated_at)"
+                    "  weight_pct, price, qty, score, pricing_mode, sector, updated_at)"
                     " VALUES (:symbol, :name, :status, :reason, :note, :stop_loss,"
-                    "  :asset_kind, :weight_pct, :price, :score, :pricing_mode,"
+                    "  :asset_kind, :weight_pct, :price, :qty, :score, :pricing_mode,"
                     "  :sector, :updated_at)",
-                    [dict(r) for r in src_rows]
+                    # بانکِ منبع ممکن است نسخهٔ بی‌«تعداد» باشد؛ کلیدِ غایب صفر
+                    # می‌خورد وگرنه INSERT پارامترِ ناموجود می‌شکند و کل
+                    # مایگریشن (بی‌صدا) رد می‌شود.
+                    [{**dict(r), "qty": dict(r).get("qty") or 0} for r in src_rows]
                 )
                 mconn.execute("DELETE FROM selection_decisions")
                 mconn.commit()

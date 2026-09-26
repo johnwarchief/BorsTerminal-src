@@ -217,16 +217,42 @@ _FUND_KINDS = (
     ("lev",    ("اهرم", "اهرمي", "اهرام")),
     ("gold",   ("طلا", "طلایی", "Gold", "ياره", "گلگشت", "عيار", "ثروت آفرين")),
     ("silver", ("نقره", "سيور")),
-    ("fixed",  ("درآمد ثابت", "درامد ثابت", "ثابت", "اقتدار", "ادوار", "آهنگ")),
+    # «درآمدثابت» و «…دثابت» بدونِ فاصله نوشته می‌شوند؛ با قاعدهٔ «کلید = کلمه»
+    # «ثابت» بعد از یک حرف رد می‌شود، پس این شکل‌هایِ سرهم هم صریح فهرست شده‌اند
+    # (probe: tools/fund_kind_boundary_probe.py — اصيل و هدف2 بدون این‌ها
+    # «سهامی» می‌شدند، چون «مشترك» در نامشان هست و equity بعد از fixed می‌آید).
+    ("fixed",  ("درآمد ثابت", "درامد ثابت", "درآمدثابت", "درامدثابت", "دثابت",
+                "ثابت", "اقتدار", "ادوار", "آهنگ")),
     ("mixed",  ("مختلط",)),
     ("commod", ("كالا", "کالا", "پتروشيمه", "فلزات")),
     ("fof",    ("در صندوق",)),
     # «بخشی/شاخصی/جسورانه/تضمین/پروژه/مشترک» و خودِ واژهٔ «سهام» همگی
     # صندوقِ سهامی‌اند. اینها نبودند: ۱۴۵ صندوقِ سهامی بی‌طبقه می‌ماندند و
     # سطر «صندوق‌های سهامی و مختلط» ۲۱٪ کم‌شمار می‌شد.
-    ("equity", ("سهام", "سهامی", "بخش", "شاخص", "جسوران", "تضمین", "تامين",
+    # «درسهام»Markerِ انتهای نام است («… ارزش-درسهام») و بعد از «-» می‌آید؛
+    # بدونِ آن، «سهام» داخلِ آن سرهم‌نویسی رد می‌شد و صندوق بی‌طبقه می‌ماند.
+    ("equity", ("سهام", "سهامی", "درسهام", "بخش", "شاخص", "جسوران", "تضمین", "تامين",
                 "پروژه", "مشترك", "مشترک", "اعتبارسهام")),
 )
+
+
+def _word_hit(name: str, key: str) -> bool:
+    """کلیدواژه باید کلمه باشد، نه ته‌ماندهٔ کلمه‌ای دیگر.
+
+    «معيار» (معیار) شامل «عيار» (عیار) است و «طلا» شامل «سلطان» نه، اما همین
+    یکی کافی بود: «صندوق س.كالاي ديباي معيار» و «آواي معيار» — یک صندوقِ کالا و
+    یک صندوقِ سهامی — «طلا» خوانده می‌شدند. تا پیش از PORT-1 این اشتباه فقط در
+    سطرهایِ صندوقِ نبض بازار دیده می‌شد؛ حالا که ترکیبِ طبقاتِ پرتفوی از همین
+    kind ساخته می‌شود، یعنی «۸۷٪ سبد طلاست» در حالی که نیست.
+    """
+    if not key:
+        return False
+    i = name.find(key)
+    while i != -1:
+        if i == 0 or not name[i - 1].isalpha():
+            return True
+        i = name.find(key, i + 1)
+    return False
 
 
 def fund_kind(l_val30: str, l_val18: str) -> str:
@@ -240,7 +266,7 @@ def fund_kind(l_val30: str, l_val18: str) -> str:
     name = (l_val30 or "") + " " + (l_val18 or "")
     for kind, keys in _FUND_KINDS:
         for k in keys:
-            if k and k in name:
+            if _word_hit(name, k):
                 return kind
     tail = (l_val30 or "").rstrip()
     if tail.endswith("-د"):
@@ -409,7 +435,12 @@ def load_snapshot(conn, force: bool = False) -> dict:
     day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
     hour = conn.execute(
         "SELECT MAX(h_even) FROM market_watch WHERE d_even=?", (day,)).fetchone()[0] or 0
-    cday = conn.execute("SELECT MAX(d_even) FROM client_type").fetchone()[0]
+    # ردیفِ مشتری باید از همان نشستِ تابلو بیاید یا قدیمی‌تر از آن.
+    # MAX مطلقِ جدول در تعطیلی به روزِ «آینده» می‌زد (تابلو ۲۰۲۶۰۹۲۳ در برابر
+    # client_type ۲۰۲۶۰۹۲۶) و قدرت خریدار/فروشِ «نبض بازار» از روزِ دیگری
+    # حساب می‌شد — همان چیزی که عددِ ما را با تریدرزآرنا می‌جنگاند.
+    cday = conn.execute(
+        "SELECT MAX(d_even) FROM client_type WHERE d_even<=?", (day,)).fetchone()[0]
     have_depth = _has_queue_cols(conn)
 
     cols = """m.ins_code, i.l_val18, i.l_val30, i.sector_code, i.sector_name,
@@ -453,6 +484,11 @@ def load_snapshot(conn, force: bool = False) -> dict:
     _CTX["conn"] = conn
     _CTX["sig"] = sig
     _CTX["data"] = {"asof": {"d_even": day, "h_even": hour, "client_d_even": cday,
+                             # صفر یعنی هم‌نشست؛ هیچ‌وقت منفی نیست (بالا محدود شد).
+                             # مصرف‌کننده با این عدد می‌فهمد سرانهٔ خرید/فروش
+                             # مربوط به نشستِ جاری است یا یک نشست عقب‌تر.
+                             "client_lag_days": None if not (cday and day) else
+                                                 (str(day) > str(cday)),
                              "depth": have_depth},
                     "rows": out, "depth": have_depth,
                     "base_est": _base_volume_estimate(conn, day)}
@@ -1146,34 +1182,47 @@ def industries(conn) -> dict:
         if not nm:
             continue
         b = by.setdefault(nm, {"industry": nm, "n": 0, "pos": 0, "neg": 0,
-                               "val": 0.0, "flow": 0.0, "bq": 0.0, "sq": 0.0})
+                               "val": 0.0, "flow": 0.0, "bq": 0.0, "sq": 0.0,
+                               "pct_sum": 0.0, "n_pct": 0})
         b["n"] += 1
         p = r.get("pct")
         if p is not None and p > 0:
             b["pos"] += 1
         elif p is not None and p < 0:
             b["neg"] += 1
+        # میانگینِ «درصد» فقط روی نمادهایی که واقعاً درصد دارند (pct ≠ None)؛
+        # نمادِ بی‌داده در مخرج نمی‌نشیند. «بی‌داده» هیچ‌وقت صفرِ plausible نیست.
+        if p is not None:
+            b["pct_sum"] += p
+            b["n_pct"] += 1
         b["val"] += r["_m"]["val"]
         b["flow"] += r["_m"]["flow"]
         b["bq"] += r["_m"]["bq_val"] or 0.0
         b["sq"] += r["_m"]["sq_val"] or 0.0
     out = []
     for b in by.values():
-        flow_bt = round(b["flow"] / B_TUMAN_FROM_RIAL, 1)
+        traded = b["val"] > 0
+        # جریانِ پولِ صنعتِ بی‌معامله «اندازه‌گیری‌نشده» است، نه صفر؛ پس None تا
+        # در صدرِ «ورود پول» صفرِ سبزِ جعلی نگیرد (قاعدهٔ «بی‌داده ≠ صفر»).
+        flow_bt = round(b["flow"] / B_TUMAN_FROM_RIAL, 1) if traded else None
         val_bt = round(b["val"] / B_TUMAN_FROM_RIAL, 1)
+        # «صنعت داغ» بر مبنای درصد = میانگینِ تغییرِ قیمتِ پایانی نسبت به دیروز
+        # (همان مبنای رسمیِ «مثبت/منفی» نماد) — نه پراکندگیِ شمارِ مثبت‌ها. مخرج
+        # فقط نمادهای دارای درصد؛ اگر هیچ‌کدام درصد نداشتند ⇒ None، نه ۰.
+        avg_pct = round(b["pct_sum"] / b["n_pct"], 2) if b["n_pct"] else None
         out.append({"industry": b["industry"], "symbols": b["n"],
                     "positive": b["pos"], "negative": b["neg"],
-                    "avg_pct": round(100.0 * b["pos"] / b["n"], 1) if b["n"] else None,
+                    "avg_pct": avg_pct,
                     "value_b_toman": val_bt,
                     "flow_b_toman": flow_bt,
-                    "flow_pct_of_value": round(100.0 * b["flow"] / b["val"], 2) if b["val"] else None,
+                    "flow_pct_of_value": round(100.0 * b["flow"] / b["val"], 2) if traded else None,
                     "buy_queue_b_toman": round(b["bq"] / B_TUMAN_FROM_RIAL, 1),
                     "sell_queue_b_toman": round(b["sq"] / B_TUMAN_FROM_RIAL, 1)})
     # ---- رتبه‌بندی FTS: ارزش معاملات (وزن اصلی) + ورود پول خرد (تاییدیه) ----
     # rank_val: ۱ = بیشترین ارزش؛ rank_flow: ۱ = بیشترین ورود پول (فقط وردهای
     # مثبت رتبه می‌گیرند — صنعتِ با خروج پول هرگز لیدر نمی‌شود).
     by_val = sorted(out, key=lambda x: -x["value_b_toman"])
-    by_flow = [x for x in out if x["flow_b_toman"] > 0]
+    by_flow = [x for x in out if x["flow_b_toman"] is not None and x["flow_b_toman"] > 0]
     by_flow.sort(key=lambda x: -x["flow_b_toman"])
     rank_val = {x["industry"]: i + 1 for i, x in enumerate(by_val)}
     rank_flow = {x["industry"]: i + 1 for i, x in enumerate(by_flow)}
@@ -1343,12 +1392,29 @@ def timeline(conn, mode: str = "cum") -> dict:
         ser["t"] = cum["t"]
     else:
         ser = cum
+    day = pts[0].get("d_even") if pts else None
+    board_day = None
+    try:
+        board_day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
+    except Exception:
+        pass
+    # «دو نقطه داریم» با «این نقطه‌ها مربوط به همین نشستِ تابلو است» دو چیزِ
+    # متفاوت‌اند. تایم‌لاینِ یک نشستِ چهار روز پیش با ready=True رویِ صفحهٔ
+    # «نبض بازار» می‌نشیند و کاربر آن را وضعیتِ امروز می‌خواند؛ پس کهنه بودن
+    # جدا اعلام می‌شود (همان قاعدهٔ «نبودنِ داده را سبز نشان نده»).
+    stale = bool(day and board_day and str(day) != str(board_day))
+    note = None
+    if len(pts) < 2:
+        note = "برای تایم‌لاین دست‌کم به دو همگام‌سازی در یک نشست نیاز است"
+    elif stale:
+        # تاریخ‌ها در دیتابیس میلادی ذخیره می‌شوند؛ عددِ خام را به کاربر
+        # نشان نمی‌دهیم چون آن‌طور که خوانده می‌شود «تاریخِ فارسی» است.
+        note = "این تایم‌لاین به نشستی غیر از آخرین نشستِ تابلو برمی‌گردد — وضعیتِ امروز نیست"
     return {"status": "ok", "mode": "inst" if mode == "inst" else "cum",
             "ready": len(pts) >= 2, "points": len(pts),
-            "day": pts[0].get("d_even") if pts else None, "series": ser,
+            "day": day, "board_day": board_day, "stale": stale, "series": ser,
             "session_open": _hhmm(SESSION_OPEN_HM), "session_close": _hhmm(SESSION_CLOSE_HM),
-            "note": None if len(pts) >= 2 else
-                    "برای تایم‌لاین دست‌کم به دو همگام‌سازی در یک نشست نیاز است"}
+            "note": note}
 
 
 # ==================================== گام ۳.۲: چرخش وضعیت درون‌روزی (فازِ بازار)

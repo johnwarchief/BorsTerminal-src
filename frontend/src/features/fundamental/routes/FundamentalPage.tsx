@@ -18,6 +18,7 @@ import { useFtsCard } from '../api/useFtsCard';
 import { useQuarters } from '../api/useQuarters';
 import { useSectorBoard } from '../api/useSectorBoard';
 import { useFtsScreen } from '../api/useFtsScreen';
+import { groupBySymbol, useCalendarUpcoming } from '../api/useCalendarUpcoming';
 import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
 import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
@@ -47,15 +48,9 @@ export default function FundamentalPage() {
   const [drillKey, setDrillKey] = useState<DrillDownKey | null>(null);
 
   const screen = useFtsScreen();
-  /** دکمهٔ بروزرسانی بالای جدول: تازه‌سازیِ ۵ شاخص از کدال + بازخوانیِ غربالگر */
-  const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await http('/api/sync/codal/fts-refresh?mode=monthly', { method: 'POST' });
-    } catch { /* سرور ممکن است فوراً پاسخ ندهد؛ بازخوانی را ادامه می‌دهیم */ }
-    try { await screen.refetch(); } finally { setRefreshing(false); }
-  };
+  /** تقویم مجمعِ کل بازار در یک درخواست — برای برچسبِ ردیف‌ها */
+  const upcoming = useCalendarUpcoming();
+  const assemblyMap = useMemo(() => groupBySymbol(upcoming.data?.items), [upcoming.data]);
 
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب: POST + polling وضعیت تا پایان */
   type DbStatus = { running: boolean; stage: string; percent?: number; detail?: string; error?: string };
@@ -170,15 +165,14 @@ export default function FundamentalPage() {
            * ده‌ها ثانیه طول می‌کشد، پس کاربر پیامِ خطا را واقعی می‌خواند. */
           <EmptyState title="در حال بارگذاری غربالگری FTS…" hint="اولین اسکنِ کل بازار ممکن است تا یک دقیقه طول بکشد؛ جدول همین‌جا ظاهر می‌شود" />
         ) : screen.isError ? (
-          <EmptyState title="غربالگری FTS در دسترس نیست" hint="سرور اسکرینر پاسخ نداد — بعداً تلاش کن" />
+          <EmptyState title="غربالگری FTS در دسترس نیست" hint="سرور غربالگری پاسخ نداد — کمی بعد دوباره امتحان کنید" />
         ) : (
           <FtsScreenTable
             rows={screen.data?.data ?? []}
             thresholds={screen.data?.thresholds ?? null}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
             onDbUpdate={handleDbUpdate}
             dbUpdate={dbUpd}
+            assemblyEvents={assemblyMap}
             settingsSlot={<FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />}
             onSelect={(s) => {
               setSymbol(s);
@@ -199,7 +193,7 @@ export default function FundamentalPage() {
     const status = card.error instanceof HttpError ? card.error.status : null;
     const hint =
       status === 0
-        ? 'پاسخ بک‌اند با قرارداد دادهٔ فرانت ناسازگار است — قرارداد را بررسی کن'
+        ? 'اتصال برقرار نشد یا پاسخ خوانده نشد — دوباره امتحان کنید'
         : status === 404
           ? `نماد ${symbol} در کدال صورت مالی ندارد`
           : 'سرور بنیادی پاسخ نداد یا خطای شبکه رخ داد';
@@ -241,13 +235,13 @@ export default function FundamentalPage() {
       {card.data?.applicable !== false && (isHolding || axis4Exempt) ? (
         <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ — نیازمند ارزیابی پرتفوی هلدینگ (N/A)</h3>
+            <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ</h3>
             <Badge tone="yellow">N/A</Badge>
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
-            نیازمند ارزیابی پرتفوی هلدینگ (N/A) — این شرکت سرمایه‌گذاری/هلدینگ است و مقایسهٔ P/E با گروه‌های تولیدی
-            نامعناست. تا انتشار دادهٔ NAV (ارزش خالص دارایی‌های پرتفوی) از بک‌اند، هیچ نسبتِ جایگزینی مثل
-            «EPS به‌عنوان جانشین NAV» محاسبه یا نمایش داده نمی‌شود — عدد ساختگی ممنوع.
+            این شرکت سرمایه‌گذاری/هلدینگ است، پس مقایسهٔ P/E آن با گروه‌های تولیدی بی‌معناست. تا وقتی ارزش خالص
+            داراییِ پرتفوی (NAV) منتشر نشود، هیچ نسبت جایگزینی — مثل «EPS به‌عنوان جانشین NAV» — محاسبه یا
+            نمایش داده نمی‌شود؛ عدد ساختگی ممنوع.
           </p>
           <div className="mt-2.5 pt-2.5 border-t border-border-c/50 text-2xs text-text-muted">
             بر اساس استراتژی FTS: هلدینگ‌ها از شرط نسبت فروش به ارزش بازار معاف هستند و با P/NAV سنجیده می‌شوند.
@@ -338,6 +332,7 @@ export default function FundamentalPage() {
         verdict={card.data.verdict ?? null}
         industryMode={card.data.pricing_mode ?? null}
         indicators={card.data.indicators ?? null}
+        thresholds={card.data.thresholds ?? null}
         audit={audit}
         physicalApplicable={physicalApplicable}
         activeDrill={drillKey}

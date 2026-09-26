@@ -1,14 +1,42 @@
 // features/market/components/TapeFilterSettingsModal.tsx -- مدال شخصی‌سازی فیلترهای تابلو
+//
+// ورودیِ عددیِ این مدال هیچ‌وقت `Number(e.target.value)` نیست: فیلدِ خالی با
+// Number('') صفر می‌شود و صفر یعنی «گیت خاموش» — یعنی پاک‌کردنِ تصادفیِ یک
+// خانۀِ فیلتر را بی‌صدا از کار می‌انداخت. اینجا از parseNum استفاده می‌شود
+// که ورودیِ ناخوانا (از جمله ارقامِ فارسی در input[type=number]) را null
+// می‌دهد و در آن حالت مقدارِ قبلی سرِ جایش می‌ماند.
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { toFaDigits } from '@shared/lib/fmt';
+import { parseNum, toFaDigits } from '@shared/lib/fmt';
 import {
   TAPE_PRESETS,
   isConfigCustomized,
   type LookbackDays,
   type TapePresetKey,
+  type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
 import { useTapeStore } from '../stores/tapeStore';
+
+type Block = keyof TapeFilterConfig;
+
+/** دامنۀِ انتخابیِ پلکانِ مقاومت — همان نقاطِ جزوه. */
+const LADDER_OPTIONS: { days: LookbackDays; label: string; sub: string }[] = [
+  { days: 2, label: '۲ روزه', sub: 'کوتاه‌ترین' },
+  { days: 5, label: '۵ روزه', sub: 'هفتگی' },
+  { days: 9, label: '۹ روزه', sub: 'دو هفته' },
+  { days: 19, label: '۱۹ روزه', sub: 'یک ماهه' },
+  { days: 29, label: '۲۹ روزه', sub: '۱.۵ ماهه' },
+  { days: 39, label: '۳۹ روزه', sub: 'دو ماهه' },
+  { days: 49, label: '۴۹ روزه', sub: '۲.۵ ماهه' },
+  { days: 59, label: '۵۹ روزه', sub: 'فصلی (جزوه)' },
+];
+
+const LADDER_HINT: Record<LookbackDays, string> = {
+  2: 'سقف ۲ نشستِ پیش', 5: 'سقف هفتگی (۵ نشستِ پیش)', 9: 'سقف دو هفته (۹ نشستِ پیش)',
+  19: 'سقف یک ماهه (۱۹ نشستِ پیش)', 29: 'سقف ۱.۵ ماهه (۲۹ نشستِ پیش)',
+  39: 'سقف دو ماهه (۳۹ نشستِ پیش)', 49: 'سقف ۲.۵ ماهه (۴۹ نشستِ پیش)',
+  59: 'پلکانِ کاملِ جزوه ([ih][2..59])',
+};
 
 export function TapeFilterSettingsModal({
   open,
@@ -21,6 +49,13 @@ export function TapeFilterSettingsModal({
   const setConfig = useTapeStore((s) => s.setTapeFilterConfig);
   const resetConfig = useTapeStore((s) => s.resetTapeFilterConfig);
   const applyPreset = useTapeStore((s) => s.applyTapePreset);
+
+  /** نوشتنِ یک آستانه، فقط وقتی ورودی واقعاً خوانا باشد. */
+  const setField = <K extends Block>(block: K, field: keyof TapeFilterConfig[K], raw: string) => {
+    const v = parseNum(raw);
+    if (v == null) return;
+    setConfig({ ...config, [block]: { ...config[block], [field]: v } } as TapeFilterConfig);
+  };
 
   const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart'>('presets');
 
@@ -197,15 +232,12 @@ export function TapeFilterSettingsModal({
                   max={4.0}
                   step={0.1}
                   value={config.clock.minDeltaPct}
-                  onChange={(e) =>
-                    setConfig({
-                      clock: { ...config.clock, minDeltaPct: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('clock', 'minDeltaPct', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
                 <p className="text-2xs text-text-muted leading-4">
                   فاصله آخرین معامله از قیمت پایانی نشان‌دهنده شدت بازگشت خریدار در دقایق پایانی بازار است.
+                  حدِّ جزوه ۲٫۰٪ است.
                 </p>
               </div>
 
@@ -237,16 +269,11 @@ export function TapeFilterSettingsModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={0}
-                      max={5}
-                      step={0.2}
+                      type="text"
+                      aria-label="حداقل ضریب حجم به میانگین ماه"
+                      inputMode="decimal"
                       value={config.clock.minVolRatio}
-                      onChange={(e) =>
-                        setConfig({
-                          clock: { ...config.clock, minVolRatio: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('clock', 'minVolRatio', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">برابر</span>
@@ -258,16 +285,11 @@ export function TapeFilterSettingsModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={5}
-                      max={200}
-                      step={5}
+                      type="text"
+                      aria-label="حداقل تعداد معاملات (الگوی ساعت)"
+                      inputMode="decimal"
                       value={config.clock.minTradeCount}
-                      onChange={(e) =>
-                        setConfig({
-                          clock: { ...config.clock, minTradeCount: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('clock', 'minTradeCount', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">معامله</span>
@@ -335,11 +357,7 @@ export function TapeFilterSettingsModal({
                   max={8.0}
                   step={0.5}
                   value={config.suspiciousVolume.minRatio}
-                  onChange={(e) =>
-                    setConfig({
-                      suspiciousVolume: { ...config.suspiciousVolume, minRatio: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('suspiciousVolume', 'minRatio', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
               </div>
@@ -350,16 +368,11 @@ export function TapeFilterSettingsModal({
                 </label>
                 <div className="flex items-center gap-2 max-w-xs">
                   <input
-                    type="number"
-                    min={10}
-                    max={300}
-                    step={10}
+                    type="text"
+                    aria-label="حداقل تعداد معاملات معتبر"
+                    inputMode="decimal"
                     value={config.suspiciousVolume.minTradeCount}
-                    onChange={(e) =>
-                      setConfig({
-                        suspiciousVolume: { ...config.suspiciousVolume, minTradeCount: Number(e.target.value) },
-                      })
-                    }
+                    onChange={(e) => setField('suspiciousVolume', 'minTradeCount', e.target.value)}
                     className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                   />
                   <span className="text-xs text-text-secondary shrink-0">معامله</span>
@@ -377,29 +390,11 @@ export function TapeFilterSettingsModal({
                     تایم‌فریم شکست سقف قیمتی (Lookback High)
                   </label>
                   <span className="text-2xs font-bold text-accent-blue bg-accent-blue/10 px-2 py-0.5 rounded border border-accent-blue/20">
-                    انتخاب فعلی: {
-                      config.jet.lookbackDays === 1 ? 'سقف دیروز (۱ روزه)' :
-                      config.jet.lookbackDays === 5 ? 'سقف هفتگی (۵ روزه)' :
-                      config.jet.lookbackDays === 9 ? 'سقف ۲ هفته (۱۰ روزه)' :
-                      config.jet.lookbackDays === 19 ? 'سقف ۱ ماهه (۲۰ روزه)' :
-                      config.jet.lookbackDays === 29 ? 'سقف ۱.۵ ماهه (۳۰ روزه)' :
-                      config.jet.lookbackDays === 39 ? 'سقف ۲ ماهه (۴۰ روزه)' :
-                      config.jet.lookbackDays === 49 ? 'سقف ۲.۵ ماهه (۵۰ روزه)' :
-                      'سقف فصلی ۳ ماهه (۶۰ روزه)'
-                    }
+                    انتخاب فعلی: {LADDER_HINT[config.jet.lookbackDays]}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {([
-                    { days: 1, label: '۱ روزه', sub: 'سقف دیروز' },
-                    { days: 5, label: '۵ روزه', sub: 'هفتگی' },
-                    { days: 9, label: '۱۰ روزه', sub: '۲ هفته' },
-                    { days: 19, label: '۲۰ روزه', sub: '۱ ماهه' },
-                    { days: 29, label: '۳۰ روزه', sub: '۱.۵ ماهه' },
-                    { days: 39, label: '۴۰ روزه', sub: '۲ ماهه' },
-                    { days: 49, label: '۵۰ روزه', sub: '۲.۵ ماهه' },
-                    { days: 59, label: '۶۰ روزه', sub: 'فصلی (۳ ماه)' },
-                  ] as { days: LookbackDays; label: string; sub: string }[]).map((opt) => {
+                  {LADDER_OPTIONS.map((opt) => {
                     const isSelected = config.jet.lookbackDays === opt.days;
                     return (
                       <button
@@ -423,7 +418,9 @@ export function TapeFilterSettingsModal({
                   })}
                 </div>
                 <p className="text-2xs text-text-muted leading-4">
-                  قیمت پایانی سهم باید بالاتر از بیشترین سقف ثبت‌شده در تایم‌فریم انتخابی باشد.
+                  آخرینِ معامله باید از سقفِ تک‌روزیِ همهٔ نقاطِ پلکانِ جزوه
+                  ([ih][2] تا نقطۀِ انتخابی) بالاتر رفته باشد. نمادی که
+                  تاریخچۀِ کاملِ این نقاط را ندارد، جت نمی‌خورد.
                 </p>
               </div>
 
@@ -442,11 +439,7 @@ export function TapeFilterSettingsModal({
                     max={4.0}
                     step={0.1}
                     value={config.jet.minBuyerPower}
-                    onChange={(e) =>
-                      setConfig({
-                        jet: { ...config.jet, minBuyerPower: Number(e.target.value) },
-                      })
-                    }
+                    onChange={(e) => setField('jet', 'minBuyerPower', e.target.value)}
                     className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                   />
                 </div>
@@ -465,11 +458,7 @@ export function TapeFilterSettingsModal({
                     max={5.0}
                     step={0.5}
                     value={config.jet.minVolRatio}
-                    onChange={(e) =>
-                      setConfig({
-                        jet: { ...config.jet, minVolRatio: Number(e.target.value) },
-                      })
-                    }
+                    onChange={(e) => setField('jet', 'minVolRatio', e.target.value)}
                     className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                   />
                 </div>
@@ -498,27 +487,30 @@ export function TapeFilterSettingsModal({
           {/* تب کف‌روبی و جمع‌آوری صف */}
           {activeTab === 'roobi' && (
             <div className="space-y-5">
+              <div className="rounded-xl border border-accent-blue/20 bg-accent-blue/5 p-3 text-2xs text-text-secondary leading-5">
+                شرطِ اصلیِ کف‌روبی همیشه برقرار است و آستانه ندارد: «آخرینِ معامله دقیقاً روی کفِ روز»
+                و «حجمِ نشستِ پیش بیشتر از یک». دو اسلایدرِ زیر انتخابی‌اند و درِ جزوه نیستند؛
+                صفر یعنی بدون شرط.
+              </div>
+
               <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-text-primary">
                     حداقل نسبت قدرت خریدار به فروشنده جمع‌کننده
                   </label>
                   <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
-                    <span className="num">{toFaDigits(config.roobi.minBuyerPower.toFixed(1))}</span>
-                    <span className="text-2xs">برابر</span>
+                    <span className="num">{config.roobi.minBuyerPower > 0
+                      ? toFaDigits(config.roobi.minBuyerPower.toFixed(1)) : 'بدون شرط'}</span>
+                    <span className="text-2xs">{config.roobi.minBuyerPower > 0 ? 'برابر' : ''}</span>
                   </div>
                 </div>
                 <input
                   type="range"
-                  min={1.0}
+                  min={0}
                   max={4.0}
                   step={0.1}
                   value={config.roobi.minBuyerPower}
-                  onChange={(e) =>
-                    setConfig({
-                      roobi: { ...config.roobi, minBuyerPower: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('roobi', 'minBuyerPower', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
                 <p className="text-2xs text-text-muted leading-4">
@@ -532,21 +524,18 @@ export function TapeFilterSettingsModal({
                     حداقل ضریب حجم معاملات جمع‌آوری به میانگین ماه
                   </label>
                   <div className="flex items-center gap-1 text-xs font-black text-accent-blue bg-accent-blue/10 px-2.5 py-1 rounded-lg border border-accent-blue/20">
-                    <span className="num">{toFaDigits(config.roobi.minVolRatio.toFixed(1))}</span>
-                    <span className="text-2xs">برابر</span>
+                    <span className="num">{config.roobi.minVolRatio > 0
+                      ? toFaDigits(config.roobi.minVolRatio.toFixed(1)) : 'بدون شرط'}</span>
+                    <span className="text-2xs">{config.roobi.minVolRatio > 0 ? 'برابر' : ''}</span>
                   </div>
                 </div>
                 <input
                   type="range"
-                  min={1.0}
+                  min={0}
                   max={5.0}
-                  step={0.2}
+                  step={0.1}
                   value={config.roobi.minVolRatio}
-                  onChange={(e) =>
-                    setConfig({
-                      roobi: { ...config.roobi, minVolRatio: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('roobi', 'minVolRatio', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
               </div>
@@ -558,16 +547,11 @@ export function TapeFilterSettingsModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      max={0}
-                      min={-7}
-                      step={0.5}
+                      type="text"
+                      aria-label="سقف درصد افت قیمت"
+                      inputMode="decimal"
                       value={config.roobi.maxChangePct}
-                      onChange={(e) =>
-                        setConfig({
-                          roobi: { ...config.roobi, maxChangePct: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('roobi', 'maxChangePct', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">درصد</span>
@@ -576,24 +560,23 @@ export function TapeFilterSettingsModal({
                 </div>
                 <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
                   <label className="text-xs font-bold text-text-primary block">
-                    حداقل تعداد معاملات (&gt;۲۰۰ طبق جزوه)
+                    حداقل تعداد معاملات (&gt;۱۰۰ طبق جزوه)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={10}
-                      max={1000}
-                      step={10}
+                      type="text"
+                      aria-label="حداقل تعداد معاملات (کف‌روبی)"
+                      inputMode="decimal"
                       value={config.roobi.minTradeCount}
-                      onChange={(e) =>
-                        setConfig({
-                          roobi: { ...config.roobi, minTradeCount: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('roobi', 'minTradeCount', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">معامله</span>
                   </div>
+                  <p className="text-3xs text-text-muted mt-1">
+                    جزوه تعدادِ معاملاتِ «دیروز» را می‌خواهد؛ تابلو آن را نگه نمی‌دارد، پس
+                    تعدادِ معاملاتِ امروز جایش نشسته است.
+                  </p>
                 </div>
               </div>
             </div>
@@ -619,11 +602,7 @@ export function TapeFilterSettingsModal({
                   max={8.0}
                   step={0.5}
                   value={config.noqteh.maxDistPct}
-                  onChange={(e) =>
-                    setConfig({
-                      noqteh: { ...config.noqteh, maxDistPct: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('noqteh', 'maxDistPct', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
                 <p className="text-2xs text-text-muted leading-4">
@@ -638,16 +617,11 @@ export function TapeFilterSettingsModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={0.5}
-                      max={4.0}
-                      step={0.2}
+                      type="text"
+                      aria-label="حداقل تاییدیه حجم"
+                      inputMode="decimal"
                       value={config.noqteh.minVolRatio}
-                      onChange={(e) =>
-                        setConfig({
-                          noqteh: { ...config.noqteh, minVolRatio: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('noqteh', 'minVolRatio', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">برابر</span>
@@ -659,16 +633,11 @@ export function TapeFilterSettingsModal({
                   </label>
                   <div className="flex items-center gap-2">
                     <input
-                      type="number"
-                      min={5}
-                      max={100}
-                      step={5}
+                      type="text"
+                      aria-label="حداقل تعداد معاملات (نقطه‌زنی)"
+                      inputMode="decimal"
                       value={config.noqteh.minTradeCount}
-                      onChange={(e) =>
-                        setConfig({
-                          noqteh: { ...config.noqteh, minTradeCount: Number(e.target.value) },
-                        })
-                      }
+                      onChange={(e) => setField('noqteh', 'minTradeCount', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
                     <span className="text-xs text-text-secondary shrink-0">معامله</span>
@@ -698,11 +667,7 @@ export function TapeFilterSettingsModal({
                   max={5.0}
                   step={0.1}
                   value={config.smartFlow.minBuyerPower}
-                  onChange={(e) =>
-                    setConfig({
-                      smartFlow: { ...config.smartFlow, minBuyerPower: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('smartFlow', 'minBuyerPower', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
               </div>
@@ -724,11 +689,7 @@ export function TapeFilterSettingsModal({
                   max={6.0}
                   step={0.5}
                   value={config.smartFlow.minVolRatio}
-                  onChange={(e) =>
-                    setConfig({
-                      smartFlow: { ...config.smartFlow, minVolRatio: Number(e.target.value) },
-                    })
-                  }
+                  onChange={(e) => setField('smartFlow', 'minVolRatio', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
               </div>

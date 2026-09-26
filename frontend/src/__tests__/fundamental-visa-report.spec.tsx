@@ -28,8 +28,10 @@ const visa = JSON.parse(
 ) as FtsCardType;
 
 const FISCAL: FiscalQuarter[] = [
-  { key: '1404-Q4', yearLabel: '1404', quarter: 4, revenue: 5_602_625, operatingProfit: null, netProfit: 1_474_154, margin: 26.3 },
-  { key: '1405-Q1', yearLabel: '1405', quarter: 1, revenue: 9_955_592, operatingProfit: null, netProfit: 604_338, margin: 6.1 },
+  // ویسا سرمایه‌گذاری/هلدینگ است: صورتِ سود و زیانش سطر «بهای تمام‌شده» ندارد،
+  // پس سود ناخالص NULL است نه صفر (#102) — و margin هم null می‌ماند.
+  { key: '1404-Q4', yearLabel: '1404', quarter: 4, revenue: 5_602_625, operatingProfit: null, netProfit: 1_474_154, grossProfit: null, margin: null },
+  { key: '1405-Q1', yearLabel: '1405', quarter: 1, revenue: 9_955_592, operatingProfit: null, netProfit: 604_338, grossProfit: null, margin: null },
 ];
 
 describe('ویسا — محور ۱: شاخص ۴ (سالانه‌سازی داینامیک)', () => {

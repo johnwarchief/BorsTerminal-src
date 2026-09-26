@@ -53,6 +53,11 @@ a = Analysis(
                    # imports them inside the function body, so PyInstaller's
                    # static import scan cannot see them.
                    'bors_config', 'bors_flags', 'api',
+                   # پنج فیلترِ تابلو از api.market به ماژولِ خالصِ tape_flags
+                   # منتقل شد تا نگهبانِ dev/tape_filters_v1034.py همان کد را
+                   # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:
+                   # نبودنش EXE را روی اولین درخواست /api/market می‌کشد.
+                   'tape_flags',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
                    'api.screener', 'api._sync_market', 'api._export',

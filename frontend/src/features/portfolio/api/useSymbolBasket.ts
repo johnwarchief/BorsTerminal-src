@@ -8,6 +8,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http, HttpError } from '@shared/api/http';
+import { PORTFOLIO_QUERY_KEY } from './usePortfolio';
 
 export const BASKET_STATUSES = ['accept', 'monitor', 'reject', 'pending'] as const;
 export type BasketStatus = (typeof BASKET_STATUSES)[number];
@@ -23,14 +24,23 @@ export const BasketDecisionSchema = z.object({
   asset_kind: z.string().nullish(),
   weight_pct: z.number().nullish(),
   price: z.number().nullish(),
+  /** تعدادِ دارایی — با قیمت ضرب می‌شود تا وزن خودکار بیاید (#106 PORT-1) */
+  qty: z.number().nullish(),
   score: z.number().nullish(),
   pricing_mode: z.string().nullish(),
   sector: z.string().nullish(),
   updated_at: z.string().nullish(),
   // فیلدهای محاسبه‌شدهٔ بک‌اند برای ردیف‌های accept
+  value_toman: z.number().nullish(),
   weight_eff_pct: z.number().nullish(),
   weight_manual: z.boolean().nullish(),
+  /** منشأ وزن: 'value' (قیمت×تعداد) · 'manual' · 'equal' — «حدس» را از «داده» جدا می‌کند */
+  weight_source: z.enum(['value', 'manual', 'equal']).nullish(),
   over_cap: z.boolean().nullish(),
+  /** طبقهٔ دارایی از classifyِ بک‌اند؛ null یعنی نمی‌دانیم (نه «سهام») */
+  asset_class: z
+    .object({ cls: z.string(), kind: z.string().nullish(), sector_name: z.string().nullish() })
+    .nullish(),
 });
 export type BasketDecision = z.infer<typeof BasketDecisionSchema>;
 
@@ -55,6 +65,12 @@ const DecisionDeleteSchema = z.object({
 });
 
 export const BASKET_QUERY_KEY = ['selection-basket'] as const;
+
+/** هر نوشتن روی تصمیم باید هر دو خوانندهٔ همان اندپوینت را بی‌اعتبار کند. */
+function invalidateDecisionFeeds(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: BASKET_QUERY_KEY });
+  void qc.invalidateQueries({ queryKey: PORTFOLIO_QUERY_KEY });
+}
 
 /** فید مشترک همهٔ تصمیم‌ها — یک کوئری برای هر تعداد نماد در هر تب */
 export function useBasketFeed() {
@@ -89,6 +105,8 @@ export function useSymbolBasket(symbol: string) {
   return {
     state,
     decision,
+    /** همهٔ تصمیم‌ها — برای برآوردِ وزنِ یک ردیفِ تازه پیش از ذخیره (#106) */
+    decisions: feed.data?.decisions ?? [],
     isLoading: feed.isLoading,
     isError: feed.isError,
     error: feed.error,
@@ -99,7 +117,7 @@ export function useSymbolBasket(symbol: string) {
 export type BasketDecisionInput = {
   symbol: string;
   status: BasketStatus;
-  /** وزن درصدی ۰..۱۰۰ — فقط برای accept معنا دارد */
+  /** وزن درصدی ۰..۱۰۰ — فقط وقتی معنا دارد که ارزشِ ردیف معلوم نباشد */
   weightPct?: number | null;
   /** حد ضرر قیمت — عدد یا رشتهٔ عددی */
   stopLoss?: number | string | null;
@@ -108,6 +126,8 @@ export type BasketDecisionInput = {
   name?: string;
   sector?: string;
   price?: number | null;
+  /** تعداد دارایی؛ null یعنی «بفرست، مقدارِ ذخیره‌شده حفظ شود» (#106) */
+  qty?: number | null;
 };
 
 /** ثبت/بروزرسانی تصمیم نماد (status=pending ⇒ بک‌اند رکورد را پاک می‌کند) */
@@ -125,9 +145,12 @@ export function useSaveBasketDecision() {
         stop_loss: input.stopLoss ?? '',
         weight_pct: input.weightPct ?? 0,
       };
+      // فیلدهایِ اختیاری فرستاده نمی‌شوند مگر معلوم باشند: بک‌اند کلیدِ غایب را
+      // از رکوردِ موجود برمی‌دارد، پس «ویرایشِ یادداشت» قیمت/تعداد را صفر نمی‌کند.
       if (input.name != null) body.name = input.name;
       if (input.sector != null) body.sector = input.sector;
       if (input.price != null) body.price = input.price;
+      if (input.qty != null) body.qty = input.qty;
       const res = await http<z.infer<typeof DecisionSaveSchema>>('/api/selection/decision', {
         schema: DecisionSaveSchema,
         method: 'POST',
@@ -138,9 +161,7 @@ export function useSaveBasketDecision() {
       }
       return res;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: BASKET_QUERY_KEY });
-    },
+    onSuccess: () => invalidateDecisionFeeds(qc),
   });
 }
 
@@ -161,8 +182,6 @@ export function useRemoveBasketDecision() {
       }
       return data;
     },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: BASKET_QUERY_KEY });
-    },
+    onSuccess: () => invalidateDecisionFeeds(qc),
   });
 }

@@ -74,6 +74,8 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   // سرور فقط «نسبت گسست قیمت پایه» را می‌دهد = اثرِ ترکیبیِ افزایش سرمایه و سود نقدی
   // (همان حالتِ پیش‌فرضِ نهایت‌نگار). تفکیکِ سود نقدی از سهام جایزه از یک نسبتِ واحد
   // استخراج نمی‌شود، پس سه حالتِ آخر غیرفعال‌اند (نه عددِ ساختگی).
+  // شماره‌هایِ adjustmentType و سنجشِ کمیِ فاکتورِ ما با هر پنج حالت:
+  // docs/CHART-PARITY-REFERENCE.md §۸ (ابزار: tools/nn_adjust_parity.py).
   const adjustments: { label: string; value: AdjustmentMode | 'capital' | 'cash' | 'operational'; desc: string }[] = [
     { label: 'افزایش سرمایه و سود نقدی', value: 'combined', desc: 'حالتِ پیش‌فرضِ نهایت‌نگار — مبنای گسست قیمتِ پایهٔ TSETMC' },
     { label: 'بدون تعدیل', value: 'none', desc: 'قیمت‌های خام و واقعی تابلوی معاملات' },

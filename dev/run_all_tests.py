@@ -73,6 +73,17 @@ SUITES = [
     # v1.0.12: گاردِ سازگاریِ ویندوز + رندرِ نرم‌افزاری. رویِ سیستم‌های بدونِ
     # GPU اختصاصی کرومیوم صفحهٔ سفید می‌زد؛ حالا SwiftShader می‌زند.
     ('dev/test_compat_guard_v1012.py', 'Windows + GPU/software-render guard'),
+    # CANDLE-1: کندل باید همان باشد که TSETMC منتشر می‌کند (ترمیمِ هندسه +
+    # رِفتنِ تعدیلِ جعلی). نه شبکه می‌خواهد نه market.db.
+    ('dev/candle_source_fidelity_v1033.py',
+                                     'candle fidelity: geometry repair + anchored adjustment'),
+    # TAPE-F / JET-BREAK / HIST-SRC: پنج فیلترِ تابلو عینِ جزوه، و «نبودنِ
+    # داده» هیچ‌وقت قبول نیست. پیش از این هیچ سویتی این فرمول‌ها را نمی‌پوشاند.
+    ('dev/tape_filters_v1034.py',   'tape filters: five formulas match the notebook'),
+    # PORT-1: وزن از «قیمت × تعداد»، مایگریشنِ افزودنیِ «تعداد»، و پایانِ
+    # صفرِ ساختگی در مقایسهٔ ترکیبِ سبد با هدف.
+    ('dev/portfolio_weights_v1035.py',
+                                     'portfolio weights: value-based + no fake zero'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
@@ -105,7 +116,19 @@ def run(argv, label):
     n = len(re.findall(r'\bPASS\b', txt))
     f = len(re.findall(r'\bFAIL\b', txt))
     m = re.search(r'(\d+)/(\d+) passed', txt)
-    detail = ('%s/%s' % (m.group(1), m.group(2))) if m else ('%d pass / %d fail' % (n, f))
+    # گاردهای فارسیِ تازه (v1.0.33+) خطۀ «N بررسی سبز، M شکست» می‌دهند؛ بدونِ
+    # این، گزارشِ مجموعه «0 pass / 0 fail» چاپ می‌شد و هیچ‌کس نمی‌فهمید چه چیزی
+    # واقعاً سبز شده است.
+    mf = re.search(r'(\d+) \u0628\u0631\u0631\u0633\u06cc \u0633\u0628\u0632\u060c (\d+) \u0634\u06a9\u0633\u062a', txt)
+    mp = re.search(r'(\d+) passed[ ,/]+(\d+) failed', txt)
+    if m:
+        detail = '%s/%s' % (m.group(1), m.group(2))
+    elif mf:
+        detail = '%s/%s' % (mf.group(1), int(mf.group(1)) + int(mf.group(2)))
+    elif mp:
+        detail = '%s/%s' % (mp.group(1), int(mp.group(1)) + int(mp.group(2)))
+    else:
+        detail = '%d pass / %d fail' % (n, f)
     ok = (r.returncode == 0)
     print('  %s %-40s rc=%s | %s' % ('OK  ' if ok else 'FAIL', label, r.returncode, detail))
     if not ok:

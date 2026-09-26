@@ -25,6 +25,15 @@ export const PortfolioDecisionSchema = z.object({
   sector: z.string().nullish(),
   price: z.number().nullish(),
   name: z.string().nullish(),
+  // #106 (PORT-1): تعداد و ارزشِ ردیف و منشأِ وزن از بک‌اند می‌آیند. نبودِ این
+  // کلیدها در اسکیما یعنی zod آن‌ها را بی‌صدا دور می‌ریخت و جدولِ پرتفوی هیچ‌وقت
+  // «قیمت × تعداد» را نمی‌دید.
+  qty: z.number().nullish(),
+  value_toman: z.number().nullish(),
+  weight_source: z.enum(['value', 'manual', 'equal']).nullish(),
+  asset_class: z
+    .object({ cls: z.string(), kind: z.string().nullish(), sector_name: z.string().nullish() })
+    .nullish(),
 });
 
 export type PortfolioDecision = z.infer<typeof PortfolioDecisionSchema>;

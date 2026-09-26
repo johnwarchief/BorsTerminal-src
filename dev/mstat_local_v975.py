@@ -496,6 +496,51 @@ missing = [m for m in set(re.findall(r"msEl\('([A-Za-z0-9]+)'\)", js))
            if ('id="%s"' % m) not in html]
 ck(not missing, "هر id که JS می‌خواند در HTML هست (مفقود: %s)" % missing)
 
+# ========== گاردِ روز: client_type باید هم‌نشستِ تابلو باشد (تریدرز آرنا) =====
+# «وضعیت بازار» با تریدرز آرنا نمی‌خواند، چون client_type با todayِ دیواری
+# stamped می‌شد و market_watch با روزِ نشست. رویِ همگام‌سازیِ آخرِ هفته دو
+# روز از هم می‌افتادند (تابلو ۲۰۲۶۰۹۲۳ / client ۲۰۲۶۰۹۲۶، آن‌طور که در
+# market.db اندازه گرفته شد) و قدرت خریدار/فروشنده از نشستِ دیگری می‌آمد.
+# ترمیم سه‌جاست: نوشتنِ d_even در test_tsetmc.py، و کرانِ d_even<=در
+# mstat_engine و api/market.py. هر سه همین‌جا قفل می‌شوند.
+_sync = io.open(os.path.join(ROOT, "test_tsetmc.py"), encoding="utf-8").read()
+_stamp_sites = re.findall(r"client = \[\(x\.get\(\"insCode\"\),\s*([^,]+),", _sync)
+ck(len(_stamp_sites) >= 2 and all("d_even or today" in s for s in _stamp_sites),
+   "همهٔ مسیرهای همگام‌سازی، client_type را با روزِ نشست می‌زنند نه todayِ دیواری (%s)"
+   % _stamp_sites)
+_mk = io.open(os.path.join(ROOT, "api", "market.py"), encoding="utf-8").read()
+ck("WHERE d_even <= (SELECT" in _mk or "d_even <= (SELECT d FROM iso)" in _mk,
+   "کوئریِ تابلو client_type را به d_even<=روزِ تابلو کران کرده")
+
+conn = new_db()
+day = seed(conn)
+# یک ردیفِ «آینده» برای i_st1 می‌گذاریم: اگر کرانِ روز کار نکند، سرانهٔ خریدِ
+# حقیقی این نماد به‌طورِ فاحشی عوض می‌شود و آزمون می‌گیرد.
+conn.execute("INSERT INTO client_type VALUES ('i_st1', ?, 9e15, 9e15, 0.0, 1, 1, 0,"
+             " 9e15, 9e15, 1, 1, 'future')", (day + 3,))
+conn.commit()
+snap = ME.load_snapshot(conn, force=True)
+ck(str(snap["asof"]["client_d_even"]) <= str(snap["asof"]["d_even"]),
+   "روزِ client_type هیچ‌وقت بعد از روزِ تابلو نیست (%s vs %s)"
+   % (snap["asof"]["client_d_even"], snap["asof"]["d_even"]))
+st1 = [r for r in snap["rows"] if r["ins_code"] == "i_st1"]
+ck(len(st1) == 1 and st1[0]["ct"][ME._CT_FIELDS["buy_i_vol"]] != 9e15,
+   "ردیفِ آینده‌دار در اسنپ‌شات انتخاب نمی‌شود")
+# تایم‌لاینِ کهنه باید خودش را کهنه اعلام کند، نه ready خاموش
+conn.execute("CREATE TABLE IF NOT EXISTS mstat_snap (d_even INTEGER, h_even INTEGER,"
+             " ts TEXT, agg TEXT)")
+conn.execute("DELETE FROM mstat_snap")
+conn.execute("INSERT INTO mstat_snap VALUES (?,?,?,?)",
+             (day - 4, 100000, "t1", json.dumps({"d_even": day - 4, "val_bt": 1.0})))
+conn.execute("INSERT INTO mstat_snap VALUES (?,?,?,?)",
+             (day - 4, 110000, "t2", json.dumps({"d_even": day - 4, "val_bt": 2.0})))
+conn.commit()
+ltl = ME.timeline(conn)
+ck(ltl["ready"] is True and ltl["stale"] is True and ltl["note"],
+   "تایم‌لاینِ دو-نقطه‌ای از نشستِ دیگر، stale=true و توضیح می‌دهد")
+ck(ltl["board_day"] == day, "تایم‌لاین روزِ تابلو را هم گزارش می‌کند")
+conn.close()
+
 # ==================== گارد ۱۲: صحت روی دادهٔ واقعی (market.db) ===============
 if os.path.exists("market.db"):
     conn = sqlite3.connect("file:market.db?mode=ro", uri=True)
@@ -532,6 +577,31 @@ if os.path.exists("market.db"):
     conn.close()
 else:
     print("SKIP: market.db not found — گاردهای دادهٔ واقعی کنار گذاشته شد")
+
+# ==================== گارد ۱۳: صنایع داغ — «درصد» = میانگینِ تغییرِ قیمت =======
+# «صنعت داغ» روی سَرجُای «بیشترین درصد» باید مبنایش میانگینِ تغییرِ قیمتِ پایانی
+# نسبت به دیروز باشد (همان چیزی که کاربر پشتِ علامت ٪ می‌بیند) نه پراکندگیِ
+# شمارِ مثبت‌ها؛ مخرج فقط نمادهای دارای درصد. صنعتِ بی‌معامله جریان=null
+# می‌گیرد، نه صفرِ سبز. ارقامِ seed با دست قابلِ حساب‌اند.
+ind_conn = new_db(); seed(ind_conn)
+ind = ME.industries(ind_conn)
+byind = {x["industry"]: x for x in ind["rows"]}
+# فولاد تنها عضو «فلزات اساسي»: پایانی ۱۰۰۰ / دیروز ۹۰۰ ⇒ +۱۱.۱۱٪
+ck(abs(byind["فلزات اساسي"]["avg_pct"] - 11.11) < 0.05,
+   "درصدِ صنعت = میانگینِ تغییرِ قیمت (فولاد ≈ +۱۱.۱٪)، نه پراکندگیِ مثبت")
+# وبملت صفرِ واقعی (پایانی = دیروز) ⇒ ۰.۰ و هنوز «داده» است، نه بی‌داده
+ck(byind["بانكها و موسسات اعتباري"]["avg_pct"] == 0.0,
+   "درصدِ صفرِ واقعی حفظ می‌شود (۰.۰ ≠ نبودِ داده)")
+# حقا تنها عضو «سرمایه گذاريها» با −۳٪ ⇒ تک‌نمادیِ منفیِ واقعی، نه صفرِ گمراه‌کننده
+ck(abs(byind["سرمایه گذاريها"]["avg_pct"] + 3.0) < 0.05,
+   "تک‌نمادیِ −۳٪ عددِ واقعی نشان می‌دهد نه صفرِ breadth")
+# هیچ میانگینی نباید از ±۵۰ عبور کند (نشانهٔ نشتِ breadth ۰..۱۰۰ به‌جای درصد)
+leak = [x["industry"] for x in ind["rows"] if x["avg_pct"] is not None and abs(x["avg_pct"]) > 50]
+ck(not leak, "هیچ «درصد» صنعتی شبیه پراکندگی (۰..۱۰۰) نیست (%s)" % leak)
+# جریانِ عددی فقط برای صنعتِ دارای ارزشِ معامله؛ بی‌معامله ⇒ None
+ck(all(x["flow_b_toman"] is None or x["value_b_toman"] > 0 for x in ind["rows"]),
+   "جریانِ عددی فقط برای صنعتِ دارای ارزشِ معامله (بی‌داده=null)")
+ind_conn.close()
 
 BAD = [m for ok, m in CHECKS if not ok]
 for m in BAD:

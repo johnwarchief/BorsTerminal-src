@@ -8,7 +8,16 @@ export type FiscalQuarter = {
   revenue: number | null;
   operatingProfit: number | null;
   netProfit: number | null;
-  /** حاشیه سود ناخالص یا خالص فصلی به درصد */
+  /**
+   * سود ناخالصِ فصل (میلیون ریال). null یعنی صورتِ مالی سطر «بهای تمام‌شده»
+   * را ندارد (صندوق، بعضی هلدینگ‌ها) — نه این‌که صفر بوده است.
+   */
+  grossProfit: number | null;
+  /**
+   * حاشیهٔ سود ناخالصِ فصلی به درصد = سود ناخالص ÷ درآمد × ۱۰۰.
+   * #102 (رأیِ جزوه): مبنای مقایسه با درآمد، سود **ناخالص** است. سود ناخالص که
+   * نباشد این عدد null می‌ماند — هرگز به سود خالص برنمی‌گردد و هرگز صفر نیست.
+   */
   margin: number | null;
 };
 
@@ -32,15 +41,18 @@ export function deCumulateQuarters(rows: QuarterRow[], keep = 8): FiscalQuarter[
     if (group.length === 0) return;
     const yearLabel = group[group.length - 1].period_end.slice(0, 4);
     let prevRev: number | null = null;
+    let prevGross: number | null = null;
     let prevOp: number | null = null;
     let prevNet: number | null = null;
     for (const r of group) {
       const q = Math.round((r.period_months ?? 0) / 3);
       if (q < 1 || q > 4) continue;
       const rev = num(r.revenue);
+      const gross = num(r.gross_profit);
       const op = num(r.operating_profit);
       const net = num(r.net_profit);
       const qRev = q === 1 ? rev : diff(rev, prevRev);
+      const qGross = q === 1 ? gross : diff(gross, prevGross);
       const qOp = q === 1 ? op : diff(op, prevOp);
       const qNet = q === 1 ? net : diff(net, prevNet);
       out.push({
@@ -50,9 +62,17 @@ export function deCumulateQuarters(rows: QuarterRow[], keep = 8): FiscalQuarter[
         revenue: qRev,
         operatingProfit: qOp,
         netProfit: qNet,
-        margin: qRev != null && qRev > 0 && qNet != null ? (qNet / qRev) * 100 : null,
+        grossProfit: qGross,
+        // #102: درآمد فقط با سود ناخالص سنجیده می‌شود. نبودِ سود ناخالص
+        // «حاشیهٔ صفر» نیست و جایگزینِ سود خالص هم ندارد → null (N/A).
+        margin: qRev != null && qRev > 0 && qGross != null ? (qGross / qRev) * 100 : null,
       });
       if (rev != null) prevRev = rev;
+      // سود ناخالص برخلاف درآمد/سود خالص «تقریباً هیچ‌وقت ته‌نشین نمی‌شود»؛ نبودش
+      // ساختاری است (صندوق سطر بهای تمام‌شده ندارد). اگر پایهٔ قدیمی نگه داشته
+      // می‌شد، تفاضلِ فصلِ بعدی دو فصل را با هم می‌داد — پس پایه هم null می‌ماند
+      // و آن فصل N/A می‌شود (نه عددِ غلط، نه صفر).
+      prevGross = gross;
       if (op != null) prevOp = op;
       if (net != null) prevNet = net;
     }
@@ -69,14 +89,20 @@ export function deCumulateQuarters(rows: QuarterRow[], keep = 8): FiscalQuarter[
   return out.slice(-keep);
 }
 
-/** رشد سود خالص فصل آخر به فصل مشابه سال قبل */
+/**
+ * داوریِ روند فصلی: رشد سود **ناخالص** فصل آخر به فصل مشابه سال قبل (#102).
+ * پیش از این مبنای مقایسه با درآمد، سود خالص بود؛ جزوه سود ناخالص را می‌خواهد.
+ * null یعنی «داوری نداریم»: نه فصلِ مشابه سال قبل، نه سود ناخالصِ یکی از دو
+ * فصل (صندوق/هلدینگ)، نه مبنای مثبت. هیچ‌وقت صفر و هیچ‌وقت سود خالص نیست.
+ */
 export function profitYoY(quarters: FiscalQuarter[]): number | null {
   if (quarters.length < 5) return null;
   const cur = quarters[quarters.length - 1];
   const base = quarters[quarters.length - 5];
   if (cur.quarter !== base.quarter) return null;
-  if (cur.netProfit == null || base.netProfit == null || base.netProfit <= 0) return null;
-  return ((cur.netProfit - base.netProfit) / base.netProfit) * 100;
+  if (cur.grossProfit == null || base.grossProfit == null) return null;
+  if (base.grossProfit <= 0) return null;
+  return ((cur.grossProfit - base.grossProfit) / base.grossProfit) * 100;
 }
 
 /** میانه P/E مثبت صنعت از تابلو زنده */

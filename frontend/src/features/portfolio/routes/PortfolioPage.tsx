@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
-import { toFaDigits } from '@shared/lib/fmt';
+import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -17,8 +17,9 @@ import {
 import { TargetBanner } from '../components/TargetBanner';
 import { TargetEditModal } from '../components/TargetEditModal';
 import { DeltaBar } from '../components/DeltaBar';
+import { useAssetValues } from '../stores/assetValues';
 import { useStopLossBoard } from '../api/useStopLossBoard';
-import { SymbolBasketAction } from '../components/SymbolBasketAction';
+import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
@@ -65,6 +66,8 @@ export default function PortfolioPage() {
   const view = useTargetAllocation((s) => s.view);
   const setView = useTargetAllocation((s) => s.setView);
   const classes = useTargetAllocation((s) => s.classes);
+  const assetTotal = useAssetValues((s) => s.totalToman);
+  const assetValues = useAssetValues((s) => s.values);
 
   const holdings = useMemo(() => portfolio.data?.portfolio ?? [], [portfolio.data]);
   const monitor = useMemo(() => portfolio.data?.monitor ?? [], [portfolio.data]);
@@ -103,7 +106,16 @@ export default function PortfolioPage() {
     if (signal) publishSignal(signal);
   }, [signal]);
 
-  const deltaRows = useMemo(() => buildDelta(classes, holdings), [classes, holdings]);
+  const deltaRows = useMemo(
+    () =>
+      buildDelta(classes, holdings, {
+        classMixPct: limits?.class_mix_pct ?? null,
+        basketValueToman: limits?.portfolio_value_toman ?? null,
+        totalToman: assetTotal,
+        valuesByClass: assetValues,
+      }),
+    [classes, holdings, limits?.class_mix_pct, limits?.portfolio_value_toman, assetTotal, assetValues],
+  );
 
   if (portfolio.isLoading) return <EmptyState title="در حال دریافت سبد..." />;
   if (portfolio.isError) return <EmptyState title="خطا در دریافت سبد" hint="اتصال بک اند را بررسی کن" />;
@@ -173,13 +185,28 @@ export default function PortfolioPage() {
           <DeltaBar rows={deltaRows} />
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* افزودن دارایی با جستجوی نماد — نام و قیمت از سرور، وزن از تعداد (#106) */}
+            <SymbolBasketAction symbol="" addMode />
             {/* اقدام سریع سبد برای نماد انتخابی */}
             <SymbolBasketAction symbol={symbol} />
             <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
             <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
             <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
             {sumWeight != null ? (
-              <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>جمع وزن {toFaDigits(sumWeight)} درصد</Badge>
+              <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>
+                جمع وزن {toFaDigits(sumWeight)} درصد
+                {limits?.weight_source ? ` · ${weightSourceLabel(limits.weight_source)}` : ''}
+              </Badge>
+            ) : null}
+            {limits?.portfolio_value_toman ? (
+              <Badge tone="blue">
+                ارزش سبد <span className="num">{fmtInt(limits.portfolio_value_toman)}</span> تومان
+              </Badge>
+            ) : null}
+            {limits?.value_missing_count ? (
+              <Badge tone="gray">
+                {toFaDigits(limits.value_missing_count)} ردیف تعداد ندارد — وزن خودکار حساب نمی‌شود
+              </Badge>
             ) : null}
             {weightCap != null ? <Badge tone="gray">سقف وزن هر نماد {toFaDigits(weightCap)} درصد</Badge> : null}
           </div>
@@ -229,6 +256,8 @@ export default function PortfolioPage() {
                     <th className="px-3 py-2.5 font-bold">نماد</th>
                     <th className="px-3 py-2.5 font-bold">وضعیت</th>
                     <th className="px-3 py-2.5 font-bold">وزن در سبد</th>
+                    <th className="px-3 py-2.5 font-bold">تعداد</th>
+                    <th className="px-3 py-2.5 font-bold">ارزش (تومان)</th>
                     <th className="px-3 py-2.5 font-bold">سود/زیان</th>
                     <th className="px-3 py-2.5 font-bold">حد ضرر تکنیکال</th>
                     <th className="px-3 py-2.5 font-bold">حد ضرر بنیادی</th>
@@ -239,7 +268,7 @@ export default function PortfolioPage() {
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-3 py-6 text-center text-xs text-text-muted">
+                      <td colSpan={10} className="px-3 py-6 text-center text-xs text-text-muted">
                         {rowLabel} خالی است
                       </td>
                     </tr>
@@ -271,9 +300,28 @@ export default function PortfolioPage() {
                               {STATUS_LABEL[(h.status ?? 'pending').toLowerCase()] ?? h.status ?? 'بدون تصمیم'}
                             </Badge>
                           </td>
-                          <td className="px-3 py-2.5 text-text-primary">
+                          <td className="px-3 py-2.5 text-text-primary" title={weightSourceLabel(h.weight_source) ?? undefined}>
                             <FlashNum value={h.weight_eff_pct ?? null} render={(v) => (v == null ? '-' : toFaDigits(v))} />
                             {h.weight_eff_pct != null ? <span className="text-2xs text-text-muted"> درصد</span> : null}
+                            {h.weight_source && h.weight_source !== 'value' ? (
+                              <span className="text-2xs text-text-muted"> ({weightSourceLabel(h.weight_source)})</span>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {h.qty != null && h.qty > 0 ? (
+                              <span className="num text-xs text-text-primary">{fmtInt(h.qty)}</span>
+                            ) : (
+                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن خودکار حساب نمی‌شود">
+                                بدون تعداد
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5">
+                            {h.value_toman != null && h.value_toman > 0 ? (
+                              <FlashNum value={h.value_toman} render={(v) => (v == null ? '-' : fmtInt(v))} />
+                            ) : (
+                              <span className="text-xs text-text-muted">-</span>
+                            )}
                           </td>
                           <td className="px-3 py-2.5">
                             {pnl == null ? (

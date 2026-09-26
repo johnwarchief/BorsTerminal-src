@@ -56,6 +56,16 @@ const Indicator1VolumeSchema = z
     /** کفِ رشد مقداری (volume_growth_min) — بک‌اند می‌فرستد؛ بدونِ این کلید
      *  zod آن را دور می‌ریخت و کارت مجبور بود عددِ ثابتِ خودش را بنویسد. */
     threshold: z.number().nullish(),
+    /** پهنای رشد ماهانه — وقتی کفِ درصدیِ رشد مقداری صفر است، همین عدد
+     *  در واقع الزامِ ۱ب را تعیین می‌کند؛ بدونِ آن کارت «≥ ۰٪» نشان می‌داد. */
+    breadth: z
+      .object({
+        improved_months: z.number().nullish(),
+        compared_months: z.number().nullish(),
+        ratio: z.number().nullish(),
+        min: z.number().nullish(),
+      })
+      .nullish(),
     applicable: z.boolean().nullish(),
     pass: z.boolean().nullish(),
     data_gap: z.boolean().nullish(),
@@ -76,6 +86,10 @@ const Indicator1Schema = z
 const Indicator2Schema = z
   .object({
     eps_series: z.array(z.number().nullable()).nullish(),
+    /** درصد رشد سال‌به‌سالِ همان سری (#101) — از خودِ موتور. null یعنی
+     *  «درصدی نداریم» (نخستین دوره، سالِ غایب، یا مبنای صفر/زیان) — هرگز ۰٪.
+     *  بدونِ این کلید zod آن را بی‌صدا دور می‌ریخت. */
+    eps_yoy_pct: z.array(z.number().nullable()).nullish(),
     net_profit_series: z.array(z.number().nullable()).nullish(),
     fiscal_years: z.array(z.string()).nullish(),
     period_ends: z.array(z.string()).nullish(),
@@ -243,6 +257,10 @@ export const FtsCardSchema = z.object({
     })
     .nullish(),
   data_gaps: z.array(GapSchema).nullish(),
+  /** کف/هدفِ جاریِ پیش‌شرط‌ها. بدونِ این کلید، zod آن را دور می‌ریخت و کارت
+   *  مجبور می‌شد عدد را در JSX حک کند — یعنی با هر «ذخیره» در کشوی تنظیمات،
+   *  برچسبِ کارت خلافِ آستانهٔ واقعی می‌ماند. */
+  thresholds: z.record(z.string(), z.unknown()).nullish(),
   history: z.array(HistoryRowSchema).nullish(),
   fs_count: z.number().nullish(),
   excluded: z.boolean().nullish(),

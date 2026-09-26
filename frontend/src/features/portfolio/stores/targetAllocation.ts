@@ -2,6 +2,7 @@
 // state هدف/فعلی طبق ماموریت باید داخل features/portfolio باشد — نه استور اشتراکی.
 // persist با localStorage؛ نرمال‌سازی جمع درصدها به ۱۰۰٪.
 import { create } from 'zustand';
+import { toFaDigits } from '@shared/lib/fmt';
 
 /** یک طبقه دارایی هدف */
 export type TargetClass = {
@@ -124,38 +125,225 @@ export type DeltaRow = {
   label: string;
   color: string;
   targetPct: number;
-  currentPct: number;
-  /** مازاد/کسری: مثبت یعنی بیشتر از هدف (فروش)، منفی یعنی کسری (خرید) */
-  delta: number;
+  /**
+   * وزنِ فعلی همان طبقه؛ null یعنی «اندازه‌ای نداریم».
+   * صفرِ ساختگی ممنوع است: «طلا ۰٪ — هدف ۴۵٪» یعنی کسریِ ۴۵ واحدی، در حالی که
+   * یعنی «نمی‌دانیم». (#106)
+   */
+  currentPct: number | null;
+  /** مخرجِ درصدِ فعلی: 'capital' = از کلِ سرمایه، 'basket' = فقط از سبد */
+  basis: DeltaBasis;
+  /** مازاد/کسری؛ null یعنی داوری نداریم */
+  delta: number | null;
+  /** چرا عددی نیست — برای متنِ صادقانهٔ ردیف */
+  reason: string | null;
+  /** منبعِ اندازهٔ فعلی؛ دونات و نوارِ شکاف یک عدد را یک‌جا می‌سنجند (#106) */
+  measure: DeltaMeasure;
+  /**
+   * هدفِ *طبقه* وقتی چند ردیفِ هدف یک طبقه‌اند (طلا = فیزیکی + گواهی).
+   * تابلو نمی‌تواند این دو را از هم بشناسد، پس مقایسه با جمعِ هدف‌های آن‌ها
+   * انجام می‌شود؛ بیرونِ این، delta با targetPctِ خودِ ردیف بی‌معناست.
+   */
+  classTargetPct?: number;
+  /** نامِ ردیف‌های هم‌طبقه — برای این‌که کاربر بداند عدد مال کدام دو سطر است */
+  classLabel?: string;
 };
 
-/** نگاشت وزن فعلی سهم‌های سبد (equity) به طبقهٔ سهام؛ سایر طبقات فعلی صفر */
-function equityCurrentPct(holdings: { weight_eff_pct?: number | null }[]): number {
-  return (
-    Math.round(
-      holdings.reduce((s, h) => s + (typeof h.weight_eff_pct === 'number' ? h.weight_eff_pct : 0), 0) * 10,
-    ) / 10
-  );
+export type DeltaBasis = 'capital' | 'basket' | null;
+
+/** از کدام منبع اندازه گرفتیم — دونات و نوارِ شکاف باید یک عدد را یک‌جا بسنجند */
+export type DeltaMeasure = 'class_mix' | 'basket_weights' | 'asset_value' | null;
+
+/**
+ * کلیدهای class_mix_pctِ بک‌اند (خروجیِ mstat_engine.classify) → شناسهٔ طبقهٔ هدف.
+ * منبعِ یکتاست: صندوقِ سهامی و سهامِ مستقیم هر دو «سهام»اند؛ صندوقِ درآمد ثابت
+ * همان «نقدینگی/درآمد ثابت» است. طبقه‌ای که این‌جا نیست (مثلاً crypto) از تابلو
+ * قابل شناختن نیست و فقط از ارزشِ دستی خوانده می‌شود.
+ */
+export const MIX_KEY_TO_CLASS: Record<string, string> = {
+  gold: 'gold',
+  silver: 'silver',
+  fixed: 'fixed',
+  stock: 'equity',
+  equity: 'equity',
+  // حقِ تقدم ادعای سهامی است و در جزوه هم سهام شمرده می‌شود؛ نگاشتِ نبودش یعنی
+  // وزنِ یک ردیفِ سهامی بی‌صدا از ترکیبِ فعلی بیفتد.
+  right: 'equity',
+  mixed: 'equity',
+  lev: 'equity',
+  commod: 'equity',
+  fof: 'equity',
+  etf: 'equity',
+};
+
+/** «طلا و سکه» دو ردیفِ هدف را می‌پوشاند (فیزیکی + گواهی سپرده) → یکی شمرده می‌شود */
+const CLASS_ALIAS: Record<string, string> = { 'gold-cert': 'gold' };
+
+/** کلیدِ طبقهٔ یک ردیف، همان‌طور که بک‌اند در /api/selection/portfolio می‌سازد:
+ *  صندوق‌ها با kind (gold/fixed/lev/…) و بقیه با cls (stock/right/…) شناخته می‌شوند. */
+function rowClassKey(ac: { cls: string; kind?: string | null }): string {
+  return ac.cls === 'fund' ? (ac.kind ?? '') : ac.cls;
+}
+
+export type DeltaHolding = {
+  weight_eff_pct?: number | null;
+  /** طبقهٔ ردیف از سمتِ بک‌اند؛ null/undefined یعنی «نمی‌دانیم» */
+  asset_class?: { cls: string; kind?: string | null } | null;
+};
+
+export type DeltaInputs = {
+  /** درصدِ هر طبقهٔ دارایی از سبد، آن‌طور که بک‌اند از classify ساخته است */
+  classMixPct?: Record<string, number> | null;
+  /** ارزشِ ریالی خودِ سبد (قیمت × تعدادِ ردیف‌ها)؛ null یعنی ناقص */
+  basketValueToman?: number | null;
+  /** کلِ سرمایهٔ ثبت‌شده (دارایی‌های غیرسهامی + نقدینگی) */
+  totalToman?: number;
+  /** ارزشِ دستی هر طبقه (تومان) — تنها منبعِ طبقاتی که تابلو نمی‌شناسد */
+  valuesByClass?: Record<string, number>;
+};
+
+/** درصدِ سبد به مخرجِ کلِ سرمایه؛ بی‌ارزشِ سبد یا سرمایه، همان درصدِ سبد می‌ماند */
+function toCapitalPct(
+  pctOfBasket: number,
+  basketValue: number | null | undefined,
+  totalToman: number | undefined,
+): { pct: number; basis: Exclude<DeltaBasis, null> } {
+  const round = (x: number) => Math.round(x * 10) / 10;
+  if (totalToman && basketValue && basketValue > 0 && basketValue <= totalToman) {
+    return { pct: round((pctOfBasket * basketValue) / totalToman), basis: 'capital' };
+  }
+  return { pct: round(pctOfBasket), basis: 'basket' };
 }
 
 /**
- * مقایسهٔ وزن فعلی با هدف — فعلی فقط برای طبقهٔ سهام از سبد واقعی می‌آید؛
- * سایر طبقات (طلا/رمز/…) دادهٔ فعلی ندارند و کسری کامل نشان می‌دهند.
+ * مقایسهٔ ترکیبِ فعلی با هدف — #106.
+ * فعلی سه منبع دارد، به همین اولویت: (۱) ترکیبِ طبقاتِ سبد که بک‌اند از
+ * «قیمت × تعداد» ساخته، (۲) ارزشِ دستیِ ثبت‌شدهٔ همان طبقه، (۳) هیچ‌کدام ⇒ null.
+ * پیش از این هر طبقهٔ غیرسهامی صفرِ خالص می‌گرفت و «کسریِ کامل» اعلام می‌شد.
+ * طبقاتی که چند ردیفِ هدف دارند (طلا) در سطحِ گروه سنجیده می‌شوند: عدد روی اولین
+ * ردیف می‌نشیند و با جمعِ هدفِ اعضا مقایسه می‌گردد؛ بقیهٔ اعضا «بدون داده» می‌مانند.
  */
 export function buildDelta(
   classes: TargetClass[],
-  holdings: { weight_eff_pct?: number | null }[],
+  holdings: DeltaHolding[],
+  inputs: DeltaInputs = {},
 ): DeltaRow[] {
-  const eq = equityCurrentPct(holdings);
+  const { classMixPct = null, basketValueToman = null, totalToman = 0, valuesByClass = {} } = inputs;
+  const hasMix = !!classMixPct && Object.keys(classMixPct).length > 0;
+
+  // جمعِ طبقاتِ هم‌نام (gold و gold-cert هر دو طلای سبد را می‌شمارند)
+  const byClass: Record<string, number> = {};
+  if (hasMix) {
+    for (const [k, v] of Object.entries(classMixPct as Record<string, number>)) {
+      const cls = MIX_KEY_TO_CLASS[k];
+      if (!cls) continue;
+      byClass[cls] = Math.round(((byClass[cls] ?? 0) + v) * 10) / 10;
+    }
+  }
+  // منبعِ جانشینِ طبقهٔ سهام: جمعِ وزنِ ردیف‌هایی که بک‌اند طبقاتشان را *نشناخته*
+  // است (مثلاً سبدی که تعداد ندارد و ترکیبی نمی‌فرستد). ردیفی که طبقه‌اش معلوم
+  // است دیگر در ترکیبِ طبقات شمرده شده؛ جمعش کردنِ دوباره‌اش همان وزن را دو بار
+  // می‌کند — و اگر هیچِ آن‌ها سهام نباشد، «سهام ۰٪» هم صادقانه نیست: هیچ ردیفی
+  // ادعای سهامی نداشته، پس «اندازه‌ای نداریم».
+  const eqUnknownRows = holdings.filter((h) => {
+    const ac = h.asset_class;
+    if (!ac) return true;
+    const mapped = MIX_KEY_TO_CLASS[rowClassKey(ac)];
+    return mapped === 'equity';
+  });
+  const eqFromBasket =
+    eqUnknownRows.length > 0
+      ? Math.round(
+          eqUnknownRows.reduce((s, h) => s + (typeof h.weight_eff_pct === 'number' ? h.weight_eff_pct : 0), 0) * 10,
+        ) / 10
+      : null;
+
+  // گروه‌های هم‌alias: «طلا» دو ردیفِ هدف دارد (فیزیکی + گواهی) ولی تابلو یک
+  // طبقه می‌دهد. مقایسه در سطحِ *گروه* انجام می‌شود و فقط ردیفِ حمل‌کننده (اولین
+  // عضو) عدد می‌گیرد؛ بقیه null می‌مانند تا یک وزن دو بار شمرده نشود.
+  const groups = new Map<string, TargetClass[]>();
+  for (const c of classes) {
+    const key = CLASS_ALIAS[c.id] ?? c.id;
+    const arr = groups.get(key);
+    if (arr) arr.push(c);
+    else groups.set(key, [c]);
+  }
+  const r1 = (x: number) => Math.round(x * 10) / 10;
+
   return classes.map((c) => {
-    const currentPct = c.id === 'equity' ? eq : 0;
+    const key = CLASS_ALIAS[c.id] ?? c.id;
+    const members = groups.get(key) ?? [c];
+    const multi = members.length > 1;
+    const isCarrier = members[0].id === c.id;
+    // هدفِ گروه = جمعِ هدفِ اعضا؛ هدفِ ردیفِ تنها = هدفِ خودش
+    const goalPct = multi ? r1(members.reduce((s, m) => s + (m.pct > 0 ? m.pct : 0), 0)) : c.pct;
+    const classLabel = multi ? members.map((m) => m.label).join(' + ') : undefined;
+    const carrierLabel = members[0].label;
+
+    let pct: number | null = null;
+    let basis: DeltaBasis = null;
+    let measure: DeltaMeasure = null;
+    let reason: string | null = null;
+
+    // اندازهٔ سطحِ طبقه: ترکیبِ سبدِ بک‌اند، وگرنه جانشینِ وزنِ سبد (فقط سهام)
+    const fromMix = byClass[key] != null;
+    const groupSrc = fromMix ? (byClass[key] as number) : key === 'equity' ? eqFromBasket : null;
+
+    if (groupSrc != null) {
+      if (isCarrier) {
+        const scaled = toCapitalPct(groupSrc, basketValueToman, totalToman);
+        pct = scaled.pct;
+        basis = scaled.basis;
+        measure = fromMix ? 'class_mix' : 'basket_weights';
+        if (!fromMix) reason = 'وزنِ ردیف‌هایی که طبقه‌شان مشخص نیست؛ تعدادِ ردیف‌ها ثبت نشده است';
+      } else {
+        reason = `تابلو این را از «${carrierLabel}» جدا نمی‌کند؛ وزنِ طبقه در همان ردیف سنجیده می‌شود`;
+      }
+    } else if (totalToman > 0 && c.id in (valuesByClass ?? {}) && (valuesByClass[c.id] ?? 0) > 0) {
+      // ارزشِ دستی به شناسهٔ خودِ طبقه بسته است، نه به alias: وگرنه طلای فیزیکی
+      // و گواهیِ سپردهٔ طلا یک عدد را دو بار می‌شمرند.
+      pct = Math.round(((valuesByClass[c.id] as number) / totalToman) * 1000) / 10;
+      basis = 'capital';
+      measure = 'asset_value';
+    } else if (holdings.length === 0) {
+      reason = 'سبد خالی است؛ دارایی‌ای برای سنجیدن وجود ندارد';
+    } else if (hasMix) {
+      reason = 'هیچِ نمادی از سبد به این طبقه نگاشت نشد';
+    } else {
+      reason = 'ردیف‌ها تعداد/قیمت ندارند یا ترکیبِ سبد ذخیره نشده است';
+    }
+
     return {
       id: c.id,
       label: c.label,
       color: c.color,
       targetPct: c.pct,
-      currentPct,
-      delta: Math.round((currentPct - c.pct) * 10) / 10,
+      currentPct: pct,
+      basis,
+      delta: pct == null ? null : r1(pct - goalPct),
+      reason,
+      measure,
+      ...(multi ? { classTargetPct: goalPct, classLabel } : {}),
     };
   });
+}
+
+/**
+ * جملهٔ headline خلاصهٔ پرتفوی: «طلا و سکه ۴۳٪ از سرمایه — هدف ۴۵٪».
+ * مخرج (سرمایه/سبد) در خودِ جمله می‌آید؛ بدونِ آن ۸۷٪ از سبد با ۴۵٪ از سرمایه
+ * قابل مقایسه نیست. هدف هم هدفِ *طبقه* است (classTargetPct)، نه سطرِ تنها —
+ * وگرنه ۸۷٪ طلا با ۳۰٪ «طلای فیزیکی» سنجیده می‌شد و مازادِ جعلی در می‌آمد.
+ */
+export function mixSentence(rows: DeltaRow[]): string | null {
+  const known = rows.filter((r) => r.currentPct != null && Math.abs(r.delta ?? 0) > 0.05);
+  if (known.length === 0) return null;
+  const worst = known.reduce(
+    (m, r) => (Math.abs(r.delta ?? 0) > Math.abs(m.delta ?? 0) ? r : m),
+    known[0],
+  );
+  const basisLabel = worst.basis === 'capital' ? 'از سرمایه' : 'از سبد';
+  const kind = (worst.delta ?? 0) > 0 ? 'مازاد' : 'کسری';
+  return `${worst.label}: ${toFaDigits(worst.currentPct as number)}٪ ${basisLabel} — هدف ${toFaDigits(
+    worst.classTargetPct ?? worst.targetPct,
+  )}٪ (${kind} ${toFaDigits(Math.abs(worst.delta as number))}٪)`;
 }

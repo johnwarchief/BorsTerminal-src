@@ -18,15 +18,27 @@ const PortfolioFeedSchema = z.object({
       weight_cap_pct: z.number().nullish(),
       equal_weight_pct: z.number().nullish(),
       sum_weight_pct: z.number().nullish(),
+      // #106: منشأِ وزن و ارزشِ ریالیِ سبد — «۷۰٪ از سبد» باید بداند مخرجش چیست
+      weight_source: z.enum(['value', 'manual', 'equal']).nullish(),
+      portfolio_value_toman: z.number().nullable().nullish(),
+      value_missing_count: z.number().nullish(),
+      /** درصد هر طبقهٔ دارایی از سبد (کلید: gold/silver/fixed/equity/stock/…) */
+      class_mix_pct: z.record(z.string(), z.number()).nullish(),
+      class_missing_count: z.number().nullish(),
     })
     .nullish(),
 });
 
 export type PortfolioFeed = z.infer<typeof PortfolioFeedSchema>;
 
+// جدول پرتفوی این کلید را می‌خواند و فید تصمیم‌ها کلیدی جدا دارد؛ هر دو همان
+// /api/selection/portfolio هستند. نوشتن روی یکی بی‌اعتبار کردن دیگری را لازم
+// می‌کند، وگرنه ردیفِ تازه‌ثبت‌شده در جدول نمی‌نشیند.
+export const PORTFOLIO_QUERY_KEY = ['portfolio'] as const;
+
 export function usePortfolio() {
   return useQuery({
-    queryKey: ['portfolio'],
+    queryKey: PORTFOLIO_QUERY_KEY,
     queryFn: ({ signal }) =>
       http<PortfolioFeed>('/api/selection/portfolio', { schema: PortfolioFeedSchema, signal }),
     staleTime: 60_000,

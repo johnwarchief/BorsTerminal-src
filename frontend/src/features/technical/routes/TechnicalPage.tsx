@@ -2,14 +2,12 @@
 // چارت‌محور: هدر تک‌خطی مینیمال + چارت تمام‌فضا + داک استاتوس‌بار باریک (۲۸px) + سایدبار جمع‌شو.
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Badge } from '@shared/components/Badge';
-import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
-import { clampCursor, isAtEnd, replaySlice, stepCursor } from '../lib/replay';
+import { clampCursor, isAtEnd, stepCursor } from '../lib/replay';
 import { computeTradeLevels } from '../lib/levels';
 import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
@@ -23,7 +21,6 @@ import { PatternToggles } from '../components/PatternToggles';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
-import { MarketOverview } from '../components/MarketOverview';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
@@ -33,8 +30,6 @@ import '../styles/tvTheme.css';
 /** چارت پورت‌شدهٔ جمینای (v10) با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
 const NnChart = lazy(() => import('../nahayatnegar/components/KLineChartWrapper'));
 
-const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
-const DIR_LABEL = { bullish: 'صعودی', bearish: 'نزولی', neutral: 'خنثی' } as const;
 
 export default function TechnicalPage() {
   const params = useParams();
@@ -100,11 +95,6 @@ export default function TechnicalPage() {
     if (signal) publishSignal(signal);
   }, [signal]);
   const gateBlocked = enforceRiskGates && gate.pass === false;
-
-  const replayRows = useMemo(
-    () => (replayActive ? replaySlice(nn.data, replayCursor) : nn.data),
-    [replayActive, nn.data, replayCursor],
-  );
 
   useEffect(() => {
     if (!replayActive || !replayPlaying || !symbol) return;
@@ -219,11 +209,7 @@ export default function TechnicalPage() {
               },
             ]}
           />
-        ) : (
-          <div className="shrink-0">
-            <MarketOverview onSelect={selectSymbol} />
-          </div>
-        )}
+        ) : null}
       </main>
 
       <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} symbol={symbol} />

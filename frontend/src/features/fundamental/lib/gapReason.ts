@@ -1,8 +1,11 @@
 // features/fundamental/lib/gapReason.ts -- «علتِ» نبود داده (منبع واحد)
 // کاربر برچسب عمومی «شکاف داده» را نمی‌خواهد؛ هر جا داده نیست، همان دلیل
 // کوتاهِ قابلفهم نمایش داده میشود و متنِ کامل علت + راهحل در tooltip
-// (الگوی GapHint) میآید. متون خام موتور بکاند هرگز به کاربر نشان داده نمیشود.
+// (الگوی GapHint) میآید. بک‌اند علت را خودش می‌داند و آن را می‌فرستد؛ این‌جا
+// همان متن پیش‌رویِ متنِ عمومیِ هر محور است و فقط رشته‌های فنیِ درونِ متن
+// (نامِ ستون/مسیر API) به متنِ جانشینِ محور تبدیل می‌شوند.
 // کلیدها همان محورهای شاخص در `data_gaps[]` و `passes` هستند.
+import { toFaDigits } from '@shared/lib/fmt';
 import type { FtsCard } from '../api/useFtsCard';
 
 export type GapAxis =
@@ -73,6 +76,9 @@ export const NOT_COMPUTABLE = 'خروجی قابل محاسبه نیست';
 export const AXIS_TO_KEY: Record<string, GapAxis> = {
   '1a_monetary_growth': '1a_monetary_growth',
   '1b_volume_growth': '1b_volume_growth',
+  // بک‌اند این محور را `1b_physical_volume` می‌فرستد (v10_data_gaps). بی‌این
+  // هم‌نامی، شکاف ۱ب به جای علتِ واقعی‌اش به برچسبِ عمومیِ fallback می‌افتاد.
+  '1b_physical_volume': '1b_volume_growth',
   '2_eps_trend': '2_eps_trend',
   '3_gross_margin': '3_gross_margin',
   '4_sales_to_mcap': '4_sales_to_mcap',
@@ -110,8 +116,22 @@ export function gapTooltip(axis?: string | null): string {
 
 type Gap = NonNullable<FtsCard['data_gaps']>[number];
 
-/** استانداردسازی ردیف‌های data_gaps بک‌اند → علت + راه‌حل کاربرپسند */
+/** علت‌های بک‌اند که «متنِ آمادهٔ کاربر» نیستند و نباید عیناً نمایش داده شوند.
+ *  اینها نامِ ستون، مسیرِ API یا نامِ تابع در خودِ متن دارند. */
+const RAW_MARKERS = /api\/|\.json|monthly_sales|fts_engine|annualize|None|NaN/i;
+
+/** نگاشت ردیفِ شکافِ بک‌اند → علت + راه‌حلِ کاربرپسند.
+ *  اولویت با متنِ خودِ بک‌اند است: او می‌داند چرا عدد نیست (مثلاً «سطر بهای
+ *  تمام‌شده در صورتِ مالیِ ۱۴۰۳ نیست» در برابر «صورتِ سالانه همگام نشده») و
+ *  متنِ عمومیِ هر محور فقط جانشینِ آن است، نه جایگزینش. */
 export function standardizeGap(g: Gap): { layer: string; why: string; fix: string; label: string } {
   const r = gapReason(g.axis != null ? g.axis : g.layer);
-  return { layer: g.layer, why: r.why, fix: r.fix, label: r.label };
+  const why = typeof g.why === 'string' && g.why.trim() && !RAW_MARKERS.test(g.why)
+    ? g.why.trim() : r.why;
+  const fix = typeof g.fix === 'string' && g.fix.trim() && !RAW_MARKERS.test(g.fix)
+    ? g.fix.trim() : r.fix;
+  // متنِ بک‌اند تاریخِ میلادی/لاتین دارد («۱۴۰۳/۱۲/۳۰» نه «1403/12/30»)؛
+  // تبدیلِ رقم در لایهٔ نمایش است نه داوری، و در یکجا انجام می‌شود.
+  return { layer: toFaDigits(g.layer), why: toFaDigits(why), fix: toFaDigits(fix),
+           label: toFaDigits(r.label) };
 }

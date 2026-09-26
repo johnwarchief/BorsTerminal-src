@@ -39,7 +39,8 @@ export const FundamentalPayload = z.object({
   dataQuality: SignalQuality.default('complete'),
   /** نسبت P/E سهم به میانه صنعت -- null یعنی قابل محاسبه نبود */
   peVsSector: z.number().nullable().default(null),
-  /** رشد سود خالص فصل جاری به فصل مشابه پارسال (درصد) */
+  /** رشد سود ناخالص فصل جاری به فصل مشابه پارسال (درصد) — #102: مبنای مقایسه
+   *  با درآمد، سود ناخالص است. null یعنی داوری نداریم (نه صفر). */
   profitYoY: z.number().nullable().default(null),
   /** رأی ۱۵: پنج‌شاخصه برای صندوق معنا ندارد — داوری صادر نمی‌شود، نه رد.
    *  غایب = نامعلوم ⇒ «می‌گنجد» (ftsApplicable همان‌جا تفسیر می‌کند). */

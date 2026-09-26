@@ -1,10 +1,12 @@
 // تست دکمهٔ خودکفا تصمیم سبد (SymbolBasketAction + useSymbolBasket):
 // وضعیت فعلی · افزودن به سبد (POST) · تغییر وضعیت · حذف کامل (DELETE) · حالت بدون داده
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
+import { SymbolBasketAction, previewWeightPct } from '@features/portfolio/components/SymbolBasketAction';
 import { deriveBasketState, type BasketFeed } from '@features/portfolio/api/useSymbolBasket';
+import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
@@ -58,6 +60,19 @@ beforeEach(() => {
     const u = String(url);
     const method = opts?.method ?? 'GET';
     if (u === '/api/selection/portfolio' && method === 'GET') return Promise.resolve(ok(portfolioFeed()));
+    if (u.startsWith('/api/selection/symbols') && method === 'GET') {
+      const q = decodeURIComponent(u.split('q=')[1] ?? '');
+      return Promise.resolve(
+        ok({
+          status: 'success',
+          count: q ? 1 : 0,
+          query: q,
+          data: q
+            ? [{ symbol: 'عيار1', name: 'صندوق عیار', sector_name: 'صندوق طلا', cls: 'fund', kind: 'gold', price: 15100 }]
+            : [],
+        }),
+      );
+    }
     if (u === '/api/selection/decision' && method === 'POST') {
       const body = JSON.parse(opts?.body ?? '{}') as { symbol: string; status: string };
       decisions = decisions.filter((d) => d.symbol !== body.symbol);
@@ -213,8 +228,7 @@ describe('حذف کامل تصمیم (DELETE)', () => {
   });
 });
 
-describe('Circuit Breaker — بدون داده', () => {
-  it('خطای بک‌اند ⇒ برچسب صادقانه «بدون داده»؛ هیچ عدد ساختگی نمایش داده نمی شود', async () => {
+describe('Circuit Breaker — بدون داده', () => {  it('خطای بک‌اند ⇒ برچسب صادقانه «بدون داده»؛ هیچ عدد ساختگی نمایش داده نمی شود', async () => {
     fetchMock.mockReset();
     fetchMock.mockImplementation(() =>
       Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({}) } as unknown as Response),
@@ -247,5 +261,163 @@ describe('Circuit Breaker — بدون داده', () => {
       const post = fetchMock.mock.calls.find(([, o]) => (o as { method?: string } | undefined)?.method === 'POST');
       expect(post).toBeDefined();
     });
+  });
+});
+
+// ── #106 PORT-1: افزودن دارایی با جستجو → وزن خودکار از قیمت × تعداد ──────
+describe('افزودن دارایی (حالت جستجو)', () => {
+  function renderAdd() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={qc}>
+        <SymbolBasketAction symbol="" addMode />
+      </QueryClientProvider>,
+    );
+  }
+
+  it('نام و قیمت از سرور می‌آیند و تعداد، وزن را زنده حساب می‌کند', async () => {
+    // ردیفِ دیگرِ سبد ارزشِ ریالی دارد ⇒ مخرجِ وزن کامل است
+    decisions = [{ symbol: 'شپنا', status: 'accept', weight_pct: 0, value_toman: 1_000_000 }];
+    renderAdd();
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+
+    fireEvent.change(screen.getByLabelText('جستجوی نام یا نماد دارایی'), { target: { value: 'عیار' } });
+    fireEvent.click(await screen.findByRole('button', { name: /عيار1/ }));
+
+    // قیمت از تابلو پر شده، بدون این‌که کاربر چیزی تایپ کند
+    const price = (await screen.findByLabelText('قیمت هر واحد به تومان')) as HTMLInputElement;
+    await waitFor(() => expect(price.value).toBe('15100'));
+
+    fireEvent.change(screen.getByLabelText('تعداد دارایی'), { target: { value: '۱۰۰' } });
+    // ارزش ردیف = ۱۵٬۱۰۰ × ۱۰۰ — با رقمِ فارسیِ تایپ‌شده هم کار می‌کند
+    expect(await screen.findByTestId('basket-row-value')).toHaveTextContent('۱٬۵۱۰٬۰۰۰');
+    // ۱٬۵۱۰٬۰۰۰ ÷ (۱٬۵۱۰٬۰۰۰ + ۱٬۰۰۰٬۰۰۰) = ۶۰.۲٪ (نقطهٔ اعشار همان رسمِ سراسریِ app است)
+    expect(screen.getByTestId('basket-row-weight')).toHaveTextContent('۶۰.۲٪');
+
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
+    await waitFor(() => {
+      const post = fetchMock.mock.calls.find(
+        ([u, o]) => String(u) === '/api/selection/decision' && (o as { method?: string } | undefined)?.method === 'POST',
+      );
+      expect(post).toBeDefined();
+      const body = JSON.parse((post![1] as { body: string }).body);
+      expect(body).toMatchObject({
+        symbol: 'عيار1', status: 'accept', price: 15100, qty: 100,
+        name: 'صندوق عیار', sector: 'صندوق طلا',
+      });
+    });
+  });
+
+  it('با ردیف‌های بی‌تعداد در سبد، درصدی جعل نمی‌شود (مخرجِ ناقص)', async () => {
+    renderAdd(); // فید پیش‌فرض: شپنا accept بدون value_toman
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+    fireEvent.change(screen.getByLabelText('جستجوی نام یا نماد دارایی'), { target: { value: 'عیار' } });
+    fireEvent.click(await screen.findByRole('button', { name: /عيار1/ }));
+    fireEvent.change(screen.getByLabelText('تعداد دارایی'), { target: { value: '100' } });
+    expect(screen.getByTestId('basket-row-weight').textContent).toContain('بقیهٔ ردیف‌ها تعداد ندارند');
+  });
+
+  it('بدونِ تعداد، هیچ وزنی ساخته و ادعا نمی‌شود', async () => {
+    renderAdd();
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+    expect(screen.getByTestId('basket-row-value').textContent).toContain('تعداد و قیمت لازم است');
+    expect(screen.getByTestId('basket-row-weight').textContent).toContain('خودکار حساب نمی‌شود');
+  });
+
+  it('تعدادِ مثبتِ نامعتبر رد می‌شود و POST نمی‌زند', async () => {
+    renderAdd();
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+    fireEvent.change(screen.getByLabelText('جستجوی نام یا نماد دارایی'), { target: { value: 'عیار' } });
+    fireEvent.click(await screen.findByRole('button', { name: /عيار1/ }));
+    fireEvent.change(screen.getByLabelText('تعداد دارایی'), { target: { value: '-3' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('تعداد باید عددی مثبت باشد.');
+    expect(
+      fetchMock.mock.calls.filter(
+        ([u, o]) => String(u) === '/api/selection/decision' && (o as { method?: string } | undefined)?.method === 'POST',
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('پس از ثبت، دکمه همان «افزودن دارایی» می‌ماند (نه «ویرایش تصمیم»)', async () => {
+    renderAdd();
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+    fireEvent.change(screen.getByLabelText('جستجوی نام یا نماد دارایی'), { target: { value: 'عیار' } });
+    fireEvent.click(await screen.findByRole('button', { name: /عيار1/ }));
+    fireEvent.change(screen.getByLabelText('تعداد دارایی'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    const btn = await screen.findByTestId('basket-action-add');
+    await waitFor(() => expect(btn.textContent).toContain('افزودن دارایی'));
+  });
+});
+
+// دکمهٔ افزودن و جدولِ پرتفوی دو کلیدِ کوئریِ جدا دارند؛ اگر نوشتن فقط کلیدِ
+// تصمیم را بی‌اعتبار کند، POST موفق می‌شود ولی ردیف هرگز در جدول نمی‌نشیند.
+describe('بی‌اعتبار کردن فیدِ جدول پس از نوشتن (#106)', () => {
+  function TableProbe() {
+    const p = usePortfolio();
+    return <div data-testid="table-symbols">{(p.data?.decisions ?? []).map((d) => d.symbol).join('|')}</div>;
+  }
+
+  function renderWithTable(action: ReactNode) {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={qc}>
+        {action}
+        <TableProbe />
+      </QueryClientProvider>,
+    );
+  }
+
+  it('POST ⇒ ردیفِ تازه در فیدِ جدول ظاهر می‌شود', async () => {
+    renderWithTable(<SymbolBasketAction symbol="" addMode />);
+    fireEvent.click(await screen.findByTestId('basket-action-add'));
+    await screen.findByRole('dialog', { name: 'افزودن دارایی به سبد' });
+    fireEvent.change(screen.getByLabelText('جستجوی نام یا نماد دارایی'), { target: { value: 'عیار' } });
+    fireEvent.click(await screen.findByRole('button', { name: /عيار1/ }));
+    fireEvent.change(screen.getByLabelText('تعداد دارایی'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت تصمیم' }));
+
+    const probe = await screen.findByTestId('table-symbols');
+    expect(probe.textContent).toContain('شپنا'); // فید اولیه نشسته باشد، تست بی‌معناست
+    await waitFor(() => expect(screen.getByTestId('table-symbols').textContent).toContain('عيار1'));
+  });
+
+  it('DELETE ⇒ ردیف از فیدِ جدول هم بیرون می‌رود', async () => {
+    renderWithTable(<SymbolBasketAction symbol="شپنا" />);
+    const btn = await screen.findByTestId('basket-action-شپنا');
+    await waitFor(() => expect(btn.textContent).toContain('ویرایش تصمیم سبد'));
+    const probe = await screen.findByTestId('table-symbols');
+    expect(probe.textContent).toContain('شپنا');
+
+    fireEvent.click(btn);
+    fireEvent.click(await screen.findByRole('button', { name: 'حذف کامل از فهرست' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(screen.getByTestId('table-symbols').textContent).not.toContain('شپنا'));
+  });
+});
+
+describe('وزنِ برآوردی پیش از ذخیره (#106)', () => {
+  it('با یک ردیفِ بی‌ارزش در سبد، درصدی نشان داده نمی‌شود', () => {
+    const others = [
+      { symbol: 'شپنا', status: 'accept', value_toman: 1_000_000 },
+      { symbol: 'شاملا', status: 'accept', value_toman: null },
+    ];
+    expect(previewWeightPct(others, 500_000)).toBeNull();
+  });
+
+  it('وقتی همهٔ ردیف‌ها ارزش دارند، سهمِ درست حساب می‌شود', () => {
+    const others = [
+      { symbol: 'شپنا', status: 'accept', value_toman: 1_000_000 },
+      { symbol: 'ویسا', status: 'monitor', value_toman: null }, // monitor در مخرج نیست
+    ];
+    expect(previewWeightPct(others, 1_000_000)).toBe(50);
   });
 });

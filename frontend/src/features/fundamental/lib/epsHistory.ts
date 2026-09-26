@@ -7,7 +7,7 @@
 //   • ≥۲ سالِ واقعی ولی <۳ سال → «مردود — سابقهٔ ناقص (۲ از ۳ سال)»:
 //     همان سالهای موجود نمایش داده میشود (داده حیف نمیشود) ولی ردِ گیت صریح است.
 //   • <۲ سال → داده برای هیچ قضاوتی کافی نیست ⇒ «شکاف داده» (سطر حذف نمیشود).
-import { toFaDigits } from '@shared/lib/fmt';
+import { fmtPct, toFaDigits } from '@shared/lib/fmt';
 
 /** سابقهٔ لازم شاخص ۲ (جزوهٔ FTS) */
 export const EPS_REQUIRED_YEARS = 3;
@@ -96,6 +96,75 @@ export function epsPartialRejectLabel(
   requiredYears: number = EPS_REQUIRED_YEARS,
 ): string {
   return `مردود در شاخص ۲ — سابقهٔ ناقص (${toFaDigits(realYears)} از ${toFaDigits(requiredYears)} سال)`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  درصد رشد سال‌به‌سالِ EPS (#101 — «کارت eps درصدها نوشته بشه»)
+//  یک منبع حقیقت برای کارت FTS، نردبان EPS، جدول غربالگری و drill-down تا
+//  درصدِ همان عدد در چهار نما یکی باشد. داوریِ گیت (pass/مردود) هرگز اینجا
+//  بازسازی نمی‌شود — فقط یک درصدِ نمایشی روی سریِ EPSِ خودِ بک‌اند.
+//
+//  قاعدهٔ سخت: «داده نداریم» هیچ‌وقت صفر نیست.
+//    · کمتر از دو نقطهٔ واقعی      → هیچ درصدی نیست (دلیل: داده نداریم)
+//    · مبنای صفر یا زیان‌ده        → درصد معنا ندارد (نه ∞٪، نه ۱۰۰٪ جعلی)
+//    · سالِ غایب (null) بین دو سال → آن فاصله null می‌ماند، نه جهش
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** دلیلِ نداشتنِ درصد — برای حالتِ صریح «داده نداریم» (متن خالی = درصد داریم) */
+export const EPS_GROWTH_NO_DATA = 'داده نداریم';
+export const EPS_GROWTH_NO_BASE = 'درصد از مبنای زیان/صفر معنا ندارد';
+
+/** یک عددِ سریِ EPS؛ هر چیزِ دیگر null (NaN/undefined/null = سالِ غایب) */
+function epsPoint(v: number | null | undefined): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * درصد تغییر EPS از سال قبل به سال جاری — null یعنی «درصدی نداریم».
+ * مبنای صفر/منفی هرگز به ±۱۰۰٪ یا درصدِ بی‌معنا تبدیل نمی‌شود.
+ */
+export function epsChangePct(
+  prev: number | null | undefined,
+  cur: number | null | undefined,
+): number | null {
+  const a = epsPoint(prev);
+  const b = epsPoint(cur);
+  if (a == null || b == null || a <= 0) return null;
+  return ((b - a) / a) * 100;
+}
+
+/**
+ * درصد رشد هر سلول سری (به سالِ قبلِ خودش) — هم‌اندازهٔ series و در جای
+ * نامعلوم null. سالِ اول سری همیشه null است (مبنایی در کار نیست).
+ *
+ * `fromBackend` (فیلد eps_yoy_pct کارت): اگر بک‌اند همان طولِ سری را فرستاده
+ * باشد، همان عددِ موتور مقدم است و دوباره در UI محاسبه نمی‌شود؛ این تابع فقط
+ * برای نماهایی است که سریِ خام می‌گیرند (جدول غربالگری/نردبانِ قدیمی).
+ */
+export function epsChanges(
+  series: readonly (number | null | undefined)[] | null | undefined,
+  fromBackend?: readonly (number | null | undefined)[] | null | undefined,
+): (number | null)[] {
+  if (!Array.isArray(series)) return [];
+  if (Array.isArray(fromBackend) && fromBackend.length === series.length) {
+    return fromBackend.map((v) => epsPoint(v));
+  }
+  return series.map((v, i) => (i === 0 ? null : epsChangePct(series[i - 1], v)));
+}
+
+/** دلیلِ صریحِ «درصدی نداریم» — تفکیکِ «داده نداریم» از «مبنای زیان/صفر» */
+export function epsGrowthReason(
+  series: readonly (number | null | undefined)[] | null | undefined,
+): string {
+  return epsRealYears(series) >= 2 ? EPS_GROWTH_NO_BASE : EPS_GROWTH_NO_DATA;
+}
+
+/** متنِ آمادهٔ نمایشِ یک درصد با علامتِ +/− و ارقام فارسی؛ null = هیچ */
+export function epsChangeText(pct: number | null | undefined): string | null {
+  if (typeof pct !== 'number' || !Number.isFinite(pct)) return null;
+  // fmtPct خودش رقم فارسی + ٪ می‌دهد؛ علامتِ + دستی اضافه می‌شود (− را خودش می‌گذارد)
+  const s = fmtPct(pct);
+  return pct > 0 ? `+${s}` : s;
 }
 
 /**

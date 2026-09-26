@@ -1,6 +1,9 @@
 // features/market/components/IndustryScreener.tsx -- اسکرینر صنعت داغ (۳ صنعت پیشرو)
-// دو نمای سورت: «ورود پول حقیقی» (flow_b_toman) و «بیشترین درصد» (avg_pct).
-// بدون داده = حالت خالی صریح، نه ردیف ساختگی.
+// دو نمای سورت: «ورود پول حقیقی» (flow_b_toman) و «بیشترین درصد» = میانگینِ
+// تغییرِ قیمتِ پایانی نسبت به دیروز (avg_pct، که موتور می‌سازد). هر دو سنجه
+// «بی‌داده» را null می‌دهند ⇒ هرگز رتبه نمی‌گیرند و صفرِ سبز/قرمز نمی‌شوند.
+// الگوی RTL: فقط خودِ عدد در .num ایزولهٔ LTR است؛ فلش و واحدِ «ب.ت» و علامتِ ٪
+// در جریانِ RTL می‌مانند (همان‌طورِ MarketPulseBar) — نگرفتنِ کل بلوک با یک .num.
 import { useState } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { topIndustriesByFlow, topIndustriesByPct, useIndustries, type IndustryRow } from '../api/useIndustries';
@@ -19,22 +22,38 @@ function IndustryLine({
   onPick?: (industry: string) => void;
 }) {
   const flow = typeof row.flow_b_toman === 'number' ? row.flow_b_toman : null;
+  const avg = typeof row.avg_pct === 'number' ? row.avg_pct : null;
+  const pctTone = avg == null ? 'text-text-muted' : avg > 0 ? 'text-accent-green' : avg < 0 ? 'text-accent-red' : 'text-text-secondary';
   const body = (
     <>
       <span className="min-w-0 truncate text-sm font-bold text-text-primary">
         {row.industry}
         {leader && row.industry === leader ? <span className="ms-1 text-2xs text-accent-yellow">★ پیشرو</span> : null}
       </span>
-      <span className="num shrink-0 text-xs">
+      {/* بلاکِ راست: فلش + عددِ ایزوله + واحد؛ هرکدام span جدا تا RTL به‌هم نکشد */}
+      <span className="flex shrink-0 items-center gap-2 text-xs">
         {flow != null ? (
-          <span className={flow >= 0 ? 'text-accent-green' : 'text-accent-red'}>
-            {flow >= 0 ? '▲' : '▼'} {fmtInt(Math.abs(flow))} ب.ت
+          <span
+            data-testid={`industry-flow-${row.industry}`}
+            title={flow >= 0 ? 'ورود پول حقیقی' : 'خروج پول حقیقی'}
+            className={`inline-flex items-center gap-1 ${flow >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+          >
+            <span aria-hidden>{flow >= 0 ? '▲' : '▼'}</span>
+            <span className="num">{fmtInt(Math.abs(flow))}</span>
+            <span className="text-3xs font-bold text-text-muted">ب.ت</span>
           </span>
         ) : (
-          '—'
+          <span data-testid={`industry-flow-${row.industry}`} className="text-2xs text-text-muted">بدون داده</span>
         )}
-        <span className="ms-2 text-text-secondary">
-          {typeof row.avg_pct === 'number' ? `٪${fa1(row.avg_pct)}` : '—'}
+        <span data-testid={`industry-pct-${row.industry}`} className={`inline-flex items-center gap-0.5 ${pctTone}`} title="میانگین تغییر قیمت پایانی نسبت به دیروز">
+          {avg != null ? (
+            <>
+              <span className="num">{fa1(avg)}</span>
+              <span aria-hidden>٪</span>
+            </>
+          ) : (
+            '—'
+          )}
         </span>
       </span>
     </>
