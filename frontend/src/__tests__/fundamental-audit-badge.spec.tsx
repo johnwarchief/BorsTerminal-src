@@ -197,8 +197,8 @@ describe('AuditBadge — رفتار دفاعی (نبود فیلدهای ممیز
   });
 });
 
-describe('AuditBadge در کارت بنیادی (FtsCard)', () => {
-  it('سلول شاخص ۴ کارت ویسا جدول واقعی نسبت فروش vs تارگت را نشان می‌دهد', () => {
+describe('#204 — کارت بنیادی دیگر بج ممیزی ندارد (شواهد: جدول و پنل)', () => {
+  it('سازندۀ شاهد هنوز اعدادِ واقعی را می‌دهد، ولی کارت هیچ بازشویی نمی‌سازد', () => {
     const audit = cardAuditEvidence(visa);
     const sales = visa.indicators?.['4']?.sales_to_mcap;
     const thr = visa.indicators?.['4']?.sales_threshold;
@@ -206,35 +206,24 @@ describe('AuditBadge در کارت بنیادی (FtsCard)', () => {
     expect(audit['4_sales_to_mcap']?.targetThreshold).toBe(thr ?? null);
     expect(sales).not.toBeNull();
     expect(thr).not.toBeNull();
-    render(<FtsCard score={visa.score ?? null} passes={visa.passes ?? {}} verdict={visa.verdict ?? null} audit={audit} />);
-    fireEvent.mouseOver(screen.getByTestId('fts-cell-audit-4_sales_to_mcap'));
-    const pop = screen.getByTestId('audit-popover');
-    expect(within(pop).getByTestId('audit-actual').textContent).toContain(toFaDigits((sales as number).toFixed(2)));
-    expect(within(pop).getByTestId('audit-target').textContent).toContain(toFaDigits(String(thr)));
-    // ویسا: ۰٫۳۱ < ۰٫۳۳ ⇒ انحراف منفی و قرمز (دلیل رد واقعی، بدون عدد ساختگی)
-    const dev = within(pop).getByTestId('audit-deviation');
-    expect(dev.className).toContain('text-accent-red');
+    render(<FtsCard score={visa.score ?? null} passes={visa.passes ?? {}} verdict={visa.verdict ?? null} audit={audit} onDrill={() => {}} />);
+    expect(screen.queryAllByTestId(/^fts-cell-audit-/)).toHaveLength(0);
+    expect(screen.queryAllByTestId('audit-popover')).toHaveLength(0);
+    fireEvent.mouseOver(screen.getByTestId('fts-card-cell-4_sales_to_mcap'));
+    expect(screen.queryByTestId('audit-popover')).toBeNull();
   });
 
-  it('سلول بدون داده، برچسب علت + بازشوی ممیزی دارد (بدون «شکاف داده»)', () => {
+  // علتِ «حکم نداریم» تنها چیزی است که از بج مانده — بی‌آن کارت بی‌داده را
+  // بی‌توضیح می‌گذارد و همان «چرا عددی نیست» دوباره سؤال می‌شود.
+  it('سلولِ بی‌داده علت را به‌صورتِ متنِ ساده می‌نویسد، نه بازشو و نه «شکاف داده»', () => {
     render(<FtsCard score={2} passes={{ '3_gross_margin': false }} verdict="مردود" audit={null} />);
-    const cell = screen.getByTestId('fts-cell-audit-3_gross_margin');
-    /** #169: بجِ مرفوع دیگر واژۀ حکم را تکرار نمی‌کند — حکم فقط در برچسبِ نتیجه */
-    expect(cell.textContent).toBe('ⓘ');
+    /** #169: واژۀ حکم فقط در برچسبِ نتیجه است */
     expect(screen.getByTestId('fts-verdict-3_gross_margin')).toHaveTextContent('رد');
     expect(screen.queryByText('شکاف داده')).toBeNull();
-    const gapCell = screen.getByTestId('fts-cell-audit-1a_monetary_growth');
-    expect(gapCell.textContent).toContain('گزارش ماهانهٔ کدال نیست');
-    fireEvent.mouseOver(gapCell);
-    expect(screen.getByTestId('audit-popover')).toBeInTheDocument();
-  });
-
-  it('کلیک روی بج ممیزی درز نمی‌کند به Drill-Down سلول', () => {
-    const onDrill = vi.fn();
-    render(<FtsCard score={4} passes={{ '3_gross_margin': true }} verdict="قبول" onDrill={onDrill} />);
-    fireEvent.click(screen.getByTestId('fts-cell-audit-3_gross_margin'));
-    expect(onDrill).not.toHaveBeenCalled();
-    expect(screen.getByTestId('audit-popover')).toBeInTheDocument();
+    const gap = screen.getByTestId('fts-cell-gap-1a_monetary_growth');
+    expect(gap.textContent).toContain('گزارش ماهانهٔ کدال نیست');
+    fireEvent.mouseOver(gap);
+    expect(screen.queryByTestId('audit-popover')).toBeNull();
   });
 });
 

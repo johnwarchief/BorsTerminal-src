@@ -24,6 +24,7 @@ import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetSc
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { cardAuditEvidence } from '../lib/auditEvidence';
+import { rejectReasons, rejectLineText } from '../lib/rejectReasons';
 import { FtsDrillDown, type DrillDownKey } from '../components/FtsDrillDown';
 import { DataGapBanner } from '../components/DataGapBanner';
 
@@ -210,6 +211,8 @@ export default function FundamentalPage() {
 
   const metrics = card.data.metrics;
   const passes = card.data.passes ?? {};
+  // #205: علتِ رد را همان پرچم‌های موتور می‌گوید، با عدد و آستانۀ خودشان
+  const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -285,8 +288,30 @@ export default function FundamentalPage() {
                     ? 'این سهم از فیلترهای مهم سودسازی، رشد فروش و عدم قیمت‌گذاری دستوری عبور کرده و یک گزینه بسیار مستعد است.'
                     : card.data.score === 3
                     ? 'این سهم پتانسیل خوبی دارد اما در یک یا دو شاخص ضعیف عمل کرده. بهتر است گزارش‌های ماهانه بعدی آن را رصد کنیم.'
-                    : 'به دلیل ضعف در سودسازی، حاشیه سود پایین یا قیمت‌گذاری دستوری، این سهم برای سرمایه‌گذاری تایید نمی‌شود.'}
+                    : ''}
                 </p>
+                {/* #205: در حالتِ رد، علت را موتور می‌نویسد — همان شاخص(ها)ی
+                    مردود با عدد و آستانۀ خودش، نه «ضعف در سودسازی یا حاشیۀ
+                    پایین یا قیمت‌گذاری دستوری»ی حدسی. */}
+                {card.data.applicable !== false && card.data.score != null && card.data.score < 3 ? (
+                  <div className="mt-1 text-2xs leading-relaxed" data-testid="fts-reject-reasons">
+                    <span className="font-black text-text-primary">علتِ دقیقِ رد: </span>
+                    {rejectLines.length === 0 ? (
+                      <span className="text-text-secondary">
+                        هیچ‌یک از پنج شاخص پرچمِ رد ندارد؛ حکم از وتوی استراتژی یا
+                        امتیازِ ترکیبی است — به خطِ «حذف از غربالگری» همین بنر نگاه کنید.
+                      </span>
+                    ) : (
+                      <ul className="mt-1 list-disc space-y-0.5 ps-4">
+                        {rejectLines.map((l, i) => (
+                          <li key={i} className={l.missing ? 'text-text-muted' : 'text-accent-red'}>
+                            {rejectLineText(l)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -336,6 +361,7 @@ export default function FundamentalPage() {
         physicalApplicable={physicalApplicable}
         activeDrill={drillKey}
         onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
+        quarters={fiscal}
       />
 
       <FtsDrillDown card={card.data} active={drillKey} quarters={fiscal} physicalApplicable={physicalApplicable} />

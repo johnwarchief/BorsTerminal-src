@@ -268,6 +268,31 @@ details[open] > summary .disclosure-chevron {
 }
 }
 
+/* نمودارکِ روی کارت بنیادی (#201): حالتِ ایستاده خودِ عنصر حالتِ نهایی است و
+   انیمیشن فقط یک‌بارمصرف «از صفر» می‌آید — پس reduced-motion و دروازۀ بی‌کاری
+   (#198) نمودار را نصفه‌کاره نمی‌گذارند. عمداً در فهرست معافِ بی‌کاری نیستند. */
+@keyframes spark-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes spark-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+@layer components {
+.spark-rise {
+  animation: spark-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.spark-draw {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  animation: spark-draw 0.7s ease-out;
+}
+}
+
 /* سلول‌های فلشِ ویجتِ عمق بازار: inline-block و relative می‌مانند تا
    انیمیشنِ پس‌زمینه زیرِ بارهای رنگیِ مظنه دیده شود، و grid cell
    هم تراز می‌ماند. */

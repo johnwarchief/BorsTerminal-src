@@ -18,7 +18,6 @@ import type { FiscalQuarter } from '@features/fundamental/lib/fundMath';
 import { epsFailReason } from '@features/fundamental/lib/epsHistory';
 import {
   industryGateLabel,
-  industryGatePassLabel,
   industryGateTone,
 } from '@features/fundamental/lib/industryGate';
 import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '@features/fundamental/lib/assetScope';
@@ -68,8 +67,9 @@ describe('ویسا — محور ۲: هلدینگ و حذف P/NAV ساختگی', 
       />,
     );
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
-    expect(within(cell).getByText('N/A')).toBeInTheDocument();
-    // #149 — کاشیِ N/A «نظر نمی‌دهد» می‌گیرد، نه «قبول»
+    // #204: بجِ «N/A» روی کارت نیست؛ علتِ معافیت را همان کارت به فارسی می‌گوید
+    expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
+    // #149 — کاشیِ معاف «نظر نمی‌دهد» می‌گیرد، نه «قبول»
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
   });
 
@@ -127,13 +127,12 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
       />,
     );
     const cell = screen.getByTestId('fts-card-cell-5_industry');
-    // صنعت ویسا neutral است: سلولِ کارت نامِ طبقه را می‌گوید و titleِ بجِ ممیزی
-    // حکمِ غربالگری را — دو متنِ متفاوت، هر دو از یک منبع (lib/industryGate)
-    const gate = within(cell).getByTestId('fts-cell-audit-5_industry');
+    // صنعت ویسا neutral است: کارت نامِ طبقه را از lib/industryGate می‌گوید.
+    // #204: titleِ بجِ ممیزی دیگر روی کارت نیست — حکمِ غربالگری درِ همان
+    // پنلِ جزئیات می‌ماند، پس دو متن از یک منبع هنوز حفظ است.
+    expect(within(cell).queryByTestId('fts-cell-audit-5_industry')).toBeNull();
     expect(within(cell).getByTestId('fts-card-label-5_industry').textContent)
       .toContain(industryGateLabel('neutral'));
-    expect(gate.getAttribute('title')).toContain(industryGateLabel('neutral'));
-    expect(gate.getAttribute('title')).toContain(industryGatePassLabel(true));
     expect(industryGateTone('neutral')).toBe('yellow');
     // #149 — حکمِ کاشی برچسبِ مستقل دارد؛ برچسبِ طبقهٔ صنعت جای دیگری است
     expect(within(cell).getByTestId('fts-verdict-5_industry').textContent).toContain('قبول');

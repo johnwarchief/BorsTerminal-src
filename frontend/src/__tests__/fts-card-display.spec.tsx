@@ -123,15 +123,20 @@ describe('#156 — روند فصلی در نوارِ بازشو', () => {
   });
 });
 
-describe('#169 — واژۀ حکم یک‌بار، رنگِ سه‌حالۀ شاخص ۳ و چیدمان ۳/۲', () => {
+describe('#169/#200/#203/#204 — واژۀ حکم یک‌بار، رنگِ سه‌حالۀ شاخص ۳ و چیدمان', () => {
   const DECIDED = ['1a_monetary_growth', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap', '5_industry'];
+  const CARDS = ['1_growth', '2_eps_trend', '3_gross_margin', '4_sales_to_mcap', '5_industry'];
 
-  it('بجِ ممیزی در کاشیِ حکم‌دار فقط «ⓘ» است — واژۀ حکم تکرار نمی‌شود', () => {
-    renderCard();
+  // #204: بجِ «ⓘ چرا این وضعیت؟» از روی کارت‌ها برداشته شد — علتِ حکم درِ
+  // پنلِ بازشونده نوشته می‌شود، پس رویِ کارت هیچ دومین شاهدِ حکم نمانده.
+  it('کارت هیچ بجِ ممیزی ندارد؛ واژۀ حکم همان یک VerdictChip است', () => {
+    renderCard({ onDrill: () => {} });
     for (const a of DECIDED) {
-      const badge = screen.getByTestId(`fts-cell-audit-${a}`);
-      expect(badge.textContent, a).toBe('ⓘ');
-      expect(screen.getByTestId(`fts-card-cell-${a}`).textContent, a).not.toContain('مردود');
+      const cell = screen.getByTestId(`fts-card-cell-${a}`);
+      expect(cell.querySelector('[data-testid^="fts-cell-audit-"]'), a).toBeNull();
+      expect(cell.textContent, a).not.toContain('ⓘ');
+      expect(cell.textContent, a).not.toContain('چرا این وضعیت');
+      expect(cell.textContent, a).not.toContain('مردود');
     }
   });
 
@@ -169,21 +174,37 @@ describe('#169 — واژۀ حکم یک‌بار، رنگِ سه‌حالۀ شا
     expect(screen.getByTestId('fts-card-cell-3_gross_margin').className).not.toContain('cyan');
   });
 
-  it('چیدمان ۳ بالا / ۲ پایین: سه کارتِ اول دو ستون، دوتای آخر سه ستون', () => {
+  // #203 + #200: شبکه از ۱۶ ستون است — کارت ۱ یک ستونِ کامل پهن‌تر از ۲ و ۳
+  // (بخش «الف» جا دارد)، و ۴ و ۵ هم‌اندازۀ بالاترها و نه کش‌آمده تا جایِ
+  // خالیِ ردیفِ دوم پر شود.
+  it('چیدمان: کارت ۱ پهن‌تر از ۲ و ۳؛ کارت ۴ و ۵ هم‌عرضِ بالاترها و خودکشیده', () => {
     renderCard();
-    const spans = (key: string) => screen.getByTestId(`fts-card-cell-${key}`).className;
-    for (const k of ['1_growth', '2_eps_trend', '3_gross_margin']) expect(spans(k), k).toContain('md:col-span-2');
-    for (const k of ['4_sales_to_mcap', '5_industry']) expect(spans(k), k).toContain('md:col-span-3');
+    const cls = (key: string) => screen.getByTestId(`fts-card-cell-${key}`).className;
+    expect(cls('1_growth')).toContain('md:col-span-6');
+    for (const k of ['2_eps_trend', '3_gross_margin', '4_sales_to_mcap', '5_industry'])
+      expect(cls(k), k).toContain('md:col-span-5');
+    for (const k of ['4_sales_to_mcap', '5_industry']) expect(cls(k), k).toContain('self-start');
+    for (const k of ['1_growth', '2_eps_trend', '3_gross_margin'])
+      expect(cls(k), k).not.toContain('self-start');
   });
 
-  it('نشانهٔ «نمودار و جزئیات» روی هر پنج کارتِ کلیک‌پذیر هست', () => {
+  // #204: برچسبِ «نمودار و جزئیات ⌄» حذف شد؛ کلیک‌پذیری خودِ کارت و title‌اش
+  // همان راهنما را می‌گویند.
+  it('برچسبِ «نمودار و جزئیات» نیست، ولی هر پنج کارت دکمهٔ راهنمادار است', () => {
     renderCard({ onDrill: () => {} });
-    expect(screen.getAllByTestId('fts-drill-affordance')).toHaveLength(5);
+    expect(screen.queryAllByTestId('fts-drill-affordance')).toHaveLength(0);
+    for (const k of CARDS) {
+      const cell = screen.getByTestId(`fts-card-cell-${k}`);
+      expect(cell.tagName, k).toBe('BUTTON');
+      expect(cell.getAttribute('title'), k).toContain('کلیک');
+      expect(cell.hasAttribute('disabled'), k).toBe(false);
+    }
   });
 
-  it('بی‌onDrill هیچ نشانهٔ کلیکی دروغین نیست', () => {
+  it('بی‌onDrill هیچ کارتی کلیک‌پذیر ادعا نمی‌کند', () => {
     renderCard({});
-    expect(screen.queryAllByTestId('fts-drill-affordance')).toHaveLength(0);
+    for (const k of CARDS)
+      expect(screen.getByTestId(`fts-card-cell-${k}`).hasAttribute('disabled'), k).toBe(true);
   });
 });
 
@@ -200,5 +221,56 @@ describe('#169 — نمودارها در ارتفاعِ استاندارد رن�
     expect(svg.getAttribute('height')).toBe('168');
     expect(svg.getAttribute('viewBox')).toMatch(/^0 0 \d+ 168$/);
     expect(svg.getAttribute('class')).toContain('block');
+  });
+});
+
+// #201 — جزئیاتِ نموداری رویِ خودِ سه کارتِ اول. قیدها: ارتفاعِ پیکسلی ثابت
+// (همان قراردادِ روند فصلی)، بی‌داده هیچ نقطه‌ای نمی‌سازد، و انیمیشن
+// یک‌بارمصرف است — نه در فهرست معافِ دروازۀ بی‌کاری (#198).
+describe('#201 — نمودارکِ روی کارت بنیادی', () => {
+  const MQ = [
+    { key: '1403-Q4', yearLabel: '1403', quarter: 4, revenue: 100, grossProfit: 20, margin: 20 },
+    { key: '1404-Q1', yearLabel: '1404', quarter: 1, revenue: 120, grossProfit: 30, margin: 25 },
+    { key: '1404-Q2', yearLabel: '1404', quarter: 2, revenue: 130, grossProfit: 26, margin: 20 },
+  ] as never;
+
+  it('کارت ۲ میله‌های EPS و کارت ۳ خطِ حاشیه می‌گیرد — و فقط همین دو', () => {
+    renderCard({ quarters: MQ });
+    expect(screen.getByTestId('fts-spark-eps')).toBeInTheDocument();
+    expect(screen.getByTestId('fts-spark-margin')).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-testid^="fts-spark-"]').length).toBe(2);
+    for (const id of ['fts-spark-eps', 'fts-spark-margin']) {
+      const svg = screen.getByTestId(id).querySelector('svg');
+      expect(svg, id).not.toBeNull();
+      expect(svg!.getAttribute('height'), id).toBe('42');
+      expect(svg!.getAttribute('class'), id).toContain('block');
+    }
+    // سه دورۀ فیکسچر = سه میله
+    expect(screen.getByTestId('fts-spark-eps').querySelectorAll('rect').length).toBe(3);
+  });
+
+  it('بی‌فصلِ حاشیه‌دار، کارت ۳ خط نمی‌سازد (نبودِ داده ≠ صفر)', () => {
+    renderCard({});
+    expect(screen.getByTestId('fts-spark-eps')).toBeInTheDocument();
+    expect(screen.queryByTestId('fts-spark-margin')).toBeNull();
+  });
+
+  it('دورۀ غایب میله نمی‌گیرد، میله‌های مانده هم سرِ جایشان می‌مانند', () => {
+    const c = realCard();
+    const bare = { ...c.indicators, 2: { ...c.indicators['2'], eps_series: [91, null, 202] } } as FtsCardIndicators;
+    renderCard({ indicators: bare });
+    const bars = screen.getByTestId('fts-spark-eps').querySelectorAll('rect');
+    expect(bars.length).toBe(2);
+  });
+
+  it('انیمیشنِ نمودارک یک‌بارمصرف است و دروازۀ بی‌کاری معافش نکرده (#198)', () => {
+    const css = readFileSync(path.resolve(import.meta.dirname, '../index.css'), 'utf8');
+    expect(css).toMatch(/@keyframes spark-rise\s*\{\s*from/);
+    expect(css).toMatch(/@keyframes spark-draw\s*\{\s*from/);
+    expect(css).not.toMatch(/spark-(rise|draw)[^}]*infinite/);
+    // تنها معافانِ دروازۀ بی‌کاری فلش‌های تابلویند؛ نمودارک باید مکث کند
+    const exemptRule = css.split('}').find((r) => r.includes('animation-play-state: running'));
+    expect(exemptRule).toBeDefined();
+    expect(exemptRule).not.toMatch(/spark/);
   });
 });

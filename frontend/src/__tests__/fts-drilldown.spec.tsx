@@ -397,13 +397,28 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     expect(screen.getByText('۱۲ ماه ×۱')).toBeInTheDocument();
   });
 
-  it('بلوک فرمول A×B÷D با اعداد واقعی رندر می‌شود (۳۶۸۱ × ۲۱.۲٪ ÷ ۲.۷۲ همت)', () => {
+  it('بلوک فرمول پتانسیل سود با اعداد واقعی رندر می‌شود (۳۶۸۱ × ۲۱.۲٪ روی ۲.۷۲ همت)', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
     const block = screen.getByTestId('potential-formula');
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
     expect(within(block).getByText(/حاشیه ناخالص/).textContent).toContain('۲۱.۲٪');
     expect(within(block).getByText(/D: ارزش بازار/).textContent).toContain('۲.۷۲');
     expect(block.textContent).toContain('۲۸.۷٪');
+  });
+
+  // #202: «ریاضی» یعنی کسرِ واقعی — A×B روی خطِ کسری و D زیرِ آن، نه زنجیرۀ
+  // «A × B ÷ D»ی متنی که خواندنِ صورت/مخرج را به حدس می‌سپارد.
+  it('فرمول پتانسیل سود کسر است: صورت A×B، مخرج D، با خطِ کسری', () => {
+    render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
+    const frac = screen.getByTestId('potential-fraction');
+    const parts = Array.from(frac.children[0].children) as HTMLElement[];
+    expect(parts).toHaveLength(2);
+    expect(parts[0].textContent).toContain('A: فروش سالانه‌شده');
+    expect(parts[0].textContent).toContain('B: حاشیه ناخالص');
+    expect(parts[1].textContent).toContain('D: ارزش بازار');
+    expect(parts[0].className, 'صورت خطِ کسری دارد').toContain('border-b');
+    expect(parts[1].className, 'مخرج خطِ کسری ندارد').not.toContain('border-b');
+    expect(screen.getByTestId('potential-formula').textContent).not.toContain('÷');
   });
 
   it('متغیر غایب فقط در جای خود علت‌دار می‌شود — بقیهٔ فرمول سالم می‌ماند', () => {
@@ -438,10 +453,14 @@ describe('پنل شاخص ۵ — چشم‌انداز صنعت و نرخ‌گذا
 });
 
 describe('N/A رشد تولیدی در کارت FTS', () => {
-  it('کارت شرکت خدماتی: سلول ۱ب برچسب N/A می‌گیرد نه مردود', () => {
+  // #204: بجِ «N/A» از روی کارت برداشته شد — حکمِ «معاف» را خودِ VerdictChip و
+  // جملهٔ علت می‌گویند، و مهم‌تر از همه: سرخِ «رد» هیچ‌جا ساخته نمی‌شود.
+  it('کارت شرکت خدماتی: ۱ب معاف است نه مردود، با علتِ رویِ کارت', () => {
     render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} verdict="WATCH" physicalApplicable={false} />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
-    expect(within(cell).getByText('N/A')).toBeInTheDocument();
+    expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toBe('نظر نمی‌دهد');
+    expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
+    expect(cell.className).not.toContain('rose');
   });
 
   it('کارت تولیدی: همان مقدار قبول/مردود می‌ماند', () => {

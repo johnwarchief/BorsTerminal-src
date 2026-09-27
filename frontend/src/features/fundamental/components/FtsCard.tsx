@@ -1,16 +1,19 @@
 // features/fundamental/components/FtsCard.tsx -- کارت مدرن پنج شاخص بنیادی FTS
-// قراردادِ واژه (#169): حکمِ هر سلول یک‌بار نوشته می‌شود — در برچسبِ VerdictChip.
-// بجِ ممیزی فقط «ⓘ» است («چرا این وضعیت؟»); آن‌جا که حکمی وجود ندارد (سلولِ
-// بی‌داده/معاف) بج همان علت را می‌نویسد («N/A»، «گزارش ماهانهٔ کدال نیست»).
+// قراردادِ واژه (#169 → #204): حکمِ هر سلول یک‌بار نوشته می‌شود — در برچسبِ
+// VerdictChip. بجِ «ⓘ چرا این وضعیت؟» و برچسبِ «نمودار و جزئیات» از روی کارت‌ها
+// برداشته شدند؛ علتِ حکم درِ پنلِ باز‌شونده است و رویِ کارت فقط علتِ
+// «حکم نداریم» (بی‌داده / N/A) می‌ماند، چون هیچ‌جای دیگرِ کارت آن را نمی‌گوید.
 import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FTS_LABEL } from '@shared/lib/ftsLabels';
 import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
-import { gapReason, gapLabel, gapTooltip, type GapAxis } from '../lib/gapReason';
-import { AuditBadge, type AuditEvidence } from './AuditBadge';
-import { industryGateLabel, industryGatePassLabel, industryGateTone } from '../lib/industryGate';
+import { gapLabel, type GapAxis } from '../lib/gapReason';
+import { type AuditEvidence } from './AuditBadge';
+import { industryGateLabel, industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
+import { SparkBars, SparkLine } from './CardSpark';
+import type { FiscalQuarter } from '../lib/fundMath';
 import { epsChangeText, epsChanges, epsGrowthReason } from '../lib/epsHistory';
 import type { DrillDownKey } from './FtsDrillDown';
 import type { FtsCardIndicators } from '../api/useFtsCard';
@@ -141,28 +144,6 @@ function BigResult({ children, className = '', testId = 'fts-big-result' }: { ch
 }
 
 /**
- * نشانهٔ «کلیک کن» (#169): کل کارت از پیش کلیک‌پذیر بود ولی هیچ چیزی رویش
- * این را نمی‌گفت — رأیِ مالک: «برای شاخص ۱ … وقتی میزنیم روش برای دیدن بیشتر
- * جزییات بهتر باشه». متنِ ثابت، پس حدس زدنی نیست.
- */
-function DrillAffordance({ active }: { active: boolean }) {
-  return (
-    <span
-      data-testid="fts-drill-affordance"
-      aria-hidden="true"
-      className={`mt-1.5 inline-flex shrink-0 items-center gap-1 self-start rounded-md border px-1.5 py-0.5 text-3xs font-bold transition-colors ${
-        active
-          ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
-          : 'border-border-c/70 bg-bg-primary/50 text-text-muted group-hover:border-accent-blue/50 group-hover:text-accent-blue'
-      }`}
-    >
-      نمودار و جزئیات
-      <span className="leading-none">⌄</span>
-    </span>
-  );
-}
-
-/**
  * مقایسۀ دو دورۀ شاخص ۱ (#151): دو نوارِ افقی به مقیاسِ بزرگ‌ترِ دوره‌ها،
  * و زیرشان خطِ رشدی که کف و هدفِ جزوه روی همان خط نشسته‌اند. دورۀ غایب
  * نوارِ صفر نمی‌گیرد — «نیست» با «صفر» یکی نیست.
@@ -252,6 +233,7 @@ export function FtsCard({
   thresholds = null,
   activeDrill = null,
   onDrill,
+  quarters = [],
 }: {
   score: number | null;
   /** سه‌حاله (رأی ۱۴۰۵-۰۷-۰۳): null = «نظر نمی‌دهد»، نه سبز و نه سرخ. */
@@ -269,6 +251,9 @@ export function FtsCard({
   thresholds?: Record<string, unknown> | null;
   activeDrill?: DrillDownKey | null;
   onDrill?: (k: DrillDownKey) => void;
+  /** فصل‌های مالی برای نمودارکِ حاشیهٔ سود رویِ کارت ۳ (#201) — همان آرایه‌ای
+   *  که پنلِ دریل‌داون می‌گیرد؛ کارت هیچ حاشیه‌ای از خود نمی‌سازد. */
+  quarters?: FiscalQuarter[];
 }) {
   return (
     <div className="glass-panel panel-in p-4 flex flex-col justify-between" dir="rtl">
@@ -325,12 +310,14 @@ export function FtsCard({
           </div>
         </div>
 
-        {/* شبکه ۵ کارت (#169): سه کارتِ اول بالا و درشت‌تر، دو تای بعدی پایین.
-            رأیِ داور jev-pilot: هر پنج در یک شبکهٔ شش‌ستونه، سه‌تای بالا
-            دو ستون و دوتای پایین سه ستون. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5">
+        {/* شبکه ۵ کارت (#169 → #200/#203): شبکهٔ شانزده‌ستونه تا نسبت‌ها درست
+            دربیایند — کارت ۱ شش ستون (کمی پهن‌تر برای بخش «الف») و ۲ و ۳ هر کدام
+            پنج. کارت‌های ۴ و ۵ هم پنج ستون، یعنی هم‌اندازۀ بالاترها و نه کش‌آمده
+            تا جای خالیِ ردیفِ دوم را پر کنند؛ آن فضای خالی عمدی است. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-16 gap-2.5">
           {LAYERS.map((l, li) => {
-            const span = li <= 2 ? 'md:col-span-2' : 'md:col-span-3';
+            const span = ['md:col-span-6', 'md:col-span-5', 'md:col-span-5', 'md:col-span-5', 'md:col-span-5'][li];
+            const alignSelf = li > 2 ? ' self-start' : '';
             const isActive = l.drill != null && l.drill === activeDrill;
 
             // شاخص ۱: رشد فروش کدال (ترکیبی ریالی و تولیدی)
@@ -408,26 +395,21 @@ export function FtsCard({
                         <VerdictChip pass={v1a} testId="fts-verdict-1a_monetary_growth" />
                       </div>
 
-                      {/* نتیجۀ درشت (#149) + شاهدِ ممیزی در همان ردیف */}
+                      {/* نتیجۀ درشت (#149). بجِ ممیزی از روی کارت برداشته شد
+                          (#204) — «نظر نمی‌دهد» را VerdictChip می‌گوید و تنها
+                          علتِ بی‌داده رویِ کارت می‌ماند. */}
                       <div className="mb-1.5 flex items-end justify-between gap-1.5">
                         <BigResult testId="fts-result-1a" className={v1a === false ? 'text-accent-red' : v1a == null ? 'text-text-primary' : 'text-accent-green'}>
                           {monPct == null ? '—' : `${monPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(monPct).toFixed(1))}٪`}
                         </BigResult>
-                        <AuditBadge
-                          state={v1a == null ? 'na' : v1a ? 'pass' : 'fail'}
-                          label={v1a == null ? gapLabel('1a_monetary_growth') : 'ⓘ'}
-                          hintTitle={v1a == null ? gapTooltip('1a_monetary_growth') : 'رشد ریالی'}
-                          evidence={
-                            v1a == null
-                              ? {
-                                  ...(audit?.['1a_monetary_growth'] ?? {}),
-                                  reason: audit?.['1a_monetary_growth']?.reason ?? gapReason('1a_monetary_growth').why,
-                                }
-                              : (audit?.['1a_monetary_growth'] ?? null)
-                          }
-                          testId="fts-cell-audit-1a_monetary_growth"
-                          compact
-                        />
+                        {v1a == null ? (
+                          <span
+                            data-testid="fts-cell-gap-1a_monetary_growth"
+                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                          >
+                            {gapLabel('1a_monetary_growth')}
+                          </span>
+                        ) : null}
                       </div>
 
                       {/* مقایسۀ دیداریِ دو دوره (#151): دو نوار + خطِ کف و هدف */}
@@ -472,23 +454,14 @@ export function FtsCard({
                         <BigResult testId="fts-result-1b" className={!physicalApplicable || v1b == null ? 'text-text-primary' : v1b ? 'text-accent-green' : 'text-accent-red'}>
                           {!physicalApplicable || volPct == null ? '—' : `${volPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(volPct).toFixed(1))}٪`}
                         </BigResult>
-                        <AuditBadge
-                          state={!physicalApplicable ? 'na' : v1b == null ? 'na' : v1b ? 'pass' : 'fail'}
-                          label={!physicalApplicable ? 'N/A' : v1b == null ? gapLabel('1b_volume_growth') : 'ⓘ'}
-                          hintTitle={!physicalApplicable ? undefined : v1b == null ? gapTooltip('1b_volume_growth') : 'رشد تولیدی'}
-                          evidence={
-                            !physicalApplicable
-                              ? null
-                              : v1b == null
-                                ? {
-                                    ...(audit?.['1b_volume_growth'] ?? {}),
-                                    reason: audit?.['1b_volume_growth']?.reason ?? gapReason('1b_volume_growth').why,
-                                  }
-                                : (audit?.['1b_volume_growth'] ?? null)
-                          }
-                          testId="fts-cell-audit-1b_volume_growth"
-                          compact
-                        />
+                        {physicalApplicable && v1b == null ? (
+                          <span
+                            data-testid="fts-cell-gap-1b_volume_growth"
+                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                          >
+                            {gapLabel('1b_volume_growth')}
+                          </span>
+                        ) : null}
                       </div>
 
                       {!physicalApplicable ? (
@@ -521,8 +494,6 @@ export function FtsCard({
                       )}
                     </div>
                   </div>
-
-                  {onDrill ? <DrillAffordance active={isActive} /> : null}
                 </button>
               );
             }
@@ -537,7 +508,6 @@ export function FtsCard({
               key === '4_sales_to_mcap' &&
               (indicators?.['4']?.na === true || indicators?.['4']?.exempt === true);
             const v = axisNa ? null : rawPass;
-            const isIndustry = key === '5_industry' && industryMode !== undefined;
             /* رنگِ سه‌حالته فقط آن‌جا که موتور band/ideal فرستاده (شاخص ۳)؛
                جایِ دیگر «ایده‌آل» ساخته نمی‌شود. */
             let cardQuality = qualityFrom(v);
@@ -546,6 +516,8 @@ export function FtsCard({
             let mathFormulaNode: React.ReactNode = null;
             /** سطرِ اضافیِ پایینِ فرمول — همین‌جا فقط برای کارت EPS (#101) */
             let extraNode: React.ReactNode = null;
+            /** نمودارکِ زیرِ فرمول (#201): کارت ۲ پله‌های EPS، کارت ۳ روند حاشیه */
+            let sparkNode: React.ReactNode = null;
             let benchmarkHint: string | null = '';
 
             if (key === '2_eps_trend') {
@@ -625,6 +597,17 @@ export function FtsCard({
                   <span>0</span>
                 </div>
               );
+              // نردبان رویِ خودِ کارت (#201) — همان سریِ بک‌اند، همان ترتیب
+              sparkNode = (
+                <SparkBars
+                  points={(i2?.eps_series ?? []).map((val, i) => ({
+                    label: i2?.period_slots?.[i] ?? i2?.fiscal_years?.[i] ?? `دورۀ ${i + 1}`,
+                    value: val ?? null,
+                  }))}
+                  testId="fts-spark-eps"
+                  title="EPS سه دورۀ اخیر (قدیم ← جدید)"
+                />
+              );
               benchmarkHint = `شرط: سود هر سهم در ${toFaDigits(epsYearsReq)} سالِ متوالی بالاتر رفته باشد`;
             } else if (key === '3_gross_margin') {
               const i3 = indicators?.['3'];
@@ -654,6 +637,20 @@ export function FtsCard({
                     <span className={`text-2xs font-black ms-0.5 ${tone(v)}`}>≥ {toFaDigits(marginFloor)}٪</span>
                   )}
                 </div>
+              );
+              // روند حاشیه رویِ خودِ کارت (#201) — همان marginِ فصلیِ بک‌اند،
+              // همان شش فصلِ آخرِ پنل؛ بی‌سودِ ناخالص هیچ نقطه‌ای رسم نمی‌شود.
+              const marginTrend = quarters.filter((q) => q.margin != null).slice(-6);
+              sparkNode = (
+                <SparkLine
+                  points={marginTrend.map((q) => ({
+                    label: `س ${toFaDigits(q.quarter)} ${q.yearLabel.slice(2)}`,
+                    value: q.margin as number,
+                  }))}
+                  testId="fts-spark-margin"
+                  floor={marginFloor}
+                  title="حاشیهٔ سود ناخالصِ شش فصلِ اخیر"
+                />
               );
               benchmarkHint =
                 marginFloor == null
@@ -750,18 +747,6 @@ export function FtsCard({
               benchmarkHint = 'رژیم قیمت‌گذاری صنعت';
             }
 
-            const industryBadge = isIndustry ? (
-              <AuditBadge
-                state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                /* متنِ کامل هم در عددِ درشت هست؛ بج فقط «چرا؟» است (#169) */
-                label="ⓘ"
-                hintTitle={`${industryGateLabel(industryMode)} · ${industryGatePassLabel(v === true)}`}
-                evidence={audit?.['5_industry'] ?? null}
-                testId={`fts-cell-audit-${key}`}
-                compact
-              />
-            ) : null;
-
             return (
               <button
                 key={key}
@@ -771,7 +756,7 @@ export function FtsCard({
                 aria-pressed={isActive}
                 data-testid={`fts-card-cell-${key}`}
                 title={l.hint}
-                className={`col-span-1 ${span} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                className={`col-span-1 ${span}${alignSelf} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
                   cardQuality,
                   isActive,
                 )}`}
@@ -784,27 +769,21 @@ export function FtsCard({
                   <VerdictChip pass={v} quality={cardQuality} testId={`fts-verdict-${key}`} />
                 </div>
 
-                {/* ردیف ۲: عددِ نتیجۀ درشت + شاهدِ ممیزی */}
+                {/* ردیف ۲: عددِ نتیجۀ درشت. بجِ «ⓘ چرا این وضعیت؟» از روی
+                    کارت‌ها برداشته شد (#204) — داوریِ حکم و علتش درِ همین
+                    کارت یک‌بار نوشته می‌شود، جزئیات درِ پنل. تنها چیزی که
+                    مانده علتِ «حکم نداریم» است، که هیچ‌جای دیگرِ کارت
+                    نمی‌گویدش. */}
                 <div className="mb-1 flex items-end justify-between gap-1.5">
                   <BigResult testId={`fts-result-${l.key}`}>{resultNumberNode}</BigResult>
-                  {industryBadge ?? (
-                    <AuditBadge
-                      state={v == null ? 'na' : v ? 'pass' : 'fail'}
-                      label={v == null ? (axisNa ? 'N/A' : gapLabel(key)) : 'ⓘ'}
-                      hintTitle={
-                        v == null
-                          ? (axisNa ? (audit?.[key]?.reason ?? gapTooltip(key)) : gapTooltip(key))
-                          : undefined
-                      }
-                      evidence={
-                        v == null
-                          ? { ...(audit?.[key] ?? {}), reason: audit?.[key]?.reason ?? gapReason(key).why }
-                          : (audit?.[key] ?? null)
-                      }
-                      testId={`fts-cell-audit-${key}`}
-                      compact
-                    />
-                  )}
+                  {v == null ? (
+                    <span
+                      data-testid={`fts-cell-gap-${key}`}
+                      className="shrink-0 text-3xs leading-snug text-text-muted"
+                    >
+                      {axisNa ? 'N/A' : gapLabel(key)}
+                    </span>
+                  ) : null}
                 </div>
 
                 {/* ردیف وسط: فرمول ریاضی واقعی با کسر و نمادهای دقیق */}
@@ -812,13 +791,16 @@ export function FtsCard({
                   {mathFormulaNode}
                 </div>
 
+                {/* نمودارکِ #201 — فقط کارت‌هایی که سری دارند می‌گیرند */}
+                {sparkNode}
+
                 {/* سطر درصد رشد EPS (#101) — بقیهٔ کارت‌ها null می‌دهند و چیزی رندر نمی‌شود */}
                 {extraNode}
 
-                {/* ردیف پایین: شرط مرجع + نشانهٔ کلیک (#169) */}
+                {/* ردیف پایین: شرط مرجع (#204: برچسبِ «نمودار و جزئیات» حذف —
+                    خودِ کارت کلیک‌پذیر است و title همین را می‌گوید) */}
                 <div className="mt-1 flex items-end justify-between gap-1.5">
                   <span className="min-w-0 flex-1 text-3xs leading-snug text-text-muted line-clamp-2">{benchmarkHint}</span>
-                  {onDrill ? <DrillAffordance active={isActive} /> : null}
                 </div>
               </button>
             );

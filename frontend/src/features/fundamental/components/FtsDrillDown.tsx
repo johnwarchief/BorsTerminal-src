@@ -619,40 +619,53 @@ function Panel4({ card }: { card: FtsCard }) {
       ) : null}
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3" data-testid="potential-formula">
         <div className="mb-2 text-2xs font-bold text-text-primary">فرمول پتانسیل سود — شاخص ۴</div>
-        <div dir="rtl" className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 rounded-lg bg-bg-primary px-3 py-2.5 text-xs font-black leading-relaxed">
-          <span className="text-text-secondary">پتانسیل سود =</span>
-          <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
-            A: فروش سالانه‌شده{' '}
-            {annualSales != null ? (
-              `${toFaDigits(fmtInt(annualSales))} ب.ت`
-            ) : (
-              <GapHint reason={VALUATION_GAP_REASON}>
-                <span className="text-accent-red">{NO_ANNUAL_SALES}</span>
-              </GapHint>
-            )}
+        {/* #202: کسرِ ریاضی با خطِ کسری، نه «A × B ÷ D»یِ متنی — و دقیقاً همان
+            جبری که موتور می‌زند: (فروش × حاشیه) ÷ ارزش بازار، در ۱۰۰. هر
+            متغیرِ غایب فقط درِ جایِ خودشِ کسر علت می‌گیرد. */}
+        <div dir="ltr" className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-2 rounded-lg bg-bg-primary px-3 py-3 text-xs font-black leading-relaxed">
+          <span dir="rtl" className="text-text-secondary">پتانسیل سود =</span>
+          <span data-testid="potential-fraction" className="inline-flex">
+            <MathFraction
+              numerator={
+                <span className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1">
+                  <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
+                    A: فروش سالانه‌شده{' '}
+                    {annualSales != null ? (
+                      `${toFaDigits(fmtInt(annualSales))} ب.ت`
+                    ) : (
+                      <GapHint reason={VALUATION_GAP_REASON}>
+                        <span className="text-accent-red">{NO_ANNUAL_SALES}</span>
+                      </GapHint>
+                    )}
+                  </span>
+                  <span className="text-text-secondary">×</span>
+                  <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
+                    B: حاشیه ناخالص{' '}
+                    {marginUsed != null ? (
+                      fmtPct(marginUsed)
+                    ) : (
+                      <GapHint reason={GENERIC_GAP_REASON}>
+                        <span className="text-accent-red">{NO_GROSS_MARGIN}</span>
+                      </GapHint>
+                    )}
+                  </span>
+                </span>
+              }
+              denominator={
+                <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
+                  D: ارزش بازار{' '}
+                  {mcapHt != null ? (
+                    `${toFaDigits(mcapHt.toFixed(2))} همت`
+                  ) : (
+                    <GapHint reason={VALUATION_GAP_REASON}>
+                      <span className="text-accent-red">{NO_MCAP}</span>
+                    </GapHint>
+                  )}
+                </span>
+              }
+            />
           </span>
-          <span className="text-text-secondary">×</span>
-          <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
-            B: حاشیه ناخالص{' '}
-            {marginUsed != null ? (
-              fmtPct(marginUsed)
-            ) : (
-              <GapHint reason={GENERIC_GAP_REASON}>
-                <span className="text-accent-red">{NO_GROSS_MARGIN}</span>
-              </GapHint>
-            )}
-          </span>
-          <span className="text-text-secondary">÷</span>
-          <span className="rounded-md border border-border-c bg-bg-card/60 px-2 py-0.5 text-accent-blue">
-            D: ارزش بازار{' '}
-            {mcapHt != null ? (
-              `${toFaDigits(mcapHt.toFixed(2))} همت`
-            ) : (
-              <GapHint reason={VALUATION_GAP_REASON}>
-                <span className="text-accent-red">{NO_MCAP}</span>
-              </GapHint>
-            )}
-          </span>
+          <span className="text-text-secondary">× ۱۰۰</span>
           <span className="text-text-secondary">=</span>
           <span className={`rounded-md px-2 py-0.5 ${potential != null ? 'bg-accent-green/15 text-accent-green' : 'bg-bg-card/60 text-accent-red'}`}>
             {potential != null ? (
