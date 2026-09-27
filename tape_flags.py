@@ -85,6 +85,19 @@ def _col(df: pd.DataFrame, name: str) -> pd.Series:
     return pd.Series(np.nan, index=df.index)
 
 
+def _alive(df: pd.DataFrame) -> pd.Series:
+    """ردیف‌هایِ تابلویِ **همین نشست**. پنج فیلتر دربارهٔ «امروز» حرف می‌زنند؛
+    ردیفی که آخرینِ نشستِ بانکِ خودش دیروز است نمی‌تواند بگوید «حجمِ امروزِ من
+    سه برابرِ مبناءست». اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵ ساعت ۱۰:۴۳: «حجم مشکوک» ۷۴ ردیف
+    می‌داد که ۵۵ تایشان همین ردیف‌هایِ بی‌ربط بودند (اختیارِ سررسیدشده و
+    متوقف)؛ رویِ تابلویِ زنده ۱۹ ردیف می‌مانَد — و همان‌ها فیلترنویسِ TSETMC.
+    نبودنِ ستون یعنی «همه زنده» (غربگر و `/api/screener` آن را نمی‌سازند).
+    """
+    if "is_live" not in df.columns:
+        return pd.Series(True, index=df.index)
+    return df["is_live"].fillna(False).astype(bool)
+
+
 def _sessions(df: pd.DataFrame) -> pd.Series:
     """چند نشست از پنجرۀِ فایل واقعاً درِ بانک است؟ (همین نشست + تا ۲۹ پیش)"""
     n = _col(df, "prior29_n").fillna(0.0).clip(upper=VOL_BASE_SESSIONS - 1)
@@ -220,17 +233,22 @@ def noqteh_flag(df: pd.DataFrame) -> pd.Series:
 
 
 def apply_tape_flags(df: pd.DataFrame) -> pd.DataFrame:
-    """پنج پرچم + نسبت‌هایِ کمکی را می‌سازد؛ ورودی را دست نمی‌زند."""
+    """پنج پرچم + نسبت‌هایِ کمکی را می‌سازد؛ ورودی را دست نمی‌زند.
+
+    پنج پرچم بر «همین نشست» شرط دارند (`_alive`)؛ نسبت‌ها و ستون‌هایِ نمایشی
+    نه — آن‌ها تاریخچند و باید برایِ ردیف‌هایِ بیرونِ تابلو هم حساب بمانند.
+    """
     out = df.copy()
+    alive = _alive(out)
     out["vol_ratio"] = vol_ratio(out).round(2)
     out["vol_ratio_file"] = formula_vol_ratio(out).round(2)
     out["buyer_power_raw"] = buyer_power(out)
     out["resistance_59"] = resistance_ladder_high(out)
     out["dist_min30_pct"] = ((_n(out["p_closing"]) - _n(out["min30_low"]))
                              / _n(out["p_closing"]) * 100).round(2)
-    out["f_clock"] = clock_flag(out)
-    out["f_susp"] = suspicious_flag(out)
-    out["f_jet"] = jet_flag(out)
-    out["f_roobi"] = roobi_flag(out)
-    out["f_noqteh"] = noqteh_flag(out)
+    out["f_clock"] = clock_flag(out) & alive
+    out["f_susp"] = suspicious_flag(out) & alive
+    out["f_jet"] = jet_flag(out) & alive
+    out["f_roobi"] = roobi_flag(out) & alive
+    out["f_noqteh"] = noqteh_flag(out) & alive
     return out

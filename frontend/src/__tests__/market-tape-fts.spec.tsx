@@ -179,8 +179,10 @@ describe('جدول تابلو بهینه‌شده', () => {
 
     const cells = screen.getByTestId('tape-row').children;
     expect(cells).toHaveLength(12);
-    const delta = cells[10];
+    // #194: اختلاف «آخرین تا پایانی» بغلِ خودِ پایانی نشسته، نه ته جدول کنارِ بج‌ها
+    const delta = cells[3];
     const patterns = cells[11];
+    expect(cells[2].textContent).toBe(fmtInt(1240));       // پایانی
     expect(delta.textContent).toBe(fmtPct(((1234 - 1240) / 1240) * 100));
     expect(delta.querySelector('[data-testid^="badge-"]')).toBeNull();
     expect(patterns.querySelector('[data-testid^="badge-"]')).not.toBeNull();

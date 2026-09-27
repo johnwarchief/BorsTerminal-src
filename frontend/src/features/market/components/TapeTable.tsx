@@ -39,16 +39,16 @@ type SortKey =
 /**
  * دوازده ستونِ تابلو (۱۲). عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در فونتِ
  * 16pxِ همین جدول گذاشته شده‌اند، نه حدس:
- * [نماد 150] [آخرین 66] [پایانی 66] [تغییر٪ 62] [آخرین٪ 62] [حجم 130] [تعداد 64]
+ * [نماد 150] [آخرین 66] [پایانی 66] [اختلاف٪ 60] [تغییر٪ 62] [آخرین٪ 62] [حجم 130] [تعداد 64]
  * [ارزش 58] [حجم/ماه 58] [خرید/فروش 118 — سرانه‌ها + نوارِ دوسُره + نسبت]
- * [اختلاف٪ 60] [الگو 142].
+ * [الگو 142].
  * سه ستونِ «سرانۀ خرید / سرانۀ فروش / قدرتِ خریدار» در #146 به یک ستونِ دوسُره
  * جمع شد؛ در #172 خانهٔ «ساعت» دو ستون شد، چون عددِ اختلاف و بج‌هایِ الگو در یک
  * خانه به هم می‌چسبیدند و خواننده نمی‌فهمید عدد زیرِ کدام سرستون است. فاصلهٔ
  * ستون‌ها ۶→۴ و حاشیهٔ ردیف ۱۲→۸ آمد تا حدِ آستانهٔ عرض بالا نکند.
  */
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(118px,1.1fr)_minmax(60px,0.6fr)_minmax(142px,1.5fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(118px,1.1fr)_minmax(142px,1.5fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
 const TABLE_MIN_W = 'min-w-[1100px]';
@@ -62,6 +62,13 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   { key: 'symbol', label: 'نماد' },
   { key: 'p_last', label: 'آخرین' },
   { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین نشست (p_closing)' },
+  // اختلافِ آخرین تا پایانی بغلِ پایانی نشسته (#194): هر دو ستونِ یک مقایسه‌اند
+  // — «آخرین» و «پایانی» و «فاصلۀ این دو» — و جدا از هم خوانده نمی‌شوند.
+  {
+    key: 'last_vs_close',
+    label: 'اختلاف٪',
+    hint: 'آخرین نسبت به پایانی — منفی یعنی پایانی بالاتر از آخرین، همان شرطِ الگوی ساعت',
+  },
   { key: 'percent_change', label: 'تغییر٪', hint: 'پایانی نسبت به دیروز — همان plp درِ فیلترها' },
   { key: 'percent_last', label: 'آخرین٪', hint: 'آخرین نسبت به دیروز؛ با درصدِ پایانی فرق دارد' },
   { key: 'tvol', label: 'حجم' },
@@ -74,11 +81,6 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
     hint:
       'بالا: سرانۀ خرید حقیقی (سبز) و سرانۀ فروش حقیقی (قرمز) به میلیون تومان. ' +
       'پایین: نوارِ سهمِ هر طرف و نسبتِ خرید به فروش',
-  },
-  {
-    key: 'last_vs_close',
-    label: 'اختلاف٪',
-    hint: 'آخرین نسبت به پایانی — منفی یعنی پایانی بالاتر از آخرین، همان شرطِ الگوی ساعت',
   },
   {
     key: null,
@@ -330,6 +332,12 @@ const TapeRow = memo(function TapeRow({
       <span className="num text-end text-text-secondary">
         <FlashNum value={row.p_closing} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
+      {/* اختلافِ آخرین تا پایانی یک ستونِ عددیِ مستقل است (#172) و بغلِ پایانی
+          می‌نشیند (#194): تا پیش از این کنارِ بج‌ها بود و خواننده نمی‌فهمید
+          عددِ درصد زیرِ کدام سرستون است، یا با «آخرین» و «پایانی» چه ربطی دارد. */}
+      <span className="num text-end text-text-secondary" title={`اختلاف آخرین و پایانی: ${diff == null ? '—' : fmtPct(diff * 100)}`}>
+        <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
+      </span>
       <span className={`num text-end font-bold ${pctTone(pct)}`}>
         <FlashNum value={pct} render={(v) => (v == null ? '-' : fmtPct(v))} />
       </span>
@@ -355,12 +363,6 @@ const TapeRow = memo(function TapeRow({
         <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v > FTS_VOL_RATIO_HOT ? '×' : ''))} />
       </span>
       <BuySellCell buyPc={buyPc} sellPc={sellPc} power={row.buyer_power} />
-      {/* اختلافِ آخرین تا پایانی یک ستونِ عددیِ مستقل است (#172): تا پیش از این
-          همان‌جا که بج‌ها می‌نشستند، به «مشکوک» می‌چسبید و خواننده نمی‌فهمید
-          عددِ درصد زیرِ کدام سرستون است. */}
-      <span className="num text-end text-text-secondary" title={`اختلاف آخرین و پایانی: ${diff == null ? '—' : fmtPct(diff * 100)}`}>
-        <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
-      </span>
       {/* `flex-wrap` به‌جای `overflow-x-auto`: نوارِ بج هیچ‌وقت اسکرول
           افقی نمی‌شود؛ اگر روزی چهار بج با هم بیایند، در ارتفاعِ ۴۰
           ردیف می‌شکنند و دیده می‌شوند — نه اینکه پشتِ لبهٔ ستون پنهان

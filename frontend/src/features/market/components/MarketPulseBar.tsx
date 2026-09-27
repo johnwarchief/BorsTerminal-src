@@ -136,7 +136,7 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
       className={`flex min-w-0 flex-1 flex-col justify-center gap-y-1 rounded-2xl border px-3 py-1.5 shadow-xs ${VERDICT_TONE[kind]}`}
     >
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5">
-        <span className="text-3xs font-bold text-text-secondary">حکمِ امروز</span>
+        <span className="text-3xs font-bold text-text-secondary">ورود به بازار</span>
         <span data-testid="pulse-verdict-label" className={`text-lg font-black leading-6 ${VERDICT_TEXT[kind]}`}>
           {v ? v.label : 'بدون داده'}
         </span>

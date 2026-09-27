@@ -1161,9 +1161,9 @@ def _gate_why(key: str, state: str, macro: dict, entry: dict) -> str:
     if key == "flow":
         return {
             "ok": "سبز یعنی پولِ حقیقی هم‌زمان از درآمد ثابت و طلا بیرون آمده و به سهام وارد شده "
-                  "است — حالتِ آرمانیِ جزوه.",
+                  "است — وضعِ مطلوبِ جزوه.",
             "bad": "سرخ یعنی پولِ حقیقی از سهام بیرون رفته است؛ جهتِ مخالفِ ورود.",
-            "mid": "زرد یعنی سه شرطِ آرمانی یکجا برقرار نیستند و جهتِ پول هنوز روشن نشده.",
+            "mid": "زرد یعنی سه شرطِ وضعِ مطلوب یکجا برقرار نیستند و جهتِ پول هنوز روشن نشده.",
             "nodata": "بی‌رنگ یعنی تفکیکِ خرید و فروشِ حقیقی برای امروز نیست.",
         }[state]
     if key == "window":
@@ -1224,7 +1224,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
             cont_state, cont_label, cont_vote = "mid", "بدونِ تداوم", 0
         cont_detail = "%s نشستِ اخیر: %s" % (
             _fa_num(n), " · ".join("%s همت" % _fa_num(h["value_hemat"]) for h in known[:n]))
-    gates.append(_gate("continuity", "تداومِ سه نشستِ اخیر", "تداوم", cont_state, cont_label, cont_vote,
+    gates.append(_gate("continuity", "روند ۳ تا ۴ نشستِ اخیر", "روندِ اخیر", cont_state, cont_label, cont_vote,
                        cont_detail, "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)"))
 
     # ---- ۲) پهنایِ بازار ---------------------------------------------------
@@ -1253,14 +1253,14 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         flow_state, flow_label, flow_vote, flow_detail = "nodata", "بدون داده", 0, None
     elif trio:
         # حالت آرمانیِ ص۱۴: پول از داراییِ امن بیرون و به سهام داخل می‌شود
-        flow_state, flow_label, flow_vote = "ok", "حالتِ آرمانی", 1
+        flow_state, flow_label, flow_vote = "ok", "پولِ تازه واردِ سهام", 1
     elif not flow.get("eq_inflow") and _f(eq_val) < 0:
-        # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «آرمانی ندارد»
+        # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «وضعِ مطلوب ندارد»
         flow_state, flow_label, flow_vote = "bad", "خروجِ پول از سهام", -1
     elif flow.get("eq_inflow") and flow.get("fixed_outflow"):
-        flow_state, flow_label, flow_vote = "mid", "آرمانیِ ناقص", 0
+        flow_state, flow_label, flow_vote = "mid", "ورودِ پولِ ناقص", 0
     else:
-        flow_state, flow_label, flow_vote = "mid", "بدونِ حالتِ آرمانی", 0
+        flow_state, flow_label, flow_vote = "mid", "جهتِ پول روشن نیست", 0
     flow_detail = ("سهام %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
         _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
         "بدون داده" if gd_out is None else _fa_signed(gd)))

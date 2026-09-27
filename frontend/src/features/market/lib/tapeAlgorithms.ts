@@ -18,6 +18,17 @@ import {
 /** نقاطِ پلکانِ مقاومتِ جزوه — همان JET_LADDER، تا انتخابِ UI گم نشود. */
 export type LookbackDays = (typeof JET_LADDER)[number];
 
+/**
+ * پنج فیلترِ فایل دربارهٔ **همین نشست** حرف می‌زنند. ردیفی که رویِ تابلویِ امروز
+ * نیست (`is_live === false` — اختیارِ سررسیدشده، نمادِ متوقف) از نشستِ خودشِ
+ * قدیمی داوری می‌شود و «حجمِ امروزِ من سه برابرِ مبناءست» را دروغ می‌گوید:
+ * اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵ — «حجم مشکوک» ۷۴ ردیف، فیلترنویس ۱۹ ردیف، و ۵۵ تای
+ * ما فسیل بودند. نبودنِ ستون یعنی زنده (پنل‌هایِ قدیمی آن را نمی‌فرستند).
+ */
+export function isLiveBoardRow(r: MarketRow): boolean {
+  return r.is_live !== false;
+}
+
 export type TapeFilterConfig = {
   /** ۱. الگوی ساعت (Clock Pattern) */
   clock: {
@@ -322,6 +333,9 @@ export function evaluateDynamicQuickFilter(
   filterKey: string,
   cfg: TapeFilterConfig,
 ): boolean {
+  // ردیفِ بیرونِ تابلویِ امروز هیچ‌کدام از پنج فیلترِ فایل را رد/قبول نمی‌کند
+  // (عددش مربوط به نشستِ خودش است)؛ جریانِ پولِ نخبگان پنلِ خودی است و آزاد.
+  if (filterKey !== 'f_smart_flow' && !isLiveBoardRow(r)) return false;
   switch (filterKey) {
     case 'f_clock':
       return matchClockPattern(r, cfg.clock);

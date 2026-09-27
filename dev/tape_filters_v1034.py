@@ -243,8 +243,25 @@ def main():
     ck(ladder5 == 900.0 and pd.isna(ladder59),
        "با تایم‌فریم ۵ فقط [ih][2] و [ih][5] لازم‌اند")
 
-    # ── ۶) سیم‌کشی: یکِ نسخهٔ منطق، نه سه تا ──────────────────────────────
-    print("\n[۶] سیم‌کشی")
+    # ── ۶) پرچم‌هایِ فایل فقط دربارهٔ «همین نشست» حرف می‌زنند ──────────────
+    # اندازه‌گیریِ زندهٔ ۱۴۰۵-۰۷-۰۵ ساعت ۱۰:۴۳: «حجم مشکوک» ۷۴ ردیف می‌داد و
+    # فیلترنویسِ TSETMC ۱۹؛ ۵۵ تایِ ما ردیف‌هایِ فسیل بودند (اختیارِ سررسیدشده
+    # و متوقف) که عددِ «امروزِ» خودشان را ندارند.
+    print("\n[۶] ردیفِ بیرونِ تابلویِ امروز داوری نمی‌شود")
+    ck(one("f_susp"), "ردیفِ زنده (بی‌ستونِ is_live) مثلِ قبل سنجیده می‌شود")
+    for fname in ("f_clock", "f_susp", "f_jet", "f_noqteh"):
+        ck(not one(fname, is_live=False), f"{fname} ردیفِ فسیل را قبول نمی‌کند")
+    ck(not roobi(is_live=False), "f_roobi ردیفِ فسیل را قبول نمی‌کند")
+    dead = row(is_live=False)
+    ck(bool(pd.notna(formula_vol_ratio(dead).iloc[0])),
+       "ستون‌هایِ نمایشی برایِ ردیفِ فسیل هم حساب می‌مانند (فقط پرچم بند می‌آید)")
+    _FRONT = os.path.join(ROOT, "frontend", "src", "features", "market", "lib", "tapeAlgorithms.ts")
+    ts_algo = read(_FRONT)
+    ck("if (filterKey !== 'f_smart_flow' && !isLiveBoardRow(r)) return false;" in ts_algo,
+       "سمتِ مرورگر هم همان قاعده را دارد (شمارشِ چیپ و فیلترِ ردیف یکی بماند)")
+
+    # ── ۷) سیم‌کشی: یکِ نسخهٔ منطق، نه سه تا ──────────────────────────────
+    print("\n[۷] سیم‌کشی")
     src = read(MARKET_PY)
     ck("from tape_flags import apply_tape_flags" in src,
        "api/market.py از ماژولِ آزمودنی استفاده می‌کند")
