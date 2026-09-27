@@ -37,23 +37,27 @@ type SortKey =
   | 'last_vs_close';
 
 /**
- * يازده ستونِ تابلو (۱۱). عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در فونتِ
+ * دوازده ستونِ تابلو (۱۲). عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در فونتِ
  * 16pxِ همین جدول گذاشته شده‌اند، نه حدس:
  * [نماد 150] [آخرین 66] [پایانی 66] [تغییر٪ 62] [آخرین٪ 62] [حجم 130] [تعداد 64]
- * [ارزش 58] [حجم/ماه 58] [خرید/فروش 104 — نوارِ دوسُره + عددِ نسبت] [ساعت 200].
+ * [ارزش 58] [حجم/ماه 58] [خرید/فروش 118 — سرانه‌ها + نوارِ دوسُره + نسبت]
+ * [اختلاف٪ 60] [الگو 142].
  * سه ستونِ «سرانۀ خرید / سرانۀ فروش / قدرتِ خریدار» در #146 به یک ستونِ دوسُره
- * جمع شد؛ دو ستون از عرضِ جدول آزاد شد تا اسکرولِ افقی زودتر نیفتد.
+ * جمع شد؛ در #172 خانهٔ «ساعت» دو ستون شد، چون عددِ اختلاف و بج‌هایِ الگو در یک
+ * خانه به هم می‌چسبیدند و خواننده نمی‌فهمید عدد زیرِ کدام سرستون است. فاصلهٔ
+ * ستون‌ها ۶→۴ و حاشیهٔ ردیف ۱۲→۸ آمد تا حدِ آستانهٔ عرض بالا نکند.
  */
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(104px,1.15fr)_minmax(200px,1.5fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(118px,1.1fr)_minmax(60px,0.6fr)_minmax(142px,1.5fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
-const TABLE_MIN_W = 'min-w-[1104px]';
+const TABLE_MIN_W = 'min-w-[1100px]';
 
-const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
+/** سرستونِ بی‌مرتب‌سازی (کلیدِ null) — ستونِ بج‌ها عددی نیست که بشود مرتبش کرد */
+const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   // برچسبِ ستون «فیلتر» نیست و فقط خواندنِ سرستون را می‌سازد؛ پس کوتاه‌ترین
   // شکلِ ممکن نوشته می‌شود و نامِ کامل + واحد در title می‌ماند. رویِ
-  // نمایشگرِ ۱۳۶ این تیترهای بلند در ستونِ ۶۲-۷۸ پیکسلی می‌شکستند و
+  // نمایشگرِ ۱۳۶۶ این تیترهای بلند در ستونِ ۶۲-۷۸ پیکسلی می‌شکستند و
   // سرستون افقی اسکرول می‌خورد.
   { key: 'symbol', label: 'نماد' },
   { key: 'p_last', label: 'آخرین' },
@@ -68,10 +72,19 @@ const HEADERS: { key: SortKey; label: string; hint?: string }[] = [
     key: 'buyer_power',
     label: 'خرید / فروش',
     hint:
-      'سرانۀ خرید حقیقی در برابرِ سرانۀ فروش حقیقی (میلیون تومان) — سبز = خرید، قرمز = فروش؛ ' +
-      'عددِ کنار نسبتِ خرید به فروش است (سرانۀ خرید ÷ سرانۀ فروش)',
+      'بالا: سرانۀ خرید حقیقی (سبز) و سرانۀ فروش حقیقی (قرمز) به میلیون تومان. ' +
+      'پایین: نوارِ سهمِ هر طرف و نسبتِ خرید به فروش',
   },
-  { key: 'last_vs_close', label: 'ساعت', hint: 'الگوی ساعت — اختلاف آخرین و پایانی' },
+  {
+    key: 'last_vs_close',
+    label: 'اختلاف٪',
+    hint: 'آخرین نسبت به پایانی — منفی یعنی پایانی بالاتر از آخرین، همان شرطِ الگوی ساعت',
+  },
+  {
+    key: null,
+    label: 'الگو',
+    hint: 'برچسبِ الگوهایِ فعال روی همان ردیف: ساعت، حجم مشکوک، جت، کف‌روب، نقطه‌زنی، صف خرید و صف فروش',
+  },
 ];
 
 /** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
@@ -140,32 +153,63 @@ function powerClass(tone: 'good' | 'mid' | 'bad' | null): string {
 
 const mt = (v: number | null): string => (v == null ? '—' : `${toFaDigits(v.toFixed(1))} م.ت`);
 
+/** سرانه به میلیون تومان: عددِ tabular + واحدِ جدا. واحد در spanِ خودش است چون
+ *  `.num` جهت را ltr می‌کند و «۵.۰ م.ت» را در آن «م.ت ۵.۰» می‌خواند. داده نیست ⇒
+ *  فقط «—»؛ صفرِ جعلی نه. بالای ۱۰۰ اعشار نمی‌ماند (همان قاعدهٔ ستونِ ارزش):
+ *  سرانۀِ صدها میلیونی با یک رقم اعشار در ستونِ ۱۱۸ پیکسلی جا نمی‌شد. */
+function pcText(v: number): string {
+  return v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1));
+}
+
+function PcNum({ v, className, testId }: { v: number | null; className: string; testId: string }) {
+  return (
+    <span data-testid={testId} className={`flex shrink-0 items-baseline gap-px ${className}`}>
+      <span className="num font-bold">{v == null ? '—' : pcText(v)}</span>
+      {v != null && <span className="text-3xs opacity-80">م.ت</span>}
+    </span>
+  );
+}
+
 /**
- * ستونِ یکیِ خرید/فروش (#146): نوارِ دوسُره سهمِ سرانۀ خرید (سبز، از راست) را از
- * سرانۀ فروش (قرمز) جدا می‌کند و عددِ نسبتِ خرید به فروش کنارش می‌ماند. دو عددِ
- * سرانه از بین نمی‌روند — در titleِ خودِ ستون‌اند.
- * یک طرف غایب ⇒ نوار رسم نمی‌شود: نبودِ داده «فروش صفر» یا «خرید صددرصد» نیست.
+ * ستونِ خرید/فروش (#146 و #172): دو خط. بالا خودِ دو سرانه (میلیون تومان) — سبز
+ * خرید در راست، قرمز فروش در چپ؛ پایین نوارِ سهم و نسبتِ خرید به فروش. تا پیش از
+ * #172 دو سرانه فقط در title بود و «با دیدنِ ستون جزئیات زیادی نمی‌داد».
+ * یک طرف غایب ⇒ «—» و بی‌نوار: نبودِ داده «فروش صفر» یا «خرید صددرصد» نیست.
  */
-function BuySellCell({ buyPc, sellPc, power }: { buyPc: number | null; sellPc: number | null; power: number | null | undefined }) {
+function BuySellCell({
+  buyPc,
+  sellPc,
+  power,
+}: {
+  buyPc: number | null;
+  sellPc: number | null;
+  power: number | null | undefined;
+}) {
   const share = buySellShare(buyPc, sellPc);
   return (
     <span
       data-testid="tape-buy-sell"
-      className="flex min-w-0 items-center gap-1.5"
+      className="flex min-w-0 flex-col gap-0.5"
       title={`سرانۀ خرید ${mt(buyPc)} · سرانۀ فروش ${mt(sellPc)} — نسبتِ خرید به فروش ${
         power == null ? '—' : `${toFaDigits(power.toFixed(2))}×`
       }`}
     >
-      <span dir="rtl" aria-hidden className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-card/80">
-        {share == null ? null : (
-          <>
-            <span className="bg-accent-green transition-[width] duration-300 ease-out" style={{ width: `${share * 100}%` }} />
-            <span className="bg-accent-red transition-[width] duration-300 ease-out" style={{ width: `${(1 - share) * 100}%` }} />
-          </>
-        )}
+      <span className="flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none">
+        <PcNum v={buyPc} className="text-accent-green" testId="tape-buy-pc" />
+        <PcNum v={sellPc} className="text-accent-red" testId="tape-sell-pc" />
       </span>
-      <span className={`num shrink-0 text-2xs ${powerClass(powerTone(power))}`}>
-        <FlashNum value={power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
+      <span className="flex min-w-0 items-center gap-1">
+        <span dir="rtl" aria-hidden className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-card/80">
+          {share == null ? null : (
+            <>
+              <span className="bg-accent-green transition-[width] duration-300 ease-out" style={{ width: `${share * 100}%` }} />
+              <span className="bg-accent-red transition-[width] duration-300 ease-out" style={{ width: `${(1 - share) * 100}%` }} />
+            </>
+          )}
+        </span>
+        <span className={`num shrink-0 text-2xs ${powerClass(powerTone(power))}`}>
+          <FlashNum value={power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
+        </span>
       </span>
     </span>
   );
@@ -269,7 +313,7 @@ const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1.5 border-b border-border-c/50 px-3 text-start text-base ${
+      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-base ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 40 }}
@@ -311,15 +355,18 @@ const TapeRow = memo(function TapeRow({
         <FlashNum value={row.vol_ratio} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(1)) + (v > FTS_VOL_RATIO_HOT ? '×' : ''))} />
       </span>
       <BuySellCell buyPc={buyPc} sellPc={sellPc} power={row.buyer_power} />
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="num shrink-0 text-text-muted font-medium text-xs">
-          <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
-        </span>
-        {/* `flex-wrap` به‌جای `overflow-x-auto`: نوارِ بج هیچ‌وقت اسکرول
-            افقی نمی‌شود؛ اگر روزی چهار بج با هم بیایند، در ارتفاعِ ۴۰
-            ردیف می‌شکنند و دیده می‌شوند — نه اینکه پشتِ لبهٔ ستون پنهان
-            شوند (باگِ گزارش‌شدهٔ کاربر: «برچسب‌ها قابل اسکرول‌اند»). */}
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 overflow-hidden py-0.5">{badges}</span>
+      {/* اختلافِ آخرین تا پایانی یک ستونِ عددیِ مستقل است (#172): تا پیش از این
+          همان‌جا که بج‌ها می‌نشستند، به «مشکوک» می‌چسبید و خواننده نمی‌فهمید
+          عددِ درصد زیرِ کدام سرستون است. */}
+      <span className="num text-end text-text-secondary" title={`اختلاف آخرین و پایانی: ${diff == null ? '—' : fmtPct(diff * 100)}`}>
+        <FlashNum value={diff} render={(v) => (v == null ? '-' : fmtPct(v * 100))} />
+      </span>
+      {/* `flex-wrap` به‌جای `overflow-x-auto`: نوارِ بج هیچ‌وقت اسکرول
+          افقی نمی‌شود؛ اگر روزی چهار بج با هم بیایند، در ارتفاعِ ۴۰
+          ردیف می‌شکنند و دیده می‌شوند — نه اینکه پشتِ لبهٔ ستون پنهان
+          شوند (باگِ گزارش‌شدهٔ کاربر: «برچسب‌ها قابل اسکرول‌اند»). */}
+      <span data-testid="tape-patterns" className="flex min-w-0 flex-wrap items-center gap-0.5 overflow-hidden py-0.5">
+        {badges}
       </span>
     </div>
   );
@@ -406,18 +453,28 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1.5 bg-bg-card/95 px-3 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
-          {HEADERS.map((h) => (
-            <button
-              key={h.key}
-              type="button"
-              onClick={() => toggle(h.key)}
-              title={h.hint ?? (h.key === 'last_vs_close' ? 'الگوی ساعت — مرتب‌سازی بر اساس اختلاف آخرین/پایانی' : undefined)}
-              className="block w-full truncate text-start whitespace-nowrap hover:text-accent-blue transition-colors"
-            >
-              {h.label} {sortKey === h.key ? (desc ? '↓' : '↑') : ''}
-            </button>
-          ))}
+        <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
+          {HEADERS.map((h) => {
+            const k = h.key;
+            if (k == null) {
+              return (
+                <span key={h.label} title={h.hint} className="block w-full truncate text-start whitespace-nowrap">
+                  {h.label}
+                </span>
+              );
+            }
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => toggle(k)}
+                title={h.hint}
+                className="block w-full truncate text-start whitespace-nowrap hover:text-accent-blue transition-colors"
+              >
+                {h.label} {sortKey === k ? (desc ? '↓' : '↑') : ''}
+              </button>
+            );
+          })}
         </div>
         <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
           <div className={`relative w-full ${TABLE_MIN_W}`} style={{ height: virtualizer.getTotalSize() }}>
