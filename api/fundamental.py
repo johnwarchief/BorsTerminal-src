@@ -2178,11 +2178,16 @@ def get_fundamental(symbol: str, months: int = 0):
         # ارجاع نماد اصلی (قرارداد اختیار معامله روی سهمِ اصلی)
         ref_symbol = norm_symbol if norm_symbol != symbol else None
         if inst and str(inst["l_val18"] or "").startswith("ض") and inst["l_val30"]:
+            # «ضهرم5026» → l_val30 = «اختيارخ اهرم-24000-1405/05/28» → اهرم.
+            # نامِ متغیرِ این شاخه روزی `probe` بود و به `m30` عوض شد، ولی
+            # سه خطِ پایین همان `probe` را خواندند — یعنی هر قراردادِ اختیار
+            # (۱٬۰۴۹ نماد) با NameError پانصد می‌داد، از اولین ریلیز تا اینجا.
             m30 = re.search(r"\S+\s+([^\s-]+)[\s-]?", str(inst["l_val30"]))
-            if probe:
-                _p_probe, _a_probe = fts_engine.sym_in("l_val18", probe)
+            if m30 and m30.group(1):
+                underlying = m30.group(1)
+                _p_probe, _a_probe = fts_engine.sym_in("l_val18", underlying)
                 if conn.execute(f"SELECT 1 FROM instruments WHERE {_p_probe}", _a_probe).fetchone():
-                    ref_symbol, ref_reason = probe, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
+                    ref_symbol, ref_reason = underlying, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
 
         # حذف خودکار از غربالگری (تعلیق / بیمه / قیمت‌گذاری دستوری)
         if res["excluded"]:
@@ -2215,7 +2220,7 @@ def get_fundamental(symbol: str, months: int = 0):
                    "eps_slots": e.get("period_slots") or [],
                    "eps_partial": bool(e.get("partial")),
                    "eps_available": int(e.get("available_periods") or 0),
-                   "eps_required": int(e.get("years_required") or th["eps_years"]),
+                   "eps_required": int(e.get("years_required") or v10_thresholds()["eps_years"]),
                    "eps_projected_year": (e.get("interim") or {}).get("eps_projected_year"),
                    "profit_potential_pct": val.get("potential_pct"),
                    "potential_pct": val.get("potential_pct"),
