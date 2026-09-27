@@ -2,7 +2,7 @@
 // پولینگِ ۵ ثانیه‌ایِ کلِ تابلو (پاسخِ ~۴ مگابایتی) در ساعتِ تعطیل هیچ داده‌ای
 // را عوض نمی‌کند ولی رندرر را بیدار نگه می‌دارد؛ این تست همان در را می‌بندد.
 import { describe, it, expect } from 'vitest';
-import { CLOSED_POLL_MS, effectivePollMs, isMarketOpen } from '@shared/lib/marketHours';
+import { CLOSED_POLL_MS, effectivePollMs, isMarketOpen, sessionPollMs } from '@shared/lib/marketHours';
 
 /** روزِ معاملاتی: دوشنبه ۲۰۲۶‑09‑14 (getDay()=1) */
 const WD = (h: number, m: number) => new Date(2026, 8, 14, h, m);
@@ -26,5 +26,20 @@ describe('effectivePollMs — تعطیل یعنی بی‌کار نچرخد', () 
     expect(isMarketOpen(new Date(2026, 8, 17, 10, 0))).toBe(false); // پنجشنبه
     expect(isMarketOpen(new Date(2026, 8, 18, 10, 0))).toBe(false); // جمعه
     expect(effectivePollMs(5_000, new Date(2026, 8, 18, 10, 0))).toBe(CLOSED_POLL_MS);
+  });
+});
+
+describe('sessionPollMs — ریتمِ پنل‌هایِ نشست‌محور (#173)', () => {
+  it('در ساعتِ بازار با نفسِ میکروچارت‌ها می‌آید، نه با انتخابِ کاربر', () => {
+    expect(sessionPollMs(30_000, WD(9, 30))).toBe(30_000);
+    // انتخابِ کاربرِ جدول (۵ ثانیه) رویِ نبض بازار اثر ندارد
+    expect(sessionPollMs(30_000, WD(12, 0))).toBe(30_000);
+  });
+
+  it('بیرونِ ساعتِ بازار کاملاً خاموش نمی‌شود: ریتمِ آرامِ تابلو را می‌گیرد', () => {
+    // پیش‌تر «خاموش» یعنی آخرین نقاطِ روزِ نهایی هیچ‌وقت نمی‌نشستند
+    expect(sessionPollMs(30_000, WD(12, 31))).toBe(CLOSED_POLL_MS);
+    expect(sessionPollMs(30_000, WD(13, 0))).toBe(CLOSED_POLL_MS);
+    expect(sessionPollMs(30_000, new Date(2026, 8, 18, 10, 0))).toBe(CLOSED_POLL_MS);
   });
 });

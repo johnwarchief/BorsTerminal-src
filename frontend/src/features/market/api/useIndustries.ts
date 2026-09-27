@@ -2,6 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { sessionPollMs } from '@shared/lib/marketHours';
+import { SNAPSHOT_POLL_MS } from '../lib/intradayCache';
 
 const num = z.number().nullish();
 
@@ -61,6 +63,9 @@ export function useIndustries() {
     queryFn: ({ signal }) => http<IndustriesFeed>('/api/mstat/industries', { schema: IndustriesSchema, signal }),
     staleTime: 120_000,
     gcTime: 10 * 60_000,
+    // #173: «صنایع داغ» هم مثلِ نبض بازار در ساعتِ معاملات عوض می‌شود؛ بی‌این
+    // خط تا بستنِ صفحه در جای خودش می‌ماند.
+    refetchInterval: () => sessionPollMs(SNAPSHOT_POLL_MS),
     refetchOnWindowFocus: false,
   });
 }

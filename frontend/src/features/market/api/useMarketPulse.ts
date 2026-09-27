@@ -4,6 +4,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { sessionPollMs } from '@shared/lib/marketHours';
+import { SNAPSHOT_POLL_MS } from '../lib/intradayCache';
 
 const num = z.number().nullish();
 
@@ -328,6 +330,12 @@ export function useMarketPulse() {
     },
     staleTime: 60_000,
     gcTime: 10 * 60_000,
+    // #173: تا پیش از این نبض بازار یک‌بار در mount خوانده می‌شد و تا بستنِ
+    // صفحه تازه نمی‌شد — یعنی نمودارهایش در ساعتِ بازار بی‌حرکت می‌ماندند در
+    // حالی که جدولِ تابلو هر چند ثانیه عوض می‌شود. ریتم از همان «نفسِ»
+    // میکروچارت‌ها (SNAPSHOT_POLL_MS) است و بعد از بسته شدن بازار به ریتمِ
+    // آرامِ تابلو می‌نشیند، تا عددِ نبض با عددِ جدولِ نهایی یکی بماند.
+    refetchInterval: () => sessionPollMs(SNAPSHOT_POLL_MS),
     refetchOnWindowFocus: false,
   });
 }

@@ -6,6 +6,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { sessionPollMs } from '@shared/lib/marketHours';
+import { SNAPSHOT_POLL_MS } from '../lib/intradayCache';
 
 export const intradayVolumeUrl = (symbol: string): string =>
   `/api/market/intraday/${encodeURIComponent(symbol)}`;
@@ -33,6 +35,8 @@ export function useIntradayVolume(symbol: string) {
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     retry: false,
+    // #173: دقایقِ درون‌روزه‌ی همین نماد هم در ساعتِ بازار عوض می‌شود
+    refetchInterval: () => sessionPollMs(SNAPSHOT_POLL_MS),
     refetchOnWindowFocus: false,
   });
 }

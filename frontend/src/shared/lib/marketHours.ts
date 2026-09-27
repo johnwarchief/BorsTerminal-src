@@ -29,3 +29,14 @@ export function isMarketOpen(d: Date = new Date()): boolean {
 export function effectivePollMs(userMs: number, d: Date = new Date()): number {
   return isMarketOpen(d) ? userMs : Math.max(userMs, CLOSED_POLL_MS);
 }
+
+/**
+ * ریتمِ پنل‌هایِ نشست‌محور (نبض بازار، صنایع داغ، مینی‌چارتِ جریان حجم،
+ * تریگرهای درون‌روزه). این‌ها انتخابِ کاربر نیستند — خودشان در ساعتِ بازار
+ * نفس می‌کشند و بیرونِ آن به ریتمِ آرامِ تابلو می‌نشینند تا عددِ پنل با
+ * عددِ جدولِ نهایی یکی بماند (#173: تا پیش از این فقط جدول تازه می‌شد و
+ * نمودارهایِ نبض تا بستنِ صفحه در جای خودشان می‌ماندند).
+ */
+export function sessionPollMs(openMs: number, d: Date = new Date()): number {
+  return isMarketOpen(d) ? openMs : CLOSED_POLL_MS;
+}
