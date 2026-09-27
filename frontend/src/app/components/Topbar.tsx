@@ -15,6 +15,8 @@ export function Topbar() {
   const { pathname } = useLocation();
   const base = '/' + (pathname.split('/')[1] ?? '');
   const title = TITLES[base] ?? 'ترمینال بورس';
+  // در تب تکنیکال خودِ نوارِ چارت بجِ نماد و جستجو را دارد؛ دکمهٔ تکراری حذف است
+  const showSearch = base !== '/technical';
 
   return (
     <header className="glass-strip sticky top-0 z-40 mb-1 flex h-9 items-center justify-between px-3 sm:px-4">
@@ -29,6 +31,7 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {showSearch && (
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event(PALETTE_OPEN_EVENT))}
@@ -42,6 +45,7 @@ export function Topbar() {
             Ctrl+K
           </kbd>
         </button>
+        )}
       </div>
     </header>
   );

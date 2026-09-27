@@ -630,11 +630,31 @@ export function FtsScreenTable({
     // در دیدگاه‌های کوچک‌تر از ۱۲۴۰px (مثلاً ۷۶۸px) ۵۶۲px بیرون از کادر
     // می‌افتد و کاربر به ستون‌ها نمی‌رسد.
     <div className="glass-panel panel-in overflow-hidden rounded-2xl min-w-0 max-w-full">
-      {/* نوار جدول: دکمهٔ تنظیمات (کشوی پیش‌شرط‌ها) + بروزرسانی/شمارش. عنوانِ
-          بالای جدول حذف شد تا فضای عمودی آزاد شود و تنظیمات روی خودِ نوار بیاید. */}
+      {/* نوار جدول: راست = جستجو و دیتابیس کدال و شمارش، چپ = تنظیمات (#179) */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--hairline)] px-4 py-2">
-        {settingsSlot ?? <span />}
         <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-1 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-0.5 focus-within:border-border-accent">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              type="search"
+              placeholder="جستجوی نماد…"
+              aria-label="جستجوی نماد در جدول غربالگری"
+              data-testid="fts-search"
+              className="w-28 bg-transparent text-2xs text-text-primary outline-none placeholder:text-text-muted"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label="پاک کردن جستجو"
+                data-testid="fts-search-clear"
+                className="text-2xs font-bold text-text-muted hover:text-text-primary"
+              >
+                ×
+              </button>
+            ) : null}
+          </label>
           <button
             type="button"
             onClick={() => onDbUpdate?.()}
@@ -664,32 +684,11 @@ export function FtsScreenTable({
                 ? 'خطای دیتابیس کدال'
                 : 'دیتابیس کدال'}
           </button>
-          <label className="flex items-center gap-1 rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-0.5 focus-within:border-border-accent">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              type="search"
-              placeholder="جستجوی نماد…"
-              aria-label="جستجوی نماد در جدول غربالگری"
-              data-testid="fts-search"
-              className="w-28 bg-transparent text-2xs text-text-primary outline-none placeholder:text-text-muted"
-            />
-            {query ? (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                aria-label="پاک کردن جستجو"
-                data-testid="fts-search-clear"
-                className="text-2xs font-bold text-text-muted hover:text-text-primary"
-              >
-                ×
-              </button>
-            ) : null}
-          </label>
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
         </div>
+        {settingsSlot ?? <span />}
       </div>
       {excludeAxes.length > 0 ? (
         <div
