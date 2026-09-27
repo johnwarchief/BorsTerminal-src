@@ -146,12 +146,15 @@ describe('پنل ترازها', () => {
 });
 
 describe('شل سایدبار و تب‌ها', () => {
-  it('سه تب و بدنهٔ پیش‌فرض دیده‌بان', () => {
+  it('سه تب هست و پیش‌فرض، سیگنال‌های FTS است (#184)', () => {
     withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
     expect(screen.getByTestId('technical-sidebar')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-watch')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-fts')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-levels')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-fts')).toBeInTheDocument();
+    // دیده‌بان حذف نشده، فقط پیش‌فرض نیست
+    fireEvent.click(screen.getByTestId('sidebar-tab-watch'));
     expect(screen.getByTestId('sidebar-watchlist')).toBeInTheDocument();
   });
 

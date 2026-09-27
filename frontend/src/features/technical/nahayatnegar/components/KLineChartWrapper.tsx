@@ -52,6 +52,7 @@ import { FtsToolbar } from './FtsToolbar';
 import { createScaleLock } from '../lib/axisScaleLock';
 import { heikinAshi } from '../../lib/chartTypes';
 import { TV_INDICATORS, MABNA_INDICATORS } from '../../lib/tvIndicatorCatalog';
+import { persianiseLegend } from '../../lib/faLegend';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
@@ -855,6 +856,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ایجاد اندیکاتور حجم پیش‌فرض در پنجره فرعی
     chart.createIndicator({ name: 'VOL', id: 'sub_pane_vol', paneId: 'sub_pane_vol' }, false);
+    persianiseLegend(chart, 'VOL', 'sub_pane_vol');
     chart.setPaneOptions({ id: 'sub_pane_vol', height: 100, minHeight: 85 });
     chart.setStyles({
       indicator: {
@@ -2025,6 +2027,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       } else {
         chart.createIndicator({ name: indName, paneId: `sub_pane_${indName.toLowerCase()}` });
       }
+      persianiseLegend(chart, indName);
       setIndicators(prev => ({ ...prev, [indName]: true }));
     }
   };

@@ -43,7 +43,7 @@ const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
 export function TechnicalSidebar({
   active,
   onSelect,
-  defaultTab = 'watch',
+  defaultTab = 'fts',
 }: {
   active: ActiveLevelsView;
   onSelect: (s: string) => void;
