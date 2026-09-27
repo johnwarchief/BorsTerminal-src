@@ -41,6 +41,10 @@ py_ok = _py.where(_py > 1.0)
 pct = ((_pc - py_ok) / py_ok * 100).round(2)
 pct = pct.fillna((_chg / py_ok * 100).round(2))
 df["percent_change"] = pct.where(pct.abs() <= 100.0)
+# jet_flag به percent_last (آخرین نسبت به دیروز) نیاز دارد؛ محصول آن را در
+# pandas می‌سازد، پس این ابزارِ خام هم باید بسازد وگرنه KeyError می‌دهد.
+_pl = pd.to_numeric(df["p_last"], errors="coerce")
+df["percent_last"] = (((_pl - py_ok) / py_ok * 100).round(2)).where((_pl.notna()) & (py_ok.notna()))
 
 out = apply_tape_flags(df)
 
