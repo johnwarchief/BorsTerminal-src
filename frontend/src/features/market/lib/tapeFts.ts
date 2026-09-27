@@ -85,7 +85,8 @@ export function buySellShare(buy: number | null, sell: number | null): number | 
   return Math.min(1, Math.max(0, buy / total));
 }
 
-/** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */export function isNumericSuffixSymbol(symbol: string | null | undefined): boolean {
+/** نماد دارای پسوند عددی (عمده/بلوکی/حق‌تقدم غیرعادی) — مبنای فیلتر خودکار تابلو */
+export function isNumericSuffixSymbol(symbol: string | null | undefined): boolean {
   return /[0-9۰-۹]$/.test((symbol ?? '').trim());
 }
 

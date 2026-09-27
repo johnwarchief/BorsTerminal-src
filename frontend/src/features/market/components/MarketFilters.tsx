@@ -69,11 +69,14 @@ function SplitFilterChip({
   active,
   onToggle,
   count,
+  hidden,
 }: {
   filter: QuickFilter;
   active: boolean;
   onToggle: () => void;
   count?: number;
+  /** چند ردیفِ واجدِ شرط، پشتِ قاعدهٔ خودکارِ پسوندِ عددی از تابلو بیرون‌اند */
+  hidden?: number;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const chipRef = useRef<HTMLDivElement>(null);
@@ -100,7 +103,12 @@ function SplitFilterChip({
         type="button"
         onClick={onToggle}
         aria-pressed={active}
-        title={QUICK_LABELS[filter]}
+        title={
+          hidden && hidden > 0
+            ? `${QUICK_LABELS[filter]} — ${toFaDigits(hidden)} ردیفِ واجدِ شرط درِ نمایِ فعلیِ `
+              + 'تابلو نیست (ابزار/بازارِ خاموش یا ردیفِ پسوندعددی)'
+            : QUICK_LABELS[filter]
+        }
         className="flex items-center ps-2.5 pe-1 py-0.5 focus:outline-none"
       >
         <span>{QUICK_LABELS[filter]}</span>
@@ -266,6 +274,7 @@ type MarketRowsLike = { [K in QuickFilter]?: boolean | null }[];
 export function MarketFilters({
   sectors,
   matches,
+  hiddenMatches,
   shown,
   total,
   pollMs,
@@ -278,6 +287,10 @@ export function MarketFilters({
 }: {
   sectors: string[];
   matches?: Record<QuickFilter, number>;
+  /** ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی نیستند (ابزار/بازارِ
+   *  خاموش یا قاعدهٔ خودکارِ پسوندِ عددی) — توضیحِ «چرا چیپ کمتر از
+   *  فیلترنویسِ TSETMC است» */
+  hiddenMatches?: Record<QuickFilter, number>;
   volRatioCount?: number;
   shown?: number;
   total?: number;
@@ -361,6 +374,7 @@ export function MarketFilters({
             active={quickFilters.includes(f)}
             onToggle={() => toggleQuickFilter(f)}
             count={matches?.[f]}
+            hidden={hiddenMatches?.[f]}
           />
         ))}
       </div>

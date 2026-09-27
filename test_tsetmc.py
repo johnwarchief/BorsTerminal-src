@@ -51,9 +51,12 @@ except Exception as _e:      # pragma: no cover - مسیرِ مقاوم در ب�
 PT_MAP = {1: "stock", 2: "stock", 4: "right", 8: "fund"}
 
 # ترتیبِ ستون‌های عمق در market_watch — همان ترتیبی که queue_agg برمی‌گرداند.
+# buy_q1_cnt = تعدادِ سفارشِ سطرِ اولِ خرید: درِ ExecFilterِ خودِ tsetmc.com
+# همین عدد متغیرِ (zd1) است، و فیلترِ کف‌روبیِ فایلِ مالک با آن داوری می‌کند.
 _QUEUE_COLS = ("buy_q_vol", "buy_q_val", "buy_q_cnt",
                "sell_q_vol", "sell_q_val", "sell_q_cnt",
-               "buy_q1_vol", "buy_q1_px", "sell_q1_vol", "sell_q1_px")
+               "buy_q1_vol", "buy_q1_px", "sell_q1_vol", "sell_q1_px",
+               "buy_q1_cnt")
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  ارزش بازار (Market Cap) — تنها نقطهٔ ساختِ این عدد در کل مخزن
@@ -83,7 +86,7 @@ _MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
               " allowed_min, allowed_max, price_yesterday, price_first, q_tot_tran,"
               " q_tot_cap, z_tot_tran, price_change, eps, pe, total_shares,"
               " sector_code, fetched_at, " + ", ".join(_QUEUE_COLS) +
-              ", market_cap, market_cap_src) VALUES (" + ",".join("?" * 32) + ")")
+              ", market_cap, market_cap_src) VALUES (" + ",".join("?" * 33) + ")")
 _DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
               "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
               " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
@@ -351,10 +354,12 @@ def ensure_market_cap_schema(conn):
 def queue_agg(row):
     """blDs → جمع ۵ خط اول و بعد خطِ اول به‌تنهایی.
 
-    خروجی ۱۰تایی: (b_vol,b_val,b_cnt, s_vol,s_val,s_cnt, b1_vol,b1_px, s1_vol,s_px)
+    خروجی ۱۱تایی: (b_vol,b_val,b_cnt, s_vol,s_val,s_cnt, b1_vol,b1_px, s1_vol,s_px, b1_cnt)
     ارزش = حجم × قیمتِ همان خط (ریال) — همان یکای q_tot_cap، پس واحدها در
     داشبورد قاطی نمی‌شوند. نبودِ blDs یعنی None (ستون NULL می‌ماند) نه صفر:
     «عمق نبود» با «عمق تهی بود» یکی نیست و UI باید فرقشان بداند.
+    b1_cnt (= blDs[0].zmd) تنها چیزی است که متغیرِ (zd1) درِ فیلترنویسِ TSETMC
+    به آن نگاه می‌کند؛ بی‌ستونش قیدِ «تعدادِ خریدارِ سطرِ اول > ۱» سنجیدنی نیست.
     """
     lines = row.get("blDs")
     if not isinstance(lines, list) or not lines:
@@ -372,7 +377,8 @@ def queue_agg(row):
     first = lines[0] if lines and isinstance(lines[0], dict) else {}
     return (bq, bqv, bc, sq, sqv, sc,
             num(first.get("qmd")), num(first.get("pmd")),
-            num(first.get("qmo")), num(first.get("pmo")))
+            num(first.get("qmo")), num(first.get("pmo")),
+            num(first.get("zmd")))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -433,6 +439,117 @@ def save_order_book(conn, rows):
     ensure_order_book_schema(conn)
     conn.executemany(_OB_INSERT, rows)
     return len(rows)
+
+
+# ── پنجرۀ [ih]، عینِ منابعِ فیلترنویسِ سایت ─────────────────────────────────
+# فیلترنویسِ خودِ tsetmc.com آرایۀِ [ih] را از یک درخواست می‌سازد: شصت نشستِ
+# آخرِ **هر نماد**، با ردیفِ صفر برایِ نشستِ بی‌معامله. بانکِ ما تنها روزهایی را
+# دارد که نماد در آن معامله کرده، پس «۱۸ ردیف» با «۱۸ نشست عمر» اشتباه می‌شود و
+# درِ «کمتر از ۳۰ نشست» برایِ نمادِ کهنۀِ کم‌معامله بسته می‌ماند (خگلپا: ۶۰ نشست
+# درِ سایت، ۱۸ ردیفِ ما — دو فیلترِ حجمی بی‌دلیل خاموش).
+TAPE_HIST_URL = f"{BASE}/ClosingPrice/GetClosingPriceDailyAllInst"
+TAPE_HIST_KEY = "closingPriceDailyAllInst"
+TAPE_HIST_TABLE = "tape_history"
+TAPE_HIST_STATE = "tape_history_state"
+# پنجره کهنه باشد یک تلاشِ دیگر؛ بیشتر از این نه، که پاسخ ۵۱ مگابایت است و
+# همگام‌سازی در ساعتِ بازار هر چند دقیقه یک‌بار صدا می‌شود.
+TAPE_HIST_RETRY_S = 6 * 3600
+
+
+def ensure_tape_history_schema(conn):
+    conn.executescript(
+        f"""
+        CREATE TABLE IF NOT EXISTS {TAPE_HIST_TABLE} (
+            ins_code TEXT NOT NULL, d_even INTEGER NOT NULL,
+            price_min REAL, price_max REAL, q_tot_tran5j REAL,
+            fetched_at TEXT, PRIMARY KEY (ins_code, d_even));
+        CREATE TABLE IF NOT EXISTS {TAPE_HIST_STATE} (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_attempt TEXT, last_ok TEXT, newest_d_even INTEGER, note TEXT);
+        """)
+
+
+def fetch_tape_history(timeout=120, attempts=3, gap=20):
+    """([ih] rows | None, خطا). None یعنی «نگرفتم» — با «خالی گرفت» یکی نیست.
+
+    بی‌stream تنها راهِ آزموده‌شده است: با stream=True همین پاسخ ۱۸۰ ثانیه
+    بی‌پاسخ ماند و ترکید، و درخواستِ معمولی در ۳ ثانیه تمام می‌شود. کشِ CDN
+    گاه سرد است، پس چند تلاشِ فاصله‌دار.
+    """
+    import time as _t
+    err = "empty-response"
+    for i in range(attempts):
+        try:
+            r = requests.get(TAPE_HIST_URL, headers=HEADERS, timeout=timeout)
+            r.raise_for_status()
+            rows = r.json().get(TAPE_HIST_KEY) or []
+        except (requests.exceptions.RequestException, ValueError, OSError,
+                PermissionError) as e:
+            err = type(e).__name__
+            rows = []
+        if rows:
+            return rows, None
+        if i + 1 < attempts:
+            _t.sleep(gap)
+    return None, err
+
+
+def refresh_tape_history(conn, force=False, fetch=None):
+    """پنجرۀ [ih] را نو می‌کند. شکستِ شبکه هرگز جدول را پاک نمی‌کند.
+
+    پنجرۀِ دیروز (یک نشست کهنه) هنوز سنجش را درست می‌گذارد — همان‌طور که درِ
+    سایت هم درِ ساعتِ بازار پنجره را تا نهایۀِ دیروز می‌گیرد — ولی جدولِ خالی
+    پنج فیلتر را یک‌باره خاموش می‌کند. پس بدترین انتخاب پاک‌کردن است.
+    """
+    ensure_tape_history_schema(conn)
+    conn.execute("PRAGMA busy_timeout=30000")
+    now = datetime.datetime.now()
+    now_txt = now.strftime("%Y-%m-%d %H:%M:%S")
+    have, newest = conn.execute(
+        f"SELECT COUNT(*), MAX(d_even) FROM {TAPE_HIST_TABLE}").fetchone()
+    board_day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+    st = conn.execute(f"SELECT * FROM {TAPE_HIST_STATE} WHERE id = 1").fetchone()
+    last_attempt, last_ok = (st[1], st[2]) if st else (None, None)
+    if not force and have and board_day and (newest or 0) >= board_day:
+        return {"skipped": "fresh"}
+    if not force and last_attempt:
+        try:
+            age = (now - datetime.datetime.strptime(last_attempt,
+                                                    "%Y-%m-%d %H:%M:%S")).total_seconds()
+        except ValueError:
+            age = TAPE_HIST_RETRY_S + 1.0
+        if age < TAPE_HIST_RETRY_S:
+            return {"skipped": "throttled"}
+    conn.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
+                 (now_txt, last_ok, newest, "attempt"))
+    conn.commit()
+    rows, err = (fetch or fetch_tape_history)()
+    if not rows:
+        conn.execute(f"UPDATE {TAPE_HIST_STATE} SET note = ? WHERE id = 1", (err,))
+        conn.commit()
+        print(f"  [tape-history] نگرفت ({err}) — پنجرۀِ کهنه دست‌نخورده ماند")
+        return {"error": err}
+    recs = []
+    for x in rows:
+        ins, d = x.get("insCode"), x.get("dEven")
+        if not ins or not d:
+            continue
+        recs.append((ins, int(d), num(x.get("priceMin")) or 0.0,
+                     num(x.get("priceMax")) or 0.0,
+                     num(x.get("qTotTran5J")) or 0.0, now_txt))
+    if not recs:
+        conn.execute(f"UPDATE {TAPE_HIST_STATE} SET note = 'no-rows' WHERE id = 1")
+        conn.commit()
+        return {"error": "no-rows"}
+    c = conn.cursor()
+    c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
+    c.executemany(f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} VALUES (?,?,?,?,?,?)", recs)
+    top = max(r[1] for r in recs)
+    c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
+              (now_txt, now_txt, top, ""))
+    conn.commit()
+    print(f"  [tape-history] {len(recs):,} ردیفِ [ih] از سایت (نشست تا {top})")
+    return {"rows": len(recs), "newest": top}
 
 
 def fetch_paper_types(getter, label="paperTypes"):
@@ -721,6 +838,7 @@ def create_schema(conn):
     _migrate(conn)
     # v10: ستون ارزش بازار (بعد از _migrate، چون queue_cols این‌جا اضافه می‌شود)
     ensure_market_cap_schema(conn)
+    ensure_tape_history_schema(conn)
     conn.commit()
 
 
@@ -911,6 +1029,9 @@ def update_existing(symbols_limit=None, max_429=3, min_interval=0.05, cooldown_f
                     print(f"  [update] STOP — 429 level {p['cooldown_level']}")
                     break
         print(f"  [update] done {done} symbols | +{stats['phase_b_rows']} rows | {stats['skipped']} skipped")
+        # پنجرۀ [ih] آخرین کارِ سینک است، نه نخستین: پاسخِ سایت گاه چند دقیقه
+        # دیر می‌آید (کشِ سردِ CDN) و نباید نوشتنِ تابلو را پشتِ خودش بیندازد.
+        stats["tape_history"] = refresh_tape_history(conn)
     finally:
         conn.close()
     return stats
@@ -967,7 +1088,7 @@ def _save_market_snapshot(s, conn):
         mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
         watch.append((ins, d, num(r.get("hEven")), pcl, p_last, num(r.get("pmn")), num(r.get("pmx")),
                       num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
-                      shares, sec, now) + (queue_agg(r) or (None,) * 10) + (mcap, mcap_src))
+                      shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + (mcap, mcap_src))
         daily.append((ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
                      now, mcap, mcap_src, trd))
 
@@ -1043,10 +1164,13 @@ def main():
         _probe.execute("SELECT 1 FROM market_watch LIMIT 1")
         last_d_even = _probe.execute(
             "SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+        _want = ["ins_code", "p_last", "q_tot_tran", "q_tot_cap", "z_tot_tran",
+                 "price_change"] + list(_QUEUE_COLS)
+        _have = {r[1] for r in _probe.execute("PRAGMA table_info(market_watch)")}
+        # بانکِ مهاجرت‌نشدۀِ قدیمی ستونِ تازه را ندارد؛ کلِ «حفظِ صفِ آخرین نشست»
+        # نباید به‌خاطرِ یک ستون دور ریخته شود، پس فقط ستون‌هایِ موجود را می‌خواهیم.
         prev = {r["ins_code"]: r for r in _probe.execute(
-            "SELECT ins_code, p_last, q_tot_tran, q_tot_cap, z_tot_tran, price_change, "
-            "buy_q_vol, buy_q_val, buy_q_cnt, sell_q_vol, sell_q_val, sell_q_cnt, "
-            "buy_q1_vol, buy_q1_px, sell_q1_vol, sell_q1_px FROM market_watch")}
+            "SELECT %s FROM market_watch" % ", ".join(c for c in _want if c in _have))}
     except Exception:
         pass
     finally:
@@ -1167,11 +1291,12 @@ def main():
                 p_last = _pl
         q = queue_agg(r)
         if q is None:
-            q = (None,) * 10
+            q = (None,) * len(_QUEUE_COLS)
         elif closed and ins in prev and not any(q):
             # بازار بسته و پاسخِ این نماد بی‌عمق بود → صف‌های آخرین نشست را نگه دار
             _p = prev[ins]
-            q = tuple(_p[k] for k in _QUEUE_COLS)
+            _have = _p.keys()
+            q = tuple(_p[k] if k in _have else None for k in _QUEUE_COLS)
         bk = book_lines(r)
         if bk:
             book.append((ins, d_even, num(r.get("hEven")), bk, now))
@@ -1239,6 +1364,11 @@ def main():
         print("  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)")
     else:
         save_mstat_snapshot(conn)
+
+    try:
+        refresh_tape_history(conn)
+    except Exception as e:      # noqa: BLE001 — پنجره نو نشد، همگام‌سازی نمی‌شکند
+        print(f"  [tape-history] خطای غیرمنتظره: {type(e).__name__}: {e}")
 
     print("=" * 60)
     print(f"Saved symbols: {nfmt(len(watch))} | client-type records: {nfmt(len(client))}")

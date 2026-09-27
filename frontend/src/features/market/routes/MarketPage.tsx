@@ -89,29 +89,45 @@ export default function MarketPage() {
   }, [rows, sector]);
 
   /**
-   * پایهٔ شمارش چیپ‌ها: همان ردیف‌هایی که جدول بی‌فیلترِ سریع نشان می‌دهد.
+   * پایهٔ جدول و شمارش: همان ردیف‌هایی که جدول بی‌فیلترِ سریع نشان می‌دهد.
    * بدون این، چیپ روی کل تابلو می‌شمرد (۱۷۹) و کلیک روی همان چیپ ۸۰ ردیف
    * از بازارهای فعال را نشان می‌داد — عددِ وعده‌دهنده با نتیجه یکی نبود.
    */
-  const filterBase = useMemo(
+  const boardBase = useMemo(
     () =>
-      dropNumericSuffixRows(
-        applyFilters(
-          rows,
-          query,
-          assetTypes,
-          [],
-          sector,
-          liveOnly,
-          direction,
-          volRatioOn,
-          volRatioMin,
-          exitAccum,
-          tapeFilterConfig,
-        ),
+      applyFilters(
+        rows,
+        query,
+        assetTypes,
+        [],
+        sector,
+        liveOnly,
+        direction,
+        volRatioOn,
+        volRatioMin,
+        exitAccum,
+        tapeFilterConfig,
       ),
     [rows, query, assetTypes, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
   );
+
+  const filterBase = useMemo(() => dropNumericSuffixRows(boardBase), [boardBase]);
+
+  /**
+   * شمارِ ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی تابلو نیستند —
+   * هر دلیلی که داشته باشند (ابزار/بازارِ خاموش در منو، یا قاعدهٔ خودکارِ
+   * پسوندِ عددی). بی‌این، چیپِ «کف‌روبی (۱)» در برابر ۳۱ ردیفِ فیلترنویسِ
+   * TSETMC هیچ توضیحی نداشت و همان «جدول با TSE فرق دارد» باقی می‌ماند.
+   */
+  const hiddenMatches = useMemo(() => {
+    const shownSet = new Set(filterBase);
+    return countQuickMatches(
+      rows.filter((r) => !shownSet.has(r)) as unknown as Parameters<
+        typeof countQuickMatches
+      >[0],
+      tapeFilterConfig,
+    );
+  }, [rows, filterBase, tapeFilterConfig]);
 
   const quickMatches = useMemo(
     () =>
@@ -173,6 +189,7 @@ export default function MarketPage() {
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}
+        hiddenMatches={hiddenMatches}
         volRatioCount={volRatioCount}
         shown={filtered.length}
         total={rows.length}

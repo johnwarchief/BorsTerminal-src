@@ -10,7 +10,8 @@
 import type { MarketRow } from '@shared/types/marketRow';
 import {
   JET_LADDER,
-  ROOBI_PREV_DAY_VOL_MIN,
+  LOW_BASE_SESSIONS,
+  ROOBI_ZD1_MIN,
   detectJetBreakout,
   filterVolumeRatio,
 } from './tapeMath';
@@ -61,8 +62,8 @@ export type TapeFilterConfig = {
     maxChangePct: number;         // سقف درصد افت قیمت (فایل: -۱٫۰٪)
     minVolRatio: number;          // ۰ = بدون شرط (فایل چنین گیتی ندارد)
     minBuyerPower: number;        // ۰ = بدون شرط
-    minTradeCount: number;        // قیدِ چهارمِ فایل: ``qd1 > 100`` — تعدادِ
-                                  // معاملاتِ **نشستِ پیش** (prev_day_tran)، نه امروز
+    minTradeCount: number;        // قیدِ چهارمِ فایل: ``qd1 > 100`` — حجمِ
+                                  // سفارشِ **سطرِ اولِ صفِ خرید** (buy_q1_vol)
   };
   /** ۵. نقطه‌زنی و کف‌یابی (Sniper / Near Low) */
   noqteh: {
@@ -227,24 +228,22 @@ function volumeGate(r: MarketRow, minRatio: number): boolean {
   return mult != null && mult > minRatio;
 }
 
-/** پنجرۀِ شناخته‌شده: همین نشست + تا ۲۹ نشستِ پیش (هر چه بانک دارد). */
-const HISTORY_FLOOR = 10;
+/** پنجرۀِ فایل: سی **نشستِ** آخر (`[ih][0..29]`). امروز تا پیش از نهایه داخلِ
+ *  این آرایه نیست — بک‌اند شمارۀِ نشست را در `hist_sessions` می‌شمارد، نه
+ *  شمارۀِ ردیفِ ذخیره‌شده را (کوئری همین کار را می‌کند؛ `srn`). */
 function knownSessions(r: MarketRow): number | null {
-  const n = num(r.prior29_n);
-  if (n == null) return null;
-  return 1 + Math.min(n, 29);
+  return num(r.hist_sessions);
 }
 
-/** کمینۀِ فایل: ``min([ih][0..28].PriceMin)`` = کفِ همین نشست با نشست‌هایِ پیش.
- *  همان کفِ ۱۰ نشستیِ بک‌اند (`tape_flags.LOW_BASE_MIN_SESSIONS`): پنجره‌ای که
- *  بانک ندارد سنجیده نمی‌شود، نه اینکه با کمینۀِ ناقص داوری گردد. */
+/** کمینۀِ فایل: ``min([ih][0..28].PriceMin)`` — صفر **معتبر** است، چون فایل
+ *  `MinPriceOfMonth() != 0` را صریحاً می‌خواهد؛ نشستِ بی‌معامله کفِ صفر
+ *  می‌گیرد و کلِ ردیف را رد می‌کند. بک‌اند پنجرۀِ ناقص را خودش صفر می‌کند
+ *  (`min_low_29`)، این‌جا فقط همان کفِ ۲۹ نشستیِ بک‌اند برگردانده می‌شود
+ *  (`tape_flags.LOW_BASE_SESSIONS`). */
 function fileLow(r: MarketRow): number | null {
   const sessions = knownSessions(r);
-  if (sessions == null || sessions < HISTORY_FLOOR) return null;
-  const today = num(r.p_min);
-  const prior = num(r.min_low_28);
-  if (today == null || prior == null) return null;
-  return Math.min(today, prior);
+  if (sessions == null || sessions < LOW_BASE_SESSIONS) return null;
+  return num(r.min_low_29);
 }
 
 /** ۱. الگوی ساعت — فایل: ``pl >= pc*1.02 && tvol > Σ[ih][0..29]/30 && tno > 30`` */
@@ -284,19 +283,21 @@ export function matchJetFilter(r: MarketRow, cfg: TapeFilterConfig['jet']): bool
 
 /** ۴. کف‌روبی و جمع‌آوری صف — فایل: ``pl == tmin && zd1 > 1 && plp < -1 && qd1 > 100``
  *
- * ``qd1`` = prev_day_tran؛ تا وقتی بانک آن را ندارد (ستونش تازه است) سه قیدِ
- * نخست سنجیده می‌شود و قیدِ چهارم **رد نمی‌کند** — جای‌نشینش هم «تعدادِ
- * امروز» نمی‌شود، چون آنگاه ۷۳ ردیف می‌آمد که هیچ‌کدام معادلۀِ فایل نبود.
+ * هر چهار واژه از `ExecFilter` خودِ tsetmc.com گرفته شده‌اند:
+ *   tmin = آستانۀ مجاز پایین (نه کفِ همین نشست)، plp = درصدِ **آخرین** نسبت به
+ *   دیروز (نه پایانی)، zd1/qd1 = تعداد و حجمِ سفارشِ **سطرِ اولِ صفِ خرید**.
+ * یعنی: رویِ کفِ مجاز چسبیده، بیش از یک درصد پایین، و خریدار در صفِ اول نشسته.
+ * نبودنِ هر قید = رد (درِ خودِ سایت هم ExecFilter را با try/catch رد می‌کند).
  */
 export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): boolean {
   const last = num(r.p_last);
-  const low = num(r.p_min);
-  // «روی کفِ روز نشسته» — همین گیت، ستونِ اصلیِ کف‌روبی است و حذف‌شدنی نیست.
-  if (last == null || low == null || last !== low) return false;
-  if (!above(r.prev_day_vol, ROOBI_PREV_DAY_VOL_MIN)) return false;   // zd1 > 1
-  if (!below(r.percent_change, cfg.maxChangePct)) return false;       // plp < -1
-  const qd1 = num(r.prev_day_tran);
-  if (qd1 != null && !above(qd1, cfg.minTradeCount)) return false;    // qd1 > 100
+  const floor = num(r.tmin);
+  if (last == null || floor == null || floor <= 0 || last !== floor) return false;
+  const zd1 = num(r.buy_q1_cnt);
+  if (zd1 == null || zd1 <= ROOBI_ZD1_MIN) return false;                 // zd1 > 1
+  if (!below(r.percent_last, cfg.maxChangePct)) return false;            // plp < -1
+  const qd1 = num(r.buy_q1_vol);
+  if (qd1 == null || qd1 <= cfg.minTradeCount) return false;              // qd1 > 100
 
   if (!volumeGate(r, cfg.minVolRatio)) return false;
   if (cfg.minBuyerPower > 0 && !atLeast(r.buyer_power, cfg.minBuyerPower)) return false;

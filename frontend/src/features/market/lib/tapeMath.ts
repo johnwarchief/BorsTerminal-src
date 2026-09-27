@@ -27,9 +27,12 @@ export const JET_VOL_MULT = 3;
  *  جتِ استراتژیک/سیگنال را بیرونِ آن نگه می‌دارد. */
 export const JET_TRADES = 1;
 export const JET_MIN_TRADES = 100;
-/** کف‌روبی: فایل ``zd1 > 1 && qd1 > 100`` */
-export const ROOBI_PREV_DAY_VOL_MIN = 1;
-export const ROOBI_PREV_DAY_TRAN_MIN = 100;
+/** کف‌روبی: فایل ``zd1 > 1 && qd1 > 100``.
+ *  درِ `ExecFilter` خودِ tsetmc.com این دو متغیر به ردیفِ **اولِ صفِ خرید**
+ *  بدل می‌شوند: ``zd1 = blDs[0].zmd`` (تعدادِ سفارش) و
+ *  ``qd1 = blDs[0].qmd`` (حجمِ سفارش). حجم/تعدادِ نشستِ پیش نیستند. */
+export const ROOBI_ZD1_MIN = 1;
+export const ROOBI_QD1_MIN = 100;
 
 /**
  * پلکانِ مقاومتِ فیلترِ جت، عینِ جزوه:
@@ -39,7 +42,10 @@ export const ROOBI_PREV_DAY_TRAN_MIN = 100;
  */
 export const JET_LADDER = [2, 5, 9, 19, 29, 39, 49, 59] as const;
 
-/** دسترسیٔ تایپ‌شده به [ih][k].PriceMax — به‌جای کلیدِ داینامیک روی MarketRow */
+/** دسترسیٔ تایپ‌شده به [ih][k].PriceMax — به‌جای کلیدِ داینامیک روی MarketRow.
+ *  ستونِ `h{k}_max` را بک‌اند از نشستِ (k+1)امِ آخر می‌سازد (`srn = k + 1`)،
+ *  چون `[ih][0]` آخرین **نشستِ** منتشرشده است و نشستِ بی‌معامله درِ آرایۀِ
+ *  سایت PriceMax = 0 دارد — یعنی نبودنِ یک پله «پلکانِ غایب» نیست، صفر است. */
 const LADDER_HIGH: Record<number, (r: MarketRow) => number | null | undefined> = {
   2: (r) => r.h2_max, 5: (r) => r.h5_max, 9: (r) => r.h9_max, 19: (r) => r.h19_max,
   29: (r) => r.h29_max, 39: (r) => r.h39_max, 49: (r) => r.h49_max, 59: (r) => r.h59_max,
@@ -157,23 +163,34 @@ export function detectSuspiciousVolume(r: SuspInput): SuspResult {
   return { hit, multiple };
 }
 
+/** پنجرۀِ فایل: سی **نشستِ** آخر. نمادی که به اندازهٔ خواسته‌شده نشست ندارد
+ *  درِ خودِ ExecFilter استثنا می‌دهد و ردیفش بیرون می‌افتد — پس «نسنج»،
+ *  نه «بر تعدادِ موجود تقسیم کن». */
+export const HIST_MIN_SESSIONS = 30;
+/** کمینۀِ نقطه‌زنی [ih][0..28] — بیست‌ونُه نشست لازم است. */
+export const LOW_BASE_SESSIONS = 29;
+
 /**
  * سقفِ پلکانِ مقاومت تا تایم‌فریمِ خواسته‌شده.
  *
- * هر نقطه‌ای که از lookback کوتاه‌تر است باید شکسته شود، و هر نقطه‌ای که
- * وجود ندارد سنجش را ناممکن می‌کند → null. صفر بازگرداندن یعنی «سقفی نبود
- * که زیرش بمانیم» و فیلتر را برای نمادِ بی‌تاریخچه باز می‌گذارد — همان
- * حلقهٔ خاموشی که ۶۷۱ ردیف را جت می‌زد.
+ * هر نقطه‌ای که از lookback کوتاه‌تر است باید شکسته شود. نبودنِ یک پله
+ * «صفر» است (نشستِ بی‌معامله درِ سایت PriceMax=0 دارد) و سقف را بالا نمی‌برد؛
+ * آن‌چه سنجش را ناممکن می‌کند کم‌سابقهِ خودِ نماد است — `hist_sessions`
+ * می‌گوید چند نشست از عمرش را می‌دانیم. بی‌این تفکیک، یا ردیفِ بی‌تاریخچه
+ * با «سقفِ صفر» قبول می‌شد (همان حلقۀِ خاموشیِ ۶۷۱ ردیف) یا نمادِ قدیمیِ
+ * کم‌معامله بی‌دلیل مردود.
  */
 export function resistanceLadderHigh(r: MarketRow, lookback: number): number | null {
-  let hi: number | null = null;
-  for (const k of JET_LADDER) {
-    if (k > lookback) break;
+  const pts = JET_LADDER.filter((k) => k <= lookback);
+  if (!pts.length) return null;
+  const sessions = num(r.hist_sessions);
+  if (sessions == null || sessions < Math.max(...pts) + 1) return null;
+  let hi = 0;
+  for (const k of pts) {
     const v = num(LADDER_HIGH[k](r));
-    if (v == null || v <= 0) return null;
-    hi = hi === null ? v : Math.max(hi, v);
+    if (v != null && v > hi) hi = v;
   }
-  return hi;
+  return hi > 0 ? hi : null;
 }
 
 /** درگاه‌هایِ فیلتر جت — همان بلوکِ `jet` در TapeFilterConfig */
@@ -222,8 +239,9 @@ export function detectJetBreakout(r: MarketRow, g: JetGates): JetResult {
   if (power < g.minBuyerPower) return fail('قدرت خریدار زیر آستانه');
 
   if (g.requireLastAboveClose && last < close) return fail('آخرین زیر پایانی');
-  const chg = num(r.percent_change);
-  if (chg == null || chg <= 0) return fail('درصد تغییر مثبت نیست');
+  // (plp) درِ خودِ سایت = درصدِ «آخرین» نسبت به دیروز، نه درصدِ پایانی.
+  const chg = num(r.percent_last);
+  if (chg == null || chg <= 0) return fail('درصدِ آخرین مثبت نیست');
   if (chg < g.minChangePct) return fail('درصد تغییر زیر آستانه');
 
   const resistance = resistanceLadderHigh(r, g.lookbackDays);

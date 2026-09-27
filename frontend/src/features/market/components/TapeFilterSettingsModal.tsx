@@ -419,11 +419,13 @@ export function TapeFilterSettingsModal({
                 </div>
                 <p className="text-2xs text-text-muted leading-4">
                   آخرینِ معامله باید از سقفِ تک‌روزیِ همهٔ نقاطِ پلکانِ فایل
-                  ([ih][2] تا نقطۀِ انتخابی) بالاتر رفته باشد. نمادی که
-                  تاریخچۀِ کاملِ این نقاط را ندارد، جت نمی‌خورد.
-                  مبناءِ «ضریب حجم» هم عینِ فایل است: Σ[ih][0..29]/۳۰، یعنی امروز
-                  به‌همراه ۲۹ نشستِ پیش. فایل علاوه بر حجم، «تعدادِ معاملات بالای ۱۰۰»
-                  را هم می‌خواهد؛ همان qd1 نیست، tnoیِ همین نشست است.
+                  ([ih][2] تا نقطۀِ انتخابی) بالاتر رفته باشد. نشستی که در آن
+                  معامله‌ای نشده سقفِ صفر دارد و مانع نمی‌شود؛ آنچه داوری را
+                  متوقف می‌کند کم بودنِ تعدادِ نشست‌هایِ در دست است.
+                  مبناءِ «ضریب حجم» هم عینِ فایل است: Σ[ih][0..29]/۳۰، یعنی سی
+                  روزنۀِ آخرِ منتشرشده — امروز تا پیش از نهایه داخلِ این پنجره نیست.
+                  فایل علاوه بر حجم، «تعدادِ معاملات بالای ۱۰۰» را هم می‌خواهد؛
+                  همان qd1 نیست، tnoیِ همین نشست است.
                 </p>
               </div>
 
@@ -491,9 +493,11 @@ export function TapeFilterSettingsModal({
           {activeTab === 'roobi' && (
             <div className="space-y-5">
               <div className="rounded-xl border border-accent-blue/20 bg-accent-blue/5 p-3 text-2xs text-text-secondary leading-5">
-                شرطِ اصلیِ کف‌روبی عینِ فایل است و آستانه ندارد: «آخرینِ معامله دقیقاً روی کفِ روز»
-                و «حجمِ نشستِ پیش بیشتر از یک» و «تعدادِ معاملاتِ نشستِ پیش بالای ۱۰۰».
-                دو اسلایدرِ بالا انتخابی‌اند و درِ فایل نیستند؛ صفر یعنی بدون شرط.
+                شرط‌هایِ کف‌روبی عینِ فایل‌اند: «آخرینِ معامله دقیقاً روی کفِ مجازِ روز»
+                (pl = tmin)، «تعدادِ سفارشِ سطرِ اولِ صفِ خرید بیشتر از یک» (zd1 &gt; ۱)،
+                «درصدِ آخرین نسبت به دیروز کمتر از ۱-» (plp) و «حجمِ سفارشِ سطرِ اول
+                بالای ۱۰۰» (qd1). دو اسلایدرِ پایین انتخابی‌اند و درِ فایل نیستند؛
+                صفر یعنی بدون شرط.
               </div>
 
               <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-2">
@@ -563,23 +567,24 @@ export function TapeFilterSettingsModal({
                 </div>
                 <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4 space-y-1.5">
                   <label className="text-xs font-bold text-text-primary block">
-                    حداقل تعداد معاملاتِ نشستِ پیش (&gt;۱۰۰ طبق فایل)
+                    حداقل حجمِ سفارشِ سطرِ اولِ خرید (&gt;۱۰۰ طبق فایل)
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      aria-label="حداقل تعداد معاملات نشست پیش (کف‌روبی)"
+                      aria-label="حداقل حجم سفارش سطر اول خرید (کف‌روبی)"
                       inputMode="decimal"
                       value={config.roobi.minTradeCount}
                       onChange={(e) => setField('roobi', 'minTradeCount', e.target.value)}
                       className="num w-full rounded-lg border border-border-c bg-bg-secondary px-3 py-2 text-xs font-bold text-text-primary focus:border-accent-blue focus:outline-none"
                     />
-                    <span className="text-xs text-text-secondary shrink-0">معامله</span>
+                    <span className="text-xs text-text-secondary shrink-0">سهم</span>
                   </div>
                   <p className="text-3xs text-text-muted mt-1">
-                    قیدِ چهارمِ فایل «qd1 &gt; ۱۰۰» است؛ یعنی تعدادِ معاملاتِ
-                    «دیروز». این عدد از نخستین نشستِ پس از این نسخه در بانک
-                    می‌نشیند، و تا نبودش رد نمی‌کند — جانشینِ «تعدادِ امروز» هم نمی‌شود.
+                    قیدِ چهارمِ فایل «qd1 &gt; ۱۰۰» است؛ درِ فیلترنویسِ TSETMC این
+                    حجمِ سفارشِ سطرِ اولِ صفِ خرید است، نه تعدادِ معاملاتِ دیروز.
+                    با «تعدادِ سفارشِ سطرِ اول &gt; ۱» (zd1) معنی می‌شود: رویِ کفِ
+                    مجاز نشسته و خریدار در صفِ اول صف شده است.
                   </p>
                 </div>
               </div>

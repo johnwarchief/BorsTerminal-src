@@ -33,7 +33,7 @@ def ck(cond, msg):
 
 import mstat_engine as ME
 
-MW_COLS = 32   # تعدادِ ستونِ market_watch — در seed و در INSERT همگام‌سازی قفل می‌شود
+MW_COLS = 33   # تعدادِ ستونِ market_watch — در seed و در INSERT همگام‌سازی قفل می‌شود
 # v10: دو ستونِ ارزش بازار (market_cap, market_cap_src) به اسنپ‌شاتِ تابلو
 # اضافه شد. «تک‌منبعِ ارزش بازار» یعنی همین جدول؛ پس این گارد باید مطمئن شود
 # نوشتنِ همگام‌سازی هنوز تمامِ ستونهایِ جدول را پوشش میدهد.
@@ -50,7 +50,7 @@ CREATE TABLE market_watch (ins_code TEXT PRIMARY KEY, d_even INTEGER, h_even INT
     total_shares REAL, sector_code TEXT, fetched_at TEXT,
     buy_q_vol REAL, buy_q_val REAL, buy_q_cnt REAL, sell_q_vol REAL, sell_q_val REAL,
     sell_q_cnt REAL, buy_q1_vol REAL, buy_q1_px REAL, sell_q1_vol REAL, sell_q1_px REAL,
-    market_cap REAL, market_cap_src TEXT);
+    market_cap REAL, market_cap_src TEXT, buy_q1_cnt REAL);
 
 CREATE TABLE client_type (ins_code TEXT, d_even INTEGER, buy_i_vol REAL, buy_n_vol REAL,
     buy_ddd_vol REAL, buy_count_i INTEGER, buy_count_n INTEGER, buy_count_ddd INTEGER,
@@ -444,7 +444,9 @@ phi_ = re.findall(r'instruments VALUES \(" \+ ","\.join\("\?" \* (\d+)\)', src)
 ck(phi_ and all(int(x) == len(real_ins) for x in phi_),
    "placeholderهای instruments (%s) = %d ستون" % (phi_, len(real_ins)))
 mig = [n for t, cols in ME.MIGRATIONS.items() if t == "market_watch" for n, _ty in cols]
-ck(len(mig) == 10 and set(mig) <= set(real_mw), "همهٔ ۱۰ ستونِ عمق در ساختار هست")
+# یازده‌اند: ششِ جمعِ پنج‌خط + چهارِ «خطِ اول»ِ حجم/قیمت + buy_q1_cnt، یعنی
+# همان (zd1)ِ فیلترنویسِ TSETMC که درِ «تعدادِ سفارشِ سطرِ اولِ خرید» است.
+ck(len(mig) == 11 and set(mig) <= set(real_mw), "همهٔ ۱۱ ستونِ عمق در ساختار هست")
 ck("withBestLimits=true" in src,
    "MW_URL باید withBestLimits=true بفرستد، وگرنه blDs نمی‌آید و کل پنلِ عمق تهی می‌ماند")
 ck("save_mstat_snapshot(conn)" in src,
@@ -456,11 +458,13 @@ got = TS.queue_agg({"blDs": [{"n": 1, "qmd": 100, "pmd": 500.0, "zmd": 3,
                               "qmo": 0, "pmo": 0.0, "zmo": 0},
                              {"n": 2, "qmd": 50, "pmd": 490.0, "zmd": 1,
                               "qmo": 0, "pmo": 0.0, "zmo": 0}]})
-ck(len(got) == 10, "queue_agg ده مقدار برمی‌گرداند (جمعِ ۵خط + خطِ اول)")
+ck(len(got) == 11, "queue_agg یازده مقدار برمی‌گرداند (جمعِ ۵خط + خطِ اول + تعدادِ سطرِ اول)")
 ck(got[0] == 150 and abs(got[1] - 74500.0) < 1e-6,
    "حجم ۵ خط = ۱۵۰ و ارزش = 100×500 + 50×490 = ۷۴٬۵۰۰ ریال")
 ck(got[2] == 4, "تعداد سفارش‌های تقاضا از zmd جمع می‌شود")
 ck(got[6] == 100 and got[7] == 500.0, "حجم/قیمت «خطِ اول» جدا نگه داشته می‌شود")
+# (zd1) درِ فیلترنویسِ TSETMC = zmdِ سطرِ اول، نه تعدادِ کلِ پنج خط (گت[2]=4)
+ck(got[10] == 3, "تعدادِ سفارشِ سطرِ اولِ خرید = zmdِ ن=۱ (سه، نه جمعِ چهار)")
 ck(TS.queue_agg({"blDs": []}) is None, "blDs تهی = None (بی‌داده، نه صفر)")
 ck(list(TS._QUEUE_COLS) == mig,
    "ترتیبِ _QUEUE_COLS با ترتیبِ بازگشتیِ queue_agg و ستون‌های مهاجرت یکی است")

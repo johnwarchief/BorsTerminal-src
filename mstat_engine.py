@@ -177,6 +177,8 @@ MIGRATIONS = {
         ("sell_q_vol", "REAL"), ("sell_q_val", "REAL"), ("sell_q_cnt", "REAL"),
         ("buy_q1_vol", "REAL"), ("buy_q1_px", "REAL"),
         ("sell_q1_vol", "REAL"), ("sell_q1_px", "REAL"),
+        # (zd1) درِ فیلترنویسِ TSETMC = تعدادِ سفارشِ سطرِ اولِ خرید
+        ("buy_q1_cnt", "REAL"),
     ],
     # طبقهٔ ابزار از فیلتر paperType خودِ TSETMC (۱/۲=سهام، ۴=حق تقدم، ۸=صندوق).
     "instruments": [("paper_type", "INTEGER")],
@@ -186,14 +188,24 @@ SNAP_DDL = """CREATE TABLE IF NOT EXISTS mstat_snap (
             d_even INTEGER NOT NULL, h_even INTEGER NOT NULL,
             ts TEXT, agg TEXT, PRIMARY KEY (d_even, h_even))"""
 
+# پنجرۀ [ih]ِ پنج فیلترِ تابلو: شصت نشستِ آخرِ **هر نماد** از درخواستِ
+# GetClosingPriceDailyAllInst (منبعِ خودِ فیلترنویسِ سایت)، با ردیفِ صفر برایِ
+# نشستِ بی‌معامله. درِ ensure_schema است تا هر بازنویسیِ بانک — خواننده یا
+# نویسنده — جدول را داشته باشد و کوئریِ تابلو «no such table» نگیرد.
+TAPE_HIST_DDL = """CREATE TABLE IF NOT EXISTS tape_history (
+            ins_code TEXT NOT NULL, d_even INTEGER NOT NULL,
+            price_min REAL, price_max REAL, q_tot_tran5j REAL,
+            fetched_at TEXT, PRIMARY KEY (ins_code, d_even))"""
+
 
 def ensure_schema(conn) -> None:
     """migrate + ساختِ جدولِ نقطه‌ها. بی‌صدا می‌بخشد: بانکِ قفل‌شده نباید
     یک درخواستِ خواندن را ۵۰۰ کند — دادهٔ قدیمی از بی‌داده بهتر است."""
-    try:
-        conn.execute(SNAP_DDL)
-    except Exception:
-        pass
+    for ddl in (SNAP_DDL, TAPE_HIST_DDL):
+        try:
+            conn.execute(ddl)
+        except Exception:
+            pass
     for table, cols in MIGRATIONS.items():
         try:
             have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}
@@ -418,7 +430,8 @@ def _row_keys(have_depth: bool):
     if have_depth:
         keys += ["buy_q_vol", "buy_q_val", "buy_q_cnt",
                  "sell_q_vol", "sell_q_val", "sell_q_cnt",
-                 "buy_q1_vol", "buy_q1_px", "sell_q1_vol", "sell_q1_px"]
+                 "buy_q1_vol", "buy_q1_px", "sell_q1_vol", "sell_q1_px",
+                 "buy_q1_cnt"]
     keys += ["q_vol", "q_val", "n_trades", "price_change", "total_shares",
              "base_vol", "h_even", "paper_type"]
     return keys
@@ -456,7 +469,8 @@ def load_snapshot(conn, force: bool = False) -> dict:
     if have_depth:
         cols += """ m.buy_q_vol, m.buy_q_val, m.buy_q_cnt,
                     m.sell_q_vol, m.sell_q_val, m.sell_q_cnt,
-                    m.buy_q1_vol, m.buy_q1_px, m.sell_q1_vol, m.sell_q1_px,"""
+                    m.buy_q1_vol, m.buy_q1_px, m.sell_q1_vol, m.sell_q1_px,
+                    m.buy_q1_cnt,"""
     cols += """ m.q_tot_tran, m.q_tot_cap, m.z_tot_tran, m.price_change,
                m.total_shares, i.base_vol, m.h_even, i.paper_type"""
     rows = conn.execute(

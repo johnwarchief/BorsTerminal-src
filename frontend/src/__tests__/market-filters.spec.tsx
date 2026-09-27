@@ -99,6 +99,23 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
     fireEvent.click(reset);
     expect(useTapeStore.getState().quickFilters).toEqual([]);
   });
+
+  // ── #207: چیپ باید بگوید چرا از فیلترنویسِ TSETMC کمتر می‌شمارد ───────────
+  it('چیپ، ردیف‌هایِ پنهانِ همان فیلتر را درِ عنوانش می‌شمارد', () => {
+    render(
+      <MarketFilters
+        sectors={[]}
+        matches={{ f_clock: 29, f_susp: 45, f_jet: 5, f_roobi: 1, f_noqteh: 4 }}
+        hiddenMatches={{ f_clock: 49, f_susp: 51, f_jet: 0, f_roobi: 30, f_noqteh: 7 }}
+      />,
+    );
+    const roobi = screen.getByTitle(/کف‌روبی — ۳۰ ردیف/);
+    expect(roobi.getAttribute('title')).toContain('پسوندعددی');
+    // حجم مشکوک هم ۴۵+۵۱ می‌شود ۹۶ ردیفِ مرجع
+    expect(screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/)).toBeInTheDocument();
+    // جت هیچ ردیفِ پنهانی ندارد → عنوانِ ساده، بدونِ ادعایِ دروغ
+    expect(screen.getByTitle(/^فیلتر جت$/).getAttribute('title')).toBe('فیلتر جت');
+  });
 });
 
 const TSETMC_LABELS = [

@@ -45,7 +45,7 @@ df["percent_change"] = pct.where(pct.abs() <= 100.0)
 out = apply_tape_flags(df)
 
 # پوششِ منابع — همان عددی که قبلاً غلط بود
-for col in ("month_avg_vol", "h1_max", "h2_max", "h59_max", "min30_low", "prev_day_vol"):
+for col in ("month_avg_vol", "hist_sessions", "h2_max", "h59_max", "min30_low", "prev_day_vol"):
     have = out[col].notna().sum()
     print(f"  {col:<14} موجود: {have:>5} از {len(out)} ({have / len(out) * 100:.0f}%)")
 

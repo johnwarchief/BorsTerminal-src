@@ -227,45 +227,67 @@ def _build_market_response(request: Request):
     now = _t.time()
     conn = get_db()
     try:
-        # پنجرۀ تاریخچه از **اتحادِ** دو جدول ساخته می‌شود، نه از price_history
-        # به‌تنهایی. دلیلِ اندازه‌گیری‌شده: price_history فقط برایِ نمادهایی
-        # نوشته می‌شود که یک‌بار در چارت باز شده باشند، و حجمِ انبوه‌اش در
-        # ۱۴۰۵/۰۶/۰۱ (۲۰۲۶-۰۸-۲۳) مانده است. نتیجه پیش از این: «میانگین حجمِ
-        # ۳۰ روزه» و «سقفِ دیروز» برایِ صدها نماد یک‌ماهه کهنه، و برایِ ۴٬۲۰۰
-        # نماد کلاً غایب — یعنی فیلترهایِ حجمیِ تابلو رویِ دادهٔ تاریخ‌گذشته
-        # یا رویِ هیچ کار می‌کردند. daily_prices هر نشستِ کاملِ بازار را دارد.
-        # روزهایِ همپوشان (دو جدول همزمان یک نشست را دارند) با GROUP BY روی
-        # (نماد،تاریخ) یک‌بار شمرده می‌شوند و نشستِ جاریِ تابلو بیرون می‌ماند،
-        # تا rn=1 واقعاً «نشستِ پیش» باشد.
+        # دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
+        #   tape_history — آرایۀِ [ih] عینِ سایت. درِ پنج فیلترِ فایل
+        #       (مبناءِ حجم، کفِ بیست‌ونُه نشست، پلکانِ مقاومت) از این است.
+        #   hist (اتحادِ price_history و daily_prices) — فقط ستون‌هایِ *نمایش*
+        #       (میانگین ماه، حجمِ دیروز، کمینه/بیشینۀِ ۳۰ روزه). این ردیف‌ها
+        #       روزهایی‌اند که نماد *معامله شده*:
+        #         price_history — ردیف‌هایِ *منتشرشده* (GetClosingPriceDailyListCSV
+        #             و بک‌فیلِ GetInstrmentsHistoryInDay).
+        #         daily_prices  — اسنپ‌شاتِ زندۀِ تابلو، برایِ روزهایی که هنوز
+        #             ردیفِ انتشاریافته نداریم؛ «امروزِ بی‌نهایه» را عمداً بیرون
+        #             می‌گذارد، چون ستونِ نمایش هم نباید نیم‌بها از حجمِ
+        #             نشستِ تمام‌نشده بسازد (اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵: خكمك با
+        #             شمارفتنِ امروز نسبتِ ۰٫۹۹ می‌شد و مردود، مرجعِ TSETMC ۱٫۰۶).
+        # روزهایِ همپوشان با GROUP BY رویِ (نماد،تاریخ) یک‌بار شمرده می‌شوند.
         query = """
             WITH iso AS (
                 SELECT d,
                        printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) AS dt
                 FROM (SELECT MAX(d_even) AS d FROM market_watch)
             ),
-            hist AS (
+            -- `spine` فهرستِ ۶۰ نشستِ آخرِ بازار است و تنها کارش بستنِ *سقفِ*
+            -- پنجرۀِ ستون‌هایِ نمایش است. درِ خودِ TSETMC آرایۀ [ih] برایِ *هر*
+            -- نشستِ تقویمی ردیف دارد و نشستِ بی‌معامله volume=0 و
+            -- PriceMin=PriceMax=0 می‌گیرد؛ بانکِ ردیف‌محورِ ما آن ردیف‌هایِ صفر
+            -- را ندارد، پس پنجرۀ «سی ردیفِ آخر» برایِ نمادی که بیست روز تعطیل
+            -- بوده به تیرماه می‌رسد و مبناء را شش برابرِ عددِ فایل می‌کند
+            -- (۱۴۰۵-۰۷-۰۵: بيوتيكح — مرجع ۵۶٬۲۶۴، ردیف‌محور ۳۴۲٬۲۲۸). درمانش
+            -- شمارشِ نشست نبود، خودِ ردیف‌هایِ صفر بود: `tape_history` پایین.
+            spine AS MATERIALIZED (
+                SELECT dt, ROW_NUMBER() OVER (ORDER BY dt DESC) AS srn
+                FROM (SELECT date AS dt FROM price_history
+                      GROUP BY date ORDER BY date DESC LIMIT 60)
+            ),
+            -- پنجره از پیش بر ۶۰ نشستِ آخر بسته می‌شود؛ هیچ‌یک از
+            -- مصرف‌کننده‌هایِ پایین فراتر از آن را نمی‌خواهند و بی‌این سقف
+            -- همین کوئری رویِ ۵۰۲ روزنۀِ بانک هشت ثانیه طول می‌کشید.
+            hist AS MATERIALIZED (
                 SELECT symbol, dt,
-                       MAX(high) AS high, MAX(low) AS low, MAX(volume) AS volume,
-                       MAX(tran) AS tran
+                       MAX(high) AS high, MAX(low) AS low, MAX(volume) AS volume
                 FROM (
                     SELECT i.l_val18 AS symbol, h.date AS dt,
-                           h.high, h.low, h.volume, NULL AS tran
+                           h.high, h.low, h.volume
                     FROM price_history h
                     JOIN instruments i ON i.l_val18 = h.symbol
-                    WHERE h.date < (SELECT dt FROM iso)
+                    WHERE h.date >= (SELECT MIN(dt) FROM spine)
                     UNION ALL
                     SELECT i.l_val18,
                            printf('%04d-%02d-%02d', d.d_even/10000,
                                   (d.d_even/100)%100, d.d_even%100),
-                           d.price_max, d.price_min, d.q_tot_tran, d.z_tot_tran
+                           d.price_max, d.price_min, d.q_tot_tran
                     FROM daily_prices d
                     JOIN instruments i ON i.ins_code = d.ins_code
                     WHERE d.d_even < (SELECT d FROM iso)
+                      AND printf('%04d-%02d-%02d', d.d_even/10000,
+                                 (d.d_even/100)%100, d.d_even%100)
+                          >= (SELECT MIN(dt) FROM spine)
                 )
                 GROUP BY symbol, dt
             ),
             rk AS (
-                SELECT symbol, high, low, volume, tran,
+                SELECT symbol, high, low, volume,
                        ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY dt DESC) AS rn
                 FROM hist
             ),
@@ -273,43 +295,54 @@ def _build_market_response(request: Request):
                 SELECT symbol,
                        AVG(CASE WHEN rn <= 30 THEN volume END) AS month_avg_vol,
                        MAX(CASE WHEN rn = 1 THEN volume END) AS prev_day_vol,
-                       -- فیلترهای TSETMC: [ih][k].PriceMax — سقفِ تک‌روزیِ
-                       -- kِمین نشستِ پیش. پلکانِ جت به [ih][2] نیاز دارد.
-                       MAX(CASE WHEN rn = 1 THEN high END) AS h1_max,
-                       MAX(CASE WHEN rn = 2 THEN high END) AS h2_max,
-                       MAX(CASE WHEN rn = 5 THEN high END) AS h5_max,
-                       MAX(CASE WHEN rn = 9 THEN high END) AS h9_max,
-                       MAX(CASE WHEN rn = 19 THEN high END) AS h19_max,
-                       MAX(CASE WHEN rn = 29 THEN high END) AS h29_max,
-                       MAX(CASE WHEN rn = 39 THEN high END) AS h39_max,
-                       MAX(CASE WHEN rn = 49 THEN high END) AS h49_max,
-                       MAX(CASE WHEN rn = 59 THEN high END) AS h59_max,
-                       -- کفِ ۳۰ روزهٔ جزوه: [ih][0..28].PriceMin
-                       -- نشستِ بدونِ معامله high/low را صفر می‌نویسد؛ صفر در
-                       -- MIN *سمّ* است (کفِ جعلیِ صفر → نقطه‌زنی رد) برعکسِ MAX
-                       -- که صفر را خودکار نادیده می‌گیرد. پس هر دو کف > 0 می‌خواهند.
                        MIN(CASE WHEN rn <= 29 AND low > 0 THEN low END) AS min30_low,
-                       MAX(CASE WHEN rn <= 29 THEN high END) AS max30_high,
-                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol,
-                       -- ── ورودی‌هایِ «عینِ فرمولِ فایل» ──────────────────────
-                       -- Σ[ih][0..29].QTotTran5J = امروز + ۲۹ نشستِ پیش. فایل
-                       -- همیشه بر ۳۰ ثابت تقسیم می‌کند؛ `month_avg_vol` میانگینِ
-                       -- واقعیِ نشست‌هایِ موجود است. هر دو می‌مانند: اولی فقط
-                       -- قیدهایِ حجمیِ پنج فیلتر را می‌سنجد، دومی ستونِ
-                       -- «نسبت حجم ماه» را (دو مبنایِ متفاوت، دو مصرفِ متفاوت).
-                       SUM(CASE WHEN rn <= 29 THEN volume END) AS prior29_vol,
-                       -- کمینۀِ [ih][1..28] — «امروز» جدا افزوده می‌شود تا
-                       -- حلقۀِ JS (`for n=1; n<29`) عیناً بازسازی شود.
-                       MIN(CASE WHEN rn <= 28 AND low > 0 THEN low END)   AS min_low_28,
-                       -- qd1 = تعدادِ معاملاتِ نشستِ پیش (قیدِ چهارمِ کف‌روبی).
-                       -- تا پیش از افزودنِ ستونش به daily_prices هیچ مقدارِ
-                       -- واقعیِ ندارد؛ صفرِ جعلی نمی‌سازیم.
-                       MAX(CASE WHEN rn = 1 THEN tran END)    AS prev_day_tran,
-                       -- چند نشستِ پیش واقعاً وجود دارد؟ نمادی که ۳۰ نشست
-                       -- ندارد مبنایِ «تقسیم بر ۳۰»اش جعلی کوچک می‌شود.
-                       COUNT(CASE WHEN rn <= 29 THEN volume END) AS prior29_n
+                       MAX(CASE WHEN rn <= 30 THEN high END) AS max30_high,
+                       MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
                 FROM rk WHERE rn <= 60
                 GROUP BY symbol
+            ),
+            -- ── پنجرۀ [ih]، عینِ منبعِ خودِ سایت ─────────────────────────────
+            -- `tape_history` را سینک از `GetClosingPriceDailyAllInst` می‌سازد —
+            -- همان درخواستی که فیلترنویسِ tsetmc.com آرایۀ [ih] را از آن می‌سازد:
+            -- شصت نشستِ آخرِ **هر نماد**، با ردیفِ صفر برایِ نشستِ بی‌معامله.
+            -- بنابراین `srn` (جایگاهِ ردیف درِ آرایۀِ خودِ نماد) دقیقاً همان [k]ِ
+            -- فایل است و `[ih][k] ↔ srn = k+1` بی‌هیچ تقریبی برقرار است.
+            -- پیش از این جدول، پنجره از ردیف‌هایِ معامله‌شدهٔ بانک ساخته می‌شد و
+            -- عمرِ نماد را با شمارِ ردیفِ او می‌شمرد؛ نمادِ کهنۀِ کم‌معامله (خگلپا:
+            -- ۶۰ نشستِ سایت، ۱۸ ردیفِ بانک) پشتِ درِ «کمتر از ۳۰ نشست» می‌ماند و
+            -- دو فیلترِ حجمی بی‌دلیل خاموش می‌شد.
+            th AS MATERIALIZED (
+                SELECT ins_code,
+                       ROW_NUMBER() OVER (PARTITION BY ins_code ORDER BY d_even DESC) AS srn,
+                       price_min, price_max, q_tot_tran5j AS volume
+                FROM tape_history
+            ),
+            fv AS (
+                SELECT ins_code,
+                       -- Σ[ih][0..29].QTotTran5J — نشستِ بی‌معامله صفر دارد و
+                       -- صفر درِ SUM همان چیزی است که سایت می‌بیند.
+                       SUM(CASE WHEN srn <= 30 THEN volume END) AS prior30_vol,
+                       -- عمرِ نماد از دیدِ سایت. فایل [ih][29] و [ih][59] را صریح
+                       -- می‌خواهد؛ اگر آرایه آن‌قدر ردیف نداشته باشد خودِ
+                       -- ExecFilter استثنا می‌دهد و ردیف بیرون می‌افتد — پس
+                       -- «کم از سی» یعنی «نسنج»، نه «بر تعدادِ موجود تقسیم کن».
+                       MAX(srn) AS hist_sessions,
+                       -- کمینۀ [ih][0..28].PriceMin. نشستی که PriceMin=0 دارد
+                       -- (بی‌معامله) کمینه را صفر می‌کند و `MinPriceOfMonth() != 0`
+                       -- درِ فایل ردیف را می‌اندازد (نفيس2 و رشدي كيان2 همین‌جا).
+                       CASE WHEN COUNT(CASE WHEN srn <= 29 THEN 1 END) < 29 THEN 0
+                            ELSE MIN(CASE WHEN srn <= 29 THEN price_min END) END AS min_low_29,
+                       -- پلکانِ هشت‌نقطه‌ای: [ih][k].PriceMax = نشستِ (k+1)امِ آخر
+                       MAX(CASE WHEN srn = 3  THEN price_max END) AS h2_max,
+                       MAX(CASE WHEN srn = 6  THEN price_max END) AS h5_max,
+                       MAX(CASE WHEN srn = 10 THEN price_max END) AS h9_max,
+                       MAX(CASE WHEN srn = 20 THEN price_max END) AS h19_max,
+                       MAX(CASE WHEN srn = 30 THEN price_max END) AS h29_max,
+                       MAX(CASE WHEN srn = 40 THEN price_max END) AS h39_max,
+                       MAX(CASE WHEN srn = 50 THEN price_max END) AS h49_max,
+                       MAX(CASE WHEN srn = 60 THEN price_max END) AS h59_max
+                FROM th WHERE srn <= 60
+                GROUP BY ins_code
             ),
             ctm AS (
                 SELECT ins_code, MAX(d_even) AS d FROM client_type
@@ -332,17 +365,22 @@ def _build_market_response(request: Request):
                    m.buy_q_vol, m.buy_q_val, m.buy_q_cnt,
                    m.sell_q_vol, m.sell_q_val, m.sell_q_cnt,
                    m.buy_q1_vol, m.buy_q1_px, m.sell_q1_vol, m.sell_q1_px,
+                   m.buy_q1_cnt,
+                   -- (tmin)/(tmax) درِ فیلترنویس = آستانۀ مجاز، نه کفِ نشست؛
+                   -- خودِ ExecFilter آن‌ها را به element.pMin/pMax بدل می‌کند.
+                   m.allowed_min AS tmin, m.allowed_max AS tmax,
                    v.month_avg_vol, v.prev_day_vol,
-                   v.h1_max, v.h2_max, v.h5_max, v.h9_max, v.h19_max, v.h29_max,
-                   v.h39_max, v.h49_max, v.h59_max,
                    v.min30_low, v.max30_high, v.d1_vol,
-                   v.prior29_vol, v.min_low_28, v.prev_day_tran, v.prior29_n
+                   fv.h2_max, fv.h5_max, fv.h9_max, fv.h19_max, fv.h29_max,
+                   fv.h39_max, fv.h49_max, fv.h59_max,
+                   fv.prior30_vol, fv.min_low_29, fv.hist_sessions
             FROM market_watch m
             JOIN instruments i ON i.ins_code = m.ins_code
             LEFT JOIN boards b ON b.ins_code = m.ins_code
             LEFT JOIN ctm ON ctm.ins_code = m.ins_code
             LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
             LEFT JOIN v ON v.symbol = i.l_val18
+            LEFT JOIN fv ON fv.ins_code = m.ins_code
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
         """
@@ -410,8 +448,10 @@ def _build_market_response(request: Request):
         # پنج فیلترِ تابلو — عینِ فرمول‌هایِ جزوه، در tape_flags.apply_tape_flags
         # (اینجا دیگر چیزی محاسبه نمی‌شود؛ تنها نتیجه رویِ ستون‌هایِ نمایشی
         #  اعمال می‌گردد تا تابلو و نشان‌هایِ ستونی یک عدد ببینند.)
-        # متغیرها: pl=آخرین معامله، pc=قیمت پایانی، plp=درصد تغییر، tmin=کف روز،
-        #          tvol=حجم، tno=تعداد معاملات، zd1=حجم نشست پیش، [ih][k]=تاریخچه
+        # متغیرها (از ExecFilterِ خودِ tsetmc.com): pl=pdv، pc=pcl، plp=درصدِ آخرین
+        # نسبت به دیروز، tmin=آستانۀ مجاز پایین (allowed_min)، tvol/qtj=حجم،
+        # tno/ztt=تعداد، zd1=تعدادِ سفارشِ سطرِ اولِ خرید، qd1=حجمِ همان سطر،
+        # [ih][k]=kِمین روزنۀِ منتشرشده (نه امروز، تا پیش از نهایه).
         # ============================================================
         flags = apply_tape_flags(df)
         df["vol_ratio"] = flags["vol_ratio"].round(1)      # نمایش با همان دقتِ قبل
@@ -428,17 +468,17 @@ def _build_market_response(request: Request):
         # نکته: ستونهای حجمی از نسخهٔ خام بازیابی میشوند چون fillna(0)
         # روی object-column (vol_trend) None را به 0 تبدیل میکند.
         #
-        # ستون‌هایِ تاریخچه هم باید بازیابی شوند: «سقفِ ۵۹ نشستِ پیش» اگر
-        # موجود نباشد باید null بماند. اگر صفر شود، فیلترِ جت آن را «سقفِ
-        # صفر» می‌بیند و ردیف را قبول می‌کند — همان حلقهٔ خاموشی که ۶۷۱ ردیف
-        # را جت می‌زد.
+        # ستون‌هایِ تاریخچه هم باید بازیابی شوند: «سقفِ ۵۹ نشستِ پیش» اگر موجود
+        # نباشد باید null بماند تا فرانت‌اند آن را «صفر» یا «حدس» نخواند. (پلکانِ
+        # خالی درِ خودِ فیلتر صفر می‌شود، ولی `hist_sessions` می‌گوید نماد آن‌قدر
+        # سابقه دارد یا نه — همان تفکیکی که ExecFilter با try/catch می‌کند.)
         _KEEP_NULL = ("vol_ratio", "vol_dod", "vol_trend", "dist_min30_pct",
                       "month_avg_vol", "prev_day_vol", "d1_vol",
-                      "prior29_vol", "min_low_28", "prev_day_tran", "percent_last",
-                      "vol_ratio_file", "prior29_n",
+                      "prior30_vol", "min_low_29", "percent_last",
+                      "vol_ratio_file", "hist_sessions", "tmin", "tmax", "buy_q1_cnt",
                       "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",
-                      "h1_max", "h2_max", "h5_max", "h9_max", "h19_max",
+                      "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
                       "min30_low", "max30_high")
         _kept = {k: df[k].copy() for k in _KEEP_NULL if k in df.columns}
