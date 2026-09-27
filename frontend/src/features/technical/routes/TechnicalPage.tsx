@@ -74,12 +74,15 @@ export default function TechnicalPage() {
   const startReplay = useReplayStore((s) => s.start);
   const stopReplay = useReplayStore((s) => s.stop);
 
-  const nn = useNnChartData(symbol);
+  // داکِ پایین و پنل‌های FTS از همین نمادِ نمایشی تغذیه می‌شوند. پیش‌تر روی
+  // `symbol` (تهی تا کاربر چیزی انتخاب نکند) قفل بودند، پس پنل‌هایِ پایینِ تب
+  // برای کسی که هنوز نمادی انتخاب نکرده اصلاً در DOM نمی‌آمد (#185).
+  const nn = useNnChartData(viewSymbol);
   const tedipx = useNnTedipx();
-  const feed = useCandleFeed(symbol);
+  const feed = useCandleFeed(viewSymbol);
   const candles = feed.candles;
-  const analysis = useFtsAnalysis(symbol);
-  const gate = useFundGate(enforceRiskGates ? symbol : '');
+  const analysis = useFtsAnalysis(viewSymbol);
+  const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
 
   const series = useMemo(
     () => ({
@@ -93,8 +96,11 @@ export default function TechnicalPage() {
   );
 
   const signal = useMemo(
-    () => (symbol && candles.length > 0 ? technicalSignal({ symbol, ...series, riskGatePass: gate.pass, enforceRiskGates }) : null),
-    [symbol, candles, series, gate.pass, enforceRiskGates],
+    () =>
+      candles.length > 0
+        ? technicalSignal({ symbol: viewSymbol, ...series, riskGatePass: gate.pass, enforceRiskGates })
+        : null,
+    [viewSymbol, candles, series, gate.pass, enforceRiskGates],
   );
   useEffect(() => {
     if (signal) publishSignal(signal);
@@ -102,7 +108,7 @@ export default function TechnicalPage() {
   const gateBlocked = enforceRiskGates && gate.pass === false;
 
   useEffect(() => {
-    if (!replayActive || !replayPlaying || !symbol) return;
+    if (!replayActive || !replayPlaying) return;
     const t = setInterval(() => {
       const cur = clampCursor(replayCursor, nn.data.length);
       if (isAtEnd(cur, nn.data.length)) {
@@ -177,36 +183,34 @@ export default function TechnicalPage() {
           <PriceAlertBanner rows={marketData?.data} />
         </div>
 
-        {symbol ? (
-          <FtsDock
-            tabs={[
-              {
-                id: 'status',
-                label: 'وضعیت FTS',
-                node: (
-                  <div className="flex flex-col gap-2">
-                    <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
-                    <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={analysis.data?.fts?.jet?.resistance ?? null} />
-                  </div>
-                ),
-              },
-              { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
-              { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
-              { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
+        <FtsDock
+          tabs={[
+            {
+              id: 'status',
+              label: 'وضعیت FTS',
+              node: (
+                <div className="flex flex-col gap-2">
+                  <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
+                  <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={analysis.data?.fts?.jet?.resistance ?? null} />
+                </div>
+              ),
+            },
+            { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
+            { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
+            { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
 
-              { id: 'compare', label: 'مقایسهٔ نمادها', node: <ComparePanel activeSymbol={symbol} /> },
-              {
-                id: 'verdict',
-                label: 'داوری',
-                node: (
-                  <div className="p-1">
-                    <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
-                  </div>
-                ),
-              },
-            ]}
-          />
-        ) : null}
+            { id: 'compare', label: 'مقایسهٔ نمادها', node: <ComparePanel activeSymbol={viewSymbol} /> },
+            {
+              id: 'verdict',
+              label: 'داوری',
+              node: (
+                <div className="p-1">
+                  <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
+                </div>
+              ),
+            },
+          ]}
+        />
       </main>
 
       <ChartSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} symbol={symbol} />
