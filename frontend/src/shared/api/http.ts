@@ -36,6 +36,18 @@ export interface HttpOptions {
 
 const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
 
+/**
+ * کشِ اعتبارسنجیِ خودِ اپ (نه کشِ مرورگر): etagِ پاسخ + همان آبجکتِ تجزیه‌شده.
+ * چرا: /api/market بدنهٔ ۷٫۳ مگابایتی دارد و تابلو در ساعتِ بازار هر ۵ ثانیه
+ * آن را می‌خواهد، ولی سینکِ داده هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی
+ * بیشترِ درخواست‌ها بدنهٔ *عیناً* قبلی را برمی‌گردانند. با If-None-Match سرور
+ * ۳۰ می‌دهد (صفر بایت، صفر gzip) و اینجا همان آبجکتِ قبلی را برمی‌گرداند؛
+ * چون مرجعِ داده عوض نمی‌شود، TanStack Query هیچ رندرِ تازه‌ای نسازد.
+ * `cache: 'no-store'` لازم است وگرنه کشِ Chromium خودش پاسخِ ۲۰۰ِ کامل را
+ * از دیسک بیرون می‌دهد و ما هیچ‌وقت ۳۰۴ را نمی‌بینیم.
+ */
+const conditional = new Map<string, { etag: string; data: unknown }>();
+
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     const t = setTimeout(resolve, ms);
@@ -57,17 +69,23 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      const revalidate = method === 'GET' ? conditional.get(url) : undefined;
       const res = await fetch(url, {
         headers: {
           Accept: 'application/json',
           // برای بدینهٔ خام، Content-Type را فراخواننده تعیین می‌کند (در headers).
           ...(payload && rawBody == null ? { 'Content-Type': 'application/json' } : {}),
+          ...(revalidate ? { 'If-None-Match': revalidate.etag } : {}),
           ...headers,
         },
+        ...(revalidate ? { cache: 'no-store' as RequestCache } : {}),
         method,
         ...(payload != null ? { body: payload } : {}),
         signal,
       });
+      // ۳۰۴ پیش از !res.ok بررسی می‌شود: statusِ ۳۰۴ با ok=false می‌آید و
+      // اگر همین‌جا رد شود، کاربر «خطایِ شبکه» می‌بیند در حالی که داده سالم است.
+      if (res.status === 304 && revalidate) return revalidate.data as T;
       if (!res.ok) {
         const err = new HttpError(res.status, url);
         if (RETRYABLE.has(res.status) && attempt < retries) {
@@ -83,6 +101,10 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
       if (!parsed.success) {
         throw new HttpError(0, url, `پاسخ API با قرارداد نمی خواند: ${parsed.error.message}`);
       }
+      // `?.` چون پاسخ‌هایِ ماک‌شدهٔ تست‌ها ممکن است Responseِ کامل نباشند؛
+      // نبودِ هدر فقط یعنی «این پاسخ قابلِ اعتبارسنجیِ مجدد نیست».
+      const etag = res.headers?.get?.('etag') ?? null;
+      if (method === 'GET' && etag) conditional.set(url, { etag, data: parsed.data });
       return parsed.data as T;
     } catch (e) {
       if (e instanceof HttpError) throw e;

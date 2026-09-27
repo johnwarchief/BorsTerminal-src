@@ -377,6 +377,15 @@ def get_market(request: Request):
         MARKET_CACHE["body"] = body
         MARKET_CACHE["t"] = now
         MARKET_CACHE["etag"] = etag
+        # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
+        # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
+        # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match
+        # بسنج؛ برابر بود صفر بایت برگردان (۷٫۳ مگابایتِ decompress + JSON.parse
+        # + zod رویِ دستگاهِ کاربر، و ۹۷۶ کیلوبایتِ gzip رویِ سیم، با این دو خط
+        # حذف می‌شود). سنجش رویِ md5ِ خودِ بدنه است، نه زمانِ کش — پس «۳۰۴» هیچ‌وقت
+        # دادهٔ کهنه نمی‌تواند باشد.
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=304, headers={"ETag": etag, "X-Cache": "MISS-304"})
         return Response(content=body, media_type="application/json",
                         headers={"Cache-Control": "max-age=15", "X-Cache": "MISS", "ETag": etag})
     finally:
