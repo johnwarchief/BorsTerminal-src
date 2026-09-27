@@ -13,14 +13,14 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
   });
 
   it('بوم اصلی SVG را با ساختار کامل رسم می‌کند', () => {
-    render(<ObsidianStrategyGraph selectedPreset="swing" onSelectPreset={() => {}} />);
+    render(<ObsidianStrategyGraph selectedPreset="swing" />);
     const canvas = screen.getByTestId('obsidian-strategy-canvas');
     expect(canvas).toBeInTheDocument();
   });
 
   it('در تم روشن (Light Theme) کانتینر و پلاک‌ها استایل کنتراست بالا دریافت می‌کنند', () => {
     useUiStore.getState().setTheme('light');
-    const { container } = render(<ObsidianStrategyGraph selectedPreset="swing" onSelectPreset={() => {}} />);
+    const { container } = render(<ObsidianStrategyGraph selectedPreset="swing" />);
 
     // کانتینر اصلی باید استایل روشن دریافت کند
     expect(container.firstChild).toHaveClass('bg-slate-50');
@@ -29,7 +29,7 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
   });
 
   it('سوییچ بین مهندسی معکوس نوسان‌گیری و جریان کلاسیک کار می‌کند', () => {
-    render(<ObsidianStrategyGraph selectedPreset="swing" onSelectPreset={() => {}} />);
+    render(<ObsidianStrategyGraph selectedPreset="swing" />);
 
     const classicBtn = screen.getByRole('button', { name: /جریان مستقیم \(کلاسیک\)/i });
     expect(classicBtn).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
   });
 
   it('شامل تمام نودهای کلیدی ۴ صفحه چارت درختی بدون از قلم افتادن بندهاست', () => {
-    render(<ObsidianStrategyGraph selectedPreset="swing" onSelectPreset={() => {}} />);
+    render(<ObsidianStrategyGraph selectedPreset="swing" />);
 
     // رکن تابلوخوانی (صفحه ۳)
     expect(screen.getAllByText(/حجم مشکوک/i).length).toBeGreaterThan(0);
@@ -71,7 +71,7 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
   });
 
   it('ویرایشگر زنده پارامترها را تغییر داده و دکمه بازنشانی به جزوه درست عمل می‌کند', () => {
-    render(<ObsidianStrategyGraph selectedPreset="swing" onSelectPreset={() => {}} />);
+    render(<ObsidianStrategyGraph selectedPreset="swing" />);
 
     // نود پیش‌فرض tape_volume است
     expect(screen.getByText(/ضریب حجم مشکوک/i)).toBeInTheDocument();

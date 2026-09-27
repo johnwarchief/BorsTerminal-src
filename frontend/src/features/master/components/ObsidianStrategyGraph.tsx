@@ -5,6 +5,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore, type StrategyParameters } from '../stores/strategyParamsStore';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
 
 export type GraphCategory = 'core' | 'fund' | 'tech' | 'tape' | 'money';
 export type FlowDirection = 'reverse' | 'classic';
@@ -753,7 +754,6 @@ function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
 
 export interface ObsidianStrategyGraphProps {
   selectedPreset: 'swing' | 'trend' | 'hourglass' | 'custom';
-  onSelectPreset: (preset: 'swing' | 'trend' | 'hourglass' | 'custom') => void;
   symbol?: string;
   activeCustomNodes?: string[];
   onToggleCustomNode?: (nodeId: string) => void;
@@ -761,7 +761,6 @@ export interface ObsidianStrategyGraphProps {
 
 export function ObsidianStrategyGraph({
   selectedPreset,
-  onSelectPreset,
   symbol,
   activeCustomNodes = [],
   onToggleCustomNode,
@@ -784,6 +783,8 @@ export function ObsidianStrategyGraph({
   const [selectedNodeId, setSelectedNodeId] = useState<string>('tape_volume');
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState(1);
+  // حرکتِ رویِ مسیر با CSS guard بسته نمی‌شود (SMIL است)، پس همین‌جا سنجیده می‌شود
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
   const isDraggingRef = useRef(false);
@@ -794,6 +795,33 @@ export function ObsidianStrategyGraph({
     const map = new Map<string, StrategyGraphNode>();
     nodes.forEach((n) => map.set(n.id, n));
     return map;
+  }, [nodes]);
+
+  // چیدمانِ بصری: ستون‌هایی که هفت نود یا بیشتر روی هم دارند کمی به سمتِ
+  // جریانِ راست‌به‌چپ خم می‌شوند تا «ستونِ صافِ بلند» دیده نشود. دامنهٔ خم ۱۶
+  // واحد است چون پلاکِ نود ۲۳۶ واحد و فاصلهٔ دو ستون ۳۰۰ واحد — بیشتر از این،
+  // پلاکِ دو ستونِ همسایه به هم می‌رسد.
+  const layout = useMemo(() => {
+    const byColumn = new Map<number, StrategyGraphNode[]>();
+    nodes.forEach((n) => {
+      const arr = byColumn.get(n.x);
+      if (arr) arr.push(n);
+      else byColumn.set(n.x, [n]);
+    });
+    const pos = new Map<string, { x: number; y: number }>();
+    const bands = new Map<number, { top: number; bottom: number; bow: number }>();
+    byColumn.forEach((arr, colX) => {
+      const sorted = [...arr].sort((a, b) => a.y - b.y);
+      const bow = sorted.length >= 7 ? 16 : 0;
+      sorted.forEach((n, i) => {
+        const t = sorted.length > 1 ? i / (sorted.length - 1) : 0.5;
+        pos.set(n.id, { x: n.x - bow * Math.sin(Math.PI * t), y: n.y });
+      });
+      if (colX !== 1350) {
+        bands.set(colX, { top: 74, bottom: sorted[sorted.length - 1].y + 73, bow });
+      }
+    });
+    return { pos, bands };
   }, [nodes]);
 
   // نودهای فعال استراتژی جاری
@@ -894,81 +922,8 @@ export function ObsidianStrategyGraph({
           isLight ? 'bg-white/80 border-slate-200' : 'bg-bg-card/70 border-border-c/60'
         }`}
       >
-        {/* پری‌ست‌ها و حالت بازی استراتژی */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`text-2xs font-bold ms-1 hidden sm:inline ${isLight ? 'text-slate-600' : 'text-text-muted'}`}>
-            مسیر استراتژی:
-          </span>
-          <button
-            type="button"
-            onClick={() => onSelectPreset('swing')}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-              selectedPreset === 'swing'
-                ? isLight
-                  ? 'bg-sky-100 border border-sky-500 text-sky-700 shadow-sm'
-                  : 'bg-accent-blue/25 border border-accent-blue text-accent-blue shadow-[0_0_8px_rgba(56,189,248,0.25)]'
-                : isLight
-                  ? 'border border-slate-200 bg-white text-slate-600 hover:text-slate-900'
-                  : 'border border-border-c/60 bg-bg-primary/50 text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <span>⚡</span>
-            <span>نوسان‌گیر (زیر ۳ ماه)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectPreset('trend')}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-              selectedPreset === 'trend'
-                ? isLight
-                  ? 'bg-emerald-100 border border-emerald-500 text-emerald-700 shadow-sm'
-                  : 'bg-accent-green/25 border border-accent-green text-accent-green shadow-[0_0_8px_rgba(34,197,94,0.25)]'
-                : isLight
-                  ? 'border border-slate-200 bg-white text-slate-600 hover:text-slate-900'
-                  : 'border border-border-c/60 bg-bg-primary/50 text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <span>📈</span>
-            <span>روندگیر (بالای ۳ ماه)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectPreset('hourglass')}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-              selectedPreset === 'hourglass'
-                ? isLight
-                  ? 'bg-amber-100 border border-amber-500 text-amber-700 shadow-sm'
-                  : 'bg-accent-yellow/25 border border-accent-yellow text-accent-yellow shadow-[0_0_8px_rgba(234,179,8,0.25)]'
-                : isLight
-                  ? 'border border-slate-200 bg-white text-slate-600 hover:text-slate-900'
-                  : 'border border-border-c/60 bg-bg-primary/50 text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <span>⏳</span>
-            <span>ساعت شنی (۳ تا ۱۰ ساله)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onSelectPreset('custom')}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-              selectedPreset === 'custom'
-                ? isLight
-                  ? 'bg-cyan-100 border border-cyan-500 text-cyan-700 shadow-sm'
-                  : 'bg-neon-cyan/25 border border-neon-cyan text-neon-cyan shadow-[0_0_8px_rgba(6,182,212,0.25)]'
-                : isLight
-                  ? 'border border-slate-200 bg-white text-slate-600 hover:text-slate-900'
-                  : 'border border-border-c/60 bg-bg-primary/50 text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <span>🛠</span>
-            <span>مسیر من (سفارشی)</span>
-          </button>
-        </div>
-
-        {/* سوییچ جهت جریان: مهندسی معکوس نوسان‌گیری vs جریان مستقیم */}
+        {/* سوییچ جهت جریان: مهندسی معکوس نوسان‌گیری vs جریان مستقیم
+            (سوییچرِ پیش‌فرضِ بازی در خودِ صفحه هست و این‌جا تکرار نشد) */}
         <div className="flex items-center gap-2 flex-wrap">
           <div
             className={`flex items-center rounded-xl p-0.5 border text-2xs font-bold transition-colors ${
@@ -1097,6 +1052,9 @@ export function ObsidianStrategyGraph({
       </div>
 
       {/* ۲. بوم نمودار ساختاریافته راست‌به‌چپ (RTL Obsidian Canvas) */}
+      {/* بوم هیچ‌وقت کوچک‌تر از یک‌به‌یک نمی‌شود؛ تنگ‌جا اسکرول افقی می‌خورد،
+          نه اینکه نوشته‌ها ریز شوند (بازخورد مالک: «تا نیاز به زوم نباشد»). */}
+      <div className="w-full overflow-x-auto overflow-y-hidden">
       <div
         ref={svgContainerRef}
         onMouseDown={handleMouseDown}
@@ -1104,10 +1062,10 @@ export function ObsidianStrategyGraph({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        className="relative w-full h-[560px] sm:h-[620px] lg:h-[660px] overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        className="relative mx-auto w-full min-w-[1480px] max-w-[1954px] aspect-[1480/920] overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
         <svg
-          viewBox="0 0 1440 880"
+          viewBox="0 0 1480 920"
           className="w-full h-full"
           preserveAspectRatio="xMidYMid meet"
           data-testid="obsidian-strategy-canvas"
@@ -1120,15 +1078,15 @@ export function ObsidianStrategyGraph({
           </defs>
 
           {/* پس‌زمینه بوم متناسب با تم */}
-          <rect width="1440" height="880" fill={isLight ? '#f8fafc' : '#070b16'} />
-          <rect width="1440" height="880" fill="url(#gridPatternFts)" />
+          <rect width="1480" height="920" fill={isLight ? '#f8fafc' : '#070b16'} />
+          <rect width="1480" height="920" fill="url(#gridPatternFts)" />
 
           {/* لایه متحرک و زوم‌پذیر */}
-          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`} transform-origin="720 440">
+          <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`} transform-origin="740 460">
             {/* فلش راهنما در بالای بوم جهت نشان دادن جریان راست به چپ (RTL) */}
             <g className="rtl-direction-banner pointer-events-none opacity-85">
               <rect
-                x="570"
+                x="590"
                 y="10"
                 width="300"
                 height="24"
@@ -1149,38 +1107,73 @@ export function ObsidianStrategyGraph({
               </text>
             </g>
 
-            {/* سربرگ‌های ستون‌های ۴ مرحله‌ای */}
+            {/* مرحله‌گذاریِ ستون‌ها: هر فاز یک نوارِ عمودیِ رنگی با شمارهٔ درشت
+                که مسیرها را پشتِ سرِ خودش گروه‌بندی می‌کند (به‌جای شماره رویِ
+                هر منحنی، که رویِ هم می‌افتاد و شلوغش می‌کرد) */}
             <g className="column-headers pointer-events-none">
-              {columnHeaders.map((col, idx) => (
+              {columnHeaders.map((col, idx) => {
+                const band = layout.bands.get(col.x);
+                return (
                 <g key={idx}>
+                  {band && (
+                    <>
+                      <rect
+                        x={col.x - 136 - band.bow}
+                        y={band.top}
+                        width={272 + band.bow}
+                        height={band.bottom - band.top}
+                        rx="20"
+                        fill={col.color}
+                        fillOpacity={isLight ? 0.07 : 0.05}
+                        stroke={col.color}
+                        strokeOpacity={isLight ? 0.42 : 0.3}
+                        strokeWidth="1.2"
+                        strokeDasharray="7 7"
+                      />
+                      <text
+                        x={col.x - band.bow / 2}
+                        y={(band.top + band.bottom) / 2}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={col.color}
+                        fillOpacity={isLight ? 0.11 : 0.09}
+                        fontSize="190"
+                        fontWeight="900"
+                      >
+                        {toFaDigits(idx + 1)}
+                      </text>
+                    </>
+                  )}
                   <rect
-                    x={col.x - 110}
-                    y="42"
-                    width="220"
+                    x={col.x - 136}
+                    y="40"
+                    width="272"
                     height="28"
                     rx="8"
                     fill={isLight ? '#ffffff' : '#1e293b'}
                     fillOpacity={isLight ? 0.95 : 0.65}
-                    stroke={isLight ? '#cbd5e1' : '#334155'}
-                    strokeWidth="1"
+                    stroke={col.color}
+                    strokeOpacity={isLight ? 0.55 : 0.45}
+                    strokeWidth="1.2"
                   />
                   <text
                     x={col.x}
                     y="60"
                     textAnchor="middle"
                     fill={col.color}
-                    className="text-[11.5px] font-black"
+                    className="text-[15px] font-black"
                   >
                     {col.title}
                   </text>
                 </g>
-              ))}
+                );
+              })}
 
               {/* سربرگ ستون مبدأ در راست */}
               <rect
-                x="1250"
-                y="42"
-                width="190"
+                x="1230"
+                y="40"
+                width="240"
                 height="28"
                 rx="8"
                 fill={isLight ? '#e0f2fe' : '#1e293b'}
@@ -1188,11 +1181,11 @@ export function ObsidianStrategyGraph({
                 strokeWidth="1"
               />
               <text
-                x="1345"
+                x="1350"
                 y="60"
                 textAnchor="middle"
                 fill={isLight ? '#0369a1' : '#38bdf8'}
-                className="text-[11.5px] font-black"
+                className="text-[15px] font-black"
               >
                 {flowDirection === 'reverse' ? '🎯 ورودی غربالگری' : '🌟 هسته استراتژی'}
               </text>
@@ -1231,22 +1224,45 @@ export function ObsidianStrategyGraph({
                   strokeOpacity = 0.08;
                 }
 
-                // محاسبه منحنی افقی نرم کوبیک بزیه
-                const dx = tgt.x - src.x;
-                const ctrl1X = src.x + dx * 0.45;
-                const ctrl2X = tgt.x - dx * 0.45;
-                const pathData = `M ${src.x} ${src.y} C ${ctrl1X} ${src.y}, ${ctrl2X} ${tgt.y}, ${tgt.x} ${tgt.y}`;
+                // محاسبه منحنی افقی نرم کوبیک بزیه — رویِ مختصاتِ چیدمان‌شده
+                const sp = layout.pos.get(link.source) ?? { x: src.x, y: src.y };
+                const tp = layout.pos.get(link.target) ?? { x: tgt.x, y: tgt.y };
+                const dx = tp.x - sp.x;
+                const ctrl1X = sp.x + dx * 0.45;
+                const ctrl2X = tp.x - dx * 0.45;
+                const pathData = `M ${sp.x} ${sp.y} C ${ctrl1X} ${sp.y}, ${ctrl2X} ${tp.y}, ${tp.x} ${tp.y}`;
 
                 return (
-                  <path
-                    key={link.id}
-                    d={pathData}
-                    fill="none"
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    strokeOpacity={strokeOpacity}
-                    className="transition-all duration-200"
-                  />
+                  <g key={link.id}>
+                    <path
+                      d={pathData}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth={strokeWidth}
+                      strokeOpacity={strokeOpacity}
+                      className="transition-all duration-200"
+                    />
+                    {/* مسیرِ بازِ این پیش‌فرض: یک نقطهٴ روان رویِ همان جاده */}
+                    {isPresetActive && !isHoverIsolated && (
+                      <>
+                        <path
+                          d={pathData}
+                          fill="none"
+                          stroke={strokeColor}
+                          strokeWidth={strokeWidth + 2.6}
+                          strokeOpacity={0.16}
+                          className="fts-path-flow"
+                        />
+                        {/* خودِ نقطه با SMIL حرکت می‌کند؛ دروازۀ prefers-reduced-motion
+                            را CSS نمی‌بندد، پس همین‌جا سنجیده می‌شود */}
+                        {!reduceMotion && (
+                          <circle r="3.4" fill={strokeColor} className="fts-path-dot">
+                            <animateMotion dur="2.6s" repeatCount="indefinite" path={pathData} />
+                          </circle>
+                        )}
+                      </>
+                    )}
+                  </g>
                 );
               })}
             </g>
@@ -1270,10 +1286,12 @@ export function ObsidianStrategyGraph({
                   opacity = isLight ? 0.38 : 0.28; // کمرنگ شدن بقیه مسیرها طبق خواسته صریح کاربر
                 }
 
+                const p = layout.pos.get(node.id) ?? { x: node.x, y: node.y };
+
                 return (
                   <g
                     key={node.id}
-                    transform={`translate(${node.x}, ${node.y})`}
+                    transform={`translate(${p.x}, ${p.y})`}
                     className="cursor-pointer transition-opacity duration-200"
                     style={{ opacity }}
                     onClick={() => {
@@ -1313,11 +1331,11 @@ export function ObsidianStrategyGraph({
                     {/* پلاک عنوان نود: فوق‌العاده خوانا، عریض‌تر با فونت درشت و پرکنتراست در هر دو تم روشن و تاریک */}
                     <g transform={`translate(0, ${node.radius + 16})`} pointerEvents="none">
                       <rect
-                        x="-88"
-                        y="-12"
-                        width="176"
-                        height="24"
-                        rx="7"
+                        x="-118"
+                        y="-15"
+                        width="236"
+                        height="30"
+                        rx="9"
                         fill={isLight ? '#ffffff' : '#0b1329'}
                         fillOpacity={isLight ? 0.98 : 0.94}
                         stroke={isSelected ? node.color : isLight ? '#cbd5e1' : 'rgba(71, 85, 105, 0.85)'}
@@ -1325,10 +1343,10 @@ export function ObsidianStrategyGraph({
                       />
                       <text
                         x="0"
-                        y="4"
+                        y="5"
                         textAnchor="middle"
                         fill={isLight ? '#0f172a' : '#f8fafc'}
-                        className="text-[12px] font-black"
+                        className="text-[16px] font-black"
                       >
                         {node.label}
                       </text>
@@ -1339,17 +1357,7 @@ export function ObsidianStrategyGraph({
             </g>
           </g>
         </svg>
-
-        {/* راهنمای کوتاه کاربری در گوشه بوم */}
-        <div
-          className={`absolute top-2 left-3 pointer-events-none rounded-lg border px-2.5 py-1 text-3xs transition-colors backdrop-blur-sm ${
-            isLight
-              ? 'bg-white/90 border-slate-300 text-slate-700 shadow-sm'
-              : 'bg-bg-card/85 border-border-c/60 text-text-muted shadow-lg'
-          }`}
-        >
-          <span>🖱 درگ: حرکت در بوم | اسکرول: زوم | کلیک روی نود: تنظیم پارامترها</span>
-        </div>
+      </div>
       </div>
 
       {/* ۳. پنل جامع ویرایشگر پارامترها و بازرسی نود انتخاب‌شده (Interactive Parameter Editor) */}

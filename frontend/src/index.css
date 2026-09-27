@@ -279,6 +279,31 @@ details[open] > summary .disclosure-chevron {
 }
 }
 
+/* درخت استراتژی: جادهٔ باز روی همان مسیرِ فعال (#190) */
+@keyframes fts-path-flow {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+/* حلقهٔ چرخانِ گرهٔ برگزیده — کلاسش از قبل در گراف استفاده می‌شد ولی
+   هیچ‌جا تعریف نشده بود، پس آن حلقه هرگز نمی‌چرخید. */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@layer components {
+  .fts-path-flow {
+    stroke-dasharray: 10 26;
+    animation: fts-path-flow 1.6s linear infinite;
+  }
+  .animate-spin-slow {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: spin-slow 6s linear infinite;
+  }
+}
+
 /* نور حاشیه ای المان های مهم */
 @layer components {
 .neon-edge-cyan {
@@ -333,7 +358,9 @@ details[open] > summary .disclosure-chevron {
   .conflict-pulse,
   .flash-up,
   .flash-down,
-  .hud-beam {
+  .hud-beam,
+  .fts-path-flow,
+  .animate-spin-slow {
     animation: none !important;
   }
 }

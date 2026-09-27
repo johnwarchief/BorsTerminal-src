@@ -43,10 +43,12 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(screen.getByText(/نقشه راه و درخت جامع استراتژی FTS/i)).toBeInTheDocument();
     expect(screen.getByText(/۴ چارت در یک نما/i)).toBeInTheDocument();
 
-    // نمودار بوم ابسیدین
+    // نما از آنِ بوم ابسیدین است و گریدِ تکراری پیش‌فرض باز نمی‌شود
     expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
+    expect(screen.queryByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).not.toBeInTheDocument();
 
-    // ارکان متناظر با ۴ صفحه جزوه در نما
+    // ارکان متناظر با ۴ صفحه جزوه در نمای گرید
+    fireEvent.click(screen.getByRole('button', { name: /نمای گرید ۴ ستونه/i }));
     expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
     expect(screen.getAllByText(/۲\. فیلتر تکنیکال ۲ زمانه/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/۳\. تابلوخوانی و زمان‌سنج/i).length).toBeGreaterThanOrEqual(1);

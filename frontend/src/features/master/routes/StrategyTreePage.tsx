@@ -52,7 +52,7 @@ export default function StrategyTreePage() {
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
 
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
-  const [viewMode, setViewMode] = useState<ViewMode>('both');
+  const [viewMode, setViewMode] = useState<ViewMode>('obsidian');
   const { params } = useStrategyParamsStore();
 
   // وضعیت جستجوی نماد
@@ -489,7 +489,6 @@ export default function StrategyTreePage() {
       {(viewMode === 'obsidian' || viewMode === 'both') && (
         <ObsidianStrategyGraph
           selectedPreset={selectedPreset}
-          onSelectPreset={setSelectedPreset}
           symbol={symbol}
           activeCustomNodes={activeCustomNodeIds}
           onToggleCustomNode={handleToggleCustomNode}
