@@ -206,7 +206,7 @@ describe('#204 — کارت بنیادی دیگر بج ممیزی ندارد (ش
     expect(audit['4_sales_to_mcap']?.targetThreshold).toBe(thr ?? null);
     expect(sales).not.toBeNull();
     expect(thr).not.toBeNull();
-    render(<FtsCard score={visa.score ?? null} passes={visa.passes ?? {}} verdict={visa.verdict ?? null} audit={audit} onDrill={() => {}} />);
+    render(<FtsCard score={visa.score ?? null} passes={visa.passes ?? {}} audit={audit} onDrill={() => {}} />);
     expect(screen.queryAllByTestId(/^fts-cell-audit-/)).toHaveLength(0);
     expect(screen.queryAllByTestId('audit-popover')).toHaveLength(0);
     fireEvent.mouseOver(screen.getByTestId('fts-card-cell-4_sales_to_mcap'));
@@ -216,7 +216,7 @@ describe('#204 — کارت بنیادی دیگر بج ممیزی ندارد (ش
   // علتِ «حکم نداریم» تنها چیزی است که از بج مانده — بی‌آن کارت بی‌داده را
   // بی‌توضیح می‌گذارد و همان «چرا عددی نیست» دوباره سؤال می‌شود.
   it('سلولِ بی‌داده علت را به‌صورتِ متنِ ساده می‌نویسد، نه بازشو و نه «شکاف داده»', () => {
-    render(<FtsCard score={2} passes={{ '3_gross_margin': false }} verdict="مردود" audit={null} />);
+    render(<FtsCard score={2} passes={{ '3_gross_margin': false }} audit={null} />);
     /** #169: واژۀ حکم فقط در برچسبِ نتیجه است */
     expect(screen.getByTestId('fts-verdict-3_gross_margin')).toHaveTextContent('رد');
     expect(screen.queryByText('شکاف داده')).toBeNull();

@@ -311,7 +311,6 @@ describe('#101 کارت EPS (شاخص ۲) — درصدها کنارِ عدد', (
       <EpsCardPanel
         score={4}
         passes={{ '2_eps_trend': true }}
-        verdict="قبول"
         indicators={cardWith(patch).indicators ?? null}
       />,
     );

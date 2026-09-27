@@ -143,7 +143,8 @@ describe('صفحهٔ بنیادی — کارت خالی با دادهٔ رشته
   it('امتیاز، verdict و شش سلول شاخص را نشان می‌دهد (نه حالت بدون داده)', async () => {
     renderPage();
     await waitFor(() => expect(screen.getByText('امتیاز ۴ از ۵')).toBeInTheDocument());
-    expect(screen.getByText('STRONG')).toBeInTheDocument();
+    expect(screen.queryByText('STRONG')).toBeNull();
+    expect(screen.queryByText('EXCLUDED')).toBeNull();
     /** #169: واژۀ حکم در هر سلول یک‌بار نوشته می‌شود (برچسبِ نتیجه)، و بجِ
      *  ممیزی دیگر همان واژه را تکرار نمی‌کند — «قبول» دوباره‌نویسی نشد. */
     const cells: [string, string][] = [
@@ -262,6 +263,24 @@ describe('کف‌های کارت FTS — از پاسخِ بک‌اند، نه ع
     await waitFor(() => expect(screen.getByTestId('fts-strategy-summary')).toBeInTheDocument());
     expect(screen.queryByTestId('holding-pnav-panel')).not.toBeInTheDocument();
     expect(screen.getByTestId('fts-strategy-summary').textContent).toContain('FTS ندارد');
+  });
+
+  it('قرارداد اختیار: داوری برایش صادر نمی‌شود و به نماد اصلی ارجاع داده می‌شود', async () => {
+    cardOverride = {
+      ...minimalCard('1404'),
+      score: null,
+      applicable: false,
+      verdict: 'FTS ندارد',
+      ref_symbol: 'خبهمن',
+      ref_reason: 'قرارداد اختیار معامله — تحلیل به نماد اصلی آن',
+      indicators: {},
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('fts-strategy-summary')).toBeInTheDocument());
+    expect(screen.getByTestId('fts-referral').textContent).toContain('قرارداد اختیار');
+    expect(screen.getByTestId('fts-referral-open').textContent).toBe('خبهمن');
+    // علت را خودِ backend می‌نویسد؛ رابط نباید نسخهٔ «صندوق» را نشان دهد
+    expect(screen.getByTestId('fts-strategy-summary').textContent).not.toContain('صندوق است');
   });
 
   it('شاخصِ «نظر نمی‌دهد» (رأیِ مالک ۱۴۰۵-۰۷-۰۳) به‌جای «مردود» سرخ نمی‌شود', async () => {

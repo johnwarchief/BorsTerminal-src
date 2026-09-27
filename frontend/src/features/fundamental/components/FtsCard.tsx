@@ -6,7 +6,6 @@
 import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FTS_LABEL } from '@shared/lib/ftsLabels';
-import { Badge } from '@shared/components/Badge';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { gapLabel, type GapAxis } from '../lib/gapReason';
 import { type AuditEvidence } from './AuditBadge';
@@ -225,7 +224,6 @@ function GrowthScale({ pct, floor, target }: { pct: number; floor: number | null
 export function FtsCard({
   score,
   passes,
-  verdict,
   physicalApplicable = true,
   industryMode,
   audit,
@@ -238,7 +236,6 @@ export function FtsCard({
   score: number | null;
   /** سه‌حاله (رأی ۱۴۰۵-۰۷-۰۳): null = «نظر نمی‌دهد»، نه سبز و نه سرخ. */
   passes: Record<string, boolean | null | undefined>;
-  verdict: string | null;
   /** رشد تولیدی صرفاً برای تولیدی معنا دارد — هلدینگ/خدماتی/مالی N/A */
   physicalApplicable?: boolean;
   /** رژیم قیمت‌گذاری صنعت (free|mandatory|neutral) */
@@ -301,12 +298,10 @@ export function FtsCard({
                 <span className="text-xs font-bold text-text-muted">بدون امتیاز</span>
               )}
             </div>
-
-            {verdict ? (
-              <Badge tone={score != null && score >= 4 ? 'green' : score != null && score >= 3 ? 'yellow' : 'red'}>
-                {verdict}
-              </Badge>
-            ) : null}
+            {/* برچسبِ حکمِ این‌جا حذف شد (#215): متنش خام از موتور می‌آمد و رویِ
+                چهل‌و‌نه درصد نمادها لاتین می‌افتاد (EXCLUDED / REJECT / STRONG /
+                WATCH)، آن هم درست زیرِ جعبه‌ای که همان حکم را فارسی و با ذکرِ
+                علتِ رد نوشته است. رأیِ داور: تکراری را نشان نده. */}
           </div>
         </div>
 

@@ -211,6 +211,9 @@ export default function FundamentalPage() {
 
   const metrics = card.data.metrics;
   const passes = card.data.passes ?? {};
+  /** نمادی که تحلیل واقعاً مالِ اوست (اختیارِ معامله یا نمادِ بی‌پسوند) */
+  const refSymbol = card.data.ref_symbol ?? null;
+  const refReason = card.data.ref_reason ?? null;
   // #205: علتِ رد را همان پرچم‌های موتور می‌گوید، با عدد و آستانۀ خودشان
   const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
@@ -281,7 +284,9 @@ export default function FundamentalPage() {
                 </div>
                 <p className="text-2xs text-text-secondary leading-relaxed mt-1">
                   {card.data.applicable === false
-                    ? 'ارزیابی پنج‌شاخصهٔ FTS برای شرکت‌های عملیاتی نوشته شده؛ این یک صندوق است، پس داوری برایش صادر نمی‌شود (نه تأیید، نه رد).'
+                    ? (refReason
+                        ? 'ارزیابی پنج‌شاخصهٔ FTS برای شرکت‌های عملیاتی نوشته شده؛ این نماد صورت مالیِ خودش را ندارد، پس داوری برایش صادر نمی‌شود (نه تأیید، نه رد).'
+                        : 'ارزیابی پنج‌شاخصهٔ FTS برای شرکت‌های عملیاتی نوشته شده؛ این یک صندوق است، پس داوری برایش صادر نمی‌شود (نه تأیید، نه رد).')
                     : card.data.score == null
                     ? 'چون اطلاعات همه ۵ شاخص کامل نیست، فعلا نمی‌توان تصمیم قطعی در مورد این سهم گرفت.'
                     : card.data.score >= 4
@@ -290,6 +295,21 @@ export default function FundamentalPage() {
                     ? 'این سهم پتانسیل خوبی دارد اما در یک یا دو شاخص ضعیف عمل کرده. بهتر است گزارش‌های ماهانه بعدی آن را رصد کنیم.'
                     : ''}
                 </p>
+                {/* علتِ ارجاع را خودِ backend می‌نویسد؛ رابط فقط نشان می‌دهد تا
+                    متنِ «چرا تحلیلِ این نماد نیست» در دو جا تکرار نشود (#215). */}
+                {refReason ? (
+                  <p className="text-2xs text-text-secondary leading-relaxed mt-1 flex flex-wrap items-center gap-1.5"
+                     data-testid="fts-referral">
+                    <span>{refReason}</span>
+                    {refSymbol ? (
+                      <button type="button" onClick={() => setSymbol(refSymbol)}
+                              className="rounded-lg border border-accent-blue/40 bg-accent-blue/10 px-1.5 py-0.5 font-black text-accent-blue"
+                              data-testid="fts-referral-open">
+                        {refSymbol}
+                      </button>
+                    ) : null}
+                  </p>
+                ) : null}
                 {/* #205: در حالتِ رد، علت را موتور می‌نویسد — همان شاخص(ها)ی
                     مردود با عدد و آستانۀ خودش، نه «ضعف در سودسازی یا حاشیۀ
                     پایین یا قیمت‌گذاری دستوری»ی حدسی. */}
@@ -353,7 +373,6 @@ export default function FundamentalPage() {
       <FtsCard
         score={card.data.score ?? null}
         passes={passes}
-        verdict={card.data.verdict ?? null}
         industryMode={card.data.pricing_mode ?? null}
         indicators={card.data.indicators ?? null}
         thresholds={card.data.thresholds ?? null}

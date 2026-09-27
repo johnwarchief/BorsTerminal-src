@@ -23,7 +23,6 @@ function renderCard(over: Partial<Parameters<typeof FtsCard>[0]> = {}) {
     <FtsCard
       score={c.score}
       passes={c.passes}
-      verdict={c.verdict}
       industryMode={c.pricing_mode}
       physicalApplicable
       indicators={c.indicators}

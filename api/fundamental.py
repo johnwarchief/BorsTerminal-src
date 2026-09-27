@@ -2138,6 +2138,7 @@ def get_fundamental(symbol: str, months: int = 0):
 
         # نرمال‌سازی پسوند عددی (TSETMC: «آ س پ3» → کدال: «آ س پ»)
         norm_symbol, ref_reason = symbol, None
+        option_contract = False
         m_und = re.match(r"^(.*?)\d+$", symbol)
         base_cand = m_und.group(1) if m_und else None
         if base_cand and base_cand != symbol and inst is None:
@@ -2188,6 +2189,17 @@ def get_fundamental(symbol: str, months: int = 0):
                 _p_probe, _a_probe = fts_engine.sym_in("l_val18", underlying)
                 if conn.execute(f"SELECT 1 FROM instruments WHERE {_p_probe}", _a_probe).fetchone():
                     ref_symbol, ref_reason = underlying, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
+                    option_contract = True
+
+        # قرارداد اختیار صورت مالیِ خودش را ندارد (fs_count=0)، و با این حال
+        # موتور برایش «رد شده در بررسی بنیادی» می‌داد — حکمِ سرخ رویِ دادهٔ صفر.
+        # مثلِ صندوق (رأی ۱۵) برایش داوری صادر نمی‌شود؛ کاربر به نماد اصلی
+        # ارجاع داده می‌شود. عددِ امتیازِ اسکرینر دست‌نخورده می‌ماند چون این
+        # شاخه فقط در مسیرِ جزئیات است. نشانه‌اش option_contract است، نه
+        # ref_reason — آن یکی برای پسوندِ عددیِ نمادهای عادی هم پر می‌شود.
+        if option_contract:
+            res["applicable"] = False
+            res["verdict"] = "FTS ندارد"
 
         # حذف خودکار از غربالگری (تعلیق / بیمه / قیمت‌گذاری دستوری)
         if res["excluded"]:

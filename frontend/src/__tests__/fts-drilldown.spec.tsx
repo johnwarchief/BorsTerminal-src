@@ -201,7 +201,7 @@ describe('Drill-Down تعاملی ۵ شاخص FTS', () => {
   it('کلیک روی هر سلول کارت FTS پنل همان شاخص را باز می‌کند', () => {
     const opened: DrillDownKey[] = [];
     render(
-      <FtsCard score={4} passes={FTS_PASSES} verdict="STRONG" activeDrill={null} onDrill={(k) => opened.push(k)} />,
+      <FtsCard score={4} passes={FTS_PASSES} activeDrill={null} onDrill={(k) => opened.push(k)} />,
     );
     fireEvent.click(screen.getByTestId('fts-card-cell-1a_monetary_growth'));
     fireEvent.click(screen.getByTestId('fts-card-cell-2_eps_trend'));
@@ -216,7 +216,6 @@ describe('Drill-Down تعاملی ۵ شاخص FTS', () => {
       <FtsCard
         score={4}
         passes={FTS_PASSES}
-        verdict="STRONG"
         activeDrill="4"
         onDrill={() => {}}
       />,
@@ -456,7 +455,7 @@ describe('N/A رشد تولیدی در کارت FTS', () => {
   // #204: بجِ «N/A» از روی کارت برداشته شد — حکمِ «معاف» را خودِ VerdictChip و
   // جملهٔ علت می‌گویند، و مهم‌تر از همه: سرخِ «رد» هیچ‌جا ساخته نمی‌شود.
   it('کارت شرکت خدماتی: ۱ب معاف است نه مردود، با علتِ رویِ کارت', () => {
-    render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} verdict="WATCH" physicalApplicable={false} />);
+    render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} physicalApplicable={false} />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toBe('نظر نمی‌دهد');
     expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
@@ -464,7 +463,7 @@ describe('N/A رشد تولیدی در کارت FTS', () => {
   });
 
   it('کارت تولیدی: همان مقدار قبول/مردود می‌ماند', () => {
-    render(<FtsCard score={4} passes={FTS_PASSES} verdict="STRONG" physicalApplicable />);
+    render(<FtsCard score={4} passes={FTS_PASSES} physicalApplicable />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toContain('قبول');
   });

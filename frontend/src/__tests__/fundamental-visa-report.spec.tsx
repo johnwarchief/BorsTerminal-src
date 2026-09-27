@@ -61,7 +61,6 @@ describe('ویسا — محور ۲: هلدینگ و حذف P/NAV ساختگی', 
       <FtsCard
         score={visa.score ?? null}
         passes={visa.passes ?? {}}
-        verdict={visa.verdict ?? null}
         physicalApplicable={false}
         industryMode={visa.pricing_mode ?? null}
       />,
@@ -121,7 +120,6 @@ describe('ویسا — محور ۴: یکدست‌سازی برچسب‌ها و �
       <FtsCard
         score={visa.score ?? null}
         passes={visa.passes ?? {}}
-        verdict={visa.verdict ?? null}
         physicalApplicable={false}
         industryMode={visa.pricing_mode ?? null}
       />,

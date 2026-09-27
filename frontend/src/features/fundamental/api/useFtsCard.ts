@@ -225,6 +225,10 @@ export const FtsCardSchema = z.object({
   verdict: z.string().nullish(),
   /** false = شرکت عملیاتی نیست (صندوق)؛ FTS روی آن اعمال نمی‌شود */
   applicable: z.boolean().nullish(),
+  /** نمادی که دادهٔ کدال واقعاً مالِ اوست — اختیارِ معامله یا پسوندِ عددی */
+  ref_symbol: z.string().nullish(),
+  /** چرا تحلیل به نمادِ دیگر تعلق دارد؛ backend می‌نویسد، رابط فقط نشان می‌دهد */
+  ref_reason: z.string().nullish(),
   pricing_mode: z.string().nullish(),
   /** سه‌حاله (رأیِ مالک ۱۴۰۵-۰۷-۰۳): null = «نظر نمی‌دهد». رکوردِ خشکِ boolean
    *  کل کارت را در parse می‌انداخت و صفحه به‌جای کارت «در دسترس نیست» می‌داد. */
