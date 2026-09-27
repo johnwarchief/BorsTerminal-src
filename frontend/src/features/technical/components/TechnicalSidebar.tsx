@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { SidebarWatchlist } from './SidebarWatchlist';
 import { SidebarFtsSignals } from './SidebarFtsSignals';
+import { SidebarOrderBook } from './SidebarOrderBook';
 import { SidebarActiveLevels, type ActiveLevelsView } from './SidebarActiveLevels';
 
-export type SidebarTabId = 'watch' | 'fts' | 'levels';
+export type SidebarTabId = 'watch' | 'fts' | 'book' | 'levels';
 
 const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -28,6 +29,18 @@ const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    id: 'book',
+    label: 'پنج مظنه',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <line x1="4" y1="6" x2="13" y2="6" />
+        <line x1="4" y1="10" x2="17" y2="10" />
+        <line x1="4" y1="14" x2="10" y2="14" />
+        <line x1="4" y1="18" x2="15" y2="18" />
+      </svg>
+    ),
+  },
+  {
     id: 'levels',
     label: 'ترازها و حد ضرر',
     icon: (
@@ -42,10 +55,13 @@ const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
 
 export function TechnicalSidebar({
   active,
+  symbol,
   onSelect,
   defaultTab = 'fts',
 }: {
   active: ActiveLevelsView;
+  /** همان نمادی که رویِ چارت است، حتی اگر کاربر هنوز چیزی انتخاب نکرده باشد */
+  symbol: string;
   onSelect: (s: string) => void;
   defaultTab?: SidebarTabId;
 }) {
@@ -90,6 +106,7 @@ export function TechnicalSidebar({
           <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto p-2" data-testid="sidebar-body">
             {tab === 'watch' ? <SidebarWatchlist onSelect={onSelect} /> : null}
             {tab === 'fts' ? <SidebarFtsSignals onSelect={onSelect} /> : null}
+            {tab === 'book' ? <SidebarOrderBook symbol={symbol} /> : null}
             {tab === 'levels' ? <SidebarActiveLevels active={active} /> : null}
           </div>
         </div>

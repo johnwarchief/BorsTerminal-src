@@ -147,10 +147,11 @@ describe('پنل ترازها', () => {
 
 describe('شل سایدبار و تب‌ها', () => {
   it('سه تب هست و پیش‌فرض، سیگنال‌های FTS است (#184)', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
+    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
     expect(screen.getByTestId('technical-sidebar')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-watch')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-fts')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-tab-book')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-levels')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-fts')).toBeInTheDocument();
     // دیده‌بان حذف نشده، فقط پیش‌فرض نیست
@@ -159,14 +160,14 @@ describe('شل سایدبار و تب‌ها', () => {
   });
 
   it('کلیک روی تب ترازها پنل نماد فعال را نشان می‌دهد', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
+    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
     fireEvent.click(screen.getByTestId('sidebar-tab-levels'));
     expect(screen.getByTestId('sidebar-levels')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-levels').textContent).toContain('فولاد');
   });
 
   it('تب «نبض کلان» حذف شده است', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} onSelect={() => undefined} />);
+    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
     expect(screen.queryByTestId('sidebar-tab-macro')).toBeNull();
     expect(screen.queryByText('نبض کلان')).toBeNull();
   });

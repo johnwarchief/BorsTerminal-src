@@ -10,7 +10,6 @@ import {
   type StoredOverlay,
 } from '@features/technical/lib/drawStore';
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
-import { MarketDepthWidget } from '@features/technical/components/MarketDepthWidget';
 
 // Mock klinecharts API for testing KLineChartWrapper
 const mockChartInstance = {
@@ -233,54 +232,4 @@ describe('۷ قابلیت کلیدی چارت سامانه نهایت‌نگر (
     });
   });
 
-  // فاز ۶: ویجت ۵ مظنه برتر عمق بازار (Top 5 Quotes Widget)
-  describe('فاز ۶: ویجت ۵ مظنه برتر عمق بازار (MarketDepthWidget)', () => {
-    it('در صورت isOpen=true پنجره ۵ مظنه با جدول تقاضا و عرضه و نسبت کل رندر می‌شود', () => {
-      const onClose = vi.fn();
-      render(
-        <MarketDepthWidget
-          symbol="فولاد"
-          isOpen={true}
-          onClose={onClose}
-          boardRow={{ p_last: 5000, p_closing: 4950, tvol: 1000000 }}
-        />
-      );
-
-      const widget = screen.getByTestId('market-depth-widget');
-      expect(widget).toBeTruthy();
-      expect(screen.getByText('عمق بازار — نمایش تقریبی')).toBeTruthy();
-      expect(screen.getByText('فولاد')).toBeTruthy();
-
-      // دکمه بستن
-      const closeBtn = screen.getByLabelText('بستن عمق بازار');
-      fireEvent.click(closeBtn);
-      expect(onClose).toHaveBeenCalled();
-    });
-
-    it('در صورت isOpen=false ویجت هیچ DOMای تولید نمی‌کند', () => {
-      const { container } = render(
-        <MarketDepthWidget symbol="فولاد" isOpen={false} />
-      );
-      expect(container.firstChild).toBeNull();
-    });
-
-    it('کلید ۵ مظنه در تولبار چارت، پنجره عمق بازار را باز و بسته می‌کند', async () => {
-      const { KLineChartWrapper } = await import('@features/technical/nahayatnegar/components/KLineChartWrapper');
-      render(<KLineChartWrapper initialSymbol="فولاد" />);
-
-      const toggleDepthBtn = screen.getByTestId('toggle-depth-btn');
-      expect(toggleDepthBtn).toBeTruthy();
-
-      // ویجت در ابتدا بسته است
-      expect(screen.queryByTestId('market-depth-widget')).toBeNull();
-
-      // کلیک برای باز شدن
-      fireEvent.click(toggleDepthBtn);
-      expect(screen.getByTestId('market-depth-widget')).toBeTruthy();
-
-      // کلیک مجدد برای بسته شدن
-      fireEvent.click(toggleDepthBtn);
-      expect(screen.queryByTestId('market-depth-widget')).toBeNull();
-    });
-  });
 });

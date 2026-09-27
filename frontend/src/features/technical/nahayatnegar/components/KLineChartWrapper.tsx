@@ -56,7 +56,6 @@ import { persianiseLegend } from '../../lib/faLegend';
 import { DrawingToolbar } from './DrawingToolbar';
 import { FloatingPropertiesBar } from './FloatingPropertiesBar';
 import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
-import { MarketDepthWidget } from '../../components/MarketDepthWidget';
 import { IconClose } from './TradingViewIcons';
 import {
   buildPatternOverlays,
@@ -359,7 +358,6 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [activeRange, setActiveRange] = useState<string>('1Y');
   const [isLogScale, setIsLogScale] = useState<boolean>(ftsPriceScale === 'logarithm');
   const [isAutoScale, setIsAutoScale] = useState<boolean>(true);
-  const [isDepthOpen, setIsDepthOpen] = useState<boolean>(false);
 
   // همسنجیِ دو نماد رویِ همان چارت (جاافتادۀ ره‌آورد RA-3)
   const [compareSymbol, setCompareSymbol] = useState<string | null>(null);
@@ -2121,22 +2119,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onToggleFullscreen={handleToggleFullscreen}
         onOpenSettings={onOpenSettings}
         onTakeSnapshot={handleTakeSnapshot}
-        onToggleDepth={() => setIsDepthOpen((prev) => !prev)}
-        isDepthOpen={isDepthOpen}
         compareSymbol={compareSymbol}
         compareBusy={compareBusy}
         compareNoOverlap={compareNoOverlap}
         compareGap={compareGap}
         onOpenCompareSearch={handleOpenCompareSearch}
         onClearCompare={handleCompareClear}
-      />
-
-      {/* ویجت ۵ مظنه برتر عمق بازار */}
-      <MarketDepthWidget
-        symbol={currentSymbol}
-        boardRow={boardRow}
-        isOpen={isDepthOpen}
-        onClose={() => setIsDepthOpen(false)}
       />
 
       {/* نوار شناور تنظیمات المان */}

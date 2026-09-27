@@ -10,6 +10,7 @@
 import os
 import sqlite3
 import datetime
+import json
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -374,6 +375,66 @@ def queue_agg(row):
             num(first.get("qmo")), num(first.get("pmo")))
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  پنل «۵ مظنه» — پنج خطِ کاملِ عمق، که تا پیش از این دور ریخته می‌شد
+# ═══════════════════════════════════════════════════════════════════════════
+# queue_agg عمق را به «جمعِ پنج خط» و «خطِ اول» می‌شکند، چون ستون‌هایِ تابلو و
+# فیلترهایِ جزوه همین دو را می‌خواهند. ولی نمایشِ صفِ خرید و فروش به تک‌تکِ
+# سطرها نیاز دارد و blDs از همیشه هر پنج خط را می‌فرستاد. جدولِ جدا نوشته می‌
+# شود نه ستونِ اضافه روی market_watch: آن INSERT سی‌ودو ستونه و چند گارد به
+# ترتیبش قفل‌اند، و عمق هیچ‌وقت در هیچ کوئریِ تابلو خوانده نمی‌شود.
+ORDER_BOOK_TABLE = "order_book"
+
+_OB_INSERT = ("INSERT OR REPLACE INTO order_book"
+              " (ins_code, d_even, h_even, book_txt, updated_at)"
+              " VALUES (?,?,?,?,?)")
+
+
+def ensure_order_book_schema(conn):
+    """جدولِ عمقِ پنج‌سطحی را idempotent می‌سازد."""
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {ORDER_BOOK_TABLE} ("
+        " ins_code TEXT PRIMARY KEY, d_even INTEGER, h_even INTEGER,"
+        " book_txt TEXT, updated_at TEXT)")
+
+
+def book_lines(row):
+    """blDs → JSONِ فشردهٔ پنج خط: [[قیمت، حجم، تعدادِ سفارش] برایِ خرید و فروش].
+
+    هر سطر [bpx, bvol, bcnt, spx, svol, scnt] است. سطری که هیچ‌یک از دو طرفِش
+    قیمت ندارد نوشته نمی‌شود؛ نبودِ کلِ blDs برابرِ None است، نه «صفِ خالی» —
+    همان قاعده‌ای که queue_agg برایِ ستونِ NULL گذاشته بود.
+    """
+    lines = row.get("blDs")
+    if not isinstance(lines, list) or not lines:
+        return None
+    out = []
+    for ln in lines[:5]:
+        if not isinstance(ln, dict):
+            continue
+        bpx, bvol, bcnt = num(ln.get("pmd")), num(ln.get("qmd")), num(ln.get("zmd"))
+        spx, svol, scnt = num(ln.get("pmo")), num(ln.get("qmo")), num(ln.get("zmo"))
+        if not bpx and not spx:
+            continue
+        out.append([bpx or 0.0, bvol or 0.0, bcnt or 0.0,
+                    spx or 0.0, svol or 0.0, scnt or 0.0])
+    return json.dumps(out, separators=(",", ":")) if out else None
+
+
+def save_order_book(conn, rows):
+    """سطرهایِ (ins_code, d_even, h_even, book_txt, updated_at) را می‌نویسد.
+
+    نمادی که در این پاسخ عمق ندارد در `rows` نیست و سطرِ کهنه‌اش دست‌نخورده
+    می‌ماند؛ قضاوتِ «عمقِ این نشست است یا نشستِ پیش» با d_even/h_evenِ خودِ سطر
+    است، نه با حدسِ مصرف‌کننده.
+    """
+    if not rows:
+        return 0
+    ensure_order_book_schema(conn)
+    conn.executemany(_OB_INSERT, rows)
+    return len(rows)
+
+
 def fetch_paper_types(getter, label="paperTypes"):
     """نقشهٔ ins_code → paperType. طبقهٔ ابزار از نام/سکتور ساخته نمی‌شود:
     اختیارجِ یک صندوق همان sector_code=68 صندوق را دارد، پس بدون این نقشه
@@ -642,6 +703,13 @@ def create_schema(conn):
             symbol TEXT, date TEXT, open REAL, high REAL, low REAL,
             close REAL, volume REAL, PRIMARY KEY (symbol, date));
         CREATE INDEX IF NOT EXISTS ix_daily_ins ON daily_prices(ins_code);
+        -- پنج خطِ عمق، از blDsِ همان نشست. sathهای تابلو جمع و خطِ اول را در
+        -- market_watch نگه می‌دارند؛ این جدولِ جدا تک‌تکِ سطرها را برایِ پنلِ
+        -- «۵ مظنه» نگه می‌دارد. در create_schema هم ساخته می‌شود تا خواننده
+        -- با «جدول نیست» روبه‌رو نشود، بلکه با «سطری هنوز ذخیره نشده».
+        CREATE TABLE IF NOT EXISTS order_book (
+            ins_code TEXT PRIMARY KEY, d_even INTEGER, h_even INTEGER,
+            book_txt TEXT, updated_at TEXT);
         -- v9.7.5 فاز ۱ — تایم‌لاین درون‌روزی. market_watch کلید ins_code دارد و
         -- هر همگام‌سازی روی همان سطر می‌نویسد، پس «تاریخچهٔ لحظه‌ای» در آن ساختنی
         -- نیست. این جدول به‌ازای هر همگام‌سازی یک نقطهٔ تجمیعی نگه می‌دارد.
@@ -1065,6 +1133,7 @@ def main():
     print(f"Paper-type map: {nfmt(len(ptypes))}")
 
     inst, watch, daily = [], [], []
+    book = []                          # پنج خطِ عمق → جدولِ جدا (order_book)
     total = len(mw)
     for i, r in enumerate(mw, 1):
         ins = r.get("insCode")
@@ -1103,6 +1172,9 @@ def main():
             # بازار بسته و پاسخِ این نماد بی‌عمق بود → صف‌های آخرین نشست را نگه دار
             _p = prev[ins]
             q = tuple(_p[k] for k in _QUEUE_COLS)
+        bk = book_lines(r)
+        if bk:
+            book.append((ins, d_even, num(r.get("hEven")), bk, now))
         inst.append((ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
                      shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins)))
         mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
@@ -1143,7 +1215,12 @@ def main():
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)",
                   [(k, v) for k, v in boards.items()])
+    n_book = save_order_book(conn, book)
     conn.commit()
+    if n_book:
+        print(f"  [order-book] پنج خطِ عمق برایِ {nfmt(n_book)} نماد در order_book")
+    else:
+        print("  [order-book] این پاسخ blDs نداشت؛ سطرهایِ قبلی دست‌نخورده ماند")
     if save_market_total(conn, total_value, total_deven or d_even_today, now):
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview)")
     else:

@@ -30,8 +30,6 @@ interface FtsToolbarProps {
   onToggleFullscreen: () => void;
   onOpenSettings?: () => void;
   onTakeSnapshot?: () => void;
-  onToggleDepth?: () => void;
-  isDepthOpen?: boolean;
   /** همسنجیِ دو نماد روی همین چارت */
   compareSymbol?: string | null;
   compareBusy?: boolean;
@@ -62,8 +60,6 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   onToggleFullscreen,
   onOpenSettings,
   onTakeSnapshot,
-  onToggleDepth,
-  isDepthOpen,
   compareSymbol,
   compareBusy,
   compareNoOverlap,
@@ -148,19 +144,6 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           )}
           <IconSearch size={13} color="var(--nn-text-secondary)" />
         </div>
-
-        {onToggleDepth && (
-          <button
-            type="button"
-            className={`nn-btn ${isDepthOpen ? 'active' : ''}`}
-            onClick={(e) => { e.stopPropagation(); onToggleDepth(); }}
-            title="نمایش تابلوی ۵ مظنه برتر (عمق بازار)"
-            data-testid="toggle-depth-btn"
-            style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 8px' }}
-          >
-            ۵ مظنه
-          </button>
-        )}
 
         <div className="nn-separator" />
 

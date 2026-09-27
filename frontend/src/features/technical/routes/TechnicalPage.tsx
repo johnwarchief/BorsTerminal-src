@@ -150,7 +150,7 @@ export default function TechnicalPage() {
 
   return (
     <div className="tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
-      <TechnicalSidebar active={activeLevels} onSelect={selectSymbol} />
+      <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}

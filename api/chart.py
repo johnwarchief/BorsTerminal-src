@@ -417,6 +417,54 @@ def get_key_levels(symbol: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
+@router.get("/api/order-book/{symbol}")
+def get_order_book(symbol: str):
+    """پنج خطِ واقعیِ صفِ خرید و فروشِ یک نماد — از blDsِ همان نشست.
+
+    جمعِ پنج خط و «خطِ اول» در ستون‌هایِ خودِ market_watch بودند و برایِ
+    پنلِ پنج‌سطحی کافی نیستند؛ تک‌تکِ سطرها در جدولِ order_book می‌نشینند.
+    بی‌داده یعنی `no_data` با فهرستِ خالی، نه پنج سطرِ صفر — صفِ تهی با
+    صفی که تابلو آن را نفرستاده دو چیزند و سایدبار باید فرقشان را بگوید.
+    جمع‌ها هم از همان ستون‌هایِ market_watch خوانده می‌شوند تا پنل عددِ
+    دیگری جزِ تابلو نسازد.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        _pred, _params = sym_pred("l_val18", symbol)
+        ins = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        row = None
+        if ins:
+            try:
+                row = conn.execute(
+                    "SELECT b.book_txt, b.d_even, b.h_even, b.updated_at,"
+                    " m.buy_q_vol, m.buy_q_cnt, m.sell_q_vol, m.sell_q_cnt"
+                    " FROM order_book b"
+                    " LEFT JOIN market_watch m ON m.ins_code = b.ins_code"
+                    " WHERE b.ins_code = ?", (ins["ins_code"],)).fetchone()
+            except sqlite3.OperationalError:
+                row = None          # بانکی که هنوز همگام نشده: جدولِ عمق نیست
+        conn.close()
+        if not row or not row["book_txt"]:
+            return {"status": "no_data", "symbol": symbol, "levels": [],
+                    "message": "عمقِ پنج‌سطحی این نماد ذخیره نشده — بعد از"
+                               " نخستین همگام‌سازیِ تابلو می‌آید"}
+        levels = [{"buy_px": ln[0], "buy_vol": ln[1], "buy_cnt": ln[2],
+                   "sell_px": ln[3], "sell_vol": ln[4], "sell_cnt": ln[5]}
+                  for ln in json.loads(row["book_txt"]) if isinstance(ln, list)]
+        return {"status": "ok", "symbol": symbol, "levels": levels,
+                "session": {"d_even": row["d_even"], "h_even": row["h_even"],
+                            "updated_at": row["updated_at"]},
+                "totals": {"buy_vol": row["buy_q_vol"], "buy_cnt": row["buy_q_cnt"],
+                           "sell_vol": row["sell_q_vol"], "sell_cnt": row["sell_q_cnt"]}}
+    except Exception as e:
+        return {"status": "error", "symbol": symbol, "levels": [],
+                "message": str(e)}
+
+
 def _cal_classify(title, tid):
     """تکرار حداقلِ منطق calendarService.js سمت سرور (دسته برای رنگ/آیکون مارکر)."""
     import re as _re
