@@ -509,10 +509,15 @@ def refresh_tape_history(conn, force=False, fetch=None):
         f"SELECT COUNT(*), MAX(d_even) FROM {TAPE_HIST_TABLE}").fetchone()
     board_day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
     st = conn.execute(f"SELECT * FROM {TAPE_HIST_STATE} WHERE id = 1").fetchone()
-    last_attempt, last_ok = (st[1], st[2]) if st else (None, None)
+    last_attempt, last_ok, last_note = (st[1], st[2], st[4]) if st else (None, None, None)
     if not force and have and board_day and (newest or 0) >= board_day:
         return {"skipped": "fresh"}
-    if not force and last_attempt:
+    # قفلِ ۶ ساعته فقط برایِ تلاشی است که «تمام» شده باشد (موفق یا خطای قطعی).
+    # تلاشِ نیمه‌کاره — app وسطِ fetchِ چنددقیقه‌ای بسته شد و note همان
+    # «attempt» ماند — نباید پشتِ تایمر بنشیند. بی‌این، نخستین fetchِ پس از
+    # نصب که یک‌بار abort شد، پنجرۀ [ih] را خالی می‌گذاشت و هر restart تا
+    # ۶ ساعت «throttled» می‌خورد؛ ستونِ «الگو» برای همیشه بی‌بج می‌ماند.
+    if not force and last_attempt and last_note != "attempt":
         try:
             age = (now - datetime.datetime.strptime(last_attempt,
                                                     "%Y-%m-%d %H:%M:%S")).total_seconds()

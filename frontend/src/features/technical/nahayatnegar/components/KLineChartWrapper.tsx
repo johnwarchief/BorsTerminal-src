@@ -395,8 +395,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasData, setHasData] = useState<boolean>(true);
 
-  // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند
-  const [isFtsActive, setIsFtsActive] = useState<boolean>(true);
+  // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند.
+  // رأیِ مالک: لایهٔ «تحلیل FTS» فعلاً ناقص است ⇒ پیش‌فرض خاموش؛ کلیدِ
+  // «تحلیل FTS» در نوارِ ابزار همان را دستی روشن می‌کند.
+  const [isFtsActive, setIsFtsActive] = useState<boolean>(false);
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({

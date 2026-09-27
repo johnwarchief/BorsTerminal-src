@@ -916,10 +916,13 @@ export function ObsidianStrategyGraph({
           : 'bg-[#070b16] border-border-c/80 text-text-primary shadow-black/60'
       }`}
     >
-      {/* ۱. نوار ابزار کنترل استراتژی، جستجو و تغییر جهت جریان */}
+      {/* ۱. نوار ابزار کنترل استراتژی، جستجو و تغییر جهت جریان
+          backdrop-blur حذف شد: بالای SVGِ همیشه‌متحرک، هر فریم را مجبور به
+          re-blur می‌کرد و گرافیک را بی‌دلیل درگیر می‌نمود (#221). جایش یک
+          پس‌زمینهٔ نیمه‌شفافِ جامد نشست که همان خوانایی را می‌دهد. */}
       <div
-        className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2.5 backdrop-blur-md transition-colors ${
-          isLight ? 'bg-white/80 border-slate-200' : 'bg-bg-card/70 border-border-c/60'
+        className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2.5 transition-colors ${
+          isLight ? 'bg-white border-slate-200' : 'bg-bg-card border-border-c/60'
         }`}
       >
         {/* سوییچ جهت جریان: مهندسی معکوس نوسان‌گیری vs جریان مستقیم
@@ -1107,42 +1110,28 @@ export function ObsidianStrategyGraph({
               </text>
             </g>
 
-            {/* مرحله‌گذاریِ ستون‌ها: هر فاز یک نوارِ عمودیِ رنگی با شمارهٔ درشت
-                که مسیرها را پشتِ سرِ خودش گروه‌بندی می‌کند (به‌جای شماره رویِ
-                هر منحنی، که رویِ هم می‌افتاد و شلوغش می‌کرد) */}
+            {/* مرحله‌گذاریِ ستون‌ها: هر فاز یک نوارِ عمودیِ رنگی. شمارهٔ درشتِ
+                کمرنگِ پشتِ هر ستون حذف شد (رأیِ مالک: مزاحمِ دید است)؛ گروه‌بندی
+                از همان نوارِ رنگی و سربرگِ عنوان خوانده می‌شود. */}
             <g className="column-headers pointer-events-none">
               {columnHeaders.map((col, idx) => {
                 const band = layout.bands.get(col.x);
                 return (
                 <g key={idx}>
                   {band && (
-                    <>
-                      <rect
-                        x={col.x - 136 - band.bow}
-                        y={band.top}
-                        width={272 + band.bow}
-                        height={band.bottom - band.top}
-                        rx="20"
-                        fill={col.color}
-                        fillOpacity={isLight ? 0.07 : 0.05}
-                        stroke={col.color}
-                        strokeOpacity={isLight ? 0.42 : 0.3}
-                        strokeWidth="1.2"
-                        strokeDasharray="7 7"
-                      />
-                      <text
-                        x={col.x - band.bow / 2}
-                        y={(band.top + band.bottom) / 2}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill={col.color}
-                        fillOpacity={isLight ? 0.11 : 0.09}
-                        fontSize="190"
-                        fontWeight="900"
-                      >
-                        {toFaDigits(idx + 1)}
-                      </text>
-                    </>
+                    <rect
+                      x={col.x - 136 - band.bow}
+                      y={band.top}
+                      width={272 + band.bow}
+                      height={band.bottom - band.top}
+                      rx="20"
+                      fill={col.color}
+                      fillOpacity={isLight ? 0.07 : 0.05}
+                      stroke={col.color}
+                      strokeOpacity={isLight ? 0.42 : 0.3}
+                      strokeWidth="1.2"
+                      strokeDasharray="7 7"
+                    />
                   )}
                   <rect
                     x={col.x - 136}
