@@ -3,8 +3,6 @@
 // باشد. تا v1.0.25 ابزارهای «الگو/گن/اندازه‌گیری» در منو بودند ولی تمپلیت‌شان هرگز
 // در چارتِ فعال ثبت نمی‌شد — کلیک کاربر بی‌صدا هیچی می‌ساخت.
 
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { indicators as pkgIndicatorList, overlays as pkgOverlays } from 'react-klinecharts-ui/extensions';
@@ -77,12 +75,23 @@ describe('drawing tool registry', () => {
     expect(clash, `indicator id collision: ${clash.join(', ')}`).toEqual([]);
   });
 
-  it('built-in names the toolbar relies on exist in the shipped vendor bundle', () => {
-    const vendor = readFileSync(path.resolve(process.cwd(), 'public/vendor/klinecharts.min.js'), 'utf8');
-    for (const name of ['segment', 'rayLine', 'straightLine', 'verticalStraightLine',
-                        'priceChannelLine', 'fibonacciLine', 'brush', 'rect', 'circle',
-                        'simpleAnnotation']) {
-      expect(vendor, `vendor bundle lost "${name}"`).toContain(`"${name}"`);
-    }
+  it('نام‌هایِ درونیِ که تولبار به کار می‌برد در موتورِ نصب‌شده هست', async () => {
+    // باندلِ npm تنها منبعِ چارتِ برنامه است (باندلِ دومِ public/vendor بیرون
+    // رفت)؛ اگر نسخه‌ای این نام‌ها را بردارد، createOverlay بی‌صدا هیچی می‌سازد.
+    // از خودِ API می‌پرسیم، نه از grepِ باندل — grep به شکلِ فشرده‌سازی حساس است.
+    const { getSupportedFigures, getSupportedOverlays } = await import('klinecharts');
+    const overlays = new Set(getSupportedOverlays());
+    const figures = new Set(getSupportedFigures());
+    // اورلیِ آماده — این‌ها را createOverlay با نامِ خودش می‌شناسد
+    const wantOverlays = ['segment', 'rayLine', 'straightLine', 'verticalStraightLine',
+                          'priceChannelLine', 'fibonacciLine', 'brush', 'simpleAnnotation',
+                          'horizontalStraightLine'];
+    // شکلِ داخلِ اورلیِ سفارشی — rect/circle اورلی *نیستند*؛ همین تفاوت باعث شد
+    // آداپترِ کمربند اول «rect» را به createOverlay بدهد و بی‌صدا هیچی نشود.
+    const wantFigures = ['rect', 'circle', 'text', 'line', 'polygon'];
+    const missingOverlays = wantOverlays.filter((n) => !overlays.has(n));
+    const missingFigures = wantFigures.filter((n) => !figures.has(n));
+    expect(missingOverlays, `klinecharts lost overlays: ${missingOverlays.join(', ')}`).toEqual([]);
+    expect(missingFigures, `klinecharts lost figures: ${missingFigures.join(', ')}`).toEqual([]);
   });
 });

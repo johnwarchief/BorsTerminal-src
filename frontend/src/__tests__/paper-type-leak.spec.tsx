@@ -23,7 +23,7 @@ function norm(s: string): string {
   return (s || '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/\u200c/g, ' ');
 }
 
-function isFund(symbol: string, name: string, sector: string): boolean {
+function isFund(name: string, sector: string): boolean {
   const n = norm(name), s = norm(sector);
   return n.includes('صندوق') || s.includes('صندوق سرمايه گذاري')
       || s.includes('صندوق سرمایه گذاری');
@@ -37,7 +37,7 @@ export function classify(paperType: number | null, name = '', symbol = '', secto
   if (paperType === 1 || paperType === 2) return [PAPER_STOCK, 'stock'];
   if (paperType === 4) return [PAPER_RIGHT, 'right'];
   if (paperType === 8) {
-    if (isFund(symbol, name, sector)) return [PAPER_FUND, 'etf'];
+    if (isFund(name, sector)) return [PAPER_FUND, 'etf'];
     if (s18.toUpperCase().endsWith('ح') || s30.includes('حق تقدم')) return [PAPER_RIGHT, 'right'];
     return [PAPER_STOCK, 'stock'];
   }

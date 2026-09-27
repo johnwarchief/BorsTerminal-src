@@ -13,7 +13,6 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
     // بازنشانی استور به مقادیر پیش‌فرض
     useFtsConfigStore.setState({
       chartType: 'candle_solid',
-      chartEngine: 'klinecharts',
       priceScale: 'normal',
       timeframe: 'day',
       showGrid: true,

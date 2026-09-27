@@ -1,6 +1,11 @@
-// vendor/klinecharts.d.ts -- تایپ ایزوله KLineCharts v10.0.3 وندورشده
-// کتابخانه از public/vendor با script tag می آید؛ این فایل فقط تایپ است.
-// امضاها فقط چیزهایی است که واقعا در باندل min استفاده می شود (پروب شده).
+// vendor/klinecharts.d.ts -- تایپِ تنگِ KLineCharts v10، پروب‌شده از باندلِ npm
+// این فایل هیچ باندلِ دومی را توصیف نمی‌کند: نسخهٔ وندورشدهٔ
+// `public/vendor/klinecharts.min.js` (که با <script> روی `window.klinecharts`
+// می‌نشست) از برنامه بیرون رفت و چارتِ یکتا از `npm/klinecharts` می‌آید.
+// نگه‌داشتنش به‌جای اتکای مستقیم به اعلانِ خودِ پکیج به‌خاطرِ دو چیز است:
+// امضاهایِ registerOverlay/registerIndicator که در .d.tsِ پکیج ناقص‌اند، و
+// متدهایی که روی Store هستند نه Chart (guard: dev/chart_single_bundle_v1038.py).
+// امضاها فقط چیزهایی است که واقعا در باندل استفاده می شود (پروب شده).
 export type KLineData = {
   timestamp: number;
   open: number;
@@ -56,6 +61,8 @@ export type RegisterOverlayDef = {
   ignoreEvent?: boolean;
   styles?: unknown;
   createPointFigures?: (ctx: OverlayFigureCtx) => OverlayFigure[];
+  /** در v10 هر دو محور callbackِ جدا دارند (npm: createXAxisFigures روی Overlay) */
+  createXAxisFigures?: (ctx: OverlayFigureCtx) => OverlayFigure[];
   createYAxisFigures?: (ctx: OverlayFigureCtx) => OverlayFigure[];
 };
 
@@ -146,11 +153,5 @@ export type KLineChartsApi = {
   getSupportedOverlays: () => string[];
   utils: unknown;
 };
-
-declare global {
-  interface Window {
-    klinecharts?: KLineChartsApi;
-  }
-}
 
 export {};

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { OverlayFigureCtx, RegisterOverlayDef } from '@vendor/klinecharts';
 import { DRAWING_CATALOG, buildDrawingGroups, toolDefaults, toolLabel } from '@features/technical/lib/drawingTools';
-import { FTS_FIB_BANDS, FTS_FIB_LEVELS, registerFtsOverlays } from '@features/technical/lib/ftsOverlays';
+import { FTS_FIB_BANDS, FTS_FIB_LEVELS, fibZoneSpecs, registerFtsOverlays } from '@features/technical/lib/ftsOverlays';
 
 /** ثبت اورلیها با api قلابی و برگرداندن تعریفها */
 function captureRegistered(): RegisterOverlayDef[] {
@@ -145,6 +145,33 @@ describe('اورلی رویدادهای شرکتی (FTS_CORP_ACTION_OVERLAY)', (
     // خودِ نسبت هم کنارِ نشانگر خوانده می‌شود (وگرنه نقطه بی‌توضیح است)
     expect(at(2).text).toBe('تعدیل قیمت پایه · ×۰٫۷۴');
     expect(at(2).x).toBe(112);
+  });
+});
+
+// از specِ رپرِ قدیمی به این‌جا آمد. fibZoneSpecs خالصِ کتابخانه‌ای است و
+// چارتِ زنده همان را می‌سازد.
+describe('fibZoneSpecs از داده بک اند', () => {
+  it('هر دو کمربند معتبر می سازد', () => {
+    const specs = fibZoneSpecs({
+      zone_33_40: { lo: 2739.2, hi: 2839.93, in_zone: false },
+      zone_618_70: { lo: 2346.44, hi: 2447.83, in_zone: true },
+    });
+    expect(specs).toHaveLength(2);
+    expect(specs[0].lo).toBeCloseTo(2739.2);
+    expect(specs[0].hi).toBeCloseTo(2839.93);
+    expect(specs[1].label).toContain('طلایی');
+  });
+
+  it('null و کمربند ناقص هیچ نمی سازد', () => {
+    expect(fibZoneSpecs(null)).toHaveLength(0);
+    expect(fibZoneSpecs({ zone_33_40: null, zone_618_70: { lo: null, hi: null } })).toHaveLength(0);
+    expect(fibZoneSpecs({ zone_33_40: { lo: 100, hi: 90 } })).toHaveLength(0); // hi<=lo
+  });
+
+  it('اعداد نامعتبر (نامنفی/NaN) رد می شوند', () => {
+    expect(
+      fibZoneSpecs({ zone_33_40: { lo: Number.NaN, hi: 100 } }),
+    ).toHaveLength(0);
   });
 });
 

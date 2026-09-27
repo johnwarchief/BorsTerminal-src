@@ -1,16 +1,15 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- ?? vendored ???? ?????? */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- registerOverlay و registerIndicator در اعلان نوعِ npm نیامده‌اند؛ بدون any کامپایل نمی‌شود */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
 
 /** کراس‌هیرِ فعلی، از مسیری که در این باندل واقعاً وجود دارد.
  *
- * در klinecharts 10 (همان نسخه‌ای که از npm import می‌شود) getCrosshair روی
- * Store است نه Chart — `chart.getCrosshair()` داخلِ هندلرِ ماوس با
- * «is not a function» می‌شکند. باندلِ public/vendor که کامپوننتِ otherِ
- * فنی از window.klinecharts مصرف می‌کند آن متد را *رویِ Chart* دارد، پس دو
- * چارتِ این برنامه یک API ندارند و کپی‌کردنِ کد بینشان سمّی است.
- * اگر روزی هر دو نباشند، null برمی‌گردد و فراخوان‌ها همان fallbackِ
+ * در klinecharts 10 `getCrosshair` روی Store است نه Chart —
+ * `chart.getCrosshair()` داخلِ هندلرِ ماوس با «is not a function» می‌شکند.
+ * (باندلِ دومِ وندورشده که این متد را روی Chart داشت از برنامه بیرون رفت؛
+ * اگر روزی باز دو باندل شد، این توابع کمکی همان جایی است که API‌شان فرق
+ * می‌کند.) اگر هیچ‌کدام نبودند null برمی‌گردد و فراخوان‌ها همان fallbackِ
  * «کندل آخر» را نگه می‌دارند — نه throw، نه عددِ ساختگی.
  */
 type CrosshairLike = { dataIndex?: number; kLineData?: { close?: number; timestamp?: number } };
@@ -721,7 +720,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // ثبت اورلی‌های سفارشی FTS (شامل tvFibLog و ftsCorpAction)
     let registerOverlayFn: ((o: unknown) => void) | undefined;
     try {
-      const regFn = (klinecharts as any).registerOverlay ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerOverlay : undefined);
+      const regFn = (klinecharts as any).registerOverlay as ((o: unknown) => void) | undefined;
       if (typeof regFn === 'function') {
         registerOverlayFn = regFn;
         registerFtsOverlays({ registerOverlay: regFn });
@@ -752,7 +751,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // میانگین، پیوت‌پوینت، استوکستیک، CCI و نسخه‌های TV از MACD/RSI). منو پیش
     // از این فقط شش اندیکاتورِ درونی klinecharts را می‌شناخت.
     try {
-      const indFn = (klinecharts as any).registerIndicator ?? (typeof window !== 'undefined' ? (window as any).klinecharts?.registerIndicator : undefined);
+      const indFn = (klinecharts as any).registerIndicator;
       if (typeof indFn === 'function') {
         // merge (نه replace): هر دو بلوک lazy‌اند و اگر جای ترتیبِ resolve‌شان
         // عوض شود، replaceِ یکی نام‌های دیگری را از منو پاک می‌کرد.
@@ -1607,8 +1606,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         groupId?: string;
         points?: { timestamp?: number; value?: number }[];
         lock?: boolean;
-        styles?: unknown;
-        extendData?: unknown;
+        styles?: Record<string, unknown>;
+        extendData?: Record<string, unknown>;
       }[];
       const snap: StoredOverlay[] = all
         .filter((o) => o?.groupId === 'fts-draw' && o?.name && Array.isArray(o.points))

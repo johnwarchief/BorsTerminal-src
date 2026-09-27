@@ -5,8 +5,12 @@
 export type StoredPoint = { timestamp: number; value?: number };
 export type StoredOverlay = {
   name: string;
+  /** شناسۀ ترسیم؛ همان چیزی که createOverlay برگردانده و هنگام بازگردانی لازم است */
+  id?: string;
   groupId?: string;
   points?: StoredPoint[];
+  /** قفلِ ترسیم در برابرِ حرکت و حذف */
+  lock?: boolean;
   styles?: Record<string, unknown>;
   extendData?: Record<string, unknown>;
 };

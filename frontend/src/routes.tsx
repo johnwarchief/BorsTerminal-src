@@ -16,6 +16,11 @@ export const mainRoutes: RouteObject[] = [
     path: 'technical/:symbol?',
     element: page(() => import('@features/technical/routes/TechnicalPage')),
   },
+  // ابزارِ توسعه‌ایِ مالک: مقایسهٔ موتورهایِ چارت درِ همان shell (بدون منو/سایدبار)
+  {
+    path: 'engine-lab',
+    element: page(() => import('@features/technical/engine-lab/EngineLabPage')),
+  },
   {
     path: 'strategy-tree/:symbol?',
     element: page(() => import('@features/master/routes/StrategyTreePage')),

@@ -12,16 +12,10 @@
 import { useState } from 'react';
 import {
   useFtsConfigStore,
-  type ChartEngine,
   type ChartType,
   type PriceScale,
   type Timeframe,
 } from '../stores/ftsConfigStore';
-
-const ENGINES: { key: ChartEngine; label: string; hint: string }[] = [
-  { key: 'klinecharts', label: 'klinecharts (فعلی)', hint: 'موتور با ابزارهای ترسیم FTS فعال' },
-  { key: 'lightweight', label: 'Lightweight Charts', hint: 'موتور متن‌باز رسمی TradingView' },
-];
 
 /** هشت نوعِ چارتی که موتورِ زنده واقعاً رندر می‌کند: شش مقدارِ `candle.type`ِ
  *  klinecharts v10، به‌علاوهٔ «خط» (اریای بی‌سطح) و «Heikin-Ashi» (تبدیلِ سریِ
@@ -244,7 +238,6 @@ export function ChartSettingsDialog({
 
   const priceScale = useFtsConfigStore((s) => s.priceScale);
   const chartType = useFtsConfigStore((s) => s.chartType);
-  const chartEngine = useFtsConfigStore((s) => s.chartEngine);
   const timeframe = useFtsConfigStore((s) => s.timeframe);
   const view = useFtsConfigStore((s) => s.view);
   const showGrid = useFtsConfigStore((s) => s.showGrid);
@@ -254,7 +247,6 @@ export function ChartSettingsDialog({
 
   const setPriceScale = useFtsConfigStore((s) => s.setPriceScale);
   const setChartType = useFtsConfigStore((s) => s.setChartType);
-  const setChartEngine = useFtsConfigStore((s) => s.setChartEngine);
   const setTimeframe = useFtsConfigStore((s) => s.setTimeframe);
   const setView = useFtsConfigStore((s) => s.setView);
   const toggleDisplay = useFtsConfigStore((s) => s.toggleDisplay);
@@ -330,9 +322,6 @@ export function ChartSettingsDialog({
               </Row>
               <Row label="تایم‌فریم" hint="دقیقه‌ای در بانکِ داده نیست">
                 <Choice options={TIMEFRAMES} value={timeframe} onPick={setTimeframe} />
-              </Row>
-              <Row label="موتور رندر">
-                <Choice options={ENGINES} value={chartEngine} onPick={setChartEngine} />
               </Row>
               <Row label="تایم‌زون" hint="ساعتِ محورِ زمانی">
                 <Choice options={TIMEZONES} value={view.timezone || 'Asia/Tehran'} onPick={(tz) => setView({ timezone: tz })} />
