@@ -1269,26 +1269,53 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const ftsGroupId = 'fts_strategy_overlays';
     chart.removeOverlay({ groupId: ftsGroupId } as never);
 
+    // فضایِ رسم ≠ فضایِ محاسبه. تحلیل FTS عمداً در ریال حساب می‌شود، ولی وقتی
+    // نمایش روی «تعدیل عملکردی» است محورِ چارت شاخصِ بازدهی است (کندلِ اول = ۱۰۰)
+    // و عددِ ریالی بیرون از دید رسم می‌شد. پس هر قیمتِ ریالی با نسبتِ آخرین کندل
+    // به فضایِ نمایش می‌آید؛ فاصلهٔ بصریِ سطح تا قیمتِ فعلی حفظ می‌شود.
+    const shown = renderCandlesRef.current;
+    const aLast = analysisCandles.length ? analysisCandles[analysisCandles.length - 1].close : 0;
+    const dLast = shown.length ? shown[shown.length - 1].close : 0;
+    const k = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
+    const toDisp = (p: number) => p * k;
+    const startTs = shown.length ? shown[0].timestamp : 0;
+    const lastTs = shown.length ? shown[shown.length - 1].timestamp : 0;
+
     // رسم زون‌های فیبوی لگاریتمی FTS (زون ۰.۳۳ تا ۰.۴۰ و زون ۰.۶۱۸ تا ۰.۷۰)
+    // یک نوارِ تمام‌عرض بین دو کرانه، به‌علاوهٔ دو خطِ افقیِ تمام‌عرض روی کرانه‌ها.
+    // پیش‌تر هر زون با دو نقطه روی یک زمانِ یکسان (و آن زمان Date.now() بود بیرون
+    // از بازهٔ داده) به شکلِ یک خطِ عمودیِ بی‌معنا در لبهٔ راست رسم می‌شد.
     try {
       ftsAnalysis.logFiboZones.forEach((z) => {
         if (z.priceStart > 0 && z.priceEnd > 0) {
-          chart.createOverlay({
-            name: 'straightLine',
-            groupId: ftsGroupId,
-            lock: true,
-            points: [
-              { timestamp: Date.now(), value: z.priceStart },
-              { timestamp: Date.now(), value: z.priceEnd }
-            ],
-            styles: {
-              line: {
-                style: 'dashed',
-                size: 1,
-                color: z.ratioStart >= 0.6 ? '#2962ff' : '#ffab00'
-              }
+          const color = z.ratioStart >= 0.6 ? '#2962ff' : '#ffab00';
+          const lo = toDisp(Math.min(z.priceStart, z.priceEnd));
+          const hi = toDisp(Math.max(z.priceStart, z.priceEnd));
+          if (startTs && lastTs && lo > 0 && hi > lo) {
+            try {
+              chart.createOverlay({
+                name: 'rect',
+                groupId: ftsGroupId,
+                lock: true,
+                points: [
+                  { timestamp: startTs, value: hi },
+                  { timestamp: lastTs, value: lo },
+                ],
+                styles: { polygon: { color: `${color}22`, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
+              } as never);
+            } catch {
+              // نوار اختیاری است؛ کرانه‌ها پایین‌تر رسم می‌شوند
             }
-          } as never);
+          }
+          [lo, hi].forEach((v) => {
+            chart.createOverlay({
+              name: 'horizontalStraightLine',
+              groupId: ftsGroupId,
+              lock: true,
+              points: [{ timestamp: lastTs || Date.now(), value: v }],
+              styles: { line: { color, size: 1, style: 'dashed' } },
+            } as never);
+          });
         }
       });
 
@@ -1355,7 +1382,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           name: 'simpleAnnotation',
           groupId: ftsGroupId,
           lock: true,
-          points: [{ timestamp: m.timestamp, value: m.price }],
+          points: [{ timestamp: m.timestamp, value: toDisp(m.price) }],
           extendData: m.label,
           styles: {
             text: {
@@ -1382,7 +1409,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     return () => {
       chart.removeOverlay({ groupId: ftsGroupId } as never);
     };
-  }, [isFtsActive, ftsAnalysis]);
+  }, [isFtsActive, ftsAnalysis, analysisCandles, renderCandles]);
   // ۵. لایهٔ ۹ الگوی FTS (فاز ۴): موتور الگوها روی کندل‌های تعدیل‌شده + ترسیم واقعی روی چارت
   const patternPrefs = usePatternPrefsStore((s) => s.prefs);
   useEffect(() => {
