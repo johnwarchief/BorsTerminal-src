@@ -32,8 +32,8 @@ export interface StrategyParameters {
   maxIndustryWeightPct: number; // سقف مجاز سرمایه‌گذاری در هر صنعت (پیش‌فرض: 20%)
   singleStockMaxWeightPct: number; // سقف مجاز تک‌سهم نوسانی (پیش‌فرض: 3.5%)
   hourglassLeverageMultiplier: number; // ضریب اهرم خرید پله‌ای در کف ساعت شنی (پیش‌فرض: 3.0 برابر)
-  maxTotalPortfolioCapPct: number; // سقف کل دارایی در بورس (پیش‌فرض: 70%)
-  warConditionCapPct: number; // سقف دارایی در شرایط جنگی (پیش‌فرض: 15%)
+  maxTotalPortfolioCapPct: number; // سقف ورود کل دارایی به بورس — حکم ۸: عادی ۵۰٪ (تئوری ۷۰٪)
+  warConditionCapPct: number; // سقف دارایی در شرایط جنگی — حکم ۸: ۲۰٪ (±۱۰٪)
 }
 
 export const FTS_DEFAULT_PARAMS: StrategyParameters = {
@@ -66,8 +66,8 @@ export const FTS_DEFAULT_PARAMS: StrategyParameters = {
   maxIndustryWeightPct: 20,
   singleStockMaxWeightPct: 3.5,
   hourglassLeverageMultiplier: 3.0,
-  maxTotalPortfolioCapPct: 70,
-  warConditionCapPct: 15,
+  maxTotalPortfolioCapPct: 50,
+  warConditionCapPct: 20,
 };
 
 const STORAGE_KEY = 'fts.strategy.custom_parameters.v2';

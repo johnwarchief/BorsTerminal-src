@@ -961,7 +961,7 @@ export default function StrategyTreePage() {
                   <span className="text-2xs text-accent-yellow font-black">مدیریت کلان</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                  حداکثر {toFaDigits(params.maxTotalPortfolioCapPct)}٪ کل دارایی در بورس (۳۰٪ طلا/فیکس)؛ در شرایط جنگی حداکثر {toFaDigits(params.warConditionCapPct)}٪ در بورس.
+                  سقفِ ورودِ کل دارایی به بورس در شرایط عادی {toFaDigits(params.maxTotalPortfolioCapPct)}٪ (تئوریِ جزوه ۷۰٪) و در شرایط جنگی {toFaDigits(params.warConditionCapPct)}٪ ±۱۰٪؛ باقیِ دارایی طلا و درآمد ثابت.
                 </p>
               </div>
             </div>
