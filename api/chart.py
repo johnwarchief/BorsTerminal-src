@@ -1214,11 +1214,18 @@ def _fts_point_hunt(candles, swings):
     نقطهٔ لنگرِ کف رخ داده باشد. آستانهٔ فعال‌شدن سیگنال: ≥ ۳ لمس (مصوب: ۳/۴).
     معنای عملیاتی: هر لمس جدیدِ کف در حالت ≥۳، «شکار نقطه» است — خرید در کف
     کانال با حد ضررِ کوتاه زیر همان کف.
-    خروجی: {'touches', 'floor_price', 'active', 'floor_idx'}.
+    خروجی: {'touches', 'floor_price', 'active', 'floor_idx', 'floor_date'}.
+
+    `floor_date` همان تاریخِ کندلِ لنگر است. چارت نمی‌تواند به `floor_idx`
+    تکیه کند: شمارۀِ اندیس درِ آرایۀِ سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست
+    (بازگشتِ تاریخچه و تعدیل متفاوت‌اند) — نشستنِ نشانگر رویِ کندلِ اشتباه
+    بدتر از نبودنش است. تاریخ را که بدهیم، لایهٔ نمایش همان را به timestamp
+    تبدیل می‌کند و اگر درِ چارت نبود، بی‌خبر نمی‌کشد؛ نمی‌کارد.
     """
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
-    out = {"touches": 0, "floor_price": None, "active": False, "floor_idx": None}
+    out = {"touches": 0, "floor_price": None, "active": False, "floor_idx": None,
+           "floor_date": None}
     if len(highs) < 2 or not lows or len(candles) < 10:
         return out
     h2, h1 = highs[-2], highs[-1]
@@ -1236,7 +1243,8 @@ def _fts_point_hunt(candles, swings):
         if candles[i]["low"] <= floor_at(i) * (1 + tol):
             touches += 1
     out.update(touches=touches, floor_price=round(floor_at(len(candles) - 1), 2),
-               active=touches >= 3, floor_idx=anchor_low["idx"])
+               active=touches >= 3, floor_idx=anchor_low["idx"],
+               floor_date=str(candles[anchor_low["idx"]]["time"])[:10])
     return out
 
 
@@ -1453,10 +1461,13 @@ def _fts_exit_layer3(candles, swings):
       در محدودهٔ ۳٪ همدیگر (شانه‌ها). یقه = خط واصل دو کفِ بین سقف‌ها (شیب‌دار
       هم می‌تواند). تریگر خروج: پایانی زیر خط یقه (در هر نقطه از خط، درونِ بازهٔ
       زمانی الگو تا امروز).
-    خروجی: {'third_peak', 'double_top', 'hs_break', 'neckline', 'level'}.
+    خروجی: {'third_peak', 'double_top', 'hs_break', 'neckline', 'level',
+    'third_peak_level'}. سقفِ سومِ تخت یک *ناحیه* است، پس ارتفاعِ همان سه سقف
+    (m) هم بیرون می‌رود؛ لایۀ نمایشِ چارت بدونِ این عدد نمی‌تواند باند را
+    بکشد و الگو را یا نادیده می‌گرفت یا سرِ خود جایِ سطح را می‌گذاشت (#193).
     """
     out = {"third_peak": False, "double_top": False, "hs_break": False,
-           "neckline": None, "level": None}
+           "neckline": None, "level": None, "third_peak_level": None}
     if len(candles) < 15:
         return out
     highs = [s for s in swings if s["kind"] == "high"]
@@ -1468,6 +1479,7 @@ def _fts_exit_layer3(candles, swings):
         m = max(h1, h2, h3)
         if m > 0 and (m - min(h1, h2, h3)) / m <= 0.01:
             out["third_peak"] = True
+            out["third_peak_level"] = round(m, 2)
     # --- دابل‌تاپ ---
     if len(highs) >= 2:
         h1, h2 = highs[-2]["price"], highs[-1]["price"]

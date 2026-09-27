@@ -70,6 +70,9 @@ const PointHunt = z.object({
   floor_price: z.number().nullish(),
   active: z.boolean().nullish(),
   floor_idx: z.number().nullish(),
+  // تاریخِ کندلِ لنگر — چارت فقط با این می‌تواند نشانگر را رویِ کندلِ درست
+  // بگذارد؛ اندیسِ آرایۀِ سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست (#193).
+  floor_date: z.string().nullish(),
 });
 
 const DoubleBottom = z.object({
@@ -110,6 +113,7 @@ const ExitEngine = z.object({
   l3: z
     .object({
       third_peak: z.boolean().nullish(),
+      third_peak_level: z.number().nullish(),
       double_top: z.boolean().nullish(),
       hs_break: z.boolean().nullish(),
       neckline: z.number().nullish(),

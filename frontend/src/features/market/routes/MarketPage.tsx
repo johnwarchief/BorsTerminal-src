@@ -47,7 +47,10 @@ export function applyFilters(
         if (!(r as unknown as Record<string, unknown>)[f]) return false;
       }
     }
-    if (liveOnly && r.is_live === false) return false;
+    // #197: جدول بی‌پیش‌فرض فقط «همین نشست» را می‌نمایاند؛ ولی وقتی کاربر
+    // خودش نمادی را نوشته منظورش دیدنِ همان نماد است، پس جستجو از این بند
+    // مستثنی می‌ماند (وگرنه جست‌وجویِ یک نمادِ خاموش = «ردیفی نیامد»ِ گمراه‌کننده).
+    if (liveOnly && !q && r.is_live === false) return false;
     if (!matchesDirection(r.percent_change, direction)) return false;
     if (volRatioOn && !matchesVolRatio(r.vol_ratio, volRatioMin)) return false;
     if (exitAccum && !matchesExitAccum(r)) return false;

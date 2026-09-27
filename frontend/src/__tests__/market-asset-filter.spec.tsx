@@ -68,3 +68,27 @@ describe('خروج مشتقه‌ها از لیست‌های تابلو با پی
     expect(buttons.some((b) => b.textContent?.includes('ضفولاد'))).toBe(true);
   });
 });
+
+// #197: «فقط زنده» پیش‌فرضِ جدول شد و بالاخره دکمه گرفت
+describe('بندِ «فقط زنده» در applyFilters', () => {
+  const live = row({ symbol: 'خگلپا', name: 'خگلی پارس' });
+  const fossil = row({ symbol: 'همتا', name: 'همتا', is_live: false });
+  const set = [live, fossil];
+  const types = [...DEFAULT_ASSET_TYPES];
+
+  it('پیش‌فرضِ استور روشن است و ردیفِ بیرونِ تابلو را از جدول بیرون می‌گذارد', () => {
+    expect(useTapeStore.getState().liveOnly).toBe(true);
+    const kept = applyFilters(set, '', types, [], '', true, 'all', false, 3, false);
+    expect(kept.map((r) => r.symbol)).toEqual(['خگلپا']);
+  });
+
+  it('جست‌وجویِ صریح از این بند معاف است — نمادِ خاموش هم پیدا می‌شود', () => {
+    const kept = applyFilters(set, 'همتا', types, [], '', true, 'all', false, 3, false);
+    expect(kept.map((r) => r.symbol)).toEqual(['همتا']);
+  });
+
+  it('خاموش‌کردنِ سوئیچ هر دو ردیف را برمی‌گرداند', () => {
+    const kept = applyFilters(set, '', types, [], '', false, 'all', false, 3, false);
+    expect(kept.map((r) => r.symbol)).toEqual(['خگلپا', 'همتا']);
+  });
+});

@@ -993,16 +993,21 @@ def _liq_side(hemat) -> str:
 
 
 def liquidity_history(conn, limit: int = LIQ_CONTINUITY_MIN + 2) -> list:
-    """ارزشِ معاملاتِ چند نشستِ آخر (همت) — market_liquidity و، برای روزهایی
-    که هنوز ردیفی ندارند، تاریخچۀ روزانۀ قیمت.
+    """ارزشِ معاملاتِ چند نشستِ آخر (همت).
 
-    نوشتارش در test_tsetmc.py است و مبنایش همان eq_allِ خودِ همین موتور، پس
-    مقایسه با عددِ امروز سیبِ‌با‌سیب است. جدول در پایگاهِ بسته‌بندی‌شده هنوز
-    نیست (یا یک ردیف دارد) — آن‌گاه درِ تداوم تا پیش از این «بدون داده»
-    می‌ماند و مالک همان را «داده نداری» خواند. پس نشست‌هایِ گذشته از
-    daily_prices شمارش می‌شوند (توضیح و دقتِ همان مبنا در
-    _liquidity_from_price_history). اگر آن هم نبود [] برمی‌گردد و در «بدون
-    داده» می‌ماند، نه «تأیید».
+    دو منبع، یک مبنایِ eq_all:
+      • market_liquidity — همان لحظه‌ای که سینک از تابلویِ زنده نوشت
+        (test_tsetmc.save_market_liquidity). برایِ نشستِ جاری درست‌ترین عدد است.
+      • daily_prices — سرنوشتِ همان نشست پس از نهایی‌شدن. شاهدِ زنده (۱۴۰۵-۰۷-۰۵):
+        ردیفِ ۲۰۶۰۹۲۶ در market_liquidity ۳۹٫۱۲ همت است ولی جمعِ نهاییِ همان
+        روزِ همان مبنایِ eq_all از daily_prices ۳۹٫۹۸ — ۰٫۸۶ همت (۲٫۲٪) که
+        تابلویِ زنده ندیده بود و هیچ‌گاه اصلاح نشد، چون ردیفِ نوشته‌شده بازنویسی
+        نمی‌شود. پس برایِ نشستِ بسته‌شده عددِ نهایی برنده است.
+
+    روزی که daily_prices نصفه داشته باشد (کمتر از LIQ_BACKFILL_MIN_SYMBOLS
+    نمادِ گردش‌دار) آن روز رد می‌شود و ردیفِ ذخیره‌شده سرِ جایش می‌ماند —
+    یعنی نشستِ بازِ امروز همچنان از تابلو خوانده می‌شود. اگر هیچ‌کدام نبود []
+    برمی‌گردد و درِ تداوم در «بدون داده» می‌ماند، نه «تأیید».
     """
     try:
         rows = conn.execute(
@@ -1010,23 +1015,23 @@ def liquidity_history(conn, limit: int = LIQ_CONTINUITY_MIN + 2) -> list:
             " ORDER BY d_even DESC LIMIT ?", (int(limit),)).fetchall()
     except sqlite3.Error:
         rows = []
-    out = []
+    stored = {}
     for r in rows:
         v = _f(r[1])
-        out.append({"d_even": int(_f(r[0])), "value_hemat": round(v, 2) if v > 0 else None})
-    if len([h for h in out if h["value_hemat"] is not None]) >= limit:
-        return out[:limit]
-    have = {h["d_even"] for h in out}
+        if v > 0:
+            stored[int(_f(r[0]))] = round(v, 2)
     try:
         days = [int(_f(r[0])) for r in conn.execute(
             "SELECT DISTINCT d_even FROM daily_prices ORDER BY d_even DESC LIMIT ?",
             (int(limit) * 3,)).fetchall()]
     except sqlite3.Error:
         days = []
-    for h in _liquidity_from_price_history(conn, [d for d in days if d not in have]):
-        out.append(h)
-    out.sort(key=lambda h: -h["d_even"])
-    return out[:limit]
+    final = {int(h["d_even"]): h["value_hemat"]
+             for h in _liquidity_from_price_history(conn, days) if h.get("value_hemat")}
+    out = [{"d_even": d, "value_hemat": final.get(d) or stored.get(d)}
+           for d in sorted(set(days) | set(stored), reverse=True)
+           if (final.get(d) or stored.get(d))]
+    return out[:int(limit)]
 
 
 def _eq_all_codes(conn) -> set:
@@ -1054,9 +1059,10 @@ def _liquidity_from_price_history(conn, dates, min_symbols: int = LIQ_BACKFILL_M
     """گردشِ روزانۀ eq_all (همت) از daily_prices، برای روزهایی که
     market_liquidity ردیف ندارد.
 
-    q_tot_cap ارزشِ معاملاتِ همان روز است (ریال)؛ جمعش روی نمادهای eq_all با
-    عددی که خودِ سینک برای همان روز می‌نویسد مو به مو می‌خواند (شاهد: نشستِ
-    ۲۰۲۶۰۹۲۶ هر دو ۳۹٫۹۸ همت). روزی که تعدادِ نمادهایِ گردش‌دارش از
+    q_tot_cap ارزشِ معاملاتِ همان روز است (ریال). این جمع با عددِ تابلو سنجیده
+    شد: نشستِ بازِ ۲۰۲۶۰۹۲۷ هر دو ۲۹٫۷۵ همت؛ اما ۲۰۲۶۰۹۲۶ در تابلو ۳۹٫۱۲ و در
+    همین مبنایِ نهایی ۳۹٫۹۸ ماند (۲٫۲٪ دیرتر نهایی شد) — دلیلِ ترجیحِ این منبع در
+    liquidity_history. روزی که تعدادِ نمادهایِ گردش‌دارش از
     LIQ_BACKFILL_MIN_SYMBOLS کمتر باشد نصفه‌سینک است و رد می‌شود — عددِ نصفه
     «تداومِ نامساعد» نمی‌سازد.
     """

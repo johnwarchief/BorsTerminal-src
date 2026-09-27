@@ -712,14 +712,43 @@ if os.path.exists("market.db"):
     hk = [h for h in hist if h["value_hemat"]]
     ck(len(hk) >= ME.LIQ_CONTINUITY_MIN,
        "تداوم روی دادهٔ واقعی %d نشست دارد (بک‌فیلد از daily_prices)، نه «بدون داده»" % len(hk))
-    saved = conn.execute("SELECT d_even, value_hemat FROM market_liquidity"
-                         " ORDER BY d_even DESC LIMIT 1").fetchone()
-    if saved:
-        bf = ME._liquidity_from_price_history(conn, [int(saved[0])])
-        ck(bool(bf) and abs(bf[0]["value_hemat"] - float(saved[1])) < 0.05,
-           "مبنای بک‌فیلد = مبنای سینک (%s همت در برابر %s)"
-           % (bf[0]["value_hemat"] if bf else None, float(saved[1])))
-        ck(ME._liquidity_from_price_history(conn, [int(saved[0])], min_symbols=10 ** 9) == [],
+    # #195 و #199: دو منبع، یک مبنایِ eq_all — ولی «کدام برنده است» عوض شده.
+    # اندازه‌گیریِ 1405-07-05 (بازارِ بسته، 12:55): daily_prices امروز را با
+    # 2167 نمادِ گردش‌دار داشت و هر دو منبع 29.75 همت دادند (مبنایِ یکی اثبات شد).
+    # برایِ 20260926 اما ردیفِ ذخیره‌شده 39.12 است و جمعِ نهاییِ همان مبنایِ همان
+    # روز 39.98 — 0.86 همت (2.2٪) که تابلویِ زنده ندید و بعد از بسته‌شدن هیچ‌گاه
+    # بازنویسی نشد. پس درِ تداوم برایِ نشستِ بسته عددِ نهایی را می‌خواند
+    # (mstat_engine.liquidity_history) و ردیفِ کهنه فقط برایِ نشستِ باز به کار
+    # می‌آید. گارد همین را می‌سنجد، نه برابریِ دو عددِ متفاوت را.
+    saved_rows = conn.execute("SELECT d_even, value_hemat FROM market_liquidity"
+                              " ORDER BY d_even DESC LIMIT 6").fetchall()
+    eff = {int(h["d_even"]): h["value_hemat"] for h in hist if h["value_hemat"]}
+    closed_days = 0
+    drift = []
+    for d_raw, v_raw in saved_rows:
+        d_even, v_sync = int(d_raw), float(v_raw)
+        bf = ME._liquidity_from_price_history(conn, [d_even])
+        if not bf:
+            # نشستِ هنوز-باز: بک‌فیلد نصفه‌سینک را رد می‌کند، پس عددِ تابلو می‌ماند
+            ck(d_even in eff and abs(eff[d_even] - v_sync) < 0.05,
+               "روزِ ناقص (کمتر از %d نمادِ گردش‌دار) از ردیفِ سینک خوانده می‌شود (%d)"
+               % (ME.LIQ_BACKFILL_MIN_SYMBOLS, d_even))
+            continue
+        closed_days += 1
+        v_final = bf[0]["value_hemat"]
+        ck(d_even in eff and abs(eff[d_even] - v_final) < 0.02,
+           "درِ تداوم برایِ %d عددِ نهایی را می‌خواند (%.2f همت، نه ردیفِ کهنهٔ %.2f)"
+           % (d_even, v_final, v_sync))
+        if abs(v_final - v_sync) / max(v_sync, 1e-9) > 0.005:
+            drift.append((d_even, v_sync, v_final))
+        if closed_days >= 3:
+            break
+    ck(closed_days >= 1,
+       "دست‌کم یکِ نشستِ بسته برایِ سنجشِ مبنایِ نقدینگی پیدا شد")
+    print("    i) اختلافِ ردیفِ کهنه تا عددِ نهایی: %s"
+          % (", ".join("%d: %.2f→%.2f" % d for d in drift) or "هیچ"))
+    if saved_rows:
+        ck(ME._liquidity_from_price_history(conn, [int(saved_rows[0][0])], min_symbols=10 ** 9) == [],
            "روزی که نمادِ گردش‌دارش زیرِ کران باشد عدد نمی‌سازد (نصفه‌سینک)")
     ck(ME._liquidity_from_price_history(conn, [19990101]) == [],
        "روزی که در تاریخچۀ قیمت نیست عدد نمی‌سازد")

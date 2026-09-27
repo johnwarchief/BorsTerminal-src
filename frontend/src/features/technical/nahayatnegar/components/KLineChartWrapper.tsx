@@ -58,20 +58,10 @@ import { SymbolSearchModal, SymbolInfo } from './SymbolSearchModal';
 import { IconClose } from './TradingViewIcons';
 import {
   buildPatternOverlays,
+  patternInputsFromFts,
   PATTERN_LABELS,
   type PatternOverlaySpec,
 } from '../../lib/patternOverlays';
-import {
-  detectChochConfirmed,
-  detectDoubleBottom,
-  detectFibZigzag,
-  detectHeadShoulders,
-  detectHourglass,
-  detectJet,
-  detectMa14Exit,
-  detectPointHunt,
-  detectThirdPeak,
-} from '../../lib/ftsPatterns';
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
 import { useFtsConfigStore, type ChartView } from '../../stores/ftsConfigStore';
 import { useChartTemplateStore, type ChartTemplate } from '../../stores/chartTemplateStore';
@@ -167,7 +157,7 @@ function formatJalali(timestamp: number, type?: string): string {  try {
   }
 }
 
-// --- فاز ۴: نگاشت خروجی موتور ۹ الگو به اورلی‌های موتور چارت (آورلی‌های توکار v10) ---
+// --- فاز ۴: نگاشت خروجی داورهای FTSِ سرور به اورلی‌های موتور چارت (آورلی‌های توکار v10) ---
 // گروه مستقل «fts_pattern_overlays»؛ الگوی خاموش ⇒ هیچ اورلی‌ای ساخته نمی‌شود.
 const PATTERN_GROUP_ID = 'fts_pattern_overlays';
 
@@ -1403,7 +1393,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       chart.removeOverlay({ groupId: ftsGroupId } as never);
     };
   }, [isFtsActive, ftsAnalysis, analysisCandles, renderCandles]);
-  // ۵. لایهٔ ۹ الگوی FTS (فاز ۴): موتور الگوها روی کندل‌های تعدیل‌شده + ترسیم واقعی روی چارت
+  // ۵. لایهٔ ۸ الگوی FTS (#193): داوری فقط در /api/fts، این‌جا نگاشت و ترسیم
   const patternPrefs = usePatternPrefsStore((s) => s.prefs);
   useEffect(() => {
     const chart = chartRef.current;
@@ -1415,32 +1405,33 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         void e;
       }
     };
-    if (adjustedCandles.length === 0) {
+    const shown = renderCandles;
+    if (shown.length === 0 || !ftsAnalysis) {
       clearPatterns();
       setActivePatterns([]);
       return;
     }
 
-    const opens = adjustedCandles.map((c) => c.open);
-    const highs = adjustedCandles.map((c) => c.high);
-    const lows = adjustedCandles.map((c) => c.low);
-    const closes = adjustedCandles.map((c) => c.close);
-
-    const inputs = {
-      jet: detectJet(highs, closes),
-      fib: detectFibZigzag(highs, lows),
-      choch: detectChochConfirmed(highs, lows, closes),
-      pointHunt: detectPointHunt(lows),
-      double: detectDoubleBottom(lows, closes),
-      headShoulders: detectHeadShoulders(highs),
-      thirdPeak: detectThirdPeak(highs, closes),
-      ma14Exit: detectMa14Exit(opens, highs, lows, closes),
-      hourglass: detectHourglass(closes),
-    };
+    // فضایِ رسم ≠ فضایِ محاسبه — همان قاعدۀِ لایۀ ۴: عددِ ریالیِ سرور با
+    // نسبتِ آخرین کندلِ نمایشی به آخرین کندلِ تحلیلی رویِ محور می‌آید، وگرنه
+    // در «تعدیل عملکردی» سطح‌ها بیرون از دید رسم می‌شدند.
+    const aLast = analysisCandles.length ? analysisCandles[analysisCandles.length - 1].close : 0;
+    const dLast = shown[shown.length - 1].close;
+    const k = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
+    const inputs = patternInputsFromFts(ftsAnalysis, {
+      toDisp: (p) => p * k,
+      // نشانگرِ نقطه‌زنی فقط با تاریخِ سرور جایش درست است؛ اندیسِ آرایۀِ
+      // سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست (تجمیع/بازگشتِ تاریخچه).
+      tsForDate: (date) => {
+        const ts = parseCandleTimestamp(date);
+        return Number.isFinite(ts) && ts > 0 ? ts : null;
+      },
+    });
     const specs = buildPatternOverlays(
       inputs,
       patternPrefs,
-      adjustedCandles.map((c) => ({ timestamp: c.timestamp })),
+      // low/high فقط برایِ آنکه لایه بفهمد کمربند چقدر بلندِ دیده می‌شود (#193)
+      shown.map((c) => ({ timestamp: c.timestamp, low: c.low, high: c.high })),
     );
 
     setActivePatterns(
@@ -1455,20 +1446,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     );
 
     clearPatterns();
-    const startTs = adjustedCandles[0].timestamp;
-    // ارزشِ نشانگرها: اگر مقدار صفر/نامعتبر بود از کندلِ همان زمان بگیر (نقطه‌زنی ⇒ کف، خروج ⇒ بسته)
-    // تا نشانگر روی قیمت ۰ و بیرون از دید رسم نشود.
-    const priceAt = (ts: number, pick: 'low' | 'close'): number => {
-      const row = adjustedCandles.find((c) => c.timestamp >= ts) ?? adjustedCandles[adjustedCandles.length - 1];
-      return row ? (pick === 'low' ? row.low : row.close) : 0;
-    };
+    const startTs = shown[0].timestamp;
     for (const spec of specs) {
       try {
-        if ((spec.kind === 'pointhunt' || spec.kind === 'ma14exit') && !(spec.points[0].value > 0)) {
-          spec.points[0].value = priceAt(spec.points[0].timestamp, spec.kind === 'ma14exit' ? 'close' : 'low');
-        }
-        // زونِ بی‌داده (مثلِ MA52=۰) رسم نشود تا باندِ تختِ بی‌معنا نسازد.
-        if (spec.points.length >= 2 && !(spec.points[0].value > 0 || spec.points[1].value > 0)) continue;
+        // هیچ قیمتی را از خود نمی‌سازیم (#193): صفر/نامعتبر یعنی سرور نگفته،
+        // پس آن اورلی رسم نمی‌شود — نه اینکه نشانگر رویِ کندلِ بی‌ربط بنشیند.
+        if (spec.points.some((p) => !(Number.isFinite(p.value) && p.value > 0))) continue;
         const made = chart.createOverlay(toChartOverlay(spec, startTs) as never);
         // اگر overlayِ زون در این نسخه ثبت نشده بود (مثلاً rect صرفاً figure است) کانال رسم می‌شود.
         if (!made && spec.points.length >= 2) {
@@ -1480,7 +1463,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     return clearPatterns;
-  }, [adjustedCandles, patternPrefs]);
+  }, [ftsAnalysis, patternPrefs, renderCandles, analysisCandles]);
 
   // ۶. لایهٔ نشانگرهای تعدیل — سرور فقط {date,ratio} می‌دهد، پس یک نشانگرِ واحد
   useEffect(() => {

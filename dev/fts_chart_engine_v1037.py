@@ -168,7 +168,63 @@ ck("صفحه همان تحلیلی را به چارت می‌دهد که پنل 
 ck("چارت کوئریِ تازه نمی‌زند — فقط prop می‌گیرد",
    "useFtsAnalysis(" not in wrapper and "fts?: FtsAnalysisData" in wrapper)
 
-# ---------- ۶) فال‌بکِ CDN نباید یک ساعت قفل کند ----------
+# ---------- ۶) لایۀ «الگوهای FTS» دیگر داور ندارد (#193) ----------
+# این لایه تا همین نسخه سومین موتور بود: خودش پیوت می‌زد، خودش MA52 را از ۲۶۰
+# کندلِ روزانه می‌گرفت و با عددِ پنل نمی‌خواند (سنجشِ ۱۲ نماد: ۱۱ اختلاف؛
+# «پارس»: جتِ این لایه ۱۱٬۸۰۸ در برابر ۲٬۷۵۸ِ سرور). حالا فقط نگاشت است.
+# سه چیز قفل می‌شود: موتورِ محلی از مخزن رفته، سرور برای هر هشت الگو عدد
+# می‌دهد، و نشانگرِ نقطه‌زنی با *تاریخ* می‌آید نه با اندیسِ آرایۀ سرور.
+po_path = os.path.join(fe, "features", "technical", "lib", "patternOverlays.ts")
+po = open(po_path, encoding="utf-8").read()
+ck("ftsPatterns.ts از مخزن بیرون رفت (یک موتورِ داور، نه سه‌تا)",
+   not os.path.exists(po_path.replace("patternOverlays.ts", "ftsPatterns.ts")))
+patt_imports = [os.path.join(dp, f) for dp, _d, fs in os.walk(fe) for f in fs
+                if f.endswith((".ts", ".tsx"))
+                and "ftsPatterns" in open(os.path.join(dp, f), encoding="utf-8").read()]
+ck("هیچ فایلی موتورِ حذف‌شدۀ الگو را import نمی‌کند", not patt_imports)
+for tok in ("swingHighs", "swingLows", "ma14TrailingExit", "sma(", "rsi(", "detect"):
+    ck("لایۀ نگاشت هیچ محاسبۀ اندیکاتوری نمی‌کند: " + tok, tok not in po)
+ck("نگاشت از دهانۀ خودِ سرور می‌خواند",
+   "patternInputsFromFts" in po and "jet?.resistance" in po and "third_peak_level" in po
+   and "weekly_rsi5" in po and "floor_date" in po)
+ck("چارت همان نگاشت را صدا می‌زند و دیگر detect* ندارد",
+   "patternInputsFromFts(" in wrapper and "detectJet(" not in wrapper
+   and "detectFibZigzag(" not in wrapper)
+ck("فیبو از این لایه حذف شد تا دوباره با موتورِ دوم رسم نشود (#161 #193)",
+   "'fib'" not in po)
+ck("هیچ قیمتی در چارت جانشینِ داده نمی‌شود (priceAt از لایه رفت)",
+   "priceAt(" not in wrapper)
+
+# کمربندِ بلند از پنل: سنجشِ پیکسلیِ زندۀ «آكام» نشان داد باندِ ±۲٪ سقفِ سوم
+# ۲۶٬۲۳ پیکسل از ۴۰۳٬۳۳ پیکسلِ پنل را می‌پوشاند (کندل‌ها زیرِ رنگ می‌رفتند).
+# داورِ jev-pilot «الف»: ارتفاعِ بصری سقف دارد و اگر بلندتر شد فقط خطِ سطح می‌ماند.
+ck("سقفِ ارتفاعِ بصریِ کمربند درِ نگاشت تعریف شده",
+   "BAND_MAX_OF_VIEW" in po and "(hi - lo) / span > BAND_MAX_OF_VIEW" in po)
+ck("هر دو کمربند (سقف سوم و ساعت شنی) از همان pushBand عبور می‌کنند",
+   po.count("pushBand(") == 2 and po.count("'ftsZoneBands'") == 2)
+ck("شاخۀ «فقط دو خطِ سطح» یک بار و داخلِ همان helper تعریف شده",
+   po.count("linesOnly: true") == 1)
+ck("چارت دامنهٔ دید (low/high) را به نگاشت می‌دهد — بی‌آن سقفِ ارتفاع محاسبه نمی‌شود",
+   "low: c.low, high: c.high" in wrapper)
+
+# سرور باید برای نقطه‌زنی تاریخ بدهد — اندیسِ آرایۀ سرور با ردیف‌هایِ دیدۀ
+# مرورگر یکی نیست (تجمیع هفتگی/ماهانه و بازگشتِ تاریخچه)
+flat = series(wave([100, 88, 150, 120, 151, 119, 150, 118, 148, 117, 151, 116]))
+sw_flat = CH._fts_swings(flat, k=CH._FTS_SWING_K)
+ph = CH._fts_point_hunt(flat, sw_flat)
+ck("نقطه‌زنیِ فعالِ ساخته‌شده، floor_date دارد", bool(ph.get("active")) and bool(ph.get("floor_date")))
+ck("floor_date همان کندلِ لنگر است (با floor_idx می‌خواند)",
+   ph.get("floor_date") == flat[ph["floor_idx"]]["time"])
+tops = series(wave([100, 88, 150, 120, 151, 121, 150, 122, 140]))
+sw_tops = CH._fts_swings(tops, k=CH._FTS_SWING_K)
+l3 = CH._fts_exit_layer3(tops, sw_tops)
+ck("سقفِ سومِ تخت، سطحِ خودش را هم بیرون می‌دهد (۱۵۱)",
+   l3["third_peak"] is True and abs((l3["third_peak_level"] or 0) - 151.0) < 0.01)
+l3_none = CH._fts_exit_layer3(flat, sw_flat)
+ck("بدونِ سقفِ سوم، سطحِ ساختگی نمی‌سازد (None می‌ماند)",
+   l3_none["third_peak"] is False and l3_none["third_peak_level"] is None)
+
+# ---------- ۷) فال‌بکِ CDN نباید یک ساعت قفل کند ----------
 src = open(os.path.join(ROOT, "api", "chart.py"), encoding="utf-8").read()
 ck("پاسخِ محلیِ موقت با TTLِ پاسخِ CDN قفل نمی‌شود",
    "CHART_FALLBACK_TTL" in src and "(_t.time() - _cached[0]) < _cached[2]" in src)

@@ -36,20 +36,22 @@ describe('استور فیلترهای تابلو', () => {
 
   it('سوئیچ فقط زنده و بازنشانی کلی کار می کند', () => {
     const s = useTapeStore.getState();
-    s.setLiveOnly(true);
+    // #197: پیش‌فرض روشن است؛ سوئیچ باید خاموشش کند و بازنشانی روشنش
+    s.setLiveOnly(false);
     s.setDirection('neg');
     s.setQuery('فول');
     s.setSector('فلزات');
     s.toggleQuickFilter('f_clock');
     const mid = useTapeStore.getState();
-    expect(mid.liveOnly).toBe(true);
+    expect(mid.liveOnly).toBe(false);
     expect(mid.direction).toBe('neg');
     expect(mid.query).toBe('فول');
     expect(mid.sector).toBe('فلزات');
     expect(mid.quickFilters).toContain('f_clock');
     mid.resetFilters();
     const after = useTapeStore.getState();
-    expect(after.liveOnly).toBe(false);
+    // #197: پیش‌فرضِ جدول «فقط زنده» روشن است
+    expect(after.liveOnly).toBe(true);
     expect(after.direction).toBe('all');
     expect(after.query).toBe('');
     expect(after.sector).toBe('');

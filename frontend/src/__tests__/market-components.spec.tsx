@@ -98,13 +98,25 @@ describe('فیلترهای بازطراحی شده', () => {
 
   it('با فیلتر فعال دکمه پاک کردن ظاهر و استور را بازنشانی می کند', () => {
     useTapeStore.getState().setDirection('pos');
-    useTapeStore.getState().setLiveOnly(true);
+    // #197: «فقط زنده» پیش‌فرض روشن است، پس انحراف یعنی خاموش‌کردنش
+    useTapeStore.getState().setLiveOnly(false);
     render(<MarketFilters sectors={[]} />);
     const reset = screen.getByText(/پاک کردن/);
     expect(reset).toBeInTheDocument();
     fireEvent.click(reset);
     expect(useTapeStore.getState().direction).toBe('all');
+    expect(useTapeStore.getState().liveOnly).toBe(true);
+  });
+
+  it('#197 سوئیچ «فقط زنده» روی نوار هست و با کلیک عوض می‌شود', () => {
+    render(<MarketFilters sectors={[]} />);
+    const btn = screen.getByTestId('live-only-toggle');
+    expect(btn.textContent).toContain('فقط زنده');
+    expect(useTapeStore.getState().liveOnly).toBe(true);
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(btn);
     expect(useTapeStore.getState().liveOnly).toBe(false);
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('بدون فیلتر فعال دکمه پاک کردن نیست', () => {

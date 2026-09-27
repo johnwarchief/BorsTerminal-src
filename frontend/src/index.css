@@ -221,10 +221,22 @@ details[open] > summary .disclosure-chevron {
 }
 }
 
+/* #198 پلتو و سپس محو، به‌جای محوِ از ثانیهٔ صفر.
+   عددِ اندازه‌گیری‌شده رویِ برنامۀِ زنده (خواندنِ alpha از CSS در هر ۵۰ms):
+   با دورۀِ ۰.۹s و ease-out رنگ در ۳۰۰ میلی‌ثانیه به alpha ۰.۲۳ و در ۵۰۰
+   به ۰.۱۰ می‌رسید، یعنی عملاً ~۴۰۰ میلی‌ثانیه «فلش» داشتیم نه ۹۰۰؛ و چون
+   ردیف‌هایِ جدول با هر تازه‌شدنِ داده از نو ساخته می‌شوند، انیمیشنِ سلول‌هایِ
+   واقعی هرگز به animationend نمی‌رسید (۱۵۵ شروع، صفر پایان) پس محوِ تدریجی
+   هم دیده نمی‌شد. پلتو یعنی حتی اگر انیمیشن نیمه‌کاره بریده شود، تا لحظۀِ
+   بریده‌شدن رنگِ کامل رویِ سلول بوده است. رأیِ jev-pilot: A (اطمینان ۰.۹۴). */
 @keyframes flash-up {
   0% {
     background: color-mix(in srgb, var(--accent-green) 50%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--accent-green) 40%, transparent);
+  }
+  45% {
+    background: color-mix(in srgb, var(--accent-green) 46%, transparent);
+    box-shadow: 0 0 9px color-mix(in srgb, var(--accent-green) 34%, transparent);
   }
   100% {
     background: transparent;
@@ -236,6 +248,10 @@ details[open] > summary .disclosure-chevron {
     background: color-mix(in srgb, var(--accent-red) 50%, transparent);
     box-shadow: 0 0 10px color-mix(in srgb, var(--accent-red) 40%, transparent);
   }
+  45% {
+    background: color-mix(in srgb, var(--accent-red) 46%, transparent);
+    box-shadow: 0 0 9px color-mix(in srgb, var(--accent-red) 34%, transparent);
+  }
   100% {
     background: transparent;
     box-shadow: none;
@@ -243,12 +259,12 @@ details[open] > summary .disclosure-chevron {
 }
 @layer components {
 .flash-up {
-  animation: flash-up 0.9s ease-out both;
+  animation: flash-up 1.6s linear both;
 }
 }
 @layer components {
 .flash-down {
-  animation: flash-down 0.9s ease-out both;
+  animation: flash-down 1.6s linear both;
 }
 }
 
@@ -408,4 +424,18 @@ html[data-idle='1'] *::before,
 html[data-idle='1'] *::after {
   animation-play-state: paused !important;
   transition: none !important;
+}
+
+/* #198 فلشِ تغییرِ عدد از این گارد مستثنی است. گلوگاهِ مصرف، انیمیشن‌هایِ
+   چرخه‌ای (animate-pulse و همسره) هستند که هر vsync یک فریم می‌سازند؛ فلش
+   یک‌بار ۱.۶ ثانیه عمر دارد و کارش همین «تازه شد» را نشان دادن است.
+   اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵ (jev-browser روی برنامۀ در حال اجرا، با
+   getAnimations): ۱۵ ثانیه بعد از آخرین حرکتِ موس data-idle='1' می‌شود و
+   currentTimeِ فلش روی صفر میخکوب می‌ماند (playState=paused در ۶ نمونه از
+   ۶، و ۰ رویدادِ animationend روی ۱۰۴ فلشِ واقعی) — یعنی تابلو در همان
+   حالتی که مالک نگاه می‌کند هرگز رنگ نمی‌دید. با حرکتِ موس همان گره
+   playState=running و currentTime=297ms شد. */
+html[data-idle='1'] .flash-up,
+html[data-idle='1'] .flash-down {
+  animation-play-state: running !important;
 }

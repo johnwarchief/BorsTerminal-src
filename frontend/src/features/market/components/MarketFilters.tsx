@@ -298,6 +298,7 @@ export function MarketFilters({
   const sector = useTapeStore((s) => s.sector);
   const setSector = useTapeStore((s) => s.setSector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
+  const setLiveOnly = useTapeStore((s) => s.setLiveOnly);
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
   const resetFilters = useTapeStore((s) => s.resetFilters);
 
@@ -312,12 +313,15 @@ export function MarketFilters({
 
   const assetTypesDirty = !isDefaultAssetTypes(assetTypes);
 
+  // «پاک کردن» به پیش‌فرض برمی‌گرداند، پس فقط انحراف از پیش‌فرض شمرده می‌شود.
+  // #197: پیش‌فرضِ liveOnly روشن است، بنابراین خاموش‌کردنش انحراف حساب
+  // می‌شود — وگرنه دکمۀِ «پاک کردن (۱)» همیشه روی نوار می‌ماند.
   const activeCount =
     (query ? 1 : 0) +
     (sector ? 1 : 0) +
     (assetTypesDirty ? 1 : 0) +
     quickFilters.length +
-    (liveOnly ? 1 : 0) +
+    (!liveOnly ? 1 : 0) +
     (volRatioOn ? 1 : 0);
 
   return (
@@ -372,6 +376,28 @@ export function MarketFilters({
             />
             <SearchIcon size={13} className="absolute start-2 text-text-muted pointer-events-none" />
           </div>
+
+          {/* #197: تا پیش از این «فقط زنده» در استور وجود داشت ولی هیچ‌جا
+              روشن/خاموش نمی‌شد — و چون چیدمانِ پیش‌فرض ردیف‌هایِ بیرونِ تابلو
+              را بالا می‌آورد، کاربر فلش را «خراب» می‌دید. */}
+          <button
+            type="button"
+            onClick={() => setLiveOnly(!liveOnly)}
+            aria-pressed={liveOnly}
+            data-testid="live-only-toggle"
+            title={
+              liveOnly
+                ? 'روشن: فقط نمادهای همین نشستِ تابلو. برای دیدن نمادهای خاموش/قدیمی خاموشش کنید.'
+                : 'خاموش: نمادهای بیرونِ تابلو هم در جدول می‌مانند (اعدادشان تکان نمی‌خورد).'
+            }
+            className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${
+              liveOnly
+                ? 'border-accent-blue/50 bg-accent-blue/15 text-accent-blue'
+                : 'border-border-c bg-bg-card text-text-muted hover:text-text-primary'
+            }`}
+          >
+            فقط زنده
+          </button>
 
           {shown != null && total != null ? (
             <span

@@ -152,7 +152,7 @@ type TapeState = {
   quickFilters: QuickFilter[];
   /** صنعت انتخابی -- خالی یعنی همه */
   sector: string;
-  /** فقط نمادهای زنده (is_live !== false) */
+  /** فقط نمادهای زنده (is_live !== false) — پیش‌فرض روشن (#197) */
   liveOnly: boolean;
   /** جهت تغییر قیمت */
   direction: DirectionFilter;
@@ -196,7 +196,12 @@ const INITIAL = {
   assetTypes: [...DEFAULT_ASSET_TYPES] as AssetType[],
   quickFilters: [] as QuickFilter[],
   sector: '',
-  liveOnly: false,
+  // #197: «فقط زنده» پیش‌فرضِ جدول است. اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵ ساعت ۱۱:۱۴ روی
+  // برنامۀ نصب‌شده: در ۷۵ ثانیه هیچ عددی در ۷۳۱ سلولِ دیدنی تکان نخورد و هیچ
+  // فلشی اجرا نشد — چون چیدمانِ پیش‌فرض ۱۶ ردیفِ بیرونِ تابلو (مُهرِ ۲۰۲۱) را
+  // بالا می‌آورد و اعدادِ آن‌ها هرگز عوض نمی‌شود. فلش سالم بود، فقط روی
+  // ردیف‌هایِ مُرده حساب می‌شد. کاربر خودش رأی داد: جدول فقط زنده باشد.
+  liveOnly: true,
   direction: 'all' as DirectionFilter,
   volRatioOn: false,
   volRatioMin: VOL_RATIO_DEFAULT,

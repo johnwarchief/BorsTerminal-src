@@ -1,4 +1,4 @@
-// features/technical/stores/patternPrefsStore.ts -- ترجیحات ۹ الگوی FTS (روشن/خاموش + رنگ + شفافیت)
+// features/technical/stores/patternPrefsStore.ts -- ترجیحات هشت الگوی FTS (روشن/خاموش + رنگ + شفافیت)
 // سراسری و پایدار در localStorage؛ هر الگو مستقل است و خاموش‌بودن یعنی «هیچ اورلی نساز».
 import { create } from 'zustand';
 import { PATTERN_PREFS_DEFAULT, type PatternKind, type PatternPref, type PatternPrefs } from '../lib/patternOverlays';

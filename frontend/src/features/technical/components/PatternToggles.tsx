@@ -1,4 +1,4 @@
-// features/technical/components/PatternToggles.tsx -- سوییچ‌های مستقل ۹ الگوی FTS (رنگ/شفافیت)
+// features/technical/components/PatternToggles.tsx -- سوییچ‌های مستقل هشت الگوی FTS (رنگ/شفافیت)
 // هر الگو مستقل: خاموش ⇒ هیچ اورلی ساخته نمی‌شود. ترجیحات در localStorage پایدار می‌مانند.
 import { PATTERN_LABELS, type PatternKind } from '../lib/patternOverlays';
 import { usePatternPrefsStore } from '../stores/patternPrefsStore';
