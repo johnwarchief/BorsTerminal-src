@@ -321,7 +321,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // استیت‌های نوار بالا
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('combined');
+  // پیش‌فرضِ مالک (#186): «تعدیل عملکردی». لایهٔ FTS خود را به فضایِ همین
+  // نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را جابه‌جا یا ناپدید کند.
+  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('performance');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
   const [templateName, setTemplateName] = useState<string>('');
