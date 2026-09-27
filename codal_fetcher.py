@@ -322,7 +322,7 @@ PATTERNS = {
     # line like «درآمدهای سود سهام». The final catch-all now excludes ANY label
     # containing سودسهام/سرمایهگذاری (dividend / investment-sale components),
     # which previously leaked into `revenue` for holdings and understated it.
-    "revenue": [r"^جمعدرآمدهایعملیاتی", r"^درآمدهایعملیاتی$", r"^درآمدعملیاتی",
+    "revenue": [r"^جمعدرآمدهایعملیاتی", r"^جمعدرآمدها$", r"^درآمدهایعملیاتی$", r"^درآمدعملیاتی",
                 r"^فروشخالص", r"^مبلغفروش", r"^بهایفروش", r"^جمعفروش",
                 r"^درآمدهعملیاتی", r"^فروش$",
                 r"^درآمد(?!.*سودسهام)(?!.*سرمایهگذاری)"],
@@ -1134,6 +1134,16 @@ def datasource(html):
 _BS_SIDE_KEYS = {"total_liabilities", "total_equity", "capital",
                  "retained_earnings"}
 
+# #177 (سنجشِ زندهٔ ۱۴ نماد با کدال): وقتی سطرِ «جمع…» وجود دارد ولی **خالی/صفر**
+# چاپ شده باشد، گزینۀ همان کلید رد می‌شد و یک **جزء** با رتبۀ ضعیف‌تر برچسبِ
+# «فروش» را می‌گرفت — اندازه‌گیری‌شده رویِ «وفيروزه»: جمعِ درآمدهای عملیاتی = ۰،
+# و درآمدِ «سود تضمین‌شده» (۷٬۰۹۶) به‌جای کلِ ۶٬۹۳۵٬۴۳۳ درآمدِ دوره در جدول نشست.
+# طبقِ جزوه («نبودِ جمع → NULL، هیچ‌وقت سطرِ جزء نه») سطرِ خالی هم «جمعِ منتشرشده»
+# است، پس جزء حقِّ ندارد. فقط برایِ revenue: بقیۀ کلیدها در ترازنامهٔ
+# دوبلِ کناری به همین «اولین عددِ ناصفر» وابسته‌اند و بردنِ آن‌ها به NULL
+# دامنهٔ خرابی را بی‌دلیل بزرگ می‌کند.
+_BLANK_TOTAL_REFUSES_COMPONENT = {"revenue"}
+
 
 def parse_tables(ds, out, rank=None):
     """Walk table cells and pick key items using RANK-BASED selection.
@@ -1183,6 +1193,10 @@ def parse_tables(ds, out, rank=None):
                     # already have an equal-or-better candidate for this key?
                     if out.get(key) is not None and rank.get(key, 1 << 30) <= best:
                         continue
+                    # a stronger total already spoke (even as 0/blank)? a weaker
+                    # component must not take its label.
+                    if rank.get("!" + key, 1 << 30) <= best:
+                        continue
                     cols = sorted(k for k in grid[r] if k)
                     cols = [ci for ci in cols if ci > 5] if side else cols[1:]
                     val = None
@@ -1192,6 +1206,15 @@ def parse_tables(ds, out, rank=None):
                             val = v
                             break
                     if val is None:
+                        if key in _BLANK_TOTAL_REFUSES_COMPONENT:
+                            # این سطرِ «جمع» از هر عددِ جزءِ ثبت‌شده معتبرتر است،
+                            # حتی اگر جزء *زودتر* خوانده شده باشد — وگرنه نتیجه
+                            # به ترتیبِ سطرها وابسته می‌ماند (گاردِ تازه همین را
+                            # قرمز کرد).
+                            if best < rank.get(key, 1 << 30):
+                                out.pop(key, None)
+                                rank.pop(key, None)
+                            rank["!" + key] = min(rank.get("!" + key, 1 << 30), best)
                         continue
                     out[key] = val
                     rank[key] = best

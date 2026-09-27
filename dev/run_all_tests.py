@@ -38,6 +38,9 @@ SUITES = [
     ('dev/chart_two_bundles_v1029.py', 'هر متدِ Chart باید در باندلِ همان فایل وجود داشته باشد'),
     # #176: تابلو پایِ بازسازیِ ۱.۴ ثانیه‌ایِ کش نمی‌ایستد (کهنه فوراً،
     # بازسازیِ تک‌نفره در پس‌زمینه، و سقفِ کهنگی که خطا را پنهان نکند).
+    # #177: سطرِ «جمع»ِ خالی/صفرِ کدال نباید برچسبِ «فروش» را به یک سطرِ جزء
+# واگذار کند — رویِ datasourceِ ساخته‌شود، بی‌شبکه.
+    ('dev/codal_blank_total_v1036.py', 'blank published total refuses a component line for فروش'),
     ('dev/market_swr_v1036.py',      'board cache is stale-while-revalidate, single-flight, honest on failure'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
