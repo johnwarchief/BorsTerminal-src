@@ -27,8 +27,28 @@ const Fib = z
     retrace_base_low: z.number().nullish(),
     zone_33_40: FibZone.nullish(),
     zone_618_70: FibZone.nullish(),
+    // سطوحِ کاملِ ابزارِ فیبو (۰ تا ۱) و خودِ موجِ لنگر — چارت این‌ها را رسم
+    // می‌کند و هیچ‌چیز را دوباره حساب نمی‌کند.
+    levels: z.array(z.object({ ratio: z.number(), price: z.number() })).nullish(),
+    leg: z
+      .object({
+        direction: z.string().nullish(),
+        start: z.string().nullish(),
+        end: z.string().nullish(),
+        high: z.number().nullish(),
+        low: z.number().nullish(),
+      })
+      .nullish(),
   })
   .nullish();
+
+const Setup = z.object({
+  date: z.string(),
+  kind: z.string(),
+  label: z.string(),
+  price: z.number(),
+  side: z.string().nullish(),
+});
 
 const Jet = z.object({
   active: z.boolean().nullish(),
@@ -139,6 +159,7 @@ export const FtsAnalysis = z.object({
   range_box: RangeBox.nullish(),
   exit_engine: ExitEngine.nullish(),
   hourglass: HourglassStrategy.nullish(),
+  setups: z.array(Setup).nullish(),
 });
 
 export type FtsAnalysisData = z.infer<typeof FtsAnalysis>;

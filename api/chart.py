@@ -139,7 +139,7 @@ def get_chart_tsetmc(symbol: str):
     import time as _t
     global CDN_OFFLINE_UNTIL
     _cached = CHART_CACHE.get(symbol)
-    if _cached and (_t.time() - _cached[0]) < CHART_CACHE_TTL:
+    if _cached and (_t.time() - _cached[0]) < _cached[2]:
         return _cached[1]
     import requests as _rq
     from urllib.parse import quote
@@ -165,7 +165,7 @@ def get_chart_tsetmc(symbol: str):
                     "count": len(cands),
                     "fts": db_res.get("fts"),
                 }
-                CHART_CACHE[symbol] = (_t.time(), res)
+                CHART_CACHE[symbol] = (_t.time(), res, CHART_FALLBACK_TTL)
                 return res
         except Exception:
             pass
@@ -276,7 +276,7 @@ def get_chart_tsetmc(symbol: str):
             "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
             "count": len(candles),
         }
-        CHART_CACHE[symbol] = (time.time(), result)
+        CHART_CACHE[symbol] = (time.time(), result, CHART_CACHE_TTL)
         return result
     except Exception as e:
         fb = _fallback_local()
@@ -844,6 +844,12 @@ ADJ_TOL = 0.001
 ANCHOR_MIN = 0.9
 
 CHART_CACHE_TTL = 3600.0
+# پاسخِ CDN یک ساعت می‌مانَد؛ اما فال‌بکِ محلی نه. محلی فقط ۳۵۵ کندلِ دو سالِ
+# اخیر دارد و بی‌ضرایبِ تعدیل، و یک لحظه‌ی قطعیِ دو‌ثانیه‌ای CDN کافی بود که کل
+# چارت و تحلیل FTS روی همان ۳۵۵ کندل قفل شود (شاهد: فولاد ۳۵۵ در برابر ۴۲۳۲،
+# و `/api/fts` با basis=local-db تا یک ساعت). با این سقف، هر بیست ثانیه یک‌بار
+# CDN دوباره امتحان می‌شود.
+CHART_FALLBACK_TTL = 20.0
 
 KEY_LEVELS_CACHE = {}
 KEY_LEVELS_TTL = 300  # ۵ دقیقه — محاسبه گران نیست ولی دوباره پول نشود
@@ -1007,46 +1013,124 @@ def _fts_rsi(closes, period=14):
     return out
 
 
+def _fts_fib_leg(candles, swings):
+    """لنگرِ فیبو: موجِ اخیر، نه کلِ تاریخ و نه پنج کندلِ آخر.
+
+    موج = زنجیرهٔ سقف‌ها/کف‌هایِ ساختاری که هنوز نشکسته‌اند. اگر آخرین پیوتِ
+    تأییدشده کف باشد موج صعودیِ جاری است: از همان کف به عقب می‌رویم و تا زمانی
+    که پیوتِ قبلی «کفِ پایین‌تر» باشد و از زمان خودش تا امروز هیچ پایانیِ زیرش
+    بسته نشود، موج را بلندتر می‌کنیم — یعنی همان زنجیرهٔ HL که `_fts_classify_trend`
+    روند صعودی می‌نامد، فقط تا جایی که پایه‌اش واقعاً پا برجا است. سقفِ موج
+    بالاترین highِ پس از آن پایه است. برای موج نزولی قرینه: زنجیرهٔ LH.
+
+    چرا این‌همه دقت؟ دو تعریفِ پیشین هر دو خطا بود و هیچ‌وقت قیمت داخل کمربند
+    نمی‌افتاد (سنجشِ هشت نماد: in_zone = false در ۸ از ۸):
+      • سرور: «سقفِ تک‌روزیِ تمامِ تاریخ ← کفِ بعد از آن» → نمادی که همین هفته
+        سقفِ تاریخی زده موجش به چند کندل خلاصه می‌شد (فولاد: ۶٫۶٪ و کمربندِ
+        ۱۵ریالی روی قیمتِ ۳۲۶۰)، و نمادی که سقفش ده سال پیش بود موجِ چندساله
+        می‌گرفت.
+      • چارت: کمینه/بیشینهٔ ۱۰۰ کندلِ آخر → با همان نمودار، کمربندی که هیچ‌وقت
+        به کارِ موتورِ جزوه نمی‌آمد.
+    جهتِ موج را روندِ ساختاریِ خودِ FTS (`_fts_classify_trend` روی پیوت‌های روزانه)
+    می‌گوید، نه «کدام پیوت آخر از همه تازه‌تر است» — چون در یک رشدِ بی‌وقفه آخرین
+    پیوتِ سقف سه کندلِ پیش است و آن تعریف، موجِ صعودی را نزولی می‌خواند.
+    خروجی: {'direction', 'start_idx', 'end_idx', 'high', 'low'} یا None.
+    """
+    n = len(candles)
+    if n < 2:
+        return None
+    highs = [s for s in swings if s["kind"] == "high"]
+    lows = [s for s in swings if s["kind"] == "low"]
+    if not highs and not lows:
+        hi_idx = max(range(n), key=lambda i: candles[i]["high"])
+        return {"direction": "up", "start_idx": 0, "end_idx": n - 1,
+                "high": float(candles[hi_idx]["high"]),
+                "low": min(float(c["low"]) for c in candles)}
+    # «هیچ پایانیِ پس از idx زیرِ قیمت نبسته» — با کمینهٔ پس‌رو، یک‌بار محاسبه
+    close = [float(c["close"]) for c in candles]
+    suf_min = [0.0] * (n + 1)
+    suf_max = [0.0] * (n + 1)
+    suf_min[n] = math.inf
+    suf_max[n] = -math.inf
+    for i in range(n - 1, -1, -1):
+        suf_min[i] = min(close[i], suf_min[i + 1])
+        suf_max[i] = max(close[i], suf_max[i + 1])
+
+    if not lows:
+        up = False
+    elif not highs:
+        up = True
+    else:
+        t = _fts_classify_trend(swings)["trend"]
+        up = True if t == "up" else False if t == "down" else lows[-1]["idx"] >= highs[-1]["idx"]
+
+    if up:
+        i = len(lows) - 1
+        while i > 0 and lows[i - 1]["price"] < lows[i]["price"] \
+                and suf_min[lows[i - 1]["idx"]] >= lows[i - 1]["price"]:
+            i -= 1
+        base = lows[i]
+        idx = base["idx"]
+        return {"direction": "up", "start_idx": idx, "end_idx": n - 1,
+                "high": max(float(c["high"]) for c in candles[idx:]),
+                "low": float(base["price"])}
+    i = len(highs) - 1
+    while i > 0 and highs[i - 1]["price"] > highs[i]["price"] \
+            and suf_max[highs[i - 1]["idx"]] <= highs[i - 1]["price"]:
+        i -= 1
+    top = highs[i]
+    idx = top["idx"]
+    return {"direction": "down", "start_idx": idx, "end_idx": n - 1,
+            "high": float(top["price"]),
+            "low": min(float(c["low"]) for c in candles[idx:])}
+
+
+# سطوحِ فعالِ ابزارِ فیبو، عینِ جزوه (صفحهٔ ۲): «تنظیم روی ۰ و ۰.۳۳ و ۰.۴ و
+# ۰.۵ و ۰.۶۱۸ و ۰.۷ و ۱ فعال می‌کنیم» — و دو کمربندِ ورود ۳۳–۴۰ و ۶۱.۸–۷۰.
+_FTS_FIB_LEVELS = (0.0, 0.33, 0.40, 0.50, 0.618, 0.70, 1.00)
+_FTS_FIB_BELTS = (("zone_33_40", 0.33, 0.40), ("zone_618_70", 0.618, 0.70))
+
+
+def _fts_fib_price(top, bot, ratio):
+    """قیمتِ سطحِ p روی مقیاس لگاریتمی، از سقفِ موج به پایین."""
+    return math.exp(math.log(top) + (math.log(bot) - math.log(top)) * ratio)
+
+
 def _fts_fib_zones(candles, swings):
-    """کمربندهای فیبوناچی در مقیاس لگاریتمی — متدولوژی FTS صفحهٔ ۲.
+    """کمربندها و سطوحِ فیبوناچی در مقیاس لگاریتمی — متدولوژی FTS صفحهٔ ۲.
 
     چرا لگاریتم؟ در سهام‌های حرصیِ تالار شفاف، حرکت ×۴ و اصلاح ۵۰٪ آن در مقیاس
-    خطی «کف» درست نمی‌دهد؛ نسبت اصلاح باید روی لگاریتم قیمت سنجیده شود
-    (ret = ln(low) / ln(high) در ادبیات فیبو-لگاریتمی).
+    خطی «کف» درست نمی‌دهد؛ نسبت اصلاح باید روی لگاریتم قیمت سنجیده شود.
 
-    بازهٔ اندازه‌گیری: آخرین سقف پیوت مهم ← پایین‌ترین کفِ «پس از آن سقف»
-    (اگر کفی بعد از سقف نبود، پایین‌ترین کف کل بازه). خروجی دو کمربند:
+    بازهٔ اندازه‌گیری: موجِ اخیر (`_fts_fib_leg`). خروجی دو کمربندِ ورود به‌علاوهٔ
+    تمامِ سطوحِ جزوه و خودِ موج:
         zone_33_40: ورود پس از «ادامهٔ روند» (کمربند کم‌عمق)
         zone_618_70: کمربند طلایی — منطقهٔ ورود اصلاحی کلاسیک FTS
+        levels: [{'ratio', 'price'}] برای ۰ تا ۱
+        leg:    {'direction','start','end','high','low'} — بازۀ زمانیِ رسم
     هر کمربند: {'lo', 'hi', 'in_zone'} — in_zone = قیمت پایانیِ آخر داخل کمربند.
     """
-    highs = [s for s in swings if s["kind"] == "high"]
-    if not highs:
+    leg = _fts_fib_leg(candles, swings)
+    if not leg:
         return None
-    top = max(highs, key=lambda s: s["idx"])["price"]
-    after = [c["low"] for c in candles
-             if c["high"] <= top or True]      # کل بازه؛ فیلتر زمانی پایین‌تر
-    hi_idx = max(range(len(candles)), key=lambda i: candles[i]["high"])
-    lows_after = [c["low"] for c in candles[hi_idx:]] or after
-    bot = min(lows_after) if lows_after else min(c["low"] for c in candles)
+    top, bot = leg["high"], leg["low"]
     if top <= 0 or bot <= 0 or top <= bot:
         return None
-    ln_top, ln_bot = math.log(top), math.log(bot)
-
-    def _band(p1, p2):
-        lo_p = math.exp(ln_top + (ln_bot - ln_top) * p2)   # p2 بزرگ‌تر → قیمت پایین‌تر
-        hi_p = math.exp(ln_top + (ln_bot - ln_top) * p1)
-        return lo_p, hi_p
-
-    z1_lo, z1_hi = _band(0.33, 0.40)
-    z2_lo, z2_hi = _band(0.618, 0.70)
-    last = float(candles[-1]["close"]) if candles else 0.0
+    zones = {}
+    for key, p1, p2 in _FTS_FIB_BELTS:
+        hi_p, lo_p = _fts_fib_price(top, bot, p1), _fts_fib_price(top, bot, p2)
+        last = float(candles[-1]["close"]) if candles else 0.0
+        zones[key] = {"lo": round(lo_p, 2), "hi": round(hi_p, 2),
+                      "in_zone": bool(lo_p <= last <= hi_p)}
     return {
         "retrace_base_high": round(top, 2), "retrace_base_low": round(bot, 2),
-        "zone_33_40": {"lo": round(z1_lo, 2), "hi": round(z1_hi, 2),
-                       "in_zone": bool(z1_lo <= last <= z1_hi)},
-        "zone_618_70": {"lo": round(z2_lo, 2), "hi": round(z2_hi, 2),
-                        "in_zone": bool(z2_lo <= last <= z2_hi)},
+        **zones,
+        "levels": [{"ratio": r, "price": round(_fts_fib_price(top, bot, r), 2)}
+                   for r in _FTS_FIB_LEVELS],
+        "leg": {"direction": leg["direction"],
+                "start": str(candles[leg["start_idx"]]["time"])[:10],
+                "end": str(candles[leg["end_idx"]]["time"])[:10],
+                "high": round(top, 2), "low": round(bot, 2)},
     }
 
 
@@ -1189,6 +1273,90 @@ def _fts_double_bottom(candles, swings):
         box.update(active=bool(broke), top=round(top, 2), bottom=round(bot, 2),
                    pct_above_top=round((last["close"] - top) / top * 100.0, 2) if broke else None)
     return {"double_bottom": dbl, "range_box": box}
+
+
+_FTS_SETUP_LABELS = {"jet": "جت", "choch": "CHoCH", "dbl": "دابل‌باتم"}
+
+
+def _fts_setup_history(candles, swings, limit=40, ladder=JET_LADDER):
+    """ستاپ‌های FTSِ گذشته، به‌تاریخ — با همان قاعده‌ای که پنل امروز می‌دهد.
+
+    چارت تا پیش از این مارکرهایش را با موتورِ دومی و قاعده‌ای جدا می‌ساخت
+    («جت» = حجمِ دو برابرِ میانگین، «CHoCH» = سه کندل) و پنلِ «وضعیت FTS» همان
+    لحظه چیز دیگری می‌گفت: روی نُه نمادِ اندازه‌گرفته‌شده چارت تا ده برچسبِ
+    «تغییر ساختار» می‌زد که هیچ‌یک در موتورِ جزوه وجود نداشت. حالا هر مارکر از
+    همین حلقه می‌آید و قاعده‌ها عینِ `_fts_jet_setup`، `_fts_choch` و
+    `_fts_double_bottom`اند — همان سه تابعی که وضعیتِ امروزِ پنل را می‌سازند.
+    پیوتِ fractal در کندلِ idx+k تأیید می‌شود، پس در کندلِ i فقط پیوت‌هایِ
+    idx ≤ i−k دیده می‌شوند — مارکرِ گذشته به آینده نگاه نمی‌کند. رویدادِ
+    متوالی یک‌بار ثبت می‌شود (جریانِ چند جتِ پیاپی یک برچسب است، نه ده‌تا).
+    کمربندِ ۳۳–۴۰ اینجا مارکر ندارد: سطحِ فعال است، نه واقعه؛ همان‌طور که در
+    `fib` و نشانگرِ «داخل کمربند» به پنل می‌رسد.
+    خروجی: [{'date','kind','label','price','side'}] مرتب زمانی، حداکثر limit.
+    """
+    need = 1 + max(ladder)
+    n = len(candles)
+    if n < need + 1:
+        return []
+    k = _FTS_SWING_K
+    hp = [s for s in swings if s["kind"] == "high"]
+    lp = [s for s in swings if s["kind"] == "low"]
+    a = b = 0
+    last_h = last_l = prev_l = None
+    neck = None
+    on = {"jet": False, "choch": None, "dbl": False}
+    events = []
+
+    def emit(i, kind, price, side):
+        events.append({"date": str(candles[i]["time"])[:10], "kind": kind,
+                       "label": _FTS_SETUP_LABELS[kind],
+                       "price": round(float(price), 2), "side": side})
+
+    for i in range(need - 1, n):
+        while a < len(hp) and hp[a]["idx"] <= i - k:
+            last_h = hp[a]; a += 1
+        new_low = None
+        while b < len(lp) and lp[b]["idx"] <= i - k:
+            new_low = lp[b]; b += 1
+
+        # دو کفِ مساوی ← یقهٔ منتظر؛ پیوتِ کفِ تازه الگو را همان‌جا بازنشانی می‌کند
+        if new_low is not None:
+            prev_l, last_l = last_l, new_low
+            neck = None
+            if prev_l and prev_l["price"] > 0 and last_l["price"] > 0:
+                if abs(prev_l["price"] - last_l["price"]) / max(
+                        prev_l["price"], last_l["price"]) <= 0.015:
+                    necks = [h["price"] for h in hp
+                             if prev_l["idx"] < h["idx"] < last_l["idx"]]
+                    neck = max(necks) if necks else None
+
+        c = candles[i]
+        hi = float(c["high"])
+        cl, op = float(c["close"]), float(c["open"])
+        up_leg = bool(last_l and (not last_h or last_l["idx"] >= last_h["idx"]))
+        # ۱) جت — شکستِ پلکانِ مقاومت با بدنهٔ صعودی، عینِ `_fts_jet_setup`
+        res = max(float(candles[i - 1 - j]["high"]) for j in ladder)
+        jet = bool(res > 0 and cl > res and cl >= op)
+        if jet and not on["jet"]:
+            emit(i, "jet", max(hi, res), "above")
+        on["jet"] = jet
+
+        # ۲) CHoCH — شکستِ قطعیِ آخرین پیوتِ مخالف، عینِ `_fts_choch`
+        if last_h and last_l:
+            want = "bear" if up_leg else "bull"
+            level = last_l["price"] if up_leg else last_h["price"]
+            broke = (cl < level * 0.997) if up_leg else (cl > level * 1.003)
+            if broke and on["choch"] != want:
+                emit(i, "choch", level, "below" if up_leg else "above")
+            on["choch"] = want if broke else None
+
+        # ۳) دابل‌باتم — یقه‌شکستِ دو کفِ مساوی، عینِ `_fts_double_bottom`
+        dbl = bool(neck and cl > neck)
+        if dbl and not on["dbl"]:
+            emit(i, "dbl", neck, "above")
+        on["dbl"] = dbl
+
+    return events[-limit:]
 
 
 def _fts_exit_layer1(candles, entry_hint=None):
@@ -1560,6 +1728,7 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     out["double_bottom"] = box["double_bottom"]
     out["range_box"] = box["range_box"]
     out["exit_engine"] = _fts_exit_engine(candles, entry_hint=entry_hint)
+    out["setups"] = _fts_setup_history(candles, swings_d)
     return out
 
 

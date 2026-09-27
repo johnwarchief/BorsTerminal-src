@@ -172,6 +172,7 @@ export default function TechnicalPage() {
                   initialSymbol={viewSymbol}
                   initialName={boardRow?.name || viewSymbol}
                   boardRow={boardRow}
+                  fts={analysis.data?.fts ?? null}
                   replayActive={replayActive}
                   onToggleReplay={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}
                   onOpenSettings={() => setSettingsOpen(true)}

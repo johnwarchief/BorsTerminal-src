@@ -1,0 +1,184 @@
+"""dev/fts_chart_engine_v1037.py — فیبوی چارت و مارکرهایش از یک موتور می‌آیند (#161)
+
+چرا: تبِ تکنیکال دو موتورِ FTS داشت. پنل از `/api/fts` می‌خواند و چارت از
+`analyzeFts` مرورگر. سنجشِ نُه نماد (۱۴۰۵-۰۷-۰۵): هیچ‌یک از دو کمربندِ فیبو با
+هم نمی‌خواندند (فولاد: چارت ۲۵۲۸–۲۶۰۹ در برابر پنل ۳۳۲۴–۳۳۳۹)، چارت تا ۱۰
+برچسبِ «CHoCH» رویِ یک نماد می‌زد که هیچ‌کدام در موتورِ جزوه نبود، و شرطِ
+خروجِ MA14 دو تعریف داشت (یک کندلِ سایه‌دار در برابر دو کندلِ بدنه‌دار — مبين:
+چارت «خروج»، پنل «احتیاط»). خودِ موتورِ سرور هم لنگرِ فیبو را غلط می‌زد:
+سقفِ تک‌روزیِ *تمامِ تاریخ* و کفِ بعد از آن، پس نمادی که تازه سقفِ تاریخی زده
+موجش به چند کندل خلاصه می‌شد و کمربندِ ۳۳–۴۰ پهنای ۱۵ ریال می‌شد (۰٫۴۶٪ِ
+قیمت) — در نتیجه «داخل کمربند» روی هشت از هشت نماد false بود.
+
+این گارد بی‌شبکه و بی‌market.db می‌دود و می‌سنجد:
+  • موجِ فیبو از زنجیرهٔ کف‌هایِ بالاترِ *نشکسته* می‌آید، و به‌محضِ اینکه پایانی
+    زیرِ یکی از آن کف‌ها بسته شود زنجیره همان‌جا می‌شکند (شاهدِ منفی)
+  • سطوحِ ابزار همان هفت نسبتِ جزوه‌اند و قیمت‌هایشان نزولی
+  • هر مارکرِ جتِ تاریخ‌دار با `_fts_jet_setup` رویِ همان برشِ تاریخچه می‌خواند
+  • چند جتِ پیاپی یک برچسب است، نه یکی‌بهیکی
+  • دیگر هیچ `analyzeFts` در فرانت‌اند نیست — چارت رسم می‌کند، محاسبه نه
+"""
+import datetime
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import api.chart as CH  # noqa: E402
+
+FAILS = []
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def ck(label, cond):
+    print(("  ok   " if cond else "  FAIL ") + label)
+    if not cond:
+        FAILS.append(label)
+
+
+def series(prices, start="2025-01-01"):
+    d0 = datetime.date.fromisoformat(start)
+    out = []
+    for i, p in enumerate(prices):
+        out.append({"time": (d0 + datetime.timedelta(days=i)).isoformat(),
+                    "open": p, "high": p, "low": p, "close": p, "volume": 100.0})
+    return out
+
+
+def wave(turns, n_per=10):
+    """آروارهٔ پیوت‌دار: هر نقطهِٔ turns در indeksِ k*n_per می‌نشیند و میانِ
+    آن‌ها خطی حرکت می‌کند — پنجرهٔ k=3 پیوت‌ها را درست تشخیص می‌دهد."""
+    prices = []
+    for p0, p1 in zip(turns, turns[1:]):
+        step = (p1 - p0) / n_per
+        for j in range(n_per):
+            prices.append(round(p0 + step * j, 2))
+    prices.append(float(turns[-1]))
+    return prices
+
+
+# کف‌های بالاتر (۹۰، ۱۰۰، ۱۱۲، ۱۳۰، ۱۵۰) و سقف‌های بالاتر (۱۱۰، ۱۲۵، ۱۴۵، ۱۶۵، ۱۹۰)
+TURNS = [100, 90, 110, 100, 125, 112, 145, 130, 165, 150, 190]
+up = series(wave(TURNS))
+sw = CH._fts_swings(up, k=CH._FTS_SWING_K)
+leg = CH._fts_fib_leg(up, sw)
+ck("روندِ ساختاریِ آروارهٔ صعودی، موج را صعودی می‌خواند",
+   (leg or {}).get("direction") == "up")
+ck("موج از نخستین کفِ زنجیره آغاز می‌شود (۹۰ نه ۱۵۰)",
+   bool(leg) and abs(leg["low"] - 90.0) < 0.01)
+ck("سقفِ موج بالاترینِ پس از آن کف است (۱۹۰)", bool(leg) and abs(leg["high"] - 190.0) < 0.01)
+
+violated = list(up)
+violated[85] = dict(violated[85], open=105.0, high=105.0, low=105.0, close=105.0)
+sw2 = CH._fts_swings(violated, k=CH._FTS_SWING_K)
+leg2 = CH._fts_fib_leg(violated, sw2)
+ck("شاهدِ منفی: با کفِ شکسته، موج از همان کفِ تازه آغاز می‌شود (۹۰ نه)",
+   bool(leg2) and abs(leg2["low"] - 105.0) < 0.01)
+
+# ---------- ۲) سطوح و کمربندها ----------
+fz = CH._fts_fib_zones(up, sw)
+ck("کمربندها ساخته می‌شوند", bool(fz) and bool(fz.get("zone_33_40")))
+ratios = [lv["ratio"] for lv in (fz or {}).get("levels") or []]
+ck("همان هفت نسبتِ ابزارِ فیبو در جزوه",
+   ratios == [0.0, 0.33, 0.40, 0.50, 0.618, 0.70, 1.00])
+prices = [lv["price"] for lv in (fz or {}).get("levels") or []]
+ck("قیمتِ سطوح از سقفِ موج تا کفش نزولی است",
+   all(a > b for a, b in zip(prices, prices[1:])))
+ck("سرِ موج و کفِ موج خودِ دو سرِ فیلدِ لنگرند",
+   bool(fz) and abs(fz["retrace_base_high"] - (leg or {}).get("high", -1)) < 0.01
+   and abs(fz["retrace_base_low"] - (leg or {}).get("low", -1)) < 0.01)
+ck("بازهٔ زمانِ موج با خودِ سری می‌خواند (start پیش از end)",
+   bool(fz) and fz["leg"]["start"] <= fz["leg"]["end"] and fz["leg"]["start"] == up[leg["start_idx"]]["time"])
+z1, z2 = fz["zone_33_40"], fz["zone_618_70"]
+ck("کمربندِ کم‌عمق بالای کمربندِ طلایی می‌نشیند", z1["hi"] > z1["lo"] > z2["hi"] > z2["lo"])
+width = (z1["hi"] - z1["lo"]) / z1["lo"]
+ck("کمربند پهنای واقعی دارد، نه یک خطِ مو (بیش از ۲٪ قیمت)", width > 0.02)
+ck("هیچ‌یک از دو کمربند بیرون از موج نیست",
+   fz["retrace_base_low"] <= z2["lo"] and z1["hi"] <= fz["retrace_base_high"])
+
+# ---------- ۳) لنگرِ تازه‌به‌سقف — همان باگِ فولاد ----------
+# سقفِ تاریخی در کندلِ آخر؛ کفِ پس از آن چند ریال بیشتر نیست. تعریفِ پیشین موج
+# را به همان چند ریال می‌بست و کمربند ناپدید می‌شد.
+rally = series([round(100 + i * 1.5, 2) for i in range(200)])
+sw3 = CH._fts_swings(rally, k=CH._FTS_SWING_K)
+fz3 = CH._fts_fib_zones(rally, sw3)
+z13 = (fz3 or {}).get("zone_33_40") or {}
+ck("نمادی که تا سقف بالا رفته کمربندِ بی‌پهنا نمی‌گیرد",
+   bool(z13) and (z13["hi"] - z13["lo"]) / z13["lo"] > 0.02)
+ck("لنگرِ آن به پیشینهٔ موج برمی‌گردد نه به آخرین کندل",
+   bool(fz3) and fz3["leg"]["start"] < rally[-1]["time"])
+
+# ---------- ۴) تاریخِ مارکرها: عینِ قاعدهٔ پنل ----------
+hist = CH._fts_setup_history(up, sw)
+by_date = {c["time"]: i for i, c in enumerate(up)}
+jets = [e for e in hist if e["kind"] == "jet"]
+ck("مارکر می‌شناسد و ستاپ ثبت می‌کند", len(hist) > 0)
+ck("هیچ رویدادی بیرون از تاریخچه نیست", all(e["date"] in by_date for e in hist))
+ck("رویدادها صعودیِ زمانی‌اند", all(a["date"] <= b["date"] for a, b in zip(hist, hist[1:])))
+ck("هیچ رویدادی به آینده نگاه نمی‌کند (همه پیش از کندلِ آخر)",
+   all(e["date"] < up[-1]["time"] for e in hist) or not hist)
+ck("برچسبِ هر رویداد از جدولِ خودِ موتور است",
+   all(e["label"] == CH._FTS_SETUP_LABELS[e["kind"]] for e in hist))
+
+bad = []
+for e in [x for x in hist if x["kind"] == "jet"]:
+    i = by_date[e["date"]]
+    if not CH._fts_jet_setup(up[:i + 1])["active"]:
+        bad.append(e["date"])
+ck("هر مارکرِ جت با `_fts_jet_setup` روی همان برش تأیید می‌شود", not bad)
+
+# جت‌های پیاپی باید یک برچسب باشند: دو برچسب با فاصلهٔ یک روزه نداریم
+def _day(s):
+    return datetime.date.fromisoformat(s)
+
+
+ck("جت‌های زنجیره‌ای ادغام می‌شوند (بدون برچسبِ تکراریِ روزِ بعد)",
+   all((_day(b["date"]) - _day(a["date"])).days != 1 for a, b in zip(jets, jets[1:])))
+
+# ---------- ۵) چارت دیگر موتورِ دوم ندارد ----------
+fe = os.path.join(ROOT, "frontend", "src")
+hits = []
+for dirpath, _dirs, files in os.walk(fe):
+    for fn in files:
+        if not fn.endswith((".ts", ".tsx")):
+            continue
+        p = os.path.join(dirpath, fn)
+        try:
+            txt = open(p, encoding="utf-8").read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        if "export function analyzeFts" in txt:
+            hits.append(os.path.relpath(p, ROOT))
+nn = os.path.join(fe, "features", "technical", "nahayatnegar")
+ck("موتورِ مرورگرِ FTS از مخزن بیرون رفته است",
+   not os.path.exists(os.path.join(nn, "lib", "ftsOverlays.ts")))
+imports = [os.path.join(dp, f) for dp, _d, fs in os.walk(nn) for f in fs
+           if f.endswith((".ts", ".tsx")) and "from '../lib/ftsOverlays'" in open(
+               os.path.join(dp, f), encoding="utf-8").read()]
+ck("هیچ فایلی از پهنهٔ نهایات‌نگارِ فنی اورلیِ حذف‌شده را import نمی‌کند", not imports)
+wrapper = open(os.path.join(fe, "features", "technical", "nahayatnegar",
+                            "components", "KLineChartWrapper.tsx"), encoding="utf-8").read()
+ck("چارت دیگر از موتورِ مرورگر فراخوانی نمی‌کند", "analyzeFts(" not in wrapper)
+ck("اورلیِ فیبو و مارکر از فیلدِ سرور خوانده می‌شود",
+   "ftsAnalysis.fib" in wrapper and "ftsAnalysis.setups" in wrapper)
+page = open(os.path.join(fe, "features", "technical", "routes", "TechnicalPage.tsx"),
+            encoding="utf-8").read()
+ck("صفحه همان تحلیلی را به چارت می‌دهد که پنل می‌خواند (یک منبع، یک درخواست)",
+   "fts={analysis.data?.fts ?? null}" in page and "useFtsAnalysis" in page)
+ck("چارت کوئریِ تازه نمی‌زند — فقط prop می‌گیرد",
+   "useFtsAnalysis(" not in wrapper and "fts?: FtsAnalysisData" in wrapper)
+
+# ---------- ۶) فال‌بکِ CDN نباید یک ساعت قفل کند ----------
+src = open(os.path.join(ROOT, "api", "chart.py"), encoding="utf-8").read()
+ck("پاسخِ محلیِ موقت با TTLِ پاسخِ CDN قفل نمی‌شود",
+   "CHART_FALLBACK_TTL" in src and "(_t.time() - _cached[0]) < _cached[2]" in src)
+ck("TTLِ فال‌بک دست‌کم ده برابر کوتاه‌تر از CDN است",
+   CH.CHART_FALLBACK_TTL * 10 <= CH.CHART_CACHE_TTL)
+
+print()
+if FAILS:
+    print("FTS CHART ENGINE GUARD FAILED: %d" % len(FAILS))
+    for f in FAILS:
+        print("  -", f)
+    sys.exit(1)
+print("FTS CHART ENGINE GUARD OK")

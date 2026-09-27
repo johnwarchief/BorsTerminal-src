@@ -30,7 +30,6 @@ import {
   mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, type Timeframe } from '../lib/timeframe';
-import { analyzeFts, type FtsAnalysisResult } from '../lib/ftsOverlays';
 import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
@@ -89,10 +88,15 @@ import { toFaDigits } from '@shared/lib/fmt';
 
 import '../styles/nahayatNegarStyles.css';
 
+// تحلیل FTS را صفحه می‌دهد (#161)؛ چارت هیچ چیز را دوباره حساب نمی‌کند و خودشان
+// کوئری نمی‌زند — همان شیئی که پنلِ «وضعیت FTS» می‌خواند به این اورلی‌ها می‌رسد.
+import type { FtsAnalysisData } from '../../api/useFtsAnalysis';
+
 export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
+  fts?: FtsAnalysisData | null;
   replayActive?: boolean;
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
@@ -261,6 +265,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialSymbol = 'خودرو',
   initialName = 'ایران خودرو',
   boardRow,
+  fts,
   replayActive,
   onToggleReplay,
   onOpenSettings,
@@ -401,9 +406,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasData, setHasData] = useState<boolean>(true);
 
-  // استراتژی FTS
+  // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند
   const [isFtsActive, setIsFtsActive] = useState<boolean>(true);
-  const [ftsAnalysis, setFtsAnalysis] = useState<FtsAnalysisResult | null>(null);
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -454,15 +458,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     [activeAdjustment, adjustedCandles, rawCandles, corporateActions]
   );
 
-  // اجرای تحلیل FTS روی داده‌های تعدیل‌شده
-  useEffect(() => {
-    if (analysisCandles.length > 0) {
-      const result = analyzeFts(analysisCandles);
-      setFtsAnalysis(result);
-    } else {
-      setFtsAnalysis(null);
-    }
-  }, [analysisCandles]);
+  // تحلیل FTS: همان شیئی که پنلِ «وضعیت FTS» می‌خواند (#161). قبلاً چارت با
+  // `analyzeFts` یک موتورِ دوم داشت — کمربندِ فیبو را از ۱۰۰ کندلِ آخر می‌گرفت
+  // و «جت» را از حجمِ دو‌برابر؛ روی نُه نماد، هیچ‌کدام با عددِ پنل نمی‌خواند.
+  const ftsAnalysis = fts ?? null;
 
   // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد، فال‌بک چندلایه و نگاشت دفاعی)
   const fetchCandleData = useCallback(async (symbol: string) => {
@@ -1283,130 +1282,122 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const startTs = shown.length ? shown[0].timestamp : 0;
     const lastTs = shown.length ? shown[shown.length - 1].timestamp : 0;
 
-    // رسم زون‌های فیبوی لگاریتمی FTS (زون ۰.۳۳ تا ۰.۴۰ و زون ۰.۶۱۸ تا ۰.۷۰)
-    // یک نوارِ تمام‌عرض بین دو کرانه، به‌علاوهٔ دو خطِ افقیِ تمام‌عرض روی کرانه‌ها.
-    // پیش‌تر هر زون با دو نقطه روی یک زمانِ یکسان (و آن زمان Date.now() بود بیرون
-    // از بازهٔ داده) به شکلِ یک خطِ عمودیِ بی‌معنا در لبهٔ راست رسم می‌شد.
-    try {
-      ftsAnalysis.logFiboZones.forEach((z) => {
-        if (z.priceStart > 0 && z.priceEnd > 0) {
-          const color = z.ratioStart >= 0.6 ? '#2962ff' : '#ffab00';
-          const lo = toDisp(Math.min(z.priceStart, z.priceEnd));
-          const hi = toDisp(Math.max(z.priceStart, z.priceEnd));
-          if (startTs && lastTs && lo > 0 && hi > lo) {
-            try {
-              chart.createOverlay({
-                name: 'rect',
-                groupId: ftsGroupId,
-                lock: true,
-                points: [
-                  { timestamp: startTs, value: hi },
-                  { timestamp: lastTs, value: lo },
-                ],
-                styles: { polygon: { color: `${color}22`, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
-              } as never);
-            } catch {
-              // نوار اختیاری است؛ کرانه‌ها پایین‌تر رسم می‌شوند
-            }
-          }
-          [lo, hi].forEach((v) => {
-            chart.createOverlay({
-              name: 'horizontalStraightLine',
-              groupId: ftsGroupId,
-              lock: true,
-              points: [{ timestamp: lastTs || Date.now(), value: v }],
-              styles: { line: { color, size: 1, style: 'dashed' } },
-            } as never);
-          });
-        }
-      });
-
-      // رسم مارکرهای ستاپ FTS (جت، پولبک، CHoCH، نقطه‌زنی، کف‌دوقلو) با سیستم Collision Avoidance & Stacking Offset
-      // ۱. گروه‌بندی بر اساس زمان/کندل جهت تشخیص هم‌پوشانی
-      const markersByTime = new Map<number, typeof ftsAnalysis.setupMarkers>();
-      for (const m of ftsAnalysis.setupMarkers) {
-        const bucket = markersByTime.get(m.timestamp) ?? [];
-        bucket.push(m);
-        markersByTime.set(m.timestamp, bucket);
-      }
-
-      // ۲. تجمیع برچسب‌های هم‌زمان در یک کندل و تفکیک سطوح بالا (مقاومت/جت) و پایین (حمایت/نقطه‌زنی/کف‌دوقلو/پولبک)
-      const processedMarkers: Array<{
-        timestamp: number;
-        price: number;
-        label: string;
-        color: string;
-      }> = [];
-
-      markersByTime.forEach((group, ts) => {
-        const lowGroup = group.filter((m) => m.name !== 'جت');
-        const highGroup = group.filter((m) => m.name === 'جت');
-
-        if (lowGroup.length > 0) {
-          const uniqueNames = Array.from(new Set(lowGroup.map((m) => m.name)));
-          const combinedLabel = uniqueNames.join(' • ');
-          const basePrice = Math.min(...lowGroup.map((m) => m.price));
-          processedMarkers.push({
-            timestamp: ts,
-            price: basePrice,
-            label: combinedLabel,
-            color: '#089981',
-          });
-        }
-
-        if (highGroup.length > 0) {
-          const uniqueNames = Array.from(new Set(highGroup.map((m) => m.name)));
-          const combinedLabel = uniqueNames.join(' • ');
-          const basePrice = Math.max(...highGroup.map((m) => m.price));
-          processedMarkers.push({
-            timestamp: ts,
-            price: basePrice,
-            label: combinedLabel,
-            color: '#ffab00',
-          });
-        }
-      });
-
-      // ۳. اعمال Stacking Offset بین مارکرهای نزدیک جهت جلوگیری از برخورد بصری
-      processedMarkers.sort((a, b) => a.timestamp - b.timestamp);
-      for (let i = 1; i < processedMarkers.length; i++) {
-        const prev = processedMarkers[i - 1];
-        const curr = processedMarkers[i];
-        const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
-        if (timeDiff <= 2 * 24 * 60 * 60 * 1000 && Math.abs(curr.price - prev.price) / Math.max(1, prev.price) < 0.025) {
-          curr.price = curr.color === '#ffab00' ? curr.price * 1.028 : curr.price * 0.972;
-        }
-      }
-
-      // ۴. رندر مارکرهای مرتب با برچسب کنتراست بالا و پس‌زمینه خوانا
-      processedMarkers.forEach((m) => {
+    // زون‌ها و سطوحِ فیبو، عینِ payloadِ سرور (#161). چارت دیگر هیچ نسبتی را
+    // خودش حساب نمی‌کند؛ همان کمربند و همان عددی که پنلِ «وضعیت FTS» می‌گوید
+    // رویِ شیشه می‌نشیند. نوارِ رنگی رویِ خودِ موجِ لنگر رسم می‌شود (چشمِ ابزارِ
+    // فیبو)، و هر سطحِ جزوه یک خطِ تمام‌عرض تا عدد بیرون از دید نرود.
+    const fib = ftsAnalysis.fib;
+    const legRaw = fib?.leg?.start ? parseCandleTimestamp(fib.leg.start) : startTs;
+    const legStartTs = Number.isFinite(legRaw) && legRaw > 0 ? legRaw : startTs;
+    [
+      { z: fib?.zone_33_40, color: '#ffab00' },
+      { z: fib?.zone_618_70, color: '#2962ff' },
+    ].forEach(({ z, color }) => {
+      const loRaw2 = Math.min(z?.lo ?? 0, z?.hi ?? 0);
+      const hiRaw2 = Math.max(z?.lo ?? 0, z?.hi ?? 0);
+      if (!z || loRaw2 <= 0 || hiRaw2 <= loRaw2) return;
+      const lo = toDisp(loRaw2);
+      const hi = toDisp(hiRaw2);
+      if (!legStartTs || !lastTs) return;
+      try {
         chart.createOverlay({
-          name: 'simpleAnnotation',
+          name: 'rect',
           groupId: ftsGroupId,
           lock: true,
-          points: [{ timestamp: m.timestamp, value: toDisp(m.price) }],
-          extendData: m.label,
-          styles: {
-            text: {
-              color: '#ffffff',
-              size: 10.5,
-              family: 'Vazirmatn, sans-serif',
-              weight: 'bold',
-              backgroundColor: m.color === '#089981' ? 'rgba(8, 153, 129, 0.92)' : 'rgba(255, 171, 0, 0.92)',
-              borderColor: '#1e222d',
-              borderSize: 1,
-              borderRadius: 4,
-              paddingLeft: 6,
-              paddingRight: 6,
-              paddingTop: 2,
-              paddingBottom: 2,
-            },
-          },
+          points: [
+            { timestamp: legStartTs, value: hi },
+            { timestamp: lastTs, value: lo },
+          ],
+          styles: { polygon: { color: `${color}22`, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
         } as never);
-      });
-    } catch (e) {
-      // مدیریت خطا
+      } catch {
+        // نوار اختیاری است؛ خطِ کرانه پایین‌تر رسم می‌شود
+      }
+    });
+    (fib?.levels ?? []).forEach((lv) => {
+      if (!(lv.price > 0)) return;
+      const near = lv.ratio === 0.33 || lv.ratio === 0.4;
+      const deep = lv.ratio === 0.618 || lv.ratio === 0.7;
+      const color = near ? '#ffab00' : deep ? '#2962ff' : '#8a93a6';
+      chart.createOverlay({
+        name: 'horizontalStraightLine',
+        groupId: ftsGroupId,
+        lock: true,
+        points: [{ timestamp: lastTs || Date.now(), value: toDisp(lv.price) }],
+        styles: { line: { color, size: 1, style: near || deep ? 'dashed' : 'dotted' } },
+      } as never);
+    });
+
+    // مارکرهای ستاپ: همان فهرستِ تاریخ‌دارِ سرور، بی‌قاعدهٔ دوم. چند ستاپِ
+    // هم‌زمان روی یک کندل در یک برچسب ادغام می‌شوند.
+    const markerBg = (kinds: Set<string>) =>
+      kinds.has('jet') ? 'rgba(255, 171, 0, 0.92)'
+        : kinds.has('dbl') ? 'rgba(8, 153, 129, 0.92)'
+          : 'rgba(167, 139, 250, 0.92)';
+    type SetupBucket = { price: number; kinds: Set<string>; labels: string[]; side: string };
+    const buckets = new Map<number, SetupBucket>();
+    for (const s of ftsAnalysis.setups ?? []) {
+      const ts = parseCandleTimestamp(s.date);
+      if (!Number.isFinite(ts) || ts <= 0) continue;
+      const g = buckets.get(ts);
+      if (!g) {
+        buckets.set(ts, {
+          price: s.price, kinds: new Set([s.kind]), labels: [s.label],
+          side: s.side ?? 'above',
+        });
+        continue;
+      }
+      g.kinds.add(s.kind);
+      if (!g.labels.includes(s.label)) g.labels.push(s.label);
+      g.price = s.side === 'below' ? Math.min(g.price, s.price) : Math.max(g.price, s.price);
     }
+
+    const processedMarkers = Array.from(buckets.entries())
+      .map(([timestamp, g]) => ({
+        timestamp,
+        price: g.price,
+        label: g.labels.join(' • '),
+        bg: markerBg(g.kinds),
+        side: g.side,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+
+    // دو برچسبِ هم‌قیمتِ نزدیک رویِ هم می‌افتند؛ یکی را بالا و دیگری را پایین
+    // هل می‌دهیم تا هر دو خوانا بمانند.
+    for (let i = 1; i < processedMarkers.length; i++) {
+      const prev = processedMarkers[i - 1];
+      const curr = processedMarkers[i];
+      const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
+      if (timeDiff <= 2 * 24 * 60 * 60 * 1000 && Math.abs(curr.price - prev.price) / Math.max(1, prev.price) < 0.025) {
+        curr.price = curr.side === 'above' ? curr.price * 1.028 : curr.price * 0.972;
+      }
+    }
+
+    processedMarkers.forEach((m) => {
+      chart.createOverlay({
+        name: 'simpleAnnotation',
+        groupId: ftsGroupId,
+        lock: true,
+        points: [{ timestamp: m.timestamp, value: toDisp(m.price) }],
+        extendData: m.label,
+        styles: {
+          text: {
+            color: '#ffffff',
+            size: 10.5,
+            family: 'Vazirmatn, sans-serif',
+            weight: 'bold',
+            backgroundColor: m.bg,
+            borderColor: '#1e222d',
+            borderSize: 1,
+            borderRadius: 4,
+            paddingLeft: 6,
+            paddingRight: 6,
+            paddingTop: 2,
+            paddingBottom: 2,
+          },
+        },
+      } as never);
+    });
 
     return () => {
       chart.removeOverlay({ groupId: ftsGroupId } as never);
@@ -2208,12 +2199,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
         >
-          {/* هشدار خروج استراتژی FTS */}
-          {isFtsActive && ftsAnalysis?.exitSignalMA14 && (
+          {/* هشدار خروج استراتژی FTS — از موتورِ سرور، نه از قاعدهٔ چارت */}
+          {isFtsActive && ftsAnalysis?.exit_engine?.l1?.ma14_exit ? (
             <div className="nn-fts-exit-alert">
-              <span>هشدار خروج FTS: کل کندل زیر میانگین ۱۴ قرار گرفت.</span>
+              <span>هشدار خروج FTS: بدنهٔ دو کندل متوالی زیر میانگین ۱۴ بسته شد.</span>
             </div>
-          )}
+          ) : null}
 
           {/* کانتینر اصلی کتابخانه KlineCharts */}
           {/* کانتینر اصلی کتابخانه KlineCharts با لِجِندِ جمع‌شوندهٔ الگوها */}
