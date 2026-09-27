@@ -1591,6 +1591,66 @@ def _basket_entry(symbol):
     return price if price > 0 else None
 
 
+def _fts_scaled(candles, factors, volumes):
+    """کندل‌هایِ صعودیِ ریالیِ تعدیل‌شده — همان سریِ «combined» که چارت می‌رسم.
+
+    مسیرِ CDN کندل‌ها را نزولی می‌دهد و حجم را در آرایه‌ای جدا؛ اینجا هر دو
+    یکسان‌سازی می‌شوند تا موتورِ سرور و موتورِ مرورگر یک ورودی داشته باشند.
+    گردکردنِ ریال و تقسیمِ حجم بر ضریب، عینِ `applyAdjustmentToCandles` سمت
+    فرانت است (به‌جایِ banker's roundingِ پایتون، پایین‌گردِ +۰٫۵).
+    """
+    fac = {str(x.get("time") or ""): float(x.get("factor") or 1.0)
+           for x in (factors or []) if isinstance(x, dict)}
+    vol = {str(x.get("time") or ""): float(x.get("value") or 0)
+           for x in (volumes or []) if isinstance(x, dict)}
+
+    def r(v):
+        return float(math.floor(v + 0.5)) if v >= 0 else v
+
+    out = []
+    for c in candles or []:
+        t = str(c.get("time") or "")
+        if len(t) < 10:
+            continue
+        k = fac.get(t[:10], 1.0)
+        if not k > 0:
+            k = 1.0
+        o, h, l, cl = (float(c.get(x) or 0) for x in ("open", "high", "low", "close"))
+        v = vol.get(t[:10], float(c.get("volume") or 0))
+        out.append({"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
+                    "close": r(cl * k), "last": r(cl * k), "volume": r(v / k)})
+    out.sort(key=lambda c: c["time"])
+    return out
+
+
+def _fts_analysis_series(symbol):
+    """سریِ کندلِ تحلیل + برچسبِ مبنا.
+
+    چارت تاریخچۀ کاملِ نماد را از CDN می‌گیرد و ضرایبِ تعدیل را روی آن می‌زند؛
+    `price_history` محلی فقط دو سال نگه می‌دارد و میانیِ نمادها ۲۰ نشست است (از
+    ۲۵۱۸ نماد، ۸۷۲ تا به ۶۰ نشست می‌رسند). بی‌این هم‌سان‌سازی، نوارِ نشان‌ها و
+    پنلِ «وضعیت FTS» برای نمادی که چارتش جت می‌زد می‌گفتند «تاریخچه به ۶۰ نشست
+    نمی‌رسد» (شاهد: خودرو ۶ نشست در برابر ۵۲۸۷، تكنار ۶ در برابر ۲۳۲۰) و پلکانِ
+    مقاومت را پیش‌از‌تعدیل می‌دادند (شاهد: فولاد ۴۲۱۳ در برابر ۳۴۱۰).
+    وقتی CDN قطع است یا پاسخِ معتبری ندارد، صادقاً به بانکِ محلی برمی‌گردد و
+    همان را در `analysis_basis` اعلام می‌کند.
+    """
+    try:
+        payload = get_chart_tsetmc(symbol)
+    except Exception:
+        payload = None
+    if isinstance(payload, dict) and payload.get("status") == "success":
+        series = _fts_scaled(payload.get("candles") or [],
+                             payload.get("factors") or [],
+                             payload.get("volumes") or [])
+        if len(series) >= 2:
+            src = str(payload.get("adjustSource") or "")
+            basis = "local-db" if src.startswith("local-db") else "tsetmc-adjusted"
+            return series, basis
+    db = get_chart_db(symbol)
+    return (db.get("candles") or []), "local-db"
+
+
 def _fts_analyze_symbol(symbol, entry_hint=None):
     """Cached single-symbol FTS payload for /api/fts/{symbol} and badges.
 
@@ -1604,8 +1664,7 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     import time as _t
     now = _t.time()
     try:
-        db = get_chart_db(symbol, adjustment=3)
-        candles = db.get("candles") or []
+        candles, basis = _fts_analysis_series(symbol)
     except Exception as e:
         return {"status": "error", "symbol": symbol, "message": str(e)}
     if not candles:
@@ -1619,7 +1678,8 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
         fts = _fts_analyze_candles(symbol, candles, entry_hint=entry_hint)
     except Exception as e:
         return {"status": "error", "symbol": symbol, "message": str(e)}
-    result = {"status": "success", "symbol": symbol, "fts": fts}
+    result = {"status": "success", "symbol": symbol, "fts": fts,
+              "analysis_basis": basis, "bars": len(candles)}
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:
         FTS_ANALYSIS_CACHE.clear()
     FTS_ANALYSIS_CACHE[key] = (now, result)
