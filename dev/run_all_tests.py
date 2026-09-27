@@ -36,6 +36,9 @@ SUITES = [
     # دو باندلِ KLineCharts (public/vendor روی window و پکیجِ npm) دو API دارند؛
     # getCrosshair فقط در یکی روی Chart است. بی‌این گارد، خط‌کشِ نهایات‌نگر کرش کرد.
     ('dev/chart_two_bundles_v1029.py', 'هر متدِ Chart باید در باندلِ همان فایل وجود داشته باشد'),
+    # #176: تابلو پایِ بازسازیِ ۱.۴ ثانیه‌ایِ کش نمی‌ایستد (کهنه فوراً،
+    # بازسازیِ تک‌نفره در پس‌زمینه، و سقفِ کهنگی که خطا را پنهان نکند).
+    ('dev/market_swr_v1036.py',      'board cache is stale-while-revalidate, single-flight, honest on failure'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),

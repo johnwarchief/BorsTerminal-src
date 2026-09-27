@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from .market import MARKET_CACHE
+from .market import warm_market_cache
 from fastapi import APIRouter
 import subprocess
 import test_tsetmc as _tsetmc_mod
@@ -26,7 +26,12 @@ def _run_market_sync():
         print("[market-sync] thread started")
         _tsetmc_mod.main()
         print("[market-sync] done")
-        MARKET_CACHE.clear()   # داده تازه → کش پاسخ قدیمی باطل
+        # داده تازه شد؛ کشِ پیشین بی‌ارزش است. «خالی‌کردن» تنها کافی نبود:
+        # اندازه‌گیری شد که نخستین درخواستِ پس از هر سینک ۱٫۴ ثانیه پایِ
+        # ساختنِ تابلو می‌ایستاد. اینجا همان ساختن در همین نخ انجام می‌شود،
+        # پس کاربر هرگز آن تأخیر را نمی‌بیند. (خودِ warm_market_cache اگر
+        # ساختن شکست کش را خالی می‌کند.)
+        warm_market_cache()
     except Exception as e:
         print(f"[market-sync] FAILED: {e}")
     finally:

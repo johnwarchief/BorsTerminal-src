@@ -16,6 +16,8 @@ import json
 import numpy as np
 import pandas as pd
 import sqlite3
+import threading
+import time
 
 
 router = APIRouter()
@@ -107,16 +109,122 @@ def market_sync_state():
 
 @router.get("/api/market")
 def get_market(request: Request):
+    """تابلو. هیچ‌وقت پایِ بازسازیِ ۱.۴ ثانیه‌ای نمی‌ایستد (بخوان SWR)."""
+    cached = _market_from_cache(request, time.time())
+    if cached is not None:
+        return cached
+    return _build_market_response(request)
+
+
+# ── تازه‌سازیِ پس‌زمینه‌ای (#176) ────────────────────────────────────────
+# اندازه‌گیری ۱۴۰۵‑۰۷‑۰۵: هر بار که TTLِ کش می‌پایاند، یکِ مشتری باید ۱٫۴ ثانیه
+# برایِ ساختنِ دوبارهٔ بدنه صبر کند (در نشستِ پنج‌ثانیه‌یِ پُرمخاطره این یعنی
+# یکی از هر چهار پولینگ دیر می‌رسد). ولی در آن لحظه همان بدنهٔ کهنه هنوز درست
+# است: سینکِ پایگاه هر ۹۰ ثانیه یک‌بار چیزی عوض می‌کند، پس کشِ ۲۰ ثانیه‌ای
+# تقریباً همیشه دارد چیزی را دوباره می‌سازد که تغییر نکرده. راهِ درست پس
+# «صبرِ مشتری» نیست؛ «بدهِ کهنه، بساز در پس‌زمینه» است.
+_MARKET_BUILD_LOCK = threading.Lock()
+_MARKET_BUILDING = False
+# سقفِ کهنه: اگر بازسازیِ پس‌زمینه چند دقیقه است که می‌شکند، «کهنه» دیگر
+# بی‌خطر نیست؛ از این لحظه به بعدِ درخواست همگام می‌سازد و همان خطای واقعی
+# را بالا می‌فرستد تا صادقانه به UI برسد، نه یک تابلوی زندهٔ مُرده.
+_MARKET_STALE_CEILING = 300.0
+
+
+class _MarketInternalRequest:
+    """درخواستِ جعلیِ نخِ پس‌زمینه: بدونِ If-None-Match، تا بازسازیِ واقعی
+    انجام شود و etagِ بیرونی مانعش نشود."""
+    headers: dict = {}
+
+
+def _kick_market_rebuild():
+    """یک بازسازیِ هم‌زمان، نه بیشتر. قفل هرگز موقعِ ساختن گرفته نمی‌ماند."""
+    global _MARKET_BUILDING
+    with _MARKET_BUILD_LOCK:
+        if _MARKET_BUILDING:
+            return
+        _MARKET_BUILDING = True
+
+    def _run():
+        global _MARKET_BUILDING
+        try:
+            _build_market_response(_MarketInternalRequest())
+        except Exception as _e:
+            print(f"[market] background rebuild failed: {_e}")
+        finally:
+            with _MARKET_BUILD_LOCK:
+                _MARKET_BUILDING = False
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
+_MARKET_SNAP_LOCK = threading.Lock()
+
+
+def _market_snapshot():
+    """بدنه، زمان و etag را به‌صورتِ یک عکسِ یکدست می‌خواند.
+
+    سه کلیدِ جدا در یک دیکشنری این تضمین را نمی‌دهند: اگر نخِ سازنده
+    بدنۀ تازه را نوشته باشد ولی etag هنوز کهنه باشد، خواننده بدنۀ تازه را
+    با etagِ کهنه می‌سنجد و به مشتریِ دارندهٔ همان etagِ کهنه ۳۰۴ می‌دهد —
+    یعنی کاربر «تازه شد» را می‌شنود ولی همان عددِ قدیمی را نگه می‌دارد.
+    """
+    with _MARKET_SNAP_LOCK:
+        return MARKET_CACHE.get("body"), MARKET_CACHE.get("t", 0), MARKET_CACHE.get("etag", "")
+
+
+def _market_store(body, etag, when):
+    with _MARKET_SNAP_LOCK:
+        MARKET_CACHE["body"] = body
+        MARKET_CACHE["etag"] = etag
+        MARKET_CACHE["t"] = when
+
+
+def _market_clear():
+    with _MARKET_SNAP_LOCK:
+        MARKET_CACHE.clear()
+
+
+def warm_market_cache():
+    """تابلو را بی‌درنگ یک‌بار می‌سازد تا در کش بنشیند.
+
+    دو جا لازم است: پایانِ سینک (داده عوض شده و کشِ پیشین بی‌ارزش است) و
+    پس از بالا آمدنِ سرور (پیش از آنکه نخستین پنجره باز شود). اگر ساختن
+    شکست، کش را خالی می‌کند — «ساختنِ ناموفق» هرگز نباید با دادهٔ کهنهٔ
+    مقابلهتِ کاربر پاسخ داده شود؛ درخواستِ بعدی همگام می‌سازد و خطا را
+    صادقانه به بالا می‌فرستد.
+    """
+    try:
+        _build_market_response(_MarketInternalRequest())
+        return True
+    except Exception as _e:
+        print(f"[market] warm failed: {_e}")
+        _market_clear()
+        return False
+
+
+def _market_from_cache(request: Request, now: float):
+    """پاسخ از کش؛ None یعنی کشی نیست یا آن‌قدر کهنه است که باید همین‌جا
+    همگام ساخته شود (و اگر ساختن شکست، خطا صادقانه به بالا برود)."""
+    body, built_at, etag = _market_snapshot()
+    if body is None:
+        return None
+    age = now - built_at
+    if age > _MARKET_STALE_CEILING:
+        return None
+    fresh = age < MARKET_CACHE_TTL
+    if not fresh:
+        _kick_market_rebuild()
+    if request.headers.get("if-none-match") == etag and etag:
+        return Response(status_code=304, headers={"ETag": etag})
+    return Response(content=body, media_type="application/json",
+                    headers={"Cache-Control": "max-age=15",
+                             "X-Cache": "HIT" if fresh else "STALE", "ETag": etag})
+
+
+def _build_market_response(request: Request):
     import time as _t
     now = _t.time()
-    hit = MARKET_CACHE.get("body")
-    if hit and (now - MARKET_CACHE.get("t", 0)) < MARKET_CACHE_TTL:
-        inm = request.headers.get("if-none-match")
-        if inm and inm == MARKET_CACHE.get("etag"):
-            return Response(status_code=304)
-        return Response(content=hit, media_type="application/json",
-                        headers={"Cache-Control": "max-age=15", "X-Cache": "HIT",
-                                 "ETag": MARKET_CACHE.get("etag", "")})
     conn = get_db()
     try:
         # پنجرۀ تاریخچه از **اتحادِ** دو جدول ساخته می‌شود، نه از price_history
@@ -374,9 +482,7 @@ def get_market(request: Request):
         else:
             body = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
         etag = '"' + hashlib.md5(body).hexdigest()[:16] + '"'
-        MARKET_CACHE["body"] = body
-        MARKET_CACHE["t"] = now
-        MARKET_CACHE["etag"] = etag
+        _market_store(body, etag, now)
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
         # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match
@@ -476,4 +582,9 @@ def set_fts_config(payload: dict = None):
         return {"status": "error", "message": str(e)[:160]}
 
 MARKET_CACHE = {}   # {"t": ts, "body": bytes, "etag": str}
-MARKET_CACHE_TTL = 20.0   # ثانیه — دادهٔ تابلو هر ۳۰ثانیه سینک میشود، ۲۰ کافی است
+MARKET_CACHE_TTL = 60.0
+# این عدد دیگر «تازگی» را تعیین نمی‌کند: پایانِ هر سینک خودِ کش را از نو می‌سازد
+# (warm_market_cache در api/_sync_market). اینجا فقط تورِ امنیتی است برای نوشتنِ
+# بیرونِ این پروسه. اندازه‌گیری با ۲۰ و پولینگِ پنج‌ثانیه‌ای: ۹ بازسازیِ ۱.۴
+# ثانیه‌ای در ۳ دقیقه = هفت‌درصدِ یک هسته، روی داده‌ای که هر ۹۰ ثانیه بیشتر عوض
+# نمی‌شود. با ۶۰: سه بازسازی.
