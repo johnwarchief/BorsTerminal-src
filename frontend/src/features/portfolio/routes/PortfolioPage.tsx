@@ -146,7 +146,7 @@ export default function PortfolioPage() {
               : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
           }`}
         >
-          پرتفوی هدف (Target Allocation)
+          پرتفوی هدف
         </button>
         <button
           type="button"
@@ -159,7 +159,7 @@ export default function PortfolioPage() {
               : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
           }`}
         >
-          پرتفوی فعلی (Current Holdings)
+          پرتفوی فعلی
         </button>
       </div>
 
@@ -185,10 +185,10 @@ export default function PortfolioPage() {
           <DeltaBar rows={deltaRows} />
 
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* افزودن دارایی با جستجوی نماد — نام و قیمت از سرور، وزن از تعداد (#106) */}
+            {/* افزودن دارایی با جستجوی نماد — نام و قیمت از سرور، وزن از تعداد (#106)
+                «افزودن به سبد» حذف شد: همین کار را می‌کرد و دو تا لازم نبود (#191).
+                تصمیمِ سبد در تب FTS و قیف نخبگان زده می‌شود. */}
             <SymbolBasketAction symbol="" addMode />
-            {/* اقدام سریع سبد برای نماد انتخابی */}
-            <SymbolBasketAction symbol={symbol} />
             <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
             <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
             <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
@@ -215,7 +215,6 @@ export default function PortfolioPage() {
             <div className="glass-panel panel-in p-4">
               <div className="mb-1 flex items-center gap-2">
                 <h3 className="text-sm font-black text-text-primary">سیگنال پرتفوی {symbol}</h3>
-                <SymbolBasketAction symbol={symbol} compact />
                 <Badge tone="gray">{STATUS_LABEL[signal.payload.decision] ?? signal.payload.decision}</Badge>
                 {signal.payload.weightPct != null ? <Badge tone="blue">وزن {toFaDigits(signal.payload.weightPct)} درصد</Badge> : null}
                 {signal.payload.stopLoss != null ? <Badge tone="gray">حد ضرر {toFaDigits(signal.payload.stopLoss)}</Badge> : null}

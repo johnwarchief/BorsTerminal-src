@@ -186,7 +186,7 @@ describe('سوییچر دوگانه و پرتفوی هدف', () => {
   it('تب فعلی با کلیک باز می شود: نوار دلتا و جدول سبد', async () => {
     renderPage();
     await screen.findByText('پیشنهاد اقتصادی و مدیریت سرمایه FTS');
-    fireEvent.click(screen.getByRole('tab', { name: 'پرتفوی فعلی (Current Holdings)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'پرتفوی فعلی' }));
     expect(await screen.findByText('شکاف فعلی با هدف (ری‌بالانس)')).toBeInTheDocument();
     expect(screen.getByText('سبد')).toBeInTheDocument();
     expect(screen.getByText('زیر نظر')).toBeInTheDocument();
@@ -206,7 +206,7 @@ describe('پرتفوی فعلی — جدول سه‌گانه', () => {
   /** افتتاح نمای فعلی — اول انتظار لود (نمای هدف)، بعد کلیک سوییچر */
   async function openCurrentView() {
     await screen.findByRole('button', { name: 'ویرایش دارایی' });
-    fireEvent.click(screen.getByRole('tab', { name: 'پرتفوی فعلی (Current Holdings)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'پرتفوی فعلی' }));
     await screen.findByText('شکاف فعلی با هدف (ری‌بالانس)');
   }
 
