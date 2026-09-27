@@ -113,7 +113,7 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
     },
     {
       id: 'tape_breakout',
-      label: '📦 خروج از باکس رنج (Breakout)',
+      label: '📦 خروج از باکس رنج',
       fullTitle: 'شکست سقف کانال تراکم قیمت در تابلو',
       category: 'tape',
       stage: isReverse ? 1 : 3,
@@ -162,7 +162,7 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
     {
       id: 'tape_market_liquidity',
       label: `🏛 ارزش کل خرد (${toFaDigits(params.marketLiquidityMinHemmat)} همت)`,
-      fullTitle: 'فیلتر رونق نقدینگی کل بازار خرد (Macro Liquidity)',
+      fullTitle: 'فیلتر رونق نقدینگی کل بازار خرد',
       category: 'tape',
       stage: isReverse ? 1 : 3,
       stageName: 'تابلوخوانی S',
