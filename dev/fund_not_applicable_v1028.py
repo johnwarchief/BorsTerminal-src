@@ -153,10 +153,10 @@ def main():
     chk("out.sort(key=lambda r: (r[\"excluded\"]" in eng, "sort key still uses excluded+score")
 
     # ── ۵) مصرف‌کننده‌های فرانت ───────────────────────────────────────────
-    screener = _read(os.path.join("frontend", "src", "features", "market", "api",
-                                  "useFtsScreener.ts"))
-    chk("hit.applicable === false" in screener,
-        "tape FTS column has a not-applicable view")
+    # ستونِ FTSِ تابلو (features/market/api/useFtsScreener.ts + FtsStatusBadge)
+    # در 08bbb4c به‌عنوانِ کدِ مرده حذف شد، پس آن «نمایِ نامشمول» دیگر جایی
+    # نیست که بشود گاردش کرد. همان قضاوت حالا فقط در جدولِ بنیادی مصرف
+    # می‌شود و همان را در خطِ آخرِ همین بخش می‌سنجیم.
     gates = _read(os.path.join("frontend", "src", "features", "master", "lib",
                                "strictGates.ts"))
     chk("ftsApplicable(fund)" in gates, "master gate refuses a non-applicable symbol")
