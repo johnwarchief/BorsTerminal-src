@@ -321,18 +321,20 @@ jobs:
             $built = @()
             for ($i = 0; $i -lt $prevs.Count; $i++) {
               $prev = $prevs[$i]
-              # نخستِ فهرست = نسخهٔ بلافاصلهٔ قبل. نبودِ پچِ آن وعدهٔ «آپدیتِ
-              # کوچک» را می‌شکند، پس شکستش خطاست؛ مبدأهایِ قدیمی‌تر best-effort
-              # می‌مانند (نبودشان فقط یعنی آن کاربر به نصبِ کامل برمی‌گردد).
-              $primary = ($i -eq 0)
+              # مبدأ = تگ، و تگ می‌تواند ریلیز نداشته باشد (v1.0.39: گارد و تست
+              # سبز بودند، تگ زد، و job درِ `npm ci` مُرد — ریلیزی منتشر نشد).
+              # پیش‌تر نبودِ manifestِ «بلافاصله قبل» Fail می‌داد و حلقه را
+              # می‌کِشید، پس پچِ ۱٫۰٫۳۸ و ۱٫۰٫۳۷ هم ساخته نشد و ریلیزِ ۱٫۰٫۴۰
+              # بی‌هیچ پچی منتشر شد: هر کسی که عقب بود نصابِ ۶۸ مگابایتی گرفت.
+              # حالا مبدأِ بی‌ریلیز فقط رد می‌شود و وعدهٔ «آپدیتِ کوچک» را
+              # درِ چکِ انتهایی نگهبانی می‌کنیم: اگر هیچ پچی ساخته نشد خطاست.
               $mfName = "BorsTerminal_Manifest_v$prev.json"
               $mfPath = Join-Path $env:RUNNER_TEMP $mfName
               if (-not (Test-Path $mfPath)) {
                 try {
                   Invoke-WebRequest -Uri "https://github.com/johnwarchief/BorsTerminal/releases/download/v$prev/$mfName" -OutFile $mfPath
                 } catch {
-                  if ($primary) { Fail "manifestِ $prev روی ریلیز نیست؛ پچِ اصلی ساخته نمی‌شود" }
-                  Note "manifestِ $prev نیست؛ از $prev پچ ساخته نمی‌شود"
+                  Note "ریلیزِ $prev manifest ندارد (تگِ بی‌بیلد؟)؛ از $prev پچ ساخته نمی‌شود"
                   continue
                 }
               }
@@ -349,12 +351,10 @@ jobs:
               $tail = ((Get-Content $mpLog -Tail 5 -ErrorAction SilentlyContinue) -join ' | ') -replace '\r?\n', ' '
               Note "make_patch($prev) exit=$mpExit :: $tail"
               if ($mpExit -ne 0) {
-                if ($primary) { Fail "make_patch برایِ $prev با کدِ $mpExit خارج شد" }
                 continue
               }
               $patchZip = "dist/BorsTerminal_Patch_${prev}_to_${ver}.zip"
               if (-not (Test-Path $patchZip)) {
-                if ($primary) { Fail "make_patch برایِ $prev zip نساخت (exit=$mpExit)" }
                 continue
               }
               $sz = [math]::Round((Get-Item $patchZip).Length / 1MB, 2)
