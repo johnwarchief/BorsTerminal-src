@@ -64,12 +64,49 @@ describe('علتِ دقیقِ رد (#205)', () => {
     const lines = rejectReasons({ '3_gross_margin': null }, IND);
     expect(lines).toHaveLength(1);
     expect(lines[0].missing).toBe(true);
-    expect(rejectLineText(lines[0])).toContain('حاشیۀ ناخالص محاسبه نشد');
+    expect(rejectLineText(lines[0])).toContain('حاشیۀ ناخالص سنجیده نشد');
   });
 
-  it('«۵ از ۳ سال» بی‌معناست — سالِ درِ دسترس تا لازم سقف می‌خورد', () => {
+  it('«۵ از ۳ سال» بی‌معناست — سالِ اضافی علتِ رد نمی‌شود (#217)', () => {
     const lines = rejectReasons({ '2_eps_trend': false }, { '2': { years_available: 5, years_required: 3 } } as never);
-    expect(rejectLineText(lines[0])).toContain('۳ از ۳ سال');
+    const text = rejectLineText(lines[0]);
+    expect(text).toContain('صعودیِ متوالی نیست');
+    expect(text).not.toContain('از');
+  });
+
+  // #217 — علتِ رد باید همان چیزی باشد که موتور می‌داند، نه شمارشِ سال‌ها.
+  it('علتِ خودِ موتور مقدم است: «۳ از ۳ سال» جای «تلفیقی» را نمی‌گیرد', () => {
+    const lines = rejectReasons(
+      { '2_eps_trend': false },
+      {
+        '2': {
+          years_available: 3,
+          years_required: 3,
+          reason: 'سابقهٔ سه‌ساله فقط از صورت‌های مالی تلفیقی است — جزوه تلفیقی را مبنای داوری نمی‌داند.',
+        },
+      } as never,
+    );
+    const text = rejectLineText(lines[0]);
+    expect(text).toContain('تلفیقی');
+    expect(text).not.toContain('از ۳ سال');
+    // رقمِ لاتینِ درونِ متنِ بک‌اند به فارسیِ رابط می‌رسد
+    expect(lines[1]).toBeUndefined();
+  });
+
+  it('بی‌عدد ⇒ «سنجیده نشد»، نه ادعای «زیرِ کف» (#217)', () => {
+    const lines = rejectReasons(
+      { '3_gross_margin': false, '4a_sales_to_mcap': false, '4b_profit_potential': false },
+      {
+        '3': { reason: 'در صورت سود و زیانِ سالِ مرجع سطر سود ناخالص نیامده است.' },
+        '4': { reason: 'دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.' },
+      } as never,
+    );
+    const text = lines.map(rejectLineText).join('\n');
+    expect(text).toContain('سود ناخالص نیامده');
+    expect(text).toContain('ارزش بازار');
+    expect(text).not.toContain('زیرِ کف');
+    // یک علتِ مشترک برای دو زیرِشرطِ شاخص ۴ یک‌بار نوشته می‌شود
+    expect((text.match(/ارزش بازار/g) ?? []).length).toBe(1);
   });
 
   it('عددِ نبود ⇒ حدس نمی‌زند؛ متنِ علت می‌ماند بدونِ رقمِ ساختگی', () => {

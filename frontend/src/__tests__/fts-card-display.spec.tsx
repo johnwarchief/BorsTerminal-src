@@ -217,8 +217,9 @@ describe('#169 — نمودارها در ارتفاعِ استاندارد رن�
     render(<QuarterlyTrend quarters={Q} />);
     fireEvent.click(screen.getByTestId('qtrend-toggle'));
     const svg = screen.getByTestId('quarterly-trend-chart');
-    expect(svg.getAttribute('height')).toBe('168');
-    expect(svg.getAttribute('viewBox')).toMatch(/^0 0 \d+ 168$/);
+    // #169 قرارداد را بست (ارتفاعِ ثابت)؛ #217 مالک آن را درشت‌تر خواست.
+    expect(svg.getAttribute('height')).toBe('262');
+    expect(svg.getAttribute('viewBox')).toMatch(/^0 0 \d+ 262$/);
     expect(svg.getAttribute('class')).toContain('block');
   });
 });

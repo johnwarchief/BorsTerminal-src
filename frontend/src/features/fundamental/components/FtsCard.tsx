@@ -312,6 +312,11 @@ export function FtsCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-16 gap-2.5">
           {LAYERS.map((l, li) => {
             const span = ['md:col-span-6', 'md:col-span-5', 'md:col-span-5', 'md:col-span-5', 'md:col-span-5'][li];
+            /** #217: کارت‌های ۴ و ۵ وسطِ ردیفِ دوم. ردیفِ اول شانزده ستون را
+             *  پر می‌کند (۶+۵+۵) و ردیفِ دوم ده ستون است؛ سه ستونِ خالی باید
+             *  دو طرف تقسیم شود، پس کارتِ ۴ از ستونِ چهارم شروع می‌کند و ۵
+             *  خودش را کنارِ آن جا می‌دهد (۹ تا ۱۳). */
+            const start = li === 3 ? ' md:col-start-4' : '';
             const alignSelf = li > 2 ? ' self-start' : '';
             const isActive = l.drill != null && l.drill === activeDrill;
 
@@ -358,7 +363,7 @@ export function FtsCard({
                   aria-pressed={isActive}
                   data-testid={`fts-card-cell-${l.key}`}
                   title={l.hint}
-                  className={`col-span-1 sm:col-span-2 ${span} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                  className={`col-span-1 sm:col-span-2 ${span}${start} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
                     qualityFrom(card1Pass),
                     isActive,
                   )}`}
@@ -751,7 +756,7 @@ export function FtsCard({
                 aria-pressed={isActive}
                 data-testid={`fts-card-cell-${key}`}
                 title={l.hint}
-                className={`col-span-1 ${span}${alignSelf} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
+                className={`col-span-1 ${span}${start}${alignSelf} group flex flex-col justify-between rounded-xl border p-2.5 text-start transition-all duration-200 cursor-pointer ${getCardToneClasses(
                   cardQuality,
                   isActive,
                 )}`}

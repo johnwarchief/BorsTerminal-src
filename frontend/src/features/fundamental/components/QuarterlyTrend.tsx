@@ -10,12 +10,13 @@ import { CollapseBody, CollapseToggle } from '@shared/components/Collapse';
 import { useElementWidth } from '@shared/hooks/useElementWidth';
 import type { FiscalQuarter } from '../lib/fundMath';
 
-/** ارتفاعِ ثابت (#169): پیش‌تر viewBox ۶۴۰×۲۰۰ با `w-full` کشیده می‌شد و روی
- *  ظرف ۱۲۰۰ پیکسلی ≈ ۳۷۵px ارتفاع می‌داد — «زیادی بزرگ» رأیِ مالک. عرض از
- *  ظرف خوانده می‌شود تا واحدِ SVG = پیکسلِ CSS بماند و نوشته‌ها بی‌نسبت
- *  درشت/ریز نشوند. */
-const CHART_H = 168;
-const PAD = 34;
+/** ارتفاعِ ثابت (#169 → #217): viewBox کشیده نمی‌شود تا واحدِ SVG = پیکسلِ CSS
+ *  بماند و نوشته‌ها بی‌نسبت درشت/ریز نشوند. #169 از ≈۳۷۵px به ۱۶۸px نشست
+ *  («زیادی بزرگ»)، ولی در عرضِ کاملِ پنل همان ۱۶۸ نوارِ باریک و بی‌قراشی شد —
+ *  رأیِ #217: «خیلی کوچیکه، محسوس بزرگترش کن». ارتفاعِ CSS ثابت می‌ماند و
+ *  فقط بلندتر می‌شود؛ عرض همچنان از ظرف خوانده می‌شود. */
+const CHART_H = 262;
+const PAD = 42;
 
 const Q_LABEL = ['بهار', 'تابستان', 'پاییز', 'زمستان'];
 
@@ -139,7 +140,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
                     strokeWidth="0.8"
                     opacity="0.6"
                   />
-                  <text x={PAD - 4} y={geom.y(v) + 3} textAnchor="end" fontSize="9.5" fill="var(--text-muted)">
+                  <text x={PAD - 4} y={geom.y(v) + 4} textAnchor="end" fontSize="12.5" fill="var(--text-muted)">
                     {fmtAxisBt(v * MRL_TO_BT)}
                   </text>
                 </g>
@@ -149,7 +150,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
                 const x = PAD + i * geom.slot;
                 const rev = q.revenue ?? 0;
                 const gross = q.grossProfit;
-                const bw = Math.max(3, Math.min(22, geom.slot / 4));
+                const bw = Math.max(6, Math.min(38, geom.slot / 3.2));
                 // میله از خط صفر به بالا/پایین — منفی درست رندر می‌شود
                 const revTop = geom.y(Math.max(0, rev));
                 const revH = Math.max(1, Math.abs(geom.y(rev) - geom.zeroY));
@@ -177,7 +178,7 @@ export function QuarterlyTrend({ quarters }: { quarters: FiscalQuarter[] }) {
                         opacity="0.9"
                       />
                     )}
-                    <text x={x + geom.slot / 2} y={geom.H - 6} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
+                    <text x={x + geom.slot / 2} y={geom.H - 10} textAnchor="middle" fontSize="13" fill="var(--text-muted)">
                       {faQuarter(q)}
                     </text>
                   </g>
