@@ -403,4 +403,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.0.38"
+APP_VERSION = "1.0.39"
