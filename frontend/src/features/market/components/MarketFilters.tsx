@@ -115,6 +115,13 @@ function SplitFilterChip({
         {count != null && count > 0 ? (
           <span className="num ms-1 font-black opacity-95">({toFaDigits(count)})</span>
         ) : null}
+        {/* +N = ردیف‌هایِ واجدِ شرطی که درِ این نمایِ تابلو نیستند. بی‌این، عددِ
+            چیپ کوچک‌ترِ عددِ خودِ سایت به‌نظر می‌رسید و فقط با hover روشن می‌شد. */}
+        {hidden != null && hidden > 0 ? (
+          <span className="num ms-1 text-2xs font-bold text-text-muted opacity-80">
+            +{toFaDigits(hidden)}
+          </span>
+        ) : null}
       </button>
 
       <button
