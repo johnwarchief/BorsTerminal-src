@@ -6,6 +6,7 @@ import { SuspiciousPanel } from '@features/market/components/SuspiciousPanel';
 import { applyFilters } from '@features/market/routes/MarketPage';
 import { countHiddenMatches, hiddenDoorOf } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
+import { isNumericSuffixSymbol } from '@features/market/lib/tapeFts';
 import { DEFAULT_ASSET_TYPES, useTapeStore } from '@features/market/stores/tapeStore';
 
 function row(patch: Partial<MarketRow> = {}): MarketRow {
@@ -98,7 +99,7 @@ describe('بندِ «فقط زنده» در applyFilters', () => {
 // پنهان بخواند، و هر ردیف فقط یک در بگیرد؛ فهرستِ ثابت رویِ فیدِ زنده دروغ می‌گفت.
 describe('hiddenDoorOf/countHiddenMatches: هر ردیفِ پنهان یک در', () => {
   const types = [...DEFAULT_ASSET_TYPES];
-  const ctx = { assetTypes: types, liveOnly: true, query: '', sector: '' };
+  const ctx = { assetTypes: types, liveOnly: true, query: '', sector: '', dropSuffix: true };
 
   it('پسوندِ عددی اول می‌آید: ردیفی که قاعدۀ حذفِ مشتقه می‌برد به بازار نسبت داده نمی‌شود', () => {
     expect(hiddenDoorOf(row({ symbol: 'فولاد۳' }), ctx)).toBe('پسوندِ عددی');
@@ -108,6 +109,22 @@ describe('hiddenDoorOf/countHiddenMatches: هر ردیفِ پنهان یک در'
 
   it('بی‌پسوند، درِ منوی بازارها نام برده می‌شود', () => {
     expect(hiddenDoorOf(option, ctx)).toBe('بازار/ابزارِ خاموش');
+  });
+
+  // تنظیمِ جدیدِ کاربر: اگر خودِ درِ «پسوندِ عددی» را باز گذاشته باشد، تولتیپ
+  // نباید همان ردیف‌ها را به همان در نسبت بدهد.
+  it('حذفِ پسوند خاموش ⇒ ردیف به درِ بعدی می‌رسد یا هیچ در نمی‌گیرد', () => {
+    const off = { ...ctx, dropSuffix: false };
+    // با ASCII هم همان قاعده است: /[0-9۰-۹]$/
+    expect(isNumericSuffixSymbol('FOLAD1')).toBe(true);
+    // بازارش در منوی پیش‌فرض خاموش است ⇒ درِ بعدی
+    expect(hiddenDoorOf(row({ symbol: 'AKHZA1', name: 'اوراق اخزا', sector_name: 'اوراق تامين' }), off)).toBe(
+      'بازار/ابزارِ خاموش',
+    );
+    // سهامِ پسونددار در بازارِ روشن: دیگر پنهان نیست، پس در ندارد
+    expect(hiddenDoorOf(row({ symbol: 'FOLAD1' }), off)).toBe(null);
+    // همان ردیف با درِ بسته: می‌شود پسوندِ عددی
+    expect(hiddenDoorOf(row({ symbol: 'FOLAD1' }), ctx)).toBe('پسوندِ عددی');
   });
 
   it('نمادِ خاموش با جستجویِ فعال از جدول بیرون نمی‌رود، پس دلیلش هم نوشته نمی‌شود', () => {

@@ -103,7 +103,12 @@ export type Funnel = {
   total: number;
 };
 
-/** نمادهایِ تابلویی که قیف از آنها شروع می‌شود: همان نمایِ تبِ تابلو. */
+/**
+ * نمادهایِ تابلویی که قیف از آنها شروع می‌شود: همان نمایِ تبِ تابلو.
+ * این سه قیدِ خودکار است و تنظیمِ نمایشِ «پسوندِ عددی» دستِ کاربر را عمداً
+ * نمی‌خواند: سوییچ، قواعدۀ نمایشِ جدول را شل می‌کند در حالی که جامعۀ قیف
+ * یک قواعدۀ روش‌شناسی است (جزوه: تابلو ← تکنیکال ← بنیادی ← تحویل).
+ */
 function boardScope(rows: MarketRow[]): MarketRow[] {
   return dropNumericSuffixRows(
     rows.filter((r) => r.is_live !== false && DEFAULT_ASSET_TYPES.includes(classifyAssetType(r))),

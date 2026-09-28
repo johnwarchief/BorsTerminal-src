@@ -1,0 +1,114 @@
+{
+  "base": "http://127.0.0.1:5173/",
+  "steps": {
+    "fit_1366": {
+      "scrollOverflow": 0,
+      "insideBar": true,
+      "insideViewport": true,
+      "switchVisible": true
+    },
+    "fit_1632": {
+      "scrollOverflow": 0,
+      "insideBar": true,
+      "insideViewport": true,
+      "switchVisible": true
+    },
+    "fit_1920": {
+      "scrollOverflow": 0,
+      "insideBar": true,
+      "insideViewport": true,
+      "switchVisible": true
+    },
+    "toggle": {
+      "before": 1106,
+      "after": 1854,
+      "pressed": "false"
+    },
+    "reload": {
+      "afterReload": "false",
+      "countReload": 1854
+    },
+    "chipTitle": "الگوی ساعت — ۱۸ ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند (پسوندِ عددی ۱۸) — با «حذفِ پسوندِ عددی» در همین نوار باز می‌شوند"
+  },
+  "errors": [],
+  "checks": [
+    {
+      "name": "سوییچ درِ رزولوشن 1366 دیده می‌شود و از نوار یا صفحه بیرون نمی‌زند",
+      "ok": true,
+      "detail": {
+        "scrollOverflow": 0,
+        "insideBar": true,
+        "insideViewport": true,
+        "switchVisible": true
+      }
+    },
+    {
+      "name": "سوییچ درِ رزولوشن 1632 دیده می‌شود و از نوار یا صفحه بیرون نمی‌زند",
+      "ok": true,
+      "detail": {
+        "scrollOverflow": 0,
+        "insideBar": true,
+        "insideViewport": true,
+        "switchVisible": true
+      }
+    },
+    {
+      "name": "سوییچ درِ رزولوشن 1920 دیده می‌شود و از نوار یا صفحه بیرون نمی‌زند",
+      "ok": true,
+      "detail": {
+        "scrollOverflow": 0,
+        "insideBar": true,
+        "insideViewport": true,
+        "switchVisible": true
+      }
+    },
+    {
+      "name": "پیش‌فرض: قاعده‌یِ حذف روشن (aria-pressed=true)",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "یک کلیک: ردیف‌هایِ پسونددار واردِ جدول می‌شوند",
+      "ok": true,
+      "detail": {
+        "before": 1106,
+        "after": 1854
+      }
+    },
+    {
+      "name": "سوییچ بعد از کلیک خاموش به نظر می‌رسد",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "reload همان انتخاب را نگه می‌دارد (تنظیمِ ماندگار)",
+      "ok": true,
+      "detail": {
+        "afterReload": "false",
+        "countReload": 1854,
+        "after": 1854
+      }
+    },
+    {
+      "name": "«پاک کردن» به پیش‌فرض برمی‌گرداند",
+      "ok": true,
+      "detail": {
+        "backPressed": "true",
+        "backCount": 1106,
+        "before": 1106
+      }
+    },
+    {
+      "name": "تولتیپ با جملهٔ «دیده نمی‌شوند» توضیح می‌دهد",
+      "ok": true,
+      "detail": "الگوی ساعت — ۱۸ ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند (پسوندِ عددی ۱۸) — با «حذفِ پسوندِ عددی» در همین نوار باز می‌شوند"
+    },
+    {
+      "name": "تولتیپ استعارهٔ «درِ نمایِ فعلی» را ندارد",
+      "ok": true,
+      "detail": "الگوی ساعت — ۱۸ ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند (پسوندِ عددی ۱۸) — با «حذفِ پسوندِ عددی» در همین نوار باز می‌شوند"
+    }
+  ],
+  "verdict": "PASS",
+  "failed": []
+}

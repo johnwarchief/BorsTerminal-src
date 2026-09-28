@@ -149,6 +149,31 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
     expect(title).not.toContain('بازار');
     expect(title).not.toContain('جستجو');
   });
+
+  // مالک پرسید «منظورت از در چیه؟» — جمله باید کاری باشد که کاربر می‌کند، نه استعاره
+  it('تولتیپ نامِ کلیدی را می‌برد که همان ردیف‌ها را نشان می‌دهد', () => {
+    render(
+      <MarketFilters
+        sectors={[]}
+        hiddenInfo={{
+          f_clock: { count: 0, doors: {} },
+          f_susp: { count: 51, doors: { 'پسوندِ عددی': 44, 'بازار/ابزارِ خاموش': 7 } },
+          f_jet: { count: 0, doors: {} },
+          f_roobi: { count: 30, doors: { 'نمادِ خاموش': 30 } },
+          f_noqteh: { count: 7, doors: { جستجو: 5, صنعت: 2 } },
+        }}
+      />,
+    );
+    const susp = screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/).getAttribute('title') ?? '';
+    expect(susp).toContain('دیده نمی‌شوند');
+    expect(susp).toContain('حذفِ پسوندِ عددی');
+    expect(susp).toContain('بازارها / ابزارها');
+    // فقط زنده هم کلیدِ خودش را دارد
+    expect(screen.getByTitle(/کف‌روبی — ۳۰ ردیف/).getAttribute('title')).toContain('فقط زنده');
+    // صنعت و جستجو رأیِ خودِ کاربرند، پس هیچ کلیدی وعده داده نمی‌شود
+    const noqteh = screen.getByTitle(/نقطه زنی — ۷ ردیف/).getAttribute('title') ?? '';
+    expect(noqteh).not.toContain('باز می‌شوند');
+  });
 });
 
 const TSETMC_LABELS = [
@@ -252,5 +277,60 @@ describe('نوار تک‌خطی فیلترها و dropdown بازارها', () 
     openMenu();
     fireEvent.click(screen.getByRole('button', { name: 'فقط سهام بورس/فرابورس' }));
     expect(useTapeStore.getState().assetTypes).toEqual(['stock', 'payeh']);
+  });
+});
+
+/**
+ * تنظیمِ «حذفِ پسوندِ عددی»: درِ +N که قبلاً کلید نداشت. جهتِ سوییچ مثل
+ * «فقط زنده» است — روشن = قاعده در کار است، پس پیش‌فرضِ آبی = رفتارِ همیشگی.
+ */
+describe('سوییچِ «حذفِ پسوندِ عددی» در نوارِ فیلتر', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useTapeStore.getState().resetFilters();
+  });
+
+  const toggle = () => screen.getByTestId('numeric-suffix-toggle');
+
+  it('پیش‌فرض: قاعده روشن (ردیف‌های پسونددار حذف) و سوییچ پریده', () => {
+    render(<MarketFilters sectors={[]} />);
+    expect(useTapeStore.getState().showNumericSuffix).toBe(false);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+    expect(toggle().textContent).toContain('پسوند');
+  });
+
+  it('یک کلیک: ردیف‌ها دیده می‌شوند، تنظیم در localStorage می‌نشیند و «پاک کردن» شمار می‌کند', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(toggle());
+    expect(useTapeStore.getState().showNumericSuffix).toBe(true);
+    expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    expect(localStorage.getItem('bors_tape_show_numeric_suffix_v1')).toBe('1');
+    // انحراف از پیش‌فرض ⇒ دکمۀِ «پاک کردن» که فقط با انحرافِ غیرصفر rendered می‌شود باید باشد
+    expect(screen.getByTestId('filters-reset')).toBeInTheDocument();
+    fireEvent.click(toggle());
+    expect(screen.queryByTestId('filters-reset')).not.toBeInTheDocument();
+  });
+
+  it('کلیک دوم برمی‌گرداند و کلید را خاموش می‌کند', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
+    expect(useTapeStore.getState().showNumericSuffix).toBe(false);
+    expect(localStorage.getItem('bors_tape_show_numeric_suffix_v1')).toBe('0');
+  });
+
+  it('بازنشانیِ فیلترها مثل liveOnly قاعده را به پیش‌فرض برمی‌گرداند', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(toggle());
+    fireEvent.click(screen.getByTestId('filters-reset'));
+    expect(useTapeStore.getState().showNumericSuffix).toBe(false);
+    expect(localStorage.getItem('bors_tape_show_numeric_suffix_v1')).toBe('0');
+  });
+
+  it('تولتیپِ هر دو حالت نامِ همان ردیف‌ها را می‌برد، نه استعارهٔ گنگ', () => {
+    render(<MarketFilters sectors={[]} />);
+    expect(toggle().getAttribute('title')).toContain('پیش‌فرضِ تابلو');
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute('title')).toContain('نشست‌هایِ قدیمی');
   });
 });

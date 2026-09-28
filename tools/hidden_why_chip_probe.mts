@@ -7,7 +7,9 @@
 //   3) در نمایِ پیش‌فرض «نمادِ خاموش» ادعا نمی‌شود؛ با جستجو «جستجو» و با صنعتِ
 //      انتخابی «صنعت» اضافه می‌شود؛ با خاموش‌کردنِ «فقط زنده» هیچ ردیفی به آن در
 //      نسبت داده نمی‌شود.
-//   4) console و pageerror صفر‌اند.
+//   4) سوییچِ «حذفِ پسوندِ عددی» (تنظیمِ دستِ کاربر): با خاموش‌کردنش آن در خالی
+//      می‌شود و شمارِ نمادهایِ جدول به همان اندازه جلو می‌آید.
+//   5) console و pageerror صفر‌اند.
 //
 //   JEV_CHROME='C:/Users/PCMOD/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe' \
 //   MSYS_NO_PATHCONV=1 node --experimental-strip-types tools/hidden_why_chip_probe.mts \
@@ -50,6 +52,8 @@ await context.addInitScript(() => {
   try {
     sessionStorage.setItem('bors_auth_session', 'true');
     localStorage.removeItem('bors-symbol');
+    // تنظیمِ «حذفِ پسوندِ عددی» ماندگار است؛ سنجشِ پیش‌فرض باید از کلیدِ پاک شروع کند
+    localStorage.removeItem('bors_tape_show_numeric_suffix_v1');
   } catch {
     /* دروازۀ محلی */
   }
@@ -97,11 +101,12 @@ type Chip = {
   doors: Record<string, number>;
 };
 
-/** «… — ۱۸ ردیفِ واجدِ شرط … نیست (پسوندِ عددی ۱۸)» → +N و هر در با شمارشِ خودش */
+/** «… — ۱۸ ردیفِ واجدِ شرط … (پسوندِ عددی ۱۸) — با … باز می‌شوند» → +N و هر در با شمارشِ خودش
+ *  پرانتش آخرین بخشِ عنوان نیست (راهنمایِ کلیدِ پشتِ آن می‌آید)، پس بی‌لنگر می‌خواند. */
 const parseChips = (raw: Awaited<ReturnType<typeof READ>>): Chip[] =>
   raw.map((c) => {
     const doors: Record<string, number> = {};
-    const paren = c.title.match(/\(([^)]*)\)\s*$/);
+    const paren = c.title.match(/\(([^)]*)\)/);
     for (const part of (paren ? paren[1] : '').split('،')) {
       const dm = part.trim().match(/^(.+?)\s+([۰-۹]+)$/);
       if (dm) doors[dm[1]] = faNum(dm[2]) ?? NaN;
@@ -287,6 +292,43 @@ ck(
   liveOff.map((c) => c.doors),
 );
 await page.click('[data-testid="live-only-toggle"]');
+
+// ── حالتِ پنج: سوییچِ جدیدِ «حذفِ پسوندِ عددی» ────────────────────────────────
+// ادعایِ تنظیم: با خاموش‌کردنِ قاعده، ردیف‌ها واردِ نما می‌شوند ⇒ دیگر هیچ ردیفی
+// به آن در نسبت داده نمی‌شود و شمارشِ جدول به همان اندازه جلو می‌آید.
+const shownCount = () =>
+  page.evaluate(() => {
+    const el = document.querySelector('[title="تعداد نمادهای فعال در جدول"]');
+    const first = el ? (el.textContent ?? '').replace(/\s+/g, ' ').trim() : '';
+    const m = first.match(/[۰-۹]+/g);
+    return m ? Number(m[0].split('').reduce((a, d) => a * 10 + (d.charCodeAt(0) - 0x06f0), 0)) : null;
+  });
+const beforeSuffix = await shownCount();
+const pressedDefault = await page.getAttribute('[data-testid="numeric-suffix-toggle"]', 'aria-pressed');
+report.steps.suffixSwitchInitial = { pressedDefault, beforeSuffix };
+ck('سوییچ در بارِ اول پریده است (قاعده‌یِ حذف روشن)', pressedDefault === 'true', pressedDefault);
+await page.click('[data-testid="numeric-suffix-toggle"]');
+await page.waitForTimeout(1400);
+const suffixOff = parseChips(await READ());
+const afterSuffix = await shownCount();
+report.steps.suffixSwitchOff = { beforeSuffix, afterSuffix, chips: suffixOff };
+ck(
+  'با خاموش‌کردنِ «حذفِ پسوندِ عددی» هیچ ردیفی به آن در نسبت داده نمی‌شود',
+  suffixOff.every((c) => !(c.doors['پسوندِ عددی'] > 0)),
+  suffixOff.map((c) => c.doors),
+);
+ck(
+  'همان کلیک ردیف‌ها را به جدول برمی‌گرداند (شمارِ نماد جلو آمد)',
+  beforeSuffix != null && afterSuffix != null && afterSuffix > beforeSuffix,
+  { beforeSuffix, afterSuffix },
+);
+await page.click('[data-testid="numeric-suffix-toggle"]');
+await page.waitForTimeout(1000);
+ck(
+  'کلیکِ دوم پیش‌فرض را برمی‌گرداند',
+  (await shownCount()) === beforeSuffix,
+  { expected: beforeSuffix, got: await shownCount() },
+);
 
 const failed = (report.checks as any[]).filter((c) => !c.ok);
 report.verdict = failed.length === 0 && (report.errors as string[]).length === 0 ? 'PASS' : 'FAIL';

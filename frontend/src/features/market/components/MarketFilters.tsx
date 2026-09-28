@@ -94,11 +94,13 @@ function SplitFilterChip({
 
   // هر ردیفِ پنهان یک در دارد، پس جمعِ درها = +N؛ درِ بی‌سهم نام برده نمی‌شود.
   const doorLabel = hidden && hidden.count > 0 ? hiddenDoorsLabel(hidden.doors) : '';
+  const doorHint = hidden && hidden.count > 0 ? hiddenDoorHint(hidden.doors) : '';
   const chipTitle =
     !hidden || hidden.count === 0
       ? QUICK_LABELS[filter]
-      : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} ردیفِ واجدِ شرط درِ نمایِ فعلیِ تابلو نیست`
-        + (doorLabel ? ` (${doorLabel})` : '');
+      : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند`
+        + (doorLabel ? ` (${doorLabel})` : '')
+        + doorHint;
 
   return (
     <div
@@ -315,13 +317,17 @@ export type HiddenCtx = {
   liveOnly: boolean;
   query: string;
   sector: string;
+  /** سوییچِ «حذفِ پسوندِ عددی» دستِ کاربر؛ روشن ⇒ این در ردیف می‌گیرد */
+  dropSuffix: boolean;
 };
 
 export type HiddenInfo = { count: number; doors: Partial<Record<HiddenDoor, number>> };
 
 export function hiddenDoorOf(r: HiddenRow, ctx: HiddenCtx): HiddenDoor | null {
   const q = ctx.query.trim();
-  if (isNumericSuffixSymbol(r.symbol)) return 'پسوندِ عددی';
+  // وقتی کاربر خودِ همین در را باز گذاشته، ردیفی از این در نمی‌گذرد؛ وگرنه
+  // تولتیپ چیزی را توضیح می‌دهد که کاربر уже لغو کرده است.
+  if (ctx.dropSuffix && isNumericSuffixSymbol(r.symbol)) return 'پسوندِ عددی';
   if (!ctx.assetTypes.includes(classifyAssetType(r))) return 'بازار/ابزارِ خاموش';
   // مثلِ خودِ درِ «فقط زنده»: با جستجویِ صریح جدول نمادِ خاموش را هم نشان می‌دهد (#197)
   if (ctx.liveOnly && !q && r.is_live === false) return 'نمادِ خاموش';
@@ -358,6 +364,24 @@ function hiddenDoorsLabel(doors: HiddenInfo['doors']): string {
   return HIDDEN_DOORS.filter((d) => (doors[d] ?? 0) > 0)
     .map((d) => `${d} ${toFaDigits(doors[d] as number)}`)
     .join('، ');
+}
+
+/**
+ * سه درِ اول را کاربر می‌تواند خودش باز کند؛ «صنعت» و «جستجو» رأیِ خودِ کاربر
+ * است و چیزی برای بازکردن ندارد. پس نامِ کلید فقط برای همین سه نوشته می‌شود —
+ * عددی که راهِ حل ندارد وعده است، و مالک دقیقاً از همین شکایت کرد.
+ */
+const HIDDEN_DOOR_CONTROLS: Partial<Record<HiddenDoor, string>> = {
+  'پسوندِ عددی': 'حذفِ پسوندِ عددی',
+  'بازار/ابزارِ خاموش': 'بازارها / ابزارها',
+  'نمادِ خاموش': 'فقط زنده',
+};
+
+function hiddenDoorHint(doors: HiddenInfo['doors']): string {
+  const names = HIDDEN_DOORS.filter((d) => (doors[d] ?? 0) > 0 && HIDDEN_DOOR_CONTROLS[d]).map(
+    (d) => HIDDEN_DOOR_CONTROLS[d] as string,
+  );
+  return names.length === 0 ? '' : ` — با «${names.join('» و «')}» در همین نوار باز می‌شوند`;
 }
 
 export function MarketFilters({
@@ -399,6 +423,8 @@ export function MarketFilters({
   const setSector = useTapeStore((s) => s.setSector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
   const setLiveOnly = useTapeStore((s) => s.setLiveOnly);
+  const showNumericSuffix = useTapeStore((s) => s.showNumericSuffix);
+  const setShowNumericSuffix = useTapeStore((s) => s.setShowNumericSuffix);
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
   const resetFilters = useTapeStore((s) => s.resetFilters);
 
@@ -422,6 +448,7 @@ export function MarketFilters({
     (assetTypesDirty ? 1 : 0) +
     quickFilters.length +
     (!liveOnly ? 1 : 0) +
+    (showNumericSuffix ? 1 : 0) +
     (volRatioOn ? 1 : 0);
 
   return (
@@ -504,6 +531,28 @@ export function MarketFilters({
             فقط زنده
           </button>
 
+          {/* درِ «پسوندِ عددی» تا پیش از این بی‌قیدِ شرط بسته بود: کاربر درِ تولتیپ
+              می‌خواند «۷۱ ردیف … (پسوندِ عددی ۷۱)» و هیچ کلیدی برای بازکردنش نبود.
+              جهتِ سوییچ مثل «فقط زنده» است: روشن = قاعده در کار است. */}
+          <button
+            type="button"
+            onClick={() => setShowNumericSuffix(!showNumericSuffix)}
+            aria-pressed={!showNumericSuffix}
+            data-testid="numeric-suffix-toggle"
+            title={
+              showNumericSuffix
+                ? 'روشن: ردیف‌هایِ نمادِ پسونددار (فولاد۱، وخار۲ …) در جدول می‌مانند؛ این‌ها بیشترِ ردیف‌هایِ نشست‌هایِ قدیمی‌اند و تازگیِ تابلو را مخدوش می‌کنند.'
+                : 'خاموش: ردیف‌هایِ نمادِ پسونددار از نما کنار گذاشته می‌شوند (پیش‌فرضِ تابلو). روشنش کنید تا همان ردیف‌ها را درِ «+N» چیپ‌ها ببینید.'
+            }
+            className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${
+              !showNumericSuffix
+                ? 'border-accent-blue/50 bg-accent-blue/15 text-accent-blue'
+                : 'border-border-c bg-bg-card text-text-muted hover:text-text-primary'
+            }`}
+          >
+            حذفِ پسوندِ عددی
+          </button>
+
           {shown != null && total != null ? (
             <span
               className="inline-flex items-center gap-1 rounded-lg border border-border-c bg-bg-card px-2.5 py-1 text-2xs font-bold text-text-primary"
@@ -567,6 +616,7 @@ export function MarketFilters({
             <button
               type="button"
               onClick={resetFilters}
+              data-testid="filters-reset"
               className="shrink-0 rounded-lg border border-accent-red/40 bg-accent-red/10 px-2 py-0.5 text-2xs font-bold text-accent-red hover:bg-accent-red/20 transition-all"
             >
               پاک کردن ({toFaDigits(activeCount)})

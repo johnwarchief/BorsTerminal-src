@@ -72,6 +72,7 @@ export default function MarketPage() {
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
   const volRatioMin = useTapeStore((s) => s.volRatioMin);
   const exitAccum = useTapeStore((s) => s.exitAccum);
+  const showNumericSuffix = useTapeStore((s) => s.showNumericSuffix);
   const tapeFilterConfig = useTapeStore((s) => s.tapeFilterConfig);
 
   const symbol = useSymbolStore((s) => s.symbol);
@@ -111,7 +112,10 @@ export default function MarketPage() {
     [rows, query, assetTypes, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
   );
 
-  const filterBase = useMemo(() => dropNumericSuffixRows(boardBase), [boardBase]);
+  const filterBase = useMemo(
+    () => (showNumericSuffix ? boardBase : dropNumericSuffixRows(boardBase)),
+    [boardBase, showNumericSuffix],
+  );
 
   /**
    * ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی تابلو نیستند. بی‌شمارشِ
@@ -129,8 +133,12 @@ export default function MarketPage() {
 
   const hiddenInfo = useMemo(
     () =>
-      countHiddenMatches(hiddenRows, { assetTypes, liveOnly, query, sector }, tapeFilterConfig),
-    [hiddenRows, assetTypes, liveOnly, query, sector, tapeFilterConfig],
+      countHiddenMatches(
+        hiddenRows,
+        { assetTypes, liveOnly, query, sector, dropSuffix: !showNumericSuffix },
+        tapeFilterConfig,
+      ),
+    [hiddenRows, assetTypes, liveOnly, query, sector, showNumericSuffix, tapeFilterConfig],
   );
 
   const quickMatches = useMemo(

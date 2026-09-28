@@ -120,6 +120,30 @@ export function isDefaultAssetTypes(types: AssetType[]): boolean {
  */
 const TAPE_CONFIG_KEY = 'bors_tape_filter_config_v2';
 
+/**
+ * «نمایشِ ردیف‌های پسوندِ عددی» یک تنظیمِ ماندگار است، نه یک فیلترِ جلسه‌ای:
+ * ردیف‌هایِ «فولاد۱» ردیف‌هایِ روزهایِ قبل‌اند و کاربری که یک‌بار آن‌ها را
+ * می‌خواهد هر روز نباید دوباره کلیک کند. پیش‌فرض = رفتارِ همیشگیِ تابلو
+ * (حذف)، پس این کلید رویِ نصبِ به‌روز نشده هیچ چیز را عوض نمی‌کند.
+ */
+const SHOW_SUFFIX_KEY = 'bors_tape_show_numeric_suffix_v1';
+
+function loadShowSuffix(): boolean {
+  try {
+    return typeof window !== 'undefined' && localStorage.getItem(SHOW_SUFFIX_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function saveShowSuffix(v: boolean) {
+  try {
+    if (typeof window !== 'undefined') localStorage.setItem(SHOW_SUFFIX_KEY, v ? '1' : '0');
+  } catch {
+    // ignore
+  }
+}
+
 function mergeBlock<T extends object>(base: T, saved: unknown): T {
   const s = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
   return { ...base, ...s } as T;
@@ -175,6 +199,11 @@ type TapeState = {
   volRatioMin: number;
   /** فیلتر ترکیبی «خروج از انباشت» (فقط در صفحهٔ تابلو) */
   exitAccum: boolean;
+  /**
+   * ردیف‌های «پسوندِ عددی» (فولاد۱، وخار۲ …) در تابلو دیده شوند؟
+   * `false` = قاعدۀ همیشگی: این ردیف‌ها از نما کنار گذاشته می‌شوند.
+   */
+  showNumericSuffix: boolean;
   /** کانفیگ شخصی‌سازی‌شدهٔ الگوریتم‌های تابلو */
   tapeFilterConfig: TapeFilterConfig;
   /** ترتیب غربالگری سه‌ایجنتی */
@@ -192,6 +221,7 @@ type TapeState = {
   setVolRatioOn: (v: boolean) => void;
   setVolRatioMin: (v: number) => void;
   toggleExitAccum: () => void;
+  setShowNumericSuffix: (v: boolean) => void;
   setTapeFilterConfig: (cfg: Partial<TapeFilterConfig>) => void;
   resetTapeFilterConfig: () => void;
   applyTapePreset: (presetKey: TapePresetKey) => void;
@@ -231,6 +261,7 @@ export function clampVolRatio(v: number): number {
 
 export const useTapeStore = create<TapeState>((set) => ({
   ...INITIAL,
+  showNumericSuffix: loadShowSuffix(),
   setQuery: (query) => set({ query }),
   toggleAssetType: (t) => set((s) => ({ assetTypes: toggle(s.assetTypes, t) })),
   setAssetTypes: (list) => set({ assetTypes: [...list] }),
@@ -250,6 +281,10 @@ export const useTapeStore = create<TapeState>((set) => ({
   setVolRatioOn: (volRatioOn) => set({ volRatioOn }),
   setVolRatioMin: (v) => set({ volRatioMin: clampVolRatio(v) }),
   toggleExitAccum: () => set((s) => ({ exitAccum: !s.exitAccum })),
+  setShowNumericSuffix: (v) => {
+    saveShowSuffix(v);
+    set({ showNumericSuffix: v });
+  },
   setTapeFilterConfig: (partial) =>
     set((s) => {
       const updated: TapeFilterConfig = {
@@ -276,5 +311,10 @@ export const useTapeStore = create<TapeState>((set) => ({
     }
   },
   setScreenOrder: (screenOrder) => set({ screenOrder }),
-  resetFilters: () => set({ ...INITIAL }),
+  resetFilters: () => {
+    // «بازنشانی» همان چیزی است که کاربر برای برگشت به تابلویِ پیش‌فرض می‌زند؛
+    // تنظیمِ ماندگارِ پسوندِ عددی هم مثل liveOnly به پیش‌فرض برمی‌گردد.
+    saveShowSuffix(false);
+    set({ ...INITIAL, showNumericSuffix: false });
+  },
 }));
