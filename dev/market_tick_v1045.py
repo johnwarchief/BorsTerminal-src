@@ -146,12 +146,20 @@ def run():
             FETCHES.clear()
             ck("تعطیلیِ %s: صفرِ درخواست، صفرِ نوشتن" % tag,
                T.tick_live(conn) == 0 and not FETCHES)
-        set_clock(hhmm="1230")
+        # ۱۲:۳۰ تا ۱۵:۳۰ — تابلوی سایت تا نهایه می‌چرخد؛ اعداد باید تازه شوند
+        # ولی ستون‌هایِ صف که main() پس از بستن حفظ کرده نباید سوخته شوند.
+        conn.execute("UPDATE market_watch SET buy_q_vol=12345.0 WHERE ins_code='X1'")
+        conn.commit()
+        set_clock(hhmm="1400")
+        fake_fetch_ok.rows = [mw_row(pcl=102.5, qtj=610.0)]
         FETCHES.clear()
-        ck("۱۲:۳۰ به بعد: درخواست نمی‌زنیم (صف‌هایِ حفظیِ main نسوزد)",
-           T.tick_live(conn) == 0 and not FETCHES)
-        v = conn.execute("SELECT p_closing FROM market_watch WHERE ins_code='X1'").fetchone()[0]
-        ck("بعدازظهر عددِ تابلو همانِ بستۀ بازار ماند", v == 101.0)
+        n = T.tick_live(conn)
+        r = conn.execute("SELECT p_closing, q_tot_tran, buy_q_vol FROM market_watch WHERE ins_code='X1'").fetchone()
+        ck("پس از بستن تا ۱۵:۳۰: آخرین/حجمِ تازه نوشته می‌شود", n == 1 and r[0] == 102.5 and r[1] == 610.0)
+        ck("صف‌هایِ حفظ‌شدۀ بستۀ بازار درِ UPDATE نیستند", r[2] == 12345.0)
+        set_clock(hhmm="1531")
+        FETCHES.clear()
+        ck("۱۵:۳۰ به بعد: درخواست نمی‌زنیم", T.tick_live(conn) == 0 and not FETCHES)
 
         # ── ۴) پاسخِ خالی (۴۲۹/قطعی): رد، نه صفرِ جعلی ────────────────────
         set_clock(hhmm="1040")
@@ -159,7 +167,7 @@ def run():
         FETCHES.clear()
         ck("پاسخِ خالی ⇒ تیک رد می‌شود", T.tick_live(conn) == 0)
         v = conn.execute("SELECT p_closing FROM market_watch WHERE ins_code='X1'").fetchone()[0]
-        ck("عددِ بانک با پاسخِ خالی پاک نشد", v == 101.0)
+        ck("عددِ بانک با پاسخِ خالی پاک نشد", v == 102.5)
 
         # ── ۵) یکِ نگاشت: بدنۀ سینک هم دیگر دوختِ مستقیم ندارد ─────────────
         src_txt = open(os.path.join(os.path.dirname(T.__file__), "test_tsetmc.py"),
@@ -182,7 +190,7 @@ def run():
         conn2.close()
     finally:
         T.polite_get = orig_pg
-    passed = 16 - len(FAILS)
+    passed = 18 - len(FAILS)
     print("\nmarket_tick_v1045: %d passed / %d failed" % (passed, len(FAILS)))
     return 1 if FAILS else 0
 

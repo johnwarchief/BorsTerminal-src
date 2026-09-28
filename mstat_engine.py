@@ -1149,9 +1149,9 @@ def _gate_why(key: str, state: str, macro: dict, entry: dict) -> str:
     bear = entry.get("bearish_pct")
     if key == "liquidity":
         return {
-            "ok": "گردشِ امروز بالایِ کفِ جزوه (%s همت)" % _fa_num(good),
-            "bad": "گردشِ امروز زیرِ %s همت — بازار راکد است" % _fa_num(bad),
-            "mid": "گردشِ امروز میانِ %s تا %s همت — نه روزِ ورود، نه رکود"
+            "ok": "ارزش معاملات بازار سهام بالایِ کفِ جزوه (%s همت)" % _fa_num(good),
+            "bad": "ارزش معاملات بازار سهام زیرِ %s همت — بازار راکد است" % _fa_num(bad),
+            "mid": "ارزش معاملات بازار سهام میانِ %s تا %s همت — نه روزِ ورود، نه رکود"
                    % (_fa_num(bad), _fa_num(good)),
             "nodata": "ارزشِ معاملاتِ امروز هنوز نیامده — داوری در کار نیست",
         }[state]
@@ -1217,7 +1217,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     liq_label = {"good": "عالی" if macro.get("excellent") else "مساعد",
                  "bad": "نامساعد", "mid": "متوسط", "nodata": "بدون داده"}[side]
     liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
-    gates.append(_gate("liquidity", "گردشِ پولِ امروز", "نقدینگی",
+    gates.append(_gate("liquidity", "ارزش معاملات بازار سهام", "نقدینگی",
                        liq_state, liq_label,
                        liq_vote, None if hemat is None else "%s همت" % _fa_num(hemat),
                        "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)"))

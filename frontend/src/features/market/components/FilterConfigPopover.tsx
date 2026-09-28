@@ -10,6 +10,52 @@ import {
   type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
 import { JET_LADDER } from '../lib/tapeMath';
+
+/** ردیفِ دستگیرۀ «مبنای داوری» (#226) درونِ پاپ‌اورِ همان فیلتر — رأیِ مالک:
+ *  هر فیلتر تنظیماتش را کنارِ خودش می‌خواهد، نه در چیپِ سراسری. وضعیتِ هر دو
+ *  دستگیره یکِ حالتِ مشترک است (یک مبناء، پنج فیلتر) و از استور خوانده می‌شود. */
+function BasisToggles({ showLowBase }: { showLowBase?: boolean }) {
+  const config = useTapeStore((s) => s.tapeFilterConfig);
+  const setConfig = useTapeStore((s) => s.setTapeFilterConfig);
+  const b = config.basis;
+  const patch = (p: Partial<typeof b>) => setConfig({ ...config, basis: { ...b, ...p } });
+  return (
+    <div className="mt-2 border-t border-border-c/50 pt-2">
+      <label className="flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-bg-card/60">
+        <input
+          type="checkbox"
+          checked={b.includeTodayInVolumeBase}
+          onChange={(e) => patch({ includeTodayInVolumeBase: e.target.checked })}
+          className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
+        />
+        <span className="text-2xs font-semibold leading-4">
+          امروز داخلِ مبنایِ میانگین
+          <span className="block text-3xs text-text-muted font-normal mt-0.5">
+            حجمِ امروز درِ میانگینِ سی‌نشست هم می‌نشیند (مبناء تقسیمِ ۳۱). پیش‌فرضِ جزوه: خاموش.
+          </span>
+        </span>
+      </label>
+      {showLowBase && (
+        <label className="mt-1.5 flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-bg-card/60">
+          <input
+            type="checkbox"
+            checked={b.requireLowBaseHistory}
+            onChange={(e) => patch({ requireLowBaseHistory: e.target.checked })}
+            className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
+          />
+          <span className="text-2xs font-semibold leading-4">
+            دروازۀ ۲۹-نشستِ تاریخچه
+            <span className="block text-3xs text-text-muted font-normal mt-0.5">
+              روشن: کفِ نقطه‌زنی فقط با آرایۀِ کاملِ فایل. خاموش: نمادِ کم‌سابقه با کمینۀِ موجود.
+            </span>
+          </span>
+        </label>
+      )}
+    </div>
+  );
+}
+
+
 import { QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
 
 export function FilterConfigPopover({
@@ -185,6 +231,7 @@ export function FilterConfigPopover({
                 </button>
               </div>
             </div>
+            <BasisToggles />
           </>
         )}
 
@@ -218,6 +265,7 @@ export function FilterConfigPopover({
               />
               <span className="text-2xs font-semibold">فقط ساعت طلایی (پایانی منفی، آخرین مثبت)</span>
             </label>
+            <BasisToggles />
           </>
         )}
 
@@ -309,6 +357,7 @@ export function FilterConfigPopover({
                 className="w-full accent-[var(--accent-blue)] cursor-pointer"
               />
             </div>
+            <BasisToggles />
           </>
         )}
 
@@ -333,6 +382,7 @@ export function FilterConfigPopover({
                 className="w-full accent-[var(--accent-yellow)] cursor-pointer"
               />
             </div>
+            <BasisToggles showLowBase />
           </>
         )}
 

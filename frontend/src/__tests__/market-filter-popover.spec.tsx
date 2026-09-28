@@ -1,8 +1,9 @@
 // پاپ‌اور تنظیمات آستانهٔ هر فیلتر: باز/بسته شدن نباید ترتیب هوک‌ها را عوض کند
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FilterConfigPopover } from '@features/market/components/FilterConfigPopover';
 import type { QuickFilter } from '@features/market/stores/tapeStore';
+import { useTapeStore } from '@features/market/stores/tapeStore';
 
 const ANCHOR = {
   x: 120, y: 12, width: 104, height: 28, top: 12, left: 120, bottom: 40, right: 224,
@@ -52,4 +53,29 @@ describe('پاپ‌اور «تنظیم آستانه‌ها» در تابلو', (
       unmount();
     }
   });
+
+describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ هر فیلتر (#226)', () => {
+  it('الگوی ساعت: دستگیرۀ «امروز داخلِ مبنایِ میانگین» را دارد و در استور می‌نویسد', () => {
+    useTapeStore.getState().resetTapeFilterConfig();
+    render(<FilterConfigPopover filter="f_clock" open anchorRect={ANCHOR} onClose={() => {}} />);
+    const box = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
+  });
+
+  it('نقطه‌زنی: هر دو دستگیره هست («دروازۀ ۲۹-نشست» فقط اینجا)', () => {
+    render(<FilterConfigPopover filter="f_noqteh" open anchorRect={ANCHOR} onClose={() => {}} />);
+    expect(screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).toBeInTheDocument();
+    const hist = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
+    expect(hist).toBeChecked();
+    fireEvent.click(hist);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
+  });
+
+  it('جت — که مبناءش دست‌نخورده می‌ماند — این ردیف‌ها را ندارد', () => {
+    render(<FilterConfigPopover filter="f_jet" open anchorRect={ANCHOR} onClose={() => {}} />);
+    expect(screen.queryByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).not.toBeInTheDocument();
+  });
+});
 });

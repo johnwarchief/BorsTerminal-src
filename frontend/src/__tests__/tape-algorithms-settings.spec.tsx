@@ -22,7 +22,6 @@ import {
 } from '@features/market/lib/tapeAlgorithms';
 import { JET_LADDER, resistanceLadderHigh } from '@features/market/lib/tapeMath';
 import { TapeFilterSettingsModal } from '@features/market/components/TapeFilterSettingsModal';
-import { BasisConfigChip } from '@features/market/components/MarketFilters';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
 /** ردیفی که همهٔ شروطِ فایلِ پنج فیلتر را با هم دارد. */
@@ -468,29 +467,5 @@ describe('دستگیره‌های ۲۲۶ — مبنایِ داوری', () => {
     expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
     fireEvent.click(histBox);
     expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
-  });
-});
-
-describe('چیپ «مبنای داوری» رویِ نوارِ تابلو (#226)', () => {
-  beforeEach(() => {
-    useTapeStore.getState().resetTapeFilterConfig();
-  });
-
-  it('پیش‌فرض: دستگیره‌ها خاموش/روشنِ جزوه و پاپ‌اور هر دو را نشان می‌دهد', () => {
-    render(<BasisConfigChip />);
-    const chip = screen.getByRole('button', { name: 'مبنای داوری' });
-    expect(chip).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(chip);
-    const todayBox = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
-    const histBox = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
-    expect(todayBox).not.toBeChecked();
-    expect(histBox).toBeChecked();
-    fireEvent.click(todayBox);
-    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
-    fireEvent.click(histBox);
-    expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
-    // تغییرِ یک بلوک، بلوکِ دیگرِ همان دستگیره را نمی‌اندازد (رگرسیونِ setTapeFilterConfig)
-    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
-    expect(chip).toHaveAttribute('aria-pressed', 'true');
   });
 });

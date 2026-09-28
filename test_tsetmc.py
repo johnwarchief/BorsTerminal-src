@@ -517,7 +517,11 @@ def refresh_tape_history(conn, force=False, fetch=None):
     # «attempt» ماند — نباید پشتِ تایمر بنشیند. بی‌این، نخستین fetchِ پس از
     # نصب که یک‌بار abort شد، پنجرۀ [ih] را خالی می‌گذاشت و هر restart تا
     # ۶ ساعت «throttled» می‌خورد؛ ستونِ «الگو» برای همیشه بی‌بج می‌ماند.
-    if not force and last_attempt and last_note != "attempt":
+    # (اندازۀ ۱۴۰۵-۰۷-۰۶: همین سناریو رویِ ماشینِ نصب‌شده تکرار شد — یک
+    # HTTPErrorِ گذرا از CDN در ۱۰:۰۶، و پنج فیلتر تا بعدازظهر صفر ماندند.
+    # وقتی جدول خالی است، «پنجرۀ کهنه»ای برای محفوظ‌داشتن وجود ندارد؛
+    # تایمر بی‌موضوع است و باید هر دورِ سینک دوباره tried شود.)
+    if not force and have and last_attempt and last_note != "attempt":
         try:
             age = (now - datetime.datetime.strptime(last_attempt,
                                                     "%Y-%m-%d %H:%M:%S")).total_seconds()
@@ -1177,15 +1181,22 @@ def tick_live(conn=None):
     market_watch و daily_pricesِ همان نشست را با همان _mw_rowِ سینک بازنویسی
     می‌کند؛ instruments/boards/client_type/تالارهایِ دیگر کارِ سینکِ کامل‌اند.
 
-    درِ نوشتن: پنجشنبه/جمعه یا هر ساعتی پس از ۱۲:۳۰ هیچ نوشتن/درخواستی ندارد —
-    همان قاعدۀ closed در main()؛ وگرنه تیک، صف‌هایِ حفظ‌شدۀ بستۀ بازار را با
-    دادهٔ کهنهٔ بعدازظهر سوخت می‌داد. polite_get در ۴۲۹ خودش خنک می‌شود و
-    آرایۀ خالی برمی‌گرداند؛ اینجا یعنی «این تیک رد، بانک دست‌نخورده».
+    درِ نوشتن (اندازۀ زندۀ ۱۴۰۵-۰۷-۰۶ ۱۵:۰۶): خودِ تابلوی TSETMC پس از بستنِ
+    رسمی هم می‌چرخد — معاملۀ بلوکی/سوداگر و نهایه‌سازی تا ~۱۵:۳۰ در همان
+    GetMarketWatch دیدۀ می‌شود و hEvenِ سایت روی ۱۵:۰۶ بود، در حالی که
+    برنامۀ ما از ۱۲:۵۹ خواب بود. پس دو نوبت:
+      • پیش از ۱۲:۳۰ — بازنویسیِ کاملِ سطر (همان مسیرِ سینک، صف‌ها هم زنده‌اند).
+      • ۱۲:۳۰ تا ۱۵:۳۰ — فقط ستون‌هایِ عددی (آخرین/پایانی/حجم/تعداد/ارزش/
+        تغییر٪/hEven/ارزشِ بازار)؛ صف‌هایِ حفظ‌شدۀ بستۀ بازار دست نمی‌خورند،
+        وگرنه همان طبقۀ باگی که main() برایش «preserving queues» دارد.
+    پنجشنبه/جمعه یا پس از ۱۵:۳۰: هیچ درخواستی. polite_get در ۴۲۹ خودش خنک
+    می‌شود و آرایۀ خالی برمی‌گرداند؛ اینجا یعنی «این تیک رد، بانک دست‌نخورده».
     """
     wd = datetime.date.today().weekday()          # 3=پنجشنبه, 4=جمعه
     hhmm = datetime.datetime.now().strftime("%H%M")
-    if wd in (3, 4) or hhmm >= "1230":
+    if wd in (3, 4) or hhmm >= "1530":
         return 0
+    after_hours = hhmm >= "1230"
     s = _tick_session()
     mw_raw = polite_get(s, MW_URL, "marketwatch")
     if not mw_raw:
@@ -1211,9 +1222,25 @@ def tick_live(conn=None):
         if not watch:
             return 0
         c = conn.cursor()
-        c.executemany(_MW_INSERT, watch)
-        ensure_daily_tran_column(conn)
-        c.executemany(_DP_INSERT, daily)
+        if after_hours:
+            # نوبتِ پس از بستن: فقط اعدادِ زنده، بی‌دست‌زدن به ستون‌هایِ صف —
+            # همان چیزی که سایت هم تا ~۱۵:۳۰ نشان می‌دهد.
+            c.executemany("UPDATE market_watch SET h_even=?, p_closing=?, p_last=?,"
+                          " price_min=?, price_max=?, q_tot_tran=?, q_tot_cap=?,"
+                          " z_tot_tran=?, price_change=?, market_cap=?, market_cap_src=?,"
+                          " fetched_at=? WHERE ins_code=?",
+                          [(w[2], w[3], w[4], w[5], w[6], w[11], w[12], w[13], w[14],
+                            w[-2], w[-1], w[19], w[0]) for w in watch])
+            c.executemany("UPDATE daily_prices SET p_closing=?, price_min=?, price_max=?,"
+                          " q_tot_tran=?, q_tot_cap=?, price_change=?, fetched_at=?,"
+                          " market_cap=?, market_cap_src=?, z_tot_tran=?"
+                          " WHERE ins_code=? AND d_even=?",
+                          [(d[2], d[3], d[4], d[7], d[8], d[9], d[10], d[11], d[12],
+                            d[13], d[0], d[1]) for d in daily])
+        else:
+            c.executemany(_MW_INSERT, watch)
+            ensure_daily_tran_column(conn)
+            c.executemany(_DP_INSERT, daily)
         conn.commit()
         return len(watch)
     finally:

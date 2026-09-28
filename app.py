@@ -247,11 +247,12 @@ def _startup_sync_market():
         import time as _t
         while True:
             try:
-                if _market_in_session():
-                    import test_tsetmc as _ts
-                    if _ts.tick_live():
-                        from api.market import _kick_market_rebuild
-                        _kick_market_rebuild()
+                # درِ ساعت داخلِ خودِ tick_live: تا ۱۲:۳۰ نوشتنِ کامل، ۱۲:۳۰ تا
+                # ۱۵:۳۰ فقط ستون‌هایِ عددی (تابلوی TSETMC پس از بستن هم می‌چرخد).
+                import test_tsetmc as _ts
+                if _ts.tick_live():
+                    from api.market import _kick_market_rebuild
+                    _kick_market_rebuild()
             except Exception as _e:
                 print(f"[startup] board tick loop: {_e}")
             _t.sleep(5)
