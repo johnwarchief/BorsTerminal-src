@@ -103,6 +103,10 @@ _py_ok = _py.where(_py > 1.0)
 _pct = ((_pc - _py_ok) / _py_ok * 100).round(2)
 _pct = _pct.fillna(_chg / _py_ok * 100)
 df["percent_change"] = _pct.where(_pct.abs() <= 100.0)
+# jet_flag به percent_last (آخرین نسبت به دیروز) نیاز دارد؛ محصول آن را در
+# pandas می‌سازد، این ابزارِ خام هم باید بسازد وگرنه KeyError می‌دهد.
+_pl = n(df["p_last"])
+df["percent_last"] = ((_pl - _py_ok) / _py_ok * 100).round(2)
 
 from tape_flags import apply_tape_flags  # noqa: E402
 
@@ -187,10 +191,12 @@ rep("نقطه‌زنی", "f_noqteh",
 # کفروبی: qd1 در فایل «تعدادِ معاملاتِ نشستِ پیش» است؛ چنین ستونی در
 # price_history و daily_prices نیست → بازگشتِ معنادار ممکن نیست، نه صفر.
 print("\n== کفروبی   (qd1 = تعداد معاملاتِ نشستِ پیش)")
-print(f"   ستونِ لازم در بانک هست؟  {'qd1' in df.columns or 'prev_day_tran' in df.columns}")
+_has_qd1 = 'qd1' in df.columns or 'prev_day_tran' in df.columns
+print(f"   ستونِ لازم در بانک هست؟  {_has_qd1}")
+_qd1_have = int(df['prev_day_tran'].notna().sum()) if 'prev_day_tran' in df.columns else 0
 print(f"   کد بدونِ قیدِ چهارم (سه قیدِ اول) → {int(df['f_roobi'].sum())} ردیف؛ "
       f"با قیدِ qd1 سنجیده می‌شود به‌محضِ این‌که prev_day_tran پر شود "
-      f"(ردیف‌هایِ دارای qd1: {int(df['prev_day_tran'].notna().sum())} از {len(df)})")
+      f"(ردیف‌هایِ دارای qd1: {_qd1_have} از {len(df)})")
 
 # چقدر «مبنایِ فایل» از «مبنایِ کد» سخت‌گیرانه‌تر است
 cmp_ = base_file.notna() & avg_code.notna() & (avg_code > 0)
