@@ -7,11 +7,7 @@ import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
-  GOLDEN_HOUR_HINT,
-  GOLDEN_HOUR_LABEL,
   STRONG_CLOCK_HINT,
-  STRONG_HOUR_LABEL,
-  SWEEP_HINT,
   detectBoxExit,
   detectGoldenHour,
   detectStrongHour,
@@ -19,9 +15,9 @@ import {
   lastCloseDiff,
 } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from '../lib/tapeFts';
+import { patternBadges } from '../lib/tapeBadges';
 import { powerTone } from '../api/useMarketPulse';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
-import { evaluateDynamicQuickFilter } from '../lib/tapeAlgorithms';
 
 type SortKey =
   | 'symbol'
@@ -166,7 +162,14 @@ function pcText(v: number): string {
 function PcNum({ v, className, testId }: { v: number | null; className: string; testId: string }) {
   return (
     <span data-testid={testId} className={`flex shrink-0 items-baseline gap-px ${className}`}>
-      <span className="num font-bold">{v == null ? '—' : pcText(v)}</span>
+      {/* سرانه‌ها هم مثلِ بقیۀِ ستون‌هایِ عددی فلاش می‌گیرند (#12): تا پیش از این
+          تنها «نسبتِ خرید/فروش» رنگ می‌دید و دو عددِ بالایِ همان خانه بی‌خبر عوض
+          می‌شدند. */}
+      <FlashNum
+        value={v}
+        className="num font-bold"
+        render={(x) => (x == null ? '—' : pcText(x))}
+      />
       {v != null && <span className="text-3xs opacity-80">م.ت</span>}
     </span>
   );
@@ -249,7 +252,7 @@ export function rowTooltip(r: MarketRow): string {
   return bits.join(' · ');
 }
 
-const TapeRow = memo(function TapeRow({
+export const TapeRow = memo(function TapeRow({
   row,
   selected,
   onSelect,
@@ -260,48 +263,17 @@ const TapeRow = memo(function TapeRow({
 }) {
   const tapeFilterConfig = useTapeStore((s) => s.tapeFilterConfig);
   const diff = lastCloseDiff(row);
-  const strongHour = detectStrongHour(row);
-  const goldenHour = !strongHour && detectGoldenHour(row);
-  const sweep = detectSweep(row);
   const pct = row.percent_change;
   const atLimitUp = pct != null && pct >= LIMIT_PCT;
   const atLimitDown = pct != null && pct <= -LIMIT_PCT;
   const tooltip = rowTooltip(row);
   const volHot = row.vol_ratio != null && row.vol_ratio > FTS_VOL_RATIO_HOT;
-  const volMult = row.vol_ratio != null ? `${toFaDigits(row.vol_ratio.toFixed(1))}× میانگین ماه` : '—';
   const buyPc = buyPerCapitaMt(row);
   const sellPc = sellPerCapitaMt(row);
 
-  const isSusp = evaluateDynamicQuickFilter(row, 'f_susp', tapeFilterConfig) || !!row.f_susp;
-  const isJet = evaluateDynamicQuickFilter(row, 'f_jet', tapeFilterConfig) || !!row.f_jet;
-  const isRoobi = evaluateDynamicQuickFilter(row, 'f_roobi', tapeFilterConfig) || sweep;
-  const isNoqteh = evaluateDynamicQuickFilter(row, 'f_noqteh', tapeFilterConfig);
-  const isClock = evaluateDynamicQuickFilter(row, 'f_clock', tapeFilterConfig) || strongHour || goldenHour || !!row.f_clock;
-
-  const badges: React.ReactNode[] = [];
-  if (isClock)
-    badges.push(
-      <MicroBadge
-        key="clock"
-        pattern={strongHour ? 'strong-hour' : goldenHour ? 'golden-hour' : 'clock'}
-        tone={goldenHour ? 'amber' : 'violet'}
-        title={
-          strongHour
-            ? `${STRONG_HOUR_LABEL} — ${STRONG_CLOCK_HINT}${diff != null ? ` · دلتا: ${fmtPct(diff * 100)}` : ''}`
-            : goldenHour
-              ? `${GOLDEN_HOUR_LABEL} — ${GOLDEN_HOUR_HINT}`
-              : `الگوی ساعت: پایانی بالاتر از آخرین${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
-        }
-      >
-        {strongHour ? 'ساعت' : goldenHour ? 'طلایی' : 'ساعت'}
-      </MicroBadge>,
-    );
-  if (isSusp) badges.push(<MicroBadge key="susp" pattern="susp" tone="amber" title={`حجم مشکوک: ${volMult}`} >مشکوک</MicroBadge>);
-  if (isJet) badges.push(<MicroBadge key="jet" pattern="jet" tone="cyan" title={`جت: شکست مقاومت با سرانه خرید ${row.buyer_power != null ? toFaDigits(row.buyer_power.toFixed(2)) : '—'}×`} >جت</MicroBadge>);
-  if (isRoobi) badges.push(<MicroBadge key="sweep" pattern="sweep" tone="emerald" title={`کف‌روب: ${SWEEP_HINT}`} >کف‌روب</MicroBadge>);
-  if (isNoqteh) badges.push(<MicroBadge key="noqteh" pattern="noqteh" tone="amber" title="نقطه‌زنی: فاصله نزدیک از کف ۳۰ روزه" >نقطه</MicroBadge>);
-  if (atLimitUp) badges.push(<MicroBadge key="lu" pattern="limit-up" tone="green" title="صف خرید (تغییر ≥ ۴.۹٪)" >صف+</MicroBadge>);
-  if (atLimitDown) badges.push(<MicroBadge key="ld" pattern="limit-down" tone="red" title="صف فروش (تغییر ≤ −۴.۹٪)" >صف−</MicroBadge>);
+  // بج‌های ستونِ «الگو» از lib می‌آیند: همان `tapeFilterVerdict` که چیپِ بالایِ
+  // جدول می‌شمارد، تا عددِ چیپ و آنچه درِ ردیف دیده می‌شود یکی بماند.
+  const badges = patternBadges(row, tapeFilterConfig);
   return (
     <div
       role="button"
@@ -368,7 +340,11 @@ const TapeRow = memo(function TapeRow({
           ردیف می‌شکنند و دیده می‌شوند — نه اینکه پشتِ لبهٔ ستون پنهان
           شوند (باگِ گزارش‌شدهٔ کاربر: «برچسب‌ها قابل اسکرول‌اند»). */}
       <span data-testid="tape-patterns" className="flex min-w-0 flex-wrap items-center gap-0.5 overflow-hidden py-0.5">
-        {badges}
+        {badges.map((b) => (
+          <MicroBadge key={b.key} pattern={b.pattern} tone={b.tone} title={b.title}>
+            {b.label}
+          </MicroBadge>
+        ))}
       </span>
     </div>
   );

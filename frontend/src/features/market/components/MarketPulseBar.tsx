@@ -3,6 +3,7 @@
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
+import { FlashNum } from '@shared/components/FlashNum';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
@@ -79,7 +80,14 @@ function IndexCell({
         <span className="text-xs">{MISSING}</span>
       ) : (
         <span className="flex flex-wrap items-baseline gap-x-1.5">
-          <span className="num text-sm font-black leading-5 text-text-primary">{fmtInt(last)}</span>
+          {/* عددِ بزرگِ نبض هم مثلِ ستون‌هایِ تابلو فلاش می‌گیرد: ریتمِ این پنل
+              خودش ۳۰ ثانیه است و تا پیش از این عدد بی‌خبر عوض می‌شد («کدام
+              عدد همین حالا تاز شد؟» بی‌جواب می‌ماند). */}
+          <FlashNum
+            value={last}
+            className="num text-sm font-black leading-5 text-text-primary"
+            render={(v) => (v == null ? '—' : fmtInt(v))}
+          />
           {delta.length ? <span className={`num text-3xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
         </span>
       )}

@@ -388,3 +388,27 @@ export function evaluateDynamicQuickFilter(
       return Boolean((r as unknown as Record<string, unknown>)[filterKey]);
   }
 }
+
+/** ستون‌هایِ تاریخچه که پنج فرمول بدونشان اجرا نمی‌شوند (پنل‌هایِ قدیمی
+ *  آن‌ها را نمی‌فرستند — `srn` و `min_low_29` از ویرایشِ ۱٫۰٫۴۴ به بعد آمدند). */
+export function hasTapeFormulaInputs(r: MarketRow): boolean {
+  return r.hist_sessions != null || r.prior30_vol != null || r.min_low_29 != null;
+}
+
+/**
+ * یک داوری، سه مصرف: چیپِ شمارش، غربالِ جدول، و بجِ ستونِ «الگو».
+ *
+ * تا پیش از این بج «فرمول **یا** پرچمِ بک‌اند **یا** ساعتِ قوی» بود و چیپ فقط
+ * فرمول — سنجشِ زندۀ ۱۴۰۵-۰۷-۰۷: چیپِ «الگوی ساعت (۶)» و همان‌طور ۸ بجِ
+ * «ساعت» درِ نمایِ تابلو (`آريان`، `سدشت` از ساعتِ قوی/طلاییِ محلی). کاربر آن را
+ * «فیلتر ما با سایت نمی‌خواند» دید، با این‌که هر پنج فرمول عینِ سایت بودند.
+ *
+ * جایی که فرمول اجرا نشدنی است (پنلِ بی‌تاریخچه) پرچمِ بک‌اند تنها داوریِ صادق
+ * است؛ ستونِ «الگو»ی بی‌بجِ ویرایشِ ۱٫۰٫۴۴ نباید دوباره ساخته شود.
+ */
+export function tapeFilterVerdict(r: MarketRow, filterKey: string, cfg: TapeFilterConfig): boolean {
+  if (!hasTapeFormulaInputs(r)) {
+    return Boolean((r as unknown as Record<string, unknown>)[filterKey]);
+  }
+  return evaluateDynamicQuickFilter(r, filterKey, cfg);
+}

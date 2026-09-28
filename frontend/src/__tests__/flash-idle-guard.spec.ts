@@ -37,13 +37,18 @@ describe('گاردِ فلش و دروازۀ بی‌کاری', () => {
   });
 
   it('فلش یک‌موردی است نه بی‌پایان، و مدتشان یکی است', () => {
-    for (const cls of flashClasses) {
+    const decls = flashClasses.map((cls) => {
       const m = new RegExp(`\\.${cls}\\s*\\{\\s*animation:\\s*([^;]+);`).exec(CSS);
       expect(m, `تعریفِ .${cls}`).not.toBeNull();
-      const decl = m![1];
+      return m![1];
+    });
+    for (const decl of decls) {
       expect(decl).not.toContain('infinite');
-      expect(decl).toMatch(/1\.6s/);
+      // مدت دیگر عددِ ثابت نیست: از ریتمِ تازۀِ تابلو می‌آید (flashClock.ts)
+      expect(decl, 'مدتِ فلاش به متغیرِ بازۀِ تیک وصل نیست').toContain('var(--bors-flash-dur');
     }
+    // هر دو کلاس باید یک مبنایِ مدت داشته باشند، وگرنه بالا/پایین دو ریتم می‌شوند
+    expect(new Set(decls.map((d) => d.replace(/\bflash-(up|down)\b/, 'X'))).size).toBe(1);
   });
 
   it('حرکتِ کاهش‌یافته هنوز فلش را خاموش می‌کند (دست‌نخورده ماندنِ دسترس‌پذیری)', () => {

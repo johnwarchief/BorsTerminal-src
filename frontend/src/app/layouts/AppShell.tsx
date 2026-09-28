@@ -9,6 +9,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useAuthStore } from '@shared/stores/authStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
+import { useFlashClock } from '@shared/lib/flashClock';
 import { LoginScreen } from '../../widgets/LoginScreen';
 
 /**
@@ -22,6 +23,9 @@ export function AppShell() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
+
+  // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
+  useFlashClock();
 
   // پولینگ هنگام مینیمایز متوقف می‌شود (فقط hidden؛ «بی‌فوکوس» کمکی نمی‌کند).
   useEffect(() => {

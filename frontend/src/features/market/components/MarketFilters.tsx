@@ -19,7 +19,7 @@ import {
   type QuickFilter,
 } from '../stores/tapeStore';
 import {
-  evaluateDynamicQuickFilter,
+  tapeFilterVerdict,
   type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
 import { FilterConfigPopover } from './FilterConfigPopover';
@@ -265,7 +265,7 @@ export function countQuickMatches(
   for (const r of rows) {
     for (const f of QUICK_FILTERS) {
       if (config) {
-        if (evaluateDynamicQuickFilter(r as unknown as Parameters<typeof evaluateDynamicQuickFilter>[0], f, config)) {
+        if (tapeFilterVerdict(r as unknown as Parameters<typeof tapeFilterVerdict>[0], f, config)) {
           out[f] += 1;
         }
       } else {

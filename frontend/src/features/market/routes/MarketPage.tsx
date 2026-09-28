@@ -18,7 +18,7 @@ import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 
 import {
-  evaluateDynamicQuickFilter,
+  tapeFilterVerdict,
   type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
 
@@ -42,7 +42,7 @@ export function applyFilters(
     if (!assetTypes.includes(classifyAssetType(r))) return false;
     for (const f of quickFilters) {
       if (filterConfig) {
-        if (!evaluateDynamicQuickFilter(r, f, filterConfig)) return false;
+        if (!tapeFilterVerdict(r, f, filterConfig)) return false;
       } else {
         if (!(r as unknown as Record<string, unknown>)[f]) return false;
       }

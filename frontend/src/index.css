@@ -257,14 +257,16 @@ details[open] > summary .disclosure-chevron {
     box-shadow: none;
   }
 }
+/* مدت از --bors-flash-dur می‌آید (shared/lib/flashClock.ts): ۷۰٪ِ بازۀِ تازۀِ
+   تابلو، با کفِ ۱.۲s و سقفِ ۴s. نبودنِ متغیر = همان ۱.۶sِ پیشین. */
 @layer components {
 .flash-up {
-  animation: flash-up 1.6s linear both;
+  animation: flash-up var(--bors-flash-dur, 1.6s) linear both;
 }
 }
 @layer components {
 .flash-down {
-  animation: flash-down 1.6s linear both;
+  animation: flash-down var(--bors-flash-dur, 1.6s) linear both;
 }
 }
 
@@ -453,7 +455,8 @@ html[data-idle='1'] *::after {
 
 /* #198 فلشِ تغییرِ عدد از این گارد مستثنی است. گلوگاهِ مصرف، انیمیشن‌هایِ
    چرخه‌ای (animate-pulse و همسره) هستند که هر vsync یک فریم می‌سازند؛ فلش
-   یک‌بار ۱.۶ ثانیه عمر دارد و کارش همین «تازه شد» را نشان دادن است.
+   یک‌بار به اندازهٔ ۷۰٪ِ بازۀِ تیک عمر دارد (۱.۲ تا ۴ ثانیه) و کارش همین
+   «تازه شد» را نشان دادن است.
    اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵ (jev-browser روی برنامۀ در حال اجرا، با
    getAnimations): ۱۵ ثانیه بعد از آخرین حرکتِ موس data-idle='1' می‌شود و
    currentTimeِ فلش روی صفر میخکوب می‌ماند (playState=paused در ۶ نمونه از
