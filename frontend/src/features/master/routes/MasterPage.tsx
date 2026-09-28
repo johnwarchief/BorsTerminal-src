@@ -255,7 +255,7 @@ export default function MasterPage() {
             غربالگری درِ تبِ «درخت استراتژی» نشسته بود. جایِ درستِ قیف همین‌جاست:
             همان‌جا که کاربر هنوز چیزی انتخاب نکرده و می‌خواهد بداند از کجا شروع
             کند. کلیکِ هر سطرِ قیف نماد را برمی‌دارد و همین صفحه داوری را باز می‌کند. */}
-        <FtsFunnelStages preset={horizon} />
+        <FtsFunnelStages preset={horizon} onPresetChange={setHorizon} />
         <EliteFunnelHub />
       </div>
     );

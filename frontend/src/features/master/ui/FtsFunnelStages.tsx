@@ -58,6 +58,19 @@ function fundRule(o: FunnelOptions): string {
 
 const ORDER: FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
 
+/**
+ * دربِ قیف = همان افقی که درِ «درخت استراتژی» و داوریِ نماد انتخاب می‌شود.
+ * پیش از این قیف فقط با prop آن را می‌خواند و انتخابش درِ جایِ دیگری از صفحه
+ * بود؛ مالک پرسید «چرا برای قیف غربالگری انتخاب استراتژی‌ها حذف شد» — چون
+ * بعد از جابه‌جاییِ قیف به این تب، کلیدش رویِ صفحه نماند.
+ */
+const FUNNEL_PRESETS = ['swing', 'trend', 'hourglass'] as const;
+const PRESET_SHORT: Record<(typeof FUNNEL_PRESETS)[number], string> = {
+  swing: 'نوسان‌گیر',
+  trend: 'روندگیر',
+  hourglass: 'ساعت شنی',
+};
+
 const MARK_DOT: Record<StageMark, string> = {
   ok: 'bg-accent-green',
   no: 'bg-accent-red',
@@ -295,7 +308,14 @@ function FunnelPrefsBar({ passed }: { passed: number }) {
   );
 }
 
-export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) {
+export function FtsFunnelStages({
+  preset = 'custom',
+  onPresetChange,
+}: {
+  preset?: TreePreset;
+  /** وقتی والد، دربِ قیف را از استورِ استراتژی می‌خواند؛ بی‌این کلیدها رسم نمی‌شوند */
+  onPresetChange?: (p: (typeof FUNNEL_PRESETS)[number]) => void;
+}) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [active, setActive] = useState<FunnelStageKey>('tape');
 
@@ -356,6 +376,36 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-black text-text-primary">قیفِ غربالگری FTS</h2>
+        {onPresetChange && (
+          <div
+            className="flex flex-wrap items-center gap-1"
+            role="group"
+            aria-label="استراتژیِ دربِ قیف"
+            data-testid="funnel-preset-picker"
+          >
+            <span className="text-3xs font-bold text-text-secondary">دربِ قیف:</span>
+            {FUNNEL_PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                aria-pressed={preset === p}
+                data-testid={`funnel-preset-${p}`}
+                title={
+                  PRESET_ENTRY[p].label +
+                  (quickFilters.length ? ' — فعلاً ورودیِ قیف را چیپ‌هایِ روشنِ تبِ تابلو تعیین می‌کنند، این درب مرحلۀ تکنیکال را می‌زند' : '')
+                }
+                onClick={() => onPresetChange(p)}
+                className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
+                  preset === p
+                    ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
+                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60 hover:text-text-primary'
+                }`}
+              >
+                {PRESET_SHORT[p]}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-1" role="tablist">
           {stages.map((s, i) => (
             <button

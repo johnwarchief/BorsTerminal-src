@@ -253,3 +253,44 @@ vi.mock('@features/portfolio/api/usePortfolio', () => ({
 vi.mock('@features/master/api/useFtsTechBoard', () => ({
   useFtsTechBoard: () => ({ map: new Map(), loading: false, wanted: 0, resolved: 0 }),
 }));
+
+/**
+ * مالک پرسید «چرا برای قیف غربالگری انتخاب استراتژی‌ها حذف شد؟» — بعد از
+ * جابه‌جاییِ قیف به تبِ «استراتژی FTS»، دربِ قیف از استورِ افق خوانده می‌شد ولی
+ * کلیدش درِ جایِ دیگری (داوریِ نماد) بود. پس قیف باید خودش انتخاب کند.
+ */
+describe('دربِ قیف: انتخابِ استراتژی رویِ خودِ قیف', () => {
+  const renderFunnel = (props: Parameters<typeof FtsFunnelStages>[0]) =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages {...props} />
+      </QueryClientProvider>,
+    );
+
+  it('بی‌onPresetChange هیچ کلیدی رسم نمی‌شود (قیفِ ایستا کلیدِ مرده ندارد)', () => {
+    renderFunnel({ preset: 'swing' });
+    expect(screen.queryByTestId('funnel-preset-picker')).not.toBeInTheDocument();
+  });
+
+  it('سه دربِ جزوه‌ای هست و همان که والد داده پریده است', () => {
+    renderFunnel({ preset: 'swing', onPresetChange: () => {} });
+    for (const p of ['swing', 'trend', 'hourglass']) {
+      expect(screen.getByTestId(`funnel-preset-${p}`)).toBeInTheDocument();
+    }
+    expect(screen.getByTestId('funnel-preset-swing')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('funnel-preset-trend')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('کلیک رویِ روندگیر، همان نام را به والد می‌دهد (دربِ واقعی درِ استورِ افق است)', () => {
+    const seen: string[] = [];
+    renderFunnel({ preset: 'swing', onPresetChange: (p) => seen.push(p) });
+    fireEvent.click(screen.getByTestId('funnel-preset-trend'));
+    fireEvent.click(screen.getByTestId('funnel-preset-hourglass'));
+    expect(seen).toEqual(['trend', 'hourglass']);
+  });
+
+  it('عنوانِ هر درب، ورودیِ پنج‌فیلترهٔ خودش را می‌گوید تا «درب» مبهم نماند', () => {
+    renderFunnel({ preset: 'swing', onPresetChange: () => {} });
+    expect(screen.getByTestId('funnel-preset-trend').getAttribute('title')).toContain('روندگیر');
+  });
+});
