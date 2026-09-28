@@ -13,7 +13,7 @@
 // یا صندوقی که پنج‌شاخصه دربارهٔ او نظر نمی‌دهد، مردود حساب نمی‌شود؛ درِ
 // مرحلۀ بعد با برچسبِ «سنجیده نشد» می‌رود.
 import type { MarketRow } from '@shared/types/marketRow';
-import { classifyAssetType } from '@features/market/lib/assetType';
+import { ASSET_LABELS, classifyAssetType, type AssetType } from '@features/market/lib/assetType';
 import { DEFAULT_ASSET_TYPES } from '@features/market/stores/tapeStore';
 import { dropNumericSuffixRows } from '@features/market/lib/tapeFts';
 import { tapeFilterVerdict, type TapeFilterConfig } from '@features/market/lib/tapeAlgorithms';
@@ -21,6 +21,11 @@ import { patternBadges } from '@features/market/lib/tapeBadges';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { TechVerdict } from '../api/useFtsTechBoard';
+import {
+  DEFAULT_FUND_FLOOR,
+  DEFAULT_UNMEASURED,
+  type UnmeasuredPolicy,
+} from '../stores/funnelPrefsStore';
 
 const FILE_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'] as const;
 
@@ -44,10 +49,29 @@ export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[]
 
 export type StageMark = 'ok' | 'no' | 'na';
 
+/**
+ * دو پیچِ تنظیمی که درِ بنیادی را به دستِ خودِ مالک می‌دهند (بی‌آنکه سخت‌گیریِ
+ * جزوه را کم کنند — پیش‌فرضِ هر دو عینِ جزوه است):
+ *   - `fundFloor` : چند شاخص از پنج‌شاخصه کافی است.
+ *   - `unmeasured`: سرنوشتِ ردیفی که بنیادش واقعاً سنجیده نشده (صندوق، اختیار،
+ *     حق تقدم یا هر آنچه در ۸۷۳ شرکتِ اسکرینر نیست).
+ */
+export type FunnelOptions = {
+  fundFloor: number;
+  unmeasured: UnmeasuredPolicy;
+};
+
+export const DEFAULT_FUNNEL_OPTIONS: FunnelOptions = {
+  fundFloor: DEFAULT_FUND_FLOOR,
+  unmeasured: DEFAULT_UNMEASURED,
+};
+
 export type FunnelEntry = {
   symbol: string;
   name: string;
   sector: string;
+  /** طبقهٔ ابزار — همان «صندوق/اختیار/حق تقدم» که پنج‌شاخصه دربارهٔ آنها نظر نمی‌دهد */
+  kind: AssetType;
   row: MarketRow | null;
   screen: FtsScreenRow | null;
   /** برچسبِ پنج فیلترِ فایل که این ردیف درِ تابلو رد کرد — عینِ بجِ ستونِ «الگو» */
@@ -205,8 +229,26 @@ function techMark(t: TechSignals | null, preset: TreePreset): { s: StageMark; wh
   }
   return { s: 'ok', why: `تکنیکال: هفتگی صعودی + ستاپِ «${gate.label}»${act ? ` (${act})` : ''}` };
 }
-function fundMark(sc: FtsScreenRow | null): { s: StageMark; why: string; score: number | null } {
-  if (!sc) return { s: 'na', why: 'بنیادی: درِ اسکرینرِ کدال پوشش داده نشده — سنجیده نشد', score: null };
+/**
+ * ابزارهایی که در پنج‌شاخصهٔ کدال «شرکت» حساب نمی‌شوند: برایِ این‌ها نبودِ
+ * ردیفِ اسکرینر ضعفِ داده نیست، ذاتِ ابزار است (صندوق صورتِ سودِ شرکتی ندارد).
+ */
+const NON_COMPANY: AssetType[] = ['option', 'fund', 'bond', 'right', 'teseh', 'tal'];
+
+function fundMark(
+  sc: FtsScreenRow | null,
+  kind: AssetType,
+  opts: FunnelOptions,
+): { s: StageMark; why: string; score: number | null } {
+  if (!sc) {
+    return {
+      s: 'na',
+      why: NON_COMPANY.includes(kind)
+        ? `بنیادی: پنج‌شاخصه شرکت‌ها را می‌سنجد و این «${ASSET_LABELS[kind]}» شرکت نیست — سنجیده نشد، وتو نیست`
+        : 'بنیادی: ردیفِ این شرکت در اسکرینرِ کدال نبود — سنجیده نشد، وتو نیست',
+      score: null,
+    };
+  }
   if (sc.applicable === false) {
     return { s: 'na', why: 'بنیادی: پنج‌شاخصه دربارهٔ این ابزار نظر نمی‌دهد (نه رد، نه قبول)', score: null };
   }
@@ -217,9 +259,9 @@ function fundMark(sc: FtsScreenRow | null): { s: StageMark; why: string; score: 
     return { s: 'no', why: regulated ? 'بنیادی: نرخ‌گذاریِ دستوری' : `بنیادی: ${sc.exclusion_reasons || 'مستثنی'}`, score };
   }
   if (score == null) return { s: 'na', why: 'بنیادی: نمره‌ای ساخته نشده', score };
-  return score >= 3
-    ? { s: 'ok', why: `بنیادی: ${score} از ۵ شاخصِ جزوه`, score }
-    : { s: 'no', why: `بنیادی: ${score} از ۵ — زیرِ کفِ سه`, score };
+  return score >= opts.fundFloor
+    ? { s: 'ok', why: `بنیادی: ${toFaDigits(score)} از ${toFaDigits(5)} شاخصِ جزوه`, score }
+    : { s: 'no', why: `بنیادی: ${toFaDigits(score)} از ${toFaDigits(5)} — زیرِ کفِ ${toFaDigits(opts.fundFloor)}`, score };
 }
 
 /** ردیف‌هایِ مرحلۀ تابلو: دامنهٔ زندهٔ تابلو که دستِ‌کم یک فیلترِ درب را رد کرده */
@@ -258,6 +300,7 @@ export function buildFunnel(
   portfolioSet: Set<string>,
   preset: TreePreset = 'custom',
   techMap: Map<string, TechVerdict> = new Map(),
+  opts: FunnelOptions = DEFAULT_FUNNEL_OPTIONS,
 ): Funnel {
   const { scope, picks: tapePicked } = tapeRows(rows, cfg, quickFilters, preset);
   const screenBySymbol = new Map<string, FtsScreenRow>();
@@ -271,11 +314,13 @@ export function buildFunnel(
       const live = techMap.get(r.symbol ?? '');
       const sig = (live ? techFromVerdict(live) : null) ?? techFromScreen(screen);
       const t = techMark(sig, preset);
-      const f = fundMark(screen);
+      const kind = classifyAssetType(r);
+      const f = fundMark(screen, kind, opts);
       return {
         symbol: r.symbol ?? '',
         name: r.name ?? '',
         sector: r.sector_name ?? '',
+        kind,
         row: r,
         screen,
         patterns: patternBadges(r, cfg)
@@ -298,11 +343,17 @@ export function buildFunnel(
   //    برچسبِ «سنجیده نشد» رویِ خودش می‌ماند.
   const techKept = picked.filter((e) => e.tech !== 'no');
   const techDropped = picked.length - techKept.length;
-  // ۳) بنیادی: فقط «ردِ صریح» بیرون می‌افتد. «سنجیده نشد» نه مردود است و نه
-  //    تحویل — در گروهِ خودش دیده می‌شود تا لیستِ تحویل قابلِ اتکا بماند.
-  const measured = techKept.filter((e) => e.screen);
-  const passed = measured.filter((e) => e.fund !== 'no');
-  const pending = techKept.filter((e) => !e.screen);
+  // ۳) بنیادی: «ردِ صریح» همیشه بیرون می‌افتد. سرنوشتِ «سنجیده نشد» دستِ خودِ
+  //    مالک است (پیچِ `unmeasured` در store): درِ انتظار بماند (پیش‌فرضِ جزوه)،
+  //    با برچسب به تحویل برود، یا از قیف حذف شود.
+  const judged = techKept.filter((e) => e.fund !== 'na');
+  const unjudged = techKept.filter((e) => e.fund === 'na');
+  const accepted = judged.filter((e) => e.fund === 'ok');
+  const fundEntries =
+    opts.unmeasured === 'pass' ? techKept.filter((e) => e.fund !== 'no') : accepted;
+  const passed = fundEntries;
+  const pending = opts.unmeasured === 'hold' ? unjudged : [];
+  const fundDropped = techKept.length - fundEntries.length - pending.length;
   // ۴) تحویل: بنیادش واقعاً سنجیده و قبول شده و هنوز درِ سبد نیست
   const handover = passed.filter((e) => !portfolioSet.has(e.symbol));
 
@@ -321,7 +372,7 @@ export function buildFunnel(
       fundamental: {
         key: 'fundamental',
         entries: passed,
-        dropped: measured.length - passed.length,
+        dropped: fundDropped,
         unmeasured: pending.length,
         pending,
       },

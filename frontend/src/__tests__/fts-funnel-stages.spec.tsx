@@ -7,14 +7,20 @@
 //      دورِ ریخته‌ها نمی‌رود.
 //   3) ورودیِ قیف خودِ پنج فیلتر است، نه الگوهایِ محلی — «ساعت قوی» نماد را
 //      داخلِ قیف نمی‌آورد، چون فیلترنویسِ سایت آن را نمی‌شناسد.
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MarketRow } from '@shared/types/marketRow';
 import { DEFAULT_TAPE_FILTER_CONFIG } from '@features/market/lib/tapeAlgorithms';
 import { useTapeStore } from '@features/market/stores/tapeStore';
-import { buildFunnel, type TreePreset } from '@features/master/lib/ftsFunnel';
+import {
+  buildFunnel,
+  DEFAULT_FUNNEL_OPTIONS,
+  type FunnelOptions,
+  type TreePreset,
+} from '@features/master/lib/ftsFunnel';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
+import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { TechVerdict } from '@features/master/api/useFtsTechBoard';
 
@@ -152,6 +158,85 @@ describe('قیفِ FTS', () => {
       expect(screen.getByTestId(`funnel-stage-${k}`)).toBeInTheDocument();
     }
     expect(document.querySelectorAll('[data-fkey]').length).toBeGreaterThan(0);
+  });
+});
+
+describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ کاربر)', () => {
+  const buildWith = (opts: Partial<FunnelOptions> = {}) =>
+    buildFunnel(
+      ROWS,
+      DEFAULT_TAPE_FILTER_CONFIG,
+      [],
+      SCREEN,
+      new Set<string>(),
+      'custom',
+      new Map(),
+      { ...DEFAULT_FUNNEL_OPTIONS, ...opts },
+    );
+
+  it('پیش‌فرض عینِ جزوه است: کفِ سه و «سنجیده نشد» در صفِّ خودش', () => {
+    expect(DEFAULT_FUNNEL_OPTIONS.fundFloor).toBe(3);
+    expect(DEFAULT_FUNNEL_OPTIONS.unmeasured).toBe('hold');
+    const f = buildWith();
+    // شپنا نمرۀ ۲ دارد ⇒ زیرِ کفِ سه؛ خار بی‌ردیفِ اسکرینر است ⇒ صف
+    expect(syms(f.stages.fundamental.entries)).toEqual(['فولاد']);
+    expect(syms(f.stages.fundamental.pending)).toEqual(['خار']);
+    expect(syms(f.stages.handover.entries)).toEqual(['فولاد']);
+  });
+
+  it('کفِ دو، ردیفِ نمره‌دو را رد نمی‌کند و کفِ پنج فقط نمره‌پنج را نگه می‌دارد', () => {
+    expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['شپنا', 'فولاد']);
+    expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['فولاد']);
+    // علتِ رد هم کفِ دستِ کاربر را می‌گوید، نه «سه»ی ثابت
+    const five = buildWith({ fundFloor: 5 });
+    expect(five.stages.technical.entries.find((e) => e.symbol === 'شپنا')?.fundWhy).toContain('کف');
+  });
+
+  it('«عبور با برچسب» سنجیده‌نشده را به تحویل می‌برد، «حذف» از قیف بیرونش می‌اندازد', () => {
+    const pass = buildWith({ unmeasured: 'pass' });
+    expect(syms(pass.stages.fundamental.entries)).toContain('خار');
+    expect(pass.stages.fundamental.pending).toHaveLength(0);
+    expect(syms(pass.stages.handover.entries)).toEqual(['خار', 'فولاد']);
+    // برچسبِ «سنجیده نشد» رویِ خودش می‌ماند تا کاربر بداند بنیادش خوانده نشده
+    expect(pass.stages.handover.entries.find((e) => e.symbol === 'خار')?.fund).toBe('na');
+
+    const drop = buildWith({ unmeasured: 'drop' });
+    expect(drop.stages.fundamental.pending).toHaveLength(0);
+    expect(syms(drop.stages.fundamental.entries)).toEqual(['فولاد']);
+    // شپنا (ردِ صریح) + خار (حذف‌شدۀ سنجیده‌نشده) ⇒ دو افت
+    expect(drop.stages.fundamental.dropped).toBe(2);
+  });
+
+  it('پیچ‌ها در همان نوارِ قیف دستکاری می‌شوند و به حالتِ جزوه برمی‌گردند', async () => {
+    useFunnelPrefsStore.getState().reset();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByTestId('funnel-floor-2'));
+    expect(useFunnelPrefsStore.getState().fundFloor).toBe(2);
+    fireEvent.click(screen.getByTestId('funnel-unmeasured-pass'));
+    expect(useFunnelPrefsStore.getState().unmeasured).toBe('pass');
+    // «بازگشت به جزوه» فقط وقتی بیرونِ جزوه هستیم پیدا است
+    fireEvent.click(screen.getByTestId('funnel-prefs-reset'));
+    expect(useFunnelPrefsStore.getState().fundFloor).toBe(3);
+    expect(useFunnelPrefsStore.getState().unmeasured).toBe('hold');
+    expect(screen.queryByTestId('funnel-prefs-reset')).not.toBeInTheDocument();
+  });
+
+  it('مرحلۀ خالی علتِ خالی‌بودنش را می‌گوید («به این در کسی نرسید» ≠ «همه رد شدند»)', () => {
+    useFunnelPrefsStore.getState().reset();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        {/* روندگیر با کف‌روبی+نقطه‌زنی باز می‌شود و «سپ» تنها ردیفِ آن است؛
+            او وتوی تکنیکال می‌گیرد ⇒ بنیادی خالی، ولی بی‌هیچ رسیدۀ رد شده. */}
+        <FtsFunnelStages preset="trend" />
+      </QueryClientProvider>,
+    );
+    const empty = screen.getByTestId('funnel-empty-fundamental');
+    expect(empty.textContent).toContain('تکنیکال');
+    expect(screen.getByTestId('funnel-empty-handover').textContent).toContain('بنیادی');
   });
 });
 

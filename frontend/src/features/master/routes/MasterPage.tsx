@@ -2,7 +2,7 @@
 // v3: لایوت full-bleed (گیج + خلاصهٔ تحلیلی مدیریتی آفلاین) + استپر چهار گیتی سخت‌گیرانه
 // + ماشین وتو (بدون میانگین خطی) + ماشین‌حساب برنامهٔ معاملاتی/DCA + خروج ۵۰٪ + اکشن‌های سبد/واچ‌لیست.
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -47,6 +47,8 @@ import { ManagementSummary } from '../ui/ManagementSummary';
 import { ExplainableAuditBox } from '../ui/ExplainableAuditBox';
 import { StrategyHorizonSelector } from '../ui/StrategyHorizonSelector';
 import { StrategyTreeDrawer } from '../ui/StrategyTreeDrawer';
+import { FtsFunnelStages } from '../ui/FtsFunnelStages';
+import { EliteFunnelHub } from '../ui/EliteFunnelHub';
 import { FtsAnalystModal } from '@widgets/FtsAnalystModal';
 
 const AGENT_FA: Record<string, string> = {
@@ -58,7 +60,9 @@ const AGENT_FA: Record<string, string> = {
 
 export default function MasterPage() {
   const params = useParams();
+  const navigate = useNavigate();
   const stored = useSymbolStore((s) => s.symbol);
+  const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const symbol = params.symbol ?? stored;
 
   const horizon = useStrategyStore((s) => s.horizon);
@@ -247,10 +251,12 @@ export default function MasterPage() {
   if (!symbol) {
     return (
       <div className="flex w-full max-w-none flex-col gap-4">
-        <EmptyState
-          title="نمادی انتخاب نشده"
-          hint="از قیف انتخاب خودکار در «درخت استراتژی FTS» یا جدول تابلو، یک نماد را برای داوری جامع ۴ رکن انتخاب کنید"
-        />
+        {/* پیش‌تر این تب بی‌نماد تنها یک پیامِ «نمادی انتخاب نشده» بود و قیفِ
+            غربالگری درِ تبِ «درخت استراتژی» نشسته بود. جایِ درستِ قیف همین‌جاست:
+            همان‌جا که کاربر هنوز چیزی انتخاب نکرده و می‌خواهد بداند از کجا شروع
+            کند. کلیکِ هر سطرِ قیف نماد را برمی‌دارد و همین صفحه داوری را باز می‌کند. */}
+        <FtsFunnelStages preset={horizon} />
+        <EliteFunnelHub />
       </div>
     );
   }
@@ -265,6 +271,19 @@ export default function MasterPage() {
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <SymbolBasketAction symbol={symbol} />
+          {/* راهِ بازگشت به قیف: با پاک‌شدنِ نماد، همین تب دوباره غربالگری را
+              نشان می‌دهد (قیف فقط در حالتِ بی‌نماد زنده است تا رایگانِ CPU باشد). */}
+          <button
+            type="button"
+            data-testid="master-open-funnel"
+            onClick={() => {
+              clearSymbol();
+              navigate('/master');
+            }}
+            className="rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
+          >
+            قیفِ غربالگری
+          </button>
           <span className="text-2xs uppercase tracking-widest text-text-muted">
             {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}
           </span>

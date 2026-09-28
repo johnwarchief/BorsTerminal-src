@@ -10,14 +10,12 @@ import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
-import { EliteFunnelHub } from '../ui/EliteFunnelHub';
-import { FtsFunnelStages } from '../ui/FtsFunnelStages';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
 import { evaluateFtsPipeline, type PipelineStep } from '../lib/ftsPipelineEvaluator';
 
 type PresetMode = 'swing' | 'trend' | 'hourglass' | 'custom';
-type ViewMode = 'obsidian' | 'grid' | 'both' | 'funnel';
+type ViewMode = 'obsidian' | 'grid' | 'both';
 
 /** رنگ/برچسب وضعیت زندهٔ هر گیت FTS از خروجی evaluateFtsPipeline */
 const LIVE_STATUS_STYLE: Record<PipelineStep['status'], { dot: string; text: string; label: string; ring: string }> = {
@@ -427,18 +425,6 @@ export default function StrategyTreePage() {
             >
               <span>🔀</span>
               <span>ترکیبی</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('funnel')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
-                viewMode === 'funnel'
-                  ? 'bg-accent-amber/20 border border-accent-amber/50 text-accent-amber shadow-[0_0_8px_rgba(245,158,11,0.25)]'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <span>🧲</span>
-              <span>قیف انتخاب خودکار</span>
             </button>
           </div>
         </div>
@@ -1000,16 +986,9 @@ export default function StrategyTreePage() {
         </div>
       )}
 
-      {/* ۳.۵ قیف انتخاب خودکار (#225/#224) — چهار مرحلۀ متحرکِ جزوه (تابلو ←
-          تکنیکال ← بنیادی ← تحویل) و زیرِ همان‌ها هستۀ EliteFunnelHub با
-          تب‌هایِ ۵۰/۱۰/سبد؛ کلیکِ هر سطر نماد را انتخاب می‌کند و وضعیتِ زنده
-          روی درخت/گرید در همان صفحه اعمال می‌شود. */}
-      {viewMode === 'funnel' && (
-        <>
-          <FtsFunnelStages preset={selectedPreset} />
-          <EliteFunnelHub />
-        </>
-      )}
+      {/* قیفِ انتخابِ خودکار (#225/#224) از این تب به تبِ «استراتژی FTS» رفت؛
+          همان‌جا که صفحه بی‌نماد خالی می‌ماند. این‌جا درخت و گرید می‌مانند تا
+          نقشه و پارامترها یک‌جا بمانند؛ نمادِ انتخاب‌شده از قیف همین تب را هم زنده می‌کند. */}
 
       {/* ۴. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
       <div className="rounded-2xl border border-border-c p-4 sm:p-5 bg-bg-card/50 shadow-sm space-y-3">

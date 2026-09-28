@@ -20,8 +20,16 @@ import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
-import { buildFunnel, PRESET_ENTRY, tapePickedSymbols, type FunnelEntry, type FunnelStage, type FunnelStageKey, type StageMark, type TreePreset } from '../lib/ftsFunnel';
+import { buildFunnel, PRESET_ENTRY, tapePickedSymbols, type FunnelEntry, type FunnelStage, type FunnelStageKey, type FunnelOptions, type StageMark, type TreePreset } from '../lib/ftsFunnel';
 import { useFtsTechBoard } from '../api/useFtsTechBoard';
+import {
+  DEFAULT_FUND_FLOOR,
+  FUND_FLOOR_MAX,
+  UNMEASURED_HINT,
+  UNMEASURED_LABEL,
+  useFunnelPrefsStore,
+  type UnmeasuredPolicy,
+} from '../stores/funnelPrefsStore';
 
 const STAGE_TITLE: Record<FunnelStageKey, string> = {
   tape: 'تابلوخوانی',
@@ -33,9 +41,20 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
 const STAGE_RULE: Record<FunnelStageKey, string> = {
   tape: 'نمادهایی که همین نشست دستِ‌کم یکی از پنج فیلترِ جزوه را رد کرده‌اند — عینِ چیپ و بجِ تبِ تابلو.',
   technical: 'روندِ هفتگی و ستاپِ همان سبک غربال می‌کنند: وتوی هفتگی یا نبودِ ستاپِ سبک بیرون می‌اندازد؛ آنچه اسکرینر تحلیلش نکرده «سنجیده نشد» است، نه رد.',
-  fundamental: 'پنج شاخصِ کدال: سه از پنج به بالا به تحویل می‌رود، ردِ صریح می‌افتد، و بی‌گزارش در صفِ خودِ خودش می‌ماند.',
+  fundamental: '',
   handover: 'فقط آنچه بنیادش واقعاً سنجیده و قبول شده — در انتظارِ انتخابِ شما برایِ سبد و مدیریتِ سرمایه.',
 };
+
+/** شرحِ درِ بنیادی به دو پیچِ دستِ کاربر وصل است تا متنِ rule دروغِ پیش‌فرض نگوید. */
+function fundRule(o: FunnelOptions): string {
+  const un =
+    o.unmeasured === 'hold'
+      ? 'و بی‌گزارش در صفِ خودش می‌ماند'
+      : o.unmeasured === 'pass'
+        ? 'و بی‌گزارش با برچسبِ «سنجیده نشد» عبور می‌کند'
+        : 'و بی‌گزارش از قیف حذف می‌شود';
+  return `پنج شاخصِ کدال: ${toFaDigits(o.fundFloor)} از ${toFaDigits(FUND_FLOOR_MAX)} به بالا به تحویل می‌رود، ردِ صریح می‌افتد ${un}.`;
+}
 
 const ORDER: FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
 
@@ -55,6 +74,8 @@ function StageCard({
   onPick,
   active,
   last,
+  opts,
+  emptyWhy,
 }: {
   stage: FunnelStage;
   index: number;
@@ -63,6 +84,8 @@ function StageCard({
   onPick: (s: string) => void;
   active: boolean;
   last: boolean;
+  opts: FunnelOptions;
+  emptyWhy: string | null;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const rows = stage.entries;
@@ -100,12 +123,16 @@ function StageCard({
             {toFaDigits(stage.unmeasured)} سنجیده‌نشده
           </span>
         ) : null}
-        <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{STAGE_RULE[stage.key]}</span>
+        <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">
+          {stage.key === 'fundamental' ? fundRule(opts) : STAGE_RULE[stage.key]}
+        </span>
       </header>
 
       <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto">
         {rows.length === 0 ? (
-          <p className="px-3 py-4 text-xs text-text-muted">درِ این مرحلۀ نمادی نمانده است.</p>
+          <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
+            {emptyWhy ?? 'درِ این مرحلۀ نمادی نمانده است.'}
+          </p>
         ) : (
           <table className="w-full border-collapse text-xs">
             <thead className="sticky top-0 bg-bg-primary/95 text-3xs text-text-muted backdrop-blur-sm">
@@ -204,6 +231,70 @@ function StageRow({
   );
 }
 
+/** پیچ‌هایِ درِ بنیادی — سخت‌گیریِ جزوه کم نمی‌شود، حقِ انتخاب دستِ خودِ مالک است. */
+function FunnelPrefsBar({ passed }: { passed: number }) {
+  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
+  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
+  const setFundFloor = useFunnelPrefsStore((s) => s.setFundFloor);
+  const setUnmeasured = useFunnelPrefsStore((s) => s.setUnmeasured);
+  const reset = useFunnelPrefsStore((s) => s.reset);
+
+  const chip = (on: boolean) =>
+    `rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+      on ? 'border-accent-amber bg-accent-amber/15 text-accent-amber' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+    }`;
+
+  return (
+    <div
+      data-testid="funnel-prefs"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border-c bg-bg-card/40 px-2.5 py-1.5"
+    >
+      <span className="text-2xs font-black text-text-secondary">
+        درِ بنیادی
+        <span className="ms-1 font-normal text-text-muted">(پیش‌فرضِ جزوه: {toFaDigits(DEFAULT_FUND_FLOOR)} از {toFaDigits(FUND_FLOOR_MAX)})</span>
+      </span>
+      <span className="flex items-center gap-1" role="group" aria-label="کفِ نمرۀ پنج‌شاخصه">
+        {Array.from({ length: FUND_FLOOR_MAX }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            type="button"
+            data-testid={`funnel-floor-${n}`}
+            aria-pressed={fundFloor === n}
+            onClick={() => setFundFloor(n)}
+            className={`num h-6 w-6 rounded-md border text-2xs font-black transition-colors ${chip(fundFloor === n)}`}
+            title={n === DEFAULT_FUND_FLOOR ? 'پیش‌فرضِ جزوه' : undefined}
+          >
+            {toFaDigits(n)}
+          </button>
+        ))}
+      </span>
+      <span className="flex items-center gap-1" role="group" aria-label="تکلیفِ سنجیده‌نشده‌ها">
+        {(['hold', 'pass', 'drop'] as UnmeasuredPolicy[]).map((p) => (
+          <button
+            key={p}
+            type="button"
+            data-testid={`funnel-unmeasured-${p}`}
+            aria-pressed={unmeasured === p}
+            onClick={() => setUnmeasured(p)}
+            title={UNMEASURED_HINT[p]}
+            className={chip(unmeasured === p)}
+          >
+            {UNMEASURED_LABEL[p]}
+          </button>
+        ))}
+      </span>
+      <span className="num ms-auto text-3xs text-text-muted">
+        با این دو پیچ: {toFaDigits(passed)} نماد درِ بنیادی را باز می‌کند
+      </span>
+      {fundFloor !== DEFAULT_FUND_FLOOR || unmeasured !== 'hold' ? (
+        <button type="button" data-testid="funnel-prefs-reset" onClick={reset} className="text-3xs font-bold text-text-muted underline hover:text-accent-amber">
+          بازگشت به جزوه
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [active, setActive] = useState<FunnelStageKey>('tape');
@@ -215,6 +306,9 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
   const portfolio = usePortfolio();
   const cfg = useTapeStore((s) => s.tapeFilterConfig);
   const quickFilters = useTapeStore((s) => s.quickFilters);
+  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
+  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
+  const opts = useMemo<FunnelOptions>(() => ({ fundFloor, unmeasured }), [fundFloor, unmeasured]);
 
   // دو پاسِ عمدی: نخست فقط مرحلۀ تابلو حساب می‌شود تا معلوم شود برایِ کدام
   // نمادها رأیِ تکنیکال لازم است، سپس `/api/fts` برایِ همان‌ها خوانده می‌شود.
@@ -228,12 +322,35 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
   const funnel = useMemo(() => {
     const rows = feed.data?.data ?? [];
     const basket = new Set((portfolio.data?.portfolio ?? []).map((h) => h.symbol));
-    return buildFunnel(rows, cfg, quickFilters ?? [], screen.data?.data ?? [], basket, preset, tech.map);
-  }, [feed.data, screen.data, portfolio.data, cfg, quickFilters, preset, tech.map]);
+    return buildFunnel(rows, cfg, quickFilters ?? [], screen.data?.data ?? [], basket, preset, tech.map, opts);
+  }, [feed.data, screen.data, portfolio.data, cfg, quickFilters, preset, tech.map, opts]);
 
   const stages = ORDER.map((k) => funnel.stages[k]);
   const wide = Math.max(1, ...stages.map((s) => s.entries.length));
   const marks: ('tech' | 'fund' | null)[] = [null, 'tech', 'fund', 'fund'];
+
+  // «چرا خالی است» باید خودش را بگوید، وگرنه مرحلۀ خالی با مرحلۀ خراب یکی
+  // به‌نظر می‌رسد: «هیچ‌کدام به این در نرسید» با «همه رد شدند» یکی نیست.
+  const fund = funnel.stages.fundamental;
+  const hand = funnel.stages.handover;
+  const emptyWhy: Record<FunnelStageKey, string | null> = {
+    tape: funnel.total ? null : 'این نشست هیچِ یک از پنج فیلترِ جزوه را رد نکرد.',
+    technical: funnel.stages.technical.entries.length
+      ? null
+      : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
+    fundamental: fund.entries.length
+      ? null
+      : fund.unmeasured
+        ? 'رسیدگان همه بی‌گزارش‌اند — در صفِ پایینِ همین مرحله می‌مانند.'
+        : funnel.stages.technical.dropped
+          ? `به این در کسی نرسید: ${toFaDigits(funnel.stages.technical.dropped)} نماد درِ تکنیکال را باز نکردند.`
+          : 'هیچ‌کدام پنج‌شاخصهٔ قبول‌شدن ندارد.',
+    handover: hand.entries.length
+      ? null
+      : fund.entries.length
+        ? 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.'
+        : 'درِ بنیادی کسی را قبول نکرد.',
+  };
 
   return (
     <section className="flex flex-col gap-2">
@@ -277,6 +394,8 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
         ) : null}
       </div>
 
+      <FunnelPrefsBar passed={funnel.stages.fundamental.entries.length} />
+
       <div className="flex flex-col gap-2">
         {stages.map((s, i) => (
           <StageCard
@@ -288,6 +407,8 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
             onPick={setSymbol}
             active={active === s.key}
             last={i === stages.length - 1}
+            opts={opts}
+            emptyWhy={emptyWhy[s.key]}
           />
         ))}
       </div>

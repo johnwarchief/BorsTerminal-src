@@ -49,11 +49,12 @@ describe('AppShell smoke', () => {
     });
   });
 
-  it('روت /master بدون نماد حالت خالی یا هاب را نشان می دهد', async () => {
+  it('روت /master بدون نماد، قیفِ غربالگری را به‌جای پیامِ خالی نشان می دهد', async () => {
     await import('@features/master/routes/MasterPage');
     renderApp('/master');
     await waitFor(() => {
-      expect(screen.getByText('نمادی انتخاب نشده')).toBeInTheDocument();
+      expect(screen.getByTestId('funnel-stage-tape')).toBeInTheDocument();
     });
+    expect(screen.queryByText('نمادی انتخاب نشده')).not.toBeInTheDocument();
   });
 });
