@@ -6,7 +6,9 @@ import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
 import { SearchIcon } from '@shared/components/Icons';
-import { ASSET_LABELS, ASSET_TYPES } from '../lib/assetType';
+import { ASSET_LABELS, ASSET_TYPES, classifyAssetType, type AssetType } from '../lib/assetType';
+import { isNumericSuffixSymbol } from '../lib/tapeFts';
+import { matchFa } from '@shared/lib/normalizeFa';
 import {
   ASSET_PRESET_LABELS,
   ASSET_QUICK_PRESETS,
@@ -75,8 +77,8 @@ function SplitFilterChip({
   active: boolean;
   onToggle: () => void;
   count?: number;
-  /** چند ردیفِ واجدِ شرط، پشتِ قاعدهٔ خودکارِ پسوندِ عددی از تابلو بیرون‌اند */
-  hidden?: number;
+  /** چند ردیفِ واجدِ شرط درِ نمایِ فعلی را باز نکردند، و کدام در هر کدام را */
+  hidden?: HiddenInfo;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const chipRef = useRef<HTMLDivElement>(null);
@@ -89,6 +91,14 @@ function SplitFilterChip({
     }
     setPopoverOpen((v) => !v);
   };
+
+  // هر ردیفِ پنهان یک در دارد، پس جمعِ درها = +N؛ درِ بی‌سهم نام برده نمی‌شود.
+  const doorLabel = hidden && hidden.count > 0 ? hiddenDoorsLabel(hidden.doors) : '';
+  const chipTitle =
+    !hidden || hidden.count === 0
+      ? QUICK_LABELS[filter]
+      : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} ردیفِ واجدِ شرط درِ نمایِ فعلیِ تابلو نیست`
+        + (doorLabel ? ` (${doorLabel})` : '');
 
   return (
     <div
@@ -103,12 +113,7 @@ function SplitFilterChip({
         type="button"
         onClick={onToggle}
         aria-pressed={active}
-        title={
-          hidden && hidden > 0
-            ? `${QUICK_LABELS[filter]} — ${toFaDigits(hidden)} ردیفِ واجدِ شرط درِ نمایِ فعلیِ `
-              + 'تابلو نیست (ابزار/بازارِ خاموش یا ردیفِ پسوندعددی)'
-            : QUICK_LABELS[filter]
-        }
+        title={chipTitle}
         className="flex items-center ps-2.5 pe-1 py-0.5 focus:outline-none"
       >
         <span>{QUICK_LABELS[filter]}</span>
@@ -117,9 +122,9 @@ function SplitFilterChip({
         ) : null}
         {/* +N = ردیف‌هایِ واجدِ شرطی که درِ این نمایِ تابلو نیستند. بی‌این، عددِ
             چیپ کوچک‌ترِ عددِ خودِ سایت به‌نظر می‌رسید و فقط با hover روشن می‌شد. */}
-        {hidden != null && hidden > 0 ? (
+        {hidden != null && hidden.count > 0 ? (
           <span className="num ms-1 text-2xs font-bold text-text-muted opacity-80">
-            +{toFaDigits(hidden)}
+            +{toFaDigits(hidden.count)}
           </span>
         ) : null}
       </button>
@@ -278,10 +283,87 @@ export function countQuickMatches(
 
 type MarketRowsLike = { [K in QuickFilter]?: boolean | null }[];
 
+/** ردیفِ خاموش‌شده: همان ردیفِ جدول، با فیلدهایی که درها می‌خوانند */
+type HiddenRow = MarketRowsLike[number] & {
+  symbol?: string | null;
+  name?: string | null;
+  sector_name?: string | null;
+  board?: number | string | null;
+  is_live?: boolean | null;
+};
+
+/**
+ * درهایی که یک ردیف را بیرونِ نمایِ فعلیِ تابلو نگه می‌دارند.
+ *
+ * رتبه از درِ سخت شروع می‌شود چون تولتیپ وعده‌ای است که کاربر می‌تواند اجرا کند:
+ * سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ ۵۳۶۰ ردیف نشان داد هر ۷۱ ردیفِ پنهان هم پسوندِ عددی داشت
+ * و هم بازارشان خاموش بود. اگر «بازار/ابزار» اول می‌آمد، چیپ وعدهٔ روشن‌کردنِ
+ * منوی اختیار را می‌داد در حالی که قاعدۀ حذفِ مشتقه همان ردیف را نگه می‌داشت.
+ * هر ردیف یک در می‌گیرد، پس جمعِ درها = شمارِ پنهانِ همان چیپ.
+ */
+export const HIDDEN_DOORS = [
+  'پسوندِ عددی',
+  'بازار/ابزارِ خاموش',
+  'نمادِ خاموش',
+  'صنعت',
+  'جستجو',
+] as const;
+export type HiddenDoor = (typeof HIDDEN_DOORS)[number];
+
+export type HiddenCtx = {
+  assetTypes: AssetType[];
+  liveOnly: boolean;
+  query: string;
+  sector: string;
+};
+
+export type HiddenInfo = { count: number; doors: Partial<Record<HiddenDoor, number>> };
+
+export function hiddenDoorOf(r: HiddenRow, ctx: HiddenCtx): HiddenDoor | null {
+  const q = ctx.query.trim();
+  if (isNumericSuffixSymbol(r.symbol)) return 'پسوندِ عددی';
+  if (!ctx.assetTypes.includes(classifyAssetType(r))) return 'بازار/ابزارِ خاموش';
+  // مثلِ خودِ درِ «فقط زنده»: با جستجویِ صریح جدول نمادِ خاموش را هم نشان می‌دهد (#197)
+  if (ctx.liveOnly && !q && r.is_live === false) return 'نمادِ خاموش';
+  if (ctx.sector && (r.sector_name ?? '') !== ctx.sector) return 'صنعت';
+  if (q && !(matchFa(r.symbol, q) || matchFa(r.name, q))) return 'جستجو';
+  return null;
+}
+
+/** شمارِ ردیف‌هایِ واجدِ شرطِ بیرونِ نما، به تفکیکِ دری که هر ردیف را نگه داشته */
+export function countHiddenMatches(
+  hidden: HiddenRow[],
+  ctx: HiddenCtx,
+  config?: TapeFilterConfig,
+): Record<QuickFilter, HiddenInfo> {
+  const out = {} as Record<QuickFilter, HiddenInfo>;
+  for (const f of QUICK_FILTERS) out[f] = { count: 0, doors: {} };
+  for (const r of hidden) {
+    const door = hiddenDoorOf(r, ctx);
+    for (const f of QUICK_FILTERS) {
+      const hit = config
+        ? tapeFilterVerdict(r as unknown as Parameters<typeof tapeFilterVerdict>[0], f, config)
+        : Boolean(r[f]);
+      if (!hit) continue;
+      const info = out[f];
+      info.count += 1;
+      if (door) info.doors[door] = (info.doors[door] ?? 0) + 1;
+    }
+  }
+  return out;
+}
+
+/** «پسوندِ عددی ۷۱، بازار/ابزارِ خاموش ۳» — به همان رتبهٔ HIDDEN_DOORS */
+function hiddenDoorsLabel(doors: HiddenInfo['doors']): string {
+  return HIDDEN_DOORS.filter((d) => (doors[d] ?? 0) > 0)
+    .map((d) => `${d} ${toFaDigits(doors[d] as number)}`)
+    .join('، ');
+}
+
 export function MarketFilters({
   sectors,
   matches,
-  hiddenMatches,
+  hiddenInfo,
   shown,
   total,
   pollMs,
@@ -294,11 +376,9 @@ export function MarketFilters({
 }: {
   sectors: string[];
   matches?: Record<QuickFilter, number>;
-  /** ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی نیستند (ابزار/بازارِ
-   *  خاموش یا قاعدهٔ خودکارِ پسوندِ عددی) — توضیحِ «چرا چیپ کمتر از
-   *  فیلترنویسِ TSETMC است» */
-  hiddenMatches?: Record<QuickFilter, number>;
-  volRatioCount?: number;
+  /** ردیف‌هایِ واجدِ شرطی که درِ نمایِ فعلی را باز نکردند، با تفکیکِ هر در —
+   *  توضیحِ «چرا چیپ کمتر از فیلترنویسِ TSETMC است» */
+  hiddenInfo?: Record<QuickFilter, HiddenInfo>;
   shown?: number;
   total?: number;
   pollMs?: number;
@@ -384,7 +464,7 @@ export function MarketFilters({
             active={quickFilters.includes(f)}
             onToggle={() => toggleQuickFilter(f)}
             count={matches?.[f]}
-            hidden={hiddenMatches?.[f]}
+            hidden={hiddenInfo?.[f]}
           />
         ))}
 

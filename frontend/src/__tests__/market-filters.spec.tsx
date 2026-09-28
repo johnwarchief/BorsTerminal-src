@@ -101,20 +101,53 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
   });
 
   // ── #207: چیپ باید بگوید چرا از فیلترنویسِ TSETMC کمتر می‌شمارد ───────────
-  it('چیپ، ردیف‌هایِ پنهانِ همان فیلتر را درِ عنوانش می‌شمارد', () => {
+  it('چیپ، ردیف‌هایِ پنهانِ همان فیلتر را با درِ هر کدام درِ عنوانش می‌شمارد', () => {
     render(
       <MarketFilters
         sectors={[]}
         matches={{ f_clock: 29, f_susp: 45, f_jet: 5, f_roobi: 1, f_noqteh: 4 }}
-        hiddenMatches={{ f_clock: 49, f_susp: 51, f_jet: 0, f_roobi: 30, f_noqteh: 7 }}
+        hiddenInfo={{
+          f_clock: { count: 49, doors: { 'پسوندِ عددی': 49 } },
+          f_susp: { count: 51, doors: { 'پسوندِ عددی': 44, 'بازار/ابزارِ خاموش': 7 } },
+          f_jet: { count: 0, doors: {} },
+          f_roobi: { count: 30, doors: { 'نمادِ خاموش': 30 } },
+          f_noqteh: { count: 7, doors: { جستجو: 5, صنعت: 2 } },
+        }}
       />,
     );
     const roobi = screen.getByTitle(/کف‌روبی — ۳۰ ردیف/);
-    expect(roobi.getAttribute('title')).toContain('پسوندعددی');
-    // حجم مشکوک هم ۴۵+۵۱ می‌شود ۹۶ ردیفِ مرجع
-    expect(screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/)).toBeInTheDocument();
+    expect(roobi.getAttribute('title')).toContain('(نمادِ خاموش ۳۰)');
+    // دو در با شمارِ خودشان، به رتبهٔ HIDDEN_DOORS
+    expect(screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/).getAttribute('title')).toContain(
+      '(پسوندِ عددی ۴۴، بازار/ابزارِ خاموش ۷)',
+    );
+    expect(screen.getByTitle(/نقطه زنی — ۷ ردیف/).getAttribute('title')).toContain(
+      '(صنعت ۲، جستجو ۵)',
+    );
     // جت هیچ ردیفِ پنهانی ندارد → عنوانِ ساده، بدونِ ادعایِ دروغ
     expect(screen.getByTitle(/^فیلتر جت$/).getAttribute('title')).toBe('فیلتر جت');
+  });
+
+  // سنجشِ زنده: ردیف‌هایِ پنهانِ پیش‌فرض *همه* پسوندِ عددی داشتند؛ اگر درِ دیگری
+  // صفر باشد نام برده نمی‌شود، وگرنه کاربر «فقط زنده» را خاموش می‌کند و چیزی نمی‌بیند
+  it('دری که ردیفی به آن نسبت داده نشده در تولتیپ نوشته نمی‌شود', () => {
+    render(
+      <MarketFilters
+        sectors={[]}
+        hiddenInfo={{
+          f_clock: { count: 0, doors: {} },
+          f_susp: { count: 12, doors: { 'پسوندِ عددی': 12 } },
+          f_jet: { count: 0, doors: {} },
+          f_roobi: { count: 0, doors: {} },
+          f_noqteh: { count: 0, doors: {} },
+        }}
+      />,
+    );
+    const title = screen.getByTitle(/حجم مشکوک — ۱۲ ردیف/).getAttribute('title') ?? '';
+    expect(title).toContain('(پسوندِ عددی ۱۲)');
+    expect(title).not.toContain('نمادِ خاموش');
+    expect(title).not.toContain('بازار');
+    expect(title).not.toContain('جستجو');
   });
 });
 

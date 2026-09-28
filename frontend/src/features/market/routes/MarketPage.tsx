@@ -11,7 +11,7 @@ import { classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
-import { countQuickMatches, MarketFilters } from '../components/MarketFilters';
+import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
@@ -114,20 +114,24 @@ export default function MarketPage() {
   const filterBase = useMemo(() => dropNumericSuffixRows(boardBase), [boardBase]);
 
   /**
-   * شمارِ ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی تابلو نیستند —
-   * هر دلیلی که داشته باشند (ابزار/بازارِ خاموش در منو، یا قاعدهٔ خودکارِ
-   * پسوندِ عددی). بی‌این، چیپِ «کف‌روبی (۱)» در برابر ۳۱ ردیفِ فیلترنویسِ
-   * TSETMC هیچ توضیحی نداشت و همان «جدول با TSE فرق دارد» باقی می‌ماند.
+   * ردیف‌هایی که فیلتر را می‌گذرانند ولی درِ نمایِ فعلی تابلو نیستند. بی‌شمارشِ
+   * آن‌ها، چیپِ «کف‌روبی (۱)» در برابر ۳۱ ردیفِ فیلترنویسِ TSETMC هیچ توضیحی
+   * نداشت و همان «جدول با TSE فرق دارد» باقی می‌ماند.
+   *
+   * سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ فیدِ زنده (۵۳۶۰ ردیف): ردیف‌هایِ پنهانِ پنج فیلتر
+   * هم‌زمان پسوندِ عددی داشتند و بازارشان خاموش بود، و هیچ‌کدام خاموشِ تابلو نبود
+   * — پس دلیلِ پنهان باید از خودِ ردیف‌ها بخواند، نه از یک فهرستِ ثابت.
    */
-  const hiddenMatches = useMemo(() => {
-    const shownSet = new Set(filterBase);
-    return countQuickMatches(
-      rows.filter((r) => !shownSet.has(r)) as unknown as Parameters<
-        typeof countQuickMatches
-      >[0],
-      tapeFilterConfig,
-    );
-  }, [rows, filterBase, tapeFilterConfig]);
+  const hiddenRows = useMemo(() => {
+    const shown = new Set(filterBase);
+    return rows.filter((r) => !shown.has(r));
+  }, [rows, filterBase]);
+
+  const hiddenInfo = useMemo(
+    () =>
+      countHiddenMatches(hiddenRows, { assetTypes, liveOnly, query, sector }, tapeFilterConfig),
+    [hiddenRows, assetTypes, liveOnly, query, sector, tapeFilterConfig],
+  );
 
   const quickMatches = useMemo(
     () =>
@@ -136,11 +140,6 @@ export default function MarketPage() {
         tapeFilterConfig,
       ),
     [filterBase, tapeFilterConfig],
-  );
-
-  const volRatioCount = useMemo(
-    () => filterBase.filter((r) => matchesVolRatio(r.vol_ratio, volRatioMin)).length,
-    [filterBase, volRatioMin],
   );
 
   const filtered = useMemo(
@@ -189,8 +188,7 @@ export default function MarketPage() {
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}
-        hiddenMatches={hiddenMatches}
-        volRatioCount={volRatioCount}
+        hiddenInfo={hiddenInfo}
         shown={filtered.length}
         total={rows.length}
         pollMs={refetchIntervalMs}

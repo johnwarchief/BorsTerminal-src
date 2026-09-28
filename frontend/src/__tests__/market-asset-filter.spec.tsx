@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { MarketRow } from '@shared/types/marketRow';
 import { SuspiciousPanel } from '@features/market/components/SuspiciousPanel';
 import { applyFilters } from '@features/market/routes/MarketPage';
+import { countHiddenMatches, hiddenDoorOf } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
 import { DEFAULT_ASSET_TYPES, useTapeStore } from '@features/market/stores/tapeStore';
 
@@ -90,5 +91,56 @@ describe('بندِ «فقط زنده» در applyFilters', () => {
   it('خاموش‌کردنِ سوئیچ هر دو ردیف را برمی‌گرداند', () => {
     const kept = applyFilters(set, '', types, [], '', false, 'all', false, 3, false);
     expect(kept.map((r) => r.symbol)).toEqual(['خگلپا', 'همتا']);
+  });
+});
+
+// #207: دلیلِ «چرا چیپ کمتر از فیلترنویسِ TSETMC است» باید از خودِ ردیف‌های
+// پنهان بخواند، و هر ردیف فقط یک در بگیرد؛ فهرستِ ثابت رویِ فیدِ زنده دروغ می‌گفت.
+describe('hiddenDoorOf/countHiddenMatches: هر ردیفِ پنهان یک در', () => {
+  const types = [...DEFAULT_ASSET_TYPES];
+  const ctx = { assetTypes: types, liveOnly: true, query: '', sector: '' };
+
+  it('پسوندِ عددی اول می‌آید: ردیفی که قاعدۀ حذفِ مشتقه می‌برد به بازار نسبت داده نمی‌شود', () => {
+    expect(hiddenDoorOf(row({ symbol: 'فولاد۳' }), ctx)).toBe('پسوندِ عددی');
+    // اخزایِ پسونددار هم اختیار/اوراق ندارد: همان در، نه دو در
+    expect(hiddenDoorOf(row({ symbol: 'اخزا۱' }), ctx)).toBe('پسوندِ عددی');
+  });
+
+  it('بی‌پسوند، درِ منوی بازارها نام برده می‌شود', () => {
+    expect(hiddenDoorOf(option, ctx)).toBe('بازار/ابزارِ خاموش');
+  });
+
+  it('نمادِ خاموش با جستجویِ فعال از جدول بیرون نمی‌رود، پس دلیلش هم نوشته نمی‌شود', () => {
+    const dead = row({ symbol: 'همتا', is_live: false });
+    expect(hiddenDoorOf(dead, ctx)).toBe('نمادِ خاموش');
+    expect(hiddenDoorOf(dead, { ...ctx, liveOnly: false })).toBe(null);
+    // نمادِ خاموشی که نامش با جستجو می‌خواند در جدول می‌ماند (همان بندِ #197)
+    expect(hiddenDoorOf(dead, { ...ctx, query: 'فولاد' })).toBe(null);
+  });
+
+  it('جستجو و صنعتِ انتخابی هر کدام درِ خودشان را دارند و ردیفِ سالم هیچ در نمی‌گیرد', () => {
+    expect(hiddenDoorOf(row(), ctx)).toBe(null);
+    expect(hiddenDoorOf(row(), { ...ctx, query: 'پتروشیمی' })).toBe('جستجو');
+    expect(hiddenDoorOf(row(), { ...ctx, sector: 'سیمان' })).toBe('صنعت');
+  });
+
+  it('شمارِ هر چیپ با جمعِ درهایش یکی است، و درِ بی‌سهم ثبت نمی‌شود', () => {
+    // قالبِ ردیف f_clock و f_susp را روشن دارد؛ فقط f_roobi دستی است
+    const hidden = [
+      row({ symbol: 'فولاد۳', f_roobi: true }),
+      row({ symbol: 'فولاد۴', f_roobi: true }),
+      option,
+    ];
+    const got = countHiddenMatches(hidden, ctx);
+    expect(got.f_roobi.count).toBe(2);
+    expect(got.f_roobi.doors).toEqual({ 'پسوندِ عددی': 2 });
+    expect(got.f_clock.count).toBe(3);
+    expect(got.f_clock.doors).toEqual({ 'پسوندِ عددی': 2, 'بازار/ابزارِ خاموش': 1 });
+    expect(got.f_jet.doors).toEqual({});
+    // جمعِ درها هیچ‌وقت از شمارِ چیپ جلو نمی‌زند
+    for (const f of Object.keys(got) as (keyof typeof got)[]) {
+      const sum = Object.values(got[f].doors).reduce((a, b) => a + (b ?? 0), 0);
+      expect(sum).toBeLessThanOrEqual(got[f].count);
+    }
   });
 });
