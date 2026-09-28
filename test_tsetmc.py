@@ -1161,6 +1161,17 @@ def _save_market_snapshot(s, conn):
 
 _TICK_SESSION = None
 _TICK_SESSION_LOCK = __import__("threading").Lock()
+# رأیِ داورِ زنده (۱۴۰۵-۰۷-۰۶، سنجۀ ۱۵:۴۶–۱۵:۵۷): تابلوی سایت تا بعد از ۱۶
+# هم می‌چرخد؛ پنجرۀ ثابتِ ساعتی زود است. سیاست: تا وقتی داده عوض می‌شود
+# بتاز، ده دقیقه بی‌تغییری ⇒ «گوش‌دادن» (هر ۶۰ ثانیه یک پروب، نه هر ۵);
+# همان‌که تغييري ديد از نو پنج‌ثانیه‌ای. درب‌های ایمنی: صبح زود (پیش از ۰۸:۵۵)
+# هرگز نوشتنی نیست — ردیف‌های صفرِ پیش‌ازگشاییِ فردا همان بلاگِ #120 را
+# می‌سازند — و سقفِ ۲۰:۰۰ برای پاتولوژیک؛ آخرینِ واقعیِ hEven سایت ~۱۶ است.
+TICK_QUIET_S = 600.0
+TICK_LISTEN_POLL_S = 60.0
+_TICK_PREV_SIG = None
+_TICK_LAST_CHANGE = 0.0
+_TICK_LAST_PROBE = 0.0
 
 
 def _tick_session():
@@ -1169,6 +1180,26 @@ def _tick_session():
         if _TICK_SESSION is None:
             _TICK_SESSION = make_session()
         return _TICK_SESSION
+
+
+def _tick_observe(mw_raw, mono, was_listening):
+    """امضایِ زندهٔ بدنه: عوض شد ⇒ ساعتِ سکوت صفر و بازگشت به تیکِ پنج‌ثانیه؛
+    دست‌نخورده و پس از دَه دقیقه ⇒ حالتِ گوش‌دادن (پروبِ شصت‌ثانیه‌ای)."""
+    global _TICK_PREV_SIG, _TICK_LAST_CHANGE, _TICK_LAST_PROBE
+    import hashlib
+    h = hashlib.md5()
+    for r in mw_raw:
+        h.update(str(r.get("insCode")).encode())
+        h.update(repr((r.get("pcl"), r.get("qtj"), r.get("pc"), r.get("hEven"))).encode())
+    sig = h.hexdigest()
+    _TICK_LAST_PROBE = mono
+    if sig != _TICK_PREV_SIG:
+        _TICK_PREV_SIG = sig
+        _TICK_LAST_CHANGE = mono
+    elif was_listening:
+        pass                       # بی‌تغييريِ دیگر — همان ریتمِ شصت‌ثانیه می‌ماند
+    if _TICK_LAST_CHANGE == 0.0:
+        _TICK_LAST_CHANGE = mono
 
 
 def tick_live(conn=None):
@@ -1193,14 +1224,22 @@ def tick_live(conn=None):
     می‌شود و آرایۀ خالی برمی‌گرداند؛ اینجا یعنی «این تیک رد، بانک دست‌نخورده».
     """
     wd = datetime.date.today().weekday()          # 3=پنجشنبه, 4=جمعه
-    hhmm = datetime.datetime.now().strftime("%H%M")
-    if wd in (3, 4) or hhmm >= "1530":
+    now_dt = datetime.datetime.now()
+    hhmm = now_dt.strftime("%H%M")
+    if wd in (3, 4) or hhmm < "0855" or hhmm >= "2000":
         return 0
     after_hours = hhmm >= "1230"
+    import time as _t
+    mono = _t.monotonic()
+    listen = (_TICK_PREV_SIG is not None and after_hours
+              and mono - _TICK_LAST_CHANGE > TICK_QUIET_S)
+    if listen and mono - _TICK_LAST_PROBE < TICK_LISTEN_POLL_S:
+        return 0
     s = _tick_session()
     mw_raw = polite_get(s, MW_URL, "marketwatch")
     if not mw_raw:
         return 0
+    _tick_observe(mw_raw, mono, listen)
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     today = int(datetime.date.today().strftime("%Y%m%d"))
     own = conn is None

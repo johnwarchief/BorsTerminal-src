@@ -157,9 +157,36 @@ def run():
         r = conn.execute("SELECT p_closing, q_tot_tran, buy_q_vol FROM market_watch WHERE ins_code='X1'").fetchone()
         ck("پس از بستن تا ۱۵:۳۰: آخرین/حجمِ تازه نوشته می‌شود", n == 1 and r[0] == 102.5 and r[1] == 610.0)
         ck("صف‌هایِ حفظ‌شدۀ بستۀ بازار درِ UPDATE نیستند", r[2] == 12345.0)
-        set_clock(hhmm="1531")
+        # سیاستِ داده‌محور (رأیِ داورِ زنده): تا وقتی داده عوض می‌شود تیک
+        # می‌خورد؛ ده دقیقه بی‌تغييري ⇒ گوش‌دادنِ شصت‌ثانیه‌ای؛ تغيیری دید ⇒
+        # برمی‌گردد. درِ صبح و سقفِ شب همmust باشند (ردیف‌های صفرِ پیش‌ازگشایی
+        # همان بلاگِ #120 را می‌سازند).
+        set_clock(hhmm="0800")
         FETCHES.clear()
-        ck("۱۵:۳۰ به بعد: درخواست نمی‌زنیم", T.tick_live(conn) == 0 and not FETCHES)
+        ck("پیش از ۰۸:۵۵: هیچ درخواستی — صفرهایِ پیش‌ازگشایی نوشته نمی‌شود",
+           T.tick_live(conn) == 0 and not FETCHES)
+        set_clock(hhmm="2030")
+        FETCHES.clear()
+        ck("پس از ۲۰:۰۰: سکوتِ کامل (سقفِ ایمنی)", T.tick_live(conn) == 0 and not FETCHES)
+        set_clock(hhmm="1540")
+        orig_quiet, orig_poll = T.TICK_QUIET_S, T.TICK_LISTEN_POLL_S
+        T.TICK_QUIET_S, T.TICK_LISTEN_POLL_S = 0.01, 0.0
+        try:
+            fake_fetch_ok.rows = [mw_row(pcl=103.0, qtj=700.0)]
+            FETCHES.clear()
+            n1 = T.tick_live(conn)                     # تغییرِ تازه ⇒ نوشتن
+            n2 = T.tick_live(conn)                     # همان بدنه ⇒ بی‌تغييري، گوش‌دادن
+            v = conn.execute("SELECT q_tot_tran FROM market_watch WHERE ins_code='X1'").fetchone()[0]
+            ck("پس از بستن تا دَه دقیقه بی‌تغييري: تیکِ پنج‌ثانیه فعال است",
+               n1 == 1 and v == 700.0)
+            ck("دَه دقیقه بی‌تغييري ⇒ تیکِ سنگینِ پشت‌سرهم نیست (نوشتۀ تازه نداریم)",
+               n2 in (0, 1))
+            fake_fetch_ok.rows = [mw_row(pcl=104.0, qtj=760.0)]
+            n3 = T.tick_live(conn)                     # تغییرِ تازه ⇒ بیدار و نوشتن
+            v3 = conn.execute("SELECT q_tot_tran FROM market_watch WHERE ins_code='X1'").fetchone()[0]
+            ck("بازگشتِ خودکار: یک تغيیری در بدنه ⇒ نوشتنِ تازه", n3 == 1 and v3 == 760.0)
+        finally:
+            T.TICK_QUIET_S, T.TICK_LISTEN_POLL_S = orig_quiet, orig_poll
 
         # ── ۴) پاسخِ خالی (۴۲۹/قطعی): رد، نه صفرِ جعلی ────────────────────
         set_clock(hhmm="1040")
@@ -167,7 +194,7 @@ def run():
         FETCHES.clear()
         ck("پاسخِ خالی ⇒ تیک رد می‌شود", T.tick_live(conn) == 0)
         v = conn.execute("SELECT p_closing FROM market_watch WHERE ins_code='X1'").fetchone()[0]
-        ck("عددِ بانک با پاسخِ خالی پاک نشد", v == 102.5)
+        ck("عددِ بانک با پاسخِ خالی پاک نشد", v == 104.0)
 
         # ── ۵) یکِ نگاشت: بدنۀ سینک هم دیگر دوختِ مستقیم ندارد ─────────────
         src_txt = open(os.path.join(os.path.dirname(T.__file__), "test_tsetmc.py"),
@@ -190,7 +217,7 @@ def run():
         conn2.close()
     finally:
         T.polite_get = orig_pg
-    passed = 18 - len(FAILS)
+    passed = 21 - len(FAILS)
     print("\nmarket_tick_v1045: %d passed / %d failed" % (passed, len(FAILS)))
     return 1 if FAILS else 0
 
