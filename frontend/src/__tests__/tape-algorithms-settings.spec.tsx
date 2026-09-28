@@ -276,6 +276,15 @@ describe('شخصی‌سازی آستانه‌ها واقعاً اعمال می�
     const row = passingRow({ p_closing: 1000, min_low_29: 0 });
     expect(matchNoqtehFilter(row, DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
   });
+
+  it('نقطه‌زنی: کف‌شکنی (فاصلۀِ منفی) قبول است — فایل فقط سقف می‌گذارد', () => {
+    // سنجشِ زندۀِ ۱۴۰۵-۰۷-۰۷ رویِ تابلویِ خودِ سایت: طملي7072 با پایانیِ ۲ و
+    // کفِ پنجرۀِ ۳ (فاصله ‎−۵۰٪) درِ «نقطه‌زنی» می‌نشست و درِ ما رد می‌شد.
+    // متنِ فایل هیچ کرانِ پایینِ برایِ cfield2 ندارد، و کف‌شکنی خودش
+    // قوی‌ترینِ مصداقِ «چسبیده به کف» است.
+    const row = passingRow({ p_closing: 1000, min_low_29: 1100 });
+    expect(matchNoqtehFilter(row, DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(true);
+  });
 });
 
 describe('نشانِ «شخصی‌سازی شده» به آستانه‌ها نگاه می‌کند، نه به شیءِ کانفیگ', () => {

@@ -1,0 +1,5 @@
+the site serves 3782 rows on its live board endpoint right now while our board marks 3893 rows as this session
+the difference is forty-three commodity, weekly-bond, warrant and fund instruments that the site drops from its live endpoint the moment their own session closes, plus older rows of the same day
+every symbol the site currently lists is present with us, nothing is missing on our side
+two of those dropped instruments still carry a suspicious-volume badge in our panel because they really traded today at a multiple of their own floor
+our table is the record of the trading day, not a mirror of the site instant, and the owner uses the badges after the close to review the day

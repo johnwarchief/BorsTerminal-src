@@ -1,0 +1,8 @@
+one-instant live parity of the five board filters against TSETMC at seventeen o clock
+history window on both sides is the same: newest published session is the sixth of the month, today is not finalised yet
+clock pattern: twenty-five on the site, twenty-five in our panel, same exact symbols
+jet breakout: seven and seven, same symbols. sell-queue scraping at the floor: three and three, same symbols
+suspicious volume: seventy-nine on the site, eighty-one with us, nothing missing on our side, two extra that the site has already dropped from its live board because those commodity and weekly-bond sessions closed
+bottom-tap: eleven on the site, ten with us, one site-only symbol. it is an option contract whose price today is far below the floor of the prior twenty-nine sessions, so the distance figure is negative
+the notebook text for bottom-tap only caps the distance from the floor from above; it never forbids a negative distance and never sets a lower bound
+our backend and our frontend both silently reject negative distance; that guard entered the code in version one point zero point thirty-three and has no entry in the owner rulings file

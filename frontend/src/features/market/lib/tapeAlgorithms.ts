@@ -337,6 +337,9 @@ export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi'], b
 
 /** ۵. نقطه‌زنی و کف‌یابی — فایل: ``round((pc-min)/pc*100*100)/100 < 3 && tvol > Σ[ih][0..29]/30 && tno > 5``
  *  ``min`` کفِ [ih][0..28] است، نه ستونِ نمایشیِ min30_low (که دیروزها را می‌شمرد).
+ *  فایل فقط از **بالا** کران می‌گذارد: فاصلۀِ منفی یعنی پایانیِ امروز زیرِ کفِ
+ *  پنجره نشسته (کف‌شکنی)، و درِ خودِ سایت چنین ردیفی «نقطه‌زنی» می‌خورد — پس
+ *  اینجا هیچ کرانِ پایینِ نمی‌گذاریم (سنجشِ زنده ۱۴۰۵-۰۷-۰۷، طملي7072).
  */
 export function matchNoqtehFilter(r: MarketRow, cfg: TapeFilterConfig['noqteh'], basis?: TapeFilterConfig['basis']): boolean {
   const close = num(r.p_closing);
@@ -344,7 +347,7 @@ export function matchNoqtehFilter(r: MarketRow, cfg: TapeFilterConfig['noqteh'],
   if (close == null || close <= 0 || minLow == null || minLow <= 0) return false;
 
   const distPct = Math.round(((close - minLow) / close) * 100 * 100) / 100;
-  if (distPct < 0 || distPct >= cfg.maxDistPct) return false;
+  if (distPct >= cfg.maxDistPct) return false;
 
   if (!volumeGate(r, cfg.minVolRatio, basis)) return false;
   return above(r.z_tot_tran, cfg.minTradeCount);

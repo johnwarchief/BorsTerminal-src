@@ -253,12 +253,18 @@ def noqteh_flag(df: pd.DataFrame) -> pd.Series:
       ۲) صفر **معتبر** است، نه حذف‌شدنی: فایل `MinPriceOfMonth() != 0` را صریحاً
          می‌خواهد — یک نشستِ بی‌معامله کلِ ردیف را رد می‌کند. نسخۀِ پیشین با
          `low > 0` همان صفر را دور می‌انداخت و ردیفِ جعلی می‌ساخت.
+      ۳) سقفِ فاصله **از بالا** بسته است، از پایین نه (۱۴۰۵-۰۷-۰۷): درِ سنجشِ زنده
+         با تابلویِ خودِ سایت، یک نمادِ کف‌شکن (طملي7072، پایانیِ ۲ به کمینۀِ
+         پنجرۀِ ۳ → فاصلۀِ ‎−۵۰٪) درِ فایل «نقطه‌زنی» می‌نشست و درِ ما رد
+         می‌شد. فایل هیچ کرانِ پایینِ برایِ `cfield2` نمی‌نویسد و کف‌شکنی
+         خودِ قوی‌ترینِ مصداقِ «نزدیکِ کف» است؛ `dist >= 0` درِ نسخۀِ ۱٫۰٫۳۳
+         رأیِ مالک نداشت و بی‌صدا ردیف‌هایِ درست را می‌کُشت.
     """
     pc = _n(df["p_closing"])
     low_file = _col(df, "min_low_29").where(lambda s: s != 0)
     low_file = low_file.where(_sessions_ok(df, LOW_BASE_SESSIONS))
     dist = ((pc - low_file) / pc * 100).round(2)
-    return ((pc > 0) & (dist >= 0) & (dist < NOQTEH_MAX_DIST)
+    return ((pc > 0) & (dist < NOQTEH_MAX_DIST)
             & (formula_vol_ratio(df) > 1.0)
             & (_n(df["z_tot_tran"]) > NOQTEH_TRADES)).fillna(False)
 
