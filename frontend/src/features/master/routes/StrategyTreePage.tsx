@@ -11,6 +11,7 @@ import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
 import { EliteFunnelHub } from '../ui/EliteFunnelHub';
+import { FtsFunnelStages } from '../ui/FtsFunnelStages';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
 import { evaluateFtsPipeline, type PipelineStep } from '../lib/ftsPipelineEvaluator';
@@ -996,10 +997,16 @@ export default function StrategyTreePage() {
         </div>
       )}
 
-      {/* ۳.۵ قیف انتخاب خودکار (#225/#224) — همان هستۀ EliteFunnelHub از مستر، با
-          دادهٔ /api/screener؛ کلیکِ هر سطر نماد را انتخاب می‌کند و وضعیتِ زنده روی
-          درخت/گرید در همان صفحه اعمال می‌شود. */}
-      {viewMode === 'funnel' && <EliteFunnelHub />}
+      {/* ۳.۵ قیف انتخاب خودکار (#225/#224) — چهار مرحلۀ متحرکِ جزوه (تابلو ←
+          تکنیکال ← بنیادی ← تحویل) و زیرِ همان‌ها هستۀ EliteFunnelHub با
+          تب‌هایِ ۵۰/۱۰/سبد؛ کلیکِ هر سطر نماد را انتخاب می‌کند و وضعیتِ زنده
+          روی درخت/گرید در همان صفحه اعمال می‌شود. */}
+      {viewMode === 'funnel' && (
+        <>
+          <FtsFunnelStages preset={selectedPreset} />
+          <EliteFunnelHub />
+        </>
+      )}
 
       {/* ۴. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
       <div className="rounded-2xl border border-border-c p-4 sm:p-5 bg-bg-card/50 shadow-sm space-y-3">
