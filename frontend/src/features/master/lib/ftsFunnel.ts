@@ -175,8 +175,11 @@ const PRESET_SETUP: Record<TreePreset, { label: string; test: (t: TechSignals) =
     test: (t) => t.jet || t.fibZone === '33-40',
   },
   trend: {
-    label: 'فیبو یا CHoCH یا جت',
-    test: (t) => t.fibZone != null || t.chochBull || t.jet,
+    // چارت ۳ برایِ روندگیر: کف‌روبی + نقطه‌زنی (ورود رویِ کفِ سوم یا پنجمِ
+    // کانال) — همان دو گره‌ای که درختِ روندگیر حالا به آن می‌رسد. فیبو/CHoCH/جت
+    // از ستاپ‌هایِ پذیرفتنیِ همین سبک می‌مانند (درخت آن‌ها را هم دارد).
+    label: `فیبو یا CHoCH یا جت یا کفِ ${toFaDigits('3')}/${toFaDigits('5')}`,
+    test: (t) => t.fibZone != null || t.chochBull || t.jet || t.pointHunt,
   },
   hourglass: {
     label: 'ستاپِ عمیقِ ساعت شنی',

@@ -2,7 +2,7 @@
 // اعتبارسنجی تم روشن/تاریک، چینش RTL، جریان مهندسی معکوس و پوشش کامل ۴ صفحه چارت
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { ObsidianStrategyGraph } from '../features/master/components/ObsidianStrategyGraph';
+import { ObsidianStrategyGraph, getGraphLinks } from '../features/master/components/ObsidianStrategyGraph';
 import { useStrategyParamsStore, FTS_DEFAULT_PARAMS } from '../features/master/stores/strategyParamsStore';
 import { useUiStore } from '../shared/stores/uiStore';
 
@@ -117,5 +117,22 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
       render(<ObsidianStrategyGraph selectedPreset="swing" />);
       expect(screen.queryByTestId('graph-symbol-plaque')).not.toBeInTheDocument();
     });
+  });
+});
+
+// درختِ روندگیر باید همان درِ قیف باشد: کف‌روبی + نقطه‌زنی (چارت ۳ جزوه).
+describe('شاخۀ روندگیر درِ هر دو جهتِ جریان', () => {
+  it('کف‌روبی و نقطه‌زنی به مسیرِ روندگیر وصل‌اند و به stop_trend می‌رسند', () => {
+    for (const flow of ['reverse', 'classic'] as const) {
+      const links = getGraphLinks(flow).filter((l) => l.presets.includes('trend'));
+      const ids = links.flatMap((l) => [l.source, l.target]);
+      // دو گره‌ای که دروازۀ قیفِ روندگیر از همان‌ها می‌شمارد (f_roobi + f_noqteh)
+      expect(ids).toContain('tape_floor_sweep');
+      expect(ids).toContain('setup_point_hunt');
+      // و شاخه باید به مدیریتِ سرمایه برسد، نه اینکه گرهٔ بی‌مقصد بماند
+      expect(ids).toContain('stop_trend');
+      expect(links.some((l) => l.source === 'tape_floor_sweep' || l.target === 'tape_floor_sweep')).toBe(true);
+      expect(links.some((l) => l.source === 'setup_point_hunt' || l.target === 'setup_point_hunt')).toBe(true);
+    }
   });
 });

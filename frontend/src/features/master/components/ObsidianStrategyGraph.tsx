@@ -635,7 +635,8 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
 }
 
 // اتصالات پیوسته افقی از ستون به ستون با رعایت هر دو جریان
-function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
+/** اتصالاتِ هر سبک — بیرون‌کشیده برایِ آزمونِ شاخه‌ها (قیف و درخت باید یک مسیر ببینند) */
+export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
   if (flow === 'reverse') {
     // ─── جریان مهندسی معکوس نوسان‌گیری (صفحه ۴ و ۱۹ جزوه) ───
     // شروع از راست (هسته غربالگری نوسان‌گیری) ➔ فیلترهای تابلوخوانی ➔ تکنیکال دو زمانه ➔ ۵ شاخص بنیادی ➔ مدیریت سرمایه
@@ -644,7 +645,7 @@ function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_c_vol', source: 'fts_core', target: 'tape_volume', presets: ['swing', 'trend'] },
       { id: 'rev_c_clock', source: 'fts_core', target: 'tape_clock', presets: ['swing'] },
       { id: 'rev_c_box', source: 'fts_core', target: 'tape_breakout', presets: ['swing', 'trend'] },
-      { id: 'rev_c_sweep', source: 'fts_core', target: 'tape_floor_sweep', presets: ['swing', 'hourglass'] },
+      { id: 'rev_c_sweep', source: 'fts_core', target: 'tape_floor_sweep', presets: ['swing', 'trend', 'hourglass'] },
       { id: 'rev_c_smart', source: 'fts_core', target: 'tape_smart_money', presets: ['trend'] },
       { id: 'rev_c_macro', source: 'fts_core', target: 'tape_market_liquidity', presets: ['swing', 'trend', 'hourglass'] },
 
@@ -655,7 +656,8 @@ function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_s_vol_fib', source: 'tape_volume', target: 'setup_fib', presets: ['swing', 'trend'] },
       { id: 'rev_s_box_jet', source: 'tape_breakout', target: 'setup_jet', presets: ['swing'] },
       { id: 'rev_s_sweep_hg', source: 'tape_floor_sweep', target: 'tech_weekly_hourglass', presets: ['hourglass'] },
-      { id: 'rev_s_sweep_hunt', source: 'tape_floor_sweep', target: 'setup_point_hunt', presets: ['swing'] },
+      { id: 'rev_s_sweep_hunt', source: 'tape_floor_sweep', target: 'setup_point_hunt', presets: ['swing', 'trend'] },
+      { id: 'rev_s_hunt_up', source: 'setup_point_hunt', target: 'tech_weekly_up', presets: ['trend'] },
       { id: 'rev_s_smart_choch', source: 'tape_smart_money', target: 'setup_choch', presets: ['trend'] },
 
       // ۳. تکنیکال T ➔ ارزیابی ۵ شاخص بنیادی F
@@ -722,14 +724,14 @@ function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_t_up_pull', source: 'tech_weekly_up', target: 'setup_pullback', presets: ['swing'] },
     { id: 'cls_t_up_fib', source: 'tech_weekly_up', target: 'setup_fib', presets: ['swing', 'trend'] },
     { id: 'cls_t_up_choch', source: 'tech_weekly_up', target: 'setup_choch', presets: ['trend'] },
-    { id: 'cls_t_up_hunt', source: 'tech_weekly_up', target: 'setup_point_hunt', presets: ['swing'] },
+    { id: 'cls_t_up_hunt', source: 'tech_weekly_up', target: 'setup_point_hunt', presets: ['swing', 'trend'] },
 
     // تکنیکال T ➔ تابلوخوانی S
     { id: 'cls_t_jet_clock', source: 'setup_jet', target: 'tape_clock', presets: ['swing'] },
     { id: 'cls_t_pull_clock', source: 'setup_pullback', target: 'tape_clock', presets: ['swing'] },
     { id: 'cls_t_fib_vol', source: 'setup_fib', target: 'tape_volume', presets: ['swing', 'trend'] },
     { id: 'cls_t_choch_smart', source: 'setup_choch', target: 'tape_smart_money', presets: ['trend'] },
-    { id: 'cls_t_hunt_sweep', source: 'setup_point_hunt', target: 'tape_floor_sweep', presets: ['swing'] },
+    { id: 'cls_t_hunt_sweep', source: 'setup_point_hunt', target: 'tape_floor_sweep', presets: ['swing', 'trend'] },
     { id: 'cls_t_hg_sweep', source: 'tech_weekly_hourglass', target: 'tape_floor_sweep', presets: ['hourglass'] },
 
     // تابلوخوانی S ➔ مدیریت سرمایه M
@@ -738,6 +740,7 @@ function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_s_vol_stoptrend', source: 'tape_volume', target: 'stop_trend', presets: ['trend'] },
     { id: 'cls_s_smart_stoptrend', source: 'tape_smart_money', target: 'stop_trend', presets: ['trend'] },
     { id: 'cls_s_sweep_hg', source: 'tape_floor_sweep', target: 'stop_hourglass', presets: ['hourglass'] },
+    { id: 'cls_s_sweep_stoptrend', source: 'tape_floor_sweep', target: 'stop_trend', presets: ['trend'] },
 
     // مدیریت سرمایه و خروج
     { id: 'cls_m_swing_exithalf', source: 'stop_swing', target: 'exit_half', presets: ['swing'] },
