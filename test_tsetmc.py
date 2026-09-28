@@ -1042,6 +1042,38 @@ def update_existing(symbols_limit=None, max_429=3, min_interval=0.05, cooldown_f
     return stats
 
 
+def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
+    """یک ردیف خامِ تابلو → سه tuple (instruments, market_watch, daily_prices).
+
+    تنها نقطۀ ساختِ این tupleها: سینکِ کامل و تیکِ زنده هر دو از همین‌جا
+    می‌خوانند تا هیچ‌وقت دو نگاشتِ متفاوت رویِ بانک ننشیند. سطرِ instruments
+    تنها وقتی ساخته می‌شود که sectors و ptypes داده شوند — تیکِ زنده این‌ها را
+    از شبکه نمی‌گیرد و جدولِ instruments را نمی‌نویسد.
+    """
+    ins = r.get("insCode")
+    if not ins:
+        return None, None, None
+    sec = str(r.get("csv") or "").strip()
+    d = int(r.get("dEven") or 0) or last_d_even or today
+    eps, pe, shares = num(r.get("eps")), num(r.get("pe")), num(r.get("ztd"))
+    pcl, pdv = num(r.get("pcl")), num(r.get("pdv"))
+    py, pf = num(r.get("py")), num(r.get("pf"))
+    vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
+    chg = num(r.get("pc"))
+    p_last = (py + chg) if (pcl and py) else None
+    it = None
+    if sectors is not None and ptypes is not None:
+        it = (ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
+        shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins))
+    mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
+    w = (ins, d, num(r.get("hEven")), pcl, p_last, num(r.get("pmn")), num(r.get("pmx")),
+    num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
+    shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + (mcap, mcap_src)
+    dy = (ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
+    now, mcap, mcap_src, trd)
+    return it, w, dy
+
+
 def _save_market_snapshot(s, conn):
     """Phase A — کل بازار در ۶ درخواست: MarketWatch(0/1/2) + ClientTypeAll + StaticData + Overview."""
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1077,25 +1109,12 @@ def _save_market_snapshot(s, conn):
     total_value, total_deven, bourse_ov = fetch_market_total(s)
     inst, watch, daily = [], [], []
     for r in mw_raw:
-        ins = r.get("insCode")
-        if not ins:
+        _it, _w, _dy = _mw_row(r, last_d_even, today, now, sectors, ptypes)
+        if _w is None:
             continue
-        sec = str(r.get("csv") or "").strip()
-        d = int(r.get("dEven") or 0) or last_d_even or today
-        eps, pe, shares = num(r.get("eps")), num(r.get("pe")), num(r.get("ztd"))
-        pcl, pdv = num(r.get("pcl")), num(r.get("pdv"))
-        py, pf = num(r.get("py")), num(r.get("pf"))
-        vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
-        chg = num(r.get("pc"))
-        p_last = (py + chg) if (pcl and py) else None
-        inst.append((ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
-                     shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins)))
-        mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
-        watch.append((ins, d, num(r.get("hEven")), pcl, p_last, num(r.get("pmn")), num(r.get("pmx")),
-                      num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
-                      shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + (mcap, mcap_src))
-        daily.append((ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
-                     now, mcap, mcap_src, trd))
+        inst.append(_it)
+        watch.append(_w)
+        daily.append(_dy)
 
     # روزِ client_type باید همان روزِ نشستِ market_watch باشد، نه «today».
     # در تعطیلی، تابلو به آخرین نشستِ واقعی می‌خورد و ClientType به امروزِ
@@ -1134,6 +1153,72 @@ def _save_market_snapshot(s, conn):
         save_mstat_snapshot(conn)
     print(f"  [snapshot] saved {len(watch)} symbols | client {len(client)} | date {d_even}")
     return {"saved": len(watch), "date": d_even}
+
+
+_TICK_SESSION = None
+_TICK_SESSION_LOCK = __import__("threading").Lock()
+
+
+def _tick_session():
+    global _TICK_SESSION
+    with _TICK_SESSION_LOCK:
+        if _TICK_SESSION is None:
+            _TICK_SESSION = make_session()
+        return _TICK_SESSION
+
+
+def tick_live(conn=None):
+    """تیکِ زنده: یک درخواستِ تابلو، نوشتنِ ستون‌هایِ ثانیه‌ای، بدونِ دست‌زدن به بقیه.
+
+    چرا هست: مالک تابلو را ثانیه‌به‌ثانیه رویِ سایت می‌بیند؛ سینکِ کاملِ ۹۰
+    ثانیه‌ای یعنی عددِ «آخرین/حجم/تغییر٪» بین دو سینک هیچ‌وقت عوض نمی‌شد و
+    پولینگِ پنج‌ثانیه‌ای فرانت عیناً همان بدنه را ۳۰۴ می‌گرفت. این تابع همین
+    آرایۀ تابلو (MW_URL، همان یک درخواستِ بازارِ سهام) را می‌گیرد و فقط
+    market_watch و daily_pricesِ همان نشست را با همان _mw_rowِ سینک بازنویسی
+    می‌کند؛ instruments/boards/client_type/تالارهایِ دیگر کارِ سینکِ کامل‌اند.
+
+    درِ نوشتن: پنجشنبه/جمعه یا هر ساعتی پس از ۱۲:۳۰ هیچ نوشتن/درخواستی ندارد —
+    همان قاعدۀ closed در main()؛ وگرنه تیک، صف‌هایِ حفظ‌شدۀ بستۀ بازار را با
+    دادهٔ کهنهٔ بعدازظهر سوخت می‌داد. polite_get در ۴۲۹ خودش خنک می‌شود و
+    آرایۀ خالی برمی‌گرداند؛ اینجا یعنی «این تیک رد، بانک دست‌نخورده».
+    """
+    wd = datetime.date.today().weekday()          # 3=پنجشنبه, 4=جمعه
+    hhmm = datetime.datetime.now().strftime("%H%M")
+    if wd in (3, 4) or hhmm >= "1230":
+        return 0
+    s = _tick_session()
+    mw_raw = polite_get(s, MW_URL, "marketwatch")
+    if not mw_raw:
+        return 0
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    today = int(datetime.date.today().strftime("%Y%m%d"))
+    own = conn is None
+    if own:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        import mstat_engine
+        mstat_engine.ensure_schema(conn)
+        try:
+            last_d_even = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+        except sqlite3.Error:
+            last_d_even = 0
+        watch, daily = [], []
+        for r in mw_raw:
+            _it, _w, _dy = _mw_row(r, last_d_even, today, now)
+            if _w is not None:
+                watch.append(_w)
+                daily.append(_dy)
+        if not watch:
+            return 0
+        c = conn.cursor()
+        c.executemany(_MW_INSERT, watch)
+        ensure_daily_tran_column(conn)
+        c.executemany(_DP_INSERT, daily)
+        conn.commit()
+        return len(watch)
+    finally:
+        if own:
+            conn.close()
 
 
 def main():

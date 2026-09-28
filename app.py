@@ -234,6 +234,33 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] board refresh loop failed: {_e}")
 
+    # ── تیکِ زندۀ تابلو (#120 ریشۀ باگِ «تازه‌نشدنِ اعداد») ────────────────
+    # اندازه‌گیریِ زنده: خودِ API تابلوی TSETMC هر ۱۵ ثانیه صدها نماد را عوض
+    # می‌کند، ولی سینکِ کاملِ ۹۰ ثانیه‌ای تنها منبعِ نوشتن بود — تا بین دو
+    # سینک هیچ عددی در بانک عوض نمی‌شد و پولینگِ پنج‌ثانیه‌ایِ فرانت درست
+    # همان ۳۰۴ می‌گرفت. این حلقه هر ۵ ثانیه یکِ درخواستِ تابلو می‌زند، همان
+    # ستون‌هایِ ثانیه‌ای را می‌نویسد و بازسازیِ کشِ /api/market را محرک
+    # می‌کند؛ دربِ ۱۲:۳۰ داخلِ خودِ tick_live است (صف‌هایِ بستۀ بازار
+    # محفوظ می‌مانند). نخِ جدا: اگر TSETMC خنک کند (۴۲۹)، حلقۀ سینکِ
+    # ۹۰ ثانیه‌ای نمی‌خوابد.
+    def _board_tick_loop():
+        import time as _t
+        while True:
+            try:
+                if _market_in_session():
+                    import test_tsetmc as _ts
+                    if _ts.tick_live():
+                        from api.market import _kick_market_rebuild
+                        _kick_market_rebuild()
+            except Exception as _e:
+                print(f"[startup] board tick loop: {_e}")
+            _t.sleep(5)
+    try:
+        threading.Thread(target=_board_tick_loop, daemon=True).start()
+        print("[startup] board tick loop spawned (5s, session-windowed)")
+    except Exception as _e:
+        print(f"[startup] board tick loop failed: {_e}")
+
     # ── اسنپ‌شاتِ دوره‌ایِ نبض بازار ─────────────────────────────────────
     # مstat_snap قبلاً فقط پراکنده پر می‌شد (چند نقطه) و به‌همین‌دلیل «روند ۳-۴
     # روزه» و نمودار درون‌روز «بدون داده» بود. این حلقه هر ۵ دقیقه یک نقطه

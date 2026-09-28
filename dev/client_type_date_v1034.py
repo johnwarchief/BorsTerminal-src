@@ -95,8 +95,10 @@ def main():
     ck(src.count("ensure_daily_tran_column(conn)") >= src.count("_DP_INSERT, daily"),
        "ALTERِ idempotent پیش از هر نوشتنِ daily_prices اجرا می‌شود")
     # آخرِ هر تاپلِ daily باید trd باشد ( نه فهرستِ ۱۳تاییِ قدیمی)
-    ck(len(re.findall(r"mcap_src, trd\)\)", src)) == 2,
-       "هر دو `daily.append` با trd بسته می‌شوند", str(len(re.findall(r"mcap_src, trd\)\)", src))))
+    # از v1.0.45 جایِ اولِ append در _mw_row به `dy = (...)` نشسته (تیکِ زنده هم
+    # همان‌جا می‌خواند)؛ پس پرانتزِ بیرونی کم شده — قاعدۀ «trd در آخر» همان است.
+    ck(len(re.findall(r"mcap_src, trd\)", src)) == 2,
+       "هر دو نگاشتِ daily با trd بسته می‌شوند", str(len(re.findall(r"mcap_src, trd\)", src))))
 
     print("\n[۴] abstentionِ نبض بازار (هیچ داوری از نبودِ داده ساخته نمی‌شود)")
     import mstat_engine as ME
