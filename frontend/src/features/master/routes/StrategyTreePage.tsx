@@ -10,12 +10,13 @@ import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
+import { EliteFunnelHub } from '../ui/EliteFunnelHub';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
 import { evaluateFtsPipeline, type PipelineStep } from '../lib/ftsPipelineEvaluator';
 
 type PresetMode = 'swing' | 'trend' | 'hourglass' | 'custom';
-type ViewMode = 'obsidian' | 'grid' | 'both';
+type ViewMode = 'obsidian' | 'grid' | 'both' | 'funnel';
 
 /** رنگ/برچسب وضعیت زندهٔ هر گیت FTS از خروجی evaluateFtsPipeline */
 const LIVE_STATUS_STYLE: Record<PipelineStep['status'], { dot: string; text: string; label: string; ring: string }> = {
@@ -423,6 +424,18 @@ export default function StrategyTreePage() {
               <span>🔀</span>
               <span>ترکیبی</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('funnel')}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-2xs font-black transition-all ${
+                viewMode === 'funnel'
+                  ? 'bg-accent-amber/20 border border-accent-amber/50 text-accent-amber shadow-[0_0_8px_rgba(245,158,11,0.25)]'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <span>🧲</span>
+              <span>قیف انتخاب خودکار</span>
+            </button>
           </div>
         </div>
 
@@ -492,6 +505,20 @@ export default function StrategyTreePage() {
           symbol={symbol}
           activeCustomNodes={activeCustomNodeIds}
           onToggleCustomNode={handleToggleCustomNode}
+          symbolPhaseStatus={symbol ? [
+            { k: 'F', status: stepsById.fundamental?.status ?? 'wait', label: stepsById.fundamental?.headline ?? '' },
+            { k: 'T', status: stepsById.technical?.status ?? 'wait', label: stepsById.technical?.headline ?? '' },
+            { k: 'S', status: stepsById.tape?.status ?? 'wait', label: stepsById.tape?.headline ?? '' },
+            { k: 'M', status: stepsById.master?.status ?? 'wait', label: stepsById.master?.headline ?? '' },
+          ] : undefined}
+          symbolLevels={symbol ? {
+            price: currentPrice,
+            entry: resistance ?? support,
+            support,
+            resistance,
+            hardStop: ftsPlan.data?.fts?.exit_engine?.l1?.hard_stop ?? null,
+            exitVerdict: ftsPlan.data?.fts?.exit_engine?.verdict ?? null,
+          } : undefined}
         />
       )}
 
@@ -968,6 +995,11 @@ export default function StrategyTreePage() {
           </div>
         </div>
       )}
+
+      {/* ۳.۵ قیف انتخاب خودکار (#225/#224) — همان هستۀ EliteFunnelHub از مستر، با
+          دادهٔ /api/screener؛ کلیکِ هر سطر نماد را انتخاب می‌کند و وضعیتِ زنده روی
+          درخت/گرید در همان صفحه اعمال می‌شود. */}
+      {viewMode === 'funnel' && <EliteFunnelHub />}
 
       {/* ۴. کارت جامع دستورالعمل و خلاصه پلن اجرایی استراتژی (Strategy Playbook Summary) */}
       <div className="rounded-2xl border border-border-c p-4 sm:p-5 bg-bg-card/50 shadow-sm space-y-3">

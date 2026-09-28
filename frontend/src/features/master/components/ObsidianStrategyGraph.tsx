@@ -757,6 +757,16 @@ export interface ObsidianStrategyGraphProps {
   symbol?: string;
   activeCustomNodes?: string[];
   onToggleCustomNode?: (nodeId: string) => void;
+  /** پلاک نماد (#222): وضعیتِ هر چهار فاز + سطوحِ ورود/خروجِ همان سهم، رویِ نقشه */
+  symbolPhaseStatus?: { k: string; status: 'pass' | 'wait' | 'fail'; label: string }[];
+  symbolLevels?: {
+    price: number | null;
+    entry: number | null;
+    support: number | null;
+    resistance: number | null;
+    hardStop: number | null;
+    exitVerdict?: string | null;
+  };
 }
 
 export function ObsidianStrategyGraph({
@@ -764,6 +774,8 @@ export function ObsidianStrategyGraph({
   symbol,
   activeCustomNodes = [],
   onToggleCustomNode,
+  symbolPhaseStatus,
+  symbolLevels,
 }: ObsidianStrategyGraphProps) {
   // ۱. پشتیبانی کامل از تم روشن / تاریک
   const theme = useUiStore((s) => s.theme);
@@ -1053,6 +1065,54 @@ export function ObsidianStrategyGraph({
           </button>
         </div>
       </div>
+
+      {/* پلاکِ نماد (#222): وضعیتِ چهار فاز F/T/S/M و سطوحِ ورود/خروج، درست
+          بالایِ بوم — همان شماره‌های evaluateFtsPipeline و /api/fts، نه محاسبهٔ دوم. */}
+      {symbol && symbolPhaseStatus && symbolPhaseStatus.length > 0 && (
+        <div
+          data-testid="graph-symbol-plaque"
+          className={`flex flex-wrap items-center gap-2.5 border-b px-4 py-2 text-2xs font-bold transition-colors ${
+            isLight ? 'bg-slate-100/90 border-slate-200' : 'bg-bg-primary/80 border-border-c/60'
+          }`}
+        >
+          <span className="font-black text-text-primary">پلاکِ {symbol}:</span>
+          {symbolPhaseStatus.map((p) => {
+            const c = p.status === 'pass'
+              ? 'border-accent-green/50 bg-accent-green/15 text-accent-green'
+              : p.status === 'wait'
+                ? 'border-accent-yellow/50 bg-accent-yellow/15 text-accent-yellow'
+                : 'border-accent-red/50 bg-accent-red/15 text-accent-red';
+            return (
+              <span
+                key={p.k}
+                title={`${p.label} — ${p.status === 'pass' ? 'تایید' : p.status === 'wait' ? 'در انتظار' : 'رد / وتو'}`}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${c}`}
+              >
+                <span className="font-black">{p.k}</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+              </span>
+            );
+          })}
+          {symbolLevels && (
+            <span className={`ms-auto inline-flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1 font-mono tabular-nums ${
+              isLight ? 'border-slate-300 bg-white text-slate-800' : 'border-border-c/70 bg-bg-card text-text-primary'
+            }`}>
+              <span title="قیمت آخرین معامله">قیمت: {symbolLevels.price != null ? toFaDigits(symbolLevels.price) : '—'}</span>
+              <span title="ورود: شکست مقاومت جت یا پولبک به تاز حمایتی">
+                ورود: {symbolLevels.entry != null ? toFaDigits(symbolLevels.entry) : '—'}
+              </span>
+              <span title="حمایت (تاز فیبو ۳۳-۴۰٪)">حمایت: {symbolLevels.support != null ? toFaDigits(symbolLevels.support) : '—'}</span>
+              <span title="مقاومت (سقف جت)">مقاومت: {symbolLevels.resistance != null ? toFaDigits(symbolLevels.resistance) : '—'}</span>
+              <span title="حد ضررِ موتور خروج (hard stop)">حدضرر: {symbolLevels.hardStop != null ? toFaDigits(symbolLevels.hardStop) : '—'}</span>
+              {symbolLevels.exitVerdict && (
+                <span title="حکمِ موتور خروج سرور" className="rounded bg-bg-secondary px-1.5 py-0.5 text-3xs text-text-secondary">
+                  خروج: {symbolLevels.exitVerdict}
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ۲. بوم نمودار ساختاریافته راست‌به‌چپ (RTL Obsidian Canvas) */}
       {/* بوم هیچ‌وقت کوچک‌تر از یک‌به‌یک نمی‌شود؛ تنگ‌جا اسکرول افقی می‌خورد،

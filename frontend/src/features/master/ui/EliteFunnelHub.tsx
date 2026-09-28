@@ -14,6 +14,55 @@ import type { MarketRow } from '@shared/types/marketRow';
 type FunnelTab = 'fundamental50' | 'watchlist10' | 'activePortfolio';
 type SortField = 'rank' | 'score' | 'vol_ratio' | 'growth' | 'margin';
 
+/** وضعیتِ هر ارکانِ چهارگانه برای یک سطرِ اسکرینر — عینِ گیت‌هایِ پایینِ همین فایل
+ *  (بنیادی F ← تب۱، هفتگی W و ستاپ S ← تب۲، تابلو T ← خوراکِ تابلو). #224 */
+type PhaseMark = 'ok' | 'no' | 'na';
+
+const PHASE_DOT_STYLE: Record<PhaseMark, string> = {
+  ok: 'bg-accent-green text-[#04121f]',
+  no: 'bg-accent-red text-white',
+  na: 'bg-bg-secondary text-text-muted border border-border-c',
+};
+
+const PHASE_MARK_TITLE: Record<PhaseMark, string> = { ok: 'تایید', no: 'رد/وتو', na: 'قابلِ سنجش نیست' };
+
+/** چهار نقطۀ F/T/S/Mِ هر سطر — هم‌نامِ چهار ستونِ درخت استراتژی (بنیادی،
+ *  تکنیکالِ دو زمانه، تابلوخوانی، مدیریتِ سرمایه)؛ همان گیت‌هایی که تبِ
+ *  «۱۰ واچلیست داغ» ازیشان می‌سازد تا قیف و درخت یک عدد ببینند (#224).
+ *  «na» یعنی داده نیست — نه رد، نه قبول. */
+function phaseMarksFor(r: {
+  weekly_veto?: boolean | null;
+  tech_matrix_decision?: string | null;
+  tech_trend_w?: string | null;
+  tech_jet?: boolean | null;
+  tech_fib_zone?: string | null;
+  tech_hourglass_active?: boolean | null;
+}, mrk: MarketRow | undefined, inBasket: boolean): { k: string; s: PhaseMark; why: string }[] {
+  const vetoed = r.weekly_veto === true || r.tech_matrix_decision === 'REJECT';
+  const weeklyUp = r.tech_trend_w === 'up' || r.tech_matrix_decision === 'PERMITTED';
+  const setup = r.tech_jet || !!r.tech_fib_zone || r.tech_hourglass_active || mrk?.f_jet || mrk?.f_clock;
+  const tapeOk = mrk ? mrk.f_clock === true || mrk.f_jet === true : false;
+  const tState: PhaseMark = vetoed ? 'no' : weeklyUp && setup ? 'ok' : 'na';
+  return [
+    { k: 'F', s: 'ok', why: 'بنیادی: نمرۀ ۵ شاخص بالای ۳ (پیش‌شرطِ همین جدول)' },
+    {
+      k: 'T',
+      s: tState,
+      why: vetoed ? 'تکنیکال: وتوی هفتگی / REJECTِ ماتریس' : weeklyUp && setup ? 'تکنیکال: روند هفتگی صعودی با ستاپ فعال' : setup ? 'تکنیکال: ستاپ هست ولی روند هفتگی صعودیِ تاییدشده نیست' : 'تکنیکال: ستاپی نیست',
+    },
+    {
+      k: 'S',
+      s: tapeOk ? 'ok' : 'na',
+      why: tapeOk ? 'تابلو: الگوی ساعت/جتِ تابلو فعال' : 'تابلو: نشانه‌ای امروز نیست',
+    },
+    {
+      k: 'M',
+      s: inBasket ? 'ok' : 'na',
+      why: inBasket ? 'مدیریتِ سرمایه: در سبدِ فعال' : 'مدیریتِ سرمایه: هنوز در سبد نیست',
+    },
+  ];
+}
+
 export function EliteFunnelHub() {
   const currentSymbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
@@ -38,8 +87,7 @@ export function EliteFunnelHub() {
   }, [marketFeed.data]);
 
   // ۱. تب ۵۰ نماد بنیادی: نمره FTS >= 3 و بدون نرخ‌گذاری دستوری
-  const fundamental50 = useMemo(() => {
-    const raw = screenQuery.data?.data ?? [];
+  const fundamental50 = useMemo(() => {    const raw = screenQuery.data?.data ?? [];
     const filtered = raw.filter((r) => {
       const mode = (r.pricing_mode ?? '').toLowerCase();
       const isRegulated = mode === 'regulated' || mode === 'دستوری';
@@ -134,8 +182,13 @@ export function EliteFunnelHub() {
     });
   }, [portfolioQuery.data, marketMap, marketCloses.data]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
+  // سبدِ فعال برای نقطۀ Mِ ستونِ ارکان (#224)
+  const portfolioSet = useMemo(
+    () => new Set((portfolioQuery.data?.portfolio ?? []).map((h) => h.symbol)),
+    [portfolioQuery.data],
+  );
+
+  const handleSort = (field: SortField) => {    if (sortField === field) {
       setSortAsc(!sortAsc);
     } else {
       setSortField(field);
@@ -250,6 +303,7 @@ export function EliteFunnelHub() {
                     حاشیه سود ناخالص {sortField === 'margin' ? (sortAsc ? '▲' : '▼') : ''}
                   </th>
                   <th className="px-2.5 py-1">فروش ÷ مارکت‌کپ</th>
+                  <th className="px-2.5 py-1 text-center" title="ارکان چهارگانۀ درخت استراتژی: F بنیادی، T تکنیکال، S تابلو، M مدیریتِ سرمایه (#224)">ارکان ۴گانه</th>
                   <th
                     className="cursor-pointer px-2.5 py-1 hover:text-neon-cyan"
                     onClick={() => handleSort('vol_ratio')}
@@ -262,7 +316,7 @@ export function EliteFunnelHub() {
               <tbody className="divide-y divide-[var(--hairline)]">
                 {fundamental50.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-4 text-center text-xs text-text-muted">
+                    <td colSpan={9} className="py-4 text-center text-xs text-text-muted">
                       داده‌ای در دسترس نیست
                     </td>
                   </tr>
@@ -308,6 +362,19 @@ export function EliteFunnelHub() {
                         </td>
                         <td className="px-2.5 py-1 font-mono tabular-nums text-text-secondary">
                           {r.sales_to_mcap != null ? `${toFaDigits(Math.round(r.sales_to_mcap * 100) / 100)}x` : '—'}
+                        </td>
+                        <td className="px-2.5 py-1">
+                          <div className="flex items-center justify-center gap-1" title="F بنیادی · T تکنیکال · S تابلو · M مدیریتِ سرمایه">
+                            {phaseMarksFor(r, mrk, portfolioSet.has(r.symbol)).map((m) => (
+                              <span
+                                key={m.k}
+                                title={`${m.why} — ${PHASE_MARK_TITLE[m.s]}`}
+                                className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-black ${PHASE_DOT_STYLE[m.s]}`}
+                              >
+                                {m.k}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-2.5 py-1 font-mono tabular-nums">
                           {mrk?.vol_ratio != null ? (

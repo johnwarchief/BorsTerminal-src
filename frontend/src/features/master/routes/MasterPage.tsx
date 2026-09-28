@@ -48,7 +48,6 @@ import { ExplainableAuditBox } from '../ui/ExplainableAuditBox';
 import { StrategyHorizonSelector } from '../ui/StrategyHorizonSelector';
 import { StrategyTreeDrawer } from '../ui/StrategyTreeDrawer';
 import { FtsAnalystModal } from '@widgets/FtsAnalystModal';
-import { EliteFunnelHub } from '../ui/EliteFunnelHub';
 
 const AGENT_FA: Record<string, string> = {
   fundamental: 'بنیادی',
@@ -248,10 +247,9 @@ export default function MasterPage() {
   if (!symbol) {
     return (
       <div className="flex w-full max-w-none flex-col gap-4">
-        <EliteFunnelHub />
         <EmptyState
           title="نمادی انتخاب نشده"
-          hint="از قیف نخبگان بالا یا جدول تابلو، یک نماد را برای داوری جامع ۴ رکن انتخاب کنید"
+          hint="از قیف انتخاب خودکار در «درخت استراتژی FTS» یا جدول تابلو، یک نماد را برای داوری جامع ۴ رکن انتخاب کنید"
         />
       </div>
     );
@@ -263,9 +261,6 @@ export default function MasterPage() {
 
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
-      {/* هاب قیف غربالگری نخبگان FTS (Elite Funnel Hub) */}
-      <EliteFunnelHub />
-
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
         <div className="flex flex-wrap items-center gap-2">

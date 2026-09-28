@@ -89,4 +89,33 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
     });
     expect(useStrategyParamsStore.getState().params.minVolumeRatio).toBe(FTS_DEFAULT_PARAMS.minVolumeRatio);
   });
+
+  describe('پلاک نماد روی نقشۀ چهارچارتی (۲۲۲)', () => {
+    it('با نمادِ انتخابی، هر چهار فاز و سطوحِ ورود/حمایت/مقاومت/حدضرر دیده می‌شوند', () => {
+      render(
+        <ObsidianStrategyGraph
+          selectedPreset="swing"
+          symbol="فولاد"
+          symbolPhaseStatus={[{ k: 'F', status: 'pass', label: 'بنیادی تایید' },
+            { k: 'T', status: 'wait', label: 'در انتظار ستاپ' },
+            { k: 'S', status: 'pass', label: 'الگوی ساعت' },
+            { k: 'M', status: 'fail', label: 'وتوی سبد' }]}
+          symbolLevels={{ price: 30000, entry: 31500, support: 29200, resistance: 31500, hardStop: 28100, exitVerdict: 'hold' }}
+        />,
+      );
+      const plaque = screen.getByTestId('graph-symbol-plaque');
+      expect(plaque).toBeInTheDocument();
+      expect(plaque.textContent).toContain('فولاد');
+      for (const k of ['F', 'T', 'S', 'M']) expect(plaque.textContent).toContain(k);
+      expect(plaque.textContent).toContain('ورود');
+      expect(plaque.textContent).toContain('حدضرر');
+      expect(plaque.textContent).toContain('۳۱۵۰۰');
+      expect(plaque.textContent).toContain('۲۸۱۰۰');
+    });
+
+    it('بی نماد، پلاک رسم نمی‌شود (نقشۀ راهنمای کلان دست‌نخورده)', () => {
+      render(<ObsidianStrategyGraph selectedPreset="swing" />);
+      expect(screen.queryByTestId('graph-symbol-plaque')).not.toBeInTheDocument();
+    });
+  });
 });
