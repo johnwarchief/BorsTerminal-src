@@ -50,6 +50,9 @@ SUITES = [
 # واگذار کند — رویِ datasourceِ ساخته‌شود، بی‌شبکه.
     ('dev/codal_blank_total_v1036.py', 'blank published total refuses a component line for فروش'),
     ('dev/market_swr_v1036.py',      'board cache is stale-while-revalidate, single-flight, honest on failure'),
+    # #120 ریشۀ باگِ تازهنشدنِ تابلو: تیکِ زندۀ پنج‌ثانیه‌ای — یکِ درخواست، یکِ
+    # نگاشتِ مشترک با سینک، و دربِ ۱۲:۳۰ که صف‌هایِ بستۀ بازار را نسوزاند.
+    ('dev/market_tick_v1045.py',     'live 5s board tick: one request, shared row map, closed-window refuses to write'),
     # #187: تحلیل FTSِ سرور باید همان سریِ تمام‌تاریخِ تعدیل‌شده‌ای را ببیند که
     # چارت می‌رسمد — بی‌شبکه و بی‌market.db (هر دو منبع جعل می‌شوند).
     ('dev/fts_series_basis_v1036.py', 'server FTS reads the full adjusted series the chart draws, not the starved raw table'),
