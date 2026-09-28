@@ -65,10 +65,18 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
     label: 'اختلاف٪',
     hint: 'آخرین نسبت به پایانی — منفی یعنی پایانی بالاتر از آخرین، همان شرطِ الگوی ساعت',
   },
-  { key: 'percent_change', label: 'تغییر٪', hint: 'پایانی نسبت به دیروز — همان plp درِ فیلترها' },
+  {
+    key: 'percent_change',
+    label: 'تغییر٪',
+    hint: 'پایانی نسبت به دیروز — همان متغیرِ plp در فیلترنویسیِ TSETMC',
+  },
   { key: 'percent_last', label: 'آخرین٪', hint: 'آخرین نسبت به دیروز؛ با درصدِ پایانی فرق دارد' },
   { key: 'tvol', label: 'حجم' },
-  { key: 'z_tot_tran', label: 'تعداد', hint: 'تعدادِ معاملات (z_tot_tran) — tno درِ فیلترها' },
+  {
+    key: 'z_tot_tran',
+    label: 'تعداد',
+    hint: 'تعدادِ معاملات — همان متغیرِ tno در فیلترنویسیِ TSETMC (z_tot_tran)',
+  },
   { key: 'q_tot_cap', label: 'ارزش', hint: 'ارزش معاملات — میلیارد ریال (q_tot_cap)' },
   { key: 'vol_ratio', label: 'حجم/ماه', hint: 'نسبت حجمِ امروز به میانگینِ حجمِ ماه' },
   {

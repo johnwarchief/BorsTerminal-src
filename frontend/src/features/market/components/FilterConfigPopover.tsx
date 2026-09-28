@@ -31,7 +31,7 @@ function BasisToggles({ showLowBase }: { showLowBase?: boolean }) {
         <span className="text-2xs font-semibold leading-4">
           امروز داخلِ مبنایِ میانگین
           <span className="block text-3xs text-text-muted font-normal mt-0.5">
-            حجمِ امروز درِ میانگینِ سی‌نشست هم می‌نشیند (مبناء تقسیمِ ۳۱). پیش‌فرضِ جزوه: خاموش.
+            حجمِ امروز در میانگینِ سی‌نشست هم می‌نشیند (مبناء تقسیمِ ۳۱). پیش‌فرضِ جزوه: خاموش.
           </span>
         </span>
       </label>

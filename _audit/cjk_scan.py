@@ -1,0 +1,40 @@
+"""CJK/corruption scan over source files.
+
+Only Han/Hangul/Kana are foreign to this repo's Persian-commented sources, so any
+hit is a character dropped in by an edit slip. Ranges are built from code points:
+writing the literal class here would put CJK into a file that must stay clean.
+"""
+import re
+import subprocess
+import sys
+
+
+def rng(lo: int, hi: int) -> re.Pattern[str]:
+    return re.compile(f"[{chr(lo)}-{chr(hi)}]")
+
+
+SCANNERS = {"han": rng(0x4E00, 0x9FFF), "hangul": rng(0xAC00, 0xD7AF), "kana": rng(0x3040, 0x30FF)}
+
+
+def touched() -> list[str]:
+    out = subprocess.run(
+        ["git", "diff", "--name-only", "HEAD~1"], capture_output=True, text=True, encoding="utf-8"
+    ).stdout
+    return [p for p in out.splitlines() if p.endswith((".ts", ".tsx", ".mts", ".py"))]
+
+
+files = sys.argv[1:] or touched()
+total = 0
+for path in files:
+    try:
+        text = open(path, encoding="utf-8").read()
+    except (OSError, UnicodeDecodeError) as exc:
+        print(f"SKIP {path}: {exc}")
+        continue
+    for name, rx in SCANNERS.items():
+        for n, line in enumerate(text.splitlines(), start=1):
+            if rx.search(line):
+                total += 1
+                print(f"{path}:{n} [{name}]: {line.strip()[:90]}")
+print(f"CJK total: {total}")
+sys.exit(1 if total else 0)

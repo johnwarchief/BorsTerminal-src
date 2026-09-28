@@ -131,7 +131,7 @@ function StageCard({
       <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto">
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
-            {emptyWhy ?? 'درِ این مرحلۀ نمادی نمانده است.'}
+            {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
           </p>
         ) : (
           <table className="w-full border-collapse text-xs">
@@ -250,7 +250,7 @@ function FunnelPrefsBar({ passed }: { passed: number }) {
       className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border-c bg-bg-card/40 px-2.5 py-1.5"
     >
       <span className="text-2xs font-black text-text-secondary">
-        درِ بنیادی
+        مرحلۀ بنیادی
         <span className="ms-1 font-normal text-text-muted">(پیش‌فرضِ جزوه: {toFaDigits(DEFAULT_FUND_FLOOR)} از {toFaDigits(FUND_FLOOR_MAX)})</span>
       </span>
       <span className="flex items-center gap-1" role="group" aria-label="کفِ نمرۀ پنج‌شاخصه">
@@ -284,7 +284,7 @@ function FunnelPrefsBar({ passed }: { passed: number }) {
         ))}
       </span>
       <span className="num ms-auto text-3xs text-text-muted">
-        با این دو پیچ: {toFaDigits(passed)} نماد درِ بنیادی را باز می‌کند
+        با این دو پیچ: {toFaDigits(passed)} نماد از مرحلۀ بنیادی عبور می‌کند
       </span>
       {fundFloor !== DEFAULT_FUND_FLOOR || unmeasured !== 'hold' ? (
         <button type="button" data-testid="funnel-prefs-reset" onClick={reset} className="text-3xs font-bold text-text-muted underline hover:text-accent-amber">
@@ -343,13 +343,13 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
       : fund.unmeasured
         ? 'رسیدگان همه بی‌گزارش‌اند — در صفِ پایینِ همین مرحله می‌مانند.'
         : funnel.stages.technical.dropped
-          ? `به این در کسی نرسید: ${toFaDigits(funnel.stages.technical.dropped)} نماد درِ تکنیکال را باز نکردند.`
+          ? `به این مرحله کسی نرسید: ${toFaDigits(funnel.stages.technical.dropped)} نماد در مرحلۀ تکنیکال رد شدند.`
           : 'هیچ‌کدام پنج‌شاخصهٔ قبول‌شدن ندارد.',
     handover: hand.entries.length
       ? null
       : fund.entries.length
         ? 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.'
-        : 'درِ بنیادی کسی را قبول نکرد.',
+        : 'مرحلۀ بنیادی کسی را قبول نکرد.',
   };
 
   return (
