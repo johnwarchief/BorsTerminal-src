@@ -323,9 +323,31 @@ details[open] > summary .disclosure-chevron {
 }
 
 /* درخت استراتژی: جادهٔ باز روی همان مسیرِ فعال (#190) */
+/* چرا نبضِ opacity و نه خط‌چینِ روان: سنجشِ زنده با tools/tab_cost_probe.mts
+   (تبِ درخت، پنجرۀ ۱۶۳۲×۹۵۰، پنجرۀ اندازه‌گیری ۱۲ ثانیه، موسِ فعال) —
+     بی‌انیمیشن                  343ms تسک و 228 لی‌اوت
+     خط‌چین (stroke-dashoffset)  1479ms تسک و 1014 لی‌اوت
+     نقطه با motion-path         1528ms تسک و  943 لی‌اوت
+     نبضِ opacity                  390ms تسک و  249 لی‌اوت
+   هر انیمیشنِ هندسی داخلِ SVG هر فریم کلِ گراف را دوباره لی‌اوت می‌کند؛
+   opacity فقط رنگ را عوض می‌کند. سه دانه‌ای که پلکانی روشن می‌شوند همان «روان» را
+   می‌فهمانند و گاردهایِ «بی‌موسی» و «کاهشِ حرکت» هم همان‌ها را می‌بندند. */
 @keyframes fts-path-flow {
-  to {
-    stroke-dashoffset: -120;
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes fts-comet {
+  0%,
+  100% {
+    opacity: 0.05;
+  }
+  40% {
+    opacity: 1;
   }
 }
 /* حلقهٔ چرخانِ گرهٔ برگزیده — کلاسش از قبل در گراف استفاده می‌شد ولی
@@ -337,8 +359,10 @@ details[open] > summary .disclosure-chevron {
 }
 @layer components {
   .fts-path-flow {
-    stroke-dasharray: 10 26;
-    animation: fts-path-flow 1.6s linear infinite;
+    animation: fts-path-flow 2.4s ease-in-out infinite;
+  }
+  .fts-comet {
+    animation: fts-comet 1.8s ease-in-out infinite;
   }
   .animate-spin-slow {
     transform-box: fill-box;

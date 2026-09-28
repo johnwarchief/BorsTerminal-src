@@ -769,6 +769,28 @@ export interface ObsidianStrategyGraphProps {
   };
 }
 
+/** جای دانه‌هایِ جاده رویِ منحنیِ بیزی و فاصلۀ تأخیرشان (چشم جهت را می‌خواند) */
+const COMET_T = [0.3, 0.55, 0.8];
+const COMET_STEP = 0.45;
+
+function cubicAt(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  t: number,
+): { x: number; y: number } {
+  const u = 1 - t;
+  const a = u * u * u;
+  const b = 3 * u * u * t;
+  const c = 3 * u * t * t;
+  const d = t * t * t;
+  return {
+    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
+    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
+  };
+}
+
 export function ObsidianStrategyGraph({
   selectedPreset,
   symbol,
@@ -795,7 +817,8 @@ export function ObsidianStrategyGraph({
   const [selectedNodeId, setSelectedNodeId] = useState<string>('tape_volume');
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState(1);
-  // حرکتِ رویِ مسیر با CSS guard بسته نمی‌شود (SMIL است)، پس همین‌جا سنجیده می‌شود
+  // حرکتِ رویِ مسیر با CSS انجام می‌شود (motion-path)، پس گاردِ
+  // prefers-reduced-motion خودش آن را می‌بندد؛ این پرچم برایِ نبودِ گره است.
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
@@ -850,6 +873,36 @@ export function ObsidianStrategyGraph({
     });
     return set;
   }, [selectedPreset, activeCustomNodes, links]);
+
+  /**
+   * جادۀ روان فقط ستونِ انتخاب است: مسیرِ ریشه تا گرهٔ برگزیده. پیش‌تر هر
+   * پیوندِ فعالِ سبک خط‌چینِ متحرک و نقطهٔ روان داشت — بیست‌و‌سه مسیر، و در
+   * اندازه‌گیریِ زنده (tools/tab_cost_probe.mts) دو هزار میلی‌ثانیه کارِ
+   * رشتهٔ اصلی و ششصد لی‌اوت در هر دوازده ثانیه، در حالی که هر تبِ دیگر سی
+   * میلی‌ثانیه و صفر لی‌اوت بود.
+   */
+  const spineLinkIds = useMemo(() => {
+    const parents = new Map<string, { id: string; from: string }[]>();
+    for (const l of links) {
+      const arr = parents.get(l.target);
+      if (arr) arr.push({ id: l.id, from: l.source });
+      else parents.set(l.target, [{ id: l.id, from: l.source }]);
+    }
+    const set = new Set<string>();
+    const seen = new Set<string>([selectedNodeId]);
+    const stack = [selectedNodeId];
+    while (stack.length) {
+      const id = stack.pop() as string;
+      for (const e of parents.get(id) ?? []) {
+        set.add(e.id);
+        if (!seen.has(e.from)) {
+          seen.add(e.from);
+          stack.push(e.from);
+        }
+      }
+    }
+    return set;
+  }, [links, selectedNodeId]);
 
   // همسایگان نود هاور شده (Hover Focus)
   const hoveredNeighbors = useMemo(() => {
@@ -1291,8 +1344,8 @@ export function ObsidianStrategyGraph({
                       strokeOpacity={strokeOpacity}
                       className="transition-all duration-200"
                     />
-                    {/* مسیرِ بازِ این پیش‌فرض: یک نقطهٴ روان رویِ همان جاده */}
-                    {isPresetActive && !isHoverIsolated && (
+                    {/* جادۀ بازِ ستونِ انتخاب: هالۀ نفس‌کشنده + سه دانهٔ پلکانی */}
+                    {isPresetActive && !isHoverIsolated && spineLinkIds.has(link.id) && (
                       <>
                         <path
                           d={pathData}
@@ -1302,13 +1355,25 @@ export function ObsidianStrategyGraph({
                           strokeOpacity={0.16}
                           className="fts-path-flow"
                         />
-                        {/* خودِ نقطه با SMIL حرکت می‌کند؛ دروازۀ prefers-reduced-motion
-                            را CSS نمی‌بندد، پس همین‌جا سنجیده می‌شود */}
-                        {!reduceMotion && (
-                          <circle r="3.4" fill={strokeColor} className="fts-path-dot">
-                            <animateMotion dur="2.6s" repeatCount="indefinite" path={pathData} />
-                          </circle>
-                        )}
+                        {/* سه دانه رویِ خودِ منحنی، با تأخیرِ پلکانی. حرکتِ
+                            هندسی (خط‌چین یا motion-path) هر فریم کلِ SVG را
+                            دوباره لی‌اوت می‌کرد؛ این فقط opacity را عوض می‌کند
+                            و گاردهایِ data-idle/کاهش‌حرکت هم می‌بندندش. */}
+                        {!reduceMotion &&
+                          COMET_T.map((t, i) => {
+                            const q = cubicAt(sp, { x: ctrl1X, y: sp.y }, { x: ctrl2X, y: tp.y }, tp, t);
+                            return (
+                              <circle
+                                key={t}
+                                cx={q.x}
+                                cy={q.y}
+                                r="3.4"
+                                fill={strokeColor}
+                                className="fts-comet"
+                                style={{ animationDelay: `${(-COMET_STEP * i).toFixed(2)}s` }}
+                              />
+                            );
+                          })}
                       </>
                     )}
                   </g>
