@@ -153,3 +153,10 @@ route inventory per module (source order of app.py):
   api/notify.py            5 funcs
   api/_pipeline.py         3 funcs
   api/engine.py            7 funcs
+
+# ---- پس از نگاشتِ اولیه (۱۴۰۵-۰۷-۰۷، پس از 1.0.53) ----
+# شش سطرِ بالاِ `api/market_status.py` (_ta_fetch, ta_overview, ta_timeline,
+# ta_industries, ta_mainwatch, ta_histo) و ثابت‌های TA_BASE/TA_CACHE/TA_TTL حذف
+# شدند: پنج روتِ `/api/market-status/*` پروکسۀ زندۀ tradersarena.ir بودند و هیچ
+# مصرف‌کننده‌ای در UI نداشتند. سنجشِ پوششِ پنل‌ها با دادهٔ خودِ برنامه:
+# tools/ta_local_parity.py. فیدهایِ بایگانی‌شده برایِ مقایسه در _audit/ta/ مانده‌اند.

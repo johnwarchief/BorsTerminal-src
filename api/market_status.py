@@ -1,63 +1,20 @@
-"""Market-status dashboard: TradersArena proxy and the local mstat engine.
+"""Market-status dashboard: the local mstat engine.
 
 Split verbatim out of app.py (v9.8.1 modularisation).
-Every statement is byte-for-byte identical to app.py; only the route
-decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
+
+پنج روتِ پروکسۀ tradersarena.ir (`/api/market-status/*`) و `_ta_fetch` از این فایل
+حذف شدند: هیچ مصرف‌کننده‌ای در وب‌اپ نداشتند و همان پنل‌ها از `market.db` خودِ
+برنامه ساخته می‌شوند. سنجشِ پوشش: `tools/ta_local_parity.py`.
 """
 from ._core import get_db
 from fastapi import APIRouter
 from fastapi import Query
 import mstat_engine as _mstat
-import time
 
 
 router = APIRouter()
 
-
-def _ta_fetch(path: str, force: bool = False):
-    """GET tradersarena.ir/data/<path> با کش کوتاه (TTL 30s) — بدون کرش در قطعی."""
-    import requests as _rq
-    now = time.time()
-    if not force:
-        c = TA_CACHE.get(path)
-        if c and (now - c[0]) < TA_TTL:
-            return c[1]
-    try:
-        r = _rq.get(TA_BASE + path, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-                    timeout=15)
-        j = r.json()
-        TA_CACHE[path] = (now, j)
-        return j
-    except Exception as e:
-        # کش کهنه را نگه دار (حالت قطعی اینترنت → آخرین داده)
-        c = TA_CACHE.get(path)
-        if c:
-            return c[1]
-        return {"status": "error", "message": str(e)}
-
-@router.get("/api/market-status/overview")
-def ta_overview():
-    """وضعیت کلی بازار: M0 + totals0 + industries (برای پنل وضعیت بازار)."""
-    m0 = _ta_fetch("/data/market0")
-    tot = _ta_fetch("/data/market/chart/totals0")
-    return {"status": "ok", "market": m0, "timeline": tot}
-
-@router.get("/api/market-status/timeline")
-def ta_timeline():
-    return {"status": "ok", "data": _ta_fetch("/data/market/chart/totals0")}
-
-@router.get("/api/market-status/industries")
-def ta_industries():
-    return {"status": "ok", "data": _ta_fetch("/data/industries-csv")}
-
-@router.get("/api/market-status/mainwatch")
-def ta_mainwatch():
-    return {"status": "ok", "data": _ta_fetch("/data/mainwatch/symbols")}
-
-@router.get("/api/market-status/histo")
-def ta_histo():
-    return {"status": "ok", "data": _ta_fetch("/data/market/histo-status")}
 
 def _mstat_call(fn, *args, **kw):
     """یک اتصال، یک فراخوانی، همیشه بسته. خطای موتور ⇒ status=error نه ۵۰۰،
@@ -169,7 +126,3 @@ def mstat_snapshot_now():
         return {"status": "error", "message": str(e)}
     finally:
         conn.close()
-
-TA_BASE = "https://tradersarena.ir"
-TA_CACHE = {}          # path → (ts, data)
-TA_TTL = 30            # ثانیه — polling سبک (UI هم interval خودش را دارد)
