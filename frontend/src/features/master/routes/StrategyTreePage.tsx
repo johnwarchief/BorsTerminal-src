@@ -192,9 +192,12 @@ export default function StrategyTreePage() {
         fund: ['fund_super', 'fund_good'],
         weekly: ['tech_weekly_up'],
         setup: ['setup_fib', 'setup_choch', 'setup_jet'],
-        tape: ['tape_clock', 'tape_breakout', 'tape_volume'],
+        // چارت ۳ (S: SELECTION) شاخۀ «فیلتر»ِ روندگیر را کف‌روبی و نقطه‌زنی
+        // می‌داند، نه ساعت و شکستِ باکس که برایِ نوسان‌گیر است. گرهٔ نقطه‌زنی
+        // هنوز درِ نقشۀ چهارچارتی ساخته نشده (کارِ باز) — پس فعلاً کف‌روبی.
+        tape: ['tape_floor_sweep'],
         stop: ['stop_trend'],
-        exit: ['exit_half'],
+        exit: ['exit_longterm'],
       };
     }
     if (selectedPreset === 'hourglass') {
