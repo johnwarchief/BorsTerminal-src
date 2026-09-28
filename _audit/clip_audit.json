@@ -1,0 +1,1023 @@
+{
+  "base": "http://127.0.0.1:5173/",
+  "widths": {
+    "tape": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 658,
+        "hits": [
+          {
+            "path": "div[tape-row] > span > span",
+            "cls": "truncate text-xs font-normal text-text-muted",
+            "overX": 134,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ص.س.درآمدثابت اندوخته داريوش-د",
+            "n": 14
+          },
+          {
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 27,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 24,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۲۹.۲",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-green",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۲.۱×",
+            "n": 1
+          },
+          {
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۷۶.۵",
+            "n": 28
+          },
+          {
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱۶۰",
+            "n": 28
+          },
+          {
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > div",
+            "cls": "overflow-x-auto overscroll-x-contain",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 471,
+        "hits": [
+          {
+            "path": "div[tape-row] > span > span",
+            "cls": "truncate text-xs font-normal text-text-muted",
+            "overX": 134,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ص.س.درآمدثابت اندوخته داريوش-د",
+            "n": 14
+          },
+          {
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 14,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-queues] > div > span",
+            "cls": "truncate text-3xs font-medium text-text-muted",
+            "overX": 11,
+            "overY": 0,
+            "scrollable": false,
+            "text": "سهام، حق تقدم و ص.سهامی",
+            "n": 1
+          },
+          {
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 11,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۲۹.۲",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-green",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۲.۱×",
+            "n": 1
+          },
+          {
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۷۶.۵",
+            "n": 28
+          },
+          {
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱۶۰",
+            "n": 28
+          },
+          {
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 460,
+        "hits": [
+          {
+            "path": "div[tape-row] > span > span",
+            "cls": "truncate text-xs font-normal text-text-muted",
+            "overX": 61,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ص.س.درآمدثابت اندوخته داريوش-د",
+            "n": 2
+          },
+          {
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۲۹.۲",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-green",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۲.۱×",
+            "n": 1
+          },
+          {
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۷۶.۵",
+            "n": 28
+          },
+          {
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱۶۰",
+            "n": 28
+          },
+          {
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "technical": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 8,
+        "hits": [
+          {
+            "path": "main > div > div",
+            "cls": "tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl",
+            "overX": 0,
+            "overY": 28,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 8,
+        "hits": [
+          {
+            "path": "div > div > span",
+            "cls": "hidden xl:inline",
+            "overX": 42,
+            "overY": 0,
+            "scrollable": false,
+            "text": "(فولاد مباركه اصفهان)",
+            "n": 1
+          },
+          {
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 24,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 8,
+        "hits": []
+      }
+    },
+    "fundamental": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 326,
+        "hits": [
+          {
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-2_eps_trend] > div > div",
+            "cls": "flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whit",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 310,
+        "hits": [
+          {
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-2_eps_trend] > div > div",
+            "cls": "flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whit",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 219,
+        "hits": [
+          {
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          }
+        ]
+      }
+    },
+    "masterFunnel": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 1614,
+        "hits": [
+          {
+            "path": "td > div > span",
+            "cls": "max-w-[120px] truncate text-[9.5px] text-text-muted",
+            "overX": 35,
+            "overY": 0,
+            "scrollable": false,
+            "text": "فراورده هاي نفتي، كك و سوخت هسته اي",
+            "n": 5
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 1614,
+        "hits": [
+          {
+            "path": "td > div > span",
+            "cls": "max-w-[120px] truncate text-[9.5px] text-text-muted",
+            "overX": 35,
+            "overY": 0,
+            "scrollable": false,
+            "text": "فراورده هاي نفتي، كك و سوخت هسته اي",
+            "n": 5
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 1688,
+        "hits": [
+          {
+            "path": "td > div > span",
+            "cls": "max-w-[120px] truncate text-[9.5px] text-text-muted",
+            "overX": 75,
+            "overY": 0,
+            "scrollable": false,
+            "text": "فراورده هاي نفتي، كك و سوخت هسته اي",
+            "n": 12
+          }
+        ]
+      }
+    },
+    "masterVerdict": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": []
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": []
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": []
+      }
+    },
+    "tree": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 791,
+        "hits": [
+          {
+            "path": "g > g > text",
+            "cls": "[object SVGAnimatedString]",
+            "overX": 0,
+            "overY": 10,
+            "scrollable": false,
+            "text": "⚡ غربالگری نوسان‌گیری FTS",
+            "n": 34
+          },
+          {
+            "path": "div > div > div",
+            "cls": "w-full overflow-x-auto overflow-y-hidden",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 771,
+        "hits": [
+          {
+            "path": "g > g > text",
+            "cls": "[object SVGAnimatedString]",
+            "overX": 0,
+            "overY": 10,
+            "scrollable": false,
+            "text": "⚡ غربالگری نوسان‌گیری FTS",
+            "n": 34
+          },
+          {
+            "path": "div > div > div",
+            "cls": "w-full overflow-x-auto overflow-y-hidden",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 826,
+        "hits": [
+          {
+            "path": "g > g > text",
+            "cls": "[object SVGAnimatedString]",
+            "overX": 0,
+            "overY": 13,
+            "scrollable": false,
+            "text": "⚡ غربالگری نوسان‌گیری FTS",
+            "n": 34
+          }
+        ]
+      }
+    },
+    "portfolio": {
+      "1180": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 212,
+        "hits": [
+          {
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ]
+      },
+      "1366": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 212,
+        "hits": [
+          {
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ]
+      },
+      "1920": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 220,
+        "hits": [
+          {
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ]
+      }
+    }
+  }
+}

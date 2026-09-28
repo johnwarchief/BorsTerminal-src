@@ -351,8 +351,11 @@ export function MarketFilters({
     >
       {/* #171: یک نوار به‌جای دو سطحِ روی‌هم — صنایع و چیپ‌ها سمتِ راست،
           جستجو/شمارندۀ نماد/بازۀ بروزرسانی سمتِ چپِ همان نوار. */}
+      {/* نوارِ کنترل: زیر 2xl سطرِ خودش را می‌گیرد تا هیچ چیپی پشتِ لبه نرود؛
+          پیش از این در صفحۀ باریک پنج‌صد‌و‌هفتاد‌وپنج پیکسل از کنترل‌ها بیرونِ
+          کادر می‌ماند و no-scrollbar اسکرول را نامرئی می‌کرد. */}
       <div
-        className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar"
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-2 no-scrollbar"
         data-testid="quick-filters-bar"
       >
         <AssetFilterMenu />
