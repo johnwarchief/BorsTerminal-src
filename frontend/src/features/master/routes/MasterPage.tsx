@@ -195,7 +195,7 @@ export default function MasterPage() {
       horizon === 'swing'
         ? {
             active: true,
-            text: 'استراتژی نوسانی: خروج کامل در مقاومت اول R1 بدون نگهداری میان‌مدت.',
+            text: 'استراتژی نوسانی: خروج کامل در اولین سقف بدون نگهداری میان‌مدت.',
             resistance,
           }
         : horizon === 'hourglass'

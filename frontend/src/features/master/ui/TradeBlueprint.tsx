@@ -253,7 +253,7 @@ export function TradeBlueprint({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-2xs font-black text-text-primary">
             {horizon === 'swing'
-              ? 'پلن خروج نوسانی (تارگت R1 بدون نگهداری)'
+              ? 'پلن خروج نوسانی (تارگتِ اولین سقف، بدون نگهداری)'
               : horizon === 'hourglass'
                 ? 'استراتژی ساعت شنی (افق بلندمدت)'
                 : 'خروج ۵۰٪ (اصل پول + حفظ نیم سود)'}

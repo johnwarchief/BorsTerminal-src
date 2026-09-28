@@ -27,7 +27,7 @@ export interface StrategyParameters {
   excludePriceControlled: boolean; // حذف صنایع مشمول نرخ دستوری شدید نظیر خودرو
 
   // فاز ۴: مدیریت سرمایه، مهندسی معکوس و خروج M (صفحه ۴)
-  exitHalfPct: number; // درصد ذخیره سود در مقاومت اول R1 (پیش‌فرض جزوه: 50%)
+  exitHalfPct: number; // درصدِ فروش در اولین سقف (جزوه: «سیگنال فروش ٪۵۰»)
   minRiskRewardRatio: number; // حداقل نسبت سود به ریسک (پیش‌فرض: 2.0)
   maxIndustryWeightPct: number; // سقف مجاز سرمایه‌گذاری در هر صنعت (پیش‌فرض: 20%)
   singleStockMaxWeightPct: number; // سقف مجاز تک‌سهم نوسانی (پیش‌فرض: 3.5%)

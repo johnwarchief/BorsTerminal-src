@@ -472,7 +472,7 @@ export function evaluateFtsPipeline(args: {
 
   // هدف قیمتی و مقاومت استاتیک
   let targetPrice: number = 0;
-  const targetLabel = 'مقاومت استاتیک اول (ذخیره سود ۵۰٪)';
+  const targetLabel = 'اولین سقف (فروش ۵۰٪)';
 
   if (resistancePrice != null && resistancePrice > 0) {
     targetPrice = resistancePrice;
@@ -488,7 +488,7 @@ export function evaluateFtsPipeline(args: {
   }
 
   const halfExitPrice: number = resistancePrice ?? Math.round(targetPrice * 0.95);
-  const halfExitLabel = 'ذخیره سود ۵۰٪ در مقاومت استاتیک جهت خروج اصل سرمایه';
+  const halfExitLabel = 'فروش ۵۰٪ در اولین سقف جهت آزادکردن اصل سرمایه';
   const weightPct = horizon === 'swing' ? 3.5 : horizon === 'trend' ? 5.0 : 10.0;
 
   if (decision.action === 'veto' || decision.action === 'veto_gate1' || decision.action === 'veto_gate2') {
@@ -556,7 +556,7 @@ export function evaluateFtsPipeline(args: {
         : 'سناریوی صعودی: حرکت از تراز فیبو به سوی مقاومت اول',
       probabilityPct: bullishProb,
       trigger: `شکست و تثبیت قیمت بالای مقاومت استاتیک ${resistanceStr} همگام با تایید الگوی ساعت یا حجم مشکوک ۳ برابری.`,
-      targetOrStop: `هدف اول: ${toFaDigits(targetPrice)} ریال · طبق قانون FTS ذخیره سود ۵۰٪ جهت خروج اصل سرمایه و نگهداری سود باقیمانده.`,
+      targetOrStop: `هدف اول: ${toFaDigits(targetPrice)} ریال · طبق قانون FTS فروشِ ۵۰٪ در اولین سقف برای آزادکردن اصل سرمایه، و نگهداریِ سودِ باقی‌مانده.`,
       action: jetActive
         ? 'تا ۳ روز کاری بعد از کندل تثبیت مقاومت، فرصت ورود پله‌ای وجود دارد.'
         : 'خرید پله اول در تراز ۳۳ تا ۴۰ فیبوناچی و تکمیل پله دوم در صورت پولبک.',

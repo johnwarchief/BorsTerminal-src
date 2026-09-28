@@ -64,7 +64,7 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
 
     // رکن مدیریت سرمایه و خروج (صفحه ۴)
     expect(screen.getAllByText(/حد ضرر نوسان‌گیر/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/ذخیره سود/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/در اولین سقف/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/خروج در سقف سوم/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/واگرایی منفی RSI/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/سقف دارایی بورس/i).length).toBeGreaterThan(0);
@@ -134,5 +134,53 @@ describe('شاخۀ روندگیر درِ هر دو جهتِ جریان', () => {
       expect(links.some((l) => l.source === 'tape_floor_sweep' || l.target === 'tape_floor_sweep')).toBe(true);
       expect(links.some((l) => l.source === 'setup_point_hunt' || l.target === 'setup_point_hunt')).toBe(true);
     }
+  });
+});
+
+// #223: سه گره‌ای که در جزوه پیدا نشدند — حالا واژۀ خودِ جزوه را دارند و
+// هیچ ادعایِ عددیِ بی‌منبع در درخت نمی‌ماند. متنِ تفصیلی فقط درِ پنلِ «نما»
+// (گرهٔ برگزیده) دیده می‌شود، پس تست اول گره را انتخاب می‌کند.
+describe('#223 — واژگانِ سه گره از خودِ جزوه', () => {
+  beforeEach(() => {
+    useStrategyParamsStore.getState().resetAll();
+    useUiStore.getState().setTheme('dark');
+  });
+
+  const pickNode = (label: RegExp) => {
+    const text = screen.getByText(label);
+    fireEvent.click(text.closest('g')!);
+  };
+
+  it('شاخص ۵ همان «نوع نرخ‌گذاری» است که موتور می‌شمارد، نه DPS و مجمع', () => {
+    render(<ObsidianStrategyGraph selectedPreset="trend" />);
+    expect(screen.getAllByText(/نوع نرخ‌گذاری/).length).toBeGreaterThan(0);
+    pickNode(/شاخص ۵/);
+    expect(screen.getAllByText(/دستوری نباشد/).length).toBeGreaterThan(0);
+    const body = document.body.textContent ?? '';
+    expect(body).not.toMatch(/DPS/);
+    expect(body).not.toMatch(/مجمع/);
+    expect(body).not.toMatch(/سود انباشته/);
+  });
+
+  it('گرهٔ خروج، «اولین سقف» را می‌گوید و درصد را از دستِ کاربر می‌گیرد', () => {
+    render(<ObsidianStrategyGraph selectedPreset="trend" />);
+    expect(screen.getAllByText(/در اولین سقف/).length).toBeGreaterThan(0);
+    expect(document.body.textContent ?? '').not.toMatch(/R1|ذخیره سود/);
+    pickNode(/در اولین سقف/);
+    expect(screen.getAllByText(/لایه لایه برویم و اصل پول را نگه داریم/).length).toBeGreaterThan(0);
+
+    act(() => {
+      useStrategyParamsStore.getState().updateParam('exitHalfPct', 30);
+    });
+    expect(screen.getAllByText(/۳۰/).length).toBeGreaterThan(0);
+  });
+
+  it('گرهٔ R/R عددِ جزوه ادعا نمی‌کند؛ آستانه پیش‌فرضِ برنامه است', () => {
+    render(<ObsidianStrategyGraph selectedPreset="trend" />);
+    expect(screen.getAllByText(/R\/R/).length).toBeGreaterThan(0);
+    expect(document.body.textContent ?? '').not.toMatch(/حداقل ۱ به ۲/);
+    pickNode(/R\/R کم/);
+    expect(screen.getByText(/دلیلِ طلبِ سهم R\/R کم است/)).toBeInTheDocument();
+    expect(screen.getByText(/پیش‌فرضِ برنامه/)).toBeInTheDocument();
   });
 });

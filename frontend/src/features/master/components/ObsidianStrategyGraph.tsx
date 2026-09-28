@@ -446,15 +446,15 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       y: 715,
     },
     {
-      id: 'crit_retained_dps',
-      label: 'شاخص ۵: سود انباشته و DPS',
-      fullTitle: 'شاخص ۵: سود انباشته بالا و تقسیم سود نقدی بالای ۶۰٪',
+      id: 'crit_pricing_regime',
+      label: 'شاخص ۵: نوع نرخ‌گذاری',
+      fullTitle: 'شاخص ۵: حجم انبار و نوع نرخ‌گذاری — دستوری نباشد',
       category: 'fund',
       stage: isReverse ? 3 : 1,
       stageName: 'بنیادی F',
       page: 'چارت صفحه ۱',
-      description: 'شرکت دارای سود انباشته قابل توجه جهت تجدید ارزیابی یا تقسیم سود نقدی بالای ۶۰٪ در مجمع عمومی عادی سالیانه باشد.',
-      ruleFormula: 'سود انباشته مثبت + DPS مجمع >= ۶۰٪ سود خالص سال',
+      description: 'جزوه صفتِ پنجم را «حجم انبار (صفت، نوع نرخ‌گذاری، دلاری/ریالی، جابه‌جایی)» می‌نویسد و شرطش را این‌جا می‌گذارد: نوع نرخ‌گذاری دستوری نباشد. جدولِ غربالگری و موتورِ FTS همین را می‌شمارند (رژیم قیمت‌گذاری صنعت).',
+      ruleFormula: 'نوع نرخ‌گذاری ≠ دستوری | آزاد / بورس‌کالا ✓ — دستوری ✗',
       badge: 'شاخص ۵ · تعدیل‌گر',
       color: '#a855f7',
       radius: 15,
@@ -516,14 +516,14 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
     },
     {
       id: 'exit_half',
-      label: `💰 ذخیره سود ${toFaDigits(params.exitHalfPct)}٪ در R1`,
-      fullTitle: 'فروش ۵۰٪ در مقاومت اول R1 جهت بدون ریسک شدن معامله',
+      label: `💰 فروش ${toFaDigits(params.exitHalfPct)}٪ در اولین سقف`,
+      fullTitle: 'سیگنال فروش: اولین سقف تشکیل شد — اصل پول نگه داشته می‌شود',
       category: 'money',
       stage: 4,
       stageName: 'مدیریت سرمایه M',
       page: 'چارت صفحه ۲ و ۴',
-      description: `در برخورد با مقاومت اول R1، دقیقاً ${toFaDigits(params.exitHalfPct)}٪ سهم نقد می‌شود تا اصل پول آزاد و ریسک معامله به صفر برسد.`,
-      ruleFormula: `رسیدن به مقاومت R1 ➔ فروش دقیق ${params.exitHalfPct}٪ دارایی سهم`,
+      description: `جزوه فهرستِ «سیگنال فروش ٪۵۰» را می‌نویسد: «۱/ اولین سقف تشکیل شد … ۴/ سقف سوم (نمی‌تواند بالاتر بسازد)» و قاعده‌اش: «سود لایه لایه برویم و اصل پول را نگه داریم». ${toFaDigits(params.exitHalfPct)}٪ دستِ شماست؛ با نقدشدنِ همین لایه ریسکِ باقی‌مانده صفر می‌شود.`,
+      ruleFormula: `اولین سقف ➔ فروش ${toFaDigits(params.exitHalfPct)}٪ و نگاه‌داشتنِ اصل پول`,
       badge: 'خروج اصل پول',
       color: '#38bdf8',
       radius: 19,
@@ -566,14 +566,14 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
     },
     {
       id: 'rule_rr',
-      label: `⚖️ ریسک به ریوارد (R/R > ${toFaDigits(params.minRiskRewardRatio)})`,
-      fullTitle: 'الزام نسبت سود به ریسک حداقل ۱ به ۲ در ورود',
+      label: `⚖️ R/R کم ➔ ریسک بالا`,
+      fullTitle: 'کم بودنِ R/R دلیلِ بی‌طلبیِ سهم است؛ آستانه دستِ شما',
       category: 'money',
       stage: 4,
       stageName: 'مدیریت سرمایه M',
       page: 'چارت صفحه ۴',
-      description: `فاصله تا تارگت سود باید حداقل ${toFaDigits(params.minRiskRewardRatio)} برابر فاصله تا حد ضرر باشد.`,
-      ruleFormula: `(تارگت سود - ورود) / (ورود - حد ضرر) >= ${params.minRiskRewardRatio}`,
+      description: `جزوه R/R را یک‌جا و به‌عنوانِ دلیلِ عدم ورود می‌آورد: «دلیلِ طلبِ سهم R/R کم است، ریسک بالاست». عددی برای آن نگفته؛ ${toFaDigits(params.minRiskRewardRatio)} برابر دستِ شماست: فاصله تا تارگت باید از فاصله تا حد ضرر بیشتر باشد.`,
+      ruleFormula: `(تارگت سود - ورود) / (ورود - حد ضرر) >= ${toFaDigits(params.minRiskRewardRatio)}`,
       badge: 'ریسک به ریوارد',
       color: '#a855f7',
       radius: 16,
@@ -675,7 +675,7 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_f_super_eps', source: 'fund_super', target: 'crit_3y_eps', presets: ['trend', 'hourglass'] },
       { id: 'rev_f_good_margin', source: 'fund_good', target: 'crit_gross_margin', presets: ['swing', 'trend'] },
       { id: 'rev_f_super_ps', source: 'fund_super', target: 'crit_ps_ratio', presets: ['trend'] },
-      { id: 'rev_f_good_dps', source: 'fund_good', target: 'crit_retained_dps', presets: ['trend'] },
+      { id: 'rev_f_good_regime', source: 'fund_good', target: 'crit_pricing_regime', presets: ['trend'] },
 
       // ۴. بنیادی F ➔ مدیریت سرمایه و خروج M
       { id: 'rev_f_med_stopswing', source: 'fund_medium', target: 'stop_swing', presets: ['swing'] },
@@ -710,7 +710,7 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_f_super_eps', source: 'fund_super', target: 'crit_3y_eps', presets: ['trend', 'hourglass'] },
     { id: 'cls_f_good_margin', source: 'fund_good', target: 'crit_gross_margin', presets: ['swing', 'trend'] },
     { id: 'cls_f_super_ps', source: 'fund_super', target: 'crit_ps_ratio', presets: ['trend'] },
-    { id: 'cls_f_good_dps', source: 'fund_good', target: 'crit_retained_dps', presets: ['trend'] },
+    { id: 'cls_f_good_regime', source: 'fund_good', target: 'crit_pricing_regime', presets: ['trend'] },
 
     // بنیادی F ➔ تکنیکال T
     { id: 'cls_f_super_up', source: 'fund_super', target: 'tech_weekly_up', presets: ['trend'] },
@@ -1866,7 +1866,7 @@ export function ObsidianStrategyGraph({
               </div>
             )}
 
-            {/* ۹. درصد ذخیره سود ۵۰٪ در مقاومت اول R1 */}
+            {/* ۹. درصدِ فروش در اولین سقف — جزوه: «سیگنال فروش ٪۵۰» */}
             {inspectedNode.editableParamKeys.includes('exitHalfPct') && (
               <div
                 className={`rounded-xl border p-3 space-y-2 ${
@@ -1875,7 +1875,7 @@ export function ObsidianStrategyGraph({
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-2xs font-bold ${isLight ? 'text-slate-800' : 'text-text-primary'}`}>
-                    درصد فروش در مقاومت ۱:
+                    درصد فروش در اولین سقف:
                   </span>
                   <span className="text-xs font-black text-sky-600 dark:text-accent-blue font-mono">
                     {toFaDigits(params.exitHalfPct)}٪
@@ -1994,7 +1994,7 @@ export function ObsidianStrategyGraph({
                 />
                 <div className="flex items-center justify-between text-3xs text-text-muted">
                   <span>۱.۵</span>
-                  <span className="text-amber-600 dark:text-accent-yellow font-bold">جزوه: ۲.۰</span>
+                  <span className="text-amber-600 dark:text-accent-yellow font-bold">پیش‌فرضِ برنامه: ۲.۰</span>
                   <span>۳.۵</span>
                 </div>
               </div>

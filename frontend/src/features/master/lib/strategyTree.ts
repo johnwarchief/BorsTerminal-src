@@ -136,7 +136,7 @@ export const DEFAULT_STRATEGY_TREES: Record<'standard_trend' | 'fast_swing' | 'd
       id: 'master',
       title: 'داوری مستر و مدیریت سرمایه',
       enabled: true,
-      halfExitAtResistance: false, // خروج 100% در R1
+      halfExitAtResistance: false, // خروجِ کامل در اولین سقف
       basePositionWeightPct: 3.5,
       hourglassLeverageEnabled: false,
       weight: 100,

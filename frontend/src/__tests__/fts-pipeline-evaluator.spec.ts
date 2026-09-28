@@ -139,7 +139,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
       resistancePrice: 12_000,
     });
     expect(trendRes.tradePlan.stopLossPrice).toBe(8_550); // 9,000 * 0.95
-    expect(trendRes.tradePlan.halfExitLabel).toContain('ذخیره سود ۵۰٪');
+    expect(trendRes.tradePlan.halfExitLabel).toContain('فروش ۵۰٪ در اولین سقف');
 
     // ۳) ساعت شنی
     const hourglassRes = evaluateFtsPipeline({
@@ -211,7 +211,7 @@ describe('ftsPipelineEvaluator — ارزیابی گام‌های ۴‌گانه 
     const sc = res.narrative.scenarios;
     expect(sc.bullish.probabilityPct + sc.neutral.probabilityPct + sc.bearish.probabilityPct).toBe(100);
     expect(sc.bullish.title).toContain('صعودی');
-    expect(sc.bullish.targetOrStop).toContain('ذخیره سود ۵۰٪');
+    expect(sc.bullish.targetOrStop).toContain('فروشِ ۵۰٪ در اولین سقف');
     expect(sc.neutral.title).toContain('رنج');
     expect(sc.bearish.title).toContain('نزولی');
     expect(sc.bearish.targetOrStop).toContain('MA-14');

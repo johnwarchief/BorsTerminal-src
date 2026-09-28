@@ -937,7 +937,7 @@ export default function StrategyTreePage() {
                 </p>
               </div>
 
-              {/* قانون ذخیره سود ۵۰٪ */}
+              {/* قانون فروشِ لایه‌ای در اولین سقف (جزوه: «سیگنال فروش ٪۵۰») */}
               <div
                 className={`rounded-xl border p-3.5 transition-all duration-200 ${
                   activeNodes.exit.includes('exit_half')
@@ -946,11 +946,13 @@ export default function StrategyTreePage() {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <strong className="text-sm font-black text-accent-blue">قانون ذخیره سود ۵۰٪ FTS</strong>
+                  <strong className="text-sm font-black text-accent-blue">
+                    {`قانون فروش ${toFaDigits(params.exitHalfPct)}٪ در اولین سقف`}
+                  </strong>
                   <span className="text-2xs text-accent-blue font-black">خروج اصل پول</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                  در برخورد با مقاومت اول R1 یا سقف موج، ۵۰٪ سهم فروخته می‌شود تا اصل سرمایه آزاد شده و ادامه معامله بدون ریسک شود.
+                  {`با تشکیلِ اولین سقف، ${toFaDigits(params.exitHalfPct)}٪ سهم فروخته می‌شود تا اصل سرمایه آزاد شده و ادامهٔ معامله بدون ریسک بماند؛ مابقی تا سقف سوم.`}
                 </p>
               </div>
 
@@ -1040,10 +1042,10 @@ export default function StrategyTreePage() {
           </div>
 
           <div className="rounded-xl border border-border-c/60 bg-bg-primary/70 p-3.5 space-y-1">
-            <span className="text-text-muted block text-2xs font-bold">۳. هدف سود و خروج ۵۰٪ / سقف ۳:</span>
+            <span className="text-text-muted block text-2xs font-bold">۳. هدف سود و خروجِ لایه‌ای / سقف سوم:</span>
             <p className="text-accent-green font-bold leading-relaxed">
               {selectedPreset === 'swing'
-                ? `خروج ۵۰٪ در R1 + خروج کامل در سقف ۳ کانال یا اخطار واگرایی منفی RSI.`
+                ? `خروج ${toFaDigits(params.exitHalfPct)}٪ در سقف (اصل پول نگه داشته می‌شود) + خروج کامل در سقف سوم یا واگرایی منفی RSI.`
                 : selectedPreset === 'trend'
                   ? `خروج ${toFaDigits(params.exitHalfPct)}٪ در مقاومت ماژور اول و نگهداری مابقی تا سقف سوم یا تغییر ساختار.`
                   : selectedPreset === 'hourglass'

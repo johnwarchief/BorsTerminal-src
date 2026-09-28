@@ -368,7 +368,7 @@ export function StrategyTreeDrawer({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-2xs">
                 <div className="flex items-center justify-between rounded-lg border border-border-c/50 bg-bg-secondary/40 p-2">
-                  <span>قانون ذخیره سود ۵۰٪ در مقاومت اول R1:</span>
+                  <span>قانون فروش ۵۰٪ در اولین سقف:</span>
                   <input
                     type="checkbox"
                     checked={config.master.halfExitAtResistance}
