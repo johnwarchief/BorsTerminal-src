@@ -60,4 +60,51 @@ describe('http() با ETag', () => {
     await http('/api/other', { schema: Schema, retries: 0 });
     await expect(http('/api/other', { schema: Schema, retries: 0 })).rejects.toBeInstanceOf(HttpError);
   });
+
+  // مسمومیتِ کشِ چنداسکیمایی: همان URL را دو مصرف‌کننده با دو اسکیمای متفاوت
+  // می‌خوانند. zod کلیدهای ناشناخته را می‌کاهد، پس اگر ۳۰۴ به آبجکتِ چروکیدهٔ
+  // دیگری اشاره کند، تابلو ردیف‌های دوفیلدی تحویل می‌گیرد (قیفِ درخت استراتژی:
+  // «1193 نماد زنده ← 0 نشانه» در حالی که پرچم‌ها فرستاده شده بودند).
+  it('اسکیمای دیگرِ همان URL آبجکتِ چروکیدهٔ او را نمی‌گیرد', async () => {
+    const Rich = z.object({
+      status: z.string(),
+      data: z.array(z.object({ symbol: z.string(), f_clock: z.boolean().nullish() })),
+    });
+    const Narrow = z.object({
+      status: z.string(),
+      data: z.array(z.object({ symbol: z.string() })),
+    });
+    const body = { status: 'success', data: [{ symbol: 'شينا', f_clock: true }] };
+    const fetchMock = vi
+      .fn()
+      // نخست `useMarketCloses`-مان می‌آید و فقط symbol نگه می‌دارد
+      .mockResolvedValueOnce(jsonResponse(body, { headers: { ETag: '"v1"' } }))
+      // سپس تابلو: باید *بدنهٔ کامل* بگیرد، نه ۳۰۴ِ آبجکتِ دوفیلدی
+      .mockResolvedValueOnce(jsonResponse(body, { headers: { ETag: '"v1"' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const narrow = await http<{ data: { symbol: string }[] }>('/api/market', { schema: Narrow });
+    const rich = await http<{ data: { symbol: string; f_clock?: boolean | null }[] }>('/api/market', { schema: Rich });
+
+    expect(narrow.data[0]).toEqual({ symbol: 'شينا' });
+    expect(rich.data[0]).toEqual({ symbol: 'شينا', f_clock: true });
+    // هیچ If-None-Match‌ای از اسکیمای دیگر نشت نمی‌کند
+    const h2 = new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers);
+    expect(h2.get('if-none-match')).toBeNull();
+  });
+
+  it('همان اسکیمای همان URL همچنان از ۳۰۴ و یک مرجع استفاده می‌کند', async () => {
+    const Rich = z.object({ status: z.string(), data: z.array(z.object({ symbol: z.string() })) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ status: 'success', data: [{ symbol: 'شينا' }] }, { headers: { ETag: '"v2"' } }))
+      .mockResolvedValueOnce(new Response(null, { status: 304 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await http('/api/market', { schema: Rich });
+    const second = await http('/api/market', { schema: Rich });
+
+    expect(second).toBe(first);
+    expect(new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers).get('if-none-match')).toBe('"v2"');
+  });
 });

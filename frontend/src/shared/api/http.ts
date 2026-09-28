@@ -45,8 +45,33 @@ const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
  * چون مرجعِ داده عوض نمی‌شود، TanStack Query هیچ رندرِ تازه‌ای نسازد.
  * `cache: 'no-store'` لازم است وگرنه کشِ Chromium خودش پاسخِ ۲۰۰ِ کامل را
  * از دیسک بیرون می‌دهد و ما هیچ‌وقت ۳۰۴ را نمی‌بینیم.
+ *
+ * کلید این کش **آدرس + هویتِ اسکیمای zod** است، نه خودِ آدرس. یک URL را چند
+ * مصرف‌کننده با چند اسکیمای مختلف می‌خواند (`/api/market` را تابلو کامل
+ * می‌خواهد و `useMarketCloses` فقط {symbol, p_closing}); اسکیمای zod کلیدهای
+ * ناشناخته را می‌کاهد، پس با کلیدِ فقط-آدرس، ۳۰۴ِ یک مصرف‌کننده آبجکتِ
+ * *چروکیدهٔ* مصرف‌کنندۀ دیگر را برمی‌گرداند. شاهدِ زندهٔ ۱۴۰۵-۰۷-۰۶: درِ تبِ
+ * درخت استراتژی، قیف «1193 نماد زنده ← 0 نشانه» می‌داد و همان لحظه
+ * /api/market پرچم‌ها را با 128 ردیف می‌فرستاد — چون `useMarketCloses` زودتر
+ * از `useMarketFeed` کوئری می‌زد و ردیف‌های دوفیلدیِ او به کشِ تابلو نشت می‌کرد.
  */
 const conditional = new Map<string, { etag: string; data: unknown }>();
+
+const schemaIds = new WeakMap<ZodType, number>();
+let schemaSeq = 0;
+
+/** هویتِ پایدارِ هر آبجکتِ اسکیمای zod (اسکیمای مشترکِ ما همه ماژول-سطحی‌اند) */
+function schemaId(schema: ZodType | undefined): number {
+  if (!schema) return 0;
+  let id = schemaIds.get(schema);
+  if (id === undefined) {
+    id = ++schemaSeq;
+    schemaIds.set(schema, id);
+  }
+  return id;
+}
+
+const conditionalKey = (url: string, schema?: ZodType) => `${url}\u0000${schemaId(schema)}`;
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -66,10 +91,11 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
 
   // JSON body فقط وقتی build می‌شود که بدنهٔ خام نیامده باشد (rawBody اولویت دارد).
   const payload: BodyInit | undefined = rawBody ?? (body != null ? JSON.stringify(body) : undefined);
+  const cKey = conditionalKey(url, schema);
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const revalidate = method === 'GET' ? conditional.get(url) : undefined;
+      const revalidate = method === 'GET' ? conditional.get(cKey) : undefined;
       const res = await fetch(url, {
         headers: {
           Accept: 'application/json',
@@ -104,7 +130,7 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
       // `?.` چون پاسخ‌هایِ ماک‌شدهٔ تست‌ها ممکن است Responseِ کامل نباشند؛
       // نبودِ هدر فقط یعنی «این پاسخ قابلِ اعتبارسنجیِ مجدد نیست».
       const etag = res.headers?.get?.('etag') ?? null;
-      if (method === 'GET' && etag) conditional.set(url, { etag, data: parsed.data });
+      if (method === 'GET' && etag) conditional.set(cKey, { etag, data: parsed.data });
       return parsed.data as T;
     } catch (e) {
       if (e instanceof HttpError) throw e;

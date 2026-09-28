@@ -5,11 +5,12 @@
 // می‌کنند (shared/lib/useFlip.ts)، تا معلوم شود کدام نماد کجا کم شد.
 //
 // دو تصمیمی که عمداً این‌جا نشسته:
-//   ۱) تکنیکال حذف نمی‌کند. موتورِ تکنیکال تمام نیست و رأیِ مالک (۱۴۰۵-۰۷-۰۷)
-//      این است که غربالِ واقعی با تابلو و بنیاد باشد؛ ستونِ تکنیکال فقط نشانه
-//      می‌گذارد و همان هم درِ جدول نوشته می‌شود، نه سکوت.
-//   ۲) مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
-//      مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
+//   - تکنیکال غربال می‌کند: وتوی هفتگی یا نبودِ ستاپِ همان سبک، نماد را بیرون
+//     می‌اندازد (ستون T درِ چارت). رأیِ هفتگی از ماتریسِ بک‌اند می‌آید، نه از
+//     فرمولِ دومِ فرانت. بی‌داده وتو نیست: ردیفی که اسکرینر تحلیلش نکرده
+//     «سنجیده نشد» می‌خورد و درِ قیف نمی‌سوزد.
+//   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
+//     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useMemo, useRef, useState } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
@@ -19,7 +20,8 @@ import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
-import { buildFunnel, PRESET_ENTRY, type FunnelEntry, type FunnelStage, type FunnelStageKey, type StageMark, type TreePreset } from '../lib/ftsFunnel';
+import { buildFunnel, PRESET_ENTRY, tapePickedSymbols, type FunnelEntry, type FunnelStage, type FunnelStageKey, type StageMark, type TreePreset } from '../lib/ftsFunnel';
+import { useFtsTechBoard } from '../api/useFtsTechBoard';
 
 const STAGE_TITLE: Record<FunnelStageKey, string> = {
   tape: 'تابلوخوانی',
@@ -30,7 +32,7 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
 
 const STAGE_RULE: Record<FunnelStageKey, string> = {
   tape: 'نمادهایی که همین نشست دستِ‌کم یکی از پنج فیلترِ جزوه را رد کرده‌اند — عینِ چیپ و بجِ تبِ تابلو.',
-  technical: 'روندِ هفتگی و ستاپ فقط علامت می‌خورند؛ درِ این مرحلۀ هیچ نمادی حذف نمی‌شود (موتورِ تکنیکال تمام نیست — رأیِ مالک).',
+  technical: 'روندِ هفتگی و ستاپِ همان سبک غربال می‌کنند: وتوی هفتگی یا نبودِ ستاپِ سبک بیرون می‌اندازد؛ آنچه اسکرینر تحلیلش نکرده «سنجیده نشد» است، نه رد.',
   fundamental: 'پنج شاخصِ کدال: سه از پنج به بالا به تحویل می‌رود، ردِ صریح می‌افتد، و بی‌گزارش در صفِ خودِ خودش می‌ماند.',
   handover: 'فقط آنچه بنیادش واقعاً سنجیده و قبول شده — در انتظارِ انتخابِ شما برایِ سبد و مدیریتِ سرمایه.',
 };
@@ -91,10 +93,6 @@ function StageCard({
         {stage.dropped > 0 ? (
           <span className="num rounded-full bg-accent-red/15 px-2 py-0.5 text-2xs font-black text-accent-red">
             − {toFaDigits(stage.dropped)}
-          </span>
-        ) : stage.key === 'technical' ? (
-          <span className="rounded-full bg-accent-yellow/15 px-2 py-0.5 text-2xs font-bold text-accent-yellow">
-            بی‌حذف
           </span>
         ) : null}
         {stage.unmeasured > 0 ? (
@@ -218,11 +216,20 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
   const cfg = useTapeStore((s) => s.tapeFilterConfig);
   const quickFilters = useTapeStore((s) => s.quickFilters);
 
+  // دو پاسِ عمدی: نخست فقط مرحلۀ تابلو حساب می‌شود تا معلوم شود برایِ کدام
+  // نمادها رأیِ تکنیکال لازم است، سپس `/api/fts` برایِ همان‌ها خوانده می‌شود.
+  // بی‌این، درِ T هرگز بسته نمی‌شد چون اسکرینر فقط سقفِ واچ‌لیست را تحلیل کرده.
+  const techTargets = useMemo(
+    () => tapePickedSymbols(feed.data?.data ?? [], cfg, quickFilters ?? [], preset),
+    [feed.data, cfg, quickFilters, preset],
+  );
+  const tech = useFtsTechBoard(techTargets);
+
   const funnel = useMemo(() => {
     const rows = feed.data?.data ?? [];
     const basket = new Set((portfolio.data?.portfolio ?? []).map((h) => h.symbol));
-    return buildFunnel(rows, cfg, quickFilters ?? [], screen.data?.data ?? [], basket, preset);
-  }, [feed.data, screen.data, portfolio.data, cfg, quickFilters, preset]);
+    return buildFunnel(rows, cfg, quickFilters ?? [], screen.data?.data ?? [], basket, preset, tech.map);
+  }, [feed.data, screen.data, portfolio.data, cfg, quickFilters, preset, tech.map]);
 
   const stages = ORDER.map((k) => funnel.stages[k]);
   const wide = Math.max(1, ...stages.map((s) => s.entries.length));
@@ -256,6 +263,18 @@ export function FtsFunnelStages({ preset = 'custom' }: { preset?: TreePreset }) 
           ورودیِ قیف: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
           {toFaDigits(funnel.boardScope)} نمادِ زندهٔ تابلو ← {toFaDigits(funnel.total)} نشانه
         </span>
+        {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست. */}
+        {tech.wanted > 0 ? (
+          <span
+            data-testid="funnel-tech-coverage"
+            className={`num rounded-full px-2 py-0.5 text-2xs font-bold ${
+              tech.loading ? 'bg-accent-yellow/15 text-accent-yellow' : 'bg-bg-secondary text-text-secondary'
+            }`}
+          >
+            {tech.loading ? 'تکنیکال در حالِ خواندن: ' : 'تکنیکال سنجیده شده: '}
+            {toFaDigits(tech.resolved)} از {toFaDigits(tech.wanted)}
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
