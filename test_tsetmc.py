@@ -454,6 +454,11 @@ TAPE_HIST_STATE = "tape_history_state"
 # پنجره کهنه باشد یک تلاشِ دیگر؛ بیشتر از این نه، که پاسخ ۵۱ مگابایت است و
 # همگام‌سازی در ساعتِ بازار هر چند دقیقه یک‌بار صدا می‌شود.
 TAPE_HIST_RETRY_S = 6 * 3600
+# پنجره باید نمادهایِ امروز را بپوشاند، نه فقط روزِ درست را داشته باشد. پاسخِ
+# سایت گاه کوتاه می‌آید (اندازۀ ۱۴۰۵-۰۷-۰۷: ۷۴٪ پوشش) و نمادی که ردیفِ [ih]
+# ندارد درِ پنج فیلتر بی‌صدا مردود می‌ماند. ۹۵٪ سقفِ محافظه‌کارانه‌ای است که با
+# پوششِ کاملِ سایت (۹۹+٪) فرقِ روشن دارد و بی‌دلیل هر سینک ۵۱ مگابایت نمی‌گیرد.
+TAPE_COVER_MIN = 0.95
 
 
 def ensure_tape_history_schema(conn):
@@ -494,6 +499,39 @@ def fetch_tape_history(timeout=120, attempts=3, gap=20):
     return None, err
 
 
+def tape_window_coverage(conn):
+    """چه کسری از نمادهایِ **معامله‌شدهٔ امروز** پنجرۀ [ih] را دارند.
+
+    پنج فیلتر بی‌این پنجره هیچ‌وقت روشن نمی‌شوند (`prior30_vol` تهی = نسنج)، پس
+    پنجره‌ای که نمادی را ندارد آن نماد را **بی‌صدا مردود** می‌کند — و درِ خودِ
+    سایت همان نماد را فیلتر می‌کند. اندازه‌گیریِ ۱۴۰۵-۰۷-۰۷: پنجرۀِ ۰۸:۵۵
+    ۳٬۲۳۸ نماد داشت و از ۲٬۲۷۰ نمادِ معاملۀِ امروز فقط ۱٬۶۸۲ تایش ردیفِ [ih]
+    داشتند (۷۴٪)؛ ۵۸۸ نمادِ بی‌پنجره هیچ‌وقت نمی‌توانستند «حجم مشکوک» بگیرند و
+    جدولِ ما ۸۱ ردیف می‌داد در برابرِ ۱۰۲ ردیفِ خودِ سایت (سنجشِ یک‌لحظه‌ایِ
+    _audit/tse_live_filter_parity.py — گوهر، سيستم۳، پتروپاداش، بمپنا۳، …).
+
+    (تعدادِ ردیفِ جدول معیار نیست: پاسخِ سایت گاه کوتاه‌تر می‌آید ولی همان
+    نمادها را دارد؛ آنچه می‌سوزد نبودنِ خودِ نماد است.)
+    """
+    traded = conn.execute(
+        "SELECT COUNT(*) FROM market_watch WHERE d_even = ?"
+        " AND COALESCE(q_tot_tran, 0) > 0",
+        (board_session_day(conn),)).fetchone()[0] or 0
+    if not traded:
+        return 1.0, 0, 0
+    covered = conn.execute(
+        "SELECT COUNT(*) FROM market_watch m WHERE m.d_even = ?"
+        " AND COALESCE(m.q_tot_tran, 0) > 0"
+        f" AND EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)",
+        (board_session_day(conn),)).fetchone()[0] or 0
+    return (covered / traded), traded, covered
+
+
+def board_session_day(conn):
+    """نشستِ جاریِ تابلو — همان روزی که پنجره باید او را بپوشاند."""
+    return conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+
+
 def refresh_tape_history(conn, force=False, fetch=None):
     """پنجرۀ [ih] را نو می‌کند. شکستِ شبکه هرگز جدول را پاک نمی‌کند.
 
@@ -507,11 +545,19 @@ def refresh_tape_history(conn, force=False, fetch=None):
     now_txt = now.strftime("%Y-%m-%d %H:%M:%S")
     have, newest = conn.execute(
         f"SELECT COUNT(*), MAX(d_even) FROM {TAPE_HIST_TABLE}").fetchone()
-    board_day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+    board_day = board_session_day(conn)
     st = conn.execute(f"SELECT * FROM {TAPE_HIST_STATE} WHERE id = 1").fetchone()
     last_attempt, last_ok, last_note = (st[1], st[2], st[4]) if st else (None, None, None)
-    if not force and have and board_day and (newest or 0) >= board_day:
+    # «تازه» یعنی هم روزش همان نشست است هم نمادهایش. بی‌شرطِ دوم، پنجرۀِ
+    # کوتاه‌آمدهٔ صبح تا نهایهٔ شب «تازه» می‌ماند و صدها نماد بی‌دلیل مردود
+    # می‌شوند (tape_window_coverage).
+    ratio, traded, covered = tape_window_coverage(conn)
+    if (not force and have and board_day and (newest or 0) >= board_day
+            and ratio >= TAPE_COVER_MIN):
         return {"skipped": "fresh"}
+    if not force and have and board_day and (newest or 0) >= board_day:
+        print(f"  [tape-history] پنجره روزش درست است ولی پوشش کم است: "
+              f"{covered:,} از {traded:,} ({ratio * 100:.1f}٪) — دوباره گرفته می‌شود")
     # قفلِ ۶ ساعته فقط برایِ تلاشی است که «تمام» شده باشد (موفق یا خطای قطعی).
     # تلاشِ نیمه‌کاره — app وسطِ fetchِ چنددقیقه‌ای بسته شد و note همان
     # «attempt» ماند — نباید پشتِ تایمر بنشیند. بی‌این، نخستین fetchِ پس از
@@ -550,10 +596,53 @@ def refresh_tape_history(conn, force=False, fetch=None):
         conn.execute(f"UPDATE {TAPE_HIST_STATE} SET note = 'no-rows' WHERE id = 1")
         conn.commit()
         return {"error": "no-rows"}
+    top = max(r[1] for r in recs)
+    # پنجره را بی‌سرنوشت عوض نکن: پاسخِ سایت گاه **کوتاه** می‌آید (اندازۀ
+    # ۱۴۰۵-۰۷-۰۷: همان endpoint یک دور ۳٬۲۳۸ نماد داد و دور بعد ۳٬۹۴۱). بی‌این
+    # بند، همان پاسخِ کوتاهِ ۰۸:۵۵ جای پنجرۀ کامل را می‌گرفت و ۵۸۸ نمادِ
+    # معامله‌شده از پنج فیلتر بیرون می‌ماندند — جدول ۸۱ بج می‌داد در برابرِ
+    # ۱۰۲ بجِ خودِ سایت. دو حالت رد:
+    #   ۱) همان نشست با پوششِ کمتر → دادهٔ ناقص دادهٔ کهنه را نمی‌بَرَد؛
+    #   ۲) نشستِ تازه‌تر ولی زیرِ کفِ پوشش، در حالی که پنجرۀ فعلی بالای کف است
+    #      → تازگیِ یک نشست ارزشِ خاموش‌کردنِ صدها نماد را ندارد.
+    if have:
+        cur = conn.cursor()
+        cur.execute("CREATE TEMP TABLE _new_window (ins_code TEXT PRIMARY KEY)")
+        cur.executemany("INSERT OR IGNORE INTO _new_window VALUES (?)",
+                        [(r[0],) for r in recs])
+        traded_n, covered_new, covered_cur = cur.execute(
+            "SELECT COUNT(*),"
+            " SUM(CASE WHEN EXISTS (SELECT 1 FROM _new_window w WHERE w.ins_code = m.ins_code)"
+            "          THEN 1 ELSE 0 END),"
+            f" SUM(CASE WHEN EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)"
+            "          THEN 1 ELSE 0 END)"
+            " FROM market_watch m WHERE m.d_even = ? AND COALESCE(m.q_tot_tran, 0) > 0",
+            (board_day,)).fetchone()
+        cur.execute("DROP TABLE _new_window")
+        traded_n = traded_n or 0
+        if traded_n:
+            ratio_new = (covered_new or 0) / traded_n
+            ratio_cur = (covered_cur or 0) / traded_n
+            if top <= (newest or 0) and (covered_new or 0) < (covered_cur or 0):
+                lost = (covered_cur or 0) - (covered_new or 0)
+                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                             (f"partial-payload:{lost}",))
+                conn.commit()
+                print(f"  [tape-history] پاسخِ سایت {lost:,} نمادِ معامله‌شده را ندارد که "
+                      f"پنجرۀ فعلی دارد — پنجره دست‌نخورده ماند")
+                return {"skipped": "partial-payload", "lost": lost}
+            if (top > (newest or 0) and ratio_new < TAPE_COVER_MIN
+                    and ratio_cur >= TAPE_COVER_MIN):
+                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                             ("partial-payload:collapse",))
+                conn.commit()
+                print(f"  [tape-history] نشستِ تازه آمد ولی پوشش به "
+                      f"{ratio_new * 100:.1f}٪ افتاد (پنجرۀ فعلی {ratio_cur * 100:.1f}٪) — "
+                      f"پنجرۀ کاملِ فعلی ماند")
+                return {"skipped": "partial-payload", "lost": covered_cur}
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
     c.executemany(f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} VALUES (?,?,?,?,?,?)", recs)
-    top = max(r[1] for r in recs)
     c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
               (now_txt, now_txt, top, ""))
     conn.commit()

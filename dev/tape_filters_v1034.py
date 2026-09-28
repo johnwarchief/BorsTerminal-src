@@ -535,6 +535,74 @@ def main():
     ck("CREATE TABLE IF NOT EXISTS {TAPE_HIST_TABLE}" in sync,
        "مسیرِ نوشتن هم همان جدول را می‌سازد (دو سوی مرز یک تعریف)")
 
+    # ── ۱۱) پوششِ پنجره: پاسخِ کوتاهِ سایت پنجرۀ کامل را نمی‌بَرَد ────────
+    # ۱۴۰۵-۰۷-۰۷: «حجم مشکوکِ» ما ۸۱ و خودِ سایت ۱۰۲. دلیلش فرمول نبود؛
+    # GetClosingPriceDailyAllInst یک دور ۳٬۲۳۸ نماد داده بود (نه ۳٬۹۴۱) و
+    # سینکِ صبح همان را جای پنجرۀ کامل گذاشته بود. ۵۸۸ نمادِ معامله‌شده
+    # بی‌ردیفِ [ih] ماندند → prior30_vol تهی → پنج فیلتر بی‌صدا خاموش.
+    print("\n[۱۱] پنجره باید نمادهایِ امروز را بپوشاند، و پوشش را از دست ندهد")
+    import sqlite3
+
+    import test_tsetmc as T
+
+    DAY = 20260101
+
+    def board(n):
+        return [(f"S{i}", DAY, 1000.0) for i in range(n)]
+
+    def fresh_db(hist_syms, traded_n):
+        c = sqlite3.connect(":memory:")
+        c.execute("CREATE TABLE market_watch (ins_code TEXT, d_even INTEGER, q_tot_tran REAL)")
+        c.executemany("INSERT INTO market_watch VALUES (?,?,?)", board(traded_n))
+        T.ensure_tape_history_schema(c)
+        c.executemany("INSERT INTO tape_history VALUES (?,?,?,?,?,?)",
+                      [(s, DAY, 100.0, 200.0, 10.0, "") for s in hist_syms])
+        c.commit()
+        return c
+
+    def payload(syms, day=DAY):
+        return lambda: ([{"insCode": s, "dEven": day, "priceMin": 100.0,
+                          "priceMax": 200.0, "qTotTran5J": 10.0} for s in syms], None)
+
+    ALL100 = [f"S{i}" for i in range(100)]
+    never = lambda: (_ for _ in ()).throw(AssertionError("fetch نباید صدا زده شود"))
+
+    # الف) روزِ درست + پوششِ کامل → هیچ درخواستِ ۵۱ مگابایتی نمی‌شود
+    r = T.refresh_tape_history(fresh_db(ALL100, 100), fetch=never)
+    ck(r.get("skipped") == "fresh", "پنجرۀ کاملِ همان نشست «تازه» است و دوباره گرفته نمی‌شود", str(r))
+
+    # ب) روزِ درست ولی پوششِ کم → باید دوباره گرفته شود (بیمارش درِ پنج فیلتر است)
+    c = fresh_db(ALL100[:70], 100)
+    r = T.refresh_tape_history(c, fetch=payload(ALL100))
+    ck(r.get("rows") == 100, "پوششِ ۷۰٪ «تازه» نیست؛ پنجره دوباره گرفته می‌شود", str(r))
+    ck(c.execute("SELECT COUNT(DISTINCT ins_code) FROM tape_history").fetchone()[0] == 100,
+       "پنجرۀ کامل جای پنجرۀ کوتاه نشست")
+
+    # ج) همان نشست با پاسخِ کوتاه‌تر → پنجرۀ کامل دست‌نخورده می‌ماند
+    c = fresh_db(ALL100, 100)
+    r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100[:60]))
+    ck(r.get("skipped") == "partial-payload",
+       "پاسخِ کوتاهِ همان نشست پنجرۀ کامل را پاک نمی‌کند", str(r))
+    ck(c.execute("SELECT COUNT(DISTINCT ins_code) FROM tape_history").fetchone()[0] == 100,
+       "بعد از ردِ پاسخِ کوتاه، پوشش افت نکرد")
+
+    # د) نشستِ تازه‌تر ولی زیرِ کفِ پوشش → تازگیِ یک روز ارزشِ خاموشیِ پنجره را ندارد
+    c = fresh_db(ALL100, 100)
+    r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100[:60], DAY + 1))
+    ck(r.get("skipped") == "partial-payload",
+       "نشستِ تازه با پوششِ ۶۰٪ پنجرۀ کامل را نمی‌بَرَد", str(r))
+
+    # ه) نشستِ تازه با پوششِ کامل → همان چیزی است که می‌خواهیم، پس عوض می‌شود
+    c = fresh_db(ALL100, 100)
+    r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100, DAY + 1))
+    ck(r.get("newest") == DAY + 1, "نشستِ تازه با پوششِ کامل پذیرفته می‌شود", str(r))
+
+    # و) آستانه درِ کد باید همان عددِ اندازه‌گیری‌شده باشد: سایت خودش ۹۷٪ پوشش
+    # دارد، پس کفِ ۹۵٪ هم پاسخِ کوتاه را می‌گیرد و هم هر سینک ۵۱ مگابایت نمی‌گیرد.
+    ck(abs(T.TAPE_COVER_MIN - 0.95) < 1e-9,
+       "کفِ پوشش ۹۵٪ است (سقفِ واقعیِ سایت ۹۷٪ — پایین‌ترش هر سینک را دانلود می‌کند)",
+       str(T.TAPE_COVER_MIN))
+
     print(f"\ntape_filters_v1034: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0
 

@@ -1,0 +1,5 @@
+the board window comes from one 51 megabyte site response listing the last sixty sessions of every instrument
+measured today: the same endpoint returned 3238 symbols at 08:55 and 3941 symbols at 17:41
+with the short one, 588 instruments that actually traded today had no window rows at all, so the volume-gated filters silently judged them as rejects
+our suspicious-volume count read 81 rows while the live site reference read 102, and the gap was entirely explained by the missing window rows
+the freshness test today only compares the newest session date, so a short window is treated as fresh and never retried until the daily job runs again
