@@ -427,6 +427,7 @@ details[open] > summary .disclosure-chevron {
   .flash-down,
   .hud-beam,
   .fts-path-flow,
+  .fts-comet,
   .animate-spin-slow {
     animation: none !important;
   }
@@ -489,5 +490,21 @@ html[data-idle='1'] *::after {
    playState=running و currentTime=297ms شد. */
 html[data-idle='1'] .flash-up,
 html[data-idle='1'] .flash-down {
+  animation-play-state: running !important;
+}
+
+/* جریانِ ستونِ انتخابِ درخت FTS هم از گاردِ بی‌حرکتی مستثنا است — ولی فقط وقتی
+   پنجره واقعاً دیده می‌شود. گارد با «بی‌حرکتیِ موس» می‌آید، نه با مخفی‌بودنِ پنجره،
+   و درخت دقیقاً همان تبی است که مالک بی‌حرکت به آن نگاه می‌کند. سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ
+   برنامۀ ۱.۰.۵۳ (tools/tree_flow_state.mts، getAnimations): با حرکتِ موس ۴ انیمیشنِ
+   جریان running بود؛ ۲۰ ثانیه بعد از آخرین حرکت هر چهار تا paused و `data-idle='1'`
+   — یعنی حرکتِ «رو به جلو» در همان حالتی می‌مرد که کاربر آن را می‌خواست.
+   هزینه‌اش چهار انیمیشنِ opacity رویِ یک ستون است (نه حرکتِ هندسی؛ همان که ۱۲۹۲
+   لی‌اوت در ۱۲ ثانیه می‌ساخت). pilot (گزینهٔ c، اطمینان ۰٫۸): استثنایِ کور رویِ
+   پنجرهٔ مینیمایزشده GPU را بیدار نگه می‌داشت، پس قیدِ :not([data-hidden='1'])
+   گذاشته شد — با data-hidden از خودِ idleGate، چون data-idle به تنهایی این دو حالت را
+   از هم جدا نمی‌کند. */
+html[data-idle='1']:not([data-hidden='1']) .fts-path-flow,
+html[data-idle='1']:not([data-hidden='1']) .fts-comet {
   animation-play-state: running !important;
 }

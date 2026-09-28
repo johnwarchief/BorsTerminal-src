@@ -63,3 +63,49 @@ function cssHasGlobalIdlePause(css: string): boolean {
   const i = css.indexOf("html[data-idle='1'] *");
   return i >= 0 && css.slice(i, i + 260).includes('animation-play-state: paused !important');
 }
+
+/**
+ * جریانِ ستونِ انتخابِ درخت FTS. سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ ۱.۰.۵۳
+ * (tools/tree_flow_state.mts، getAnimations): با حرکتِ موس ۴ انیمیشن running بود
+ * و ۲۰ ثانیه بعد از آخرین حرکت هر چهار paused — مالک همان‌جا پرسید «چرا انیمیشن
+ * را برای درخت FTS حذف کردی؟». کد حذف نشده بود؛ دروازۀ بی‌کاری خوابانده بودش.
+ */
+const GRAPH = readFileSync(
+  path.resolve(import.meta.dirname, '../../src/features/master/components/ObsidianStrategyGraph.tsx'),
+  'utf8',
+);
+const flowClasses = [
+  ...new Set([...GRAPH.matchAll(/className="(fts-[a-z-]+)"/g)].map((m) => m[1])),
+];
+
+const FLOW_EXEMPT = "html[data-idle='1']:not([data-hidden='1'])";
+
+describe('گاردِ جریانِ درخت و دروازۀ بی‌کاری', () => {
+  it('کامپوننت همان دو کلاسی را می‌زند که CSS می‌شناسد', () => {
+    expect(flowClasses.slice().sort()).toEqual(['fts-comet', 'fts-path-flow']);
+  });
+
+  it('بی‌حرکتیِ موس جریانِ درخت را نمی‌خواباند — درخت همان تبی است که بی‌حرکت نگاهش می‌کنند', () => {
+    for (const cls of flowClasses) {
+      expect(CSS, `استثنایِ ${cls} در index.css نیست`).toContain(`${FLOW_EXEMPT} .${cls}`);
+    }
+    const exempt = CSS.slice(CSS.indexOf(FLOW_EXEMPT));
+    expect(exempt.slice(0, 300)).toMatch(/animation-play-state:\s*running\s*!important/);
+  });
+
+  /**
+   * pilot (گزینهٔ c، اطمینان ۰٫۸): استثنایِ کورِ `.fts-*` رویِ پنجرهٔ مینیمایزشده
+   * GPU را بیدار نگه می‌داشت؛ همان گاردی که برایِ ۱۲٪ مصرفِ v1.0.26 ساخته شد.
+   */
+  it('استثنا پنجرهٔ پنه را بی‌کار نمی‌گذارد — قیدِ :not([data-hidden]) سرِ جایش است', () => {
+    expect(CSS).not.toMatch(/html\[data-idle='1'\]\s+\.fts-/);
+    for (const cls of flowClasses) {
+      expect(CSS, `${cls} بی‌قیدِ پنهانی مستثنا شده`).toContain(`${FLOW_EXEMPT} .${cls}`);
+    }
+  });
+
+  it('کاهشِ حرکت اما هر دو را خاموش می‌کند (دسترس‌پذیری به بهایِ جریان فروخته نمی‌شود)', () => {
+    const reduced = CSS.slice(CSS.indexOf('prefers-reduced-motion'));
+    for (const cls of flowClasses) expect(reduced).toContain(`.${cls}`);
+  });
+});
