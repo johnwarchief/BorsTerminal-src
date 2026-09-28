@@ -7,9 +7,11 @@ import {
   LIMIT_PCT,
   isDefaultAssetTypes,
   matchesDirection,
+  matchesExitAccum,
   sameAssetSets,
   useTapeStore,
 } from '@features/market/stores/tapeStore';
+import { DEFAULT_TAPE_FILTER_CONFIG, tapeFilterVerdict } from '@features/market/lib/tapeAlgorithms';
 
 describe('استور فیلترهای تابلو', () => {
   beforeEach(() => {
@@ -113,5 +115,31 @@ describe('استور فیلترهای تابلو', () => {
     useTapeStore.getState().setAssetTypes(src);
     src.push('stock');
     expect(useTapeStore.getState().assetTypes).toEqual(['stock', 'fund']);
+  });
+
+  // «خروج از انباشت» تنها فیلترِ تابلو بود که پرچمِ خامِ بک‌اند را می‌خواند؛
+  // تا وقتی کانفیگ فرمول به او داده نشود، با چیپ و ستونِ «الگو» یکی نمی‌ماند.
+  it('خروج از انباشت همان داوریِ واحدِ چیپ و بج را می‌گیرد، نه پرچمِ خام', () => {
+    const cfg = DEFAULT_TAPE_FILTER_CONFIG;
+    const weak = {
+      symbol: 'فولاد', f_clock: true, f_susp: true, hist_sessions: 60,
+      prior30_vol: 1_000_000, tvol: 1_000, z_tot_tran: 5,
+      p_last: 1000, p_closing: 1000, price_yesterday: 1000,
+    } as never;
+    const strong = {
+      symbol: 'فولاد', f_clock: false, f_susp: false, hist_sessions: 60,
+      prior30_vol: 1_000_000, tvol: 4_000_000, z_tot_tran: 500,
+      p_last: 1100, p_closing: 1000, price_yesterday: 1000,
+    } as never;
+    // بی‌کانفیگ = همان رفتارِ پیشین (پرچم)
+    expect(matchesExitAccum(weak)).toBe(true);
+    // با کانفیگ، فرمول حاکم است هرچند پرچم سبز گفته
+    expect(matchesExitAccum(weak, cfg)).toBe(false);
+    // و قیدِ دو فیلتر، عینِ حاصل‌ضربِ همان داوریِ یکی‌شده
+    for (const row of [weak, strong]) {
+      expect(matchesExitAccum(row, cfg)).toBe(
+        tapeFilterVerdict(row, 'f_clock', cfg) && tapeFilterVerdict(row, 'f_susp', cfg),
+      );
+    }
   });
 });

@@ -6,6 +6,7 @@ import {
   DEFAULT_TAPE_FILTER_CONFIG,
   TAPE_PRESETS,
   coerceLookback,
+  tapeFilterVerdict,
   type TapeFilterConfig,
   type TapePresetKey,
 } from '../lib/tapeAlgorithms';
@@ -70,9 +71,20 @@ export function matchesVolRatio(volRatio: number | null | undefined, min: number
   return volRatio >= min;
 }
 
-/** عبور از فیلتر «خروج از انباشت»: هر دو پرچم ساعت و حجم مشکوک فعال */
-export function matchesExitAccum(row: { f_clock?: boolean | null; f_susp?: boolean | null }): boolean {
-  return !!row.f_clock && !!row.f_susp;
+/**
+ * عبور از فیلتر «خروج از انباشت»: هم ساعت و هم حجم مشکوک. داوری از همان
+ * `tapeFilterVerdict` واحد می‌آید — پیش از این پرچمِ خامِ بک‌اند خوانده می‌شد،
+ * پس همین یک فیلتر می‌توانست با چیپ و ستونِ «الگو»یِ همان صفحه نخواند.
+ */
+export function matchesExitAccum(
+  row: Parameters<typeof tapeFilterVerdict>[0],
+  config?: TapeFilterConfig,
+): boolean {
+  if (!config) {
+    return Boolean((row as unknown as Record<string, unknown>).f_clock) &&
+      Boolean((row as unknown as Record<string, unknown>).f_susp);
+  }
+  return tapeFilterVerdict(row, 'f_clock', config) && tapeFilterVerdict(row, 'f_susp', config);
 }
 
 /** پنج نوع پیش‌فرض فعال در بارگذاری اولیه و پس از بازنشانی (مطابق استاندارد ۱۱‌گانه TSETMC) */

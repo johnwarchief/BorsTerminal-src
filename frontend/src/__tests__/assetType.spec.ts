@@ -23,4 +23,17 @@ describe('طبقه بندی دارایی', () => {
     expect(classifyAssetType({ symbol: 'تسه9801', name: 'تسهیلات مسکن', sector_name: 'تسهیلات', board: 1 })).toBe('teseh');
     expect(classifyAssetType({ symbol: 'ضفولاد', name: 'اختیار فولاد', sector_name: 'اختیار', board: 1 })).toBe('option');
   });
+
+  // شاخه‌هایِ صنعت با «ي» عربیِ خودِ TSETMC نوشته شده‌اند و norm() داده را به
+  // «ی» فارسی می‌برد. تا پیش از این literalِ دست‌نویس هرگز مچ نمی‌شد و ۵۸۱
+  // صندوقِ زنده درِ منوی «بازارها / ابزارها» سهام حساب می‌شدند.
+  it('صندوق و اوراق از روی صنعتِ واقعیِ TSETMC (با ي عربی) هم شناخته می‌شوند', () => {
+    const YEH = String.fromCharCode(0x064a);
+    const fundSector = 'صندوق سرما' + YEH + 'ه گذاري قابل معامله';
+    const bondSector = 'اوراق تام' + YEH + 'ن مالي';
+    // نام هیچ‌کدام واژۀ «صندوق»/«اوراق» ندارد؛ فقط صنعت می‌تواند داوری کند
+    expect(classifyAssetType({ symbol: 'آبي', name: 'ص.س.درآمد ثابت آبي هامون-د', sector_name: fundSector, board: 1 })).toBe('fund');
+    expect(classifyAssetType({ symbol: 'پارسان', name: 'ص.س.پارسان-ب', sector_name: fundSector, board: 1 })).toBe('fund');
+    expect(classifyAssetType({ symbol: 'خزعت', name: 'سند خزانه', sector_name: bondSector, board: 1 })).toBe('bond');
+  });
 });

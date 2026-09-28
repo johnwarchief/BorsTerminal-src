@@ -52,9 +52,9 @@ describe('استور فیلترهای جدید', () => {
   });
 
   it('خروج از انباشت ترکیب ساعت و حجم مشکوک است', () => {
-    expect(matchesExitAccum({ f_clock: true, f_susp: true })).toBe(true);
-    expect(matchesExitAccum({ f_clock: true, f_susp: false })).toBe(false);
-    expect(matchesExitAccum({ f_clock: null, f_susp: true })).toBe(false);
+    expect(matchesExitAccum({ symbol: 'فولاد', f_clock: true, f_susp: true } as never)).toBe(true);
+    expect(matchesExitAccum({ symbol: 'فولاد', f_clock: true, f_susp: false } as never)).toBe(false);
+    expect(matchesExitAccum({ symbol: 'فولاد', f_clock: null, f_susp: true } as never)).toBe(false);
     useTapeStore.getState().toggleExitAccum();
     expect(useTapeStore.getState().exitAccum).toBe(true);
     useTapeStore.getState().toggleExitAccum();

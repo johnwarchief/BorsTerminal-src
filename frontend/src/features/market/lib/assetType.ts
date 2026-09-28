@@ -46,13 +46,23 @@ function norm(s: string | null | undefined): string {
   return (s ?? '').replace(ZWNJ_RE, '').replace(/ي/g, 'ی');
 }
 
+/**
+ * شاخه‌هایِ صنعت هم باید از همان norm() بگذرند. متنِ خامِ TSETMC «ي» عربی دارد
+ * (سرمايه، تامين) و norm() آن را به «ی» فارسی می‌برد؛ literalsِ دست‌نویس با
+ * «ي» عربی هیچ‌وقت به دادهٔ نرمال‌شده نمی‌خوردند، پس ۵۸۱ صندوقِ زنده و ۶۷۶
+ * ردیفِ اوراقِ خرد درِ «بازارها / ابزارها» سهام حساب می‌شدند و با خاموش‌کردنِ
+ * صندوق/اوراق از جدول بیرون نمی‌رفتند.
+ */
+const SECTOR_FUND = norm('صندوق سرمايه');
+const SECTOR_BOND = norm('اوراق تامين');
+
 export function classifyAssetType(d: Classifiable): AssetType {
   const name = norm(d.name);
   const sym = norm(d.symbol).toUpperCase();
   const sec = norm(d.sector_name);
 
   if (sym.startsWith('ض') || (sym.startsWith('ط') && !sym.startsWith('طال'))) return 'option';
-  if (name.includes('صندوق') || name.includes('ETF') || sec.includes('صندوق سرمايه')) return 'fund';
+  if (name.includes('صندوق') || name.includes('ETF') || sec.includes(SECTOR_FUND)) return 'fund';
   if (
     sym.startsWith('اخزا') ||
     sym.startsWith('اراد') ||
@@ -60,7 +70,7 @@ export function classifyAssetType(d: Classifiable): AssetType {
     sym.startsWith('گام') ||
     name.includes('اوراق') ||
     name.includes('اسناد') ||
-    sec.includes('اوراق تامين')
+    sec.includes(SECTOR_BOND)
   )
     return 'bond';
   if (sym.endsWith('ح') || name.includes('حق تقدم')) return 'right';

@@ -53,7 +53,7 @@ export function applyFilters(
     if (liveOnly && !q && r.is_live === false) return false;
     if (!matchesDirection(r.percent_change, direction)) return false;
     if (volRatioOn && !matchesVolRatio(r.vol_ratio, volRatioMin)) return false;
-    if (exitAccum && !matchesExitAccum(r)) return false;
+    if (exitAccum && !matchesExitAccum(r, filterConfig)) return false;
     return true;
   });
 }
