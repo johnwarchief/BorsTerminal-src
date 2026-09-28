@@ -10,9 +10,11 @@ description: گارد بیلد/نصب/اجرای BorsTerminal — قبل از ه
 ## ناورداها (نباید بشکنند)
 
 - **`numpy==2.0.2` پین‌شده است.** numpy ۲.۱+ نیازمند baseline x86-v2 است و روی CPUهای قدیمی کرش می‌کند. «مدرن‌سازی» ممنوع.
-- **پکیجینگ onedir، نه onefile:** `bors_exe_onedir.spec` (onefile کل market.db را هر بار استخراج می‌کرد).
+- **پکیجینگ onedir، نه onefile:** specِ فعال `fts_terminal.spec` است (`scripts/build_all.py` همان را صدا می‌زند؛
+  `bors_exe_onedir.spec` و کانالِ Velopack در v1.0.20 حذف شدند — دنبالشان نگردید. `bors_setup.spec` نسخۀ کهنه است).
+  دلیلِ onedir: onefile کل market.db را هر بار استخراج می‌کرد.
 - **`market.db.lzma` کنار EXE توزیع می‌شود، نه داخلش.** `ensure_market_db()` در `bors_config.py` بازسازی می‌کند.
-- **هر ماژول جدید `api/*.py` باید به `hiddenimports` در `bors_exe_onedir.spec` اضافه شود** وگرنه EXE روی اولین درخواست `ModuleNotFoundError` می‌دهد (چون `api_router()` ایمپورت‌ها را داخل بدنه‌ی تابع انجام می‌دهد).
+- **هر ماژول جدید `api/*.py` باید به `hiddenimports` در `fts_terminal.spec` اضافه شود** وگرنه EXE روی اولین درخواست `ModuleNotFoundError` می‌دهد (چون `api_router()` ایمپورت‌ها را داخل بدنه‌ی تابع انجام می‌دهد).
 - **گارد ویندوز:** `WIN_TOO_OLD` (ویندوز < ۱۰) در `bors_entry.py` قبل از استارت اپ بررسی می‌شود.
 - **رندر نرم افزاری:** `_render_flags()` برای GPU مجتمع/قدیمی/بدون GPU و RAM کم → فلگ‌های SwiftShader به مرورگر پاس می‌شود.
 - **کدگذاری خروجی:** روی ویندوز انگلیسی، stdout با cp1252 کرش می‌کند (`UnicodeEncodeError`) — هر print با متن فارسی باید زیر UTF-8 بماند.
