@@ -120,6 +120,30 @@ export function filterVolumeRatio(r: { vol_ratio_file?: number | null }): number
   return num(r.vol_ratio_file);
 }
 
+/**
+ * مبنایِ فایل با «امروز داخلِ میانگین» (#226-الف):
+ * ``tvol ÷ (Σ[ih][0..29] + tvol) / 31``.
+ *
+ * تا پنجرۀِ سی‌نشستِ فایل درست می‌ماند و فقط وزنِ امروز درِ میانگین را
+ * عوض می‌کند. دربِ «پنجره کامل نیست» را ستونِ `vol_ratio_file` نگهبانی
+ * می‌کند: نبودنش یعنی کمتر از سی نشستِ فایل — آن‌وقت این‌جا هم نسنجیده
+ * می‌مانیم (دستگیرهٔ «دروازۀ تاریخچه» کارِ دیگری ندارد؛ گیتِ حجم همان
+ * سیِ نشستِ کامل می‌ماند، فقط صورتِ کسر با امروز سنگین‌تر می‌شود).
+ */
+export function filterVolumeRatioWithToday(r: {
+  tvol?: number | null;
+  prior30_vol?: number | null;
+  vol_ratio_file?: number | null;
+}): number | null {
+  const vrf = num(r.vol_ratio_file);
+  if (vrf == null) return null;                     // پنجرۀ ۳۰ نشستِ فایل کامل نیست
+  const t = num(r.tvol);
+  const sum = num(r.prior30_vol);
+  if (t != null && t >= 0 && sum != null && sum > 0) return (t * 31) / (sum + t);
+  // Σ خام نیست: همان جبر از رویِ نسبتِ گردِ بک‌اند (دو رقمِ اعطا).
+  return vrf > 0 ? (31 * vrf) / (30 + vrf) : 0;     // vrf=0 یعنی حجمِ امروز صفر
+}
+
 export type ClockInput = {
   p_last?: number | null;
   p_closing?: number | null;

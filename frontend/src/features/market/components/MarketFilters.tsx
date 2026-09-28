@@ -34,6 +34,119 @@ const POLL_OPTIONS = [
   { ms: 300_000, label: '۵ دقیقه' },
 ];
 
+/** چیپ «مبنای داوری» (#226): دو دستگیرۀِ سراسریِ همان ارزیابِ فرانت — نه آستانهٔ
+ *  یک فیلتر، چیزی که «الگو» و شمارِ چیپ‌ها را با هم می‌سازد. پیش‌فرض = عینِ فایل. */
+export function BasisConfigChip() {
+  const config = useTapeStore((s) => s.tapeFilterConfig);
+  const setConfig = useTapeStore((s) => s.setTapeFilterConfig);
+  const [open, setOpen] = useState(false);
+  const chipRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (popRef.current?.contains(t) || chipRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onScrollOrResize = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, [open]);
+
+  const basisOn = config.basis.includeTodayInVolumeBase || !config.basis.requireLowBaseHistory;
+
+  const toggle = (patch: Partial<TapeFilterConfig['basis']>) =>
+    setConfig({ basis: { ...config.basis, ...patch } });
+
+  return (
+    <div ref={chipRef} className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        onClick={() => {
+          if (chipRef.current) setAnchorRect(chipRef.current.getBoundingClientRect());
+          setOpen((v) => !v);
+        }}
+        title="مبنای داوریِ پنج فیلتر و ستونِ الگو (#226)"
+        aria-label="مبنای داوری"
+        aria-pressed={basisOn}
+        className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-2xs font-bold transition-all ${
+          basisOn
+            ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+            : 'border-border-c bg-bg-card text-text-primary/85 hover:border-accent-blue hover:text-accent-blue'
+        }`}
+      >
+        🧮 مبنای داوری
+      </button>
+      {open && anchorRect && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={popRef}
+              role="dialog"
+              aria-label="مبنای داوری"
+              style={{
+                position: 'fixed',
+                top: anchorRect.bottom + 6,
+                left: Math.max(8, Math.min(anchorRect.left, window.innerWidth - 300)),
+                zIndex: 9999,
+              }}
+              className="w-72 rounded-2xl border border-border-c bg-bg-primary p-3 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+            >
+              <div className="flex items-center justify-between border-b border-border-c/60 pb-2 mb-2.5">
+                <span className="text-xs font-black text-text-primary">🧮 مبنای داوری</span>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label="بستن"
+                  className="size-5 rounded-md text-text-muted hover:bg-bg-secondary hover:text-text-primary flex items-center justify-center text-xs"
+                >
+                  ✕
+                </button>
+              </div>
+              <label className="flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-bg-card/60">
+                <input
+                  type="checkbox"
+                  checked={config.basis.includeTodayInVolumeBase}
+                  onChange={(e) => toggle({ includeTodayInVolumeBase: e.target.checked })}
+                  className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
+                />
+                <span className="text-2xs font-semibold leading-4">
+                  امروز داخلِ مبنایِ میانگین
+                  <span className="block text-3xs text-text-muted font-normal mt-0.5">
+                    حجمِ همین نشست هم درِ Σ[ih][0..29]÷۳۰ می‌نشیند (مبناء ÷ ۳۱).
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer rounded-lg p-1 hover:bg-bg-card/60 mt-1.5">
+                <input
+                  type="checkbox"
+                  checked={config.basis.requireLowBaseHistory}
+                  onChange={(e) => toggle({ requireLowBaseHistory: e.target.checked })}
+                  className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
+                />
+                <span className="text-2xs font-semibold leading-4">
+                  دروازۀ ۲۹-نشستِ تاریخچه
+                  <span className="block text-3xs text-text-muted font-normal mt-0.5">
+                    خاموش: نمادِ کم‌سابقه با کمینۀِ موجود سنجیده می‌شود (کفِ نقطه‌زنی).
+                  </span>
+                </span>
+              </label>
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
+}
+
 /** چیپ ساده برای گزینه‌های داخل منوی بازارها */
 function MenuChip({
   active,
@@ -377,6 +490,8 @@ export function MarketFilters({
             hidden={hiddenMatches?.[f]}
           />
         ))}
+
+        <BasisConfigChip />
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">
         <div className="flex items-center gap-2 flex-wrap">

@@ -14,6 +14,7 @@ import {
   ROOBI_ZD1_MIN,
   detectJetBreakout,
   filterVolumeRatio,
+  filterVolumeRatioWithToday,
 } from './tapeMath';
 
 /** نقاطِ پلکانِ مقاومتِ جزوه — همان JET_LADDER، تا انتخابِ UI گم نشود. */
@@ -76,6 +77,19 @@ export type TapeFilterConfig = {
     minBuyerPower: number;        // حداقل قدرت خریدار
     minVolRatio: number;          // حداقل ضریب حجم
   };
+  /**
+   * ۷. مبنایِ داوری (#226) — دو دستگیره، فقط درِ ارزیابِ فرانت؛ بک‌اند و
+   * نشانه‌هایِ خامِ ستون‌ها دست‌نخورده‌اند.
+   */
+  basis: {
+    /** (الف) «امروز داخلِ مبنایِ میانگین» — حجمِ همین نشست درِ Σ[ih][0..29]/۳۰
+     *  یک واحدِ سی‌ام share می‌گیرد: مبناء ÷ ۳۱ با امروز. پیش‌فرض خاموش = عینِ فایل. */
+    includeTodayInVolumeBase: boolean;
+    /** (ب) «دروازۀ ۲۹-نشستِ تاریخچه» — روشن = کمینۀِ نقطه‌زنی فقط با آرایۀِ
+     *  کاملِ فایل سنجیده می‌شود (رفتارِ فعلی/جزوه). خاموش = نمادهایِ کم‌سابقه
+     *  با کمینۀِ موجود سنجیده می‌شوند (ستونِ نمایشِ min30_low، بدونِ روزهایِ صفر). */
+    requireLowBaseHistory: boolean;
+  };
 };
 
 /**
@@ -117,6 +131,10 @@ export const DEFAULT_TAPE_FILTER_CONFIG: TapeFilterConfig = {
   smartFlow: {
     minBuyerPower: 2.0,
     minVolRatio: 1.5,
+  },
+  basis: {
+    includeTodayInVolumeBase: false,  // عینِ فایل: Σ[ih][0..29] بی‌امروز
+    requireLowBaseHistory: true,      // عینِ فایل: کمینۀ سی‌نشستِ کامل
   },
 };
 
@@ -221,10 +239,12 @@ function below(value: number | null | undefined, bound: number): boolean {
   return v != null && v < bound;
 }
 
-/** گیتِ حجمیِ پنج فیلتر — مبناءِ فایل، و نبودنش **رد** است نه بی‌صدا قبول. */
-function volumeGate(r: MarketRow, minRatio: number): boolean {
+/** گیتِ حجمیِ پنج فیلتر — مبناءِ فایل، و نبودنش **رد** است نه بی‌صدا قبول.
+ *  دستگیرۀ #226-الف (`basis.includeTodayInVolumeBase`) تنها وزنِ امروز را درِ
+ *  همان مبناء عوض می‌کند؛ آستانه و قاعدۀ «نسنجیده = مردود» همان می‌ماند. */
+function volumeGate(r: MarketRow, minRatio: number, basis?: TapeFilterConfig['basis']): boolean {
   if (!(minRatio > 0)) return true;              // آستانهٔ صفر = گیتِ خاموش
-  const mult = filterVolumeRatio(r);
+  const mult = basis?.includeTodayInVolumeBase ? filterVolumeRatioWithToday(r) : filterVolumeRatio(r);
   return mult != null && mult > minRatio;
 }
 
@@ -235,19 +255,30 @@ function knownSessions(r: MarketRow): number | null {
   return num(r.hist_sessions);
 }
 
-/** کمینۀِ فایل: ``min([ih][0..28].PriceMin)`` — صفر **معتبر** است، چون فایل
+/** کمینۀ فایل: ``min([ih][0..28].PriceMin)`` — صفر **معتبر** است، چون فایل
  *  `MinPriceOfMonth() != 0` را صریحاً می‌خواهد؛ نشستِ بی‌معامله کفِ صفر
  *  می‌گیرد و کلِ ردیف را رد می‌کند. بک‌اند پنجرۀِ ناقص را خودش صفر می‌کند
  *  (`min_low_29`)، این‌جا فقط همان کفِ ۲۹ نشستیِ بک‌اند برگردانده می‌شود
- *  (`tape_flags.LOW_BASE_SESSIONS`). */
-function fileLow(r: MarketRow): number | null {
+ *  (`tape_flags.LOW_BASE_SESSIONS`).
+ *
+ *  دستگیرۀ #226-ب (`basis.requireLowBaseHistory=false`) همین دربِ «۲۹ نشستِ
+ *  تاریخچه» را باز می‌کند: نمادهایِ کم‌سابقه با کمینۀِ **موجود** (ستونِ
+ *  نمایشیِ `min30_low`، که مثلِ فایل روزهایِ صفر را بیرون می‌گذارد) سنجیده
+ *  می‌شوند. با دربِ بسته (پیش‌فرض) رفتارِ جزوه مو به مو محفوظ است. */
+function fileLow(r: MarketRow, basis?: TapeFilterConfig['basis']): number | null {
+  const exact = num(r.min_low_29);
   const sessions = knownSessions(r);
+  if (basis?.requireLowBaseHistory === false) {
+    if (exact != null && exact > 0 && sessions != null && sessions >= LOW_BASE_SESSIONS) return exact;
+    const avail = num(r.min30_low);
+    return avail != null && avail > 0 ? avail : null;
+  }
   if (sessions == null || sessions < LOW_BASE_SESSIONS) return null;
-  return num(r.min_low_29);
+  return exact;
 }
 
 /** ۱. الگوی ساعت — فایل: ``pl >= pc*1.02 && tvol > Σ[ih][0..29]/30 && tno > 30`` */
-export function matchClockPattern(r: MarketRow, cfg: TapeFilterConfig['clock']): boolean {
+export function matchClockPattern(r: MarketRow, cfg: TapeFilterConfig['clock'], basis?: TapeFilterConfig['basis']): boolean {
   const last = num(r.p_last);
   const close = num(r.p_closing);
   if (last == null || close == null || close <= 0) return false;
@@ -260,15 +291,15 @@ export function matchClockPattern(r: MarketRow, cfg: TapeFilterConfig['clock']):
     if (yest == null || !(close < yest && last > yest)) return false;
   }
 
-  if (!volumeGate(r, cfg.minVolRatio)) return false;
+  if (!volumeGate(r, cfg.minVolRatio, basis)) return false;
   return above(r.z_tot_tran, cfg.minTradeCount);
 }
 
 /** ۲. حجم مشکوک — فایل: ``tvol > 3*Σ[ih][0..29]/30 && tno > 50`` */
-export function matchSuspiciousVolume(r: MarketRow, cfg: TapeFilterConfig['suspiciousVolume']): boolean {
+export function matchSuspiciousVolume(r: MarketRow, cfg: TapeFilterConfig['suspiciousVolume'], basis?: TapeFilterConfig['basis']): boolean {
   if (!above(r.z_tot_tran, cfg.minTradeCount)) return false;
   if (cfg.timeframe === 'prev_day_dod') return above(r.vol_dod, cfg.minRatio);
-  return volumeGate(r, cfg.minRatio);
+  return volumeGate(r, cfg.minRatio, basis);
 }
 
 /**
@@ -289,7 +320,7 @@ export function matchJetFilter(r: MarketRow, cfg: TapeFilterConfig['jet']): bool
  * یعنی: رویِ کفِ مجاز چسبیده، بیش از یک درصد پایین، و خریدار در صفِ اول نشسته.
  * نبودنِ هر قید = رد (درِ خودِ سایت هم ExecFilter را با try/catch رد می‌کند).
  */
-export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): boolean {
+export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi'], basis?: TapeFilterConfig['basis']): boolean {
   const last = num(r.p_last);
   const floor = num(r.tmin);
   if (last == null || floor == null || floor <= 0 || last !== floor) return false;
@@ -299,7 +330,7 @@ export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): 
   const qd1 = num(r.buy_q1_vol);
   if (qd1 == null || qd1 <= cfg.minTradeCount) return false;              // qd1 > 100
 
-  if (!volumeGate(r, cfg.minVolRatio)) return false;
+  if (!volumeGate(r, cfg.minVolRatio, basis)) return false;
   if (cfg.minBuyerPower > 0 && !atLeast(r.buyer_power, cfg.minBuyerPower)) return false;
   return true;
 }
@@ -307,15 +338,15 @@ export function matchRoobiFilter(r: MarketRow, cfg: TapeFilterConfig['roobi']): 
 /** ۵. نقطه‌زنی و کف‌یابی — فایل: ``round((pc-min)/pc*100*100)/100 < 3 && tvol > Σ[ih][0..29]/30 && tno > 5``
  *  ``min`` کفِ [ih][0..28] است، نه ستونِ نمایشیِ min30_low (که دیروزها را می‌شمرد).
  */
-export function matchNoqtehFilter(r: MarketRow, cfg: TapeFilterConfig['noqteh']): boolean {
+export function matchNoqtehFilter(r: MarketRow, cfg: TapeFilterConfig['noqteh'], basis?: TapeFilterConfig['basis']): boolean {
   const close = num(r.p_closing);
-  const minLow = fileLow(r);
+  const minLow = fileLow(r, basis);
   if (close == null || close <= 0 || minLow == null || minLow <= 0) return false;
 
   const distPct = Math.round(((close - minLow) / close) * 100 * 100) / 100;
   if (distPct < 0 || distPct >= cfg.maxDistPct) return false;
 
-  if (!volumeGate(r, cfg.minVolRatio)) return false;
+  if (!volumeGate(r, cfg.minVolRatio, basis)) return false;
   return above(r.z_tot_tran, cfg.minTradeCount);
 }
 
@@ -339,15 +370,15 @@ export function evaluateDynamicQuickFilter(
   if (filterKey !== 'f_smart_flow' && !isLiveBoardRow(r)) return false;
   switch (filterKey) {
     case 'f_clock':
-      return matchClockPattern(r, cfg.clock);
+      return matchClockPattern(r, cfg.clock, cfg.basis);
     case 'f_susp':
-      return matchSuspiciousVolume(r, cfg.suspiciousVolume);
+      return matchSuspiciousVolume(r, cfg.suspiciousVolume, cfg.basis);
     case 'f_jet':
       return matchJetFilter(r, cfg.jet);
     case 'f_roobi':
-      return matchRoobiFilter(r, cfg.roobi);
+      return matchRoobiFilter(r, cfg.roobi, cfg.basis);
     case 'f_noqteh':
-      return matchNoqtehFilter(r, cfg.noqteh);
+      return matchNoqtehFilter(r, cfg.noqteh, cfg.basis);
     case 'f_smart_flow':
       return matchSmartFlowFilter(r, cfg.smartFlow);
     default:

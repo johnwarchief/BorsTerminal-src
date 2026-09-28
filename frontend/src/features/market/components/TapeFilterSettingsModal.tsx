@@ -57,7 +57,7 @@ export function TapeFilterSettingsModal({
     setConfig({ ...config, [block]: { ...config[block], [field]: v } } as TapeFilterConfig);
   };
 
-  const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart'>('presets');
+  const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart' | 'basis'>('presets');
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
@@ -174,6 +174,17 @@ export function TapeFilterSettingsModal({
             }`}
           >
             💎 پول هوشمند
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('basis')}
+            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
+              activeTab === 'basis'
+                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
+                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
+            }`}
+          >
+            🧮 مبنای داوری
           </button>
         </div>
 
@@ -701,6 +712,58 @@ export function TapeFilterSettingsModal({
                   onChange={(e) => setField('smartFlow', 'minVolRatio', e.target.value)}
                   className="w-full accent-[#38bdf8] cursor-pointer h-2 bg-bg-secondary rounded-lg"
                 />
+              </div>
+            </div>
+          )}
+
+          {/* تب مبنای داوری (#226) */}
+          {activeTab === 'basis' && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={config.basis.includeTodayInVolumeBase}
+                    onChange={(e) =>
+                      setConfig({
+                        basis: { ...config.basis, includeTodayInVolumeBase: e.target.checked },
+                      })
+                    }
+                    className="size-4 rounded accent-[#38bdf8] cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-text-primary">
+                    امروز داخلِ مبنایِ میانگین
+                  </span>
+                </label>
+                <p className="mt-1.5 text-2xs text-text-muted leading-4 ms-6.5">
+                  پیش‌فرضِ فایل: مبناء Σ[ih][0..29] ÷ ۳۰ است و حجمِ امروز داخلش نیست. با
+                  روشن‌کردن، حجمِ همین نشست هم درِ میانگین می‌نشیند (تقسیم بر ۳۱) — آستانه‌ها
+                  همان می‌مانند و داوریِ سنگین‌تر می‌شود. نشانِ ستونِ «الگو» و شمارِ چیپ‌ها با
+                  همینِ یکِ ارزیاب عوض می‌شوند.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border-c/60 bg-bg-card/40 p-4">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={config.basis.requireLowBaseHistory}
+                    onChange={(e) =>
+                      setConfig({
+                        basis: { ...config.basis, requireLowBaseHistory: e.target.checked },
+                      })
+                    }
+                    className="size-4 rounded accent-[#38bdf8] cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-text-primary">
+                    دروازۀ ۲۹-نشستِ تاریخچه
+                  </span>
+                </label>
+                <p className="mt-1.5 text-2xs text-text-muted leading-4 ms-6.5">
+                  روشن (پیش‌فرض): کفِ «نقطه‌زنی و کف‌یابی» فقط با آرایۀِ کاملِ فایل ([ih][0..28])
+                  سنجیده می‌شود؛ نمادِ کم‌سابقه مردود است، عینِ ExecFilterِ خودِ سایت. خاموش:
+                  همان نمادها با کمینۀِ موجودِ سابقه داوری می‌شوند.
+                </p>
               </div>
             </div>
           )}

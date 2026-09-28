@@ -126,6 +126,7 @@ function loadInitialTapeConfig(): TapeFilterConfig {
       roobi: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.roobi, parsed.roobi),
       noqteh: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.noqteh, parsed.noqteh),
       smartFlow: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.smartFlow, parsed.smartFlow),
+      basis: mergeBlock(DEFAULT_TAPE_FILTER_CONFIG.basis, parsed.basis),
     };
   } catch {
     // ignore
@@ -246,6 +247,7 @@ export const useTapeStore = create<TapeState>((set) => ({
         roobi: { ...s.tapeFilterConfig.roobi, ...(partial.roobi ?? {}) },
         noqteh: { ...s.tapeFilterConfig.noqteh, ...(partial.noqteh ?? {}) },
         smartFlow: { ...s.tapeFilterConfig.smartFlow, ...(partial.smartFlow ?? {}) },
+        basis: { ...s.tapeFilterConfig.basis, ...(partial.basis ?? {}) },
       };
       saveTapeConfig(updated);
       return { tapeFilterConfig: updated };

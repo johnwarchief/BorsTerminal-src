@@ -18,9 +18,11 @@ import {
   matchRoobiFilter,
   matchSmartFlowFilter,
   matchSuspiciousVolume,
+  evaluateDynamicQuickFilter,
 } from '@features/market/lib/tapeAlgorithms';
 import { JET_LADDER, resistanceLadderHigh } from '@features/market/lib/tapeMath';
 import { TapeFilterSettingsModal } from '@features/market/components/TapeFilterSettingsModal';
+import { BasisConfigChip } from '@features/market/components/MarketFilters';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
 /** ردیفی که همهٔ شروطِ فایلِ پنج فیلتر را با هم دارد. */
@@ -399,5 +401,96 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
                + missing.join(',')).toEqual([]);
       }
     }
+  });
+});
+
+describe('دستگیره‌های ۲۲۶ — مبنایِ داوری', () => {
+  // دو دستگیره، هر کدام یک تابع: (الف) درِ volumeGate، (ب) درِ کمینۀِ ۲۹-نشست.
+  const basisToday = { ...DEFAULT_TAPE_FILTER_CONFIG.basis, includeTodayInVolumeBase: true };
+  const noHistGate = { ...DEFAULT_TAPE_FILTER_CONFIG.basis, requireLowBaseHistory: false };
+
+  it('پیش‌فرض‌ها = رفتارِ فعلی: هیچ‌کدام از پنج فیلتر با کانفیگِ تازه عوض نمی‌شود', () => {
+    const row = passingRow();
+    for (const key of ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh']) {
+      expect(evaluateDynamicQuickFilter(row, key, DEFAULT_TAPE_FILTER_CONFIG))
+        .toBe(evaluateDynamicQuickFilter(row, key, {
+          ...DEFAULT_TAPE_FILTER_CONFIG,
+          basis: { includeTodayInVolumeBase: false, requireLowBaseHistory: true },
+        }));
+    }
+    expect(DEFAULT_TAPE_FILTER_CONFIG.basis).toEqual({
+      includeTodayInVolumeBase: false, requireLowBaseHistory: true,
+    });
+  });
+
+  it('(الف) امروز داخلِ مبناء: نسبت از ۴ به ۳۱×۴÷۳۴ (≈۳.۶۴۷) می‌آید و آستانۀ مرزی می‌شکند', () => {
+    const row = passingRow();  // tvol=۴۰۰۰۰۰۰، Σ=۳۰۰۰۰۰۰۰ → vrf=۴
+    const cfg = {
+      ...DEFAULT_TAPE_FILTER_CONFIG,
+      suspiciousVolume: { ...DEFAULT_TAPE_FILTER_CONFIG.suspiciousVolume, minRatio: 3.7 },
+    };
+    expect(evaluateDynamicQuickFilter(row, 'f_susp', cfg)).toBe(true);        // ۴ > ۳.۷
+    expect(evaluateDynamicQuickFilter(row, 'f_susp', { ...cfg, basis: basisToday })).toBe(false);
+  });
+
+  it('(الف) دربِ سی‌نشستِ کامل جا نمی‌زند: بی‌مبناءِ کامل همچنان رد است', () => {
+    const thin = passingRow({ vol_ratio_file: null, prior30_vol: 5_000_000, hist_sessions: 12 });
+    const cfg = { ...DEFAULT_TAPE_FILTER_CONFIG, basis: basisToday };
+    expect(evaluateDynamicQuickFilter(thin, 'f_clock', cfg)).toBe(false);
+  });
+
+  it('(الف) جت بی‌تأثیر می‌ماند — قیدِ حجمش همان مبناءِ خالصِ فایل است', () => {
+    const row = passingRow();
+    expect(evaluateDynamicQuickFilter(row, 'f_jet', DEFAULT_TAPE_FILTER_CONFIG)).toBe(true);
+    expect(evaluateDynamicQuickFilter(row, 'f_jet',
+      { ...DEFAULT_TAPE_FILTER_CONFIG, basis: basisToday })).toBe(true);
+  });
+
+  it('(ب) دربِ ۲۹-نشست خاموش: نمادِ کم‌سابقه با کمینۀِ موجود سنجیده می‌شود', () => {
+    const young = passingRow({ hist_sessions: 28, min_low_29: 0, min30_low: 995 });
+    expect(matchNoqtehFilter(young, DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
+    expect(matchNoqtehFilter(young, DEFAULT_TAPE_FILTER_CONFIG.noqteh, noHistGate)).toBe(true);
+  });
+
+  it('(ب) با دربِ خاموش هم «هیچ کفی نبودن» یعنی رد، نه قبولِ بی‌صدا', () => {
+    const noLow = passingRow({ hist_sessions: 28, min_low_29: 0, min30_low: null });
+    expect(matchNoqtehFilter(noLow, DEFAULT_TAPE_FILTER_CONFIG.noqteh, noHistGate)).toBe(false);
+  });
+
+  it('تب «مبنای داوری» در مودال هر دو دستگیره را در استور می‌نویسد', () => {
+    render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
+    fireEvent.click(screen.getByText('🧮 مبنای داوری'));
+    const todayBox = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
+    const histBox = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
+    expect(todayBox).not.toBeChecked();
+    expect(histBox).toBeChecked();
+    fireEvent.click(todayBox);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
+    fireEvent.click(histBox);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
+  });
+});
+
+describe('چیپ «مبنای داوری» رویِ نوارِ تابلو (#226)', () => {
+  beforeEach(() => {
+    useTapeStore.getState().resetTapeFilterConfig();
+  });
+
+  it('پیش‌فرض: دستگیره‌ها خاموش/روشنِ جزوه و پاپ‌اور هر دو را نشان می‌دهد', () => {
+    render(<BasisConfigChip />);
+    const chip = screen.getByRole('button', { name: 'مبنای داوری' });
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(chip);
+    const todayBox = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
+    const histBox = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
+    expect(todayBox).not.toBeChecked();
+    expect(histBox).toBeChecked();
+    fireEvent.click(todayBox);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
+    fireEvent.click(histBox);
+    expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
+    // تغییرِ یک بلوک، بلوکِ دیگرِ همان دستگیره را نمی‌اندازد (رگرسیونِ setTapeFilterConfig)
+    expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
   });
 });
