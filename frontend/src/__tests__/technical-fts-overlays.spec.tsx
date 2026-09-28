@@ -71,6 +71,12 @@ async function renderChart() {
     .find((e) => (e.textContent ?? '').includes('بدون تعدیل')) as HTMLElement;
   await act(async () => { fireEvent.click(none); });
   await act(async () => { await Promise.resolve(); });
+  // رأیِ مالک (#219): لایۀ «تحلیل FTS» پیش‌فرض خاموش است ⇒ تست همان کلیدِ نوارِ ابزار
+  // را صریح روشن می‌کند؛ پیش‌فرضِ محصول تغییر نمی‌کند.
+  const ftsBtn = Array.from(document.querySelectorAll('button'))
+    .find((e) => (e.getAttribute('title') ?? '') === 'فعال‌سازی لایه‌های تحلیلی استراتژی FTS') as HTMLElement;
+  await act(async () => { fireEvent.click(ftsBtn); });
+  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 }
 
 const drawn = (name: string) => overlays.filter((o) => o.name === name);
