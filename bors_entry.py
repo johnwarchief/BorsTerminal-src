@@ -326,6 +326,29 @@ def find_app_browser():
             return c
     return None
 
+def _webview_storage_dir():
+    """پروفایلِ پایدارِ WebView2 به‌جای پوشهٔ موقتِ هر اجرا.
+
+    دلیلِ وجودش (سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ اپِ نصبی): pywebview با private_mode
+    پیش‌فرضْ هر اجرا یک `tempfile.mkdtemp()` می‌سازد و درِ همان حالت هیچ
+    localStorage را رویِ دیسک نمی‌نویسد. درِ %TEMP% همین ماشین ۳۶ پوشهٔ
+    EBWebView با ۴۷۶ مگابایت جا ماند، و در ۳۴ مورد از ۳۵ِ قابلِ خواندن
+    logِ Local Storage بی‌محتوا بود (۴۹ بایت) — یعنی هر چیزی که UI در
+    localStorage می‌گذارد (بازهٔ پولینگ، «حذفِ پسوندِ عددی»، ترجیحاتِ قیف،
+    پارامترهایِ استراتژی، تم، آستانهٔ سرمایه) با هر بارِ بستنِ برنامه می‌مرد.
+    مسیرِ جایگزینِ مرورگری (`open_app_window`) پروفایلِ پایدار دارد؛ این
+    تفاوتِ دو مسیر بود، نه باگِ فرانت‌اند.
+    """
+    base = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
+    d = os.path.join(base, 'BorsTerminal_Ultimate', 'webview2')
+    try:
+        os.makedirs(d, exist_ok=True)
+        return d
+    except OSError as e:
+        print(f'[native] storage dir unavailable ({e}) -> pywebview default')
+        return ''
+
+
 def open_native_window(url):
     """پنجرهٔ مستقلِ بومی با WebView2 (pywebview): بدون مرورگر/تب/نوار آدرس و
     بدون نامِ Edge در تسک‌بار — شبیهِ یک اپ دسکتاپ واقعی. اگر pywebview یا
@@ -357,7 +380,26 @@ def open_native_window(url):
         webview.create_window('بورس‌ترمینال — BorsTerminal', url,
                               width=1440, height=900, min_size=(1024, 640),
                               maximized=True)
-        webview.start()          # تا بستهٔ شدن پنجره بلاق میکند
+        storage = _webview_storage_dir()
+        # private_mode باید صریحاً خاموش شود، وگرنه storage_path بی‌اثر است
+        # (پیش‌فرضِ pywebviewْ حالتِ خصوصی/موقت است). نسخهٔ کتابخانه درِ
+        # requirements پین نشده، پس فقط کلیدهایی پاس می‌شوند که امضایشان هست.
+        kwargs = {}
+        try:
+            import inspect
+            allowed = set(inspect.signature(webview.start).parameters)
+            if 'private_mode' in allowed:
+                kwargs['private_mode'] = False
+            if storage and 'storage_path' in allowed:
+                kwargs['storage_path'] = storage
+        except (TypeError, ValueError) as e:
+            print(f'[native] cannot read webview.start signature ({e})')
+        if kwargs:
+            print(f'[native] persistent webview profile: {kwargs.get("storage_path", "-")}')
+        else:
+            print('[native] webview.start has no private_mode/storage_path -> '
+                  'settings will NOT survive a restart (upgrade pywebview)')
+        webview.start(**kwargs)          # تا بستهٔ شدن پنجره بلاق میکند
         return True
     except Exception as e:
         print(f'[native] window failed ({e}) -> browser fallback')

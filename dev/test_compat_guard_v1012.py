@@ -19,12 +19,21 @@ try:
 except Exception:
     pass
 
+# bors_entry درِ زمانِ import صدا‌زده می‌شود: sys.stdout را به logs/bors.log
+# می‌بندد (حالتِ EXE بدونِ کنسول). نتیجه‌اش این بود که خروجیِ این گارد هرگز
+# رویِ کنسول/CI دیده نمی‌شد و run_all_tests آن را «0 pass / 0 fail» ثبت می‌کرد —
+# یعنی گاردی که هیچ‌چیز چاپ نمی‌کند ولی قرمز هم نمی‌شود. با همین متغیرِ محیط
+# که خودِ bors_entry برایِ دیباگ گذاشته، جریانِ واقعی حفظ می‌شود.
+os.environ.setdefault("BORS_SHOW_CONSOLE", "1")
+
 import bors_entry as E
 
 _bad = []
+_n = [0]
 
 
 def ck(cond, msg):
+    _n[0] += 1
     print("  %s %s" % ("PASS" if cond else "FAIL", msg))
     if not cond:
         _bad.append(msg)
@@ -98,7 +107,25 @@ ck("WIN_TOO_OLD" in src and "_warn_old_windows" in src,
    "Windows-version guard is wired")
 ck("if WIN_TOO_OLD:" in src, "main() checks the Windows guard before starting")
 
-print("\n%d check(s), %d failure(s)" % (len(_bad) == 0 and 14 or 14, len(_bad)))
+print("\n== پنجرۀ بومی پروفایلِ پایدارِ WebView2 دارد ==")
+# سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ اپِ نصبی: ۳۶ پوشۀ EBWebView با ۴۷۶ مگ در %TEMP% و
+# ۳۴ از ۳۵ logِ Local Storage بی‌محتوا (۴۹ بایت). یعنی هر چیزی که UI در
+# localStorage می‌نویسد با بستنِ برنامه می‌مرد.
+ck("_webview_storage_dir" in src,
+   "a stable webview storage dir is computed")
+ck('os.path.join(base, \'BorsTerminal_Ultimate\', \'webview2\')' in src,
+   "it lives under %LOCALAPPDATA%\\BorsTerminal_Ultimate\\webview2, not %TEMP%")
+ck("webview.start(**kwargs)" in src,
+   "open_native_window passes the storage kwargs to webview.start")
+ck("kwargs['private_mode'] = False" in src,
+   "private_mode is turned off explicitly (otherwise storage_path is inert)")
+ck("kwargs['storage_path'] = storage" in src,
+   "storage_path is passed when the library accepts it")
+ck("def _webview_storage_dir" in src and "except OSError" in
+   src.split("def _webview_storage_dir")[1].split("def open_native_window")[0],
+   "an unwritable LOCALAPPDATA degrades instead of crashing the window")
+
+print("\n%d check(s), %d failure(s)" % (_n[0], len(_bad)))
 if _bad:
     print("FAILURES: %s" % _bad)
     sys.exit(1)

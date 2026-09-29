@@ -25,7 +25,7 @@ set "ZIP=%~dp0BorsTerminal_Update.zip"
 if not exist "%ZIP%" (
   echo [ERR] %ZIP% not found.
   echo       Keep apply_update.bat and BorsTerminal_Update.zip together.
-  pause
+  call :hold_window
   exit /b 1
 )
 rem Re-run from %TEMP% so extraction can safely overwrite this file.
@@ -37,7 +37,7 @@ set "RC=%errorlevel%"
 del "%WORKER%" >nul 2>&1
 echo.
 echo Update finished with code %RC%. This window can be closed.
-pause
+call :hold_window
 exit /b %RC%
 
 :phase2
@@ -132,3 +132,14 @@ if defined BORS_UPDATE_NORELAUNCH (
 )
 start "" "%TARGET%\%EXE%"
 exit /b 0
+
+:hold_window
+rem `pause` waits for a keypress that never arrives when the in-app updater
+rem spawns this script with no console: the cmd.exe then stays alive forever
+rem (observed on a real machine: two hung cmd.exe after the 1.0.53 and 1.0.54
+rem patches, both sitting on this very line). `timeout` fails immediately when
+rem input is redirected, so a double-clicked window still stays readable for
+rem 20 seconds and a silent in-app update simply finishes and exits.
+timeout /t 20 /nobreak >nul 2>&1
+goto :eof
+
