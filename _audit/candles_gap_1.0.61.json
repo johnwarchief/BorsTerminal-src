@@ -1,0 +1,439 @@
+{
+ "symbol": "فولاد",
+ "base": "http://127.0.0.1:8001",
+ "app_version": "1.0.61",
+ "chart_db": {
+  "count": 355,
+  "n": 355,
+  "last_dates": [
+   "2026-08-08",
+   "2026-08-09",
+   "2026-08-10",
+   "2026-08-11",
+   "2026-08-15",
+   "2026-08-16",
+   "2026-08-17",
+   "2026-08-18",
+   "2026-08-19",
+   "2026-08-22",
+   "2026-08-23",
+   "2026-09-29"
+  ],
+  "last": {
+   "time": "2026-09-29",
+   "open": 3520.0,
+   "high": 3520.0,
+   "low": 3450.0,
+   "close": 3520.0,
+   "volume": 2498239692.0,
+   "last": 3520.0
+  },
+  "liveInjected": true,
+  "degraded": null,
+  "fts": {
+   "trend": {
+    "D": {
+     "trend": "down",
+     "hh": false,
+     "hl": false,
+     "last_high": 3367.0,
+     "prev_high": 3492.0,
+     "last_low": 2182.0,
+     "prev_low": 3195.0
+    },
+    "W": {
+     "trend": "range",
+     "hh": true,
+     "hl": false,
+     "last_high": 4490.0,
+     "prev_high": 3237.0,
+     "last_low": 2182.0,
+     "prev_low": 3260.0
+    },
+    "M": {
+     "trend": "down",
+     "hh": false,
+     "hl": false,
+     "last_high": 4490.0,
+     "prev_high": 6360.0,
+     "last_low": 2010.0,
+     "prev_low": 3771.0
+    },
+    "alignment": "na",
+    "matrix": {
+     "decision": "REJECT",
+     "setup": "NONE",
+     "desc": "تایم هفتگی خنثی — عدم ورود طبق چارت درختی FTS"
+    }
+   },
+   "fib": {
+    "retrace_base_high": 3367.0,
+    "retrace_base_low": 2182.0,
+    "zone_33_40": {
+     "lo": 2830.66,
+     "hi": 2917.93,
+     "in_zone": false
+    },
+    "zone_618_70": {
+     "lo": 2485.26,
+     "hi": 2575.25,
+     "in_zone": false
+    },
+    "levels": [
+     {
+      "ratio": 0.0,
+      "price": 3367.0
+     },
+     {
+      "ratio": 0.33,
+      "price": 2917.93
+     },
+     {
+      "ratio": 0.4,
+      "price": 2830.66
+     },
+     {
+      "ratio": 0.5,
+      "price": 2710.5
+     },
+     {
+      "ratio": 0.618,
+      "price": 2575.25
+     },
+     {
+      "ratio": 0.7,
+      "price": 2485.26
+     },
+     {
+      "ratio": 1.0,
+      "price": 2182.0
+     }
+    ],
+    "leg": {
+     "direction": "down",
+     "start": "2026-02-25",
+     "end": "2026-09-29",
+     "high": 3367.0,
+     "low": 2182.0
+    }
+   },
+   "jet": {
+    "active": false,
+    "resistance": 4479.0,
+    "ath": false,
+    "close": 3520.0,
+    "pct_above_res": -21.41,
+    "reason": "آخرین هنوز زیر پلکان مقاومت است"
+   },
+   "choch": {
+    "bearish": false,
+    "bullish": false,
+    "level": null,
+    "label": null
+   },
+   "point_hunt": {
+    "touches": 12,
+    "floor_price": 2820.0,
+    "active": true,
+    "floor_idx": 339,
+    "floor_date": "2026-02-22"
+   },
+   "double_bottom": {
+    "active": false,
+    "neckline": null,
+    "pct_above_neck": null
+   },
+   "range_box": {
+    "active": true,
+    "top": 3492.0,
+    "bottom": 2182.0,
+    "pct_above_top": 0.8
+   },
+   "exit_engine": {
+    "verdict": "hold",
+    "signals": [],
+    "l1": {
+     "hard_stop": 2072.9,
+     "stop_basis": "swing_low",
+     "stop_hit": false,
+     "ma14_exit": false,
+     "ma14_exit_pending": false,
+     "ma14": 2589.64,
+     "close": 3520.0
+    },
+    "l2": {
+     "choch_break": false,
+     "channel_break": false,
+     "level": null,
+     "touches": 12
+    },
+    "l3": {
+     "third_peak": false,
+     "double_top": false,
+     "hs_break": false,
+     "neckline": null,
+     "level": null,
+     "third_peak_level": null
+    },
+    "l4": {
+     "rsi_divergence": false,
+     "rsi_rollover": false,
+     "rsi": 64.6,
+     "rsi_prev_peak": 41.1
+    }
+   },
+   "hourglass": {
+    "active": false,
+    "weekly_close": 3520.0,
+    "ma52": 3256.17,
+    "weekly_rsi5": 63.0,
+    "action": "NORMAL",
+    "desc": "شرایط ساعت شنی برقرار نیست"
+   },
+   "setups": [
+    {
+     "date": "2024-11-23",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 4324.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-11-25",
+     "kind": "jet",
+     "label": "جت",
+     "price": 4975.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-11-25",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 4888.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-11-27",
+     "kind": "jet",
+     "label": "جت",
+     "price": 5127.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-12-04",
+     "kind": "jet",
+     "label": "جت",
+     "price": 5240.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-12-11",
+     "kind": "jet",
+     "label": "جت",
+     "price": 5320.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-12-11",
+     "kind": "dbl",
+     "label": "دابل‌باتم",
+     "price": 5240.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-12-18",
+     "kind": "jet",
+     "label": "جت",
+     "price": 5810.0,
+     "side": "above"
+    },
+    {
+     "date": "2024-12-23",
+     "kind": "jet",
+     "label": "جت",
+     "price": 6180.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-02-16",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 5470.0,
+     "side": "below"
+    },
+    {
+     "date": "2025-04-13",
+     "kind": "dbl",
+     "label": "دابل‌باتم",
+     "price": 4145.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-04-19",
+     "kind": "dbl",
+     "label": "دابل‌باتم",
+     "price": 4145.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-04-20",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 4294.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-11-02",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3067.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-11-23",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3203.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-11-23",
+     "kind": "dbl",
+     "label": "دابل‌باتم",
+     "price": 3143.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-03",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3342.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-08",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3409.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-10",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3496.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-17",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3826.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-24",
+     "kind": "jet",
+     "label": "جت",
+     "price": 3984.0,
+     "side": "above"
+    },
+    {
+     "date": "2025-12-28",
+     "kind": "jet",
+     "label": "جت",
+     "price": 4162.0,
+     "side": "above"
+    },
+    {
+     "date": "2026-01-05",
+     "kind": "jet",
+     "label": "جت",
+     "price": 4108.0,
+     "side": "above"
+    },
+    {
+     "date": "2026-01-10",
+     "kind": "jet",
+     "label": "جت",
+     "price": 4409.0,
+     "side": "above"
+    },
+    {
+     "date": "2026-02-22",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 3292.0,
+     "side": "below"
+    },
+    {
+     "date": "2026-08-08",
+     "kind": "choch",
+     "label": "CHoCH",
+     "price": 3195.0,
+     "side": "below"
+    }
+   ]
+  },
+  "gaps_last40": [
+   "2026-01-14 → 2026-01-18: 4 روز",
+   "2026-02-03 → 2026-02-09: 6 روز",
+   "2026-02-10 → 2026-02-14: 4 روز",
+   "2026-02-25 → 2026-08-08: 164 روز",
+   "2026-08-11 → 2026-08-15: 4 روز",
+   "2026-08-23 → 2026-09-29: 37 روز"
+  ]
+ },
+ "chart_cdn": {
+  "count": 4235,
+  "n": 4235,
+  "last_dates": [
+   "2026-09-22",
+   "2026-09-23",
+   "2026-09-26",
+   "2026-09-27",
+   "2026-09-28",
+   "2026-09-29"
+  ],
+  "last": {
+   "time": "2026-09-29",
+   "open": 3520.0,
+   "high": 3520.0,
+   "low": 3450.0,
+   "close": 3520.0,
+   "volume": 2498239692.0,
+   "last": 3520.0
+  },
+  "adjustEvents": 30
+ },
+ "price_history": {
+  "db": "C:\\Users\\PCMOD\\AppData\\Local\\Programs\\BorsTerminal Ultimate\\market.db",
+  "rows_last12": [
+   "2026-08-23",
+   "2026-08-22",
+   "2026-08-19",
+   "2026-08-18",
+   "2026-08-17",
+   "2026-08-16",
+   "2026-08-15",
+   "2026-08-11",
+   "2026-08-10",
+   "2026-08-09",
+   "2026-08-08",
+   "2026-02-25"
+  ],
+  "newest": [
+   "2026-08-23",
+   2608.0,
+   2608.0,
+   2540.0,
+   2601.0,
+   5282932229.0
+  ],
+  "max_date": "2026-09-21",
+  "total": 321389,
+  "bad_geometry": 34849,
+  "symbols_today": 10,
+  "board_newest": "20260929"
+ }
+}
