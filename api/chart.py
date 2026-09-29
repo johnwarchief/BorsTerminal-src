@@ -133,6 +133,95 @@ def _adjust_events_from_rows(all_rows):
     return adj_events, True
 
 
+def _d_even_to_date(d_even):
+    """20260928 (int/str) → '2026-09-28'؛ بی‌اعتبار → None."""
+    s = str(d_even or "").strip()
+    if len(s) != 8 or not s.isdigit():
+        return None
+    return f"{s[:4]}-{s[4:6]}-{s[6:]}"
+
+
+def _watch_live_bar(symbol, after_date):
+    """(bar, error) — کندلِ جلسهٔ جاری از market_watch، با تاریخِ خودِ جلسه.
+
+    تاریخ از `d_evenِ` ردیف خوانده می‌شود، نه از `date.today()`. پیش از این،
+    همان ردیفِ جلسهٔ *دیروز* با برچسبِ «امروز» می‌چسبید: فولاد بامداد ۱۴۰۵/۷/۸
+    (پیش از بازگشایی) کندلی به نام ۲۰۲۶-۰۹-۲۹ گرفت با O=H=L=C=۳۴۲۰ و حجمِ صفر،
+    درست کنارِ کندلِ واقعیِ ۰۹-۲۸ که پایانی‌اش همان ۳۴۲۰ بود. آن کندلِ شبح هم
+    مقیاسِ عمودی را جابه‌جا می‌کند و هم سطل‌هایِ تجمیعِ هفتگی را یک‌خانه می‌کِشَد،
+    پس «عددِ کندلِ پنجم» بی‌هیچ معاملۀ‌ای عوض می‌شد.
+
+    `after_date` آخرین روزِ سریِ موجود است؛ فقط جلسه‌ای که **جدیدتر** از آن است
+    تزریق می‌شود — یعنی واقعاً هنوز کندلش در تاریخچه نیست.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            # v8.7 FIX-4: نام ستون‌ها با اسکیمای واقعی market_watch تطبیق داده شد
+            # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
+            #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
+            #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
+            _p18, _a18 = sym_pred("i.l_val18", symbol)
+            _p30, _a30 = sym_pred("i.l_val30", symbol)
+            row = conn.execute(
+                "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, "
+                "       m.d_even, m.p_last "
+                "FROM instruments i LEFT JOIN market_watch m ON i.ins_code = m.ins_code "
+                "WHERE (%s OR %s) AND m.p_closing > 0 ORDER BY m.d_even DESC LIMIT 1" % (_p18, _p30),
+                (*_a18, *_a30)).fetchone()
+        finally:
+            conn.close()
+    except Exception as e:
+        # v8.7 FIX-4: خطا دیگر خاموش نیست — در پاسخ منعکس می‌شود تا در لاگ/دیباگ دیده شود
+        return None, f"{type(e).__name__}: {e}"
+    if not row:
+        return None, None
+    session_date = _d_even_to_date(row[5])
+    if not session_date or (after_date and session_date <= after_date):
+        return None, None
+    p_first, p_max, p_min, p_close, vol = (
+        float(row[0] or 0), float(row[1] or 0), float(row[2] or 0),
+        float(row[3] or 0), float(row[4] or 0))
+    p_last = float(row[6] or 0)                       # v9.7
+    # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
+    o_l = p_first if p_first > 0 else p_close
+    h_l = max(p_max if p_max > 0 else o_l, o_l, p_close)
+    l_l = min(p_min if p_min > 0 else o_l, o_l, p_close)
+    return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
+             "close": p_close, "volume": vol,
+             # v9.7: «آخرین معامله» زنده از market_watch.p_last
+             "last": p_last if p_last > 0 else p_close}), None
+
+
+def _attach_live_bar(symbol, res):
+    """کندلِ جلسهٔ جاری را به پاسخِ /api/chart اضافه می‌کند — بی‌نوشتن در کش.
+
+    تا پیش از این فقط /api/chart-db کندلِ زنده می‌ساخت، پس همان نماد در دو
+    اندپوینت دو «آخرین کندل» متفاوت داشت. این تابع روی *نسخه* کار می‌کند تا
+    شیءِ کش‌شده دست‌نخورده بماند و کندلِ زنده هر بار تازه بچسبد (وگرنه یک
+    کندلِ نیم‌کار تا یک ساعت در CHART_CACHE_TTL قفل می‌شد).
+    """
+    candles = res.get("candles") or []
+    if not candles:
+        return res
+    newest = max(c["time"] for c in candles)   # ترتیبِ /api/chart نزولی است
+    bar, err = _watch_live_bar(symbol, newest)
+    if bar is None:
+        return dict(res, liveError=err) if err else res
+    out = dict(res)
+    out["candles"] = [bar] + list(candles)
+    vols = list(res.get("volumes") or [])
+    vols.insert(0, {"time": bar["time"], "value": bar.get("volume", 0),
+                    "color": "#10b981" if bar["close"] >= bar["open"] else "#f43f5e"})
+    out["volumes"] = vols
+    facts = list(res.get("factors") or [])
+    facts.insert(0, {"time": bar["time"], "factor": 1.0})   # تازه‌ترین کندل خام می‌ماند
+    out["factors"] = facts
+    out["count"] = len(out["candles"])
+    out["liveInjected"] = True
+    return out
+
+
 @router.get("/api/chart/{symbol}")
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
@@ -140,7 +229,7 @@ def get_chart_tsetmc(symbol: str):
     global CDN_OFFLINE_UNTIL
     _cached = CHART_CACHE.get(symbol)
     if _cached and (_t.time() - _cached[0]) < _cached[2]:
-        return _cached[1]
+        return _attach_live_bar(symbol, _cached[1])
     import requests as _rq
     from urllib.parse import quote
 
@@ -162,6 +251,10 @@ def get_chart_tsetmc(symbol: str):
                     "factors": db_res.get("factors") or [{"time": c["time"], "factor": 1.0} for c in cands],
                     "adjustEvents": db_res.get("adjustEvents") or [],
                     "adjustSource": "local-db-fallback",
+                    # فرانت با این پرچم «منبعِ جایگزین» را روی چارت می‌نویسد:
+                    # سریِ محلی هم کوتاه‌تر است و هم بی‌رویدادِ تعدیل، پس هر
+                    # جابه‌جاییِ اعدادِ محور باید برای کاربر توضیح داشته باشد.
+                    "degraded": True,
                     "count": len(cands),
                     "fts": db_res.get("fts"),
                 }
@@ -277,7 +370,7 @@ def get_chart_tsetmc(symbol: str):
             "count": len(candles),
         }
         CHART_CACHE[symbol] = (time.time(), result, CHART_CACHE_TTL)
-        return result
+        return _attach_live_bar(symbol, result)
     except Exception as e:
         fb = _fallback_local()
         if fb:
@@ -679,54 +772,14 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         finally:
             conn.close()
 
-        # ---- تزریق کندل امروز از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
-        today = datetime.date.today().strftime("%Y-%m-%d")
+        # ---- تزریق کندلِ جلسهٔ جاری از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
+        # تاریخِ کندل را خودِ جلسه (d_even) می‌دهد، نه ساعتِ سیستم — دلیلش در
+        # _watch_live_bar مستند است. سریِ اینجا صعودی است، پس آخرینِ لیست تازه‌ترین.
         last_db_date = candles[-1]["time"] if candles else ""
-        live_injected = False
-        live_error = None
-        try:
-            conn = sqlite3.connect(DB_PATH, timeout=15)
-            try:
-                # v8.7 FIX-4: نام ستون‌ها با اسکیمای واقعی market_watch تطبیق داده شد
-                # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
-                #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
-                #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
-                _p18, _a18 = sym_pred("i.l_val18", symbol)
-                _p30, _a30 = sym_pred("i.l_val30", symbol)
-                row = conn.execute(
-                    "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, i.l_val18, m.p_last "
-                    "FROM instruments i LEFT JOIN market_watch m ON i.ins_code = m.ins_code "
-                    "WHERE %s OR %s ORDER BY m.d_even DESC LIMIT 1" % (_p18, _p30),
-                    (*_a18, *_a30)).fetchone()
-            finally:
-                conn.close()
-            if row and row[3] and float(row[3]) > 0:   # p_closing موجود و معتبر
-                p_first, p_max, p_min, p_close, vol = (
-                    float(row[0] or 0), float(row[1] or 0), float(row[2] or 0),
-                    float(row[3]), float(row[4] or 0))
-                p_last = float(row[6] or 0) if len(row) > 6 else 0.0   # v9.7
-                # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
-                o_l = p_first if p_first > 0 else p_close
-                h_l = p_max if p_max > 0 else max(o_l, p_close)
-                l_l = p_min if p_min > 0 else min(o_l, p_close)
-                h_l = max(h_l, o_l, p_close)          # high باید بالای بدنه باشد
-                l_l = min(l_l, o_l, p_close) if l_l > 0 else min(o_l, p_close)
-                bar = {"time": today, "open": o_l, "high": h_l, "low": l_l,
-                       "close": p_close, "volume": vol,
-                       # v9.7: «آخرین معامله» زنده از market_watch.p_last
-                       "last": p_last if p_last > 0 else p_close}
-                if last_db_date < today:
-                    candles.append(bar)
-                    live_injected = True
-                elif candles and candles[-1]["time"] == today:
-                    # جایگزینی با دادهٔ زندهٔ تازه‌تر
-                    candles[-1] = bar
-                    live_injected = True
-            elif row:
-                live_error = "no_valid_p_closing"
-        except Exception as e:
-            # v8.7 FIX-4: خطا دیگر خاموش نیست — در پاسخ منعکس می‌شود تا در لاگ/دیباگ دیده شود
-            live_error = f"{type(e).__name__}: {e}"
+        bar, live_error = _watch_live_bar(symbol, last_db_date)
+        live_injected = bar is not None
+        if live_injected:
+            candles.append(bar)
 
         # ---- v10 FTS: technical methodology payload (same candles) ----
         # Pure compute wrapper; failures must never break the chart contract,
