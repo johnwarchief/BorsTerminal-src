@@ -1,0 +1,28 @@
+{
+ "db": "C:\\Users\\PCMOD\\.openclaw-autoclaw\\workspace\\projects\\BorsTerminal_Work\\_audit\\market_copy_20260929.db",
+ "runs": 2,
+ "warm": [
+  0.08081840000158991,
+  0.07179630000246107
+ ],
+ "cold": [
+  0.6425515000009909,
+  0.6069174000003841
+ ],
+ "after_rebuild": [
+  0.07233919999998761,
+  0.07391980000102194
+ ],
+ "rebuild_seconds": {
+  "board_hist_v": 0.3427525999977661,
+  "board_hist_fv": 0.17579010000190465
+ },
+ "median_warm": 0.07630735000202549,
+ "median_cold": 0.6247344500006875,
+ "median_after_rebuild": 0.07312950000050478,
+ "rows": 5365,
+ "identical": false,
+ "fp_warm": "5365x14:b0641896c9c3682b",
+ "fp_cold": "5365x14:07bbf9c6f536a336",
+ "fp_after": "5365x14:07bbf9c6f536a336"
+}

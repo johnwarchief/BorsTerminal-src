@@ -1,0 +1,74 @@
+{
+ "label": "before",
+ "at": "2026-09-29 09:55:31",
+ "build_seconds": 0.943,
+ "rows": 5368,
+ "guard_base_rows": 893,
+ "fabricated_zero_percent_change": 893,
+ "nulls": {
+  "percent_change": 0,
+  "percent_last": 906,
+  "vol_ratio": 1278,
+  "vol_dod": 1912,
+  "month_avg_vol": 8,
+  "prev_day_vol": 8,
+  "hist_sessions": 2393,
+  "buyer_power": 2421,
+  "min_low_29": 2393,
+  "last_vs_close": 5368
+ },
+ "zeros": {
+  "percent_change": 2490,
+  "percent_last": 1359,
+  "vol_ratio": 1316,
+  "vol_dod": 337,
+  "month_avg_vol": 1270,
+  "prev_day_vol": 1904,
+  "hist_sessions": 0,
+  "buyer_power": 6,
+  "min_low_29": 2119,
+  "last_vs_close": 0
+ },
+ "sample": [
+  {
+   "symbol": "ضاطلس080300",
+   "py": 1.0,
+   "p_closing": 1.0,
+   "p_last": 1.0,
+   "percent_change": 0.0,
+   "percent_last": null
+  },
+  {
+   "symbol": "ضاطلس080301",
+   "py": 1.0,
+   "p_closing": 1.0,
+   "p_last": 1.0,
+   "percent_change": 0.0,
+   "percent_last": null
+  },
+  {
+   "symbol": "ضاطلس080302",
+   "py": 1.0,
+   "p_closing": 1.0,
+   "p_last": 1.0,
+   "percent_change": 0.0,
+   "percent_last": null
+  },
+  {
+   "symbol": "ضاطلس080303",
+   "py": 1.0,
+   "p_closing": 1.0,
+   "p_last": 1.0,
+   "percent_change": 0.0,
+   "percent_last": null
+  },
+  {
+   "symbol": "ضاطلس080304",
+   "py": 1.0,
+   "p_closing": 1.0,
+   "p_last": 1.0,
+   "percent_change": 0.0,
+   "percent_last": null
+  }
+ ]
+}

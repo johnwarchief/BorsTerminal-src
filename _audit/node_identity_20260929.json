@@ -1,0 +1,73 @@
+{
+ "url": "http://127.0.0.1:8001/",
+ "at": "2026-09-29T06:20:08.674Z",
+ "markedFirst": {
+  "seen": 25,
+  "kept": 0,
+  "changed": 0,
+  "rows": 25
+ },
+ "pollMs": 5000,
+ "rowsSampled": 25,
+ "trail": [
+  {
+   "at": 1,
+   "seen": 25,
+   "kept": 25,
+   "changed": 1,
+   "rows": 25
+  },
+  {
+   "at": 2,
+   "seen": 25,
+   "kept": 25,
+   "changed": 1,
+   "rows": 25
+  },
+  {
+   "at": 3,
+   "seen": 25,
+   "kept": 25,
+   "changed": 3,
+   "rows": 25
+  },
+  {
+   "at": 4,
+   "seen": 25,
+   "kept": 25,
+   "changed": 3,
+   "rows": 25
+  },
+  {
+   "at": 5,
+   "seen": 25,
+   "kept": 25,
+   "changed": 5,
+   "rows": 25
+  },
+  {
+   "at": 6,
+   "seen": 25,
+   "kept": 25,
+   "changed": 5,
+   "rows": 25
+  },
+  {
+   "at": 7,
+   "seen": 25,
+   "kept": 25,
+   "changed": 6,
+   "rows": 25
+  },
+  {
+   "at": 8,
+   "seen": 25,
+   "kept": 25,
+   "changed": 6,
+   "rows": 25
+  }
+ ],
+ "totalSeen": 200,
+ "totalKept": 200,
+ "totalChanged": 30
+}

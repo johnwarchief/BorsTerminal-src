@@ -1,0 +1,84 @@
+{
+ "url": "http://127.0.0.1:8001/",
+ "at": "2026-09-29T06:22:07.553Z",
+ "firstPass": {
+  "seen": 25,
+  "keptMark": 0,
+  "patched": 0,
+  "replaced": 0,
+  "flashed": 0
+ },
+ "trail": [
+  {
+   "at": 1,
+   "seen": 25,
+   "keptMark": 21,
+   "patched": 4,
+   "replaced": 0,
+   "flashed": 4
+  },
+  {
+   "at": 2,
+   "seen": 25,
+   "keptMark": 25,
+   "patched": 0,
+   "replaced": 0,
+   "flashed": 4
+  },
+  {
+   "at": 3,
+   "seen": 25,
+   "keptMark": 24,
+   "patched": 1,
+   "replaced": 0,
+   "flashed": 4
+  },
+  {
+   "at": 4,
+   "seen": 25,
+   "keptMark": 25,
+   "patched": 0,
+   "replaced": 0,
+   "flashed": 4
+  },
+  {
+   "at": 5,
+   "seen": 25,
+   "keptMark": 23,
+   "patched": 2,
+   "replaced": 0,
+   "flashed": 5
+  },
+  {
+   "at": 6,
+   "seen": 25,
+   "keptMark": 25,
+   "patched": 0,
+   "replaced": 0,
+   "flashed": 5
+  },
+  {
+   "at": 7,
+   "seen": 25,
+   "keptMark": 22,
+   "patched": 3,
+   "replaced": 0,
+   "flashed": 5
+  },
+  {
+   "at": 8,
+   "seen": 25,
+   "keptMark": 25,
+   "patched": 0,
+   "replaced": 0,
+   "flashed": 5
+  }
+ ],
+ "totals": {
+  "seen": 200,
+  "unchanged": 190,
+  "changedInPlace": 10,
+  "nodeReplaced": 0,
+  "flashClassSeen": 36
+ }
+}

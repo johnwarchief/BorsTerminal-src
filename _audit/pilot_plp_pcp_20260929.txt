@@ -1,0 +1,1 @@
+{"winner": "a", "confidence": 0.87, "probabilities": {"a": 0.91, "b": 0.05, "c": 0.04}, "risk": 0.2}

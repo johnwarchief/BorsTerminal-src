@@ -1,0 +1,10 @@
+SNAPSHOT 2 @ 2026-09-29 10:40:03
+board_hist_v rows: 5358
+board_hist_fv rows: 3098
+board_hist_fv checksum: (3098, 138294, 3154160485821.0, 45060405.0)
+board_hist_v checksum: (5358, 169402699673.25876, 139863779710.0, 574212877.0, 614797606.0, 139863779710.0)
+tape_history: (138294, 20260928, 5356586968955.0)
+price_history: (321389, 525069)
+daily_prices prior-session rows: 83778 sum: 2800948664994.0
+market_watch: (20260929, 5434)
+tape_history_state: (1, '2026-09-29 06:45:22', '2026-09-29 06:45:22', 20260928, '')

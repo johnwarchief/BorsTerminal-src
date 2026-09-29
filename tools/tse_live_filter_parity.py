@@ -230,6 +230,7 @@ def main():
 
     site = {k: set() for k, _ in CHECKS}
     traded = 0
+    site_codes = {mw.get("insCode") for mw in mw_rows}
     for mw in mw_rows:
         v = site_row(mw, hist, ct)
         if (v["tvol"] or 0) > 0:
@@ -269,12 +270,20 @@ def main():
         both = site[name] & app[name]
         only_site = sorted(site[name] - app[name])
         only_app = sorted(app[name] - site[name])
+        # «فقطما» دو چیزِ متفاوت است: یا سایت همان ردیف را درِ پاسخِ خود دارد و
+        # علامت نزده (اختلافِ واقعی)، یا آن ردیف درِ هیچ بازاری از پاسخِ سایت
+        # نیست و هیچ فیلتری هم رویش اجرا نمی‌شود (اختلافِ پوششِ مرجع). دومی را
+        # نمی‌توان «ما زیاد علامت زدیم» خواند.
+        off_ref = sorted(c for c in only_app if c not in site_codes)
         report["diffs"][name] = {"both": len(both), "only_site": len(only_site),
                                  "only_app": len(only_app),
+                                 "only_app_not_in_site_payload": len(off_ref),
+                                 "only_app_codes": only_app[:80],
                                  "only_site_codes": only_site[:80],
-                                 "only_app_codes": only_app[:80]}
+                                 "only_app_off_reference_codes": off_ref[:80]}
         print(f"  {name:<7} site={len(site[name]):>4} app={len(app[name]):>4} "
-              f"match={len(both):>4} only_site={len(only_site):>3} only_app={len(only_app):>3}")
+              f"match={len(both):>4} only_site={len(only_site):>3} only_app={len(only_app):>3}"
+              f" (بیرونِ پاسخِ سایت: {len(off_ref)})")
 
     # symbol labels for the mismatch rows, from the app's own rows
     label = {row.get("ins_code"): row.get("symbol") for row in app_rows}
