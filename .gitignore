@@ -23,7 +23,7 @@ build/
 dist/
 portable/
 releases/
-android/
+/android/
 backups/
 .v2cache/
 *.spec.bak
@@ -160,3 +160,4 @@ frontend/_audit/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 _audit/ra-profile/
+dist_mobile/

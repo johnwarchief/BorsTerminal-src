@@ -87,6 +87,22 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
   const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET',
           body, rawBody, headers } = opts;
+
+  // حالت موبایل/آفلاین (VITE_LOCAL_DATA='1'): مسیرهای /api/* به‌جای شبکه از
+  // اسنپ‌شات روی دستگاه پاسخ می‌گیرند (shared/api/local). ایمپورت داینامیک
+  // است تا در بیلد دسکتاپ (بدون این متغیر) کل شاخه dead-code حذف شود و
+  // قانون «fetch فقط در http.ts» هم سر جایش بماند — local هیچ fetchِ APIای
+  // ندارد، فقط دانلود یک‌بارهٔ اسنپ‌شات.
+  if (import.meta.env.VITE_LOCAL_DATA === '1' && url.startsWith('/api/')) {
+    const { resolveLocal } = await import('./local');
+    const data: unknown = await resolveLocal(url, method as 'GET' | 'POST' | 'PUT' | 'DELETE', body);
+    if (!schema) return data as T;
+    const parsed = schema.safeParse(data);
+    if (!parsed.success) {
+      throw new HttpError(0, url, `پاسخ آفلاین با قرارداد نمی خواند: ${parsed.error.message}`);
+    }
+    return parsed.data as T;
+  }
   let lastErr: unknown;
 
   // JSON body فقط وقتی build می‌شود که بدنهٔ خام نیامده باشد (rawBody اولویت دارد).
