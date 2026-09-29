@@ -593,13 +593,17 @@ def _build_market_response(request: Request):
         # نکته: ستونهای حجمی از نسخهٔ خام بازیابی میشوند چون fillna(0)
         # روی object-column (vol_trend) None را به 0 تبدیل میکند.
         #
-        # ستون‌هایِ تاریخچه هم باید بازیابی شوند: «سقفِ ۵۹ نشستِ پیش» اگر موجود
-        # نباشد باید null بماند تا فرانت‌اند آن را «صفر» یا «حدس» نخواند. (پلکانِ
-        # خالی درِ خودِ فیلتر صفر می‌شود، ولی `hist_sessions` می‌گوید نماد آن‌قدر
-        # سابقه دارد یا نه — همان تفکیکی که ExecFilter با try/catch می‌کند.)
+        # «سقفِ ۵۹ نشستِ پیش» اگر موجود نباشد باید null بماند تا فرانت‌اند آن را
+        # «صفر» یا «حدس» نخواند. (پلکانِ خالی درِ خودِ فیلتر صفر می‌شود، ولی
+        # `hist_sessions` می‌گوید نماد آن‌قدر سابقه دارد یا نه — همان تفکیکی که
+        # ExecFilter با try/catch می‌کند.)
+        # `percent_change` هم همین‌جاست: سایت برایِ نمادهایِ اختیار و حق‌تقدم
+        # «قیمتِ دیروز» را ۱ می‌فرستد (نگهبان)، پس درصد هیچ‌وقت سنجیده نمی‌شود؛
+        # با fillna(0) آن ردیف‌ها «تغییر٪ ۰٫۰۰» می‌گرفتند، یعنی «بدونِ تغییر»
+        # درحالی‌که چیزی اندازه گرفته نشده بود (شاهدِ ۱۴۰۵-۰۷-۰۷: ۸۹۳ ردیف).
         _KEEP_NULL = ("vol_ratio", "vol_dod", "vol_trend", "dist_min30_pct",
                       "month_avg_vol", "prev_day_vol", "d1_vol",
-                      "prior30_vol", "min_low_29", "percent_last",
+                      "prior30_vol", "min_low_29", "percent_last", "percent_change",
                       "vol_ratio_file", "hist_sessions", "tmin", "tmax", "buy_q1_cnt",
                       "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",

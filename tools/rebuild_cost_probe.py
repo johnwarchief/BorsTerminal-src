@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-tools/rebuild_cost_probe.py — سنجشِ هزینهٔ «بازسازیِ تابلو» و تفکیکِ آن به
-دو بخش: پنجره‌هایِ بی‌تغییرِ روزانه (v و fv) و بخشِ زنده.
+tools/rebuild_cost_probe.py — سنجشِ هزینهٔ «بازسازیِ تابلو» رویِ یک کپی
 
-کوئری از خودِ `api/market.py` بیرون کشیده می‌شود (تک‌نسخهٔ حقیقت) و با
-برشِ متنی رویِ چند نشانگرِ شناخته‌شده به قطعه‌ها تقسیم می‌شود. اگر برش اشتباه باشد
-مقایسۀ «نتیجهٔ کامل» با «نتیجهٔ تفکیک‌شده» قرمز می‌شود — پس این ابزار
-هرگز عددِ ساختگی چاپ نمی‌کند.
+سه عدد کنار هم، همه از متنِ خودِ `api/market.py` (تک‌نسخهٔ حقیقت):
+
+  warm   — کوئریِ کاملِ تابلو، همان‌که امروز می‌دود: دو پنجرۀ روزانه از
+           `board_hist_v` / `board_hist_fv` خوانده می‌شوند (کشِ materialized).
+  cold   — همان کوئریِ کامل، کلمه‌به‌کلمه، ولی دو جدول با «VIEWِ همان متنِ
+           پنجره» جانشین شده‌اند. یعنی دقیقاً حالتِ پیش از ۱٫۰٫۵۶ که هر
+           درخواست پنجره‌ها را خودش می‌ساخت.
+  rebuild— یک‌بارِ ساختنِ هر دو جدول از صفر (چیزی که هر پروسه روزی یک‌بار
+           و هنگامِ درخواستِ نخستِ تابلو می‌پردازد).
+
+برابریِ دو مسیر با چک‌سامِ بی‌بعد اثبات می‌شود، نه با نگاه: اگر مقادیرِ
+کش‌شده با مقادیرِ مسیرِ زنده یکی نباشد ابزار غیرصفر می‌دهد. هیچ نوشتنی روی
+دیتابیسِ داده‌شده انجام نمی‌شود — اول کپی گرفته می‌شود و همه‌چیز روی کپی.
 
     python tools/rebuild_cost_probe.py --db "<market.db>" --runs 5
 """
@@ -19,94 +27,51 @@ import re
 import sqlite3
 import statistics
 import sys
+import tempfile
 import time
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MARKET_PY = os.path.join(REPO, "api", "market.py")
 
-# ── استخراجِ متنِ کوئری از منبع ────────────────────────────────────────────
-def load_query() -> str:
-    src = open(MARKET_PY, encoding="utf-8").read()
-    m = re.search(r'query = """(.*?)"""', src, re.DOTALL)
-    if not m:
-        raise SystemExit("marker `query = \"\"\"` not found in api/market.py")
-    q = m.group(1)
-    for anchor in ("WITH iso AS (", "v AS (", "th AS MATERIALIZED (",
-                   "ctm AS (", "SELECT m.ins_code"):
-        if anchor not in q:
-            raise SystemExit(f"anchor lost: {anchor!r} — this tool is stale")
-    return q
-
-
-def split_query(q: str):
-    """بازگرداندنِ چهار قطعه: پیش‌تاگلِ v، قطعهٔ fv، سرآمدِ iso+ctm، بدنهٔ نهایی."""
-    i_iso = q.index("WITH iso AS (")
-    i_spine_marker = q.index("-- `spine`")
-    i_v_end = q.index("ctm AS (")
-    i_th = q.index("th AS MATERIALIZED (")
-    i_final = q.index("SELECT m.ins_code")
-
-    iso_only = q[i_iso:i_spine_marker]                      # WITH iso AS (...)،
-    spine_hist_rk_v = q[i_spine_marker:i_th]                # spine, hist, rk, v AS (...)،
-    th_fv = q[i_th:i_v_end]                                 # th, fv AS (...)
-    final = q[i_final:]                                     # SELECT ... FROM market_watch ...
-    return iso_only, spine_hist_rk_v, th_fv, final
-
-
-def strip_tail(s: str) -> str:
-    """حذفِ خط‌هایِ توضیحیِ انتهایی و کامِ جداکننده، تا قطعه با «)» تمام شود.
-
-    چرا لازم است: قطعه‌هایِ برش‌خورده پیش از نشانگرِ بعدی یک بلوکِ توضیحی
-    دارند؛ اگر همان بلوک باقی بماند، «SELECT * FROM v» که به انتهای رشته
-    می‌چسبد داخلِ سطرِ توضیح فرو می‌رود و کوئری بی‌معنی (incomplete input)
-    می‌شود — و ابزار به‌جایِ سنجش، خطا می‌داد.
-    """
-    lines = s.rstrip().splitlines()
-    while lines and lines[-1].lstrip().startswith("--"):
-        lines.pop()
-    out = "\n".join(lines).rstrip()
-    return out.rstrip(",").rstrip()
-
-
-def build_variants(q: str):
-    iso_only, spine_hist_rk_v, th_fv, final = split_query(q)
-
-    # قطعهٔ v تنها با iso معنا دارد: شرطِ «امروز را بیرون بگذار» در hist به
-    # (SELECT d FROM iso) نگاه می‌کند، پس iso باید در همین WITH بماند.
-    cache_v_sql = strip_tail(iso_only) + ",\n" + strip_tail(spine_hist_rk_v) + " SELECT * FROM v"
-    cache_fv_sql = "WITH " + strip_tail(th_fv) + " SELECT * FROM fv"
-
-    live = (strip_tail(iso_only) + ",\n"
-            + "ctm AS (\n                SELECT ins_code, MAX(d_even) AS d FROM client_type\n"
-              "                WHERE d_even <= (SELECT d FROM iso)\n"
-              "                GROUP BY ins_code\n            )\n"
-            + final)
-    live = live.replace("LEFT JOIN v ON v.symbol = i.l_val18",
-                        "LEFT JOIN cache.v AS v ON v.symbol = i.l_val18")
-    live = live.replace("LEFT JOIN fv ON fv.ins_code = m.ins_code",
-                        "LEFT JOIN cache.fv AS fv ON fv.ins_code = m.ins_code")
-    if "cache.v AS v" not in live or "cache.fv AS fv" not in live:
-        raise SystemExit("live-only rewrite did not land — join text changed upstream")
-    return q, cache_v_sql, cache_fv_sql, live
-
-
 COLS = ["p_closing", "p_last", "q_tot_tran", "month_avg_vol", "prev_day_vol",
         "min30_low", "max30_high", "h2_max", "h29_max", "h59_max",
         "prior30_vol", "min_low_29", "hist_sessions", "buy_i_vol"]
 
+# نشانگرها: اگر متنِ خودِ api/market.py عوض شد، ابزار باید بگوید «کهنه‌ام»
+# و خاموش شود؛ عددِ ساختگی از این ابزار بیرون نمی‌آید.
+QUERY_ANCHORS = ("WITH iso AS (",
+                 "v AS MATERIALIZED (SELECT * FROM board_hist_v)",
+                 "fv AS MATERIALIZED (SELECT * FROM board_hist_fv)",
+                 "ctm AS (", "SELECT m.ins_code")
 
-def run(conn: sqlite3.Connection, sql: str):
-    cur = conn.execute(sql)
-    names = [d[0] for d in cur.description]
-    return names, cur.fetchall()
+
+def load_texts():
+    src = open(MARKET_PY, encoding="utf-8").read()
+    m = re.search(r'query = """(.*?)"""', src, re.DOTALL)
+    if not m:
+        raise SystemExit('marker `query = """` not found in api/market.py')
+    q = m.group(1)
+    for anchor in QUERY_ANCHORS:
+        if anchor not in q:
+            raise SystemExit(f"anchor lost: {anchor!r} — this tool is stale")
+    out = {"query": q}
+    for name in ("_HIST_V_SQL", "_HIST_FV_SQL"):
+        mm = re.search(re.escape(name) + r' = """(.*?)"""', src, re.DOTALL)
+        if not mm:
+            raise SystemExit(f"{name} not found in api/market.py — this tool is stale")
+        sql = mm.group(1).strip()
+        if not sql.upper().startswith("WITH ") or not sql.rstrip().endswith("SELECT * FROM v") \
+                and not sql.rstrip().endswith("SELECT * FROM fv"):
+            raise SystemExit(f"{name} no longer has the `WITH … SELECT * FROM x` shape")
+        out[name] = sql
+    return out
 
 
 def fingerprint(rows, names):
-    """چک‌سامِ بی‌بعد از ستون‌هایِ کلیدی — برایِ اثباتِ برابریِ دو مسیر.
+    """چک‌سامِ بی‌بعد از ستون‌هایِ کلیدی — اثباتِ برابریِ دو مسیر.
 
-    اگر ستونی در نتیجه نباشد ابزار خطا می‌دهد، نه اینکه بی‌صدا از کنارش
-    رد شود: مقایسهٔ دو مسیری که ستون‌هایشان یکی نیست «یکسان» به‌نظر می‌رسد
-    و همان «یکسان»ِ دروغین تمامِ این سنجش را بی‌ارزش می‌کند.
+    ستونی که در نتیجه نباشد خطا می‌دهد، نه سکوت: مقایسهٔ دو نتیجهٔ بی‌ستونِ
+    یکسان «برابر» به‌نظر می‌رسد و آن «برابر» کلِ سنجش را بی‌ارزش می‌کند.
     """
     missing = [c for c in COLS if c not in names]
     if missing:
@@ -122,14 +87,50 @@ def fingerprint(rows, names):
     return f"{len(rows)}x{len(idx)}:{acc:016x}"
 
 
+def run_query(conn, sql):
+    cur = conn.execute(sql)
+    return [d[0] for d in cur.description], cur.fetchall()
+
+
 def timeit(conn, sql, runs):
-    times = []
-    names = rows = None
+    times, names, rows = [], [], None
     for _ in range(runs):
         t0 = time.perf_counter()
-        names, rows = run(conn, sql)
+        names, rows = run_query(conn, sql)
         times.append(time.perf_counter() - t0)
     return times, names, rows
+
+
+def swap_to_views(conn, hist_v_sql, hist_fv_sql):
+    """دو جدولِ کش جانشینِ VIEWِ همان متنِ پنجره می‌شوند (حالتِ پیش از ۱٫۰٫۵۶)."""
+    for table, sql in (("board_hist_v", hist_v_sql), ("board_hist_fv", hist_fv_sql)):
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.execute(f"DROP VIEW IF EXISTS {table}")
+        conn.execute(f"CREATE VIEW {table} AS {sql}")
+
+
+def rebuild_tables(conn, hist_v_sql, hist_fv_sql):
+    """بازسازیِ دو جدول، عینِ `api/market.py::_rebuild_history_windows`."""
+    out = {}
+    for table, sql, source in (("board_hist_v", hist_v_sql, "price_history"),
+                               ("board_hist_fv", hist_fv_sql, "tape_history")):
+        tmp = table + "_new"
+        # این ابزار پیش از بازسازی، جدول‌ها را به VIEWِ همان متن بدل کرده بود؛
+        # پس «DROP TABLE» تنها کافی نیست و SQLite با خطا می‌ایستد.
+        conn.execute(f"DROP VIEW IF EXISTS {table}")
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.execute(f"DROP TABLE IF EXISTS {tmp}")
+        t0 = time.perf_counter()
+        conn.execute(f"CREATE TABLE {tmp} AS {sql}")
+        out[table] = time.perf_counter() - t0
+        n = conn.execute(f"SELECT COUNT(*) FROM {tmp}").fetchone()[0]
+        n_src = conn.execute(f"SELECT COUNT(*) FROM {source}").fetchone()[0]
+        if n == 0 and n_src > 0:
+            raise SystemExit(f"history window {table} built zero rows while {source} has {n_src}")
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.execute(f"ALTER TABLE {tmp} RENAME TO {table}")
+    conn.commit()
+    return out
 
 
 def main():
@@ -139,66 +140,71 @@ def main():
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
-    src = open(MARKET_PY, encoding="utf-8").read()
-    _ = src  # فقط برایِ اطمینان از وجودِ منبع
-    q, cache_v_sql, cache_fv_sql, live_sql = build_variants(load_query())
+    texts = load_texts()
+    q, hist_v, hist_fv = texts["query"], texts["_HIST_V_SQL"], texts["_HIST_FV_SQL"]
 
-    uri = "file:" + args.db.replace("\\", "/") + "?mode=ro"
-    conn = sqlite3.connect(uri, uri=True)
+    src_db = os.path.abspath(args.db)
+    tmp_dir = tempfile.mkdtemp(prefix="bors_rebuild_probe_")
+    work_db = os.path.join(tmp_dir, "market_copy.db")
+    t0 = time.perf_counter()
+    a = sqlite3.connect("file:" + src_db.replace("\\", "/") + "?mode=ro", uri=True)
+    b = sqlite3.connect(work_db)
+    a.backup(b, pages=256)
+    a.close()
+    b.close()
+    print(f"[copy] {os.path.basename(src_db)} -> {work_db} "
+          f"in {time.perf_counter() - t0:.1f}s "
+          f"({os.path.getsize(work_db) / 1e6:.1f}MB) — source opened read-only")
+
+    conn = sqlite3.connect(work_db)
     conn.execute("PRAGMA cache_size=-65536")
-    conn.execute("ATTACH DATABASE ':memory:' AS cache")
 
-    print(f"db={os.path.basename(args.db)} runs={args.runs} "
-          f"size={os.path.getsize(args.db)/1e6:.1f}MB")
+    warm_t, names, warm_rows = timeit(conn, q, args.runs)
+    fp_warm = fingerprint(warm_rows, names)
+    print(f"[warm  ] median={statistics.median(warm_t):.3f}s  "
+          f"all={['%.3f' % t for t in warm_t]}  rows={len(warm_rows)}  fp={fp_warm}")
 
-    # ۱) مسیرِ کامل، N بار (اولین بار سرد است)
-    full_t, names, full_rows = timeit(conn, q, args.runs)
-    fp_full = fingerprint(full_rows, names)
-    print(f"[full ] cold={full_t[0]:.3f}s  median={statistics.median(full_t):.3f}s  "
-          f"all={['%.3f' % t for t in full_t]}  rows={len(full_rows)}  fp={fp_full}")
+    swap_to_views(conn, hist_v, hist_fv)
+    cold_t, cnames, cold_rows = timeit(conn, q, args.runs)
+    fp_cold = fingerprint(cold_rows, cnames)
+    print(f"[cold  ] median={statistics.median(cold_t):.3f}s  "
+          f"all={['%.3f' % t for t in cold_t]}  rows={len(cold_rows)}  fp={fp_cold}")
 
-    # ۲) ساختِ کش (روزی یک بار) — جدا سنجیده می‌شود
-    tv, _, _ = timeit(conn, cache_v_sql, 2)
-    tf, _, _ = timeit(conn, cache_fv_sql, 2)
-    conn.execute("DROP TABLE IF EXISTS cache.v")
-    conn.execute(f"CREATE TABLE cache.v AS {cache_v_sql}")
-    conn.execute("DROP TABLE IF EXISTS cache.fv")
-    conn.execute(f"CREATE TABLE cache.fv AS {cache_fv_sql}")
-    # در SQLite بخشِ ON نمی‌تواند نامِ اسکیما بگیرد؛ خودِ ایندیس اسکیما می‌گیرد.
-    conn.execute("CREATE INDEX cache.idx_v ON v(symbol)")
-    conn.execute("CREATE INDEX cache.idx_fv ON fv(ins_code)")
-    nv = conn.execute("SELECT COUNT(*) FROM cache.v").fetchone()[0]
-    nf = conn.execute("SELECT COUNT(*) FROM cache.fv").fetchone()[0]
-    print(f"[cache] v={tv[1]:.3f}s (rows={nv})  fv={tf[1]:.3f}s (rows={nf})  "
-          f"once-per-day={tv[1] + tf[1]:.3f}s")
+    rebuilt = rebuild_tables(conn, hist_v, hist_fv)
+    print(f"[rebuild] " + "  ".join(f"{k}={v:.3f}s" for k, v in rebuilt.items())
+          + f"  once-per-day={sum(rebuilt.values()):.3f}s")
+    after_t, anames, after_rows = timeit(conn, q, args.runs)
+    fp_after = fingerprint(after_rows, anames)
+    print(f"[after ] median={statistics.median(after_t):.3f}s  fp={fp_after}")
 
-    # ۳) مسیرِ تفکیک‌شده، N بار
-    split_t, snames, srows = timeit(conn, live_sql, args.runs)
-    fp_split = fingerprint(srows, snames)
-    print(f"[split] cold={split_t[0]:.3f}s  median={statistics.median(split_t):.3f}s  "
-          f"all={['%.3f' % t for t in split_t]}  rows={len(srows)}  fp={fp_split}")
-
-    same = (fp_full == fp_split) and (len(full_rows) == len(srows))
-    print(f"[parity] identical={same}  full_fp={fp_full}  split_fp={fp_split}")
-
-    saved = statistics.median(full_t) - statistics.median(split_t)
-    print(f"[saving] per-rebuild={saved:.3f}s  "
-          f"({saved / statistics.median(full_t) * 100:.1f}% of full)")
+    identical = fp_warm == fp_cold == fp_after
+    saved = statistics.median(cold_t) - statistics.median(warm_t)
+    print(f"[parity] identical={identical}")
+    print(f"[saving] per-request={saved:.3f}s "
+          f"({saved / statistics.median(cold_t) * 100:.1f}% of the cold path)")
+    conn.close()
 
     result = {
-        "db": args.db, "runs": args.runs,
-        "full": full_t, "split": split_t,
-        "cache_v": tv[1], "cache_fv": tf[1],
-        "rows": len(full_rows), "identical": same,
-        "fp_full": fp_full, "fp_split": fp_split,
-        "median_full": statistics.median(full_t),
-        "median_split": statistics.median(split_t),
+        "db": src_db, "runs": args.runs,
+        "warm": warm_t, "cold": cold_t, "after_rebuild": after_t,
+        "rebuild_seconds": rebuilt,
+        "median_warm": statistics.median(warm_t),
+        "median_cold": statistics.median(cold_t),
+        "median_after_rebuild": statistics.median(after_t),
+        "rows": len(warm_rows), "identical": identical,
+        "fp_warm": fp_warm, "fp_cold": fp_cold, "fp_after": fp_after,
     }
     if args.out:
+        os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
         with open(args.out, "w", encoding="utf-8") as fh:
             json.dump(result, fh, indent=1, ensure_ascii=False)
-    conn.close()
-    return 0 if same else 1
+        print("wrote " + args.out)
+    try:
+        os.remove(work_db)
+        os.rmdir(tmp_dir)
+    except OSError:
+        pass
+    return 0 if identical else 1
 
 
 if __name__ == "__main__":

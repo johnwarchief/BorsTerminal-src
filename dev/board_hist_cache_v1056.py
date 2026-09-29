@@ -255,7 +255,7 @@ def _pipeline_flags(mk, conn, sql_text):
         for k in got:
             if rec.get(k):
                 got[k].add(rec["symbol"])
-    return got
+    return got, payload["data"]
 
 
 def compare(cached, mono, names_a, names_b):
@@ -375,8 +375,9 @@ def main():
     c2 = sqlite3.connect(real_path)
     mk._HIST_CACHE_KEY = (None,)
     flags = {}
+    recs_by_label = {}
     for label, sql in (("materialized", live_sql), ("monolithic", mono_sql)):
-        flags[label] = _pipeline_flags(mk, c2, sql)
+        flags[label], recs_by_label[label] = _pipeline_flags(mk, c2, sql)
     for k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"):
         n = len(flags["materialized"][k])
         m = len(flags["monolithic"][k])
@@ -387,6 +388,18 @@ def main():
         diff = flags["materialized"][k] ^ flags["monolithic"][k]
         ck(f"فیلترِ {k} در دو مسیر یکی است ({n} نماد)", not diff,
            "" if not diff else f" differences={sorted(diff)[:6]}")
+
+    # «قیمتِ دیروز» درِ نمادهایِ اختیار و حق‌تقدم مقدارِ نگهبانِ ۱ است، پس درصدِ
+    # تغییر هیچ‌وقت سنجیده نمی‌شود. fail-safeِ انتهای لوله (fillna(0)) این
+    # بی‌مقداری را به «تغییر٪ ۰٫۰۰» تبدیل می‌کرد، یعنی «بدونِ تغییر» رویِ داده‌ای
+    # که هیچ‌وقت اندازه گرفته نشده. سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ بانکِ نصبی: ۸۹۳ ردیف.
+    recs = recs_by_label["materialized"]
+    guard_recs = [r for r in recs if (r.get("price_yesterday") or 0) <= 1]
+    ck("ردیفِ نگهبان‌دار درِ بانکِ واقعی هست (چکِ بی‌محتوا نیست)", len(guard_recs) > 0,
+       f"{len(guard_recs)} ردیف")
+    invented = [r.get("symbol") for r in guard_recs if r.get("percent_change") is not None]
+    ck("هیچ ردیفِ نگهبان‌داری درصدِ تغییرِ ساختگی نمی‌گیرد", not invented,
+       f"نمونه: {invented[:5]}")
     c2.close()
 
     print(f"\n{len(PASS)} pass / {len(FAIL)} fail")

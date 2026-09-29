@@ -68,9 +68,13 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   {
     key: 'percent_change',
     label: 'تغییر٪',
-    hint: 'پایانی نسبت به دیروز — همان متغیرِ plp در فیلترنویسیِ TSETMC',
+    hint: 'پایانی نسبت به دیروز — همان متغیرِ pcp در فیلترنویسیِ TSETMC',
   },
-  { key: 'percent_last', label: 'آخرین٪', hint: 'آخرین نسبت به دیروز؛ با درصدِ پایانی فرق دارد' },
+  {
+    key: 'percent_last',
+    label: 'آخرین٪',
+    hint: 'آخرین نسبت به دیروز — همان متغیرِ plp در فیلترنویسیِ TSETMC، و با درصدِ پایانی فرق دارد',
+  },
   { key: 'tvol', label: 'حجم' },
   {
     key: 'z_tot_tran',
