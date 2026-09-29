@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
-import os, sys, threading, time, webbrowser, socket, subprocess
+import os, sys, threading, time, webbrowser, socket, subprocess, atexit
 
 # ── بدونِ پنجرهٔ کنسول + کدپیجِ خروجی (v1.0.13) ──────────────────────────
 # با console=False در spec، sys.stdout/sys.stderr می‌توانند None باشند
@@ -28,7 +28,12 @@ def _setup_streams():
         os.makedirs(_logdir, exist_ok=True)
         _logpath = os.path.join(_logdir, "bors.log")
         # حالتِ append: کرش‌هایِ قبلی حفظ شوند و چرخهٔ اجراها دیده شود.
-        _f = open(_logpath, "a", encoding="utf-8", errors="replace")
+        # buffering=1 (خط‌به‌خط): با بافرِ پیش‌فرضِ بلوکی، آخرین سطرهایِ پیش از
+        # مرگِ پروسه داخلِ بافر می‌مانند و هرگز رویِ دیسک نمی‌آمدند — یعنی
+        # دقیقاً همان سطرهایی که باید «چگونه مُرد» را بگویند گم می‌شدند و لاگ با
+        # یک GET معمولی تمام می‌شد. (شاهد: هیچ «Shutting down» در کلِ لاگ نیست،
+        # درحالی‌که ده بارِ اجرا از سر گرفته شده است.)
+        _f = open(_logpath, "a", encoding="utf-8", errors="replace", buffering=1)
         sys.stdout = _f
         sys.stderr = _f
     except (AttributeError, ValueError, OSError, FileNotFoundError):
@@ -40,6 +45,66 @@ def _setup_streams():
             def close(self): pass
         sys.stdout = _Null()
         sys.stderr = _Null()
+
+# ── ساعت و نشانِ خروج (v1.0.55) ───────────────────────────────────────────
+# دو کورکنندهٔ «مرگِ بی‌صدای» برنامه، هر دو در همین فایل بودند:
+#   ۱) لاگ هیچ زمانی نداشت (uvicorn access log با قالبِ بی‌زمانِ پیش‌فرض)، پس
+#      هیچ واقعه‌ای در bors.log قابلِ زمان‌بندی نبود.
+#   ۲) سطرهایِ آخر داخلِ بافرِ بلوکی می‌ماندند و با مرگِ پروسه می‌مردند.
+# با این سه چیز داوری ممکن می‌شود: هر سطر زمان دارد، هر سطر بی‌درنگ رویِ
+# دیسک می‌آید، و یک [exit] هنگامِ خروجِ عادی نوشته می‌شود. نبودِ [exit] پس از
+# آخرین [beat] یعنی پروسه کشته شده، نه اینکه بسته شده است.
+def _stamp():
+    return time.strftime('%Y-%m-%d %H:%M:%S')
+
+
+def _note(msg):
+    try:
+        print(f'{_stamp()} [app] {msg}', flush=True)
+    except Exception:
+        pass
+
+
+def _log_config_with_clock():
+    """همان پیکربندیِ پیش‌فرضِ uvicorn، فقط با %(asctime)s در دو قالب."""
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "default": {
+                "()": "uvicorn.logging.DefaultFormatter",
+                "fmt": "%(asctime)s %(levelprefix)s %(message)s",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "use_colors": None,
+            },
+            "access": {
+                "()": "uvicorn.logging.AccessFormatter",
+                "fmt": ('%(asctime)s %(levelprefix)s %(client_addr)s - '
+                        '"%(request_line)s" %(status_code)s'),
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            },
+        },
+        "handlers": {
+            "default": {"formatter": "default", "class": "logging.StreamHandler",
+                        "stream": "ext://sys.stderr"},
+            "access": {"formatter": "access", "class": "logging.StreamHandler",
+                       "stream": "ext://sys.stdout"},
+        },
+        "loggers": {
+            "uvicorn": {"handlers": ["default"], "level": "INFO", "propagate": False},
+            "uvicorn.error": {"level": "INFO"},
+            "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
+        },
+    }
+
+
+def _beat_loop(port):
+    """ضربانِ زنده بودن هر ۵ دقیقه. مرزِ بین «برنامه مُرد» و «فاصلهٔ بی‌درخواست
+    در ساعتِ بسته» را همین خط نگه می‌دارد."""
+    while True:
+        time.sleep(300)
+        _note(f'beat pid={os.getpid()} port={port}')
+
 
 # در حالت EXE (onefile): کتابخانه‌ها داخل _MEIPASS؛ DB ها کنار exe (از ZIP)
 # توجه: _setup_streams() به WORK نیاز دارد (پوشهٔ لاگ کنارِ exe است)، پس
@@ -467,13 +532,19 @@ def main():
         return
     import uvicorn
     def run():
-        uvicorn.run('app:app', host='127.0.0.1', port=port, log_level='info')
+        uvicorn.run('app:app', host='127.0.0.1', port=port, log_level='info',
+                    log_config=_log_config_with_clock())
     th = threading.Thread(target=run, daemon=True)
     th.start()
+    atexit.register(lambda: _note(f'[exit] process ending (pid={os.getpid()})'))
+    threading.Thread(target=_beat_loop, args=(port,), daemon=True).start()
     if wait_http(port):
         print(f'[OK] http://127.0.0.1:{port}')
         url = f'http://127.0.0.1:{port}'
         if open_native_window(url):
+            # تفکیکِ «چرا تمام شد»: نبودِ این سطر پیش از [exit] یعنی پنجرهٔ
+            # بومی بسته نشد، بلکه خودِ پروسه از کار افتاد.
+            _note('native window closed')
             return  # پنجرهٔ بومی بسته شد → خروج
         open_app_window(url)
     else:
