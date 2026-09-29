@@ -406,6 +406,22 @@
   gap: 6px;
 }
 
+/* بنر منبعِ داده — پایین‌تر از هشدارِ خروج تا هر دو جا دارند */
+.nn-feed-note {
+  position: absolute;
+  top: 46px;
+  left: 10px;
+  background-color: rgba(229, 172, 67, 0.14);
+  border: 1px solid rgba(229, 172, 67, 0.45);
+  color: var(--nn-color-warning);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  direction: rtl;
+  z-index: 10;
+}
+
 /* ================= نوار شناور تنظیمات المان (FLOATING PROPERTIES BAR) ================= */
 .tv-floating-properties-bar {
   position: absolute;

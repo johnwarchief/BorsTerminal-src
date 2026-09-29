@@ -72,7 +72,7 @@ import {
   registerCompareIndicator,
   setCompareRows,
 } from '../../lib/compareIndicator';
-import { parseCandleTimestamp } from '../../lib/jalaliDate';
+import { epochToJalali, parseCandleTimestamp } from '../../lib/jalaliDate';
 import { toFaDigits } from '@shared/lib/fmt';
 
 import '../styles/nahayatNegarStyles.css';
@@ -394,6 +394,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasData, setHasData] = useState<boolean>(true);
+  // یادداشتِ منبع: وقتی مدار TSETMC نمی‌رسد، سریِ محلی جایش را می‌گیرد —
+  // کوتاه‌تر و بی‌رویدادِ تعدیل، پس اعدادِ محور جابه‌جا می‌شوند. تا پیش از این
+  // آن جابه‌جایی بی‌هیچ نشانه‌ای رخ می‌داد («کندلِ پنجم از ۴۰۵ شد ۴۰۴»).
+  const [feedNote, setFeedNote] = useState<string | null>(null);
 
   // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند.
   // رأیِ مالک: لایهٔ «تحلیل FTS» فعلاً ناقص است ⇒ پیش‌فرض خاموش؛ کلیدِ
@@ -457,6 +461,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد، فال‌بک چندلایه و نگاشت دفاعی)
   const fetchCandleData = useCallback(async (symbol: string) => {
     setIsLoading(true);
+    // «cdn» تا ثابت نشود جای دیگری رسم شده است.
+    let layer: 'cdn' | 'local' = 'cdn';
+    let degradedCdn = false;
     try {
       let url = `/api/chart/${encodeURIComponent(symbol)}`;
       if (symbol === 'شاخص کل' || symbol === 'TEDPIX') {
@@ -475,6 +482,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
 
       let rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
+      degradedCdn = json?.degraded === true;
 
       // فال‌بک لایه ۲: اگر از اندپوینت اول پاسخی نیامد، خطا داد، یا فقط یک کندل برگشت (باگ تک‌خط عمودی):
       // فوراً از اندپوینت /api/history (دیتابیس محلی چند صد کندلی) واکشی می‌کنیم
@@ -488,6 +496,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             if (Array.isArray(histList) && histList.length > 1) {
               json = histJson;
               rawList = histList;
+              layer = 'local';
             }
           }
         } catch {
@@ -508,6 +517,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             if (Array.isArray(fbList) && fbList.length > 0) {
               json = fbJson;
               rawList = fbList;
+              layer = 'local';
             }
           }
         } catch {
@@ -527,6 +537,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (!Array.isArray(rawList) || rawList.length === 0) {
         setRawCandles([]);
         setHasData(false);
+        setFeedNote(null);
         setIsLoading(false);
         return;
       }
@@ -562,9 +573,21 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       setCorporateActions(parsedActions);
       setRawCandles(parsedCandles);
       setHasData(parsedCandles.length > 0);
+      // منبعِ جایگزین باید خوانا باشد: سریِ محلی هم کوتاه‌تر است و هم رویدادِ
+      // تعدیل ندارد، پس سطل‌هایِ هفتگی و اعدادِ محور با CDN یکی نمی‌شوند.
+      if ((layer === 'local' || degradedCdn) && parsedCandles.length > 0) {
+        const lastTs = parsedCandles[parsedCandles.length - 1].timestamp;
+        setFeedNote(
+          `منبع: پایگاهِ محلی · ${parsedCandles.length.toLocaleString('fa-IR')} کندل تا ` +
+          toFaDigits(epochToJalali(lastTs)),
+        );
+      } else {
+        setFeedNote(null);
+      }
     } catch (e) {
       setRawCandles([]);
       setHasData(false);
+      setFeedNote(null);
     } finally {
       setIsLoading(false);
     }
@@ -2190,7 +2213,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             </div>
           ) : null}
 
-          {/* کانتینر اصلی کتابخانه KlineCharts */}
+          {/* منبعِ سریِ رسم‌شده — فقط وقتی جایِ مدارِ زنده نشسته است */}
+          {feedNote ? (
+            <div
+              className="nn-feed-note"
+              data-testid="chart-feed-note"
+              title="مدارِ TSETMC در دسترس نبود؛ این نمودار از پایگاهِ محلی رسم شده است. تاریخچه‌اش کوتاه‌تر و بدونِ رویدادهایِ تعدیل است، پس سطوح و اعدادِ محور با نمایِ زنده یکی نمی‌شوند."
+            >
+              <span>{feedNote}</span>
+            </div>
+          ) : null}
+
           {/* کانتینر اصلی کتابخانه KlineCharts با لِجِندِ جمع‌شوندهٔ الگوها */}
           {activePatterns.length > 0 ? (
             isPatternLegendCollapsed ? (

@@ -3,7 +3,7 @@
 // درآمد ثابت، برچسب طلایی Alpha Trio، رنگ‌بندی سرانه (۱.۵×/۰.۸×)، هشدار ۸۰٪
 // پهنای باند، شمارش/ارزش صف‌ها و Circuit Breaker در اندپوینت مرده.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarketPulseBar } from '@features/market/components/MarketPulseBar';
 import {
@@ -311,10 +311,26 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     renderPulse();
     await waitFor(() => expect(screen.getByTestId('pulse-alpha-conditions')).toBeTruthy());
     const t = screen.getByTestId('pulse-alpha-conditions').textContent ?? '';
-    expect(t).toContain('ورود سهام');
+    expect(t).toContain('ورود خرد');
     expect(t).toContain('خروج درآمد ثابت');
     expect(t).toContain('خروج طلا');
     expect(t).toContain('؟');
+  });
+
+  it('عنوانِ ردیفِ جریان: «معاملات خرد» — نه «سهام» (رأیِ مالک)', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    await waitFor(() => expect(screen.getByTestId('pulse-smart').textContent).toContain('معاملات خرد'));
+    const smart = screen.getByTestId('pulse-smart');
+    expect(smart.textContent).toContain('معاملات خرد');
+    expect(smart.textContent).not.toContain('سهام');
+    // عنوانِ بخش و hint هنوز خوانا: سه بازار، نه چهار
+    expect(smart.textContent).toContain('خرد / درآمد ثابت / طلا');
   });
 
   it('قدرت خریدار به تفکیکِ گروه: ردیف‌های واقعیِ خلاصه، رنگ از آستانهٔ ۱.۵/۰.۸', async () => {
@@ -436,7 +452,7 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(screen.queryByTestId('pulse-breadth-warn')).not.toBeInTheDocument();
   });
 
-  it('حکمِ امروز: تیتر، علت و پنج درِ جزوه از payload نمایش داده می‌شود', async () => {
+  it('حکمِ امروز: تیتر و علت در یک سطر، پنج درِ جزوه به‌صورتِ چیپ', async () => {
     mockRoutes({
       'mstat/smart-money': () => jsonResponse(smartMoney()),
       'mstat/summary': () => jsonResponse(summary()),
@@ -451,10 +467,15 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
       expect(screen.getByTestId(`pulse-verdict-gate-${k}`)).toBeInTheDocument();
     }
-    // هر شرط یک سطرِ مستقل است (#170) و یک جملهٔ «رنگش یعنی چی» دارد
+    // پنل در حالتِ پیش‌فرض کوتاه است: پنج در در *یک* سطرِ چیپ، بدونِ جملهٔ توضیح
     const list = screen.getByTestId('pulse-verdict-gate-flow').parentElement;
     expect(list?.tagName).toBe('UL');
+    expect(list?.className).toContain('flex-wrap');
     expect(list?.children).toHaveLength(5);
+    expect(screen.queryByTestId(/^pulse-verdict-why-/)).toBeNull();
+    // رأیِ مالک #170 سرِ جایش می‌ماند: با یک کلیک، هر پنج جمله‌ای که رنگش را
+    // توضیح می‌دهد خوانده می‌شود (نه حذف‌شده، فقط از پیش‌فرضِ شلوغ بیرون).
+    fireEvent.click(screen.getByTestId('pulse-verdict-whys-toggle'));
     for (const k of ['liquidity', 'continuity', 'breadth', 'flow', 'window']) {
       expect(screen.getByTestId(`pulse-verdict-why-${k}`).textContent).toBeTruthy();
     }
@@ -462,6 +483,7 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(screen.getByTestId('pulse-verdict').textContent).not.toContain('قدمِ');
     const flow = screen.getByTestId('pulse-verdict-gate-flow');
     expect(flow.textContent).toContain('جهتِ پولِ حقیقی');
+    // بی‌کلیک هم می‌شود فهمید رنگ چی است: عنوانِ ابزارِ خودِ چیپ
     expect(flow.getAttribute('title')).toContain('حالتِ آرمانی');
     // درِ بی‌داده با رنگِ داوری‌شده نمی‌نشیند
     const cont = screen.getByTestId('pulse-verdict-gate-continuity');

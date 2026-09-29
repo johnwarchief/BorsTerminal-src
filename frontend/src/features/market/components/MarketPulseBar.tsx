@@ -2,6 +2,7 @@
 // بخش ۱: سنجه ارزش معاملات خرد | بخش ۲: مثلث جریان پول هوشمند |
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
+import { useState } from 'react';
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
@@ -129,15 +130,27 @@ const GATE_MARK: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
   nodata: '؟',
 };
 
+/** زمینهٔ چیپِ هر در — همان چهار حالت، بی‌رنگ برای «بدون داده» */
+const GATE_CHIP_TONE: Record<'ok' | 'mid' | 'bad' | 'nodata', string> = {
+  ok: 'border-emerald-300/80 bg-emerald-50 dark:border-accent-green/40 dark:bg-accent-green/10',
+  mid: 'border-amber-300/80 bg-amber-50 dark:border-accent-yellow/40 dark:bg-accent-yellow/10',
+  bad: 'border-rose-300/80 bg-rose-50 dark:border-accent-red/40 dark:bg-accent-red/10',
+  nodata: 'border-border-c bg-bg-card/40',
+};
+
 /**
  * حکمِ امروز — «آیا امروز برای ورود مناسب است یا نه». پنج شرطِ جزوه (ص۱۳ و ص۱۴)
  * همه از موتور می‌آیند (mstat_engine.day_verdict)؛ این‌جا فقط رنگ از state
- * خوانده می‌شود. رأیِ مالک (#170): شمارهٔ «قدمِ ۱/۲/۳» برداشته شد و شرط‌ها زیرِ
- * هم نوشته می‌شوند، هرکدام با یک جمله که می‌گوید رنگش دقیقاً چه معنی دارد —
- * «ارزش معاملات نوشتی سبزش کردی یعنی چی؟» دیگر نباید سؤال بماند.
+ * خوانده می‌شود. رأیِ مالک (#170): شمارهٔ «قدمِ ۱/۲/۳» برداشته شد و هر شرط یک
+ * جمله دارد که می‌گوید رنگش دقیقاً چه معنی می‌دهد. رأیِ بعدیِ مالک: همان
+ * جمله‌ها پنل را قدِ بلند کرده بودند، پس پنج در به یک سطرِ چیپ تبدیل شد و
+ * توضیحِ هر در پشتِ کلیدِ «توضیحِ شرط‌ها» (و در titleِ خودِ چیپ) مانده است —
+ * هیچ توضیحی حذف نشده، فقط از پیشِ‌فرضِ شلوغ برداشته شده است.
  */
 function VerdictStrip({ v }: { v: DayVerdict | null }) {
   const kind = v?.verdict ?? 'nodata';
+  const [showWhys, setShowWhys] = useState(false);
+  const gates = v?.gates ?? [];
   return (
     <div
       data-testid="pulse-verdict"
@@ -148,36 +161,54 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
         <span data-testid="pulse-verdict-label" className={`text-lg font-black leading-6 ${VERDICT_TEXT[kind]}`}>
           {v ? v.label : 'بدون داده'}
         </span>
+        <span data-testid="pulse-verdict-reason" className="min-w-0 text-2xs font-medium text-text-secondary">
+          {v ? v.reason : 'هنوز پولِ هوشمند نرسیده تا حکمی باشد'}
+        </span>
       </div>
-      <span data-testid="pulse-verdict-reason" className="text-2xs font-medium text-text-secondary">
-        {v ? v.reason : 'هنوز پولِ هوشمند نرسیده تا حکمی باشد'}
-      </span>
-      <ul className="flex min-w-0 flex-col gap-y-1 border-t border-border-c/40 pt-1">
-        {(v?.gates ?? []).map((g) => (
-          <li
-            key={g.key}
-            data-testid={`pulse-verdict-gate-${g.key}`}
-            title={`${g.label_state}${g.detail ? ` — ${g.detail}` : ''}\n${g.rule ?? ''}`}
-            className="flex min-w-0 flex-wrap items-baseline gap-x-1.5"
+      {gates.length ? (
+        <>
+          <ul className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-border-c/40 pt-1">
+            {gates.map((g) => (
+              <li
+                key={g.key}
+                data-testid={`pulse-verdict-gate-${g.key}`}
+                title={`${g.label_state}${g.detail ? ` — ${g.detail}` : ''}${g.why ? `\n${g.why}` : ''}\n${g.rule ?? ''}`}
+                className={`inline-flex min-w-0 items-center gap-1 rounded-full border px-1.5 py-0.5 ${GATE_CHIP_TONE[g.state]}`}
+              >
+                <span
+                  aria-hidden
+                  data-testid={`pulse-verdict-mark-${g.key}`}
+                  className={`shrink-0 text-2xs font-black ${GATE_TONE[g.state]}`}
+                >
+                  {GATE_MARK[g.state]}
+                </span>
+                <span className="text-2xs font-bold text-text-primary">{g.label}</span>
+                {g.detail ? <span className={`num text-2xs font-black ${GATE_TONE[g.state]}`}>{g.detail}</span> : null}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            data-testid="pulse-verdict-whys-toggle"
+            onClick={() => setShowWhys((s) => !s)}
+            aria-expanded={showWhys}
+            className="self-start text-3xs font-bold text-text-muted underline decoration-dotted underline-offset-2"
           >
-            <span
-              aria-hidden
-              data-testid={`pulse-verdict-mark-${g.key}`}
-              className={`shrink-0 text-2xs font-black ${GATE_TONE[g.state]}`}
-            >
-              {GATE_MARK[g.state]}
-            </span>
-            <span className="text-2xs font-bold text-text-primary">{g.label}</span>
-            <span className={`text-2xs font-black ${GATE_TONE[g.state]}`}>{g.label_state}</span>
-            {g.detail ? <span className="num min-w-0 text-2xs text-text-secondary">{g.detail}</span> : null}
-            {g.why ? (
-              <span data-testid={`pulse-verdict-why-${g.key}`} className="min-w-0 text-3xs leading-snug text-text-muted">
-                — {g.why}
-              </span>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+            {showWhys ? 'بستنِ توضیحِ شرط‌ها' : 'توضیحِ شرط‌ها'}
+          </button>
+          {showWhys ? (
+            <ul data-testid="pulse-verdict-whys" className="flex min-w-0 flex-col gap-y-0.5 border-t border-border-c/40 pt-1">
+              {gates.map((g) => (
+                <li key={g.key} data-testid={`pulse-verdict-why-${g.key}`} className="text-3xs leading-snug text-text-muted">
+                  <span className="font-bold text-text-secondary">{g.label}: </span>
+                  <span className={GATE_TONE[g.state]}>{g.label_state}</span>
+                  <span> — {g.why}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }
@@ -342,7 +373,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
       <Section
         testId="pulse-smart"
         title="جریان پول هوشمند"
-        hint="سهام / درآمد ثابت / طلا"
+        hint="خرد / درآمد ثابت / طلا"
       >
         {!flow ? (
           MISSING
@@ -350,14 +381,14 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           <>
             <div className="flex flex-col gap-1.5">
               <span
-                title="جریان پول حقیقی سهام و صندوق‌های سهامی (میلیارد تومان)"
+                title="خریدِ حقیقی منهای فروشِ حقیقی در سهام، حق تقدم و ص.سهامی (میلیارد تومان)"
                 className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1 ${
                   flow.eq_flow_b_toman != null && flow.eq_flow_b_toman >= 0
                     ? 'border-emerald-300/80 bg-emerald-50 text-emerald-950 dark:border-accent-green/40 dark:bg-accent-green/10 dark:text-accent-green'
                     : 'border-rose-300/80 bg-rose-50 text-rose-950 dark:border-accent-red/40 dark:bg-accent-red/10 dark:text-accent-red'
                 }`}
               >
-                <span className="text-2xs font-bold text-text-secondary">سهام</span>
+                <span className="text-2xs font-bold text-text-secondary">معاملات خرد</span>
                 {flow.eq_flow_b_toman != null ? (
                   <span className={`text-xs font-black inline-flex items-center gap-1 ${flow.eq_flow_b_toman >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     <span>{flow.eq_flow_b_toman >= 0 ? '▲' : '▼'}</span>
@@ -413,7 +444,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               <span
                 data-testid="pulse-alpha-trio"
                 className="self-start rounded-full border border-amber-400/80 bg-amber-100 text-amber-950 px-2 py-0.5 text-3xs font-black dark:border-accent-yellow/60 dark:bg-accent-yellow/15 dark:text-accent-yellow"
-                title="خروج درآمد ثابت + خروج طلا + ورود سهام"
+                title="خروج درآمد ثابت + خروج طلا + ورود معاملات خرد"
               >
                 ✨ {ALPHA_TRIO_LABEL}
               </span>
@@ -428,7 +459,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                 title="هر تیک یکی از سه شرطِ ایده‌آلِ ورود نوسانی است"
               >
                 {[
-                  { t: 'ورود سهام', v: trio.eqInflow },
+                  { t: 'ورود خرد', v: trio.eqInflow },
                   { t: 'خروج درآمد ثابت', v: trio.fixedOutflow },
                   { t: 'خروج طلا', v: trio.goldOutflow },
                 ].map((c) => (
