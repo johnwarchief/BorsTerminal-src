@@ -222,32 +222,28 @@ def _market_from_cache(request: Request, now: float):
                              "X-Cache": "HIT" if fresh else "STALE", "ETag": etag})
 
 
-def _build_market_response(request: Request):
-    import time as _t
-    now = _t.time()
-    conn = get_db()
-    try:
-        # دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
-        #   tape_history — آرایۀِ [ih] عینِ سایت. درِ پنج فیلترِ فایل
-        #       (مبناءِ حجم، کفِ بیست‌ونُه نشست، پلکانِ مقاومت) از این است.
-        #   hist (اتحادِ price_history و daily_prices) — فقط ستون‌هایِ *نمایش*
-        #       (میانگین ماه، حجمِ دیروز، کمینه/بیشینۀِ ۳۰ روزه). این ردیف‌ها
-        #       روزهایی‌اند که نماد *معامله شده*:
-        #         price_history — ردیف‌هایِ *منتشرشده* (GetClosingPriceDailyListCSV
-        #             و بک‌فیلِ GetInstrmentsHistoryInDay).
-        #         daily_prices  — اسنپ‌شاتِ زندۀِ تابلو، برایِ روزهایی که هنوز
-        #             ردیفِ انتشاریافته نداریم؛ «امروزِ بی‌نهایه» را عمداً بیرون
-        #             می‌گذارد، چون ستونِ نمایش هم نباید نیم‌بها از حجمِ
-        #             نشستِ تمام‌نشده بسازد (اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵: خكمك با
-        #             شمارفتنِ امروز نسبتِ ۰٫۹۹ می‌شد و مردود، مرجعِ TSETMC ۱٫۰۶).
-        # روزهایِ همپوشان با GROUP BY رویِ (نماد،تاریخ) یک‌بار شمرده می‌شوند.
-        query = """
-            WITH iso AS (
-                SELECT d,
-                       printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) AS dt
-                FROM (SELECT MAX(d_even) AS d FROM market_watch)
-            ),
-            -- `spine` فهرستِ ۶۰ نشستِ آخرِ بازار است و تنها کارش بستنِ *سقفِ*
+# ════════════════════════════════════════════════════════════════════════════
+# پنجره‌هایِ روزانۀ تابلو — یک‌بار در روز، نه یک‌بار در هر تیک (v1.0.56)
+# ════════════════════════════════════════════════════════════════════════════
+# سنجشِ همین هفته رویِ بانکِ نصبی (tools/rebuild_cost_probe.py، چک‌سامِ
+# ستون‌به‌ستونِ دو مسیر یکسان، ۵۳۶۰ ردیف): کوئری ۰٫۶۷۴ ثانیه، بی‌این دو پنجره
+# ۰٫۰۶۲ ثانیه. دلیلِ افتِ این‌همه، خودِ داده نیست: پنجرۀ نمایشِ ۳۰ روزه و
+# پنجرۀ شصت‌نشستِ [ih] به تیکِ زنده وابسته‌اند، درحالی‌که تیک فقط ستون‌هایِ
+# *همان نشست* را در daily_prices/market_watch بازنویسی می‌کند و هر دو پنجره
+# «نشست‌هایِ پیشین» را می‌خوانند.
+#
+# چرا جدول و نه کشِ pandas: get_db() هر درخواست اتصالِ تازه‌ای می‌سازد، پس
+# جدولِ موقتِ آن اتصال با بازسازیِ بعدی زنده نمی‌ماند.
+#
+# چرا بی‌اعتباری با «شمارش» درست است: تنها چیزی که پنجره را تغییر می‌دهد
+# ورودِ ردیفِ *قدیمی* است — انتشارِ ردیفِ قیمتِ دیروز (price_history)،
+# نهایهٔ نشستِ قبلی (daily_prices)، یا سینکِ [ih] (tape_history). هر سه
+# شمارششان تکان می‌خورد. MAX(rowid) رویِ daily_prices عمداً در کلید نیست:
+# تیک با INSERT OR REPLACE ردیفِ امروز را جابه‌جا می‌کند و کلید را هر ۵ ثانیه
+# عوض می‌کرد، یعنی کش بی‌اثر. ردیفِ امروز درِ پنجره هم نیست (d_even < iso).
+_HIST_V_SQL = """
+WITH iso AS (SELECT MAX(d_even) AS d FROM market_watch),
+-- `spine` فهرستِ ۶۰ نشستِ آخرِ بازار است و تنها کارش بستنِ *سقفِ*
             -- پنجرۀِ ستون‌هایِ نمایش است. درِ خودِ TSETMC آرایۀ [ih] برایِ *هر*
             -- نشستِ تقویمی ردیف دارد و نشستِ بی‌معامله volume=0 و
             -- PriceMin=PriceMax=0 می‌گیرد؛ بانکِ ردیف‌محورِ ما آن ردیف‌هایِ صفر
@@ -300,8 +296,12 @@ def _build_market_response(request: Request):
                        MAX(CASE WHEN rn = 1 THEN volume END) AS d1_vol
                 FROM rk WHERE rn <= 60
                 GROUP BY symbol
-            ),
-            -- ── پنجرۀ [ih]، عینِ منبعِ خودِ سایت ─────────────────────────────
+            )
+SELECT * FROM v
+"""
+
+_HIST_FV_SQL = """
+WITH -- ── پنجرۀ [ih]، عینِ منبعِ خودِ سایت ─────────────────────────────
             -- `tape_history` را سینک از `GetClosingPriceDailyAllInst` می‌سازد —
             -- همان درخواستی که فیلترنویسِ tsetmc.com آرایۀ [ih] را از آن می‌سازد:
             -- شصت نشستِ آخرِ **هر نماد**، با ردیفِ صفر برایِ نشستِ بی‌معامله.
@@ -343,7 +343,131 @@ def _build_market_response(request: Request):
                        MAX(CASE WHEN srn = 60 THEN price_max END) AS h59_max
                 FROM th WHERE srn <= 60
                 GROUP BY ins_code
+            )
+SELECT * FROM fv
+"""
+
+_HIST_LOCK = threading.Lock()
+
+
+def _history_signature(conn):
+    """امضایِ بی‌اعتباریِ دو پنجره — شمارشِ ردیف کافی نیست.
+
+    سینکِ `[ih]` و نهایهٔ نشستِ قبلی می‌توانند همان ردیف‌ها را *مقدارِ تازه*
+    بدهند (UPDATE و INSERT OR REPLACE رویِ کلیدِ موجود)، و در آن حالت نه
+    COUNT تکان می‌خورد نه MAX(rowid)ِ tape_history (که ردیف‌هایش متراکم‌اند).
+    بی‌جمعِ مقداری، پنج فیلترِ حجمی تا نشستِ بعدی با [ih]ِ دیروز حساب
+    می‌کردند. هزینهٔ اندازه‌گیری‌شده رویِ بانکِ نصبی: price_history ۲۰٫۳ms،
+    tape_history ۱۱٫۱ms، daily_prices ۵٫۰ms — در برابرِ ۶۱۲ms که هر بازسازی
+    صرفه‌جویی می‌شود، و بازسازی حدوداً یک‌بار در دقیقه است.
+
+    daily_prices تنها برایِ «نشست‌هایِ پیشین» جمع می‌شود: ردیفِ نشستِ جاری هر
+    تیک بازنویسی می‌شود و اگر در امضا بود، کش را بی‌اثر می‌کرد — آن ردیف درِ
+    هیچ‌یک از دو پنجره هم نیست (شرطِ `d_even < iso`).
+    """
+    row = conn.execute(
+        "SELECT (SELECT MAX(d_even) FROM market_watch),"
+        "       (SELECT COUNT(*) FROM price_history),"
+        "       (SELECT MAX(rowid) FROM price_history),"
+        "       (SELECT SUM(close) + SUM(high) + SUM(low) + SUM(volume) FROM price_history),"
+        "       (SELECT COUNT(*) FROM daily_prices"
+        "         WHERE d_even < (SELECT MAX(d_even) FROM market_watch)),"
+        "       (SELECT SUM(p_closing) + SUM(q_tot_tran) FROM daily_prices"
+        "         WHERE d_even < (SELECT MAX(d_even) FROM market_watch)),"
+        "       (SELECT COUNT(*) FROM tape_history),"
+        "       (SELECT SUM(price_max) + SUM(price_min) + SUM(q_tot_tran5j) FROM tape_history)"
+    ).fetchone()
+    try:
+        tape_ok = conn.execute(
+            "SELECT COALESCE(newest_d_even, 0) FROM tape_history_state WHERE id = 1"
+        ).fetchone()[0]
+    except Exception:
+        # بانکِ بدونِ جدولِ وضعیت (نسخهٔ قدیمیِ baseline): «همیشه بساز» بی‌خطا.
+        tape_ok = -1
+    return tuple(row) + (tape_ok,)
+
+
+def _rebuild_history_windows(conn):
+    """ساختنِ دو جدول، با درِ «صفرِ بی‌دلیل».
+
+    جدولِ پنجره اگر بی‌دلیل صفر بسازد، جدولِ قبلی جای خود می‌ماند: پنج فیلترِ
+    حجمی بی‌این ستون‌ها خاموش می‌شوند و «صفر» با «نبودنِ داده» یکی به‌نظر
+    می‌رسد. ولی صفر *با دلیل* مجاز است: بانکِ تازه‌نصب که tape_history ندارد
+    باید پنجرۀ [ih] خالی بدهد، نه خطا — همان چیزی که کوئریِ تکپیسّه هم
+    می‌داد (LEFT JOIN رویِ fvِ خالی ⇒ ستون‌ها NULL).
+    """
+    for table, sql, source in (("board_hist_v", _HIST_V_SQL, "price_history"),
+                               ("board_hist_fv", _HIST_FV_SQL, "tape_history")):
+        n_src = conn.execute(f"SELECT COUNT(*) FROM {source}").fetchone()[0]
+        tmp = table + "_new"
+        conn.execute(f"DROP TABLE IF EXISTS {tmp}")
+        conn.execute(f"CREATE TABLE {tmp} AS {sql}")
+        n = conn.execute(f"SELECT COUNT(*) FROM {tmp}").fetchone()[0]
+        if n == 0 and n_src > 0:
+            conn.execute(f"DROP TABLE {tmp}")
+            raise RuntimeError(f"history window {table} built zero rows "
+                               f"while {source} has {n_src}")
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.execute(f"ALTER TABLE {tmp} RENAME TO {table}")
+    conn.commit()
+
+
+def ensure_board_history(conn):
+    """دو پنجره باید پیش از کوئریِ تابلو موجود و به‌روز باشند."""
+    global _HIST_CACHE_KEY
+    sig = _history_signature(conn)
+    with _HIST_LOCK:
+        have = _HIST_CACHE_KEY[0] == sig
+        if have:
+            try:
+                n = conn.execute("SELECT COUNT(*) FROM board_hist_v").fetchone()[0]
+                m = conn.execute("SELECT COUNT(*) FROM board_hist_fv").fetchone()[0]
+                have = n > 0 and m > 0
+            except Exception:
+                have = False          # جدول نیست (بانک عوض شده) → بساز
+        if have:
+            return False
+        t0 = time.time()
+        _rebuild_history_windows(conn)
+        _HIST_CACHE_KEY = (sig,)
+        print(f"[market] history windows rebuilt in {time.time() - t0:.2f}s "
+              f"(sig={sig})")
+        return True
+
+
+_HIST_CACHE_KEY = (None,)
+
+
+def _build_market_response(request: Request):
+    import time as _t
+    now = _t.time()
+    conn = get_db()
+    try:
+        # دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
+        #   tape_history — آرایۀِ [ih] عینِ سایت. درِ پنج فیلترِ فایل
+        #       (مبناءِ حجم، کفِ بیست‌ونُه نشست، پلکانِ مقاومت) از این است.
+        #   hist (اتحادِ price_history و daily_prices) — فقط ستون‌هایِ *نمایش*
+        #       (میانگین ماه، حجمِ دیروز، کمینه/بیشینۀِ ۳۰ روزه). این ردیف‌ها
+        #       روزهایی‌اند که نماد *معامله شده*:
+        #         price_history — ردیف‌هایِ *منتشرشده* (GetClosingPriceDailyListCSV
+        #             و بک‌فیلِ GetInstrmentsHistoryInDay).
+        #         daily_prices  — اسنپ‌شاتِ زندۀِ تابلو، برایِ روزهایی که هنوز
+        #             ردیفِ انتشاریافته نداریم؛ «امروزِ بی‌نهایه» را عمداً بیرون
+        #             می‌گذارد، چون ستونِ نمایش هم نباید نیم‌بها از حجمِ
+        #             نشستِ تمام‌نشده بسازد (اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵: خكمك با
+        #             شمارفتنِ امروز نسبتِ ۰٫۹۹ می‌شد و مردود، مرجعِ TSETMC ۱٫۰۶).
+        # روزهایِ همپوشان با GROUP BY رویِ (نماد،تاریخ) یک‌بار شمرده می‌شوند.
+        query = """
+            WITH iso AS (
+                SELECT d,
+                       printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) AS dt
+                FROM (SELECT MAX(d_even) AS d FROM market_watch)
             ),
+            -- `v` حالا یک جدولِ materialized است؛ متنِ پنجره دست‌نخورده به
+--        `board_hist_v` منتقل شده (refresh در @ensure_board_history).
+            v AS MATERIALIZED (SELECT * FROM board_hist_v),
+            -- `fv` هم مثلِ `v`: پنجرۀ [ih] یک‌بار در روز ساخته می‌شود.
+            fv AS MATERIALIZED (SELECT * FROM board_hist_fv),
             ctm AS (
                 SELECT ins_code, MAX(d_even) AS d FROM client_type
                 WHERE d_even <= (SELECT d FROM iso)
@@ -384,6 +508,7 @@ def _build_market_response(request: Request):
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
         """
+        ensure_board_history(conn)
         df = pd.read_sql_query(query, conn)
         last_deven = df["d_even"].max() if "d_even" in df.columns and len(df) else None
         # نمادهای خارج از تابلو (دEVEN قدیمی) با اولویت آخر — ولی هنوز قابل نمایشاند
