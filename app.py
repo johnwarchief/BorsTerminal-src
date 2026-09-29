@@ -284,6 +284,33 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] pulse snapshot loop failed: {_e}")
 
+    # ── کندل از تابلو، یک بار درِ بوت (۱٫۰٫۶۲) ─────────────────────────────
+    # حلقۀ سینک بیرونِ پنجرۀ ۰۹–۱۳ نمی‌دود، پس اگر برنامه پس از بستنِ بازار
+    # بالا بیاید (یا شبکه درِ نشست نرسیده باشد) جدولِ کندل روی آخرینِ نشستِ
+    # موفق می‌ماند. سنجشِ ۱۴۰۵-۰۷-۰۷ روی کپیِ بانکِ نصبی: کندل‌ها روی
+    # ۲۰۲۶-۰۹-۲۱ و فقط ۱۰ نماد در هر روز، درحالی‌که تابلو ۲۴ نشستِ
+    # معامله‌شده داشت. این دو تابع فقط از خودِ بانک می‌خوانند (بی‌شبکه،
+    # بی‌۴۲۹، ۰٫۹ ثانیه برایِ جبرانِ کامل و ۰٫۲۸ برایِ حالتِ عادی) و
+    # قابلِ تکرارند، پس درِ بوت هم اجرا می‌شوند. نخِ جدا: بوت را نبندد.
+    def _candle_projection_at_boot():
+        try:
+            import sqlite3 as _sq
+            import test_tsetmc as _T
+            from bors_config import DB_PATH as _DB
+            _c = _sq.connect(_DB, timeout=60)
+            try:
+                _T.sync_price_history_from_daily(_c)
+                _T.normalize_price_history_geometry(_c)
+            finally:
+                _c.close()
+        except Exception as _e:
+            print(f"[startup] candle projection at boot: {_e}")
+    try:
+        threading.Thread(target=_candle_projection_at_boot, daemon=True).start()
+        print("[startup] candle projection spawned (local-only, one pass)")
+    except Exception as _e:
+        print(f"[startup] candle projection failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():

@@ -101,10 +101,15 @@ SUITES = [
     # رِفتنِ تعدیلِ جعلی). نه شبکه می‌خواهد نه market.db.
     ('dev/candle_source_fidelity_v1033.py',
                                      'candle fidelity: geometry repair + anchored adjustment'),
-    # LIVE-BAR-1 (گزارشِ مالک رویِ فولاد ۱۴۰۵-۰۷-۰۸): کندلِ زنده با تاریخِ
+    # LIVE-BAR-1 (گزارشِ مالک رویِ فولاد ۱۴۰۵-۰۷-۰۷): کندلِ زنده با تاریخِ
     # خودِ نشست تزریق می‌شود، در هر دو اندپوینت، و کش را آلوده نمی‌کند.
     ('dev/live_bar_session_date_v1059.py',
                                      'live candle: session date, both chart endpoints, cache untouched'),
+    # CANDLES-STALE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷): هیچ حلقه‌ای price_history را
+    # نمی‌نوشت؛ حالا کندل از خودِ daily_prices ساخته می‌شود و سایه‌هایِ
+    # بی‌هندسهٔ کهنه اصلاح می‌شوند. بی‌شبکه، رویِ جدول‌هایِ موقتِ کوچک.
+    ('dev/candles_from_board_v1062.py',
+                                     'candles from the board table + geometry repair + no prune-before-fetch'),
     # TAPE-F / JET-BREAK / HIST-SRC: پنج فیلترِ تابلو عینِ جزوه، و «نبودنِ
     # داده» هیچ‌وقت قبول نیست. پیش از این هیچ سویتی این فرمول‌ها را نمی‌پوشاند.
     ('dev/tape_filters_v1034.py',   'tape filters: five formulas match the notebook'),

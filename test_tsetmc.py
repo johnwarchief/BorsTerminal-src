@@ -982,6 +982,150 @@ def get_json(s, url, key):
         return []
 
 
+def _iso_from_deven(d_even):
+    """20260929 (int/str) → '2026-09-29'؛ بی‌اعتبار → None."""
+    s = str(d_even or "").strip()
+    if len(s) != 8 or not s.isdigit():
+        return None
+    return f"{s[:4]}-{s[4:6]}-{s[6:]}"
+
+
+def candle_from_row(l_val18, d_even, first, high, low, close, vol):
+    """یک ردیفِ تابلو → کندلِ price_history، یا None.
+
+    همان دو قاعده‌ای که مسیرِ CDN رعایت می‌کند، اینجا رویِ دادهٔ خودِ برنامه:
+    بدنه از «اولین معامله» است (نه قیمتِ پایه) و اگر high/low بیرونِ بدنه بودند
+    سایه گِشاد می‌شود، نه پایانی خُرد. ردیفِ بی‌معامله (حجمِ صفر) کندل نمی‌شود —
+    پیش از بازگشایی تابلو ردیفِ امروز را با قیمتِ پایه و حجمِ صفر می‌فرستد.
+    """
+    if not l_val18:
+        return None
+    date = _iso_from_deven(d_even)
+    if not date:
+        return None
+    try:
+        c = float(close or 0)
+        o = float(first or 0) or c
+        h = float(high or 0)
+        l = float(low or 0)
+        v = float(vol or 0)
+    except (TypeError, ValueError):
+        return None
+    if c <= 0 or v <= 0:
+        return None
+    h = max(h, o, c)
+    l = min(l if l > 0 else o, o, c)
+    return (str(l_val18), date, o, h, l, c, v)
+
+
+def sync_price_history_from_daily(conn, full=False):
+    """کندل‌ها را از خودِ daily_prices می‌سازد — بی‌شبکه، بی‌۴۲۹، قابلِ تکرار.
+
+    ریشۀ «کندل‌ها عقب‌اند»: `price_history` تنها از راهِ `fetch_price_history`
+    پر می‌شد؛ آن هم یا در pack کردنِ baseline یا با `python test_tsetmc.py
+    --update-existing` که دستی است. هیچ حلقۀ خودکاری در برنامه آن را نمی‌نویسد،
+    پس در بانکِ نصبی (اندازه‌گیری ۱۴۰۵-۰۷-۰۷ روی کپی) جدولِ کندل روی
+    ۲۰۲۶-۰۹-۲۱ و فقط ۱۰ نماد در هر روز بود، درحالی‌که `daily_prices` همان
+    روزها را کامل داشت: هشت نشستِ معامله‌شده (۰۸-۲۰، ۰۸-۲۱ و ۰۹-۲۲ تا ۰۹-۲۹)
+    در تابلو بود و در کندل نبود؛ جبران ۵۳٬۰۶۰ کندل شد.
+    تابلو خودش first/max/min/closing/vol هر نشست را نگه می‌دارد، پس کپی‌کردنشان
+    به price_history دقیقاً همان چیزی است که لازم است — بدونِ هیچ درخواستِ تازه.
+    تنها پوششی که از آنِ خودِ تابلو نیست: `daily_prices` خودش فقط ۲۴ نشستِ آخر
+    را دارد (۲۰۲۶-۰۸-۲۰ به بعد)، پس تاریخچۀ کهنه‌تر همان‌جا می‌ماند و نشستِ
+    ۲۰۲۶-۰۹-۲۰ که در تابلو ردیفی ندارد، تنها از CSV پر می‌شود.
+
+    حالتِ عادی فقط تازه‌ترین نشست را می‌نویسد (چند هزار ردیف، هر ۹۰ ثانیه بی‌هزینه
+    است); اگر جدولِ کندل به نشستِ امروز نرسیده باشد، کلِ نشست‌های موجود در
+    daily_prices یک‌بار جبران می‌شود.
+    """
+    try:
+        # تنها نشستی که واقعاً معامله شده مبناست: ردیفِ پیش از بازگشایی (حجمِ صفر)
+        # هیچ‌وقت کندل نمی‌شود، پس اگر آن را مبنای «به امروز رسیدم» می‌گذاشتیم،
+        # هر ۹۰ ثانیه یک‌بار کلِ جبران اجرا می‌شد.
+        traded = "d.q_tot_tran > 0 AND d.p_closing > 0"
+        row = conn.execute(
+            "SELECT MAX(d.d_even) FROM daily_prices d JOIN instruments i "
+            "ON i.ins_code = d.ins_code WHERE " + traded).fetchone()
+        newest = row[0] if row else None
+        if not newest:
+            return {"sessions": 0, "rows": 0, "mode": "no-board"}
+        newest_iso = _iso_from_deven(newest)
+        have = conn.execute("SELECT MAX(date) FROM price_history").fetchone()[0]
+        catch_up = full or have != newest_iso
+        if catch_up:
+            want = [r[0] for r in conn.execute(
+                "SELECT DISTINCT d.d_even FROM daily_prices d JOIN instruments i "
+                "ON i.ins_code = d.ins_code WHERE " + traded + " ORDER BY d.d_even")]
+            mode = "catch-up"
+        else:
+            want, mode = [newest], "latest"
+        if not want:
+            return {"sessions": 0, "rows": 0, "mode": mode}
+        rows = conn.execute(
+            "SELECT i.l_val18, d.d_even, d.price_first, d.price_max, d.price_min,"
+            "       d.p_closing, d.q_tot_tran "
+            "FROM daily_prices d JOIN instruments i ON i.ins_code = d.ins_code "
+            "WHERE d.d_even IN (%s) AND %s"
+            % (",".join("?" * len(want)), traded), tuple(want)).fetchall()
+        out, seen = [], set()
+        for r in rows:
+            bar = candle_from_row(*r)
+            if not bar:
+                continue
+            key = (bar[0], bar[1])
+            if key in seen:          # دو ins_code با یک نماد: آخرینِ فهرست می‌ماند
+                continue
+            seen.add(key)
+            out.append(bar)
+        if out:
+            conn.executemany("INSERT OR REPLACE INTO price_history "
+                             "(symbol, date, open, high, low, close, volume) "
+                             "VALUES (?,?,?,?,?,?,?)", out)
+            conn.commit()
+        n_syms = len({x[0] for x in out})
+        print(f"  [candles-from-board] {mode}: {len(out)} کندل از {len(want)} نشست "
+              f"برایِ {n_syms:,} نماد".replace(",", "٬"))
+        return {"sessions": len(want), "rows": len(out), "mode": mode}
+    except Exception as e:      # noqa: BLE001 — کندل هرگز نباید همگام‌سازی را بشکند
+        print(f"  [candles-from-board] خطا: {type(e).__name__}: {e}")
+        return {"sessions": 0, "rows": 0, "mode": "error", "error": str(e)}
+
+
+def normalize_price_history_geometry(conn):
+    """سایه‌هایِ بیرونِ بدنه را در price_history گِشاد می‌کند (یک‌بار، idempotent).
+
+    اندازه‌گیری روی کپیِ بانکِ نصبی ۱۴۰۵-۰۷-۰۷: ۳۴٬۸۴۹ ردیف از ۳۲۱٬۳۸۹ ردیف
+    بدنه‌شان بیرونِ [low, high] بود (نمونه: وبملت ۲۰۲۴-۱۰-۲۰ با
+    O=H=L=۱٬۸۹۳ و C=۱٬۹۰۱). علتش همین مسیرِ قدیمی است: `fetch_price_history`
+    ستون `<OPEN>` را می‌خواند که «قیمت پایه» است نه اولینِ معامله — همان چیزی که
+    برایِ مسیرِ CDN در v8.7 FIX-1 اصلاح شد ولی در این جدول ماند.
+    پایانی دست‌نخورده می‌ماند (به پایهٔ روزِ بعد زنجیر می‌شود)، فقط سایه گِشاد
+    می‌شود — دقیقاً همان قاعده‌ای که `_parse_tsetmc_csv` رعایت می‌کند.
+    """
+    try:
+        bad = conn.execute(
+            "SELECT rowid, open, high, low, close FROM price_history "
+            "WHERE open > 0 AND close > 0 AND ("
+            "  COALESCE(high,0) < MAX(open, close) OR COALESCE(low,0) = 0"
+            "  OR COALESCE(low,999999999999) > MIN(open, close) OR COALESCE(high,0) <= 0"
+            ")").fetchall()
+        if not bad:
+            return 0
+        upd = []
+        for rid, o, h, l, c in bad:
+            hi = max(float(h or 0), float(o), float(c))
+            lo_c = float(l or 0)
+            lo = min(x for x in (lo_c if lo_c > 0 else None, float(o), float(c)) if x is not None)
+            upd.append((hi, lo, rid))
+        conn.executemany("UPDATE price_history SET high = ?, low = ? WHERE rowid = ?", upd)
+        conn.commit()
+        print(f"  [candles-geometry] {len(upd):,} سایه اصلاح شد".replace(",", "٬"))
+        return len(upd)
+    except Exception as e:      # noqa: BLE001 — اصلاحِ هندسه هرگز سینک را نمی‌شکند
+        print(f"  [candles-geometry] خطا: {type(e).__name__}: {e}")
+        return 0
+
+
 def fetch_price_history(symbol, s=None, since=None):
     """دریافت سابقهٔ قیمت (OHLCV) از TSETMC برای نمودار شمعی (cdn، ~0.16s/نماد).
 
@@ -1005,11 +1149,6 @@ def fetch_price_history(symbol, s=None, since=None):
     cutoff = (datetime.date.today() - datetime.timedelta(days=730)).strftime("%Y-%m-%d")
     if since:
         cutoff = max(cutoff, since)
-    try:
-        conn.execute("DELETE FROM price_history WHERE symbol = ? AND date < ?", (symbol, cutoff))
-        conn.commit()
-    except Exception:
-        pass
     try:
         s = s or make_session()
         _rate_wait(s)
@@ -1042,6 +1181,15 @@ def fetch_price_history(symbol, s=None, since=None):
             rows += 1
         conn.commit()
         print(f"  [history] {symbol}: {rows} OHLCV rows saved")
+        # هرس فقط پس از fetchِ موفق و فقط در حالتِ کامل. پیش از این DELETE پیش از
+        # درخواست اجرا می‌شد و cutoff آن با `since` برابر بود: یعنی هر دلتا
+        # تاریخچۀ پیشِ پنجره را بی‌بازگشت پاک می‌کرد (و در حالت خطا، ردیف‌ها
+        # پیش‌تر رفته بودند و صفر برمی‌گشت).
+        if rows and not since:
+            floor = (datetime.date.today() - datetime.timedelta(days=730)).strftime("%Y-%m-%d")
+            conn.execute("DELETE FROM price_history WHERE symbol = ? AND date < ?",
+                         (symbol, floor))
+            conn.commit()
     except Exception as e:
         print(f"  [history] {symbol}: error - {type(e).__name__}: {e}")
     finally:
@@ -1614,6 +1762,17 @@ def main():
         refresh_tape_history(conn)
     except Exception as e:      # noqa: BLE001 — پنجره نو نشد، همگام‌سازی نمی‌شکند
         print(f"  [tape-history] خطای غیرمنتظره: {type(e).__name__}: {e}")
+
+    # کندل‌ها از خودِ تابلو — این تنها راهی است که price_history را در برنامه‌ای
+    # که فقط «بروزرسانی تابلو» می‌زند، جلو می‌برد (پیش‌تر هیچ حلقه‌ای نمی‌نوشتش).
+    try:
+        sync_price_history_from_daily(conn)
+    except Exception as e:      # noqa: BLE001
+        print(f"  [candles-from-board] خطای غیرمنتظره: {type(e).__name__}: {e}")
+    try:
+        normalize_price_history_geometry(conn)
+    except Exception as e:      # noqa: BLE001
+        print(f"  [candles-geometry] خطای غیرمنتظره: {type(e).__name__}: {e}")
 
     print("=" * 60)
     print(f"Saved symbols: {nfmt(len(watch))} | client-type records: {nfmt(len(client))}")
