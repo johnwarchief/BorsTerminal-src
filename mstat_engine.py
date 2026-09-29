@@ -1277,7 +1277,7 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
         flow_state, flow_label, flow_vote = "mid", "ورودِ پولِ ناقص", 0
     else:
         flow_state, flow_label, flow_vote = "mid", "جهتِ پول روشن نیست", 0
-    flow_detail = ("سهام %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
+    flow_detail = ("خرد %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
         _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
         "بدون داده" if gd_out is None else _fa_signed(gd)))
     gates.append(_gate("flow", "جهتِ پولِ حقیقی", "پولِ حقیقی",
