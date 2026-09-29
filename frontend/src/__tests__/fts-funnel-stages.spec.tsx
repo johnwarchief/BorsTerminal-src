@@ -16,6 +16,7 @@ import { useTapeStore } from '@features/market/stores/tapeStore';
 import {
   buildFunnel,
   DEFAULT_FUNNEL_OPTIONS,
+  IND_COLUMNS,
   type FunnelOptions,
   type TreePreset,
 } from '@features/master/lib/ftsFunnel';
@@ -384,9 +385,10 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     expect(tape.queryByRole('columnheader', { name: 'هفتگی' })).not.toBeInTheDocument();
 
     const fund = within(screen.getByTestId('funnel-stage-fundamental'));
-    for (const h of ['رشد فروش', 'EPS سه‌ساله', 'حاشیه ناخالص', 'فروش÷ارزش', 'نرخ‌گذاری']) {
-      // سرستون دو بار می‌آید (جدولِ اصلی + جدولِ «سنجیده نشد»)، پس همه را می‌شماریم
-      expect(fund.getAllByRole('columnheader', { name: h }).length).toBeGreaterThan(0);
+    for (const c of IND_COLUMNS) {
+      // سرستون از همان IND_COLUMNS می‌آید، نه از متنِ دومی در UI — پس تست هم
+      // از همان منبع می‌خواند (یک جای واحد برای نامِ هر شاخص).
+      expect(fund.getAllByRole('columnheader', { name: c.label }).length).toBeGreaterThan(0);
     }
   });
 
