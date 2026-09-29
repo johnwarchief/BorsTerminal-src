@@ -26,6 +26,13 @@ import tempfile
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
 
+# import bors_entry در سطرِ ۱۱۹ خودش _setup_streams() را صدا می‌زند و stdout را
+# به logs/bors.log می‌بندد. بدونِ این متغیر، شش سطرِ PASSِ پایینیِ همین فایل
+# داخلِ لاگ می‌رفت و run_all_tests «۲ pass / ۰ fail» چاپ می‌کرد — گاردی که
+# چیزی از خودش نمی‌بیند. (دقیقاً همان باگی که در test_compat_guard_v1012 رفع
+# شده بود و اینجا دوباره تکرار شد.)
+os.environ.setdefault("BORS_SHOW_CONSOLE", "1")
+
 PASS, FAIL = [], []
 
 

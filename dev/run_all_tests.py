@@ -94,6 +94,9 @@ SUITES = [
     # v1.0.12: گاردِ سازگاریِ ویندوز + رندرِ نرم‌افزاری. رویِ سیستم‌های بدونِ
     # GPU اختصاصی کرومیوم صفحهٔ سفید می‌زد؛ حالا SwiftShader می‌زند.
     ('dev/test_compat_guard_v1012.py', 'Windows + GPU/software-render guard'),
+    # LOG-CLOCK: لاگِ بی‌ساعت + بافرِ بلوکی، «مرگِ بی‌صدای» برنامه را غیرقابلِ
+    # داوری کرده بود. گارد با دو کنترلِ منفی ثابت می‌کند خودش را می‌گیرد.
+    ('dev/log_clock_guard_v1055.py',  'log has a clock and survives a hard death'),
     # CANDLE-1: کندل باید همان باشد که TSETMC منتشر می‌کند (ترمیمِ هندسه +
     # رِفتنِ تعدیلِ جعلی). نه شبکه می‌خواهد نه market.db.
     ('dev/candle_source_fidelity_v1033.py',
