@@ -59,6 +59,18 @@ def _schema_source():
     return out, out
 
 
+def _real_db_copy() -> str:
+    """کپیِ نوشتنیِ بانکِ واقعی، تا پنجره‌ها در فایلِ اصلیِ کاربر ساخته نشوند.
+
+    دادهٔ واقعی لازماً لازم است: فیکسچرِ ساختگی هیچ فیلتری را روشن نمی‌کند و
+    مقایسهٔ مجموعهٔ خالی با مجموعهٔ خالی سبز می‌شود.
+    """
+    src_path, _tmp = _schema_source()
+    out = os.path.join(tempfile.mkdtemp(prefix="bors_hist_real_"), "market.db")
+    shutil.copyfile(src_path, out)
+    return out
+
+
 def _build_fixture() -> sqlite3.Connection:
     src_path, tmp = _schema_source()
     src = sqlite3.connect(f"file:{src_path.replace(os.sep, '/')}?mode=ro", uri=True)
@@ -183,6 +195,61 @@ def _rows(c, sql):
     return names, cur.fetchall()
 
 
+class _FakeReq:
+    headers = {}
+
+
+class _NoCloseConn:
+    """`_build_market_response` درِ پایان conn.close() را صدا می‌زند؛ اتصالِ
+    فیکسچر در حافظه است و بسته شدنش کلِ تست را بی‌محتوا خراب می‌کند."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def cursor(self):
+        return self._real.cursor()
+
+    def execute(self, *a, **k):
+        return self._real.execute(*a, **k)
+
+    def executemany(self, *a, **k):
+        return self._real.executemany(*a, **k)
+
+    def commit(self):
+        return self._real.commit()
+
+    def close(self):
+        pass
+
+
+def _pipeline_flags(mk, conn, sql_text):
+    """لولۀ واقعیِ تابلو را اجرا می‌کند، بی‌آنکه چیزی جز *متنِ SQL* عوض شود."""
+    import json as _json
+    import pandas as real_pd
+
+    class _PdShim:
+        def read_sql_query(self, query, con, *a, **k):
+            return real_pd.read_sql_query(sql_text, con, *a, **k)
+
+        def __getattr__(self, n):
+            return getattr(real_pd, n)
+
+    old_pd, old_getdb = mk.pd, mk.get_db
+    mk.pd, mk.get_db = _PdShim(), (lambda: _NoCloseConn(conn))
+    try:
+        out = mk._build_market_response(_FakeReq())
+        body = out.body if isinstance(out.body, (bytes, bytearray)) else out.body.encode()
+        payload = _json.loads(body.decode("utf-8"))
+    finally:
+        mk.pd, mk.get_db = old_pd, old_getdb
+    got = {k: set() for k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh")}
+    for rec in payload["data"]:
+        for k in got:
+            if rec.get(k):
+                got[k].add(rec["symbol"])
+    return got
+
+
 def compare(cached, mono, names_a, names_b):
     if names_a != names_b:
         return False, f"column sets differ: {set(names_a) ^ set(names_b)}"
@@ -217,6 +284,10 @@ def main():
     names_b, rows_b = _rows(c, mono_sql)
     same, why = compare(rows_a, rows_b, names_a, names_b)
     ck("کوئریِ مادی‌شده سطر‌به‌سطر همان نتیجهٔ کوئریِ تک‌پیسّه است", same, why)
+
+    # برابریِ *داوری‌ها* رویِ دادهٔ واقعی به انتهای main منتقل شده است: این
+    # بخش ensure_board_history را رویِ اتصالِ دیگری اجرا می‌کند و شمارنده و
+    # کلیدِ کشِ تست‌هایِ بالا را آلوده می‌کرد (سه چک بی‌دلیل قرمز شدند).
     ck("پنجره‌ها ستون‌هایِ پنج فیلتر را می‌سازند (prior30_vol/hist_sessions)",
        "prior30_vol" in names_a and "hist_sessions" in names_a
        and all(r[names_a.index("prior30_vol")] is not None for r in rows_a[:1]))
@@ -286,6 +357,29 @@ def main():
            len(rows_x) > 0 and all(r[idx] is None for r in rows_x))
     except Exception as e:
         ck("tape_historyِ خالیِ واقعی خطا نمی‌دهد (نصبِ تازه)", False, str(e)[:80])
+
+    # ── ۴) داوریِ پنج فیلتر رویِ دادهٔ واقعی، دو مسیر، متنِ بی‌تنها SQL عوض ──
+    # چرا رویِ دادهٔ واقعی: با ردیف‌هایِ ساختگی هیچ‌یک از پنج فیلتر نمادی پیدا
+    # نمی‌کند و مقایسهٔ «خالی با خالی» سبز می‌شود بی‌آنکه چیزی ثابت شده باشد —
+    # دقیقاً همین در نسخۀ اولِ این گارد افتاد. کپیِ نوشتنی ساخته می‌شود تا
+    # جدول‌های پنجره در فایلِ اصلیِ کاربر ننشینند.
+    real_path = _real_db_copy()
+    c2 = sqlite3.connect(real_path)
+    mk._HIST_CACHE_KEY = (None,)
+    flags = {}
+    for label, sql in (("materialized", live_sql), ("monolithic", mono_sql)):
+        flags[label] = _pipeline_flags(mk, c2, sql)
+    for k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"):
+        n = len(flags["materialized"][k])
+        m = len(flags["monolithic"][k])
+        if n == 0 or m == 0:
+            ck(f"فیلترِ {k} رویِ دادهٔ واقعی نماد دارد (چک بی‌محتوا نیست)", False,
+               f"materialized={n} monolithic={m}")
+            continue
+        diff = flags["materialized"][k] ^ flags["monolithic"][k]
+        ck(f"فیلترِ {k} در دو مسیر یکی است ({n} نماد)", not diff,
+           "" if not diff else f" differences={sorted(diff)[:6]}")
+    c2.close()
 
     print(f"\n{len(PASS)} pass / {len(FAIL)} fail")
     return 1 if FAIL else 0
