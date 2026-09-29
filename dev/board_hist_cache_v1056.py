@@ -22,6 +22,7 @@ market.db.lzma)، ردیف‌ها ساختگی است. پس هیچ دادهٔ ز
 """
 from __future__ import annotations
 
+import atexit
 import lzma
 import os
 import re
@@ -33,6 +34,13 @@ import tempfile
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
 os.environ.setdefault("BORS_SHOW_CONSOLE", "1")
+
+# هر دو بانکِ کپیِ نوشتنیِ این گارد در %TEMP% می‌نشینند (~۱۵۰ مگ هر کدام) و اگر
+# پاک نشوند، هر اجرایِ CI یک‌سومِ گیگ جا می‌گذارد.
+def _temp_db(name="schema.db"):
+    d = tempfile.mkdtemp(prefix="bors_hist_")
+    atexit.register(shutil.rmtree, d, ignore_errors=True)
+    return os.path.join(d, name)
 
 TABLES = ["instruments", "boards", "market_watch", "client_type",
           "price_history", "daily_prices", "tape_history", "tape_history_state"]
@@ -53,7 +61,7 @@ def _schema_source():
     packed = os.path.join(REPO, "market.db.lzma")
     if not os.path.exists(packed):
         raise SystemExit("no market.db and no market.db.lzma — nothing to copy the schema from")
-    out = os.path.join(tempfile.mkdtemp(prefix="bors_hist_schema_"), "schema.db")
+    out = _temp_db("schema.db")
     with lzma.open(packed) as src, open(out, "wb") as dst:
         shutil.copyfileobj(src, dst)
     return out, out
@@ -66,7 +74,7 @@ def _real_db_copy() -> str:
     مقایسهٔ مجموعهٔ خالی با مجموعهٔ خالی سبز می‌شود.
     """
     src_path, _tmp = _schema_source()
-    out = os.path.join(tempfile.mkdtemp(prefix="bors_hist_real_"), "market.db")
+    out = _temp_db("market.db")
     shutil.copyfile(src_path, out)
     return out
 
