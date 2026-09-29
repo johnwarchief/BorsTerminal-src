@@ -63,10 +63,11 @@ jobs:
           cp ../dist_mobile/mobile_snapshot.db.gz dist/
 
       # ---- بیلد اندروید ----
-      - uses: actions/setup-java@v4
+      # Capacitor 8 (AGP 8.13 / Gradle 8.14) به Java 21 نیاز دارد — با 17 بیلد می‌شکند
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
       - name: همگام‌سازی Capacitor و بیلد APK
         working-directory: frontend
         run: |
