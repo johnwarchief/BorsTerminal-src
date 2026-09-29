@@ -29,7 +29,13 @@ const ROUTE = arg('route', '#/master');
 const OUT = arg('out', '_audit/funnel_columns_probe.json');
 
 const browser = await chromium.launch({ headless: true, executablePath: process.env.JEV_CHROME || undefined });
-const ctx = await browser.newContext({ viewport: { width: 1632, height: 950 } });
+// --narrow = 1366×768: هفت سرستون در مرحلۀ بنیادی باید درِ کوچک‌ترین رزولوشنِ
+// پشتیبانی‌شده هم خوانده شوند، نه اینکه میز را بشکنند.
+const NARROW = process.argv.includes('--narrow');
+const SHOT = arg('shot', '');
+const ctx = await browser.newContext({
+  viewport: NARROW ? { width: 1366, height: 768 } : { width: 1632, height: 950 },
+});
 await ctx.addInitScript(() => sessionStorage.setItem('bors_auth_session', 'true'));
 const page = await ctx.newPage();
 const errors: string[] = [];
@@ -101,8 +107,20 @@ await page.click('[data-testid="funnel-prefs-reset"]').catch(() => {});
 await page.waitForTimeout(600);
 const reset = await snap();
 
+const fit = await page.evaluate(() => {
+  const el = document.querySelector('[data-testid="funnel-stage-fundamental"]');
+  const sec = el?.closest('section')?.parentElement;
+  return {
+    viewport: window.innerWidth,
+    docOverflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+    funnelOverflowX: sec ? sec.scrollWidth > sec.clientWidth + 1 : null,
+    tableOverflowX: el ? el.scrollWidth > el.clientWidth + 1 : null,
+  };
+});
+if (SHOT) await page.screenshot({ path: SHOT, fullPage: false });
+
 const summary = {
-  url: BASE, route: ROUTE,
+  url: BASE, route: ROUTE, fit,
   headsetsDiffer: new Set(
     [...before.stages, ...floor1.stages].map((s: any) => JSON.stringify(s.heads))
   ).size,
@@ -111,6 +129,7 @@ const summary = {
 writeFileSync(OUT, JSON.stringify(summary, null, 1), 'utf-8');
 const line = (s: any) =>
   `  ${s.k}: rows=${s.rowCount} chip=${s.chip ?? '-'} heads=[${(s.heads ?? []).join(' | ')}] first=${JSON.stringify(s.firstRow)}`;
+console.log(`fit: ${JSON.stringify(summary.fit)}`);
 console.log(`headsetsDiffer=${summary.headsetsDiffer} مجموعهٔ سرستونِ متمایز`);
 console.log('BEFORE (جزوه: تکنیکال رد می‌کند)');
 before.stages.forEach((s: any) => console.log(line(s)));
