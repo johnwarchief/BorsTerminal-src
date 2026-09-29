@@ -1,0 +1,180 @@
+{
+ "baseline(importشده، چیزی warm نشده)": {
+  "rss_mb": 17.2
+ },
+ "import bors_config": {
+  "rss_mb": 18.7
+ },
+ "import api.market": {
+  "rss_mb": 131.9,
+  "top": [
+   {
+    "site": "<frozen importlib._bootstrap_external>:757",
+    "mb": 24.71
+   },
+   {
+    "site": "<frozen importlib._bootstrap>:488",
+    "mb": 4.72
+   },
+   {
+    "site": "<frozen abc>:106",
+    "mb": 0.72
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\re\\__init__.py:186",
+    "mb": 0.35
+   },
+   {
+    "site": ".venv\\Lib\\site-packages\\pandas\\util\\_decorators.py:380",
+    "mb": 0.34
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\dataclasses.py:473",
+    "mb": 0.29
+   }
+  ]
+ },
+ "یک بار ساختنِ کاملِ /api/market": {
+  "rss_mb": 174.2,
+  "delta_mb": 22.2,
+  "body_bytes": 7436835,
+  "top": [
+   {
+    "site": "<frozen importlib._bootstrap_external>:757",
+    "mb": 25.19
+   },
+   {
+    "site": "api\\market.py:521",
+    "mb": 8.31
+   },
+   {
+    "site": "<frozen importlib._bootstrap>:488",
+    "mb": 4.72
+   },
+   {
+    "site": "<frozen abc>:106",
+    "mb": 0.72
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\re\\__init__.py:186",
+    "mb": 0.35
+   },
+   {
+    "site": ".venv\\Lib\\site-packages\\pandas\\util\\_decorators.py:380",
+    "mb": 0.34
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\dataclasses.py:473",
+    "mb": 0.29
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\typing.py:904",
+    "mb": 0.28
+   },
+   {
+    "site": "<frozen importlib._bootstrap_external>:123",
+    "mb": 0.26
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\typing.py:2906",
+    "mb": 0.25
+   }
+  ]
+ },
+ "8 بار ساختنِ دوباره": {
+  "rss_mb": 213.5,
+  "cache_keys": [
+   "body",
+   "etag",
+   "t"
+  ],
+  "top": [
+   {
+    "site": "<frozen importlib._bootstrap_external>:757",
+    "mb": 25.19
+   },
+   {
+    "site": "api\\market.py:521",
+    "mb": 16.61
+   },
+   {
+    "site": "<frozen importlib._bootstrap>:488",
+    "mb": 4.72
+   },
+   {
+    "site": "<frozen abc>:106",
+    "mb": 0.72
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\re\\__init__.py:186",
+    "mb": 0.35
+   },
+   {
+    "site": ".venv\\Lib\\site-packages\\pandas\\util\\_decorators.py:380",
+    "mb": 0.34
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\dataclasses.py:473",
+    "mb": 0.29
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\typing.py:904",
+    "mb": 0.28
+   },
+   {
+    "site": "<frozen importlib._bootstrap_external>:123",
+    "mb": 0.26
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\typing.py:2906",
+    "mb": 0.25
+   }
+  ]
+ },
+ "warm_screener_cache()": {
+  "rss_mb": 230.4,
+  "delta_mb": 1.4,
+  "top": [
+   {
+    "site": "<frozen importlib._bootstrap_external>:757",
+    "mb": 25.39
+   },
+   {
+    "site": "api\\market.py:521",
+    "mb": 16.61
+   },
+   {
+    "site": "<frozen importlib._bootstrap>:488",
+    "mb": 4.72
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\json\\decoder.py:354",
+    "mb": 1.49
+   },
+   {
+    "site": "<frozen abc>:106",
+    "mb": 0.72
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\re\\__init__.py:186",
+    "mb": 0.35
+   },
+   {
+    "site": ".venv\\Lib\\site-packages\\pandas\\util\\_decorators.py:380",
+    "mb": 0.34
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\dataclasses.py:473",
+    "mb": 0.29
+   },
+   {
+    "site": "C:\\Users\\PCMOD\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\typing.py:904",
+    "mb": 0.28
+   },
+   {
+    "site": "<frozen importlib._bootstrap_external>:123",
+    "mb": 0.26
+   }
+  ]
+ }
+}

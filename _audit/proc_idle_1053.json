@@ -1,0 +1,254 @@
+﻿{
+    "total":  {
+                  "window_seconds":  30.1,
+                  "logical_cores":  16,
+                  "processes":  22,
+                  "cpu_percent_sum":  0.21,
+                  "working_set_mb":  1489.5,
+                  "private_mb":  1904.7
+              },
+    "byType":  [
+                   {
+                       "type":  "main(python)",
+                       "count":  1,
+                       "cpu_percent":  0.21,
+                       "working_set_mb":  364.4,
+                       "private_mb":  911.7
+                   },
+                   {
+                       "type":  "host",
+                       "count":  3,
+                       "cpu_percent":  0,
+                       "working_set_mb":  326.1,
+                       "private_mb":  133.3
+                   },
+                   {
+                       "type":  "renderer",
+                       "count":  6,
+                       "cpu_percent":  0,
+                       "working_set_mb":  384.6,
+                       "private_mb":  396
+                   },
+                   {
+                       "type":  "gpu-process",
+                       "count":  3,
+                       "cpu_percent":  0,
+                       "working_set_mb":  213.9,
+                       "private_mb":  391.3
+                   },
+                   {
+                       "type":  "utility",
+                       "count":  6,
+                       "cpu_percent":  0,
+                       "working_set_mb":  165.4,
+                       "private_mb":  63.5
+                   },
+                   {
+                       "type":  "crashpad-handler",
+                       "count":  3,
+                       "cpu_percent":  0,
+                       "working_set_mb":  35.1,
+                       "private_mb":  8.9
+                   }
+               ],
+    "processes":  [
+                      {
+                          "pid":  28068,
+                          "name":  "BorsTerminal_Ultimate.exe",
+                          "type":  "main(python)",
+                          "cpu_percent":  0.21,
+                          "working_set_mb":  364.4,
+                          "peak_ws_mb":  549.4,
+                          "private_mb":  911.7
+                      },
+                      {
+                          "pid":  21520,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "host",
+                          "cpu_percent":  0,
+                          "working_set_mb":  122.7,
+                          "peak_ws_mb":  159.1,
+                          "private_mb":  41.3
+                      },
+                      {
+                          "pid":  34164,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  120.9,
+                          "peak_ws_mb":  255,
+                          "private_mb":  188.5
+                      },
+                      {
+                          "pid":  15244,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "host",
+                          "cpu_percent":  0,
+                          "working_set_mb":  109.9,
+                          "peak_ws_mb":  129,
+                          "private_mb":  41.9
+                      },
+                      {
+                          "pid":  22752,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "gpu-process",
+                          "cpu_percent":  0,
+                          "working_set_mb":  103.5,
+                          "peak_ws_mb":  205.5,
+                          "private_mb":  234.6
+                      },
+                      {
+                          "pid":  3216,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "host",
+                          "cpu_percent":  0,
+                          "working_set_mb":  93.5,
+                          "peak_ws_mb":  138,
+                          "private_mb":  50.1
+                      },
+                      {
+                          "pid":  16196,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  74.9,
+                          "peak_ws_mb":  139.9,
+                          "private_mb":  86.8
+                      },
+                      {
+                          "pid":  25056,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "gpu-process",
+                          "cpu_percent":  0,
+                          "working_set_mb":  59,
+                          "peak_ws_mb":  98.8,
+                          "private_mb":  79.8
+                      },
+                      {
+                          "pid":  2960,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "gpu-process",
+                          "cpu_percent":  0,
+                          "working_set_mb":  51.4,
+                          "peak_ws_mb":  74.3,
+                          "private_mb":  76.9
+                      },
+                      {
+                          "pid":  28048,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  47.4,
+                          "peak_ws_mb":  67.5,
+                          "private_mb":  28.8
+                      },
+                      {
+                          "pid":  30304,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  47.3,
+                          "peak_ws_mb":  68.1,
+                          "private_mb":  30.9
+                      },
+                      {
+                          "pid":  14208,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  47.1,
+                          "peak_ws_mb":  68.3,
+                          "private_mb":  28.9
+                      },
+                      {
+                          "pid":  7220,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  47,
+                          "peak_ws_mb":  71,
+                          "private_mb":  32.1
+                      },
+                      {
+                          "pid":  32608,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  40.9,
+                          "peak_ws_mb":  46.3,
+                          "private_mb":  13.4
+                      },
+                      {
+                          "pid":  15988,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  38.4,
+                          "peak_ws_mb":  43.2,
+                          "private_mb":  13.3
+                      },
+                      {
+                          "pid":  25512,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  33.3,
+                          "peak_ws_mb":  40.7,
+                          "private_mb":  12.3
+                      },
+                      {
+                          "pid":  16440,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  18.7,
+                          "peak_ws_mb":  20.4,
+                          "private_mb":  8
+                      },
+                      {
+                          "pid":  16148,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  17.6,
+                          "peak_ws_mb":  21.5,
+                          "private_mb":  8.6
+                      },
+                      {
+                          "pid":  15944,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  16.5,
+                          "peak_ws_mb":  19.3,
+                          "private_mb":  7.9
+                      },
+                      {
+                          "pid":  33628,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "crashpad-handler",
+                          "cpu_percent":  0,
+                          "working_set_mb":  13,
+                          "peak_ws_mb":  20.6,
+                          "private_mb":  3
+                      },
+                      {
+                          "pid":  17996,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "crashpad-handler",
+                          "cpu_percent":  0,
+                          "working_set_mb":  11.3,
+                          "peak_ws_mb":  18.7,
+                          "private_mb":  3
+                      },
+                      {
+                          "pid":  15100,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "crashpad-handler",
+                          "cpu_percent":  0,
+                          "working_set_mb":  10.8,
+                          "peak_ws_mb":  18,
+                          "private_mb":  2.9
+                      }
+                  ]
+}

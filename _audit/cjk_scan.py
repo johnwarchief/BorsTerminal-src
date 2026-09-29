@@ -1,8 +1,14 @@
-"""CJK/corruption scan over source files.
+"""Foreign-script / corruption scan over source files.
 
-Only Han/Hangul/Kana are foreign to this repo's Persian-commented sources, so any
-hit is a character dropped in by an edit slip. Ranges are built from code points:
-writing the literal class here would put CJK into a file that must stay clean.
+Only Han/Hangul/Kana and Cyrillic are foreign to this repo's Persian-commented
+sources, so any hit is a character dropped in by an edit slip. Ranges are built
+from code points: writing the literal class here would put CJK into a file that
+must stay clean.
+
+Cyrillic is listed because it happened twice on 1405-07-07 while editing Persian
+prose — once as a replacement for a Chinese slip, so the CJK-only scan stayed
+silent and the Russian word survived into the doc. Greek is NOT flagged: Σ[ih] is
+real notation in RELEASE_NOTES/CHART-PARITY docs.
 """
 import re
 import subprocess
@@ -13,7 +19,12 @@ def rng(lo: int, hi: int) -> re.Pattern[str]:
     return re.compile(f"[{chr(lo)}-{chr(hi)}]")
 
 
-SCANNERS = {"han": rng(0x4E00, 0x9FFF), "hangul": rng(0xAC00, 0xD7AF), "kana": rng(0x3040, 0x30FF)}
+SCANNERS = {
+    "han": rng(0x4E00, 0x9FFF),
+    "hangul": rng(0xAC00, 0xD7AF),
+    "kana": rng(0x3040, 0x30FF),
+    "cyrillic": rng(0x0400, 0x04FF),
+}
 
 
 def touched() -> list[str]:
