@@ -197,23 +197,29 @@ export default function StrategyTreePage() {
       return {
         fund: ['fund_super', 'fund_good'],
         weekly: ['tech_weekly_up'],
-        setup: ['setup_fib', 'setup_choch', 'setup_jet'],
-        // چارت ۳ (S: SELECTION) شاخۀ «فیلتر»ِ روندگیر را کف‌روبی و نقطه‌زنی
-        // می‌داند، نه ساعت و شکستِ باکس که برایِ نوسان‌گیر است. گرهٔ نقطه‌زنی
-        // هنوز درِ نقشۀ چهارچارتی ساخته نشده (کارِ باز) — پس فعلاً کف‌روبی.
+        // چارت ۳ (S: SELECTION): روندگیر = کف‌روبی + نقطه‌زنی، و نقطه‌زنی
+        // «ورود در کف سوم یا پنجم» است (چارت ۴). گرهٔ setup_point_hunt درِ
+        // نقشه ساخته شده، پس اینجا هم باید باشد — وگرنه درختِ روندگیر همان
+        // گره‌ای را خاموش نشان می‌دهد که قیف برایش نماد می‌گیرد.
+        setup: ['setup_fib', 'setup_choch', 'setup_jet', 'setup_point_hunt'],
         tape: ['tape_floor_sweep'],
         stop: ['stop_trend'],
-        exit: ['exit_longterm'],
+        // رأیِ مالک (بند ۸): سهامدارِ روندگیر در سهم بنیادی حد ضررِ قیمتی
+        // ندارد و با گزارشِ فصلی کدال خارج می‌شود — هیچ گره «خروج»ی برایش
+        // روشن نمی‌شود، و این خالی‌بودن عمدی است نه فراموشی.
+        exit: [],
       };
     }
     if (selectedPreset === 'hourglass') {
       return {
         fund: ['fund_super'],
+        // ساعت شنی ستاپِ مستقل ندارد؛ خودِ همان اشباعِ هفتگی (MA=52 + RSI)
+        // در ستونِ هفتگی روشن می‌شود.
         weekly: ['tech_weekly_hourglass'],
-        setup: ['setup_hourglass_deep'],
+        setup: [],
         tape: ['tape_floor_sweep', 'tape_clock'],
         stop: ['stop_hourglass'],
-        exit: ['exit_longterm'],
+        exit: [],
       };
     }
     // حالت Custom
@@ -750,7 +756,7 @@ export default function StrategyTreePage() {
                   setCustomSetup('choch');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.setup.includes('setup_choch') || activeNodes.setup.includes('setup_double_bottom')
+                  activeNodes.setup.includes('setup_choch')
                     ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
