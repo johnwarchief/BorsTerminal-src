@@ -15,6 +15,7 @@ import json
 import math
 import os
 import sqlite3
+import threading
 import time
 
 
@@ -193,6 +194,55 @@ def _watch_live_bar(symbol, after_date):
              "last": p_last if p_last > 0 else p_close}), None
 
 
+HISTORY_REPAIR_MIN_GAP = 900.0   # هر نماد، دست‌کم هر ۱۵ دقیقه یک‌بار تازه می‌شود
+
+_HISTORY_REPAIR_AT = {}          # symbol → monotonicِ آخرین تلاش
+_HISTORY_REPAIR_LOCK = threading.Lock()
+
+
+def _history_repair_due(last_date, session_date, symbol, now=None):
+    """آیا تاریخچۀ محلیِ این نماد واقعاً به تازگی نیاز دارد؟ (خالص، بی‌کش)
+
+    دو شرط: (۱) نشستِ جاریِ تابلو از آخرین روزِ `price_history` تازه‌تر باشد —
+    یعنی شکافِ واقعی، نه فقط عمقِ کم؛ و (۲) از آخرین تلاشِ همان نماد
+    `HISTORY_REPAIR_MIN_GAP` گذشته باشد. (۲) با ساعتِ تزریق‌شونده اندازه گرفته
+    می‌شود تا گاردِ آفلاین همان مسیر را ثابتِ قدم بداند.
+    """
+    if not last_date or not session_date or session_date <= last_date:
+        return False
+    import time as _t
+    _now = _t.monotonic() if now is None else now
+    return (_now - _HISTORY_REPAIR_AT.get(symbol, -1e12)) >= HISTORY_REPAIR_MIN_GAP
+
+
+def _schedule_history_repair(symbol, last_date, session_date):
+    """تاریخچۀ *همین یک نماد* را در پس‌زمینه تازه می‌کند.
+
+    چرا: وقتی CDN نمی‌رسد، نمودار به `price_history` می‌افتد و آنجا بعضی نمادها
+    هفته‌ها عقب‌اند (اندازۀ ۱۴۰۵-۰۷-۰۸ روی بانکِ کاری: ۴٬۸۳۷ نماد از ۵٬۷۱۷ از
+    تازه‌ترین روزِ خودِ جدول عقب‌تر بودند). نشان‌دادنِ منبع تنها نیمیِ کار است؛
+    نیمۀ دیگر این است که دیدِ بعدی کامل باشد.
+    ایمنی (ریسکِ داوری‌شدۀ پایلوت ۰٫۸): یک نماد، نه کل بازار؛ هر نماد دست‌کم
+    ۱۵ دقیقه یک‌بار (علامت‌گذاری درونِ همان قفل، پس دو درخواستِ هم‌زمان یکی را
+    دوباره نمی‌فرستند)؛ پاسخِ چارت را هرگز نگه نمی‌دارد؛ و از همان
+    `fetch_price_history` می‌گذرد که خودش min_interval و سقفِ ۴۲۹ دارد.
+    """
+    with _HISTORY_REPAIR_LOCK:
+        if not _history_repair_due(last_date, session_date, symbol):
+            return False
+        _HISTORY_REPAIR_AT[symbol] = time.monotonic()
+
+    def _run():
+        try:
+            import test_tsetmc
+            test_tsetmc.fetch_price_history(symbol)
+        except Exception:
+            # بهترینِ تلاش: نشد، دیدِ بعدی دوباره امتحان می‌کند
+            pass
+    threading.Thread(target=_run, daemon=True, name="hist-repair").start()
+    return True
+
+
 def _attach_live_bar(symbol, res):
     """کندلِ جلسهٔ جاری را به پاسخِ /api/chart اضافه می‌کند — بی‌نوشتن در کش.
 
@@ -204,20 +254,24 @@ def _attach_live_bar(symbol, res):
     candles = res.get("candles") or []
     if not candles:
         return res
-    newest = max(c["time"] for c in candles)   # ترتیبِ /api/chart نزولی است
+    newest = max(c["time"] for c in candles)   # ترتیبِ آرایه به خودِ سری واگذار است
     bar, err = _watch_live_bar(symbol, newest)
     if bar is None:
         return dict(res, liveError=err) if err else res
+    # /api/chart نزولی می‌دهد (تازه‌به‌قدیم) و مسیرِ محلی صعودی — کندلِ تازه باید
+    # در همان سمتی بنشیند که سری بزرگ می‌شود، نه همیشه در خانۀ صفر.
+    at = len(candles) if candles[-1]["time"] > candles[0]["time"] else 0
     out = dict(res)
-    out["candles"] = [bar] + list(candles)
+    cands = list(candles); cands.insert(at, bar)
+    out["candles"] = cands
     vols = list(res.get("volumes") or [])
-    vols.insert(0, {"time": bar["time"], "value": bar.get("volume", 0),
-                    "color": "#10b981" if bar["close"] >= bar["open"] else "#f43f5e"})
+    vols.insert(min(at, len(vols)), {"time": bar["time"], "value": bar.get("volume", 0),
+                                     "color": "#10b981" if bar["close"] >= bar["open"] else "#f43f5e"})
     out["volumes"] = vols
     facts = list(res.get("factors") or [])
-    facts.insert(0, {"time": bar["time"], "factor": 1.0})   # تازه‌ترین کندل خام می‌ماند
+    facts.insert(min(at, len(facts)), {"time": bar["time"], "factor": 1.0})   # تازه‌ترین خام
     out["factors"] = facts
-    out["count"] = len(out["candles"])
+    out["count"] = len(cands)
     out["liveInjected"] = True
     return out
 
@@ -258,6 +312,15 @@ def get_chart_tsetmc(symbol: str):
                     "count": len(cands),
                     "fts": db_res.get("fts"),
                 }
+                # شکافِ تاریخچه را بی‌صدا نگه نمی‌داریم: نشستی که در
+                # price_history نیست (همان که liveInjected می‌گوید) همین یک
+                # نماد را در پس‌زمینه تازه می‌کند تا دیدِ بعدی کامل باشد.
+                hist_last = (cands[-2]["time"]
+                             if db_res.get("liveInjected") and len(cands) > 1
+                             else cands[-1]["time"])
+                sess_bar, _sess_err = _watch_live_bar(symbol, "")
+                res["historyRepairScheduled"] = _schedule_history_repair(
+                    symbol, hist_last, sess_bar["time"] if sess_bar else "")
                 CHART_CACHE[symbol] = (_t.time(), res, CHART_FALLBACK_TTL)
                 return res
         except Exception:

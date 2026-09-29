@@ -25,6 +25,10 @@
     است تزریق می‌شود (برابر = آن روز در تاریخچه هست و دست‌نخورده می‌ماند).
   • `_attach_live_bar` همان کندل را به پاسخِ `/api/chart` هم می‌چسباند — رویِ
     نسخه، تا شیءِ کش‌شده با کندلِ نیم‌کارِ یک ساعت قفل نشود.
+  • اگر همان فال‌بک نشان دهد که نشستِ جاری در `price_history` نیست، تاریخچۀ
+    *همان یک نماد* در پس‌زمینه تازه می‌شود (سقفِ ۱۵ دقیقه برای هر نماد، از راهِ
+    `fetch_price_history` که خودش min_interval و سقفِ ۴۲۹ دارد) — رأیِ پایلوت:
+    selfheal با اطمینانِ ۰٫۸۳ و ریسکِ ۰٫۸، پس هر سه قیدِ بالا در گارد می‌آیند.
 
 گارد بی‌شبکه و بی‌market.dbِ واقعی اجرا می‌شود (دیتابیسِ موقتِ کوچک + هر دو
 منبعِ داده جعل).  اجرا:  python dev/live_bar_session_date_v1059.py
@@ -167,6 +171,17 @@ def main():
         ck(len(base["candles"]) == 2 and "liveInjected" not in base,
            "the cached object was not mutated — a half-day bar cannot freeze for an hour")
 
+        asc = {"status": "success",
+               "candles": list(reversed(base["candles"])),      # صعودی = مسیرِ محلی
+               "volumes": list(reversed(base["volumes"])),
+               "factors": list(reversed(base["factors"])),
+               "count": 2}
+        a_out = ch._attach_live_bar("فولاد", asc)
+        ck(a_out["candles"][-1]["time"] == "2026-09-29",
+           "an ascending series grows at its own end, not at index 0")
+        ck([v["time"] for v in a_out["volumes"]] == [c["time"] for c in a_out["candles"]],
+           "volumes stay aligned in the ascending order too")
+
         ch._watch_live_bar = lambda sym, after: (None, None)
         same = ch._attach_live_bar("فولاد", base)
         ck(same["candles"] == base["candles"] and "liveInjected" not in same,
@@ -183,8 +198,41 @@ def main():
     finally:
         ch._watch_live_bar = original_wlb
 
-    # ── ۴) سیم‌کشی: هر دو مسیر از یک هلپر، و هیچ today‌ای در کار نیست ──────
-    print("\n[۴] سیم‌کشی")
+    # ── ۴) شکافِ تاریخچه: فقط نمادِ همان شکاف، فقط هر ۱۵ دقیقه ─────────────
+    print("\n[۴] خودتازۀ تاریخچه")
+    ck(ch.HISTORY_REPAIR_MIN_GAP >= 300.0,
+       "the repair has a floor gap — a CDN blip cannot become a request storm",
+       str(ch.HISTORY_REPAIR_MIN_GAP))
+    saved = dict(ch._HISTORY_REPAIR_AT)
+    try:
+        ch._HISTORY_REPAIR_AT.clear()
+        ck(ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد"),
+           "a session missing from price_history is worth a fetch")
+        ck(not ch._history_repair_due("2026-09-28", "2026-09-28", "فولاد"),
+           "NEGATIVE CONTROL: an up-to-date history fetches nothing")
+        ck(not ch._history_repair_due("2026-09-28", "", "فولاد"),
+           "no board session → nothing to compare against → no request")
+        ch._HISTORY_REPAIR_AT["فولاد"] = 1000.0
+        ck(not ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد", now=1000.0 + 60.0),
+           "a second blip inside the window does not re-issue the request")
+        ck(ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد",
+                                  now=1000.0 + ch.HISTORY_REPAIR_MIN_GAP),
+           "after the window the same symbol may be refreshed again")
+        ch._HISTORY_REPAIR_AT.clear()
+        ch._HISTORY_REPAIR_AT["خساپا"] = 1000.0
+        ck(ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد", now=1050.0),
+           "a throttle stamp on another symbol never blocks this one")
+        ck(not ch._history_repair_due("2026-09-26", "2026-09-28", "خساپا", now=1050.0),
+           "…and the stamped symbol stays throttled")
+        ck(not ch._schedule_history_repair("فولاد", "2026-09-26", ""),
+           "a refused schedule never touches the stamp map",
+           str(ch._HISTORY_REPAIR_AT.get("فولاد")))
+    finally:
+        ch._HISTORY_REPAIR_AT.clear()
+        ch._HISTORY_REPAIR_AT.update(saved)
+
+    # ── ۵) سیم‌کشی: هر دو مسیر از یک هلپر، و هیچ today‌ای در کار نیست ──────
+    print("\n[۵] سیم‌کشی")
     src = io.open(CHART_PY, encoding="utf-8").read()
     ck('datetime.date.today().strftime("%Y-%m-%d")' not in src,
        "the phantom-bar clock-stamping is gone from chart.py")
@@ -195,6 +243,13 @@ def main():
        "_attach_live_bar(symbol, result)" in src,
        "the CDN path injects on both the cache hit and a fresh fetch")
     ck('"degraded": True' in src, "a local-fallback response is marked as degraded")
+    ck('"historyRepairScheduled": ' in src or "res[\"historyRepairScheduled\"]" in src,
+       "the fallback says whether it scheduled a refresh")
+    ck("test_tsetmc.fetch_price_history(symbol)" in src,
+       "the refresh reuses the polite fetcher (min_interval + 429 ceiling), not a new one")
+    spec = io.open(os.path.join(ROOT, "bors_setup.spec"), encoding="utf-8").read()
+    ck("'test_tsetmc'" in spec,
+       "test_tsetmc stays in hiddenimports — the EXE must be able to import it at runtime")
 
     print("\nlive_bar_session_date_v1059: %d passed, %d failed" % (PASS, FAIL))
     return 1 if FAIL else 0
