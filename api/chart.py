@@ -184,6 +184,13 @@ def _watch_live_bar(symbol, after_date):
         float(row[0] or 0), float(row[1] or 0), float(row[2] or 0),
         float(row[3] or 0), float(row[4] or 0))
     p_last = float(row[6] or 0)                       # v9.7
+    vol = float(row[4] or 0)
+    # «قیمت پایانی» ردیفِ تابلو پیش از بازگشایی هم پر است (قیمتِ پایهٔ امروز =
+    # پایانیِ دیروز)، ولی حجمِ صفر یعنی هنوز هیچ معامله‌ای نشده — همان چیزی که
+    # باید از کندل ساخته نشود. اثباتِ زنده (اپِ نصبی، ۱۴۰۵-۰۷-۰۸ ساعتِ ۰۷:۵۰):
+    # d_even=20260929 با q_tot_tran=0 و پایانیِ ۳۴۲۰.
+    if vol <= 0:
+        return None, None
     # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
     o_l = p_first if p_first > 0 else p_close
     h_l = max(p_max if p_max > 0 else o_l, o_l, p_close)
@@ -200,22 +207,22 @@ _HISTORY_REPAIR_AT = {}          # symbol → monotonicِ آخرین تلاش
 _HISTORY_REPAIR_LOCK = threading.Lock()
 
 
-def _history_repair_due(last_date, session_date, symbol, now=None):
+def _history_repair_due(last_date, target_date, symbol, now=None):
     """آیا تاریخچۀ محلیِ این نماد واقعاً به تازگی نیاز دارد؟ (خالص، بی‌کش)
 
-    دو شرط: (۱) نشستِ جاریِ تابلو از آخرین روزِ `price_history` تازه‌تر باشد —
+    دو شرط: (۱) `target_date` (امروزِ تقویمی) از آخرین روزِ سروشده تازه‌تر باشد —
     یعنی شکافِ واقعی، نه فقط عمقِ کم؛ و (۲) از آخرین تلاشِ همان نماد
     `HISTORY_REPAIR_MIN_GAP` گذشته باشد. (۲) با ساعتِ تزریق‌شونده اندازه گرفته
     می‌شود تا گاردِ آفلاین همان مسیر را ثابتِ قدم بداند.
     """
-    if not last_date or not session_date or session_date <= last_date:
+    if not last_date or not target_date or target_date <= last_date:
         return False
     import time as _t
     _now = _t.monotonic() if now is None else now
     return (_now - _HISTORY_REPAIR_AT.get(symbol, -1e12)) >= HISTORY_REPAIR_MIN_GAP
 
 
-def _schedule_history_repair(symbol, last_date, session_date):
+def _schedule_history_repair(symbol, last_date, target_date):
     """تاریخچۀ *همین یک نماد* را در پس‌زمینه تازه می‌کند.
 
     چرا: وقتی CDN نمی‌رسد، نمودار به `price_history` می‌افتد و آنجا بعضی نمادها
@@ -228,7 +235,7 @@ def _schedule_history_repair(symbol, last_date, session_date):
     `fetch_price_history` می‌گذرد که خودش min_interval و سقفِ ۴۲۹ دارد.
     """
     with _HISTORY_REPAIR_LOCK:
-        if not _history_repair_due(last_date, session_date, symbol):
+        if not _history_repair_due(last_date, target_date, symbol):
             return False
         _HISTORY_REPAIR_AT[symbol] = time.monotonic()
 
@@ -312,15 +319,11 @@ def get_chart_tsetmc(symbol: str):
                     "count": len(cands),
                     "fts": db_res.get("fts"),
                 }
-                # شکافِ تاریخچه را بی‌صدا نگه نمی‌داریم: نشستی که در
-                # price_history نیست (همان که liveInjected می‌گوید) همین یک
-                # نماد را در پس‌زمینه تازه می‌کند تا دیدِ بعدی کامل باشد.
-                hist_last = (cands[-2]["time"]
-                             if db_res.get("liveInjected") and len(cands) > 1
-                             else cands[-1]["time"])
-                sess_bar, _sess_err = _watch_live_bar(symbol, "")
+                # شکافِ تاریخچه را بی‌صدا نگه نمی‌داریم: اگر سریِ محلی حتی
+                # امروزِ تقویمی را هم ندارد، نشستِ تازه‌ای جا افتاده و همین یک
+                # نماد در پس‌زمینه تازه می‌شود تا دیدِ بعدی کامل باشد.
                 res["historyRepairScheduled"] = _schedule_history_repair(
-                    symbol, hist_last, sess_bar["time"] if sess_bar else "")
+                    symbol, cands[-1]["time"], datetime.date.today().strftime("%Y-%m-%d"))
                 CHART_CACHE[symbol] = (_t.time(), res, CHART_FALLBACK_TTL)
                 return res
         except Exception:

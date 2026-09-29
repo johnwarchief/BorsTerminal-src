@@ -126,11 +126,24 @@ def main():
         noclose, _ = ch._watch_live_bar("خساپا", "2026-09-20")
         ck(noclose is None, "a watch row without a closing price is not a candle")
 
-        ch.DB_PATH = mini_db([("A3", "شپنا", 20260928, 0.0, 0.0, 0.0, 500.0, 0.0, 0.0)])
+        ch.DB_PATH = mini_db([("A3", "شپنا", 20260928, 0.0, 0.0, 0.0, 500.0, 0.0, 12000.0)])
         flat, _ = ch._watch_live_bar("شپنا", "2026-09-27")
         ck(flat and flat["open"] == 500.0 and flat["high"] == 500.0 and flat["low"] == 500.0
            and flat["last"] == 500.0,
            "a mid-session row with empty wicks degrades to a flat bar of its close", str(flat))
+
+        # پیش از بازگشایی تابلو «پایانی» را با قیمتِ پایه پر می‌کند؛ حجمِ صفر یعنی
+        # هنوز معامله‌ای نبوده، پس کندلی هم نیست (اثباتِ زندهٔ اپِ نصبی ۰۷:۵۰).
+        ch.DB_PATH = mini_db([("A4", "فولاد", 20260929, 3420.0, 3420.0, 3420.0, 3420.0,
+                               3420.0, 0.0)])
+        preopen, _ = ch._watch_live_bar("فولاد", "2026-09-28")
+        ck(preopen is None,
+           "NEGATIVE CONTROL: an untouched session (zero volume) never becomes a candle")
+        ch.DB_PATH = mini_db([("A5", "فولاد", 20260929, 3420.0, 3450.0, 3400.0, 3430.0,
+                               3440.0, 500000.0)])
+        opened, _ = ch._watch_live_bar("فولاد", "2026-09-28")
+        ck(opened and opened["time"] == "2026-09-29" and opened["volume"] == 500000.0,
+           "the same session the moment it trades does become a candle", str(opened))
 
         ch.DB_PATH = os.path.join(tempfile.gettempdir(), "definitely-not-here-v1059.db")
         broken_bar, broken_err = ch._watch_live_bar("فولاد", "2020-01-01")
@@ -207,11 +220,11 @@ def main():
     try:
         ch._HISTORY_REPAIR_AT.clear()
         ck(ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد"),
-           "a session missing from price_history is worth a fetch")
+           "a local series that has not reached the target day is worth a fetch")
         ck(not ch._history_repair_due("2026-09-28", "2026-09-28", "فولاد"),
-           "NEGATIVE CONTROL: an up-to-date history fetches nothing")
+           "NEGATIVE CONTROL: a history that is current fetches nothing")
         ck(not ch._history_repair_due("2026-09-28", "", "فولاد"),
-           "no board session → nothing to compare against → no request")
+           "no target day → nothing to compare against → no request")
         ch._HISTORY_REPAIR_AT["فولاد"] = 1000.0
         ck(not ch._history_repair_due("2026-09-26", "2026-09-28", "فولاد", now=1000.0 + 60.0),
            "a second blip inside the window does not re-issue the request")
@@ -234,8 +247,8 @@ def main():
     # ── ۵) سیم‌کشی: هر دو مسیر از یک هلپر، و هیچ today‌ای در کار نیست ──────
     print("\n[۵] سیم‌کشی")
     src = io.open(CHART_PY, encoding="utf-8").read()
-    ck('datetime.date.today().strftime("%Y-%m-%d")' not in src,
-       "the phantom-bar clock-stamping is gone from chart.py")
+    ck('today = datetime.date.today()' not in src and '"time": today' not in src,
+       "no candle is ever stamped with the system clock again")
     ck(src.count("_watch_live_bar(") >= 3,
        "both chart routes reach the live bar through the one helper",
        str(src.count("_watch_live_bar(")))
