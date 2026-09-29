@@ -1,0 +1,41 @@
+{
+  "base": "http://127.0.0.1:8001",
+  "body_bytes": 7430732,
+  "body_mb": 7.43,
+  "rows": 5360,
+  "fields_per_row": 72,
+  "validations_per_poll": 385920,
+  "runs": 5,
+  "json_parse_ms": {
+    "best": 26,
+    "median": 27,
+    "all": [
+      36,
+      26,
+      28,
+      27,
+      26
+    ]
+  },
+  "zod_parse_ms": {
+    "best": 13,
+    "median": 17,
+    "all": [
+      65,
+      33,
+      14,
+      13,
+      17
+    ]
+  },
+  "deep_clone_ms": {
+    "best": 46,
+    "median": 46,
+    "all": [
+      47,
+      46,
+      46
+    ]
+  },
+  "zod_share_of_5s_tick": 0.3
+}

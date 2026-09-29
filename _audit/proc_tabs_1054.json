@@ -1,0 +1,103 @@
+﻿{
+    "total":  {
+                  "window_seconds":  170,
+                  "logical_cores":  16,
+                  "processes":  6,
+                  "cpu_percent_sum":  10.37,
+                  "working_set_mb":  579.1,
+                  "private_mb":  958.7
+              },
+    "byType":  [
+                   {
+                       "type":  "main(python)",
+                       "count":  1,
+                       "cpu_percent":  10.31,
+                       "working_set_mb":  240.6,
+                       "private_mb":  675
+                   },
+                   {
+                       "type":  "host",
+                       "count":  1,
+                       "cpu_percent":  0.04,
+                       "working_set_mb":  127.3,
+                       "private_mb":  40
+                   },
+                   {
+                       "type":  "gpu-process",
+                       "count":  1,
+                       "cpu_percent":  0.01,
+                       "working_set_mb":  79.8,
+                       "private_mb":  187.8
+                   },
+                   {
+                       "type":  "renderer",
+                       "count":  1,
+                       "cpu_percent":  0.01,
+                       "working_set_mb":  73.9,
+                       "private_mb":  35.2
+                   },
+                   {
+                       "type":  "utility",
+                       "count":  2,
+                       "cpu_percent":  0,
+                       "working_set_mb":  57.5,
+                       "private_mb":  20.7
+                   }
+               ],
+    "processes":  [
+                      {
+                          "pid":  13188,
+                          "name":  "BorsTerminal_Ultimate.exe",
+                          "type":  "main(python)",
+                          "cpu_percent":  10.31,
+                          "working_set_mb":  240.6,
+                          "peak_ws_mb":  369.3,
+                          "private_mb":  675
+                      },
+                      {
+                          "pid":  3744,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "host",
+                          "cpu_percent":  0.04,
+                          "working_set_mb":  127.3,
+                          "peak_ws_mb":  148,
+                          "private_mb":  40
+                      },
+                      {
+                          "pid":  11504,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "gpu-process",
+                          "cpu_percent":  0.01,
+                          "working_set_mb":  79.8,
+                          "peak_ws_mb":  82.4,
+                          "private_mb":  187.8
+                      },
+                      {
+                          "pid":  19252,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0.01,
+                          "working_set_mb":  73.9,
+                          "peak_ws_mb":  81.4,
+                          "private_mb":  35.2
+                      },
+                      {
+                          "pid":  15156,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  38.9,
+                          "peak_ws_mb":  40.8,
+                          "private_mb":  12.9
+                      },
+                      {
+                          "pid":  17708,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  18.6,
+                          "peak_ws_mb":  18.6,
+                          "private_mb":  7.8
+                      }
+                  ]
+}

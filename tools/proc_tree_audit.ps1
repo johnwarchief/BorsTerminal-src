@@ -8,8 +8,14 @@
 param(
   [int]$Seconds = 30,
   [string]$Match = 'BorsTerminal_Ultimate|msedgewebview2',
+  [string]$Owner = 'BorsTerminal',
   [string]$Out = ''
 )
+
+# $Owner exists because msedgewebview2.exe is shared machine-wide: the first read
+# of "22 processes / 1489 MB" counted Windows SearchHost and Spotify as if they
+# were ours. WebView2 children carry --webview-exe-name=<host exe>, so ownership
+# is provable from the command line. Pass -Owner '' to measure every stack.
 
 $ErrorActionPreference = 'Stop'
 
@@ -21,9 +27,12 @@ function Snap($ids) {
   return $h
 }
 
-$procs = Get-CimInstance Win32_Process -Filter "Name LIKE '%.exe'" |
-  Where-Object { $_.Name -match $Match }
-if (-not $procs) { Write-Error "no process matched '$Match'"; exit 2 }
+$procs = @(Get-CimInstance Win32_Process -Filter "Name LIKE '%.exe'" |
+  Where-Object { $_.Name -match $Match })
+if ($Owner -ne '') {
+  $procs = @($procs | Where-Object { ($_.Name -match $Owner) -or ('' + $_.CommandLine) -match $Owner })
+}
+if (-not $procs) { Write-Error "no process matched '$Match' owned by '$Owner'"; exit 2 }
 
 $ids = @($procs | ForEach-Object { $_.ProcessId })
 $t0 = Get-Date
@@ -82,7 +91,9 @@ $tot = [pscustomobject]@{
 "`n---- total ----"; $tot | Format-List | Out-String | Write-Output
 
 if ($Out -ne '') {
-  [pscustomobject]@{ total = $tot; byType = $byType; processes = $rows } |
-    ConvertTo-Json -Depth 5 | Set-Content -Path $Out -Encoding UTF8
-  "`nJSON -> $Out"
+  # No BOM: Set-Content -Encoding UTF8 on Windows PowerShell writes one, and
+  # json.load() in Python refuses to read it ("Unexpected UTF-8 BOM").
+  [System.IO.File]::WriteAllText($Out, (ConvertTo-Json -InputObject @{ total = $tot; byType = $byType; processes = $rows } -Depth 5),
+    (New-Object System.Text.UTF8Encoding($false)))
+  "`nJSON -> $Out (no BOM)"
 }
