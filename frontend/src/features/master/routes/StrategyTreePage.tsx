@@ -598,7 +598,7 @@ export default function StrategyTreePage() {
                   <li>● ۲- سابقه عملکرد ۳ ساله سودآوری (روند صعودی متوالی EPS هر سهم)</li>
                   <li>● ۳- حاشیه سود ناخالص مطلوب &gt; ۳۰٪ (حداقل کف ۲۰٪)</li>
                   <li>● ۴- نسبت فروش سالانه‌شده (تجمیعی × ۱۲÷م) به ارزش بازار (حداقل ۱ برابر یا پوشش &gt; ۴۰٪)</li>
-                  <li>● ۵- صنایع آزاد و بورس کالا بدون قیمت‌گذاری دستوری</li>
+                  <li>● ۵- چشم‌انداز خوب: دارویی، غذایی، سیمانی، فلزات، پتروشیمی، کانی‌فلزی، کاشی، شیشه + نرخ‌گذاری دلاری/ریالی (بدون قیمت‌گذاری دستوری)</li>
                 </ul>
               </div>
 
@@ -766,7 +766,7 @@ export default function StrategyTreePage() {
                   <span className="text-2xs text-purple-400 font-black">بازگشتی</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                  شکست آخرین سقف در روند نزولی یا شکست خط گردن (Neckline) کف دوقلو با پولبک و تثبیت ۲ روزه.
+                  شکست آخرین سقف در روند نزولی یا شکست آخرین کف در روند صعودی؛ سقف دوقلو و سر و شانه مشابه CHoCH.
                 </p>
               </div>
 
@@ -871,7 +871,7 @@ export default function StrategyTreePage() {
                   <span className="text-2xs text-accent-blue font-black">آغاز موج</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                  شکست سقف باکس رنج با کندل پرقدرت + رشد حجم معاملات + پر شدن حجم مبنا و الگوی ساعت.
+                  رشد حجم معاملات و شکست باکس با یک کندل قوی به سمت بالا و ورود پول و الگوی ساعت؛ هرچه زمان باکس بیشتر، حرکت قوی‌تر.
                 </p>
               </div>
 

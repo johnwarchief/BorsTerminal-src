@@ -66,7 +66,10 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
     expect(screen.getAllByText(/حد ضرر نوسان‌گیر/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/در اولین سقف/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/خروج در سقف سوم/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/واگرایی منفی RSI/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/واگرایی مقاومتی/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/نمودارهای جریان نقدینگی/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/کف دوقلو/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/رصد مداوم پورتفو/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/سقف دارایی بورس/i).length).toBeGreaterThan(0);
   });
 
