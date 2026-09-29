@@ -85,7 +85,8 @@
   #198 — که برایِ فلاشِ اعداد ساخته شده بود و با «بی‌حرکتیِ موس» می‌آمد نه با مخفی‌بودنِ
   پنجره — هر ۴ جریان را ۲۰ ثانیه بعد از آخرین حرکت paused می‌کرد؛ درخت دقیقاً همان تبی است
   که بی‌حرکت نگاهش می‌کنند. حالا `.fts-path-flow` و `.fts-comet` از `data-idle` مستثنا‌اند،
-  `prefers-reduced-motion` هنوز هر دو را خاموش می‌کند، و pilot (گزینهٔ c، اطمینان ۰٫۸)
+  `prefers-reduced-motion` هنوز هر دو را خاموش می‌کرد (همان قفل بعداً ادعایِ «هنوز انیمیشن
+  ندارد» شد و در §۱۰ باز شد)، و pilot (گزینهٔ c، اطمینان ۰٫۸)
   همان قیدی را خواست که گذاشته شد: استثنایِ کور رویِ پنجرهٔ مینیمایزشده GPU را بیدار
   نگه می‌داشت، پس خودِ استثنا به `:not([data-hidden='1'])` قید خورد و `data-hidden`
   پرچمِ جدایِ خودش را در `idleGate` گرفت (تا پیش از این «دست روی موس نیست» و «پنجره وجود
@@ -209,7 +210,47 @@
   دو ردیفِ فقط‌ما داشت (کپا ه ۳ و سپا ه ۳ — حق‌تقدم‌هایِ حجمِ انفجاری) که همان
   پنجرۀ یک‌روزِجلو بود، نه فرمول. پس پیش از هر داوری، این یکی برابریِ پنجره است.
 
-## ۱۰) بازها (هیچ‌کدام کد نمی‌خواهند، رأی/زمان می‌خواهند)
+## ۱۰) بازگشتِ دومِ جریانِ درخت: reduce-motion نامِ انیمیشن را می‌کشت (بسته شد، ۱٫۰٫۵۷)
+- **ادعایِ مالک درست بود و شاهدِ ما بی‌محتوا**: «درخت استراتژی هنوز هم انیمیشن ندارد».
+  `06afe78`/`1.0.54` گاردِ `data-idle` را بست (بی‌حرکتیِ موس) و پروبِ همان نشست
+  `tools/tree_flow_state.mts` را با `getComputedStyle().animationPlayState` خواند و
+  «running: 4» گزارش داد. ولی بلاکِ `@media (prefers-reduced-motion: reduce)` در
+  `index.css` این دو را با `animation: none !important` **بی‌نام** می‌کرد؛ انیمیشنی که
+  نامش `none` است با `animation-play-state: running` زنده نمی‌شود. پس رویِ ماشینِ او
+  (WebView2، که تنظیمِ «کاهشِ انیمیشنِ ویندوز» را به `prefers-reduced-motion` نگاشت
+  می‌کند) درخت از همان اول بی‌حرکت بود و عددِ «running» هیچ‌چیز را نمی‌سنجید.
+  درسِ روش‌شناختی: برایِ «حرکت دارد؟» باید نام + دامنه + **فرقِ واقعیِ دو فریم** خوانده
+  شود، نه وضعیتِ اجرا. پروبِ جدید: `tools/reduced_motion_probe.mts` (`--reduced` با
+  `reducedMotion:'reduce'` پلی‌ت‌راایت) که هر سه را می‌دهد.
+- **شاهدِ قبل از رفع** (اپِ نصبیِ ۱٫۰٫۵۶، `_audit/reduced_motion_1056_reduced.json`):
+  `reduce:true`، `.fts-path-flow` → `animationName:"none"` و `duration:"0s"`،
+  `.fts-comet` → **missing** (اورکِ رندرِ کامپوننت هم با `reduceMotion` بسته بود)،
+  `pixelsChangedBetweenFrames:false`. بی‌reduce همان آدرس: `fts-path-flow` 2.4s و
+  سه comet با 1.8s (حالتِ سالم، پس باگِ داده/رندر نبود و فقط مسیرِ reduce می‌مرد).
+- **رفع** (pilot گزینهٔ b، اطمینان ۰٫۸، ریسک ۰٫۳۹ — رأیِ «صفرِ حرکت رویِ ماشینِ reduce
+  قابل‌قبول نیست» همان چیزی است که مالک خواسته): استورِ `treeFlowStore.ts` با سه حالتِ
+  `always | system | off`، پیش‌فرض `always`، کلیدِ `fts.tree.flow.v1` (۱٫۰٫۵۵ این کلیدها
+  را رویِ دیسک می‌آورد)، و دو datum رویِ `<html>`: `data-tree-flow` و
+  `data-tree-flow-running`. دو کلاسِ درخت از فهرستِ کشتارِ reduce **بیرون** رفتند؛
+  جایش را قاعدهٔ `html[data-tree-flow-running='0'] … animation: none !important` گرفت و
+  قاعدهٔ `='1'` داخلِ همان بلاکِ media درِ reduce نام و دامنه را **برمی‌گرداند**
+  (`2.4s` / `1.8s`). در `ObsidianStrategyGraph.tsx` دروازۀ رندرِ comet از `!reduceMotion`
+  به `flowOn` (نتیجۀ `isFlowRunning(mode, systemReduce)`) عوض شد تا «خاموش» واقعاً
+  گره‌ها را از DOM بیرون کند، و کنترلِ «جریانِ مسیر» بالایِ `StrategyTreePage` نشست.
+  بقیهٔ کشتارِ reduce (چرخک، فلاشِ اعداد) دست‌نخورده ماند.
+- شواهدِ بعد از رفع (vite ۵۱۷۳ با emulate reduce، `_audit/tree_flow_reduced_fixed.json`):
+  `(always)` → `treeFlow:"always"`, `running:"1"`, `fts-path-flow 2.4s`, سه comet,
+  `pixelsChanged:true`؛ با کلیکِ «خاموش» → `running:"0"`, `none`/`0s`, comet غایب,
+  `pixelsChanged:false`؛ بازگشت به «همیشه» → همان حالتِ سالم؛ ۳۵ ثانیه بی‌موس
+  (`idleAttr:"1"`) → هنوز `fts-path-flow 2.4s` و running.
+- تست: `flash-idle-guard.spec.ts` با `reduceBlock()`/`reduceKillSelectors()` (بریس‌مچ به‌جای
+  `slice(0,500)`ِ شکننده) و سه چکِ تازه (کلاس‌هایِ درخت در فهرستِ کشتار نیستند ولی
+  `.flash-up/.flash-down/.hud-beam` هستند؛ قاعدۀ `='0'`؛ قاعدۀ بازگشت داخلِ media با
+  2.4s/1.8s و `!important`)، و بازنویسیِ چکِ قدیمِ reduce. کل سوریتِ فرانت 1188 pass /
+  1 skip، `tsc -b` صفر خطا. negative control: برگرداندنِ دو کلاسِ درخت به فهرستِ کشتار →
+  ۱ FAIL (بازگردانی از کپی).
+
+## ۱۱) بازها (هیچ‌کدام کد نمی‌خواهند، رأی/زمان می‌خواهند)
 - برابریِ زندهٔ پنج فیلتر در ساعتِ بازگشایی (۰۹:۰۰–۱۲:۳۰): `tools/tse_live_filter_parity.py`
   و `tools/live_session_check.mts`. سنجشِ تفاضلیِ ۷۳۲ حالته سبز است؛ ادعایِ «تضمینِ داخلِ
   نشست» فقط با یک پاسِ زنده بسته می‌شود.

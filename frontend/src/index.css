@@ -418,7 +418,9 @@ details[open] > summary .disclosure-chevron {
     scroll-behavior: auto !important;
   }
 
-  /* انیمیشن های نامدار پوسته: کاملا خاموش */
+  /* انیمیشن های نامدار پوسته: کاملا خاموش
+     (جریانِ مسیرِ درخت و دانه‌هایِ جهت‌نما اینجا نیستند: از ۱٫۰٫۵۷ تصمیم را
+      خودِ تنظیمِ درون‌برنامه می‌گیرد — پایینِ همین فایل.) */
   .panel-in,
   .scale-in,
   .collapse-in,
@@ -426,10 +428,35 @@ details[open] > summary .disclosure-chevron {
   .flash-up,
   .flash-down,
   .hud-beam,
-  .fts-path-flow,
-  .fts-comet,
   .animate-spin-slow {
     animation: none !important;
+  }
+}
+
+/* ── جریانِ مسیرِ درخت استراتژی (v1.0.57) ────────────────────────────────
+   جهتِ حرکتِ سرمایه رویِ مسیرِ انتخاب با همین دو انیمیشن خوانده می‌شود، پس
+   برایِ مالک اطلاعات است نه تزئین. تا پیش از این هر دو درِ فهرستِ
+   «کاملاً خاموشِ» prefers-reduced-motion بودند؛ چون پنجرۀ بومیِ برنامه
+   (WebView2) ترجیعِ انیمیشنِ ویندوز را به صفحه می‌دهد، رویِ همان ماشینِ هدف
+   درخت هیچ‌وقت تکان نمی‌خورد — و سنجشِ ما که فقط animation-play-state را
+   می‌خواند «running» گزارش می‌داد، چون انیمیشن کلاً نامش none شده بود.
+
+   حالا تنظیمِ درون‌برنامه (fts.tree.flow.v1، پیش‌فرض «همیشه») رویِ ریشه
+   data-tree-flow-running می‌نشیند. قاعدهٔ `*`ِ بالا زیرِ reduce مدت را
+   ۰٫۰۱ms می‌کند، پس برایِ حالتِ روشن باید همان مدتِ واقعیِ هر انیمیشن
+   برگردانده شود، نه فقط play-state. */
+html[data-tree-flow-running='0'] .fts-path-flow,
+html[data-tree-flow-running='0'] .fts-comet {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-tree-flow-running='1'] .fts-path-flow {
+    animation: fts-path-flow 2.4s ease-in-out infinite !important;
+  }
+
+  html[data-tree-flow-running='1'] .fts-comet {
+    animation: fts-comet 1.8s ease-in-out infinite !important;
   }
 }
 

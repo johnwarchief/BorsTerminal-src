@@ -11,6 +11,11 @@ import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
+import {
+  useTreeFlowStore,
+  TREE_FLOW_LABEL,
+  TREE_FLOW_HINT,
+} from '../stores/treeFlowStore';
 import { runStrictGates, definiteDecision } from '../lib/strictGates';
 import { evaluateFtsPipeline, type PipelineStep } from '../lib/ftsPipelineEvaluator';
 
@@ -63,6 +68,9 @@ export default function StrategyTreePage() {
   // خوراک بازار برای اتوکامپلیت نماد
   const marketFeed = useMarketFeed();
   const marketRows = useMemo(() => marketFeed.data?.data ?? [], [marketFeed.data]);
+
+  const treeFlow = useTreeFlowStore((st) => st.mode);
+  const setTreeFlow = useTreeFlowStore((st) => st.setMode);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -386,6 +394,35 @@ export default function StrategyTreePage() {
                 (راهنمای کلان — با سرچ نماد، وضعیت سهم روی درخت اعمال می‌شود)
               </span>
             )}
+          </div>
+
+          {/* جریانِ مسیر: جهتِ حرکتِ سرمایه رویِ مسیرِ انتخاب. پیش‌فرض
+              «همیشه» — چون پنجرۀ بومی ترجیعِ انیمیشنِ ویندوز را به صفحه
+              می‌دهد و بی‌این تنظیم درخت رویِ سیستمِ هدف ساکن می‌ماند. */}
+          <div
+            className="flex items-center gap-1 rounded-xl border border-border-c/70 bg-bg-primary p-1"
+            role="group"
+            aria-label="جریانِ مسیرِ درخت"
+            data-testid="tree-flow-toggle"
+            title={TREE_FLOW_HINT[treeFlow]}
+          >
+            <span className="px-1 text-2xs text-text-muted font-bold">جریانِ مسیر</span>
+            {(['always', 'system', 'off'] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setTreeFlow(m)}
+                aria-pressed={treeFlow === m}
+                data-testid={`tree-flow-${m}`}
+                className={`rounded-lg px-2 py-1 text-2xs font-black transition-all ${
+                  treeFlow === m
+                    ? 'bg-accent-cyan/20 border border-accent-cyan/50 text-accent-cyan'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {TREE_FLOW_LABEL[m]}
+              </button>
+            ))}
           </div>
 
           {/* سمت چپ: سوییچ نما */}

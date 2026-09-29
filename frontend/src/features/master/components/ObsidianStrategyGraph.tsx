@@ -6,6 +6,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore, type StrategyParameters } from '../stores/strategyParamsStore';
 import { useMediaQuery } from '@shared/lib/useMediaQuery';
+import { useTreeFlowStore, isFlowRunning } from '../stores/treeFlowStore';
 
 export type GraphCategory = 'core' | 'fund' | 'tech' | 'tape' | 'money';
 export type FlowDirection = 'reverse' | 'classic';
@@ -820,9 +821,13 @@ export function ObsidianStrategyGraph({
   const [selectedNodeId, setSelectedNodeId] = useState<string>('tape_volume');
   const [searchQuery, setSearchQuery] = useState('');
   const [zoom, setZoom] = useState(1);
-  // حرکتِ رویِ مسیر با CSS انجام می‌شود (motion-path)، پس گاردِ
-  // prefers-reduced-motion خودش آن را می‌بندد؛ این پرچم برایِ نبودِ گره است.
-  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  // حرکتِ رویِ مسیر با CSS انجام می‌شود. اینکه بدود یا نه را تنظیمِ
+  // درون‌برنامه تعیین می‌کند (fts.tree.flow.v1، پیش‌فرض «همیشه»)، نه
+  // ترجیعِ سیستم: پنجرۀ بومیِ برنامه آن ترجیع را از ویندوز می‌گیرد و
+  // درخت را بی‌حرکت می‌کرد.
+  const treeFlowMode = useTreeFlowStore((s) => s.mode);
+  const systemReduce = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const flowOn = isFlowRunning(treeFlowMode, systemReduce);
   const [pan, setPan] = useState({ x: 0, y: 0 });
 
   const isDraggingRef = useRef(false);
@@ -1361,10 +1366,11 @@ export function ObsidianStrategyGraph({
                         {/* سه دانه رویِ خودِ منحنی، با تأخیرِ پلکانی. حرکتِ
                             هندسی (خط‌چین یا motion-path) هر فریم کلِ SVG را
                             دوباره لی‌اوت می‌کرد؛ این فقط opacity را عوض می‌کند.
-                            خاموش‌کردنش دو چیز است: کاهشِ حرکت و پنجرهٔ پنه
-                            (data-hidden)؛ بی‌حرکتیِ موس نه — درخت همان تبی است
-                            که بی‌دست نگاهش می‌کنند (استثنا در index.css). */}
-                        {!reduceMotion &&
+                            خاموش‌کردنش دو چیز است: تنظیمِ «جریانِ مسیر» (flowOn؛
+                            پیش‌فرض «همیشه») و پنجرهٔ پنه (data-hidden)؛ بی‌حرکتیِ
+                            موس نه — درخت همان تبی است که بی‌دست نگاهش می‌کنند
+                            (استثنا در index.css). */}
+                        {flowOn &&
                           COMET_T.map((t, i) => {
                             const q = cubicAt(sp, { x: ctrl1X, y: sp.y }, { x: ctrl2X, y: tp.y }, tp, t);
                             return (

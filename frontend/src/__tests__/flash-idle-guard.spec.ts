@@ -19,6 +19,30 @@ const FLASH = readFileSync(
 /** کلاس‌هایی که خودِ کامپوننت به سلول می‌چسباند — گارد با منبعِ حقیقت می‌خواند */
 const flashClasses = [...FLASH.matchAll(/'(flash-[a-z]+)'/g)].map((m) => m[1]).filter((v, i, a) => a.indexOf(v) === i);
 
+/** بدنۀ اولین بلوکِ @media (prefers-reduced-motion …) با شمارشِ { } */
+function reduceBlock(css: string): string {
+  const at = css.indexOf('prefers-reduced-motion');
+  expect(at, 'هیچ بلوکِ prefers-reduced-motion در CSS نیست').toBeGreaterThan(-1);
+  const open = css.indexOf('{', at);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}') {
+      depth--;
+      if (depth === 0) return css.slice(open + 1, i);
+    }
+  }
+  throw new Error('reduce block never closes');
+}
+
+/** فقط فهرستِ سلکتورهایِ قاعندۀ `animation: none !important` داخلِ آن بلوک */
+function reduceKillSelectors(block: string): string {
+  const at = block.search(/animation:\s*none\s*!important/);
+  expect(at, 'قاعندۀ animation:none داخلِ reduce نیست').toBeGreaterThan(-1);
+  const prevBrace = block.lastIndexOf('}', at);
+  return block.slice(prevBrace + 1, at);
+}
+
 describe('گاردِ فلش و دروازۀ بی‌کاری', () => {
   it('کامپوننتِ سلول همان دو کلاسی را می‌زند که CSS می‌شناسد', () => {
     expect(flashClasses.sort()).toEqual(['flash-down', 'flash-up']);
@@ -51,11 +75,50 @@ describe('گاردِ فلش و دروازۀ بی‌کاری', () => {
     expect(new Set(decls.map((d) => d.replace(/\bflash-(up|down)\b/, 'X'))).size).toBe(1);
   });
 
-  it('حرکتِ کاهش‌یافته هنوز فلش را خاموش می‌کند (دست‌نخورده ماندنِ دسترس‌پذیری)', () => {
-    const reduced = CSS.slice(CSS.indexOf('prefers-reduced-motion'));
+  it('حرکتِ کاهش‌یافته هنوز فلاش را خاموش می‌کند (دست‌نخورده ماندنِ دسترس‌پذیری)', () => {
+    const reduced = reduceBlock(CSS);
     expect(reduced).toContain('.flash-up');
     expect(reduced).toContain('.flash-down');
-    expect(reduced.slice(0, 500)).toMatch(/animation:\s*none\s*!important/);
+    // نه برشِ طولی: قواعدِ داخلِ بلوک به ترتیبِ متن مهم‌اند، نه به فاصلهٔ ۵۰۰ حرف.
+    expect(reduced).toMatch(/animation:\s*none\s*!important/);
+  });
+});
+
+// ── جریانِ مسیرِ درخت: تنظیمِ درون‌برنامه، نه ترجیعِ سیستم ──────────────────
+// WebView2 ترجیعِ انیمیشنِ ویندوز را به صفحه می‌دهد. تا ۱٫۰۵۶ .fts-path-flow و
+// .fts-comet داخلِ فهرستِ «کاملاً خاموش» بودند، پس درختِ رویِ ماشینِ هدف ساکن
+// می‌ماند — و سنجشی که فقط play-state می‌خواند این را «running» می‌دید.
+describe('tree flow motion is governed by the app setting', () => {
+  const TREE_CLASSES = ['.fts-path-flow', '.fts-comet'];
+
+  it('از فهرستِ خاموشیِ reduce بیرون‌اند', () => {
+    const kill = reduceKillSelectors(reduceBlock(CSS));
+    for (const cls of TREE_CLASSES) {
+      expect(kill.includes(cls), `${cls} هنوز در فهرستِ خاموشیِ reduce است`).toBe(false);
+    }
+    // و فلاش‌ها باید همچنان در همان فهرست بمانند (گاردِ بالا تنها متنِ بلوک را
+    // می‌بیند؛ این می‌گوید حذفِ درخت، فلش‌ها را هم با خودش بیرون نبرده باشد)
+    for (const keep of ['.flash-up', '.flash-down', '.hud-beam']) {
+      expect(kill.includes(keep), `${keep} از فهرستِ خاموشیِ reduce افتاده`).toBe(true);
+    }
+  });
+
+  it('حالتِ «خاموش» با قاعدهٔ خودش انیمیشن را می‌کُشد', () => {
+    expect(CSS).toMatch(/html\[data-tree-flow-running='0'\]\s+\.fts-path-flow/);
+    const off = CSS.slice(CSS.indexOf(`html[data-tree-flow-running='0'] .fts-path-flow`));
+    expect(off.slice(0, 300)).toMatch(/animation:\s*none\s*!important/);
+  });
+
+  it('زیرِ reduce، حالتِ روشن مدتِ واقعیِ هر دو انیمیشن را برمی‌گرداند', () => {
+    // play-state نمی‌تواند انیمیشنی را که name‌اش none شده زنده کند؛ پس باید
+    // همان shorthandِ durationدار برگردد، وگرنه همین باگِ ۱٫۰٫۵۴ برمی‌گردد.
+    for (const [cls, dur] of [['.fts-path-flow', '2.4s'], ['.fts-comet', '1.8s']] as const) {
+      const at = CSS.indexOf(`html[data-tree-flow-running='1'] ${cls}`);
+      expect(at, `قاعندۀ بازگردانیِ ${cls} نیست`).toBeGreaterThan(-1);
+      const rule = CSS.slice(at, at + 200);
+      expect(rule).toContain(dur);
+      expect(rule).toMatch(/!important/);
+    }
   });
 });
 
@@ -104,8 +167,21 @@ describe('گاردِ جریانِ درخت و دروازۀ بی‌کاری', () 
     }
   });
 
-  it('کاهشِ حرکت اما هر دو را خاموش می‌کند (دسترس‌پذیری به بهایِ جریان فروخته نمی‌شود)', () => {
+  it('کاهشِ حرکت جریانِ درخت را فقط با تنظیمِ «طبقِ سیستم» خاموش می‌کند', () => {
+    // قراردادِ ۱٫۰٫۵۴ این بود که reduce همیشه درخت را می‌خواباند؛ همان چیزی
+    // بود که رویِ پنجرۀ بومی (WebView2 ترجیعِ انیمیشنِ ویندوز را می‌دهد) درخت را
+    // بی‌حرکت می‌کرد، درحالی‌که سنجشِ ما play-state را می‌خواند و آن «running»
+    // می‌ماند. دسترس‌پذیری فروخته نشده: تصمیم به کنترلِ صریحِ درون‌برنامه منتقل
+    // شده، با پیش‌فرضِ «همیشه» و دو حالتِ «طبقِ سیستم» و «خاموش».
     const reduced = CSS.slice(CSS.indexOf('prefers-reduced-motion'));
-    for (const cls of flowClasses) expect(reduced).toContain(`.${cls}`);
+    expect(reduced).toContain("html[data-tree-flow-running='1']");
+    expect(CSS).toContain("html[data-tree-flow-running='0'] .fts-path-flow");
+    const store = readFileSync(
+      path.resolve(import.meta.dirname, '../../src/features/master/stores/treeFlowStore.ts'),
+      'utf8'
+    );
+    // منطقِ خالصی که کامپوننت و CSS هر دو از همان می‌خوانند
+    expect(store).toContain("mode === 'always' || (mode === 'system' && !systemReduce)");
+    expect(store).toContain("DEFAULT_TREE_FLOW: TreeFlowMode = 'always'");
   });
 });
