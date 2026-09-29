@@ -174,11 +174,23 @@ ck(ME.fund_kind("صندوق نامشخص-و", "ايكس") == "etf",
 
 # ==================== گارد ۲: یکاها — همان‌چه کاربر در سربرگ می‌خواند =========
 # فولاد: q_tot_cap = 1e13 ریال = ۱۰۰۰ میلیارد تومان = ۱ همت
-TOTAL_RIAL = 1e13 + 1e12 + 1e11 + 6 * 1e11      # فولاد + وبملت + حق تقدم + شش صندوق/اختیار
+# دامنهٔ «کل بازار» از این نسخه سطرهایِ market0ِ تریدرزآرناست
+# (هویتِ جبریِ m = st + sf + nsf؛ شاهد و توضیح: docs/TA-SCOPE-DECODE.md):
+# سهام + حق‌تقدم + ص.سهامی/مختلط/درآمدِ ثابت. اهرمی، طلا، نقره و اختیار/اوراق
+# سطرهایِ خودشان را دارند، پس دیگر جمعِ هر نه سطر برابرِ «کل» نیست.
+GRAND_RIAL = 1e13 + 1e12 + 7 * 1e11            # هر نه نمادِ فیشر
+ALL_RIAL = 1e13 + 1e12 + 3 * 1e11              # فولاد+وبملت+حق‌تقدم+ص.سهامی+ص.درآمد ثابت
+OTHER_RIAL = 1e11                              # اختیارخ → «اوراق، اختيار و سایر»
 s = ME.summary(DB)
 by = {r["key"]: r for r in s["rows"]}
-ck(abs(by["all"]["value_b_toman"] - TOTAL_RIAL / 1e10) < 0.5,
-   "ارزش کل = مجموعِ ریال ÷ 1e10 (میلیارد تومان)")
+ck(abs(by["all"]["value_b_toman"] - ALL_RIAL / 1e10) < 0.5,
+   "«کل بازار» = دامنهٔ تریدرزآرنا (سهام/حق‌تقدم/ص.سهامی/ص.درآمدثابت) ÷ 1e10")
+ck(abs(by["bonds_other"]["value_b_toman"] - OTHER_RIAL / 1e10) < 0.5,
+   "«اوراق، اختيار و سایر» فقط اختیار/اوراق می‌ماند؛ اهرمی و طلا در سطرِ خودشان")
+ck(abs((by["all"]["value_b_toman"] + by["bonds_other"]["value_b_toman"]
+        + by["lev_fund"]["value_b_toman"] + by["gold_fund"]["value_b_toman"]
+        + by["silver_fund"]["value_b_toman"]) - GRAND_RIAL / 1e10) < 0.5,
+   "تجزیهٔ کامل: کل + سایر + اهرمی + طلا + نقره = هر ریالِ تابلو (هیچ پولی گم نمی‌شود)")
 ck(s["health"]["trade_value_all_market_hemat"] > 0, "گردشِ کل بازار گزارش می‌شود")
 ck(s["health"]["market_value_hemat"] is None,
    "ارزشِ بازار بی‌دادِ رسمی صفر نمی‌شود (market_totals هنوز نیست → null)")
@@ -187,10 +199,10 @@ ck("value_hemat_all_market" not in s["health"],
 ck(abs(ME.B_TUMAN_FROM_RIAL - 1e10) == 0, "یکای ریال→میلیارد تومان قفل است")
 ck(abs(ME.M_TUMAN_FROM_RIAL - 1e7) == 0, "یکای ریال→میلیون تومان قفل است")
 ck(abs(ME.HEMAT_IN_B_TUMAN - 1e3) == 0, "۱ همت = ۱۰۰۰ میلیارد تومان")
-ck(s["rows"][0]["key"] == "all" and len(s["rows"]) == 9,
-   "جدول خلاصه دقیقاً ۹ سطر دارد (تصویر ۱)")
+ck(s["rows"][0]["key"] == "all" and len(s["rows"]) == 10,
+   "جدول خلاصه دقیقاً ۱۰ سطر دارد (سطرِ «اوراق، اختيار و سایر» افزوده شد)")
 labels = [r["label"] for r in s["rows"]]
-for need in ("کل بازار", "سهام، حق تقدم و ص.سهامی", "سهام و حق تقدم",
+for need in ("کل بازار", "اوراق، اختيار و سایر", "سهام، حق تقدم و ص.سهامی", "سهام و حق تقدم",
              "صندوق‌های سهامی و مختلط", "صندوق درآمد ثابت", "صندوق‌های اهرمی",
              "صندوق‌های طلا", "صندوق‌های نقره"):
     ck(any(need in x for x in labels), "سطر «%s» در جدول هست" % need)
@@ -233,13 +245,19 @@ ck(h2["not_traded"] >= 1 and h2["total"] == h["total"] - 1,
    "نمادِ بدون معامله از توزیع بیرون می‌ماند و جدا گزارش می‌شود")
 
 # ==================== گارد ۴: دماسنج و قانون فرصت ورود ======================
+# دامنهٔ «کل» دیگر هر نه نماد نیست: اهرمی/طلا/نقره/اختیار سطرِ خودشان‌اند و
+# تریدرزآرنا هم دماسنجش را روی همان m می‌سازد. پس سه صفر، نه هفت صفر.
 th = ME.thermometer(DB, "all")
-ck(th["positive"] == 1 and th["negative"] == 1 and th["zero"] == 7,
-   "فولاد مثبت / حق تقدم منفی / هفت نماد صفر (دست‌چین، قابل شمارش)")
+ck(th["positive"] == 1 and th["negative"] == 1 and th["zero"] == 3,
+   "فولاد مثبت / حق تقدم منفی / سه صفر در دامنهٔ «کل» (دست‌چین، قابل شمارش)")
 ck(th["entry_opportunity"] is False, "با بازارِ مثبت، «فرصت ورود» دروغ نمی‌گوید")
-n_traded = sum(1 for r in ME.enrich(DB)[0] if r["_m"]["vol"] > 0)
+n_traded = sum(1 for r in ME.enrich(DB)[0]
+               if ME.in_category(r, "all", None) and r["_m"]["vol"] > 0)
 ck(th["positive"] + th["negative"] + th["zero"] + th["nodata"] == n_traded,
    "اجزای دماسنج = تعداد نمادهای معامله‌شده (چیزی گم یا دوباره شمرده نمی‌شود)")
+th_gold = ME.thermometer(DB, "gold_fund")
+ck(th_gold["positive"] + th_gold["negative"] + th_gold["zero"] + th_gold["nodata"] == 1,
+   "دامنهٔ «صندوق‌های طلا» فقط صندوقِ طلا را می‌شمارد — دماسنج هر سطر دامنهٔ خودش است")
 c3 = new_db(); seed(c3)
 c3.execute("UPDATE market_watch SET p_closing = price_yesterday * 0.9 WHERE "
            "price_yesterday > 0 AND p_closing > 0")
@@ -684,7 +702,7 @@ if os.path.exists("market.db"):
     conn.row_factory = sqlite3.Row
     ME._CTX.clear()
     ls = ME.summary(conn)
-    ck(len(ls["rows"]) == 9, "روی دادهٔ واقعی هم ۹ سطر")
+    ck(len(ls["rows"]) == 10, "روی دادهٔ واقعی هم ۱۰ سطر")
     ck(ls["rows"][0]["value_b_toman"] > 1000, "ارزشِ کلِ بازارِ واقعی معنادار است")
     ck(ls["health"]["state"] in ("good", "mid", "bad"), "برچسب سلامت ساخته می‌شود")
     ld = ME.depth(conn)

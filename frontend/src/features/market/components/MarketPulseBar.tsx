@@ -381,7 +381,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           <>
             <div className="flex flex-col gap-1.5">
               <span
-                title="خریدِ حقیقی منهای فروشِ حقیقی در سهام، حق تقدم و ص.سهامی (میلیارد تومان)"
+                title="خریدِ حقیقی منهای فروشِ حقیقی در سهام، حق تقدم و ص.سهامی (میلیارد تومان) — زیرگونهٔ صندوق از نامش خوانده می‌شود"
                 className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1 ${
                   flow.eq_flow_b_toman != null && flow.eq_flow_b_toman >= 0
                     ? 'border-emerald-300/80 bg-emerald-50 text-emerald-950 dark:border-accent-green/40 dark:bg-accent-green/10 dark:text-accent-green'
@@ -400,7 +400,7 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
                 )}
               </span>
               <span
-                title="خروج از درآمد ثابت = عدد منفی؛ نشانهٔ ورود نوسانی، پس سبز بولد"
+                title="خروج از درآمد ثابت = عدد منفی؛ نشانهٔ ورود نوسانی، پس سبز بولد — تقسیمِ «سهامی/ثابت» از نامِ صندوق است، جمعِ دو سطر می‌خواند"
                 className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1 ${
                   flow.fixed_flow_b_toman != null && flow.fixed_flow_b_toman < 0
                     ? 'border-emerald-300/80 bg-emerald-50 text-emerald-950 dark:border-accent-green/40 dark:bg-accent-green/10 dark:text-accent-green'

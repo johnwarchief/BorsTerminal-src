@@ -1,0 +1,71 @@
+TA: 1405/07/07 1638 | ما: {"d_even": 20260929, "h_even": 163729, "client_d_even": 20260929, "client_lag_days": false, "depth": true, "top50": 50, "n": 3943}
+سطل‌ها (12):
+  fund/commod n=56    val=     11480.7 vol=    4.096 flow=    1389.3 up/dn/flat=42/14/0
+  fund/equity n=183   val=      5055.6 vol=    1.222 flow=     182.2 up/dn/flat=126/52/5
+  fund/etf   n=22    val=      1252.2 vol=    0.345 flow=     156.7 up/dn/flat=12/5/5
+  fund/fixed n=141   val=     49912.0 vol=   20.301 flow=   -3095.0 up/dn/flat=102/38/1
+  fund/fof   n=6     val=       593.9 vol=    0.184 flow=     173.3 up/dn/flat=3/3/0
+  fund/gold  n=14    val=     12962.7 vol=    0.573 flow=    1766.1 up/dn/flat=10/3/1
+  fund/lev   n=12    val=      6822.8 vol=    1.086 flow=    -124.0 up/dn/flat=11/0/1
+  fund/mixed n=9     val=       826.1 vol=    0.313 flow=    -115.4 up/dn/flat=7/2/0
+  fund/silver n=3     val=       807.5 vol=    0.638 flow=     286.6 up/dn/flat=2/1/0
+  other/other n=1981  val=     73599.1 vol=    1.279 flow=     138.3 up/dn/flat=323/328/1330
+  right/right n=12    val=        96.4 vol=    0.320 flow=      41.0 up/dn/flat=5/7/0
+  stock/stock n=1504  val=     33264.6 vol=   91.189 flow=     490.4 up/dn/flat=753/343/408
+
+--- برازش (|خطا| ≤ ۲٪) ---
+
+m1 کل (ارزش) = 88,626.75
+    -0.006% =      88,621.50  ← 4 سطل: fund/etf,fund/gold,fund/silver,other/other
+    +0.015% =      88,640.04  ← 4 سطل: fund/etf,fund/gold,fund/mixed,other/other
+    -0.076% =      88,559.47  ← 6 سطل: fund/commod,fund/etf,fund/fof,fund/mixed,fund/silver,other/other
+    +0.103% =      88,717.93  ← 5 سطل: fund/etf,fund/gold,fund/silver,other/other,right/right
+    +0.124% =      88,736.47  ← 5 سطل: fund/etf,fund/gold,fund/mixed,other/other,right/right
+
+m7 سهمی (ارزش) = 42,919.07
+    +0.126% =      42,973.24  ← 5 سطل: fund/etf,fund/lev,fund/mixed,fund/silver,stock/stock
+    -0.147% =      42,856.03  ← 6 سطل: fund/etf,fund/fof,fund/lev,fund/mixed,right/right,stock/stock
+    -0.190% =      42,837.49  ← 6 سطل: fund/etf,fund/fof,fund/lev,fund/silver,right/right,stock/stock
+    +0.351% =      43,069.67  ← 6 سطل: fund/etf,fund/lev,fund/mixed,fund/silver,right/right,stock/stock
+    -0.372% =      42,759.60  ← 5 سطل: fund/etf,fund/fof,fund/lev,fund/mixed,stock/stock
+
+m0 کل (حجم) = 107.37
+   ✗ هیچ اتحادی زیر ۲٪ نبود؛ نزدیک‌ترین‌ها:
+    +3.835% =         111.49  ← 2 سطل: fund/fixed,stock/stock
+    +4.006% =         111.67  ← 3 سطل: fund/fixed,fund/fof,stock/stock
+    +4.127% =         111.80  ← 3 سطل: fund/fixed,fund/mixed,stock/stock
+
+m5 کل (جریان) = -2,130.89
+    -0.023% =      -2,130.40  ← 6 سطل: fund/fixed,fund/fof,fund/lev,fund/silver,other/other,stock/stock
+    -0.162% =      -2,127.44  ← 5 سطل: fund/equity,fund/etf,fund/fixed,other/other,stock/stock
+    +0.231% =      -2,135.82  ← 4 سطل: fund/equity,fund/fixed,fund/silver,stock/stock
+    +0.257% =      -2,136.36  ← 5 سطل: fund/etf,fund/fixed,fund/fof,other/other,stock/stock
+    +0.356% =      -2,138.48  ← 6 سطل: fund/etf,fund/fixed,fund/mixed,fund/silver,other/other,stock/stock
+
+m13 خوشۀ ۱۳ = 45,707.47
+    +0.064% =      45,736.90  ← 4 سطل: fund/equity,fund/fof,fund/lev,stock/stock
+    -0.087% =      45,667.80  ← 4 سطل: fund/commod,fund/mixed,right/right,stock/stock
+    -0.127% =      45,649.26  ← 4 سطل: fund/commod,fund/silver,right/right,stock/stock
+    +0.275% =      45,833.33  ← 5 سطل: fund/equity,fund/fof,fund/lev,right/right,stock/stock
+    -0.298% =      45,571.37  ← 3 سطل: fund/commod,fund/mixed,stock/stock
+
+m16 خوشۀ ۱۶ = 43,576.58
+    -0.022% =      43,567.14  ← 6 سطل: fund/etf,fund/fof,fund/lev,fund/mixed,fund/silver,stock/stock
+    -1.163% =      43,069.67  ← 6 سطل: fund/etf,fund/lev,fund/mixed,fund/silver,right/right,stock/stock
+    -1.385% =      42,973.24  ← 5 سطل: fund/etf,fund/lev,fund/mixed,fund/silver,stock/stock
+    -1.654% =      42,856.03  ← 6 سطل: fund/etf,fund/fof,fund/lev,fund/mixed,right/right,stock/stock
+    -1.696% =      42,837.49  ← 6 سطل: fund/etf,fund/fof,fund/lev,fund/silver,right/right,stock/stock
+
+m12 شمارد ۱۲ = 4,212.00
+   ✗ هیچ اتحادی زیر ۲٪ نبود؛ نزدیک‌ترین‌ها:
+    -9.568% =       3,809.00  ← 4 سطل: fund/equity,fund/fixed,other/other,stock/stock
+   -11.586% =       3,724.00  ← 4 سطل: fund/commod,fund/equity,other/other,stock/stock
+   -12.393% =       3,690.00  ← 4 سطل: fund/equity,fund/etf,other/other,stock/stock
+
+m17 شمارد ۱۷ = 4,315.00
+   ✗ هیچ اتحادی زیر ۲٪ نبود؛ نزدیک‌ترین‌ها:
+   -11.727% =       3,809.00  ← 4 سطل: fund/equity,fund/fixed,other/other,stock/stock
+   -13.696% =       3,724.00  ← 4 سطل: fund/commod,fund/equity,other/other,stock/stock
+   -14.484% =       3,690.00  ← 4 سطل: fund/equity,fund/etf,other/other,stock/stock
+
+→ _audit/scope_fit_14050707.json

@@ -1,0 +1,556 @@
+{
+ "taken_at": "2026-09-29 16:37:56",
+ "ta_j": "1405/07/07",
+ "ta_d": 1638,
+ "ta_m": [
+  107373111793,
+  886267507514788,
+  1067261547,
+  757194351,
+  1.41,
+  -21308900818371,
+  402142,
+  429190693317768,
+  48.43,
+  50.83,
+  450499594136139,
+  594959,
+  4212,
+  457074703649552,
+  51.57,
+  49.17,
+  435765802831181,
+  4315
+ ],
+ "buckets": {
+  "stock/stock": {
+   "n": 1504,
+   "val": 33264.61154569591,
+   "vol": 91.18934606700006,
+   "flow": 490.38185557873663,
+   "up": 753,
+   "down": 343,
+   "flat": 408
+  },
+  "other/other": {
+   "n": 1981,
+   "val": 73599.07230383168,
+   "vol": 1.2790979679999988,
+   "flow": 138.32176846994196,
+   "up": 323,
+   "down": 328,
+   "flat": 1330
+  },
+  "fund/equity": {
+   "n": 183,
+   "val": 5055.574455878798,
+   "vol": 1.2219874890000002,
+   "flow": 182.22777102794743,
+   "up": 126,
+   "down": 52,
+   "flat": 5
+  },
+  "fund/fixed": {
+   "n": 141,
+   "val": 49912.00820984591,
+   "vol": 20.301379793000006,
+   "flow": -3095.0264132819616,
+   "up": 102,
+   "down": 38,
+   "flat": 1
+  },
+  "fund/etf": {
+   "n": 22,
+   "val": 1252.1963047335996,
+   "vol": 0.345272614,
+   "flow": 156.65032034115725,
+   "up": 12,
+   "down": 5,
+   "flat": 5
+  },
+  "fund/commod": {
+   "n": 56,
+   "val": 11480.675401316797,
+   "vol": 4.09629855,
+   "flow": 1389.305621335592,
+   "up": 42,
+   "down": 14,
+   "flat": 0
+  },
+  "right/right": {
+   "n": 12,
+   "val": 96.43211284579999,
+   "vol": 0.320155055,
+   "flow": 40.953725473879246,
+   "up": 5,
+   "down": 7,
+   "flat": 0
+  },
+  "fund/lev": {
+   "n": 12,
+   "val": 6822.8129923038005,
+   "vol": 1.085774504,
+   "flow": -123.9880767905183,
+   "up": 11,
+   "down": 0,
+   "flat": 1
+  },
+  "fund/mixed": {
+   "n": 9,
+   "val": 826.0801814823001,
+   "vol": 0.31316082,
+   "flow": -115.40981493739889,
+   "up": 7,
+   "down": 2,
+   "flat": 0
+  },
+  "fund/gold": {
+   "n": 14,
+   "val": 12962.687253133803,
+   "vol": 0.5728365959999999,
+   "flow": 1766.1407092298746,
+   "up": 10,
+   "down": 3,
+   "flat": 1
+  },
+  "fund/silver": {
+   "n": 3,
+   "val": 807.5415459132,
+   "vol": 0.6383789900000001,
+   "flow": 286.600944789029,
+   "up": 2,
+   "down": 1,
+   "flat": 0
+  },
+  "fund/fof": {
+   "n": 6,
+   "val": 593.8993739372,
+   "vol": 0.183994391,
+   "flow": 173.30772669075972,
+   "up": 3,
+   "down": 3,
+   "flat": 0
+  }
+ },
+ "fits": {
+  "m1": {
+   "label": "کل (ارزش)",
+   "target": 88626.7507514788,
+   "metric": "val",
+   "cands": [
+    {
+     "err_pct": -0.0059,
+     "sum": 88621.49740761229,
+     "buckets": [
+      "fund/etf",
+      "fund/gold",
+      "fund/silver",
+      "other/other"
+     ]
+    },
+    {
+     "err_pct": 0.015,
+     "sum": 88640.03604318138,
+     "buckets": [
+      "fund/etf",
+      "fund/gold",
+      "fund/mixed",
+      "other/other"
+     ]
+    },
+    {
+     "err_pct": -0.0759,
+     "sum": 88559.46511121477,
+     "buckets": [
+      "fund/commod",
+      "fund/etf",
+      "fund/fof",
+      "fund/mixed",
+      "fund/silver",
+      "other/other"
+     ]
+    },
+    {
+     "err_pct": 0.1029,
+     "sum": 88717.92952045808,
+     "buckets": [
+      "fund/etf",
+      "fund/gold",
+      "fund/silver",
+      "other/other",
+      "right/right"
+     ]
+    },
+    {
+     "err_pct": 0.1238,
+     "sum": 88736.46815602719,
+     "buckets": [
+      "fund/etf",
+      "fund/gold",
+      "fund/mixed",
+      "other/other",
+      "right/right"
+     ]
+    }
+   ]
+  },
+  "m7": {
+   "label": "سهمی (ارزش)",
+   "target": 42919.0693317768,
+   "metric": "val",
+   "cands": [
+    {
+     "err_pct": 0.1262,
+     "sum": 42973.24257012881,
+     "buckets": [
+      "fund/etf",
+      "fund/lev",
+      "fund/mixed",
+      "fund/silver",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.1469,
+     "sum": 42856.03251099861,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/mixed",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.1901,
+     "sum": 42837.49387542951,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/silver",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 0.3509,
+     "sum": 43069.67468297461,
+     "buckets": [
+      "fund/etf",
+      "fund/lev",
+      "fund/mixed",
+      "fund/silver",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.3716,
+     "sum": 42759.60039815281,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/mixed",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m0": {
+   "label": "کل (حجم)",
+   "target": 107.373111793,
+   "metric": "vol",
+   "cands": [
+    {
+     "err_pct": 3.8349,
+     "sum": 111.49072586000007,
+     "buckets": [
+      "fund/fixed",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 4.0062,
+     "sum": 111.67472025100007,
+     "buckets": [
+      "fund/fixed",
+      "fund/fof",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 4.1265,
+     "sum": 111.80388668000006,
+     "buckets": [
+      "fund/fixed",
+      "fund/mixed",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m5": {
+   "label": "کل (جریان)",
+   "target": -2130.8900818371,
+   "metric": "flow",
+   "cands": [
+    {
+     "err_pct": -0.0229,
+     "sum": -2130.4021945440127,
+     "buckets": [
+      "fund/fixed",
+      "fund/fof",
+      "fund/lev",
+      "fund/silver",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.1617,
+     "sum": -2127.444697864178,
+     "buckets": [
+      "fund/equity",
+      "fund/etf",
+      "fund/fixed",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 0.2312,
+     "sum": -2135.8158418862486,
+     "buckets": [
+      "fund/equity",
+      "fund/fixed",
+      "fund/silver",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 0.2569,
+     "sum": -2136.364742201366,
+     "buckets": [
+      "fund/etf",
+      "fund/fixed",
+      "fund/fof",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 0.3562,
+     "sum": -2138.4813390404956,
+     "buckets": [
+      "fund/etf",
+      "fund/fixed",
+      "fund/mixed",
+      "fund/silver",
+      "other/other",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m13": {
+   "label": "خوشۀ ۱۳",
+   "target": 45707.4703649552,
+   "metric": "val",
+   "cands": [
+    {
+     "err_pct": 0.0644,
+     "sum": 45736.89836781571,
+     "buckets": [
+      "fund/equity",
+      "fund/fof",
+      "fund/lev",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.0868,
+     "sum": 45667.79924134081,
+     "buckets": [
+      "fund/commod",
+      "fund/mixed",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.1274,
+     "sum": 45649.260605771706,
+     "buckets": [
+      "fund/commod",
+      "fund/silver",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": 0.2754,
+     "sum": 45833.330480661505,
+     "buckets": [
+      "fund/equity",
+      "fund/fof",
+      "fund/lev",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -0.2978,
+     "sum": 45571.367128495,
+     "buckets": [
+      "fund/commod",
+      "fund/mixed",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m16": {
+   "label": "خوشۀ ۱۶",
+   "target": 43576.5802831181,
+   "metric": "val",
+   "cands": [
+    {
+     "err_pct": -0.0217,
+     "sum": 43567.14194406601,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/mixed",
+      "fund/silver",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -1.1633,
+     "sum": 43069.67468297461,
+     "buckets": [
+      "fund/etf",
+      "fund/lev",
+      "fund/mixed",
+      "fund/silver",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -1.3845,
+     "sum": 42973.24257012881,
+     "buckets": [
+      "fund/etf",
+      "fund/lev",
+      "fund/mixed",
+      "fund/silver",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -1.6535,
+     "sum": 42856.03251099861,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/mixed",
+      "right/right",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -1.6961,
+     "sum": 42837.49387542951,
+     "buckets": [
+      "fund/etf",
+      "fund/fof",
+      "fund/lev",
+      "fund/silver",
+      "right/right",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m12": {
+   "label": "شمارد ۱۲",
+   "target": 4212.0,
+   "metric": "n",
+   "cands": [
+    {
+     "err_pct": -9.5679,
+     "sum": 3809,
+     "buckets": [
+      "fund/equity",
+      "fund/fixed",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -11.5859,
+     "sum": 3724,
+     "buckets": [
+      "fund/commod",
+      "fund/equity",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -12.3932,
+     "sum": 3690,
+     "buckets": [
+      "fund/equity",
+      "fund/etf",
+      "other/other",
+      "stock/stock"
+     ]
+    }
+   ]
+  },
+  "m17": {
+   "label": "شمارد ۱۷",
+   "target": 4315.0,
+   "metric": "n",
+   "cands": [
+    {
+     "err_pct": -11.7265,
+     "sum": 3809,
+     "buckets": [
+      "fund/equity",
+      "fund/fixed",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -13.6964,
+     "sum": 3724,
+     "buckets": [
+      "fund/commod",
+      "fund/equity",
+      "other/other",
+      "stock/stock"
+     ]
+    },
+    {
+     "err_pct": -14.4844,
+     "sum": 3690,
+     "buckets": [
+      "fund/equity",
+      "fund/etf",
+      "other/other",
+      "stock/stock"
+     ]
+    }
+   ]
+  }
+ }
+}

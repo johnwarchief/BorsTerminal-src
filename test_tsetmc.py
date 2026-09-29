@@ -174,8 +174,14 @@ def fetch_market_total(s):
     صفرِ جعلی نمی‌سازد: اگر هر دو بازار پاسخ ندادند (۴۲۹/قطعی) همان (0.0, 0, None)
     برمی‌گردد و مصرف‌کننده روی مسیرِ پشتیبان می‌نشیند. سومین عضو تاپل همان
     دیکشنریِ بورس است تا شاخصِ کل/هموزنِ همان درخواستِ رایگان دور ریخته نشود.
+
+    نصفه هم نمی‌نویسد: هر دو بازار (بورس و فرابورس) همیشه ارزشِ مثبت دارند، پس
+    اگر یکی پاسخ نداد یا صفر داد، کلِ عدد رد می‌شود. اندازه‌گیریِ ۱۴۰۵-۰۷-۰۶ روی
+    بانکِ نصبی: سینکِ ۰۶:۰۷ صبح فقط یک بازار را گرفت و ۸٬۰۰۹ همت نوشت در برابر
+    ۲۵۶٬۱۳۱ همتِ همان روزِ بانکِ توسعه — ۳٪. نسخهٔ پیشین هر جمعِ ناصفری را
+    می‌پذیرفت و همان ردیفِ غلط تا ابد در جدول می‌ماند.
     """
-    total, d_even, bourse_ov = 0.0, 0, None
+    total, d_even, bourse_ov, answered = 0.0, 0, None, 0
     for m in MARKET_TOTAL_MARKETS:
         ov = polite_get(s, f"{BASE}/MarketData/GetMarketOverview/{m}", "marketOverview")
         if isinstance(ov, list):
@@ -186,10 +192,13 @@ def fetch_market_total(s):
         v += num(ov.get("marketValueBase")) or 0.0
         if v > 0:
             total += v
+            answered += 1
         # بورس (marketType ۱) تنها بازاری است که indexEqualWeightedLastValue دارد.
         if bourse_ov is None and (num(ov.get("indexLastValue")) or 0) > 0:
             bourse_ov = ov
         d_even = max(d_even, int(num(ov.get("marketActivityDEven")) or 0))
+    if answered < len(MARKET_TOTAL_MARKETS):
+        return 0.0, d_even, bourse_ov
     return (total if total > 0 else 0.0, d_even, bourse_ov)
 
 

@@ -47,6 +47,10 @@ HEMAT_FROM_RIAL = 1e13       # ریال → همت (هزار میلیارد تو
 HEMAT_GOOD = 20.0            # ≥ ۲۰ همت → مساعد
 HEMAT_BAD = 10.0             # ≤ ۱۰ همت → نامساعد
 HEMAT_EXCELLENT = 50.0       # «بالایِ ۵۰ همت هم عال[ی]» — جزوه صفحهٔ ۱۳
+# «ارزش کل بازار»ِ رسمی نباید نصفه باشد: سینک فقط یک بازار را بگیرد، عددِ
+# نوشتنی تا ~۳٪ِ درست می‌افتد. کمتر از این نسبتِ بزرگ‌ترینِ ردیف‌هایِ آخر =
+# نوشتۀِ معیوب، نه ریزشِ بازار (سنجشِ ۱۴۰۵-۰۷-۰۶: ۸٬۰۰۹ در ۲۵۶٬۱۳۱ همت).
+MARKET_TOTAL_MIN_RATIO = 0.5
 # «فرصت ورود»: اگر بیش از این درصد نمادها منفی بودند، بازار در کف است
 ENTRY_OPPORTUNITY_NEG_PCT = 80.0
 # جزوه صفحهٔ ۱۳: وضعیتِ نقدینگی را «برایِ حرانتِ ۳ الی ۴ روزِ متوالی» بررسی کن
@@ -95,8 +99,17 @@ def in_trading_session(h_even, when=None) -> bool:
 
 
 # ---- دسته‌بندی ردیف‌های جدول خلاصه ----
+# ۱٫۰٫۶۳ — «کل بازار» دیگر «همه‌چیز» نیست. اندازه‌گیریِ هم‌لحظه (۱۴۰۵-۰۷-۰۷،
+# tools/ta_rows_decode.py → _audit/ta_rows_decode.json): گردشِ ردیف‌هایِ
+# paper_type=null — ۳۸۶ نماد «اوراق تامين مالي» با ۶۴٬۲۹۵ م.ت — وارد «کل» می‌شد
+# و عددِ ما ۱۵۹٬۱۵۱ در برابرِ ۷۱٬۱۴۰ِ تریدرزآرنا می‌ایستاد (+۱۲۴٪). هویتِ جبریِ
+# خودِ TA (خطای ۰٫۰۰۰٪) دامنه‌اش را روشن می‌کند: `m = st + sf + nsf`، یعنی
+# سهام و حق‌تقدم + ص.سهامی/مختلط + ص.درآمدِ ثابت؛ ص.طلا/اهرمی/نقره/کالا سطرهایِ
+# جدا دارند و اوراق/اختيار اصلاً در ساختارش نیست. پس «کل» هم‌ردیفِ اوست و پولِ
+# باقیِ بازار در سطرِ «اوراق، اختيار و سایر» پنهان نمی‌شود.
 CATEGORY_ROWS = [
     ("all",         "کل بازار"),
+    ("bonds_other", "اوراق، اختيار و سایر"),
     ("eq_all",      "سهام، حق تقدم و ص.سهامی"),
     ("stock_right", "سهام و حق تقدم"),
     ("eq_fund",     "صندوق‌های سهامی و مختلط"),
@@ -106,6 +119,10 @@ CATEGORY_ROWS = [
     ("gold_fund",   "صندوق‌های طلا"),
     ("silver_fund", "صندوق‌های نقره"),
 ]
+
+# طبقاتی که در «کل بازار» (هم‌ردیفِ `m`ِ تریدرزآرنا) می‌آیند
+_EQ_FUND_KINDS = ("equity", "fof", "etf", "mixed")
+_ALL_FUND_KINDS = ("equity", "fof", "etf", "mixed", "fixed")
 
 # تب‌های جدول تفکیک حقیقی/حقوقی
 CLIENT_TABS = [
@@ -323,6 +340,40 @@ _FUND_NAME = ("صندوق", "ETF")
 _FUND_SECTOR = ("صندوق سرمایه",)
 _TESEH_SECTOR = ("اوراق حق تقدم",)
 
+# v1.0.63 — نشتِ «سهام و حق تقدم». صکوک، اوراق مشارکت، سلف و گواهیِ سپردهٔ کالا
+# در تابلو هیچ paperTypeِ درستی نمی‌گیرند (فیلترِ paperType در TSETMC بی‌ثبات
+# است: سه درخواستِ پیاپیِ pt=8 در ۱۴۰۵-۰۷-۰۷ کلِ ۳٬۸۶۴ نماد را برگرداند و دو
+# درخواست ۴۳۹ ردیفِ درست) و سکتورشان هم سکتورِ صادرکننده است، پس از نام/نماد
+# شناخته می‌شوند. پیش از این ۲۶۱ ردیفِ غیرسهام با ۲٬۰۳۳ م.ت در سطرِ سهام
+# می‌نشستند (سنجشِ همان روز؛ نمونه: «صكوك اجاره فولاد006» ۱٬۰۵۱،
+# «مشاركت ش كرج712-3ماهه» ۵۰۰، «سلف استاندارد سكه مركزي» ۴۳۳ م.ت).
+# «آتی» تنها با قیدِ assetType.ts می‌آید (نام + نمادِ عددپایان)؛ بی‌آن قید
+# «آتيه داده پرداز» و «سرمايه گذاري آتيه دماوند» — دو سهامِ واقعی — اوراق
+# می‌شدند. «اجاره» فهرست نیست: فقط در دلِ «صكوك اجاره» می‌آید و همان صكوك
+# گرفته‌اش است. نوشتارِ کلیدها فارسی است چون نام پیش از تطبیق از _norm می‌گذرد
+# («صكوك» در بانک با کِ عربی ذخیره می‌شود و به «صکوک» برمی‌گردد).
+_BOND_WORD = ("صکوک", "مشارکت", "مرابحه", "مضاربه", "استصناع", "گواهی سپرده", "سلف")
+_FUTURES_WORD = ("آتی",)
+
+
+def _whole_word(name: str, key: str) -> bool:
+    """کلید باید واژه باشد، نه بخشی از واژه‌ای بلندتر — از دو سو.
+
+    _word_hit فقط چپ را می‌بیند و کافی نیست: «آتيه» با «آتي» از چپ تطبیق
+    می‌خورد و یک سهامِ واقعی را اوراق می‌کرد.
+    """
+    if not key:
+        return False
+    i = name.find(key)
+    while i != -1:
+        j = i + len(key)
+        left_ok = i == 0 or not name[i - 1].isalpha()
+        right_ok = j >= len(name) or not name[j].isalpha()
+        if left_ok and right_ok:
+            return True
+        i = name.find(key, i + 1)
+    return False
+
 
 def _norm(s: str) -> str:
     """نرمال‌سازیِ نوشتار — همان norm در assetType.ts: ی/ک عربی و نیم‌فاصله."""
@@ -336,10 +387,22 @@ def is_fund(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool
 
 
 def is_bond(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool:
-    """اوراق بودن از نماد/نام/سکتور — «اوراق تامين مالي» سکتورِ رسمیِ اوراق است."""
+    """اوراق/صکوک/مشارکت/سلف/گواهیِ سپرده/قرارداد آتی بودن — نام، نماد یا سکتور.
+
+    «اوراق تامين مالي» سکتورِ رسمیِ اوراق است، ولی صکوک و اوراق مشارکت و سلفِ
+    کالا سکتورِ صادرکننده را می‌گیرند (صفولا006 → فلزات) و هیچ paperTypeِ
+    معتبری در تابلو ندارند، پس تنها راهِ باقی‌مانده نام است (بالای همین بخش).
+    صندوق‌ها هرگز اینجا نمی‌افتند: classify اول is_fund را می‌پرسد و شش صندوقِ
+    دارایِ «اوراق/مشارکت» در نام همان صندوق می‌مانند (سنجشِ ۱۴۰۵-۰۷-۰۷)."""
     s, n, c = _norm(l_val18).upper(), _norm(l_val30), _norm(sector_name)
-    return (s.startswith(_BOND_SYM_PREFIX) or any(k in n for k in _BOND_NAME)
-            or any(k in c for k in _BOND_SECTOR))
+    if (s.startswith(_BOND_SYM_PREFIX) or any(k in n for k in _BOND_NAME)
+            or any(k in c for k in _BOND_SECTOR)):
+        return True
+    if any(_whole_word(n, k) for k in _BOND_WORD):
+        return True
+    # قرارداد آتی: نام با «آتی» + نمادِ عددپایان (قیدِ assetType.ts — بی‌آن
+    # «آتيه داده پرداز» سهامِ واقعی اوراق می‌شد)
+    return (s[-1:].isdigit() and any(_whole_word(n, k) for k in _FUTURES_WORD))
 
 
 def is_teseh(l_val18: str = "", l_val30: str = "", sector_name: str = "") -> bool:
@@ -611,12 +674,21 @@ def top50_codes(rows) -> set:
 
 
 def in_category(row, cat: str, top50) -> bool:
-    """عضویت در سطرهای جدول خلاصه — دقیقاً همان نه ردیف تریدرزآرنا."""
+    """عضویت در سطرهای جدول خلاصه — دامنه‌ها همان سطرهایِ `market0`ِ تریدرزآرنا
+    است (هویتِ جبریِ `m = st + sf + nsf`؛ توضیح و شاهد: `docs/TA-SCOPE-DECODE.md`).
+    «اوراق، اختيار و سایر» سطرِ خودش را دارد تا جمعِ جدول با کلِ تابلو بخواند."""
     cls, kind = row["cls"], row["kind"]
     if cat == "all":
+        return (cls in (PAPER_STOCK, PAPER_RIGHT)
+                or (cls == PAPER_FUND and kind in _ALL_FUND_KINDS))
+    if cat == "bonds_other":
+        if cls in (PAPER_STOCK, PAPER_RIGHT):
+            return False
+        if cls == PAPER_FUND:
+            return kind not in _ALL_FUND_KINDS + ("gold", "silver", "lev")
         return True
     if cat == "eq_all":
-        return cls in (PAPER_STOCK, PAPER_RIGHT) or (cls == PAPER_FUND and kind in ("equity", "fof"))
+        return cls in (PAPER_STOCK, PAPER_RIGHT) or (cls == PAPER_FUND and kind in _EQ_FUND_KINDS)
     if cat == "stock_right":
         return cls in (PAPER_STOCK, PAPER_RIGHT)
     if cat == "eq_fund":
@@ -777,7 +849,7 @@ def category_rows(rows) -> dict:
 
 # ============================================================ گام ۱: جدول خلاصه
 def summary(conn) -> dict:
-    """جدول بالای تب: ۹ سطر دسته‌ای با شش ستون محاسباتی + سلامت کلان."""
+    """جدول بالای تب: ۱۰ سطر دسته‌ای با شش ستون محاسباتی + سلامت کلان."""
     rows, meta = enrich(conn)
     buckets = category_rows(rows)
     out = []
@@ -838,23 +910,42 @@ def market_total_rials(conn) -> tuple:
     پیش از نخستین سینکِ موفق عددی نیست (نصبِ تازه روی پایگاهِ بسته‌بندی‌شده)؛
     آن‌گاه از آخرین نشستِ تابلو با حذفِ ردیف‌هایِ هم‌تعدادِ سهام برمی‌گردد و
     منبعِ متفاوتی گزارش می‌کند تا مصرف‌کننده بداند عدد پشتیبان است.
+
+    ردیفِ نصفه باورپذیر نیست: سینکِ شبانهٔ ۱۴۰۵-۰۷-۰۶ رویِ بانکِ نصبی فقط یک
+    بازار را گرفت و ۸٬۰۰۹ همت نوشت در حالی که همان روزِ بانکِ توسعه ۲۵۶٬۱۳۱ همت
+    بود (۳٪). سنجهٔ باورپذیری از «جمعِ دستیِ deduped»ِ خودِ تابلو می‌آید — رویِ
+    بانکِ نصبی ۲۴۹٬۰۷۰ همت در برابر ۲۶۰٬۴۶۰ همتِ رسمی، یعنی ۴٪ فاصله — پس ردیفی
+    که نصفِ آن هم نیست نوشتنِ ناقص است، نه ریزشِ بازار. (نویسنده
+    هم از این پس نصفه نمی‌نویسد: fetch_market_total در test_tsetmc.py.)
     """
+    def board_estimate():
+        try:
+            row = conn.execute(
+                "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch"
+                "  WHERE market_cap > 0 AND d_even = (SELECT MAX(d_even) FROM market_watch)"
+                "  GROUP BY total_shares)").fetchone()
+            return _f(row[0]) if row else 0.0
+        except (sqlite3.Error, TypeError, IndexError):
+            return 0.0                   # جدول هنوز ساخته نشده — پایگاهِ کهنه
+
+    est = board_estimate()
     try:
-        v = _f(conn.execute("SELECT market_value FROM market_totals"
-                            " ORDER BY d_even DESC LIMIT 1").fetchone()[0])
-        if v > 0:
-            return v, "tse_market_overview"
-    except (sqlite3.Error, TypeError, IndexError):
-        pass                          # جدول هنوز ساخته نشده — پایگاهِ کهنه
-    try:
-        row = conn.execute(
-            "SELECT SUM(mc) FROM (SELECT MAX(market_cap) AS mc FROM market_watch"
-            "  WHERE market_cap > 0 AND d_even = (SELECT MAX(d_even) FROM market_watch)"
-            "  GROUP BY total_shares)").fetchone()
-        if row and _f(row[0]) > 0:
-            return _f(row[0]), "board_sum_deduped"
+        got = [(int(r[0]), _f(r[1])) for r in conn.execute(
+            "SELECT d_even, market_value FROM market_totals"
+            " ORDER BY d_even DESC LIMIT 5").fetchall()]
+        vals = [v for _d, v in got if v > 0]
+        if vals:
+            # یک‌طرفه: نصفه‌نوشتن عدد را **کوچک** می‌کند، پس فقط پایین‌تر از
+            # مرجع رد می‌شود. بزرگ‌تر بودنِ عددِ رسمی از جمعِ تابلو خطا نیست
+            # (تابلو همهٔ بازارها را ندارد) و ردّ آن فیکسچرِ تست را می‌شکست.
+            lo = (est if est > 0 else max(vals)) * MARKET_TOTAL_MIN_RATIO
+            for v in vals:                          # تازه‌ترینِ باورپذیر
+                if v >= lo:
+                    return v, "tse_market_overview"
     except (sqlite3.Error, TypeError, IndexError):
         pass
+    if est > 0:
+        return est, "board_sum_deduped"
     return 0.0, "unavailable"
 
 
@@ -862,9 +953,9 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
                       total_source: str = "") -> dict:
     """برچسب سلامت کلان از ارزش معاملات (سند FTS صفحهٔ ۳): ≥۲۰ همت مساعد.
 
-    مبنای برچسب «سهام، حق تقدم و ص.سهامی» است، نه کلِ جدول. کل بازار با
-    شمارشِ بلوک‌های صندوق درآمد ثابت ۲۰۸ همت می‌شود (۶۱ همتِ آن تنها از ۱۳۸
-    صندوق درآمد ثابت است) و آن‌وقت آستانهٔ ۲۰ همت همیشه سبز می‌ماند و
+    مبنای برچسب «سهام، حق تقدم و ص.سهامی» است، نه کلِ جدول. کلِ بازار با شمارشِ
+    صندوق‌های درآمد ثابت ۸۹ همت می‌شود (۵۰ همتِ آن تنها از ۱۴۱ صندوق درآمد ثابت
+    است — سنجشِ ۱۴۰۵-۰۷-۰۷) و آن‌وقت آستانهٔ ۲۰ همت همیشه سبز می‌ماند و
     شاخصِ سلامت هیچ‌گاه نمی‌تواند قرمز شود — یعنی بی‌اثر. عددِ کل هم
     گزارش می‌شود، فقط داور نیست.
 

@@ -1,0 +1,127 @@
+{
+ "taken_at": "2026-09-29 18:28:12",
+ "ta_day": "1405/07/07",
+ "ta_hour": 1828,
+ "app_asof": {
+  "d_even": 20260929,
+  "h_even": 182750,
+  "client_d_even": 20260929,
+  "client_lag_days": false,
+  "depth": true,
+  "top50": 50,
+  "n": 3943
+ },
+ "rows": [
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "ارزش",
+   "ta_bt": 88601.6,
+   "our_bt": 89116.2,
+   "err_pct": 0.58
+  },
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "جریان",
+   "ta_bt": -2121.8,
+   "our_bt": -1552.7,
+   "err_pct": -26.82
+  },
+  {
+   "ta_row": "st",
+   "ta_label": "سهام و حق تقدم",
+   "our_key": "stock_right",
+   "metric": "ارزش",
+   "ta_bt": 30588.5,
+   "our_bt": 31373.1,
+   "err_pct": 2.56
+  },
+  {
+   "ta_row": "sf",
+   "ta_label": "صندوق‌های سهامی و مختلط",
+   "our_key": "eq_fund",
+   "metric": "ارزش",
+   "ta_bt": 12890.7,
+   "our_bt": 7831.1,
+   "err_pct": -39.25
+  },
+  {
+   "ta_row": "nsf",
+   "ta_label": "صندوق درآمد ثابت",
+   "our_key": "fixed_fund",
+   "metric": "ارزش",
+   "ta_bt": 45122.4,
+   "our_bt": 49912.0,
+   "err_pct": 10.61
+  },
+  {
+   "ta_row": "lf",
+   "ta_label": "صندوق‌های اهرمی",
+   "our_key": "lev_fund",
+   "metric": "ارزش",
+   "ta_bt": 6822.4,
+   "our_bt": 6822.8,
+   "err_pct": 0.01
+  },
+  {
+   "ta_row": "cf",
+   "ta_label": "صندوق‌های طلا",
+   "our_key": "gold_fund",
+   "metric": "ارزش",
+   "ta_bt": 25978.2,
+   "our_bt": 14976.7,
+   "err_pct": -42.35
+  },
+  {
+   "ta_row": "scf",
+   "ta_label": "صندوق‌های نقره",
+   "our_key": "silver_fund",
+   "metric": "ارزش",
+   "ta_bt": 2358.0,
+   "our_bt": 885.6,
+   "err_pct": -62.44
+  },
+  {
+   "ta_row": "afl",
+   "ta_label": "سهام و واحدهایِ سهمی",
+   "our_key": "eq_all",
+   "metric": "ارزش",
+   "ta_bt": 43479.2,
+   "our_bt": 39204.2,
+   "err_pct": -9.83
+  }
+ ],
+ "combos": [
+  {
+   "label": "ص.سهامی + درآمدِ ثابت",
+   "ta_bt": 58013.0,
+   "our_bt": 57743.1,
+   "err_pct": -0.47
+  },
+  {
+   "label": "طلا + نقره + کالا",
+   "ta_bt": 28336.2,
+   "our_bt": 28949.3,
+   "err_pct": 2.16
+  },
+  {
+   "label": "اهرمی (تنها)",
+   "ta_bt": 6822.4,
+   "our_bt": 6822.8,
+   "err_pct": 0.01
+  }
+ ],
+ "identity": {
+  "i1": {
+   "m": 88601.566044167,
+   "st+sf+nsf": 88601.566044167
+  },
+  "i5": {
+   "m": -2121.7696689088,
+   "st+sf+nsf": -2121.7696689089
+  }
+ }
+}

@@ -110,6 +110,11 @@ SUITES = [
     # بی‌هندسهٔ کهنه اصلاح می‌شوند. بی‌شبکه، رویِ جدول‌هایِ موقتِ کوچک.
     ('dev/candles_from_board_v1062.py',
                                      'candles from the board table + geometry repair + no prune-before-fetch'),
+    # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
+    # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
+    # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.
+    ('dev/pulse_ta_scope_v1063.py',
+                                     'pulse scopes match tradersarena + no half-written market total'),
     # TAPE-F / JET-BREAK / HIST-SRC: پنج فیلترِ تابلو عینِ جزوه، و «نبودنِ
     # داده» هیچ‌وقت قبول نیست. پیش از این هیچ سویتی این فرمول‌ها را نمی‌پوشاند.
     ('dev/tape_filters_v1034.py',   'tape filters: five formulas match the notebook'),
