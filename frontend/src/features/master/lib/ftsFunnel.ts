@@ -23,11 +23,34 @@ import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { TechVerdict } from '../api/useFtsTechBoard';
 import {
   DEFAULT_FUND_FLOOR,
+  DEFAULT_TECH_SCREENS,
   DEFAULT_UNMEASURED,
   type UnmeasuredPolicy,
 } from '../stores/funnelPrefsStore';
 
 const FILE_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'] as const;
+
+/** واژگانِ روندِ موتور (`_fts_classify_trend`) به زبانِ خودِ چارت ۳ ستون T. */
+export const TREND_LABEL: Record<string, string> = {
+  up: 'صعودی',
+  down: 'نزولی',
+  range: 'خنثی',
+  na: 'بی‌ساختار',
+};
+
+export function trendLabel(t: string | null | undefined): string {
+  if (!t) return '—';
+  return TREND_LABEL[t] ?? '—';
+}
+
+/** سرستون‌هایِ پنج‌شاخصه — عینِ پنج سطرِ صفحۀ ۱ چارت (بنیادی:F). */
+export const IND_COLUMNS = [
+  { key: 'i1', label: 'رشد فروش', full: 'درآمد و فروش از ابتدای سال تا اکنون، در برابرِ سالِ قبل (کفِ ۴۰٪، هدفِ ۶۰٪)' },
+  { key: 'i2', label: 'EPSِ سه‌ساله', full: 'EPS (سود و زیان) سه سال گذشته' },
+  { key: 'i3', label: 'حاشیه ناخالص', full: 'حاشیه سود ناخالص (کفِ ۲۰٪، استانداردِ ۳۰٪)' },
+  { key: 'i4', label: 'فروش÷ارزش', full: 'تخمینِ فروشِ ۱۲ ماهه ÷ ارزش بازار (کفِ ۰٫۳۳، ایده‌آلِ ۱٫۰)' },
+  { key: 'i5', label: 'نرخ‌گذاری', full: 'نرخ‌گذاری دلاری/ریالی — دستوری بودن وتو است' },
+] as const;
 
 /**
  * سبکِ انتخابی درِ همان درخت استراتژی، دربِ قیف را تعیین می‌کند — عینِ شاخۀ
@@ -59,11 +82,15 @@ export type StageMark = 'ok' | 'no' | 'na';
 export type FunnelOptions = {
   fundFloor: number;
   unmeasured: UnmeasuredPolicy;
+  /** true = تکنیکال غربال می‌کند (جزوه). false = ردشده‌ها فقط برچسب می‌خورند
+   *  و به بنیادی می‌رسند، تا خودِ مالک ستونِ روندِ هفتگی را بخواند. */
+  techScreens: boolean;
 };
 
 export const DEFAULT_FUNNEL_OPTIONS: FunnelOptions = {
   fundFloor: DEFAULT_FUND_FLOOR,
   unmeasured: DEFAULT_UNMEASURED,
+  techScreens: DEFAULT_TECH_SCREENS,
 };
 
 export type FunnelEntry = {
@@ -81,6 +108,13 @@ export type FunnelEntry = {
   fund: StageMark;
   fundWhy: string;
   score: number | null;
+  /** روندِ دو زمانه همان‌طور که موتور می‌بیند: 'up' | 'down' | 'range' | 'na' | null */
+  trendW: string | null;
+  trendD: string | null;
+  /** ستاپ‌های فعالِ این نماد (جت/فیبو/CHoCH/…) — ستونِ مرحلۀ تکنیکال */
+  setups: string;
+  /** تک‌تکِ پنج شاخص: ok / no / na — همان سطرهای صفحۀ ۱ چارت */
+  inds: StageMark[];
 };
 
 export type FunnelStageKey = 'tape' | 'technical' | 'fundamental' | 'handover';
@@ -90,6 +124,9 @@ export type FunnelStage = {
   entries: FunnelEntry[];
   /** چه تعداد از مرحلۀ قبل بیرون افتاد (تکنیکال و بنیادی هر دو حذف می‌کنند) */
   dropped: number;
+  /** چه تعداد روی این مرحله برچسبِ «رد» خوردند — با «رد نکند، خودم چک می‌کنم»
+   *  dropped صفر است ولی این شمار همان ردشده‌ها را نشان می‌دهد */
+  rejected: number;
   /** چه تعداد «سنجیده نشد» روی این مرحلۀ آنها خورده است */
   unmeasured: number;
   /** در مرحلۀ بنیادی: سنجیده‌نشده‌ها — نه رد شده‌اند، نه به تحویل می‌روند */
@@ -132,6 +169,9 @@ export type TechSignals = {
   rangeBreak: boolean;
   hourglass: boolean;
   pointHunt: boolean;
+  /** روندِ خامِ دو زمانه از خودِ موتور (`_fts_classify_trend`) */
+  trendW: string | null;
+  trendD: string | null;
 };
 
 /** ردیفِ اسکرینر؛ `null` یعنی تحلیلِ دو زمانه روی این نماد اجرا نشده است */
@@ -149,6 +189,8 @@ export function techFromScreen(sc: FtsScreenRow | null): TechSignals | null {
     rangeBreak: sc.tech_range_break === true,
     hourglass: sc.tech_hourglass_active === true,
     pointHunt: false,
+    trendW: sc.tech_trend_w ?? null,
+    trendD: sc.tech_trend_d ?? null,
   };
 }
 
@@ -165,6 +207,8 @@ export function techFromVerdict(v: TechVerdict): TechSignals {
     rangeBreak: v.rangeBreak,
     hourglass: v.hourglass,
     pointHunt: v.pointHunt,
+    trendW: v.trendW ?? null,
+    trendD: v.trendD ?? null,
   };
 }
 
@@ -272,6 +316,18 @@ function fundMark(
     : { s: 'no', why: `بنیادی: ${toFaDigits(score)} از ${toFaDigits(5)} — زیرِ کفِ ${toFaDigits(opts.fundFloor)}`, score };
 }
 
+/**
+ * پنج شاخص یکی‌یکی، نه فقط جمعشان. `i1_pass … i5_pass` را همان موتورِ
+ * `api/screener` می‌نویسد، پس این‌جا فقط نگاشت می‌شوند؛ `null` یعنی آن شاخص
+ * داوری نشد (بی‌گزارش) و «رد» نیست.
+ */
+function indMarks(sc: FtsScreenRow | null): StageMark[] {
+  if (!sc || sc.applicable === false) return ['na', 'na', 'na', 'na', 'na'];
+  return [sc.i1_pass, sc.i2_pass, sc.i3_pass, sc.i4_pass, sc.i5_pass].map(
+    (v): StageMark => (v === true ? 'ok' : v === false ? 'no' : 'na'),
+  );
+}
+
 /** ردیف‌هایِ مرحلۀ تابلو: دامنهٔ زندهٔ تابلو که دستِ‌کم یک فیلترِ درب را رد کرده */
 function tapeRows(
   rows: MarketRow[],
@@ -339,6 +395,10 @@ export function buildFunnel(
         fund: f.s,
         fundWhy: f.why,
         score: f.score,
+        trendW: sig?.trendW ?? null,
+        trendD: sig?.trendD ?? null,
+        setups: sig ? activeSetups(sig) : '',
+        inds: indMarks(screen),
       };
     })
     .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
@@ -349,8 +409,11 @@ export function buildFunnel(
   // ۲) تکنیکال: وتوی هفتگی یا نبودِ ستاپِ همان سبک ⇒ بیرون (چارت ۳، ستون T).
   //    «سنجیده نشد» نمی‌افتد — بی‌داده وتو نیست — به مرحلۀ بعد می‌رود و
   //    برچسبِ «سنجیده نشد» رویِ خودش می‌ماند.
-  const techKept = picked.filter((e) => e.tech !== 'no');
-  const techDropped = picked.length - techKept.length;
+  //    با `techScreens: false` همان ردیف‌ها حذف نمی‌شوند، فقط برچسبِ رد
+  //    می‌خورند و به بنیادی می‌رسند: مالک ستونِ روندِ هفتگی را خودش می‌خواند.
+  const techRejected = picked.filter((e) => e.tech === 'no');
+  const techKept = opts.techScreens ? picked.filter((e) => e.tech !== 'no') : picked;
+  const techDropped = opts.techScreens ? techRejected.length : 0;
   // ۳) بنیادی: «ردِ صریح» همیشه بیرون می‌افتد. سرنوشتِ «سنجیده نشد» دستِ خودِ
   //    مالک است (پیچِ `unmeasured` در store): درِ انتظار بماند (پیش‌فرضِ جزوه)،
   //    با برچسب به تحویل برود، یا از قیف حذف شود.
@@ -369,11 +432,12 @@ export function buildFunnel(
     boardScope: scope.length,
     total: picked.length,
     stages: {
-      tape: { key: 'tape', entries: picked, dropped: 0, unmeasured: 0, pending: [] },
+      tape: { key: 'tape', entries: picked, dropped: 0, rejected: 0, unmeasured: 0, pending: [] },
       technical: {
         key: 'technical',
         entries: picked,
         dropped: techDropped,
+        rejected: techRejected.length,
         unmeasured: unmeasuredOn(picked, 'tech'),
         pending: [],
       },
@@ -381,10 +445,11 @@ export function buildFunnel(
         key: 'fundamental',
         entries: passed,
         dropped: fundDropped,
+        rejected: techKept.filter((e) => e.fund === 'no').length,
         unmeasured: pending.length,
         pending,
       },
-      handover: { key: 'handover', entries: handover, dropped: 0, unmeasured: 0, pending: [] },
+      handover: { key: 'handover', entries: handover, dropped: 0, rejected: 0, unmeasured: 0, pending: [] },
     },
   };
 }

@@ -58,6 +58,7 @@ export type TechVerdict = {
   decision: string | null;
   matrixDesc: string | null;
   trendW: string | null;
+  trendD: string | null;
   jet: boolean;
   fibZone: string | null;
   chochBull: boolean;
@@ -101,6 +102,7 @@ export function useFtsTechBoard(symbols: string[]) {
         s,
         f.trend?.matrix?.decision ?? '',
         f.trend?.W?.trend ?? '',
+        f.trend?.D?.trend ?? '',
         f.jet?.active ? 1 : 0,
         f.fib?.zone_33_40?.in_zone ? 1 : 0,
         f.fib?.zone_618_70?.in_zone ? 1 : 0,
@@ -125,6 +127,7 @@ export function useFtsTechBoard(symbols: string[]) {
         decision: f.trend?.matrix?.decision ?? null,
         matrixDesc: f.trend?.matrix?.desc ?? null,
         trendW: f.trend?.W?.trend ?? null,
+        trendD: f.trend?.D?.trend ?? null,
         jet: f.jet?.active === true,
         fibZone: fib33 ? '33-40' : fib61 ? '61.8-70' : null,
         chochBull: f.choch?.bullish === true,

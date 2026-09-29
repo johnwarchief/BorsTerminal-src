@@ -970,7 +970,7 @@ export default function StrategyTreePage() {
                   <span className="text-2xs text-accent-yellow font-black">کف تاریخی</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                  سهام بزرگ بنیادی در تایم هفتگی زیر MA=52 و RSI زیر ۷ در اشباع عمیق؛ خرید سنگین پله‌ای به دید ۳ تا ۱۰ ساله.
+                  سهام بزرگ بنیادی در تایم هفتگی زیر MA=52 و RSIِ پنج‌رفته در اشباع عمیق (زیر ۳۰)؛ خرید سنگین پله‌ای به دید ۳ تا ۱۰ ساله.
                 </p>
               </div>
 

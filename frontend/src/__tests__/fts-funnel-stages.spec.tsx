@@ -7,7 +7,7 @@
 //      دورِ ریخته‌ها نمی‌رود.
 //   3) ورودیِ قیف خودِ پنج فیلتر است، نه الگوهایِ محلی — «ساعت قوی» نماد را
 //      داخلِ قیف نمی‌آورد، چون فیلترنویسِ سایت آن را نمی‌شناسد.
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MarketRow } from '@shared/types/marketRow';
@@ -49,15 +49,30 @@ const ROWS = [
 ];
 
 const SCREEN = [
-  screened('فولاد', 5, { tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_jet: true }),
+  screened('فولاد', 5, {
+    tech_matrix_decision: 'PERMITTED',
+    tech_trend_w: 'up',
+    tech_trend_d: 'up',
+    tech_jet: true,
+    // پنج شاخص یکی‌یکی، همان چیزی که ستون‌هایِ مرحلۀ بنیادی می‌خوانند
+    i1_pass: true, i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+    rev_growth: 52, eps_last: 318, gross_margin: 26, sales_to_mcap: 0.41,
+  }),
   screened('شپنا', 2, {
     tech_matrix_decision: 'PERMITTED',
     tech_trend_w: 'up',
+    tech_trend_d: 'down',
     tech_fib_zone: '61.8-70',
+    i1_pass: false, i2_pass: null, i3_pass: false, i4_pass: true, i5_pass: true,
+    rev_growth: 11, gross_margin: 12,
   }),
-  screened('سپ', 4, { tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up' }),
-  screened('همراه', 4, { tech_matrix_decision: 'REJECT', weekly_veto: true, tech_trend_w: 'down' }),
+  screened('سپ', 4, { tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_trend_d: 'range' }),
+  screened('همراه', 4, { tech_matrix_decision: 'REJECT', weekly_veto: true, tech_trend_w: 'down', tech_trend_d: 'down' }),
 ];
+
+/** هاب‌هایِ قابل‌تغییر برایِ دو mockِ داده — تستِ نگارشِ ستون‌ها ردیف می‌چیند. */
+const feedMock = { rows: ROWS as MarketRow[] };
+const screenMock = { rows: SCREEN as FtsScreenRow[] };
 
 const build = (preset: TreePreset = 'custom', chips: string[] = []) =>
   buildFunnel(ROWS, DEFAULT_TAPE_FILTER_CONFIG, chips, SCREEN, new Set(['همراه']), preset);
@@ -99,6 +114,7 @@ describe('قیفِ FTS', () => {
       decision: 'PERMITTED',
       matrixDesc: null,
       trendW: 'up',
+      trendD: 'up',
       jet: false,
       fibZone: null,
       chochBull: false,
@@ -241,10 +257,10 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
 });
 
 vi.mock('@features/market/api/useMarketFeed', () => ({
-  useMarketFeed: () => ({ data: { data: ROWS } }),
+  useMarketFeed: () => ({ data: { data: feedMock.rows } }),
 }));
 vi.mock('@features/fundamental/api/useFtsScreen', () => ({
-  useFtsScreen: () => ({ data: { data: SCREEN } }),
+  useFtsScreen: () => ({ data: { data: screenMock.rows } }),
 }));
 vi.mock('@features/portfolio/api/usePortfolio', () => ({
   usePortfolio: () => ({ data: { portfolio: [{ symbol: 'همراه' }] } }),
@@ -253,6 +269,162 @@ vi.mock('@features/portfolio/api/usePortfolio', () => ({
 vi.mock('@features/master/api/useFtsTechBoard', () => ({
   useFtsTechBoard: () => ({ map: new Map(), loading: false, wanted: 0, resolved: 0 }),
 }));
+
+/**
+ * مالک: «هر بخش باید ستونِ مربوط به خودش را داشته باشد، مثلا تکنیکال هفتگی
+ * صعودیه یا نزولی … یکاری هم بکن که تکنیکال رد نشن تا به بنیادی برسن».
+ * دو چیزِ این‌جا تست می‌شود: سرستون‌هایِ جدا برایِ هر مرحله (تا پیش از این
+ * چهار جدول یک سرستون مشترک داشتند)، و کلیدِ «خودم چک می‌کنم» که با
+ * پیش‌فرضِ جزوه (غربال) خاموش است و ردشده‌ها را فقط برچسب می‌زند.
+ */
+describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکال را خودم چک می‌کنم»', () => {
+  const buildWith = (opts: Partial<FunnelOptions> = {}) =>
+    buildFunnel(
+      ROWS,
+      DEFAULT_TAPE_FILTER_CONFIG,
+      [],
+      SCREEN,
+      new Set<string>(),
+      'custom',
+      new Map(),
+      { ...DEFAULT_FUNNEL_OPTIONS, ...opts },
+    );
+
+  it('پیش‌فرضِ جزوه: تکنیکال غربال می‌کند (رأیِ ملغی‌شدۀ «فقط نشانه» برگشته نیست)', () => {
+    expect(DEFAULT_FUNNEL_OPTIONS.techScreens).toBe(true);
+  });
+
+  it('«رد نکند»: هیچ نمادی نمی‌افتد، ولی ردِّ تکنیکال رویش می‌ماند و به بنیادی می‌رسد', () => {
+    const on = buildWith();
+    expect(on.stages.technical.dropped).toBe(2);
+    expect(syms(on.stages.fundamental.entries)).not.toContain('همراه');
+
+    const off = buildWith({ techScreens: false });
+    // هیچی حذف نشده، پس dropped صفر است؛ شمارِ رد خورده پنهان نمی‌شود
+    expect(off.stages.technical.dropped).toBe(0);
+    expect(off.stages.technical.rejected).toBe(2);
+    // برچسب و دلیل سرِ جایشان‌اند تا کاربر بداند چرا این دو رد شده‌اند
+    const hamrah = off.stages.technical.entries.find((e) => e.symbol === 'همراه');
+    expect(hamrah?.tech).toBe('no');
+    expect(hamrah?.techWhy).toContain('وتوی هفتگی');
+    // و به مرحلۀ بنیادی رسیده‌اند: آنجا خودشان داوری می‌شوند
+    expect(syms(off.stages.fundamental.entries)).toEqual(['سپ', 'فولاد', 'همراه']);
+    // (شپنا بنیادش رد است — نمرۀ ۲ زیرِ کفِ سه — پس از همین‌جا می‌افتد)
+    expect(off.stages.fundamental.rejected).toBe(1);
+  });
+
+  it('روندِ دو زمانه از همان ردیفِ اسکرینر به ستون‌هایِ تکنیکال می‌رسد', () => {
+    const f = buildWith({ techScreens: false });
+    const t = (s: string) => f.stages.technical.entries.find((e) => e.symbol === s);
+    expect(t('فولاد')?.trendW).toBe('up');
+    expect(t('فولاد')?.trendD).toBe('up');
+    expect(t('همراه')?.trendW).toBe('down');
+    // خار ردیفِ اسکرینر ندارد ⇒ نه روندی، نه ستاپی؛ «سنجیده نشد» نه «رد»
+    expect(t('خار')?.trendW).toBeNull();
+    expect(t('خار')?.tech).toBe('na');
+    expect(t('فولاد')?.setups).toContain('جت');
+  });
+
+  it('پنج شاخص یکی‌یکی در ستون‌هایِ خودِ مرحلۀ بنیادی، با عددِ همان شاخص', () => {
+    const f = buildWith({ techScreens: false });
+    const e = f.stages.fundamental.entries.find((x) => x.symbol === 'فولاد');
+    expect(e?.inds).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
+    // شپنا در بنیادی رد می‌شود، پس ردیفش را از مرحلۀ تکنیکال می‌خوانیم
+    const sh = f.stages.technical.entries.find((x) => x.symbol === 'شپنا');
+    expect(sh?.inds).toEqual(['no', 'na', 'no', 'ok', 'ok']);
+    // خار هیچ ردیفِ اسکرینری ندارد ⇒ پنج «na»، نه پنج «no»
+    expect(f.stages.technical.entries.find((x) => x.symbol === 'خار')?.inds)
+      .toEqual(['na', 'na', 'na', 'na', 'na']);
+  });
+
+  it('عددِ هر شاخص با جداکنندهٔ هزارگان و به زبانِ خودِ جدول می‌آید (free ⇒ آزاد)', () => {
+    // دو نقصِ دیدنی رویِ دادهٔ زنده: رشد فروشِ میلیاردی بی‌جداکننده خوانده
+    // نمی‌شد، و نرخ‌گذاری با واژگانِ بک‌اند («free») به کاربر نشان داده می‌شد.
+    useFunnelPrefsStore.getState().reset();
+    screenMock.rows = [screened('بزرگ', 5, {
+      tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_jet: true,
+      i1_pass: true, i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+      rev_growth: 3885990000, eps_last: -342895, gross_margin: 26, sales_to_mcap: 0.41,
+      pricing_mode: 'free',
+    })];
+    feedMock.rows = [board({ symbol: 'بزرگ', f_susp: true })];
+    try {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <FtsFunnelStages preset="custom" />
+        </QueryClientProvider>,
+      );
+      const stage = screen.getByTestId('funnel-stage-fundamental');
+      const row = stage.querySelector('tbody tr[data-fkey="بزرگ"]');
+      const text = row?.textContent ?? '';
+      expect(text).toContain('۳٬۸۸۵٬۹۹۰٬۰۰۰٪');
+      expect(text).toContain('آزاد');
+      expect(text).not.toContain('free');
+      expect(text).toContain('✓');
+    } finally {
+      screenMock.rows = SCREEN;
+      feedMock.rows = ROWS;
+    }
+  });
+
+  it('سرستون‌ها دیگر یکسان نیستند: تکنیکال هفتگی/روزانه/ستاپ دارد، تابلو ندارد', () => {    useFunnelPrefsStore.getState().reset();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages />
+      </QueryClientProvider>,
+    );
+    const tech = within(screen.getByTestId('funnel-stage-technical'));
+    for (const h of ['هفتگی', 'روزانه', 'ستاپ', 'داوری']) {
+      expect(tech.getByRole('columnheader', { name: h })).toBeInTheDocument();
+    }
+    expect(tech.queryByRole('columnheader', { name: 'حجم/ماه' })).not.toBeInTheDocument();
+
+    const tape = within(screen.getByTestId('funnel-stage-tape'));
+    expect(tape.getByRole('columnheader', { name: 'نشانه' })).toBeInTheDocument();
+    expect(tape.queryByRole('columnheader', { name: 'هفتگی' })).not.toBeInTheDocument();
+
+    const fund = within(screen.getByTestId('funnel-stage-fundamental'));
+    for (const h of ['رشد فروش', 'EPS سه‌ساله', 'حاشیه ناخالص', 'فروش÷ارزش', 'نرخ‌گذاری']) {
+      // سرستون دو بار می‌آید (جدولِ اصلی + جدولِ «سنجیده نشد»)، پس همه را می‌شماریم
+      expect(fund.getAllByRole('columnheader', { name: h }).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('روندِ هفتگی در جدولِ تکنیکال به زبانِ خودِ چارت نوشته می‌شود (نزولی، نه null)', () => {
+    useFunnelPrefsStore.getState().reset();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages />
+      </QueryClientProvider>,
+    );
+    const row = screen.getByTestId('funnel-stage-technical').querySelector('[data-fkey="همراه"]');
+    expect(row?.textContent).toContain('نزولی');
+    expect(row?.textContent).toContain('رد');
+  });
+
+  it('کلیدِ درِ تکنیکال کنارِ همان مرحله است، با پیش‌فرضِ جزوه، و برگشت دارد', () => {
+    useFunnelPrefsStore.getState().reset();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages />
+      </QueryClientProvider>,
+    );
+    expect(useFunnelPrefsStore.getState().techScreens).toBe(true);
+    expect(screen.queryByTestId('funnel-rejected-technical')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('funnel-tech-selfcheck'));
+    expect(useFunnelPrefsStore.getState().techScreens).toBe(false);
+    // حالا ردشده‌ها در جدول‌اند و شمارِ «رد (بی‌حذف)» پیدا می‌شود
+    expect(screen.getByTestId('funnel-rejected-technical').textContent).toContain('۲');
+    expect(screen.getByTestId('funnel-tech-selfcheck')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByTestId('funnel-tech-screens'));
+    expect(useFunnelPrefsStore.getState().techScreens).toBe(true);
+    expect(screen.queryByTestId('funnel-rejected-technical')).not.toBeInTheDocument();
+    // «بازگشت به جزوه» با همین پیچ هم بیرون از جزوه می‌آید
+    fireEvent.click(screen.getByTestId('funnel-tech-selfcheck'));
+    fireEvent.click(screen.getByTestId('funnel-prefs-reset'));
+    expect(useFunnelPrefsStore.getState().techScreens).toBe(true);
+  });
+});
 
 /**
  * مالک پرسید «چرا برای قیف غربالگری انتخاب استراتژی‌ها حذف شد؟» — بعد از

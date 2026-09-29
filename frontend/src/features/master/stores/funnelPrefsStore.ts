@@ -1,10 +1,13 @@
 // features/master/stores/funnelPrefsStore.ts -- دستِ کاربر درِ قیفِ غربالگری
 //
 // قیفِ FTS چهار مرحلۀ جزوه را می‌گذراند و درِ بنیادی سخت‌گیرترینشان است.
-// این دو گزینه سخت‌گیریِ جزوه را کم نمی‌کنند، فقط حقِ انتخاب را به خودِ مالک
-// می‌دهند؛ پیش‌فرض‌هایشان عینِ جزوه است (کفِ سه از پنج، و «بی‌داده وتو نیست»):
+// این گزینه‌ها سخت‌گیریِ جزوه را کم نمی‌کنند، فقط حقِ انتخاب را به خودِ مالک
+// می‌دهند؛ پیش‌فرض‌هایشان عینِ جزوه است (کفِ سه از پنج، «بی‌داده وتو نیست»،
+// و تکنیکالِ غربال‌کن):
 //   - `fundFloor`   : چند شاخص از پنج‌شاخصهٔ کدال کافی است.
 //   - `unmeasured`  : با ردیفی که بنیادش واقعاً سنجیده نشده چه شود.
+//   - `techScreens`: آیا وتوی تکنیکال نماد را حذف کند، یا فقط برچسب بخورد
+//                    و ردیف به بنیادی برسد تا خودِ مالک روندِ هفتگی را ببیند.
 import { create } from 'zustand';
 
 const STORAGE_KEY = 'fts.funnel.prefs.v1';
@@ -29,11 +32,23 @@ export const UNMEASURED_HINT: Record<UnmeasuredPolicy, string> = {
   drop: 'از قیف بیرون می‌افتند تا فهرستِ تحویل فقط سنجیده‌ها را نشان دهد.',
 };
 
+/** پیش‌فرضِ جزوه: تکنیکال غربال می‌کند (رأیِ مالک، چارت ۳ ستون T). */
+export const DEFAULT_TECH_SCREENS = true;
+
+export const TECH_SCREEN_LABEL = { on: 'رد می‌کند', off: 'خودم چک می‌کنم' } as const;
+
+export const TECH_SCREEN_HINT = {
+  on: 'وتوی هفتگی یا نبودِ ستاپِ سبک، نماد را از قیف بیرون می‌اندازد — عینِ درِ چارت.',
+  off: 'ردشده‌ها درِ جدولِ تکنیکال با دلیل (روندِ هفتگی و ستاپ) می‌مانند و به بنیادی هم می‌روند؛ آنجا خودشان فیلتر می‌شوند.',
+} as const;
+
 export type FunnelPrefsState = {
   fundFloor: number;
   unmeasured: UnmeasuredPolicy;
+  techScreens: boolean;
   setFundFloor: (n: number) => void;
   setUnmeasured: (p: UnmeasuredPolicy) => void;
+  setTechScreens: (on: boolean) => void;
   reset: () => void;
 };
 
@@ -42,22 +57,33 @@ function clampFloor(n: number): number {
   return Math.min(FUND_FLOOR_MAX, Math.max(1, Math.round(n)));
 }
 
-function saved(): { fundFloor: number; unmeasured: UnmeasuredPolicy } {
+type SavedPrefs = { fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean };
+
+const JOZVE: SavedPrefs = {
+  fundFloor: DEFAULT_FUND_FLOOR,
+  unmeasured: DEFAULT_UNMEASURED,
+  techScreens: DEFAULT_TECH_SCREENS,
+};
+
+function saved(): SavedPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { fundFloor: DEFAULT_FUND_FLOOR, unmeasured: DEFAULT_UNMEASURED };
-    const p = JSON.parse(raw) as { fundFloor?: unknown; unmeasured?: unknown };
+    if (!raw) return JOZVE;
+    const p = JSON.parse(raw) as { fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown };
     return {
       fundFloor: clampFloor(typeof p.fundFloor === 'number' ? p.fundFloor : DEFAULT_FUND_FLOOR),
       unmeasured:
         p.unmeasured === 'pass' || p.unmeasured === 'drop' ? p.unmeasured : DEFAULT_UNMEASURED,
+      // کلیدِ تازه: فایلِ ذخیره‌شده‌هایِ قدیم این را ندارد. نبودش یعنی همان
+      // رفتارِ همیشگی (غربال)، نه تغییرِ بی‌صدا.
+      techScreens: typeof p.techScreens === 'boolean' ? p.techScreens : DEFAULT_TECH_SCREENS,
     };
   } catch {
-    return { fundFloor: DEFAULT_FUND_FLOOR, unmeasured: DEFAULT_UNMEASURED };
+    return JOZVE;
   }
 }
 
-function persist(s: { fundFloor: number; unmeasured: UnmeasuredPolicy }) {
+function persist(s: SavedPrefs) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
   } catch {
@@ -70,6 +96,7 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
   return {
     fundFloor: init.fundFloor,
     unmeasured: init.unmeasured,
+    techScreens: init.techScreens,
     setFundFloor: (n) => {
       const v = clampFloor(n);
       persist({ ...get(), fundFloor: v });
@@ -79,9 +106,13 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
       persist({ ...get(), unmeasured: p });
       set({ unmeasured: p });
     },
+    setTechScreens: (on) => {
+      persist({ ...get(), techScreens: on });
+      set({ techScreens: on });
+    },
     reset: () => {
-      persist({ fundFloor: DEFAULT_FUND_FLOOR, unmeasured: DEFAULT_UNMEASURED });
-      set({ fundFloor: DEFAULT_FUND_FLOOR, unmeasured: DEFAULT_UNMEASURED });
+      persist(JOZVE);
+      set(JOZVE);
     },
   };
 });
