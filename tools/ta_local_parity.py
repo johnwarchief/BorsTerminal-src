@@ -1,10 +1,9 @@
 """ta_local_parity.py — پنل‌به‌پنل: فیدِ تریدرزآرنا در برابرِ موتورِ لوکالِ خودِ برنامه
 
-چرا: پنج روتِ `/api/market-status/*` پروکسۀ زندۀ tradersarena.ir بودند و هیچ
-مصرف‌کننده‌ای در UI نداشتند؛ در v1.0.53+ از `api/market_status.py` حذف شدند. این
-اسکریپت پوششِ هر پنل را با دادهٔ خودِ برنامه می‌سنجد و اگر پروکسی در دسترس نبود
-(حالتِ عادیِ امروز) از فیدهایِ بایگانی‌شدۀ `_audit/ta/` می‌خواند، پس بعد از حذف هم
-answer می‌دهد.
+چرا: پنج روتِ `/api/market-status/*` پروکسۀ tradersarena.ir بودند و هیچ
+مصرف‌کننده‌ای در UI نداشتند؛ در v1.0.53+ از `api/market_status.py` حذف شدند.
+منبعِ «او» حالا خودِ آدرسِ عمومیِ تریدرزآرنا است (`--ta live`، فقط GETِ خواندنی)؛
+اگر نرسید از فیدهایِ بایگانی‌شدۀ `_audit/ta/` می‌خواند (`--ta archive`/`auto`).
 
 اعدادِ ریالی این‌جا مقایسه نمی‌شوند (واحدِ دو طرف یکی نیست؛ آن مقایسه با تبدیلِ
 درست در `docs/TA-PARITY-1405-07-04.md` آمده). این اسکریپت **ساختار و پوشش** را
@@ -24,8 +23,20 @@ import sys
 import urllib.request
 
 ARCHIVE_DIR = os.path.join("_audit", "ta")
+TA_ORIGIN = "https://tradersarena.ir"
+TA_HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": f"{TA_ORIGIN}/market",
+              "Accept": "application/json"}
 
-# هر پنلِ TA: (آدرسِ پروکسی، فایلِ بایگانی، کلیدِ زیرِ بدنه در پاسخِ پروکسی)
+# پنل‌های TA که بعد از حذفِ پروکسی مستقیماً خوانده می‌شوند (فقط GETِ عمومی).
+TA_LIVE = {
+    "overview": "/data/market0",
+    "timeline": "/data/market/chart/totals0",
+    "industries": "/data/industries-csv",
+    "mainwatch": "/data/mainwatch/symbols",
+    "histo": "/data/market/histo-status",
+}
+
+# هر پنلِ TA: (آدرسِ پروکسیِ پیشین — حالا فقط برایِ نامِ کلیدِ بدنه، فایلِ بایگانی، کلیدِ زیرِ بدنه)
 TA_PANELS = {
     "overview": ("/api/market-status/overview", "market0.json", "market"),
     "timeline": ("/api/market-status/timeline", "market_chart_totals0.json", "data"),
@@ -52,8 +63,13 @@ def _n(v) -> int:
 
 
 def get_live(base: str, path: str):
+    return get_url(base + path)
+
+
+def get_url(url: str):
     try:
-        with urllib.request.urlopen(base + path, timeout=60) as r:
+        req = urllib.request.Request(url, headers=TA_HEADERS)
+        with urllib.request.urlopen(req, timeout=60) as r:
             return json.loads(r.read().decode("utf-8"))
     except Exception:
         return None
@@ -81,12 +97,12 @@ def main() -> int:
     args = ap.parse_args()
 
     rows, uncovered = [], 0
-    for panel, (path, archive, body_key) in TA_PANELS.items():
+    for panel, (_proxy, archive, body_key) in TA_PANELS.items():
         src, ta = "—", None
-        if args.ta in ("live", "auto"):
-            d = get_live(args.base, path)
-            if d is not None and d.get("status") != "unreachable":
-                ta, src = ta_body(d, body_key), "پروکسیِ زنده"
+        if args.ta in ("live", "auto") and panel in TA_LIVE:
+            d = get_url(TA_ORIGIN + TA_LIVE[panel])
+            if d is not None:
+                ta, src = ta_body(d, body_key), "تریدرزآرنا زنده"
         if ta is None and args.ta in ("archive", "auto"):
             ta, src = get_archive(archive), f"بایگانیِ `_audit/ta/{archive}`"
         if ta is None:

@@ -33,7 +33,7 @@ const BASE = (process.env.PROBE_BASE ?? 'http://127.0.0.1:8010').replace(/\/+$/,
 const ORIGIN = new URL(BASE).origin;
 const MINUTES = Number(process.env.PROBE_MINUTES ?? 10);
 const POLL = process.env.PROBE_POLL ?? '5000';
-const OUT = '_audit/live_session.json';
+const OUT = process.env.PROBE_OUT ?? '_audit/live_session.json';
 const ROWS = Number(process.env.PROBE_ROWS ?? 4);
 
 const apiPath = (u: string) => (u.startsWith(ORIGIN) ? u.slice(ORIGIN.length) : u);
@@ -111,7 +111,12 @@ const setPoll = async () => {
 };
 const pollSet = await setPoll();
 
-/** وضعیتِ ردیف‌های دیدنی: متنِ هر ستون + کلاسِ فلش + زنده بودنِ گره */
+/** وضعیتِ ردیف‌های دیدنی: متنِ هر ستون + زنده بودنِ گره
+ *
+ * فلاش *per-cell* خوانده نمی‌شود: کلاسِ `flash-*` روی گره‌ای می‌نشیند و
+ * پیش از نمونهٔ بعدی (۳۰s در برابرِ ۵s پول) حذف می‌شود، پس «کلاسِ الان»
+ * شاهدِ «آیا همان لحظه فلاش خورد» نیست. فلاش از `__flashLog` می‌آید که
+ * MutationObserver درِ خودِ صفحه پر می‌کند (پایین‌تر). */
 const snapshot = (n: number) =>
   page.evaluate(
     (n: number) =>
@@ -121,7 +126,6 @@ const snapshot = (n: number) =>
           const cells = Array.from(row.children).map((c) => (c.textContent ?? '').trim());
           const last = row.children[1];
           const num = (last?.querySelector('.num') ?? last) as HTMLElement | null;
-          const cls = num?.className ?? '';
           const marked = Boolean(num?.hasAttribute('data-live'));
           if (num && !marked) {
             num.setAttribute('data-live', '1');
@@ -130,7 +134,6 @@ const snapshot = (n: number) =>
           return {
             symbol: cells[0] ?? '',
             cells,
-            flash: cls.split(/\s+/).filter((c) => c.startsWith('flash-')).join(',') || 'none',
             nodeOriginal: marked,
             sinceMarkMs: num?.getAttribute('data-live-at')
               ? Date.now() - Number(num.getAttribute('data-live-at'))
@@ -139,6 +142,36 @@ const snapshot = (n: number) =>
         }),
     n,
   );
+
+/** ضبطِ هر گذارِ کلاس به `flash-*` روی ستون‌های ردیفِ تابلو — شاهدِ فلاش،
+ *  لحظه‌ای و ستون‌به‌ستون، نه از روی کلاسی که دیر خوانده می‌شود. */
+const startFlashLog = () =>
+  page.evaluate(() => {
+    const w = window as unknown as { __flashLog?: any[] };
+    w.__flashLog = [];
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type !== 'attributes' || m.attributeName !== 'class') continue;
+        const el = m.target as HTMLElement;
+        const dir = Array.from(el.classList ?? []).find((c) => c.startsWith('flash-'));
+        if (!dir) continue;
+        const row = el.closest('[data-testid="tape-row"]');
+        if (!row) continue;
+        let cell = el;
+        while (cell.parentElement && cell.parentElement !== row) cell = cell.parentElement;
+        const col = Array.from(row.children).indexOf(cell);
+        w.__flashLog!.push({
+          at: Date.now(),
+          symbol: ((row.children[0]?.textContent ?? '').trim()),
+          col,
+          dir,
+          text: (cell.textContent ?? '').trim().slice(0, 40),
+        });
+      }
+    });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
+    return true;
+  });
 
 const pulseText = () =>
   page.evaluate(() => {
@@ -155,38 +188,85 @@ const pulseText = () =>
     };
   });
 
-const samples: { at: string; rows: Awaited<ReturnType<typeof snapshot>>; pulse: Awaited<ReturnType<typeof pulseText>> }[] = [];
+const samples: {
+  at: string; atMs: number;
+  rows: Awaited<ReturnType<typeof snapshot>>;
+  pulse: Awaited<ReturnType<typeof pulseText>>;
+}[] = [];
 const deadline = Date.now() + MINUTES * 60_000;
 let i = 0;
+await startFlashLog();
+
+/* کنترلِ منفیِ خودِ ابزار (PROBE_SELFTEST=1): متنِ یک سلول را بی‌هیچ کلاسِ
+ * فلاشی عوض می‌کنیم؛ اگر داوری واقعاً تفکیکِ (نماد، ستون) می‌کند باید دقیقاً
+ * یک «جاافتاده» ببیند. بدونِ این کنترل `missedFlash=0` می‌تواند یعنی «همه‌چیز
+ * فلاش می‌زند» و هم یعنی «سنجش هیچ‌چیز را جا نمی‌اندازد». */
+const SELFTEST = process.env.PROBE_SELFTEST === '1';
+/* سطرِ *آخر* از بریدۀ دیدنی: سطرهایِ بالای جدول با هر پول بازنوشته می‌شوند و
+ * React متنِ تزریق‌شده را پاک می‌کند؛ آنجا کنترلِ منفی بی‌نتیجه می‌شود. */
+const sentinel = () =>
+  page.evaluate((idx: number) => {
+    const all = document.querySelectorAll('[data-testid="tape-row"]');
+    const row = all[Math.min(idx, all.length) - 1];
+    const cell = row?.children[5];
+    if (!cell) return null;
+    const target = (cell.querySelector('.num') ?? cell) as HTMLElement;
+    const sym = (row.children[0]?.textContent ?? '').trim();
+    const from = (cell.textContent ?? '').trim();
+    target.textContent = '999-CTRL';
+    return { sym, col: 5, from, to: (cell.textContent ?? '').trim(), rowCount: all.length };
+  }, ROWS);
+let selftest: { expect: any; missedSeen: number; otherMissed: number } | null = null;
+let selftestAtMs = 0;
+
 while (Date.now() < deadline) {
+  const atMs = Date.now();
   const rows = await snapshot(ROWS);
-  samples.push({ at: `t${i}`, rows, pulse: await pulseText() });
+  samples.push({ at: `t${i}`, atMs, rows, pulse: await pulseText() });
+  if (SELFTEST && i === 0) {
+    selftest = { expect: await sentinel(), missedSeen: 0, otherMissed: 0 };
+    selftestAtMs = Date.now();
+  }
   i += 1;
   await page.waitForTimeout(30_000);
 }
 
+const flashLog = (await page.evaluate(
+  () => ((window as unknown as { __flashLog?: any[] }).__flashLog ?? []),
+)) as { at: number; symbol: string; col: number; dir: string; text: string }[];
+
 // ── داوری ────────────────────────────────────────────────────────────────
-// هر جفتِ متوالی: کدام ستون‌ها عوض شدند و آیا همان لحظه فلش داشت؟
-const flashes = new Set(['flash-up', 'flash-down']);
+// هر جفتِ متوالی: کدام ستون عوض شد و درِ همان پنجره، برایِ همان نماد و همان
+// ستون، یک گذارِ `flash-*` ضبط شد؟ نبودِ ضبط = فلاش نخورد.
 const changedCells = new Set<string>();
 const missedFlash: { symbol: string; col: number; from: string; to: string }[] = [];
 const colLabels = ['نماد', 'آخرین', 'پایانی', 'اختلاف٪', 'حجم', 'ارزش', 'تعداد', 'قدرت', 'الگو'];
+let flashedCells = 0;
 for (let s = 1; s < samples.length; s += 1) {
   const a = samples[s - 1];
   const b = samples[s];
+  const inWindow = flashLog.filter((f) => f.at > a.atMs && f.at <= b.atMs);
   for (const rb of b.rows) {
     const ra = a.rows.find((x) => x.symbol === rb.symbol);
     if (!ra) continue;
     rb.cells.forEach((v, col) => {
       if (col === 0 || v === ra.cells[col]) return;
       changedCells.add(colLabels[col] ?? String(col));
-      const touched = flashes.has(rb.flash) || (rb.sinceMarkMs ?? 0) < Number(POLL) * 3;
-      if (!touched) missedFlash.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
+      const flashed = inWindow.some((f) => f.symbol === rb.symbol && f.col === col);
+      if (flashed) flashedCells += 1;
+      else missedFlash.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
     });
   }
 }
 const market = byEndpoint['/api/market'] ?? {};
 const fresh = Object.values(payloadWatch).filter((e) => (e.changes ?? 0) > 0).length;
+
+if (selftest?.expect) {
+  const exp = selftest.expect as { sym: string; col: number; to: string };
+  const hit = missedFlash.find((m) => m.symbol === exp.sym && m.col === exp.col);
+  selftest.missedSeen = hit ? 1 : 0;
+  selftest.otherMissed = missedFlash.filter((m) => m !== hit).length;
+}
 
 await browser.close();
 const report = {
@@ -200,6 +280,9 @@ const report = {
   payloadSymbols: Object.keys(payloadWatch).length,
   payloadFreshSymbols: fresh,
   changedCells: [...changedCells],
+  flashRecords: flashLog.length,
+  flashCellsMatched: flashedCells,
+  selftest,
   missedFlash,
   // نمونهٔ نخست گره‌ها را *نشانه می‌گذارد*؛ از نمونهٔ دوم به بعد نشانه باید
   // هنوز همان‌جا باشد — اگر React گره را از نو ساخته باشد، نشانه می‌رود.
@@ -225,8 +308,11 @@ console.log(
       pulseReqs: byEndpoint['/api/mstat/summary']?.req ?? 0,
       payloadChangedSymbols: fresh,
       changedCells: report.changedCells,
+      flashRecords: report.flashRecords,
+      flashCellsMatched: report.flashCellsMatched,
       missedFlashCount: missedFlash.length,
-      nodesAllOriginal: report.nodesAllOriginal,
+      selftest: report.selftest,
+      nodesKeptOriginal: report.nodesKeptOriginal,
       verdictChanged: report.firstPulse?.verdict !== report.lastPulse?.verdict,
       errors: report.errors,
     },

@@ -94,6 +94,13 @@ def _log_config_with_clock():
             "uvicorn": {"handlers": ["default"], "level": "INFO", "propagate": False},
             "uvicorn.error": {"level": "INFO"},
             "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
+            # قیدِ v1.0.55 «هر سطرِ لاگ با ساعت شروع می‌شود» فقط سه سروِ بالا را
+            # می‌پوشاند: `warnings.warn` بی‌این سرو مستقیم در stderr می‌نویسد.
+            # سنجشِ ۱۴۰۵-۰۷-۰۷: ۵٬۶۲۶ سطرِ بی‌ساعت از ۳۵٬۸۴۹ سطرِ روز (۱۶٫۶٪)،
+            # همه یک اخطارِ pandas. با `captureWarnings` این‌ها هم از همان
+            # قالبِ ساعت‌دار می‌گذرند.
+            "py.warnings": {"handlers": ["default"], "level": "WARNING",
+                            "propagate": False},
         },
     }
 
@@ -532,6 +539,10 @@ def main():
         return
     import uvicorn
     def run():
+        import logging
+        # اخطارها (مثلاً FutureWarningِ pandas درِ مسیرِ تابلو) بی‌این خط سطرِ
+        # بی‌ساعت می‌سازند؛ سروِ py.warnings درِ _log_config_with_clock ساعت دارد.
+        logging.captureWarnings(True)
         uvicorn.run('app:app', host='127.0.0.1', port=port, log_level='info',
                     log_config=_log_config_with_clock())
     th = threading.Thread(target=run, daemon=True)

@@ -123,6 +123,42 @@ access_line = AccessFormatter(fmt=cfg["formatters"]["access"]["fmt"],
 check("سطرِ access هم با ساعت شروع می‌شود", _starts_with_clock(access_line),
       repr(access_line[:56]))
 
+# ── ۲ب) اخطارها هم سطرِ ساعت‌دار می‌سازند ──────────────────────────────────
+# درِ سنجشِ ۱۴۰۵-۰۷-۰۷ رویِ بانکِ نصبی: ۵٬۶۲۶ سطرِ بی‌ساعت از ۳۵٬۸۴۹ سطرِ روز
+# (۱۶٫۶٪) — همگی یک FutureWarningِ pandas. `warnings.warn` بی‌سروِ py.warnings
+# مستقیم درِ stderr می‌نویسد و قیدِ «هر سطر با ساعت شروع می‌شود» را می‌شکند.
+import warnings as _warnings  # noqa: E402
+
+
+def _warn_line(cfg_dict):
+    _o_err, _o_out = sys.stderr, sys.stdout
+    e, o = io.StringIO(), io.StringIO()
+    sys.stderr, sys.stdout = e, o
+    _prev_show = _warnings.showwarning
+    try:
+        logging.config.dictConfig(cfg_dict)
+        logging.captureWarnings(True)
+        with _warnings.catch_warnings():
+            _warnings.simplefilter("always")
+            _warnings.warn("Downcasting behavior probe", FutureWarning)
+    finally:
+        logging.captureWarnings(False)
+        _warnings.showwarning = _prev_show
+        sys.stderr, sys.stdout = _o_err, _o_out
+    return (e.getvalue() + o.getvalue()).strip().splitlines()[:1]
+
+
+_warn = _warn_line(cfg)
+check("سطرِ اخطار هم با ساعت شروع می‌شود",
+      bool(_warn) and _starts_with_clock(_warn[0]), repr(_warn[:1]))
+
+_neg_cfg = {**cfg, "loggers": {k: v for k, v in cfg["loggers"].items()
+                               if k != "py.warnings"}}
+_neg = _warn_line(_neg_cfg)
+check("کنترلِ منفی: بی‌سروِ py.warnings همان سطر بی‌ساعت است",
+      not (bool(_neg) and _starts_with_clock(_neg[0])),
+      "اگر این هم ساعت گرفت، گاردِ بالا چیزی را اثبات نمی‌کند")
+
 # ── ۳) نشان‌ها ──────────────────────────────────────────────────────────────
 _o = sys.stdout
 sys.stdout = _c = io.StringIO()
