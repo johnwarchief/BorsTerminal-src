@@ -1,0 +1,203 @@
+{
+ "session": "2026-09-29 live (installed 1.0.61, backend 127.0.0.1:8001)",
+ "screener_rows": 873,
+ "pricing_mode_counts": {
+  "free": 290,
+  "neutral": 404,
+  "mandatory": 179
+ },
+ "null_value_vs_verdict": {
+  "gross_margin": {
+   "null_rows": 297,
+   "pass_false": 297,
+   "pass_none": 0
+  },
+  "eps_last": {
+   "null_rows": 175,
+   "pass_false": 175,
+   "pass_none": 0
+  },
+  "rev_growth": {
+   "null_rows": 265,
+   "pass_false": 265,
+   "pass_none": 0
+  },
+  "sales_to_mcap": {
+   "null_rows": 328,
+   "pass_false": 31,
+   "pass_none": 297
+  }
+ },
+ "absurd_rev_growth_rows": [
+  {
+   "symbol": "آريان",
+   "rev_growth": 4654.8
+  },
+  {
+   "symbol": "كاما",
+   "rev_growth": 9633.2
+  },
+  {
+   "symbol": "ثاخت",
+   "rev_growth": 4779.4
+  },
+  {
+   "symbol": "كبافق",
+   "rev_growth": 304596700.0
+  },
+  {
+   "symbol": "واعتبار",
+   "rev_growth": 1798.2
+  },
+  {
+   "symbol": "فكمند",
+   "rev_growth": 793900.0
+  },
+  {
+   "symbol": "فسوژ",
+   "rev_growth": 681485500.0
+  },
+  {
+   "symbol": "ميدكو",
+   "rev_growth": 3394.7
+  },
+  {
+   "symbol": "سرچشمه",
+   "rev_growth": 1408.8
+  },
+  {
+   "symbol": "شارپيلن",
+   "rev_growth": 3885990000.0
+  },
+  {
+   "symbol": "وصنا",
+   "rev_growth": 2272.7
+  },
+  {
+   "symbol": "وكادو",
+   "rev_growth": 1230.0
+  },
+  {
+   "symbol": "شپترو",
+   "rev_growth": 1966.0
+  },
+  {
+   "symbol": "فنفت",
+   "rev_growth": 2972.7
+  },
+  {
+   "symbol": "اوان",
+   "rev_growth": 1105.7
+  },
+  {
+   "symbol": "ودانا",
+   "rev_growth": 18582.0
+  },
+  {
+   "symbol": "خكرمان",
+   "rev_growth": 13666.4
+  },
+  {
+   "symbol": "بتيس",
+   "rev_growth": 214441200.0
+  },
+  {
+   "symbol": "شفا",
+   "rev_growth": 2227.5
+  },
+  {
+   "symbol": "كاريز",
+   "rev_growth": 1357.5
+  },
+  {
+   "symbol": "ختوقا",
+   "rev_growth": 2596.1
+  },
+  {
+   "symbol": "بهامرز",
+   "rev_growth": 4001.5
+  },
+  {
+   "symbol": "وفردا",
+   "rev_growth": 4041.3
+  }
+ ],
+ "dev_vs_installed_field_diffs": {
+  "pricing_mode": 0,
+  "rev_growth": 0,
+  "eps_last": 0,
+  "gross_margin": 0,
+  "sales_to_mcap": 0,
+  "i1_pass": 0,
+  "i2_pass": 0,
+  "i3_pass": 0,
+  "i4_pass": 0,
+  "i5_pass": 0,
+  "score": 0,
+  "applicable": 0,
+  "excluded": 2
+ },
+ "pending_symbols_cause": [
+  {
+   "symbol": "خنورح",
+   "in_screener": false,
+   "installed_db": {
+    "annual": 0,
+    "any": 0
+   },
+   "dev_db": {
+    "annual": 0,
+    "any": 0
+   }
+  },
+  {
+   "symbol": "ذرت",
+   "in_screener": false,
+   "installed_db": {
+    "annual": 0,
+    "any": 1
+   },
+   "dev_db": {
+    "annual": 0,
+    "any": 1
+   }
+  },
+  {
+   "symbol": "غمارگ",
+   "in_screener": false,
+   "installed_db": {
+    "annual": 0,
+    "any": 0
+   },
+   "dev_db": {
+    "annual": 0,
+    "any": 0
+   }
+  },
+  {
+   "symbol": "فالوم",
+   "in_screener": false,
+   "installed_db": {
+    "annual": 0,
+    "any": 0
+   },
+   "dev_db": {
+    "annual": 0,
+    "any": 0
+   }
+  },
+  {
+   "symbol": "نيروترانسفو",
+   "in_screener": false,
+   "installed_db": {
+    "annual": 0,
+    "any": 0
+   },
+   "dev_db": {
+    "annual": 0,
+    "any": 0
+   }
+  }
+ ],
+ "watchlist_max": 50
+}

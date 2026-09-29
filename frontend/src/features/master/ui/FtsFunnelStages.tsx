@@ -16,6 +16,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
+import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
@@ -125,14 +126,16 @@ const TREND_COLOR: Record<string, string> = {
   na: 'text-text-muted',
 };
 
-/** سلولِ «ردیفِ پنج‌شاخصه»: ✓ / ✗ / — با عددِ خودش، نه فقط رنگ. */
-function IndCell({ mark, value }: { mark: StageMark; value: string | null }) {
+/** سلولِ «ردیفِ پنج‌شاخصه»: ✓ / ✗ / — با عددِ خودش، نه فقط رنگ.
+ *  عددِ غیرمعقول همان نشانِ جدولِ غربالگری را می‌گیرد (نه حذفِ عدد). */
+function IndCell({ mark, value, hint }: { mark: StageMark; value: string | null; hint?: string | null }) {
   const glyph = mark === 'ok' ? '✓' : mark === 'no' ? '✗' : '—';
   const cls =
     mark === 'ok' ? 'text-accent-green' : mark === 'no' ? 'text-accent-red' : 'text-text-muted';
   return (
-    <td className={`num px-2 py-1 text-end ${cls}`} title={value ?? MARK_LABEL[mark]}>
+    <td className={`num px-2 py-1 text-end ${cls}`} title={hint ?? value ?? MARK_LABEL[mark]}>
       {value ? <span className="ms-1 opacity-70">{value}</span> : null}
+      {hint ? <span className="text-accent-yellow">⚠</span> : null}
       <span className="font-black">{glyph}</span>
     </td>
   );
@@ -147,14 +150,14 @@ function TrendCell({ t }: { t: string | null }) {
   );
 }
 
-/** نرخ‌گذاری به زبانِ خودِ جدول: بک‌اند 'free' / 'mandatory' را می‌دهد. */
+/** نرخ‌گذاری به زبانِ خودِ جدول: بک‌اند 'free' / 'mandatory' / 'neutral' را می‌دهد
+ *  و واژۀ خامِ موتور نباید در ستونِ فارسی بنشیند (۴۰۴ شرکت از ۸۷۳ neutral‌اند). */
 function pricingLabel(mode: string | null | undefined): string | null {
   const m = (mode ?? '').trim().toLowerCase();
-  if (!m) return null;
-  if (m === 'free') return 'آزاد';
+  if (m === 'free' || m === 'آزاد') return 'آزاد';
   if (m === 'mandatory' || m === 'regulated' || m === 'دستوری') return 'دستوری';
-  if (m === 'آزاد') return 'آزاد';
-  return mode ?? null;
+  if (m === 'neutral') return 'سایر صنایع';
+  return null;
 }
 
 function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark | null; why: string | null }) {
@@ -198,7 +201,10 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark 
         sc?.sales_to_mcap != null ? toFaDigits(sc.sales_to_mcap.toFixed(2)) : null,
         pricingLabel(sc?.pricing_mode),
       ][i];
-      return <IndCell mark={e.inds[i] ?? 'na'} value={raw} />;
+      // دو ستون درصدیِ جزوه (رشد فروش، حاشیهٔ ناخالص): عددِ غیرمعقول حذف
+      // نمی‌شود، همان هشدارِ جدولِ غربالگری رویش می‌نشیند.
+      const hint = [absurdHint(sc?.rev_growth), null, absurdHint(sc?.gross_margin), null, null][i];
+      return <IndCell mark={e.inds[i] ?? 'na'} value={raw} hint={hint} />;
     }
     case 'score':
       return <td className="num px-2 py-1 text-end font-bold text-text-primary">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</td>;

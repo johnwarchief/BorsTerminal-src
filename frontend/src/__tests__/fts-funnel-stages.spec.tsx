@@ -362,6 +362,36 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
       expect(text).toContain('آزاد');
       expect(text).not.toContain('free');
       expect(text).toContain('✓');
+      // عددِ غیرمعقول همان هشدارِ جدولِ غربالگری را می‌گیرد، نه حذفِ عدد
+      expect(text).toContain('⚠');
+      expect(row?.querySelector('td[title*="غیرمعقول"]')).not.toBeNull();
+    } finally {
+      screenMock.rows = SCREEN;
+      feedMock.rows = ROWS;
+    }
+  });
+
+  it('نرخ‌گذاریِ «سایر صنایع» به فارسی می‌آید (۴۰۴ شرکت از ۸۷۳ neutral‌اند)', () => {
+    useFunnelPrefsStore.getState().reset();
+    screenMock.rows = [screened('خنثی‌صنعت', 5, {
+      tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_jet: true,
+      i1_pass: true, i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+      rev_growth: 52, eps_last: 318, gross_margin: 26, sales_to_mcap: 0.41,
+      pricing_mode: 'neutral',
+    })];
+    feedMock.rows = [board({ symbol: 'خنثی‌صنعت', f_susp: true })];
+    try {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <FtsFunnelStages preset="custom" />
+        </QueryClientProvider>,
+      );
+      const row = screen
+        .getByTestId('funnel-stage-fundamental')
+        .querySelector('tbody tr[data-fkey="خنثی‌صنعت"]');
+      const text = row?.textContent ?? '';
+      expect(text).toContain('سایر صنایع');
+      expect(text).not.toContain('neutral');
     } finally {
       screenMock.rows = SCREEN;
       feedMock.rows = ROWS;
