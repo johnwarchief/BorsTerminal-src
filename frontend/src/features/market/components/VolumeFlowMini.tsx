@@ -1,10 +1,11 @@
 // features/market/components/VolumeFlowMini.tsx -- مینی‌چارت خودکفای توزیع حجم درون‌روز
 // props: { symbol: string; compact?: boolean } -- برای نصب در سایدبار چپ (Symbol Inspector).
-// میله‌ها بر اساس جهت معامله سبز/قرمز می‌شوند و دو پنجرهٔ حساس FTS (۰۹:۰۰–۰۹:۳۰ و
-// ۱۲:۰۰–۱۲:۳۰) هایلایت می‌شوند. نبود داده ⇒ «بدون داده» صادقانه (Circuit Breaker، بدون mock).
-import { useMemo } from 'react';
+// منبع: دلتای حجمِ انباشتهٔ همان خوراک تابلو (lib/symbolFlow) — نه یک اندپوینتِ
+// درون‌روزه؛ چنین اندپوینتی در بانک بازار وجود ندارد. میله‌ها بر اساسِ تغییرِ قیمتِ
+// همان دقیقه سبز/قرمز می‌شوند (جهتِ سفارش از سرور نمی‌آید) و دو پنجرهٔ حساس FTS
+// (۰۹:۰۰–۰۹:۳۰ و ۱۲:۰۰–۱۲:۳۰) هایلایت می‌شوند. نبود داده ⇒ «بدون داده» صادقانه.
 import { toFaDigits } from '@shared/lib/fmt';
-import { useIntradayVolume, type IntradayBucket } from '../api/useIntradayVolume';
+import { useSymbolFlow, type FlowBucket } from '../api/useSymbolFlow';
 
 /** بازهٔ معاملات بازار (زمان محلی) */
 export const MARKET_OPEN = '08:45';
@@ -24,15 +25,14 @@ export function inFtsWindow(t: string): boolean {
 /** هندل‌های لب پنجره‌ها برای رسم نوارهای هایلایت روی محور */
 export const FTS_WINDOW_LABELS = ['۰۹:۰۰–۰۹:۳۰', '۱۲:۰۰–۱۲:۳۰'] as const;
 
-function barTone(b: IntradayBucket): string {
+function barTone(b: FlowBucket): string {
   if (b.dir === 'up') return 'bg-accent-green/80';
   if (b.dir === 'down') return 'bg-accent-red/80';
   return 'bg-text-muted/50';
 }
 
 export function VolumeFlowMini({ symbol, compact = false }: { symbol: string; compact?: boolean }) {
-  const { data, isLoading, isError } = useIntradayVolume(symbol);
-  const buckets = useMemo(() => data?.buckets ?? [], [data]);
+  const { buckets, isLoading } = useSymbolFlow(symbol);
 
   // بدون نماد انتخابی، مینی‌چارت ارتفاع صفر دارد
   if (!symbol) return null;
@@ -51,13 +51,13 @@ export function VolumeFlowMini({ symbol, compact = false }: { symbol: string; co
         <span className="num text-2xs text-text-muted">{symbol}</span>
       </div>
 
-      {isLoading ? (
+      {isLoading && !hasData ? (
         <div className={`text-center text-2xs text-text-muted ${compact ? 'py-3' : 'py-5'}`} data-testid="volume-mini-loading">
           در حال دریافت...
         </div>
-      ) : isError || !hasData ? (
-        <div className={`text-center text-2xs text-text-muted ${compact ? 'py-3' : 'py-5'}`} data-testid="volume-mini-empty">
-          بدون داده
+      ) : !hasData ? (
+        <div className={`text-center text-2xs text-text-muted ${compact ? 'py-3' : 'py-5'}`} data-testid="volume-mini-empty" title="سری در ساعتِ بازار از تابلو جمع می‌شود">
+          بدون داده — در ساعتِ بازار جمع می‌شود
         </div>
       ) : (
         <>
@@ -93,10 +93,10 @@ export function VolumeFlowMini({ symbol, compact = false }: { symbol: string; co
 
           <div className="flex items-center gap-3 text-[9px] text-text-muted">
             <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-accent-green/80" /> خرید
+              <span className="inline-block h-2 w-2 rounded-sm bg-accent-green/80" /> صعودی
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-accent-red/80" /> فروش
+              <span className="inline-block h-2 w-2 rounded-sm bg-accent-red/80" /> نزولی
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-sm bg-accent-yellow/40" /> پنجرهٔ FTS
