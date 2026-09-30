@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router';
+import { motion } from 'motion/react';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useAuthStore } from '@shared/stores/authStore';
 import { useMediaQuery } from '@shared/lib/useMediaQuery';
@@ -78,22 +79,41 @@ export function Sidebar() {
             title={item.label}
             aria-label={item.label}
             className={({ isActive }) =>
-              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${
+              `group relative flex items-center rounded-lg border border-transparent text-nav font-bold transition-colors duration-200 ${
                 collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
               } ${
-                isActive
-                  ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
-                  : 'text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
+                isActive ? 'text-accent-blue' : 'text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <span
-                  className={`absolute bottom-1 start-0 top-1 w-[2.5px] rounded-full bg-neon-cyan transition-opacity duration-200 ${
-                    isActive ? 'opacity-100 shadow-[0_0_8px_var(--neon-cyan)]' : 'opacity-0'
-                  }`}
-                />
+                {/* قرصِ فعال. پیش از این هر تب قرصِ خودش را داشت و فقط
+                    opacity عوض می‌شد — یعنی قرص «می‌پرید»، جابه‌جا نمی‌شد.
+                    حالا یک المان است که motion با layoutId بینِ تب‌ها
+                    می‌کشد، پس حرکتِ پیوسته دیده می‌شود.
+
+                    این همان چیزِ ارزشمندِ gooey-navbar است. خودِ آن کامپوننت
+                    ۴۲۱ خط هندسهٔ SVG و اندازه‌گیریِ متن با canvas رویِ فرضِ
+                    فونتِ «Inter 600» دارد — با وزیرمتنِ فارسی عرض‌ها غلط
+                    درمی‌آید و هر فریم مسیر بازتولید می‌شود. */}
+                {isActive ? (
+                  <motion.span
+                    layoutId="sidebar-active-pill"
+                    data-testid="sidebar-active-pill"
+                    aria-hidden="true"
+                    transition={{ type: 'spring', stiffness: 400, damping: 36, mass: 0.7 }}
+                    className="absolute inset-0 -z-10 rounded-lg border border-[var(--hairline)] bg-accent-blue/12 shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]"
+                  />
+                ) : null}
+                {isActive ? (
+                  <motion.span
+                    layoutId="sidebar-active-edge"
+                    aria-hidden="true"
+                    transition={{ type: 'spring', stiffness: 400, damping: 36, mass: 0.7 }}
+                    className="absolute bottom-1 start-0 top-1 w-[2.5px] rounded-full bg-neon-cyan shadow-[0_0_8px_var(--neon-cyan)]"
+                  />
+                ) : null}
                 {collapsed ? <item.icon size={19} /> : <span className="flex items-center gap-2"><item.icon size={18} /><span>{item.label}</span></span>}
               </>
             )}

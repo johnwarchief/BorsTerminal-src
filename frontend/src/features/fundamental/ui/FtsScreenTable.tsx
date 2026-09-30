@@ -12,6 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { FTS_COLUMN_LABEL } from '@shared/lib/ftsLabels';
 import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
+import { AnimatePresence, motion } from 'motion/react';
 import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
 import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
 import { matchFa } from '@shared/lib/normalizeFa';
@@ -761,11 +762,26 @@ export function FtsScreenTable({
                 style={{ width: `${dbPct}%` }}
               />
             ) : null}
-            <svg className={`h-3 w-3 ${dbUpdate?.running ? 'animate-pulse' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              {dbDone
-                ? <path d="M20 6 9 17l-5-5" />
-                : <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />}
-            </svg>
+            {/* مبادلهٔ آیکون با فنر — الگویِ save-button. تیک باید «بنشیند»،
+                نه اینکه ناگهان جای فلش را بگیرد؛ همان چیزی که پایانِ کار را
+                محسوس می‌کند. mode="wait" لازم است وگرنه دو آیکون یک لحظه
+                رویِ هم می‌افتند و دکمه می‌پرد. */}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.svg
+                key={dbDone ? 'done' : 'idle'}
+                initial={{ scale: 0.4, opacity: 0, rotate: dbDone ? -30 : 0 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 26 }}
+                className={`h-3 w-3 shrink-0 ${dbUpdate?.running ? 'animate-pulse' : ''}`}
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+              >
+                {dbDone
+                  ? <path d="M20 6 9 17l-5-5" />
+                  : <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />}
+              </motion.svg>
+            </AnimatePresence>
             {dbUpdate?.running
               ? dbUpdate.stage === 'downloading' && dbUpdate.percent
                 ? `دیتابیس کدال ${toFaDigits(Math.round(dbUpdate.percent))}٪`
