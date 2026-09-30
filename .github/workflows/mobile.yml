@@ -138,6 +138,11 @@ jobs:
           # اگر release امضاشده هم ساخته شده باشد، همان را با نام اصلی منتشر کن
           REL_APK=$(ls frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1 || true)
           if [ -n "$REL_APK" ]; then cp "$REL_APK" bors-terminal-mobile.apk; fi
+          # بستهٔ رمزدار برای توزیع (همان سیاست ستاپ‌های ویندوز): ZIP رمزدار —
+          # RAR روی CI در دسترس نیست (انحصاری)؛ این ZIP را WinRAR/ZArchiver/RAR
+          # با همان رمز همیشگی باز می‌کنند. رمز این‌جا در مخزن خصوصی می‌ماند.
+          rm -f bors-terminal-mobile.zip
+          zip -j -P 'BorsTerminal-2026' bors-terminal-mobile.zip bors-terminal-mobile.apk
           NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER} (کامیت ${GITHUB_SHA::7})
           - دادهٔ آفلاین کامل داخل APK است؛ داخل ایران تابلو/چارت زنده از TSETMC می‌آید.
           - mobile_snapshot.db.gz + meta: بستهٔ داده برای بروزرسانی خودکارِ درون‌برنامه‌ای."
@@ -149,6 +154,7 @@ jobs:
             --notes "$NOTES"
           gh release upload mobile-latest --clobber \
             bors-terminal-mobile.apk \
+            bors-terminal-mobile.zip \
             dist_mobile/mobile_snapshot.db.gz \
             dist_mobile/mobile_snapshot.db.meta.json
 
@@ -172,8 +178,9 @@ jobs:
           VER=$(python -c "import bors_config; print(bors_config.APP_VERSION)")
           PUB=johnwarchief/BorsTerminal
           NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER}
-          - نصب مستقیم: bors-terminal-mobile.apk (دادهٔ آفلاین کامل داخل خود اپ است)
-          - داخل ایران، تابلو/چارت/شاخص زنده از TSETMC خوانده می‌شود
+          - bors-terminal-mobile.zip: اپ اندروید (رمزدار — همان رمز ستاپ‌های ویندوز)؛
+            باز کردن با WinRAR/ZArchiver/RAR، بعد نصب APK داخلش
+          - دادهٔ آفلاین کامل داخل خود اپ است؛ داخل ایران تابلو/چارت/شاخص زنده از TSETMC می‌آید
           - mobile_snapshot.db.gz + meta: بستهٔ داده — اپ روزی یک‌بار خودش چک و آپدیت می‌کند"
           gh release create mobile-latest -R "$PUB" --prerelease \
             --title "اپ موبایل (آخرین بیلد) — v${VER}" \
@@ -181,7 +188,9 @@ jobs:
           gh release edit mobile-latest -R "$PUB" --prerelease \
             --title "اپ موبایل (آخرین بیلد) — v${VER}" \
             --notes "$NOTES"
+          # عمداً فقط ZIP رمزدار (نه APK خام) + بستهٔ داده — دادهٔ اسنپ‌شات باید
+          # بی‌رمز بماند چون بروزرسانی خودکار اپ آن را مستقیم fetch می‌کند.
           gh release upload mobile-latest -R "$PUB" --clobber \
-            bors-terminal-mobile.apk \
+            bors-terminal-mobile.zip \
             dist_mobile/mobile_snapshot.db.gz \
             dist_mobile/mobile_snapshot.db.meta.json
