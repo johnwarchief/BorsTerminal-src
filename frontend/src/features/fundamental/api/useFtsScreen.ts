@@ -46,6 +46,11 @@ export const FtsScreenRowSchema = z.object({
   watchlist: z.boolean().nullish(),
   /** وتوی سختِ روند هفتگی (چارت ۳) — اسکرینر جای خالیِ واچ‌لیست را پر نمی‌کند */
   weekly_veto: z.boolean().nullish(),
+  /** وتوی مجمعِ پیش‌رو (رأیِ مالک، نه چارت) — بیرونِ کش و هر درخواست تازه حساب
+   *  می‌شود. `assembly_date` میلادیِ ISO است؛ جلالی در فرانت ساخته می‌شود. */
+  assembly_veto: z.boolean().nullish(),
+  assembly_date: z.string().nullish(),
+  assembly_days: z.number().nullish(),
   // FTS Technical Methodology Fields
   tech_trend_d: z.string().nullish(),
   tech_trend_w: z.string().nullish(),

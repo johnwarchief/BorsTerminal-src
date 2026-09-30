@@ -689,52 +689,123 @@ def _cal_events_for(symbol):
     return out
 
 _ASSEMBLY_FAMILY = ("assembly", "assemblyExtra", "assemblyChange")
+# مجمعِ «قطعی»: رویدادی که واقعاً تاریخِ توقفِ نماد را می‌سازد. لغو/تعویق/انتقال
+# (assemblyChange) تاریخِ معتبری به دست نمی‌دهد، پس وتو نمی‌سازد — فقط برچسبِ
+# صادقانهٔ تغییر. وتو روی تاریخِ نامعلوم، وتوی ساختگی است.
+_ASSEMBLY_CONFIRMED = ("assembly", "assemblyExtra")
+# افقِ «مجمعِ نزدیک» (روز) — یک منبع برای هر سه مصرفِ پایتون: برچسبِ ردیف‌های جدول
+# (`/api/calendar/upcoming`)، وتوی اسکرینر، و مقدارِ پیش‌فرضِ `upcoming_assemblies`.
+# باید با `ASSEMBLY_NEAR_DAYS` در
+# frontend/src/features/fundamental/lib/assemblyEvent.ts یکی بماند، وگرنه ردیفی
+# برچسبِ «مجمع نزدیک» می‌خورد ولی وتو نمی‌شود (یا برعکس). گاردِ برابری:
+# dev/test_calendar_v92.py بخش ۴ — عدد از خودِ دو فایل خوانده می‌شود، نه کپی.
+ASSEMBLY_NEAR_DAYS = 14
+
+
+def _clamp_days(days) -> int:
+    """افقِ درخواستی را در [۱, ۹۰] نگه می‌دارد — مقدارِ نامعتبر ⇒ پیش‌فرض."""
+    try:
+        return max(1, min(int(days), 90))
+    except (TypeError, ValueError):
+        return ASSEMBLY_NEAR_DAYS
+
+
+def _upcoming_by(cats, days: int, title_re=None) -> dict:
+    """نزدیک‌ترین رویدادِ پیش‌روی هر نماد در میانِ دسته‌هایِ خواستۀ `cats`.
+
+    یک تابع برای دو مصرف: خانوادۀ مجمع (برچسب + وتو) و «افزایشِ سرمایه» (فقط
+    برچسب — رأیِ pilot: این رویداد وتو نمی‌سازد). افقِ هر دو یکی است، وگرنه
+    ردیفی برچسب می‌گیرد ولی وتو نمی‌شود. خطا ⇒ {}.
+
+    `title_re` برایِ «افزایشِ سرمایه» است: عنوانِ یک اطلاعیه می‌تواند هم‌زمان
+    «دعوت به مجمع فوق‌العاده» و «افزایش سرمایه» باشد و آن‌وقت `cat` تنها یکی از
+    دو را می‌گوید (مجمع، چون رأیِ وتو به آن گره خورده است). پس برچسبِ دوم با
+    خودِ عنوان سنجیده می‌شود تا آن یکی را نبَد.
+    """
+    days = _clamp_days(days)
+    _norm = lambda s: str(s or "").translate(
+        str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
+    # لنگرِ افقِ تقویم، نه مُهرِ کندل. dev/live_bar_session_date_v1059.py هر
+    # «امروزِ ساعتِ سیستم» را در این فایل کندلِ مهرشده می‌شمارد، پس نامِ متغیر
+    # عمداً `today` نیست.
+    as_of = datetime.date.today()
+    horizon = as_of + datetime.timedelta(days=days)
+    best: dict = {}
+    for ev in _cal_cache_events():
+        title = str(ev.get("event_title") or "")
+        cat = _cal_classify(title, int(ev.get("event_type_id") or 0))
+        if cats is not None and cat not in cats:
+            continue
+        if title_re is not None and not title_re.search(
+                title.replace("‌", "").replace("ي", "ی").replace("ك", "ک")):
+            continue
+        try:
+            d = datetime.datetime.fromisoformat(str(ev.get("date_time"))).date()
+        except Exception:
+            continue
+        if d < as_of or d > horizon:
+            continue
+        sym = _norm(ev.get("asset_symbol_trade"))
+        if not sym:
+            continue
+        cur = best.get(sym)
+        # نزدیک‌ترینِ پیش‌رو؛ در تساویِ تاریخ، لغو/تعویق برنده است تا تاریخِ
+        # مجمعِ باطل‌شده به کاربر نشان داده نشود.
+        if cur is None or d < datetime.date.fromisoformat(cur["date"]) or (
+            d == datetime.date.fromisoformat(cur["date"]) and cat == "assemblyChange"
+            and cur["cat"] != "assemblyChange"
+        ):
+            best[sym] = {"symbol": sym, "date": d.isoformat(), "cat": cat,
+                         "title": title[:140]}
+    return best
+
+
+def upcoming_assemblies(days: int = ASSEMBLY_NEAR_DAYS) -> dict:
+    """نزدیک‌ترین رویدادِ خانوادهٔ مجمع برای هر نماد در افقِ `days` روز.
+
+    یک منبع برای دو مصرف: اندپوینتِ `/api/calendar/upcoming` (برچسبِ ردیف‌های
+    جدولِ بنیادی) و وتوی مجمع در `/api/screener`. هر دو باید یک افق و یک قاعدهٔ
+    تساوی داشته باشند، وگرنه برچسب یک چیز می‌گوید و وتو چیزِ دیگر.
+    هزینه: یک بار خواندنِ کشِ `static/calendar/cache.json`، نه کوئری به‌ازایِ ردیف.
+    خروجی: {نمادِ نرمال‌شده: {"symbol", "date", "cat", "title"}} — خطا ⇒ {} .
+    """
+    return _upcoming_by(_ASSEMBLY_FAMILY, days)
+
+
+# «افزایش سرمایه» با فاصله یا بدونِ آن، با ي/ك عربی — همان کلیدواژه‌ای که
+# dev/calendar_fetcher.py در جستجویش استفاده می‌کند (فاصله‌زدایی‌شده).
+_CAP_RE = __import__("re").compile("افزايش\\s*سرمايه|افزایش\\s*سرمایه|افزایشسرمايه|افزايشسرمايه")
+
+
+def upcoming_capital_increases(days: int = ASSEMBLY_NEAR_DAYS) -> dict:
+    """«افزایش سرمایه»هایِ پیش‌رو — برچسبِ هشدار، بی‌هیچ حکمی (رأیِ pilot #53).
+
+    عنوان‌محور است نه دسته‌محور: واکشی‌کننده دسته‌هایِ دیگر را `event_type_id=0`
+    می‌گذارد («فرانت با کلیدواژه دسته‌بندی می‌کند» — static/calendar/README.md)،
+    و یک اطلاعیه می‌تواند هم «دعوت به مجمع فوق‌العاده» باشد هم «افزایش سرمایه».
+    آن‌جا `cat` مجمع می‌ماند تا وتو نَبَد، و این فهرست هم همان ردیف را می‌گیرد.
+    """
+    return _upcoming_by(None, days, title_re=_CAP_RE)
+
 
 
 @router.get("/api/calendar/upcoming")
-def get_calendar_upcoming(days: int = Query(14)):
+def get_calendar_upcoming(days: int = Query(ASSEMBLY_NEAR_DAYS)):
     """مجمع‌های پیش‌روی همهٔ نمادها در یک درخواست — برای برچسبِ ردیف‌های جدول.
 
     `/api/calendar/{symbol}` نمادی است؛ اگر این مسیر بعد از آن تعریف می‌شد،
     «upcoming» به‌عنوان نامِ نماد مطابق می‌شد و پاسخ خالی می‌داد.
-    منبع همان کشِ `static/calendar/cache.json` است، پس هزینه‌اش یک بار
-    خواندنِ فایل است نه کوئری به‌ازایِ ردیف — قراردادِ تعدادِ ثابتِ درخواست.
     """
-    days = max(1, min(int(days or 14), 90))
     try:
-        raw = _cal_cache_events()
-        today = datetime.datetime.now().date()
-        horizon = today + datetime.timedelta(days=days)
-        _norm = lambda s: str(s or "").translate(
-            str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
-        best: dict = {}
-        for ev in raw:
-            title = str(ev.get("event_title") or "")
-            cat = _cal_classify(title, int(ev.get("event_type_id") or 0))
-            if cat not in _ASSEMBLY_FAMILY:
-                continue
-            try:
-                d = datetime.datetime.fromisoformat(str(ev.get("date_time"))).date()
-            except Exception:
-                continue
-            if d < today or d > horizon:
-                continue
-            sym = _norm(ev.get("asset_symbol_trade"))
-            if not sym:
-                continue
-            cur = best.get(sym)
-            # نزدیک‌ترینِ پیش‌رو؛ در تساویِ تاریخ، لغو/تعویق برنده است تا تاریخِ
-            # مجمعِ باطل‌شده به کاربر نشان داده نشود.
-            if cur is None or d < datetime.date.fromisoformat(cur["date"]) or (
-                d == datetime.date.fromisoformat(cur["date"]) and cat == "assemblyChange"
-                and cur["cat"] != "assemblyChange"
-            ):
-                best[sym] = {"symbol": sym, "date": d.isoformat(), "cat": cat,
-                             "title": title[:140]}
-        return {"status": "ok", "days": days,
-                "count": len(best), "items": sorted(best.values(), key=lambda x: x["date"])}
+        span = _clamp_days(days)
+        best = upcoming_assemblies(span)
+        cap = upcoming_capital_increases(span)
+        return {"status": "ok", "days": span,
+                "count": len(best), "items": sorted(best.values(), key=lambda x: x["date"]),
+                "capital_count": len(cap),
+                "capital": sorted(cap.values(), key=lambda x: x["date"])}
     except Exception as e:
-        return {"status": "error", "message": str(e), "items": []}
+        return {"status": "error", "message": str(e), "items": [], "capital": []}
 
 
 @router.get("/api/calendar/{symbol}")

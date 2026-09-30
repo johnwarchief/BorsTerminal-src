@@ -52,6 +52,8 @@ export default function FundamentalPage() {
   /** تقویم مجمعِ کل بازار در یک درخواست — برای برچسبِ ردیف‌ها */
   const upcoming = useCalendarUpcoming();
   const assemblyMap = useMemo(() => groupBySymbol(upcoming.data?.items), [upcoming.data]);
+  /** «افزایش سرمایه» از همان یک درخواستِ انبوه می‌آید؛ کلیدِ دومِ پاسخ */
+  const capitalMap = useMemo(() => groupBySymbol(upcoming.data?.capital), [upcoming.data]);
 
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب: POST + polling وضعیت تا پایان */
   type DbStatus = { running: boolean; stage: string; percent?: number; detail?: string; error?: string };
@@ -174,6 +176,7 @@ export default function FundamentalPage() {
             onDbUpdate={handleDbUpdate}
             dbUpdate={dbUpd}
             assemblyEvents={assemblyMap}
+            capitalEvents={capitalMap}
             settingsSlot={<FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />}
             onSelect={(s) => {
               setSymbol(s);

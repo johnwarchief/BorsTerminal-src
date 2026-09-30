@@ -51,7 +51,7 @@ function BookRows({ levels, side, max }: { levels: OrderBookLevel[]; side: Side;
   );
 }
 
-export function SidebarOrderBook({ symbol }: { symbol: string }) {
+export function SidebarOrderBook({ symbol, compact = false }: { symbol: string; compact?: boolean }) {
   const { data, isLoading, isError } = useOrderBook(symbol);
   const levels = data?.levels ?? [];
   const max = useMemo(() => {
@@ -65,7 +65,10 @@ export function SidebarOrderBook({ symbol }: { symbol: string }) {
   return (
     <div className="flex flex-col gap-2" data-testid="sidebar-orderbook">
       <div className="flex items-center justify-between gap-2 px-1">
-        <span className="min-w-0 truncate text-xs font-bold text-text-primary">{symbol}</span>
+        {/* در سایدبار چپ نامِ نماد همین بالا در هدرِ پنل نوشته شده است */}
+        <span className={`min-w-0 truncate text-xs font-bold text-text-primary ${compact ? 'sr-only' : ''}`}>
+          {symbol}
+        </span>
         <span className="shrink-0 text-[10px] text-text-muted" title="زمانِ آخرین همگام‌سازیِ تابلو برایِ این نماد">
           {stamp ? `همگامِ ساعتِ ${stamp}` : 'بی‌زمان'}
         </span>
@@ -111,9 +114,11 @@ export function SidebarOrderBook({ symbol }: { symbol: string }) {
               </span>
             </div>
           </div>
-          <p className="px-1 text-[9px] leading-4 text-text-muted">
-            قیمت‌ها ریال است. پنج سطرِ اولِ هر صف، آن‌طور که تابلو می‌فرستد.
-          </p>
+          {!compact ? (
+            <p className="px-1 text-[9px] leading-4 text-text-muted">
+              قیمت‌ها ریال است. پنج سطرِ اولِ هر صف، آن‌طور که تابلو می‌فرستد.
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>

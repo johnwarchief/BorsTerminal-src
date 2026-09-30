@@ -472,9 +472,12 @@ export default function StrategyTreePage() {
           </div>
         </div>
 
-        {/* سوییچر سبک معامله / مسیر بازی */}
+        {/* سوییچر سبک معامله — «مسیر بازی» نامِ فنیِ خودِ ما بود، نه زبانِ جزوه؛
+            مالک: «مسیر بازی رو بکن انتخاب استراتژی». */}
         <div className="pt-2 border-t border-border-c/50 flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold text-text-secondary">سبک و مسیر بازی FTS:</span>
+          <span className="text-xs font-bold text-text-secondary" data-testid="tree-preset-label">
+            انتخاب استراتژی:
+          </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"

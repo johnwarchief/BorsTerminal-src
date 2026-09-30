@@ -232,12 +232,18 @@ ck("ind4_na(_i4)" in _body,
 # حکمِ نسخهٔ قبلی را می‌بیند (در ۱٫۰٫۲۹ که حکم ۸۸ نماد عوض شد همین رخ داد).
 # ولی fts_results باید با cfg_hashِ خالص سنجیده بماند — نسخه به آن راه ندارد،
 # چون نویسنده‌اش (dev/codal_fts_updater) همان خالص را می‌نویسد.
+# بدنهٔ سنگین از ۱٫۰٫۶۴ در `_screener_cached` است (وتوی مجمع بیرونِ کش و در
+# خودِ مسیر `/api/screener` حساب می‌شود)؛ پس هویتِ کش آن‌جا سنجیده می‌شود و
+# یک بندِ تازه اضافه است که مسیر واقعاً به همان بدنه می‌رسد.
 import api.screener as _scr_mod  # noqa: E402
-_scr_src = _inspect.getsource(_scr_mod.get_screener)
+_scr_src = _inspect.getsource(_scr_mod._screener_cached)
 ck('APP_VERSION' in _scr_src and 'payload_key' in _scr_src,
    "هویتِ کشِ payload نسخهٔ برنامه را دارد (با آپدیت باطل می‌شود)")
 ck('fts_results_bulk(conn, cfg_hash=cfg_hash)' in _scr_src,
    "مقایسهٔ fts_results هنوز با cfg_hashِ خالص است (بدونِ نسخه)")
+_route_src = _inspect.getsource(_scr_mod.get_screener)
+ck('_screener_cached()' in _route_src,
+   "مسیرِ /api/screener به همان بدنهٔ کشیده می‌رسد (کش دور زده نمی‌شود)")
 
 ck(fts_engine.ind4_na({"na": True}) and fts_engine.ind4_na({"exempt": True})
    and not fts_engine.ind4_na({"na": False, "exempt": False})

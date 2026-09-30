@@ -5,6 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
 import { isFundamentalCompany, isPhysicalGrowthApplicable } from '@features/fundamental/lib/assetScope';
+import { jalaliOf, todayIsoInTehran } from '@features/fundamental/lib/assemblyEvent';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 
 // jsdom اندازه ندارد -- virtualizer را به رندر کامل وادار می‌کنیم (الگوی tape-patterns)
@@ -455,5 +456,164 @@ describe('کارایی جدول غربالگری (F-08)', () => {
     const thead = document.querySelector('thead');
     expect(thead?.className).toContain('sticky');
     expect(thead?.className).toContain('top-0');
+  });
+});
+
+/**
+ * برچسب و وتوی مجمع در ردیفِ جدول — رأیِ مالک: «بغل نماد برچسب داده بشه که
+ * … مجمع عمومی داره هشدار داده بشه و اینکه وتو بخوره».
+ * دو نقشِ جدا: برچسبِ هشدار (زرد/آبی) از `assemblyEvents` ساخته می‌شود و
+ * وتو (قرمز) از پرچمِ بک‌اند `assembly_veto`. دومی باید بر اولی بچربد، وگرنه
+ * دو برچسبِ متناقض کنارِ هم می‌نشینند.
+ */
+describe('برچسب و وتوی مجمعِ ردیف', () => {
+  const plusDays = (base: string, n: number) => {
+    const d = new Date(`${base}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const TODAY = todayIsoInTehran();
+  const IN3 = plusDays(TODAY, 3);
+  const IN40 = plusDays(TODAY, 40);
+
+  const events = (date: string, cat = 'assembly') => ({
+    شپنا: [{ date, cat, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه' }],
+  });
+
+  const badge = () => screen.queryByTestId('row-assembly-veto-badge');
+  const near = () => screen.queryByTestId('row-assembly-near-badge');
+
+  it('وتو ⇒ برچسبِ قرمز با تاریخِ جلالی، و برچسبِ هشدار تکرار نمی‌شود', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: true, assembly_date: IN3, assembly_days: 3, watchlist: false })]}
+        onSelect={() => {}}
+        assemblyEvents={events(IN3)}
+      />,
+    );
+    const b = badge();
+    expect(b).not.toBeNull();
+    expect(b?.textContent).toContain('وتوی مجمع');
+    expect(b?.textContent).toBe(`وتوی مجمع ${jalaliOf(IN3)}`);
+    // هشدارِ زرد زیرِ وتو پنهان می‌شود — یک برچسب، یک رأی
+    expect(near()).toBeNull();
+    const title = b?.getAttribute('title') ?? '';
+    expect(title).toContain('ورود وتو شد');
+    expect(title).toContain('۳ روز دیگر');
+  });
+
+  it('کنترلِ منفی: بی‌وتو همان برچسبِ هشدارِ قبلی است', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: false })]}
+        onSelect={() => {}}
+        assemblyEvents={events(IN3)}
+      />,
+    );
+    expect(badge()).toBeNull();
+    expect(near()).not.toBeNull();
+    expect(near()?.textContent).toContain('مجمع');
+  });
+
+  it('لغو/تعویق برچسبِ تغییر می‌گیرد و وتو نمی‌شود (تاریخِ نامعلوم، وتوی ساختگی است)', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: false })]}
+        onSelect={() => {}}
+        assemblyEvents={events(IN3, 'assemblyChange')}
+      />,
+    );
+    expect(badge()).toBeNull();
+    expect(screen.queryByTestId('row-assembly-change-badge')).not.toBeNull();
+  });
+
+  it('مجمعِ بیرونِ پنجره هیچ برچسبی نمی‌سازد', () => {
+    render(
+      <FtsScreenTable rows={[row()]} onSelect={() => {}} assemblyEvents={events(IN40)} />,
+    );
+    expect(badge()).toBeNull();
+    expect(near()).toBeNull();
+  });
+
+  it('وتوی بی‌تاریخ هم وتو می‌ماند — فقط تاریخ از برچسب می‌افتد، نه رأی', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: true, watchlist: false })]}
+        onSelect={() => {}}
+      />,
+    );
+    expect(badge()?.textContent).toBe('وتوی مجمع');
+  });
+
+  it('وتو ردیف را خاکستری نمی‌کند: مجمع ضعفِ بنیادی نیست، زمان‌بندیِ ورود است', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: true, assembly_date: IN3, assembly_days: 3, watchlist: false })]}
+        onSelect={() => {}}
+      />,
+    );
+    const tr = screen.getByTestId('fts-screen-row');
+    expect(tr.className).not.toContain('opacity-');
+    expect(tr.className).not.toContain('cursor-not-allowed');
+    // نمرۀ پنج‌شاخصه دست‌نخورده نشان داده می‌شود
+    expect(tr.textContent).toContain('۴');
+  });
+});
+
+
+/**
+ * برچسب «افزایش سرمایه» (#59) — رأیِ pilot: فقط هشدارِ تاریخ، هیچ وتویی از آن
+ * نمی‌سازد و ردیف را خاکستری نمی‌کند؛ کنارِ بجِ مجمع می‌نشیند نه به‌جای آن.
+ */
+describe('برچسب «افزایش سرمایه» در ردیف', () => {
+  const plusDays = (base: string, n: number) => {
+    const d = new Date(`${base}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const TODAY = todayIsoInTehran();
+  const cap = (date: string) => ({
+    شپنا: [{ date, cat: 'capitalIncrease', title: 'اطلاعیه افزایش سرمایه از محل سود انباشته' }],
+  });
+
+  it('رویدادِ پیش‌رو ⇒ برچسب با تاریخِ جلالی، بی‌هیچ وتویی', () => {
+    render(
+      <FtsScreenTable rows={[row()]} onSelect={() => {}} capitalEvents={cap(plusDays(TODAY, 5))} />,
+    );
+    const b = screen.getByTestId('row-capital-increase-badge');
+    expect(b.textContent).toContain('افزایش سرمایه');
+    expect(b.textContent).toContain(jalaliOf(plusDays(TODAY, 5)).split('-').slice(-2).join('/'));
+    expect(b.getAttribute('title')).toContain('وتو نیست');
+    expect(screen.queryByTestId('row-assembly-veto-badge')).toBeNull();
+  });
+
+  it('با وتوی مجمع هم‌زمان می‌نشیند و جایِ آن را نمی‌گیرد', () => {
+    const d = plusDays(TODAY, 4);
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: true, assembly_date: d, assembly_days: 4 })]}
+        onSelect={() => {}}
+        assemblyEvents={{ شپنا: [{ date: d, cat: 'assembly', title: 'آگهی دعوت به مجمع' }] }}
+        capitalEvents={cap(d)}
+      />,
+    );
+    expect(screen.queryByTestId('row-assembly-veto-badge')).not.toBeNull();
+    expect(screen.queryByTestId('row-capital-increase-badge')).not.toBeNull();
+  });
+
+  it('بیرونِ افقِ «نزدیک» هیچ برچسبی نیست — تاریخِ دور ساخته نمی‌شود', () => {
+    render(
+      <FtsScreenTable rows={[row()]} onSelect={() => {}} capitalEvents={cap(plusDays(TODAY, 40))} />,
+    );
+    expect(screen.queryByTestId('row-capital-increase-badge')).toBeNull();
+  });
+
+  it('ردیفِ برچسب‌خورده خاکستری یا بی‌مصرف نمی‌شود', () => {
+    render(
+      <FtsScreenTable rows={[row()]} onSelect={() => {}} capitalEvents={cap(plusDays(TODAY, 2))} />,
+    );
+    const tr = screen.getByTestId('fts-screen-row');
+    expect(tr.className).not.toContain('opacity-');
+    expect(tr.className).not.toContain('cursor-not-allowed');
   });
 });

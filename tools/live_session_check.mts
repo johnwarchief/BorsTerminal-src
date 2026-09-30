@@ -35,38 +35,19 @@ const MINUTES = Number(process.env.PROBE_MINUTES ?? 10);
 const POLL = process.env.PROBE_POLL ?? '5000';
 const OUT = process.env.PROBE_OUT ?? '_audit/live_session.json';
 const ROWS = Number(process.env.PROBE_ROWS ?? 4);
-const SYMBOL = process.env.PROBE_SYMBOL ?? '';
 
 const apiPath = (u: string) => (u.startsWith(ORIGIN) ? u.slice(ORIGIN.length) : u);
 const isApi = (u: string) => apiPath(u).startsWith('/api/');
 
-/** «HH:MM» محلی در سمتِ Node — همان کلیدِ دقیقه‌ای که پنل در مرورگر می‌زند */
-const localMinute = (d = new Date()) =>
-  `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-
-/** خودسنجیِ #49: چند دقیقه از *خودِ خوراکِ تابلو* افزایشِ حجم داشت، مستقل از آنچه
- *  پنل در localStorage جمع کرده. بدونِ این، «۴ باکت در ۳۰ دقیقه» را نمی‌شد از
- *  «باکت جا افتاده» تفکیک کرد و مجبور به نمونه‌برداریِ دستی از پایگاه شدیم. */
-const boardFlow = {
-  samples: 0,
-  minutes: {} as Record<string, number>,
-  firstTvol: null as number | null,
-  lastTvol: null as number | null,
-  prevTvol: null as number | null,
-  resets: 0,
-};
-
 const browser = await chromium.launch({ headless: true, executablePath: process.env.JEV_CHROME || undefined });
 const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
-await context.addInitScript((sym: string) => {
+await context.addInitScript(() => {
   try {
     sessionStorage.setItem('bors_auth_session', 'true');
-    // سایدبار چپ (و بنابراین ضبطِ جریان حجم) فقط با نمادِ انتخابی زنده است
-    if (sym) localStorage.setItem('bors-symbol', sym);
   } catch {
     /* پوستهٔ بدونِ دروازه هم همین را می‌پذیرد */
   }
-}, process.env.PROBE_SYMBOL ?? '');
+});
 const page = await context.newPage();
 
 const errors: string[] = [];
@@ -99,21 +80,6 @@ page.on('response', async (rs: { url: () => string; status: () => number }) => {
     const stamp = new Date().toISOString();
     for (const row of body.data ?? []) {
       if (row.is_live === false) continue;
-      if (SYMBOL && row.symbol === SYMBOL) {
-        const v = Number(row.tvol);
-        if (Number.isFinite(v)) {
-          boardFlow.samples += 1;
-          if (boardFlow.firstTvol == null) boardFlow.firstTvol = v;
-          if (boardFlow.prevTvol != null && v < boardFlow.prevTvol) boardFlow.resets += 1;
-          const d = boardFlow.prevTvol == null ? 0 : v - boardFlow.prevTvol;
-          if (d > 0) {
-            const mk = localMinute();
-            boardFlow.minutes[mk] = (boardFlow.minutes[mk] ?? 0) + d;
-          }
-          boardFlow.prevTvol = v;
-          boardFlow.lastTvol = v;
-        }
-      }
       payloadWatch[row.symbol] = payloadWatch[row.symbol] ?? {};
       const e = payloadWatch[row.symbol];
       const changed = e.ts !== undefined && (e.p_last !== row.p_last || e.tvol !== row.tvol);
@@ -134,16 +100,6 @@ const clock = await page.evaluate(() => ({
   pageLocal: new Date().toString(),
   pageIso: new Date().toISOString(),
 }));
-
-/** برچسبِ واقعیِ ستون‌ها از سرستونِ جدول. فهرستِ دست‌نویسِ ۹تایی، ۱۲ ستونِ جدول
- *  را پوشش نمی‌داد و فلاشِ جاافتادهٔ ستون‌های ۹/۱۰/۱۱ را با «شماره» گزارش می‌کرد
- *  (در اجرای ۱۴۰۵-۰۷-۰۸: changedCells = ['9','10','11']). */
-const colLabels = (await page.evaluate(() =>
-  Array.from(document.querySelectorAll('[data-testid="tape-head"] > *')).map((e, i) => {
-    const t = (e.textContent ?? '').replace(/\s*[↑↓]\s*$/, '').trim();
-    return t || `ستون${i}`;
-  }),
-)) as string[];
 
 const setPoll = async () => {
   try {
@@ -168,6 +124,13 @@ const snapshot = (n: number) =>
         .slice(0, n)
         .map((row) => {
           const cells = Array.from(row.children).map((c) => (c.textContent ?? '').trim());
+          // خانۀ فلاش‌خور آن است که `.num` دارد (یعنی FlashNum). خانۀ نشانِ
+          // الگو متنِ غیرعددی است و فلاش نمی‌خورد — پیش از این همین گذارها
+          // درِ `missedFlash` می‌نشستند و عددِ شاخص بی‌معنی می‌شد.
+          const hasNum = Array.from(row.children).map((c) => Boolean(c.querySelector('.num')));
+          const isBadge = Array.from(row.children).map(
+            (c) => Boolean(c.querySelector('[data-testid="tape-patterns"]')),
+          );
           const last = row.children[1];
           const num = (last?.querySelector('.num') ?? last) as HTMLElement | null;
           const marked = Boolean(num?.hasAttribute('data-live'));
@@ -178,6 +141,8 @@ const snapshot = (n: number) =>
           return {
             symbol: cells[0] ?? '',
             cells,
+            hasNum,
+            isBadge,
             nodeOriginal: marked,
             sinceMarkMs: num?.getAttribute('data-live-at')
               ? Date.now() - Number(num.getAttribute('data-live-at'))
@@ -252,13 +217,21 @@ const sentinel = () =>
   page.evaluate((idx: number) => {
     const all = document.querySelectorAll('[data-testid="tape-row"]');
     const row = all[Math.min(idx, all.length) - 1];
-    const cell = row?.children[5];
+    const kids = Array.from(row?.children ?? []) as HTMLElement[];
+    // کنترلِ منفی باید خانۀ *عددی* را بزند؛ گذارِ خانۀ نشانِ الگو از این پس
+    // درِ `badgeChanges` می‌نشیند و اگر آن را هدف می‌گرفت، خودِ کنترل قرمز
+    // می‌شد بی‌آنکه داوری خراب باشد.
+    const cell = (kids[5]?.querySelector('.num') ? kids[5]
+      : kids.find((c, k) => k > 0 && c.querySelector('.num'))) ?? null;
     if (!cell) return null;
     const target = (cell.querySelector('.num') ?? cell) as HTMLElement;
     const sym = (row.children[0]?.textContent ?? '').trim();
     const from = (cell.textContent ?? '').trim();
     target.textContent = '999-CTRL';
-    return { sym, col: 5, from, to: (cell.textContent ?? '').trim(), rowCount: all.length };
+    return {
+      sym, col: kids.indexOf(cell), from,
+      to: (cell.textContent ?? '').trim(), rowCount: all.length,
+    };
   }, ROWS);
 let selftest: { expect: any; missedSeen: number; otherMissed: number } | null = null;
 let selftestAtMs = 0;
@@ -270,6 +243,13 @@ while (Date.now() < deadline) {
   if (SELFTEST && i === 0) {
     selftest = { expect: await sentinel(), missedSeen: 0, otherMissed: 0 };
     selftestAtMs = Date.now();
+    // نمونه باید بی‌درنگ بعدِ تزریق خوانده شود: پولینگِ ۵ ثانیه متنِ تزریق‌شده
+    // را پیش از نمونهٔ بعدی (۳۰ ثانیه) بازمی‌گرداند و کنترلِ منفی بی‌اثر می‌شود.
+    samples.push({
+      at: 't0-ctrl', atMs: Date.now(),
+      rows: await snapshot(ROWS), pulse: await pulseText(),
+    });
+    i += 1;
   }
   i += 1;
   await page.waitForTimeout(30_000);
@@ -282,8 +262,15 @@ const flashLog = (await page.evaluate(
 // ── داوری ────────────────────────────────────────────────────────────────
 // هر جفتِ متوالی: کدام ستون عوض شد و درِ همان پنجره، برایِ همان نماد و همان
 // ستون، یک گذارِ `flash-*` ضبط شد؟ نبودِ ضبط = فلاش نخورد.
+// برچسبِ ستون‌ها از خودِ سرستون خوانده می‌شود؛ فهرستِ دست‌نویسِ قدیمی با
+// ستون‌هایِ تازه از جا می‌ماند و «الگو» را به ستونِ دیگری می‌نسرد.
+const colLabels = (await page.evaluate(
+  () => Array.from(document.querySelectorAll('[data-testid="tape-head"] > *'))
+    .map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()),
+)) as string[];
 const changedCells = new Set<string>();
-const missedFlash: { symbol: string; col: number; label: string; from: string; to: string }[] = [];
+const missedFlash: { symbol: string; col: number; from: string; to: string }[] = [];
+const badgeChanges: { symbol: string; col: number; from: string; to: string }[] = [];
 let flashedCells = 0;
 for (let s = 1; s < samples.length; s += 1) {
   const a = samples[s - 1];
@@ -295,16 +282,15 @@ for (let s = 1; s < samples.length; s += 1) {
     rb.cells.forEach((v, col) => {
       if (col === 0 || v === ra.cells[col]) return;
       changedCells.add(colLabels[col] ?? String(col));
+      // خانۀ نشانِ الگو و خانۀ بی‌عدد از قرارِ خود فلاش نمی‌خورند؛ آن‌ها را
+      // جدا می‌شماریم تا «صفرِ جاافتاده» یعنی صفرِ واقعی، نه یعنی کورِ سنجش.
+      if (rb.isBadge?.[col] || !rb.hasNum?.[col]) {
+        badgeChanges.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
+        return;
+      }
       const flashed = inWindow.some((f) => f.symbol === rb.symbol && f.col === col);
       if (flashed) flashedCells += 1;
-      else
-        missedFlash.push({
-          symbol: rb.symbol,
-          col,
-          label: colLabels[col] ?? String(col),
-          from: ra.cells[col],
-          to: v,
-        });
+      else missedFlash.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
     });
   }
 }
@@ -318,106 +304,6 @@ if (selftest?.expect) {
   selftest.otherMissed = missedFlash.filter((m) => m !== hit).length;
 }
 
-/**
- * جریان حجمِ درون‌روز (#49) — این تنها چیزی است که فقط درِ نشستِ باز سنجیده
- * می‌شود: سری از دلتای همان خوراک تابلو در localStorageِ مرورگر جمع می‌شود.
- * پنل + خودِ خوراک با هم سنجیده می‌شوند: کش پر شده؟ میله‌ها نقاشی شده‌اند؟
- * مجموعِ باکت‌ها با رشدِ حجمِ تابلو می‌خواند؟ چند دقیقۀ دارایِ چاپ باکت دارد؟
- * زمانِ آخرین میله تا ساعتِ اکنون چقدر فاصله دارد؟ و عنوان، نامِ نماد است
- * یا ins_code?
- */
-const flow = SYMBOL
-  ? await page.evaluate(async (sym: string) => {
-      const raw = localStorage.getItem('bors:market:symflow:v1');
-      const store = raw ? (JSON.parse(raw) as { day: string; symbols: Record<string, { last: { cumVol: number } | null; buckets: { t: string; vol: number; dir?: string | null }[] }> }) : null;
-      const entry = store?.symbols?.[sym] ?? null;
-      const res = await fetch(`/api/market`, { headers: { Accept: 'application/json' } });
-      const body = (await res.json()) as { data?: { symbol: string; q_tot_tran?: number }[] };
-      const row = (body.data ?? []).find((r) => r.symbol === sym) ?? null;
-      const bs = entry?.buckets ?? [];
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const nowMinute = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      const asMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-      const lastBar = bs.length ? bs[bs.length - 1].t : null;
-      const aside = document.querySelector('aside[aria-label^="بازرسی نماد"]');
-      const sideText = aside ? (aside.textContent ?? '') : '';
-      const panel = document.querySelector('[data-testid="volume-flow-mini"]');
-      return {
-        day: store?.day ?? null,
-        buckets: bs.length,
-        sum_vol: bs.reduce((m: number, b) => m + (b.vol ?? 0), 0),
-        last_cum: entry?.last?.cumVol ?? null,
-        board_cum: row?.q_tot_tran ?? null,
-        panel_bars: document.querySelectorAll('[data-testid^="volume-mini-bar-"]').length,
-        /** دقیقاً همان HH:MMهایی که روی میله‌هایِ DOM نشسته — تا «زمانِ میله‌ها»
-         *  با سریِ کش مقایسه شود، نه با عددِ buckets */
-        panel_bar_keys: Array.from(
-          document.querySelectorAll('[data-testid^="volume-mini-bar-"]'),
-        ).map((e) => (e.getAttribute('data-testid') ?? '').replace('volume-mini-bar-', '')),
-        panel_empty: document.querySelector('[data-testid="volume-mini-empty"]')?.textContent ?? null,
-        /** سریِ خام: «۴ باکت» را بشود با دقیقه‌هایِ دارایِ چاپ مقایسه کرد */
-        series: bs.slice(-60),
-        now_minute: nowMinute,
-        last_bar: lastBar,
-        /** فاصلۀ آخرین میله تا ساعتِ اکنون؛ ۰/۱ = سری زنده، بیشتر = سری خوابیده */
-        last_bar_gap_min: lastBar ? asMin(nowMinute) - asMin(lastBar) : null,
-        sidebar_aria: aside?.getAttribute('aria-label') ?? null,
-        panel_head: panel ? (panel.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60) : null,
-        /** true یعنی یک کدِ ۱۵رقمی (ins_code) در متنِ سایدبار دیده می‌شود */
-        side_has_long_code: /\d{14,}/.test(sideText),
-      };
-    }, SYMBOL)
-  : { skipped: 'PROBE_SYMBOL داده نشد' };
-
-const f = flow as Record<string, any>;
-const num = (v: unknown): number | null => (typeof v === 'number' ? v : null);
-const baselineImplied =
-  num(f?.last_cum) != null && num(f?.sum_vol) != null
-    ? (num(f?.last_cum) as number) - (num(f?.sum_vol) as number)
-    : null;
-/** مقایسهٔ پنل با خوراکِ همان نشست — هیچ داده‌ای جعل نمی‌شود */
-const sumVolExpected =
-  baselineImplied != null && num(boardFlow.lastTvol) != null
-    ? (boardFlow.lastTvol as number) - baselineImplied
-    : null;
-const boardMinutes = Object.keys(boardFlow.minutes);
-const flowAccounting = {
-  /** حجمِ انباشته در اولین نمونۀ پنل؛ با اولین حجمِ دیدنیِ خوراک باید بخواند */
-  baseline_implied: baselineImplied,
-  board_first_tvol: boardFlow.firstTvol,
-  board_last_tvol: boardFlow.lastTvol,
-  last_cum_minus_board_last:
-    num(f?.last_cum) != null && num(boardFlow.lastTvol) != null
-      ? (num(f?.last_cum) as number) - (boardFlow.lastTvol as number)
-      : null,
-  sum_vol_expected: sumVolExpected,
-  /** منفی = حجمی در باکت‌ها شمارش نشده؛ مثبت = باکت بیش از خوراک ساخته */
-  sum_vol_gap:
-    num(f?.sum_vol) != null && sumVolExpected != null
-      ? (num(f?.sum_vol) as number) - sumVolExpected
-      : null,
-  panel_buckets: f?.buckets ?? null,
-  board_delta_minutes: boardMinutes.length,
-  /** منفی = دقیقۀ دارایِ چاپ بدونِ باکت مانده (باکِت گم‌شده) */
-  buckets_gap:
-    num(f?.buckets) != null ? (f.buckets as number) - boardMinutes.length : null,
-  board_resets: boardFlow.resets,
-  last_bar_gap_min: f?.last_bar_gap_min ?? null,
-  /** میله‌های DOM باید دقیقاً همان دقیقه‌های سری باشند */
-  bar_keys_vs_series: (() => {
-    const keys: string[] = Array.isArray(f?.panel_bar_keys) ? f.panel_bar_keys : [];
-    const series: { t: string }[] = Array.isArray(f?.series) ? f.series : [];
-    if (!Array.isArray(f?.panel_bar_keys) || !Array.isArray(f?.series)) return null;
-    const a = new Set(keys), b = new Set(series.map((s) => s.t));
-    return {
-      only_in_dom: [...a].filter((x) => !b.has(x)),
-      only_in_store: [...b].filter((x) => !a.has(x)),
-    };
-  })(),
-  side_has_long_code: f?.side_has_long_code ?? null,
-};
-
 await browser.close();
 const report = {
   base: BASE,
@@ -430,18 +316,17 @@ const report = {
   payloadSymbols: Object.keys(payloadWatch).length,
   payloadFreshSymbols: fresh,
   changedCells: [...changedCells],
+  colLabels,
   flashRecords: flashLog.length,
   flashCellsMatched: flashedCells,
   selftest,
   missedFlash,
+  badgeChanges,
   // نمونهٔ نخست گره‌ها را *نشانه می‌گذارد*؛ از نمونهٔ دوم به بعد نشانه باید
   // هنوز همان‌جا باشد — اگر React گره را از نو ساخته باشد، نشانه می‌رود.
   nodesKeptOriginal: samples
     .slice(1)
     .every((s) => s.rows.every((r) => r.nodeOriginal)),
-  flow,
-  flowAccounting,
-  boardFlow,
   pulseTrail: samples.map((s) => ({ at: s.at, verdict: s.pulse.verdict, hemat: s.pulse.hemat, rows: s.pulse.rows })),
   firstPulse: samples[0]?.pulse ?? null,
   lastPulse: samples[samples.length - 1]?.pulse ?? null,
@@ -467,8 +352,6 @@ console.log(
       selftest: report.selftest,
       nodesKeptOriginal: report.nodesKeptOriginal,
       verdictChanged: report.firstPulse?.verdict !== report.lastPulse?.verdict,
-      flow: report.flow,
-      flowAccounting: report.flowAccounting,
       errors: report.errors,
     },
     null,

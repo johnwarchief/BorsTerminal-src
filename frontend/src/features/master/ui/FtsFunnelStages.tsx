@@ -14,7 +14,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { useTapeStore } from '@features/market/stores/tapeStore';
+import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
 import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
@@ -45,7 +45,7 @@ const STAGE_RULE: Record<FunnelStageKey, string> = {
   tape: 'نمادهایی که همین نشست دستِ‌کم یکی از پنج فیلترِ جزوه را رد کرده‌اند — عینِ چیپ و بجِ تبِ تابلو.',
   technical: 'ستون‌های خودِ این مرحله: روندِ هفتگی و روزانه و ستاپ. با «رد می‌کند» وتوی هفتگی یا نبودِ ستاپِ سبک نماد را بیرون می‌اندازد؛ با «خودم چک می‌کنم» ردشده‌ها برچسب می‌خورند و به بنیادی می‌رسند. سنجیده‌نشده هیچ‌وقت رد نیست.',
   fundamental: '',
-  handover: 'فقط آنچه بنیادش واقعاً سنجیده و قبول شده — در انتظارِ انتخابِ شما برایِ سبد و مدیریتِ سرمایه.',
+  handover: 'فقط آنچه بنیادش قبول شده و تا ۱۴ روز مجمعِ عمومی پیشِ رو ندارد. وتوی مجمع زمان‌بندیِ ورود است نه ضعفِ بنیادی — نمره دست‌نخورده می‌ماند و فردا خودش برمی‌گردد.',
 };
 
 /** شرحِ درِ بنیادی به دو پیچِ دستِ کاربر وصل است تا متنِ rule دروغِ پیش‌فرض نگوید. */
@@ -119,6 +119,34 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
   handover: ['symbol', 'weekly', 'score', 'basket'],
 };
 
+/**
+ * پهنایِ هر ستون (درصد) — با `table-layout: fixed`.
+ *
+ * چرا دستی: با چیدمانِ خودکار، مرورگر فضایِ اضافی را به سرستونِ بلندِ «رشد فروش»
+ * می‌دهد (۵۲۷px) ولی سلولِ همان ستون ۵۲px می‌ماند؛ نتیجه‌اش این بود که
+ * سرستون تا ۸۸۲ پیکسل از مقدارِ خودش جدا می‌افتاد و پنج شاخصِ بنیادی زیرِ
+ * سرستونِ اشتباه می‌نشستند. جدولِ «در انتظارِ گزارش» هم جدولِ دومی است، پس
+ * همان colgroup را می‌گیرد — وگرنه دو سرستونِ ناهم‌راستا رویِ هم می‌آیند.
+ * ارقام نسبی‌اند: ColGroup آن‌ها را به ۱۰۰٪ نرمال می‌کند، پس هر مرحله لازم نیست
+ * جمعش دقیقاً صد شود (و افزودنِ ستونِ تازه جمع را نمی‌شکند).
+ */
+const COL_W: Record<ColKey, number> = {
+  symbol: 20, last: 13, chg: 12, vol: 11, pattern: 32,
+  weekly: 15, daily: 15, setup: 26, mark: 14,
+  ind1: 14, ind2: 14, ind3: 14, ind4: 14, ind5: 14, score: 10, basket: 30,
+};
+
+function ColGroup({ cols }: { cols: ColKey[] }) {
+  const sum = cols.reduce((a, k) => a + COL_W[k], 0) || 1;
+  return (
+    <colgroup>
+      {cols.map((k) => (
+        <col key={k} style={{ width: `${((COL_W[k] / sum) * 100).toFixed(3)}%` }} />
+      ))}
+    </colgroup>
+  );
+}
+
 const TREND_COLOR: Record<string, string> = {
   up: 'text-accent-green',
   down: 'text-accent-red',
@@ -133,7 +161,7 @@ function IndCell({ mark, value, hint }: { mark: StageMark; value: string | null;
   const cls =
     mark === 'ok' ? 'text-accent-green' : mark === 'no' ? 'text-accent-red' : 'text-text-muted';
   return (
-    <td className={`num px-2 py-1 text-end ${cls}`} title={hint ?? value ?? MARK_LABEL[mark]}>
+    <td className={`truncate px-2 py-1 text-end ${cls}`} title={hint ?? value ?? MARK_LABEL[mark]}>
       {value ? <span className="ms-1 opacity-70">{value}</span> : null}
       {hint ? <span className="text-accent-yellow">⚠</span> : null}
       <span className="font-black">{glyph}</span>
@@ -144,7 +172,7 @@ function IndCell({ mark, value, hint }: { mark: StageMark; value: string | null;
 function TrendCell({ t }: { t: string | null }) {
   const key = t ?? 'na';
   return (
-    <td className={`px-2 py-1 text-end font-bold ${TREND_COLOR[key] ?? 'text-text-muted'}`}>
+    <td className={`truncate px-2 py-1 text-end font-bold ${TREND_COLOR[key] ?? 'text-text-muted'}`}>
       {trendLabel(t)}
     </td>
   );
@@ -164,27 +192,27 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark 
   const r = e.row;
   switch (k) {
     case 'last':
-      return <td className="num px-2 py-1 text-end text-text-secondary">{r?.p_last != null ? fmtInt(r.p_last) : '—'}</td>;
+      return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.p_last != null ? fmtInt(r.p_last) : '—'}</span></td>;
     case 'chg':
       return (
-        <td className={`num px-2 py-1 text-end ${
+        <td className={`truncate px-2 py-1 text-end ${
           (r?.percent_change ?? 0) > 0 ? 'text-accent-green' : (r?.percent_change ?? 0) < 0 ? 'text-accent-red' : 'text-text-secondary'
         }`}>
-          {r?.percent_change != null ? fmtPct(r.percent_change) : '—'}
+          <span className="num">{r?.percent_change != null ? fmtPct(r.percent_change) : '—'}</span>
         </td>
       );
     case 'vol':
-      return <td className="num px-2 py-1 text-end text-text-secondary">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</td>;
+      return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</span></td>;
     case 'pattern':
-      return <td className="px-2 py-1 text-start text-3xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
+      return <td className="truncate px-2 py-1 text-start text-3xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
     case 'weekly':
       return <TrendCell t={e.trendW} />;
     case 'daily':
       return <TrendCell t={e.trendD} />;
     case 'setup':
-      return <td className="px-2 py-1 text-start text-3xs text-text-secondary">{e.setups || '—'}</td>;
+      return <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary">{e.setups || '—'}</td>;
     case 'mark':
-      return <td className="px-2 py-1 text-end text-3xs font-bold" title={why ?? undefined}>{mark ? MARK_LABEL[mark] : '—'}</td>;
+      return <td className="truncate px-2 py-1 text-end text-3xs font-bold" title={why ?? undefined}>{mark ? MARK_LABEL[mark] : '—'}</td>;
     case 'ind1':
     case 'ind2':
     case 'ind3':
@@ -207,7 +235,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark 
       return <IndCell mark={e.inds[i] ?? 'na'} value={raw} hint={hint} />;
     }
     case 'score':
-      return <td className="num px-2 py-1 text-end font-bold text-text-primary">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</td>;
+      return <td className="px-2 py-1 text-end font-bold text-text-primary"><span className="num">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</span></td>;
     case 'basket':
       return <td className="px-2 py-1 text-end"><SymbolBasketAction symbol={e.symbol} /></td>;
     default:
@@ -286,6 +314,13 @@ function StageCard({
             {toFaDigits(stage.unmeasured)} سنجیده‌نشده
           </span>
         ) : null}
+        {/* مالک: «تنظیماتِ مرحلۀ بنیادی رو روی نوارِ جدول بنیادی بذار». پیش‌تر یک
+            نوارِ سراسری زیرِ چهار مرحله بود؛ هر مرحله پیچ‌هایِ خودش را رویِ
+            نوارِ خودش می‌گیرد — همان کاری که کلیدِ تکنیکال از قبل می‌کرد. */}
+        {stage.key === 'fundamental' ? (
+          <FundStagePrefs passed={stage.entries.length} techScreens={techScreens} />
+        ) : null}
+        {stage.key === 'tape' ? <TapeStagePrefs picked={stage.entries.length} /> : null}
         {/* کنترلِ درِ تکنیکال کنارِ همین مرحله نشسته است، نه در منویِ سراسری. */}
         {stage.key === 'technical' ? (
           <span
@@ -322,14 +357,15 @@ function StageCard({
             {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
           </p>
         ) : (
-          <table className="w-full border-collapse text-xs">
+          <table className="w-full table-fixed border-collapse text-xs">
+            <ColGroup cols={cols} />
             <thead className="sticky top-0 bg-bg-primary/95 text-3xs text-text-muted backdrop-blur-sm">
               <tr>
                 {cols.map((k) => (
                   <th
                     key={k}
                     title={COL[k].title}
-                    className={`px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}
+                    className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}
                   >
                     {COL[k].label}
                   </th>
@@ -352,13 +388,15 @@ function StageCard({
           <p className="px-3 py-1.5 text-3xs font-bold text-text-muted">
             بنیادی‌اش سنجیده نشده — در انتظارِ گزارشِ کدال ({toFaDigits(stage.pending.length)})
           </p>
-          <table className="w-full border-collapse text-xs">
-            {/* سرستونِ همان مرحله: ردیف‌هایِ انتظار هم باید بدانند کدام ✓/✗
-                کدام شاخص است، وگرنه پنج علامت بی‌نام می‌مانند. */}
+          <table className="w-full table-fixed border-collapse text-xs">
+            {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
+                بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
+                بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
+            <ColGroup cols={cols} />
             <thead className="text-3xs text-text-muted">
               <tr>
                 {cols.map((k) => (
-                  <th key={k} className={`px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}>
+                  <th key={k} className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}>
                     {COL[k].label}
                   </th>
                 ))}
@@ -389,11 +427,15 @@ function StageRow({
 }) {
   const mark = showMark ? (showMark === 'tech' ? entry.tech : entry.fund) : null;
   const why = showMark === 'tech' ? entry.techWhy : entry.fundWhy;
+  // وتوی مجمع فقط درِ مرحلۀ «تحویل» نماد را بیرون می‌اندازد، ولی برچسبش در
+  // همهٔ مرحله‌ها می‌نشیند: وگرنه کاربر می‌بیند نمادی که درِ بنیادی قبول شده
+  // در مرحلۀ آخر غیب شده و هیچ دلیلی برایش نوشته نیست.
+  const rowTitle = entry.assemblyVeto ? [why, entry.assemblyWhy].filter(Boolean).join(' · ') : why;
   return (
     <tr
       data-fkey={entry.symbol}
       className="border-b border-border-c/40 last:border-0 hover:bg-bg-card/70"
-      title={why}
+      title={rowTitle}
     >
       <td className="px-2 py-1 text-start">
         <button
@@ -403,6 +445,15 @@ function StageRow({
         >
           {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
           <span className="truncate">{entry.symbol}</span>
+          {entry.assemblyVeto ? (
+            <span
+              data-testid={`funnel-assembly-veto-${entry.symbol}`}
+              className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+              title={entry.assemblyWhy}
+            >
+              وتوی مجمع
+            </span>
+          ) : null}
         </button>
       </td>
       {cols.filter((k) => k !== 'symbol').map((k) => (
@@ -412,8 +463,49 @@ function StageRow({
   );
 }
 
-/** پیچ‌هایِ درِ بنیادی — سخت‌گیریِ جزوه کم نمی‌شود، حقِ انتخاب دستِ خودِ مالک است. */
-function FunnelPrefsBar({ passed, techScreens }: { passed: number; techScreens: boolean }) {
+/**
+ * چیپ‌هایِ پنج فیلترِ جزوه رویِ نوارِ خودِ مرحلۀ «تابلو» — «نحوۀ غربالگری» همین
+ * است: کدامِ پنج درِ ورودی باز باشند. این همان `quickFilters` تبِ تابلو است، پس
+ * دو منبعِ حقیقت نیست و از قیف روشن شدنش هم عوضی در نمی‌آید.
+ */
+function TapeStagePrefs({ picked }: { picked: number }) {
+  const quickFilters = useTapeStore((s) => s.quickFilters);
+  const toggle = useTapeStore((s) => s.toggleQuickFilter);
+  return (
+    <span
+      data-testid="funnel-tape-prefs"
+      className="flex flex-wrap items-center gap-1"
+      role="group"
+      aria-label="فیلترهای ورودی قیف"
+    >
+      {QUICK_FILTERS.map((f: QuickFilter) => {
+        const on = quickFilters.includes(f);
+        return (
+          <button
+            key={f}
+            type="button"
+            data-testid={`funnel-tape-chip-${f}`}
+            aria-pressed={on}
+            onClick={() => toggle(f)}
+            title={on ? 'روشن — این فیلتر ورودیِ قیف را می‌سازد' : 'خاموش — با این فیلتر نمادها کمتر می‌شوند'}
+            className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+              on
+                ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60'
+            }`}
+          >
+            {QUICK_LABELS[f]}
+          </button>
+        );
+      })}
+      <span className="num text-3xs text-text-muted">ورودی: {toFaDigits(picked)}</span>
+    </span>
+  );
+}
+
+/** پیچ‌هایِ درِ بنیادی — سخت‌گیریِ جزوه کم نمی‌شود، حقِ انتخاب دستِ خودِ مالک است.
+    درونِ <header> همان مرحله می‌نشیند، پس جعبه و عنوانِ تکراری ندارد. */
+function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: boolean }) {
   const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
   const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
   const setFundFloor = useFunnelPrefsStore((s) => s.setFundFloor);
@@ -428,11 +520,10 @@ function FunnelPrefsBar({ passed, techScreens }: { passed: number; techScreens: 
   return (
     <div
       data-testid="funnel-prefs"
-      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border border-border-c bg-bg-card/40 px-2.5 py-1.5"
+      className="flex flex-wrap items-center gap-x-2 gap-y-1"
     >
-      <span className="text-2xs font-black text-text-secondary">
-        مرحلۀ بنیادی
-        <span className="ms-1 font-normal text-text-muted">(پیش‌فرضِ جزوه: {toFaDigits(DEFAULT_FUND_FLOOR)} از {toFaDigits(FUND_FLOOR_MAX)})</span>
+      <span className="text-2xs font-black text-text-secondary" title={`پیش‌فرضِ جزوه: ${toFaDigits(DEFAULT_FUND_FLOOR)} از ${toFaDigits(FUND_FLOOR_MAX)}`}>
+        کفِ نمره
       </span>
       <span className="flex items-center gap-1" role="group" aria-label="کفِ نمرۀ پنج‌شاخصه">
         {Array.from({ length: FUND_FLOOR_MAX }, (_, i) => i + 1).map((n) => (
@@ -464,8 +555,8 @@ function FunnelPrefsBar({ passed, techScreens }: { passed: number; techScreens: 
           </button>
         ))}
       </span>
-      <span className="num ms-auto text-3xs text-text-muted">
-        با این پیچ‌ها: {toFaDigits(passed)} نماد از مرحلۀ بنیادی عبور می‌کند
+      <span className="num text-3xs text-text-muted">
+        عبور با این پیچ‌ها: {toFaDigits(passed)}
       </span>
       {fundFloor !== DEFAULT_FUND_FLOOR || unmeasured !== 'hold' || !techScreens ? (
         <button type="button" data-testid="funnel-prefs-reset" onClick={reset} className="text-3xs font-bold text-text-muted underline hover:text-accent-amber">
@@ -539,9 +630,13 @@ export function FtsFunnelStages({
           : 'هیچ‌کدام پنج‌شاخصهٔ قبول‌شدن ندارد.',
     handover: hand.entries.length
       ? null
-      : fund.entries.length
-        ? 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.'
-        : 'مرحلۀ بنیادی کسی را قبول نکرد.',
+      : hand.rejected
+        ? `${toFaDigits(hand.rejected)} نماد تا ۱۴ روز مجمعِ عمومی دارد — ورود وتو است${
+            fund.entries.length > hand.rejected ? '؛ بقیهٔ رسیدگان همین حالا در سبدِ شما هستند' : ''
+          }.`
+        : fund.entries.length
+          ? 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.'
+          : 'مرحلۀ بنیادی کسی را قبول نکرد.',
   };
 
   return (
@@ -616,7 +711,6 @@ export function FtsFunnelStages({
         ) : null}
       </div>
 
-      <FunnelPrefsBar passed={funnel.stages.fundamental.entries.length} techScreens={techScreens} />
 
       <div className="flex flex-col gap-2">
         {stages.map((s, i) => (

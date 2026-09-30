@@ -7,9 +7,11 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from ._core import _num, get_db, sym_pred
 from .market import load_fts_config
-from .chart import _fts_analyze_symbol
+from .chart import _fts_analyze_symbol, upcoming_assemblies, _ASSEMBLY_CONFIRMED
+from .fundamental import _fa
 from fastapi import APIRouter
 import pandas as pd
+import datetime
 import os
 import json
 from bors_config import APP_VERSION, DB_PATH, WORK_DIR
@@ -130,6 +132,60 @@ def get_history(symbol: str):
     finally:
         conn.close()
 
+# ── وتوی مجمع (تقویم کدال) ────────────────────────────────────────────────
+# مجمعِ عمومی یعنی توقفِ نماد در روزِ برگزاری و گپِ قیمتیِ پس از آن. هیچ صفحه‌ای
+# از چارتِ چهارصفحه‌ای این قاعده را ندارد — رأیِ خودِ مالک است («هشدار داده بشه
+# و وتو بخوره»)، پس کنارِ وتوی هفتگی می‌نشیند، نه داخلِ پنج‌شاخصه.
+#
+# چرا بیرونِ کش: اسکنِ پنج‌شاخصه ۱۲ ساعت کش می‌شود، ولی «چند روز تا مجمع» هر
+# روز عوض می‌شود. وتو را داخلِ payload می‌ساختیم، نمادی که مجمعمان تمام شده تا
+# ۱۲ ساعت وتو می‌ماند و نمادی که فردا مجمع دارد وتو نمی‌شد. هزینهٔ محاسبهٔ
+# تازه یک بار خواندنِ `static/calendar/cache.json` است — همان کاری که
+# `/api/calendar/upcoming` می‌کند، پس روی هر درخواست ارزانش هست.
+#
+# ردیف‌ها کپی می‌شوند: payloadِ کشِ رم همان آبجکتِ برگشتی است و جهشِ درجا
+# علتِ وتو را هر درخواست یک‌بار به `exclusion_reasons` اضافه می‌کرد.
+_ASM_VETO_PREFIX = "وتوی مجمع"
+
+
+def _apply_assembly_veto(rows):
+    """کپیِ ردیف‌ها با پرچمِ تازۀ وتوی مجمع. «بی‌داده وتو نیست»: خطا ⇒ فقط
+    پرچمِ false، نه حدس. لغو/تعویق (assemblyChange) تاریخِ معتبری به دست
+    نمی‌دهد ⇒ وتو نمی‌سازد؛ برچسبِ صادقانهٔ تغییر در فرانت می‌ماند."""
+    try:
+        asm = upcoming_assemblies()
+    except Exception:
+        asm = {}
+    today = datetime.date.today()
+    norm = str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})
+    out = []
+    for r in rows:
+        r = dict(r)
+        # علتِ وتوی قبلی از دورِ پیش پاک می‌شود تا دو بار پشتِ هم ننشیند
+        base = " · ".join(x for x in str(r.get("exclusion_reasons") or "").split(" · ")
+                          if x.strip() and not x.startswith(_ASM_VETO_PREFIX))
+        ev = asm.get(str(r.get("symbol") or "").translate(norm))
+        if ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED:
+            r["assembly_veto"] = False
+            r["exclusion_reasons"] = base
+            out.append(r)
+            continue
+        left = (datetime.date.fromisoformat(ev["date"]) - today).days
+        r["assembly_veto"] = True
+        r["assembly_date"] = ev["date"]
+        r["assembly_days"] = left
+        # مثلِ وتوی هفتگی: جای واچ‌لیست می‌سوزد و با ردیفِ رتبهٔ بعدی پر
+        # نمی‌شود — انقباضِ عمدیِ قیف است، نه باگ. `excluded` دست‌نخورده است:
+        # مجمع ضعفِ بنیادی نیست، زمان‌بندیِ ورود است و خاکستری‌کردنِ ردیف دروغ
+        # می‌گوید.
+        r["watchlist"] = False
+        why = ("وتوی مجمع — امروز مجمع عمومی دارد" if left <= 0
+               else f"وتوی مجمع — {_fa(left)} روز تا مجمع عمومی")
+        r["exclusion_reasons"] = " · ".join(x for x in (base, why) if x)
+        out.append(r)
+    return out
+
+
 @router.get("/api/screener")
 def get_screener():
     """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8).
@@ -139,7 +195,20 @@ def get_screener():
     «سودآوری مستمر» بر پایهٔ net_profit به‌جای EPS سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی).
     اکنون امتیاز دقیقاً تعداد پنج محور است (۰..۵) و نمادهای تعلیق/بیمه/دستوری
     با پرچم excluded علامت می‌خورند.
+
+    وتوی مجمع بیرونِ کش و روی هر درخواست تازه حساب می‌شود (`_apply_assembly_veto`).
     """
+    payload = _screener_cached()
+    rows = (payload or {}).get("data")
+    if not isinstance(rows, list) or not rows:
+        return payload
+    fresh = dict(payload)
+    fresh["data"] = _apply_assembly_veto(rows)
+    return fresh
+
+
+def _screener_cached():
+    """بدنهٔ سنگینِ اسکن — با کشِ رم/دیسکِ ۱۲ ساعته. وتوی مجمع اینجا نیست."""
     conn = get_db()
     try:
         import fts_engine
@@ -280,6 +349,8 @@ def get_screener():
                                        cfg=cfg, company_name=cname_of.get(key, ""),
                                        m141_map=_m141m, liq_map=_liqm)
                 p = res["passes"]
+                _ind = res.get("indicators") or {}
+                _g3 = _ind.get("3") or {}
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
@@ -287,8 +358,9 @@ def get_screener():
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
-                r["i3_pass"] = p["3_gross_margin"]
-                r["i4_pass"] = (None if fts_engine.ind4_na((res.get("indicators") or {}).get("4"))
+                r["i3_pass"] = (None if fts_engine.ind3_na(_g3)
+                                else p["3_gross_margin"])
+                r["i4_pass"] = (None if fts_engine.ind4_na(_ind.get("4"))
                                 else p["4_sales_to_mcap"])
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
@@ -307,9 +379,7 @@ def get_screener():
                 # این، «۴ پتانسیل»ِ جدول (فروش ۳ماهه×۴) با potential_pctِ کارت
                 # (تجمیعی × ۱۲÷م) واگرا می‌شد — شاهد: شملی جدول ۳۳٫۲٪ در برابر کارت
                 # ۶۱٫۳٪؛ ۵۲۳ ردیف از ۸۶۵ ناهم‌خوان بودند. امتیاز/پرچم دست‌نخورده است.
-                _ind = res.get("indicators") or {}
                 _g1 = ((_ind.get("1") or {}).get("monetary") or {})
-                _g3 = _ind.get("3") or {}
                 _v4 = _ind.get("4") or {}
                 _an4 = _v4.get("annual") or {}
                 r["rev_growth"] = _g1.get("monetary_pct")

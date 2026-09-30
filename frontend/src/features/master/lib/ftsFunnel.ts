@@ -115,6 +115,10 @@ export type FunnelEntry = {
   setups: string;
   /** تک‌تکِ پنج شاخص: ok / no / na — همان سطرهای صفحۀ ۱ چارت */
   inds: StageMark[];
+  /** وتوی مجمعِ پیش‌رو — داوریِ بک‌اند (`assembly_veto` در /api/screener)، نه یک
+   *  فرمولِ دوم در فرانت. رأیِ مالک است، نه چارتِ چهارصفحه‌ای. */
+  assemblyVeto: boolean;
+  assemblyWhy: string;
 };
 
 export type FunnelStageKey = 'tape' | 'technical' | 'fundamental' | 'handover';
@@ -328,6 +332,21 @@ function indMarks(sc: FtsScreenRow | null): StageMark[] {
   );
 }
 
+/**
+ * وتوی مجمع — از خودِ ردیفِ اسکرینر خوانده می‌شود، نه از یک تقویمِ دوم در فرانت.
+ * بک‌اند (`_apply_assembly_veto` در api/screener.py) بیرونِ کشِ ۱۲ ساعته و روی
+ * هر درخواست تازه داوری می‌کند؛ قیف اینجا داوریِ تازه‌ای نمی‌سازد، فقط منتقل
+ * می‌کند — همان قراردادی که وتوی هفتگی دارد.
+ * `screen === null` یعنی اسکرینر این نماد را پوشش نداده ⇒ وتو نیست (بی‌داده وتو نیست).
+ */
+function assemblyVetoOf(sc: FtsScreenRow | null): { veto: boolean; why: string } {
+  if (sc?.assembly_veto !== true) return { veto: false, why: '' };
+  const d = typeof sc.assembly_days === 'number' ? sc.assembly_days : null;
+  const tail =
+    d == null ? '' : d <= 0 ? ' — امروز مجمع عمومی دارد' : ` — ${toFaDigits(d)} روز تا مجمع عمومی`;
+  return { veto: true, why: `تحویل: وتوی مجمع${tail}؛ نماد در روزِ مجمع متوقف می‌شود` };
+}
+
 /** ردیف‌هایِ مرحلۀ تابلو: دامنهٔ زندهٔ تابلو که دستِ‌کم یک فیلترِ درب را رد کرده */
 function tapeRows(
   rows: MarketRow[],
@@ -380,6 +399,7 @@ export function buildFunnel(
       const t = techMark(sig, preset);
       const kind = classifyAssetType(r);
       const f = fundMark(screen, kind, opts);
+      const av = assemblyVetoOf(screen);
       return {
         symbol: r.symbol ?? '',
         name: r.name ?? '',
@@ -399,6 +419,8 @@ export function buildFunnel(
         trendD: sig?.trendD ?? null,
         setups: sig ? activeSetups(sig) : '',
         inds: indMarks(screen),
+        assemblyVeto: av.veto,
+        assemblyWhy: av.why,
       };
     })
     .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
@@ -425,8 +447,13 @@ export function buildFunnel(
   const passed = fundEntries;
   const pending = opts.unmeasured === 'hold' ? unjudged : [];
   const fundDropped = techKept.length - fundEntries.length - pending.length;
-  // ۴) تحویل: بنیادش واقعاً سنجیده و قبول شده و هنوز درِ سبد نیست
-  const handover = passed.filter((e) => !portfolioSet.has(e.symbol));
+  // ۴) تحویل: بنیادش واقعاً سنجیده و قبول شده، هنوز درِ سبد نیست و مجمعِ
+  //    نزدیک ندارد. وتوی مجمع اینجا می‌ایستد نه درِ مرحلۀ بنیادی: مجمع ضعفِ
+  //    بنیادی نیست، زمان‌بندیِ ورود است — نماد در روزِ مجمع متوقف می‌شود و پس
+  //    از آن گپِ قیمتی می‌خورد. پس نمرۀ پنج‌شاخصه دست‌نخورده می‌ماند و فقط
+  //    «امروز» تحویل داده نمی‌شود؛ فردا که مجمع تمام شد خودش برمی‌گردد.
+  const assemblyBlocked = passed.filter((e) => e.assemblyVeto);
+  const handover = passed.filter((e) => !portfolioSet.has(e.symbol) && !e.assemblyVeto);
 
   return {
     boardScope: scope.length,
@@ -449,7 +476,14 @@ export function buildFunnel(
         unmeasured: pending.length,
         pending,
       },
-      handover: { key: 'handover', entries: handover, dropped: 0, rejected: 0, unmeasured: 0, pending: [] },
+      handover: {
+        key: 'handover',
+        entries: handover,
+        dropped: assemblyBlocked.length,
+        rejected: assemblyBlocked.length,
+        unmeasured: 0,
+        pending: [],
+      },
     },
   };
 }

@@ -130,3 +130,51 @@ export function pickAssemblyBadge(
   }
   return null;
 }
+
+export interface CapitalIncreaseBadge {
+  date: string;
+  jalali: string;
+  /** فاصله تا اطلاعیه — ۰ یعنی همین امروز */
+  days: number;
+  label: string;
+  detail: string;
+  testId: 'capital-increase-badge';
+}
+
+/** برچسب «افزایش سرمایه» — هشدارِ زمان‌بندی است، نه حکم: هیچ وتویی از آن نمی‌سازد
+ *  (رأیِ pilot روی #53). بیرونِ افقِ همان «مجمع نزدیک» چیزی نشان داده نمی‌شود.
+ *  عنوان‌محور است، چون یک اطلاعیه می‌تواند هم «دعوت به مجمع» باشد هم «افزایش
+ *  سرمایه»؛ آن‌جا `cat` مجمع می‌ماند (تا وتو نَبَد) و این فهرست همان ردیف را از
+ *  عنوان می‌شناسد — عینِ `_CAP_RE` در api/chart.py. */
+const CAPITAL_RE = /افزايش\s*سرمايه|افزایش\s*سرمایه|افزایشسرمايه|افزايشسرمايه/;
+
+export function isCapitalIncreaseEvent(e: CalEvent): boolean {
+  if (e.cat === 'capitalIncrease') return true;
+  const t = normTitle(String(e.title ?? '')).replace(/\u064a/g, '\u06cc').replace(/\u0643/g, '\u06a9');
+  return CAPITAL_RE.test(t);
+}
+
+export function pickCapitalBadge(
+  events: readonly CalEvent[] | null | undefined,
+  now: Date = new Date(),
+  nearDays: number = ASSEMBLY_NEAR_DAYS,
+): CapitalIncreaseBadge | null {
+  const todayIso = todayIsoInTehran(now);
+  const upcoming = (Array.isArray(events) ? events : [])
+    .filter((e): e is CalEvent => typeof e?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.date))
+    .filter((e) => isCapitalIncreaseEvent(e) && dayDiff(todayIso, e.date) >= 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const next = upcoming[0];
+  if (!next) return null;
+  const days = dayDiff(todayIso, next.date);
+  if (days > nearDays) return null;
+  const daysText = days === 0 ? 'امروز' : days === 1 ? 'فردا' : `${toFaDigits(days)} روز دیگر`;
+  return {
+    date: next.date,
+    jalali: jalaliOf(next.date),
+    days,
+    label: `افزایش سرمایه — ${daysText} (${jalaliOf(next.date)})`,
+    detail: String(next.title ?? ''),
+    testId: 'capital-increase-badge',
+  };
+}

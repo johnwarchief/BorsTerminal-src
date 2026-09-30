@@ -1,9 +1,9 @@
 // widgets/SymbolInspector.tsx -- داک باریک نماد در لبه چپ (فاز 8)
 // دید متمرکز روی تک‌سهم در کنار دید کلان همه تب‌ها.
 import { useMemo } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
+import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
 import { ftsScoreOf } from '@contracts/fundamental';
@@ -14,6 +14,8 @@ import { runStrictGates, definiteDecision, weeklyTrendFromSignal } from '@featur
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
+import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
+import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard } from './useInspectorBoard';
 
 const ACTION_FA = {
@@ -114,6 +116,8 @@ export function SymbolInspector() {
   const symbol = useSymbolStore((s) => s.symbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const row = useInspectorBoard();
+  const { pathname } = useLocation();
+  const stageIdx = stageIndexForPath(pathname);
 
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
   const verdict = symbol ? aggregateSignals(symbol, getActiveSignals(symbol)) : null;
@@ -197,6 +201,45 @@ export function SymbolInspector() {
       </div>
 
       <div className="flex flex-col gap-2 p-2.5">
+        {/* نشانگر مرحلۀ قیف بر اساسِ تبِ فعال — «الان تو چه مرحله‌ای هستیم» */}
+        {stageIdx != null ? (
+          <nav
+            aria-label="مراحل غربالگری FTS"
+            data-testid="inspector-stage"
+            className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
+          >
+            {INSPECTOR_STAGES.map((s, i) => (
+              <Link
+                key={s.key}
+                to={stageHref(i, symbol)}
+                aria-current={i === stageIdx ? 'step' : undefined}
+                data-testid={`inspector-stage-${s.key}`}
+                title={
+                  i === stageIdx
+                    ? `مرحلۀ فعلی: ${s.label}`
+                    : i < stageIdx
+                      ? `گذشته: ${s.label}`
+                      : `بعدی: ${s.label}`
+                }
+                className={`rounded-md border px-1.5 py-0.5 transition-colors ${
+                  i === stageIdx
+                    ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                    : i < stageIdx
+                      ? 'border-border-c/70 bg-bg-card/60 text-text-secondary hover:text-text-primary'
+                      : 'border-border-c/50 bg-bg-primary text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {s.label}
+              </Link>
+            ))}
+            <span className="w-full text-[9.5px] font-normal text-text-muted" data-testid="inspector-stage-next">
+              {stageIdx < INSPECTOR_STAGES.length - 1
+                ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
+                : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ قیف`}
+            </span>
+          </nav>
+        ) : null}
+
         {/* قیمت و درصد با فلاش */}
         <div className="flex items-end justify-between gap-2">
           <div>
@@ -278,13 +321,14 @@ export function SymbolInspector() {
           />
         </div>
 
-        {/* جریان حجم درون‌روزی با سقف ارتفاع ۶۰ پیکسل */}
-        <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-2">
-          <div className="mb-1 text-[10px] font-bold text-text-secondary">جریان حجم (۰۸:۴۵ تا ۱۲:۳۰)</div>
-          <div className="max-h-[60px] overflow-hidden">
-            <VolumeFlowMini symbol={symbol} compact />
-          </div>
+        {/* پنج مظنه — همان عمقی که در تب تکنیکال است، این‌جا برایِ همان نماد */}
+        <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-1.5">
+          <div className="mb-1 text-[10px] font-bold text-text-secondary">پنج مظنه</div>
+          <SidebarOrderBook symbol={symbol} compact />
         </div>
+
+        {/* جریان حجم درون‌روز — کارتِ خودکفا (عنوان و محورِ خودش را دارد) */}
+        <VolumeFlowMini symbol={symbol} compact />
 
         {/* ممیزی وضعیت بنیادی (FTS) — بازشوی «چرا این وضعیت؟» */}
         <AuditBadge

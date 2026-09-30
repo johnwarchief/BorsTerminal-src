@@ -183,7 +183,9 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
                   {GATE_MARK[g.state]}
                 </span>
                 <span className="text-2xs font-bold text-text-primary">{g.label}</span>
-                {g.detail ? <span className={`num text-2xs font-black ${GATE_TONE[g.state]}`}>{g.detail}</span> : null}
+                {/* `detail` جمله است نه عدد («۳ نشستِ اخیر: …»)؛ با .num شروعِ
+                    جمله به لبۀ چپ می‌افتاد — مالک: «rtl شروعش رو درست کن». */}
+                {g.detail ? <span className={`num-text text-2xs font-black ${GATE_TONE[g.state]}`}>{g.detail}</span> : null}
               </li>
             ))}
           </ul>

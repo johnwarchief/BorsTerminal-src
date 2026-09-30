@@ -4,7 +4,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
-import type { CalEvent } from '../lib/assemblyEvent';
+import { ASSEMBLY_NEAR_DAYS, type CalEvent } from '../lib/assemblyEvent';
 
 const UpcomingItemSchema = z.object({
   symbol: z.string(),
@@ -18,11 +18,12 @@ const UpcomingSchema = z.object({
   days: z.number().nullish(),
   count: z.number().nullish(),
   items: z.array(UpcomingItemSchema).nullish(),
+  capital: z.array(UpcomingItemSchema).nullish(),
 });
 
 export type UpcomingAssembly = z.infer<typeof UpcomingItemSchema>;
 
-export function useCalendarUpcoming(days = 14, enabled = true) {
+export function useCalendarUpcoming(days = ASSEMBLY_NEAR_DAYS, enabled = true) {
   return useQuery({
     queryKey: ['cal-upcoming', days],
     queryFn: ({ signal }) =>

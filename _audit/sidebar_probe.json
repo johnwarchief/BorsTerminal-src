@@ -1,0 +1,122 @@
+{
+ "symbol": "چتر",
+ "day": "2026-09-30",
+ "intraday_endpoint_calls": [],
+ "api_paths_seen": [
+  "/api/update/version",
+  "/api/order-book/%DA%86%D8%AA%D8%B1",
+  "/api/market",
+  "/api/selection/portfolio",
+  "/api/mstat/timeline",
+  "/api/mstat/smart-money",
+  "/api/mstat/summary",
+  "/api/mstat/depth",
+  "/api/mstat/thermometer",
+  "/api/screener",
+  "/api/chart/%DA%86%D8%AA%D8%B1",
+  "/api/index/tedpix"
+ ],
+ "closed_market": {
+  "stage_present": true,
+  "stage_current": "تابلوخوانی",
+  "stage_note": "مرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکال",
+  "stage_box": {
+   "h": 39,
+   "w": 219,
+   "top": 72
+  },
+  "book_present": true,
+  "book_rows": 10,
+  "book_empty": null,
+  "book_first": [
+   "۱۹٬۴۳۴۹۷٬۹۹۷۱",
+   "۱۹٬۴۲۵۱٬۰۰۰۱",
+   "۱۹٬۰۵۰۵۵۱"
+  ],
+  "book_box": {
+   "h": 233,
+   "w": 205,
+   "top": 372
+  },
+  "flow_present": true,
+  "flow_bars": 0,
+  "flow_empty": "بدون داده — در ساعتِ بازار جمع می‌شود",
+  "flow_box": {
+   "h": 77,
+   "w": 219,
+   "top": 619
+  },
+  "inspector_h": 1000,
+  "inspector_scroll": 1000,
+  "doc_scroll_x": 0
+ },
+ "flow_cache_written_outside_session": null,
+ "seeded_render": {
+  "stage_present": true,
+  "stage_current": "تابلوخوانی",
+  "stage_note": "مرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکال",
+  "stage_box": {
+   "h": 39,
+   "w": 219,
+   "top": 72
+  },
+  "book_present": true,
+  "book_rows": 10,
+  "book_empty": null,
+  "book_first": [
+   "۱۹٬۴۳۴۹۷٬۹۹۷۱",
+   "۱۹٬۴۲۵۱٬۰۰۰۱",
+   "۱۹٬۰۵۰۵۵۱"
+  ],
+  "book_box": {
+   "h": 233,
+   "w": 205,
+   "top": 372
+  },
+  "flow_present": true,
+  "flow_bars": 5,
+  "flow_empty": null,
+  "flow_box": {
+   "h": 147,
+   "w": 219,
+   "top": 619
+  },
+  "inspector_h": 1000,
+  "inspector_scroll": 1000,
+  "doc_scroll_x": 0
+ },
+ "on_technical_tab": {
+  "stage_present": true,
+  "stage_current": "تکنیکال",
+  "stage_note": "مرحلۀ فعلی: تکنیکال · بعدی: بنیادی",
+  "stage_box": {
+   "h": 39,
+   "w": 219,
+   "top": 72
+  },
+  "book_present": true,
+  "book_rows": 10,
+  "book_empty": null,
+  "book_first": [
+   "۱۹٬۴۳۴۹۷٬۹۹۷۱",
+   "۱۹٬۴۲۵۱٬۰۰۰۱",
+   "۱۹٬۰۵۰۵۵۱"
+  ],
+  "book_box": {
+   "h": 233,
+   "w": 205,
+   "top": 372
+  },
+  "flow_present": true,
+  "flow_bars": 5,
+  "flow_empty": null,
+  "flow_box": {
+   "h": 147,
+   "w": 219,
+   "top": 619
+  },
+  "inspector_h": 1000,
+  "inspector_scroll": 1000,
+  "doc_scroll_x": 0
+ }
+}

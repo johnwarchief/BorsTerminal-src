@@ -112,12 +112,14 @@ export function AgentMatrix({
                     {AGENT_FA[a].label}
                   </span>
                 </td>
-                <td className="num px-4 py-2.5 text-text-primary">
-                  {fa0(active ? AGENT_WEIGHTS[a] : 0)}
+                <td className="px-4 py-2.5 text-text-primary">
+                  <span className="num">{fa0(active ? AGENT_WEIGHTS[a] : 0)}</span>
                 </td>
-                <td className="num px-4 py-2.5 text-text-primary">
+                <td className="px-4 py-2.5 text-text-primary">
+                  <span className="num">
                   {s?.score == null ? <span className="text-2xs text-text-muted">بدون داده</span> : <>{s.direction === 'bullish' ? '+' : s.direction === 'bearish' ? '-' : ''}{fa0(s.score)}</>}
-                  {contrib && active ? <span className="text-text-muted"> (سهم <span className="num">{fa0(contrib.score)}</span>)</span> : null}
+                  {contrib && active ? <span className="text-text-muted"> (سهم {fa0(contrib.score)})</span> : null}
+                  </span>
                 </td>
                 <td className="px-4 py-2.5">
                   {(() => {

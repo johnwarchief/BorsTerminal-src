@@ -10,8 +10,10 @@
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FTS_COLUMN_LABEL } from '@shared/lib/ftsLabels';
-import { pickAssemblyBadge, type AssemblyBadgeInfo, type CalEvent } from '../lib/assemblyEvent';
+import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
@@ -48,6 +50,25 @@ const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: '۵ — صنعت', title: 'رژیم قیمت‌گذاری صنعت' },
   { key: 'score', label: FTS_COLUMN_LABEL['score'], title: 'نردبان بنیادی ۰ تا ۵' },
 ];
+
+/** سلول‌هایِ متنِ خالصِ یک ردیف، به همان ترتیبِ COLS — برایِ «دانلودِ فقطِ ردیف‌های
+ *  دیدنی». همان قالب‌سازهایِ سلول خوانده می‌شود (`fmtPctGrouped`/`toFaDigits`) تا
+ *  عددِ فایل با عددِ رویِ صفحه یکی باشد؛ هیچ فرمولِ دومی اینجا نوشته نمی‌شود. */
+export function screenRowCells(r: FtsScreenRow): ExportCell[] {
+  const pct = (v: number | null | undefined) => (v == null ? '—' : fmtPctGrouped(v));
+  const eps = Array.isArray(r.eps_series) && r.eps_series.length
+    ? r.eps_series.map((v) => (v == null ? '—' : toFaDigits(v))).join(' ← ')
+    : '—';
+  return [
+    `${r.symbol} — ${r.name ?? ''}`.trim(),
+    `${pct(r.rev_growth)} (الف: ${r.i1_pass === true ? '✓' : r.i1_pass === false ? '✗' : '؟'} / ب: ${r.i2_pass === true ? '✓' : r.i2_pass === false ? '✗' : '؟'})`,
+    `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
+    pct(r.gross_margin),
+    r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
+    `${r.sector_name ?? '—'} (${r.pricing_mode === 'regulated' ? 'دستوری' : 'آزاد'})`,
+    toFaDigits(r.score),
+  ];
+}
 
 /** نمایش جریان سال‌به‌سال EPS همراه با اتصال فلش و درصد رشد YoY (#101).
  *  درصد از lib/epsHistory می‌آید — همان منبعِ کارت FTS و نردبان EPS، تا یک
@@ -205,10 +226,13 @@ const ScreenerRow = memo(function ScreenerRow({
   onSelect,
   stripe,
   assembly = null,
+  capital = null,
 }: {
   row: FtsScreenRow;
   /** برچسب مجمع این نماد (از نقشهٔ انبوهٔ والد) — null یعنی رویدادی نیست */
   assembly?: AssemblyBadgeInfo | null;
+  /** برچسب «افزایش سرمایه» — هشدارِ تاریخ، بی‌هیچ حکمی */
+  capital?: CapitalIncreaseBadge | null;
   thresholds?: Record<string, unknown> | null;
   onSelect: (symbol: string) => void;
   /** زبرا از ایندکسِ ردیف در آرایهٔ مرتب‌شده می‌آید — نه از :nth-child.
@@ -293,8 +317,24 @@ const ScreenerRow = memo(function ScreenerRow({
                             وتوی روند
                           </span>
                         ) : null}
-                        {/* مجمع نزدیک — متنِ کامل در title، روی برچسب فقط تاریخ */}
-                        {assembly ? (
+                        {/* مجمع پیش‌رو — وتو (قرمز) یا فقط هشدار (زرد/آبی).
+                            داورِ وتو بک‌اند است (`assembly_veto` در /api/screener،
+                            بیرونِ کش و تازه در هر درخواست)؛ برچسبِ هشدار از
+                            /api/calendar/upcoming می‌آید. هر دو یک افقِ ۱۴ روزه
+                            دارند — گاردِ برابری: dev/test_calendar_v92.py بخش ۴.
+                            تاریخ روی خودِ برچسب می‌ماند، چون خواستِ مالک
+                            «هشدارِ تاریخِ مجمع» است نه فقط یک واژهٔ قرمز. */}
+                        {r.assembly_veto ? (
+                          <span
+                            data-testid="row-assembly-veto-badge"
+                            title={`مجمع عمومی در پیش است — ورود وتو شد${
+                              r.assembly_date ? ` · تاریخ: ${jalaliOf(r.assembly_date)}` : ''
+                            }${typeof r.assembly_days === 'number' ? ` · ${toFaDigits(r.assembly_days)} روز دیگر` : ''}`}
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-red/20 text-accent-red border-accent-red/30"
+                          >
+                            وتوی مجمع{r.assembly_date ? ` ${jalaliOf(r.assembly_date)}` : ''}
+                          </span>
+                        ) : assembly ? (
                           <span
                             data-testid={`row-${assembly.testId}`}
                             title={assembly.detail ? `${assembly.label} · ${assembly.detail}` : assembly.label}
@@ -305,6 +345,22 @@ const ScreenerRow = memo(function ScreenerRow({
                             }`}
                           >
                             مجمع {assembly.jalali.split('-').slice(-2).join('/')}
+                          </span>
+                        ) : null}
+                        {/* «افزایش سرمایه» — فقط برچسب. رأیِ pilot (#53): این رویداد
+                            وتو نمی‌سازد و ردیف را خاکستری نمی‌کند؛ جایِ آن کنارِ
+                            بجِ مجمع است، نه به‌جای آن. */}
+                        {capital ? (
+                          <span
+                            data-testid={`row-${capital.testId}`}
+                            title={
+                              capital.detail
+                                ? `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali} · ${capital.detail}`
+                                : `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali}`
+                            }
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-blue/15 text-accent-blue border-accent-blue/30"
+                          >
+                            افزایش سرمایه {capital.jalali.split('-').slice(-2).join('/')}
                           </span>
                         ) : null}
                       </div>
@@ -510,6 +566,7 @@ export function FtsScreenTable({
   onDbUpdate,
   dbUpdate,
   assemblyEvents = null,
+  capitalEvents = null,
   settingsSlot,
 }: {
   rows: FtsScreenRow[];
@@ -522,12 +579,16 @@ export function FtsScreenTable({
   dbUpdate?: { running: boolean; stage: string; percent?: number; detail?: string; error?: string } | null;
   /** رویدادهای مجمعِ همهٔ نمادها از /api/calendar/upcoming — یک درخواست برای کل جدول */
   assemblyEvents?: Record<string, CalEvent[]> | null;
+  /** «افزایش سرمایه»هایِ پیش‌رو — همان پاسخِ انبوه، کلیدِ دومِ `capital` */
+  capitalEvents?: Record<string, CalEvent[]> | null;
   /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
   settingsSlot?: ReactNode;
 }) {
   /** برچسب مجمعِ یک نماد؛ منطق انتخاب در lib/assemblyEvent.ts (آزمون‌شده) است */
   const assemblyBadge = (sym: string) =>
     assemblyEvents ? pickAssemblyBadge(assemblyEvents[sym] ?? []) : null;
+  const capitalBadge = (sym: string) =>
+    capitalEvents ? pickCapitalBadge(capitalEvents[sym] ?? []) : null;
 
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [desc, setDesc] = useState(true);
@@ -687,6 +748,13 @@ export function FtsScreenTable({
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
+          <DownloadRowsButton
+            base="بنیادی FTS"
+            testId="download-screen-rows"
+            count={sorted.length}
+            title={`دانلودِ ${toFaDigits(sorted.length)} ردیفِ دیدنی — با همین فیلتر، جستجو و مرتب‌سازی`}
+            getTable={() => toExportTable(COLS.map((c) => c.label), sorted, screenRowCells)}
+          />
         </div>
         {settingsSlot ?? <span />}
       </div>
@@ -832,6 +900,7 @@ export function FtsScreenTable({
                 onSelect={onSelect}
                 stripe={vi.index % 2 === 0 ? 'odd' : 'even'}
                 assembly={assemblyBadge(r.symbol)}
+                capital={capitalBadge(r.symbol)}
               />
             );
           })}

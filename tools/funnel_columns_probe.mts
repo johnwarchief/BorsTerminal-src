@@ -52,12 +52,19 @@ const snap = () =>
     const stage = (k: string) => {
       const el = document.querySelector(`[data-testid="funnel-stage-${k}"]`);
       if (!el) return { k, missing: true };
-      const heads = Array.from(el.querySelectorAll('thead th')).map((t) => t.textContent?.trim());
+      // سرستونِ خودِ مرحلۀ جدول = theadِ نخستین table. صفِ «سنجیده نشد» زیرِ همان
+      // مرحله جدولِ دومِ *همان سرستون* دارد (عمدی است)، و بی‌این تفکیک شمارِ
+      // «چند سرستونِ متمایز» پنج می‌شد نه چهار.
+      const tables = Array.from(el.querySelectorAll(':scope table'))
+        .filter((t) => !t.closest('[data-testid^="funnel-pending-"]'));
+      const heads = Array.from(tables[0]?.querySelectorAll('thead th') ?? []).map((t) => t.textContent?.trim());
+      const pendingHeads = Array.from(el.querySelectorAll('[data-testid^="funnel-pending-"] thead th'))
+        .map((t) => t.textContent?.trim());
       const rows = Array.from(el.querySelectorAll('tbody tr[data-fkey]'));
       const first = rows[0] ? Array.from(rows[0].children).map((c) => c.textContent?.trim()) : null;
       const count = el.querySelector('header .num')?.textContent?.trim() ?? null;
       const chip = el.querySelector('[data-testid^="funnel-rejected-"]')?.textContent?.trim() ?? null;
-      return { k, heads, rowCount: rows.length, count, chip, firstRow: first };
+      return { k, heads, pendingHeads, rowCount: rows.length, count, chip, firstRow: first };
     };
     const gate = (id: string) => {
       const b = document.querySelector(`[data-testid="${id}"]`);
@@ -119,18 +126,27 @@ const fit = await page.evaluate(() => {
 });
 if (SHOT) await page.screenshot({ path: SHOT, fullPage: false });
 
+// شمارِ «سرستونِ متمایز» فقط رویِ مرحلۀ *پُرِ همان لحظه* و فقط سرستونِ خودِ
+// جدولش: چهار مرحلۀ پُر ⇒ چهار مجموعه. (مرحلۀ خالی جدول نمی‌کشَد، پس سرستون هم ندارد.)
+const fullSnaps = [before, off, floor1, back];
+const perInstant = fullSnaps.map((s) => {
+  const filled = s.stages.filter((x: any) => x.rowCount > 0);
+  return { filled: filled.length, distinct: new Set(filled.map((x: any) => JSON.stringify(x.heads))).size };
+});
 const summary = {
   url: BASE, route: ROUTE, fit,
-  headsetsDiffer: new Set(
-    [...before.stages, ...floor1.stages].map((s: any) => JSON.stringify(s.heads))
-  ).size,
+  headsetsDiffer: Math.max(...perInstant.map((p) => p.distinct)),
+  perInstant,
   before, off, floor1, back, afterReload, reset, consoleErrors: errors,
 };
 writeFileSync(OUT, JSON.stringify(summary, null, 1), 'utf-8');
 const line = (s: any) =>
-  `  ${s.k}: rows=${s.rowCount} chip=${s.chip ?? '-'} heads=[${(s.heads ?? []).join(' | ')}] first=${JSON.stringify(s.firstRow)}`;
+  `  ${s.k}: rows=${s.rowCount} chip=${s.chip ?? '-'} heads=[${(s.heads ?? []).join(' | ')}]` +
+  `${s.pendingHeads?.length ? ` || صفِ انتظار(${s.pendingHeads.length} سرستونِ همان مرحله)` : ''}` +
+  ` first=${JSON.stringify(s.firstRow)}`;
 console.log(`fit: ${JSON.stringify(summary.fit)}`);
-console.log(`headsetsDiffer=${summary.headsetsDiffer} مجموعهٔ سرستونِ متمایز`);
+console.log(`headsetsDiffer=${summary.headsetsDiffer} مجموعهٔ سرستونِ متمایز در مرحلۀ پُرِ یک لحظه`,
+  JSON.stringify(summary.perInstant));
 console.log('BEFORE (جزوه: تکنیکال رد می‌کند)');
 before.stages.forEach((s: any) => console.log(line(s)));
 console.log('AFTER «خودم چک می‌کنم»');

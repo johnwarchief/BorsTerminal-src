@@ -498,3 +498,163 @@ describe('دربِ قیف: انتخابِ استراتژی رویِ خودِ ق�
     expect(screen.getByTestId('funnel-preset-trend').getAttribute('title')).toContain('روندگیر');
   });
 });
+
+/**
+ * رأیِ مالک: «بغل نماد برچسب داده بشه که … مجمع عمومی داره هشدار داده بشه و
+ * اینکه وتو بخوره». داوریِ وتو در بک‌اند است (`assembly_veto` در /api/screener)
+ * و قیف فقط همان پرچم را می‌خواند — فرمولِ دومی در فرانت نیست.
+ * جای وتو مرحلۀ تحویل است نه بنیادی: مجمع ضعفِ بنیادی نیست، زمان‌بندیِ ورود است.
+ */
+describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بنیادی', () => {
+  const okScreen = (sym: string, over: Partial<FtsScreenRow> = {}): FtsScreenRow =>
+    screened(sym, 5, {
+      tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_trend_d: 'up', tech_jet: true,
+      i1_pass: true, i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+      rev_growth: 52, eps_last: 318, gross_margin: 26, sales_to_mcap: 0.41, ...over,
+    });
+
+  const SYM = 'مجمع‌دار';
+  const run = (over: Partial<FtsScreenRow> = {}) =>
+    buildFunnel(
+      [board({ symbol: SYM, f_susp: true })],
+      DEFAULT_TAPE_FILTER_CONFIG,
+      [],
+      [okScreen(SYM, over)],
+      new Set<string>(),
+      'custom',
+    );
+  const first = (f: ReturnType<typeof run>, k: 'tape' | 'handover' | 'fundamental') =>
+    f.stages[k].entries[0];
+
+  it('نمرۀ پنج با مجمعِ سه روز دیگر ⇒ بنیادی قبول، تحویل خالی', () => {
+    const f = run({ assembly_veto: true, assembly_days: 3, assembly_date: '2026-10-02' });
+    expect(syms(f.stages.fundamental.entries)).toEqual([SYM]);
+    // وتو نمره را کم نمی‌کند: داوریِ پنج‌شاخصه دست‌نخورده می‌ماند
+    expect(first(f, 'fundamental').inds).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
+    expect(first(f, 'fundamental').fund).toBe('ok');
+    expect(f.stages.handover.entries).toHaveLength(0);
+    expect(f.stages.handover.dropped).toBe(1);
+    expect(f.stages.handover.rejected).toBe(1);
+  });
+
+  it('کنترلِ منفی: بی‌پرچم همان نماد به تحویل می‌رسد', () => {
+    const f = run();
+    expect(syms(f.stages.handover.entries)).toEqual([SYM]);
+    expect(f.stages.handover.dropped).toBe(0);
+  });
+
+  it('بی‌داده وتو نیست: پرچمِ غایب یا false یا فقط assembly_days هیچ وتویی نمی‌سازد', () => {
+    for (const over of [{}, { assembly_veto: false }, { assembly_days: 3 }, { assembly_veto: null }]) {
+      const f = run(over as Partial<FtsScreenRow>);
+      expect(first(f, 'tape').assemblyVeto).toBe(false);
+      expect(syms(f.stages.handover.entries)).toEqual([SYM]);
+    }
+  });
+
+  it('علتِ وتو از همان ردیف خوانده می‌شود و امروز «۰ روز» نمی‌گیرد', () => {
+    const three = first(run({ assembly_veto: true, assembly_days: 3 }), 'tape');
+    expect(three.assemblyVeto).toBe(true);
+    expect(three.assemblyWhy).toContain('۳ روز تا مجمع عمومی');
+    const today = first(run({ assembly_veto: true, assembly_days: 0 }), 'tape');
+    expect(today.assemblyWhy).toContain('امروز مجمع عمومی دارد');
+    expect(today.assemblyWhy).not.toContain('۰ روز');
+    // بی‌شمارِ روز هم وتو می‌ماند، فقط دلیلش کوتاه‌تر
+    expect(first(run({ assembly_veto: true }), 'tape').assemblyVeto).toBe(true);
+  });
+
+  it('برچسبِ قرمز در هر سه مرحله پیدا است — نماد فقط در تحویل گم می‌شود', () => {
+    useFunnelPrefsStore.getState().reset();
+    screenMock.rows = [okScreen(SYM, { assembly_veto: true, assembly_days: 3 })];
+    feedMock.rows = [board({ symbol: SYM, f_susp: true })];
+    try {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <FtsFunnelStages preset="custom" />
+        </QueryClientProvider>,
+      );
+      for (const k of ['tape', 'technical', 'fundamental']) {
+        const chip = screen
+          .getByTestId(`funnel-stage-${k}`)
+          .querySelector(`[data-testid="funnel-assembly-veto-${SYM}"]`);
+        expect(chip, `مرحلهٔ ${k}`).not.toBeNull();
+        expect(chip?.textContent).toBe('وتوی مجمع');
+      }
+      expect(screen.getByTestId('funnel-stage-handover').querySelector('tbody tr')).toBeNull();
+    } finally {
+      screenMock.rows = SCREEN;
+      feedMock.rows = ROWS;
+    }
+  });
+
+  it('تحویلِ خالی از وتوی مجمع می‌گوید، نه «بنیادی کسی را قبول نکرد»', () => {
+    useFunnelPrefsStore.getState().reset();
+    screenMock.rows = [okScreen(SYM, { assembly_veto: true, assembly_days: 3 })];
+    feedMock.rows = [board({ symbol: SYM, f_susp: true })];
+    try {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <FtsFunnelStages preset="custom" />
+        </QueryClientProvider>,
+      );
+      const why = screen.getByTestId('funnel-empty-handover');
+      expect(why.textContent).toContain('مجمع');
+      expect(why.textContent).toContain('۱ نماد');
+      expect(why.textContent).not.toContain('بنیادی کسی را قبول نکرد');
+      // قاعدۀ خودِ مرحله هم وتوی مجمع را می‌گوید تا «چرا خالی است» مبهم نماند
+      expect(screen.getByTestId('funnel-stage-handover').textContent).toContain('وتوی مجمع');
+    } finally {
+      screenMock.rows = SCREEN;
+      feedMock.rows = ROWS;
+    }
+  });
+});
+
+/**
+ * مالک: «تنظیماتِ مرحلۀ بنیادی رو روی نوارِ جدول بنیادی بذار و برای بقیۀ
+ * جدول‌ها هم روی نوارشون تنظیماتی بذار که کاربر روش و نحوۀ غربالگری رو انتخاب
+ * کنه». پس جایِ هر پیچ، نوارِ خودِ همان مرحله است — نه یک نوارِ سراسری که
+ * کاربر نفهمد به کدام در می‌خورد.
+ */
+describe('پیچ‌ها رویِ نوارِ خودِ هر مرحله', () => {
+  const renderStages = () => {
+    useFunnelPrefsStore.getState().reset();
+    useTapeStore.setState({ quickFilters: [] });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages preset="custom" />
+      </QueryClientProvider>,
+    );
+  };
+  const ownerSection = (id: string) =>
+    screen.getByTestId(id).closest('section')?.getAttribute('data-testid');
+
+  it('پیچ‌هایِ بنیادی داخلِ همان مرحلۀ بنیادی‌اند، نه در نوارِ سراسری', () => {
+    renderStages();
+    expect(ownerSection('funnel-prefs')).toBe('funnel-stage-fundamental');
+    expect(screen.getAllByTestId('funnel-prefs')).toHaveLength(1);
+    // کلیک از رویِ همان نوار واقعاً به استور می‌نشیند (سیم زنده است، نه تزئینی)؛
+    // اینکه خودِ استور مرحلۀ بنیادی را عوض می‌کند در «پیچ‌هایِ درِ بنیادی» سنجیده شده.
+    fireEvent.click(screen.getByTestId('funnel-floor-5'));
+    expect(useFunnelPrefsStore.getState().fundFloor).toBe(5);
+    expect(screen.getByTestId('funnel-floor-5')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('funnel-prefs').textContent).toContain('عبور با این پیچ‌ها');
+  });
+
+  it('مرحلۀ تابلو چیپ‌هایِ پنج‌فیلترهٔ خودش را رویِ نوارش دارد و ورودیِ قیف را تغییر می‌دهد', () => {
+    renderStages();
+    expect(ownerSection('funnel-tape-prefs')).toBe('funnel-stage-tape');
+    // بی‌هیچ چیپی ورودی از دربِ سبک می‌آید؛ با «الگوی ساعت» فقط ردیف‌هایِ ساعت‌دار
+    const before = screen.getByTestId('funnel-stage-tape').querySelectorAll('tbody tr').length;
+    fireEvent.click(screen.getByTestId('funnel-tape-chip-f_clock'));
+    expect(useTapeStore.getState().quickFilters).toEqual(['f_clock']);
+    const after = screen.getByTestId('funnel-stage-tape').querySelectorAll('tbody tr').length;
+    expect(after).toBeLessThan(before);
+    expect(after).toBeGreaterThan(0);
+    expect(screen.getByTestId('funnel-tape-chip-f_clock')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('کلیدِ تکنیکال همان‌جا مانده است (الگویِ همین تقسیم، نه چیزِ تازه)', () => {
+    renderStages();
+    expect(ownerSection('funnel-tech-gate')).toBe('funnel-stage-technical');
+  });
+});

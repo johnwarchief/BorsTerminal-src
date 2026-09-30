@@ -113,11 +113,11 @@ export function AuditReasonCard({
           </thead>
           <tbody>
             <tr className="num text-text-primary">
-              <td className="num py-1" data-testid="audit-actual">
-                {actual ?? '—'}
+              <td className="py-1" data-testid="audit-actual">
+                <span className="num">{actual ?? '—'}</span>
               </td>
-              <td className="num py-1" data-testid="audit-target">
-                {target ?? '—'}
+              <td className="py-1" data-testid="audit-target">
+                <span className="num">{target ?? '—'}</span>
               </td>
               <td
                 className={`py-1 ${dev == null ? 'text-text-muted' : dev.meets ? 'text-accent-green' : 'text-accent-red'}`}

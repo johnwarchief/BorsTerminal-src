@@ -65,11 +65,19 @@ SUITES = [
     # اسکرینر/کارت هم کارت را با خودش می‌سنجد (۲۳۱ نماد واگرایی بی‌صدا ماند).
     ('dev/fts_screener_card_parity_v10.py',
                                       'screener<->card parity + ind-4 exemption engine vs card'),
+    # قیف/جدول نباید «بی‌داده» را «رد» بنویسد: شاخص ۳ (حاشیۀ ناخالص) در اسکرینرِ
+    # زنده bool می‌ماند و ۲۹۷ نماد بی‌سطرِ سود ناخالص سرخ می‌شدند (۱۴۰۵-۰۷-۰۹).
+    ('dev/fts_ind3_na_guard_v1065.py',
+                                      "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)"),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
+    # وتوی مجمع (رأیِ مالک، نه چارت): برچسبِ جدول و وتوی اسکرینر باید یک افق و یک
+    # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
+    # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.
+    ('dev/assembly_veto_v1064.py',    'assembly veto: fresh outside the cache, no-data is not a veto'),
     ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
     # Data-Lifecycle (گام ۳۴/۳۵): ستون‌های مشتقِ خودکار + تاب‌آوریِ سینکِ افزایشی.
     # نکته: run() مسیر را با os.sep می‌سازد و سپس split می‌کند، پس آرگومانِ

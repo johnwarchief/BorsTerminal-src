@@ -496,6 +496,31 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(idx.parentElement).toBe(screen.getByTestId('pulse-verdict').parentElement);
   });
 
+  // #61 — «rtl شروعش رو درست کن»: .num شامل direction:ltr است و رویِ رشته‌ای که
+  // عدد + واژهٔ فارسی است («۳ نشستِ اخیر: …») شروعِ جمله را به لبۀ چپ می‌انداخت.
+  // هر .num در این پنل باید عددِ خالص باشد؛ جمله‌ها .num-text می‌گیرند.
+  it('هیچ .num رویِ جمله نمی‌نشیند (فقط عددِ خالص)', async () => {
+    mockRoutes({
+      'mstat/smart-money': () => jsonResponse(smartMoney()),
+      'mstat/summary': () => jsonResponse(summary()),
+      'mstat/depth': () => jsonResponse(depth()),
+      'mstat/thermometer': () => jsonResponse(thermo()),
+    });
+    renderPulse();
+    const cont = await waitFor(() => {
+      const el = screen.getByTestId('pulse-verdict-gate-continuity');
+      expect(el.querySelector('.num-text')).not.toBeNull();
+      return el;
+    });
+    expect(cont.textContent).toContain('تاریخچه کامل نیست');
+    const strip = screen.getByTestId('pulse-verdict');
+    const offenders = [...strip.querySelectorAll('span')]
+      .filter((s) => s.className.split(/\s+/).includes('num'))
+      .filter((s) => /[؀-ۿ]/.test((s.textContent ?? '').replace(/[۰-۹٬.,%٪:\s+\-−▲▼×()]/g, '')))
+      .map((s) => s.textContent);
+    expect(offenders).toEqual([]);
+  });
+
   it('حکم نرسیده (اندپوینتِ پولِ هوشمند مرد) → «بدون داده»، نه «وارد نشو»', async () => {
     mockRoutes({
       'mstat/smart-money': () => jsonResponse({ status: 'error', message: 'x' }),
