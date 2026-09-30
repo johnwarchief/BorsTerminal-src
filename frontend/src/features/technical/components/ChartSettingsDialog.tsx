@@ -16,6 +16,7 @@ import {
   type PriceScale,
   type Timeframe,
 } from '../stores/ftsConfigStore';
+import { Modal } from '@shared/ui/Modal';
 
 /** هشت نوعِ چارتی که موتورِ زنده واقعاً رندر می‌کند: شش مقدارِ `candle.type`ِ
  *  klinecharts v10، به‌علاوهٔ «خط» (اریای بی‌سطح) و «Heikin-Ashi» (تبدیلِ سریِ
@@ -255,38 +256,27 @@ export function ChartSettingsDialog({
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="تنظیمات چارت"
-      data-testid="chart-settings"
-      onClick={onClose}
-    >
-      <div
-        dir="rtl"
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-border-c bg-bg-card/60 px-5 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs font-black text-text-primary">تنظیمات چارت</span>
-            {symbol ? (
-              <span className="rounded-md border border-accent-blue/40 bg-accent-blue/15 px-2.5 py-0.5 text-2xs font-bold text-text-primary">
-                {symbol}
-              </span>
-            ) : null}
-          </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="تنظیمات چارت"
+      description={symbol ?? undefined}
+      className="max-w-2xl"
+      testId="chart-settings"
+      footer={
+        <div className="flex items-center justify-between">
+          <span className="text-2xs text-text-muted">هر تغییر بی‌درنگ ذخیره و اعمال می‌شود.</span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="بستن"
-            data-testid="chart-settings-close"
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-bg-card hover:text-text-primary"
+            data-testid="chart-settings-done"
+            className="rounded-lg bg-accent-blue/25 px-4 py-1.5 text-2xs font-bold text-text-primary ring-1 ring-accent-blue/60 transition-colors hover:bg-accent-blue/35"
           >
-            ✕
+            بستن و اعمال
           </button>
         </div>
+      }
+    >
 
         <div
           className="flex flex-wrap gap-1.5 border-b border-border-c bg-bg-card/40 px-4 py-2"
@@ -559,18 +549,6 @@ export function ChartSettingsDialog({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border-c bg-bg-card/60 px-5 py-3">
-          <span className="text-2xs text-text-muted">هر تغییر بی‌درنگ ذخیره و اعمال می‌شود.</span>
-          <button
-            type="button"
-            onClick={onClose}
-            data-testid="chart-settings-done"
-            className="rounded-lg bg-accent-blue/25 px-4 py-1.5 text-2xs font-bold text-text-primary ring-1 ring-accent-blue/60 transition-colors hover:bg-accent-blue/35"
-          >
-            بستن و اعمال
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
