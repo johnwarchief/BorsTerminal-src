@@ -1,0 +1,39 @@
+C:\Users\PCMOD\.openclaw-autoclaw\workspace\projects\BorsTerminal_Work\dev\board_hist_cache_v1056.py:247: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return real_pd.read_sql_query(sql_text, con, *a, **k)
+C:\Users\PCMOD\.openclaw-autoclaw\workspace\projects\BorsTerminal_Work\api\market.py:635: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df = df.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\PCMOD\.openclaw-autoclaw\workspace\projects\BorsTerminal_Work\dev\board_hist_cache_v1056.py:247: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  return real_pd.read_sql_query(sql_text, con, *a, **k)
+C:\Users\PCMOD\.openclaw-autoclaw\workspace\projects\BorsTerminal_Work\api\market.py:635: FutureWarning: Downcasting behavior in `replace` is deprecated and will be removed in a future version. To retain the old behavior, explicitly call `result.infer_objects(copy=False)`. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df = df.replace([np.inf, -np.inf], 0).fillna(0)
+2026-09-30 10:10:45 [market] history windows rebuilt in 0.00s (sig=(20260928, 145, 247300.0, 20, 82580, 130, 441217, 20260928))
+PASS  اولین فراخوانیِ ensure دو پنجره را می‌سازد  — rebuilds=1
+PASS  کوئریِ مادی‌شده سطر‌به‌سطر همان نتیجهٔ کوئریِ تک‌پیسّه است
+PASS  پنجره‌ها ستون‌هایِ پنج فیلتر را می‌سازند (prior30_vol/hist_sessions)
+PASS  «حجمِ دیروز»ِ پنجره، ردیفِ نشستِ باز را نمی‌خواند  — پنجره=4014 · نشستِ پیش=4014 · کندلِ نشستِ باز=301.0
+PASS  فراخوانیِ دومِ بی‌تغییری بازسازی نمی‌کند  — rebuilds=1
+PASS  بازنویسیِ ردیفِ نشستِ جاری کش را نمی‌سوزاند (تیکِ ۵ ثانیه)  — rebuilds=1
+PASS  بازنویسیِ کندلِ نشستِ باز درِ price_history کش را نمی‌سوزاند  — rebuilds=1
+2026-09-30 10:10:45 [market] history windows rebuilt in 0.00s (sig=(20260928, 145, 247300.0, 20, 78567, 130, 441217, 20260928))
+PASS  تصحیحِ درجایِ نشستِ پیشین بازسازی می‌کند  — rebuilds=2
+PASS  و پنجره واقعاً عددِ تازه می‌گیرد  — (1977.0,) → (1843.2333333333333,)
+2026-09-30 10:10:45 [market] history windows rebuilt in 0.00s (sig=(20260928, 145, 247301.0, 20, 78567, 130, 441217, 20260928))
+PASS  تصحیحِ کندلِ یک نشستِ تمام‌شده بازسازی می‌کند  — rebuilds=3
+PASS  بی‌تغیریِ مطلق دوباره بازسازی نمی‌کند  — rebuilds=0
+2026-09-30 10:10:45 [market] history windows rebuilt in 0.00s (sig=(20260928, 145, 247301.0, 20, 78567, 130, 442106, 20260928))
+PASS  تصحیحِ درجایِ [ih] (بی‌تغییریِ شمارش و rowid) بازسازی می‌کند  — rebuilds=1
+PASS  پنجرۀ خالیِ بی‌دلیل خطا می‌دهد  — history window board_hist_fv built zero rows while tape_history has 13
+PASS  خطا جدولِ قبلی را نگه می‌دارد (نه خالی‌کردنِ بی‌صدا)  — rows=3
+2026-09-30 10:10:45 [market] history windows rebuilt in 0.00s (sig=(20260928, 145, 247301.0, 20, 78567, 0, None, 20260928))
+PASS  tape_historyِ خالیِ واقعی خطا نمی‌دهد (نصبِ تازه)  — rows=0
+PASS  و آنجا ستون‌هایِ [ih] NULL می‌مانند نه صفر
+2026-09-30 10:10:46 [market] history windows rebuilt in 0.81s (sig=(20260930, 372878, 15049955035698.0, 87724, 2814002726507.0, 151356, 5605343604428.0, 20260929))
+PASS  فیلترِ f_clock در دو مسیر یکی است (21 نماد)
+PASS  فیلترِ f_susp در دو مسیر یکی است (18 نماد)
+FAIL  فیلترِ f_jet رویِ دادهٔ واقعی نماد دارد (چک بی‌محتوا نیست)  — materialized=0 monolithic=0
+PASS  فیلترِ f_roobi در دو مسیر یکی است (4 نماد)
+PASS  فیلترِ f_noqteh در دو مسیر یکی است (3 نماد)
+PASS  ردیفِ نگهبان‌دار درِ بانکِ واقعی هست (چکِ بی‌محتوا نیست)  — 987 ردیف
+PASS  هیچ ردیفِ نگهبان‌داری درصدِ تغییرِ ساختگی نمی‌گیرد  — نمونه: []
+
+22 pass / 1 fail

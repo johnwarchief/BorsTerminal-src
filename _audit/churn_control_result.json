@@ -1,0 +1,13 @@
+{
+ "db": "_audit/churn_control.db",
+ "live_date_in_price_history": "2026-09-30",
+ "rows_for_live_date": 1143,
+ "old_changed": true,
+ "old_changed_fields": [
+  3
+ ],
+ "new_changed": false,
+ "new_changed_fields": [],
+ "symbols_whose_rn1_is_today": 1143,
+ "prev_day_vol_is_today_for": 1143
+}

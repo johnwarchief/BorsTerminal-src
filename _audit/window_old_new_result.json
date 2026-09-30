@@ -1,0 +1,65 @@
+{
+ "db": "_audit/liveprobe_copy.db",
+ "live_date": "2026-09-30",
+ "symbols_with_live_candle": 1143,
+ "rows_old": 5438,
+ "rows_new": 5438,
+ "common": 5438,
+ "symbols_differing": 1211,
+ "differ_share_pct": 22.27,
+ "build_seconds_old": 0.512,
+ "build_seconds_new": 0.527,
+ "samples": [
+  {
+   "symbol": "آ س پ",
+   "prev_day_vol_old": 90499.0,
+   "prev_day_vol_new": 455660.0,
+   "month_avg_old": 9481715.384615384,
+   "month_avg_new": 9857364.04,
+   "last_two_candles": [
+    [
+     "2026-09-30",
+     90499.0
+    ],
+    [
+     "2026-09-29",
+     455660.0
+    ]
+   ]
+  },
+  {
+   "symbol": "آباد",
+   "prev_day_vol_old": 20913166.0,
+   "prev_day_vol_new": 45753191.0,
+   "month_avg_old": 77205549.81481482,
+   "month_avg_new": 79370641.5,
+   "last_two_candles": [
+    [
+     "2026-09-30",
+     20913166.0
+    ],
+    [
+     "2026-09-29",
+     45753191.0
+    ]
+   ]
+  },
+  {
+   "symbol": "آبادا",
+   "prev_day_vol_old": 806564.0,
+   "prev_day_vol_new": 1794845.0,
+   "month_avg_old": 3939897.3571428573,
+   "month_avg_new": 4055946.7407407407,
+   "last_two_candles": [
+    [
+     "2026-09-30",
+     806564.0
+    ],
+    [
+     "2026-09-29",
+     1794845.0
+    ]
+   ]
+  }
+ ]
+}

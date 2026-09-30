@@ -1,0 +1,119 @@
+{
+    "processes":  [
+                      {
+                          "pid":  12340,
+                          "name":  "BorsTerminal_Ultimate.exe",
+                          "type":  "main(python)",
+                          "cpu_percent":  14.46,
+                          "working_set_mb":  366.3,
+                          "peak_ws_mb":  547.5,
+                          "private_mb":  940.3
+                      },
+                      {
+                          "pid":  6964,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "renderer",
+                          "cpu_percent":  0,
+                          "working_set_mb":  147.1,
+                          "peak_ws_mb":  403.6,
+                          "private_mb":  169.2
+                      },
+                      {
+                          "pid":  28388,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "host",
+                          "cpu_percent":  0.03,
+                          "working_set_mb":  135.2,
+                          "peak_ws_mb":  153.1,
+                          "private_mb":  41.7
+                      },
+                      {
+                          "pid":  29204,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "gpu-process",
+                          "cpu_percent":  0,
+                          "working_set_mb":  98.1,
+                          "peak_ws_mb":  208.9,
+                          "private_mb":  212.2
+                      },
+                      {
+                          "pid":  24092,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  40.3,
+                          "peak_ws_mb":  46.4,
+                          "private_mb":  12.5
+                      },
+                      {
+                          "pid":  21436,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "utility",
+                          "cpu_percent":  0,
+                          "working_set_mb":  18.9,
+                          "peak_ws_mb":  20.9,
+                          "private_mb":  7.4
+                      },
+                      {
+                          "pid":  21248,
+                          "name":  "msedgewebview2.exe",
+                          "type":  "crashpad-handler",
+                          "cpu_percent":  0,
+                          "working_set_mb":  13.2,
+                          "peak_ws_mb":  20.3,
+                          "private_mb":  2.9
+                      }
+                  ],
+    "byType":  [
+                   {
+                       "type":  "main(python)",
+                       "count":  1,
+                       "cpu_percent":  14.46,
+                       "working_set_mb":  366.3,
+                       "private_mb":  940.3
+                   },
+                   {
+                       "type":  "renderer",
+                       "count":  1,
+                       "cpu_percent":  0,
+                       "working_set_mb":  147.1,
+                       "private_mb":  169.2
+                   },
+                   {
+                       "type":  "host",
+                       "count":  1,
+                       "cpu_percent":  0.03,
+                       "working_set_mb":  135.2,
+                       "private_mb":  41.7
+                   },
+                   {
+                       "type":  "gpu-process",
+                       "count":  1,
+                       "cpu_percent":  0,
+                       "working_set_mb":  98.1,
+                       "private_mb":  212.2
+                   },
+                   {
+                       "type":  "utility",
+                       "count":  2,
+                       "cpu_percent":  0,
+                       "working_set_mb":  59.2,
+                       "private_mb":  19.9
+                   },
+                   {
+                       "type":  "crashpad-handler",
+                       "count":  1,
+                       "cpu_percent":  0,
+                       "working_set_mb":  13.2,
+                       "private_mb":  2.9
+                   }
+               ],
+    "total":  {
+                  "window_seconds":  60.1,
+                  "logical_cores":  16,
+                  "processes":  7,
+                  "cpu_percent_sum":  14.49,
+                  "working_set_mb":  819.1,
+                  "private_mb":  1386.2
+              }
+}

@@ -254,6 +254,8 @@ WITH iso AS (SELECT MAX(d_even) AS d FROM market_watch),
             spine AS MATERIALIZED (
                 SELECT dt, ROW_NUMBER() OVER (ORDER BY dt DESC) AS srn
                 FROM (SELECT date AS dt FROM price_history
+                      WHERE date < (SELECT printf('%04d-%02d-%02d', d/10000,
+                                                   (d/100)%100, d%100) FROM iso)
                       GROUP BY date ORDER BY date DESC LIMIT 60)
             ),
             -- پنجره از پیش بر ۶۰ نشستِ آخر بسته می‌شود؛ هیچ‌یک از
@@ -268,6 +270,8 @@ WITH iso AS (SELECT MAX(d_even) AS d FROM market_watch),
                     FROM price_history h
                     JOIN instruments i ON i.l_val18 = h.symbol
                     WHERE h.date >= (SELECT MIN(dt) FROM spine)
+                      AND h.date < (SELECT printf('%04d-%02d-%02d', d/10000,
+                                                  (d/100)%100, d%100) FROM iso)
                     UNION ALL
                     SELECT i.l_val18,
                            printf('%04d-%02d-%02d', d.d_even/10000,
@@ -349,27 +353,41 @@ SELECT * FROM fv
 
 _HIST_LOCK = threading.Lock()
 
+# تاریخِ نشستِ جاری به قالبِ `price_history.date`. سینکِ کندل از تابلو همین
+# نشست را درِ همان جدول می‌نویسد و هر ۹۰ ثانیه بازنویسی‌اش می‌کند، پس هر اجزایِ
+# امضا که این ردیف‌ها را ببیند، کش را بی‌دلیل می‌سوزاند.
+_LIVE_DT = ("(SELECT printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100)"
+            " FROM (SELECT MAX(d_even) AS d FROM market_watch))")
+
 
 def _history_signature(conn):
     """امضایِ بی‌اعتباریِ دو پنجره — شمارشِ ردیف کافی نیست.
 
     سینکِ `[ih]` و نهایهٔ نشستِ قبلی می‌توانند همان ردیف‌ها را *مقدارِ تازه*
     بدهند (UPDATE و INSERT OR REPLACE رویِ کلیدِ موجود)، و در آن حالت نه
-    COUNT تکان می‌خورد نه MAX(rowid)ِ tape_history (که ردیف‌هایش متراکم‌اند).
-    بی‌جمعِ مقداری، پنج فیلترِ حجمی تا نشستِ بعدی با [ih]ِ دیروز حساب
-    می‌کردند. هزینهٔ اندازه‌گیری‌شده رویِ بانکِ نصبی: price_history ۲۰٫۳ms،
-    tape_history ۱۱٫۱ms، daily_prices ۵٫۰ms — در برابرِ ۶۱۲ms که هر بازسازی
-    صرفه‌جویی می‌شود، و بازسازی حدوداً یک‌بار در دقیقه است.
+    COUNT تکان می‌خورد نه هیچ‌یکِ شمارنده‌هایِ کلِ جدول. بی‌جمعِ مقداری، پنج
+    فیلترِ حجمی تا نشستِ بعدی با [ih]ِ دیروز حساب می‌کردند.
+    هزینهٔ اندازه‌گیری‌شده رویِ بانکِ نصبی: price_history ۶۱٫۲ms،
+    tape_history ۱۱٫۱ms، daily_prices ۵٫۰ms — در برابرِ ۱٫۵ ثانیه که هر بازسازی
+    هزینه دارد.
 
-    daily_prices تنها برایِ «نشست‌هایِ پیشین» جمع می‌شود: ردیفِ نشستِ جاری هر
-    تیک بازنویسی می‌شود و اگر در امضا بود، کش را بی‌اثر می‌کرد — آن ردیف درِ
-    هیچ‌یک از دو پنجره هم نیست (شرطِ `d_even < iso`).
+    هر سه منبعِ ردیفِ *نشستِ جاری* را کنار می‌گذارند: `daily_prices` با
+    `d_even < iso` و `price_history` با «کل منهای امروز»، چون سینکِ کندل از
+    تابلو ردیفِ همین امروز را می‌نویسد و با هر تیک بازنویسی‌اش می‌کند — پیش از
+    این، همان بازنویسی امضا را عوض می‌کرد و پنجره هر چند دقیقه از نو ساخته
+    می‌شد (سنجشِ ۱۴۰۵-۰۷-۰۸: ۲۳ بازسازیِ ۱٫۵ ثانیه‌ای در سه ساعتِ نخستِ نشست).
+    `MAX(rowid)` هم عمداً در کلید نیست: ردیفِ جدیدِ امروز آن را بالا می‌برد، و
+    بازنویسیِ بی‌تغییریِ یک نشستِ پیشین (حذفِ همسان و درجِ همسان) پنجره را
+    عوض نمی‌کند که ارزشِ بازسازی داشته باشد.
     """
     row = conn.execute(
         "SELECT (SELECT MAX(d_even) FROM market_watch),"
-        "       (SELECT COUNT(*) FROM price_history),"
-        "       (SELECT MAX(rowid) FROM price_history),"
-        "       (SELECT SUM(close) + SUM(high) + SUM(low) + SUM(volume) FROM price_history),"
+        "       (SELECT COUNT(*) FROM price_history)"
+        "         - (SELECT COUNT(*) FROM price_history WHERE date = " + _LIVE_DT + "),"
+        "       (SELECT COALESCE(SUM(close) + SUM(high) + SUM(low) + SUM(volume), 0)"
+        "          FROM price_history)"
+        "         - (SELECT COALESCE(SUM(close) + SUM(high) + SUM(low) + SUM(volume), 0)"
+        "            FROM price_history WHERE date = " + _LIVE_DT + "),"
         "       (SELECT COUNT(*) FROM daily_prices"
         "         WHERE d_even < (SELECT MAX(d_even) FROM market_watch)),"
         "       (SELECT SUM(p_closing) + SUM(q_tot_tran) FROM daily_prices"
@@ -430,8 +448,10 @@ def ensure_board_history(conn):
         t0 = time.time()
         _rebuild_history_windows(conn)
         _HIST_CACHE_KEY = (sig,)
-        print(f"[market] history windows rebuilt in {time.time() - t0:.2f}s "
-              f"(sig={sig})")
+        # سطرِ بی‌ساعت درِ لاگِ نصبی قابلِ زمان‌بندی نیست و بی‌آن نمی‌شد فهمید
+        # کش چند بار درِ نشست می‌سوزد (قیدِ v1.0.55: هر سطر با ساعت شروع شود).
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [market] history windows "
+              f"rebuilt in {time.time() - t0:.2f}s (sig={sig})")
         return True
 
 

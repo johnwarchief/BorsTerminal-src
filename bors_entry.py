@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
-import os, sys, threading, time, webbrowser, socket, subprocess, atexit
+import os, sys, threading, time, webbrowser, socket, subprocess
 
 # ── بدونِ پنجرهٔ کنسول + کدپیجِ خروجی (v1.0.13) ──────────────────────────
 # با console=False در spec، sys.stdout/sys.stderr می‌توانند None باشند
@@ -509,7 +509,7 @@ def open_app_window(url):
     webbrowser.open(url)
     return False
 
-def main():
+def _serve():
     _set_dpi_awareness()
     # v1.0.12: گاردِ ویندوز — قبل از هر چیز، تا روی ویندوزِ قدیمی کرشِ
     # نامفهوم ندهیم. هشدار نمایش می‌دهیم و ادامه می‌دهیم (نه مسدود).
@@ -520,9 +520,10 @@ def main():
         print(f'[OK] Server already running on {port} -> open window')
         url = f'http://127.0.0.1:{port}'
         if open_native_window(url):
-            return
+            _note('native window closed')
+            return 'already-running-window'
         open_app_window(url)
-        return
+        return 'already-running-browser'
     if port_open(port):
         # پورت اشغال است ولی سرورِ ما نیست → پورت آزادِ دیگر
         port = pick_free_port(port)
@@ -536,7 +537,7 @@ def main():
                 input('Press Enter to close...')
             except Exception:
                 pass
-        return
+        return 'preflight-failed'
     import uvicorn
     def run():
         import logging
@@ -547,7 +548,6 @@ def main():
                     log_config=_log_config_with_clock())
     th = threading.Thread(target=run, daemon=True)
     th.start()
-    atexit.register(lambda: _note(f'[exit] process ending (pid={os.getpid()})'))
     threading.Thread(target=_beat_loop, args=(port,), daemon=True).start()
     if wait_http(port):
         print(f'[OK] http://127.0.0.1:{port}')
@@ -556,15 +556,29 @@ def main():
             # تفکیکِ «چرا تمام شد»: نبودِ این سطر پیش از [exit] یعنی پنجرهٔ
             # بومی بسته نشد، بلکه خودِ پروسه از کار افتاد.
             _note('native window closed')
-            return  # پنجرهٔ بومی بسته شد → خروج
+            return 'window-closed'  # پنجرهٔ بومی بسته شد → خروج
         open_app_window(url)
     else:
         print('[ERR] server did not start')
+        return 'http-never-came-up'
     try:
         while True:
             time.sleep(3600)
     except KeyboardInterrupt:
-        pass
+        return 'interrupted'
+    return 'loop-ended'
+
+
+def main():
+    # نشانِ [exit] بی‌این‌که خودِ لانچر بنویسد هرگز رویِ دیسک نمی‌آمد: پس از
+    # بسته‌شدنِ پنجرهٔ بومی، .NET پروسه را می‌بندد و پایتون به قلابِ خروجِ
+    # مفسر نمی‌رسد (سنجشِ لاگِ نصبی: ۱۰ اجرا و ۸ بارِ بستنِ پنجره، صفر سطرِ
+    # [exit]). حالا «مُرد vs بسته شد» واقعاً سه‌حالتي می‌ماند.
+    reason = 'returned'
+    try:
+        reason = _serve() or 'returned'
+    finally:
+        _note(f'[exit] process ending pid={os.getpid()} reason={reason}')
 
 if __name__ == '__main__':
     main()

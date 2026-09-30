@@ -171,8 +171,25 @@ check("_note() سطرِ زمان‌دارِ [app] چاپ می‌کند",
       out.startswith("20") and "[app] probe" in out, repr(out[:40]))
 
 uv_src = open(os.path.join(REPO, "bors_entry.py"), encoding="utf-8").read()
-check("atexit نشانِ [exit] را ثبت کرده است", "atexit.register" in uv_src
-      and "[exit] process ending" in uv_src)
+
+# نشانِ [exit] را قلابِ خروجِ مفسر (atexit) می‌نوشت و درِ دنیا هرگز نوشته
+# نشد: پس از بسته‌شدنِ پنجرهٔ بومی .NET پروسه را می‌بندد و پایتون به آن مرحله
+# نمی‌رسد (سنجشِ لاگِ نصبی: ۱۰ اجرا و ۸ بستنِ پنجره، صفر سطرِ [exit]). حالا
+# خودِ main() بعدِ بازگشتِ _serve می‌نویسد — و همین‌جا با اجرایِ واقعی ثابت
+# می‌شود، نه با grepِ متن.
+be._serve = lambda: "window-closed"          # بی‌شبکه، بی‌پنجره، بی‌یو‌وicorn
+_o2 = sys.stdout
+sys.stdout = _c2 = io.StringIO()
+try:
+    be.main()
+finally:
+    sys.stdout = _o2
+exit_line = _c2.getvalue().strip()
+check("main() نشانِ [exit] را بی‌درنگ بعدِ بازگشتِ _serve می‌نویسد",
+      exit_line.startswith("20") and "[exit] process ending" in exit_line
+      and "reason=window-closed" in exit_line, repr(exit_line[:90]))
+check("نشانِ [exit] به قلابِ خروجِ مفسر واگذار نشده (همان که بی‌صدا می‌مرد)",
+      "atexit" not in uv_src, "atexit.register درِ بیداریِ لاگ جابه‌جا شده است")
 check("حلقۀ [beat] برایِ تفکیکِ «مرگ» از «بازارِ بسته» فعال است",
       "_beat_loop" in uv_src and "target=_beat_loop" in uv_src)
 check("پنجرهٔ بومی هنگامِ بسته شدن علامت می‌زند",

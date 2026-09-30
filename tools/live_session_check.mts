@@ -124,6 +124,13 @@ const snapshot = (n: number) =>
         .slice(0, n)
         .map((row) => {
           const cells = Array.from(row.children).map((c) => (c.textContent ?? '').trim());
+          // خانۀ فلاش‌خور آن است که `.num` دارد (یعنی FlashNum). خانۀ نشانِ
+          // الگو متنِ غیرعددی است و فلاش نمی‌خورد — پیش از این همین گذارها
+          // درِ `missedFlash` می‌نشستند و عددِ شاخص بی‌معنی می‌شد.
+          const hasNum = Array.from(row.children).map((c) => Boolean(c.querySelector('.num')));
+          const isBadge = Array.from(row.children).map(
+            (c) => Boolean(c.querySelector('[data-testid="tape-patterns"]')),
+          );
           const last = row.children[1];
           const num = (last?.querySelector('.num') ?? last) as HTMLElement | null;
           const marked = Boolean(num?.hasAttribute('data-live'));
@@ -134,6 +141,8 @@ const snapshot = (n: number) =>
           return {
             symbol: cells[0] ?? '',
             cells,
+            hasNum,
+            isBadge,
             nodeOriginal: marked,
             sinceMarkMs: num?.getAttribute('data-live-at')
               ? Date.now() - Number(num.getAttribute('data-live-at'))
@@ -208,13 +217,21 @@ const sentinel = () =>
   page.evaluate((idx: number) => {
     const all = document.querySelectorAll('[data-testid="tape-row"]');
     const row = all[Math.min(idx, all.length) - 1];
-    const cell = row?.children[5];
+    const kids = Array.from(row?.children ?? []) as HTMLElement[];
+    // کنترلِ منفی باید خانۀ *عددی* را بزند؛ گذارِ خانۀ نشانِ الگو از این پس
+    // درِ `badgeChanges` می‌نشیند و اگر آن را هدف می‌گرفت، خودِ کنترل قرمز
+    // می‌شد بی‌آنکه داوری خراب باشد.
+    const cell = (kids[5]?.querySelector('.num') ? kids[5]
+      : kids.find((c, k) => k > 0 && c.querySelector('.num'))) ?? null;
     if (!cell) return null;
     const target = (cell.querySelector('.num') ?? cell) as HTMLElement;
     const sym = (row.children[0]?.textContent ?? '').trim();
     const from = (cell.textContent ?? '').trim();
     target.textContent = '999-CTRL';
-    return { sym, col: 5, from, to: (cell.textContent ?? '').trim(), rowCount: all.length };
+    return {
+      sym, col: kids.indexOf(cell), from,
+      to: (cell.textContent ?? '').trim(), rowCount: all.length,
+    };
   }, ROWS);
 let selftest: { expect: any; missedSeen: number; otherMissed: number } | null = null;
 let selftestAtMs = 0;
@@ -226,6 +243,13 @@ while (Date.now() < deadline) {
   if (SELFTEST && i === 0) {
     selftest = { expect: await sentinel(), missedSeen: 0, otherMissed: 0 };
     selftestAtMs = Date.now();
+    // نمونه باید بی‌درنگ بعدِ تزریق خوانده شود: پولینگِ ۵ ثانیه متنِ تزریق‌شده
+    // را پیش از نمونهٔ بعدی (۳۰ ثانیه) بازمی‌گرداند و کنترلِ منفی بی‌اثر می‌شود.
+    samples.push({
+      at: 't0-ctrl', atMs: Date.now(),
+      rows: await snapshot(ROWS), pulse: await pulseText(),
+    });
+    i += 1;
   }
   i += 1;
   await page.waitForTimeout(30_000);
@@ -238,9 +262,15 @@ const flashLog = (await page.evaluate(
 // ── داوری ────────────────────────────────────────────────────────────────
 // هر جفتِ متوالی: کدام ستون عوض شد و درِ همان پنجره، برایِ همان نماد و همان
 // ستون، یک گذارِ `flash-*` ضبط شد؟ نبودِ ضبط = فلاش نخورد.
+// برچسبِ ستون‌ها از خودِ سرستون خوانده می‌شود؛ فهرستِ دست‌نویسِ قدیمی با
+// ستون‌هایِ تازه از جا می‌ماند و «الگو» را به ستونِ دیگری می‌نسرد.
+const colLabels = (await page.evaluate(
+  () => Array.from(document.querySelectorAll('[data-testid="tape-head"] > *'))
+    .map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()),
+)) as string[];
 const changedCells = new Set<string>();
 const missedFlash: { symbol: string; col: number; from: string; to: string }[] = [];
-const colLabels = ['نماد', 'آخرین', 'پایانی', 'اختلاف٪', 'حجم', 'ارزش', 'تعداد', 'قدرت', 'الگو'];
+const badgeChanges: { symbol: string; col: number; from: string; to: string }[] = [];
 let flashedCells = 0;
 for (let s = 1; s < samples.length; s += 1) {
   const a = samples[s - 1];
@@ -252,6 +282,12 @@ for (let s = 1; s < samples.length; s += 1) {
     rb.cells.forEach((v, col) => {
       if (col === 0 || v === ra.cells[col]) return;
       changedCells.add(colLabels[col] ?? String(col));
+      // خانۀ نشانِ الگو و خانۀ بی‌عدد از قرارِ خود فلاش نمی‌خورند؛ آن‌ها را
+      // جدا می‌شماریم تا «صفرِ جاافتاده» یعنی صفرِ واقعی، نه یعنی کورِ سنجش.
+      if (rb.isBadge?.[col] || !rb.hasNum?.[col]) {
+        badgeChanges.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
+        return;
+      }
       const flashed = inWindow.some((f) => f.symbol === rb.symbol && f.col === col);
       if (flashed) flashedCells += 1;
       else missedFlash.push({ symbol: rb.symbol, col, from: ra.cells[col], to: v });
@@ -280,10 +316,12 @@ const report = {
   payloadSymbols: Object.keys(payloadWatch).length,
   payloadFreshSymbols: fresh,
   changedCells: [...changedCells],
+  colLabels,
   flashRecords: flashLog.length,
   flashCellsMatched: flashedCells,
   selftest,
   missedFlash,
+  badgeChanges,
   // نمونهٔ نخست گره‌ها را *نشانه می‌گذارد*؛ از نمونهٔ دوم به بعد نشانه باید
   // هنوز همان‌جا باشد — اگر React گره را از نو ساخته باشد، نشانه می‌رود.
   nodesKeptOriginal: samples

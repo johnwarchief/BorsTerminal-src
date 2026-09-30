@@ -128,6 +128,13 @@ def _build_fixture() -> sqlite3.Connection:
             ins("price_history",
                 ["symbol", "date", "open", "high", "low", "close", "volume"],
                 (sym, dt, 100 + k, 105 + k, 95 + k % 7, 102 + k, 1000 + k * 10))
+    # سینکِ کندل از تابلو، ردیفِ *همین نشست* را هم درِ price_history می‌نویسد و
+    # هر ۹۰ ثانیه بازنویسی‌اش می‌کند. پنجرۀ نمایش و امضایِ کش هر دو باید آن را
+    # نبینند؛ بی‌این دو ردیف، گارد هیچ‌وقت این حالت را آزموده نبود.
+    for code, sym in ((1, "A"), (2, "B")):
+        ins("price_history",
+            ["symbol", "date", "open", "high", "low", "close", "volume"],
+            (sym, "2026-09-28", 100.0, 106.0, 99.0, 103.0, 300.0 + code))
     # daily_prices: نشست‌هایِ پیشین (پنجره این‌ها را می‌خواند) و نشستِ جاری
     for code in (1, 2, 3, 4):
         for k, d in enumerate([20260920, 20260921, 20260922, 20260926, 20260927]):
@@ -300,6 +307,18 @@ def main():
        "prior30_vol" in names_a and "hist_sessions" in names_a
        and all(r[names_a.index("prior30_vol")] is not None for r in rows_a[:1]))
 
+    # نشستِ باز درِ price_history ردیف دارد (کارِ خودِ سینک) — پنجرۀ نمایش نباید
+    # آن را «دیروز» بخوانَد. بی‌این چک، «حجمِ دیروز» نیم‌بهایِ همین نشست می‌شد.
+    # مبناءِ درستِ خودِ پنجره است: آخرینِ نشستِ تمام‌شده از اتحادِ دو منبع.
+    exp_prev = c.execute("SELECT q_tot_tran FROM daily_prices "
+                         "WHERE ins_code=1 AND d_even=20260927").fetchone()[0]
+    live_vol = c.execute("SELECT volume FROM price_history WHERE symbol='A' "
+                         "AND date='2026-09-28'").fetchone()[0]
+    pv = c.execute("SELECT prev_day_vol FROM board_hist_v WHERE symbol='A'").fetchone()[0]
+    ck("«حجمِ دیروز»ِ پنجره، ردیفِ نشستِ باز را نمی‌خواند",
+       pv == exp_prev and pv != live_vol,
+       f"پنجره={pv} · نشستِ پیش={exp_prev} · کندلِ نشستِ باز={live_vol}")
+
     # ── ۲) کش: نشستِ جاری عوض شود، پنجره نه ────────────────────────────────
     mk.ensure_board_history(c)
     ck("فراخوانیِ دومِ بی‌تغییری بازسازی نمی‌کند", calls["n"] == 1,
@@ -312,6 +331,17 @@ def main():
     ck("بازنویسیِ ردیفِ نشستِ جاری کش را نمی‌سوزاند (تیکِ ۵ ثانیه)", calls["n"] == 1,
        f"rebuilds={calls['n']}")
 
+    # تیکِ کندل‌ساز: سینکِ کندل از تابلو همان ردیفِ نشستِ باز را درِ
+    # price_history می‌نویسد؛ اگر امضا آن را ببیند، کش هر دو دقیقه می‌سوزد.
+    c.execute("UPDATE price_history SET volume=volume+4000, high=high+2 "
+              "WHERE date='2026-09-28'")
+    c.execute("INSERT OR REPLACE INTO price_history VALUES "
+              "('C','2026-09-28',1,2,1,2,3)")
+    c.commit()
+    mk.ensure_board_history(c)
+    ck("بازنویسیِ کندلِ نشستِ باز درِ price_history کش را نمی‌سوزاند",
+       calls["n"] == 1, f"rebuilds={calls['n']}")
+
     # کنترلِ منفی ۱: تصحیحِ درجایِ یک نشستِ *پیشین*
     before = c.execute("SELECT month_avg_vol FROM board_hist_v WHERE symbol='A'").fetchone()
     c.execute("UPDATE daily_prices SET q_tot_tran=1 WHERE ins_code=1 AND d_even=20260927")
@@ -321,6 +351,14 @@ def main():
        f"rebuilds={calls['n']}")
     after = c.execute("SELECT month_avg_vol FROM board_hist_v WHERE symbol='A'").fetchone()
     ck("و پنجره واقعاً عددِ تازه می‌گیرد", before != after, f"{before} → {after}")
+
+    # کنترلِ مثبت ۱ب: کندلِ یک نشستِ *تمام‌شده* درِ price_history عوض شود
+    c.execute("UPDATE price_history SET volume=volume+1 WHERE symbol='A' "
+              "AND date='2026-09-07'")
+    c.commit()
+    mk.ensure_board_history(c)
+    ck("تصحیحِ کندلِ یک نشستِ تمام‌شده بازسازی می‌کند", calls["n"] == 3,
+       f"rebuilds={calls['n']}")
 
     # کنترلِ منفی ۲: tape_history با همان شمارِ ردیف و همان rowid فقط مقدار عوض کند
     calls["n"] = 0
@@ -373,11 +411,53 @@ def main():
     # جدول‌های پنجره در فایلِ اصلیِ کاربر ننشینند.
     real_path = _real_db_copy()
     c2 = sqlite3.connect(real_path)
+    # «جت» درِ دادۀِ زنده تقریباً هیچ‌وقت نماد ندارد (سنجشِ ۱۴۰۵-۰۷-۰۸: شمارِ
+    # خودِ سایت هم صفر بود) و مقایسهٔ «صفر با صفر» هیچ چیز را اثبات نمی‌کرد.
+    # پس یک نماد را عمداً جت می‌کنیم: پلکان از tape_history می‌آید (دست‌نخورده)
+    # و قیدهایِ زنده از market_watch/client_type. حالا چک هم بی‌محتوا نیست و
+    # هم گذارِ «مثبت» را در دو مسیر می‌سنجد.
+    seed = c2.execute(
+        "WITH r AS (SELECT ins_code, d_even, price_max, q_tot_tran5j, "
+        "                  ROW_NUMBER() OVER (PARTITION BY ins_code ORDER BY d_even DESC) srn "
+        "           FROM tape_history) "
+        "SELECT ins_code, "
+        "       MAX(CASE WHEN srn IN (3,6,10,20,30,40,50,60) THEN price_max END) lad, "
+        "       SUM(CASE WHEN srn <= 30 THEN q_tot_tran5j END)/30.0 base30 "
+        " FROM r GROUP BY ins_code "
+        " HAVING COUNT(*) >= 60 AND lad > 0 AND base30 > 0 "
+        "   AND ins_code IN (SELECT ins_code FROM market_watch "
+        "                    WHERE d_even = (SELECT MAX(d_even) FROM market_watch)) "
+        " ORDER BY lad DESC LIMIT 1").fetchone()
+    seed_symbol = None
+    if seed:
+        code_s, lad, base30 = seed
+        pl = round(lad * 1.9, 0)
+        c2.execute(
+            "UPDATE market_watch SET p_last=?, p_closing=?, price_yesterday=?, "
+            "       q_tot_tran=?, z_tot_tran=? "
+            " WHERE ins_code=? AND d_even=(SELECT MAX(d_even) FROM market_watch)",
+            (pl, round(pl * 0.95), round(pl / 1.12),
+             max(1.0, base30 * 40.0), 400.0, code_s))
+        # client_type درِ تابلو از *آخرینِ ردیفِ خودِ نماد* خوانده می‌شود، نه از
+        # بیشترینِ روزنۀِ کلِ جدول؛ بی‌این قیدِ درونِ نمادی، ساختگی بی‌اثر می‌ماند.
+        c2.execute(
+            "UPDATE client_type SET buy_i_vol=400000, buy_count_i=2, "
+            "                     sell_i_vol=100000, sell_count_i=20 "
+            " WHERE ins_code=? AND d_even=(SELECT MAX(ct2.d_even) FROM client_type ct2 "
+            "                               WHERE ct2.ins_code = client_type.ins_code)",
+            (code_s,))
+        c2.commit()
+        seed_symbol = c2.execute(
+            "SELECT l_val18 FROM instruments WHERE ins_code=?", (code_s,)).fetchone()[0]
     mk._HIST_CACHE_KEY = (None,)
     flags = {}
     recs_by_label = {}
     for label, sql in (("materialized", live_sql), ("monolithic", mono_sql)):
         flags[label], recs_by_label[label] = _pipeline_flags(mk, c2, sql)
+    if seed_symbol:
+        hit = {k: (seed_symbol in flags[k]["f_jet"]) for k in flags}
+        ck("جتِ ساختگی در هر دو مسیر جت است (چکِ بی‌محتوا نبود)",
+           all(hit.values()), f"{seed_symbol} → {hit}")
     for k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"):
         n = len(flags["materialized"][k])
         m = len(flags["monolithic"][k])
