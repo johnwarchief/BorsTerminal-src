@@ -35,7 +35,6 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlsplit
-from fastapi.middleware.gzip import GZipMiddleware
 
 from bors_config import (APP_DIR, DB_PATH, FTS_CONFIG_PATH, MARKET_STATUS_PATH,
                          STATUS_PATH)
@@ -49,8 +48,23 @@ from api import api_router
 # callable» → 500 می‌شود. در نبودِ orjson به JSONResponse استاندارد برگرد.
 app = FastAPI(title="BorsAgent Modern Terminal",
               default_response_class=(ORJSONResponse or JSONResponse))
-# GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
-app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+# GZip عمداً روشن نیست (v1.0.66).
+#
+# این سرور همیشه رویِ loopback است — هر سه نقطهٔ اجرا (`app.py` پایین،
+# `bors_entry.py:547`، `scripts/build_exe.py:153`) با `host='127.0.0.1'`
+# بالا می‌آیند و هیچ مسیری آن را بیرون نمی‌دهد. پس «صرفه‌جویی در پهنای باند»
+# اینجا معنا ندارد: داده از یک پروسه به پروسهٔ WebView روی همان ماشین می‌رود.
+#
+# اندازه‌گیریِ سرتاسری روی /api/market با بانکِ نصبی (۵۴۲۷ نماد، بدنهٔ ۷٫۳MB)،
+# میانهٔ ۶ درخواست:
+#     با    gzip (compresslevel=5): ۱۲۵٫۰ ms، ۹۷۱ KB رویِ سیم
+#     بدونِ gzip                  :   ۵٫۰ ms، ۷۳۴۹ KB رویِ سیم
+# یعنی ۱۲۰ms از هر پولینگِ پنج‌ثانیه‌ای صرفِ فشرده‌کردنِ چیزی می‌شد که
+# انتقالش رویِ loopback ۵ میلی‌ثانیه است — و سمتِ کاربر هم بازکردنِ همان
+# ۹۷۱KB روی نخِ اصلیِ WebView هزینهٔ دوباره داشت.
+#
+# اگر روزی این سرور بیرون از ماشین سرو شد، خطِ زیر را برگردانید:
+#     app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
 # میزبان‌هایی که «همین ماشین» شمرده می‌شوند. '::1' در برخی مسیرها با کروشه

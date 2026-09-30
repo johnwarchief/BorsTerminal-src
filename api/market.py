@@ -430,19 +430,40 @@ def _rebuild_history_windows(conn):
     conn.commit()
 
 
+def _hist_tables_ready(conn) -> bool:
+    """آیا هر دو جدولِ پنجره موجود و ناخالی‌اند؟ (سنجشِ ۰٫۰۱۲ms)"""
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM board_hist_v").fetchone()[0]
+        m = conn.execute("SELECT COUNT(*) FROM board_hist_fv").fetchone()[0]
+        return n > 0 and m > 0
+    except Exception:
+        return False              # جدول نیست (بانک عوض شده) → بساز
+
+
+# چرا اینجا کش-بر-حسبِ-زمان نیست ─────────────────────────────────────────
+# `_history_signature` رویِ بانکِ نصبی ۱۴۳ms است و در *هر* ساختِ تابلو صدا
+# می‌شود. وسوسه‌برانگیز است که آن را مثلاً هر ۶۰ ثانیه یک‌بار بسنجیم؛ سنجیده
+# شد و ۴۷۷ms ساختِ تابلو به ۲۷۹ms رسید. ولی گاردِ
+# `dev/board_hist_cache_v1056.py` درست ردش می‌کند: «تصحیحِ درجایِ یک نشستِ
+# پیشین باید بازسازی کند» یک تضمینِ درستی است، و هر درِ زمانی آن را به
+# «تا ۶۰ ثانیه بعد» تبدیل می‌کند. ستون‌هایِ پنج فیلترِ حجمی از همین پنجره
+# می‌آیند.
+#
+# ایندکسِ پوشا هم امتحان شد: price_history ‏۶۶٫۸→۵۹٫۸ms با ۸٫۳MB رشدِ بانک —
+# SQLite باز هم همهٔ ردیف‌ها را می‌خواند، گلوگاه I/O نیست.
+#
+# و مهم‌تر: این ۱۴۳ms در نخِ پس‌زمینهٔ `_kick_market_rebuild` است، نه در
+# مسیرِ درخواستِ کاربر؛ درخواست تقریباً همیشه از کش پاسخ می‌گیرد. پس
+# قیمتش «۲٫۹٪ از یک هسته در ساعتِ بازار» است، نه تأخیرِ محسوس.
+# راهِ درستِ آینده، بی‌اعتبارسازیِ صریح از سمتِ نویسنده‌هاست (نه پولینگ).
+
+
 def ensure_board_history(conn):
     """دو پنجره باید پیش از کوئریِ تابلو موجود و به‌روز باشند."""
     global _HIST_CACHE_KEY
     sig = _history_signature(conn)
     with _HIST_LOCK:
-        have = _HIST_CACHE_KEY[0] == sig
-        if have:
-            try:
-                n = conn.execute("SELECT COUNT(*) FROM board_hist_v").fetchone()[0]
-                m = conn.execute("SELECT COUNT(*) FROM board_hist_fv").fetchone()[0]
-                have = n > 0 and m > 0
-            except Exception:
-                have = False          # جدول نیست (بانک عوض شده) → بساز
+        have = _HIST_CACHE_KEY[0] == sig and _hist_tables_ready(conn)
         if have:
             return False
         t0 = time.time()
@@ -640,14 +661,23 @@ def _build_market_response(request: Request):
 
         records = df.to_dict(orient="records")
 
-        def _clean(v):
-            if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))):
-                return None
-            return v
+        # NaN/±inf باید null شوند، وگرنه JSONِ نامعتبر می‌سازیم.
+        # orjson این کار را خودش و در C انجام می‌دهد (تأیید شد: nan/inf/-inf
+        # هر سه null). حلقهٔ پایتونیِ زیر همان نتیجه را می‌داد ولی روی
+        # ۵۴۲۷ ردیف × ۲۱۶ ستون = ۱٬۱۷۲٬۲۳۲ فراخوانِ تابعی، ۱۶۴ms از هر
+        # ساختِ تابلو می‌خورد — هر ۵ ثانیه، در ساعتِ بازار. خروجیِ دو مسیر
+        # بایت‌به‌بایت مقایسه شد و یکی بود.
+        # مسیرِ fallback حلقه را لازم دارد: json استاندارد `NaN` می‌نویسد که
+        # JSON.parseِ مرورگر ردش می‌کند.
+        if not _ORJ:
+            def _clean(v):
+                if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))):
+                    return None
+                return v
 
-        for rec in records:
-            for k in list(rec.keys()):
-                rec[k] = _clean(rec[k])
+            for rec in records:
+                for k in list(rec.keys()):
+                    rec[k] = _clean(rec[k])
         # meta: تاریخ/زمان معاملات برای نمایش شمسی (دادهٔ تابلو متعلق به کدام روز است)
         meta = {"d_even": None, "h_even": None, "last_sync": None}
         try:
