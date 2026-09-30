@@ -5,17 +5,13 @@ import { FilterConfigPopover } from '@features/market/components/FilterConfigPop
 import type { QuickFilter } from '@features/market/stores/tapeStore';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 
-const ANCHOR = {
-  x: 120, y: 12, width: 104, height: 28, top: 12, left: 120, bottom: 40, right: 224,
-  toJSON: () => ({}),
-} as DOMRect;
 
 function paint(open: boolean) {
   return (
     <FilterConfigPopover
       filter={'f_clock' as QuickFilter}
       open={open}
-      anchorRect={open ? ANCHOR : null}
+      trigger={<button type="button">⚙</button>}
       onClose={() => {}}
     />
   );
@@ -47,7 +43,7 @@ describe('پاپ‌اور «تنظیم آستانه‌ها» در تابلو', (
     const filters: QuickFilter[] = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'];
     for (const f of filters) {
       const { unmount } = render(
-        <FilterConfigPopover filter={f} open anchorRect={ANCHOR} onClose={vi.fn()} />,
+        <FilterConfigPopover filter={f} open trigger={<button type="button">⚙</button>} onClose={vi.fn()} />,
       );
       expect(screen.getByRole('dialog')).toBeInTheDocument();
       unmount();
@@ -57,7 +53,7 @@ describe('پاپ‌اور «تنظیم آستانه‌ها» در تابلو', (
 describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ هر فیلتر (#226)', () => {
   it('الگوی ساعت: دستگیرۀ «امروز داخلِ مبنایِ میانگین» را دارد و در استور می‌نویسد', () => {
     useTapeStore.getState().resetTapeFilterConfig();
-    render(<FilterConfigPopover filter="f_clock" open anchorRect={ANCHOR} onClose={() => {}} />);
+    render(<FilterConfigPopover filter="f_clock" open trigger={<button type="button">⚙</button>} onClose={() => {}} />);
     const box = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
     expect(box).not.toBeChecked();
     fireEvent.click(box);
@@ -65,7 +61,7 @@ describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ
   });
 
   it('نقطه‌زنی: هر دو دستگیره هست («دروازۀ ۲۹-نشست» فقط اینجا)', () => {
-    render(<FilterConfigPopover filter="f_noqteh" open anchorRect={ANCHOR} onClose={() => {}} />);
+    render(<FilterConfigPopover filter="f_noqteh" open trigger={<button type="button">⚙</button>} onClose={() => {}} />);
     expect(screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).toBeInTheDocument();
     const hist = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
     expect(hist).toBeChecked();
@@ -74,7 +70,7 @@ describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ
   });
 
   it('جت — که مبناءش دست‌نخورده می‌ماند — این ردیف‌ها را ندارد', () => {
-    render(<FilterConfigPopover filter="f_jet" open anchorRect={ANCHOR} onClose={() => {}} />);
+    render(<FilterConfigPopover filter="f_jet" open trigger={<button type="button">⚙</button>} onClose={() => {}} />);
     expect(screen.queryByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).not.toBeInTheDocument();
   });
 });

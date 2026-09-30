@@ -82,16 +82,6 @@ function SplitFilterChip({
   hidden?: HiddenInfo;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const chipRef = useRef<HTMLDivElement>(null);
-  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
-
-  const handleOpenConfig = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (chipRef.current) {
-      setAnchorRect(chipRef.current.getBoundingClientRect());
-    }
-    setPopoverOpen((v) => !v);
-  };
 
   // هر ردیفِ پنهان یک در دارد، پس جمعِ درها = +N؛ درِ بی‌سهم نام برده نمی‌شود.
   const doorLabel = hidden && hidden.count > 0 ? hiddenDoorsLabel(hidden.doors) : '';
@@ -105,7 +95,6 @@ function SplitFilterChip({
 
   return (
     <div
-      ref={chipRef}
       className={`inline-flex shrink-0 items-center rounded-full border text-xs font-bold transition-all shadow-2xs select-none ${
         active
           ? 'border-accent-blue bg-accent-blue/15 text-accent-blue font-black dark:bg-accent-blue/25'
@@ -132,21 +121,24 @@ function SplitFilterChip({
         ) : null}
       </button>
 
-      <button
-        type="button"
-        onClick={handleOpenConfig}
-        title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
-        aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
-        className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
-      >
-        ⚙
-      </button>
-
+      {/* خودِ دکمهٔ چرخ‌دنده تریگرِ پاپ‌اور است. پیش از این جایِ پاپ‌اور با
+          getBoundingClientRect دستی حساب می‌شد و برایِ پنهان‌کردنِ بیات‌شدنش
+          هر اسکرول آن را می‌بست. */}
       <FilterConfigPopover
         filter={filter}
         open={popoverOpen}
-        anchorRect={anchorRect}
         onClose={() => setPopoverOpen(false)}
+        trigger={
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setPopoverOpen((v) => !v); }}
+            title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
+            aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
+            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
+          >
+            ⚙
+          </button>
+        }
       />
     </div>
   );

@@ -2,8 +2,7 @@
 // گزینه‌ها باید از همان JET_LADDER و پیش‌فرض‌هایِ جزوه بیایند؛ فهرستِ دستیِ
 // «۵، ۹، ۱۹، ۲۹، ۳۹» هیچ‌وقت ۵۹ نداشت، پس حالتِ پیش‌فرضِ جت در این پاپ‌اور
 // انتخابی‌نشانه می‌ماند و کاربر فکر می‌کرد فیلتر روی ۳۹ روزه تنظیم شده است.
-import { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import * as Popover from '@radix-ui/react-popover';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
   DEFAULT_TAPE_FILTER_CONFIG,
@@ -61,43 +60,26 @@ import { QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStor
 export function FilterConfigPopover({
   filter,
   open,
-  anchorRect,
+  trigger,
   onClose,
 }: {
   filter: QuickFilter;
   open: boolean;
-  anchorRect: DOMRect | null;
+  /** دکمه‌ای که پاپ‌اور را باز می‌کند — Radix خودش لنگرش می‌کند */
+  trigger: React.ReactNode;
   onClose: () => void;
 }) {
   const config = useTapeStore((s) => s.tapeFilterConfig);
   const setConfig = useTapeStore((s) => s.setTapeFilterConfig);
   const quickFilters = useTapeStore((s) => s.quickFilters);
   const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
-  const popoverRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (popoverRef.current?.contains(t)) return;
-      onClose();
-    };
-    const onScrollOrResize = () => onClose();
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('scroll', onScrollOrResize, true);
-    window.addEventListener('resize', onScrollOrResize);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('scroll', onScrollOrResize, true);
-      window.removeEventListener('resize', onScrollOrResize);
-    };
-  }, [open, onClose]);
 
-  if (!open || !anchorRect || typeof document === 'undefined') return null;
-
-  // موقعیت‌سنجی هوشمند زیر چیپ
-  const top = anchorRect.bottom + 6;
-  const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - 290));
+  // موقعیت‌سنجی دیگر دستی نیست. نسخهٔ پیشین anchorRect را یک‌بار هنگامِ باز
+  // شدن می‌گرفت و `top` را ثابت می‌نوشت، پس با اسکرولِ صفحه پاپ‌اور از چیپ
+  // جدا می‌شد و وسطِ صفحه شناور می‌ماند. clamp هم فقط افقی بود، یعنی نزدیکِ
+  // پایینِ صفحه از کادر بیرون می‌زد. Radix خودش لنگر را دنبال می‌کند، در
+  // برخورد با لبه می‌چرخد، و Escape و کلیکِ بیرون را هم دارد.
 
   const isActive = quickFilters.includes(filter);
 
@@ -135,19 +117,20 @@ export function FilterConfigPopover({
     }
   };
 
-  return createPortal(
-    <div
-      ref={popoverRef}
-      style={{
-        position: 'fixed',
-        top: `${top}px`,
-        left: `${left}px`,
-        zIndex: 9999,
-      }}
-      className="w-72 rounded-2xl border border-border-c bg-bg-primary p-3 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
-      role="dialog"
-      aria-label={`تنظیمات فیلتر ${QUICK_LABELS[filter]}`}
-    >
+  return (
+    <Popover.Root open={open} onOpenChange={(o) => !o && onClose()}>
+      <Popover.Trigger asChild>{trigger}</Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          side="bottom"
+          align="start"
+          sideOffset={6}
+          collisionPadding={8}
+          dir="rtl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-[9999] w-72 rounded-2xl border border-border-c bg-bg-primary p-3 shadow-2xl motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0 motion-safe:data-[state=open]:zoom-in-95 motion-safe:duration-120"
+          aria-label={`تنظیمات فیلتر ${QUICK_LABELS[filter]}`}
+        >
       {/* هدر پاپ‌اور با کلید وضعیت فعال/غیرفعال */}
       <div className="flex items-center justify-between border-b border-border-c/60 pb-2 mb-2.5">
         <div className="flex items-center gap-1.5">
@@ -397,7 +380,8 @@ export function FilterConfigPopover({
           </button>
         </div>
       </div>
-    </div>,
-    document.body,
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
