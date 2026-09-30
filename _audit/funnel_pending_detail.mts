@@ -1,4 +1,5 @@
 // _audit/funnel_pending_detail.mts -- جزئیاتِ مرحلۀ بنیادی: صفِ انتظار، سرستونِ تکراری، چیپ‌ها
+import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 const PKG = process.env.JEV_BROWSER_DIR!;
 const { chromium } = await import(pathToFileURL(`${PKG}/node_modules/playwright/index.mjs`).href);
@@ -41,5 +42,6 @@ const r = await p.evaluate(() => {
 console.log(JSON.stringify(r, null, 1));
 await p.click('[data-testid="funnel-prefs-reset"]').catch(() => {});
 await p.waitForTimeout(500);
+writeFileSync('_audit/funnel_pending_detail.json', JSON.stringify({ ...r, prefsAfterReset: await p.evaluate(() => localStorage.getItem('fts.funnel.prefs.v1')) }, null, 1), 'utf-8');
 console.log('prefs after reset:', await p.evaluate(() => localStorage.getItem('fts.funnel.prefs.v1')));
 await b.close();

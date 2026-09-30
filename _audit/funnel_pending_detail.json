@@ -1,0 +1,94 @@
+{
+ "tape": {
+  "nTables": 1,
+  "theadTexts": [
+   "نماد|آخرین|تغییر٪|حجم/ماه|نشانه"
+  ],
+  "mainRows": [
+   "دشيمي",
+   "دفرا",
+   "رانفور",
+   "اندوخته داريوش",
+   "ترنج ثابت"
+  ],
+  "pendLabel": null,
+  "pendRows": null,
+  "pendFirstCells": null,
+  "chips": [
+   "۵ نماد"
+  ],
+  "emptyMsg": null
+ },
+ "technical": {
+  "nTables": 1,
+  "theadTexts": [
+   "نماد|هفتگی|روزانه|ستاپ|داوری"
+  ],
+  "mainRows": [
+   "دشيمي",
+   "دفرا",
+   "رانفور",
+   "اندوخته داريوش",
+   "ترنج ثابت"
+  ],
+  "pendLabel": null,
+  "pendRows": null,
+  "pendFirstCells": null,
+  "chips": [
+   "۵ نماد",
+   "۴ رد (بی‌حذف)"
+  ],
+  "emptyMsg": null
+ },
+ "fundamental": {
+  "nTables": 2,
+  "theadTexts": [
+   "نماد|رشد فروش|EPSِ سه‌ساله|حاشیه ناخالص|فروش÷ارزش|نرخ‌گذاری|بنیادی",
+   "نماد|رشد فروش|EPSِ سه‌ساله|حاشیه ناخالص|فروش÷ارزش|نرخ‌گذاری|بنیادی"
+  ],
+  "mainRows": [
+   "دفرا",
+   "رانفور"
+  ],
+  "pendLabel": "بنیادی‌اش سنجیده نشده — در انتظارِ گزارشِ کدال (۲)",
+  "pendRows": [
+   "اندوخته داريوش",
+   "ترنج ثابت"
+  ],
+  "pendFirstCells": [
+   "اندوخته داريوش",
+   "—",
+   "—",
+   "—",
+   "—",
+   "سایر صنایع—",
+   "—"
+  ],
+  "chips": [
+   "۲ نماد",
+   "− ۱",
+   "۲ سنجیده‌نشده"
+  ],
+  "emptyMsg": null
+ },
+ "handover": {
+  "nTables": 1,
+  "theadTexts": [
+   "نماد|هفتگی|بنیادی|سبد"
+  ],
+  "mainRows": [
+   "دفرا",
+   "رانفور"
+  ],
+  "pendLabel": null,
+  "pendRows": null,
+  "pendFirstCells": null,
+  "chips": [
+   "۲ نماد"
+  ],
+  "emptyMsg": null
+ },
+ "coverage": "تکنیکال سنجیده شده: ۵ از ۵",
+ "prefs": "مرحلۀ بنیادی(پیش‌فرضِ جزوه: ۳ از ۵)۱۲۳۴۵در انتظارِ گزارشعبور با برچسبحذف از قیفبا این پیچ‌ها: ۲ نماد از مرحلۀ بنیادی عبور می‌کندبازگشت به جزوه",
+ "prefsAfterReset": "{\"fundFloor\":3,\"unmeasured\":\"hold\",\"techScreens\":true}"
+}
