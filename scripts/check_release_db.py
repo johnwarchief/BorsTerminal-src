@@ -67,6 +67,40 @@ FUTURE_TOLERANCE = 0.5
 SRC = "market.db"
 DST = "market.db.lzma"
 
+# شمارِ ردیفِ این جدول‌ها «دادهٔ روز» است، نه آرایهٔ جانبی. بیس‌لاین با هر
+# نشستِ تازه بزرگ‌تر می‌شود، پس کم‌شدنِ هر کدام یعنی روزها/گزارش‌هایی که در
+# فایلِ commit‌شده هست از بیس‌لاینِ نو بیرون می‌افتد — دقیقاً همان چیزی که
+# PACK_REFUSED برایِ تاریخِ آخرین نشست نگهبانی‌اش می‌کند، ولی تاریخِ تنها
+# نشستِ آخر این را نمی‌بیند. سنجشِ ۱۴۰۵-۰۷-۰۹: daily_prices این ماشین ۷۲٬۲۸۰ در
+# برابر ۸۷٬۱۴۶ِ فایلِ منتشرشده، و tape_historyِ بانکِ نصبی ۱۵۱٬۳۵۶ در برابر
+# ۱۸۳٬۹۷۳ — هر دو «تازه» بودند و --pack بی‌استثنا قبول می‌کرد.
+COUNT_TABLES = ("daily_prices", "financial_statements", "codal_notices", "tape_history")
+
+
+def row_counts(conn, tables=COUNT_TABLES):
+    """نامِ جدول -> شمارِ ردیف؛ None یعنی جدول نیست یا خوانده نمی‌شود.
+
+    None با صفر یکی نیست: بانکِ بی‌`tape_history` «خالی» نیست، «ناشناخته» است و
+    بی‌دلیل نمی‌تواند ریلیز را ببندد.
+    """
+    out = {}
+    for t in tables:
+        try:
+            out[t] = conn.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0]
+        except sqlite3.Error:
+            out[t] = None
+    return out
+
+
+def shrinking(src_counts, base_counts, tables=COUNT_TABLES):
+    """فقط جدول‌هایی که عددشان قطعیِ کمتر است؛ خروجیِ ناشناخته رد نمی‌شود."""
+    bad = []
+    for t in tables:
+        a, b = src_counts.get(t), base_counts.get(t)
+        if isinstance(a, int) and isinstance(b, int) and a < b:
+            bad.append((t, a, b))
+    return bad
+
 
 def _ro(path):
     return sqlite3.connect("file:%s?mode=ro" % path.replace(os.sep, "/"), uri=True)
@@ -255,7 +289,7 @@ def baseline():
             conn.close()
 
 
-def pack():
+def pack(allow_shrink=False):
     """فشرده‌سازی + round-trip verification. baseline قبلی حفظ می‌شود."""
     src, dst = SRC, DST
     if not os.path.exists(src):
@@ -283,6 +317,37 @@ def pack():
                 print("PACK_REFUSED source is older than the committed baseline; "
                       "market.db.lzma left untouched. Sync market.db first.")
                 return 1
+
+    # سنِ «آخرین نشست» تنها نشانه نیست: بانکِ همین ماشین با آخرینِ نشستِ دیروز
+    # هم می‌تواند ۱۴٬۰۰۰ ردیفِ کم‌تر از فایلِ منتشرشده داشته باشد و بیس‌لاینِ
+    # کاربرها را کوتاه کند. بی‌--allow-shrink رد می‌کنیم و فایل را دست نمی‌زنیم.
+    if os.path.exists(dst):
+        c_src = _open_src()
+        try:
+            sc = row_counts(c_src) if c_src is not None else {}
+        finally:
+            if c_src is not None:
+                c_src.close()
+        try:
+            with open_lzma(dst) as b:
+                bc = row_counts(b)
+        except Exception as e:
+            print("[pack] baseline unreadable (%r) — no row-count comparison" % e)
+            bc = {}
+        if sc and bc:
+            print("[pack] rows " + " ".join(
+                "%s=%s/%s" % (t, sc.get(t), bc.get(t)) for t in COUNT_TABLES))
+            bad = shrinking(sc, bc)
+            if bad:
+                for t, a, b_ in bad:
+                    print("PACK_SHRINK table=%s source=%d baseline=%d lost=%d"
+                          % (t, a, b_, b_ - a))
+                if not allow_shrink:
+                    print("PACK_REFUSED rows: market.db has fewer rows than the "
+                          "committed baseline; market.db.lzma left untouched. "
+                          "Sync first, or pass --allow-shrink for an intentional dedupe.")
+                    return 1
+                print("PACK_ALLOWED_SHRINK --allow-shrink: کاستیِ ردیف‌ها عمدی است")
 
     if os.path.exists(dst):
         shutil.copy2(dst, dst + ".bak")
@@ -320,6 +385,9 @@ def main():
                     help="validate + age the committed market.db.lzma (no market.db needed)")
     ap.add_argument("--strict", action="store_true",
                     help="exit non-zero when any stamp is past its age limit")
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="with --pack: accept fewer rows than the committed baseline "
+                         "(intentional dedupe/housekeeping only)")
     args = ap.parse_args()
 
     if args.baseline:
@@ -334,7 +402,7 @@ def main():
     if stale and args.strict:
         print("STRICT: stale stamps=%s" % ",".join(stale))
         return 1
-    return pack() if args.pack else 0
+    return pack(allow_shrink=args.allow_shrink) if args.pack else 0
 
 
 if __name__ == "__main__":

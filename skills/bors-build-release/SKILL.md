@@ -90,9 +90,23 @@ UI-only release could therefore ship a board months behind and the in-app «بر
 - Plain mode (called by `release.ps1`) validates structure and prints the age.
 - **Stale data is a warning, never an abort.** Nowruz holidays and UI-only hotfixes are
   both legitimate; a gate that cries wolf gets `continue-on-error` added and then reads as
-  noise. The one unconditional refusal is `PACK_REFUSED`: packing a `market.db` whose last
-  trading day is *older than the committed baseline* would delete market days, so the pack
-  stops and leaves the baseline bytes untouched (no `.bak`, no `.new`).
+  noise. The unconditional refusals are two:
+
+  - `PACK_REFUSED`: packing a `market.db` whose last trading day is *older than the
+    committed baseline* would delete market days, so the pack stops and leaves the
+    baseline bytes untouched (no `.bak`, no `.new`).
+  - `PACK_REFUSED rows` + one `PACK_SHRINK table=… source=… baseline=… lost=…` line per
+    table: the age check only looks at the *last* session, so a database that is fresh
+    by date can still be smaller than the shipped baseline. Proved on 2026-09-30: this
+    machine's `market.db` had `daily_prices` 72,280 against the committed 87,146 (and the
+    installed app's DB had lost `tape_history`: 151,356 against 183,973) while both
+    carried the newest session day. Guarded tables are `daily_prices`,
+    `financial_statements`, `codal_notices`, `tape_history`; a *missing* table is
+    unknown, not zero, so it never refuses. `--allow-shrink` accepts an intentional
+    dedupe and prints `PACK_ALLOWED_SHRINK`. Covered by
+    `dev/pack_rowcount_guard_v1065.py` with synthetic mini-databases (no bank needed).
+    Consequence: v1.0.65 ships the 2026-09-29 baseline deliberately — a fresh baseline
+    must come from a full sync, not from either local copy.
 - Unknown is not zero and not stale: a missing table or NULL stamp prints `AGE_UNKNOWN`
   and does not count toward `STALE_COUNT`. Age never uses a Jalali field
   (`period_end`, `publish_date`, `monthly_sales.year`) because the repo has no trustworthy

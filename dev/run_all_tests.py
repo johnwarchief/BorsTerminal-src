@@ -79,6 +79,11 @@ SUITES = [
     # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.
     ('dev/assembly_veto_v1064.py',    'assembly veto: fresh outside the cache, no-data is not a veto'),
     ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
+    # --pack تنها تاریخِ آخرین نشست را می‌دید؛ روی این ماشین بانکِ مخزن با
+    # نشستِ همان روز ۱۴٬۸۶۶ ردیف daily_prices کم‌تر از بیس‌لاینِ منتشرشده داشت.
+    # با بانکِ کوچکِ مصنوعی: رد، پذیرشِ --allow-shrink، و «ناشناخته ≠ صفر».
+    ('dev/pack_rowcount_guard_v1065.py',
+                                      'pack refuses a baseline with fewer rows than the committed one'),
     # Data-Lifecycle (گام ۳۴/۳۵): ستون‌های مشتقِ خودکار + تاب‌آوریِ سینکِ افزایشی.
     # نکته: run() مسیر را با os.sep می‌سازد و سپس split می‌کند، پس آرگومانِ
     # اضافی باید در همان رشته باشد (درست مثل test_arg_parse_v10).
