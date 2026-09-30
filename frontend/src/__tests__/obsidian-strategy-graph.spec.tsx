@@ -187,3 +187,52 @@ describe('#223 — واژگانِ سه گره از خودِ جزوه', () => {
     expect(screen.getByText(/پیش‌فرضِ برنامه/)).toBeInTheDocument();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// سلسله‌مراتبِ صفحهٔ ۲ چارت (افزودهٔ ۱٫۰٫۶۶)
+//
+// چارت صریح است: روندِ *روزانه* تعیین می‌کند کدام ستاپ معتبر است، نه
+// هفتگی. تا پیش از این، گراف طبقهٔ روزانه را اصلاً نداشت و «هفتگی صعودی»
+// مستقیم به هر شش ستاپ وصل بود — یعنی به کاربر می‌گفت «هفتگی صعودی ⇒ هر
+// ستاپی مجاز است». این تست‌ها نمی‌گذارند آن میان‌بر برگردد.
+describe('چارت ص۲: روندِ روزانه درِ ستاپ‌ها را تعیین می‌کند', () => {
+  const all = () => getGraphLinks('classic');
+  const targetsOf = (src: string) =>
+    all().filter((l) => l.source === src).map((l) => l.target);
+
+  it('هفتگیِ صعودی فقط به سه شاخهٔ روزانه می‌رود (و نقطه‌زنیِ ص۳)', () => {
+    const t = targetsOf('tech_weekly_up');
+    expect(t).toEqual(expect.arrayContaining(['tech_daily_up', 'tech_daily_down', 'tech_daily_flat']));
+    // هیچ ستاپِ وابسته‌به‌روزانه‌ای نباید مستقیم زیرِ هفتگی باشد
+    for (const s of ['setup_pullback', 'setup_jet', 'setup_fib', 'setup_choch', 'setup_last_low', 'setup_double_bottom']) {
+      expect(t).not.toContain(s);
+    }
+  });
+
+  it('روزانهٔ صعودی ⇒ فقط پولبک و جت', () => {
+    const t = targetsOf('tech_daily_up');
+    expect(new Set(t)).toEqual(new Set(['setup_jet', 'setup_pullback']));
+  });
+
+  it('روزانهٔ نزولی ⇒ فقط فیبوناچی و CHoCH', () => {
+    const t = targetsOf('tech_daily_down');
+    expect(new Set(t)).toEqual(new Set(['setup_fib', 'setup_choch']));
+  });
+
+  it('روزانهٔ خنثی ⇒ فقط آخرین کف/سقف و کف دوقلو', () => {
+    const t = targetsOf('tech_daily_flat');
+    expect(new Set(t)).toEqual(new Set(['setup_last_low', 'setup_double_bottom']));
+  });
+
+  it('هر سه شاخهٔ روزانه در جریانِ معکوس هم هستند', () => {
+    const rev = getGraphLinks('reverse');
+    const t = rev.filter((l) => l.source === 'tech_weekly_up').map((l) => l.target);
+    expect(t).toEqual(expect.arrayContaining(['tech_daily_up', 'tech_daily_down', 'tech_daily_flat']));
+  });
+
+  it('هیچ شاخهٔ روزانه‌ای بن‌بست نیست', () => {
+    for (const d of ['tech_daily_up', 'tech_daily_down', 'tech_daily_flat']) {
+      expect(targetsOf(d).length).toBeGreaterThan(0);
+    }
+  });
+});

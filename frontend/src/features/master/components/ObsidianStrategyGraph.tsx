@@ -292,6 +292,60 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       x: xTech,
       y: 168,
     },
+    // ─── طبقهٔ روندِ روزانه (چارت ص۲) ───
+    // این سه گره تا ۱٫۰٫۶۶ اصلاً وجود نداشتند و «هفتگی صعودی» مستقیم به هر
+    // شش ستاپ وصل بود. یعنی گراف می‌گفت «هفتگی صعودی ⇒ هر ستاپی مجاز است»،
+    // در حالی که چارت صریح است: روندِ *روزانه* تعیین می‌کند کدام ستاپ
+    // معتبر است. پولبک و جت فقط در روزانهٔ صعودی، فیبوناچی و CHoCH فقط در
+    // روزانهٔ نزولی، و آخرین‌کف/کف‌دوقلو فقط در روزانهٔ خنثی.
+    {
+      id: 'tech_daily_up',
+      label: '🟢 تایم روزانه صعودی',
+      fullTitle: 'روند روزانه صعودی — درِ ستاپ‌های ادامه‌دهنده',
+      category: 'tech',
+      stage: 2,
+      stageName: 'تکنیکال T',
+      page: 'چارت صفحه ۲',
+      description: 'زیرِ چترِ هفتگیِ صعودی، روندِ روزانه هم صعودی است. در این شاخه فقط پولبک و جت مجازند.',
+      ruleFormula: 'هفتگی صعودی + روزانه صعودی ➔ پولبک | جت',
+      badge: 'ادامه‌دهنده',
+      color: '#22c55e',
+      radius: 16,
+      x: xTech,
+      y: 250,
+    },
+    {
+      id: 'tech_daily_down',
+      label: '🔻 تایم روزانه نزولی',
+      fullTitle: 'روند روزانه نزولی — درِ ستاپ‌های بازگشتی',
+      category: 'tech',
+      stage: 2,
+      stageName: 'تکنیکال T',
+      page: 'چارت صفحه ۲',
+      description: 'هفتگی صعودی ولی روزانه نزولی: اصلاحِ درونِ روند. فقط فیبوناچی و CHoCH مجازند.',
+      ruleFormula: 'هفتگی صعودی + روزانه نزولی ➔ فیبوناچی | CHoCH',
+      badge: 'بازگشتی',
+      color: '#f59e0b',
+      radius: 16,
+      x: xTech,
+      y: 470,
+    },
+    {
+      id: 'tech_daily_flat',
+      label: '⚖️ تایم روزانه خنثی',
+      fullTitle: 'روند روزانه خنثی — درِ ستاپ‌های محدودهٔ رنج',
+      category: 'tech',
+      stage: 2,
+      stageName: 'تکنیکال T',
+      page: 'چارت صفحه ۲',
+      description: 'هفتگی صعودی و روزانه خنثی. ورود در آخرین کفِ روند صعودی یا آخرین سقفِ روند نزولی، و کف دوقلو.',
+      ruleFormula: 'هفتگی صعودی + روزانه خنثی ➔ آخرین کف/سقف | کف دوقلو',
+      badge: 'رنج',
+      color: '#94a3b8',
+      radius: 16,
+      x: xTech,
+      y: 690,
+    },
     {
       id: 'setup_jet',
       label: `🚀 ستاپ جت (مهلت ورود ${toFaDigits(params.jetStabilizationDays)} روز)`,
@@ -866,8 +920,12 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_s_voltrend_hunt', source: 'tape_volume_trend', target: 'setup_point_hunt', presets: ['trend'] },
       { id: 'rev_s_filters_jet', source: 'tape_final_filters', target: 'setup_jet', presets: ['swing'] },
       { id: 'rev_s_filters_hunt', source: 'tape_final_filters', target: 'setup_point_hunt', presets: ['trend'] },
-      { id: 'rev_t_up_lastlow', source: 'tech_weekly_up', target: 'setup_last_low', presets: ['swing', 'trend'] },
-      { id: 'rev_t_up_dbottom', source: 'tech_weekly_up', target: 'setup_double_bottom', presets: ['swing', 'trend'] },
+      // در مهندسیِ معکوس هم همان سه شاخهٔ روزانه سرِ جایشان می‌مانند
+      { id: 'rev_t_up_daily_up', source: 'tech_weekly_up', target: 'tech_daily_up', presets: ['swing', 'trend', 'hourglass'] },
+      { id: 'rev_t_up_daily_down', source: 'tech_weekly_up', target: 'tech_daily_down', presets: ['swing', 'trend'] },
+      { id: 'rev_t_up_daily_flat', source: 'tech_weekly_up', target: 'tech_daily_flat', presets: ['swing', 'trend'] },
+      { id: 'rev_t_dflat_lastlow', source: 'tech_daily_flat', target: 'setup_last_low', presets: ['swing', 'trend'] },
+      { id: 'rev_t_dflat_dbottom', source: 'tech_daily_flat', target: 'setup_double_bottom', presets: ['swing', 'trend'] },
       { id: 'rev_t_up_dtop', source: 'tech_weekly_up', target: 'setup_double_top', presets: ['swing', 'trend'] },
       { id: 'rev_t_dtop_rsi', source: 'setup_double_top', target: 'exit_rsi_div', presets: ['swing', 'trend'] },
 
@@ -935,14 +993,25 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_f_med_up', source: 'fund_medium', target: 'tech_weekly_up', presets: ['swing'] },
     { id: 'cls_f_weak_rej', source: 'fund_weak', target: 'tech_weekly_reject', presets: [] },
 
-    // تکنیکال هفتگی به ستاپ‌های روزانه
-    { id: 'cls_t_up_jet', source: 'tech_weekly_up', target: 'setup_jet', presets: ['swing'] },
-    { id: 'cls_t_up_pull', source: 'tech_weekly_up', target: 'setup_pullback', presets: ['swing'] },
-    { id: 'cls_t_up_fib', source: 'tech_weekly_up', target: 'setup_fib', presets: ['swing', 'trend'] },
-    { id: 'cls_t_up_choch', source: 'tech_weekly_up', target: 'setup_choch', presets: ['trend'] },
+    // هفتگی ➔ سه شاخهٔ روزانه ➔ ستاپ‌هایِ مجازِ همان شاخه.
+    // تا ۱٫۰٫۶۶ این طبقه نبود و هفتگی مستقیم به هر شش ستاپ می‌رفت — یعنی
+    // گراف می‌گفت «هفتگی صعودی ⇒ هر ستاپی مجاز است». چارت ص۲ خلافِ این است.
+    { id: 'cls_t_up_daily_up', source: 'tech_weekly_up', target: 'tech_daily_up', presets: ['swing', 'trend', 'hourglass'] },
+    { id: 'cls_t_up_daily_down', source: 'tech_weekly_up', target: 'tech_daily_down', presets: ['swing', 'trend'] },
+    { id: 'cls_t_up_daily_flat', source: 'tech_weekly_up', target: 'tech_daily_flat', presets: ['swing', 'trend'] },
+
+    // روزانه صعودی ➔ پولبک | جت
+    { id: 'cls_t_dup_jet', source: 'tech_daily_up', target: 'setup_jet', presets: ['swing'] },
+    { id: 'cls_t_dup_pull', source: 'tech_daily_up', target: 'setup_pullback', presets: ['swing'] },
+    // روزانه نزولی ➔ فیبوناچی | CHoCH
+    { id: 'cls_t_ddown_fib', source: 'tech_daily_down', target: 'setup_fib', presets: ['swing', 'trend'] },
+    { id: 'cls_t_ddown_choch', source: 'tech_daily_down', target: 'setup_choch', presets: ['trend'] },
+    // روزانه خنثی ➔ آخرین کف/سقف | کف دوقلو
+    { id: 'cls_t_dflat_lastlow', source: 'tech_daily_flat', target: 'setup_last_low', presets: ['swing', 'trend'] },
+    { id: 'cls_t_dflat_dbottom', source: 'tech_daily_flat', target: 'setup_double_bottom', presets: ['swing', 'trend'] },
+    // نقطه‌زنی از چارت ص۳ می‌آید (فیلترِ روندگیر)، نه از شاخهٔ روزانه —
+    // پس همچنان مستقیم زیرِ مجوزِ هفتگی می‌ماند.
     { id: 'cls_t_up_hunt', source: 'tech_weekly_up', target: 'setup_point_hunt', presets: ['swing', 'trend'] },
-    { id: 'cls_t_up_lastlow', source: 'tech_weekly_up', target: 'setup_last_low', presets: ['swing', 'trend'] },
-    { id: 'cls_t_up_dbottom', source: 'tech_weekly_up', target: 'setup_double_bottom', presets: ['swing', 'trend'] },
     { id: 'cls_t_up_dtop', source: 'tech_weekly_up', target: 'setup_double_top', presets: ['swing', 'trend'] },
 
     // تکنیکال T ➔ تابلوخوانی S
