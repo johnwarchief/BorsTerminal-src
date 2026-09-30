@@ -1006,27 +1006,14 @@ export interface ObsidianStrategyGraphProps {
   };
 }
 
-/** جای دانه‌هایِ جاده رویِ منحنیِ بیزی و فاصلۀ تأخیرشان (چشم جهت را می‌خواند) */
-const COMET_T = [0.3, 0.55, 0.8];
-const COMET_STEP = 0.45;
-
-function cubicAt(
-  p0: { x: number; y: number },
-  p1: { x: number; y: number },
-  p2: { x: number; y: number },
-  p3: { x: number; y: number },
-  t: number,
-): { x: number; y: number } {
-  const u = 1 - t;
-  const a = u * u * u;
-  const b = 3 * u * u * t;
-  const c = 3 * u * t * t;
-  const d = t * t * t;
-  return {
-    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
-    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
-  };
-}
+/** دانه‌هایِ جاده: جابه‌جاییِ واقعی رویِ همان منحنی، نه سوسوی درجا.
+ *  حرکت با SMIL (`animateMotion`) انجام می‌شود چون «تبدیل» است نه لی‌اوت:
+ *  سنجشِ ۱۴۰۵-۰۷-۰۹ (رأیِ pilot: گزینهٔ c، اطمینان ۰٫۸، ریسک ۰٫۲۸) خط‌چینِ
+ *  متحرکِ CSS را ۱۰۱۴ لی‌اوت در ۱۲ ثانیه و نبضِ opacity را ۲۴۹ نشان داد —
+ *  ولی مالک انیمیشنی را که جابه‌جایی ندارد «حذف‌شده» می‌شمارد. پس دانه
+ *  حرکت می‌کند، به‌شرطِ اینکه تعدادِ مسیر کم و نفسِ حرکت بلند بماند. */
+const COMET_N = 3;
+const COMET_DUR_S = 4.8;
 
 export function ObsidianStrategyGraph({
   selectedPreset,
@@ -1596,28 +1583,32 @@ export function ObsidianStrategyGraph({
                           strokeOpacity={0.16}
                           className="fts-path-flow"
                         />
-                        {/* سه دانه رویِ خودِ منحنی، با تأخیرِ پلکانی. حرکتِ
-                            هندسی (خط‌چین یا motion-path) هر فریم کلِ SVG را
-                            دوباره لی‌اوت می‌کرد؛ این فقط opacity را عوض می‌کند.
-                            خاموش‌کردنش دو چیز است: تنظیمِ «جریانِ مسیر» (flowOn؛
-                            پیش‌فرض «همیشه») و پنجرهٔ پنه (data-hidden)؛ بی‌حرکتیِ
-                            موس نه — درخت همان تبی است که بی‌دست نگاهش می‌کنند
-                            (استثنا در index.css). */}
+                        {/* سه دانه که رویِ همان منحنی **جابه‌جا** می‌شوند (رأیِ pilot #60:
+                            گزینهٔ c). حرکت با `animateMotion` است — تبدیلِ رویِ خودِ
+                            گره، نه خط‌چینِ متحرکِ CSS که هر فریم کلِ SVG را لی‌اوت
+                            می‌کرد (۱۰۱ لی‌اوت در ۲ ثانیه). فقط رویِ ستونِ انتخاب و
+                            با نفسِ کشیده ({COMET_DUR_S} ثانیه) می‌دوند. خاموش‌کردنش
+                            همان دو کلیدِ قبلی است: تنظیمِ «جریانِ مسیر» (flowOn —
+                            دانه‌ها اصلاً ساخته نمی‌شوند) و پنجرهٔ پنه؛ بی‌حرکتیِ موس
+                            نه، چون درخت همان تبی است که بی‌دست نگاهش می‌کنند. */}
                         {flowOn &&
-                          COMET_T.map((t, i) => {
-                            const q = cubicAt(sp, { x: ctrl1X, y: sp.y }, { x: ctrl2X, y: tp.y }, tp, t);
-                            return (
-                              <circle
-                                key={t}
-                                cx={q.x}
-                                cy={q.y}
-                                r="3.4"
-                                fill={strokeColor}
-                                className="fts-comet"
-                                style={{ animationDelay: `${(-COMET_STEP * i).toFixed(2)}s` }}
+                          Array.from({ length: COMET_N }, (_, i) => (
+                            <circle
+                              key={i}
+                              data-testid="tree-flow-comet"
+                              r="3.6"
+                              fill={strokeColor}
+                              className="fts-comet"
+                            >
+                              <animateMotion
+                                dur={`${COMET_DUR_S}s`}
+                                repeatCount="indefinite"
+                                begin={`${(-((COMET_DUR_S / COMET_N) * i)).toFixed(2)}s`}
+                                path={pathData}
+                                rotate="0"
                               />
-                            );
-                          })}
+                            </circle>
+                          ))}
                       </>
                     )}
                   </g>
