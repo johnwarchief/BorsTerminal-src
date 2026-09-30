@@ -343,7 +343,7 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
 
   it('تغییر مستقیم پارامتر ساعت در تب ساعت', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
+    fireEvent.click(screen.getByRole('tab', { name: /الگوی ساعت/ }));
     const goldenBox = screen.getByRole('checkbox', { name: /فقط ساعت طلایی/ });
     fireEvent.click(goldenBox);
     expect(useTapeStore.getState().tapeFilterConfig.clock.requireGoldenHour).toBe(true);
@@ -351,7 +351,7 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
 
   it('تغییر تایم‌فریم شکست سقف جت به نقاطِ پلکانِ جزوه', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    fireEvent.click(screen.getByText('🚀 فیلتر جت (سقف)'));
+    fireEvent.click(screen.getByRole('tab', { name: /فیلتر جت/ }));
     expect(screen.getByText('تایم‌فریم شکست سقف قیمتی (Lookback High)')).toBeInTheDocument();
     expect(screen.getByText('۲ روزه')).toBeInTheDocument();
     fireEvent.click(screen.getByText('۲۹ روزه'));
@@ -362,7 +362,7 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
 
   it('فیلدِ عددیِ خالی آستانه را صفر نمی‌کند (صفر = گیتِ خاموش)', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
+    fireEvent.click(screen.getByRole('tab', { name: /الگوی ساعت/ }));
     const trades = screen.getByRole('textbox', { name: /حداقل تعداد معاملات/ });
     const before = useTapeStore.getState().tapeFilterConfig.clock.minTradeCount;
     fireEvent.change(trades, { target: { value: '' } });
@@ -371,7 +371,7 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
 
   it('ارقامِ فارسی در فیلدِ عددی خوانده می‌شوند', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    fireEvent.click(screen.getByText('⏰ الگوی ساعت'));
+    fireEvent.click(screen.getByRole('tab', { name: /الگوی ساعت/ }));
     const trades = screen.getByRole('textbox', { name: /حداقل تعداد معاملات/ });
     fireEvent.change(trades, { target: { value: '۷۵' } });
     expect(useTapeStore.getState().tapeFilterConfig.clock.minTradeCount).toBe(75);
@@ -467,7 +467,7 @@ describe('دستگیره‌های ۲۲۶ — مبنایِ داوری', () => {
 
   it('تب «مبنای داوری» در مودال هر دو دستگیره را در استور می‌نویسد', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    fireEvent.click(screen.getByText('🧮 مبنای داوری'));
+    fireEvent.click(screen.getByRole('tab', { name: /مبنای داوری/ }));
     const todayBox = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
     const histBox = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
     expect(todayBox).not.toBeChecked();

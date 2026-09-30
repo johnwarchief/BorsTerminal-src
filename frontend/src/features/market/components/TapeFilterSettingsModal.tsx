@@ -7,6 +7,7 @@
 // می‌دهد و در آن حالت مقدارِ قبلی سرِ جایش می‌ماند.
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { VerticalTabs, type VerticalTabItem } from '@shared/components/VerticalTabs';
 import { parseNum, toFaDigits } from '@shared/lib/fmt';
 import {
   TAPE_PRESETS,
@@ -38,6 +39,22 @@ const LADDER_HINT: Record<LookbackDays, string> = {
   59: 'پلکانِ کاملِ فایل ([ih][2..59])',
 };
 
+/** هشت بخشِ تنظیمات. برچسب‌ها کوتاه‌اند چون در ستونِ باریک می‌نشینند؛ جملهٔ
+ *  کامل در `hint` می‌ماند و هم به title می‌رود هم به صفحه‌خوان. */
+type FilterTabKey =
+  | 'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart' | 'basis';
+
+const FILTER_TABS: readonly VerticalTabItem<FilterTabKey>[] = [
+  { key: 'presets', icon: '🎯', label: 'استراتژی‌ها', hint: 'استراتژی‌های آمادهٔ تنظیم‌شده' },
+  { key: 'clock', icon: '⏰', label: 'الگوی ساعت', hint: 'الگوی ساعت' },
+  { key: 'susp', icon: '📊', label: 'حجم مشکوک', hint: 'حجم مشکوک' },
+  { key: 'jet', icon: '🚀', label: 'فیلتر جت', hint: 'فیلتر جت (سقف)' },
+  { key: 'roobi', icon: '🧹', label: 'کف‌روبی صف', hint: 'کف‌روبی صف' },
+  { key: 'noqteh', icon: '🎯', label: 'کف‌یابی', hint: 'کف‌یابی و نقطه‌زنی' },
+  { key: 'smart', icon: '💎', label: 'پول هوشمند', hint: 'پول هوشمند' },
+  { key: 'basis', icon: '🧮', label: 'مبنای داوری', hint: 'مبنای داوری' },
+];
+
 export function TapeFilterSettingsModal({
   open,
   onClose,
@@ -57,7 +74,7 @@ export function TapeFilterSettingsModal({
     setConfig({ ...config, [block]: { ...config[block], [field]: v } } as TapeFilterConfig);
   };
 
-  const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart' | 'basis'>('presets');
+  const [activeTab, setActiveTab] = useState<FilterTabKey>('presets');
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
@@ -96,100 +113,17 @@ export function TapeFilterSettingsModal({
           </button>
         </div>
 
-        {/* منوی تب‌های افقی */}
-        <div className="flex overflow-x-auto border-b border-border-c/60 px-4 pt-2 gap-1.5 bg-bg-secondary/40 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveTab('presets')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'presets'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            🎯 استراتژی‌های آماده
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('clock')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'clock'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            ⏰ الگوی ساعت
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('susp')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'susp'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            📊 حجم مشکوک
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('jet')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'jet'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            🚀 فیلتر جت (سقف)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('roobi')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'roobi'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            🧹 کف‌روبی صف
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('noqteh')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'noqteh'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            🎯 کف‌یابی و نقطه
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('smart')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'smart'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            💎 پول هوشمند
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('basis')}
-            className={`shrink-0 rounded-t-lg border-b-2 px-3 py-2 text-xs font-bold transition-all ${
-              activeTab === 'basis'
-                ? 'border-accent-blue bg-bg-primary/80 text-accent-blue shadow-xs'
-                : 'border-transparent text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
-            }`}
-          >
-            🧮 مبنای داوری
-          </button>
-        </div>
-
-        {/* محتوای تب */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        {/* تب‌ها: عمودی. هشت تب در یک نوارِ افقی روی ۱۳۶۶ اسکرول می‌خورد و
+            برچسب‌هایِ فارسی جا نمی‌شدند؛ ستونِ عمودی همه را یک‌جا نشان می‌دهد
+            و شاخصِ لغزانش فقط یک translate است (رندرِ نرم‌افزاری هم روان). */}
+        <VerticalTabs
+          items={FILTER_TABS}
+          active={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="بخش‌هایِ تنظیماتِ فیلتر"
+          testId="tape-filter-tabs"
+        >
+          <div className="space-y-4">
           {/* تب استراتژی‌های آماده */}
           {activeTab === 'presets' && (
             <div className="space-y-3">
@@ -767,7 +701,8 @@ export function TapeFilterSettingsModal({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </VerticalTabs>
 
         {/* فوتر مدال */}
         <div className="flex items-center justify-between border-t border-border-c/70 px-5 py-3.5 bg-bg-card/60 backdrop-blur">
