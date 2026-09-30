@@ -656,10 +656,24 @@ def main():
     except Exception as e:
         print(f"[!] انتقالِ codal.db.lzma خطا داد (ریلیز متوقف نمی‌شود): {e!r}")
 
-    # latest.json از همان URLای که آپدیتِرِ کاربر می‌خواند (releases/latest)
-    # بررسی می‌شود: نسخه باید همین TAG باشد.
-    manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
-    remote_manifest_bytes = _fetch_remote(manifest_url)
+    # راستی‌آزماییِ latest.json — و اینجا انتظارِ ریلیزِ عادی و پیش‌انتشار
+    # درست وارونهٔ هم است.
+    #
+    # ریلیزِ عادی: باید رویِ releases/latest بنشیند، چون آپدیترِ کاربر دقیقاً
+    #   همان نشانی را می‌خواند. اگر ننشیند، ریلیز عملاً به دستِ کسی نرسیده.
+    # پیش‌انتشار (دمو/rc): باید *نـنـشـیـنـد*. کلِ ایمنیِ بیلدِ دمو همین است.
+    #   پس به‌جایِ شکست‌دادنِ ریلیز، همین را به‌عنوان یک شرطِ مثبت می‌سنجیم:
+    #   مانیفستِ خودِ تگ باید درست باشد، و releases/latest باید هنوز چیزِ
+    #   دیگری باشد. (نسخهٔ پیشین این تابع بی‌قیدوشرط انتظار داشت latest همین
+    #   تگ باشد و برایِ هر پیش‌انتشاری exit 1 می‌داد — در حالی که فایل‌ها
+    #   سالم آپلود شده بودند.)
+    if IS_PRERELEASE:
+        tag_manifest_url = (f"https://github.com/{REPO}/releases/download/{TAG}/latest.json")
+        remote_manifest_bytes = _fetch_remote(tag_manifest_url)
+    else:
+        remote_manifest_bytes = _fetch_remote(
+            f"https://github.com/{REPO}/releases/latest/download/latest.json")
+
     if remote_manifest_bytes is None:
         print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
         verify_ok = False
@@ -674,8 +688,27 @@ def main():
                   f"دارد (انتظار: {TAG.lstrip('v')!r}).")
             verify_ok = False
         else:
-            print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
-                  f"را اعلام می‌کند.")
+            print(f"[✓] latest.json نسخهٔ {remote_manifest.get('version')} را اعلام می‌کند.")
+
+    if IS_PRERELEASE:
+        # شرطِ ایمنی، صریح سنجیده می‌شود: کاربرِ نسخهٔ واقعی نباید دمو را
+        # به‌عنوان آپدیت ببیند. اگر گیت‌هاب روزی پیش‌انتشار را «latest» کند،
+        # اینجا سروصدا می‌کند نه رویِ ماشینِ کاربر.
+        live = _fetch_remote(
+            f"https://github.com/{REPO}/releases/latest/download/latest.json")
+        live_ver = None
+        if live is not None:
+            try:
+                live_ver = json.loads(live.decode("utf-8", errors="replace")).get("version")
+            except Exception:
+                live_ver = None
+        if live_ver == TAG.lstrip("v"):
+            print(f"::error::[publish] پیش‌انتشارِ {TAG} رویِ releases/latest نشسته — "
+                  f"آپدیترِ کاربرانِ نسخهٔ واقعی آن را می‌بیند!")
+            verify_ok = False
+        else:
+            print(f"[✓] releases/latest هنوز {live_ver!r} است، نه {TAG.lstrip('v')!r} — "
+                  f"آپدیترِ کاربرانِ واقعی این دمو را نمی‌بیند.")
 
     if not verify_ok:
         print("[-] راستی‌آزماییِ پس از آپلود شکست خورد؛ ریلیز را دستی بررسی کن.")
