@@ -176,8 +176,10 @@ x=۱۳۵۰/۱۰۸۰/۷۸۰/۴۸۰/۱۸۰ است. در عرض‌های کم، م�
 با `git worktree` روی بیسِ دست‌نخورۀ 2ce03f4 بازتولید شدند:
 
 - `dev/mstat_local_v975.py` → `no such table: market_liquidity`
-- `dev/fts_screener_card_parity_v10.py` → نشار: موتور=۱۴۳٫۷۵ کارت=None (مبنای
-  سالانه‌سازی، شاخص ۴)
+- `dev/fts_screener_card_parity_v10.py` → نشار: موتور=۱۴۱۳٫۷۵ کارت=None (مبنای
+  سالانه‌سازی، شاخص ۴). **داده‌محور است، نه کد:** با همین کد در ورک‌اسپیسِ
+  autoclaw سبز می‌شود (۸۷۳ ردیف / معاف ۲۹۷) و در این درخت قرمز (۸۷۲ / ۲۶۳).
+  شاهدِ کامل: `_audit/parity_guard_1065.txt`
 - `dev/board_hist_cache_v1056.py` → «table tape_history_state is gone from the
   schema source — guard is stale»
 
@@ -293,30 +295,45 @@ focus-testimonials در متن‌ها، trellis برای تب‌های اصلی.
 Excel؟ این تنها موردِ فهرست است که مستقلِ هر پکیجی ارزشِ واقعی دارد و با یک تابعِ
 `Blob` در `shared/` تمام می‌شود.
 
-## ۹) خطِ پایهٔ سنجش و وضعیتِ commit (این دور **هیچ‌چیز commit نشده**)
+## ۹) برشِ ریلیز ۱٫۰٫۶۵ و یک دامِ داده‌ای که باید بدانید
 
-HEAD = `2ce03f4` = ریلیز ۱٫۰٫۶۴. تغییراتِ همین نشست در working tree است:
+دورِ کاری این سند در `2648c52` (۶۳ فایل) و ادامهٔ آن در `HEAD` commit شد و به
+`github` (آینهٔ منبع، جایی که CI می‌چرخد) پوش شد؛ تگ `v1.0.65` ریلیز را می‌سازد.
+**دو رفع از ورک‌اسپیسِ اتوماسیونِ زنده هم منتقل شد** (`api/market.py`،
+`bors_entry.py`، `fts_engine.py`، `api/screener.py`، `dev/codal_fts_updater.py`،
+گاردِ نو `dev/fts_ind3_na_guard_v1065.py`) — آن درخت از `2ce03f4` فقط شش commit
+جلوتر بود، پس واگراییِ پنهان ندارد. تنها چیزِ عمداً منتقل‌نشده: ثبتِ
+`dev/fts_trend_staleness_v1064.py` در `run_all_tests`، چون آن فایل در autoclaw
+**untracked** است و اینجا نبودنش سوئیت را می‌شکست (#57 همان کار است).
 
-- **کدِ تغییریافته (۱۶ فایل در `git diff --name-only`):** `api/chart.py`،
-  `api/screener.py`، `dev/db_contract_v11.py`، `dev/run_all_tests.py`،
-  `dev/test_calendar_v92.py`، `frontend/src/index.css`، `FtsFunnelStages.tsx`،
-  `FtsScreenTable.tsx`، `useFtsScreen.ts`، `useCalendarUpcoming.ts`،
-  `AuditBadge.tsx`، `AgentMatrix.tsx`، `ftsFunnel.ts`، `StrategyTreePage.tsx`،
-  و دو spec (`fts-funnel-stages`، `fts-screen`).
-- **ناشناس (untracked):** `dev/assembly_veto_v1064.py`، `docs/HANDOFF-FTS-TAB-OPEN-WORK.md`،
-  چهار پیچِ `_audit/probe_*.mts`، خروجی‌های `_audit/*.json|png`، و
-  `dev/fixtures/fts_v10_payloads.json` که **خودِ اجرای تست** بازش تولید کرد (تغییرِ
-  عمدی نیست؛ قبلِ commit ببینید آیا diffِ آن بی‌معنی است یا نه).
+**دامِ بیس‌لاین داده (مهم‌ترین یادداشتِ این بخش):** `python scripts/check_release_db.py --pack`
+رویِ این ماشین بی‌استثنا قبول می‌کند، چون `PACK_REFUSED` فقط «تاریخِ آخرین نشست»
+را با بیس‌لاین مقایسه می‌کند و **عددِ ردیف را نمی‌بیند**. اندازه‌گیریِ واقعی:
 
-| سنجش | عددِ آخرِ این نشست |
+| جدول | بیس‌لاینِ commit‌شده (۰۹-۲۹) | `market.db` این مخزن | بانکِ اپِ نصبی |
+|---|---|---|---|
+| `daily_prices` | ۸۷٬۱۴۶ | **۷۲٬۲۸۰** | ۹۱٬۶۵۱ |
+| `financial_statements` | ۸٬۳۲۵ (۱٬۰۳۳ نماد) | **۸٬۲۱۶ (۱٬۰۲۲)** | ۸٬۳۲۵ |
+| `codal_notices` | ۳۵٬۰۴۴ | **۳۴٬۸۹۱** | ۳۵٬۰۴۴ |
+| `tape_history` | **۱۸۳٬۹۷۳** | ۱۵۱٬۳۵۶ | ۱۵۱٬۳۵۶ |
+
+هیچ‌کدام بالا بر دیگری نیست: بانکِ مخزن در همه‌چیز کوتاه‌تر است و بانکِ نصبی
+`tape_history` را از دست داده. پک‌کردنِ هر دو یعنی **پاک‌شدنِ روزهایِ معاملاتیِ
+کاربر** (نصبِ تازه پنجره‌هایِ حجمی و پنج فیلترِ «الگو» را از همان فایل می‌سازد).
+پس ریلیز ۱٫۰٫۶۵ با **همان بیس‌لاین ۰۹-۲۹** می‌رود (AGE_OK، ۱٫۶ روز، حد ۷ روز) و
+تازۀ داده باید از سینکِ کامل بیاید، نه از این دو کپی — کارِ #62/#34. اگر روزی
+خواستید پک کنید، اول همین جدول را بگیرید و بعد از آن یک گاردِ «شمارِ ردیف کم
+نشود» به `check_release_db.py` اضافه کنید.
+
+| سنجش (پیش از تگ) | عدد |
 |---|---|
-| `npx vitest run` (فرانت) | **۱۲۱۳ pass / ۱ skip** — صفر fail |
-| `npx tsc -b --force` | پاک (خطای TS2307ِ `@pairlens/fast-financial-charts/financial-chart` کهنهٔ `tsbuildinfo` بود، نه واقعی) |
-| `npm run lint` | ۰ error، ۱ warning از پیش موجود در فایلی که دست نخورده |
-| `python dev/run_all_tests.py` | فقط **همان سه گاردِ از‌قبل‌قرمز** (§۴) قرمز است |
-
-پس اگر چیزی جز این سه قرمز شد، مالِ تغییرِ شماست. `dev/fixtures/fts_v10_payloads.json`
-را هم بی‌بازبینی commit نکنید.
+| `npx vitest run` (فرانت) | **۱۲۴۷ pass / ۱ skip در ۱۱۳ فایل** — صفر fail |
+| `npx tsc -b --force` | پاک |
+| `npm run lint` | ۰ error، ۱ warningِ بی‌ربط (`tape-badge-chip-parity.spec.ts:151`) |
+| `npm run build` | ✓ (سنگین‌ترین chunk: FastFinancialChartsEngine ۲۹۶KB / gzip ۷۲KB) |
+| `dev/version_anchor_guard.py` | VERSION ANCHOR GUARD OK (۶ لنگه = ۱٫۰٫۶۵) |
+| `python dev/run_all_tests.py` | همه سبز جز `fts_screener_card_parity_v10` (§۴، داده‌محور)؛ `board_hist_cache_v1056` و `mstat_local_v975` با انتقالِ رفع، سبز شدند |
+| `check_release_db.py --baseline` | STALE_COUNT=0، همه AGE_OK |
 
 ## ۱۰) فهرستِ کارِ باز، به همان ترتیبِ فرمانِ مالک
 
