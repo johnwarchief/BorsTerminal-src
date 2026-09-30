@@ -151,3 +151,37 @@ jobs:
             bors-terminal-mobile.apk \
             dist_mobile/mobile_snapshot.db.gz \
             dist_mobile/mobile_snapshot.db.meta.json
+
+      # ---- انتشار در مخزن عمومی BorsTerminal (اختیاری، با PAT) ----
+      # GITHUB_TOKEN فقط به همین مخزن دسترسی دارد؛ برای مخزن عمومی یک
+      # Fine-grained PAT با دسترسی Contents:Read&Write روی johnwarchief/BorsTerminal
+      # بساز و به‌عنوان سکرت PUBLIC_RELEASE_TOKEN اضافه کن. تا وقتی این سکرت
+      # نیست، این گام بی‌صدا رد می‌شود و ریلیز فقط در همین مخزن (-src) می‌ماند.
+      # چرا مخزن عمومی مهم است: (الف) هر کسی بدون لاگین APK را دانلود می‌کند؛
+      # (ب) بروزرسانی خودکار دادهٔ اپ (localData.ts) بی‌احراز fetch می‌کند و
+      # روی مخزن خصوصی همیشه 404 می‌گیرد.
+      - name: انتشار در مخزن عمومی BorsTerminal (اختیاری)
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "سکرت PUBLIC_RELEASE_TOKEN تعریف نشده — انتشار عمومی رد شد (ریلیز در -src هست)."
+            exit 0
+          fi
+          set -e
+          VER=$(python -c "import bors_config; print(bors_config.APP_VERSION)")
+          PUB=johnwarchief/BorsTerminal
+          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER}
+          - نصب مستقیم: bors-terminal-mobile.apk (دادهٔ آفلاین کامل داخل خود اپ است)
+          - داخل ایران، تابلو/چارت/شاخص زنده از TSETMC خوانده می‌شود
+          - mobile_snapshot.db.gz + meta: بستهٔ داده — اپ روزی یک‌بار خودش چک و آپدیت می‌کند"
+          gh release create mobile-latest -R "$PUB" --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES" 2>/dev/null || \
+          gh release edit mobile-latest -R "$PUB" --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES"
+          gh release upload mobile-latest -R "$PUB" --clobber \
+            bors-terminal-mobile.apk \
+            dist_mobile/mobile_snapshot.db.gz \
+            dist_mobile/mobile_snapshot.db.meta.json
