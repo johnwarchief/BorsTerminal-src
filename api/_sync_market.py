@@ -7,7 +7,6 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from .market import warm_market_cache
 from fastapi import APIRouter
-import subprocess
 import test_tsetmc as _tsetmc_mod
 import threading
 
@@ -37,20 +36,22 @@ def _run_market_sync():
     finally:
         _MARKET_SYNC_LOCK.release()
 
-def _market_sync_alive():
-    """True اگر همگام‌سازی بازار در حال اجراست (thread زنده یا پروسهٔ قدیمی)."""
-    # پروسهٔ تست (برای نسخهٔ قدیمی/کد — اگر بررسی powershell در دسترس بود)
-    try:
-        out = subprocess.run(
-            ["powershell.exe", "-NoProfile", "-Command",
-             "(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'test_tsetmc' -and $_.Name -ne 'pythonw.exe' }).Count"],
-            capture_output=True, text=True, timeout=15)
-        n = int(out.stdout.strip()) if out.returncode == 0 and out.stdout.strip().isdigit() else 0
-        if n:
-            return True
-    except Exception:
-        pass
-    return not _MARKET_SYNC_LOCK.acquire(blocking=False) or (_MARKET_SYNC_LOCK.release() or False)
+def _market_sync_alive() -> bool:
+    """True اگر همگام‌سازی بازار در حال اجراست.
+
+    منبعِ یکتا خودِ `_MARKET_SYNC_LOCK` است. تا v1.0.65 اینجا اول یک
+    `Get-CimInstance Win32_Process` با PowerShell اجرا می‌شد تا پروسهٔ جدای
+    `test_tsetmc` را پیدا کند — ولی همان بالا در `_run_market_sync` نوشته
+    شده که سینک دیگر پروسهٔ جدا نیست و درونِ همین فرآیند (thread + قفل)
+    می‌دود، چون `Popen([sys.executable, ...])` در EXE خودِ EXE را دوباره
+    بالا می‌آورد. پس آن پروسه هیچ‌وقت وجود ندارد و آن فراخوان فقط
+    ۰٫۵ تا ۳ ثانیه به هر استارتِ ویندوزی اضافه می‌کرد (CIM روی Win32_Process
+    کند است) تا صفر برگرداند.
+    """
+    if _MARKET_SYNC_LOCK.acquire(blocking=False):
+        _MARKET_SYNC_LOCK.release()
+        return False
+    return True
 
 @router.post("/api/sync/market")
 def sync_market():

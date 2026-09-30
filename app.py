@@ -182,9 +182,13 @@ def _startup_sync_market():
         # migrate_schema را صدا می‌زنند.
         print(f"[startup] codal schema migrate failed (non-fatal): {e}")
 
+    # فراخوانِ مستقیم و نه داخلِ Thread: خودِ _sync_market_on_start نخِ کارگر را
+    # می‌سازد و برمی‌گردد، پس نخِ بیرونی فقط یک لایهٔ اضافه بود که همان پیامِ
+    # «market sync thread spawned» را دو بار چاپ می‌کرد (یکی خودش، یکی اینجا) و
+    # این توهم را می‌ساخت که دو سینک راه افتاده. حالا که پروبِ PowerShellِ
+    # _market_sync_alive رفته، این فراخوان آنی است و استارت را نگه نمی‌دارد.
     try:
-        threading.Thread(target=_sync_market_on_start, daemon=True).start()
-        print("[startup] market sync thread spawned")
+        _sync_market_on_start()
     except Exception as e:
         print(f"[startup] market sync thread failed: {e}")
 
@@ -327,9 +331,16 @@ def spa_catch_all(full_path: str):
     """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم)."""
     idx = _get_index_html()
     if idx and full_path:
-        candidate = os.path.normpath(os.path.join(_FRONTEND_DIST, full_path))
+        candidate = os.path.abspath(os.path.join(_FRONTEND_DIST, full_path))
         base = os.path.abspath(_FRONTEND_DIST)
-        if candidate.startswith(base) and os.path.isfile(candidate):
+        # commonpath و نه startswith: مقایسهٔ رشته‌ای پیشوندی، «dist-old» را هم
+        # زیرمجموعهٔ «dist» می‌شمارد. commonpath مرزِ جزءِ مسیر را می‌بیند.
+        # (ValueError وقتی دو مسیر روی دو درایو ویندوزند → همان «بیرون است».)
+        try:
+            inside = os.path.commonpath([candidate, base]) == base
+        except ValueError:
+            inside = False
+        if inside and os.path.isfile(candidate):
             return FileResponse(candidate)
     return _spa_index()
 
@@ -346,9 +357,8 @@ if __name__ == "__main__":
                                  cwd=APP_DIR)
     except Exception:
         pass
-    # تابلو: هر بار اجرا، تازه‌سازی بازار در ترد جدا (شروع بلافاصله، بدون مسدود کردن UI)
-    try:
-        threading.Thread(target=_sync_market_on_start, daemon=True).start()
-    except Exception as e:
-        print(f"[startup] market sync thread failed: {e}")
+    # تابلو اینجا سینک نمی‌شود: uvicorn.run بلافاصله هوکِ @app.on_event("startup")
+    # را می‌زند و همان `_sync_market_on_start` را صدا می‌کند. تا v1.0.65 هر دو جا
+    # بود و دو نخ هم‌زمان می‌شدند؛ dedup روی قفل یک مسابقه است نه تضمین. هوکِ
+    # استارت هر دو مسیرِ اجرا (این فایل و start_dashboard.py) را پوشش می‌دهد.
     uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=False)

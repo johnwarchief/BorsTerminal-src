@@ -38,9 +38,13 @@ def main(old, new):
             print(f"{sym:<10} status={a.get('status')}/{b.get('status')} "
                   f"{str(b.get('message', ''))[:70]}")
             continue
+        # کوتیشنِ تودرتوی هم‌نوع (PEP 701) فقط روی پایتون ۳٫۱۲+ parse می‌شود و
+        # این تنها فایلی بود که روی ۳٫۱۱ SyntaxError می‌داد. متغیرِ میانی همان
+        # خروجی را می‌دهد و روی هر نسخه‌ای باز می‌شود.
+        n_adj = f"{len(a['adjustEvents'])} -> {len(b['adjustEvents'])}"
         print(f"{sym:<10}{b['count']:>7}"
               f"{f'{bad_candles(a)} -> {bad_candles(b)}':>16}"
-              f"{f'{len(a['adjustEvents'])} -> {len(b['adjustEvents'])}':>14}"
+              f"{n_adj:>14}"
               f"  {a.get('adjustSource')} | {b.get('adjustSource')}")
         closes_a = {c['time']: c['close'] for c in a['candles']}
         closes_b = {c['time']: c['close'] for c in b['candles']}

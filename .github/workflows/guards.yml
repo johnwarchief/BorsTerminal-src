@@ -49,38 +49,47 @@ jobs:
           fi
           exit "$rc"
 
-  js-syntax:
-    name: node --check on our bundles
+  frontend:
+    name: frontend (tsc + eslint + vitest)
     runs-on: ubuntu-latest
+    # این جاب جایگزینِ `js-syntax` شد. آن جاب روی ۱۱ فایلِ static/*.js
+    # `node --check` می‌زد که ۹ تایشان در فاز ۷ به archive/legacy_static رفتند؛
+    # پس «skip (not in repo)» چاپ می‌کرد و سبز می‌شد بی‌آنکه چیزی را نگه دارد.
+    # در همان حال ۳۵۶ فایلِ TS و ۱۲۴۷ تستِ vitest فقط سرِ تگ (release.yml)
+    # دیده می‌شدند، یعنی یک PR می‌توانست سبز باشد و UI را شکسته باشد.
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Syntax-check first-party JS
+      - name: Install
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: frontend
+        run: npx eslint .
+
+      - name: Unit tests
+        working-directory: frontend
+        run: npx vitest run
+
+      # همان چیزی که از جابِ قبلی زنده مانده بود: دو باندلِ فرست‌پارتیِ
+      # بی‌بandler که هنوز در static/ هستند و هیچ tsc/eslintی نمی‌بیندشان.
+      - name: Syntax-check the remaining bundler-less JS
         run: |
           set -e
-          for f in \
-            static/app.js \
-            static/fundamental_ui.js \
-            static/portfolio_ui.js \
-            static/tech_rtv.js \
-            static/tech_tools.js \
-            static/tech_365.js \
-            static/mstat.js \
-            static/selection.js \
-            static/calendar/calendar.js \
-            static/calendar/calendarService.js \
-            static/vendor/drawing_math.js
-          do
-            if [ -f "$f" ]; then
-              echo "node --check $f"
-              node --check "$f"
-            else
-              echo "skip (not in repo): $f"
-            fi
+          for f in static/calendar/calendar.js static/calendar/calendarService.js; do
+            echo "node --check $f"
+            node --check "$f"
           done
 
   repo-hygiene:
