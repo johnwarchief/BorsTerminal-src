@@ -15,6 +15,7 @@
 // است که با متغیرِ CSS جابه‌جا می‌شود — بی‌اندازه‌گیریِ DOM، بی‌ResizeObserver،
 // بی‌reflow. همهٔ تب‌ها هم‌ارتفاع‌اند، پس جایِ شاخص = شمارهٔ تب ÷ تعداد.
 // در `prefers-reduced-motion` انتقال خاموش می‌شود.
+import { motion } from 'motion/react';
 import { useCallback, useId, useRef, type ReactNode } from 'react';
 
 export type VerticalTabItem<K extends string> = {
@@ -81,18 +82,6 @@ export function VerticalTabs<K extends string>({
         onKeyDown={onKeyDown}
         className="relative w-[7.5rem] shrink-0 overflow-y-auto border-e border-border-c/60 bg-bg-secondary/40 py-1 sm:w-40 scrollbar-none"
       >
-        {/* شاخصِ لغزان: یک نوار که فقط translate می‌شود. `--n` و `--i` از
-            جاوااسکریپت می‌آیند ولی فقط به‌عنوانِ عدد — هیچ پیکسلی اینجا
-            حساب نمی‌شود، پس تغییرِ اندازهٔ پنجره کاری لازم ندارد. */}
-        <span
-          aria-hidden="true"
-          data-testid={`${testId}-indicator`}
-          className="pointer-events-none absolute end-0 top-0 w-[3px] rounded-s bg-accent-blue motion-safe:transition-transform motion-safe:duration-200"
-          style={{
-            height: `calc(100% / ${items.length})`,
-            transform: `translateY(calc(${idx} * 100%))`,
-          }}
-        />
         {items.map((t, i) => {
           const on = t.key === active;
           return (
@@ -114,10 +103,23 @@ export function VerticalTabs<K extends string>({
                   : 'text-text-secondary hover:bg-bg-card/50 hover:text-text-primary'
               }`}
               style={{ height: `calc(100% / ${items.length})`, minHeight: '2.25rem' }}
+              // نکته: شاخص داخلِ همین دکمه رندر می‌شود، نه بیرون. motion با
+              // layoutId همان المان را بینِ دو موقعیت FLIP می‌کند، پس دیگر
+              // لازم نیست ارتفاع و جابه‌جایی را خودمان حساب کنیم — و تبِ
+              // هم‌اندازه‌نبودن هم مشکلی نمی‌سازد.
               data-index={i}
             >
               {t.icon ? <span aria-hidden="true">{t.icon}</span> : null}
               <span className="truncate">{t.label}</span>
+              {on ? (
+                <motion.span
+                  layoutId={`${testId}-indicator`}
+                  data-testid={`${testId}-indicator`}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-1 end-0 w-[3px] rounded-s bg-accent-blue"
+                  transition={{ type: 'spring', stiffness: 380, damping: 34, mass: 0.7 }}
+                />
+              ) : null}
             </button>
           );
         })}

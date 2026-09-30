@@ -2,7 +2,9 @@
 // بخش ۱: سنجه ارزش معاملات خرد | بخش ۲: مثلث جریان پول هوشمند |
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
-import { useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { LayoutGroup, motion } from 'motion/react';
+import { cn } from '@shared/ui/cn';
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
@@ -27,6 +29,17 @@ import {
 
 const fa = (x: number, digits = 1): string => toFaDigits(x.toFixed(digits));
 
+/** یک اسپرینگ برایِ همهٔ جابه‌جایی‌ها. اعداد از روی حسِ «سنگینِ نرم» انتخاب
+ *  شده‌اند: stiffness پایین‌تر = کشیده‌تر، damping بالا = بی‌لرزش. جهش
+ *  (bounce) عمداً صفر است — این یک ترمینالِ مالی است، نه یک صفحهٔ تبلیغاتی. */
+const SPRING = { type: 'spring', stiffness: 260, damping: 32, mass: 0.9 } as const;
+
+/** کدام کارت باز است — `null` یعنی هیچ‌کدام (چیدمانِ چهارستونیِ عادی). */
+const ExpandCtx = createContext<{
+  expanded: string | null;
+  toggle: (id: string) => void;
+}>({ expanded: null, toggle: () => {} });
+
 function Section({
   testId,
   title,
@@ -38,17 +51,53 @@ function Section({
   hint?: string;
   children: React.ReactNode;
 }) {
+  const { expanded, toggle } = useContext(ExpandCtx);
+  const isOpen = expanded === testId;
+  // وقتی کارتِ دیگری باز است، این یکی باید جمع‌وجور شود تا ردیف نشکند.
+  const isDimmed = expanded != null && !isOpen;
+
   return (
-    <div
+    <motion.div
+      // layout به motion می‌گوید جابه‌جاییِ این جعبه را با FLIP انیمیت کن:
+      // موقعیتِ قبل و بعد را می‌گیرد و با transform بینشان حرکت می‌دهد.
+      // نه با انیمیتِ width/height — آن هر فریم بازچینش می‌سازد.
+      layout
+      transition={SPRING}
       data-testid={testId}
-      className="glass-panel flex min-w-0 flex-col justify-start gap-2 rounded-2xl border border-border-c p-3 shadow-xs"
+      data-expanded={isOpen || undefined}
+      className={cn(
+        'glass-panel flex min-w-0 flex-col justify-start gap-2 rounded-2xl border p-3 shadow-xs',
+        isOpen ? 'col-span-full border-border-accent shadow-lg' : 'border-border-c',
+        isDimmed && 'opacity-70',
+      )}
     >
-      <div className="flex items-baseline justify-between gap-1.5 border-b border-border-c/40 pb-1.5">
+      <motion.div layout="position" className="flex items-baseline justify-between gap-1.5 border-b border-border-c/40 pb-1.5">
         <h3 className="text-xs font-black text-text-primary">{title}</h3>
-        {hint ? <span className="truncate text-3xs font-medium text-text-muted">{hint}</span> : null}
-      </div>
-      <div className="flex min-w-0 flex-col gap-1.5 text-xs">{children}</div>
-    </div>
+        <div className="flex min-w-0 items-baseline gap-2">
+          {hint ? <span className="truncate text-3xs font-medium text-text-muted">{hint}</span> : null}
+          <button
+            type="button"
+            onClick={() => toggle(testId)}
+            aria-expanded={isOpen}
+            data-testid={`${testId}-expand`}
+            title={isOpen ? 'جمع‌کردن' : 'بزرگ‌کردنِ این کارت'}
+            className="shrink-0 rounded-md p-0.5 text-text-muted transition-colors hover:bg-bg-card hover:text-accent-blue"
+          >
+            <svg
+              className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+            >
+              {isOpen
+                ? <path d="M9 9H4m5 0V4m0 5L3 3m12 6h5m-5 0V4m0 5 6-6M9 15H4m5 0v5m0-5-6 6m12-6h5m-5 0v5m0-5 6 6" />
+                : <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />}
+            </svg>
+          </button>
+        </div>
+      </motion.div>
+      <motion.div layout="position" className="flex min-w-0 flex-col gap-1.5 text-xs">
+        {children}
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -265,12 +314,25 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
       ? (depth.sellBt / (depth.buyBt + depth.sellBt)) * 100
       : null;
 
+  // کارتِ بازشده. یک‌بار بیشتر باز نمی‌شود: دو کارتِ تمام‌عرض یعنی همان
+  // فهرستِ عمودیِ بلندی که از اولش می‌خواستیم از آن فرار کنیم.
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const toggle = useCallback(
+    (id: string) => setExpanded((cur) => (cur === id ? null : id)),
+    [],
+  );
+  const expandCtx = useMemo(() => ({ expanded, toggle }), [expanded, toggle]);
+
   const eqTone = powerTone(eq?.power) ?? 'mid';
   const powerClass = TONE_TEXT[eqTone];
   const powerBarClass = TONE_BG[eqTone];
 
   return (
-    <div
+    <LayoutGroup id="market-pulse">
+    <ExpandCtx.Provider value={expandCtx}>
+    <motion.div
+      layout
+      transition={SPRING}
       dir="rtl"
       className="grid w-full max-w-none grid-cols-1 items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4"
       aria-label="مرکز فرماندهی نبض بازار"
@@ -630,6 +692,8 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
           MISSING
         )}
       </Section>
-    </div>
+    </motion.div>
+    </ExpandCtx.Provider>
+    </LayoutGroup>
   );
 }

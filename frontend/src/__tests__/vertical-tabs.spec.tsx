@@ -65,21 +65,28 @@ describe('VerticalTabs', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('شاخص فقط با transform جابه‌جا می‌شود (نه top/height پیکسلی)', () => {
+  it('شاخص داخلِ همان تبِ فعال زندگی می‌کند و با آن جابه‌جا می‌شود', () => {
+    // قراردادِ تازه (۱٫۰٫۶۶): شاخص دیگر یک نوارِ بیرونی با حسابِ دستیِ
+    // translateY نیست. داخلِ دکمهٔ فعال رندر می‌شود و motion با layoutId
+    // همان المان را بینِ دو موقعیت FLIP می‌کند. سودش: تبِ هم‌اندازه‌نبودن
+    // دیگر مهم نیست و هیچ پیکسلی در جاوااسکریپت حساب نمی‌شود.
     const { rerender } = setup('a');
-    const ind = screen.getByTestId('vertical-tabs-indicator');
-    expect(ind.style.transform).toBe('translateY(calc(0 * 100%))');
-    expect(ind.style.top).toBe('');
+    const first = screen.getByRole('tab', { selected: true });
+    expect(first.contains(screen.getByTestId('vertical-tabs-indicator'))).toBe(true);
+    // هیچ مکان‌یابیِ پیکسلی نباید باشد
+    expect(screen.getByTestId('vertical-tabs-indicator').style.top).toBe('');
+
     rerender(
       <VerticalTabs items={ITEMS} active="c" onChange={() => {}} ariaLabel="نمونه">
         <p>محتوا</p>
       </VerticalTabs>,
     );
-    expect(screen.getByTestId('vertical-tabs-indicator').style.transform).toBe(
-      'translateY(calc(2 * 100%))',
-    );
+    const third = screen.getByRole('tab', { selected: true });
+    expect(third).not.toBe(first);
+    expect(third.contains(screen.getByTestId('vertical-tabs-indicator'))).toBe(true);
+    // و فقط یکی باشد — دو شاخصِ هم‌زمان یعنی layoutId تکراری
+    expect(screen.getAllByTestId('vertical-tabs-indicator')).toHaveLength(1);
   });
-
   it('کلیدِ ناشناخته در فهرستِ خالی نمی‌ترکد', () => {
     render(
       <VerticalTabs items={[]} active={'a' as K} onChange={() => {}} ariaLabel="خالی">
