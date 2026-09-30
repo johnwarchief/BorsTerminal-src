@@ -41,14 +41,20 @@ def check(cond, msg):
         fails.append(msg)
 
 
-def evaluate(demo):
+def evaluate(demo, appversion="1.0.65"):
     """شبیه‌سازیِ #ifdef/#define/#ifndef در حدِ چیزی که این فایل به‌کار می‌برد."""
     src = open(ISS, encoding="utf-8-sig", errors="surrogateescape").read()
-    defs = {"Demo": "1"} if demo else {}
+    defs = {"AppVersion": appversion}
+    if demo:
+        defs["Demo"] = "1"
     active = [True]
     out = {}
     for raw in src.splitlines():
         line = raw.strip()
+        m = re.match(r'#if\s+Pos\("-",\s*AppVersion\)\s*>\s*0', line)
+        if m:
+            active.append(active[-1] and "-" in defs.get("AppVersion", ""))
+            continue
         if line.startswith("#ifdef "):
             active.append(active[-1] and line.split(None, 1)[1].strip() in defs)
             continue
@@ -63,6 +69,13 @@ def evaluate(demo):
             active.pop()
             continue
         if not active[-1]:
+            continue
+        # #define NumericVersion Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
+        m2 = re.match(
+            r'#define\s+(\w+)\s+Copy\(AppVersion,\s*1,\s*Pos\("-",\s*AppVersion\)\s*-\s*1\)',
+            line)
+        if m2:
+            defs[m2.group(1)] = defs.get("AppVersion", "").split("-", 1)[0]
             continue
         m = re.match(r'#define\s+(\w+)\s+(.+)$', line)
         if m:
@@ -81,7 +94,7 @@ def evaluate(demo):
             if val is not None:
                 defs[name] = val
             continue
-        m = re.match(r'(AppId|OutputBaseFilename|AppName)=(.*)$', line)
+        m = re.match(r'(AppId|OutputBaseFilename|AppName|VersionInfoVersion|VersionInfoTextVersion)=(.*)$', line)
         if m and m.group(1) not in out:
             v = m.group(2)
             # جانشینیِ {#Name}
@@ -122,7 +135,20 @@ check(re.fullmatch(r"\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{
                    demo.get("AppId") or ""),
       "GUIDِ دمو شکلِ درستِ GUID دارد")
 
-print("\n[۳] همگامی با api/update.py")
+print("\n[۳] نسخهٔ فایل — برچسبِ دمو نباید 0.0.0.0 بسازد")
+d = evaluate(demo=True, appversion="1.0.66-demo")
+r = evaluate(demo=False, appversion="1.0.66")
+check(d.get("VersionInfoVersion") == "1.0.66",
+      "VersionInfoVersionِ دمو بخشِ عددی را می‌گیرد  (1.0.66-demo \u2192 %s)"
+      % d.get("VersionInfoVersion"))
+check(d.get("VersionInfoTextVersion") == "1.0.66-demo",
+      "متنِ نسخه هنوز کاملِ برچسب است  (%s)" % d.get("VersionInfoTextVersion"))
+check(r.get("VersionInfoVersion") == "1.0.66",
+      "نسخهٔ واقعی دست‌نخورده می‌ماند  (%s)" % r.get("VersionInfoVersion"))
+check(d.get("OutputBaseFilename") == "BorsTerminal_Ultimate_Setup_v1.0.66-demo",
+      "نامِ فایلِ ستاپ با برچسبِ گیت می‌خواند  (%s)" % d.get("OutputBaseFilename"))
+
+print("\n[۴] همگامی با api/update.py")
 if os.path.exists(UPDATE_PY):
     up = open(UPDATE_PY, encoding="utf-8").read()
     m = re.search(r'APP_ID\s*=\s*"(\{[^"]+\})"', up)

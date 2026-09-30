@@ -39,6 +39,20 @@
 AppId={{{#AppGuid}}
 AppName={#AppName}
 AppVersion={#AppVersion}
+; VersionInfoVersion را Inno از AppVersion می‌سازد، ولی فقط اگر عددِ نسخهٔ
+; معتبری باشد. برچسبِ دمو («1.0.66-demo») نیست، و آن‌وقت نسخهٔ فایل رویِ
+; 0.0.0.0 می‌افتد: ویندوز در Properties هیچ نسخه‌ای نشان نمی‌دهد و منطقِ
+; «فایلِ تازه‌تر» در [Files] با flags ignoreversion هم بی‌تکیه‌گاه می‌ماند.
+; پس بخشِ عددی را جدا می‌کنیم و هر چهار فیلد را صریح می‌دهیم.
+#if Pos("-", AppVersion) > 0
+  #define NumericVersion Copy(AppVersion, 1, Pos("-", AppVersion) - 1)
+#else
+  #define NumericVersion AppVersion
+#endif
+VersionInfoVersion={#NumericVersion}
+VersionInfoTextVersion={#AppVersion}
+VersionInfoProductVersion={#NumericVersion}
+VersionInfoProductTextVersion={#AppVersion}
 AppPublisher={#AppPublisher}
 DefaultDirName={autopf}\{#AppName}
 ; --- نصبِ پیش‌فرض per-user: بدون نیاز به حقِ مدیر و بدون پنجرهٔ UAC. کاربر در
