@@ -6,7 +6,11 @@ export interface StrategyParameters {
   // فاز ۳: تابلوخوانی و غربالگری S (صفحه ۳)
   minVolumeRatio: number; // ضریب حجم مشکوک (پیش‌فرض جزوه: 3.0 برابر)
   minBuyerPower: number; // حداقل قدرت خریدار به فروشنده (پیش‌فرض: 1.2)
-  clockPriceDiffPct: number; // درصد اختلاف آخرین از پایانی در الگوی ساعت (پیش‌فرض: 1.0%)
+  /** اختلافِ «آخرین» از «پایانی» در الگویِ ساعت.
+   *  رأیِ مالک (۱۴۰۵/۰۷/۰۹): **۲٪**. چارت ص۳ «بیش از ۱٪» می‌نویسد، ولی
+   *  فیلترنویسِ خودِ سایت با ۲٪ سطربه‌سطر برابر شد (۲۵=۲۵). پیش از این
+   *  تابلو ۲٪ و درخت ۱٪ بود — دو عددِ متفاوت برایِ یک قاعده. */
+  clockPriceDiffPct: number;
   clockStrictNegativeClose: boolean; // الزام پایانی منفی و آخرین مثبت در الگوی ساعت
   marketLiquidityMinHemmat: number; // حداقل ارزش معاملات خرد بازار مساعد (پیش‌فرض جزوه: 20 همت)
 
@@ -40,7 +44,7 @@ export const FTS_DEFAULT_PARAMS: StrategyParameters = {
   // تابلوخوانی
   minVolumeRatio: 3.0,
   minBuyerPower: 1.2,
-  clockPriceDiffPct: 1.0,
+  clockPriceDiffPct: 2.0,
   clockStrictNegativeClose: true,
   marketLiquidityMinHemmat: 20,
 
