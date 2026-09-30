@@ -195,9 +195,24 @@ jobs:
       - name: Compile Inno Installer
         # /D overrides AppVersion in bors_setup.iss so the tag and the built
         # setup filename always match (OutputBaseFilename uses {#AppVersion}).
+        #
+        # A tag carrying a semver pre-release part (v1.0.66-demo, v1.0.66-rc1)
+        # additionally compiles with /DDemo=1, which swaps AppName and AppId in
+        # bors_setup.iss. The AppId swap is the part that matters: without it
+        # the demo installs *over* the user's real BorsTerminal, steals its
+        # Uninstall key and leaves them with no way back. With it, the demo is
+        # a separate application in a separate directory.
+        # publish_github_release.py marks the same tags prerelease=true, so the
+        # in-app updater (which reads releases/latest) never offers a demo to
+        # real users. Both halves key off the same '-' rule; keep them in sync.
         run: |
           $ver = $env:TAG -replace '^v',''
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$ver" installer\bors_setup.iss
+          $flags = @("/DAppVersion=$ver")
+          if ($ver -match '-') {
+            Write-Host "[i] pre-release tag '$env:TAG' -> compiling demo build"
+            $flags += "/DDemo=1"
+          }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" @flags installer\bors_setup.iss
 
       - name: Restore updater signing key
         shell: pwsh

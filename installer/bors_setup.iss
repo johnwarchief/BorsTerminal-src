@@ -1,4 +1,17 @@
-#define AppName "BorsTerminal Ultimate"
+﻿; ─── بیلدِ دمو ───────────────────────────────────────────────────────────
+; با ISCC /DDemo=1 یک نصبِ کاملاً جدا ساخته می‌شود که نصبِ واقعیِ کاربر را
+; دست نمی‌زند. جداییِ واقعی از AppId می‌آید نه از نام: Inno نصبِ قبلی را با
+; AppId می‌شناسد، پس اگر GUID یکی بماند، دمو رویِ نصبِ واقعی می‌نشیند،
+; کلیدِ Uninstall را می‌دزدد و کاربر برنامهٔ اصلی‌اش را از دست می‌دهد.
+; با GUIDِ جدا، دمو و نسخهٔ واقعی کنارِ هم و بی‌خبر از هم زندگی می‌کنند
+; (پوشهٔ نصب هم جداست چون DefaultDirName از AppName می‌آید).
+#ifdef Demo
+  #define AppName "BorsTerminal Demo"
+  #define AppGuid "4D9E1FA3-77C5-4E10-8B62-2C1E9A4F0D02"
+#else
+  #define AppName "BorsTerminal Ultimate"
+  #define AppGuid "8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001"
+#endif
 ; AppVersion can be overridden from the command line (ISCC /DAppVersion=x.y.z,
 ; used by CI so the release tag and the built filename always agree). Because a
 ; bare #define always wins over a command-line define, guard it with #ifndef and
@@ -18,12 +31,12 @@
 #endif
 ; کلیدِ Uninstall در رجیستری (AppId بدون کروشه‌های اضافی + پسوند _is1) —
 ; برای تشخیصِ نصبِ قبلی در بخشِ [Code].
-#define AppRegID "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}_is1"
+#define AppRegID "{" + AppGuid + "}_is1"
 ; رمز نصب از فایل gitignored خوانده می‌شود تا هرگز وارد ریپو نشود
 #include ".setup_password.iss"
 
 [Setup]
-AppId={{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}
+AppId={{{#AppGuid}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}

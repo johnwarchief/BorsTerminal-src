@@ -9,6 +9,7 @@ os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 SUITES = [
     ('dev/struct_check.py',           'structure / undefined-names'),
+    ('dev/installer_identity_v1066.py', 'installer AppId/AppName identity + demo isolation'),
     ('dev/test_fts_isolation.py',     'FTS filter isolation'),
     ('dev/fts_pipeline_v981.py',      'codal FTS pipeline + ADB fallback + session window'),
     ('dev/test_calendar_v92.py',      'calendar py<->js categories'),

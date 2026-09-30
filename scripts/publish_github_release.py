@@ -7,6 +7,7 @@ scripts/publish_github_release.py
 import os
 import sys
 import json
+import re
 import hashlib
 import subprocess
 import urllib.request
@@ -75,6 +76,21 @@ def _app_version():
 
 
 TAG = os.environ.get("RELEASE_TAG") or ("v" + _app_version())
+
+# ─── پیش‌انتشار (دمو / rc) ────────────────────────────────────────────────
+# قاعده: هر برچسبی که بخشِ pre-release سم‌ور داشته باشد — یعنی خط تیره پس از
+# عددها، مثل v1.0.66-demo یا v1.0.66-rc1 — پیش‌انتشار است.
+#
+# این فقط یک برچسبِ تزئینی نیست. آپدیترِ درون‌برنامه‌ایِ کاربران از
+# `releases/latest/download/latest.json` می‌خواند و گیت‌هاب پیش‌انتشارها را
+# هرگز «latest» حساب نمی‌کند. پس اگر این پرچم نباشد، انتشارِ یک بیلدِ دمو
+# باعث می‌شود latest.jsonِ دمو رویِ همهٔ نصب‌هایِ واقعی پوش شود و کاربر یک
+# نسخهٔ آزمایشی را به‌عنوانِ آپدیت بگیرد. با پرچم، ریلیزِ دمو در گیت‌هاب
+# دیده می‌شود ولی دستِ هیچ کاربری نمی‌رسد.
+IS_PRERELEASE = bool(re.match(r"^v?\d+(\.\d+)*-", TAG))
+if IS_PRERELEASE:
+    print(f"[i] «{TAG}» پیش‌انتشار است → prerelease=true "
+          f"(آپدیترِ کاربرانِ واقعی آن را نمی‌بیند)")
 RELEASE_BODY = release_body(TAG)
 # صفحهٔ ریلیز گیت‌هاب جهتِ پیش‌فرضِ چپ‌به‌راست دارد، پس نامِ لاتینِ داخل
 # گیومه («Unexpected Application Error») و پرانتزهای پایانِ خط جابه‌جا چاپ می‌شوند.
@@ -358,7 +374,7 @@ def main():
             "name": RELEASE_NAME_TEMPLATE.format(tag=TAG),
             "body": RELEASE_BODY_RTL,
             "draft": False,
-            "prerelease": False
+            "prerelease": IS_PRERELEASE
         }).encode("utf-8")
         req = urllib.request.Request(url_releases, data=payload, headers={**headers, "Content-Type": "application/json"})
         try:
