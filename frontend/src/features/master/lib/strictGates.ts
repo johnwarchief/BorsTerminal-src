@@ -54,11 +54,24 @@ export type WeeklyTrendInput = {
   belowMa52: boolean | null;
   /** RSI هفتگی */
   rsi: number | null;
-  /** روند هفتگی صعودی است؟ */
+  /** روند هفتگی صعودی است؟ null یعنی «na» — ساختارِ کافی برای قضاوت نیست */
   uptrend: boolean | null;
+  /** مبنایِ رأیِ موتور: 'pivots' یا 'recent-window' (پیوتِ کهنه) */
+  basis?: string | null;
+  /** دلیلِ فارسیِ رأی — کدام پیوت‌ها یا کدام بازه سنجیده شد */
+  reason?: string | null;
+  /** حکمِ ماتریسِ چندزمانهٔ FTS: PERMITTED / REJECT / UNKNOWN */
+  matrixDecision?: string | null;
 };
 
-export const EMPTY_WEEKLY: WeeklyTrendInput = { belowMa52: null, rsi: null, uptrend: null };
+export const EMPTY_WEEKLY: WeeklyTrendInput = {
+  belowMa52: null,
+  rsi: null,
+  uptrend: null,
+  basis: null,
+  reason: null,
+  matrixDecision: null,
+};
 
 function payloadAsRecord(s: AgentSignal | undefined): Record<string, unknown> {
   return (s?.payload ?? {}) as Record<string, unknown>;
@@ -80,10 +93,22 @@ function pickBool(p: Record<string, unknown>, keys: string[]): boolean | null {
   return null;
 }
 
+function pickStr(p: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const v = p[k];
+    if (typeof v === 'string' && v.length > 0) return v;
+  }
+  return null;
+}
+
 /**
- * خواندن دادهٔ هفتگی از payload تکنیکال (در صورت انتشار).
- * هنوز هیچ اندپوینت/سیگنالی MA52 و RSI هفتگی را منتشر نمی‌کند ⇒ خروجی null است
- * و گیت وتوی هفتگی صادقانه «در انتظار» می‌ماند (بدون ادعای کاذب).
+ * خواندن رأیِ هفتگی از payload سیگنالِ تکنیکال.
+ *
+ * منبعِ یکتا موتورِ FTSِ سرور است (`/api/fts` → `trend.W` و `hourglass`) و تبِ
+ * تکنیکال آن را با `weeklyFromFts` داخلِ سیگنال منتشر می‌کند. پیش‌تر این فیلدها
+ * هیچ تولیدکننده‌ای نداشتند و گیتِ وتوی هفتگی برای هر نمادی «در انتظار» می‌ماند
+ * (سیم‌کشیِ مرده ⇒ «توقف در فیلتر دوم» حتی روی سهمِ صعودی).
+ * `uptrend === null` یعنی «na»: ساختارِ کافی نیست ⇒ رأیِ ساختگی نمی‌دهیم.
  */
 export function weeklyTrendFromSignal(tech: AgentSignal | undefined): WeeklyTrendInput {
   const p = payloadAsRecord(tech);
@@ -94,6 +119,9 @@ export function weeklyTrendFromSignal(tech: AgentSignal | undefined): WeeklyTren
       pickBool(weekly, ['belowMa52', 'below_ma52']),
     rsi: pickNum(p, ['weeklyRsi', 'weekly_rsi']) ?? pickNum(weekly, ['rsi']),
     uptrend: pickBool(p, ['weeklyUptrend', 'weekly_uptrend']) ?? pickBool(weekly, ['uptrend']),
+    basis: pickStr(weekly, ['basis']),
+    reason: pickStr(weekly, ['reason']),
+    matrixDecision: pickStr(weekly, ['matrixDecision', 'matrix_decision']),
   };
 }
 
@@ -239,14 +267,23 @@ export function runStrictGates(
       mk(
         'technical',
         'blocked',
-        `روند هفتگی زیر MA52 یا ضعف مومنتوم RSI است (توقف ورود روندی).`,
+        `روند هفتگی صعودی نیست — وتوی کامل ورود${weekly.reason ? ` (${weekly.reason})` : ''}.`,
         true,
       ),
     );
   } else if (tech.direction === 'bearish') {
     gates.push(mk('technical', 'blocked', 'ساختار تکنیکال نزولی است؛ ورود ممنوع.'));
   } else if (!hasDirectEntrySetup(tech)) {
-    gates.push(mk('technical', 'pending', 'در انتظار تریگر ورود مستقیم (جت/پولبک/CHoCH).'));
+    // تفکیکِ «ساختار رد است» از «تریگر هنوز فعال نشده»: دومی رد نیست، انتظار است.
+    gates.push(
+      mk(
+        'technical',
+        'pending',
+        weekly.matrixDecision === 'PERMITTED'
+          ? 'روند مجاز است؛ فقط تریگر ورود (جت/پولبک/CHoCH) هنوز فعال نشده.'
+          : 'در انتظار تریگر ورود مستقیم (جت/پولبک/CHoCH).',
+      ),
+    );
   } else {
     gates.push(mk('technical', 'passed', 'ستاپ ورود مستقیم روی ساختار ماژور/مینور فعال است.'));
   }

@@ -7,6 +7,8 @@ import { http } from '@shared/api/http';
 
 const TrendLeg = z.object({
   trend: z.string(),
+  // مبنایِ رأی: 'pivots' یا 'recent-window' (پیوتِ کهنه ⇒ سنجشِ مستقیمِ بازهٔ اخیر)
+  basis: z.string().nullish(),
   hh: z.boolean().nullish(),
   hl: z.boolean().nullish(),
   last_high: z.number().nullish(),
@@ -134,6 +136,10 @@ const MatrixDecision = z.object({
   decision: z.string().nullish(),
   setup: z.string().nullish(),
   desc: z.string().nullish(),
+  // «چرا» — مبنایِ فارسیِ رأیِ هفتگی و روزانه (کدام پیوت‌ها یا کدام بازه)
+  basis: z
+    .object({ weekly: z.string().nullish(), daily: z.string().nullish() })
+    .nullish(),
 });
 
 const HourglassStrategy = z.object({

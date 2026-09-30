@@ -3,7 +3,7 @@
 // گیت ریسک بنیادی در صورت فعال بودن شرط، جلوی سیگنال پرواز را می گیرد.
 import type { AgentSignal, Confidence, Direction } from '@contracts/signal';
 import type { DataQuality } from '@contracts/signal';
-import type { SetupKind, TechnicalPayload } from '@contracts/technical';
+import type { SetupKind, TechnicalPayload, WeeklyTrend } from '@contracts/technical';
 import { toFaDigits } from '@shared/lib/fmt';
 import {
   avgVolume,
@@ -40,6 +40,8 @@ export type TechInput = {
   riskGatePass: boolean | null;
   /** اعمال شرط گیت از استور تنظیمات */
   enforceRiskGates: boolean;
+  /** رأیِ هفتگیِ موتورِ FTSِ سرور — گیتِ وتوی هفتگی فقط از همین می‌خواند */
+  weekly?: WeeklyTrend | null;
 };
 
 function faNum(x: number, digits = 1): string {
@@ -62,7 +64,7 @@ function nodata(symbol: string, ts: number): AgentSignal<TechnicalPayload> {
     sourceView: 'technical',
     sourceRef: ['API'],
     validForMs: NODATA_VALID_MS,
-    payload: { kind: 'setup', timeframe: 'daily', setups: [], stopLossRef: null, stopLossPrice: null, keyLevels: [], dataQuality: 'incomplete' },
+    payload: { kind: 'setup', timeframe: 'daily', setups: [], stopLossRef: null, stopLossPrice: null, keyLevels: [], dataQuality: 'incomplete', weekly: null },
   };
 }
 
@@ -218,6 +220,7 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
         ...(support != null ? [{ type: 'support', price: support.price }] : []),
       ],
       dataQuality,
+      weekly: input.weekly ?? null,
     },
   };
 }

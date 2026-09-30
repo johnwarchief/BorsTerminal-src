@@ -17,6 +17,26 @@ export const KeyLevel = z.object({
 });
 export type KeyLevel = z.infer<typeof KeyLevel>;
 
+/**
+ * رأیِ هفتگیِ موتورِ FTSِ سرور (`/api/fts`) — تنها منبعِ گیتِ وتوی هفتگی.
+ *
+ * پیش‌تر هیچ تولیدکننده‌ای این بلوک را منتشر نمی‌کرد، پس `weeklyTrendFromSignal`
+ * همیشه null می‌داد و گیت برای هر نمادی «در انتظار» می‌ماند ⇒ حکمِ
+ * «توقف در فیلتر دوم» (شاهد: کايزد با ۱۵۲٪ صعودِ هفتگی).
+ */
+export const WeeklyTrend = z.object({
+  /** روندِ هفتگی صعودی است؟ null یعنی ساختار کافی برای قضاوت نیست */
+  uptrend: z.boolean().nullable().default(null),
+  belowMa52: z.boolean().nullable().default(null),
+  rsi: z.number().nullable().default(null),
+  /** مبنایِ رأی: 'pivots' (سقف/کفِ تأییدشده) یا 'recent-window' (پیوتِ کهنه) */
+  basis: z.string().nullable().default(null),
+  /** دلیلِ فارسیِ رأی: کدام پیوت‌ها یا کدام بازه سنجیده شد */
+  reason: z.string().nullable().default(null),
+  matrixDecision: z.string().nullable().default(null),
+});
+export type WeeklyTrend = z.infer<typeof WeeklyTrend>;
+
 export const TechnicalPayload = z.object({
   kind: z.literal('setup'),
   timeframe: Timeframe,
@@ -26,5 +46,6 @@ export const TechnicalPayload = z.object({
   keyLevels: z.array(KeyLevel).default([]),
   /** کیفیت داده: تاریخچه کوتاه تر از 50 کندل یعنی partial (فاز 4) */
   dataQuality: DataQuality.default('complete'),
+  weekly: WeeklyTrend.nullish(),
 });
 export type TechnicalPayload = z.infer<typeof TechnicalPayload>;

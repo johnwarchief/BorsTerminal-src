@@ -12,6 +12,7 @@ import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
 import { technicalSignal } from '../signals/technicalSignals';
+import { weeklyFromFts } from '../lib/weeklyFromFts';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
@@ -23,6 +24,7 @@ import { ComparePanel } from '../components/ComparePanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
+import { applyAdjustmentToCandles, mapBackendAdjustEvents } from '../nahayatnegar/lib/adjustments';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
 import { PriceAlertBanner } from '../nahayatnegar/components/PriceAlertBanner';
@@ -80,9 +82,23 @@ export default function TechnicalPage() {
   const nn = useNnChartData(viewSymbol);
   const tedipx = useNnTedipx();
   const feed = useCandleFeed(viewSymbol);
-  const candles = feed.candles;
   const analysis = useFtsAnalysis(viewSymbol);
   const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
+
+  // سیگنالِ تکنیکال باید همان سریِ تعدیل‌شده‌ای را ببیند که چارت می‌رسمد و موتورِ
+  // FTSِ سرور تحلیل می‌کند. پیش‌تر روی کندلِ خام می‌دوید: دو طرفِ یک افزایشِ سرمایه
+  // دو مقیاسِ قیمتی‌اند، پس MA/مقاومت/فیبو قاطی می‌شد (شاهد: کايزد ۵۸۱۰ ← ۲۶۴۲).
+  const adjustEvents = feed.data?.adjustEvents;
+  const candles = useMemo(
+    () => applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined'),
+    [feed.candles, adjustEvents],
+  );
+
+  // رأیِ هفتگی از همان موتورِ FTSِ سرور می‌آید و داخلِ سیگنال منتشر می‌شود؛ گیتِ
+  // وتوی هفتگیِ تبِ مستر و سایدبارِ چپ فقط از همین می‌خوانند. پیش‌تر هیچ‌کس این
+  // سه فیلد را تولید نمی‌کرد و گیت برای هر نمادی «در انتظار» می‌ماند ⇒
+  // «توقف در فیلتر دوم» (شاهد: کايزد با ۱۵۲٪ صعودِ هفتگی).
+  const weekly = useMemo(() => weeklyFromFts(analysis.data?.fts), [analysis.data]);
 
   const series = useMemo(
     () => ({
@@ -98,9 +114,9 @@ export default function TechnicalPage() {
   const signal = useMemo(
     () =>
       candles.length > 0
-        ? technicalSignal({ symbol: viewSymbol, ...series, riskGatePass: gate.pass, enforceRiskGates })
+        ? technicalSignal({ symbol: viewSymbol, ...series, riskGatePass: gate.pass, enforceRiskGates, weekly })
         : null,
-    [viewSymbol, candles, series, gate.pass, enforceRiskGates],
+    [viewSymbol, candles, series, gate.pass, enforceRiskGates, weekly],
   );
   useEffect(() => {
     if (signal) publishSignal(signal);
