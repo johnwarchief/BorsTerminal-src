@@ -160,3 +160,7 @@ frontend/_audit/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 _audit/ra-profile/
+
+# پشتیبانِ گذرایِ dev/boot_market_hours_v1066.py — خودش با atexit برمی‌گرداند،
+# ولی اگر پروسه سخت کشته شود ممکن است بماند. هرگز هدفِ کامیت نیست.
+market.db.boot_probe_backup
