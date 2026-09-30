@@ -85,7 +85,7 @@ export function TapeFilterSettingsModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="⚙️ تنظیمات فیلترها"
+      title="تنظیمات فیلترها"
       description={isCustom ? 'شخصی‌سازی شده' : 'پیش‌فرض استاندارد'}
       testId="tape-filter-modal"
       footer={

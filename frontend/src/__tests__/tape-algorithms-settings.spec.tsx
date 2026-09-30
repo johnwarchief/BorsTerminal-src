@@ -333,7 +333,9 @@ describe('مدال تنظیمات شخصی‌سازی فیلترها (TapeFilter
 
   it('اعمال پریست استراتژی آماده از مدال', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
-    expect(screen.getByText('⚙️ تنظیمات فیلترها')).toBeInTheDocument();
+    // ایموجی از نامِ دسترسی‌پذیر برداشته شد: صفحه‌خوان «چرخ‌دنده تنظیمات…»
+    // می‌خواند. عنوان حالا از پوستهٔ مشترکِ Modal می‌آید.
+    expect(screen.getByRole('dialog', { name: /تنظیمات فیلترها/ })).toBeInTheDocument();
     fireEvent.click(screen.getByText('نوسان‌گیری سریع و ساعت قوی'));
     const current = useTapeStore.getState().tapeFilterConfig;
     expect(current.jet.lookbackDays).toBe(5);

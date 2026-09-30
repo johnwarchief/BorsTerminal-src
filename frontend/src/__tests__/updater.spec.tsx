@@ -50,7 +50,8 @@ describe('سیستم مدیریت به‌روزرسانی (هستۀ پایتون
     expect(screen.getByText(/هستهٔ پایتون · آپدیترِ درون‌برنامه‌ای/)).toBeInTheDocument();
     expect(screen.getByText(/بارگذاری دستی بسته آفلاین/)).toBeInTheDocument();
 
-    const closeBtn = screen.getByLabelText('بستن پنجره');
+    // دکمهٔ بستن حالا از پوستهٔ مشترکِ Modal می‌آید و برچسبش «بستن» است.
+    const closeBtn = screen.getByLabelText('بستن');
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalled();
   });

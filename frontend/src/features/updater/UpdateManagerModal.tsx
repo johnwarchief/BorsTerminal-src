@@ -1,6 +1,6 @@
 // features/updater/UpdateManagerModal.tsx -- مودال مدیریت به‌روزرسانی با تم سایبرپانک / بلومبرگ دارک
 import React, { useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { Modal } from '@shared/ui/Modal';
 import { useAppUpdater } from './useAppUpdater';
 import { openAppLog } from './api/diagnostics';
 
@@ -58,59 +58,19 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
     e.target.value = ''; // اجازهٔ انتخابِ مجددِ همان فایل
   };
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="updater-title"
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 selection:bg-neon-cyan/30"
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="مدیریت به‌روزرسانی سیستم"
+      description={`نسخه فعلی: v${currentVersion} · هستهٔ پایتون · آپدیترِ درون‌برنامه‌ای`}
+      className="max-w-lg"
+      testId="updater-modal"
     >
-      {/* بک‌دراپ */}
-      <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* پنجره مودال سایبرپانک */}
-      <div
-        dir="rtl"
-        className="glass-panel relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all font-sans text-text-primary"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative p-5">
         {/* نورپردازی پس‌زمینه */}
         <div className="pointer-events-none absolute -left-20 -top-20 h-44 w-44 rounded-full bg-neon-cyan/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -right-20 h-44 w-44 rounded-full bg-accent-blue/10 blur-3xl" />
-
-        {/* هدر */}
-        <div className="mb-5 flex items-center justify-between border-b border-[var(--hairline)] pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-neon-cyan/40 bg-neon-cyan/15 text-lg text-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.2)]">
-              🚀
-            </div>
-            <div>
-              <h2 id="updater-title" className="text-base font-black tracking-tight text-text-primary">
-                مدیریت به‌روزرسانی سیستم
-              </h2>
-              <div className="mt-0.5 flex items-center gap-2 text-2xs text-text-muted">
-                <span>نسخه فعلی: <strong className="font-mono text-text-secondary">v{currentVersion}</strong></span>
-                <span>•</span>
-                <span className="inline-flex items-center gap-1 font-bold text-accent-blue">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-blue" />
-                  هستهٔ پایتون · آپدیترِ درون‌برنامه‌ای
-                </span>
-              </div>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="بستن پنجره"
-            className="rounded-lg border border-transparent p-1.5 text-text-muted transition-colors hover:border-border-c hover:bg-bg-card hover:text-text-primary"
-          >
-            ✕
-          </button>
-        </div>
-
         {/* بخش محتوا بر اساس وضعیت */}
         <div className="space-y-4">
           {/* خطا */}
@@ -340,7 +300,6 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
           </div>
         </div>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }

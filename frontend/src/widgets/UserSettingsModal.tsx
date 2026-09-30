@@ -1,6 +1,6 @@
 // widgets/UserSettingsModal.tsx -- پنجره تنظیمات حساب کاربری، تغییر نام کاربری و رمز عبور
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Modal } from '@shared/ui/Modal';
 import { useAuthStore } from '@shared/stores/authStore';
 
 interface UserSettingsModalProps {
@@ -84,50 +84,16 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
     }, 150);
   };
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="user-settings-title"
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="تنظیمات حساب کاربری و امنیت"
+      description="تغییر نام کاربری و رمز عبور ورود به ترمینال"
+      className="max-w-md"
+      testId="user-settings-modal"
     >
-      {/* پس‌زمینه نیمه‌شفاف */}
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* بدنه دیالوگ */}
-      <div
-        dir="rtl"
-        className="glass-panel relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-2xl transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* هدر پنجره */}
-        <div className="mb-4 flex items-center justify-between border-b border-[var(--hairline)] pb-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-accent bg-border-accent/15 text-sm text-accent-blue">
-              ⚙
-            </span>
-            <div>
-              <h2 id="user-settings-title" className="text-sm font-black text-text-primary sm:text-base">
-                تنظیمات حساب کاربری و امنیت
-              </h2>
-              <p className="text-2xs text-text-muted">
-                تغییر نام کاربری و رمز عبور ورود به ترمینال
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="بستن پنجره"
-            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-bg-card hover:text-text-primary"
-          >
-            ✕
-          </button>
-        </div>
-
+      <div className="p-5">
         {/* پیام‌های وضعیت */}
         {error && (
           <div
@@ -242,7 +208,6 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
           </div>
         </form>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }

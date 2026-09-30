@@ -13,6 +13,7 @@
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useMemo, useRef, useState } from 'react';
 import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { Tooltip } from '@shared/ui/Tooltip';
 import { toExportTable } from '@shared/lib/tableExport';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
@@ -416,12 +417,19 @@ function StageCard({
             <thead className="sticky top-0 bg-bg-primary/95 text-3xs text-text-muted backdrop-blur-sm">
               <tr>
                 {cols.map((k) => (
+                  // سرستون‌هایِ قیف توضیحِ فرمول دارند («درآمد و فروش از
+                  // ابتدایِ سال…») — دقیقاً متنی که کاربر می‌خواهد بخواند.
+                  // با title بومی یک ثانیه صبر می‌کرد، بعد وسطِ خواندن محو
+                  // می‌شد، و راست‌چین هم نبود.
                   <th
                     key={k}
-                    title={COL[k].title}
                     className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}
                   >
-                    {COL[k].label}
+                    <Tooltip content={COL[k].title} side="bottom">
+                      <span className="cursor-help border-b border-dotted border-text-muted/40">
+                        {COL[k].label}
+                      </span>
+                    </Tooltip>
                   </th>
                 ))}
               </tr>

@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { TooltipProvider } from '@shared/ui/Tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createHashRouter, RouterProvider } from 'react-router';
 import { AppShell } from '@app/layouts/AppShell';
@@ -26,7 +27,11 @@ const router = createHashRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      {/* یک Provider برایِ کلِ برنامه: تأخیرِ مشترک و «پرشِ سریع» بینِ دو
+          راهنمایِ همسایه — اولی با تأخیر، بعدی‌ها فوری. */}
+      <TooltipProvider>
+        <RouterProvider router={router} />
+      </TooltipProvider>
     </QueryClientProvider>
   </StrictMode>,
 );
