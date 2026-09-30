@@ -5,12 +5,14 @@ import { createHashRouter, RouterProvider } from 'react-router';
 import { AppShell } from '@app/layouts/AppShell';
 import { mainRoutes } from './routes';
 import './index.css';
+// استایل موبایل ایستا ایمپورت می‌شود (نه داینامیک) تا خطای بارگذاری chunk در
+// WebView نتواند پوسته را بشکند؛ همهٔ قواعدش پشت html.bors-mobile است و در
+// دسکتاپ (که این کلاس را نمی‌گیرد) کاملاً بی‌اثر می‌ماند (~۲KB).
+import './shared/styles/mobile.css';
 
-// بیلد موبایل (VITE_LOCAL_DATA='1'): کلاس پوستهٔ موبایل + استایل مخصوص لمس.
-// در بیلد دسکتاپ این شاخه tree-shake می‌شود و هیچ اثری در باندل ندارد.
+// بیلد موبایل (VITE_LOCAL_DATA='1'): کلاس پوستهٔ موبایل روی ریشهٔ سند.
 if (import.meta.env.VITE_LOCAL_DATA === '1') {
   document.documentElement.classList.add('bors-mobile');
-  void import('./shared/styles/mobile.css');
 }
 
 const queryClient = new QueryClient({

@@ -11,6 +11,7 @@
 import initSqlJs, { type Database } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { HttpError } from '../http';
+import { nativeGetBytes, nativeGetJson } from './nativeHttp';
 
 const SNAPSHOT_URL =
   (import.meta.env.VITE_SNAPSHOT_URL as string | undefined) ?? '/mobile_snapshot.db.gz';
@@ -35,16 +36,15 @@ async function maybeRefreshSnapshot(): Promise<void> {
     const lastCheck = Number(localStorage.getItem(CHECK_KEY) ?? 0);
     if (Date.now() - lastCheck < CHECK_EVERY_MS) return;
     localStorage.setItem(CHECK_KEY, String(Date.now()));
-    const metaRes = await fetch(REMOTE_META_URL);
-    if (!metaRes.ok) return; // ریلیزی با بستهٔ داده هنوز منتشر نشده
-    const meta = (await metaRes.json()) as { built_at?: string };
+    // درگاه بومی: داخل اپ اندروید بدون دیوار CORS؛ در مرورگر fetch معمولی
+    const meta = (await nativeGetJson(REMOTE_META_URL)) as { built_at?: string } | null;
+    if (!meta) return; // ریلیزی با بستهٔ داده هنوز منتشر نشده / آفلاین
     const remoteBuilt = String(meta.built_at ?? '');
     if (!remoteBuilt) return;
     const localBuilt = (await metaValue('built_at')) ?? '';
     if (remoteBuilt <= localBuilt) return; // همین دادهٔ فعلی یا قدیمی‌تر
-    const gzRes = await fetch(REMOTE_GZ_URL);
-    if (!gzRes.ok) return;
-    const buf = await gzRes.arrayBuffer();
+    const buf = await nativeGetBytes(REMOTE_GZ_URL);
+    if (!buf) return;
     // sanity: gz معتبر و به‌قدر کافی بزرگ باشد (صفحهٔ خطای HTML جایگزین نشود)
     const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
     if (buf.byteLength < 1_000_000 || head[0] !== 0x1f || head[1] !== 0x8b) return;
@@ -85,9 +85,34 @@ async function gunzip(buf: ArrayBuffer): Promise<Uint8Array> {
   if (head.length < 2 || head[0] !== 0x1f || head[1] !== 0x8b) {
     return new Uint8Array(buf);
   }
-  const ds = new DecompressionStream('gzip');
-  const decompressed = new Response(new Blob([buf]).stream().pipeThrough(ds));
-  return new Uint8Array(await decompressed.arrayBuffer());
+  // WebViewهای قدیمی‌تر (کروم < ۸۰) DecompressionStream ندارند — بدون این
+  // جایگزین، دیتابیس هرگز باز نمی‌شد و همهٔ تب‌ها خالی می‌ماند.
+  if (typeof DecompressionStream === 'function') {
+    const ds = new DecompressionStream('gzip');
+    const decompressed = new Response(new Blob([buf]).stream().pipeThrough(ds));
+    return new Uint8Array(await decompressed.arrayBuffer());
+  }
+  const { gunzipSync } = await import('fflate');
+  return gunzipSync(new Uint8Array(buf));
+}
+
+/**
+ * خطای مرگبار بارگذاری داده را به‌جای صفحهٔ بی‌صدا خالی، به کاربر نشان می‌دهد
+ * (برای عیب‌یابی نصب اول روی گوشی حیاتی است — «همه بدون داده» یعنی همین‌جا).
+ */
+function showFatalBanner(message: string): void {
+  try {
+    if (document.getElementById('bors-fatal-banner')) return;
+    const el = document.createElement('div');
+    el.id = 'bors-fatal-banner';
+    el.dir = 'rtl';
+    el.style.cssText =
+      'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;' +
+      'color:#fff;font-size:12px;line-height:1.8;padding:8px 12px;text-align:center;' +
+      'font-family:inherit;word-break:break-word';
+    el.textContent = `⛔ بارگذاری بستهٔ دادهٔ آفلاین شکست خورد: ${message}`;
+    document.body.appendChild(el);
+  } catch { /* حتی بنر هم نشد — دستِ‌کم خطا در کنسول هست */ }
 }
 
 let dbPromise: Promise<Database> | null = null;
@@ -104,7 +129,13 @@ export function getDb(): Promise<Database> {
     // چکِ بروزرسانی در پس‌زمینه — نه await می‌شود نه خطایش به UI می‌رسد
     setTimeout(() => { void maybeRefreshSnapshot(); }, 15000);
     return db;
-  })();
+  })().catch((e: unknown) => {
+    // بدون این بنر، هر تب فقط «بی‌داده» می‌ماند و کاربر سرنخی ندارد؛
+    // dbPromise هم ریست می‌شود تا اجرای بعدیِ برنامه دوباره تلاش کند.
+    showFatalBanner(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+    dbPromise = null;
+    throw e;
+  });
   return dbPromise;
 }
 

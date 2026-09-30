@@ -11,6 +11,8 @@
 // ساختگی، هیچ خطای مزاحم. داخل اپ Capacitor (CapacitorHttp)، fetch بومی است
 // و CORS ندارد.
 
+import { nativeGetJson, nativeGetText } from './nativeHttp';
+
 const LIVE_BASE = 'https://cdn.tsetmc.com/api';
 const PT = Array.from({ length: 9 }, (_, i) => `paperTypes[${i}]=${i + 1}`).join('&');
 const MW_URL = `${LIVE_BASE}/ClosingPrice/GetMarketWatch?market=0&${PT}&showTraded=false&withBestLimits=true&hEven=0`;
@@ -36,9 +38,7 @@ async function cachedJson(url: string, ttlMs: number): Promise<Json | null> {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data as Json | null;
   try {
-    const res = await fetch(url, { headers: HDRS });
-    if (!res.ok) throw new Error(String(res.status));
-    const data = (await res.json()) as Json;
+    const data = (await nativeGetJson(url, HDRS)) as Json | null;
     cache.set(url, { at: Date.now(), data });
     return data;
   } catch {
@@ -53,9 +53,7 @@ async function cachedText(url: string, ttlMs: number): Promise<string | null> {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data as string | null;
   try {
-    const res = await fetch(url, { headers: { ...HDRS, Accept: 'text/plain' } });
-    if (!res.ok) throw new Error(String(res.status));
-    const text = await res.text();
+    const text = await nativeGetText(url, HDRS);
     cache.set(url, { at: Date.now(), data: text });
     return text;
   } catch {
