@@ -21,6 +21,9 @@ on:
       - '.github/workflows/mobile.yml'
       - 'market.db.lzma'
 
+permissions:
+  contents: write   # برای انتشار APK و اسنپ‌شات در تگ غلتان mobile-latest
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -120,3 +123,31 @@ jobs:
             dist_mobile/mobile_snapshot.db.gz
             dist_mobile/mobile_snapshot.db.meta.json
           if-no-files-found: error
+
+      # ---- انتشار در Releases: تگ غلتان mobile-latest (pre-release) ----
+      # عمداً pre-release است تا «Latest» مخزن همچنان ریلیز رسمی دسکتاپ بماند.
+      # نام دارایی‌ها ثابت است تا لینک دانلود همیشگی باشد؛ بروزرسانی خودکار
+      # دادهٔ اپ (localData.ts) هم از همین تگ mobile-latest می‌خواند.
+      - name: انتشار APK و داده در تگ mobile-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          VER=$(python -c "import bors_config; print(bors_config.APP_VERSION)")
+          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk bors-terminal-mobile.apk
+          # اگر release امضاشده هم ساخته شده باشد، همان را با نام اصلی منتشر کن
+          REL_APK=$(ls frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1 || true)
+          if [ -n "$REL_APK" ]; then cp "$REL_APK" bors-terminal-mobile.apk; fi
+          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER} (کامیت ${GITHUB_SHA::7})
+          - دادهٔ آفلاین کامل داخل APK است؛ داخل ایران تابلو/چارت زنده از TSETMC می‌آید.
+          - mobile_snapshot.db.gz + meta: بستهٔ داده برای بروزرسانی خودکارِ درون‌برنامه‌ای."
+          gh release create mobile-latest --prerelease --target "$GITHUB_SHA" \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES" 2>/dev/null || \
+          gh release edit mobile-latest --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES"
+          gh release upload mobile-latest --clobber \
+            bors-terminal-mobile.apk \
+            dist_mobile/mobile_snapshot.db.gz \
+            dist_mobile/mobile_snapshot.db.meta.json

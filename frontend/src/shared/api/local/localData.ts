@@ -20,9 +20,11 @@ const CACHE_NAME = 'bors-mobile-snapshot-v1';
 // یک بار در روز metaی کوچک (~۲۰۰ بایت) چک می‌شود؛ اگر built_at جدیدتر بود،
 // gz کامل در پس‌زمینه دانلود و در Cache API جایگزین می‌شود — از اجرای بعدی
 // برنامه دادهٔ تازه بار می‌شود (اجرای جاری دست‌نخورده می‌ماند).
+// تگ ثابت «mobile-latest» (pre-release غلتان که CI با هر بیلد تازه می‌کند) —
+// عمداً نه releases/latest، تا ریلیزهای رسمی دسکتاپ مالک دست‌نخورده بمانند.
 const REMOTE_BASE =
   (import.meta.env.VITE_SNAPSHOT_REMOTE as string | undefined) ??
-  'https://github.com/johnwarchief/BorsTerminal-src/releases/latest/download';
+  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest';
 const REMOTE_META_URL = `${REMOTE_BASE}/mobile_snapshot.db.meta.json`;
 const REMOTE_GZ_URL = `${REMOTE_BASE}/mobile_snapshot.db.gz`;
 const CHECK_KEY = 'bors_snapshot_check_at';
