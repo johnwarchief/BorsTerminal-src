@@ -12,6 +12,8 @@
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useMemo, useRef, useState } from 'react';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable } from '@shared/lib/tableExport';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
@@ -188,6 +190,40 @@ function pricingLabel(mode: string | null | undefined): string | null {
   return null;
 }
 
+/** مقدارِ خامِ همان سلولی که `Cell` می‌کشد — برایِ خروجیِ اکسل.
+ *  عمداً عددِ خام می‌دهد نه رقمِ فارسی: اکسل رقمِ فارسی را متن می‌خواند و
+ *  جمع و مرتب‌سازی از کار می‌افتد. هر شاخه باید با همان شاخه در `Cell`
+ *  بخواند، وگرنه فایل و صفحه دو چیزِ متفاوت می‌گویند. */
+export function funnelCellValue(k: ColKey, e: FunnelEntry,
+                                mark: StageMark | null): string | number | null {
+  const r = e.row;
+  switch (k) {
+    case 'symbol': return e.symbol;
+    case 'last': return r?.p_last ?? null;
+    case 'chg': return r?.percent_change ?? null;
+    case 'vol': return r?.vol_ratio ?? null;
+    case 'pattern': return e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : null);
+    case 'weekly': return e.trendW ?? null;
+    case 'daily': return e.trendD ?? null;
+    case 'setup': return e.setups || null;
+    case 'mark': return mark ? MARK_LABEL[mark] : null;
+    case 'ind1': case 'ind2': case 'ind3': case 'ind4': case 'ind5': {
+      const i = Number(k.slice(3)) - 1;
+      const sc = e.screen;
+      return [
+        sc?.rev_growth ?? null,
+        sc?.eps_last ?? null,
+        sc?.gross_margin ?? null,
+        sc?.sales_to_mcap ?? null,
+        pricingLabel(sc?.pricing_mode),
+      ][i] ?? null;
+    }
+    case 'score': return e.score ?? null;
+    case 'basket': return null;
+    default: return null;
+  }
+}
+
 function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark | null; why: string | null }) {
   const r = e.row;
   switch (k) {
@@ -349,6 +385,24 @@ function StageCard({
           </span>
         ) : null}
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
+        {/* دانلودِ همین مرحله — همان ستون‌ها و همان ردیف‌هایی که الان
+            رویِ صفحه‌اند، نه کلِ قیف. */}
+        {rows.length > 0 ? (
+          <DownloadRowsButton
+            base={`قیف-${STAGE_TITLE[stage.key]}`}
+            title="ردیف‌هایِ همین مرحلهٔ قیف را با همان ستون‌هایِ رویِ صفحه در اکسل می‌گیرد."
+            count={rows.length}
+            testId={`download-funnel-${stage.key}`}
+            getTable={() =>
+              toExportTable(
+                cols.map((k) => COL[k].label),
+                rows,
+                (e) => cols.map((k) =>
+                  funnelCellValue(k, e, showMark ? (showMark === 'tech' ? e.tech : e.fund) : null)),
+              )
+            }
+          />
+        ) : null}
       </header>
 
       <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto">

@@ -2,6 +2,8 @@
 // خودکفا: تصمیم‌های سبد را خودش از /api/selection/portfolio می‌خواند و وزن فعلی هر صنعت را
 // با بازهٔ سند مقایسه می‌کند. غیب داده ⇒ «بدون داده»؛ عبور از سقف ⇒ هشدار «نقض تنوع‌بخشی (Overweight)».
 import { useMemo } from 'react';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable } from '@shared/lib/tableExport';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { usePortfolio } from '../api/usePortfolio';
@@ -90,6 +92,27 @@ export function SectorMatrix() {
         </p>
       ) : (
         <div className="overflow-x-auto">
+          <div className="flex justify-end pb-2">
+            <DownloadRowsButton
+              base="پرتفوی-ماتریس-صنایع"
+              title="بازهٔ سند، وزنِ فعلیِ سبد و پوزیشن‌هایِ هر صنعت را در اکسل می‌گیرد."
+              count={alloc.rows.length}
+              testId="download-sector-matrix"
+              getTable={() =>
+                toExportTable(
+                  ['صنعت', 'بازهٔ سند', 'وزن فعلی٪', 'پوزیشن‌ها', 'نمونه‌ها'],
+                  alloc.rows,
+                  (r) => [
+                    r.band.label,
+                    bandRangeLabel(r.band),
+                    state === 'ready' ? r.actualPct : null,
+                    r.members.map((m) => m.symbol).join('، '),
+                    r.band.examples.join('، '),
+                  ],
+                )
+              }
+            />
+          </div>
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-bg-card/70 text-start text-2xs uppercase tracking-wider text-text-secondary">

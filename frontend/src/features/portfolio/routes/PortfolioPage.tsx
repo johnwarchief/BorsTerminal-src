@@ -21,6 +21,8 @@ import { useAssetValues } from '../stores/assetValues';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable } from '@shared/lib/tableExport';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
@@ -248,6 +250,51 @@ export default function PortfolioPage() {
           </div>
 
           <div className="glass-panel overflow-hidden rounded-2xl">
+            {/* نوارِ دانلود: همان قاعدهٔ جدولِ بنیادی و تابلوخوانی — فقط
+                ردیف‌هایِ همین تبِ باز، نه هر سه فهرست. */}
+            {rows.length > 0 ? (
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--hairline)] px-3 py-2">
+                <span className="num text-2xs text-text-muted">
+                  {toFaDigits(rows.length)} ردیف در «{rowLabel}»
+                </span>
+                <DownloadRowsButton
+                  base={`پرتفوی-${rowLabel}`}
+                  title="همین ردیف‌هایِ تبِ باز را با قیمت و سود/زیانِ لحظه‌ای در اکسل می‌گیرد."
+                  count={rows.length}
+                  testId="download-portfolio-rows"
+                  getTable={() =>
+                    toExportTable(
+                      ['نماد', 'وضعیت', 'وزن٪', 'تعداد', 'قیمت خرید', 'قیمت روز',
+                       'ارزش', 'سود/زیان٪', 'حد ضرر', 'فاصله تا حد ضرر٪'],
+                      rows,
+                      (h) => {
+                        // عددها خام می‌روند، نه با رقمِ فارسی: اکسل رقمِ فارسی را
+                        // متن می‌خواند و جمع‌بستن ناممکن می‌شود.
+                        const price = closes.data?.get(h.symbol) ?? null;
+                        const stop = stopAsNumber(h.stop_loss)
+                          ?? stops.map.get(h.symbol)?.techStop ?? null;
+                        const buy = typeof h.price === 'number' ? h.price : null;
+                        const pnl = price != null && buy != null && buy > 0
+                          ? ((price - buy) / buy) * 100 : null;
+                        const qty = typeof h.qty === 'number' ? h.qty : null;
+                        return [
+                          h.symbol,
+                          STATUS_LABEL[(h.status ?? 'pending').toLowerCase()] ?? h.status ?? 'بدون تصمیم',
+                          h.weight_eff_pct ?? null,
+                          qty,
+                          buy,
+                          price,
+                          price != null && qty != null ? price * qty : null,
+                          pnl,
+                          stop,
+                          distanceToStopPct(price, stop),
+                        ];
+                      },
+                    )
+                  }
+                />
+              </div>
+            ) : null}
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
