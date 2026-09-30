@@ -13,6 +13,9 @@ import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
 import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
+import { CollapsibleSection } from '@shared/components/CollapsibleSection';
+import { fmtInt, toFaDigits } from '@shared/lib/fmt';
+import { pulseIndex, pulseVerdict, type MarketPulseData } from '../api/useMarketPulse';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
@@ -56,6 +59,43 @@ export function applyFilters(
     if (exitAccum && !matchesExitAccum(r, filterConfig)) return false;
     return true;
   });
+}
+
+/** خلاصهٔ یک‌خطیِ نبض برایِ حالتِ جمع‌شده: شاخصِ کل و حکمِ امروز.
+ *  همان داده‌ای که خودِ نوار می‌کشد — بی‌محاسبهٔ تازه، پس نمی‌تواند با آن
+ *  اختلاف پیدا کند. */
+const VERDICT_TONE: Record<string, string> = {
+  go: 'text-accent-green',
+  watch: 'text-accent-yellow',
+  wait: 'text-text-secondary',
+  avoid: 'text-accent-red',
+  nodata: 'text-text-muted',
+};
+
+function PulseSummary({ pulse }: { pulse: MarketPulseData | null }) {
+  const ix = pulseIndex(pulse);
+  const v = pulseVerdict(pulse);
+  if (!ix && !v) return <span className="text-2xs text-text-muted">نبض هنوز نیامده</span>;
+  return (
+    <span className="flex items-center gap-2.5 text-2xs">
+      {ix?.last != null ? (
+        <span className="flex items-center gap-1">
+          <span className="text-text-muted">شاخص</span>
+          <span className="num font-bold text-text-primary">{fmtInt(ix.last)}</span>
+          {ix.pct != null ? (
+            <span className={`num font-bold ${ix.pct > 0 ? 'text-accent-green' : ix.pct < 0 ? 'text-accent-red' : 'text-text-secondary'}`}>
+              {toFaDigits(ix.pct.toFixed(2))}٪
+            </span>
+          ) : null}
+        </span>
+      ) : null}
+      {v ? (
+        <span className={`font-bold ${VERDICT_TONE[v.verdict] ?? 'text-text-secondary'}`} title={v.reason}>
+          {v.label}
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 export default function MarketPage() {
@@ -188,7 +228,18 @@ export default function MarketPage() {
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2">
-      <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
+      {/* نبضِ بازار جمع‌شونده: رویِ ۱۳۶۶×۷۶۸ این داشبورد بیشترِ ارتفاع را
+          می‌گرفت و جدولِ تابلو زیرِ خطِ تا می‌افتاد. حالا کاربر انتخاب
+          می‌کند، و انتخابش می‌ماند. در حالتِ جمع، شاخص و حکمِ امروز روی
+          همان نوار می‌مانند تا جمع‌کردن کور نکند. */}
+      <CollapsibleSection
+        title="نبض بازار"
+        storageKey="bors.market.pulse.open"
+        testId="market-pulse-section"
+        summary={<PulseSummary pulse={pulse ?? null} />}
+      >
+        <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
+      </CollapsibleSection>
 
       {/* نمودارهای جریان سفارش‌ها بالای نوار تابلو */}
       <MicroChartsDrawer />

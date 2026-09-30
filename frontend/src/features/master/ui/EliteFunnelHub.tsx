@@ -1,6 +1,8 @@
 // features/master/ui/EliteFunnelHub.tsx -- ماژول قیف غربالگری نخبگان FTS (Elite Funnel Hub)
 // زنجیره کاهش نمادها بر اساس متدولوژی FTS: ۸۰۰ سهم ──> ۵۰ سهم بنیادی ──> ۱۰ سهم واچلیست داغ ──> ۵ تا ۷ سهم سبد
 import { useState, useMemo } from 'react';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable } from '@shared/lib/tableExport';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
@@ -182,6 +184,49 @@ export function EliteFunnelHub() {
     });
   }, [portfolioQuery.data, marketMap, marketCloses.data]);
 
+  /** جدولِ خروجیِ همان تبِ باز. عددها خام می‌روند نه رقمِ فارسی — اکسل
+   *  رقمِ فارسی را متن می‌خواند و جمع و مرتب‌سازی از کار می‌افتد. */
+  const exportTab = useMemo(() => {
+    if (tab === 'fundamental50') {
+      return {
+        label: '۵۰ بنیادی',
+        count: fundamental50.length,
+        getTable: () => toExportTable(
+          ['رتبه', 'نماد', 'صنعت', 'امتیاز بنیاد', 'رشد فروش YTD٪', 'حاشیه ناخالص٪', 'حجم/ماه'],
+          fundamental50,
+          (r) => [
+            fundamental50.indexOf(r) + 1,
+            r.symbol, r.sector_name ?? null, r.score ?? null,
+            r.rev_growth ?? null, r.gross_margin ?? null,
+            marketMap.get(r.symbol)?.vol_ratio ?? null,
+          ],
+        ),
+      };
+    }
+    if (tab === 'watchlist10') {
+      return {
+        label: 'واچ‌لیست داغ',
+        count: watchlist10.length,
+        getTable: () => toExportTable(
+          ['نماد', 'صنعت', 'ستاپ', 'قیمت ورود', 'حجم/ماه', 'فاصله تا ماشه٪', 'امتیاز'],
+          watchlist10,
+          (r) => [r.symbol, r.sector ?? null, r.setup ?? null, r.entryPrice ?? null,
+                  r.volRatio ?? null, r.triggerDistPct ?? null, r.score ?? null],
+        ),
+      };
+    }
+    return {
+      label: 'سبد فعال',
+      count: activePortfolio.length,
+      getTable: () => toExportTable(
+        ['نماد', 'صنعت', 'وزن٪', 'قیمت ورود', 'قیمت روز', 'سود/زیان٪', 'حد ضرر'],
+        activePortfolio,
+        (r) => [r.symbol, r.sector ?? null, r.weight ?? null, r.entryPrice ?? null,
+                r.currentPrice ?? null, r.pnl ?? null, r.stopLoss ?? null],
+      ),
+    };
+  }, [tab, fundamental50, watchlist10, activePortfolio, marketMap]);
+
   // سبدِ فعال برای نقطۀ Mِ ستونِ ارکان (#224)
   const portfolioSet = useMemo(
     () => new Set((portfolioQuery.data?.portfolio ?? []).map((h) => h.symbol)),
@@ -278,6 +323,22 @@ export function EliteFunnelHub() {
       {/* محتوای جدول متراکم */}
       {!collapsed && (
         <div className="mt-2 overflow-x-auto">
+          {/* دانلود، دنبالِ همان تبی که باز است — سه تب سه ستون‌بندیِ
+              متفاوت دارند، پس یک جدولِ ثابت نمی‌شود. */}
+          {exportTab.count > 0 ? (
+            <div className="flex items-center justify-between gap-2 pb-2">
+              <span className="num text-2xs text-text-muted">
+                {toFaDigits(exportTab.count)} ردیف
+              </span>
+              <DownloadRowsButton
+                base={`قیفِ نخبه-${exportTab.label}`}
+                title="ردیف‌هایِ همین تبِ باز را با همان ستون‌هایِ رویِ صفحه در اکسل می‌گیرد."
+                count={exportTab.count}
+                testId="download-elite-funnel"
+                getTable={exportTab.getTable}
+              />
+            </div>
+          ) : null}
           {tab === 'fundamental50' && (
             <table className="w-full border-collapse text-right text-xs">
               <thead>
