@@ -16,6 +16,9 @@ import {
 } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from '../lib/tapeFts';
 import { patternBadges } from '../lib/tapeBadges';
+import type { TapeFilterConfig } from '../lib/tapeAlgorithms';
+import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
+import { toExportTable } from '@shared/lib/tableExport';
 import { powerTone } from '../api/useMarketPulse';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 
@@ -100,6 +103,41 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
 /** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
 function toBillionRial(rials: number | null | undefined): number | null {
   return typeof rials === 'number' && Number.isFinite(rials) ? rials / 1e9 : null;
+}
+
+/** سلول‌هایِ خروجیِ یک ردیفِ تابلو — به همان ترتیبِ HEADERS.
+ *
+ *  اینجا عمداً عددِ خام می‌رود، نه رشتۀ فارسیِ رندرشده: فایلِ خروجی قرار است
+ *  در Excel جمع/مرتب/فیلتر شود و «۱٬۲۳۴٫۵» با رقمِ فارسی در هیچ صفحه‌گسترده‌ای
+ *  عدد نیست. تنها استثناها ستونِ نماد (متن) و ستونِ الگو (برچسب‌ها) هستند.
+ *  ستونِ «خرید / فروش» در UI دو عدد و یک نوار است؛ در خروجی همان نسبتِ
+ *  عددیِ خرید به فروش می‌رود که ستون بر اساسش مرتب می‌شود.
+ */
+function tapeRowCells(
+  r: MarketRow,
+  cfg: TapeFilterConfig,
+): readonly (string | number | null)[] {
+  // lastCloseDiff کسر برمی‌گرداند، ولی ستون در UI درصد نشان می‌دهد؛ خروجی باید
+  // همان عددی باشد که کاربر روی صفحه می‌بیند، وگرنه فایل با جدول نمی‌خواند.
+  const diff = lastCloseDiff(r);
+  return [
+    r.symbol ?? '',
+    r.p_last ?? null,
+    r.p_closing ?? null,
+    diff == null ? null : Number((diff * 100).toFixed(2)),
+    r.percent_change ?? null,
+    r.percent_last ?? null,
+    r.tvol ?? null,
+    r.z_tot_tran ?? null,
+    toBillionRial(r.q_tot_cap),
+    r.vol_ratio ?? null,
+    r.buyer_power ?? null,
+    // همان بج‌هایی که در ستونِ «الگو» دیده می‌شوند، با همان config —
+    // پس شمارِ چیپِ بالای جدول، ستونِ الگو و فایلِ خروجی هر سه یکی می‌مانند.
+    patternBadges(r, cfg)
+      .map((b) => b.label)
+      .join('، '),
+  ];
 }
 
 const NEG = Number.NEGATIVE_INFINITY;
@@ -381,6 +419,7 @@ export function TapeTable({
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
   const parentRef = useRef<HTMLDivElement>(null);
+  const tapeFilterConfig = useTapeStore((s) => s.tapeFilterConfig);
 
   const sorted = useMemo(() => {
     const arr = [...rows];
@@ -442,6 +481,26 @@ export function TapeTable({
 
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
+      {/* نوارِ ابزار: فقط شمارِ ردیفِ دیدنی و دانلودِ همان‌ها. هرچه اینجا
+          اضافه شود روی هر رندرِ تابلو (هر ۵ ثانیه) هم می‌نشیند، پس سبک بماند. */}
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--hairline)] px-3 py-1.5">
+        <span className="num text-2xs text-text-muted">
+          {toFaDigits(sorted.length)} نماد
+        </span>
+        <DownloadRowsButton
+          base="تابلوخوانی"
+          testId="download-tape-rows"
+          count={sorted.length}
+          title={`دانلودِ ${toFaDigits(sorted.length)} ردیفِ دیدنی — با همین فیلتر و مرتب‌سازی`}
+          getTable={() =>
+            toExportTable(
+              HEADERS.map((h) => h.label),
+              sorted,
+              (r) => tapeRowCells(r, tapeFilterConfig),
+            )
+          }
+        />
+      </div>
       <div className="overflow-x-auto overscroll-x-contain">
         <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => {
