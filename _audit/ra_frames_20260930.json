@@ -1,0 +1,226 @@
+{
+ "action": "frames",
+ "url": "https://rahavard365.com/asset/167/chart",
+ "frames": [
+  {
+   "name": "",
+   "href": "https://rahavard365.com/asset/167/chart"
+  },
+  {
+   "name": "tradingview_8eeb6",
+   "href": "blob:https://rahavard365.com/d45b1fe3-3a61-49af-bd7c-6b5746e18efa"
+  }
+ ],
+ "chartFrameCount": 2,
+ "dom": {
+  "frame0:https://rahavard365.com/asset/167/chart": {
+   "title": "خودرو نمودار تکنیکال | ره آورد",
+   "nodes": 3099,
+   "buttons": 17,
+   "drawingsToolbar": 0,
+   "category": 0,
+   "dialog": 1,
+   "tabbar": 1,
+   "firstDataNames": [],
+   "titled": [
+    {
+     "tag": "a",
+     "title": "ره‌آورد",
+     "name": null,
+     "cls": "Link_root__Whe22",
+     "text": ""
+    },
+    {
+     "tag": "button",
+     "title": "همه",
+     "name": null,
+     "cls": "TabButton_root__U8H_L TabButton_isActive__M15mS",
+     "text": "همه"
+    },
+    {
+     "tag": "button",
+     "title": "سهام",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "سهام"
+    },
+    {
+     "tag": "button",
+     "title": "صندوق",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "صندوق"
+    },
+    {
+     "tag": "button",
+     "title": "اوراق",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "اوراق"
+    },
+    {
+     "tag": "button",
+     "title": "کالا و ارز",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "کالا و ارز"
+    },
+    {
+     "tag": "button",
+     "title": "آتی",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "آتی"
+    },
+    {
+     "tag": "button",
+     "title": "ارز دیجیتال",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "ارز دیجیتال"
+    },
+    {
+     "tag": "button",
+     "title": "شاخص",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "شاخص"
+    },
+    {
+     "tag": "button",
+     "title": "سایر",
+     "name": null,
+     "cls": "TabButton_root__U8H_L",
+     "text": "سایر"
+    },
+    {
+     "tag": "iframe",
+     "title": "Financial Chart",
+     "name": null,
+     "cls": "",
+     "text": ""
+    }
+   ],
+   "buttonList": [
+    {
+     "text": "همه",
+     "title": "همه",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L TabButton_isActive__M15mS"
+    },
+    {
+     "text": "سهام",
+     "title": "سهام",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "صندوق",
+     "title": "صندوق",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "اوراق",
+     "title": "اوراق",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "کالا و ارز",
+     "title": "کالا و ارز",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "آتی",
+     "title": "آتی",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "ارز دیجیتال",
+     "title": "ارز دیجیتال",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "شاخص",
+     "title": "شاخص",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "سایر",
+     "title": "سایر",
+     "aria": null,
+     "cls": "TabButton_root__U8H_L"
+    },
+    {
+     "text": "ورود / ثبت‌نام",
+     "title": null,
+     "aria": null,
+     "cls": "AccountDropdownLogin_register__Vs6Vd"
+    },
+    {
+     "text": "ورود / ثبت‌نام",
+     "title": null,
+     "aria": null,
+     "cls": "AccountDropdownLogin_register__Vs6Vd"
+    },
+    {
+     "text": "",
+     "title": null,
+     "aria": null,
+     "cls": "IconWrapper_root__gs1v_ MuiBox-root css-0"
+    },
+    {
+     "text": "",
+     "title": null,
+     "aria": null,
+     "cls": "IconWrapper_root__gs1v_ MuiBox-root css-0"
+    },
+    {
+     "text": "فراموشی رمز عبور",
+     "title": null,
+     "aria": null,
+     "cls": "MuiButtonBase-root MuiButton-root Button_root__fmIok MuiButt"
+    },
+    {
+     "text": "ورود",
+     "title": null,
+     "aria": null,
+     "cls": "MuiButtonBase-root MuiButton-root Button_root__fmIok MuiButt"
+    },
+    {
+     "text": "ثبت نام",
+     "title": null,
+     "aria": null,
+     "cls": "MuiButtonBase-root MuiButton-root Button_root__fmIok MuiButt"
+    },
+    {
+     "text": "ورود با رمز یکبار مصرف",
+     "title": null,
+     "aria": null,
+     "cls": "MuiButtonBase-root MuiButton-root Button_root__fmIok MuiButt"
+    }
+   ]
+  },
+  "frame1:blob:https://rahavard365.com/d45b1fe3-3a": {
+   "title": "",
+   "nodes": 32,
+   "buttons": 0,
+   "drawingsToolbar": 0,
+   "category": 0,
+   "dialog": 0,
+   "tabbar": 1,
+   "firstDataNames": [],
+   "titled": [],
+   "buttonList": []
+  }
+ },
+ "errors": [
+  "pageerror: Object",
+  "reqfail: https://www.google-analytics.com/g/collect?v=2&tid=G-SHCYDC3Q6C&gtm=45je69s1v9206101564z89206102092za20gzb9206102092zd92"
+ ]
+}
