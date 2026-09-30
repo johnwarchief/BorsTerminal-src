@@ -57,6 +57,9 @@ SUITES = [
     # چارت می‌رسمد — بی‌شبکه و بی‌market.db (هر دو منبع جعل می‌شوند).
     ('dev/fts_series_basis_v1036.py', 'server FTS reads the full adjusted series the chart draws, not the starved raw table'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
+    # رأیِ روند نباید روی پیوتِ کهنه بماند: در حرکتِ یک‌طرفه هیچ پیوتی تأیید نمی‌شود
+    # (شاهد: کايزد با ۱۵۲٪ صعود «نزولی/خنثی» و REJECT می‌گرفت).
+    ('dev/fts_trend_staleness_v1064.py', 'trend verdict falls back to the recent window when the newest confirmed pivot is stale'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
@@ -65,6 +68,10 @@ SUITES = [
     # اسکرینر/کارت هم کارت را با خودش می‌سنجد (۲۳۱ نماد واگرایی بی‌صدا ماند).
     ('dev/fts_screener_card_parity_v10.py',
                                       'screener<->card parity + ind-4 exemption engine vs card'),
+    # قیف/جدول نباید «بی‌داده» را «رد» بنویسد: شاخص ۳ (حاشیهٔ ناخالص) در
+    # اسکرینرِ زنده bool می‌ماند و ۲۹۷ نماد بی‌سطرِ سود ناخالص سرخ می‌شدند.
+    ('dev/fts_ind3_na_guard_v1065.py',
+                                      'indicator-3 no-data is "not measured", never "rejected" (both cache paths)'),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),

@@ -1,0 +1,79 @@
+{
+ "t0": {
+  "tape": {
+   "n": 5,
+   "chip": null,
+   "pend": 0
+  },
+  "tech": {
+   "n": 5,
+   "chip": null,
+   "pend": 0
+  },
+  "fund": {
+   "n": 1,
+   "chip": null,
+   "pend": 0
+  },
+  "hand": {
+   "n": 1,
+   "chip": null,
+   "pend": 0
+  },
+  "screens": "true",
+  "self": "false",
+  "clock": "12:53:46"
+ },
+ "t1": {
+  "tape": {
+   "n": 5,
+   "chip": null,
+   "pend": 0
+  },
+  "tech": {
+   "n": 5,
+   "chip": "۴ رد (بی‌حذف)",
+   "pend": 0
+  },
+  "fund": {
+   "n": 3,
+   "chip": null,
+   "pend": 2
+  },
+  "hand": {
+   "n": 1,
+   "chip": null,
+   "pend": 0
+  },
+  "screens": "false",
+  "self": "true",
+  "clock": "12:53:47"
+ },
+ "t2": {
+  "tape": {
+   "n": 5,
+   "chip": null,
+   "pend": 0
+  },
+  "tech": {
+   "n": 5,
+   "chip": null,
+   "pend": 0
+  },
+  "fund": {
+   "n": 1,
+   "chip": null,
+   "pend": 0
+  },
+  "hand": {
+   "n": 1,
+   "chip": null,
+   "pend": 0
+  },
+  "screens": "true",
+  "self": "false",
+  "clock": "12:53:48"
+ },
+ "rowsRejectedNow": 4,
+ "errors": []
+}

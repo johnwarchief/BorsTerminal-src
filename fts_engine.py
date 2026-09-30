@@ -317,6 +317,23 @@ def ind4_na(card_ind4) -> bool:
                                 or card_ind4.get("exempt") is True)
 
 
+def ind3_na(card_ind3) -> bool:
+    """آیا کارتِ جزئیات، شاخص ۳ (حاشیهٔ ناخالص) را «سنجیده نشده» اعلام کرده؟
+
+    همان رأی ۱۶ در شاخص ۳: «بی‌داده» با «رد» یکی نیست. کارت در حالتِ
+    not_applicable فقط `na: True` را می‌گوید و `passes` را عمداً bool نگه
+    می‌دارد، پس هر کپی‌کاری که حکمِ کارت را به ستونِ سه‌حالۀ جدول می‌برد باید
+    جدا بپرسد. بدونِ این، صندوق و نمادی که سطرِ «سود ناخالص» ندارد سرخِ «رد»
+    می‌شوند (شاهد ۲۰۲۶-۰۹-۳۰: ۲۹۷ ردیف از ۸۷۳ با gross_margin تهی در
+    اسکرینرِ زنده، و اندوخته داريوش در قیف). `margin_pct` تهی هم همان معنی
+    را می‌دهد: چیزی که عدد ندارد سنجیده نشده است.
+    """
+    if not card_ind3:
+        return False
+    return bool(card_ind3.get("na") is True or card_ind3.get("exempt") is True
+                or card_ind3.get("margin_pct") is None)
+
+
 def _tp(v):
     """ستونِ پاسِ جدول → سه‌حاله (None همان «نظر نمی‌دهد» می‌ماند — رأی ۱۶)."""
     return None if v is None else bool(v)
@@ -1766,7 +1783,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         margin = None
         if ref and _f(ref["revenue"]) > 0 and ref["gross_profit"] is not None:
             margin = (ref["gross_profit"] / ref["revenue"]) * 100.0
-        i3 = margin is not None and margin >= m_min
+        # رأی ۱۶ روی شاخص ۳: حاشیه‌ای که هرگز ساخته نشد سنجیده نشده، نه رد —
+        # همان قاعده‌ای که برای شاخص ۴ و در api/screener جاری است. (حاشیۀ صفرِ
+        # واقعی عدد دارد و می‌ماند: `margin is not None and margin < m_min`.)
+        i3 = (None if margin is None
+              else margin >= m_min)
 
         # ۴) فروش سالانهٔ Annualized ÷ ارزش بازار (+ پتانسیل سود ناخالص)
         # همان مبنای annualized_sales: YTD × ۱۲ ÷ ماه (بی‌ضریبِ ثابتِ ۳×۴).
@@ -1841,7 +1862,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "annualize_months": months_used,
             "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
-            "primary_score": int(sum([i1, i2, i3])),
+            "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
             # رأی ۱۵: صندوق داوری FTS ندارد (نه رد). امتیازِ عددی دست‌نخورده

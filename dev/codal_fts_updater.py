@@ -910,7 +910,8 @@ def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
             (_json.dumps(_ser, ensure_ascii=False) if _ser else None),  # f02_eps_series
             _tp(p.get("2_eps_trend")),            # f02_pass
             _i3.get("margin_pct"),                # f03_margin_pct
-            _tp(p.get("3_gross_margin")),         # f03_pass
+            (None if fts_engine.ind3_na(_i3)      # f03_pass — رأی ۱۶: بی‌داده = None
+             else _tp(p.get("3_gross_margin"))),
             _i4.get("sales_to_mcap"),             # f04_ratio
             (None if fts_engine.ind4_na(_i4)      # f04_pass — رأی ۱۶: معاف = None
              else _tp(p.get("4_sales_to_mcap"))),

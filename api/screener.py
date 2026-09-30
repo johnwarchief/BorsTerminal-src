@@ -280,6 +280,8 @@ def get_screener():
                                        cfg=cfg, company_name=cname_of.get(key, ""),
                                        m141_map=_m141m, liq_map=_liqm)
                 p = res["passes"]
+                _ind = res.get("indicators") or {}
+                _g3 = _ind.get("3") or {}
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
@@ -287,8 +289,9 @@ def get_screener():
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
-                r["i3_pass"] = p["3_gross_margin"]
-                r["i4_pass"] = (None if fts_engine.ind4_na((res.get("indicators") or {}).get("4"))
+                r["i3_pass"] = (None if fts_engine.ind3_na(_g3)
+                                else p["3_gross_margin"])
+                r["i4_pass"] = (None if fts_engine.ind4_na(_ind.get("4"))
                                 else p["4_sales_to_mcap"])
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
@@ -307,9 +310,7 @@ def get_screener():
                 # این، «۴ پتانسیل»ِ جدول (فروش ۳ماهه×۴) با potential_pctِ کارت
                 # (تجمیعی × ۱۲÷م) واگرا می‌شد — شاهد: شملی جدول ۳۳٫۲٪ در برابر کارت
                 # ۶۱٫۳٪؛ ۵۲۳ ردیف از ۸۶۵ ناهم‌خوان بودند. امتیاز/پرچم دست‌نخورده است.
-                _ind = res.get("indicators") or {}
                 _g1 = ((_ind.get("1") or {}).get("monetary") or {})
-                _g3 = _ind.get("3") or {}
                 _v4 = _ind.get("4") or {}
                 _an4 = _v4.get("annual") or {}
                 r["rev_growth"] = _g1.get("monetary_pct")
