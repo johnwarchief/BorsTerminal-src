@@ -600,6 +600,21 @@ export function FtsScreenTable({
    *  فقط همین جدول را تنگ می‌کند و به تب‌های دیگر (تابلو/تکنیکال) سرریز نمی‌کند. */
   const [query, setQuery] = useState('');
 
+  /** درصدِ نوارِ داخلِ دکمهٔ دیتابیس. سرور فقط در مرحلهٔ دانلود درصد می‌دهد؛
+   *  در «ادغام» و «چرخش IP» عددی نیست ولی کار هنوز ادامه دارد، پس نوار را
+   *  پر نگه می‌داریم تا عقب‌گرد نکند. مقدار بست می‌شود چون یک درصدِ خرابِ
+   *  سرور نباید دکمه را از قاب بیرون بزند. */
+  const dbPct = useMemo(() => {
+    if (!dbUpdate?.running) return null;
+    if (dbUpdate.stage === 'downloading' && typeof dbUpdate.percent === 'number') {
+      return Math.min(100, Math.max(0, dbUpdate.percent));
+    }
+    return dbUpdate.stage === 'merging' || dbUpdate.stage === 'rotating' ? 100 : 0;
+  }, [dbUpdate?.running, dbUpdate?.stage, dbUpdate?.percent]);
+
+  /** پایانِ موفق: نه در حالِ اجرا، نه خطا، و مرحله «done». */
+  const dbDone = !!dbUpdate && !dbUpdate.running && !dbUpdate.error && dbUpdate.stage === 'done';
+
   /** تعداد ردیف‌های حذف‌شده توسط دروازه‌های سخت */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
 
@@ -721,17 +736,35 @@ export function FtsScreenTable({
             onClick={() => onDbUpdate?.()}
             disabled={!onDbUpdate || dbUpdate?.running}
             data-testid="fts-db-update"
+            aria-live="polite"
+            aria-busy={dbUpdate?.running || undefined}
             title={dbUpdate?.error
               ? dbUpdate.error
               : 'جدیدترین صورت‌مالی‌های کدال را می‌گیرد و با دادهٔ همین رایانه ادغام می‌کند؛ ردیفی که تازه‌تر باشد دست‌نخورده می‌ماند.'}
-            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
+            className={`relative isolate flex items-center gap-1.5 overflow-hidden rounded-lg border px-2.5 py-1 text-2xs font-bold transition-colors ${
               dbUpdate?.error
                 ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
-                : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue disabled:opacity-50'
+                : dbDone
+                  ? 'border-accent-green/40 bg-accent-green/10 text-accent-green'
+                  : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue disabled:opacity-50'
             }`}
           >
+            {/* نوارِ پیشرفت داخلِ خودِ دکمه: درصد تا حالا فقط متن بود و کاربر
+                در دانلودِ چندده‌مگابایتی هیچ حسِ حرکتی نداشت. فقط `width` عوض
+                می‌شود — بی‌blur و بی‌لایهٔ تازه، چون برنامه رویِ بیشترِ
+                ماشین‌ها با --disable-gpu بالا می‌آید. */}
+            {dbPct !== null ? (
+              <span
+                aria-hidden="true"
+                data-testid="fts-db-progress"
+                className="absolute inset-y-0 start-0 -z-10 bg-accent-blue/20 motion-safe:transition-[width] motion-safe:duration-500"
+                style={{ width: `${dbPct}%` }}
+              />
+            ) : null}
             <svg className={`h-3 w-3 ${dbUpdate?.running ? 'animate-pulse' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+              {dbDone
+                ? <path d="M20 6 9 17l-5-5" />
+                : <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />}
             </svg>
             {dbUpdate?.running
               ? dbUpdate.stage === 'downloading' && dbUpdate.percent
@@ -743,7 +776,9 @@ export function FtsScreenTable({
                     : 'در حال دریافت…'
               : dbUpdate?.error
                 ? 'خطای دیتابیس کدال'
-                : 'دیتابیس کدال'}
+                : dbDone
+                  ? 'دیتابیس کدال به‌روز شد'
+                  : 'دیتابیس کدال'}
           </button>
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
