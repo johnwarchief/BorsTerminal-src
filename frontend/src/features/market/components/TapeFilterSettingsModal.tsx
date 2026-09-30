@@ -6,7 +6,7 @@
 // که ورودیِ ناخوانا (از جمله ارقامِ فارسی در input[type=number]) را null
 // می‌دهد و در آن حالت مقدارِ قبلی سرِ جایش می‌ماند.
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
+import { Modal } from '@shared/ui/Modal';
 import { VerticalTabs, type VerticalTabItem } from '@shared/components/VerticalTabs';
 import { parseNum, toFaDigits } from '@shared/lib/fmt';
 import {
@@ -81,38 +81,32 @@ export function TapeFilterSettingsModal({
 
   const isCustom = isConfigCustomized(config);
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/65 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-label="شخصی‌سازی فیلترهای تابلو و الگوریتم‌ها"
-    >
-      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl border border-border-c/90 bg-bg-primary shadow-2xl overflow-hidden">
-        {/* هدر مدال */}
-        <div className="flex items-center justify-between border-b border-border-c/70 px-5 py-3.5 bg-bg-card/60 backdrop-blur">
-          <div className="flex items-center gap-2.5">
-            <span className="text-sm sm:text-base font-black text-text-primary">⚙️ تنظیمات فیلترها</span>
-            {isCustom ? (
-              <span className="rounded-full bg-accent-blue/15 px-2.5 py-0.5 text-2xs font-bold text-accent-blue border border-accent-blue/30">
-                شخصی‌سازی شده
-              </span>
-            ) : (
-              <span className="rounded-full bg-bg-secondary px-2.5 py-0.5 text-2xs font-medium text-text-muted border border-border-c/50">
-                پیش‌فرض استاندارد
-              </span>
-            )}
-          </div>
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="⚙️ تنظیمات فیلترها"
+      description={isCustom ? 'شخصی‌سازی شده' : 'پیش‌فرض استاندارد'}
+      testId="tape-filter-modal"
+      footer={
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={resetConfig}
+            className="rounded-xl border border-border-c px-3.5 py-2 text-xs font-semibold text-text-secondary hover:border-accent-red/50 hover:text-accent-red transition-all"
+          >
+            بازنشانی به پیش‌فرض
+          </button>
           <button
             type="button"
             onClick={onClose}
-            aria-label="بستن"
-            className="flex size-8 items-center justify-center rounded-lg text-text-muted hover:bg-bg-secondary hover:text-text-primary transition-colors"
+            className="rounded-xl bg-accent-blue px-6 py-2 text-xs font-black text-on-accent hover:opacity-90 active:scale-98 transition-all shadow-md"
           >
-            ✕
+            تایید و بستن
           </button>
         </div>
-
+      }
+    >
         {/* تب‌ها: عمودی. هشت تب در یک نوارِ افقی روی ۱۳۶۶ اسکرول می‌خورد و
             برچسب‌هایِ فارسی جا نمی‌شدند؛ ستونِ عمودی همه را یک‌جا نشان می‌دهد
             و شاخصِ لغزانش فقط یک translate است (رندرِ نرم‌افزاری هم روان). */}
@@ -705,24 +699,6 @@ export function TapeFilterSettingsModal({
         </VerticalTabs>
 
         {/* فوتر مدال */}
-        <div className="flex items-center justify-between border-t border-border-c/70 px-5 py-3.5 bg-bg-card/60 backdrop-blur">
-          <button
-            type="button"
-            onClick={resetConfig}
-            className="rounded-xl border border-border-c px-3.5 py-2 text-xs font-semibold text-text-secondary hover:border-accent-red/50 hover:text-accent-red transition-all"
-          >
-            بازنشانی به پیش‌فرض
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl bg-accent-blue px-6 py-2 text-xs font-black text-on-accent hover:opacity-90 active:scale-98 transition-all shadow-md"
-          >
-            تایید و بستن
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }
