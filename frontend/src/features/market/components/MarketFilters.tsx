@@ -1,7 +1,8 @@
 // features/market/components/MarketFilters.tsx -- نوار کنترل و فیلترهای یکپارچه بالای جدول تابلو
 // شامل ردیف اول: جستجوی نماد، شمارنده نمادها، انتخاب بازه به‌روزرسانی و پاک‌کردن فیلترها
 // ردیف دوم: بازارها/ابزارها، صنایع و چیپ‌های فیلتر با پاپ‌اور تنظیمات اختصاصی (Split Chips)
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Select } from '@shared/ui/Select';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
@@ -428,6 +429,12 @@ export function MarketFilters({
   const volRatioOn = useTapeStore((s) => s.volRatioOn);
   const resetFilters = useTapeStore((s) => s.resetFilters);
 
+  // «همه صنایع» اولین گزینه می‌ماند؛ بقیه به همان ترتیبی که سرور می‌دهد.
+  const sectorOptions = useMemo(
+    () => [{ value: '', label: 'همه صنایع' }, ...sectors.map((x) => ({ value: x, label: x }))],
+    [sectors],
+  );
+
   const [draft, setDraft] = useState(query);
   useEffect(() => setDraft(query), [query]);
   useEffect(() => {
@@ -467,19 +474,17 @@ export function MarketFilters({
       >
         <AssetFilterMenu />
 
-        <select
+        {/* فهرستِ صنایع از <select>ِ بومی درآمد. پاپ‌آپِ بومی را ویندوز
+            می‌کشد، پس نه انیمیشن می‌گرفت نه جستجو — و در فهرستِ چهل‌تاییِ
+            صنایع کاربر باید کورکورانه اسکرول می‌کرد. */}
+        <Select
           value={sector}
-          onChange={(e) => setSector(e.target.value)}
-          className={`${CONTROL_CLS} max-w-36 truncate`}
-          aria-label="فیلتر صنعت"
-        >
-          <option value="">همه صنایع</option>
-          {sectors.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
+          onChange={setSector}
+          ariaLabel="فیلتر صنعت"
+          testId="sector-select"
+          className="max-w-36"
+          options={sectorOptions}
+        />
 
         <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
 

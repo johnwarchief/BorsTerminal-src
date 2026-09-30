@@ -1,4 +1,9 @@
 @import 'tailwindcss';
+/* ابزارهایِ animate-in/animate-out. کشفِ ۱٫۰٫۶۶: این کلاس‌ها از قبل در
+   TapeFilterSettingsModal و FilterConfigPopover نوشته شده بودند ولی هیچ
+   پلاگینی تعریفشان نکرده بود — یعنی دو سالِ تمام کلاسِ مرده بودند و آن دو
+   پنجره بی‌هیچ انیمیشنی باز می‌شدند. حالا واقعاً کار می‌کنند. */
+@import 'tw-animate-css';
 @import './shared/styles/tokens.css';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *, .dark, .dark *));
@@ -41,6 +46,36 @@
      ۲K/۴K با نردبانِ واکنشی بزرگ نمی‌شد (تب‌ها ریزتر از بقیهٔ صفحه می‌ماندند). */
   --text-nav: var(--fs-sm);
   --text-nav--line-height: 1.3;
+
+  /* ---------- پلِ نام‌گذاریِ shadcn ----------
+     کامپوننت‌هایِ سبکِ shadcn با نام‌هایِ قراردادیِ خودشان نوشته می‌شوند
+     (bg-background، text-muted-foreground، border-border، …). این‌ها نامِ
+     تازه‌اند ولی رنگِ تازه نیستند: هر کدام به همان متغیرِ موجودِ tokens.css
+     اشاره می‌کنند.
+
+     چرا پل و نه بازنویسیِ توکن‌ها: tokens.css تمِ روشن را هم دارد
+     (`[data-theme='light']`). اگر shadcn تمِ دومِ خودش را می‌آورد، دو منبعِ
+     حقیقت می‌شد و سوییچِ تم نصفه‌نیمه کار می‌کرد. با این پل، هر دو سبک از
+     یک منبع می‌خوانند و تمِ روشن خودبه‌خود درست می‌ماند. */
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--bg-secondary);
+  --color-popover-foreground: var(--text-primary);
+  --color-primary: var(--accent-blue);
+  --color-primary-foreground: var(--on-accent);
+  --color-secondary: var(--bg-secondary);
+  --color-secondary-foreground: var(--text-secondary);
+  --color-muted: var(--bg-secondary);
+  --color-muted-foreground: var(--text-muted);
+  --color-accent: var(--bg-card);
+  --color-accent-foreground: var(--text-primary);
+  --color-destructive: var(--accent-red);
+  --color-destructive-foreground: var(--on-accent);
+  --color-border: var(--border-color);
+  --color-input: var(--border-color);
+  --color-ring: var(--border-accent);
 }
 
 html,
