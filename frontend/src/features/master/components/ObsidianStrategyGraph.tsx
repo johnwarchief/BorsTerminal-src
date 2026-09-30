@@ -717,6 +717,12 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       editableParamKeys: ['exitHalfPct'],
     },
     {
+      // ⚠ ناهمخوانیِ ثبت‌شده (۱٫۰٫۶۶): این گره قاعدهٔ چارت را نشان می‌دهد
+      // (فاصله تا خط روند: هفتگی ۱۰٪ و روزانه ۵٪)، ولی موتورِ چارت در
+      // api/chart.py:1667 «سقف سوم» را جورِ دیگری می‌سنجد: سه پیوتِ سقفِ
+      // اخیر با اختلافِ ≤۱٪ از هم — یعنی سقفِ سه‌قلو، بی‌هیچ خط روندی و
+      // بی‌۱۰٪ و ۵٪. تا وقتی مالک رأی ندهد کدام مرجع است، هیچ‌کدام عوض
+      // نمی‌شود؛ فقط «یا» به «و» اصلاح شد چون چارت صریح «و» دارد.
       id: 'exit_third_peak',
       label: `🏔️ خروج در سقف سوم (${toFaDigits(params.thirdPeakWeeklyPct)}٪ و ${toFaDigits(params.thirdPeakDailyPct)}٪)`,
       fullTitle: 'خروج کامل در سقف سوم کانال صعودی طبق چارت صفحه ۴',
@@ -725,7 +731,7 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       stageName: 'مدیریت سرمایه M',
       page: 'چارت صفحه ۴',
       description: `برخورد قیمت به سقف سوم کانال صعودی یا خط روند ماژور با فاصله زیر ${toFaDigits(params.thirdPeakWeeklyPct)}٪ هفتگی و ${toFaDigits(params.thirdPeakDailyPct)}٪ روزانه؛ خروج کامل از سهم.`,
-      ruleFormula: `فاصله تا خط روند هفتگی <= ${params.thirdPeakWeeklyPct}٪ یا روزانه <= ${params.thirdPeakDailyPct}٪ ➔ فروش ۱۰۰٪`,
+      ruleFormula: `فاصله تا خط روند هفتگی <= ${params.thirdPeakWeeklyPct}٪ و روزانه <= ${params.thirdPeakDailyPct}٪ ➔ فروش ۱۰۰٪`,
       badge: 'خروج سقف ۳',
       color: '#f97316',
       radius: 18,
