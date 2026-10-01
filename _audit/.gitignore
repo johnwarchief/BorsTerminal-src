@@ -6,3 +6,7 @@ live_market.json
 live_screener.json
 *.db
 *.db.journal
+_audit/last_blast_radius/csv_cache/
+_audit/last_blast_radius/market_copy.db
+_audit/last_blast_radius/partial.jsonl
+_audit/last_blast_radius/run.log

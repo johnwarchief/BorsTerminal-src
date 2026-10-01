@@ -1,0 +1,684 @@
+{
+ "generated": "2026-10-01T21:42:13",
+ "basis": "ADJUSTED CDN series via _fts_scaled + _fts_analyze_candles (entry_hint=None). PRIMARY B2 = close=LAST with adjustment detection left CLOSE-based; B1_naive = full swap where adjust chain also uses LAST",
+ "totals": {
+  "symbols_total": 800,
+  "symbols_measured": 800,
+  "symbols_failed": 0,
+  "failed_list": []
+ },
+ "1_candle_validity_B": {
+  "days": 1518905,
+  "last_zero_or_missing": 0,
+  "last_below_low": 385,
+  "last_above_high": 136,
+  "last_outside_widened": 72,
+  "no_trade_day": 524,
+  "pct_last_zero_or_missing": 0.0,
+  "pct_last_outside_range": 0.0343,
+  "top_examples_out_of_range": [
+   {
+    "date": "2022-12-03",
+    "last": 83900.0,
+    "low": 1.0,
+    "high": 1.0,
+    "close": 83814.0,
+    "vol": 350000.0,
+    "side": "above_high",
+    "dist_pct": 8389900.0
+   },
+   {
+    "date": "2022-05-01",
+    "last": 83900.0,
+    "low": 1.0,
+    "high": 1.0,
+    "close": 1.0,
+    "vol": 200000.0,
+    "side": "above_high",
+    "dist_pct": 8389900.0
+   },
+   {
+    "date": "2022-12-03",
+    "last": 49634.0,
+    "low": 1.0,
+    "high": 1.0,
+    "close": 49634.0,
+    "vol": 34200000.0,
+    "side": "above_high",
+    "dist_pct": 4963300.0
+   }
+  ],
+  "examples_zero": []
+ },
+ "2_gap_A_vs_B": {
+  "symbol_days_compared": 1518905,
+  "pct_gt_1": 35.37,
+  "mean_all": 15.052,
+  "mean_of_symbol_means": 31.029,
+  "median_of_symbol_medians": 0.552
+ },
+ "3_engine_flips_B2_primary": {
+  "trend_D": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "trend_W": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "trend_M": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "matrix_decision": {
+   "symbols": 0,
+   "pct": 0.0,
+   "into_REJECT": 0,
+   "out_of_REJECT": 0,
+   "reject_A": 190,
+   "reject_B": 190
+  },
+  "matrix_setup": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "jet_active": {
+   "symbols": 74,
+   "pct": 9.2
+  },
+  "exit_verdict": {
+   "symbols": 38,
+   "pct": 4.8
+  },
+  "exit_signals": {
+   "symbols": 86,
+   "pct": 10.8
+  },
+  "hard_stop": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "ma14": {
+   "symbols": 739,
+   "pct": 92.4
+  },
+  "stop_hit": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "ma14_exit": {
+   "symbols": 10,
+   "pct": 1.2
+  },
+  "l2_choch_break": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "l2_channel_break": {
+   "symbols": 9,
+   "pct": 1.1
+  },
+  "l3_third_peak": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "l3_double_top": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "l3_hs_break": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "l4_rsi_div": {
+   "symbols": 38,
+   "pct": 4.8
+  },
+  "l4_rsi_roll": {
+   "symbols": 24,
+   "pct": 3.0
+  },
+  "hourglass_active": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "ma52": {
+   "symbols": 715,
+   "pct": 89.4
+  },
+  "fib_belt33_bounds": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "fib_belt618_bounds": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "fib_in33": {
+   "symbols": 15,
+   "pct": 1.9
+  },
+  "fib_in618": {
+   "symbols": 4,
+   "pct": 0.5
+  },
+  "fib_leg": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "fib_levels": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "choch_bearish": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "choch_bullish": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "double_bottom": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "range_box": {
+   "symbols": 65,
+   "pct": 8.1
+  },
+  "point_hunt_active": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "point_hunt_touches": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "setups_history": {
+   "symbols": 758,
+   "pct": 94.8
+  }
+ },
+ "3b_engine_flips_B1_naive": {
+  "trend_D": {
+   "symbols": 13,
+   "pct": 1.6
+  },
+  "trend_W": {
+   "symbols": 98,
+   "pct": 12.2
+  },
+  "trend_M": {
+   "symbols": 210,
+   "pct": 26.2
+  },
+  "matrix_decision": {
+   "symbols": 84,
+   "pct": 10.5,
+   "into_REJECT": 74,
+   "out_of_REJECT": 10,
+   "reject_A": 190,
+   "reject_B": 254
+  },
+  "matrix_setup": {
+   "symbols": 87,
+   "pct": 10.9
+  },
+  "jet_active": {
+   "symbols": 90,
+   "pct": 11.2
+  },
+  "exit_verdict": {
+   "symbols": 64,
+   "pct": 8.0
+  },
+  "exit_signals": {
+   "symbols": 122,
+   "pct": 15.2
+  },
+  "hard_stop": {
+   "symbols": 56,
+   "pct": 7.0
+  },
+  "ma14": {
+   "symbols": 739,
+   "pct": 92.4
+  },
+  "stop_hit": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "ma14_exit": {
+   "symbols": 17,
+   "pct": 2.1
+  },
+  "l2_choch_break": {
+   "symbols": 2,
+   "pct": 0.2
+  },
+  "l2_channel_break": {
+   "symbols": 19,
+   "pct": 2.4
+  },
+  "l3_third_peak": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "l3_double_top": {
+   "symbols": 1,
+   "pct": 0.1
+  },
+  "l3_hs_break": {
+   "symbols": 0,
+   "pct": 0.0
+  },
+  "l4_rsi_div": {
+   "symbols": 57,
+   "pct": 7.1
+  },
+  "l4_rsi_roll": {
+   "symbols": 36,
+   "pct": 4.5
+  },
+  "hourglass_active": {
+   "symbols": 14,
+   "pct": 1.8
+  },
+  "ma52": {
+   "symbols": 715,
+   "pct": 89.4
+  },
+  "fib_belt33_bounds": {
+   "symbols": 201,
+   "pct": 25.1
+  },
+  "fib_belt618_bounds": {
+   "symbols": 201,
+   "pct": 25.1
+  },
+  "fib_in33": {
+   "symbols": 18,
+   "pct": 2.2
+  },
+  "fib_in618": {
+   "symbols": 5,
+   "pct": 0.6
+  },
+  "fib_leg": {
+   "symbols": 201,
+   "pct": 25.1
+  },
+  "fib_levels": {
+   "symbols": 201,
+   "pct": 25.1
+  },
+  "choch_bearish": {
+   "symbols": 2,
+   "pct": 0.2
+  },
+  "choch_bullish": {
+   "symbols": 2,
+   "pct": 0.2
+  },
+  "double_bottom": {
+   "symbols": 3,
+   "pct": 0.4
+  },
+  "range_box": {
+   "symbols": 72,
+   "pct": 9.0
+  },
+  "point_hunt_active": {
+   "symbols": 22,
+   "pct": 2.8
+  },
+  "point_hunt_touches": {
+   "symbols": 80,
+   "pct": 10.0
+  },
+  "setups_history": {
+   "symbols": 758,
+   "pct": 94.8
+  }
+ },
+ "4_adjustment_drift_naive": {
+  "symbols_with_events": 617,
+  "symbols_events_count_differ_naive": 617,
+  "symbols_anchor_differ_naive": 739,
+  "symbols_anchor_lost_naive": 739,
+  "symbols_any_factor_drift_naive": 611,
+  "total_factor_drift_days_naive": 1335643,
+  "median_drift_days_per_symbol_naive": 1237.5,
+  "max_oldest_factor_shift_naive": 270474.9540192578
+ },
+ "top5_flip_symbols": [
+  {
+   "symbol": "كپشير",
+   "bars": 3944,
+   "verdict_flips": 4,
+   "total_flips": 8,
+   "before_after": {
+    "trend_D": [
+     "up",
+     "up"
+    ],
+    "trend_W": [
+     "up",
+     "up"
+    ],
+    "matrix": [
+     "PERMITTED/JET_OR_PULLBACK_HOLD",
+     "PERMITTED/JET_OR_PULLBACK_HOLD"
+    ],
+    "jet": [
+     false,
+     true
+    ],
+    "exit_verdict": [
+     "exit",
+     "hold"
+    ],
+    "hard_stop": [
+     20776.5,
+     20776.5
+    ],
+    "ma14": [
+     28713.57,
+     28779.29
+    ],
+    "ma52": [
+     11636.71,
+     11666.88
+    ],
+    "fib_belt618": [
+     [
+      15061.02,
+      16464.3
+     ],
+     [
+      15061.02,
+      16464.3
+     ]
+    ],
+    "choch": [
+     null,
+     null
+    ],
+    "double_bottom": [
+     false,
+     false
+    ]
+   }
+  },
+  {
+   "symbol": "مهرگان",
+   "bars": 151,
+   "verdict_flips": 3,
+   "total_flips": 7,
+   "before_after": {
+    "trend_D": [
+     "up",
+     "up"
+    ],
+    "trend_W": [
+     "up",
+     "up"
+    ],
+    "matrix": [
+     "PERMITTED/JET_OR_PULLBACK_HOLD",
+     "PERMITTED/JET_OR_PULLBACK_HOLD"
+    ],
+    "jet": [
+     false,
+     true
+    ],
+    "exit_verdict": [
+     "hold",
+     "caution"
+    ],
+    "hard_stop": [
+     8099.7,
+     8099.7
+    ],
+    "ma14": [
+     11479.93,
+     11515.07
+    ],
+    "ma52": [
+     null,
+     null
+    ],
+    "fib_belt618": [
+     [
+      8738.76,
+      9194.72
+     ],
+     [
+      8738.76,
+      9194.72
+     ]
+    ],
+    "choch": [
+     null,
+     null
+    ],
+    "double_bottom": [
+     false,
+     false
+    ]
+   }
+  },
+  {
+   "symbol": "وآفر",
+   "bars": 898,
+   "verdict_flips": 3,
+   "total_flips": 7,
+   "before_after": {
+    "trend_D": [
+     "range",
+     "range"
+    ],
+    "trend_W": [
+     "up",
+     "up"
+    ],
+    "matrix": [
+     "PERMITTED/SWING_DOUBLE_BOTTOM_OR_RANGE",
+     "PERMITTED/SWING_DOUBLE_BOTTOM_OR_RANGE"
+    ],
+    "jet": [
+     false,
+     false
+    ],
+    "exit_verdict": [
+     "exit",
+     "hold"
+    ],
+    "hard_stop": [
+     10782.5,
+     10782.5
+    ],
+    "ma14": [
+     12137.86,
+     12152.14
+    ],
+    "ma52": [
+     10739.21,
+     10714.83
+    ],
+    "fib_belt618": [
+     [
+      11865.17,
+      12010.01
+     ],
+     [
+      11865.17,
+      12010.01
+     ]
+    ],
+    "choch": [
+     null,
+     null
+    ],
+    "double_bottom": [
+     false,
+     false
+    ]
+   }
+  },
+  {
+   "symbol": "وبصادر",
+   "bars": 3426,
+   "verdict_flips": 3,
+   "total_flips": 7,
+   "before_after": {
+    "trend_D": [
+     "down",
+     "down"
+    ],
+    "trend_W": [
+     "up",
+     "up"
+    ],
+    "matrix": [
+     "PERMITTED/FIB_CHOCH_STEP_ENTRY",
+     "PERMITTED/FIB_CHOCH_STEP_ENTRY"
+    ],
+    "jet": [
+     false,
+     false
+    ],
+    "exit_verdict": [
+     "exit",
+     "hold"
+    ],
+    "hard_stop": [
+     876.85,
+     876.85
+    ],
+    "ma14": [
+     985.86,
+     983.93
+    ],
+    "ma52": [
+     635.21,
+     635.62
+    ],
+    "fib_belt618": [
+     [
+      1014.77,
+      1027.61
+     ],
+     [
+      1014.77,
+      1027.61
+     ]
+    ],
+    "choch": [
+     null,
+     null
+    ],
+    "double_bottom": [
+     false,
+     false
+    ]
+   }
+  },
+  {
+   "symbol": "سرو",
+   "bars": 1672,
+   "verdict_flips": 2,
+   "total_flips": 7,
+   "before_after": {
+    "trend_D": [
+     "up",
+     "up"
+    ],
+    "trend_W": [
+     "up",
+     "up"
+    ],
+    "matrix": [
+     "PERMITTED/JET_OR_PULLBACK_HOLD",
+     "PERMITTED/JET_OR_PULLBACK_HOLD"
+    ],
+    "jet": [
+     true,
+     true
+    ],
+    "exit_verdict": [
+     "exit",
+     "hold"
+    ],
+    "hard_stop": [
+     37736.85,
+     37736.85
+    ],
+    "ma14": [
+     43612.21,
+     43603.93
+    ],
+    "ma52": [
+     26716.62,
+     26741.87
+    ],
+    "fib_belt618": [
+     [
+      33571.66,
+      34859.96
+     ],
+     [
+      33571.66,
+      34859.96
+     ]
+    ],
+    "choch": [
+     null,
+     null
+    ],
+    "double_bottom": [
+     false,
+     false
+    ]
+   }
+  }
+ ],
+ "top5_naive": [
+  {
+   "symbol": "شبهرن",
+   "verdict_flips_naive": 9
+  },
+  {
+   "symbol": "قشهد",
+   "verdict_flips_naive": 9
+  },
+  {
+   "symbol": "نتوس",
+   "verdict_flips_naive": 9
+  },
+  {
+   "symbol": "كاردان",
+   "verdict_flips_naive": 8
+  },
+  {
+   "symbol": "نمرينو",
+   "verdict_flips_naive": 8
+  }
+ ],
+ "5_cost": {
+  "csv_fetches_new": 795,
+  "csv_from_cache": 5,
+  "csv_bytes": 181829436,
+  "fetch_wall_s": 124.7,
+  "symbol_days": 1518905,
+  "engine_wall_ms": 114390
+ },
+ "sample_bias": {
+  "min_rows": 139,
+  "median_rows": 421.0,
+  "max_rows": 496,
+  "db_total_symbols": 4190,
+  "cutoff": "price_history rows desc (≈2y window) — sample = most-active listings"
+ },
+ "errors": []
+}
