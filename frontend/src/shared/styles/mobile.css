@@ -160,12 +160,18 @@ html.bors-mobile .bors-fixed-top {
   /* درختِ استراتژی: بوم ۱۹۶۰ پیکسل عرض دارد و اگر در ۴۱۲ پیکسل «جا» شود
      مقیاسش ۰٫۲۱ می‌شود — هیچ برچسبی خوانا نیست. به‌جایش کفِ عرض می‌گذاریم
      و اجازهٔ پیمایشِ افقی می‌دهیم؛ خودِ گراف زوم و پن دارد. */
-  html.bors-mobile [data-testid='obsidian-strategy-canvas'] {
+  /* ظرفِ بوم کفِ عرض دارد (وگرنه مقیاسِ ۰٫۲۱ و هیچ برچسبِ خوانا)، و
+     والدش افقی اسکرول می‌خورد. پیش از این انتخابگر .strategy-canvas-wrap
+     بود که فقط در همین فایل وجود داشت و در DOM نبود — قاعدهٔ مرده. */
+  html.bors-mobile [data-testid='strategy-canvas-wrap'] {
     min-width: 760px;
   }
-  html.bors-mobile [data-testid='obsidian-strategy-canvas'] ~ *,
-  html.bors-mobile .strategy-canvas-wrap {
+  html.bors-mobile [data-testid='strategy-canvas-wrap'] {
+    margin-inline: 0;
+  }
+  html.bors-mobile [data-testid='strategy-canvas-scroll'] {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* جدول‌هایِ داده در عمودی باید افقی اسکرول بخورند نه اینکه ستون‌ها

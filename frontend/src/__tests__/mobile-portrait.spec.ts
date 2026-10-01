@@ -30,7 +30,9 @@ describe('چیدمانِ موبایل', () => {
   it('در عمودی، بومِ درخت کفِ عرض دارد تا برچسب‌ها خوانا بماند', () => {
     // بی‌این، بومِ ۱۹۶۰ پیکسلی در ۴۱۲ پیکسل با مقیاسِ ۰٫۲۱ رسم می‌شد.
     const b = mediaBlock('orientation: portrait');
-    expect(b).toMatch(/obsidian-strategy-canvas[\s\S]*?min-width:\s*760px/);
+    // انتخابگر از obsidian-strategy-canvas به strategy-canvas-wrap رفت:
+    // کفِ عرض باید رویِ *ظرف* باشد نه خودِ svg، وگرنه نسبتِ ابعاد می‌شکند.
+    expect(b).toMatch(/strategy-canvas-wrap'\]\s*\{[\s\S]*?min-width:\s*760px/);
   });
 
   it('در عمودی، جدول‌ها افقی اسکرول می‌خورند نه اینکه ستون‌ها له شوند', () => {

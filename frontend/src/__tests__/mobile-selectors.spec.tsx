@@ -20,6 +20,15 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const css = fs.readFileSync('src/shared/styles/mobile.css', 'utf8');
 
+/** همهٔ فایل‌هایِ منبعِ فرانت (برایِ جست‌وجویِ شناسه‌ها). */
+function listSources(dir = 'src'): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const full = `${dir}/${e.name}`;
+    if (e.isDirectory()) return listSources(full);
+    return /\.tsx?$/.test(e.name) ? [full] : [];
+  });
+}
+
 const wrap = (node: React.ReactNode) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     <MemoryRouter>{node}</MemoryRouter>
@@ -45,6 +54,17 @@ describe('انتخابگرهایِ چیدمانِ موبایل مرده نباش
     useSymbolStore.setState({ symbol: 'فولاد' });
     const { container } = render(wrap(<SymbolInspector />));
     expect(container.querySelector("aside[data-shell='inspector']")).not.toBeNull();
+  });
+
+  it('هیچ data-testidِ اختراعی در mobile.css نمانده', () => {
+    // باگِ واقعی: قاعده‌ای رویِ .strategy-canvas-wrap نوشته بودم که فقط در
+    // همان فایل وجود داشت و در DOM نبود — مرده. این بررسی هر شناسه‌ای را
+    // که CSS به آن چنگ می‌زند در خودِ سورس می‌جوید.
+    const ids = [...css.matchAll(/data-testid='([a-z0-9-]+)'/g)].map((m) => m[1]);
+    expect(ids.length).toBeGreaterThan(0);
+    const all = listSources().map((f) => fs.readFileSync(f, 'utf8')).join('\n');
+    const dead = [...new Set(ids)].filter((id) => !all.includes(`"${id}"`) && !all.includes(`'${id}'`));
+    expect(dead).toEqual([]);
   });
 
   it('هیچ انتخابگرِ asideای در CSS نمانده که به aria-label بچسبد', () => {

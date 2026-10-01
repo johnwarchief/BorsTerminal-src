@@ -1808,7 +1808,7 @@ export function ObsidianStrategyGraph({
       {/* ۲. بوم نمودار ساختاریافته راست‌به‌چپ (RTL Obsidian Canvas) */}
       {/* بوم هیچ‌وقت کوچک‌تر از یک‌به‌یک نمی‌شود؛ تنگ‌جا اسکرول افقی می‌خورد،
           نه اینکه نوشته‌ها ریز شوند (بازخورد مالک: «تا نیاز به زوم نباشد»). */}
-      <div className="w-full overflow-x-auto overflow-y-hidden">
+      <div data-testid="strategy-canvas-scroll" className="w-full overflow-x-auto overflow-y-hidden">
       <div
         ref={svgContainerRef}
         onMouseDown={handleMouseDown}
@@ -1816,7 +1816,12 @@ export function ObsidianStrategyGraph({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        className="relative mx-auto w-full min-w-[1480px] max-w-[1954px] aspect-[1480/1040] overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        data-testid="strategy-canvas-wrap"
+        // نسبت باید با viewBox بخواند؛ از ۱٫۰٫۶۶ بوم ۱۹۶۰×۱۵۰۰ شد ولی
+        // این‌جا هنوز ۱۴۸۰/۱۰۴۰ بود و SVG کج/لتربکس می‌شد.
+        // min-width هم رویِ گوشیِ ۵۷۴ پیکسلی ۱۴۸۰ می‌ماند و بیرون می‌زد؛
+        // حالا در صفحهٔ کوچک ۷۶۰ است و ظرفِ بیرونی افقی اسکرول می‌خورد.
+        className="relative mx-auto w-full min-w-[760px] sm:min-w-[1480px] max-w-[1954px] aspect-[1960/1500] overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
         <svg
           viewBox="0 0 1960 1500"
