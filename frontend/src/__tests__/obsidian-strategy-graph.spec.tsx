@@ -2,17 +2,13 @@
 // اعتبارسنجی تم روشن/تاریک، چینش RTL، جریان مهندسی معکوس و پوشش کامل ۴ صفحه چارت
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { ObsidianStrategyGraph, getGraphLinks, CHART_TREE, computeTreeLayout } from '../features/master/components/ObsidianStrategyGraph';
+import { ObsidianStrategyGraph, getGraphLinks, CHART_TREE, computeTreeLayout, COLLAPSIBLE_IDS } from '../features/master/components/ObsidianStrategyGraph';
 import { useStrategyParamsStore, FTS_DEFAULT_PARAMS } from '../features/master/stores/strategyParamsStore';
 import { useUiStore } from '../shared/stores/uiStore';
 
 /** دو دستهٔ پیش‌فرض‌بسته را باز می‌کند (دابل‌کلیک رویِ گرهِ دسته). */
 function expandAll() {
-  for (const label of [/رصد جریان نقدینگی/, /مدیریت سرمایه$/]) {
-    const hits = screen.queryAllByText(label);
-    const g = hits[0]?.closest('g[transform]');
-    if (g) fireEvent.doubleClick(g);
-  }
+  fireEvent.click(screen.getByTestId('tree-expand-all'));
 }
 
 describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrategyGraph)', () => {
@@ -88,6 +84,7 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
 
   it('ویرایشگر زنده پارامترها را تغییر داده و دکمه بازنشانی به جزوه درست عمل می‌کند', () => {
     render(<ObsidianStrategyGraph selectedPreset="swing" />);
+    expandAll(); // شاخه‌ها پیش‌فرض بسته‌اند (خوانایی در ۱۳۶۶×۷۶۸)
 
     // نود پیش‌فرض tape_volume است
     expect(screen.getByText(/ضریب حجم مشکوک/i)).toBeInTheDocument();
@@ -180,6 +177,7 @@ describe('#223 — واژگانِ سه گره از خودِ جزوه', () => {
 
   it('گرهٔ خروج، «اولین سقف» را می‌گوید و درصد را از دستِ کاربر می‌گیرد', () => {
     render(<ObsidianStrategyGraph selectedPreset="trend" />);
+    expandAll(); // شاخه‌ها پیش‌فرض بسته‌اند (خوانایی در ۱۳۶۶×۷۶۸)
     expect(screen.getAllByText(/در اولین سقف/).length).toBeGreaterThan(0);
     expect(document.body.textContent ?? '').not.toMatch(/R1|ذخیره سود/);
     pickNode(/در اولین سقف/);
@@ -307,6 +305,18 @@ describe('ستون‌فقراتِ درخت از CHART_TREE', () => {
       const pairs = getGraphLinks(flow).map((l) => `${l.source}>${l.target}`);
       expect(new Set(pairs).size).toBe(pairs.length);
     }
+  });
+
+  it('در پیش‌فرضِ بسته، برچسب‌ها رویِ ۱۳۶۶×۷۶۸ رویِ هم نمی‌افتند', () => {
+    // باگِ لپ‌تاپِ مالک: با همهٔ شاخه‌ها باز، مقیاسِ بوم در آن پنجره ۰٫۴۱
+    // می‌شد و فاصلهٔ واقعیِ دو برچسب ۱۳٫۲ پیکسل — کمتر از ~۱۸ که برچسب
+    // لازم دارد. این تست همان حساب را نگه می‌دارد.
+    const c = new Set(COLLAPSIBLE_IDS.filter((i) => !i.startsWith('pillar_')));
+    const d = computeTreeLayout('fts_core', { collapsed: c });
+    const ys = Object.values(d).map((v) => v.y);
+    const h = Math.max(...ys) - Math.min(...ys);
+    const scale = Math.min(1150 / 1960, 620 / (h + 96)); // ناحیهٔ گراف در ۱۳۶۶×۷۶۸
+    expect(32 * scale).toBeGreaterThanOrEqual(18);
   });
 
   it('چیدمان در بومِ ۱۹۶۰×۱۵۰۰ جا می‌شود', () => {

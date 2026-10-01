@@ -1335,15 +1335,27 @@ export function ObsidianStrategyGraph({
   const [flowDirection, setFlowDirection] = useState<FlowDirection>('reverse');
 
   // ۴. تولید نودها و اتصالات بر اساس پارامترها و جریان جاری
-  // دسته‌هایِ بسته در نخستین نگاه.
+  // دسته‌هایِ بسته در نخستین نگاه: **همه**.
   //
-  // عمداً فقط این دو: «رصد جریان نقدینگی» و «مدیریت سرمایه» موادِ مرجع‌اند
-  // (۱۲ برگ) و در مسیرِ تصمیمِ «این نماد را بخرم یا نه» نیستند. سه رکن و
-  // شاخه‌هایِ خرید و فروش باز می‌مانند، چون آن‌ها همان چیزی‌اند که کاربر
-  // آمده ببیند. هیچ گره‌ای حذف نشده — دابل‌کلیک بازشان می‌کند و عددِ
-  // کنارِ دسته می‌گوید چند تا تا شده.
+  // عدد، نه سلیقه: بوم ۱۹۶۰×۱۵۰۰ است و در پنجرهٔ ۱۳۶۶×۷۶۸ ناحیهٔ گراف
+  // حدودِ ۱۱۵۰×۶۲۰ می‌شود، یعنی مقیاسِ ۰٫۴۱. با ۳۸ برگِ باز، فاصلهٔ
+  // عمودیِ واقعیِ دو برچسب ۱۳٫۲ پیکسل می‌شد در حالی که برچسب ~۱۸ لازم
+  // دارد — برچسب‌ها ریاضی‌وار روی هم می‌افتادند (همان چیزی که رویِ
+  // لپ‌تاپِ مالک دیده شد).
+  //
+  // سقفِ ایمن ~۳۰ برگ است: بالاتر از آن، ارتفاع قیدِ تعیین‌کننده می‌شود و
+  // مقیاس می‌افتد. با بستنِ همهٔ دسته‌ها ~۱۵ گره می‌ماند، قیدْ افقی
+  // می‌شود (۰٫۵۹) و فاصله به ~۱۹ پیکسل می‌رسد.
+  //
+  // هیچ‌چیز حذف نشده: هر دسته عددِ «+n» دارد و با دابل‌کلیک باز می‌شود،
+  // و دو کلیدِ «باز/بستنِ همه» هم بالایِ بوم است.
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
-    () => new Set(['sel_liquidity', 'money_mgmt']),
+    () => new Set(COLLAPSIBLE_IDS.filter((id) => !id.startsWith('pillar_'))),
+  );
+  const expandAllNodes = useCallback(() => setCollapsed(new Set()), []);
+  const collapseAllNodes = useCallback(
+    () => setCollapsed(new Set(COLLAPSIBLE_IDS.filter((id) => !id.startsWith('pillar_')))),
+    [],
   );
   const toggleCollapse = useCallback((id: string) => {
     setCollapsed((cur) => {
@@ -1356,6 +1368,13 @@ export function ObsidianStrategyGraph({
   const nodes = useMemo(
     () => getGraphNodes(params, flowDirection, collapsed),
     [params, flowDirection, collapsed],
+  );
+  // فهرستِ کامل، بی‌اعتنا به تاشدگی. تاکردن باید فقط *دایره* را پنهان کند،
+  // نه پنلِ جزئیات را خالی کند — وگرنه کاربری که یک دسته را می‌بندد ناگهان
+  // کارتِ گرهِ انتخاب‌شده‌اش را هم از دست می‌دهد.
+  const allNodes = useMemo(
+    () => getGraphNodes(params, flowDirection),
+    [params, flowDirection],
   );
   const links = useMemo(() => {
     const hidden = collapsed.size > 0 ? hiddenUnderCollapsed(collapsed) : null;
@@ -1471,8 +1490,10 @@ export function ObsidianStrategyGraph({
 
   // نود در حال بازرسی و ویرایش در پنل پایینی
   const inspectedNode = useMemo(() => {
-    return nodeMap.get(selectedNodeId) || nodeMap.get('tape_volume') || nodes[0];
-  }, [selectedNodeId, nodeMap, nodes]);
+    const fullMap = new Map(allNodes.map((n) => [n.id, n]));
+    return fullMap.get(selectedNodeId) || nodeMap.get(selectedNodeId)
+      || fullMap.get('tape_volume') || nodes[0];
+  }, [selectedNodeId, nodeMap, nodes, allNodes]);
 
   // کنترل حرکت بوم با ماوس (Pan) بدون لرزش
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -1547,6 +1568,40 @@ export function ObsidianStrategyGraph({
         {/* سوییچ جهت جریان: مهندسی معکوس نوسان‌گیری vs جریان مستقیم
             (سوییچرِ پیش‌فرضِ بازی در خودِ صفحه هست و این‌جا تکرار نشد) */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* باز/بستنِ همهٔ دسته‌ها — پیش‌فرض بسته است تا رویِ ۱۳۶۶×۷۶۸
+              برچسب‌ها رویِ هم نیفتند. */}
+          <div
+            className={`flex items-center rounded-xl p-0.5 border text-2xs font-bold transition-colors ${
+              isLight ? 'bg-slate-200/70 border-slate-300' : 'bg-bg-primary/80 border-border-c/70'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={expandAllNodes}
+              data-testid="tree-expand-all"
+              title="همهٔ شاخه‌ها باز شوند (رویِ نمایشگرِ کوچک شلوغ می‌شود)"
+              className={`px-2.5 py-1 rounded-lg transition-colors ${
+                collapsed.size === 0
+                  ? 'bg-accent-blue/25 text-accent-blue'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              باز کردن همه
+            </button>
+            <button
+              type="button"
+              onClick={collapseAllNodes}
+              data-testid="tree-collapse-all"
+              title="فقط ستون‌فقراتِ درخت بماند"
+              className={`px-2.5 py-1 rounded-lg transition-colors ${
+                collapsed.size > 0
+                  ? 'bg-accent-blue/25 text-accent-blue'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              جمع کردن همه
+            </button>
+          </div>
           <div
             className={`flex items-center rounded-xl p-0.5 border text-2xs font-bold transition-colors ${
               isLight ? 'bg-slate-200/70 border-slate-300' : 'bg-bg-primary/80 border-border-c/70'
