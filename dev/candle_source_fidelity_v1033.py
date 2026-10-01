@@ -172,8 +172,14 @@ def main():
        "the route counts adjustments through the tested helper")
     ck(src.count('adjustSource') >= 2 and '"base-not-anchored"' in src,
        "adjustSource reports the honest reason instead of always claiming success")
-    ck("hi, lo = max(hi, lo, o, c), min(hi, lo, o, c)" in src,
-       "the geometry repair lives inside the shared parser")
+    # Step 4: «shared parser» یعنی یکِ پیادۀ هندسه درِ کلِ برنامه — حالا
+    # candle_contract.widen. چکِ قبلی رشتهٔ `max(hi, lo, o, c)` را می‌جست؛ آن رشته
+    # به‌عمد ازِ chart.py رفت (دومین پیادۀ هم‌شکل بودنِ هندسه همان واگراییِ
+    # ۷۶ روز high / ۱۰۹ روز low درِ _audit/candle_builder_divergence.py بود).
+    ck("candle_contract.widen(" in src,
+       "the geometry repair lives in the single shared rule (candle_contract.widen)")
+    ck("max(hi, lo, o, c)" not in src,
+       "NEGATIVE CONTROL: پیادۀ دست‌دومِ هندسه درِ chart.py برنگشته", "")
 
     print("\ncandle_source_fidelity_v1033: %d passed, %d failed" % (PASS, FAIL))
     return 1 if FAIL else 0

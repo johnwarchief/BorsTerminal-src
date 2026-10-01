@@ -588,7 +588,7 @@ def create_schema(conn):
 
         CREATE TABLE IF NOT EXISTS price_history (
             symbol TEXT, date TEXT, open REAL, high REAL, low REAL,
-            close REAL, volume REAL, last REAL, value REAL,
+            close REAL, volume REAL, last REAL, value REAL, src TEXT,
             PRIMARY KEY (symbol, date));
         """
     )

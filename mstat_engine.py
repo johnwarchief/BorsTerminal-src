@@ -206,7 +206,13 @@ MIGRATIONS = {
     # (GetInstrmentsHistoryInDay) صریح NULL می‌ماند، نه عددِ پایانی با نامِ آخرین.
     # `value` = گردشِ ریالیِ همان روز (ستونِ VALUEِ CSV / qTotCapِ تابلو)؛ امروز فقط درِ
     # daily_prices.q_tot_cap بود و درِ تاریخچۀ کندل دست‌نیافتنی.
-    "price_history": [("last", "REAL"), ("value", "REAL")],
+    # `src` = کدامِ سازندۀ کندل این سطر را نوشته (`published` | `board` | `index-synthetic`).
+    # پنج نویسندۀ price_history با INSERT OR REPLACE بی‌اولویت داشتیم و هیچ تستی ترتیب را
+    # نگه نمی‌داشت؛ اندازه‌گیریِ قدمِ ۴: ۴۷۰ از ۱٬۲۷۲ ردیف (۳۷٪) open‌شان قیمتِ *پایه* است
+    # نه «اولین» — یعنی سرنوشتِ سطر به این بستگی داشت که کدام نویسندۀ آخر نوشته، و
+    # ۴ نشست از ۷۲ نشستِ مشترک snapshotِ میانۀ تابلو را رویِ ردیفِ منتشرشده نشانده بود
+    # (`_audit/candle_source_priority_probe.py`). قاعدۀ اولویت درِ candle_contract.UPSERT_SQL است.
+    "price_history": [("last", "REAL"), ("value", "REAL"), ("src", "TEXT")],
     # «آخرین» درِ ردیفِ تابلو کلیدِ خامِ خودش را دارد (pdv — سنجشِ ۶/۶ نماد درِ
     # _audit/mw_last_key_probe.py)؛ مسیرِ کندل-از-تابلو از همین خوانده وگرنه NULL.
     "daily_prices": [("p_last", "REAL")],

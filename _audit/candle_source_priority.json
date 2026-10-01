@@ -1,0 +1,111 @@
+{
+ "symbols": {
+  "فولاد": {
+   "board_vs_csv_open": 1,
+   "board_vs_csv_high": 1,
+   "board_vs_csv_low": 1,
+   "board_vs_csv_close": 1,
+   "board_vs_csv_vol": 1,
+   "board_vs_csv_last_missing": 18,
+   "phantom_days_in_db": 2,
+   "csv_days_missing_from_db": 4279,
+   "overlapped_sessions": 18,
+   "examples": [
+    {
+     "day": "2026-09-01",
+     "board_first": 2669.0,
+     "csv_FIRST": 2820.0,
+     "csv_CLOSE": 2751.0,
+     "board_close": 2669.0,
+     "in_db": 2669.0
+    }
+   ],
+   "db_rows": 374,
+   "csv_rows": 4651,
+   "board_rows": 20
+  },
+  "خگستر": {
+   "board_vs_csv_open": 1,
+   "board_vs_csv_high": 1,
+   "board_vs_csv_low": 1,
+   "board_vs_csv_close": 1,
+   "board_vs_csv_vol": 1,
+   "board_vs_csv_last_missing": 18,
+   "phantom_days_in_db": 2,
+   "csv_days_missing_from_db": 3978,
+   "overlapped_sessions": 18,
+   "examples": [
+    {
+     "day": "2026-09-01",
+     "board_first": 3900.0,
+     "csv_FIRST": 4130.0,
+     "csv_CLOSE": 4020.0,
+     "board_close": 3920.0,
+     "in_db": 3900.0
+    }
+   ],
+   "db_rows": 421,
+   "csv_rows": 4397,
+   "board_rows": 20
+  },
+  "شبندر": {
+   "board_vs_csv_open": 1,
+   "board_vs_csv_high": 1,
+   "board_vs_csv_low": 1,
+   "board_vs_csv_close": 1,
+   "board_vs_csv_vol": 1,
+   "board_vs_csv_last_missing": 18,
+   "phantom_days_in_db": 2,
+   "csv_days_missing_from_db": 3004,
+   "overlapped_sessions": 18,
+   "examples": [
+    {
+     "day": "2026-09-01",
+     "board_first": 12970.0,
+     "csv_FIRST": 13600.0,
+     "csv_CLOSE": 13370.0,
+     "board_close": 12970.0,
+     "in_db": 13360.0
+    }
+   ],
+   "db_rows": 483,
+   "csv_rows": 3485,
+   "board_rows": 20
+  },
+  "پارس": {
+   "board_vs_csv_open": 1,
+   "board_vs_csv_high": 1,
+   "board_vs_csv_low": 1,
+   "board_vs_csv_close": 1,
+   "board_vs_csv_vol": 1,
+   "board_vs_csv_last_missing": 18,
+   "phantom_days_in_db": 2,
+   "csv_days_missing_from_db": 1610,
+   "overlapped_sessions": 18,
+   "examples": [
+    {
+     "day": "2026-09-01",
+     "board_first": 2180.0,
+     "csv_FIRST": 2278.0,
+     "csv_CLOSE": 2247.0,
+     "board_close": 2183.0,
+     "in_db": 2180.0
+    }
+   ],
+   "db_rows": 372,
+   "csv_rows": 1980,
+   "board_rows": 20
+  }
+ },
+ "totals": {
+  "board_vs_csv_open": 4,
+  "board_vs_csv_high": 4,
+  "board_vs_csv_low": 4,
+  "board_vs_csv_close": 4,
+  "board_vs_csv_vol": 4,
+  "board_vs_csv_last_missing": 72,
+  "phantom_days_in_db": 8,
+  "csv_days_missing_from_db": 12871,
+  "overlapped_sessions": 72
+ }
+}

@@ -126,11 +126,12 @@ def main():
     print("\n[۳] candle_from_row")
     bar = t.candle_from_row("فولاد", 20260920, 3430.0, 3560.0, 3400.0, 3495.0, 2.5e9,
                             3520.0, 7.4e12)
-    ck(bar[5] == 3495.0 and bar[7] == 3520.0 and bar[8] == 7.4e12,
+    ck(bar["close"] == 3495.0 and bar["last"] == 3520.0 and bar["value"] == 7.4e12,
        "پایانی لنگر می‌ماند و آخرین/گردش کنارش می‌نشینند", str(bar))
     nobar = t.candle_from_row("فولاد", 20260920, 3430.0, 3560.0, 3400.0, 3495.0, 2.5e9)
-    ck(nobar[7] is None and nobar[8] is None,
-       "NEGATIVE CONTROL: بدونِ «آخرین» درِ منبع، ستون null است نه close", str(nobar[7:]))
+    ck(nobar["last"] is None and nobar["value"] is None,
+       "NEGATIVE CONTROL: بدونِ «آخرین» درِ منبع، ستون null است نه close",
+       str((nobar["last"], nobar["value"])))
 
     # ── ۴) خواننده دیگر دروغ نمی‌فروشد ───────────────────────────────────────
     print("\n[۴] /api/chart-db")

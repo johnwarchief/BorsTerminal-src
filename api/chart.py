@@ -7,6 +7,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
 from tape_flags import JET_LADDER
+import candle_contract
 import price_basis
 from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
@@ -81,7 +82,8 @@ def _parse_tsetmc_csv(text):
         # پایهٔ روزِ بعد زنجیر می‌شود (base(t+1)==close(t))، پایانی معتبر است و
         # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
         # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
-        hi, lo = max(hi, lo, o, c), min(hi, lo, o, c)
+        # تنها قاعدۀ هندسه (Step 4): سایه گِشاد می‌شود، هیچ قیمتِ منتشرشده خُرد نمی‌شود
+        hi, lo = candle_contract.widen(o, hi, lo, c)
         # v10.7.0 (کارِ #73 قدمِ ۳): «آخرین» دیگر به پایانی fallback نمی‌کند و دیگر
         # clamp نمی‌شود. دو جعلِ قبلی همان چیزی بود که قرارداد §۱-ث شرطِ ۳ بست:
         #   (الف) `last = c` وقتی ستون خالی است ⇒ مصرف‌کننده عددِ پایانی را با نامِ
@@ -192,8 +194,7 @@ def _watch_live_bar(symbol, after_date):
         return None, None
     # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
     o_l = p_first if p_first > 0 else p_close
-    h_l = max(p_max if p_max > 0 else o_l, o_l, p_close)
-    l_l = min(p_min if p_min > 0 else o_l, o_l, p_close)
+    h_l, l_l = candle_contract.widen(o_l, p_max, p_min, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
              "close": p_close, "volume": vol,
              # «آخرین معامله» زنده از market_watch.p_last؛ بی‌fallback به پایانی

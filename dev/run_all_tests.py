@@ -152,6 +152,10 @@ SUITES = [
     # دانلودِ کاملِ هر اجرا و نه بازنویسیِ ردیفِ موجود. بی‌شبکه: CDN فیکسچر است.
     ('dev/history_depth_v1070.py',
                                      'no history pruning, incremental sync, idempotent second run'),
+    # Step 4: هشت سازندۀ کندل یک قرارداد دارند — یک هندسه (widen)، یک مالکیتِ سطر
+    # (published > board)، یک شکلِ خروجی. واگراییِ پیش از این اندازه گرفته شد.
+    ('dev/candle_contract_v1071.py',
+                                     'one candle contract: shared geometry, writer priority, same numbers from every source'),
     # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
     # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
     # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.

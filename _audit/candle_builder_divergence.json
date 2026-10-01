@@ -1,0 +1,726 @@
+{
+ "since": "2026-06-01",
+ "symbols": {
+  "فولاد": {
+   "A_ram": 4236,
+   "B_CSV_to_db": null,
+   "C_board_to_db": null,
+   "B_rows_written": 38,
+   "C_board_rows": 42401,
+   "D_db_after_B_and_C": 40,
+   "D_chartdb": 383,
+   "G_ma": 379,
+   "E_keylevels_n": 6,
+   "F_patterns_n": 9,
+   "H_confidence": 250,
+   "I_screener": 383
+  },
+  "خگستر": {
+   "A_ram": 3867,
+   "B_CSV_to_db": null,
+   "C_board_to_db": null,
+   "B_rows_written": 77,
+   "C_board_rows": 42401,
+   "D_db_after_B_and_C": 79,
+   "D_chartdb": 427,
+   "G_ma": 423,
+   "E_keylevels_n": 6,
+   "F_patterns_n": 9,
+   "H_confidence": 250,
+   "I_screener": 427
+  },
+  "شبندر": {
+   "A_ram": 2803,
+   "B_CSV_to_db": null,
+   "C_board_to_db": null,
+   "B_rows_written": 79,
+   "C_board_rows": 42401,
+   "D_db_after_B_and_C": 83,
+   "D_chartdb": 483,
+   "G_ma": 479,
+   "E_keylevels_n": 0,
+   "F_patterns_n": 0,
+   "H_confidence": 250,
+   "I_screener": 391
+  }
+ },
+ "pairs": [
+  {
+   "pair": "A_ram ⇄ D_chartdb",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 381,
+   "only_in_a": 3855,
+   "only_in_b": 2,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 343,
+    "volume": 381
+   },
+   "examples": [
+    {
+     "day": "2024-08-24",
+     "field": "last",
+     "A_ram": 4432.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-08-26",
+     "field": "last",
+     "A_ram": 4419.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-08-24",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 104951259.0
+    },
+    {
+     "day": "2024-08-26",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 145344773.0
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 2,
+   "symbol": "فولاد"
+  },
+  {
+   "pair": "D_chartdb ⇄ I_screener",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 383,
+   "only_in_a": 0,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 0,
+    "volume": 383
+   },
+   "examples": [
+    {
+     "day": "2024-08-24",
+     "field": "volume",
+     "D_chartdb": 104951259.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-08-26",
+     "field": "volume",
+     "D_chartdb": 145344773.0,
+     "I_screener": null
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "فولاد"
+  },
+  {
+   "pair": "D_chartdb ⇄ H_confidence",
+   "fields_compared": [
+    "close"
+   ],
+   "shared_days": 250,
+   "only_in_a": 133,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "close": 0
+   },
+   "examples": [],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "فولاد"
+  },
+  {
+   "pair": "A_ram ⇄ B+C_db",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 38,
+   "only_in_a": 4198,
+   "only_in_b": 2,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 38,
+    "volume": 38
+   },
+   "examples": [
+    {
+     "day": "2026-08-08",
+     "field": "last",
+     "A_ram": 2360.0,
+     "B+C_db": 8751481850.0
+    },
+    {
+     "day": "2026-08-09",
+     "field": "last",
+     "A_ram": 2291.0,
+     "B+C_db": 12950170918.0
+    },
+    {
+     "day": "2026-08-08",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 2360.0
+    },
+    {
+     "day": "2026-08-09",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 2291.0
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 2,
+   "symbol": "فولاد"
+  },
+  {
+   "pair": "A_ram ⇄ D_chartdb",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 425,
+   "only_in_a": 3442,
+   "only_in_b": 2,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 348,
+    "volume": 425
+   },
+   "examples": [
+    {
+     "day": "2024-08-31",
+     "field": "last",
+     "A_ram": 3014.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-09-01",
+     "field": "last",
+     "A_ram": 3055.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-08-31",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 11010053.0
+    },
+    {
+     "day": "2024-09-01",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 124974961.0
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 2,
+   "symbol": "خگستر"
+  },
+  {
+   "pair": "D_chartdb ⇄ I_screener",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 427,
+   "only_in_a": 0,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 0,
+    "volume": 427
+   },
+   "examples": [
+    {
+     "day": "2024-08-31",
+     "field": "volume",
+     "D_chartdb": 11010053.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-09-01",
+     "field": "volume",
+     "D_chartdb": 124974961.0,
+     "I_screener": null
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "خگستر"
+  },
+  {
+   "pair": "D_chartdb ⇄ H_confidence",
+   "fields_compared": [
+    "close"
+   ],
+   "shared_days": 250,
+   "only_in_a": 177,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "close": 0
+   },
+   "examples": [],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "خگستر"
+  },
+  {
+   "pair": "A_ram ⇄ B+C_db",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 77,
+   "only_in_a": 3790,
+   "only_in_b": 2,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 77,
+    "volume": 77
+   },
+   "examples": [
+    {
+     "day": "2026-06-01",
+     "field": "last",
+     "A_ram": 2785.0,
+     "B+C_db": 504923900.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "last",
+     "A_ram": 2810.0,
+     "B+C_db": 437977903.0
+    },
+    {
+     "day": "2026-06-01",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 2785.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 2810.0
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 2,
+   "symbol": "خگستر"
+  },
+  {
+   "pair": "A_ram ⇄ D_chartdb",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 389,
+   "only_in_a": 2414,
+   "only_in_b": 94,
+   "field_mismatch": {
+    "open": 301,
+    "high": 73,
+    "low": 106,
+    "close": 0,
+    "last": 310,
+    "volume": 389
+   },
+   "examples": [
+    {
+     "day": "2024-10-01",
+     "field": "open",
+     "A_ram": 7870.0,
+     "D_chartdb": 7940.0
+    },
+    {
+     "day": "2024-10-02",
+     "field": "open",
+     "A_ram": 7850.0,
+     "D_chartdb": 7920.0
+    },
+    {
+     "day": "2024-10-01",
+     "field": "high",
+     "A_ram": 7920.0,
+     "D_chartdb": 7940.0
+    },
+    {
+     "day": "2024-10-02",
+     "field": "high",
+     "A_ram": 7890.0,
+     "D_chartdb": 7920.0
+    },
+    {
+     "day": "2024-10-27",
+     "field": "low",
+     "A_ram": 7000.0,
+     "D_chartdb": 6800.0
+    },
+    {
+     "day": "2024-11-09",
+     "field": "low",
+     "A_ram": 6310.0,
+     "D_chartdb": 6240.0
+    },
+    {
+     "day": "2024-10-01",
+     "field": "last",
+     "A_ram": 7870.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-10-02",
+     "field": "last",
+     "A_ram": 7850.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-10-01",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 5138088.0
+    },
+    {
+     "day": "2024-10-02",
+     "field": "volume",
+     "A_ram": null,
+     "D_chartdb": 6641120.0
+    }
+   ],
+   "class_geometry": 4,
+   "class_field_mapping": 4,
+   "symbol": "شبندر"
+  },
+  {
+   "pair": "D_chartdb ⇄ I_screener",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 391,
+   "only_in_a": 92,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 0,
+    "volume": 391
+   },
+   "examples": [
+    {
+     "day": "2024-10-01",
+     "field": "volume",
+     "D_chartdb": 5138088.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-10-02",
+     "field": "volume",
+     "D_chartdb": 6641120.0,
+     "I_screener": null
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "شبندر"
+  },
+  {
+   "pair": "D_chartdb ⇄ H_confidence",
+   "fields_compared": [
+    "close"
+   ],
+   "shared_days": 250,
+   "only_in_a": 233,
+   "only_in_b": 0,
+   "field_mismatch": {
+    "close": 0
+   },
+   "examples": [],
+   "class_geometry": 0,
+   "class_field_mapping": 0,
+   "symbol": "شبندر"
+  },
+  {
+   "pair": "A_ram ⇄ B+C_db",
+   "fields_compared": [
+    "open",
+    "high",
+    "low",
+    "close",
+    "last",
+    "volume"
+   ],
+   "shared_days": 79,
+   "only_in_a": 2724,
+   "only_in_b": 4,
+   "field_mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 79,
+    "volume": 79
+   },
+   "examples": [
+    {
+     "day": "2026-06-01",
+     "field": "last",
+     "A_ram": 8430.0,
+     "B+C_db": 261992037.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "last",
+     "A_ram": 8680.0,
+     "B+C_db": 285918107.0
+    },
+    {
+     "day": "2026-06-01",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 8430.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "volume",
+     "A_ram": null,
+     "B+C_db": 8680.0
+    }
+   ],
+   "class_geometry": 0,
+   "class_field_mapping": 2,
+   "symbol": "شبندر"
+  }
+ ],
+ "notes": [],
+ "aggregate": {
+  "A_ram ⇄ D_chartdb": {
+   "shared": 1195,
+   "mismatch": {
+    "open": 301,
+    "high": 73,
+    "low": 106,
+    "close": 0,
+    "last": 1001,
+    "volume": 1195
+   },
+   "only_left": 9711,
+   "only_right": 98,
+   "worst": [
+    {
+     "day": "2024-08-24",
+     "field": "last",
+     "A_ram": 4432.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-08-26",
+     "field": "last",
+     "A_ram": 4419.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-08-31",
+     "field": "last",
+     "A_ram": 3014.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-09-01",
+     "field": "last",
+     "A_ram": 3055.0,
+     "D_chartdb": null
+    },
+    {
+     "day": "2024-10-01",
+     "field": "open",
+     "A_ram": 7870.0,
+     "D_chartdb": 7940.0
+    },
+    {
+     "day": "2024-10-02",
+     "field": "open",
+     "A_ram": 7850.0,
+     "D_chartdb": 7920.0
+    }
+   ]
+  },
+  "D_chartdb ⇄ I_screener": {
+   "shared": 1201,
+   "mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 0,
+    "volume": 1201
+   },
+   "only_left": 92,
+   "only_right": 0,
+   "worst": [
+    {
+     "day": "2024-08-24",
+     "field": "volume",
+     "D_chartdb": 104951259.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-08-26",
+     "field": "volume",
+     "D_chartdb": 145344773.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-08-31",
+     "field": "volume",
+     "D_chartdb": 11010053.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-09-01",
+     "field": "volume",
+     "D_chartdb": 124974961.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-10-01",
+     "field": "volume",
+     "D_chartdb": 5138088.0,
+     "I_screener": null
+    },
+    {
+     "day": "2024-10-02",
+     "field": "volume",
+     "D_chartdb": 6641120.0,
+     "I_screener": null
+    }
+   ]
+  },
+  "D_chartdb ⇄ H_confidence": {
+   "shared": 750,
+   "mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 0,
+    "volume": 0
+   },
+   "only_left": 543,
+   "only_right": 0,
+   "worst": []
+  },
+  "A_ram ⇄ B+C_db": {
+   "shared": 194,
+   "mismatch": {
+    "open": 0,
+    "high": 0,
+    "low": 0,
+    "close": 0,
+    "last": 194,
+    "volume": 194
+   },
+   "only_left": 10712,
+   "only_right": 8,
+   "worst": [
+    {
+     "day": "2026-08-08",
+     "field": "last",
+     "A_ram": 2360.0,
+     "B+C_db": 8751481850.0
+    },
+    {
+     "day": "2026-08-09",
+     "field": "last",
+     "A_ram": 2291.0,
+     "B+C_db": 12950170918.0
+    },
+    {
+     "day": "2026-06-01",
+     "field": "last",
+     "A_ram": 2785.0,
+     "B+C_db": 504923900.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "last",
+     "A_ram": 2810.0,
+     "B+C_db": 437977903.0
+    },
+    {
+     "day": "2026-06-01",
+     "field": "last",
+     "A_ram": 8430.0,
+     "B+C_db": 261992037.0
+    },
+    {
+     "day": "2026-06-02",
+     "field": "last",
+     "A_ram": 8680.0,
+     "B+C_db": 285918107.0
+    }
+   ]
+  }
+ }
+}

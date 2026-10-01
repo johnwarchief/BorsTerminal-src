@@ -27,6 +27,10 @@ import time
 import requests
 
 sys.stdout.reconfigure(encoding="utf-8")
+# ابزار درِ tools/ است؛ ریشۀ ریپو را به path اضافه می‌کنیم تا همان قراردادِ واحدِ
+# سازنده‌هایِ کندل (candle_contract) خوانده شود — نه یک نگاشتِ دومِ OHLC.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import candle_contract  # noqa: E402
 
 BASE = "https://cdn.tsetmc.com/api"
 HEADERS = {
@@ -108,24 +112,22 @@ def main():
             sym = ins_map.get(str(x.get("insCode"))) or x.get("lVal18AFC")
             if not sym:
                 continue
-            try:
-                op = float(x.get("priceFirst") or 0)
-                hi = float(x.get("priceMax") or 0)
-                lo = float(x.get("priceMin") or 0)
-                cl = float(x.get("pClosing") or 0)
-                vol = float(x.get("qTotTran5J") or 0)
-                val = float(x.get("qTotCap") or 0) or None
-            except (TypeError, ValueError):
+            bar = candle_contract.candle(sym, date,
+                                         x.get("priceFirst"), x.get("priceMax"),
+                                         x.get("priceMin"), x.get("pClosing"),
+                                         x.get("qTotTran5J"), None,
+                                         float(x.get("qTotCap") or 0) or None,
+                                         candle_contract.SRC_PUBLISHED)
+            if not bar:
                 continue
             # این endpoint هیچ کلیدِ «آخرین قیمت» ندارد (همۀ کلیدهایِ یکِ ردیفِ واقعی
             # درِ ۱۴۰۵-۰۷-۱۰ فهرست شد: priceMin/Max/Yesterday/First/Change، pClosing،
             # pDrCotVal، zTotTran، qTotTran5J/qTotCap) — پس last عمداً NULL می‌ماند؛
             # numberِ پایانی را با نامِ «آخرین» نوشتن ممنوع است (§۱-ث شرطِ ۳).
-            batch.append((sym, date, op, hi, lo, cl, vol, None, val))
+            # این endpoint هیچ کلیدِ «آخرین» ندارد ⇒ last عمداً None (§۱-ث شرطِ ۳).
+            batch.append(candle_contract.upsert_row(bar))
         if not args.dry:
-            conn.executemany("INSERT OR REPLACE INTO price_history "
-                             "(symbol, date, open, high, low, close, volume, last, value) "
-                             "VALUES (?,?,?,?,?,?,?,?,?)", batch)
+            conn.executemany(candle_contract.UPSERT_SQL, batch)
             conn.commit()
         written += len(batch)
         print(f"  {d:%Y-%m-%d}: {len(batch)} ردیف (نشستِ {days_done}/{args.sessions})")

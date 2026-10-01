@@ -193,7 +193,7 @@ def main():
     os.close(fd)
     conn = sqlite3.connect(dbp)
     conn.execute("CREATE TABLE price_history (symbol TEXT, date TEXT, open REAL, high REAL,"
-                 " low REAL, close REAL, volume REAL, last REAL, value REAL,"
+                 " low REAL, close REAL, volume REAL, last REAL, value REAL, src TEXT,"
                  " PRIMARY KEY (symbol, date))")
     conn.execute("CREATE TABLE instruments (ins_code TEXT, l_val18 TEXT, l_val30 TEXT)")
     conn.execute("CREATE TABLE market_watch (ins_code TEXT, d_even INTEGER, price_first REAL,"
@@ -201,7 +201,8 @@ def main():
     rows = [("فولاد", d, 1000.0 + i * 10, 1060.0 + i * 10, 980.0 + i * 10, 1040.0 + i * 10,
              1e9, 1035.0 + i * 10, 5e12) for i, d in
             enumerate(["2024-01-0%d" % (i + 1) for i in range(9)])]
-    conn.executemany("INSERT INTO price_history VALUES (?,?,?,?,?,?,?,?,?)", rows)
+    conn.executemany("INSERT INTO price_history (symbol, date, open, high, low, close,"
+                     " volume, last, value) VALUES (?,?,?,?,?,?,?,?,?)", rows)
     conn.execute("INSERT INTO instruments VALUES ('X','فولاد','فولاد')")
     conn.commit(); conn.close()
     import test_tsetmc

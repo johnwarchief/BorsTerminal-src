@@ -76,7 +76,7 @@ def mini():
               " price_min REAL, price_max REAL, price_first REAL, q_tot_tran REAL,"
               " q_tot_cap REAL, p_last REAL)")
     c.execute("CREATE TABLE price_history (symbol TEXT, date TEXT, open REAL, high REAL,"
-              " low REAL, close REAL, volume REAL, last REAL, value REAL,"
+              " low REAL, close REAL, volume REAL, last REAL, value REAL, src TEXT,"
               " PRIMARY KEY (symbol, date))")
     return c
 
@@ -118,13 +118,18 @@ def main():
        "a missing d_even is no date")
 
     bar = t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9)
-    ck(bar == ("فولاد", "2026-09-29", 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9, None, None),
+    ck(bar and (bar["symbol"], bar["time"], bar["open"], bar["high"], bar["low"],
+                bar["close"], bar["volume"]) == ("فولاد", "2026-09-29", 3520.0, 3520.0,
+                                                3450.0, 3520.0, 2.49e9),
        "a traded session becomes a candle of the board's own OHLC", str(bar))
-    ck(bar[7] is None and bar[8] is None,
-       "NEGATIVE CONTROL: no last/value in the source row means NULL, never the close", str(bar[7:]))
+    ck(bar["last"] is None and bar["value"] is None,
+       "NEGATIVE CONTROL: no last/value in the source row means NULL, never the close",
+       str((bar["last"], bar["value"])))
+    ck(bar["src"] == "board",
+       "سطرِ تابلو منبعش را `board` ثبت می‌کند (مالکیتِ نوشتن معلوم است)", str(bar["src"]))
     bl = t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9,
                            3510.0, 8.7e12)
-    ck(bl[5] == 3520.0 and bl[7] == 3510.0 and bl[8] == 8.7e12,
+    ck(bl["close"] == 3520.0 and bl["last"] == 3510.0 and bl["value"] == 8.7e12,
        "closing stays the anchor while last/value ride beside it", str(bl))
     ck(t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 0.0) is None,
        "NEGATIVE CONTROL: pre-open row with zero volume never becomes a candle")
@@ -133,10 +138,11 @@ def main():
     ck(t.candle_from_row("", 20260929, 1.0, 2.0, 0.5, 1.5, 10.0) is None,
        "an instrument without a symbol string is skipped")
     bad = t.candle_from_row("شپنا", 20260929, 1900.0, 1893.0, 1893.0, 1901.0, 10.0)
-    ck(bad and bad[3] == 1901.0 and bad[4] == 1893.0,
+    ck(bad and bad["high"] == 1901.0 and bad["low"] == 1893.0,
        "the shadow widens instead of moving the close", str(bad))
-    ck(all(x[3] >= x[4] and x[3] >= max(x[2], x[5]) and x[4] <= min(x[2], x[5])
-           for x in [bar, bad]), "every produced candle is geometrically possible")
+    ck(all(x["high"] >= x["low"] and x["high"] >= max(x["open"], x["close"])
+           and x["low"] <= min(x["open"], x["close"]) for x in [bar, bad]),
+       "every produced candle is geometrically possible")
 
     # ── ۲) ساختنِ جدولِ کندل از تابلو ───────────────────────────────────────
     print("\n[۲] ساختنِ price_history از daily_prices")

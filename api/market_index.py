@@ -17,6 +17,7 @@ from fastapi import APIRouter
 from fastapi import Query
 from fastapi.responses import JSONResponse
 import datetime
+import candle_contract
 import price_basis
 import time
 
@@ -148,10 +149,11 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
             h = c
         if l > c:
             l = c
-        # شاخص «تیک بازگشایی» واقعی ندارد؛ open = close روز قبل است و مثل خود chart.py
-        # داخل [low, high] همان روز clamp می‌شود تا کندل منسجم بماند (گپ‌ها حفظ می‌شوند).
+        # شاخص «تیک بازگشایی» واقعی ندارد؛ open = close روز قبل است. Step 4: اینجا
+        # `clamp` نبود که قیمتِ منتخب را جابه‌جا کند — همان `widen` مشترک، سایه را
+        # باز می‌کند تا کندل ممکن بماند و openِ شاخص دست‌کم‌تر/بیشتر از روز نشود.
         o = prev_close if (prev_close and prev_close > 0) else c
-        o = min(max(o, l), h)
+        h, l = candle_contract.widen(o, h, l, c)
         candles.append({
             "time": r["time"],
             "open": round(o, 2),

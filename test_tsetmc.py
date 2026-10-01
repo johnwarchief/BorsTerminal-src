@@ -12,6 +12,7 @@ import sqlite3
 import datetime
 import json
 
+import candle_contract
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -938,7 +939,9 @@ def create_schema(conn):
             close REAL, volume REAL,
             -- close = «قیمت پایانی» (لنگرِ تعدیل)؛ last = «آخرین قیمت» (مبنایِ نمایش/محاسبه)
             -- value = گردشِ ریالیِ همان روز. هر دو nullable — ببینید mstat_engine.MIGRATIONS
-            last REAL, value REAL, PRIMARY KEY (symbol, date));
+            -- src = سازندۀ سطر (published | board | index-synthetic)؛ مالکیتِ نوشتن با
+            -- همین ستون تعیین می‌شود (candle_contract.UPSERT_SQL).
+            last REAL, value REAL, src TEXT, PRIMARY KEY (symbol, date));
         CREATE INDEX IF NOT EXISTS ix_daily_ins ON daily_prices(ins_code);
         -- پنج خطِ عمق، از blDsِ همان نشست. sathهای تابلو جمع و خطِ اول را در
         -- market_watch نگه می‌دارند؛ این جدولِ جدا تک‌تکِ سطرها را برایِ پنلِ
@@ -1015,36 +1018,19 @@ def _iso_from_deven(d_even):
 def candle_from_row(l_val18, d_even, first, high, low, close, vol, last=None, value=None):
     """یک ردیفِ تابلو → کندلِ price_history، یا None.
 
-    همان دو قاعده‌ای که مسیرِ CDN رعایت می‌کند، اینجا رویِ دادهٔ خودِ برنامه:
-    بدنه از «اولین معامله» است (نه قیمتِ پایه) و اگر high/low بیرونِ بدنه بودند
-    سایه گِشاد می‌شود، نه پایانی خُرد. ردیفِ بی‌معامله (حجمِ صفر) کندل نمی‌شود —
-    پیش از بازگشایی تابلو ردیفِ امروز را با قیمتِ پایه و حجمِ صفر می‌فرستد.
+    از Step 4 این دیگر سازندۀ *دوم* نیست: همان `candle_contract.candle` صدا زده می‌شود
+    (هندسه از `widen`، بدنه از «اولین»، پایانی خُرد نمی‌شود، روزِ بی‌معامله کندل نمی‌شود)
+    و `src="board"` رویِ سطر می‌خورد تا مالکیتِ نوشتن معلوم باشد — پیش از این این
+    مسیر با `INSERT OR REPLACE` بی‌اولویت، ردیفِ **منتشرشدهٔ** CSV را هم له می‌کرد
+    (سنجیده: ۴ نشست از ۷۲ نشستِ مشترک، همه رویِ ۲۰۲۶-۰۹-۰۱؛
+    `_audit/candle_source_priority_probe.py`).
 
     `close` = «قیمت پایانی» و `last` = «آخرین قیمت»؛ این دو هرگز قاطی نمی‌شوند
     (docs/CANDLE-CONTRACT.md §۱-ث). اگر ردیفی «آخرین» نداشت، `last` صریح None
-    می‌ماند نه close — جعلِ عددِ پایانی با نامِ آخرین درِ `/api/chart-db` دقیقاً همان
-    چیزی بود که این قرارداد بست.
+    می‌ماند نه close.
     """
-    if not l_val18:
-        return None
-    date = _iso_from_deven(d_even)
-    if not date:
-        return None
-    try:
-        c = float(close or 0)
-        o = float(first or 0) or c
-        h = float(high or 0)
-        l = float(low or 0)
-        v = float(vol or 0)
-        ls = float(last) if last else None
-        vl = float(value) if value else None
-    except (TypeError, ValueError):
-        return None
-    if c <= 0 or v <= 0:
-        return None
-    h = max(h, o, c)
-    l = min(l if l > 0 else o, o, c)
-    return (str(l_val18), date, o, h, l, c, v, ls, vl)
+    return candle_contract.from_board_row(l_val18, d_even, first, high, low,
+                                          close, vol, last, value)
 
 
 def sync_price_history_from_daily(conn, full=False):
@@ -1101,20 +1087,26 @@ def sync_price_history_from_daily(conn, full=False):
             bar = candle_from_row(*r)
             if not bar:
                 continue
-            key = (bar[0], bar[1])
+            key = (bar["symbol"], bar["time"])
             if key in seen:          # دو ins_code با یک نماد: آخرینِ فهرست می‌ماند
                 continue
             seen.add(key)
-            out.append(bar)
+            out.append(candle_contract.upsert_row(bar))
+        written = 0
         if out:
-            conn.executemany("INSERT OR REPLACE INTO price_history "
-                             "(symbol, date, open, high, low, close, volume, last, value) "
-                             "VALUES (?,?,?,?,?,?,?,?,?)", out)
+            # upsert با قیدِ اولویت: اگر سطر از پیش `published` باشد، این نوشتن
+            # انجام نمی‌شود — پس شمارِ «noop» را هم نگه می‌داریم تا گزارشِ
+            # [candles-from-board] ادعایِ بی‌اساس نکند.
+            before = conn.execute("SELECT COUNT(*) FROM price_history").fetchone()[0]
+            conn.executemany(candle_contract.UPSERT_SQL, out)
             conn.commit()
+            after = conn.execute("SELECT COUNT(*) FROM price_history").fetchone()[0]
+            written = after - before
         n_syms = len({x[0] for x in out})
         print(f"  [candles-from-board] {mode}: {len(out)} کندل از {len(want)} نشست "
-              f"برایِ {n_syms:,} نماد".replace(",", "٬"))
-        return {"sessions": len(want), "rows": len(out), "mode": mode}
+              f"برایِ {n_syms:,} نماد (نوشتۀ تازه/بازنشانی‌شده: {written})".replace(",", "٬"))
+        return {"sessions": len(want), "rows": len(out), "mode": mode,
+                "skipped_published": len(out) - written}
     except Exception as e:      # noqa: BLE001 — کندل هرگز نباید همگام‌سازی را بشکند
         print(f"  [candles-from-board] خطا: {type(e).__name__}: {e}")
         return {"sessions": 0, "rows": 0, "mode": "error", "error": str(e)}
@@ -1142,9 +1134,11 @@ def normalize_price_history_geometry(conn):
             return 0
         upd = []
         for rid, o, h, l, c in bad:
-            hi = max(float(h or 0), float(o), float(c))
-            lo_c = float(l or 0)
-            lo = min(x for x in (lo_c if lo_c > 0 else None, float(o), float(c)) if x is not None)
+            # تنها قاعدۀ هندسه: candle_contract.widen — پیش از این این سطر چهارمین
+            # پیادۀ «نزدیک‌به‌همان» بود (max/minِ دستی)، و همان تفاوت‌هایِ ریزِ
+            # high/low را تولید می‌کرد که درِ `_audit/candle_builder_divergence.py`
+            # شمرده شد (۷۶ روز high، ۱۰۹ روز low واگرایی رویِ ۱٬۱۹۵ روزِ مشترک).
+            hi, lo = candle_contract.widen(float(o), h, l, float(c))
             upd.append((hi, lo, rid))
         conn.executemany("UPDATE price_history SET high = ?, low = ? WHERE rowid = ?", upd)
         conn.commit()
@@ -1229,30 +1223,17 @@ def fetch_price_history(symbol, s=None, since=None, backfill=False):
         reader = _csv.reader(_io.StringIO(r.text))
         next(reader, None)   # header
         for fields in reader:
-            if len(fields) < 12:
+            # تنها نقطۀ ساختِ کندل از ردیفِ CSV: `candle_contract.from_csv_row`
+            # (open=FIRST، close=CLOSE، last=LAST، value=VALUE، هندسه از widen).
+            # فیلترِ زمانی فقط «پیشِ پنجرۀ خواستۀ ما» را رد می‌کند؛ دیگر کفِ ۷۳۰روزه
+            # و دیگر حذفی در کار نیست.
+            dt = candle_contract.iso_from_csv(fields)
+            if not dt or dt.replace("-", "") < from_:
                 continue
-            d_even = fields[1].strip()          # DTYYYYMMDD
-            if len(d_even) != 8 or not d_even.isdigit():
+            bar = candle_contract.from_csv_row(symbol, fields)
+            if not bar:
                 continue
-            dt = f"{d_even[:4]}-{d_even[4:6]}-{d_even[6:]}"
-            # فیلترِ زمانی فقط «پیشِ پنجرۀ خواستۀ ما» را رد می‌کند (ردیفِ بیرونی از
-            # خودِ CDN)، دیگر کفِ ۷۳۰روزه و دیگر حذفی در کار نیست.
-            if dt.replace("-", "") < from_:
-                continue
-            try:
-                o = float(fields[2])    # FIRST — اولینِ معامله (قرارداد §۱-ج الف: سنجیده
-                h = float(fields[3])    # HIGH   شد که openِ رهاورد FIRST است، ۱۴٬۲۱۰/۱۴٬۷۰۶؛
-                l = float(fields[4])    # LOW    fields[10] (=OPEN) قیمتِ *پایه* است نه اولین)
-                c = float(fields[5])    # CLOSE — «قیمت پایانی»؛ لنگرِ زنجیرِ تعدیل
-                val = float(fields[6])  # VALUE — گردشِ ریالی
-                v = float(fields[7])    # VOL
-                last = float(fields[11])  # LAST — «آخرین قیمت»؛ مبنایِ نمایشِ انتخابی
-            except (ValueError, IndexError):
-                continue
-            conn.execute("INSERT OR REPLACE INTO price_history "
-                         "(symbol, date, open, high, low, close, volume, last, value) "
-                         "VALUES (?,?,?,?,?,?,?,?,?)",
-                         (symbol, dt, o, h, l, c, v, last, val))
+            conn.execute(candle_contract.UPSERT_SQL, candle_contract.upsert_row(bar))
             rows += 1
         conn.commit()
         print(f"  [history] {symbol}: {rows} OHLCV rows saved")
