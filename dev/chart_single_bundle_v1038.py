@@ -150,13 +150,21 @@ def main():
     ck(not unknown, "every chart method the live code calls exists on the npm Chart class",
        str(sorted(unknown)))
 
-    # ── ۴) رجیستری: موتورِ تولیدی یکی است، دومی فقط لاب ──────────────────
+    # ── ۴) رجیستری: پیش‌فرض KLineCharts می‌ماند و هیچ موتوری ایستا وارد نمی‌شود ─
+    # تا v1.0.65 این شاخه «دقیقاً یک موتورِ production» را می‌سنجید، چون FFC فقط
+    # در لاب بود. مالک خواست FFC «به‌عنوان یک موتورِ دیگر» در تب تکنیکال باشد، پس
+    # دوتا production شد؛ چیزی که واقعاً باید ثابت بماند همین دو است:
+    #   · DEFAULT_ENGINE still klinecharts (هیچ انتخابِ پیش‌فرضی جابه‌جا نشود)
+    #   · هر دو create پویا باشند (importِ ایستا یعنی نشتِ باندلِ یک موتور به
+    #     چانکِ دیگری — همان باگِ دو-باندلیِ ۱٫۰٫۳۷ در لباسِ تازه)
     reg = os.path.join(FE, "src", "features", "technical", "engine", "registry.ts")
     if os.path.isfile(reg):
         body = read(reg)
         prod = re.findall(r"production:\s*(true|false)", body)
-        ck(prod.count("true") == 1,
-           "exactly one production engine in the registry", str(prod))
+        ck(prod.count("true") >= 1, "the registry has at least one production engine", str(prod))
+        ck("import { KLineChartsEngine }" not in body and "import { FastFinancialChartsEngine }" not in body,
+           "no engine is imported statically into the registry", "static import")
+        ck(body.count("await import(") >= 2, "both engines load lazily", str(body.count("await import(")))
         ck("DEFAULT_ENGINE: ChartEngineId = 'klinecharts'" in body,
            "the default engine is KLineCharts")
         ck("id: '%s'" % LAB_ONLY_ENGINE in body,
