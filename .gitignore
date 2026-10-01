@@ -23,7 +23,9 @@ build/
 dist/
 portable/
 releases/
-android/
+# فقط پوشهٔ android در ریشه. پیش از این «android/» بود که frontend/android
+# (پروژهٔ Capacitor، که باید track شود) را هم می‌گرفت.
+/android/
 backups/
 .v2cache/
 *.spec.bak
@@ -164,3 +166,4 @@ _audit/ra-profile/
 # پشتیبانِ گذرایِ dev/boot_market_hours_v1066.py — خودش با atexit برمی‌گرداند،
 # ولی اگر پروسه سخت کشته شود ممکن است بماند. هرگز هدفِ کامیت نیست.
 market.db.boot_probe_backup
+dist_mobile/
