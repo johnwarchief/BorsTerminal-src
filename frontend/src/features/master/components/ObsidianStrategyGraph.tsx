@@ -881,9 +881,29 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection,
   const all = [...base, ...categoryNodes(isReverse)];
   const layout = computeTreeLayout('fts_core', { collapsed });
   const hidden = collapsed && collapsed.size > 0 ? hiddenUnderCollapsed(collapsed) : null;
+
+  // ── نردبانِ امتیازِ بنیادی ───────────────────────────────────────────
+  // چهار سطلِ نمره شاخهٔ چارت نیستند، پس شیارِ درخت نمی‌گیرند. به‌جایش
+  // یک ستونِ فشرده‌ی چسبیده به رکنِ F می‌شوند — همان اطلاعات، یک‌پنجم
+  // فضا، و چشم فوراً می‌فهمد که این‌ها «درجه»اند نه «مرحله».
+  const LADDER = ['fund_super', 'fund_good', 'fund_medium', 'fund_weak'];
+  const anchor = layout.pillar_f;
+  const ladderPos: Record<string, { x: number; y: number }> = {};
+  if (anchor) {
+    LADDER.forEach((id, i) => {
+      ladderPos[id] = { x: anchor.x + 96, y: anchor.y - 33 + i * 22 };
+    });
+  }
+
   return all
     .filter((n) => !hidden?.has(n.id))
-    .map((n) => (layout[n.id] ? { ...n, x: layout[n.id].x, y: layout[n.id].y } : n));
+    .map((n) => {
+      if (ladderPos[n.id]) {
+        // شعاعِ کوچک‌تر: این‌ها برچسبِ درجه‌اند، نه گرهِ متد.
+        return { ...n, x: ladderPos[n.id].x, y: ladderPos[n.id].y, radius: 11 };
+      }
+      return layout[n.id] ? { ...n, x: layout[n.id].x, y: layout[n.id].y } : n;
+    });
 }
 
 /** گره‌هایِ دسته — ستون‌فقراتِ درخت. تا ۱٫۰٫۶۶ هیچ‌کدام وجود نداشتند و
@@ -976,8 +996,12 @@ export const CHART_TREE: Record<string, string[]> = {
   fts_core: ['pillar_s', 'pillar_t', 'pillar_f', 'money_mgmt', 'strategy_group', 'portfolio_principles'],
 
   // ── صفحهٔ ۱ — F: بنیادی ──
+  // فقط پنج شاخصِ خودِ چارت ص۱. چهار سطلِ نمره (سوپربنیادی/مطلوب/متوسط/رد)
+  // عمداً اینجا نیستند: آن‌ها داوریِ خودِ برنامه‌اند نه شاخهٔ متد، و چهار
+  // شیارِ عمودی می‌گرفتند. حذف هم نشدند (هایلایتِ پریست‌ها به آن‌ها وصل
+  // است) — به‌شکلِ «نردبانِ امتیاز» کنارِ همین رکن رسم می‌شوند.
   pillar_f: ['crit_sales_growth', 'crit_3y_eps', 'crit_gross_margin', 'crit_ps_ratio',
-             'crit_pricing_regime', 'fund_super', 'fund_good', 'fund_medium', 'fund_weak'],
+             'crit_pricing_regime'],
 
   // ── صفحهٔ ۲ — T: تکنیکال ➔ سه شاخهٔ سطح‌اول ──
   pillar_t: ['signal_buy', 'signal_sell', 'stop_loss'],

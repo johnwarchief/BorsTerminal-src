@@ -265,6 +265,25 @@ describe('ستون‌فقراتِ درخت از CHART_TREE', () => {
     );
   });
 
+  it('رکنِ F فقط پنج شاخصِ چارت را شاخه دارد، نه سطل‌هایِ نمره', () => {
+    // سطل‌هایِ امتیاز داوریِ خودِ برنامه‌اند نه شاخهٔ متد؛ چهار شیارِ
+    // عمودی می‌گرفتند. حذف نشدند — به‌شکلِ «نردبانِ امتیاز» کنارِ رکن
+    // رسم می‌شوند، پس هایلایتِ پریست‌ها هم دست‌نخورده می‌ماند.
+    expect(CHART_TREE.pillar_f).toEqual([
+      'crit_sales_growth', 'crit_3y_eps', 'crit_gross_margin',
+      'crit_ps_ratio', 'crit_pricing_regime',
+    ]);
+    for (const id of ['fund_super', 'fund_good', 'fund_medium', 'fund_weak']) {
+      expect(CHART_TREE.pillar_f).not.toContain(id);
+    }
+  });
+
+  it('سطل‌هایِ نمره هنوز رسم می‌شوند — فقط جایشان عوض شده', () => {
+    render(<ObsidianStrategyGraph selectedPreset="trend" />);
+    expect(screen.getAllByText(/سوپربنیاد/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/رد صلب بنیادی/).length).toBeGreaterThan(0);
+  });
+
   it('«استراتژی»ِ ص۴ هر سه را دارد: ساعت شنی · جت · نقطه‌زنی', () => {
     // «جت» جا افتاده بود و فقط ستاپِ روزانهٔ صعودی به‌حساب می‌آمد، در حالی
     // که چارت ص۴ صریح سه استراتژی می‌شمارد.
