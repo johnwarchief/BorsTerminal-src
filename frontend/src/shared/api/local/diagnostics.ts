@@ -7,7 +7,7 @@
 //
 // بدون React و بدون وابستگی به پوسته — حتی اگر کل UI از کار افتاده باشد، این
 // پنل باید کار کند (همان فلسفهٔ بنر قرمز localData).
-import { baked, metaValue, query } from './localData';
+import { baked, metaValue, query, bootTiming } from './localData';
 import { liveWatch } from './live';
 
 const BUILD_TAG = (import.meta.env.VITE_BUILD_TAG as string | undefined) ?? 'بیلد محلی';
@@ -46,6 +46,26 @@ async function collect(): Promise<string> {
     parts.push(row('TSETMC زنده', mw ? `${mw.size} نماد` : 'در دسترس نیست (آفلاین/فیلتر؟)', !!mw));
   } catch (e) {
     parts.push(row('TSETMC زنده', e instanceof Error ? e.message : String(e), false));
+  }
+  // زمان‌بندیِ راه‌اندازی — بی‌این عدد، هر «بهینه‌سازیِ سرعت» حدس است.
+  // هر بار باز کردنِ اپ یعنی گشودنِ بستهٔ gzip و ساختنِ دیتابیس در حافظه؛
+  // اینجا معلوم می‌شود کدام پله واقعاً گران است و رویِ *این* گوشی چقدر.
+  {
+    const t = bootTiming;
+    const mb = (n: number) => (n / 1048576).toFixed(1);
+    const srcLabel = { cache: 'کشِ دستگاه', bundle: 'همراهِ APK',
+                       release: 'دانلود از ریلیز', '': '—' }[t.source];
+    parts.push(row('منبعِ بسته', srcLabel));
+    parts.push(row(
+      'راه‌اندازی',
+      t.totalMs
+        ? `${t.totalMs}ms  (دریافت ${t.fetchMs} · بازگشایی ${t.gunzipMs} · باز کردن ${t.openMs})`
+        : 'هنوز دیتابیس باز نشده',
+      t.totalMs > 0 && t.totalMs < 6000,
+    ));
+    if (t.rawBytes) {
+      parts.push(row('حجمِ بسته', `${mb(t.gzBytes)}MB فشرده ← ${mb(t.rawBytes)}MB در حافظه`));
+    }
   }
   parts.push(row('صفحه', `${window.innerWidth}×${window.innerHeight} · bors-mobile=` +
     String(document.documentElement.classList.contains('bors-mobile'))));

@@ -92,3 +92,22 @@ describe('بنرِ خطا', () => {
     expect(css).toMatch(/\.bors-fatal-banner\b[\s\S]*?safe-area-inset-top/);
   });
 });
+
+describe('زمان‌بندیِ راه‌اندازی', () => {
+  it('منبعِ بسته ثبت می‌شود تا در پنلِ عیب‌یابی دیده شود', async () => {
+    // بی‌این عدد، «چرا اپ کند بالا می‌آید» فقط حدس است: نمی‌دانیم بسته از
+    // کشِ دستگاه آمده یا از شبکه، و کدام پله گران بوده.
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(fakeGz(), { status: 200 })));
+    const mod = await import('@shared/api/local/localData');
+    await mod.__fetchSnapshotForTest();
+    expect(['cache', 'bundle', 'release']).toContain(mod.bootTiming.source);
+  });
+
+  it('وقتی از ریلیز می‌آید، منبع «release» ثبت می‌شود', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
+    nativeGetBytes.mockResolvedValue(fakeGz());
+    const mod = await import('@shared/api/local/localData');
+    await mod.__fetchSnapshotForTest();
+    expect(mod.bootTiming.source).toBe('release');
+  });
+});

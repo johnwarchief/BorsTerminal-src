@@ -63,7 +63,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
   try {
     cache = await caches.open(CACHE_NAME);
     const hit = await cache.match(SNAPSHOT_URL);
-    if (hit) return await hit.arrayBuffer();
+    if (hit) { bootTiming.source = 'cache'; return await hit.arrayBuffer(); }
   } catch {
     cache = null; // Cache API در برخی WebViewها نیست — مستقیم دانلود کن
   }
@@ -96,6 +96,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
           if (cache) {
             try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
           }
+          bootTiming.source = 'release';
           return buf;
         }
       }
@@ -115,6 +116,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
       /* جای کافی نبود — فقط از همین پاسخ استفاده کن */
     }
   }
+  bootTiming.source = 'bundle';
   return local.arrayBuffer();
 }
 
@@ -176,17 +178,44 @@ function showFatalBanner(message: string): void {
   } catch { /* حتی بنر هم نشد — دستِ‌کم خطا در کنسول هست */ }
 }
 
+/** زمان‌بندیِ راه‌اندازی — پنلِ عیب‌یابیِ 🛠 نشانش می‌دهد.
+ *
+ *  چرا ثبت می‌شود: هر بار باز کردنِ اپ یعنی گشودنِ ۲۲ مگابایت gzip و
+ *  ساختنِ یک دیتابیسِ چندده‌مگابایتی در حافظه. کدامش گران است را از
+ *  اینجا نمی‌شود حدس زد — گوشیِ کاربر باید بگوید. بی‌عدد، هر
+ *  «بهینه‌سازی»ای تیر در تاریکی است.
+ */
+export const bootTiming: {
+  source: 'cache' | 'bundle' | 'release' | '';
+  gzBytes: number;
+  rawBytes: number;
+  fetchMs: number;
+  gunzipMs: number;
+  openMs: number;
+  totalMs: number;
+} = { source: '', gzBytes: 0, rawBytes: 0, fetchMs: 0, gunzipMs: 0, openMs: 0, totalMs: 0 };
+
 let dbPromise: Promise<Database> | null = null;
 
 /** دیتابیس اسنپ‌شات — singleton؛ اولین فراخوانی دانلود/بازگشایی می‌کند */
 export function getDb(): Promise<Database> {
   dbPromise ??= (async () => {
+    const t0 = performance.now();
     const [SQL, gz] = await Promise.all([
       initSqlJs({ locateFile: () => wasmUrl }),
       fetchSnapshot(),
     ]);
+    const t1 = performance.now();
     const bytes = await gunzip(gz);
+    const t2 = performance.now();
     const db = new SQL.Database(bytes);
+    const t3 = performance.now();
+    bootTiming.gzBytes = gz.byteLength;
+    bootTiming.rawBytes = bytes.byteLength;
+    bootTiming.fetchMs = Math.round(t1 - t0);
+    bootTiming.gunzipMs = Math.round(t2 - t1);
+    bootTiming.openMs = Math.round(t3 - t2);
+    bootTiming.totalMs = Math.round(t3 - t0);
     // چکِ بروزرسانی در پس‌زمینه — نه await می‌شود نه خطایش به UI می‌رسد
     setTimeout(() => { void maybeRefreshSnapshot(); }, 15000);
     return db;
