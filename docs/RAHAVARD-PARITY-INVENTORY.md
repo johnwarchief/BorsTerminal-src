@@ -80,7 +80,7 @@ price_history ──► /api/chart-db، /api/history، /api/ma، key-levels، pa
 
 | # | مسیر | file:line | نگاشتِ امروز (فیلدِ CSV/تابلو → ستون) | last؟ |
 |---|---|---|---|---|
-| ۱ | `test_tsetmc.fetch_price_history` (CSV دلتا، هر نماد) | تابع `test_tsetmc.py:1138`؛ نوشتن `:1188`؛ **open از `fields[10]`** `:1181`؛ هرسِ ۷۳۰روزه `:1197-1200` | open=**OPEN(قیمت‌پایه!)** high=HIGH low=LOW close=**CLOSE(پایانی)** vol=VOL | ندارد |
+| ۱ | `test_tsetmc.fetch_price_history` (CSV، هر نماد) | تابع `test_tsetmc.py:1201`؛ نوشتن `:1252`؛ **open از `fields[2]` (= FIRST)** `:1243`؛ پنجرۀ درخواست از `_history_start()` `:1158` (increment، بی‌کفِ ۷۳۰روزه) | open=**FIRST(اولین)** high=HIGH low=LOW close=**CLOSE(پایانی)** vol=VOL **last=LAST value=VALUE** | دارد ✅ |
 | ۲ | `test_tsetmc.sync_price_history_from_daily` + `candle_from_row` (کندل از خودِ تابلو) | `test_tsetmc.py:1002-1027` (تبدیل)، `:1030-1100` (کوئری/نوشتن `:1090`)؛ فراخوان: انتهایِ `main()` `:1777-1780` و تردِ بوتِ `app.py:306-323` | open=`price_first`(اولین) high=`price_max` low=`price_min` close=`p_closing`(پایانی) vol=`q_tot_tran`؛ هندسه: `h=max(h,o,c)` `:1025` | ندارد |
 | ۳ | `tools/backfill_daily_history.py` (GetInstrmentsHistoryInDay، دستی/۶۰نشست) | کوئری `:107-119`، نوشتن `:121` | open=`priceFirst` high/low=max/min close=`pClosing` vol=`qTotTran5J` | ندارد |
 | ۴ | بازنویسِ هندسه (تولیدِ کندل نیست ولی ستون‌ها را عوض می‌کند): `normalize_price_history_geometry` | `test_tsetmc.py:1103-1135`؛ فراخوان `main():1781-1784` و `app.py:314` | فقط `high/low` را گِشاد می‌کند؛ closeِ پایانی دست‌نخورده (`:1111` comment) | — |

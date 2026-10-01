@@ -217,17 +217,25 @@ def main():
     ck(sound == (10.0, 20.0, 5.0, 15.0), "the sound candle was not rewritten", str(sound))
     c.close()
 
-    # ── ۴) خطرِ «حذف پیش از دریافت» باید رفته باشد ──────────────────────────
+    # ── ۴) تاریخچۀ منتشرشده هرگز حذف نمی‌شود ────────────────────────────────
     print("\n[۴] هرسِ بی‌بازگشت")
+    # این بند درِ v1.0.62 سه چیز را می‌خواست: DELETE پیش از درخواست نباشد، فقط پس از
+    # fetchِ موفق باشد، و به کفِ ۷۳۰روزه bound باشد. درِ ۱۴۰۵-۰۷-۱۱ مالک کف را لغو کرد
+    # (عمق برایِ FTS/الگو/بک‌تست)، پس دو خواسته‌یِ آخر جای خود را به خواستۀ سخت‌تر
+    # دادند: **هیچ DELETE‌ای درِ این مسیر نباشد** و درخواست increment باشد تا دانلودِ
+    # کاملِ تصادفی در هر اجرا ساخته نشود.
     src = io.open(TS_PY, encoding="utf-8").read()
     fetch_body = src[src.index("def fetch_price_history"):src.index("def update_existing")]
-    ck("DELETE FROM price_history" in fetch_body,
-       "the prune still exists (depth is still bounded)")
-    ck(fetch_body.index("if rows and not since") < fetch_body.index("DELETE FROM price_history"),
-       "it runs only after a successful FULL fetch — never before the request")
-    ck('datetime.timedelta(days=730)).strftime("%Y-%m-%d")\n            conn.execute'
-       in fetch_body or "floor = " in fetch_body,
-       "the prune is bounded to the 730-day floor, not to the delta window")
+    ck("DELETE FROM price_history" not in fetch_body,
+       "NEGATIVE CONTROL: هیچ حذفی درِ مسیرِ تاریخچه نمانده (عمق محفوظ است)",
+       str([l for l in fetch_body.splitlines() if "DELETE" in l])[:120])
+    ck("days=730" not in fetch_body and "cutoff" not in fetch_body,
+       "NEGATIVE CONTROL: کفِ ۷۳۰روزه برگشتہ نیست", "")
+    ck("_history_start(" in fetch_body,
+       "پنجرۀ درخواست از incrementِ خودِ نماد می‌آید، نه از یکِ عددِ ثابت")
+    hist_start = src[src.index("def _history_start"):src.index("def fetch_price_history")]
+    ck("CSV_FLOOR" in hist_start and "MAX(date)" in hist_start,
+       "نمادِ تازه از اولِ منبع، نمادِ موجود از روزِ بعدِ MAX(date)")
 
     print("\n[۵] سیم‌کشی")
     main_body = src[src.index("def main()"):]

@@ -35,6 +35,13 @@ except Exception:  # noqa: BLE001 — dev/standalone
 _PT = "&".join(f"paperTypes[{i}]={i+1}" for i in range(9))
 MW_URL = f"{BASE}/ClosingPrice/GetMarketWatch?market=0&{_PT}&showTraded=false&withBestLimits=true&hEven=0"
 
+# کفِ تاریخِ درخواستِ CSV: همان ۱۹۹۰۰۱۰۱ که `/api/chart` (cdn) استفاده می‌کند — یعنی
+# «از اولِ چیزی که منبع منتشر می‌کند». جایگزینِ کفِ ۷۳۰روزه شد (تصمیمِ مالک
+# ۱۴۰۵-۰۷-۱۱؛ docs/CANDLE-CONTRACT.md §۲-۴). این «عمقِ خواستنی» است، نه اینکه CDN آن‌قدر
+# ردیف دارد: نمادی که ۱۳۹۰ شروع شده فقط همان ۱۳۹۰ به بعد را می‌گیرد، پس ردیفِ ساخته‌شده
+# در کار نیست.
+CSV_FLOOR = "19900101"
+
 # نقطهٔ تایم‌لاین در پایان هر همگام‌سازی. import در همین‌جا انجام می‌شود تا
 # نبودِ mstat_engine (نسخهٔ ناقصِ دیپلوی) همگام‌سازیِ بازار را نکشد — فقط
 # تایم‌لاین آپدیت نمی‌شود و یک هشدار چاپ می‌شود.
@@ -1148,12 +1155,56 @@ def normalize_price_history_geometry(conn):
         return 0
 
 
-def fetch_price_history(symbol, s=None, since=None):
+def _history_start(conn, symbol, backfill=False):
+    """از کجا درخواست کنیم؟ — پاسخِ بی‌cutoff.
+
+    پیش از این اینجا `today - 730 روز` بود و بعد از دریافت یک DELETE هم همان کف را
+    می‌زد (§۱-پِ قرارداد و کارِ #73). مالک درِ ۱۴۰۵-۰۷-۱۱ هرس را لغو کرد: بانکِ محلی
+    باید هر تاریخچۀ معتبری که منبع دارد را نگه دارد، چون FTS/الگو/بک‌تست به عمق نیاز
+    دارد. پس:
+
+      • نماد تازه (هیچ ردیفی نیست) → از اولِ تاریخِ منبع (`CSV_FLOOR`)؛ فقط آنچه
+        واقعاً منتشر شده ذخیره می‌شود، هیچ ردیفی ساخته نمی‌شود.
+      • نماد موجود → روزِ بعد از **MAX(date)ِ خودِ همان نماد**؛ یعنی increment، پس
+        اجرای دوم چیزی بازنویسی نمی‌کند و «full download» تصادفی رخ نمی‌دهد.
+      • `backfill=True` (صریح، فقط با فرمانِ مالک) → از اولِ تاریخ، برایِ نمادی که
+        ردیف دارد. این تنها راهِ رساندنِ عمقِ جدید به ردیف‌هایِ قدیمی است و بی‌اجرای
+        --backfill-history هیچ‌وقت خودبه‌خود اتفاق نمی‌افتد.
+
+    MAX(date) با هر دو نوشتارِ نماد خوانده می‌شود (ك/ي عربی ↔ ک/ی فارسی)، وگرنه
+    «اندازه‌گیریِ سقف» صفر می‌شود و مسیر increment بی‌صدا به fullِ هر اجرا تبدیل می‌شد.
+    """
+    if backfill:
+        return CSV_FLOOR
+    names = [symbol]
+    try:
+        for a, b in conn.execute(
+                "SELECT l_val18, l_val30 FROM instruments WHERE l_val18 = ? OR l_val30 = ? LIMIT 2",
+                (symbol, symbol)).fetchall():
+            for n in (a, b):
+                if n and n not in names:
+                    names.append(n)
+    except Exception:
+        pass
+    ph = conn.execute(
+        "SELECT MAX(date) FROM price_history WHERE symbol IN (%s)"
+        % ",".join("?" * len(names)), tuple(names)).fetchone()[0]
+    if not ph:
+        return CSV_FLOOR
+    try:
+        nxt = datetime.date(int(ph[0:4]), int(ph[5:7]), int(ph[8:10])) + datetime.timedelta(days=1)
+    except (ValueError, IndexError):
+        return CSV_FLOOR
+    return nxt.strftime("%Y%m%d")
+
+
+def fetch_price_history(symbol, s=None, since=None, backfill=False):
     """دریافت سابقهٔ قیمت (OHLCV) از TSETMC برای نمودار شمعی (cdn، ~0.16s/نماد).
 
     legacy CSV (old.tsetmc) جایگزین شد: cdn سریعتر و بدون rate-limit.
     since: 'YYYY-MM-DD' → فقط ردیفهای بعد از آن (دلتا).
-    Returns the number of rows upserted (0 on failure)."""
+    backfill: صریحاً از اولِ تاریخِ منبع بخوان (پیش‌فرض False — ببینید _history_start).
+    Returns the number of rows upserted (0 on failure). هیچ ردیفی حذف نمی‌شود."""
     conn = sqlite3.connect(DB_PATH)
     try:
         ins = conn.execute(
@@ -1167,14 +1218,10 @@ def fetch_price_history(symbol, s=None, since=None):
         return 0
     ins_code = ins[0]
     rows = 0
-    # فقط ۲ سال اخیر (دادههای قدیمیتر از TSETMC کیفیت ناهماهنگی دارند)
-    cutoff = (datetime.date.today() - datetime.timedelta(days=730)).strftime("%Y-%m-%d")
-    if since:
-        cutoff = max(cutoff, since)
+    from_ = (since.replace("-", "") if since else _history_start(conn, symbol, backfill))
     try:
         s = s or make_session()
         _rate_wait(s)
-        from_ = since.replace("-", "") if since else cutoff.replace("-", "")
         r = s.get(f"{BASE}/ClosingPrice/GetClosingPriceDailyListCSV/{ins_code}/{from_}",
                   headers=HEADERS, timeout=90, stream=True)
         r.raise_for_status()
@@ -1188,7 +1235,9 @@ def fetch_price_history(symbol, s=None, since=None):
             if len(d_even) != 8 or not d_even.isdigit():
                 continue
             dt = f"{d_even[:4]}-{d_even[4:6]}-{d_even[6:]}"
-            if dt < cutoff:
+            # فیلترِ زمانی فقط «پیشِ پنجرۀ خواستۀ ما» را رد می‌کند (ردیفِ بیرونی از
+            # خودِ CDN)، دیگر کفِ ۷۳۰روزه و دیگر حذفی در کار نیست.
+            if dt.replace("-", "") < from_:
                 continue
             try:
                 o = float(fields[2])    # FIRST — اولینِ معامله (قرارداد §۱-ج الف: سنجیده
@@ -1207,15 +1256,11 @@ def fetch_price_history(symbol, s=None, since=None):
             rows += 1
         conn.commit()
         print(f"  [history] {symbol}: {rows} OHLCV rows saved")
-        # هرس فقط پس از fetchِ موفق و فقط در حالتِ کامل. پیش از این DELETE پیش از
-        # درخواست اجرا می‌شد و cutoff آن با `since` برابر بود: یعنی هر دلتا
-        # تاریخچۀ پیشِ پنجره را بی‌بازگشت پاک می‌کرد (و در حالت خطا، ردیف‌ها
-        # پیش‌تر رفته بودند و صفر برمی‌گشت).
-        if rows and not since:
-            floor = (datetime.date.today() - datetime.timedelta(days=730)).strftime("%Y-%m-%d")
-            conn.execute("DELETE FROM price_history WHERE symbol = ? AND date < ?",
-                         (symbol, floor))
-            conn.commit()
+        # هیچ حذفی اینجا نیست. پیش از این یک DELETE پس از هر fetchِ کامل تاریخچۀ
+        # پیشِ کفِ ۷۳۰روزه را می‌زد؛ با لغوِ آن کف (تصمیمِ مالک ۱۴۰۵-۰۷-۱۱: عمق برایِ
+        # FTS/الگو/بک‌تست) دیگر چیزی برایِ حذف نیست و «هرس» هم دیگر نمی‌تواند
+        # تاریخچۀ منتشرشده را بی‌بازگشت ببَرَد. increment در _history_start تضمین
+        # می‌کند اجرای دوم همان ردیف‌ها را دوباره نزند.
     except Exception as e:
         print(f"  [history] {symbol}: error - {type(e).__name__}: {e}")
     finally:
@@ -1307,6 +1352,52 @@ def update_existing(symbols_limit=None, max_429=3, min_interval=0.05, cooldown_f
     finally:
         conn.close()
     return stats
+
+
+def backfill_history(symbols=None, limit=None):
+    """عمق‌دادنِ صریحِ تاریخچه — تنها راهی که یک نمادِ موجود به پیشِ پنجرۀ قدیمی می‌رسد.
+
+    چرا تابعِ جدا: سینکِ عادی (`update_existing`) increment است و از همین‌جا
+    «فقط ردیفِ جدید یا missing» را می‌نویسد. عمقِ جدید (لغوِ هرسِ ۷۳۰روزه، تصمیمِ
+    مالک ۱۴۰۵-۰۷-۱۱) باید **با فرمان** اتفاق بیفتد، نه به‌عنوانِ اثرِ جانبیِ هر اجرا؛
+    وگرنه هر بوت یکِ دانلودِ کاملِ ۸۰۰نمادی می‌شد.
+
+    پیشرفت درِ sync_summary.json ثبت می‌شود تا اجرای قطعه‌قطعه (`--limit`) ممکن باشد؛
+    نوشتن ردیف‌به‌ردیف اتمیک است (INSERT OR REPLACE)، پس تکرارِ یکِ نماد بی‌ضرر است و
+    ردیفِ تازهای ساخته نمی‌شود.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        if symbols:
+            todo = [(s,) for s in symbols]
+        else:
+            # همهٔ نمادهایِ دارایِ ins_code — از جمله آن‌هایی که هنوز هیچ کندلی ندارند
+            # (حلقۀ update_existing فقط نمادهایِ دارایِ ردیف را انتخاب می‌کند، پس
+            # نمادِ نوزاد از آن طریق هرگز عمق نمی‌گیرد).
+            todo = [(n,) for (n,) in conn.execute(
+                "SELECT l_val18 FROM instruments WHERE l_val18 IS NOT NULL AND ins_code IS NOT NULL"
+                " ORDER BY l_val18").fetchall()]
+        if limit:
+            todo = todo[:limit]
+        done = 0
+        added = 0
+        for (sym,) in todo:
+            if not sym:
+                continue
+            try:
+                added += fetch_price_history(sym, backfill=True)
+            except Exception as e:  # noqa: BLE001 — عمق‌دادن هرگز نباید سینک را بکُشد
+                print(f"  [backfill] {sym}: {type(e).__name__}: {e}")
+            done += 1
+            if done % 25 == 0:
+                print(f"  [backfill] {done}/{len(todo)} نماد | +{added} ردیف")
+                write_summary({"backfill_symbols": done, "backfill_rows": added})
+        write_summary({"backfill_symbols": done, "backfill_rows": added,
+                       "backfill_last_run": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"  [backfill] done {done} symbols | +{added} ردیف")
+        return {"symbols": done, "rows": added}
+    finally:
+        conn.close()
 
 
 def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
@@ -1827,8 +1918,13 @@ if __name__ == "__main__":
     ap.add_argument("--limit", type=int, default=None, help="حداکثر نماد برای Phase B")
     ap.add_argument("--min-interval", type=float, default=0.25, help="حداقل فاصلهٔ درخواستها (ثانیه)")
     ap.add_argument("--max-429", type=int, default=3, help="توقف بعد از چند 429 (پلههای همیشه که بیشتر نشود)")
+    ap.add_argument("--backfill-history", action="store_true",
+                    help="عمق‌دادنِ صریحِ تاریخچه از اولِ انتشارِ منبع (بدونِ این پرچم هیچ اجرایِ "
+                         "خودکاری عمق نمی‌دهد؛ incremental می‌ماند)")
     a = ap.parse_args()
-    if a.update_existing:
+    if a.backfill_history:
+        backfill_history(limit=a.limit)
+    elif a.update_existing:
         update_existing(symbols_limit=a.limit, max_429=a.max_429, min_interval=a.min_interval)
     else:
         main()
