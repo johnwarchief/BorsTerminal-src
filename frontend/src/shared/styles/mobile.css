@@ -239,3 +239,28 @@ html.bors-mobile .bors-fixed-top {
     flex-direction: row;
   }
 }
+
+/* راهنمایِ «برایِ خروج دوباره بزنید» (دکمهٔ بازگشتِ اندروید) */
+.bors-exit-hint {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 100002;
+  width: max-content;
+  margin-inline: auto;
+  padding: 7px 18px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 82%);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+/* قابلیت‌هایِ فقط‌دسکتاپ که در موبایل بن‌بست‌اند.
+   آپدیترِ درون‌برنامه‌ای رویِ اندروید کار نمی‌کند (APK را فروشگاه/نصبِ
+   دستی به‌روز می‌کند) و resolverِ محلی هم برایِ /api/update صریحاً
+   «unsupported» برمی‌گرداند — یعنی دکمه کاربر را به بن‌بست می‌برد. */
+html.bors-mobile [data-testid='app-update-btn'] {
+  display: none;
+}

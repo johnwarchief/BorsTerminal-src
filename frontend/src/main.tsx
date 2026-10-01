@@ -18,6 +18,11 @@ if (import.meta.env.VITE_LOCAL_DATA === '1') {
   void import('./shared/api/local/diagnostics')
     .then((m) => m.mountDiagnostics())
     .catch(() => { /* پنل عیب‌یابی نیامد — اپ بدون آن هم کار می‌کند */ });
+  // دکمهٔ بازگشتِ سخت‌افزاری. بی‌این، اندروید با یک لمس کلِ اپ را می‌بندد
+  // و بارگذاریِ بعدی یعنی بازکردنِ دوبارهٔ دیتابیسِ ۲۲ مگابایتی.
+  void import('./shared/api/local/androidShell')
+    .then((m) => m.mountAndroidBack())
+    .catch(() => { /* پوستهٔ بومی نبود — رفتارِ مرورگر می‌ماند */ });
 }
 
 const queryClient = new QueryClient({
