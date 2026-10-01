@@ -10,13 +10,22 @@ import { ftsScoreOf } from '@contracts/fundamental';
 import { FlashNum } from '@shared/components/FlashNum';
 import { Badge } from '@shared/components/Badge';
 import { aggregateSignals } from '@features/master/lib/masterMath';
-import { runStrictGates, definiteDecision, weeklyTrendFromSignal } from '@features/master/lib/strictGates';
+import {
+  definiteDecision,
+  runStrictGates,
+  weeklyTrendFromSignal,
+  type DefiniteAction,
+} from '@features/master/lib/strictGates';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
+import { usePortfolio } from '@features/portfolio/api/usePortfolio';
+import { basketRegimeFor } from '@features/portfolio/lib/basketRegime';
+import { useCapitalStore } from '@features/master/stores/capitalStore';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard } from './useInspectorBoard';
+import { useSymbolVeto } from './useSymbolVeto';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -40,9 +49,20 @@ const ACTION_TONE = {
   no_data: 'gray',
 } as const;
 
-function MiniGauge({ pct, color, isVeto }: { pct: number; color: string; isVeto?: boolean }) {
+/** رنگِ تصمیمِ قطعیِ گیت‌ها — همان داورِ کاکپیتِ مستر، نه میانگینِ وزنیِ آرا */
+const DECISION_TONE: Record<DefiniteAction, 'green' | 'yellow' | 'red' | 'blue' | 'gray'> = {
+  ladder_buy: 'green',
+  high_risk_swing: 'yellow',
+  watch: 'blue',
+  veto: 'red',
+  veto_gate1: 'yellow',
+  veto_gate2: 'yellow',
+};
+
+function MiniGauge({ pct, color, mode }: { pct: number; color: string; mode: 'score' | 'veto' | 'wait' }) {
   const r = 18;
   const circ = 2 * Math.PI * r;
+  const closed = mode !== 'score';
   return (
     <svg width="42" height="42" viewBox="0 0 42 42" role="img" aria-label="گیج برآیند">
       <circle cx="21" cy="21" r={r} fill="none" stroke="var(--border-color)" strokeWidth="4" />
@@ -51,24 +71,30 @@ function MiniGauge({ pct, color, isVeto }: { pct: number; color: string; isVeto?
         cy="21"
         r={r}
         fill="none"
-        stroke={isVeto ? 'var(--accent-red)' : color}
+        stroke={mode === 'veto' ? 'var(--accent-red)' : mode === 'wait' ? 'var(--accent-yellow)' : color}
         strokeWidth="4"
         strokeLinecap="round"
         strokeDasharray={circ}
-        strokeDashoffset={isVeto ? circ : circ * (1 - pct / 100)}
+        strokeDashoffset={closed ? circ : circ * (1 - pct / 100)}
         transform="rotate(-90 21 21)"
         style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.22, 1, 0.36, 1)' }}
       />
       <text
         x="21"
-        y={isVeto ? '24' : '25'}
+        y={closed ? '24' : '25'}
         textAnchor="middle"
-        fontSize={isVeto ? '8.5' : '11'}
+        fontSize={closed ? '8.5' : '11'}
         fontWeight="900"
-        fill={isVeto ? 'var(--accent-red)' : 'var(--text-primary)'}
+        fill={
+          mode === 'veto'
+            ? 'var(--accent-red)'
+            : mode === 'wait'
+              ? 'var(--accent-yellow)'
+              : 'var(--text-primary)'
+        }
         className="num"
       >
-        {isVeto ? 'وتو' : toFaDigits(Math.round(pct))}
+        {mode === 'veto' ? 'وتو' : mode === 'wait' ? '…' : toFaDigits(Math.round(pct))}
       </text>
     </svg>
   );
@@ -120,33 +146,62 @@ export function SymbolInspector() {
   const stageIdx = stageIndexForPath(pathname);
 
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
+  const inputs = useMemo(() => (symbol ? getActiveSignals(symbol) : {}), [symbol, entry]);
   const verdict = symbol ? aggregateSignals(symbol, getActiveSignals(symbol)) : null;
+
+  // رژیمِ سبد از همان تصمیم‌هایِ واقعیِ مستر خوانده می‌شود، نه از ثابت‌ها:
+  // پیش‌تر این‌جا `industryCapPct: 20` و `warRegime: false` نوشته شده بود و
+  // سایدبار برایِ نمادی که مستر آن را می‌بندد «خرید» می‌گفت.
+  const basket = usePortfolio();
+  const warRegime = useCapitalStore((s) => s.warRegime);
+  const regime = useMemo(() => basketRegimeFor(symbol, basket.data?.decisions), [symbol, basket.data]);
 
   const strictRes = useMemo(() => {
     if (!entry) return null;
     return runStrictGates(
-      entry,
+      // سیگنالِ غیرمنقضی، نه خامِ باس: با سیگنالِ منقضی، چراغ‌ها سبز می‌ماندند
+      // و گیج قرمز «وتو» — دو جوابِ متناقض برایِ یک نماد در یک پنل.
+      inputs,
       {
-        inBasket: Boolean(
-          entry.portfolio?.payload &&
-            (entry.portfolio.payload as { decision?: unknown }).decision === 'accept',
-        ),
-        industryUsedPct: null,
-        industryCapPct: 20,
-        warRegime: false,
-        symbolWeightPct: null,
+        inBasket: regime.inBasket,
+        industryUsedPct: regime.industryUsedPct,
+        industryCapPct: regime.industryCapPct,
+        warRegime,
+        symbolWeightPct: regime.symbolWeightPct,
       },
-      weeklyTrendFromSignal(entry.technical),
+      weeklyTrendFromSignal(inputs.technical),
     );
-  }, [entry]);
+  }, [entry, inputs, regime, warRegime]);
 
   const decision = useMemo(() => (strictRes ? definiteDecision(strictRes) : null), [strictRes]);
-  const isVeto = Boolean(
-    decision &&
-      (decision.action === 'veto' ||
-        decision.action === 'veto_gate1' ||
-        decision.action === 'veto_gate2'),
-  );
+
+  // سه حالت، نه دو تا: وتویِ واقعی (مجمع/هفتگی) قرمز است؛ «هنوز سنجیده نشده»
+  // زردِ درانتظار است و نباید واژۀ «وتو» را قرض بگیرد (رأیِ pilot گزینهٔ a،
+  // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
+  const veto = useSymbolVeto(symbol);
+  const hardVeto = veto.assembly.veto || veto.weekly.veto || decision?.action === 'veto';
+  const awaiting =
+    !hardVeto && (decision?.action === 'veto_gate1' || decision?.action === 'veto_gate2');
+  const gaugeMode: 'score' | 'veto' | 'wait' = hardVeto ? 'veto' : awaiting ? 'wait' : 'score';
+  const isVeto = hardVeto;
+  /** نامِ گیت‌هایی که سبز نیستند — خطِ دومِ کاکپیت، تا «چرا نه» مبهم نماند */
+  const blockers = (strictRes?.gates ?? [])
+    .filter((g) => g.state !== 'passed')
+    .map((g) => g.label)
+    .join('، ');
+  const whyLine = veto.assembly.veto
+    ? veto.assembly.label || 'مجمع عمومیِ پیش‌رو'
+    : veto.weekly.veto || decision?.action === 'veto'
+      ? `وتوی هفتگی${veto.weekly.desc ? ` — ${veto.weekly.desc}` : ' — روند هفتگی صعودی نیست'}`
+      : awaiting
+        ? decision?.action === 'veto_gate1'
+          ? 'بنیادی هنوز سنجیده نشده'
+          : 'تکنیکال هنوز سنجیده نشده'
+        : blockers
+          ? `سد: ${blockers}`
+          : verdict && symbol
+            ? `${toFaDigits(verdict.usedSignalIds.length)}/۴ سیگنال`
+            : 'در انتظار سیگنال';
 
   const open = symbol.length > 0;
   const pct = isVeto ? 0 : verdict ? (verdict.compositeScore + 100) / 2 : 50;
@@ -163,6 +218,32 @@ export function SymbolInspector() {
   const fundFts = ftsScoreOf(fund);
   const tech = entry?.technical;
   const port = entry?.portfolio;
+
+  // وضعیت سبد: رأیِ سیگنال اگر باشد، وگرنه تصمیمِ واقعیِ سبد. نبودِ سیگنال
+  // «در سبد نیست» نبود (ادعای بی‌داده)؛ آن را از خودِ اندپوینتِ سبد می‌خوانیم و
+  // اگر آن هم نخوانده بود، صادقانه «بی‌خبر».
+  const portDecision = (port?.payload as { decision?: unknown } | null | undefined)?.decision;
+  const basketIn = regime.inBasket === true || portDecision === 'accept';
+  const basketOut = regime.inBasket === false && portDecision !== 'monitor' && portDecision !== 'reject';
+  const basketValue =
+    portDecision === 'reject'
+      ? 'حذف‌شده'
+      : portDecision === 'monitor'
+        ? 'زیر نظر'
+        : basketIn
+          ? 'نگهداری'
+          : basketOut
+            ? 'در سبد نیست'
+            : portDecision === 'pending'
+              ? 'ظرفیت‌سنجی'
+              : 'بی‌خبر';
+  const basketTone: 'green' | 'red' | 'yellow' | 'gray' = portDecision === 'reject'
+    ? 'red'
+    : portDecision === 'monitor'
+      ? 'yellow'
+      : basketIn
+        ? 'green'
+        : 'gray';
 
   return (
     <>
@@ -254,23 +335,26 @@ export function SymbolInspector() {
           </div>
         </div>
 
-        {/* مینی کاکپیت مستر */}
+        {/* مینی کاکپیت مستر
+            بج از «تصمیمِ قطعیِ گیت‌ها» می‌آید، نه از میانگینِ وزنیِ آرا: میانگین
+            می‌توانست «خرید قوی» بگوید در حالی که گیتِ سبد (رژیم جنگی/سقفِ صنعت)
+            همان نماد را بسته است — دو پنل، دو جواب. */}
         <div className="flex items-center gap-2.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-2">
-          <MiniGauge pct={pct} color={gaugeColor} isVeto={isVeto} />
+          <MiniGauge pct={pct} color={gaugeColor} mode={gaugeMode} />
           <div className="flex min-w-0 flex-col gap-0.5">
-            {isVeto ? (
+            {hardVeto ? (
               <Badge tone="red">ورود متوقف</Badge>
+            ) : awaiting ? (
+              <Badge tone="yellow">در انتظارِ سنجش</Badge>
+            ) : decision ? (
+              <Badge tone={DECISION_TONE[decision.action]}>{decision.label}</Badge>
             ) : verdict ? (
               <Badge tone={ACTION_TONE[verdict.finalAction]}>{ACTION_FA[verdict.finalAction]}</Badge>
             ) : (
               <Badge tone="gray">بدون داده</Badge>
             )}
-            <span className="num text-[9.5px] text-text-muted">
-              {isVeto
-                ? (decision?.action === 'veto_gate1' ? 'سد فیلتر ۱' : decision?.action === 'veto_gate2' ? 'سد فیلتر ۲' : 'توقف در فیلترها')
-                : verdict
-                  ? `${toFaDigits(verdict.usedSignalIds.length)}/۴ سیگنال`
-                  : 'در انتظار سیگنال'}
+            <span className="num text-[9.5px] text-text-muted" data-testid="inspector-veto-why">
+              {whyLine}
             </span>
           </div>
         </div>
@@ -297,26 +381,8 @@ export function SymbolInspector() {
           />
           <StatusLight
             label="پرتفوی"
-            value={
-              port == null
-                ? 'در سبد نیست'
-                : port.payload && (port.payload as { decision?: unknown }).decision === 'accept'
-                  ? 'نگهداری'
-                  : (port.payload as { decision?: unknown }).decision === 'monitor'
-                    ? 'زیر نظر'
-                    : (port.payload as { decision?: unknown }).decision === 'reject'
-                      ? 'حذف‌شده'
-                      : 'بدون تصمیم'
-            }
-            tone={
-              port == null
-                ? 'gray'
-                : (port.payload as { decision?: unknown }).decision === 'accept'
-                  ? 'green'
-                  : (port.payload as { decision?: unknown }).decision === 'reject'
-                    ? 'red'
-                    : 'yellow'
-            }
+            value={basketValue}
+            tone={basketTone}
             hint={port?.rationale}
           />
         </div>

@@ -195,6 +195,14 @@ out = SC._apply_assembly_veto([row(symbol="فولادي")])[0]
 ck(out["assembly_veto"] is True,
    "نمادِ ردیف با یای عربی هم به همان رویداد می‌رسد (نرمال‌سازیِ سمتِ ردیف)")
 
+# کلیدِ تقویم `strip` می‌شود (`_norm` در api/chart.py)؛ اگر سمتِ ردیف strip
+# نشود، نمادی که در جدولِ بازار فضای انتهایی دارد هرگز وتو نمی‌گیرد و هیچ تستی
+# قرمز نمی‌شود. شاهدِ زنده ۱۴۰۵-۰۷-۰۹: ردیفِ «معيار » در /api/screener.
+stub_calendar({"فولاد": ev("assembly", _in3)})
+out = SC._apply_assembly_veto([row(symbol="فولاد ")])[0]
+ck(out["assembly_veto"] is True,
+   "نمادِ ردیف با فضای انتهایی هم وتو می‌گیرد (کلیدِ تقویم strip شده است)")
+
 # ── ۶) ورودی جهش نمی‌خورد ───────────────────────────────────────────────────
 stub_calendar({"فولاد": ev("assembly", _in3)})
 src_row = row()

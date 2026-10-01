@@ -452,8 +452,12 @@ export function buildFunnel(
   //    بنیادی نیست، زمان‌بندیِ ورود است — نماد در روزِ مجمع متوقف می‌شود و پس
   //    از آن گپِ قیمتی می‌خورد. پس نمرۀ پنج‌شاخصه دست‌نخورده می‌ماند و فقط
   //    «امروز» تحویل داده نمی‌شود؛ فردا که مجمع تمام شد خودش برمی‌گردد.
-  const assemblyBlocked = passed.filter((e) => e.assemblyVeto);
-  const handover = passed.filter((e) => !portfolioSet.has(e.symbol) && !e.assemblyVeto);
+  //    شمارشِ «مجمع مانع شد» فقط رویِ کسانِ بیرونِ سبد است: نمادی که ازپیش
+  //    خریده‌اید به‌خاطرِ سبد تحویل نمی‌شود، نه به‌خاطرِ مجمع، و دوشماره‌ای
+  //    شدنش عددِ ردِ این در را تورم می‌داد.
+  const candidates = passed.filter((e) => !portfolioSet.has(e.symbol));
+  const assemblyBlocked = candidates.filter((e) => e.assemblyVeto);
+  const handover = candidates.filter((e) => !e.assemblyVeto);
 
   return {
     boardScope: scope.length,

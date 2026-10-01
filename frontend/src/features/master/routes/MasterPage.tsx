@@ -11,7 +11,7 @@ import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { AGENT_WEIGHTS } from '@contracts/signal';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { usePortfolio, useMarketCloses } from '@features/portfolio/api/usePortfolio';
-import { SECTOR_BANDS, matchSectorBand, normalizeSector } from '@features/portfolio/model/sectorAllocation';
+import { basketRegimeFor } from '@features/portfolio/lib/basketRegime';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import {
   aggregateSignals,
@@ -22,7 +22,6 @@ import { buildTradePlan, riskLevel } from '../lib/tradePlanMath';
 import { buildTradeBlueprint } from '../lib/dcaCalc';
 import { DEFAULT_ASSUMED_CAPITAL, fa0 } from '../lib/fmtNum';
 import {
-  DEFAULT_INDUSTRY_CAP_PCT,
   definiteDecision,
   hasDirectEntrySetup,
   hourglassSwitch,
@@ -99,30 +98,10 @@ export default function MasterPage() {
   const totalToman = useCapitalStore((s) => s.totalToman);
   const setWarRegime = useCapitalStore((s) => s.setWarRegime);
 
-  const regime = useMemo(() => {
-    const decisions = portfolio.data?.decisions ?? [];
-    const mine = decisions.find((d) => d.symbol === symbol) ?? null;
-    const status = (mine?.status ?? '').toLowerCase();
-    const inBasket = mine ? status === 'accept' : null;
-    const sector = mine?.sector ?? null;
-    const band = SECTOR_BANDS.find((b) => b.id === matchSectorBand(sector)) ?? null;
-    const industryCapPct = band?.max ?? DEFAULT_INDUSTRY_CAP_PCT;
-    const industryUsedPct =
-      sector != null
-        ? Math.round(
-            decisions
-              .filter(
-                (d) =>
-                  (d.status ?? '').toLowerCase() === 'accept' &&
-                  d.symbol !== symbol &&
-                  normalizeSector(d.sector ?? '') === normalizeSector(sector),
-              )
-              .reduce((s, d) => s + (typeof d.weight_eff_pct === 'number' ? d.weight_eff_pct : 0), 0) * 10,
-          ) / 10
-        : null;
-    const symbolWeightPct = typeof mine?.weight_eff_pct === 'number' ? mine.weight_eff_pct : null;
-    return { inBasket, industryCapPct, industryUsedPct, symbolWeightPct, bandLabel: band?.label ?? null };
-  }, [portfolio.data, symbol]);
+  const regime = useMemo(
+    () => basketRegimeFor(symbol, portfolio.data?.decisions),
+    [portfolio.data, symbol],
+  );
 
   const weekly = useMemo(() => weeklyTrendFromSignal(inputs.technical), [inputs.technical]);
 

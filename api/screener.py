@@ -164,7 +164,7 @@ def _apply_assembly_veto(rows):
         # علتِ وتوی قبلی از دورِ پیش پاک می‌شود تا دو بار پشتِ هم ننشیند
         base = " · ".join(x for x in str(r.get("exclusion_reasons") or "").split(" · ")
                           if x.strip() and not x.startswith(_ASM_VETO_PREFIX))
-        ev = asm.get(str(r.get("symbol") or "").translate(norm))
+        ev = asm.get(str(r.get("symbol") or "").translate(norm).strip())
         if ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED:
             r["assembly_veto"] = False
             r["exclusion_reasons"] = base

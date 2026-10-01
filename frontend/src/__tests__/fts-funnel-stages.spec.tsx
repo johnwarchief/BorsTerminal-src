@@ -543,6 +543,23 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
     expect(f.stages.handover.dropped).toBe(0);
   });
 
+  it('نمادی که هم در سبد است هم مجمع: تحویل را «وتوی مجمع» نخور', () => {
+    // handover = passed ∧ ¬سبد ∧ ¬وتو؛ پس شمارِ «ردشده به‌خاطرِ مجمع» باید فقط
+    // آن‌هایی باشد که جز‌و‌بد بدونِ مجمع به تحویل می‌رسیدند. بی‌این شرط، عددِ
+    // ردِ مرحلۀ تحویل با نمادهایِ ازپیش‌خریداریشه‌شده تورم می‌خورد.
+    const f = buildFunnel(
+      [board({ symbol: SYM, f_susp: true })],
+      DEFAULT_TAPE_FILTER_CONFIG,
+      [],
+      [okScreen(SYM, { assembly_veto: true, assembly_days: 3 })],
+      new Set<string>([SYM]),
+      'custom',
+    );
+    expect(f.stages.handover.entries).toHaveLength(0);
+    expect(f.stages.handover.dropped).toBe(0);
+    expect(f.stages.handover.rejected).toBe(0);
+  });
+
   it('بی‌داده وتو نیست: پرچمِ غایب یا false یا فقط assembly_days هیچ وتویی نمی‌سازد', () => {
     for (const over of [{}, { assembly_veto: false }, { assembly_days: 3 }, { assembly_veto: null }]) {
       const f = run(over as Partial<FtsScreenRow>);
