@@ -3,6 +3,7 @@
 // ردیف دوم: بازارها/ابزارها، صنایع و چیپ‌های فیلتر با پاپ‌اور تنظیمات اختصاصی (Split Chips)
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Select } from '@shared/ui/Select';
+import { DynamicToolbar } from '@shared/ui/DynamicToolbar';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
@@ -478,9 +479,18 @@ export function MarketFilters({
           options={sectorOptions}
         />
 
-          {/* «فقط زنده» و «پسوند عددی» عمداً رویِ خودِ نوار می‌مانند:
-              این‌ها فیلترند و فیلتر باید دیده شود. DynamicToolbar برایِ
-              کنترل‌هایی است که فیلتر نیستند. */}
+          {/* پنج فیلترِ تابلوخوانی (حجم مشکوک، الگوی ساعت، جت، کف‌روبی،
+              نقطه‌زنی) بالاتر و رویِ خودِ نوارند — فیلتر باید دیده شود.
+              این دو سوییچ فیلتر نیستند، «نمایِ جدول» را تنظیم می‌کنند و
+              به‌ندرت عوض می‌شوند؛ پس به صفحهٔ دومِ نوارِ پویا رفتند و یک
+              ردیفِ شکسته از ارتفاعِ ۷۶۸ آزاد شد. */}
+          <DynamicToolbar
+            className="shrink-0"
+            primaryLabel="بستن"
+            secondaryLabel="نمای جدول"
+            testId="view-toolbar"
+            primary={<span className="whitespace-nowrap text-2xs text-text-muted">نمای جدول</span>}
+            secondary={<>
           {/* #197: تا پیش از این «فقط زنده» در استور وجود داشت ولی هیچ‌جا
               روشن/خاموش نمی‌شد — و چون چیدمانِ پیش‌فرض ردیف‌هایِ بیرونِ تابلو
               را بالا می‌آورد، کاربر فلش را «خراب» می‌دید. */}
@@ -524,6 +534,8 @@ export function MarketFilters({
           >
             حذفِ پسوندِ عددی
           </button>
+            </>}
+          />
         <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
 
         {/* چیپ‌های فیلتر با پاپ‌اور اختصاصی */}
