@@ -1,0 +1,35 @@
+{
+  "version": "1.0.69",
+  "notes": "### ◆ بهایِ «بروزرسانی» حالا دادهٔ شما را نمی‌خورد، و خودِ بروزرسانی دیگر شکایت جعلی نمی‌کند\n- **پچ دلتا «اعمال نشد» نمی‌گوید.** وقتی دکمهٔ بروزرسانی را می‌زدید و پیام «اتصال به سرور برقرار نشد، اینترنت خود را بررسی کنید» می‌آمد، پچ **اعمال شده بود**: برنامه در میانهٔ همان درخواست خودش را می‌بست و پاسخ هرگز نوشته نمی‌شد، پس مرورگر آن را خطایِ شبکه می‌خواند. حالا پاسخ می‌رود و اگر پاسخی نیامد، برنامه تا دو دقیقه نسخهٔ تازه را می‌پاید و همان را می‌گوید — نه «اینترنت».\n- **یک «نصبِ کامل» دیگر کندل‌های خودتان را پاک نمی‌کرد.** هرکس که نسخه‌اش دو-سه نسخه عقب باشد به نصابِ کامل می‌افتد (پچ دلتا فقط برایِ همان نسخهٔ نصب‌شده ساخته می‌شود). نصابِ کامل `market.db` را با دیتابیسِ داخلِ خودش عوض می‌کرد و فقط واچ‌لیست و تصمیم‌ها را نگه می‌داشت. رویِ همین ماشین اندازه گرفته شد: شما ۹۱٬۶۸۶ قیمتِ روزانه تا ۱۴۰۵/۰۷/۰۸ و ۳۷۵٬۱۵۴ کندل و ۱۵۱٬۳۵۶ ردیفِ نبض داشتید، و نصاب ۸۷٬۱۴۶ / ۳۲۱٬۳۸۹ و بی‌هیچِ نبضی. یعنی بعد ازِ آپدیت، چارت و ستون «الگو» بی‌داده می‌شدند. حالا ردیف‌هایِ خودشینک‌شده می‌مانند و دیتابیسِ تازه فقط **اضافه** می‌شود؛ اصلاحِ نام/تالار/صنعت از نصاب می‌آید، ولی هیچ ردیفی که خودتان جمع کرده‌اید حذف یا بازنویسی نمی‌شود.\n- **۵۲ مگابایت زباله از محلِ نصب پاک می‌شود.** پچ دلتا هیچ فایلی را حذف نمی‌کند و هر بیلدِ وب نامِ فایل‌ها را عوض می‌کند، پس بعد از سه آپدیتِ پشت‌سرهم درِ نصبِ شما ۷۴۶ فایلِ جاوااسکریپت بود که فقط ۲۷ تایِ آن‌ها واقعاً استفاده می‌شد — ۵۲٫۲ مگابایت از ۵۴٫۳ مگابایتِ پوشه (۹۶٪) مرده. برنامه در اولین اجرا بعد ازِ آپدیت آن‌ها را بشناس می‌کند و پاک می‌کند؛ اگر فهمیدنِ ارجاع‌ها جایی لنگ بزند، **هیچ** پاک نمی‌کند.\n- **فایلِ `BorsTerminal_Update.zip` بعد ازِ مصرف از کنارِ برنامه پاک می‌شد.** ماندنش باعث می‌شد یک آپدیتِ موفق رویِ دیسک شبیه «دانلود شد ولی نصب نشد» به‌نظر برسد.\n- **حجمِ واقعیِ دانلود را می‌گوید.** وقتی پچِ دلتایی برایِ نسخهٔ شما وجود نداشته باشد، نصبِ کامل پیشنهاد می‌شود؛ تا پیش از این پنجرهٔ بروزرسانی حجمش را «۰» نشان می‌داد چون فایلِ مانیفستِ انتشار این عدد را برایِ نصاب نمی‌نوشت.",
+  "pub_date": "Thu, 01 Oct 2026 14:46:29 +0000",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q05wamlGZE5EblQ3aXRMa1l6SU5TY2hEemI3WUo3dFk5aEJneUlaNGZZV3ZpSnV0T0crZFFUQldzS2VFTkR6c3ZaWGszc2lKRHBBa0FpK0R6Y2I1ZndNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODY1OTYzCWZpbGU6Qm9yc1Rlcm1pbmFsX1VsdGltYXRlX1NldHVwX3YxLjAuNjkuZXhlCllrTmNodGl0amNGOHNRQ1hyOEcvcGFNLy9HYVY0bmgrcUZsREhrc2VzYkdKL0NTS3Jab2NuRjlibFRFVjdLNGYxZkRZTUtUNnR3alFLLzVLZDBaRkFBPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.69/BorsTerminal_Ultimate_Setup_v1.0.69.exe",
+      "size": 80438537
+    }
+  },
+  "patches": [
+    {
+      "from": "1.0.65",
+      "to": "1.0.69",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0tjUWVwczUwREwwS3N2L2hqMDhLTDlWaDlDVGdXT25kSnZvNXR0alI2MUQ2QmY4bDg1OGh4ckw4ZFJXZUcrSk03Y1FheDRpQm9xZGdGOHFGOXluUEF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODY1OTc1CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42NV90b18xLjAuNjkuemlwCk1jMytLaGp6aXhqa1dlYU1NTlU2Tk9JbVdSaTdJdEZOdHBYUlAyRDgrYnlUZDRlZnpWVkhnT0xMQmZhSFlieXJ0L29HSzdYenNnam81YXBiWXVsSEJRPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.69/BorsTerminal_Patch_1.0.65_to_1.0.69.zip",
+      "size": 12821390
+    },
+    {
+      "from": "1.0.67",
+      "to": "1.0.69",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q1BUeFRMSGlzZ055UjdBbG5sR2RoWVNDQktzS1pOQ1haWWhjZDdHTXZrYkJzMmpLODFRT2IzbnhMQzhtMEtoYzg1MTRTeTRYUFFJa3RtWHpxcTJ2SHdjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODY1OTcyCWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42N190b18xLjAuNjkuemlwCkYvVlVpVFdUbWIrYXJ4U3VkcCthRGtKeCs3cDBvVUxZeG5KU2tnT3F5OG5oN1VxNUJLaVJycUIwcXJyUnpwV290VVJQR3JRdVo5cmJhSjNjdW5VR0N3PT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.69/BorsTerminal_Patch_1.0.67_to_1.0.69.zip",
+      "size": 12755089
+    },
+    {
+      "from": "1.0.68",
+      "to": "1.0.69",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q09ueEV5T1VRcjM5c0I5emhBYW9sekZTUXg4OFhGSXE2QUhkNTVNa1BQU2pHNk9GQzNSS1RFdDZSUnF2SlZVdi9qaUZiOW4vbVlGTTh5cmxUSHIwOUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODY1OTY5CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42OF90b18xLjAuNjkuemlwCm9UY3JOK2xtc0l1SDVQNXhkQS9nTlBnaTRiOWFFUGZpQ25ORlV0QUczMy85SUkwSUludjRpUlRCNHAzbVhLejVuaDV4bGxsc2pHRWdscjVCVDczMUJBPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.69/BorsTerminal_Patch_1.0.68_to_1.0.69.zip",
+      "size": 12755089
+    }
+  ]
+}
