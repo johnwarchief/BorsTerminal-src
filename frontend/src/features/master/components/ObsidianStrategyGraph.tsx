@@ -56,7 +56,7 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
   const xFund = isReverse ? 480 : 1080;
   const xMoney = 180;
 
-  return [
+  const base: StrategyGraphNode[] = [
     // ─── ستون راست (مبدأ جریان): هسته استراتژی جامع FTS ───
     {
       id: 'fts_core',
@@ -888,15 +888,212 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       y: 933,
     },
   ];
+
+  // ── چیدمان از سلسله‌مراتب مشتق می‌شود، نه از مختصاتِ دستی ──
+  // مقادیرِ x/y که بالا نوشته شده‌اند فقط تا وقتی اعتبار دارند که گره در
+  // CHART_TREE نباشد؛ هر گرهی که در درخت جا دارد، جایش را از ساختار
+  // می‌گیرد. این تنها راهی است که افزودنِ یک گره بازچینشِ دستیِ ده‌ها
+  // مختصات نخواهد.
+  const all = [...base, ...categoryNodes(isReverse)];
+  const layout = computeTreeLayout('fts_core');
+  return all.map((n) => (layout[n.id] ? { ...n, x: layout[n.id].x, y: layout[n.id].y } : n));
+}
+
+/** گره‌هایِ دسته — ستون‌فقراتِ درخت. تا ۱٫۰٫۶۶ هیچ‌کدام وجود نداشتند و
+ *  برگ‌ها مستقیم به هاب وصل بودند. برچسب‌ها عینِ خودِ چارت‌اند. */
+function categoryNodes(isReverse: boolean): StrategyGraphNode[] {
+  const mk = (
+    id: string, label: string, fullTitle: string, page: string,
+    description: string, ruleFormula: string, badge: string,
+    color: string, category: GraphCategory, stage: number, stageName: string,
+    radius = 19,
+  ): StrategyGraphNode => ({
+    id, label, fullTitle, category, stage, stageName, page,
+    description, ruleFormula, badge, color, radius, x: 0, y: 0,
+  });
+  return [
+    // ── ستون‌هایِ سه‌گانهٔ متدولوژی ──
+    mk('pillar_s', '🔎 S — انتخاب و تابلوخوانی', 'S: SELECTION — صفحهٔ ۳ چارت', 'چارت صفحه ۳',
+       'پنج شاخهٔ چارت: انتخاب سبک معامله، رصد جریان نقدینگی، حجم معاملات، الگوهای تابلوخوانی، و فیلتر.',
+       'سبک ➔ نقدینگی ➔ حجم ➔ الگو ➔ فیلتر', 'رکن S', '#06b6d4', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S', 23),
+    mk('pillar_t', '📊 T — تکنیکال', 'T: تکنیکال — صفحهٔ ۲ چارت', 'چارت صفحه ۲',
+       'سه شاخهٔ چارت: سیگنال خرید، سیگنال فروش، و حد ضرر.',
+       'سیگنال خرید | سیگنال فروش | حد ضرر', 'رکن T', '#22c55e', 'tech', 2, 'تکنیکال T', 23),
+    mk('pillar_f', '📑 F — بنیادی', 'F: بنیادی — صفحهٔ ۱ چارت', 'چارت صفحه ۱',
+       'پنج شاخصِ بنیادیِ کدال و داوریِ امتیاز.',
+       'رشد فروش | EPS ۳ساله | حاشیه ناخالص | فروش÷ارزش | نرخ‌گذاری', 'رکن F', '#a78bfa', 'fund', isReverse ? 3 : 1, 'بنیادی F', 23),
+
+    // ── صفحهٔ ۲: سه شاخهٔ T ──
+    mk('signal_buy', '🟩 سیگنال خرید', 'شاخهٔ سیگنال خرید (چارت ص۲)', 'چارت صفحه ۲',
+       'نخست روندِ هفتگی داوری می‌شود: نزولی و خنثی هر دو reject. فقط هفتگیِ صعودی درِ ستاپ‌های روزانه را باز می‌کند.',
+       'هفتگی صعودی ➔ شاخهٔ روزانه ➔ ستاپ', 'خرید', '#22c55e', 'tech', 2, 'تکنیکال T'),
+    mk('signal_sell', '🟥 سیگنال فروش', 'شاخهٔ سیگنال فروش (چارت ص۲)', 'چارت صفحه ۲',
+       'سقف دوقلو، سروشانهٔ مشابه CHoCH، سقف سوم، و واگراییِ مقاومتی.',
+       'سقف دوقلو | سروشانه | سقف سوم | واگرایی مقاومتی', 'فروش', '#ef4444', 'tech', 2, 'تکنیکال T'),
+    mk('stop_loss', '🛑 حد ضرر', 'شاخهٔ حد ضرر (چارت ص۲)', 'چارت صفحه ۲',
+       'سه حالتِ چارت: ۵٪ زیر آخرین کفِ روند صعودی · نوسان‌گیر با MA=۱۴ · روندگیر.',
+       '۵٪ زیر آخرین کف | کندل زیر MA=۱۴ | روندگیر', 'حد ضرر', '#f59e0b', 'tech', 2, 'تکنیکال T'),
+
+    // ── صفحهٔ ۳: پنج شاخهٔ S ──
+    mk('sel_style', '🎚️ انتخاب سبک معامله', 'انتخاب سبک: نوسان‌گیر یا روندگیر', 'چارت صفحه ۳',
+       'نخستین تصمیمِ چارت ص۳. سبک، شاخهٔ حجم و الگو و فیلتر را تعیین می‌کند.',
+       'نوسان‌گیر | روندگیر', 'سبک', '#38bdf8', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S'),
+    mk('sel_liquidity', '💧 رصد جریان نقدینگی', 'رصد جریان نقدینگی در TRADERS ARENA', 'چارت صفحه ۳',
+       'وضعیتِ کلِ بازار پیش از انتخابِ نماد: ارزش معاملات، مثبت/منفی، سفارش‌ها، سرانه، صف‌ها، ورود و خروج پول، صنایع و سهام برگزیده.',
+       'ارزش معاملات ۲۰/۱۰ همت · ۸۰٪ منفی = فرصت · صنایع', 'نقدینگی', '#06b6d4', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S'),
+    mk('sel_volume', '📦 حجم معاملات', 'حجم معاملات (چارت ص۳)', 'چارت صفحه ۳',
+       'نوسان‌گیر: حجم مشکوکِ سه‌برابرِ میانگینِ ماهانه. روندگیر: ورود در قیمتِ ارزنده.',
+       'نوسان‌گیر: ۳× MA۲۱ | روندگیر: قیمت ارزنده', 'حجم', '#0ea5e9', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S'),
+    mk('sel_patterns', '🪧 الگوهای تابلوخوانی', 'الگوهای تابلوخوانی (چارت ص۳)', 'چارت صفحه ۳',
+       'نوسان‌گیر: الگوی ساعت و خروج از باکس رنج. روندگیر: کف‌روبی و خشک کردن.',
+       'نوسان‌گیر: ساعت/باکس | روندگیر: کف‌روبی/خشک‌کردن', 'الگو', '#22d3ee', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S'),
+    mk('sel_filter', '🧲 فیلتر', 'فیلترهای اجراییِ سایت (چارت ص۳)', 'چارت صفحه ۳',
+       'نوسان‌گیر: ساعت (TVOL>۱، قابلِ تغییر به ۳ یا ۵)، جت، حجم مشکوک. روندگیر: کف‌روبی، نقطه‌زنی.',
+       'نوسان‌گیر: ساعت/جت/حجم | روندگیر: کف‌روبی/نقطه‌زنی', 'فیلتر', '#14b8a6', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S'),
+
+    // ── صفحهٔ ۴ ──
+    mk('money_mgmt', '💼 مدیریت سرمایه', 'مدیریت سرمایه (چارت ص۴)', 'چارت صفحه ۴',
+       'سقفِ دارایی، وزنِ سبد، صندوق‌ها و پوششِ ریسک، نوعِ حد ضرر، ورود و خروجِ پله‌ای، و رصدِ مداوم.',
+       'سقف ۷۰٪ (جنگی ۲۰٪±۱۰٪) · وزن سبد · پله‌ای · رصد', 'رکن M', '#f472b6', 'money', 4, 'مدیریت سرمایه M', 23),
+    mk('strategy_group', '🎯 استراتژی', 'سه استراتژیِ نام‌بردهٔ چارت ص۴', 'چارت صفحه ۴',
+       'ساعت شنی (هفتگی MA=۵۲ و RSI=۵)، جت (عبور از سقف تاریخی + کندلِ تثبیت، مهلتِ ۳ روز)، و نقطه‌زنی (کفِ سوم یا پنجم).',
+       'ساعت شنی | جت | نقطه‌زنی', 'استراتژی', '#fbbf24', 'tech', 4, 'استراتژی', 21),
+    mk('portfolio_principles', '🧺 اصول پورتفوی بهینه', 'اصول یک پورتفوی بهینهٔ بورسی (چارت ص۴)', 'چارت صفحه ۴',
+       'سهامِ دلاری و ریالی، شرکت‌هایِ بزرگ و کوچک، تولیدی و غیرتولیدی، و صندوق‌هایِ سرمایه‌گذاری.',
+       'دلاری/ریالی · بزرگ/کوچک · تولیدی/غیرتولیدی · صندوق', 'پورتفو', '#c084fc', 'money', 4, 'مدیریت سرمایه M', 21),
+
+    // ── برگی که از tape_final_filters جدا شد ──
+    mk('tape_dry_up', '🫗 خشک کردن', 'خشک کردنِ عرضه — الگویِ تابلوخوانیِ روندگیر', 'چارت صفحه ۳',
+       'در چارت فرزندِ «روندگیر» زیرِ الگوهای تابلوخوانی است. تا ۱٫۰٫۶۶ داخلِ «فیلترهای نهایی» ادغام شده بود، یعنی با دستهٔ «فیلتر» که شاخهٔ جداگانه‌ای است قاطی می‌شد.',
+       'پایانِ فشارِ عرضه در کف ➔ خشک‌شدنِ فروشنده', 'روندگیر', '#2dd4bf', 'tape', isReverse ? 1 : 3, 'تابلوخوانی S', 16),
+  ];
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  سلسله‌مراتبِ چارت — منبع: docs/TREE-CHART-STRUCTURE.md
+//
+//  تا ۱٫۰٫۶۶ این گراف یک «شبکهٔ تخت» بود: یک هابِ مرکزی و ۴۹ برگ که همه
+//  مستقیم به آن وصل می‌شدند، با ۵۰ مختصاتِ x/y دستیِ ثابت در کد. برگ‌ها
+//  درست بودند ولی شکلِ درخت بازتولید نشده بود — و خواسته همین بود:
+//  «چهار چارت در یک نمودارِ درختی».
+//
+//  حالا ساختار اعلانی است و چیدمان از خودِ آن مشتق می‌شود. افزودنِ یک گره
+//  یعنی یک سطر در این نقشه، نه بازمحاسبهٔ دستیِ ده‌ها مختصات.
+//
+//  «مهندسی معکوس» (ص۴) عمداً گره نشد: خودِ برنامه آن را به‌صورتِ کلیدِ
+//  جهتِ جریان دارد (flow === 'reverse')، که بازنماییِ زنده‌تری است.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** والد ➔ فرزندان. ترتیبِ فرزندان ترتیبِ عمودیِ چیدمان را می‌سازد. */
+export const CHART_TREE: Record<string, string[]> = {
+  fts_core: ['pillar_s', 'pillar_t', 'pillar_f', 'money_mgmt', 'strategy_group', 'portfolio_principles'],
+
+  // ── صفحهٔ ۱ — F: بنیادی ──
+  pillar_f: ['crit_sales_growth', 'crit_3y_eps', 'crit_gross_margin', 'crit_ps_ratio',
+             'crit_pricing_regime', 'fund_super', 'fund_good', 'fund_medium', 'fund_weak'],
+
+  // ── صفحهٔ ۲ — T: تکنیکال ➔ سه شاخهٔ سطح‌اول ──
+  pillar_t: ['signal_buy', 'signal_sell', 'stop_loss'],
+  signal_buy: ['tech_weekly_reject', 'tech_weekly_up'],
+  tech_weekly_up: ['tech_daily_up', 'tech_daily_down', 'tech_daily_flat'],
+  tech_daily_up: ['setup_pullback', 'setup_jet'],
+  tech_daily_down: ['setup_fib', 'setup_choch'],
+  tech_daily_flat: ['setup_last_low', 'setup_double_bottom'],
+  signal_sell: ['setup_double_top', 'exit_third_peak', 'exit_rsi_div', 'exit_half'],
+  stop_loss: ['stop_swing', 'stop_trend'],
+
+  // ── صفحهٔ ۳ — S: SELECTION ➔ پنج شاخهٔ سطح‌اول ──
+  pillar_s: ['sel_style', 'sel_liquidity', 'sel_volume', 'sel_patterns', 'sel_filter'],
+  sel_liquidity: ['tape_market_liquidity', 'tape_breadth', 'tape_flow_charts',
+                  'tape_smart_money', 'tape_industries_picks'],
+  sel_volume: ['tape_volume', 'tape_volume_trend'],
+  // «خشک کردن» در چارت فرزندِ روندگیر زیرِ «الگوهای تابلوخوانی» است —
+  // تا امروز داخلِ tape_final_filters با دستهٔ «فیلتر» قاطی شده بود.
+  sel_patterns: ['tape_clock', 'tape_breakout', 'tape_floor_sweep', 'tape_dry_up'],
+  sel_filter: ['tape_final_filters'],
+
+  // ── صفحهٔ ۴ ──
+  money_mgmt: ['rule_max_portfolio', 'm_weighting', 'hedge_options_etf', 'm_ladder',
+               'm_review', 'rule_cap', 'rule_rr', 'stop_hourglass'],
+  strategy_group: ['tech_weekly_hourglass', 'setup_point_hunt'],
+  portfolio_principles: ['m_principles'],
+};
+
+/** چیدمانِ درختیِ راست‌به‌چپ، مشتق‌شده از CHART_TREE.
+ *
+ *  الگوریتم همان «درختِ مرتب»ِ کلاسیک است: برگ‌ها به ترتیبِ پیمایش یک
+ *  شیارِ عمودی می‌گیرند و هر والد وسطِ فرزندانش می‌نشیند. عمق ➔ ستونِ
+ *  افقی. چون ریشه راست است، x با افزایشِ عمق کم می‌شود (RTL).
+ */
+export function computeTreeLayout(
+  rootId = 'fts_core',
+  opts: { xRoot?: number; xGap?: number; yGap?: number; yTop?: number } = {},
+): Record<string, { x: number; y: number; depth: number }> {
+  const { xRoot = 1395, xGap = 268, yGap = 31, yTop = 46 } = opts;
+  const pos: Record<string, { x: number; y: number; depth: number }> = {};
+  let slot = 0;
+  const seen = new Set<string>();
+
+  const walk = (id: string, depth: number): number => {
+    // گاردِ حلقه: یک گره در چندین شاخه هم ظاهر می‌شود (مثلِ جت که هم ستاپِ
+    // روزانهٔ صعودی است هم یکی از سه استراتژیِ ص۴). اولین والد چیدمان را
+    // تعیین می‌کند؛ بقیه یالِ متقاطع می‌مانند.
+    if (seen.has(id)) return pos[id]?.y ?? yTop;
+    seen.add(id);
+    const kids = CHART_TREE[id] ?? [];
+    let y: number;
+    if (kids.length === 0) {
+      y = yTop + slot * yGap;
+      slot += 1;
+    } else {
+      const ys = kids.map((k) => walk(k, depth + 1));
+      y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    }
+    pos[id] = { x: xRoot - depth * xGap, y, depth };
+    return y;
+  };
+  walk(rootId, 0);
+  return pos;
+}
+
+/** یال‌هایِ ستون‌فقرات، مستقیماً از CHART_TREE. هر والد➔فرزند یک یال.
+ *  چون از همان نقشه‌ای می‌آیند که چیدمان از آن ساخته شده، ساختارِ دیده‌شده
+ *  و ساختارِ اعلام‌شده نمی‌توانند از هم جدا بیفتند. */
+function hierarchyLinks(): StrategyGraphLink[] {
+  const out: StrategyGraphLink[] = [];
+  for (const [parent, kids] of Object.entries(CHART_TREE)) {
+    for (const kid of kids) {
+      out.push({
+        id: `tree_${parent}__${kid}`,
+        source: parent,
+        target: kid,
+        presets: ['swing', 'trend', 'hourglass'],
+      });
+    }
+  }
+  return out;
 }
 
 // اتصالات پیوسته افقی از ستون به ستون با رعایت هر دو جریان
 /** اتصالاتِ هر سبک — بیرون‌کشیده برایِ آزمونِ شاخه‌ها (قیف و درخت باید یک مسیر ببینند) */
 export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
+  // ستون‌فقراتِ درخت همیشه هست؛ یال‌هایِ قدیمی رویِ آن «میان‌بر»اند و هر
+  // جفتِ تکراری حذف می‌شود تا دو خط رویِ هم کشیده نشود.
+  const spine = hierarchyLinks();
+  const seenPair = new Set(spine.map((l) => `${l.source}>${l.target}`));
+  const merge = (extra: StrategyGraphLink[]) => [
+    ...spine,
+    ...extra.filter((l) => {
+      const k = `${l.source}>${l.target}`;
+      if (seenPair.has(k)) return false;
+      seenPair.add(k);
+      return true;
+    }),
+  ];
   if (flow === 'reverse') {
     // ─── جریان مهندسی معکوس نوسان‌گیری (صفحه ۴ و ۱۹ جزوه) ───
     // شروع از راست (هسته غربالگری نوسان‌گیری) ➔ فیلترهای تابلوخوانی ➔ تکنیکال دو زمانه ➔ ۵ شاخص بنیادی ➔ مدیریت سرمایه
-    return [
+    return merge([
       // ۱. اتصال هسته اسکن نوسان‌گیری به ورودی‌های تابلوخوانی S
       { id: 'rev_c_vol', source: 'fts_core', target: 'tape_volume', presets: ['swing', 'trend'] },
       { id: 'rev_c_clock', source: 'fts_core', target: 'tape_clock', presets: ['swing'] },
@@ -974,11 +1171,11 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_m_ladder_review', source: 'm_ladder', target: 'm_review', presets: ['swing', 'trend', 'hourglass'] },
       { id: 'rev_m_review_principles', source: 'm_review', target: 'm_principles', presets: ['trend', 'hourglass'] },
       { id: 'rev_m_principles_hedge', source: 'm_principles', target: 'hedge_options_etf', presets: ['trend', 'hourglass'] },
-    ];
+    ]);
   }
 
   // ─── جریان کلاسیک بنیادی به تابلوخوانی ───
-  return [
+  return merge([
     // هسته به شاخه‌های بنیادی
     { id: 'cls_c_super', source: 'fts_core', target: 'fund_super', presets: ['trend', 'hourglass'] },
     { id: 'cls_c_good', source: 'fts_core', target: 'fund_good', presets: ['swing', 'trend'] },
@@ -1061,7 +1258,7 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_m_ladder_review', source: 'm_ladder', target: 'm_review', presets: ['swing', 'trend', 'hourglass'] },
     { id: 'cls_m_review_principles', source: 'm_review', target: 'm_principles', presets: ['trend', 'hourglass'] },
     { id: 'cls_m_principles_hedge', source: 'm_principles', target: 'hedge_options_etf', presets: ['trend', 'hourglass'] },
-  ];
+  ]);
 }
 
 export interface ObsidianStrategyGraphProps {
@@ -1497,7 +1694,7 @@ export function ObsidianStrategyGraph({
         className="relative mx-auto w-full min-w-[1480px] max-w-[1954px] aspect-[1480/1040] overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
         <svg
-          viewBox="0 0 1480 1040"
+          viewBox="0 0 1480 1500"
           className="w-full h-full"
           preserveAspectRatio="xMidYMid meet"
           data-testid="obsidian-strategy-canvas"

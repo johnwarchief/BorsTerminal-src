@@ -2,7 +2,7 @@
 // اعتبارسنجی تم روشن/تاریک، چینش RTL، جریان مهندسی معکوس و پوشش کامل ۴ صفحه چارت
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { ObsidianStrategyGraph, getGraphLinks } from '../features/master/components/ObsidianStrategyGraph';
+import { ObsidianStrategyGraph, getGraphLinks, CHART_TREE, computeTreeLayout } from '../features/master/components/ObsidianStrategyGraph';
 import { useStrategyParamsStore, FTS_DEFAULT_PARAMS } from '../features/master/stores/strategyParamsStore';
 import { useUiStore } from '../shared/stores/uiStore';
 
@@ -234,5 +234,77 @@ describe('چارت ص۲: روندِ روزانه درِ ستاپ‌ها را ت�
     for (const d of ['tech_daily_up', 'tech_daily_down', 'tech_daily_flat']) {
       expect(targetsOf(d).length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// ستون‌فقراتِ درخت (۱٫۰٫۶۶) — خوانده‌شده از خودِ تصویرِ چارت.
+// پیش از این گراف یک «شبکهٔ تخت» بود: یک هاب و ۴۹ برگ، با ۵۰ مختصاتِ
+// دستی. حالا ساختار اعلانی است و چیدمان از آن مشتق می‌شود.
+describe('ستون‌فقراتِ درخت از CHART_TREE', () => {
+  it('سه رکن و چهار شاخهٔ ص۴ زیرِ هسته‌اند', () => {
+    expect(CHART_TREE.fts_core).toEqual(
+      expect.arrayContaining(['pillar_s', 'pillar_t', 'pillar_f', 'money_mgmt',
+                              'strategy_group', 'portfolio_principles']),
+    );
+  });
+
+  it('T سه شاخهٔ چارت را دارد: خرید / فروش / حد ضرر', () => {
+    expect(CHART_TREE.pillar_t).toEqual(['signal_buy', 'signal_sell', 'stop_loss']);
+  });
+
+  it('S پنج شاخهٔ چارت را دارد', () => {
+    expect(CHART_TREE.pillar_s).toEqual(
+      ['sel_style', 'sel_liquidity', 'sel_volume', 'sel_patterns', 'sel_filter'],
+    );
+  });
+
+  it('«خشک کردن» زیرِ الگوهای تابلوخوانی است، نه زیرِ فیلتر', () => {
+    // در چارت فرزندِ روندگیر زیرِ «الگوهای تابلوخوانی» است؛ تا ۱٫۰٫۶۶
+    // داخلِ «فیلترهای نهایی» ادغام شده بود.
+    expect(CHART_TREE.sel_patterns).toContain('tape_dry_up');
+    expect(CHART_TREE.sel_filter ?? []).not.toContain('tape_dry_up');
+  });
+
+  it('هیچ مختصاتی دستی نیست — همهٔ گره‌هایِ درخت از چیدمان می‌آیند', () => {
+    const layout = computeTreeLayout();
+    const named = new Set([...Object.keys(CHART_TREE), ...Object.values(CHART_TREE).flat()]);
+    for (const id of named) expect(layout[id]).toBeDefined();
+  });
+
+  it('عمق با چارت می‌خواند: هسته ۰، رکن ۱، دستهٔ T دو، ستاپ ۵', () => {
+    const l = computeTreeLayout();
+    expect(l.fts_core.depth).toBe(0);
+    expect(l.pillar_t.depth).toBe(1);
+    expect(l.signal_buy.depth).toBe(2);
+    expect(l.setup_pullback.depth).toBe(5);
+  });
+
+  it('والد وسطِ فرزندانش می‌نشیند', () => {
+    const l = computeTreeLayout();
+    const kids = CHART_TREE.tech_daily_up.map((k) => l[k].y);
+    expect(l.tech_daily_up.y).toBeCloseTo((Math.min(...kids) + Math.max(...kids)) / 2, 5);
+  });
+
+  it('هر یالِ CHART_TREE در گراف هست', () => {
+    const links = getGraphLinks('classic');
+    const have = new Set(links.map((x) => `${x.source}>${x.target}`));
+    for (const [par, kids] of Object.entries(CHART_TREE)) {
+      for (const k of kids) expect(have.has(`${par}>${k}`)).toBe(true);
+    }
+  });
+
+  it('هیچ یالِ تکراری نیست — دو خط رویِ هم کشیده نمی‌شود', () => {
+    for (const flow of ['classic', 'reverse'] as const) {
+      const pairs = getGraphLinks(flow).map((l) => `${l.source}>${l.target}`);
+      expect(new Set(pairs).size).toBe(pairs.length);
+    }
+  });
+
+  it('چیدمان در بومِ ۱۴۸۰×۱۵۰۰ جا می‌شود', () => {
+    const l = Object.values(computeTreeLayout());
+    expect(Math.min(...l.map((v) => v.x))).toBeGreaterThan(0);
+    expect(Math.max(...l.map((v) => v.x))).toBeLessThan(1480);
+    expect(Math.max(...l.map((v) => v.y))).toBeLessThan(1500);
   });
 });
