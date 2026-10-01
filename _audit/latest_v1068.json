@@ -1,0 +1,34 @@
+{
+  "version": "1.0.68",
+  "notes": "### ◆ رفعِ همان چیزی که در ۱٫۰٫۶۷ شش‌دکمه شد\n- **کلیدِ «موتور دوم» زیرِ دکمهٔ «بازپخش» بود.** گروهکِ انتخابِ موتور را با کلاسی ساخته بودم که در stylesheet برنامه هیچ‌وقت تعریف نشده؛ دو دکمه در جعبه‌ای بلوکی هم‌راستا نشدند و روی دکمهٔ کناری افتادند، یعنی کلیکِ «موتور دوم» عملاً «بازپخش» را می‌زد. با سنجشِ زنده (hit-testِ نقطهٔ میانیِ هر دکمه در عرضِ ۱۳۶۶) درست شد: هیچ‌کدام از ۱۶ دکمهٔ نوارِ بالا COVERED نیست. همان سنجش به `tools/toolbar_overlap.mts` اضافه شد تا این خطایِ چیدمان دوباره برنگردد.\n- **موتورِ دوم روی همین ماشین آزمود شد:** WebGL2 موجود است، پنل با شش canvas می‌آید (۹۷۶×۵۷۲ قیمت و ۹۷۶×۲۲۲ حجم)، ۴۲۳۵ کندل و ۱۱ لایۀ FTS از همان `/api/fts` رسم می‌شود، «بازگشت به KLineCharts» کار می‌کند و هیچ خطایِ کنسولی نیست.",
+  "pub_date": "Thu, 01 Oct 2026 10:31:11 +0000",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0syNGNUM2VhMlZ2aTNqRVV3Sk1UQmNKQ05YT1U5Z1d3eGVvRmFtQUJwSGxuSldMdmlBSC9TaXNIOEZweVo2cmJ2dmk4aDJqS3JzZUt1Z2I3T2Q5eGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODUwNjQ4CWZpbGU6Qm9yc1Rlcm1pbmFsX1VsdGltYXRlX1NldHVwX3YxLjAuNjguZXhlCmZjekVrVkdMSGpZcnE0WlF0RDhITzU4SnBrT2JvN2Z4bm5nR20xUklWZXhCSkZ2WG9wWnhka1dGRFdYOHdCejlBcE56S3dOZWx5T0FkTEJRQWN4M0FRPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.68/BorsTerminal_Ultimate_Setup_v1.0.68.exe"
+    }
+  },
+  "patches": [
+    {
+      "from": "1.0.64",
+      "to": "1.0.68",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q04rN0lKN0d4Q2J1bW8xMTQyRXE1RVQ1MU1rNEhIelVQSGh2cnV1ei9TRTZUWmxPWDBqVjduT04xUHN1MktLdEo1T0VDS3ZEK0wxOGtzN09VbmdtVkFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODUwNjU4CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42NF90b18xLjAuNjguemlwCnJPTGMrTzdlLzQ1VE1CQVBrZUczcWt1aVV0d1lhUFhiaXd6UWQrMHR3d1lsTzlyeitPS0EwU2dNczVZN3p3dlJHeWJDdHpqNENWeWp2K3NuR1pwZEJBPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.68/BorsTerminal_Patch_1.0.64_to_1.0.68.zip",
+      "size": 12989484
+    },
+    {
+      "from": "1.0.65",
+      "to": "1.0.68",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0g1bmttdy9XQWZkdFRqTXRZc0Y3Qmh4cDNxS0FiVXFWUGh0LzMzUGtVb2JJT3lhdVJjZjZMRERkNk51OG5KeHYxTDR4YnNHWDRvd2V2Wjh4K2U4aUFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODUwNjU1CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42NV90b18xLjAuNjguemlwCjNRc0F5SzdxT3Z3cWdmZmgxdTEyWWp1YzRvUGlSYllGOURlbkgrSUFuNGpHdEhIQTFqa2hYcFBWM3hBVUo2cERWclVYREZzQnhkTjBUUnNJUG02dkRnPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.68/BorsTerminal_Patch_1.0.65_to_1.0.68.zip",
+      "size": 12796095
+    },
+    {
+      "from": "1.0.67",
+      "to": "1.0.68",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0lkakYvVXJXcVQ3S3hNNklYK3JlNlhzaXhIRDVpRGNwUHdERE5DUHIyR0JPcEdrUzlMZ0JiS0s1NzZveE1wREJ6dTBIN1FIRHJWZnY4eWxGdHBDSHdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODUwNjUzCWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42N190b18xLjAuNjguemlwCmZoK2VqMUYxQXZHOWd2M0lPbFdTTzZVNHhtNm1GZFg4WnU5a2hHVk9hRHNkYSt1RGRFM2cwZklqM1piTTFQa3pmS1YzRllHa3BxUWQxa2ViVlVVVUR3PT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.68/BorsTerminal_Patch_1.0.67_to_1.0.68.zip",
+      "size": 12729794
+    }
+  ]
+}

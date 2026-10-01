@@ -1,0 +1,34 @@
+{
+  "version": "1.0.67",
+  "notes": "### ◆ پنج باگِ محاسبهٔ موتور FTS + موتورِ دوم در تب تکنیکال\n- **هفتگی حالا هفتۀ ایرانی است.** تجمیع کندل‌های هفتگی «هفتۀ ISO» (دوشنبه‌محور) بود؛ بازارِ ما شنبه تا چهارشنبه باز است، پس شنبه و یکشنبه به هفتهٔ قبل می‌افتادند. در سنجش روی ۸۰۰ نمادِ پیشینه، شکلِ کندلِ هفتگی در ۷۵۹ نماد عوض شد و **رأیِ روند هفتگی در ۱۱۱ نماد** (۴۱ ورود به وتو، ۵۰ خروج از وتو، ۲۰ جابه‌جایی دیگر). این عدد را پیش از معامله با چارتِ خودتان ببینید؛ دلیلش در پنل آمده («مبنا: …»).\n- **حد ضرر با سایهٔ لحظه‌ای تکان نمی‌خورد.** کفِ ماژور حالا از ۲۰ کندلِ **بسته‌شده** گرفته می‌شود، نه با کندلِ نیمه‌کارِ امروز. در ۱۷۰ نماد از ۸۰۰ عددِ حدِ ضرر عوض شد (همان‌هایی که کفِ امروز پایین‌ترین بود).\n- **MA۵۲ فقط با ۵۲ کندل هفتگی.** نمادی که ۱۵ تا ۵۱ کندل هفتگی دارد میانگینِ کوتاه‌ترش را با نامِ MA۵۲ و «خرید ۲ تا ۴ برابری» نمی‌بیند؛ عدد null است با دلیلِ «MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی)» و تعدادِ کندلِ هفتگی هم منتشر می‌شود. در ۳۹ نماد از ۸۰۰ ساعتِ شنی خاموش شد چون مبنایش وجود نداشت.\n- **کمربند فیبوی موجِ نزولی قرینه شد.** قبلاً هر دو جهتِ موج «از سقف به پایین» اندازه گرفته می‌شد، پس روی موجِ ریزشی کمربندِ ۳۳–۴۰٪ چسبیده به سقف می‌افتاد (همان‌جا که موج از آن شروع کرده). در ۱۸۱ موجِ نزولی از ۸۰۰ نماد جایِ کمربند درست شد.\n- **روزانۀ سنجیده‌نشده دیگر «خنثیِ مجاز» نیست.** اگر کمتر از دو پیوتِ کاملِ روزانه داریم، ماتریس UNKNOWN می‌گوید و هیچ ستاپی پیشنهاد نمی‌کند (پیش از این: «هفتگی صعودی + روزانه خنثی: کف دوقلو یا خرید در کف باکس رنج»).\n- **موتورِ دوم (FFC) در تب تکنیکال نشست.** کلیدش در نوارِ ابزار است و انتخابتان ذخیره می‌شود؛ کندل‌ها، تجمیع و لایه‌های تحلیل از همان سرور می‌آیند (کمربندها، سطوح ۰ تا ۱، جت، CHoCH، خط گردن، نقطه‌زنی، حدِ ضرر، MA14، سقفِ سوم، ساعتِ شنی) و هیچ داوریِ دومی ساخته نمی‌شود. پیش‌فرض KLineCharts می‌ماند. FFC برای هندسۀ کندل WebGL2 می‌خواهد؛ اگر بالا نیاید پیامِ خودِ موتور روی چارت می‌نشیند، نه بومِ خالی، و راهِ بازگشت روی همان پنل هست. محورِ زمانِ FFC میلادی است و این را همان‌جا می‌گوید.\n- **بازپخش (Bar Replay) واقعاً کار می‌کند:** مکان‌نما سری را می‌بُرد و کندل‌هایِ بعد از آن پنهان می‌شوند (قبلاً مکان‌نما جلو می‌رفت و چارت دست‌نخورده می‌ماند).\n- **دکمه‌های «بازهٔ زمانی» زوم می‌کنند** (۱D تا All روی پهنای واقعی پنل). پیش از این فقط برچسبِ فعال جابه‌جا می‌شد و مبنای نمایش «All» است نه «۱Y»ِ نوشته‌شده.\n- **«مخفی‌سازی ترسیم‌ها» فقط دستِ خودتان را پنهان می‌کند**، نه لایۀ تحلیل FTS، الگوها و رویدادهای شرکتی را.\n- **نوارِ ترسیم:** دو ابزارِ مرده («دایره»، «سه‌موجه») که هیچ‌وقت چیزی نمی‌ساختند حذف شد، و دو نگاشتِ غلط درست شد: «خط افقی» کج نمی‌کشید و «خط اطلاعاتی» پاره‌خط بود. یک تستِ تازه هر کلیکِ این نوار را با فهرستِ واقعیِ اورلی‌های موتور می‌سنجد تا این دیگر برنگردد.\n- **سقفِ دوقلو رسم می‌شود**؛ لایه‌اش از قبل «کف/سقف دوقلو» نام داشت ولی فقط کف رسم می‌شد.\n- **سطحِ ۰٫۵ فیبو** که در جزوه هست («۰ و ۰.۳۳ و ۰.۴ و ۰.۵ و ۰.۶۱۸ و ۰.۷ و ۱») به رسمِ فرانت اضافه شد؛ بک‌اند از قبل می‌داد و گاردِ تازه یکی‌بودنِ دو فهرست را می‌سنجد.\n- **تحلیل نرسید؟ همان را می‌خوانید:** خطای موتور دیگر «در حال دریافت نشان‌ها» ابدی نیست؛ پیامِ سرور و دلیلِ «جت نبودن» نمایش داده می‌شود.\n- **سایدبار چپ، مرحلِه‌به‌مرحله:** جای خودِ نماد در قیف (تابلو → تکنیکال → بنیادی → تحویل) با چهار رنگِ روشن/بسته/در انتظار/بی‌منبع و خطِ «ایستاده در «تکنیکال» — …». قواعد از همان موتورِ قیف خوانده می‌شود، نه از یک پیاده‌سازیِ دوم.\n- **تب تکنیکال بدون انتخابِ نماد** هم پنل‌هایش را نشان می‌دهد: سایدبارِ ترازها «نمادی انتخاب نشده» می‌گفت در حالی که چارت همان لحظه فولاد را نشان می‌داد.\n- **دیتای کدال این نسخه تازه است:** ۳۶٬۱۸۷ اطلاعیه، ۸٬۲۲۰ صورتِ مالی و ۱۴٬۲۷۲ فروشِ ماهانه (سنجشِ امروز). فایل `codal.db.lzma` کنار همین ریلیز است، پس دکمۀ «بروزرسانی دیتابیس کدال» همین را می‌گیرد. بیس‌لاین `market.db.lzma` دست‌نخورده ماند: بانکِ این ماشین از فایلِ منتشرشده ردیفِ کمتری دارد (daily_prices ۷۲٬۲۸۰ ⇄ ۸۷٬۱۴۶) و پک‌کردنش روزهای معاملاتیِ نصبِ تازه را می‌بُرد.\n- **اعتبارسنجی:** ۱۲۷۹ تستِ فرانت در ۱۱۸ فایل سبز، `tsc -b --force` پاک، بیلدِ تمیز؛ سوئیتِ سرور سبز به‌جز گاردِ پاریتیِ اسکرینر/کارت که روی این ماشین روی همان ردیفِ «نشار» (شاخص ۴: موتور ۱٬۴۱۳٫۷۵ ⇄ کارت هیچ) قرمز است و در گیت‌هاب سبز می‌شود. گاردِ تازهٔ `dev/fts_engine_honesty_v1066.py` (۲۵ شاهد + شاهدِ منفی) به سوئیت اضافه شد.",
+  "pub_date": "Thu, 01 Oct 2026 09:32:24 +0000",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0hWZm9sNGhOL1FyUndJVXB6WDhnQ0pHd3FZK0E5M3NZWGl2UTFGUnphdzkzbVBramU5NkdwMEVwWGkyYlE3ZlJxUi9JTVdFckVIQzlZM1ZzNFZlR0EwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODQ3MTIxCWZpbGU6Qm9yc1Rlcm1pbmFsX1VsdGltYXRlX1NldHVwX3YxLjAuNjcuZXhlCmNrVmFidmtnWTBRejFQOWRlSkpobFJrbHRRZ2JrWk9HRWg2OXZ3UHVzRWd1NjdwQnpUMUFNWGFZcUJuRXU3RndyeWNSQjlLV3pNTDRrODlnZFd6NkNnPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.67/BorsTerminal_Ultimate_Setup_v1.0.67.exe"
+    }
+  },
+  "patches": [
+    {
+      "from": "1.0.63",
+      "to": "1.0.67",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0ZDdGlRQlFYSkN2L3YrVmhQS0VwN2NYZlQ5MHBvNnY5R3A5R2hIUlZNS2RIQXBLWlNTNWdlaWlKLzhRWjdkSmlVUUZPcG5qYityYWUyNmV6SlRLZkF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODQ3MTMxCWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42M190b18xLjAuNjcuemlwCnYrdk02WERKOElNY2JDK25lemg3Q0lNemt6OGxmSG5zU1BybzA2TXNIc3Uvc3FPOHZyZmEzQmZlRnJXSHBLQThsckpoOWxuSU5CcWdzd01OR05ZbERRPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.67/BorsTerminal_Patch_1.0.63_to_1.0.67.zip",
+      "size": 12988723
+    },
+    {
+      "from": "1.0.64",
+      "to": "1.0.67",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0ppVS93Z3cySmg4ZkxHeU5NZEUybzhvWFE0WlB1RUg3SHlmaWNVWm4xRjRLQzI2NWZsUmxqWTBsS0ROa0w2VEt4bVFOU0R0YmNIUElJUm5NM0VaMlFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODQ3MTI4CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42NF90b18xLjAuNjcuemlwCmZCVWZiTktxYXNJclhHck03cU5YcTF0Nm9Ec3JrQXpoT1NCYkRXY2VrL2JmblEvVmZxME1Pejl5NWRrRTdtRUVtQ2R5ckJFTXFEdDhnQzBpQmtYWURBPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.67/BorsTerminal_Patch_1.0.64_to_1.0.67.zip",
+      "size": 12988723
+    },
+    {
+      "from": "1.0.65",
+      "to": "1.0.67",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0hueHpVTkNIQVl3OVp2bWU5NCtaOHgyQnN5VjhUUUNzYUVadUtBZ0pxT2dJVXBDWkZDbnFRdEZQVVNRaUFTUGlHbDQ1Wk0waDhmOHFYRTE5K0FBckEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkwODQ3MTI2CWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC42NV90b18xLjAuNjcuemlwCm9ZbVc0TXNabnR4WXBFeVl0MEZ5eFZzNExyb0VTY1NHZ0xtbXdTM1VzL0M0L0s5WWs2MC9vcHRFbnFZZWFLRFVBWlNzeS9qOW5USnQ5M1ppeUs0akNnPT0K",
+      "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.67/BorsTerminal_Patch_1.0.65_to_1.0.67.zip",
+      "size": 12795332
+    }
+  ]
+}
