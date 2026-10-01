@@ -140,17 +140,38 @@ async function gunzip(buf: ArrayBuffer): Promise<Uint8Array> {
  * خطای مرگبار بارگذاری داده را به‌جای صفحهٔ بی‌صدا خالی، به کاربر نشان می‌دهد
  * (برای عیب‌یابی نصب اول روی گوشی حیاتی است — «همه بدون داده» یعنی همین‌جا).
  */
+export const __showFatalBannerForTest = (m: string): void => showFatalBanner(m);
+
 function showFatalBanner(message: string): void {
   try {
     if (document.getElementById('bors-fatal-banner')) return;
     const el = document.createElement('div');
     el.id = 'bors-fatal-banner';
     el.dir = 'rtl';
-    el.style.cssText =
-      'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;' +
-      'color:#fff;font-size:12px;line-height:1.8;padding:8px 12px;text-align:center;' +
-      'font-family:inherit;word-break:break-word';
-    el.textContent = `⛔ بارگذاری بستهٔ دادهٔ آفلاین شکست خورد: ${message}`;
+    // چیدمان در mobile.css است، نه inline — مهم‌ترینش padding-topِ
+    // safe-area: بی‌آن بنر زیرِ نوارِ وضعیتِ اندروید می‌رود و متنش با ساعت
+    // و باتری قاطی می‌شود، دقیقاً چیزی که رویِ گوشیِ مالک دیده شد.
+    el.className = 'bors-fatal-banner';
+    const txt = document.createElement('span');
+    txt.textContent = `⛔ بارگذاری بستهٔ دادهٔ آفلاین شکست خورد: ${message}`;
+    el.appendChild(txt);
+
+    // دکمهٔ تلاشِ دوباره. بی‌این، تنها راهِ کاربر بستن و بازکردنِ اپ بود —
+    // و چون dbPromise کش شده، حتی آن هم همیشه جواب نمی‌داد. اینجا کشِ بسته
+    // و خودِ promise پاک می‌شوند تا واقعاً از نو تلاش شود.
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'تلاش دوباره';
+    btn.onclick = () => {
+      btn.disabled = true;
+      btn.textContent = 'در حال تلاش…';
+      void (async () => {
+        try { await caches.delete(CACHE_NAME); } catch { /* کش نبود */ }
+        try { localStorage.removeItem(CHECK_KEY); } catch { /* مهم نیست */ }
+        location.reload();
+      })();
+    };
+    el.appendChild(btn);
     document.body.appendChild(el);
   } catch { /* حتی بنر هم نشد — دستِ‌کم خطا در کنسول هست */ }
 }

@@ -108,3 +108,47 @@
     height: 4px;
   }
 }
+
+/* ── ناحیهٔ امنِ بالا (۱٫۰٫۶۶) ──────────────────────────────────────────
+   تا امروز فقط safe-area-inset-bottom رعایت می‌شد. رویِ گوشی‌هایِ امروزی
+   که نوارِ وضعیت رویِ محتوا می‌افتد، سرِ برنامه زیرِ ساعت و باتری می‌رفت.
+   رویِ دسکتاپ inset صفر است، پس max() این قاعده را بی‌اثر می‌کند.      */
+html.bors-mobile body {
+  padding-top: env(safe-area-inset-top);
+}
+html.bors-mobile .bors-fixed-top {
+  top: env(safe-area-inset-top);
+}
+
+/* ── بنرِ خطایِ مرگبارِ بارگذاری داده ──────────────────────────────────
+   عمداً خارج از html.bors-mobile: این بنر در پیش‌نمایشِ مرورگر هم باید
+   درست دیده شود. padding-top از safe-area می‌آید تا زیرِ نوارِ وضعیت
+   نرود؛ max() رویِ دسکتاپ که inset صفر است بی‌اثر می‌شود.            */
+.bors-fatal-banner {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 99999;
+  background: #7f1d1d;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: center;
+  word-break: break-word;
+  padding: 8px 12px;
+  padding-top: max(8px, calc(env(safe-area-inset-top) + 8px));
+}
+.bors-fatal-banner button {
+  display: block;
+  margin: 6px auto 0;
+  padding: 3px 14px;
+  border-radius: 8px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}

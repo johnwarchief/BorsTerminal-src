@@ -68,3 +68,27 @@ describe('پشتیبانِ بستهٔ دادهٔ آفلاین', () => {
     expect(nativeGetBytes).not.toHaveBeenCalled();
   });
 });
+
+describe('بنرِ خطا', () => {
+  it('زیرِ نوارِ وضعیتِ اندروید نمی‌رود و دکمهٔ تلاشِ دوباره دارد', async () => {
+    // باگِ اسکرین‌شات: بنر top:0 بود و متنش با ساعت و باتری قاطی می‌شد.
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })));
+    nativeGetBytes.mockResolvedValue(null);
+    const { __showFatalBannerForTest } = await import('@shared/api/local/localData');
+    __showFatalBannerForTest('آزمایش');
+    const el = document.getElementById('bors-fatal-banner');
+    expect(el).toBeTruthy();
+    // چیدمان در mobile.css است (jsdom مقدارِ env() را از inline حذف می‌کند
+    // و اصلاً جایِ استایل آنجا نبود). اینجا کلاس را می‌سنجیم و قاعدهٔ
+    // safe-area را مستقیم از خودِ فایلِ CSS.
+    expect(el!.className).toBe('bors-fatal-banner');
+    expect(el!.querySelector('button')?.textContent).toBe('تلاش دوباره');
+    el!.remove();
+  });
+
+  it('قاعدهٔ safe-area واقعاً در mobile.css هست', async () => {
+    const css = await import('fs').then((fs) =>
+      fs.readFileSync('src/shared/styles/mobile.css', 'utf8'));
+    expect(css).toMatch(/\.bors-fatal-banner\b[\s\S]*?safe-area-inset-top/);
+  });
+});
