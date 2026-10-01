@@ -62,6 +62,9 @@ jobs:
         working-directory: frontend
         run: |
           npm ci --no-audit --no-fund
+          # برچسب بیلد در پنل عیب‌یابی 🛠 اپ نشان داده می‌شود تا همیشه معلوم
+          # باشد APK نصب‌شده واقعاً از کدام بیلد است.
+          export VITE_BUILD_TAG="run${GITHUB_RUN_NUMBER} · ${GITHUB_SHA::7} · $(date -u +%Y-%m-%d_%H:%M)"
           VITE_LOCAL_DATA=1 npm run build
           cp ../dist_mobile/mobile_snapshot.db.gz dist/
 

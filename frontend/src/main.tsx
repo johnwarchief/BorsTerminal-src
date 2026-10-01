@@ -10,9 +10,13 @@ import './index.css';
 // دسکتاپ (که این کلاس را نمی‌گیرد) کاملاً بی‌اثر می‌ماند (~۲KB).
 import './shared/styles/mobile.css';
 
-// بیلد موبایل (VITE_LOCAL_DATA='1'): کلاس پوستهٔ موبایل روی ریشهٔ سند.
+// بیلد موبایل (VITE_LOCAL_DATA='1'): کلاس پوستهٔ موبایل روی ریشهٔ سند +
+// پنل عیب‌یابی روی خود دستگاه (دکمهٔ 🛠 — برچسب بیلد/وضعیت داده/زنده).
 if (import.meta.env.VITE_LOCAL_DATA === '1') {
   document.documentElement.classList.add('bors-mobile');
+  void import('./shared/api/local/diagnostics')
+    .then((m) => m.mountDiagnostics())
+    .catch(() => { /* پنل عیب‌یابی نیامد — اپ بدون آن هم کار می‌کند */ });
 }
 
 const queryClient = new QueryClient({
