@@ -235,6 +235,18 @@ export default function MarketPage() {
       <CollapsibleSection
         title="نبض بازار"
         storageKey="bors.market.pulse.open"
+        // رویِ نمایشگرِ کوتاه (لپ‌تاپِ ۱۳۶۶×۷۶۸) نبض پیش‌فرض جمع است.
+        // حساب: نوارِ عنوان ~۷۵ + نوارِ شرط‌ها ~۸۰ + کارت‌هایِ نبض ~۲۱۰ +
+        // نمودارها ~۴۵ + نوارِ فیلتر ~۹۵ = ~۵۰۵ پیکسل، یعنی از ۷۶۸ فقط
+        // ~۱۰۰ پیکسل برایِ خودِ جدول می‌ماند — کمتر از سه ردیف.
+        // عرض هم شرط است، وگرنه گوشیِ عمودی (مثلاً ۴۱۲×۹۱۵) از قیدِ
+        // ارتفاع رد می‌شد و نبض باز می‌ماند — در حالی که آنجا شبکه یک‌ستونی
+        // است و چهار کارت رویِ هم تلنبار می‌شوند، یعنی بدترین حالت.
+        // انتخابِ کاربر همیشه مقدم است (اول localStorage خوانده می‌شود).
+        defaultOpen={
+          typeof window === 'undefined'
+          || (window.innerHeight > 820 && window.innerWidth > 820)
+        }
         testId="market-pulse-section"
         summary={<PulseSummary pulse={pulse ?? null} />}
       >
