@@ -1,0 +1,272 @@
+{
+ "فولاد": {
+  "months_matched": 182,
+  "exact_matches": {
+   "sum": 0,
+   "mean": 0,
+   "last": 0,
+   "max": 13
+  },
+  "vol_over_sum_median": 0.041375,
+  "vol_over_sum_min": 0.001361,
+  "vol_over_sum_max": 0.272928,
+  "open_over_firstday_open_median": 1.0,
+  "open_over_firstday_open_cv": 0.0,
+  "close_over_lastday_median": 1.0,
+  "close_over_lastday_cv": 0.0,
+  "sample_3": [
+   {
+    "g": "2026-08-08",
+    "mvol": 8751481850.0,
+    "sum": 59134586514.0,
+    "mean": 5913458651.4,
+    "last": 2975001335.0,
+    "max": 12950170918.0,
+    "ndays": 10,
+    "ratio_sum": 0.1479926108543619,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-08-23",
+    "mvol": 5282932229.0,
+    "sum": 85846424942.0,
+    "mean": 3902110224.6363635,
+    "last": 3705610251.0,
+    "max": 9069143306.0,
+    "ndays": 22,
+    "ratio_sum": 0.06153933879680233,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-09-23",
+    "mvol": 2210827100.0,
+    "sum": 12174595322.0,
+    "mean": 2029099220.3333333,
+    "last": 1542190602.0,
+    "max": 2512505604.0,
+    "ndays": 6,
+    "ratio_sum": 0.18159347736223672,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   }
+  ]
+ },
+ "پارس": {
+  "months_matched": 96,
+  "exact_matches": {
+   "sum": 0,
+   "mean": 0,
+   "last": 0,
+   "max": 12
+  },
+  "vol_over_sum_median": 0.046932,
+  "vol_over_sum_min": 0.003984,
+  "vol_over_sum_max": 0.610847,
+  "open_over_firstday_open_median": 1.0,
+  "open_over_firstday_open_cv": 0.0,
+  "close_over_lastday_median": 1.0,
+  "close_over_lastday_cv": 0.0,
+  "sample_3": [
+   {
+    "g": "2026-07-25",
+    "mvol": 68439595.0,
+    "sum": 3855201063.0,
+    "mean": 202905319.10526314,
+    "last": 273993106.0,
+    "max": 1064133807.0,
+    "ndays": 19,
+    "ratio_sum": 0.017752535829283673,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-08-23",
+    "mvol": 416343212.0,
+    "sum": 8528208779.0,
+    "mean": 387645853.59090906,
+    "last": 425112520.0,
+    "max": 976989929.0,
+    "ndays": 22,
+    "ratio_sum": 0.04881953793453208,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-09-23",
+    "mvol": 235743191.0,
+    "sum": 1244477992.0,
+    "mean": 207412998.66666666,
+    "last": 418642094.0,
+    "max": 418642094.0,
+    "ndays": 6,
+    "ratio_sum": 0.18943138610361218,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   }
+  ]
+ },
+ "خگستر": {
+  "months_matched": 185,
+  "exact_matches": {
+   "sum": 0,
+   "mean": 0,
+   "last": 0,
+   "max": 20
+  },
+  "vol_over_sum_median": 0.046005,
+  "vol_over_sum_min": 0.00014,
+  "vol_over_sum_max": 0.845097,
+  "open_over_firstday_open_median": 1.0,
+  "open_over_firstday_open_cv": 0.0,
+  "close_over_lastday_median": 1.0,
+  "close_over_lastday_cv": 0.0,
+  "sample_3": [
+   {
+    "g": "2026-07-26",
+    "mvol": 440807777.0,
+    "sum": 7116329151.0,
+    "mean": 395351619.5,
+    "last": 420368454.0,
+    "max": 1024357753.0,
+    "ndays": 18,
+    "ratio_sum": 0.061943140578040415,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-08-23",
+    "mvol": 910173908.0,
+    "sum": 10344677578.0,
+    "mean": 470212617.1818182,
+    "last": 307540525.0,
+    "max": 910173908.0,
+    "ndays": 22,
+    "ratio_sum": 0.0879847536220621,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-09-23",
+    "mvol": 832754263.0,
+    "sum": 3153817413.0,
+    "mean": 525636235.5,
+    "last": 339072857.0,
+    "max": 832754263.0,
+    "ndays": 6,
+    "ratio_sum": 0.2640464408520913,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   }
+  ]
+ },
+ "شبندر": {
+  "months_matched": 155,
+  "exact_matches": {
+   "sum": 0,
+   "mean": 0,
+   "last": 0,
+   "max": 18
+  },
+  "vol_over_sum_median": 0.044999,
+  "vol_over_sum_min": 0.000608,
+  "vol_over_sum_max": 0.716429,
+  "open_over_firstday_open_median": 1.0,
+  "open_over_firstday_open_cv": 0.0,
+  "close_over_lastday_median": 1.0,
+  "close_over_lastday_cv": 0.0,
+  "sample_3": [
+   {
+    "g": "2026-07-25",
+    "mvol": 803867793.0,
+    "sum": 10469489213.9922,
+    "mean": 615852306.7054236,
+    "last": 412150486.0,
+    "max": 1324994387.7313693,
+    "ndays": 17,
+    "ratio_sum": 0.07678194958409733,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-08-23",
+    "mvol": 515942462.0,
+    "sum": 8774777668.0,
+    "mean": 398853530.3636364,
+    "last": 313035092.0,
+    "max": 818375180.0,
+    "ndays": 22,
+    "ratio_sum": 0.058798351539042094,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-09-23",
+    "mvol": 356262364.0,
+    "sum": 1842341974.0,
+    "mean": 307056995.6666667,
+    "last": 340309351.0,
+    "max": 504477740.0,
+    "ndays": 6,
+    "ratio_sum": 0.1933747203438573,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   }
+  ]
+ },
+ "خودرو": {
+  "months_matched": 183,
+  "exact_matches": {
+   "sum": 0,
+   "mean": 0,
+   "last": 0,
+   "max": 13
+  },
+  "vol_over_sum_median": 0.045061,
+  "vol_over_sum_min": 0.000459,
+  "vol_over_sum_max": 0.529839,
+  "open_over_firstday_open_median": 1.0,
+  "open_over_firstday_open_cv": 0.0,
+  "close_over_lastday_median": 1.0,
+  "close_over_lastday_cv": 0.0,
+  "sample_3": [
+   {
+    "g": "2026-07-25",
+    "mvol": 3821562255.0,
+    "sum": 124897031496.0,
+    "mean": 6573527973.473684,
+    "last": 3928094925.0,
+    "max": 17024536430.0,
+    "ndays": 19,
+    "ratio_sum": 0.030597702837496108,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-08-23",
+    "mvol": 13542876616.0,
+    "sum": 211161331689.0,
+    "mean": 9598242349.5,
+    "last": 7163211921.0,
+    "max": 16235045774.0,
+    "ndays": 22,
+    "ratio_sum": 0.06413521125139546,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   },
+   {
+    "g": "2026-09-23",
+    "mvol": 3258116592.0,
+    "sum": 33536677799.0,
+    "mean": 5589446299.833333,
+    "last": 7882584532.0,
+    "max": 7882584532.0,
+    "ndays": 6,
+    "ratio_sum": 0.09715084515906196,
+    "open_ratio": 1.0,
+    "close_ratio": 1.0
+   }
+  ]
+ }
+}

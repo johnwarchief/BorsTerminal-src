@@ -1,0 +1,396 @@
+{
+ "ماهانه(tf=2)": [
+  {
+   "tf": "ماهانه(tf=2)",
+   "symbol": "فولاد",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "172/182",
+      "last": "0/182",
+      "sum": "0/182",
+      "mean": "0/182",
+      "max": "13/182",
+      "median": "7/182"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "182/182",
+      "close_last": "182/182",
+      "high_max": "182/182",
+      "low_min": "182/182"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "172/182",
+      "last": "0/182",
+      "sum": "0/182",
+      "mean": "0/182",
+      "max": "13/182",
+      "median": "7/182"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "182/182",
+      "close_last": "182/182",
+      "high_max": "182/182",
+      "low_min": "182/182"
+     }
+    }
+   },
+   "buckets_matched": 182
+  },
+  {
+   "tf": "ماهانه(tf=2)",
+   "symbol": "پارس",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "91/96",
+      "last": "0/96",
+      "sum": "0/96",
+      "mean": "0/96",
+      "max": "12/96",
+      "median": "0/96"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "96/96",
+      "close_last": "96/96",
+      "high_max": "96/96",
+      "low_min": "96/96"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "91/96",
+      "last": "0/96",
+      "sum": "0/96",
+      "mean": "0/96",
+      "max": "12/96",
+      "median": "0/96"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "96/96",
+      "close_last": "96/96",
+      "high_max": "96/96",
+      "low_min": "96/96"
+     }
+    }
+   },
+   "buckets_matched": 96
+  },
+  {
+   "tf": "ماهانه(tf=2)",
+   "symbol": "خگستر",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "172/185",
+      "last": "0/185",
+      "sum": "0/185",
+      "mean": "0/185",
+      "max": "20/185",
+      "median": "3/185"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "185/185",
+      "close_last": "185/185",
+      "high_max": "185/185",
+      "low_min": "185/185"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "172/185",
+      "last": "0/185",
+      "sum": "0/185",
+      "mean": "0/185",
+      "max": "20/185",
+      "median": "3/185"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "185/185",
+      "close_last": "185/185",
+      "high_max": "185/185",
+      "low_min": "185/185"
+     }
+    }
+   },
+   "buckets_matched": 185
+  },
+  {
+   "tf": "ماهانه(tf=2)",
+   "symbol": "شبندر",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "151/155",
+      "last": "0/155",
+      "sum": "0/155",
+      "mean": "0/155",
+      "max": "18/155",
+      "median": "2/155"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "155/155",
+      "close_last": "155/155",
+      "high_max": "155/155",
+      "low_min": "155/155"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "151/155",
+      "last": "0/155",
+      "sum": "0/155",
+      "mean": "0/155",
+      "max": "18/155",
+      "median": "2/155"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "155/155",
+      "close_last": "155/155",
+      "high_max": "155/155",
+      "low_min": "155/155"
+     }
+    }
+   },
+   "buckets_matched": 155
+  },
+  {
+   "tf": "ماهانه(tf=2)",
+   "symbol": "خودرو",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "182/183",
+      "last": "0/183",
+      "sum": "0/183",
+      "mean": "0/183",
+      "max": "13/183",
+      "median": "8/183"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "183/183",
+      "close_last": "183/183",
+      "high_max": "183/183",
+      "low_min": "183/183"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "182/183",
+      "last": "0/183",
+      "sum": "0/183",
+      "mean": "0/183",
+      "max": "13/183",
+      "median": "8/183"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "183/183",
+      "close_last": "183/183",
+      "high_max": "183/183",
+      "low_min": "183/183"
+     }
+    }
+   },
+   "buckets_matched": 183
+  }
+ ],
+ "هفتگی(tf=1)": [
+  {
+   "tf": "هفتگی(tf=1)",
+   "symbol": "فولاد",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "61/770",
+      "last": "91/770",
+      "sum": "7/770",
+      "mean": "7/770",
+      "max": "166/770",
+      "median": "116/770"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "80/770",
+      "close_last": "29/770",
+      "high_max": "155/770",
+      "low_min": "189/770"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "768/770",
+      "last": "15/770",
+      "sum": "15/770",
+      "mean": "15/770",
+      "max": "211/770",
+      "median": "120/770"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "770/770",
+      "close_last": "770/770",
+      "high_max": "770/770",
+      "low_min": "770/770"
+     }
+    }
+   },
+   "buckets_matched": 770
+  },
+  {
+   "tf": "هفتگی(tf=1)",
+   "symbol": "پارس",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "31/396",
+      "last": "43/396",
+      "sum": "4/396",
+      "mean": "4/396",
+      "max": "99/396",
+      "median": "65/396"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "35/396",
+      "close_last": "10/396",
+      "high_max": "77/396",
+      "low_min": "91/396"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "394/396",
+      "last": "4/396",
+      "sum": "4/396",
+      "mean": "4/396",
+      "max": "114/396",
+      "median": "65/396"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "396/396",
+      "close_last": "396/396",
+      "high_max": "396/396",
+      "low_min": "396/396"
+     }
+    }
+   },
+   "buckets_matched": 396
+  },
+  {
+   "tf": "هفتگی(tf=1)",
+   "symbol": "خگستر",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "63/770",
+      "last": "92/770",
+      "sum": "6/770",
+      "mean": "6/770",
+      "max": "145/770",
+      "median": "133/770"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "66/770",
+      "close_last": "25/770",
+      "high_max": "152/770",
+      "low_min": "141/770"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "769/770",
+      "last": "13/770",
+      "sum": "13/770",
+      "mean": "13/770",
+      "max": "194/770",
+      "median": "112/770"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "770/770",
+      "close_last": "770/770",
+      "high_max": "770/770",
+      "low_min": "770/770"
+     }
+    }
+   },
+   "buckets_matched": 770
+  },
+  {
+   "tf": "هفتگی(tf=1)",
+   "symbol": "شبندر",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "55/631",
+      "last": "78/631",
+      "sum": "8/631",
+      "mean": "8/631",
+      "max": "138/631",
+      "median": "98/631"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "60/631",
+      "close_last": "20/631",
+      "high_max": "137/631",
+      "low_min": "145/631"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "629/631",
+      "last": "12/631",
+      "sum": "12/631",
+      "mean": "12/631",
+      "max": "180/631",
+      "median": "100/631"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "631/631",
+      "close_last": "631/631",
+      "high_max": "631/631",
+      "low_min": "631/631"
+     }
+    }
+   },
+   "buckets_matched": 631
+  },
+  {
+   "tf": "هفتگی(tf=1)",
+   "symbol": "خودرو",
+   "modes": {
+    "jalali_key": {
+     "volume_rule_hits": {
+      "first": "65/741",
+      "last": "85/741",
+      "sum": "3/741",
+      "mean": "3/741",
+      "max": "150/741",
+      "median": "103/741"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "70/741",
+      "close_last": "23/741",
+      "high_max": "151/741",
+      "low_min": "155/741"
+     }
+    },
+    "stamp_range": {
+     "volume_rule_hits": {
+      "first": "741/741",
+      "last": "12/741",
+      "sum": "12/741",
+      "mean": "12/741",
+      "max": "209/741",
+      "median": "128/741"
+     },
+     "ohlc_rule_hits": {
+      "open_first": "741/741",
+      "close_last": "741/741",
+      "high_max": "741/741",
+      "low_min": "741/741"
+     }
+    }
+   },
+   "buckets_matched": 741
+  }
+ ]
+}

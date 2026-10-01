@@ -1,0 +1,2768 @@
+_0x5ca6:419	#ee1111
+_0x5ca6:420	toggle-a
+_0x5ca6:421	delete-d
+_0x5ca6:422	notifyOp
+_0x5ca6:423	Space
+_0x5ca6:424	maticAna
+_0x5ca6:425	NumberFo
+_0x5ca6:426	identifi
+_0x5ca6:427	دوره خط 
+_0x5ca6:428	text-sec
+_0x5ca6:429	کانال
+_0x5ca6:430	HEIKIN_A
+_0x5ca6:431	display
+_0x5ca6:432	ساده
+_0x5ca6:433	lette-gr
+_0x5ca6:434	hart dra
+_0x5ca6:435	-referen
+_0x5ca6:436	hasHidde
+_0x5ca6:437	allDrawi
+_0x5ca6:438	extSubme
+_0x5ca6:439	#0077cc
+_0x5ca6:440	small
+_0x5ca6:441	timefram
+_0x5ca6:442	channel
+_0x5ca6:443	CircleSh
+_0x5ca6:444	ntActive
+_0x5ca6:445	hot
+_0x5ca6:446	,82,82,.
+_0x5ca6:447	createLe
+_0x5ca6:448	ای میانگ
+_0x5ca6:449	pane-set
+_0x5ca6:450	ف شوند؟
+_0x5ca6:451	Crosshai
+_0x5ca6:452	ion/json
+_0x5ca6:453	pagehide
+_0x5ca6:454	rlay-leg
+_0x5ca6:455	#ee8811
+_0x5ca6:456	andscape
+_0x5ca6:457	BAR
+_0x5ca6:458	ر تکنیکا
+_0x5ca6:459	marketDa
+_0x5ca6:460	ParaLine
+_0x5ca6:461	Restored
+_0x5ca6:462	#227700
+_0x5ca6:463	#ff0000
+_0x5ca6:464	دوره همو
+_0x5ca6:465	ext
+_0x5ca6:466	ellipse
+_0x5ca6:467	سطح 
+_0x5ca6:468	t replac
+_0x5ca6:469	ture
+_0x5ca6:470	elMode
+_0x5ca6:471	nColor
+_0x5ca6:472	etOpen
+_0x5ca6:473	lor-prev
+_0x5ca6:474	l-chart:
+_0x5ca6:475	gTool
+_0x5ca6:476	cut
+_0x5ca6:477	-disable
+_0x5ca6:478	tionVers
+_0x5ca6:479	mic
+_0x5ca6:480	lower
+_0x5ca6:481	awing
+_0x5ca6:482	AreaColo
+_0x5ca6:483	nly
+_0x5ca6:484	#ffeb3b
+_0x5ca6:485	getDrawi
+_0x5ca6:486	79479ChbQbG
+_0x5ca6:487	ic-drawi
+_0x5ca6:488	createCh
+_0x5ca6:489	ید و فرو
+_0x5ca6:490	heet-ope
+_0x5ca6:491	15)
+_0x5ca6:492	a[href]
+_0x5ca6:493	macd
+_0x5ca6:494	error
+_0x5ca6:495	startBac
+_0x5ca6:496	setMaxim
+_0x5ca6:497	temporar
+_0x5ca6:498	محل نوشت
+_0x5ca6:499	Percenta
+_0x5ca6:500	rawing-s
+_0x5ca6:501	خط عمودی
+_0x5ca6:502	visible
+_0x5ca6:503	edCoordi
+_0x5ca6:504	gends
+_0x5ca6:505	Render
+_0x5ca6:506	#2B6A55
+_0x5ca6:507	lds
+_0x5ca6:508	nav
+_0x5ca6:509	some
+_0x5ca6:510	نمودار
+_0x5ca6:511	OpenSele
+_0x5ca6:512	-inline-
+_0x5ca6:513	chart-ov
+_0x5ca6:514	حذف همه 
+_0x5ca6:515	110,60,.
+_0x5ca6:516	setInter
+_0x5ca6:517	PanelVis
+_0x5ca6:518	btnClear
+_0x5ca6:519	viewport
+_0x5ca6:520	HOURLY
+_0x5ca6:521	RSI
+_0x5ca6:522	fill-sec
+_0x5ca6:523	KeyC
+_0x5ca6:524	lectedPr
+_0x5ca6:525	popover
+_0x5ca6:526	.p3
+_0x5ca6:527	volumepr
+_0x5ca6:528	tiveOper
+_0x5ca6:529	ialog
+_0x5ca6:530	-started
+_0x5ca6:531	tings
+_0x5ca6:532	ingsAsUs
+_0x5ca6:533	#111111
+_0x5ca6:534	Configur
+_0x5ca6:535	refreshP
+_0x5ca6:536	projecti
+_0x5ca6:537	setTimeo
+_0x5ca6:538	analysis
+_0x5ca6:539	leCopyMo
+_0x5ca6:540	dark
+_0x5ca6:541	tialized
+_0x5ca6:542	nFrame
+_0x5ca6:543	wing
+_0x5ca6:544	type
+_0x5ca6:545	bindKeyb
+_0x5ca6:546	ریافت اط
+_0x5ca6:547	tribute
+_0x5ca6:548	#cc1100
+_0x5ca6:549	standard
+_0x5ca6:550	cos
+_0x5ca6:551	extraVis
+_0x5ca6:552	arrow
+_0x5ca6:553	Momentum
+_0x5ca6:554	signal
+_0x5ca6:555	lose
+_0x5ca6:556	abcd
+_0x5ca6:557	response
+_0x5ca6:558	DateStri
+_0x5ca6:559	 اسپن B
+_0x5ca6:560	xelRatio
+_0x5ca6:561	markSele
+_0x5ca6:562	00000
+_0x5ca6:563	tenkanPe
+_0x5ca6:564	#8a3cc4
+_0x5ca6:565	ی شد.
+_0x5ca6:566	uest
+_0x5ca6:567	یسک و با
+_0x5ca6:568	lChartAp
+_0x5ca6:569	#6a5acd
+_0x5ca6:570	 chart e
+_0x5ca6:571	fresh fa
+_0x5ca6:572	14px ira
+_0x5ca6:573	startedA
+_0x5ca6:574	#BB2FA6
+_0x5ca6:575	6,180,.1
+_0x5ca6:576	heme-tri
+_0x5ca6:577	rgba(22,
+_0x5ca6:578	کو اسپن 
+_0x5ca6:579	,.38)
+_0x5ca6:580	angeFilt
+_0x5ca6:581	latestCa
+_0x5ca6:582	sin
+_0x5ca6:583	#color-p
+_0x5ca6:584	رنگ تنکا
+_0x5ca6:585	bindSett
+_0x5ca6:586	Logarith
+_0x5ca6:587	random
+_0x5ca6:588	اندیکاتو
+_0x5ca6:589	کیجون‌سن
+_0x5ca6:590	bindInte
+_0x5ca6:591	ustom-co
+_0x5ca6:592	DAILY
+_0x5ca6:593	روفایل
+_0x5ca6:594	ove
+_0x5ca6:595	gPeriod
+_0x5ca6:596	smodal
+_0x5ca6:597	select
+_0x5ca6:598	pendingD
+_0x5ca6:599	textSect
+_0x5ca6:600	hart his
+_0x5ca6:601	rPickers
+_0x5ca6:602	icLevelF
+_0x5ca6:603	metaKey
+_0x5ca6:604	randomUU
+_0x5ca6:605	match
+_0x5ca6:606	styleCop
+_0x5ca6:607	o-levels
+_0x5ca6:608	aria-lab
+_0x5ca6:609	t-mobile
+_0x5ca6:610	.p2
+_0x5ca6:611	lement
+_0x5ca6:612	appendCh
+_0x5ca6:613	price
+_0x5ca6:614	div
+_0x5ca6:615	 وارونه
+_0x5ca6:616	velDrawi
+_0x5ca6:617	erage-se
+_0x5ca6:618	#225599
+_0x5ca6:619	loading
+_0x5ca6:620	navcolor
+_0x5ca6:621	k-alt
+_0x5ca6:622	minimum
+_0x5ca6:623	n:rtl
+_0x5ca6:624	ogress
+_0x5ca6:625	step
+_0x5ca6:626	or, .osc
+_0x5ca6:627	ngeFilte
+_0x5ca6:628	item
+_0x5ca6:629	Ctrl+Y
+_0x5ca6:630	a.symbol
+_0x5ca6:631	arget
+_0x5ca6:632	measureT
+_0x5ca6:633	createIc
+_0x5ca6:634	ontainer
+_0x5ca6:635	col
+_0x5ca6:636	Settings
+_0x5ca6:637	bulb
+_0x5ca6:638	applyRep
+_0x5ca6:639	مودار حذ
+_0x5ca6:640	logicalI
+_0x5ca6:641	nNextRef
+_0x5ca6:642	geListen
+_0x5ca6:643	rawingsJ
+_0x5ca6:644	ظاهر نمو
+_0x5ca6:645	#005500
+_0x5ca6:646	none
+_0x5ca6:647	showSett
+_0x5ca6:648	لاعات فل
+_0x5ca6:649	renderSe
+_0x5ca6:650	anceVisi
+_0x5ca6:651	,0,0)
+_0x5ca6:652	sqrt
+_0x5ca6:653	velSigna
+_0x5ca6:654	layCutCr
+_0x5ca6:655	ectorAll
+_0x5ca6:656	bindOver
+_0x5ca6:657	102lhhCTd
+_0x5ca6:658	setPrice
+_0x5ca6:659	ترسیم مق
+_0x5ca6:660	nelCount
+_0x5ca6:661	خط روند
+_0x5ca6:662	lock
+_0x5ca6:663	name
+_0x5ca6:664	activeTo
+_0x5ca6:665	ین نقطهٔ
+_0x5ca6:666	elect, t
+_0x5ca6:667	rgba(0,8
+_0x5ca6:668	onButton
+_0x5ca6:669	Stochast
+_0x5ca6:670	lineTo
+_0x5ca6:671	drawRect
+_0x5ca6:672	آموزشی خ
+_0x5ca6:673	.timefra
+_0x5ca6:674	#888888
+_0x5ca6:675	Bands
+_0x5ca6:676	منحنی
+_0x5ca6:677	drawSele
+_0x5ca6:678	KeyR
+_0x5ca6:679	-automat
+_0x5ca6:680	yDown
+_0x5ca6:681	createTo
+_0x5ca6:682	13px ira
+_0x5ca6:683	NAV
+_0x5ca6:684	isible
+_0x5ca6:685	1000
+_0x5ca6:686	deDrawin
+_0x5ca6:687	complete
+_0x5ca6:688	extMenu
+_0x5ca6:689	ettings-
+_0x5ca6:690	cursor
+_0x5ca6:691	#cc9900
+_0x5ca6:692	ingerpri
+_0x5ca6:693	eElement
+_0x5ca6:694	legend
+_0x5ca6:695	ilentDra
+_0x5ca6:696	maximumT
+_0x5ca6:697	setMagne
+_0x5ca6:698	isCollap
+_0x5ca6:699	curve
+_0x5ca6:700	#cccccc
+_0x5ca6:701	classLis
+_0x5ca6:702	 ناموفق 
+_0x5ca6:703	totalInd
+_0x5ca6:704	staticLe
+_0x5ca6:705	refresh
+_0x5ca6:706	nesVis
+_0x5ca6:707	innerHei
+_0x5ca6:708	mouseent
+_0x5ca6:709	drawingL
+_0x5ca6:710	olor-pic
+_0x5ca6:711	toggleRe
+_0x5ca6:712	altKey
+_0x5ca6:713	extendLe
+_0x5ca6:714	middleVi
+_0x5ca6:715	highligh
+_0x5ca6:716	KeyN
+_0x5ca6:717	ngBody
+_0x5ca6:718	senkouBP
+_0x5ca6:719	Candlest
+_0x5ca6:720	isIntege
+_0x5ca6:721	PriceSca
+_0x5ca6:722	getPaneT
+_0x5ca6:723	is-stati
+_0x5ca6:724	وی ترسیم
+_0x5ca6:725	imationF
+_0x5ca6:726	awingSty
+_0x5ca6:727	down
+_0x5ca6:728	adx
+_0x5ca6:729	lineDash
+_0x5ca6:730	bindCont
+_0x5ca6:731	spanBVis
+_0x5ca6:732	period >
+_0x5ca6:733	ngEngine
+_0x5ca6:734	register
+_0x5ca6:735	mparison
+_0x5ca6:736	cCalcula
+_0x5ca6:737	other
+_0x5ca6:738	پاسخ تار
+_0x5ca6:739	یرات فیل
+_0x5ca6:740	refreshR
+_0x5ca6:741	classNam
+_0x5ca6:742	mobile-o
+_0x5ca6:743	city
+_0x5ca6:744	indexedT
+_0x5ca6:745	t availa
+_0x5ca6:746	createOv
+_0x5ca6:747	liveRefr
+_0x5ca6:748	nsx
+_0x5ca6:749	readySta
+_0x5ca6:750	globalAl
+_0x5ca6:751	edDrawin
+_0x5ca6:752	drawings
+_0x5ca6:753	ting
+_0x5ca6:754	Access
+_0x5ca6:755	Failed t
+_0x5ca6:756	teToPric
+_0x5ca6:757	ibeVisib
+_0x5ca6:758	removePa
+_0x5ca6:759	mainSeri
+_0x5ca6:760	removeEv
+_0x5ca6:761	1398075qibgRi
+_0x5ca6:762	roperty
+_0x5ca6:763	%) | 
+_0x5ca6:764	periods
+_0x5ca6:765	der
+_0x5ca6:766	sible
+_0x5ca6:767	clearRec
+_0x5ca6:768	disconne
+_0x5ca6:769	clientHe
+_0x5ca6:770	eVisible
+_0x5ca6:771	ان‌سن
+_0x5ca6:772	cancelAn
+_0x5ca6:773	rgba(244
+_0x5ca6:774	children
+_0x5ca6:775	cDirecti
+_0x5ca6:776	c-static
+_0x5ca6:777	ntrolAcc
+_0x5ca6:778	son
+_0x5ca6:779	سنکو اسپ
+_0x5ca6:780	ool
+_0x5ca6:781	magnetEn
+_0x5ca6:782	-vis
+_0x5ca6:783	mobile-n
+_0x5ca6:784	rgba(224
+_0x5ca6:785	Technica
+_0x5ca6:786	pagation
+_0x5ca6:787	Range Fi
+_0x5ca6:788	olume-tr
+_0x5ca6:789	cssText
+_0x5ca6:790	mobile-b
+_0x5ca6:791	:popover
+_0x5ca6:792	LevelInd
+_0x5ca6:793	bindRepl
+_0x5ca6:794	lightwei
+_0x5ca6:795	خط K
+_0x5ca6:796	setAllDr
+_0x5ca6:797	clone-an
+_0x5ca6:798	or-remov
+_0x5ca6:799	NEGATIVE
+_0x5ca6:800	replaceB
+_0x5ca6:801	mobileDr
+_0x5ca6:802	setPoint
+_0x5ca6:803	osc-back
+_0x5ca6:804	nnelReca
+_0x5ca6:805	Storage
+_0x5ca6:806	levelLin
+_0x5ca6:807	fork
+_0x5ca6:808	spanAVis
+_0x5ca6:809	وط محدود
+_0x5ca6:810	مل شد و 
+_0x5ca6:811	ionChang
+_0x5ca6:812	pointer-
+_0x5ca6:813	max
+_0x5ca6:814	از کردن
+_0x5ca6:815	rData
+_0x5ca6:816	toggleTr
+_0x5ca6:817	rgb(78,1
+_0x5ca6:818	ضخامت
+_0x5ca6:819	handleKe
+_0x5ca6:820	جهت میله
+_0x5ca6:821	lected
+_0x5ca6:822	hitDrawi
+_0x5ca6:823	[data-va
+_0x5ca6:824	round
+_0x5ca6:825	#00bb00
+_0x5ca6:826	رسیم‌ها 
+_0x5ca6:827	normal
+_0x5ca6:828	essibili
+_0x5ca6:829	theme
+_0x5ca6:830	csrfToke
+_0x5ca6:831	upParaLi
+_0x5ca6:832	نمایش پس
+_0x5ca6:833	playPlay
+_0x5ca6:834	ent
+_0x5ca6:835	aria-con
+_0x5ca6:836	title
+_0x5ca6:837	dLine
+_0x5ca6:838	changeCh
+_0x5ca6:839	0.001
+_0x5ca6:840	#0099dd
+_0x5ca6:841	shortcut
+_0x5ca6:842	yle
+_0x5ca6:843	String
+_0x5ca6:844	crypto
+_0x5ca6:845	grid
+_0x5ca6:846	iesVisib
+_0x5ca6:847	canUseRa
+_0x5ca6:848	mporaryV
+_0x5ca6:849	andle re
+_0x5ca6:850	mobile-s
+_0x5ca6:851	updateSt
+_0x5ca6:852	tensionB
+_0x5ca6:853	rallelLi
+_0x5ca6:854	Drawing
+_0x5ca6:855	position
+_0x5ca6:856	operty
+_0x5ca6:857	efault
+_0x5ca6:858	#dce5ef
+_0x5ca6:859	extraSer
+_0x5ca6:860	Recalcul
+_0x5ca6:861	-fields
+_0x5ca6:862	fields
+_0x5ca6:863	layer
+_0x5ca6:864	thriple
+_0x5ca6:865	freehand
+_0x5ca6:866	erages
+_0x5ca6:867	cloudUpC
+_0x5ca6:868	update
+_0x5ca6:869	-reset
+_0x5ca6:870	observeC
+_0x5ca6:871	toggleSe
+_0x5ca6:872	support
+_0x5ca6:873	from
+_0x5ca6:874	length
+_0x5ca6:875	مت ترسیم
+_0x5ca6:876	ibility
+_0x5ca6:877	eight
+_0x5ca6:878	role
+_0x5ca6:879	ه راست
+_0x5ca6:880	,67,154,
+_0x5ca6:881	auto_sta
+_0x5ca6:882	ertyInpu
+_0x5ca6:883	iceLine
+_0x5ca6:884	fieldsId
+_0x5ca6:885	ter-sett
+_0x5ca6:886	#122469
+_0x5ca6:887	11RxblWy
+_0x5ca6:888	hypot
+_0x5ca6:889	toggleNa
+_0x5ca6:890	recalcul
+_0x5ca6:891	utton
+_0x5ca6:892	refreshB
+_0x5ca6:893	#a22469
+_0x5ca6:894	series
+_0x5ca6:895	gend-ite
+_0x5ca6:896	AreaSeri
+_0x5ca6:897	[data-co
+_0x5ca6:898	KeyZ
+_0x5ca6:899	updatePr
+_0x5ca6:900	cognitoR
+_0x5ca6:901	stroke
+_0x5ca6:902	cloud
+_0x5ca6:903	light
+_0x5ca6:904	label-st
+_0x5ca6:905	حذف اندی
+_0x5ca6:906	levels
+_0x5ca6:907	bollinge
+_0x5ca6:908	شیف
+_0x5ca6:909	,180,195
+_0x5ca6:910	../../sv
+_0x5ca6:911	toggleIn
+_0x5ca6:912	-section
+_0x5ca6:913	ترسیم‌ها
+_0x5ca6:914	بیشترین:
+_0x5ca6:915	activeSe
+_0x5ca6:916	iceLegen
+_0x5ca6:917	candle
+_0x5ca6:918	eriod
+_0x5ca6:919	color:va
+_0x5ca6:920	#66aa99
+_0x5ca6:921	طلاعات ن
+_0x5ca6:922	wingSave
+_0x5ca6:923	ult
+_0x5ca6:924	ates
+_0x5ca6:925	val
+_0x5ca6:926	matches
+_0x5ca6:927	:absolut
+_0x5ca6:928	‌ها
+_0x5ca6:929	playing
+_0x5ca6:930	angleSel
+_0x5ca6:931	bullish
+_0x5ca6:932	hildren
+_0x5ca6:933	ionConta
+_0x5ca6:934	#7e36b4
+_0x5ca6:935	#indicat
+_0x5ca6:936	خط افقی
+_0x5ca6:937	keepRepl
+_0x5ca6:938	drawingE
+_0x5ca6:939	assign
+_0x5ca6:940	rvi
+_0x5ca6:941	nCandles
+_0x5ca6:942	#046A41
+_0x5ca6:943	s-select
+_0x5ca6:944	ateStati
+_0x5ca6:945	lReplayW
+_0x5ca6:946	toggleBo
+_0x5ca6:947	Backgrou
+_0x5ca6:948	pen
+_0x5ca6:949	#612a8a
+_0x5ca6:950	trim
+_0x5ca6:951	-levels-
+_0x5ca6:952	l-chart-
+_0x5ca6:953	سیم مبدأ
+_0x5ca6:954	رسیم مقص
+_0x5ca6:955	dal
+_0x5ca6:956	eHistory
+_0x5ca6:957	-trigger
+_0x5ca6:958	addSerie
+_0x5ca6:959	رنگ کیجو
+_0x5ca6:960	anged
+_0x5ca6:961	ودار…
+_0x5ca6:962	ttings
+_0x5ca6:963	button, 
+_0x5ca6:964	rt-custo
+_0x5ca6:965	,.55)
+_0x5ca6:966	opyState
+_0x5ca6:967	toLocale
+_0x5ca6:968	timeStam
+_0x5ca6:969	دوره، ان
+_0x5ca6:970	ines
+_0x5ca6:971	moveTo
+_0x5ca6:972	loadTime
+_0x5ca6:973	copyDraw
+_0x5ca6:974	legacy-l
+_0x5ca6:975	bindOsci
+_0x5ca6:976	osc-extr
+_0x5ca6:977	getConfi
+_0x5ca6:978	-panel
+_0x5ca6:979	actionCh
+_0x5ca6:980	#999999
+_0x5ca6:981	برای حسا
+_0x5ca6:982	th: 1024
+_0x5ca6:983	tTypeCon
+_0x5ca6:984	no-store
+_0x5ca6:985	SheetOpe
+_0x5ca6:986	stopImme
+_0x5ca6:987	redo
+_0x5ca6:988	نمایش اس
+_0x5ca6:989	aft
+_0x5ca6:990	#cc5500
+_0x5ca6:991	مخفی‌کرد
+_0x5ca6:992	dispose
+_0x5ca6:993	resolveP
+_0x5ca6:994	cancel-t
+_0x5ca6:995	upTrendL
+_0x5ca6:996	ale
+_0x5ca6:997	فعال است
+_0x5ca6:998	ای کپی ا
+_0x5ca6:999	drawVolu
+_0x5ca6:1000	right:74
+_0x5ca6:1001	tor
+_0x5ca6:1002	lts
+_0x5ca6:1003	iLabelPo
+_0x5ca6:1004	 found.
+_0x5ca6:1005	#dd8800
+_0x5ca6:1006	#ffcc00
+_0x5ca6:1007	py-state
+_0x5ca6:1008	repeat
+_0x5ca6:1009	NaN
+_0x5ca6:1010	renderFi
+_0x5ca6:1011	interUp
+_0x5ca6:1012	spanBCol
+_0x5ca6:1013	Landscap
+_0x5ca6:1014	header
+_0x5ca6:1015	fibo-lev
+_0x5ca6:1016	cal-char
+_0x5ca6:1017	rtl
+_0x5ca6:1018	-overlay
+_0x5ca6:1019	createEx
+_0x5ca6:1020	ontrols
+_0x5ca6:1021	[data-re
+_0x5ca6:1022	iedAutom
+_0x5ca6:1023	KeyG
+_0x5ca6:1024	firstCon
+_0x5ca6:1025	662328XtLAtm
+_0x5ca6:1026	o load c
+_0x5ca6:1027	 102, 24
+_0x5ca6:1028	دن تنظیم
+_0x5ca6:1029	clearTim
+_0x5ca6:1030	rlaySett
+_0x5ca6:1031	settingV
+_0x5ca6:1032	DrawingI
+_0x5ca6:1033	#003300
+_0x5ca6:1034	ySourceI
+_0x5ca6:1035	archRequ
+_0x5ca6:1036	yCutArme
+_0x5ca6:1037	forEach
+_0x5ca6:1038	زی نمودا
+_0x5ca6:1039	عمومی
+_0x5ca6:1040	le='titl
+_0x5ca6:1041	line-wid
+_0x5ca6:1042	tle
+_0x5ca6:1043	رنگ سطح 
+_0x5ca6:1044	دار و تن
+_0x5ca6:1045	-label
+_0x5ca6:1046	-close
+_0x5ca6:1047	ayTimer
+_0x5ca6:1048	lineJoin
+_0x5ca6:1049	paneConf
+_0x5ca6:1050	End
+_0x5ca6:1051	67,54)
+_0x5ca6:1052	interDow
+_0x5ca6:1053	tRect
+_0x5ca6:1054	 ضخامت و
+_0x5ca6:1055	lorSelec
+_0x5ca6:1056	questId
+_0x5ca6:1057	active
+_0x5ca6:1058	defaultS
+_0x5ca6:1059	selected
+_0x5ca6:1060	toggleVo
+_0x5ca6:1061	tyButton
+_0x5ca6:1062	ell
+_0x5ca6:1063	createDe
+_0x5ca6:1064	l-chart
+_0x5ca6:1065	isStatic
+_0x5ca6:1066	storyReq
+_0x5ca6:1067	lor-pale
+_0x5ca6:1068	cloudDow
+_0x5ca6:1069	o save c
+_0x5ca6:1070	s-trigge
+_0x5ca6:1071	isArray
+_0x5ca6:1072	-replay
+_0x5ca6:1073	pointeru
+_0x5ca6:1074	ope
+_0x5ca6:1075	gPane
+_0x5ca6:1076	دریافت آ
+_0x5ca6:1077	sectionI
+_0x5ca6:1078	events:n
+_0x5ca6:1079	آخرین قی
+_0x5ca6:1080	renderTo
+_0x5ca6:1081	وقف بازپ
+_0x5ca6:1082	lay-sett
+_0x5ca6:1083	166,106,
+_0x5ca6:1084	پیش‌فرض
+_0x5ca6:1085	دکار
+_0x5ca6:1086	-theme
+_0x5ca6:1087	rgba(255
+_0x5ca6:1088	cancelHi
+_0x5ca6:1089	pointFro
+_0x5ca6:1090	دریافت ت
+_0x5ca6:1091	تعداد تغ
+_0x5ca6:1092	مودار نا
+_0x5ca6:1093	find
+_0x5ca6:1094	اتور
+_0x5ca6:1095	meAndSca
+_0x5ca6:1096	tagName
+_0x5ca6:1097	center
+_0x5ca6:1098	bearish
+_0x5ca6:1099	ttings-d
+_0x5ca6:1100	mobile-l
+_0x5ca6:1101	showOver
+_0x5ca6:1102	listenFo
+_0x5ca6:1103	رنج فیلت
+_0x5ca6:1104	neTempor
+_0x5ca6:1105	.oscilat
+_0x5ca6:1106	osition
+_0x5ca6:1107	ircleSho
+_0x5ca6:1108	eme
+_0x5ca6:1109	liveUpda
+_0x5ca6:1110	velsOnce
+_0x5ca6:1111	push
+_0x5ca6:1112	layWindo
+_0x5ca6:1113	trendlin
+_0x5ca6:1114	startRep
+_0x5ca6:1115	andles
+_0x5ca6:1116	 missing
+_0x5ca6:1117	stochast
+_0x5ca6:1118	indow
+_0x5ca6:1119	stableDr
+_0x5ca6:1120	strokeSt
+_0x5ca6:1121	eCopySta
+_0x5ca6:1122	ibeClick
+_0x5ca6:1123	llator
+_0x5ca6:1124	rawing-p
+_0x5ca6:1125	alt
+_0x5ca6:1126	ner
+_0x5ca6:1127	نمادی پی
+_0x5ca6:1128	renderOs
+_0x5ca6:1129	fillStyl
+_0x5ca6:1130	logarith
+_0x5ca6:1131	تنظیمات
+_0x5ca6:1132	ette
+_0x5ca6:1133	AbortErr
+_0x5ca6:1134	removeSe
+_0x5ca6:1135	mainchar
+_0x5ca6:1136	بازگردان
+_0x5ca6:1137	mini-set
+_0x5ca6:1138	ForRepla
+_0x5ca6:1139	erlayLeg
+_0x5ca6:1140	ings-fie
+_0x5ca6:1141	undoStac
+_0x5ca6:1142	نماد
+_0x5ca6:1143	aySettin
+_0x5ca6:1144	mainColo
+_0x5ca6:1145	AfterToo
+_0x5ca6:1146	stepRepl
+_0x5ca6:1147	ttings c
+_0x5ca6:1148	ection
+_0x5ca6:1149	firstY
+_0x5ca6:1150	o-finish
+_0x5ca6:1151	cloudRen
+_0x5ca6:1152	extraWid
+_0x5ca6:1153	rgba(170
+_0x5ca6:1154	expansio
+_0x5ca6:1155	 اسپن
+_0x5ca6:1156	بولینگر
+_0x5ca6:1157	derReque
+_0x5ca6:1158	دایره
+_0x5ca6:1159	tom-colo
+_0x5ca6:1160	start
+_0x5ca6:1161	tedDrawi
+_0x5ca6:1162	panelPos
+_0x5ca6:1163	#367236
+_0x5ca6:1164	ready
+_0x5ca6:1165	setTimeS
+_0x5ca6:1166	downward
+_0x5ca6:1167	atan2
+_0x5ca6:1168	ار، رنگ،
+_0x5ca6:1169	ty-butto
+_0x5ca6:1170	resetRep
+_0x5ca6:1171	#800B3A
+_0x5ca6:1172	iLevels
+_0x5ca6:1173	ن A
+_0x5ca6:1174	ه پایین
+_0x5ca6:1175	x, Tahom
+_0x5ca6:1176	rClick
+_0x5ca6:1177	ion
+_0x5ca6:1178	draftDra
+_0x5ca6:1179	Panel
+_0x5ca6:1180	interact
+_0x5ca6:1181	ght Char
+_0x5ca6:1182	نوع خط
+_0x5ca6:1183	(orienta
+_0x5ca6:1184	ذخیره تر
+_0x5ca6:1185	رشت
+_0x5ca6:1186	ilyHidde
+_0x5ca6:1187	UTC
+_0x5ca6:1188	پاسخ ذخی
+_0x5ca6:1189	catorCon
+_0x5ca6:1190	activeOv
+_0x5ca6:1191	دوره محا
+_0x5ca6:1192	-control
+_0x5ca6:1193	.88)
+_0x5ca6:1194	fa-unloc
+_0x5ca6:1195	touch
+_0x5ca6:1196	showOsci
+_0x5ca6:1197	lineCap
+_0x5ca6:1198	نمایش NA
+_0x5ca6:1199	legendIt
+_0x5ca6:1200	عیار
+_0x5ca6:1201	-body
+_0x5ca6:1202	color-pa
+_0x5ca6:1203	lity
+_0x5ca6:1204	handleCo
+_0x5ca6:1205	lectionC
+_0x5ca6:1206	#ff8888
+_0x5ca6:1207	Automati
+_0x5ca6:1208	#007700
+_0x5ca6:1209	nIndicat
+_0x5ca6:1210	asks
+_0x5ca6:1211	refreshI
+_0x5ca6:1212	sort
+_0x5ca6:1213	-header
+_0x5ca6:1214	neSlot
+_0x5ca6:1215	dotted
+_0x5ca6:1216	index
+_0x5ca6:1217	anges
+_0x5ca6:1218	ation
+_0x5ca6:1219	To100-sc
+_0x5ca6:1220	origins
+_0x5ca6:1221	paneInde
+_0x5ca6:1222	auto_dyn
+_0x5ca6:1223	LineSeri
+_0x5ca6:1224	olumn
+_0x5ca6:1225	colors
+_0x5ca6:1226	sTime
+_0x5ca6:1227	color-pi
+_0x5ca6:1228	eChannel
+_0x5ca6:1229	invalid
+_0x5ca6:1230	hanged
+_0x5ca6:1231	width
+_0x5ca6:1232	unt
+_0x5ca6:1233	#aa3333
+_0x5ca6:1234	fitConte
+_0x5ca6:1235	کندل بعد
+_0x5ca6:1236	extendRi
+_0x5ca6:1237	وط و ابر
+_0x5ca6:1238	canSaveD
+_0x5ca6:1239	handleIn
+_0x5ca6:1240	lByDefau
+_0x5ca6:1241	چنگال ان
+_0x5ca6:1242	getHTMLE
+_0x5ca6:1243	etsCache
+_0x5ca6:1244	متن
+_0x5ca6:1245	lume
+_0x5ca6:1246	eMode
+_0x5ca6:1247	false
+_0x5ca6:1248	instrume
+_0x5ca6:1249	le='visi
+_0x5ca6:1250	Deviatio
+_0x5ca6:1251	حجم
+_0x5ca6:1252	beginPat
+_0x5ca6:1253	delete
+_0x5ca6:1254	onChange
+_0x5ca6:1255	#searchR
+_0x5ca6:1256	#114466
+_0x5ca6:1257	محدوده ر
+_0x5ca6:1258	erval
+_0x5ca6:1259	synchron
+_0x5ca6:1260	or-selec
+_0x5ca6:1261	شد.
+_0x5ca6:1262	 کومو
+_0x5ca6:1263	کاهش سرع
+_0x5ca6:1264	setSelec
+_0x5ca6:1265	لگاریتمی
+_0x5ca6:1266	DeMarker
+_0x5ca6:1267	orMobile
+_0x5ca6:1268	closePat
+_0x5ca6:1269	#cc7700
+_0x5ca6:1270	every
+_0x5ca6:1271	jalaliDa
+_0x5ca6:1272	replayIn
+_0x5ca6:1273	انتقال ب
+_0x5ca6:1274	KeyV
+_0x5ca6:1275	style-co
+_0x5ca6:1276	href
+_0x5ca6:1277	getOverl
+_0x5ca6:1278	paneTarg
+_0x5ca6:1279	ating-ti
+_0x5ca6:1280	setMarke
+_0x5ca6:1281	log-scal
+_0x5ca6:1282	readPane
+_0x5ca6:1283	LinesVis
+_0x5ca6:1284	awingsLo
+_0x5ca6:1285	teToTime
+_0x5ca6:1286	ons
+_0x5ca6:1287	contextm
+_0x5ca6:1288	strong
+_0x5ca6:1289	riod
+_0x5ca6:1290	historyR
+_0x5ca6:1291	attachLe
+_0x5ca6:1292	context-
+_0x5ca6:1293	slice
+_0x5ca6:1294	 پایان ب
+_0x5ca6:1295	مقیاس نم
+_0x5ca6:1296	abs
+_0x5ca6:1297	endChann
+_0x5ca6:1298	ناموفق ب
+_0x5ca6:1299	toggleMi
+_0x5ca6:1300	toggleCo
+_0x5ca6:1301	روزه
+_0x5ca6:1302	یادداشت
+_0x5ca6:1303	undo
+_0x5ca6:1304	gridColu
+_0x5ca6:1305	thead
+_0x5ca6:1306	argets
+_0x5ca6:1307	ility
+_0x5ca6:1308	aria-che
+_0x5ca6:1309	applyThe
+_0x5ca6:1310	set
+_0x5ca6:1311	#e14400
+_0x5ca6:1312	ical-cha
+_0x5ca6:1313	trol
+_0x5ca6:1314	eredStat
+_0x5ca6:1315	floating
+_0x5ca6:1316	icatorNa
+_0x5ca6:1317	visibleC
+_0x5ca6:1318	one
+_0x5ca6:1319	#e6e6e6
+_0x5ca6:1320	#00bb55
+_0x5ca6:1321	chartTyp
+_0x5ca6:1322	getModif
+_0x5ca6:1323	percent
+_0x5ca6:1324	#44e122
+_0x5ca6:1325	arc
+_0x5ca6:1326	est
+_0x5ca6:1327	روزانه
+_0x5ca6:1328	createDr
+_0x5ca6:1329	bindPane
+_0x5ca6:1330	ArrowLef
+_0x5ca6:1331	findSele
+_0x5ca6:1332	tcuts
+_0x5ca6:1333	gend-lab
+_0x5ca6:1334	eDrawing
+_0x5ca6:1335	g/trend.
+_0x5ca6:1336	animatio
+_0x5ca6:1337	سیم‌ها
+_0x5ca6:1338	ress
+_0x5ca6:1339	overlay-
+_0x5ca6:1340	leOption
+_0x5ca6:1341	ectedCol
+_0x5ca6:1342	ode
+_0x5ca6:1343	eneratio
+_0x5ca6:1344	toString
+_0x5ca6:1345	join
+_0x5ca6:1346	elsOnNex
+_0x5ca6:1347	velIndex
+_0x5ca6:1348	prepareF
+_0x5ca6:1349	definePr
+_0x5ca6:1350	Revealed
+_0x5ca6:1351	tory
+_0x5ca6:1352	ble.
+_0x5ca6:1353	img
+_0x5ca6:1354	c-levels
+_0x5ca6:1355	#d13b40
+_0x5ca6:1356	فروش
+_0x5ca6:1357	navVisib
+_0x5ca6:1358	replace
+_0x5ca6:1359	پروفایل 
+_0x5ca6:1360	PendingC
+_0x5ca6:1361	اندازه م
+_0x5ca6:1362	yMode
+_0x5ca6:1363	hideSett
+_0x5ca6:1364	hoveredD
+_0x5ca6:1365	prepareA
+_0x5ca6:1366	tEnabled
+_0x5ca6:1367	controls
+_0x5ca6:1368	aticDraw
+_0x5ca6:1369	click
+_0x5ca6:1370	cancelSt
+_0x5ca6:1371	00%
+_0x5ca6:1372	scaleMod
+_0x5ca6:1373	haveStat
+_0x5ca6:1374	mobile-m
+_0x5ca6:1375	custom-c
+_0x5ca6:1376	hasAttri
+_0x5ca6:1377	#006699
+_0x5ca6:1378	ضریب به 
+_0x5ca6:1379	notifyDr
+_0x5ca6:1380	#dd8899
+_0x5ca6:1381	ut-compl
+_0x5ca6:1382	messageE
+_0x5ca6:1383	-grid
+_0x5ca6:1384	downTren
+_0x5ca6:1385	ایچیموکو
+_0x5ca6:1386	clone-dr
+_0x5ca6:1387	clientY
+_0x5ca6:1388	resetRan
+_0x5ca6:1389	selector
+_0x5ca6:1390	ltilineC
+_0x5ca6:1391	activeHi
+_0x5ca6:1392	بل از تغ
+_0x5ca6:1393	gsPanel
+_0x5ca6:1394	kijun
+_0x5ca6:1395	LevelsCh
+_0x5ca6:1396	activeOs
+_0x5ca6:1397	smoothin
+_0x5ca6:1398	-empty-c
+_0x5ca6:1399	bandsVis
+_0x5ca6:1400	bel
+_0x5ca6:1401	update-d
+_0x5ca6:1402	#00ff00
+_0x5ca6:1403	beginFre
+_0x5ca6:1404	oggle
+_0x5ca6:1405	حذف
+_0x5ca6:1406	-fill-se
+_0x5ca6:1407	ته است: 
+_0x5ca6:1408	floor
+_0x5ca6:1409	av-trigg
+_0x5ca6:1410	preventD
+_0x5ca6:1411	select-f
+_0x5ca6:1412	emeColor
+_0x5ca6:1413	bindStat
+_0x5ca6:1414	modal
+_0x5ca6:1415	Changed
+_0x5ca6:1416	ه چپ
+_0x5ca6:1417	dSeries
+_0x5ca6:1418	indexes
+_0x5ca6:1419	flex
+_0x5ca6:1420	Listener
+_0x5ca6:1421	#5078c8
+_0x5ca6:1422	leLogica
+_0x5ca6:1423	چپ به را
+_0x5ca6:1424	now
+_0x5ca6:1425	textColo
+_0x5ca6:1426	-line-se
+_0x5ca6:1427	ngContro
+_0x5ca6:1428	font:12p
+_0x5ca6:1429	clientX
+_0x5ca6:1430	price-le
+_0x5ca6:1431	 invalid
+_0x5ca6:1432	12px ira
+_0x5ca6:1433	ماهانه
+_0x5ca6:1434	ctionHan
+_0x5ca6:1435	.signal.
+_0x5ca6:1436	baseStar
+_0x5ca6:1437	section
+_0x5ca6:1438	set-rang
+_0x5ca6:1439	t-color-
+_0x5ca6:1440	ase
+_0x5ca6:1441	ngs-requ
+_0x5ca6:1442	volume
+_0x5ca6:1443	isConnec
+_0x5ca6:1444	ord=
+_0x5ca6:1445	#play i
+_0x5ca6:1446	chikou
+_0x5ca6:1447	romPersi
+_0x5ca6:1448	drawingS
+_0x5ca6:1449	ndResist
+_0x5ca6:1450	stCandle
+_0x5ca6:1451	ابر نزول
+_0x5ca6:1452	kijunPer
+_0x5ca6:1453	 .dropdo
+_0x5ca6:1454	ipse
+_0x5ca6:1455	 قفل هست
+_0x5ca6:1456	کران بال
+_0x5ca6:1457	projectP
+_0x5ca6:1458	ctor
+_0x5ca6:1459	oordinat
+_0x5ca6:1460	lector
+_0x5ca6:1461	وده
+_0x5ca6:1462	points
+_0x5ca6:1463	createPr
+_0x5ca6:1464	handles
+_0x5ca6:1465	قفل یا ب
+_0x5ca6:1466	ggle]
+_0x5ca6:1467	rHover
+_0x5ca6:1468	primaryL
+_0x5ca6:1469	playSpee
+_0x5ca6:1470	beginSty
+_0x5ca6:1471	tem
+_0x5ca6:1472	قیمت: 
+_0x5ca6:1473	میانگین 
+_0x5ca6:1474	tRefresh
+_0x5ca6:1475	spanA
+_0x5ca6:1476	مستطیل
+_0x5ca6:1477	ndscape)
+_0x5ca6:1478	color-pr
+_0x5ca6:1479	keydown
+_0x5ca6:1480	aled
+_0x5ca6:1481	listener
+_0x5ca6:1482	AreConce
+_0x5ca6:1483	MACD
+_0x5ca6:1484	requestG
+_0x5ca6:1485	font
+_0x5ca6:1486	els
+_0x5ca6:1487	Lightwei
+_0x5ca6:1488	context
+_0x5ca6:1489	cker-spa
+_0x5ca6:1490	NAV: 
+_0x5ca6:1491	resizeCa
+_0x5ca6:1492	 و ضخامت
+_0x5ca6:1493	prepend
+_0x5ca6:1494	me-selec
+_0x5ca6:1495	#ffff88
+_0x5ca6:1496	dit-draw
+_0x5ca6:1497	devicePi
+_0x5ca6:1498	gs, .tec
+_0x5ca6:1499	ool-chan
+_0x5ca6:1500	s, .tech
+_0x5ca6:1501	نوع فیلت
+_0x5ca6:1502	#03a9f4
+_0x5ca6:1503	lter & L
+_0x5ca6:1504	tRange
+_0x5ca6:1505	ible
+_0x5ca6:1506	oDetails
+_0x5ca6:1507	orPanes
+_0x5ca6:1508	#6166f3
+_0x5ca6:1509	pseSelec
+_0x5ca6:1510	querySel
+_0x5ca6:1511	o100-sca
+_0x5ca6:1512	راست به 
+_0x5ca6:1513	باشد.
+_0x5ca6:1514	status
+_0x5ca6:1515	6PqwJyD
+_0x5ca6:1516	baseEnd
+_0x5ca6:1517	20px
+_0x5ca6:1518	ntLoaded
+_0x5ca6:1519	priceLab
+_0x5ca6:1520	negative
+_0x5ca6:1521	#dd0011
+_0x5ca6:1522	ار خطی و
+_0x5ca6:1523	ayCandle
+_0x5ca6:1524	دن ترسیم
+_0x5ca6:1525	visibili
+_0x5ca6:1526	 میله
+_0x5ca6:1527	onActive
+_0x5ca6:1528	ionEnabl
+_0x5ca6:1529	ل نمایش 
+_0x5ca6:1530	entries
+_0x5ca6:1531	ight
+_0x5ca6:1532	migrateL
+_0x5ca6:1533	1, 0.10)
+_0x5ca6:1534	teInProg
+_0x5ca6:1535	fillColo
+_0x5ca6:1536	warn
+_0x5ca6:1537	stateSto
+_0x5ca6:1538	nel
+_0x5ca6:1539	ابزارها
+_0x5ca6:1540	parseInt
+_0x5ca6:1541	actionEn
+_0x5ca6:1542	replay
+_0x5ca6:1543	initialD
+_0x5ca6:1544	esVis
+_0x5ca6:1545	Selectio
+_0x5ca6:1546	refreshM
+_0x5ca6:1547	candleBy
+_0x5ca6:1548	hortcutT
+_0x5ca6:1549	createCo
+_0x5ca6:1550	xAtCoord
+_0x5ca6:1551	تنظیم سط
+_0x5ca6:1552	Ichimoku
+_0x5ca6:1553	year
+_0x5ca6:1554	updatePa
+_0x5ca6:1555	mainVisi
+_0x5ca6:1556	upper
+_0x5ca6:1557	chorNeed
+_0x5ca6:1558	notifyCh
+_0x5ca6:1559	loadPric
+_0x5ca6:1560	#66eeff
+_0x5ca6:1561	cloudCon
+_0x5ca6:1562	112,170,
+_0x5ca6:1563	/data/
+_0x5ca6:1564	dle
+_0x5ca6:1565	دوره کیج
+_0x5ca6:1566	nus
+_0x5ca6:1567	neStyleS
+_0x5ca6:1568	ierHandl
+_0x5ca6:1569	toolbar
+_0x5ca6:1570	Enter
+_0x5ca6:1571	lastRend
+_0x5ca6:1572	heikin
+_0x5ca6:1573	parse
+_0x5ca6:1574	mobile-p
+_0x5ca6:1575	#ff2222
+_0x5ca6:1576	coordina
+_0x5ca6:1577	ظیمات عم
+_0x5ca6:1578	دوره K
+_0x5ca6:1579	refreshS
+_0x5ca6:1580	cloneSel
+_0x5ca6:1581	retracem
+_0x5ca6:1582	tings te
+_0x5ca6:1583	ols
+_0x5ca6:1584	#111722
+_0x5ca6:1585	LINE
+_0x5ca6:1586	replay-p
+_0x5ca6:1587	applyPan
+_0x5ca6:1588	atureMan
+_0x5ca6:1589	tedStyle
+_0x5ca6:1590	scale
+_0x5ca6:1591	lifecycl
+_0x5ca6:1592	cAnalysi
+_0x5ca6:1593	mainLine
+_0x5ca6:1594	,120,130
+_0x5ca6:1595	scrollTo
+_0x5ca6:1596	ستایل ان
+_0x5ca6:1597	دارد.
+_0x5ca6:1598	canvas
+_0x5ca6:1599	getPersi
+_0x5ca6:1600	-custom-
+_0x5ca6:1601	neLegend
+_0x5ca6:1602	bindTime
+_0x5ca6:1603	ce-secti
+_0x5ca6:1604	pivotx
+_0x5ca6:1605	 مخفی کر
+_0x5ca6:1606	اریخچه ق
+_0x5ca6:1607	getBound
+_0x5ca6:1608	ل نقاط
+_0x5ca6:1609	candles
+_0x5ca6:1610	echnical
+_0x5ca6:1611	setScale
+_0x5ca6:1612	ابر کومو
+_0x5ca6:1613	extraLin
+_0x5ca6:1614	createTr
+_0x5ca6:1615	arch-res
+_0x5ca6:1616	or-previ
+_0x5ca6:1617	dResista
+_0x5ca6:1618	toggle
+_0x5ca6:1619	cStaticL
+_0x5ca6:1620	beginInc
+_0x5ca6:1621	tionsCha
+_0x5ca6:1622	wings
+_0x5ca6:1623	line-sty
+_0x5ca6:1624	xchart
+_0x5ca6:1625	contains
+_0x5ca6:1626	startsWi
+_0x5ca6:1627	دیکاتور 
+_0x5ca6:1628	chart-ty
+_0x5ca6:1629	نمایش
+_0x5ca6:1630	middleLe
+_0x5ca6:1631	oscillat
+_0x5ca6:1632	aryVisib
+_0x5ca6:1633	ut-armed
+_0x5ca6:1634	ماد
+_0x5ca6:1635	ابتدا تر
+_0x5ca6:1636	cancelTo
+_0x5ca6:1637	nimation
+_0x5ca6:1638	ry is no
+_0x5ca6:1639	شیف اصلا
+_0x5ca6:1640	Alt+R
+_0x5ca6:1641	replay-c
+_0x5ca6:1642	ctedDraw
+_0x5ca6:1643	syncMenu
+_0x5ca6:1644	ci-contr
+_0x5ca6:1645	drawingR
+_0x5ca6:1646	Menu
+_0x5ca6:1647	cancelAc
+_0x5ca6:1648	settingI
+_0x5ca6:1649	in 
+_0x5ca6:1650	#replay-
+_0x5ca6:1651	toggleOv
+_0x5ca6:1652	#cccc00
+_0x5ca6:1653	ubleClic
+_0x5ca6:1654	oraryVis
+_0x5ca6:1655	trols
+_0x5ca6:1656	ectedDra
+_0x5ca6:1657	beginRep
+_0x5ca6:1658	رصد فاصل
+_0x5ca6:1659	logicalW
+_0x5ca6:1660	کو اسپن
+_0x5ca6:1661	esult
+_0x5ca6:1662	48)
+_0x5ca6:1663	atorSett
+_0x5ca6:1664	ated
+_0x5ca6:1665	کپی
+_0x5ca6:1666	CloudRen
+_0x5ca6:1667	min
+_0x5ca6:1668	Baseline
+_0x5ca6:1669	_INFINIT
+_0x5ca6:1670	agedDraw
+_0x5ca6:1671	velSaveT
+_0x5ca6:1672	یلتر به 
+_0x5ca6:1673	getCompu
+_0x5ca6:1674	میانبرها
+_0x5ca6:1675	touchmov
+_0x5ca6:1676	navColor
+_0x5ca6:1677	ver
+_0x5ca6:1678	format
+_0x5ca6:1679	ingsInPr
+_0x5ca6:1680	stepCoun
+_0x5ca6:1681	btnCopyS
+_0x5ca6:1682	تنظیمات 
+_0x5ca6:1683	159947
+_0x5ca6:1684	ild
+_0x5ca6:1685	toUpperC
+_0x5ca6:1686	field
+_0x5ca6:1687	updateOv
+_0x5ca6:1688	top
+_0x5ca6:1689	signalLi
+_0x5ca6:1690	ines-dat
+_0x5ca6:1691	TrendLin
+_0x5ca6:1692	default
+_0x5ca6:1693	 مخفی‌کر
+_0x5ca6:1694	WEEKLY
+_0x5ca6:1695	checkbox
+_0x5ca6:1696	bindSele
+_0x5ca6:1697	lock-all
+_0x5ca6:1698	ArrowUp
+_0x5ca6:1699	supportA
+_0x5ca6:1700	ب شما فع
+_0x5ca6:1701	hideOsci
+_0x5ca6:1702	date
+_0x5ca6:1703	evels
+_0x5ca6:1704	م‌ها
+_0x5ca6:1705	نمایش شب
+_0x5ca6:1706	جون‌سن
+_0x5ca6:1707	onTimes
+_0x5ca6:1708	hidePopo
+_0x5ca6:1709	هموارساز
+_0x5ca6:1710	bindChar
+_0x5ca6:1711	ت ساختار
+_0x5ca6:1712	comparis
+_0x5ca6:1713	#00bbff
+_0x5ca6:1714	منوی باز
+_0x5ca6:1715	availabl
+_0x5ca6:1716	-volume-
+_0x5ca6:1717	 و سپس ت
+_0x5ca6:1718	lculatio
+_0x5ca6:1719	یمت
+_0x5ca6:1720	time
+_0x5ca6:1721	al-vis
+_0x5ca6:1722	ings
+_0x5ca6:1723	rect
+_0x5ca6:1724	solid
+_0x5ca6:1725	movingAv
+_0x5ca6:1726	tionButt
+_0x5ca6:1727	-fibonac
+_0x5ca6:1728	failed
+_0x5ca6:1729	createTe
+_0x5ca6:1730	getManag
+_0x5ca6:1731	lash
+_0x5ca6:1732	searchSy
+_0x5ca6:1733	#a86fd3
+_0x5ca6:1734	ractions
+_0x5ca6:1735	osc-sig1
+_0x5ca6:1736	در حال د
+_0x5ca6:1737	spanBWid
+_0x5ca6:1738	ith
+_0x5ca6:1739	ems
+_0x5ca6:1740	plicatio
+_0x5ca6:1741	oCoordin
+_0x5ca6:1742	gin
+_0x5ca6:1743	, 0.65)
+_0x5ca6:1744	tenkanVi
+_0x5ca6:1745	72heDihu
+_0x5ca6:1746	disposer
+_0x5ca6:1747	MFI
+_0x5ca6:1748	-title
+_0x5ca6:1749	ingShort
+_0x5ca6:1750	top:8px
+_0x5ca6:1751	averageC
+_0x5ca6:1752	gle
+_0x5ca6:1753	ی صفحه
+_0x5ca6:1754	getHeigh
+_0x5ca6:1755	llatorSe
+_0x5ca6:1756	tToNeare
+_0x5ca6:1757	add
+_0x5ca6:1758	دروز
+_0x5ca6:1759	dashed
+_0x5ca6:1760	lightSel
+_0x5ca6:1761	ment
+_0x5ca6:1762	enforceI
+_0x5ca6:1763	dingDraw
+_0x5ca6:1764	managedB
+_0x5ca6:1765	sibility
+_0x5ca6:1766	lor
+_0x5ca6:1767	histogra
+_0x5ca6:1768	activePr
+_0x5ca6:1769	#cfafe7
+_0x5ca6:1770	#283443
+_0x5ca6:1771	layIndic
+_0x5ca6:1772	ntent te
+_0x5ca6:1773	scale-se
+_0x5ca6:1774	color
+_0x5ca6:1775	 - 
+_0x5ca6:1776	drawText
+_0x5ca6:1777	#3377aa
+_0x5ca6:1778	ould not
+_0x5ca6:1779	rame
+_0x5ca6:1780	anes
+_0x5ca6:1781	movePane
+_0x5ca6:1782	rangeFil
+_0x5ca6:1783	horz
+_0x5ca6:1784	search-c
+_0x5ca6:1785	prototyp
+_0x5ca6:1786	izeMobil
+_0x5ca6:1787	#000000
+_0x5ca6:1788	open
+_0x5ca6:1789	indisett
+_0x5ca6:1790	profile-
+_0x5ca6:1791	messageT
+_0x5ca6:1792	dles
+_0x5ca6:1793	rgb(244,
+_0x5ca6:1794	rgba(24,
+_0x5ca6:1795	touchsta
+_0x5ca6:1796	attachCl
+_0x5ca6:1797	amples
+_0x5ca6:1798	fibo
+_0x5ca6:1799	rchDialo
+_0x5ca6:1800	dblclick
+_0x5ca6:1801	رنگ خط د
+_0x5ca6:1802	cloudCan
+_0x5ca6:1803	right
+_0x5ca6:1804	cked
+_0x5ca6:1805	بیضی
+_0x5ca6:1806	maximum
+_0x5ca6:1807	info
+_0x5ca6:1808	abled
+_0x5ca6:1809	lator
+_0x5ca6:1810	paletteT
+_0x5ca6:1811	oving-av
+_0x5ca6:1812	replay-s
+_0x5ca6:1813	خرین کند
+_0x5ca6:1814	Escape
+_0x5ca6:1815	ingContr
+_0x5ca6:1816	body
+_0x5ca6:1817	awingPro
+_0x5ca6:1818	general-
+_0x5ca6:1819	menu-che
+_0x5ca6:1820	cillator
+_0x5ca6:1821	Levels
+_0x5ca6:1822	createMu
+_0x5ca6:1823	cOrdinal
+_0x5ca6:1824	olor
+_0x5ca6:1825	s-fields
+_0x5ca6:1826	tart
+_0x5ca6:1827	removeAt
+_0x5ca6:1828	toLowerC
+_0x5ca6:1829	#44ff00
+_0x5ca6:1830	clearAll
+_0x5ca6:1831	theme-se
+_0x5ca6:1832	-inverte
+_0x5ca6:1833	imeoutId
+_0x5ca6:1834	getSelec
+_0x5ca6:1835	mobile-d
+_0x5ca6:1836	-right
+_0x5ca6:1837	#009955
+_0x5ca6:1838	demarker
+_0x5ca6:1839	.extra
+_0x5ca6:1840	baseMidd
+_0x5ca6:1841	ofile
+_0x5ca6:1842	x iransa
+_0x5ca6:1843	stringif
+_0x5ca6:1844	eSelecti
+_0x5ca6:1845	بستن
+_0x5ca6:1846	iner
+_0x5ca6:1847	site-men
+_0x5ca6:1848	خط‌چین
+_0x5ca6:1849	ovingAve
+_0x5ca6:1850	fa-IR
+_0x5ca6:1851	ار ویرای
+_0x5ca6:1852	osc-main
+_0x5ca6:1853	delay
+_0x5ca6:1854	tchforkC
+_0x5ca6:1855	لاعات نم
+_0x5ca6:1856	lette
+_0x5ca6:1857	Required
+_0x5ca6:1858	filter
+_0x5ca6:1859	aria-pre
+_0x5ca6:1860	showCont
+_0x5ca6:1861	getPrope
+_0x5ca6:1862	neral-se
+_0x5ca6:1863	resize
+_0x5ca6:1864	rtcut
+_0x5ca6:1865	attachOv
+_0x5ca6:1866	tData
+_0x5ca6:1867	idle
+_0x5ca6:1868	.48)
+_0x5ca6:1869	Frame
+_0x5ca6:1870	LabelMod
+_0x5ca6:1871	mUnbound
+_0x5ca6:1872	displace
+_0x5ca6:1873	ortcut
+_0x5ca6:1874	#33aa33
+_0x5ca6:1875	artAndSe
+_0x5ca6:1876	gendToPa
+_0x5ca6:1877	tate
+_0x5ca6:1878	ArrowRig
+_0x5ca6:1879	priceSer
+_0x5ca6:1880	-save
+_0x5ca6:1881	interval
+_0x5ca6:1882	nd, .tec
+_0x5ca6:1883	anded
+_0x5ca6:1884	ntrol
+_0x5ca6:1885	alueType
+_0x5ca6:1886	nReplayC
+_0x5ca6:1887	fontsize
+_0x5ca6:1888	ker
+_0x5ca6:1889	den
+_0x5ca6:1890	fill-tog
+_0x5ca6:1891	#e05252
+_0x5ca6:1892	onOption
+_0x5ca6:1893	آخرین: 
+_0x5ca6:1894	legendTi
+_0x5ca6:1895	Form
+_0x5ca6:1896	عنوان قی
+_0x5ca6:1897	smoothRa
+_0x5ca6:1898	Middle
+_0x5ca6:1899	Series
+_0x5ca6:1900	nvas
+_0x5ca6:1901	umTrendC
+_0x5ca6:1902	یمات
+_0x5ca6:1903	7430nBVnOL
+_0x5ca6:1904	48px
+_0x5ca6:1905	ود: 
+_0x5ca6:1906	aria-dis
+_0x5ca6:1907	eRightCl
+_0x5ca6:1908	neutralC
+_0x5ca6:1909	ble
+_0x5ca6:1910	Alt+N
+_0x5ca6:1911	tting-pr
+_0x5ca6:1912	lChartCo
+_0x5ca6:1913	rtyValue
+_0x5ca6:1914	ysisPane
+_0x5ca6:1915	yPeriod
+_0x5ca6:1916	ل کلیک ک
+_0x5ca6:1917	extraCol
+_0x5ca6:1918	toggleGr
+_0x5ca6:1919	reduce
+_0x5ca6:1920	#1769aa
+_0x5ca6:1921	cognitoM
+_0x5ca6:1922	chart-ge
+_0x5ca6:1923	hasOwn
+_0x5ca6:1924	rebuildP
+_0x5ca6:1925	forceCha
+_0x5ca6:1926	ingIds
+_0x5ca6:1927	btn
+_0x5ca6:1928	آخرین
+_0x5ca6:1929	checked
+_0x5ca6:1930	ctrlKey
+_0x5ca6:1931	tbody
+_0x5ca6:1932	له‌های پ
+_0x5ca6:1933	Start
+_0x5ca6:1934	channelP
+_0x5ca6:1935	getConte
+_0x5ca6:1936	lineVisi
+_0x5ca6:1937	 drawing
+_0x5ca6:1938	fromEntr
+_0x5ca6:1939	لاعات خط
+_0x5ca6:1940	fill
+_0x5ca6:1941	.chartTy
+_0x5ca6:1942	#225500
+_0x5ca6:1943	حاسبه نا
+_0x5ca6:1944	cloneMan
+_0x5ca6:1945	setRepla
+_0x5ca6:1946	searchMo
+_0x5ca6:1947	clipToDr
+_0x5ca6:1948	chDialog
+_0x5ca6:1949	arallelV
+_0x5ca6:1950	colorVal
+_0x5ca6:1951	CCI
+_0x5ca6:1952	nes
+_0x5ca6:1953	 .floati
+_0x5ca6:1954	upColor
+_0x5ca6:1955	#0088bb
+_0x5ca6:1956	border
+_0x5ca6:1957	bindExis
+_0x5ca6:1958	aria-exp
+_0x5ca6:1959	action
+_0x5ca6:1960	ارسازی
+_0x5ca6:1961	دوره‌ی م
+_0x5ca6:1962	lorPalet
+_0x5ca6:1963	opacity
+_0x5ca6:1964	0.1
+_0x5ca6:1965	هایلایتر
+_0x5ca6:1966	cross
+_0x5ca6:1967	abel
+_0x5ca6:1968	locked
+_0x5ca6:1969	downColo
+_0x5ca6:1970	levelBan
+_0x5ca6:1971	settings
+_0x5ca6:1972	or-added
+_0x5ca6:1973	cloudPan
+_0x5ca6:1974	عرض میله
+_0x5ca6:1975	stopProp
+_0x5ca6:1976	bindSear
+_0x5ca6:1977	syncMobi
+_0x5ca6:1978	ted osci
+_0x5ca6:1979	#449944
+_0x5ca6:1980	r(--text
+_0x5ca6:1981	:scope >
+_0x5ca6:1982	eStyle
+_0x5ca6:1983	ضخامت سن
+_0x5ca6:1984	vert
+_0x5ca6:1985	ADX
+_0x5ca6:1986	ght
+_0x5ca6:1987	ح‌شده
+_0x5ca6:1988	Chart se
+_0x5ca6:1989	awings
+_0x5ca6:1990	forceSta
+_0x5ca6:1991	ings-clo
+_0x5ca6:1992	#ccaa00
+_0x5ca6:1993	#18a66a
+_0x5ca6:1994	ateChann
+_0x5ca6:1995	trigger
+_0x5ca6:1996	fill-col
+_0x5ca6:1997	پله‌ای
+_0x5ca6:1998	padStart
+_0x5ca6:1999	onStyleC
+_0x5ca6:2000	change
+_0x5ca6:2001	tabindex
+_0x5ca6:2002	tyle
+_0x5ca6:2003	ested
+_0x5ca6:2004	 a, .pan
+_0x5ca6:2005	دوره کوت
+_0x5ca6:2006	ayContro
+_0x5ca6:2007	bindAuto
+_0x5ca6:2008	 اسپن A
+_0x5ca6:2009	csrfHead
+_0x5ca6:2010	دوره محد
+_0x5ca6:2011	chart-os
+_0x5ca6:2012	-setting
+_0x5ca6:2013	ged
+_0x5ca6:2014	triangle
+_0x5ca6:2015	setAnaly
+_0x5ca6:2016	نمایش و 
+_0x5ca6:2017	vas
+_0x5ca6:2018	#526928
+_0x5ca6:2019	hideable
+_0x5ca6:2020	ingsDial
+_0x5ca6:2021	tenkanWi
+_0x5ca6:2022	کمترین
+_0x5ca6:2023	POSITIVE
+_0x5ca6:2024	kijunWid
+_0x5ca6:2025	dragOper
+_0x5ca6:2026	ation is
+_0x5ca6:2027	indicato
+_0x5ca6:2028	/searchD
+_0x5ca6:2029	-chart-c
+_0x5ca6:2030	منبع حرک
+_0x5ca6:2031	‌زمینه
+_0x5ca6:2032	enforceL
+_0x5ca6:2033	confirm
+_0x5ca6:2034	#ffffff
+_0x5ca6:2035	igger
+_0x5ca6:2036	الگوی AB
+_0x5ca6:2037	isibilit
+_0x5ca6:2038	steps
+_0x5ca6:2039	teIsInsi
+_0x5ca6:2040	target
+_0x5ca6:2041	s-table
+_0x5ca6:2042	index-se
+_0x5ca6:2043	fa-eye-s
+_0x5ca6:2044	رمونیک
+_0x5ca6:2045	move-dra
+_0x5ca6:2046	#7030a0
+_0x5ca6:2047	, .techn
+_0x5ca6:2048	setVisib
+_0x5ca6:2049	#ff4444
+_0x5ca6:2050	الگوی ها
+_0x5ca6:2051	z-index:
+_0x5ca6:2052	lement #
+_0x5ca6:2053	separato
+_0x5ca6:2054	#339900
+_0x5ca6:2055	fibo_exp
+_0x5ca6:2056	nged
+_0x5ca6:2057	ickPoint
+_0x5ca6:2058	state
+_0x5ca6:2059	-selecto
+_0x5ca6:2060	expected
+_0x5ca6:2061	#ff6666
+_0x5ca6:2062	#dd99aa
+_0x5ca6:2063	activate
+_0x5ca6:2064	tyState
+_0x5ca6:2065	دوره دوم
+_0x5ca6:2066	ichimoku
+_0x5ca6:2067	LevelDra
+_0x5ca6:2068	clientWi
+_0x5ca6:2069	از حالت 
+_0x5ca6:2070	ts libra
+_0x5ca6:2071	#444444
+_0x5ca6:2072	renderDr
+_0x5ca6:2073	خط‌چین ر
+_0x5ca6:2074	inverted
+_0x5ca6:2075	append
+_0x5ca6:2076	user-inp
+_0x5ca6:2077	labelTyp
+_0x5ca6:2078	-percent
+_0x5ca6:2079	.technic
+_0x5ca6:2080	یم جداگا
+_0x5ca6:2081	panel
+_0x5ca6:2082	replaceC
+_0x5ca6:2083	showMess
+_0x5ca6:2084	pendingS
+_0x5ca6:2085	meframe
+_0x5ca6:2086	syncOsci
+_0x5ca6:2087	reset
+_0x5ca6:2088	symbol-c
+_0x5ca6:2089	revealIn
+_0x5ca6:2090	chikouVi
+_0x5ca6:2091	awingsCh
+_0x5ca6:2092	ingStyle
+_0x5ca6:2093	incognit
+_0x5ca6:2094	fibonacc
+_0x5ca6:2095	values
+_0x5ca6:2096	createFi
+_0x5ca6:2097	dth
+_0x5ca6:2098	deleteSe
+_0x5ca6:2099	lityRequ
+_0x5ca6:2100	ضخامت کی
+_0x5ca6:2101	 نماد دا
+_0x5ca6:2102	height
+_0x5ca6:2103	 days: 
+_0x5ca6:2104	مینه
+_0x5ca6:2105	filterTy
+_0x5ca6:2106	e-select
+_0x5ca6:2107	signalVi
+_0x5ca6:2108	sibleMar
+_0x5ca6:2109	نوع چنگا
+_0x5ca6:2110	olor-pal
+_0x5ca6:2111	uttons
+_0x5ca6:2112	تخاب کنی
+_0x5ca6:2113	andle
+_0x5ca6:2114	rs-setti
+_0x5ca6:2115	chart
+_0x5ca6:2116	touchend
+_0x5ca6:2117	ghtIndex
+_0x5ca6:2118	bindSite
+_0x5ca6:2119	mobileLa
+_0x5ca6:2120	utomatic
+_0x5ca6:2121	month
+_0x5ca6:2122	mobileAu
+_0x5ca6:2123	سایه‌های
+_0x5ca6:2124	rawing
+_0x5ca6:2125	idth
+_0x5ca6:2126	Ignoring
+_0x5ca6:2127	درصدی
+_0x5ca6:2128	agers
+_0x5ca6:2129	chartCon
+_0x5ca6:2130	Event
+_0x5ca6:2131	extarea,
+_0x5ca6:2132	rawingSh
+_0x5ca6:2133	rgba(30,
+_0x5ca6:2134	#4488cc
+_0x5ca6:2135	28, 0.82
+_0x5ca6:2136	abelType
+_0x5ca6:2137	itionIni
+_0x5ca6:2138	bar
+_0x5ca6:2139	lectedDr
+_0x5ca6:2140	r-cloud-
+_0x5ca6:2141	ب‌ها
+_0x5ca6:2142	-row-tit
+_0x5ca6:2143	دوره بلن
+_0x5ca6:2144	updateGe
+_0x5ca6:2145	-left
+_0x5ca6:2146	lumeProf
+_0x5ca6:2147	schedule
+_0x5ca6:2148	ده‌ی قاب
+_0x5ca6:2149	#c04aa1
+_0x5ca6:2150	shed
+_0x5ca6:2151	rgba(128
+_0x5ca6:2152	dataset
+_0x5ca6:2153	inearPri
+_0x5ca6:2154	lex
+_0x5ca6:2155	درصد قیم
+_0x5ca6:2156	fa-clone
+_0x5ca6:2157	lectorMe
+_0x5ca6:2158	addPane
+_0x5ca6:2159	-analysi
+_0x5ca6:2160	erCaptur
+_0x5ca6:2161	fill-opa
+_0x5ca6:2162	ttings-s
+_0x5ca6:2163	downPara
+_0x5ca6:2164	armed
+_0x5ca6:2165	abels(
+_0x5ca6:2166	Backspac
+_0x5ca6:2167	clip
+_0x5ca6:2168	update/
+_0x5ca6:2169	signalCo
+_0x5ca6:2170	abort
+_0x5ca6:2171	رنگ متن
+_0x5ca6:2172	amic_
+_0x5ca6:2173	nical-ch
+_0x5ca6:2174	t-menu-c
+_0x5ca6:2175	ut-chang
+_0x5ca6:2176	settingP
+_0x5ca6:2177	ntId
+_0x5ca6:2178	[data-ro
+_0x5ca6:2179	veDrawin
+_0x5ca6:2180	tion: la
+_0x5ca6:2181	TradersA
+_0x5ca6:2182	awingShe
+_0x5ca6:2183	updateSe
+_0x5ca6:2184	نوشته چپ
+_0x5ca6:2185	play
+_0x5ca6:2186	بوناچی
+_0x5ca6:2187	یرایش‌شد
+_0x5ca6:2188	showPopo
+_0x5ca6:2189	Icon
+_0x5ca6:2190	ropertie
+_0x5ca6:2191	height:1
+_0x5ca6:2192	area
+_0x5ca6:2193	static
+_0x5ca6:2194	tEventsO
+_0x5ca6:2195	دو کانال
+_0x5ca6:2196	nelSelec
+_0x5ca6:2197	رنگ شبکه
+_0x5ca6:2198	تغییر قی
+_0x5ca6:2199	سه کانال
+_0x5ca6:2200	youtActi
+_0x5ca6:2201	#dd5566
+_0x5ca6:2202	rgba(96,
+_0x5ca6:2203	oardShor
+_0x5ca6:2204	enu
+_0x5ca6:2205	,.6)
+_0x5ca6:2206	175,80,.
+_0x5ca6:2207	ر و برچس
+_0x5ca6:2208	gendValu
+_0x5ca6:2209	#timefra
+_0x5ca6:2210	low
+_0x5ca6:2211	[data-se
+_0x5ca6:2212	موفق بود
+_0x5ca6:2213	ordinate
+_0x5ca6:2214	up-color
+_0x5ca6:2215	ction
+_0x5ca6:2216	refreshA
+_0x5ca6:2217	source
+_0x5ca6:2218	widths
+_0x5ca6:2219	lectedSt
+_0x5ca6:2220	grayx
+_0x5ca6:2221	 اصلی
+_0x5ca6:2222	defaultP
+_0x5ca6:2223	original
+_0x5ca6:2224	on-
+_0x5ca6:2225	صد را بر
+_0x5ca6:2226	rgba(
+_0x5ca6:2227	cLevelKi
+_0x5ca6:2228	ata?keyw
+_0x5ca6:2229	e-filter
+_0x5ca6:2230	onSettin
+_0x5ca6:2231	endLineC
+_0x5ca6:2232	IndexedT
+_0x5ca6:2233	createOf
+_0x5ca6:2234	fontSize
+_0x5ca6:2235	anel
+_0x5ca6:2236	rgba(150
+_0x5ca6:2237	rveTo
+_0x5ca6:2238	Layout
+_0x5ca6:2239	StaticLe
+_0x5ca6:2240	hideSele
+_0x5ca6:2241	copy-dra
+_0x5ca6:2242	رنگ خط
+_0x5ca6:2243	mSeries
+_0x5ca6:2244	xtWaterm
+_0x5ca6:2245	مثلث
+_0x5ca6:2246	ATR
+_0x5ca6:2247	element
+_0x5ca6:2248	icLevels
+_0x5ca6:2249	tangle
+_0x5ca6:2250	llatorVi
+_0x5ca6:2251	olor-pre
+_0x5ca6:2252	hnical-c
+_0x5ca6:2253	.floatin
+_0x5ca6:2254	inline-f
+_0x5ca6:2255	ه پنل ان
+_0x5ca6:2256	searchDe
+_0x5ca6:2257	claimed
+_0x5ca6:2258	nsansx
+_0x5ca6:2259	agation
+_0x5ca6:2260	numeric
+_0x5ca6:2261	-changed
+_0x5ca6:2262	applySer
+_0x5ca6:2263	erif
+_0x5ca6:2264	#113300
+_0x5ca6:2265	searchvi
+_0x5ca6:2266	input,te
+_0x5ca6:2267	signalsV
+_0x5ca6:2268	findInde
+_0x5ca6:2269	ت. آیا ق
+_0x5ca6:2270	finishIn
+_0x5ca6:2271	لاعات کا
+_0x5ca6:2272	lines
+_0x5ca6:2273	#44ddff
+_0x5ca6:2274	ings-tit
+_0x5ca6:2275	firstWin
+_0x5ca6:2276	magnet
+_0x5ca6:2277	overlayI
+_0x5ca6:2278	configur
+_0x5ca6:2279	chimoku
+_0x5ca6:2280	cale
+_0x5ca6:2281	snapPoin
+_0x5ca6:2282	extra
+_0x5ca6:2283	selectDr
+_0x5ca6:2284	osc-sign
+_0x5ca6:2285	chimoku-
+_0x5ca6:2286	isFinite
+_0x5ca6:2287	inesVis
+_0x5ca6:2288	disposed
+_0x5ca6:2289	اسیلاتور
+_0x5ca6:2290	اب یک‌رو
+_0x5ca6:2291	searchin
+_0x5ca6:2292	true
+_0x5ca6:2293	گسترش فی
+_0x5ca6:2294	میانه
+_0x5ca6:2295	خلی
+_0x5ca6:2296	tEditabl
+_0x5ca6:2297	aggedCha
+_0x5ca6:2298	fabtn
+_0x5ca6:2299	lysisCon
+_0x5ca6:2300	Modified
+_0x5ca6:2301	inset
+_0x5ca6:2302	nge
+_0x5ca6:2303	یگنال
+_0x5ca6:2304	#b3b3b3
+_0x5ca6:2305	secondar
+_0x5ca6:2306	multipli
+_0x5ca6:2307	-oscilla
+_0x5ca6:2308	-color
+_0x5ca6:2309	rgba(75,
+_0x5ca6:2310	replayCu
+_0x5ca6:2311	mobile-i
+_0x5ca6:2312	label
+_0x5ca6:2313	renderer
+_0x5ca6:2314	drawBezi
+_0x5ca6:2315	operty]
+_0x5ca6:2316	sVis
+_0x5ca6:2317	ssed
+_0x5ca6:2318	createdB
+_0x5ca6:2319	hange
+_0x5ca6:2320	اشته شود
+_0x5ca6:2321	#9e9e9e
+_0x5ca6:2322	fillRect
+_0x5ca6:2323	ومی صفحه
+_0x5ca6:2324	temCheck
+_0x5ca6:2325	حباب
+_0x5ca6:2326	rgba(99,
+_0x5ca6:2327	setLineD
+_0x5ca6:2328	/chart/p
+_0x5ca6:2329	کندل قبل
+_0x5ca6:2330	bute
+_0x5ca6:2331	key
+_0x5ca6:2332	main
+_0x5ca6:2333	istingPa
+_0x5ca6:2334	eControl
+_0x5ca6:2335	isPrimar
+_0x5ca6:2336	rawings-
+_0x5ca6:2337	isConten
+_0x5ca6:2338	evision
+_0x5ca6:2339	handlePo
+_0x5ca6:2340	fa-arrow
+_0x5ca6:2341	render
+_0x5ca6:2342	#777777
+_0x5ca6:2343	#4169e1
+_0x5ca6:2344	ors
+_0x5ca6:2345	نمایش یا
+_0x5ca6:2346	تاریخ
+_0x5ca6:2347	geFilter
+_0x5ca6:2348	createPi
+_0x5ca6:2349	Visible
+_0x5ca6:2350	SELECT
+_0x5ca6:2351	roundRec
+_0x5ca6:2352	forward
+_0x5ca6:2353	ted
+_0x5ca6:2354	hasOwnPr
+_0x5ca6:2355	load
+_0x5ca6:2356	یش است.
+_0x5ca6:2357	function
+_0x5ca6:2358	rChange
+_0x5ca6:2359	Navigati
+_0x5ca6:2360	leFromCh
+_0x5ca6:2361	annelCon
+_0x5ca6:2362	eLayout
+_0x5ca6:2363	rgba(0,0
+_0x5ca6:2364	drawChan
+_0x5ca6:2365	period2L
+_0x5ca6:2366	period1L
+_0x5ca6:2367	olbar
+_0x5ca6:2368	emitStyl
+_0x5ca6:2369	style-pa
+_0x5ca6:2370	, 128, 1
+_0x5ca6:2371	hasVisib
+_0x5ca6:2372	t, .sele
+_0x5ca6:2373	Style
+_0x5ca6:2374	cent
+_0x5ca6:2375	onSelect
+_0x5ca6:2376	بت قیمت
+_0x5ca6:2377	ت: 
+_0x5ca6:2378	Interact
+_0x5ca6:2379	or-title
+_0x5ca6:2380	toggleSu
+_0x5ca6:2381	onStatic
+_0x5ca6:2382	eCrossha
+_0x5ca6:2383	mobile-c
+_0x5ca6:2384	#ff3333
+_0x5ca6:2385	handleDo
+_0x5ca6:2386	BearishC
+_0x5ca6:2387	freeze
+_0x5ca6:2388	-scale
+_0x5ca6:2389	تم تیره
+_0x5ca6:2390	spanB
+_0x5ca6:2391	#222222
+_0x5ca6:2392	iled
+_0x5ca6:2393	isFund
+_0x5ca6:2394	kijunCol
+_0x5ca6:2395	leCompar
+_0x5ca6:2396	touches
+_0x5ca6:2397	kind
+_0x5ca6:2398	Toggle
+_0x5ca6:2399	syncExis
+_0x5ca6:2400	ر ناشناخ
+_0x5ca6:2401	tainer
+_0x5ca6:2402	hidden
+_0x5ca6:2403	number
+_0x5ca6:2404	activeEl
+_0x5ca6:2405	ن موقت
+_0x5ca6:2406	mCoordin
+_0x5ca6:2407	exes
+_0x5ca6:2408	hairMove
+_0x5ca6:2409	????/??/
+_0x5ca6:2410	toRelock
+_0x5ca6:2411	lePanelS
+_0x5ca6:2412	-down
+_0x5ca6:2413	ibeCross
+_0x5ca6:2414	izeObser
+_0x5ca6:2415	,0,.82)
+_0x5ca6:2416	بازنشانی
+_0x5ca6:2417	#e91e63
+_0x5ca6:2418	heading
+_0x5ca6:2419	destroye
+_0x5ca6:2420	Histogra
+_0x5ca6:2421	setTrans
+_0x5ca6:2422	Size
+_0x5ca6:2423	readJson
+_0x5ca6:2424	دوره
+_0x5ca6:2425	ghtChart
+_0x5ca6:2426	dir
+_0x5ca6:2427	message
+_0x5ca6:2428	pe-selec
+_0x5ca6:2429	middle
+_0x5ca6:2430	od1
+_0x5ca6:2431	ialMarke
+_0x5ca6:2432	ison
+_0x5ca6:2433	eLabels
+_0x5ca6:2434	rdinates
+_0x5ca6:2435	uItemChe
+_0x5ca6:2436	پیوسته
+_0x5ca6:2437	,80,80,.
+_0x5ca6:2438	copySele
+_0x5ca6:2439	eventCoo
+_0x5ca6:2440	pportAnd
+_0x5ca6:2441	#7f4bb2
+_0x5ca6:2442	ارج شدید
+_0x5ca6:2443	atr
+_0x5ca6:2444	ettings 
+_0x5ca6:2445	oller
+_0x5ca6:2446	چیکو اسپ
+_0x5ca6:2447	focus
+_0x5ca6:2448	ortContr
+_0x5ca6:2449	-drawing
+_0x5ca6:2450	افزایش س
+_0x5ca6:2451	legacyAn
+_0x5ca6:2452	llator: 
+_0x5ca6:2453	redoStac
+_0x5ca6:2454	setDrawi
+_0x5ca6:2455	#aaaaaa
+_0x5ca6:2456	 کندل
+_0x5ca6:2457	atorColo
+_0x5ca6:2458	onds
+_0x5ca6:2459	 span
+_0x5ca6:2460	technica
+_0x5ca6:2461	دامنه وا
+_0x5ca6:2462	drawingP
+_0x5ca6:2463	pha
+_0x5ca6:2464	containe
+_0x5ca6:2465	ies
+_0x5ca6:2466	colorPal
+_0x5ca6:2467	applySel
+_0x5ca6:2468	abelPosi
+_0x5ca6:2469	#ff00ff
+_0x5ca6:2470	applyOve
+_0x5ca6:2471	serif
+_0x5ca6:2472	latestVa
+_0x5ca6:2473	رنگ صعود
+_0x5ca6:2474	mobile-a
+_0x5ca6:2475	faultSty
+_0x5ca6:2476	گیری تغی
+_0x5ca6:2477	rtSettin
+_0x5ca6:2478	bdi
+_0x5ca6:2479	scale-mo
+_0x5ca6:2480	getEleme
+_0x5ca6:2481	bindSeri
+_0x5ca6:2482	پیکان
+_0x5ca6:2483	renderCl
+_0x5ca6:2484	signalWi
+_0x5ca6:2485	size
+_0x5ca6:2486	#f44336
+_0x5ca6:2487	jalali
+_0x5ca6:2488	lueTime
+_0x5ca6:2489	barWidth
+_0x5ca6:2490	neWidthS
+_0x5ca6:2491	tervalId
+_0x5ca6:2492	ansx
+_0x5ca6:2493	rawingCo
+_0x5ca6:2494	auth
+_0x5ca6:2495	یک کانال
+_0x5ca6:2496	Targets
+_0x5ca6:2497	ody
+_0x5ca6:2498	lRange
+_0x5ca6:2499	#d37a21
+_0x5ca6:2500	خط‌کش
+_0x5ca6:2501	Latest c
+_0x5ca6:2502	showInit
+_0x5ca6:2503	ouds
+_0x5ca6:2504	 هر خط
+_0x5ca6:2505	kbd
+_0x5ca6:2506	seriesDa
+_0x5ca6:2507	disabled
+_0x5ca6:2508	secondWi
+_0x5ca6:2509	oudCanva
+_0x5ca6:2510	Delete
+_0x5ca6:2511	ن‌سن
+_0x5ca6:2512	pointerT
+_0x5ca6:2513	tra > la
+_0x5ca6:2514	timeScal
+_0x5ca6:2515	rawing-t
+_0x5ca6:2516	closeSea
+_0x5ca6:2517	ndoSnaps
+_0x5ca6:2518	دوره پای
+_0x5ca6:2519	origin
+_0x5ca6:2520	stopRepl
+_0x5ca6:2521	r-palett
+_0x5ca6:2522	guration
+_0x5ca6:2523	ctive
+_0x5ca6:2524	togglePa
+_0x5ca6:2525	getOptio
+_0x5ca6:2526	o100
+_0x5ca6:2527	createPa
+_0x5ca6:2528	MidLines
+_0x5ca6:2529	eckpoint
+_0x5ca6:2530	Percent
+_0x5ca6:2531	نقطه‌چین
+_0x5ca6:2532	tenkanCo
+_0x5ca6:2533	artType
+_0x5ca6:2534	rs-selec
+_0x5ca6:2535	قلم آزاد
+_0x5ca6:2536	boundary
+_0x5ca6:2537	rena.ir
+_0x5ca6:2538	or-setti
+_0x5ca6:2539	lds']
+_0x5ca6:2540	upMidLin
+_0x5ca6:2541	eTempora
+_0x5ca6:2542	نمایش خر
+_0x5ca6:2543	setting-
+_0x5ca6:2544	applicat
+_0x5ca6:2545	pointerd
+_0x5ca6:2546	سیگنال ۲
+_0x5ca6:2547	رنگ خطوط
+_0x5ca6:2548	d-move-d
+_0x5ca6:2549	EPSILON
+_0x5ca6:2550	age
+_0x5ca6:2551	move-up
+_0x5ca6:2552	#673ab7
+_0x5ca6:2553	ttings-f
+_0x5ca6:2554	updateDr
+_0x5ca6:2555	icator
+_0x5ca6:2556	signalPe
+_0x5ca6:2557	Dirty
+_0x5ca6:2558	esVisibi
+_0x5ca6:2559	aria-hid
+_0x5ca6:2560	اخته است
+_0x5ca6:2561	interMov
+_0x5ca6:2562	رعت بازپ
+_0x5ca6:2563	#cc3300
+_0x5ca6:2564	textBase
+_0x5ca6:2565	upward
+_0x5ca6:2566	leContro
+_0x5ca6:2567	prepareD
+_0x5ca6:2568	ollinger
+_0x5ca6:2569	upportAn
+_0x5ca6:2570	stence
+_0x5ca6:2571	fillText
+_0x5ca6:2572	70px
+_0x5ca6:2573	ingClien
+_0x5ca6:2574	n-trigge
+_0x5ca6:2575	art-over
+_0x5ca6:2576	ات رنج ف
+_0x5ca6:2577	backgrou
+_0x5ca6:2578	le='over
+_0x5ca6:2579	dataClie
+_0x5ca6:2580	-open
+_0x5ca6:2581	clearMen
+_0x5ca6:2582	 technic
+_0x5ca6:2583	xtContro
+_0x5ca6:2584	cificCon
+_0x5ca6:2585	#4aa3ff
+_0x5ca6:2586	rlayVisi
+_0x5ca6:2587	cker, .t
+_0x5ca6:2588	ector
+_0x5ca6:2589	CANDLE
+_0x5ca6:2590	eout
+_0x5ca6:2591	toggleTe
+_0x5ca6:2592	history-
+_0x5ca6:2593	legendEl
+_0x5ca6:2594	stId
+_0x5ca6:2595	 بود.
+_0x5ca6:2596	detail
+_0x5ca6:2597	neStyle
+_0x5ca6:2598	-chart-o
+_0x5ca6:2599	meProfil
+_0x5ca6:2600	-request
+_0x5ca6:2601	setData
+_0x5ca6:2602	pointerI
+_0x5ca6:2603	mainWidt
+_0x5ca6:2604	vel
+_0x5ca6:2605	neration
+_0x5ca6:2606	nearestC
+_0x5ca6:2607	-tpwchar
+_0x5ca6:2608	textCont
+_0x5ca6:2609	tting.ex
+_0x5ca6:2610	startCoo
+_0x5ca6:2611	addOscil
+_0x5ca6:2612	ter
+_0x5ca6:2613	perties
+_0x5ca6:2614	ettingsB
+_0x5ca6:2615	level-na
+_0x5ca6:2616	loaded
+_0x5ca6:2617	alette, 
+_0x5ca6:2618	fa-gear
+_0x5ca6:2619	auto
+_0x5ca6:2620	yCut
+_0x5ca6:2621	createLi
+_0x5ca6:2622	awingsVi
+_0x5ca6:2623	tychange
+_0x5ca6:2624	changeRe
+_0x5ca6:2625	yleCopyM
+_0x5ca6:2626	wicks
+_0x5ca6:2627	نام
+_0x5ca6:2628	#16833b
+_0x5ca6:2629	slope
+_0x5ca6:2630	-up
+_0x5ca6:2631	tingProp
+_0x5ca6:2632	د درصدی 
+_0x5ca6:2633	خط MACD
+_0x5ca6:2634	volumeVi
+_0x5ca6:2635	ون‌سن
+_0x5ca6:2636	layId
+_0x5ca6:2637	ngs
+_0x5ca6:2638	tatus
+_0x5ca6:2639	string
+_0x5ca6:2640	nsx,Taho
+_0x5ca6:2641	entListe
+_0x5ca6:2642	touchcan
+_0x5ca6:2643	#ff1111
+_0x5ca6:2644	ضخامت خط
+_0x5ca6:2645	tionSele
+_0x5ca6:2646	cancelDr
+_0x5ca6:2647	nates
+_0x5ca6:2648	form
+_0x5ca6:2649	layTimer
+_0x5ca6:2650	pointerm
+_0x5ca6:2651	aggedRec
+_0x5ca6:2652	,165,180
+_0x5ca6:2653	l-drawin
+_0x5ca6:2654	setItem
+_0x5ca6:2655	ngine
+_0x5ca6:2656	applyOpt
+_0x5ca6:2657	getSetti
+_0x5ca6:2658	امتداد ب
+_0x5ca6:2659	mobile-t
+_0x5ca6:2660	 .dropbt
+_0x5ca6:2661	ctors, .
+_0x5ca6:2662	heet-clo
+_0x5ca6:2663	رنگ نمود
+_0x5ca6:2664	includes
+_0x5ca6:2665	gsReques
+_0x5ca6:2666	#204CAB
+_0x5ca6:2667	ehandDra
+_0x5ca6:2668	operties
+_0x5ca6:2669	previewP
+_0x5ca6:2670	code
+_0x5ca6:2671	leMode
+_0x5ca6:2672	PRICECHA
+_0x5ca6:2673	mobile-v
+_0x5ca6:2674	mColor
+_0x5ca6:2675	s-sectio
+_0x5ca6:2676	قفل کردن
+_0x5ca6:2677	sisPanel
+_0x5ca6:2678	diatePro
+_0x5ca6:2679	save
+_0x5ca6:2680	Count
+_0x5ca6:2681	x sans-s
+_0x5ca6:2682	finishDr
+_0x5ca6:2683	awingSpe
+_0x5ca6:2684	special-
+_0x5ca6:2685	برای این
+_0x5ca6:2686	awingUnl
+_0x5ca6:2687	ketData
+_0x5ca6:2688	رنگ
+_0x5ca6:2689	272RkpJPS
+_0x5ca6:2690	gridVisi
+_0x5ca6:2691	.2)
+_0x5ca6:2692	#technic
+_0x5ca6:2693	همهٔ ترس
+_0x5ca6:2694	#5588dd
+_0x5ca6:2695	#d9dee3
+_0x5ca6:2696	lay
+_0x5ca6:2697	دریافت ن
+_0x5ca6:2698	نمایش، د
+_0x5ca6:2699	px irans
+_0x5ca6:2700	left
+_0x5ca6:2701	success
+_0x5ca6:2702	DrawingT
+_0x5ca6:2703	frame
+_0x5ca6:2704	get
+_0x5ca6:2705	text
+_0x5ca6:2706	#f0f0f0
+_0x5ca6:2707	renderVi
+_0x5ca6:2708	-log-sca
+_0x5ca6:2709	directio
+_0x5ca6:2710	tures
+_0x5ca6:2711	primary
+_0x5ca6:2712	ticLevel
+_0x5ca6:2713	GET
+_0x5ca6:2714	چنگال دا
+_0x5ca6:2715	-row
+_0x5ca6:2716	cLevelsO
+_0x5ca6:2717	pop
+_0x5ca6:2718	نوع اتصا
+_0x5ca6:2719	ntById
+_0x5ca6:2720	ark
+_0x5ca6:2721	رنگ نزول
+_0x5ca6:2722	lityCont
+_0x5ca6:2723	m-color-
+_0x5ca6:2724	subscrib
+_0x5ca6:2725	oleanSet
+_0x5ca6:2726	#ff50ff
+_0x5ca6:2727	rages
+_0x5ca6:2728	timeToCo
+_0x5ca6:2729	 ذخیره ش
+_0x5ca6:2730	iod
+_0x5ca6:2731	 ترسیم‌ه
+_0x5ca6:2732	-heading
+_0x5ca6:2733	openAnal
+_0x5ca6:2734	textAlig
+_0x5ca6:2735	secondCo
+_0x5ca6:2736	دا نشد
+_0x5ca6:2737	ojection
+_0x5ca6:2738	en-US
+_0x5ca6:2739	yControl
+_0x5ca6:2740	#ff9800
+_0x5ca6:2741	tpwchart
+_0x5ca6:2742	automati
+_0x5ca6:2743	onVisibi
+_0x5ca6:2744	ement
+_0x5ca6:2745	ه به‌صور
+_0x5ca6:2746	rr_zone
+_0x5ca6:2747	ions
+_0x5ca6:2748	rawingId
+_0x5ca6:2749	signalSe
+_0x5ca6:2750	verlay-s
+_0x5ca6:2751	paneTemp
+_0x5ca6:2752	ه‌های فی
+_0x5ca6:2753	released
+_0x5ca6:2754	setMobil
+_0x5ca6:2755	SHI
+_0x5ca6:2756	simple-s
+_0x5ca6:2757	erSelect
+_0x5ca6:2758	has
+_0x5ca6:2759	ndex
+_0x5ca6:2760	osshairO
+_0x5ca6:2761	legendVa
+_0x5ca6:2762	ash
+_0x5ca6:2763	lineWidt
+_0x5ca6:2764	saveDraw
+_0x5ca6:2765	updateAc
+_0x5ca6:2766	PointerA
+_0x5ca6:2767	75,80)
+_0x5ca6:2768	 be save
+_0x5ca6:2769	نمایش ان
+_0x5ca6:2770	#7272aa
+_0x5ca6:2771	drawingI
+_0x5ca6:2772	osc-sig-
+_0x5ca6:2773	rawings
+_0x5ca6:2774	chnical-
+_0x5ca6:2775	al-chart
+_0x5ca6:2776	chikouCo
+_0x5ca6:2777	قعی (ATR
+_0x5ca6:2778	های متحر
+_0x5ca6:2779	#analysi
+_0x5ca6:2780	#0080ff
+_0x5ca6:2781	removeEx
+_0x5ca6:2782	 initial
+_0x5ca6:2783	 نزولی
+_0x5ca6:2784	pitchfor
+_0x5ca6:2785	#363672
+_0x5ca6:2786	رنگ مثبت
+_0x5ca6:2787	ing
+_0x5ca6:2788	ane
+_0x5ca6:2789	ype
+_0x5ca6:2790	youtMedi
+_0x5ca6:2791	latestSe
+_0x5ca6:2792	line
+_0x5ca6:2793	163,255,
+_0x5ca6:2794	#dd3344
+_0x5ca6:2795	tionChan
+_0x5ca6:2796	tep
+_0x5ca6:2797	artClick
+_0x5ca6:2798	span
+_0x5ca6:2799	updateLe
+_0x5ca6:2800	rgba(78,
+_0x5ca6:2801	باندهای 
+_0x5ca6:2802	sourceTi
+_0x5ca6:2803	ange
+_0x5ca6:2804	dispatch
+_0x5ca6:2805	neralCha
+_0x5ca6:2806	navchart
+_0x5ca6:2807	theme-co
+_0x5ca6:2808	معتبر نب
+_0x5ca6:2809	measure
+_0x5ca6:2810	anel-ope
+_0x5ca6:2811	logicalT
+_0x5ca6:2812	valueMap
+_0x5ca6:2813	chartThe
+_0x5ca6:2814	n techni
+_0x5ca6:2815	button
+_0x5ca6:2816	kijunVis
+_0x5ca6:2817	symbol
+_0x5ca6:2818	object
+_0x5ca6:2819	point
+_0x5ca6:2820	averageS
+_0x5ca6:2821	ryVisibi
+_0x5ca6:2822	#0066aa
+_0x5ca6:2823	mfi
+_0x5ca6:2824	#aa00aa
+_0x5ca6:2825	paneSlot
+_0x5ca6:2826	down-col
+_0x5ca6:2827	 163, 74
+_0x5ca6:2828	rendChan
+_0x5ca6:2829	c-level-
+_0x5ca6:2830	observe
+_0x5ca6:2831	a-vis
+_0x5ca6:2832	preserve
+_0x5ca6:2833	cel
+_0x5ca6:2834	createVo
+_0x5ca6:2835	src
+_0x5ca6:2836	listen
+_0x5ca6:2837	#index-s
+_0x5ca6:2838	نیم‌خط
+_0x5ca6:2839	ange-fil
+_0x5ca6:2840	andleCou
+_0x5ca6:2841	relative
+_0x5ca6:2842	art
+_0x5ca6:2843	فقط قیمت
+_0x5ca6:2844	setMenuI
+_0x5ca6:2845	percenta
+_0x5ca6:2846	levels-p
+_0x5ca6:2847	ocked
+_0x5ca6:2848	نمایش اط
+_0x5ca6:2849	hline
+_0x5ca6:2850	evelSave
+_0x5ca6:2851	style
+_0x5ca6:2852	offsetY
+_0x5ca6:2853	-general
+_0x5ca6:2854	kgroundT
+_0x5ca6:2855	updateDe
+_0x5ca6:2856	r-close
+_0x5ca6:2857	ings-sec
+_0x5ca6:2858	bonacciL
+_0x5ca6:2859	end
+_0x5ca6:2860	105345YXzzQN
+_0x5ca6:2861	lineStyl
+_0x5ca6:2862	createEl
+_0x5ca6:2863	لیل خودک
+_0x5ca6:2864	showFina
+_0x5ca6:2865	atestCan
+_0x5ca6:2866	Height
+_0x5ca6:2867	dexByTim
+_0x5ca6:2868	میانگین‌
+_0x5ca6:2869	یخچه قیم
+_0x5ca6:2870	nalysis-
+_0x5ca6:2871	clear-al
+_0x5ca6:2872	دکار خط 
+_0x5ca6:2873	eplay-tr
+_0x5ca6:2874	Button
+_0x5ca6:2875	بیشترین
+_0x5ca6:2876	bindScal
+_0x5ca6:2877	ndColor
+_0x5ca6:2878	refreshL
+_0x5ca6:2879	ntextMen
+_0x5ca6:2880	end, .te
+_0x5ca6:2881	osc-sig2
+_0x5ca6:2882	initiali
+_0x5ca6:2883	erlayInd
+_0x5ca6:2884	ChannelS
+_0x5ca6:2885	awingPan
+_0x5ca6:2886	secondY
+_0x5ca6:2887	#003322
+_0x5ca6:2888	1 / -1
+_0x5ca6:2889	hideOver
+_0x5ca6:2890	d-scale
+_0x5ca6:2891	parallel
+_0x5ca6:2892	#45579c
+_0x5ca6:2893	ب‌های خر
+_0x5ca6:2894	settingT
+_0x5ca6:2895	cancelSe
+_0x5ca6:2896	ndVisibl
+_0x5ca6:2897	day
+_0x5ca6:2898	 مقصد کپ
+_0x5ca6:2899	setManag
+_0x5ca6:2900	lState
+_0x5ca6:2901	-tpachar
+_0x5ca6:2902	#159947
+_0x5ca6:2903	نی نمی‌ش
+_0x5ca6:2904	osc-peri
+_0x5ca6:2905	معتبر اس
+_0x5ca6:2906	tton
+_0x5ca6:2907	نوع ۲ — 
+_0x5ca6:2908	logicalH
+_0x5ca6:2909	matchMed
+_0x5ca6:2910	ilators
+_0x5ca6:2911	sition
+_0x5ca6:2912	addPoint
+_0x5ca6:2913	یلاتور
+_0x5ca6:2914	site-tri
+_0x5ca6:2915	lDraggin
+_0x5ca6:2916	armRepla
+_0x5ca6:2917	رنگ خط N
+_0x5ca6:2918	width:10
+_0x5ca6:2919	expanded
+_0x5ca6:2920	exVisibl
+_0x5ca6:2921	قفل ترسی
+_0x5ca6:2922	tion
+_0x5ca6:2923	isMobile
+_0x5ca6:2924	MONTHLY
+_0x5ca6:2925	#ffaaaa
+_0x5ca6:2926	-indexed
+_0x5ca6:2927	#AF80B1
+_0x5ca6:2928	ngsVisib
+_0x5ca6:2929	lRangeCh
+_0x5ca6:2930	openForD
+_0x5ca6:2931	ed this 
+_0x5ca6:2932	Normal
+_0x5ca6:2933	#758696
+_0x5ca6:2934	Drag
+_0x5ca6:2935	Unsuppor
+_0x5ca6:2936	bonacciS
+_0x5ca6:2937	مقایسه، 
+_0x5ca6:2938	quadrati
+_0x5ca6:2939	mixed
+_0x5ca6:2940	ctorMenu
+_0x5ca6:2941	boolean
+_0x5ca6:2942	darkThem
+_0x5ca6:2943	#333333
+_0x5ca6:2944	انحراف م
+_0x5ca6:2945	bindMobi
+_0x5ca6:2946	createAc
+_0x5ca6:2947	tiveOsci
+_0x5ca6:2948	remove
+_0x5ca6:2949	createFe
+_0x5ca6:2950	themeCol
+_0x5ca6:2951	icatorSe
+_0x5ca6:2952	c-analys
+_0x5ca6:2953	hart-pri
+_0x5ca6:2954	فقط درصد
+_0x5ca6:2955	bwp
+_0x5ca6:2956	نوشته را
+_0x5ca6:2957	period
+_0x5ca6:2958	shift
+_0x5ca6:2959	#326499
+_0x5ca6:2960	۰۱۲۳۴۵۶۷
+_0x5ca6:2961	ddleLine
+_0x5ca6:2962	harmonic
+_0x5ca6:2963	inate
+_0x5ca6:2964	Ctrl+U
+_0x5ca6:2965	rangeSca
+_0x5ca6:2966	حداکثر س
+_0x5ca6:2967	ileContr
+_0x5ca6:2968	input
+_0x5ca6:2969	updateTh
+_0x5ca6:2970	ySpeed
+_0x5ca6:2971	mobile-r
+_0x5ca6:2972	nfigurat
+_0x5ca6:2973	row
+_0x5ca6:2974	پخش
+_0x5ca6:2975	syncAuto
+_0x5ca6:2976	o dispos
+_0x5ca6:2977	vline
+_0x5ca6:2978	archResu
+_0x5ca6:2979	ndicator
+_0x5ca6:2980	fa 
+_0x5ca6:2981	red
+_0x5ca6:2982	splice
+_0x5ca6:2983	tte
+_0x5ca6:2984	cCurveTo
+_0x5ca6:2985	KeyS
+_0x5ca6:2986	ToolChan
+_0x5ca6:2987	Channels
+_0x5ca6:2988	count
+_0x5ca6:2989	tArmed
+_0x5ca6:2990	سیگنال
+_0x5ca6:2991	Checks
+_0x5ca6:2992	clearInt
+_0x5ca6:2993	ries
+_0x5ca6:2994	storage
+_0x5ca6:2995	wheel
+_0x5ca6:2996	circle
+_0x5ca6:2997	فعال کرد
+_0x5ca6:2998	ی ابر کو
+_0x5ca6:2999	#33aaff
+_0x5ca6:3000	ود.
+_0x5ca6:3001	hanges
+_0x5ca6:3002	e reques
+_0x5ca6:3003	ors-sele
+_0x5ca6:3004	unsubscr
+_0x5ca6:3005	signalLa
+_0x5ca6:3006	uchInter
+_0x5ca6:3007	split
+_0x5ca6:3008	hart-ove
+_0x5ca6:3009	AREA
+_0x5ca6:3010	iguratio
+_0x5ca6:3011	ndles
+_0x5ca6:3012	ضخامت تن
+_0x5ca6:3013	hannelCo
+_0x5ca6:3014	getState
+_0x5ca6:3015	 was not
+_0x5ca6:3016	arent
+_0x5ca6:3017	.13)
+_0x5ca6:3018	#338BC6
+_0x5ca6:3019	captureU
+_0x5ca6:3020	elector
+_0x5ca6:3021	nce
+_0x5ca6:3022	btnToggl
+_0x5ca6:3023	aggedEll
+_0x5ca6:3024	speedSec
+_0x5ca6:3025	-nav
+_0x5ca6:3026	peed
+_0x5ca6:3027	clearPen
+_0x5ca6:3028	Unlocked
+_0x5ca6:3029	block
+_0x5ca6:3030	getItem
+_0x5ca6:3031	fsetClon
+_0x5ca6:3032	is-refre
+_0x5ca6:3033	changed
+_0x5ca6:3034	تعداد می
+_0x5ca6:3035	property
+_0x5ca6:3036	priceToC
+_0x5ca6:3037	#ffa0ff
+_0x5ca6:3038	drawHigh
+_0x5ca6:3039	closest
+_0x5ca6:3040	site-clo
+_0x5ca6:3041	uttonIco
+_0x5ca6:3042	hideCont
+_0x5ca6:3043	oint
+_0x5ca6:3044	#f44079
+_0x5ca6:3045	drawing-
+_0x5ca6:3046	iceSerie
+_0x5ca6:3047	mbols
+_0x5ca6:3048	حجم: 
+_0x5ca6:3049	positive
+_0x5ca6:3050	cloudVis
+_0x5ca6:3051	options
+_0x5ca6:3052	font-siz
+_0x5ca6:3053	fillSect
+_0x5ca6:3054	Time
+_0x5ca6:3055	multilin
+_0x5ca6:3056	زده
+_0x5ca6:3057	renderRe
+_0x5ca6:3058	نوع ۱ — 
+_0x5ca6:3059	ionListe
+_0x5ca6:3060	ignature
+_0x5ca6:3061	shiftKey
+_0x5ca6:3062	ompariso
+_0x5ca6:3063	manual
+_0x5ca6:3064	andleCol
+_0x5ca6:3065	me, .flo
+_0x5ca6:3066	، نسخه و
+_0x5ca6:3067	innerWid
+_0x5ca6:3068	-main,#7
+_0x5ca6:3069	ors-sett
+_0x5ca6:3070	tting-to
+_0x5ca6:3071	close
+_0x5ca6:3072	ate
+_0x5ca6:3073	ر، محدود
+_0x5ca6:3074	-legend
+_0x5ca6:3075	dex
+_0x5ca6:3076	mplates/
+_0x5ca6:3077	faultBez
+_0x5ca6:3078	canUseOv
+_0x5ca6:3079	option
+_0x5ca6:3080	#c43d3d
+_0x5ca6:3081	angeChan
+_0x5ca6:3082	ییر کندل
+_0x5ca6:3083	value
+_0x5ca6:3084	bold 12p
+_0x5ca6:3085	#2f71b5
+_0x5ca6:3086	cChannel
+_0x5ca6:3087	populate
+_0x5ca6:3088	#666666
+_0x5ca6:3089	comment
+_0x5ca6:3090	elect, .
+_0x5ca6:3091	bottom
+_0x5ca6:3092	ray
+_0x5ca6:3093	Resistan
+_0x5ca6:3094	نمایش حب
+_0x5ca6:3095	cloudRes
+_0x5ca6:3096	rmat
+_0x5ca6:3097	notifySe
+_0x5ca6:3098	سیم ناشن
+_0x5ca6:3099	frameCon
+_0x5ca6:3100	loadLate
+_0x5ca6:3101	offsetWi
+_0x5ca6:3102	ن B
+_0x5ca6:3103	 ناحیه‌ا
+_0x5ca6:3104	mobile-e
+_0x5ca6:3105	372040kYuoRu
+_0x5ca6:3106	toggleTh
+_0x5ca6:3107	color-ce
+_0x5ca6:3108	RVI
+_0x5ca6:3109	POST
+_0x5ca6:3110	spanAWid
+_0x5ca6:3111	test
+_0x5ca6:3112	#58267e
+_0x5ca6:3113	map
+_0x5ca6:3114	equestGe
+_0x5ca6:3115	btnMagne
+_0x5ca6:3116	channelV
+_0x5ca6:3117	دوده
+_0x5ca6:3118	Mode
+_0x5ca6:3119	آهنربا
+_0x5ca6:3120	ortcutCo
+_0x5ca6:3121	caleVisi
+_0x5ca6:3122	imeframe
+_0x5ca6:3123	fa-trash
+_0x5ca6:3124	PaneInde
+_0x5ca6:3125	Scale
+_0x5ca6:3126	view
+_0x5ca6:3127	svg
+_0x5ca6:3128	 تنظیمات
+_0x5ca6:3129	.85)
+_0x5ca6:3130	panes
+_0x5ca6:3131	bilityBu
+_0x5ca6:3132	ازپخش رو
+_0x5ca6:3133	destroy
+_0x5ca6:3134	own
+_0x5ca6:3135	nnel
+_0x5ca6:3136	markActi
+_0x5ca6:3137	type1
+_0x5ca6:3138	fixed
+_0x5ca6:3139	دوره تنک
+_0x5ca6:3140	#cc00cc
+_0x5ca6:3141	BullishC
+_0x5ca6:3142	equalWei
+_0x5ca6:3143	eted
+_0x5ca6:3144	requestA
+_0x5ca6:3145	spanACol
+_0x5ca6:3146	excludeF
+_0x5ca6:3147	high
+_0x5ca6:3148	#f8f8f8
+_0x5ca6:3149	setAttri
+_0x5ca6:3150	sed
+_0x5ca6:3151	#setting
+_0x5ca6:3152	fa-lock
+_0x5ca6:3153	wn-conte
+_0x5ca6:3154	focusin
+_0x5ca6:3155	ltr
+_0x5ca6:3156	setHeigh
+_0x5ca6:3157	rsi
+_0x5ca6:3158	hitTest
+_0x5ca6:3159	le']
+_0x5ca6:3160	quadeq
+_0x5ca6:3161	addEvent
+_0x5ca6:3162	restore
+_0x5ca6:3163	aneTarge
+_0x5ca6:3164	fa-eye
+_0x5ca6:3165	62)
+_0x5ca6:3166	bindDraw
+_0x5ca6:3167	setEleme
+_0x5ca6:3168	chikouWi
+_0x5ca6:3169	ذخیرهٔ ت
+_0x5ca6:3170	resistan
+_0x5ca6:3171	Change
+_0x5ca6:3172	رنگ سنکو
+_0x5ca6:3173	7477810vfgThT
+_0x5ca6:3174	absolute
+_0x5ca6:3175	ceScales
+_0x5ca6:3176	ره‌سازی 
+_0x5ca6:3177	json
+_0x5ca6:3178	yChange
+_0x5ca6:3179	#009900
+_0x5ca6:3180	مقدار خو
+_0x5ca6:3181	sPrice
+_0x5ca6:3182	نمایش خط
+_0x5ca6:3183	input, s
+_0x5ca6:3184	10000000
+_0x5ca6:3185	nlocked
+_0x5ca6:3186	InView

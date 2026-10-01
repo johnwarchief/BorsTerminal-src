@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html>
+<head lang="fa">
+
+<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <meta name="theme-color" content="#1a3a6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Traders Arena">
+    <link rel="manifest" href="/manifest.webmanifest?v=1.2.1">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png?v=1.2.1">
+    <link rel="stylesheet" href="/css/s/pwa.css?v=1.1.1">
+    <script src="/js/last-page.js?v=1.0.0"></script>
+    <script defer src="/js/pwa-register.js?v=1.1.0"></script>
+
+<meta name="_csrf" content="3607e6bf-327c-40e9-bd24-382165402b1b" />
+<meta name="_csrf_header" content="X-CSRF-TOKEN" />
+<link rel="icon" href="/images/favicon.ico" type="image">
+<link rel="stylesheet" href="/css/s/font-awesome.6.5.2.min.css" />
+<link rel="stylesheet" href="/css/chart-style.1.0.1.css" />
+<link rel="stylesheet" href="/css/s/page-guide.1.0.0.css" />
+<script src="/js/session-recovery.js" data-session-status-url="/login/status" data-authenticated="false"></script>
+<script type="text/javascript" src="/js/cdn/jquery.3.6.0.min.js"></script>
+<script type="text/javascript" src="/js/cdn/farsiInputPlus.js"></script>
+<script type="text/javascript" src="/js/cdn/theme.1.1.1.min.js"></script>
+<script type="text/javascript" src="/js/cdn/lightweight-charts.5.0.7.min.js"></script>
+<script type="text/javascript" defer src="/js/page-guide.1.0.0.js"></script>
+
+
+<title>تحلیلگر تکنیکال خگستر</title>
+
+<meta name="description" content="صفحه تحلیل تکنیکال خگستر شامل اطلاعات معاملات سهم و تابلوخوانی نماد خگستر حمایت ها و مقاومت های تکنیکال سهم و اندیکاتورهای تکنیکال">
+
+
+<script defer src="/js/product/technicalChart.1.1.2.min.js"></script>
+	<link rel="stylesheet" href="/css/dev/technical-chart.1.0.2.css">
+
+</head>
+<body>
+
+	<script>
+		var dt = new Date();
+		template(dt);
+	</script>
+
+	<div class="modal" id="searchModal">
+		<div class="modal-content technical-chart-search-dialog" dir="rtl">
+			<div class="technical-chart-settings-header">
+				<div>
+					<strong>جستجوی نماد</strong>
+					<small>نماد موردنظر را برای نمایش نمودار انتخاب کنید</small>
+				</div>
+				<button type="button" id="search-close" aria-label="بستن جستجو">&times;</button>
+			</div>
+			<div class="technical-chart-search-body">
+				<label class="technical-chart-search-field" for="searching">
+					<i class="fa fa-search" aria-hidden="true"></i>
+					<input id="searching" type="text" placeholder="نام یا نماد شرکت را وارد کنید"
+						lang="fa-IR" autocomplete="off">
+				</label>
+				<div class="technical-chart-search-results">
+					<table id="searchResult">
+						<tbody></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="floating-panel" id="mini-settings" style="display: none">
+
+
+		<div id="floating-chart-type" class="floating-parent independent">
+			<span>نوع نمودار</span> <img src="../../svg/arrow-left.svg"
+				style="float: left; margin-top: -8px;"> <span
+				data-type="candle" class="chartType floating floating-chart-type"
+				style="top: 0px">کندل استیک</span> <span data-type="bar"
+				class="chartType floating floating-chart-type" style="top: 30px">میله
+				ای</span> <span data-type="line"
+				class="chartType floating floating-chart-type" style="top: 60px">خطی</span>
+			<span data-type="area" class="chartType floating floating-chart-type"
+				style="top: 90px">ناحیه ای</span> <span data-type="heikin"
+				class="chartType floating floating-chart-type" style="top: 120px">هیکین
+				آشی</span>
+		</div>
+		<div id="floating-timeframe" class="floating-parent independent">
+			<span>تایم فریم</span> <img src="../../svg/arrow-left.svg"
+				style="float: left; margin-top: -8px;">
+
+			<div data-time="0" class="floating floating-timeframe"
+				style="top: 35px">روزانه</div>
+			<div data-time="1" class="floating floating-timeframe"
+				style="top: 65px">هفتگی</div>
+			<div data-time="2" class="floating floating-timeframe"
+				style="top: 95px">ماهانه</div>
+		</div>
+
+		<div id="floating-scale" class="floating-parent independent">
+
+			<span>مقیاس قیمت</span> <img src="../../svg/arrow-left.svg"
+				style="float: left; margin-top: -8px;">
+
+			<div class="scale floating-scale floating" style="top: 65px"
+				id="floating-simple-scale">ساده</div>
+			<div class="scale floating-scale floating" style="top: 95px"
+				id="floating-log-scale">لگاریتمی</div>
+			<div class="scale floating-scale floating" style="top: 125px"
+				id="floating-percent-scale">درصدی</div>
+			<div class="scale floating-scale floating" style="top: 155px"
+				id="floating-indexedTo100-scale">ضریب به صد</div>
+			<div class="scale floating-scale floating" style="top: 185px"
+				id="floating-inverted-scale">وارونه</div>
+		</div>
+
+		<div id="floating-compare" class="floating-parent independent">
+			<span>مقایسه</span> <img src="../../svg/arrow-left.svg"
+				style="float: left; margin-top: -8px;">
+			<div class="floating-compare floating" style="top: 95px"
+				id="floating-tpwchart">شاخص کل</div>
+			<div class="floating-compare floating" style="top: 125px"
+				id="floating-tpachart">شاخص هم وزن</div>
+<!--
+			<div class="floating-compare floating" style="top: 155px"
+				id="floating-gold">طلا</div>
+			<div class="floating-compare floating" style="top: 185px"
+				id="floating-usdt">دلار</div>
+-->
+		</div>
+		<div id="floating-indicator" class="floating-parent independent">
+			<span> اندیکاتورها</span> <img src="../../svg/arrow-left.svg"
+				style="float: left; margin-top: -8px;">
+
+			<div class="indicators floating floating-indicator" style="top: 0px;"
+				id="floating-ema">میانگین متحرک</div>
+			<div class="indicators floating floating-indicator"
+				style="top: 30px;" id="floating-ichi">ایچیموکو</div>
+			<div class="indicators floating floating-indicator"
+				style="top: 60px;" id="floating-bands">باندهای بولینگر</div>
+			
+<!--
+			<div class="indicators floating floating-indicator"
+				style="top: 90px;" id="floating-psar">پارابولیک سار</div>
+-->				
+			<div class="oscilators floating floating-indicator"
+				style="top: 90px;" data-type="macd">Macd</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 120px;" data-type="rsi">RSI</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 150px;" data-type="stochastic">Stochastic</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 180px;" data-type="cci">CCI</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 210px;" data-type="adx">ADX</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 240px;" data-type="atr">ATR</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 270px;" data-type="demarker">DeMarker</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 300px;" data-type="momentum">Momentum</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 330px;" data-type="rvi">RVI</div>
+			<div class="oscilators floating floating-indicator"
+				style="top: 360px;" data-type="mfi">MFI</div>
+			
+
+		</div>
+		<div id="floating-replay">بازپخش</div>
+		<div id="floating-analysis">تحلیل</div>
+		<div id="floating-volume">حجم (alt + v)</div>
+		
+		<div id="floating-grid">شبکه پس زمینه (alt + g)</div>
+		<div id="floating-save">ذخیره تحلیل (ctrl + s)</div>
+		<div id="floating-theme">تغییر تم</div>
+		<div id="floating-settings">تنضیمات</div>
+	</div>
+
+	<div class="pane-settings-panel technical-chart-indicator-settings" id="indicators-settings"
+		style="display: none" dir="rtl">
+		<div class="technical-chart-settings-header">
+			<div>
+				<strong id="osc-name"></strong>
+				<small>تنظیمات اسیلاتور</small>
+			</div>
+			<button type="button" id="osc-settings-close" aria-label="بستن تنظیمات">&times;</button>
+		</div>
+		<div class="technical-chart-indicator-settings-body">
+			<section class="technical-chart-settings-section">
+				<h3>دوره‌های محاسبه</h3>
+				<div class="technical-chart-period-grid">
+					<label><span id="period1Label">دوره محاسبه</span><input type="number" id="osc-period1"></label>
+					<label class="p2"><span id="period2Label">دوره محاسبه</span><input type="number" id="osc-period2"></label>
+					<label class="p3"><span id="period3Label">دوره محاسبه</span><input type="number" id="osc-period3"></label>
+					<label class="signal period"><span>دوره خط سیگنال</span><input type="number" id="osc-sig-period"></label>
+				</div>
+			</section>
+
+			<section class="technical-chart-settings-section">
+				<h3>خطوط اندیکاتور</h3>
+				<div class="technical-chart-line-setting">
+					<label id="mainLabel"></label>
+					<button type="button" class="vis" aria-label="نمایش خط اصلی"><i id="osc-main-vis" class="fa fa-eye-slash"></i></button>
+					<button type="button" id="osc-main-color" class="technical-chart-custom-color-picker" aria-label="رنگ خط اصلی"></button>
+					<select id="mainWidth" aria-label="ضخامت خط اصلی">
+					<option value="1">1پیکسل</option>
+					<option value="2">2پیکسل</option>
+					<option value="3">3پیکسل</option>
+					<option value="4">4پیکسل</option>
+					</select>
+					<select id="mainLineStyle" aria-label="استایل خط اصلی">
+					<option value="0">پیوسته</option>
+					<option value="1">خط چین ریز</option>
+					<option value="2">خط چین</option>
+					<option value="3">خط چین درشت</option>
+					<option value="4">نقطه چین</option>
+					</select>
+				</div>
+				<div class="technical-chart-line-setting signal">
+					<label id="signalLabel">سیگنال</label>
+					<button type="button" class="vis" aria-label="نمایش خط سیگنال"><i id="osc-signal-vis" class="fa fa-eye-slash"></i></button>
+					<button type="button" id="osc-sig1-color" class="technical-chart-custom-color-picker" aria-label="رنگ خط سیگنال"></button>
+					<select id="signalWidth" aria-label="ضخامت خط سیگنال">
+					<option value="1">1پیکسل</option>
+					<option value="2">2پیکسل</option>
+					<option value="3">3پیکسل</option>
+					<option value="4">4پیکسل</option>
+					</select>
+					<select id="signalLineStyle" aria-label="استایل خط سیگنال">
+					<option value="0">پیوسته</option>
+					<option value="1">خط چین ریز</option>
+					<option value="2">خط چین</option>
+					<option value="3">خط چین درشت</option>
+					<option value="4">نقطه چین</option>
+					</select>
+				</div>
+				<div class="technical-chart-line-setting extra">
+					<label>سیگنال ۲</label>
+					<button type="button" class="vis" aria-label="نمایش خط دوم"><i id="osc-extra-vis" class="fa fa-eye-slash"></i></button>
+					<button type="button" id="osc-sig2-color" class="technical-chart-custom-color-picker" aria-label="رنگ خط دوم"></button>
+					<select id="extraWidth" aria-label="ضخامت خط دوم">
+					<option value="1">1پیکسل</option>
+					<option value="2">2پیکسل</option>
+					<option value="3">3پیکسل</option>
+					<option value="4">4پیکسل</option>
+					</select>
+					<select id="extraLineStyle" aria-label="استایل خط دوم">
+					<option value="0">پیوسته</option>
+					<option value="1">خط چین ریز</option>
+					<option value="2">خط چین</option>
+					<option value="3">خط چین درشت</option>
+					<option value="4">نقطه چین</option>
+					</select>
+				</div>
+				<div class="technical-chart-histogram-setting histogram">
+					<span>رنگ ستون‌های هیستوگرام</span>
+					<label>مثبت <button type="button" id="up-color" class="technical-chart-custom-color-picker" aria-label="رنگ مثبت"></button></label>
+					<label>منفی <button type="button" id="down-color" class="technical-chart-custom-color-picker" aria-label="رنگ منفی"></button></label>
+				</div>
+			</section>
+
+			<section class="technical-chart-settings-section technical-chart-levels-section">
+				<div class="technical-chart-section-title-row">
+					<h3>سطوح راهنما</h3>
+					<label class="technical-chart-background-setting" for="osc-background-visible">
+						<span>نمایش پس‌زمینه</span>
+						<input type="checkbox" id="osc-background-visible">
+					</label>
+				</div>
+				<div class="quadeq" id="levels-parent"></div>
+			</section>
+		</div>
+	</div>
+
+
+	
+	<!-- 
+	 	<div id="chart-parent">
+  -->
+	<div id="xchart">
+		<div id="message"></div>
+		
+		<div id="topbar" class="navbar">
+		 <div class="right" id="startbar">
+			 <button type="button" id="technical-chart-site-trigger" class="technical-chart-site-trigger"
+				 aria-label="منوی بخش‌های سایت" aria-expanded="false" aria-controls="technical-chart-site-menu" title="منوی بخش‌های سایت">
+				 <i class="fa fa-bars" aria-hidden="true"></i>
+			 </button>
+			 <a id="homepage" href="https://tradersarena.ir" style="display: block; z-index: 10000;">
+			  <img id="logo" src="../../../images/tradersarena-logo.png"
+			   style="width: 40px; height: 30px;">  </a> 
+				<a style="margin-top:-3px;" class="symbol" href="/48990026850202503">خگستر</a>
+				 <span style="margin:5px 10px;"> <i id="searchvis" class="fa fa-search"></i></span>
+			</div>
+			<nav id="technical-chart-site-menu" class="technical-chart-site-menu" aria-label="بخش‌های سایت" dir="rtl" hidden>
+				<div class="technical-chart-site-menu-heading">
+					<strong>بخش‌های سایت</strong>
+					<button type="button" id="technical-chart-site-close" aria-label="بستن منوی سایت">×</button>
+				</div>
+				
+			<div class="dropdown" id="extras" data-tour="extra-pages">
+<button class="dropbtn">صفحه های کاربردی<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content" id="extras-content" >
+<a  href="/options-arena" >آپشن آرنا</a>
+<a href="/money-flow" >نمودارهای جریانات نقدینگی لحظه ای بازار</a>
+<a  href="/heatmap/market" >نقشه بازار </a>
+<a  href="/compare" >نمودار مقایسه چندین نماد</a>
+<a href="/extras/incognito-charts" >چارت ناشناخته (تست معامله گری) </a>
+<a href="/extras/tal" >معاملات پایانی (TAL) </a>
+<a href="/extras/tops" >لیست شرکت ها بر اساس فاصله تا سقف قیمت</a>
+<!--
+<a href="/extras/industries" >دیده بان صنایع </a>
+-->
+<a href="/extras/market-values" >لیست شرکت ها بر اساس ارزش بازار</a>
+<a href="/000/chart/price" >نمودار شاخص کل</a>
+<a href="/999/chart/price">نمودار شاخص هم وزن </a>
+<a href="/gold-funds/chart/price"> شاخص صندوق های طلا(هم وزن) </a>
+<a href="/silver-funds/chart/price"> شاخص صندوق های نقره(هم وزن) </a>
+<a href="/leveraged-funds/chart/price"> شاخص صندوق های اهرمی(هم وزن) </a>
+<a href="/market/histo-status" >بازدهی های دوره ای بازار</a>
+<a href="/extras/long-term-money-flow-filters" >فیلترهای جریان نقدینگی بلندمدت</a>
+      </div>
+</div>
+			<div class="dropdown " data-tour="watch">
+    <button class="dropbtn">دیده بان<i class="fas fa-angle-down arrow-icon"></i></button>
+    <div class="dropdown-content"  id="watch-content">
+		<a href="/market-watch-pro">دیده بان بازار پیشرفته</a>
+		<a href="/market-watch">دیده بان بازار نسخه سبک</a>
+		<a href="/pivot-watch" >دیده بان حمایت ها و مقاومت ها</a>
+		<a href="/signal-watch" >دیده بان جریانات نقدینگی بلندمدت</a>
+		<a href="/extras/techno-watch" >دیده بان  تکنیکال</a>
+		<a href="/extras/orders-watch" >دیده بان سفارش ها</a>
+	</div>
+</div>
+			<div class="dropdown" data-tour="history">
+<button class="dropbtn">سابقه معاملات<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content"  id="history-content">
+
+<a class="sublist" href="/48990026850202503/history" >سوابق خگستر</a>
+<a href="/market/history?type=0">سوابق بازار(سهام،حق تقدم،صندوقهای سهامی،مختلط و درآمدثابت)</a>
+<a href="/market/history?type=1">سوابق بازار(سهام،حق تقدم،صندوقهای سهامی و مختلط )</a>
+<a href="/market/history?type=2">سوابق بازار(سهام و حق تقدم)</a>
+</div>
+</div>
+			<div class="dropdown" data-tour="money-flow">
+<button class="dropbtn">جریان نقدینگی
+<i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content" data-tour="money-flow" id="money-flow-content">
+<div class="menu-container">
+  
+ <div class="menu-row">
+    <span class="menu-text">نمودار جریان نقدینگی خگستر</span>
+    <div class="menu-actions">
+      <span></span>
+      <a href="/48990026850202503/chart/money-flow" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+  
+
+
+  <div class="menu-row">
+    <span class="menu-text">سهام، حق تقدم، صندوق سهامی و درآمدثابت</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=0" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=0" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+
+  <div class="menu-row">
+    <span class="menu-text">سهام، حق تقدم و صندوق سهامی</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=1" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=1" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+
+  <div class="menu-row">
+    <span class="menu-text">سهام و حق تقدم</span>
+    <div class="menu-actions">
+      <a href="/chart/daily/market?type=2" class="menu-link simple">روزانه</a>
+      <a href="/market/chart?type=2" class="menu-link advanced">پیشرفته</a>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+			<div class="dropdown compact" data-tour="options">
+<button class="dropbtn">آپشن
+   <i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content"  id="options-content">
+<a  href="/options-arena" >آپشن آرنا</a>
+<a  href="/options-arena/history" >سوابق بازار اختیار معامله</a>
+<a  href="/options-arena/watch" >دیده بان اختیار معامله</a>
+<a  href="/options-arena/strategy" >استراتژی ساز  اختیار معامله</a>
+</div>
+</div>
+			<div class="dropdown compact" data-tour="symbols">
+<button class="dropbtn" > 
+<span>خگستر</span> <i class="fas fa-angle-down arrow-icon"></i></button>
+<div class="dropdown-content"  id="symbols-content">
+ <a class="sublist" href="/48990026850202503">خگستر</a>
+ <a class="sublist" href="/48990026850202503/chart/price">نمودار تکنیکال خگستر</a>
+ <a class="sublist" href="/48990026850202503/history">سوابق خگستر</a>
+ <a class="sublist" href="/48990026850202503/chart/money-flow">نمودار جریان نقدینگی خگستر</a>
+  <a class="sublist" href="/48990026850202503/money-flow-analyser">تحلیلگر جریان نقدینگی خگستر</a>
+</div>
+</div>
+		
+			</nav>
+			<div id="mobile-top-actions" class="technical-chart-mobile-only technical-chart-mobile-top-actions">
+				
+				<button type="button" id="mobile-volume-trigger" class="technical-chart-text-mobile-action"
+					aria-label="نمایش یا پنهان کردن حجم" aria-pressed="false" title="حجم">
+					<span>حجم</span>
+				</button>
+				<button type="button" id="mobile-replay-trigger" class="technical-chart-text-mobile-action"
+					aria-label="نمایش کنترل‌های بازپخش" aria-expanded="false" title="بازپخش">
+					<span>بازپخش</span>
+				</button>
+				<button type="button" id="mobile-comparison-trigger" class="technical-chart-text-mobile-action"
+					aria-label="نمایش مقایسه شاخص‌ها" aria-expanded="false" aria-pressed="false" title="مقایسه">
+					<span>مقایسه</span>
+				</button>
+				<button type="button" id="mobile-theme-trigger" aria-label="تغییر تم نمودار" title="تغییر تم">
+					<i class="fa-solid fa-moon" aria-hidden="true"></i>
+				</button>
+				<button type="button" id="mobile-settings-trigger" aria-label="باز کردن تنظیمات نمودار" title="تنظیمات نمودار">
+					<i class="fa fa-cog" aria-hidden="true"></i>
+				</button>
+			</div>
+
+				<div class="left" id="top-left-bar">
+					<div class="top-left-items">
+					<span id="page-guide-btn" class="selectors-parent topbar"
+						title="راهنمای نمودار تکنیکال"
+						role="button" tabindex="0" data-page-guide-id="technicalChart"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></span>
+					 
+					<div id="settings" class="selectors-parent"
+						style="left: 5px; padding: 0 10px;">
+						<i class="fa-solid fa-gear  topbar" aria-hidden="true"></i>
+
+					</div>
+
+					<div id="theme" class="selectors-parent "
+						style="left: 5px; padding: 0 10px;">
+						<i class="fa-solid fa-moon  topbar" aria-hidden="true"></i>
+
+					</div>
+
+					<div class="selectors-parent">
+						<img id="chart-type" src="../../svg/candle.svg"
+							style="height: 30px; padding: 0 5px 0 10px; margin-bottom: -10px;">
+
+						<div id="chart-type-selector" class="selectors drpdn">
+							<div class="chartType" data-type="candle">
+								<img class="left" src="../../svg/candle.svg">
+								<span>کندل استیک</span>
+							</div>
+							<div class="chartType" data-type="bar">
+								<img class="left" src="../../svg/bar.svg">
+								<span>نمودار میله ای</span>
+							</div>
+							<div class="chartType" data-type="line">
+								<img class="left" src="../../svg/line.svg">
+								<span>نمودار خطی</span>
+							</div>
+							<div class="chartType" data-type="area">
+								<img class="left" src="../../svg/area.svg">
+								<span>نمودار ناحیه ای</span>
+							</div>
+							<div class="chartType" data-type="heikin">
+								<img class="left" src="../../svg/heikin.svg">
+								<span>هیکن آشی</span>
+							</div>
+
+						</div>
+					</div>
+
+
+					<div class="selectors-parent technical-chart-mobile-menu-host">
+						<span id="timeframe" class="topbar">D</span>
+						<div id="timeframe-selector" class="selectors drpdn">
+							<div class="timeframe" data-time="0" id="daily-timeframe">D</div>
+							<div class="timeframe" data-time="1" id="weekly-timeframe">W</div>
+							<div class="timeframe" data-time="2" id="monthly-timeframe">M</div>
+
+						</div>
+					</div>
+
+					<div class="selectors-parent">
+						<span id="scale" class=" topbar">ساده</span>
+						<div id="scale-selector" class="selectors drpdn">
+							<div class="scale" id="simple-scale">ساده</div>
+							<div class="scale" id="log-scale">لگاریتمی</div>
+							<div class="scale" id="percent-scale">درصدی</div>
+							<div class="scale" id="indexedTo100-scale">ضریب به صد</div>
+							<div class="scale" id="inverted-scale">وارونه</div>
+
+						</div>
+					</div>
+					<div class="selectors-parent technical-chart-mobile-menu-host technical-chart-wide-mobile-menu-host">
+						<span id="indexes" class=" topbar">مقایسه</span>
+						<div id="index-selector" class="selectors drpdn">
+							<div id="tpwchart">شاخص کل</div>
+							<div id="tpachart">شاخص هم وزن</div>
+<!--
+							<div id="gold">طلا</div>
+							<div id="usdt">دلار</div>
+-->
+							</div>
+					</div>
+					<div class="selectors-parent technical-chart-mobile-menu-host">
+						<span id="indicators" class=" topbar">اندیکاتورها</span>
+						<div id="indicators-selector" class="selectors drpdn">
+							<div id="ema">میانگین متحرک</div>
+							<div id="ichi">ایچیموکو</div>
+							<div id="bands">باندهای بولینگر</div>
+							
+							<!--							<div id="psar">پارابولیک سار</div>  -->
+							<div class="oscilator" id="macd">Macd</div>
+							<div class="oscilator" id="rsi">RSI</div>
+							<div class="oscilator" id="stochastic">Stochastic</div>
+							<div class="oscilator" id="cci">CCI</div>
+							<div class="oscilator" id="adx">ADX</div>
+							<div class="oscilator" id="atr">ATR</div>
+							<div class="oscilator" id="demarker">Demarker</div>
+							<div class="oscilator" id="momentum">Momentum</div>
+							<div class="oscilator" id="rvi">RVI</div>
+							<div class="oscilator" id="mfi">MFI</div>
+							
+						</div>
+					</div>
+					<div class="selectors-parent technical-chart-mobile-menu-host">
+						<span id="analysis" class=" topbar">تحلیل</span>
+						<div id="analysis-selector" class="selectorbtn drpdn"
+							style="min-width: 600px;">
+							<div class="technical-chart-analysis-header">
+							<span class="technical-chart-mobile-only technical-chart-analysis-title">تحلیل خودکار</span>
+							<span   id="analysis-selector-close"
+								class="technical-chart-analysis-close" aria-label="بستن پنجره تحلیل"
+								title="بستن"><i class="fa fa-times"></i></span>
+							<span id="pivotx" class="btxx technical-chart-analysis-pivot">حمایت/ مقاومت</span>
+							<label class="technical-chart-analysis-channel-count" for="count">
+								حداکثر کانال
+								<select id="count" style="min-width:100px;">
+									<option value="1">یک</option>
+									<option value="2">دو</option>
+									<option value="3">سه</option>
+								</select>
+							</label>
+							</div>
+							<div class="technical-chart-analysis-row">
+								<span class="technical-chart-analysis-actions"> <span style="display: table-cell; width: 120px;"
+									id="upTrendLine" class="btxx  grayx"> کانال صعودی <i
+										class="fa fa-eye"></i></span> <span
+									style="display: table-cell; width: 95px;" id="up1" class="btxx">کوتاه
+										مدت</span> <span style="display: table-cell; width: 95px;" id="up2"
+									class="btxx">میان مدت</span> <span
+									style="display: table-cell; width: 95px;" id="up3" class="btxx">بلند
+										مدت</span> <span style="display: table-cell; width: 95px;"
+									id="upMidLinesVis" class="btxx"> خط میانی </span> <span
+									style="display: table-cell; width: 95px;" id="upParaLinesVis"
+									class="btxx"> خط موازی</span>
+								</span>
+							</div>
+							<div class="technical-chart-analysis-row">
+								<span class="technical-chart-analysis-actions"> <span style="display: table-cell; width: 120px;"
+									id="downTrendLine" class="btxx  grayx"> کانال نزولی <i
+										class="fa fa-eye" style="margin-right: 12px;"></i>
+								</span> <span style="display: table-cell; width: 95px;" id="down1"
+									class="btxx">کوتاه مدت</span> <span
+									style="display: table-cell; width: 95px;" id="down2"
+									class="btxx">میان مدت</span> <span
+									style="display: table-cell; width: 95px;" id="down3"
+									class="btxx">بلند مدت</span> <span
+									style="display: table-cell; width: 95px;" id="downMidLinesVis"
+									class="btxx"> خط میانی </span> <span
+									style="display: table-cell; width: 95px;" id="downParaLinesVis"
+									class="btxx"> خط موازی</span>
+								</span>
+							</div>
+
+						</div>
+					</div>
+					<div class="selectors-parent technical-chart-mobile-menu-host technical-chart-wide-mobile-menu-host">
+						<span id="replay" class=" topbar">بازپخش</span>
+						<div id="replay-selector" class="selectorbtn drpdn">
+
+							<div style="text-align: rtl;">
+
+								<span class=" tooltip"> <select id="intervalPeriod" style="min-width:100px;">
+										<option value="0.05">بیست کندل در ثانیه</option>
+										<option value="0.1">ده کندل در ثانیه</option>
+										<option value="0.2" selected>پنج کندل در ثانیه</option>
+										<option value="0.5">دو کندل در ثانیه</option>
+										<option value="1">هر یک ثانیه یک کندل</option>
+										<option value="2">هر دو ثانیه یک کندل</option>
+										<option value="3">هر سه ثانیه یک کندل</option>
+										<option value="5">هر پنج ثانیه یک کندل</option>
+										<option value="10">هر ده ثانیه یک کندل</option>
+								</select> <span class="tooltiptext">سرعت به روزرسانی نمودار در
+										حالت بازپخش</span>
+								</span> <span id="date" class="bt tooltip"><i
+									class="fa fa-clock" style="color: darkGreen;"
+									aria-hidden="false"></i> <span class="tooltiptext">خاموش
+										و روشن کردن محور زمان</span> </span> <span id="empty" class="bt tooltip"><i
+									class="fa fa-remove" aria-hidden="true"></i> <span
+									class="tooltiptext">پنهان کردن اطلاعات چارت و شروع از
+										اولین کندل </span> </span> <span id="reset"
+									class="bt tooltip"><i class="fa fa-refresh"
+									aria-hidden="true"></i> <span class="tooltiptext">نمایش
+										کلیه اطلاعات چارت</span> </span> <span id="cut" class="bt tooltip"><i
+									class="fa fa-cut" aria-hidden="true"></i> <span
+									class="tooltiptext">با انتخاب این گزینه و سپس کلیک روی
+										هر تاریخ اطلاعات بعد از آن تاریخ پنهان خواهد شد</span> </span> <span
+									id="backward" class="bt tooltip"><i
+									class="fa fa-backward" aria-hidden="true"></i> <span
+									class="tooltiptext">در حالت بازپخش اطلاعات آخرین کندل
+										نمایش داده پنهان میشود(&#8592;)</span> </span> <span id="play"
+									class="bt tooltip"><i class="fa fa-play"
+									aria-hidden="true"></i> <span class="tooltiptext">اجرا/توقف
+										در حالت بازپخش(space)</span> </span> <span id="forward" class="bt tooltip"><i
+									class="fa fa-forward" aria-hidden="true"></i> <span
+									class="tooltiptext">در حالت بازپخش اطلاعات کندل بعدی
+										نمایش داده میشود(&#8594;)</span> </span>
+
+							</div>
+
+						</div>
+					</div>
+
+					<span id="volume" class="selectors-parent topbar">حجم</span> 
+					<span id="saveTemplate" class="selectors-parent topbar"> <i
+						class="fa fa-save"
+						style="color: gray; font-size: 20px; padding-top: 5px;"></i>
+					</span>
+					<span><a class="selectors-parent topbar"
+						href="/extras/incognito-charts">تست معامله‌گری</a></span>
+
+
+
+
+
+				</div>
+				</div>
+			</div>
+
+	 
+		<div id="mainchart"></div>
+		<div id="sidebar">
+			<div class="technical-chart-mobile-only technical-chart-mobile-drawing-header">
+				<div>
+					<strong>ابزارهای ترسیم</strong>
+					<small id="mobile-drawing-status">ترسیم‌ها قفل هستند</small>
+				</div>
+				<div class="technical-chart-mobile-drawing-header-actions">
+					<button type="button" id="mobile-edit-drawings" aria-label="فعال کردن ویرایش ترسیم‌های موجود">
+						<i class="fa fa-unlock-alt" aria-hidden="true"></i>
+						<span>ویرایش ترسیم‌ها</span>
+					</button>
+					<button type="button" id="mobile-drawing-sheet-close" aria-label="بستن ابزارهای ترسیم" title="بستن">
+						<i class="fa fa-times" aria-hidden="true"></i>
+					</button>
+				</div>
+			</div>
+			<img id="btnTrend" class="drawing" src="../../svg/trend.svg">
+			<img id="btnHLine" class="drawing" src="../../svg/horizontal-line.svg">
+			<img id="btnVLine" class="drawing" src="../../svg/vertical-line.svg">
+			<img id="btnCross" class="drawing" src="../../svg/cross.svg"> 
+			<img id="btnChannel" class="drawing" src="../../svg/channel.svg">
+			<img id="btnRay" class="drawing" src="../../svg/ray.svg">
+			<img id="btnMultiline" class="drawing" src="../../svg/multiline.svg">
+			<img id="btnPitchfork" class="drawing" src="../../svg/fork.svg">
+			<img id="btnFibo" class="drawing" src="../../svg/retracement.svg">
+			<img id="btnFiboExp" class="drawing" src="../../svg/expansion.svg">
+			<img id="btnVolumeprofile" class="drawing" src="../../svg/volumeprofile.svg"> 
+			<img id="btnRR" class="drawing" src="../../svg/sl.svg">
+			<img id="btnRectangle" class="drawing" src="../../svg/rectangle.svg">
+			<img id="btnTriangle" class="drawing" src="../../svg/triangle.svg">
+			<img id="btnCircle" class="drawing" src="../../svg/circle.svg">
+			<img id="btnEllipse" class="drawing" src="../../svg/ellipse.svg">
+			<img id="btnHarmonic" class="drawing" src="../../svg/pattern.svg">
+			<img id="btnABCD" class="drawing" src="../../svg/abcd.svg"> 
+			<img id="btnArc" class="drawing" src="../../svg/arc.svg">
+			<img id="btnArrow" class="drawing" src="../../svg/arrow.svg">
+			<img id="btnText" class="drawing" src="../../svg/text.svg">
+			<img id="btnComment" class="drawing" src="../../svg/comment.svg">  
+			<img id="btnHighlight" class="drawing" src="../../svg/highlight.svg">
+			<img id="btnPen" class="drawing" src="../../svg/pen.svg"> 
+			<img id="btnMeasure" class="drawing" src="../../svg/ruler.svg"> 
+			<i id="btnCopyStyle" class="drawing fa fa-paint-brush" style="color: #555;margin-right:5px;"></i>  								
+			<img id="btnMagnete" class="drawing" src="../../svg/magnet.svg"> 
+			<i id="btnToggleVis" class="drawing fa fa-eye" style="color: #555;margin-right:5px;"></i> 					
+			<img id="btnClear" class="drawing" src="../../svg/trash.svg">				
+		</div>
+
+		<nav id="mobile-chart-controls" class="technical-chart-mobile-only" aria-label="کنترل‌های نمودار موبایل">
+			<button type="button" id="mobile-timeframe-trigger" aria-label="انتخاب تایم‌فریم">
+				<i class="fa fa-clock-o" aria-hidden="true"></i>
+				<span id="mobile-timeframe-label">روزانه</span>
+			</button>
+			<button type="button" id="mobile-indicators-trigger" aria-label="نمایش اندیکاتورها">
+				<i class="fa fa-line-chart" aria-hidden="true"></i>
+				<span>اندیکاتورها</span>
+			</button>
+			<button type="button" id="mobile-analysis-trigger" aria-label="نمایش تحلیل خودکار" aria-expanded="false">
+				<i class="fa fa-magic" aria-hidden="true"></i>
+				<span>تحلیل</span>
+			</button>
+			<button type="button" id="mobile-drawings-trigger" aria-label="نمایش ابزارهای ترسیم" aria-expanded="false" aria-pressed="false">
+				<i class="fa fa-pencil" aria-hidden="true"></i>
+				<span>ابزارها</span>
+			</button>
+		</nav>
+
+		<div id="style-panel" class="panel technical-chart-drawing-settings" style="display: none;">
+			<div id="color-palette" class="color-palette-grid"
+				style="display: none;"></div>
+			<div id="fibo-levels" class="fibo-levels-grid" style="display: none;"></div>
+			<div class="technical-chart-drawing-settings-body">
+				<section class="technical-chart-drawing-settings-section">
+					<div id="hexa" class="technical-chart-drawing-toolbar"></div>
+				</section>
+				<section id="drawing-text-section" class="technical-chart-drawing-settings-section">
+					<div id="labeldiv" class="technical-chart-drawing-text-fields">
+
+
+				<select id="label-style" title="نوع برچسب" style="min-width: 140px;">
+					<option value="-1">متن</option>
+					<option value="0">قیمت نقطه شروع خط</option>
+					<option value="1">اولین قیمت کندل</option>
+					<option value="2">بیشترین قیمت کندل</option>
+					<option value="3">کمترین قیمت کندل</option>
+					<option value="4">آخرین قیمت کندل</option>
+					<option value="5">حجم کندل</option>
+					<option value="6">تاریخ</option>
+					
+					
+				</select>
+				 <input type="text" id="user-input" placeholder="text"
+					style="max-height: 18px; margin-left: 5px;">
+					</div>
+				</section>
+
+				<section class="technical-chart-drawing-settings-section technical-chart-drawing-fill-section">
+					<div class="panel-section" id="fill-section">
+
+<div style="min-width:20px"></div>
+					<label id="backg" class="toggle">پس‌زمینه:</label> 
+					<input style="margin-bottom: 6px; width: 16px; height: 16px" type="checkbox" id="fill-toggle">
+					<div class="color-picker-span" id="fill-color-selector" style="margin-top: -5px; margin-bottom: 7px;">
+					<div>
+						<img src="../../svg/fill.svg"
+								style="margin-bottom: -5px; margin-right: 5px; width: 16px; height: 16px;">
+						</div>
+						<div id="fill-color-preview" class="color-preview-btnx"></div>
+					</div>
+					<input type="range" id="fill-opacity" min="0" max="1" step="0.05"
+						title="شفافیت" style="width: 120px; height: 5px; margin-top: 5px;">
+					</div>
+				</section>
+			</div>
+
+		</div>
+	</div>
+	<!-- 
+	  </div>
+	  -->
+
+
+
+
+
+
+	<div id="helpModal" class="fullModal">
+		<div class="modal-content">
+			<div>در این صفحه نمودار یک نماد بدون این که مشخص شود چیست از
+				ابتدای معاملات نماد یا ابتدای سال ۹۰ (هر کدام که زودتر باشد) نمایش
+				داده میشود. هدف از ساخت این صفحه این است که در شرایطی بدون اطلاع از
+				اسم نماد و زمان معاملات با صرف اتکا به نمودار قیمت بتوانید ادامه
+				روند را حدس بزنید و توانایی خود در خواندن چارت را افزایش دهید در
+				شروع کار همه کندل ها مخفی هستند و نمودار به صورت خودکار به روز
+				میشود. محور زمان هم خاموش هست تا بدون توجه به حوادث تاریخچه بورس
+				صرفا از طریق چارت روند قیمت را پیش بینی کنید با استفاده از دکمه
+				play/pause و یا دکمه فاصله کیبورد میتوانید به روزرسانی نمودار را
+				متوقف کرده و یا مجدد راه اندازی کنید به صورت پیش فرض سرعت به
+				روزرسانی نمودار ۵ کندل بر ثانیه هست که میتوانید با استفاده از منوی
+				آبشاری در نوار ابزار این صفحه و یا با استفاده از دکمه های جهت بالا و
+				جهت پایین کیبورد سرعت به روزرسانی نمودار را کم یا زیاد کرد در هر
+				زمان میتوانید با فشردن دکمه پایان کل چارت را به همراه نام نماد
+				مشاهده کنید.</div>
+			<div id="verify" class="log-btn">متوجه شدم</div>
+		</div>
+	</div>
+	<div id="settingsmodal" style="max-width: 600px;" class="modal">
+		<div class="modal-content" id="indisettings">
+			<div id="settingsclose"
+				style="margin: 10px; padding: 5px; float: left; font-size: 36px; color: var(-- text-neg);">&times;</div>
+			<div id="modal-title" style="margin: 10px; padding: 5px;">تنظیمات</div>
+
+
+
+			<div id="color-mini-palette-dark" class="color-palette-grid8"
+				style="display: none;"></div>
+			<div id="color-mini-palette-light" class="color-palette-grid8"
+				style="display: none;"></div>
+			<div id="color-mini-palette" class="color-palette-grid"
+				style="display: none;"></div>
+
+
+
+			<div style="border: 1px solid gray; margin: 5px 0;">
+				<div style="font-weight: bold; font-size: 18px; margin: 5px;">تنظیمات
+					تم روشن</div>
+
+
+				<div class="dual">
+
+					<div>رنگ پس زمینه</div>
+					<div id="lightBackground" data-index="1"
+						class="light-color-settings"></div>
+
+					<div>رنگ شبکه(grid)</div>
+					<div id="lightGrid" data-index="2" class="light-color-settings"></div>
+
+
+					<div>نمودار خطی/ناحیه ای</div>
+					<div id="lightAreaColor" data-index="3" class="color-settings"></div>
+
+					<div>کندل صعودی</div>
+					<div id="lightBullishCandleColor" data-index="4"
+						class="color-settings"></div>
+
+					<div>کندل نزولی</div>
+					<div id="lightBearishCandleColor" data-index="5"
+						class="color-settings"></div>
+
+				</div>
+
+			</div>
+			<div style="border: 1px solid gray; margin: 5px 0;">
+				<div style="font-weight: bold; font-size: 18px; margin: 5px;">تنظیمات
+					تم تیره</div>
+
+
+				<div class="dual">
+
+					<div>رنگ پس زمینه</div>
+					<div id="darkBackground" data-index="6" class="dark-color-settings"></div>
+
+					<div>رنگ شبکه(grid)</div>
+					<div id="darkGrid" data-index="7" class="dark-color-settings"></div>
+
+					<div>نمودار خطی/ناحیه ای</div>
+					<div id="darkAreaColor" data-index="8" class="color-settings"></div>
+
+					<div>کندل صعودی</div>
+					<div id="darkBullishCandleColor" data-index="9"
+						class="color-settings"></div>
+
+					<div>کندل نزولی</div>
+					<div id="darkBearishCandleColor" data-index="10"
+						class="color-settings"></div>
+
+
+
+				</div>
+
+			</div>
+			<div style="border: 1px solid gray; margin: 5px 0;">
+				<div style="font-weight: bold; font-size: 18px; margin: 5px;">تنظیمات
+					عمومی نمودار</div>
+				<div class="dual">
+					<div>ناو صندوق</div>
+					<div id="navcolor" data-index="11" class="color-settings"></div>
+					<div>عنوان خط ها و ترسیمهای کاربر</div>
+					<select id="labelType"
+							style="min-width: 250px;">
+								<option value=0>قیمت و درصد فاصله با قیمت آخرین کندل</option>
+								<option value=1>قیمت</option>
+								<option value=2>درصد فاصله با قیمت آخرین کندل</option>
+						</select>
+
+				</div>
+			</div>
+			<div id="indicator-settings-table">
+				<table class="switcher" style="direction: rtl;">
+
+	 
+			 
+					<tr>
+						<td id="ma1" colspan="2">میانگین متحرک کوتاه مدت</td>
+						<td><i id="ema1" class=" fa fa-eye-slash"></i></td>
+						<td><input id="iMAPeriod1" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="ema1Color" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="ema1Width">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td id="ma2" colspan="2">میانگین متحرک میان مدت</td>
+						<td><i id="ema2" class=" fa fa-eye-slash"></i></td>
+						<td><input id="iMAPeriod2" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="ema2Color" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="ema2Width">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td id="ma3" colspan="2">میانگین متحرک بلند مدت</td>
+						<td><i id="ema3" class=" fa fa-eye-slash"></i></td>
+						<td><input id="iMAPeriod3" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="ema3Color" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="ema3Width">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td id="bolinger" colspan="2">باندهای بولینگر</td>
+						<td title="نمایش پس‌زمینه">
+							<input id="bolingerBackground" type="checkbox" aria-label="نمایش پس‌زمینه بولینگر">
+						</td>
+						<td><input id="bolingerPeriod" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="bolingerColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="bolingerWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="2">تنکان-سن</td>
+						<td><i id="tenkan" class=" fa fa-eye-slash"></i></td>
+						<td><input id="tenkanPeriod" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="tenkanColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="tenkanWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="2">کیجون-سن</td>
+						<td><i id="kijun" class=" fa fa-eye-slash"></i></td>
+						<td><input id="kijunPeriod" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="kijunColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="kijunWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="2">A سنکو اسپن</td>
+						<td><i id="spana" class=" fa fa-eye-slash"></i></td>
+						<td></td>
+						<td><button type="button" id="spanaColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="spanaWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="2">B سنکو اسپن</td>
+						<td><i id="spanb" class=" fa fa-eye-slash"></i></td>
+						<td><input id="spanbPeriod" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره محاسبه"></td>
+						<td><button type="button" id="spanbColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="spanbWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+
+						</select></td>
+					</tr>
+					<tr>
+						<td colspan="2">ابر کومو</td>
+						<td><i id="komuCloud" class=" fa fa-eye-slash"></i></td>
+						<td></td>
+						<td><button type="button" id="komuUpColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><button type="button" id="komuDownColor" class="technical-chart-custom-color-picker"></button></td>
+					</tr>
+					<tr>
+						<td colspan="2">چیکو اسپن</td>
+						<td><i id="chiko" class=" fa fa-eye-slash"></i></td>
+						<td><input id="ichiShift" type="number" class=""
+							style="max-width: 90px;" placeholder="دوره جابه&zwnj;جایی"></td>
+						<td><button type="button" id="chikoColor" class="technical-chart-custom-color-picker"></button></td>
+						<td><select id="chikoWidth">
+								<option value="1">نازک</option>
+								<option value="2">متوسط</option>
+								<option value="3">ضخیم</option>
+
+						</select></td>
+					</tr>
+
+
+				</table>
+			</div>
+
+
+		</div>
+	</div>
+
+
+
+ 
+
+
+	<script>
+		/*<![CDATA[*/
+		window.technicalChartConfiguration = Object.freeze({
+			instrumentId: "48990026850202503",
+			symbol: "\u062E\u06AF\u0633\u062A\u0631",
+			isFund: false,
+			canSaveDrawings: false,
+			canUseRangeFilter: false,
+			liveRefreshSeconds: 120,
+			incognito: false,
+			initialDrawingsJson: "[]",
+			csrfToken: document.querySelector("meta[name='_csrf']")?.content || "",
+			csrfHeader: document.querySelector("meta[name='_csrf_header']")?.content || ""
+		});
+		/*]]>*/
+	</script>
+
+
+
+</body>
+</html>
+
