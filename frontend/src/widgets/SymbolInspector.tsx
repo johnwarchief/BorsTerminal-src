@@ -175,6 +175,11 @@ export function SymbolInspector() {
         }`}
       />
       <aside
+      // data-shell قلابِ چیدمان است، نه برچسبِ دسترسی‌پذیری. پیش از این
+      // mobile.css به aria-label="داور نماد" چنگ می‌زد که با متنِ واقعی
+      // («بازرسی نماد فولاد») نمی‌خواند — قاعده مرده بود و اینسپکتور رویِ
+      // گوشی به یک نوارِ باریکِ له‌شده در لبهٔ چپ تبدیل می‌شد.
+      data-shell="inspector"
       aria-label={`بازرسی نماد ${symbol}`}
       className={`glass-panel fixed bottom-0 left-0 top-0 z-50 flex w-[var(--inspector-w)] max-w-[88vw] shrink-0 flex-col overflow-y-auto rounded-none border-y-0 border-l-0 p-0 transition-transform duration-200 ease-out shadow-2xl ${
         open ? 'translate-x-0' : '-translate-x-full'

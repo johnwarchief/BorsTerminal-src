@@ -91,7 +91,7 @@
   }
 
   /* ۷) داور نماد (اینسپکتور) در موبایل تمام‌صفحه باز شود، نه ستون کناری */
-  html.bors-mobile aside[aria-label='داور نماد'],
+  html.bors-mobile aside[data-shell='inspector'],
   html.bors-mobile [data-inspector-panel] {
     width: 100vw !important;
     max-width: 100vw !important;
