@@ -174,10 +174,23 @@ html.bors-mobile .bors-fixed-top {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* جدول‌هایِ داده در عمودی باید افقی اسکرول بخورند نه اینکه ستون‌ها
-     له شوند — ستونِ امتیاز و صنعت در ۴۱۲ پیکسل وگرنه ناخوانا می‌شوند. */
-  html.bors-mobile table {
-    min-width: 640px;
+  /* جدول‌هایِ عریضِ داده در عمودی باید افقی اسکرول بخورند، نه اینکه
+     ستون‌ها له شوند.
+     دو اصلاح نسبت به نسخهٔ اول:
+       • کف از ۶۴۰ به ۹۲۰ رفت. جدولِ بنیادی هفت ستون دارد و ۶۴۰ یعنی
+         ~۹۱ پیکسل برایِ هر ستون — سرستونی مثل «۴ — پتانسیل سود تا آخر
+         سال» در آن عرض می‌شکند و همان بریدگیِ اسکرین‌شات را می‌سازد.
+       • انتخابگر از «هر table» به همین دو ظرفِ عریض محدود شد. قاعدهٔ
+         سراسری جدول‌هایِ باریک (پنج‌مظنه، ماتریسِ صنایع) را هم به زورِ
+         ۶۴۰ پیکسل می‌کشید و داخلِ پنل‌هایِ تنگ بیرون می‌زد. */
+  html.bors-mobile [data-testid='fts-screen-scroll'] table,
+  html.bors-mobile [data-testid='tape-scroll'] table {
+    min-width: 920px;
+  }
+  html.bors-mobile [data-testid='fts-screen-scroll'],
+  html.bors-mobile [data-testid='tape-scroll'] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* نوارهایِ ابزار (فیلترها، پریست‌ها) یک ردیفِ قابلِ کشیدن می‌شوند

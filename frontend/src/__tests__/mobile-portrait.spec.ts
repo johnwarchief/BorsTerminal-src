@@ -35,8 +35,13 @@ describe('چیدمانِ موبایل', () => {
     expect(b).toMatch(/strategy-canvas-wrap'\]\s*\{[\s\S]*?min-width:\s*760px/);
   });
 
-  it('در عمودی، جدول‌ها افقی اسکرول می‌خورند نه اینکه ستون‌ها له شوند', () => {
-    expect(mediaBlock('orientation: portrait')).toMatch(/table\s*\{[\s\S]*?min-width:\s*640px/);
+  it('در عمودی، جدول‌هایِ عریض کفِ عرض دارند — و فقط همان‌ها', () => {
+    const b = mediaBlock('orientation: portrait');
+    // کف باید به‌قدری باشد که هفت ستونِ جدولِ بنیادی له نشوند
+    expect(b).toMatch(/fts-screen-scroll'\] table[\s\S]*?min-width:\s*920px/);
+    // و قاعده نباید سراسری باشد: جدولِ پنج‌مظنه و ماتریسِ صنایع باریک‌اند
+    // و کفِ ۹۲۰ آن‌ها را از پنلِ تنگشان بیرون می‌زند.
+    expect(b).not.toMatch(/\n\s*html\.bors-mobile table\s*\{/);
   });
 
   it('در عمودی، نوارِ فیلترها یک ردیفِ کشیدنی است نه چهار ردیفِ شکسته', () => {
