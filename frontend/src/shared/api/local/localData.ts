@@ -53,6 +53,9 @@ async function maybeRefreshSnapshot(): Promise<void> {
   } catch { /* آفلاین/Cache API غایب — دفعهٔ بعد دوباره تلاش می‌شود */ }
 }
 
+/** فقط برایِ تست — مسیرِ بارگذاریِ بسته و راهِ دومش. */
+export const __fetchSnapshotForTest = (): Promise<ArrayBuffer> => fetchSnapshot();
+
 async function fetchSnapshot(): Promise<ArrayBuffer> {
   // Cache API: دانلود ~۱۵MB فقط یک‌بار در عمر نصب؛ تازه‌سازی = پاک کردن کش
   // (دکمهٔ «بروزرسانی داده» بعداً همین کش را حذف و دوباره دانلود می‌کند).
@@ -64,18 +67,55 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
   } catch {
     cache = null; // Cache API در برخی WebViewها نیست — مستقیم دانلود کن
   }
-  const res = await fetch(SNAPSHOT_URL);
-  if (!res.ok) {
-    throw new HttpError(res.status, SNAPSHOT_URL, 'دانلود بستهٔ دادهٔ آفلاین ناموفق بود');
+  // ۱) بستهٔ همراهِ APK (مسیر عادی — بی‌نیاز به شبکه)
+  let local: Response | null = null;
+  let localWhy = '';
+  try {
+    local = await fetch(SNAPSHOT_URL);
+    if (!local.ok) { localWhy = `HTTP ${local.status}`; local = null; }
+  } catch (e) {
+    localWhy = e instanceof Error ? e.message : String(e);
   }
+
+  // ۲) پشتیبان: همان بسته از ریلیزِ mobile-latest.
+  //
+  // چرا لازم شد: تا پیش از این اگر فایلِ درونِ APK به هر دلیلی باز نمی‌شد —
+  // بیلدی که بسته در آن جا نیفتاده، نصبِ ناقص، یا WebViewای که فایلِ ۲۲
+  // مگابایتی را از سرورِ مجازیِ خودش نمی‌دهد — اپ کاملاً می‌مرد: یک نوارِ
+  // قرمز و همهٔ کارت‌ها «بدون داده». در حالی که همان بسته روی ریلیز هست و
+  // کدِ دانلودش (nativeGetBytes) هم از قبل برای بروزرسانیِ روزانه نوشته
+  // شده بود؛ فقط به‌عنوانِ راهِ دومِ بارگذاریِ اول وصل نبود.
+  if (!local) {
+    try {
+      const buf = await nativeGetBytes(REMOTE_GZ_URL);
+      // همان وارسیِ بروزرسانیِ روزانه: gz معتبر و به‌قدرِ کافی بزرگ، تا
+      // صفحهٔ خطایِ HTML به‌جایِ دیتابیس ذخیره نشود.
+      if (buf && buf.byteLength >= 1_000_000) {
+        const h = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
+        if (h[0] === 0x1f && h[1] === 0x8b) {
+          if (cache) {
+            try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
+          }
+          return buf;
+        }
+      }
+    } catch { /* شبکه هم نبود — پیامِ زیر را می‌دهیم */ }
+    throw new HttpError(
+      0,
+      SNAPSHOT_URL,
+      `بستهٔ دادهٔ آفلاین نه در برنامه بود نه از اینترنت آمد (${localWhy || 'بدون پاسخ'}). `
+      + 'یک‌بار با اینترنتِ متصل باز کنید تا بسته دانلود شود.',
+    );
+  }
+
   if (cache) {
     try {
-      await cache.put(SNAPSHOT_URL, res.clone());
+      await cache.put(SNAPSHOT_URL, local.clone());
     } catch {
       /* جای کافی نبود — فقط از همین پاسخ استفاده کن */
     }
   }
-  return res.arrayBuffer();
+  return local.arrayBuffer();
 }
 
 async function gunzip(buf: ArrayBuffer): Promise<Uint8Array> {
