@@ -1002,7 +1002,12 @@ export const CHART_TREE: Record<string, string[]> = {
   // ── صفحهٔ ۴ ──
   money_mgmt: ['rule_max_portfolio', 'm_weighting', 'hedge_options_etf', 'm_ladder',
                'm_review', 'rule_cap', 'stop_hourglass'],
-  strategy_group: ['tech_weekly_hourglass', 'setup_point_hunt'],
+  // هر سه استراتژیِ نام‌بردهٔ چارت ص۴: ساعت شنی · جت · نقطه‌زنی.
+  // «جت» تا ۱٫۰٫۶۶ اینجا جا افتاده بود و فقط ستاپِ روزانهٔ صعودی به‌حساب
+  // می‌آمد — در حالی که چارت صریح سه استراتژی می‌شمارد. چیدمان او را زیرِ
+  // نخستین والدش (tech_daily_up) می‌گذارد و این یالِ دوم متقاطع می‌ماند،
+  // که همان چیزی است که چارت نشان می‌دهد.
+  strategy_group: ['tech_weekly_hourglass', 'setup_jet', 'setup_point_hunt'],
   portfolio_principles: ['m_principles'],
 };
 

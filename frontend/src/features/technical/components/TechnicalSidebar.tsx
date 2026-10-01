@@ -86,8 +86,11 @@ export function TechnicalSidebar({
       className="flex h-full min-h-0 shrink-0 select-none border-l border-[var(--hairline)] bg-[var(--bg-secondary)]"
     >
       {/* دراور بازشونده کشویی */}
+      {/* عرض دیگر ثابت نیست: رویِ لپ‌تاپِ ۱۳۶۶ این پنل ۲۸۵ پیکسل می‌گرفت و
+          با ریلِ آیکون‌ها ~۳۳۰ می‌شد — چارت را به ~۷۰۰ پیکسل می‌رساند. حالا
+          تا ۱۵۳۶ پیکسل باریک‌تر است و از آن به بالا همان ۲۸۵. */}
       {!collapsed && (
-        <div className="flex h-full w-[285px] min-h-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-card)]">
+        <div className="flex h-full w-[228px] 2xl:w-[285px] min-h-0 flex-col border-r border-[var(--hairline)] bg-[var(--bg-card)]">
           {/* هدر دراور ۴۰ پیکسلی هماهنگ با نوار بالا */}
           <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--hairline)] px-3 bg-[var(--bg-secondary)]">
             <span className="text-xs font-bold text-[var(--text-primary)]">{activeTabDef.label}</span>

@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router';
+import { useLocation, Outlet } from 'react-router';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 import { CommandPalette } from '../components/CommandPalette';
@@ -22,7 +22,13 @@ const SHOW_FTS_PIPELINE_BAR = false;
 export function AppShell() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const symbol = useSymbolStore((s) => s.symbol);
-  const inspectorOpen = symbol.length > 0;
+  // در تبِ تکنیکال، اینسپکتورِ چپ نشان داده نمی‌شود: آن صفحه خودش سایدبارِ
+  // راست دارد و با هر دو، از ۱۳۶۵ پیکسل فقط ~۷۰۰ برایِ خودِ چارت می‌ماند —
+  // یعنی چارت، که کلِ دلیلِ وجودِ آن صفحه است، کوچک‌ترین بخشش می‌شود.
+  // ضمناً دادهٔ اینسپکتور (نمرهٔ بنیادی، سرانهٔ خریدار، پنج مظنه) همان است
+  // که سایدبارِ خودِ تکنیکال هم دارد.
+  const onTechnical = useLocation().pathname.startsWith('/technical');
+  const inspectorOpen = symbol.length > 0 && !onTechnical;
 
   // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
   useFlashClock();
@@ -74,7 +80,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
-      <SymbolInspector />
+      {onTechnical ? null : <SymbolInspector />}
       <CommandPalette />
     </div>
   );

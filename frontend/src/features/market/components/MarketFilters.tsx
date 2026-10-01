@@ -3,6 +3,7 @@
 // ردیف دوم: بازارها/ابزارها، صنایع و چیپ‌های فیلتر با پاپ‌اور تنظیمات اختصاصی (Split Chips)
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Select } from '@shared/ui/Select';
+import { DynamicToolbar } from '@shared/ui/DynamicToolbar';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
@@ -478,34 +479,16 @@ export function MarketFilters({
           options={sectorOptions}
         />
 
-        <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
-
-        {/* چیپ‌های فیلتر با پاپ‌اور اختصاصی */}
-        {QUICK_FILTERS.map((f) => (
-          <SplitFilterChip
-            key={f}
-            filter={f}
-            active={quickFilters.includes(f)}
-            onToggle={() => toggleQuickFilter(f)}
-            count={matches?.[f]}
-            hidden={hiddenInfo?.[f]}
-          />
-        ))}
-
-      </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex items-center">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="جستجوی نماد یا نام..."
-              aria-label="جستجوی نماد"
-              className={`${CONTROL_CLS} w-44 sm:w-56 ps-7 placeholder:text-text-muted`}
-            />
-            <SearchIcon size={13} className="absolute start-2 text-text-muted pointer-events-none" />
-          </div>
-
+        {/* نوارِ پویا (برداشت از dynamic-toolbar): سوییچ‌هایِ کم‌مصرف به
+            صفحهٔ دوم رفتند. رویِ ۱۳۶۶ این نوار به چهار ردیف می‌شکست و
+            ~۹۵ پیکسل از ارتفاع را می‌خورد — در صفحه‌ای با جدولِ
+            هزاران‌ردیفی گران است. */}
+        <DynamicToolbar
+          className="shrink-0"
+          primaryLabel="بازگشت"
+          secondaryLabel="نمای تابلو"
+          primary={<span className="whitespace-nowrap text-2xs font-bold text-text-muted">فیلترهای سریع</span>}
+          secondary={<>
           {/* #197: تا پیش از این «فقط زنده» در استور وجود داشت ولی هیچ‌جا
               روشن/خاموش نمی‌شد — و چون چیدمانِ پیش‌فرض ردیف‌هایِ بیرونِ تابلو
               را بالا می‌آورد، کاربر فلش را «خراب» می‌دید. */}
@@ -549,6 +532,36 @@ export function MarketFilters({
           >
             حذفِ پسوندِ عددی
           </button>
+          </>}
+        />
+        <div className="h-4 w-[1px] bg-border-c/70 shrink-0 mx-0.5" />
+
+        {/* چیپ‌های فیلتر با پاپ‌اور اختصاصی */}
+        {QUICK_FILTERS.map((f) => (
+          <SplitFilterChip
+            key={f}
+            filter={f}
+            active={quickFilters.includes(f)}
+            onToggle={() => toggleQuickFilter(f)}
+            count={matches?.[f]}
+            hidden={hiddenInfo?.[f]}
+          />
+        ))}
+
+      </div>
+      <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative flex items-center">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="جستجوی نماد یا نام..."
+              aria-label="جستجوی نماد"
+              className={`${CONTROL_CLS} w-44 sm:w-56 ps-7 placeholder:text-text-muted`}
+            />
+            <SearchIcon size={13} className="absolute start-2 text-text-muted pointer-events-none" />
+          </div>
+
 
           {shown != null && total != null ? (
             <span
