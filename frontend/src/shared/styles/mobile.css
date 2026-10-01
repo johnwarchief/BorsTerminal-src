@@ -185,3 +185,38 @@ html.bors-mobile .bors-fixed-top {
     display: none;
   }
 }
+
+/* ── صفحهٔ تکنیکال در گوشی ────────────────────────────────────────────
+   باگِ اسکرین‌شاتِ ۷: چارت کاملاً خالی بود.
+
+   علت: ظرفِ .tv-workbench تا ۱۲۸۰ پیکسل flex-col است و سایدبارِ تکنیکال
+   کلاسِ h-full دارد. در یک ستون، h-full یعنی «تمامِ ارتفاعِ ظرف» — پس
+   سایدبار همه‌چیز را می‌خورد و <main> که چارت در آن است صفر می‌ماند.
+
+   رفع: در گوشی سایدبار از جریانِ ستون بیرون می‌آید و روکش می‌شود. چارت
+   کلِ قاب را می‌گیرد و با همان دکمهٔ جمع/باز کردنِ خودش به سایدبار
+   دسترسی هست.                                                        */
+@media (max-width: 1279px) {
+  html.bors-mobile .tv-workbench [data-testid='technical-sidebar'] {
+    position: fixed;
+    inset-block: 3rem 0;
+    inset-inline-end: 0;
+    z-index: 55;
+    height: auto;
+    max-width: 88vw;
+    box-shadow: -8px 0 28px rgb(0 0 0 / 45%);
+  }
+  /* ریلِ آیکون‌ها (حالتِ جمع) باریک است و می‌تواند در جریان بماند. */
+  html.bors-mobile .tv-workbench [data-testid='technical-sidebar-collapsed'] {
+    height: auto;
+    align-self: stretch;
+  }
+  /* چارت باید ارتفاعِ واقعی بگیرد؛ flex-1 در ستونی که محتوایش auto است
+     می‌تواند صفر شود. */
+  html.bors-mobile .tv-workbench [data-testid='chart-area'] {
+    min-height: 62vh;
+  }
+  html.bors-mobile .tv-workbench {
+    flex-direction: row;
+  }
+}

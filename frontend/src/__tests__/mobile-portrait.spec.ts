@@ -43,3 +43,15 @@ describe('چیدمانِ موبایل', () => {
     expect(b).toMatch(/quick-filters-bar[\s\S]*?overflow-x:\s*auto/);
   });
 });
+
+describe('صفحهٔ تکنیکال در گوشی', () => {
+  it('سایدبارِ تکنیکال از جریانِ ستون بیرون می‌آید', () => {
+    // باگِ اسکرین‌شاتِ ۷: ظرف تا ۱۲۸۰px ستونی است و سایدبار h-full دارد،
+    // پس کلِ ارتفاع را می‌خورد و چارت صفر می‌ماند.
+    expect(css).toMatch(/technical-sidebar'\]\s*\{[\s\S]*?position:\s*fixed/);
+  });
+
+  it('ناحیهٔ چارت کفِ ارتفاع دارد', () => {
+    expect(css).toMatch(/chart-area'\]\s*\{[\s\S]*?min-height:\s*62vh/);
+  });
+});
