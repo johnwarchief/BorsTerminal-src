@@ -1,3 +1,4 @@
+import os
 # -*- mode: python ; coding: utf-8 -*-
 # fts_terminal.spec -- فاز 7: بسته دسکتاپ FTS Terminal (onedir تمیز)
 #
@@ -18,6 +19,9 @@ a = Analysis(
     pathex=['.'],
     binaries=[],
     datas=[
+        # شناسنامهٔ بیلد (اختیاری — فقط CI می‌نویسدش). بی‌این، بیلدِ دمو
+        # نمی‌داند نسخه‌اش چیست و آپدیترش به کانالِ نسخهٔ واقعی می‌رود.
+        *( [('build_channel.json', '.')] if os.path.exists('build_channel.json') else [] ),
         ('frontend/dist', 'frontend/dist'),
         ('static', 'static'),
         ('app.py', '.'),

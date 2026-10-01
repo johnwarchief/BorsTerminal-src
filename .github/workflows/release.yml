@@ -189,6 +189,22 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($pw)) { $pw = 'BorsTerminal' }
           "#define SetupPassword ""$pw""" | Out-File -FilePath installer\.setup_password.iss -Encoding ascii -NoNewline
 
+      # شناسنامهٔ بیلد — پیش از PyInstaller نوشته می‌شود تا داخلِ بسته برود.
+      #
+      # بی‌این فایل، بیلدِ دمو خودش را «1.0.65» می‌دانست (APP_VERSION که
+      # عمداً ثابت می‌ماند) و آپدیترش از releases/latest می‌خواند که همیشه
+      # ریلیزِ *واقعی* است. نتیجه: کاربرِ دمو پچ‌هایِ دلتایِ دمو را اصلاً
+      # نمی‌دید و به‌جایش نسخهٔ واقعی به او پیشنهاد می‌شد.
+      # برایِ ریلیزِ واقعی channel_tag خالی می‌ماند ⇒ همان رفتارِ قبلی.
+      - name: Write build channel
+        shell: pwsh
+        run: |
+          $ver = $env:TAG -replace '^v',''
+          $chan = if ($ver -match '-') { $env:TAG } else { '' }
+          $info = @{ version = $ver; channel_tag = $chan } | ConvertTo-Json -Compress
+          Set-Content -Path build_channel.json -Value $info -Encoding utf8
+          Write-Host "build_channel.json = $info"
+
       - name: Build Python Backend (PyInstaller + bundle data)
         run: python scripts/build_all.py
 

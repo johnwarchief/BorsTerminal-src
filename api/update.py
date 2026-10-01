@@ -62,10 +62,51 @@ UPDATE_PUBKEY = (
 )
 # مانیفستِ Tauri - دقیقاً همان فایلی که scripts/publish_github_release.py
 # می‌سازد و به ریلیز آپلود می‌کند.
-LATEST_JSON_URL = ("https://github.com/johnwarchief/BorsTerminal"
-                   "/releases/latest/download/latest.json")
+_PUBLIC_REPO = "https://github.com/johnwarchief/BorsTerminal"
+
+
+def _build_info() -> dict:
+    """شناسنامهٔ بیلد، اگر CI گذاشته باشدش.
+
+    چرا لازم شد: در بیلدِ دمو، APP_VERSION عمداً رویِ نسخهٔ واقعی می‌ماند
+    (نسخه از برچسبِ گیت به ISCC می‌رود، نه از این فایل). نتیجه این بود که
+    اپِ دمو خودش را «1.0.65» می‌دانست در حالی که نصب‌کننده «1.0.66-demo9»
+    نوشته بود، و بدتر: آپدیتر از releases/latest می‌خواند که همیشه ریلیزِ
+    *واقعی* است. پس اپِ دمو هرگز کانالِ خودش را نمی‌دید، پچ‌هایِ دلتایِ
+    دمو را نمی‌گرفت، و به‌جایش نسخهٔ واقعی را پیشنهاد می‌داد.
+
+    فایل اختیاری است؛ نبودنش یعنی همان رفتارِ نسخهٔ واقعی.
+    """
+    for base in (os.path.dirname(os.path.abspath(sys.executable)),
+                 os.path.dirname(os.path.abspath(__file__))):
+        for cand in (os.path.join(base, "build_channel.json"),
+                     os.path.join(base, "_internal", "build_channel.json"),
+                     os.path.join(os.path.dirname(base), "build_channel.json")):
+            try:
+                with open(cand, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                if isinstance(data, dict):
+                    return data
+            except Exception:  # noqa: BLE001 — فایل نبود/خراب بود
+                continue
+    return {}
+
+
+_BUILD = _build_info()
+
+#: نسخه‌ای که این بیلد واقعاً هست. در نسخهٔ واقعی = APP_VERSION.
+BUILD_VERSION = str(_BUILD.get("version") or APP_VERSION)
+
+#: کانالِ به‌روزرسانی. نسخهٔ واقعی از releases/latest می‌خواند؛ بیلدِ دمو
+#: از برچسبِ خودش، تا هرگز کاربرِ دمو را به نسخهٔ واقعی نیندازد.
+_channel_tag = str(_BUILD.get("channel_tag") or "").strip()
+LATEST_JSON_URL = (
+    f"{_PUBLIC_REPO}/releases/download/{_channel_tag}/latest.json"
+    if _channel_tag else
+    f"{_PUBLIC_REPO}/releases/latest/download/latest.json"
+)
 PLATFORM_KEY = "windows-x86_64"
-USER_AGENT = "BorsTerminal-Updater/" + APP_VERSION
+USER_AGENT = "BorsTerminal-Updater/" + BUILD_VERSION
 # AppId در installer/bors_setup.iss (کروشه‌های بیرونی توسط Inno حذف می‌شوند)
 APP_ID = "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}"
 APP_EXE = "BorsTerminal_Ultimate.exe"
@@ -186,7 +227,7 @@ def _registry_install_dir():
 
 
 def _sync_display_version():
-    """DisplayVersionِ کلیدِ Uninstall را با APP_VERSION همگام می‌کند.
+    """DisplayVersionِ کلیدِ Uninstall را با نسخهٔ همین بیلد همگام می‌کند.
 
     نصب‌کنندهٔ Inno این مقدار را می‌نویسد، ولی یک پَچ فقط فایل‌ها را
     جایگزین می‌کند؛ پس Add/Remove Programs بدون این همگام‌سازی همچنان
@@ -202,9 +243,9 @@ def _sync_display_version():
         try:
             with winreg.OpenKey(hive, key_path, 0, winreg.KEY_SET_VALUE) as key:
                 cur, _ = winreg.QueryValueEx(key, "DisplayVersion")
-                if cur == APP_VERSION:
+                if cur == BUILD_VERSION:
                     return True
-                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, APP_VERSION)
+                winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, BUILD_VERSION)
                 return True
         except OSError:
             continue
@@ -388,7 +429,7 @@ def _select_patch(manifest):
     for p in patches:
         if not isinstance(p, dict):
             continue
-        if str(p.get("from") or "") != APP_VERSION:
+        if str(p.get("from") or "") != BUILD_VERSION:
             continue
         if str(p.get("to") or "") != target:
             continue
@@ -483,7 +524,7 @@ def _spawn_patch_apply(patch_zip):
 # ---------------------------------------------------------------------------
 @router.get("/api/update/version")
 def update_version():
-    """نسخهٔ فعلیِ برنامه (منبعِ واحد: bors_config.APP_VERSION)."""
+    """نسخهٔ فعلیِ برنامه. در بیلدِ دمو از شناسنامهٔ بیلد، وگرنه APP_VERSION."""
     # یک پَچ فقط فایل‌ها را جایگزین می‌کند، پس DisplayVersionِ رجیستری
     # می‌تواند پشت بماند. اینجا خودش را تعمیر می‌کنیم تا Add/Remove
     # Programs همیشه با نسخهٔ واقعیِ در حالِ اجرا موافق باشد.
@@ -491,7 +532,7 @@ def update_version():
         _sync_display_version()
     except Exception:
         pass
-    return {"version": APP_VERSION, "tauri": False}
+    return {"version": BUILD_VERSION, "tauri": False}
 
 
 @router.get("/api/update/check")
@@ -499,21 +540,21 @@ def update_check():
     try:
         manifest = _fetch_manifest()
     except Exception as exc:                                   # noqa: BLE001
-        return {"status": "error", "current_version": APP_VERSION,
+        return {"status": "error", "current_version": BUILD_VERSION,
                 "message": "دریافت مانیفست به‌روزرسانی ناموفق: %s" % exc}
     global _LAST_MANIFEST
     with _LOCK:
         _LAST_MANIFEST = manifest
     platform = _platform_of(manifest)
     latest = str(manifest.get("version") or "")
-    available = bool(latest) and _vkey(latest) > _vkey(APP_VERSION)
+    available = bool(latest) and _vkey(latest) > _vkey(BUILD_VERSION)
     # v1.0.10: اگر پچِ دلتایی برای همین نسخه موجود باشد، مرورگر آن را به جای
     # نصبِ کامل نشان می‌دهد (حجمِ بسیار کمتر). انتخابِ نهایی در download انجام
     # می‌شود تا بینِ check و download تغییرِ نسخه رخ ندهد.
     patch = _select_patch(manifest) if available else None
     return {
         "status": "success",
-        "current_version": APP_VERSION,
+        "current_version": BUILD_VERSION,
         "latest_version": latest,
         "available": available,
         "notes": manifest.get("notes") or "",

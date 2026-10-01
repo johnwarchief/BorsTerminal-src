@@ -49,7 +49,7 @@ def manifest(patches=None, version="1.0.10"):
 
 
 def good_patch(**over):
-    p = {"from": upd.APP_VERSION, "to": "1.0.10",
+    p = {"from": upd.BUILD_VERSION, "to": "1.0.10",
          "signature": "SIG-PATCH", "url": "https://example.com/patch.zip",
          "size": 1234}
     p.update(over)
@@ -66,7 +66,7 @@ check("no patches key -> None",
 check("empty patches array -> None",
       upd._select_patch(manifest([])) is None)
 check("patches not a list -> None",
-      upd._select_patch(manifest({"from": upd.APP_VERSION})) is None)
+      upd._select_patch(manifest({"from": upd.BUILD_VERSION})) is None)
 check("wrong from (older client) -> None",
       upd._select_patch(manifest([good_patch(**{"from": "1.0.8"})])) is None)
 check("wrong to (stale patch vs manifest) -> None",
@@ -88,16 +88,16 @@ print("== update_check: delta metadata")
 # update_check خودش مانیفست را fetch می‌کند (BORS_UPDATE_MANIFEST یا شبکه) و
 # به _LAST_MANIFEST نگاه نمی‌کند؛ پس خودِ _fetch_manifest را جایگزین می‌کنیم.
 # کلاینتِ قدیمیِ 1.0.9 را شبیه‌سازی می‌کنیم تا available=True و پچِ 1.0.9→1.0.10
-# همزمان برقرار شوند (available نیازمندِ version > APP_VERSION است).
+# همزمان برقرار شوند (available نیازمندِ version > BUILD_VERSION است).
 orig_fetch = upd._fetch_manifest
-orig_version = upd.APP_VERSION
+orig_version = upd.BUILD_VERSION
 try:
-    upd.APP_VERSION = "1.0.9"
+    upd.BUILD_VERSION = "1.0.9"
     upd._fetch_manifest = lambda: manifest([good_patch(size=999)])
     res = upd.update_check()
 finally:
     upd._fetch_manifest = orig_fetch
-    upd.APP_VERSION = orig_version
+    upd.BUILD_VERSION = orig_version
 check("available is True", res["available"] is True)
 check("delta is True when a patch matches", res["delta"] is True)
 check("size reports the patch size", res["size"] == 999)
@@ -105,12 +105,12 @@ check("url points at the patch", res["url"].endswith("patch.zip"))
 check("signature is the patch signature", res["signature"] == "SIG-PATCH")
 
 try:
-    upd.APP_VERSION = "1.0.9"
+    upd.BUILD_VERSION = "1.0.9"
     upd._fetch_manifest = lambda: manifest(None)
     res2 = upd.update_check()
 finally:
     upd._fetch_manifest = orig_fetch
-    upd.APP_VERSION = orig_version
+    upd.BUILD_VERSION = orig_version
 check("delta is False without patches", res2["delta"] is False)
 check("url falls back to the installer", res2["url"].endswith("setup.exe"))
 check("size falls back to the installer size",
@@ -257,13 +257,13 @@ pub_manifest = {
 }
 # همان ساختاری که scripts/publish_github_release.py می‌سازد، باید توسطِ
 # _select_patch روی یک کلاینتِ 1.0.9 قابلِ انتخاب باشد.
-orig_version = upd.APP_VERSION
+orig_version = upd.BUILD_VERSION
 try:
-    upd.APP_VERSION = "1.0.9"
+    upd.BUILD_VERSION = "1.0.9"
     check("published patch entry is selectable by a 1.0.9 client",
           upd._select_patch(pub_manifest) is not None)
 finally:
-    upd.APP_VERSION = orig_version
+    upd.BUILD_VERSION = orig_version
 check("json round-trips",
       json.loads(json.dumps(pub_manifest, ensure_ascii=False)) == pub_manifest)
 

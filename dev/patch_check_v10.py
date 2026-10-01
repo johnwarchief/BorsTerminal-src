@@ -83,8 +83,11 @@ upd = io.open("api/update.py", encoding="utf-8", errors="replace").read()
 for token in ["_select_patch", "_install_dir_writable", "_spawn_patch_apply",
               "is_patch", '"patches"', '"from"', '"to"', "UPDATE_PUBKEY"]:
     ck("api/update.py: delta path uses %s" % token, token in upd)
-ck("api/update.py: patch selection requires from==APP_VERSION",
-   bool(re.search(r'p\.get\(\s*"from"\s*\)\s*or\s*""\)\s*!=\s*APP_VERSION', upd)))
+# ۱٫۰٫۶۶: قرارداد از APP_VERSION به BUILD_VERSION رفت. در ریلیزِ واقعی این
+# دو یکی‌اند؛ در بیلدِ دمو، BUILD_VERSION از شناسنامهٔ بیلد می‌آید وگرنه اپِ
+# دمو خودش را نسخهٔ واقعی می‌پنداشت و پچ‌هایِ کانالِ خودش را نمی‌گرفت.
+ck("api/update.py: patch selection requires from==BUILD_VERSION",
+   bool(re.search(r'p\.get\(\s*"from"\s*\)\s*or\s*""\)\s*!=\s*BUILD_VERSION', upd)))
 ck("api/update.py: patch selection requires to==manifest version",
    bool(re.search(r'p\.get\(\s*"to"\s*\)\s*or\s*""\)\s*!=\s*target', upd)))
 ck("api/update.py: patch needs url + signature",
