@@ -129,6 +129,13 @@ DB_PATH = _resolve_market_db()
 # این صورت یک ارتقای ساده، واچ‌لیست و تصمیماتِ کاربر را پاک می‌کرد.
 MARKET_DB_USER_TABLES = ("user_watchlists", "selection_decisions")
 
+# جدول‌های «مراجع»: معناشان را خودِ baseline تعریف می‌کند (نامِ شرکت، تالار،
+# صنعت). اگر محلی برنده بماند، یک اصلاحِ داده درِ نسخهٔ جدید هرگز به کاربر
+# نمی‌رسد — همان چیزی که dev/test_cumulative_db_v1020.py می‌خواست ثابت کند.
+# بقیهٔ جدول‌های بازار «واقعاً» محلی‌اند: ردیف‌هایی که برنامه خودش سینک کرده
+# نباید درِ یک ارتقا با نسخهٔ قدیمی‌تر جایگزین شوند.
+_MARKET_REF_TABLES = ("instruments", "boards", "symbol_sectors")
+
 _REQUIRED_MARKET_TABLES = {"instruments", "daily_prices", "financial_statements"}
 
 
@@ -226,6 +233,218 @@ def _carry_user_tables(old_db, new_db, verbose=False):
         src.close()
 
 
+def _table_pk(conn, name, schema="main"):
+    """کلیدهای اصلی یک جدول؛ خالی یعنی جدول بی‌کلید (پس ادغامش امن نیست)."""
+    try:
+        return [r[1] for r in conn.execute(
+            'PRAGMA %s.table_info("%s")' % (schema, name)) if r[5] > 0]
+    except Exception:
+        return []
+
+
+def _union_forward(live_db, fresh_db, verbose=False):
+    """ردیف‌های baselineِ تازه را به دیتابیسِ زنده «افزوده» می‌کند؛ هیچ ردیفِ
+    زنده‌ای پاک یا بازنویسی نمی‌شود.
+
+    چرا: `ensure_market_db` پیش از این با تغییرِ هشِ .lzma کل market.db را با
+    baselineِ داخلِ نصاب عوض می‌کرد و فقط واچ‌لیست/تصمیمات را نگه می‌داشت. یعنی
+    یک ارتقا — و مخصوصاً «نصبِ کامل» که سهمِ کاربرِ خیلی‌گذشته به آن می‌افتد —
+    کندل‌ها و نبضِ روزهایی را که خودِ برنامه سینک کرده بود پاک می‌کرد و چارت را
+    به عقب می‌انداخت. ادغامِ رو‌به‌جلو همان داده را نگه می‌دارد و پوششِ baseline
+    را هم می‌گیرد.
+
+    بازگشت: تعدادِ ردیف‌های اضافه‌شده به‌ازایِ جدول.
+    """
+    import sqlite3 as _sq
+    added = {}
+    try:
+        dst = _sq.connect(live_db)
+    except Exception:
+        return added
+    try:
+        try:
+            dst.execute('ATTACH DATABASE ? AS src', (fresh_db,))
+        except Exception:
+            return added
+        try:
+            src_tables = {r[0] for r in dst.execute(
+                "SELECT name FROM src.sqlite_master WHERE type='table'")}
+            dst_tables = {r[0] for r in dst.execute(
+                "SELECT name FROM main.sqlite_master WHERE type='table'")}
+            dst.execute("BEGIN IMMEDIATE")
+            for t in sorted(src_tables):
+                if t == "sqlite_stat1":
+                    continue                      # آمارِ ANALYZE، داده نیست
+                if t in MARKET_DB_USER_TABLES:
+                    # نوشتهٔ خودِ کاربر. baselineِ نصاب ممکن است واچ‌لیستِ
+                    # ماشینِ سازنده را داشته باشد؛ ادغامش یعنی نمادهایِ ساختگی
+                    # در واچ‌لیستِ کاربر. (مسیرِ قدیمی با DELETE همان را پنهان
+                    # می‌کرد؛ این خطِ روشن‌تر، همان تضمین را نگه می‌دارد.)
+                    continue
+                if t not in dst_tables:
+                    # جدولی که baseline دارد و نصبِ کاربر نه — مثلاً
+                    # tape_history در نسخه‌های قدیمی. بسازش و کپی‌اش کن.
+                    ddl = dst.execute(
+                        "SELECT sql FROM src.sqlite_master WHERE type='table' AND name=?",
+                        (t,)).fetchone()
+                    if not ddl or not ddl[0] or not _table_pk(dst, t, "src"):
+                        continue
+                    try:
+                        dst.execute(ddl[0])
+                    except Exception:
+                        continue
+                    dst.execute('INSERT OR IGNORE INTO main."%s" SELECT * FROM src."%s"' % (t, t))
+                    added[t] = dst.execute("SELECT changes()").fetchone()[0]
+                    continue
+                if not _table_pk(dst, t):
+                    continue                      # بی‌کلید ⇒ تکراری‌شدنِ بی‌صدا
+                shared = [r[1] for r in dst.execute('PRAGMA main.table_info("%s")' % t)]
+                src_cols = {r[1] for r in dst.execute('PRAGMA src.table_info("%s")' % t)}
+                cols = [c for c in shared if c in src_cols]
+                if not cols:
+                    continue
+                collist = ",".join('"%s"' % c for c in cols)
+                verb = "INSERT OR REPLACE" if t in _MARKET_REF_TABLES else "INSERT OR IGNORE"
+                dst.execute('%s INTO main."%s" (%s) SELECT %s FROM src."%s"'
+                            % (verb, t, collist, collist, t))
+                n = dst.execute("SELECT changes()").fetchone()[0]
+                if n:
+                    added[t] = n
+            dst.commit()
+        except Exception:
+            try:
+                dst.rollback()
+            except Exception:
+                pass
+            return added if added else {}
+        finally:
+            try:
+                dst.execute("DETACH DATABASE src")
+            except Exception:
+                pass
+    finally:
+        dst.close()
+    if verbose and added:
+        print("  [OK]  market.db kept; merged %d rows from the new baseline (%s)"
+              % (sum(added.values()),
+                 ", ".join("%s+%d" % (k, v) for k, v in sorted(added.items())[:6])))
+    return added
+
+
+def _frontend_asset_names(assets_dir):
+    """نامِ فایل‌هایِ کدِ build شده (js/css/mjs) درِ پوشهٔ assets."""
+    try:
+        return {n for n in os.listdir(assets_dir)
+                if n.lower().endswith((".js", ".mjs", ".css"))}
+    except OSError:
+        return set()
+
+
+_ASSET_REF_RE = None
+
+
+def prune_stale_frontend_assets(dist_dir, marker_version, verbose=False):
+    """chunkهایِ کهنۀ frontend را ازِ محلِ نصبِ درجا پاک می‌کند.
+
+    چرا: پچِ دلتا فقط «رویهمگذاری» می‌کند و هیچ‌وقت فایلی را حذف نمی‌کند. Vite
+    هر بارِ build نامِ hash‌شده را عوض می‌کند، پس هر آپدیتِ جزئی چندصدِ فایلِ
+    مرده در `_internal/frontend/dist/assets` می‌گذارد. شمارشِ واقعی رویِ نصبیِ
+    مالک (۱٫۰٫۶۸، سه پچِ رویهم): ۲٫۲۹۲ فایلِ رویِ دیسک در برابرِ ۱٫۴۵۹ فایلِ
+    manifestِ همان نسخه — یعنی ~۸۳۰ chunk که هیچ‌کس واردشان نمی‌شود.
+
+    تشخیصِ «مرده» بی‌حدس: ازِ هر فایلِ بیرونِ پوشهٔ assets (index.html و
+    `vendor/`) شروع می‌شود و بستهٔ importهایِ هر chunkِ زنده را دنبال می‌کند
+    (closure). هر فایلِ js/css که درِ هیچِ فایلِ زنده‌ای نامش نیاید، مرده است.
+    نگهبان‌ها: اگر closure کمتر از دو فایل شد هیچی پاک نمی‌شود — buildِ واقعی
+    هرگز دو فایلِ زنده ندارد، پس آن حالت یعنی «فهمیدنِ ارجاع‌ها شکست خورده».
+    رویِ ماشینِ trading، پاککردنِ چارت بدترِ نگه‌داشتنِ چند مگابایت است.
+
+    یک‌بار به‌ازایِ هر نسخه اجرا می‌شود (stamp کنارِ فایل‌ها)، تاِ startupِ
+    هر روز رویِ سخت‌افزارِ ضعیف گران نشود.
+    """
+    import re
+    global _ASSET_REF_RE
+    if _ASSET_REF_RE is None:
+        _ASSET_REF_RE = re.compile(r"[A-Za-z0-9_@./+\-]+\.(?:js|mjs|css)")
+    assets = os.path.join(dist_dir, "assets")
+    if not os.path.isdir(assets):
+        return 0
+    stamp = os.path.join(assets, ".live_chunks_stamp")
+    try:
+        with open(stamp, encoding="utf-8") as f:
+            if f.read().strip() == str(marker_version):
+                return 0
+    except OSError:
+        pass
+    candidates = _frontend_asset_names(assets)
+    if not candidates:
+        return 0
+
+    def refs(text):
+        out = set()
+        for token in _ASSET_REF_RE.findall(text):
+            out.add(os.path.basename(token))
+        return out
+
+    # ریشه‌ها: هر نامِ asset که بیرونِ پوشهٔ assets صدا زده شود. index.html
+    # ورودیِ SPA است، ولی `vendor/` (klinecharts روی window) و هر html/jsِ
+    # هم‌سطح هم می‌تواند chunkی را مستقیم بخواهد؛ اگر آن‌ها را ندید، همان chunk
+    # «مرده» خوانده و پاک می‌شد.
+    roots = set()
+    for dirpath, dirnames, filenames in os.walk(dist_dir):
+        if os.path.abspath(dirpath) == os.path.abspath(assets):
+            continue
+        for fn in filenames:
+            if not fn.lower().endswith((".html", ".js", ".mjs", ".css")):
+                continue
+            try:
+                with open(os.path.join(dirpath, fn), encoding="utf-8",
+                          errors="replace") as f:
+                    roots |= refs(f.read())
+            except OSError:
+                continue
+    live = roots & candidates
+    if len(live) < 2:
+        return 0                 # buildِ واقعی هیچ‌وقت دو فایلِ زنده ندارد
+    queue = sorted(live)
+    seen = set()
+    while queue:
+        name = queue.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        try:
+            with open(os.path.join(assets, name), encoding="utf-8",
+                      errors="replace") as f:
+                body = f.read()
+        except OSError:
+            continue
+        for nxt in refs(body) & candidates:
+            if nxt not in live:
+                live.add(nxt)
+                queue.append(nxt)
+    dead = sorted(candidates - live)
+    if not dead:
+        return 0
+    freed = 0
+    for name in dead:
+        try:
+            p = os.path.join(assets, name)
+            freed += os.path.getsize(p)
+            os.remove(p)
+        except OSError:
+            continue
+    try:
+        with open(stamp, "w", encoding="utf-8") as f:
+            f.write(str(marker_version))
+    except OSError:
+        pass
+    if verbose:
+        print("  [OK]  pruned %d stale frontend chunks (%.1f MB freed)"
+              % (len(dead), freed / 1048576.0))
+    return len(dead)
+
+
 def ensure_market_db(verbose=False):
     """(idempotent) market.db را از market.db.lzma می‌سازد یا تازه می‌کند.
 
@@ -238,6 +457,12 @@ def ensure_market_db(verbose=False):
     راهِ دوم: اثرِ انگشتی (sha256) از .lzma کنارِ فایل نگه می‌داریم؛ اگر عوض شد،
     baselineِ تازه استخراج و جدول‌هایِ کاربر از نسخهٔ قدیمی منتقل می‌شود. فایلِ
     قدیمی با پسوندِ .stale-<ts> نگه داشته می‌شود، نه حذف.
+
+    v1.0.69: «جایگزینیِ کلِ فایل» فقط برایِ دیتابیسِ ناقص. دیتابیسِ سالمِ کاربر
+    دیگر با baseline له نمی‌شود — ردیف‌هایِ تازه ادغامِ رو‌به‌جلو می‌شوند. دلیلش
+    یک شمارشِ واقعی بود: نصبی که daily_prices‌اش تا ۲۰۲۶۰۹۳۰ و price_history‌اش
+    ۳۷۵٫۱۵۴ ردیف بود، با یکِ «نصبِ کامل» به ۸۷٫۱۴۶ و ۳۲۱٫۳۸۹ ردیفِ baseline برمی‌گشت
+    و tape_history‌اش (۱۵۱٫۳۵۶ ردیف) هم می‌توانست برود.
     """
     src_lzma = _find_bundled_db_lzma()
     want = None
@@ -253,9 +478,21 @@ def ensure_market_db(verbose=False):
         current = bool(want) and _read_baseline_stamp() == want
         if complete and current:
             return DB_PATH
-        reason = "incomplete" if not complete else "stale baseline"
+        if complete:
+            # سالم است و فقط baseline عوض شده ⇒ ادغام، نه جایگزینی.
+            fresh = _extract_market_db(src_lzma, verbose=verbose,
+                                       scratch_name="market.db.baseline.new")
+            if fresh:
+                _union_forward(DB_PATH, fresh, verbose=verbose)
+                try:
+                    os.remove(fresh)
+                except OSError:
+                    pass
+            _write_baseline_stamp(want or "")
+            return DB_PATH
+        # تا این‌جا فقط دیتابیسِ ناقص/خراب می‌رسد: سالم‌ها بالا ادغام شدند.
         if verbose:
-            print("  [..]  market.db is %s — re-extracting from market.db.lzma" % reason)
+            print("  [..]  market.db is incomplete — re-extracting from market.db.lzma")
         stale_path = DB_PATH + ".stale"
         try:
             os.replace(DB_PATH, stale_path)
@@ -283,14 +520,18 @@ def ensure_market_db(verbose=False):
     return new_db or DB_PATH
 
 
-def _extract_market_db(src_lzma, verbose=False):
-    """market.db.lzma را به WORK_DIR/market.db باز می‌کند. None یعنی نشد."""
+def _extract_market_db(src_lzma, verbose=False, scratch_name=None):
+    """market.db.lzma را به WORK_DIR/market.db باز می‌کند. None یعنی نشد.
+
+    scratch_name داده شود یعنی فقط بازکردنِ موقت برایِ ادغام: فایلِ market.dbِ
+    کاربر دست‌نخورده می‌ماند و مسیرِ باز شده برایِ پاک‌شدن به caller برمی‌گردد.
+    """
     if not src_lzma:
         return None
     try:
         import lzma
         os.makedirs(WORK_DIR, exist_ok=True)
-        target_db = os.path.join(WORK_DIR, "market.db")
+        target_db = os.path.join(WORK_DIR, scratch_name or "market.db")
         tmp = target_db + ".part"
         if verbose:
             print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
@@ -302,7 +543,7 @@ def _extract_market_db(src_lzma, verbose=False):
             os.remove(tmp)
             return None
         os.replace(tmp, target_db)
-        if verbose:
+        if not scratch_name and verbose:
             print("  [OK]  market.db extracted from .lzma")
         return target_db
     except Exception as e:

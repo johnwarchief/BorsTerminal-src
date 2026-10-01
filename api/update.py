@@ -473,7 +473,13 @@ def _spawn_patch_apply(patch_zip):
     subprocess.Popen(["cmd.exe", "/c", applier], **kw)
     _STATE.update(status="installing",
                   message="در حال اعمالِ پچِ به‌روزرسانی")
-    _delayed_exit(2.0)
+    # درِ مسیرِ نصبِ کامل: مرگِ پروسه در یک رشتهِٔ بعدی. قبلاً همین‌جا
+    # _delayed_exit(2.0) صدا زده می‌شد و handler هیچ‌وقت return نمی‌شد، پس
+    # POSTِ /install با connection reset می‌مرد و فرانت‌اند آن را «اتصال به
+    # سرور برقرار نشد، اینترنت‌ات را چک کن» نشان می‌داد — یعنی یک آپدیتِ
+    # موفق در چِشمِ کاربر «اعمال نشد» خوانده می‌شد (گزارشِ مالک، و بازسازیِ
+    # زنده روی ۱٫۰٫۶۵→۱٫۰٫۶۸ که با همان reset جواب داد ولی پچ را درست گذاشت).
+    threading.Thread(target=_delayed_exit, args=(2.0,), daemon=True).start()
     return applier
 
 

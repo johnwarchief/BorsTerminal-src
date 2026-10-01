@@ -16,9 +16,12 @@ import bors_config as bc  # noqa: E402
 
 REQ = {"instruments", "daily_prices", "financial_statements"}
 FAILED = []
+TOTAL = 0
 
 
 def check(cond, msg):
+    global TOTAL
+    TOTAL += 1
     if cond:
         print("  PASS %s" % msg)
     else:
@@ -65,7 +68,10 @@ def main():
     def tag_of():
         c = sqlite3.connect("file:%s?mode=ro" % bc.DB_PATH, uri=True)
         try:
-            return c.execute("select note from instruments").fetchone()[0]
+            # صریحاً «فولاد»: INSERT OR REPLACE ردیف را پاک و دوباره می‌سازد و
+            # ردیفِ محلیِ اضافه‌شده بی‌ORDER BY می‌تواند اول بیاید.
+            row = c.execute("select note from instruments where symbol='فولاد'").fetchone()
+            return row[0] if row else None
         finally:
             c.close()
 
@@ -92,7 +98,18 @@ def main():
           "idempotent — با baselineِ یکسان دست نمی‌زند")
     check(bc._read_baseline_stamp() == stamp1, "مُهر دست‌نخورده ماند")
 
-    # ۳) baselineِ تازه: جایگزین شود، واچ‌لیست بماند، قدیمی بایگانی شود
+    # ۳) baselineِ تازه: دادهٔ مراجع بیاید، اما ردیف‌هایِ خودسینک‌شده نماند
+    #
+    # v1.0.69: این مرحله قبلاً «کلِ فایل جایگزین شد + نسخهٔ قدیمی بایگانی شد» را
+    # می‌سنجید. آن رفتارِ جایگزینیِ کور، کندل‌ها و نبضِ روزهایی را که خودِ برنامه
+    # سینک کرده بود هم له می‌کرد (شمارشِ واقعی: daily_prices ۹۱٫۶۸۶ تا ۲۰۲۶۰۹۳۰
+    # در برابرِ ۸۷٫۱۴۶ تا ۲۰۲۶۰۹۲۹ِ نصاب). حالا ادغامِ رو‌به‌جلو می‌شود: معنا از
+    # baseline می‌آید، دادهٔ کاربر می‌ماند.
+    local = sqlite3.connect(bc.DB_PATH)
+    local.execute("insert into financial_statements values (99, 7.0)")
+    local.execute("insert into instruments values ('محلی', 'self-synced')")
+    local.commit()
+    local.close()
     build_db(os.path.join(work, "b2.db"), "baseline-2", ["خزر", "فملی", "وهمن"])
     pack(os.path.join(work, "b2.db"), lzma_path)
     bc.ensure_market_db()
@@ -100,8 +117,14 @@ def main():
           "baselineِ تازه جایگزین شد (بدونِ این، آپدیتِ داده بی‌اثر است)")
     check(watch_of() == sorted(["خزر", "فملی"]),
           "واچ‌لیستِ کاربر از نسخهٔ قدیمی منتقل شد")
-    check(any(n.endswith(".stale") for n in os.listdir(work)),
-          "نسخهٔ قدیمی حذف نشد و بایگانی شد")
+    keep = sqlite3.connect("file:%s?mode=ro" % bc.DB_PATH, uri=True)
+    n99 = keep.execute("select count(*) from financial_statements where tracing_no=99").fetchone()[0]
+    loc = keep.execute("select note from instruments where symbol='محلی'").fetchone()
+    keep.close()
+    check(n99 == 1, "ردیفِ خودسینک‌شدهٔ کاربر درِ ارتقا له نشد")
+    check(loc and loc[0] == "self-synced", "جدولِ مراجع، نمادهایِ محلی را حذف نمی‌کند")
+    check(not any(n.endswith(".stale") for n in os.listdir(work)),
+          "دیتابیسِ سالم دیگر کنار گذاشته و جایگزین نمی‌شود")
     check(bc._read_baseline_stamp() == bc._sha256_file(lzma_path), "مُهر تازه شد")
 
     # ۴) DBِ ناقص/خالی: بازسازی شود (باگِ v1.0.7/8 که تا ابد «داده نیست» می‌داد)
@@ -113,7 +136,7 @@ def main():
     c.close()
     check(REQ <= have, "DBِ ناقص از market.db.lzma بازسازی شد")
 
-    print("\n%d checks, %d failed" % (7, len(FAILED)))
+    print("\n%d checks, %d failed" % (TOTAL - len(FAILED), len(FAILED)))
     print("CUMULATIVE DB GUARD " + ("PASSED" if not FAILED else "FAILED"))
     return 1 if FAILED else 0
 

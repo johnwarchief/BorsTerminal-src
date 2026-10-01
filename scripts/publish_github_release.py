@@ -208,6 +208,11 @@ def build_latest_json():
             "windows-x86_64": {
                 "signature": signature,
                 "url": f"https://github.com/{REPO}/releases/download/{TAG}/{asset_name}",
+                # بی‌این فیلد `/api/update/check` برایِ نصبِ کامل size=0 می‌دهد و
+                # پنجرهٔ «بروزرسانی» به کاربر می‌گوید ۰ بایت دانلود می‌شود، درست
+                # وقتی که ۸۶ مگابایت در کار است — سهمِ کسی که نسخه‌اش به هیچِ
+                # patchesِ below نمی‌خورد.
+                "size": os.path.getsize(SETUP_EXE) if os.path.isfile(SETUP_EXE) else 0,
             }
         },
     }

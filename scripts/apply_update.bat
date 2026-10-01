@@ -107,6 +107,12 @@ set "TARGET=%~2"
 cd /d "%TARGET%" 2>nul
 
 :finalize
+rem The applied patch is spent. Leaving BorsTerminal_Update.zip beside the exe
+rem reads, on the owner's machine, as "the download happened but the patch never
+rem applied" - the 1.0.64 zip sat there for a week after 1.0.65 landed fine.
+rem It is re-downloaded on the next update, so nothing is lost by removing it.
+if exist "%TARGET%\BorsTerminal_Update.zip" del /q "%TARGET%\BorsTerminal_Update.zip" >nul 2>&1
+
 echo [3/5] Stamping version marker ...
 if not exist "%TARGET%\Version.txt" echo updated>"%TARGET%\Version.txt"
 

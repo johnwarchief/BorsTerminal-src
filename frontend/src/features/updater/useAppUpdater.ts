@@ -100,6 +100,29 @@ function friendlyErrorMessage(raw: string | null | undefined): string {
 }
 
 
+/**
+ * پس ازِ `/api/update/install` برنامه می‌میرد و اعمال‌کننده کار می‌کند؛ تنها
+ * شاهدِ قابلِ اتکا همین است که نسخهٔ تازه بالا بیاید. تا ~۲ دقیقه فرصت می‌دهد
+ * (استخراجِ پچ + بالا آمدنِ PyInstaller روی سیستمِ ضعیف) و هر بار که هستهٔ
+ * پایتون نسخهٔ خواسته را داد، true برمی‌گرداند.
+ */
+async function waitForVersion(want: string, budgetMs = 120_000): Promise<boolean> {
+  if (!want) return false;
+  const until = Date.now() + budgetMs;
+  await new Promise((r) => setTimeout(r, 6000));   // پنجرهٔ مرگِ برنامه
+  while (Date.now() < until) {
+    try {
+      const v = await http<VersionResponse>('/api/update/version', { retries: 0 });
+      if (v.version && v.version === want) return true;
+    } catch {
+      /* برنامه هنوز پایین است یا در حالِ بالا آمدن — طبیعی است */
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return false;
+}
+
+
 export function useAppUpdater() {
   const [status, setStatus] = useState<UpdaterStatus>('idle');
   const [currentVersion, setCurrentVersion] = useState<string>(APP_VERSION);
@@ -244,18 +267,43 @@ export function useAppUpdater() {
       }
 
       // ۳) راستی‌آزماییِ نهایی + اجرای نصبِ سایلنت (پاسخ، رمز را لو نمی‌دهد)
-      const install = await http<InstallResponse>('/api/update/install', {
-        method: 'POST',
-        retries: 0, // سرور کمتر از ۲ ثانیه بعد خارج می‌شود؛ تلاشِ مجدد بی‌معنی است
-      });
-      if (install.status === 'error') {
+      //
+      // هر دو مسیرِ نصب، پروسهٔ برنامه را می‌بندند تا فایل‌هایِ قفل‌شده
+      // جایگزین شوند؛ پس «پاسخ‌نیامدن» در این فراخوانی خطایِ شبکه نیست،
+      // نشانهٔ شروعِ نصب است. پیش‌تر همین reset را «اتصال برقرار نشد،
+      // اینترنتت را چک کن» می‌خواند و آپدیتِرِ موفق را خراب گزارش می‌کرد.
+      let install: InstallResponse | null = null;
+      try {
+        install = await http<InstallResponse>('/api/update/install', {
+          method: 'POST',
+          retries: 0,
+        });
+      } catch {
+        install = null;
+      }
+      if (install && install.status === 'error') {
         console.error('[updater] install failed:', install.message);
         setErrorMessage(friendlyErrorMessage(install.message));
         setStatus('error');
         return;
       }
+      if (!install) {
+        // بی‌خبر از برنامه: تا ~۹۰ ثانیه نسخه را می‌پرسیم. برگشتنِ برنامه با
+        // نسخهٔ تازه یعنی پچ اعمال شده؛ برنگشتن یعنی واقعاً چیزی نصب نشد.
+        const applied = await waitForVersion(pending.version);
+        if (!applied) {
+          setErrorMessage(
+            'به‌روزرسانی شروع شد ولی برنامه با نسخهٔ جدید بالا نیامد. ' +
+              'اگر چند دقیقه گذشته و هنوز نسخهٔ قبلی است، نصب‌کنندهٔ کامل را از ' +
+              'صفحهٔ دانلود بگیرید.',
+          );
+          setStatus('error');
+          return;
+        }
+      }
       // نصب‌کننده در یک پروسهٔ مستقل اجرا می‌شود و نسخهٔ جدید را دوباره
       // بالا می‌آورد؛ کاربر می‌تواند همین الان صفحه را تازه کند.
+      setCurrentVersion(pending.version);
       setStatus('ready-to-restart');
     } catch (err) {
       // سرور بعد از شروعِ نصب می‌میرد → قطعِ ارتباط طبیعی است، نصب ادامه دارد.

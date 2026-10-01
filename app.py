@@ -134,6 +134,17 @@ app.mount("/static", StaticFiles(directory=_static_dir()), name="static")
 # از catch-all ثبت می‌شود اولویت دارد.
 _FRONTEND_DIST = _frontend_dist()
 
+
+# پچِ دلتا هیچ فایلی را حذف نمی‌کند و Vite هر build نامِ chunkها را عوض می‌کند،
+# پس آپدیتِ درجا انباشته می‌شود: رویِ نصبیِ ۱٫۰٫۶۸ ~۸۳۰ فایلِ js/css مرده شمرده
+# شد. یک‌بار به‌ازایِ هر نسخه پاک می‌شود؛ شکستِ آن هرگز نبایدِ برنامه را بیندازد.
+if os.path.isdir(_FRONTEND_DIST):
+    try:
+        from bors_config import APP_VERSION as _AV, prune_stale_frontend_assets
+        prune_stale_frontend_assets(_FRONTEND_DIST, _AV)
+    except Exception as _exc:                                  # noqa: BLE001
+        print("[warn] stale-asset prune skipped:", _exc)
+
 def _get_index_html():
     if not os.path.isdir(_FRONTEND_DIST):
         return None
