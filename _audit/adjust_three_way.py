@@ -14,6 +14,7 @@ Compared on the same dates, at one instant, from both sources.
 """
 import datetime as dt
 import json
+import os
 import statistics
 import sys
 import time
