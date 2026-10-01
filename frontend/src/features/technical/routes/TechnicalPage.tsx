@@ -8,6 +8,9 @@ import { useUiStore } from '@shared/stores/uiStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, stepCursor } from '../lib/replay';
+import { FtsEngineChart } from '../components/FtsEngineChart';
+import { aggregateCandles, type Timeframe as ChartTimeframe } from '../nahayatnegar/lib/timeframe';
+import type { EngineBar } from '../engine';
 import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
@@ -32,6 +35,9 @@ import '../styles/tvTheme.css';
 
 /** چارت پورت‌شدهٔ جمینای (v10) با React.lazy تا چانک صفحهٔ تکنیکال سبک بماند */
 const NnChart = lazy(() => import('../nahayatnegar/components/KLineChartWrapper'));
+
+/** تایم‌فریمِ استور ('day'|'week'|'month') → واژهٔ لایۀ تجمیع ('D'|'W'|'M') */
+const TF_TO_CHART: Record<string, ChartTimeframe> = { day: 'D', week: 'W', month: 'M' };
 
 
 export default function TechnicalPage() {
@@ -93,6 +99,34 @@ export default function TechnicalPage() {
     () => applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined'),
     [feed.candles, adjustEvents],
   );
+
+  // موتورِ دوم (FFC): همان کندلِ تعدیل‌شده، همان تجمیع، همان تحلیلِ سرور -- فقط
+  // رندرِ دیگر. پیش‌فرضِ تولید klinecharts می‌ماند؛ انتخابِ کاربر در
+  // fts.chart.settings.v1 ذخیره می‌شود.
+  const chartEngine = useFtsConfigStore((s) => s.chartEngine);
+  const setChartEngine = useFtsConfigStore((s) => s.setChartEngine);
+  const storeTimeframe = useFtsConfigStore((s) => s.timeframe);
+  const storeChartType = useFtsConfigStore((s) => s.chartType);
+  const storePriceScale = useFtsConfigStore((s) => s.priceScale);
+  const theme = useUiStore((s) => s.theme);
+  const engineBars = useMemo<EngineBar[]>(
+    () =>
+      aggregateCandles(candles, TF_TO_CHART[storeTimeframe] ?? 'D').map((c) => ({
+        timestamp: c.timestamp,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+        volume: c.volume ?? 0,
+      })),
+    [candles, storeTimeframe],
+  );
+  const engineStyle =
+    storeChartType === 'line' ? 'line'
+      : storeChartType === 'area' ? 'area'
+      : storeChartType === 'ohlc' ? 'bars'
+      : storeChartType === 'heikin_ashi' ? 'heikin'
+      : 'candles';
 
   // رأیِ هفتگی از همان موتورِ FTSِ سرور می‌آید و داخلِ سیگنال منتشر می‌شود؛ گیتِ
   // وتوی هفتگیِ تبِ مستر و سایدبارِ چپ فقط از همین می‌خوانند. پیش‌تر هیچ‌کس این
@@ -171,7 +205,19 @@ export default function TechnicalPage() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
-          {noData ? (
+          {chartEngine === 'ffc' ? (
+            <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
+              <FtsEngineChart
+                engineId="ffc"
+                bars={engineBars}
+                fts={analysis.data?.fts ?? null}
+                dark={theme !== 'light'}
+                logScale={storePriceScale === 'logarithm'}
+                candleStyle={engineStyle}
+                onEngineChange={setChartEngine}
+              />
+            </div>
+          ) : noData ? (
             <div className="flex h-full items-center justify-center text-xs text-text-muted" data-testid="nn-no-data">
               دادهٔ کندلی برای این نماد از سرور برنگشت (بدون داده — نه ساختگی)
             </div>
@@ -190,6 +236,8 @@ export default function TechnicalPage() {
                   boardRow={boardRow}
                   fts={analysis.data?.fts ?? null}
                   replayActive={replayActive}
+                  chartEngine={chartEngine}
+                  onEngineChange={setChartEngine}
                   onToggleReplay={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}
                   onOpenSettings={() => setSettingsOpen(true)}
                   onSymbolChange={(s) => selectSymbol(s.symbol)}

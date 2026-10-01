@@ -29,6 +29,7 @@ import {
   mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
+import type { ChartEngineId } from '../../engine';
 import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
@@ -94,6 +95,9 @@ export interface ChartProps {
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: Timeframe) => void;
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
+  /** موتورِ رندر + عوض‌کردنش — از بالا می‌آید، این‌جا فقط به نوارِ ابزار می‌رسد */
+  chartEngine?: ChartEngineId;
+  onEngineChange?: (id: ChartEngineId) => void;
 }
 
 /** فهرستِ مجازِ نوعِ کندل — همان‌ها که منو می‌سازد؛ نامِ ناشناخته اعمال نمی‌شود */
@@ -258,6 +262,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   boardRow,
   fts,
   replayActive,
+  chartEngine,
+  onEngineChange,
   onToggleReplay,
   onOpenSettings,
   onSymbolChange,
@@ -2170,6 +2176,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onOpenIndicators={() => setShowIndicatorsModal(!showIndicatorsModal)}
         isFtsActive={isFtsActive}
         onToggleFts={() => setIsFtsActive(!isFtsActive)}
+        chartEngine={chartEngine}
+        onEngineChange={onEngineChange}
         replayActive={replayActive}
         onToggleReplay={onToggleReplay}
         isFullscreen={isFullscreen}

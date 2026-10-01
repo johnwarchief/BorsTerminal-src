@@ -3,6 +3,10 @@
 // مقادیر candle.type و yAxis.type دقیقاً از نگاشت klinecharts v10 گرفته شده‌اند
 // (docs/CHART-PARITY-REFERENCE.md بخش ۷).
 import { create } from 'zustand';
+// مستقیم از رجیستری، نه ویترینِ لایۀ engine: ویترین klinecharts را ایستا
+// بیرون می‌دهد و این استور در تب‌هایِ دیگری هم import می‌شود.
+import { ENGINE_REGISTRY } from '../engine/registry';
+import type { ChartEngineId } from '../engine/types';
 
 export type FtsLayerKey =
   | 'showMAs'
@@ -126,6 +130,9 @@ type FtsFlags = Record<FtsLayerKey, boolean>;
 
 type FtsConfigState = FtsFlags & {
   chartType: ChartType;
+  /** موتورِ رندرِ چارت: klinecharts (پیش‌فرضِ تولید) یا FFC. انتخابِ کاربر است،
+   *  نه تشخیصِ خودکار -- و بی‌مراجعتِ رجیستری هیچ نامِ کتابخانه‌ای اینجا نیست. */
+  chartEngine: ChartEngineId;
   view: ChartView;
   timeframe: Timeframe;
   priceScale: PriceScale;
@@ -135,6 +142,7 @@ type FtsConfigState = FtsFlags & {
   showVolMa: boolean;
   toggle: (k: FtsLayerKey) => void;
   setChartType: (t: ChartType) => void;
+  setChartEngine: (e: ChartEngineId) => void;
   setView: (patch: Partial<ChartView>) => void;
   setTimeframe: (t: Timeframe) => void;
   setPriceScale: (p: PriceScale) => void;
@@ -157,6 +165,7 @@ export const DEFAULTS: FtsFlags = {
 
 type PersistedState = FtsFlags & {
   chartType: ChartType;
+  chartEngine: ChartEngineId;
   view: ChartView;
   timeframe: Timeframe;
   priceScale: PriceScale;
@@ -169,6 +178,7 @@ type PersistedState = FtsFlags & {
 const PERSIST_DEFAULTS: PersistedState = {
   ...DEFAULTS,
   chartType: 'candle_solid',
+  chartEngine: 'klinecharts',
   view: VIEW_DEFAULTS,
   timeframe: 'day',
   priceScale: 'normal',
@@ -188,6 +198,7 @@ function pick(s: PersistedState): PersistedState {
     showFibZones: s.showFibZones,
     showSetupMarkers: s.showSetupMarkers,
     chartType: s.chartType,
+    chartEngine: s.chartEngine,
     view: s.view,
     timeframe: s.timeframe,
     priceScale: s.priceScale,
@@ -226,10 +237,17 @@ function initial(): PersistedState {
       gridColor: parsedView.gridColor || VIEW_DEFAULTS.gridColor,
     };
 
+    // موتور فقط از رجیستری خوانده می‌شود؛ مقدارِ ناشناخته (یا موتورِ حذف‌شده)
+    // به پیش‌فرضِ تولید برمی‌گردد، نه به رندرِ نشدنی.
+    const rawEngine = parsed.chartEngine as string | undefined;
+    const chartEngine: ChartEngineId =
+      rawEngine && ENGINE_REGISTRY.some((e) => e.id === rawEngine) ? (rawEngine as ChartEngineId) : PERSIST_DEFAULTS.chartEngine;
+
     return {
       ...PERSIST_DEFAULTS,
       ...parsed,
       priceScale,
+      chartEngine,
       view: safeView,
     };
   } catch {
@@ -256,6 +274,15 @@ export const useFtsConfigStore = create<FtsConfigState>((set) => ({
   setChartType: (t) =>
     set((s) => {
       const next = { ...pick(s), chartType: t };
+      persist(next);
+      return { ...s, ...next };
+    }),
+  setChartEngine: (e) =>
+    set((s) => {
+      // فقط موتوری که در رجیستری هست و برایِ این ساخت «production» علامت دارد
+      const ok = ENGINE_REGISTRY.some((x) => x.id === e && x.production);
+      if (!ok) return s;
+      const next = { ...pick(s), chartEngine: e };
       persist(next);
       return { ...s, ...next };
     }),

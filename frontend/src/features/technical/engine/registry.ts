@@ -3,7 +3,6 @@
 // موتور ندارند؛ برایِ همین افزودنِ موتورِ سوم یک سطرِ همین‌جا است.
 import type { ChartEngine } from './ChartEngine';
 import type { ChartEngineId } from './types';
-import { KLineChartsEngine } from './klinecharts/KLineChartsEngine';
 
 export type EngineEntry = {
   id: ChartEngineId;
@@ -19,17 +18,27 @@ export const ENGINE_REGISTRY: EngineEntry[] = [
   {
     id: 'klinecharts',
     title: 'KLineCharts (موتورِ فعلی)',
-    create: async () => new KLineChartsEngine(),
+    // lazy مثل موتورِ دوم: این رجیستری را ftsConfigStore هم می‌خواند (برای
+    // اعتبارسنجیِ انتخابِ کاربر) و استورِ تنظیمات در چند تبِ دیگر import می‌شود —
+    // اگر klinecharts این‌جا ایستا وارد شود، کتابخانه به چانکِ آن تب‌ها نشت می‌کند.
+    create: async () => {
+      const mod = await import('./klinecharts/KLineChartsEngine');
+      return new mod.KLineChartsEngine();
+    },
     production: true,
   },
   {
     id: 'ffc',
-    title: 'Fast Financial Charts (آزمایشی)',
+    title: 'Fast Financial Charts (موتورِ دوم)',
     create: async () => {
       const mod = await import('./ffc/FastFinancialChartsEngine');
       return new mod.FastFinancialChartsEngine();
     },
-    production: false,
+    // موتورِ دوم درِ تب تکنیکال انتخاب‌پذیر است؛ پیش‌فرضِ تولید هنوز
+    // klinecharts است و انتخابِ کاربر در ftsConfigStore («fts.chart.settings.v1»)
+    // می‌نشیند. هندسۀ کندل اینجا WebGL2 می‌خواهد، پس پنلِ خودش بی‌موتورِ بالا‌آمده
+    // پیامِ همان موتور را می‌گوید، نه چارتِ خالی.
+    production: true,
   },
 ];
 

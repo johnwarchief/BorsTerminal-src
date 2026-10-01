@@ -7,6 +7,7 @@ import {
 import { toFaDigits } from '@shared/lib/fmt';
 import type { AdjustmentMode } from '../lib/adjustments';
 import { SUPPORTED_TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from '../lib/timeframe';
+import { ENGINE_REGISTRY, type ChartEngineId } from '../../engine';
 import { usePriceAlertStore } from '../../stores/priceAlertStore';
 import { PriceAlertsPanel } from './PriceAlertsPanel';
 
@@ -38,6 +39,9 @@ interface FtsToolbarProps {
   compareGap?: string | null;
   onOpenCompareSearch?: () => void;
   onClearCompare?: () => void;
+  /** موتورِ رندر؛ فهرست از رجیستری می‌آید، نه از نامِ کتابخانه */
+  chartEngine?: ChartEngineId;
+  onEngineChange?: (id: ChartEngineId) => void;
 }
 
 export const FtsToolbar: React.FC<FtsToolbarProps> = ({
@@ -66,6 +70,8 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   compareGap,
   onOpenCompareSearch,
   onClearCompare,
+  chartEngine,
+  onEngineChange,
 }) => {
   const [showCandleMenu, setShowCandleMenu] = useState(false);
   const [showAdjMenu, setShowAdjMenu] = useState(false);
@@ -339,6 +345,26 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           <span>تحلیل FTS</span>
         </button>
       </div>
+
+      {/* موتورِ رندر: همان داده و همان لایه‌ها، موتورِ دیگر. انتخاب اینجا
+          ذخیره می‌شود و چارتِ اصلی (klinecharts) پیش‌فرض می‌ماند. */}
+      {onEngineChange && chartEngine ? (
+        <div className="nn-btn-group" role="group" aria-label="موتور چارت" data-testid="nn-engine-switch">
+          {ENGINE_REGISTRY.filter((e) => e.production).map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              className={`nn-btn ${chartEngine === e.id ? 'active' : ''}`}
+              aria-pressed={chartEngine === e.id}
+              data-testid={`nn-engine-${e.id}`}
+              title={e.id === 'ffc' ? 'موتورِ دوم (WebGL2 لازم دارد)' : e.title}
+              onClick={() => onEngineChange(e.id)}
+            >
+              <span>{e.id === 'ffc' ? 'موتور دوم' : 'KLineCharts'}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {/* سمت چپ: بازپخش، تنظیمات، عکاسی و تمام‌صفحه */}
       <div className="nn-toolbar-group">
