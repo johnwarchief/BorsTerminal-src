@@ -259,7 +259,14 @@ describe('ماشین وتو سخت‌گیرانه (بدون میانگین خط�
 
   it('weeklyTrendFromSignal در نبود فیلد هفتگی null می‌دهد', () => {
     const w = weeklyTrendFromSignal(techSig('bullish', 70, ['breakout']));
-    expect(w).toEqual({ uptrend: null, belowMa52: null, rsi: null });
+    expect(w).toEqual({
+      uptrend: null,
+      belowMa52: null,
+      rsi: null,
+      basis: null,
+      reason: null,
+      matrixDecision: null,
+    });
     const w2 = weeklyTrendFromSignal(techSig('bullish', 70, ['breakout'], { weekly: { uptrend: true, belowMa52: true, rsi: 28 } }));
     expect(w2.uptrend).toBe(true);
     expect(w2.rsi).toBe(28);

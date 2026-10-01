@@ -1068,6 +1068,10 @@ PATTERNS_CACHE = {}
 #   ۷) موتور خروج/حد ضرر چهارلایه → _fts_exit_engine (توضیح کامل بالای همان تابع)
 # ============================================================================
 
+_FTS_STALE_BARS = 8         # فاصلهٔ تازه‌ترین پیوتِ تأییدشده تا امروز که «ساختار کهنه» حساب می‌شود
+_FTS_STALE_WINDOW = 52      # بازهٔ سنجشِ مستقیمِ روند (همان ۵۲ دورهٔ MA52)
+_FTS_STALE_MIN_BARS = 12    # کمینهٔ کندل برای سنجشِ مستقیم؛ کمتر از آن رأی نمی‌دهیم
+_FTS_STALE_MOVE_MIN = 0.05  # کمینهٔ جابه‌جاییِ کلِ بازه برای اعلامِ جهت
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
 # تریگرِ ورودِ جت دیگر «ماکسِ ۶۰ کندلِ قبل» را نمی‌بیند؛ پلکانِ هشت‌نقطه‌ایِ
@@ -1131,44 +1135,152 @@ def _fts_swings(series, k=3):
         win_r_h = [series[j]["high"] for j in range(i + 1, i + k + 1)]
         win_l_l = [series[j]["low"] for j in range(i - k, i)]
         win_r_l = [series[j]["low"] for j in range(i + 1, i + k + 1)]
+        t = str(series[i].get("time") or "")[:10]
         if hi >= max(win_l_h) and hi >= max(win_r_h):
-            out.append({"idx": i, "price": float(hi), "kind": "high"})
+            out.append({"idx": i, "price": float(hi), "kind": "high", "time": t})
         if lo <= min(win_l_l) and lo <= min(win_r_l):
-            out.append({"idx": i, "price": float(lo), "kind": "low"})
+            out.append({"idx": i, "price": float(lo), "kind": "low", "time": t})
     return out
 
 
-def _fts_classify_trend(swings, tol=_FTS_EQUAL_TOL):
+def _fts_recent_window_trend(series, window=_FTS_STALE_WINDOW):
+    """روندِ مستقیمِ بازهٔ اخیر — فقط وقتی ساختارِ پیوت کهنه شده است (رأیِ پایلوت: گزینهٔ B).
+
+    پیوت‌های تأییدشده دست‌نخورده می‌مانند؛ اگر تازه‌ترین پیوت قدیمی‌تر از
+    `_FTS_STALE_BARS` کندل بود، جهت از روی شیبِ رگرسیونِ خطیِ بستهٔ بازهٔ اخیر و
+    جایِ قیمت نسبت به میانگینِ ۵۲ دوره خوانده می‌شود. انگیزه: تأییدِ پیوت سه کندل
+    در هر دو طرف می‌خواهد، پس در یک حرکتِ یک‌طرفهٔ طولانی هیچ پیوتی تأیید نمی‌شود و
+    موتور روی پیوت‌های ماه‌ها پیش رأی می‌داد — شاهد: کايزد با صعودِ ۱۵۱۴ ← ۳۸۲۰
+    «نزولی/خنثی» و REJECT می‌گرفت چون تازه‌ترین پیوتِ تأییدشده‌اش ۴۴ کندل عقب بود.
+    جهت فقط وقتی اعلام می‌شود که شیب و جایِ قیمت هم‌داستان باشند؛ وگرنه «رنج».
+    """
+    closes = [float(c["close"]) for c in series
+              if isinstance(c.get("close"), (int, float)) and float(c["close"]) > 0]
+    n = len(closes)
+    if n < _FTS_STALE_MIN_BARS:
+        return None
+    w = min(window, n)
+    seg = closes[-w:]
+    mean_y = sum(seg) / w
+    if mean_y <= 0:
+        return None
+    mean_x = (w - 1) / 2.0
+    den = sum((i - mean_x) ** 2 for i in range(w))
+    num = sum((i - mean_x) * (seg[i] - mean_y) for i in range(w))
+    slope = num / den if den else 0.0
+    move = slope * (w - 1) / mean_y           # جابه‌جاییِ کلِ بازه بر حسبِ کسری
+    ma_n = min(window, n)
+    ma = sum(closes[-ma_n:]) / ma_n
+    above = closes[-1] >= ma
+    if move >= _FTS_STALE_MOVE_MIN and above:
+        trend = "up"
+    elif move <= -_FTS_STALE_MOVE_MIN and not above:
+        trend = "down"
+    else:
+        trend = "range"
+    return {"trend": trend, "basis": "recent-window", "window": w,
+            "move_pct": round(move * 100.0, 1), "ma": round(ma, 2),
+            "last_close": round(closes[-1], 2), "above_ma": above}
+
+
+def _fts_classify_trend(swings, tol=_FTS_EQUAL_TOL, series=None,
+                        stale_bars=_FTS_STALE_BARS):
     """طبقه‌بندی روند بر پایهٔ ساختار سقف/کف (هستهٔ متدولوژی FTS صفحهٔ ۲).
 
     دو سقف پیوت و دو کف پیوتِ آخر مقایسه می‌شوند:
         HH + HL → 'up'        (سقف بالاتر و کف بالاتر)
         LH + LL → 'down'      (سقف پایین‌تر و کف پایین‌تر)
         غیر آن  → 'range'     (هر اختلاف ≤ tol = ساختار «مساوی»/تخت)
-    خروجی: {'trend', 'hh', 'hl', 'last_high', 'prev_high', 'last_low', 'prev_low'}
     تایم‌فریم با کمتر از دو پیوت کامل → trend='na' (غربگر/UI باید نال‌پذیر باشد).
+
+    اگر `series` داده شود، کهنگیِ ساختار هم سنجیده می‌شود: وقتی تازه‌ترین پیوتِ
+    تأییدشده بیش از `stale_bars` کندل عقب است، رأیِ پیوت‌ها مربوط به گذشته است و
+    جای خودش را به `_fts_recent_window_trend` می‌دهد (`basis='recent-window'`) —
+    وگرنه کايزد‌ها (حرکتِ یک‌طرفهٔ بدون پیوتِ تازه) همیشه «نزولی/خنثی» می‌مانند.
+    `basis` و تاریخِ پیوت‌ها در خروجی هست تا ردِ ورود بگوید بر چه مبنایی بوده.
     """
     highs = [s for s in swings if s["kind"] == "high"][-2:]
     lows = [s for s in swings if s["kind"] == "low"][-2:]
-    base = {"trend": "na", "hh": None, "hl": None,
-            "last_high": None, "prev_high": None, "last_low": None, "prev_low": None}
-    if len(highs) < 2 or len(lows) < 2:
-        return base
-    h2, h1 = highs[-2]["price"], highs[-1]["price"]     # h1 = سقف اخیر
-    l2, l1 = lows[-2]["price"], lows[-1]["price"]
-    hh = h1 > h2 * (1 + tol)
-    hl = l1 > l2 * (1 + tol)
-    lh = h1 < h2 * (1 - tol)
-    ll = l1 < l2 * (1 - tol)
-    if hh and hl:
-        trend = "up"
-    elif lh and ll:
-        trend = "down"
-    else:
-        trend = "range"
-    return {"trend": trend, "hh": hh, "hl": hl,
-            "last_high": round(h1, 2), "prev_high": round(h2, 2),
-            "last_low": round(l1, 2), "prev_low": round(l2, 2)}
+    base = {"trend": "na", "hh": None, "hl": None, "basis": "pivots",
+            "last_high": None, "prev_high": None, "last_low": None, "prev_low": None,
+            "last_high_time": None, "prev_high_time": None,
+            "last_low_time": None, "prev_low_time": None,
+            "stale_bars": None, "window": None}
+    piv = None
+    if len(highs) >= 2 and len(lows) >= 2:
+        h2, h1 = highs[-2]["price"], highs[-1]["price"]     # h1 = سقف اخیر
+        l2, l1 = lows[-2]["price"], lows[-1]["price"]
+        hh = h1 > h2 * (1 + tol)
+        hl = l1 > l2 * (1 + tol)
+        lh = h1 < h2 * (1 - tol)
+        ll = l1 < l2 * (1 - tol)
+        if hh and hl:
+            trend = "up"
+        elif lh and ll:
+            trend = "down"
+        else:
+            trend = "range"
+        piv = {"trend": trend, "hh": hh, "hl": hl, "basis": "pivots",
+               "last_high": round(h1, 2), "prev_high": round(h2, 2),
+               "last_low": round(l1, 2), "prev_low": round(l2, 2),
+               "last_high_time": highs[-1].get("time"), "prev_high_time": highs[-2].get("time"),
+               "last_low_time": lows[-1].get("time"), "prev_low_time": lows[-2].get("time"),
+               "stale_bars": None, "window": None}
+    if series is None:
+        return piv if piv is not None else base
+    n = len(series)
+    newest = max((s["idx"] for s in swings), default=-1)
+    gap = n - 1 - newest
+    if piv is not None and gap <= stale_bars:
+        return piv
+    win = _fts_recent_window_trend(series)
+    if win is None:
+        return piv if piv is not None else base
+    out = dict(win)
+    out["stale_bars"] = gap
+    out["last_pivot_time"] = series[newest].get("time") if 0 <= newest < n else None
+    out["hh"] = None
+    out["hl"] = None
+    out["last_high"] = None
+    out["prev_high"] = None
+    out["last_low"] = None
+    out["prev_low"] = None
+    if piv is not None:
+        out["pivots"] = piv
+    return out
+
+
+def _fts_fa(v):
+    """رقمِ فارسی — متنِ دلیلِ رد هم باید با اعدادِ فارسی خوانده شود (قاعدهٔ سراسری UI)."""
+    if v is None:
+        return "—"
+    return str(v).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
+
+
+def _fts_trend_reason(t):
+    """مبنایِ رأیِ روند به فارسی — ردِ ورود باید بگوید با چه عددی قضاوت شده.
+
+    پیش‌تر فقط «تایم هفتگی خنثی» نوشته می‌شد و کاربر راهی نداشت بفهمد کدام دو پیوت
+    مقایسه شده‌اند (شاهد: کايزد با ۴۴ کندلِ صعودیِ بی‌پیوت «نزولی» می‌گرفت). تاریخ‌ها
+    همان رشته‌هایِ محورِ زمانِ خودِ چارت‌اند تا عددِ متن و عددِ چارت یکی باشد.
+    """
+    if not isinstance(t, dict):
+        return ""
+    if t.get("basis") == "recent-window":
+        pos = "بالای" if t.get("above_ma") else "زیر"
+        txt = (f"مبنا: {_fts_fa(t.get('window'))} کندلِ اخیر، "
+               f"{_fts_fa(t.get('move_pct'))}٪ جابه‌جایی، قیمت {pos} میانگینِ ۵۲ دوره")
+        stale = t.get("stale_bars")
+        if stale is not None:
+            txt += f" (تازه‌ترین پیوتِ تأییدشده {_fts_fa(stale)} کندل عقب است)"
+        return txt
+    if t.get("trend") == "na":
+        return "مبنا: کمتر از دو پیوتِ کامل"
+    return (f"مبنا: سقف‌ها {_fts_fa(t.get('prev_high_time'))} "
+            f"({_fts_fa(t.get('prev_high'))}) ← {_fts_fa(t.get('last_high_time'))} "
+            f"({_fts_fa(t.get('last_high'))})، کف‌ها {_fts_fa(t.get('prev_low_time'))} "
+            f"({_fts_fa(t.get('prev_low'))}) ← {_fts_fa(t.get('last_low_time'))} "
+            f"({_fts_fa(t.get('last_low'))})")
 
 
 def _fts_ma(closes, period=14):
@@ -1251,7 +1363,7 @@ def _fts_fib_leg(candles, swings):
     elif not highs:
         up = True
     else:
-        t = _fts_classify_trend(swings)["trend"]
+        t = _fts_classify_trend(swings, series=candles)["trend"]
         up = True if t == "up" else False if t == "down" else lows[-1]["idx"] >= highs[-1]["idx"]
 
     if up:
@@ -1836,9 +1948,9 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     m = _fts_resample(candles, "M")
     out = {
         "trend": {
-            "D": _fts_classify_trend(swings_d),
-            "W": _fts_classify_trend(_fts_swings(w, k=2)),
-            "M": _fts_classify_trend(_fts_swings(m, k=2)),
+            "D": _fts_classify_trend(swings_d, series=candles),
+            "W": _fts_classify_trend(_fts_swings(w, k=2), series=w),
+            "M": _fts_classify_trend(_fts_swings(m, k=2), series=m),
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -1897,6 +2009,14 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
                 "setup": "SWING_DOUBLE_BOTTOM_OR_RANGE",
                 "desc": "هفتگی صعودی + روزانه خنثی: ستاپ کف دوقلو یا خرید در کف باکس رنج؛ نوسان‌گیری زیر ۳ ماه",
             }
+
+    w_reason = _fts_trend_reason(out["trend"]["W"])
+    d_reason = _fts_trend_reason(out["trend"]["D"])
+    _mx = out["trend"].get("matrix")
+    if _mx is not None:
+        _mx["basis"] = {"weekly": w_reason, "daily": d_reason}
+        if _mx["decision"] in ("REJECT", "UNKNOWN") and w_reason:
+            _mx["desc"] = f"{_mx['desc']} — {w_reason}"
 
     # استراتژی ساعت شنی پیشرفته FTS طبق بخش ۵ سند رسمی FTS v2.1
     closes_w = [float(c["close"]) for c in w] if w else []

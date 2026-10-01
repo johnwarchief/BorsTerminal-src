@@ -78,6 +78,9 @@ SUITES = [
     # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
     # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.
     ('dev/assembly_veto_v1064.py',    'assembly veto: fresh outside the cache, no-data is not a veto'),
+    # سیمِ مرگِ وتوی هفتگی: هیچ تولیدکننده‌ای رأیِ هفتگی را منتشر نمی‌کرد، پس
+    # گیت برای هر نمادی «در انتظار» می‌ماند. پیوتِ کهنه ⇒ سنجشِ بازۀ اخیر.
+    ('dev/fts_trend_staleness_v1064.py', 'weekly trend verdict from live pivots or the recent window, never a stale pivot'),
     ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
     # --pack تنها تاریخِ آخرین نشست را می‌دید؛ روی این ماشین بانکِ مخزن با
     # نشستِ همان روز ۱۴٬۸۶۶ ردیف daily_prices کم‌تر از بیس‌لاینِ منتشرشده داشت.
