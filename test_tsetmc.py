@@ -90,8 +90,8 @@ _MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
 _DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
               "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
               " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
-              " market_cap, market_cap_src, z_tot_tran) VALUES ("
-              + ",".join("?" * 14) + ")")
+              " market_cap, market_cap_src, z_tot_tran, p_last) VALUES ("
+              + ",".join("?" * 15) + ")")
 
 
 def session_day_of(watch_rows, fallback=0):
@@ -914,6 +914,9 @@ def create_schema(conn):
             -- خوانده می‌شود. درِ DDL هست تا بانکِ تازه با _DP_INSERT یکی بماند،
             -- و درِ ensure_daily_tran_column برایِ بانکِ قدیمی ALTER می‌زند.
             z_tot_tran REAL,
+            -- p_last = «آخرین قیمت» (کلیدِ خامِ pdv درِ تابلو)؛ از «قیمت پایانی» جدا
+            -- نگه داشته می‌شود تا کندلِ روزِ جاری هم هر دو مبنایِ نام‌دار را داشته باشد.
+            p_last REAL,
             PRIMARY KEY (ins_code, d_even));
         CREATE TABLE IF NOT EXISTS client_type (
             ins_code TEXT, d_even INTEGER, buy_i_vol REAL, buy_n_vol REAL,
@@ -925,7 +928,10 @@ def create_schema(conn):
             ins_code TEXT PRIMARY KEY, board INTEGER);
         CREATE TABLE IF NOT EXISTS price_history (
             symbol TEXT, date TEXT, open REAL, high REAL, low REAL,
-            close REAL, volume REAL, PRIMARY KEY (symbol, date));
+            close REAL, volume REAL,
+            -- close = «قیمت پایانی» (لنگرِ تعدیل)؛ last = «آخرین قیمت» (مبنایِ نمایش/محاسبه)
+            -- value = گردشِ ریالیِ همان روز. هر دو nullable — ببینید mstat_engine.MIGRATIONS
+            last REAL, value REAL, PRIMARY KEY (symbol, date));
         CREATE INDEX IF NOT EXISTS ix_daily_ins ON daily_prices(ins_code);
         -- پنج خطِ عمق، از blDsِ همان نشست. sathهای تابلو جمع و خطِ اول را در
         -- market_watch نگه می‌دارند؛ این جدولِ جدا تک‌تکِ سطرها را برایِ پنلِ
@@ -999,13 +1005,18 @@ def _iso_from_deven(d_even):
     return f"{s[:4]}-{s[4:6]}-{s[6:]}"
 
 
-def candle_from_row(l_val18, d_even, first, high, low, close, vol):
+def candle_from_row(l_val18, d_even, first, high, low, close, vol, last=None, value=None):
     """یک ردیفِ تابلو → کندلِ price_history، یا None.
 
     همان دو قاعده‌ای که مسیرِ CDN رعایت می‌کند، اینجا رویِ دادهٔ خودِ برنامه:
     بدنه از «اولین معامله» است (نه قیمتِ پایه) و اگر high/low بیرونِ بدنه بودند
     سایه گِشاد می‌شود، نه پایانی خُرد. ردیفِ بی‌معامله (حجمِ صفر) کندل نمی‌شود —
     پیش از بازگشایی تابلو ردیفِ امروز را با قیمتِ پایه و حجمِ صفر می‌فرستد.
+
+    `close` = «قیمت پایانی» و `last` = «آخرین قیمت»؛ این دو هرگز قاطی نمی‌شوند
+    (docs/CANDLE-CONTRACT.md §۱-ث). اگر ردیفی «آخرین» نداشت، `last` صریح None
+    می‌ماند نه close — جعلِ عددِ پایانی با نامِ آخرین درِ `/api/chart-db` دقیقاً همان
+    چیزی بود که این قرارداد بست.
     """
     if not l_val18:
         return None
@@ -1018,13 +1029,15 @@ def candle_from_row(l_val18, d_even, first, high, low, close, vol):
         h = float(high or 0)
         l = float(low or 0)
         v = float(vol or 0)
+        ls = float(last) if last else None
+        vl = float(value) if value else None
     except (TypeError, ValueError):
         return None
     if c <= 0 or v <= 0:
         return None
     h = max(h, o, c)
     l = min(l if l > 0 else o, o, c)
-    return (str(l_val18), date, o, h, l, c, v)
+    return (str(l_val18), date, o, h, l, c, v, ls, vl)
 
 
 def sync_price_history_from_daily(conn, full=False):
@@ -1072,7 +1085,7 @@ def sync_price_history_from_daily(conn, full=False):
             return {"sessions": 0, "rows": 0, "mode": mode}
         rows = conn.execute(
             "SELECT i.l_val18, d.d_even, d.price_first, d.price_max, d.price_min,"
-            "       d.p_closing, d.q_tot_tran "
+            "       d.p_closing, d.q_tot_tran, d.p_last, d.q_tot_cap "
             "FROM daily_prices d JOIN instruments i ON i.ins_code = d.ins_code "
             "WHERE d.d_even IN (%s) AND %s"
             % (",".join("?" * len(want)), traded), tuple(want)).fetchall()
@@ -1088,8 +1101,8 @@ def sync_price_history_from_daily(conn, full=False):
             out.append(bar)
         if out:
             conn.executemany("INSERT OR REPLACE INTO price_history "
-                             "(symbol, date, open, high, low, close, volume) "
-                             "VALUES (?,?,?,?,?,?,?)", out)
+                             "(symbol, date, open, high, low, close, volume, last, value) "
+                             "VALUES (?,?,?,?,?,?,?,?,?)", out)
             conn.commit()
         n_syms = len({x[0] for x in out})
         print(f"  [candles-from-board] {mode}: {len(out)} کندل از {len(want)} نشست "
@@ -1169,7 +1182,7 @@ def fetch_price_history(symbol, s=None, since=None):
         reader = _csv.reader(_io.StringIO(r.text))
         next(reader, None)   # header
         for fields in reader:
-            if len(fields) < 11:
+            if len(fields) < 12:
                 continue
             d_even = fields[1].strip()          # DTYYYYMMDD
             if len(d_even) != 8 or not d_even.isdigit():
@@ -1178,15 +1191,19 @@ def fetch_price_history(symbol, s=None, since=None):
             if dt < cutoff:
                 continue
             try:
-                o = float(fields[10])   # OPEN
-                h = float(fields[3])    # HIGH
-                l = float(fields[4])    # LOW
-                c = float(fields[5])    # CLOSE
+                o = float(fields[2])    # FIRST — اولینِ معامله (قرارداد §۱-ج الف: سنجیده
+                h = float(fields[3])    # HIGH   شد که openِ رهاورد FIRST است، ۱۴٬۲۱۰/۱۴٬۷۰۶؛
+                l = float(fields[4])    # LOW    fields[10] (=OPEN) قیمتِ *پایه* است نه اولین)
+                c = float(fields[5])    # CLOSE — «قیمت پایانی»؛ لنگرِ زنجیرِ تعدیل
+                val = float(fields[6])  # VALUE — گردشِ ریالی
                 v = float(fields[7])    # VOL
+                last = float(fields[11])  # LAST — «آخرین قیمت»؛ مبنایِ نمایشِ انتخابی
             except (ValueError, IndexError):
                 continue
-            conn.execute("INSERT OR REPLACE INTO price_history VALUES (?,?,?,?,?,?,?)",
-                         (symbol, dt, o, h, l, c, v))
+            conn.execute("INSERT OR REPLACE INTO price_history "
+                         "(symbol, date, open, high, low, close, volume, last, value) "
+                         "VALUES (?,?,?,?,?,?,?,?,?)",
+                         (symbol, dt, o, h, l, c, v, last, val))
             rows += 1
         conn.commit()
         print(f"  [history] {symbol}: {rows} OHLCV rows saved")
@@ -1310,7 +1327,12 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     py, pf = num(r.get("py")), num(r.get("pf"))
     vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
     chg = num(r.get("pc"))
-    p_last = (py + chg) if (pcl and py) else None
+    # «آخرین» کلیدِ خامِ خودش را درِ تابلو دارد: `pdv`. سنجشِ لحظه‌ای رویِ شش نماد
+    # (_audit/mw_key_to_csv_column.json → mw_last_key_probe.py): pdv == ستونِ LASTِ
+    # فایلِ رسمیِ خودِ TSETMC درِ ۶/۶، و pcl == CLOSE درِ ۶/۶. پیش از این `p_last` از
+    # `py + pc` ساخته می‌شد (که رویِ همان نمونه‌ها باز هم LAST داد، ولی مشتق است و درِ
+    # ردیفِ بی‌معامله/کدهایِ شکسته می‌شکند)؛ حالا عددِ خام و fallbackِ مشتق.
+    p_last = pdv or ((py + chg) if (pcl and py) else None)
     it = None
     if sectors is not None and ptypes is not None:
         it = (ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
@@ -1320,7 +1342,7 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
     shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + (mcap, mcap_src)
     dy = (ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
-    now, mcap, mcap_src, trd)
+    now, mcap, mcap_src, trd, p_last)
     return it, w, dy
 
 
@@ -1677,9 +1699,11 @@ def main():
         py, pf = num(r.get("py")), num(r.get("pf"))
         vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
         chg = num(r.get("pc"))
-        # API جدید (2026): pLast/pClosing قدیمی حذف شدند؛ pcl=پایانی، pc=تغییر،
-        # py=دیروز → آخرین معامله ≈ دیروز + تغییر
-        p_last = (py + chg) if (pcl and py) else None
+        # «آخرین» کلیدِ خامِ خودش را دارد (`pdv` — سنجشِ ۶/۶ نماد درِ
+        # _audit/mw_key_to_csv_column.json؛ `pcl` هم == CLOSE). قاعدهٔ قدیمی
+        # «pLast حذف شده، پس py+pc» رویِ همان نمونه‌ها عددِ درست می‌داد ولی مشتق
+        # بود؛ اینجا عددِ خام و fallbackِ مشتق، تا ردیفِ پیش از بازگشایی.
+        p_last = pdv or ((py + chg) if (pcl and py) else None)
         # حفاظت صف: وقتی بازار بسته است و ارقام جدید صفرند، دادهٔ آخرین روز
         # معاملاتی (صفهای بستهشدن) را نگه دار — صفرها جایگزین نشوند
         if closed and not (vol or val or trd) and ins in prev:
@@ -1709,7 +1733,7 @@ def main():
                       amin, amax, py, pf, vol, val, trd, chg, eps, pe,
                       shares, sec, now) + tuple(q) + (mcap, mcap_src))
         daily.append((ins, d_even, pcl, pmn, pmx, py, pf, vol, val, chg, now,
-                      mcap, mcap_src, trd))
+                      mcap, mcap_src, trd, p_last))
         if i % 250 == 0 or i == total:
             sym = (r.get("lva") or "").strip()
             write_progress("parse", f"در حال پردازش تابلوخوانی: نماد {sym} ...",

@@ -114,11 +114,18 @@ def main():
                 lo = float(x.get("priceMin") or 0)
                 cl = float(x.get("pClosing") or 0)
                 vol = float(x.get("qTotTran5J") or 0)
+                val = float(x.get("qTotCap") or 0) or None
             except (TypeError, ValueError):
                 continue
-            batch.append((sym, date, op, hi, lo, cl, vol))
+            # این endpoint هیچ کلیدِ «آخرین قیمت» ندارد (همۀ کلیدهایِ یکِ ردیفِ واقعی
+            # درِ ۱۴۰۵-۰۷-۱۰ فهرست شد: priceMin/Max/Yesterday/First/Change، pClosing،
+            # pDrCotVal، zTotTran، qTotTran5J/qTotCap) — پس last عمداً NULL می‌ماند؛
+            # numberِ پایانی را با نامِ «آخرین» نوشتن ممنوع است (§۱-ث شرطِ ۳).
+            batch.append((sym, date, op, hi, lo, cl, vol, None, val))
         if not args.dry:
-            conn.executemany("INSERT OR REPLACE INTO price_history VALUES (?,?,?,?,?,?,?)", batch)
+            conn.executemany("INSERT OR REPLACE INTO price_history "
+                             "(symbol, date, open, high, low, close, volume, last, value) "
+                             "VALUES (?,?,?,?,?,?,?,?,?)", batch)
             conn.commit()
         written += len(batch)
         print(f"  {d:%Y-%m-%d}: {len(batch)} ردیف (نشستِ {days_done}/{args.sessions})")

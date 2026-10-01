@@ -61,26 +61,43 @@ def ck(ok, what, detail=""):
 
 
 def mini():
-    """DBِ موقتِ کوچک با سه جدولِ لازم (فقط ستون‌هایِ خوانده‌شده)."""
+    """DBِ موقتِ کوچک با سه جدولِ لازم (فقط ستون‌هایِ خوانده‌شده).
+
+    `p_last`/`q_tot_cap` درِ daily_prices و `last`/`value` درِ price_history از
+    کارِ #73 قدمِ ۲ اینجاست: کوئریِ سینک هر دو را می‌خواند، پس فیکسچر هم باید
+    هر دو را داشته باشد — وگرنه گارد «سبزِ ساختگی» می‌دهد (جدولِ ۷ ستونی با
+    SELECTِ ۹ ستونیِ تولید نمی‌خواند و خطا می‌دهد، که آن هم گاردِ قرمز است).
+    """
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
     c = sqlite3.connect(path)
     c.execute("CREATE TABLE instruments (ins_code TEXT, l_val18 TEXT, l_val30 TEXT)")
     c.execute("CREATE TABLE daily_prices (ins_code TEXT, d_even INTEGER, p_closing REAL,"
-              " price_min REAL, price_max REAL, price_first REAL, q_tot_tran REAL)")
+              " price_min REAL, price_max REAL, price_first REAL, q_tot_tran REAL,"
+              " q_tot_cap REAL, p_last REAL)")
     c.execute("CREATE TABLE price_history (symbol TEXT, date TEXT, open REAL, high REAL,"
-              " low REAL, close REAL, volume REAL, PRIMARY KEY (symbol, date))")
+              " low REAL, close REAL, volume REAL, last REAL, value REAL,"
+              " PRIMARY KEY (symbol, date))")
     return c
 
 
 def seed(c, symbols, sessions):
-    """symbols: {ins_code: نام}; sessions: [(d_even, {ins_code: (first,hi,lo,close,vol)})]"""
+    """symbols: {ins_code: نام}; sessions: [(d_even, {ins_code: (first,hi,lo,close,vol)})]
+
+    آخرینِ tuple دو خانهٔ اختیاری دارد: `last` (آخرینِ خامِ تابلو) و `value`
+    (گردشِ ریالی)؛ نبودنشان یعنی «این نماد last ندارد» نه یعنی پایانی.
+    """
     for code, name in symbols.items():
         c.execute("INSERT INTO instruments VALUES (?,?,?)", (code, name, name))
     for d_even, rows in sessions:
-        for code, (f, h, l, cl, v) in rows.items():
-            c.execute("INSERT INTO daily_prices VALUES (?,?,?,?,?,?,?)",
-                      (code, d_even, cl, l, h, f, v))
+        for code, row in rows.items():
+            f, h, l, cl, v = row[:5]
+            last = row[5] if len(row) > 5 else None
+            val = row[6] if len(row) > 6 else None
+            c.execute("INSERT INTO daily_prices (ins_code, d_even, p_closing, price_min,"
+                      " price_max, price_first, q_tot_tran, q_tot_cap, p_last)"
+                      " VALUES (?,?,?,?,?,?,?,?,?)",
+                      (code, d_even, cl, l, h, f, v, val, last))
     c.commit()
 
 
@@ -101,8 +118,14 @@ def main():
        "a missing d_even is no date")
 
     bar = t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9)
-    ck(bar == ("فولاد", "2026-09-29", 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9),
+    ck(bar == ("فولاد", "2026-09-29", 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9, None, None),
        "a traded session becomes a candle of the board's own OHLC", str(bar))
+    ck(bar[7] is None and bar[8] is None,
+       "NEGATIVE CONTROL: no last/value in the source row means NULL, never the close", str(bar[7:]))
+    bl = t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 2.49e9,
+                           3510.0, 8.7e12)
+    ck(bl[5] == 3520.0 and bl[7] == 3510.0 and bl[8] == 8.7e12,
+       "closing stays the anchor while last/value ride beside it", str(bl))
     ck(t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 3520.0, 0.0) is None,
        "NEGATIVE CONTROL: pre-open row with zero volume never becomes a candle")
     ck(t.candle_from_row("فولاد", 20260929, 3520.0, 3520.0, 3450.0, 0.0, 1000.0) is None,
@@ -119,9 +142,9 @@ def main():
     print("\n[۲] ساختنِ price_history از daily_prices")
     c = mini()
     seed(c, {"A": "فولاد", "B": "خساپا", "C": "بی‌نام"}, [
-        (20260928, {"A": (3410.0, 3420.0, 3380.0, 3420.0, 1.8e9),
+        (20260928, {"A": (3410.0, 3420.0, 3380.0, 3420.0, 1.8e9, 3415.0, 6.1e12),
                     "B": (690.0, 700.0, 680.0, 695.0, 2.0e9)}),
-        (20260929, {"A": (3430.0, 3520.0, 3430.0, 3520.0, 2.5e9),
+        (20260929, {"A": (3430.0, 3520.0, 3430.0, 3520.0, 2.5e9, 3490.0, 8.75e12),
                     "B": (695.0, 699.0, 675.0, 685.0, 2.6e9),
                     "C": (100.0, 100.0, 100.0, 100.0, 5.0)}),
         # ردیفِ پیش از بازگشایی: امروز هست، معامله نیست
@@ -132,6 +155,14 @@ def main():
     r = t.sync_price_history_from_daily(c)
     ck(r["mode"] == "catch-up" and r["rows"] == 5,
        "a stale candle table is filled from every session the board holds", str(r))
+    lv = c.execute("SELECT close, last, value FROM price_history "
+                   "WHERE symbol='فولاد' AND date='2026-09-29'").fetchone()
+    ck(lv == (3520.0, 3490.0, 8.75e12),
+       "the board row's own close/last/value land in three separate columns", str(lv))
+    lvn = c.execute("SELECT close, last FROM price_history "
+                    "WHERE symbol='خساپا' AND date='2026-09-29'").fetchone()
+    ck(lvn[1] is None and lvn[0] == 685.0,
+       "NEGATIVE CONTROL: a board row without last stores NULL there, not the close", str(lvn))
     got = dict(c.execute("SELECT symbol, date FROM price_history").fetchall())
     ck(("فولاد", "2026-09-29") in [tuple(x) for x in c.execute(
         "SELECT symbol, date FROM price_history")], "the newest session lands")
@@ -160,7 +191,8 @@ def main():
     # ── ۳) اصلاحِ هندسهٔ ردیف‌هایِ کهنه ─────────────────────────────────────
     print("\n[۳] سایه‌هایِ بیرونِ بدنه")
     c = mini()
-    c.executemany("INSERT INTO price_history VALUES (?,?,?,?,?,?,?)", [
+    c.executemany("INSERT INTO price_history (symbol, date, open, high, low, close, volume)"
+                  " VALUES (?,?,?,?,?,?,?)", [
         ("وبملت", "2024-10-20", 1893.0, 1893.0, 1893.0, 1901.0, 1.0),   # close بالای high
         ("خساپا", "2024-10-21", 1000.0, 0.0, 0.0, 990.0, 1.0),          # سایه‌های صفر
         ("فولاد", "2024-10-22", 10.0, 20.0, 5.0, 15.0, 1.0),            # سالم

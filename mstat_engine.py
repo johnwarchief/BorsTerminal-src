@@ -199,6 +199,17 @@ MIGRATIONS = {
     ],
     # طبقهٔ ابزار از فیلتر paperType خودِ TSETMC (۱/۲=سهام، ۴=حق تقدم، ۸=صندوق).
     "instruments": [("paper_type", "INTEGER")],
+    # کارِ #73 قدمِ ۲ (docs/CANDLE-CONTRACT.md §۱-ث): `close` درِ این جدول همیشه
+    # «قیمت پایانی» است و لنگرِ زنجیرِ تعدیل می‌ماند؛ `last` «آخرین قیمت» است و مبنایِ
+    # نمایش/محاسباتِ انتخابی. تا این ستون نبود، `/api/chart-db` مجبور بود `last := close`
+    # جعل کند (api/chart.py:907). هر دو nullable‌اند: ردیفی که منبعش «آخرین» نداشته باشد
+    # (GetInstrmentsHistoryInDay) صریح NULL می‌ماند، نه عددِ پایانی با نامِ آخرین.
+    # `value` = گردشِ ریالیِ همان روز (ستونِ VALUEِ CSV / qTotCapِ تابلو)؛ امروز فقط درِ
+    # daily_prices.q_tot_cap بود و درِ تاریخچۀ کندل دست‌نیافتنی.
+    "price_history": [("last", "REAL"), ("value", "REAL")],
+    # «آخرین» درِ ردیفِ تابلو کلیدِ خامِ خودش را دارد (pdv — سنجشِ ۶/۶ نماد درِ
+    # _audit/mw_last_key_probe.py)؛ مسیرِ کندل-از-تابلو از همین خوانده وگرنه NULL.
+    "daily_prices": [("p_last", "REAL")],
 }
 
 SNAP_DDL = """CREATE TABLE IF NOT EXISTS mstat_snap (

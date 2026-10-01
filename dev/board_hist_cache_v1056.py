@@ -335,8 +335,8 @@ def main():
     # price_history می‌نویسد؛ اگر امضا آن را ببیند، کش هر دو دقیقه می‌سوزد.
     c.execute("UPDATE price_history SET volume=volume+4000, high=high+2 "
               "WHERE date='2026-09-28'")
-    c.execute("INSERT OR REPLACE INTO price_history VALUES "
-              "('C','2026-09-28',1,2,1,2,3)")
+    c.execute("INSERT OR REPLACE INTO price_history (symbol, date, open, high, low,"
+              " close, volume) VALUES ('C','2026-09-28',1,2,1,2,3)")
     c.commit()
     mk.ensure_board_history(c)
     ck("بازنویسیِ کندلِ نشستِ باز درِ price_history کش را نمی‌سوزاند",

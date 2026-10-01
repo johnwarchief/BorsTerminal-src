@@ -60,6 +60,8 @@ CREATE TABLE daily_prices (ins_code TEXT, d_even INTEGER, p_closing REAL, price_
     price_max REAL, price_yesterday REAL, price_first REAL, q_tot_tran REAL,
     q_tot_cap REAL, price_change REAL, fetched_at TEXT,
     market_cap REAL, market_cap_src TEXT, z_tot_tran REAL,
+    -- p_last = «آخرین قیمت» (کلیدِ خامِ pdv درِ تابلو) — کارِ #73 قدمِ ۲
+    p_last REAL,
     PRIMARY KEY (ins_code, d_even));
 CREATE TABLE mstat_snap (d_even INTEGER NOT NULL, h_even INTEGER NOT NULL, ts TEXT,
     agg TEXT, PRIMARY KEY (d_even, h_even));

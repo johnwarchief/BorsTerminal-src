@@ -888,7 +888,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         try:
             _pred, _params = sym_pred("symbol", symbol)
             _raw = conn.execute(
-                "SELECT date, open, high, low, close, volume FROM price_history "
+                "SELECT date, open, high, low, close, volume, last, value FROM price_history "
                 "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
             # حذف تکراریِ روز: کلید price_history = (symbol,date)؛ نمادِ دو-املا
             # می‌تواند همان روز را در دو نوشتار داشته باشد — پرحجم‌تر می‌ماند.
@@ -899,12 +899,15 @@ def get_chart_db(symbol: str, adjustment: int = 3):
                 _seen.add(r[0])
                 rows.append(r)
             rows.reverse()          # صعودی (قرارداد پیشین: ORDER BY date ASC)
-            # v9.7: price_history ستون «آخرین معامله» ندارد (فقط OHLCV)؛ پس last
-            # روی همان close می‌نشیند و گمراه‌کننده نیست — مسیر واقعیِ last،
-            # /api/chart (CSV تکمیل‌شده با <LAST>) است.
+            # `close` = «قیمت پایانی» و `last` = «آخرین قیمت»؛ این دو ستونِ جدا‌اند و
+            # جعلِ `last := close` حذف شده (docs/CANDLE-CONTRACT.md §۱-ث شرطِ ۳). ردیفی
+            # که منبعش «آخرین» نداشته (مثلاً GetInstrmentsHistoryInDay) صریح null
+            # می‌رود، تا مصرف‌کننده بتواند «نداریم» را تشخیص دهد، نه اینکه عددِ پایانی
+            # را با نامِ «آخرین» بخورد.
             candles = [{"time": r[0], "open": float(r[1]), "high": float(r[2]),
                         "low": float(r[3]), "close": float(r[4]),
-                        "last": float(r[4]),
+                        "last": float(r[6]) if r[6] is not None else None,
+                        "value": float(r[7]) if r[7] is not None else None,
                         "volume": float(r[5] or 0)} for r in rows]
         finally:
             conn.close()

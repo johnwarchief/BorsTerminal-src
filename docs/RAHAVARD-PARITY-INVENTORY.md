@@ -43,9 +43,11 @@ price_history ──► /api/chart-db، /api/history، /api/ma، key-levels، pa
 **باید اینجا ساخته شود:** FIRST/«پایانی»/«آخرین» هر سه از همان ردیفِ CSV باید واردِ زنجیر شوند —
 `<FIRST>` برایِ open، `<CLOSE>` فقط برایِ لنگرِ تعدیل، `<LAST>` به‌عنوانِ closeِ نمایشی. تنها جایی
 که `<LAST>` امروز خوانده می‌شود `_parse_tsetmc_csv` است (`api/chart.py:46,61`); هیچ fetcherِ
-ذخیره‌کننده‌ای (مسیرهایِ ۱ و ۳) آن را نمی‌خواند. تابلو (`GetMarketWatch`) «آخرینِ» خام ندارد و
-`p_last` را مشتق می‌سازد (`test_tsetmc.py:1313`) — برایِ parity باید یا از endpointِ زندهٔ
-`LastPrice` گرفته شود یا صریحاً «تقریبِ py+pc» برچسب بخورد.
+ذخیره‌کننده‌ای (مسیرهایِ ۱ و ۳) آن را نمی‌خواند. **اصلاحِ ۱۴۰۵-۰۷-۱۰ (قدمِ ۲):** تابلو
+«آخرینِ» خام **دارد** — کلیدِ `pdv` (و `pmd`)؛ سنجشِ لحظه رویِ شش نمادِ پرتاریخچه:
+`pdv == ستونِ LASTِ فایلِ رسمی` درِ ۶/۶ و `pcl == CLOSE` درِ ۶/۶
+(`_audit/mw_last_key_probe.py` → `_audit/mw_key_to_csv_column.json`). پس `p_last` امروز از
+همان `pdv` نوشته می‌شود و `py+pc` فقط fallbackِ ردیف‌هایِ بی‌آخرین است.
 
 ---
 
@@ -55,9 +57,13 @@ price_history ──► /api/chart-db، /api/history، /api/ma، key-levels، pa
 `market.db` (PRAGMA table_info، ۱۴۰۵-۰۷-۱۰): ستون‌ها **فقط**
 `symbol, date, open, high, low, close, volume` — یعنی:
 - **ستونِ `last` وجود ندارد** (همان که قراردادِ §۱-پ گفت؛ اینجا تأییدِ schema شد).
+  ↳ **۱۴۰۵-۰۷-۱۰، قدمِ ۲:** حالا `last` و `value` درِ DDL و درِ `MIGRATIONS` هستند و
+  بانک‌هایِ قدیمی با اولینِ اتصال ALTER می‌شوند (`dev/price_last_value_v1070.py`).
 - **ستونِ `value` (گردشِ ریالی) وجود ندارد**؛ VALUE فقط در `daily_prices.q_tot_cap` می‌نشیند
   (`_DP_INSERT` `test_tsetmc.py:90-94`). درِ CSV هم `_parse_tsetmc_csv` ستونِ ۶ (VALUE) را
   نادیده می‌گیرد (`api/chart.py:59` فقط p[7]=VOL).
+  ↳ همان قدم: `price_history.value` از `VALUEِ` CSV و `q_tot_capِ` تابلو پر می‌شود؛
+  `_parse_tsetmc_csv` (مسیرِ RAM) هنوز VALUE را نمی‌خواند — قدمِ ۵.
 - `close` درِ این جدول **همیشه «قیمت پایانی» است** (هر پنج مسیرِ نوشتن پایین).
 - ایندکسِ خوانندگان: `ix_ph_sym_date2` (`api/_core.py:105`).
 
@@ -105,10 +111,18 @@ open=پایه خراب می‌کند و سپس مسیرِ ۴ بی‌صدا جب�
 | نرمال‌سازِ نوشتار | `scripts/migrate_symbol_norm.py:88` | symbol | — |
 | نامِ گمراه‌کننده: `mstat_engine._liquidity_from_price_history` | `mstat_engine.py:1163` | **از daily_prices می‌خواند** (`:1181`)، نه price_history — سازندهٔ کندل نیست |
 
-**باید اینجا ساخته شود:** (الف) ستونِ `last` (+`value`) درِ `price_history` با backfill از CSV؛
-(ب) یکِ مسیرِ نوشتنِ واحد (fetcherِ مرجع) که همهٔ ستون‌ها را از همانِ یکِ ردیفِ CSV بیاورد و
-LV-last را بنویسد؛ (ج) حذفِ جعلِ `last:=close` در `api/chart.py:907` و جانشین‌کردنش با
-NULLِ صادقانه یا backfill.
+**باید اینجا ساخته شود:** (الف) ستونِ `last` (+`value`) درِ `price_history` با backfill از CSV —
+**۱۴۰۵-۰۷-۱۰ انجام شد** (قدمِ ۲ کارِ #73): `mstat_engine.MIGRATIONS` دو ستون به
+`price_history` و `p_last` را به `daily_prices` می‌افزاید (idempotent و nullable)، هر دو
+`CREATE TABLE` (این فایل و `codal_fetcher.py:589`) یکی شدند، و سنجشِ سرتاسری رویِ
+**کپیِ** بانک ۱۶/۱۶ سبز است (`_audit/price_history_last_value_verify.py`) + گاردِ
+`dev/price_last_value_v1070.py` (۱۹ چک، بی‌شبکه). (ب) یکِ مسیرِ نوشتنِ واحد — **نیمه**:
+هر چهار نویسندۀ `price_history` ستون‌ها را نام‌دار می‌نویسند و open همه‌جا FIRST است،
+اما ترتیبِ مالکیتِ سطرِ یکِ نشست بینِ مسیرِ ۱ و ۲ هنوز بی‌تست است (§۲-الف). (ج) حذفِ
+جعلِ `last:=close` در `api/chart.py:907` — **انجام شد**؛ `last` از ستونِ خودش خوانده
+می‌شود و ردیفِ بی‌last صریح `null` می‌دهد. «آخرینِ» خامِ تابلو هم دیگر مشتق نیست:
+`pdv` (سنجشِ ۶/۶ نماد == ستونِ LASTِ فایلِ رسمی، `_audit/mw_key_to_csv_column.json`) با
+fallback به `py+pc`.
 
 ---
 

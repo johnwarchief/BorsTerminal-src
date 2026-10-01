@@ -97,8 +97,16 @@ def main():
     # آخرِ هر تاپلِ daily باید trd باشد ( نه فهرستِ ۱۳تاییِ قدیمی)
     # از v1.0.45 جایِ اولِ append در _mw_row به `dy = (...)` نشسته (تیکِ زنده هم
     # همان‌جا می‌خواند)؛ پس پرانتزِ بیرونی کم شده — قاعدۀ «trd در آخر» همان است.
-    ck(len(re.findall(r"mcap_src, trd\)", src)) == 2,
-       "هر دو نگاشتِ daily با trd بسته می‌شوند", str(len(re.findall(r"mcap_src, trd\)", src))))
+    # آخرِ هر تاپلِ daily باید trd باشد ( نه فهرستِ ۱۳تاییِ قدیمی)
+    # از v1.0.45 جایِ اولِ append در _mw_row به `dy = (...)` نشسته (تیکِ زنده هم
+    # همان‌جا می‌خواند)؛ پس پرانتزِ بیرونی کم شده — قاعدۀ «trd در آخر» همان است.
+    # از کارِ #73 قدمِ ۲: trd دیگر آخرینِ خانه نیست، p_last بعد از آن می‌آید؛ قاعدۀ
+    # «هر دو نگاشتِ daily همین دو خانه را در آخرِ تاپل دارند» باز نوشته شد.
+    _daily_tail = len(re.findall(r"mcap_src, trd, p_last\)", src))
+    ck(_daily_tail == 2,
+       "هر دو نگاشتِ daily (سینک و تیکِ زنده) با trd و p_last بسته می‌شوند", str(_daily_tail))
+    ck("z_tot_tran" in cols and "p_last" in cols,
+       "_DP_INSERT هر دو ستونِ trd و p_last را در درج می‌گیرد", str(cols[-3:]))
 
     print("\n[۴] abstentionِ نبض بازار (هیچ داوری از نبودِ داده ساخته نمی‌شود)")
     import mstat_engine as ME
