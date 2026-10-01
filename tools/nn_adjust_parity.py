@@ -36,6 +36,48 @@ def get(url: str, timeout: int = 120) -> dict:
         return json.loads(r.read().decode())
 
 
+def _norm(sym: str) -> str:
+    """نرمالِ نامِ نماد: بی‌فاصله، بی‌نیم‌فاصله، و بی‌پسوندِ «سری»."""
+    s = (sym or "").replace("\u200c", "").replace(" ", "").strip()
+    while s and s[-1].isdigit():
+        s = s[:-1]
+    return s
+
+
+def nn_resolve(query: str) -> str:
+    """نامِ فارسیِ نماد → isinCodeای که آن‌ها درِ `symbol=` می‌خواهند.
+
+    بی‌این هر سنجشی جزِ دو نمادِ hard-code شده ممکن نبود (آن‌ها isin را درِ
+    آدرس می‌خواهند، نه ins_code عددیِ tsetmc؛ با عددِ خودی «no_data» می‌دهند).
+    پارامترِ درستِ این endpoint `query=` است — با `search=` یا `text=` فهرست
+    خالی برمی‌گردد.
+
+    دو دام که اولِ کار نمادِ غلط را داد:
+      ۱) نام‌هایِ آن‌ها پسوندِ سری دارد («فولاد1») و نتایج fuzzy مرتب‌شده‌اند،
+         پس «اولینِ فهرست» برایِ فولاد «فولاد تربت1» بود و سنجش بی‌صدا رویِ
+         نمادِ دیگری انجام می‌شد؛
+      ۲) دیکته‌ها فرق می‌کند: «وغدير»ِ ما با ي عربی است و آن‌ها «وغدیر» با ی
+         فارسی دارند، پس جست‌وجو صفرِ نتیجه می‌داد.
+    حالا فقط تطبیقِ دقیقِ نامِ نرمال‌شده پذیرفته می‌شود و وگرنه "" برمی‌گردد —
+    نبودنش بهترِ سنجشِ رویِ نمادِ اشتباه است.
+    """
+    tries = [query]
+    alt = query.replace("ي", "ی").replace("ك", "ک")
+    if alt != query:
+        tries.append(alt)
+    want = _norm(query)
+    for term in tries:
+        try:
+            items = get("https://www.nahayatnegar.com/tv/chart/search?query="
+                        + urllib.parse.quote(term), timeout=60).get("tvSymbols") or []
+        except Exception:
+            items = []
+        for it in items:
+            if _norm(it.get("symbol") or it.get("ticker") or "") == want:
+                return it.get("id") or it.get("ticker") or ""
+    return ""
+
+
 def nn_series(sym_id: str, adj: int, frm: int, to: int) -> dict:
     j = get(f"{NN}?symbol={sym_id}{adj}&resolution=1D&from={frm}&to={to}"
             f"&type=stock&adjustmentType={adj}&countback=4000")
@@ -53,22 +95,36 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ours", default="http://127.0.0.1:8011")
     ap.add_argument("--since", default="2015-01-01")
+    ap.add_argument("--symbols", default="",
+                    help="comma list of Persian tickers; each isin is resolved live")
+    ap.add_argument("--modes", default="3,4",
+                    help="adjustmentType numbers to compare against (default 3,4)")
     a = ap.parse_args()
+    want_modes = [int(m) for m in a.modes.split(",") if m.strip()]
+    if a.symbols:
+        pairs = [(s.strip(), "") for s in a.symbols.split(",") if s.strip()]
+    else:
+        pairs = list(SYMS)
     frm = int(dt.datetime(2012, 1, 1, tzinfo=dt.timezone.utc).timestamp())
     to = int(dt.datetime.now(dt.timezone.utc).timestamp())
-    for sym, sym_id in SYMS:
+    for sym, sym_id in pairs:
+        sym_id = sym_id or nn_resolve(sym)
+        if not sym_id:
+            print("\n=== %s: isinِ آن‌ها پیدا نشد — سنجش انجام شدنی نیست" % sym)
+            continue
         fac, n_ev, src, cnt = our_factors(a.ours, sym)
         raw0 = nn_series(sym_id, 0, frm, to)
         dates = sorted(d for d in fac if d >= a.since and d in raw0)
         print(f"\n=== {sym} ({sym_id})  ردیفِ ما={cnt}  رویدادِ تعدیل={n_ev}  ({src})"
-              f"  ردیفِ قابلِ مقایسه={len(dates)}")
+              f"  ردیفِ قابلِ مقایسه={len(dates)}  ردیفِ آن‌ها={len(raw0)}")
         if not dates:
+            print("  هیچ ردیفِ مشترکی نبود")
             continue
         # فاکتورِ خودِ ما نرمال می‌شود به آخرین روزِ مشترک (همان قراردادِ آن‌ها)
         last = dates[-1]
         ours = {d: fac[d] / fac[last] for d in dates}
         best = None
-        for m in sorted(MODE)[1:]:
+        for m in want_modes:
             s = nn_series(sym_id, m, frm, to)
             dd = [d for d in dates if d in s and raw0[d]]
             if len(dd) < 50:
