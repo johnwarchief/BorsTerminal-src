@@ -4,3 +4,5 @@ _visual_detail.json
 board_now.json
 live_market.json
 live_screener.json
+*.db
+*.db.journal
