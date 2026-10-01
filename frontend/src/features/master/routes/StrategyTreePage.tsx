@@ -254,7 +254,6 @@ export default function StrategyTreePage() {
       tapeId,
       stopId,
       'exit_half',
-      'rule_rr',
     ];
   }, [customFund, customWeekly, customSetup, customTape, customStop]);
 
@@ -292,7 +291,10 @@ export default function StrategyTreePage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-[1700px] mx-auto w-full">
+    // سقفِ ۱۷۰۰ پیکسل برداشته شد: رویِ مانیتورِ پهن دو نوارِ خالی در چپ و
+    // راست می‌ماند در حالی که خودِ درخت جا کم می‌آورد. padding هم از sm:p-5
+    // به sm:px-3 آمد تا عرضِ بیشتری به بوم برسد.
+    <div className="flex flex-col gap-4 p-3 sm:px-3 sm:py-4 w-full">
       {/* ۱. نوار ابزار فشرده، سریع و سبک بالای نمودار (حذف نوار بزرگ و تکراری) */}
       <div className="rounded-2xl border border-border-c bg-bg-card/70 p-3 sm:p-4 shadow-sm flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">

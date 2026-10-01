@@ -1,7 +1,7 @@
 // features/master/components/ObsidianStrategyGraph.tsx -- گراف شبکه‌ای بهینه‌شده، فوق‌العاده روان، تمیز به سبک ابسیدین
 // یکپارچه‌سازی کامل ۴ صفحه چارت FTS با پشتیبانی جامع از تم روشن و تاریک، چینش اصیل راست‌به‌چپ (RTL)،
 // جریان دوگانه مهندسی معکوس نوسان‌گیری (صفحه ۴ و ۱۹ جزوه) و جریان کلاسیک تحلیلی، همراه با قابلیت ویرایش زنده پارامترها
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore, type StrategyParameters } from '../stores/strategyParamsStore';
@@ -38,7 +38,8 @@ export interface StrategyGraphLink {
 }
 
 // ساختار ۴۶ نود جامع — نسخهٔ تطبیق موبهمو با ۴ صفحه چارت (دور دوم: رفع متن‌های بی‌مرجع + ۱۲ گرهٔ جاافتاده)
-function getGraphNodes(params: StrategyParameters, flow: FlowDirection): StrategyGraphNode[] {
+function getGraphNodes(params: StrategyParameters, flow: FlowDirection,
+                       collapsed?: ReadonlySet<string>): StrategyGraphNode[] {
   // در فرهنگ زبان فارسی، جهت مطالعه و جریان از راست به چپ (RTL) است:
   // X_CORE (راست‌ترین): 1350
   // X_COL1: 1080
@@ -756,23 +757,6 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
       y: 405,
     },
     {
-      id: 'rule_rr',
-      label: `⚖️ R/R کم ➔ ریسک بالا`,
-      fullTitle: 'کم بودنِ R/R دلیلِ بی‌طلبیِ سهم است؛ آستانه دستِ شما',
-      category: 'money',
-      stage: 4,
-      stageName: 'مدیریت سرمایه M',
-      page: 'چارت صفحه ۴',
-      description: `جزوه R/R را یک‌جا و به‌عنوانِ دلیلِ عدم ورود می‌آورد: «دلیلِ طلبِ سهم R/R کم است، ریسک بالاست». عددی برای آن نگفته؛ ${toFaDigits(params.minRiskRewardRatio)} برابر دستِ شماست: فاصله تا تارگت باید از فاصله تا حد ضرر بیشتر باشد.`,
-      ruleFormula: `(تارگت سود - ورود) / (ورود - حد ضرر) >= ${toFaDigits(params.minRiskRewardRatio)}`,
-      badge: 'ریسک به ریوارد',
-      color: '#a855f7',
-      radius: 16,
-      x: xMoney,
-      y: 471,
-      editableParamKeys: ['minRiskRewardRatio'],
-    },
-    {
       id: 'rule_cap',
       label: `📊 سقف وزن صنعت (${toFaDigits(params.maxIndustryWeightPct)}٪)`,
       fullTitle: 'سقف سرمایه‌گذاری مجاز در یک صنعت و تک‌سهم',
@@ -895,8 +879,11 @@ function getGraphNodes(params: StrategyParameters, flow: FlowDirection): Strateg
   // می‌گیرد. این تنها راهی است که افزودنِ یک گره بازچینشِ دستیِ ده‌ها
   // مختصات نخواهد.
   const all = [...base, ...categoryNodes(isReverse)];
-  const layout = computeTreeLayout('fts_core');
-  return all.map((n) => (layout[n.id] ? { ...n, x: layout[n.id].x, y: layout[n.id].y } : n));
+  const layout = computeTreeLayout('fts_core', { collapsed });
+  const hidden = collapsed && collapsed.size > 0 ? hiddenUnderCollapsed(collapsed) : null;
+  return all
+    .filter((n) => !hidden?.has(n.id))
+    .map((n) => (layout[n.id] ? { ...n, x: layout[n.id].x, y: layout[n.id].y } : n));
 }
 
 /** گره‌هایِ دسته — ستون‌فقراتِ درخت. تا ۱٫۰٫۶۶ هیچ‌کدام وجود نداشتند و
@@ -1014,7 +1001,7 @@ export const CHART_TREE: Record<string, string[]> = {
 
   // ── صفحهٔ ۴ ──
   money_mgmt: ['rule_max_portfolio', 'm_weighting', 'hedge_options_etf', 'm_ladder',
-               'm_review', 'rule_cap', 'rule_rr', 'stop_hourglass'],
+               'm_review', 'rule_cap', 'stop_hourglass'],
   strategy_group: ['tech_weekly_hourglass', 'setup_point_hunt'],
   portfolio_principles: ['m_principles'],
 };
@@ -1027,9 +1014,13 @@ export const CHART_TREE: Record<string, string[]> = {
  */
 export function computeTreeLayout(
   rootId = 'fts_core',
-  opts: { xRoot?: number; xGap?: number; yGap?: number; yTop?: number } = {},
+  opts: {
+    xRoot?: number; xGap?: number; yGap?: number; yTop?: number;
+    /** دسته‌هایی که کاربر بسته — زیردرختشان نه چیده می‌شود نه رسم */
+    collapsed?: ReadonlySet<string>;
+  } = {},
 ): Record<string, { x: number; y: number; depth: number }> {
-  const { xRoot = 1395, xGap = 268, yGap = 31, yTop = 46 } = opts;
+  const { xRoot = 1860, xGap = 330, yGap = 32, yTop = 48, collapsed } = opts;
   const pos: Record<string, { x: number; y: number; depth: number }> = {};
   let slot = 0;
   const seen = new Set<string>();
@@ -1040,7 +1031,10 @@ export function computeTreeLayout(
     // تعیین می‌کند؛ بقیه یالِ متقاطع می‌مانند.
     if (seen.has(id)) return pos[id]?.y ?? yTop;
     seen.add(id);
-    const kids = CHART_TREE[id] ?? [];
+    // گرهِ بسته مثلِ برگ رفتار می‌کند: یک شیار می‌گیرد و فرزندانش کنار
+    // می‌روند. این تنها راهی است که ۶۴ گره رویِ یک بوم خوانا بماند بی‌آنکه
+    // چیزی حذف شود.
+    const kids = collapsed?.has(id) ? [] : (CHART_TREE[id] ?? []);
     let y: number;
     if (kids.length === 0) {
       y = yTop + slot * yGap;
@@ -1055,6 +1049,31 @@ export function computeTreeLayout(
   walk(rootId, 0);
   return pos;
 }
+
+/** گره‌هایی که زیرِ یک دستهٔ بسته‌اند و نباید رسم شوند. */
+export function hiddenUnderCollapsed(collapsed: ReadonlySet<string>): Set<string> {
+  const hidden = new Set<string>();
+  const bury = (id: string) => {
+    for (const k of CHART_TREE[id] ?? []) {
+      if (hidden.has(k)) continue;
+      hidden.add(k);
+      bury(k);
+    }
+  };
+  for (const c of collapsed) bury(c);
+  // گرهی که از راهِ دیگری هم والد دارد نباید پنهان شود (مثلِ جت که هم
+  // ستاپِ روزانهٔ صعودی است هم یکی از سه استراتژیِ ص۴).
+  for (const [par, kids] of Object.entries(CHART_TREE)) {
+    if (collapsed.has(par) || hidden.has(par)) continue;
+    for (const k of kids) hidden.delete(k);
+  }
+  return hidden;
+}
+
+/** دسته‌هایی که می‌شود بست — هر گرهی که فرزند دارد، جز خودِ هسته. */
+export const COLLAPSIBLE_IDS: readonly string[] = Object.keys(CHART_TREE).filter(
+  (id) => id !== 'fts_core',
+);
 
 /** یال‌هایِ ستون‌فقرات، مستقیماً از CHART_TREE. هر والد➔فرزند یک یال.
  *  چون از همان نقشه‌ای می‌آیند که چیدمان از آن ساخته شده، ساختارِ دیده‌شده
@@ -1161,8 +1180,6 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
       { id: 'rev_m_exithalf_third', source: 'exit_half', target: 'exit_third_peak', presets: ['swing', 'trend'] },
       { id: 'rev_m_third_rsidiv', source: 'exit_third_peak', target: 'exit_rsi_div', presets: ['swing', 'trend'] },
       { id: 'rev_m_stoptrend_exithalf', source: 'stop_trend', target: 'exit_half', presets: ['trend'] },
-      { id: 'rev_m_exithalf_rr', source: 'exit_half', target: 'rule_rr', presets: ['swing', 'trend'] },
-      { id: 'rev_m_rr_cap', source: 'rule_rr', target: 'rule_cap', presets: ['swing', 'trend'] },
       { id: 'rev_m_cap_portcap', source: 'rule_cap', target: 'rule_max_portfolio', presets: ['swing', 'trend', 'hourglass'] },
       { id: 'rev_m_portcap_hedge', source: 'rule_max_portfolio', target: 'hedge_options_etf', presets: ['trend', 'hourglass'] },
       { id: 'rev_m_hg_portcap', source: 'stop_hourglass', target: 'rule_max_portfolio', presets: ['hourglass'] },
@@ -1248,7 +1265,6 @@ export function getGraphLinks(flow: FlowDirection): StrategyGraphLink[] {
     { id: 'cls_m_trend_exithalf', source: 'stop_trend', target: 'exit_half', presets: ['trend'] },
     { id: 'cls_m_exithalf_third', source: 'exit_half', target: 'exit_third_peak', presets: ['swing', 'trend'] },
     { id: 'cls_m_third_rsidiv', source: 'exit_third_peak', target: 'exit_rsi_div', presets: ['swing', 'trend'] },
-    { id: 'cls_m_exithalf_rr', source: 'exit_half', target: 'rule_rr', presets: ['swing', 'trend'] },
     { id: 'cls_m_trend_cap', source: 'stop_trend', target: 'rule_cap', presets: ['trend'] },
     { id: 'cls_m_cap_portcap', source: 'rule_cap', target: 'rule_max_portfolio', presets: ['swing', 'trend', 'hourglass'] },
     { id: 'cls_m_portcap_hedge', source: 'rule_max_portfolio', target: 'hedge_options_etf', presets: ['trend', 'hourglass'] },
@@ -1319,8 +1335,33 @@ export function ObsidianStrategyGraph({
   const [flowDirection, setFlowDirection] = useState<FlowDirection>('reverse');
 
   // ۴. تولید نودها و اتصالات بر اساس پارامترها و جریان جاری
-  const nodes = useMemo(() => getGraphNodes(params, flowDirection), [params, flowDirection]);
-  const links = useMemo(() => getGraphLinks(flowDirection), [flowDirection]);
+  // دسته‌هایِ بسته در نخستین نگاه.
+  //
+  // عمداً فقط این دو: «رصد جریان نقدینگی» و «مدیریت سرمایه» موادِ مرجع‌اند
+  // (۱۲ برگ) و در مسیرِ تصمیمِ «این نماد را بخرم یا نه» نیستند. سه رکن و
+  // شاخه‌هایِ خرید و فروش باز می‌مانند، چون آن‌ها همان چیزی‌اند که کاربر
+  // آمده ببیند. هیچ گره‌ای حذف نشده — دابل‌کلیک بازشان می‌کند و عددِ
+  // کنارِ دسته می‌گوید چند تا تا شده.
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(
+    () => new Set(['sel_liquidity', 'money_mgmt']),
+  );
+  const toggleCollapse = useCallback((id: string) => {
+    setCollapsed((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const nodes = useMemo(
+    () => getGraphNodes(params, flowDirection, collapsed),
+    [params, flowDirection, collapsed],
+  );
+  const links = useMemo(() => {
+    const hidden = collapsed.size > 0 ? hiddenUnderCollapsed(collapsed) : null;
+    const all = getGraphLinks(flowDirection);
+    return hidden ? all.filter((l) => !hidden.has(l.source) && !hidden.has(l.target)) : all;
+  }, [flowDirection, collapsed]);
 
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string>('tape_volume');
@@ -1694,7 +1735,7 @@ export function ObsidianStrategyGraph({
         className="relative mx-auto w-full min-w-[1480px] max-w-[1954px] aspect-[1480/1040] overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
         <svg
-          viewBox="0 0 1480 1500"
+          viewBox="0 0 1960 1500"
           className="w-full h-full"
           preserveAspectRatio="xMidYMid meet"
           data-testid="obsidian-strategy-canvas"
@@ -1930,9 +1971,28 @@ export function ObsidianStrategyGraph({
                         onToggleCustomNode(node.id);
                       }
                     }}
+                    // دابل‌کلیک رویِ یک دسته، زیردرختش را تا می‌زند. کلیکِ
+                    // ساده همان انتخابِ قبلی است تا رفتارِ آشنا نشکند.
+                    onDoubleClick={(e) => {
+                      if (!CHART_TREE[node.id]) return;
+                      e.stopPropagation();
+                      toggleCollapse(node.id);
+                    }}
                     onMouseEnter={() => setHoveredNodeId(node.id)}
                     onMouseLeave={() => setHoveredNodeId(null)}
                   >
+                    {/* نشانهٔ «این دسته تا شده» — عددِ فرزندانِ پنهان، تا
+                        کاربر بداند چیزی حذف نشده فقط بسته است. */}
+                    {CHART_TREE[node.id] && collapsed.has(node.id) ? (
+                      <g data-testid={`collapsed-${node.id}`}>
+                        <circle r={node.radius + 6} fill="none" stroke={node.color}
+                                strokeWidth={1.2} strokeDasharray="3 3" opacity={0.75} />
+                        <text y={node.radius + 17} textAnchor="middle" fontSize={9}
+                              fontWeight={800} fill={node.color}>
+                          +{toFaDigits(CHART_TREE[node.id].length)}
+                        </text>
+                      </g>
+                    ) : null}
                     {/* حلقه چرخان در دور نودهای انتخاب‌شده یا جستجوشده */}
                     {(isSelected || isMatched) && (
                       <circle

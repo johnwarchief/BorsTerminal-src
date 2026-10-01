@@ -6,6 +6,15 @@ import { ObsidianStrategyGraph, getGraphLinks, CHART_TREE, computeTreeLayout } f
 import { useStrategyParamsStore, FTS_DEFAULT_PARAMS } from '../features/master/stores/strategyParamsStore';
 import { useUiStore } from '../shared/stores/uiStore';
 
+/** دو دستهٔ پیش‌فرض‌بسته را باز می‌کند (دابل‌کلیک رویِ گرهِ دسته). */
+function expandAll() {
+  for (const label of [/رصد جریان نقدینگی/, /مدیریت سرمایه$/]) {
+    const hits = screen.queryAllByText(label);
+    const g = hits[0]?.closest('g[transform]');
+    if (g) fireEvent.doubleClick(g);
+  }
+}
+
 describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrategyGraph)', () => {
   beforeEach(() => {
     useStrategyParamsStore.getState().resetAll();
@@ -44,6 +53,10 @@ describe('گراف استراتژی شبکه ابسیدین FTS (ObsidianStrateg
 
   it('شامل تمام نودهای کلیدی ۴ صفحه چارت درختی بدون از قلم افتادن بندهاست', () => {
     render(<ObsidianStrategyGraph selectedPreset="swing" />);
+    // «رصد جریان نقدینگی» و «مدیریت سرمایه» پیش‌فرض تا شده‌اند تا نخستین
+    // نگاه خوانا باشد. هیچ‌کدام حذف نشده — بازشان می‌کنیم و می‌سنجیم که
+    // همه سرِ جایشان‌اند. این خودش گاردِ همان رفتارِ تاشدن هم هست.
+    expandAll();
 
     // رکن تابلوخوانی (صفحه ۳)
     expect(screen.getAllByText(/حجم مشکوک/i).length).toBeGreaterThan(0);
@@ -178,14 +191,9 @@ describe('#223 — واژگانِ سه گره از خودِ جزوه', () => {
     expect(screen.getAllByText(/۳۰/).length).toBeGreaterThan(0);
   });
 
-  it('گرهٔ R/R عددِ جزوه ادعا نمی‌کند؛ آستانه پیش‌فرضِ برنامه است', () => {
-    render(<ObsidianStrategyGraph selectedPreset="trend" />);
-    expect(screen.getAllByText(/R\/R/).length).toBeGreaterThan(0);
-    expect(document.body.textContent ?? '').not.toMatch(/حداقل ۱ به ۲/);
-    pickNode(/R\/R کم/);
-    expect(screen.getByText(/دلیلِ طلبِ سهم R\/R کم است/)).toBeInTheDocument();
-    expect(screen.getByText(/پیش‌فرضِ برنامه/)).toBeInTheDocument();
-  });
+  // تستِ گرهٔ R/R برداشته شد: خودِ گره در ۱٫۰٫۶۶ حذف شد چون در هیچ‌یک از
+  // چهار صفحهٔ چارت و در احکامِ مالک نبود — آستانه‌اش «پیش‌فرضِ برنامه» بود،
+  // یعنی ادعایی بی‌منبع رویِ نموداری که قرار است عینِ چارت باشد.
 });
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -301,10 +309,10 @@ describe('ستون‌فقراتِ درخت از CHART_TREE', () => {
     }
   });
 
-  it('چیدمان در بومِ ۱۴۸۰×۱۵۰۰ جا می‌شود', () => {
+  it('چیدمان در بومِ ۱۹۶۰×۱۵۰۰ جا می‌شود', () => {
     const l = Object.values(computeTreeLayout());
     expect(Math.min(...l.map((v) => v.x))).toBeGreaterThan(0);
-    expect(Math.max(...l.map((v) => v.x))).toBeLessThan(1480);
+    expect(Math.max(...l.map((v) => v.x))).toBeLessThan(1960);
     expect(Math.max(...l.map((v) => v.y))).toBeLessThan(1500);
   });
 });
