@@ -81,6 +81,11 @@ SUITES = [
     # سیمِ مرگِ وتوی هفتگی: هیچ تولیدکننده‌ای رأیِ هفتگی را منتشر نمی‌کرد، پس
     # گیت برای هر نمادی «در انتظار» می‌ماند. پیوتِ کهنه ⇒ سنجشِ بازۀ اخیر.
     ('dev/fts_trend_staleness_v1064.py', 'weekly trend verdict from live pivots or the recent window, never a stale pivot'),
+    # موتورِ FTS چهار جا عددِ جا‌زده منتشر می‌کرد: هفتۀ ISO روی بازارِ شنبه‌محور،
+    # کمربندِ فیبوِ موجِ نزولی از سقف، حدِ ضرر روی کندلِ نیمه‌کار، MA52 با کمتر از
+    # ۵۲ کندل، و روزانۀ na در آغالتِ «خنثیِ مجاز». بی‌شبکه و بی‌market.db.
+    ('dev/fts_engine_honesty_v1066.py',
+                                     'FTS engine publishes no made-up numbers (week, fib, stop, MA52, na)'),
     ('dev/test_cumulative_db_v1020.py', 'market.db re-extracts on a new bundled baseline'),
     # --pack تنها تاریخِ آخرین نشست را می‌دید؛ روی این ماشین بانکِ مخزن با
     # نشستِ همان روز ۱۴٬۸۶۶ ردیف daily_prices کم‌تر از بیس‌لاینِ منتشرشده داشت.

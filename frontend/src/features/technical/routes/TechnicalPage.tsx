@@ -153,14 +153,14 @@ export default function TechnicalPage() {
         ? Math.round(closes.slice(-100).reduce((a, b) => a + b, 0) / 100)
         : null;
     return {
-      symbol,
+      symbol: viewSymbol,
       fts: analysis.data?.fts ?? null,
       ma100,
       lastClose: candles.length > 0 ? candles[candles.length - 1].close : null,
       setups: signal?.payload.setups ?? [],
       direction: signal?.direction ?? null,
     };
-  }, [analysis.data, series.closes, signal, symbol, candles]);
+  }, [analysis.data, series.closes, signal, viewSymbol, candles]);
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
@@ -207,8 +207,23 @@ export default function TechnicalPage() {
               label: 'وضعیت FTS',
               node: (
                 <div className="flex flex-col gap-2">
-                  <FtsBadgeStrip data={analysis.data?.fts ?? null} empty={analysis.data?.status === 'empty' || noData} />
-                  <FtsStatusCard signal={signal} gateBlocked={gateBlocked} jetPrice={analysis.data?.fts?.jet?.resistance ?? null} />
+                  <FtsBadgeStrip
+                    data={analysis.data?.fts ?? null}
+                    empty={analysis.data?.status === 'empty' || noData}
+                    error={
+                      analysis.data?.status === 'error'
+                        ? analysis.data.message || 'موتور تحلیل خطا داد'
+                        : analysis.isError
+                          ? 'تحلیل از سرور گرفته نشد'
+                          : null
+                    }
+                  />
+                  <FtsStatusCard
+                    signal={signal}
+                    gateBlocked={gateBlocked}
+                    jetPrice={analysis.data?.fts?.jet?.resistance ?? null}
+                    jetReason={analysis.data?.fts?.jet?.reason ?? null}
+                  />
                 </div>
               ),
             },

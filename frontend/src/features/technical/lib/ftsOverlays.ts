@@ -50,8 +50,10 @@ export const FTS_MEASURE_OVERLAY = 'ftsMeasure';
 export const FTS_POSITION_OVERLAY = 'ftsPosition';
 export const FTS_CORP_ACTION_OVERLAY = 'ftsCorpAction';
 
-/** سطوح فیبوی FTS (FTS_SPEC بخش اول بند ۳): دو کمربند + مبنا ۱.۰ */
-export const FTS_FIB_LEVELS = [0, 0.33, 0.4, 0.618, 0.7, 1] as const;
+/** سطوح فیبوی FTS (FTS_SPEC بخش اول بند ۳، عینِ جزوۀ صفحهٔ ۲: «تنظیم روی ۰ و
+ *  ۰.۳۳ و ۰.۴ و ۰.۵ و ۰.۶۱۸ و ۰.۷ و ۱ فعال می‌کنیم») + دو کمربندِ ورود ۳۳–۴۰ و ۶۱.۸–۷۰.
+ *  سطحِ ۰.۵ سال‌ها از رسمِ فرانت جا افتاده بود؛ بک‌اند آن را در `fib.levels` می‌داد. */
+export const FTS_FIB_LEVELS = [0, 0.33, 0.4, 0.5, 0.618, 0.7, 1] as const;
 export const FTS_FIB_BANDS: readonly (readonly [number, number])[] = [
   [0.33, 0.4],
   [0.618, 0.7],

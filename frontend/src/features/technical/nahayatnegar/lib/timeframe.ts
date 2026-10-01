@@ -1,4 +1,5 @@
 import type { KLineData } from 'klinecharts';
+import { epochToJalali } from '../../lib/jalaliDate';
 
 const DAY_MS = 86_400_000;
 
@@ -73,4 +74,33 @@ export function aggregateCandles(candles: KLineData[], tf: Timeframe): KLineData
   closeBar();
 
   return out;
+}
+
+/** کلیدهایِ نوارِ «بازه زمانی» پایینِ چارت، به همان ترتیبی که دکمه‌ها می‌نشینند */
+export const VIEW_RANGES = ['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'] as const;
+
+const RANGE_DAYS: Record<string, number> = {
+  '1D': 1, '5D': 5, '1M': 31, '3M': 92, '6M': 183, '1Y': 365, '5Y': 1826,
+};
+
+/**
+ * دکمه‌های «بازه زمانی» باید واقعاً زوم کنند: چند کندلِ آخر در دید بماند.
+ * مبنایِ شمار تقویمِ میلادیِ همان کندل‌هاست و YTD سالِ جلالیِ آخرین کندل.
+ * حداقلِ ۵ کندل: سریِ ما روزانه است و «۱ روز» رویِ چارتِ تک‌کندل شبیه خرابی
+ * به‌نظر می‌رسد، نه یک نمادِ بزرگ‌نمایی.
+ */
+export function rangeVisibleBars(rng: string, candles: readonly { timestamp: number }[]): number {
+  const n = candles.length;
+  if (n === 0) return 0;
+  if (rng === 'All' || (rng !== 'YTD' && !RANGE_DAYS[rng])) return n;
+  const last = candles[n - 1].timestamp;
+  let count: number;
+  if (rng === 'YTD') {
+    const year = epochToJalali(last).slice(0, 4);
+    count = candles.filter((c) => epochToJalali(c.timestamp).slice(0, 4) === year).length;
+  } else {
+    const cutoff = last - RANGE_DAYS[rng] * DAY_MS;
+    count = candles.filter((c) => c.timestamp >= cutoff).length;
+  }
+  return Math.min(n, Math.max(Math.min(5, n), count));
 }

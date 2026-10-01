@@ -28,6 +28,7 @@ function noPatterns(): PatternInputs {
     choch: { active: false, level: null },
     pointHunt: { active: false, floor: null, touches: null, ts: null },
     double: { active: false, level: null, breakout: false },
+    doubleTop: { active: false, level: null },
     headShoulders: { active: false, neckline: null },
     thirdPeak: { active: false, level: null },
     ma14Exit: { active: false, level: null },
@@ -84,6 +85,19 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     const i = patternInputsFromFts(payload, { ...plain, toDisp: (p) => p * 0.5 });
     expect(i.jet.level).toBe(1379);
     expect(i.ma14Exit.level).toBe(1225);
+  });
+
+  it('سقف دوقلو از لایۀ ۳ برداشته و رسم می‌شود (قبلاً فقط کف رسم می‌شد)', () => {
+    const top = {
+      exit_engine: { verdict: 'exit', l3: { double_top: true, level: 4120, neckline: 4120 } },
+    } as unknown as FtsAnalysisData;
+    const i = patternInputsFromFts(top, plain);
+    expect(i.doubleTop).toEqual({ active: true, level: 4120 });
+    expect(i.double.active).toBe(false);
+    const specs = buildPatternOverlays(i, PATTERN_PREFS_DEFAULT, rows(45));
+    const line = specs.find((s) => s.label === 'خط گردن (سقف دوقلو)');
+    expect(line).toBeTruthy();
+    expect(line?.overlayName).toBe('ftsNeckline');
   });
 });
 

@@ -76,12 +76,29 @@ export function trendBadges(f: FtsAnalysisData): { label: string; value: string;
   return out;
 }
 
-export function FtsBadgeStrip({ data, empty }: { data: FtsAnalysisData | null | undefined; empty: boolean }) {
+export function FtsBadgeStrip({
+  data,
+  empty,
+  error,
+}: {
+  data: FtsAnalysisData | null | undefined;
+  empty: boolean;
+  /** پیامِ شکستِ موتور — بی‌این، نشان‌ها روی «error» تا ابد «در حال دریافت…» می‌ماندند */
+  error?: string | null;
+}) {
   if (empty) {
     return (
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-empty">
         <Badge tone="gray">FTS</Badge>
         <span>تحلیل سمت سرور برای این نماد موجود نیست (تاریخچه خالی)</span>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-error">
+        <Badge tone="red">FTS</Badge>
+        <span>تحلیل FTS نرسید — {error}</span>
       </div>
     );
   }

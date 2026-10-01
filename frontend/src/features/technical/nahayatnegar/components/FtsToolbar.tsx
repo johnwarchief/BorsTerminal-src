@@ -332,7 +332,8 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
         <button
           className={`nn-btn ${isFtsActive ? 'warning-active' : ''}`}
           onClick={onToggleFts}
-          title="فعال‌سازی لایه‌های تحلیلی استراتژی FTS"
+          data-testid="nn-fts-layer-toggle"
+          title="لایۀ سطوحِ تحلیل FTS (فیبو، کمربندها، خط‌هایِ ماژور). الگوها از «الگوهای FTS» روشن/خاموش می‌شوند."
         >
           <IconFts size={16} color={isFtsActive ? '#ffab00' : 'currentColor'} />
           <span>تحلیل FTS</span>

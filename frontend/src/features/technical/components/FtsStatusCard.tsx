@@ -28,10 +28,13 @@ export function FtsStatusCard({
   signal,
   gateBlocked,
   jetPrice,
+  jetReason,
 }: {
   signal: AgentSignal<TechnicalPayload> | null;
   gateBlocked: boolean;
   jetPrice: number | null;
+  /** «چرا جت نیست» از خودِ موتور — بی‌این فقط «محاسبه نشد» خوانده می‌شد */
+  jetReason?: string | null;
 }) {
   const status = resolveFtsStatus(signal, gateBlocked);
   const meta = STATUS_META[status];
@@ -47,7 +50,7 @@ export function FtsStatusCard({
             خط آبی پرواز: <span className="num font-bold text-neon-cyan">{toFaDigits(jetPrice.toFixed(0))}</span>
           </span>
         ) : (
-          <span>خط آبی محاسبه نشد</span>
+          <span data-testid="fts-jet-reason">{jetReason || 'خط آبی محاسبه نشد'}</span>
         )}
         {signal?.score != null ? (
           <span>

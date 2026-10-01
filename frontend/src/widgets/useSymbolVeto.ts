@@ -20,12 +20,16 @@ export type SymbolVeto = {
   weekly: { veto: boolean; desc: string | null };
   /** آیا اصلاً منبعی برای داوری بوده؟ */
   known: boolean;
+  /** ردیفِ اسکرینرِ همین نماد از کشِ موجود (null = هنوز خوانده نشده) — همان
+   *  منبعی که قیف می‌خواند، تا سایدبار قواعدِ دومی نسازد. */
+  screen: FtsScreenRow | null;
 };
 
 const NONE: SymbolVeto = {
   assembly: { veto: false, days: null, date: null, label: '' },
   weekly: { veto: false, desc: null },
   known: false,
+  screen: null,
 };
 
 /** کلیدهایِ `useFtsScreen` که در برنامه مصرف می‌شوند — هر کدام اگر کش شده باشد خوانده می‌شود */
@@ -51,7 +55,7 @@ export function useSymbolVeto(symbol: string): SymbolVeto {
         : { veto: false, days: badge?.days ?? null, date: badge?.date ?? null, label: '' };
 
     let weekly: SymbolVeto['weekly'] = { veto: false, desc: null };
-    let foundRow = false;
+    let screen: FtsScreenRow | null = null;
     for (const limit of SCREEN_KEYS) {
       const rows = qc.getQueryData<{ data?: FtsScreenRow[] }>(['fts-screen', limit])?.data;
       if (!rows?.length) continue;
@@ -59,7 +63,7 @@ export function useSymbolVeto(symbol: string): SymbolVeto {
         rows.find((r) => r.symbol === symbol) ??
         rows.find((r) => normalizeFa(r.symbol ?? '') === want);
       if (!row) continue;
-      foundRow = true;
+      screen = row;
       if (row.weekly_veto === true || row.tech_matrix_decision === 'REJECT') {
         weekly = {
           veto: true,
@@ -69,6 +73,11 @@ export function useSymbolVeto(symbol: string): SymbolVeto {
       break;
     }
 
-    return { assembly, weekly, known: foundRow || eventList.length > 0 };
+    return {
+      assembly,
+      weekly,
+      known: screen != null || eventList.length > 0,
+      screen,
+    };
   }, [symbol, grouped, qc]);
 }

@@ -3,7 +3,7 @@ import {
   IconCrosshair, IconDot, IconArrowCursor, IconEraser,
   IconTrendLine, IconRay, IconInfoLine, IconHorizontalLine, IconVerticalLine, IconParallelChannel,
   IconFibRetracement, IconPitchfork,
-  IconBrush, IconRectangle, IconCircle,
+  IconBrush, IconRectangle,
   IconText, IconPriceLabel,
   IconPatterns,
   IconLongPosition, IconShortPosition,
@@ -54,7 +54,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     fib: { id: 'fibRetracement', name: 'بازگشتی فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
     shapes: { id: 'rectangle', name: 'مستطیل', overlayType: 'rect', icon: <IconRectangle /> },
     text: { id: 'text', name: 'متن یادداشت', overlayType: 'simpleAnnotation', icon: <IconText /> },
-    patterns: { id: 'xabcd', name: 'الگوی هارمونیک', overlayType: 'segment', icon: <IconPatterns /> },
+    patterns: { id: 'xabcd', name: 'الگوی هارمونیک', overlayType: 'xabcd', icon: <IconPatterns /> },
     prediction: { id: 'longPosition', name: 'موقعیت خرید', overlayType: 'rect', icon: <IconLongPosition /> },
   });
 
@@ -77,8 +77,8 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       items: [
         { id: 'trendLine', name: 'خط روند', overlayType: 'segment', icon: <IconTrendLine /> },
         { id: 'ray', name: 'نیم‌خط (Ray)', overlayType: 'rayLine', icon: <IconRay /> },
-        { id: 'infoLine', name: 'خط اطلاعاتی', overlayType: 'segment', icon: <IconInfoLine /> },
-        { id: 'horizontalLine', name: 'خط افقی', overlayType: 'straightLine', icon: <IconHorizontalLine /> },
+        { id: 'infoLine', name: 'خط اطلاعاتی', overlayType: 'priceLine', icon: <IconInfoLine /> },
+        { id: 'horizontalLine', name: 'خط افقی', overlayType: 'horizontalStraightLine', icon: <IconHorizontalLine /> },
         { id: 'verticalLine', name: 'خط عمودی', overlayType: 'verticalStraightLine', icon: <IconVerticalLine /> },
         { id: 'parallelChannel', name: 'کانال موازی', overlayType: 'priceChannelLine', icon: <IconParallelChannel /> },
       ]
@@ -101,7 +101,6 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       items: [
         { id: 'brush', name: 'قلم‌مو (Brush)', overlayType: 'brush', icon: <IconBrush /> },
         { id: 'rectangle', name: 'مستطیل', overlayType: 'rect', icon: <IconRectangle /> },
-        { id: 'circle', name: 'دایره', overlayType: 'circle', icon: <IconCircle /> },
         { id: 'triangle', name: 'مثلث', overlayType: 'triangle', icon: <IconPatterns /> },
         { id: 'drawArrow', name: 'فلش', overlayType: 'arrow', icon: <IconRay /> },
       ]
@@ -122,7 +121,6 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
       items: [
         { id: 'xabcd', name: 'الگوی هارمونیک (XABCD)', overlayType: 'xabcd', icon: <IconPatterns /> },
         { id: 'elliott', name: 'امواج الیوت', overlayType: 'elliottWave', icon: <IconPatterns /> },
-        { id: 'threeWaves', name: 'سه‌موجه', overlayType: 'threeWaves', icon: <IconPatterns /> },
       ]
     },
     {

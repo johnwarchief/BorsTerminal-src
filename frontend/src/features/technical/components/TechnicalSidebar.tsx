@@ -124,7 +124,7 @@ export function TechnicalSidebar({
             data-testid="sidebar-expand"
             onClick={() => setCollapsed(false)}
             title="باز کردن سایدبار"
-            className="hidden"
+            className="flex h-8 w-8 items-center justify-center rounded border border-[var(--hairline)] text-sm text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
           >
             ‹
           </button>

@@ -28,7 +28,7 @@ import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
   mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
-import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, type Timeframe } from '../lib/timeframe';
+import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
 import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
@@ -64,6 +64,8 @@ import {
 import { usePatternPrefsStore } from '../../stores/patternPrefsStore';
 import { useFtsConfigStore, type ChartView } from '../../stores/ftsConfigStore';
 import { useChartTemplateStore, type ChartTemplate } from '../../stores/chartTemplateStore';
+import { useReplayStore } from '../../stores/replayStore';
+import { replaySlice } from '../../lib/replay';
 import { fetchCandleFeed, toKLineData, type RawAdjustEvent } from '../../api/useCandleFeed';
 import { comparePctLabel, compareRows } from '../../lib/compareSeries';
 import {
@@ -351,7 +353,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
   const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
 
-  const [activeRange, setActiveRange] = useState<string>('1Y');
+  // مبنایِ اولیه «All»: چارت با تمامِ سریِ دریافتی باز می‌شود. «۱Y» هایلایت می‌شد
+  // در حالی که هیچ زومی انجام نمی‌گرفت — برچسبِ دروغ‌گفتۀ کنترلِ مرده.
+  const [activeRange, setActiveRange] = useState<string>('All');
   const [isLogScale, setIsLogScale] = useState<boolean>(ftsPriceScale === 'logarithm');
   const [isAutoScale, setIsAutoScale] = useState<boolean>(true);
 
@@ -414,10 +418,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     BOLL: false,
   });
 
+  // بازپخش (Bar Replay): مکان‌نما ایندکسِ سریِ خامِ روزانه است (همان چیزی که
+  // صفحه می‌شمارد)، پس برش پیش از تجمیع انجام می‌شود؛ در نمایند هفتگی هم درست
+  // می‌ماند. تا این اصلاح مکان‌نما جلو می‌رفت ولی چارت هرگز برش نمی‌خورد ⇒
+  // دکمۀ «بازپخش» هیچ کندلی را پنهان نمی‌کرد.
+  const replayCursor = useReplayStore((s) => (s.active ? s.cursor : -1));
+  const shownRawCandles = useMemo(
+    () => (replayCursor < 0 ? rawCandles : replaySlice(rawCandles, replayCursor)),
+    [rawCandles, replayCursor]
+  );
+
   // مپ کردن داده‌های تعدیل‌شده
   const adjustedCandles = useMemo(() => {
-    return applyAdjustmentToCandles(rawCandles, corporateActions, activeAdjustment);
-  }, [rawCandles, corporateActions, activeAdjustment]);
+    return applyAdjustmentToCandles(shownRawCandles, corporateActions, activeAdjustment);
+  }, [shownRawCandles, corporateActions, activeAdjustment]);
 
   // رفرنس پایدار به دیتای جاری کندل‌ها جهت پیشگیری از closure قدیمی در دیتا لودر
   const adjustedCandlesRef = useRef<KLineData[]>(adjustedCandles);
@@ -443,14 +457,30 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const renderCandlesRef = useRef<KLineData[]>(renderCandles);
   renderCandlesRef.current = renderCandles;
 
+  /** دکمه‌های «بازه زمانی»: فاصلۀ میله را روی پهنایِ واقعیِ پنل تنظیم می‌کند تا
+   *  تعدادِ کندلِ خواستۀ `rangeVisibleBars` در دید بماند. تا پیش از این کلیک فقط
+   *  برچسبِ فعال را جابه‌جا می‌کرد و چارت دست‌نخورده می‌ماند — کنترلِ مرده. */
+  const applyRange = useCallback((rng: string) => {
+    setActiveRange(rng);
+    const chart = chartRef.current;
+    const bars = displayCandlesRef.current;
+    if (!chart || bars.length === 0) return;
+    const want = rangeVisibleBars(rng, bars);
+    if (want <= 0) return;
+    const width = Math.max(160, chart.getSize('candle_pane', 'main')?.width ?? 0);
+    chart.setBarSpace(Math.min(40, Math.max(2, Math.floor(width / want))));
+    chart.scrollToRealTime();
+  }, []);
+
   // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود، حتی وقتی نمایش
   // روی نمایِ بازدهی است. بی‌این تفکیک، شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گیرد
   // و منطقِ قیمت‌محور بی‌صدا یک تحلیلِ بی‌معنا تولید می‌کند.
+  // در بازپخش همین سری برش می‌خورد، وگرنه سطحِ تحلیل روی کندل‌هایِ پنه‌رسمده می‌ماند.
   const analysisCandles = useMemo(
     () => activeAdjustment === 'performance'
-      ? applyAdjustmentToCandles(rawCandles, corporateActions, 'combined')
+      ? applyAdjustmentToCandles(shownRawCandles, corporateActions, 'combined')
       : adjustedCandles,
-    [activeAdjustment, adjustedCandles, rawCandles, corporateActions]
+    [activeAdjustment, adjustedCandles, shownRawCandles, corporateActions]
   );
 
   // تحلیل FTS: همان شیئی که پنلِ «وضعیت FTS» می‌خواند (#161). قبلاً چارت با
@@ -2196,7 +2226,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           onToggleHide={() => {
             const next = !isDrawingsHidden;
             setIsDrawingsHidden(next);
-            chartRef.current?.setStyles({ overlay: { visible: !next } } as never);
+            // «مخفی‌سازی ترسیم‌ها» فقط دستِ خودِ کاربر را پنهان می‌کند. بی‌این
+            // تفکیک setStyles سراسری لایۀ «تحلیل FTS»، الگوها و رویدادهایِ شرکتی
+            // را هم با می‌برد — دکمه‌ای که دورِ کلِ تحلیل می‌پیچید.
+            chartRef.current?.overrideOverlay({ groupId: 'fts-draw', visible: !next } as never);
           }}
         />
 
@@ -2380,15 +2413,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       <footer className="nn-bottom-bar">
         <div className="nn-range-buttons">
           <span className="pe-1 text-[11px] font-semibold text-[var(--nn-text-secondary)]">بازه زمانی:</span>
-          {['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'].map((rng) => (
+          {VIEW_RANGES.map((rng) => (
             <button
               key={rng}
               type="button"
+              data-testid={`nn-range-${rng}`}
               className={`nn-range-btn ${activeRange === rng ? 'active' : ''}`}
-              onClick={() => {
-                setActiveRange(rng);
-                chartRef.current?.scrollToRealTime();
-              }}
+              onClick={() => applyRange(rng)}
             >
               {rng}
             </button>

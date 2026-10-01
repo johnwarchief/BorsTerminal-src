@@ -15,6 +15,10 @@ const TrendLeg = z.object({
   prev_high: z.number().nullish(),
   last_low: z.number().nullish(),
   prev_low: z.number().nullish(),
+  // تازه‌ترین پیوت چند کندل عقب است و خودش کِی بسته شده — بدونِ این دو، چارت
+  // نمی‌تواند بگوید رأیِ روند روی ساختارِ زنده است یا روی چند ماه پیش.
+  stale_bars: z.number().nullish(),
+  last_pivot_time: z.string().nullish(),
 });
 
 const FibZone = z.object({
@@ -58,6 +62,9 @@ const Jet = z.object({
   ath: z.boolean().nullish(),
   close: z.number().nullish(),
   pct_above_res: z.number().nullish(),
+  // «چرا جت نیست» — سرور بی‌تاریخچهٔ کافی همین را می‌فرستد و فرانت قبلاً
+  // دورش می‌ریخت، پس برچسب بی‌دلیل خاموش می‌ماند.
+  reason: z.string().nullish(),
 });
 
 const Choch = z.object({
@@ -146,6 +153,9 @@ const HourglassStrategy = z.object({
   active: z.boolean().nullish(),
   weekly_close: z.number().nullable().nullish(),
   ma52: z.number().nullable().nullish(),
+  // تعدادِ کندلِ هفتگیِ واقعی: ma52 فقط با ۵۲ تا از این‌ها سنجیده می‌شود و
+  // زیرِ آن «سنجیده نشد» است، نه میانگینِ کوتاه‌ترِ جا‌زده.
+  weekly_bars: z.number().nullable().nullish(),
   weekly_rsi5: z.number().nullable().nullish(),
   action: z.string().nullish(),
   desc: z.string().nullish(),
@@ -178,6 +188,13 @@ const FtsResponse = z.object({
   status: z.string(),
   symbol: z.string().nullish(),
   fts: FtsAnalysis.nullish(),
+  // «از کجا حساب شد» و «روی چند نشست» — بی‌این دو خطِ «مبنا» در کارت نمی‌آید
+  // و واگراییِ سریِ محلی با CDN بی‌صدا می‌ماند.
+  analysis_basis: z.string().nullish(),
+  bars: z.number().nullish(),
+  // فقط در status === 'error' پر می‌شود؛ قبلاً دور ریخته می‌شد و نشان‌ها
+  // تا ابد «در حال دریافت…» می‌ماندند.
+  message: z.string().nullish(),
 });
 
 export type FtsResponseData = z.infer<typeof FtsResponse>;

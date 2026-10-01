@@ -4,7 +4,8 @@
 import { useMemo } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { normalizeFa } from '@shared/lib/normalizeFa';
+import { findBoardRow } from '@features/market/api/useSymbolFlow';
+import type { MarketRow } from '@shared/types/marketRow';
 
 export type BoardRow = {
   symbol: string;
@@ -18,14 +19,18 @@ export type BoardRow = {
   fSusp: boolean;
 };
 
-export function useInspectorBoard(): BoardRow | null {
+/** ردیفِ خامِ تابلو — همان چیزی که قواعدِ درِ تابلو (`tapeFilterVerdict`) و
+ *  `symbolStageProgress` رویِ خودش اجرا می‌شوند. تطبیقِ نماد از `findBoardRow`
+ *  است (نوشتارِ عربی/فارسی + فاصله)، نه از مقایسهٔ خام. */
+export function useInspectorRawRow(): MarketRow | null {
   const symbol = useSymbolStore((s) => s.symbol);
   const { data } = useMarketFeed();
+  return useMemo(() => findBoardRow(data?.data ?? [], symbol), [symbol, data]);
+}
 
+export function useInspectorBoard(): BoardRow | null {
+  const r = useInspectorRawRow();
   return useMemo(() => {
-    if (!symbol || !data?.data) return null;
-    const nSymbol = normalizeFa(symbol);
-    const r = data.data.find((item) => item.symbol === symbol || normalizeFa(item.symbol) === nSymbol);
     if (!r) return null;
     return {
       symbol: r.symbol,
@@ -38,5 +43,5 @@ export function useInspectorBoard(): BoardRow | null {
       fClock: r.f_clock === true,
       fSusp: r.f_susp === true,
     };
-  }, [symbol, data]);
+  }, [r]);
 }

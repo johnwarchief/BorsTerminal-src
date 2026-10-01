@@ -24,8 +24,11 @@ import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
-import { useInspectorBoard } from './useInspectorBoard';
+import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
+import { symbolStageProgress } from '@features/master/lib/ftsFunnel';
+import { useTapeStore } from '@features/market/stores/tapeStore';
+import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -179,6 +182,32 @@ export function SymbolInspector() {
   // زردِ درانتظار است و نباید واژۀ «وتو» را قرض بگیرد (رأیِ pilot گزینهٔ a،
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
+  const rawRow = useInspectorRawRow();
+  const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
+  const tapeQuickFilters = useTapeStore((s) => s.quickFilters);
+  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
+  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
+  const techScreens = useFunnelPrefsStore((s) => s.techScreens);
+  /** جایِ خودِ نماد در قیف — از همان `buildFunnel`، رویِ تک‌ردیفِ همین نماد.
+   *  سبکِ درخت محلیِ تبِ درخت است و این‌جا در دسترس نیست، پس «مسیر سفارشی»
+   *  (هر پنج فیلترِ درب) مبنا است؛ tooltipِ هر چیپ همان را می‌گوید. */
+  const progress = useMemo(
+    () =>
+      symbolStageProgress(
+        rawRow,
+        tapeCfg,
+        tapeQuickFilters ?? [],
+        veto.screen,
+        regime.inBasket === true,
+        'custom',
+        new Map(),
+        { fundFloor, unmeasured, techScreens },
+      ),
+    [rawRow, tapeCfg, tapeQuickFilters, veto.screen, regime.inBasket, fundFloor, unmeasured, techScreens],
+  );
+  /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
+  const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
+
   const hardVeto = veto.assembly.veto || veto.weekly.veto || decision?.action === 'veto';
   const awaiting =
     !hardVeto && (decision?.action === 'veto_gate1' || decision?.action === 'veto_gate2');
@@ -282,41 +311,55 @@ export function SymbolInspector() {
       </div>
 
       <div className="flex flex-col gap-2 p-2.5">
-        {/* نشانگر مرحلۀ قیف بر اساسِ تبِ فعال — «الان تو چه مرحله‌ای هستیم» */}
+        {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف
+            («این سهم کجا ایستاده»). حلقه‌ها از همان `symbolStageProgress`ِ قیف
+            می‌آیند — سایدبار قواعدِ دومی نمی‌سازد. */}
         {stageIdx != null ? (
           <nav
             aria-label="مراحل غربالگری FTS"
             data-testid="inspector-stage"
             className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
           >
-            {INSPECTOR_STAGES.map((s, i) => (
-              <Link
-                key={s.key}
-                to={stageHref(i, symbol)}
-                aria-current={i === stageIdx ? 'step' : undefined}
-                data-testid={`inspector-stage-${s.key}`}
-                title={
-                  i === stageIdx
-                    ? `مرحلۀ فعلی: ${s.label}`
-                    : i < stageIdx
-                      ? `گذشته: ${s.label}`
-                      : `بعدی: ${s.label}`
-                }
-                className={`rounded-md border px-1.5 py-0.5 transition-colors ${
-                  i === stageIdx
-                    ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                    : i < stageIdx
-                      ? 'border-border-c/70 bg-bg-card/60 text-text-secondary hover:text-text-primary'
-                      : 'border-border-c/50 bg-bg-primary text-text-muted hover:text-text-primary'
-                }`}
-              >
-                {s.label}
-              </Link>
-            ))}
+            {INSPECTOR_STAGES.map((s, i) => {
+              const p = progress[i];
+              const st = p?.state ?? 'unknown';
+              return (
+                <Link
+                  key={s.key}
+                  to={stageHref(i, symbol)}
+                  aria-current={i === stageIdx ? 'step' : undefined}
+                  data-testid={`inspector-stage-${s.key}`}
+                  data-stage-state={st}
+                  title={p?.why || `${s.label}: هنوز منبعی برای داوری این مرحله نیست`}
+                  className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors ${
+                    i === stageIdx
+                      ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                      : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  <span
+                    aria-hidden
+                    data-testid={`inspector-stage-dot-${s.key}`}
+                    className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                      st === 'passed'
+                        ? 'bg-accent-green'
+                        : st === 'blocked'
+                          ? 'bg-accent-red'
+                          : st === 'waiting'
+                            ? 'bg-accent-yellow'
+                            : 'bg-border-c'
+                    }`}
+                  />
+                  {s.label}
+                </Link>
+              );
+            })}
             <span className="w-full text-[9.5px] font-normal text-text-muted" data-testid="inspector-stage-next">
-              {stageIdx < INSPECTOR_STAGES.length - 1
-                ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
-                : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ قیف`}
+              {stoppedAt >= 0
+                ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
+                : stageIdx < INSPECTOR_STAGES.length - 1
+                  ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
+                  : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ قیف`}
             </span>
           </nav>
         ) : null}

@@ -100,6 +100,9 @@ export type PatternInputs = {
   choch: { active: boolean; level: number | null };
   pointHunt: { active: boolean; floor: number | null; touches: number | null; ts: number | null };
   double: { active: boolean; level: number | null; breakout: boolean };
+  /** سقف دوقلو: همان «دوقلو»ی جزوه در سمتِ سقف — موتور در لایۀ ۳ می‌گوید و
+   *  تا این نگاشت نبود هیچ‌وقت رسم می‌شد (برچسبِ لایه «کف/سقف دوقلو» بود). */
+  doubleTop: { active: boolean; level: number | null };
   headShoulders: { active: boolean; neckline: number | null };
   thirdPeak: { active: boolean; level: number | null };
   ma14Exit: { active: boolean; level: number | null };
@@ -143,6 +146,7 @@ export function patternInputsFromFts(
       level: price(fts?.double_bottom?.neckline, toDisp),
       breakout: fts?.double_bottom?.pct_above_neck != null,
     },
+    doubleTop: { active: l3?.double_top === true, level: price(l3?.level ?? l3?.neckline, toDisp) },
     headShoulders: { active: l3?.hs_break === true, neckline: price(l3?.neckline, toDisp) },
     thirdPeak: { active: l3?.third_peak === true, level: price(l3?.third_peak_level, toDisp) },
     ma14Exit: { active: l1?.ma14_exit === true, level: price(l1?.ma14, toDisp) },
@@ -245,7 +249,19 @@ export function buildPatternOverlays(
     });
   }
 
-  // ۵) سر و شانه: خط گردن قرمز + هشدار خروج
+  // ۵) سقف دوقلو: خط گردنِ شکسته‌شده — همان لایۀ «دوقلو»، سمتِ سقف
+  if (on('double') && inputs.doubleTop.active && inputs.doubleTop.level != null && lastTs > 0) {
+    out.push({
+      kind: 'double',
+      overlayName: 'ftsNeckline',
+      label: 'خط گردن (سقف دوقلو)',
+      points: [{ timestamp: lastTs, value: inputs.doubleTop.level }],
+      styles: { color: col('double'), size: 1, style: 'dashed' },
+      extendData: { label: 'خط گردن (سقف دوقلو)', warning: true },
+    });
+  }
+
+  // ۶) سر و شانه: خط گردن قرمز + هشدار خروج
   if (on('headshoulders') && inputs.headShoulders.active && inputs.headShoulders.neckline != null && lastTs > 0) {
     out.push({
       kind: 'headshoulders',
@@ -257,7 +273,7 @@ export function buildPatternOverlays(
     });
   }
 
-  // ۶) سقف سوم: نوار هشدار حولِ سقفِ تخت (سطحِ سرور، ±۲٪ پهنایِ باند)
+  // ۷) سقف سوم: نوار هشدار حولِ سقفِ تخت (سطحِ سرور، ±۲٪ پهنایِ باند)
   if (on('thirdpeak') && inputs.thirdPeak.active && inputs.thirdPeak.level != null && lastTs > 0) {
     pushBand(
       'thirdpeak',

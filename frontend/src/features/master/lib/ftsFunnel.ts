@@ -375,6 +375,75 @@ export function tapePickedSymbols(
   return tapeRows(rows, cfg, quickFilters, preset).picks.map((r) => r.symbol ?? '').filter(Boolean);
 }
 
+/**
+ * مرحلۀ خودِ یک نماد، از همان `buildFunnel` — نه یک پیاده‌سازی دوم.
+ * سایدبارِ چپ می‌خواهد بگوید «این نماد کجای قیف ایستاده»: به‌جای نوشتنِ دوبارهٔ
+ * قواعد (که دو نسخه‌اش حتماً از هم جدا می‌افتد)، قیف رویِ تک‌ردیفِ همین نماد
+ * اجرا می‌شود و پیشرفتِ همان را گزارش می‌دهد. O(۱) است.
+ */
+export type StageProgress = {
+  key: FunnelStageKey;
+  /** 'passed' رد شده · 'blocked' اینجا مانده · 'waiting' سنجیده نشده ·
+   *  'unknown' هیچ منبعی برایِ داوریِ این مرحله نیست (نه رد، نه قبول) */
+  state: 'passed' | 'blocked' | 'waiting' | 'unknown';
+  /** چرا — برایِ tooltip و خطِ «ایستاده در …» */
+  why: string;
+};
+
+const STAGE_KEYS: readonly FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
+
+export function symbolStageProgress(
+  row: MarketRow | null,
+  cfg: TapeFilterConfig,
+  quickFilters: string[],
+  screen: FtsScreenRow | null,
+  inBasket: boolean,
+  preset: TreePreset = 'custom',
+  tech: Map<string, TechVerdict> = new Map(),
+  opts: FunnelOptions = DEFAULT_FUNNEL_OPTIONS,
+): StageProgress[] {
+  if (!row || !row.symbol) {
+    const none = 'تابلو: ردیفِ این نماد در خوراکِ زنده نیست — سنجیده نشد، وتو نیست';
+    return STAGE_KEYS.map((k) => ({ key: k, state: 'unknown' as const, why: k === 'tape' ? none : '' }));
+  }
+  const f = buildFunnel(
+    [row], cfg, quickFilters, screen ? [screen] : [],
+    new Set(inBasket ? [row.symbol] : []), preset, tech, opts,
+  );
+  const entry = f.stages.tape.entries[0];
+  const on = (k: FunnelStageKey) => f.stages[k].entries.some((e) => e.symbol === row.symbol);
+  const mark = (s: StageMark): StageProgress['state'] =>
+    s === 'ok' ? 'passed' : s === 'no' ? 'blocked' : 'waiting';
+
+  return STAGE_KEYS.map((k) => {
+    if (k === 'tape') {
+      return on('tape')
+        ? { key: k, state: 'passed' as const, why: 'تابلو: حداقل یک فیلترِ دربِ این سبک روشن است' }
+        : { key: k, state: 'blocked' as const, why: 'تابلو: هیچ‌کدام از فیلترهایِ درب روی این ردیف روشن نیست' };
+    }
+    if (!entry) {
+      // درِ تابلو بسته بوده؛ مرحله‌های بعد چیزی برای گفتن ندارند
+      return { key: k, state: 'unknown' as const, why: '' };
+    }
+    if (k === 'technical') return { key: k, state: mark(entry.tech), why: entry.techWhy };
+    if (k === 'fundamental') return { key: k, state: mark(entry.fund), why: entry.fundWhy };
+    if (on('handover')) return { key: k, state: 'passed' as const, why: 'تحویل: آمادهٔ ارائه به کاکپیتِ داوری' };
+    // تحویل فقط وقتی حرف می‌زند که سه درِ اول باز بوده باشند؛ وگرنه علتِ
+    // خالی‌بودنش بالادست گفته شده و این‌جا چیزی اضافه نمی‌کنیم.
+    const upstreamClosed = entry.tech !== 'ok' || entry.fund !== 'ok';
+    if (upstreamClosed) return { key: k, state: 'unknown' as const, why: '' };
+    return {
+      key: k,
+      state: 'blocked' as const,
+      why: entry.assemblyVeto
+        ? entry.assemblyWhy
+        : inBasket
+          ? 'تحویل: نماد همین حالا در سبدِ شماست — این فهرست جایِ خریدِ تازه است'
+          : 'تحویل: بسته',
+    };
+  });
+}
+
 export function buildFunnel(
   rows: MarketRow[],
   cfg: TapeFilterConfig,

@@ -1083,7 +1083,11 @@ def _fts_resample(candles, bucket="W"):
 
     candles: لیست دیکشنری با کلیدهای time ('YYYY-MM-DD'), open, high, low, close, volume
              (همان ساختار candles در get_chart_db؛ مرتب صعودی).
-    bucket:  'W' → هفتهٔ ISO  |  'M' → ماه میلادی.
+    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه میلادی.
+    هفتهٔ ISO دوشنبه‌محور است؛ نشستِ ایران شنبه تا چهارشنبه است، پس در ISO سه
+    روزِ اولِ هفتهٔ معاملاتی به هفتهٔ قبلی می‌افتادند و کندلِ هفتگیِ موتور با
+    کندلِ هفتگیِ چارت (که شنبه‌محور است یکی از همان‌ها را می‌شمارد) یکی نمی‌شد —
+    یعنی رأیِ هفتگی و وتوی آن رویِ سبدی از روزها ساخته می‌شد که کاربر نمی‌بیند.
     کندل تجمیعی: open = اولین روز سبد، close = آخرین روز، high/low = max/min سبد،
     حجم = جمع. تاریخ کندل تجمیعی = تاریخ آخرین روز سبد (کندلِ هفته در آخرین روز
     معاملاتی‌اش می‌بندد) — هم‌قرارداد rvAggregate سمت فرانت.
@@ -1100,8 +1104,7 @@ def _fts_resample(candles, bucket="W"):
         except ValueError:
             continue
         if bucket == "W":
-            iso = d.isocalendar()
-            key = f"{iso[0]}-W{int(iso[1]):02d}"
+            key = (d - datetime.timedelta(days=(d.weekday() + 2) % 7)).isoformat()
         else:
             key = t[:7]          # 'YYYY-MM'
         prev = out.get(key)
@@ -1398,6 +1401,19 @@ def _fts_fib_price(top, bot, ratio):
     return math.exp(math.log(top) + (math.log(bot) - math.log(top)) * ratio)
 
 
+def _fts_fib_retrace(top, bot, ratio, direction):
+    """سطحِ اصلاحِ pِ موج، در مقیاس لگاریتمی.
+
+    موجِ صعودی: اصلاح از سقف به پایین است (p=0.۶۱۸ ⇒ ۶۱٫۸٪ از صعود برگشته).
+    موجِ نزولی: همان p باید از کف به بالا سنجیده شود؛ وگرنه «کمربندِ ۳۳–۴۰٪»
+    رویِ موجِ ریزشی جایی نزدیک سقف می‌افتد — یعنی درست همان‌جا که قیمتِ موج
+    از آن شروع کرده، و کاربر به‌جای منطقۀ بازگشت، ابتدای ریزش را می‌بیند.
+    """
+    if direction == "down":
+        return math.exp(math.log(bot) + (math.log(top) - math.log(bot)) * ratio)
+    return _fts_fib_price(top, bot, ratio)
+
+
 def _fts_fib_zones(candles, swings):
     """کمربندها و سطوحِ فیبوناچی در مقیاس لگاریتمی — متدولوژی FTS صفحهٔ ۲.
 
@@ -1419,15 +1435,21 @@ def _fts_fib_zones(candles, swings):
     if top <= 0 or bot <= 0 or top <= bot:
         return None
     zones = {}
+    direction = leg.get("direction") or "up"
     for key, p1, p2 in _FTS_FIB_BELTS:
-        hi_p, lo_p = _fts_fib_price(top, bot, p1), _fts_fib_price(top, bot, p2)
+        # کمربند در جهتِ موج سنجیده می‌شود: صعودی از سقف به پایین، نزولی از کف
+        # به بالا. پیش از این هر دو «از سقف به پایین» بودند، پس روی موجِ ریزشی
+        # کمربندِ ۳۳–۴۰٪ چسبیده به همان سقفی می‌افتاد که موج از آن شروع کرده
+        # بود — منطقۀ بازگشت نه، ابتدایِ ریزش.
+        a, b = _fts_fib_retrace(top, bot, p1, direction), _fts_fib_retrace(top, bot, p2, direction)
+        hi_p, lo_p = max(a, b), min(a, b)
         last = float(candles[-1]["close"]) if candles else 0.0
         zones[key] = {"lo": round(lo_p, 2), "hi": round(hi_p, 2),
                       "in_zone": bool(lo_p <= last <= hi_p)}
     return {
         "retrace_base_high": round(top, 2), "retrace_base_low": round(bot, 2),
         **zones,
-        "levels": [{"ratio": r, "price": round(_fts_fib_price(top, bot, r), 2)}
+        "levels": [{"ratio": r, "price": round(_fts_fib_retrace(top, bot, r, direction), 2)}
                    for r in _FTS_FIB_LEVELS],
         "leg": {"direction": leg["direction"],
                 "start": str(candles[leg["start_idx"]]["time"])[:10],
@@ -1481,8 +1503,9 @@ def _fts_choch(candles, swings):
       • در روند نزولی: CHoCH صعودی وقتی پایانی امروز بالای آخرین سقف پیوتِ پایین‌تر
         (last_high) بسته شود — نشانهٔ برگشت صعودی (معیار ورود FTS روی نمادهای
         فرسوده‌شده).
-      • در رنج/نا: شکست هر سمتِ آخرین سقف/کف پیوت گزارش می‌شود ولی «قطعی»
-        نیست (label 'range-break').
+      • جهتِ غالب از سمتِ پیوتِ اخیر خوانده می‌شود (آخرین پیوتِ زمانی، سقف یا کف)،
+        پس در رنج هم همان یک سمت سنجیده می‌شود. شکستِ باکسِ رنج را این تابع
+        برچسب نمی‌زند؛ آن کارِ `range_box` است (فرانت از همان جبران می‌کند).
     آستانهٔ «قطعی»: بسته‌شدنِ کامل پایانی (نه فقط wick) + فاصلهٔ ≥ ۰.۳٪ از سطح.
     خروجی: {'bearish', 'bullish', 'level', 'label'}.
     """
@@ -1694,7 +1717,11 @@ def _fts_exit_layer1(candles, entry_hint=None):
     close = float(last["close"])
     out["close"] = round(close, 2)
     # --- حد ضرر سخت ---
-    major_low = min(float(c["low"]) for c in candles[-20:])
+    # بیست کندلِ بسته‌شده. کندلِ آخر نشستِ جاریِ زنده است و کمینۀ آن با هر تیک
+    # عوض می‌شود؛ پیش از این همین سایهٔ لحظه‌ای حدِ ضرری را که در تابلو، سبد و
+    # کارتِ پلن منتشر شده پله‌پله پایین می‌کشید.
+    closed = candles[:-1] if len(candles) > 1 else candles
+    major_low = min(float(c["low"]) for c in closed[-20:])
     cand = []
     if entry_hint and entry_hint > 0:
         cand.append((entry_hint * 0.95, "entry"))
@@ -2003,6 +2030,15 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
                 "setup": "FIB_CHOCH_STEP_ENTRY",
                 "desc": "هفتگی صعودی + روزانه نزولی: ستاپ فیبوناچی لگاریتمی و CHoCH؛ ورود پله‌ای",
             }
+        elif tD == "na":
+            # «سنجیده نشد» رأی نیست: روزانۀ کم‌سابقه نه صعودی است نه خنثی. پیش از
+            # این در همان `else`ی خنثی می‌نشست و «خرید در کف باکس رنج» پیشنهاد
+            # می‌داد — پیشنهادِ ستاپ رویِ چیزی که اصلاً اندازه گرفته نشده بود.
+            out["trend"]["matrix"] = {
+                "decision": "UNKNOWN",
+                "setup": "NONE",
+                "desc": "هفتگی صعودی + روزانه سنجیده نشده (کمتر از دو پیوت کامل) — نظر داده نمی‌شود",
+            }
         else:
             out["trend"]["matrix"] = {
                 "decision": "PERMITTED",
@@ -2015,26 +2051,41 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     _mx = out["trend"].get("matrix")
     if _mx is not None:
         _mx["basis"] = {"weekly": w_reason, "daily": d_reason}
-        if _mx["decision"] in ("REJECT", "UNKNOWN") and w_reason:
-            _mx["desc"] = f"{_mx['desc']} — {w_reason}"
+        if _mx["decision"] in ("REJECT", "UNKNOWN"):
+            # دلیلِ همان درزی که رأی را بسته است: وتوی هفتگی دلیلِ هفتگی می‌خواهد،
+            # «روزانه سنجیده نشد» دلیلِ روزانه.
+            why = w_reason if tW in ("down", "range", "na") else d_reason
+            if why:
+                _mx["desc"] = f"{_mx['desc']} — {why}"
 
     # استراتژی ساعت شنی پیشرفته FTS طبق بخش ۵ سند رسمی FTS v2.1
     closes_w = [float(c["close"]) for c in w] if w else []
     if len(closes_w) >= 15:
-        period_ma = min(52, len(closes_w))
-        ma52_w = _fts_ma(closes_w, period_ma)
         rsi5_w = _fts_rsi(closes_w, 5)
         last_cw = closes_w[-1]
-        last_ma52 = ma52_w[-1] if ma52_w else None
         last_rsi5 = rsi5_w[-1] if rsi5_w else None
+        # MA52 فقط با پنجاه‌ودو نشستِ هفتگیِ واقعی. پیش از این دوره با
+        # «کمترینِ پنجاه‌ودو و طولِ سابقه» ساخته می‌شد و همان عددِ کوتاه‌تر با
+        # نامِ ma52 منتشر و در شرطِ «خریدِ ۲ تا ۴ برابری» به کار می‌رفت: نمادی
+        # با چهارده هفته، میانگینِ چهارده‌هفته‌اش را زیرِ پا داشت و ساعت شنی
+        # روشن می‌شد. عددی که موتور نگفته نباید جایِ عددِ دیگر را بزند.
+        ma_ok = len(closes_w) >= 52
+        ma52_w = _fts_ma(closes_w, 52) if ma_ok else []
+        last_ma52 = ma52_w[-1] if ma52_w else None
         is_hg_active = bool(last_ma52 and last_cw < last_ma52 and (last_rsi5 is not None and last_rsi5 <= 30.0))
         out["hourglass"] = {
             "active": is_hg_active,
             "weekly_close": round(last_cw, 2),
             "ma52": round(last_ma52, 2) if last_ma52 else None,
+            "weekly_bars": len(closes_w),
             "weekly_rsi5": round(last_rsi5, 1) if last_rsi5 is not None else None,
             "action": "ACCELERATE_BUY_2X_4X" if is_hg_active else "NORMAL",
-            "desc": "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)" if is_hg_active else "شرایط ساعت شنی برقرار نیست",
+            "desc": (
+                "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)"
+                if is_hg_active
+                else ("MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+                      if not ma_ok else "شرایط ساعت شنی برقرار نیست")
+            ),
         }
     else:
         out["hourglass"] = {
