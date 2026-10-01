@@ -349,7 +349,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
       {/* موتورِ رندر: همان داده و همان لایه‌ها، موتورِ دیگر. انتخاب اینجا
           ذخیره می‌شود و چارتِ اصلی (klinecharts) پیش‌فرض می‌ماند. */}
       {onEngineChange && chartEngine ? (
-        <div className="nn-btn-group" role="group" aria-label="موتور چارت" data-testid="nn-engine-switch">
+        <div className="nn-toolbar-group" role="group" aria-label="موتور چارت" data-testid="nn-engine-switch">
           {ENGINE_REGISTRY.filter((e) => e.production).map((e) => (
             <button
               key={e.id}
