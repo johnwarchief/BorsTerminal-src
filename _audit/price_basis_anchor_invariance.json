@@ -1,0 +1,90 @@
+{
+ "symbols": {},
+ "cdn": {
+  "فولاد": {
+   "basis_applied_last_mode": "last",
+   "basis_applied_closing_mode": "closing",
+   "candles": 4236,
+   "from_cdn": true,
+   "anchor_events_equal": true,
+   "anchor_factors_equal": true,
+   "adjust_events": 30,
+   "adjust_events_equal_count": true,
+   "adjustSource_equal": true,
+   "adjustSource": "base-price-discontinuity",
+   "display_close_flips": 3596,
+   "display_close_flip_pct": 84.89,
+   "closes_equal_under_both_for_closing_col": true,
+   "last_missing_candles": 0,
+   "wicks_widened_by_basis": 0,
+   "reason_last_mode": null,
+   "sample_flip": [
+    "2019-03-09",
+    3145.0,
+    3136.0
+   ]
+  },
+  "پارس": {
+   "basis_applied_last_mode": "last",
+   "basis_applied_closing_mode": "closing",
+   "candles": 1766,
+   "from_cdn": true,
+   "anchor_events_equal": true,
+   "anchor_factors_equal": true,
+   "adjust_events": 11,
+   "adjust_events_equal_count": true,
+   "adjustSource_equal": true,
+   "adjustSource": "base-price-discontinuity",
+   "display_close_flips": 1671,
+   "display_close_flip_pct": 94.62,
+   "closes_equal_under_both_for_closing_col": true,
+   "last_missing_candles": 0,
+   "wicks_widened_by_basis": 0,
+   "reason_last_mode": null,
+   "sample_flip": [
+    "2019-03-09",
+    32527.0,
+    32471.0
+   ]
+  },
+  "خگستر": {
+   "basis_applied_last_mode": "last",
+   "basis_applied_closing_mode": "closing",
+   "candles": 3867,
+   "from_cdn": true,
+   "anchor_events_equal": true,
+   "anchor_factors_equal": true,
+   "adjust_events": 20,
+   "adjust_events_equal_count": true,
+   "adjustSource_equal": true,
+   "adjustSource": "base-price-discontinuity",
+   "display_close_flips": 3443,
+   "display_close_flip_pct": 89.04,
+   "closes_equal_under_both_for_closing_col": true,
+   "last_missing_candles": 0,
+   "wicks_widened_by_basis": 0,
+   "reason_last_mode": null,
+   "sample_flip": [
+    "2019-03-09",
+    3098.0,
+    3101.0
+   ]
+  }
+ },
+ "notes": [
+  "بخشِ بانکِ محلی (--cdn-only) اجرا نشد"
+ ],
+ "verdict": {
+  "cdn": {
+   "checked": 3,
+   "counted": 3,
+   "all_events_equal": true,
+   "all_factors_equal": true,
+   "all_adjustSource_equal": true,
+   "total_adjust_events": 61,
+   "candles": 9869,
+   "close_flips": 8710,
+   "leg_meaningful": true
+  }
+ }
+}

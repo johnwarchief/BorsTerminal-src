@@ -143,6 +143,10 @@ SUITES = [
     # لنگرِ تعدیل هرگز last را نمی‌خواند. بی‌شبکه — CSV و تابلو فیکسچرند.
     ('dev/price_last_value_v1070.py',
                                      'last/closing are separate columns; no fabricated last, anchor untouched'),
+    # کارِ #73 قدمِ ۳: price_basis تنها نقطۀ انتخابِ ستونِ قیمت است (last|closing،
+    # پیش‌فرض last، سمتِ سرور) و لنگرِ تعدیل تحتِ هر دو مبنای بیت‌به‌بیت یکی می‌ماند.
+    ('dev/price_basis_v1070.py',
+                                     'single price resolver (last|closing) + adjustment anchor invariance'),
     # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
     # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
     # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.

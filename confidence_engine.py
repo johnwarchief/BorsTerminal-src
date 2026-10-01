@@ -38,6 +38,7 @@ from typing import Optional
 # import در سطح ماژول نهاده می‌شود چون fts_engine وابستگی شبکه/HTTP ندارد.
 import fts_engine
 import mstat_engine
+import price_basis
 
 
 # ============================================================ آستانه‌ها
@@ -348,7 +349,7 @@ def _bars(conn: sqlite3.Connection, symbol: str, entry: dict = None,
     if not al:
         return [], None
     rows = conn.execute(
-        "SELECT date, close, high, low, volume FROM price_history "
+        "SELECT date, close, high, low, volume, last FROM price_history "
         "WHERE symbol IN (%s) ORDER BY date DESC, volume DESC LIMIT ?"
         % ",".join("?" * len(al)), (*al, int(limit))).fetchall()
     seen, uniq = set(), []
@@ -357,7 +358,18 @@ def _bars(conn: sqlite3.Connection, symbol: str, entry: dict = None,
             continue
         seen.add(r[0])
         uniq.append(r)
-    return (uniq, cands[0]) if uniq else ([], None)
+    if not uniq:
+        return [], None
+    # کارِ #73 قدمِ ۳: این ستونِ تکنیکالِ واچ‌لیست پیش‌تر «خامِ پایانی» بود در حالی که
+    # چارت مبنایِ دیگری داشت (inventory §۱۰، پرچمِ ۵). حالا از همان price_basis
+    # می‌گذرد و درِ خانۀ ۱ (close) عددِ **منتخب** را نگه می‌دارد، پس همهٔ
+    # مصرف‌کننده‌هایِ موقعیتی (MA/RSI/موقعیتِ دامنه/هفتگی) بی‌انتخابِ ستونِ خودشان
+    # هم‌مبنایِ چارت می‌شوند. ترتیبِ tuple و معنایِ خانۀ دوم (روزشِ نماد) دست‌نخورده.
+    bars = [{"date": r[0], "close": r[1], "high": r[2], "low": r[3], "volume": r[4],
+             "last": r[5]} for r in uniq]
+    price_basis.apply_basis(bars)
+    out = [(b["date"], b["close"], b["high"], b["low"], b["volume"]) for b in bars]
+    return (out, cands[0]) if out else ([], None)
 
 
 from datetime import date as _date

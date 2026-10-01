@@ -564,6 +564,10 @@ OD_STATUS_PATH = os.path.join(WORK_DIR, "sync_ondemand.json")
 MARKET_STATUS_PATH = os.path.join(WORK_DIR, "market_sync.json")
 CONTROL_PATH = os.path.join(WORK_DIR, "codal_control.json")
 FTS_CONFIG_PATH = os.path.join(WORK_DIR, "fts_thresholds.json")
+# تنظیماتِ رسمیِ «Price Source» (کارِ #73 قدمِ ۳؛ docs/CANDLE-CONTRACT.md §۱-ث):
+# `{"basis": "last"|"closing"}`، پیش‌فرض last، سمتِ سرور — تنها خواننده‌اش price_basis.py
+# است تا چارت/غربگر/کارت همه یک مبنایِ یکسان ببینند.
+PRICE_BASIS_PATH = os.path.join(WORK_DIR, "price_basis.json")
 _ADB_CFG = os.path.join(WORK_DIR, "adb_config.json")
 
 FTS_DEFAULTS = {

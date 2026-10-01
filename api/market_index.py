@@ -17,6 +17,7 @@ from fastapi import APIRouter
 from fastapi import Query
 from fastapi.responses import JSONResponse
 import datetime
+import price_basis
 import time
 
 
@@ -157,7 +158,11 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
             "high": round(h, 2),
             "low": round(l, 2),
             "close": round(c, 2),
-            "last": round(c, 2),
+            # کارِ #73 قدمِ ۳: برایِ شاخص کل «آخرینِ معامله» معنا ندارد (endpointِ
+            # Index/GetIndexB2History آن را نمی‌دهد). پیش از این `last := close` نوشته
+            # می‌شد؛ حالا None است و price_basis صریح می‌گوید این سری last ندارد، پس
+            # مبنایِ اعمال‌شده closing است با دلیلِ ثبت‌شده — نه یک عددِ جعلی.
+            "last": None,
         })
         prev_close = c
 
@@ -183,7 +188,9 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
     }
     INDEX_CACHE[ins_code] = (now, {k: v for k, v in payload.items()
                                    if k not in ("cached", "cache_age_sec")})
-    return payload
+    # مبنایِ قیمت از ریزالویِ واحد می‌گذرد؛ برایِ شاخص نتیجه همیشه closing است و
+    # دلیلش (`last_missing:N/N`) درِ همان پاسخ ثبت می‌شود.
+    return price_basis.resolve_payload(payload)
 
 
 @router.get("/api/index/tedpix")

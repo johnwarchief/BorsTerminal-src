@@ -9,6 +9,7 @@ from ._core import _num, get_db, sym_pred
 from .market import load_fts_config
 from .chart import _fts_analyze_symbol, upcoming_assemblies, _ASSEMBLY_CONFIRMED
 from .fundamental import _fa
+import price_basis
 from fastapi import APIRouter
 import pandas as pd
 import datetime
@@ -99,7 +100,7 @@ def get_history(symbol: str):
         # بدون این، `WHERE symbol = ?` صفر ردیف می‌دهد و تاریخچه خالی می‌ماند.
         _pred, _params = sym_pred("symbol", symbol)
         query = """
-            SELECT date, open, high, low, close, volume
+            SELECT date, open, high, low, close, volume, last
             FROM price_history WHERE %s ORDER BY date ASC
         """ % _pred
         df = pd.read_sql_query(query, conn, params=_params)
@@ -123,12 +124,22 @@ def get_history(symbol: str):
         lows = df["low"].astype(float).tolist()
         closes = df["close"].astype(float).tolist()
         vols = df["volume"].astype(float).tolist()
+        # «آخرین» می‌تواند ستونی تمام-NULL باشد (ردیف‌هایِ قدیمیِ مهاجرت‌شده)؛
+        # to_numeric آن را NaN می‌کند و NaN درِ JSON مقدارِ معتبری نیست، پس صریح به
+        # None برمی‌گردد — «این نماد last ندارد»، نه عددِ پایانی با نامِ آخرین.
+        _ls = pd.to_numeric(df["last"], errors="coerce").where(lambda s: s > 0)
+        last_s = [None if (x != x or x is None) else float(x) for x in _ls.tolist()]
         up_c, dn_c = "rgba(34, 197, 94, 0.4)", "rgba(239, 68, 68, 0.4)"
-        candles = [{"time": t, "open": o, "high": h, "low": l, "close": c}
-                   for t, o, h, l, c in zip(times, opens, highs, lows, closes)]
+        candles = [{"time": t, "open": o, "high": h, "low": l, "close": c, "last": ls}
+                   for t, o, h, l, c, ls in zip(times, opens, highs, lows, closes, last_s)]
         volumes = [{"time": t, "value": v, "color": up_c if c >= o else dn_c}
                    for t, v, o, c in zip(times, vols, opens, closes)]
-        return {"status": "success", "candles": candles, "volumes": volumes}
+        # تنها نقطۀ انتخابِ مبنایِ قیمت (کارِ #73 قدمِ ۳): این سری همان چیزی است که
+        # غربگر و چارتِ فرانت کنارِ هم می‌گذارند، پس اینجا هم باید از price_basis
+        # بگذرد نه از `close` خامِ بانک. رنگِ حجمِ این endpoint (rgba) حفظ می‌شود.
+        return price_basis.resolve_payload(
+            {"status": "success", "candles": candles, "volumes": volumes},
+            colors=(up_c, dn_c))
     finally:
         conn.close()
 

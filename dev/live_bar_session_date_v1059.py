@@ -128,9 +128,13 @@ def main():
 
         ch.DB_PATH = mini_db([("A3", "شپنا", 20260928, 0.0, 0.0, 0.0, 500.0, 0.0, 12000.0)])
         flat, _ = ch._watch_live_bar("شپنا", "2026-09-27")
+        # کارِ #73 قدمِ ۳ (قرارداد §۱-ث شرطِ ۳): «آخرینِ» نبود با پایانی پر نمی‌شود.
+        # هندسه هنوز همان قاعده است (بدونِ سایه ⇒ کندلِ تختِ پایانی)، ولی `last`
+        # صریح None می‌ماند تا price_basis اعلام کند این کندل last ندارد.
         ck(flat and flat["open"] == 500.0 and flat["high"] == 500.0 and flat["low"] == 500.0
-           and flat["last"] == 500.0,
-           "a mid-session row with empty wicks degrades to a flat bar of its close", str(flat))
+           and flat["close"] == 500.0 and flat["last"] is None,
+           "a mid-session row with empty wicks degrades to a flat bar of its close, "
+           "with last left honestly null", str(flat))
 
         # پیش از بازگشایی تابلو «پایانی» را با قیمتِ پایه پر می‌کند؛ حجمِ صفر یعنی
         # هنوز معامله‌ای نبوده، پس کندلی هم نیست (اثباتِ زندهٔ اپِ نصبی ۰۷:۵۰).
@@ -197,14 +201,21 @@ def main():
 
         ch._watch_live_bar = lambda sym, after: (None, None)
         same = ch._attach_live_bar("فولاد", base)
-        ck(same["candles"] == base["candles"] and "liveInjected" not in same,
-           "NEGATIVE CONTROL: no session newer than the history → series untouched")
+        # قدمِ ۳ (price_basis) به هر کندل `closing`/`basis` اضافه می‌کند، پس مقایسۀ
+        # «دیکشنریِ برابر» دیگر سنجشِ درستی نیست: چیزی که باید دست‌نخورده بماند
+        # **عددهایِ سری** است، نه کلیدهایِ متادیتا.
+        _px = lambda cs: [(c["time"], c["open"], c["high"], c["low"], c["close"],
+                           c.get("last")) for c in cs]
+        ck(_px(same["candles"]) == _px(base["candles"]) and "liveInjected" not in same,
+           "NEGATIVE CONTROL: no session newer than the history → series untouched",
+           str(_px(same["candles"]))[:120])
 
         ch._watch_live_bar = lambda sym, after: (None, "OperationalError: locked")
         witherr = ch._attach_live_bar("فولاد", base)
         ck(witherr.get("liveError") == "OperationalError: locked",
            "the injection failure is reported, not silent")
-        ck(witherr["candles"] == base["candles"], "a failed injection never breaks the series")
+        ck(_px(witherr["candles"]) == _px(base["candles"]),
+           "a failed injection never breaks the series")
 
         ck(ch._attach_live_bar("خالی", {"status": "error", "message": "x"})["status"] == "error",
            "an empty/error response passes through untouched")

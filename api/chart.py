@@ -7,6 +7,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
 from tape_flags import JET_LADDER
+import price_basis
 from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
 from fastapi import Query
@@ -57,8 +58,6 @@ def _parse_tsetmc_csv(text):
             hi = float(p[3]); lo = float(p[4]); c = float(p[5])
             base = float(p[10] or 0)   # <OPEN>  = «قیمت پایه» (= پایانی دیروز، یا پس از تعدیل)
             v = float(p[7]) if p[7] else 0
-            # آخرین معامله؛ اگر ستون نبود یا صفر بود به پایانی برمی‌گردد
-            last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else 0.0
         except (ValueError, IndexError):
             continue
         # v8.7 FIX-1: بدنهٔ کندل = «اولین معامله» (ستون ۲). ستون <OPEN> که قبلاً استفاده
@@ -83,13 +82,13 @@ def _parse_tsetmc_csv(text):
         # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
         # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
         hi, lo = max(hi, lo, o, c), min(hi, lo, o, c)
-        if last <= 0:
-            last = c          # <LAST> معتبر نبود → پایانی جانشین می‌شود
-        # LAST-CLAMP FIX (2026-09-09): «آخرین معامله» قیمتِ معاملاتی است و
-        # ریاضیاتاً باید داخل [low, high] باشد. اگر CDN مقدار معیوب داد (همان
-        # گونه که برای FIRST در v8.7 FIX-1b می‌داد)، clamp می‌شود تا سریِ
-        # «آخرین قیمت» در نمای خطی بیرون از سایهٔ کندل خط نکشد.
-        last = min(max(last, lo), hi)
+        # v10.7.0 (کارِ #73 قدمِ ۳): «آخرین» دیگر به پایانی fallback نمی‌کند و دیگر
+        # clamp نمی‌شود. دو جعلِ قبلی همان چیزی بود که قرارداد §۱-ث شرطِ ۳ بست:
+        #   (الف) `last = c` وقتی ستون خالی است ⇒ مصرف‌کننده عددِ پایانی را با نامِ
+        #       «آخرین» می‌خواند؛ حالا None می‌ماند و price_basis صریح اعلام می‌کند.
+        #   (ب) clamp داخلِ [low, high] ⇒ قیمتِ منتخب بی‌صدا جابه‌جا می‌شد. حالا سایه
+        #       گِشاد می‌شود (همان قاعدۀ candle_from_row) و تعدادش درِ متادیتا می‌آید.
+        last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else None
         candles.append({"time": dt, "open": o, "high": hi, "low": lo,
                         "close": c, "last": last})
         volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
@@ -197,8 +196,10 @@ def _watch_live_bar(symbol, after_date):
     l_l = min(p_min if p_min > 0 else o_l, o_l, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
              "close": p_close, "volume": vol,
-             # v9.7: «آخرین معامله» زنده از market_watch.p_last
-             "last": p_last if p_last > 0 else p_close}), None
+             # «آخرین معامله» زنده از market_watch.p_last؛ بی‌fallback به پایانی
+             # (کارِ #73 قدمِ ۳، شرطِ ۳ قرارداد). p_last نبود ⇒ None، و price_basis
+             # خودش اعلام می‌کند که این سری last ندارد.
+             "last": p_last if p_last > 0 else None}), None
 
 
 HISTORY_REPAIR_MIN_GAP = 900.0   # هر نماد، دست‌کم هر ۱۵ دقیقه یک‌بار تازه می‌شود
@@ -260,11 +261,11 @@ def _attach_live_bar(symbol, res):
     """
     candles = res.get("candles") or []
     if not candles:
-        return res
+        return price_basis.resolve_payload(res)
     newest = max(c["time"] for c in candles)   # ترتیبِ آرایه به خودِ سری واگذار است
     bar, err = _watch_live_bar(symbol, newest)
     if bar is None:
-        return dict(res, liveError=err) if err else res
+        return price_basis.resolve_payload(dict(res, liveError=err) if err else res)
     # /api/chart نزولی می‌دهد (تازه‌به‌قدیم) و مسیرِ محلی صعودی — کندلِ تازه باید
     # در همان سمتی بنشیند که سری بزرگ می‌شود، نه همیشه در خانۀ صفر.
     at = len(candles) if candles[-1]["time"] > candles[0]["time"] else 0
@@ -280,7 +281,10 @@ def _attach_live_bar(symbol, res):
     out["factors"] = facts
     out["count"] = len(cands)
     out["liveInjected"] = True
-    return out
+    # تنها نقطۀ انتخابِ مبنایِ قیمت درِ این مسیر (کارِ #73 قدمِ ۳): کندلِ زنده هم
+    # داخلِ سری است، پس یکِ تصمیمِ مبنایی برایِ کلِ سری اینجا گرفته می‌شود — نه یکی
+    # برایِ تاریخچه و یکی برایِ امروز.
+    return price_basis.resolve_payload(out)
 
 
 @router.get("/api/chart/{symbol}")
@@ -553,7 +557,7 @@ def get_key_levels(symbol: str):
         conn.execute("PRAGMA journal_mode=WAL")
         _pred, _params = sym_pred("symbol", symbol)
         _raw = conn.execute(
-            "SELECT symbol, date, open, high, low, close, volume FROM price_history "
+            "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
             _params).fetchall()
         _seen, rows = set(), []
@@ -562,9 +566,12 @@ def get_key_levels(symbol: str):
                 continue
             _seen.add(r[1])
             rows.append({"date": r[1], "open": r[2], "high": r[3], "low": r[4],
-                         "close": r[5], "volume": r[6]})
+                         "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()  # صعودی
+        # سطوح کلیدی رویِ همان مبنایی رسم می‌شوند که چارت نشان می‌دهد (§۱-ث شرطِ ۱):
+        # پیش از این این endpoint خامِ پایانی را می‌خواند و «مقاومت» با عددِ چارت نمی‌خواند.
+        price_basis.apply_basis(rows)
         if len(rows) < 60:
             return {"status": "ok", "symbol": symbol, "levels": [], "blocks": [],
                     "count": 0, "message": "تاریخچهٔ کافی نیست (< 60 روز)"}
@@ -834,7 +841,7 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         conn.execute("PRAGMA journal_mode=WAL")
         _pred, _params = sym_pred("symbol", symbol)
         _raw = conn.execute(
-            "SELECT date, close, volume FROM price_history WHERE %s "
+            "SELECT date, close, volume, last FROM price_history WHERE %s "
             "ORDER BY date DESC, volume DESC LIMIT ?" % _pred,
             (*_params, days)).fetchall()
         conn.close()
@@ -845,7 +852,11 @@ def get_ma_events(symbol: str, days: int = Query(730)):
             _seen.add(r[0])
             rows.append(r)
         rows.reverse()  # صعودی
-        closes = [(r[0], float(r[1])) for r in rows if r[1] is not None]
+        # مبنایِ MA همان مبنایِ چارت است (قدمِ ۳): سری از price_basis می‌گذرد، پس
+        # ma{w} و کندل‌هایِ چارت هرگز دو جوابِ متفاوت برایِ یکِ روز نمی‌دهند.
+        _ma_rows = [{"time": r[0], "close": r[1], "last": r[3]} for r in rows]
+        price_basis.apply_basis(_ma_rows)
+        closes = [(c["time"], float(c["close"])) for c in _ma_rows if c["close"] is not None]
         ma = {}
         for w in MA_WINDOWS:
             ser, acc = [], 0.0
@@ -926,7 +937,12 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         # so "fts" degrades to None. See _fts_analyze_candles.
         fts_payload = None
         try:
-            fts_payload = _fts_analyze_candles(symbol, candles)
+            # نسخه‌کپی به موتور داده می‌شود: `apply_basis()` کندل‌ها را در‌جا تغییر
+            # می‌دهد و موتورِ FTS درِ این قدم **عمداً** رویِ همان مبنایِ پایانیِ خام
+            # می‌ماند (کارِ FTS Pattern Engine درِ #73 معوق است؛ ببینید
+            # docs/CANDLE-CONTRACT.md §۱-ث). کپی، نشتِ مبنایِ منتخب به آرایۀ موتور را
+            # تضمین می‌کند، نه فقط قرائتِ پیش از تغییر.
+            fts_payload = _fts_analyze_candles(symbol, [dict(c) for c in candles])
         except Exception:
             fts_payload = None
 
@@ -934,13 +950,14 @@ def get_chart_db(symbol: str, adjustment: int = 3):
                  "color": "#10b981" if c.get("close", 0) >= c.get("open", 0) else "#f43f5e"} for c in candles]
         facts = [{"time": c["time"], "factor": 1.0} for c in candles]
 
-        return {"status": "success", "symbol": symbol, "count": len(candles),
-                "candles": candles, "volumes": vols, "factors": facts,
-                "adjustEvents": [], "adjustSource": "local-db",
-                "liveInjected": live_injected,
-                "liveError": live_error,
-                "adjustment": adjustment,
-                "fts": fts_payload}
+        return price_basis.resolve_payload(
+            {"status": "success", "symbol": symbol, "count": len(candles),
+             "candles": candles, "volumes": vols, "factors": facts,
+             "adjustEvents": [], "adjustSource": "local-db",
+             "liveInjected": live_injected,
+             "liveError": live_error,
+             "adjustment": adjustment,
+             "fts": fts_payload})
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -960,7 +977,7 @@ def get_patterns(symbol: str):
         conn.execute("PRAGMA journal_mode=WAL")
         _pred, _params = sym_pred("symbol", symbol)
         _raw = conn.execute(
-            "SELECT symbol, date, open, high, low, close, volume FROM price_history "
+            "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
             _params).fetchall()
         _seen, rows = set(), []
@@ -969,7 +986,7 @@ def get_patterns(symbol: str):
                 continue
             _seen.add(r[1])
             rows.append({"date": r[1], "open": r[2], "high": r[3], "low": r[4],
-                         "close": r[5], "volume": r[6]})
+                         "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()
         if len(rows) < 60:
@@ -977,12 +994,18 @@ def get_patterns(symbol: str):
                     "message": "تاریخچه کافی نیست"}
         # FIX v7.2: سطحها باید در فضای تعدیلشده باشند (chart با factor رسم میکند) — وگرنه Y-mismatch
         evs = _adjust_events_for(symbol, rows)
+        # مبنایِ قیمت پیش از ضربِ فاکتور انتخاب می‌شود (تنها نقطۀ انتخاب؛ §۱-ث شرطِ ۱)،
+        # و سپس هر سه نگارۀ قیمتی همان کندل ضریب می‌گیرند تا `closing` (لنگر) و `last`
+        # درِ پاسخ با `close` (منتخب) در یک فضایِ مقیاس باشند.
+        price_basis.apply_basis(rows)
         for r in rows:
             f = 1.0
             for e in evs:
                 if e["date"] > r["date"]:
                     f *= e["ratio"]
-            r["high"] *= f; r["low"] *= f; r["close"] *= f
+            for _k in ("high", "low", "close", "closing", "last", "high_raw", "low_raw"):
+                if r.get(_k) is not None:
+                    r[_k] = r[_k] * f
         ext = _swing_extremes(rows, k=3, min_strength=2)
         levels = _merge_levels(ext, keep=6)
         # v8.7 FIX-3: خروجی باید میلی‌ثانیه باشد (سند KLineChart v10) — قبلاً ثانیه بود و

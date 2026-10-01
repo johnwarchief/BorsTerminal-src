@@ -706,6 +706,30 @@ def get_fts_scan(limit: int = 0):
 def get_fts_config():
     return {"status": "success", "config": load_fts_config()}
 
+
+@router.get("/api/price-basis")
+def get_price_basis():
+    """مبنایِ قیمتِ منتخبِ کاربر — سمتِ سرور، نه فرانت (کارِ #73 قدمِ ۳).
+
+    تنها نقطۀ خواندن این مقدار `price_basis.py` است و تنها نقطۀ نوشتنش همین endpoint؛
+    چارت/غربگر/کارتِ FTS همه از یکِ تصمیم تغذیه می‌شوند تا عددِ چارت با عددِ غربگر
+    نجنگد (شکلِ نقضِ آن درِ #66 بود).
+    """
+    import price_basis
+    return {"status": "success", **price_basis.describe()}
+
+
+@router.post("/api/price-basis")
+def set_price_basis(payload: dict = None):
+    """`{"basis": "last"}` یا `{"basis": "closing"}`؛ هر چیزِ دیگر مردود است.
+
+    لنگرِ زنجیرِ تعدیل با این عوض نمی‌شود و اینجا هم تنظیم نمی‌شود: همیشه CLOSING
+    (§۱-ث قرارداد؛ سنجشِ §۱-پ: بردنِ لنگر به last درِ ۹۲٪ نمادها لنگر را می‌شکند).
+    """
+    import price_basis
+    val = (payload or {}).get("basis") or (payload or {}).get("priceBasis")
+    return price_basis.set_basis(val)
+
 @router.post("/api/fts/config")
 def set_fts_config(payload: dict = None):
     """ذخیرهٔ پیش‌شرط‌های ۵ شاخص (از پنل تنظیمات کدال).
