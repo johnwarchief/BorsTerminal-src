@@ -90,6 +90,19 @@ export function epsSeriesText(
     .join(' ← ');
 }
 
+/** شکلِ کوتاه، برایِ وقتی که ستونْ خودش «شاخص ۲» است.
+ *
+ *  در جدولِ غربالگری، «مردود در شاخص ۲ — سابقهٔ ناقص (۲ از ۳ سال)» زیرِ
+ *  ستونی می‌نشیند که سرستونش «۲ — روند EPS» است؛ نیمِ اولِ جمله همان را
+ *  دوباره می‌گوید و فقط عرض می‌خورد. در کارتِ نماد و دریل‌داون که ستونی
+ *  در کار نیست، همان شکلِ کاملِ زیر به‌کار می‌رود. */
+export function epsPartialRejectShort(
+  realYears: number,
+  requiredYears: number = EPS_REQUIRED_YEARS,
+): string {
+  return `سابقهٔ ناقص · ${toFaDigits(realYears)} از ${toFaDigits(requiredYears)} سال`;
+}
+
 /** برچسب یکسانِ «۲ از ۳ سال»: داده هست، ولی سابقهٔ کاملِ گیت نیست */
 export function epsPartialRejectLabel(
   realYears: number,

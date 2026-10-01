@@ -63,12 +63,24 @@ EXCLUDE_DIRS = {"__pycache__", "logs", ".pytest_cache", "WT"}
 
 
 def app_version():
-    """نسخهٔ مقصدِ پچ = APP_VERSION منبعِ واحد (bors_config).
+    """نسخهٔ مقصدِ پچ.
+
+    ترتیب: RELEASE_TAG (اگر هست) ➔ APP_VERSION.
+
+    چرا برچسب مقدم است: در بیلدِ دمو، APP_VERSION عمداً رویِ نسخهٔ واقعی
+    می‌ماند (نسخه از برچسبِ گیت می‌آید، نه از فایل). نتیجه این بود که
+    make_patch پچ را «..._to_1.0.65.zip» نام می‌گذاشت در حالی که
+    publish_github_release دنبالِ «..._to_1.0.66-demo7.zip» می‌گشت، هیچ
+    تطبیقی رخ نمی‌داد و هر ریلیزِ دمو با پیامِ «هیچ پچی ساخته نشد؛ همه به
+    نصبِ کامل می‌افتند» منتشر می‌شد. یعنی دلتا برایِ دمو هرگز کار نمی‌کرد.
 
     v1.0.10: static/index.html حذف شده (SPA حالا از frontend/dist سرو می‌شود)،
     پس خواندنِ نسخه از آن مسیر همیشه 0.0.0 برمی‌گرداند. bors_config همان
     منبعی است که api/update.py و bors_setup.iss می‌خوانند.
     """
+    tag = (os.environ.get("RELEASE_TAG") or "").strip()
+    if tag:
+        return tag.lstrip("v")
     sys.path.insert(0, ROOT)
     import bors_config  # noqa: PLC0415  (importِ محلی: جلوگیری از import دورهای)
     return bors_config.APP_VERSION

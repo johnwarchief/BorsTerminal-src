@@ -209,7 +209,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     expect(screen.getAllByText('سابقهٔ EPS سالانه ثبت نشده').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('۲ سال EPS: سری دو ساله نمایش + برچسب یکسانِ «مردود در شاخص ۲ — سابقهٔ ناقص» با علت در title', () => {
+  it('۲ سال EPS: سری دو ساله + برچسبِ کوتاهِ «سابقهٔ ناقص» (ستون خودش شاخص ۲ است)', () => {
     render(
       <FtsScreenTable
         rows={[row({ symbol: 'دوساله', eps_series: [100, 150, null], eps_data_gap: true, i2_pass: false })]}
@@ -219,9 +219,11 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     // همان دو سالِ موجود رندر می‌شود (سال غایب «—»)
     expect(screen.getByTitle('۱۰۰ ← ۱۵۰ ← —')).toBeInTheDocument();
     const label = screen.getByTestId('eps-partial-rejected');
-    // برچسب عیناً همان نردبان EPS و drill-down است (منبع واحد: lib/epsHistory)
-    expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
+    // در جدول شکلِ کوتاه می‌آید: سرستونِ همین ستون «۲ — روند EPS» است، پس
+    // «مردود در شاخص ۲» همان را دوباره می‌گفت و فقط عرض می‌خورد.
+    expect(label.textContent).toContain('سابقهٔ ناقص');
     expect(label.textContent).toContain('۲ از ۳ سال');
+    expect(label.textContent).not.toContain('مردود در شاخص ۲');
     // علت شکاف با hover ظاهر می‌شود
     expect(label.getAttribute('title')).toContain('فقط ۲ سال از ۳ سال');
     // ردِ منطقی همان قبلی است — i2_pass تغییری نکرده

@@ -137,13 +137,15 @@ describe('lib/epsHistory — شمارش و وضعیت سابقهٔ EPS', () => {
 });
 
 describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', () => {
-  it('۲ سال: همان دو سال نمایش + برچسب «مردود — سابقهٔ ناقص (۲ از ۳ سال)» — نه برچسب شکاف', () => {
+  it('۲ سال: همان دو سال نمایش + برچسبِ کوتاهِ «سابقهٔ ناقص» — نه برچسب شکاف', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     const tr = screen.getByTestId('fts-screen-row');
     // همان دو سالِ موجود (۱۴۰۴ و ۱۴۰۵) دیده می‌شود
     expect(within(tr).getByTitle('— ← ۵۹۰ ← ۹۹۰')).toBeInTheDocument();
     const label = within(tr).getByTestId(EPS_PARTIAL_TESTID);
-    expect(label.textContent).toContain('مردود در شاخص ۲ — سابقهٔ ناقص');
+    // در جدول شکلِ کوتاه می‌آید (سرستون خودش «۲ — روند EPS» است)
+    expect(label.textContent).toContain('سابقهٔ ناقص');
+    expect(label.textContent).not.toContain('مردود در شاخص ۲');
     expect(label.textContent).toContain('۲ از ۳ سال');
     // سلول شاخص ۲ برچسب علت‌دارِ سابقهٔ ناکافی نمی‌گیرد (پانوشت جدول بیرون از ردیف است)
     expect(within(tr).queryByText('سابقهٔ EPS کمتر از ۲ سال')).not.toBeInTheDocument();
@@ -209,7 +211,11 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
 });
 
 describe('سازگاری برچسب بین جدول، نردبان EPS و drill-down (برچسب و منطق یکی)', () => {
-  it('هر سه نما برای همان «۲ از ۳ سال» یک متن برچسب می‌دهند', () => {
+  it('هر سه نما یک *حکم* می‌دهند؛ جدول شکلِ کوتاهش را', () => {
+    // قراردادِ تازه (۱٫۰٫۶۶): منبع هنوز یکی است، ولی رندر به متن وابسته
+    // است. در جدول سرستونْ خودش «۲ — روند EPS» است، پس «مردود در شاخص ۲»
+    // همان را دوباره می‌گفت و فقط عرض می‌خورد؛ متنِ کامل آنجا در title
+    // می‌ماند. در نردبان و drill-down که ستونی در کار نیست، شکلِ کامل.
     const expected = 'مردود در شاخص ۲ — سابقهٔ ناقص (۲ از ۳ سال)';
     // نرمال‌سازی: حذف نشانگر ⓘ و فاصله‌های اضافی
     const norm = (t: string | null) => (t ?? '').replace(/ⓘ/g, '').replace(/\s+/g, ' ').trim();
@@ -221,9 +227,18 @@ describe('سازگاری برچسب بین جدول، نردبان EPS و drill-
         <FtsDrillDown card={card2year()} active="2" quarters={[]} physicalApplicable />
       </>,
     );
-    const labels = screen.getAllByTestId(EPS_PARTIAL_TESTID).map((el) => norm(el.textContent));
-    expect(labels).toHaveLength(3);
-    for (const l of labels) expect(l).toBe(expected);
+    const els = screen.getAllByTestId(EPS_PARTIAL_TESTID);
+    expect(els).toHaveLength(3);
+    // همهٔ نماها همان عددِ «۲ از ۳ سال» را می‌گویند — حکم یکی است
+    for (const el of els) expect(norm(el.textContent)).toContain('۲ از ۳ سال');
+    // دستِ‌کم دو نما شکلِ کامل دارند (نردبان و drill-down)
+    const full = els.filter((el) => norm(el.textContent) === expected);
+    expect(full.length).toBeGreaterThanOrEqual(2);
+    // نمایِ کوتاه (جدول) علتِ شکاف را در title دارد — همان چیزی که کاربر
+    // با hover می‌خواهد بداند، و از تکرارِ نامِ ستون مفیدتر است.
+    const short = els.filter((el) => norm(el.textContent) !== expected);
+    expect(short).toHaveLength(1);
+    expect(norm(short[0].getAttribute('title'))).toContain('۲ سال از ۳ سال');
   });
 
   it('هر سه نما با ۱ سال سابقه، برچسب سابقهٔ ناقص نمی‌زنند', () => {

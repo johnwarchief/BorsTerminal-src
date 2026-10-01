@@ -28,6 +28,7 @@ import {
   epsGapLabel,
   epsHistory,
   epsSeriesText,
+  epsPartialRejectShort,
 } from '../lib/epsHistory';
 import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
 import { AuditBadge, type AuditEvidenceInput } from '../components/AuditBadge';
@@ -417,7 +418,11 @@ const ScreenerRow = memo(function ScreenerRow({
                         {epsPartialRejected ? (
                           <AuditBadge
                             state="fail"
-                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold"
+                                         /* شکلِ کوتاه: سرستونِ همین ستون «۲ — روند EPS» است */
+                                         title={epsHist.label}>
+                                     {epsPartialRejectShort(epsHist.realYears, epsHist.requiredYears)}
+                                   </span>}
                             hintTitle={epsGapReason}
                             evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
                             compact
