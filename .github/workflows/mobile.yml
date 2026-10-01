@@ -146,7 +146,8 @@ jobs:
           # با همان رمز همیشگی باز می‌کنند. رمز این‌جا در مخزن خصوصی می‌ماند.
           rm -f bors-terminal-mobile.zip
           zip -j -P 'BorsTerminal-2026' bors-terminal-mobile.zip bors-terminal-mobile.apk
-          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER} (کامیت ${GITHUB_SHA::7})
+          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER}
+          - bors-terminal-mobile.apk: نصبِ مستقیم رویِ گوشی (کامیت ${GITHUB_SHA::7})
           - دادهٔ آفلاین کامل داخل APK است؛ داخل ایران تابلو/چارت زنده از TSETMC می‌آید.
           - mobile_snapshot.db.gz + meta: بستهٔ داده برای بروزرسانی خودکارِ درون‌برنامه‌ای."
           gh release create mobile-latest --prerelease --target "$GITHUB_SHA" \
@@ -171,10 +172,15 @@ jobs:
       # روی مخزن خصوصی همیشه 404 می‌گیرد.
       - name: انتشار در مخزن عمومی BorsTerminal (اختیاری)
         env:
-          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          # RELEASE_TOKEN همان توکنی است که ریلیزِ ویندوز سال‌هاست با آن
+          # رویِ مخزنِ عمومی می‌نویسد (release.yml خط ۴۰۵). تا امروز این
+          # گام فقط PUBLIC_RELEASE_TOKEN را می‌شناخت که هرگز تعریف نشده
+          # بود، پس هر بار بی‌صدا رد می‌شد و APK فقط در مخزنِ -src می‌ماند
+          # — جایی که کنارِ ریلیزهایِ ویندوز دیده نمی‌شود.
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN || secrets.RELEASE_TOKEN }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "سکرت PUBLIC_RELEASE_TOKEN تعریف نشده — انتشار عمومی رد شد (ریلیز در -src هست)."
+            echo "نه PUBLIC_RELEASE_TOKEN نه RELEASE_TOKEN تعریف نشده — انتشار عمومی رد شد (ریلیز در -src هست)."
             exit 0
           fi
           set -e
@@ -191,9 +197,11 @@ jobs:
           gh release edit mobile-latest -R "$PUB" --prerelease \
             --title "اپ موبایل (آخرین بیلد) — v${VER}" \
             --notes "$NOTES"
-          # عمداً فقط ZIP رمزدار (نه APK خام) + بستهٔ داده — دادهٔ اسنپ‌شات باید
-          # بی‌رمز بماند چون بروزرسانی خودکار اپ آن را مستقیم fetch می‌کند.
+          # هم APK خام (نصبِ مستقیم رویِ گوشی) و هم ZIP رمزدار (همان سیاستِ
+          # ستاپ‌هایِ ویندوز، برایِ توزیع). دادهٔ اسنپ‌شات عمداً بی‌رمز است
+          # چون بروزرسانیِ خودکارِ اپ مستقیم fetchش می‌کند.
           gh release upload mobile-latest -R "$PUB" --clobber \
+            bors-terminal-mobile.apk \
             bors-terminal-mobile.zip \
             dist_mobile/mobile_snapshot.db.gz \
             dist_mobile/mobile_snapshot.db.meta.json
