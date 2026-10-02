@@ -111,3 +111,35 @@ describe('زمان‌بندیِ راه‌اندازی', () => {
     expect(mod.bootTiming.source).toBe('release');
   });
 });
+
+describe('احترام به دادهٔ همراه', () => {
+  const conn = (c: Record<string, unknown> | undefined) =>
+    Object.defineProperty(navigator, 'connection', { value: c, configurable: true });
+
+  it('«صرفه‌جویی در داده» را رعایت می‌کند', async () => {
+    // بستهٔ داده ۲۲ مگابایت است؛ کشیدنش رویِ دادهٔ همراه بی‌اجازه، هزینهٔ
+    // کاربر است — و اپ با بستهٔ فعلی کاملاً کار می‌کند، این فقط تازه‌تر است.
+    conn({ saveData: true });
+    const { __isMeteredForTest } = await import('@shared/api/local/localData');
+    expect(__isMeteredForTest()).toBe(true);
+  });
+
+  it('اتصالِ cellular سنجه‌دار شمرده می‌شود', async () => {
+    conn({ type: 'cellular' });
+    const { __isMeteredForTest } = await import('@shared/api/local/localData');
+    expect(__isMeteredForTest()).toBe(true);
+  });
+
+  it('۴g رد نمی‌شود — ممکن است وای‌فای باشد', async () => {
+    conn({ effectiveType: '4g' });
+    const { __isMeteredForTest } = await import('@shared/api/local/localData');
+    expect(__isMeteredForTest()).toBe(false);
+  });
+
+  it('نبودِ این API رفتارِ قبلی را نگه می‌دارد', async () => {
+    // وگرنه رویِ WebViewِ قدیمی بسته هرگز تازه نمی‌شد.
+    conn(undefined);
+    const { __isMeteredForTest } = await import('@shared/api/local/localData');
+    expect(__isMeteredForTest()).toBe(false);
+  });
+});

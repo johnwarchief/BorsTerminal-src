@@ -31,10 +31,33 @@ const REMOTE_GZ_URL = `${REMOTE_BASE}/mobile_snapshot.db.gz`;
 const CHECK_KEY = 'bors_snapshot_check_at';
 const CHECK_EVERY_MS = 24 * 3600 * 1000;
 
+/** آیا اتصال سنجه‌دار (دادهٔ همراه) یا کاربر «صرفه‌جویی» خواسته است؟
+ *
+ *  بستهٔ داده ۲۲ مگابایت است. دانلودِ خودکارِ آن رویِ دادهٔ همراه، بی‌آنکه
+ *  کاربر خواسته باشد، هم هزینه است هم بی‌ادبی — مخصوصاً که اپ با بستهٔ
+ *  فعلی کاملاً کار می‌کند و این فقط «تازه‌تر» است، نه «لازم».
+ *  نبودِ این API (WebViewِ قدیمی) یعنی محافظه‌کار باشیم؟ نه — آنجا رفتارِ
+ *  قبلی می‌ماند، وگرنه رویِ وای‌فای هم هرگز تازه نمی‌شد.
+ */
+function isMeteredConnection(): boolean {
+  const c = (navigator as unknown as {
+    connection?: { saveData?: boolean; type?: string; effectiveType?: string };
+  }).connection;
+  if (!c) return false;
+  if (c.saveData === true) return true;
+  if (c.type === 'cellular') return true;
+  // 2g/3g تقریباً همیشه همراه است؛ 4g ممکن است وای‌فای باشد، پس رد نمی‌شود.
+  return c.effectiveType === 'slow-2g' || c.effectiveType === '2g' || c.effectiveType === '3g';
+}
+
 async function maybeRefreshSnapshot(): Promise<void> {
   try {
     const lastCheck = Number(localStorage.getItem(CHECK_KEY) ?? 0);
     if (Date.now() - lastCheck < CHECK_EVERY_MS) return;
+    if (isMeteredConnection()) {
+      // مُهر را جلو نمی‌بریم: وای‌فایِ بعدی باید دوباره بررسی کند.
+      return;
+    }
     localStorage.setItem(CHECK_KEY, String(Date.now()));
     // درگاه بومی: داخل اپ اندروید بدون دیوار CORS؛ در مرورگر fetch معمولی
     const meta = (await nativeGetJson(REMOTE_META_URL)) as { built_at?: string } | null;
@@ -54,6 +77,8 @@ async function maybeRefreshSnapshot(): Promise<void> {
 }
 
 /** فقط برایِ تست — مسیرِ بارگذاریِ بسته و راهِ دومش. */
+export const __isMeteredForTest = (): boolean => isMeteredConnection();
+
 export const __fetchSnapshotForTest = (): Promise<ArrayBuffer> => fetchSnapshot();
 
 async function fetchSnapshot(): Promise<ArrayBuffer> {
