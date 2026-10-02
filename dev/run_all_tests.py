@@ -72,6 +72,17 @@ SUITES = [
     # اسکرینر/کارت هم کارت را با خودش می‌سنجد (۲۳۱ نماد واگرایی بی‌صدا ماند).
     ('dev/fts_screener_card_parity_v10.py',
                                       'screener<->card parity + ind-4 exemption engine vs card'),
+    # پاریتیِ **تمام‌سطحی**ِ دو مسیرِ موتور (sample-based بودنِ گاردِ بالا سه
+    # واگراییِ مرزی را ندید): آستانه باید با عددِ خام سنجیده شود، نه با
+    # مقدارِ گردشدۀ منتشرشده. ~۲ دقیقه (۹۲۱ فراخوان scan_symbol).
+    ('dev/fts_engine_paths_parity_v1076.py',
+                                      'scan_symbol == bulk_scan on every symbol + raw-threshold boundary'),
+    # جدولِ مادی‌شدهٔ fts_results باید فیلد‌به‌فیلد با evaluate_v10ِ زنده یکی باشد.
+    # این گارد در SUITES نبود — و همان‌جا سه ناهم‌خوانیِ `3_gross_margin` (None در
+    # جدول ⇄ False در کارت) یکِ دورِ کامل پنهان ماند؛ علتِ واقعی‌اش هم فیکچری بود
+    # که `period_end` را با خطِ تیره می‌نوشت و زیرِ قراردادِ canonical بی‌دوره شد.
+    ('dev/test_fts_results_materialize.py',
+                                      "materialized fts_results == live evaluate_v10, field by field"),
     # قیف/جدول نباید «بی‌داده» را «رد» بنویسد: شاخص ۳ (حاشیۀ ناخالص) در اسکرینرِ
     # زنده bool می‌ماند و ۲۹۷ نماد بی‌سطرِ سود ناخالص سرخ می‌شدند (۱۴۰۵-۰۷-۰۹).
     ('dev/fts_ind3_na_guard_v1065.py',
@@ -169,6 +180,14 @@ SUITES = [
     # شبکه ثبت نمی‌شود تا دوباره تلاش شود، و قاعدۀ ترجیح (مستقل بر تلفیقی) یک‌جا.
     ('dev/codal_derived_ledger_v1073.py',
                                      'one notice = one extraction; shared period never blocks another symbol'),
+    # «دورۀ گزارش» پنج تفسیر داشت (`period_end IS NOT NULL` سه جا، `str(pe)[:4]`
+    # دو جا، سه regex استخراج، چهار کپیِ «latest by period_end» برایِ نامِ شرکت).
+    # حالا یکِ تعریف درِ `codal_periods.py` است و این گارد ثابت می‌کند شرطِ SQL و
+    # شرطِ پایتون یکی‌اند، ردیفِ بی‌دوره حذف/برنده نمی‌شود، و همهٔ consumerها
+    # (fts_engine / api.fundamental / api.screener / db_housekeeping) یکِ عدد
+    # «بی‌دوره» می‌بینند. بی‌شبکه؛ خواندنِ market.db فقط read-only است.
+    ('dev/codal_period_canonical_v1075.py',
+                                     'one canonical period rule; SQL and Python agree; every consumer sees one count'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

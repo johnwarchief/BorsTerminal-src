@@ -26,6 +26,10 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+# تنها تعریفِ «دورۀ گزارش» (شکل، بی‌دوره، زنجیرۀ استخراج، شمارش). این فایل دیگر
+# هیچ regexِ تاریخِ خودش را ندارد — ببین `codal_periods.py`.
+import codal_periods as CP
+
 API = "https://search.codal.ir/api/search/v2/q"
 
 # Stealth: real, modern desktop browser fingerprints — one is picked at random
@@ -99,6 +103,18 @@ _NO_TETHER = False
 _POLITE_BURST_MAX = 35
 _POLITE_REST = 240
 _POLITE_BURST_COUNT = 0
+
+# تعدادِ تردِ استخراجِ عمیق (`_deep_extract`). سرعتِ این مسیر فقط شبکه است:
+# هر گزارش ≈۳ GET و هر GET ~۰٫۷s ⇒ با ۴ ترد ≈۱ گزارش/ثانیه اندازه‌گیری شد
+# (پاس ۱٬۵۰۰ِ ۱۴۰۵-۰۷-۱۰: ۸۹۷ گزارش در ۱۵ دقیقه). چون scrape از
+# codal.ir/Reports می‌آید که WAFِ بخشِ search نیست، تعدادِ ترد تنها اهرمِ سرعت است.
+EXTRACT_WORKERS = 4
+
+
+def set_extract_workers(v):
+    """تغییرِ اندازهٔ استخرِ استخراج از CLI (سقف ۱۶ تا یکِ اجرا WAF را نزند)."""
+    global EXTRACT_WORKERS
+    EXTRACT_WORKERS = max(1, min(16, int(v)))
 
 
 def polite_pause(base_lo=1.2, base_hi=2.2):
@@ -405,10 +421,7 @@ def fs_derived(title: str, period_end: str, unit, consol_override=None):
         consol = 1 if consol_override else 0
     else:
         consol = 1 if _fe._is_consolidated(t) else 0
-    year = None
-    pe = (period_end or "").strip()
-    if len(pe) >= 4 and pe[:4].isdigit():
-        year = pe[:4]
+    year = CP.fiscal_year(period_end)
     return audited, consol, year, _classify_unit(unit)
 
 
@@ -505,9 +518,12 @@ def make_session():
     return s
 
 
-def _detect_tether_ip():
+def _probe_tether_ip():
     """Returns the local IP of an active USB tether adapter (Windows SAMSUNG
-    Remote NDIS), or None if no tethering is up."""
+    Remote NDIS), or None if no tethering is up.
+
+    گران است: ~۱٫۲ ثانیه راه‌اندازی PowerShell. هیچ‌وقت مستقیم صدا زده نشود —
+    `_detect_tether_ip()` کشِ ۲۰ ثانیه‌ای دارد."""
     try:
         import subprocess as _sp
         out = _sp.run(
@@ -524,6 +540,23 @@ def _detect_tether_ip():
     except Exception:
         pass
     return None
+
+
+# کشِ کاوشِ تترینگ. `_deep_extract` برایِ هر گزارش یک `make_session()` نو می‌سازد،
+# و بدونِ کش این کاوش رویِ هر گزارش پرداخت می‌شد: اندازه‌گیری ۱۴۰۵-۰۷-۱۰ →
+# make_session() = ۱٫۲s، یعنی ~۳۰٪ِ زمانِ هر گزارشِ ~۴ ثانیه‌ای صرفِ یک
+# subprocess بی‌نتیجه می‌شد (امروز `_detect_tether_ip()` اصلاً None می‌دهد).
+# TTL کوتاه (۲۰s) چون تترینگ درِ میانهٔ پاس ممکن است وصل/قطع شود.
+_TETHER_TTL = 20.0
+_TETHER_CACHE = [0.0, None]        # [مونوتونیکِ آخرین کاوش، IP]
+
+
+def _detect_tether_ip(force=False):
+    now = time.monotonic()
+    if force or now - _TETHER_CACHE[0] >= _TETHER_TTL:
+        _TETHER_CACHE[0] = now
+        _TETHER_CACHE[1] = _probe_tether_ip()
+    return _TETHER_CACHE[1]
 
 
 class _SourceAddressAdapter(HTTPAdapter):
@@ -1293,10 +1326,24 @@ def _resilient_get(s, url, tries=4, timeout=60, quiet=False):
     cellular IP. Here a genuine block (429/403) or a network stall rotates via
     ADB (when enabled and not POLITE) and retries with a short cooldown; other
     HTTP errors just retry with jitter. Returns a Response, or None when the
-    block persists after `tries` attempts."""
+    block persists after `tries` attempts.
+
+    «خطایِ همیشگی» از «خطایِ شبکه» جدا است: اگر URL بی‌اعتبار باشد
+    (MissingSchema/InvalidSchema/InvalidURL) هیچ تلاشِ دیگری و هیچ چرخشِ IP
+    کمکی نمی‌کند. امروز دو سطرِ خرابِ `codal_notices.url` (تاریخِ فارسی درِ
+    ستونِ url) هر بار چهار تلاش کردند و هر تلاش یکِ چرخشِ IP ~۲ دقیقه‌ای با
+    خاموش‌کردنِ Wi-Fiِ میزبان را راه انداخت — یعنی یکِ نقصِ داده‌ای دوِّ
+    قطعِ اینترنت ساخت."""
+    permanent = (requests.exceptions.MissingSchema, requests.exceptions.InvalidSchema,
+                 requests.exceptions.InvalidURL)
     for attempt in range(tries):
         try:
             r = s.get(url, headers=_headers(), timeout=timeout)
+        except permanent as e:
+            if not quiet:
+                print(f"  [get] URL بی‌اعتبار، بی‌تلاشِ دوباره: {type(e).__name__}",
+                      flush=True)
+            return None
         except Exception as e:
             if attempt == tries - 1:
                 if not quiet:
@@ -1340,7 +1387,10 @@ def scrape_report(s, url):
     rank = {}
     r = _resilient_get(s, url)
     if r is None:
-        return out, meta, unit
+        # «باز نشد» با «باز شد و عدد نداشت» یکی نیست: اگر None را مثل صفحۀ
+        # بی‌شیت برمی‌گرداندیم، `_deep_extract` وضعیت را empty می‌خواند و درِ
+        # `codal_extracted` ok=0 ثبت می‌شد → آن گزارش برایِ همیشه بی‌مشتق می‌ماند.
+        raise RuntimeError(f"codal letter unreadable: {url}")
     r.raise_for_status()
     html = r.text
 
@@ -1567,14 +1617,15 @@ def scrape_monthly_report(s, url):
 
     The sales table has a TWO-row header (group row «از ابتدای سال مالی تا» /
     «دوره یک ماهه منتهی به» + sub-column row «مبلغ فروش …») and a final
-    «جمع» (Total) row. Returns (values dict, period_end)."""
+    «جمع» (Total) row. Returns (values dict, period_end).
+
+    خطایِ شبکه/بن `RuntimeError` می‌دهد (نه `({}, None)`)، چون `_deep_extract`
+    آن را «failed» می‌شمارد و درِ دفتر ثبت نمی‌کند تا درِ پاسِ بعدی دوباره
+    تلاش شود؛ `({}, None)` فقط وقتی است که صفحه باز شد ولی جدولِ فروش نداشت."""
     out = {}
-    try:
-        r = s.get(url, headers=_headers(), timeout=60)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"  monthly report error: {e}")
-        return out, None
+    r = _resilient_get(s, url)
+    if r is None:
+        raise RuntimeError(f"codal monthly letter unreadable: {url}")
     ds = datasource(r.text)
     if not ds:
         return out, None
@@ -2018,6 +2069,8 @@ def rotate_ip_via_adb(quiet=False):
             return False
         globals()["_ADB_LAST_IP"] = ip_now
         _ADB_ROTATED_AT = time.monotonic()
+        # کشِ IP محلی بی‌اعتبار شود: ترافیک نباید به آدرسِ RNDISِ قبل از توگل بند بماند
+        _detect_tether_ip(force=True)
         print(f"  [adb] IP rotated via airplane-mode toggle → {ip_now or '?'}",
               flush=True)
         return True
@@ -2071,65 +2124,53 @@ def _parse_year_month(period_end):
     ارقامِ فارسی/عربی را هم می‌پذیرد: برخی گزارش‌های ماهانهٔ قدیمی period_end
     را با «۱۳۹۴/۰۹/۳۰» ذخیره کرده‌اند و int() خام روی آن شکست می‌خورد →
     year/month NULL می‌ماند و ix_ms_sym_ym برایشان بی‌فایده می‌شود.
-    """
-    try:
-        s = str(period_end or "").translate(_FA_DIGITS)
-        parts = s.split("/")
-        return int(parts[0]), int(parts[1])
-    except (ValueError, IndexError):
-        return None, None
+
+    واگرد به `codal_periods.ym` — پیش از این اینجا splitِ دستی بود و درِ ماژولِ
+    canonical قاعدۀ دوم."""
+    return CP.ym(period_end)
 
 
 # «گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۳۹۴/۰۹/۳۰» — برخی ردیف‌های قدیمی
 # period_end را NULL ذخیره کرده‌اند و تاریخ فقط در عنوان دیده می‌شود (گاهی با
 # دو فاصله قبل از تاریخ). بدون این fallback، year/month برایشان NULL می‌ماند و
 # ix_ms_sym_ym آن‌ها را پوشش نمی‌دهد.
-_YM_IN_TITLE = re.compile(r"(\d{4})\s*/\s*(\d{1,2})")
-
-
+#
+# سنجیدۀ ۱۴۰۵-۰۷-۱۰ رویِ هر ۳۶٬۲۱۶ عنوانِ `codal_notices`: «سال/ماه بی‌روز» صفر
+# مورد است، پس این مسیر هم به همان یکِ تعریفِ canonical واگرد می‌کند و regexِ دوم
+# نمی‌ماند.
 def _ym_from_title(title):
-    """سال/ماه را از عنوانِ گزارش ماهانه استخراج می‌کند یا (None, None)."""
-    m = _YM_IN_TITLE.search(str(title or "").translate(_FA_DIGITS))
-    if not m:
-        return None, None
-    return int(m.group(1)), int(m.group(2))
+    """سال/ماه از عنوانِ گزارش ماهانه — از مسیرِ `codal_periods.from_title`."""
+    return CP.ym(CP.from_title(title))
 
 
 def _period_from_title(title):
     """Extract period-end '1405/03/31' from a notice title, or None.
 
     Titles always carry the period: '...منتهی به ۱۴۰۴/۱۲/۲۹...' — parsing it
-    lets us skip duplicate periods BEFORE any HTTP request."""
-    t = norm(title)
-    # Persian/Arabic digits -> ASCII (norm() keeps them native)
-    t = t.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
-    m = re.search(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", t)
-    if m:
-        return f"{m.group(1)}/{int(m.group(2)):02d}/{int(m.group(3)):02d}"
-    return None
+    lets us skip duplicate periods BEFORE any HTTP request.
+
+    واگرد به `codal_periods.from_title` (همان یک regex برایِ هر سه مسیر)."""
+    return CP.from_title(title)
 
 
 def _pe_key(p):
-    """کلیدِ مقایسۀ دوره: رقمِ فارسی/عربی → لاتین، جداکننده به '/', بدون ساعت.
+    """کلیدِ مقایسۀ دوره = شکلِ canonical (`codal_periods.canonicalize`).
 
-    چرا لازم است: `period_end` درِ بانک سه شکل دارد («1405-06-31»، «۱۴۰۵/۰۶/۳۱»،
-    و عنوان‌هایی که تاریخ را با دو فاصله می‌آورند). `_period_from_title` با «/»
-    می‌سازد و ستونِ DB خط تیره دارد — مقایسهٔ مستقیم هیچ‌وقت true نمی‌شد، پس
-    «گاردِ دورۀ تکراری» عملاً مُرده بود و همان دوره را دوباره دوباره scrape می‌کرد.
+    رقمِ فارسی/عربی، جداکننده‌هایِ مخلوط، دو فاصله و برچسبِ ساعت («… ۱۸:۱۰:۳۰»)
+    هر سه درِ همین یک تابع به `'YYYY/MM/DD'` می‌رسند.
+
+    تصحیحِ یکِ ادعایِ غلطِ خودم (۱۴۰۵-۰۷-۱۰، شمارشِ رویِ بانکِ کاری): ستونِ
+    `period_end` خط تیره **ندارد** — ۸٬۳۹۶ ردیفِ `financial_statements` و
+    ۱۴٬۶۹۷ ردیفِ `monthly_sales` همه با «/» هستند و ۶۷ تا NULL. چیزی که مقایسه را
+    می‌شکست رقمِ فارسی و دو فاصلهٔ داخلِ عنوان بود، نه جداکننده.
     """
-    if p is None:
-        return None
-    s = str(p).translate(_FA_DIGITS)
-    m = re.search(r"(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})", s)
-    if not m:
-        return None
-    return "%s/%02d/%02d" % (m.group(1), int(m.group(2)), int(m.group(3)))
+    return CP.canonicalize(p)
 
 
 def derived_state(conn, symbol=None):
     """وضعیتِ «این گزارش پردازش شده یا نه» — با کلیدِ درست: `tracing_no`.
 
-    اشکالی که این تابع حل می‌کند (سنجیده بر رويِ بانکِ کاری درِ ۱۴۰۵-۰۷-۱۰):
+    اشکالی که این تابع حل می‌کند (سنجیده بر رویِ بانکِ کاری درِ ۱۴۰۵-۰۷-۱۰):
     `feed_sync` دو مجموعۀ `known_pe/known_ms_pe` از `DISTINCT period_end` **سراسری**
     می‌ساخت و `_deep_extract` هر گزارشِ هم‌دوره را با آن رد می‌کرد. دوره‌های مالی
     عمومی‌اند (پایانِ هر ماه/فصلِ همهٔ بازار)، پس به‌محضِ این‌که یک نماد آن دوره را
@@ -2195,17 +2236,32 @@ def date_key(v):
     return "%s/%02d/%02d" % (m.group(1), int(m.group(2)), int(m.group(3))) if m else None
 
 
-def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Activity Report")):
+def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Activity Report"),
+                    exclude_tried=True):
     """ردیف‌هایِ `codal_notices` که هنوز ردیفِ مشتق ندارند (تازۀ‌ترین اول).
 
     فیلتر با **خودِ `kind_of`** انجام می‌شود، نه با LIKEِ دوباره‌نویسی‌شدۀ عنوانِ
     همان گزارش — وگرنه تعریفِ «کدامِ اطلاعیه مشتق‌پذیر است» دو جا می‌شود و
     می‌پَرَد. sort هم با `date_key` (ارقامِ فارسی/لاتین قاطی است).
+
+    `exclude_tried` (پیش‌فرض روشن است): اطلاعیه‌ای که درِ `codal_extracted` سطر دارد
+    **پردازش شده** — یا ردیف ساخته (ok=1) یا باز شده و عددِ قابل‌استخراج نداشته
+    (ok=0). شکستِ شبکه درِ دفتر ثبت نمی‌شود (همان قراردادِ `_scrape_one`)، پس
+    آن‌ها درِ صف می‌مانند و دوباره تلاش می‌شوند. بی‌این فیلتر، صف «تازترین‌ها» را
+    می‌دهد و تازترین‌ها همان‌اند که پاسِ اصلیِ همین اجرا تازه امتحانشان کرده:
+    بودجه صرفِ ردیف‌هایی می‌شد که `_deep_extract` همه را skip می‌کرد و صفرِ
+    ردیفِ تازه برمی‌گشت (شاهد: `[catchup] 40 → 0 FS + 0 ماهانه` درِ دو پاسِ متوالی).
     """
     have = {"Financial Statements": {r[0] for r in conn.execute(
                 "SELECT tracing_no FROM financial_statements")},
             "Monthly Activity Report": {r[0] for r in conn.execute(
                 "SELECT tracing_no FROM monthly_sales")}}
+    tried = set()
+    if exclude_tried:
+        try:
+            tried = {r[0] for r in conn.execute("SELECT tracing_no FROM codal_extracted")}
+        except sqlite3.OperationalError:
+            tried = set()          # بانکِ تازه: دفترِ `codal_extracted` هنوز ساخته نشده
     cols = ("c.tracing_no, c.symbol, c.company_name, c.title, c.letter_code,"
             " c.publish_date, c.sent_date, c.url, c.fetched_at, c.pdf_url, c.excel_url,"
             " i.l_val30")
@@ -2214,7 +2270,7 @@ def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Ac
             f"SELECT {cols} FROM codal_notices c"
             " LEFT JOIN instruments i ON i.l_val18 = c.symbol"):
         k = kind_of(r[3])
-        if k not in kinds or r[0] in have.get(k, ()):
+        if k not in kinds or r[0] in have.get(k, ()) or r[0] in tried:
             continue
         # همان استانداردِ `main("missing")`: گزارشِ صندوق (فقط پورتفوی/NAV) و مشتقات
         # با پارسرِ صورتِ مالی/فروشِ ماهانه خوانده نمی‌شوند — اگر درِ صف بمانند
@@ -2260,23 +2316,32 @@ def _deep_extract(rows, processed, conn, store_notices=True):
             if n[0] not in processed and kind_of(n[3]) in
             ("Financial Statements", "Monthly Activity Report")]
 
+    _tls = threading.local()
+
+    def _sess():
+        """یک session به‌ازایِ ترد (همان الگوی `rebuild_fs`) — نه به‌ازایِ گزارش.
+        صفحهٔ هر نامه ~۹۵۵ کیلوبایتِ **فشرده‌نشده** است (Content-Encoding: none،
+        اندازه‌گیری ۱۴۰۵-۰۷-۱۰) ⇒ اتصالِ تازه = هزینهٔ TCP+TLSِ اضافه رویِ لینکی
+        که از پیش پهنای‌باندش سقفِ سرعت است."""
+        s = getattr(_tls, "s", None)
+        if s is None:
+            s = _tls.s = make_session()
+        return s
+
     def _scrape_one(n):
         """(tracing_no, kind, row|None, status) — status ∈ ok|empty|failed."""
         kind = kind_of(n[3])
         if kind == "Monthly Activity Report":
-            sess2 = make_session()
+            sess2 = _sess()
             try:
                 vals, period_end = scrape_monthly_report(sess2, n[7])
             except Exception as e:
                 print(f"  [worker] monthly failed {n[1]}: {e}")
                 return n[0], kind, None, "failed"
             if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
-                year = month = None
-                if period_end:
-                    mm = re.match(r"(\d{4})[-/](\d{1,2})", str(period_end))
-                    if mm:
-                        year, month = int(mm.group(1)), int(mm.group(2))
-                return n[0], "ms", (n[0], n[1], n[3], period_end, year, month,
+                pe, _src = CP.derive(period_end, n[3])      # datasource ← عنوان
+                year, month = CP.ym(pe)
+                return n[0], "ms", (n[0], n[1], n[3], pe, year, month,
                                     vals.get("monthly_revenue"),
                                     vals.get("ytd_revenue"),
                                     vals.get("monthly_revenue_prev"),
@@ -2286,22 +2351,38 @@ def _deep_extract(rows, processed, conn, store_notices=True):
                                     vals.get("volume_unit"), n[9], n[10]), "ok"
             return n[0], kind, None, "empty"
         if kind == "Financial Statements":
-            sess2 = make_session()
+            sess2 = _sess()
             try:
                 vals, meta, unit = scrape_report(sess2, n[7])
             except Exception as e:
                 print(f"  [worker] FS scrape failed {n[1]}: {e}")
                 return n[0], kind, None, "failed"
             if vals.get("revenue") is not None:
+                # دورۀ canonical: اول datasource، در نبودش عنوان (بندِ ۳ قراردادِ
+                # `codal_periods`) — اگر هیچ‌کدام نبود ردیف **بی‌دوره** نوشته می‌شود،
+                # نه حدسی و نه ردشده.
+                pe, _src = CP.derive(meta.get("end"), n[3])
                 return n[0], "fs", (n[0], n[1], n[2], n[3], kind, meta.get("period"),
-                                    meta.get("end"), n[5])                        + tuple(vals.get(k) for k in FS_KEYS)                        + (unit, n[7], now)                        + fs_derived(n[3], meta.get("end"), unit,
+                                    pe, n[5])                        + tuple(vals.get(k) for k in FS_KEYS)                        + (unit, n[7], now)                        + fs_derived(n[3], pe, unit,
                                     meta.get("is_consolidated")), "ok"
             return n[0], kind, None, "empty"
         return n[0], kind, None, "empty"
 
     touched = set()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as _ex:
+    n_done = 0
+    # همان قراردادِ --rebuild-fs: پروفایلِ polite (بی‌ADB، بی‌روتاریشن) تک‌کارگر
+    # است؛ آنجا تنها اهرمِ امنیت، کم‌کردنِ همزمانی است نه مکث (polite_pause فقط
+    # درِ fetch_page خوانده می‌شود، یعنی مسیرِ search).
+    _workers = 1 if POLITE else EXTRACT_WORKERS
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max(1, min(_workers, len(todo)))) as _ex:
         for tno, kind, row, status in _ex.map(_scrape_one, todo):
+            n_done += 1
+            if n_done % 100 == 0:
+                # پاس‌هایِ جبران تا ~۱٬۵۰۰ گزارشند و بی‌این خط برایِ ۲۵ دقیقه
+                # هیچ خروجی‌ای ندارند و اجرا مرده به نظر می‌رسد.
+                print(f"  [extract] {n_done}/{len(todo)} گزارش "
+                      f"(FS: {n_fs}، ماهانه: {n_ms})", flush=True)
             if status == "failed":
                 continue                       # اجرای بعدی دوباره تلاش می‌کند
             conn.execute("INSERT OR REPLACE INTO codal_extracted"
@@ -2326,48 +2407,66 @@ def _deep_extract(rows, processed, conn, store_notices=True):
     return n_fs, n_ms
 
 
-def collapse_symbol(conn, sym):
-    """یکِ دوره، یکِ ردیف — قاعدۀ ترجیحِ خودِ فایل، درِ **یک** جا.
+def period_winners(conn, table, symbol=None):
+    """یکِ دورۀ یکِ نماد = یکِ ردیف؛ **تنها** پیاده‌سازیِ قاعدۀ contract.
 
-    FTS jozve basis = STANDALONE (غیرتلفیقی). Per period_end keep the
-    standalone row when one exists, else the consolidated; tie-break on the
-    latest tracing_no (اصلاحیه). Previously this kept MAX(tracing_no)
-    blindly, which could delete the standalone row and keep a consolidated
-    one — the opposite of the required basis.
+    رتبه (ascending ⇒ برنده اول) از خودِ `fts_engine.statement_rank` خوانده می‌شود،
+    پس نویسنده و خواننده یکِ قاعده دارند:
+      ۱) مستقل برِ تلفیقی (مبنایِ جزوه) — **از همان «منبعِ» خوانندۀ کارت/موتور**:
+         `_fe._is_consolidated(title)`. پیش‌ازین این‌جا ستونِ `is_consolidated` را
+         می‌خواند و خواننده را عنوان را؛ درِ auditِ ۱۴۰۵-۰۷-۱۱ ثابت شد آن ستون
+         قابل‌اتکا نیست (۱٬۲۰۸ ردیف با عنوان نمی‌خواند، و ۴ از ۴ مقایسه با
+         ردیفِ مستقلِ هم‌سال واگرا) ⇒ دو قاعدهٔ متفاوت یعنی دو جواب برایِ یکِ دوره.
+      ۲) ردیفِ کامل‌تر (ستون‌هایِ کلیدیِ پُرتر) برنده است — پیش از این نبود، و
+         پوستۀ بی‌عددِ تازه‌تر، ردیفِ عدددارِ کهنه‌تر را حذف می‌کرد
+      ۳) درِ تساوی newest `tracing_no` (اصلاحیه)
+
+    `monthly_sales` مبنا ندارد ⇒ همان (کامل‌تر، تازۀ‌تر).
+    برگردان: `{(symbol, period_end): winning tracing_no}`
+    """
+    if table not in ("financial_statements", "monthly_sales"):
+        raise ValueError(f"unknown derived table: {table}")
+    import fts_engine as _fe                  # همان الگوی `fs_derived` (بی‌چرخۀ import)
+    if table == "financial_statements":
+        keys, basis_from_title = _fe.FS_NUMBER_KEYS, True
+    else:
+        keys, basis_from_title = _fe.MS_NUMBER_KEYS, False
+    where = "WHERE " + CP.DATED_SQL
+    params: tuple = ()
+    if symbol is not None:
+        where = f"{where} AND symbol=?"
+        params = (symbol,)
+    cols = "symbol, period_end, tracing_no, %s%s" % (
+        "title, " if basis_from_title else "0, ", ", ".join(keys))
+    keep: dict = {}
+    for sym, pe, tno, title, *vals in conn.execute(
+            f"SELECT {cols} FROM {table} {where}", params):
+        consol = _fe._is_consolidated(title or "") if basis_from_title else False
+        rank = _fe.statement_rank(keys, bool(consol),
+                                  _fe.row_completeness(keys, dict(zip(keys, vals))), tno)
+        cur = keep.get((sym, pe))
+        if cur is None or rank < cur[0]:
+            keep[(sym, pe)] = (rank, tno)
+    return {k: v[1] for k, v in keep.items()}
+
+
+def collapse_symbol(conn, sym):
+    """یکِ دوره، یکِ ردیف — `period_winners` رویِ یکِ نماد، با همان `conn`.
 
     `conn` از فراخوان می‌آید تا `_deep_extract` بتواند درست بعدِ نوشتنِ
     ردیف‌هایِ خودش همان connection را جمع کند؛ `dedupe_symbol` همان قاعده با
-    اتصالِ خودش است. پیش از این همین قاعده دو جا (این‌جا و
-    `dev/db_housekeeping.py`) با دو نتیجۀ مختلف نوشته شده بود.
-    commit با فراخوان است.
+    اتصالِ خودش است. commit با فراخوان است.
     """
     removed = removed_ms = 0
-    # FTS jozve basis = STANDALONE (غیرتلفیقی). Per period_end keep the
-    # standalone row when one exists, else the consolidated; tie-break on the
-    # latest tracing_no (اصلاحیه). Previously this kept MAX(tracing_no)
-    # blindly, which could delete the standalone row and keep a consolidated
-    # one — the opposite of the required basis.
-    keep = {}
-    for pe, tno, consol in conn.execute(
-            "SELECT period_end, tracing_no, COALESCE(is_consolidated,0) "
-            "FROM financial_statements WHERE symbol=? AND period_end IS NOT NULL",
-            (sym,)).fetchall():
-        cur = keep.get(pe)
-        # prefer lower is_consolidated (0=standalone), then higher tracing_no
-        if cur is None or (consol, -tno) < (cur[1], -cur[0]):
-            keep[pe] = (tno, consol)
-    for pe, (tno, _c) in keep.items():
+    for (_s, pe), tno in period_winners(conn, "financial_statements", sym).items():
         cur = conn.execute(
             "DELETE FROM financial_statements WHERE symbol=? AND period_end=? AND tracing_no<>?",
             (sym, pe, tno))
         removed += cur.rowcount
-    latest_ms = dict(conn.execute(
-        "SELECT period_end, MAX(tracing_no) FROM monthly_sales "
-        "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
-    for pe, mx in latest_ms.items():
+    for (_s, pe), tno in period_winners(conn, "monthly_sales", sym).items():
         cur = conn.execute(
             "DELETE FROM monthly_sales WHERE symbol=? AND period_end=? AND tracing_no<>?",
-            (sym, pe, mx))
+            (sym, pe, tno))
         removed_ms += cur.rowcount
     return removed, removed_ms
 
@@ -2645,8 +2744,8 @@ def feed_sync(mode="update", optimized=False, catchup=None):
         # نشانکِ increment: «تازۀ‌ترین تاریخِ واقعیِ بانک».
         # پیش از این همین‌جا `SELECT MAX(publish_date)` می‌خواند و می‌گرفت — ولی
         # ۲۰٬۵۴۴ از ۳۶٬۱۸۷ اطلاعیه تاریخشان با **ارقامِ فارسی** ذخیره شده، و
-        # مقایسه در SQLite لغت‌شناختی است: «۱۴۰۵/…」 (U+06F1) از «1405-07-08»
-        # بزرگ‌تر می‌شود، پس نشانک به یکِ تاریخِ قدیمی می‌افتاد و پنجرۀ فید
+        # مقایسه در SQLite لغت‌شناختی است: «۱۴۰۵/۰۱/۰۱» (ارقامش U+06F0..U+06F9) از
+        # «1405-07-08» بزرگ‌تر می‌شود، پس نشانک به یکِ تاریخِ قدیمی می‌افتاد و پنجرۀ فید
         # دوباره روزهایِ دیدۀ‌قبل را می‌خواند (و روزهایِ تازه جا می‌ماند).
         # اینجا همان ترجمۀ خودِ فایل اعمال می‌شود و بیشینه عددی گرفته می‌شود.
         max_dt = newest_publish_date(conn)
@@ -2793,7 +2892,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     if budget > 0:
         c3 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
         try:
-            pend = pending_notices(c3, limit=budget)
+            pend = pending_notices(c3, limit=budget)      # بی‌ردیف‌هایِ واقعی، نه آنچه همین اجرا آزموده شده
             counters["catchup_rows"] = len(pend)
             if pend:
                 write_progress("codal_catchup",
@@ -2811,57 +2910,147 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                            f"از {nfmt(counters['catchup_rows'])} گزارشِ معوق", 1, 1, "")
 
 
+def _repair_periods_from_titles(conn):
+    """مرحلۀ **بی‌شبکه**ٔ ترمیمِ دوره: تاریخِ داخلِ عنوانِ خودِ ردیف (منبعِ دومِ
+    قراردادِ `codal_periods`). ردیف‌هایِ بی‌دوره را هدف می‌گیرد، پس idempotent است.
+
+    برگردان: `(filled_monthly, filled_statements)`
+    """
+    filled = {}
+    for t in ("monthly_sales", "financial_statements"):
+        n = 0
+        for tn, title in conn.execute(
+                f"SELECT tracing_no, title FROM {t} WHERE {CP.UNDATED_SQL}").fetchall():
+            pe = CP.from_title(title)
+            if not pe:
+                continue
+            conn.execute(f"UPDATE {t} SET period_end=? WHERE tracing_no=?", (pe, tn))
+            if t == "monthly_sales":
+                y, mo = CP.ym(pe)
+                conn.execute("UPDATE monthly_sales SET year=COALESCE(?, year),"
+                             " month=COALESCE(?, month) WHERE tracing_no=?", (y, mo, tn))
+            n += 1
+        filled[t] = n
+    return filled["monthly_sales"], filled["financial_statements"]
+
+
+def repair_periods_only():
+    """فرمانِ `--repair-periods`: همان مرحلۀ بی‌شبکهٔ ترمیمِ دوره، تنها.
+
+    به‌ازایِ هر ردیف یکِ GET نمی‌زند — فقط تاریخِ داخلِ `title` خودِ ردیف را
+    می‌خواند. برایِ ردیف‌هایی است که نامۀ کدالشان datasource ندارد (گزارشِ
+    ماهانۀ شرکت‌هایِ سرمایه‌گذاری: پورتفوی/ریزمعاملات، بی‌جدولِ «جمع» فروش).
+    هیچ عددی را دست نمی‌زند و هیچ ردیفی را حذف نمی‌کند."""
+    conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
+    before = CP.undated_counts(conn)
+    f_ms, f_fs = _repair_periods_from_titles(conn)
+    conn.commit()
+    after = CP.undated_counts(conn)
+    conn.close()
+    print(f"[repair-periods] پر شد: {f_fs} صورتِ مالی + {f_ms} فروشِ ماهانه", flush=True)
+    print(f"[repair-periods] بی‌دوره: پیش {before['total']} → پس {after['total']} "
+          f"(fs={after['financial_statements']}، ms={after['monthly_sales']})", flush=True)
+    return f_ms, f_fs
+
+
 def repair_broken_rows(limit=None):
     """حالت ترمیم کیفیت: ردیف‌های MS/FS که وجود دارند ولی مبالغ کلیدی‌شان NULL است
     را دوباره scrape میکند (پارسرهای جدید، بانک/جمع‌ردیفی را میفهمند).
-    این باگ «ردیف هست ولی خالی» را که feed عادی هرگز ترمیم نمیکند، صاف میکند."""
+    این باگ «ردیف هست ولی خالی» را که feed عادی هرگز ترمیم نمیکند، صاف میکند.
+
+    ترتیبِ ترمیمِ `period_end` همان زنجیرۀ قراردادِ `codal_periods.derive` است:
+    اول `periodEndToDate` خودِ datasource (بازمخانیِ نامۀ کدال)، بعد تاریخِ داخلِ
+    عنوانِ نامه. چون منبعِ اول باید برنده باشد، حلقۀ بازمخانی **اول** اجرا می‌شود و
+    مرحلۀ عنوانِ بی‌شبکه **پس** از آن، برایِ هرچه هنوز بی‌دوره است
+    (سنجیده: هر ۶۷ ردیفِ بی‌دورۀ بانکِ کاری تاریخ درِ عنوان دارند — ۳۸/۳۸ و ۲۹/۲۹).
+
+    هیچ مقداری پاک نمی‌شود: همه‌چیز با `COALESCE(نو، کهنه)` — اگر صفحۀ کدال
+    عددی برنگرداند، ردیفِ موجود دقیقاً دست‌نخورده می‌ماند (پیش از این همین‌جا
+    `monthly_revenue` می‌توانست با NULLِ یکِ parse ناقص بازنویسی شود).
+    ردیفی که هیچِ دو منبعی دوره ندارد **حذف نمی‌شود**: معتبر و بی‌دوره می‌ماند و
+    فقط از `codal_periods.undated_counts()` شمرده می‌شود."""
     conn = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
     s = make_session()
     ms = conn.execute(
-        "SELECT ms.tracing_no, cn.url FROM monthly_sales ms "
+        "SELECT ms.tracing_no, cn.url, ms.title FROM monthly_sales ms "
         "JOIN codal_notices cn ON cn.tracing_no = ms.tracing_no "
-        "WHERE ms.monthly_revenue IS NULL AND ms.ytd_revenue IS NULL"
+        "WHERE (ms.monthly_revenue IS NULL AND ms.ytd_revenue IS NULL)"
+        f" OR {CP.undated_sql('ms')}"
         + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
-    print(f"[repair] MS بدون مبلغ: {len(ms)}", flush=True)
+    print(f"[repair] MS بی‌مبلغ یا بی‌دوره: {len(ms)}", flush=True)
     ok = 0
-    for t, url in ms:
+    for t, url, title in ms:
         try:
-            vals, _pe = scrape_monthly_report(s, url)
+            vals, ds_pe = scrape_monthly_report(s, url)
         except Exception:
             continue
         mv, yv = vals.get("monthly_revenue"), vals.get("ytd_revenue")
-        if mv is not None or yv is not None:
+        # زنجیرۀ قرارداد: اول datasource، در نبودش عنوانِ همان ردیف
+        pe, _src = CP.derive(ds_pe, title)
+        year, month = CP.ym(pe)
+        if mv is not None or yv is not None or pe:
             conn.execute(
-                "UPDATE monthly_sales SET monthly_revenue=?, ytd_revenue=?, "
-                "monthly_revenue_prev=?, ytd_revenue_prev=? WHERE tracing_no=?",
-                (mv, yv, vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"), t))
+                "UPDATE monthly_sales SET monthly_revenue=COALESCE(?, monthly_revenue), "
+                "ytd_revenue=COALESCE(?, ytd_revenue), "
+                "monthly_revenue_prev=COALESCE(?, monthly_revenue_prev), "
+                "ytd_revenue_prev=COALESCE(?, ytd_revenue_prev), "
+                "period_end=COALESCE(?, period_end), year=COALESCE(?, year), "
+                "month=COALESCE(?, month) WHERE tracing_no=?",
+                (mv, yv, vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"),
+                 pe, year, month, t))
             ok += 1
         time.sleep(0.4)
     print(f"[repair] MS ترمیم شد: {ok}", flush=True)
     fs = conn.execute(
-        "SELECT f.tracing_no, cn.url FROM financial_statements f "
+        "SELECT f.tracing_no, cn.url, f.title FROM financial_statements f "
         "JOIN codal_notices cn ON cn.tracing_no = f.tracing_no "
-        "WHERE f.revenue IS NULL AND f.net_profit IS NULL AND f.basic_eps IS NULL"
+        "WHERE (f.revenue IS NULL AND f.net_profit IS NULL AND f.basic_eps IS NULL)"
+        f" OR {CP.undated_sql('f')}"
         + (f" LIMIT {int(limit)}" if limit else "")).fetchall()
-    print(f"[repair] FS بدون هیچ فیلد کلیدی: {len(fs)}", flush=True)
+    print(f"[repair] FS بی‌فیلد کلیدی یا بی‌دوره: {len(fs)}", flush=True)
     ok2 = 0
-    for t, url in fs:
+    for t, url, title in fs:
         try:
-            out, _meta, _unit = scrape_report(s, url)
+            out, meta, _unit = scrape_report(s, url)
         except Exception:
             continue
+        # زنجیرۀ قرارداد (datasource ← عنوان)؛ سالِ مالی هم از همان دوره می‌آید،
+        # وگرنه ردیفِ تازه‌دوره‌دار بی‌fiscal_year می‌ماند.
+        pe, _src = CP.derive(meta.get("end"), title)
         if out and (out.get("revenue") or out.get("net_profit") or out.get("basic_eps")):
             conn.execute(
-                "UPDATE financial_statements SET revenue=?, gross_profit=?, operating_profit=?, "
-                "net_profit=?, total_assets=?, total_liabilities=?, total_equity=?, capital=?, "
-                "retained_earnings=?, basic_eps=? WHERE tracing_no=?",
+                "UPDATE financial_statements SET revenue=COALESCE(?, revenue), "
+                "gross_profit=COALESCE(?, gross_profit), "
+                "operating_profit=COALESCE(?, operating_profit), "
+                "net_profit=COALESCE(?, net_profit), "
+                "total_assets=COALESCE(?, total_assets), "
+                "total_liabilities=COALESCE(?, total_liabilities), "
+                "total_equity=COALESCE(?, total_equity), capital=COALESCE(?, capital), "
+                "retained_earnings=COALESCE(?, retained_earnings), "
+                "basic_eps=COALESCE(?, basic_eps), "
+                "period_end=COALESCE(?, period_end), fiscal_year=COALESCE(?, fiscal_year)"
+                " WHERE tracing_no=?",
                 (out.get("revenue"), out.get("gross_profit"), out.get("operating_profit"),
                  out.get("net_profit"), out.get("total_assets"), out.get("total_liabilities"),
                  out.get("total_equity"), out.get("capital"), out.get("retained_earnings"),
-                 out.get("basic_eps"), t))
+                 out.get("basic_eps"), pe, CP.fiscal_year(pe), t))
+            ok2 += 1
+        elif pe:
+            conn.execute("UPDATE financial_statements SET period_end=COALESCE(?, period_end),"
+                         " fiscal_year=COALESCE(?, fiscal_year) WHERE tracing_no=?",
+                         (pe, CP.fiscal_year(pe), t))
             ok2 += 1
         time.sleep(0.4)
     print(f"[repair] FS ترمیم شد: {ok2}", flush=True)
+    # مرحلهٔ بی‌شبکه **بعد** از بازمخانی می‌آید: تا وقتی datasource جواب می‌دهد همان
+    # منبعِ معتبر می‌نشیند (بندِ ۳ قراردادِ `codal_periods`)؛ عنوان فقط برایِ
+    # ردیف‌هایی است که نامۀشان باز نشد یا اصلاً درِ `codal_notices` نیست.
+    filled_ms, filled_fs = _repair_periods_from_titles(conn)
+    print(f"[repair] دورۀ باقی‌مانده از عنوانِ نامه: {filled_ms} ماهانه + {filled_fs} صورتِ مالی",
+          flush=True)
+    und = CP.undated_counts(conn)
+    print(f"[repair] بی‌دوره پس ازِ ترمیم: fs={und['financial_statements']} "
+          f"ms={und['monthly_sales']} total={und['total']}", flush=True)
     conn.close()
     return ok, ok2
 
@@ -3425,7 +3614,14 @@ def fetch_symbol(symbol):
         title, url = n[3], n[7]
         write_od_status(symbol, "codal",
                         f"گزارش فعالیت ماهانه {nfmt(i)}/{nfmt(total)} — {sym}")
-        vals, period_end = scrape_monthly_report(s, url)
+        try:
+            vals, period_end = scrape_monthly_report(s, url)
+        except Exception as e:
+            # مسیرِ on-demand مثلِ قبل ادامه می‌دهد: این گزارش بی‌عدد می‌ماند، ولی
+            # یکِ بنِ گذرا کلِ واکشیِ نماد را نمی‌کُشد. (برخلافِ `_deep_extract` که
+            # اینجا باید failed بشود تا درِ پاسِ بعدی دوباره تلاش شود.)
+            print(f"  [ondemand] ماهانه خوانده نشد {sym}: {e}", flush=True)
+            continue
         if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
             ok_ms += 1
         year = month = None
@@ -3654,6 +3850,10 @@ if __name__ == "__main__":
                     help="Smart global-feed sync (no per-symbol search; browser-verified 2026-08-27)")
     ap.add_argument("--repair", action="store_true",
                     help="ترمیم ردیف‌های MS/FS موجود ولی خالی (re-scrape با پارسر جدید)")
+    ap.add_argument("--repair-periods", action="store_true",
+                    help="فقط مرحلۀ **بی‌شبکه**ٔ ترمیمِ period_end (تاریخِ داخلِ عنوانِ "
+                         "خودِ ردیف). هیچ درخواستی به کدال نمی‌زند و هیچ عددی را عوض "
+                         "نمی‌کند؛ برایِ بانک‌هایی که datasourceشان دوره ندارد.")
     ap.add_argument("--rebuild-fs", action="store_true",
                     help="بازسازی financial_statements با پارسرِ نام‌محور/مبنای غیرتلفیقی "
                          "(re-scrape همهٔ نامه‌های در دسترس؛ جایگزینی مبالغ+مبنا؛ skip روی خطای کدال)")
@@ -3682,15 +3882,23 @@ if __name__ == "__main__":
                     help="درِ --feed: درِ پایانِ اجرا N گزارشِ معوق (اطلاعیه هست، ردیفِ "
                          "FS/MS نیست) را مشتق کن. ۰ = خاموش؛ پیش‌فرض "
                          + str(CATCHUP_DEFAULT) + ".")
+    ap.add_argument("--extract-workers", type=int, default=None, metavar="N",
+                    help="اندازهٔ استخرِ اسکرپ درِ جبرانِ مشتقه‌ها (--catchup و پاسِ فید). "
+                         "پیش‌فرض ۴؛ سقف ۱۶. درِ --polite همیشه ۱ (همان قراردادِ "
+                         "--rebuild-fs: بی‌روتاریشنِ IP، تک‌کارگر).")
     ap.add_argument("--optimized", action="store_true",
-                    help="فقط داده‌های تغییرپذیر از Codal: новые اطلاعیه‌ها + FS های قدیمی/فاسد + نمادهای جدید (حداقل درخواست — برای IP های بدون ADB)")
+                    help="فقط داده‌های تغییرپذیر از Codal: اطلاعیه‌های نو + FS های قدیمی/فاسد + نمادهای جدید (حداقل درخواست — برای IP های بدون ADB)")
     args = ap.parse_args()
     _NO_TETHER = bool(args.no_tether)
     set_polite(getattr(args, "polite", False))
+    if getattr(args, "extract_workers", None):
+        set_extract_workers(args.extract_workers)
     if args.symbol:
         fetch_symbol(args.symbol)
     elif args.repair:
         repair_broken_rows(limit=args.limit)
+    elif args.repair_periods:
+        repair_periods_only()
     elif args.rebuild_fs:
         syms = [x.strip() for x in args.symbols.split(",")] if args.symbols else None
         rebuild_fs(limit=args.limit, symbols=syms, latest_only=args.latest_only,

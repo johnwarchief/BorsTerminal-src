@@ -11,7 +11,8 @@ run_all_tests.py آن را گزارش می‌کند.
   F-02   روند ۳ سالهٔ EPS با سال مالی پویا (نه قفل روی ۲۹ اسفند)
   F-04   سالانه‌سازی پویای ۱۲÷n + نسبتِ مارکت‌کپ
   F-04b  مدیریت وضعیت N/A برای هلدینگ‌ها/سرمایه‌گذاری‌ها
-  F-05   استثنای دارویی (GPM ≥ ۵۰٪ مجاز، نه ردِ مطلق)
+  F-05   صنایع دستوری/آزاد — استثنای دارویی **خاموشِ پیش‌فرض** (کلیدش در جزوه
+         نیست؛ رأیِ مالک ۱۴۰۵-۰۷-۱۱) و پهنایِ رشد ماهانه **نمایشی** است، نه درگاه
 
 اجرا:  python dev/codal_logic_guard.py
 اگر market.db نباشد، بخشِ داده SKIP می‌شود؛ گاردهای خالص همیشه اجرا می‌شوند.
@@ -29,6 +30,7 @@ except Exception:
     pass
 
 import fts_engine as F  # noqa: E402
+import codal_periods as CP  # noqa: E402
 
 CHECKS = []
 
@@ -78,7 +80,7 @@ def main():
     if conn is not None:
         pe = conn.execute(
             "SELECT period_end FROM financial_statements WHERE period_months>=12 "
-            "AND period_end IS NOT NULL ORDER BY period_end DESC LIMIT 1").fetchone()
+            "AND %s %s LIMIT 1" % (CP.DATED_SQL, CP.latest_order_sql())).fetchone()
         ck(pe is not None,
            "F-02 سال مالی از period_end خوانده می‌شود (آخرین=%s، نه قفلِ ۲۹ اسفند)"
            % (pe["period_end"] if pe else "-"))
@@ -101,13 +103,60 @@ def main():
     n = F.sales_to_marketcap(conn or _Fake(), "ناموجود", 1e13, sector="فلزات اساسي")
     ck(n is None, "F-04b غیرهلدینگِ بدونِ داده: None (معافیت نمی‌گیرد)")
 
-    # ── F-05: استثنای دارویی ────────────────────────────────────────────
+    # ── F-05: استثنای دارویی — **خاموشِ پیش‌فرض** (رأیِ مالک ۱۴۰۵-۰۷-۱۱) ─────
+    # «pharma_margin_exempt_min» درِ جزوه نیست؛ پس دارو نه خودکار معاف می‌شود نه
+    # خودکار رد. این سه چک همان حکم را قفل می‌کنند: با کانفیگِ خالی، GPM هرچه باشد
+    # داوری «خنثی» است؛ فقط وقتی مالک کلید را non-zero کند شاخۀ استثنا کار می‌کند.
     ck(F.sector_filter("مواد و محصولات دارویی")["verdict"] == "neutral",
        "F-05 دارو با GPM نامعلوم: neutral (نه وتوی سخت)")
-    ck(F.sector_filter("مواد و محصولات دارویی", gpm=55.0)["verdict"] == "free",
-       "F-05 دارو با GPM ۵۵٪: free")
-    ck(F.sector_filter("مواد و محصولات دارویی", gpm=20.0)["verdict"] == "mandatory",
-       "F-05 دارو با GPM ۲۰٪: mandatory")
+    ck(F.sector_filter("مواد و محصولات دارویی", gpm=55.0)["verdict"] == "neutral",
+       "F-05 دارو با GPM ۵۵٪ هم neutral می‌ماند (کلید خاموش ⇒ استثنای خودکار نداریم)")
+    ck(F.sector_filter("مواد و محصولات دارویی", gpm=20.0)["verdict"] == "neutral",
+       "F-05 دارو با GPM ۲۰٪ رد نمی‌شود (نبودِ قانونِ جزوه ≠ وتو)")
+    ck(F.sector_filter("مواد و محصولات دارویی", cfg={"pharma_margin_exempt_min": 50.0},
+                       gpm=55.0)["verdict"] == "free",
+       "F-05 اگر مالک کلید را روشن کند، شاخۀ استثنا همان ۵۰٪ را می‌خواند (free)")
+    ck(F.sector_filter("مواد و محصولات دارویی", cfg={"pharma_margin_exempt_min": 50.0},
+                       gpm=20.0)["verdict"] == "mandatory",
+       "F-05 با کلیدِ روشن و GPM زیرِ آستانه: mandatory (سلوکِ قبلیِ انتخابی)")
+
+    # ── F-01/۱ب: پهنای رشد **نمایشی** است، نه درگاهِ امتیاز ────────────────
+    # جزوه برایِ «breadth» هیچ فرمول یا آستانه‌ای ندارد. سریِ ساختگیِ زیر رشد
+    # ریالیِ خوب دارد ولی فقط ۱ از ۶ ماه بهتر شده — با گیتِ پیشین ۱ب «رد»
+    # می‌شد؛ حالا pass است و پهنا فقط درِ payload دیده می‌شود.
+    from api import fundamental as _FD          # importِ محلی (خارج از مسیرِ موتور)
+    _mem = sqlite3.connect(":memory:")
+    _mem.execute("CREATE TABLE monthly_sales (tracing_no INTEGER PRIMARY KEY,"
+                 " symbol TEXT, title TEXT, period_end TEXT, year INTEGER, month INTEGER,"
+                 " monthly_revenue REAL, ytd_revenue REAL, ytd_revenue_prev REAL)")
+    _now = {1: 100.0, 2: 100.0, 3: 100.0, 4: 100.0, 5: 100.0, 6: 300.0}
+    _prev = {1: 110.0, 2: 110.0, 3: 110.0, 4: 110.0, 5: 110.0, 6: 90.0}
+    _tn = 0
+    for _y, _src in ((1405, _now), (1404, _prev)):
+        _cum = 0.0
+        for _m in range(1, 7):
+            _tn += 1
+            _cum += _src[_m]
+            _mem.execute("INSERT INTO monthly_sales VALUES (?,?,?,?,?,?,?,?,?)",
+                         (_tn, "آزمون", "گزارش فعالیت ماهانه", "%d/%02d/30" % (_y, _m),
+                          _y, _m, _src[_m], _cum, None))
+    _mem.commit()
+    _ser = _FD.monthly_series(_mem, "آزمون")
+    _mon = {"year": 1405, "months": 6, "monetary_pct": 66.7}
+    _th = _FD.v10_thresholds()
+    _prof = F.company_profile("فلزات اساسی")
+    _v = _FD.ind1b_volume_growth(_mem, "آزمون", monetary=_mon, series=_ser,
+                                 th=_th, profile=_prof)
+    _br = _v.get("breadth") or {}
+    ck(_br.get("ratio") is not None and _br["ratio"] < _th["volume_breadth_min"],
+       "F-01 ۱ب: پهنا واقعاً کم است (%s از %s) — سناریوی تست ساخته شد"
+       % (_br.get("improved_months"), _br.get("compared_months")))
+    ck(bool(_v.get("pass")) is True,
+       "F-01 ۱ب باوجودِ پهنای کم pass می‌شود (رشد واقعی %+.1f٪ ≥ %g٪) — پهنا درگاه نیست"
+       % (_v.get("real_pct") or 0.0, _th["volume_growth_min"]))
+    ck("note_breadth" in _v and _v.get("breadth"),
+       "F-01 ۱ب: پهنا درِ payload برایِ نمایش ماند (نه درِ داوری)")
+    _mem.close()
 
     if conn is not None:
         conn.close()

@@ -217,8 +217,9 @@ pathL, conL = make_db(migrate=False)
 infoL = FD.get_tsetmc_market_cap_info("فولاد", db=conL)
 ck(infoL["rials"] is not None and infoL["rials"] > 0,
    "reader migrates a pre-v10 market.db on the fly instead of returning 0 (%r)" % (infoL["rials"],))
-ck(FD._MCAP_COLS.get((id(conL), "market_watch")) is True,
-   "column probe cache is refreshed after the self-heal migration")
+ck(FD._has_mcap_col(conL, "market_watch") is True,
+   "بعد ازِ خود-ترمیم، خواننده بی‌کش دوباره ستون را می‌بیند "
+   "(پیش‌ازین ازِ کشِ (id(conn), table) answerِ کهنه نشت می‌کرد)")
 con.close()
 conL.close()
 for p in (path, pathL):
@@ -335,6 +336,75 @@ ck(FD.ind4_valuation(annual, gm, 2.5e13, th=th_hi)["sales_pass"] is False,
 ck(FD.ind4_valuation(annual, gm, 2.5e13)["potential_pct"] == 16.0,
    "profit potential = 0.4 × 40%% = 16%% under a 1.0× cap (%s)"
    % FD.ind4_valuation(annual, gm, 2.5e13)["potential_pct"])
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  ۷) موتورِ دسته‌ای هم فقط ستونِ رسمی را می‌خواند (جعلِ قیمت×سهام حذف شد)
+# ═══════════════════════════════════════════════════════════════════════════
+ck(fts_engine.has_market_cap_col.__module__ == "fts_engine"
+   and FD._has_mcap_col.__module__ == "api.fundamental"
+   and "fts_engine.has_market_cap_col" in open(os.path.join(
+       ROOT, "api", "fundamental.py"), encoding="utf-8").read(),
+   "کارت و موتور یک تشخیصِ ستون دارند (واگردِ کارت به fts_engine، بی‌کش)")
+
+_p1, _con_pre = make_db(migrate=False)
+try:
+    ck(fts_engine.mcap_bulk_expr(_con_pre) == "NULL",
+       "DBِ پیش از مهاجرت: عبارتِ ارزش بازارِ موتور = NULL (نه p_closing×total_shares)")
+    # خود-ترمیمیِ کارت (ensure_market_cap_schema) موتور را هم بی‌خبر نمی‌گذارد
+    FD.ensure_market_cap_schema(_con_pre)
+    _expr = fts_engine.mcap_bulk_expr(_con_pre)
+    ck("CASE WHEN m.market_cap > 0" in _expr and "COALESCE(" in _expr
+       and "allowed_max" in _expr,
+       "پس از مهاجرت: موتور ستونِ رسمی + history را با هم می‌خواند (%s…)" % _expr[:34])
+    ck("daily_prices" in _expr,
+       "سلسله‌مراتبِ موتور همان کارت است: market_watch و در نبودش آخرین daily_prices")
+finally:
+    _con_pre.close()
+    shutil.rmtree(os.path.dirname(_p1), ignore_errors=True)
+
+with open(os.path.join(ROOT, "fts_engine.py"), encoding="utf-8") as _fh:
+    _eng_src = _fh.read()
+ck("mcap_bulk_expr(conn)" in _eng_src and "p_closing * " not in _eng_src,
+   "bulk_scan از mcap_bulk_expr می‌سازد و هیچ‌جا قیمت×سهام نمی‌سازد (قفلِ متنی)")
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  ۸) بانِ مرده: ردیفی که تابلو برایش مجازِ قیمتی ندارد، ارزشِ بازار نمی‌سازد
+#     (نشار: p=۱٫۰، allowed ۱٫۰ تا ۱٫۰، صفردیده → نسبتِ ۱۴۱۳٫۷۵× می‌داد)
+# ═══════════════════════════════════════════════════════════════════════════
+_p8, _c8 = make_db(migrate=True)
+try:
+    seed_caps(_c8, [(4000000.0, "tse_board_calc", "C3"), (5.57e15, "tse_raw", "C1")])
+    _c8.execute("UPDATE market_watch SET p_closing=1.0, total_shares=4000000.0,"
+                " allowed_min=1.0, allowed_max=1.0 WHERE ins_code='C3'")   # خودرو
+    _c8.execute("UPDATE market_watch SET allowed_min=144.0, allowed_max=176.0"
+                " WHERE ins_code='C1'")                                     # فولاد
+    _c8.commit()
+    i_dead = FD.get_tsetmc_market_cap_info("خودرو", db=_c8)
+    ck(i_dead["rials"] is None and i_dead["error"] == FD.MCAP_ERR_NO_BAND,
+       "کارت: بانِ مرده ⇒ None + پرچمِ no_live_band، نه ۴٬۰۰۰٬۰۰۰ ریال (%r)"
+       % (i_dead["error"],))
+    i_live = FD.get_tsetmc_market_cap_info("فولاد", db=_c8)
+    ck(i_live["rials"] == 5.57e15,
+       "کارت: بانِ زنده دست‌نخورده می‌ماند (%r)" % (i_live["rials"],))
+    _expr8 = fts_engine.mcap_bulk_expr(_c8)
+    _got = {s: v for s, v in _c8.execute(
+        "SELECT i.l_val18, " + _expr8 + " FROM instruments i"
+        " LEFT JOIN market_watch m ON m.ins_code = i.ins_code")}
+    ck(_got.get("خودرو") is None, "موتور: همان ردیف ⇒ NULL (به مسیرِ history هم نمی‌افتد)")
+    ck(_got.get("فولاد") == i_live["rials"],
+       "موتور ⇄ کارت: یک ردیفِ زنده، یک عدد (%s)" % _got.get("فولاد"))
+    # بانِ پر نشده (فیکچرها و DB کهنه) نباید رد کند — نبودِ شاهد ≠ شاهدِ بی‌اعتباری
+    _c8.execute("UPDATE market_watch SET allowed_min=NULL, allowed_max=NULL"
+                " WHERE ins_code='C3'")
+    _c8.commit()
+    ck({s: v for s, v in _c8.execute("SELECT i.l_val18, " +
+                                     fts_engine.mcap_bulk_expr(_c8) + " FROM instruments i"
+                                     " LEFT JOIN market_watch m ON m.ins_code=i.ins_code")
+       }.get("خودرو") == 4000000.0,
+       "بانِ NULL ⇒ رد نمی‌کند (نبودِ شاهد، شاهدِ بی‌اعتباری نیست)")
+finally:
+    _c8.close()
+    shutil.rmtree(os.path.dirname(_p8), ignore_errors=True)
 
 print("\n".join("%s %s" % ("PASS" if ok else "FAIL", msg) for ok, msg in CHECKS))
 bad = [msg for ok, msg in CHECKS if not ok]

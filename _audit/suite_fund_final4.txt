@@ -1,0 +1,110 @@
+  OK   structure / undefined-names              rc=0 | 0 pass / 0 fail
+  OK   FTS filter isolation                     rc=0 | 23/23
+  OK   codal FTS pipeline + ADB fallback + session window rc=0 | 53 pass / 0 fail
+  OK   calendar py<->js categories              rc=0 | 19 pass / 0 fail
+  OK   KLineCharts v10 API guard                rc=0 | 163 pass / 0 fail
+  OK   m141/liquidity parity + anti-N+1         rc=0 | 24 pass / 0 fail
+  OK   ADB retry/reconnect + wifi restore       rc=0 | 26/26
+  OK   triple-confirmation confidence engine    rc=0 | 107 pass / 0 fail
+  OK   soft pass/warn/fail/nodata — no hard vetoes rc=0 | 81 pass / 0 fail
+  OK   mstat dashboard computed from local market.db rc=0 | 202 pass / 0 fail
+  OK   watchlist store + triple matrix + parity rc=0 | 47 pass / 0 fail
+  OK   patch/update system guard                rc=0 | 55/55
+  OK   make_patch --from arg parsing            rc=0 | 0 pass / 0 fail
+  OK   delta patch select/apply + fallback      rc=0 | 0 pass / 0 fail
+  OK   fund sheet: سود سهام هرگز «فروش» نمی‌شود rc=0 | 0 pass / 0 fail
+  OK   API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست rc=0 | 0 pass / 0 fail
+  OK   صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر) rc=0 | 0 pass / 0 fail
+  OK   هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs) rc=0 | 0 pass / 0 fail
+  OK   قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی) rc=0 | 0 pass / 0 fail
+  OK   هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب) rc=0 | 0 pass / 0 fail
+  OK   سنِ دادهٔ ریلیز سنجیده می‌شود: کهنه=هشدار، کهنه‌تر از baseline=رد rc=0 | 38/38
+  OK   ادغامِ کدال: محلیِ تازه‌تر هرگز بازنویسی نمی‌شود rc=0 | 30/30
+  OK   ادغامِ market.db: دادهٔ بازارِ کاربر با ارتقا له نمی‌شود rc=0 | 22/22
+  OK   پاک‌سازیِ chunkهایِ مردهٔ frontend، با درختِ ساختگی rc=0 | 8/8
+  OK   چارتِ یکتا: هر متدِ Chart باید در باندلِ خودش باشد و باندلِ دومی نباشد rc=0 | 20/20
+  OK   blank published total refuses a component line for فروش rc=0 | 0 pass / 0 fail
+  OK   board cache is stale-while-revalidate, single-flight, honest on failure rc=0 | 0 pass / 0 fail
+  OK   live 5s board tick: one request, shared row map, closed-window refuses to write rc=0 | 21/21
+  OK   server FTS reads the full adjusted series the chart draws, not the starved raw table rc=0 | 0 pass / 0 fail
+  OK   chart fib belts and setup markers come from the one server engine, over the current wave rc=0 | 0 pass / 0 fail
+  OK   repo hygiene / dead-code stays gone      rc=0 | 123/123
+  FAIL FTS v10 EPS evidence ladder + partial table row rc=1 | 0 pass / 0 fail
+       Traceback (most recent call last):
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\dev\test_fts_v10_ladder.py", line 29, in <module>
+           from api import fundamental as F  # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\fundamental.py", line 210, in <module>
+           _MCAP_COLS = fts_engine._MCAP_COLS
+                        ^^^^^^^^^^^^^^^^^^^^^
+       AttributeError: module 'fts_engine' has no attribute '_MCAP_COLS'. Did you mean: '_MCAP_CACHE'?
+  FAIL TSETMC market-cap source of truth + risk filters rc=1 | 0 pass / 0 fail
+       Traceback (most recent call last):
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\dev\test_fts_market_cap.py", line 30, in <module>
+           from api import fundamental as FD
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\fundamental.py", line 210, in <module>
+           _MCAP_COLS = fts_engine._MCAP_COLS
+                        ^^^^^^^^^^^^^^^^^^^^^
+       AttributeError: module 'fts_engine' has no attribute '_MCAP_COLS'. Did you mean: '_MCAP_CACHE'?
+  FAIL screener<->card parity + ind-4 exemption engine vs card rc=1 | 0 pass / 0 fail
+       Traceback (most recent call last):
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\dev\fts_screener_card_parity_v10.py", line 51, in <module>
+           from api import fundamental as F        # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\fundamental.py", line 210, in <module>
+           _MCAP_COLS = fts_engine._MCAP_COLS
+                        ^^^^^^^^^^^^^^^^^^^^^
+       AttributeError: module 'fts_engine' has no attribute '_MCAP_COLS'. Did you mean: '_MCAP_CACHE'?
+  OK   indicator-3 no-data is 'not measured', never 'rejected' (both cache paths) rc=0 | 0 pass / 0 fail
+  OK   codal logic contract F-01..F-05 (amendment) rc=0 | 17 pass / 0 fail
+  FAIL FTS v2.2 db contract: writer/reader/schema agree rc=1 | 26 pass / 0 fail
+         PASS ??????? ?????? ?? ?? _tp ???????? (None ? NULL? ?? bool() ? 0)
+         PASS ???????? fts_results ??????? ???? ?? ?? NULL ????????? (ind4_na)
+       Traceback (most recent call last):
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\dev\db_contract_v11.py", line 238, in <module>
+           import api.screener as _scr_mod  # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\screener.py", line 11, in <module>
+           from .fundamental import _fa
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\fundamental.py", line 210, in <module>
+           _MCAP_COLS = fts_engine._MCAP_COLS
+                        ^^^^^^^^^^^^^^^^^^^^^
+       AttributeError: module 'fts_engine' has no attribute '_MCAP_COLS'. Did you mean: '_MCAP_CACHE'?
+  OK   all six version anchors state the same release rc=0 | 1 pass / 0 fail
+  OK   FTS guide defaults: FE drawer mirrors the server rc=0 | 61 pass / 0 fail
+  OK   weekly downtrend/neutral is a hard veto; no-data is not rc=0 | 12 pass / 0 fail
+  FAIL assembly veto: fresh outside the cache, no-data is not a veto rc=1 | 0 pass / 0 fail
+       Traceback (most recent call last):
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\dev\assembly_veto_v1064.py", line 41, in <module>
+           import api.screener as SC  # noqa: E402
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\screener.py", line 11, in <module>
+           from .fundamental import _fa
+         File "C:\Users\PCMOD\Desktop\BorsTerminal\api\fundamental.py", line 210, in <module>
+           _MCAP_COLS = fts_engine._MCAP_COLS
+                        ^^^^^^^^^^^^^^^^^^^^^
+       AttributeError: module 'fts_engine' has no attribute '_MCAP_COLS'. Did you mean: '_MCAP_CACHE'?
+  OK   weekly trend verdict from live pivots or the recent window, never a stale pivot rc=0 | 0 pass / 0 fail
+  OK   FTS engine publishes no made-up numbers (week, fib, stop, MA52, na) rc=0 | 1 pass / 0 fail
+  OK   market.db re-extracts on a new bundled baseline rc=0 | 11 pass / 0 fail
+  OK   pack refuses a baseline with fewer rows than the committed one rc=0 | 0 pass / 0 fail
+  OK   derived columns at insert (backfill selftest) rc=0 | 0 pass / 0 fail
+  OK   incremental sync: new symbol + new monthly report rc=0 | 31 pass / 0 fail
+  OK   R1/R2 housekeeping: dedupe + prev-year backfill rc=0 | 1 pass / 0 fail
+  OK   onedir build contract: hiddenimports + shape rc=0 | 1 pass / 0 fail
+  OK   live board audit: zero-volume / no-CT edge cases rc=0 | 0 pass / 0 fail
+  OK   Windows + GPU/software-render guard      rc=0 | 23 pass / 0 fail
+  OK   log has a clock and survives a hard death rc=0 | 12 pass / 0 fail
+  OK   candle fidelity: geometry repair + anchored adjustment rc=0 | 23/23
+  OK   live candle: session date, both chart endpoints, cache untouched rc=0 | 46/46
+  OK   candles from the board table + geometry repair + no prune-before-fetch rc=0 | 41/41
+  OK   last/closing are separate columns; no fabricated last, anchor untouched rc=0 | 19/19
+  OK   single price resolver (last|closing) + adjustment anchor invariance rc=0 | 45/45
+  OK   no history pruning, incremental sync, idempotent second run rc=0 | 13/13
+  OK   one candle contract: shared geometry, writer priority, same numbers from every source rc=0 | 22/22
+  OK   adjustment also from restated close on zero-volume rows; four negative controls rc=0 | 0 pass / 0 fail
+  OK   one notice = one extraction; shared period never blocks another symbol rc=0 | 0 pass / 0 fail
+  OK   one canonical period rule; SQL and Python agree; every consumer sees one count rc=0 | 0 pass / 0 fail
+  OK   fresh data invalidates the dependent caches; no crawler child in the frozen build rc=0 | 0 pass / 0 fail
+  OK   indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact rc=0 | 0 pass / 0 fail
+  OK   pulse scopes match tradersarena + no half-written market total rc=0 | 62 pass / 0 fail

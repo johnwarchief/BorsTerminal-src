@@ -1,0 +1,162 @@
+# ── بلوکِ جدیدِ fts_engine.py (تک‌منبعِ طبقه + سالانه‌سازی) ──────────────────
+# این فایل منبعِ جای‌گزینی است؛ خودِ `_audit/splice_fund.py` آن را درِ
+# fts_engine.py می‌گذارد (جای `annualized_sales` و کامنتِ بالایِ آن).
+# ==================== شاخص ۴: فروش سالانهٔ Annualized به ارزش بازار + پتانسیل سود
+# ═══════════════════════════════════════════════════════════════════════════
+#  طبقۀ شرکت — تک‌مرجعِ «مبنای درآمد» (کارت، موتور و bulk یک چیز می‌خوانند)
+# ═══════════════════════════════════════════════════════════════════════════
+# «فروش» برای بانک معنا ندارد؛ جزوه برای شرکت‌های مالی «درآمد تسهیلات اعطایی +
+# سپرده‌گذاری + سرمایه‌گذاری + اوراق + کارمزد» را می‌نویسد و برای تولیدی
+# «فروش داخلی + صادراتی». پیش از این این جدول در `api/fundamental.py` بود و
+# `bulk_scan` به آن دسترسی نداشت ⇒ موتور برای طبقۀ مالی همان مسیرِ تولیدی را
+# می‌رفت و فروش سالانۀ شاخص ۴ بین کارت و اسکرینر واگرا می‌شد (۵۰ نماد).
+_FIN_TOKENS = tuple(norm_fa(x) for x in
+                    ("اعتباري", "اعتباری", "بيمه", "بیمه",
+                     "ليزينگ", "لیزینگ", "کارگزاري", "کارگزاری", "اوراق"))
+_HOLD_TOKENS = tuple(norm_fa(x) for x in
+                     ("بانک", "سرمایه گذاری", "سرمایه‌گذاری", "هلدینگ",
+                      "واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"))
+_SVC_TOKENS = tuple(norm_fa(x) for x in
+                    ("خدمات", "حمل", "ترابری", "فناوري", "فناوری", "مخابرات",
+                     "بازرگاني", "بازرگانی", "پخش", "رستوران", "گردش"))
+_PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "مالی و بانکی",
+                  "service": "خدماتی", "fund": "صندوق",
+                  "holding": "هلدینگ / سرمایه‌گذاری"}
+
+
+def company_profile(sector: str = "", company_name: str = "") -> dict:
+    """طبقۀ شرکت + مبنای درآمد + اینکه چکِ فیزیکی (تناژ) برایش معنا دارد یا نه."""
+    both = norm_fa(sector) + " " + norm_fa(company_name)
+    if fund_class_match(sector, company_name):
+        kind, applicable = "fund", False
+        basis = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
+    elif any(t in both for t in _HOLD_TOKENS):
+        kind, applicable = "holding", False
+        basis = ("هلدینگ/سرمایه‌گذاری/بانکی — درآمد عملیاتی از پرتفوی، سود "
+                 "تسهیلات/سپرده و سرمایه‌گذاری‌ها (بدون «فروش کالا» و تناژ فیزیکی)")
+    elif any(t in both for t in _FIN_TOKENS):
+        kind, applicable = "financial", False
+        basis = ("مالی/بانکی — جمع درآمد تسهیلات اعطایی + سپرده‌گذاری + "
+                 "سرمایه‌گذاری‌ها + اوراق بدهی + کارمزد (نه «فروش کالا»)")
+    elif any(t in both for t in _SVC_TOKENS):
+        kind, applicable = "service", False
+        basis = "خدماتی — کارمزد و درآمد عملیاتی (بدون تناژ فیزیکی)"
+    else:
+        kind, applicable = "production", True
+        basis = "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)"
+    return {"kind": kind, "label": _PROFILE_LABEL[kind], "revenue_basis": basis,
+            "volume_applicable": applicable,
+            "volume_note": ("تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ "
+                            "رشد ریالی بدون رشد تناژ = افزایش قیمت."
+                            if applicable else
+                            "این شرکت کالای وزن‌شدنی تولید نمی‌کند؛ چک فیزیکی روی "
+                            "مبنای متناسبِ همان طبقه (درآمد واقعی پس از تورم) سنجیده "
+                            "میشود نه تن محصول."),
+            "pricing_note": ("درآمد به دلار/بورس کالا گره خورده (صادراتی)."
+                             if applicable else
+                             "درآمد ریالیِ نرخ‌گذاری‌شده — ریسک سرکوب نرخ وجود دارد.")}
+
+
+# طبقه‌هایی که «فروش کالا» ندارند و مبنایشان درآمدِ صورتِ مالیِ سالانه است
+_OP_BASIS_KINDS = ("financial", "service", "fund", "holding")
+ANNUALIZATION_SCALE = (3, 4, 5, 6, 9, 12)
+
+
+def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
+    """خالصِ سالانه‌سازی — **یک** قاعده برای مسیرِ SQL و مسیرِ کل‌بازار.
+
+    قاعده (رأیِ مالک، OWNER_RULINGS ردیف ۴ + سند v2.1):
+      ۰) `op_basis` (طبقۀ مالی/خدماتی/صندوق/هلدینگ) → درآمدِ صورتِ مالیِ سالانه
+         با ضریب ۱٫۰؛ گزارشِ ماهانه جای آن را نمی‌گیرد.
+      ۱) تجمیعیِ YTDِ بلندترینِ ماهِ دارایِ گزارش × ۱۲÷م  (م = همان ماه)
+      ۲) دوازده‌ماهۀ کامل ⇒ خودِ YTD (×۱٫۰)
+      ۳) بی‌گزارشِ ماهانه → فروشِ صورتِ مالیِ سالانۀ کدال
+      ۴) گیتِ واحدِ مشکوک: >۴× یا <۰٫۲۵× فروشِ سالانه ⇒ مبنای کدال +
+         `reconciled=False`
+    م از «بلندترینِ ماهِ دارایِ گزارشِ تجمیعی در آخرین سالِ مالی» خوانده می‌شود،
+    نه از تقویم — تا نمادی که ماهِ جاافتاده دارد درست annualize شود.
+    `rows`: [(سال, ماه، فروشِ ماه، تجمیعی), …] — ردیف‌هایِ تازه‌ترینِ سالِ مالی اول.
+    برگردان: {} یعنی «قابل محاسبه نبود» (هیچ‌وقت صفرِ ساختگی نه).
+    """
+    if op_basis:
+        if fs_rev <= 0:
+            return {}
+        return {"annual_sales_mrl": fs_rev, "months_used": 12, "reconciled": True,
+                "operational_revenue_basis": True,
+                "basis": "درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برایِ طبقه"}
+    annual, months, basis, reconciled = 0.0, 0, "", True
+    if rows:
+        year = int(rows[0][0] or 0)
+        cur = sorted((r for r in rows if int(r[0] or 0) == year),
+                     key=lambda r: -int(r[1] or 0))
+        if cur:
+            months = int(cur[0][1] or 0)
+            ytd = _f(cur[0][3])
+            if months >= 1 and ytd > 0:
+                annual = ytd if months >= 12 else ytd * 12.0 / months
+                basis = (("تجمیعی %02d/%d × ۱۲÷%d (=×%.2f)"
+                          % (months, year, months, 12.0 / months))
+                         if months < 12 else
+                         "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)" % year)
+    if annual <= 0 and fs_rev > 0:
+        annual, months = fs_rev, 12
+        basis = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
+    if annual <= 0:
+        return {}
+    # گیتِ «واحد مشکوک» فقط برای سالانه‌سازیِ واقعی (۰ < م < ۱۲) معنا دارد؛
+    # گزارشی که خودش ۱۲ ماهِ کامل را پوشش می‌دهد مستقیم پذیرفته می‌شود.
+    if (fs_rev > 0 and 0 < months < 12
+            and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25)):
+        reconciled = False
+        annual, months = fs_rev, 12
+        basis = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
+    return {"annual_sales_mrl": annual, "months_used": months, "basis": basis,
+            "reconciled": reconciled, "operational_revenue_basis": False}
+
+
+def annualized_sales(conn: sqlite3.Connection, symbol: str,
+                     ref: Optional[dict] = None, series=None, profile=None,
+                     exempt=None) -> Optional[dict]:
+    """فروش سالانۀ شاخص ۴ — **تک‌پیاده‌سازیِ کارت، اسکرینر و bulk**.
+
+    `api/fundamental.dynamic_annualized_sales` به همین تابع واگرد می‌کند؛ طبقه
+    از `company_profile` (همین فایل) و حکمِ معافیت از `ind4_exempt` (تک‌مرجع)
+    می‌آید، پس «مبنای درآمد» و «N/A» برای هر سه مسیر یک تصمیم است.
+
+    خروجی ابرمجموعهِ کلیدهایِ هر دو مسیرِ پیشین است: annual_sales_mrl/bt،
+    months_used، scale_factor، basis، reconciled، revenue_basis،
+    operational_revenue_basis، na، ytd_sales_bt، scale_table.
+    """
+    pred, params = sym_in("symbol", symbol)
+    if series is None:
+        series = conn.execute(
+            "SELECT year, month, monthly_revenue, ytd_revenue FROM monthly_sales "
+            "WHERE " + pred + " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
+            "ORDER BY year DESC, month DESC", params).fetchall()
+    series = _dedupe_ym([list(r) for r in series])
+    ref_row = ref if ref is not None else reference_annual(conn, symbol)
+    fs_rev = _f((ref_row or {}).get("revenue"))
+    prof = profile or company_profile()
+    _na = (prof.get("kind") == "holding") if exempt is None else bool(exempt)
+    if _na:
+        return {"annual_sales_mrl": 0.0, "annual_sales_bt": None, "months_used": 0,
+                "scale_factor": 0.0,
+                "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+                "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
+                "operational_revenue_basis": False, "na": True}
+    core = annualize_rows(series, fs_rev,
+                          op_basis=(prof.get("kind") in _OP_BASIS_KINDS) and fs_rev > 0)
+    if not core:
+        return None
+    months = core["months_used"]
+    annual = core["annual_sales_mrl"]
+    out = dict(core)
+    out.update({"annual_sales_bt": round(normalize_mrl_to_btom(annual), 1),
+                "scale_factor": round(12.0 / max(months, 1), 4),
+                "revenue_basis": prof.get("revenue_basis", ""),
+                "na": False,
+                "ytd_sales_bt": round(normalize_mrl_to_btom(
+                    annual / max(12.0 / max(months, 1), 1e-9)), 1),
+                "scale_table": [{"months": m, "factor": round(12.0 / m, 2)}
+                                for m in ANNUALIZATION_SCALE]})
+    return out

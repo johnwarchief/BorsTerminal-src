@@ -58,6 +58,11 @@ a = Analysis(
                    # سطح-بال import می‌کنند. مثل tape_flags صریح فهرست می‌شود: نبودنش
                    # EXE را روی اولین درخواستِ چارت می‌کشد.
                    'price_basis', 'candle_contract',
+                   # کارِ #73 (بخشِ بنیادی، ۱۴۰۵-۰۷-۱۰): `codal_periods` تنها تعریفِ
+                   # «دورۀ گزارش» است و fts_engine / api.fundamental / api.screener /
+                   # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
+                   # درخواستِ بنیادی می‌کشد.
+                   'codal_periods',
                    # پنج فیلترِ تابلو از api.market به ماژولِ خالصِ tape_flags
                    # منتقل شد تا نگهبانِ dev/tape_filters_v1034.py همان کد را
                    # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:

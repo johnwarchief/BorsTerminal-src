@@ -47,6 +47,7 @@ if not os.path.isfile(DB):
     sys.exit(0)
 
 import fts_engine                       # noqa: E402
+import codal_periods as CP              # noqa: E402  (ترتیبِ «تازه‌ترین دوره اول»)
 from api import fundamental as F        # noqa: E402
 from api import screener as S           # noqa: E402
 from api.market import load_fts_config  # noqa: E402
@@ -54,14 +55,14 @@ from api.market import load_fts_config  # noqa: E402
 AX = ("1_growth", "2_eps_trend", "3_gross_margin", "4_sales_to_mcap", "5_industry")
 
 cfg = load_fts_config()
-# کشِ دیسکِ اسکرینر تا ۱۲ ساعت کهنه می‌ماند؛ اگر سینکِ بازار بین دو اجرای ما
-# ردیف‌ها را عوض کند، ناهم‌خوانیِ بندِ اول «باگِ کد» نیست که «داده عوض شده».
-# پس کش پاک می‌شود تا هر دو بند روی یک محاسبهٔ زنده سنجیده شوند
-# (get_screener خودش کشِ تازه را دوباره می‌نویسد). فقط فایلِ کش — دیتابیس
-# دست‌نخورده می‌ماند، پس سوئیت هیچ چیزی را در market.db تغییر نمی‌دهد.
+# کشِ اسکرینر دو لایه است: payloadِ دیسک (تا ۱۲ ساعت کهنه) و جدولِ مادی‌شدهٔ
+# `fts_results`. اگر سینکِ بازار بین دو اجرای ما ردیف‌ها را عوض کند — یا **کدِ
+# محاسبه عوض شود** (مثل دروازهٔ بانِ مردهٔ ارزش بازار، ۱۴۰۵-۰۷-۱۱) — ناهم‌خوانیِ
+# بندِ اول «باگِ کد» نیست که «کشِ کهنه». پس هر دو لایه با همان رویۀ خودِ محصول
+# باطل می‌شوند. `fts_results` کشِ کاملاً مشتق است: پس ازِ این حذف، اسکرینر محاسبهٔ
+# زنده می‌کند و legِ «codal FTS pipeline» درِ همین سوئیت دوباره مادی‌اش می‌کند.
 try:
-    if os.path.exists(S.CACHE_FILE):
-        os.remove(S.CACHE_FILE)
+    S.invalidate_screener_cache()
 except OSError:
     pass
 res = S.get_screener()
@@ -72,7 +73,7 @@ conn = sqlite3.connect(DB)
 conn.row_factory = sqlite3.Row
 cname_of = {}
 for sym, cn in conn.execute("SELECT symbol, company_name FROM financial_statements "
-                            "ORDER BY period_end DESC"):
+                            "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
     k = fts_engine.norm_fa(sym)
     if k and k not in cname_of:
         cname_of[k] = cn or ""
@@ -139,7 +140,7 @@ for r in rows:
     # نمونه‌ای از مسیرِ تک‌نمادیِ موتور (/api/fts/{symbol} = scan_symbol) هم
     # سنجیده می‌شود: bulk_scan و scan_symbol دو ورودیِ ind4_exempt‌اند.
     if ind4_checked % 25 == 0:
-        scan_probe.append((key, r["symbol"], mcap or 0.0, total, sector, ce))
+        scan_probe.append((key, r["symbol"], mcap or 0.0, total, sector, ce, b))
 
 print("بررسی‌شده: %d | ناهم‌خوانی: %d" % (checked, len(mismatches)))
 for sym, ss, sp, se, cs, cp, ce in mismatches[:15]:
@@ -162,7 +163,7 @@ for sym, sector, er, cr in value_disagree[:20]:
     print("  ✗ %-14s هیچ‌کدام معاف نیست ولی یکی عدد ندارد: موتور=%s کارت=%s (%s)"
           % (sym, er, cr, sector))
 scan_bad = []
-for key, sym, mcap, total, sector, ce in scan_probe:
+for key, sym, mcap, total, sector, ce, bulk_row in scan_probe:
     _rec = fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg)
     d = (_rec.get("detail") or {}).get("sales_to_mcap") or {}
     if bool(d.get("is_exempt")) != ce:
@@ -173,6 +174,25 @@ for key, sym, mcap, total, sector, ce in scan_probe:
                          _rec.get("passes", {}).get("4_sales_to_mcap")))
     if _rec.get("score") != sum(1 for v in (_rec.get("passes") or {}).values() if v is True):
         scan_bad.append((sym, "امتیازِ scan_symbol ≠ شمارشِ پاس‌ها", _rec.get("score")))
+    # قفلِ «یکِ فرمول» رویِ خودِ اعداد: مسیرِ تک‌نمادیِ موتور (/api/fts/{symbol})
+    # و bulk_scan (/api/screener) باید رقمِ یکسان بدهند، نه فقط حکمِ یکسان.
+    # این بند روزی کور بود و واگراییِ طبقۀ مالی/خدماتی (کتوکا/حبندر: op_basis) و
+    # باگِ shadowingِ متغیرِ `annual` درِ bulk از چنگِ گزارش در رفت.
+    _det = _rec.get("detail") or {}
+    _pairs = (("نسبتِ فروش÷ارزش", (d or {}).get("sales_to_mcap"),
+               bulk_row.get("sales_to_mcap")),
+              ("پتانسیل سود", (_det.get("profit_potential") or {}).get("potential_pct"),
+               bulk_row.get("profit_potential_pct")),
+              ("حاشیۀ ناخالص", (_det.get("gross_margin") or {}).get("margin_pct"),
+               bulk_row.get("gross_margin")),
+              ("رشد فروش", (_det.get("growth") or {}).get("growth_pct"),
+               bulk_row.get("rev_growth")))
+    for label, sv, bv in _pairs:
+        if sv != bv:
+            scan_bad.append((sym, "scan_symbol ⇄ bulk: %s = %s ≠ %s" % (label, sv, bv), ""))
+    if _rec.get("score") != bulk_row.get("score"):
+        scan_bad.append((sym, "امتیازِ scan_symbol ≠ امتیازِ bulk",
+                         (_rec.get("score"), bulk_row.get("score"))))
 for sym, ee, ce in scan_bad[:20]:
     print("  ✗ %-14s scan_symbol: %s | %s" % (sym, ee, ce))
 print("نمونهٔ scan_symbol: %d | واگرایی: %d" % (len(scan_probe), len(scan_bad)))

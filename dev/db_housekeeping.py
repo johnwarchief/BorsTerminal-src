@@ -6,10 +6,12 @@
 
   R2 — اصلاحیه‌های پردازش‌نشده:
       چند ردیف برای یک (symbol, period_end) باقی مانده‌اند — اطلاعیهٔ اصلی
-      و اصلاحیه‌اش. قراردادِ پروژه (dedupe_symbol در pipeline_updater و
-      _dedupe_ym در fts_engine) ردیفِ با MAX(tracing_no) را نگه می‌دارد، چون
-      جدیدترین شماره پیگیری همان اصلاحیه است. این ابزار همان قانون را روی
-      دیتایِ ذخیره‌شده اعمال می‌کند.
+      و اصلاحیه‌اش. قاعدۀ پروژه **یکِ جا** زندگی می‌کند:
+      `codal_fetcher.period_winners` (برایِ صورتهایِ مالی: ردیفِ مستقل بر
+      تلفیقی می‌چربد، وگرنه newest tracing_no؛ برایِ فروشِ ماهانه: newest).
+      پیش از این این فایل قاعدۀ خودش را داشت («همیشه MAX(tracing_no)») که
+      رویِ بانکِ امروز ۱۱ دورۀ مستقل+تلفیقی را با حذفِ ردیفِ مستقل جمع می‌کرد —
+      برعکسِ مبنایِ جزوه. همین ابزار حالا همان برندۀ contract را نگه می‌دارد.
 
   R1 — ستون‌های «مقایسه با دورهٔ مشابه سال قبل»:
       monthly_sales.monthly_revenue_prev و ytd_revenue_prev در کل دیتابیس
@@ -32,8 +34,11 @@
     python dev/db_housekeeping.py --selftest
 """
 import argparse
+import atexit
+import contextlib
 import lzma
 import os
+import shutil
 import sqlite3
 import sys
 import tempfile
@@ -43,8 +48,8 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 # ── R2: جداولی که ممکن است جفتِ اصلی/اصلاحیه داشته باشند ───────────────────
-# هر دو جدول روی (symbol, period_end) می‌توانند تکراری شوند. کلیدِ اصلی
-# tracing_no است و بزرگترینِ آن اصلاحیه است.
+# هر دو جدول روی (symbol, period_end) می‌توانند تکراری شوند؛ برندۀ هر گروه را
+# `codal_fetcher.period_winners` تعیین می‌کند (بی‌قاعدهٔ دوم درِ این فایل).
 _DUP_TABLES = (
     ("monthly_sales", "period_end"),
     ("financial_statements", "period_end"),
@@ -61,11 +66,17 @@ _PREV_COLS = (
 
 
 def _fresh_copy():
-    """یک کپیِ تازه از market.db.lzma در temp — برای تست."""
+    """یک کپیِ تازه از market.db.lzma در temp — برای تست.
+
+    پاک‌کردن به `atexit` سپرده می‌شود، نه فقط به انتهای `--selftest`: اجرایِ
+    ساده (dry-run) که سوئیتِ کامل هر دور صدا می‌زند ۱۴۸ مگابایت در %TEMP%
+    جا می‌گذاشت (پنج اجرایِ این دور = ۷۰۷ مگابایت).
+    """
     src = os.path.join(_ROOT, "market.db.lzma")
     if not os.path.exists(src):
         raise SystemExit(f"[FAIL] market.db.lzma not found: {src}")
     tmp = tempfile.mkdtemp(prefix="bors_housekeep_")
+    atexit.register(shutil.rmtree, tmp, True)
     db = os.path.join(tmp, "copy.db")
     with lzma.open(src) as f, open(db, "wb") as out:
         out.write(f.read())
@@ -73,31 +84,30 @@ def _fresh_copy():
 
 
 def _dup_groups(conn, table, pe_col):
-    """گروه‌های (symbol, period_end) با بیش از یک ردیف."""
+    """گروه‌های (symbol, period_end) با بیش از یک ردیف — با **همان** تعریفِ
+    «ردیفِ دوره‌دار» در `codal_periods` (بی‌predicaleِ دومِ `IS NOT NULL`)."""
+    import codal_periods as CP
     return conn.execute(
         f"SELECT symbol, {pe_col}, COUNT(*) n FROM {table} "
-        f"WHERE {pe_col} IS NOT NULL GROUP BY symbol, {pe_col} HAVING COUNT(*) > 1"
+        f"WHERE {CP.DATED_SQL} GROUP BY symbol, {pe_col} HAVING COUNT(*) > 1"
     ).fetchall()
 
 
 def _dup_victims(conn, table, pe_col):
-    """tracing_noهایی که حذف می‌شوند — هر چیزی به جز MAX(tracing_no) گروه."""
-    rows = conn.execute(
+    """tracing_noهایی که حذف می‌شوند — هر چیزی جز برندۀ `period_winners`.
+
+    این تابع یک‌وقت قاعدۀ خودش را داشت («هر چیزی به جز MAX(tracing_no)») که
+    ردیفِ **مستقل** را دور می‌ریخت اگر تلفیقی شمارهٔ بزرگ‌تری داشته باشد. حالا
+    همان قاعدۀ contract خوانده می‌شود: یکِ قاعده، یکِ جا. دامۀ نامزد‌ها هم همان
+    `CP.DATED_SQL` است، نه `IS NOT NULL` — وگرنه یکِ ردیفِ بی‌canonical قربانیِ
+    بی‌درو‌پدرو می‌شد در حالی که `period_winners` اصلاً آن را ندیده است."""
+    import codal_fetcher as CF
+    import codal_periods as CP
+    winners = CF.period_winners(conn, table)
+    return [tn for sym, pe, tn in conn.execute(
         f"SELECT symbol, {pe_col}, tracing_no FROM {table} "
-        f"WHERE {pe_col} IS NOT NULL ORDER BY tracing_no"
-    ).fetchall()
-    keep, victims = {}, []
-    for sym, pe, tn in rows:
-        key = (sym, pe)
-        if key not in keep:
-            keep[key] = tn
-        elif tn > keep[key]:
-            # این ردیف جدیدتر است → قبلی قربانی می‌شود
-            victims.append(keep[key])
-            keep[key] = tn
-        else:
-            victims.append(tn)
-    return victims
+        f"WHERE {CP.DATED_SQL}").fetchall()
+        if winners.get((sym, pe)) != tn]
 
 
 def plan_dedupe(conn):
@@ -186,7 +196,11 @@ def _integrity(conn):
 
 
 def _coverage(conn):
-    """پوششِ ستون‌ها بعد از اجرا — برای راستی‌آزمایی."""
+    """پوششِ ستون‌ها بعد از اجرا — برای راستی‌آزمایی.
+
+    شمارِ «بی‌دوره» از همان `codal_periods.undated_counts` خوانده می‌شود که هر
+    consumerِ دیگر می‌خواند؛ این فایل کوئریِ شمارشِ خودش را ندارد."""
+    import codal_periods as CP
     out = {"ms_total": conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]}
     for prev_col, _src in _PREV_COLS:
         out[f"ms_{prev_col}_nonnull"] = conn.execute(
@@ -194,6 +208,7 @@ def _coverage(conn):
         ).fetchone()[0]
     for table, pe_col in _DUP_TABLES:
         out[f"{table}_dupgroups"] = len(_dup_groups(conn, table, pe_col))
+    out["undated"] = CP.undated_counts(conn)
     return out
 
 
@@ -315,9 +330,14 @@ def selftest():
         print("  [ok] backfill idempotent")
 
     # ۵) یک نمادِ مشخص: شارپيلن باید دقیقاً یک ردیف در هر دوره داشته باشد
-    n = sqlite3.connect(db).execute(
-        "SELECT COUNT(*) FROM (SELECT 1 FROM monthly_sales WHERE symbol='شارپيلن' "
-        "GROUP BY period_end HAVING COUNT(*) > 1)").fetchone()[0]
+    # (با همان تعریفِ «دوره» در `codal_periods` — دو ردیفِ بی‌دوره «دورۀ تکراری» نیست)
+    import codal_periods as CP
+    # `with conn` در sqlite فقط تراکنش را commit/rollback می‌کند و **بست نمی‌دهد**؛
+    # هندلِ بازِ فایل رویِ ویندوز مانعِ rmtree می‌شود، پس `closing`.
+    with contextlib.closing(sqlite3.connect(db)) as k5:
+        n = k5.execute(
+            "SELECT COUNT(*) FROM (SELECT 1 FROM monthly_sales WHERE symbol='شارپيلن' "
+            f"AND {CP.DATED_SQL} GROUP BY period_end HAVING COUNT(*) > 1)").fetchone()[0]
     if n != 0:
         print(f"  [FAIL] شارپيلن still has {n} duplicate periods")
         ok = False
@@ -325,7 +345,8 @@ def selftest():
         print("  [ok] شارپيلن canonical (1 row per period)")
 
     # ۶) سلامتِ نهایی
-    ic, fk = _integrity(sqlite3.connect(db))
+    with contextlib.closing(sqlite3.connect(db)) as k6:
+        ic, fk = _integrity(k6)
     if ic != "ok" or fk:
         print(f"  [FAIL] final integrity={ic} fk={fk}")
         ok = False
@@ -333,6 +354,15 @@ def selftest():
         print(f"  [ok] integrity={ic}, fk_violations={fk}")
 
     print("[selftest] PASS" if ok else "[selftest] FAIL")
+    # کپیِ آزمون ~۱۴۰ مگابایت است و پیش‌تر هیچ‌وقت پاک نمی‌شد؛ ۳۳ اجرایِ این
+    # selftest ≈ ۴٫۶ گیگابایت درِ %TEMP% جا گذاشته بود. `ignore_errors=True`
+    # حذفِ ناکام را بی‌صدا می‌کرد (ویندوز تا هندلِ اتصال باز است پاک نمی‌کند) —
+    # حالا اتصال‌ها بسته‌اند و خطا صادقانه چاپ می‌شود؛ `atexit` هم ضمناً ثبت شده.
+    try:
+        shutil.rmtree(os.path.dirname(db))
+        print(f"[selftest] copy removed: {db}")
+    except OSError as e:
+        print(f"[selftest] copy left behind ({db}): {e}")
     return 0 if ok else 1
 
 

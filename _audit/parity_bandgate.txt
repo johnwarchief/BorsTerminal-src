@@ -1,0 +1,52 @@
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+  [history] ساربیل: ins_code not found in instruments
+  [history] سکرما: ins_code not found in instruments
+  [history] کپرسپولیس: ins_code not found in instruments
+  [history] الکتروماد: ins_code not found in instruments
+  [history] دکپسول: ins_code not found in instruments
+  [history] کپارس: ins_code not found in instruments
+  [history] کمنگنز: ins_code not found in instruments
+  [history] کسرا: ins_code not found in instruments
+  [history] فزرین: ins_code not found in instruments
+  [history] کطبس: ins_code not found in instruments
+  [history] شملی: ins_code not found in instruments
+  [history] کتوکا: ins_code not found in instruments
+  [history] لطیف: ins_code not found in instruments
+  [history] سنیر: ins_code not found in instruments
+  [history] کاذر: ins_code not found in instruments
+  [history] کفپارس: ins_code not found in instruments
+  [history] چکارن: ins_code not found in instruments
+  [history] شیران: ins_code not found in instruments
+  [history] سفار: 0 OHLCV rows saved
+  [history] سیستم: ins_code not found in instruments
+  [history] سخاش: 0 OHLCV rows saved
+  [history] کخاک: ins_code not found in instruments
+  [history] سقاین: ins_code not found in instruments
+  [history] سبهان: 0 OHLCV rows saved
+  [history] کرازی: ins_code not found in instruments
+  [history] تکیمیا: ins_code not found in instruments
+  [history] شاروم: 0 OHLCV rows saved
+  [history] شفارس: 0 OHLCV rows saved
+  [history] نوری: ins_code not found in instruments
+  [history] تفارس: 0 OHLCV rows saved
+[screener] saved to disk cache
+  [history] سمتاز: 0 OHLCV rows saved
+اسکرینر: 921 ردیف
+  [history] فجام: 0 OHLCV rows saved
+  [history] حبندر: 0 OHLCV rows saved
+  [history] حپارسا: 0 OHLCV rows saved
+  [history] ولراز: 0 OHLCV rows saved
+  [history] شبندر: 0 OHLCV rows saved
+موتور (bulk_scan): 921 ردیف
+بررسی‌شده: 921 | ناهم‌خوانی: 1
+  ✗ نشار           اسکرینر=2 00011 exc=False | کارت=1 00001 exc=False
+
+شاخص ۴ — موتور ⇄ کارت: مقایسه‌شده 921 (بی‌ردیفِ موتوری: 0) | هر دو معاف: 277
+  [history] چخزر: 0 OHLCV rows saved
+نمونهٔ scan_symbol: 36 | واگرایی: 0
+توضیح: اختلافِ مبنای سالانه‌سازیِ عددی (>۰٫۰۵) خارج از حکمِ معافیت: 0 ردیف
+معافِ هر-دو-مسیر که هیچ‌کدام امتیاز نمی‌گیرد: 277 ردیف
+بندِ سوم (endpoint): 921 ردیف | ناهم‌خوانی: 0 | صندوقِ NOT_APPLICABLE: 114 | خطا: 0
+RESULT: FAIL — اسکرینر/موتور و کارت جزئیات هم‌راستا نیستند (امتیاز=1، معافیت=0، عدد-vs-N/A=0، scan_symbol=0، تورمِ امتیاز=0، endpoint=0).
+EXIT=1

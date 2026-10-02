@@ -25,6 +25,7 @@ import tempfile
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(_ROOT)
 sys.path.insert(0, _ROOT)
+import codal_periods as CP  # noqa: E402  (شمارشِ بی‌دوره از همان یکِ منبع)
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -276,10 +277,15 @@ def main():
                    (ms_prev or 0) > 0))
     dup_ms = q(conn,
                "SELECT COUNT(*) FROM (SELECT 1 FROM monthly_sales "
-               "WHERE period_end IS NOT NULL GROUP BY symbol, period_end "
+               f"WHERE {CP.DATED_SQL} GROUP BY symbol, period_end "
                "HAVING COUNT(*) > 1)")
     checks.append(("R2: گروهِ تکراریِ monthly_sales صفر است (%d)" % (dup_ms or 0),
                    (dup_ms or 0) == 0))
+    # «بی‌دوره» نقص نیست که زنگ بزند: ردیفِ معتبرِ بی‌دوره نگه داشته می‌شود
+    # (بندِ ۳ قراردادِ `codal_periods`) — این‌جا فقط همان عددِ واحد گزارش می‌شود.
+    und = CP.undated_counts(conn)
+    print("   · ردیف‌هایِ بی‌دوره (منبعِ یگانه): fs=%d ms=%d total=%d"
+          % (und["financial_statements"], und["monthly_sales"], und["total"]))
     for _msg, _ok in checks:
         print("   %s %s" % ("✓" if _ok else "✗", _msg))
     n_bad = sum(1 for _, ok in checks if not ok)

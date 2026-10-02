@@ -27,6 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 import fts_engine                                          # noqa: E402
+import codal_periods as CP                                 # noqa: E402
 import api.fundamental as fundamental                       # noqa: E402
 
 PASS = FAIL = 0
@@ -70,8 +71,12 @@ def main():
     eng = _read("fts_engine.py")
     card = _read(os.path.join("api", "fundamental.py"))
     chk("def fund_class_match(" in eng, "engine has one fund predicate")
-    chk("fts_engine.fund_class_match(sector, company_name)" in card,
-        "company_profile uses the engine predicate")
+    # واگردِ v1075: کارت دیگر جدولِ طبقۀ خودش را ندارد و `company_profile` تنها یک
+    # نامِ دیگرِ `fts_engine.company_profile` است (تک‌منبع برای کارت/اسکرینر/bulk).
+    chk("company_profile = fts_engine.company_profile" in card,
+        "card delegates company_profile to the engine")
+    chk("_FIN_TOKENS" not in card and "_SVC_TOKENS" not in card,
+        "no second class-token table in api/fundamental")
     chk('"صندوق" in both' not in card, "company_profile has no private «صندوق» test")
     chk(eng.count("fund_class_match") >= 2, "bulk_scan uses the same predicate")
 
@@ -80,7 +85,7 @@ def main():
     if conn is not None:
         name_of = {}
         for sym, cn in conn.execute("SELECT symbol, company_name FROM financial_statements "
-                                    "ORDER BY period_end DESC"):
+                                    "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
             k = fts_engine.norm_fa(sym)
             if k and k not in name_of:
                 name_of[k] = cn or ""

@@ -59,7 +59,8 @@ CREATE TABLE market_watch (
     z_tot_tran REAL, price_change REAL, eps REAL, pe REAL, total_shares REAL,
     sector_code TEXT, fetched_at TEXT, buy_q_vol REAL, buy_q_val REAL,
     buy_q_cnt REAL, sell_q_vol REAL, sell_q_val REAL, sell_q_cnt REAL,
-    buy_q1_vol REAL, buy_q1_px REAL, sell_q1_vol REAL, sell_q1_px REAL);
+    buy_q1_vol REAL, buy_q1_px REAL, sell_q1_vol REAL, sell_q1_px REAL,
+    market_cap REAL, market_cap_src TEXT);
 CREATE TABLE daily_prices (
     ins_code TEXT, d_even INTEGER, p_closing REAL, price_min REAL, price_max REAL,
     price_yesterday REAL, price_first REAL, q_tot_tran REAL, q_tot_cap REAL,
@@ -95,10 +96,12 @@ def seed_fts(conn):
               ("i_test", "تستF", "شرکت آزمون فلزات", "30", "فلزات اساسي",
                1000.0, 410.0, 10.0, 0.0, "2026", 1))
     # مارکت‌کپ = ۱۰۰۰ سهم × ۵۰۰ ریال = ۵۰۰٬۰۰۰ ریال (p_closing=500)
-    c.execute("INSERT INTO market_watch VALUES (" + ",".join("?" * 30) + ")",
+    # ستونِ رسمیِ `market_cap` (مهاجرت v10) هم پر میشود، چون تک‌منبعِ ارزش بازارِ
+    # کارت و موتور همان ستون است — «قیمت × سهام» دیگر هیچ‌جا ساخته نمیشود.
+    c.execute("INSERT INTO market_watch VALUES (" + ",".join("?" * 32) + ")",
               ("i_test", 20260910, 101500, 500.0, 500.0, 480.0, 520.0, 400.0, 600.0,
                490.0, 500.0, 1e6, 5e8, 1000.0, 0.0, 410.0, 10.0, 1000.0, "30",
-               "2026") + (0.0,) * 10)
+               "2026") + (0.0,) * 10 + (500000.0, "tsetmc_board"))
     c.execute("INSERT INTO daily_prices VALUES (?,?,?,?,?,?,?,?,?,?,?)",
               ("i_test", 20260910, 500.0, 480.0, 520.0, 490.0, 500.0, 1e6, 5e8,
                0.0, "2026"))

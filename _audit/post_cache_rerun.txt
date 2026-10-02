@@ -1,0 +1,7 @@
+dev/test_fts_market_cap.py               67/67 passed
+dev/test_fts_v10_ladder.py               43/43 passed
+dev/fund_not_applicable_v1028.py         fund-not-applicable: 22 pass / 0 fail
+dev/codal_period_canonical_v1075.py      نتیجه: 36 سبز، 0 قرمز
+dev/fts_screener_card_parity_v10.py      RESULT: FAIL — اسکرینر/موتور و کارت جزئیات هم‌راستا نیستند (امتیاز=0، معافیت=0، عدد-vs-N/A=1، scan_symbol=0، تورمِ امتیاز=0، endpoint=0).
+dev/codal_fts_updater.py                     ·    پتانسیل سود*        —   (دیتای کافی نیست)
+dev/test_fts_results_materialize.py      106/109 passed

@@ -35,6 +35,7 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
 import codal_fetcher as cf            # noqa: E402  (create_schema/migrate_schema)
+import codal_periods as CP            # noqa: E402  (ترتیبِ «تازه‌ترین دورۀ اول»)
 import fts_engine                     # noqa: E402  (خواننده + norm_fa)
 from api import fundamental as FD     # noqa: E402  (evaluate_v10 زنده)
 
@@ -128,7 +129,7 @@ def make_db():
                     "INSERT INTO monthly_sales (tracing_no,symbol,title,period_end,year,month,"
                     "monthly_revenue,ytd_revenue,ytd_revenue_prev,pdf_url,excel_url) "
                     "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                    (tn, sym, "گزارش فعالیت ماهانه", "1404-12-29", year, m,
+                    (tn, sym, "گزارش فعالیت ماهانه", "1404/12/29", year, m,
                      per_m, per_m * m, prev_per_m * m, None, None))
 
     # ── financial_statements: ۳ سال حسابرسی‌شده غیرتلفیقی ───────────────
@@ -153,7 +154,7 @@ def make_db():
                         "total_equity,capital,retained_earnings,basic_eps,unit,url,"
                         "fetched_at,is_audited,is_consolidated,fiscal_year,unit_norm")
             _fs_vals = (tn, sym, sym, "صورت مالی 12 ماهه حسابرسی شده غيرتلفيقي",
-                        "annual", 12, "%d-12-29" % fy, "2026-04-01", rev,
+                        "annual", 12, "%d/12/29" % fy, "2026-04-01", rev,
                         rev * gm_ratio, rev * gm_ratio * 0.8, rev * gm_ratio * 0.6,
                         500e9, 410e9, 90e9, 100e9, 40e9, eps, "mrl", None, "t",
                         1, 0, str(fy), "mrl")
@@ -257,7 +258,7 @@ try:
     _liqm = fts_engine.avg_trade_value_hmt(con)
     cname_of = {}
     for sym, cn in con.execute("SELECT symbol, company_name FROM financial_statements "
-                               "ORDER BY period_end DESC"):
+                               "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
         k = fts_engine.norm_fa(sym)
         if k and k not in cname_of:
             cname_of[k] = cn or ""

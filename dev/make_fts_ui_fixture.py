@@ -23,17 +23,23 @@ AUD = "صورت مالی سالانه حسابرسی شده"
 I3 = "اطلاعاتیه و صورت‌های مالی میاندوره‌ای ۳ ماهه حسابرسی نشده"
 
 ROWS = [
-    ("A", "1402-12-29", 12, AUD, 400), ("A", "1403-12-29", 12, AUD, 500),
-    ("A", "1404-12-29", 12, AUD, 600),
+    # دوره‌ها در شکلِ canonical (`codal_periods`): 'YYYY/MM/DD'. «۱۴۰۴-۱۲-۲۹» که
+    # این فیکچرها پیش از این داشتند دیگر بی‌دوره شمرده می‌شود (بانکِ واقعی همه
+    # اسلش است) و ردیف‌ها بی‌صدا از چشمِ خواننده می‌افتادند.
+    ("A", "1402/12/29", 12, AUD, 400), ("A", "1403/12/29", 12, AUD, 500),
+    ("A", "1404/12/29", 12, AUD, 600),
     # E: فقط ۲ دوره (۱۴۰۳ غایب) → قاعدهٔ «سطر حذف نمیشود، قرمز میشود»
-    ("E", "1404-12-29", 12, AUD, 500), ("E", "1405-03-31", 3, I3, 80),
+    ("E", "1404/12/29", 12, AUD, 500), ("E", "1405/03/31", 3, I3, 80),
     # N: هیچ دوره‌ای
 ]
 
 conn = sqlite3.connect(":memory:")
+# net_profit ستونِ بانکِ واقعی است (codal_fetcher: CREATE + مهاجرتِ REAL) و
+# `eps_ladder` آن را می‌خواند؛ فیکچر باید همان طرحِ جدول را داشته باشد.
 conn.execute("CREATE TABLE financial_statements (symbol TEXT, period_end TEXT, "
-             "period_months INTEGER, title TEXT, basic_eps REAL)")
-conn.executemany("INSERT INTO financial_statements VALUES (?,?,?,?,?)", ROWS)
+             "period_months INTEGER, title TEXT, basic_eps REAL, net_profit REAL)")
+conn.executemany("INSERT INTO financial_statements (symbol, period_end, period_months, "
+                 "title, basic_eps) VALUES (?,?,?,?,?)", ROWS)
 conn.commit()
 
 TH = F.v10_thresholds()

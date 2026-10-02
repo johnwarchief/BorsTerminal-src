@@ -11,6 +11,7 @@
 | `app.py`, `bors_entry.py`, `bors_config.py` | بک‌اند FastAPI + لانچرِ دسکتاپ + ثابت‌ها (از جمله `APP_VERSION`) |
 | `api/*.py` | اندپوینت‌ها (`market`, `chart`, `screener`, `update`, `_sync_codal`, …) |
 | `tape_flags.py`, `mstat_engine.py`, `fts_engine.py`, `codal_fetcher.py` | موتورهایِ پرچم/نبض بازار/قیف FTS/واکشی کدال |
+| `price_basis.py`, `candle_contract.py`, `codal_periods.py` | قراردادِ frozen: تنها resolverِ مبنایِ قیمت (last/closing)، تنها سازندۀ هندسۀ کندل، و تنها تعریفِ «دورۀ گزارش» (`YYYY/MM/DD`، قاعدۀ «بی‌دوره»، زنجیرۀ datasource ← عنوان، و `undated_counts()` به‌عنوان یگانه شمارش). هر سه درِ `fts_terminal.spec` → `hiddenimports` فهرست شده‌اند |
 | `frontend/src/` | React + Vite + TanStack Query + zustand، چیدمانِ Feature-Sliced (`app/ features/ widgets/ shared/`) |
 | `dev/` | گاردها و ابزارهایِ توسعه (`run_all_tests.py`, `version_anchor_guard.py`, `data_age_release_guard.py`, …) |
 | `tools/` | سنجش‌هایِ زنده (pilot/jev، parity، probeها) — خروجی‌شان در `_audit/` |
@@ -107,6 +108,7 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
   چرخشِ IP: `--adb-rotate` (روی ۴۲۹/بلاک: Wi-Fi ویندوز موقتاً خاموش، سه متد adb، پایشِ IP هر ۳s تا ۹۰s، **فقط با دیدنِ IP تازه** موفق می‌شود)، `--adb-long`، و راستی‌آزماییِ مستقلِ `--rotate-test` (بدونِ درخواست به کدال).
 - `dev/fts_refresh_plan.py` — الگوریتمِ افزایشی: فقط دِلتا را مشخص می‌کند (NEW/NEED_ANNUAL/STALE_MONTHLY/STALE_ANNUAL) + فرمانِ آماده.
 - `codal_fetcher.py` — موتورِ HTTP/اسکرپ (`rotate_ip_via_adb`، `fetch_page` با backoffِ ۴۲۹).
+  اهرم‌هایِ execution: `--feed update --catchup N` (جبرانِ مشتق‌هایِ عقب‌مانده از خودِ `codal_notices`، بی‌درخواستِ search)، `--extract-workers N` (اندازۀ استخرِ اسکرپِ این مسیر؛ پیش‌فرض ۴، سقف ۱۶، با `--polite` همیشه ۱). سقفِ سرعت پهنای‌باند است نه کارگر: ۴ کارگر ~۱٫۰ گزارش/ثانیه، ۱۰ کارگر ~۲٫۸، ۱۲ کارگر ~۳٫۳ — صفحه‌های `codal.ir/Reports` ۵۵ تا ۹۵۵ کیلوبایت **بی‌فشرده‌سازی**‌اند (`Content-Encoding: none`).
 
 **رویهٔ کار (اجباری):**
 ۱) `python dev/fts_refresh_plan.py --out plan.json` → کارنامۀ دِلتا.

@@ -45,6 +45,8 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 import fts_engine
 import mstat_engine
+# تنها تعریفِ «دورۀ گزارش» — همان که `codal_fetcher` می‌نویسد و `fts_engine` می‌خواند.
+import codal_periods as CP
 import datetime
 import os
 import re
@@ -142,10 +144,10 @@ def _bt(value_million_rials) -> float:
 
 
 def _fa_date(period_end) -> str:
-    """تاریخِ ستونِ period_end در دیتابیس «۱۴۰۴-۰۹-۳۰» است؛ در متنِ کاربر با
-    جداکنندهٔ تاریخِ فارسی می‌نشیند («۱۴۰۴/۰۹/۳۰»). رقم‌ها را لایهٔ نمایش فارسی
-    می‌کند — اینجا فقط قالب."""
-    return str(period_end or "—")[:10].replace("-", "/")
+    """نمونۀ دورۀ یکِ ردیف برایِ متنِ کاربر — از `codal_periods` می‌خواند، پس رقمِ
+    فارسی و خط تیره هم به همان شکلِ canonical (`۱۴۰۴/۰۹/۳۰`) درمی‌آید و ردیفِ
+    بی‌دوره «—» می‌شود (نه رشته‌ای نصفه)."""
+    return CP.canonicalize(period_end) or "—"
 
 
 def _pct(new, old) -> float:
@@ -202,9 +204,7 @@ MCAP_ERR_NO_ROW = "symbol_not_on_board"        # نماد فقط-کدال (صن�
 MCAP_ERR_NO_COL = "market_cap_column_missing"  # market.db پیش از مهاجرت v10
 MCAP_ERR_NO_VALUE = "market_cap_missing_value"  # سطر هست ولی ستون NULL/≤0
 MCAP_ERR_BAD_VALUE = "market_cap_invalid_value"  # NaN/inf در ستونِ ذخیره‌شده
-
-# کشِ «این جدول ستونِ ارزش بازار را دارد یا نه» — کلید: (id(conn), table)
-_MCAP_COLS: dict = {}
+MCAP_ERR_NO_BAND = "market_cap_no_live_band"    # مجازِ قیمت max<=min ⇒ نشانه، نه ارزش بازار
 
 
 def hmt_to_rials(hmt) -> float:
@@ -233,16 +233,12 @@ def _rials_or_none(v) -> tuple:
 
 
 def _has_mcap_col(conn, table: str) -> bool:
-    key = (id(conn), table)
-    hit = _MCAP_COLS.get(key)
-    if hit is None:
-        try:
-            hit = any((r[1] or "").lower() == "market_cap"
-                      for r in conn.execute("PRAGMA table_info(%s)" % table))
-        except sqlite3.Error:
-            hit = False
-        _MCAP_COLS[key] = hit
-    return hit
+    """واگرد به `fts_engine.has_market_cap_col` — تک‌پیاده‌سازیِ تشخیصِ ستون.
+
+    کارت (اینجا) و موتور (`mcap_bulk_expr`) باید یک بانک را «ستون دارد/ندارد»
+    یکسان ببینند؛ تشخیص بی‌کش است تا پاسخِ اتصالِ کهنه به اتصالِ تازه نشت نکند.
+    """
+    return fts_engine.has_market_cap_col(conn, table)
 
 
 def ensure_market_cap_schema(conn) -> bool:
@@ -255,8 +251,6 @@ def ensure_market_cap_schema(conn) -> bool:
     try:
         import test_tsetmc
         test_tsetmc.ensure_market_cap_schema(conn)
-        _MCAP_COLS.pop((id(conn), "market_watch"), None)
-        _MCAP_COLS.pop((id(conn), "daily_prices"), None)
         return True
     except Exception:
         return False
@@ -292,13 +286,28 @@ def get_tsetmc_market_cap_info(symbol, db=None) -> dict:
         if not _has_mcap_col(conn, "market_watch"):
             ensure_market_cap_schema(conn)
         if _has_mcap_col(conn, "market_watch"):
+            has_band = (fts_engine.has_column(conn, "market_watch", "allowed_max")
+                        and fts_engine.has_column(conn, "market_watch", "allowed_min"))
+            # بانِ مرده از همان تک‌تعریفِ موتور (`mcap_dead_band_sql`) خوانده می‌شود،
+            # پس کارت و اسکرینر یک ردیف را «ارزش بازار دارد/ندارد» می‌بینند.
+            sel = ("m.market_cap, m.market_cap_src, m.d_even" +
+                   (", CASE WHEN %s THEN 1 ELSE 0 END" % fts_engine.mcap_dead_band_sql("m")
+                    if has_band else ""))
             try:
                 row = conn.execute(
-                    "SELECT m.market_cap, m.market_cap_src, m.d_even"
+                    "SELECT " + sel +
                     " FROM market_watch m JOIN instruments i ON i.ins_code = m.ins_code"
                     " WHERE " + where + " ORDER BY i.updated_at DESC LIMIT 1", args).fetchone()
             except sqlite3.Error:
                 row = None
+            if row is not None and has_band and row[3]:
+                # تابلو برایِ این نماد بانِ معاملۀ زنده ندارد (نشار: ۱٫۰ ریال با
+                # مجازِ ۱٫۰ تا ۱٫۰ و صفردیدۀ معامله) ⇒ «قیمت × سهام» ارزشِ بازار
+                # نیست. مقدار درِ بانک می‌ماند (حذف نمی‌شود) ولی واردِ محاسبهٔ
+                # فروش÷ارزش نمی‌شود: None + پرچم — حتی از مسیرِ history.
+                out["error"] = MCAP_ERR_NO_BAND
+                out["asof"] = row[2]
+                return out
         else:
             out["error"] = MCAP_ERR_NO_COL
             return out
@@ -369,69 +378,20 @@ def board_total_market_cap(conn) -> tuple:
         except sqlite3.Error:
             pass
     return 0.0, MCAP_ERR_NO_COL
-
-
 # ═══════════════════════════════════════════════════════════════════════════
-#  تفکیک طبقهٔ شرکت (پیش‌شرط لایهٔ ۱): تولیدی در برابر مالی/خدماتی
+#  طبقۀ شرکت — واگرد به تک‌مرجعِ fts_engine
 # ═══════════════════════════════════════════════════════════════════════════
-# «فروش» برای بانک معنا ندارد؛ جزوه برای شرکت‌های مالی «درآمد تسهیلات اعطایی +
-# سپرده‌گذاری + سرمایه‌گذاری + اوراق + کارمزد» را می‌نویسد و برای تولیدی
-# «فروش داخلی + صادراتی». این تابع همان تفکیک را از sector_name/نام شرکت می‌سازد
-# تا هر دو چکِ لایهٔ ۱ روی مبنای درستِ همان طبقه اجرا شوند.
-_FIN_TOKENS = tuple(fts_engine.norm_fa(x) for x in
-                    ("اعتباري", "اعتباری", "بيمه", "بیمه",
-                     "ليزينگ", "لیزینگ", "کارگزاري", "کارگزاری", "اوراق"))
-# هلدینگ/سرمایه‌گذاری/واسطه‌گری مالی/بانکی: «فروش کالا» و رشد تولیدی/تناژ
-# معنا ندارد؛ درآمد از پرتفوی/تسهیلات/سپرده می‌آید → رشد تولیدی کاملاً مخفی.
-_HOLD_TOKENS = tuple(fts_engine.norm_fa(x) for x in
-                     ("بانک", "سرمایه گذاری", "سرمایه‌گذاری", "هلدینگ",
-                      "واسطه گری", "واسطه‌گری", "نهادهای مالی واسط"))
-_SVC_TOKENS = tuple(fts_engine.norm_fa(x) for x in
-                    ("خدمات", "حمل", "ترابری", "فناوري", "فناوری", "مخابرات",
-                     "بازرگاني", "بازرگانی", "پخش", "رستوران", "گردش"))
-_PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "مالی و بانکی",
-                  "service": "خدماتی", "fund": "صندوق",
-                  "holding": "هلدینگ / سرمایه‌گذاری"}
+# جدولِ توکن‌ها و «مبنای درآمد» در `fts_engine.company_profile` زندگی می‌کند؛
+# این‌جا فقط نامِ دوباره‌سازی‌نشده نگه داشته شده تا `evaluate_v10`، `ind1b`،
+# `_growth_breadth` و گاردها (dev/fund_not_applicable_v1028.py و
+# dev/test_fts_v10_ladder.py که این نام را صدا می‌زنند) بی‌تغییر کار کنند.
+# پیش از این همین جدول دو جا بود و `bulk_scan` (که به `api/` دسترسی ندارد)
+# نسخهٔ موتور را نمی‌دید ⇒ طبقۀ مالی/خدماتی در کارت N/A و در اسکرینر «فروش».
+company_profile = fts_engine.company_profile
+_PROFILE_LABEL = fts_engine._PROFILE_LABEL
+_OP_BASIS_KINDS = fts_engine._OP_BASIS_KINDS
 
 
-def company_profile(sector: str = "", company_name: str = "") -> dict:
-    """طبقهٔ شرکت + مبنای درآمد + اینکه چکِ فیزیکی (تناژ) برایش معنا دارد یا نه."""
-    both = fts_engine.norm_fa(sector) + " " + fts_engine.norm_fa(company_name)
-    # طبقهٔ صندوق از تک‌مرجعِ موتور خوانده می‌شود تا اسکرینر و کارت یک نماد را
-    # دو جور طبقه نکنند (bulk_scan همان تابع را می‌خواند).
-    if fts_engine.fund_class_match(sector, company_name):
-        kind = "fund"
-        basis = "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها"
-        applicable = False
-    elif any(t in both for t in _HOLD_TOKENS):
-        kind = "holding"
-        basis = ("هلدینگ/سرمایه‌گذاری/بانکی — درآمد عملیاتی از پرتفوی، سود "
-                 "تسهیلات/سپرده و سرمایه‌گذاری‌ها (بدون «فروش کالا» و تناژ فیزیکی)")
-        applicable = False
-    elif any(t in both for t in _FIN_TOKENS):
-        kind = "financial"
-        basis = ("مالی/بانکی — جمع درآمد تسهیلات اعطایی + سپرده‌گذاری + "
-                 "سرمایه‌گذاری‌ها + اوراق بدهی + کارمزد (نه «فروش کالا»)")
-        applicable = False
-    elif any(t in both for t in _SVC_TOKENS):
-        kind = "service"
-        basis = "خدماتی — کارمزد و درآمد عملیاتی (بدون تناژ فیزیکی)"
-        applicable = False
-    else:
-        kind = "production"
-        basis = "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)"
-        applicable = True
-    return {"kind": kind, "label": _PROFILE_LABEL[kind], "revenue_basis": basis,
-            "volume_applicable": applicable,
-            "volume_note": ("تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ "
-                            "رشد ریالی بدون رشد تناژ = افزایش قیمت."
-                            if applicable else
-                            "این شرکت کالای وزن‌شدنی تولید نمی‌کند؛ چک فیزیکی روی "
-                            "مبنای متناسبِ همان طبقه (درآمد واقعی پس از تورم) سنجیده "
-                            "میشود نه تن محصول."),
-            "pricing_note": ("درآمد به دلار/بورس کالا گره خورده (صادراتی)."
-                             if applicable else
-                             "درآمد ریالیِ نرخ‌گذاری‌شده — ریسک سرکوب نرخ وجود دارد.")}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -441,37 +401,17 @@ MS_COLS = "year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, period_e
 
 
 def _dedupe_ym(rows, ytd_idx: int = 3) -> list:
-    """یکی‌کردن ردیف‌های تکراریِ (سال,ماه) پس از ادغام نوشتارهای ي/ک عربی-فارسی.
-
-    با symbol_aliases گزارشِ یک شرکت از دو نوشتار (داریک/داريك) با هم می‌آید؛
-    بدون این ادغام مخرج رشد YoY می‌توانست صفرِ نوشتارِ بی‌داده باشد. قاعده:
-    برای هر (سال,ماه) رکوردی که `ytd_revenue` بزرگ‌تر دارد نگه داشته میشود —
-    همان contract ای که fts_engine اجرا میکند، تا دو مسیر یک عدد بدهند.
-    """
-    best, order = {}, []
-    for r in rows:
-        try:
-            k = (int(r[0] or 0), int(r[1] or 0))
-        except (TypeError, ValueError):
-            k = (str(r[0]), str(r[1]))
-        if k not in best:
-            order.append(k)
-            best[k] = list(r)
-            continue
-        if _f(r[ytd_idx]) > _f(best[k][ytd_idx]):
-            best[k] = list(r)
-    return [best[k] for k in order]
+    """واگرد به `fts_engine._dedupe_ym` — یکی‌کردن ردیف‌هایِ (سال، ماه) یکِ جا."""
+    return fts_engine._dedupe_ym(rows, ytd_idx)
 
 
 def monthly_series(conn, symbol: str) -> list:
-    """گزارش‌های فعالیت ماهانه، تازه‌ترین در ابتدا →
-    [[year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, period_end], …]"""
-    pred, params = fts_engine.sym_in("symbol", symbol)
-    rows = conn.execute(
-        "SELECT %s FROM monthly_sales WHERE %s AND ytd_revenue IS NOT NULL "
-        "AND ytd_revenue>0 ORDER BY year DESC, month DESC LIMIT 60" % (MS_COLS, pred),
-        params).fetchall()
-    return _dedupe_ym([list(r) for r in rows])
+    """سریِ گزارشِ ماهانه — واگرد به تک‌منبعِ `fts_engine.monthly_series`.
+
+    کارت، موتور و bulk از همین یک کوئری (با یک سقف) می‌خوانند؛ پیش از این کارت
+    LIMIT ۶۰ و موتور LIMIT ۳۰ داشت و مخرجِ YoY گاه بیرونِ پنجرۀ موتور می‌ماند.
+    """
+    return fts_engine.monthly_series(conn, symbol)
 
 
 def _fiscal_year_rows(series, year) -> list:
@@ -575,23 +515,22 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
 
     if not series:
         return _nodata("هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.")
-    cur = series[0]
-    year, month, ytd_now = int(_f(cur[0])), int(_f(cur[1])), _f(cur[3])
-    if ytd_now <= 0 or month <= 0:
+    # مخرج از تک‌قاعدهٔ `fts_engine.ytd_denominator` می‌آید (ستونِ «مقایسه با
+    # دورۀ مشابه سال قبل» ← ردیفِ سال−۱/همان ماه) — کارت نسخهٔ دومِ این
+    # سلسلۀ‌مراتب را نداشت، فقط ترتیبِ کوئری‌اش فرق می‌کرد (LIMIT ۶۰ در برابر ۳۰).
+    d = fts_engine.ytd_denominator(series)
+    if not d:
         return _nodata("تجمیعیِ آخرین گزارش ماهانه صفر یا نامعتبر است.",
-                       months=month, year=year)
-    ytd_prev, basis = _f(cur[4]), "ستون رسمی «مقایسه با دورهٔ مشابه سال قبل» در همان گزارش"
-    if ytd_prev <= 0:
-        prev = next((r for r in series[1:] if int(_f(r[0])) == year - 1
-                     and int(_f(r[1])) == month), None)
-        if prev is None or _f(prev[3]) <= 0:
-            return _nodata("فروش تجمیعیِ همان دورهٔ سال قبل در کدال ثبت نشده؛ "
-                           "مقایسهٔ سال‌به‌سال ممکن نیست.",
-                           months=month, year=year, ytd_now_bt=_bt(ytd_now),
-                           ytd_prev_bt=None, period="%02d/%d" % (month, year),
-                           denominator_basis="ناموجود — ردیف تجمیعی همان دورهٔ سال قبل نیست")
-        ytd_prev = _f(prev[3])
-        basis = "تجمیعی %02d/%d از گزارش فعالیت ماهانه (نه ماه قبل)" % (month, year - 1)
+                       months=int(_f(series[0][1])), year=int(_f(series[0][0])))
+    year, month, ytd_now = d["year"], d["month"], d["ytd_now"]
+    basis = d["denominator_basis"]
+    if d["ytd_prev"] is None:
+        return _nodata("فروش تجمیعیِ همان دورۀ سال قبل در کدال ثبت نشده؛ "
+                       "مقایسۀ سال‌به‌سال ممکن نیست.",
+                       months=month, year=year, ytd_now_bt=_bt(ytd_now),
+                       ytd_prev_bt=None, period="%02d/%d" % (month, year),
+                       denominator_basis=basis)
+    ytd_prev = d["ytd_prev"]
     growth = _pct(ytd_now, ytd_prev)
     return {"monetary_pct": growth,
             "ytd_now_bt": _bt(ytd_now), "ytd_prev_bt": _bt(ytd_prev),
@@ -674,19 +613,20 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
     if real is None:
         out["reason"] = "شاخص مرجع افزایش نرخ موجود نیست."
         return out
-    gates = [real >= th["volume_growth_min"]]
-    if breadth is not None:
-        gates.append(breadth >= th["volume_breadth_min"])
-    out["pass"] = all(gates)
+    # پهنای رشد **دادهٔ نمایشی** است، نه دروازۀ امتیاز: جزوه برایِ «breadth» هیچ
+    # فرمول یا آستانه‌ای ندارد، پس داوریِ ۱ب همان تعدیلِ رشد اسمی با مبنای تورم
+    # است (رأیِ مالک ۱۴۰۵-۰۷-۱۱). موتورِ اسکرینر هم اصلاً پهنا نمی‌ساخت؛ با
+    # گیت‌بودنِ آن، کارت و موتور دو داوریِ متفاوت برایِ یکِ نماد داشتند.
+    out["pass"] = real >= th["volume_growth_min"]
     if out["pass"]:
         out["reason"] = ""
-    elif real < th["volume_growth_min"]:
+    else:
         out["reason"] = ("رشد اسمی %+.1f٪ کمتر از مبنای افزایش نرخ %.0f٪ است؛ "
                          "رشد واقعی منفی است (فقط قیمت بالا رفته)."
                          % (monetary_pct, th["inflation_benchmark"]))
-    else:
-        out["reason"] = ("رشد واقعی کافی است اما فقط %d از %d ماهِ سپری‌شده بهتر شده؛ "
-                         "رشد حجم فراگیر نیست." % (improved, compared))
+    if breadth is not None and improved < compared:
+        out["note_breadth"] = ("فقط %d از %d ماهِ سپری‌شده بهتر شده — رشد حجم فراگیر نیست."
+                               % (improved, compared))
     return out
 
 
@@ -700,167 +640,12 @@ def _is_audited_title(title) -> bool:
 
 
 def _eps_track_blended(conn, symbol, years: int = 3) -> dict:
-    """سابقهٔ سودسازی با «سال‌پایان + میاندوره» — لایهٔ پشتیبانِ v10.
-
-    چرا لازم است: قاعدهٔ سختِ v8 (فقط ۱۲ماههٔ حسابرسی‌شدهٔ غیرتلفیقی) روی این
-    دیتابیس برای خیلی از نمادهای بزرگ صفر رکورد می‌دهد — یا چون صورت سالانه
-    «حسابرسی‌نشده» بارگذاری شده (فولاد: ۱۴۰۳/۱۴۰۴ هر دو این‌طور) یا چون شرکت
-    اصلاً صورت «غیرتلفیقی» سالانه ندارد و فقط تلفیقی منتشر میکند. دستور کارِ
-    نسخهٔ ۱۰ صریحاً می‌گوید مسیر EPS با year-end **و** interim سنجیده شود، پس
-    اینجا روی یک نردبانِ شفاف تنزل میکنیم و هر تنزل را برچسب میزنیم:
-      ۱) سال‌پایانِ حسابرسی‌شدهٔ غیرتلفیقی   (audited_year_end)
-      ۲) سال‌پایانِ غیرتلفیقیِ حسابرسی‌نشده  (unaudited_year_end)
-      ۳) سال‌پایانِ حسابرسی‌شدهٔ تلفیقی      (consolidated_audited)
-      ۴) سال‌پایانِ تلفیقیِ حسابرسی‌نشده     (consolidated_unaudited)
-      ۵) بلندترین دورهٔ میاندورهٔ همان سال × ۱۲÷م (annualized_interim)
-    سطح ۱-۲ «تمیز» و ۳-۵ «مستندِ جایگزین» شمرده میشوند؛ پرچم‌های
-    consolidated_used / relaxed_evidence / low_quality_track در نتیجه می‌مانند
-    تا رابط کاربری بتواند صراحتاً بگوید EPS از کجا آمده است.
-    سالِ مالیِ در‌جریان (فقط میاندوره) پیشِ‌فرض بیرون از «سابقه» می‌ماند و به‌عنوان
-    شواهدِ تداوم در `_interim_eps_check` گزارش میشود؛ فقط وقتی سابقهٔ ۳ساله از
-    آب‌تمام‌ها درنمی‌آید، با برچسب annualized_interim به انتهای سابقه افزوده میشود.
+    """نردبانِ شاهدِ EPS — واگرد به `fts_engine.eps_ladder` (تک‌پیاده‌سازیِ مشترکِ
+    کارت و اسکرینر؛ جزئیاتِ سطوح و قاعدهٔ «سطر حذف نشود» در آن docstring است).
     """
-    pred, params = fts_engine.sym_in("symbol", symbol)
-    rows = conn.execute(
-        "SELECT period_end, period_months, title, basic_eps FROM financial_statements "
-        "WHERE %s AND basic_eps IS NOT NULL AND period_months > 0 "
-        "ORDER BY period_end DESC LIMIT 120" % pred, params).fetchall()
-    per_year = {}
-    for pe, pm, title, eps in rows:
-        try:
-            y, pm, eps = int(str(pe or "")[:4]), int(_f(pm)), float(eps)
-        except (TypeError, ValueError):
-            continue
-        if y <= 0 or pm <= 0:
-            continue
-        cons = _is_consolidated_title(title or "")
-        bucket = per_year.setdefault(y, {"annual": [], "interim": []})
-        (bucket["annual"] if pm >= 12 else bucket["interim"]).append(
-            (pm, _is_audited_title(title or ""), eps, str(pe or "")[:10],
-             str(title or "")[:60], cons))
-    if not per_year:
-        return {}
+    return fts_engine.eps_ladder(conn, symbol, years=years)
 
-    # ---- نردبانِ شواهد برای هر سال مالی -------------------------------------
-    # rank هر رکورد: (سطح، مرتبهٔ دوره)؛ سطحِ کوچک‌تر = معتبرتر. ترتیبِ مقایسه
-    # طوری است که داخلِ یک سطح، بلندترین/تازه‌ترین رکورد انتخاب شود.
-    def _rank(r):
-        pm, aud, eps, pe, title, cons = r
-        if pm >= 12:
-            # 0=غیرتلفیقیِ حسابرسی‌شده · 1=غیرتلفیقیِ نشده · 2=تلفیقیِ حسابرسی‌شده · 3=تلفیقیِ نشده
-            tier = (2 if cons else 0) + (0 if aud else 1)
-            return (tier, -pm, pe)
-        return (4, -pm, pe)
 
-    _QUALITY = {0: "audited_year_end", 1: "unaudited_year_end",
-                2: "consolidated_audited", 3: "consolidated_unaudited"}
-
-    def _pick(y):
-        """بهترین رکورد یک سال مالی → (eps, period_end, quality, months, cons)."""
-        b = per_year[y]
-        pool = sorted(list(b["annual"]) + list(b["interim"]), key=_rank)
-        best = pool[0]
-        pm, aud, eps, pe, title, cons = best
-        if pm >= 12:
-            return eps, pe, _QUALITY[_rank(best)[0]], pm, cons
-        return (round(eps * 12.0 / pm, 2), pe,
-                "annualized_interim_short" if pm < 6 else "annualized_interim",
-                pm, cons)
-
-    def _has_annual(y):
-        return bool(per_year[y]["annual"])
-
-    # سال‌هایی که «سالی کامل» گزارش دارند (۱۲ماهه؛ تلفیقی هم مجاز، سطح ۳/۴).
-    # سالِ در‌جریان = تازه‌ترین سالی که فقط میاندوره دارد.
-    years_sorted = sorted(per_year, reverse=True)
-    complete = [y for y in years_sorted if _has_annual(y)]
-    newest = years_sorted[0]
-    in_progress = newest if not _has_annual(newest) else None
-    need = max(int(years or 3), 2)
-    window = []
-    if complete:
-        y = complete[0]
-        while len(window) < need and y in per_year:
-            window.append(y)
-            y -= 1
-        # سابقه ناقص بود؟ سالِ در‌جریان را فقط در صورتی اضافه میکنیم که دقیقاً
-        # بعد از آخرین سالِ کامل باشد (۱۲÷م روی بلندترین میاندورهٔ همان سال).
-        if (len(window) < need and in_progress
-                and in_progress == window[0] + 1):
-            window.insert(0, in_progress)
-            in_progress = None
-    out = {"years_required": need, "years_available": len(window),
-           "in_progress_year": in_progress,
-           "fiscal_years": [str(y) for y in reversed(window)]}
-    if len(window) < need:
-        # ── قاعدهٔ خروجی جدول بنیادی: سطر هرگز حذف نمیشود ──────────────────
-        # اگر به‌جای ۳ دوره فقط ۲ دوره (یا کمتر) موجود است، مقادیرِ موجود درج
-        # میشود و به‌جایِ هر دورهٔ ناموجود «-» می‌نشیند. `eps_series` پس از این
-        # همیشه به بلندای `years_required` است؛ دوره‌های غایب = None.
-        if not window:
-            out.update({"eps_series": None, "pass": False, "data_gap": True,
-                        "available_periods": 0, "periods_missing": need,
-                        "partial": False,
-                        "reason": "کمتر از %d سال مالیِ متوالی با EPS ثبت‌شده (موجود: 0)"
-                                  % need})
-            return out
-        picked_g = {yr: _pick(yr) for yr in window}
-        top = max(picked_g)
-        slots = list(range(top - need + 1, top + 1))          # قدیمی ← تازه
-        have = [str(y) for y in slots if y in picked_g]
-        out.update({
-            "eps_series": [(round(_f(picked_g[y][0]), 2) if y in picked_g else None)
-                           for y in slots],
-            "period_slots": [str(y) for y in slots],
-            "period_ends": [picked_g[y][1] if y in picked_g else None for y in slots],
-            "evidence": [picked_g[y][2] if y in picked_g else "missing" for y in slots],
-            "period_months": [picked_g[y][3] if y in picked_g else None for y in slots],
-            "available_periods": len(have),
-            "periods_missing": need - len(have),
-            "partial": True,
-            "pass": False, "data_gap": True,
-            "reason": ("فقط %d دوره از %d موجود است — %s"
-                       % (len(have), need,
-                          " و ".join("%s: %s" % (y, _n(picked_g[int(y)][0])) for y in have)))
-                       if len(have) < need else ""})
-        return out
-    picked = [_pick(yr) for yr in window]
-    series = [p[0] for p in reversed(picked)]
-    ev = [p[2] for p in reversed(picked)]
-    out.update({
-        "eps_series": [round(_f(s), 2) for s in series],
-        "period_slots": [str(y) for y in reversed(window)],
-        "partial": False, "available_periods": need, "periods_missing": 0,
-        "period_ends": [p[1] for p in reversed(picked)],
-        "evidence": ev,
-        "period_months": [p[3] for p in reversed(picked)],
-        "net_profit_series": [None] * need,
-        "consecutive_years": True,
-        "strictly_rising": all(series[i] < series[i + 1] for i in range(len(series) - 1)),
-        "all_profitable": all(_f(s) > 0 for s in series),
-        "consolidated_used": any(p[4] for p in picked),
-        "audited_only": all(e == "audited_year_end" for e in ev),
-        # هر سالِ غیرتلفیقیِ حسابرسی‌شده نبودن → شواهد «جایگزین» و باید برچسب بخورد
-        "relaxed_evidence": any(e != "audited_year_end" for e in ev),
-        # میاندورهٔ کوتاه‌مدت سال‌سازی‌شده ضعفِ روش است نه ضعفِ شرکت
-        "low_quality_track": any(e.startswith("annualized_interim") for e in ev),
-        "source": "کدال — صورت‌های مالی سالانه + میاندوره"})
-    out["data_gap"] = False
-    out["pass"] = bool(out["strictly_rising"] and out["all_profitable"])
-    # اگر تنها دلیلِ «صعودی نبودن»، سالِ جاریِ فقط-۳ماهه باشد، نتیجه قابلِ استناد
-    # نیست (۶۲ ریالِ فصل اول ≠ سال کامل). این را soft_gap می‌نامیم: عدد نشان داده
-    # میشود ولی رابط کاربری نباید آن را «ردِ قطعیِ روند» بخواند.
-    out["soft_gap"] = bool(not out["pass"] and ev[-1] == "annualized_interim_short")
-    if out["pass"]:
-        out["reason"] = ""
-    else:
-        # شکستِ واقعیِ روند (هر ۳ دوره موجود) → علت از خودِ سری ساخته میشود،
-        # نه متنِ عمومیِ «دیتا ناقص»؛ مثال: «سقوط سود به زیان در سال آخر».
-        out["reason"] = fts_engine.eps_trend_reason(
-            series, [str(y) for y in reversed(window)])
-        if out["soft_gap"]:
-            out["reason"] += " (برآورد میاندوره)"
-    return out
 
 
 def _interim_eps_check(conn, symbol, last_fy_eps=None, track_period_ends=(),
@@ -881,8 +666,8 @@ def _interim_eps_check(conn, symbol, last_fy_eps=None, track_period_ends=(),
     pred, params = fts_engine.sym_in("symbol", symbol)
     rows = conn.execute(
         "SELECT period_end, period_months, basic_eps, title FROM financial_statements "
-        "WHERE %s AND period_months BETWEEN 1 AND 11 AND basic_eps IS NOT NULL "
-        "ORDER BY period_end DESC LIMIT 40" % pred, params).fetchall()
+        "WHERE %s AND %s AND period_months BETWEEN 1 AND 11 AND basic_eps IS NOT NULL "
+        "ORDER BY period_end DESC LIMIT 40" % (pred, CP.DATED_SQL), params).fetchall()
     cand = [r for r in rows if not _is_consolidated_title(r[3] or "")]
     if not cand:
         return {"available": False, "reason": "صورت مالی میاندوره‌ایِ غیرتلفیقی ثبت نشده."}
@@ -892,25 +677,23 @@ def _interim_eps_check(conn, symbol, last_fy_eps=None, track_period_ends=(),
     except (TypeError, ValueError):
         newest_ty = 0
     if newest_ty:
-        newer = [r for r in cand if int(str(r[0] or "")[:4] or 0) > newest_ty]
+        newer = [r for r in cand if int(CP.fiscal_year(r[0]) or 0) > newest_ty]
         if not newer:
             return {"available": False,
                     "reason": "میاندورهٔ تازه‌تر از آخرین سالِ سابقه ثبت نشده است."}
         cand = newer
     pe, pm, eps, title = cand[0]
-    if str(pe or "")[:10] in seen:
-        return {"available": False, "period_end": str(pe or "")[:10],
+    pe_c = CP.canonicalize(pe) or ""
+    if pe_c in seen:
+        return {"available": False, "period_end": pe_c,
                 "reason": "میاندورهٔ جاری به‌عنوان سالِ در‌جریان داخل خودِ سابقه محاسبه شده."}
     pm = int(_f(pm)) or 1
     eps = _f(eps)
-    try:
-        y = int(str(pe or "")[:4])
-    except (TypeError, ValueError):
-        y = 0
-    prev = next((r for r in cand[1:] if str(r[0] or "")[:4] == str(y - 1)
+    y = int(CP.fiscal_year(pe) or 0)
+    prev = next((r for r in cand[1:] if CP.fiscal_year(r[0]) == str(y - 1)
                  and int(_f(r[1])) == pm), None)
     projected = round(eps * 12.0 / pm, 2)
-    return {"available": True, "period_end": str(pe or "")[:10], "period_months": pm,
+    return {"available": True, "period_end": pe_c, "period_months": pm,
             "eps_interim": round(eps, 2), "eps_projected_year": projected,
             "same_period_last_year": (None if prev is None else round(_f(prev[2]), 2)),
             "interim_yoy_pct": _pct(eps, _f(prev[2])) if prev is not None else None,
@@ -921,68 +704,27 @@ def _interim_eps_check(conn, symbol, last_fy_eps=None, track_period_ends=(),
 
 
 def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
-    """EPS سه سال مالی متوالی — اکیداً صعودی و همگی مثبت (لایهٔ ۲)، دو سطحِ شاهد.
+    """لایهٔ ۲ (EPS سه سال مالی متوالی، اکیداً صعودی و همگی مثبت) — لایۀ نمایشِ کارت.
 
-    سطح ۱ (معتبرترین): fts_engine.eps_trend_3y — فقط ۱۲ماههٔ حسابرسی‌شدهٔ
-      غیرتلفیقیِ سال‌های متوالی. همین مسیر در v8 تنها ملاک بود و روی این
-      دیتابیس برای نمادهای زیادی «بی‌داده» برمی‌گرداند.
-    سطح ۲ (پشتیبانِ v10): _eps_track_blended — سال‌پایان (حسابرسی‌شده یا
-      نشده) و در نبودش میاندوره × ۱۲÷م، همان چیزی که دستور کار با عبارت
-      «year-end and interim statements» می‌خواهد. تنزلِ شاهد با
-      `evidence_tier` و `relaxed_evidence` صریح اعلام میشود، نه پنهان.
-    روی هر دو سطح، «تداومِ سال جاری» با `_interim_eps_check` سنجیده و فقط به‌صورت
-    `interim_confirms` گزارش میشود (هشدارِ نرم، وتوی سخت نه — قراردادِ v9.7.4).
+    داوری در `fts_engine.eps_assessment` است (نردبانِ پنج‌سطحی + بیمه + حکمِ
+    «فقط تلفیقی ⇒ na»)؛ همان تابعی که `scan_symbol`/`bulk_scan` می‌خوانند، پس
+    کارت و اسکرینر دو عدد از دو قاعده نمی‌بینند. این‌جا فقط سه چیز افزوده می‌شود:
+    نشانه‌هایِ جدول (partial/period_slots)، درصدِ رشدِ سال‌به‌سالِ سری
+    (`eps_yoy_pct` — رأیِ #101: موتور می‌سازد، UI دوباره حک نمی‌کند)، و
+    راستی‌آزماییِ میاندوره (`interim_confirms` — هشدارِ نرم، وتوی سخت نه؛
+    قراردادِ v9.7.4).
     """
     th = th or v10_thresholds()
     need = int(th["eps_years"])
-    insurance = fts_engine.is_insurance_sector(sector)
-    strict = (None if insurance else
-              fts_engine.eps_trend_3y(conn, symbol, years=need, sector=sector))
-    blended = (None if insurance else _eps_track_blended(conn, symbol, years=need))
-    strict_ok = bool(strict and not strict.get("data_gap"))
-    if strict_ok:
-        base, tier = strict, "audited_year_end"
-    elif blended and not blended.get("data_gap"):
-        base = blended
-        # رتبه‌بندیِ شفافِ شاهدِ جایگزین — از تمیز‌ترین به ضعیف‌ترین
-        if blended.get("low_quality_track"):
-            tier = "year_end_plus_interim"
-        elif blended.get("consolidated_used"):
-            tier = "consolidated_year_end"
-        else:
-            tier = "year_end_unaudited"
-    else:
-        # هیچ‌کدام پنجره را کامل نکرد؛ آن‌که دورهٔ واقعیِ بیشتری دارد نگه داشته
-        # میشود تا سطرِ شاخص ۲ در جدول خالی نشود (قاعدهٔ «هرگز سطر را حذف نکن»).
-        def _have(x):
-            return len([v for v in ((x or {}).get("eps_series") or [])
-                        if v is not None])
-        _cands = [x for x in (strict, blended) if x]
-        base = max(_cands, key=_have) if _cands else {}
-        tier = "insufficient"
-    if not base:
-        base = {"eps_series": None, "pass": False, "data_gap": True,
-                "years_required": need, "years_available": 0,
-                "reason": ("صنعت بیمه — لایهٔ EPS اجرا نمیشود." if insurance
-                           else "هیچ صورت مالیِ معتبری با EPS ثبت نشده.")}
-    base["evidence_tier"] = tier
-    base["strict_evidence"] = strict_ok
-    base["relaxed_evidence"] = (False if strict_ok
-                                else bool(base.get("relaxed_evidence")))
-    base["consolidated_used"] = bool(base.get("consolidated_used"))
-    base["low_quality_track"] = bool(base.get("low_quality_track"))
-    base["soft_gap"] = bool(base.get("soft_gap"))
-    # رأیِ مالک (۱۴۰۵/۰۷): سوابقِ EPS که *فقط* از صورتهای تلفیقی ساخته شده باشد
-    # «رد» نیست و «سبز» هم نیست — قابلِ محاسبه روی مبنای جزوه نیست. جزوه صریح
-    # است «اطلاعات و صورت‌های مالی تلفیقی مدنظر ما نیست»، و اسکرینر همین را
-    # data_gap می‌شمارد؛ تا پیش از این همین نماد در کارتِ جزئیات با
-    # relaxed_evidence سبز می‌شد (مبين و شسپا — همان واگرایی #50).
-    if tier == "consolidated_year_end":
-        base["pass"] = False
-        base["na"] = True
-        base["data_gap"] = True
-        base["reason"] = ("سابقهٔ سه‌ساله فقط از صورت‌های مالی تلفیقی است — "
-                          "جزوه تلفیقی را مبنای داوری نمی‌داند.")
+    # تک‌منبعِ داوری: `fts_engine.eps_assessment` — همان نردبانی که مسیرِ اسکرینر
+    # می‌خواند (سطح ۱ = سال‌پایانِ حسابرسی‌شدهٔ غیرتلفیقی … سطح ۵ = میاندوره ×۱۲÷م،
+    # پیش‌گیتِ بیمه، و حکمِ «فقط تلفیقی ⇒ na»). کارت هیچ قاعدۀ انتخابِ دوم
+    # نمی‌سازد؛ فقط لایۀ نمایش (partial، eps_yoy_pct، راستی‌آزمایی میاندوره) رویش
+    # می‌نشیند. پیش‌تر این‌جا strict و blended جدا خوانده و دو‌بار انتخاب
+    # می‌شدند — همان دودلی که شاخص ۲ را بین کارت و اسکرینر واگرا می‌کرد.
+    base = fts_engine.eps_assessment(conn, symbol, years=need, sector=sector)
+    tier = str(base.get("evidence_tier") or "insufficient")
+    insurance = (tier == "insurance")
     # حالتِ «ناقص»: دوره‌های موجود نشان داده میشوند و جایِ غایب «-»
     _ser = base.get("eps_series") or []
     _real = [v for v in _ser if v is not None]
@@ -1012,13 +754,19 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
                                 else bool(interim["continues_trend"]))
     base["eps_basis"] = ("%s%s" % (
         {"audited_year_end": "سال‌پایانِ حسابرسی‌شدهٔ غیرتلفیقی",
+         "unaudited_year_end": "سال‌پایانِ غیرتلفیقی (حسابرسی‌نشده)",
          "year_end_unaudited": "سال‌پایانِ غیرتلفیقی (حسابرسی‌نشده)",
          "consolidated_year_end": "سال‌پایانِ تلفیقی (غیرتلفیقیِ ۱۲ماهه موجود نیست)",
          "year_end_plus_interim": "سال‌پایان + میاندورهٔ سال‌سازی‌شده × ۱۲÷م",
-         "insufficient": "شاهدِ کافی برای مسیر EPS موجود نیست"}[tier],
+         "insurance": "صنعت بیمه — لایهٔ EPS اجرا نمی‌شود",
+         "insufficient": "شاهدِ کافی برای مسیر EPS موجود نیست"}.get(
+             tier, "شاهدِ کافی برای مسیر EPS موجود نیست"),
         " + راستی‌آزمایی میاندوره‌ای" if interim.get("available")
         else " (میاندورهٔ مستقلِ راستی‌آزمایی موجود نیست)"))
     base["threshold"] = "%d سال مالی متوالی" % need
+    base.setdefault("consolidated_used", False)
+    base.setdefault("low_quality_track", False)
+    base.setdefault("soft_gap", False)
     base.setdefault("source", "کدال — صورت سود و زیان (حسابرسی شده، شرکت اصلی)")
     base.setdefault("reason", "")
     return base
@@ -1074,7 +822,11 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
                 "band": "not_applicable", "threshold": th["margin_min"],
                 "ideal_threshold": th["margin_ideal"], "optimal": False,
                 "data_gap": data_gap, "reason": reason, "remediation": fix}
-    margin = _sane(gm.get("margin_pct"), -99.0, 200.0)  # حاشیهٔ ۱۸۸۵٪- ⇒ None
+    # حاشیۀ منفیِ واقعی (ثتران −۱۸۴٫۶، دامین −۱۴۲٫۵، وملل −۱۱۲٫۵) «N/A» نیست:
+    # عدد است و طبیعی به «زیرِ باند» می‌رسد. `_sane(-99, 200)` همین را None می‌کرد
+    # و باند را هم اشتباه می‌براند (و حاشیۀ ۱٬۸۸۵٪ را هم)؛ اینجا فقط NaN/inf دور
+    # ریخته می‌شود — همان کاری که `_f` می‌کند. آستانۀ تازه‌ای اضافه نشده است.
+    margin = _f(gm.get("margin_pct"))
     # حاشیه غایب یا نامعتبر: زیر باند (بدون داده) و نه کرش مقایسه با None
     gm["band"] = ("ideal" if margin is not None and margin >= th["margin_ideal"] else
                   "acceptable" if margin is not None and margin >= th["margin_min"] else "below")
@@ -1093,75 +845,18 @@ ANNUALIZATION_SCALE = (3, 4, 5, 6, 9, 12)
 
 def dynamic_annualized_sales(conn, symbol, series=None, ref=None, profile=None,
                              exempt=None) -> dict:
-    """فروش سالانه = فروش تجمیعی × (۱۲ ÷ م)، م = ماه‌های سپری‌شدهٔ سال مالی.
+    """لایۀ ۴ کارت — واگرد به `fts_engine.annualized_sales` (تک‌پیاده‌سازی).
 
-    ضریب ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۵ ماه ×۲٫۴، ۶ ماه ×۲ و… (شرطِ صریحِ
-    دستور کار). م از «بزرگ‌ترین ماهِ دارای گزارش تجمیعی در آخرین سال مالی» خوانده
-    میشود، نه از تقویم — تا نمادی که ماهِ جاافتاده دارد درست annualize شود.
-    راستی‌آزمایی: اگر برآورد بیش از ۴× یا کمتر از ۰٫۲۵× فروشِ صورت مالی سالانه
-    شد، واحد/ساختارِ گزارش مشکوک است → مبنای سالانه به فروش کدال برمی‌گردد و
-    `reconciled=False` ثبت میشود (همان گیتِ fts_engine، بدون واگرایی دو مسیر).
-
-    طبقهٔ مالی/خدماتی/صندوق: «فروش کالا» معنا ندارد، پس مبنا **درآمد عملیاتیِ
-    صورت مالی سالانه** است و گزارش ماهانه جای آن را نمی‌گیرد (قاعدهٔ جزوه).
-
-    `exempt` = حکمِ fts_engine.ind4_exempt (تک‌مرجعِ معافیتِ شاخص ۴). اگر
-    داده نشود رفتارِ نام‌محورِ پیشین می‌ماند؛ evaluate_v10 همیشه می‌دهد تا
-    «سالانه‌سازی N/A» و «خودِ شاخص ۴» یک تصمیم را دو جور نگویند (بی‌این،
-    نمادی که طبقه‌اش هلدینگ است ولی معاف نیست فروشِ ۰٫۰ می‌گرفت).
+    ضریبِ ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۶ ماه ×۲ … (م = بلندترینِ ماهِ دارایِ
+    گزارشِ تجمیعی در آخرین سالِ مالی، نه تقویم). طبقۀ مالی/خدماتی/صندوق/هلدینگ
+    «فروش کالا» ندارد ⇒ مبنایش درآمدِ صورتِ مالیِ سالانه، و حکمِ معافیت از
+    `fts_engine.ind4_exempt` می‌آید (تک‌مرجعِ کارت و اسکرینر).
+    جزئیاتِ قاعده و گیتِ «واحد مشکوک» در docstring خودِ آن تابع است.
     """
-    series = series if series is not None else monthly_series(conn, symbol)
-    ref_row = ref if ref is not None else fts_engine.reference_annual(conn, symbol)
-    fs_rev = _f((ref_row or {}).get("revenue"))
-    prof = profile or company_profile()
-    # سند v2.1 (F-04): محاسبهٔ نسبتِ فروش برای طبقهٔ معاف مجاز نیست ⇒ N/A صریح
-    # (هیچ نسبتِ ساختگی ساخته نمی‌شود؛ ind4_valuation هم همان حکم را می‌گیرد).
-    _na = (prof.get("kind") == "holding") if exempt is None else bool(exempt)
-    if _na:
-        return {"annual_sales_mrl": 0.0, "annual_sales_bt": None, "months_used": 0,
-                "scale_factor": 0.0,
-                "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطهٔ مالی (سند v2.1 F-04)",
-                "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
-                "operational_revenue_basis": False, "na": True}
-    op_basis = ((prof.get("kind") in ("financial", "service", "fund", "holding"))
-                and fs_rev > 0)
-    annual, months, basis, reconciled = 0.0, 0, "", True
-    if op_basis:
-        annual, months = fs_rev, 12
-        basis = ("درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برای طبقهٔ %s"
-                 % prof.get("label", "مالی/خدماتی"))
-    elif series:
-        year = int(_f(series[0][0]))
-        cur = _fiscal_year_rows(series, year)
-        months = int(_f(cur[0][1])) if cur else 0
-        ytd = _f(cur[0][3]) if cur else 0.0
-        if months >= 1 and ytd > 0:
-            factor = 12.0 / months
-            annual = ytd * factor if months < 12 else ytd
-            basis = (("تجمیعی %02d/%d × ۱۲÷%d (=×%.2f)" % (months, year, months, factor))
-                     if months < 12 else
-                     "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)" % year)
-    if annual <= 0 and fs_rev > 0:
-        annual, months = fs_rev, 12
-        basis = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
-    if annual <= 0:
-        return None
-    # گیتِ «واحد مشکوک» فقط برای سالانه‌سازیِ واقعی (ماهِ سپری‌شده < ۱۲) معنا دارد؛
-    # گزارشی که خودش ۱۲ ماه کامل را پوشش می‌دهد مستقیم پذیرفته می‌شود، نه مشکوک.
-    if (fs_rev > 0 and not op_basis and 0 < months < 12
-            and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25)):
-        reconciled = False
-        annual, months = fs_rev, 12
-        basis = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
+    return fts_engine.annualized_sales(conn, symbol, ref=ref, series=series,
+                                       profile=profile, exempt=exempt)
 
-    return {"annual_sales_mrl": annual, "annual_sales_bt": _bt(annual),
-            "months_used": months, "scale_factor": round(12.0 / max(months, 1), 4),
-            "basis": basis, "reconciled": reconciled,
-            "revenue_basis": prof.get("revenue_basis", ""),
-            "operational_revenue_basis": bool(op_basis),
-            "ytd_sales_bt": _bt(annual / max(12.0 / max(months, 1), 1e-9)),
-            "scale_table": [{"months": m, "factor": round(12.0 / m, 2)}
-                            for m in ANNUALIZATION_SCALE]}
+
 
 
 def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
@@ -1198,10 +893,12 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     elif gm and gm.get("net_margin_pct") is not None:
         margin = _f(gm["net_margin_pct"])
         margin_basis, margin_label = "net_margin_proxy", "حاشیهٔ سود خالص (جایگزینِ مالی)"
-    pot_pct = (round(ann_rial * (margin / 100.0) / mcap * 100.0, 1)
-               if margin is not None else None)
+    pot_raw = (ann_rial * (margin / 100.0) / mcap * 100.0) if margin is not None else None
+    pot_pct = round(pot_raw, 1) if pot_raw is not None else None
     sales_pass = sales_ratio >= th["sales_to_mcap_min"]
-    pot_pass = pot_pct is not None and pot_pct >= th["potential_min"]
+    # مقایسه با عددِ **خام** (همان قاعدۀ `fts_engine.gross_profit_potential`)؛
+    # با عددِ گرد شده، پتانسیلِ ۳۹٫۹۶٪ «≥ ۴۰٪» می‌شد و کارت با موتور نمی‌خواند.
+    pot_pass = pot_raw is not None and pot_raw >= th["potential_min"]
     return {"available": True, "mcap_ht": round(mcap / 1e13, 2),
             "annual_sales_bt": annual["annual_sales_bt"],
             "months_used": annual["months_used"], "scale_factor": annual["scale_factor"],
@@ -1237,10 +934,17 @@ _PRICING_OUTLOOK = {
 }
 
 
-def ind5_industry(sector, cfg=None, market_cap_rials=0.0, total_market_cap_rials=0.0) -> dict:
-    """تگ صنعت: آزاد/بورس‌کالایی در برابر دستوری (دیکشنری fts_engine، بدون موازی‌سازی)."""
+def ind5_industry(sector, cfg=None, market_cap_rials=0.0, total_market_cap_rials=0.0,
+                  gpm=None, sales_growth=None) -> dict:
+    """تگ صنعت: آزاد/بورس‌کالایی در برابر دستوری (دیکشنری fts_engine، بدون موازی‌سازی).
+
+    `gpm` و `sales_growth` هم مثلِ مسیرِ اسکرینر پاس داده می‌شوند: استثنای دارویی
+    و بانک هر دو به آن‌ها نگاه می‌کنند، و بی‌آن‌ها کارت برایِ یکِ نمادِ دارویی
+    «خنثی» می‌گفت جایی که موتور «دستوری» می‌گفت (رأیِ ۱۶: بی‌داده = خنثی، نه رد).
+    """
     sec = fts_engine.sector_filter(sector, cfg=cfg, market_cap_rials=market_cap_rials,
-                                   total_market_cap_rials=total_market_cap_rials)
+                                   total_market_cap_rials=total_market_cap_rials,
+                                   gpm=gpm, sales_growth=sales_growth)
     verdict = sec.get("verdict", "neutral")
     sec["outlook"] = _PRICING_OUTLOOK.get(verdict, _PRICING_OUTLOOK["neutral"])
     sec["regime_label"] = {"free": "آزاد / بورس کالا", "mandatory": "دستوری",
@@ -1413,7 +1117,7 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         #  شده — حاشیهٔ >۱۰۰٪ یعنی واحد/سطرِ گزارش غلط است، نه سودآوری فراوان.)
         if rev > 0 and net and 0 < (net / rev * 100.0) <= 100.0:
             gm["net_margin_pct"] = round(net / rev * 100.0, 1)
-            gm["net_margin_period"] = str(ref.get("period_end") or "")[:10]
+            gm["net_margin_period"] = CP.canonicalize(ref.get("period_end")) or ""
         elif rev > 0 and net:
             gm["net_margin_rejected_pct"] = round(net / rev * 100.0, 1)
     # سند v2.1: گیتِ «عدم اعمال نسبت فروش بر هلدینگ‌ها» (holdings_sales_na).
@@ -1425,25 +1129,16 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref,
                                       profile=prof, exempt=ind4_na)
     val = ind4_valuation(annual, gm, market_cap_rials, th=th, exempt=ind4_na)
+    # تک‌منبع: فیلتر صنعت و استثنای دارویی/بانکی در `fts_engine.sector_filter`
+    # است — همان تابعی که bulk_scan/scan_symbol صدا می‌زنند. کارت پیش از این
+    # هیچ gpm/رشدی نمی‌داد و بعداً بلوکِ تکراریِ «pharma_margin_exempt_min» را
+    # خودش اعمال می‌کرد (و چون آن کلید درِ fts_thresholds.json نیست، عملاً
+    # خاموش می‌ماند) ⇒ نمادِ دارویی در کارت «خنثی» و در اسکرینر «دستوری».
+    _gpm = gm.get("margin_pct") if isinstance(gm, dict) else None
+    _grw = growth.get("monetary_pct") if isinstance(growth, dict) else None
     sec = ind5_industry(sector, cfg=cfg, market_cap_rials=market_cap_rials,
-                        total_market_cap_rials=total_market_cap_rials)
-    # سند v2.1: استثنای دارویی — فقط با حاشیهٔ ناخالص > آستانهٔ پیکربندی
-    # (pharma_margin_exempt_min؛ ۰ = غیرفعال) مجاز است.
-    _pm = float((cfg or {}).get("pharma_margin_exempt_min", 0) or 0)
-    try:
-        _is_pharma = "دارو" in fts_engine.norm_fa(sector)
-    except Exception:
-        _is_pharma = False
-    if _pm > 0 and _is_pharma:
-        _m = None
-        try:
-            _m = gm.get("margin_pct") if isinstance(gm, dict) else None
-        except Exception:
-            _m = None
-        if _m is None or float(_m) < _pm:
-            sec = dict(sec)
-            sec["verdict"] = "mandatory"
-            sec["reason"] = ("دارویی با حاشیهٔ ناخالص کمتر از %.0f٪ مجاز نیست (سند v2.1)." % _pm)
+                        total_market_cap_rials=total_market_cap_rials,
+                        gpm=_gpm, sales_growth=_grw)
 
     # ممیزی (سند v2.1): ارجاع قاعده روی هر شاخص بنیادی
     try:
@@ -1631,20 +1326,22 @@ def build_insights(res: dict) -> tuple:
     elif v.get("pass"):
         txt1b = "✅ ۱ب رشد تولیدی: تأیید شد (%s)" % basis_str
     else:
-        v_reason = v.get("reason") or "رشد صرفاً از افزایش نرخ است (فاقد رشد حجم)"
-        if "رشد واقعی کافی است" in v_reason:
-            v_reason = "عدم فراگیری در ماه‌های سپری‌شده"
+        v_reason = (v.get("reason") or
+                    "رشد صرفاً از افزایش نرخ است (فاقد رشد حجم)")
         txt1b = "🚫 ۱ب رشد تولیدی: %s" % v_reason
     insights.append({"step": "۱", "title": "لایهٔ ۱ — درآمد/فروش (رشد ریالی + تأیید حجم)",
                      "type": "success" if axis1 else "warning",
                      "text": "%s<br>%s" % (txt1, txt1b)})
     breadth = v.get("breadth") or {}
     details["۱"] = {
-        "title": "درآمد/فروش — دو چکِ الزامی",
+        "title": "درآمد/فروش — رشد ریالی (۱الف) + تأیید حجم (۱ب)",
         "formula": ("۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ %g٪"
-                    " · ۱ب = رشد کمیت ≥ %g٪ (یا رشد واقعیِ پس از تورم ≥ %g٪ و پهنای رشد ≥ %.0f٪)"
+                    " · ۱ب = رشد کمیت ≥ %g٪ یا رشد واقعیِ پس از تورم ≥ %g٪"
+                    " · پهنای رشد (%d/%d ماه) فقط نمایشی است، دروازۀ امتیاز نیست"
                     % (th["monetary_growth_min"], th["volume_growth_min"],
-                       th["volume_growth_min"], th["volume_breadth_min"] * 100)),
+                       th["volume_growth_min"],
+                       breadth.get("improved_months") or 0,
+                       breadth.get("compared_months") or 0)),
         "source": ("کدال — گزارش فعالیت ماهانهٔ منتهی به %s | مخرج: %s | طبقهٔ شرکت: %s"
                    % (g.get("period") or "—", g.get("denominator_basis") or "—", prof["label"])),
         "calc": ("%s ÷ %s میلیارد تومان = %s | ۱ب: مبنای %s → رشد واقعی %s (مبنای نرخ %s٪)"
@@ -2126,7 +1823,8 @@ def get_fundamental(symbol: str, months: int = 0):
             inst = conn.execute(_INSTR_SQL, (fts_engine.norm_fa(symbol),)).fetchone()
         pred, params = fts_engine.sym_in("symbol", symbol)
         cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
-                          "ORDER BY period_end DESC LIMIT 1" % pred, params).fetchone()
+                          "%s LIMIT 1" % (pred, CP.latest_order_sql()),
+                          params).fetchone()
         company_name = str(cn[0] or "") if cn else ""
         if not inst:
             # نمادهای فقط-کدال (صندوق‌ها و…): در instruments نیستند ولی اسکرینر نشانشان میدهد
@@ -2283,7 +1981,7 @@ def get_fundamental(symbol: str, months: int = 0):
                 secondary["ROE"] = "%s٪ (تکمیلی)" % _n(roe_pct, 1)
         metrics["roe"] = roe_pct
 
-        history = [{"period_end": str(r["period_end"])[:10], "fiscal_year": r["fiscal_year"],
+        history = [{"period_end": CP.canonicalize(r["period_end"]) or "", "fiscal_year": r["fiscal_year"],
                     "revenue": r["revenue"], "gross_profit": r["gross_profit"],
                     "net_profit": r["net_profit"], "eps": r["basic_eps"],
                     "audited": r["audited"], "consolidated": r["consolidated"]}
@@ -2327,7 +2025,8 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
             "SELECT period_end, period_months, revenue, gross_profit,"
             " operating_profit, net_profit, basic_eps, publish_date"
             " FROM financial_statements"
-            " WHERE %s ORDER BY period_end DESC, publish_date DESC LIMIT ?" % _fp,
+            " WHERE %s AND %s ORDER BY period_end DESC, publish_date DESC LIMIT ?"
+            % (_fp, CP.DATED_SQL),
             (*_fa, max(1, min(limit, 40)))).fetchall()
         # حذف تکراریِ (period_end, period_months): نمادِ دو-املا می‌تواند یک دوره را
         # در دو نوشتار داشته باشد؛ تازه‌ترین ردیف می‌ماند.
@@ -2365,22 +2064,28 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
         # مسیرِ تک‌نماد دارد) — وگرنه واچ‌لیست ۵۰ نمادی ۱۰۰ کوئری می‌زد.
         ctx = {}
         try:
+            # همان عبارتِ موتور (`mcap_bulk_expr`) — ستونِ رسمی، در نبودش
+            # daily_prices، و بانِ مرده ⇒ None. برچسبِ منبع هم با همان دروازه
+            # بی‌اعتبار می‌شود تا «منبع» چیزی را توضیح ندهد که عددش را نداده‌ایم.
+            _mc = fts_engine.mcap_bulk_expr(conn)
+            _dead = (fts_engine.mcap_dead_band_sql("m")
+                     if (fts_engine.has_column(conn, "market_watch", "allowed_min")
+                         and fts_engine.has_column(conn, "market_watch", "allowed_max"))
+                     else "0")
             for r in conn.execute("""
-                SELECT i.l_val18,
-                       COALESCE(m.market_cap,
-                                (SELECT d.market_cap FROM daily_prices d
-                                  WHERE d.ins_code = i.ins_code AND d.market_cap > 0
-                                  ORDER BY d.d_even DESC LIMIT 1)),
-                       COALESCE(i.sector_name, 'سایر'),
-                       COALESCE(m.market_cap_src,
-                                (SELECT d.market_cap_src FROM daily_prices d
-                                  WHERE d.ins_code = i.ins_code AND d.market_cap > 0
-                                  ORDER BY d.d_even DESC LIMIT 1))
+                SELECT i.l_val18, """ + _mc + """,
+                       CASE WHEN """ + _dead + """ THEN NULL ELSE
+                            COALESCE(m.market_cap_src,
+                                     (SELECT d.market_cap_src FROM daily_prices d
+                                       WHERE d.ins_code = i.ins_code AND d.market_cap > 0
+                                       ORDER BY d.d_even DESC LIMIT 1))
+                       END,
+                       COALESCE(i.sector_name, 'سایر')
                 FROM instruments i
                 LEFT JOIN market_watch m ON m.ins_code = i.ins_code"""):
                 k = fts_engine.norm_fa(r[0])
                 if k and k not in ctx:
-                    ctx[k] = (r[1], r[2], r[3])
+                    ctx[k] = (r[1], r[3], r[2])
         except sqlite3.Error:
             ctx = {}
         # دو نقشهٔ کل‌بازاری یک‌بار ساخته میشوند (الگوی fts_engine در scan_all) —
@@ -2466,21 +2171,22 @@ def v10_coverage(conn) -> dict:
         "WITH latest AS (SELECT symbol, MAX(year * 100 + month) AS k FROM monthly_sales "
         "                 WHERE ytd_revenue > 0 GROUP BY symbol) "
         "SELECT COUNT(DISTINCT l.symbol), "
-        "       COUNT(DISTINCT CASE WHEN p.symbol IS NOT NULL THEN l.symbol END) "
+        "       COUNT(DISTINCT CASE WHEN COALESCE(c.ytd_revenue_prev, 0) > 0 "
+        "                           THEN l.symbol END), "
+        "       COUNT(DISTINCT CASE WHEN COALESCE(c.ytd_revenue_prev, 0) <= 0 "
+        "                            AND p.symbol IS NOT NULL THEN l.symbol END) "
         "FROM latest l "
         "JOIN monthly_sales c ON c.symbol = l.symbol AND c.year * 100 + c.month = l.k "
         "                     AND c.ytd_revenue > 0 "
         "LEFT JOIN monthly_sales p ON p.symbol = l.symbol "
         "     AND p.year = (l.k / 100) - 1 AND p.month = (l.k % 100) "
         "     AND p.ytd_revenue > 0").fetchone()
-    n_ms_latest, n_1a = int(_f(row[0])), int(_f(row[1]))
-    # منشأ مخرج: ستونِ رسمیِ «مقایسه با دورهٔ مشابه» (اولویت ۱ موتور) چقدر پر است؟
-    n_prev_col = int(_f(conn.execute(
-        "SELECT COUNT(DISTINCT m.symbol) FROM monthly_sales m "
-        "JOIN (SELECT symbol, MAX(year * 100 + month) AS k FROM monthly_sales "
-        "      WHERE ytd_revenue > 0 GROUP BY symbol) l "
-        "  ON l.symbol = m.symbol AND m.year * 100 + m.month = l.k "
-        "WHERE COALESCE(m.ytd_revenue_prev, 0) > 0").fetchone()[0]))
+    n_ms_latest = int(_f(row[0]))
+    # «قابل داوری» = دقیقاً قاعدهٔ `fts_engine.ytd_denominator`: ستونِ رسمی یا
+    # ردیفِ (سال−۱، همان ماه). تفکیکِ دو منشأ هم از همان یک کوئری می‌آید؛ مجموع
+    # دو ستون آخر، پس هیچ‌وقت عددِ منفی (طرحِ پیشین: ۶۲۴−۷۳۲) نمایش داده نمی‌شود.
+    n_prev_col, n_prev_row = int(_f(row[1])), int(_f(row[2]))
+    n_1a = n_prev_col + n_prev_row
     latest_ym = conn.execute("SELECT MAX(year * 100 + month) FROM monthly_sales "
                              "WHERE ytd_revenue > 0").fetchone()[0]
 
@@ -2492,7 +2198,7 @@ def v10_coverage(conn) -> dict:
             "WHERE basic_eps IS NOT NULL AND period_months > 0").fetchall():
         s = str(sym or "").strip()
         try:
-            y, mm, ev = int(str(pe or "")[:4]), int(_f(pm)), float(eps)
+            y, mm, ev = int(CP.fiscal_year(pe) or 0), int(_f(pm)), float(eps)
         except (TypeError, ValueError):
             continue
         if not s or y <= 0 or mm <= 0:
@@ -2518,8 +2224,9 @@ def v10_coverage(conn) -> dict:
         "1a_monetary_growth": {
             "evaluable": n_1a, "of": n_ms_latest, "pct": pct(n_1a, n_ms_latest),
             "denominator_from_official_column": n_prev_col,
-            "denominator_from_same_month_last_year": n_1a - n_prev_col,
-            "note": "نمادهایی که ردیف (سال قبل، همان ماه) با فروش تجمیعی > ۰ دارند"},
+            "denominator_from_same_month_last_year": n_prev_row,
+            "note": "نمادهایی که مخرجِ YoY دارند: ستونِ «مقایسهٔ دورهٔ مشابه» "
+                    "یا ردیفِ (سال قبل، همان ماه) با فروشِ تجمیعیِ > ۰"},
         "1b_physical_volume": {
             "evaluable": 0 if not vol_cols else n_ms_latest, "of": n_ms_latest,
             "pct": 0.0 if not vol_cols else pct(n_ms_latest, n_ms_latest),

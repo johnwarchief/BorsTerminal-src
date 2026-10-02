@@ -10,6 +10,8 @@ from .market import load_fts_config
 from .chart import _fts_analyze_symbol, upcoming_assemblies, _ASSEMBLY_CONFIRMED
 from .fundamental import _fa
 import price_basis
+# تنها تعریفِ «دورۀ گزارش» و ترتیبِ «تازه‌ترین اول» — ببین `codal_periods.py`.
+import codal_periods as CP
 from fastapi import APIRouter
 import pandas as pd
 import datetime
@@ -314,9 +316,16 @@ def _screener_cached():
         if evaluate_v10 is not None:
             if not _has_mcap_col(conn, "market_watch"):
                 ensure_market_cap_schema(conn)
+            # ارزش بازار از همان تک‌منبعِ کارت و موتور: `fts_engine.mcap_bulk_expr`
+            # (ستونِ رسمیِ market_watch، در نبودش آخرین daily_pricesِ معتبر، و
+            # بانِ مرده ⇒ None). پیش‌ازین این‌جا **چهارمین** خوانندۀ جدا بود —
+            # `SELECT m.market_cap` بی‌دروازه و بی‌history — پس نشار با
+            # ۴٬۰۰۰٬۰۰۰ ریال درِ اسکرینر پاس می‌شد در حالی که کارت همان را
+            # «ارزش بازارِ نامعتبر» می‌خواند (اختلافِ امتیازِ ۲ در برابر ۱).
             mcap_official = {}
             for _l18, _mc in conn.execute(
-                    "SELECT i.l_val18, m.market_cap FROM instruments i "
+                    "SELECT i.l_val18, " + fts_engine.mcap_bulk_expr(conn) +
+                    " FROM instruments i "
                     "JOIN market_watch m ON m.ins_code = i.ins_code"):
                 _k = fts_engine.norm_fa(_l18)
                 if _k and _k not in mcap_official:
@@ -327,7 +336,7 @@ def _screener_cached():
             cname_of = {}
             for _sym, _cn in conn.execute(
                     "SELECT symbol, company_name FROM financial_statements "
-                    "ORDER BY period_end DESC"):
+                    "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
                 _k = fts_engine.norm_fa(_sym)
                 if _k and _k not in cname_of:
                     cname_of[_k] = _cn or ""

@@ -85,6 +85,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 import codal_fetcher as cf          # noqa: E402  (ماشین‌افزار HTTP + تجزیه)
+import codal_periods as CP          # noqa: E402  (تنها تعریفِ «دورۀ گزارش»)
 import fts_engine                    # noqa: E402  (۵ شاخص — منبع یگانه حقیقت)
 # api.fundamental به‌صورتِ محلی (داخل sync_fts_results) import می‌شود تا
 # بارِ fastapi فقط موقعِ نیازِ واقعی بیاید — همان الگوی test_fts_market_cap.py.
@@ -848,9 +849,11 @@ def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
     if not _has_mcap_col(conn, "market_watch"):
         ensure_market_cap_schema(conn)
     mcap_official = {}
+    # تک‌منبع: همان عبارتِ کارت/اسکرینر/bulk — وگرنه جدولِ مادی‌شده عددی را
+    # می‌نویسد که سه خوانندۀ دیگر رد کرده‌اند (نشار: ۴٬۰۰۰٬۰۰۰ ریال).
     for _l18, _mc in conn.execute(
-            "SELECT i.l_val18, m.market_cap FROM instruments i "
-            "JOIN market_watch m ON m.ins_code = i.ins_code"):
+            "SELECT i.l_val18, " + fts_engine.mcap_bulk_expr(conn) +
+            " FROM instruments i JOIN market_watch m ON m.ins_code = i.ins_code"):
         _k = fts_engine.norm_fa(_l18)
         if _k and _k not in mcap_official:
             mcap_official[_k] = _num(_mc)
@@ -862,7 +865,7 @@ def sync_fts_results(conn, ctx, total_mcap, cfg, symbols=None, verbose=True):
     cname_of = {}
     for _sym, _cn in conn.execute(
             "SELECT symbol, company_name FROM financial_statements "
-            "ORDER BY period_end DESC"):
+            "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
         _k = fts_engine.norm_fa(_sym)
         if _k and _k not in cname_of:
             cname_of[_k] = _cn or ""

@@ -7,6 +7,7 @@ import sys, os, json, time, sqlite3, datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import codal_fetcher as cf
+import codal_periods as CP
 
 DB = cf.DB_PATH
 QUERY = dict(cf.QUERY)
@@ -92,31 +93,14 @@ def update_symbol(sym, from_date=None):
 
 
 def dedupe_symbol(sym):
-    """Task 2 — RECALCULATION: هر period_end فقط آخرین tracing_no (اصلاحیهٔ جدید).
-    قدیمی‌ها پاک می‌شوند بدون آسیب به سایر دوره‌ها/نمادها. خروجی: تعداد حذف."""
+    """Task 2 — جمعِ ردیف‌هایِ یکِ نماد، با **همان** قاعدۀ `codal_fetcher.collapse_symbol`.
+
+    این تابع نسخهٔ خودش را داشت («هر period_end فقط آخرین tracing_no») که رویِ
+    ۱۱ زوجِ مستقل+تلفیقیِ بانکِ امروز، ردیفِ مستقل را حذف و تلفیقی را نگه می‌داشت
+    — برعکسِ مبنایِ جزوه. قاعده باید درِ یکِ جا زندگی کند."""
     conn = sqlite3.connect(DB, timeout=60, isolation_level=None)
     try:
-        removed = 0
-        # FS: برنده آخرین
-        latest = dict(conn.execute(
-            "SELECT period_end, MAX(tracing_no) FROM financial_statements "
-            "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
-        for pe, mx in latest.items():
-            cur = conn.execute(
-                "DELETE FROM financial_statements WHERE symbol=? AND period_end=? AND tracing_no<>?",
-                (sym, pe, mx))
-            removed += cur.rowcount
-        conn.commit()
-        # MS: برنده آخرین (ماهانه‌ها هم اصلاحیه دارند)
-        latest_ms = dict(conn.execute(
-            "SELECT period_end, MAX(tracing_no) FROM monthly_sales "
-            "WHERE symbol=? AND period_end IS NOT NULL GROUP BY period_end", (sym,)).fetchall())
-        removed_ms = 0
-        for pe, mx in latest_ms.items():
-            cur = conn.execute(
-                "DELETE FROM monthly_sales WHERE symbol=? AND period_end=? AND tracing_no<>?",
-                (sym, pe, mx))
-            removed_ms += cur.rowcount
+        removed, removed_ms = cf.collapse_symbol(conn, sym)
         conn.commit()
         return removed + removed_ms
     finally:
@@ -129,7 +113,7 @@ def sanity_fs(sym):
     rows = conn.execute(
         "SELECT period_end, revenue, net_profit, total_assets, total_equity, gross_profit "
         "FROM financial_statements WHERE symbol=? AND net_profit IS NOT NULL "
-        "ORDER BY period_end DESC LIMIT 1", (sym,)).fetchall()
+        "AND %s %s LIMIT 1" % (CP.DATED_SQL, CP.latest_order_sql()), (sym,)).fetchall()
     conn.close()
     checks = []
     for r in rows:
