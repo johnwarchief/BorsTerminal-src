@@ -71,7 +71,7 @@ def _parse_tsetmc_csv(text):
         # بیرون بازه بیفتد و کندلِ ناممکن بسازد؛ پس داخل [low, high] clamp می‌شود.
         o = first if first > 0 else (min(max(base, lo), hi) if base > 0 else c)
         if c > 0 and base > 0:
-            all_rows.append({"time": dt, "base": base, "close": c})
+            all_rows.append({"time": dt, "base": base, "close": c, "vol": v})
 
         if hi <= 0 or c <= 0 or o <= 0 or lo <= 0:
             continue
@@ -98,7 +98,26 @@ def _parse_tsetmc_csv(text):
 
 
 def _adjust_events_from_rows(all_rows):
-    """(adj_events, anchored) — تعدیل از گسستِ «قیمت پایه»، با درِ لنگر.
+    """(adj_events, anchored) — تعدیل از دو نشانۀ خامِ CSV، به‌علاوهٔ درِ لنگر.
+
+    نشانۀ (ی) — گسستِ «قیمت پایه»: `base(t) != close(t-1)`. رفتارِ همیشگیِ برنامه.
+
+    نشانۀ (ب) — بازنویسیِ «قیمت پایانی» روی سطرِ بی‌معامله: روزِ توقفِ معامله با
+    VOL=0 درِ CSV منتشر می‌شود و TSETMC تعدیل را بعضی نمادها **داخلِ ستونِ پایانیِ
+    همان سطر** می‌گذارد، بی‌آنکه پایه جابه‌جا شود. سنجشِ مستقیم (کارِ #73، قدمِ ۶،
+    `_audit/adjust_zero_volume_probe.py`):
+
+        وبملت  ۲۰۱۲-۰۲-۰۴  VOL=0  CLOSE=2242  BASE=2242
+        وبملت  ۲۰۱۲-۰۲-۰۵  VOL=0  CLOSE=1793  BASE=2242   ← ۱۷۹۳/۲۲۴۲ = ۰٫۷۹۹۷۳
+        وبملت  ۲۰۱۲-۰۲-۰۶  VOL=۱۵٬۱۸۷٬۵۸۰  CLOSE=1736  BASE=1793   ← پایه می‌خواند
+
+    درِ این الگو (ی) هیچ‌وقت آتش نمی‌زند (پایۀ ۰۲-۰۶ == پایانیِ ۰۲-۰۵) و زنجیرِ تعدیل
+    شش رویدادِ ۱۳۹۰–۱۳۹۳ وبملت را کامل از دست می‌داد — مقیاسِ تاریخِ قبل از آن تا
+    ۳٫۸ برابر با رهاورد فرق می‌کرد. نسبتِ (ب) با معکوسِ گامِ پلکانِ رهاورد می‌خواند
+    (۱/۰٫۷۹۹۷۳ = ۱٫۲۵۰۴ در برابرِ ۱٫۲۵۰۴۱۸ِ اندازه‌گیری‌شدۀ آن‌ها).
+
+    دو نشانۀ روزِ یکی درِ دوازده نماد سنجیده‌شده صفر بار دیده شد (پس جمع‌شدنشان
+    ضریب را دو‌بار نمی‌کند)، و با درِ لنگرِ زیر هم می‌خورند.
 
     درِ لنگر چرا لازم است: گسستِ پایه تنها وقتی نشانهٔ تعدیل است که پایهٔ هر روز
     «خودِ پایانیِ دیروز» باشد. در سهام این برقرار است (۹۹٪+ روزها دقیقاً برابر)، ولی
@@ -121,7 +140,7 @@ def _adjust_events_from_rows(all_rows):
     anchored = not (_pairs >= 20 and _anch / _pairs < ANCHOR_MIN)
     if not anchored:
         return [], False
-    adj_events = []
+    by_date = {}
     prev = None
     for row in asc:
         if prev:
@@ -129,9 +148,13 @@ def _adjust_events_from_rows(all_rows):
             # آستانه دوتایی: هم ≥ یک واحد قیمت، هم > ADJ_TOL نسبی — تا گردکردنِ عددِ
             # قیمت، رویداد جعلی نسازد و در عین حال کوچک‌ترین تقسیم واقعی هم حذف نشود.
             if abs(row["base"] - prev["close"]) >= 1.0 and abs(ratio - 1.0) > ADJ_TOL:
-                adj_events.append({"date": row["time"], "ratio": round(ratio, 6)})
+                by_date.setdefault(row["time"], {"date": row["time"], "ratio": round(ratio, 6)})
+        if row.get("vol") == 0.0:
+            r2 = row["close"] / row["base"]
+            if abs(r2 - 1.0) > ADJ_TOL:
+                by_date.setdefault(row["time"], {"date": row["time"], "ratio": round(r2, 6)})
         prev = row
-    adj_events.sort(key=lambda e: e["date"])
+    adj_events = sorted(by_date.values(), key=lambda e: e["date"])
     return adj_events, True
 
 

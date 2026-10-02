@@ -156,6 +156,12 @@ SUITES = [
     # (published > board)، یک شکلِ خروجی. واگراییِ پیش از این اندازه گرفته شد.
     ('dev/candle_contract_v1071.py',
                                      'one candle contract: shared geometry, writer priority, same numbers from every source'),
+    # Step 6 (ریشۀ اختلافِ تعدیل با رهاورد): TSETMC بعضی تعدیل‌ها را درِ <CLOSE> یکِ
+    # سطرِ بی‌معامله (VOL=0) می‌گذارد و «قیمت پایه» را نمی‌چرخاند، پس قاعدۀ
+    # «گسستِ پایه = تعدیل» آن‌ها را کامل از دست می‌داد (وبملت: شش تعدیلِ ۱۳۹۰–۱۳۹۳،
+    # مقیاسِ آن دوره تا ۳٫۸ برابر با رهاورد). پوششِ گام‌هایِ مرجع: ۷۰٫۴٪ → ۷۶٫۱٪.
+    ('dev/adjust_zero_volume_v1072.py',
+                                     'adjustment also from restated close on zero-volume rows; four negative controls'),
     # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
     # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
     # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.
