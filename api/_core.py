@@ -13,6 +13,20 @@ import os
 import sqlite3
 import subprocess
 
+import sys
+
+
+def codal_crawler_available():
+    """آیا می‌شود خزندۀ کدال را به‌صورت زیرپروسه اجرا کرد؟ (برایِ endpointهایِ sync)
+
+    هر سه مسیرِ «کدال را بخوان» با `[sys.executable, "codal_fetcher.py", …]`
+    Popen می‌کردند. درِ بیلدِ فریزشده `sys.executable` **خودِ EXE** است، پس آن
+    فرمان نه خزنده را اجرا می‌کند و نه چیزی می‌سازد — دومینِ نسخهٔ برنامه بالا
+    می‌آید (و یکِ مسیرِ فرعیِ بدونِ dispatch، با connectِ خالی، market.db را
+    ناقص گذاشته است — bors_config:452). کاربر درِ نسخهٔ نصبی برایِ دادهٔ تازه
+    دکمۀ «بروزرسانی دیتابیس کدال» را می‌زند که snapshotِ گیت‌هاب را merge می‌کند.
+    """
+    return not bool(getattr(sys, "frozen", False))
 
 def _sel_ddl() -> str:
     """DDL مشترک جدول تصمیمات سبد — یک متن برای هر دو بانک (market.db و user.db).

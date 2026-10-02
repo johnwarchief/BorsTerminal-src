@@ -22,6 +22,14 @@ def _spawn_pipeline(kind, limit, args):
     """اجرای پسزمینهٔ pipeline (subprocess.Popen) + ثبت job برای poll."""
     import subprocess, sys, os
     pid = None
+    from ._core import codal_crawler_available
+    if not codal_crawler_available():
+        # درِ EXE این فرمان دومینِ نسخهٔ برنامه را بالا می‌آورد (چون `sys.executable`
+        # خودِ EXE است) — همان چیزی که یک بار market.db را ناقص گذاشت.
+        _PIPELINE_JOBS[kind] = {"status": "unavailable",
+                                "message": "خزندهٔ کدال درِ نسخۀ نصبی اجرا نمی‌شود؛ "
+                                           "از «بروزرسانی دیتابیس کدال» استفاده کنید"}
+        return _PIPELINE_JOBS[kind]
     try:
         proc = subprocess.Popen(
             [sys.executable, "codal_fetcher.py", *args],

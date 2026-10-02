@@ -109,23 +109,23 @@ def run_sync_job(kind, **kwargs):
     پذیرفته میشوند تا امضای endpointهای app.py نشکند، ولی صادقانه در
     پاسخ گزارش میشوند.
     """
-    frozen = bool(getattr(sys, "frozen", False))
+    from api._core import codal_crawler_available          # importِ داخلِ تابع (چرخه را نمی‌شکند)
+    if not codal_crawler_available():
+        # `--codal-worker` هیچ‌جا dispatch نشده (نه در bors_entry، نه هیچ‌جا) — یعنی
+        # درِ EXE این فرمان فقط دومینِ پنجرۀ برنامه را باز می‌کرد. راهِ کاربر برایِ
+        # دادهٔ تازه، merge کردنِ snapshotِ گیت‌هاب است (/api/sync/codal/db-download).
+        return {"status": "unavailable", "mode": kind,
+                "message": "همگام‌سازیِ مستقیمِ کدال درِ نسخۀ نصبی ممکن نیست؛ "
+                           "دکمۀ «بروزرسانی دیتابیس کدال» را بزنید"}
     if kind == "watchlist":
-        if frozen:
-            cmd = [sys.executable, "--codal-worker", "watchlist"]
-            args = ["--codal-worker watchlist"]
-        else:
-            cmd = [sys.executable, "-c", _WATCHLIST_RUNNER]
-            args = ["-c <watchlist runner>"]
+        cmd = [sys.executable, "-c", _WATCHLIST_RUNNER]
+        args = ["-c <watchlist runner>"]
         note = "fetch_symbol() برای تک‌تک نمادهای user_watchlists"
     else:
         argv = _SYNC_MODES.get(kind)
         if not argv:
             return {"status": "error", "message": "Unknown sync mode: %s" % kind}
-        if frozen:
-            cmd = [sys.executable, "--codal-worker", kind]
-        else:
-            cmd = [sys.executable, "codal_fetcher.py"] + argv
+        cmd = [sys.executable, "codal_fetcher.py"] + argv
         args = argv
         note = ""
     try:
