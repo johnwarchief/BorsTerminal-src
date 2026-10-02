@@ -16,7 +16,7 @@
 | `tools/` | سنجش‌هایِ زنده (pilot/jev، parity، probeها) — خروجی‌شان در `_audit/` |
 | `scripts/` | زنجیرۀ بیلد و انتشار (`build_all.py`, `check_release_db.py`, `make_patch.py`, `publish_github_release.py`) |
 | `installer/` | Inno Setup (`bors_setup.iss`) و خروجیِ نصاب در `installer/out/` |
-| `docs/` | جزوۀ روش‌شناسی FTS (`docs/fts-notes/`)، SPECها، `PLAN-remaining.md`، `RELEASE_NOTES.md` |
+| `docs/` | جزوۀ روش‌شناسی FTS (`docs/fts-notes/`)، SPECها، `PLAN-remaining.md`، `RELEASE_NOTES.md`، و نقشۀ کدِ هر ایجنت (`docs/AGENT-INDEX.md` — با `python tools/build_agent_index.py` بازتولید می‌شود) |
 | `skills/` | ده اسکیلِ قراردادِ کار — جدولِ زمان‌بندی‌شان در `skills/README.md` |
 
 ## فرمان‌ها
