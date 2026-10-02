@@ -9,7 +9,11 @@
  * هدف‌های لمسی بزرگ‌تر. رنگ/توکن/کامپوننت هیچ تغییری نمی‌کند.
  */
 
-@media (max-width: 820px) {
+/* شرطِ ورود به چیدمانِ موبایل.
+   ارتفاع هم شرط است، نه فقط عرض: گوشیِ افقی ۹۱۵×۴۱۲ است و با قیدِ
+   «عرض ≤ ۸۲۰» از همهٔ قاعده‌ها بیرون می‌افتاد — یعنی چیدمانِ کاملِ
+   دسکتاپ رویِ ۴۱۲ پیکسل ارتفاع، که از لپ‌تاپِ ۷۶۸ هم تنگ‌تر است. */
+@media (max-width: 820px), (max-height: 520px) {
   html.bors-mobile {
     font-size: 13px;
     -webkit-text-size-adjust: 100%;
@@ -263,4 +267,47 @@ html.bors-mobile .bors-fixed-top {
    «unsupported» برمی‌گرداند — یعنی دکمه کاربر را به بن‌بست می‌برد. */
 html.bors-mobile [data-testid='app-update-btn'] {
   display: none;
+}
+
+/* ── گوشیِ افقی ─────────────────────────────────────────────────────
+   در افقی معادلهٔ فضا وارونه می‌شود: عرض فراوان است (۹۱۵) و ارتفاع کمیاب
+   (۴۱۲). نوارِ چسبیده‌به‌پایین آنجا ۵۸ پیکسل از ۴۱۲ را می‌خورد — یعنی
+   ۱۴٪ از چیزی که کم داریم. پس همان نوار به یک ریلِ عمودیِ باریک در کنار
+   برمی‌گردد که از عرضِ فراوان خرج می‌کند، نه از ارتفاع.             */
+@media (max-height: 520px) and (orientation: landscape) {
+  html.bors-mobile aside[data-shell='sidebar'] {
+    position: sticky;
+    inset: 0 auto auto 0;
+    top: 0;
+    bottom: auto;
+    width: 52px !important;
+    max-width: 52px;
+    height: 100dvh;
+    min-height: 0;
+    max-height: none;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-top: none;
+    border-inline-end: 1px solid var(--hairline, rgb(255 255 255 / 12%));
+    padding: 4px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+  }
+  html.bors-mobile aside[data-shell='sidebar'] nav {
+    flex-direction: column;
+    width: 100%;
+  }
+  html.bors-mobile aside[data-shell='sidebar'] nav a {
+    flex: 0 0 auto;
+    min-height: 40px; /* در افقی ارتفاع کمیاب است؛ ۴۴ به ۴۰ کم می‌شود */
+  }
+  /* بدنه دیگر لازم نیست برایِ نوارِ پایین جا باز کند */
+  html.bors-mobile .app-content {
+    padding-bottom: 0;
+  }
+  /* چارت در افقی باید بیشترِ قاب را بگیرد — همان کاری که کاربر برایش
+     گوشی را چرخانده. */
+  html.bors-mobile .tv-workbench [data-testid='chart-area'] {
+    min-height: 78vh;
+  }
 }

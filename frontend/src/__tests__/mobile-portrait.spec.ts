@@ -62,3 +62,22 @@ describe('صفحهٔ تکنیکال در گوشی', () => {
     expect(css).toMatch(/chart-area'\]\s*\{[\s\S]*?min-height:\s*62vh/);
   });
 });
+
+describe('گوشیِ افقی', () => {
+  it('شرطِ ورود به چیدمانِ موبایل ارتفاع را هم می‌بیند', () => {
+    // گوشیِ افقی ۹۱۵×۴۱۲ است؛ با قیدِ «عرض ≤ ۸۲۰» از همهٔ قاعده‌ها بیرون
+    // می‌افتاد و چیدمانِ کاملِ دسکتاپ رویِ ۴۱۲ پیکسل ارتفاع می‌نشست.
+    expect(css).toMatch(/@media \(max-width: 820px\), \(max-height: 520px\)/);
+  });
+
+  it('در افقی نوار به ریلِ عمودیِ باریک برمی‌گردد، نه نوارِ پایین', () => {
+    // نوارِ پایین آنجا ۵۸ از ۴۱۲ پیکسل را می‌خورد — ۱۴٪ از چیزی که کم داریم.
+    const b = mediaBlock('orientation: landscape');
+    expect(b).toMatch(/aside\[data-shell='sidebar'\][\s\S]*?width:\s*52px/);
+    expect(b).toMatch(/flex-direction:\s*column/);
+  });
+
+  it('در افقی چارت بیشترِ قاب را می‌گیرد', () => {
+    expect(mediaBlock('orientation: landscape')).toMatch(/chart-area'\][\s\S]*?min-height:\s*78vh/);
+  });
+});
