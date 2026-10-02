@@ -1,102 +1,32 @@
 indicator           current implementation                       reference                          input                 n    bad   max_abs   max_rel    1st
 ------------------------------------------------------------------------------------------------------------------------------------------------------
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4965   4964 6.999e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4960   4959 6.705e+04  9.98e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4950   4949 6.372e+04  9.96e-01     20
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4969   4945 6.026e+04  4.61e+00      2
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4920   4919 5.804e+04  9.90e-01     50
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4880   4879 1.038e+05  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4875   4874 1.011e+05  9.98e-01     10
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4870   4869 4.855e+04  9.80e-01    100
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4865   4864 9.684e+04  9.96e-01     20
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4850   4849  4.59e+04  9.76e-01    120
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4835   4834 9.123e+04  9.90e-01     50
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4884   4820 8.761e+04  2.35e+00     18
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4785   4784 8.619e+04  9.80e-01    100
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4770   4768 3.483e+04  9.60e-01    201
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4765   4764 8.356e+04  9.75e-01    120
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4959   4736 2.302e+04  1.45e+00     10
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4874   4686 2.205e+04  6.71e-01     22
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4685   4683 7.415e+04  9.59e-01    201
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4525   4524 3.143e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4520   4519 3.083e+04  9.98e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4510   4509 2.978e+04  9.96e-01     20
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4529   4499 1.724e+04  6.09e+00      1
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4480   4479 2.568e+04  9.89e-01     50
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4439   4438 2.095e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4434   4433 1.993e+04  9.98e-01     10
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4430   4429 2.233e+04  9.78e-01    100
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4424   4423 1.801e+04  9.95e-01     20
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4443   4411 1.768e+04  8.00e+00      2
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4410   4409 2.206e+04  9.74e-01    120
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4394   4393 1.654e+04  9.89e-01     50
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4369   4368 5.806e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4364   4363 5.253e+04  9.98e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4354   4353  4.46e+04  9.95e-01     20
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4344   4343  1.42e+04  9.77e-01    100
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4519   4336 1.545e+04  8.16e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4373   4330 5.188e+04  5.42e+00     20
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4330   4328 1.923e+04  9.56e-01    201
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4324   4323 3.174e+04  9.89e-01     50
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4324   4323 1.325e+04  9.73e-01    120
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4433   4297      5255  8.39e-01     10
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4274   4273 2.297e+04  9.77e-01    100
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4254   4253 2.113e+04  9.73e-01    120
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4244   4242  1.05e+04  9.55e-01    201
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4232   4231 2.296e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4227   4226 2.244e+04  9.98e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        4236   4217 1.792e+04  2.31e+00      1
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4217   4216 2.128e+04  9.95e-01     20
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4187   4186 1.928e+04  9.88e-01     50
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4363   4174 3.894e+04  1.25e+00     20
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4174   4172 1.709e+04  9.54e-01    201
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4137   4136  1.68e+04  9.76e-01    100
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4117   4116 1.619e+04  9.72e-01    120
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4226   4060      7476  5.80e-01     10
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   4037   4035 1.404e+04  9.53e-01    201
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3922   3921 5.127e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3917   3916 4.909e+04  9.97e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3907   3906 4.737e+04  9.95e-01     20
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3926   3906 3.624e+04  7.33e+00      1
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3877   3876 4.436e+04  9.87e-01     50
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4931   3829     14.26  2.16e+02     41
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3827   3826 3.952e+04  9.75e-01    100
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4928   3816     13.55  1.80e+02     42
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3916   3808 2.497e+04  9.38e-01     10
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3807   3806 3.818e+04  9.69e-01    120
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3798   3797 3.049e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3793   3792 2.868e+04  9.97e-01     10
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4846   3789     9.899  4.87e+01     52
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3783   3782 2.543e+04  9.95e-01     20
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3802   3768 2.825e+04  9.11e+00      1
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4843   3759     8.883  1.32e+03     60
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3753   3752 2.099e+04  9.87e-01     50
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3727   3725 2.894e+04  9.49e-01    201
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3703   3702 1.722e+04  9.74e-01    100
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3689   3688  2.64e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3684   3683 2.606e+04  9.97e-01     10
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3683   3682 1.652e+04  9.68e-01    120
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3674   3673 2.545e+04  9.95e-01     20
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3792   3659 1.125e+04  1.57e+00     10
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3644   3643 2.154e+04  9.86e-01     50
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3693   3630 2.197e+04  2.66e+00      2
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3603   3601 1.364e+04  9.47e-01    201
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3594   3593 1.511e+04  9.73e-01    100
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3574   3573 1.362e+04  9.68e-01    120
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4491   3548     14.95  1.14e+02     43
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4488   3540     14.11  4.31e+01     43
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3683   3532 1.984e+04  1.17e+00     10
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3494   3492 1.003e+04  9.46e-01    201
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3474   3473 4.908e+04  9.99e-01      5
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3469   3468 4.886e+04  9.97e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3478   3460 3.768e+04  5.00e+00      1
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3459   3458 4.641e+04  9.94e-01     20
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3429   3428 3.721e+04  9.86e-01     50
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3379   3378 2.678e+04  9.71e-01    100
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3468   3359 1.781e+04  1.37e+00     10
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3359   3358 2.527e+04  9.65e-01    120
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4335   3330     17.21  8.79e+01     39
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   3279   3277 2.154e+04  9.42e-01    201
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4405   3271     10.38  9.82e+01     38
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4332   3257     16.82  1.69e+02     41
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4198   3185     9.246  5.41e+01     38
@@ -112,34 +42,20 @@ HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma vari
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3440   2487     10.67  8.73e+01     38
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3437   2448     10.14  1.09e+02     41
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4959   2405      5381  9.57e+00     10
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2359   2358 4.377e+04  9.98e-01      5
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        2363   2357 3.364e+04  7.95e-01      1
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2354   2353 4.331e+04  9.96e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2344   2343  4.22e+04  9.92e-01     20
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2314   2313  3.81e+04  9.79e-01     50
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              2353   2297 1.081e+04  7.13e-01     10
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2264   2263 3.371e+04  9.58e-01    100
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4874   2259      4021  2.25e-01     35
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2244   2243 3.279e+04  9.49e-01    120
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4363   2176      8043  4.71e+00     22
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   2164   2162 2.853e+04  9.15e-01    201
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4226   1884      1017  2.08e-01     62
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               2325   1849     7.424  1.49e+01     41
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               2322   1824     6.836  1.73e+01     43
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3468   1798      4502  2.95e+00     13
-SMA(5)              api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1762   1761 2.155e+05  9.97e-01      5
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4519   1759      2514  5.18e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        1766   1759 1.624e+05  1.76e+01      1
-SMA(10)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1757   1756  2.12e+05  9.94e-01     10
-SMA(20)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1747   1746 2.061e+05  9.89e-01     20
-SMA(50)             api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1717   1716 1.915e+05  9.72e-01     50
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              1756   1694 1.093e+05  1.82e+00     10
-SMA(100)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1667   1666  1.72e+05  9.43e-01    100
-SMA(120)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1647   1646 1.641e+05  9.32e-01    120
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3916   1635      5665  1.17e+00     47
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3683   1594      3904  5.04e+00     24
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3792   1576      2644  1.05e+02     16
-SMA(200)            api/chart.py:890-897 /api/ma                 oracle.sma ≡ pandas.rolling.mean   close (basis-res   1567   1565 1.371e+05  8.87e-01    201
 WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               1728   1301     8.521  1.22e+02     38
 WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               1725   1249     8.033  1.39e+01     42
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1153   1101 4.599e+04  1.69e+00      3
@@ -155,62 +71,17 @@ Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket I
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               794    745 2.379e+04  2.63e+00      0
 HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              1756    709 3.275e+04  3.50e+00     10
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               529    456 1.468e+04  1.66e+00      0
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4524    445    0.5077  1.00e+00      9
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4879    398   0.04999  1.00e+00     64
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4522    384     6.461  1.00e+00      7
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4877    368   0.04999  1.00e+00     69
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4521    352     3.236  1.00e+00      9
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3921    331   0.04999  1.00e+00    121
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4368    322   0.04999  1.00e+00     78
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               396    312 3.581e+04  1.70e-01      1
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4876    309   0.04999  1.00e+00     71
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4870    261   0.04998  1.00e+00    728
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4515    237      1.23  1.94e-01     17
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4438    225     5.681  1.00e+00     10
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4964    219     5.728  1.03e+00      5
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4366    215   0.05021  1.00e+00    157
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3919    205   0.04999  1.00e+00    219
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4365    186    0.0547  1.00e+00    157
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3797    185    0.9587  1.00e+00      7
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4231    183     4.142  1.00e+00      5
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3918    180   0.05004  1.00e+00    224
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4962    165     9.049  1.00e+00      7
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3795    147     12.59  1.00e+00      7
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4961    145     5.129  1.00e+00      8
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              2358    132     1.612  1.00e+00      6
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4436    130     1.834  1.00e+00     10
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4435    122     1.442  3.23e-01     11
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              1761    115      1.58  2.47e-01      6
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3473    112     4.448  1.00e+00      5
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4229    106     2.085  1.66e-01      7
-RSI(5)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3688    106       7.8  1.00e+00      5
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4955    100    0.6041  9.08e-02     14
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3470     95     8.201  3.38e-01      8
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3794     93       1.9  1.00e+00      8
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              1759     91     1.357  6.97e-02      8
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              2355     90     2.408  1.18e-01      8
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4228     88     1.276  4.17e-02      8
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              2356     88     1.215  1.84e-01      7
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3471     87     1.899  1.00e+00      7
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              1758     86     2.084  4.53e-02      8
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3912     83     0.052  2.90e-01    257
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              1752     80     1.868  2.52e-02     14
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3464     65    0.7717  5.23e-02     17
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4359     59   0.07574  1.83e-01    246
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4429     55    0.8248  4.49e-02     21
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              4222     51    0.6314  1.57e-02     14
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              2349     50    0.9248  3.57e-02     20
-RSI(7)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3686     48     1.849  2.66e-02      8
-RSI(8)              api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3685     39     4.255  7.80e-02      8
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3788     37    0.2917  3.80e-02    635
-RSI(14)             api/chart.py:1360 _fts_rsi                   oracle.wilder ≡ Wilder1978         close              3679      7    0.7098  9.02e-03     19
-FTS input series    api/chart.py:2195 _fts_scaled                price_basis: last و closing دو ستو last=108 · close      1      1         6  2.78e-02      0
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3798      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3793      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3783      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3753      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3703      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3683      0     0.005  1.05e-05      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  1.05e-05      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3603      0     0.005  9.84e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3789      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3783      0         0  0.00e+00      -
@@ -220,9 +91,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3791      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3789      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3777      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3797      0   0.04998  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3797      0 3.553e-14  1.27e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3795      0   0.04997  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3795      0 4.263e-14  2.27e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3794      0   0.04999  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3794      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3788      0   0.04999  3.80e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3788      0 4.263e-14  5.35e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 3.553e-14  7.12e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              3789      0         0  0.00e+00      -
@@ -248,11 +123,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               854      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               210      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4965      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4960      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4950      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4920      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4870      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4850      0     0.005  2.65e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  2.65e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4770      0     0.005  2.59e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4956      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4950      0         0  0.00e+00      -
@@ -262,9 +141,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4958      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4956      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4944      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4964      0   0.04998  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4964      0 4.263e-14  1.44e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4962      0      0.05  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4962      0 5.684e-14  3.85e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4961      0   0.04999  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4961      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4955      0   0.04998  9.08e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4955      0 5.684e-14  1.85e-14      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 1.421e-14  2.09e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4956      0         0  0.00e+00      -
@@ -290,11 +173,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close              1162      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               285      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4880      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4875      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4865      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4835      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4785      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4765      0     0.005  6.32e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  3.14e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4685      0     0.005  6.17e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4871      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4865      0         0  0.00e+00      -
@@ -304,9 +191,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4873      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4871      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4859      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4879      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4879      0 4.263e-14  5.37e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4877      0   0.04999  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4877      0 4.974e-14  4.09e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4876      0   0.04999  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4876      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4870      0   0.04998  1.00e+00      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4870      0 4.263e-14  1.96e-14      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 2.842e-14  1.24e-15      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4871      0         0  0.00e+00      -
@@ -332,11 +223,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close              1153      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               283      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3474      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3469      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3459      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3429      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3379      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3359      0     0.005  2.10e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  1.34e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3279      0     0.005  1.90e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3465      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3459      0         0  0.00e+00      -
@@ -346,9 +241,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3467      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3465      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3453      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3473      0   0.04998  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3473      0 3.553e-14  8.97e-15      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3471      0      0.05  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3471      0 4.263e-14  4.32e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3470      0   0.04999  3.23e-01      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3470      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3464      0   0.04996  1.90e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3464      0 6.395e-14  9.54e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 7.105e-15  1.17e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              3465      0         0  0.00e+00      -
@@ -374,11 +273,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               795      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               195      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4369      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4364      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4354      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4324      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4274      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4254      0     0.005  3.70e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  2.36e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4174      0     0.005  3.15e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4360      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4354      0         0  0.00e+00      -
@@ -388,9 +291,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4362      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4360      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4348      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4368      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4368      0 3.553e-14  7.03e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4366      0   0.04998  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4366      0 5.684e-14  5.24e-13      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4365      0   0.04998  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4365      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4359      0   0.04998  1.83e-01      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4359      0 5.684e-14  4.05e-14      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0         0  0.00e+00      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4360      0         0  0.00e+00      -
@@ -416,11 +323,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close              1066      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               272      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4439      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4434      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4424      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4394      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4344      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4324      0     0.005  1.29e-05      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  4.95e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4244      0     0.005  1.07e-05      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4430      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4424      0         0  0.00e+00      -
@@ -430,9 +341,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4432      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4430      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4418      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4438      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4438      0 2.842e-14  2.57e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4436      0   0.04999  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4436      0 4.263e-14  2.99e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4435      0      0.05  3.23e-01      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4435      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4429      0   0.04996  4.49e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4429      0 4.263e-14  6.59e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 1.421e-14  2.71e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4430      0         0  0.00e+00      -
@@ -458,11 +373,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close              1012      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               253      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3922      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3917      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3907      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3877      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3827      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3807      0     0.005  3.51e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  3.51e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3727      0     0.005  3.02e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3913      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3907      0         0  0.00e+00      -
@@ -472,9 +391,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3915      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3913      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3901      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3921      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3921      0 2.842e-14  7.01e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3919      0   0.04999  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3919      0 3.553e-14  3.75e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3918      0   0.04999  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3918      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3912      0   0.04999  2.90e-01      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3912      0 4.263e-14  1.02e-14      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 1.421e-14  1.76e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              3913      0         0  0.00e+00      -
@@ -500,11 +423,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               901      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               221      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4232      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4227      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4217      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4187      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4137      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4117      0     0.005  4.30e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  1.76e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4037      0     0.005  4.10e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4223      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4217      0         0  0.00e+00      -
@@ -514,9 +441,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4225      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4223      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4211      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4231      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4231      0 2.842e-14  1.57e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4229      0      0.05  1.66e-01      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4229      0 4.974e-14  2.69e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4228      0      0.05  4.17e-02      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4228      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4222      0      0.05  1.03e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4222      0 4.263e-14  6.06e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0         0  0.00e+00      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4223      0         0  0.00e+00      -
@@ -542,11 +473,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               959      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               228      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4525      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4520      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4510      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4480      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4430      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4410      0     0.005  2.62e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  2.51e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   4330      0     0.005  2.48e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4516      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              4510      0         0  0.00e+00      -
@@ -556,9 +491,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4518      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4516      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              4504      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4524      0      0.05  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4524      0 3.553e-14  6.28e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4522      0      0.05  1.00e+00      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4522      0 7.105e-14  3.69e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4521      0   0.04998  1.00e+00      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4521      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              4515      0   0.04999  1.94e-01      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              4515      0 5.684e-14  2.00e-14      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0         0  0.00e+00      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              4516      0         0  0.00e+00      -
@@ -584,11 +523,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close              1046      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               261      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2359      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2354      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2344      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2314      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2264      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2244      0     0.005  1.59e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  1.31e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   2164      0     0.005  1.55e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              2350      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              2344      0         0  0.00e+00      -
@@ -598,9 +541,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              2352      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              2350      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              2338      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              2358      0    0.0499  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              2358      0 2.842e-14  2.54e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              2356      0   0.04999  1.84e-01      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              2356      0 4.974e-14  1.00e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              2355      0   0.04999  1.18e-01      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              2355      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              2349      0   0.04997  3.57e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              2349      0 5.684e-14  3.81e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 2.842e-14  8.65e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              2350      0         0  0.00e+00      -
@@ -626,11 +573,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               529      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               127      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3689      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1896      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3684      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3674      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1881      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3644      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1851      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3594      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3574      0     0.005  5.20e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1781      0     0.005  5.20e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3494      0     0.005  5.07e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3680      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              3674      0         0  0.00e+00      -
@@ -640,9 +591,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3682      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3680      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              3668      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3688      0   0.04999  1.00e+00      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3688      0 3.553e-14  3.96e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3686      0      0.05  2.04e-02      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3686      0 4.263e-14  2.22e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3685      0   0.04999  2.66e-02      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3685      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              3679      0      0.05  3.95e-03      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              3679      0 4.263e-14  2.77e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 7.105e-15  1.25e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              3680      0         0  0.00e+00      -
@@ -668,11 +623,15 @@ HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدو
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               830      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close               201      0         0  0.00e+00      -
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1762      0         0  0.00e+00      -
+SMA(5)              api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1762      0         0  0.00e+00      -
 SMA(10)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1757      0         0  0.00e+00      -
 SMA(20)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1747      0         0  0.00e+00      -
+SMA(20)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1747      0         0  0.00e+00      -
 SMA(50)             api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1717      0         0  0.00e+00      -
+SMA(50)             api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1717      0         0  0.00e+00      -
 SMA(100)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1667      0         0  0.00e+00      -
 SMA(120)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1647      0     0.005  2.18e-06      -
+SMA(120)            api/chart.py /api/ma (endpoint)              oracle.sma ≡ pandas.rolling.mean   close (basis-res   1647      0     0.005  2.18e-06      -
 SMA(200)            api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   1567      0     0.005  2.08e-06      -
 SMA(14)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              1753      0         0  0.00e+00      -
 SMA(20)             lib/indicators.ts:48 sma (TS)                oracle.sma                         close              1747      0         0  0.00e+00      -
@@ -682,9 +641,13 @@ EMA(9)              lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed
 EMA(12)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              1755      0         0  0.00e+00      -
 EMA(14)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              1753      0         0  0.00e+00      -
 EMA(26)             lib/indicators.ts:21 ema (SMA-seed)          oracle.ema(seed=sma)               close              1741      0         0  0.00e+00      -
+RSI(5)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              1761      0      0.05  2.47e-01      -
 RSI(5)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              1761      0 2.842e-14  1.28e-14      -
+RSI(7)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              1759      0   0.04992  6.97e-02      -
 RSI(7)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              1759      0 5.684e-14  1.40e-14      -
+RSI(8)              api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              1758      0   0.04994  4.53e-02      -
 RSI(8)              lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              1758      0         0  0.00e+00      -
+RSI(14)             api/chart.py _fts_rsi                        oracle.wilder ≡ Wilder1978         close              1752      0   0.04999  1.07e-02      -
 RSI(14)             lib/indicators.ts:372 rsi (TS)               oracle.wilder                      close              1752      0 5.684e-14  5.23e-15      -
 RSI(14)             confidence_engine._rsi (scalar, newest-first oracle.wilder                      close                 1      0 1.421e-14  1.72e-16      -
 ATR(14)             mabnaStd.atr = rma(trueRange)                oracle.atr(wilder) ≡ Wilder        H/L/C              1753      0         0  0.00e+00      -
@@ -709,105 +672,37 @@ SQZMOM momentum     mabnaIndicators.ts calcSqueezeMomentum       oracle: linreg(
 HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h oracle: (بدونِ پیادۀ مستقلِ منتشرش H/L/C              1766      0         0  0.00e+00      -
 Weekly close (شنبه) api/chart.py:1140 _fts_resample('W')         oracle bucket Saturday≡self        close               396      0         0  0.00e+00      -
 Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle bucket Gregorian-month      close                94      0         0  0.00e+00      -
+FTS input series    api/chart.py _fts_scaled                     price_basis: last و closing دو ستو basis=last · las      1      0         0  0.00e+00      -
+FTS input series    api/chart.py _fts_scaled                     price_basis: last و closing دو ستو basis=closing ·       1      0         0  0.00e+00      -
 
 === علت‌ها (فقط ردیف‌هایِ بد‌دار یا یادداشت‌دار) ===
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4964  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4959  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4949  max_rel=9.96e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4945  max_rel=4.61e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4919  max_rel=9.90e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4879  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4874  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4869  max_rel=9.80e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4864  max_rel=9.96e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4849  max_rel=9.76e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4834  max_rel=9.90e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4820  max_rel=2.35e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4784  max_rel=9.80e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4768  max_rel=9.60e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4764  max_rel=9.75e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4736  max_rel=1.45e+00  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4686  max_rel=6.71e-01  ← 
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4683  max_rel=9.59e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4524  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4519  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4509  max_rel=9.96e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4499  max_rel=6.09e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4479  max_rel=9.89e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4438  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4433  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4429  max_rel=9.78e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4423  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4411  max_rel=8.00e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4409  max_rel=9.74e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4393  max_rel=9.89e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4368  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4363  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4353  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4343  max_rel=9.77e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4336  max_rel=8.16e-01  ← 
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4330  max_rel=5.42e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4328  max_rel=9.56e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4323  max_rel=9.89e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4323  max_rel=9.73e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4297  max_rel=8.39e-01  ← 
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4273  max_rel=9.77e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4253  max_rel=9.73e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4242  max_rel=9.55e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=4231  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=4226  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=4217  max_rel=2.31e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=4216  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=4186  max_rel=9.88e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4174  max_rel=1.25e+00  ← 
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4172  max_rel=9.54e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=4136  max_rel=9.76e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=4116  max_rel=9.72e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4060  max_rel=5.80e-01  ← 
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=4035  max_rel=9.53e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=3921  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=3916  max_rel=9.97e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=3906  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3906  max_rel=7.33e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=3876  max_rel=9.87e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3829  max_rel=2.16e+02  ← 
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=3826  max_rel=9.75e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend avg       همان (SMA 4)                                 bad=3816  max_rel=1.80e+02  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3808  max_rel=9.38e-01  ← 
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=3806  max_rel=9.69e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=3797  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=3792  max_rel=9.97e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3789  max_rel=4.87e+01  ← 
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=3782  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3768  max_rel=9.11e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
 · WaveTrend avg       همان (SMA 4)                                 bad=3759  max_rel=1.32e+03  ← 
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=3752  max_rel=9.87e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=3725  max_rel=9.49e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=3702  max_rel=9.74e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=3688  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=3683  max_rel=9.97e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=3682  max_rel=9.68e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=3673  max_rel=9.95e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3659  max_rel=1.57e+00  ← 
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=3643  max_rel=9.86e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3630  max_rel=2.66e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=3601  max_rel=9.47e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=3593  max_rel=9.73e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=3573  max_rel=9.68e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3548  max_rel=1.14e+02  ← 
 · WaveTrend avg       همان (SMA 4)                                 bad=3540  max_rel=4.31e+01  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3532  max_rel=1.17e+00  ← 
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=3492  max_rel=9.46e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=3473  max_rel=9.99e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=3468  max_rel=9.97e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3460  max_rel=5.00e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=3458  max_rel=9.94e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=3428  max_rel=9.86e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=3378  max_rel=9.71e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3359  max_rel=1.37e+00  ← 
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=3358  max_rel=9.65e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3330  max_rel=8.79e+01  ← 
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=3277  max_rel=9.42e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3271  max_rel=9.82e+01  ← 
 · WaveTrend avg       همان (SMA 4)                                 bad=3257  max_rel=1.69e+02  ← 
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3185  max_rel=5.41e+01  ← 
@@ -823,34 +718,20 @@ Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle buck
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=2487  max_rel=8.73e+01  ← 
 · WaveTrend avg       همان (SMA 4)                                 bad=2448  max_rel=1.09e+02  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2405  max_rel=9.57e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2405 (از 4)
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=2358  max_rel=9.98e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=2357  max_rel=7.95e-01  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=2353  max_rel=9.96e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=2343  max_rel=9.92e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=2313  max_rel=9.79e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=2297  max_rel=7.13e-01  ← 
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=2263  max_rel=9.58e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2259  max_rel=2.25e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2259 (از 4)
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=2243  max_rel=9.49e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2176  max_rel=4.71e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2176 (از 4)
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=2162  max_rel=9.15e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1884  max_rel=2.08e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1884 (از 4)
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=1849  max_rel=1.49e+01  ← 
 · WaveTrend avg       همان (SMA 4)                                 bad=1824  max_rel=1.73e+01  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1798  max_rel=2.95e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1798 (از 4)
-· SMA(5)              api/chart.py:890-897 /api/ma                 bad=1761  max_rel=9.97e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1759  max_rel=5.18e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1759 (از 4)
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=1759  max_rel=1.76e+01  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· SMA(10)             api/chart.py:890-897 /api/ma                 bad=1756  max_rel=9.94e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(20)             api/chart.py:890-897 /api/ma                 bad=1746  max_rel=9.89e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(50)             api/chart.py:890-897 /api/ma                 bad=1716  max_rel=9.72e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=1694  max_rel=1.82e+00  ← 
-· SMA(100)            api/chart.py:890-897 /api/ma                 bad=1666  max_rel=9.43e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
-· SMA(120)            api/chart.py:890-897 /api/ma                 bad=1646  max_rel=9.32e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1635  max_rel=1.17e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1635 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1594  max_rel=5.04e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1594 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1576  max_rel=1.05e+02  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1576 (از 4)
-· SMA(200)            api/chart.py:890-897 /api/ma                 bad=1565  max_rel=8.87e-01  ← شمارند = i+1 (میانگینِ کلِ تاریخ) نه w
 · WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=1301  max_rel=1.22e+02  ← 
 · WaveTrend avg       همان (SMA 4)                                 bad=1249  max_rel=1.39e+01  ← 
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=1101  max_rel=1.69e+00  ← تقویمِ متفاوت: 1150 از 1153 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
@@ -866,116 +747,69 @@ Monthly close (میلا api/chart.py:1140 _fts_resample('M')         oracle buck
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=745   max_rel=2.63e+00  ← تقویمِ متفاوت: 786 از 794 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=709   max_rel=3.50e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=709 (از 4)
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=456   max_rel=1.66e+00  ← تقویمِ متفاوت: 521 از 529 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=445   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=398   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=384   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=368   max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=352   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=331   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=322   max_rel=1.00e+00  ← 
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=312   max_rel=1.70e-01  ← تقویمِ متفاوت: 382 از 396 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=309   max_rel=1.00e+00  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=261   max_rel=1.00e+00  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=237   max_rel=1.94e-01  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=225   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=219   max_rel=1.03e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=215   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=205   max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=186   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=185   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=183   max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=180   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=165   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=147   max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=145   max_rel=1.00e+00  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=132   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=130   max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=122   max_rel=3.23e-01  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=115   max_rel=2.47e-01  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=112   max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=106   max_rel=1.66e-01  ← 
-· RSI(5)              api/chart.py:1360 _fts_rsi                   bad=106   max_rel=1.00e+00  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=100   max_rel=9.08e-02  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=95    max_rel=3.38e-01  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=93    max_rel=1.00e+00  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=91    max_rel=6.97e-02  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=90    max_rel=1.18e-01  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=88    max_rel=4.17e-02  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=88    max_rel=1.84e-01  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=87    max_rel=1.00e+00  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=86    max_rel=4.53e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=83    max_rel=2.90e-01  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=80    max_rel=2.52e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=65    max_rel=5.23e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=59    max_rel=1.83e-01  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=55    max_rel=4.49e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=51    max_rel=1.57e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=50    max_rel=3.57e-02  ← 
-· RSI(7)              api/chart.py:1360 _fts_rsi                   bad=48    max_rel=2.66e-02  ← 
-· RSI(8)              api/chart.py:1360 _fts_rsi                   bad=39    max_rel=7.80e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=37    max_rel=3.80e-02  ← 
-· RSI(14)             api/chart.py:1360 _fts_rsi                   bad=7     max_rel=9.02e-03  ← 
-· FTS input series    api/chart.py:2195 _fts_scaled                bad=1     max_rel=2.78e-02  ← `last` := close×k (خطِ chart.py:2213) ⇒ مبنایِ last درِ سریِ FTS هیچ‌وقت last واقعی نیست
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=7.12e-16  ← variant: ema bad=3708 / cutler-sma bad=3724 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=7.12e-16  ← variant: ema bad=3021 / cutler-sma bad=3144 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.22e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=3783 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=2.09e-16  ← variant: ema bad=4823 / cutler-sma bad=4863 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=2.09e-16  ← variant: ema bad=3865 / cutler-sma bad=4046 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.88e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4950 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.24e-15  ← variant: ema bad=4731 / cutler-sma bad=4721 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.24e-15  ← variant: ema bad=4005 / cutler-sma bad=3995 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.19e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4865 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.17e-16  ← variant: ema bad=3386 / cutler-sma bad=3376 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.17e-16  ← variant: ema bad=2724 / cutler-sma bad=2809 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.66e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=3459 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=4246 / cutler-sma bad=4255 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=3485 / cutler-sma bad=3598 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.22e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4354 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=2.71e-16  ← variant: ema bad=4322 / cutler-sma bad=4337 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=2.71e-16  ← variant: ema bad=3388 / cutler-sma bad=3569 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.18e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4424 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.76e-16  ← variant: ema bad=3781 / cutler-sma bad=3803 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.76e-16  ← variant: ema bad=3074 / cutler-sma bad=3211 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.18e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=3907 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=4137 / cutler-sma bad=4142 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=3266 / cutler-sma bad=3421 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.14e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4217 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=4404 / cutler-sma bad=4417 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=0.00e+00  ← variant: ema bad=3619 / cutler-sma bad=3781 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=3.02e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=4499 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=8.65e-16  ← variant: ema bad=2297 / cutler-sma bad=2298 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=8.65e-16  ← variant: ema bad=1813 / cutler-sma bad=1922 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.07e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=2344 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.25e-16  ← variant: ema bad=3612 / cutler-sma bad=3605 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.25e-16  ← variant: ema bad=2826 / cutler-sma bad=2954 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.21e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=3674 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
-· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.72e-16  ← variant: ema bad=1724 / cutler-sma bad=1723 ⇒ wilder درست
+· RSI(14)             confidence_engine._rsi (scalar, newest-first bad=0     max_rel=1.72e-16  ← variant: ema bad=1366 / cutler-sma bad=1431 ⇒ wilder درست
 · ATR(14)             chartTypes.ts:33 atr = SMA(TR) (Renko/PnF)   bad=0     max_rel=0.00e+00  ← smoothing: SMA نه Wilder ⇒ سومین طعمِ ATR در مخزن
 · BOLL(20,2)          klinecharts 10.0.3 built-in (جمع population) bad=0     max_rel=2.98e-16  ← variant ddof=1 رویِ stdev خودِ TS: bad=1747 ⇒ منبعِ اختلافِ محتملِ ظاهری نه فرمول
 · %K/%D               klinecharts Stochastic از پکیج react-klinech bad=0     max_rel=0.00e+00  ← پکیج درِ node اجرا نمی‌شود (DOM لازم دارد) — فقط source خوانده شد
 · HalfTrend           mabnaIndicators.ts calcHalfTrend (ATR100/2 h bad=0     max_rel=0.00e+00  ← خود-سنجی: فرمول از Pine copy شده؛ ATR period = 100 ثابت (پارامترِ visible نیست)
+· FTS input series    api/chart.py _fts_scaled                     bad=0     max_rel=0.00e+00  ← close باید 216.0 باشد؛ شد 216.0 · last=216.0 closing=210.0
+· FTS input series    api/chart.py _fts_scaled                     bad=0     max_rel=0.00e+00  ← close باید 210.0 باشد؛ شد 210.0 · last=216.0 closing=210.0
 
-report -> C:\Users\PCMOD\Desktop\BorsTerminal\_audit\indicator_audit\report.json (709 rows, 12 symbols)
+report -> C:\Users\PCMOD\Desktop\BorsTerminal\_audit\indicator_audit\report.json (674 rows, 12 symbols)
 TS runtime errors: ['Ichimoku']

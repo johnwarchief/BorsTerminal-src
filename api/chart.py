@@ -888,12 +888,17 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         closes = [(c["time"], float(c["close"])) for c in _ma_rows if c["close"] is not None]
         ma = {}
         for w in MA_WINDOWS:
+            # میانگینِ متحرک = جمعِ پنجره ÷ **عرضِ پنجره**. نسخهٔ پیشین `(i+1)` را
+            # می‌آورد: برایِ i≥w صورتِ کسر درستِ پنجره بود ولی شمارنده بهِ
+            # «شمارِ کلِ سطرها» می‌رفت، پس عددِ ارسالی میانگینِ متحرک نبود بلکه
+            # میانگینِ کلِ تاریخِ نماد (سنجیده: ۴۶٬۴۰۲ از ۴۶٬۴۱۴ نقطه درِ ۱۲ نماد،
+            # خطایِ نسبی ~۹۹٪ — `_audit/indicator_audit/`).
             ser, acc = [], 0.0
             for i, (d, c) in enumerate(closes):
                 acc += c
                 if i >= w:
                     acc -= closes[i - w][1]
-                ser.append([d, round(acc / (i + 1), 2) if i >= w - 1 else None])
+                ser.append([d, round(acc / w, 2) if i >= w - 1 else None])
             ma[f"ma{w}"] = ser
         result = {"status": "ok", "symbol": symbol, "periods": MA_WINDOWS,
                   "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes)}
@@ -1359,7 +1364,21 @@ def _fts_ma(closes, period=14):
 
 def _fts_rsi(closes, period=14):
     """RSI وایلدر — مبنای لایهٔ مومنتوم موتور خروج (واگرایی/چرخش اشباع).
-    خروجی هم‌طول ورودی؛ تا period → None."""
+
+    warmupِ دقیق و deterministic (همان قاعده‌ای که `_audit/indicator_audit/oracle.py`
+    می‌سنجد و `_audit/indicator_audit/cause_probe.py` علتِ انحرافِ پیشین را ثابت کرد):
+      • خروجی هم‌طول ورودی است.
+      • index 0 … period-1 → `None`؛ نخستینِ عدد در index `period` می‌نشیند.
+      • بذر = میانگینِ سادهٔ `period` تغییرِ نخست (i = 1 … period). همین بذر در
+        index `period` **بدونِ گامِ اضافی** گزارش می‌شود و recursionِ وایلدر
+        `avg = (avg·(p−1) + x)/p` از i = period+1 شروع می‌شود.
+      • سریِ کوتاه‌تر از period+2 سطر → همه `None` (کمبودِ داده، نه مردود).
+      • avgLoss ≤ 0 → 100.0 (صعودیِ مطلق)؛ خروجی به یک رقم گرد می‌شود.
+
+    نسخهٔ پیشین تغییرِ i=period را دو بار می‌شمرد (یک بار داخلِ بذر، یک بار به‌عنوان
+    نخستینِ گامِ recursion) پس کلِ warmup یکِ گام جلو افتاده بود: بدترینِ انحراف
+    Δ=۱٫۸۸ واحد رویِ پنجرۀ ۳۵ سطری — در حالی که آستانۀ واگراییِ لایۀ ۴ «۱٫۰ واحد» است.
+    """
     if len(closes) < period + 2:
         return [None] * len(closes)
     gains, losses = 0.0, 0.0
@@ -1368,12 +1387,16 @@ def _fts_rsi(closes, period=14):
         gains += max(ch, 0.0)
         losses += max(-ch, 0.0)
     ag, al = gains / period, losses / period
-    out = [None] * period
-    for i in range(period, len(closes)):
+
+    def _val(a, b):
+        return round(100.0 - 100.0 / (1.0 + a / b), 1) if b > 0 else 100.0
+
+    out = [None] * period + [_val(ag, al)]         # i = period: خودِ بذر، بی‌گامِ اضافی
+    for i in range(period + 1, len(closes)):
         ch = closes[i] - closes[i - 1]
         ag = (ag * (period - 1) + max(ch, 0.0)) / period
         al = (al * (period - 1) + max(-ch, 0.0)) / period
-        out.append(round(100.0 - 100.0 / (1.0 + ag / al), 1) if al > 0 else 100.0)
+        out.append(_val(ag, al))
     return out
 
 
@@ -2199,6 +2222,11 @@ def _fts_scaled(candles, factors, volumes):
     یکسان‌سازی می‌شوند تا موتورِ سرور و موتورِ مرورگر یک ورودی داشته باشند.
     گردکردنِ ریال و تقسیمِ حجم بر ضریب، عینِ `applyAdjustmentToCandles` سمت
     فرانت است (به‌جایِ banker's roundingِ پایتون، پایین‌گردِ +۰٫۵).
+
+    تفاوتِ عمدی با فرانت: آن مسیر `last` ندارد (KLineData آن را نمی‌شناسد)، ولی
+    سریِ FTS باید هر دو ستون را نگه دارد، پس `closing` و `last` هر کدام ×k
+    می‌شوند و `close` از `price_basis.apply_basis` می‌آید. پیش از این `last`
+    با `close × k` بازنویسی می‌شد — یعنی مبنایِ «آخرین» درِ موتورِ خروج جعلی بود.
     """
     fac = {str(x.get("time") or ""): float(x.get("factor") or 1.0)
            for x in (factors or []) if isinstance(x, dict)}
@@ -2216,10 +2244,26 @@ def _fts_scaled(candles, factors, volumes):
         k = fac.get(t[:10], 1.0)
         if not k > 0:
             k = 1.0
-        o, h, l, cl = (float(c.get(x) or 0) for x in ("open", "high", "low", "close"))
+        o, h, l = (float(c.get(x) or 0) for x in ("open", "high", "low"))
+        # سه ستونِ جدا، سه ضریبِ جدا — هیچ‌کدام از دیگری بازسازی نمی‌شود:
+        #   closing = لنگرِ تعدیل (پایانیِ خام) · last = آخرینِ خام · close بعداً
+        #   فقط و فقط از price_basis.apply_basis می‌آید (شرطِ ۱ِ §۱-ث).
+        anchor = c.get("closing")
+        if anchor is None:
+            anchor = c.get("close_raw")
+        if anchor is None:
+            anchor = c.get("close")
+        anchor = float(anchor or 0)
+        ls = c.get("last")
+        ls = float(ls) if ls else None
         v = vol.get(t[:10], float(c.get("volume") or 0))
         out.append({"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
-                    "close": r(cl * k), "last": r(cl * k), "volume": r(v / k)})
+                    "closing": r(anchor * k) if anchor > 0 else None,
+                    "last": r(ls * k) if ls is not None else None,
+                    "volume": r(v / k)})
+    # تنها نقطۀ انتخابِ ستونِ قیمت: `close` اینجا ساخته نمی‌شود، از ریزالویِ
+    # قرارداد می‌آید (و هندسه هم از همان `widen`ِ مشترک عبور می‌کند).
+    price_basis.apply_basis(out)
     out.sort(key=lambda c: c["time"])
     return out
 

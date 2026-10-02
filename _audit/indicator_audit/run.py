@@ -90,6 +90,42 @@ def bucket_last(times, vals, keyfn):
     return out
 
 
+def ma_events_via_endpoint(times, closes, lasts, w_max=120):
+    """خواندنِ واقعیِ `/api/ma` از یکِ بانکِ موقتِ کوچک (بی‌touchِ market.dbِ کاری).
+
+    endpoint خودش را به ۲۰۰۰ سطر آخر محدود می‌کند، پس مرجع هم از همان برش
+    ساخته می‌شود؛ warmupِ داخلیِ endpoint با برشِ پنجره یکی است.
+    """
+    import sqlite3
+    import tempfile
+    n = min(len(closes), 1900)
+    t, cl, ls = times[-n:], closes[-n:], (lasts or [None] * len(closes))[-n:]
+    path = os.path.join(tempfile.mkdtemp(prefix="indaudit_"), "t.db")
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE price_history (symbol TEXT, date TEXT, open REAL, high REAL,"
+                " low REAL, close REAL, volume REAL, last REAL, value REAL, src TEXT,"
+                " PRIMARY KEY (symbol, date))")
+    for i in range(n):
+        con.execute("INSERT OR REPLACE INTO price_history VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    ("AUD", t[i], cl[i], cl[i], cl[i], cl[i], 1e6, None, cl[i] * 1e6, "published"))
+    con.commit()
+    con.close()
+    orig = CH.DB_PATH
+    CH.DB_PATH = path
+    CH.MA_CACHE.clear()
+    try:
+        res = CH.get_ma_events("AUD", days=n)
+        out = {}
+        for w in (5, 10, 20, 50, 100, 120, 200):
+            key = "ma%d" % w
+            if key in (res.get("ma") or {}):
+                out[w] = [p[1] for p in res["ma"][key]]
+        return cl, out, res.get("status")
+    finally:
+        CH.DB_PATH = orig
+        CH.MA_CACHE.clear()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--symbols", default="")
@@ -130,19 +166,20 @@ def main():
               for a, b, x in zip(h, l, c)]
 
         # ── SMA / مووینگ‌ها ────────────────────────────────────────────────
+        ep_closes, ep_ma, ep_status = ma_events_via_endpoint(times, c, last)
         for w in (5, 10, 20, 50, 100, 120, 200):
             ref = O.sma(c, w)
             add("SMA(%d)" % w, "api/chart.py:1348 _fts_ma", "oracle.sma ≡ pandas.rolling.mean",
                 "close (basis-resolved)", CH._fts_ma(c, w), ref)
-            # همان پنجره در /api/ma — حلقۀ api/chart.py:890-897 عیناً
-            ser, acc = [], 0.0
-            for i, x in enumerate(c):
-                acc += x
-                if i >= w:
-                    acc -= c[i - w]
-                ser.append(round(acc / (i + 1), 2) if i >= w - 1 else None)
-            add("SMA(%d)" % w, "api/chart.py:890-897 /api/ma", "oracle.sma ≡ pandas.rolling.mean",
-                "close (basis-resolved)", ser, ref, "شمارند = i+1 (میانگینِ کلِ تاریخ) نه w")
+            if w in ep_ma:
+                # همان پنجره از مسیرِ واقعیِ `/api/ma` (نسخۀ اول این هارنس حلقه را
+                # اینجا copy می‌کرد، پس پس ازِ اصلاحِ محصول هم خطایِ قدیمی را گزارش
+                # می‌داد — حالا خودِ endpoint با بانکِ موقت صدا زده می‌شود).
+                r_ref = O.sma(ep_closes, w)
+                add("SMA(%d)" % w, "api/chart.py /api/ma (endpoint)",
+                    "oracle.sma ≡ pandas.rolling.mean", "close (basis-resolved)",
+                    ep_ma[w], r_ref,
+                    "" if not cmp_series(ep_ma[w], r_ref)["bad"] else "شمارند/پنجره درِ endpoint")
         for w in (14, 20, 50, 100):
             add("SMA(%d)" % w, "lib/indicators.ts:48 sma (TS)", "oracle.sma", "close",
                 tlist(sym, "I.sma%d" % w), O.sma(c, w))
@@ -151,16 +188,18 @@ def main():
                 "close", tlist(sym, "I.ema%d" % w), O.ema(c, w, seed="sma"))
 
         # ── RSI ────────────────────────────────────────────────────────────
+        RT1 = 0.05 + 1e-9      # `_fts_rsi` خروجی را به یک رقم گرد می‌کند (قراردادِ خودش)
         for p in (5, 7, 8, 14):
             ref = O.rsi(c, p, "wilder")
-            add("RSI(%d)" % p, "api/chart.py:1360 _fts_rsi", "oracle.wilder ≡ Wilder1978",
-                "close", CH._fts_rsi(c, p), ref)
+            add("RSI(%d)" % p, "api/chart.py _fts_rsi", "oracle.wilder ≡ Wilder1978",
+                "close", CH._fts_rsi(c, p), ref, rt=RT1)
             add("RSI(%d)" % p, "lib/indicators.ts:372 rsi (TS)", "oracle.wilder", "close",
                 tlist(sym, "I.rsi%d" % p), ref)
             if p == 14:
                 alt_e = O.rsi(c, p, "ema")
                 alt_s = O.rsi(c, p, "sma")
-                r_e, r_s = cmp_series(CH._fts_rsi(c, p), alt_e), cmp_series(CH._fts_rsi(c, p), alt_s)
+                r_e = cmp_series(CH._fts_rsi(c, p), alt_e, rt=RT1)
+                r_s = cmp_series(CH._fts_rsi(c, p), alt_s, rt=RT1)
                 scalar = [None] * (len(c) - 1) + [CE._rsi(list(reversed(c)), p)]
                 add("RSI(14)", "confidence_engine._rsi (scalar, newest-first)", "oracle.wilder",
                     "close", scalar, ref,
@@ -314,17 +353,25 @@ def main():
             % (diff, min(len(sat_closes), len(iso_closes))))
 
     # ── پروبِ قراردادِ سریِ FTS (input price) ──────────────────────────────
+    import price_basis as PB
     probe = [{"time": "2026-01-02", "open": 100.0, "high": 110.0, "low": 95.0,
-              "close": 105.0, "last": 108.0, "volume": 10.0}]
-    scaled = CH._fts_scaled(probe, [{"time": "2026-01-02", "factor": 2.0}], [])
-    rows.append(dict(indicator="FTS input series", impl="api/chart.py:2195 _fts_scaled",
-                     reference="price_basis: last و closing دو ستونِ جدا",
-                     input="last=108 · close=105 · k=2", max_abs=abs(scaled[0]["last"] - 216.0),
-                     mean_abs=abs(scaled[0]["last"] - 216.0),
-                     max_rel=0.0 if scaled[0]["last"] == 216.0 else abs(216.0 - scaled[0]["last"]) / 216.0,
-                     n=1, bad=0 if scaled[0]["last"] == 216.0 else 1, first_bad=None if scaled[0]["last"] == 216.0 else 0,
-                     null_prod=0, null_ref=0,
-                     cause="`last` := close×k (خطِ chart.py:2213) ⇒ مبنایِ last درِ سریِ FTS هیچ‌وقت last واقعی نیست"))
+              "closing": 105.0, "close": 105.0, "last": 108.0, "volume": 10.0}]
+    fac = [{"time": "2026-01-02", "factor": 2.0}]
+    for basis, want_close in (("last", 216.0), ("closing", 210.0)):
+        PB.set_basis(basis)
+        sc = CH._fts_scaled(probe, fac, [])[0]
+        ok_last = sc.get("last") == 216.0 and sc.get("closing") == 210.0
+        rows.append(dict(indicator="FTS input series", impl="api/chart.py _fts_scaled",
+                         reference="price_basis: last و closing دو ستونِ جدا",
+                         input="basis=%s · last=108 · closing=105 · k=2" % basis,
+                         max_abs=abs(float(sc.get("close") or 0) - want_close),
+                         mean_abs=abs(float(sc.get("close") or 0) - want_close),
+                         max_rel=0.0 if sc.get("close") == want_close else 1.0,
+                         n=1, bad=0 if (ok_last and sc.get("close") == want_close) else 1,
+                         first_bad=None if ok_last else 0, null_prod=0, null_ref=0,
+                         cause="close باید %r باشد؛ شد %r · last=%r closing=%r"
+                               % (want_close, sc.get("close"), sc.get("last"), sc.get("closing"))))
+    PB.set_basis("closing")
 
     # ── چاپِ گزارش ─────────────────────────────────────────────────────────
     order = {"WRONG": 0}

@@ -183,9 +183,17 @@ def main():
         ck(_b in chart, "سازندۀ کندل درِ chart.py دست‌نخورده شناسایی می‌شود: %s" % _b[:34], "")
     ck(chart.count('"last": p_last if p_last > 0 else p_close') == 0,
        "NEGATIVE CONTROL: کندلِ زنده دیگر lastِ نبود را با پایانی پر نمی‌کند", "")
-    ck('r(cl * k), "last": r(cl * k)' in chart,
-       "استثنایِ ثبت‌شدۀ قدمِ ۵: `_fts_scaled` هنوز last را از close می‌سازد "
-       "(موتورِ FTS درِ #73 معوق است — گزارشِ قدمِ ۳)", "")
+    # استثنایِ قدمِ ۵ («`_fts_scaled` هنوز last را از close می‌سازد») درِ
+    # ۱۴۰۵-۰۷-۱۴ برداشته شد: ممیزیِ اندیکاتورها همان سه نقص را با عدد ثابت کرد
+    # (docs/INDICATOR-PARITY-1405-07-14.md §۵) و سازندۀ FTS حالا هر ستون را جدا
+    # ضرب می‌کند و `close` را بهِ ریزالویِ خودِ قرارداد می‌سپارد.
+    ck('r(cl * k), "last": r(cl * k)' not in chart,
+       "`_fts_scaled` دیگر last را از close نمی‌سازد (استثنایِ قدمِ ۵ برداشته شد)", "")
+    ck('"last": r(ls * k) if ls is not None else None' in chart
+       and '"closing": r(anchor * k)' in chart,
+       "`_fts_scaled` دو ستون را جدا ضرب می‌کند (closing=لنگر، last=آخرینِ خام یا None)", "")
+    ck("price_basis.apply_basis(out)" in chart,
+       "سریِ FTS بستۀ `close` را از ریزالویِ واحدِ مبن می‌گیرد، نه از ضربِ دستی", "")
 
     # ── ۵) bank-level: two series endpoints with the real columns ────────────
     print("\n[۵] مسیرِ بانک (کپیِ موقت)")

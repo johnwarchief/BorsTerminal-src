@@ -175,6 +175,14 @@ SUITES = [
     # برش‌خورده/حل‌نشده درِ INDEX_CACHE. بی‌شبکه و بی‌market.dbِ واقعی.
     ('dev/stale_wiring_v1073.py',
                                      'fresh data invalidates the dependent caches; no crawler child in the frozen build'),
+    # ممیزیِ اندیکاتورها (۱۴۰۵-۰۷-۱۴، docs/INDICATOR-PARITY-1405-07-14.md): سه خطایِ
+    # عددیِ اثبات‌شده قفل می‌شوند — شمارندِ `/api/ma` (باید عرضِ پنجره باشد)، گامِ
+    # اضافیِ بذر درِ `_fts_rsi` (وایلدرِ خالص؛ بدترینِ انحرافِ پیشین Δ=۱٫۸۸ رویِ پنجرۀ
+    # ۳۵ سطری در برابرِ آستانۀ واگراییِ ۱٫۰)، و `last := close×k` درِ `_fts_scaled`.
+    # مرجع = همان oracleِ `_audit/indicator_audit/` (خودش ۳۲/۰ سبز) رویِ fixtureِ
+    # ۶ نماد × ۳۰۰ کندلِ واقعیِ درِ گیت. بی‌شبکه.
+    ('dev/indicator_math_v1074.py',
+                                     'indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact'),
     # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
     # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
     # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.
