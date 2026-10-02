@@ -160,3 +160,23 @@ frontend/_audit/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 _audit/ra-profile/
+# Reference Parity (کارِ #73): پاسخِ خامِ رهاورد/تپ‌سیت‌مک و گزارشِ ۹ تا ۳۱ مگابایتیِ هر
+# اجرا بازتولیدشدنی‌اند (`python tools/ra_parity.py --symbols "$(cat
+# _audit/parity_symbols.txt)" --timeframes 0,1,2 --basis last,closing`). ابزارِ تحلیل و
+# جمع‌بندیِ کوچکِ آن (`_audit/parity_root_cause.json`) درِ گیت می‌ماند.
+_audit/ra_probe_cache/
+_audit/parity_event_csv/
+_audit/ra_parity_run*.log
+_audit/ra_parity_report_after.json
+_audit/ra_parity_report_v*.json
+_audit/ra_parity_smoke.json
+_audit/ra_parity_eracheck.json
+_audit/ra_parity_volcheck.json
+_audit/ra_parity_foolad_pars.json
+# گزارشِ اجرایِ مرجع درِ گیت می‌ماند (همان چیزی که §۱-ح به آن ارجاع می‌دهد)؛ فقط
+# ستونِ `table` (نمونۀ ۴۲هزار سطری) حذف می‌شود و با همان فرمانِ بالا بازتولید است.
+!_audit/ra_parity_report.json
+_audit/last_blast_radius/csv_cache/
+_audit/last_blast_radius/fetch_stats.json
+_audit/last_blast_radius/partial.jsonl
+price_basis.json

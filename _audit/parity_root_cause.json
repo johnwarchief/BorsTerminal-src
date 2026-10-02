@@ -1,0 +1,2346 @@
+{
+ "report": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit/ra_parity_report.json",
+ "basis": "last",
+ "generated": "2026-10-02T03:48:36",
+ "rows_compared": 919312,
+ "by_mismatch_type": {
+  "reference_missing": 155384,
+  "match": 407326,
+  "aggregation": 14152,
+  "adjustment": 285320,
+  "field_mapping": 2902,
+  "rounding": 1756,
+  "missing_candle": 52472
+ },
+ "aggregation_vs_adjustment": {
+  "aggregation": {
+   "tf0|high": 5334,
+   "tf0|low": 1797,
+   "tf1|low": 324,
+   "tf1|high": 756,
+   "tf2|low": 66,
+   "tf2|high": 134
+  },
+  "adjustment": {
+   "tf1|high": 125,
+   "tf1|close": 128,
+   "tf2|close": 35,
+   "tf0|open": 525,
+   "tf0|high": 520,
+   "tf0|low": 526,
+   "tf0|close": 526,
+   "tf1|open": 126,
+   "tf1|low": 126,
+   "tf2|open": 33,
+   "tf2|high": 34,
+   "tf2|low": 34
+  }
+ },
+ "ladder_classes": {
+  "same_day": 101,
+  "shifted": 246,
+  "only_ours": 171,
+  "only_theirs": 111
+ },
+ "ladder_per_symbol": [
+  {
+   "symbol": "وبملت",
+   "our_events": 25,
+   "ref_steps": 20,
+   "same_day": 4,
+   "shifted": 11,
+   "only_ours": 10,
+   "only_theirs": 5,
+   "only_ours_dates": [
+    "2009-07-25",
+    "2010-07-25",
+    "2012-09-26",
+    "2020-07-25",
+    "2020-07-26",
+    "2022-06-25",
+    "2022-06-26",
+    "2025-07-26",
+    "2025-08-03",
+    "2026-04-05"
+   ],
+   "only_theirs_dates": [
+    "2012-10-20",
+    "2020-09-12",
+    "2022-06-26",
+    "2025-08-05",
+    "2026-05-19"
+   ],
+   "only_theirs_ratios": [
+    1.655508,
+    4.146565,
+    1.297592,
+    2.040134,
+    1.422325
+   ],
+   "only_ours_not_candles": [
+    "2009-07-25",
+    "2010-07-25",
+    "2012-09-26",
+    "2020-07-25",
+    "2020-07-26",
+    "2022-06-25",
+    "2025-07-26",
+    "2025-08-03",
+    "2026-04-05"
+   ]
+  },
+  {
+   "symbol": "شپنا",
+   "our_events": 26,
+   "ref_steps": 24,
+   "same_day": 5,
+   "shifted": 15,
+   "only_ours": 6,
+   "only_theirs": 4,
+   "only_ours_dates": [
+    "2009-07-26",
+    "2012-07-23",
+    "2014-03-16",
+    "2014-08-05",
+    "2015-07-27",
+    "2015-07-28"
+   ],
+   "only_theirs_dates": [
+    "2013-02-09",
+    "2015-03-17",
+    "2015-08-10",
+    "2020-05-26"
+   ],
+   "only_theirs_ratios": [
+    1.122624,
+    2.772126,
+    2.215584,
+    1.000534
+   ],
+   "only_ours_not_candles": [
+    "2009-07-26",
+    "2012-07-23",
+    "2014-03-16",
+    "2014-08-05",
+    "2015-07-27",
+    "2015-07-28"
+   ]
+  },
+  {
+   "symbol": "شكيميا",
+   "our_events": 0,
+   "ref_steps": 0,
+   "same_day": 0,
+   "shifted": 0,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "فخوز",
+   "our_events": 28,
+   "ref_steps": 23,
+   "same_day": 5,
+   "shifted": 17,
+   "only_ours": 6,
+   "only_theirs": 1,
+   "only_ours_dates": [
+    "2009-06-23",
+    "2010-07-25",
+    "2016-07-24",
+    "2016-07-26",
+    "2016-07-27",
+    "2016-07-31"
+   ],
+   "only_theirs_dates": [
+    "2016-08-01"
+   ],
+   "only_theirs_ratios": [
+    1.061008
+   ],
+   "only_ours_not_candles": [
+    "2009-06-23",
+    "2010-07-25",
+    "2016-07-24",
+    "2016-07-26",
+    "2016-07-27",
+    "2016-07-31"
+   ]
+  },
+  {
+   "symbol": "خودرو",
+   "our_events": 13,
+   "ref_steps": 12,
+   "same_day": 2,
+   "shifted": 7,
+   "only_ours": 4,
+   "only_theirs": 3,
+   "only_ours_dates": [
+    "2010-07-25",
+    "2013-01-08",
+    "2014-03-17",
+    "2020-03-24"
+   ],
+   "only_theirs_dates": [
+    "2013-02-16",
+    "2014-04-08",
+    "2020-05-16"
+   ],
+   "only_theirs_ratios": [
+    1.043233,
+    1.142487,
+    19.71891
+   ],
+   "only_ours_not_candles": [
+    "2013-01-08",
+    "2014-03-17",
+    "2020-03-24"
+   ]
+  },
+  {
+   "symbol": "صبا",
+   "our_events": 3,
+   "ref_steps": 3,
+   "same_day": 0,
+   "shifted": 3,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "دلقما",
+   "our_events": 25,
+   "ref_steps": 20,
+   "same_day": 1,
+   "shifted": 16,
+   "only_ours": 8,
+   "only_theirs": 3,
+   "only_ours_dates": [
+    "2009-06-21",
+    "2010-06-22",
+    "2013-07-24",
+    "2013-07-29",
+    "2017-07-18",
+    "2017-07-19",
+    "2021-12-26",
+    "2026-04-12"
+   ],
+   "only_theirs_dates": [
+    "2017-07-26",
+    "2022-01-18",
+    "2026-05-23"
+   ],
+   "only_theirs_ratios": [
+    1.817477,
+    9.994505,
+    1.519603
+   ],
+   "only_ours_not_candles": [
+    "2009-06-21",
+    "2013-07-24",
+    "2017-07-18",
+    "2017-07-19",
+    "2021-12-26",
+    "2026-04-12"
+   ]
+  },
+  {
+   "symbol": "شستا",
+   "our_events": 9,
+   "ref_steps": 11,
+   "same_day": 3,
+   "shifted": 3,
+   "only_ours": 3,
+   "only_theirs": 5,
+   "only_ours_dates": [
+    "2020-10-18",
+    "2021-10-20",
+    "2022-01-23"
+   ],
+   "only_theirs_dates": [
+    "2020-11-17",
+    "2021-11-06",
+    "2022-03-02",
+    "2025-06-10",
+    "2025-06-11"
+   ],
+   "only_theirs_ratios": [
+    1.033389,
+    1.11588,
+    11.578947,
+    0.999321,
+    1.00068
+   ],
+   "only_ours_not_candles": [
+    "2020-10-18",
+    "2021-10-20",
+    "2022-01-23"
+   ]
+  },
+  {
+   "symbol": "كگل",
+   "our_events": 57,
+   "ref_steps": 32,
+   "same_day": 3,
+   "shifted": 17,
+   "only_ours": 37,
+   "only_theirs": 12,
+   "only_ours_dates": [
+    "2009-06-23",
+    "2010-07-04",
+    "2010-07-05",
+    "2010-07-11",
+    "2011-06-22",
+    "2011-06-26",
+    "2015-07-25",
+    "2015-07-27",
+    "2016-08-16",
+    "2018-07-01",
+    "2018-07-02",
+    "2018-07-03",
+    "2019-07-03",
+    "2019-07-06",
+    "2019-07-07",
+    "2019-07-08",
+    "2020-07-08",
+    "2020-07-11",
+    "2020-07-12",
+    "2021-07-07"
+   ],
+   "only_theirs_dates": [
+    "2011-06-27",
+    "2015-09-12",
+    "2016-09-06",
+    "2018-07-03",
+    "2019-07-08",
+    "2020-05-26",
+    "2020-07-12",
+    "2021-07-11",
+    "2022-07-19",
+    "2023-07-05",
+    "2024-07-03",
+    "2026-05-26"
+   ],
+   "only_theirs_ratios": [
+    2.063502,
+    1.411137,
+    1.141414,
+    1.116234,
+    1.115335,
+    1.000611,
+    1.028348,
+    1.056626,
+    1.047156,
+    1.04502,
+    1.098534,
+    1.154657
+   ],
+   "only_ours_not_candles": [
+    "2010-07-04",
+    "2010-07-05",
+    "2010-07-11",
+    "2011-06-22",
+    "2011-06-26",
+    "2015-07-25",
+    "2015-07-27",
+    "2016-08-16",
+    "2018-07-01",
+    "2018-07-02",
+    "2019-07-03",
+    "2019-07-06",
+    "2019-07-07",
+    "2020-07-08",
+    "2020-07-11",
+    "2021-07-07",
+    "2021-07-10",
+    "2022-07-12",
+    "2022-07-13",
+    "2022-07-17",
+    "2023-07-03",
+    "2023-07-04",
+    "2024-06-30",
+    "2024-07-01",
+    "2024-07-02",
+    "2025-07-16",
+    "2025-07-20",
+    "2026-04-05",
+    "2026-05-24",
+    "2026-05-25"
+   ]
+  },
+  {
+   "symbol": "مبين",
+   "our_events": 15,
+   "ref_steps": 15,
+   "same_day": 4,
+   "shifted": 8,
+   "only_ours": 3,
+   "only_theirs": 3,
+   "only_ours_dates": [
+    "2017-05-17",
+    "2023-07-16",
+    "2026-07-20"
+   ],
+   "only_theirs_dates": [
+    "2017-06-20",
+    "2023-08-05",
+    "2026-09-08"
+   ],
+   "only_theirs_ratios": [
+    1.240317,
+    1.147372,
+    1.122982
+   ],
+   "only_ours_not_candles": [
+    "2017-05-17",
+    "2023-07-16",
+    "2026-07-20"
+   ]
+  },
+  {
+   "symbol": "ثامان",
+   "our_events": 19,
+   "ref_steps": 17,
+   "same_day": 2,
+   "shifted": 14,
+   "only_ours": 3,
+   "only_theirs": 1,
+   "only_ours_dates": [
+    "2009-01-25",
+    "2010-02-10",
+    "2011-01-24"
+   ],
+   "only_theirs_dates": [
+    "2025-02-22"
+   ],
+   "only_theirs_ratios": [
+    1.000731
+   ],
+   "only_ours_not_candles": [
+    "2011-01-24"
+   ]
+  },
+  {
+   "symbol": "كاريز",
+   "our_events": 5,
+   "ref_steps": 4,
+   "same_day": 0,
+   "shifted": 3,
+   "only_ours": 2,
+   "only_theirs": 1,
+   "only_ours_dates": [
+    "2025-06-29",
+    "2025-10-19"
+   ],
+   "only_theirs_dates": [
+    "2025-10-26"
+   ],
+   "only_theirs_ratios": [
+    1.023132
+   ],
+   "only_ours_not_candles": [
+    "2025-06-29",
+    "2025-10-19"
+   ]
+  },
+  {
+   "symbol": "سباقر",
+   "our_events": 3,
+   "ref_steps": 2,
+   "same_day": 1,
+   "shifted": 1,
+   "only_ours": 1,
+   "only_theirs": 0,
+   "only_ours_dates": [
+    "2025-01-15"
+   ],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "اسياتك",
+   "our_events": 10,
+   "ref_steps": 9,
+   "same_day": 1,
+   "shifted": 8,
+   "only_ours": 1,
+   "only_theirs": 0,
+   "only_ours_dates": [
+    "2024-05-26"
+   ],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "اخابر",
+   "our_events": 21,
+   "ref_steps": 18,
+   "same_day": 6,
+   "shifted": 6,
+   "only_ours": 9,
+   "only_theirs": 6,
+   "only_ours_dates": [
+    "2009-02-11",
+    "2009-07-26",
+    "2013-05-06",
+    "2016-05-23",
+    "2016-05-24",
+    "2016-05-25",
+    "2020-07-01",
+    "2022-07-17",
+    "2025-04-06"
+   ],
+   "only_theirs_dates": [
+    "2013-05-22",
+    "2016-06-19",
+    "2020-08-10",
+    "2022-08-14",
+    "2023-07-10",
+    "2025-04-27"
+   ],
+   "only_theirs_ratios": [
+    1.217949,
+    1.156577,
+    1.01418,
+    1.012384,
+    1.000864,
+    16.0
+   ],
+   "only_ours_not_candles": [
+    "2009-02-11",
+    "2009-07-26",
+    "2013-05-06",
+    "2016-05-23",
+    "2016-05-24",
+    "2016-05-25",
+    "2020-07-01",
+    "2022-07-17",
+    "2025-04-06"
+   ]
+  },
+  {
+   "symbol": "غپينو",
+   "our_events": 27,
+   "ref_steps": 25,
+   "same_day": 4,
+   "shifted": 19,
+   "only_ours": 4,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2008-12-13",
+    "2009-07-13",
+    "2020-04-26",
+    "2026-04-06"
+   ],
+   "only_theirs_dates": [
+    "2020-05-19",
+    "2026-05-20"
+   ],
+   "only_theirs_ratios": [
+    5.255785,
+    5.824742
+   ],
+   "only_ours_not_candles": [
+    "2008-12-13",
+    "2009-07-13",
+    "2020-04-26",
+    "2026-04-06"
+   ]
+  },
+  {
+   "symbol": "بورس",
+   "our_events": 18,
+   "ref_steps": 14,
+   "same_day": 4,
+   "shifted": 5,
+   "only_ours": 9,
+   "only_theirs": 5,
+   "only_ours_dates": [
+    "2017-07-18",
+    "2019-07-22",
+    "2019-07-27",
+    "2020-09-13",
+    "2020-09-20",
+    "2021-07-27",
+    "2021-09-29",
+    "2026-07-25",
+    "2026-07-26"
+   ],
+   "only_theirs_dates": [
+    "2017-08-19",
+    "2019-07-27",
+    "2020-10-06",
+    "2021-11-15",
+    "2026-07-26"
+   ],
+   "only_theirs_ratios": [
+    1.012121,
+    1.354225,
+    2.007136,
+    3.542718,
+    1.34398
+   ],
+   "only_ours_not_candles": [
+    "2017-07-18",
+    "2019-07-22",
+    "2020-09-13",
+    "2020-09-20",
+    "2021-07-27",
+    "2021-09-29",
+    "2026-07-25"
+   ]
+  },
+  {
+   "symbol": "سمگا",
+   "our_events": 24,
+   "ref_steps": 22,
+   "same_day": 9,
+   "shifted": 8,
+   "only_ours": 7,
+   "only_theirs": 5,
+   "only_ours_dates": [
+    "2012-05-02",
+    "2016-02-15",
+    "2016-02-16",
+    "2023-07-25",
+    "2023-07-26",
+    "2025-07-26",
+    "2026-04-21"
+   ],
+   "only_theirs_dates": [
+    "2013-04-15",
+    "2016-02-22",
+    "2023-07-29",
+    "2025-08-23",
+    "2026-05-24"
+   ],
+   "only_theirs_ratios": [
+    1.167516,
+    2.36205,
+    1.643326,
+    1.132878,
+    1.249886
+   ],
+   "only_ours_not_candles": [
+    "2012-05-02",
+    "2016-02-15",
+    "2016-02-16",
+    "2023-07-25",
+    "2023-07-26",
+    "2025-07-26",
+    "2026-04-21"
+   ]
+  },
+  {
+   "symbol": "كماسه",
+   "our_events": 24,
+   "ref_steps": 19,
+   "same_day": 2,
+   "shifted": 13,
+   "only_ours": 9,
+   "only_theirs": 4,
+   "only_ours_dates": [
+    "2009-07-05",
+    "2010-06-28",
+    "2020-04-05",
+    "2020-04-06",
+    "2021-09-12",
+    "2021-09-13",
+    "2023-07-08",
+    "2023-07-09",
+    "2026-05-03"
+   ],
+   "only_theirs_dates": [
+    "2020-08-09",
+    "2021-09-15",
+    "2023-07-11",
+    "2026-05-23"
+   ],
+   "only_theirs_ratios": [
+    1.000648,
+    8.414343,
+    1.631653,
+    1.428571
+   ],
+   "only_ours_not_candles": [
+    "2009-07-05",
+    "2020-04-05",
+    "2020-04-06",
+    "2021-09-12",
+    "2021-09-13",
+    "2023-07-08",
+    "2023-07-09",
+    "2026-05-03"
+   ]
+  },
+  {
+   "symbol": "حفارس",
+   "our_events": 5,
+   "ref_steps": 5,
+   "same_day": 1,
+   "shifted": 2,
+   "only_ours": 2,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2019-03-13",
+    "2023-05-30"
+   ],
+   "only_theirs_dates": [
+    "2019-04-08",
+    "2023-07-11"
+   ],
+   "only_theirs_ratios": [
+    7.230351,
+    7.811111
+   ],
+   "only_ours_not_candles": [
+    "2019-03-13",
+    "2023-05-30"
+   ]
+  },
+  {
+   "symbol": "حفاري",
+   "our_events": 23,
+   "ref_steps": 19,
+   "same_day": 6,
+   "shifted": 11,
+   "only_ours": 6,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2009-07-22",
+    "2009-08-23",
+    "2010-07-21",
+    "2017-07-16",
+    "2024-07-09",
+    "2024-07-17"
+   ],
+   "only_theirs_dates": [
+    "2017-08-27",
+    "2024-07-21"
+   ],
+   "only_theirs_ratios": [
+    1.022861,
+    2.145631
+   ],
+   "only_ours_not_candles": [
+    "2010-07-21",
+    "2017-07-16",
+    "2024-07-09",
+    "2024-07-17"
+   ]
+  },
+  {
+   "symbol": "كپشير",
+   "our_events": 29,
+   "ref_steps": 20,
+   "same_day": 2,
+   "shifted": 14,
+   "only_ours": 13,
+   "only_theirs": 4,
+   "only_ours_dates": [
+    "2009-05-23",
+    "2010-05-26",
+    "2017-05-22",
+    "2017-05-29",
+    "2017-05-30",
+    "2017-05-31",
+    "2021-07-27",
+    "2023-06-07",
+    "2023-06-10",
+    "2023-06-11",
+    "2024-06-16",
+    "2024-06-18",
+    "2024-06-19"
+   ],
+   "only_theirs_dates": [
+    "2017-06-06",
+    "2021-08-23",
+    "2023-06-11",
+    "2024-06-19"
+   ],
+   "only_theirs_ratios": [
+    2.093924,
+    1.023418,
+    1.069726,
+    1.134104
+   ],
+   "only_ours_not_candles": [
+    "2009-05-23",
+    "2010-05-26",
+    "2017-05-22",
+    "2017-05-29",
+    "2017-05-30",
+    "2017-05-31",
+    "2021-07-27",
+    "2023-06-07",
+    "2023-06-10",
+    "2024-06-16",
+    "2024-06-18"
+   ]
+  },
+  {
+   "symbol": "چاپ",
+   "our_events": 1,
+   "ref_steps": 1,
+   "same_day": 0,
+   "shifted": 1,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "لبن",
+   "our_events": 1,
+   "ref_steps": 1,
+   "same_day": 1,
+   "shifted": 0,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "بترانس",
+   "our_events": 27,
+   "ref_steps": 21,
+   "same_day": 7,
+   "shifted": 12,
+   "only_ours": 8,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2009-07-13",
+    "2010-06-20",
+    "2011-06-07",
+    "2011-06-08",
+    "2017-07-04",
+    "2017-07-08",
+    "2017-07-09",
+    "2017-07-10"
+   ],
+   "only_theirs_dates": [
+    "2011-06-11",
+    "2017-07-10"
+   ],
+   "only_theirs_ratios": [
+    5.00055,
+    1.042634
+   ],
+   "only_ours_not_candles": [
+    "2011-06-07",
+    "2011-06-08",
+    "2017-07-04",
+    "2017-07-08",
+    "2017-07-09"
+   ]
+  },
+  {
+   "symbol": "پي پاد",
+   "our_events": 6,
+   "ref_steps": 6,
+   "same_day": 1,
+   "shifted": 5,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "فاراك",
+   "our_events": 17,
+   "ref_steps": 16,
+   "same_day": 3,
+   "shifted": 9,
+   "only_ours": 5,
+   "only_theirs": 4,
+   "only_ours_dates": [
+    "2012-05-02",
+    "2016-03-30",
+    "2017-01-24",
+    "2026-02-01",
+    "2026-02-08"
+   ],
+   "only_theirs_dates": [
+    "2012-05-23",
+    "2016-05-01",
+    "2017-03-12",
+    "2026-02-09"
+   ],
+   "only_theirs_ratios": [
+    1.20229,
+    2.858656,
+    1.019246,
+    1.24708
+   ],
+   "only_ours_not_candles": [
+    "2012-05-02",
+    "2016-03-30",
+    "2017-01-24",
+    "2026-02-01",
+    "2026-02-08"
+   ]
+  },
+  {
+   "symbol": "قاسم",
+   "our_events": 20,
+   "ref_steps": 20,
+   "same_day": 11,
+   "shifted": 7,
+   "only_ours": 2,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2020-07-26",
+    "2026-04-12"
+   ],
+   "only_theirs_dates": [
+    "2020-09-07",
+    "2026-05-20"
+   ],
+   "only_theirs_ratios": [
+    4.875271,
+    4.133571
+   ],
+   "only_ours_not_candles": [
+    "2020-07-26",
+    "2026-04-12"
+   ]
+  },
+  {
+   "symbol": "مهرمام",
+   "our_events": 6,
+   "ref_steps": 5,
+   "same_day": 3,
+   "shifted": 2,
+   "only_ours": 1,
+   "only_theirs": 0,
+   "only_ours_dates": [
+    "2025-02-25"
+   ],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "نيان2",
+   "our_events": 7,
+   "ref_steps": 29,
+   "same_day": 0,
+   "shifted": 0,
+   "only_ours": 7,
+   "only_theirs": 29,
+   "only_ours_dates": [
+    "2023-07-12",
+    "2024-03-04",
+    "2024-07-03",
+    "2024-10-09",
+    "2025-07-08",
+    "2026-07-12",
+    "2026-07-22"
+   ],
+   "only_theirs_dates": [
+    "2023-10-01",
+    "2023-10-04",
+    "2023-12-16",
+    "2023-12-20",
+    "2023-12-23",
+    "2023-12-25",
+    "2023-12-26",
+    "2023-12-27",
+    "2024-01-21",
+    "2024-02-24",
+    "2024-03-30",
+    "2024-05-07",
+    "2024-05-18",
+    "2024-07-03",
+    "2024-07-06",
+    "2024-07-31",
+    "2024-08-26",
+    "2024-12-07",
+    "2025-02-09",
+    "2025-04-19"
+   ],
+   "only_theirs_ratios": [
+    1.049037,
+    0.999009,
+    1.006153,
+    0.964139,
+    0.988509,
+    1.048934,
+    0.947464,
+    1.016311,
+    1.011351,
+    0.988665,
+    1.037729,
+    0.969663,
+    0.992398,
+    1.021852,
+    0.993146,
+    1.079618,
+    0.938099,
+    1.035448,
+    1.027057,
+    0.944697
+   ],
+   "only_ours_not_candles": [
+    "2023-07-12",
+    "2024-03-04",
+    "2024-10-09",
+    "2026-07-22"
+   ]
+  },
+  {
+   "symbol": "انتخاب",
+   "our_events": 5,
+   "ref_steps": 5,
+   "same_day": 3,
+   "shifted": 1,
+   "only_ours": 1,
+   "only_theirs": 1,
+   "only_ours_dates": [
+    "2024-04-30"
+   ],
+   "only_theirs_dates": [
+    "2024-06-09"
+   ],
+   "only_theirs_ratios": [
+    15.566667
+   ],
+   "only_ours_not_candles": [
+    "2024-04-30"
+   ]
+  },
+  {
+   "symbol": "قچار",
+   "our_events": 16,
+   "ref_steps": 15,
+   "same_day": 6,
+   "shifted": 8,
+   "only_ours": 2,
+   "only_theirs": 1,
+   "only_ours_dates": [
+    "2021-04-27",
+    "2021-07-26"
+   ],
+   "only_theirs_dates": [
+    "2021-07-26"
+   ],
+   "only_theirs_ratios": [
+    4.392142
+   ],
+   "only_ours_not_candles": [
+    "2021-04-27"
+   ]
+  },
+  {
+   "symbol": "كيسون",
+   "our_events": 3,
+   "ref_steps": 3,
+   "same_day": 1,
+   "shifted": 0,
+   "only_ours": 2,
+   "only_theirs": 2,
+   "only_ours_dates": [
+    "2025-01-21",
+    "2025-07-26"
+   ],
+   "only_theirs_dates": [
+    "2025-07-07",
+    "2025-08-16"
+   ],
+   "only_theirs_ratios": [
+    0.975789,
+    1.005894
+   ],
+   "only_ours_not_candles": [
+    "2025-07-26"
+   ]
+  },
+  {
+   "symbol": "عيار",
+   "our_events": 0,
+   "ref_steps": 2,
+   "same_day": 0,
+   "shifted": 0,
+   "only_ours": 0,
+   "only_theirs": 2,
+   "only_ours_dates": [],
+   "only_theirs_dates": [
+    "2021-12-15",
+    "2021-12-18"
+   ],
+   "only_theirs_ratios": [
+    0.994689,
+    1.00537
+   ],
+   "only_ours_not_candles": []
+  },
+  {
+   "symbol": "تعاون1405",
+   "our_events": 0,
+   "ref_steps": 0,
+   "same_day": 0,
+   "shifted": 0,
+   "only_ours": 0,
+   "only_theirs": 0,
+   "only_ours_dates": [],
+   "only_theirs_dates": [],
+   "only_theirs_ratios": [],
+   "only_ours_not_candles": []
+  }
+ ],
+ "era_offsets": [
+  {
+   "symbol": "اسياتك",
+   "err_rows": 37,
+   "median_rel_err": 0.001785,
+   "spread": 0.0,
+   "first": "2022-04-27",
+   "last": "2022-06-29",
+   "flat_era": true
+  },
+  {
+   "symbol": "عيار",
+   "err_rows": 1,
+   "median_rel_err": 0.005365,
+   "spread": 0.0,
+   "first": "2021-12-15",
+   "last": "2021-12-15",
+   "flat_era": true
+  },
+  {
+   "symbol": "كيسون",
+   "err_rows": 38,
+   "median_rel_err": 0.02421,
+   "spread": 0.0,
+   "first": "2025-01-21",
+   "last": "2025-03-25",
+   "flat_era": true
+  },
+  {
+   "symbol": "نيان2",
+   "err_rows": 29,
+   "median_rel_err": 0.900036,
+   "spread": 0.964594,
+   "first": "2023-09-02",
+   "last": "2026-09-05",
+   "flat_era": false
+  }
+ ],
+ "volume_rules": [
+  {
+   "tf": 1,
+   "buckets_shared": 725,
+   "volume": {
+    "compared": 725,
+    "match_within_0.5pct": 724,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 725,
+    "match_within_0.5pct": 12,
+    "median_our_over_reference": 4.8224
+   },
+   "median_our_sum_over_our_first": 4.822,
+   "symbol": "وبملت",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 176,
+   "volume": {
+    "compared": 176,
+    "match_within_0.5pct": 173,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 176,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.8698
+   },
+   "median_our_sum_over_our_first": 21.724,
+   "symbol": "وبملت",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 685,
+   "volume": {
+    "compared": 685,
+    "match_within_0.5pct": 684,
+    "median_our_over_reference": 0.9995
+   },
+   "volume_sum": {
+    "compared": 685,
+    "match_within_0.5pct": 10,
+    "median_our_over_reference": 4.7069
+   },
+   "median_our_sum_over_our_first": 4.709,
+   "symbol": "شپنا",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 166,
+   "volume": {
+    "compared": 166,
+    "match_within_0.5pct": 159,
+    "median_our_over_reference": 0.9995
+   },
+   "volume_sum": {
+    "compared": 166,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 25.6131
+   },
+   "median_our_sum_over_our_first": 25.613,
+   "symbol": "شپنا",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 1,
+   "volume": {
+    "compared": 1,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 1,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 1.0
+   },
+   "median_our_sum_over_our_first": 1.0,
+   "symbol": "شكيميا",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 1,
+   "volume": {
+    "compared": 1,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 1,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 1.0
+   },
+   "median_our_sum_over_our_first": 1.0,
+   "symbol": "شكيميا",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 736,
+   "volume": {
+    "compared": 736,
+    "match_within_0.5pct": 735,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 736,
+    "match_within_0.5pct": 9,
+    "median_our_over_reference": 4.9597
+   },
+   "median_our_sum_over_our_first": 4.96,
+   "symbol": "فخوز",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 179,
+   "volume": {
+    "compared": 179,
+    "match_within_0.5pct": 166,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 179,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 20.5584
+   },
+   "median_our_sum_over_our_first": 20.326,
+   "symbol": "فخوز",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 741,
+   "volume": {
+    "compared": 741,
+    "match_within_0.5pct": 741,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 741,
+    "match_within_0.5pct": 12,
+    "median_our_over_reference": 4.758
+   },
+   "median_our_sum_over_our_first": 4.758,
+   "symbol": "خودرو",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 183,
+   "volume": {
+    "compared": 183,
+    "match_within_0.5pct": 182,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 183,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 22.192
+   },
+   "median_our_sum_over_our_first": 22.192,
+   "symbol": "خودرو",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 133,
+   "volume": {
+    "compared": 133,
+    "match_within_0.5pct": 132,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 133,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 4.395
+   },
+   "median_our_sum_over_our_first": 4.395,
+   "symbol": "صبا",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 34,
+   "volume": {
+    "compared": 34,
+    "match_within_0.5pct": 34,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 34,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 25.2705
+   },
+   "median_our_sum_over_our_first": 25.271,
+   "symbol": "صبا",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 768,
+   "volume": {
+    "compared": 768,
+    "match_within_0.5pct": 768,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 768,
+    "match_within_0.5pct": 16,
+    "median_our_over_reference": 4.7465
+   },
+   "median_our_sum_over_our_first": 4.746,
+   "symbol": "دلقما",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 185,
+   "volume": {
+    "compared": 185,
+    "match_within_0.5pct": 170,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 185,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 22.3342
+   },
+   "median_our_sum_over_our_first": 22.334,
+   "symbol": "دلقما",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 304,
+   "volume": {
+    "compared": 304,
+    "match_within_0.5pct": 304,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 304,
+    "match_within_0.5pct": 5,
+    "median_our_over_reference": 4.5652
+   },
+   "median_our_sum_over_our_first": 4.565,
+   "symbol": "شستا",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 76,
+   "volume": {
+    "compared": 76,
+    "match_within_0.5pct": 76,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 76,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 22.7837
+   },
+   "median_our_sum_over_our_first": 22.784,
+   "symbol": "شستا",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 745,
+   "volume": {
+    "compared": 745,
+    "match_within_0.5pct": 745,
+    "median_our_over_reference": 0.9994
+   },
+   "volume_sum": {
+    "compared": 745,
+    "match_within_0.5pct": 18,
+    "median_our_over_reference": 4.6604
+   },
+   "median_our_sum_over_our_first": 4.66,
+   "symbol": "كگل",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 179,
+   "volume": {
+    "compared": 179,
+    "match_within_0.5pct": 160,
+    "median_our_over_reference": 0.9994
+   },
+   "volume_sum": {
+    "compared": 179,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.4514
+   },
+   "median_our_sum_over_our_first": 20.933,
+   "symbol": "كگل",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 529,
+   "volume": {
+    "compared": 529,
+    "match_within_0.5pct": 528,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 529,
+    "match_within_0.5pct": 8,
+    "median_our_over_reference": 5.0809
+   },
+   "median_our_sum_over_our_first": 5.081,
+   "symbol": "مبين",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 129,
+   "volume": {
+    "compared": 129,
+    "match_within_0.5pct": 120,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 129,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.088
+   },
+   "median_our_sum_over_our_first": 20.951,
+   "symbol": "مبين",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 768,
+   "volume": {
+    "compared": 768,
+    "match_within_0.5pct": 767,
+    "median_our_over_reference": 0.9993
+   },
+   "volume_sum": {
+    "compared": 768,
+    "match_within_0.5pct": 17,
+    "median_our_over_reference": 5.1485
+   },
+   "median_our_sum_over_our_first": 5.152,
+   "symbol": "ثامان",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 186,
+   "volume": {
+    "compared": 186,
+    "match_within_0.5pct": 174,
+    "median_our_over_reference": 0.9993
+   },
+   "volume_sum": {
+    "compared": 186,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 32.9426
+   },
+   "median_our_sum_over_our_first": 32.604,
+   "symbol": "ثامان",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 148,
+   "volume": {
+    "compared": 148,
+    "match_within_0.5pct": 148,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 148,
+    "match_within_0.5pct": 3,
+    "median_our_over_reference": 5.2492
+   },
+   "median_our_sum_over_our_first": 5.249,
+   "symbol": "كاريز",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 38,
+   "volume": {
+    "compared": 38,
+    "match_within_0.5pct": 36,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 38,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 24.2083
+   },
+   "median_our_sum_over_our_first": 24.208,
+   "symbol": "كاريز",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 77,
+   "volume": {
+    "compared": 77,
+    "match_within_0.5pct": 77,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 77,
+    "match_within_0.5pct": 2,
+    "median_our_over_reference": 4.3619
+   },
+   "median_our_sum_over_our_first": 4.362,
+   "symbol": "سباقر",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 20,
+   "volume": {
+    "compared": 20,
+    "match_within_0.5pct": 20,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 20,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 30.29
+   },
+   "median_our_sum_over_our_first": 30.29,
+   "symbol": "سباقر",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 215,
+   "volume": {
+    "compared": 215,
+    "match_within_0.5pct": 213,
+    "median_our_over_reference": 1.0018
+   },
+   "volume_sum": {
+    "compared": 215,
+    "match_within_0.5pct": 4,
+    "median_our_over_reference": 5.4035
+   },
+   "median_our_sum_over_our_first": 5.402,
+   "symbol": "اسياتك",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 53,
+   "volume": {
+    "compared": 53,
+    "match_within_0.5pct": 47,
+    "median_our_over_reference": 1.0018
+   },
+   "volume_sum": {
+    "compared": 53,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 20.8415
+   },
+   "median_our_sum_over_our_first": 20.804,
+   "symbol": "اسياتك",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 747,
+   "volume": {
+    "compared": 747,
+    "match_within_0.5pct": 747,
+    "median_our_over_reference": 0.9991
+   },
+   "volume_sum": {
+    "compared": 747,
+    "match_within_0.5pct": 11,
+    "median_our_over_reference": 5.201
+   },
+   "median_our_sum_over_our_first": 5.205,
+   "symbol": "اخابر",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 182,
+   "volume": {
+    "compared": 182,
+    "match_within_0.5pct": 176,
+    "median_our_over_reference": 0.9991
+   },
+   "volume_sum": {
+    "compared": 182,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 27.7096
+   },
+   "median_our_sum_over_our_first": 27.696,
+   "symbol": "اخابر",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 772,
+   "volume": {
+    "compared": 772,
+    "match_within_0.5pct": 771,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 772,
+    "match_within_0.5pct": 20,
+    "median_our_over_reference": 4.671
+   },
+   "median_our_sum_over_our_first": 4.671,
+   "symbol": "غپينو",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 185,
+   "volume": {
+    "compared": 185,
+    "match_within_0.5pct": 174,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 185,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 23.3066
+   },
+   "median_our_sum_over_our_first": 23.307,
+   "symbol": "غپينو",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 460,
+   "volume": {
+    "compared": 460,
+    "match_within_0.5pct": 459,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 460,
+    "match_within_0.5pct": 6,
+    "median_our_over_reference": 4.722
+   },
+   "median_our_sum_over_our_first": 4.722,
+   "symbol": "بورس",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 112,
+   "volume": {
+    "compared": 112,
+    "match_within_0.5pct": 105,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 112,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 24.4648
+   },
+   "median_our_sum_over_our_first": 24.465,
+   "symbol": "بورس",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 690,
+   "volume": {
+    "compared": 690,
+    "match_within_0.5pct": 688,
+    "median_our_over_reference": 0.9993
+   },
+   "volume_sum": {
+    "compared": 690,
+    "match_within_0.5pct": 14,
+    "median_our_over_reference": 4.8735
+   },
+   "median_our_sum_over_our_first": 4.877,
+   "symbol": "سمگا",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 168,
+   "volume": {
+    "compared": 168,
+    "match_within_0.5pct": 162,
+    "median_our_over_reference": 0.9993
+   },
+   "volume_sum": {
+    "compared": 168,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 23.9254
+   },
+   "median_our_sum_over_our_first": 23.875,
+   "symbol": "سمگا",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 676,
+   "volume": {
+    "compared": 676,
+    "match_within_0.5pct": 675,
+    "median_our_over_reference": 0.9994
+   },
+   "volume_sum": {
+    "compared": 676,
+    "match_within_0.5pct": 44,
+    "median_our_over_reference": 4.7809
+   },
+   "median_our_sum_over_our_first": 4.784,
+   "symbol": "كماسه",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 174,
+   "volume": {
+    "compared": 174,
+    "match_within_0.5pct": 168,
+    "median_our_over_reference": 0.9994
+   },
+   "volume_sum": {
+    "compared": 174,
+    "match_within_0.5pct": 6,
+    "median_our_over_reference": 23.0078
+   },
+   "median_our_sum_over_our_first": 22.414,
+   "symbol": "كماسه",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 675,
+   "volume": {
+    "compared": 675,
+    "match_within_0.5pct": 674,
+    "median_our_over_reference": 0.9996
+   },
+   "volume_sum": {
+    "compared": 675,
+    "match_within_0.5pct": 26,
+    "median_our_over_reference": 4.891
+   },
+   "median_our_sum_over_our_first": 4.893,
+   "symbol": "حفارس",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 169,
+   "volume": {
+    "compared": 169,
+    "match_within_0.5pct": 168,
+    "median_our_over_reference": 0.9996
+   },
+   "volume_sum": {
+    "compared": 169,
+    "match_within_0.5pct": 3,
+    "median_our_over_reference": 22.71
+   },
+   "median_our_sum_over_our_first": 22.72,
+   "symbol": "حفارس",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 763,
+   "volume": {
+    "compared": 763,
+    "match_within_0.5pct": 762,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 763,
+    "match_within_0.5pct": 17,
+    "median_our_over_reference": 4.747
+   },
+   "median_our_sum_over_our_first": 4.747,
+   "symbol": "حفاري",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 184,
+   "volume": {
+    "compared": 184,
+    "match_within_0.5pct": 171,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 184,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 25.4825
+   },
+   "median_our_sum_over_our_first": 25.483,
+   "symbol": "حفاري",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 771,
+   "volume": {
+    "compared": 771,
+    "match_within_0.5pct": 771,
+    "median_our_over_reference": 0.9999
+   },
+   "volume_sum": {
+    "compared": 771,
+    "match_within_0.5pct": 32,
+    "median_our_over_reference": 4.6883
+   },
+   "median_our_sum_over_our_first": 4.688,
+   "symbol": "كپشير",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 185,
+   "volume": {
+    "compared": 185,
+    "match_within_0.5pct": 178,
+    "median_our_over_reference": 0.9999
+   },
+   "volume_sum": {
+    "compared": 185,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 23.0308
+   },
+   "median_our_sum_over_our_first": 22.486,
+   "symbol": "كپشير",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 26,
+   "volume": {
+    "compared": 26,
+    "match_within_0.5pct": 26,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 26,
+    "match_within_0.5pct": 2,
+    "median_our_over_reference": 5.25
+   },
+   "median_our_sum_over_our_first": 5.25,
+   "symbol": "چاپ",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 8,
+   "volume": {
+    "compared": 8,
+    "match_within_0.5pct": 7,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 8,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 45.6697
+   },
+   "median_our_sum_over_our_first": 45.67,
+   "symbol": "چاپ",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 3,
+   "volume": {
+    "compared": 3,
+    "match_within_0.5pct": 3,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 3,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 1.1374
+   },
+   "median_our_sum_over_our_first": 1.137,
+   "symbol": "لبن",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 2,
+   "volume": {
+    "compared": 2,
+    "match_within_0.5pct": 2,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 2,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 3.2253
+   },
+   "median_our_sum_over_our_first": 3.225,
+   "symbol": "لبن",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 775,
+   "volume": {
+    "compared": 775,
+    "match_within_0.5pct": 774,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 775,
+    "match_within_0.5pct": 8,
+    "median_our_over_reference": 4.6885
+   },
+   "median_our_sum_over_our_first": 4.688,
+   "symbol": "بترانس",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 186,
+   "volume": {
+    "compared": 186,
+    "match_within_0.5pct": 174,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 186,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 25.0014
+   },
+   "median_our_sum_over_our_first": 24.466,
+   "symbol": "بترانس",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 168,
+   "volume": {
+    "compared": 168,
+    "match_within_0.5pct": 167,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 168,
+    "match_within_0.5pct": 5,
+    "median_our_over_reference": 4.643
+   },
+   "median_our_sum_over_our_first": 4.643,
+   "symbol": "پي پاد",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 42,
+   "volume": {
+    "compared": 42,
+    "match_within_0.5pct": 39,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 42,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.0251
+   },
+   "median_our_sum_over_our_first": 21.025,
+   "symbol": "پي پاد",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 723,
+   "volume": {
+    "compared": 723,
+    "match_within_0.5pct": 723,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 723,
+    "match_within_0.5pct": 13,
+    "median_our_over_reference": 4.7029
+   },
+   "median_our_sum_over_our_first": 4.703,
+   "symbol": "فاراك",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 176,
+   "volume": {
+    "compared": 176,
+    "match_within_0.5pct": 168,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 176,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.7794
+   },
+   "median_our_sum_over_our_first": 21.754,
+   "symbol": "فاراك",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 571,
+   "volume": {
+    "compared": 571,
+    "match_within_0.5pct": 570,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 571,
+    "match_within_0.5pct": 13,
+    "median_our_over_reference": 4.8514
+   },
+   "median_our_sum_over_our_first": 4.851,
+   "symbol": "قاسم",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 140,
+   "volume": {
+    "compared": 140,
+    "match_within_0.5pct": 129,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 140,
+    "match_within_0.5pct": 2,
+    "median_our_over_reference": 25.0394
+   },
+   "median_our_sum_over_our_first": 24.948,
+   "symbol": "قاسم",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 68,
+   "volume": {
+    "compared": 68,
+    "match_within_0.5pct": 68,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 68,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 4.282
+   },
+   "median_our_sum_over_our_first": 4.282,
+   "symbol": "مهرمام",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 19,
+   "volume": {
+    "compared": 19,
+    "match_within_0.5pct": 16,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 19,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 27.8209
+   },
+   "median_our_sum_over_our_first": 27.821,
+   "symbol": "مهرمام",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 12,
+   "volume": {
+    "compared": 12,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 4.5657
+   },
+   "volume_sum": {
+    "compared": 12,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 12.382
+   },
+   "median_our_sum_over_our_first": 5.696,
+   "symbol": "نيان2",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 4,
+   "volume": {
+    "compared": 4,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 18.0594
+   },
+   "volume_sum": {
+    "compared": 4,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 811.314
+   },
+   "median_our_sum_over_our_first": 16.905,
+   "symbol": "نيان2",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 170,
+   "volume": {
+    "compared": 170,
+    "match_within_0.5pct": 170,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 170,
+    "match_within_0.5pct": 4,
+    "median_our_over_reference": 4.3539
+   },
+   "median_our_sum_over_our_first": 4.354,
+   "symbol": "انتخاب",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 44,
+   "volume": {
+    "compared": 44,
+    "match_within_0.5pct": 42,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 44,
+    "match_within_0.5pct": 2,
+    "median_our_over_reference": 25.4565
+   },
+   "median_our_sum_over_our_first": 25.457,
+   "symbol": "انتخاب",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 641,
+   "volume": {
+    "compared": 641,
+    "match_within_0.5pct": 641,
+    "median_our_over_reference": 1.0006
+   },
+   "volume_sum": {
+    "compared": 641,
+    "match_within_0.5pct": 15,
+    "median_our_over_reference": 4.872
+   },
+   "median_our_sum_over_our_first": 4.869,
+   "symbol": "قچار",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 159,
+   "volume": {
+    "compared": 159,
+    "match_within_0.5pct": 152,
+    "median_our_over_reference": 1.0006
+   },
+   "volume_sum": {
+    "compared": 159,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 21.8158
+   },
+   "median_our_sum_over_our_first": 21.803,
+   "symbol": "قچار",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 73,
+   "volume": {
+    "compared": 73,
+    "match_within_0.5pct": 51,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 73,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 4.724
+   },
+   "median_our_sum_over_our_first": 4.724,
+   "symbol": "كيسون",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 20,
+   "volume": {
+    "compared": 20,
+    "match_within_0.5pct": 14,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 20,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 14.2324
+   },
+   "median_our_sum_over_our_first": 13.888,
+   "symbol": "كيسون",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 415,
+   "volume": {
+    "compared": 415,
+    "match_within_0.5pct": 415,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 415,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 4.3724
+   },
+   "median_our_sum_over_our_first": 4.372,
+   "symbol": "عيار",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 100,
+   "volume": {
+    "compared": 100,
+    "match_within_0.5pct": 100,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 100,
+    "match_within_0.5pct": 1,
+    "median_our_over_reference": 20.5963
+   },
+   "median_our_sum_over_our_first": 20.596,
+   "symbol": "عيار",
+   "basis": "last"
+  },
+  {
+   "tf": 1,
+   "buckets_shared": 9,
+   "volume": {
+    "compared": 9,
+    "match_within_0.5pct": 9,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 9,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 5.7
+   },
+   "median_our_sum_over_our_first": 5.7,
+   "symbol": "تعاون1405",
+   "basis": "last"
+  },
+  {
+   "tf": 2,
+   "buckets_shared": 3,
+   "volume": {
+    "compared": 3,
+    "match_within_0.5pct": 3,
+    "median_our_over_reference": 1.0
+   },
+   "volume_sum": {
+    "compared": 3,
+    "match_within_0.5pct": 0,
+    "median_our_over_reference": 24.015
+   },
+   "median_our_sum_over_our_first": 24.015,
+   "symbol": "تعاون1405",
+   "basis": "last"
+  }
+ ],
+ "day_presence": {
+  "tf0·shared": 138564,
+  "tf0·only_reference": 9936,
+  "tf0·only_bors": 29052,
+  "tf1·shared": 31566,
+  "tf1·only_reference": 2524,
+  "tf1·only_bors": 7676,
+  "tf2·shared": 7734,
+  "tf2·only_reference": 658,
+  "tf2·only_bors": 2118
+ }
+}
