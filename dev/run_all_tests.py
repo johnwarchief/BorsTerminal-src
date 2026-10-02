@@ -169,6 +169,12 @@ SUITES = [
     # شبکه ثبت نمی‌شود تا دوباره تلاش شود، و قاعدۀ ترجیح (مستقل بر تلفیقی) یک‌جا.
     ('dev/codal_derived_ledger_v1073.py',
                                      'one notice = one extraction; shared period never blocks another symbol'),
+    # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
+    # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
+    # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ
+    # برش‌خورده/حل‌نشده درِ INDEX_CACHE. بی‌شبکه و بی‌market.dbِ واقعی.
+    ('dev/stale_wiring_v1073.py',
+                                     'fresh data invalidates the dependent caches; no crawler child in the frozen build'),
     # TA-SCOPE-1 (پرسشِ مالک ۱۴۰۵-۰۷-۰۷: «نبض را کامل با تریدرزآرنا تطبیق بده»):
     # دامنهٔ «کل بازار» = سطرهایِ market0ِ او، نشتِ صکوک/مشارکت/سلف از سطرِ سهام
     # بسته شد، و «ارزش کل بازار»ِ نصفه نه نوشته می‌شود نه خوانده.
