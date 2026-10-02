@@ -160,7 +160,12 @@ def main():
         times, o, h, l, c = d["time"], d["open"], d["high"], d["low"], d["close"]
         v, last = d["volume"], d.get("last") or [None] * len(c)
         hl2 = [None if (a is None or b is None) else (a + b) / 2.0 for a, b in zip(h, l)]
-        hlc3 = [None if (a is None or b is None or x is None) else (a + b + 3 * x) / 6.0
+        # `hlc3` در سندِ رسمی Pine: (high + low + close)/3 — همان چیزی که کدِ فرانت
+        # می‌سازد. نسخهٔ اولِ این هارنس آن را (H+L+3C)/6 («weighted close» کتابِ TA)
+        # گرفته بود و به‌خاطرِ همین واگراییِ ۳۵٬۴۸۸ سطری را «غلط» گزارش کرد؛
+        # شاهد: docs/INDICATOR-PARITY-1405-07-14.md §۸ (تراجع). hlcc4 در همان سند
+        # (h+l+c+c)/4 است و در باندلِ مرجع هم عیناً همین‌طور inline شده.
+        hlc3 = [None if (a is None or b is None or x is None) else (a + b + x) / 3.0
                 for a, b, x in zip(h, l, c)]
         tp = [None if (a is None or b is None or x is None) else (a + b + x) / 3.0
               for a, b, x in zip(h, l, c)]
@@ -230,10 +235,10 @@ def main():
             % r_sam["bad"])
 
         # ── حجم‌محور ───────────────────────────────────────────────────────
-        add("VWMA(20)", "mabnaStd.vwma", "oracle.vwma (Σtp? نه، Σclose·vol)", "close+vol",
+        add("VWMA(20)", "mabnaStd.vwma", "oracle.vwma (Σclose·vol ÷ Σvol)", "close+vol",
             tlist(sym, "pine.vwma20"), O.vwma(c, v, 20))
         ref_vwap_day = O.vwap(o, h, l, c, v, times, "session", "tp")
-        ref_vwap_full = O.vwma(c, v, len(c)) if False else O.vwap(o, h, l, c, v, times, "full", "tp")
+        ref_vwap_full = O.vwap(o, h, l, c, v, times, "full", "tp")   # قرائتِ بی‌ریست، برایِ انتسابِ علت
         add("VWAP", "mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/commit‌نشده)",
             "oracle.vwap(session-anchored) ≡ Harris", "H/L/C + vol",
             trows(sym, "VWAP", "vwap"), ref_vwap_day,
@@ -269,7 +274,7 @@ def main():
             r = cmp_series(hma_ts, fn(c))
             if best is None or r["bad"] < best[1]["bad"]:
                 best = (nm, r)
-        add("HMA(9)", "mabnaIndicators.ts:1125 HMA", "oracle.hma variants (Halma/TA-Lib)",
+        add("HMA(9)", "mabnaIndicators.ts:1125 HMA", "oracle.hma variants (مرجعِ بیرونی ندارد)",
             "close", hma_ts, O.hma(c, 9, "floor"),
             "بهترین variant: %s ⇒ bad=%d (از %d)" % (best[0], best[1]["bad"],
                                                      len(variants)))

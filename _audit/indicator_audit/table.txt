@@ -13,63 +13,39 @@ VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c orac
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4363   4174 3.894e+04  1.25e+00     20
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              4226   4060      7476  5.80e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3926   3906 3.624e+04  7.33e+00      1
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4931   3829     14.26  2.16e+02     41
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4928   3816     13.55  1.80e+02     42
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3916   3808 2.497e+04  9.38e-01     10
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4846   3789     9.899  4.87e+01     52
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3802   3768 2.825e+04  9.11e+00      1
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4843   3759     8.883  1.32e+03     60
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3792   3659 1.125e+04  1.57e+00     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3693   3630 2.197e+04  2.66e+00      2
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4491   3548     14.95  1.14e+02     43
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4488   3540     14.11  4.31e+01     43
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3683   3532 1.984e+04  1.17e+00     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        3478   3460 3.768e+04  5.00e+00      1
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              3468   3359 1.781e+04  1.37e+00     10
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4335   3330     17.21  8.79e+01     39
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4405   3271     10.38  9.82e+01     38
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4332   3257     16.82  1.69e+02     41
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4198   3185     9.246  5.41e+01     38
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4195   3162     8.694  1.62e+01     41
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4402   3123     9.939  2.96e+01     41
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3888   3060      13.1  4.27e+01     38
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3764   3050        13  2.96e+01     41
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3885   3008      12.2  2.52e+01     41
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3761   2986     11.32  2.37e+01     43
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3655   2789     5.908  2.34e+03     38
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3652   2717     5.501  2.99e+02     41
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4433   2639     765.9  4.60e-01     10
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3440   2487     10.67  8.73e+01     38
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3437   2448     10.14  1.09e+02     41
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4959   2405      5381  9.57e+00     10
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4433   2639     765.9  4.60e-01     10
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4959   2405      5381  9.57e+00     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        2363   2357 3.364e+04  7.95e-01      1
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              2353   2297 1.081e+04  7.13e-01     10
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4874   2259      4021  2.25e-01     35
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4363   2176      8043  4.71e+00     22
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4226   1884      1017  2.08e-01     62
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               2325   1849     7.424  1.49e+01     41
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               2322   1824     6.836  1.73e+01     43
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3468   1798      4502  2.95e+00     13
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              4519   1759      2514  5.18e-01     10
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4874   2259      4021  2.25e-01     35
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4363   2176      8043  4.71e+00     22
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4226   1884      1017  2.08e-01     62
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              3468   1798      4502  2.95e+00     13
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              4519   1759      2514  5.18e-01     10
 VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c oracle.vwap(session-anchored) ≡ Ha H/L/C + vol        1766   1759 1.624e+05  1.76e+01      1
 SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  oracle.supertrend(ATRِ واقعیِ Wild H/L/C              1756   1694 1.093e+05  1.82e+00     10
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3916   1635      5665  1.17e+00     47
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3683   1594      3904  5.04e+00     24
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              3792   1576      2644  1.05e+02     16
-WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               1728   1301     8.521  1.22e+02     38
-WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               1725   1249     8.033  1.39e+01     42
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              3916   1635      5665  1.17e+00     47
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              3683   1594      3904  5.04e+00     24
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              3792   1576      2644  1.05e+02     16
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1153   1101 4.599e+04  1.69e+00      3
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1162   1083  3.53e+04  1.09e+01      0
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1066    974 3.952e+04  4.57e+00      3
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1012    957      8940  2.02e+00      5
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close              1046    907 1.969e+04  1.75e+00      1
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              2353    875      2747  4.80e-01     12
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              2353    875      2747  4.80e-01     12
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               959    829      4970  6.22e-01      0
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               854    791 1.628e+04  1.24e+01      0
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               901    781 3.067e+04  2.10e+00      0
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               830    778 2.113e+04  3.75e+00      6
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               794    745 2.379e+04  2.63e+00      0
-HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (Halma/TA-Lib) close              1756    709 3.275e+04  3.50e+00     10
+HMA(9)              mabnaIndicators.ts:1125 HMA                  oracle.hma variants (مرجعِ بیرونی  close              1756    709 3.275e+04  3.50e+00     10
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               529    456 1.468e+04  1.66e+00      0
 Weekly close (ISO)  confidence_engine._weekly_closes             oracle bucket ISO-Monday           close               396    312 3.581e+04  1.70e-01      1
 SMA(5)              api/chart.py:1348 _fts_ma                    oracle.sma ≡ pandas.rolling.mean   close (basis-res   3798      0         0  0.00e+00      -
@@ -115,6 +91,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3753      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3703      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3603      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3764      0 3.553e-14  5.96e-15      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3761      0 2.132e-13  8.66e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              3783      0 8.882e-16  7.39e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         3776      0 4.263e-13  3.30e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          3781      0         0  0.00e+00      -
@@ -165,6 +143,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4920      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4870      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4770      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4931      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4928      0 1.421e-13  2.86e-11      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4950      0 8.882e-16  6.34e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4938      0   2.3e-13  1.22e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4948      0         0  0.00e+00      -
@@ -215,6 +195,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4835      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4785      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4685      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4846      0  1.89e-12  7.10e-14      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4843      0 1.648e-12  8.36e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4865      0 8.882e-16  6.54e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4698      0 1.279e-13  5.59e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4863      0         0  0.00e+00      -
@@ -265,6 +247,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3429      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3379      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3279      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3440      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3437      0  1.99e-13  6.78e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              3459      0 8.882e-16  5.83e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         3460      0 2.558e-13  1.00e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          3457      0         0  0.00e+00      -
@@ -315,6 +299,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4324      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4274      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4174      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4335      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4332      0 2.487e-13  5.71e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4354      0 8.882e-16  5.80e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4311      0 1.137e-13  1.45e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4352      0         0  0.00e+00      -
@@ -365,6 +351,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4394      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4344      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4244      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4405      0 7.105e-15  2.66e-15      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4402      0 4.974e-13  9.12e-11      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4424      0  1.11e-15  5.75e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4406      0 3.695e-13  1.00e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4422      0         0  0.00e+00      -
@@ -415,6 +403,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3877      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3827      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3727      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3888      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3885      0 1.847e-13  5.84e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              3907      0 8.882e-16  4.88e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         3849      0 1.577e-13  4.39e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          3905      0         0  0.00e+00      -
@@ -465,6 +455,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4187      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4137      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4037      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4198      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4195      0 9.948e-14  7.05e-13      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4217      0 8.882e-16  4.80e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4222      0 8.527e-14  1.00e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4215      0         0  0.00e+00      -
@@ -515,6 +507,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4480      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4430      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              4330      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               4491      0         0  0.00e+00      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               4488      0 4.121e-13  8.28e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              4499      0 8.882e-16  8.34e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         4441      0 2.416e-13  1.83e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          4508      0         0  0.00e+00      -
@@ -565,6 +559,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              2314      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              2264      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              2164      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               2325      0 1.421e-14  3.09e-15      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               2322      0 3.979e-13  4.70e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              2344      0 8.882e-16  5.96e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         2342      0 1.563e-13  1.00e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          2342      0         0  0.00e+00      -
@@ -615,6 +611,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3644      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3594      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              3494      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               3655      0  4.69e-13  1.45e-14      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               3652      0 3.979e-13  3.85e-12      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              3674      0 8.882e-16  5.29e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         3671      0 3.979e-13  1.39e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          3672      0         0  0.00e+00      -
@@ -665,6 +663,8 @@ MA_Ribbon(20)       mabnaIndicators.ts:1237 (SMA)                oracle.sma     
 MA_Ribbon(50)       mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              1717      0         0  0.00e+00      -
 MA_Ribbon(100)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              1667      0         0  0.00e+00      -
 MA_Ribbon(200)      mabnaIndicators.ts:1237 (SMA)                oracle.sma                         close              1567      0         0  0.00e+00      -
+WaveTrend wt        mabnaIndicators.ts waveTrendCore             oracle: EMA(hlc3,10)→EMA|d|→CI→EMA hlc3               1728      0 1.421e-14  1.03e-15      -
+WaveTrend avg       همان (SMA 4)                                 oracle.sma(wt,4)                   hlc3               1725      0 1.705e-13  8.97e-13      -
 ZScore(20,2)        mabnaIndicators.ts calcZScore                oracle: (x−SMA)/σ_population       close              1747      0 8.882e-16  4.77e-16      -
 DT %K(8,5,3)        mabnaIndicators.ts calcDTOscillator          oracle: SMA(stoch(RSI8,5),3)       close→RSI8         1752      0  1.35e-13  1.00e+00      -
 VixFix vix          mabnaIndicators.ts calcVixFix (highest(close oracle: همان تعریفِ Pine           close+low          1745      0         0  0.00e+00      -
@@ -689,42 +689,20 @@ FTS input series    api/chart.py _fts_scaled                     price_basis: la
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4174  max_rel=1.25e+00  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=4060  max_rel=5.80e-01  ← 
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3906  max_rel=7.33e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3829  max_rel=2.16e+02  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3816  max_rel=1.80e+02  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3808  max_rel=9.38e-01  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3789  max_rel=4.87e+01  ← 
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3768  max_rel=9.11e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· WaveTrend avg       همان (SMA 4)                                 bad=3759  max_rel=1.32e+03  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3659  max_rel=1.57e+00  ← 
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3630  max_rel=2.66e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3548  max_rel=1.14e+02  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3540  max_rel=4.31e+01  ← 
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3532  max_rel=1.17e+00  ← 
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=3460  max_rel=5.00e+00  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=3359  max_rel=1.37e+00  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3330  max_rel=8.79e+01  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3271  max_rel=9.82e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3257  max_rel=1.69e+02  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3185  max_rel=5.41e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3162  max_rel=1.62e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3123  max_rel=2.96e+01  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3060  max_rel=4.27e+01  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=3050  max_rel=2.96e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=3008  max_rel=2.52e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=2986  max_rel=2.37e+01  ← 
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=2789  max_rel=2.34e+03  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=2717  max_rel=2.99e+02  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2639  max_rel=4.60e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2639 (از 4)
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=2487  max_rel=8.73e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=2448  max_rel=1.09e+02  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2405  max_rel=9.57e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2405 (از 4)
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=2357  max_rel=7.95e-01  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
 · SuperTrend(10,3)    mabnaIndicators.ts:1046 rawAtr (TR از close  bad=2297  max_rel=7.13e-01  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2259  max_rel=2.25e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2259 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=2176  max_rel=4.71e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=2176 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1884  max_rel=2.08e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1884 (از 4)
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=1849  max_rel=1.49e+01  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=1824  max_rel=1.73e+01  ← 
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1798  max_rel=2.95e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1798 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1759  max_rel=5.18e-01  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1759 (از 4)
 · VWAP                mabnaIndicators.ts:1013 VWAP (کارِ نامنسوب/c bad=1759  max_rel=1.76e+01  ← هیچ ریستِ روزانه‌ای نیست؛ Σ تجمعی از اولِ سری (variantِ بی‌ریست: bad=0)
@@ -732,8 +710,6 @@ FTS input series    api/chart.py _fts_scaled                     price_basis: la
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1635  max_rel=1.17e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1635 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1594  max_rel=5.04e+00  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1594 (از 4)
 · HMA(9)              mabnaIndicators.ts:1125 HMA                  bad=1576  max_rel=1.05e+02  ← بهترین variant: half=floor,valid-norm=False ⇒ bad=1576 (از 4)
-· WaveTrend wt        mabnaIndicators.ts waveTrendCore             bad=1301  max_rel=1.22e+02  ← 
-· WaveTrend avg       همان (SMA 4)                                 bad=1249  max_rel=1.39e+01  ← 
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=1101  max_rel=1.69e+00  ← تقویمِ متفاوت: 1150 از 1153 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=1083  max_rel=1.09e+01  ← تقویمِ متفاوت: 1152 از 1162 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)
 · Weekly close (ISO)  confidence_engine._weekly_closes             bad=974   max_rel=4.57e+00  ← تقویمِ متفاوت: 1045 از 1066 سطرِ هم‌شاخص فرق دارد (شنبه vs ISO-دوشنبه)

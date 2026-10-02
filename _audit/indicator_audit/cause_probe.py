@@ -2,7 +2,7 @@
 """`_audit/indicator_audit/cause_probe.py` — اثباتِ «علت» برایِ هر واگراییِ جدول.
 
 برایِ هر اندیکاتورِ واگرا، یکِ **variant** ساخته می‌شود که دقیقاً همان کاری را بکند
-که کدِ محصول می‌کند (بذرِ دوتabled، ورودیِ غلطِ برچسب‌خورده، TR از close تنها، …).
+که کدِ محصول می‌کند (بذرِ دوشمرده، ورودیِ برخلافِ نام، TR از close تنها، …).
 اگر variant با bad=0 بخواند، علت ثابت شده است؛ در غیر این صورت علت «نامعلوم» می‌ماند
 و درِ گزارش هم همین‌طور نوشته می‌شود. هیچ کدِ محصولی عوض نمی‌شود.
 
@@ -87,6 +87,44 @@ def supertrend_close_only_tr(h, l, c, period=10, mult=3.0):
     return out
 
 
+def supertrend_exact(h, l, closes, period=10, mult=3.0):
+    """بازسازیِ «عینِ» calcSuperTrendV2 — تا مکانیزمِ واگرایی اثبات شود، نه فرض.
+
+    سه چیز را ثابت می‌کند که کدِ فعلی می‌کند:
+      ۱) «TR» در واقع |Δclose| است (`max(Δ,|Δ|,Δ)` رویِ close تنها؛ high/low و شکافِ
+         دیروز هرگز نمی‌آیند) ⇒ ATRِ وایلدرِ رویِ seriesِ close.
+      ۲) قفلِ بند جابه‌جاست: `superTrendUp = min(lowerBand, …)` و
+         `superTrendDn = max(upperBand, …)` — یعنی متغیرِ Up باندِ پایین را نگه
+         می‌دارد و Dn باندِ بالا را.
+      ۳) خطِ رسم `trend===1 ? superTrendDn : superTrendUp` است ⇒ درِ روندِ صعودی
+         باندِ بالا (که بالایِ قیمت است) رسم می‌شود؛ درست برعکسِ تعریفِ کلاسیک.
+    """
+    trs = [None] + [abs(closes[i] - closes[i - 1]) for i in range(1, len(closes))]
+    atr = [None] * len(closes)
+    if len(closes) >= period + 1:
+        atr[period] = sum(trs[1:period + 1]) / period
+        for i in range(period + 1, len(closes)):
+            atr[i] = (atr[i - 1] * (period - 1) + trs[i]) / period
+    mid = [(a + b) / 2.0 for a, b in zip(h, l)]
+    up, dn, trend = float("inf"), float("-inf"), 1
+    out = [None] * len(closes)
+    for i in range(len(closes)):
+        av = atr[i] if atr[i] is not None else 0.0
+        ub, lb = mid[i] + mult * av, mid[i] - mult * av
+        if i == 0:
+            up, dn = ub, lb
+        elif av == 0.0:
+            continue
+        elif trend == -1 and closes[i] > up:
+            trend, up = 1, lb
+        elif trend == 1 and closes[i] < dn:
+            trend, dn = -1, ub
+        else:
+            up, dn = min(lb, up), max(ub, dn)
+        out[i] = dn if trend == 1 else up
+    return out
+
+
 def main():
     candles = json.load(open(os.path.join(HERE, "candles.json"), encoding="utf-8"))
     ts = json.load(open(os.path.join(HERE, "ts_out.json"), encoding="utf-8"))["series"]
@@ -98,15 +136,19 @@ def main():
 
         def row(ind, variant, prod, ref):
             k, n = bad_count(prod, ref)
-            causes.setdefault(ind, {})[sym] = [k, n]
+            # کلیدِ رکورد = جفتِ «اندیکاتور + variant»؛ وگرنه variantِ آخرِ حلقه
+            # بقیه را درِ causes.json بازنویسی می‌کند (همین اشتباه یک‌بار عددِ
+            # aggregate را گمراه کرد).
+            causes.setdefault("%s | %s" % (ind, variant), {})[sym] = [k, n]
             if sym == "فولاد":
                 print("%-22s %-52s %8d %8d" % (ind[:22], variant[:52], k, n))
 
         tr_ = (T := lambda key, field: ((ts.get("%s|%s" % (sym, key)) or {}).get("rows", {}) or {}).get(field, []))
-        # ۱) WaveTrend: ورودیِ اعلامی hlc3 نیست، tp است
+        # ۱) WaveTrend: مرجعِ واقعی، خودِ Pine است: hlc3 = (H+L+C)/3 (سندِ v6) و باندلِ
+        #    مرجع هم `Std.hlc3` را صدا می‌زند، نه arithmeticِ دیگر. پس ورودیِ فعلی درست است؛
+        #    «مرجع» اولِ این هارنس (weighted close کتابِ TA) اشتباه بود — نه محصول.
         src_tp = [(a + b + x) / 3.0 for a, b, x in zip(h, l, c)]
-        src_true = [(a + b + 3 * x) / 6.0 for a, b, x in zip(h, l, c)]
-
+        src_alt = [(a + b + 3 * x) / 6.0 for a, b, x in zip(h, l, c)]
         def wt(s):
             esa = O.ema(s, 10, "sma")
             dd = O.ema([None if (a is None or b is None) else abs(a - b)
@@ -114,19 +156,23 @@ def main():
             ci = [None if (a is None or b is None or not z) else (a - b) / (0.015 * z)
                   for a, b, z in zip(s, esa, dd)]
             return O.ema(ci, 21, "sma")
-        row("WaveTrend wt", "ورودی = (H+L+C)/3 به‌جای hlc3", tr_("MabnaWaveTrend", "wt"), wt(src_tp))
-        row("WaveTrend wt", "مرجع‌صحیح: ورودی = hlc3 واقعی", tr_("MabnaWaveTrend", "wt"), wt(src_true))
-        # ۲) HMA: نیمۀ‌دوره با Math.round و نرمال‌سازیِ بی‌مقدار
+        row("WaveTrend wt", "مرجع: hlc3ِ Pine = (H+L+C)/3 (ورودیِ فعلیِ محصول)",
+            tr_("MabnaWaveTrend", "wt"), wt(src_tp))
+        row("WaveTrend wt", "قرائتِ دیگر: weighted close (H+L+3C)/6 (مرجعِ اشتباهِ اولِ همین ممیزی)",
+            tr_("MabnaWaveTrend", "wt"), wt(src_alt))
         wh = wma_normalize(c, 5)
         wf = wma_normalize(c, 9)
         diff = [None if (a is None or b is None) else 2 * a - b for a, b in zip(wh, wf)]
         row("HMA(9)", "half=Math.round(9/2)=5 + WMA با نرمال‌سازی", tr_("HMA", "hma"),
             wma_normalize(diff, 3))
-        row("HMA(9)", "مرجع‌صحیح: half=floor(4) ≡ Halma/TA-Lib", tr_("HMA", "hma"), O.hma(c, 9, "floor"))
+        row("HMA(9)", "قرائتِ دیگر: half=floor(4) ≡ Halma/TA-Lib (در مرجع هیچ HMA نیست)", tr_("HMA", "hma"), O.hma(c, 9, "floor"))
         # ۳) SuperTrend: TR از close تنها + قفلِ بندِ یک‌طرفه
-        row("SuperTrend(10,3)", "TR تنها از close (high/low نادیده)", tr_("SuperTrend", "superTrend"),
+        st_st = tr_("SuperTrend", "superTrend")
+        row("SuperTrend(10,3)", "TR تنها از close (high/low نادیده)", st_st,
             supertrend_close_only_tr(h, l, c, 10, 3.0))
-        row("SuperTrend(10,3)", "مرجع‌صحیح: ATRِ واقعیِ Wilder", tr_("SuperTrend", "superTrend"),
+        row("SuperTrend(10,3)", "عینِ کد: |Δc| + قفلِ جابه‌جا + خطِ متقاطع", st_st,
+            supertrend_exact(h, l, c, 10, 3.0))
+        row("SuperTrend(10,3)", "مرجع‌صحیح: ATRِ واقعیِ Wilder", st_st,
             [x.get("line") for x in O.supertrend(h, l, c, 10, 3.0)])
         # ۴) VWAP: بدونِ ریستِ روزانه
         row("VWAP", "Σ تجمعی بی‌ریست (variantِ بی‌ریست)", tr_("VWAP", "vwap"),
