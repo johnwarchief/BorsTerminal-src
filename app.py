@@ -283,9 +283,14 @@ def _startup_sync_market():
             try:
                 import sqlite3 as _sq, mstat_engine as _ME
                 from bors_config import DB_PATH as _DB
+                # `close()` باید درِ finally باشد: هر raise داخلِ save_mstat_snapshot
+                # یکِ اتصال + هندلِ WAL را برایِ عمرِ کلِ برنامه باز می‌گذاشت
+                # (این حلقه هر ۳۰۰ ثانیه اجرا می‌شود).
                 _c = _sq.connect(_DB, timeout=30)
-                _ME.save_mstat_snapshot(_c)
-                _c.close()
+                try:
+                    _ME.save_mstat_snapshot(_c)
+                finally:
+                    _c.close()
             except Exception as _e:
                 print(f"[startup] pulse snapshot loop: {_e}")
             _t.sleep(300)
