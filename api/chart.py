@@ -573,7 +573,12 @@ def _key_levels_from_history(rows):
 def get_key_levels(symbol: str):
     """سطوح کلیدی (Swing High/Low) + بلوکهای تقاضا/عرضه — از تاریخچهٔ قیمت DB (price_history)."""
     import time as _t
-    _cached = KEY_LEVELS_CACHE.get(symbol)
+    # کلید باید مبنایِ قیمت را هم داشته باشد: این سه کش رویِ سریِ **پس ازِ
+    # `price_basis`** حساب می‌شوند، و `set_basis` هیچ کشی را پاک نمی‌کند — با کلیدِ
+    # بدونِ مبنای، پس ازِ عوض‌کردنِ setting تا ۱۵ دقیقه MA/سطوح/الگو رویِ مبنایِ
+    # قبلی می‌ماندند (شرطِ ۱ِ §۱-ث).
+    _ck_levels = f"{symbol}|{price_basis.current()}"
+    _cached = KEY_LEVELS_CACHE.get(_ck_levels)
     if _cached and (_t.time() - _cached[0]) < KEY_LEVELS_TTL:
         return _cached[1]
     try:
@@ -602,7 +607,7 @@ def get_key_levels(symbol: str):
         result = _key_levels_from_history(rows)
         result.update({"status": "ok", "symbol": symbol,
                        "message": f"{len(rows)} روز آخر"})
-        KEY_LEVELS_CACHE[symbol] = (time.time(), result)
+        KEY_LEVELS_CACHE[_ck_levels] = (time.time(), result)
         return result
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -856,7 +861,7 @@ def get_ma_events(symbol: str, days: int = Query(730)):
     """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) از price_history + رویدادهای تقویم نماد."""
     import time as _t
     days = max(120, min(int(days or 730), 2000))
-    ck = f"{symbol}|{days}"
+    ck = f"{symbol}|{days}|{price_basis.current()}"
     _cached = MA_CACHE.get(ck)
     if _cached and (_t.time() - _cached[0]) < MA_TTL:
         return _cached[1]
@@ -993,7 +998,8 @@ def get_patterns(symbol: str):
     breakout zone (آستانهٔ آخرین رنج) — همه با timestamp میلی‌ثانیه (ظهر UTC؛ فرمت overlay v10).
     """
     import time as _t
-    cached = PATTERNS_CACHE.get(symbol)
+    _ck_pat = f"{symbol}|{price_basis.current()}"
+    cached = PATTERNS_CACHE.get(_ck_pat)
     if cached and (_t.time() - cached[0]) < KEY_LEVELS_TTL:
         return cached[1]
     try:
@@ -1069,7 +1075,7 @@ def get_patterns(symbol: str):
             "styles": {"color": "#2962ff"},
         })
         result = {"status": "ok", "symbol": symbol, "overlays": overlays, "count": len(overlays)}
-        PATTERNS_CACHE[symbol] = (_t.time(), result)
+        PATTERNS_CACHE[_ck_pat] = (_t.time(), result)
         return result
     except Exception as e:
         return {"status": "error", "message": str(e)}

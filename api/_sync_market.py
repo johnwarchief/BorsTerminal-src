@@ -32,6 +32,15 @@ def _run_market_sync():
         # پس کاربر هرگز آن تأخیر را نمی‌بیند. (خودِ warm_market_cache اگر
         # ساختن شکست کش را خالی می‌کند.)
         warm_market_cache()
+        # کشِ اسکرینر از همان `market_watch` (market_cap/قیمت) ساخته می‌شود و
+        # TTL‑ش ۱۲ ساعت + کشِ دیسک است — یعنی تا پیش از این پس از هر سینک،
+        # ستون‌هایِ وابسته‌به‌قیمتِ تبِ بنیادی تا ۱۲ ساعت کهنه می‌ماندند در
+        # حالی که `/api/fundamental` زنده جواب می‌داد (همان شکلِ «عددِ اسکرینر
+        # با عددِ کارت می‌جنگد» که برایِ #66 ثبت شد). بی‌`drop_materialized`،
+        # چون درِ بیلدِ فریزشده هیچ نویسدۀ دیگری برایِ fts_results نیست.
+        from .screener import invalidate_screener_cache, warm_screener_cache
+        invalidate_screener_cache(drop_materialized=False)
+        warm_screener_cache()
     except Exception as e:
         print(f"[market-sync] FAILED: {e}")
     finally:

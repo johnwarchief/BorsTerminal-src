@@ -111,10 +111,14 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
         cached = dict(hit[1])
         cached["cached"] = True
         cached["cache_age_sec"] = round(now - hit[0], 1)
+        # مسیرِ hit هم باید از ریزالویِ واحدِ مبن بگذرد، وگرنه پاسخِ کش‌شده متادیتایِ
+        # `priceBasis*` ندارد و کندلش حل‌نشده است، برخلافِ پاسخِ تازه (§۱-ث شرطِ ۵:
+        # هر سری‌دهنده‌ای درِ پایانِ کار از همین یکِ نقطه می‌گذرد). ترتیبِ برش/مبن
+        # مثلِ مسیرِ تازه است تا `count` درِ هر دو حالت معنایِ یکی داشته باشد.
         if limit and limit > 0:
             cached["candles"] = cached["candles"][-limit:]
             cached["count"] = len(cached["candles"])
-        return cached
+        return price_basis.resolve_payload(cached)
 
     raw = fetch_tedpix_series(ins_code)
 
@@ -168,9 +172,10 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
         })
         prev_close = c
 
-    if limit and limit > 0:
-        candles = candles[-limit:]
-
+    # بودجه/limit هیچ‌وقت پیش ازِ نوشتنِ کش اعمال نمی‌شود: نسخهٔ اول اینجا
+    # سری را برش می‌زد و **همان برش‌خورده** را درِ INDEX_CACHE می‌گذاشت، پس هر
+    # درخواستِ بعدیِ limit=0 تا TTL سریِ ناقص می‌گرفت (امروز هر دو فراخوان
+    # limit=0 می‌فرستند، ولی endpoint بر اساسِ پارامترِ limit باز است).
     payload = {
         "status": "success",
         "symbol": TEDPIX_SYMBOL,
@@ -192,7 +197,11 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
                                    if k not in ("cached", "cache_age_sec")})
     # مبنایِ قیمت از ریزالویِ واحد می‌گذرد؛ برایِ شاخص نتیجه همیشه closing است و
     # دلیلش (`last_missing:N/N`) درِ همان پاسخ ثبت می‌شود.
-    return price_basis.resolve_payload(payload)
+    resp = dict(payload)
+    if limit and limit > 0:
+        resp["candles"] = resp["candles"][-limit:]
+        resp["count"] = len(resp["candles"])
+    return price_basis.resolve_payload(resp)
 
 
 @router.get("/api/index/tedpix")

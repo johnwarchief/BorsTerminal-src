@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import _count_procs, _kill_procs, _safe_read_json
+from ._core import _count_procs, _kill_procs, _safe_read_json, codal_crawler_available
 from bors_config import APP_DIR, CONTROL_PATH, DB_PATH, MARKET_STATUS_PATH, OD_STATUS_PATH, STATUS_PATH, WORK_DIR
 from fastapi import APIRouter
 from fastapi import Query
@@ -40,6 +40,12 @@ def sync_codal(mode: str = Query("update")):
             json.dump({"cmd": "resume", "ts": datetime.datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
     except Exception:
         pass
+    if not codal_crawler_available():
+        return {"status": "unavailable", "mode": mode,
+                "message": "خزندهٔ کدال فقط رویِ درختِ توسعه اجرا می‌شود؛ درِ نسخۀ "
+                           "نصبی زیرپروسه، خودِ برنامه را دوباره بالا می‌آورد. برایِ "
+                           "دادهٔ تازه دکمۀ «بروزرسانی دیتابیس کدال» (snapshot گیت‌هاب) "
+                           "را بزنید."}
     args = [sys.executable, "codal_fetcher.py"]
     if mode == "new":
         args += ["--backfill"]         # نمادهای قابل معامله با عنوان مالی ولی بدون FS → ۵ شاخص پرشدنی
@@ -279,6 +285,17 @@ def _codal_db_worker(dest_lzma, tmp_db):
         #    ستون‌های مشترک را لمس می‌کند و بقیه را دست‌نخورده می‌گذارد.
         _write_db_status("merging", 0.0, "ادغام در market.db")
         stats, stale = _apply_codal_merge(DB_PATH, tmp_db)
+        # payloadِ اسکرینر از همین جدول‌ها ساخته می‌شود و TTL‑ش ۱۲ ساعت است (به‌علاوه
+        # کشِ رویِ دیسک، پس با restart هم نمی‌رود). بدونِ این، کاربر بعد از
+        # «بروزرسانی دیتابیس کدال» تا ۱۲ ساعت همان اعدادِ قدیمیِ تبِ بنیادی را
+        # می‌دید. گرم‌کردن درِ همین نخ انجام می‌شود تا اولین درخواست ~۲۷ ثانیه
+        # پایِ محاسبه نپردازد.
+        try:
+            from .screener import invalidate_screener_cache, warm_screener_cache
+            invalidate_screener_cache(drop_materialized=False)
+            warm_screener_cache()
+        except Exception as _e:      # noqa: BLE001 — گرم‌کردنِ مجدد هرگز ادغام را عقب نمی‌زند
+            print(f"[codal-db] screener re-warm failed: {_e}")
         if stale:
             # snapshot قدیمی‌تر از DB محلی است؛ دادهٔ از‌دست‌رفته خبر می‌خواهد
             _write_db_status(
