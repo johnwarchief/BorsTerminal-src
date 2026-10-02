@@ -6,10 +6,11 @@
 // frontend/src نشان داد هیچ‌جا خوانده نمی‌شوند: eps، price_max/price_min،
 // p_max/p_min، buy_n_vol/sell_n_vol، aggregates‌هایِ صف
 // (buy_q_vol/val/cnt، sell_q_vol/val/cnt، buy_q1_px، sell_q1_vol/sell_q1_px)،
-// prev_day_vol، d1_vol، max30_high، month_avg_vol، tmax، vol_trend،
+// prev_day_vol، d1_vol، max30_high، tmax، vol_trend،
 // sell_power_i، suspicious_vol، d_even، resistance_59، dist_min30_pct.
 // آن‌ها هنوز درِ `market_watch` و درِ کوئریِ تابلو هستند؛ فقط رویِ سیم نمی‌آیند:
-// ۷٫۵MB → ۴٫۱MB و gzip ۹۱۳KB → ۵۶۴KB.
+// ۷٫۵MB → ۴٫۲MB و gzip ۹۱۳KB → ۵۶۵KB. `month_avg_vol` فرستاده می‌شود، چون
+// typeِ همین فایل آن را اعلام می‌کند — قراردادِ دو طرف باید یکی بماند.
 //
 // همه کلیدها `.nullish()`‌اند، پس «نیامدن» و «null» برایِ UI یکی است — و این
 // شرطِ درستِ کارِ حالتِ داغ است: سرور کلیدهایِ null را هم حذف می‌کند.

@@ -631,8 +631,9 @@ _DROP_FIELDS = frozenset((
     "buy_q_vol", "buy_q_val", "buy_q_cnt",
     "sell_q_vol", "sell_q_val", "sell_q_cnt",
     "buy_q1_px", "sell_q1_vol", "sell_q1_px",
-    "prev_day_vol", "d1_vol", "max30_high", "month_avg_vol",     # میانگینِ ماه: FE از vol_ratio می‌خواند
-    "tmax", "vol_trend", "sell_power_i", "suspicious_vol",
+    "prev_day_vol", "d1_vol", "max30_high",
+    "tmax", "vol_trend", "sell_power_i", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
+
     "d_even", "resistance_59", "dist_min30_pct",
 ))
 
