@@ -109,8 +109,18 @@ def market_sync_state():
     return {"status": "success", "running": _market_running(), "last": d}
 
 @router.get("/api/market")
-def get_market(request: Request):
-    """تابلو. هیچ‌وقت پایِ بازسازیِ ۱.۴ ثانیه‌ای نمی‌ایستد (بخوان SWR)."""
+def get_market(request: Request, fields: str = ""):
+    """تابلو. هیچ‌وقت پایِ بازسازیِ ۱.۴ ثانیه‌ای نمی‌ایستد (بخوان SWR).
+
+    `?fields=all` همان بدنه را با بیست‌وشش ستونِ بی‌خوانندۀ فرانت می‌دهد. چرا
+    لازم است: UI آن‌ها را نمی‌خواهد، ولی ابزارهایِ ممیزیِ خودِ مخزن
+    (`tools/installed_vs_dev_diff.py`، `tools/tape_flag_yield.py`،
+    `tools/tse_live_filter_parity.py`) همان‌ها را inputs می‌گیرند. این مسیر
+    کشِ /api/market را **دست نمی‌زند** (بدنۀ ابزار جایِ بدنۀ تابلو را نمی‌گیرد)
+    و بی‌دقتِ ۳۹۰ms هم برایِ یک پروبِ دستی اشکالی ندارد.
+    """
+    if fields == "all":
+        return _build_market_response(request, drop_unused=False, store_cache=False)
     cached = _market_from_cache(request, time.time())
     if cached is not None:
         return cached
@@ -644,13 +654,13 @@ def _clean(v):
     return v
 
 
-def _slim_records(df):
+def _slim_records(df, drop_unused=True):
     """ردیف‌ها بی‌کلیدهایِ بی‌خواننده و بی‌null — و `ins_code` به‌عنوان کلید."""
     out = []
     for rec in df.reset_index().to_dict(orient="records"):
         r = {}
         for k, v in rec.items():
-            if k in _DROP_FIELDS:
+            if drop_unused and k in _DROP_FIELDS:
                 continue
             v = _clean(v)
             if v is None:
@@ -784,7 +794,7 @@ _BOARD_SQL = """
 """
 
 
-def _build_market_response(request: Request):
+def _build_market_response(request: Request, drop_unused=True, store_cache=True):
     """تابلو. قابِ ایستا از RAM، دلتا از حالتِ داغ؛ SQLite فقط درِ بی‌اعتباری."""
     now = time.time()
     # ویرایش **پیش از** ساختن خوانده می‌شود: نوشتن‌هایِ وسطِ این ۳۰۰ میلی‌ثانیه
@@ -899,7 +909,7 @@ def _build_market_response(request: Request):
         for _k, _s in _filters_tbl.items():
             df[_k] = _s.fillna(False)
 
-        records = _slim_records(df)
+        records = _slim_records(df, drop_unused)
         counts = {"count": len(df),
                   "live_count": int(df["is_live"].sum()) if "is_live" in df.columns else len(df),
                   "fossil_count": int((~df["is_live"]).sum()) if "is_live" in df.columns else 0}
@@ -911,8 +921,11 @@ def _build_market_response(request: Request):
         # ویرایشی که برایِ آن ساخته شده‌اند. `/api/market/delta` از همین آینه
         # می‌فهمد «از ویرایشِ N تا چه نمادهایی تکان خورده» و همان ردیف‌ها را
         # می‌فرستد — بی‌JSONِ ۴ مگابایتیِ هر پنج ثانیه.
-        _mirror(records, meta, counts, built_rev)
-        _market_store(body, etag, now)
+        if store_cache:
+            # `?fields=all` آینه و کش را نمی‌سوزاند: ابزارِ ممیزی حق ندارد
+            # بدنۀ تابلویِ کاربر را عوض کند.
+            _mirror(records, meta, counts, built_rev)
+            _market_store(body, etag, now)
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
         # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match

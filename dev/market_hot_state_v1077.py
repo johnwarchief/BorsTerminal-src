@@ -346,6 +346,22 @@ def board_part():
         ck("چکِ بی‌محتوا نبود: بدنه‌ها با دقتِ یکسان مقابله شدند",
            len(by2) == len(by1) and by1["K3"]["p_closing"] == by2["K3"]["p_closing"])
 
+        # ── درِ ابزارِ ممیزی: ?fields=all بی‌کش ─────────────────────────
+        before_body, before_etag, _ = M._market_snapshot()
+        r_all = M.get_market(Req(), fields="all")
+        b_all = json.loads((r_all.body if isinstance(r_all.body, bytes)
+                            else r_all.body.encode()).decode("utf-8"))
+        keys_all = set(b_all["data"][0])
+        ck("?fields=all ستون‌هایِ بی‌خواننده را برایِ ابزارِ ممیزی برمی‌گرداند",
+           {"eps", "p_max", "p_min", "suspicious_vol", "d_even", "prev_day_vol",
+            "tmax", "vol_trend"} <= keys_all,
+           str(sorted({"eps", "p_max", "d_even", "tmax"} - keys_all)))
+        ck("بدنۀ عادی همان ستون‌ها را نمی‌فرستد (وگرنه صرفِ ۴۵٪ معنا ندارد)",
+           not ({"eps", "p_max", "suspicious_vol"} & set(d1b["data"][0].keys())))
+        after_body, after_etag, _ = M._market_snapshot()
+        ck("و این بدنۀ ابزار جایِ کشِ تابلو را نمی‌گیرد (برقی‌ماندِ یکسان)",
+           after_etag == before_etag and after_body == before_body)
+
         # ── ۳) endpoint دلتا ────────────────────────────────────────────
         rev0 = MS.revision()
         # `raw` همان متغیری است که fake_get برمی‌گرداند — پس *همین نام* باید
@@ -462,7 +478,7 @@ def main():
     board_part()
     wiring_part()
     print("\nmarket_hot_state_v1077: %d passed / %d failed"
-          % (27 - len(FAILS) if not FAILS else 0, len(FAILS)))
+          % (CHECKS[0] - len(FAILS), len(FAILS)))
     if FAILS:
         for f in FAILS:
             print("  FAILED:", f)
