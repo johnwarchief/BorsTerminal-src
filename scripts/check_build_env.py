@@ -30,6 +30,12 @@ PROBES = [
     ("pywebview", "webview"),
     ("pythonnet", "pythonnet"),
     ("pyinstaller", "PyInstaller"),
+    # سه مسیرِ خروجی (`api/_export.py`): هر سه درِ `requirements.txt` و
+    # `hiddenimports` هستند، ولی این فهرست دستی است — یعنی نبودنشان تا
+    # `ModuleNotFoundError` رویِ خودِ route (۵۰۰) هیچ‌جا گزارش نمی‌شد.
+    ("openpyxl", "openpyxl"),
+    ("python-docx", "docx"),
+    ("reportlab", "reportlab"),
 ]
 # app.py در نبودش به JSONResponse استاندارد برمی‌گردد، پس ریلیز نمی‌شکند.
 OPTIONAL = {"orjson"}
