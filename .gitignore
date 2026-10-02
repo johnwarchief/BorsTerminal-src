@@ -180,3 +180,11 @@ _audit/last_blast_radius/csv_cache/
 _audit/last_blast_radius/fetch_stats.json
 _audit/last_blast_radius/partial.jsonl
 price_basis.json
+
+# Indicator Contract (ممیزیِ اندیکاتورها): دو خروجیِ بزرگِ میانیِ بازتولیدپذیر —
+# `python _audit/indicator_audit/make_dataset.py && node _audit/indicator_audit/js_run.mjs`
+# (candles.json ≈۳٫۷MB از CSVهایِ کش‌شده، ts_out.json ≈۴۸MB خروجیِ ریاضیِ فرانت).
+# اسکریپت‌ها و report.json/causes.json/table.txt درِ گیت می‌مانند.
+_audit/indicator_audit/candles.json
+_audit/indicator_audit/ts_out.json
+_audit/indicator_audit/__pycache__/
