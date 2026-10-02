@@ -11,3 +11,11 @@ orjson
 # پنجرهٔ مستقلِ بومی (WebView2) بدون مرورگر/تب/نوار آدرس.
 pywebview
 pythonnet
+# مسیر خروجی (api/_export.py): xlsx / docx / pdf. هر سه درِ hiddenimportsِ
+# fts_terminal.spec فهرست‌اند ولی هیچ‌جا اعلام نشده بودند — بیلد روی محیطِ تمیز
+# با ModuleNotFoundError رویِ هر route خروجی (۵۰۰) جواب می‌داد و
+# scripts/check_build_env.py فقط بسته‌هایِ *اعلام‌شده* را چک می‌کند، پس نبودنشان
+# را هیچ‌وقت گزارش نمی‌داد. نسخه‌ها همان چیزی است که بیلدِ امروز با آن تست شده.
+openpyxl==3.1.5
+python-docx==1.2.0
+reportlab==5.0.1
