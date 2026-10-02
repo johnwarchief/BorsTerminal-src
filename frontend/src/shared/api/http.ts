@@ -32,6 +32,13 @@ export interface HttpOptions {
   rawBody?: BodyInit;
   /** هدرهای اضافه یا رونویسی (مثلاً Content-Type برای rawBody) */
   headers?: Record<string, string>;
+  /**
+   * بی‌کشِ اعتبارسنجی. برایِ آدرسهایی که *هر سیکل نویشان* دارند:
+   * `/api/market/delta?since=REV` با کلیدِ آدرس‌محور درِ `conditional` یک
+   * ورودیِ تازه می‌سازد و هیچ‌وقت به کار نمی‌آید (۳۰۴ ندارد) — یعنی نشتِ
+   * حافظه‌ای که درِ نشستِ چهارساعته هزاران ردیفِ ۲۰۰-تایی نگه می‌دارد.
+   */
+  noCache?: boolean;
 }
 
 const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
@@ -86,7 +93,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 /** fetch با retry نمایی + Zod parse — الگوی codal_fetcher (backoff روی 429/403) */
 export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
   const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET',
-          body, rawBody, headers } = opts;
+          body, rawBody, headers, noCache } = opts;
   let lastErr: unknown;
 
   // JSON body فقط وقتی build می‌شود که بدنهٔ خام نیامده باشد (rawBody اولویت دارد).
@@ -95,7 +102,7 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const revalidate = method === 'GET' ? conditional.get(cKey) : undefined;
+      const revalidate = method === 'GET' && !noCache ? conditional.get(cKey) : undefined;
       const res = await fetch(url, {
         headers: {
           Accept: 'application/json',
@@ -130,7 +137,7 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
       // `?.` چون پاسخ‌هایِ ماک‌شدهٔ تست‌ها ممکن است Responseِ کامل نباشند؛
       // نبودِ هدر فقط یعنی «این پاسخ قابلِ اعتبارسنجیِ مجدد نیست».
       const etag = res.headers?.get?.('etag') ?? null;
-      if (method === 'GET' && etag) conditional.set(cKey, { etag, data: parsed.data });
+      if (method === 'GET' && etag && !noCache) conditional.set(cKey, { etag, data: parsed.data });
       return parsed.data as T;
     } catch (e) {
       if (e instanceof HttpError) throw e;

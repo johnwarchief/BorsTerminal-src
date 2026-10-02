@@ -101,6 +101,8 @@ async function fetchFeed(signal?: AbortSignal): Promise<MarketFeed> {
     d = await http<MarketDelta>(`/api/market/delta?since=${rev}`, {
       schema: MarketDeltaSchema,
       signal,
+      // آدرسِ هر-سیکل-نُو ⇒ کشِ etag بی‌فایده و مَمُ‌نشتِ حافظه (درِ http.ts).
+      noCache: true,
     });
   } catch (e) {
     if (e instanceof HttpError && e.status === 404) deltaUnsupported = true;
