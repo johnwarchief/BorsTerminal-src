@@ -54,6 +54,15 @@ def api_discover(limit: int = Query(25, ge=1, le=200)):
     """v7.4 — دریافت نمادهای جدید = فید سراسری discover (بهینه‌ترین روش:
     یک فید بازار-wide به‌جای ~۲۰۰۰ پراب نماد-به-نماد؛ ۹۶٪ پراب‌های قدیمی خالی بود).
     گارد ۲-اسکن همزمان + پاکسازی stop ماندگار مثل sync_codal."""
+    from ._core import codal_crawler_available
+    if not codal_crawler_available():
+        # همان نقصِ `_spawn_pipeline`: این Popen دومِ مسیرِ کدال بود و ازِ گاردِ
+        # تابعِ مشترک رد نمی‌شد، پس درِ EXE هنوز دومینِ پنجرۀ برنامه را بالا
+        # می‌آورد و فایلِ کنترل را هم «resume» می‌نوشت (یعنی یکِ خزندۀ
+        # خیالیِ درحالِ اجرا).
+        return {"status": "unavailable",
+                "message": "خزندهٔ کدال درِ نسخۀ نصبی اجرا نمی‌شود؛ "
+                           "از «بروزرسانی دیتابیس کدال» استفاده کنید"}
     if _codal_running():
         return {"status": "already_running",
                 "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}

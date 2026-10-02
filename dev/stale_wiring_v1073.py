@@ -8,8 +8,10 @@
      هم نمی‌رود)، ولی سینکِ بازار `market_watch.market_cap` را بازنویسی می‌کند و
      ادغامِ snapshot کدال هر سه جدولِ بنیادی را. هیچ‌کدام کشِ اسکرینر را پاک نمی‌کردند
      ⇒ همان شکلِ «عددِ اسکرینر با عددِ کارت می‌جنگد» که برایِ #66 ثبت شد.
-  ۲) سه endpoint زیرپروسۀ کدال را با `[sys.executable, "codal_fetcher.py", …]`
-     Popen می‌کردند. درِ بیلدِ فریزشده `sys.executable` خودِ EXE است ⇒ دومینِ پنجرۀ
+  ۲) چهار مسیرِ کدال زیرپروسه را با `[sys.executable, "codal_fetcher.py", …]`
+     Popen می‌کردند (`sync_codal`، `_spawn_pipeline`، `api_discover`،
+     `codal_engine.run_sync_job`). درِ بیلدِ فریزشده `sys.executable` خودِ EXE
+     است ⇒ دومینِ پنجرۀ
      برنامه بالا می‌آمد (و طبقِ `bors_config:452` یکِ مسیرِ فرعی با connectِ خالی
      market.db را ناقص گذاشته بود). پرچمِ `--codal-worker` هم هیچ‌جا dispatch نشده.
   ۳) سه کشِ `MA_CACHE`/`KEY_LEVELS_CACHE`/`PATTERNS_CACHE` رویِ سریِ **پس ازِ
@@ -100,6 +102,7 @@ def main():
 
     print("\n— ۳) درِ بیلدِ فریزشده هیچ زیرپروسۀ خزنده‌ای متولد نمی‌شود")
     import api._core as CORE
+    import api._pipeline as PL
     import codal_engine as CE
     real = CORE.codal_crawler_available
     CORE.codal_crawler_available = lambda: False
@@ -108,6 +111,8 @@ def main():
         r1 = SD.sync_codal(mode="update")
         r2 = CE.run_sync_job("full")
         r3 = CE.run_sync_job("watchlist")
+        r4 = PL.api_discover(limit=25)
+        r5 = PL._spawn_pipeline("update", 25, ["--update-symbols", "25"])
     finally:
         CORE.codal_crawler_available = real
         SD.codal_crawler_available = real
@@ -115,6 +120,11 @@ def main():
        "/api/sync/codal در EXE صادقانه رد می‌کند (نه پنجرۀ دوم)", str(r1)[:90])
     ck(r2.get("status") == "unavailable", "run_sync_job(full) در EXE رد می‌کند", str(r2)[:80])
     ck(r3.get("status") == "unavailable", "run_sync_job(watchlist) هم رد می‌کند", str(r3)[:80])
+    ck(r4.get("status") == "unavailable", "/api/sync/discover هم رد می‌کند", str(r4)[:80])
+    ck(r5.get("status") == "unavailable", "_spawn_pipeline (مسیرِ مشترک) رد می‌کند", str(r5)[:80])
+    ck("discover" not in PL._PIPELINE_JOBS or
+       PL._PIPELINE_JOBS["discover"].get("status") != "running",
+       "هیچ jobِ «درحالِ اجرا»یِ خیالی ثبت نمی‌شود", str(PL._PIPELINE_JOBS))
 
     print("\n— ۴) کلیدِ سه کشِ چارت مبنایِ قیمت را حمل می‌کند")
     import api.chart as CH
