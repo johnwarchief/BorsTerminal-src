@@ -12,7 +12,7 @@
 // `title` عمداً از المانِ فرزند برداشته نمی‌شود مگر صریح بگویید: اگر هر دو
 // بمانند، کاربر دو راهنما می‌بیند.
 import * as RT from '@radix-ui/react-tooltip';
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { cn } from './cn';
 
 /** یک Provider برایِ کلِ برنامه — تأخیرِ مشترک و رفتارِ «پرشِ سریع» بینِ
@@ -38,6 +38,27 @@ export function Tooltip({
   className?: string;
   testId?: string;
 }) {
+  // ── لمس ──────────────────────────────────────────────────────────────
+  // Radix راهنما را با hover و focus باز می‌کند. گوشی hover ندارد و لمس
+  // هم فوکوس نمی‌دهد مگر رویِ عنصرِ فوکوس‌پذیر — یعنی رویِ موبایل این
+  // راهنماها عملاً نامرئی‌اند. در برنامه‌ای که ۲۷۲ جا توضیحِ فرمول را در
+  // همین راهنما گذاشته، این یعنی کاربرِ موبایل هیچ‌کدام را نمی‌بیند.
+  //
+  // پس رویِ اشاره‌گرِ درشت (انگشت) خودمان بازوبسته می‌کنیم. تشخیص با
+  // media query است نه با userAgent — لپ‌تاپِ لمسی هم درست رفتار کند.
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(pointer: coarse)');
+    setCoarse(mq.matches);
+    const on = (e: MediaQueryListEvent) => setCoarse(e.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  const [touchOpen, setTouchOpen] = useState(false);
+  // فقط وقتی coarse است وصل می‌شود، پس نیازی به گاردِ درونی نیست.
+  const toggle = useCallback(() => setTouchOpen((v) => !v), []);
+
   if (!content) return <>{children}</>;
   return (
     // Provider اینجا هم هست، نه فقط در ریشهٔ برنامه.
@@ -52,8 +73,18 @@ export function Tooltip({
     // نمی‌شود، پس حرکت از یک سرستون به سرستونِ بعدی هر بار تأخیرِ کامل
     // می‌گیرد. در برابرِ «هرگز نترکد» معاملهٔ خوبی است.
     <RT.Provider delayDuration={350} skipDelayDuration={200}>
-    <RT.Root>
-      <RT.Trigger asChild>{children}</RT.Trigger>
+    <RT.Root
+      {...(coarse ? { open: touchOpen, onOpenChange: setTouchOpen } : {})}
+      disableHoverableContent={coarse}
+    >
+      <RT.Trigger
+        asChild
+        // لمس: خودمان بازوبسته می‌کنیم. onPointerDown به‌جایِ onClick چون
+        // Radix خودش pointer را می‌بلعد و click همیشه نمی‌رسد.
+        onPointerDown={coarse ? toggle : undefined}
+      >
+        {children}
+      </RT.Trigger>
       <RT.Portal>
         <RT.Content
           side={side}
