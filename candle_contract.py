@@ -132,7 +132,7 @@ def iso_from_csv(fields):
 def from_csv_row(symbol, fields, src=SRC_PUBLISHED):
     """ردیفِ `GetClosingPriceDailyListCSV` → کندل.
 
-    نگاشتِ سنجیده‌شدہ (قرارداد §۱-ج الف، ۱۴٬۲۱۰/۱۴٬۷۰۶): open از `FIRST`، close از
+    نگاشتِ سنجیده‌شده (قرارداد §۱-ج الف، ۱۴٬۲۱۰/۱۴٬۷۰۶): open از `FIRST`، close از
     `CLOSE` (لنگر)، last از `LAST`، value از `VALUE`. `fields[10]` (= `OPEN`) قیمتِ پایه
     است و هیچ‌وقت open نمی‌شود.
     """
