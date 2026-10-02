@@ -2,6 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
+import { useMarketFeedShared } from '@shared/api/marketFeed';
+import type { MarketFeed } from '@shared/types/marketRow';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { PortfolioDecisionSchema } from '../model/portfolioSignals';
 
@@ -46,28 +48,21 @@ export function usePortfolio() {
   });
 }
 
-const ClosesSchema = z.object({
-  status: z.string(),
-  data: z.array(z.object({ symbol: z.string().min(1), p_closing: z.number().nullish() })).nullish(),
-});
 
 /** قیمت پایانی جاری نمادها برای کنترل حد ضرر */
 export function useMarketCloses() {
-  return useQuery({
-    queryKey: ['portfolio-closes'],
-    queryFn: ({ signal }) =>
-      http<z.infer<typeof ClosesSchema>>('/api/market', { schema: ClosesSchema, signal }).then((feed) => {
+  // حدِ ضرر از همان تابلو خوانده می‌شود. پیش‌ازین این یک کوئریِ مستقل با
+  // اسکیمایِ دوفیلدی بود و — آن‌طور که در #1193ِ درختِ استراتژی دیدیم — کلیدِ
+  // فقط-آدرس درِ shared/api/http باعث می‌شد آبجکتِ چروکیدهٔ آن به کشِ تابلو
+  // نشت کند. با کلیدِ مشترک این طبقه خطا هم از بین می‌رود.
+  return useMarketFeedShared((feed: MarketFeed) => {
         const map = new Map<string, number>();
-        for (const r of feed.data ?? []) {
+        for (const r of feed.data) {
           if (r.p_closing != null) {
             map.set(r.symbol, r.p_closing);
             map.set(normalizeFa(r.symbol), r.p_closing);
           }
         }
-        return map;
-      }),
-    staleTime: 60_000,
-    gcTime: 10 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+    return map;
+  }, 60_000);
 }

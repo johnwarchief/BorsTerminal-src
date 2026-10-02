@@ -68,6 +68,10 @@ a = Analysis(
                    # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:
                    # نبودنش EXE را روی اولین درخواست /api/market می‌کشد.
                    'tape_flags',
+                   # حالتِ داغِ تابلو (کار #73): api.market و test_tsetmc آن را import
+                   # می‌کنند (test_tsetmc درِ بدنهٔ تابع، پس ایستیک‌اسکن نمی‌بیند).
+                   # نبودنش EXE را روی اولین تیکِ زنده می‌کشد.
+                   'market_state',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
                    'api.screener', 'api._sync_market', 'api._export',

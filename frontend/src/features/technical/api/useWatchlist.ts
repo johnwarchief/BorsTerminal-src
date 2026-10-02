@@ -2,11 +2,10 @@
 // از اندپوینت /api/market با اسکیمای مشترک shared/types/marketRow (مرز B1 حفظ است:
 // فقط shared و contracts). بازهٔ بازخوانی از shared/stores/marketStore می‌آید.
 import { useQuery } from '@tanstack/react-query';
-import { http } from '@shared/api/http';
-import { MarketFeedSchema, type MarketFeed, type MarketRow } from '@shared/types/marketRow';
+import { marketFeedOptions } from '@shared/api/marketFeed';
+import type { MarketRow } from '@shared/types/marketRow';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { matchFa } from '@shared/lib/normalizeFa';
-import { effectivePollMs } from '@shared/lib/marketHours';
 
 /** کفِ بازهٔ بازخوانی دیده‌بان — سبک‌تر از تابلو تا سایدبار سنگین نشود */
 const MIN_INTERVAL_MS = 30_000;
@@ -15,14 +14,10 @@ const DEFAULT_LIMIT = 60;
 export function useWatchlistFeed() {
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const paused = useMarketStore((s) => s.paused);
-  return useQuery({
-    queryKey: ['technical-watchlist'],
-    queryFn: ({ signal }) => http<MarketFeed>('/api/market', { schema: MarketFeedSchema, signal }),
-    refetchInterval: paused ? false : () => effectivePollMs(Math.max(MIN_INTERVAL_MS, refetchIntervalMs)),
-    staleTime: 10_000,
-    gcTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+  // کلیدِ مشترکِ ['market-feed'] ⇒ بی‌درخواستِ دوم. واچ‌لیست ریتمِ آرام‌تر
+  // می‌خواهد، ولی چون داده از همان کوئریِ تابلو می‌آید، «آرام‌تر» یعنی فقط
+  // کمتر *بیدار شدن*، نه کمتر کشیدنِ ۴ مگابایت رویِ سیم.
+  return useQuery(marketFeedOptions(Math.max(MIN_INTERVAL_MS, refetchIntervalMs), paused));
 }
 
 /** ارزش معاملهٔ روز ≈ آخرین قیمت × حجم — مبنای مرتب‌سازی دیده‌بان */

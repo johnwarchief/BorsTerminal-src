@@ -164,8 +164,8 @@ def _queries():
     """(live_with_tables, monolithic) — هر دو از خودِ api/market.py."""
     import api.market as mk
     src = open(os.path.join(REPO, "api", "market.py"), encoding="utf-8").read()
-    m = re.search(r'query = """(.*?)"""\n', src, re.DOTALL)
-    assert m, "board query text not found in api/market.py"
+    m = re.search(r'_BOARD_SQL = """(.*?)"""\n', src, re.DOTALL)
+    assert m, "board query text not found in api/market.py (_BOARD_SQL)"
     live = m.group(1)
     assert "board_hist_v" in live and "board_hist_fv" in live, \
         "the live query no longer reads the materialized windows — this guard is stale"
@@ -244,19 +244,30 @@ def _pipeline_flags(mk, conn, sql_text):
 
     class _PdShim:
         def read_sql_query(self, query, con, *a, **k):
+            self.calls += 1
             return real_pd.read_sql_query(sql_text, con, *a, **k)
+
+        calls = 0
 
         def __getattr__(self, n):
             return getattr(real_pd, n)
 
     old_pd, old_getdb = mk.pd, mk.get_db
-    mk.pd, mk.get_db = _PdShim(), (lambda: _NoCloseConn(conn))
+    shim = _PdShim()
+    mk.pd, mk.get_db = shim, (lambda: _NoCloseConn(conn))
+    # حالتِ داغ (کار #73) قابِ تابلو را در RAM نگه می‌دارد؛ این گارد همین
+    # متنِ SQL را دو بار می‌سنجد (با جدولِ مادی و تک‌پیسّه)، پس بینِ دو اجرا
+    # باید قاب بسوزد، وگرنه اجرای دوم پاسخِ اجرای اول را می‌بیند و مقایسه
+    # با خودش یکی می‌شود — سبزِ بی‌محتوا.
+    mk._reset_board_cache()
     try:
         out = mk._build_market_response(_FakeReq())
         body = out.body if isinstance(out.body, (bytes, bytearray)) else out.body.encode()
         payload = _json.loads(body.decode("utf-8"))
     finally:
         mk.pd, mk.get_db = old_pd, old_getdb
+        mk._reset_board_cache()
+    assert shim.calls == 1, f"pipeline did not run the SQL (calls={shim.calls})"
     got = {k: set() for k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh")}
     for rec in payload["data"]:
         for k in got:

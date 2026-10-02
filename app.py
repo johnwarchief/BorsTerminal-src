@@ -256,13 +256,23 @@ def _startup_sync_market():
     # ۹۰ ثانیه‌ای نمی‌خوابد.
     def _board_tick_loop():
         import time as _t
+        import market_state as _MS
+        from api.market import _kick_market_rebuild
+        # محرکِ rebuild «تغییرِ داده» است، نه «پایانِ یک سیکل». تا پیش از این
+        # هر تیکِ پنج‌ثانیه‌ای کش را بازسازی می‌خواست — یعنی درِ سکوتِ بازار
+        # هم ۲۵۰ میلی‌ثانیه CPU و یک بدنهٔ ۷ مگابایتی که بایتی از آن فرق
+        # نداشت. revision فقط درِ market_state بالا می‌رود، آن‌هم پس از
+        # commitِ موفق، پس «بازسازی‌شده» همیشه یعنی «چیزی رویِ دیسک عوض شده».
+        last_rev = _MS.revision()
         while True:
             try:
                 # درِ ساعت داخلِ خودِ tick_live: تا ۱۲:۳۰ نوشتنِ کامل، ۱۲:۳۰ تا
                 # ۱۵:۳۰ فقط ستون‌هایِ عددی (تابلوی TSETMC پس از بستن هم می‌چرخد).
                 import test_tsetmc as _ts
-                if _ts.tick_live():
-                    from api.market import _kick_market_rebuild
+                _ts.tick_live()
+                rev = _MS.revision()
+                if rev != last_rev:
+                    last_rev = rev
                     _kick_market_rebuild()
             except Exception as _e:
                 print(f"[startup] board tick loop: {_e}")
@@ -281,22 +291,29 @@ def _startup_sync_market():
         import time as _t
         while True:
             try:
-                import sqlite3 as _sq, mstat_engine as _ME
-                from bors_config import DB_PATH as _DB
-                # `close()` باید درِ finally باشد: هر raise داخلِ save_mstat_snapshot
-                # یکِ اتصال + هندلِ WAL را برایِ عمرِ کلِ برنامه باز می‌گذاشت
-                # (این حلقه هر ۳۰۰ ثانیه اجرا می‌شود).
-                _c = _sq.connect(_DB, timeout=30)
-                try:
-                    _ME.save_mstat_snapshot(_c)
-                finally:
-                    _c.close()
+                # رأیِ مالک (کار #73): «همهٔ pollingها فقط درِ نشستِ معاملاتی فعال
+                # باشند». save_mstat_snapshot خودش بیرونِ پنجره چیزی نمی‌نویسد،
+                # ولی این حلقه باز هر ۳۰۰ ثانیه بیدار می‌شد، یکِ اتصالِ SQLite و
+                # یکِ ensure_schema (کوئریِ PRAGMA) می‌ساخت — یعنی شبِ پنجشنبه
+                # هم برنامه بیدار است. دربِ ساعت حالا درِ خودِ حلقه است؛ اگر
+                # برنامه بیرونِ نشست بالا بیاید، اولین نقطه درِ ۰۸:۵۵ نوشته می‌شود.
+                if _market_in_session():
+                    import sqlite3 as _sq, mstat_engine as _ME
+                    from bors_config import DB_PATH as _DB
+                    # `close()` باید درِ finally باشد: هر raise داخلِ save_mstat_snapshot
+                    # یکِ اتصال + هندلِ WAL را برایِ عمرِ کلِ برنامه باز می‌گذاشت
+                    # (این حلقه هر ۳۰۰ ثانیه اجرا می‌شود).
+                    _c = _sq.connect(_DB, timeout=30)
+                    try:
+                        _ME.save_mstat_snapshot(_c)
+                    finally:
+                        _c.close()
             except Exception as _e:
                 print(f"[startup] pulse snapshot loop: {_e}")
             _t.sleep(300)
     try:
         threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
-        print("[startup] pulse snapshot loop spawned")
+        print("[startup] pulse snapshot loop spawned (300s, session-windowed)")
     except Exception as _e:
         print(f"[startup] pulse snapshot loop failed: {_e}")
 
@@ -319,6 +336,13 @@ def _startup_sync_market():
                 _T.normalize_price_history_geometry(_c)
             finally:
                 _c.close()
+            # این دو جدول پنجره‌هایِ نمایشِ تابلو را می‌سازند (میانگین حجم،
+            # کفِ ۲۹ نشست، پلکانِ [ih]) و تیکِ زنده هرگز نمی‌نویسدشان؛ نخِ بوت
+            # ممکن است *پس از* اولین ساختنِ تابلو تمام کند، پس خودمان خبر می‌دهیم
+            # که قابِ ایستا سوخته است. بی‌این، سقفِ ۶۰ ثانیه در `api.market`
+            # جبران می‌کرد — یعنی تا یک دقیقه عددِ دیروز زیرِ تاریخِ امروز.
+            import market_state as _MS
+            _MS.note_static_change()
         except Exception as _e:
             print(f"[startup] candle projection at boot: {_e}")
     try:

@@ -1,25 +1,14 @@
 // features/market/api/useMarketFeed.ts -- خوراک تابلو با پولینگ
-// اشتراک ساختاری پیش فرض TanStack Query ارجاع داده را نگه می دارد تا
-// پولینگ 1 ثانیه ای وقتی داده عوض نشده رندر بیهوده نسازد.
+// گزینه‌ها از shared/api/marketFeed می‌آید: همان کلید، همان queryFn که پس از
+// اولین بار دلتا می‌خواند (بی‌بدنۀ ۴ مگابایتی هر پنج ثانیه) و همان ارجاعِ
+// داده در بی‌تغییری، تا پولینگِ بی‌کاری رندر نسازد.
 import { useQuery } from '@tanstack/react-query';
-import { http } from '@shared/api/http';
-import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
+import { marketFeedOptions } from '@shared/api/marketFeed';
 import { useMarketStore } from '@shared/stores/marketStore';
-import { effectivePollMs } from '@shared/lib/marketHours';
 
 export function useMarketFeed() {
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const paused = useMarketStore((s) => s.paused);
-  return useQuery({
-    queryKey: ['market-feed'],
-    queryFn: ({ signal }) => http<MarketFeed>('/api/market', { schema: MarketFeedSchema, signal }),
-    // تابع باشد یعنی هر تیک دوباره سنجیده می‌شود: بازِ شدنِ بازار بدونِ remount
-    // به ریتمِ سریع برمی‌گردد، و در ساعتِ تعطیل به ریتمِ آرام (۵ دقیقه) می‌نشیند.
-    // اندازه‌گیریِ همین فایل: با بازارِ بسته و پولینگِ خامِ ۵ ثانیه، پنجرهٔ باز
-    // ~۷۵٪ یک هسته CPU و ۲۵٪ موتور سه‌بعدی می‌خورد. انتخابِ کاربر فقط در بازهٔ
-    // باز محترم می‌ماند؛ واچ‌لیستِ تکنیکال هم همین تابع را صدا می‌زند.
-    refetchInterval: paused ? false : () => effectivePollMs(refetchIntervalMs),
-    staleTime: Math.min(Math.max(refetchIntervalMs - 1_000, 1_000), 4_000),
-    gcTime: 5 * 60_000,
-  });
+  return useQuery(marketFeedOptions(refetchIntervalMs, paused));
 }
+

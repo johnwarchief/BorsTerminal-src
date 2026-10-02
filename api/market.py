@@ -8,6 +8,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 from ._core import _count_procs, get_db
 from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, FTS_LEGACY_LISTS, FTS_LEGACY_SCALARS, FTS_LIST_KEYS, FTS_STR_KEYS, MARKET_STATUS_PATH
 from bors_flags import _ORJ
+import market_state
 from tape_flags import apply_tape_flags
 from fastapi import APIRouter
 from fastapi import Request
@@ -183,6 +184,12 @@ def _market_store(body, etag, when):
 def _market_clear():
     with _MARKET_SNAP_LOCK:
         MARKET_CACHE.clear()
+    # آینهٔ دلتا هم باید بسوزد: بدنه‌ای که نبودنِ آن را به کلاینت می‌گوییم
+    # نمی‌تواند منبعِ «ردیف‌هایِ تغییریافته» بماند.
+    try:
+        _delta_clear()
+    except NameError:
+        pass
 
 
 def warm_market_cache():
@@ -458,26 +465,272 @@ def ensure_board_history(conn):
 _HIST_CACHE_KEY = (None,)
 
 
-def _build_market_response(request: Request):
-    import time as _t
-    now = _t.time()
-    conn = get_db()
+# ════════════════════════════════════════════════════════════════════════════
+# لایۀ «حالتِ داغ» — SQLite بیرون از مسیرِ خواندنِ زنده (کار #73)
+# ════════════════════════════════════════════════════════════════════════════
+# اندازه‌گیری ۱۴۰۵-۰۷-۱۱ رویِ کپیِ بانکِ کاری (_audit/payload_probe.py):
+#   بازسازیِ کامل ۳۸۱–۳۹۵ms = ۹۹ms کوئریِ بی‌اعتباریِ پنجره‌ها
+#                    + ۹۵ms کوئریِ تابلو + ~۱۵۰ms مشتقات + ۳۵ms to_dict + ۱۲ms JSON
+# و هر پنج ثانیه یک‌بار، حتی وقتی هیچ عددی عوض نشده بود. دو تا از آن چهار
+# مرحله فقط «خواندنِ بانک» بودند؛ حال آنکه تنها نویسدۀ درونِ نشست خودِ تیک است
+# و خودش می‌داند چه چیزی نوشته. پس:
+#   * بدنهٔ خامِ تابلو (joinِ ایستا) در RAM نگه داشته می‌شود و فقط وقتی
+#     سینکِ کامل/پنجره‌ها/تاریخِ نشست عوض شده از SQLite خوانده می‌شود؛
+#   * ستون‌هایِ زنده رویِ همان قاب از `market_state` می‌نشینند — همان
+#     مقدارهایی که رویِ دیسک رفته‌اند، پس RAM هیچ‌وقت جلوتر از بانک نیست؛
+#   * متای «زمان تابلو» از ضربانِ خودِ سیکل می‌آید، نه از یک کوئری.
+# مسیرِ SQLite دست‌نخورده می‌ماند و گاردِ `dev/market_hot_state_v1077.py`
+# بدنۀ هر دو مسیر را ستون‌به‌ستون می‌سنجد.
+_STATIC_LOCK = threading.Lock()
+# {"key": (sync_count, session_day, static_rev, hist_key), "df": قابِ ایستا}
+_STATIC_FRAME: dict = {"key": None, "df": None}
+# کوئریِ امضا ~۹۹ms است؛ بی‌از‌نو‌سازیِ پنجره‌ها این هزینه در هر بازسازیِ
+# پنج‌ثانیه‌ای صرفِ هیچ می‌شود. سقفِ زمانیِ اطمینان (ثانیه): اگر نویسنده‌ای
+# شمارنده را بالا نبرد، حداکثر یک‌دقیقه بعد خودمان بانک را می‌بینیم.
+_HIST_CHECK_S = 60.0
+_HIST_CHECKED_AT = 0.0
+
+# ستون‌هایِ تابلو که «همین نشست» را از market_watch می‌گیرند و تیکِ زنده‌شان را
+# عوض می‌کند. کلید = نامِ ستون درِ قاب، مقدار = نامِ ستون درِ `MW_COLS`.
+_LIVE_FROM_WATCH = {
+    "d_even": "d_even", "p_closing": "p_closing", "p_last": "p_last",
+    "q_tot_tran": "q_tot_tran", "q_tot_cap": "q_tot_cap", "z_tot_tran": "z_tot_tran",
+    "price_change": "price_change", "price_yesterday": "price_yesterday",
+    "pe": "pe", "eps": "eps", "p_max": "price_max", "p_min": "price_min",
+    "tmin": "allowed_min", "tmax": "allowed_max",
+    "buy_q_vol": "buy_q_vol", "buy_q_val": "buy_q_val", "buy_q_cnt": "buy_q_cnt",
+    "sell_q_vol": "sell_q_vol", "sell_q_val": "sell_q_val", "sell_q_cnt": "sell_q_cnt",
+    "buy_q1_vol": "buy_q1_vol", "buy_q1_px": "buy_q1_px", "buy_q1_cnt": "buy_q1_cnt",
+    "sell_q1_vol": "sell_q1_vol", "sell_q1_px": "sell_q1_px",
+}
+
+
+def _static_key():
+    return (market_state.sync_count(), market_state.session_day(),
+            market_state.static_rev())
+
+
+def _reset_board_cache() -> None:
+    """همهٔ قاب‌هایِ RAM را بی‌اعتبار می‌کند — درِ بوت، پایانِ سینک، و تست.
+
+    سه چیز جدا سوختنی است: قابِ ایستا، کلیدِ پنجره‌ها (که `_HIST_CACHE_KEY`
+    نگه می‌دارد) و ویرایشِ قاب. اگر فقط بدنۀ /api/market بسوزد و قابِ ایستا
+    بماند، بازسازیِ بعدی دلتایِ *همان قابِ کهنه* را می‌گذارد و عددِ یک نشستِ
+    پیشین زیرِ تاریخِ جدید می‌نشیند.
+    """
+    global _FRAME_REV, _HIST_CHECKED_AT
+    with _STATIC_LOCK:
+        _STATIC_FRAME["df"] = None
+        _STATIC_FRAME["key"] = None
+        _HIST_CHECKED_AT = 0.0
+    _FRAME_REV = market_state.revision()
+
+
+def _board_query_frame(conn):
+    """قابِ ایستایِ تابلو از SQLite، ایندکس‌شده بر `ins_code`.
+
+    ستون‌هایِ زنده هم همین‌جا از بانک می‌آیند (تازۀ آخرین نوشتن) و بعد رویِ
+    همان‌ها overlay می‌نشیند؛ پس «قابِ ایستا» دقیقاً همان چیزی است که کوئریِ
+    تک‌پیسّهٔ پیش می‌داد.
+    """
+    global _HIST_CHECKED_AT
+    ensure_board_history(conn)
+    _HIST_CHECKED_AT = time.time()
+    df = pd.read_sql_query(_BOARD_SQL, conn)
+    df = df.drop_duplicates(subset="ins_code", keep="first").set_index("ins_code")
+    last_deven = df["d_even"].max() if len(df) else None
+    df["is_live"] = (df["d_even"] == last_deven) if last_deven is not None else True
+    with _STATIC_LOCK:
+        _STATIC_FRAME["df"] = df
+        _STATIC_FRAME["key"] = _static_key() + (_HIST_CACHE_KEY,)
+    return df
+
+
+def _live_overlay(df, codes):
+    """ستون‌هایِ زندۀ `codes` را از حالتِ داغ رویِ کپیِ قاب می‌گذارد.
+
+    `codes` = هرچه از آخرینِ ساختنِ قاب نوشته شده. ردیفِ کامل از `_FULL`
+    می‌آید و patch (نوشتنِ پس از بستن که صف‌ها را نمی‌نویسد) رویِ همان می‌نشیند
+    — همان تفکیکی که درِ `market_state.commit` بین INSERT و UPDATE بود، پس
+    تابلوی RAM دقیقاً محتوایِ market_watch را می‌بیند.
+    """
+    if not codes:
+        return df
+    import test_tsetmc as _T
+    idx = [_T.MW_COLS.index(name) for name in _LIVE_FROM_WATCH.values()]
+    live_cols = list(_LIVE_FROM_WATCH)
+    dfcols = [c for c in live_cols if c in df.index or c in df.columns]
+    dfcols = [c for c in dfcols if c in df.columns]
+    full, patch = market_state.live_rows(codes)
+    pos = df.index
+    if full:
+        rows, kept = [], []
+        for code, r in full.items():
+            if code not in pos:
+                continue
+            rows.append([r[i] if i < len(r) else None for i in idx])
+            kept.append(code)
+        if rows:
+            df.update(pd.DataFrame(rows, index=kept, columns=live_cols)[dfcols])
+    if patch:
+        rows, kept, names = [], [], []
+        for code, p in patch.items():
+            if code not in pos or code in kept:
+                continue
+            rows.append([p.get(_LIVE_FROM_WATCH[c]) for c in live_cols])
+            kept.append(code)
+        if rows:
+            pf = pd.DataFrame(rows, index=kept, columns=live_cols)
+            pf = pf[[c for c in dfcols if pf[c].notna().any()]]
+            df.update(pf)
+    return df
+
+
+def _board_frame(conn, frame_rev):
+    """قابِ کاریِ این بازسازی: کشِ ایستا + دلتایِ زنده، یا SQLite اگر کش نیست.
+
+    تنها شرطِ خواندنِ SQLite تغییرِ لایۀ ایستاست (سینکِ کامل، روزِ نشست،
+    شمارندۀ ایستا، یا پنجره‌هایِ تاریخ) و یکِ سقفِ زمانیِ اطمینان برایِ
+    نویسدۀ ناشناخته. بی‌آن‌ها کوئریِ تابلو و کوئریِ امضا هر دو رد می‌شوند —
+    یعنی صفرِ SQLite در مسیرِ زنده.
+    """
+    global _FRAME_REV
+    key = _static_key() + (_HIST_CACHE_KEY,)
+    with _STATIC_LOCK:
+        cached = _STATIC_FRAME["df"]
+        same = _STATIC_FRAME["key"] == key and cached is not None
+    if same and (time.time() - _HIST_CHECKED_AT) < _HIST_CHECK_S:
+        df = cached.copy()
+    else:
+        df = _board_query_frame(conn)
+        frame_rev = _FRAME_REV = market_state.revision()
+    df = _live_overlay(df, market_state.overlay_codes(frame_rev))
+    return df, frame_rev
+
+
+
+_FRAME_REV = 0
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# بدنۀ کوچک‌تر — و آینه‌ای که دلتا از آن می‌خواند
+# ════════════════════════════════════════════════════════════════════════════
+# سنجش ۱۴۰۵-۰۷-۱۱ (_audit/payload_probe.py رویِ کپیِ بانکِ کاری): بدنه ۷٫۵۵MB،
+# ۷۲ کلید در هر ردیف، و ۱۵٪ مقدارها null. inventoryِ frontend/src (گزارشِ #73)
+# نشان داد ۲۵ کلید هیچ‌جا خوانده نمی‌شوند؛ schemaیِ zod همه را `.nullish()`
+# می‌خواهد، پس **نیامدنِ کلید بی‌خطاست** و ۴۵٪ از بدن می‌کاهد
+# (۷٫۵۵MB → ۴٫۱۵MB، gzip ۹۱۳KB → ۵۶۴KB).
+#
+# چرا بی‌حدسِ «به‌درد نمی‌خورد» سرِ route نگه داشته می‌شوند: این ستون‌ها درِ
+# بانک و درِ کوئری هستند و سازندۀ تابلو همان‌ها را می‌خواند؛ فقط سریال‌سازی
+# از فرستادنِ آن‌ها دست می‌کشد. اگر روزی UI بخواهد، یک سطر از همین فهرست
+# برمی‌گردد — نه یک migration.
+_DROP_FIELDS = frozenset((
+    "eps", "price_max", "price_min", "p_max", "p_min",          # دوباره‌نویسِ p_max/p_min
+    "buy_n_vol", "sell_n_vol",                                   # صفِ حقوقی/حقیقی درِ تابلو خوانده نمی‌شود
+    "buy_q_vol", "buy_q_val", "buy_q_cnt",
+    "sell_q_vol", "sell_q_val", "sell_q_cnt",
+    "buy_q1_px", "sell_q1_vol", "sell_q1_px",
+    "prev_day_vol", "d1_vol", "max30_high", "month_avg_vol",     # میانگینِ ماه: FE از vol_ratio می‌خواند
+    "tmax", "vol_trend", "sell_power_i", "suspicious_vol",
+    "d_even", "resistance_59", "dist_min30_pct",
+))
+
+
+def _clean(v):
+    if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))):
+        return None
+    return v
+
+
+def _slim_records(df):
+    """ردیف‌ها بی‌کلیدهایِ بی‌خواننده و بی‌null — و `ins_code` به‌عنوان کلید."""
+    out = []
+    for rec in df.reset_index().to_dict(orient="records"):
+        r = {}
+        for k, v in rec.items():
+            if k in _DROP_FIELDS:
+                continue
+            v = _clean(v)
+            if v is None:
+                continue
+            r[k] = v
+        out.append(r)
+    return out
+
+
+def _board_meta(conn):
+    """تاریخ/ساعتِ تابلو. درِ حالتِ داغ از ضربانِ سیکل، بی‌کوئری."""
+    day = market_state.session_day()
+    at = market_state.last_cycle_at()
+    if day and at:
+        return {"d_even": int(day), "h_even": int(market_state.max_h_even() or 0),
+                "last_sync": at}
     try:
-        # دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
-        #   tape_history — آرایۀِ [ih] عینِ سایت. درِ پنج فیلترِ فایل
-        #       (مبناءِ حجم، کفِ بیست‌ونُه نشست، پلکانِ مقاومت) از این است.
-        #   hist (اتحادِ price_history و daily_prices) — فقط ستون‌هایِ *نمایش*
-        #       (میانگین ماه، حجمِ دیروز، کمینه/بیشینۀِ ۳۰ روزه). این ردیف‌ها
-        #       روزهایی‌اند که نماد *معامله شده*:
-        #         price_history — ردیف‌هایِ *منتشرشده* (GetClosingPriceDailyListCSV
-        #             و بک‌فیلِ GetInstrmentsHistoryInDay).
-        #         daily_prices  — اسنپ‌شاتِ زندۀِ تابلو، برایِ روزهایی که هنوز
-        #             ردیفِ انتشاریافته نداریم؛ «امروزِ بی‌نهایه» را عمداً بیرون
-        #             می‌گذارد، چون ستونِ نمایش هم نباید نیم‌بها از حجمِ
-        #             نشستِ تمام‌نشده بسازد (اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵: خكمك با
-        #             شمارفتنِ امروز نسبتِ ۰٫۹۹ می‌شد و مردود، مرجعِ TSETMC ۱٫۰۶).
-        # روزهایِ همپوشان با GROUP BY رویِ (نماد،تاریخ) یک‌بار شمرده می‌شوند.
-        query = """
+        _r = conn.execute(
+            "SELECT d_even, MAX(h_even), MAX(fetched_at) FROM market_watch "
+            "WHERE d_even = (SELECT MAX(d_even) FROM market_watch)").fetchone()
+        if _r:
+            return {"d_even": int(_r[0] or 0), "h_even": int(_r[1] or 0), "last_sync": _r[2]}
+    except Exception:
+        pass
+    return {"d_even": None, "h_even": None, "last_sync": None}
+
+
+def _encode_board(payload):
+    import hashlib
+    if _ORJ:
+        import orjson
+        body = orjson.dumps(payload)
+    else:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    return body, '"' + hashlib.md5(body).hexdigest()[:16] + '"'
+
+
+# آینهٔ دلتا: ردیف‌هایِ سریال‌سازی‌شدهٔ آخرینِ بازسازی، keyed بر ins_code، به‌همراه
+# ویرایشی که *پیش از* ساختن خوانده شده بود. بی‌آن «rev = بعد از ساخت» می‌شد و
+# نوشتن‌هایِ وسطِ ساخت از چشمِ کلاینت پنهان می‌ماند.
+_DELTA_LOCK = threading.Lock()
+_DELTA: dict = {"by_code": {}, "meta": {}, "counts": {}, "rev": -1, "ready": False}
+
+
+def _mirror(records, meta, counts, rev):
+    with _DELTA_LOCK:
+        _DELTA["by_code"] = {r["ins_code"]: r for r in records if r.get("ins_code")}
+        _DELTA["meta"] = meta
+        _DELTA["counts"] = counts
+        _DELTA["rev"] = rev
+        _DELTA["ready"] = True
+
+
+def _mirror_snapshot():
+    with _DELTA_LOCK:
+        return (dict(_DELTA["by_code"]), dict(_DELTA["meta"]), dict(_DELTA["counts"]),
+                _DELTA["rev"], _DELTA["ready"])
+
+
+def _delta_clear():
+    with _DELTA_LOCK:
+        _DELTA["by_code"] = {}
+        _DELTA["ready"] = False
+        _DELTA["rev"] = -1
+
+
+# کوئریِ تابلو — دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
+#   tape_history — آرایۀِ [ih] عینِ سایت. درِ پنج فیلترِ فایل
+#       (مبناءِ حجم، کفِ بیست‌ونُه نشست، پلکانِ مقاومت) از این است.
+#   hist (اتحادِ price_history و daily_prices) — فقط ستون‌هایِ *نمایش*
+#       (میانگین ماه، حجمِ دیروز، کمینه/بیشینۀِ ۳۰ روزه). این ردیف‌ها
+#       روزهایی‌اند که نماد *معامله شده*:
+#         price_history — ردیف‌هایِ *منتشرشده* (GetClosingPriceDailyListCSV
+#             و بک‌فیلِ GetInstrmentsHistoryInDay).
+#         daily_prices  — اسنپ‌شاتِ زندۀِ تابلو، برایِ روزهایی که هنوز
+#             ردیفِ انتشاریافته نداریم؛ «امروزِ بی‌نهایه» را عمداً بیرون
+#             می‌گذارد، چون ستونِ نمایش هم نباید نیم‌بها از حجمِ
+#             نشستِ تمام‌نشده بسازد (اندازه‌گیریِ ۱۴۰۵-۰۷-۰۵: خكمك با
+#             شمارفتنِ امروز نسبتِ ۰٫۹۹ می‌شد و مردود، مرجعِ TSETMC ۱٫۰۶).
+# روزهایِ همپوشان با GROUP BY رویِ (نماد،تاریخ) یک‌بار شمرده می‌شوند.
+_BOARD_SQL = """
             WITH iso AS (
                 SELECT d,
                        printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) AS dt
@@ -527,12 +780,19 @@ def _build_market_response(request: Request):
             LEFT JOIN fv ON fv.ins_code = m.ins_code
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
-        """
-        ensure_board_history(conn)
-        df = pd.read_sql_query(query, conn)
-        last_deven = df["d_even"].max() if "d_even" in df.columns and len(df) else None
-        # نمادهای خارج از تابلو (دEVEN قدیمی) با اولویت آخر — ولی هنوز قابل نمایشاند
-        df["is_live"] = (df["d_even"] == last_deven) if last_deven else True
+"""
+
+
+def _build_market_response(request: Request):
+    """تابلو. قابِ ایستا از RAM، دلتا از حالتِ داغ؛ SQLite فقط درِ بی‌اعتباری."""
+    now = time.time()
+    # ویرایش **پیش از** ساختن خوانده می‌شود: نوشتن‌هایِ وسطِ این ۳۰۰ میلی‌ثانیه
+    # در بدنۀ پیش رو نیستند، پس آینه باید بگوید «این بدنۀ rev است»، نه revِ
+    # لحظۀ آخر — وگرنه دلتا همان ردیف‌هایِ تازه را «بی‌تغییری» گزارش می‌کند.
+    built_rev = market_state.revision()
+    conn = get_db()
+    try:
+        df, frame_rev = _board_frame(conn, _FRAME_REV)
 
         # ---------- cast حجم به float؛ NULL/NaN → 0 ----------
         df["tvol"] = pd.to_numeric(df["q_tot_tran"], errors="coerce").astype(float).fillna(0.0)
@@ -638,39 +898,19 @@ def _build_market_response(request: Request):
         for _k, _s in _filters_tbl.items():
             df[_k] = _s.fillna(False)
 
-        records = df.to_dict(orient="records")
-
-        def _clean(v):
-            if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))):
-                return None
-            return v
-
-        for rec in records:
-            for k in list(rec.keys()):
-                rec[k] = _clean(rec[k])
-        # meta: تاریخ/زمان معاملات برای نمایش شمسی (دادهٔ تابلو متعلق به کدام روز است)
-        meta = {"d_even": None, "h_even": None, "last_sync": None}
-        try:
-            # «زمان تابلو» یعنی آخرین چاپِ نشست، نه h_evenِ یک ردیفِ اتفاقی:
-            # ردیفِ برگزیده با ORDER BY fetched_at، ساعتِ معاملهٔ همان نماد است
-            # (امروز ۰۶:۱۰:۴۶ داد، در حالی که تابلو ۱۲:۵۸ بسته بود).
-            _r = conn.execute(
-                "SELECT d_even, MAX(h_even), MAX(fetched_at) FROM market_watch "
-                "WHERE d_even = (SELECT MAX(d_even) FROM market_watch)").fetchone()
-            if _r:
-                meta = {"d_even": int(_r[0] or 0), "h_even": int(_r[1] or 0), "last_sync": _r[2]}
-        except Exception:
-            pass
-        payload = {"status": "success", "count": len(df), "data": records, "meta": meta,
-                   "live_count": int(df["is_live"].sum()) if "is_live" in df.columns else len(df),
-                   "fossil_count": int((~df["is_live"]).sum()) if "is_live" in df.columns else 0}
-        import hashlib, json as _json
-        if _ORJ:
-            import orjson
-            body = orjson.dumps(payload)
-        else:
-            body = _json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        etag = '"' + hashlib.md5(body).hexdigest()[:16] + '"'
+        records = _slim_records(df)
+        counts = {"count": len(df),
+                  "live_count": int(df["is_live"].sum()) if "is_live" in df.columns else len(df),
+                  "fossil_count": int((~df["is_live"]).sum()) if "is_live" in df.columns else 0}
+        meta = _board_meta(conn)
+        payload = dict(status="success", rev=built_rev, data=records,
+                   meta=meta, **counts)
+        body, etag = _encode_board(payload)
+        # آینهٔ دلتا: همان ردیف‌هایِ سریال‌سازی‌شده، keyed بر ins_code، به‌همراه
+        # ویرایشی که برایِ آن ساخته شده‌اند. `/api/market/delta` از همین آینه
+        # می‌فهمد «از ویرایشِ N تا چه نمادهایی تکان خورده» و همان ردیف‌ها را
+        # می‌فرستد — بی‌JSONِ ۴ مگابایتیِ هر پنج ثانیه.
+        _mirror(records, meta, counts, built_rev)
         _market_store(body, etag, now)
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
@@ -685,6 +925,92 @@ def _build_market_response(request: Request):
                         headers={"Cache-Control": "max-age=15", "X-Cache": "MISS", "ETag": etag})
     finally:
         conn.close()
+
+@router.get("/api/market/delta")
+def get_market_delta(since: int = -1):
+    """فقط ردیف‌هایی که از ویرایشِ `since` تکان خورده‌اند.
+
+    پولینگِ پنج‌ثانیه‌ایِ تابلو رویِ localhost هم هزینه دارد: بدنهٔ کامل
+    ۴٫۱۵ مگابایت (۵۶۴KB gzip) است و رویِ دستگاهِ کاربر decompress + JSON.parse +
+    zodِ ۵٬۴۵۱ شیء را می‌خواهد. حال آنکه در یک سیکلِ پنج‌ثانیه‌ای معمولاً چند
+    صد نماد عوض می‌شود، نه پنج‌هزار.
+
+    سه پاسخ ممکن است و هیچ‌کدام «حدسِ ناقص» نیست:
+      • `unchanged` — آینه همان ویرایشِ کلاینت است ⇒ صفر ردیف، صفر parse.
+      • `delta`     — ردیف‌هایِ تغییریافته در (since, mirror_rev].
+      • `full`      — ژورنال به `since` نمی‌رسد، یا آینه از کلاینت عقب‌تر است،
+                      یا ردیفی در آینه نیست ⇒ کلاینت `/api/market` کامل را
+                      می‌گیرد. هیچ‌وقت دلتایِ نصفه از نبودِ داده ساخته نمی‌شود.
+
+    آینه فقط تا `mirror_rev` را دیده است؛ نوشتن‌هایِ بعد از آن در بدنۀ فعلی
+    نیستند، پس بازهٔ پاسخ `since < r <= mirror_rev` است و اگر revision جلو
+    افتاده باشد، rebuildِ پس‌زمینه را خودمان محرک می‌کنیم.
+    """
+    by_code, meta, counts, mirror_rev, ready = _mirror_snapshot()
+    cur = market_state.revision()
+    if not ready or mirror_rev < 0:
+        _kick_market_rebuild()
+        return _ORJ_JSON({"status": "full", "rev": cur, "reason": "no-cache"})
+    if since == mirror_rev and since == cur:
+        return _ORJ_JSON({"status": "unchanged", "rev": mirror_rev, "meta": meta, **counts})
+    if since > mirror_rev or not (0 <= since <= cur):
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "stale-client"})
+    codes = market_state.codes_between(since, mirror_rev)
+    if codes is None:
+        if cur > mirror_rev:
+            _kick_market_rebuild()
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "journal-gap"})
+    rows = [by_code[c] for c in codes if c in by_code]
+    if len(rows) != len(codes):
+        # نمادی که در آینه نیست (از تابلو رفته یا تازه آمده): دلتا صادق نیست.
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "missing-rows"})
+    if cur > mirror_rev:
+        _kick_market_rebuild()
+    return _ORJ_JSON({"status": "delta", "rev": mirror_rev, "rows": rows,
+                      "meta": meta, **counts})
+
+
+def _ORJ_JSON(payload) -> Response:
+    """JSONِ فشرده‌تر از defaultِ FastAPI؛ همان orjsonِ مسیرِ اصلی."""
+    body, _ = _encode_board(payload)
+    return Response(content=body, media_type="application/json",
+                    headers={"Cache-Control": "no-store"})
+
+
+@router.get("/api/live-stats")
+def live_stats():
+    """شمارنده‌هایِ حالتِ داغ — برایِ اینکه «چه‌قدر واقعاً عوض شد» دیده شود.
+
+    بی‌این endpoint ادعاهایِ «دلتا نوشتن‌ها را یک‌دهم کرد» فقط حرف می‌ماند؛
+    چرخۀ benchmarkِ کار #73 همین اعداد را قبل/بعد مقابله می‌کند.
+    """
+    from .market import _STATIC_FRAME
+    s = market_state.stats()
+    s["board_cache"] = bool(_STATIC_FRAME.get("df") is not None)
+    s["board_rows"] = int(len(_STATIC_FRAME["df"])) if _STATIC_FRAME.get("df") is not None else 0
+    s["delta_mirror_rows"] = len(_mirror_snapshot()[0])
+    s["subscribed"] = sorted(market_state.subscriptions())
+    return {"status": "success", "data": s}
+
+
+@router.post("/api/orderbook/watch")
+def orderbook_watch(payload: dict = None):
+    """«این پنجره عمقِ این نماد را نگاه می‌کند» — اشتراکِ حالتِ داغ.
+
+    عمقِ پنج‌سطحی هزینهٔ *شبکه* جدا ندارد: blDs در همان یک درخواستِ تابلو
+    (withBestLimits=true) می‌آید. چیزی که اشتراک می‌سنجد دو چیز است: ریتمِ
+    پولینگِ سایدبار (که تا پیش از این بی‌اعتبار به نشست، هر ۳۰ ثانیه می‌زد)
+    و هر کارِ افزونۀ درون‌جلسه‌ای که در آینده فقط برایِ نمادهایِ دیده‌شده
+    انجام می‌شود. نوشتنِ `order_book` دست‌نخورده مانده: حذفِ ردیف‌هایِ
+    غیرمشترک یعنی نمادی که کاربر دیر باز می‌کند «بی‌داده» ببیند — آن تصمیمِ
+    مالک است، نه حدسِ من.
+    """
+    code = str((payload or {}).get("ins_code") or "").strip()
+    if not code:
+        return {"status": "error", "message": "ins_code لازم است"}
+    market_state.subscribe_orderbook(code)
+    return {"status": "success", "subscribed": sorted(market_state.subscriptions())}
+
 
 @router.get("/api/fts")
 def get_fts_scan(limit: int = 0):

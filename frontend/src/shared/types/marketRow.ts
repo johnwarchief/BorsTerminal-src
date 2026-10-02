@@ -1,5 +1,18 @@
 // shared/types/marketRow.ts -- شکل پاسخ /api/market
 // فیلدها از کوئری api/market.py استخراج شده اند. عددها ممکن است null باشند.
+//
+// این فهرست **همان چیزی است که سرور می‌فرستد**، نه همهٔ ستون‌هایِ بانک. کارِ #73
+// (حالتِ داغ) بیست‌وشش کلید را از سریال‌سازی بیرون گذاشت، چون inventoryِ
+// frontend/src نشان داد هیچ‌جا خوانده نمی‌شوند: eps، price_max/price_min،
+// p_max/p_min، buy_n_vol/sell_n_vol، aggregates‌هایِ صف
+// (buy_q_vol/val/cnt، sell_q_vol/val/cnt، buy_q1_px، sell_q1_vol/sell_q1_px)،
+// prev_day_vol، d1_vol، max30_high، month_avg_vol، tmax، vol_trend،
+// sell_power_i، suspicious_vol، d_even، resistance_59، dist_min30_pct.
+// آن‌ها هنوز درِ `market_watch` و درِ کوئریِ تابلو هستند؛ فقط رویِ سیم نمی‌آیند:
+// ۷٫۵MB → ۴٫۱MB و gzip ۹۱۳KB → ۵۶۴KB.
+//
+// همه کلیدها `.nullish()`‌اند، پس «نیامدن» و «null» برایِ UI یکی است — و این
+// شرطِ درستِ کارِ حالتِ داغ است: سرور کلیدهایِ null را هم حذف می‌کند.
 import { z } from 'zod';
 
 const num = z.number().nullish();
@@ -18,34 +31,20 @@ export const MarketRowSchema = z.object({
   q_tot_tran: num,
   z_tot_tran: num,
   q_tot_cap: num,
-  pe: num,
-  eps: num,
-  price_max: z.string().nullish(),
-  price_min: z.string().nullish(),
-  p_max: num,
-  p_min: num,
-  buy_i_vol: num,
-  buy_n_vol: num,
-  sell_i_vol: num,
-  sell_n_vol: num,
-  buy_count_i: num,
-  sell_count_i: num,
-  // تابلویِ ۵ مظنه (buy_q*/sell_q*) از بانک می‌آید؛ «عمق بازار» دیگر چیزی
-  // نمی‌سازد. q_cnt تعدادِ سفارش و q1 اولینِ مظنهٔ فعال است.
-  buy_q_vol: num,
-  buy_q_val: num,
-  buy_q_cnt: num,
-  buy_q1_vol: num,
-  buy_q1_px: num,
-  sell_q_vol: num,
-  sell_q_val: num,
-  sell_q_cnt: num,
-  sell_q1_vol: num,
-  sell_q1_px: num,
-  month_avg_vol: num,
-  prev_day_vol: num,
   tvol: num,
   vol_ratio: num,
+  pe: num,
+  // تابلویِ ۵ مظنه: از بانک می‌آید؛ «عمق بازار» دیگر چیزی نمی‌سازد.
+  // فقط سطرِ اولِ صف خرید درِ پنج فیلترِ جزوه است (qd1/zd1)، پس همان می‌ماند.
+  buy_q1_vol: num,
+  buy_q1_cnt: num,
+  // (tmin) درِ فیلترنویسِ TSETMC = آستانۀ مجاز، نه کفِ همین نشست.
+  tmin: num,
+  buy_i_vol: num,
+  sell_i_vol: num,
+  buy_count_i: num,
+  sell_count_i: num,
+  month_avg_vol: num,
   // مبنایِ حجمِ پنج فیلتر: Σ[ih][0..29]/۳۰ — میانگینِ سی **نشستِ** آخر.
   // null = پنجره کامل نیست، که یعنی **سنجیده نمی‌شود**.
   vol_ratio_file: num,
@@ -57,26 +56,19 @@ export const MarketRowSchema = z.object({
   // کمینۀِ خامِ [ih][0..28].PriceMin — صفر می‌ماند، چون فایل خودِ صفر را
   // دلیلِ رد می‌خواهد (`MinPriceOfMonth() != 0`) نه حذف‌شدنی.
   min_low_29: num,
-  // (tmin)/(tmax) درِ فیلترنویسِ TSETMC = آستانۀ مجاز، نه کفِ همین نشست.
-  tmin: num,
-  tmax: num,
-  // (qd1)/(zd1) = حجم و تعدادِ سفارشِ **سطرِ اولِ صف خرید** (blDs[0]).
-  buy_q1_cnt: num,
+  // (zd1) = تعدادِ سفارشِ **سطرِ اولِ صف خرید** (blDs[0]).
   vol_dod: num,
-  vol_trend: z.string().nullish(),
   buyer_power: num,
+  buyer_power_raw: num,
   buy_power_i: num,
-  sell_power_i: num,
   // درصدِ «آخرین» نسبت به دیروز: percent_change پایانی را می‌سنجد، این آخرین را.
   percent_last: num,
-  suspicious_vol: flag,
   f_roobi: flag,
   f_susp: flag,
   f_clock: flag,
   f_jet: flag,
   f_noqteh: flag,
   is_live: flag,
-  d_even: num,
   // سقفِ تک‌روزیِ kامین نشستِ آخر — [ih][k].PriceMax در فرمول‌هایِ TSETMC.
   // نبودنش یعنی آن نشست بی‌معامله بوده و سایت همان‌جا صفر می‌گذارد؛ «پلکانِ
   // غایب» از این تفکیک نمی‌آید، از `hist_sessions` می‌آید.
@@ -88,14 +80,7 @@ export const MarketRowSchema = z.object({
   h39_max: num,
   h49_max: num,
   h59_max: num,
-  // پلکانِ مقاومتِ جت (بیشترینِ سقفِ نقاطِ [ih][2..59]) و قدرتِ خریدارِ بی‌سقف.
-  // این دو را فیلترها می‌خوانند، نه جدول؛ ستونِ buyer_power برایِ نمایش است.
-  resistance_59: num,
-  buyer_power_raw: num,
   min30_low: num,
-  max30_high: num,
-  d1_vol: num,
-  dist_min30_pct: num,
 });
 
 export type MarketRow = z.infer<typeof MarketRowSchema>;
@@ -110,6 +95,8 @@ export type MarketMeta = z.infer<typeof MarketMetaSchema>;
 
 export const MarketFeedSchema = z.object({
   status: z.string(),
+  /** ویرایشِ حالتِ داغِ این بدنه — پولینگِ بعدی `?since=rev` می‌شود. */
+  rev: z.number().nullish(),
   count: z.number().nullish(),
   data: z.array(MarketRowSchema),
   meta: MarketMetaSchema.nullish(),
@@ -118,3 +105,29 @@ export const MarketFeedSchema = z.object({
 });
 
 export type MarketFeed = z.infer<typeof MarketFeedSchema>;
+
+/**
+ * پاسخ /api/market/delta?since=REV — همان تابلو، بی‌بدنۀ کامل.
+ *
+ * سه حالتِ ممکن و صریح (هیچ‌کدام «نصفه» نیست):
+ *   • unchanged : سرور همان ویرایشِ ماست ⇒ صفر ردیف، صفر parse؛
+ *   • delta     : فقط ردیف‌هایِ تغییریافته از ویرایشِ ما تا `rev`؛
+ *   • full      : سرور نمی‌تواند دلتا را اثبات کند (ژورنال چرخیده، کلاینت
+ *                 عقب/جلو مانده، نمادی جابه‌جا شده) ⇒ `/api/market` کامل.
+ * `count` در دو حالتِ اول می‌آید و **باید** با تعدادِ ردیف‌هایِ ما برابر باشد؛
+ * اگر نبود، یعنی چیزی از چشمِ دلتا دور مانده و merge را رها می‌کنیم.
+ */
+const counts = {
+  count: z.number().nullish(),
+  live_count: z.number().nullish(),
+  fossil_count: z.number().nullish(),
+};
+
+export const MarketDeltaSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('unchanged'), rev: z.number(), meta: MarketMetaSchema.nullish(), ...counts }),
+  z.object({ status: z.literal('delta'), rev: z.number(), rows: z.array(MarketRowSchema),
+             meta: MarketMetaSchema.nullish(), ...counts }),
+  z.object({ status: z.literal('full'), rev: z.number().nullish(), reason: z.string().nullish() }),
+]);
+
+export type MarketDelta = z.infer<typeof MarketDeltaSchema>;

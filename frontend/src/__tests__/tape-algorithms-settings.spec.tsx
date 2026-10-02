@@ -45,7 +45,6 @@ const passingRow = (overrides: Partial<MarketRow> = {}): MarketRow => ({
   buy_q1_vol: 250_000,
   tmin: 900,                  // (tmin) = آستانۀِ مجاز پایین
   vol_dod: 2,
-  prev_day_vol: 2_000_000,
   z_tot_tran: 120,
   buyer_power: 2,
   buyer_power_raw: 2,
@@ -53,7 +52,6 @@ const passingRow = (overrides: Partial<MarketRow> = {}): MarketRow => ({
   buy_count_i: 100,
   sell_i_vol: 1_000_000,
   sell_count_i: 100,
-  p_min: 1025,
   min30_low: 995,
   ...Object.fromEntries(JET_LADDER.map((k) => [`h${k}_max`, 900])),
   ...overrides,
@@ -221,13 +219,13 @@ describe('شخصی‌سازی آستانه‌ها واقعاً اعمال می�
   it('کف‌روبی: آخرین باید دقیقاً روی آستانۀِ مجازِ پایین باشد (tmin، نه کفِ روز)', () => {
     // (tmin) درِ ExecFilter خودِ سایت = element.pMin = آستانۀِ مجاز. کفِ همین
     // نشست (p_min) چیزِ دیگری است و پیش از این اشتباه خوانده می‌شد.
-    const onFloor = passingRow({ p_last: 900, tmin: 900, p_min: 940, percent_last: -2.0 });
+    const onFloor = passingRow({ p_last: 900, tmin: 900, percent_last: -2.0 });
     expect(matchRoobiFilter(onFloor, DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(true);
     // یک ریال بالاتر از آستانه → دیگر «رویِ کف» نیست.
     expect(matchRoobiFilter(passingRow({ ...onFloor, p_last: 901 }),
                             DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
     // رویِ کفِ *روز* نشستن کافی نیست؛ باید آستانه باشد.
-    expect(matchRoobiFilter(passingRow({ p_last: 940, tmin: 900, p_min: 940, percent_last: -2.0 }),
+    expect(matchRoobiFilter(passingRow({ p_last: 940, tmin: 900, percent_last: -2.0 }),
                             DEFAULT_TAPE_FILTER_CONFIG.roobi)).toBe(false);
     // plp = -۱ اکیداً رد است (فایل: < -1)
     expect(matchRoobiFilter(passingRow({ ...onFloor, percent_last: -1.0 }),
@@ -265,7 +263,7 @@ describe('شخصی‌سازی آستانه‌ها واقعاً اعمال می�
   it('نقطه‌زنی: کفِ فایل کفِ [ih][0..28] است، نه ستونِ نمایشیِ min30_low', () => {
     // min30_low (کفِ سی نشستِ *معامله‌شده*) ۹۹۵ است و کفِ خامِ پنجره ۸۰۰ →
     // فاصله از کفِ فایل ۲۰٪، یعنی رد. با min30_low می‌شد ۰٫۵٪ و قبول.
-    const row = passingRow({ p_closing: 1000, p_min: 800, min30_low: 995, min_low_29: 800 });
+    const row = passingRow({ p_closing: 1000, min30_low: 995, min_low_29: 800 });
     expect(matchNoqtehFilter(row, DEFAULT_TAPE_FILTER_CONFIG.noqteh)).toBe(false);
   });
 

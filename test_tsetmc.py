@@ -89,12 +89,19 @@ MCAP_RAW_KEYS = ("marketValue",)
 # (صف در mstat_engine، ارزش بازار اینجا) بی‌صدا یک ستون جابه‌جا می‌کند و
 # «آخرین معامله» با «تاریخِ نشست» قاطی می‌شود — همان طبقهٔ باگی که در v9.8.1
 # روی p_last خوردیم. نامِ صریح این اشتباه را غیرممکن می‌کند.
+#
+# `MW_COLS` تک‌منبعِ این ترتیب است: همان tuple‌ای که `_mw_row` می‌سازد، همان
+# ستون‌های INSERT، و همان نگاشتِ «نام → شاخص» که `market_state` برایِ
+# زنده‌خوانی لازم دارد. ستونِ تازه = یک ورودِ همین فهرست (INSERT خودکار
+# درست می‌شود؛ placeholder از len ساخته می‌شود).
+MW_COLS = ("ins_code", "d_even", "h_even", "p_closing", "p_last", "price_min",
+           "price_max", "allowed_min", "allowed_max", "price_yesterday",
+           "price_first", "q_tot_tran", "q_tot_cap", "z_tot_tran", "price_change",
+           "eps", "pe", "total_shares", "sector_code", "fetched_at") + _QUEUE_COLS + \
+          ("market_cap", "market_cap_src")
 _MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
-              "ins_code, d_even, h_even, p_closing, p_last, price_min, price_max,"
-              " allowed_min, allowed_max, price_yesterday, price_first, q_tot_tran,"
-              " q_tot_cap, z_tot_tran, price_change, eps, pe, total_shares,"
-              " sector_code, fetched_at, " + ", ".join(_QUEUE_COLS) +
-              ", market_cap, market_cap_src) VALUES (" + ",".join("?" * 33) + ")")
+              + ", ".join(MW_COLS) + ") VALUES ("
+              + ",".join("?" * len(MW_COLS)) + ")")
 _DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
               "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
               " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
@@ -1477,6 +1484,11 @@ def _save_market_snapshot(s, conn):
     c.executemany("INSERT OR REPLACE INTO client_type VALUES (" + ",".join("?" * 13) + ")", client)
     c.executemany("INSERT OR REPLACE INTO boards VALUES (?, ?)", [(k, v) for k, v in boards.items()])
     conn.commit()
+    # حالتِ داغ: سینکِ کامل هرچه در تابلو بود نوشت، پس امضاها از نو نشستن و
+    # لایۀ ایستایِ تابلو (instruments/boards/client_type) سوخت؛ تیکِ بعدی
+    # باید فقط آنچه از این لحظه عوض می‌شود را بنویسد، نه کلِ ۳٬۹۵۹ ردیف.
+    import market_state
+    market_state.prime(watch)
     if save_market_total(conn, total_value, total_deven or d_even, now):
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview, d_even {total_deven or d_even})")
     else:
@@ -1600,6 +1612,20 @@ def tick_live(conn=None):
                 daily.append(_dy)
         if not watch:
             return 0
+        # ── دِلتا (حالتِ داغ) ──────────────────────────────────────────────
+        # پیش‌ازین کلِ ~۵٬۴۵۱ ردیف هر پنج ثانیه با INSERT OR REPLACE می‌رفت، حتی
+        # آن‌که هیچ فیلدی عوض نشده باشد، و بی‌تغییری هم کش را بازسازی می‌کرد.
+        # امضا **رویِ همان ستون‌هایی** است که این نوبت واقعاً می‌نویسد: درِ پس از
+        # بستن صف‌ها UPDATE نمی‌شوند، پس تغییرِ صف نباید «تغییر» حساب شود (وگرنه
+        # هر سیکل یک UPDATE بی‌اثر + یک rebuildِ ۴ مگابایتی می‌ساخت).
+        import market_state
+        fields = market_state.AFTER_HOURS_FIELDS if after_hours else None
+        changed_codes = {w[0] for w in market_state.diff(watch, fields)}
+        wch = [w for w in watch if w[0] in changed_codes]
+        dch = [d for d in daily if d[0] in changed_codes]
+        if not wch:
+            market_state.note_cycle(len(watch), 0, _t.monotonic() - mono)
+            return 0
         c = conn.cursor()
         if after_hours:
             # نوبتِ پس از بستن: فقط اعدادِ زنده، بی‌دست‌زدن به ستون‌هایِ صف —
@@ -1609,19 +1635,25 @@ def tick_live(conn=None):
                           " z_tot_tran=?, price_change=?, market_cap=?, market_cap_src=?,"
                           " fetched_at=? WHERE ins_code=?",
                           [(w[2], w[3], w[4], w[5], w[6], w[11], w[12], w[13], w[14],
-                            w[-2], w[-1], w[19], w[0]) for w in watch])
+                            w[-2], w[-1], w[19], w[0]) for w in wch])
             c.executemany("UPDATE daily_prices SET p_closing=?, price_min=?, price_max=?,"
                           " q_tot_tran=?, q_tot_cap=?, price_change=?, fetched_at=?,"
-                          " market_cap=?, market_cap_src=?, z_tot_tran=?"
+                          " market_cap=?, market_cap_src=?, z_tot_tran=?, p_last=?"
                           " WHERE ins_code=? AND d_even=?",
                           [(d[2], d[3], d[4], d[7], d[8], d[9], d[10], d[11], d[12],
-                            d[13], d[0], d[1]) for d in daily])
+                            d[13], d[14], d[0], d[1]) for d in dch])
         else:
-            c.executemany(_MW_INSERT, watch)
+            c.executemany(_MW_INSERT, wch)
             ensure_daily_tran_column(conn)
-            c.executemany(_DP_INSERT, daily)
+            c.executemany(_DP_INSERT, dch)
         conn.commit()
-        return len(watch)
+        # امضاها **پس از** commit جا می‌افتند: اگر نوشتن شکست، آن ردیف در سیکلِ
+        # بعدی دوباره «تغییر» حساب می‌شود و رویِ دیسک کهنه نمی‌ماند. `fields`
+        # هم همین‌جا معنا دارد: RAM فقط ستون‌هایی را نگه می‌دارد که واقعاً
+        # نوشته شده‌اند، پس تابلویِ RAM هرگز جلوتر از بانک نمی‌رود.
+        market_state.commit(wch, fields)
+        market_state.note_cycle(len(watch), len(wch), _t.monotonic() - mono)
+        return len(wch)
     finally:
         if own:
             conn.close()
@@ -1840,6 +1872,8 @@ def main():
                   [(k, v) for k, v in boards.items()])
     n_book = save_order_book(conn, book)
     conn.commit()
+    import market_state
+    market_state.prime(watch)
     if n_book:
         print(f"  [order-book] پنج خطِ عمق برایِ {nfmt(n_book)} نماد در order_book")
     else:
