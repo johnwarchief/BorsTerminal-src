@@ -10,6 +10,11 @@
 //                    و ردیف به بنیادی برسد تا خودِ مالک روندِ هفتگی را ببیند.
 import { create } from 'zustand';
 
+/** دو حالتِ کشفِ نماد — هر دو از یک قراردادِ داوری (`lib/ftsFunnel.ts`). */
+export type FunnelMode = 'reverse' | 'review';
+/** پیش‌فرضِ جزوه: مهندسیِ معکوس (S ➔ T ➔ F ➔ M). */
+export const DEFAULT_FUNNEL_MODE: FunnelMode = 'reverse';
+
 const STORAGE_KEY = 'fts.funnel.prefs.v1';
 
 /** پیش‌فرضِ جزوه: سه از پنج. */
@@ -46,9 +51,11 @@ export type FunnelPrefsState = {
   fundFloor: number;
   unmeasured: UnmeasuredPolicy;
   techScreens: boolean;
+  mode: FunnelMode;
   setFundFloor: (n: number) => void;
   setUnmeasured: (p: UnmeasuredPolicy) => void;
   setTechScreens: (on: boolean) => void;
+  setMode: (m: FunnelMode) => void;
   reset: () => void;
 };
 
@@ -57,19 +64,20 @@ function clampFloor(n: number): number {
   return Math.min(FUND_FLOOR_MAX, Math.max(1, Math.round(n)));
 }
 
-type SavedPrefs = { fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean };
+type SavedPrefs = { fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean; mode: FunnelMode };
 
 const JOZVE: SavedPrefs = {
   fundFloor: DEFAULT_FUND_FLOOR,
   unmeasured: DEFAULT_UNMEASURED,
   techScreens: DEFAULT_TECH_SCREENS,
+  mode: DEFAULT_FUNNEL_MODE,
 };
 
 function saved(): SavedPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return JOZVE;
-    const p = JSON.parse(raw) as { fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown };
+    const p = JSON.parse(raw) as { fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown; mode?: unknown };
     return {
       fundFloor: clampFloor(typeof p.fundFloor === 'number' ? p.fundFloor : DEFAULT_FUND_FLOOR),
       unmeasured:
@@ -77,6 +85,8 @@ function saved(): SavedPrefs {
       // کلیدِ تازه: فایلِ ذخیره‌شده‌هایِ قدیم این را ندارد. نبودش یعنی همان
       // رفتارِ همیشگی (غربال)، نه تغییرِ بی‌صدا.
       techScreens: typeof p.techScreens === 'boolean' ? p.techScreens : DEFAULT_TECH_SCREENS,
+      // نبودِ کلیدِ mode درِ فایل‌هایِ قدیم یعنی همان رفتارِ همیشگی (معکوس).
+      mode: p.mode === 'review' ? 'review' : DEFAULT_FUNNEL_MODE,
     };
   } catch {
     return JOZVE;
@@ -97,6 +107,7 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     fundFloor: init.fundFloor,
     unmeasured: init.unmeasured,
     techScreens: init.techScreens,
+    mode: init.mode,
     setFundFloor: (n) => {
       const v = clampFloor(n);
       persist({ ...get(), fundFloor: v });
@@ -109,6 +120,10 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     setTechScreens: (on) => {
       persist({ ...get(), techScreens: on });
       set({ techScreens: on });
+    },
+    setMode: (m) => {
+      persist({ ...get(), mode: m });
+      set({ mode: m });
     },
     reset: () => {
       persist(JOZVE);

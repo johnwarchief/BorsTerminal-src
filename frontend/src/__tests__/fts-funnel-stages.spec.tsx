@@ -80,7 +80,7 @@ const build = (preset: TreePreset = 'custom', chips: string[] = []) =>
 
 const syms = (list: { symbol: string }[]) => list.map((e) => e.symbol).sort();
 const markOf = (f: ReturnType<typeof build>, key: 'technical' | 'fundamental', sym: string) =>
-  f.stages[key].entries.find((e) => e.symbol === sym)?.tech;
+  f.stages[key].entries.find((e) => e.symbol === sym)?.status[key];
 
 describe('قیفِ FTS', () => {
   it('دربِ قیف سبکِ درخت است (چارت 3): روندگیر = کف‌روبی + نقطه‌زنی، نه هر پنج فیلتر', () => {
@@ -100,10 +100,10 @@ describe('قیفِ FTS', () => {
     expect(f.stages.technical.entries).toHaveLength(f.stages.tape.entries.length);
     // همراه = وتوی هفتگی، سپ = هفتگی صعودی بی‌ستاپ
     expect(f.stages.technical.dropped).toBe(2);
-    expect(markOf(f, 'technical', 'همراه')).toBe('no');
-    expect(markOf(f, 'technical', 'سپ')).toBe('no');
+    expect(markOf(f, 'technical', 'همراه')).toBe('reject');
+    expect(markOf(f, 'technical', 'سپ')).toBe('reject');
     // خار تحلیل نشده: «سنجیده نشد» — وتو نیست
-    expect(f.stages.technical.entries.find((e) => e.symbol === 'خار')?.tech).toBe('na');
+    expect(f.stages.technical.entries.find((e) => e.symbol === 'خار')?.status.technical).toBe('unavailable');
     expect(f.stages.technical.unmeasured).toBe(1);
     // هیچ‌کدام از دو ردِ تکنیکال به بنیادی نمی‌رسند
     expect(syms(f.stages.fundamental.entries)).not.toContain('همراه');
@@ -123,6 +123,8 @@ describe('قیفِ FTS', () => {
       rangeBreak: false,
       hourglass: false,
       pointHunt: false,
+      jetResistance: null,
+      jetPctAbove: null,
       ...over,
     });
     const verdicts = new Map<string, TechVerdict>([
@@ -131,11 +133,11 @@ describe('قیفِ FTS', () => {
       ['شپنا', v({ jet: true })],
     ]);
     const f = buildFunnel(ROWS, DEFAULT_TAPE_FILTER_CONFIG, [], [], new Set(), 'custom', verdicts);
-    const mark = (s: string) => f.stages.technical.entries.find((e) => e.symbol === s)?.tech;
-    expect(mark('خار')).toBe('no');
-    expect(mark('شپنا')).toBe('ok');
-    // بی‌رأی = «سنجیده نشد»، نه رد
-    expect(mark('فولاد')).toBe('na');
+    const mark = (s: string) => f.stages.technical.entries.find((e) => e.symbol === s)?.status.technical;
+    expect(mark('خار')).toBe('reject');
+    expect(mark('شپنا')).toBe('pass');
+    // بی‌منبع = «سنجیده نشد» (unavailable)، نه رد
+    expect(mark('فولاد')).toBe('unavailable');
     expect(f.stages.technical.dropped).toBe(1);
     // وتوی تکنیکال به بنیادی نمی‌رسد، ولی بی‌رأی می‌رسد (بی‌داده وتو نیست)
     expect(syms(f.stages.fundamental.pending)).toContain('فولاد');
@@ -144,11 +146,16 @@ describe('قیفِ FTS', () => {
 
   it('ستاپِ پذیرفتنی از سبک می‌آید: فیبوی 61.8-70 برای نوسان‌گیر ستاپ نیست، برای روندگیر هست', () => {
     const swing = build('swing').stages.technical.entries.find((e) => e.symbol === 'شپنا');
-    expect(swing?.tech).toBe('no');
-    expect(swing?.techWhy).toContain('ستاپ');
+    expect(swing?.status.technical).toBe('reject');
+    expect(swing?.why.technical).toContain('ستاپ');
     const trend = build('trend').stages.technical.entries.find((e) => e.symbol === 'سپ');
-    // «سپ» بی‌ستاپ است، پس در روندگیر هم رد می‌شود — سبک فقط آستانه را عوض می‌کند
-    expect(trend?.tech).toBe('no');
+    // «سپ» تنها ستاپِ قابل‌پذیرشِ روندگیر را دارد که نقطه‌زنی است، و اسکرینر
+    // هرگز `point_hunt` منتشر نمی‌کند. پیش از این، نبودِ فیلد «false» خوانده
+    // می‌شد و نماد رد می‌خورد؛ حالا `pending` است — از نبودِ داده نتیجه نمی‌گیریم
+    // (#7). رأیِ زندهٔ /api/fts اگر باشد همان‌جا به pass/reject عوض می‌شود.
+    expect(trend?.status.technical).toBe('pending');
+    expect(trend?.why.technical).toContain('نقطه‌زنی');
+    expect(trend?.techSource).toBe('screen');
   });
 
   it('بنیادی: ردِ صریح می‌افتد، بی‌گزارش در صفِ خودش می‌ماند و به تحویل نمی‌رود', () => {
@@ -206,7 +213,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
     expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['فولاد']);
     // علتِ رد هم کفِ دستِ کاربر را می‌گوید، نه «سه»ی ثابت
     const five = buildWith({ fundFloor: 5 });
-    expect(five.stages.technical.entries.find((e) => e.symbol === 'شپنا')?.fundWhy).toContain('کف');
+    expect(five.stages.technical.entries.find((e) => e.symbol === 'شپنا')?.why.fundamental).toContain('کف');
   });
 
   it('«عبور با برچسب» سنجیده‌نشده را به تحویل می‌برد، «حذف» از قیف بیرونش می‌اندازد', () => {
@@ -215,7 +222,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
     expect(pass.stages.fundamental.pending).toHaveLength(0);
     expect(syms(pass.stages.handover.entries)).toEqual(['خار', 'فولاد']);
     // برچسبِ «سنجیده نشد» رویِ خودش می‌ماند تا کاربر بداند بنیادش خوانده نشده
-    expect(pass.stages.handover.entries.find((e) => e.symbol === 'خار')?.fund).toBe('na');
+    expect(pass.stages.handover.entries.find((e) => e.symbol === 'خار')?.status.fundamental).toBe('unavailable');
 
     const drop = buildWith({ unmeasured: 'drop' });
     expect(drop.stages.fundamental.pending).toHaveLength(0);
@@ -244,16 +251,22 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
 
   it('مرحلۀ خالی علتِ خالی‌بودنش را می‌گوید («به این در کسی نرسید» ≠ «همه رد شدند»)', () => {
     useFunnelPrefsStore.getState().reset();
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        {/* روندگیر با کف‌روبی+نقطه‌زنی باز می‌شود و «سپ» تنها ردیفِ آن است؛
-            او وتوی تکنیکال می‌گیرد ⇒ بنیادی خالی، ولی بی‌هیچ رسیدۀ رد شده. */}
-        <FtsFunnelStages preset="trend" />
-      </QueryClientProvider>,
-    );
-    const empty = screen.getByTestId('funnel-empty-fundamental');
-    expect(empty.textContent).toContain('تکنیکال');
-    expect(screen.getByTestId('funnel-empty-handover').textContent).toContain('بنیادی');
+    // تنها ردیفِ تابلویی که درِ نوسان‌گیر رد می‌شود «همراه» است (وتوی هفتگیِ
+    // صریحِ موتور) ⇒ بنیادی هیچ رسیدۀ داوری‌شده‌ای ندارد و باید همین را بگوید.
+    feedMock.rows = [board({ symbol: 'همراه', f_susp: true })];
+    try {
+      render(
+        <QueryClientProvider client={new QueryClient()}>
+          <FtsFunnelStages preset="swing" />
+        </QueryClientProvider>,
+      );
+      const empty = screen.getByTestId('funnel-empty-fundamental');
+      expect(empty.textContent).toContain('تکنیکال');
+      expect(empty.textContent).toContain('۱ نماد');
+      expect(screen.getByTestId('funnel-empty-handover').textContent).toContain('بنیادی');
+    } finally {
+      feedMock.rows = ROWS;
+    }
   });
 });
 
@@ -268,7 +281,17 @@ vi.mock('@features/portfolio/api/usePortfolio', () => ({
   useMarketCloses: () => ({ data: new Map() }),
 }));
 vi.mock('@features/master/api/useFtsTechBoard', () => ({
-  useFtsTechBoard: () => ({ map: new Map(), loading: false, wanted: 0, resolved: 0 }),
+  // خودِ سقفِ واقعی را می‌دهد تا صفِ بودجه درِ تست با صفِ برنامه یکی بماند
+  TECH_QUERY_CAP: 60,
+  useFtsTechBoard: (symbols: string[]) => ({
+    map: new Map(),
+    asOf: new Map<string, number>(),
+    loading: false,
+    wanted: Math.min(60, symbols.length),
+    queued: symbols.length,
+    beyondCap: Math.max(0, symbols.length - 60),
+    resolved: 0,
+  }),
 }));
 
 /**
@@ -306,8 +329,8 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     expect(off.stages.technical.rejected).toBe(2);
     // برچسب و دلیل سرِ جایشان‌اند تا کاربر بداند چرا این دو رد شده‌اند
     const hamrah = off.stages.technical.entries.find((e) => e.symbol === 'همراه');
-    expect(hamrah?.tech).toBe('no');
-    expect(hamrah?.techWhy).toContain('وتوی هفتگی');
+    expect(hamrah?.status.technical).toBe('reject');
+    expect(hamrah?.why.technical).toContain('وتوی هفتگی');
     // و به مرحلۀ بنیادی رسیده‌اند: آنجا خودشان داوری می‌شوند
     expect(syms(off.stages.fundamental.entries)).toEqual(['سپ', 'فولاد', 'همراه']);
     // (شپنا بنیادش رد است — نمرۀ ۲ زیرِ کفِ سه — پس از همین‌جا می‌افتد)
@@ -322,20 +345,20 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     expect(t('همراه')?.trendW).toBe('down');
     // خار ردیفِ اسکرینر ندارد ⇒ نه روندی، نه ستاپی؛ «سنجیده نشد» نه «رد»
     expect(t('خار')?.trendW).toBeNull();
-    expect(t('خار')?.tech).toBe('na');
+    expect(t('خار')?.status.technical).toBe('unavailable');
     expect(t('فولاد')?.setups).toContain('جت');
   });
 
   it('پنج شاخص یکی‌یکی در ستون‌هایِ خودِ مرحلۀ بنیادی، با عددِ همان شاخص', () => {
     const f = buildWith({ techScreens: false });
     const e = f.stages.fundamental.entries.find((x) => x.symbol === 'فولاد');
-    expect(e?.inds).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
+    expect(e?.inds).toEqual(['pass', 'pass', 'pass', 'pass', 'pass']);
     // شپنا در بنیادی رد می‌شود، پس ردیفش را از مرحلۀ تکنیکال می‌خوانیم
     const sh = f.stages.technical.entries.find((x) => x.symbol === 'شپنا');
-    expect(sh?.inds).toEqual(['no', 'na', 'no', 'ok', 'ok']);
+    expect(sh?.inds).toEqual(['reject', 'pending', 'reject', 'pass', 'pass']);
     // خار هیچ ردیفِ اسکرینری ندارد ⇒ پنج «na»، نه پنج «no»
     expect(f.stages.technical.entries.find((x) => x.symbol === 'خار')?.inds)
-      .toEqual(['na', 'na', 'na', 'na', 'na']);
+      .toEqual(['pending', 'pending', 'pending', 'pending', 'pending']);
   });
 
   it('عددِ هر شاخص با جداکنندهٔ هزارگان و به زبانِ خودِ جدول می‌آید (free ⇒ آزاد)', () => {
@@ -530,11 +553,13 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
     const f = run({ assembly_veto: true, assembly_days: 3, assembly_date: '2026-10-02' });
     expect(syms(f.stages.fundamental.entries)).toEqual([SYM]);
     // وتو نمره را کم نمی‌کند: داوریِ پنج‌شاخصه دست‌نخورده می‌ماند
-    expect(first(f, 'fundamental').inds).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
-    expect(first(f, 'fundamental').fund).toBe('ok');
+    expect(first(f, 'fundamental').inds).toEqual(['pass', 'pass', 'pass', 'pass', 'pass']);
+    expect(first(f, 'fundamental').status.fundamental).toBe('pass');
     expect(f.stages.handover.entries).toHaveLength(0);
     expect(f.stages.handover.dropped).toBe(1);
-    expect(f.stages.handover.rejected).toBe(1);
+    // وتوی مجمع توقفِ زمانبندی است، نه ردِ کیفی: درِ `pending` می‌نشیند (#15)
+    expect(f.stages.handover.rejected).toBe(0);
+    expect(f.stages.handover.pending.map((e) => e.symbol)).toEqual([SYM]);
   });
 
   it('کنترلِ منفی: بی‌پرچم همان نماد به تحویل می‌رسد', () => {
@@ -556,8 +581,12 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
       'custom',
     );
     expect(f.stages.handover.entries).toHaveLength(0);
-    expect(f.stages.handover.dropped).toBe(0);
+    // `dropped` = هرچه به تحویل نرسید (سبد یا مجمع)؛ تضمینِ ضدِّ تورم درِ
+    // `rejected` و درِ *علت* است: علتِ توقفِ این نماد «سبد» است نه «مجمع».
+    expect(f.stages.handover.dropped).toBe(1);
     expect(f.stages.handover.rejected).toBe(0);
+    expect(f.stages.handover.pending[0].why.handover).toContain('سبد');
+    expect(f.stages.handover.pending[0].why.handover).not.toContain('مجمع');
   });
 
   it('بی‌داده وتو نیست: پرچمِ غایب یا false یا فقط assembly_days هیچ وتویی نمی‌سازد', () => {
@@ -596,7 +625,12 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
         expect(chip, `مرحلهٔ ${k}`).not.toBeNull();
         expect(chip?.textContent).toBe('وتوی مجمع');
       }
-      expect(screen.getByTestId('funnel-stage-handover').querySelector('tbody tr')).toBeNull();
+      // جدولِ اصلیِ تحویل خالی است (نماد تحویل داده نمی‌شود)…
+      expect(screen.getByTestId('funnel-empty-handover')).toBeInTheDocument();
+      // …ولی «گم» نمی‌شود: در گروهِ متوقفانِ همین در، با علتِ مجمع دیده می‌شود.
+      const held = screen.getByTestId('funnel-pending-handover');
+      expect(held.textContent).toContain('متوقف درِ تحویل');
+      expect(held.querySelector(`[data-testid="funnel-assembly-veto-${SYM}"]`)).not.toBeNull();
     } finally {
       screenMock.rows = SCREEN;
       feedMock.rows = ROWS;

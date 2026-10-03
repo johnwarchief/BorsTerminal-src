@@ -54,5 +54,21 @@ export const TechnicalPayload = z.object({
   /** کیفیت داده: تاریخچه کوتاه تر از 50 کندل یعنی partial (فاز 4) */
   dataQuality: DataQuality.default('complete'),
   weekly: WeeklyTrend.nullish(),
+  /**
+   * پرچم‌هایِ خامِ ستاپ، عینِ خروجیِ `_fts_analyze_candles` درِ `api/chart.py`.
+   *
+   * چرا لازم بود: `lib/ftsPipelineEvaluator.ts` گامِ ۲ را با همین کلیدها
+   * (`jet_active`، `choch_bullish`، `point_hunt_active`، `double_bottom_active`)
+   * می‌سنجد، ولی هیچ تولیدکننده‌ای آن‌ها را منتشر نمی‌کرد — پس آن گام درِ
+   * برنامهٔ زنده همیشه به «در انتظار» می‌افتاد و فقط درِ تست‌هایی که payload
+   * جعلی می‌دادند کار می‌کرد (دقیقاً همان باگِ بلوکِ `weekly` که بالا مستند شده).
+   * هیچ تشخیصِ تازه‌ای این‌جا ساخته نمی‌شود: فقط رأیِ موتور منتقل می‌شود.
+   */
+  jet_active: z.boolean().optional(),
+  choch_bullish: z.boolean().optional(),
+  point_hunt_active: z.boolean().optional(),
+  double_bottom_active: z.boolean().optional(),
+  range_break_active: z.boolean().optional(),
+  hourglass_active: z.boolean().optional(),
 });
 export type TechnicalPayload = z.infer<typeof TechnicalPayload>;

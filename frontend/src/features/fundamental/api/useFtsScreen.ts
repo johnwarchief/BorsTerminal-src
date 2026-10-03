@@ -88,6 +88,9 @@ const FtsScreenSchema = z.object({
   data: z.array(FtsScreenRowSchema),
   thresholds: z.record(z.string(), z.unknown()).nullish(),
   max_score: z.number().nullish(),
+  /** زمانِ خودِ اسکن (epoch ثانیه) — کشِ ۱۲ ساعته یعنی «پاسخِ امروز» می‌تواند
+   *  دادهٔ دیروز باشد؛ تازگیِ کاندید از همین خوانده می‌شود. */
+  as_of: z.number().nullish(),
 });
 export type FtsScreen = z.infer<typeof FtsScreenSchema>;
 

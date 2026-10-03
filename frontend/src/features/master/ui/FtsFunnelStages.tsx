@@ -11,18 +11,30 @@
 //     «سنجیده نشد» می‌خورد و درِ قیف نمی‌سوزد.
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
-import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
-import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
-import { buildFunnel, PRESET_ENTRY, tapePickedSymbols, IND_COLUMNS, trendLabel, type FunnelEntry, type FunnelStage, type FunnelStageKey, type FunnelOptions, type StageMark, type TreePreset } from '../lib/ftsFunnel';
-import { useFtsTechBoard } from '../api/useFtsTechBoard';
+import {
+  MODE_HINT,
+  MODE_LABEL,
+  MODE_PATH,
+  TAPE_FRESHNESS_LABEL,
+  PRESET_ENTRY,
+  STATUS_LABEL,
+  IND_COLUMNS,
+  trendLabel,
+  type FunnelEntry,
+  type FunnelStage,
+  type FunnelStageKey,
+  type FunnelOptions,
+  type StageStatus,
+  type TreePreset,
+} from '../lib/ftsFunnel';
+import { useFtsFunnel } from '../api/useFtsFunnel';
 import {
   DEFAULT_FUND_FLOOR,
   FUND_FLOOR_MAX,
@@ -74,12 +86,14 @@ const PRESET_SHORT: Record<(typeof FUNNEL_PRESETS)[number], string> = {
   hourglass: 'ساعت شنی',
 };
 
-const MARK_DOT: Record<StageMark, string> = {
-  ok: 'bg-accent-green',
-  no: 'bg-accent-red',
-  na: 'bg-border-c',
+const MARK_DOT: Record<StageStatus, string> = {
+  pass: 'bg-accent-green',
+  reject: 'bg-accent-red',
+  pending: 'bg-accent-yellow',
+  unavailable: 'bg-border-c',
 };
-const MARK_LABEL: Record<StageMark, string> = { ok: 'تایید', no: 'رد', na: 'سنجیده نشد' };
+/** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
+const MARK_LABEL = STATUS_LABEL;
 
 /**
  * ستون‌هایِ هر مرحله — «هر بخش باید ستونِ مربوط به خودش را داشته باشد».
@@ -156,10 +170,10 @@ const TREND_COLOR: Record<string, string> = {
 
 /** سلولِ «ردیفِ پنج‌شاخصه»: ✓ / ✗ / — با عددِ خودش، نه فقط رنگ.
  *  عددِ غیرمعقول همان نشانِ جدولِ غربالگری را می‌گیرد (نه حذفِ عدد). */
-function IndCell({ mark, value, hint }: { mark: StageMark; value: string | null; hint?: string | null }) {
-  const glyph = mark === 'ok' ? '✓' : mark === 'no' ? '✗' : '—';
+function IndCell({ mark, value, hint }: { mark: StageStatus; value: string | null; hint?: string | null }) {
+  const glyph = mark === 'pass' ? '✓' : mark === 'reject' ? '✗' : mark === 'pending' ? '…' : '—';
   const cls =
-    mark === 'ok' ? 'text-accent-green' : mark === 'no' ? 'text-accent-red' : 'text-text-muted';
+    mark === 'pass' ? 'text-accent-green' : mark === 'reject' ? 'text-accent-red' : 'text-text-muted';
   return (
     <td className={`truncate px-2 py-1 text-end ${cls}`} title={hint ?? value ?? MARK_LABEL[mark]}>
       {value ? <span className="ms-1 opacity-70">{value}</span> : null}
@@ -188,7 +202,7 @@ function pricingLabel(mode: string | null | undefined): string | null {
   return null;
 }
 
-function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark | null; why: string | null }) {
+function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatus | null; why: string | null }) {
   const r = e.row;
   switch (k) {
     case 'last':
@@ -232,7 +246,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageMark 
       // دو ستون درصدیِ جزوه (رشد فروش، حاشیهٔ ناخالص): عددِ غیرمعقول حذف
       // نمی‌شود، همان هشدارِ جدولِ غربالگری رویش می‌نشیند.
       const hint = [absurdHint(sc?.rev_growth), null, absurdHint(sc?.gross_margin), null, null][i];
-      return <IndCell mark={e.inds[i] ?? 'na'} value={raw} hint={hint} />;
+      return <IndCell mark={e.inds[i] ?? 'pending'} value={raw} hint={hint} />;
     }
     case 'score':
       return <td className="px-2 py-1 text-end font-bold text-text-primary"><span className="num">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</span></td>;
@@ -257,7 +271,7 @@ function StageCard({
   stage: FunnelStage;
   index: number;
   wide: number;
-  showMark: 'tech' | 'fund' | null;
+  showMark: 'tech' | 'fund' | 'handover' | null;
   onPick: (s: string) => void;
   active: boolean;
   opts: FunnelOptions;
@@ -386,7 +400,9 @@ function StageCard({
       {stage.pending.length > 0 ? (
         <div data-testid={`funnel-pending-${stage.key}`} className="border-t border-dashed border-border-c/70 bg-bg-secondary/40">
           <p className="px-3 py-1.5 text-3xs font-bold text-text-muted">
-            بنیادی‌اش سنجیده نشده — در انتظارِ گزارشِ کدال ({toFaDigits(stage.pending.length)})
+            {stage.key === 'handover'
+              ? `متوقف درِ تحویل — نه رد شده، نه آماده (${toFaDigits(stage.pending.length)})`
+              : `بنیادی‌اش سنجیده نشده — در انتظارِ گزارشِ کدال (${toFaDigits(stage.pending.length)})`}
           </p>
           <table className="w-full table-fixed border-collapse text-xs">
             {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
@@ -404,7 +420,13 @@ function StageCard({
             </thead>
             <tbody>
               {stage.pending.map((r) => (
-                <StageRow key={r.symbol} entry={r} cols={cols} showMark="fund" onPick={onPick} />
+                <StageRow
+                  key={r.symbol}
+                  entry={r}
+                  cols={cols}
+                  showMark={stage.key === 'handover' ? 'handover' : 'fund'}
+                  onPick={onPick}
+                />
               ))}
             </tbody>
           </table>
@@ -422,15 +444,16 @@ function StageRow({
 }: {
   entry: FunnelEntry;
   cols: ColKey[];
-  showMark: 'tech' | 'fund' | null;
+  showMark: 'tech' | 'fund' | 'handover' | null;
   onPick: (s: string) => void;
 }) {
-  const mark = showMark ? (showMark === 'tech' ? entry.tech : entry.fund) : null;
-  const why = showMark === 'tech' ? entry.techWhy : entry.fundWhy;
+  const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
+  const mark = showMark ? entry.status[key] : null;
+  const why = showMark ? entry.why[key] : null;
   // وتوی مجمع فقط درِ مرحلۀ «تحویل» نماد را بیرون می‌اندازد، ولی برچسبش در
   // همهٔ مرحله‌ها می‌نشیند: وگرنه کاربر می‌بیند نمادی که درِ بنیادی قبول شده
   // در مرحلۀ آخر غیب شده و هیچ دلیلی برایش نوشته نیست.
-  const rowTitle = entry.assemblyVeto ? [why, entry.assemblyWhy].filter(Boolean).join(' · ') : why;
+  const rowTitle = entry.assemblyVeto ? [why, entry.assemblyWhy].filter(Boolean).join(' · ') : (why ?? undefined);
   return (
     <tr
       data-fkey={entry.symbol}
@@ -578,39 +601,17 @@ export function FtsFunnelStages({
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [active, setActive] = useState<FunnelStageKey>('tape');
 
-  const feed = useMarketFeed();
-  // limit همان شمارۀ خودِ هاب است تا کوئریِ مشترک دوباره ساخته نشود؛
-  // خودِ بک‌اند limit را نمی‌خواند و هر ۸۷۳ شرکتِ واجد را می‌فرستد.
-  const screen = useFtsScreen(120);
-  const portfolio = usePortfolio();
-  const cfg = useTapeStore((s) => s.tapeFilterConfig);
-  const quickFilters = useTapeStore((s) => s.quickFilters);
-  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
-  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
-  const techScreens = useFunnelPrefsStore((s) => s.techScreens);
-  const opts = useMemo<FunnelOptions>(
-    () => ({ fundFloor, unmeasured, techScreens }),
-    [fundFloor, unmeasured, techScreens],
-  );
-
-  // دو پاسِ عمدی: نخست فقط مرحلۀ تابلو حساب می‌شود تا معلوم شود برایِ کدام
-  // نمادها رأیِ تکنیکال لازم است، سپس `/api/fts` برایِ همان‌ها خوانده می‌شود.
-  // بی‌این، درِ T هرگز بسته نمی‌شد چون اسکرینر فقط سقفِ واچ‌لیست را تحلیل کرده.
-  const techTargets = useMemo(
-    () => tapePickedSymbols(feed.data?.data ?? [], cfg, quickFilters ?? [], preset),
-    [feed.data, cfg, quickFilters, preset],
-  );
-  const tech = useFtsTechBoard(techTargets);
-
-  const funnel = useMemo(() => {
-    const rows = feed.data?.data ?? [];
-    const basket = new Set((portfolio.data?.portfolio ?? []).map((h) => h.symbol));
-    return buildFunnel(rows, cfg, quickFilters ?? [], screen.data?.data ?? [], basket, preset, tech.map, opts);
-  }, [feed.data, screen.data, portfolio.data, cfg, quickFilters, preset, tech.map, opts]);
+  // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که هابِ نخبگان
+  // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
+  const { funnel, mode, tape, tech, quickFilters, opts } = useFtsFunnel(preset);
+  const setMode = useFunnelPrefsStore((s) => s.setMode);
 
   const stages = ORDER.map((k) => funnel.stages[k]);
+  // شمارشِ واقعیِ درِ تحویل: «چند تا واقعاً» — نه اینکه برایِ رسیدن به ۱۰ نماد
+  // ضعیف اضافه شود. هدف‌هایِ جزوه فقط مرجعِ کناری‌اند.
+  const hc = funnel.counts.handover;
   const wide = Math.max(1, ...stages.map((s) => s.entries.length));
-  const marks: ('tech' | 'fund' | null)[] = [null, 'tech', 'fund', 'fund'];
+  const marks: ('tech' | 'fund' | 'handover' | null)[] = [null, 'tech', 'fund', 'handover'];
 
   // «چرا خالی است» باید خودش را بگوید، وگرنه مرحلۀ خالی با مرحلۀ خراب یکی
   // به‌نظر می‌رسد: «هیچ‌کدام به این در نرسید» با «همه رد شدند» یکی نیست.
@@ -630,19 +631,55 @@ export function FtsFunnelStages({
           : 'هیچ‌کدام پنج‌شاخصهٔ قبول‌شدن ندارد.',
     handover: hand.entries.length
       ? null
-      : hand.rejected
-        ? `${toFaDigits(hand.rejected)} نماد تا ۱۴ روز مجمعِ عمومی دارد — ورود وتو است${
-            fund.entries.length > hand.rejected ? '؛ بقیهٔ رسیدگان همین حالا در سبدِ شما هستند' : ''
-          }.`
-        : fund.entries.length
-          ? 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.'
-          : 'مرحلۀ بنیادی کسی را قبول نکرد.',
+      : (() => {
+          // علت از خودِ ردیف‌ها خوانده می‌شود: توقفِ مجمع با توقفِ «در سبد» و با
+          // «بنیادی کسی را قبول نکرد» یکی نیست (#15).
+          const assembly = hand.pending.filter((e) => e.assemblyVeto).length;
+          const held = hand.pending.length - assembly;
+          if (assembly) {
+            return `${toFaDigits(assembly)} نماد تا ۱۴ روز مجمعِ عمومی دارد — ورود وتو است${
+              held ? `؛ ${toFaDigits(held)} نمادِ دیگر همین حالا در سبدِ شماست` : ''
+            }.`;
+          }
+          if (held) return 'رسیدگانِ بنیادی همه همین حالا در سبدِ شما هستند.';
+          return fund.entries.length
+            ? 'مرحلۀ تحویل چیزی برای تحویل نداشت — بنیادی یا تکنیکال بالا را ببینید.'
+            : 'مرحلۀ بنیادی کسی را قبول نکرد.';
+        })(),
   };
 
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-black text-text-primary">قیفِ غربالگری FTS</h2>
+        {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
+            جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
+        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="حالتِ کشفِ نماد" data-testid="funnel-mode-picker">
+          {(['reverse', 'review'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              data-testid={`funnel-mode-${m}`}
+              title={MODE_HINT[m] + ' — ' + MODE_PATH[m]}
+              onClick={() => setMode(m)}
+              className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
+                mode === m
+                  ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                  : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
+              }`}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+          <span
+            className="rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
+            data-testid="funnel-tape-freshness"
+            title="تازگیِ خوراکِ تابلو — دادهٔ آخرینِ نشست جایِ زنده خوانده نمی‌شود"
+          >
+            {TAPE_FRESHNESS_LABEL[tape]}
+          </span>
+        </div>
         {onPresetChange && (
           <div
             className="flex flex-wrap items-center gap-1"
@@ -673,6 +710,30 @@ export function FtsFunnelStages({
             ))}
           </div>
         )}
+      </div>
+      {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
+          با عددِ خودِ بازار. هدف‌هایِ جزوه (۵۰ و ۱۰ و -۷) فقط مرجعِ کناری‌اند و
+          هیچ‌جا گیتِ عبور نیستند. */}
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
+        data-testid="funnel-counts"
+      >
+        <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
+        <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
+        <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
+        <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
+        <span className="text-text-secondary">| universe: {toFaDigits(funnel.total)}</span>
+        <span
+          className="text-text-secondary"
+          title="چند کاندید رأیِ زندۀ /api/fts گرفتند — بودجه سقفِ TECH_QUERY_CAP دارد و بیرونِ آن «بی‌داده» می‌ماند، نه «رد»"
+          data-testid="funnel-tech-coverage"
+        >
+          تکنیکالِ زنده: {toFaDigits(funnel.techCoverage.live)} از {toFaDigits(funnel.techCoverage.universe)}
+          {tech.beyondCap > 0 ? ` — ${toFaDigits(tech.beyondCap)} بیرونِ بودجه` : ''}
+        </span>
+        <span className="text-text-secondary">هدفِ جزوه: ۵۰  ۱۰  ۵-۷</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1" role="tablist">
           {stages.map((s, i) => (
             <button

@@ -225,6 +225,19 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
       ],
       dataQuality,
       weekly: input.weekly ?? null,
+      // پرچم‌هایِ ستاپ از خودِ موتور — برایِ گامِ ۲ خطِ روایتِ مستر (#6 و #7).
+      // بی‌پاسخِ موتور این‌ها منتشر **نمی‌شوند** (undefined)، نه false: «رد از رویِ
+      // نبودِ داده» همان چیزی است که درِ قیف هم ممنوع است.
+      ...(fts
+        ? {
+            jet_active: jet?.active === true,
+            choch_bullish: choch?.bullish === true,
+            point_hunt_active: fts.point_hunt?.active === true,
+            double_bottom_active: fts.double_bottom?.active === true,
+            range_break_active: fts.range_box?.active === true,
+            hourglass_active: fts.hourglass?.active === true,
+          }
+        : {}),
     },
   };
 }

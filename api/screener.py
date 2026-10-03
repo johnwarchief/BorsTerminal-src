@@ -517,8 +517,11 @@ def _screener_cached():
             else:
                 r["weekly_veto"] = False
 
+        # `as_of` = زمانِ خودِ اسکن (نه زمانِ پاسخ): کشِ ۱۲ ساعته یعنی یک جدولِ
+        # دیروز هم امروز سرو می‌شود، و فرانت بی‌این عدد نمی‌تواند بگوید داده
+        # چند ساعته است. وتوی مجمع بیرونِ کش حساب می‌شود و زمانش را جدا می‌دهد.
         payload = {"status": "success", "count": len(rows), "data": rows,
-                   "thresholds": cfg, "max_score": 5}
+                   "thresholds": cfg, "max_score": 5, "as_of": int(now)}
         _SCREENER_CACHE["key"] = payload_key
         _SCREENER_CACHE["payload"] = payload
         _SCREENER_CACHE["ts"] = now

@@ -235,7 +235,7 @@ export default function MasterPage() {
             همان‌جا که کاربر هنوز چیزی انتخاب نکرده و می‌خواهد بداند از کجا شروع
             کند. کلیکِ هر سطرِ قیف نماد را برمی‌دارد و همین صفحه داوری را باز می‌کند. */}
         <FtsFunnelStages preset={horizon} onPresetChange={setHorizon} />
-        <EliteFunnelHub />
+        <EliteFunnelHub preset={horizon} />
       </div>
     );
   }

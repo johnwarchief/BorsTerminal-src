@@ -113,3 +113,40 @@ describe('وتوی هفتگی و بی‌رأیی', () => {
     expect(s.evidence).toEqual(['tech:risk_gate_block']);
   });
 });
+
+// گامِ ۲ خطِ روایتِ مستر (`lib/ftsPipelineEvaluator.ts`) این کلیدها را از باسِ
+// سیگنال می‌خواند. تا پیش از این هیچ‌کدام منتشر نمی‌شد، پس آن گام درِ برنامهٔ
+// زنده همیشه «در انتظار» می‌ماند و فقط درِ تست‌هایی که payload جعلی می‌دادند
+// کار می‌کرد (همین باگِ بلوکِ `weekly` که بالا مستند شده).
+describe('پرچم‌هایِ ستاپ برایِ گامِ ۲ منتشر می‌شوند', () => {
+  it('جت و نقطه‌زندۀ موتور درِ payload می‌نشینند (با کنترلِ منفی)', () => {
+    const on = run(input({
+      jet: { active: true, resistance: 3520, ath: true, pct_above_res: 5.4 },
+      point_hunt: { active: true, touches: 3, floor_price: 900 },
+      double_bottom: { active: false },
+      choch: { bullish: false },
+    }));
+    expect(on.payload.jet_active).toBe(true);
+    expect(on.payload.point_hunt_active).toBe(true);
+    expect(on.payload.double_bottom_active).toBe(false);
+    expect(on.payload.choch_bullish).toBe(false);
+    const off = run(input({ jet: { active: false }, point_hunt: { active: false } }));
+    expect(off.payload.jet_active).toBe(false);
+    expect(off.payload.point_hunt_active).toBe(false);
+  });
+
+  it('نامِ کلیدها همان چیزی است که ارزیاب می‌خواند (تایپو = گامِ خاموش)', () => {
+    const s = run(input({ jet: { active: true } }));
+    for (const k of ['jet_active', 'choch_bullish', 'point_hunt_active', 'double_bottom_active', 'range_break_active', 'hourglass_active']) {
+      expect(s.payload, k).toHaveProperty(k);
+    }
+  });
+
+  it('بی‌پاسخِ موتور هیچ پرچمی ساخته نمی‌شود', () => {
+    const s = run(input(null));
+    // بی‌رأیِ موتور: کلید منتشر نمی‌شود (نه false) — و ارزیاب هم آن را «ستاپ نیست»
+    // نمی‌خواند، «نسنجیده» می‌خواند.
+    expect(s.payload.jet_active).toBeUndefined();
+    expect(s.payload.point_hunt_active).toBeUndefined();
+  });
+});

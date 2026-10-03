@@ -36,7 +36,9 @@ const FtsTechSchema = z.object({
             .nullish(),
         })
         .nullish(),
-      jet: Flag.nullish(),
+      jet: z
+        .object({ active: z.boolean().nullish(), resistance: z.number().nullish(), pct_above_res: z.number().nullish() })
+        .nullish(),
       choch: Flag.nullish(),
       double_bottom: Flag.nullish(),
       range_box: Flag.nullish(),
@@ -65,13 +67,25 @@ export type TechVerdict = {
   doubleBottom: boolean;
   rangeBreak: boolean;
   hourglass: boolean;
+  /** `true`/`false` از خودِ موتور؛ این‌جا هیچ‌وقت از نبودِ داده ساخته نمی‌شود */
   pointHunt: boolean;
+  /** شواهدِ ستاپِ جت از همان پاسخ — برایِ «فاصله تا ماشه»؛ نه فرمولِ فرانت */
+  jetResistance: number | null;
+  jetPctAbove: number | null;
 };
 
 export const TECH_QUERY_CAP = 60;
 
+/**
+ * `symbols` باید **از پیشِ مرتب** بیاید: `lib/ftsFunnel.ts::techQueryQueue` آن را
+ * با رتبۀ رسمیِ بک‌اند (`screener.py:440`) می‌چیند. این‌جا دیگر `slice` رویِ
+ * ترتیبِ تصادفیِ تابلو نمی‌شود — که با هر رفرش عوض می‌شد و «کی سنجیده شد» را
+ * قمار می‌کرد. `requested` تعدادِ کلِ صف است تا UI بگوید چند نماد بیرونِ بودجه
+ * مانده (`unavailable`، نه `reject`).
+ */
 export function useFtsTechBoard(symbols: string[]) {
-  const uniq = [...new Set(symbols.filter(Boolean))].slice(0, TECH_QUERY_CAP);
+  const all = [...new Set(symbols.filter(Boolean))];
+  const uniq = all.slice(0, TECH_QUERY_CAP);
   const q = useQueries({
     queries: uniq.map((symbol) => ({
       queryKey: ['fts-tech', symbol],
@@ -104,6 +118,7 @@ export function useFtsTechBoard(symbols: string[]) {
         f.trend?.W?.trend ?? '',
         f.trend?.D?.trend ?? '',
         f.jet?.active ? 1 : 0,
+        f.jet?.resistance ?? '',
         f.fib?.zone_33_40?.in_zone ? 1 : 0,
         f.fib?.zone_618_70?.in_zone ? 1 : 0,
         f.choch?.bullish ? 1 : 0,
@@ -129,6 +144,8 @@ export function useFtsTechBoard(symbols: string[]) {
         trendW: f.trend?.W?.trend ?? null,
         trendD: f.trend?.D?.trend ?? null,
         jet: f.jet?.active === true,
+        jetResistance: typeof f.jet?.resistance === 'number' ? f.jet.resistance : null,
+        jetPctAbove: typeof f.jet?.pct_above_res === 'number' ? f.jet.pct_above_res : null,
         fibZone: fib33 ? '33-40' : fib61 ? '61.8-70' : null,
         chochBull: f.choch?.bullish === true,
         doubleBottom: f.double_bottom?.active === true,
@@ -140,5 +157,27 @@ export function useFtsTechBoard(symbols: string[]) {
     return out;
   }, [sig]);
 
-  return { map, loading: q.some((r) => r.isPending), wanted: uniq.length, resolved: map.size };
+  // تازگیِ رأیِ هر نماد (#16): زمانِ آخرینِ دریافتِ خودِ همین پاسخ، نه زمانِ رندر.
+  // مثلِ `map` با امضایِ محتوا می‌سازد — وگرنه هر رندر یک Mapِ نو می‌داد و
+  // useMemoهایِ پایینِ دست (قیفِ چندصدردیفی) دوباره حساب می‌شدند.
+  const asOf = useMemo(() => {
+    const out = new Map<string, number>();
+    const { uniq: syms, q: results } = latest.current;
+    syms.forEach((symbol, i) => {
+      const d = results[i]?.dataUpdatedAt;
+      if (d) out.set(symbol, d);
+    });
+    return out;
+  }, [sig]);
+
+  return {
+    map,
+    asOf,
+    loading: q.some((r) => r.isPending),
+    wanted: uniq.length,
+    /** چند نماد در صف بودند — تفاوتِ `queued - wanted` بیرونِ بودجه مانده است */
+    queued: all.length,
+    beyondCap: Math.max(0, all.length - uniq.length),
+    resolved: map.size,
+  };
 }
