@@ -18,7 +18,7 @@ import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow } from '../api/useFtsScreen';
-import { isFundamentalCompany, isFinancialOrHolding } from '../lib/assetScope';
+import { isFundamentalCompany } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
   EPS_REQUIRED_YEARS,
@@ -40,6 +40,16 @@ import {
 
 type SortKey = 'score' | 'rev_growth' | 'gross_margin' | 'sales_to_mcap' | 'profit_potential_pct';
 
+/**
+ * امتیازِ **نمایشیِ** ردیف. نمادی که موتور می‌گوید «FTS ندارد»
+ * (`applicable === false` — صندوق/خارج از پنج‌شاخصه) عددش امتیاز FTS نیست؛
+ * کارت همین قاعده را دارد (`api/fundamental.py`: score ⇒ null وقتی
+ * applicable نیست) و جدول نباید چیزی بگوید که کارت نمی‌گوید.
+ */
+export function displayScore(r: FtsScreenRow): number | null {
+  return r.applicable === false ? null : (r.score ?? null);
+}
+
 /** شمارهٔ شاخص با «—» از نامش جدا می‌شود؛ بی‌جداکننده، «۳ حاشیه…» یک عددِ بخشی از نام خوانده می‌شد. */
 const COLS: { key: SortKey | null; label: string; title: string }[] = [
   { key: null, label: 'نماد', title: '' },
@@ -59,14 +69,23 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
   const eps = Array.isArray(r.eps_series) && r.eps_series.length
     ? r.eps_series.map((v) => (v == null ? '—' : toFaDigits(v))).join(' ← ')
     : '—';
+  const mark = (v: boolean | null | undefined) => (v === true ? '✓' : v === false ? '✗' : '؟');
   return [
     `${r.symbol} — ${r.name ?? ''}`.trim(),
-    `${pct(r.rev_growth)} (الف: ${r.i1_pass === true ? '✓' : r.i1_pass === false ? '✗' : '؟'} / ب: ${r.i2_pass === true ? '✓' : r.i2_pass === false ? '✗' : '؟'})`,
+    // سه اصلاحِ همان‌جا که فایلِ دانلودی با صفحه نمی‌خواند: «ب» از `i2_pass`
+    // (محورِ EPS!) می‌آمد، «الف» از `i1_pass` (رأیِ مجموع) می‌آمد، و رژیم
+    // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
+    // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
+    `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
+      r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
     pct(r.gross_margin),
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
-    `${r.sector_name ?? '—'} (${r.pricing_mode === 'regulated' ? 'دستوری' : 'آزاد'})`,
-    toFaDigits(r.score),
+    `${r.sector_name ?? '—'} (${
+      r.pricing_mode === 'mandatory' ? 'دستوری'
+        : r.pricing_mode === 'neutral' ? 'سایر صنایع'
+        : r.pricing_mode === 'free' ? 'آزاد' : '—'})`,
+    toFaDigits(displayScore(r) ?? '—'),
   ];
 }
 
@@ -243,6 +262,7 @@ const ScreenerRow = memo(function ScreenerRow({
   const ev = useMemo(
     () => ({
       i1a: () => screenAuditEvidence('1a_monetary_growth', r, thresholds),
+      i1b: () => screenAuditEvidence('1b_volume_growth', r, thresholds),
       i2: () => screenAuditEvidence('2_eps_trend', r, thresholds),
       i3: () => screenAuditEvidence('3_gross_margin', r, thresholds),
       i4: () => screenAuditEvidence('4_sales_to_mcap', r, thresholds),
@@ -250,7 +270,10 @@ const ScreenerRow = memo(function ScreenerRow({
     }),
     [r, thresholds],
   );
-              const i1a = verdictOf(r.i1a_pass ?? r.i1_pass);
+              /** حکمِ «الف» فقط از پرچمِ خودِ «الف» می‌آید. برگشتِ `?? i1_pass`
+               *  رأیِ مجموعِ دو پا را به پایِ یک پا می‌نوشت (امروز ۰ ردیف فعالش
+               *  می‌کرد، ولی اگر بک‌اند «الف» را نفرستد همان خطایِ قبلی برمی‌گردد). */
+              const i1a = verdictOf(r.i1a_pass);
               const i1b = verdictOf(r.i1b_pass);
               /** شاخص ۲ — چهاردحالته از روی خودِ داده (lib/epsHistory):
                *  pass / partial «مردود — سابقهٔ ناقص (۲ از ۳ سال)» / fail / gap (<۲ سال) */
@@ -386,10 +409,20 @@ const ScreenerRow = memo(function ScreenerRow({
                         </span>
                         <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
                           <span className="text-[10px] text-text-muted font-bold">ب</span>
-                          {isFinancialOrHolding(r) ? (
-                            <span className="text-[9px] text-text-muted">N/A</span>
+                          {r.i1b_applicable === false ? (
+                            /* «قابل اعمال نیست» را خودِ موتور می‌گوید
+                               (`company_profile.volume_applicable`) — نه از
+                               regexِ نام/صنعت؛ پیش از این درِ ۲۵۱ ردیف حکمِ
+                               واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
+                               N/Aِ اشتباه می‌خورد. */
+                            <GapMark
+                              label="N/A (قابل اعمال نیست)"
+                              tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
+                              evidence={ev.i1b}
+                              testId="fts-na-1b_volume_growth"
+                            />
                           ) : i1b === 'gap' ? (
-                            <AxisGapMark axis="1b_volume_growth" />
+                            <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
                           ) : (
                             <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
                           )}
@@ -448,11 +481,13 @@ const ScreenerRow = memo(function ScreenerRow({
                           می‌شد رقمِ ۲۸٪ زیرِ ستونِ کناری خوانده شود. */}
                       <span className="shrink-0">
                         {i3 === 'gap' ? (
-                          isFinancialOrHolding(r) ? (
-                            /* مؤسسهٔ مالی/هلدینگ: سود ناخالص ماهیتاً وجود ندارد → N/A نه «شکاف داده» */
+                          r.i3_na === true ? (
+                            /* «سود ناخالص ندارد» را خودِ موتور اعلام می‌کند
+                               (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
+                               ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
                             <GapMark
                               label="N/A (ماهیت مالی)"
-                              tooltip="بانک/بیمه/هلدینگ «سود ناخالص» گزارش نمی‌کند؛ این شاخص برای این ماهیت کاربرد ندارد — شکاف داده نیست."
+                              tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
                             />
@@ -480,10 +515,10 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
                         {i4 === 'gap' ? (
-                          isFinancialOrHolding(r) ? (
+                          r.i4_na === true ? (
                             <GapMark
                               label="N/A (ماهیت مالی)"
-                              tooltip="نسبت فروش/ارزش بازار برای بانک/بیمه/هلدینگ معنا ندارد؛ شکاف داده نیست."
+                              tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
                             />
@@ -541,18 +576,28 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle text-start">
+                    {/* «FTS ندارد» (applicable=false) امتیاز نمی‌گیرد؛ کارت هم همین
+                        قاعده را دارد (`api/fundamental.py`: score = None وقتی
+                        نماد خارج از پنج‌شاخصه است). نمایشِ عددِ آنجا یعنی دو
+                        جواب برایِ یک نماد: کارت می‌گوید داوری نداریم، جدول ۳. */}
                     <span
+                      title={r.applicable === false
+                        ? 'این نماد خارج از پنج‌شاخصۀ FTS است (صندوق/کارگزاری/ماهیت مالی) — امتیازِ FTS ندارد.'
+                        : undefined}
                       className={`num inline-flex h-6 w-9 items-center justify-center rounded-full border text-xs font-black shadow-xs ${
-                        r.score == null
+                        displayScore(r) == null
                           ? 'border-border-c/70 bg-bg-card/50 text-text-muted'
-                          : r.score >= 4
+                          : (displayScore(r) as number) >= 4
                             ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
-                            : r.score >= 3
+                            : (displayScore(r) as number) >= 3
                               ? 'border-accent-yellow/40 bg-accent-yellow/15 text-accent-yellow'
                               : 'border-accent-red/40 bg-accent-red/15 text-accent-red'
                       }`}
                     >
-                      <span className="num font-bold">{r.score == null ? '؟' : toFaDigits(r.score)}</span>
+                      <span className="num font-bold">
+                        {r.applicable === false ? '—'
+                          : displayScore(r) == null ? '؟' : toFaDigits(displayScore(r) as number)}
+                      </span>
                     </span>
                   </td>
                 </tr>
@@ -619,7 +664,11 @@ export function FtsScreenTable({
     const base = rowsAfterAxisFilter.filter((r) => isFundamentalCompany(r) && r.excluded !== true);
     return {
       all: base.length,
-      super: base.filter((r) => r.score >= 4 && r.pricing_mode === 'free').length,
+      // «سوپر بنیادی» رأیِ خودِ موتور است (`verdict === 'STRONG'` ⇐ امتیاز ≥۴
+      // **و** هر سه محورِ بلاکر قبول). پیش از این فرانت با `score>=4 &&
+      // pricing_mode==='free'` چهارم را می‌شمرد و بیست‌وـ را می‌انداخت بیرون:
+      // سنجشِ ۱۴۰۵-۰۷-۱۱ رویِ ۸۷۳ نماد ⇒ ۹۶ در برابرِ ۵۱ (۶۳ اضافه، ۱۸ کم).
+      super: base.filter((r) => r.verdict === 'STRONG').length,
       // «ستاپ جت» یعنی آخرینِ کندل پلکانِ مقاومتِ جزوه را شکسته باشد --
       // همان tech_jet که موتورِ اسکرینر از رویِ کندل‌ها حساب می‌کند. پیش از
       // این این چیپ i1_pass را می‌شمرد و نامش را جت می‌گذاشت.
@@ -636,7 +685,7 @@ export function FtsScreenTable({
       if (q) base = base.filter((r) => matchFa(r.symbol, q) || matchFa(r.name, q) || matchFa(r.sector_name, q));
 
       if (strategicPreset === 'super') {
-        base = base.filter((r) => r.score >= 4 && r.pricing_mode === 'free');
+        base = base.filter((r) => r.verdict === 'STRONG');
       } else if (strategicPreset === 'jet') {
         base = base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free');
       } else if (strategicPreset === 'hourglass') {
@@ -650,10 +699,12 @@ export function FtsScreenTable({
 
   const sorted = useMemo(() => {
     const arr = [...visible];
+    const key = (r: FtsScreenRow): number =>
+      (sortKey === 'score' ? displayScore(r) : (r[sortKey] as number | null)) ?? Number.NEGATIVE_INFINITY;
     arr.sort((a, b) => {
-      const va = (a[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
-      const vb = (b[sortKey] as number | null | undefined) ?? Number.NEGATIVE_INFINITY;
-      if (va === vb) return b.score - a.score;
+      const va = key(a);
+      const vb = key(b);
+      if (va === vb) return (displayScore(b) ?? Number.NEGATIVE_INFINITY) - (displayScore(a) ?? Number.NEGATIVE_INFINITY);
       return desc ? vb - va : va - vb;
     });
     return arr;
@@ -807,7 +858,7 @@ export function FtsScreenTable({
         <button
           type="button"
           onClick={() => setStrategicPreset('super')}
-          title="شرکت‌های با امتیاز ۴ یا ۵ و صنعت غیردستوری"
+          title="رأیِ خودِ موتور FTS: امتیاز ≥ ۴ و هر سه محورِ بلاکر (رشد، EPS، حاشیه) قبول"
           className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
             strategicPreset === 'super'
               ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan shadow-[0_0_8px_rgba(6,182,212,0.25)]'

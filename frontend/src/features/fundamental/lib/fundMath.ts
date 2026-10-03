@@ -1,4 +1,10 @@
-// features/fundamental/lib/fundMath.ts -- ریاضیات خالص ۵ شاخص استراتژی FTS
+// features/fundamental/lib/fundMath.ts -- تفکیک فصلی و میانهٔ صنعت (لایهٔ نمایش)
+// این فایل هرگز داوری FTS نمی‌سازد: هیچ PASS/FAIL، امتیاز یا verdict اینجا محاسبه نمی‌شود.
+// رأی پنج محور فقط از بک‌اند می‌آید (`/api/fundamental/{symbol}` و `/api/screener`).
+// نسخ۔ پیشین چهار تابعٔ «ارزیابی پنج شاخص» با آستانه‌هایش داشت
+// (`growth>=40`، `ratio>=1.0` و معافیتِ `passed: true`) که هیچ مصرف‌کننده‌ای نداشت
+// و با موتور نمی‌خواند (`v10_monetary_growth_min=60`، `sales_to_mcap_min=0.33`، و
+// معافیت = «نظر نمی‌دهد» نه قبول). حذف شد تا منبع دومی رأی نماند.
 import type { QuarterRow } from '../api/useQuarters';
 
 export type FiscalQuarter = {
@@ -137,109 +143,3 @@ export function yoyBonus(yoy: number | null | undefined): number {
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  توابع داوری ۵ شاخص اصلی FTS (اسپک v2.1)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * شاخص ۱: نرخ رشد فروش و درآمد نسبت به دوره مشابه سال قبل
- * فرمول: ((فروش امسال - فروش پارسال) / فروش پارسال) * ۱۰۰
- * آستانه: حداقل ۴۰٪ و امتیاز کامل بالای ۶۰٪
- */
-export function evalSalesGrowth(curr: number, prev: number, minGrowth = 40.0) {
-  if (prev <= 0 || curr == null) return { growth: null, passed: false, fullScore: false };
-  const growth = ((curr - prev) / prev) * 100;
-  const rounded = Number(growth.toFixed(1));
-  return {
-    growth: rounded,
-    passed: rounded >= minGrowth,
-    fullScore: rounded >= 60.0,
-  };
-}
-
-/**
- * شاخص ۲: سابقه ۳ ساله روند سود خالص هر سهم (EPS) از ۱۲/۲۹ حسابرسی‌شده
- * شرط: اکیداً صعودی و تمام سال‌ها مثبت (EPS_y > EPS_y-1 > EPS_y-2 > 0)
- * هرگونه افت یا زیان = رد قطعی
- */
-export function evalEpsTrajectory(history: number[]) {
-  if (!history || history.length < 3) return { trajectory: 'INSUFFICIENT_DATA', passed: false };
-  const [y1, y2, y3] = history.slice(-3);
-  if (y1 == null || y2 == null || y3 == null) {
-    return { trajectory: 'INSUFFICIENT_DATA', passed: false };
-  }
-  // شرط سخت‌گیرانه FTS: اکیداً صعودی و تماماً سودده
-  if (y3 > y2 && y2 > y1 && y1 > 0) {
-    return { trajectory: 'ASCENDING_STRICT', passed: true };
-  }
-  if (y3 <= 0 || y2 <= 0 || y1 <= 0) {
-    return { trajectory: 'LOSS_OR_NEGATIVE', passed: false };
-  }
-  return { trajectory: 'DECLINING_OR_FLAT', passed: false };
-}
-
-/**
- * شاخص ۳: حاشیه سود ناخالص (Gross Profit Margin)
- * فرمول: (سود ناخالص / درآمد عملیاتی) * ۱۰۰
- * استاندارد >= ۳۰٪، مرزی >= ۲۰٪، زیر ۲۰٪ وتو و رد قطعی
- */
-export function evalGrossMargin(grossProfit: number, revenue: number, minMargin = 20.0, optimalMargin = 30.0) {
-  if (revenue <= 0 || grossProfit == null) return { margin: null, passed: false, optimal: false };
-  const margin = (grossProfit / revenue) * 100;
-  const rounded = Number(margin.toFixed(1));
-  return {
-    margin: rounded,
-    passed: rounded >= minMargin,
-    optimal: rounded >= optimalMargin,
-  };
-}
-
-/**
- * شاخص ۴: نسبت فروش سالانه و پتانسیل سود ناخالص به ارزش بازار
- * شرط قبولی (OR Gate):
- * ۱) فروش سالانه‌شده / ارزش بازار >= ۱.۰
- * یا
- * ۲) سود ناخالص سالانه تخمینی / ارزش بازار >= ۴۰٪
- * استثنا: هلدینگ‌ها و سرمایه‌گذاری‌ها N/A معاف هستند
- */
-export function evalSalesToMarketCap(
-  annualSales: number,
-  marketCap: number,
-  grossMarginPct: number | null = null,
-  isHolding = false,
-) {
-  if (isHolding) {
-    return {
-      ratio: null,
-      potential: null,
-      passed: true,
-      isExempt: true,
-      reason: 'معافیت هلدینگ/سرمایه‌گذاری (مبنای P/NAV)',
-    };
-  }
-  if (marketCap <= 0 || annualSales <= 0) {
-    return { ratio: null, potential: null, passed: false, isExempt: false, reason: 'داده ارزش بازار یا فروش ناموجود' };
-  }
-
-  const ratio = Number((annualSales / marketCap).toFixed(2));
-  let potential: number | null = null;
-  if (grossMarginPct != null && grossMarginPct > 0) {
-    potential = Number(((annualSales * (grossMarginPct / 100) / marketCap) * 100).toFixed(1));
-  }
-
-  const salesPass = ratio >= 1.0;
-  const potentialPass = potential != null && potential >= 40.0;
-  const passed = salesPass || potentialPass;
-
-  return {
-    ratio,
-    potential,
-    passed,
-    salesPass,
-    potentialPass,
-    isExempt: false,
-    reason: salesPass
-      ? 'پاس با نسبت فروش سالانه به ارزش بازار >= ۱.۰'
-      : potentialPass
-      ? 'پاس با پوشش سود ناخالص سالانه تخمینی >= ۴۰٪ ارزش بازار'
-      : 'عدم دستیابی به حد نصاب نسبت فروش یا پتانسیل سود',
-  };
-}

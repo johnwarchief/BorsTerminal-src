@@ -43,6 +43,12 @@ function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
     mcap: 5e13,
     score: 4,
     i1_pass: true,
+    i1a_pass: true,
+    i1b_pass: true,
+    i1b_applicable: true,
+    i3_na: false,
+    i4_na: false,
+    verdict: 'WATCH',
     i2_pass: true,
     i3_pass: true,
     i4_pass: true,
@@ -57,7 +63,7 @@ function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
 
 describe('F-10 — حکمِ موتور بر مقدار غایب مقدم است', () => {
   it('شاخص ۱: رشد null ولی حکم مردود ⇒ ✗ (نه برچسب «داده نیست»)', () => {
-    render(<FtsScreenTable rows={[row({ symbol: 'الف', rev_growth: null, i1_pass: false })]} onSelect={() => {}} />);
+    render(<FtsScreenTable rows={[row({ symbol: 'الف', rev_growth: null, i1_pass: false, i1a_pass: false })]} onSelect={() => {}} />);
     const cell = screen.getByTestId('fts-mark-1a_monetary_growth');
     expect(cell.textContent).toContain('✗');
     expect(screen.queryByText(gapLabel('1a_monetary_growth'))).toBeNull();
@@ -210,7 +216,7 @@ describe('متنِ علتِ شاخص‌ها — عدد و کف، بدون ادع
   ];
   const CASES: Partial<FtsScreenRow>[] = [
     {},
-    { rev_growth: -12, i1_pass: false },
+    { rev_growth: -12, i1_pass: false, i1a_pass: false },
     { gross_margin: 8.5, i3_pass: false },
     { gross_margin: null, i3_pass: null },
     { sales_to_mcap: 0.02, i4_pass: false },

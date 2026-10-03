@@ -378,13 +378,40 @@ def _screener_cached():
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
-                r["i3_pass"] = (None if fts_engine.ind3_na(_g3)
-                                else p["3_gross_margin"])
-                r["i4_pass"] = (None if fts_engine.ind4_na(_ind.get("4"))
-                                else p["4_sales_to_mcap"])
+                # `i3_na`/`i4_na` هم همین‌جا بیرون می‌آیند: «null بودنِ حکم» دو
+                # علت دارد (معافیتِ ماهیت ⇔ نبودِ داده)، و جدول نباید علت را از
+                # regexِ نام/صنعت حدس بزند — سنجشِ ۱۴۰۵-۰۷-۱۱: حدسِ فرانت درِ
+                # ۱۱۲ ردیف از ۲۹۶ (شاخص ۳) و ۷۹ ردیف از ۲۹۸ (شاخص ۴) می‌گشت.
+                # TODO(fts_results): مسیرِ مادی‌شده `indicators` را کامل
+                # برنمی‌گرداند، پس درِ آن مسیر این دو پرچم False می‌ماند (حکم
+                # درست است، فقط علتِ خالی‌بودن generalize می‌شود). امروزِ کاری
+                # جدولِ fts_results خالی است (سنجش: ۰ ردیف در نصب و در dev) ⇒
+                # همه‌چیز از همین مسیرِ زنده می‌آید؛ با فعال‌شدنِ کش باید سه
+                # پرچمِ na هم درِ همان جدول ثبت شود.
+                _na3 = fts_engine.ind3_na(_g3)
+                _na4 = fts_engine.ind4_na(_ind.get("4"))
+                r["i3_pass"] = None if _na3 else p["3_gross_margin"]
+                r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
+                r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
                 r["i1b_pass"] = p.get("1b_volume_growth")
+                # «ب» رشد فیزیکی: کارت می‌گوید این محور برایِ این ماهیت «قابل
+                # اعمال» است یا نه (`company_profile.volume_applicable`). بی‌این
+                # پرچم جدول چاره‌ای نداشت جز حدس‌زدن از regexِ نام/صنعت؛ سنجشِ
+                # ۱۴۰۵-۰۷-۱۱ رویِ ۸۷۳ نماد: کارت ۳۵۱ ردیف را غیرقابل‌اعمال
+                # می‌خواند و حدسِ فرانت درِ ۱۰۲ تای آن‌ها می‌گشت — و درِ ۲۵۱
+                # ردیف حکمِ واقعیِ موتور (✓/✗) پشتِ «N/A» پنهان می‌شد.
+                # مسیرِ مادی‌شده `indicators` را کامل برنمی‌گرداند، پس همان
+                # تابعِ خالصِ `company_profile` با همان دو آرگومانِ کارت صدا
+                # زده می‌شود — یک منبع، دو مسیر (کشِ سرد = کشِ گرم).
+                _v1b = ((_ind.get("1") or {}).get("volume") or {})
+                if "applicable" in _v1b:
+                    r["i1b_applicable"] = bool(_v1b.get("applicable"))
+                else:
+                    r["i1b_applicable"] = bool(fts_engine.company_profile(
+                        r.get("sector_name") or "", cname_of.get(key, "")
+                    ).get("volume_applicable"))
                 r["i4a_pass"] = p.get("4a_sales_to_mcap")
                 r["i4b_pass"] = p.get("4b_profit_potential")
                 # r["applicable"] از خودِ bulk_scan می‌آید (تک‌مرجعِ

@@ -59,6 +59,12 @@ function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
     mcap: 1e13,
     score: 3,
     i1_pass: true,
+    i1a_pass: true,
+    i1b_pass: true,
+    i1b_applicable: true,
+    i3_na: false,
+    i4_na: false,
+    verdict: 'WATCH',
     i2_pass: false,
     i3_pass: true,
     i4_pass: true,
@@ -160,8 +166,14 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
     );
     const tr = screen.getByTestId('fts-screen-row');
     expect(within(tr).queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
-    // هر پنج شاخص قبول ⇒ پنج ✓ در همان ردیف
-    expect(within(tr).getAllByText('✓')).toHaveLength(5);
+    // هر شش تیکِ محور (۱الف، ۱ب، ۲، ۳، ۴، ۵) — شمارشِ کلی «۵» رویِ فیچری
+    // می‌گذشت که «ب» را نداشت؛ حالا که فیچر عینِ پاسخِ واقعیِ سرور است
+    // (`i1a_pass`/`i1b_pass`/`i1b_applicable`) هر تک را با testidِ خودش می‌سنجیم.
+    for (const t of ['fts-mark-1a_monetary_growth', 'fts-mark-1b_volume_growth',
+                     'fts-mark-2_eps_trend', 'fts-mark-3_gross_margin',
+                     'fts-mark-4_sales_to_mcap', 'fts-mark-5_industry']) {
+      expect(within(tr).getByTestId(t).textContent).toContain('✓');
+    }
     expect(within(tr).getByTitle('۹۱ ← ۹۶ ← ۲۰۲')).toBeInTheDocument();
   });
 

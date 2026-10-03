@@ -5,7 +5,6 @@ import type { FtsCard } from '../api/useFtsCard';
 import type { FtsScreenRow } from '../api/useFtsScreen';
 import type { GapAxis } from './gapReason';
 import { epsFailReason, epsRealYears } from './epsHistory';
-import { isFinancialOrHolding, isPhysicalGrowthApplicable } from './assetScope';
 import { toFaDigits } from '@shared/lib/fmt';
 
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -225,13 +224,18 @@ export function cardAuditEvidence(card: FtsCard): Partial<Record<GapAxis, AuditE
   const i4 = ind?.['4'];
   const out: Partial<Record<GapAxis, AuditEvidence>> = {};
 
-  const isHolding =
-    card.profile?.kind === 'holding' ||
-    isFinancialOrHolding({ name: card.symbol, sector_name: card.sector });
+  // «معاف است؟» و «قابل اعمال است؟» را خودِ کارت می‌گوید. دو خطِ پیشین برایِ
+  // همین دو، regexِ نام/صنعت را رویِ **نمادِ شش‌حرفی** اجرا می‌کردند
+  // (`card.symbol`) — یعنی نه نامِ شرکت دیده می‌شد نه صنعتِ کامل، و جوابِ
+  // شاهدِ ممیزی با جوابِ کارت می‌جنگید.
+  const isHolding = Boolean(i4?.na) || Boolean(i4?.exempt)
+    || card.profile?.kind === 'holding';
 
-  const volApplicable = card.profile?.volume_applicable != null
-    ? card.profile.volume_applicable
-    : isPhysicalGrowthApplicable({ name: card.symbol, sector_name: card.sector });
+  const volApplicable = i1?.volume?.applicable != null
+    ? Boolean(i1.volume.applicable)
+    : card.profile?.volume_applicable != null
+      ? card.profile.volume_applicable
+      : true;
 
   // ۱-الف: رشد ریالی
   out['1a_monetary_growth'] = build1aEvidence(
@@ -297,13 +301,15 @@ export function screenAuditEvidence(
   thresholds?: Record<string, unknown> | null,
 ): AuditEvidence {
   const cfg = thresholds ?? {};
-  const isHolding = isFinancialOrHolding({ name: row.name, sector_name: row.sector_name });
-  const volApplicable = isPhysicalGrowthApplicable({ name: row.name, sector_name: row.sector_name });
+  // علتِ «چرا حکمی نیست» از پرچم‌هایِ خودِ بک‌اند خوانده می‌شود
+  // (`i1b_applicable`, `i3_na`, `i4_na`)؛ نسخهٔ پیشین هر سه را از regexِ
+  // نام/صنعت حدس می‌زد و شاهدِ ممیزی را با همان حدس پر می‌کرد.
+  const volApplicable = row.i1b_applicable !== false;
 
   switch (axis) {
     case '1a_monetary_growth': {
       const actual = num(row.rev_growth);
-      const ev = build1aEvidence(actual, num(cfg.growth_min), row.i1_pass);
+      const ev = build1aEvidence(actual, num(cfg.growth_min), row.i1a_pass);
       if (actual == null) {
         ev.reason = MISSING;
       }
@@ -313,7 +319,7 @@ export function screenAuditEvidence(
     case '1b_volume_growth':
       return build1bEvidence(
         null,
-        row.i1_pass,
+        row.i1b_pass,
         volApplicable
       );
 
@@ -331,8 +337,8 @@ export function screenAuditEvidence(
 
     case '3_gross_margin': {
       const actual = num(row.gross_margin);
-      const ev = build3Evidence(actual, num(cfg.margin_min), row.i3_pass, isHolding);
-      if (actual == null && !isHolding) {
+      const ev = build3Evidence(actual, num(cfg.margin_min), row.i3_pass, row.i3_na === true);
+      if (actual == null && row.i3_na !== true) {
         ev.reason = MISSING;
       }
       return ev;
@@ -340,8 +346,8 @@ export function screenAuditEvidence(
 
     case '4_sales_to_mcap': {
       const actual = num(row.sales_to_mcap);
-      const ev = build4Evidence(actual, num(cfg.v10_sales_to_mcap_min), row.i4_pass, isHolding);
-      if (actual == null && !isHolding) {
+      const ev = build4Evidence(actual, num(cfg.v10_sales_to_mcap_min), row.i4_pass, row.i4_na === true);
+      if (actual == null && row.i4_na !== true) {
         ev.reason = MISSING;
       }
       return ev;

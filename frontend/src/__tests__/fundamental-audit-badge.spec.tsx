@@ -58,6 +58,12 @@ function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
     mcap: 5e13,
     score: 4,
     i1_pass: true,
+    i1a_pass: true,
+    i1b_pass: true,
+    i1b_applicable: true,
+    i3_na: false,
+    i4_na: false,
+    verdict: 'WATCH',
     i2_pass: true,
     i3_pass: true,
     i4_pass: true,
@@ -254,7 +260,7 @@ describe('AuditBadge در جدول غربالگری (FtsScreenTable)', () => {
   });
 
   it('ستون بی‌داده دقیقاً علت را نشان می‌دهد و برچسب کلی «شکاف داده» ندارد', () => {
-    render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null })]} onSelect={() => {}} />);
+    render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null, i1a_pass: null })]} onSelect={() => {}} />);
     expect(screen.getByTestId('fts-gap-reason-1a_monetary_growth').textContent).toContain('گزارش ماهانهٔ کدال نیست');
     expect(screen.queryByText('شکاف داده')).toBeNull();
   });

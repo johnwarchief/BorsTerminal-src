@@ -48,6 +48,12 @@ function row(patch: Partial<FtsScreenRow> = {}): FtsScreenRow {
     mcap: 5e13,
     score: 4,
     i1_pass: true,
+    i1a_pass: true,
+    i1b_pass: true,
+    i1b_applicable: true,
+    i3_na: false,
+    i4_na: false,
+    verdict: 'WATCH',
     i2_pass: true,
     i3_pass: true,
     i4_pass: true,
@@ -165,6 +171,9 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
             symbol: 'ناقص',
             rev_growth: null,
             i1_pass: null,
+            i1a_pass: null,
+            i1b_pass: null,
+            i1b_applicable: true,
             gross_margin: null,
             i3_pass: null,
             eps_series: null,
@@ -189,7 +198,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
   });
 
   it('سلول بی‌داده tooltip علت + راه‌حل دارد (بازشوی ممیزی AuditBadge)', () => {
-    render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null })]} onSelect={() => {}} />);
+    render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null, i1a_pass: null })]} onSelect={() => {}} />);
     const cell = screen.getByTestId('fts-gap-reason-1a_monetary_growth');
     // از F-06: خودِ برچسبِ علت یک بج ممیزی است و متن tooltip کوتاه روی همان بج می‌ماند
     const title = cell.getAttribute('title') ?? '';

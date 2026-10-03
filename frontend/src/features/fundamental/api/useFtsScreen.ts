@@ -34,10 +34,20 @@ export const FtsScreenRowSchema = z.object({
   i1_pass: z.boolean().nullish(),
   i1a_pass: z.boolean().nullish(),
   i1b_pass: z.boolean().nullish(),
+  /** «ب» رشد فیزیکی برایِ این ماهیت قابل‌اعمال است؟ از همان
+   *  `company_profile.volume_applicable` که کارت می‌خواند — نه حدسِ نام/صنعت. */
+  i1b_applicable: z.boolean().nullish(),
   i2_pass: z.boolean().nullish(),
   i3_pass: z.boolean().nullish(),
   i4_pass: z.boolean().nullish(),
+  /** علتِ خالی‌بودنِ حکم: «معاف/بی‌کاربرد» (na) یا «داده نیست». از خودِ کارت
+   *  (`ind3_na`/`ind4_na`) می‌آید تا جدول علت را از نام و صنعت حدس نزند. */
+  i3_na: z.boolean().nullish(),
+  i4_na: z.boolean().nullish(),
   i5_pass: z.boolean().nullish(),
+  /** رأیِ موتور برایِ همین ردیف (STRONG / WATCH / REJECT / EXCLUDED / «FTS ندارد»).
+   *  پری‌ست «سوپر بنیادی» همان STRONG است — بی‌بازتولیدِ آستانه درِ فرانت. */
+  verdict: z.string().nullish(),
   excluded: z.boolean().nullish(),
   /** صندوق در پنج‌شاخصه نمی‌گنجد ⇒ حکمِ NOT_APPLICABLE، نه REJECTED */
   applicable: z.boolean().nullish(),
