@@ -105,6 +105,24 @@ for cls, kind in UNIVERSE:
     if ME.in_category(row, "eq_all", None):
         ck(ME.in_category(row, "all", None), "eq_all ⊂ all برایِ %s/%s" % (cls, kind))
 
+# ==== ۲ب) برچسبِ دامنهٔ پنل باید با دامنه‌ای که می‌خواند یکی باشد =========
+# سنجشِ زندهٔ ۱۴۰۵-۰۷-۱۱ (۱۰:۵۴): پنلِ «عمق/دما» hint اش «سهام، حق تقدم و
+# ص.سهامی» بود ولی فرانت بی‌`group` صدا می‌زد و پیش‌فرضِ موتور `all` است —
+# یعنی ۶۴٬۴۸۷ ب.تِ کلِّ بازار (درآمدثابت + اوراق + اختیار داخلش) زیرِ برچسبی
+# که ۱۱٬۸۶۸ ب.تِ سهام‌ساندها را وعده می‌داد. با `eq_all`: ۱۱٬۸۶۸ در برابرِ
+# ۱۱٬۲۰۳ِ تریدرزآرنا (+۵٫۹٪) و ۵٬۳۴۵ در برابرِ ۴٬۸۰۱ (+۱۱٪) و pos% ۵۳٫۱ در
+# برابرِ ۵۲٪ — پیش‌تر ۵٫۷ برابر و ۲٫۹ برابر و ۵۷٪ بود.
+_pul = open(os.path.join(ROOT, "frontend", "src", "features", "market", "api",
+                          "useMarketPulse.ts"), encoding="utf-8").read()
+for ep in ("depth", "thermometer"):
+    ck(f"/api/mstat/{ep} درِ نبض بازار با group=eq_all خوانده می‌شود",
+       f"/api/mstat/{ep}?group=eq_all" in _pul)
+    naked = [ln.strip() for ln in _pul.splitlines()
+             if f"/api/mstat/{ep}" in ln and "group=" not in ln]
+    ck(not naked, "فراخوانِ بی‌دامنهٔ %s نمانده%s"
+       % (ep, ("" if naked else "  ← " + " | ".join(n[:70] for n in naked))))
+
+
 # ============ ۳) نوشتنِ نصفهٔ «ارزش کل بازار» + خواندنِ ردیفِ معیوب ===========
 def fake_getter(replies):
     def _p(_s, url, _key):

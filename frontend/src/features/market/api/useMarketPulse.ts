@@ -10,7 +10,7 @@ import { SNAPSHOT_POLL_MS } from '../lib/intradayCache';
 const num = z.number().nullish();
 
 /**
- * «nodata» حالتِ چهارم است، نه خطا: مоторِ کلان وقتی هیچ نمادی در نشستِ جاری
+ * «nodata» حالتِ چهارم است، نه خطا: موتورِ کلان وقتی هیچ نمادی در نشستِ جاری
  * معامله نشده (نشستِ پیش از بازگشایی یا روزِ تعطیل) داوری نمی‌کند. پیش از این
  * نبودنِ داده را «نامساعد» می‌خواندیم — رأیِ مالک: هیچ‌چیز نباید از نبودِ داده
  * سبز یا قرمز بسازد. این رشته در اسکیماست، وگرنه اعتبارسنجی کل پاسخ می‌شکند.
@@ -323,8 +323,13 @@ export function useMarketPulse() {
       const [smartMoney, summary, depth, thermometer] = await Promise.all([
         http<SmartMoney>('/api/mstat/smart-money', { schema: SmartMoneySchema, signal }).catch(() => null),
         http<SummaryFeed>('/api/mstat/summary', { schema: SummarySchema, signal }).catch(() => null),
-        http<DepthFeed>('/api/mstat/depth', { schema: DepthSchema, signal }).catch(() => null),
-        http<Thermometer>('/api/mstat/thermometer', { schema: ThermometerSchema, signal }).catch(() => null),
+        // «عمق» و «دما» زیرِ same hint می‌نشینند: «سهام، حق تقدم و ص.سهامی».
+        // پیش از این هر دو بی‌`group` صدا زده می‌شدند و پیش‌فرضِ موتور `all` بود —
+        // یعنی ۶۴٬۱۸۹ ب.تِ کلِّ بازار (صندوقِ درآمدثابت و اوراق و اختیار هم داخلش)
+        // زیرِ برچسبی که ۱۱٬۷۷۳ ب.تِ سهام‌ساندها را وعده می‌دهد (سنجشِ زندهٔ
+        // ۱۴۰۵-۰۷-۱۱، و همان دامنه‌ای که تریدرزآرنا در این دو پنل می‌شمارد).
+        http<DepthFeed>('/api/mstat/depth?group=eq_all', { schema: DepthSchema, signal }).catch(() => null),
+        http<Thermometer>('/api/mstat/thermometer?group=eq_all', { schema: ThermometerSchema, signal }).catch(() => null),
       ]);
       return { smartMoney, summary, depth, thermometer };
     },
