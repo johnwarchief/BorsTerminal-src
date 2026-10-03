@@ -446,7 +446,22 @@ const ScreenerRow = memo(function ScreenerRow({
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
-                        {epsPartialRejected ? (
+                        {r.i2_na === true ? (
+                          /* رأیِ ۱۳ + جزوۀ ص ۴ («صورتهای مالی تلفیقی مدنظر ما
+                             نیست»): سابقه‌ای که یک اسلاتش تلفیقی است داوریِ FTS
+                             ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
+                             (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
+                          <GapMark
+                            label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
+                            tooltip={
+                              r.eps_consolidated
+                                ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
+                                : 'لایهٔ EPS برای این نماد اجرا نمی‌شود (صنعت بیمه) — اعلامِ خودِ موتور، نه شکاف داده.'
+                            }
+                            evidence={ev.i2}
+                            testId="fts-na-2_eps_trend"
+                          />
+                        ) : epsPartialRejected ? (
                           <AuditBadge
                             state="fail"
                             label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}

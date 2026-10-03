@@ -234,7 +234,7 @@ describe('کف‌های کارت FTS — از پاسخِ بک‌اند، نه ع
     expect(screen.getByTestId('fts-card-cell-2_eps_trend').textContent).toContain('۴ سالِ رشد');
     const m = screen.getByTestId('fts-card-cell-3_gross_margin').textContent ?? '';
     expect(m).toMatch(/≥\s*۲۶٪/);
-    expect(m).toContain('ایده‌آل ۲۸٪');
+    expect(m).toContain('مطلوبِ جزوه: ۲۸٪');
     expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap').textContent).toMatch(/۰[./]۷۷×/);
     // هیچ‌کدام از کف‌های پیش‌فرض نباید جای عددِ بک‌اند نشسته باشد
     expect(m).not.toMatch(/≥\s*۲۰٪/);

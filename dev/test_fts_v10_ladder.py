@@ -6,6 +6,10 @@
 میاندوره × ۱۲÷م)، سال‌سازی، پرچم‌های soft_gap/low_quality_track و تکمیلِ پنجره با
 سالِ در‌جریان. هدف: اثبات اینکه تنزلِ شاهد «برچسب‌دار» است، نه پنهانی.
 
+بخشِ دومِ فایل **داوریِ** همان نردبان را می‌سنجد (`fts_engine.eps_assessment`):
+رأیِ ۱۳ و جزوۀ ص ۴ — هر اسلاتِ تلفیقی (نه فقط پنجرۀ تماماًِ تلفیقی) یعنی
+سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست، پس `na + data_gap` و نه «رد» و نه «سبز».
+
 همین‌طور قاعدهٔ «خروجی جدول بنیادی» قفل میشود: با کمبودِ دوره (۲ به‌جای ۳) سطر
 هرگز حذف نمیشود — مقادیرِ موجود می‌مانند، جایِ دورهٔ غایب «-» است و سطر با تگِ
 HTML قرمز و ذکرِ «تنها ۲ دوره موجود است» رندر میشود (`_eps_row`)؛ به‌علاوهٔ
@@ -59,6 +63,14 @@ ROWS = [
     ("F", "1403/12/29", 12, AUD, 300),
     # G: فقط یک دورهٔ متوالی (۱۴۰۴ غایب) → دو سلولِ «-» و سطرِ قرمز
     ("G", "1405/12/29", 12, AUD, 600), ("G", "1403/12/29", 12, AUD, 500),
+    # H: دو سالِ مستقل + یک سالِ فقط تلفیقی — سابقۀ سه‌سالۀ مستقل کامل نیست
+    # (سنجشِ ۱۴۰۵-۰۷-۱۲ روی بانکِ واقعی: ۳۹۳ نماد این شکل را دارند).
+    ("H", "1404/12/29", 12, AUD, 600), ("H", "1403/12/29", 12, AUD, 500),
+    ("H", "1402/12/29", 12, CA, 400),
+    # I: یک اسلاتِ تلفیقی + یک تنزلِ میاندوره — همان باگِ ترتیبِ tier که سابقه را
+    # «year_end_plus_interim» می‌خواند و داوری با EPSِ تلفیقی انجام می‌شد.
+    ("I", "1405/09/30", 9, I9, 300), ("I", "1404/12/29", 12, CU, 200),
+    ("I", "1403/12/29", 12, AUD, 100),
 ]
 
 conn = sqlite3.connect(":memory:")
@@ -76,7 +88,7 @@ def chk(name, cond, got=""):
     RES.append((name if cond else "✗ " + name, cond, "" if cond else repr(got)))
 
 
-for sym in ("A", "B", "C", "D", "E", "F", "G"):
+for sym in ("A", "B", "C", "D", "E", "F", "G", "H", "I"):
     chk("%s: خروجی JSON-serializable است" % sym,
         isinstance(F._eps_track_blended(conn, sym, years=3), dict))
 
@@ -169,6 +181,45 @@ try:  # خروجیِ جدول — هدرِ فارسی نباید ستونِ expo
         == _r.headers["content-disposition"])
 except ImportError as _ex:      # pandas در محیطِ حداقلی نصب نیست → رد شدنِ تمیز
     chk("export: (skipped: %s)" % _ex, True)
+
+# ── داوریِ شاخص ۲ (`eps_assessment`) — رأیِ ۱۳ + جزوۀ ص ۴ ────────────────
+# نردبان «چه چیزی موجود است» را می‌گوید؛ داوری «با چه مبنایی حکم می‌دهیم» را.
+# جزوه: «اطلاعات و صورت‌های مالی تلفیقی مدنظر ما نیست و ما صورت سود و زیان
+# [شرکت اصلی] برامون مهمه» ⇒ هر اسلاتِ تلفیقی یعنی آن سالِ غیرتلفیقی منتشر
+# نشده، پس سابقۀ سه‌ساله کامل نیست: نه رد، نه سبز — `na + data_gap`.
+import fts_engine as FE  # noqa: E402
+
+A2 = FE.eps_assessment(conn, "A", years=3)
+chk("داوری A (سه سالِ مستقل، صعودی): پاس", A2["pass"] is True and not A2.get("na"), A2)
+chk("داوری A: tier از نبودنِ حسابرسی می‌آید، نه تلفیقی",
+    A2["evidence_tier"] == "year_end_unaudited", A2["evidence_tier"])
+
+B2 = FE.eps_assessment(conn, "B", years=3)
+chk("داوری B (فقط تلفیقی): na + data_gap، پاس نه",
+    B2["pass"] is False and B2["na"] is True and B2["data_gap"] is True, B2)
+chk("داوری B: tier تلفیقی", B2["evidence_tier"] == "consolidated_year_end", B2)
+chk("داوری B: دلیل، نامِ جزوه را می‌برد", "تلفیقی" in (B2.get("reason") or ""), B2)
+
+H2 = FE.eps_assessment(conn, "H", years=3)
+chk("داوری H (۲ مستقل + ۱ تلفیقی): دیگر با تلفیقی داوری نمی‌شود",
+    H2["na"] is True and H2["pass"] is False and H2["data_gap"] is True, H2)
+chk("داوری H: سالِ تلفیقی ذکر شود", H2.get("consolidated_years") == ["1402"], H2)
+
+I2 = FE.eps_assessment(conn, "I", years=3)
+chk("داوری I (تلفیقی + میاندوره): باگِ ترتیبِ tier برگشته — تلفیقی زودتر سنجیده می‌شود",
+    I2["evidence_tier"] == "consolidated_year_end" and I2["na"] is True, I2)
+chk("داوری I: نردبان همان پنجرۀ سه‌ساله را می‌سازد (تنزلِ میاندوره هم ثبت است)",
+    I2["low_quality_track"] is True and I2["consolidated_used"] is True, I2)
+
+S2 = FE.eps_assessment(conn, "B", years=3, sector="بیمه و صندوق بازنشستگی")
+chk("داوری بیمه: پیش‌گیت — na و پاسِ بدونِ کوئری", S2["na"] is True and S2["pass"] is False
+    and S2["evidence_tier"] == "insurance", S2)
+chk("داوری نمادِ بی‌رکورد: data_gap و نه na", FE.eps_assessment(conn, "Z", years=3)["data_gap"] is True)
+# پرچم‌ها باید در هر دو شعبۀ نردبان (کامل و partial) از برچسبِ اسلات بسازند:
+P2 = FE.eps_assessment(conn, "G", years=3)
+chk("داوری G (سابقۀ ناقصِ مستقل): tier = insufficient با پاسِ False",
+    P2["evidence_tier"] == "insufficient" and P2["pass"] is False
+    and P2["consolidated_used"] is False, P2)
 
 npass = sum(1 for _n, ok, _g in RES if ok)
 for n, ok, g in RES:

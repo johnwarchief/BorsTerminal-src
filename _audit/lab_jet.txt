@@ -1,0 +1,12 @@
+پنل: 725 نماد | 297194 کندل
+
+══ jet | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  ath                         6156    25.08     0.564   0.0244      617
+  ladder_current             11269    45.91     0.561   0.0234      690
+  static                     11962    48.74     0.487   0.0140      628
+  static_confirm2            11511    46.90     0.483   0.0136      621
+  static_eps1_confirm2       11180    45.55     0.481   0.0134      613
+  static_confirm3            11245    45.81     0.478   0.0131      618
+
+نوشته شد: C:\Users\PCMOD\Desktop\BorsTerminal\_audit\fts_lab_jet_b0_event.json

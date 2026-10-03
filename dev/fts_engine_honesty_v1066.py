@@ -120,7 +120,8 @@ ck("کفِ کندلِ بسته‌شدۀ دیروز حدِ ضرر را می‌س�
 short_series = [bar(d, 100 + (i % 7), low=99 + (i % 7)) for i, d in enumerate(days(100))]
 hg_short = CH._fts_analyze_candles("SHORT", short_series)["hourglass"]
 ck("با ۱۵ تا ۵۱ کندلِ هفتگی ma52 منتشر نمی‌شود", hg_short["ma52"] is None)
-ck("و ساعتِ شنی در آن حالت خاموش است", hg_short["active"] is False)
+ck("و ساعتِ شنی در آن حالت نظر نمی‌دهد (None، نه False — نبودِ MA52 رأی نیست)",
+   hg_short["active"] is None and hg_short["action"] == "UNKNOWN")
 ck("دلیلِ خاموشی در desc می‌آید", "52" in (hg_short["desc"] or ""))
 ck("تعدادِ کندلِ هفتگی هم منتشر می‌شود", isinstance(hg_short.get("weekly_bars"), int))
 

@@ -1,0 +1,12 @@
+پنل: 242 نماد | 98797 کندل
+
+══ fib | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.382
+  variant                    fires   win/1k precision    expect    cover
+  ungated_618_70_log          1264    15.51     0.483   0.0130      216
+  weekly_up_not_daily_up       205     2.52     0.474   0.0123      125
+  ungated_33_40_log           1263    15.49     0.461   0.0101      216
+  weekly_up_618_70_log         291     3.57     0.446   0.0088      145
+  weekly_up_618_70_linear      311     3.81     0.442   0.0078      155
+  weekly_up_33_40_log          319     3.91     0.370  -0.0010      151
+
+نوشته شد: _audit/lab_b0_fib.json

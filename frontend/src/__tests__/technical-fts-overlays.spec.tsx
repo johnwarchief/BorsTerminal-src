@@ -71,10 +71,13 @@ async function renderChart() {
     .find((e) => (e.textContent ?? '').includes('بدون تعدیل')) as HTMLElement;
   await act(async () => { fireEvent.click(none); });
   await act(async () => { await Promise.resolve(); });
-  // رأیِ مالک (#219): لایۀ «تحلیل FTS» پیش‌فرض خاموش است ⇒ تست همان کلیدِ نوارِ ابزار
-  // را صریح روشن می‌کند؛ پیش‌فرضِ محصول تغییر نمی‌کند.
+  // لایۀ «تحلیل FTS» را روشن می‌کند. دورِ موتور تکنیکال پیش‌فرضِ محصول روشن شد
+  // (سیگنال‌ها سنجشِ تاریخی گرفتند)، پس این‌جا دیگر «یک بار کلیک» کافی نیست —
+  // با aria-pressed خوانده می‌شود تا تست به پیش‌فرضِ محصول گره نخورد.
   const ftsBtn = document.querySelector('[data-testid="nn-fts-layer-toggle"]') as HTMLElement;
-  await act(async () => { fireEvent.click(ftsBtn); });
+  if (ftsBtn.getAttribute('aria-pressed') !== 'true') {
+    await act(async () => { fireEvent.click(ftsBtn); });
+  }
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 }
 

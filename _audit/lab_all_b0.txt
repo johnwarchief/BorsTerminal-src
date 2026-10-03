@@ -1,0 +1,42 @@
+پنل: 725 نماد | 297194 کندل
+
+══ jet | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  static_ceiling_120          7303    29.75     0.576   0.0251      666
+  ladder_confirm3             8215    33.47     0.575   0.0251      689
+  ladder_confirm2             9553    38.92     0.569   0.0243      689
+  ath                         6156    25.08     0.564   0.0244      617
+  ladder_current             11269    45.91     0.561   0.0234      690
+  ladder_no_body             13136    53.52     0.545   0.0218      690
+  ladder_3day_window         13858    56.46     0.543   0.0215      690
+  static                     11962    48.74     0.487   0.0140      628
+  static_confirm2            11511    46.90     0.483   0.0136      621
+  static_confirm3            11245    45.81     0.478   0.0131      618
+
+══ choch | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  confirm_2d_margin1          2475    10.08     0.498   0.0163      583
+  confirm_3d                  2153     8.77     0.492   0.0160      549
+  confirm_2d                  2830    11.53     0.482   0.0146      609
+  current_1d                  4784    19.49     0.475   0.0128      653
+
+══ hunt | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  channel_4touch             14990    61.07     0.435   0.0070      653
+  channel_current            15846    64.56     0.434   0.0069      653
+  two_lows_line              11405    46.47     0.418   0.0050      651
+  flat_lows                   1821     7.42     0.379   0.0004      535
+
+══ dbl | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  current                     3236    13.18     0.563   0.0226      572
+  confirm_2d                  2794    11.38     0.549   0.0210      549
+
+══ fib | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  zone_618_70_log             3893    15.86     0.493   0.0138      648
+  zone_50_log                 5124    20.88     0.488   0.0132      652
+  zone_33_40_linear           3846    15.67     0.481   0.0122      652
+  zone_33_40_log              3782    15.41     0.475   0.0115      649
+
+نوشته شد: C:\Users\PCMOD\Desktop\BorsTerminal\_audit\fts_lab_jet+choch+hunt+dbl+fib_b0_event.json

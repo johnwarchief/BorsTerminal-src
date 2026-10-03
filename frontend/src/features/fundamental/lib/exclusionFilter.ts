@@ -111,6 +111,10 @@ export function rejectedFor(row: FtsScreenRow, axis: ExcludeAxis): boolean | nul
       // ستون تناژ در پاسخ غربالگری وجود ندارد ⇒ تشخیص ممکن نیست
       return null;
     case '2': {
+      // رأیِ ۱۳ + جزوۀ ص ۴: «سنجیده نشد» با «مردود» یکی نیست — سابقه‌ای که
+      // اسلاتی از صورتهایِ تلفیقی دارد (یا صنعت بیمه) را این فیلتر حذف نمی‌کند،
+      // چون موتور درباره‌اش نظر نداده است.
+      if (row.i2_na === true) return null;
       const hist = epsHistory(
         row.eps_series,
         row.eps_years_required ?? EPS_REQUIRED_YEARS,

@@ -63,12 +63,16 @@ export const TechnicalPayload = z.object({
    * برنامهٔ زنده همیشه به «در انتظار» می‌افتاد و فقط درِ تست‌هایی که payload
    * جعلی می‌دادند کار می‌کرد (دقیقاً همان باگِ بلوکِ `weekly` که بالا مستند شده).
    * هیچ تشخیصِ تازه‌ای این‌جا ساخته نمی‌شود: فقط رأیِ موتور منتقل می‌شود.
+   *
+   * سه‌حال است نه بولین: `true` = ستاپ فعال، `false` = صریحاً غیرفعال،
+   * `null` = موتور **قضاوت نکرد** (تاریخچه/پیوت کافی نبود) — و `undefined`
+   * = پاسخِ تکنیکال اصلاً نیامده. تبدیلِ null به false ممنوع (رأیِ مالک).
    */
-  jet_active: z.boolean().optional(),
-  choch_bullish: z.boolean().optional(),
-  point_hunt_active: z.boolean().optional(),
-  double_bottom_active: z.boolean().optional(),
-  range_break_active: z.boolean().optional(),
-  hourglass_active: z.boolean().optional(),
+  jet_active: z.boolean().nullable().optional(),
+  choch_bullish: z.boolean().nullable().optional(),
+  point_hunt_active: z.boolean().nullable().optional(),
+  double_bottom_active: z.boolean().nullable().optional(),
+  range_break_active: z.boolean().nullable().optional(),
+  hourglass_active: z.boolean().nullable().optional(),
 });
 export type TechnicalPayload = z.infer<typeof TechnicalPayload>;

@@ -212,9 +212,24 @@ ck("چارت دامنهٔ دید (low/high) را به نگاشت می‌دهد �
 flat = series(wave([100, 88, 150, 120, 151, 119, 150, 118, 148, 117, 151, 116]))
 sw_flat = CH._fts_swings(flat, k=CH._FTS_SWING_K)
 ph = CH._fts_point_hunt(flat, sw_flat)
-ck("نقطه‌زنیِ فعالِ ساخته‌شده، floor_date دارد", bool(ph.get("active")) and bool(ph.get("floor_date")))
+ck("نقطه‌زنیِ ساخته‌شده، floor_date دارد", bool(ph.get("touches")) and bool(ph.get("floor_date")))
 ck("floor_date همان کندلِ لنگر است (با floor_idx می‌خواند)",
    ph.get("floor_date") == flat[ph["floor_idx"]]["time"])
+# قاعدۀ جدید (سنجشِ lab): لمسِ خط به‌تنهایی سیگنال نیست — کندلِ باید سبز باشد،
+# low آن روی/زیر خط بخورد و پایانی **بالای** خط بسته شود (ریباند). هر دو طرفِ
+# این قاعده قفل می‌شود تا «لمس = خرید» برنگردد.
+_lvl = ph["floor_price"]
+_no_bounce = list(flat)
+_no_bounce[-1] = dict(_no_bounce[-1], open=_lvl * 1.02, high=_lvl * 1.03,
+                      low=_lvl * 0.99, close=_lvl * 1.01)   # سبزِ بالای خط، بی‌لمس
+_ph2 = CH._fts_point_hunt(_no_bounce, CH._fts_swings(_no_bounce, k=CH._FTS_SWING_K))
+ck("لمسِ بدونِ ریباندِ همان کندل ⇒ فعال نیست (False، نه None)",
+   _ph2["active"] is False and _ph2["bounced"] is False)
+_bounce = list(flat[:-1])
+_bounce.append({"time": flat[-1]["time"], "open": _lvl * 0.995, "high": _lvl * 1.04,
+                "low": _lvl * 0.99, "close": _lvl * 1.03, "volume": 100.0})
+_ph3 = CH._fts_point_hunt(_bounce, CH._fts_swings(_bounce, k=CH._FTS_SWING_K))
+ck("لمس + ریباند ⇒ فعال", _ph3["active"] is True and _ph3["bounced"] is True)
 tops = series(wave([100, 88, 150, 120, 151, 121, 150, 122, 140]))
 sw_tops = CH._fts_swings(tops, k=CH._FTS_SWING_K)
 l3 = CH._fts_exit_layer3(tops, sw_tops)

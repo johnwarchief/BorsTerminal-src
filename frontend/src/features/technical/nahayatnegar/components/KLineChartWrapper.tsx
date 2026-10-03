@@ -416,9 +416,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const [tfNote, setTfNote] = useState<string | null>(null);
 
   // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند.
-  // رأیِ مالک: لایهٔ «تحلیل FTS» فعلاً ناقص است ⇒ پیش‌فرض خاموش؛ کلیدِ
-  // «تحلیل FTS» در نوارِ ابزار همان را دستی روشن می‌کند.
-  const [isFtsActive, setIsFtsActive] = useState<boolean>(false);
+  // رأیِ مالک («فعلاً ناقص است ⇒ پیش‌فرض خاموش») به‌دلیلِ ناقص‌بودنِ سیگنال‌ها
+  // بود؛ دورِ «موتور تکنیکال» همان ناقصی را با سنجشِ تاریخی بست (جت/CHoCH/
+  // نقطه‌زنی اندازه‌گیری و اصلاح شدند، و هیچ مارکری بی‌پشتوانۀ موتور رسم نمی‌شود)
+  // ⇒ پیش‌فرض روشن. کلیدِ نوارِ ابزار همان را دستی خاموش/روشن می‌کند.
+  const [isFtsActive, setIsFtsActive] = useState<boolean>(true);
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -1441,18 +1443,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    // دو برچسبِ هم‌قیمتِ نزدیک رویِ هم می‌افتند؛ یکی را بالا و دیگری را پایین
-    // هل می‌دهیم تا هر دو خوانا بمانند.
-    for (let i = 1; i < processedMarkers.length; i++) {
-      const prev = processedMarkers[i - 1];
-      const curr = processedMarkers[i];
-      const timeDiff = Math.abs(curr.timestamp - prev.timestamp);
-      if (timeDiff <= 2 * 24 * 60 * 60 * 1000 && Math.abs(curr.price - prev.price) / Math.max(1, prev.price) < 0.025) {
-        curr.price = curr.side === 'above' ? curr.price * 1.028 : curr.price * 0.972;
+    // دو برچسبِ هم‌قیمتِ نزدیک رویِ هم می‌افتند. راهِ قبلی **هل‌دادنِ قیمت** بود
+    // (×۱٫۰۲۸ / ×۰٫۹۷۲) که یعنی لنگرِ مارکر دیگر قیمتِ موتور نبود — کاربر
+    // برچسب را رویِ کندلِ اشتباه یا قیمتِ اشتباه می‌دید. حالا به‌جای جابه‌جایی،
+    // رویدادهایِ هم‌زمانِ هم‌قیمت در یک مارکر ادغام می‌شوند (برچسب‌ها با « • »)
+    // و مختصات دقیقاً همان timestamp+price بک‌اند می‌ماند.
+    const merged: typeof processedMarkers = [];
+    for (const m of processedMarkers) {
+      const prev = merged[merged.length - 1];
+      const near = prev
+        && Math.abs(m.timestamp - prev.timestamp) <= 2 * 24 * 60 * 60 * 1000
+        && Math.abs(m.price - prev.price) / Math.max(1, prev.price) < 0.025;
+      if (prev && near) {
+        prev.label = prev.label.includes(m.label) ? prev.label : `${prev.label} • ${m.label}`;
+        continue;
       }
+      merged.push({ ...m });
     }
+    const markers = merged;
 
-    processedMarkers.forEach((m) => {
+    markers.forEach((m) => {
       chart.createOverlay({
         name: 'simpleAnnotation',
         groupId: ftsGroupId,

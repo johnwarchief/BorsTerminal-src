@@ -30,7 +30,9 @@ export type StrictGate = {
   veto: boolean;
 };
 
-/** کف حاشیهٔ سود خالص طبق سند FTS */
+/** کفِ **حاشیهٔ سود ناخالصِ** پنل (۲۰٪) — جزوه: ۳۰٪ مطلوب، بالای ۵۰٪ خوب.
+ *  «خالص» نبود: همان `margin_min`ِ `fts_thresholds.json` است که روی
+ *  (سود ناخالص ÷ درآمدهای عملیاتی) سنجیده می‌شود. */
 export const FUNDAMENTAL_MARGIN_FLOOR_PCT = 20;
 /** آستانهٔ افت شدید فروش (درصد سالانه) */
 export const SALES_DROP_FLOOR_PCT = 0;

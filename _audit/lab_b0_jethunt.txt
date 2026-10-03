@@ -1,0 +1,23 @@
+پنل: 725 نماد | 297194 کندل
+
+══ jet | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  static_ceiling_250          4507    18.36     0.610   0.0279      545
+  static_ceiling_120          7303    29.75     0.576   0.0251      666
+  ladder_confirm3             8215    33.47     0.575   0.0251      689
+  static_ceil_confirm2        6474    26.38     0.570   0.0248      658
+  ladder_confirm2             9553    38.92     0.569   0.0243      689
+  static_ceil_confirm3        5918    24.11     0.569   0.0248      650
+  ladder_current             11269    45.91     0.561   0.0234      690
+  static_ceiling_60          10168    41.43     0.556   0.0232      690
+
+══ hunt | event | bracket {'tp': 0.08, 'sl': 0.05, 'horizon': 20} | نرخ پایه win=0.381
+  variant                    fires   win/1k precision    expect    cover
+  channel_bounce_4            2952    12.03     0.494   0.0138      636
+  channel_bounce              3495    14.24     0.487   0.0130      644
+  channel_current            15846    64.56     0.434   0.0069      653
+  two_lows_line              11405    46.47     0.418   0.0050      651
+  two_lows_bounce             8467    34.50     0.416   0.0047      651
+  flat_lows                   1821     7.42     0.379   0.0004      535
+
+نوشته شد: _audit/lab_b0_jethunt.json

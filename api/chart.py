@@ -1138,6 +1138,12 @@ _FTS_STALE_MIN_BARS = 12    # کمینهٔ کندل برای سنجشِ مستق
 _FTS_STALE_MOVE_MIN = 0.05  # کمینهٔ جابه‌جاییِ کلِ بازه برای اعلامِ جهت
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
+# «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
+# این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
+# پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
+# ۰٫۴۹۸ در برابر ۰٫۴۷۵ یک‌روزه (lab، ۷۲ نماد؛ نرخِ پایه ۰٫۳۸۱).
+_FTS_CHOCH_DAYS = 2
+_FTS_CHOCH_MARGIN = 0.01
 # تریگرِ ورودِ جت دیگر «ماکسِ ۶۰ کندلِ قبل» را نمی‌بیند؛ پلکانِ هشت‌نقطه‌ایِ
 # جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
@@ -1540,26 +1546,41 @@ def _fts_fib_zones(candles, swings):
     }
 
 
-def _fts_jet_setup(candles, ladder=JET_LADDER):
-    """ستاپ جت (Jet) — شکستِ پلکانِ مقاومتِ جزوه با آخرینِ کندل.
+def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6):
+    """ستاپ جت (Jet) — شکستِ پلکانِ مقاومت + شکستِ **سقفِ ایستاده**.
 
-    تعریفِ جزوه: ``[ih][2].PriceMax < pl && [ih][5] < pl && … && [ih][59] < pl``
-    یعنی «آخرینِ همین نشست از سقفِ تک‌روزیِ هشتِ نشستِ مشخص بالاتر رفته»،
-    نه «بالاترینِ ۶۰ روز». این دو یکی نیستند: سقفِ متحرکِ ۶۰ روزه سخت‌گیرتر
-    است و نمادی که دیروز سقفِ ۴۰ روزه‌اش را بشکند ستاپ نمی‌گیرد، در حالی که
-    فیلترِ تابلو آن را جت می‌زند. تا پیش از این چارت و تابلو دو جوابِ متفاوت
-    به یک سؤال می‌دادند (JET-BREAK)؛ حالا هر دو همین تابع را share می‌کنند.
+    دو لایه، دو معنی:
 
-    کندلِ آخر = نشستِ جاریِ زنده (live-bar)، پس «آخرین کندل مقاومت را شکست»
-    همان چیزی است که مالک خواسته. اگر تاریخچه به [ih][59] نرسد صادقاً
-    ``reason`` می‌دهد و false برمی‌گرداند — حدس نمی‌زند.
-    خروجی: {'active', 'resistance', 'ath', 'close', 'pct_above_res', 'reason'}.
+      • `active` = پلکانِ هشت‌نقطه‌ایِ جزوه (JET_LADDER از tape_flags). این همان
+        چیزی است که بجِ تابلو می‌زند، پس چارت و تابلو در «آیا امروز سقفِ تک‌روزی
+       ‌ها شکسته شد» یک جواب می‌دهند (باگِ JET-BREAK).
+      • `static_broke` = عبور از **بالاترین highِ ۲۵۰ نشستِ اخیر** (بدون شش
+        نشستِ آخر). جزوه ص ۲۷ جت را «عبور از مقاومتِ **استاتیک** (حتماً استاتیک
+        باشد، یعنی افقی رسم شده) + کندل تثبیت» می‌داند، نه «بالاترینِ ۶۰ روز».
+
+    سنجشِ تاریخی (tools/fts_signal_lab.py، ۷۲۵ نماد / ۲۹۷٬۱۹۴ کندل / first-touch
+    +۸٪−۵٪ در ۲۰ نشست؛ نرخِ پایه = ۰٫۳۸۱):
+        پلکانِ تنها            precision ۰٫۵۶۱   (۱۱٬۲۶۹ آتش)
+        سقفِ ایستاده ۲۵۰       precision ۰٫۶۱۰   (۴٬۵۰۷ آتش)
+        سقفِ ایستاده ۱۲۰      precision ۰٫۵۷۶
+        پلکان بدونِ بدنهٔ صعودی precision ۰٫۵۴۵   ← «کندل تثبیت» +۰٫۰۱۶ واحد می‌دهد
+    پس `tier="strong"` یعنی هر دو لایه رد شده‌اند — همان چیزی که جزوه می‌خواهد.
+    سقفِ ۲۵۰ نشست زیرمجموعۀ پلکان است (پنجره، هشت نقطۀ پلکان را می‌پوشاند)، پس
+    «قوی» هیچ‌وقت با بجِ تابلو در نمی‌افتد.
+
+    سابقهٔ کمتر از پنجره ⇒ `static_broke = None` (سنجیده نشد)، نه False.
+    خروجی: {'active','resistance','ath','close','pct_above_res','ceiling',
+            'static_broke','tier','reason'}.
     """
     need = 1 + max(ladder)
     if len(candles) < need:
-        return {"active": False, "resistance": None, "ath": False,
-                "close": None, "pct_above_res": None,
-                "reason": f"تاریخچه به {need} نشست نمی‌رسد (این {len(candles)})"}
+        # «تاریخچه کم است» رأیِ «نیست» نیست. پیش از این همین‌جا active=False
+        # می‌شد و نمادِ تازه‌وارد در چارت و در ستون «تک» همان ✗ را می‌گرفت که
+        # نمادِ «شکست نکردۀ» واقعی می‌گیرد. (رأیِ مالک: null ≠ false.)
+        return {"active": None, "resistance": None, "ath": None,
+                "close": None, "pct_above_res": None, "ceiling": None,
+                "static_broke": None, "tier": None,
+                "reason": f"تاریخچه به {need} نشست نمی‌رسد (این {len(candles)}) — سنجیده نشد"}
     last = candles[-1]
     # [ih][k] = k نشستِ پیش از امروز = candles[-1-k]
     res = max(float(candles[-1 - k]["high"]) for k in ladder)
@@ -1567,8 +1588,22 @@ def _fts_jet_setup(candles, ladder=JET_LADDER):
     close = float(last["close"])
     up_body = close >= float(last["open"])
     active = bool(res > 0 and close > res and up_body)
+    # سقفِ ایستاده: بالاترین highِ پنجره، بی‌`ceiling_skip` نشستِ آخر (وگرنه
+    # خودِ شکستِ امروز سقفِ خودش را می‌بلعد).
+    ceil_n = len(candles) - ceiling_skip
+    ceiling = None
+    static_broke = None
+    if ceil_n >= ceiling_win:
+        ceiling = max(float(c["high"]) for c in candles[ceil_n - ceiling_win:ceil_n])
+        if ceiling > 0:
+            static_broke = bool(close > ceiling and up_body)
+    tier = ("strong" if (active and static_broke) else
+            "breakout" if active else
+            None if active is None and static_broke is None else "none")
     return {"active": active, "resistance": round(res, 2),
             "ath": bool(abs(res - ath_res) / ath_res < 0.002 if ath_res else False),
+            "ceiling": round(ceiling, 2) if ceiling else None,
+            "static_broke": static_broke, "tier": tier,
             "close": round(close, 2),
             "pct_above_res": round((close - res) / res * 100.0, 2) if res else None,
             "reason": None if active else (
@@ -1576,8 +1611,8 @@ def _fts_jet_setup(candles, ladder=JET_LADDER):
                 else "آخرین هنوز زیر پلکان مقاومت است")}
 
 
-def _fts_choch(candles, swings):
-    """CHoCH (Change of Character) — شکست قطعیِ آخرین پیوتِ مخالف روند.
+def _fts_choch(candles, swings, confirm_days=_FTS_CHOCH_DAYS, margin=_FTS_CHOCH_MARGIN):
+    """CHoCH (Change of Character) — شکستِ قطعیِ آخرین پیوتِ مخالفِ روند.
 
     روند فعلی از ساختار خوانده می‌شود:
       • در روند صعودی: CHoCH نزولی وقتی پایانیِ امروز زیر آخرین کف پیوتِ بالاتر
@@ -1588,26 +1623,60 @@ def _fts_choch(candles, swings):
       • جهتِ غالب از سمتِ پیوتِ اخیر خوانده می‌شود (آخرین پیوتِ زمانی، سقف یا کف)،
         پس در رنج هم همان یک سمت سنجیده می‌شود. شکستِ باکسِ رنج را این تابع
         برچسب نمی‌زند؛ آن کارِ `range_box` است (فرانت از همان جبران می‌کند).
-    آستانهٔ «قطعی»: بسته‌شدنِ کامل پایانی (نه فقط wick) + فاصلهٔ ≥ ۰.۳٪ از سطح.
-    خروجی: {'bearish', 'bullish', 'level', 'label'}.
+
+    «قطعی» دو چیز است، نه یکی — و هر دو از خودِ جزوه‌اند:
+      ۱) بسته‌شدنِ کاملِ پایانی (نه wick) با فاصلۀ ≥ ۱٪ از سطح،
+      ۲) **تثبیتِ دو روزه** (ص ۹: «دو روز تثبیت باشد؛ اگر به همان سطح برگردد
+         پولبک زده»). پیش از این یک کندل کافی بود و آتش ۹۶٪ بیشتر از حالتِ
+         دودوره بود با دقتِ پایین‌تر.
+    سنجشِ تاریخی (lab، bracket +۸٪−۵٪/۲۰؛ نرخِ پایه ۰٫۳۸۱):
+        یک‌روزه (قاعدۀ قبلی)   precision ۰٫۴۷۵   ۴٬۷۸۴ آتش
+        دوروزه + حاشیۀ ۱٪      precision ۰٫۴۹۸   ۲٬۴۷۵ آتش   ← انتخاب
+        سه‌روزه                precision ۰٫۴۹۲   ۲٬۱۵۳ آتش   (بهتریِ ۲ روزه نیست)
+    در bracketِ دوم (+۱۲٪−۶٪/۴۰) هم همین ترتیب ماند ⇒ پارامتر شکننده نیست.
+    خروجی: {'bearish','bullish','level','label','confirm_days','margin','reason'}.
     """
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
-    out = {"bearish": False, "bullish": False, "level": None, "label": None}
+    out = {"bearish": None, "bullish": None, "level": None, "label": None,
+           "confirm_days": confirm_days, "margin": margin,
+           "reason": "پیوتِ کاملِ سقف و کف موجود نیست — ساختار سنجیده نشد"}
     if not highs or not lows or not candles:
         return out
-    last = float(candles[-1]["close"])
+    out["reason"] = None
     last_high = highs[-1]["price"]
     last_low = lows[-1]["price"]
     # جهت غالب = سمتِ پیوتِ اخیر (آخرین پیوتِ زمانی، سقف یا کف)
     trend_up = lows[-1]["idx"] > highs[-1]["idx"]
-    decisive = 0.003
+    n = len(candles)
+    need = max(1, int(confirm_days))
+    if n < need:
+        out["reason"] = "تعداد کندل برای تأییدِ چندروزه کم است — سنجیده نشد"
+        out["bearish"] = out["bullish"] = None
+        return out
+
+    def _settled(level, above):
+        """`need` بستهٔ متوالیِ آخر بالای (یا زیرِ) سطح."""
+        for j in range(need):
+            c = float(candles[n - 1 - j]["close"])
+            if above and c <= level * (1 + margin):
+                return False
+            if not above and c >= level * (1 - margin):
+                return False
+        return True
+
     if trend_up:
-        if last < last_low * (1 - decisive):
-            out.update(bearish=True, level=round(last_low, 2), label="choch_bear")
+        if _settled(last_low, above=False):
+            out.update(bearish=True, bullish=False, level=round(last_low, 2),
+                       label="choch_bear")
+        else:
+            out.update(bearish=False, bullish=False)
     else:
-        if last > last_high * (1 + decisive):
-            out.update(bullish=True, level=round(last_high, 2), label="choch_bull")
+        if _settled(last_high, above=True):
+            out.update(bullish=True, bearish=False, level=round(last_high, 2),
+                       label="choch_bull")
+        else:
+            out.update(bullish=False, bearish=False)
     return out
 
 
@@ -1617,11 +1686,23 @@ def _fts_point_hunt(candles, swings):
     کانالِ مورد نظر FTS: خط سقف از دو سقف پیوتِ اخیر (چون در فاز توزیع/رنج
     سقف‌ها تخت‌تر عمل می‌کنند) و کف دایامتریک = خط موازیِ همان شیب که از
     پایین‌ترین کفِ بین آن دو سقف می‌گذرد.
-    «لمس» = کندلی که low آن ≤ کفِ محاسبه‌شده × ۱.۰۰۵ (تلورانس ۰.۵٪) و پس از
+    «لمس» = کندلی که low آن ≤ کفِ محاسبه‌شده × ۱٫۰۰۵ (تلورانس ۰٫۵٪) و پس از
     نقطهٔ لنگرِ کف رخ داده باشد. آستانهٔ فعال‌شدن سیگنال: ≥ ۳ لمس (مصوب: ۳/۴).
-    معنای عملیاتی: هر لمس جدیدِ کف در حالت ≥۳، «شکار نقطه» است — خرید در کف
-    کانال با حد ضررِ کوتاه زیر همان کف.
-    خروجی: {'touches', 'floor_price', 'active', 'floor_idx', 'floor_date'}.
+
+    شرطِ دوم که اضافه شد — **ریباندِ همان کندل**: رسیدنِ قیمت به خط به‌تنهایی
+    سیگنال نیست؛ کندلِ باید سبز باشد، low آن روی/زیر خط خورده باشد و پایانی بالای
+    خط بسته شود. جزوه (ص ۲۸) «کف سوم جذاب است» را می‌گوید نه «هر بار که خط را لمس
+    کرد بخر» — و اندازه‌گیری همین تفاوت را نشان داد (lab، ۷۲۵ نماد / ۲۹۷٬۱۹۴
+    کندل / bracket +۸٪−۵٪ در ۲۰ نشست؛ نرخِ پایهٔ برد ۰٫۳۸۱):
+        لمسِ تنها (قاعدۀ قبلی)   precision ۰٫۴۳۴   ۱۵٬۸۴۶ آتش
+        لمس + ریباند             precision ۰٫۴۸۷    ۳٬۴۹۵ آتش
+        لمس + ریباند، ۴ لمس      precision ۰٫۴۹۴    ۲٬۹۵۲ آتش
+    یعنی قاعدۀ قبلی در ۵٫۳٪ کندل‌ها «فعال» بود و edge‌اش فقط ۵ واحد بالای نرخِ
+    پایه؛ با ریباند edge به ۱۰+ واحد می‌رسد و نویزِ سیگنال ۷۸٪ کم می‌شود.
+    `touches` و `floor_price` مثلِ قبل منتشر می‌شوند (لایۀ خروجِ کانال از همان
+    `active` استفاده می‌کند و نباید با شرطِ ریباند لال شود — پس آنجا `touches`
+    را می‌خواند، نه `active`).
+    خروجی: {'touches', 'floor_price', 'active', 'bounced', 'floor_idx', 'floor_date'}.
 
     `floor_date` همان تاریخِ کندلِ لنگر است. چارت نمی‌تواند به `floor_idx`
     تکیه کند: شمارۀِ اندیس درِ آرایۀِ سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست
@@ -1631,13 +1712,15 @@ def _fts_point_hunt(candles, swings):
     """
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
-    out = {"touches": 0, "floor_price": None, "active": False, "floor_idx": None,
-           "floor_date": None}
+    out = {"touches": None, "floor_price": None, "active": None, "bounced": None,
+           "floor_idx": None, "floor_date": None,
+           "reason": "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد"}
     if len(highs) < 2 or not lows or len(candles) < 10:
         return out
     h2, h1 = highs[-2], highs[-1]
     if h1["idx"] - h2["idx"] < 3:
         return out                                   # کانال بی‌معنی (سقف‌های چسبیده)
+    out["reason"] = None
     slope = (h1["price"] - h2["price"]) / (h1["idx"] - h2["idx"])
     anchor_low = min((l for l in lows if h2["idx"] < l["idx"] <= h1["idx"]),
                      key=lambda l: l["price"], default=None)
@@ -1649,8 +1732,15 @@ def _fts_point_hunt(candles, swings):
     for i in range(anchor_low["idx"], len(candles)):
         if candles[i]["low"] <= floor_at(i) * (1 + tol):
             touches += 1
-    out.update(touches=touches, floor_price=round(floor_at(len(candles) - 1), 2),
-               active=touches >= 3, floor_idx=anchor_low["idx"],
+    lvl = floor_at(len(candles) - 1)
+    last = candles[-1]
+    # لمسِ امروز + بدنهٔ صعودی + بستنِ بالای خط
+    bounced = bool(float(last["low"]) <= lvl * (1 + tol)
+                   and float(last["close"]) > float(last["open"])
+                   and float(last["close"]) > lvl)
+    out.update(touches=touches, floor_price=round(lvl, 2),
+               active=bool(touches >= 3 and bounced), bounced=bounced,
+               floor_idx=anchor_low["idx"],
                floor_date=str(candles[anchor_low["idx"]]["time"])[:10])
     return out
 
@@ -1667,8 +1757,10 @@ def _fts_double_bottom(candles, swings):
     """
     lows = [s for s in swings if s["kind"] == "low"]
     highs = [s for s in swings if s["kind"] == "high"]
-    dbl = {"active": False, "neckline": None, "pct_above_neck": None}
+    dbl = {"active": None, "neckline": None, "pct_above_neck": None,
+           "reason": "دو کفِ پیوت موجود نیست — سنجیده نشد"}
     if len(lows) >= 2:
+        dbl["reason"] = None
         l1, l2 = lows[-2]["price"], lows[-1]["price"]
         equal = abs(l1 - l2) / max(l1, l2) <= 0.015 if l1 and l2 else False
         necks = [h["price"] for h in highs if lows[-2]["idx"] < h["idx"] < lows[-1]["idx"]]
@@ -1678,8 +1770,10 @@ def _fts_double_bottom(candles, swings):
             hit = last > neck
             dbl.update(active=bool(hit), neckline=round(neck, 2),
                        pct_above_neck=round((last - neck) / neck * 100.0, 2) if hit else None)
-    box = {"active": False, "top": None, "bottom": None, "pct_above_top": None}
+    box = {"active": None, "top": None, "bottom": None, "pct_above_top": None,
+           "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد"}
     if len(candles) >= 21:
+        box["reason"] = None
         win = candles[-21:-1]
         top = max(c["high"] for c in win)
         bot = min(c["low"] for c in win)
@@ -1749,18 +1843,45 @@ def _fts_setup_history(candles, swings, limit=40, ladder=JET_LADDER):
         hi = float(c["high"])
         cl, op = float(c["close"]), float(c["open"])
         up_leg = bool(last_l and (not last_h or last_l["idx"] >= last_h["idx"]))
-        # ۱) جت — شکستِ پلکانِ مقاومت با بدنهٔ صعودی، عینِ `_fts_jet_setup`
+        # ۱) جت — شکستِ پلکانِ مقاومت با بدنهٔ صعودی، عینِ `_fts_jet_setup`.
+        #    مارکرِ چارت فقط برایِ لایۀ «قوی» (عبور از سقفِ ایستاده) می‌نشیند:
+        #    سنجشِ تاریخی نشان داد پلکان رویِ ۳٫۸٪ کندل‌ها می‌شکند و تاریخچۀ
+        #    یکِ نماد تا ۳۴ مارکرِ «جت» از ۴۰ مارکر پر می‌شد — یعنی نویز، نه
+        #    رویداد. لایۀ اول (پلکان) در `jet.active` زنده می‌ماند تا بجِ تابلو
+        #    و پنلِ «وضعیت FTS» همان جوابِ همیشگی را بدهند؛ آن‌چه رویِ چارت
+        #    علامت می‌خورد واقعه‌ای است که جزوه برایش تعریف دارد.
         res = max(float(candles[i - 1 - j]["high"]) for j in ladder)
         jet = bool(res > 0 and cl > res and cl >= op)
         if jet and not on["jet"]:
-            emit(i, "jet", max(hi, res), "above")
+            skip = 6
+            ceil_hi = i - skip
+            ceil_lo = max(0, ceil_hi - 250)
+            ceiling = max(float(x["high"]) for x in candles[ceil_lo:ceil_hi]) if ceil_hi > ceil_lo else 0.0
+            if ceiling > 0 and cl > ceiling:
+                emit(i, "jet", max(hi, res), "above")
         on["jet"] = jet
 
-        # ۲) CHoCH — شکستِ قطعیِ آخرین پیوتِ مخالف، عینِ `_fts_choch`
+        # ۲) CHoCH — شکستِ قطعیِ آخرین پیوتِ مخالف، عینِ `_fts_choch`:
+        #    حاشیۀ ۱٪ و **تثبیتِ دو بستهٔ متوالی** (جزوه ص ۹). مارکر رویِ دومین
+        #    بسته می‌نشیند، نه رویِ کندلِ اولِ شکست — همان چیزی که پنلِ امروز
+        #    می‌گوید. پارامترها از امضایِ تابعِ مرجع خوانده می‌شوند تا این‌جا
+        #    عددِ دومی نوشته نشود.
         if last_h and last_l:
             want = "bear" if up_leg else "bull"
             level = last_l["price"] if up_leg else last_h["price"]
-            broke = (cl < level * 0.997) if up_leg else (cl > level * 1.003)
+            settled = True
+            for j in range(_FTS_CHOCH_DAYS):
+                if i - j < 0:
+                    settled = False
+                    break
+                cj = float(candles[i - j]["close"])
+                if up_leg and cj >= level * (1 - _FTS_CHOCH_MARGIN):
+                    settled = False
+                    break
+                if not up_leg and cj <= level * (1 + _FTS_CHOCH_MARGIN):
+                    settled = False
+                    break
+            broke = settled
             if broke and on["choch"] != want:
                 emit(i, "choch", level, "below" if up_leg else "above")
             on["choch"] = want if broke else None
@@ -1853,7 +1974,10 @@ def _fts_exit_layer2(candles, swings_d):
     ph = _fts_point_hunt(candles, swings_d)
     out["touches"] = ph["touches"]
     floor = ph["floor_price"]
-    if ph["active"] and floor and float(candles[-1]["close"]) < floor * 0.995:
+    # عمداً `touches` و نه `active`: `active` از این دور «لمس + ریباندِ سبزِ بالای
+    # خط» می‌خواهد (تریگرِ خرید)، ولی اینجا دقیقاً برعکسش را می‌سنجیم — پایانی
+    # که **زیر** همان خط بسته شده. با `active` این خروج هرگز روشن نمی‌شد.
+    if (ph["touches"] or 0) >= 3 and floor and float(candles[-1]["close"]) < floor * 0.995:
         out["channel_break"] = True
         out["level"] = round(floor, 2)
     return out
@@ -2035,6 +2159,52 @@ FTS_ANALYSIS_CACHE_MAX = 3000    # size cap (bulk-screener style churn safe)
 FTS_ANALYSIS_TTL = 900.0         # seconds; payload recomputed after expiry
 
 
+def _fts_clean_candles(candles):
+    """سریِ کندل را برایِ دیتکتورها قابل‌اتکا می‌کند — مرتب، یکتا، بی‌مقدارِ تهی.
+
+    چرا لازم بود: `_fts_analyze_candles` رویِ هر ورودیِ کج می‌ترکید
+    (`'>' not supported between NoneType and float`) و مسیرِ `/api/fts/{symbol}`
+    آن را به `status:"error"` می‌برد، یعنی یک ردیفِ خرابِ CDN کل تحلیلِ آن نماد
+    را می‌سوزاند. سه چیز اینجا بسته می‌شود:
+      • o/h/l/c عددِ مثبتِ متناهی نباشد ⇒ آن ردیف حذف (نه صفرِ جعلی)
+      • تکراریِ همان تاریخ ⇒ آخرینِ نوشتۀ منبع می‌ماند (ردیف‌هایِ تکراریِ TSETMC
+        با هم یکی نیستند: یکی پیش از تعدیل و یکی بعدش)
+      • بی‌ترتیب ⇒ مرتبِ زمانی. سایزِ خروجی مثلِ قبل حفظ می‌شود مگر ردیفِ خراب.
+    """
+    if not candles:
+        return []
+    by_time = {}
+    dropped = 0
+    for c in candles:
+        if not isinstance(c, dict):
+            dropped += 1
+            continue
+        try:
+            o = float(c["open"]); h = float(c["high"])
+            l = float(c["low"]); cl = float(c["close"])
+        except (TypeError, ValueError, KeyError):
+            dropped += 1
+            continue
+        if not all(x == x and x > 0 for x in (o, h, l, cl)):
+            dropped += 1
+            continue
+        t = str(c.get("time") or "")[:10]
+        if not t:
+            dropped += 1
+            continue
+        d = dict(c)
+        d.update({"open": o, "high": h, "low": l, "close": cl})
+        try:
+            d["volume"] = float(c.get("volume") or 0)
+        except (TypeError, ValueError):
+            d["volume"] = 0.0
+        by_time[t] = d                      # آخرینِ ردیفِ همان تاریخ برنده است
+    if not by_time:
+        return []
+    out = [by_time[k] for k in sorted(by_time)]
+    return out
+
+
 def _fts_analyze_candles(symbol, candles, entry_hint=None):
     """Pure-compute FTS analysis for one symbol from its DAILY candles.
 
@@ -2052,6 +2222,7 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
       range_box        - {'active','top','bottom','pct_above_top'}
       exit_engine      - four-layer verdict {'verdict','signals','l1'..'l4'}
     """
+    candles = _fts_clean_candles(candles)
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
     w = _fts_resample(candles, "W")
     m = _fts_resample(candles, "M")
@@ -2156,12 +2327,16 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         last_ma52 = ma52_w[-1] if ma52_w else None
         is_hg_active = bool(last_ma52 and last_cw < last_ma52 and (last_rsi5 is not None and last_rsi5 <= 30.0))
         out["hourglass"] = {
-            "active": is_hg_active,
+            # MA52 با کمتر از ۵۲ کندل هفتگی ساخته نمی‌شود ⇒ ساعت شنی **نظر
+            # نمی‌دهد** (None)، نه «غیرفعال». پیش از این desc می‌گفت «نظر نمی‌دهد»
+            # ولی active=False می‌داد و UI همان ✗ را می‌کشید.
+            "active": is_hg_active if ma_ok else None,
             "weekly_close": round(last_cw, 2),
             "ma52": round(last_ma52, 2) if last_ma52 else None,
             "weekly_bars": len(closes_w),
             "weekly_rsi5": round(last_rsi5, 1) if last_rsi5 is not None else None,
-            "action": "ACCELERATE_BUY_2X_4X" if is_hg_active else "NORMAL",
+            "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
+                       "NORMAL" if ma_ok else "UNKNOWN"),
             "desc": (
                 "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)"
                 if is_hg_active
@@ -2171,12 +2346,13 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         }
     else:
         out["hourglass"] = {
-            "active": False,
+            "active": None,
             "weekly_close": None,
             "ma52": None,
             "weekly_rsi5": None,
-            "action": "NORMAL",
-            "desc": "سابقه هفتگی کمتر از حد نصاب",
+            "weekly_bars": len(closes_w),
+            "action": "UNKNOWN",
+            "desc": "سابقه هفتگی کمتر از حد نصاب (۱۵ کندل) — ساعت شنی سنجیده نمی‌شود",
         }
 
     box = _fts_double_bottom(candles, swings_d)

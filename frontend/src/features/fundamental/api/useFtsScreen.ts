@@ -38,6 +38,11 @@ export const FtsScreenRowSchema = z.object({
    *  `company_profile.volume_applicable` که کارت می‌خواند — نه حدسِ نام/صنعت. */
   i1b_applicable: z.boolean().nullish(),
   i2_pass: z.boolean().nullish(),
+  /** شاخص ۲: «سنجیده نشد» از خودِ موتور (`ind2_na`) — سابقه‌ای که اسلاتی از
+   *  صورتهایِ تلفیقی دارد یا صنعت بیمه. `eps_consolidated` علتش را می‌گوید تا
+   *  جدول «N/A» را با «داده نیست» اشتباه نگیرد (رأیِ ۱۳ + جزوۀ ص ۴). */
+  i2_na: z.boolean().nullish(),
+  eps_consolidated: z.boolean().nullish(),
   i3_pass: z.boolean().nullish(),
   i4_pass: z.boolean().nullish(),
   /** علتِ خالی‌بودنِ حکم: «معاف/بی‌کاربرد» (na) یا «داده نیست». از خودِ کارت

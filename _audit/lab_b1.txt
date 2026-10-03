@@ -1,0 +1,26 @@
+پنل: 725 نماد | 297194 کندل
+
+══ jet | event | bracket {'tp': 0.12, 'sl': 0.06, 'horizon': 40} | نرخ پایه win=0.000
+  variant                    fires   win/1k precision    expect    cover
+  static_ceiling_250          4507    18.36     0.600   0.0483      545
+  static_ceiling_120          7303    29.75     0.557   0.0435      666
+  static_ceil_confirm3        5918    24.11     0.554   0.0444      650
+  ladder_confirm2             9553    38.92     0.554   0.0428      689
+  static_ceil_confirm2        6474    26.38     0.551   0.0435      658
+  ladder_current             11269    45.91     0.549   0.0415      690
+  ladder_confirm3             8215    33.47     0.548   0.0431      689
+  static_ceiling_60          10168    41.43     0.539   0.0407      690
+
+══ choch | event | bracket {'tp': 0.12, 'sl': 0.06, 'horizon': 40} | نرخ پایه win=0.000
+  variant                    fires   win/1k precision    expect    cover
+  confirm_2d_margin1          2475    10.08     0.482   0.0299      583
+  confirm_2d                  2830    11.53     0.474   0.0286      609
+  current_1d                  4784    19.49     0.472   0.0268      653
+  confirm_3d                  2153     8.77     0.468   0.0288      549
+
+══ dbl | event | bracket {'tp': 0.12, 'sl': 0.06, 'horizon': 40} | نرخ پایه win=0.000
+  variant                    fires   win/1k precision    expect    cover
+  current                     3236    13.18     0.526   0.0342      572
+  confirm_2d                  2794    11.38     0.525   0.0344      549
+
+نوشته شد: _audit/lab_b1.json

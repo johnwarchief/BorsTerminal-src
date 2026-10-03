@@ -87,21 +87,28 @@ function build2Evidence(
   profitable: boolean | null | undefined,
   reqYears: number = 3,
   backendReason?: string | null,
+  isNa = false,
 ): AuditEvidence {
   const realYears = epsRealYears(series);
   let reason = str(backendReason);
   if (!reason) {
-    const fail = epsFailReason({ series, slots, strictlyRising: rising, allProfitable: profitable });
-    if (fail) {
-      reason = fail;
-    } else if (pass === true || (pass == null && rising && profitable && realYears >= reqYears)) {
-      reason = `سود هر سهم در ${toFaDigits(reqYears)} سال مالی متوالی مثبت و روبه‌بالا بوده است.`;
-    } else if (realYears < reqYears && realYears >= 2) {
-      reason = `سابقهٔ EPS ${toFaDigits(realYears)} سال از ${toFaDigits(reqYears)} سال لازم.`;
-    } else if (realYears < 2) {
-      reason = 'صورت مالی سالانهٔ ۱۲ماهه در کدال نیست؛ سابقهٔ سودآوری بررسی نشد.';
+    if (isNa) {
+      // N/A با «رد» و با «داده نیست» یکی نیست (رأیِ ۱۳ + جزوۀ ص ۴) — حکم از
+      // بک‌اند می‌آید؛ این فقط متنِ شاهد است.
+      reason = 'مبنایِ غیرتلفیقیِ سه‌ساله کامل نیست؛ شاخص ۲ داوری نمی‌شود.';
     } else {
-      reason = 'سود هر سهم در سه سال متوالی بالتر نرفته است.';
+      const fail = epsFailReason({ series, slots, strictlyRising: rising, allProfitable: profitable });
+      if (fail) {
+        reason = fail;
+      } else if (pass === true || (pass == null && rising && profitable && realYears >= reqYears)) {
+        reason = `سود هر سهم در ${toFaDigits(reqYears)} سال مالی متوالی مثبت و روبه‌بالا بوده است.`;
+      } else if (realYears < reqYears && realYears >= 2) {
+        reason = `سابقهٔ EPS ${toFaDigits(realYears)} سال از ${toFaDigits(reqYears)} سال لازم.`;
+      } else if (realYears < 2) {
+        reason = 'صورت مالی سالانهٔ ۱۲ماهه در کدال نیست؛ سابقهٔ سودآوری بررسی نشد.';
+      } else {
+        reason = 'سود هر سهم در سه سال متوالی بالتر نرفته است.';
+      }
     }
   }
 
@@ -111,7 +118,7 @@ function build2Evidence(
     unit: 'سال',
     direction: 'higher',
     reason,
-    ruleRef: 'جزوهٔ FTS — شاخص ۲ (۳ سال مالی با رشد متوالی سود)',
+    ruleRef: 'جزوهٔ FTS — شاخص ۲ (۳ سال مالی با رشد متوالی سود، صورتِ شرکت اصلی)',
   };
 }
 
@@ -261,7 +268,8 @@ export function cardAuditEvidence(card: FtsCard): Partial<Record<GapAxis, AuditE
     i2?.strictly_rising,
     i2?.all_profitable,
     i2?.years_required ?? 3,
-    str(i2?.reason)
+    str(i2?.reason),
+    i2?.na === true,
   );
 
   // ۳: حاشیه سود ناخالص
@@ -325,13 +333,19 @@ export function screenAuditEvidence(
 
     case '2_eps_trend': {
       const realYears = epsRealYears(row.eps_series);
+      const naReason =
+        row.i2_na === true
+          ? row.eps_consolidated
+            ? 'برخی سال‌ها فقط تلفیقی منتشر شده‌اند — جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس شاخص ۲ سنجیده نمی‌شود.'
+            : 'لایهٔ EPS برای این نماد اجرا نمی‌شود (صنعت بیمه) — اعلامِ خودِ موتور.'
+          : null;
       return {
         actualValue: realYears,
         targetThreshold: num(cfg.v10_eps_years) ?? 3,
         unit: 'سال',
         direction: 'higher',
-        reason: realYears < 2 ? 'سابقهٔ EPS کمتر از ۲ سال در کدال ثبت شده است.' : null,
-        ruleRef: 'جزوهٔ FTS — ۳ سال مالی با رشد متوالی سود',
+        reason: naReason ?? (realYears < 2 ? 'سابقهٔ EPS کمتر از ۲ سال در کدال ثبت شده است.' : null),
+        ruleRef: 'جزوهٔ FTS — ۳ سال مالی با رشد متوالی سود (صورتِ شرکت اصلی)',
       };
     }
 

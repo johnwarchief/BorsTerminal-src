@@ -322,10 +322,13 @@ export function evaluateFtsPipeline(args: {
   // ──────────────────────────────────────────────────────────
   const weekly = strict.weekly;
   const weeklyUptrend = weekly.uptrend ?? (techPayload.weekly_uptrend as boolean) ?? null;
-  const jetActive = Boolean(techPayload.jet_active ?? (techPayload.jet as Record<string, unknown> | undefined)?.active);
-  const chochBullish = Boolean(techPayload.choch_bullish ?? (techPayload.choch as Record<string, unknown> | undefined)?.bullish);
-  const pointHuntActive = Boolean(techPayload.point_hunt_active ?? (techPayload.point_hunt as Record<string, unknown> | undefined)?.active);
-  const doubleBottomActive = Boolean(techPayload.double_bottom_active ?? (techPayload.double_bottom as Record<string, unknown> | undefined)?.active);
+  // سه‌حالۀ ستاپ: true / false / null («مotor سنجیده نشد»). `Boolean()` همان
+  // null را به false می‌انداخت و «تاریخچۀ کم» با «ستاپ نیست» یکی می‌شد.
+  const tri = (v: unknown): boolean | null => (v === true || v === false ? v : null);
+  const jetActive = tri(techPayload.jet_active ?? (techPayload.jet as Record<string, unknown> | undefined)?.active);
+  const chochBullish = tri(techPayload.choch_bullish ?? (techPayload.choch as Record<string, unknown> | undefined)?.bullish);
+  const pointHuntActive = tri(techPayload.point_hunt_active ?? (techPayload.point_hunt as Record<string, unknown> | undefined)?.active);
+  const doubleBottomActive = tri(techPayload.double_bottom_active ?? (techPayload.double_bottom as Record<string, unknown> | undefined)?.active);
 
   let techStatus: PipelineStepStatus = 'wait';
   let techHeadline = 'ساختار تکنیکال در انتظار ستاپ معتبر';

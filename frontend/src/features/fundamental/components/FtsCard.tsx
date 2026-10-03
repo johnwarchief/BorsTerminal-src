@@ -28,7 +28,7 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
     key: '2_eps_trend',
     drill: '2',
     label: FTS_LABEL['2_eps_trend'],
-    hint: 'روند ۳ سال متوالی سود هر سهم از صورت‌های حسابرسی‌شده — کلیک: نمودار و جزئیات',
+    hint: 'روند صعودی EPS در ۳ سالِ متوالی — صورتِ سود و زیانِ شرکت اصلی (غیرتلفیقی) — کلیک: نمودار و جزئیات',
   },
   {
     key: '3_gross_margin',
@@ -327,11 +327,13 @@ export function FtsCard({
               const mon = indicators?.['1']?.monetary;
               const vol = indicators?.['1']?.volume;
               /** کف و هدفِ واقعیِ جزوه از کانفیگِ جاری؛ عددِ دستِ JSX نبود —
-               *  رأیِ مالک: «کف ۴۰٪ · هدف ۶۰٪ درست است و باید به کانفیگ وصل شود». */
-              const growthFloor = cfgNum(thresholds?.growth_min);
-              const growthTarget = cfgNum(mon?.threshold) ?? cfgNum(thresholds?.v10_monetary_growth_min);
+               *  رأیِ مالک: «کف ۴۰٪ · هدف ۶۰٪ درست است و باید به کانفیگ وصل شود».
+               *  `monetary.threshold` = کفِ قبولی (همان `growth_min`) و
+               *  `monetary.target_threshold` = هدفِ پوشش تورم؛ برعکسِ پیش از این
+               *  بود که «threshold»ِ کارت همان ۶۰ بود و دروازه هم محسوب می‌شد. */
+              const growthFloor = cfgNum(mon?.threshold) ?? cfgNum(thresholds?.growth_min);
+              const growthTarget = cfgNum(mon?.target_threshold) ?? cfgNum(thresholds?.v10_monetary_growth_min);
               const volFloor = cfgNum(vol?.threshold);
-              const breadthMin = cfgNum(vol?.breadth?.min);
               /** مبنای تورمِ داخلِ فرمولِ ۱ب — بک‌اند می‌فرستد (#153)؛ کارت فقط
                *  آن را نشان می‌دهد و عددِ تازه‌ای نمی‌سازد. */
               const inflationBasis = cfgNum(vol?.price_benchmark_pct);
@@ -347,12 +349,12 @@ export function FtsCard({
                   ? (audit?.['1b_volume_growth']?.actualValue as number)
                   : null);
 
-              const card1Pass =
-                v1a === false || (physicalApplicable && v1b === false)
-                  ? false
-                  : v1a === true && (!physicalApplicable || v1b === true)
-                    ? true
-                    : null;
+              /** حکم از خودِ موتور (`passes['1_growth']`). تنها چیزی که کارت
+               *  اضافه می‌کند «بی‌داده» است: شکافِ داده رأی نیست (رأیِ ۱۶) و علت
+               *  را بک‌اند در `monetary.data_gap` می‌فرستد. منطق «ب فقط آن‌جا که
+               *  قابل‌اعمال است» دیگر اینجا تکرار نمی‌شود — در `axis1_pass`
+               *  (api/fundamental.py) نشسته و کارت و موتور همان را می‌خوانند. */
+              const card1Pass = mon?.data_gap ? null : passes['1_growth'] === true;
 
               return (
                 <button
@@ -476,11 +478,11 @@ export function FtsCard({
                               />
                               <span>− ۱</span>
                               <span className={`font-bold whitespace-nowrap ${tone(v1b)}`}>
-                                {volFloor != null && volFloor > 0
-                                  ? `≥ ${toFaDigits(volFloor)}٪`
-                                  : breadthMin != null
-                                    ? `پهنا ≥ ${toFaDigits(Math.round(breadthMin * 100))}٪`
-                                    : 'بدون کف'}
+                                {/* دروازۀ ۱ب فقط کفِ رشدِ واقعیِ خودِ موتور است؛
+                                    «پهنا» دادهٔ نمایشی است (توضیحِ ind1b در
+                                    api/fundamental.py) و پیش‌تر همین‌جا با «≥
+                                    ۶۰٪» به‌عنوان شرطِ جزوه خوانده می‌شد. */}
+                                {volFloor != null ? `≥ ${toFaDigits(volFloor)}٪` : 'بدون کف'}
                               </span>
                             </div>
                           </div>
@@ -505,8 +507,15 @@ export function FtsCard({
              *  مرتب‌سازی هنوز bool است)؛ پس نشانه از همان پرچمِ موتور خوانده
              *  می‌شود — محاسبهٔ دوباره در UI نیست. */
             const axisNa =
-              key === '4_sales_to_mcap' &&
-              (indicators?.['4']?.na === true || indicators?.['4']?.exempt === true);
+              (key === '4_sales_to_mcap' &&
+               (indicators?.['4']?.na === true || indicators?.['4']?.exempt === true)) ||
+              /* شاخص ۲: «تلفیقی مدنظر ما نیست» (جزوه ص ۴) و پیش‌گیتِ بیمه
+                 (رأیِ ۱) — هر دو را خودِ موتور با `na` اعلام می‌کند. شاخص ۳ هم
+                 همان رأیِ ۱۶ را دارد (حاشیه‌ای که ساخته نشد سنجیده نشده، نه رد)؛
+                 پیش‌تر فقط شاخص ۴ به این فهرست بود و صندوق درِ کارتِ ۳ سرخِ «رد»
+                 می‌خورد. */
+              (key === '2_eps_trend' && indicators?.['2']?.na === true) ||
+              (key === '3_gross_margin' && indicators?.['3']?.na === true);
             const v = axisNa ? null : rawPass;
             /* رنگِ سه‌حالته فقط آن‌جا که موتور band/ideal فرستاده (شاخص ۳)؛
                جایِ دیگر «ایده‌آل» ساخته نمی‌شود. */
@@ -532,9 +541,25 @@ export function FtsCard({
 
               resultNumberNode = (
                 <span
-                  className={v ? 'text-accent-green' : v === false ? 'text-accent-red' : 'text-text-primary'}
+                  className={
+                    i2?.na === true
+                      ? 'text-text-muted'
+                      : v
+                        ? 'text-accent-green'
+                        : v === false
+                          ? 'text-accent-red'
+                          : 'text-text-primary'
+                  }
                 >
-                  {epsRising ? `${toFaDigits(epsYearsReq)} سالِ رشد` : epsYears ? `${toFaDigits(epsYears)} سال` : 'رشدِ متوالی ندارد'}
+                  {i2?.na === true
+                    ? i2?.consolidated_used
+                      ? 'N/A (تلفیقی)'
+                      : 'N/A'
+                    : epsRising
+                      ? `${toFaDigits(epsYearsReq)} سالِ رشد`
+                      : epsYears
+                        ? `${toFaDigits(epsYears)} سال`
+                        : 'رشدِ متوالی ندارد'}
                 </span>
               );
 
@@ -608,7 +633,10 @@ export function FtsCard({
                   title="EPS سه دورۀ اخیر (قدیم ← جدید)"
                 />
               );
-              benchmarkHint = `شرط: سود هر سهم در ${toFaDigits(epsYearsReq)} سالِ متوالی بالاتر رفته باشد`;
+              benchmarkHint = i2?.na
+                ? (i2?.reason ||
+                   'شاخص ۲ داوری نمی‌شود — مبنایِ غیرتلفیقیِ سه‌ساله کامل نیست')
+                : `شرط: سود هر سهم در ${toFaDigits(epsYearsReq)} سالِ متوالی بالاتر رفته باشد`;
             } else if (key === '3_gross_margin') {
               const i3 = indicators?.['3'];
               const marginFloor = i3?.threshold ?? null;
@@ -655,8 +683,10 @@ export function FtsCard({
               benchmarkHint =
                 marginFloor == null
                   ? null
-                  : `کف استاندارد: ${toFaDigits(marginFloor)}٪${
-                      marginIdeal == null ? '' : ` (ایده‌آل ${toFaDigits(marginIdeal)}٪)`
+                  : // «کفِ استاندارد» نبود: ۲۰ کفِ *پنل* است و عددِ جزوه (ص ۴)
+                    // «بالای ۳۰٪» است — پس هر دو با منبعشان نوشته می‌شوند.
+                    `کفِ پنل: ${toFaDigits(marginFloor)}٪${
+                      marginIdeal == null ? '' : ` · مطلوبِ جزوه: ${toFaDigits(marginIdeal)}٪`
                     }`;
             } else if (key === '4_sales_to_mcap') {
               const i4 = indicators?.['4'];

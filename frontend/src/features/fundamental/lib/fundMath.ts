@@ -1,10 +1,11 @@
 // features/fundamental/lib/fundMath.ts -- تفکیک فصلی و میانهٔ صنعت (لایهٔ نمایش)
 // این فایل هرگز داوری FTS نمی‌سازد: هیچ PASS/FAIL، امتیاز یا verdict اینجا محاسبه نمی‌شود.
 // رأی پنج محور فقط از بک‌اند می‌آید (`/api/fundamental/{symbol}` و `/api/screener`).
-// نسخ۔ پیشین چهار تابعٔ «ارزیابی پنج شاخص» با آستانه‌هایش داشت
+// نسخۀ پیشین چهار تابعِ «ارزیابی پنج شاخص» با آستانه‌هایش داشت
 // (`growth>=40`، `ratio>=1.0` و معافیتِ `passed: true`) که هیچ مصرف‌کننده‌ای نداشت
-// و با موتور نمی‌خواند (`v10_monetary_growth_min=60`، `sales_to_mcap_min=0.33`، و
-// معافیت = «نظر نمی‌دهد» نه قبول). حذف شد تا منبع دومی رأی نماند.
+// و با موتور نمی‌خواند (`v10_monetary_growth_min=60` که *هدف* است نه کف،
+// `sales_to_mcap_min=0.33`، و معافیت = «نظر نمی‌دهد» نه قبول). حذف شد تا منبع
+// دومی رأی نماند.
 import type { QuarterRow } from '../api/useQuarters';
 
 export type FiscalQuarter = {
@@ -140,6 +141,3 @@ export function yoyBonus(yoy: number | null | undefined): number {
   if (y >= 0) return Math.min(15, 5 + y * 0.2);
   return Math.max(-15, y * 0.3);
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-//  توابع داوری ۵ شاخص اصلی FTS (اسپک v2.1)

@@ -319,6 +319,18 @@ def ind4_na(card_ind4) -> bool:
                                 or card_ind4.get("exempt") is True)
 
 
+def ind2_na(card_ind2) -> bool:
+    """آیا کارتِ جزئیات، شاخص ۲ (سابقۀ سه‌سالۀ EPS) را «سنجیده نشده» اعلام کرده؟
+
+    همان رأیِ ۱۳/۱۶ که برایِ شاخص ۳ و ۴ جاری است: سابقه‌ای که یک اسلاتش از
+    صورتهایِ تلفیقی است (جزوه ص ۴: «تلفیقی مدنظر ما نیست») «رد» نیست. کارت
+    `na: True` می‌گوید و `passes` را bool نگه می‌دارد، پس هر کپی‌کاریِ حکم به
+    ستونِ جدول باید جدا بپرسد (الگوی `ind3_na`/`ind4_na`) — وگرنه همان نماد در
+    فیلترِ «حذفِ مردودها» مردود شمرده می‌شود.
+    """
+    return bool(card_ind2) and card_ind2.get("na") is True
+
+
 def ind3_na(card_ind3) -> bool:
     """آیا کارتِ جزئیات، شاخص ۳ (حاشیهٔ ناخالص) را «سنجیده نشده» اعلام کرده؟
 
@@ -464,13 +476,14 @@ def fts_results_bulk(conn, cfg_hash: str = "") -> Optional[dict]:
 # همهٔ توکن‌ها به نوشتار نرمال (ی/ک فارسی) ذخیره میشوند و با norm_fa(sector) سنجیده‌اند.
 # فهرست با ۵۵ sector_name واقعیِ جدول instruments راستی‌آزمایی شده است.
 
-# قیمت‌گذاری دستوری / کنترل‌شده (حذف از سبد FTS):
-#   خودرو و ساخت قطعات · مواد و محصولات دارویی · محصولات غذایی و آشامیدنی · قند و شکر
-#   لاستیک و پلاستیک · عرضه برق، گاز، بخار و آب گرم (نیروگاه) · بیمه و صندوق بازنشستگی
-#   شوینده‌ها (تگ مستقل در TSETMC ندارد؛ برای پوشش نام‌های شرکتی نگه داشته شده)
-# سند v2.1: «دارو» و «غذای عمومی» دیگر یک‌جا رد نمی‌شوند؛
-#   دارو فقط با حاشیهٔ ناخالص > ۵۰٪ مجاز است (توسط گیت GPM در F-03 سنجیده می‌شود)،
-#   و غذا تنها در صورت کنترل شدید — که «قند و شکر» نمایندهٔ آن است.
+# قیمت‌گذاری دستوری / کنترل‌شده (حذف از سبد FTS) — همان چیزی که در tuple پایین
+# هست، نه بیشتر:  خودرو و قطعات · نقلیهٔ موتوری · قند و شکر · لاستیک · شوینده ·
+# نیروگاه و عرضه/تولید/توزیع برق · بیمه.
+# «شوینده» تگ مستقل در TSETMC ندارد؛ برای پوشش نام‌های شرکتی نگه داشته شده است.
+# سند v2.1 + جدولِ ص ۶ جزوه: «دارو» و «غذای عمومی» یک‌جا رد نمی‌شوند (در جزوه
+# هر دو ✓‌اند، غذا با برچسب «کنترل قیمت»؛ ✗ فقط خودرو، نیروگاهی و لاستیک‌اند).
+# دارو فقط با حاشیهٔ ناخالصِ بالای ۵۰٪ مجاز است که در گیتِ GPM سنجیده می‌شود، و
+# غذا تنها در مصداقِ کنترل‌شده‌اش — که «قند و شکر» نمایندهٔ آن است.
 MANDATORY_PRICING_TOKENS = (
     "خودرو", "نقلیه موتور", "قند و شکر", "لاستیک",
     "شوینده", "نیروگاه", "عرضه برق", "تولید برق", "توزیع برق", "بیمه",
@@ -487,9 +500,27 @@ FREE_PRICING_TOKENS = (
 INSURANCE_TOKENS = ("بیمه", "بازنشستگی")
 
 
+def sector_core(sector: str) -> str:
+    """برچسبِ صنعت تا پیش از بندِ «به جز …» — نرمال‌شده.
+
+    «محصولات غذايي و آشاميدني **به جز قند و شكر**» اسمِ همان صنعتِ غذایی است که
+    در جدولِ ص ۶ جزوه ✓ خورده؛ ولی چون زیررشتهٔ «قند و شكر» *داخلِ استثنایِ نام*
+    آمده، تطبیقِ ساده آن را «دستوری» می‌کرد و نماد را از غربالگری حذف. بندِ
+    استثنا را که ببریم، هم «قند و شكر» واقعی دستوری می‌ماند و هم غذاییِ «به جز
+    قند و شکر» آزاد/خنثی. (نسخۀ بدونِ فاصلهٔ «به جزتامين» هم با همین پیشوند
+    گرفته می‌شود.)
+    """
+    s = norm_fa(sector or "")
+    for cut in ("به جز", "به استثنا", "به حذف"):
+        i = s.find(cut)
+        if i > 0:
+            s = s[:i]
+    return s.strip()
+
+
 def pricing_mode(sector: str) -> str:
     """طبقه‌بندی صنعت: 'mandatory' | 'free' | 'neutral' (همیشه نرمال‌سازی‌شده)."""
-    s = norm_fa(sector)
+    s = sector_core(sector)
     if not s:
         return "neutral"
     # دستوری اولویت دارد: اگر صنعتی در هر دو فهرست بیفتد، احتیاطاً مردود است
@@ -514,7 +545,15 @@ def _is_audited(title: str) -> bool:
 
 
 def _is_consolidated(title: str) -> bool:
-    return "تلفیقی" in norm_fa(title)
+    """عنوان «تلفیقی» دارد و «غیرتلفیقی» ندارد — الگوی `_is_audited`.
+
+    بدونِ بندِ دوم، «صورت مالی ۱۲ماهه حسابرسی‌شدهٔ **غیرتلفیقی**» تلفیقی خوانده
+    می‌شود و رأیِ ۱۳ سرِ همان نماد می‌نشیند. در بانکِ امروز چنین عنوانی صفر ردیف
+    دارد (سنجش: ۷۵۳ عنوانِ متمایز)، ولی فیکچرهایِ تست و نوشتارِ کدال فردا را
+    نباید با زیررشته‌ای باطل کرد.
+    """
+    t = norm_fa(title or "")
+    return "تلفیقی" in t and "غیرتلفیقی" not in t
 
 
 def _is_amendment(title: str) -> bool:
@@ -1034,9 +1073,10 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
                    sector: str = "") -> dict:
     """داوریِ نهاییِ شاخص ۲ رویِ یکِ نردبان — کارت و اسکرینر همین را می‌خوانند.
 
-    بیمه پیش‌گیت است (لایه اجرا نمی‌شود — رأیِ ۱). سابقه‌ای که *فقط* از
-    صورتهایِ تلفیقی ساخته شده «رد» هم نیست و «سبز» هم: `na + data_gap`
-    (حکمِ مالک ۱۴۰۵-۰۷؛ جزوه: «صورتهای مالی تلفیقی مدنظر ما نیست»).
+    بیمه پیش‌گیت است (لایه اجرا نمی‌شود — رأیِ ۱). سابقه‌ای که **هر** اسلاتش از
+    صورتهایِ تلفیقی باشد «رد» هم نیست و «سبز» هم: `na + data_gap` (حکمِ مالک
+    ۱۴۰۵-۰۷؛ جزوه ص ۴: «صورتهای مالی تلفیقی مدنظر ما نیست» — پس یک سالِ
+    تلفیقی یعنی آن سالِ غیرتلفیقی هرگز منتشر نشده و سابقهٔ سه‌ساله کامل نیست).
     """
     need = max(int(years or 3), 2)
     if is_insurance_sector(sector):
@@ -1047,7 +1087,7 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
                 "low_quality_track": False, "soft_gap": False,
                 "reason": "صنعت بیمه — لایهٔ EPS اجرا نمیشود."}
     track = eps_ladder(conn, symbol, years=need)
-    ev = track.get("evidence") or []
+    ev = [str(e or "") for e in (track.get("evidence") or [])]
     if not track or track.get("available_periods", 0) == 0:
         return {"eps_series": None, "pass": False, "data_gap": True,
                 "years_required": need, "years_available": 0,
@@ -1056,25 +1096,44 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
                 "low_quality_track": False, "soft_gap": False,
                 "reason": (track or {}).get("reason")
                 or "هیچ صورت مالیِ معتبری با EPS ثبت نشده."}
-    if all(e == "audited_year_end" for e in ev):
+    # سه پرچم از خودِ برچسبِ اسلات‌ها ساخته می‌شوند، نه از شاخۀ خاصِ نردبان:
+    # شعبۀ `partial` هرگز `consolidated_used` را نمی‌گذاشت، پس سابقۀ ناقصِ
+    # تلفیقی بی‌برچسب داوری می‌شد. ترتیبِ سنجش هم جزءِ قاعده است — «تلفیقی»
+    # مبنایِ جزوه نیست (ص ۴) و باید زودتر از تنزلِ میاندوره بیفتد، وگرنه
+    # شاخۀ `year_end_plus_interim` آن را می‌بلعد (سنجشِ ۱۴۰۵-۰۷-۱۲: ۲۶۱
+    # سابقه بدین‌گونه بدونِ برچسبِ تلفیقی داوری می‌شدند).
+    cons_years = [str(y) for y, e in zip(track.get("period_slots") or [], ev)
+                  if e.startswith("consolidated_")]
+    track["consolidated_used"] = bool(cons_years)
+    track["low_quality_track"] = any(e.startswith("annualized_interim") for e in ev)
+    track["relaxed_evidence"] = any(e not in ("audited_year_end", "missing")
+                                    for e in ev)
+    if ev and all(e == "audited_year_end" for e in ev):
         tier = "audited_year_end"
-    elif track.get("low_quality_track"):
-        tier = "year_end_plus_interim"
-    elif track.get("consolidated_used"):
+    elif cons_years:
         tier = "consolidated_year_end"
-    elif track.get("relaxed_evidence"):
+    elif track["low_quality_track"]:
+        tier = "year_end_plus_interim"
+    elif track["relaxed_evidence"]:
         tier = "year_end_unaudited"
     else:
         tier = "insufficient"
     track["evidence_tier"] = tier
     track["strict_evidence"] = (tier == "audited_year_end")
-    track["relaxed_evidence"] = bool(track.get("relaxed_evidence"))
     if tier == "consolidated_year_end":
+        # حکمِ مالک ۱۴۰۵-۰۷ + جزوۀ ص ۴: «اطلاعات و صورت‌های مالی تلفیقی مدنظر
+        # ما نیست». باقی‌ماندۀ مستقلِ سه‌ساله هرچه باشد (دو سال مستقل + یک سال
+        # تلفیقی هم همین‌طور)، آن سابقه کامل نیست: نه «رد» است نه «سبز» ⇒
+        # `na + data_gap` با ذکرِ سال‌هایِ تلفیقی.
         track["pass"] = False
         track["na"] = True
         track["data_gap"] = True
-        track["reason"] = ("سابقهٔ سه‌ساله فقط از صورت‌های مالی تلفیقی است — "
-                           "جزوه تلفیقی را مبنای داوری نمی‌داند.")
+        track["consolidated_years"] = cons_years
+        _note = ("صورتهای مالی تلفیقی مدنظر نیست — سال‌های %s فقط تلفیقی منتشر "
+                 "شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست."
+                 % "، ".join(cons_years))
+        _prior = str(track.get("reason") or "")
+        track["reason"] = (_prior + " " + _note) if _prior else _note
     return track
 
 
@@ -1595,7 +1654,9 @@ def sector_filter(sector: str, cfg: dict = None, market_cap_rials: float = 0.0,
     شامل استثنای دارویی با GPM >= آستانهٔ cfg و بانک با رشد مثبت درآمدهای تسهیلاتی.
     """
     cfg = cfg or {}
-    s = norm_fa(sector)
+    # تطبیق روی «هستۀ» برچسبِ صنعت، بی بندِ «به جز …» — وگرنه استثنایِ داخلِ
+    # نام، خودِ نام را دستوری می‌کند (توضیحِ کامل در `sector_core`).
+    s = sector_core(sector)
     mandatory = [norm_fa(t) for t in (cfg.get("mandatory_sectors")
                                       or MANDATORY_PRICING_TOKENS)]
     free = [norm_fa(t) for t in (cfg.get("free_sectors") or FREE_PRICING_TOKENS)]
@@ -2254,6 +2315,12 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "eps_series": eps_series,
             "eps_last": (eps_series[-1] if eps_series else None),
             "eps_data_gap": bool(data_gap2),
+            # دو پرچمِ شفافیت برایِ جدول: «چه‌قدر از سابقه تلفیقی است» و
+            # «محور سنجیده شد یا نظر داده نشد». بدونِ این‌ها ردیفِ `na` رویِ
+            # جدول همان ✗ «رد» را می‌گیرد در حالی که جزوه (ص ۴) تلفیقی را
+            # مبنایِ داوری نمی‌داند — نه مردود و نه مطلوب.
+            "eps_consolidated": bool(_eps.get("consolidated_used")),
+            "i2_na": bool(_eps.get("na")),
             "eps_years_available": min(eps_avail, eps_years),
             "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),

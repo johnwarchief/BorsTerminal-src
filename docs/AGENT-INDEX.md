@@ -43,9 +43,9 @@
 - `GET /api/calendar/upcoming` → `api/chart.py:828`
 - `GET /api/calendar/{symbol}` → `api/chart.py:847`
 - `GET /api/ma/{symbol}` → `api/chart.py:859`
-- `GET /api/chart-db/{symbol}` → `api/chart.py:917`
-- `GET /api/patterns/{symbol}` → `api/chart.py:993`
-- `GET /api/fts/{symbol}` → `api/chart.py:2292`
+- `GET /api/chart-db/{symbol}` → `api/chart.py:922`
+- `GET /api/patterns/{symbol}` → `api/chart.py:998`
+- `GET /api/fts/{symbol}` → `api/chart.py:2341`
 
 ### `api/diagnostics.py` — 6 تابع، 3 اندپوینت
 - `GET /api/diagnostics/info` → `api/diagnostics.py:39`
@@ -62,20 +62,23 @@
 - `GET /api/sync/pipeline` → `api/engine.py:64`
 
 ### `api/fundamental.py` — 59 تابع، 5 اندپوینت
-- `GET /api/fundamental/screen` → `api/fundamental.py:2029`
-- `GET /api/fundamental/sectors` → `api/fundamental.py:2090`
-- `GET /api/fundamental/{symbol}` → `api/fundamental.py:2104`
-- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2309`
-- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2552`
+- `GET /api/fundamental/screen` → `api/fundamental.py:1794`
+- `GET /api/fundamental/sectors` → `api/fundamental.py:1855`
+- `GET /api/fundamental/{symbol}` → `api/fundamental.py:1869`
+- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2075`
+- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2327`
 
-### `api/market.py` — 20 تابع، 7 اندپوینت
-- `GET /api/market/sync-state` → `api/market.py:91`
-- `GET /api/market` → `api/market.py:110`
-- `GET /api/fts` → `api/market.py:689`
-- `GET /api/fts/config` → `api/market.py:705`
-- `GET /api/price-basis` → `api/market.py:710`
-- `POST /api/price-basis` → `api/market.py:722`
-- `POST /api/fts/config` → `api/market.py:733`
+### `api/market.py` — 36 تابع، 10 اندپوینت
+- `GET /api/market/sync-state` → `api/market.py:92`
+- `GET /api/market` → `api/market.py:111`
+- `GET /api/market/delta` → `api/market.py:995`
+- `GET /api/live-stats` → `api/market.py:1046`
+- `POST /api/orderbook/watch` → `api/market.py:1062`
+- `GET /api/fts` → `api/market.py:1081`
+- `GET /api/fts/config` → `api/market.py:1097`
+- `GET /api/price-basis` → `api/market.py:1102`
+- `POST /api/price-basis` → `api/market.py:1114`
+- `POST /api/fts/config` → `api/market.py:1125`
 
 ### `api/market_index.py` — 5 تابع، 1 اندپوینت
 - `GET /api/index/tedpix` → `api/market_index.py:207`
@@ -101,8 +104,8 @@
 - `POST /api/notify/test-all` → `api/notify.py:49`
 
 ### `api/screener.py` — 6 تابع، 2 اندپوینت
-- `GET /api/history/{symbol}` → `api/screener.py:94`
-- `GET /api/screener` → `api/screener.py:200`
+- `GET /api/history/{symbol}` → `api/screener.py:96`
+- `GET /api/screener` → `api/screener.py:202`
 
 ### `api/selection.py` — 8 تابع، 4 اندپوینت
 - `GET /api/selection/symbols` → `api/selection.py:52`
@@ -128,10 +131,10 @@
 
 | فایل | تابع‌هایِ کلیدی |
 | --- | --- |
-| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+49) |
+| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+63) |
 | `tape_flags.py` | `_n`, `_col`, `_alive`, `history_sessions`, `_sessions_ok`, `formula_volume_base` (+11) |
 | `mstat_engine.py` | `in_trading_session`, `_f`, `_div`, `ensure_schema`, `_word_hit`, `fund_kind` (+59) |
-| `codal_fetcher.py` | `polite_pause`, `set_polite`, `write_status`, `_fmt_ban_until`, `_control_cmd`, `_control_sleep` (+66) |
+| `codal_fetcher.py` | `set_extract_workers`, `polite_pause`, `set_polite`, `write_status`, `_fmt_ban_until`, `_control_cmd` (+71) |
 | `bors_config.py` | `_app_dir`, `_writable`, `_user_data_dir`, `_work_dir`, `_db_has_codal`, `_resolve_market_db` (+13) |
 | `app.py` | `loopback_guard`, `no_cache_middleware`, `_static_dir`, `_frontend_dist`, `_get_index_html`, `_spa_index` (+3) |
 | `bors_entry.py` | `_setup_streams`, `_stamp`, `_note`, `_log_config_with_clock`, `_beat_loop`, `_warn_old_windows` (+16) |
@@ -142,9 +145,9 @@
 
 - **features/fundamental** — 32 فایل: `features/fundamental/api/useCalendarEvents.ts`, `features/fundamental/api/useCalendarUpcoming.ts`, `features/fundamental/api/useFtsCard.ts`, `features/fundamental/api/useFtsConfig.ts`, `features/fundamental/components/SectorPePanel.tsx`, `features/fundamental/routes/FundamentalPage.tsx` (+26 فایل)
 - **features/market** — 30 فایل: `features/market/api/useHistory.ts`, `features/market/api/useIndustries.ts`, `features/market/api/useIntradayCache.ts`, `features/market/api/useMarketFeed.ts`, `features/market/components/SuspiciousPanel.tsx`, `features/market/components/TapeTable.tsx` (+24 فایل)
-- **features/master** — 32 فایل: `features/master/api/useFtsPlan.ts`, `features/master/api/useFtsTechBoard.ts`, `features/master/routes/MasterPage.tsx`, `features/master/routes/StrategyTreePage.tsx` (+28 فایل)
+- **features/master** — 35 فایل: `features/master/api/useFtsFunnel.ts`, `features/master/api/useFtsPlan.ts`, `features/master/api/useFtsTechBoard.ts`, `features/master/routes/MasterPage.tsx`, `features/master/routes/StrategyTreePage.tsx` (+30 فایل)
 - **features/portfolio** — 18 فایل: `features/portfolio/api/usePortfolio.ts`, `features/portfolio/api/useStopLossBoard.ts`, `features/portfolio/api/useSymbolBasket.ts`, `features/portfolio/api/useSymbolSearch.ts`, `features/portfolio/routes/PortfolioPage.tsx` (+13 فایل)
-- **features/technical** — 72 فایل: `features/technical/engine/index.ts`, `features/technical/api/useCandleFeed.ts`, `features/technical/api/useFtsAnalysis.ts`, `features/technical/api/useFundGate.ts`, `features/technical/api/useOrderBook.ts`, `features/technical/components/ComparePanel.tsx` (+66 فایل)
+- **features/technical** — 75 فایل: `features/technical/engine/index.ts`, `features/technical/api/useCandleFeed.ts`, `features/technical/api/useFtsAnalysis.ts`, `features/technical/api/useFundGate.ts`, `features/technical/api/useOrderBook.ts`, `features/technical/components/ComparePanel.tsx` (+69 فایل)
 - **features/updater** — 4 فایل: `features/updater/index.ts`, `features/updater/useAppUpdater.ts` (+2 فایل)
 
 ### `widgets/`
@@ -152,7 +155,7 @@
 
 ### `shared/`
 
-- **shared/api** — 1 فایل: `shared/api/http.ts`
+- **shared/api** — 2 فایل: `shared/api/http.ts`, `shared/api/marketFeed.ts`
 - **shared/components** — 11 فایل: `shared/components/DataTable.tsx` (+10 فایل)
 - **shared/hooks** — 1 فایل: `shared/hooks/useElementWidth.ts`
 - **shared/lib** — 13 فایل: `shared/lib/useFlip.ts`, `shared/lib/useMediaQuery.ts` (+11 فایل)
@@ -175,6 +178,7 @@
 | `dev/candle_contract_v1071.py` | one candle contract: shared geometry, writer priority, same numbers from every source |
 | `dev/candle_source_fidelity_v1033.py` | candle fidelity: geometry repair + anchored adjustment |
 | `dev/candles_from_board_v1062.py` | candles from the board table + geometry repair + no prune-before-fetch |
+| `dev/ce_weekly_bucket_v1073.py` | confidence_engine weekly bucket == chart Saturday bucket |
 | `dev/chart_api_check_v95.py` | KLineCharts v10 API guard |
 | `dev/chart_single_bundle_v1038.py` | چارتِ یکتا: هر متدِ Chart باید در باندلِ خودش باشد و باندلِ دومی نباشد |
 | `dev/client_type_date_v1034.py` | board freshness: session day + abstaining market pulse |
@@ -182,14 +186,17 @@
 | `dev/codal_derived_ledger_v1073.py` | one notice = one extraction; shared period never blocks another symbol |
 | `dev/codal_logic_guard.py` | codal logic contract F-01..F-05 (amendment) |
 | `dev/codal_merge_recency_v1029.py` | ادغامِ کدال: محلیِ تازه‌تر هرگز بازنویسی نمی‌شود |
+| `dev/codal_period_canonical_v1075.py` | one canonical period rule; SQL and Python agree; every consumer sees one count |
 | `dev/confidence_engine_v973.py` | triple-confirmation confidence engine |
 | `dev/data_age_release_guard.py` | سنِ دادهٔ ریلیز سنجیده می‌شود: کهنه=هشدار، کهنه‌تر از baseline=رد |
 | `dev/db_backfill_derived.py --selftest` | derived columns at insert (backfill selftest) |
 | `dev/db_contract_v11.py` | FTS v2.2 db contract: writer/reader/schema agree |
 | `dev/db_housekeeping.py --selftest` | R1/R2 housekeeping: dedupe + prev-year backfill |
+| `dev/fts_cache_basis_v1078.py` | FTS analysis cache key carries the price basis (with a negative control) |
 | `dev/fts_chart_engine_v1037.py` | chart fib belts and setup markers come from the one server engine, over the current wave |
 | `dev/fts_defaults_parity_guard.py` | FTS guide defaults: FE drawer mirrors the server |
 | `dev/fts_engine_honesty_v1066.py` | FTS engine publishes no made-up numbers (week, fib, stop, MA52, na) |
+| `dev/fts_engine_paths_parity_v1076.py` | scan_symbol == bulk_scan on every symbol + raw-threshold boundary |
 | `dev/fts_m141_parity_v97.py` | m141/liquidity parity + anti-N+1 |
 | `dev/fts_pipeline_v981.py` | codal FTS pipeline + ADB fallback + session window |
 | `dev/fts_screener_card_parity_v10.py` | screener<->card parity + ind-4 exemption engine vs card |
@@ -198,11 +205,13 @@
 | `dev/fund_not_applicable_v1028.py` | صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر) |
 | `dev/history_depth_v1070.py` | no history pruning, incremental sync, idempotent second run |
 | `dev/incremental_sync_resilience.py` | incremental sync: new symbol + new monthly report |
+| `dev/indicator_math_v1074.py` | indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact |
 | `dev/live_bar_session_date_v1059.py` | live candle: session date, both chart endpoints, cache untouched |
 | `dev/live_market_board_audit.py --offline` | live board audit: zero-volume / no-CT edge cases |
 | `dev/log_clock_guard_v1055.py` | log has a clock and survives a hard death |
 | `dev/loopback_guard_v1029.py` | API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست |
 | `dev/market_db_union_v1069.py` | ادغامِ market.db: دادهٔ بازارِ کاربر با ارتقا له نمی‌شود |
+| `dev/market_hot_state_v1077.py` | hot state: field-aware diff, RAM==SQL board, honest delta |
 | `dev/market_swr_v1036.py` | board cache is stale-while-revalidate, single-flight, honest on failure |
 | `dev/market_tick_v1045.py` | live 5s board tick: one request, shared row map, closed-window refuses to write |
 | `dev/mstat_local_v975.py` | mstat dashboard computed from local market.db |

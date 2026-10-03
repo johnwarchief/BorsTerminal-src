@@ -73,6 +73,8 @@ SUITES = [
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
+    ('dev/test_fts_technical_tristate.py',
+     'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
     # شاخص ۴: حکمِ معافیت/N/A باید بین fts_engine (اسکرینر) و api/fundamental
     # (کارت) یکی باشد — پیش از این این سوئیت اصلاً در SUITES نبود و پاریتیِ

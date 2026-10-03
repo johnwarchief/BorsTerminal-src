@@ -36,6 +36,10 @@ const Indicator1MonetarySchema = z
     months: z.number().nullish(),
     year: z.number().nullish(),
     threshold: z.number().nullish(),
+    /** هدفِ پوشش تورم (رأیِ مالک بند ۳: کفِ قبولی ۴۰، هدف ۶۰). `threshold` کف
+     *  است و رأیِ قبولی به آن گره خورده؛ این عدد فقط برچسبِ «رشد قوی» می‌سازد. */
+    target_threshold: z.number().nullish(),
+    strong: z.boolean().nullish(),
     pass: z.boolean().nullish(),
     data_gap: z.boolean().nullish(),
     reason: z.string().nullish(),
@@ -104,8 +108,23 @@ const Indicator2Schema = z
     /** پرچم شکاف دادهٔ شاخص ۲ — بک‌اند آن را می‌فرستد ولی در جدول فیلدهای
      *  UI لازم است تا «ردِ گیت» از «نقص داده» تفکیک شود */
     data_gap: z.boolean().nullish(),
-    reason: z.string().nullish(),
+    /** رأیِ ۱۳ + جزوۀ ص ۴: «N/A» با «رد» یکی نیست — بک‌اند می‌گوید (سابقه‌ای که
+     *  اسلاتی از صورتهایِ تلفیقی دارد، یا صنعت بیمه). بی‌این کلید zod آن را دور
+     *  می‌ریخت و کارت همان را ✗ سرخ نشان می‌داد. */
+    na: z.boolean().nullish(),
+    consolidated_used: z.boolean().nullish(),
+    consolidated_years: z.array(z.string()).nullish(),
+    low_quality_track: z.boolean().nullish(),
+    relaxed_evidence: z.boolean().nullish(),
+    strict_evidence: z.boolean().nullish(),
+    soft_gap: z.boolean().nullish(),
+    /** متنِ بک‌اند برایِ مبنایِ امروزی («سال‌پایانِ حسابرسی‌شدهٔ غیرتلفیقی…») */
+    eps_basis: z.string().nullish(),
+    source: z.string().nullish(),
+    /** برچسبِ هر اسلات (audited_year_end / consolidated_unaudited / …) */
+    evidence: z.array(z.string()).nullish(),
     evidence_tier: z.string().nullish(),
+    reason: z.string().nullish(),
     interim: z
       .object({
         available: z.boolean().nullish(),
@@ -189,6 +208,10 @@ const Indicator5Schema = z
     matched_tokens: z.array(z.string()).nullish(),
     fts_top_industry: z.boolean().nullish(),
     pass: z.boolean().nullish(),
+    /** `industry_mode`ِ موتور: true = «حذفِ خودکارِ دستوری‌ها» روشن است؛ false =
+     *  حالتِ Rank_Only (دستوری فقط رتبه می‌گیرد، وتو نمی‌شود). رابط بدونِ این
+     *  کلید نمی‌توانست بگوید «دستوری» یعنی وتو یا فقط برچسب. */
+    exclusion_active: z.boolean().nullish(),
     market_share_pct: z.number().nullish(),
     outlook: z.string().nullish(),
     regime_label: z.string().nullish(),

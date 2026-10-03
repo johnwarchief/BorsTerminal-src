@@ -73,7 +73,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
   const passes1a = card.passes?.['1a_monetary_growth'];
   // «جلو زدن از تارگت» را بک‌اند با همان آستانهٔ جزوه می‌سنجد؛ نرخِ تورمِ
   // جدا در UI یعنی دو جواب برای یک نماد، پس نشانه از حکمِ شاخص ۱ می‌آید.
-  const beatsTarget = passes1a ?? beatsFloor;
+  const aboveFloor = passes1a ?? beatsFloor;
   const passes1b = card.passes?.['1b_volume_growth'];
 
   return (
@@ -180,7 +180,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 
           {/* اختلاف و تغییرات */}
           <div className={`flex flex-col justify-between rounded-xl border p-2.5 ${
-            beatsTarget ? 'border-accent-green/30 bg-accent-green/5' : 'border-amber-400/30 bg-amber-400/5'
+            aboveFloor ? 'border-accent-green/30 bg-accent-green/5' : 'border-amber-400/30 bg-amber-400/5'
           }`}>
             <div className="flex items-center justify-between text-2xs mb-1">
               <span className="font-bold text-text-secondary">تغییر ریالی دوره</span>
@@ -197,7 +197,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             <span className="text-3xs text-text-muted mt-1">
               {floor == null
                 ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
-                : beatsTarget
+                : aboveFloor
                   ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
                   : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
             </span>
@@ -244,7 +244,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
           {growth != null ? (
             <>
               <span className="text-text-muted">=</span>
-              <span className={`font-bold ${beatsTarget ? 'text-accent-green' : 'text-accent-yellow'}`}>
+              <span className={`font-bold ${aboveFloor ? 'text-accent-green' : 'text-accent-yellow'}`}>
                 {growth >= 0 ? '+' : '−'}{toFaDigits(Math.abs(growth).toFixed(1))}٪
               </span>
             </>
@@ -327,7 +327,22 @@ function Panel2({ card }: { card: FtsCard }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {rising == null && realYears < 2 ? (
+        {ind?.na === true ? (
+          /* رأیِ ۱۳ + جزوۀ ص ۴ («صورتهای مالی تلفیقی مدنظر ما نیست») و رأیِ ۱
+             (بیمه پیش‌گیت است): این شاخص داوری **نشده** — نه سبز و نه سرخ.
+             بی‌این شاخه سریِ صعودیِ تلفیقی همین‌جا «سه سالِ متوالی بالاتر ✓»
+             می‌خورد در حالی که کارتِ بالایش N/A می‌گفت. */
+          <GapHint
+            reason={`${ind?.reason || 'مبنایِ غیرتلفیقیِ سه‌سالهٔ کامل موجود نیست'} · راه‌حل: شرکت صورتِ سود و زیانِ آن سال‌ها را غیرتلفیقی منتشر نکرده، پس همگام‌سازیِ تازه این شکاف را نمی‌بندد.`}
+          >
+            <span
+              data-testid="drilldown-eps-na"
+              className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow"
+            >
+              {ind?.consolidated_used ? 'N/A — مبنایِ تلفیقی' : 'N/A — لایه اجرا نمی‌شود'}
+            </span>
+          </GapHint>
+        ) : rising == null && realYears < 2 ? (
           <GapHint reason={`${gapWhy} راه‌حل: ${axisGapReason('2_eps_trend').fix}`}>
             <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
               {epsGapLabel(realYears)}
@@ -676,7 +691,9 @@ function Panel4({ card }: { card: FtsCard }) {
           </span>
         </div>
         <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
-          A از سالانه‌سازیِ دورۀ N ماهه می‌آید؛ B حاشیهٔ سود ناخالصِ آخرین دورۀ حسابرسی‌شده؛ D ارزش بازارِ روز. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیهٔ فرمول سالم نمایش می‌یابد.
+          A از سالانه‌سازیِ دورۀ N ماهه می‌آید؛ B {ind?.margin_basis === 'net_margin_proxy'
+            ? 'حاشیۀ سودِ خالص — جایگزینِ شرکت مالی که سطرِ «بهای تمام‌شده» ندارد، پس فرمولِ جزوه (ناخالص) روی این نماد ساخته نمی‌شود'
+            : 'حاشیۀ سود ناخالصِ همان دورۀ مبنای لایۀ ۳'}؛ D ارزش بازارِ روز. هر متغیرِ غایب فقط در جای خودش با علت مشخص می‌شود — بقیۀ فرمول سالم نمایش می‌یابد.
         </p>
       </div>
     </div>
@@ -724,8 +741,15 @@ function Panel5({ card }: { card: FtsCard }) {
         </div>
       </div>
       {outlook ? <p className="text-2xs leading-relaxed text-text-secondary">چشم‌انداز: {outlook}</p> : null}
-      <p className="text-2xs leading-relaxed text-text-secondary">
-        فرمول: صنعت دستوری (خودرو، دارو، نیروگاه، غذا، لاستیک، شوینده) مردود · آزاد (سیمان، فلزات، پتروشیمی، کانی، کاشی) مطلوب
+      {/* جدولِ ص ۶ جزوه، نه حدسِ رابط: ✗ فقط خودرو و قطعات، نیروگاهی و لاستیک‌اند؛
+          دارویی ✓ و غذایی ✓ (با برچسب «کنترل قیمت»). فهرستِ موتورِ امروز «قند و
+          شکر»، «شوینده» و «بیمه» را هم دستوری می‌شمارد که در جزوه نیست — آن
+          افزودۀ پیاده‌سازی است، نه قانونِ جزوه، و حکمِ نهایی را همان موتور می‌دهد. */}
+      <p className="text-2xs leading-relaxed text-text-muted">
+        جزوه (ص ۶): ✗ خودرو و قطعات، نیروگاهی، لاستیک · ✓ سیمان، فلزات اساسی، پتروشیمی، کانه‌های فلزی، کاشی (بورس کالا / آزاد) · دارویی و غذایی در فهرستِ جزوه ✗ نیستند.
+        {ind?.exclusion_active === false
+          ? ' · در حالتِ «فقط رتبه‌بندی»، دستوری وتو نمی‌شود.'
+          : ' · حکمِ همین نماد را موتور می‌دهد.'}
       </p>
     </div>
   );
@@ -735,8 +759,9 @@ function Panel5({ card }: { card: FtsCard }) {
 const EVIDENCE_TIER_FA: Record<string, string> = {
   audited_year_end: '۱۲ماهه حسابرسی‌شدهٔ شرکت اصلی (غیرتلفیقی)',
   year_end_unaudited: 'سال‌پایانِ غیرتلفیقیِ حسابرسی‌نشده',
-  consolidated_year_end: 'سال‌پایانِ تلفیقی (صورت ۱۲ماههٔ غیرتلفیقی منتشر نشده)',
+  consolidated_year_end: 'شامل صورتِ تلفیقی (آن سال‌ها صورت ۱۲ماههٔ غیرتلفیقی منتشر نشده)',
   year_end_plus_interim: 'سال‌پایان + سال‌سازیِ میاندوره × ۱۲÷م برای تکمیلِ سه سال',
+  insurance: 'صنعت بیمه — لایهٔ EPS اجرا نمی‌شود',
   insufficient: 'مبنای معتبری یافت نشد',
 };
 

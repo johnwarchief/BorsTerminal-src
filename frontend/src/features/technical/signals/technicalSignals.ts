@@ -45,6 +45,12 @@ function faNum(x: number, digits = 1): string {
   return toFaDigits(x.toFixed(digits));
 }
 
+/** سه‌حالۀ رأیِ موتور: true / false / null («سنجیده نشد»). هیچ‌جا null به false
+ *  تبدیل نمی‌شود — نبودِ شواهد ≠ ردِ سیگنال. */
+function tri(v: boolean | null | undefined): boolean | null {
+  return v === true || v === false ? v : null;
+}
+
 function nodata(symbol: string, ts: number): AgentSignal<TechnicalPayload> {
   return {
     id: `technical:${symbol}:nodata:${ts}`,
@@ -227,15 +233,17 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
       weekly: input.weekly ?? null,
       // پرچم‌هایِ ستاپ از خودِ موتور — برایِ گامِ ۲ خطِ روایتِ مستر (#6 و #7).
       // بی‌پاسخِ موتور این‌ها منتشر **نمی‌شوند** (undefined)، نه false: «رد از رویِ
-      // نبودِ داده» همان چیزی است که درِ قیف هم ممنوع است.
+      // نبودِ داده» همان چیزی است که درِ قیف هم ممنوع است. و اگر موتور گفته
+      // «سنجیده نشد» (`active: null`) هم همان null می‌ماند — `=== true` آن را به
+      // false می‌انداخت و «تاریخچۀ کم» با «شکست نشد» یکی می‌شد (رأیِ مالک).
       ...(fts
         ? {
-            jet_active: jet?.active === true,
-            choch_bullish: choch?.bullish === true,
-            point_hunt_active: fts.point_hunt?.active === true,
-            double_bottom_active: fts.double_bottom?.active === true,
-            range_break_active: fts.range_box?.active === true,
-            hourglass_active: fts.hourglass?.active === true,
+            jet_active: tri(jet?.active),
+            choch_bullish: tri(choch?.bullish),
+            point_hunt_active: tri(fts.point_hunt?.active),
+            double_bottom_active: tri(fts.double_bottom?.active),
+            range_break_active: tri(fts.range_box?.active),
+            hourglass_active: tri(fts.hourglass?.active),
           }
         : {}),
     },

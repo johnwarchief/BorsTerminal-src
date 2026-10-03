@@ -282,23 +282,15 @@ def _screener_cached():
         for r in rows:
             r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
             r["eps_data_gap"] = bool(r.get("eps_data_gap"))
-            # سند v2.1: اگر سطرهای سالانهٔ اسکنر کافی نبود، همان نردبانِ EPSِ
-            # مسیر جزئیات صدا زده می‌شود تا شاخص ۲ بین اسکرینر و /api/fundamental
-            # واگرا نشود (ریشهٔ گزارش کاربر: «بدون داده» برای نمادهایی که داده دارند).
-            if r["eps_data_gap"]:
-                try:
-                    from .fundamental import _eps_track_blended
-                    _tr = _eps_track_blended(conn, r["symbol"], years=3) or {}
-                    _ser = _tr.get("eps_series")
-                    if _ser:
-                        r["eps_series"] = _ser
-                        r["eps_last"] = _ser[-1]
-                        r["eps_data_gap"] = bool(_tr.get("data_gap"))
-                        r["eps_years_available"] = len([v for v in _ser if v is not None])
-                        if isinstance(_tr.get("pass"), bool):
-                            r["i2_pass"] = _tr["pass"]
-                except Exception:
-                    pass
+            r["i2_na"] = bool(r.get("i2_na"))
+            # سند v2.1 «per-row دومِ خواندنِ EPS» حذف شد: `bulk_scan` از همان
+            # `fts_engine.eps_assessment` می‌خواند که کارتِ جزئیات می‌خواند، پس
+            # بازخوانیِ `fundamental._eps_track_blended` (نردبانِ **خام**، بی‌داوری)
+            # دیگر چیزی اضافه نمی‌کرد و فقط ضرر داشت — پرچمِ `eps_data_gap` را از
+            # سابقۀ تلفیقی خاموش می‌کرد و سه مقدارِ EPSِ تلفیقی را بی‌برچسب روی
+            # جدول می‌نشاند، یعنی همان «پرکردنِ نبودِ دادهِ مستقل با دادهِ تلفیقی»
+            # که رأیِ ۱۳ و جزوۀ ص ۴ منع می‌کنند. (`years=3`ِ هاردکد هم با
+            # `eps_years`ِ کانفیگ درِ موتور واگرا بود.)
 
         # ---- v10: یکسان‌سازی امتیاز/پرچم اسکرینر با کارت جزئیات (منبع واحد حقیقت) ----
         # قاعدهٔ v10 (بالای api/fundamental.py): هیچ مسیرِ خواندنی — کارت،
@@ -374,7 +366,6 @@ def _screener_cached():
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
-                r["i2_pass"] = p["2_eps_trend"]
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -390,6 +381,13 @@ def _screener_cached():
                 # پرچمِ na هم درِ همان جدول ثبت شود.
                 _na3 = fts_engine.ind3_na(_g3)
                 _na4 = fts_engine.ind4_na(_ind.get("4"))
+                # شاخص ۲ هم سه‌حال شد (جزوه ص ۴ + رأیِ ۱۳): سابقه‌ای که اسلاتی
+                # از صورتهایِ تلفیقی دارد داوریِ FTS ندارد ⇒ «رد» نه. درِ مسیرِ
+                # زنده کارت با `na: True` می‌گوید؛ درِ مسیرِ مادی همان حکم ستونِ
+                # NULLِ f02_pass است (نویسندهٔ جدول: dev/codal_fts_updater.py).
+                _na2 = fts_engine.ind2_na(_ind.get("2")) or p.get("2_eps_trend") is None
+                r["i2_pass"] = None if _na2 else p["2_eps_trend"]
+                r["i2_na"] = bool(_na2)
                 r["i3_pass"] = None if _na3 else p["3_gross_margin"]
                 r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
                 r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
@@ -469,15 +467,24 @@ def _screener_cached():
             tr = f.get("trend") or {}
             ex = f.get("exit_engine") or {}
             fib = f.get("fib") or {}
+            # سه‌حالۀ تکنیکال: اگر تحلیل این نماد ساخته نشده (`f` تهی — fetch
+            # شکست خورد، تاریخچه نبود، یا بیرونِ سقفِ محاسبه بود) هیچ‌کدام از
+            # بج‌ها «نیست» نیستند؛ **نظر داده نشده**. پیش از این همه bool بودند و
+            # نمادِ بی‌تحلیل دقیقاً همان «جت ندارد / CHoCH ندارد» را می‌گرفت که
+            # نمادِ تحلیل‌شدهٔ منفی می‌گرفت (قانونِ مالک: null ≠ false).
+            _none = not f
+
+            def _tri(v):
+                return None if (_none or v is None) else bool(v)
             r["tech_trend_d"] = (tr.get("D") or {}).get("trend")
             r["tech_trend_w"] = (tr.get("W") or {}).get("trend")
             r["tech_trend_m"] = (tr.get("M") or {}).get("trend")
             r["tech_alignment"] = tr.get("alignment")
-            r["tech_jet"] = bool((f.get("jet") or {}).get("active"))
-            r["tech_choch_bull"] = bool((f.get("choch") or {}).get("bullish"))
-            r["tech_choch_bear"] = bool((f.get("choch") or {}).get("bearish"))
-            r["tech_double_bottom"] = bool((f.get("double_bottom") or {}).get("active"))
-            r["tech_range_break"] = bool((f.get("range_box") or {}).get("active"))
+            r["tech_jet"] = _tri((f.get("jet") or {}).get("active"))
+            r["tech_choch_bull"] = _tri((f.get("choch") or {}).get("bullish"))
+            r["tech_choch_bear"] = _tri((f.get("choch") or {}).get("bearish"))
+            r["tech_double_bottom"] = _tri((f.get("double_bottom") or {}).get("active"))
+            r["tech_range_break"] = _tri((f.get("range_box") or {}).get("active"))
             if ((fib.get("zone_33_40") or {}).get("in_zone")):
                 r["tech_fib_zone"] = "33-40"
             elif ((fib.get("zone_618_70") or {}).get("in_zone")):
@@ -491,7 +498,7 @@ def _screener_cached():
             r["tech_matrix_setup"] = mat.get("setup")
             r["tech_matrix_desc"] = mat.get("desc")
             hg = f.get("hourglass") or {}
-            r["tech_hourglass_active"] = bool(hg.get("active"))
+            r["tech_hourglass_active"] = _tri(hg.get("active"))
             r["tech_hourglass_action"] = hg.get("action")
 
         # ---- وتوی روند هفتگی (چارت ۳: هم نزولی و هم خنثی ⇒ reject) ----

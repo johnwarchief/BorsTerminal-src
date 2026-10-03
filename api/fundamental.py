@@ -60,17 +60,23 @@ router = APIRouter()
 #  آستانه‌های روش‌شناسی — حکمِ جزوه، نه سلیقهٔ کاربر
 # ═══════════════════════════════════════════════════════════════════════════
 # fts_thresholds.json (growth_min/margin_min/…) مسیر اسکرینر و ماتریس اطمینان
-# را تغذیه میکند و از این فایل نوشتنش مجاز نیست. پس آستانه‌های v10 پیش‌فرضِ
-# خودشان را دارند و فقط با کلیدهای صریحِ `v10_*` قابل روشن‌کردن‌اند؛ طوری که
-# تغییر `growth_min: 40` اسکرینر را جابه‌جا کند ولی چک ۱الفِ کارت بنیادی (۶۰٪)
-# را بی‌صدا شل نکند.
+# را تغذیه میکند و از این فایل نوشتنش مجاز نیست.
+#
+# کف و هدفِ شاخص ۱ (رأیِ مالک، بند ۳): «۴۰٪ کفِ قبولی است و ۶۰٪ هدفِ پوشش
+# تورم». تا پیش از این اصلاح کارتِ بنیادی ۶۰ را **دروازۀ قبولی** گذاشته بود و
+# موتورِ اسکرینر ۴۰ را ⇒ برای نمادی که رشدش بین این دو بود دو حکمِ متفاوت وجود
+# داشت (سنجشِ ۱۴۰۵-۰۷-۱۲ روی بانکِ واقعی: ۷۰ نماد، از جمله فولاد و كچاد).
+# حالا هر دو مسیر یک قاعده دارند: پاس = ≥ کفِ ۴۰، و ۶۰ فقط «رشد قوی» برچسب
+# می‌خورد؛ عددِ ۶۰ همان `v10_monetary_growth_min`ِ پنل است (برچسبِ کشو:
+# «هدف درصد رشد (پوشش تورم)») و `growth_min` همان کفِ ۴۰.
 FTS_V10_DEFAULTS = {
-    "monetary_growth_min": 60.0,    # ۱الف — رشد ریالی تجمیعی (٪)
+    "monetary_growth_min": 40.0,    # ۱الف — کفِ قبولیِ رشد ریالی (٪) = growth_min
+    "monetary_growth_target": 60.0,  # ۱الف — هدفِ پوشش تورم (٪)، دروازۀ امتیاز نیست
     "volume_growth_min": 0.0,       # ۱ب — رشد تولیدی باید غیرمنفی باشد (٪)
-    "volume_breadth_min": 0.60,     # ۱ب — حداقل share ماههایی که واقعاً بهتر شده‌اند
+    "volume_breadth_min": 0.60,     # ۱ب — دادهٔ نمایشی: share ماههایی که بهتر شده‌اند
     "eps_years": 3,                 # ۲ — طول سابقهٔ سودسازی (سالِ متوالی سودآور)
-    "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالص
-    "margin_ideal": 30.0,           # ۳ — حاشیهٔ ایده‌آل
+    "margin_min": 20.0,             # ۳ — کف حاشیهٔ ناخالصِ پنل (جزوه: ۳۰ مطلوب، ۵۰+ خوب)
+    "margin_ideal": 30.0,           # ۳ — حاشیهٔ مطلوبِ جزوه
     "sales_to_mcap_min": 0.33,      # ۴الف — فروش سالانه ÷ ارزش بازار (۳۳٪ = ۰٫۳۳×، استاندارد جزوه)
     "potential_min": 40.0,          # ۴ب — سود ناخالص پتانسیل ÷ ارزش بازار (٪)
     # ۱ب — مبنای تورمِ داخلِ فرمولِ «رشد تولیدی». حکمِ مالک (۱۴۰۵/۰۷/۰۴):
@@ -97,21 +103,33 @@ def v10_thresholds(cfg: dict = None) -> dict:
          یک جا»: کاربر در پنل یک عدد می‌زند و همان عدد هم اسکرینر و هم کارت را
          می‌گرداند؛ دو منبعِ حقیقت برای «حاشیهٔ ناخالص» نداشتن بهتر است.
       ۳) پیش‌فرضِ جزوهٔ همین فایل
-    استثنای عمدی: `monetary_growth_min` (چک ۱الفِ کارت = ۶۰٪) هیچ‌وقت از
-    `growth_min`ِ اسکرینر (۴۰٪) ارث نمی‌برد — دلیلش در بالای همین فایل است:
-    شل‌کردنِ عددِ اسکرینر نباید بی‌صدا حکمِ سختِ کارت را عوض کند. برای همین
-    پنل، فیلدِ جداگانهٔ `v10_monetary_growth_min` دارد.
+
+    کف و هدفِ شاخص ۱ (بند ۳ِ حکمِ مالک): «کفِ قبولی» همان `growth_min`ِ مشترکِ
+    اسکرینر است و «هدفِ پوشش تورم» `v10_monetary_growth_min`ِ پنل (که با نامِ
+    «هدف درصد رشد» نشان داده می‌شود). پیش‌تر کارت، هدف را دروازۀ قبولی می‌گذاشت
+    و موتور کف را ⇒ دو حکم برای یک نماد. حالا دو مسیر یک قاعده‌اند و هدف فقط
+    برچسبِ «رشد قوی» می‌سازد.
     """
     cfg = cfg or {}
     out = dict(FTS_V10_DEFAULTS)
     shared = {"eps_years": "eps_years", "margin_min": "margin_min",
               "margin_ideal": "margin_optimal",
+              "monetary_growth_min": "growth_min",
               "sales_to_mcap_min": "sales_to_mcap_min",
               "potential_min": "profit_potential_min",
               "volume_growth_min": "volume_growth_min",
               "volume_breadth_min": "volume_breadth_min"}
+    # نامِ تاریخیِ کلیدِ پنل: «هدفِ رشد» زیرِ `v10_monetary_growth_min` ذخیره
+    # می‌شود، ولی دروازۀ امتیاز نیست ⇒ به `monetary_growth_target` نگاشت می‌شود.
+    alias = {"monetary_growth_target": "v10_monetary_growth_min"}
+    # و چون همان کلید *نامش* الگوی `v10_<k>`ِ `monetary_growth_min` است، برایِ
+    # کف هرگز با آن probe نمی‌شود — وگرنه هدفِ ۶۰ بی‌صدا کف را هم ۶۰ می‌کند
+    # (همان اشتباهی که این اصلاح آمد درستش کند).
+    no_v10_probe = {"monetary_growth_min"}
     for k, default in FTS_V10_DEFAULTS.items():
-        probes = ["v10_%s" % k]
+        probes = ([] if k in no_v10_probe else ["v10_%s" % k])
+        if k in alias:
+            probes.append(alias[k])
         if k in shared:
             probes.append(shared[k])
         for probe in probes:
@@ -431,11 +449,11 @@ _VOL_PREV_KEYS = ("ytd_volume_prev", "ytd_quantity_prev", "ytd_tonnage_prev",
 def _physical_pair(conn, symbol: str, year: int, month: int) -> tuple:
     """(کمیت تجمیعی دوره, کمیت تجمیعی همان دورهٔ سال قبل, نام ستون).
 
-    امروز market.db هیچ ستون فیزیکی ندارد — هر ۱۳٬۶۴۲ ردیف monthly_sales فقط
-    ستون ریالی دارند (راستی‌آزمایی با PRAGMA table_info) → خروجی (None, None,
-    None) است و چک ۱ب به «تجزیهٔ اثر قیمت + پهنای رشد» تنزل میشود. به‌محض اینکه
-    fetcher ستونی مانند `ytd_volume` اضافه کند، همین شاخص بی‌هیچ بازنویسی به
-    دادهٔ واقعیِ تناژ سوییچ میکند.
+    سنجشِ ۱۴۰۵-۰۷-۱۲ روی market.db: `monthly_sales` سه ستونِ فیزیکی دارد
+    (`monthly_volume`، `ytd_volume`، `volume_unit`) و از ۱۴٬۸۲۳ ردیف، ۷۳۷ ردیف
+    (۳۵۸ نماد) مقدارِ غیرصفر دارند — پس سطح A واقعاً برایِ همان ۳۵۸ نماد فعال
+    است و برایِ بقیه به سطح B (تعدیل تورمی) تنزل می‌شود. مخرجِ سالِ قبل ستونِ
+    جدا ندارد، بنابراین ردیفِ (سال−۱، همان ماه) از همان ستون خوانده می‌شود.
     """
     try:
         present = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
@@ -538,6 +556,10 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
             "period": "%02d/%d" % (month, year), "months": month, "year": year,
             "denominator_basis": basis, "revenue_basis": prof["revenue_basis"],
             "threshold": th["monetary_growth_min"],
+            "target_threshold": th["monetary_growth_target"],
+            # «رشد قوی» یعنی به هدفِ پوشش تورم رسیده؛ رأیِ قبولی به کفِ ۴۰ است،
+            # پس این فقط برچسب است و امتیازِ اضافه نمی‌سازد (جزوه ص ۳ + بند ۳).
+            "strong": growth is not None and growth >= th["monetary_growth_target"],
             "pass": growth is not None and growth >= th["monetary_growth_min"],
             "data_gap": False, "reason": ""}
 
@@ -547,7 +569,8 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
 # ═══════════════════════════════════════════════════════════════════════════
 def _is_consolidated_title(title) -> bool:
     """عنوان صورت مالی تلفیقی است؟ (همان قاعدهٔ fts_engine، بدون وابستگی خصوصی)"""
-    return "تلفیقی" in fts_engine.norm_fa(title)
+    t = fts_engine.norm_fa(title or "")
+    return "تلفیقی" in t and "غیرتلفیقی" not in t
 
 
 def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
@@ -556,8 +579,8 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
 
     سه سطح، به ترتیب قدرتِ شواهد:
       A) `reported_quantity` — ستون فیزیکیِ تناژ/تعداد در گزارش ماهانه موجود باشد
-         → رشد واقعیِ کمیت سنجیده میشود (قوی‌ترین حالت؛ امروز در DB چنین ستونی
-            نیست، و به‌محض افزودنش توسط fetcher همین شاخص به آن سوییچ میکند).
+         → رشد واقعیِ کمیت سنجیده میشود (قوی‌ترین حالت؛ ستون‌های `ytd_volume` و
+            `volume_unit` در DB هست و برای نمادهای پرشده همین سطح فعال است).
       B) `price_effect_decomposition` — رشد اسمی با شاخص افزایش نرخ تعدیل میشود
          تا «رشد واقعی» بیرون بیاید؛ به‌علاوه پهنای رشد (چند ماه از م ماه بهتر
          بوده) که فروشِ یک‌بارهِ انبار/قراردادِ تکی را از رشدِ فراگیرِ حجم جدا
@@ -628,6 +651,26 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
         out["note_breadth"] = ("فقط %d از %d ماهِ سپری‌شده بهتر شده — رشد حجم فراگیر نیست."
                                % (improved, compared))
     return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  لایهٔ ۱ — رأیِ مجموعِ «الف» و «ب»
+# ═══════════════════════════════════════════════════════════════════════════
+def axis1_pass(monetary: dict, volume: dict) -> bool:
+    """رأیِ لایۀ ۱ = رشد ریالی، و «تأیید حجم» فقط آن‌جا که برایِ ماهیتِ شرکت
+    **قابل‌اعمال** است.
+
+    جزوه (ص ۳) «فروش و درآمد» را با درصدِ رشد نسبت به دورۀ مشابه سال قبل می‌سنجد؛
+    محور «ب» (کمیت/تناژ) افزودۀ پیادۀسازی است و خودِ کشوی تنظیمات هم می‌گوید
+    بانک، بیمه، خدمات و هلدینگ این محور را ندارند (N/A). `and`ِ پیشین همان N/A
+    را وتو می‌شمارد — یعنی «قابل اعمال نیست ⇒ مردود»، همان چیزی که در شاخص ۳ و ۴
+    با رأیِ ۱۶ ممنوع شده است. (`card1Pass` در FtsCard.tsx از ابتدا همین را می‌گفت
+    و با موتور نمی‌خواند.)
+    """
+    if not (monetary or {}).get("pass"):
+        return False
+    v = volume or {}
+    return True if v.get("applicable") is False else bool(v.get("pass"))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -756,7 +799,8 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
         {"audited_year_end": "سال‌پایانِ حسابرسی‌شدهٔ غیرتلفیقی",
          "unaudited_year_end": "سال‌پایانِ غیرتلفیقی (حسابرسی‌نشده)",
          "year_end_unaudited": "سال‌پایانِ غیرتلفیقی (حسابرسی‌نشده)",
-         "consolidated_year_end": "سال‌پایانِ تلفیقی (غیرتلفیقیِ ۱۲ماهه موجود نیست)",
+         "consolidated_year_end": "شامل صورتِ تلفیقی — آن سال‌ها غیرتلفیقی منتشر نشده"
+                                  " (مبنایِ جزوه: صورتِ شرکت اصلی)",
          "year_end_plus_interim": "سال‌پایان + میاندورهٔ سال‌سازی‌شده × ۱۲÷م",
          "insurance": "صنعت بیمه — لایهٔ EPS اجرا نمی‌شود",
          "insufficient": "شاهدِ کافی برای مسیر EPS موجود نیست"}.get(
@@ -1148,7 +1192,7 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         gm["rule_ref"] = "F-03"
     except Exception:
         pass
-    axis1 = bool(growth.get("pass") and volume.get("pass"))
+    axis1 = axis1_pass(growth, volume)
     axis2 = bool(eps.get("pass"))
     axis3 = bool(gm.get("pass"))
     axis4 = bool(val.get("pass"))
@@ -1303,12 +1347,14 @@ def build_insights(res: dict) -> tuple:
     insights, details = [], {}
 
     # ── لایهٔ ۱: درآمد/فروش (۱الف ریالی + ۱ب فیزیکی) ──────────────────────
-    axis1 = bool(g.get("pass") and v.get("pass"))
+    axis1 = axis1_pass(g, v)
     if g.get("data_gap"):
         txt1 = "⚠️ ۱الف رشد ریالی: داده موجود نیست (%s)" % (g.get("reason") or "مخرج YoY غایب")
     elif g.get("pass"):
-        txt1 = "✅ ۱الف رشد ریالی: %s (کف %g٪ احراز شد)" % (
-            _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
+        txt1 = "✅ ۱الف رشد ریالی: %s (کف %g٪ احراز شد%s)" % (
+            _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"],
+            " · هدف %g٪ هم پوشش شد" % th["monetary_growth_target"]
+            if g.get("strong") else "")
     else:
         txt1 = "⚠️ ۱الف رشد ریالی: %s (زیر کف %g٪)" % (
             _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
@@ -1396,17 +1442,20 @@ def build_insights(res: dict) -> tuple:
     _EV_FA = {"audited_year_end": "۱۲ماههٔ حسابرسی‌شدهٔ شرکت اصلی (غیرتلفیقی)",
               "year_end_unaudited": "سال‌پایانِ غیرتلفیقیِ حسابرسی‌نشده "
                                     "(صورت حسابرسی‌شدهٔ آن سال‌ها در کدال نیست)",
-              "consolidated_year_end": "سال‌پایانِ تلفیقی "
-                                       "(صورت ۱۲ماههٔ غیرتلفیقی منتشر نشده)",
+              "consolidated_year_end": "شامل صورتِ تلفیقی "
+                                       "(آن سال‌ها صورت ۱۲ماههٔ غیرتلفیقی منتشر نشده)",
               "year_end_plus_interim": "سال‌پایان + سال‌سازیِ میاندوره × ۱۲÷م "
                                        "برای تکمیلِ سه سال",
               "insufficient": "مبنای معتبری یافت نشد"}
     ev_fa = _EV_FA.get(e.get("evidence_tier") or "", "")
-    ev_badge = ("" if e.get("strict_evidence") or e.get("data_gap")
-                else " (%s)" % (
-                    "تلفیقی" if e.get("consolidated_used") else
-                    "میاندوره" if e.get("low_quality_track") else
-                    "حسابرسی‌نشده"))
+    # برچسبِ شاهد حتی در حالتِ شکاف هم می‌ماند: کاربر باید ببیند «آنچه موجود است
+    # از کجاست»، نه فقط این‌که کافی نیست. پیش‌تر `data_gap` آن را خاموش می‌کرد و
+    # سابقۀ تلفیقی رویِ جدول بی‌هیچ نشانه‌ای می‌نشست.
+    _ev_tag = ("تلفیقی" if e.get("consolidated_used") else
+               "میاندوره" if e.get("low_quality_track") else
+               "حسابرسی‌نشده" if e.get("relaxed_evidence") else "")
+    ev_badge = ("" if e.get("strict_evidence") or not _ev_tag
+                else " (%s)" % _ev_tag)
     if e.get("data_gap") and _partial:
         # قاعدهٔ جدول: سطر هرگز حذف نمیشود — مقادیرِ موجود + «-» برایِ دورهٔ
         # غایب، و عنوان/سلول‌ها قرمز با ذکرِ تعدادِ دوره‌های موجود.
@@ -1416,6 +1465,16 @@ def build_insights(res: dict) -> tuple:
                          "text": "🚫 شاخص ۲ (تنها %s دوره موجود است) — سابقه EPS: %s ریال · %s"
                                  % (_fa(_avail), " ← ".join(_cells),
                                     e.get("reason") or "کمبود صورت مالی")})
+    elif e.get("na"):
+        # رأیِ ۱۳ + جزوۀ ص ۴ («صورتهای مالی تلفیقی مدنظر ما نیست») و رأیِ ۱
+        # (بیمه پیش‌گیت است): این شاخص داوری **نشده** است — نه مردود و نه سبز.
+        # بی‌این شاخه، سابقۀ تلفیقی در «⚠️ سابقه EPS در دسترس نیست» و بیمه در
+        # «🚫» می‌افتاد، یعنی همان N/A ≠ Reject که در شاخص ۳ و ۴ جاری است.
+        insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
+                         "type": "info", "na": True, "row": _row["markdown"],
+                         "text": "ℹ️ شاخص ۲ داوری نمی‌شود (N/A) — %s"
+                                 % (e.get("reason")
+                                    or "مبنایِ غیرتلفیقیِ سه‌سالهٔ کامل موجود نیست")})
     elif e.get("data_gap"):
         insights.append({"step": "۲", "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
                          "type": "warning",
@@ -1459,14 +1518,17 @@ def build_insights(res: dict) -> tuple:
                  "تا کاربر بداند EPS از کدالِ غیرتلفیقیِ حسابرسی‌شده آمده یا از "
                  "جایگزین‌های ضعیف‌تر. تداومِ سال جاری هشدارِ نرم است، وتوی سخت نه. "
                  "در کمبودِ دوره هم سطر حذف نمیشود: مقدارِ موجود می‌آید و جایِ "
-                 "دورهٔ غایب «-» با سطرِ قرمز."),
+                 "دورهٔ غایب «-» با سطرِ قرمز. هر اسلاتِ **تلفیقی** رأیِ ۱۳ را "
+                 "می‌گیرد: شاخص داوری نمی‌شود (N/A)، چون جزوه (ص ۴) صورتِ "
+                 "تلفیقی را مبنایِ سابقۀ سودسازی نمی‌داند."),
         "subchecks": [
             {"key": "2a", "label": "سابقهٔ ۳ سالهٔ EPS"
                                    + (" (تنها %s دوره موجود است)" % _fa(_avail)
                                       if _partial else ""),
-             "state": ("nodata" if e.get("data_gap") and not _partial
+             "state": ("na" if e.get("na")
                        else "fail" if _partial           # ناقص = قرمز، نه خاکستری
                        else "warn" if e.get("soft_gap")
+                       else "nodata" if e.get("data_gap")
                        else _state(e.get("pass"))),
              "value": " ← ".join(_cells) or "—",
              "threshold": "%d سال صعودی" % th["eps_years"],
@@ -1648,13 +1710,26 @@ def v10_data_gaps(res: dict) -> list:
                      "why": g.get("reason") or "",
                      "fix": g.get("remediation") or _MS_GAP_HINT})
     if v.get("basis") == "unavailable":
+        # «unavailable» یعنی پایۀ ۱الف ساخته نشد تا ۱ب رویش سوار شود — نه این‌که
+        # کدال اصلاً مقدارِ فیزیکی منتشر نمی‌کند: ستون‌های `ytd_volume`/
+        # `volume_unit` در DB هست و برایِ بخشی از نمادها پر است (سنجشِ همان
+        # بالا). علتِ واقعی از خودِ `v["reason"]` خوانده می‌شود.
         gaps.append({"layer": "۱ب", "axis": "1b_physical_volume",
-                     "why": "کدال مقدار/تناژ فروش را در گزارش ماهانه نمی‌دهد؛ فقط مبلغِ ریالی ثبت شده است.",
-                     "fix": "تا خودِ کدال ستونِ مقدار را منتشر نکند، رشد واقعی با تعدیل تورمی سنجیده می‌شود."})
+                     "why": v.get("reason") or "رشد ریالی محاسبه نشد تا رشد تولیدی بررسی شود.",
+                     "fix": "با همگام‌سازیِ گزارش فعالیت ماهانه (مخرجِ همان دورهٔ سال قبل) "
+                            "این محور ساخته می‌شود."})
     elif v.get("data_gap"):
         gaps.append({"layer": "۱ب", "axis": "1b_physical_volume",
                      "why": v.get("reason") or "", "fix": "گزارش ماهانهٔ سال قبل لازم است."})
-    if e.get("data_gap"):
+    if e.get("na"):
+        # N/A با «شکافِ داده» یکی نیست: این شکاف با همگام‌سازی بسته نمی‌شود،
+        # چون شرکت آن سال‌ها را فقط تلفیقی منتشر کرده (رأیِ ۱۳ + جزوۀ ص ۴) —
+        # یا صنعت بیمه است و لایه اصلاً اجرا نمی‌شود (رأیِ ۱).
+        gaps.append({"layer": "۲", "axis": "2_eps_trend", "na": True,
+                     "why": e.get("reason") or "مبنایِ غیرتلفیقیِ سه‌سالهٔ کامل موجود نیست.",
+                     "fix": "این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: "
+                            "صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است."})
+    elif e.get("data_gap"):
         gaps.append({"layer": "۲", "axis": "2_eps_trend", "why": e.get("reason") or "",
                      "available_periods": int(e.get("available_periods") or 0),
                      "required_periods": int(e.get("years_required") or 3),
@@ -1942,7 +2017,7 @@ def get_fundamental(symbol: str, months: int = 0):
             "مبنای حجم (لایهٔ ۱ب)": "%s · اطمینان %s · تناژ گزارش‌شده: %s"
             % (v.get("basis") or "—", v.get("confidence") or "—",
                "بله" if v.get("quantity_verified")
-               else "خیر — ستون فیزیکی در DB نیست، تعدیل تورمی مصرف شد"),
+               else "خیر — کمیتِ گزارش‌شدۀ همان دوره در دسترس نبود؛ تعدیل تورمی مصرف شد"),
             "سالانه‌سازی (لایهٔ ۴)": "م = %s ماه × ۱۲÷م = ×%s — %s"
             % (annual.get("months_used"), _n(annual.get("scale_factor"), 2),
                annual.get("basis") or "—")}
