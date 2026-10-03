@@ -8,7 +8,14 @@ export type Timeframe = z.infer<typeof Timeframe>;
 export const SetupKind = z.enum(['breakout', 'pullback', 'fibonacci', 'choch', 'bearish_div', 'range', 'trend']);
 export type SetupKind = z.infer<typeof SetupKind>;
 
-export const StopLossRef = z.enum(['ma14', 'rising_low', 'swing_stop']);
+/**
+ * مبنایِ حد ضرر: رشتهٔ خامِ `stop_basis`ِ خودِ موتورِ خروج
+ * (`api/chart.py::_fts_exit_layer1` ⇒ `exit_engine.l1.stop_basis`).
+ * پیش از این اینجا یک enumِ سه‌تاییِ فرانتی (`ma14 | rising_low | swing_stop`)
+ * بود که به «موتورِ دومِ» فرانت گره خورده بود؛ حالا که حد ضرر از سرور می‌آید،
+ * enumِ فرانت واژۀ موتور را نمی‌پوشاند و ترجمه‌اش نمی‌کند.
+ */
+export const StopLossRef = z.string().min(1);
 export type StopLossRef = z.infer<typeof StopLossRef>;
 
 export const KeyLevel = z.object({

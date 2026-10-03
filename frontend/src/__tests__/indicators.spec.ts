@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   avgVolume,
-  detectChoch,
+  
   ema,
   ftsMAs,
   majorResistance,
@@ -58,27 +58,3 @@ describe('سوینگ و خطوط', () => {
   });
 });
 
-describe('خط چین قرمز', () => {
-  it('شکست کف پس از سقف های صعودی هشدار نزولی می دهد', () => {
-    const highs = [100, 100, 100, 100, 100, 105, 100, 100, 100, 100, 100, 110, 100, 100, 100, 100, 100];
-    const lows = [98, 98, 98, 98, 98, 98, 98, 98, 96, 98, 98, 98, 98, 98, 97, 98, 98];
-    const closes = [99, 99, 99, 99, 99, 100, 99, 99, 98, 99, 99, 100, 99, 99, 98, 97, 95];
-    const c = detectChoch(highs, lows, closes, 2);
-    expect(c.type).toBe('bearish');
-    expect(c.level).toBe(97);
-  });
-
-  it('شکست سقف پس از کف های نزولی هشدار صعودی می دهد', () => {
-    const lows = [100, 100, 100, 100, 100, 95, 100, 100, 100, 100, 100, 90, 100, 100, 100, 100, 100];
-    const highs = [102, 102, 102, 102, 102, 102, 102, 102, 104, 102, 102, 102, 102, 102, 103, 102, 102];
-    const closes = [101, 101, 101, 101, 101, 100, 101, 101, 102, 101, 101, 100, 101, 101, 102, 103, 105];
-    const c = detectChoch(highs, lows, closes, 2);
-    expect(c.type).toBe('bullish');
-    expect(c.level).toBe(103);
-  });
-
-  it('بدون ساختار هشدار نیست', () => {
-    const flat = new Array(20).fill(100);
-    expect(detectChoch(flat, flat, flat, 2).type).toBeNull();
-  });
-});

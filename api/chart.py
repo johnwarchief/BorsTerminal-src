@@ -2317,7 +2317,12 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     if not candles:
         return {"status": "empty", "symbol": symbol, "fts": None}
     last_close = candles[-1].get("close")
-    key = f"{symbol}|{last_close}|{entry_hint}"
+    # مبنایِ قیمت هم درِ کلید است، مثلِ سه کشِ دیگر (key-levels، ma، patterns درِ
+    # همین فایل) و مثلِ باقیِ مسیرِ چارت: `_fts_analysis_series` سری را با
+    # مبنایِ ذخیرۀ کاربر می‌سازد، و برایِ نمادی که آخرینِ کندلش last==closing
+    # باشد «آخرینِ ته‌بندی» عوض نمی‌شود ⇒ بی‌این، عوض‌کردنِ مبنایِ قیمت تا
+    # FTS_ANALYSIS_TTL (۹۰۰ ثانیه) همان داوریِ مبنایِ قبلی را برمی‌گرداند.
+    key = f"{symbol}|{last_close}|{entry_hint}|{basis}"
     cached = FTS_ANALYSIS_CACHE.get(key)
     if cached and (now - cached[0]) < FTS_ANALYSIS_TTL:
         return cached[1]

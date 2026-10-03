@@ -1,114 +1,115 @@
-// تست سیگنال FTS: استک مووینگ و تریگر جت و گیت ریسک
+// تستِ سیگنال تکنیکال: هیچ تشخیصی درِ فرانت ساخته نمی‌شود — فقط رأیِ موتورِ FTS
+// (`/api/fts`) ترجمه می‌شود. هر سنجه یک کنترلِ منفی هم دارد: همان ورودی با رأیِ
+// مخالفِ موتور باید خروجیِ مخالف بدهد (یعنی سنجه واقعاً ببیند، نه اینکه صفرِ جعلی بدهد).
 import { describe, expect, it } from 'vitest';
-import { BaseSignal, TechnicalPayload } from '@contracts/index';
-import { TECH_VALID_MS, technicalSignal, type TechInput } from '@features/technical/signals/technicalSignals';
+import { technicalSignal, type TechInput } from '@features/technical/signals/technicalSignals';
+import type { FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
 
-function input(patch: Partial<TechInput> = {}): TechInput {
-  const n = 120;
-  const closes = Array.from({ length: n }, (_, i) => 100 + i);
+const closes = Array.from({ length: 120 }, (_, i) => 100 + i);
+
+function input(fts: Partial<FtsAnalysisData> | null, patch: Partial<TechInput> = {}): TechInput {
   return {
-    symbol: 'فولاد',
-    opens: closes.map((c) => c - 0.5),
+    symbol: 'آزمون',
+    opens: closes.map((c) => c - 1),
     closes,
-    highs: closes.map((c) => c + 1),
-    lows: closes.map((c) => c - 1),
-    volumes: new Array(n).fill(1000),
-    riskGatePass: true,
-    enforceRiskGates: true,
+    highs: closes.map((c) => c + 2),
+    lows: closes.map((c) => c - 2),
+    volumes: closes.map(() => 1000),
+    riskGatePass: null,
+    enforceRiskGates: false,
+    weekly: null,
+    fts: (fts == null ? null : { fib: { levels: [], zone_33_40: { in_zone: false },
+      zone_618_70: { in_zone: false }, ...(fts.fib ?? {}) }, ...fts }) as FtsAnalysisData,
     ...patch,
   };
 }
 
-describe('سیگنال FTS', () => {
-  it('روند صعودی با استک سالم صعودی می دهد', () => {
-    const s = technicalSignal(input(), 1726000000000);
-    expect(s.direction).toBe('bullish');
-    expect(s.payload.setups).toContain('trend');
-    expect(s.payload.stopLossRef).toBe('ma14');
-    expect(s.payload.stopLossPrice).not.toBeNull();
-    expect(s.validForMs).toBe(TECH_VALID_MS);
-    expect(BaseSignal.safeParse(s).success).toBe(true);
-    expect(TechnicalPayload.safeParse(s.payload).success).toBe(true);
-  });
+const run = (i: TechInput) => technicalSignal(i, 1726000000000);
 
-  it('شکست خط آبی با حجم تریگر پرواز می دهد', () => {
-    const n = 103;
-    const closes = [...new Array(n - 3).fill(100), 105, 108, 112];
-    const s = technicalSignal(
-      input({
-        opens: [...new Array(n - 3).fill(99.5), 104, 107, 110],
-        closes,
-        highs: [...new Array(n - 3).fill(101), 105, 108, 112],
-        lows: [...new Array(n - 3).fill(99), 103, 106, 109],
-        volumes: [...new Array(n - 3).fill(1000), 1000, 1000, 5000],
-      }),
-      1726000000000,
-    );
-    expect(s.direction).toBe('bullish');
+describe('jets: فقط از jet.activeی موتور', () => {
+  it('موتور جت را فعال می‌گوید ⇒ breakout با +3', () => {
+    const s = run(input({ jet: { active: true, resistance: 3520, ath: true, pct_above_res: 5.4 } }));
     expect(s.payload.setups).toContain('breakout');
-    expect(s.score as number).toBeGreaterThanOrEqual(70);
+    expect(s.evidence).toContain('tech:jet_trigger');
+    expect(s.rationale).toContain('سقف تاریخی');
   });
 
-  it('گیت ریسک مردود جلوی پرواز را می گیرد', () => {
-    const n = 103;
-    const jetPatch = {
-      opens: [...new Array(n - 3).fill(99.5), 104, 107, 110],
-      closes: [...new Array(n - 3).fill(100), 105, 108, 112],
-      highs: [...new Array(n - 3).fill(101), 105, 108, 112],
-      lows: [...new Array(n - 3).fill(99), 103, 106, 109],
-      volumes: [...new Array(n - 3).fill(1000), 1000, 1000, 5000],
-    };
-    const blocked = technicalSignal(input({ ...jetPatch, riskGatePass: false }), 1726000000000);
-    expect(blocked.direction).toBe('neutral');
-    expect(blocked.payload.setups).toEqual([]);
-    expect(blocked.score).toBe(50);
-    expect(blocked.confidence).toBe('low');
-    expect(blocked.rationale).toContain('گیت ریسک');
+  it('کنترلِ منفی: عبورِ قیمت از مقاومتِ ۱۲۰ کندله ولی موتور می‌گوید «بدنهٔ نزولی» ⇒ هیچ جتی', () => {
+    // سریِ عمداً صعودی + حجمِ بالا: اگر فرانت خودش تشخیص می‌داد، اینجا «شکست خط آبی» می‌گفت
+    const s = run(input({ jet: { active: false, resistance: 101, reason: 'بدنهٔ نزولی: پایانی زیر آخرینِ بازِ همین نشست' } }));
+    expect(s.payload.setups).not.toContain('breakout');
+    expect(s.evidence).not.toContain('tech:jet_trigger');
+    expect(s.rationale).toContain('جت نیست: بدنهٔ نزولی');
+  });
+});
 
-    const unknown = technicalSignal(input({ ...jetPatch, riskGatePass: null }), 1726000000000);
-    expect(unknown.direction).toBe('bullish');
+describe('حد ضرر: عدد و مبنای خودِ موتورِ خروج', () => {
+  it('l1.hard_stop با stop_basisِ خامِ موتور در payload می‌نشیند', () => {
+    const s = run(input({ trend: { alignment: 'up' }, exit_engine: { verdict: 'hold', l1: { hard_stop: 2444.35, stop_basis: 'swing_low' } } }));
+    expect(s.direction).toBe('bullish');
+    expect(s.payload.stopLossPrice).toBe(2444.35);
+    expect(s.payload.stopLossRef).toBe('swing_low');
   });
 
-  it('خط چین قرمز نزولی هشدار خروج می دهد', () => {
-    const n = 48;
-    const closes = new Array(n).fill(100);
-    const highs = new Array(n).fill(101);
-    const lows = new Array(n).fill(99);
-    highs[20] = 105;
-    highs[30] = 110;
-    const tailCloses = [100, 99, 98, 97, 98, 99, 100, 96, 94, 92, 90, 86];
-    const tailLows = [91, 90, 89, 88, 89, 90, 91, 87, 87, 87, 87, 86];
-    for (let i = 0; i < 12; i++) {
-      closes[n - 12 + i] = tailCloses[i];
-      lows[n - 12 + i] = tailLows[i];
-      highs[n - 12 + i] = tailCloses[i] + 1;
-    }
-    const s = technicalSignal(
-      input({ opens: closes.map((c) => c + 0.2), closes, highs, lows, volumes: new Array(n).fill(1000) }),
-      1726000000000,
-    );
-    expect(s.payload.setups).toContain('choch');
-    expect(s.direction).toBe('bearish');
+  it('مبنایِ موتور ترجمه/جایگزین نمی‌شود؛ نبودش یعنی null', () => {
+    const s = run(input({ trend: { alignment: 'up' }, exit_engine: { verdict: 'hold', l1: { hard_stop: 2444.35 } } }));
+    expect(s.payload.stopLossRef).toBeNull();
+    expect(s.payload.stopLossPrice).toBe(2444.35);
+  });
+});
+
+describe('خروج و واگرایی: از لایه‌های موتور', () => {
+  it('ma14_exit فعال ⇒ سه نمره کم و سقفِ جهت در انتظار', () => {
+    const s = run(input({ trend: { alignment: 'up' }, exit_engine: { verdict: 'exit', l1: { ma14_exit: true } } }));
+    expect(s.direction).not.toBe('bullish');
+    expect(s.evidence).toContain('tech:ma14_exit');
   });
 
-  it('تاریخچه کوتاه اعتماد پایین و کیفیت جزئی می گیرد', () => {
-    const s = technicalSignal(
-      input({ opens: new Array(20).fill(99.5), closes: new Array(20).fill(100), highs: new Array(20).fill(101), lows: new Array(20).fill(99), volumes: new Array(20).fill(500) }),
-      1726000000000,
-    );
+  it('rsi_divergence در l4 ⇒ bearish_div؛ بی‌آن هیچ واگرایی‌ای از قیمت حساب نمی‌شود', () => {
+    const s = run(input({ exit_engine: { verdict: 'hold', l4: { rsi_divergence: true } } }));
+    expect(s.payload.setups).toContain('bearish_div');
+    const n = run(input({ exit_engine: { verdict: 'hold', l4: { rsi_divergence: false } } }));
+    expect(n.payload.setups).not.toContain('bearish_div');
+  });
+});
+
+describe('فیبو و CHoCH', () => {
+  it('داخل کمربند ۶۱٫۸–۷۰ ⇒ fibonacci؛ خارج از هر دو ⇒ نه', () => {
+    const in_ = run(input({ fib: { zone_618_70: { in_zone: true } } }));
+    expect(in_.payload.setups).toContain('fibonacci');
+    const out_ = run(input({ fib: { zone_618_70: { in_zone: false }, zone_33_40: { in_zone: false } } }));
+    expect(out_.payload.setups).not.toContain('fibonacci');
+  });
+
+  it('CHoCH نزولی −۳ و صعودی +۲، همان‌که موتور می‌گوید', () => {
+    const bear = run(input({ choch: { bearish: true, bullish: false, level: 3407 } }));
+    const bull = run(input({ choch: { bearish: false, bullish: true, level: 3407 } }));
+    expect(bear.score).toBeLessThan(bull.score ?? 0);
+    expect(bear.rationale).toContain('CHoCH نزولی');
+  });
+});
+
+describe('وتوی هفتگی و بی‌رأیی', () => {
+  it('matrix.decision=REJECT جهتِ صعودی را به انتظار برمی‌گرداند (قانونِ درخت، نه قانونِ جدید)', () => {
+    const s = run(input({ trend: { alignment: 'up', matrix: { decision: 'REJECT' } }, jet: { active: true } }));
+    expect(s.direction).toBe('neutral');
+    expect(s.evidence).toContain('tech:weekly_veto');
+    expect(s.title).toContain('وتوی تایم هفتگی');
+  });
+
+  it('بی‌پاسخِ موتور: هیچ تشخیصی ساخته نمی‌شود و dataQuality partial است', () => {
+    const s = run(input(null));
     expect(s.confidence).toBe('low');
     expect(s.payload.dataQuality).toBe('partial');
-    expect(BaseSignal.safeParse(s).success).toBe(true);
+    expect(s.evidence).toEqual(['tech:awaiting_engine']);
+    expect(s.title).toContain('در انتظار رأیِ موتور');
   });
 
-  it('تاریخچه خالی خنثی ناقص می دهد', () => {
-    const s = technicalSignal(
-      { symbol: 'فولاد', opens: [], closes: [], highs: [], lows: [], volumes: [], riskGatePass: null, enforceRiskGates: true },
-      1726000000000,
-    );
+  it('گیت ریسک بنیادی همچنان بر صدورِ سیگنال مقدم است', () => {
+    const s = run(input({ trend: { alignment: 'up' }, jet: { active: true } },
+      { enforceRiskGates: true, riskGatePass: false }));
     expect(s.direction).toBe('neutral');
-    expect(s.confidence).toBe('nodata');
-    expect(s.score).toBeNull();
-    expect(s.payload.dataQuality).toBe('incomplete');
+    expect(s.payload.setups).toEqual([]);
+    expect(s.evidence).toEqual(['tech:risk_gate_block']);
   });
 });

@@ -495,7 +495,18 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const ftsAnalysis = fts ?? null;
 
   // ۱. دریافت داده‌های کندل از بک‌اند (با رعایت قرارداد، فال‌بک چندلایه و نگاشت دفاعی)
+  // نگهبانِ ترتیبِ واکشی: این مسیر سه لایه است و بی‌نگهبان، درخواستِ نمادِ قبلی
+  // می‌توانست بعد از عوض‌شدنِ نماد برسد و سریِ نمادِ قبلی رویِ چارتِ تازه بنشیند
+  // (`setRawCandles` بی‌شرط صدا زده می‌شد). هر فراخوانی شمارهت می‌گیرد؛ فقط
+  // آخرینِ شماره حقِ نوشتن رویِ state دارد و فراخوانیِ بی‌مصرف abort می‌شود.
+  const fetchSeqRef = useRef(0);
+  const fetchAbortRef = useRef<AbortController | null>(null);
   const fetchCandleData = useCallback(async (symbol: string) => {
+    const seq = ++fetchSeqRef.current;
+    fetchAbortRef.current?.abort();
+    const ac = new AbortController();
+    fetchAbortRef.current = ac;
+    const stale = () => seq !== fetchSeqRef.current || ac.signal.aborted;
     setIsLoading(true);
     // «cdn» تا ثابت نشود جای دیگری رسم شده است.
     let layer: 'cdn' | 'local' = 'cdn';
@@ -509,13 +520,15 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       let res: Response | null = null;
       let json: any = null;
       try {
-        res = await fetch(url);
+        res = await fetch(url, { signal: ac.signal });
         if (res.ok) {
           json = await res.json();
         }
       } catch {
-        // خطای شبکه - تلاش با اندپوینت محلی
+        // خطای شبکه - تلاش با اندپوینت محلی؛ لکن لغوِ عمدی (نماد عوض شد) ادامه نمی‌دهند
+        if (ac.signal.aborted) return;
       }
+      if (stale()) return;
 
       let rawList = Array.isArray(json) ? json : (json?.candles || json?.data || []);
       degradedCdn = json?.degraded === true;
@@ -525,7 +538,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (!Array.isArray(rawList) || rawList.length <= 1) {
         try {
           const histUrl = `/api/history/${encodeURIComponent(symbol)}`;
-          const histRes = await fetch(histUrl);
+          const histRes = await fetch(histUrl, { signal: ac.signal });
           if (histRes.ok) {
             const histJson = await histRes.json();
             const histList = Array.isArray(histJson) ? histJson : (histJson?.candles || histJson?.data || []);
@@ -546,7 +559,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           const fallbackUrl = (symbol === 'شاخص کل' || symbol === 'TEDPIX')
             ? '/api/chart-db/فولاد'
             : `/api/chart-db/${encodeURIComponent(symbol)}`;
-          const fbRes = await fetch(fallbackUrl);
+          const fbRes = await fetch(fallbackUrl, { signal: ac.signal });
           if (fbRes.ok) {
             const fbJson = await fbRes.json();
             const fbList = Array.isArray(fbJson) ? fbJson : (fbJson?.candles || fbJson?.data || []);
@@ -570,6 +583,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         if (v && typeof v.time === 'string') volByTime[v.time] = Number(v.value ?? v.volume ?? 0);
       }
 
+      if (stale()) return;
       if (!Array.isArray(rawList) || rawList.length === 0) {
         setRawCandles([]);
         setHasData(false);
@@ -606,6 +620,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       // نگاشت رویدادهای مجمع و تعدیل
       const parsedActions = mapBackendAdjustEvents(rawEvents);
 
+      if (stale()) return;   // نماد یا زمانی عوض شده است — سریِ قبلی نباید بنشیند
       setCorporateActions(parsedActions);
       setRawCandles(parsedCandles);
       setHasData(parsedCandles.length > 0);
@@ -621,11 +636,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         setFeedNote(null);
       }
     } catch (e) {
+      if (stale()) return;
       setRawCandles([]);
       setHasData(false);
       setFeedNote(null);
     } finally {
-      setIsLoading(false);
+      if (!stale()) setIsLoading(false);
     }
   }, []);
 

@@ -148,9 +148,17 @@ export default function TechnicalPage() {
   const signal = useMemo(
     () =>
       candles.length > 0
-        ? technicalSignal({ symbol: viewSymbol, ...series, riskGatePass: gate.pass, enforceRiskGates, weekly })
+        ? technicalSignal({
+            symbol: viewSymbol,
+            ...series,
+            riskGatePass: gate.pass,
+            enforceRiskGates,
+            weekly,
+            // همان شیئی که چارت و پنل «وضعیت FTS» می‌خوانند؛ تنها منبعِ تشخیص
+            fts: analysis.data?.fts ?? null,
+          })
         : null,
-    [viewSymbol, candles, series, gate.pass, enforceRiskGates, weekly],
+    [viewSymbol, candles, series, gate.pass, enforceRiskGates, weekly, analysis.data],
   );
   useEffect(() => {
     if (signal) publishSignal(signal);

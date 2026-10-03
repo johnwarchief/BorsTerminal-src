@@ -63,6 +63,9 @@ SUITES = [
     # #187: تحلیل FTSِ سرور باید همان سریِ تمام‌تاریخِ تعدیل‌شده‌ای را ببیند که
     # چارت می‌رسمد — بی‌شبکه و بی‌market.db (هر دو منبع جعل می‌شوند).
     ('dev/fts_series_basis_v1036.py', 'server FTS reads the full adjusted series the chart draws, not the starved raw table'),
+    # کشِ تحلیل FTS بدونِ مبنایِ قیمت درِ کلید، عوض‌کردنِ «آخرین ↔ پایانی» را تا
+    # ۹۰۰ ثانیه بی‌پاسخ می‌گذاشت (برایِ نمادی که آخرینِ close == closing است).
+    ('dev/fts_cache_basis_v1078.py', 'FTS analysis cache key carries the price basis (with a negative control)'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),

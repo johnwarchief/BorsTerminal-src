@@ -1,33 +1,28 @@
-// features/technical/signals/technicalSignals.ts -- سیگنال FTS با وزن 3
-// تاییدیه روند از آرایش چهار مووینگ و تریگر ورود از خط آبی پرواز.
-// گیت ریسک بنیادی در صورت فعال بودن شرط، جلوی سیگنال پرواز را می گیرد.
-import type { AgentSignal, Confidence, Direction } from '@contracts/signal';
-import type { DataQuality } from '@contracts/signal';
+// features/technical/signals/technicalSignals.ts -- سیگنال تکنیکال برایِ مستر، از رأیِ موتورِ FTSِ سرور
+//
+// این فایل «موتور» نیست: هیچ آستانه، هیچ پنجرۀ پیوت و هیچ فرمولِ تشخیصی
+// نمی‌سازد. هر تشخیص (جت، CHoCH، کمربند فیبو، خروجِ MA14، واگرایی RSI، حد ضرر،
+// هم‌راستاییِ سه‌زمانه) از `fts` همانی خوانده می‌شود که چارت و پنل «وضعیت FTS»
+// می‌خوانند (`/api/fts/{symbol}` ← `api/chart.py::_fts_analyze_candles`).
+// پیش از این همین‌جا چهار تشخیصِ دوم با فرمولِ دیگری اجرا می‌شد: جت = عبور از
+// مقاومتِ ۱۲۰ کندله با حجمِ ۱٫۵× (`JET_VOL_MULT`) در حالی که موتورِ جزوه نردبانِ
+// مقاومت را بی‌شرطِ حجم می‌سنجد؛ CHoCH/فیبو/MA14/واگرایی هم از lib/indicators.ts
+// (بازنویسیِ TS از پایتون) می‌آمدند. شاهدِ زنده (۱۴۰۵-۰۷-۱۱، فولاد): موتور
+// `jet.active=false` («بدنهٔ نزولی») می‌گفت و سیگنالِ همین‌جا «شکست خط آبی» می‌داد.
+//
+// وزن‌ها (۲/۳/۱/۲/۳) و نگاشتِ نمره `50 + 8*total` عمداً دست‌نخورده‌اند: این‌ها
+// ریتمِ هم‌سنجیِ ایجت‌ها درِ مسترند، نه قواعدِ جزوۀ تکنیکال. چیزی که از جزوه
+// نمی‌آید اینجا اختراع نشده؛ اگر موتور چیزی نگوید، سیگنال هم می‌گوید «نظر نداریم».
+import type { AgentSignal, Confidence, DataQuality, Direction } from '@contracts/signal';
 import type { SetupKind, TechnicalPayload, WeeklyTrend } from '@contracts/technical';
 import { toFaDigits } from '@shared/lib/fmt';
-import {
-  avgVolume,
-  bearishDivergence,
-  detectChoch,
-  fibZones,
-  FTS_RSI_PERIOD,
-  ftsMAs,
-  lastValid,
-  majorResistance,
-  majorSupport,
-  ma14TrailingExit,
-  maStack,
-  rsi,
-  swingLows,
-} from '../lib/indicators';
+import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 
 /** کمینه کندل معتبر برای داوری کامل */
 export const MIN_CANDLES = 50;
 /** ماندگاری سیگنال روزانه: 48 ساعت */
 export const TECH_VALID_MS = 48 * 3600_000;
 const NODATA_VALID_MS = 7 * 24 * 3600_000;
-/** تایید حجم شکست: 1.5 برابر میانگین 20 جلسه */
-export const JET_VOL_MULT = 1.5;
 
 export type TechInput = {
   symbol: string;
@@ -42,6 +37,8 @@ export type TechInput = {
   enforceRiskGates: boolean;
   /** رأیِ هفتگیِ موتورِ FTSِ سرور — گیتِ وتوی هفتگی فقط از همین می‌خواند */
   weekly?: WeeklyTrend | null;
+  /** پاسخِ کاملِ `/api/fts/{symbol}`؛ تنها منبعِ تشخیص در این فایل */
+  fts?: FtsAnalysisData | null;
 };
 
 function faNum(x: number, digits = 1): string {
@@ -73,90 +70,86 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
   const valid = input.closes.filter((c) => c != null).length;
   if (!symbol || valid === 0) return nodata(symbol || 'unknown', ts);
 
+  const fts = input.fts ?? null;
+  const l1 = fts?.exit_engine?.l1;
+  const l4 = fts?.exit_engine?.l4;
+  const jet = fts?.jet;
+  const choch = fts?.choch;
+  const fib = fts?.fib;
+  const alignment = fts?.trend?.alignment ?? 'na';
+  const vetoed = (fts?.trend?.matrix?.decision ?? '') === 'REJECT';
+  /** موتور هنوز رأیی نداده (تحلیل در جریان است یا بی‌نتیجه بوده) */
+  const noVerdict = fts == null;
+
   const short = valid < MIN_CANDLES;
-  const last = lastValid(input.closes) ?? 0;
-  const lastOpen = lastValid(input.opens);
-  const lastVol = lastValid(input.volumes);
-  const avgVol = avgVolume(input.volumes, 20);
-
-  const mas = ftsMAs(input.closes);
-  const m14 = lastValid(mas[14]);
-  const m21 = lastValid(mas[21]);
-  const m52 = lastValid(mas[52]);
-  const m100 = lastValid(mas[100]);
-  const stack = maStack(m14, m21, m52, m100);
-
-  const jet = majorResistance(input.highs.slice(0, -1), 120);
-  const support = majorSupport(input.lows, 120);
-  const jetTrigger =
-    jet != null &&
-    last >= jet.price &&
-    lastOpen != null &&
-    last > lastOpen &&
-    avgVol != null &&
-    lastVol != null &&
-    lastVol > JET_VOL_MULT * avgVol;
-
-  const choch = detectChoch(input.highs, input.lows, input.closes, 3);
-
   const setups = new Set<SetupKind>();
   let total = 0;
   const bits: string[] = [];
 
-  if (stack === 'bull') {
+  // هم‌راستاییِ سه‌زمانه (روز/هفته/ماه) — `trend.alignment` درِ خودِ موتور
+  if (alignment === 'up') {
     total += 2;
     setups.add('trend');
-    bits.push('آرایش صعودی مووینگ ها (14 بالای 21 بالای 52 بالای 100)');
-  } else if (stack === 'bear') {
+    bits.push('سه تایمِ روز/هفته/ماه صعودی‌اند (رأیِ موتور)');
+  } else if (alignment === 'down') {
     total -= 2;
     setups.add('trend');
-    bits.push('آرایش نزولی مووینگ ها');
+    bits.push('سه تایمِ روز/هفته/ماه نزولی‌اند (رأیِ موتور)');
   }
 
-  if (jetTrigger && jet) {
+  // جت: عبور از نردبانِ مقاومت با بدنهٔ صعودی — همان تعریفِ `_fts_jet_setup`
+  if (jet?.active === true) {
     total += 3;
     setups.add('breakout');
-    bits.push(`شکست خط آبی ${faNum(jet.price, 0)} با کندل تثبیت و حجم ${faNum((lastVol ?? 0) / (avgVol ?? 1))} برابری`);
+    bits.push(
+      `جت: عبور از مقاومت${jet.resistance != null ? ` ${faNum(jet.resistance, 0)}` : ''}` +
+        (jet.ath ? ' (سقف تاریخی)' : '') +
+        (jet.pct_above_res != null ? `، ${faNum(jet.pct_above_res)}٪ بالاتر` : ''),
+    );
+  } else if (jet?.reason) {
+    bits.push(`جت نیست: ${jet.reason}`);
   }
 
-  if (choch.type === 'bearish') {
+  // CHoCH: شکست آخرینِ سقف در روند نزولی یا آخرینِ کف در روند صعودی
+  if (choch?.bearish === true) {
     total -= 3;
     setups.add('choch');
-    bits.push(`خط چین قرمز نزولی در ${choch.level != null ? faNum(choch.level, 0) : '-'}؛ حد خروج`);
-  } else if (choch.type === 'bullish') {
+    bits.push(`CHoCH نزولی${choch.level != null ? ` در ${faNum(choch.level, 0)}` : ''} — حد خروج`);
+  } else if (choch?.bullish === true) {
     total += 2;
     setups.add('choch');
-    bits.push(`خط چین قرمز صعودی در ${choch.level != null ? faNum(choch.level, 0) : '-'}؛ بازگشت روند`);
+    bits.push(`CHoCH صعودی${choch.level != null ? ` در ${faNum(choch.level, 0)}` : ''} — بازگشت روند`);
   }
 
-  // RSI(14) وایلدر + واگرایی منفی (RD−) — FTS_SPEC بخش اول بند ۵
-  const rsiSeries = rsi(input.closes, FTS_RSI_PERIOD);
-  const divBear = bearishDivergence(input.highs, rsiSeries);
-  if (divBear) {
+  // واگرایی منفی RSI — لایۀ ۴ موتورِ خروج
+  if (l4?.rsi_divergence === true) {
     total -= 2;
     setups.add('bearish_div');
-    bits.push('واگرایی منفی RSI (سقف قیمتی بالاتر با سقف RSI پایین‌تر)');
+    bits.push('واگرایی منفی RSI (سقفِ قیمتیِ بالاتر با سقفِ RSIِ پایین‌تر)');
   }
 
-  // کمربند فیبوی لگاریتمی — FTS_SPEC بخش اول بند ۳: داخل زون = کاندید ورود پله‌ای
-  const fib = fibZones(input.highs, input.lows, input.closes);
-  const inFibZone = fib != null && (fib.zone3340.inZone || fib.zone61870.inZone);
-  if (fib && inFibZone) {
+  // کمربندهای فیبو (۳۳–۴۰ و ۶۱٫۸–۷۰) — از موتور، با همان مبنایِ موج
+  const in3340 = fib?.zone_33_40?.in_zone === true;
+  const in61870 = fib?.zone_618_70?.in_zone === true;
+  if (in3340 || in61870) {
     total += 1;
     setups.add('fibonacci');
-    bits.push(fib.zone61870.inZone ? 'قیمت داخل کمربند طلایی ۶۱.۸-۷۰٪' : 'قیمت داخل کمربند ۳۳-۴۰٪');
+    bits.push(in61870 ? 'قیمت داخل کمربند طلایی ۶۱.۸–۷۰٪' : 'قیمت داخل کمربند ۳۳–۴۰٪');
   }
 
-  // خروج با «کندل کامل زیر MA(14)» — FTS_SPEC بخش اول بند ۵
-  const ma14Exit = ma14TrailingExit(input.opens, input.highs, input.lows, input.closes, mas[14]);
-  if (ma14Exit.exit) {
+  // خروج با MA(14) — لایۀ ۱ موتورِ خروج (دو کندلِ کامل زیر میانگین)
+  const ma14Exit = l1?.ma14_exit === true;
+  if (ma14Exit) {
     total -= 3;
-    bits.push('کندل کامل زیر MA(14) — سیگنال خروج');
+    bits.push('کندلِ کامل زیر MA(14) — سیگنال خروج');
   }
 
   const score = Math.max(0, Math.min(100, Math.round(50 + 8 * total)));
   let direction: Direction = total >= 2 ? 'bullish' : total <= -2 ? 'bearish' : 'neutral';
-  if (ma14Exit.exit && direction === 'bullish') direction = 'neutral';
+  if (ma14Exit && direction === 'bullish') direction = 'neutral';
+  // رأیِ درختِ FTS: وتوی هفتگی «فرصت ورود» نمی‌دهد (چارت ۳، بخش ۲). سیگنالِ
+  // مستر نباید جایش «پرواز تأیید شد» بنویسد وقتی موتور می‌گوید REJECT.
+  if (vetoed && direction === 'bullish') direction = 'neutral';
   if (direction === 'neutral' && !short) setups.add('range');
 
   // دروازه ریسک: سهم مردود یعنی پرواز صادر نمی شود
@@ -166,18 +159,22 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
     setups.clear();
   }
 
-  const dataQuality: DataQuality = short ? 'partial' : 'complete';
-  const confidence: Confidence = gateBlocked ? 'low' : short ? 'low' : score >= 70 ? 'high' : score >= 45 ? 'medium' : 'low';
+  const dataQuality: DataQuality = noVerdict || short ? 'partial' : 'complete';
+  const confidence: Confidence = gateBlocked || noVerdict
+    ? 'low'
+    : short ? 'low' : score >= 70 ? 'high' : score >= 45 ? 'medium' : 'low';
   if (short) bits.push(`فقط ${faNum(valid, 0)} کندل معتبر؛ داوری احتیاطی است`);
+  if (noVerdict) bits.push('موتور FTS هنوز برای این نماد رأی منتشر نکرده؛ تشخیصی از این فایل ساخته نمی‌شود');
+  if (vetoed) bits.push('درخت FTS: وتوی تایم هفتگی — ورود ندارد');
   if (gateBlocked) bits.push('سهم در گیت ریسک بنیادی مردود است؛ سیگنال پرواز صادر نشد');
 
-  // حد ضرر نوسان‌گیر: ۵٪ زیر آخرین کف سوینگ روند صعودی (FTS_SPEC بند ۵)؛
-  // در نبود کف سوینگ، مرجع به MA(14) تنزل می‌کند.
-  const swingArr = swingLows(input.lows, 3);
-  const swingLow = swingArr.length > 0 ? swingArr[swingArr.length - 1].price : null;
-  const risingLowStop = swingLow != null ? swingLow * 0.95 : null;
-  const bullStopRef = risingLowStop != null ? 'rising_low' : 'ma14';
-  const bullStopPrice = risingLowStop ?? m14;
+  // حد ضرر: همان عددِ موتورِ خروج (لایۀ ۱) با همان مبنایِ اعلام‌شده؛ برایِ
+  // نمادِ نزولی کفِ کانال/پایۀ نقطه‌زنیِ خودِ موتور مرجع است، نه محاسبۀ دوم.
+  // مبنارا «ترجمه» نمی‌کنیم: رشتهٔ خامِ `stop_basis` می‌رود و اگر موتور مبنایی
+  // نگفت، null می‌ماند (نه واژۀ سه‌تاییِ قدیمیِ فرانت).
+  const bullStopPrice = l1?.hard_stop ?? null;
+  const bullStopRef = l1?.stop_basis ?? null;
+  const bearRef = fts?.point_hunt?.floor_price ?? fts?.range_box?.bottom ?? null;
 
   return {
     id: `technical:${symbol}:setup:${ts}`,
@@ -189,23 +186,30 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
     weight: 'major',
     title: gateBlocked
       ? `تکنیکال ${symbol} پشت گیت ریسک ماند`
-      : direction === 'bullish'
-        ? `پرواز ${symbol} تایید شد`
-        : direction === 'bearish'
-          ? `تکنیکال ${symbol} نزولی است`
-          : `تکنیکال ${symbol} در انتظار شکست خط آبی است`,
+      : noVerdict
+        ? `تکنیکال ${symbol} در انتظار رأیِ موتور`
+        : direction === 'bullish'
+          ? `پرواز ${symbol} تایید شد`
+          : direction === 'bearish'
+            ? `تکنیکال ${symbol} نزولی است`
+            : vetoed
+              ? `تکنیکال ${symbol}: وتوی تایم هفتگی`
+              : `تکنیکال ${symbol} در انتظار شکست خط آبی است`,
     rationale: bits.length > 0 ? bits.join('؛ ') + '.' : 'همگرایی مشخصی دیده نشد.',
     score: gateBlocked ? 50 : score,
     evidence: gateBlocked
       ? ['tech:risk_gate_block']
-      : [
-          'tech:ma_stack',
-          'tech:jet_trigger',
-          'tech:choch',
-          ...(divBear ? ['tech:rsi_div'] : []),
-          ...(inFibZone ? ['tech:fib_zone'] : []),
-          ...(ma14Exit.exit ? ['tech:ma14_exit'] : []),
-        ],
+      : noVerdict
+        ? ['tech:awaiting_engine']
+        : [
+            'tech:trend_alignment',
+            ...(jet?.active === true ? ['tech:jet_trigger'] : []),
+            ...(choch?.bullish === true || choch?.bearish === true ? ['tech:choch'] : []),
+            ...(l4?.rsi_divergence === true ? ['tech:rsi_div'] : []),
+            ...(in3340 || in61870 ? ['tech:fib_zone'] : []),
+            ...(ma14Exit ? ['tech:ma14_exit'] : []),
+            ...(vetoed ? ['tech:weekly_veto'] : []),
+          ],
     sourceView: 'technical',
     sourceRef: ['API'],
     validForMs: TECH_VALID_MS,
@@ -213,11 +217,11 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
       kind: 'setup',
       timeframe: 'daily',
       setups: [...setups],
-      stopLossRef: direction === 'neutral' ? null : direction === 'bullish' ? bullStopRef : 'swing_stop',
-      stopLossPrice: direction === 'bullish' ? bullStopPrice : direction === 'bearish' ? (support?.price ?? null) : null,
+      stopLossRef: direction === 'bullish' ? bullStopRef : null,
+      stopLossPrice: direction === 'bullish' ? bullStopPrice : direction === 'bearish' ? bearRef : null,
       keyLevels: [
-        ...(jet != null ? [{ type: 'resistance', price: jet.price }] : []),
-        ...(support != null ? [{ type: 'support', price: support.price }] : []),
+        ...(jet?.resistance != null ? [{ type: 'resistance' as const, price: jet.resistance }] : []),
+        ...(bearRef != null ? [{ type: 'support' as const, price: bearRef }] : []),
       ],
       dataQuality,
       weekly: input.weekly ?? null,

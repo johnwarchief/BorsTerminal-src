@@ -98,39 +98,14 @@ export function maStack(m14: number | null, m21: number | null, m52: number | nu
   return 'mixed';
 }
 
-export type Ma14Exit = { exit: boolean; pending: boolean; ma14: number | null };
 
 /** خروج تعقیبی MA14 — مطابق FTS_SPEC بخش اول بند ۵.
     شرط: «یک کندل کامل» یعنی همهٔ اجزای OHLC (Open/High/Low/Close) زیر خط MA14
     (چون high بیشینه است، high < MA14 کل کندل را زیر خط می‌گذارد).
     pending = بدنه زیر خط ولی سایهٔ بالا بالای خط (کندل کامل نیست).
     ma14Series اختیاری: پیش‌فرض SMA روی بسته‌ها با دورهٔ 14. */
-export function ma14TrailingExit(
-  opens: (number | null)[],
-  highs: (number | null)[],
-  lows: (number | null)[],
-  closes: (number | null)[],
-  ma14Series?: (number | null)[],
-): Ma14Exit {
-  const ma = ma14Series ?? sma(closes, 14);
-  const n = Math.min(opens.length, highs.length, lows.length, closes.length, ma.length);
-  for (let i = n - 1; i >= 0; i--) {
-    const o = num(opens[i]);
-    const h = num(highs[i]);
-    const l = num(lows[i]);
-    const c = num(closes[i]);
-    const m = num(ma[i]);
-    if (o == null || h == null || l == null || c == null || m == null) continue;
-    const fullBelow = o < m && h < m && l < m && c < m;
-    const bodyBelow = Math.max(o, c) < m;
-    return { exit: fullBelow, pending: !fullBelow && bodyBelow, ma14: m };
-  }
-  return { exit: false, pending: false, ma14: lastValid(ma) };
-}
-
 export type SwingPoint = { index: number; price: number };
 
-/** فرکتال سقف: سقف بالاتر از order کندل دو طرف */
 export function swingHighs(highs: (number | null)[], order = 3): SwingPoint[] {
   const out: SwingPoint[] = [];
   for (let i = order; i < highs.length - order; i++) {
@@ -175,67 +150,7 @@ export function swingLows(lows: (number | null)[], order = 3): SwingPoint[] {
     مساوی هم پیوت می‌شوند)؛ یک کندل می‌تواند همزمان سقف و کف باشد. مبنای
     ftsChoch/fibZones برای هم‌خوانی عددی با موتور بک‌اند. کندل‌های دارای null
     در پنجره، پیوت‌زنی نمی‌شوند (بک‌اند کندلِ ناقص ندارد). */
-export type FtsPivot = { idx: number; price: number; kind: 'high' | 'low' };
 
-export function ftsSwings(highs: (number | null)[], lows: (number | null)[], k = FTS_SWING_K): FtsPivot[] {
-  const n = Math.min(highs.length, lows.length);
-  if (k < 1 || n < 2 * k + 2) return [];
-  const out: FtsPivot[] = [];
-  for (let i = k; i < n - k; i++) {
-    const hi = num(highs[i]);
-    const lo = num(lows[i]);
-    if (hi == null || lo == null) continue;
-    let maxLH = -Infinity;
-    let maxRH = -Infinity;
-    let minLL = Infinity;
-    let minRL = Infinity;
-    let gap = false;
-    for (let j = i - k; j <= i + k; j++) {
-      if (j === i) continue;
-      const h = num(highs[j]);
-      const l = num(lows[j]);
-      if (h == null || l == null) {
-        gap = true;
-        break;
-      }
-      if (j < i) {
-        if (h > maxLH) maxLH = h;
-        if (l < minLL) minLL = l;
-      } else {
-        if (h > maxRH) maxRH = h;
-        if (l < minRL) minRL = l;
-      }
-    }
-    if (gap) continue;
-    if (hi >= maxLH && hi >= maxRH) out.push({ idx: i, price: hi, kind: 'high' });
-    if (lo <= minLL && lo <= minRL) out.push({ idx: i, price: lo, kind: 'low' });
-  }
-  return out;
-}
-
-export type FtsTrend = 'up' | 'down' | 'range' | 'na';
-
-/** طبقه‌بندی ساختار روند — قرینهٔ _fts_classify_trend (api/chart.py:677):
-    دو سقف و دو کفِ پیوتِ آخر: HH+HL=up، LH+LL=down، هر اختلاف ≤tol یا بقیهٔ
-    حالت‌ها=range؛ کمتر از دو پیوت در یک سمت=na. */
-export function classifyTrend(swings: FtsPivot[], tol = FTS_EQUAL_TOL): FtsTrend {
-  const hs = swings.filter((s) => s.kind === 'high').slice(-2);
-  const ls = swings.filter((s) => s.kind === 'low').slice(-2);
-  if (hs.length < 2 || ls.length < 2) return 'na';
-  const h2 = hs[0].price;
-  const h1 = hs[1].price;
-  const l2 = ls[0].price;
-  const l1 = ls[1].price;
-  const hh = h1 > h2 * (1 + tol);
-  const hl = l1 > l2 * (1 + tol);
-  const lh = h1 < h2 * (1 - tol);
-  const ll = l1 < l2 * (1 - tol);
-  if (hh && hl) return 'up';
-  if (lh && ll) return 'down';
-  return 'range';
-}
-
-/** خط آبی پرواز: بالاترین سوینگ ماژور در پنجره نگاه */
 export function majorResistance(highs: (number | null)[], lookback = 120): SwingPoint | null {
   const swings = swingHighs(highs.slice(-lookback), 3);
   if (swings.length > 0) return swings.reduce((a, b) => (b.price > a.price ? b : a));
@@ -252,98 +167,6 @@ export function majorSupport(lows: (number | null)[], lookback = 120): SwingPoin
   if (vals.length === 0) return null;
   return { index: lows.length - 1, price: Math.min(...vals) };
 }
-
-export type FibBand = { lo: number; hi: number; inZone: boolean };
-export type FibZones = {
-  baseHigh: number;
-  baseLow: number;
-  zone3340: FibBand;
-  zone61870: FibBand;
-};
-
-/** کمربندهای فیبوناچی در مقیاس لگاریتمی — قرینهٔ _fts_fib_zones (api/chart.py:742).
-    چرا لگاریتم: حرکت ×۴ و اصلاح ۵۰٪ آن در مقیاس خطی «کف» درست نمی‌دهد؛ نسبت
-    اصلاح روی ln قیمت سنجیده می‌شود. بازهٔ اندازه‌گیری: آخرین سقف پیوتِ مهم ←
-    پایین‌ترین کفِ «پس از آن سقف» (کفی بعد از سقف نبود: مینِ کل پنجره؛ همان
-    fallback بک‌اند). دو کمربند: zone3340 (ادامهٔ روند) و zone61870 (طلایی
-    اصلاحی). in_zone = پایانیِ آخرین کندل داخل کمربند.
-    انحراف مستند از کد بک‌اند: بک‌اند نقطهٔ شروع را argmax سقف کل پنجره
-    (candles) می‌گیرد، نه idx خودِ پیوت؛ وقتی آخرین سقف پیوت همان قلهٔ پنجره
-    است (حالت عادی) دو خروجی یکی می‌شود — اینجا قاعدهٔ مستندِ متدولوژی (idx پیوت)
-    پیاده شده. بک‌اند قیمت‌ها را round(…,2) می‌کند؛ اینجا عدد خام (گردکردن به
-    نمایش سپرده شد). */
-export function fibZones(
-  highs: (number | null)[],
-  lows: (number | null)[],
-  closes: (number | null)[],
-  order = FTS_SWING_K,
-): FibZones | null {
-  const pivots = ftsSwings(highs, lows, order);
-  const highPivots = pivots.filter((p) => p.kind === 'high');
-  if (highPivots.length === 0) return null;
-  const topPivot = highPivots[highPivots.length - 1];
-  const top = topPivot.price;
-  const nLow = Math.min(lows.length, highs.length);
-  let bot: number | null = null;
-  for (let i = topPivot.idx; i < nLow; i++) {
-    const l = num(lows[i]);
-    if (l != null && (bot == null || l < bot)) bot = l;
-  }
-  if (bot == null) {
-    for (let i = 0; i < nLow; i++) {
-      const l = num(lows[i]);
-      if (l != null && (bot == null || l < bot)) bot = l;
-    }
-  }
-  if (bot == null || top <= 0 || bot <= 0 || top <= bot) return null;
-  const last = lastValid(closes);
-  const lnTop = Math.log(top);
-  const lnBot = Math.log(bot);
-  const band = ([p1, p2]: readonly [number, number]): FibBand => {
-    const hi = Math.exp(lnTop + (lnBot - lnTop) * p1);
-    const lo = Math.exp(lnTop + (lnBot - lnTop) * p2);
-    return { lo, hi, inZone: last != null && last >= lo && last <= hi };
-  };
-  return {
-    baseHigh: top,
-    baseLow: bot,
-    zone3340: band(FTS_FIB_BANDS[0]),
-    zone61870: band(FTS_FIB_BANDS[1]),
-  };
-}
-
-export type Choch = { type: 'bearish' | 'bullish' | null; level: number | null };
-
-/** خط چین قرمز: شکست ساختار پس از توالی کف و سقف.
-    در سه سوینگ آخر اگر یک جفت صعودی باشد و قیمت زیر آخرین کف برود یعنی
-    تغییر ماهیت نزولی؛ قرینه آن برای صعودی. */
-export function detectChoch(
-  highs: (number | null)[],
-  lows: (number | null)[],
-  closes: (number | null)[],
-  order = 3,
-): Choch {
-  const sh = swingHighs(highs, order);
-  const sl = swingLows(lows, order);
-  const last = lastValid(closes);
-  if (last == null) return { type: null, level: null };
-  const recentH = sh.slice(-3);
-  const recentL = sl.slice(-3);
-  const hasHigherHigh = recentH.some((s, i) => i > 0 && s.price > recentH[i - 1].price);
-  const hasLowerLow = recentL.some((s, i) => i > 0 && s.price < recentL[i - 1].price);
-  if (recentH.length >= 2 && sl.length >= 1 && hasHigherHigh) {
-    const l = sl[sl.length - 1];
-    // آستانهٔ قطعی CHoCH: بستهٔ فراتر از سطح دست‌کم FTS_CHOCH_DECISIVE (۰٫۳٪)
-    if (last < l.price * (1 - FTS_CHOCH_DECISIVE)) return { type: 'bearish', level: l.price };
-  }
-  if (recentL.length >= 2 && sh.length >= 1 && hasLowerLow) {
-    const h = sh[sh.length - 1];
-    if (last > h.price * (1 + FTS_CHOCH_DECISIVE)) return { type: 'bullish', level: h.price };
-  }
-  return { type: null, level: null };
-}
-
-/** سقف n کندل آخر */
 export function highestHigh(highs: (number | null)[], n: number): number | null {
   if (!(n > 0)) return null;
   const vals = highs.slice(-n).filter((v): v is number => v != null);
@@ -407,26 +230,4 @@ export function rsi(values: (number | null)[], period = FTS_RSI_PERIOD): (number
     out[i] = fromRs(avgGain, avgLoss);
   }
   return out;
-}
-
-/**
- * واگرایی منفی (RD−) — FTS_SPEC بخش اول بند ۵: سقف قیمتی بالاتر هم‌زمان با سقف
- * پایین‌ترِ RSI. آخرین دو سوینگ‌های سقفِ فرکتالی مقایسه می‌شوند و سقف دوم باید
- * تازه باشد (داخل پنجرهٔ FTS_DIV_BACK کندل آخر).
- */
-export function bearishDivergence(
-  highs: (number | null)[],
-  rsiSeries: (number | null)[],
-  order = 3,
-  lookback = FTS_DIV_BACK,
-): boolean {
-  const sh = swingHighs(highs, order);
-  if (sh.length < 2) return false;
-  const prev = sh[sh.length - 2];
-  const last = sh[sh.length - 1];
-  if (last.index < highs.length - lookback - 1) return false;
-  const rPrev = num(rsiSeries[prev.index]);
-  const rLast = num(rsiSeries[last.index]);
-  if (rPrev == null || rLast == null) return false;
-  return last.price > prev.price && rLast < rPrev;
 }
