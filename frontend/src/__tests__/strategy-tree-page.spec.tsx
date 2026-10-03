@@ -84,7 +84,7 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     renderWithProviders(<StrategyTreePage />);
 
     // سوییچ به نمای خالص ابسیدین
-    const obsidianTab = screen.getByRole('button', { name: /نمودار شبکه ابسیدین/i });
+    const obsidianTab = screen.getByRole('button', { name: /نقشۀ ۴ چارت FTS/i });
     fireEvent.click(obsidianTab);
     expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
 

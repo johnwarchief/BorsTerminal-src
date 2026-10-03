@@ -1,0 +1,106 @@
+{
+  "base": "http://127.0.0.1:8002/",
+  "checks": [
+    {
+      "name": "برچسبِ هیچ گره‌ای از کارتِ خودش بیرون نمی‌زند",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "چهار Zone با جایگاهِ ۰ تا ۳ رسم شده",
+      "ok": true,
+      "detail": [
+        "F:0",
+        "T:1",
+        "S:2",
+        "M:3"
+      ]
+    },
+    {
+      "name": "اسکرولِ افقی از لبۀ راست (صفحۀ ۱) شروع می‌شود",
+      "ok": true,
+      "detail": {
+        "left": 0,
+        "max": 0,
+        "dir": "rtl"
+      }
+    },
+    {
+      "name": "بوم در ۱۰۸۰ بدون اسکرولِ عمودیِ زیاد جا می‌شود",
+      "ok": true,
+      "detail": {
+        "canvasH": 890,
+        "viewportH": 1080,
+        "pageH": 1697
+      }
+    },
+    {
+      "name": "در ۱۳۶۶ هم متن‌ها درونِ کارت‌اند",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "errors": [],
+  "shots": [
+    "_audit/map_geometry3-1920.png",
+    "_audit/map_geometry3-1366.png"
+  ],
+  "g1920": {
+    "canvasCss": {
+      "w": 1438,
+      "h": 890
+    },
+    "viewBox": "0 0 1438 890",
+    "rows": 78,
+    "sample": {
+      "cardW": 244,
+      "textW": 191,
+      "cardH": 33
+    },
+    "overflowCount": 0,
+    "overflow": [],
+    "scroll": {
+      "left": 0,
+      "max": 0,
+      "dir": "rtl"
+    },
+    "zoneSlots": [
+      "F:0",
+      "T:1",
+      "S:2",
+      "M:3"
+    ]
+  },
+  "htmlDir": "rtl",
+  "tall": {
+    "canvasH": 890,
+    "viewportH": 1080,
+    "pageH": 1697
+  },
+  "g1366": {
+    "canvasCss": {
+      "w": 1438,
+      "h": 890
+    },
+    "viewBox": "0 0 1438 890",
+    "rows": 78,
+    "sample": {
+      "cardW": 244,
+      "textW": 169,
+      "cardH": 33
+    },
+    "overflowCount": 0,
+    "overflow": [],
+    "scroll": {
+      "left": 0,
+      "max": 282,
+      "dir": "rtl"
+    },
+    "zoneSlots": [
+      "F:0",
+      "T:1",
+      "S:2",
+      "M:3"
+    ]
+  }
+}

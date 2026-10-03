@@ -10,6 +10,7 @@ import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { ObsidianStrategyGraph } from '../components/ObsidianStrategyGraph';
+import { PRESET_ACTIVE } from '../lib/ftsChartModel';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import {
   useTreeFlowStore,
@@ -181,59 +182,7 @@ export default function StrategyTreePage() {
     return m;
   }, [symbol, evaluation]);
 
-  // تعیین نودهای فعال بر مبنای پری‌ست یا نماد
-  const activeNodes = useMemo(() => {
-    if (selectedPreset === 'swing') {
-      return {
-        fund: ['fund_good', 'fund_medium'],
-        weekly: ['tech_weekly_up'],
-        setup: ['setup_jet', 'setup_fib'],
-        tape: ['tape_clock', 'tape_volume'],
-        stop: ['stop_swing'],
-        exit: ['exit_half'],
-      };
-    }
-    if (selectedPreset === 'trend') {
-      return {
-        fund: ['fund_super', 'fund_good'],
-        weekly: ['tech_weekly_up'],
-        // چارت ۳ (S: SELECTION): روندگیر = کف‌روبی + نقطه‌زنی، و نقطه‌زنی
-        // «ورود در کف سوم یا پنجم» است (چارت ۴). گرهٔ setup_point_hunt درِ
-        // نقشه ساخته شده، پس اینجا هم باید باشد — وگرنه درختِ روندگیر همان
-        // گره‌ای را خاموش نشان می‌دهد که قیف برایش نماد می‌گیرد.
-        setup: ['setup_fib', 'setup_choch', 'setup_jet', 'setup_point_hunt'],
-        tape: ['tape_floor_sweep'],
-        stop: ['stop_trend'],
-        // رأیِ مالک (بند ۸): سهامدارِ روندگیر در سهم بنیادی حد ضررِ قیمتی
-        // ندارد و با گزارشِ فصلی کدال خارج می‌شود — هیچ گره «خروج»ی برایش
-        // روشن نمی‌شود، و این خالی‌بودن عمدی است نه فراموشی.
-        exit: [],
-      };
-    }
-    if (selectedPreset === 'hourglass') {
-      return {
-        fund: ['fund_super'],
-        // ساعت شنی ستاپِ مستقل ندارد؛ خودِ همان اشباعِ هفتگی (MA=52 + RSI)
-        // در ستونِ هفتگی روشن می‌شود.
-        weekly: ['tech_weekly_hourglass'],
-        setup: [],
-        tape: ['tape_floor_sweep', 'tape_clock'],
-        stop: ['stop_hourglass'],
-        exit: [],
-      };
-    }
-    // حالت Custom
-    return {
-      fund: [`fund_${customFund}`],
-      weekly: [customWeekly === 'up' ? 'tech_weekly_up' : 'tech_weekly_reject'],
-      setup: [`setup_${customSetup}`],
-      tape: [`tape_${customTape}`],
-      stop: [customStop === 'ma14_fixed5' ? 'stop_swing' : customStop === 'codal_fund' ? 'stop_trend' : 'stop_hourglass'],
-      exit: ['exit_half'],
-    };
-  }, [selectedPreset, customFund, customWeekly, customSetup, customTape, customStop]);
-
-  // نودهای فعال در حالت سفارشی جهت ارسال به گراف ابسیدین
+  // نودهای فعال در حالت سفارشی جهت ارسال به نقشۀ FTS
   const activeCustomNodeIds = useMemo(() => {
     const stopId =
       customStop === 'ma14_fixed5' ? 'stop_swing' : customStop === 'codal_fund' ? 'stop_trend' : 'stop_hourglass';
@@ -258,7 +207,14 @@ export default function StrategyTreePage() {
     ];
   }, [customFund, customWeekly, customSetup, customTape, customStop]);
 
-  // کلیک روی نودهای گراف در حالت سفارشی
+  // گره‌هایِ روشنِ پرستِ جاری — تک‌منبع: `PRESET_ACTIVE` درِ `lib/ftsChartModel`
+  // (نقشۀ چهار صفحۀ FTS همان فهرست را ریل می‌کند؛ اینجا دیگر فهرستِ دومی نیست).
+  const activeNodeIds = useMemo(() => {
+    if (selectedPreset === 'custom') return new Set<string>(activeCustomNodeIds);
+    return new Set<string>(PRESET_ACTIVE[selectedPreset]);
+  }, [selectedPreset, activeCustomNodeIds]);
+
+  // کلیک روی نودهای نقشۀ در حالت سفارشی
   const handleToggleCustomNode = (nodeId: string) => {
     setSelectedPreset('custom');
     if (nodeId.startsWith('fund_')) {
@@ -454,8 +410,8 @@ export default function StrategyTreePage() {
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <span>🕸️</span>
-              <span>نمودار شبکه ابسیدین</span>
+              <span>🗺️</span>
+              <span>نقشۀ ۴ چارت FTS</span>
             </button>
             <button
               type="button"
@@ -587,7 +543,7 @@ export default function StrategyTreePage() {
                   setCustomFund('super');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.fund.includes('fund_super')
+                  activeNodeIds.has('fund_super')
                     ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -612,7 +568,7 @@ export default function StrategyTreePage() {
                   setCustomFund('good');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.fund.includes('fund_good')
+                  activeNodeIds.has('fund_good')
                     ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -633,7 +589,7 @@ export default function StrategyTreePage() {
                   setCustomFund('medium');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.fund.includes('fund_medium')
+                  activeNodeIds.has('fund_medium')
                     ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -654,7 +610,7 @@ export default function StrategyTreePage() {
                   setCustomFund('weak');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.fund.includes('fund_weak')
+                  activeNodeIds.has('fund_weak')
                     ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -696,7 +652,7 @@ export default function StrategyTreePage() {
                   setCustomWeekly('up');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.weekly.includes('tech_weekly_up') || activeNodes.weekly.includes('tech_weekly_hourglass')
+                  activeNodeIds.has('tech_weekly_up') || activeNodeIds.has('tech_weekly_hourglass')
                     ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -717,7 +673,7 @@ export default function StrategyTreePage() {
                   setCustomSetup('jet');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.setup.includes('setup_jet')
+                  activeNodeIds.has('setup_jet')
                     ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -738,7 +694,7 @@ export default function StrategyTreePage() {
                   setCustomSetup('fib');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.setup.includes('setup_fib')
+                  activeNodeIds.has('setup_fib')
                     ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -759,7 +715,7 @@ export default function StrategyTreePage() {
                   setCustomSetup('choch');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.setup.includes('setup_choch')
+                  activeNodeIds.has('setup_choch')
                     ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -780,7 +736,7 @@ export default function StrategyTreePage() {
                   setCustomWeekly('reject');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.weekly.includes('tech_weekly_reject')
+                  activeNodeIds.has('tech_weekly_reject')
                     ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -822,7 +778,7 @@ export default function StrategyTreePage() {
                   setCustomTape('clock');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.tape.includes('tape_clock')
+                  activeNodeIds.has('tape_clock')
                     ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -843,7 +799,7 @@ export default function StrategyTreePage() {
                   setCustomTape('suspicious_vol');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.tape.includes('tape_volume')
+                  activeNodeIds.has('tape_volume')
                     ? 'border-neon-cyan bg-neon-cyan/15 shadow-[0_0_12px_rgba(6,182,212,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -864,7 +820,7 @@ export default function StrategyTreePage() {
                   setCustomTape('box_break');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.tape.includes('tape_breakout')
+                  activeNodeIds.has('tape_breakout')
                     ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -885,7 +841,7 @@ export default function StrategyTreePage() {
                   setCustomTape('floor_sweep');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.tape.includes('tape_floor_sweep')
+                  activeNodeIds.has('tape_floor_sweep')
                     ? 'border-purple-500 bg-purple-500/15 shadow-[0_0_12px_rgba(168,85,247,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -927,7 +883,7 @@ export default function StrategyTreePage() {
                   setCustomStop('ma14_fixed5');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.stop.includes('stop_swing')
+                  activeNodeIds.has('stop_swing')
                     ? 'border-accent-red bg-accent-red/15 shadow-[0_0_12px_rgba(239,68,68,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -948,7 +904,7 @@ export default function StrategyTreePage() {
                   setCustomStop('codal_fund');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.stop.includes('stop_trend')
+                  activeNodeIds.has('stop_trend')
                     ? 'border-accent-green bg-accent-green/15 shadow-[0_0_12px_rgba(34,197,94,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -969,7 +925,7 @@ export default function StrategyTreePage() {
                   setCustomStop('hourglass_deep');
                 }}
                 className={`cursor-pointer rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.stop.includes('stop_hourglass')
+                  activeNodeIds.has('stop_hourglass')
                     ? 'border-accent-yellow bg-accent-yellow/15 shadow-[0_0_12px_rgba(234,179,8,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40 hover:opacity-80'
                 }`}
@@ -986,7 +942,7 @@ export default function StrategyTreePage() {
               {/* قانون فروشِ لایه‌ای در اولین سقف (جزوه: «سیگنال فروش ٪۵۰») */}
               <div
                 className={`rounded-xl border p-3.5 transition-all duration-200 ${
-                  activeNodes.exit.includes('exit_half')
+                  activeNodeIds.has('exit_half')
                     ? 'border-accent-blue bg-accent-blue/15 shadow-[0_0_12px_rgba(56,189,248,0.2)] opacity-100 scale-[1.01]'
                     : 'border-border-c/60 bg-bg-primary/60 opacity-40'
                 }`}
