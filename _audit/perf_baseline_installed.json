@@ -1,0 +1,149 @@
+{
+ "base": "http://127.0.0.1:8001",
+ "seconds": 300,
+ "procs": 7,
+ "root_pids": [
+  16816
+ ],
+ "tree_rss_mb_sum": 1545.2,
+ "top_procs": [
+  {
+   "pid": 27568,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 629.8,
+   "cpu_pct": 42.2
+  },
+  {
+   "pid": 16816,
+   "name": "BorsTerminal_Ultimate.exe",
+   "rss_mb": 505.3,
+   "cpu_pct": 33.6
+  },
+  {
+   "pid": 27604,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 199.2,
+   "cpu_pct": 24.3
+  },
+  {
+   "pid": 24560,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 135.7,
+   "cpu_pct": 0.0
+  },
+  {
+   "pid": 11588,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 40.7,
+   "cpu_pct": 0.0
+  },
+  {
+   "pid": 11636,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 21.0,
+   "cpu_pct": 0.0
+  },
+  {
+   "pid": 26108,
+   "name": "msedgewebview2.exe",
+   "rss_mb": 13.5,
+   "cpu_pct": 0.0
+  }
+ ],
+ "process_cpu_pct": {
+  "n": 140,
+  "median": 51.65,
+  "p95": 154.8,
+  "max": 213.5
+ },
+ "process_rss_mb": {
+  "n": 140,
+  "median": 1554.89,
+  "p95": 1596.04,
+  "max": 1624.64
+ },
+ "cycles_delta_per_2s": {
+  "n": 139,
+  "median": 0,
+  "p95": 1,
+  "max": 1
+ },
+ "rows_written_per_2s": {
+  "n": 139,
+  "median": 0,
+  "p95": 609,
+  "max": 692
+ },
+ "rows_seen_per_2s": {
+  "n": 139,
+  "median": 0,
+  "p95": 3473,
+  "max": 3473
+ },
+ "last_changed_per_cycle": {
+  "n": 139,
+  "median": 514,
+  "p95": 682,
+  "max": 692
+ },
+ "api_market_ms": {
+  "n": 46,
+  "median": 19.24,
+  "p95": 43.34,
+  "max": 127.96
+ },
+ "api_market_bytes": {
+  "n": 46,
+  "median": 4541275.0,
+  "p95": 4541616,
+  "max": 4541633
+ },
+ "client_json_dumps_ms": {
+  "n": 46,
+  "median": 35.17,
+  "p95": 38.2,
+  "max": 39.86
+ },
+ "client_json_loads_ms": {
+  "n": 46,
+  "median": 40.65,
+  "p95": 44.96,
+  "max": 46.98
+ },
+ "client_orjson_dumps_ms": {
+  "n": 46,
+  "median": 8.7,
+  "p95": 9.42,
+  "max": 9.63
+ },
+ "api_delta_ms": {
+  "n": 46,
+  "median": 14.16,
+  "p95": 33.55,
+  "max": 94.73
+ },
+ "api_delta_bytes": {
+  "n": 46,
+  "median": 161.0,
+  "p95": 167,
+  "max": 561635
+ },
+ "gpu": {
+  "samples": 10,
+  "ok": 10,
+  "median_sum_pct": 1.38,
+  "max_sum_pct": 23.35,
+  "first": {
+   "ok": true,
+   "sum_pct": 0.72,
+   "top5_pct": [
+    0.26,
+    0.25,
+    0.13,
+    0.06,
+    0.01
+   ]
+  }
+ },
+ "written_at": "2026-10-03 11:49:16"
+}

@@ -1,0 +1,51 @@
+{
+ "builds_ms_all": [
+  1189.1,
+  72.9,
+  72.0,
+  73.0,
+  73.1,
+  74.3
+ ],
+ "first_cold_ms": 1189.1,
+ "warm_median_ms": 73.0,
+ "warm_min_ms": 72.0,
+ "body_bytes": 4541467,
+ "body_sha256": "094a444dc73e14a9c9c8fdfe8fd1de25afbfbaca99082eac478e685966900dc2",
+ "fields_all_bytes": 6839204,
+ "fields_all_sha256": "6dc564cb5701fa23d6fc81ba533a5917fb38b619a4e43023f93bd08684f9226b",
+ "phases_ms": {
+  "_board_query_frame": 1106.6,
+  "_live_overlay": 0.0,
+  "_board_frame": 2.7,
+  "apply_tape_flags": 19.5,
+  "_slim_records": 22.6,
+  "_encode_board": 13.3,
+  "_mirror": 3.0
+ },
+ "profile_top": [
+  "         185758 function calls (184049 primitive calls) in 0.119 seconds",
+  "   Ordered by: internal time",
+  "   List reduced from 618 to 18 due to restriction <18>",
+  "   ncalls  tottime  percall  cumtime  percall filename:lineno(function)",
+  "        1    0.018    0.018    0.034    0.034 C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\api\\market.py:657(_slim_records)",
+  "        1    0.009    0.009    0.009    0.009 {orjson.dumps}",
+  "46787/46436    0.005    0.000    0.007    0.000 {built-in method builtins.isinstance}",
+  "    22572    0.005    0.000    0.007    0.000 C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\api\\market.py:651(_clean)",
+  "        1    0.005    0.005    0.005    0.005 {built-in method _hashlib.openssl_md5}",
+  "    22576    0.004    0.000    0.011    0.000 C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\api\\market.py:692(<genexpr>)",
+  "        1    0.003    0.003    0.004    0.004 C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\api\\market.py:733(_mirror)",
+  "        1    0.003    0.003    0.003    0.003 {method 'execute' of 'sqlite3.Connection' objects}",
+  "     1048    0.003    0.000    0.004    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\generic.py:6119(__finalize__)",
+  "       79    0.002    0.000    0.002    0.000 {method 'tolist' of 'numpy.ndarray' objects}",
+  "      223    0.002    0.000    0.002    0.000 {method 'copy' of 'numpy.ndarray' objects}",
+  "       10    0.002    0.000    0.002    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\dtypes\\missing.py:260(_isna_string_dtype)",
+  "      401    0.002    0.000    0.019    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\internals\\managers.py:399(apply)",
+  "     1265    0.001    0.000    0.003    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\generic.py:6196(__setattr__)",
+  "      243    0.001    0.000    0.009    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\series.py:369(__init__)",
+  "       10    0.001    0.000    0.002    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\internals\\managers.py:2487(_merge_blocks)",
+  "      274    0.001    0.000    0.003    0.000 C:\\Users\\PCMOD\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\site-packages\\pandas\\core\\construction.py:531(sanitize_array)",
+  "      363    0.001    0.000    0.001    0.000 {method 'reduce' of 'numpy.ufunc' objects}"
+ ],
+ "db": "C:/Users/PCMOD/AppData/Local/Temp/bors_bench_snap/market.db"
+}

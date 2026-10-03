@@ -1,0 +1,113 @@
+{
+ "base": "http://127.0.0.1:8002",
+ "seconds": 280,
+ "procs": 1,
+ "root_pids": [
+  30248
+ ],
+ "tree_rss_mb_sum": 378.9,
+ "top_procs": [
+  {
+   "pid": 30248,
+   "name": "python.exe",
+   "rss_mb": 378.9,
+   "cpu_pct": 0.9
+  }
+ ],
+ "process_cpu_pct": {
+  "n": 132,
+  "median": 6.9,
+  "p95": 87.3,
+  "max": 111.8
+ },
+ "process_rss_mb": {
+  "n": 132,
+  "median": 371.23,
+  "p95": 381.7,
+  "max": 440.32
+ },
+ "cycles_delta_per_2s": {
+  "n": 131,
+  "median": 0,
+  "p95": 1,
+  "max": 1
+ },
+ "rows_written_per_2s": {
+  "n": 131,
+  "median": 0,
+  "p95": 2748,
+  "max": 3062
+ },
+ "rows_seen_per_2s": {
+  "n": 131,
+  "median": 0,
+  "p95": 3430,
+  "max": 3430
+ },
+ "last_changed_per_cycle": {
+  "n": 131,
+  "median": 1042,
+  "p95": 3056,
+  "max": 3062
+ },
+ "api_market_ms": {
+  "n": 44,
+  "median": 19.06,
+  "p95": 34.07,
+  "max": 41.46
+ },
+ "api_market_bytes": {
+  "n": 44,
+  "median": 4361765.0,
+  "p95": 4361994,
+  "max": 4362002
+ },
+ "client_json_dumps_ms": {
+  "n": 44,
+  "median": 33.61,
+  "p95": 36.81,
+  "max": 37.96
+ },
+ "client_json_loads_ms": {
+  "n": 44,
+  "median": 39.17,
+  "p95": 43.16,
+  "max": 45.76
+ },
+ "client_orjson_dumps_ms": {
+  "n": 44,
+  "median": 8.28,
+  "p95": 9.0,
+  "max": 9.11
+ },
+ "api_delta_ms": {
+  "n": 44,
+  "median": 8.04,
+  "p95": 27.13,
+  "max": 207.88
+ },
+ "api_delta_bytes": {
+  "n": 44,
+  "median": 159.0,
+  "p95": 398329,
+  "max": 2592476
+ },
+ "gpu": {
+  "samples": 9,
+  "ok": 9,
+  "median_sum_pct": 3.7,
+  "max_sum_pct": 9.69,
+  "first": {
+   "ok": true,
+   "sum_pct": 4.52,
+   "top5_pct": [
+    1.88,
+    1.27,
+    0.53,
+    0.52,
+    0.18
+   ]
+  }
+ },
+ "written_at": "2026-10-03 11:59:28"
+}

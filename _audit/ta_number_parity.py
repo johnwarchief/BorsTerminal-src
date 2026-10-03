@@ -36,8 +36,8 @@ GAP = float(os.environ.get("PAR_GAP", "8"))
 def ours():
     su = requests.get(APP + "/api/mstat/summary", timeout=90).json()
     sm = requests.get(APP + "/api/mstat/smart-money", timeout=90).json()
-    de = requests.get(APP + "/api/mstat/depth", timeout=90).json()
-    th = requests.get(APP + "/api/mstat/thermometer", timeout=90).json()
+    de = requests.get(APP + "/api/mstat/depth?group=eq_all", timeout=90).json()
+    th = requests.get(APP + "/api/mstat/thermometer?group=eq_all", timeout=90).json()
     rows = {r["label"]: r for r in su["rows"]}
     allm = rows.get("کل بازار", {})
     eq = next((v for k, v in rows.items() if k.startswith("سهام، حق تقدم و ص")), {})

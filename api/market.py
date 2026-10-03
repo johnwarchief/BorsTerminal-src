@@ -655,18 +655,43 @@ def _clean(v):
 
 
 def _slim_records(df, drop_unused=True):
-    """ردیف‌ها بی‌کلیدهایِ بی‌خواننده و بی‌null — و `ins_code` به‌عنوان کلید."""
-    out = []
-    for rec in df.reset_index().to_dict(orient="records"):
-        r = {}
-        for k, v in rec.items():
-            if drop_unused and k in _DROP_FIELDS:
-                continue
-            v = _clean(v)
-            if v is None:
-                continue
-            r[k] = v
-        out.append(r)
+    """ردیف‌ها بی‌کلیدهایِ بی‌خواننده و بی‌null — و `ins_code` به‌عنوان کلید.
+
+    ستون‌به‌ستون، نه ردیف‌به‌ردیف: نسخۀ پیشین `to_dict(orient="records")` برایِ
+    ۷۲ ستون می‌ساخت (≈۴۰۸هزار جفت کلید-مقدار) و بعد ۲۵ ستونِ بی‌خواننده را یکی
+    یکی دور می‌ریخت، و رویِ هر ۲۷۰هزار مقدار یک `isinstance` درِ `_clean` صدا
+    می‌زد — ۱۲۳ میلی‌ثانیه از ۱۷۸ میلی‌ثانیهٔ کلِ بازسازی همین‌جا می‌سوخت.
+    اینجا هر ستون یک‌بار به فهرستِ پایتون تبدیل می‌شود و ماسکِ «قابل‌ارزش بودن»
+    برداری محاسبه می‌شود؛ ترتیبِ کلیدها (اول `ins_code`، بعد ستون‌هایِ قاب) و
+    قاعدهٔ حذفِ مقدار همان قاعدۀ پیشین است، پس بدنۀ سریال‌شدہ بایت‌به‌بایت یکی
+    می‌ماند (اثبات: sha256 درِ `_audit/perf_board_build_bench.py`).
+
+    قاعدۀ `_clean`ِ قبلی: اگر float بود و NaN یا ±inf ⇒ null؛ و هر مقدارِ None
+    ⇒ کلید نمی‌آید. `np.isfinite` دقیقاً همان سه حالت را می‌گیرد و برایِ
+    int/bool/str هیچ چیز را حذف نمی‌کند.
+    """
+    keys = [c for c in df.columns if not (drop_unused and c in _DROP_FIELDS)]
+    out = [{"ins_code": c} for c in df.index.tolist()]
+    for k in keys:
+        s = df[k]
+        v = s.to_numpy()
+        kind = v.dtype.kind
+        if kind == "f":
+            ok = np.isfinite(v).tolist()
+            vals = v.tolist()
+            for d, val, keep in zip(out, vals, ok):
+                if keep:
+                    d[k] = val
+        elif kind in ("i", "u", "b"):
+            for d, val in zip(out, v.tolist()):
+                d[k] = val
+        else:
+            # ستونِ object (نام/برچسب/درصدهایِ null‌نگه‌دار): همان قاعدۀ `_clean`
+            # سطر‌به‌سطر — این ستون‌ها کم‌تعدادند و ±infِ لایۀ object تنها جایی
+            # است که `isfinite` برایش نمی‌رسد.
+            for d, val in zip(out, (_clean(x) for x in s.tolist())):
+                if val is not None:
+                    d[k] = val
     return out
 
 
@@ -715,8 +740,16 @@ def _mirror(records, meta, counts, rev):
 
 
 def _mirror_snapshot():
+    """رجوع‌هایِ درونِ قفل، نه کپیِ آینه.
+
+    `_mirror` هر بار یکِ dictِ **نو** می‌سازد و جای قبلی می‌گذارد (هیچ‌وقت درِ
+    جایِ خودش سطر اضافه/کم نمی‌کند)، پس نگه‌داشتنِ رجوعِ قدیمی برایِ سازندۀ
+    دلتا هم‌ارزِ کپیِ آن است بی‌۵٬۶۴۲ ورودیِ تازه درِ هر پولینگِ پنج‌ثانیه‌ای.
+    ردیف‌هایِ داخلش هم رجوع‌هایِ سریال‌سازی‌شدۀ همان ساخت‌اند و هیچ‌جا درِ جا
+    تغییر نمی‌کنند (تابلو هر بازسازی از نو ساخته می‌شود).
+    """
     with _DELTA_LOCK:
-        return (dict(_DELTA["by_code"]), dict(_DELTA["meta"]), dict(_DELTA["counts"]),
+        return (_DELTA["by_code"], _DELTA["meta"], _DELTA["counts"],
                 _DELTA["rev"], _DELTA["ready"])
 
 
@@ -901,18 +934,37 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
                       "min30_low", "max30_high")
-        _kept = {k: df[k].copy() for k in _KEEP_NULL if k in df.columns}
-        _filters_tbl = {k: df[k].copy() for k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh")}
-        df = df.replace([np.inf, -np.inf], 0).fillna(0)
-        for _k, _s in _kept.items():
-            df[_k] = _s          # NaN باقی می‌ماند → _clean → null
-        for _k, _s in _filters_tbl.items():
-            df[_k] = _s.fillna(False)
+        # پاک‌سازی فقط رویِ ستون‌هایی که *سریال می‌شوند* و *nullِ نگهبان ندارند*:
+        # پیش از این کلِ قاب (۷۲ ستون، از ۲۵ ستونِ بی‌خواننده) دو پاسِ تمام‌قد
+        # `replace` + `fillna` می‌خورد و بعد ۳۱ ستون از نسخۀ پیشین برمی‌گشتند —
+        # یعنی دو کپیِ بیهودی از چیزی که همین‌جا دور ریخته می‌شد.
+        # قاعده بی‌تغییر: float ⇒ NaN/±inf → ۰ (cینِ `np.nan_to_num`)، int/bool ⇒
+        # چیزی برایِ پاک کردن نیست، object ⇒ `replace`/`fillna`ِ پیشین، و
+        # ستون‌هایِ `_KEEP_NULL` ⇒ دست‌نخورده (NaN/infِ آن‌ها درِ `_slim_records`
+        # با ماسکِ `isfinite` بیرون می‌افتد، همان کاری که `_clean` می‌کرد).
+        _nullish = frozenset(_KEEP_NULL)
+        for _c in df.columns:
+            if _c in _nullish:
+                continue
+            _s = df[_c]
+            _k = _s.dtype.kind
+            if _k == "f":
+                df[_c] = np.nan_to_num(_s.to_numpy(copy=False), nan=0.0,
+                                       posinf=0.0, neginf=0.0)
+            elif _k in "iub":
+                continue
+            else:
+                df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+        for _k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh"):
+            df[_k] = df[_k].fillna(False)
 
         records = _slim_records(df, drop_unused)
-        counts = {"count": len(df),
-                  "live_count": int(df["is_live"].sum()) if "is_live" in df.columns else len(df),
-                  "fossil_count": int((~df["is_live"]).sum()) if "is_live" in df.columns else 0}
+        # یکِ پاس رویِ ستونِ bool، نه سه تا (`sum` و بعد `~df[...]` و `sum` دوبار):
+        # دو تای آخرِ پیشین برایِ هر بازسازی یکِ قابِ ۵٬۶۰۰×۱ جدید می‌ساختند، فقط
+        # برایِ «منفیِ» همان عدد.
+        _live = int(df["is_live"].sum()) if "is_live" in df.columns else len(df)
+        counts = {"count": len(df), "live_count": _live,
+                  "fossil_count": len(df) - _live}
         meta = _board_meta(conn)
         payload = dict(status="success", rev=built_rev, data=records,
                    meta=meta, **counts)
