@@ -1,0 +1,19 @@
+{
+  "base": "http://127.0.0.1:8002/",
+  "symbol": "فولاد",
+  "afterApply": {
+    "noteText": "بازۀ «1m» منبعِ داده ندارد؛ نمای روزانه رسم می‌شود.",
+    "noteTitle": "سریِ دقیقه‌ای یا ساعتی برایِ هیچ نمادی منتشر نمی‌شود؛ چارت رویِ همان بازۀ روزانه می‌ماند. منبعِ درون‌روزیِ نماد در TSETMC منتشر نمی‌شود (نوزده مسیرِ آزموده‌شده مرده‌اند).",
+    "activeButtons": [
+      "روزانه",
+      "KLineCharts"
+    ],
+    "minuteLabelsOnScreen": []
+  },
+  "verdict": {
+    "note_visible": true,
+    "note_names_the_requested_range": true,
+    "still_daily": true,
+    "no_minute_axis_claim": true
+  }
+}

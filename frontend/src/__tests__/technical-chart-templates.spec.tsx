@@ -162,4 +162,39 @@ describe('قالب در منوی اندیکاتورها', () => {
     fireEvent.click(screen.getByTestId(`template-remove-${saved.id}`));
     expect(screen.getByTestId('template-empty')).toBeInTheDocument();
   });
+
+  // capabilityِ منبع: بازۀ درون‌روزی سورسِ داده ندارد، پس قالبِ کهنه آن را
+  // «سرو» نمی‌کند — تنزلِ صریح به روزانه با دلیلِ خوانا.
+  it('قالبِ با بازۀ درون‌روزی ⇒ تنزلِ صریح به روزانه و نمایشِ دلیل، نه برچسبِ جعلی', () => {
+    // هر دو قالب پیش از mount ذخیره می‌شوند (اشتراکِ زندهٔ منو وسطِ تست هشدار act می‌دهد)
+    const saved = useChartTemplateStore.getState().saveTemplate({
+      name: 'دقیقه‌ایِ قدیمی', indicators: ['VOL'], timeframe: '1m',
+    })!;
+    const w = useChartTemplateStore.getState().saveTemplate({
+      name: 'هفتگی', indicators: ['VOL'], timeframe: 'W',
+    })!;
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    openModal();
+    expect(screen.queryByTestId('chart-timeframe-note')).toBeNull();
+
+    fireEvent.click(screen.getByTestId(`template-apply-${saved.id}`));
+    const note = screen.getByTestId('chart-timeframe-note');
+    expect(note.textContent).toContain('1m');
+    expect(note.textContent).toContain('روزانه');
+
+    // هیچ دوره‌ای جز روز/هفته/ماه به موتور نمی‌رود — یعنی کندلِ روزانه زیرِ
+    // برچسبِ «دقیقه‌ای» سرو نمی‌شود (دو فراخوانِ mount حداقلِ پوشش است)
+    const periods = chart().setPeriod.mock.calls.map(([p]) => (p as { type?: string })?.type);
+    expect(periods.length).toBeGreaterThan(0);
+    for (const p of periods) expect(['day', 'week', 'month']).toContain(p);
+    expect(periods).not.toContain('minute');
+    expect(periods).not.toContain('hour');
+
+    // کنترلِ مثبت: قالبِ با بازۀ واقعی همان بازه را می‌گیرد و یادداشت می‌رود
+    fireEvent.click(screen.getByTestId(`template-apply-${w.id}`));
+    expect(screen.queryByTestId('chart-timeframe-note')).toBeNull();
+    expect(
+      chart().setPeriod.mock.calls.some(([p]) => (p as { type?: string })?.type === 'week'),
+    ).toBe(true);
+  });
 });

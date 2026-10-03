@@ -81,7 +81,11 @@ export type ChartCapabilities = {
   overlay: Record<ChartOverlayKind, boolean>;
   customIndicator: boolean;
   builtinDrawTools: boolean;
-  minuteTimeframes: boolean;
+  /** آیا موتور *رندرِ* میله‌ای با بازهٔ دقیقه‌ای را می‌فهمد؟ این توانِ کتابخانه است،
+   *  نه ادعایِ منبع: سورسِ دادهٔ درون‌روزیِ نماد در TSETMC منتشر نمی‌شود
+   *  (`nahayatnegar/lib/timeframe.ts` → INTRADAY_CAPABILITY). نامِ دقیق همین است تا
+   *  در جدولِ آزمایشگاه، ✓ِ رندر با ✓ِ داده قاطی نشود. */
+  minuteBarRendering: boolean;
   logScale: boolean;
   jalaliAxis: boolean;
   crosshairEvents: boolean;

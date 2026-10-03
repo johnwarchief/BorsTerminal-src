@@ -119,6 +119,60 @@ def main():
     C._fts_analyze_symbol = getattr(C, "_real_fts_analyze_symbol", C._fts_analyze_symbol)
     del orig_key
 
+    # ── دوم: کشِ `/api/chart` (CHART_CACHE) مبنی‌برِ نماد خالی است — چرا درست است؟ ──
+    # دورِ E پرسید این کلید race/تازگیِ مبنا دارد یا نه. پاسخِ اندازه‌گیری‌شده:
+    # هر خواندن از `_attach_live_bar` می‌گذرد و آن `price_basis.resolve_payload` را
+    # **پس از** کش دوباره می‌زند؛ کندلِ کش‌شده هم `closing` و `last` هر دو را نگه
+    # می‌دارد و هندسه را از `high_raw/low_raw` می‌خواند، پس عوض‌شدنِ setting درِ
+    # همانِ درخواست اثر می‌کند و سایه هم انباشته نمی‌شود. این دو سنجه همان
+    # نامشروطی را قفل می‌کنند؛ اگر روزی خواندن از resolve_payload بگذرد و نوشتن
+    # نه، این‌جا سرخ می‌شود.
+    import price_basis as PB  # noqa: E402
+    orig_watch, orig_basis = C._watch_live_bar, PB.current()
+    # نوشتنِ مبنایِ آزمایشی نباید تنظیماتِ واقعیِ کاربر را لمس کند — همان ترفندِ
+    # dev/price_basis_v1070.py: مسیرِ فایل را به یکِ پوشۀ موقت می‌بریم.
+    import tempfile  # noqa: E402
+    import bors_config  # noqa: E402
+    tmpdir = tempfile.mkdtemp(prefix="fts_basis_chart_")
+    real_path = bors_config.PRICE_BASIS_PATH
+    bors_config.PRICE_BASIS_PATH = os.path.join(tmpdir, "price_basis.json")
+    try:
+        C._watch_live_bar = lambda symbol, after: (None, None)
+        raw = [{"time": "2026-10-05", "open": 100.0, "high": 110.0, "low": 90.0,
+                "close": 105.0, "last": 118.0, "volume": 10.0}]
+        PB.set_basis("closing")
+        r1 = C._attach_live_bar("آزمون۲", {"status": "success", "symbol": "آزمون۲",
+                                           "candles": [dict(x) for x in raw],
+                                           "volumes": [], "factors": []})
+        PB.set_basis("last")
+        r2 = C._attach_live_bar("آزمون۲", {"status": "success", "symbol": "آزمون۲",
+                                           "candles": [dict(x) for x in raw],
+                                           "volumes": [], "factors": []})
+        ck("خواندنِ `/api/chart` مبنایِ روز را می‌زند: دو مبنا ⇒ دو closeِ متفاوت از یکِ سری",
+           r1["candles"][0]["close"] == 105.0 and r2["candles"][0]["close"] == 118.0)
+        # بارِ دوم رویِ سریِ **حل‌شده** — همان چیزی که درِ کشِ فال‌بک می‌نشیند
+        again = C._attach_live_bar("آزمون۲", r1)
+        ck("بازخوانیِ سریِ حل‌شده مبنایِ تازه را می‌گیرد و سایه را گِشادِ انباشته نمی‌کند",
+           again["candles"][0]["close"] == 118.0
+           and again["candles"][0]["high_raw"] == 110.0
+           and again["candles"][0]["low_raw"] == 90.0)
+        ck("سایه درِ پاسخِ آخر هم همان ارتفاعِ خام می‌ماند (بی‌واحدِ ساختگی)",
+           again["candles"][0]["high"] >= 118.0 and again["candles"][0]["low"] <= 100.0)
+    finally:
+        C._watch_live_bar = orig_watch
+        # بازگرداندنِ مقدار **پیش از** برگرداندنِ مسیر: فایلِ واقعیِ تنظیماتِ کاربر
+        # هیچ‌وقت نوشته نمی‌شود، حتی با همانِ مقدار.
+        PB.set_basis(orig_basis)
+        bors_config.PRICE_BASIS_PATH = real_path
+        for f in (os.path.join(tmpdir, "price_basis.json"),
+                  os.path.join(tmpdir, "price_basis.json.tmp")):
+            if os.path.exists(f):
+                os.unlink(f)
+        try:
+            os.rmdir(tmpdir)
+        except OSError:
+            pass
+
     print("\nfts_cache_basis_v1078: %d سنجه، %d خطا" % (CHECKS, len(FAILS)))
     return 1 if FAILS else 0
 

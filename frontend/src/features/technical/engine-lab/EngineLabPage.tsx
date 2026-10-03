@@ -16,6 +16,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 
 import EnginePane from './EnginePane';
+import { INTRADAY_CAPABILITY } from '@features/technical/nahayatnegar/lib/timeframe';
 import { LAB_TIMEFRAMES, type LabMetrics, type LabTimeframe } from './types';
 
 const TIMEFRAME_LABEL: Record<LabTimeframe, string> = { D: 'روزانه', W: 'هفتگی', M: 'ماهانه' };
@@ -35,7 +36,10 @@ const CAP_ROWS: CapRow[] = [
   { label: 'اورلیِ نشانگر', cell: (c) => yes(c.overlay.marker) },
   { label: 'اندیکاتورِ سفارشی', cell: (c) => yes(c.customIndicator) },
   { label: 'ابزارِ ترسیمیِ داخلی', cell: (c) => yes(c.builtinDrawTools) },
-  { label: 'تایم‌فریمِ دقیقه‌ای', cell: (c) => yes(c.minuteTimeframes) },
+  { label: 'کندلِ دقیقه‌ای (رندر)', cell: (c) => yes(c.minuteBarRendering) },
+  // توانِ رندر با توانِ منبع یکی نیست: این سطرِ بی✓ نگاشتِ «موتور می‌تواند» را از
+  // «داده وجود دارد» جدا نگه می‌دارد (INTRADAY_CAPABILITY درِ lib/timeframe.ts).
+  { label: 'سورسِ دادهٔ دقیقه‌ای', cell: () => INTRADAY_CAPABILITY.supported ? '✓' : 'ندارد' },
   { label: 'مقیاسِ لگاریتمی', cell: (c) => yes(c.logScale) },
   { label: 'محورِ جلالی', cell: (c) => yes(c.jalaliAxis) },
   { label: 'رویدادِ کراس‌هیر', cell: (c) => yes(c.crosshairEvents) },

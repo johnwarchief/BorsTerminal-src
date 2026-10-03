@@ -4,12 +4,53 @@ import { epochToJalali } from '../../lib/jalaliDate';
 const DAY_MS = 86_400_000;
 
 /**
- * TSETMC تاریخچهٔ درون‌روزی (۱/۵/۱۵/۶۰ دقیقه‌ای) منتشر نمی‌کند — نه در CDN و نه در
- * نهایت‌نگار. پس تنها سه بازه با دادهٔ واقعی وجود دارد و بقیه حذف شده‌اند تا
- * کندلِ روزانه زیرِ برچسبِ «ساعتی» سرو نشود.
+ * TSETMC تاریخچۀ درون‌روزی (یک و پنج و پانزده و سی دقیقه‌ای و ساعتی) منتشر نمی‌کند —
+ * نه در CDN و نه در نهایت‌نگار. پس تنها سه بازه با دادهٔ واقعی وجود دارد و بقیه
+ * حذف شده‌اند تا کندلِ روزانه زیرِ برچسبِ «ساعتی» سرو نشود.
  */
 export const SUPPORTED_TIMEFRAMES = ['D', 'W', 'M'] as const;
 export type Timeframe = (typeof SUPPORTED_TIMEFRAMES)[number];
+
+/**
+ * capabilityِ صریحِ «منبع»، جدا از توانِ رندرِ کتابخانه. کاوشِ زندۀ ۱۴۰۵-۰۷-۱۲
+ * (`_audit/probe_intraday_sources.py`) نُه خانوادۀ نآزمودۀ `cdn.tsetmc.com/api`
+ * (Trades/Chart/History/StaticData/MarketData) را زد و هیچ‌کدام داده نداد: یا ۴۰۴
+ * یا همان صفحۀ ضدربات. با ده مسیرِ دورِ پیش (LIVE_HOT_STATE.md §۸) جمعاً نوزده
+ * مسیرِ آزموده‌شدۀ مرده — پس کندلِ درون‌روزه برایِ هیچ نمادی قابلِ ساخت نیست و
+ * «کندلِ باز» فقط برایِ جلسۀ جاری و فقط از تابلویِ زنده معنا دارد.
+ */
+export const UNSUPPORTED_TIMEFRAMES = ['1m', '5m', '15m', '30m', '1h'] as const;
+
+export const INTRADAY_CAPABILITY = {
+  supported: false,
+  /** دلیلِ کامل — جایِ آن tooltip و مستند است، نه متنِ دیدنی */
+  reason: 'منبعِ درون‌روزیِ نماد در TSETMC منتشر نمی‌شود (نوزده مسیرِ آزموده‌شده مرده‌اند).',
+  fallback: 'D' as Timeframe,
+};
+
+export function isSupportedTimeframe(tf: unknown): tf is Timeframe {
+  return typeof tf === 'string' && (SUPPORTED_TIMEFRAMES as readonly string[]).includes(tf);
+}
+
+/**
+ * درخواستِ بازه‌ای که منبعِ داده ندارد باید صریح به روزانه تنزل کند و دلیلش را
+ * بگوید — سکوتِ بی‌نشانه یعنی کاربر فکر می‌کند چارت خراب است.
+ */
+export function resolveTimeframe(req: unknown): { timeframe: Timeframe; degraded: string | null } {
+  if (isSupportedTimeframe(req)) return { timeframe: req, degraded: null };
+  if (typeof req === 'string' && (UNSUPPORTED_TIMEFRAMES as readonly string[]).includes(req)) {
+    return {
+      timeframe: INTRADAY_CAPABILITY.fallback,
+      degraded: `بازۀ «${req}» منبعِ داده ندارد؛ نمای روزانه رسم می‌شود.`,
+    };
+  }
+  const label = typeof req === 'string' && req.length > 0 && req.length <= 8 ? req : 'ناشناخته';
+  return {
+    timeframe: INTRADAY_CAPABILITY.fallback,
+    degraded: `بازۀ «${label}» درِ این برنامه داده ندارد؛ نمای روزانه رسم می‌شود.`,
+  };
+}
+
 
 export const TIMEFRAME_LABELS: Record<Timeframe, string> = {
   D: 'روزانه',

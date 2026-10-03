@@ -1,0 +1,33 @@
+{
+ "symbols_measured": 748,
+ "qualified_both": 748,
+ "verdict_flip_bullish": 1,
+ "oversold_flip": 1,
+ "iso_only_qualified": 0,
+ "sat_only_qualified": 0,
+ "ma52_diff_pct_median": 0.946,
+ "ma52_diff_pct_p90": 2.159,
+ "ma52_diff_pct_max": 12.219,
+ "rsi_diff_median": 2.03,
+ "rsi_diff_p90": 5.612,
+ "weekly_bars_extra_iso_median": 1,
+ "flips": [
+  {
+   "symbol": "كرماشا",
+   "iso": {
+    "bullish": false,
+    "oversold": false,
+    "ma52": 28315.0,
+    "rsi": 47.50099194918118,
+    "bars": 98
+   },
+   "sat": {
+    "bullish": true,
+    "oversold": false,
+    "ma52": 28084.423076923078,
+    "rsi": 47.95474749922698,
+    "bars": 96
+   }
+  }
+ ]
+}

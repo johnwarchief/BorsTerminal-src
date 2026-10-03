@@ -171,6 +171,39 @@ prime/journal، برابریِ سطر‌به‌سطرِ بدنهٔ RAM با بد
   `market_state` ردیفِ کاملِ هر نماد را نگه می‌دارد (`live_view`)، نوشتنِ
   شمعِ بسته از `candle_contract` می‌گذرد، و شمعِ باز هرگز رویِ دیسک نمی‌نشیند.
 
+### ۸-الف) دورِ دومِ کاوش و ثبتِ capability درِ کد (۱۴۰۵-۰۷-۱۲)
+
+`_audit/probe_intraday_sources.py` نه خانوادۀ **نآزموده** از همان میزبانی که
+`GetClosingPriceDailyListCSV` تولید از آن کار می‌کند را زد؛ ده مسیرِ بالا **دوباره
+آزموده نشدند** (احیایِ مسیرِ مرده ممنوع):
+
+| نامزد (cdn.tsetmc.com/api) | پاسخ |
+|---|---|
+| `Trades/GetInstrumentTradesWithDate` (امروز، دیروز، و شکلِ path) | ۸۲۴ بایت HTMLِ ضدربات |
+| `Trades/GetInstrumentTradesLastNUpdate` | ۸۲۴ بایت HTML |
+| `Chart/GetChartV2?tf=1&dateFrom=…`، `Chart/GetChartData` | ۸۲۴ بایت HTML |
+| `MarketData/GetMarketDataTwo?method=PostMarketData` | ۴۰۴ |
+| `History/GetInstrumentHistory` | ۸۲۴ بایت HTML |
+| `StaticData/GetInstrumentStatic` | ۴۰۴ |
+
+جمعاً **نوزده مسیرِ آزموده‌شدۀ مرده** و هیچ‌کدام دادهٔ دقیقه‌ایِ *هر نماد* نداد.
+پس محدودیت دیگر فقط یادداشتِ این سند نبود و به‌عنوان **capability صریح درِ کد**
+ثبت شد:
+
+| کجا | چه |
+|---|---|
+| `frontend/…/nahayatnegar/lib/timeframe.ts` | `UNSUPPORTED_TIMEFRAMES` + `INTRADAY_CAPABILITY = {supported: false, reason, fallback: 'D'}` — جدا از توانِ رندرِ کتابخانه |
+| همان فایل، `resolveTimeframe()` | درخواستِ بازۀ بی‌منبع ⇒ تنزلِ صریح به `D` **به‌همراهِ دلیلِ خوانا**؛ سکوتِ بی‌نشانه ممنوع |
+| `KLineChartWrapper.applyTemplate` | قالبِ کهنه‌ای که `1m` بخواهد رویِ روزانه می‌ماند و یادداشتِ `chart-timeframe-note` را نشان می‌دهد |
+| `engine/types.ts` + آزمایشگاهِ موتورها | `minuteTimeframes` → `minuteBarRendering` (توانِ رندر) و سطرِ جدا «سورسِ دادهٔ دقیقه‌ای: ندارد» |
+| تست‌ها | `technical-timeframe.spec.ts` (capability + تنزل + کنترلِ مثبت) و `technical-chart-templates.spec.tsx` (هیچ `setPeriod` با `minute`/`hour` نمی‌رود) |
+
+**کندلِ باز:** تنها شمعِ «باز»ِ مجاز درِ همین برنامه، جلسۀ جاریِ *روزانه* است که
+منبعش `market_watch` است (`_watch_live_bar` درِ `api/chart.py:169`)، با دو گیتِ
+سنجیده‌شده: تاریخ از خودِ `d_even` (نه `date.today()`) و `q_tot_tran > 0` (ردیفِ
+پیش از بازگشایی با پایانیِ پر و حجمِ صفر شمع نمی‌سازد). هیچ سورسِ درون‌روزه‌ای
+برایِ «کندلِ باز» ادعا نمی‌شود.
+
 ## ۹) بهینگیِ بی‌رفتار (۱۴۰۵-۰۷-۱۱، درِ ساعتِ بازار)
 
 دورِ «فقط مصرف». قاعدۀ بازی: هیچ عددی درِ خروجی حق ندارد تکان بخورد، پس هر

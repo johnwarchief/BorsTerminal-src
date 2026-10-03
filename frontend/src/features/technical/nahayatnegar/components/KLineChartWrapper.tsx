@@ -28,7 +28,10 @@ import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
   mapBackendAdjustEvents, pricePrecisionFor
 } from '../lib/adjustments';
-import { aggregateCandles, timeframePeriod, SUPPORTED_TIMEFRAMES, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
+import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
+import { buildBarClick, type OverlayRef } from '../lib/barClicks';
+import { useChartClickStore } from '../../stores/chartClickStore';
+import { ClickLogChip } from './ClickLogChip';
 import type { ChartEngineId } from '../../engine';
 import {
   registerFtsOverlays,
@@ -408,6 +411,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // کوتاه‌تر و بی‌رویدادِ تعدیل، پس اعدادِ محور جابه‌جا می‌شوند. تا پیش از این
   // آن جابه‌جایی بی‌هیچ نشانه‌ای رخ می‌داد («کندلِ پنجم از ۴۰۵ شد ۴۰۴»).
   const [feedNote, setFeedNote] = useState<string | null>(null);
+  // یادداشتِ تنزلِ بازه: قالبِ ذخیره‌شده می‌تواند بازه‌ای بخواهد که منبعِ داده
+  // ندارد (درون‌روزی). آن‌جا چارت روزانه می‌ماند و دلیل را یک‌بار می‌گوید.
+  const [tfNote, setTfNote] = useState<string | null>(null);
 
   // استراتژی FTS — تحلیل از سرور می‌آید (#161)؛ چارت فقط رسم می‌کند.
   // رأیِ مالک: لایهٔ «تحلیل FTS» فعلاً ناقص است ⇒ پیش‌فرض خاموش؛ کلیدِ
@@ -650,6 +656,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   useEffect(() => {
     fetchCandleData(currentSymbol);
   }, [currentSymbol, fetchCandleData]);
+
+  // بازپخش (Bar Replay) مالِ سریِ یک نماد است: مکان‌نما ایندکسِ همان سری است، پس
+  // اگر نماد عوض شود و بازپخش روشن بماند، سریِ نمادِ تازه از ایندکسِ نمادِ قبلی
+  // برش می‌خورد — همان کلاسِ نشتِ حالتِ #44، این‌بار درِ استورِ سراسری.
+  useEffect(() => {
+    useReplayStore.getState().rehome(currentSymbol);
+  }, [currentSymbol]);
 
   // --- فاز ۳ (wiring): ماندگاری ترسیم‌ها + میانبرها + مگنت ---
   const magnetRef = useRef(isMagnetActive);
@@ -1730,6 +1743,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const handleTimeframeChange = (tf: Timeframe) => {
     flushDrawings();
     setActiveTimeframe(tf);
+    setTfNote(null);
     chartRef.current?.setPeriod(timeframePeriod(tf));
     if (onTimeframeChange) onTimeframeChange(tf);
   };
@@ -1786,8 +1800,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     for (const k of want) if (!have.has(k) && registered.has(k)) toggleIndicator(k);
 
     const chart = chartRef.current;
-    if (t.timeframe && SUPPORTED_TIMEFRAMES.includes(t.timeframe as Timeframe) && t.timeframe !== activeTimeframe) {
-      handleTimeframeChange(t.timeframe as Timeframe);
+    // بازه‌ای که منبعِ داده ندارد (درون‌روزی) صریح به روزانه تنزل می‌کند و
+    // دلیلش را می‌گوید؛ سکوتِ بی‌نشانه یعنی کاربر قالب را خراب می‌پندارد.
+    // قالبِ بی‌بازه هیچ تنزلی ندارد. یادداشت بعد از عوض‌کردنِ بازه نوشته می‌شود،
+    // چون خودِ تغییرِ بازه پاکش می‌کند.
+    if (t.timeframe) {
+      const tf = resolveTimeframe(t.timeframe);
+      if (tf.timeframe !== activeTimeframe) handleTimeframeChange(tf.timeframe);
+      setTfNote(tf.degraded);
     }
     if (t.candleType && t.candleType !== activeCandleType && CHART_TYPES.includes(t.candleType)) {
       handleCandleTypeChange(t.candleType);
@@ -1918,6 +1938,53 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     };
   }, [compareSymbol, isChartReady]);
+
+  // ── رویدادِ کلیک ──────────────────────────────────────────────────────────
+  // کلیک رویِ میله یکِ قراردادِ پایدار می‌سازد (نماد/بازه/میله/نتیجهٔ موتور) و درِ
+  // لاگِ محلی می‌نشیند. تشخیصِ ستاپ اینجا تکرار نمی‌شود: `setups` عینِ همان
+  // فهرستِ تاریخ‌دارِ `/api/fts` است و مارکر از اورلی‌هایِ رسم‌شده خوانده می‌شود.
+  // وضعیت به رفرنس می‌چسبد تا اشتراک با هر رندرِ تازه بسته نشود و کلیکِ کهنه
+  // نمادِ قبلی را درِ لاگ نزند.
+  const clickCtxRef = useRef<{ symbol: string; timeframe: Timeframe }>({
+    symbol: currentSymbol,
+    timeframe: activeTimeframe,
+  });
+  clickCtxRef.current = { symbol: currentSymbol, timeframe: activeTimeframe };
+  const clickEngineRef = useRef<{
+    setups: FtsAnalysisData['setups'];
+    adjustments: CorporateAction[];
+  }>({ setups: ftsAnalysis?.setups ?? null, adjustments: corporateActions });
+  clickEngineRef.current = { setups: ftsAnalysis?.setups ?? null, adjustments: corporateActions };
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const onBarClick = (data?: unknown) => {
+      const bar = (data as { data?: { current?: KLineData } } | undefined)?.data?.current;
+      const overlays = (chart.getOverlays?.() ?? []) as never as OverlayRef[];
+      const e = buildBarClick({
+        symbol: clickCtxRef.current.symbol,
+        timeframe: clickCtxRef.current.timeframe,
+        bar,
+        setups: clickEngineRef.current.setups,
+        adjustments: clickEngineRef.current.adjustments,
+        overlays,
+      });
+      if (e) useChartClickStore.getState().log(e);
+    };
+    try {
+      chart.subscribeAction('onCandleBarClick', onBarClick);
+    } catch {
+      // موتورِ قدیمی این کنش را ندارد؛ لاگ همان خالی می‌ماند و چارت دست‌نخورده است
+    }
+    return () => {
+      try {
+        chart.unsubscribeAction('onCandleBarClick', onBarClick);
+      } catch {
+        // اشتراکی ثبت نشده بود که برداشته شود
+      }
+    };
+  }, [isChartReady]);
 
   // هندلر ابزارهای رسم در نوار چپ
   const handleSelectTool = (toolId: string, overlayType: string) => {
@@ -2281,6 +2348,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             </div>
           ) : null}
 
+          {/* تنزلِ بازه: درخواستِ کندلِ درون‌روزی، نه خرابیِ چارت */}
+          {tfNote ? (
+            <div
+              className="nn-feed-note"
+              data-testid="chart-timeframe-note"
+              title={`سریِ دقیقه‌ای یا ساعتی برایِ هیچ نمادی منتشر نمی‌شود؛ چارت رویِ همان بازۀ روزانه می‌ماند. ${INTRADAY_CAPABILITY.reason}`}
+            >
+              <span>{tfNote}</span>
+            </div>
+          ) : null}
+
           {/* کانتینر اصلی کتابخانه KlineCharts با لِجِندِ جمع‌شوندهٔ الگوها */}
           {activePatterns.length > 0 ? (
             isPatternLegendCollapsed ? (
@@ -2454,6 +2532,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#089981]" />
           <span>تهران (UTC+3:30)</span>
         </div>
+
+        {/* رویدادِ آخرینِ کلیک — نماد/بازه/میله/نتیجهٔ موتور (لاگِ محلی، پایدار) */}
+        <ClickLogChip symbol={currentSymbol} />
       </footer>
 
       {/* پنجره جستجوی نماد */}

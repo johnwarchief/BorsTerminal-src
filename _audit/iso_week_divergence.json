@@ -1,73 +1,25 @@
 {
  "source": "فهرستِ arg (سبدِ parity + نام‌هایِ مالک)",
- "symbols": 24,
- "skipped": 19,
- "rows": 9718,
- "buckets_iso_avg": 94.04166666666667,
- "buckets_sat_avg": 92.08333333333333,
+ "symbols": 3,
+ "skipped": 3,
+ "rows": 1290,
+ "buckets_iso_avg": 98.66666666666667,
+ "buckets_sat_avg": 97.0,
  "lag_sessions": {
-  "0": 264,
-  "1": 98,
-  "2": 319,
-  "3": 1554,
-  "4": 1,
-  "5": 21
+  "0": 30,
+  "1": 12,
+  "2": 41,
+  "3": 210,
+  "5": 3
  },
- "share_sampled_on_week_end": 0.11696942844483828,
- "week_close_diff_pct_median": 2.5892506865437426,
- "rsi_delta_median": 1.4895896265316715,
+ "share_sampled_on_week_end": 0.10135135135135136,
+ "week_close_diff_pct_median": 0.6816736823328735,
+ "rsi_delta_median": 1.5931493732877868,
  "rsi_gate_swaps": 0,
  "bullish_swaps": 0,
- "verdict_symbols": 24,
- "eligible_iso": 24,
- "eligible_sat": 24,
- "rsi_samples": 24,
- "examples": [
-  {
-   "symbol": "مبين",
-   "rsi_iso": 11.16,
-   "rsi_sat": 17.88,
-   "bullish_iso": false,
-   "bullish_sat": false,
-   "oversold_iso": true,
-   "oversold_sat": true,
-   "iso_sample_days": [
-    "2026-09-30",
-    "2026-09-21",
-    "2026-09-20",
-    "2026-09-13",
-    "2026-09-06"
-   ],
-   "sat_sample_days": [
-    "2026-09-30",
-    "2026-09-21",
-    "2026-09-16",
-    "2026-09-09",
-    "2026-09-02"
-   ]
-  },
-  {
-   "symbol": "عيار",
-   "rsi_iso": 88.26,
-   "rsi_sat": 81.37,
-   "bullish_iso": true,
-   "bullish_sat": true,
-   "oversold_iso": false,
-   "oversold_sat": false,
-   "iso_sample_days": [
-    "2026-09-30",
-    "2026-09-21",
-    "2026-09-19",
-    "2026-09-13",
-    "2026-09-06"
-   ],
-   "sat_sample_days": [
-    "2026-09-30",
-    "2026-09-21",
-    "2026-09-16",
-    "2026-09-09",
-    "2026-09-02"
-   ]
-  }
- ]
+ "verdict_symbols": 3,
+ "eligible_iso": 3,
+ "eligible_sat": 3,
+ "rsi_samples": 3,
+ "examples": []
 }

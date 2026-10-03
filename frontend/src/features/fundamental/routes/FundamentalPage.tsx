@@ -58,6 +58,7 @@ export default function FundamentalPage() {
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب: POST + polling وضعیت تا پایان */
   type DbStatus = { running: boolean; stage: string; percent?: number; detail?: string; error?: string };
   const [dbUpd, setDbUpd] = useState<DbStatus | null>(null);
+  const dbRunning = dbUpd?.running === true;
   const { refetch: refetchScreen } = screen;
   const handleDbUpdate = async () => {
     setDbUpd({ running: true, stage: 'starting' });
@@ -65,17 +66,29 @@ export default function FundamentalPage() {
       await http('/api/sync/codal/db-download', { method: 'POST' });
     } catch { /* وضعیت واقعی از polling می‌آید */ }
   };
+  // polling: ریتم از «آیا در جریان است» می‌آید، نه از خودِ وضعیت — وگرنه هر پاسخ
+  // افکت را از نو می‌ساخت. دو نگهبان لازم است: `alive` (صفحه بسته شد ⇒ نوشتن در
+  // stateِ رهاشده نباشد) و شمارۀ ترتیب (پاسخِ درخواستِ کهنه جایِ پاسخِ تازه را
+  // نگیرد؛ با ریتمِ ۲ ثانیه و پاسخِ کند، دو درخواست هم‌زمان در راه می‌مانند و
+  // ترتیبِ رسیدن با ترتیبِ زدن یکی نیست — پیش از این «done» می‌توانست با
+  // «running»ِ کهنه بازنویسی شود).
   useEffect(() => {
-    if (!dbUpd?.running) return;
-    const id = setInterval(async () => {
-      try {
-        const r = await http<{ db: DbStatus }>('/api/sync/codal/db-status');
-        setDbUpd(r.db);
-        if (!r.db.running && r.db.stage === 'done') void refetchScreen();
-      } catch { /* سرور مشغول است — تیک بعدی */ }
-    }, 2000);
-    return () => clearInterval(id);
-  }, [dbUpd?.running, refetchScreen]);
+    if (!dbRunning) return;
+    let alive = true;
+    let issued = 0;
+    const tick = () => {
+      const mine = ++issued;
+      http<{ db: DbStatus }>('/api/sync/codal/db-status')
+        .then((r) => {
+          if (!alive || mine !== issued) return;
+          setDbUpd(r.db);
+          if (!r.db.running && r.db.stage === 'done') void refetchScreen();
+        })
+        .catch(() => { /* سرور مشغول است — تیک بعدی */ });
+    };
+    const id = setInterval(tick, 2000);
+    return () => { alive = false; clearInterval(id); };
+  }, [dbRunning, refetchScreen]);
   // اگر دانلود از قبل در جریان است (مثلاً کاربر وسط آن صفحه را عوض کرده)،
   // وضعیت را یک‌بار بخوان تا دکمه و polling از همان ابتدا زنده باشند.
   useEffect(() => {

@@ -112,7 +112,7 @@ export class FastFinancialChartsEngine implements ChartEngine {
     overlay: { level: true, band: true, segment: true, marker: true },
     customIndicator: true,
     builtinDrawTools: true,
-    minuteTimeframes: true,
+    minuteBarRendering: true,
     logScale: true,
     // محورِ زمان را خودِ بسته با Intl می‌سازد؛ جلالی فقط با formatterِ ما ممکن
     // است و آن هم فقط «متن» را عوض می‌کند، نه نامِ ماه‌هایِ میلادیِ پیش‌فرض.

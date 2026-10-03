@@ -1,7 +1,12 @@
 // تجمیع کندل روزانه → هفتگی/ماهانه؛ KLineCharts خودش بازآرایی نمی‌کند، پس این تنها
 // جایی است که نمای غیرروزانه داده‌اش را می‌سازد (برچسبِ اشتباه = کندلِ اشتباه).
 import { describe, expect, it } from 'vitest';
-import { aggregateCandles, SUPPORTED_TIMEFRAMES } from '@features/technical/nahayatnegar/lib/timeframe';
+import {
+  aggregateCandles,
+  INTRADAY_CAPABILITY,
+  resolveTimeframe,
+  SUPPORTED_TIMEFRAMES,
+} from '@features/technical/nahayatnegar/lib/timeframe';
 import type { KLineData } from 'klinecharts';
 
 // همان چیزی که parseCandleTimestamp می‌سازد: نیمه‌شبِ UTC، بدونِ جزءِ ساعت
@@ -71,5 +76,25 @@ describe('تجمیع بازهٔ زمانی', () => {
 
   it('فقط سه بازهٔ روزانه/هفتگی/ماهانه پیشنهاد می‌شود — دادهٔ درون‌روزی وجود ندارد', () => {
     expect([...SUPPORTED_TIMEFRAMES]).toEqual(['D', 'W', 'M']);
+  });
+
+  // capability صریح: محدودیت از «منبع» است نه از کتابخانه؛ بدونِ این سطر، حذفِ
+  // گزینه‌ها فقط یک سکوتِ بی‌دلیل به‌نظر می‌رسد.
+  it('منبعِ درون‌روزی اعلام‌شده است و بازهٔ درخواستیِ بی‌منبع به روزانه تنزل می‌کند', () => {
+    expect(INTRADAY_CAPABILITY.supported).toBe(false);
+
+    const degraded = resolveTimeframe('1m');
+    expect(degraded.timeframe).toBe('D');
+    expect(degraded.degraded).toContain('منبع');
+    expect(degraded.degraded).toContain('1m');
+
+    // کنترلِ مثبت: بازه‌هایِ واقعی هیچ تنزلی و هیچ یادداشتی ندارند
+    expect(resolveTimeframe('W')).toEqual({ timeframe: 'W', degraded: null });
+    expect(resolveTimeframe('D').degraded).toBeNull();
+    expect(resolveTimeframe('M').degraded).toBeNull();
+
+    // رشتهٔ ناشناخته هم روزانه می‌شود، ولی مقدارِ خامِ کاربر به متن راه نمی‌یابد
+    expect(resolveTimeframe('xyz').timeframe).toBe('D');
+    expect(resolveTimeframe(null).degraded).toContain('ناشناخته');
   });
 });

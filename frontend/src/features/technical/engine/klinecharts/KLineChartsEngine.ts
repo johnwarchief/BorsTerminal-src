@@ -204,7 +204,7 @@ export class KLineChartsEngine implements ChartEngine {
     overlay: { level: true, band: true, segment: true, marker: true },
     customIndicator: true,
     builtinDrawTools: true,
-    minuteTimeframes: true,
+    minuteBarRendering: true,
     logScale: true,
     jalaliAxis: true,
     crosshairEvents: true,

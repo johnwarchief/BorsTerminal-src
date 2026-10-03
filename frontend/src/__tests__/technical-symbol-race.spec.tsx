@@ -6,6 +6,8 @@
 import { act, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useReplayStore } from '@features/technical/stores/replayStore';
+
 type Cfg = { time: string; open: number; high: number; low: number; close: number };
 /** چارت KLineData می‌گیرد (`timestamp` میلی‌ثانیه)، نه رشتهٔ سرور */
 type Bar = { timestamp: number };
@@ -79,7 +81,10 @@ async function settle(ms = 60) {
   await act(async () => { await new Promise((r) => setTimeout(r, ms)); });
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  useReplayStore.setState({ active: false, cursor: 0, playing: false, owner: null });
+});
 
 describe('واکشی کندل با عوض‌شدنِ نماد', () => {
   it('پاسخِ کُندِ نمادِ قبلی رویِ چارتِ نمادِ تازه نمی‌نشیند', async () => {
@@ -112,5 +117,33 @@ describe('واکشی کندل با عوض‌شدنِ نماد', () => {
     render(<KLineChartWrapper initialSymbol="خودرو" />);
     await settle();
     expect(barsNow().map((b) => b.timestamp)).toEqual(B.map((b) => stamp(b.time)));
+  });
+
+  // کلاسِ همان باگ، این‌بار درِ استورِ سراسریِ بازپخش: مکان‌نما ایندکسِ سریِ نمادِ
+  // پیشین است و اگر روشن بماند، سریِ نمادِ تازه از همان ایندکس برش می‌خورد.
+  it('بازپخشِ روشنِ نمادِ قبلی با نمادِ تازه خاموش می‌شود (نه برشِ کهنه)', async () => {
+    stubSlowFirst();
+    useReplayStore.getState().start(2);
+    useReplayStore.getState().rehome('فولاد');
+    expect(useReplayStore.getState().active).toBe(true);
+
+    const { rerender } = render(<KLineChartWrapper initialSymbol="فولاد" />);
+    await act(async () => { await Promise.resolve(); });
+    rerender(<KLineChartWrapper initialSymbol="خودرو" />);
+    await settle();
+
+    expect(useReplayStore.getState().active).toBe(false);
+    expect(useReplayStore.getState().owner).toBe('خودرو');
+  });
+
+  it('بی‌بازپخش، عوض‌شدنِ نماد هیچ وضعیتی را نمی‌سازد (کنترلِ منفیِ همان گیت)', async () => {
+    stubSlowFirst();
+    const { rerender } = render(<KLineChartWrapper initialSymbol="فولاد" />);
+    await act(async () => { await Promise.resolve(); });
+    rerender(<KLineChartWrapper initialSymbol="خودرو" />);
+    await settle();
+    const st = useReplayStore.getState();
+    expect(st.active).toBe(false);
+    expect(st.cursor).toBe(0);
   });
 });

@@ -17,6 +17,10 @@ SUITES = [
     ('dev/adb_resilience_v972.py',    'ADB retry/reconnect + wifi restore'),
     ('dev/confidence_engine_v973.py', 'triple-confirmation confidence engine'),
     ('dev/soft_warnings_v974.py',     'soft pass/warn/fail/nodata — no hard vetoes'),
+    # بستۀ هفتگیِ موتورِ اطمینان باید همان سبدِ شنبه‌محورِ خودِ چارت باشد؛ سنجشِ
+    # ۷۴۸ نمادی (§۱-ح-۵ و _audit/ce_weekly_calendar_impact.py) MA52 را تا ۱۲٪ و
+    # شمارِ سطل را در ۲۹ از ۴۰ نماد جدا می‌دید. گارد با منفی‌کنترلِ ISO.
+    ('dev/ce_weekly_bucket_v1073.py', 'confidence_engine weekly bucket == chart Saturday bucket'),
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
     ('dev/watchlist_matrix_v973.py',  'watchlist store + triple matrix + parity'),
     ('dev/patch_check_v10.py',        'patch/update system guard'),
