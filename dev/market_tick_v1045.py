@@ -29,9 +29,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import test_tsetmc as T  # noqa: E402
 
 FAILS = []
+CHECKS = 0
 
 
 def ck(label, cond):
+    global CHECKS
+    CHECKS += 1
     print(("  ok   " if cond else "  FAIL ") + label)
     if not cond:
         FAILS.append(label)
@@ -157,9 +160,30 @@ def run():
         r = conn.execute("SELECT p_closing, q_tot_tran, buy_q_vol FROM market_watch WHERE ins_code='X1'").fetchone()
         ck("پس از بستن تا ۱۵:۳۰: آخرین/حجمِ تازه نوشته می‌شود", n == 1 and r[0] == 102.5 and r[1] == 610.0)
         ck("صف‌هایِ حفظ‌شدۀ بستۀ بازار درِ UPDATE نیستند", r[2] == 12345.0)
+        # «آخرین» درِ همین شاخه هم باید بنشیند: `UPDATE daily_prices` یک‌بار
+        # ستونِ p_last را نداشت، پس هیچ «آخرینی» از تابلو به `daily_prices` راه
+        # نمی‌یافت و `price_history.last` تا ابد NULL می‌ماند (سنجیدۀ ۱۴۰۵-۰۷-۱۴
+        # رویِ بانکِ کاری: daily_prices.p_last = ۰ از ۷۲٬۳۱۱، market_watch.p_last
+        # = ۵٬۴۵۱ از ۵٬۴۵۱). کلیدِ زنجیر: pdv → daily_prices.p_last → کندل.
+        rd = conn.execute("SELECT p_last, p_closing FROM daily_prices"
+                          " WHERE ins_code='X1' AND d_even=20260928").fetchone()
+        ck("پس از بستن: p_lastِ تابلو (pdv) درِ daily_prices هم نوشته می‌شود",
+           rd is not None and rd[0] == 90.0 and rd[1] == 102.5)
+        # بازسازِ کندل از daily_prices با instruments می‌پیوندد (نمادِ بازار از
+        # آن‌جا خوانده می‌شود) — تیکِ زنده instruments را نمی‌نویسد، پس اینجا
+        # خودش را می‌سازیم تا زنجیرِ pdv → p_last → price_history.last سنجیده شود.
+        conn.execute("INSERT OR REPLACE INTO instruments (ins_code, l_val18, l_val30)"
+                     " VALUES ('X1','نام','شرکت آزمایشی')")
+        conn.commit()
+        T.sync_price_history_from_daily(conn, full=True)
+        ch = conn.execute("SELECT last, close, src FROM price_history"
+                          " WHERE date='2026-09-28'").fetchall()
+        ck("و همان عدد به price_history.last می‌رسد (بی‌این، مبنایِ last هیچ‌وقت داده ندارد): %s"
+           % (str(ch[:2]),),
+           bool(ch) and all(x[0] == 90.0 for x in ch) and all(x[2] == "board" for x in ch))
         # سیاستِ داده‌محور (رأیِ داورِ زنده): تا وقتی داده عوض می‌شود تیک
         # می‌خورد؛ ده دقیقه بی‌تغييري ⇒ گوش‌دادنِ شصت‌ثانیه‌ای؛ تغيیری دید ⇒
-        # برمی‌گردد. درِ صبح و سقفِ شب همmust باشند (ردیف‌های صفرِ پیش‌ازگشایی
+        # برمی‌گردد. درِ صبح و سقفِ شب هم باید باشند (ردیف‌های صفرِ پیش‌ازگشایی
         # همان بلاگِ #120 را می‌سازند).
         set_clock(hhmm="0800")
         FETCHES.clear()
@@ -217,8 +241,7 @@ def run():
         conn2.close()
     finally:
         T.polite_get = orig_pg
-    passed = 21 - len(FAILS)
-    print("\nmarket_tick_v1045: %d passed / %d failed" % (passed, len(FAILS)))
+    print("\nmarket_tick_v1045: %d سنجه، %d خطا" % (CHECKS, len(FAILS)))
     return 1 if FAILS else 0
 
 
