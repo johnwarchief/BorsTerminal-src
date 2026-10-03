@@ -488,6 +488,9 @@ export function ObsidianStrategyGraph({
             </g>
 
             {/* چهار Zone: سربرگِ ثابت + بدنهٔ رنگیِ همان صفحۀ چاپی */}
+            {/* قیدِ SVG درِ این بوم: text-anchor درِ متنِ راست‌به‌چپ جهت‌دار است —
+                «start» یعنی لبۀ راست و «end» یعنی لبۀ چپ. برعکسش برچسب را از
+                کارت بیرون می‌برد (سنجشِ زنده: tools/map_geometry_probe.mts). */}
             <g className="zone-frames">
               {layout.zones.map((zone) => {
                 const meta = ZONE_BY_KEY[zone.key];
