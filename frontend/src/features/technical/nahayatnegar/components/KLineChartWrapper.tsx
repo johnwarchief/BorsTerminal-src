@@ -915,7 +915,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     // init در v10 با layout.yAxis و formatter
-    const chart = init(chartContainerRef.current, {
+    // میزبان در متغیر محلی قفل می‌شود: در unmountِ React 18 ریف می‌تواند پیش از
+    // cleanupِ passive تهی شده باشد و `if (chartContainerRef.current)` دیسپوز را
+    // بی‌صدا رد می‌کرد — سنجشِ نشت: هر بازدیدِ /technical سه listenerِ document
+    // (keydown/mousedown/touchstartِ چارتِ آزادنشده) اضافه می‌کرد.
+    const hostEl = chartContainerRef.current;
+    const chart = init(hostEl, {
       layout: {
         barSpaceLimit: { min: 2, max: 40 },
         yAxis: { position: 'right', inside: false }
@@ -1020,9 +1025,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       } catch (e) {
         void e;
       }
-      if (chartContainerRef.current) {
-        dispose(chartContainerRef.current);
-      }
+      if (hostEl) dispose(hostEl);
       setIsChartReady(false);
       chartRef.current = null;
     };
