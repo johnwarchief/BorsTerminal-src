@@ -5,36 +5,36 @@
    "sl": 0.05,
    "horizon": 20
   },
-  "bars_evaluated": 245444,
-  "symbols": 725,
+  "bars_evaluated": 249170,
+  "symbols": 727,
   "base_rate": {
-   "n": 245444,
-   "win": 0.38119082153159173,
-   "loss": 0.4304933100829517,
-   "open": 0.18831586838545655,
-   "mean_ret": 0.01174152903901087
+   "n": 249170,
+   "win": 0.3809969097403379,
+   "loss": 0.4286872416422523,
+   "open": 0.1903158486174098,
+   "mean_ret": 0.011838816889592327
   },
   "variants": {
    "ladder_current": {
-    "fires": 11269,
-    "fires_per_1000_bars": 45.913,
-    "win": 4250,
-    "loss": 3319,
-    "open": 3700,
+    "fires": 11444,
+    "fires_per_1000_bars": 45.928,
+    "win": 4286,
+    "loss": 3371,
+    "open": 3787,
     "pending_bars": 0,
-    "false_bars": 206639,
-    "precision": 0.5615,
-    "expectancy": 0.02337,
-    "median_bars_to_resolve": 6,
-    "coverage_symbols": 690,
+    "false_bars": 209747,
+    "precision": 0.5597,
+    "expectancy": 0.02319,
+    "median_bars_to_resolve": 6.0,
+    "coverage_symbols": 692,
     "by_regime": {
      "bull": {
-      "n": 8587,
-      "win": 0.4367
+      "n": 8753,
+      "win": 0.4322
      },
      "range": {
-      "n": 2682,
-      "win": 0.1864
+      "n": 2691,
+      "win": 0.1869
      }
     },
     "fp_examples": [
@@ -112,123 +112,26 @@
      }
     ]
    },
-   "ladder_no_body": {
-    "fires": 13136,
-    "fires_per_1000_bars": 53.519,
-    "win": 5008,
-    "loss": 4175,
-    "open": 3953,
-    "pending_bars": 0,
-    "false_bars": 187161,
-    "precision": 0.5454,
-    "expectancy": 0.02179,
-    "median_bars_to_resolve": 6.0,
-    "coverage_symbols": 690,
-    "by_regime": {
-     "bull": {
-      "n": 10092,
-      "win": 0.4316
-     },
-     "range": {
-      "n": 3044,
-      "win": 0.2142
-     }
-    },
-    "fp_examples": [
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-05",
-      "level": 410650.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-17",
-      "level": 461644.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-06",
-      "level": 606753.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-07-08",
-      "level": 740000.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-09-13",
-      "level": 1017737.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-05-19",
-      "level": 8450.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-12-22",
-      "level": 8360.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2026-09-13",
-      "level": 2895.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-05-27",
-      "level": 10250.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-06-07",
-      "level": 10577.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-12-28",
-      "level": 13817.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2026-01-20",
-      "level": 14590.0,
-      "ret": -0.05
-     }
-    ]
-   },
    "ladder_confirm2": {
-    "fires": 9553,
-    "fires_per_1000_bars": 38.921,
-    "win": 3438,
-    "loss": 2601,
-    "open": 3514,
+    "fires": 9734,
+    "fires_per_1000_bars": 39.066,
+    "win": 3462,
+    "loss": 2669,
+    "open": 3603,
     "pending_bars": 0,
-    "false_bars": 213143,
-    "precision": 0.5693,
-    "expectancy": 0.02427,
-    "median_bars_to_resolve": 7,
-    "coverage_symbols": 689,
+    "false_bars": 216322,
+    "precision": 0.5647,
+    "expectancy": 0.0237,
+    "median_bars_to_resolve": 7.0,
+    "coverage_symbols": 691,
     "by_regime": {
      "bull": {
-      "n": 7314,
-      "win": 0.4289
+      "n": 7489,
+      "win": 0.4218
      },
      "range": {
-      "n": 2239,
-      "win": 0.1344
+      "n": 2245,
+      "win": 0.135
      }
     },
     "fp_examples": [
@@ -307,25 +210,25 @@
     ]
    },
    "ladder_confirm3": {
-    "fires": 8215,
-    "fires_per_1000_bars": 33.47,
-    "win": 2814,
-    "loss": 2078,
-    "open": 3323,
+    "fires": 8371,
+    "fires_per_1000_bars": 33.596,
+    "win": 2840,
+    "loss": 2117,
+    "open": 3414,
     "pending_bars": 0,
-    "false_bars": 218333,
-    "precision": 0.5752,
-    "expectancy": 0.02509,
+    "false_bars": 221599,
+    "precision": 0.5729,
+    "expectancy": 0.02469,
     "median_bars_to_resolve": 8,
-    "coverage_symbols": 689,
+    "coverage_symbols": 691,
     "by_regime": {
      "bull": {
-      "n": 6244,
-      "win": 0.4204
+      "n": 6396,
+      "win": 0.414
      },
      "range": {
-      "n": 1971,
-      "win": 0.0959
+      "n": 1975,
+      "win": 0.0972
      }
     },
     "fp_examples": [
@@ -403,123 +306,26 @@
      }
     ]
    },
-   "ladder_3day_window": {
-    "fires": 13858,
-    "fires_per_1000_bars": 56.461,
-    "win": 5325,
-    "loss": 4481,
-    "open": 4052,
-    "pending_bars": 0,
-    "false_bars": 178583,
-    "precision": 0.543,
-    "expectancy": 0.02152,
-    "median_bars_to_resolve": 6.0,
-    "coverage_symbols": 690,
-    "by_regime": {
-     "bull": {
-      "n": 10767,
-      "win": 0.4333
-     },
-     "range": {
-      "n": 3091,
-      "win": 0.2135
-     }
-    },
-    "fp_examples": [
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-05",
-      "level": 410650.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-13",
-      "level": 416560.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-17",
-      "level": 461644.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-05-19",
-      "level": 8450.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-11-12",
-      "level": 7860.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-12-22",
-      "level": 8360.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2026-09-13",
-      "level": 2895.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-05-27",
-      "level": 10250.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-06-07",
-      "level": 10577.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-11-05",
-      "level": 10900.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-12-28",
-      "level": 13817.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2026-01-20",
-      "level": 14590.0,
-      "ret": -0.05
-     }
-    ]
-   },
    "static_ceiling_120": {
-    "fires": 7303,
-    "fires_per_1000_bars": 29.754,
-    "win": 2627,
-    "loss": 1935,
-    "open": 2741,
-    "pending_bars": 40548,
-    "false_bars": 176965,
-    "precision": 0.5758,
-    "expectancy": 0.02511,
-    "median_bars_to_resolve": 6,
-    "coverage_symbols": 666,
+    "fires": 7450,
+    "fires_per_1000_bars": 29.899,
+    "win": 2673,
+    "loss": 1981,
+    "open": 2796,
+    "pending_bars": 40660,
+    "false_bars": 180036,
+    "precision": 0.5743,
+    "expectancy": 0.02507,
+    "median_bars_to_resolve": 6.0,
+    "coverage_symbols": 668,
     "by_regime": {
      "bull": {
-      "n": 6053,
-      "win": 0.4224
+      "n": 6197,
+      "win": 0.4199
      },
      "range": {
-      "n": 1250,
-      "win": 0.056
+      "n": 1253,
+      "win": 0.0567
      }
     },
     "fp_examples": [
@@ -597,332 +403,241 @@
      }
     ]
    },
-   "static": {
-    "fires": 11962,
-    "fires_per_1000_bars": 48.736,
-    "win": 5143,
-    "loss": 5422,
-    "open": 1397,
-    "pending_bars": 16205,
-    "false_bars": 185151,
-    "precision": 0.4868,
-    "expectancy": 0.01405,
-    "median_bars_to_resolve": 4.0,
-    "coverage_symbols": 628,
+   "static_ceil_confirm2": {
+    "fires": 6632,
+    "fires_per_1000_bars": 26.616,
+    "win": 2222,
+    "loss": 1720,
+    "open": 2690,
+    "pending_bars": 42110,
+    "false_bars": 181342,
+    "precision": 0.5637,
+    "expectancy": 0.02412,
+    "median_bars_to_resolve": 7.0,
+    "coverage_symbols": 660,
     "by_regime": {
-     "bear": {
-      "n": 310,
-      "win": 0.5613
-     },
      "bull": {
-      "n": 10048,
-      "win": 0.439
+      "n": 5474,
+      "win": 0.3973
      },
      "range": {
-      "n": 1604,
-      "win": 0.3479
+      "n": 1158,
+      "win": 0.0406
      }
     },
     "fp_examples": [
      {
       "symbol": "آتيمس",
-      "date": "2025-01-05",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-13",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-26",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-04",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-18",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-03-02",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-14",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-06-07",
-      "level": 415765.0,
+      "date": "2025-05-18",
+      "level": 461644.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
       "date": "2025-12-28",
-      "level": 415765.0,
+      "level": 547850.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
-      "date": "2026-01-06",
-      "level": 415765.0,
+      "date": "2026-01-07",
+      "level": 606753.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
-      "date": "2026-01-18",
-      "level": 415765.0,
+      "date": "2026-07-01",
+      "level": 735500.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
-      "date": "2026-02-03",
-      "level": 439989.0,
+      "date": "2026-09-15",
+      "level": 970680.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-20",
+      "level": 8290.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-28",
+      "level": 8360.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-12-31",
+      "level": 13599.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-09-07",
+      "level": 24470.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-09-15",
+      "level": 25273.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-06-01",
+      "level": 609500.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا213",
+      "date": "2025-12-24",
+      "level": 719800.0,
       "ret": -0.05
      }
     ]
    },
-   "static_confirm2": {
-    "fires": 11511,
-    "fires_per_1000_bars": 46.899,
-    "win": 4913,
-    "loss": 5263,
-    "open": 1335,
-    "pending_bars": 16205,
-    "false_bars": 186600,
-    "precision": 0.4828,
-    "expectancy": 0.0136,
-    "median_bars_to_resolve": 4,
-    "coverage_symbols": 621,
+   "static_ceil_confirm3": {
+    "fires": 6055,
+    "fires_per_1000_bars": 24.301,
+    "win": 1940,
+    "loss": 1497,
+    "open": 2618,
+    "pending_bars": 42836,
+    "false_bars": 182659,
+    "precision": 0.5644,
+    "expectancy": 0.02429,
+    "median_bars_to_resolve": 8,
+    "coverage_symbols": 654,
     "by_regime": {
-     "bear": {
-      "n": 278,
-      "win": 0.518
-     },
      "bull": {
-      "n": 9772,
-      "win": 0.4363
+      "n": 4933,
+      "win": 0.3841
      },
      "range": {
-      "n": 1461,
-      "win": 0.3457
+      "n": 1122,
+      "win": 0.0401
      }
     },
     "fp_examples": [
      {
       "symbol": "آتيمس",
-      "date": "2025-01-05",
-      "level": 322110.0,
+      "date": "2025-12-28",
+      "level": 547850.0,
       "ret": -0.05
      },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-01-11",
+      "level": 609177.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-06-15",
+      "level": 649990.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-07-07",
+      "level": 735500.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-08-08",
+      "level": 778009.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-09-15",
+      "level": 970680.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-21",
+      "level": 8290.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-11-05",
+      "level": 10891.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-12-31",
+      "level": 13599.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-08-24",
+      "level": 21687.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-09-12",
+      "level": 25273.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-05-21",
+      "level": 605900.0,
+      "ret": -0.05
+     }
+    ]
+   },
+   "static_ceiling_60": {
+    "fires": 10299,
+    "fires_per_1000_bars": 41.333,
+    "win": 3861,
+    "loss": 3095,
+    "open": 3343,
+    "pending_bars": 0,
+    "false_bars": 211857,
+    "precision": 0.5551,
+    "expectancy": 0.02311,
+    "median_bars_to_resolve": 6,
+    "coverage_symbols": 692,
+    "by_regime": {
+     "bull": {
+      "n": 8145,
+      "win": 0.4318
+     },
+     "range": {
+      "n": 2154,
+      "win": 0.1597
+     }
+    },
+    "fp_examples": [
      {
       "symbol": "آتيمس",
       "date": "2025-01-13",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-26",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-04",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-18",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-03-02",
-      "level": 322110.0,
+      "level": 416560.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
       "date": "2025-05-18",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-06-07",
-      "level": 415765.0,
+      "level": 461644.0,
       "ret": -0.05
      },
      {
       "symbol": "آتيمس",
       "date": "2025-12-28",
-      "level": 415765.0,
+      "level": 568300.0,
       "ret": -0.05
      },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-06",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-18",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-02-03",
-      "level": 439989.0,
-      "ret": -0.05
-     }
-    ]
-   },
-   "static_confirm3": {
-    "fires": 11245,
-    "fires_per_1000_bars": 45.815,
-    "win": 4749,
-    "loss": 5190,
-    "open": 1306,
-    "pending_bars": 16205,
-    "false_bars": 187590,
-    "precision": 0.4778,
-    "expectancy": 0.01308,
-    "median_bars_to_resolve": 4,
-    "coverage_symbols": 618,
-    "by_regime": {
-     "bear": {
-      "n": 266,
-      "win": 0.5
-     },
-     "bull": {
-      "n": 9596,
-      "win": 0.433
-     },
-     "range": {
-      "n": 1383,
-      "win": 0.3333
-     }
-    },
-    "fp_examples": [
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-05",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-13",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-26",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-04",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-18",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-03-02",
-      "level": 322110.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-12",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-21",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-06-07",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-12-28",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-06",
-      "level": 415765.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-18",
-      "level": 415765.0,
-      "ret": -0.05
-     }
-    ]
-   },
-   "ath": {
-    "fires": 6156,
-    "fires_per_1000_bars": 25.081,
-    "win": 1817,
-    "loss": 1403,
-    "open": 2936,
-    "pending_bars": 0,
-    "false_bars": 223770,
-    "precision": 0.5643,
-    "expectancy": 0.02439,
-    "median_bars_to_resolve": 10.0,
-    "coverage_symbols": 617,
-    "by_regime": {
-     "bull": {
-      "n": 4629,
-      "win": 0.377
-     },
-     "range": {
-      "n": 1527,
-      "win": 0.0472
-     }
-    },
-    "fp_examples": [
      {
       "symbol": "آتيمس",
       "date": "2026-01-06",
@@ -932,7 +647,37 @@
      {
       "symbol": "آتيمس",
       "date": "2026-07-01",
-      "level": 740000.0,
+      "level": 735500.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-09-15",
+      "level": 1017737.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-05-21",
+      "level": 8200.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-17",
+      "level": 8290.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-27",
+      "level": 8590.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-03",
+      "level": 10627.0,
       "ret": -0.05
      },
      {
@@ -942,9 +687,82 @@
       "ret": -0.05
      },
      {
-      "symbol": "اخزا210",
-      "date": "2025-06-01",
-      "level": 611900.0,
+      "symbol": "ابتكار",
+      "date": "2026-09-15",
+      "level": 26340.0,
+      "ret": -0.05
+     }
+    ]
+   },
+   "static_ceiling_250": {
+    "fires": 4637,
+    "fires_per_1000_bars": 18.61,
+    "win": 1720,
+    "loss": 1117,
+    "open": 1800,
+    "pending_bars": 135075,
+    "false_bars": 96133,
+    "precision": 0.6063,
+    "expectancy": 0.02768,
+    "median_bars_to_resolve": 6,
+    "coverage_symbols": 548,
+    "by_regime": {
+     "bull": {
+      "n": 3969,
+      "win": 0.4286
+     },
+     "range": {
+      "n": 668,
+      "win": 0.0284
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "آتيمس",
+      "date": "2025-12-28",
+      "level": 547850.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-01-06",
+      "level": 598997.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-01-18",
+      "level": 615202.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-07-01",
+      "level": 735500.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-09-15",
+      "level": 970680.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-09-07",
+      "level": 24470.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-09-15",
+      "level": 25273.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2026-06-17",
+      "level": 12930.0,
       "ret": -0.05
      },
      {
@@ -962,37 +780,13 @@
      {
       "symbol": "اخشان",
       "date": "2026-08-18",
-      "level": 16900.0,
+      "level": 16190.0,
       "ret": -0.05
      },
      {
       "symbol": "اخشان",
       "date": "2026-08-24",
-      "level": 18710.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2024-12-24",
-      "level": 19990.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2025-01-08",
-      "level": 20560.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2025-04-14",
-      "level": 25680.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2025-05-25",
-      "level": 31050.0,
+      "level": 16900.0,
       "ret": -0.05
      }
     ]
@@ -1007,40 +801,40 @@
    "sl": 0.05,
    "horizon": 20
   },
-  "bars_evaluated": 245444,
-  "symbols": 725,
+  "bars_evaluated": 249170,
+  "symbols": 727,
   "base_rate": {
-   "n": 245444,
-   "win": 0.38119082153159173,
-   "loss": 0.4304933100829517,
-   "open": 0.18831586838545655,
-   "mean_ret": 0.01174152903901087
+   "n": 249170,
+   "win": 0.3809969097403379,
+   "loss": 0.4286872416422523,
+   "open": 0.1903158486174098,
+   "mean_ret": 0.011838816889592327
   },
   "variants": {
    "current_1d": {
-    "fires": 4784,
-    "fires_per_1000_bars": 19.491,
-    "win": 1949,
-    "loss": 2158,
-    "open": 677,
-    "pending_bars": 15123,
-    "false_bars": 215498,
-    "precision": 0.4746,
-    "expectancy": 0.01284,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 653,
+    "fires": 4755,
+    "fires_per_1000_bars": 19.083,
+    "win": 1961,
+    "loss": 2139,
+    "open": 655,
+    "pending_bars": 15316,
+    "false_bars": 219015,
+    "precision": 0.4783,
+    "expectancy": 0.01358,
+    "median_bars_to_resolve": 5,
+    "coverage_symbols": 655,
     "by_regime": {
      "bear": {
-      "n": 1093,
-      "win": 0.4099
+      "n": 1091,
+      "win": 0.4106
      },
      "bull": {
-      "n": 2594,
-      "win": 0.4441
+      "n": 2564,
+      "win": 0.4528
      },
      "range": {
-      "n": 1097,
-      "win": 0.3181
+      "n": 1100,
+      "win": 0.32
      }
     },
     "fp_examples": [
@@ -1119,29 +913,29 @@
     ]
    },
    "confirm_2d": {
-    "fires": 2830,
-    "fires_per_1000_bars": 11.53,
-    "win": 1091,
+    "fires": 2829,
+    "fires_per_1000_bars": 11.354,
+    "win": 1098,
     "loss": 1174,
-    "open": 565,
-    "pending_bars": 15123,
-    "false_bars": 219098,
-    "precision": 0.4817,
-    "expectancy": 0.01458,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 609,
+    "open": 557,
+    "pending_bars": 15316,
+    "false_bars": 222568,
+    "precision": 0.4833,
+    "expectancy": 0.01474,
+    "median_bars_to_resolve": 6,
+    "coverage_symbols": 607,
     "by_regime": {
      "bear": {
-      "n": 633,
-      "win": 0.3697
+      "n": 635,
+      "win": 0.3701
      },
      "bull": {
-      "n": 1562,
-      "win": 0.4296
+      "n": 1557,
+      "win": 0.4342
      },
      "range": {
-      "n": 635,
-      "win": 0.2929
+      "n": 637,
+      "win": 0.2936
      }
     },
     "fp_examples": [
@@ -1220,29 +1014,29 @@
     ]
    },
    "confirm_2d_margin1": {
-    "fires": 2475,
-    "fires_per_1000_bars": 10.084,
-    "win": 990,
-    "loss": 998,
-    "open": 487,
-    "pending_bars": 15123,
-    "false_bars": 220192,
-    "precision": 0.498,
-    "expectancy": 0.01633,
-    "median_bars_to_resolve": 5,
-    "coverage_symbols": 583,
+    "fires": 2467,
+    "fires_per_1000_bars": 9.901,
+    "win": 995,
+    "loss": 993,
+    "open": 479,
+    "pending_bars": 15316,
+    "false_bars": 223679,
+    "precision": 0.5005,
+    "expectancy": 0.01662,
+    "median_bars_to_resolve": 6,
+    "coverage_symbols": 581,
     "by_regime": {
      "bear": {
-      "n": 554,
-      "win": 0.3791
+      "n": 555,
+      "win": 0.3784
      },
      "bull": {
-      "n": 1370,
-      "win": 0.4438
+      "n": 1358,
+      "win": 0.4507
      },
      "range": {
-      "n": 551,
-      "win": 0.3122
+      "n": 554,
+      "win": 0.3123
      }
     },
     "fp_examples": [
@@ -1307,43 +1101,43 @@
       "ret": -0.05
      },
      {
-      "symbol": "اپال",
-      "date": "2025-07-12",
-      "level": 10780.0,
+      "symbol": "الماس",
+      "date": "2026-09-15",
+      "level": 46169.0,
       "ret": -0.05
      },
      {
       "symbol": "اپال",
-      "date": "2025-11-01",
-      "level": 9960.0,
+      "date": "2025-07-12",
+      "level": 10780.0,
       "ret": -0.05
      }
     ]
    },
    "confirm_3d": {
-    "fires": 2153,
-    "fires_per_1000_bars": 8.772,
-    "win": 824,
-    "loss": 849,
-    "open": 480,
-    "pending_bars": 15123,
-    "false_bars": 220848,
-    "precision": 0.4925,
-    "expectancy": 0.01597,
-    "median_bars_to_resolve": 6,
-    "coverage_symbols": 549,
+    "fires": 2178,
+    "fires_per_1000_bars": 8.741,
+    "win": 825,
+    "loss": 861,
+    "open": 492,
+    "pending_bars": 15316,
+    "false_bars": 224299,
+    "precision": 0.4893,
+    "expectancy": 0.01543,
+    "median_bars_to_resolve": 6.0,
+    "coverage_symbols": 551,
     "by_regime": {
      "bear": {
-      "n": 417,
-      "win": 0.3189
+      "n": 418,
+      "win": 0.3182
      },
      "bull": {
-      "n": 1241,
-      "win": 0.4464
+      "n": 1263,
+      "win": 0.4394
      },
      "range": {
-      "n": 495,
-      "win": 0.2768
+      "n": 497,
+      "win": 0.2757
      }
     },
     "fp_examples": [
@@ -1396,6 +1190,12 @@
       "ret": -0.05
      },
      {
+      "symbol": "الماس",
+      "date": "2026-09-16",
+      "level": 46169.0,
+      "ret": -0.05
+     },
+     {
       "symbol": "اپال",
       "date": "2025-07-13",
       "level": 10780.0,
@@ -1412,12 +1212,6 @@
       "date": "2025-12-29",
       "level": 3600.0,
       "ret": -0.05
-     },
-     {
-      "symbol": "اپرداز",
-      "date": "2026-01-07",
-      "level": 3600.0,
-      "ret": -0.05
      }
     ]
    }
@@ -1431,40 +1225,40 @@
    "sl": 0.05,
    "horizon": 20
   },
-  "bars_evaluated": 245444,
-  "symbols": 725,
+  "bars_evaluated": 249170,
+  "symbols": 727,
   "base_rate": {
-   "n": 245444,
-   "win": 0.38119082153159173,
-   "loss": 0.4304933100829517,
-   "open": 0.18831586838545655,
-   "mean_ret": 0.01174152903901087
+   "n": 249170,
+   "win": 0.3809969097403379,
+   "loss": 0.4286872416422523,
+   "open": 0.1903158486174098,
+   "mean_ret": 0.011838816889592327
   },
   "variants": {
    "channel_current": {
-    "fires": 15846,
-    "fires_per_1000_bars": 64.561,
-    "win": 6239,
-    "loss": 8141,
-    "open": 1466,
-    "pending_bars": 36893,
-    "false_bars": 136654,
-    "precision": 0.4339,
-    "expectancy": 0.00688,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 653,
+    "fires": 16231,
+    "fires_per_1000_bars": 65.14,
+    "win": 6429,
+    "loss": 8272,
+    "open": 1530,
+    "pending_bars": 37282,
+    "false_bars": 137847,
+    "precision": 0.4373,
+    "expectancy": 0.0073,
+    "median_bars_to_resolve": 5,
+    "coverage_symbols": 655,
     "by_regime": {
      "bear": {
-      "n": 3944,
-      "win": 0.443
+      "n": 3966,
+      "win": 0.4445
      },
      "bull": {
-      "n": 8228,
-      "win": 0.3991
+      "n": 8543,
+      "win": 0.4024
      },
      "range": {
-      "n": 3674,
-      "win": 0.3288
+      "n": 3722,
+      "win": 0.3299
      }
     },
     "fp_examples": [
@@ -1542,30 +1336,232 @@
      }
     ]
    },
-   "two_lows_line": {
-    "fires": 11405,
-    "fires_per_1000_bars": 46.467,
-    "win": 4166,
-    "loss": 5802,
-    "open": 1437,
-    "pending_bars": 54512,
-    "false_bars": 142856,
-    "precision": 0.4179,
-    "expectancy": 0.00497,
-    "median_bars_to_resolve": 5,
-    "coverage_symbols": 651,
+   "channel_bounce": {
+    "fires": 3548,
+    "fires_per_1000_bars": 14.239,
+    "win": 1535,
+    "loss": 1610,
+    "open": 403,
+    "pending_bars": 37282,
+    "false_bars": 206119,
+    "precision": 0.4881,
+    "expectancy": 0.01321,
+    "median_bars_to_resolve": 5.0,
+    "coverage_symbols": 646,
     "by_regime": {
      "bear": {
-      "n": 4072,
-      "win": 0.418
+      "n": 867,
+      "win": 0.5006
      },
      "bull": {
-      "n": 3946,
-      "win": 0.3748
+      "n": 1802,
+      "win": 0.4412
      },
      "range": {
-      "n": 3387,
-      "win": 0.2908
+      "n": 879,
+      "win": 0.3481
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "آتيمس",
+      "date": "2025-01-05",
+      "level": 409339.85714285716,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-01-13",
+      "level": 421113.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-05-14",
+      "level": 455753.8387096774,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-07-11",
+      "level": 747752.5,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-27",
+      "level": 8634.545454545454,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2026-02-23",
+      "level": 5900.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-02",
+      "level": 10517.833333333334,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-02-23",
+      "level": 11715.818181818182,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-07-14",
+      "level": 16441.2,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-08-24",
+      "level": 23070.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-05-28",
+      "level": 606380.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-06-08",
+      "level": 609260.0,
+      "ret": -0.05
+     }
+    ]
+   },
+   "channel_bounce_4": {
+    "fires": 2996,
+    "fires_per_1000_bars": 12.024,
+    "win": 1301,
+    "loss": 1328,
+    "open": 367,
+    "pending_bars": 37282,
+    "false_bars": 207020,
+    "precision": 0.4949,
+    "expectancy": 0.01397,
+    "median_bars_to_resolve": 5.0,
+    "coverage_symbols": 637,
+    "by_regime": {
+     "bear": {
+      "n": 712,
+      "win": 0.486
+     },
+     "bull": {
+      "n": 1542,
+      "win": 0.4507
+     },
+     "range": {
+      "n": 742,
+      "win": 0.3504
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "آتيمس",
+      "date": "2025-01-05",
+      "level": 409339.85714285716,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-01-13",
+      "level": 421113.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-05-14",
+      "level": 455753.8387096774,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2026-07-11",
+      "level": 747752.5,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-27",
+      "level": 8634.545454545454,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-02",
+      "level": 10517.833333333334,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2026-08-24",
+      "level": 23070.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-05-28",
+      "level": 606380.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخزا210",
+      "date": "2025-06-08",
+      "level": 609260.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2025-11-10",
+      "level": 11410.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2026-01-13",
+      "level": 10240.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اردستان",
+      "date": "2025-02-25",
+      "level": 22184.0,
+      "ret": -0.05
+     }
+    ]
+   },
+   "two_lows_line": {
+    "fires": 11487,
+    "fires_per_1000_bars": 46.101,
+    "win": 4207,
+    "loss": 5827,
+    "open": 1453,
+    "pending_bars": 55222,
+    "false_bars": 145611,
+    "precision": 0.4193,
+    "expectancy": 0.00511,
+    "median_bars_to_resolve": 5,
+    "coverage_symbols": 653,
+    "by_regime": {
+     "bear": {
+      "n": 4088,
+      "win": 0.4173
+     },
+     "bull": {
+      "n": 3987,
+      "win": 0.3777
+     },
+     "range": {
+      "n": 3412,
+      "win": 0.2916
      }
     },
     "fp_examples": [
@@ -1643,30 +1639,131 @@
      }
     ]
    },
-   "flat_lows": {
-    "fires": 1821,
-    "fires_per_1000_bars": 7.419,
-    "win": 572,
-    "loss": 939,
-    "open": 310,
-    "pending_bars": 16662,
-    "false_bars": 223814,
-    "precision": 0.3786,
-    "expectancy": 0.00039,
-    "median_bars_to_resolve": 7,
-    "coverage_symbols": 535,
+   "two_lows_bounce": {
+    "fires": 8522,
+    "fires_per_1000_bars": 34.202,
+    "win": 3129,
+    "loss": 4377,
+    "open": 1016,
+    "pending_bars": 0,
+    "false_bars": 227076,
+    "precision": 0.4169,
+    "expectancy": 0.00477,
+    "median_bars_to_resolve": 5.0,
+    "coverage_symbols": 653,
     "by_regime": {
      "bear": {
-      "n": 733,
-      "win": 0.397
+      "n": 3164,
+      "win": 0.402
      },
      "bull": {
-      "n": 460,
-      "win": 0.2783
+      "n": 2885,
+      "win": 0.3872
      },
      "range": {
-      "n": 628,
-      "win": 0.2436
+      "n": 2473,
+      "win": 0.2992
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "آتيمس",
+      "date": "2025-02-02",
+      "level": 393283.93333333335,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-02-19",
+      "level": 377710.28571428574,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-06-07",
+      "level": 446693.75,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-07-02",
+      "level": 449986.625,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-06-08",
+      "level": 8898.333333333334,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-08-06",
+      "level": 6126.363636363636,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-08-16",
+      "level": 5970.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-12-31",
+      "level": 8748.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2026-01-11",
+      "level": 9216.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2026-01-20",
+      "level": 9684.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2026-02-16",
+      "level": 5998.0,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2026-06-17",
+      "level": 2320.75,
+      "ret": -0.05
+     }
+    ]
+   },
+   "flat_lows": {
+    "fires": 1829,
+    "fires_per_1000_bars": 7.34,
+    "win": 581,
+    "loss": 938,
+    "open": 310,
+    "pending_bars": 16876,
+    "false_bars": 227308,
+    "precision": 0.3825,
+    "expectancy": 0.00075,
+    "median_bars_to_resolve": 7,
+    "coverage_symbols": 536,
+    "by_regime": {
+     "bear": {
+      "n": 734,
+      "win": 0.4005
+     },
+     "bull": {
+      "n": 461,
+      "win": 0.2842
+     },
+     "range": {
+      "n": 634,
+      "win": 0.2461
      }
     },
     "fp_examples": [
@@ -1743,107 +1840,6 @@
       "ret": -0.05
      }
     ]
-   },
-   "channel_4touch": {
-    "fires": 14990,
-    "fires_per_1000_bars": 61.073,
-    "win": 5925,
-    "loss": 7691,
-    "open": 1374,
-    "pending_bars": 36893,
-    "false_bars": 140773,
-    "precision": 0.4351,
-    "expectancy": 0.00699,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 653,
-    "by_regime": {
-     "bear": {
-      "n": 3689,
-      "win": 0.4443
-     },
-     "bull": {
-      "n": 7823,
-      "win": 0.3998
-     },
-     "range": {
-      "n": 3478,
-      "win": 0.3329
-     }
-    },
-    "fp_examples": [
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-12",
-      "level": 422067.71428571426,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-21",
-      "level": 433225.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-02-17",
-      "level": 381971.6,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-12",
-      "level": 450462.6129032258,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-20",
-      "level": 466336.2903225806,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-06-01",
-      "level": 453444.875,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-06-28",
-      "level": 430780.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-07-16",
-      "level": 420976.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-12-28",
-      "level": 1059641.0,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-06",
-      "level": 1385882.75,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-01-14",
-      "level": 1419942.5,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2026-07-11",
-      "level": 747752.5,
-      "ret": -0.05
-     }
-    ]
    }
   },
   "mode": "event",
@@ -1855,40 +1851,40 @@
    "sl": 0.05,
    "horizon": 20
   },
-  "bars_evaluated": 245444,
-  "symbols": 725,
+  "bars_evaluated": 249170,
+  "symbols": 727,
   "base_rate": {
-   "n": 245444,
-   "win": 0.38119082153159173,
-   "loss": 0.4304933100829517,
-   "open": 0.18831586838545655,
-   "mean_ret": 0.01174152903901087
+   "n": 249170,
+   "win": 0.3809969097403379,
+   "loss": 0.4286872416422523,
+   "open": 0.1903158486174098,
+   "mean_ret": 0.011838816889592327
   },
   "variants": {
    "current": {
-    "fires": 3236,
-    "fires_per_1000_bars": 13.184,
-    "win": 1610,
-    "loss": 1251,
-    "open": 375,
-    "pending_bars": 16662,
-    "false_bars": 214278,
-    "precision": 0.5627,
-    "expectancy": 0.02257,
+    "fires": 3288,
+    "fires_per_1000_bars": 13.196,
+    "win": 1622,
+    "loss": 1270,
+    "open": 396,
+    "pending_bars": 16876,
+    "false_bars": 217585,
+    "precision": 0.5609,
+    "expectancy": 0.02226,
     "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 572,
+    "coverage_symbols": 577,
     "by_regime": {
      "bear": {
       "n": 623,
-      "win": 0.5602
+      "win": 0.5586
      },
      "bull": {
-      "n": 1840,
-      "win": 0.506
+      "n": 1880,
+      "win": 0.5005
      },
      "range": {
-      "n": 773,
-      "win": 0.4269
+      "n": 785,
+      "win": 0.4242
      }
     },
     "fp_examples": [
@@ -1967,29 +1963,29 @@
     ]
    },
    "confirm_2d": {
-    "fires": 2794,
-    "fires_per_1000_bars": 11.383,
-    "win": 1358,
-    "loss": 1115,
-    "open": 321,
-    "pending_bars": 16662,
-    "false_bars": 215797,
-    "precision": 0.5491,
-    "expectancy": 0.02096,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 549,
+    "fires": 2831,
+    "fires_per_1000_bars": 11.362,
+    "win": 1370,
+    "loss": 1133,
+    "open": 328,
+    "pending_bars": 16876,
+    "false_bars": 219123,
+    "precision": 0.5473,
+    "expectancy": 0.02084,
+    "median_bars_to_resolve": 5,
+    "coverage_symbols": 551,
     "by_regime": {
      "bear": {
       "n": 491,
       "win": 0.556
      },
      "bull": {
-      "n": 1665,
-      "win": 0.4883
+      "n": 1693,
+      "win": 0.4861
      },
      "range": {
-      "n": 638,
-      "win": 0.4263
+      "n": 647,
+      "win": 0.4235
      }
     },
     "fp_examples": [
@@ -2077,141 +2073,40 @@
    "sl": 0.05,
    "horizon": 20
   },
-  "bars_evaluated": 245444,
-  "symbols": 725,
+  "bars_evaluated": 249170,
+  "symbols": 727,
   "base_rate": {
-   "n": 245444,
-   "win": 0.38119082153159173,
-   "loss": 0.4304933100829517,
-   "open": 0.18831586838545655,
-   "mean_ret": 0.01174152903901087
+   "n": 249170,
+   "win": 0.3809969097403379,
+   "loss": 0.4286872416422523,
+   "open": 0.1903158486174098,
+   "mean_ret": 0.011838816889592327
   },
   "variants": {
-   "zone_33_40_log": {
-    "fires": 3782,
-    "fires_per_1000_bars": 15.409,
-    "win": 1634,
-    "loss": 1806,
-    "open": 342,
-    "pending_bars": 35704,
-    "false_bars": 204773,
-    "precision": 0.475,
-    "expectancy": 0.01151,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 649,
+   "ungated_618_70_log": {
+    "fires": 3990,
+    "fires_per_1000_bars": 16.013,
+    "win": 1785,
+    "loss": 1805,
+    "open": 400,
+    "pending_bars": 36071,
+    "false_bars": 207862,
+    "precision": 0.4972,
+    "expectancy": 0.01433,
+    "median_bars_to_resolve": 4.0,
+    "coverage_symbols": 650,
     "by_regime": {
      "bear": {
-      "n": 1084,
-      "win": 0.5378
+      "n": 1145,
+      "win": 0.5415
      },
      "bull": {
-      "n": 1674,
-      "win": 0.4152
+      "n": 1807,
+      "win": 0.4228
      },
      "range": {
-      "n": 1024,
-      "win": 0.3477
-     }
-    },
-    "fp_examples": [
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-13",
-      "level": 423743.0517134285,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-01-27",
-      "level": 410488.5550048612,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-05-21",
-      "level": 447850.2958180539,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آتيمس",
-      "date": "2025-07-15",
-      "level": 400753.03168314975,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-04-29",
-      "level": 7600.813110600477,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-08-02",
-      "level": 6795.363195910234,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2025-11-16",
-      "level": 7834.25694432919,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2026-02-14",
-      "level": 6330.458475096869,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-06-02",
-      "level": 10522.217637364654,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-07-29",
-      "level": 9482.144061054178,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اخشان",
-      "date": "2025-06-02",
-      "level": 8957.191029873475,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اخشان",
-      "date": "2026-02-16",
-      "level": 10345.38532468895,
-      "ret": -0.05
-     }
-    ]
-   },
-   "zone_618_70_log": {
-    "fires": 3893,
-    "fires_per_1000_bars": 15.861,
-    "win": 1742,
-    "loss": 1792,
-    "open": 359,
-    "pending_bars": 35704,
-    "false_bars": 204629,
-    "precision": 0.4929,
-    "expectancy": 0.01382,
-    "median_bars_to_resolve": 5,
-    "coverage_symbols": 648,
-    "by_regime": {
-     "bear": {
-      "n": 1139,
-      "win": 0.5417
-     },
-     "bull": {
-      "n": 1729,
-      "win": 0.4211
-     },
-     "range": {
-      "n": 1025,
-      "win": 0.3873
+      "n": 1038,
+      "win": 0.3863
      }
     },
     "fp_examples": [
@@ -2289,204 +2184,507 @@
      }
     ]
    },
-   "zone_50_log": {
-    "fires": 5124,
-    "fires_per_1000_bars": 20.876,
-    "win": 2274,
-    "loss": 2382,
-    "open": 468,
-    "pending_bars": 35704,
-    "false_bars": 202400,
-    "precision": 0.4884,
-    "expectancy": 0.01325,
-    "median_bars_to_resolve": 5.0,
+   "ungated_33_40_log": {
+    "fires": 3853,
+    "fires_per_1000_bars": 15.463,
+    "win": 1668,
+    "loss": 1822,
+    "open": 363,
+    "pending_bars": 36071,
+    "false_bars": 208040,
+    "precision": 0.4779,
+    "expectancy": 0.01193,
+    "median_bars_to_resolve": 5,
     "coverage_symbols": 652,
     "by_regime": {
      "bear": {
-      "n": 1533,
-      "win": 0.5525
+      "n": 1090,
+      "win": 0.5349
      },
      "bull": {
-      "n": 2292,
-      "win": 0.4071
+      "n": 1736,
+      "win": 0.4188
      },
      "range": {
-      "n": 1299,
-      "win": 0.3803
+      "n": 1027,
+      "win": 0.3486
      }
     },
     "fp_examples": [
      {
       "symbol": "آتيمس",
-      "date": "2026-02-09",
-      "level": 587531.3590482846,
+      "date": "2025-01-13",
+      "level": 423743.0517134285,
       "ret": -0.05
      },
-     {
-      "symbol": "آواك",
-      "date": "2026-02-16",
-      "level": 6263.356959785999,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2026-06-23",
-      "level": 2269.6735043399412,
-      "ret": -0.05
-     },
-     {
-      "symbol": "آواك",
-      "date": "2026-07-11",
-      "level": 2218.933043415861,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-07-22",
-      "level": 9765.90737761699,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-08-02",
-      "level": 9334.501382274571,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2025-09-15",
-      "level": 9615.246249096857,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2026-01-25",
-      "level": 14306.103363140113,
-      "ret": -0.05
-     },
-     {
-      "symbol": "ابتكار",
-      "date": "2026-06-30",
-      "level": 16992.681775623023,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اخشان",
-      "date": "2026-07-12",
-      "level": 14617.247245241182,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2025-03-05",
-      "level": 21684.71854106474,
-      "ret": -0.05
-     },
-     {
-      "symbol": "اردستان",
-      "date": "2025-12-30",
-      "level": 25104.020403541166,
-      "ret": -0.05
-     }
-    ]
-   },
-   "zone_33_40_linear": {
-    "fires": 3846,
-    "fires_per_1000_bars": 15.67,
-    "win": 1682,
-    "loss": 1817,
-    "open": 347,
-    "pending_bars": 35704,
-    "false_bars": 204686,
-    "precision": 0.4807,
-    "expectancy": 0.01218,
-    "median_bars_to_resolve": 5.0,
-    "coverage_symbols": 652,
-    "by_regime": {
-     "bear": {
-      "n": 1051,
-      "win": 0.5452
-     },
-     "bull": {
-      "n": 1767,
-      "win": 0.4182
-     },
-     "range": {
-      "n": 1028,
-      "win": 0.3599
-     }
-    },
-    "fp_examples": [
      {
       "symbol": "آتيمس",
       "date": "2025-01-27",
-      "level": 411059.67000000004,
+      "level": 410488.5550048612,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-05-21",
+      "level": 447850.2958180539,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آتيمس",
+      "date": "2025-07-15",
+      "level": 400753.03168314975,
       "ret": -0.05
      },
      {
       "symbol": "آواك",
       "date": "2025-04-29",
-      "level": 7608.15,
+      "level": 7600.813110600477,
+      "ret": -0.05
+     },
+     {
+      "symbol": "آواك",
+      "date": "2025-08-02",
+      "level": 6795.363195910234,
       "ret": -0.05
      },
      {
       "symbol": "آواك",
       "date": "2025-11-16",
-      "level": 7855.65,
+      "level": 7834.25694432919,
       "ret": -0.05
      },
      {
       "symbol": "آواك",
       "date": "2026-02-14",
-      "level": 6337.35,
+      "level": 6330.458475096869,
       "ret": -0.05
      },
      {
       "symbol": "ابتكار",
       "date": "2025-06-02",
-      "level": 10532.935000000001,
+      "level": 10522.217637364654,
       "ret": -0.05
      },
      {
       "symbol": "ابتكار",
       "date": "2025-07-29",
-      "level": 9535.275,
+      "level": 9482.144061054178,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2025-06-02",
+      "level": 8957.191029873475,
       "ret": -0.05
      },
      {
       "symbol": "اخشان",
       "date": "2026-02-16",
-      "level": 10352.95,
+      "level": 10345.38532468895,
+      "ret": -0.05
+     }
+    ]
+   },
+   "weekly_up_618_70_log": {
+    "fires": 922,
+    "fires_per_1000_bars": 3.7,
+    "win": 387,
+    "loss": 472,
+    "open": 63,
+    "pending_bars": 1939,
+    "false_bars": 246078,
+    "precision": 0.4505,
+    "expectancy": 0.00962,
+    "median_bars_to_resolve": 4.0,
+    "coverage_symbols": 458,
+    "by_regime": {
+     "bear": {
+      "n": 85,
+      "win": 0.5765
+     },
+     "bull": {
+      "n": 653,
+      "win": 0.4119
+     },
+     "range": {
+      "n": 184,
+      "win": 0.375
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-07",
+      "level": 10668.069436320835,
       "ret": -0.05
      },
      {
-      "symbol": "اردستان",
-      "date": "2025-05-19",
-      "level": 29056.1,
+      "symbol": "اخشان",
+      "date": "2026-02-07",
+      "level": 10586.882499638603,
       "ret": -0.05
      },
      {
-      "symbol": "اردستان",
-      "date": "2025-09-14",
-      "level": 23890.0,
+      "symbol": "اطلس",
+      "date": "2025-03-01",
+      "level": 61214.6096527294,
       "ret": -0.05
      },
      {
-      "symbol": "اردستان",
-      "date": "2026-06-23",
-      "level": 29752.8,
+      "symbol": "اطلس",
+      "date": "2026-02-07",
+      "level": 91794.98528227926,
       "ret": -0.05
      },
      {
-      "symbol": "ارفع",
-      "date": "2025-01-06",
-      "level": 22890.25,
+      "symbol": "اطلس",
+      "date": "2026-02-16",
+      "level": 85964.4497219417,
       "ret": -0.05
      },
      {
-      "symbol": "ارفع",
-      "date": "2026-08-03",
-      "level": 13382.75,
+      "symbol": "اكسيژن",
+      "date": "2025-07-30",
+      "level": 18038.747565412843,
+      "ret": -0.05
+     },
+     {
+      "symbol": "البرز",
+      "date": "2025-02-25",
+      "level": 1966.1424168626193,
+      "ret": -0.05
+     },
+     {
+      "symbol": "الماس",
+      "date": "2026-01-20",
+      "level": 29396.35235418981,
+      "ret": -0.05
+     },
+     {
+      "symbol": "باران",
+      "date": "2026-02-07",
+      "level": 1535.733977912625,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بخاور",
+      "date": "2025-05-11",
+      "level": 6549.053324428882,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بمولد",
+      "date": "2025-12-31",
+      "level": 5847.432995485557,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بيوتيك",
+      "date": "2026-01-21",
+      "level": 36038.15344690958,
+      "ret": -0.05
+     }
+    ]
+   },
+   "weekly_up_33_40_log": {
+    "fires": 922,
+    "fires_per_1000_bars": 3.7,
+    "win": 368,
+    "loss": 501,
+    "open": 53,
+    "pending_bars": 1939,
+    "false_bars": 246092,
+    "precision": 0.4235,
+    "expectancy": 0.00562,
+    "median_bars_to_resolve": 4.0,
+    "coverage_symbols": 452,
+    "by_regime": {
+     "bear": {
+      "n": 101,
+      "win": 0.4653
+     },
+     "bull": {
+      "n": 624,
+      "win": 0.3958
+     },
+     "range": {
+      "n": 197,
+      "win": 0.3756
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "آواك",
+      "date": "2026-02-14",
+      "level": 6330.458475096869,
+      "ret": -0.05
+     },
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-02",
+      "level": 10522.217637364654,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2026-02-16",
+      "level": 10345.38532468895,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2026-09-14",
+      "level": 17736.337305589772,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اكسيژن",
+      "date": "2025-07-20",
+      "level": 18890.094632906053,
+      "ret": -0.05
+     },
+     {
+      "symbol": "البرز",
+      "date": "2025-02-04",
+      "level": 2015.5412515776693,
+      "ret": -0.05
+     },
+     {
+      "symbol": "البرز",
+      "date": "2025-02-19",
+      "level": 1890.2113804756514,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اپرداز",
+      "date": "2026-09-21",
+      "level": 5308.603603990681,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بتك",
+      "date": "2025-05-04",
+      "level": 224543.4529008192,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بخاور",
+      "date": "2026-01-05",
+      "level": 4785.607300630199,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بساما",
+      "date": "2026-06-29",
+      "level": 10476.615722246312,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بكابل",
+      "date": "2026-05-31",
+      "level": 4951.981334614988,
+      "ret": -0.05
+     }
+    ]
+   },
+   "weekly_up_618_70_linear": {
+    "fires": 948,
+    "fires_per_1000_bars": 3.805,
+    "win": 403,
+    "loss": 476,
+    "open": 69,
+    "pending_bars": 1939,
+    "false_bars": 246053,
+    "precision": 0.4585,
+    "expectancy": 0.01061,
+    "median_bars_to_resolve": 3.0,
+    "coverage_symbols": 465,
+    "by_regime": {
+     "bear": {
+      "n": 87,
+      "win": 0.5517
+     },
+     "bull": {
+      "n": 675,
+      "win": 0.4252
+     },
+     "range": {
+      "n": 186,
+      "win": 0.3656
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "ابتكار",
+      "date": "2025-06-07",
+      "level": 10672.419000000002,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اخشان",
+      "date": "2026-02-07",
+      "level": 10603.75,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اطلس",
+      "date": "2025-03-01",
+      "level": 61246.712,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اطلس",
+      "date": "2026-02-07",
+      "level": 92114.52900000001,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اطلس",
+      "date": "2026-02-16",
+      "level": 86190.174,
+      "ret": -0.05
+     },
+     {
+      "symbol": "افرا",
+      "date": "2026-07-28",
+      "level": 10894.26,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اكسيژن",
+      "date": "2025-07-30",
+      "level": 18058.528,
+      "ret": -0.05
+     },
+     {
+      "symbol": "البرز",
+      "date": "2025-02-25",
+      "level": 1970.022,
+      "ret": -0.05
+     },
+     {
+      "symbol": "باران",
+      "date": "2026-02-07",
+      "level": 1539.321,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بخاور",
+      "date": "2025-05-11",
+      "level": 6563.95,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بمولد",
+      "date": "2025-12-31",
+      "level": 5854.83,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بيوتيك",
+      "date": "2026-01-06",
+      "level": 36874.7,
+      "ret": -0.05
+     }
+    ]
+   },
+   "weekly_up_not_daily_up": {
+    "fires": 656,
+    "fires_per_1000_bars": 2.633,
+    "win": 273,
+    "loss": 338,
+    "open": 45,
+    "pending_bars": 1522,
+    "false_bars": 246844,
+    "precision": 0.4468,
+    "expectancy": 0.00923,
+    "median_bars_to_resolve": 4.0,
+    "coverage_symbols": 396,
+    "by_regime": {
+     "bear": {
+      "n": 81,
+      "win": 0.5926
+     },
+     "bull": {
+      "n": 416,
+      "win": 0.3942
+     },
+     "range": {
+      "n": 159,
+      "win": 0.3836
+     }
+    },
+    "fp_examples": [
+     {
+      "symbol": "اطلس",
+      "date": "2025-03-01",
+      "level": 61214.6096527294,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اطلس",
+      "date": "2026-02-07",
+      "level": 91794.98528227926,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اطلس",
+      "date": "2026-02-16",
+      "level": 85964.4497219417,
+      "ret": -0.05
+     },
+     {
+      "symbol": "اكسيژن",
+      "date": "2025-07-30",
+      "level": 18038.747565412843,
+      "ret": -0.05
+     },
+     {
+      "symbol": "البرز",
+      "date": "2025-02-25",
+      "level": 1966.1424168626193,
+      "ret": -0.05
+     },
+     {
+      "symbol": "باران",
+      "date": "2026-02-07",
+      "level": 1535.733977912625,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بخاور",
+      "date": "2025-05-11",
+      "level": 6549.053324428882,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بمولد",
+      "date": "2026-01-06",
+      "level": 6047.6907725658775,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بيوتيك",
+      "date": "2026-01-21",
+      "level": 36038.15344690958,
+      "ret": -0.05
+     },
+     {
+      "symbol": "بگيلان",
+      "date": "2026-01-19",
+      "level": 16422.211364134484,
+      "ret": -0.05
+     },
+     {
+      "symbol": "تابا",
+      "date": "2025-05-03",
+      "level": 25401.29903996082,
+      "ret": -0.05
+     },
+     {
+      "symbol": "تجلي",
+      "date": "2026-01-12",
+      "level": 1608.1828428104818,
       "ret": -0.05
      }
     ]
