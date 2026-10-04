@@ -50,7 +50,7 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
   tape: 'تابلوخوانی',
   technical: 'تکنیکال',
   fundamental: 'بنیادی',
-  handover: 'تحویل',
+  handover: 'نمادهای عبوری',
 };
 
 const STAGE_RULE: Record<FunnelStageKey, string> = {
@@ -601,7 +601,7 @@ export function FtsFunnelStages({
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [active, setActive] = useState<FunnelStageKey>('tape');
 
-  // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که هابِ نخبگان
+  // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
   const { funnel, mode, tape, tech, quickFilters, opts } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);

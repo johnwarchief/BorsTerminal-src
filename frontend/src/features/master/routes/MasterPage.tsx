@@ -54,7 +54,6 @@ import { ExplainableAuditBox } from '../ui/ExplainableAuditBox';
 import { StrategyHorizonSelector } from '../ui/StrategyHorizonSelector';
 import { StrategyTreeDrawer } from '../ui/StrategyTreeDrawer';
 import { FtsFunnelStages } from '../ui/FtsFunnelStages';
-import { EliteFunnelHub } from '../ui/EliteFunnelHub';
 import { FtsAnalystModal } from '@widgets/FtsAnalystModal';
 
 const AGENT_FA: Record<string, string> = {
@@ -268,7 +267,6 @@ export default function MasterPage() {
             همان‌جا که کاربر هنوز چیزی انتخاب نکرده و می‌خواهد بداند از کجا شروع
             کند. کلیکِ هر سطرِ قیف نماد را برمی‌دارد و همین صفحه داوری را باز می‌کند. */}
         <FtsFunnelStages preset={horizon} onPresetChange={setHorizon} />
-        <EliteFunnelHub preset={horizon} />
       </div>
     );
   }
