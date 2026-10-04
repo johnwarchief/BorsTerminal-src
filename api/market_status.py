@@ -10,24 +10,74 @@ Audit map of source line spans: MIGRATED_LINES.txt
 from ._core import get_db
 from fastapi import APIRouter
 from fastapi import Query
+import threading
+import time
+
+import market_state as _MS
 import mstat_engine as _mstat
 
 
 router = APIRouter()
 
+# ---- Phase پرفورمنس (N3): کشِ نتیجه به‌ازای revision واقعیِ بانک ----
+# هر پنل mstat کل ۵٫۵هزار ردیف را می‌روبید (~250-830ms هسته در هر درخواست)؛
+# سنجهٔ baseline: ~۱٫۵s CPU هر نفسِ نبض. کلیدِ کش همان چهار نشانه‌ای است که
+# «حالتِ بانک» را کامل توصیف می‌کنند — revisionِ تابلو، static_rev (الگوی
+# ازپیش‌پذیرفتۀ خودِ api/market.py:495-520)، روزِ نشست، و آخرین نقطۀ mstat_snap.
+# بی‌هیچ محاسبهٔ موازی: همان fn، همان فرمول، همان عدد؛ فقط یک‌بار به‌ازای هر
+# حالت. TTL سقفِ امانت هم نگهبانِ بی‌سر‌و‌صداست.
+_MSTAT_TTL_S = 45.0
+_MSTAT_CACHE: dict = {}
+_MSTAT_LOCK = threading.Lock()
+
+
+def _mstat_marker(conn):
+    """اثرِ حالتِ تایم‌لاین: آخرین (روز، ساعت) ثبت‌شده در mstat_snap.
+    جدول نباشد None ⇒ کش بی‌استفاده (اولین دورِ بوت)."""
+    try:
+        row = conn.execute(
+            "SELECT IFNULL(MAX(d_even),0), IFNULL(MAX(h_even),0) FROM mstat_snap"
+        ).fetchone()
+        return (int(row[0] or 0), int(row[1] or 0))
+    except Exception:
+        return None
+
 
 def _mstat_call(fn, *args, **kw):
     """یک اتصال، یک فراخوانی، همیشه بسته. خطای موتور ⇒ status=error نه ۵۰۰،
-    چون یک پنلِ خراب نباید کل تب وضعیت بازار را از کار بیندازد."""
+    چون یک پنلِ خراب نباید کل تب وضعیت بازار را از کار بیندازد.
+    نتیجه‌های موفق به‌ازای هر «حالتِ بانک» کش می‌خورند؛ خطا هرگز نه."""
+    key = (fn.__name__, args, tuple(sorted(kw.items())))
+    now = time.monotonic()
+    conn = get_db()
+    try:
+        marker = _mstat_marker(conn)
+        if marker is not None:
+            full_key = (key, _MS.revision(), _MS.static_rev(), _MS.session_day(), marker)
+            with _MSTAT_LOCK:
+                hit = _MSTAT_CACHE.get(full_key)
+                if hit and now - hit[0] < _MSTAT_TTL_S:
+                    return dict(hit[1])
+        else:
+            full_key = None
+    except Exception:
+        full_key = None
+    finally:
+        conn.close()
     conn = get_db()
     try:
         out = fn(conn, *args, **kw)
         out.setdefault("source", "local:market.db")
-        return out
     except Exception as e:
         return {"status": "error", "message": str(e), "source": "local:market.db"}
     finally:
         conn.close()
+    if full_key is not None and isinstance(out, dict) and out.get("status") != "error":
+        with _MSTAT_LOCK:
+            if len(_MSTAT_CACHE) > 240:
+                _MSTAT_CACHE.clear()
+            _MSTAT_CACHE[full_key] = (now, out)
+    return dict(out)
 
 @router.get("/api/mstat/summary")
 def mstat_summary():
