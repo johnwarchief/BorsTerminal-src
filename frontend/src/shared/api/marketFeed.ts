@@ -18,8 +18,10 @@
 //      کامل گرفته می‌شود (ردیفِ کم‌یا‌زیاده از دلتا قابل اثبات نیست).
 //   ۲) هر پاسخِ غیرمنتظره (۴۰۴ روی نسخهٔ قدیمیِ سرور، zod fail، خطای شبکه)
 //      یک‌بار به مسیرِ کامل برمی‌گردد؛ بی‌دلتا بهتر از دلتایِ ناقص.
-//   ۳) در حالتِ `unchanged` همان آرایۀ قبلی برگردانده می‌شود — ارجاعِ یکسان
-//      یعنی TanStack هیچ رندرِ تازه‌ای نمی‌سازد.
+//   ۳) در حالتِ `unchanged` همان آبجکتِ قبلی برگردانده می‌شود — ارجاعِ یکسان
+//      یعنی TanStack هیچ رندرِ تازه‌ای نمی‌سازد. (خودِ snapshot هم ممو است؛
+//      ساختنِ wrapper تازه در هر poll، همان دروغِ وعدۀ بالا بود — سنجشِ
+//      Phase پرفورمنس: fan-outِ تا ۸ observer در هر نفس.)
 import { useQuery, type QueryObserverOptions } from '@tanstack/react-query';
 import { http, HttpError } from '@shared/api/http';
 import {
@@ -41,8 +43,15 @@ let counts = { count: 0, live_count: 0, fossil_count: 0 };
 /** سرورِ بی‌/api/market/delta (نسخۀ قدیمیِ نصب‌شده) ⇒ تا پایانِ عمرِ تب کامل می‌گیریم. */
 let deltaUnsupported = false;
 
+/** تنها سازندۀ wrapper؛ بعدِ هر adopt/applyDelta/reset صدا زده می‌شود. تا آن
+ *  لحظه snapshot() همان مرجع قبلی را می‌دهد و «بی‌تغییری» واقعاً بی‌تغییری است. */
+let snap: MarketFeed = { status: 'success', data: rows, meta, ...counts };
+function rebuildSnapshot(): void {
+  snap = { status: 'success', data: rows, meta, ...counts };
+}
+
 function snapshot(): MarketFeed {
-  return { status: 'success', data: rows, meta, ...counts };
+  return snap;
 }
 
 function adopt(f: MarketFeed): MarketFeed {
@@ -58,6 +67,7 @@ function adopt(f: MarketFeed): MarketFeed {
   // پس پولینگِ بعدی دقیقاً از همین نقطه دلتا می‌خواهد. بی‌rev هر دور یک
   // بدنۀ ۴ مگابایتی می‌شد — یعنی همان وضعیتِ پیش از حالتِ داغ.
   rev = typeof f.rev === 'number' ? f.rev : -1;
+  rebuildSnapshot();
   return f;
 }
 
@@ -87,6 +97,7 @@ function applyDelta(r: Delta): boolean {
     live_count: r.live_count ?? counts.live_count,
     fossil_count: r.fossil_count ?? counts.fossil_count,
   };
+  rebuildSnapshot();
   return true;
 }
 
@@ -156,6 +167,7 @@ export function resetMarketFeedMirror() {
   meta = null;
   counts = { count: 0, live_count: 0, fossil_count: 0 };
   deltaUnsupported = false;
+  rebuildSnapshot();
 }
 
 export function marketFeedMirrorSize() {

@@ -50,19 +50,27 @@ export function usePortfolio() {
 
 
 /** قیمت پایانی جاری نمادها برای کنترل حد ضرر */
+// Phase پرفورمنس: selectِ پایدار + کشِ کلید=مرجعِ rows. پیش‌تر هر poll (حتی
+// بی‌تغییری) Mapِ ۵۵۹۸ردیفی از نو ساخته می‌شد؛ حالا فقط با تغییرِ واقعیِ آرایه.
+let closesCache: { src: MarketFeed['data']; map: Map<string, number> } | null = null;
+
+function selectMarketCloses(feed: MarketFeed): Map<string, number> {
+  if (closesCache && closesCache.src === feed.data) return closesCache.map;
+  const map = new Map<string, number>();
+  for (const r of feed.data) {
+    if (r.p_closing != null) {
+      map.set(r.symbol, r.p_closing);
+      map.set(normalizeFa(r.symbol), r.p_closing);
+    }
+  }
+  closesCache = { src: feed.data, map };
+  return map;
+}
+
 export function useMarketCloses() {
   // حدِ ضرر از همان تابلو خوانده می‌شود. پیش‌ازین این یک کوئریِ مستقل با
   // اسکیمایِ دوفیلدی بود و — آن‌طور که در #1193ِ درختِ استراتژی دیدیم — کلیدِ
   // فقط-آدرس درِ shared/api/http باعث می‌شد آبجکتِ چروکیدهٔ آن به کشِ تابلو
   // نشت کند. با کلیدِ مشترک این طبقه خطا هم از بین می‌رود.
-  return useMarketFeedShared((feed: MarketFeed) => {
-        const map = new Map<string, number>();
-        for (const r of feed.data) {
-          if (r.p_closing != null) {
-            map.set(r.symbol, r.p_closing);
-            map.set(normalizeFa(r.symbol), r.p_closing);
-          }
-        }
-    return map;
-  }, 60_000);
+  return useMarketFeedShared(selectMarketCloses, 60_000);
 }

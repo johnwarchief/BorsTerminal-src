@@ -76,7 +76,12 @@ describe('marketFeed — حالتِ داغ در کلاینت', () => {
     httpMock.mockResolvedValueOnce({ status: 'unchanged', rev: 3, count: 1, rows: undefined });
     const f2 = await call();
     expect(f2.data).toBe(f1.data);
-    expect(httpMock).toHaveBeenCalledTimes(2);
+    // Phase پرفورمنس: ادعای «بی‌رندر» یعنی خودِ wrapper هم باید همان مرجع باشد؛
+    // تا پیش از این هر poll آبجکتِ تازه می‌ساخت و fan-outِ ۸-observerه می‌زد.
+    httpMock.mockResolvedValueOnce({ status: 'unchanged', rev: 3, count: 1, rows: undefined });
+    const f3 = await call();
+    expect(f3).toBe(f2);
+    expect(httpMock).toHaveBeenCalledTimes(3);
   });
 
   it('countِ ناهمخوان ⇒ بدنۀ کامل، نه mergeِ ناقص (ردیفِ کم/زیاد از دلتا پنهان می‌ماند)', async () => {
