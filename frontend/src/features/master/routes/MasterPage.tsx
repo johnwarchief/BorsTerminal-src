@@ -35,6 +35,10 @@ import { evaluateFtsPipeline, recommendHorizon } from '../lib/ftsPipelineEvaluat
 import { useFtsFunnel } from '../api/useFtsFunnel';
 import { buildDossier, findCandidate } from '../lib/masterDossier';
 import { MasterDossierPanel } from '../ui/MasterDossier';
+import { MasterFtsDetails } from '../ui/MasterFtsDetails';
+import { useKeyLevels, supportResistance } from '../api/useKeyLevels';
+import { patternBadges } from '@features/market/lib/tapeBadges';
+import { useTapeStore } from '@features/market/stores/tapeStore';
 import { useCapitalStore } from '../stores/capitalStore';
 import { useFtsPlan } from '../api/useFtsPlan';
 import { MasterVerdictCard } from '../ui/MasterVerdictCard';
@@ -83,14 +87,24 @@ export default function MasterPage() {
   // `buildDossier` چیزی داوری نمی‌کند — فقط دو منبعِ کاننیکال را ترجمه می‌کند،
   // پس Master و قیف و سایدبار یک حکم می‌دهند، نه سه حکم.
   const { funnel } = useFtsFunnel(horizon);
+  const candidate = useMemo(
+    () => findCandidate([funnel.stages.tape.entries, funnel.stages.fundamental.entries], symbol ?? ''),
+    [funnel, symbol],
+  );
   const dossier = useMemo(
-    () =>
-      buildDossier(
-        findCandidate([funnel.stages.tape.entries, funnel.stages.fundamental.entries], symbol ?? ''),
-        planFeed.data,
-        symbol ?? '',
-      ),
-    [funnel, planFeed.data, symbol],
+    () => buildDossier(candidate, planFeed.data, symbol ?? ''),
+    [candidate, planFeed.data, symbol],
+  );
+  // S: بج‌هایِ ستونِ «الگو» از همان تابعِ تبِ تابلو · T: پشتیبان/مقاومت از key-levels
+  const keyLevels = useKeyLevels(symbol ?? '');
+  const tapeCfg = useTapeStore((st) => st.tapeFilterConfig);
+  const tapeBadges = useMemo(
+    () => (candidate?.row ? patternBadges(candidate.row, tapeCfg) : []),
+    [candidate, tapeCfg],
+  );
+  const sr = useMemo(
+    () => supportResistance(keyLevels.data?.levels, planFeed.data?.fts?.jet?.close ?? null),
+    [keyLevels.data, planFeed.data],
   );
   /** جزئیات و برنامهٔ معاملاتی — capability دست‌نخورده، فقط زیرِ خلاصه */
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -289,6 +303,13 @@ export default function MasterPage() {
       </div>
 
       <MasterDossierPanel dossier={dossier} />
+      <MasterFtsDetails
+        candidate={candidate}
+        dossier={dossier}
+        badges={tapeBadges}
+        support={sr.support}
+        srResistance={sr.resistance}
+      />
 
       {/* خلاصه اول، جزئیات دوم، پیشرفته سوم (§13): هیچ چیزی حذف نشده —
           زیرِ همین دکمه است، تا صفحه در پنج ثانیه اول جواب بدهد. */}

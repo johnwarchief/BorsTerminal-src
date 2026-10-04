@@ -64,6 +64,54 @@ export function jalaaliToGregorian(jy: number, jm: number, jd: number): [number,
   return d2g(j2d(jy, jm, jd));
 }
 
+/** روزِ جلالی از روزِ نجومی — عینِ الگوریتمِ آزمون‌شدهٔ jalaali-js (toJalaali) */
+function d2j(jdn: number): { jy: number; jm: number; jd: number } {
+  const gy = d2g(jdn)[0];
+  let jy = gy - 621;
+  const r = jalCal(jy);
+  const jdn1f = g2d(gy, 3, r.march);
+  let k = jdn - jdn1f;
+  if (k >= 0) {
+    if (k <= 185) {
+      const jm = 1 + div(k, 31);
+      const jd = mod(k, 31) + 1;
+      return { jy, jm, jd };
+    }
+    k -= 186;
+  } else {
+    jy -= 1;
+    k += 179;
+    if (r.leap === 1) k += 1;
+  }
+  const jm = 7 + div(k, 30);
+  const jd = mod(k, 30) + 1;
+  return { jy, jm, jd };
+}
+
+/** میلادی → جلالی (الگوریتمِ استاندارد jalaali-js) */
+export function gregorianToJalaali(gy: number, gm: number, gd: number): { jy: number; jm: number; jd: number } {
+  return d2j(g2d(gy, gm, gd));
+}
+
+/** «2026-10-04» (یا هر رشته‌ای که Date بپذیرد) → «۱۴۰۵/۰۷/۱۲» بی‌ارقامِ فارسی؛ بی‌اعتبار ⇒ null */
+export function isoToJalaliParts(iso: string | null | undefined): [number, number, number] | null {
+  if (!iso) return null;
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(iso).trim());
+  if (!m) return null;
+  const gy = Number(m[1]), gm = Number(m[2]), gd = Number(m[3]);
+  if (!Number.isInteger(gy) || gm < 1 || gm > 12 || gd < 1 || gd > 31) return null;
+  const j = gregorianToJalaali(gy, gm, gd);
+  if (j.jy < 1200 || j.jy > 1600) return null;
+  return [j.jy, j.jm, j.jd];
+}
+
+/** رشتهٔ جلالیِ «YYYY/MM/DD» از تاریخِ میلادی؛ بی‌اعتبار ⇒ null (رقم‌ها لاتین می‌مانند) */
+export function isoToJalali(iso: string | null | undefined): string | null {
+  const p = isoToJalaliParts(iso);
+  if (!p) return null;
+  return `${p[0]}/${String(p[1]).padStart(2, '0')}/${String(p[2]).padStart(2, '0')}`;
+}
+
 /** پارس رشته دوره کدال به شکل YYYY/MM/DD و تبدیل به epoch ms */
 export function jalToEpochMs(jal: string | null | undefined): number | null {
   if (!jal) return null;

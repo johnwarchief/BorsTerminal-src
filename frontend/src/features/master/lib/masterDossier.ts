@@ -10,6 +10,8 @@ import {
   type FunnelStageKey,
   type StageStatus,
 } from './ftsFunnel';
+import { toFaDigits } from '@shared/lib/fmt';
+import { isoToJalali } from '@shared/lib/jalaali';
 import type { FtsPlanFeed } from '../api/useFtsPlan';
 
 export type DossierVerdict = 'confirmed' | 'watch' | 'wait' | 'reject' | 'insufficient';
@@ -88,6 +90,12 @@ export type MasterDossier = {
 };
 
 /** نمادِ درجامعه؟ کاندید را از پهن‌ترین درِ قیف می‌خوانیم (`tape.entries = picked`). */
+/** تاریخِ میلادیِ payload → «۱۴۰۵/۰۷/۱۲»؛ بی‌اعتبار ⇒ '—' (تبدیل درِ shared/lib/jalaali) */
+export function jalaliText(iso: string | null | undefined): string {
+  const j = isoToJalali(iso);
+  return j ? toFaDigits(j) : '—';
+}
+
 export function findCandidate(candLists: Array<Candidate[] | undefined>, symbol: string): Candidate | null {
   for (const list of candLists) {
     const hit = list?.find((c) => c.symbol === symbol);

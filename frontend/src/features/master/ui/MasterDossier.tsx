@@ -5,7 +5,7 @@
 import { Link } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
-import type { DossierVerdict, MasterDossier } from '../lib/masterDossier';
+import { jalaliText, type DossierVerdict, type MasterDossier } from '../lib/masterDossier';
 
 const TONE: Record<DossierVerdict, 'green' | 'blue' | 'yellow' | 'red'> = {
   confirmed: 'green',
@@ -96,7 +96,7 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
                 <span className="num text-text-muted">
                   تریگر: {d.technical.trigger.label}
                   {d.technical.trigger.price !== null ? ` · ${money(d.technical.trigger.price)}` : ''}
-                  {d.technical.trigger.date ? ` · ${toFaDigits(d.technical.trigger.date)}` : ''}
+                  {d.technical.trigger.date ? ` · ${jalaliText(d.technical.trigger.date)}` : ''}
                 </span>
               ) : null}
             </div>
