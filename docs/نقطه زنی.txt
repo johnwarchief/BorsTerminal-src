@@ -1,0 +1,24 @@
+true==function()
+{
+//Calculate the Min Price of Month
+var MinPriceOfMonth=function()
+{
+var minimum=[ih][0].PriceMin;
+var n;
+for(n=1; n<29; n++)
+if(minimum>[ih][n].PriceMin)
+minimum=[ih][n].PriceMin;
+(cfield0)= minimum;
+(cfield1)=(pc)-minimum;
+(cfield2)= Math.round(((pc)-minimum)/(pc)*100*100)/100;
+return minimum;
+};
+if((cfield2)<3 && MinPriceOfMonth() !=0)
+{
+return true;
+}
+else
+{
+return false;
+}
+}() &&  (tvol)>1*(([ih][0].QTotTran5J+[ih][1].QTotTran5J+[ih][2].QTotTran5J+[ih][3].QTotTran5J+[ih][4].QTotTran5J+[ih][5].QTotTran5J+[ih][6].QTotTran5J+[ih][7].QTotTran5J+[ih][8].QTotTran5J+[ih][9].QTotTran5J+[ih][10].QTotTran5J+[ih][11].QTotTran5J+[ih][12].QTotTran5J+[ih][13].QTotTran5J+[ih][14].QTotTran5J+[ih][15].QTotTran5J+[ih][16].QTotTran5J+[ih][17].QTotTran5J+[ih][18].QTotTran5J+[ih][19].QTotTran5J+[ih][20].QTotTran5J+[ih][21].QTotTran5J+[ih][22].QTotTran5J+[ih][23].QTotTran5J+[ih][24].QTotTran5J+[ih][25].QTotTran5J+[ih][26].QTotTran5J+[ih][27].QTotTran5J+[ih][28].QTotTran5J+[ih][29].QTotTran5J)/30)&& (tno) > 5
