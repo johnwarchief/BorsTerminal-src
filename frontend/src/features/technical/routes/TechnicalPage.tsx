@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useUiStore } from '@shared/stores/uiStore';
+import { RetryAction } from '@shared/components/RetryAction';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { useReplayStore } from '../stores/replayStore';
 import { clampCursor, isAtEnd, stepCursor } from '../lib/replay';
@@ -225,6 +226,14 @@ export default function TechnicalPage() {
                 candleStyle={engineStyle}
                 onEngineChange={setChartEngine}
               />
+            </div>
+          ) : symbol && nn.isError && nn.data.length === 0 ? (
+            <div
+              className="flex h-full flex-col items-center justify-center gap-3 text-xs text-text-muted"
+              data-testid="nn-feed-error"
+            >
+              <span>خوراکِ کندلِ {viewSymbol} نمی‌رسد — تاریخچۀ سرور پاسخ نداد</span>
+              <RetryAction onRetry={() => void nn.refetch()} testId="nn-feed-retry" />
             </div>
           ) : noData ? (
             <div className="flex h-full items-center justify-center text-xs text-text-muted" data-testid="nn-no-data">

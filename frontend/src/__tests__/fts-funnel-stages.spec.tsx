@@ -715,7 +715,7 @@ describe('پیچ‌ها رویِ نوارِ خودِ هر مرحله', () => {
   });
 });
 
-describe('قیف: snapshotِ بازگشت (Task #78 — scroll/stage پس از Back)', () => {
+describe('قیف: snapshotِ بازگشت (Task #78 — stage/scroll پس از Back)', () => {
   const SNAP_KEY = 'bors.funnel.snapshot.v1';
   const renderSnap = () =>
     renderRouted(
@@ -733,6 +733,17 @@ describe('قیف: snapshotِ بازگشت (Task #78 — scroll/stage پس از B
     const snap = JSON.parse(sessionStorage.getItem(SNAP_KEY) ?? '{}');
     expect(snap.stage).toBe('tape');
     expect(typeof snap.scroll).toBe('number');
+  });
+
+  it('تبِ قیف فقط هایلایت نیست — کارتِ همان مرحله را به دید می‌آورد (UX Round 79)', () => {
+    sessionStorage.clear();
+    const spy = vi.fn();
+    Element.prototype.scrollIntoView = spy;
+    useFunnelPrefsStore.getState().reset();
+    renderSnap();
+    fireEvent.click(screen.getByTestId('funnel-step-technical'));
+    expect(screen.getByTestId('funnel-step-technical')).toHaveAttribute('aria-selected', 'true');
+    expect(spy).toHaveBeenCalled();
   });
 
   it('snapshotِ ذخیره‌شده، تبِ مرحلۀ قیف را پس از بازگشت برمی‌گرداند', () => {

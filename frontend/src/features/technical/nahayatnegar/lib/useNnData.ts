@@ -65,7 +65,7 @@ export function useNnChartData(symbol: string, enabled = true) {
   }, [q.data]);
   const data = useMemo(() => toKLine(q.data?.candles ?? [], volMap), [q.data, volMap]);
   const actions = useMemo(() => mapBackendAdjustEvents(q.data?.adjustEvents ?? []), [q.data]);
-  return { data, actions, isLoading: q.isLoading, isError: q.isError, status: q.data?.status ?? null };
+  return { data, actions, isLoading: q.isLoading, isError: q.isError, refetch: q.refetch, status: q.data?.status ?? null };
 }
 
 /** نمای کل بورس (شاخص کل) */

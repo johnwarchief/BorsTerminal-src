@@ -826,7 +826,16 @@ export function FtsFunnelStages({
               role="tab"
               aria-selected={active === s.key}
               data-testid={`funnel-step-${s.key}`}
-              onClick={() => setActive(s.key)}
+              onClick={() => {
+                setActive(s.key);
+                // تب قیف فقط هایلایت نبود؛ کاربر انتظار داشت همان مرحله را ببیند
+                const card = document.querySelector(`[data-testid="funnel-stage-${s.key}"]`) as HTMLElement | null;
+                if (card) {
+                  card.style.scrollMarginTop = '3.2rem';
+                  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                  card.scrollIntoView?.({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+                }
+              }}
               className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
                 active === s.key
                   ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'

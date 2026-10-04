@@ -364,6 +364,19 @@ export default function MasterPage() {
         />
       ) : null}
 
+      {planFeed.isLoading && !planFeed.data ? (
+        /* «—» تنها درِ بالا بی‌صدا نمی‌نشیند: نواری می‌گوید نتیجه در راه است */
+        <div
+          className="flex items-center gap-2 rounded-xl border border-dashed border-border-c bg-bg-secondary/50 px-3 py-1.5 text-2xs text-text-muted"
+          data-testid="dossier-loading"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent-blue" aria-hidden />
+          در حالِ دریافت برآیند FTS...
+        </div>
+      ) : null}
+
       <MasterDossierPanel dossier={dossier} />
       <MasterFtsDetails
         candidate={candidate}

@@ -2,6 +2,7 @@
 // بر پایه جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { toFaDigits, fmtInt } from '@shared/lib/fmt';
+import { RetryAction } from '@shared/components/RetryAction';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { useParams } from 'react-router';
@@ -323,6 +324,20 @@ export default function StrategyTreePage() {
                   ))}
                 </div>
               )}
+
+              {/* بی‌نتیجه با خطایِ فید یکی نیست: «نیست» را از «نمی‌رسد» جدا نگه‌دار */}
+              {searchOpen && searchResults.length === 0 && searchQuery.trim() && (
+                <div className="absolute z-50 mt-1 w-full rounded-xl border border-border-c bg-bg-card px-3 py-2 text-2xs text-text-muted shadow-2xl">
+                  {marketFeed.isError ? (
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                      <span>فهرستِ نمادها نمی‌رسد — جستجو موقتاً کار نمی‌کند</span>
+                      <RetryAction onRetry={() => void marketFeed.refetch()} testId="tree-search-retry" />
+                    </span>
+                  ) : (
+                    <span>نمادی با این نام پیدا نشد</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* نشانگر نماد فعال و وضعیت عینی */}
@@ -338,6 +353,21 @@ export default function StrategyTreePage() {
                     بنیادی {toFaDigits(fundScore)}/۵
                   </span>
                 )}
+                {ftsPlan.isError ? (
+                  <span
+                    data-testid="tree-plan-error"
+                    className="flex items-center gap-1.5 rounded-md bg-accent-red/15 px-1.5 py-0.5 text-3xs font-bold text-accent-red"
+                  >
+                    وضعیتِ FTS نمی‌رسد
+                    <button
+                      type="button"
+                      onClick={() => void ftsPlan.refetch()}
+                      className="underline decoration-dotted hover:opacity-80"
+                    >
+                      تلاش دوباره
+                    </button>
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   onClick={handleSyncWithSymbol}

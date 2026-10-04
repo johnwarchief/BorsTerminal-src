@@ -9,6 +9,7 @@ import { fmtPct } from '@shared/lib/fmt';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { FlashNum } from '@shared/components/FlashNum';
 import { Badge } from '@shared/components/Badge';
+import { RetryAction } from '@shared/components/RetryAction';
 import { aggregateSignals } from '@features/master/lib/masterMath';
 import {
   definiteDecision,
@@ -23,6 +24,7 @@ import { useCapitalStore } from '@features/master/stores/capitalStore';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
+import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
@@ -144,7 +146,10 @@ function StatusLight({
 export function SymbolInspector() {
   const symbol = useSymbolStore((s) => s.symbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
+  const togglePin = useSymbolStore((s) => s.togglePin);
+  const pinned = useSymbolStore((s) => s.pinned);
   const row = useInspectorBoard();
+  const feed = useMarketFeed();
   const { pathname } = useLocation();
   const stageIdx = stageIndexForPath(pathname);
 
@@ -300,17 +305,44 @@ export function SymbolInspector() {
           <div className="truncate text-[9.5px] text-text-muted">{row?.name || ''}</div>
           {row?.sector ? <div className="truncate text-[9.5px] text-text-muted">{row.sector}</div> : null}
         </div>
-        <button
-          type="button"
-          onClick={clearSymbol}
-          aria-label="بستن پنل نماد"
-          className="shrink-0 rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:border-[var(--hairline)] hover:text-accent-red"
-        >
-          ✕
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => togglePin(symbol)}
+            aria-pressed={pinned.includes(symbol)}
+            aria-label="سنجاق کردن نماد برای دسترسی سریع"
+            title={pinned.includes(symbol) ? 'از سنجاق برداشته می‌شود' : 'به سنجاق‌ها اضافه می‌شود — در Ctrl+K صدر می‌آید'}
+            className={`rounded-md border px-1.5 py-0.5 text-2xs transition-colors ${
+              pinned.includes(symbol)
+                ? 'border-accent-amber/50 bg-accent-amber/15 text-accent-amber'
+                : 'border-transparent text-text-muted hover:border-[var(--hairline)] hover:text-text-primary'
+            }`}
+          >
+            سنجاق
+          </button>
+          <button
+            type="button"
+            onClick={clearSymbol}
+            aria-label="بستن پنل نماد"
+            className="rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:border-[var(--hairline)] hover:text-accent-red"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 p-2.5">
+        {/* خطای خوراک با «ردیف نیست» یکی نیست: بی‌این، بیست '-' بی‌صدا معنای
+            «داده نیست» به کاربر می‌فروشد وقتی مشکل، رسیدنِ داده است. */}
+        {!row && feed.isError ? (
+          <div
+            data-testid="inspector-feed-error"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-accent-red/40 bg-accent-red/10 px-2 py-1.5 text-3xs text-accent-red"
+          >
+            <span>تابلو نمی‌رسد — اعداد این نماد تازه نیست</span>
+            <RetryAction onRetry={() => void feed.refetch()} testId="inspector-feed-retry" />
+          </div>
+        ) : null}
         {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف
             («این سهم کجا ایستاده»). حلقه‌ها از همان `symbolStageProgress`ِ قیف
             می‌آیند — سایدبار قواعدِ دومی نمی‌سازد. */}

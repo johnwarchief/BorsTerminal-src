@@ -3,6 +3,7 @@
 // (pos در برابر neg). سری کمتر از ۲ نقطه = «بدون داده»؛ عدد ساختگی رندر نمی‌شود.
 import { useMemo, useState } from 'react';
 import { CollapseBody, CollapseToggle } from '@shared/components/Collapse';
+import { RetryAction } from '@shared/components/RetryAction';
 import { useMarketTimeline } from '../api/useTimeline';
 import { useIntradayCache } from '../api/useIntradayCache';
 import {
@@ -83,7 +84,7 @@ function ChartCard({
 }
 
 export function MicroChartsDrawer() {
-  const { data, isLoading } = useMarketTimeline();
+  const { data, isLoading, isError, refetch } = useMarketTimeline();
   const [open, setOpen] = useState(false);
 
   /** نقاط تایم‌لاین بک‌اند */
@@ -114,8 +115,21 @@ export function MicroChartsDrawer() {
   }, [points]);
 
   // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
-  // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند.
-  if (isLoading || !data) return null;
+  // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند. خطا استثناست: سربالاییِ
+  // بی‌پایانِ «لود نشده» با «نمی‌رسد» یکی نیست — بی‌این، خرابیِ تایم‌لاین بی‌صدا می‌ماند.
+  if (isLoading) return null;
+  if (isError) {
+    return (
+      <div
+        data-testid="micro-charts-error"
+        className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-border-c bg-bg-secondary px-4 py-2 text-2xs text-text-secondary"
+      >
+        <span>تایم‌لاینِ جریان سفارش‌ها نمی‌رسد — بقیۀ تابلو کار می‌کند</span>
+        <RetryAction onRetry={() => void refetch()} testId="micro-charts-retry" />
+      </div>
+    );
+  }
+  if (!data) return null;
 
   return (
     <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
