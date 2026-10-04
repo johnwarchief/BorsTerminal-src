@@ -5,7 +5,9 @@ import {
   getAdjustmentFactor,
   mapBackendAdjustEvents,
   pricePrecisionFor,
-  toPerformanceSeries,
+  adjustmentGapNote,
+  readAdjustmentCapability,
+  toIndexedSeries,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
 
@@ -81,8 +83,8 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
 
   it('پایهٔ صفر یا تهی ⇒ سری بی‌تغییر برمی‌گردد، نه صفرِ جعلی یا بی‌نهایت', () => {
     const zero = [{ timestamp: t('2020-01-08'), open: 0, high: 0, low: 0, close: 0 }] as unknown as KLineData[];
-    expect(toPerformanceSeries(zero)[0].close).toBe(0);
-    expect(toPerformanceSeries([])).toEqual([]);
+    expect(toIndexedSeries(zero)[0].close).toBe(0);
+    expect(toIndexedSeries([])).toEqual([]);
   });
 
   it('بازدهی دو رقمِ ممیز دارد — گردکردنِ صحیح یعنی ۱۰۰٫۴٪ بشود ۱۰۰٪', () => {
@@ -96,5 +98,59 @@ describe('تعدیل چارت نهایت‌نگر (نسبت سرور)', () => {
     expect(pricePrecisionFor('performance')).toBe(2);
     expect(pricePrecisionFor('combined')).toBe(0);
     expect(pricePrecisionFor('none')).toBe(0);
+  });
+});
+
+// PHASE A (Round K): جداسازیِ معناییِ تعدیل — چهار مفهوم، یک ضرب
+describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
+  it("«نمایِ بازدهی» فقط شاخصِ نخستینِ پایانی نیست: با رویداد ≠ شاخصِ خام", () => {
+    const perf = applyAdjustmentToCandles(candles, events, "performance");
+    const indexedRaw = toIndexedSeries(candles);
+    expect(perf.map((c) => c.close)).not.toEqual(indexedRaw.map((c) => c.close));
+  });
+
+  it("combined ≠ indexed: indexed همان combined ÷ پایانیِ اول × ۱۰۰ است، نه سرمایه‌گذاریِ دوبارهٔ سود", () => {
+    const comb = applyAdjustmentToCandles(candles, events, "combined");
+    const perf = applyAdjustmentToCandles(candles, events, "performance");
+    const k = 100 / comb[0].close;
+    perf.forEach((c, i) => expect(c.close).toBeCloseTo(comb[i].close * k, 2));
+  });
+
+  it("تعدیلِ دوباره سری را عوض می‌کند ⇒ مصرف‌کننده باید خام بدهد؛ «none» بی‌تغییر برمی‌گرداند", () => {
+    const once = applyAdjustmentToCandles(candles, events, "combined");
+    const twice = applyAdjustmentToCandles(once, events, "combined");
+    expect(twice[0].close).not.toBe(once[0].close);
+    expect(applyAdjustmentToCandles(candles, events, "none").map((c) => c.close))
+      .toEqual(candles.map((c) => c.close));
+  });
+
+  it("فال‌بکِ بی‌بلوکِ توانایی، combined را «هست» جا نمی‌زند و هشدار می‌دهد", () => {
+    const unseen = readAdjustmentCapability({ adjustEvents: [] });
+    expect(unseen.combinedAvailable).toBe(false);
+    expect(unseen.functionalAvailable).toBe(false);
+    expect(adjustmentGapNote("performance", unseen)).toContain("در دسترس نیست");
+    const cached = readAdjustmentCapability({ adjustCapability: {
+      source: "local-cache", combined_available: true, functional_available: false,
+      functional_reason: "r", event_count: 3 } });
+    expect(cached.combinedAvailable).toBe(true);
+    expect(adjustmentGapNote("performance", cached)).toBeNull();
+    expect(adjustmentGapNote("none", unseen)).toBeNull();
+  });
+
+  it("ترتیبِ رویداد در ورودی، داوری را عوض نمی‌کند", () => {
+    const two = mapBackendAdjustEvents([{ date: "2020-01-11", ratio: 0.5 },
+                                        { date: "2020-01-13", ratio: 0.8 }]);
+    const rev = [...two].reverse();
+    expect(applyAdjustmentToCandles(candles, two, "combined").map((c) => c.close))
+      .toEqual(applyAdjustmentToCandles(candles, rev, "combined").map((c) => c.close));
+  });
+
+  it("هندسهٔ OHLC پس از هر دو حالت حفظ می‌شود", () => {
+    for (const mode of ["combined", "performance"] as const) {
+      for (const c of applyAdjustmentToCandles(candles, events, mode)) {
+        expect(c.low).toBeLessThanOrEqual(Math.min(c.open, c.close));
+        expect(c.high).toBeGreaterThanOrEqual(Math.max(c.open, c.close));
+      }
+    }
   });
 });

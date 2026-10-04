@@ -252,8 +252,8 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(parsed[0].name).toBe('segment');
   });
 
-  // ── «تعدیل عملکردی» (نمایِ بازدهی) ─────────────────────────────────────
-  it('پیش‌فرضِ چارت «تعدیل عملکردی» است و دقتِ محور دو رقم؛ با «بدون تعدیل» صفر می‌شود (#186)', () => {
+  // ── «نمایِ بازدهی» (نمایِ بازدهی) ─────────────────────────────────────
+  it('پیش‌فرضِ چارت «نمایِ بازدهی» است و دقتِ محور دو رقم؛ با «بدون تعدیل» صفر می‌شود (#186)', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
 
     const calls = chart().setSymbol.mock.calls;
@@ -261,7 +261,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(calls[calls.length - 1][0].pricePrecision).toBe(2);
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    const perfItem = item('تعدیل عملکردی');
+    const perfItem = item('نمایِ بازدهی');
     expect(perfItem.className).not.toContain('nn-disabled');
     act(() => { fireEvent.click(item('بدون تعدیل')); });
     expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(0);
@@ -271,7 +271,7 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     act(() => { useFtsConfigStore.getState().setPriceScale('percentage'); });
     render(<KLineChartWrapper initialSymbol="فولاد" />);
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    act(() => { fireEvent.click(item('تعدیل عملکردی')); });
+    act(() => { fireEvent.click(item('نمایِ بازدهی')); });
 
     const y = chart().overrideYAxis.mock.calls;
     expect(y[y.length - 1][0].name).toBe('normal');

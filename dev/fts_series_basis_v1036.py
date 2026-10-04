@@ -112,13 +112,27 @@ try:
     CH.get_chart_tsetmc = _boom
     CH.FTS_ANALYSIS_CACHE.clear()
     series2, basis2 = CH._fts_analysis_series("آزمایشی")
-    ck("بی‌CDN به بانکِ محلی برمی‌گردد و مبنایِ خودش را می‌گوید",
-       basis2 == "local-db" and len(series2) == N)
+    ck("بی‌CDN و بی‌رویدادِ شناخته‌شده ⇒ بانکِ محلی، خام، و صریح اعلام‌شده",
+       basis2 == "local-db-raw" and len(series2) == N)
     CH.FTS_ANALYSIS_CACHE.clear()
     payload2 = CH._fts_analyze_symbol("جت-محلی")
     ck("روی سریِ خامِ محلی همان نماد جت نمی‌زند (تفاوتِ واقعیِ دو مسیر)",
        ((payload2.get("fts") or {}).get("jet") or {}).get("active") is False
-       and payload2.get("analysis_basis") == "local-db")
+       and payload2.get("analysis_basis") == "local-db-raw")
+
+    # Round K/PHASE A: بانکِ محلی همان مجموعهٔ رویدادِ کاننیکال را نگه می‌دارد، پس
+    # فال‌بک دیگر «سریِ خامِ برچسب‌خورده» نیست — هر دو مسیر یک قیمت می‌بینند.
+    CH.get_chart_db = lambda symbol, adjustment=3: {
+        "status": "success", "candles": list(_local), "factors": list(factors),
+        "volumes": list(volumes), "adjustSource": "local-cache",
+        "adjustCapability": {"source": "local-cache", "combined_available": True,
+                             "functional_available": False,
+                             "functional_reason": "دادهٔ رویدادِ تفکیکی نیست",
+                             "event_count": 2}}
+    CH.FTS_ANALYSIS_CACHE.clear()
+    series3, basis3 = CH._fts_analysis_series("آزمایشی")
+    ck("فال‌بکِ محلی با رویدادِ کاننیکال ⇒ سریِ تعدیل و مبنایِ local-db-adjusted",
+       basis3 == "local-db-adjusted" and len(series3) == N and series3[0]["close"] < 100.0)
 finally:
     CH.get_chart_tsetmc, CH.get_chart_db = _saved_cdn, _saved_db
     CH.FTS_ANALYSIS_CACHE.clear()

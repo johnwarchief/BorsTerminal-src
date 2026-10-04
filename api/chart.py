@@ -158,6 +158,108 @@ def _adjust_events_from_rows(all_rows):
     return adj_events, True
 
 
+# ═════ رویدادهایِ تعدیلِ کاننیکال: یک‌بار کشف، همیشه خوانده ═════
+# کشفِ رویداد فقط از CSV زندهٔ TSETMC می‌شد و هیچ‌جا نمی‌ماند؛ پس همان نماد درِ
+# مسیرِ آفلاین «بی‌رویداد» برمی‌گشت و مصرف‌کننده سریِ خام را با برچسبِ تعدیل
+# می‌خواند. حالا رویدادِ کشف‌شده درِ بانک می‌نشیند و فال‌بک همان مجموعه را می‌دهد.
+_ADJ_TABLE_DDL = ("CREATE TABLE IF NOT EXISTS adjust_events("
+                  "symbol TEXT, date TEXT, ratio REAL, source TEXT, "
+                  "PRIMARY KEY(symbol, date))")
+# «رویدادی نیست» یک داوری است، نه نبودِ داوری — پس خودش ذخیره می‌شود، وگرنه
+# مسیرِ آفلاین برایِ نمادی که واقعاً تعدیل ندارد هشدارِ جعلی می‌داد.
+_ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
+                    "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
+_ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache")
+_ADJ_FUNCTIONAL_REASON = (
+    "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: "
+    "افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. هیچ‌یک از این‌ها "
+    "درِ فیدِ TSETMC و درِ هیچ جدولِ این بانک نیست؛ گسستِ «قیمتِ پایه» یک عدد است و دو "
+    "مجهول، پس فرمولِ حدسی به‌جایِ آن نمی‌نشیند.")
+
+
+def _store_adjust_events(symbol, events, source):
+    """رویدادها و داوریِ منبع را می‌نویسد — تا فال‌بک، همان مجموعه را داشته باشد."""
+    if not source:
+        return
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        try:
+            conn.execute(_ADJ_TABLE_DDL)
+            conn.execute(_ADJ_VERDICT_DDL)
+            if events and source in _ADJ_KNOWN_SOURCES:
+                conn.executemany(
+                    "INSERT OR REPLACE INTO adjust_events(symbol, date, ratio, source) "
+                    "VALUES (?,?,?,?)",
+                    [(symbol, e["date"], float(e["ratio"]), source) for e in events])
+            conn.execute("INSERT OR REPLACE INTO adjust_verdict(symbol, source, checked_at) "
+                         "VALUES (?,?,date('now'))", (symbol, source))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        # کشِ تعدیل، شواهدِ داده نیست؛ مسیرِ چارت نباید بی‌آن بمیرد
+        pass
+
+
+def _stored_adjust_source(symbol):
+    """آخرین داوریِ منبع برایِ نماد، یا '' وقتی هنوز دیده نشده است."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        try:
+            conn.execute(_ADJ_VERDICT_DDL)
+            row = conn.execute("SELECT source FROM adjust_verdict WHERE symbol=?",
+                               (symbol,)).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return ""
+    return str(row[0] or "") if row else ""
+
+
+def _stored_adjust_events(symbol):
+    """مجموعهٔ رویدادِ یک‌بارکشف‌شده، یا [] وقتی هنوز چیزی ندیده‌ایم."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        try:
+            conn.execute(_ADJ_TABLE_DDL)
+            rows = conn.execute(
+                "SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date",
+                (symbol,)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    return [{"date": r[0], "ratio": float(r[1])} for r in rows if r[1]]
+
+
+def _adjust_capability(events, source):
+    """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست."""
+    return {
+        "source": source,
+        "combined_available": source in _ADJ_KNOWN_SOURCES,
+        "indexed_available": True,
+        "functional_available": False,
+        "functional_reason": _ADJ_FUNCTIONAL_REASON,
+        "event_count": len(events or []),
+    }
+
+
+def _factors_from_events(times, events):
+    """factor(t) = ∏ ratio برای رویدادهایِ date > t — همان قاعدۀ حلقۀ CDN."""
+    ev = sorted((e for e in (events or []) if e.get("date")), key=lambda e: str(e["date"]))
+    dates = [str(e["date"]) for e in ev]
+    ratios = [float(e.get("ratio") or 1.0) for e in ev]
+    out = [1.0] * len(times)
+    f, j = 1.0, len(dates) - 1
+    for i in range(len(times) - 1, -1, -1):
+        t = str(times[i])[:10]
+        while j >= 0 and dates[j] > t:
+            f *= ratios[j]
+            j -= 1
+        out[i] = round(f, 10)
+    return out
+
+
 def _d_even_to_date(d_even):
     """20260928 (int/str) → '2026-09-28'؛ بی‌اعتبار → None."""
     s = str(d_even or "").strip()
@@ -340,6 +442,7 @@ def get_chart_tsetmc(symbol: str):
                     "factors": db_res.get("factors") or [{"time": c["time"], "factor": 1.0} for c in cands],
                     "adjustEvents": db_res.get("adjustEvents") or [],
                     "adjustSource": "local-db-fallback",
+                    "adjustCapability": db_res.get("adjustCapability") or {},
                     # فرانت با این پرچم «منبعِ جایگزین» را روی چارت می‌نویسد:
                     # سریِ محلی هم کوتاه‌تر است و هم بی‌رویدادِ تعدیل، پس هر
                     # جابه‌جاییِ اعدادِ محور باید برای کاربر توضیح داشته باشد.
@@ -461,8 +564,11 @@ def get_chart_tsetmc(symbol: str):
             "factors": factors,
             "adjustEvents": adj_events,
             "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
+            "adjustCapability": _adjust_capability(adj_events, adjust_source),
             "count": len(candles),
         }
+        # یک‌بار کشف، همیشه خوانده: همین مجموعه، منبعِ مسیرِ آفلاین هم می‌شود.
+        _store_adjust_events(symbol, adj_events, adjust_source)
         CHART_CACHE[symbol] = (time.time(), result, CHART_CACHE_TTL)
         return _attach_live_bar(symbol, result)
     except Exception as e:
@@ -907,12 +1013,11 @@ def get_ma_events(symbol: str, days: int = Query(730)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def _adjust_events_for(symbol, rows):
-    """رویدادهای تعدیل — از همان منطق /api/chart (APF + gap-detection) reuse میشود."""
-    try:
-        import test_tsetmc  # noqa — نه لازم؛ فقط اگر importError
-    except Exception:
-        pass
+def _adjust_events_for(symbol, rows=None):
+    """رویدادهایِ تعدیلِ کاننیکالِ نماد — همان مجموعه‌ای که یک‌بار کشف شده است."""
+    evs = _stored_adjust_events(symbol)
+    if evs:
+        return evs
     try:
         j = get_chart_tsetmc(symbol)
         return j.get("adjustEvents") or []
@@ -966,28 +1071,38 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         if live_injected:
             candles.append(bar)
 
-        # ---- v10 FTS: technical methodology payload (same candles) ----
-        # Pure compute wrapper; failures must never break the chart contract,
-        # so "fts" degrades to None. See _fts_analyze_candles.
-        fts_payload = None
-        try:
-            # نسخه‌کپی به موتور داده می‌شود: `apply_basis()` کندل‌ها را در‌جا تغییر
-            # می‌دهد و موتورِ FTS درِ این قدم **عمداً** رویِ همان مبنایِ پایانیِ خام
-            # می‌ماند (کارِ FTS Pattern Engine درِ #73 معوق است؛ ببینید
-            # docs/CANDLE-CONTRACT.md §۱-ث). کپی، نشتِ مبنایِ منتخب به آرایۀ موتور را
-            # تضمین می‌کند، نه فقط قرائتِ پیش از تغییر.
-            fts_payload = _fts_analyze_candles(symbol, [dict(c) for c in candles])
-        except Exception:
-            fts_payload = None
-
         vols = [{"time": c["time"], "value": c.get("volume", 0),
                  "color": "#10b981" if c.get("close", 0) >= c.get("open", 0) else "#f43f5e"} for c in candles]
-        facts = [{"time": c["time"], "factor": 1.0} for c in candles]
+        # رویدادِ کاننیکالِ یک‌بارکشف‌شده + ضرایبِ همان مجموعه. پیش از اینجا این
+        # مسیر صریح «adjustEvents: []» می‌داد و فرانت سریِ خام را «تعدیل‌شده» می‌خواند.
+        _evs = _stored_adjust_events(symbol)
+        _src = ("local-cache" if _evs
+                else _stored_adjust_source(symbol) or "local-db-unseen")
+        _cap = _adjust_capability(_evs, _src)
+        _fct = _factors_from_events([str(c["time"])[:10] for c in candles],
+                                    _evs if _cap["combined_available"] else [])
+        facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fct)]
+
+        # ---- v10 FTS: همان سریِ کاننیکالِ تعدیل‌شده که چارت می‌بیند ----
+        # Pure compute wrapper; failures must never break the chart contract,
+        # so "fts" degrades to None. See _fts_analyze_candles.
+        #
+        # `_fts_scaled` نسخه‌هایِ تازه می‌سازد و `apply_basis` رویِ همان نسخه‌ها
+        # می‌نشیند، پس کندل‌هایِ خامِ پاسخ دست‌نخورده می‌مانند و `resolve_payload`
+        # تنها نقطۀ انتخابِ مبنا می‌ماند. بی‌این خط، موتورِ FTS درِ مسیرِ محلی رویِ
+        # ریالِ خام داوری می‌کرد و درِ مسیرِ CDN رویِ تعدیل‌شده — دو قیمتِ متفاوت
+        # برایِ یک نماد درِ یک موتور.
+        fts_payload = None
+        try:
+            fts_payload = _fts_analyze_candles(symbol, _fts_scaled(candles, facts, vols))
+        except Exception:
+            fts_payload = None
 
         return price_basis.resolve_payload(
             {"status": "success", "symbol": symbol, "count": len(candles),
              "candles": candles, "volumes": vols, "factors": facts,
-             "adjustEvents": [], "adjustSource": "local-db",
+             "adjustEvents": _evs, "adjustSource": _src,
+             "adjustCapability": _cap,
              "liveInjected": live_injected,
              "liveError": live_error,
              "adjustment": adjustment,
@@ -2645,10 +2760,26 @@ def _fts_analysis_series(symbol):
                              payload.get("volumes") or [])
         if len(series) >= 2:
             src = str(payload.get("adjustSource") or "")
-            basis = "local-db" if src.startswith("local-db") else "tsetmc-adjusted"
+            cap = payload.get("adjustCapability") or _adjust_capability(
+                payload.get("adjustEvents") or [], src)
+            # «raw» یعنی داوریِ تعدیل درِ دسترس نیست (لنگر پذیرفته نشد یا نماد هنوز
+            # دیده نشده) — نه اینکه تعدیل صفر است؛ آن حالت درِ `-adjusted` می‌ماند.
+            if cap.get("combined_available"):
+                basis = "local-db-adjusted" if src.startswith("local-db") else "tsetmc-adjusted"
+            else:
+                basis = "local-db-raw" if src.startswith("local-db") else "tsetmc-raw"
             return series, basis
     db = get_chart_db(symbol)
-    return (db.get("candles") or []), "local-db"
+    cands = db.get("candles") or []
+    cap = db.get("adjustCapability") or {}
+    # مسیرِ محلی هم از همان `_fts_scaled` عبور می‌کند: یک سریِ کاننیکال برایِ هر
+    # دو منبع. وقتی داوریِ تعدیل شناخته‌شده نیست (نماد دیده نشده، یا لنگرِ NAV)
+    # صادقاً خام می‌ماند و درِ `analysis_basis` اعلام می‌شود — نه بی‌صدا.
+    if cap.get("combined_available"):
+        scaled = _fts_scaled(cands, db.get("factors") or [], db.get("volumes") or [])
+        if len(scaled) >= 2:
+            return scaled, "local-db-adjusted"
+    return cands, "local-db-raw"
 
 
 def _fts_analyze_symbol(symbol, entry_hint=None):
@@ -2683,8 +2814,11 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
         fts = _fts_analyze_candles(symbol, candles, entry_hint=entry_hint)
     except Exception as e:
         return {"status": "error", "symbol": symbol, "message": str(e)}
+    _evs = _stored_adjust_events(symbol)
+    _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
-              "analysis_basis": basis, "bars": len(candles)}
+              "analysis_basis": basis, "bars": len(candles),
+              "adjustCapability": _adjust_capability(_evs, _src)}
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:
         FTS_ANALYSIS_CACHE.clear()
     FTS_ANALYSIS_CACHE[key] = (now, result)

@@ -70,6 +70,11 @@ SUITES = [
     # کشِ تحلیل FTS بدونِ مبنایِ قیمت درِ کلید، عوض‌کردنِ «آخرین ↔ پایانی» را تا
     # ۹۰۰ ثانیه بی‌پاسخ می‌گذاشت (برایِ نمادی که آخرینِ close == closing است).
     ('dev/fts_cache_basis_v1078.py', 'FTS analysis cache key carries the price basis (with a negative control)'),
+    # Round K / PHASE A: چهار مفهومِ تعدیل جدا از هم، یک سریِ کاننیکال برایِ همهٔ
+    # مصرف‌کننده‌ها، و فال‌بکی که «داوریِ تعدیل در دسترس نیست» را اعلام می‌کند،
+    # نه اینکه سریِ خام را «تعدیل‌شده» جا بزند.
+    ('dev/test_adjustment_phasea.py',
+     'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),

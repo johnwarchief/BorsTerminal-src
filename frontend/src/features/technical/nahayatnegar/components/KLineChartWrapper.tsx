@@ -26,7 +26,7 @@ import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme
 import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
-  mapBackendAdjustEvents, pricePrecisionFor
+  mapBackendAdjustEvents, pricePrecisionFor, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
 import { buildBarClick, type OverlayRef } from '../lib/barClicks';
@@ -658,14 +658,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       setCorporateActions(parsedActions);
       setRawCandles(parsedCandles);
       setHasData(parsedCandles.length > 0);
-      // منبعِ جایگزین باید خوانا باشد: سریِ محلی هم کوتاه‌تر است و هم رویدادِ
-      // تعدیل ندارد، پس سطل‌هایِ هفتگی و اعدادِ محور با CDN یکی نمی‌شوند.
-      if ((layer === 'local' || degradedCdn) && parsedCandles.length > 0) {
+      // منبعِ جایگزین و تواناییِ تعدیل هر دو باید خوانا باشند. سریِ محلی حالا همان
+      // مجموعۀ رویدادِ کاننیکال را دارد؛ ولی اگر سرور بگوید «داوریِ تعدیل در دسترس
+      // نیست» (لنگر پذیرفته نشده یا نماد هنوز دیده نشده)، اعدادِ سریِ تعدیل‌شده در
+      // واقع خام‌اند — این را سرور اعلام می‌کند، نه حدسِ ما.
+      const cap = readAdjustmentCapability(json);
+      const capNote = cap.combinedAvailable ? null
+        : `تعدیلِ رویداد در دسترس نیست (منبع: ${cap.source}) — اعدادِ سریِ تعدیل خام‌اند`;
+      if ((layer === 'local' || degradedCdn || capNote) && parsedCandles.length > 0) {
         const lastTs = parsedCandles[parsedCandles.length - 1].timestamp;
-        setFeedNote(
-          `منبع: پایگاهِ محلی · ${parsedCandles.length.toLocaleString('fa-IR')} کندل تا ` +
-          toFaDigits(epochToJalali(lastTs)),
-        );
+        const srcNote = (layer === 'local' || degradedCdn)
+          ? `منبع: پایگاهِ محلی · ${parsedCandles.length.toLocaleString('fa-IR')} کندل تا ` +
+            toFaDigits(epochToJalali(lastTs))
+          : null;
+        setFeedNote([srcNote, capNote].filter(Boolean).join(' · '));
       } else {
         setFeedNote(null);
       }
