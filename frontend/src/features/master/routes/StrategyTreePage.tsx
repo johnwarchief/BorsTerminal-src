@@ -1,6 +1,6 @@
 // features/master/routes/StrategyTreePage.tsx -- صفحه جامع درخت استراتژی FTS (۴ چارت در یک نما)
 // بر پایه جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { toFaDigits, fmtInt } from '@shared/lib/fmt';
 import { RetryAction } from '@shared/components/RetryAction';
 import { matchFa } from '@shared/lib/normalizeFa';
@@ -65,7 +65,9 @@ export default function StrategyTreePage() {
 
   const [selectedPreset, setSelectedPreset] = useState<PresetMode>('swing');
   const [viewMode, setViewMode] = useState<ViewMode>('obsidian');
-  const { params } = useStrategyParamsStore();
+  // انتخابِ فیلدی (Phase پرفورمنس): اشتراکِ کلِ استور یعنی هر updateParam — و
+  // هر رندرِ والد — این صفحه را هم جابه‌جا می‌کرد؛ خودِ params مرجعِ پایدار دارد.
+  const params = useStrategyParamsStore((s) => s.params);
 
   // وضعیت جستجوی نماد
   const [searchQuery, setSearchQuery] = useState('');
@@ -221,7 +223,7 @@ export default function StrategyTreePage() {
   }, [selectedPreset, activeCustomNodeIds]);
 
   // کلیک روی نودهای نقشۀ در حالت سفارشی
-  const handleToggleCustomNode = (nodeId: string) => {
+  const handleToggleCustomNode = useCallback((nodeId: string) => {
     setSelectedPreset('custom');
     if (nodeId.startsWith('fund_')) {
       const fundKey = nodeId.replace('fund_', '') as 'super' | 'good' | 'medium' | 'weak';
@@ -251,7 +253,37 @@ export default function StrategyTreePage() {
     } else if (nodeId === 'stop_hourglass') {
       setCustomStop('hourglass_deep');
     }
-  };
+  }, []);
+
+  // Phase پرفورمنس (N1-B): این دو prop هر رندر آبجکتِ تازه می‌ساختند؛ با
+  // مرجعِ تازه حتی React.memo هم رد نمی‌کند و ۵۰۰-۸۰۰ عنصر SVG در هر pollِ
+  // تابلو از نو diff می‌شد. حالا فقط با تغییرِ واقعیِ فاز/سطح مرجع عوض می‌شود.
+  const graphPhaseStatus = useMemo(
+    () =>
+      symbol
+        ? [
+            { k: 'F', status: stepsById.fundamental?.status ?? 'wait', label: stepsById.fundamental?.headline ?? '' },
+            { k: 'T', status: stepsById.technical?.status ?? 'wait', label: stepsById.technical?.headline ?? '' },
+            { k: 'S', status: stepsById.tape?.status ?? 'wait', label: stepsById.tape?.headline ?? '' },
+            { k: 'M', status: stepsById.master?.status ?? 'wait', label: stepsById.master?.headline ?? '' },
+          ]
+        : undefined,
+    [symbol, stepsById],
+  );
+  const graphLevels = useMemo(
+    () =>
+      symbol
+        ? {
+            price: currentPrice,
+            entry: resistance ?? support,
+            support,
+            resistance,
+            hardStop: ftsPlan.data?.fts?.exit_engine?.l1?.hard_stop ?? null,
+            exitVerdict: ftsPlan.data?.fts?.exit_engine?.verdict ?? null,
+          }
+        : undefined,
+    [symbol, currentPrice, resistance, support, ftsPlan.data],
+  );
 
   return (
     <div className="flex flex-col gap-4 p-3 sm:p-5 max-w-[1700px] mx-auto w-full">
@@ -532,20 +564,8 @@ export default function StrategyTreePage() {
           symbol={symbol}
           activeCustomNodes={activeCustomNodeIds}
           onToggleCustomNode={handleToggleCustomNode}
-          symbolPhaseStatus={symbol ? [
-            { k: 'F', status: stepsById.fundamental?.status ?? 'wait', label: stepsById.fundamental?.headline ?? '' },
-            { k: 'T', status: stepsById.technical?.status ?? 'wait', label: stepsById.technical?.headline ?? '' },
-            { k: 'S', status: stepsById.tape?.status ?? 'wait', label: stepsById.tape?.headline ?? '' },
-            { k: 'M', status: stepsById.master?.status ?? 'wait', label: stepsById.master?.headline ?? '' },
-          ] : undefined}
-          symbolLevels={symbol ? {
-            price: currentPrice,
-            entry: resistance ?? support,
-            support,
-            resistance,
-            hardStop: ftsPlan.data?.fts?.exit_engine?.l1?.hard_stop ?? null,
-            exitVerdict: ftsPlan.data?.fts?.exit_engine?.verdict ?? null,
-          } : undefined}
+          symbolPhaseStatus={graphPhaseStatus}
+          symbolLevels={graphLevels}
         />
       )}
 

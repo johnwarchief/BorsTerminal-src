@@ -12,7 +12,7 @@
 // متن/آستانه/قاعدهٔ گره‌ها، پنلِ بازرسی و ویرایشگرِ زندهٔ پارامترها از نسخۀ
 // پیشین عیناً منتقل شده‌اند (بازسازیِ بصری، نه بازنویسیِ منطق). Source of Truth
 // داوری همچنان بک‌اند/پایتون است.
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
@@ -65,7 +65,7 @@ const COMET_DUR_S = 4.8;
 
 const NORMAL_OPACITY = 1;
 
-export function ObsidianStrategyGraph({
+function ObsidianStrategyGraphInner({
   selectedPreset,
   symbol,
   activeCustomNodes = [],
@@ -77,8 +77,12 @@ export function ObsidianStrategyGraph({
   const theme = useUiStore((s) => s.theme);
   const isLight = theme === 'light';
 
-  // ۲. استور پارامترهای شخصی‌سازی استراتژی
-  const { params, updateParam, resetParam, resetAll } = useStrategyParamsStore();
+  // ۲. استور پارامترهای شخصی‌سازی استراتژی — اشتراکِ فیلدی (Phase پرفورمنس):
+  // تخریکِ کلِ استور هر updateParam را به رندرِ کاملِ ۸۰۰ عنصرِ SVG می‌کشاند.
+  const params = useStrategyParamsStore((s) => s.params);
+  const updateParam = useStrategyParamsStore((s) => s.updateParam);
+  const resetParam = useStrategyParamsStore((s) => s.resetParam);
+  const resetAll = useStrategyParamsStore((s) => s.resetAll);
 
   // ۳. حالت جهت جریان (پیش‌فرض: مهندسی معکوس FTS) — فقط ریل، نه توپولوژی
   const [flowDirection, setFlowDirection] = useState<FlowDirection>('reverse');
@@ -666,15 +670,12 @@ export function ObsidianStrategyGraph({
                               r="3.6"
                               fill={strokeColor}
                               className="fts-comet"
-                            >
-                              <animateMotion
-                                dur={`${COMET_DUR_S}s`}
-                                repeatCount="indefinite"
-                                begin={`${(-((COMET_DUR_S / COMET_N) * i)).toFixed(2)}s`}
-                                path={pathData}
-                                rotate="0"
-                              />
-                            </circle>
+                              style={{
+                                offsetPath: `path("${pathData}")`,
+                                animation: `fts-comet-run ${COMET_DUR_S}s linear infinite, fts-comet 1.8s ease-in-out infinite`,
+                                animationDelay: `${(-((COMET_DUR_S / COMET_N) * i)).toFixed(2)}s`,
+                              }}
+                            />
                           ))}
                   </g>
                 );
@@ -1523,3 +1524,6 @@ export function ObsidianStrategyGraph({
     </div>
   );
 }
+// Phase پرفورمنس (N1-B): والد props را با useMemo پایدار می‌فرستد؛ memo یعنی
+// pollِ بی‌تغییریِ تابلو دیگر ۵۰۰-۸۰۰ عنصر SVG را diff نمی‌کند.
+export const ObsidianStrategyGraph = memo(ObsidianStrategyGraphInner);

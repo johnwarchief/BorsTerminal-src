@@ -356,6 +356,16 @@ details[open] > summary .disclosure-chevron {
     opacity: 1;
   }
 }
+/* حرکتِ دانه روی همان منحنی با Motion Path (تبدیل، نه لی‌اوت) — جانشینِ
+   animateMotion در A/Bِ Phase پرفورمنس؛ مسیرِ حرکت و نفسِ ۴٫۸s دست‌نخورده. */
+@keyframes fts-comet-run {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
 @keyframes fts-comet {
   0%,
   100% {
@@ -375,9 +385,13 @@ details[open] > summary .disclosure-chevron {
 @layer components {
   .fts-path-flow {
     animation: fts-path-flow 2.4s ease-in-out infinite;
+    /* لایه‌سازی: بی‌will-change چشمکِ opacityِ هاله هر بار کل ناحیۀ SVG را
+       در نخ اصلی redraw می‌کرد (سنجش A/B فاز پرفورمنس). */
+    will-change: opacity;
   }
   .fts-comet {
     animation: fts-comet 1.8s ease-in-out infinite;
+    will-change: opacity, offset-distance;
   }
   .animate-spin-slow {
     transform-box: fill-box;
