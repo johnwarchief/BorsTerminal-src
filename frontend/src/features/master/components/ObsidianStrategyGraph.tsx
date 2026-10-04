@@ -12,7 +12,7 @@
 // متن/آستانه/قاعدهٔ گره‌ها، پنلِ بازرسی و ویرایشگرِ زندهٔ پارامترها از نسخۀ
 // پیشین عیناً منتقل شده‌اند (بازسازیِ بصری، نه بازنویسیِ منطق). Source of Truth
 // داوری همچنان بک‌اند/پایتون است.
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
@@ -199,16 +199,26 @@ export function ObsidianStrategyGraph({
     isDraggingRef.current = false;
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.08 : 0.92;
-    setZoom((z) => Math.min(Math.max(z * factor, 0.55), 1.9));
-  };
 
   const handleResetView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
+
+  // چرخِ ماوس = زوم، بی‌اسکرولِ صفحه. React رویدادِ wheel را passive ثبت می‌کند
+  // و `preventDefault` را نادیده می‌گیرد؛ تنها راه، شنوندهٔ native است.
+  // خودِ تابع داخلِ effect ساخته می‌شود تا هر رندر دوباره attach نشود.
+  useEffect(() => {
+    const el = svgContainerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.08 : 0.92;
+      setZoom((z) => Math.min(Math.max(z * factor, 0.55), 1.9));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [svgContainerRef]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -291,7 +301,7 @@ export function ObsidianStrategyGraph({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="🔍 جستجو در قوانین و نودها..."
-              className={`w-36 sm:w-44 rounded-lg border px-2.5 py-1 text-2xs transition-colors focus:outline-none ${
+              className={`w-36 sm:w-44 rounded-lg border px-2.5 pe-7 py-1 text-2xs transition-colors focus:outline-none ${
                 isLight
                   ? 'border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-sky-500'
                   : 'border-border-c/60 bg-bg-primary/70 text-text-primary placeholder:text-text-muted focus:border-accent-blue'
@@ -427,7 +437,6 @@ export function ObsidianStrategyGraph({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         className="relative mx-auto w-full select-none cursor-grab active:cursor-grabbing"
         style={{
           // یک‌به‌یک: کوچک‌تر نشود (بازخورد مالک) و بزرگ‌تر هم نشود تا قدِ
@@ -438,8 +447,12 @@ export function ObsidianStrategyGraph({
           aspectRatio: `${layout.width} / ${layout.height}`,
         }}
       >
+        {/* جهتِ متنِ SVG میخکوب شده: با mirathِ `html dir=rtl`، 
+            `text-anchor="start"` لبۀ راست است؛ یک wrapperِ dir="ltr"
+            همه‌چیز را بی‌صدا آینه می‌کرد. */}
         <svg
           viewBox={`0 0 ${layout.width} ${layout.height}`}
+          style={{ direction: 'rtl' }}
           className="w-full h-full"
           preserveAspectRatio="xMidYMid meet"
           data-testid="obsidian-strategy-canvas"
