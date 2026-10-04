@@ -2,7 +2,7 @@
 // v3: لایوت full-bleed (گیج + خلاصهٔ تحلیلی مدیریتی آفلاین) + استپر چهار گیتی سخت‌گیرانه
 // + ماشین وتو (بدون میانگین خطی) + ماشین‌حساب برنامهٔ معاملاتی/DCA + خروج ۵۰٪ + اکشن‌های سبد/واچ‌لیست.
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -72,6 +72,14 @@ export default function MasterPage() {
 
   const horizon = useStrategyStore((s) => s.horizon);
   const setHorizon = useStrategyStore((s) => s.setHorizon);
+  const location = useLocation();
+  /** §۱۰ Round M: بازگشتِ واقعی — اگر از قیف آمده‌ایم به عقب برمی‌گردیم و
+   *  stateِ محلیِ آن (چیپ‌ها، جست‌وجو، اسکرول) می‌ماند؛ بی‌تاریخچه به خودِ قیف. */
+  const goBackToFunnel = () => {
+    clearSymbol();
+    if (location.key && location.key !== 'default') navigate(-1);
+    else navigate('/master');
+  };
   const [analystModalOpen, setAnalystModalOpen] = useState(false);
   const [treeModalOpen, setTreeModalOpen] = useState(false);
 
@@ -277,6 +285,33 @@ export default function MasterPage() {
 
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
+      {/* §۱۰ Round M: مسیرِ روشن، پیش از هر چیزِ دیگر */}
+      <nav
+        aria-label="مسیر"
+        data-testid="master-breadcrumb"
+        className="flex flex-wrap items-center gap-1.5 text-2xs text-text-muted"
+      >
+        <button
+          type="button"
+          data-testid="master-back"
+          onClick={goBackToFunnel}
+          className="rounded-lg border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
+        >
+          ← بازگشت
+        </button>
+        <Link to="/strategy-tree" className="hover:text-accent-blue">FTS Strategy</Link>
+        <span aria-hidden>/</span>
+        <Link to="/master" onClick={(e) => { e.preventDefault(); goBackToFunnel(); }} className="hover:text-accent-blue">
+          قیف غربالگری
+        </Link>
+        <span aria-hidden>/</span>
+        <span className="font-bold text-text-primary">{symbol}</span>
+        <span aria-hidden>/</span>
+        <span>Master</span>
+        <span aria-hidden>/</span>
+        <span>جزئیات</span>
+      </nav>
+
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -286,10 +321,7 @@ export default function MasterPage() {
           <button
             type="button"
             data-testid="master-open-funnel"
-            onClick={() => {
-              clearSymbol();
-              navigate('/master');
-            }}
+            onClick={goBackToFunnel}
             className="rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
           >
             قیفِ غربالگری
