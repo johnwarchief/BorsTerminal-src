@@ -73,6 +73,10 @@ SUITES = [
     # Round K / PHASE A: چهار مفهومِ تعدیل جدا از هم، یک سریِ کاننیکال برایِ همهٔ
     # مصرف‌کننده‌ها، و فال‌بکی که «داوریِ تعدیل در دسترس نیست» را اعلام می‌کند،
     # نه اینکه سریِ خام را «تعدیل‌شده» جا بزند.
+    # Round M §۱۹: گیتِ هفتگی و ساعتِ شنیِ هفتگی فریزِ مالک‌اند — این گارد
+    # قاعده را رویِ ۴۰ نمادِ واقعیِ بانک می‌سنجد و بی‌بانک SKIP می‌شود، نه شکست.
+    ('dev/test_roundm_freeze.py',
+     'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
