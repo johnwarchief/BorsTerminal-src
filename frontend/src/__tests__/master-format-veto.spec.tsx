@@ -1,6 +1,6 @@
 // تست M-05: فرمت اعداد، وتوی سخت‌گیرانه (بدون بازتوزیع وزن)، سرمایهٔ فرضی DCA، استپر متراکم ۴ گیتی
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import MasterPage from '@features/master/routes/MasterPage';
@@ -119,7 +119,7 @@ function ftsFeed() {
 
 function renderMaster() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const out = render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={['/master/شپنا']}>
         <Routes>
@@ -128,6 +128,10 @@ function renderMaster() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  // Round L: جزئیات پشتِ گیتِ نمایش‌اند؛ این تست‌ها همان
+  // جزئیات را می‌سنجند، پس بخشِ «جزئیات» اینجا باز می‌شود.
+  fireEvent.click(out.getByTestId('master-toggle-advanced'));
+  return out;
 }
 
 beforeEach(() => {

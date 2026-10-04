@@ -146,7 +146,7 @@ function ftsFeed() {
 
 function renderMaster() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const out = render(
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={['/master/شپنا']}>
         <Routes>
@@ -156,6 +156,10 @@ function renderMaster() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  // Round L: جزئیات پشتِ گیتِ نمایش‌اند؛ این تست‌ها همان
+  // جزئیات را می‌سنجند، پس بخشِ «جزئیات» اینجا باز می‌شود.
+  fireEvent.click(out.getByTestId('master-toggle-advanced'));
+  return out;
 }
 
 beforeEach(() => {

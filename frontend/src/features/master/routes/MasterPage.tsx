@@ -32,6 +32,9 @@ import {
 } from '../lib/strictGates';
 import { buildManagementSummary, halfExitPlan } from '../lib/managementSummary';
 import { evaluateFtsPipeline, recommendHorizon } from '../lib/ftsPipelineEvaluator';
+import { useFtsFunnel } from '../api/useFtsFunnel';
+import { buildDossier, findCandidate } from '../lib/masterDossier';
+import { MasterDossierPanel } from '../ui/MasterDossier';
 import { useCapitalStore } from '../stores/capitalStore';
 import { useFtsPlan } from '../api/useFtsPlan';
 import { MasterVerdictCard } from '../ui/MasterVerdictCard';
@@ -75,6 +78,22 @@ export default function MasterPage() {
   const gates3 = useMemo(() => runGatingPipeline(inputs), [inputs]);
 
   const planFeed = useFtsPlan(symbol);
+
+  // برآیندِ تک‌ناماد (Round L): کاندیدِ همان مدلِ قیف + همان `/api/fts/{symbol}`.
+  // `buildDossier` چیزی داوری نمی‌کند — فقط دو منبعِ کاننیکال را ترجمه می‌کند،
+  // پس Master و قیف و سایدبار یک حکم می‌دهند، نه سه حکم.
+  const { funnel } = useFtsFunnel(horizon);
+  const dossier = useMemo(
+    () =>
+      buildDossier(
+        findCandidate([funnel.stages.tape.entries, funnel.stages.fundamental.entries], symbol ?? ''),
+        planFeed.data,
+        symbol ?? '',
+      ),
+    [funnel, planFeed.data, symbol],
+  );
+  /** جزئیات و برنامهٔ معاملاتی — capability دست‌نخورده، فقط زیرِ خلاصه */
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const plan = useMemo(() => {
     const gateFails = gates3.filter((g) => g.status === 'fail').length;
     const gateWaits = gates3.filter((g) => g.status === 'wait').length;
@@ -269,6 +288,24 @@ export default function MasterPage() {
         </div>
       </div>
 
+      <MasterDossierPanel dossier={dossier} />
+
+      {/* خلاصه اول، جزئیات دوم، پیشرفته سوم (§13): هیچ چیزی حذف نشده —
+          زیرِ همین دکمه است، تا صفحه در پنج ثانیه اول جواب بدهد. */}
+      <button
+        type="button"
+        data-testid="master-toggle-advanced"
+        aria-expanded={advancedOpen}
+        onClick={() => setAdvancedOpen((v) => !v)}
+        className="self-start rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
+      >
+        {advancedOpen
+          ? 'بستنِ جزئیات، برنامهٔ معاملاتی و رأی‌گیریِ ایجنت‌ها'
+          : 'جزئیات، برنامهٔ معاملاتی و رأی‌گیریِ ایجنت‌ها'}
+      </button>
+
+      {advancedOpen ? (
+        <>
       {empty ? (
         <EmptyState
           title="هنوز سیگنالی در باس نیست"
@@ -360,6 +397,8 @@ export default function MasterPage() {
           {gates3.some((g) => g.status === 'fail') ? ' رد فیلتر بنیادی/تکنیکال حکم نهایی را محدود کرد.' : ''}
         </p>
       </div>
+        </>
+      ) : null}
 
       <FtsAnalystModal
         open={analystModalOpen}

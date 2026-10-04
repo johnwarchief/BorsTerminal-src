@@ -1,5 +1,5 @@
 // تست داشبورد مستر v2: گیتینگ، برنامه معاملاتی، synthesis با fetch ماک‌شده
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -88,9 +88,9 @@ function ftsFeed(hasFib = true) {
   };
 }
 
-function renderMaster() {
+function renderMaster(openAdvanced = true) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const out = render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/master/شپنا']}>
         <Routes>
@@ -99,6 +99,13 @@ function renderMaster() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  // Round L: خلاصه اول، جزئیات دوم — برآیندهایِ قدیمی این تست‌ها در بخشِ
+  // «جزئیات و برنامهٔ معاملاتی»اند، پس همان‌جا باز می‌شود (خودِ گیتِ باز/بسته در
+  // تستِ «پیش‌فرض بسته است» می‌سنجد).
+  if (openAdvanced) {
+    fireEvent.click(out.getByTestId('master-toggle-advanced'));
+  }
+  return out;
 }
 
 beforeEach(() => {
@@ -177,5 +184,14 @@ describe('داشبورد مستر v2', () => {
     await waitFor(() => {
       expect(screen.getByText('هنوز سیگنالی در باس نیست')).toBeInTheDocument();
     });
+  });
+
+  // Round L: برآیندِ تک‌ناماد بالای صفحه است و جزئیات زیرِ یک گیتِ نمایش
+  it('خلاصه در بالا، جزئیات پیش‌فرض بسته — و با کلیک باز می‌شود', async () => {
+    renderMaster(false);
+    expect(screen.getByTestId('master-dossier')).toBeInTheDocument();
+    expect(screen.queryByText('آمار رای‌گیری')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('master-toggle-advanced'));
+    await waitFor(() => expect(screen.getByText('آمار رای‌گیری')).toBeInTheDocument());
   });
 });

@@ -24,6 +24,9 @@ const Fib = z
 const Jet = z.object({
   active: z.boolean().nullish(),
   resistance: z.number().nullish(),
+  /** سقفِ تاریخیِ منتشرشده — اگر `null` باشد عددِ `resistance` فقط
+   *  بالاترینِ دیدِ ماست و برآیندِ مستر آن را «سقفِ تاریخی» نمی‌نویسد */
+  ceiling: z.number().nullish(),
   ath: z.boolean().nullish(),
   close: z.number().nullish(),
   pct_above_res: z.number().nullish(),
@@ -43,14 +46,64 @@ const ExitL1 = z
 
 const ExitEngine = z.object({ verdict: z.string().nullish(), l1: ExitL1 }).nullish();
 
+// ── داوریِ موتور، نه فقط عددِ سطوح ──
+// Round L: برآیندِ مستر باید همان `status` و گیتِ هفتگی/روزانه را بخواند؛ تا پیش
+// از این این فایل فقط سطح‌ها را می‌گرفت و Master مجبور بود حکم را جای دیگری بسازد.
+const TrendLeg = z.object({ trend: z.string().nullish() }).nullish();
+
+const StatusTrigger = z
+  .object({
+    kind: z.string().nullish(),
+    label: z.string().nullish(),
+    price: z.number().nullish(),
+    date: z.string().nullish(),
+    role: z.string().nullish(),
+  })
+  .nullish();
+
+const FtsStatus = z
+  .object({
+    code: z.string().nullish(),
+    text: z.string().nullish(),
+    trigger: StatusTrigger,
+    vetoed: z.boolean().nullish(),
+  })
+  .nullish();
+
+const Hourglass = z
+  .object({
+    active: z.boolean().nullish(),
+    action: z.string().nullish(),
+    ma52: z.number().nullish(),
+    weekly_rsi5: z.number().nullish(),
+    desc: z.string().nullish(),
+  })
+  .nullish();
+
 const FtsPlanSchema = z.object({
   status: z.string(),
   symbol: z.string().nullish(),
+  analysis_basis: z.string().nullish(),
   fts: z
     .object({
       fib: Fib,
       jet: Jet.nullish(),
       exit_engine: ExitEngine,
+      status: FtsStatus,
+      hourglass: Hourglass,
+      trend: z
+        .object({
+          D: TrendLeg,
+          W: TrendLeg,
+          matrix: z
+            .object({
+              decision: z.string().nullish(),
+              setup: z.string().nullish(),
+              desc: z.string().nullish(),
+            })
+            .nullish(),
+        })
+        .nullish(),
     })
     .nullish(),
 });
