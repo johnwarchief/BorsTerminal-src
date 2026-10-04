@@ -42,9 +42,16 @@ const FTS = {
     leg: { direction: 'up', start: '2025-01-06', end: '2025-01-10', high: 200, low: 100 },
   },
   setups: [
+    // ردیفِ کهنه: اگر سروری روزی جتِ تاریخی بفرستد، چارت رسمش نمی‌کند
     { date: '2025-01-07', kind: 'jet', label: 'جت', price: 210, side: 'above' },
     { date: '2025-01-09', kind: 'choch', label: 'CHoCH', price: 150, side: 'below' },
   ],
+  status: {
+    code: 'entry_trigger',
+    text: 'تریگرِ فعال رویِ کندلِ امروز: جت',
+    trigger: { kind: 'jet', label: 'جت', price: 210, date: '2025-01-10', role: 'entry' },
+  },
+  roles: { jet: 'entry', fib_zone: 'context' },
   exit_engine: { verdict: 'exit', l1: { ma14_exit: true } },
 } as never;
 
@@ -86,10 +93,21 @@ const drawn = (name: string) => overlays.filter((o) => o.name === name);
 describe('اورلی FTS روی چارت، از دادهٔ سرور (#161)', () => {
   beforeEach(() => { vi.clearAllMocks(); overlays = []; });
 
-  it('هر هفت سطحِ فیبو با همان عددِ سرور رسم می‌شود', async () => {
+  it('سطح‌های فیبو پیش‌فرض رسم نمی‌شوند (سلسله‌مراتبِ دورِ J: زمینه نباید کندل را بپوشاند)', async () => {
     await renderChart();
-    const lines = drawn('horizontalStraightLine');
-    const values = lines.map((o) => o.points?.[0]?.value).sort((a, b) => (a ?? 0) - (b ?? 0));
+    expect(drawn('horizontalStraightLine')).toEqual([]);
+    // کمربندها (مستطیل) همیشه می‌مانند
+    expect(drawn('rect').length).toBe(2);
+  });
+
+  it('با کلیدِ «سطح‌های فیبو» هر هفت سطح با همان عددِ سرور رسم می‌شود', async () => {
+    await renderChart();
+    const btn = document.querySelector('[data-testid="nn-fib-levels-toggle"]') as HTMLElement;
+    expect(btn.getAttribute('aria-pressed')).toBe('false');
+    await act(async () => { fireEvent.click(btn); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    const values = drawn('horizontalStraightLine')
+      .map((o) => o.points?.[0]?.value).sort((a, b) => (a ?? 0) - (b ?? 0));
     expect(values).toEqual([100, 120, 128, 139, 155, 165, 200]);
   });
 
@@ -113,13 +131,22 @@ describe('اورلی FTS روی چارت، از دادهٔ سرور (#161)', () 
     expect(rects.map((r) => r.points?.[0]?.value).sort((a, b) => (a ?? 0) - (b ?? 0))).toEqual([138, 165]);
   });
 
-  it('مارکرهای ستاپ سرور سرِ کندلِ خودشان می‌نشینند', async () => {
+  it('مارکرهای ستاپ سرور سرِ کندلِ خودشان می‌نشینند، و جتِ تاریخی هیچ‌وقت', async () => {
     await renderChart();
+    // پیش‌فرض: فقط تریگرِ فعلی (یک انوتیشن)، نه انبوه رویدادِ گذشته
+    const off = drawn('simpleAnnotation');
+    expect(off.map((m) => m.extendData)).toEqual(['▲ جت']);
+    expect(off[0].points?.[0]?.timestamp).toBe(dayUtc('2025-01-10'));
+    // رویدادهای تاریخی را با کلید روشن می‌کنیم
+    const btn = document.querySelector('[data-testid="nn-history-events-toggle"]') as HTMLElement;
+    await act(async () => { fireEvent.click(btn); });
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     const marks = drawn('simpleAnnotation');
-    expect(marks.map((m) => m.extendData).sort()).toEqual(['CHoCH', 'جت'].sort());
-    const byLabel = Object.fromEntries(marks.map((m) => [m.extendData as string, m]));
-    expect(byLabel['جت']?.points?.[0]?.timestamp).toBe(dayUtc('2025-01-07'));
+    // فیکسچر یک رویدادِ «جتِ ۲۰۲۵-۰۱-۰۷» دارد؛ چارت باید دورش بیندازد
+    expect(marks.map((m) => String(m.extendData)).filter((s) => s.includes('جت') && !s.startsWith('▲'))).toEqual([]);
+    const byLabel = Object.fromEntries(marks.map((m) => [String(m.extendData), m]));
     expect(byLabel['CHoCH']?.points?.[0]?.timestamp).toBe(dayUtc('2025-01-09'));
+    expect(byLabel['▲ جت']?.points?.[0]?.timestamp).toBe(dayUtc('2025-01-10'));
   });
 
   it('هشدار خروج از موتورِ سرور می‌آید، نه از شرطِ تک‌کندلیِ چارت', async () => {

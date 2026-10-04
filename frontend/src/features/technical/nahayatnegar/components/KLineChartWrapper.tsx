@@ -207,7 +207,23 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
     };
   }
 
-  // ۲) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی): مستطیلِ تمام‌عرض با پرِ ملایم و بوردرِ خط‌چین.
+  // ۲) خطِ محدودشده (بتِه) به بازۀ خودِ ستاپ: دو نقطه رویِ یک قیمت ⇒ segment
+  //    بین همان دو timestamp، نه horizontalStraightLine که کلِ تاریخ را می‌بند.
+  if (spec.points.length >= 2 && spec.points[0].value === spec.points[1].value) {
+    const [a, b] = spec.points;
+    return {
+      name: 'segment',
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [
+        { timestamp: a.timestamp, value: a.value },
+        { timestamp: b.timestamp, value: b.value },
+      ],
+      styles: { line: { color, size: patternLineStyle(spec).size, style: patternLineStyle(spec).style } },
+    };
+  }
+
+  // ۳) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی): مستطیلِ تمام‌عرض با پرِ ملایم و بوردرِ خط‌چین.
   if (spec.points.length >= 2) {
     const a = spec.points[0].value;
     const b = spec.points[1].value;
@@ -226,15 +242,10 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
     };
   }
 
-  // ۳) خطِ افقیِ تمام‌عرض: ضخامت/نوعِ خط مخصوصِ هر الگو
-  //    جت و خطِ گردنِ دوقلو پررنگ و ممتد؛ CHoCH و خطِ گردنِ سر‌و‌شانه نازک و خط‌چین.
-  const lineStyleByKind: Record<string, { size: number; style: 'solid' | 'dashed' | 'dotted' }> = {
-    jet: { size: 2, style: 'solid' },
-    double: { size: 2, style: 'solid' },
-    choch: { size: 1, style: 'dashed' },
-    headshoulders: { size: 1, style: 'dashed' },
-  };
-  const ls = lineStyleByKind[spec.kind] ?? { size: 1, style: 'solid' as const };
+  // ۴) خطِ افقیِ تمام‌عرض: ضخامت/نوع از **نقشِ** پرچم درِ موتور می‌آید
+  //    (تریگر پررنگ ممتد، زمینه نازک خط‌چین، هشدار/خروج خط‌چین) — نه از جدولِ
+  //    سلیقه‌ای این فایل.
+  const ls = patternLineStyle(spec);
   return {
     name: 'horizontalStraightLine',
     groupId: PATTERN_GROUP_ID,
@@ -242,6 +253,14 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
     points: [{ timestamp: p0.timestamp, value: p0.value }],
     styles: { line: { color, size: ls.size, style: ls.style } },
   };
+}
+
+/** سبکِ خط از spec (نگاشتِ role در patternOverlays)؛ fallback فقط برایِ specهای بی‌style */
+function patternLineStyle(spec: PatternOverlaySpec): { size: number; style: 'solid' | 'dashed' | 'dotted' } {
+  const s = (spec.styles ?? {}) as { size?: number; style?: string };
+  const size = typeof s.size === 'number' && s.size > 0 ? s.size : 1;
+  const style = s.style === 'dashed' || s.style === 'dotted' ? s.style : 'solid';
+  return { size, style };
 }
 
 /** فالبکِ زون: کانالِ قیمتیِ دوانقطه‌ای (overlayِ تضمین‌شده) وقتی «rect» در این نسخه overlay نیست. */
@@ -421,6 +440,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // نقطه‌زنی اندازه‌گیری و اصلاح شدند، و هیچ مارکری بی‌پشتوانۀ موتور رسم نمی‌شود)
   // ⇒ پیش‌فرض روشن. کلیدِ نوارِ ابزار همان را دستی خاموش/روشن می‌کند.
   const [isFtsActive, setIsFtsActive] = useState<boolean>(true);
+
+  // سلسله‌مراتبِ دورِ J: کندل باید عنصرِ اصلی بماند. پس دو چیز پیش‌فرض خاموش‌اند
+  // و دستی روشن می‌شوند: ۱) هفت سطحِ فیبو (کمربندها همیشه می‌مانند) و
+  // ۲) رویدادهایِ تاریخیِ CHoCH/دابل‌باتم. جتِ تاریخی اصلاً رسم نمی‌شود — موتور
+  // هم دیگر آن را در `setups` نمی‌فرستد.
+  const [showFibLevels, setShowFibLevels] = useState<boolean>(false);
+  const [showHistoryEvents, setShowHistoryEvents] = useState<boolean>(false);
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -1364,9 +1390,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const lastTs = shown.length ? shown[shown.length - 1].timestamp : 0;
 
     // زون‌ها و سطوحِ فیبو، عینِ payloadِ سرور (#161). چارت دیگر هیچ نسبتی را
-    // خودش حساب نمی‌کند؛ همان کمربند و همان عددی که پنلِ «وضعیت FTS» می‌گوید
-    // رویِ شیشه می‌نشیند. نوارِ رنگی رویِ خودِ موجِ لنگر رسم می‌شود (چشمِ ابزارِ
-    // فیبو)، و هر سطحِ جزوه یک خطِ تمام‌عرض تا عدد بیرون از دید نرود.
+    // خودش حساب نمی‌کند. سلسله‌مراتبِ دورِ J: فیبو **زمینه** است، پس کمربندها
+    // نازک و بی‌فشار می‌مانند و هفت سطحِ تمام‌عرض پیش‌فرض رسم نمی‌شوند — با
+    // کلیدِ «سطح‌های فیبو» روشن می‌شوند و جزئیاتشان درِ پنلِ «تحلیل ساختاری»
+    // همیشه هست.
     const fib = ftsAnalysis.fib;
     const legRaw = fib?.leg?.start ? parseCandleTimestamp(fib.leg.start) : startTs;
     const legStartTs = Number.isFinite(legRaw) && legRaw > 0 ? legRaw : startTs;
@@ -1389,35 +1416,41 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             { timestamp: legStartTs, value: hi },
             { timestamp: lastTs, value: lo },
           ],
-          styles: { polygon: { color: `${color}22`, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
+          styles: { polygon: { color: `${color}14`, borderColor: `${color}99`, borderSize: 1, borderStyle: 'dashed' } },
         } as never);
       } catch {
         // نوار اختیاری است؛ خطِ کرانه پایین‌تر رسم می‌شود
       }
     });
-    (fib?.levels ?? []).forEach((lv) => {
-      if (!(lv.price > 0)) return;
-      const near = lv.ratio === 0.33 || lv.ratio === 0.4;
-      const deep = lv.ratio === 0.618 || lv.ratio === 0.7;
-      const color = near ? '#ffab00' : deep ? '#2962ff' : '#8a93a6';
-      chart.createOverlay({
-        name: 'horizontalStraightLine',
-        groupId: ftsGroupId,
-        lock: true,
-        points: [{ timestamp: lastTs || Date.now(), value: toDisp(lv.price) }],
-        styles: { line: { color, size: 1, style: near || deep ? 'dashed' : 'dotted' } },
-      } as never);
-    });
+    if (showFibLevels) {
+      (fib?.levels ?? []).forEach((lv) => {
+        if (!(lv.price > 0)) return;
+        const near = lv.ratio === 0.33 || lv.ratio === 0.4;
+        const deep = lv.ratio === 0.618 || lv.ratio === 0.7;
+        const color = near ? '#ffab00' : deep ? '#2962ff' : '#8a93a6';
+        chart.createOverlay({
+          name: 'horizontalStraightLine',
+          groupId: ftsGroupId,
+          lock: true,
+          points: [{ timestamp: lastTs || Date.now(), value: toDisp(lv.price) }],
+          styles: { line: { color, size: 1, style: near || deep ? 'dashed' : 'dotted' } },
+        } as never);
+      });
+    }
 
     // مارکرهای ستاپ: همان فهرستِ تاریخ‌دارِ سرور، بی‌قاعدهٔ دوم. چند ستاپِ
     // هم‌زمان روی یک کندل در یک برچسب ادغام می‌شوند.
     const markerBg = (kinds: Set<string>) =>
-      kinds.has('jet') ? 'rgba(255, 171, 0, 0.92)'
-        : kinds.has('dbl') ? 'rgba(8, 153, 129, 0.92)'
-          : 'rgba(167, 139, 250, 0.92)';
+      kinds.has('dbl') ? 'rgba(8, 153, 129, 0.92)' : 'rgba(167, 139, 250, 0.92)';
     type SetupBucket = { price: number; kinds: Set<string>; labels: string[]; side: string };
     const buckets = new Map<number, SetupBucket>();
-    for (const s of ftsAnalysis.setups ?? []) {
+    // رویدادهایِ تاریخی (CHoCH/دابل‌باتمِ گذشته) پیش‌فرض رسم نمی‌شوند تا price
+    // action مزاحم نداشته باشد؛ کلیدِ نوارِ ابزار روشنشان می‌کند. جتِ تاریخی درِ
+    // خودِ موتور دیگر ساخته نمی‌شود، پس درِ این فهرست هم نیست.
+    const historyEvents = showHistoryEvents
+      ? (ftsAnalysis.setups ?? []).filter((e) => e.kind !== 'jet')
+      : [];
+    for (const s of historyEvents) {
       const ts = parseCandleTimestamp(s.date);
       if (!Number.isFinite(ts) || ts <= 0) continue;
       const g = buckets.get(ts);
@@ -1488,10 +1521,43 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       } as never);
     });
 
+    // تریگرِ فعلی = برجسته‌ترین انوتیشنِ چارت. مختصاتش عینِ `status.trigger`ِ
+    // موتور است (کندلِ امروز برایِ جت، کندلِ تریگر برایِ شکارِ نقطه)؛ بی‌عددِ
+    // موتور هیچ مارکری رسم نمی‌شود.
+    const trig = ftsAnalysis.status?.trigger;
+    if (trig && typeof trig.price === 'number' && trig.price > 0 && trig.date) {
+      const tts = parseCandleTimestamp(trig.date);
+      if (Number.isFinite(tts) && tts > 0) {
+        chart.createOverlay({
+          name: 'simpleAnnotation',
+          groupId: ftsGroupId,
+          lock: true,
+          points: [{ timestamp: tts, value: toDisp(trig.price) }],
+          extendData: `▲ ${trig.label ?? trig.kind}`,
+          styles: {
+            text: {
+              color: '#04121a',
+              size: 12,
+              family: 'Vazirmatn, sans-serif',
+              weight: 'bold',
+              backgroundColor: '#22d3ee',
+              borderColor: '#0b111c',
+              borderSize: 1,
+              borderRadius: 5,
+              paddingLeft: 7,
+              paddingRight: 7,
+              paddingTop: 3,
+              paddingBottom: 3,
+            },
+          },
+        } as never);
+      }
+    }
+
     return () => {
       chart.removeOverlay({ groupId: ftsGroupId } as never);
     };
-  }, [isFtsActive, ftsAnalysis, analysisCandles, renderCandles]);
+  }, [isFtsActive, ftsAnalysis, analysisCandles, renderCandles, showFibLevels, showHistoryEvents]);
   // ۵. لایهٔ ۸ الگوی FTS (#193): داوری فقط در /api/fts، این‌جا نگاشت و ترسیم
   const patternPrefs = usePatternPrefsStore((s) => s.prefs);
   useEffect(() => {
@@ -2269,6 +2335,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         onOpenIndicators={() => setShowIndicatorsModal(!showIndicatorsModal)}
         isFtsActive={isFtsActive}
         onToggleFts={() => setIsFtsActive(!isFtsActive)}
+        showFibLevels={showFibLevels}
+        onToggleFibLevels={() => setShowFibLevels(!showFibLevels)}
+        showHistoryEvents={showHistoryEvents}
+        onToggleHistoryEvents={() => setShowHistoryEvents(!showHistoryEvents)}
         chartEngine={chartEngine}
         onEngineChange={onEngineChange}
         replayActive={replayActive}

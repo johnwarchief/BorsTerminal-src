@@ -200,6 +200,7 @@ export default function TechnicalPage() {
       ma100,
       lastClose: candles.length > 0 ? candles[candles.length - 1].close : null,
       setups: signal?.payload.setups ?? [],
+      context: signal?.payload.context ?? [],
       direction: signal?.direction ?? null,
     };
   }, [analysis.data, series.closes, signal, viewSymbol, candles]);
@@ -279,6 +280,7 @@ export default function TechnicalPage() {
                     gateBlocked={gateBlocked}
                     jetPrice={analysis.data?.fts?.jet?.resistance ?? null}
                     jetReason={analysis.data?.fts?.jet?.reason ?? null}
+                    trigger={analysis.data?.fts?.status?.trigger ?? null}
                   />
                 </div>
               ),

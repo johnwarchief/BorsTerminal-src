@@ -49,7 +49,10 @@ describe('حالت های نشان', () => {
     expect(verdictMeta('exit').label).toBe('خروج');
     expect(verdictMeta('caution').label).toBe('احتیاط');
     expect(verdictMeta('hold').label).toBe('نگهداری');
-    expect(verdictMeta('unknown-word').label).toBe('نگهداری');
+    // دورِ J (پینِ برگردانده‌شده): کلمۀ ناشناخته یا رأیِ نیامده «نگهداری» نیست؛
+    // «نگهداری» یعنی سنجیدیم و خروجی نداریم. چیزی که موتور نگفته ⇒ نسنجیده.
+    expect(verdictMeta('unknown-word').label).toBe('خروج: نسنجیده');
+    expect(verdictMeta(undefined).label).toBe('خروج: نسنجیده');
   });
 
   it('سه روند و بدون هم راستایی', () => {

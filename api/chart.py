@@ -1549,6 +1549,13 @@ def _fts_fib_zones(candles, swings):
 def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6):
     """ستاپ جت (Jet) — شکستِ پلکانِ مقاومت + شکستِ **سقفِ ایستاده**.
 
+    قاعدۀ production (رأیِ مالک، دورِ J): جت **فقط برایِ `candles[-1]`** حساب و
+    منتشر می‌شود. جت یک واقعهٔ «همین امروز» است، نه یک برچسبِ تاریخی؛ پس هیچ
+    مسیری در برنامه نباید مارکرِ جتِ گذشته بسازد (`_fts_setup_history` و
+    لایۀ چارت از این قاعده مستثنی‌اند: جتِ تاریخی رسم نمی‌شود). در `tools/fts_signal_lab.py`
+    محاسبهٔ جت روی هر کندل فقط برایِ پژوهشِ تاریخی مجاز است و با مسیرِ production
+    یکی نمی‌شود.
+
     دو لایه، دو معنی:
 
       • `active` = پلکانِ هشت‌نقطه‌ایِ جزوه (JET_LADDER از tape_flags). این همان
@@ -1579,11 +1586,18 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6):
         # نمادِ «شکست نکردۀ» واقعی می‌گیرد. (رأیِ مالک: null ≠ false.)
         return {"active": None, "resistance": None, "ath": None,
                 "close": None, "pct_above_res": None, "ceiling": None,
+                "resistance_date": None, "ceiling_date": None,
                 "static_broke": None, "tier": None,
                 "reason": f"تاریخچه به {need} نشست نمی‌رسد (این {len(candles)}) — سنجیده نشد"}
     last = candles[-1]
     # [ih][k] = k نشستِ پیش از امروز = candles[-1-k]
-    res = max(float(candles[-1 - k]["high"]) for k in ladder)
+    res_k = max(ladder, key=lambda k: float(candles[-1 - k]["high"]))
+    res = float(candles[-1 - res_k]["high"])
+    # تاریخِ همان کندلِ سقف: لایۀ نمایش با این عدد، خطِ مقاومت را فقط تا جایی
+    # می‌کشد که واقعاً به ستاپ مربوط است (پیش‌تر خطِ تمام‌عرض رویِ کلِ تاریخ بود).
+    # `.get` نه []*: تحلیل نباید بی‌تاریخِ یک ردیف کرش کند (درِ production
+    # _fts_clean_candles آن را حذف می‌کند، ولی تابعِ دیتکت total می‌ماند)
+    resistance_date = str(candles[-1 - res_k].get("time") or "")[:10] or None
     ath_res = max(float(c["high"]) for c in candles[:-1])
     close = float(last["close"])
     up_body = close >= float(last["open"])
@@ -1592,15 +1606,21 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6):
     # خودِ شکستِ امروز سقفِ خودش را می‌بلعد).
     ceil_n = len(candles) - ceiling_skip
     ceiling = None
+    ceiling_date = None
     static_broke = None
     if ceil_n >= ceiling_win:
-        ceiling = max(float(c["high"]) for c in candles[ceil_n - ceiling_win:ceil_n])
+        win = candles[ceil_n - ceiling_win:ceil_n]
+        ck_i = max(range(len(win)), key=lambda j: float(win[j]["high"]))
+        ceiling = float(win[ck_i]["high"])
+        ceiling_date = str(win[ck_i].get("time") or "")[:10] or None
         if ceiling > 0:
             static_broke = bool(close > ceiling and up_body)
     tier = ("strong" if (active and static_broke) else
             "breakout" if active else
             None if active is None and static_broke is None else "none")
     return {"active": active, "resistance": round(res, 2),
+            "resistance_date": resistance_date,
+            "ceiling_date": ceiling_date,
             "ath": bool(abs(res - ath_res) / ath_res < 0.002 if ath_res else False),
             "ceiling": round(ceiling, 2) if ceiling else None,
             "static_broke": static_broke, "tier": tier,
@@ -1704,16 +1724,21 @@ def _fts_point_hunt(candles, swings):
     را می‌خواند، نه `active`).
     خروجی: {'touches', 'floor_price', 'active', 'bounced', 'floor_idx', 'floor_date'}.
 
-    `floor_date` همان تاریخِ کندلِ لنگر است. چارت نمی‌تواند به `floor_idx`
-    تکیه کند: شمارۀِ اندیس درِ آرایۀِ سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست
-    (بازگشتِ تاریخچه و تعدیل متفاوت‌اند) — نشستنِ نشانگر رویِ کندلِ اشتباه
-    بدتر از نبودنش است. تاریخ را که بدهیم، لایهٔ نمایش همان را به timestamp
-    تبدیل می‌کند و اگر درِ چارت نبود، بی‌خبر نمی‌کشد؛ نمی‌کارد.
+    `floor_date` همان تاریخِ کندلِ **لنگر** است (کفِ کانال) — اطلاعاتِ ساختاری.
+    `trigger_date` تاریخِ کندلی است که لمس + ریباند رویِ **همان** کندل رخ داده،
+    یعنی کندلِ امروز وقتی `active` است. این دو هرگز یکی نیستند و جایگزینِ هم
+    نمی‌شوند: نشانگرِ خرید باید رویِ کندلِ تریگر بنشیند، نه رویِ لنگرِ چندهفته‌پیش
+    (باگِ #221: `floor_date` به‌عنوانِ جایِ نشانگر مصرف می‌شد).
+    `trigger_idx` هم مثلِ `floor_idx` فقط برایِ آزمون‌هایِ درونِ سرور است؛ چارت
+    هیچ‌وقت به اندیسِ سرور تکیه نمی‌کند: شمارۀِ اندیس درِ آرایۀِ سرور با ردیف‌هایِ
+    دیدۀِ مرورگر یکی نیست (بازگشتِ تاریخچه و تعدیل متفاوت‌اند) — نشستنِ نشانگر
+    رویِ کندلِ اشتباه بدتر از نبودنش است.
     """
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
     out = {"touches": None, "floor_price": None, "active": None, "bounced": None,
-           "floor_idx": None, "floor_date": None,
+           "floor_idx": None, "floor_date": None, "trigger_idx": None,
+           "trigger_date": None,
            "reason": "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد"}
     if len(highs) < 2 or not lows or len(candles) < 10:
         return out
@@ -1738,10 +1763,15 @@ def _fts_point_hunt(candles, swings):
     bounced = bool(float(last["low"]) <= lvl * (1 + tol)
                    and float(last["close"]) > float(last["open"])
                    and float(last["close"]) > lvl)
+    active = bool(touches >= 3 and bounced)
     out.update(touches=touches, floor_price=round(lvl, 2),
-               active=bool(touches >= 3 and bounced), bounced=bounced,
+               active=active, bounced=bounced,
                floor_idx=anchor_low["idx"],
-               floor_date=str(candles[anchor_low["idx"]]["time"])[:10])
+               floor_date=str(candles[anchor_low["idx"]]["time"])[:10],
+               # تریگر فقط وقتی معنا دارد که لمس + ریباند رویِ همین کندل رخ داده؛
+               # اگر فعال نیست، «کندلِ تریگر» هم نمی‌شناسیم (None، نه کندلِ آخر).
+               trigger_idx=(len(candles) - 1) if active else None,
+               trigger_date=str(last["time"])[:10] if active else None)
     return out
 
 
@@ -1784,7 +1814,7 @@ def _fts_double_bottom(candles, swings):
     return {"double_bottom": dbl, "range_box": box}
 
 
-_FTS_SETUP_LABELS = {"jet": "جت", "choch": "CHoCH", "dbl": "دابل‌باتم"}
+_FTS_SETUP_LABELS = {"choch": "CHoCH", "dbl": "دابل‌باتم"}
 
 
 def _fts_setup_history(candles, swings, limit=40, ladder=JET_LADDER):
@@ -1843,23 +1873,13 @@ def _fts_setup_history(candles, swings, limit=40, ladder=JET_LADDER):
         hi = float(c["high"])
         cl, op = float(c["close"]), float(c["open"])
         up_leg = bool(last_l and (not last_h or last_l["idx"] >= last_h["idx"]))
-        # ۱) جت — شکستِ پلکانِ مقاومت با بدنهٔ صعودی، عینِ `_fts_jet_setup`.
-        #    مارکرِ چارت فقط برایِ لایۀ «قوی» (عبور از سقفِ ایستاده) می‌نشیند:
-        #    سنجشِ تاریخی نشان داد پلکان رویِ ۳٫۸٪ کندل‌ها می‌شکند و تاریخچۀ
-        #    یکِ نماد تا ۳۴ مارکرِ «جت» از ۴۰ مارکر پر می‌شد — یعنی نویز، نه
-        #    رویداد. لایۀ اول (پلکان) در `jet.active` زنده می‌ماند تا بجِ تابلو
-        #    و پنلِ «وضعیت FTS» همان جوابِ همیشگی را بدهند؛ آن‌چه رویِ چارت
-        #    علامت می‌خورد واقعه‌ای است که جزوه برایش تعریف دارد.
-        res = max(float(candles[i - 1 - j]["high"]) for j in ladder)
-        jet = bool(res > 0 and cl > res and cl >= op)
-        if jet and not on["jet"]:
-            skip = 6
-            ceil_hi = i - skip
-            ceil_lo = max(0, ceil_hi - 250)
-            ceiling = max(float(x["high"]) for x in candles[ceil_lo:ceil_hi]) if ceil_hi > ceil_lo else 0.0
-            if ceiling > 0 and cl > ceiling:
-                emit(i, "jet", max(hi, res), "above")
-        on["jet"] = jet
+        # ۱) جت — **اینجا مارکر نمی‌شود** (رأیِ مالک، دورِ J). جت فقط برایِ
+        #    `candles[-1]` معنا دارد: یک واقعۀ «همین امروز»، نه برچسبِ تاریخی.
+        #    پیش از این همین حلقه تا ۳۴ مارکرِ «جت» از ۴۰ مارکرِ هر نماد می‌ساخت
+        #    (پلکان رویِ ~۴٪ کندل‌ها می‌شکند) و کاربر «جتِ فعال» را رویِ کندلِ
+        #    سه‌ماه‌پیش می‌دید. رشتۀ `jet` درِ `jet.active` زنده است و فقط رویِ
+        #    کندلِ آخر رسم می‌شود؛ سطحِ مقاومت/سقف هم context می‌ماند.
+        #    (سنجشِ تاریخیِ جت در `tools/fts_signal_lab.py` دست‌نخورده است.)
 
         # ۲) CHoCH — شکستِ قطعیِ آخرین پیوتِ مخالف، عینِ `_fts_choch`:
         #    حاشیۀ ۱٪ و **تثبیتِ دو بستهٔ متوالی** (جزوه ص ۹). مارکر رویِ دومین
@@ -1910,9 +1930,12 @@ def _fts_exit_layer1(candles, entry_hint=None):
       لازم است (کندل اول = هشدار، دوم = تأیید خروج).
     خروجی: {'hard_stop', 'stop_basis', 'stop_hit', 'ma14_exit', 'ma14_exit_pending',
             'ma14', 'close'}.
+    سه‌حالۀ L1: `stop_hit`/`ma14_exit`/`ma14_exit_pending` وقتی `None`اند که موتور
+    نتوانسته بسنجد (بدونِ کندل، یا MA14ِ هنوز نپخته) — «سنجیده نشد» با «خروجی
+    نداریم» یکی نیست (قاعدۀ دورِ J: هیچ مسیرِ production null → false نمی‌کند).
     """
-    out = {"hard_stop": None, "stop_basis": None, "stop_hit": False,
-           "ma14_exit": False, "ma14_exit_pending": False,
+    out = {"hard_stop": None, "stop_basis": None, "stop_hit": None,
+           "ma14_exit": None, "ma14_exit_pending": None,
            "ma14": None, "close": None}
     if not candles:
         return out
@@ -1961,25 +1984,33 @@ def _fts_exit_layer2(candles, swings_d):
       (فاصلهٔ ≥ ۰.۵٪) — یعنی کفی که سه بار خریدار از آن دفاع کرده بود، واگذار شد.
       این خروج «تأییدی» است: تا وقتی لمس ≥ ۳ نباشد، شکستِ یک کفِ بی‌سابقه
       سیگنال نمی‌دهد (همان منطق soft_warnings_v974.py: خرابیِ سطحِ آزموده‌شده).
-    خروجی: {'choch_break', 'channel_break', 'level', 'touches'}.
+    خروجی: {'choch_break', 'channel_break', 'level', 'touches'} — هر دو سه‌حالته:
+    `None` یعنی ساختار لازم برایِ سنجش وجود ندارد (پیوتِ کامل نیست، کانال نداریم)،
+    `False` یعنی سنجیده شد و شکستی نیست. لایۀ خروج با «نشدنِ سنجش» نباید «خرابیِ
+    ساختاری» بخوانده شود.
     """
-    out = {"choch_break": False, "channel_break": False,
+    out = {"choch_break": None, "channel_break": None,
            "level": None, "touches": None}
     if not candles:
         return out
     ch = _fts_choch(candles, swings_d)
-    if ch["bearish"]:
-        out["choch_break"] = True
+    out["choch_break"] = ch["bearish"]          # True/False/None، دست‌نخورده
+    if ch["bearish"] is True:
         out["level"] = ch["level"]
     ph = _fts_point_hunt(candles, swings_d)
     out["touches"] = ph["touches"]
     floor = ph["floor_price"]
+    if ph["touches"] is None:
+        return out                              # کانال سنجیده نشد ⇒ رأیی نداریم
     # عمداً `touches` و نه `active`: `active` از این دور «لمس + ریباندِ سبزِ بالای
     # خط» می‌خواهد (تریگرِ خرید)، ولی اینجا دقیقاً برعکسش را می‌سنجیم — پایانی
     # که **زیر** همان خط بسته شده. با `active` این خروج هرگز روشن نمی‌شد.
-    if (ph["touches"] or 0) >= 3 and floor and float(candles[-1]["close"]) < floor * 0.995:
-        out["channel_break"] = True
-        out["level"] = round(floor, 2)
+    if (ph["touches"] or 0) >= 3 and floor:
+        out["channel_break"] = bool(float(candles[-1]["close"]) < floor * 0.995)
+        if out["channel_break"]:
+            out["level"] = round(floor, 2)
+    else:
+        out["channel_break"] = False            # سنجیده شد: لمسِ کافی یا بی‌کف
     return out
 
 
@@ -2000,8 +2031,10 @@ def _fts_exit_layer3(candles, swings):
     'third_peak_level'}. سقفِ سومِ تخت یک *ناحیه* است، پس ارتفاعِ همان سه سقف
     (m) هم بیرون می‌رود؛ لایۀ نمایشِ چارت بدونِ این عدد نمی‌تواند باند را
     بکشد و الگو را یا نادیده می‌گرفت یا سرِ خود جایِ سطح را می‌گذاشت (#193).
+    سه‌حالگی: هر سه پرچم تا سابقه/پیوتِ لازم نرسد `None` می‌ماند (۱۵ کندل،
+    سه سقف، دو کف) — `False` فقط وقتی است که الگو سنجیده شد و برقرار نبود.
     """
-    out = {"third_peak": False, "double_top": False, "hs_break": False,
+    out = {"third_peak": None, "double_top": None, "hs_break": None,
            "neckline": None, "level": None, "third_peak_level": None}
     if len(candles) < 15:
         return out
@@ -2012,8 +2045,8 @@ def _fts_exit_layer3(candles, swings):
     if len(highs) >= 3:
         h1, h2, h3 = highs[-3]["price"], highs[-2]["price"], highs[-1]["price"]
         m = max(h1, h2, h3)
-        if m > 0 and (m - min(h1, h2, h3)) / m <= 0.01:
-            out["third_peak"] = True
+        out["third_peak"] = bool(m > 0 and (m - min(h1, h2, h3)) / m <= 0.01)
+        if out["third_peak"]:
             out["third_peak_level"] = round(m, 2)
     # --- دابل‌تاپ ---
     if len(highs) >= 2:
@@ -2021,12 +2054,11 @@ def _fts_exit_layer3(candles, swings):
         m = max(h1, h2)
         twin = m > 0 and (m - min(h1, h2)) / m <= 0.01
         necks = [l["price"] for l in lows if highs[-2]["idx"] < l["idx"] < highs[-1]["idx"]]
-        if twin and necks:
+        out["double_top"] = bool(twin and necks and last < min(necks))
+        if out["double_top"]:
             neck = min(necks)
-            if last < neck:
-                out["double_top"] = True
-                out["neckline"] = round(neck, 2)
-                out["level"] = round(neck, 2)
+            out["neckline"] = round(neck, 2)
+            out["level"] = round(neck, 2)
     # --- سر و شانه ---
     if len(highs) >= 3 and len(lows) >= 2:
         s1, head, s2 = highs[-3], highs[-2], highs[-1]
@@ -2037,16 +2069,18 @@ def _fts_exit_layer3(candles, swings):
         is_hs = (head["price"] > s1["price"] and head["price"] > s2["price"]
                  and between1 and between2 and shoulders
                  and ls1["idx"] > s1["idx"] and ls2["idx"] < s2["idx"])
+        broke = False
         if is_hs:
             # یقه: خط واصل دو کف — مقدار خط در کندل آخر (exterior extropolate)
             span = ls2["idx"] - ls1["idx"]
             if span > 0:
                 slope = (ls2["price"] - ls1["price"]) / span
                 neck_now = ls1["price"] + slope * (len(candles) - 1 - ls1["idx"])
-                if last < neck_now:
-                    out["hs_break"] = True
+                broke = bool(last < neck_now)
+                if broke:
                     out["neckline"] = round(neck_now, 2)
                     out["level"] = round(neck_now, 2)
+        out["hs_break"] = broke
     return out
 
 
@@ -2061,9 +2095,11 @@ def _fts_exit_layer4(candles):
     ▪ چرخش اشباع خرید (Overbought Roll-over): RSI روزانه ≥ ۷۰ بوده و اکنون
       «پایان‌یافته به زیر ۶۵» — یعنی از اوجِ اشباع، ۵ واحد واگذاریِ مومنتوم
       رخ داده. سیگنال خروجِ تاکتیکی (سودجمعی) در متدولوژی FTS.
-    خروجی: {'rsi_divergence', 'rsi_rollover', 'rsi', 'rsi_prev_peak'}.
+    خروجی: {'rsi_divergence', 'rsi_rollover', 'rsi', 'rsi_prev_peak'} — این دو
+    «هشدار»ند نه خروجِ قطعی؛ و تا ۳۰ کندلِ سابقه و دو سقفِ پیوت و خودِ RSI نباشد
+    `None` می‌مانند (سنجیده نشد)، نه `False`.
     """
-    out = {"rsi_divergence": False, "rsi_rollover": False,
+    out = {"rsi_divergence": None, "rsi_rollover": None,
            "rsi": None, "rsi_prev_peak": None}
     if len(candles) < 30:
         return out
@@ -2085,68 +2121,206 @@ def _fts_exit_layer4(candles):
         out["rsi_prev_peak"] = r1
         if r1 is not None and r2 is not None:
             # قیمت HH (سقف جدید بالاتر) ولی RSI LH (اوجِ RSI پایین‌تر)
-            if h2["price"] > h1["price"] and r2 < r1 - 1.0:   # تلورانس ۱ واحد RSI
-                out["rsi_divergence"] = True
+            out["rsi_divergence"] = bool(h2["price"] > h1["price"] and r2 < r1 - 1.0)
     # چرخش اشباع: در ۱۰ کندل اخیر RSI ≥ ۷۰ بوده و اکنون ≤ ۶۵ است
     recent = [v for v in rsi[-10:] if v is not None]
     if recent and out["rsi"] is not None:
-        if max(recent) >= 70.0 and out["rsi"] <= 65.0:
-            out["rsi_rollover"] = True
+        out["rsi_rollover"] = bool(max(recent) >= 70.0 and out["rsi"] <= 65.0)
     return out
+
+
+# ============================================================================
+# taxonomyِ واحدِ سیگنال (دورِ J): هر پرچمِ موتور یک نقش دارد، نه بیشتر.
+#   entry    → تریگرِ ورود، فقط رویِ کندلِ آخر
+#   context  → موقعیت/ساختار؛ نه رأیِ ورود، نه امتیاز
+#   warning  → هشدار (پایش/کاهش پوزیشن)؛ خروجِ تأییدشده نیست
+#   exit     → خروجِ تأییدشده (یا حدِ ضرر)
+# رابط و امتیازِ سیگنال همین جدول را می‌خوانند؛ هیچ‌کدام برایِ پرچمی نقشِ
+# دیگری اختراع نمی‌کند (فیوبو مثلاً context است، پس امتیازِ ورود نمی‌گیرد).
+_FTS_ROLES = {
+    "jet": "entry", "choch_bullish": "entry", "point_hunt": "entry",
+    "double_bottom": "entry", "range_break": "entry", "hourglass": "entry",
+    "fib_zone": "context", "trend": "context", "support_resistance": "context",
+    "third_peak": "warning", "rsi_divergence": "warning",
+    "rsi_rollover": "warning", "ma14_pending": "warning",
+    "hard_stop": "exit", "ma14_exit": "exit", "choch_bearish": "exit",
+    "channel_break": "exit", "double_top": "exit", "hs_break": "exit",
+}
+
+# برچسبِ فارسیِ تریگرها (متنِ رابط از همین جدول، نه از رشتهٔ ثابتِ کامپوننت)
+_FTS_TRIGGER_LABELS = {
+    "jet": "جت",
+    "point_hunt": "شکار نقطه",
+    "choch_bullish": "تغییرِ ساختارِ صعودی",
+    "double_bottom": "کفِ دوقلو",
+    "range_break": "شکستِ باکسِ رنج",
+    "hourglass": "ساعتِ شنی",
+}
+
+# اولویتِ وضعیتِ عمومی (رأیِ مالک، دورِ J): از جدی‌ترین به کم‌اهمیت‌ترین
+FTS_STATUS_PRIORITY = ("hard_stop", "confirmed_exit", "weekly_veto", "entry_trigger",
+                       "warning", "context_only", "no_signal", "insufficient")
+
+FTS_STATUS_TEXT = {
+    "hard_stop": "حدِ ضررِ سخت خورده شد — خروج",
+    "confirmed_exit": "خروجِ تأییدشده (موتورِ چهارلایه)",
+    "weekly_veto": "وتوی تایم هفتگی — فرصت ورود نمی‌دهد",
+    "entry_trigger": "تریگرِ فعال رویِ کندلِ امروز",
+    "warning": "هشدار (پایش/کاهش پوزیشن) — خروجِ تأییدشده نیست",
+    "context_only": "فقطِ موقعیت (کمربندِ فیبو یا ساختار) — سیگنالِ ورود نیست",
+    "no_signal": "هیچِ سیگنالِ فعالی نیست",
+    "insufficient": "داده برایِ داوری کافی نیست — سنجیده نشد",
+}
+
+
+def _fts_roles_table():
+    """کپیِ جدولِ نقش‌ها — لایۀ نمایش این را می‌خواند تا نقش را دوباره نسازد."""
+    return dict(_FTS_ROLES)
+
+
+def _fts_status_block(candles, out):
+    """وضعیتِ عمومیِ canonical از همان اعدادی که موتور منتشر کرده.
+
+    یک‌جا حساب می‌شود تا رابط (کارتِ وضعیت، بج‌ها، سیگنالِ مستر) متنِ ثابتِ خودش
+    را جایِ رأیِ موتور نگذارد: پیش از این کارتِ وضعیت هر حالتی را با «در انتظار
+    شکست خط آبی» توضیح می‌داد، حتی وقتی موتور خروج یا جتِ فعال گفته بود.
+    اولویت: حدِ ضرر ← خروجِ تأییدشده ← وتوی هفتگی ← تریگرِ امروز ← هشدار ←
+    فقطِ موقعیت ← بی‌سیگنال ← بی‌داده.
+    `trigger` فقط وقتی هست که یک ستاپِ «entry» رویِ **کندلِ آخر** فعال باشد، و
+    تاریخش همان کندلِ تریگرِ موتور است (برایِ شکارِ نقطه: `trigger_date`، نه
+    لنگرِ کفِ کانال). وتوی هفتگی بر تریگر غالب است: «پرواز» با وتو هم‌زمان
+    منتشر نمی‌شود.
+    خروجی: {'code','text','trigger','exits','warnings','unknown','vetoed',
+            'priority','roles'}
+    """
+    last_date = str(candles[-1]["time"])[:10] if candles else None
+    ex = out.get("exit_engine") or {}
+    l1 = ex.get("l1") or {}
+    l2 = ex.get("l2") or {}
+    l3 = ex.get("l3") or {}
+    l4 = ex.get("l4") or {}
+    jet = out.get("jet") or {}
+    choch = out.get("choch") or {}
+    ph = out.get("point_hunt") or {}
+    dbl = out.get("double_bottom") or {}
+    box = out.get("range_box") or {}
+    hg = out.get("hourglass") or {}
+    fib = out.get("fib") or {}
+
+    # --- تریگرِ فعلی (نقش entry) ---
+    trig_candidates = [
+        ("jet", jet.get("active"), jet.get("resistance"), last_date),
+        ("point_hunt", ph.get("active"), ph.get("floor_price"), ph.get("trigger_date")),
+        ("choch_bullish", choch.get("bullish"), choch.get("level"), last_date),
+        ("double_bottom", dbl.get("active"), dbl.get("neckline"), last_date),
+        ("range_break", box.get("active"), box.get("top"), last_date),
+        ("hourglass", hg.get("active"), hg.get("ma52"), last_date),
+    ]
+    trig = None
+    for kind, flag, price, date in trig_candidates:
+        if flag is True and price is not None and date:
+            trig = {"kind": kind, "price": price, "date": date,
+                    "label": _FTS_TRIGGER_LABELS.get(kind, kind), "role": "entry"}
+            break
+
+    exit_flags = [("hard_stop", l1.get("stop_hit")),
+                  ("choch_bearish", l2.get("choch_break")),
+                  ("channel_break", l2.get("channel_break")),
+                  ("double_top", l3.get("double_top")),
+                  ("hs_break", l3.get("hs_break")),
+                  ("ma14_exit", l1.get("ma14_exit"))]
+    warn_flags = [("third_peak", l3.get("third_peak")),
+                  ("rsi_divergence", l4.get("rsi_divergence")),
+                  ("rsi_rollover", l4.get("rsi_rollover")),
+                  ("ma14_pending", l1.get("ma14_exit_pending"))]
+    all_flags = ([(k, flag) for k, flag, _p, _d in trig_candidates]
+                 + exit_flags + warn_flags)
+    exits = [k for k, v in exit_flags if v is True]
+    warnings = [k for k, v in warn_flags if v is True]
+    unknown = [k for k, v in all_flags if v is None]
+    measured = any(v is not None for _k, v in all_flags)
+    vetoed = ((out.get("trend") or {}).get("matrix") or {}).get("decision") == "REJECT"
+    in_fib = bool((fib.get("zone_33_40") or {}).get("in_zone")
+                  or (fib.get("zone_618_70") or {}).get("in_zone"))
+
+    if "hard_stop" in exits:
+        code = "hard_stop"
+    elif any(e != "hard_stop" for e in exits):
+        code = "confirmed_exit"
+    elif vetoed:
+        code = "weekly_veto"
+    elif trig is not None:
+        code = "entry_trigger"
+    elif warnings:
+        code = "warning"
+    elif in_fib:
+        code = "context_only"
+    elif not measured:
+        code = "insufficient"
+    else:
+        code = "no_signal"
+
+    text = FTS_STATUS_TEXT[code]
+    if code == "entry_trigger":
+        text = "%s: %s" % (text, trig["label"])
+    if code == "weekly_veto" and jet.get("active") is True:
+        text = "%s (جتِ امروز هم فعال است، ولی وتو بر ورود غالب است)" % text
+    return {"code": code, "text": text, "trigger": trig,
+            "exits": exits, "warnings": warnings, "unknown": unknown,
+            "vetoed": bool(vetoed), "context_only": bool(in_fib and trig is None
+                                                         and not exits and not warnings),
+            "priority": list(FTS_STATUS_PRIORITY), "roles": dict(_FTS_ROLES)}
 
 
 def _fts_exit_engine(candles, entry_hint=None):
     """FTS four-layer exit/stop engine - master assembler.
 
-    Layers (each independently boolean-flagged, layer dict exposed verbatim):
+    Layers (each independently tri-state flagged, layer dict exposed verbatim):
       L1 hard stop + MA14 trailing body-exit  -> _fts_exit_layer1
       L2 structural breaks (CHoCH, channel)   -> _fts_exit_layer2
       L3 reversal patterns (3rd peak, DT, HS) -> _fts_exit_layer3
       L4 momentum (RSI divergence, rollover)  -> _fts_exit_layer4
     Verdict precedence (highest severity first):
       'stop'    - hard stop hit; position must be closed
-      'exit'    - confirmed structural/pattern exit (L2 or L3 triggers)
+      'exit'    - confirmed structural/pattern/trailing exit (L1 ma14, L2, L3)
       'caution' - soft warnings only (MA14 pending, divergence, rollover,
                   third peak) - reduce / monitor, do not add
-      'hold'    - no exit signal
+      'hold'    - سنجیده شد و خروجی نیست
+      'unknown' - هیچ لایه‌ای نتوانست بسنجد؛ «بی‌داده»، نه «خروجی ندارد»
+    `signals` فقط پرچم‌های True را می‌شمارد و `unmeasured` آن‌هایی را که None
+    ماندند؛ تفکیکِ این دو برایِ رابط لازم است (قاعدۀ null ≠ false).
     Input candles are DAILY OHLCV dicts (same shape as get_chart_db output).
-    Output: {'verdict', 'signals': [..], 'l1', 'l2', 'l3', 'l4'}.
+    Output: {'verdict', 'signals', 'unmeasured', 'l1', 'l2', 'l3', 'l4'}.
     """
     l1 = _fts_exit_layer1(candles, entry_hint=entry_hint)
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
     l2 = _fts_exit_layer2(candles, swings_d)
     l3 = _fts_exit_layer3(candles, swings_d)
     l4 = _fts_exit_layer4(candles)
-    signals = []
-    if l1["stop_hit"]:
-        signals.append("stop_hard")
-    if l1["ma14_exit"]:
-        signals.append("ma14_trail")
-    if l1["ma14_exit_pending"]:
-        signals.append("ma14_watch")
-    if l2["choch_break"]:
-        signals.append("choch_break")
-    if l2["channel_break"]:
-        signals.append("channel_break")
-    if l3["third_peak"]:
-        signals.append("third_peak")
-    if l3["double_top"]:
-        signals.append("double_top")
-    if l3["hs_break"]:
-        signals.append("hs_break")
-    if l4["rsi_divergence"]:
-        signals.append("rsi_divergence")
-    if l4["rsi_rollover"]:
-        signals.append("rsi_rollover")
-    if l1["stop_hit"]:
+    flags = [("stop_hard", l1["stop_hit"]), ("ma14_trail", l1["ma14_exit"]),
+             ("ma14_watch", l1["ma14_exit_pending"]),
+             ("choch_break", l2["choch_break"]), ("channel_break", l2["channel_break"]),
+             ("third_peak", l3["third_peak"]), ("double_top", l3["double_top"]),
+             ("hs_break", l3["hs_break"]),
+             ("rsi_divergence", l4["rsi_divergence"]),
+             ("rsi_rollover", l4["rsi_rollover"])]
+    signals = [k for k, v in flags if v is True]
+    unmeasured = [k for k, v in flags if v is None]
+    tr = lambda k: next((v for kk, v in flags if kk == k), None)
+    if tr("stop_hard") is True:
         verdict = "stop"
-    elif l2["choch_break"] or l2["channel_break"] or l3["double_top"] or l3["hs_break"]:
+    elif tr("ma14_trail") is True or tr("choch_break") is True \
+            or tr("channel_break") is True or tr("double_top") is True \
+            or tr("hs_break") is True:
         verdict = "exit"
-    elif l1["ma14_exit_pending"] or l4["rsi_divergence"] or l4["rsi_rollover"] or l3["third_peak"]:
+    elif tr("ma14_watch") is True or tr("rsi_divergence") is True \
+            or tr("rsi_rollover") is True or tr("third_peak") is True:
         verdict = "caution"
-    else:
+    elif any(v is False for _k, v in flags):
         verdict = "hold"
-    return {"verdict": verdict, "signals": signals,
+    else:
+        verdict = "unknown"
+    return {"verdict": verdict, "signals": signals, "unmeasured": unmeasured,
             "l1": l1, "l2": l2, "l3": l3, "l4": l4}
 
 
@@ -2360,6 +2534,9 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     out["range_box"] = box["range_box"]
     out["exit_engine"] = _fts_exit_engine(candles, entry_hint=entry_hint)
     out["setups"] = _fts_setup_history(candles, swings_d)
+    # وضعیتِ عمومیِ canonical + جدولِ نقش‌ها: تنها منبعِ متنِ «وضعیت FTS» درِ رابط
+    out["status"] = _fts_status_block(candles, out)
+    out["roles"] = _fts_roles_table()
     return out
 
 

@@ -55,28 +55,31 @@ export function useFtsScreener() {
   });
 }
 
-export type FtsSignalTag = { label: string; tone: 'green' | 'red' | 'blue' };
+export type FtsSignalTag = { label: string; tone: 'green' | 'red' | 'blue' | 'gray'; role: 'signal' | 'context' };
 
-/** برچسب ستاپ‌های فعال از ستون‌های tech_* پاسخ اسکرینر */
+/** برچسب ستاپ‌های فعال از ستون‌های tech_* پاسخ اسکرینر.
+ *  taxonomyِ دورِ J: `role: 'context'` هیچ‌وقت «ستاپ» حساب نمی‌شود — کمربندِ فیبو
+ *  جایِ ایستادن را می‌گوید، نه اینکه بخر (سنجش: داخلِ باند edge ندارد). */
 export function ftsSignalTags(r: ScreenerRow): FtsSignalTag[] {
   const t: FtsSignalTag[] = [];
-  if (r.tech_hourglass_active) t.push({ label: 'ساعت شنی (۲x-۴x)', tone: 'green' });
-  if (r.tech_jet) t.push({ label: 'جت', tone: 'green' });
-  if (r.tech_choch_bull) t.push({ label: 'CHoCH صعودی', tone: 'green' });
-  if (r.tech_choch_bear) t.push({ label: 'CHoCH نزولی', tone: 'red' });
-  if (r.tech_double_bottom) t.push({ label: 'کف دوقلو', tone: 'green' });
-  if (r.tech_range_break) t.push({ label: 'خروج از انباشت', tone: 'green' });
-  if (r.tech_fib_zone) t.push({ label: 'نقطه‌زنی فیبو', tone: 'blue' });
-  if (r.tech_matrix_decision === 'REJECT') t.push({ label: 'وتوی هفتگی', tone: 'red' });
+  if (r.tech_hourglass_active) t.push({ label: 'ساعت شنی (۲x-۴x)', tone: 'green', role: 'signal' });
+  if (r.tech_jet) t.push({ label: 'جت', tone: 'green', role: 'signal' });
+  if (r.tech_choch_bull) t.push({ label: 'CHoCH صعودی', tone: 'green', role: 'signal' });
+  if (r.tech_choch_bear) t.push({ label: 'CHoCH نزولی', tone: 'red', role: 'signal' });
+  if (r.tech_double_bottom) t.push({ label: 'کف دوقلو', tone: 'green', role: 'signal' });
+  if (r.tech_range_break) t.push({ label: 'خروج از انباشت', tone: 'green', role: 'signal' });
+  if (r.tech_fib_zone) t.push({ label: `موقعیت فیبو ${r.tech_fib_zone}`, tone: 'gray', role: 'context' });
+  if (r.tech_matrix_decision === 'REJECT') t.push({ label: 'وتوی هفتگی', tone: 'red', role: 'signal' });
   return t;
 }
 
 /** فقط نمادهای دارای دست‌کم یک ستاپ/الگو؛ جستجو روی نماد و نام */
 export function filterFtsSignals(rows: ScreenerRow[], q: string, limit = DEFAULT_LIMIT): ScreenerRow[] {
   const term = q.trim();
+  const hasSignal = (r: ScreenerRow) => ftsSignalTags(r).some((tag) => tag.role === 'signal');
   return rows
     .filter((r) => {
-      if (ftsSignalTags(r).length === 0) return false;
+      if (!hasSignal(r)) return false;
       if (!term) return true;
       return matchFa(r.symbol, term) || matchFa(r.name, term);
     })

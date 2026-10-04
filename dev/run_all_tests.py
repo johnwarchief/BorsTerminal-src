@@ -75,6 +75,10 @@ SUITES = [
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
+    ('dev/test_fts_roundj.py',
+     'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
+    ('_audit/candle_integrity_roundj.py',
+     'candle integrity + published-TSETMC parity along feed → engine → chart'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
     # شاخص ۴: حکمِ معافیت/N/A باید بین fts_engine (اسکرینر) و api/fundamental
     # (کارت) یکی باشد — پیش از این این سوئیت اصلاً در SUITES نبود و پاریتیِ

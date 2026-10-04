@@ -493,6 +493,9 @@ def _screener_cached():
                 r["tech_fib_zone"] = None
             r["tech_exit_verdict"] = ex.get("verdict")
             r["tech_exit_signals"] = ex.get("signals") or []
+            # وضعیتِ عمومیِ canonical (همان که کارتِ «وضعیت FTS» می‌خواند) تا بجِ
+            # تابلو و چارت یک رأی داشته باشند، نه دو تا.
+            r["tech_status"] = (f.get("status") or {}).get("code")
             mat = tr.get("matrix") or {}
             r["tech_matrix_decision"] = mat.get("decision")
             r["tech_matrix_setup"] = mat.get("setup")

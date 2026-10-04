@@ -3,7 +3,7 @@
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
-import { EXIT_SIGNAL_FA, SETUP_FA, STOP_BASIS_FA } from '../lib/levels';
+import { CONTEXT_FA, EXIT_SIGNAL_FA, SETUP_FA, STOP_BASIS_FA } from '../lib/levels';
 import { verdictMeta } from './FtsBadgeStrip';
 
 export type ActiveLevelsView = {
@@ -14,6 +14,8 @@ export type ActiveLevelsView = {
   ma100: number | null;
   lastClose: number | null;
   setups: string[];
+  /** «زمینه»ها (کمربند فیبو و…) — ستاپِ ورود نیستند، برای همین جدا نمایش داده می‌شوند */
+  context: string[];
   direction: 'bullish' | 'bearish' | 'neutral' | null;
 };
 
@@ -195,6 +197,17 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
           {active.setups.map((s) => (
             <Badge key={s} tone="blue">
               {SETUP_FA[s] ?? s}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      {active.context.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1" data-testid="sidebar-fts-context">
+          <span className="text-[10px] text-text-muted">زمینه:</span>
+          {active.context.map((c) => (
+            <Badge key={c} tone="gray">
+              {CONTEXT_FA[c] ?? c}
             </Badge>
           ))}
         </div>

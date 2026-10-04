@@ -36,7 +36,7 @@
 - `GET /api/adb/state` → `api/adb.py:19`
 - `POST /api/adb/set` → `api/adb.py:47`
 
-### `api/chart.py` — 55 تابع، 9 اندپوینت
+### `api/chart.py` — 58 تابع، 9 اندپوینت
 - `GET /api/chart/{symbol}` → `api/chart.py:314`
 - `GET /api/chart/{symbol}/key-levels` → `api/chart.py:572`
 - `GET /api/order-book/{symbol}` → `api/chart.py:616`
@@ -45,7 +45,7 @@
 - `GET /api/ma/{symbol}` → `api/chart.py:859`
 - `GET /api/chart-db/{symbol}` → `api/chart.py:922`
 - `GET /api/patterns/{symbol}` → `api/chart.py:998`
-- `GET /api/fts/{symbol}` → `api/chart.py:2341`
+- `GET /api/fts/{symbol}` → `api/chart.py:2692`
 
 ### `api/diagnostics.py` — 6 تابع، 3 اندپوینت
 - `GET /api/diagnostics/info` → `api/diagnostics.py:39`
@@ -62,11 +62,11 @@
 - `GET /api/sync/pipeline` → `api/engine.py:64`
 
 ### `api/fundamental.py` — 59 تابع، 5 اندپوینت
-- `GET /api/fundamental/screen` → `api/fundamental.py:1794`
-- `GET /api/fundamental/sectors` → `api/fundamental.py:1855`
-- `GET /api/fundamental/{symbol}` → `api/fundamental.py:1869`
-- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2075`
-- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2327`
+- `GET /api/fundamental/screen` → `api/fundamental.py:1801`
+- `GET /api/fundamental/sectors` → `api/fundamental.py:1862`
+- `GET /api/fundamental/{symbol}` → `api/fundamental.py:1876`
+- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2082`
+- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2334`
 
 ### `api/market.py` — 36 تابع، 10 اندپوینت
 - `GET /api/market/sync-state` → `api/market.py:92`
@@ -131,7 +131,7 @@
 
 | فایل | تابع‌هایِ کلیدی |
 | --- | --- |
-| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+63) |
+| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+64) |
 | `tape_flags.py` | `_n`, `_col`, `_alive`, `history_sessions`, `_sessions_ok`, `formula_volume_base` (+11) |
 | `mstat_engine.py` | `in_trading_session`, `_f`, `_div`, `ensure_schema`, `_word_hit`, `fund_kind` (+59) |
 | `codal_fetcher.py` | `set_extract_workers`, `polite_pause`, `set_polite`, `write_status`, `_fmt_ban_until`, `_control_cmd` (+71) |
@@ -171,6 +171,7 @@
 
 | سوئیت | چه چیزی را نگه می‌دارد |
 | --- | --- |
+| `_audit/candle_integrity_roundj.py` | candle integrity + published-TSETMC parity along feed → engine → chart |
 | `dev/adb_resilience_v972.py` | ADB retry/reconnect + wifi restore |
 | `dev/adjust_zero_volume_v1072.py` | adjustment also from restated close on zero-volume rows; four negative controls |
 | `dev/assembly_veto_v1064.py` | assembly veto: fresh outside the cache, no-data is not a veto |
@@ -236,6 +237,8 @@
 | `dev/test_delta_update.py` | delta patch select/apply + fallback |
 | `dev/test_fts_isolation.py` | FTS filter isolation |
 | `dev/test_fts_market_cap.py` | TSETMC market-cap source of truth + risk filters |
+| `dev/test_fts_roundj.py` | Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority |
+| `dev/test_fts_technical_tristate.py` | technical setups stay three-state (null != false) and each rule matches the notebook |
 | `dev/test_fts_v10_ladder.py` | FTS v10 EPS evidence ladder + partial table row |
 | `dev/test_fund_revenue_v1027.py` | fund sheet: سود سهام هرگز «فروش» نمی‌شود |
 | `dev/typography_guard.py` | هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs) |

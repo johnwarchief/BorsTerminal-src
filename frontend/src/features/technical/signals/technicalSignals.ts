@@ -91,6 +91,8 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
   const setups = new Set<SetupKind>();
   let total = 0;
   const bits: string[] = [];
+  /** هرچه نقشش درِ جدولِ موتور «context» است اینجا می‌نشیند — بی‌امتیاز، بی‌«ستاپ» */
+  const context: string[] = [];
 
   // هم‌راستاییِ سه‌زمانه (روز/هفته/ماه) — `trend.alignment` درِ خودِ موتور
   if (alignment === 'up') {
@@ -134,13 +136,15 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
     bits.push('واگرایی منفی RSI (سقفِ قیمتیِ بالاتر با سقفِ RSIِ پایین‌تر)');
   }
 
-  // کمربندهای فیبو (۳۳–۴۰ و ۶۱٫۸–۷۰) — از موتور، با همان مبنایِ موج
+  // کمربندهای فیبو: **context**، نه تریگر. دورِ I با سنجهٔ تاریخی رأی داد که
+  // «داخل کمربند بودن» به‌تنهایی edge ندارد (بی‌گیت ۰٫۴۹۷ ≈ نرخِ پایه؛ با گیتِ
+  // هفتگی بدتر). پس اینجا نه امتیازی است نه «ستاپ»: فقط درِ `context` منتشر
+  // می‌شود تا رابط بگوید «کجا ایستاده‌ایم»، نه «بخر».
   const in3340 = fib?.zone_33_40?.in_zone === true;
   const in61870 = fib?.zone_618_70?.in_zone === true;
   if (in3340 || in61870) {
-    total += 1;
-    setups.add('fibonacci');
-    bits.push(in61870 ? 'قیمت داخل کمربند طلایی ۶۱.۸–۷۰٪' : 'قیمت داخل کمربند ۳۳–۴۰٪');
+    context.push(in61870 ? 'fib_zone_618_70' : 'fib_zone_33_40');
+    bits.push(in61870 ? 'موقعیت: داخل کمربند ۶۱.۸–۷۰٪ (زمینه، نه سیگنالِ ورود)' : 'موقعیت: داخل کمربند ۳۳–۴۰٪ (زمینه، نه سیگنالِ ورود)');
   }
 
   // خروج با MA(14) — لایۀ ۱ موتورِ خروج (دو کندلِ کامل زیر میانگین)
@@ -200,7 +204,11 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
             ? `تکنیکال ${symbol} نزولی است`
             : vetoed
               ? `تکنیکال ${symbol}: وتوی تایم هفتگی`
-              : `تکنیکال ${symbol} در انتظار شکست خط آبی است`,
+              : fts?.status
+                // متنِ وضعیت از خودِ موتور می‌آید؛ رابط دیگر «در انتظار شکست خط
+                // آبی» را جایِ هر رأی نمی‌نشیند.
+                ? `تکنیکال ${symbol}: ${fts.status.text}`
+                : `تکنیکال ${symbol} وضعیتِ عمومیِ منتشرشده ندارد`,
     rationale: bits.length > 0 ? bits.join('؛ ') + '.' : 'همگرایی مشخصی دیده نشد.',
     score: gateBlocked ? 50 : score,
     evidence: gateBlocked
@@ -231,6 +239,11 @@ export function technicalSignal(input: TechInput, ts = Date.now()): AgentSignal<
       ],
       dataQuality,
       weekly: input.weekly ?? null,
+      // وضعیتِ عمومیِ canonical (کد + متن) از موتور — کارتِ «وضعیت FTS» همین را
+      // می‌خواند، پس سه‌جا (چارت، سایدبار، API) یک رأی دارند.
+      status: fts?.status ? { code: fts.status.code, text: fts.status.text } : null,
+      // نقشِ «زمینه»ها: فیبو و هم‌راستاییِ روند اینجا می‌نشینند، نه درِ `setups`.
+      context,
       // پرچم‌هایِ ستاپ از خودِ موتور — برایِ گامِ ۲ خطِ روایتِ مستر (#6 و #7).
       // بی‌پاسخِ موتور این‌ها منتشر **نمی‌شوند** (undefined)، نه false: «رد از رویِ
       // نبودِ داده» همان چیزی است که درِ قیف هم ممنوع است. و اگر موتور گفته

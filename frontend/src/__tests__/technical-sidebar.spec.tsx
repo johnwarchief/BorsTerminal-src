@@ -45,6 +45,7 @@ const ACTIVE: ActiveLevelsView = {
   ma100: 2300,
   lastClose: 2967,
   setups: ['breakout'],
+  context: ['fib_zone_33_40'],
   direction: 'bullish',
 };
 
@@ -82,11 +83,14 @@ describe('فیلتر دیده‌بان', () => {
 describe('فیلتر سیگنال‌های FTS', () => {
   it('برچسب ستاپ‌های فعال', () => {
     const tags = ftsSignalTags(srow({ tech_jet: true, tech_choch_bear: true, tech_fib_zone: 'in' }));
-    expect(tags.map((t) => t.label)).toEqual(['جت', 'CHoCH نزولی', 'نقطه‌زنی فیبو']);
+    expect(tags.map((t) => t.label)).toEqual(['جت', 'CHoCH نزولی', 'موقعیت فیبو in']);
+    // فیبو زمینه است، پس به‌تنهایی نماد را واردِ فهرستِ «سیگنال‌ها» نمی‌کند
+    expect(tags.filter((t) => t.role === 'context').map((t) => t.label)).toEqual(['موقعیت فیبو in']);
   });
 
-  it('نماد بی‌سیگنال حذف می‌شود', () => {
-    const rows = [srow({ symbol: 'الف', tech_jet: true }), srow({ symbol: 'ب' })];
+  it('نماد بی‌سیگنال حذف می‌شود؛ «فقط زمینه» هم سیگنال نیست', () => {
+    const rows = [srow({ symbol: 'الف', tech_jet: true }), srow({ symbol: 'ب' }),
+                  srow({ symbol: 'پ', tech_fib_zone: '33-40' })];
     expect(filterFtsSignals(rows, '').map((r) => r.symbol)).toEqual(['الف']);
   });
 });

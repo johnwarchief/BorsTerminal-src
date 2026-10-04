@@ -59,6 +59,15 @@ const Setup = z.object({
 const Jet = z.object({
   active: z.boolean().nullish(),
   resistance: z.number().nullish(),
+  // تاریخِ همان کندلِ سقفِ پلکان — خطِ مقاومت فقط تا همین‌جا رسم می‌شود، نه رویِ
+  // کلِ تاریخِ چارت (سلسله‌مراتبِ دورِ J).
+  resistance_date: z.string().nullish(),
+  ceiling: z.number().nullish(),
+  ceiling_date: z.string().nullish(),
+  // لایۀ «سقفِ ایستاده» (جزوه: مقاومتِ استاتیکِ افقی). این سه کلید باید درِ
+  // قرارداد باشند، وگرنه Zod آن‌ها را بی‌صدا دور می‌ریزد و tier هرگز نمی‌رسد.
+  static_broke: z.boolean().nullish(),
+  tier: z.string().nullish(),
   ath: z.boolean().nullish(),
   close: z.number().nullish(),
   pct_above_res: z.number().nullish(),
@@ -72,22 +81,30 @@ const Choch = z.object({
   bullish: z.boolean().nullish(),
   level: z.number().nullish(),
   label: z.string().nullish(),
+  // قاعدۀ تأیید از سرور خوانده می‌شود نه از عددِ دست‌نویسِ فرانت (دو بسته، حاشیۀ ۱٪)
+  confirm_days: z.number().nullish(),
+  margin: z.number().nullish(),
+  reason: z.string().nullish(),
 });
 
 const PointHunt = z.object({
   touches: z.number().nullish(),
   floor_price: z.number().nullish(),
   active: z.boolean().nullish(),
+  bounced: z.boolean().nullish(),
   floor_idx: z.number().nullish(),
-  // تاریخِ کندلِ لنگر — چارت فقط با این می‌تواند نشانگر را رویِ کندلِ درست
-  // بگذارد؛ اندیسِ آرایۀِ سرور با ردیف‌هایِ دیدۀِ مرورگر یکی نیست (#193).
+  // تاریخِ کندلِ لنگر = اطلاعاتِ ساختاریِ کانال. نشانگرِ خرید اینجا نمی‌نشیند.
   floor_date: z.string().nullish(),
+  // تاریخِ کندلِ تریگر (لمس + ریباند رویِ همین کندل، فقط وقتی active است) —
+  // مارکرِ خرید رویِ همین می‌نشیند (#221: anchor و تریگر دو چیزند).
+  trigger_date: z.string().nullish(),
 });
 
 const DoubleBottom = z.object({
   active: z.boolean().nullish(),
   neckline: z.number().nullish(),
   pct_above_neck: z.number().nullish(),
+  reason: z.string().nullish(),
 });
 
 const RangeBox = z.object({
@@ -95,11 +112,15 @@ const RangeBox = z.object({
   top: z.number().nullish(),
   bottom: z.number().nullish(),
   pct_above_top: z.number().nullish(),
+  reason: z.string().nullish(),
 });
 
 const ExitEngine = z.object({
   verdict: z.string(),
   signals: z.array(z.string()).nullish(),
+  // پرچم‌هایی که موتور نسنجد اینجا نام برده می‌شوند؛ «خروجی ندارد» با
+  // «سنجیده نشد» یکی نیست (قاعدۀ null ≠ false).
+  unmeasured: z.array(z.string()).nullish(),
   l1: z
     .object({
       hard_stop: z.number().nullish(),
@@ -161,6 +182,29 @@ const HourglassStrategy = z.object({
   desc: z.string().nullish(),
 });
 
+// وضعیتِ عمومیِ canonical و جدولِ نقش‌ها — تنها منبعِ متنِ «وضعیت FTS» و تنها
+// مرجعِ «این پرچم تریگر است یا زمینه یا هشدار یا خروج».
+const StatusTrigger = z.object({
+  kind: z.string(),
+  price: z.number().nullish(),
+  date: z.string().nullish(),
+  label: z.string().nullish(),
+  role: z.string().nullish(),
+});
+
+const FtsStatus = z.object({
+  code: z.string(),
+  text: z.string(),
+  trigger: StatusTrigger.nullable().nullish(),
+  exits: z.array(z.string()).nullish(),
+  warnings: z.array(z.string()).nullish(),
+  unknown: z.array(z.string()).nullish(),
+  vetoed: z.boolean().nullish(),
+  context_only: z.boolean().nullish(),
+  priority: z.array(z.string()).nullish(),
+  roles: z.record(z.string(), z.string()).nullish(),
+});
+
 export const FtsAnalysis = z.object({
   trend: z
     .object({
@@ -180,6 +224,8 @@ export const FtsAnalysis = z.object({
   exit_engine: ExitEngine.nullish(),
   hourglass: HourglassStrategy.nullish(),
   setups: z.array(Setup).nullish(),
+  status: FtsStatus.nullish(),
+  roles: z.record(z.string(), z.string()).nullish(),
 });
 
 export type FtsAnalysisData = z.infer<typeof FtsAnalysis>;

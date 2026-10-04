@@ -87,7 +87,9 @@ describe('نگاشتِ چارت از رأیِ تهی عدد نمی‌سازد', 
     expect(inp.jet.active).toBe(false);
     expect(inp.jet.level).toBeNull();
     expect(inp.pointHunt.floor).toBeNull();
-    expect(inp.pointHunt.ts).toBeNull();
+    expect(inp.pointHunt.triggerTs).toBeNull();
+    expect(inp.pointHunt.anchorTs).toBeNull();
+    expect(inp.jet.fromTs).toBeNull();
     expect(inp.choch.level).toBeNull();
   });
 

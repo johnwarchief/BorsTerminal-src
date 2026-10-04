@@ -595,10 +595,14 @@ def regime(S, i, win=60):
 #  اجرا
 # ═══════════════════════════════════════════════════════════════════════════
 def run(panel, signal, bracket_idx=0, warmup=70, sample_every=1, mode="event",
-        cooldown=5):
+        cooldown=5, folds=0):
     """mode=event ⇒ فقط **اولینِ** باری که شرط true می‌شود (تریگر)، و تا
     `cooldown` بارِ بعدی دوبار آتش نمی‌گیرد. mode=state ⇒ هر باری که شرط برقرار
     است (برای مقایسۀ «وضعیتِ فعال» با «رویدادِ ورود»).
+
+    `folds` ⇒ walk-forward: بازۀ زمانیِ پنل به N قطعهٔ متوالی تقسیم می‌شود و
+    دقتِ هر variant در هر قطعه جدا گزارش می‌شود (پایداریِ پارامتر، نه فقط میانگین).
+    قطعه‌بندی رویِ **تاریخ** است، پس هر قطعه نمونه‌ای بیرونِ نمونهٔ قطعهٔ دیگر است.
 
     بدونِ event، دقتِ یک شکستِ ماندگار با «چند روز بالای سطح مانده» قاطی می‌شود
     و مقایسهٔ variantها بی‌معنی است.
@@ -607,7 +611,20 @@ def run(panel, signal, bracket_idx=0, warmup=70, sample_every=1, mode="event",
     variants = VARIANTS[signal]
     agg = {k: {"fires": 0, "win": 0, "loss": 0, "open": 0, "ret": [], "bars": [],
                "regime": {}, "symbols": set(), "examples": [], "pending": 0,
-               "false": 0} for k in variants}
+               "false": 0, "folds": {}} for k in variants}
+    # مرزهایِ قطعه‌ها از تقویمِ کلِ پنل (بی‌look-ahead: تقسیمِ زمانی است، نه انتخابِ داده)
+    fold_edges = []
+    if folds and folds > 1:
+        alldates = sorted({str(d) for S in panel.values() for d in S["dates"]})
+        if len(alldates) >= folds:
+            step = len(alldates) / float(folds)
+            fold_edges = [alldates[int(round(step * (k + 1))) - 1]
+                          for k in range(folds - 1)]
+
+    def fold_of(date_str):
+        if not fold_edges:
+            return None
+        return sum(1 for e in fold_edges if date_str > e)
     base = {"n": 0, "win": 0, "loss": 0, "open": 0, "ret": []}
     bars_total = 0
     for sym, S in panel.items():
@@ -648,11 +665,21 @@ def run(panel, signal, bracket_idx=0, warmup=70, sample_every=1, mode="event",
                 a[r if r != "open" else "open"] += 1
                 a["ret"].append(ret)
                 a["bars"].append(nb)
-                rg = regime(S, i)
-                d = a["regime"].setdefault(rg, [0, 0])
-                d[0] += 1
-                if r == "win":
-                    d[1] += 1
+                # تفکیکِ regime/fold رویِ «نشستۀ بسته» است (win+loss)، وگرنه با
+                # «open» مخلوط می‌شود و با precisionِ ستون اصلی قابلِ مقایسه نیست
+                # (اشتباهِ دورِ اول؛ درِ همین دور اصلاح شد).
+                if r != "open":
+                    rg = regime(S, i)
+                    d = a["regime"].setdefault(rg, [0, 0])
+                    d[0] += 1
+                    if r == "win":
+                        d[1] += 1
+                fd = fold_of(str(S["dates"][i])[:10])
+                if fd is not None and r != "open":
+                    g = a["folds"].setdefault(fd, [0, 0])
+                    g[0] += 1
+                    if r == "win":
+                        g[1] += 1
                 if len(a["examples"]) < 12 and r == "loss":
                     a["examples"].append({"symbol": sym, "date": S["dates"][i],
                                           "level": hit.get("level"), "ret": round(ret, 4)})
@@ -679,6 +706,13 @@ def run(panel, signal, bracket_idx=0, warmup=70, sample_every=1, mode="event",
             "coverage_symbols": len(a["symbols"]),
             "by_regime": {k: {"n": v[0], "win": round(v[1] / v[0], 4)}
                           for k, v in sorted(a["regime"].items())},
+            # walk-forward: دقت در هر قطعهٔ زمانی + بدترین قطعه (پارامتر شکننده
+            # میانگینِ خوب دارد و دامنهٔ wide؛ این دو ستون همان را لو می‌دهند)
+            "by_fold": {k: {"closed": v[0], "win": round(v[1] / v[0], 4)}
+                        for k, v in sorted(a["folds"].items())},
+            "fold_precision": [round(v[1] / v[0], 4) for _k, v in sorted(a["folds"].items())
+                               if v[0] >= 20],
+            "fold_min": min((v[1] / v[0] for v in a["folds"].values() if v[0] >= 20), default=None),
             "fp_examples": a["examples"],
         }
     return out
@@ -693,6 +727,8 @@ def main():
     ap.add_argument("--sample-every", type=int, default=1)
     ap.add_argument("--mode", default="event", choices=("event", "state"))
     ap.add_argument("--cooldown", type=int, default=5)
+    ap.add_argument("--folds", type=int, default=0,
+                    help="walk-forward: N قطعهٔ زمانیِ متوالی (۰ = خاموش)")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
     panel = load_panel(args.min_bars, args.limit_symbols)
@@ -703,21 +739,33 @@ def main():
             print("نامعلوم:", sig)
             continue
         r = run(panel, sig, args.bracket, sample_every=args.sample_every,
-                mode=args.mode, cooldown=args.cooldown)
+                mode=args.mode, cooldown=args.cooldown, folds=args.folds)
+        r["folds"] = args.folds
         r["mode"] = args.mode
         r["cooldown"] = args.cooldown
         allres[sig] = r
         print("\n══ %s | %s | bracket %s | نرخ پایه win=%.3f" %
               (sig, args.mode, r["bracket"], (r["base_rate"]["win"] or 0)))
-        print("  %-24s %7s %8s %8s %9s %8s" %
-              ("variant", "fires", "win/1k", "precision", "expect", "cover"))
+
+        # ستونِ walk-forward: spreadِ دقت بین قطعه‌ها (شکنندگیِ پارامتر)
+        hdr = "  %-24s %7s %8s %8s %9s %8s" % (
+            "variant", "fires", "win/1k", "precision", "expect", "cover")
+        if args.folds > 1:
+            hdr += "  %-18s" % "fold precision"
+        print(hdr)
         for name, m in sorted(r["variants"].items(),
                               key=lambda kv: -(kv[1]["precision"] or 0)):
-            print("  %-24s %7d %8.2f %9s %8s %8s" %
-                  (name, m["fires"], m["fires_per_1000_bars"],
-                   ("%.3f" % m["precision"]) if m["precision"] is not None else "-",
-                   ("%.4f" % m["expectancy"]) if m["expectancy"] is not None else "-",
-                   m["coverage_symbols"]))
+            line = "  %-24s %7d %8.2f %9s %8s %8s" % (
+                name, m["fires"], m["fires_per_1000_bars"],
+                ("%.3f" % m["precision"]) if m["precision"] is not None else "-",
+                ("%.4f" % m["expectancy"]) if m["expectancy"] is not None else "-",
+                m["coverage_symbols"])
+            if args.folds > 1:
+                fp = m.get("fold_precision") or []
+                spread = ("%.3f…%.3f" % (min(fp), max(fp))) if len(fp) > 1 else "-"
+                line += "  %-18s" % spread
+            print(line)
+
     path = args.out or os.path.join(ROOT, "_audit", "fts_lab_%s_b%d_%s.json" %
                                     (args.signals.replace(",", "+"), args.bracket, args.mode))
     os.makedirs(os.path.dirname(path), exist_ok=True)

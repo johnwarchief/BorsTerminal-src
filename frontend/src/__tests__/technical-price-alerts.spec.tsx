@@ -175,6 +175,10 @@ describe('پنلِ هشدار', () => {
         onOpenIndicators={noop}
         isFtsActive={false}
         onToggleFts={noop}
+        showFibLevels={false}
+        onToggleFibLevels={() => {}}
+        showHistoryEvents={false}
+        onToggleHistoryEvents={() => {}}
         isFullscreen={false}
         onToggleFullscreen={noop}
       />,

@@ -24,28 +24,34 @@ export const VERDICT_META: Record<string, { label: string; tone: 'red' | 'yellow
   exit: { label: 'خروج', tone: 'red' },
   caution: { label: 'احتیاط', tone: 'yellow' },
   hold: { label: 'نگهداری', tone: 'gray' },
+  // موتورِ کم‌سابقه رأیِ «خروجی ندارد» نمی‌دهد؛ این «سنجیده نشد» است
+  unknown: { label: 'خروج: نسنجیده', tone: 'gray' },
 };
 
 export function verdictMeta(v: string | null | undefined): { label: string; tone: 'red' | 'yellow' | 'gray' } {
-  return VERDICT_META[v ?? 'hold'] ?? VERDICT_META.hold;
+  return VERDICT_META[v ?? 'unknown'] ?? VERDICT_META.unknown;
 }
 
-/** جت استریپ: وضعیت ستاپ شکست سقف ایستا یا ATH */
+/** جت استریپ: وضعیت ستاپ شکست سقف ایستا یا ATH — فقط کندلِ آخر.
+ *  با وتوی هفتگی برچسب «فعال» گمراه‌کننده است، پس خودِ وتو درِ بج نوشته می‌شود. */
 export function jetBadges(f: FtsAnalysisData): { label: string; tone: 'green' | 'blue' | 'gray'; title: string }[] {
   const jet = f.jet;
   if (!jet) return [];
-  if (!jet.active) return [];
+  if (jet.active !== true) return [];
+  const vetoed = f.trend?.matrix?.decision === 'REJECT';
   const isAth = jet.ath === true;
   const pct = jet.pct_above_res;
   return [
     {
-      label: isAth ? 'جت (ATH)' : 'جت فعال',
-      tone: 'green',
-      title: isAth
-        ? 'شکست سقف تاریخی با تایید بدنه روزانه'
-        : pct != null
-          ? `شکست مقاومت ${toFaDigits(jet.resistance?.toFixed(0) ?? '-')} با ${toFaDigits(pct.toFixed(1))}٪ فاصله`
-          : 'شکست مقاومت با تایید بدنه روزانه',
+      label: vetoed ? 'جت (وتوی هفتگی)' : isAth ? 'جت (ATH)' : 'جت فعال',
+      tone: vetoed ? 'blue' : 'green',
+      title: vetoed
+        ? 'شکستِ امروز رخ داده، ولی درخت FTS با این تایم هفتگی فرصت ورود نمی‌دهد'
+        : isAth
+          ? 'شکست سقف تاریخی با تایید بدنه روزانه'
+          : pct != null
+            ? `شکست مقاومت ${toFaDigits(jet.resistance?.toFixed(0) ?? '-')} با ${toFaDigits(pct.toFixed(1))}٪ فاصله`
+            : 'شکست مقاومت با تایید بدنه روزانه',
     },
   ];
 }
@@ -118,11 +124,12 @@ export function FtsBadgeStrip({
   }
 
   const fib = data.fib;
+  // فیبو «زمینه» است نه سیگنالِ ورود (سنجشِ دورِ I: داخلِ کمربند بودن edge ندارد)
   if (fib?.zone_33_40?.in_zone) {
-    items.push({ label: 'فیبو', value: '۳۳-۴۰٪', tone: 'blue', title: 'قیمت داخل کمربند اصلاح ۳۳ تا ۴۰ درصد است' });
+    items.push({ label: 'موقعیت فیبو', value: '۳۳-۴۰٪', tone: 'gray', title: 'قیمت داخل کمربند اصلاح ۳۳ تا ۴۰ درصد است — زمینه، نه سیگنالِ ورود' });
   }
   if (fib?.zone_618_70?.in_zone) {
-    items.push({ label: 'فیبو', value: '۶۱.۸-۷۰٪', tone: 'blue', title: 'قیمت داخل کمربند طلایی اصلاح است' });
+    items.push({ label: 'موقعیت فیبو', value: '۶۱.۸-۷۰٪', tone: 'gray', title: 'قیمت داخل کمربند طلایی اصلاح است — زمینه، نه سیگنالِ ورود' });
   }
 
   for (const b of jetBadges(data)) {
@@ -138,12 +145,15 @@ export function FtsBadgeStrip({
   }
 
   const ph = data.point_hunt;
-  if (ph?.active) {
+  if (ph?.active === true) {
     items.push({
       label: 'شکار نقطه',
       value: `${toFaDigits(ph.touches ?? 0)} لمس`,
       tone: 'blue',
-      title: 'کف دایامتریک کانال دست کم سه بار لمس شده؛ خرید در کف با حد ضرر کوتاه',
+      // «کجا» = کفِ کانال (anchor)، «کِی» = کندلِ تریگر؛ این دو درِ موتور جدا هستند
+      title:
+        `کف دایامتریک کانال دست کم سه بار لمس شده و همین کندل بازگشت؛ تریگر: ${ph.trigger_date ?? '—'}` +
+        ` (لنگرِ کف: ${ph.floor_date ?? '—'})`,
     });
   }
 

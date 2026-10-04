@@ -5,11 +5,16 @@
 export const SETUP_FA: Record<string, string> = {
   breakout: 'جت (شکست سقف)',
   pullback: 'پولبک',
-  fibonacci: 'فیبوناچی',
   choch: 'CHoCH',
   bearish_div: 'واگرایی منفی',
   range: 'رنج',
   trend: 'روند',
+};
+
+/** واژه‌نامۀ «زمینه»ها — این‌ها ستاپ/سیگنالِ ورود نیستند (taxonomyِ دورِ J) */
+export const CONTEXT_FA: Record<string, string> = {
+  fib_zone_33_40: 'موقعیت: کمربند ۳۳–۴۰٪',
+  fib_zone_618_70: 'موقعیت: کمربند ۶۱.۸–۷۰٪',
 };
 
 /** منشأِ حد ضرر سخت از موتور خروج — `stop_basis` در لایهٔ ۱ */

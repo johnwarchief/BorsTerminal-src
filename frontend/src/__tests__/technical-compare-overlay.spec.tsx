@@ -161,6 +161,10 @@ describe('دکمهٔ همسنجی در نوارِ ابزار', () => {
     onOpenIndicators: () => {},
     isFtsActive: false,
     onToggleFts: () => {},
+    showFibLevels: false,
+    onToggleFibLevels: () => {},
+    showHistoryEvents: false,
+    onToggleHistoryEvents: () => {},
     isFullscreen: false,
     onToggleFullscreen: () => {},
   };

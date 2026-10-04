@@ -95,7 +95,6 @@ export function FtsEngineChart({
     };
     // کال‌پس‌ها فقط هنگامِ mount خوانده می‌شوند؛ عوض‌شدنِ آن‌ها نباید موتور را
     // از نو بسازد (هر ساختِ دوباره یعنی پرشِ نما درِ بازارِ باز).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engineId]);
 
   const layers = useMemo(() => {

@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { toKLineData } from '@features/technical/api/useCandleFeed';
 import { gatePassFromCard } from '@features/technical/api/useFundGate';
-import { resolveFtsStatus } from '@features/technical/components/FtsStatusCard';
+import { resolveFtsStatusView } from '@features/technical/components/FtsStatusCard';
 
 describe('خوراک کندل', () => {
   it('تبدیل تاریخ و مرتب سازی', () => {
@@ -34,13 +34,20 @@ describe('خوراک کندل', () => {
 });
 
 describe('وضعیت FTS', () => {
-  it('اولویت وضعیت: گیت سپس پرواز سپس هشدار', () => {
-    const jet = { payload: { setups: ['breakout'] } } as never;
-    const choch = { payload: { setups: ['choch'] } } as never;
-    expect(resolveFtsStatus(jet, true)).toBe('gate_rejected');
-    expect(resolveFtsStatus(jet, false)).toBe('jet_active');
-    expect(resolveFtsStatus(choch, false)).toBe('choch_warning');
-    expect(resolveFtsStatus(null, false)).toBe('awaiting_break');
+  it('وضعیت از خودِ موتور می‌آید، نه از حدسِ کامپوننت؛ گیت بر همه غالب است', () => {
+    const st = (code: string, text: string) => ({ payload: { status: { code, text } } }) as never;
+    expect(resolveFtsStatusView(st('entry_trigger', 'تریگرِ فعال'), true).code).toBe('gate_rejected');
+    expect(resolveFtsStatusView(st('entry_trigger', 'تریگرِ فعال: جت'), false).code).toBe('entry_trigger');
+    // رأیِ دورِ J: وتوی هفتگی با جتِ فعال، «پرواز» نمی‌شود
+    const veto = resolveFtsStatusView(st('weekly_veto', 'وتوی تایم هفتگی'), false);
+    expect(veto.code).toBe('weekly_veto');
+    expect(veto.text).toContain('وتوی');
+    expect(resolveFtsStatusView(st('hard_stop', 'حدِ ضرر'), false).tone).toBe('red');
+    expect(resolveFtsStatusView(st('warning', 'هشدار'), false).tone).toBe('yellow');
+    // بی‌وضعیتِ موتور هیچ متنِ ثابتی ساخته نمی‌شود
+    const none = resolveFtsStatusView({ payload: {} } as never, false);
+    expect(none.code).toBe('insufficient');
+    expect(none.text).toContain('وضعیتِ عمومی');
   });
 
   it('قانون عبور گیت: بدون حذف و امتیاز دست کم 3', () => {

@@ -74,11 +74,14 @@ describe('خروج و واگرایی: از لایه‌های موتور', () => 
 });
 
 describe('فیبو و CHoCH', () => {
-  it('داخل کمربند ۶۱٫۸–۷۰ ⇒ fibonacci؛ خارج از هر دو ⇒ نه', () => {
+  it('داخل کمربند فیبو دیگر سیگنال/امتیاز نیست (context)؛ خارج از هر دو ⇒ نه', () => {
     const in_ = run(input({ fib: { zone_618_70: { in_zone: true } } }));
-    expect(in_.payload.setups).toContain('fibonacci');
     const out_ = run(input({ fib: { zone_618_70: { in_zone: false }, zone_33_40: { in_zone: false } } }));
-    expect(out_.payload.setups).not.toContain('fibonacci');
+    // دورِ J: «داخل باند بودن» نه ستاپ است نه امتیاز — فقط زمینه منتشر می‌شود
+    expect(in_.payload.setups).not.toContain('fibonacci');
+    expect(in_.payload.context).toContain('fib_zone_618_70');
+    expect(in_.score, 'فیبو تنها نمره را تکان نمی‌دهد').toBe(out_.score);
+    expect(out_.payload.context).toEqual([]);
   });
 
   it('CHoCH نزولی −۳ و صعودی +۲، همان‌که موتور می‌گوید', () => {

@@ -24,15 +24,16 @@ const plain = { toDisp: (p: number) => p, tsForDate: (d: string) => Date.parse(d
 /** ورودیِ بی‌الگو — تست‌ها فقط چیزی که می‌خواهند را فعال می‌کنند */
 function noPatterns(): PatternInputs {
   return {
-    jet: { active: false, level: null },
-    choch: { active: false, level: null },
-    pointHunt: { active: false, floor: null, touches: null, ts: null },
+    jet: { active: false, level: null, fromTs: null },
+    choch: { active: false, bullish: false, bearish: false, level: null },
+    pointHunt: { active: false, floor: null, touches: null, triggerTs: null, anchorTs: null },
     double: { active: false, level: null, breakout: false },
     doubleTop: { active: false, level: null },
     headShoulders: { active: false, neckline: null },
     thirdPeak: { active: false, level: null },
     ma14Exit: { active: false, level: null },
-    hourglass: { active: false, ma52Weekly: null, rsi14: null },
+    hourglass: { active: false, ma52Weekly: null, rsi5Weekly: null },
+    roles: {},
   };
 }
 
@@ -40,7 +41,8 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
   const payload = {
     jet: { active: true, resistance: 2758 },
     choch: { bearish: false, bullish: true, level: 1900 },
-    point_hunt: { active: true, touches: 4, floor_price: 1810, floor_idx: 77, floor_date: '2026-01-05' },
+    point_hunt: { active: true, touches: 4, floor_price: 1810, floor_idx: 77,
+      floor_date: '2026-01-05', trigger_date: '2026-01-09' },
     double_bottom: { active: true, neckline: 2100, pct_above_neck: 3.1 },
     exit_engine: {
       verdict: 'hold',
@@ -48,21 +50,27 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
       l3: { hs_break: true, neckline: 2210, third_peak: true, third_peak_level: 3050 },
     },
     hourglass: { active: true, ma52: 2980, weekly_rsi5: 24.6 },
+    roles: { jet: 'entry', point_hunt: 'entry', choch_bullish: 'entry', double_bottom: 'entry',
+             hs_break: 'exit', third_peak: 'warning', ma14_exit: 'exit', fib_zone: 'context' },
   } as unknown as FtsAnalysisData;
 
   it('هر هشت داور از جایِ خودش برداشته می‌شود، نه از حدسِ چارت', () => {
     const i = patternInputsFromFts(payload, plain);
-    expect(i.jet).toEqual({ active: true, level: 2758 });
-    expect(i.choch).toEqual({ active: true, level: 1900 });
+    expect(i.jet).toEqual({ active: true, level: 2758, fromTs: null });
+    expect(i.choch).toEqual({ active: true, bullish: true, bearish: false, level: 1900 });
     expect(i.pointHunt.active).toBe(true);
     expect(i.pointHunt.floor).toBe(1810);
     expect(i.pointHunt.touches).toBe(4);
-    expect(i.pointHunt.ts).toBe(Date.parse('2026-01-05T00:00:00Z'));
+    // تریگر و لنگر جدا می‌مانند (#221): مارکر رویِ کندلِ لمس+ریباند است
+    expect(i.pointHunt.triggerTs).toBe(Date.parse('2026-01-09T00:00:00Z'));
+    expect(i.pointHunt.anchorTs).toBe(Date.parse('2026-01-05T00:00:00Z'));
     expect(i.double).toEqual({ active: true, level: 2100, breakout: true });
     expect(i.headShoulders).toEqual({ active: true, neckline: 2210 });
     expect(i.thirdPeak).toEqual({ active: true, level: 3050 });
     expect(i.ma14Exit).toEqual({ active: true, level: 2450 });
-    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi14: 24.6 });
+    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 });
+    expect(i.roles.jet).toBe('entry');
+    expect(i.roles.third_peak).toBe('warning');
   });
 
   it('بی‌payload هیچ الگویی فعال نیست و هیچ قیمتی صفر نمی‌شود', () => {
@@ -78,7 +86,8 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     const i = patternInputsFromFts(bad, { ...plain, tsForDate: () => null });
     expect(i.jet.level).toBeNull();
     expect(i.pointHunt.floor).toBeNull();
-    expect(i.pointHunt.ts).toBeNull();
+    expect(i.pointHunt.triggerTs).toBeNull();
+    expect(i.pointHunt.anchorTs).toBeNull();
   });
 
   it('نمایِ بازدهی: همان داور با نسبتِ چارت به محور می‌آید (#193 × #187)', () => {
@@ -93,6 +102,7 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     } as unknown as FtsAnalysisData;
     const i = patternInputsFromFts(top, plain);
     expect(i.doubleTop).toEqual({ active: true, level: 4120 });
+    expect(i.double).toEqual({ active: false, level: null, breakout: false });
     expect(i.double.active).toBe(false);
     const specs = buildPatternOverlays(i, PATTERN_PREFS_DEFAULT, rows(45));
     const line = specs.find((s) => s.label === 'خط گردن (سقف دوقلو)');
@@ -106,7 +116,8 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
 
   it('جتِ فعالِ سرور ⇒ یک اورلی JET با هایلایتِ سه کندلی', () => {
     const specs = buildPatternOverlays(
-      { ...noPatterns(), jet: { active: true, level: 2758 } },
+      { ...noPatterns(), jet: { active: true, level: 2758, fromTs: t0 + 10 * DAY },
+        roles: { jet: 'entry' } },
       PATTERN_PREFS_DEFAULT,
       barRows,
     );
@@ -120,17 +131,17 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
 
   it('خاموش‌کردن جت ⇒ هیچ اورلی جت ساخته نمی‌شود', () => {
     const prefs: PatternPrefs = { ...PATTERN_PREFS_DEFAULT, jet: { ...PATTERN_PREFS_DEFAULT.jet, enabled: false } };
-    const specs = buildPatternOverlays({ ...noPatterns(), jet: { active: true, level: 2758 } }, prefs, barRows);
+    const specs = buildPatternOverlays({ ...noPatterns(), jet: { active: true, level: 2758, fromTs: null } }, prefs, barRows);
     expect(specs.find((s) => s.kind === 'jet')).toBeUndefined();
   });
 
   it('نقطه‌زنی بی‌تاریخِ لنگر رسم نمی‌شود — نشانگر روی کندلِ بی‌ربط بدتر از نبودن است', () => {
-    const noTs = { ...noPatterns(), pointHunt: { active: true, floor: 1810, touches: 4, ts: null } };
+    const noTs = { ...noPatterns(), pointHunt: { active: true, floor: 1810, touches: 4, triggerTs: null, anchorTs: t0 + 3 * DAY } };
     expect(buildPatternOverlays(noTs, PATTERN_PREFS_DEFAULT, barRows).find((s) => s.kind === 'pointhunt')).toBeUndefined();
-    const withTs = { ...noPatterns(), pointHunt: { active: true, floor: 1810, touches: 4, ts: t0 + 3 * DAY } };
+    const withTs = { ...noPatterns(), pointHunt: { active: true, floor: 1810, touches: 4, triggerTs: t0 + 8 * DAY, anchorTs: t0 + 3 * DAY } };
     const kept = buildPatternOverlays(withTs, PATTERN_PREFS_DEFAULT, barRows).find((s) => s.kind === 'pointhunt');
     expect(kept).toBeTruthy();
-    expect(kept!.points[0].timestamp).toBe(t0 + 3 * DAY);
+    expect(kept!.points[0].timestamp).toBe(t0 + 8 * DAY);
     expect(kept!.points[0].value).toBe(1810);
   });
 
@@ -144,9 +155,9 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
   });
 
   it('ساعت شنی بی‌MA52 باندِ تخت نمی‌سازد؛ با MA52 هم‌عرضِ ۳٪ می‌کشد', () => {
-    const bare = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: null, rsi14: 24 } }, PATTERN_PREFS_DEFAULT, barRows);
+    const bare = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: null, rsi5Weekly: 24 } }, PATTERN_PREFS_DEFAULT, barRows);
     expect(bare.find((s) => s.kind === 'hourglass')).toBeUndefined();
-    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, rsi14: 24.6 } }, PATTERN_PREFS_DEFAULT, barRows);
+    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 } }, PATTERN_PREFS_DEFAULT, barRows);
     const band = full.find((s) => s.kind === 'hourglass')!;
     expect(band.points[0].value).toBeCloseTo(2980 * 1.03, 6);
     expect(band.points[1].value).toBeCloseTo(2980 * 0.97, 6);
@@ -183,7 +194,7 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     });
 
     it('ساعت شنی هم از همان سقفِ ارتفاعِ بصری عبور می‌کند', () => {
-      const hg = { active: true, ma52Weekly: 101, rsi14: 22 };
+      const hg = { active: true, ma52Weekly: 101, rsi5Weekly: 22 };
       const tight = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, tightRows).filter((s) => s.kind === 'hourglass');
       const wide = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, wideRows).filter((s) => s.kind === 'hourglass');
       expect(tight).toHaveLength(2);
@@ -241,5 +252,38 @@ describe('سوییچ‌های UI (PatternToggles) + پایداری', () => {
     fireEvent.change(screen.getByTestId('pattern-opacity-jet'), { target: { value: '55' } });
     expect(usePatternPrefsStore.getState().prefs.jet.color).toBe('#ff00aa');
     expect(usePatternPrefsStore.getState().prefs.jet.opacity).toBeCloseTo(0.55, 6);
+  });
+});
+
+describe('سبکِ نقش‌محور (دورِ J) — تریگر، هشدار و خروج یکی نیستند', () => {
+  it('تریگرِ جت ممتد و پررنگ است و خط تا کندلِ منبع محدود شده', () => {
+    const specs = buildPatternOverlays(
+      { ...noPatterns(), jet: { active: true, level: 2758, fromTs: t0 + 5 * DAY }, roles: { jet: 'entry' } },
+      PATTERN_PREFS_DEFAULT, rows(30),
+    );
+    const s = specs.find((x) => x.kind === 'jet')!;
+    expect(s.role).toBe('entry');
+    expect(s.points.length).toBe(2);
+    expect(s.points[0].timestamp).toBe(t0 + 5 * DAY);
+    expect(s.points[0].value).toBe(s.points[1].value);
+    expect((s.styles as { style: string }).style).toBe('solid');
+    expect((s.styles as { size: number }).size).toBe(2);
+  });
+
+  it('خروجِ MA14 و سقفِ سوم خط‌چین‌اند و نقششان از موتور خوانده می‌شود', () => {
+    const specs = buildPatternOverlays(
+      {
+        ...noPatterns(),
+        ma14Exit: { active: true, level: 2450 },
+        thirdPeak: { active: true, level: 3050 },
+        roles: { ma14_exit: 'exit', third_peak: 'warning' },
+      },
+      PATTERN_PREFS_DEFAULT, rows(30),
+    );
+    const ex = specs.find((x) => x.kind === 'ma14exit')!;
+    expect(ex.role).toBe('exit');
+    expect((ex.styles as { style: string }).style).toBe('dashed');
+    const tp = specs.find((x) => x.kind === 'thirdpeak')!;
+    expect(tp.role).toBe('warning');
   });
 });

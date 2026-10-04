@@ -14,8 +14,8 @@
   • موجِ فیبو از زنجیرهٔ کف‌هایِ بالاترِ *نشکسته* می‌آید، و به‌محضِ اینکه پایانی
     زیرِ یکی از آن کف‌ها بسته شود زنجیره همان‌جا می‌شکند (شاهدِ منفی)
   • سطوحِ ابزار همان هفت نسبتِ جزوه‌اند و قیمت‌هایشان نزولی
-  • هر مارکرِ جتِ تاریخ‌دار با `_fts_jet_setup` رویِ همان برشِ تاریخچه می‌خواند
-  • چند جتِ پیاپی یک برچسب است، نه یکی‌بهیکی
+  • جت درِ تاریخچه مارکر نمی‌شود (فقط کندلِ آخر)، و هر رویدادِ دیگری از قاعدۀ پنل می‌خواند
+  • جت هرگز مارکرِ تاریخی نمی‌شود؛ رویدادهای زنجیره‌ایِ دیگر یک برچسب‌اند
   • دیگر هیچ `analyzeFts` در فرانت‌اند نیست — چارت رسم می‌کند، محاسبه نه
 """
 import datetime
@@ -108,32 +108,62 @@ ck("نمادی که تا سقف بالا رفته کمربندِ بی‌پهنا
 ck("لنگرِ آن به پیشینهٔ موج برمی‌گردد نه به آخرین کندل",
    bool(fz3) and fz3["leg"]["start"] < rally[-1]["time"])
 
-# ---------- ۴) تاریخِ مارکرها: عینِ قاعدهٔ پنل ----------
-hist = CH._fts_setup_history(up, sw)
-by_date = {c["time"]: i for i, c in enumerate(up)}
-jets = [e for e in hist if e["kind"] == "jet"]
-ck("مارکر می‌شناسد و ستاپ ثبت می‌کند", len(hist) > 0)
+# ---------- ۴) تاریخِ مارکرها: عینِ قاعدهٔ پنل، و بی‌جتِ تاریخی ----------
+# فیکسچرِ آرواره‌ای: پیوت‌هایِ fractal واقعی می‌سازد و CHoCHِ تاریخی می‌دهد،
+# پس آزمون‌هایِ ترتیب/برچسب/ادغام رویِ دادهٔ راست می‌ایستند (فیکسچرِ `up`
+# تنها جت می‌ساخت و با حذفِ جت خالی می‌ماند).
+def _saw(n_cycles, start_px=200.0, depth=0.9, decay=0.96):
+    out, top = [], start_px
+    for _c in range(n_cycles):
+        for j in range(4):
+            out.append(top * (1 + 0.02 * j))
+        nxt = top * depth
+        for j in range(4):
+            out.append(top - (top - nxt) * (j + 1) / 4)
+        top = nxt * decay
+    return out
+
+
+_saw_px = _saw(8)
+# و بعد یک شکستِ واقعی بالای کلِ پیشینه — چند واقعهٔ جت درِ میانهٔ تاریخ، که
+# هیچ‌کدام نباید مارکر بسازد (و کندلِ آخر هم نیست، پس today هم جت ندارد).
+_g = max(_saw_px)
+saw_series = series(_saw_px + [_g * 1.02, _g * 1.045, _g * 1.06, _g * 1.03, _g * 1.01])
+sw_saw = CH._fts_swings(saw_series, k=CH._FTS_SWING_K)
+hist = CH._fts_setup_history(saw_series, sw_saw)
+by_date = {c["time"]: i for i, c in enumerate(saw_series)}
+ck("مارکر می‌شناسد و ستاپ ثبت می‌کند (%d رویداد)" % len(hist), len(hist) > 0)
+ck("کنترل: فیکسچر پیوتِ کافی دارد (%d)" % len(sw_saw), len(sw_saw) >= 6)
 ck("هیچ رویدادی بیرون از تاریخچه نیست", all(e["date"] in by_date for e in hist))
 ck("رویدادها صعودیِ زمانی‌اند", all(a["date"] <= b["date"] for a, b in zip(hist, hist[1:])))
 ck("هیچ رویدادی به آینده نگاه نمی‌کند (همه پیش از کندلِ آخر)",
-   all(e["date"] < up[-1]["time"] for e in hist) or not hist)
+   all(e["date"] < saw_series[-1]["time"] for e in hist) or not hist)
 ck("برچسبِ هر رویداد از جدولِ خودِ موتور است",
    all(e["label"] == CH._FTS_SETUP_LABELS[e["kind"]] for e in hist))
 
-bad = []
-for e in [x for x in hist if x["kind"] == "jet"]:
-    i = by_date[e["date"]]
-    if not CH._fts_jet_setup(up[:i + 1])["active"]:
-        bad.append(e["date"])
-ck("هر مارکرِ جت با `_fts_jet_setup` روی همان برش تأیید می‌شود", not bad)
+# رأیِ مالک (دورِ J): جت فقط کندلِ آخر است، پس درِ تاریخچه هیچ مارکرِ جت نمی‌شود.
+# پینِ این گارد درِ همین دور برگردانده شد (پیش‌تر «مارکرِ جت دارد» را الزام می‌کرد).
+_ladder = CH.JET_LADDER
+broke = []
+for _i in range(1 + max(_ladder), len(saw_series)):
+    _res = max(float(saw_series[_i - 1 - _k]["high"]) for _k in _ladder)
+    _c = saw_series[_i]
+    if _res > 0 and float(_c["close"]) > _res and float(_c["close"]) >= float(_c["open"]):
+        broke.append(_i)
+ck("کنترل: همین تاریخچه واقعهٔ شکستِ نردبان دارد (broke=%d)" % len(broke), len(broke) > 0)
+ck("هیچ مارکرِ تاریخی جت ساخته نمی‌شود (%s)" % sorted({e["kind"] for e in hist}),
+   not [e for e in hist if e["kind"] == "jet"])
+ck("جدولِ برچسبِ ستاپ‌هایِ تاریخی جت ندارد", "jet" not in CH._FTS_SETUP_LABELS)
 
-# جت‌های پیاپی باید یک برچسب باشند: دو برچسب با فاصلهٔ یک روزه نداریم
+
 def _day(s):
     return datetime.date.fromisoformat(s)
 
 
-ck("جت‌های زنجیره‌ای ادغام می‌شوند (بدون برچسبِ تکراریِ روزِ بعد)",
-   all((_day(b["date"]) - _day(a["date"])).days != 1 for a, b in zip(jets, jets[1:])))
+for _kind in sorted({e["kind"] for e in hist}):
+    _ev = [e for e in hist if e["kind"] == _kind]
+    ck("رویدادهای زنجیره‌ایِ %s ادغام می‌شوند" % _kind,
+       all((_day(b["date"]) - _day(a["date"])).days != 1 for a, b in zip(_ev, _ev[1:])))
 
 # ---------- ۵) چارت دیگر موتورِ دوم ندارد ----------
 fe = os.path.join(ROOT, "frontend", "src")

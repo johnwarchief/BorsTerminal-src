@@ -5,7 +5,12 @@ import { DataQuality } from './signal';
 export const Timeframe = z.enum(['daily', 'weekly', 'monthly']);
 export type Timeframe = z.infer<typeof Timeframe>;
 
-export const SetupKind = z.enum(['breakout', 'pullback', 'fibonacci', 'choch', 'bearish_div', 'range', 'trend']);
+/**
+ * ستاپ‌ها = فقط «تریگرِ ورود» (taxonomyِ دورِ J، از `role` درِ خودِ موتور).
+ * فیبو اینجا نیست: سنجهٔ تاریخی گفت داخلِ کمربند بودن edge ندارد، پس نقشش
+ * `context` است و درِ `TechnicalPayload.context` منتشر می‌شود.
+ */
+export const SetupKind = z.enum(['breakout', 'pullback', 'choch', 'bearish_div', 'range', 'trend']);
 export type SetupKind = z.infer<typeof SetupKind>;
 
 /**
@@ -47,13 +52,26 @@ export type WeeklyTrend = z.infer<typeof WeeklyTrend>;
 export const TechnicalPayload = z.object({
   kind: z.literal('setup'),
   timeframe: Timeframe,
-  setups: z.array(SetupKind).default([]),
-  stopLossRef: StopLossRef.nullable().default(null),
+  setups: z.array(SetupKind).default([]),  stopLossRef: StopLossRef.nullable().default(null),
   stopLossPrice: z.number().nullable().default(null),
   keyLevels: z.array(KeyLevel).default([]),
   /** کیفیت داده: تاریخچه کوتاه تر از 50 کندل یعنی partial (فاز 4) */
   dataQuality: DataQuality.default('complete'),
   weekly: WeeklyTrend.nullish(),
+  /**
+   * وضعیتِ عمومیِ canonical، عینِ `_fts_status_block` درِ `api/chart.py`:
+   * کد (با اولویتِ حدِ ضرر ← خروجِ تأییدشده ← وتوی هفتگی ← تریگرِ امروز ←
+   * هشدار ← فقطِ زمینه ← بی‌سیگنال ← بی‌داده) و متنِ فارسیِ همان رأی.
+   * کارتِ «وضعیت FTS» و بج‌ها این را می‌خوانند؛ هیچ کامپوننتی متنِ ثابتِ
+   * خودش را جایِ رأیِ موتور نمی‌گذارد (باگِ «در انتظار شکست خط آبی» در همهٔ
+   * حالت‌ها).
+   */
+  status: z
+    .object({ code: z.string(), text: z.string() })
+    .nullable()
+    .nullish(),
+  /** هرچه نقشش «زمینه» است (کمربند فیبو، هم‌راستاییِ روند) — بی‌امتیاز و بی‌«ستاپ» */
+  context: z.array(z.string()).nullish(),
   /**
    * پرچم‌هایِ خامِ ستاپ، عینِ خروجیِ `_fts_analyze_candles` درِ `api/chart.py`.
    *

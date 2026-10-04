@@ -18,12 +18,15 @@ export type FtsLayerInput = {
   toDisp: (rial: number) => number;
   /** «YYYY-MM-DD»ِ سرور → timestamp، یا null اگر آن کندل درِ دید نیست */
   tsForDate: (date: string) => number | null;
+  /** سلسله‌مراتبِ دورِ J: سطح‌هایِ هفتگانه فیبو پیش‌فرض رسم نمی‌شوند (زمینه، مزاحمِ
+   *  کندل). همان flag درِ هر دو موتور رعایت می‌شود تا ظاهرِ دو موتور یکی بماند. */
+  showFibLevels?: boolean;
 };
 
 const num = (v: unknown): number | null =>
   typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
 
-/** دو نکتِ یک کمربند: از اولِ دید تا کندلِ آخر، با高低ِ همان کمربند */
+/** دو کرانۀ یک کمربند: از اولِ دید تا کندلِ آخر، با سقف و کفِ همان کمربند */
 const band = (
   id: string,
   group: string,
@@ -87,7 +90,7 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
     const hi = disp(z?.hi);
     if (lo != null && hi != null && hi > lo) out.push(band(`fib-${key}`, 'fts-fib', lo, hi, label, edge, fill, i));
   }
-  for (const lv of fib?.levels ?? []) {
+  for (const lv of i.showFibLevels ? fib?.levels ?? [] : []) {
     const p = disp(lv.price);
     if (p == null) continue;
     out.push({
@@ -102,10 +105,27 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
     });
   }
 
-  // ۲) ستاپ‌ها و سطوحِ تک‌خطی
+  // ۲) ستاپ‌ها و سطوحِ تک‌خطی — جت فقط وضعیتِ فعلی (کندلِ آخر)
   const jet = disp(fts.jet?.resistance);
   if (fts.jet?.active === true && jet != null) {
-    out.push(level('jet', jet, 'JET', FTS_OVERLAY_COLORS.jet, i));
+    const fromTs = fts.jet?.resistance_date ? i.tsForDate(fts.jet.resistance_date) : null;
+    if (fromTs != null && fromTs < i.anchorTs) {
+      out.push({
+        id: 'jet',
+        kind: 'segment',
+        group: 'fts-pattern',
+        points: [
+          { timestamp: fromTs, value: jet },
+          { timestamp: i.anchorTs, value: jet },
+        ],
+        color: FTS_OVERLAY_COLORS.jet,
+        label: 'JET',
+        width: 2,
+        dashed: false,
+      });
+    } else {
+      out.push(level('jet', jet, 'JET', FTS_OVERLAY_COLORS.jet, i));
+    }
   }
   const ch = disp(fts.choch?.level);
   if ((fts.choch?.bearish === true || fts.choch?.bullish === true) && ch != null) {
@@ -113,23 +133,41 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   }
   const neck = disp(fts.double_bottom?.neckline);
   if (fts.double_bottom?.active === true && neck != null) {
-    out.push(level('double-bottom', neck, 'خط گردن (دوقلو)', '#10b981', i));
+    out.push(level('double-bottom', neck, 'خط گردن (کف دوقلو)', '#10b981', i));
   }
   const floor = disp(fts.point_hunt?.floor_price);
-  const floorTs = fts.point_hunt?.floor_date ? i.tsForDate(fts.point_hunt.floor_date) : null;
-  if (fts.point_hunt?.active === true && floor != null && floorTs != null) {
+  // مارکرِ خرید رویِ کندلِ تریگر است، نه لنگرِ کفِ کانال (#221)
+  const triggerTs = fts.point_hunt?.trigger_date ? i.tsForDate(fts.point_hunt.trigger_date) : null;
+  if (fts.point_hunt?.active === true && floor != null && triggerTs != null) {
     out.push({
       id: 'point-hunt',
       kind: 'marker',
       group: 'fts-pattern',
-      points: [{ timestamp: floorTs, value: floor }],
+      points: [{ timestamp: triggerTs, value: floor }],
       color: '#a78bfa',
-      label: `نقطه‌زنی (${String(fts.point_hunt.touches ?? 0)} لمس)`,
+      label: `تریگر نقطه‌زنی (${String(fts.point_hunt.touches ?? 0)} لمس)`,
       width: 1,
     });
   }
 
-  // ۳) لایه‌های خروج -- حدِ ضرر و MA14 از لایۀ ۱، ساعت شنی و سقف سوم از ۳
+  // ۳) تریگرِ فعلیِ موتور (برجسته‌ترین انوتیشن، درِ هر دو موتور یکی)
+  const trig = fts.status?.trigger;
+  if (trig && typeof trig.price === 'number' && trig.price > 0 && trig.date) {
+    const tts = i.tsForDate(trig.date);
+    if (tts != null) {
+      out.push({
+        id: 'current-trigger',
+        kind: 'marker',
+        group: 'fts-pattern',
+        points: [{ timestamp: tts, value: i.toDisp(trig.price) }],
+        color: '#22d3ee',
+        label: `▲ ${trig.label ?? trig.kind}`,
+        width: 2,
+      });
+    }
+  }
+
+  // ۴) لایه‌های خروج -- حدِ ضرر و MA14 از لایۀ ۱، ساعت شنی و سقف سوم از ۳
   const stop = disp(fts.exit_engine?.l1?.hard_stop);
   if (stop != null) out.push(level('hard-stop', stop, 'حد ضرر', '#f23645', i, true));
   const ma14 = disp(fts.exit_engine?.l1?.ma14);

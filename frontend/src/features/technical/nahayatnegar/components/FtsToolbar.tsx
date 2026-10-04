@@ -25,6 +25,11 @@ interface FtsToolbarProps {
   onOpenIndicators: () => void;
   isFtsActive: boolean;
   onToggleFts: () => void;
+  /** سلسله‌مراتبِ دورِ J — هر دو پیش‌فرض خاموش */
+  showFibLevels: boolean;
+  onToggleFibLevels: () => void;
+  showHistoryEvents: boolean;
+  onToggleHistoryEvents: () => void;
   replayActive?: boolean;
   onToggleReplay?: () => void;
   isFullscreen: boolean;
@@ -58,6 +63,10 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   onOpenIndicators,
   isFtsActive,
   onToggleFts,
+  showFibLevels,
+  onToggleFibLevels,
+  showHistoryEvents,
+  onToggleHistoryEvents,
   replayActive,
   onToggleReplay,
   isFullscreen,
@@ -344,6 +353,28 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
         >
           <IconFts size={16} color={isFtsActive ? '#ffab00' : 'currentColor'} />
           <span>تحلیل FTS</span>
+        </button>
+
+        {/* دو کلیدِ سلسله‌مراتب (دورِ J): پیش‌فرض خاموش‌اند تا کندل عنصرِ اصلی بماند */}
+        <button
+          type="button"
+          className={`nn-btn ${showFibLevels ? 'warning-active' : ''}`}
+          onClick={onToggleFibLevels}
+          data-testid="nn-fib-levels-toggle"
+          aria-pressed={showFibLevels}
+          title="سطح‌هایِ هفتگانه فیبو رویِ چارت (کمربندها همیشه می‌مانند؛ عددِ سطوح درِ پنلِ «تحلیل ساختاری» هست)"
+        >
+          <span>سطح‌های فیبو</span>
+        </button>
+        <button
+          type="button"
+          className={`nn-btn ${showHistoryEvents ? 'warning-active' : ''}`}
+          onClick={onToggleHistoryEvents}
+          data-testid="nn-history-events-toggle"
+          aria-pressed={showHistoryEvents}
+          title="رویدادهایِ تاریخیِ CHoCH و کف دوقلو (جتِ تاریخی رسم نمی‌شود: جت فقط کندلِ آخر است)"
+        >
+          <span>رویدادهای تاریخی</span>
         </button>
       </div>
 

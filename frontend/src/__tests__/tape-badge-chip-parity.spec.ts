@@ -148,7 +148,6 @@ describe.skipIf(!PAYLOAD)('برابریِ سه‌راه رویِ ردیف‌ها
         tapeFilterVerdict(r, f, DEFAULT_TAPE_FILTER_CONFIG)).length };
       expect(badges, `${f}: بج با فرمول نمی‌خواند`).toBe(dyn);
     }
-    // eslint-disable-next-line no-console
     console.log(JSON.stringify(report));
   });
 });

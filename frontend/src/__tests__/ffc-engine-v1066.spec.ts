@@ -31,7 +31,8 @@ const payload = {
   jet: { active: true, resistance: 1500 },
   choch: { bearish: true, level: 1180 },
   double_bottom: { active: true, neckline: 1290 },
-  point_hunt: { active: true, floor_price: 1105, touches: 4, floor_date: '2026-01-08' },
+  point_hunt: { active: true, floor_price: 1105, touches: 4, floor_date: '2026-01-08',
+                 trigger_date: '2026-01-08' },
   exit_engine: { verdict: 'caution', l1: { hard_stop: 1049, ma14: 1270, ma14_exit: true }, l3: { third_peak: true, third_peak_level: 1500 } },
   hourglass: { active: true, ma52: 1250, weekly_rsi5: 24 },
 } as unknown as FtsAnalysisData;
@@ -45,7 +46,7 @@ describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
   it('کمربندها، سطوح، خطِ گردن، جت، CHoCH، حدِ ضرر و ساعت شنی همگی می‌آیند', () => {
     const layers = engineFtsLayers({ ...plain, fts: payload });
     const ids = layers.map((l) => l.id);
-    for (const want of ['fib-zone_33_40', 'fib-zone_618_70', 'fib-level-0.5', 'jet', 'choch',
+    for (const want of ['fib-zone_33_40', 'fib-zone_618_70', 'jet', 'choch',
                        'double-bottom', 'point-hunt', 'hard-stop', 'ma14-exit', 'third-peak', 'hourglass']) {
       expect(ids, `لایۀ ${want} رسم می‌شود`).toContain(want);
     }
@@ -54,6 +55,10 @@ describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
     expect(belt.kind).toBe('band');
     expect(belt.points.map((p) => p.value)).toEqual([1200, 1260]);
     expect(layers.find((l) => l.id === 'point-hunt')!.points[0].timestamp).toBe(Date.parse('2026-01-08T00:00:00Z'));
+    // سلسله‌مراتبِ دورِ J: سطح‌های فیبو پیش‌فرض رسم نمی‌شوند
+    expect(ids.filter((s) => String(s).startsWith('fib-level-'))).toEqual([]);
+    const withLevels = engineFtsLayers({ ...plain, fts: payload, showFibLevels: true });
+    expect(withLevels.map((l) => l.id)).toContain('fib-level-0.5');
   });
 
   it('عددِ سرور در فضایِ قیمتِ چارت می‌نشیند و بی‌سطحِ معتبر لایه نمی‌سازد', () => {

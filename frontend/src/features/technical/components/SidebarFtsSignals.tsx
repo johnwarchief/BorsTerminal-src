@@ -56,8 +56,10 @@ export function SidebarFtsSignals({ onSelect }: { onSelect: (s: string) => void 
                       {t.label}
                     </Badge>
                   ))}
-                  {r.tech_exit_verdict && r.tech_exit_verdict !== 'hold' ? (
-                    <Badge tone="yellow">خروج: {EXIT_FA[r.tech_exit_verdict] ?? r.tech_exit_verdict}</Badge>
+                  {r.tech_exit_verdict && r.tech_exit_verdict !== 'hold' && r.tech_exit_verdict !== 'unknown' ? (
+                    <Badge tone={r.tech_exit_verdict === 'stop' || r.tech_exit_verdict === 'exit' ? 'red' : 'yellow'}>
+                      خروج: {EXIT_FA[r.tech_exit_verdict] ?? r.tech_exit_verdict}
+                    </Badge>
                   ) : null}
                 </span>
               </button>
