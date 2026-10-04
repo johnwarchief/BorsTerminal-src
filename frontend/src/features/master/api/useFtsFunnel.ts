@@ -50,8 +50,41 @@ export type FtsFunnelResult = {
   opts: FunnelOptions;
 };
 
-export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {
-  const feed = useMarketFeed();
+// Phase پرفورمنس (N4-C): درِ /master دو مصرف‌کننده هم‌زمان این قیف را mount
+// می‌کنند (سربرگِ مستر برایِ candidate + خودِ پنلِ قیف). useMemo هر instance
+// جدا می‌شمارد، پس buildFunnel و funnelUniverse دو بار رویِ همان ورودیِ
+// یکسان می‌دوند. این کشِ ماژول با برابریِ مرجعِ همان آرگومان‌ها، شمارش را
+// به یک‌بار می‌رساند — بی‌هیچ تغییرِ خروجی. آرگومان‌ها همه از store/کوئری
+// می‌آیند و مرجع‌شان تا تغییرِ واقعی پایدار است؛ گسترشِ [...quickFilters]
+// حذف شد تا همین برابریِ مرجع برقرار بماند (تابلو همان آرایه را in-place
+// عوض نمی‌کند — tapeRows فقط می‌خواند).
+type BuildFunnelArgs = Parameters<typeof buildFunnel>;
+let lastFunnelArgs: BuildFunnelArgs | null = null;
+let lastFunnelResult: ReturnType<typeof buildFunnel> | null = null;
+
+function sharedBuildFunnel(...args: BuildFunnelArgs): ReturnType<typeof buildFunnel> {
+  if (lastFunnelArgs && lastFunnelArgs.length === args.length && lastFunnelArgs.every((v, i) => v === args[i])) {
+    return lastFunnelResult as ReturnType<typeof buildFunnel>;
+  }
+  lastFunnelArgs = args;
+  lastFunnelResult = buildFunnel(...args);
+  return lastFunnelResult;
+}
+
+type UniverseArgs = Parameters<typeof funnelUniverse>;
+let lastUniverseArgs: UniverseArgs | null = null;
+let lastUniverseResult: ReturnType<typeof funnelUniverse> | null = null;
+
+function sharedFunnelUniverse(...args: UniverseArgs): ReturnType<typeof funnelUniverse> {
+  if (lastUniverseArgs && lastUniverseArgs.length === args.length && lastUniverseArgs.every((v, i) => v === args[i])) {
+    return lastUniverseResult as ReturnType<typeof funnelUniverse>;
+  }
+  lastUniverseArgs = args;
+  lastUniverseResult = funnelUniverse(...args);
+  return lastUniverseResult;
+}
+
+export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {  const feed = useMarketFeed();
   // limit همان شمارۀ همیشۀ این تب است تا کوئریِ مشترک دوباره ساخته نشود؛
   // خودِ بک‌اند limit را نمی‌خواند و هر ۸۷۳ شرکتِ واجد را می‌فرستد.
   const screen = useFtsScreen(120);
@@ -79,7 +112,7 @@ export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {
   // صف را `funnelUniverse` + `techQueryQueue` می‌چینند (رتبۀ رسمیِ بک‌اند) —
   // ترتیبِ تابلو با هر رفرش عوض می‌شود و «کی سنجیده شد» را قمار می‌کرد.
   const queue = useMemo(() => {
-    const u = funnelUniverse(mode, boardRows, cfg, [...quickFilters], preset, screen.data?.data ?? []);
+    const u = sharedFunnelUniverse(mode, boardRows, cfg, quickFilters, preset, screen.data?.data ?? []);
     return techQueryQueue(u.ordered, u.rank, TECH_QUERY_CAP);
   }, [mode, boardRows, cfg, quickFilters, preset, screen.data]);
 
@@ -90,15 +123,20 @@ export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {
     [portfolio.data],
   );
 
+  const funnelCtx = useMemo(
+    () => ({
+      mode,
+      tape,
+      screenAsOf: screen.data?.as_of ?? null,
+      techAsOf: tech.asOf,
+    }),
+    [mode, tape, screen.data, tech.asOf],
+  );
+
   const funnel = useMemo(
     () =>
-      buildFunnel(boardRows, cfg, [...quickFilters], screen.data?.data ?? [], basket, preset, tech.map, opts, {
-        mode,
-        tape,
-        screenAsOf: screen.data?.as_of ?? null,
-        techAsOf: tech.asOf,
-      }),
-    [boardRows, screen.data, basket, cfg, quickFilters, preset, tech.map, tech.asOf, opts, mode, tape],
+      sharedBuildFunnel(boardRows, cfg, quickFilters, screen.data?.data ?? [], basket, preset, tech.map, opts, funnelCtx),
+    [boardRows, screen.data, basket, cfg, quickFilters, preset, tech.map, opts, funnelCtx],
   );
 
   return {

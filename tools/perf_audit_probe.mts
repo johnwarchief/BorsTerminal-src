@@ -253,12 +253,19 @@ await scenario('scroll-market-10s', '/market', 3000, async () => {
 // Tab loop ×3 با heap در هر پاس
 const routes = ['/market', '/technical', '/fundamental', '/master', '/portfolio', '/strategy-tree'];
 const passes: unknown[] = [];
-for (let pass = 0; pass < (QUICK ? 1 : 3); pass++) {
+for (let pass = 0; pass < (QUICK ? 1 : Number(arg('passes', '3'))); pass++) {
   for (const r of routes) {
     await page.goto(BASE + '#' + r, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1600);
   }
-  passes.push({ pass, heapMB: await heapMB(), nodes: (await metrics()).nodes, listenersAdd: (await perfSide()).listenerAdd });
+  passes.push({
+    pass,
+    heapMB: await heapMB(),
+    nodes: (await metrics()).nodes,
+    jsListeners: (await metrics()).listeners,
+    canvases: await page.evaluate(() => document.querySelectorAll('canvas').length),
+    listenersAdd: (await perfSide()).listenerAdd,
+  });
 }
 (results.scenarios as Record<string, unknown>)['tab-loop'] = { passes, routes };
 console.log('tab-loop:', JSON.stringify(passes));
