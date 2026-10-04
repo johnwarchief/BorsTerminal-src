@@ -94,3 +94,47 @@ PHASE عوض نشد. ابزارها: `tools/perf_audit_probe.mts` (جدید)،
 
 FTS logic، ودوی هفتگی، ساعت شنی، adjustment، معنای داده، UX IA و **انیمیشن‌ها**
 دست‌نخورده — هر fix پیشنهادی باید «همان تجربه، تسکِ کمتر» باشد.
+
+## نتایجِ optimization (Steps 1–8 — پس از `5e132dd` + fixِ نشت)
+
+سه وضعیت در یک پروب (`tools/perf_audit_probe.mts`)، همان آدرس و همان پنجره‌ها؛
+عددِ دستکاری‌شده نیست: «baseline» = `a4e0454`، «میانی» = پس از Stepهای 1–4 و
+پیشِ fixِ نشت (`_audit/perf_audit_after.json`)، «نهایی» = با fixِ نشت
+(`_audit/perf_audit_final.json`، ۱۰ پاس).
+
+| سنجش (ms مگر ذکرِ واحد) | baseline | میانی | نهایی |
+|---|---:|---:|---:|
+| idle-market ۶۰s — Task | 2757 | 731 | **550** |
+| scroll-market — Task | 281 | 73 | **59** |
+| heavy-tree-flow ۲۰s — Task | 7861 | 2006 | **1346** |
+| heavy-tree-flow — DOM nodes | 8100 | 12454 | **5579** |
+| heavy-master-dossier ۲۰s — Task | 985 | 280 | **172** |
+| symbol-stress ۲۰ — Task / heap پس | 1823 / 32.4MB | 905 / 61.2MB | 933 / **28.0MB** |
+| tab-loop ۱۰ پاس — listener زنده | — ( ثبت نمی‌شد ) | 687→1491 (+97/پاس) | **521 ثابت** |
+| tab-loop ۱۰ پاس — heap | 22.9→29.7MB/3پاس | 24.6→57.2MB | **17.9→20.6MB (سقفِ صاف)** |
+| فراخوانِ تکراریِ mstat در همان revision (بک‌اند) | 295–406 | **5–21 (parity بایت‌به‌بایت)** | 5–21 |
+| بدنهٔ پولینگِ بی‌تغییری | 4.1MB کامل | **۱۵۸B دلتا + snapshotِ هم‌هویت** | همان |
+
+هدف‌های Step7 هر سه محقق شدند: بی‌تغییری→fan-outِ نزدیکِ صفر (تستِ `f3===f2`)،
+mstatِ تکراری→CPUِ نزدیکِ صفر، درخت→کاهشِ ۸۳٪ از ۷٫۹s.
+
+### نشتِ /technical — اثبات، ریشه، بستن
+
+- اثبات: هر سیکلِ market↔technical دقیقاً `document:keydown/mousedown/touchstart`
+  را +۱ می‌کرد (CDP JSEventListeners ۵ سیکل: 247→752).
+- ریشه: `dispose(chartContainerRef.current)` در cleanupِ passive — ریف پیش از
+  cleanup تهی می‌شد و گاردِ `if` دیسپوز را بی‌صدا رد می‌کرد (klinecharts v10).
+- fix: قفلِ میزبان در `hostEl` زمانِ `init` و دیسپوزِ همان (`KLineChartWrapper.tsx`).
+- پس از fix: ۱۰ سیکل ⇒ JSEventListeners 247→251، documentها بدونِ رشد، هیپِ
+  پسِ GCِ اجباری 14.1→16.3MB و صاف. رفتارِ cache (symbol-stress heap +7MB و
+  سپس بی‌رشد) نشت نیست؛ gcTimeِ TanStack است — سند شد، پاک‌سازیِ حدسی نشد.
+- KLineCharts دوم (second engine): بی‌فعال که بود؛ سوییچِ فعال‌سازی انجام نشد (Step4-D).
+
+### بازگشتِ انجماد
+
+`dev/test_roundm_freeze.py` = 6 pass / 0 fail / 1 skip با همان توزیعِ پین‌شده
+(seen up=35/range=5؛ PERMITTED=35/REJECT=5)؛ `dev/run_all_tests.py` = ALL SUITES
+PASSED؛ vitest فرانت 1425 تست در 134 پرونده؛ tsc/eslint/CJK = صفر.
+
+**راستی‌آزمایی‌نشده:** قضاوتِ pilot jev در تمامِ فازِ optimization در دسترس نبود
+(timeout مکرر) — نصابِ «دو jev» فقط با نیمۀ browser خوانده شد.
