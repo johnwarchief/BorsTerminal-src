@@ -1,7 +1,10 @@
 // features/master/ui/StrategyTreeDrawer.tsx -- دیاگرام درختی و تنظیمات شخصی‌سازی استراتژی ۴ مرحله‌ای FTS
+// این تنظیمات فقط متن برنامۀ شخصی و نمایشِ همین پنل را رویِ همین دستگاه نگه می‌دارد؛
+// حکم موتور FTS (ودوی هفتگی، آستانه‌های غربالگری) از سرور می‌آید و با این پنل تغییر نمی‌کند.
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import {
   type StrategyTreeConfig,
   type TechnicalBranchConfig,
@@ -13,14 +16,13 @@ import {
 export function StrategyTreeDrawer({
   open,
   onClose,
-  onApplyTree,
 }: {
   open: boolean;
   onClose: () => void;
-  onApplyTree?: (config: StrategyTreeConfig) => void;
 }) {
   const [config, setConfig] = useState<StrategyTreeConfig>(loadStrategyTree);
   const [activeTab, setActiveTab] = useState<'visual' | 'advanced'>('visual');
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
 
   useEffect(() => {
     if (open) {
@@ -37,7 +39,6 @@ export function StrategyTreeDrawer({
 
   const handleSave = () => {
     saveStrategyTree(config);
-    if (onApplyTree) onApplyTree(config);
     onClose();
   };
 
@@ -45,21 +46,23 @@ export function StrategyTreeDrawer({
     const next = { ...DEFAULT_STRATEGY_TREES.standard_trend };
     setConfig(next);
     saveStrategyTree(next);
-    if (onApplyTree) onApplyTree(next);
   };
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="strategy-tree-title"
+      role="presentation"
       className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="glass-panel relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl"
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="strategy-tree-title"
+        className="glass-panel relative flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl outline-none overscroll-contain"
         data-testid="strategy-tree-modal"
       >
         {/* سربرگ */}
@@ -73,7 +76,7 @@ export function StrategyTreeDrawer({
                 شخصی‌سازی نمودار درختی استراتژی ۴ مرحله‌ای FTS
               </h2>
               <span className="text-2xs text-text-muted">
-                تنظیم قواعد وتو، آستانه‌های غربالگری و مدیریت سرمایه در هر شاخه از زنجیره
+                این تنظیمات فقط برنامۀ شخصیِ شما را روی همین دستگاه ذخیره می‌کند؛ حکم موتور FTS را تغییر نمی‌دهد
               </span>
             </div>
           </div>
@@ -430,7 +433,7 @@ export function StrategyTreeDrawer({
               onClick={handleSave}
               className="rounded-lg bg-accent-blue px-4 py-1.5 font-bold text-black hover:bg-accent-blue/90 transition-colors shadow-[0_0_12px_rgba(56,189,248,0.25)]"
             >
-              ذخیره و اعمال بر الگوریتم
+              ذخیرهٔ برنامۀ شخصی
             </button>
           </div>
         </div>

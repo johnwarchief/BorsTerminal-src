@@ -24,6 +24,82 @@ export const INDENT = 15;
 export const LEAF_W = 244;
 export const HEAD_W = 210;
 
+/* ----اندازۀ متنِ واقعی: برچسبِ فارسیِ بلند باید داخلِ کارت بشکند، نه اینکه
+   از لبۀ ۲۴۴پیکسلی بیرون بزند (Task #78). قیاس با contextِ canvas و فال‌بک
+   تخمینی برایِ محیط‌های بی‌canvas (jsdom). ---- */
+const LEAF_FS = 11.5;
+const HEAD_FS = 11;
+const LEAD_LINE = 14;
+const TEXT_INNER_W = { leaf: LEAF_W - 20, head: HEAD_W - 8 };
+
+let measureCtx: CanvasRenderingContext2D | null | undefined;
+let measureFontFamily: string | undefined;
+
+function glyphWidth(text: string, fs: number): number {
+  if (typeof measureCtx === 'undefined') {
+    try {
+      const canvas = document.createElement('canvas');
+      measureCtx = canvas.getContext('2d');
+      measureFontFamily = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    } catch {
+      measureCtx = null;
+    }
+  }
+  if (measureCtx) {
+    measureCtx.font = `900 ${fs}px ${measureFontFamily}`;
+    return measureCtx.measureText(text).width;
+  }
+  // فال‌بکِ محافظه‌کار: فارسیِ پررنگ ≈ ۰٫۵۴ِ اندازهٔ فونت به ازای هر نویسه
+  return text.length * fs * 0.54;
+}
+
+/** واژگان را خط‌به‌خط می‌چیند؛ اگر سه خط هم نشد، با «…» کوتاه می‌کند. */
+function wrapLabel(label: string, kind: 'head' | 'leaf'): { lines: string[]; fs: number } {
+  const maxW = TEXT_INNER_W[kind];
+  for (const fs of kind === 'leaf' ? [LEAF_FS, 10.5] : [HEAD_FS, 10]) {
+    const words = label.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let cur = '';
+    for (const word of words) {
+      const next = cur ? `${cur} ${word}` : word;
+      if (glyphWidth(next, fs) <= maxW || !cur) cur = next;
+      else {
+        lines.push(cur);
+        cur = word;
+      }
+    }
+    if (cur) lines.push(cur);
+    if (lines.length <= 3) {
+      if (lines.length === 3 && glyphWidth(lines[2], fs) > maxW) {
+        let tail = lines[2];
+        while (tail.length > 1 && glyphWidth(`${tail}…`, fs) > maxW) tail = tail.slice(0, -1);
+        lines[2] = `${tail}…`;
+      }
+      return { lines, fs };
+    }
+  }
+  // سه خط هم نشد (برچسبِ بی‌فاصلۀ بسیار بلند): تک‌واژگانی می‌شکند و خطِ آخر حذف
+  const fs = kind === 'leaf' ? 10 : 9.5;
+  const lines: string[] = [];
+  let cur = '';
+  for (const ch of label) {
+    const next = cur + ch;
+    if (glyphWidth(next, fs) <= maxW) cur = next;
+    else {
+      lines.push(cur);
+      cur = ch;
+      if (lines.length === 3) break;
+    }
+  }
+  if (lines.length < 3 && cur) lines.push(cur);
+  else lines[2] = lines[2].slice(0, -1) + '…';
+  return { lines, fs };
+}
+
+/** قدِ سطرِ تازه‌شدهٔ هر دو سرِ شاخه و برگ */
+const HEAD_EXTRA = 12;
+const LEAF_EXTRA = LEAD_LINE;
+
 export interface MapRow {
   id: string;
   zone: FtsZone;
@@ -35,6 +111,10 @@ export interface MapRow {
   h: number;
   midY: number;
   right: number;
+  /** برچسبِ خط‌شکسته بر پایۀ اندازۀ واقعیِ متن (۱ تا ۳ خط) */
+  lines: string[];
+  /** اندازهٔ فونتِ همان سطر — همان چیزی که با آن اندازه‌گیری شد */
+  fs: number;
 }
 
 export interface ZoneBox {
@@ -67,10 +147,15 @@ export interface MapLayout {
   fullHeight: number;
 }
 
-/** قدِ یک سطر: سرِ شاخه کوتاه، گرهٔ برگ بلند */
-function rowH(kind: 'head' | 'leaf'): number {
-  return kind === 'head' ? ROW_HEAD_H : ROW_LEAF_H;
+/** قدِ یک سطر: پایه + سرِ خطهایِ اضافه — تک‌خطی‌ها دقیقاً قدِ همیشگی را دارند */
+function rowH(kind: 'head' | 'leaf', lineCount = 1): number {
+  const base = kind === 'head' ? ROW_HEAD_H : ROW_LEAF_H;
+  const extra = kind === 'head' ? HEAD_EXTRA : LEAF_EXTRA;
+  return base + Math.max(0, lineCount - 1) * extra;
 }
+
+/** فاصلۀ عمودیِ خطهایِ برچسبِ چندخطی — رسمِ tspan باید همین را بزند */
+export const ROW_LEAD = { head: HEAD_EXTRA, leaf: LEAF_EXTRA } as const;
 
 /** ترتیبِ خواندنِ چارت: والد پیش از فرزند، فرزندان به ترتیبِ `order` */
 function walk(model: FtsChartModel, rootId: string, out: { id: string; depth: number }[], skip: (id: string) => boolean) {
@@ -99,11 +184,28 @@ export function layoutMap(model: FtsChartModel, collapsed: Set<string> = new Set
     perZone.set(z.key, list);
   }
 
+  // هر برچسب یک‌بار اندازه‌گیری/خط‌بندی می‌شود و همان نتیجه در قد و رسم می‌نشیند
+  const wrapOf = new Map<string, { lines: string[]; fs: number }>();
+  const wrapFor = (id: string, kind: 'head' | 'leaf', label: string) => {
+    let w = wrapOf.get(id);
+    if (!w) {
+      w = wrapLabel(label, kind);
+      wrapOf.set(id, w);
+    }
+    return w;
+  };
+
   // بلندترین ستون، قدِ بوم را تعیین می‌کند (چهار Zone هم‌قد رسم می‌شوند)
   let tallest = 0;
   for (const z of ZONES) {
     const list = perZone.get(z.key) ?? [];
-    const h = list.reduce((acc, r) => acc + rowH(model.byId.get(r.id)?.kind ?? 'leaf') + ROW_GAP, PAD_TOP);
+    const h = list.reduce((acc, r) => {
+      const node = model.byId.get(r.id);
+      if (!node) return acc;
+      const kind = node.kind as 'head' | 'leaf';
+      const wr = wrapFor(r.id, kind, node.label);
+      return acc + rowH(kind, wr.lines.length) + ROW_GAP;
+    }, PAD_TOP);
     if (h > tallest) tallest = h;
   }
 
@@ -129,7 +231,8 @@ export function layoutMap(model: FtsChartModel, collapsed: Set<string> = new Set
       const node = model.byId.get(r.id);
       if (!node) continue;
       const kind = node.kind;
-      const h = rowH(kind);
+      const wr = wrapFor(r.id, kind, node.label);
+      const h = rowH(kind, wr.lines.length);
       const w = kind === 'head' ? HEAD_W : LEAF_W;
       // تورفتگی از راست: لبۀ راستِ فرزند INDENT واحد چپ‌تر از والد
       const right = boxRight - r.depth * INDENT;
@@ -144,6 +247,8 @@ export function layoutMap(model: FtsChartModel, collapsed: Set<string> = new Set
         h,
         midY: y + h / 2,
         right,
+        lines: wr.lines,
+        fs: wr.fs,
       };
       rows.push(row);
       y += h + ROW_GAP;

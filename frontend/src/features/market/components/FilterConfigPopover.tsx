@@ -83,11 +83,16 @@ export function FilterConfigPopover({
       onClose();
     };
     const onScrollOrResize = () => onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
       window.removeEventListener('scroll', onScrollOrResize, true);
       window.removeEventListener('resize', onScrollOrResize);
     };

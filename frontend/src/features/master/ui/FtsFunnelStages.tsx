@@ -11,7 +11,7 @@
 //     «سنجیده نشد» می‌خورد و درِ قیف نمی‌سوزد.
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
@@ -73,6 +73,53 @@ function fundRule(o: FunnelOptions): string {
 }
 
 const ORDER: FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
+
+// ---- برگشتِ قیف (Round M §۹، باقی‌ماندۀ ۲): مرحلۀ فعال و scroll پیش از رفتن به
+// Master در sessionStorage ثبت می‌شوند و پس از بازگشت یک‌بار بازخوانده می‌شوند.
+// بی‌store سراسری؛ snapshot مصرف‌شده پاک می‌شود تا ورودِ تازه از صفر باشد.
+export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
+
+type FunnelSnap = { stage: FunnelStageKey; scroll: number };
+
+function readFunnelSnap(): FunnelSnap | null {
+  try {
+    const raw = sessionStorage.getItem(FUNNEL_SNAP_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as Partial<FunnelSnap>;
+    if (p.stage && ORDER.includes(p.stage as FunnelStageKey) && typeof p.scroll === 'number') {
+      return { stage: p.stage as FunnelStageKey, scroll: p.scroll };
+    }
+  } catch {
+    /* snapshot ناقص = بی snapshot */
+  }
+  return null;
+}
+
+function scrollTargets(): HTMLElement[] {
+  // در این پوسته هر دو آرایش دیده شده: .app-content اسکرول‌کنندهٔ داخلی است،
+  // ولی در عرض‌های بلندِ قیف خودِ سند می‌لغزد — پس هر دو نامزد می‌شوند.
+  const out: HTMLElement[] = [];
+  const inner = document.querySelector('.app-content');
+  if (inner) out.push(inner as HTMLElement);
+  const doc = (document.scrollingElement ?? document.documentElement) as HTMLElement | null;
+  if (doc && !out.includes(doc)) out.push(doc);
+  return out;
+}
+
+function readAppScroll(): number {
+  return Math.max(0, ...scrollTargets().map((t) => t.scrollTop));
+}
+
+function applyAppScroll(v: number): boolean {
+  let done = false;
+  for (const t of scrollTargets()) {
+    if (t.scrollHeight - t.clientHeight >= v) {
+      t.scrollTop = v;
+      done = true;
+    }
+  }
+  return done;
+}
 
 /**
  * دربِ قیف = همان افقی که درِ «درخت استراتژی» و داوریِ نماد انتخاب می‌شود.
@@ -601,18 +648,47 @@ export function FtsFunnelStages({
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
+  const [snap] = useState(readFunnelSnap);
+  const [active, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
   // کلیکِ سطر یک گذرِ واقعی است، نه فقط یک استور: URL نماد را نگه می‌دارد تا
   // «← بازگشت» و دکمۀ عقبِ مرورگر هر دو به همان قیف برسند (Round M §۱۰).
   const pick = (s: string) => {
+    try {
+      sessionStorage.setItem(FUNNEL_SNAP_KEY, JSON.stringify({ stage: active, scroll: readAppScroll() }));
+    } catch {
+      /* حافظه پر/غیرقابل دسترس: بازگشت بی‌اسکرول بهتر از بی‌عبور است */
+    }
     setSymbol(s);
     navigate(`/master/${encodeURIComponent(s)}`);
   };
-  const [active, setActive] = useState<FunnelStageKey>('tape');
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
   const { funnel, mode, tape, tech, quickFilters, opts } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);
+
+  // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
+  // تا سطر به اندازه نگه داشته نشده، تلاشِ بعدی رندر دوباره می‌آزماید.
+  const scrollRestored = useRef(false);
+  useEffect(() => {
+    if (!snap || scrollRestored.current) return;
+    if (snap.scroll <= 0 || scrollTargets().length === 0) {
+      scrollRestored.current = true;
+      try {
+        sessionStorage.removeItem(FUNNEL_SNAP_KEY);
+      } catch {
+        /* بی‌مصرف باقی می‌ماند و دفعۀ بعد دوباره خوانده می‌شود */
+      }
+      return;
+    }
+    if (!applyAppScroll(snap.scroll)) return; // محتوا هنوز کوتاه است — رندرِ بعد دوباره می‌آزماید
+    scrollRestored.current = true;
+    try {
+      sessionStorage.removeItem(FUNNEL_SNAP_KEY);
+    } catch {
+      /* همان بالا */
+    }
+  }, [snap, funnel]);
 
   const stages = ORDER.map((k) => funnel.stages[k]);
   // شمارشِ واقعیِ درِ تحویل: «چند تا واقعاً» — نه اینکه برایِ رسیدن به ۱۰ نماد
@@ -764,7 +840,7 @@ export function FtsFunnelStages({
         </div>
         <span className="ms-auto text-3xs text-text-muted">
           ورودیِ قیف: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
-          {toFaDigits(funnel.boardScope)} نمادِ زندهٔ تابلو ← {toFaDigits(funnel.total)} نشانه
+          از {toFaDigits(funnel.boardScope)} نمادِ زندهٔ تابلو، {toFaDigits(funnel.total)} نشانه
         </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست. */}
         {tech.wanted > 0 ? (

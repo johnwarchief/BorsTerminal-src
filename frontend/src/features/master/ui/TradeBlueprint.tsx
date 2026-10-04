@@ -141,7 +141,7 @@ export function TradeBlueprint({
         </button>
         <span className="text-2xs leading-5 text-text-muted">
           {assumedCapital
-            ? `سرمایهٔ فرضی پیش‌فرض ${toman(DEFAULT_ASSUMED_CAPITAL)} تومان در نظر گرفته شد تا پله‌ها فوراً محاسبه شوند؛ همین اینپوت قابل ویرایش آنی است.`
+            ? `سرمایهٔ فرضی پیش‌فرض ${toman(DEFAULT_ASSUMED_CAPITAL)} تومان در نظر گرفته شد تا پله‌ها فوراً محاسبه شوند؛ همین ورودی قابل ویرایش آنی است.`
             : plan.industryRemainingPct != null
               ? 'ظرفیت باقی‌ماندهٔ صنعت و سقف ریسک، وزن هر پله را محدود می‌کند.'
               : 'وزن هر پله از سطح ریسک استخراج شده است.'}

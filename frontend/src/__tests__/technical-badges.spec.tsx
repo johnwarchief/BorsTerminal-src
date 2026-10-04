@@ -122,7 +122,7 @@ describe('کارت تحلیل ساختاری', () => {
     expect(panel.textContent).toContain('ماهانه');
     expect(panel.textContent).toContain('کمربند طلایی');
     expect(panel.textContent).toContain('حد ضرر سخت');
-    expect(panel.textContent).toContain('کف سوینگ');
+    expect(panel.textContent).toContain('زیرِ کف ۲۰ نشستِ اخیر');
     expect(panel.textContent).toContain('RSI');
     // ستاپ شکار نقطه فعال
     const setups = setupBadgesOf(fixture());

@@ -1,5 +1,5 @@
 // shared/components/Modal.tsx -- پنجره مودال ساده
-import { useEffect } from 'react';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 
 export function Modal({
   title,
@@ -10,25 +10,22 @@ export function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const panelRef = useDialogA11y<HTMLDivElement>({ open: true, onClose });
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      role="presentation"
     >
       <div
-        className="glass-panel scale-in w-full max-w-2xl p-6"
+        ref={panelRef}
+        tabIndex={-1}
+        className="glass-panel scale-in w-full max-w-2xl p-6 outline-none overscroll-contain"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-black text-text-primary">{title}</h2>

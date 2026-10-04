@@ -1,9 +1,10 @@
 // features/master/routes/MasterPage.tsx -- داشبورد ایجنت ارشد (بازطراحی M-03)
 // v3: لایوت full-bleed (گیج + خلاصهٔ تحلیلی مدیریتی آفلاین) + استپر چهار گیتی سخت‌گیرانه
 // + ماشین وتو (بدون میانگین خطی) + ماشین‌حساب برنامهٔ معاملاتی/DCA + خروج ۵۰٪ + اکشن‌های سبد/واچ‌لیست.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
+import { RetryAction } from '@shared/components/RetryAction';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useStrategyStore } from '@shared/stores/strategyStore';
@@ -53,7 +54,7 @@ import { ManagementSummary } from '../ui/ManagementSummary';
 import { ExplainableAuditBox } from '../ui/ExplainableAuditBox';
 import { StrategyHorizonSelector } from '../ui/StrategyHorizonSelector';
 import { StrategyTreeDrawer } from '../ui/StrategyTreeDrawer';
-import { FtsFunnelStages } from '../ui/FtsFunnelStages';
+import { FtsFunnelStages, FUNNEL_SNAP_KEY } from '../ui/FtsFunnelStages';
 import { FtsAnalystModal } from '@widgets/FtsAnalystModal';
 
 const AGENT_FA: Record<string, string> = {
@@ -62,6 +63,15 @@ const AGENT_FA: Record<string, string> = {
   tape: 'تابلو',
   portfolio: 'پرتفوی',
 };
+
+/** popstate درِ سطحِ ماژول ثبت می‌شود: شنوندهٔ داخلِ کامپوننت از رویدادی که
+ *  خودِ کامپوننت را mount کرده بی‌خبر می‌ماند (اول event، بعد effect). */
+let lastPopAt = 0;
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    lastPopAt = Date.now();
+  });
+}
 
 export default function MasterPage() {
   const params = useParams();
@@ -73,6 +83,20 @@ export default function MasterPage() {
   const horizon = useStrategyStore((s) => s.horizon);
   const setHorizon = useStrategyStore((s) => s.setHorizon);
   const location = useLocation();
+  // عقبِ واقعیِ مرورگر از نمادِ قیف ⇒ همان قیف: اگر تازه popstate بود و
+  // snapshotِ قیف دست‌نخورده مانده، نمادِ استور را رها می‌کنیم تا قیف رسم شود
+  // و همان stage/scroll را خودش برگرداند (Round M §۹ باقی‌مانده ۲).
+  useEffect(() => {
+    if (params.symbol || !stored) return;
+    if (Date.now() - lastPopAt > 800) return;
+    let pending = false;
+    try {
+      pending = sessionStorage.getItem(FUNNEL_SNAP_KEY) !== null;
+    } catch {
+      pending = false;
+    }
+    if (pending) clearSymbol();
+  }, [params.symbol, stored, clearSymbol]);
   /** §۱۰ Round M: بازگشتِ واقعی — اگر از قیف آمده‌ایم به عقب برمی‌گردیم و
    *  stateِ محلیِ آن (چیپ‌ها، جست‌وجو، اسکرول) می‌ماند؛ بی‌تاریخچه به خودِ قیف. */
   const goBackToFunnel = () => {
@@ -299,7 +323,7 @@ export default function MasterPage() {
         >
           ← بازگشت
         </button>
-        <Link to="/strategy-tree" className="hover:text-accent-blue">FTS Strategy</Link>
+        <Link to="/strategy-tree" className="hover:text-accent-blue">استراتژی FTS</Link>
         <span aria-hidden>/</span>
         <Link to="/master" onClick={(e) => { e.preventDefault(); goBackToFunnel(); }} className="hover:text-accent-blue">
           قیف غربالگری
@@ -307,7 +331,7 @@ export default function MasterPage() {
         <span aria-hidden>/</span>
         <span className="font-bold text-text-primary">{symbol}</span>
         <span aria-hidden>/</span>
-        <span>Master</span>
+        <span>تحویل</span>
         <span aria-hidden>/</span>
         <span>جزئیات</span>
       </nav>
@@ -331,6 +355,14 @@ export default function MasterPage() {
           </span>
         </div>
       </div>
+
+      {planFeed.isError ? (
+        <EmptyState
+          title={`نتیجۀ FTS نماد ${symbol} نرسید`}
+          hint="تا رسیدنِ پاسخ، حکم «سنجیده نشد» نشان داده می‌شود"
+          action={<RetryAction onRetry={() => void planFeed.refetch()} testId="master-plan-retry" />}
+        />
+      ) : null}
 
       <MasterDossierPanel dossier={dossier} />
       <MasterFtsDetails

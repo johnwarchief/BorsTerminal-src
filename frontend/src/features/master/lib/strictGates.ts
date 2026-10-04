@@ -1,5 +1,5 @@
 // features/master/lib/strictGates.ts -- ماشین حالت وتو (بدون میانگین خطی)
-// چهار گیت سخت‌گیرانه: [بنیاد] → [تکنیکال ماژور/مینور] → [تابلوخوانی] → [سبد و رژیم ریسک]
+// چهار گیت سخت‌گیرانه: [بنیادی] → [تکنیکال ماژور/مینور] → [تابلوخوانی] → [سبد و رژیم ریسک]
 // قوانین (M-03):
 // ۱) نبود روند هفتگی صعودی ⇒ VETO فوری.
 // ۲) نقض بنیادی (افت شدید فروش یا حاشیهٔ < ۲۰٪) ⇒ ورود روندی مسدود؛ فقط با جهش تابلو
@@ -38,7 +38,7 @@ export const FUNDAMENTAL_MARGIN_FLOOR_PCT = 20;
 export const SALES_DROP_FLOOR_PCT = 0;
 
 export const STRICT_GATE_LABELS: Record<StrictGateId, string> = {
-  fundamental: 'بنیاد',
+  fundamental: 'بنیادی',
   technical: 'تکنیکال ماژور/مینور',
   tape: 'تابلوخوانی',
   portfolio: 'سبد و رژیم ریسک',
@@ -226,7 +226,7 @@ export function runStrictGates(
     veto,
   });
 
-  // ── فیلتر ۱: بنیاد ────────────────────────────────────────────────
+  // ── فیلتر ۱: بنیادی ────────────────────────────────────────────────
   const fund = input.fundamental;
   const fm = fundamentalMetrics(fund);
   const fundActive = fund != null && isActiveSignal(fund, now);
@@ -249,7 +249,7 @@ export function runStrictGates(
     } else if (fm.marginPct == null && fm.marginCheck == null && fm.salesGrowthPct == null) {
       gates.push(mk('fundamental', 'pending', 'دادهٔ مالی کافی برای سنجش حاشیه سود و رشد فروش در دسترس نیست.'));
     } else {
-      gates.push(mk('fundamental', 'passed', `تایید فیلتر بنیاد (${basis}).`));
+      gates.push(mk('fundamental', 'passed', `تایید فیلتر بنیادی (${basis}).`));
     }
   }
 
@@ -263,7 +263,7 @@ export function runStrictGates(
   if (!tech) {
     gates.push(mk('technical', 'pending', 'سابقه کندل‌های هفتگی برای سنجش MA52 و RSI کافی نیست.'));
   } else if (!techActive) {
-    gates.push(mk('technical', 'pending', 'دیتای تکنیکال منقضی یا ناقص است.'));
+    gates.push(mk('technical', 'pending', 'دادهٔ تکنیکال منقضی یا ناقص است.'));
   } else if (weeklyNotUp) {
     gates.push(
       mk(
@@ -302,7 +302,7 @@ export function runStrictGates(
   if (!tape) {
     gates.push(mk('tape', 'pending', 'عدم ثبت حجم مشکوک یا الگوی ساعت معتبر.'));
   } else if (!tapeActive) {
-    gates.push(mk('tape', 'pending', 'دیتای جریان معاملات منقضی است.'));
+    gates.push(mk('tape', 'pending', 'دادهٔ جریان معاملات منقضی است.'));
   } else if (pattern === 'closing_auction_pop') {
     gates.push(mk('tape', 'passed', 'الگوی ساعت فعال است؛ زمان‌سنج ورود تایید شد.'));
   } else if (pattern === 'suspicious_volume') {
@@ -335,7 +335,7 @@ export function runStrictGates(
       mk(
         'portfolio',
         'blocked',
-        `وزن صنعت با این نماد از سقف ${fa0(cap)}٪ می‌گذرد (مصرف فعلی ${fa1(regime.industryUsedPct)}٪) ⇒ فیلتر سبد مسدود شد.`,
+        `وزن صنعت با این نماد از سقف ${fa0(cap)}٪ می‌گذرد (مصرف فعلی ${fa1(regime.industryUsedPct)}٪)؛ پس فیلتر سبد مسدود شد.`,
       ),
     );
   } else if (regime.inBasket === true) {
@@ -434,7 +434,7 @@ export function definiteDecision(res: StrictGatesResult): DefiniteDecision {
     return {
       action: 'ladder_buy',
       label: DEFINITE_ACTION_FA.ladder_buy,
-      reason: 'هر چهار فیلتر (بنیاد، چارت، تابلو و سبد) هم‌زمان سبز است؛ خرید پله‌ای مجاز.',
+      reason: 'هر چهار فیلتر (بنیادی، چارت، تابلو و سبد) هم‌زمان سبز است؛ خرید پله‌ای مجاز.',
       allGatesPassed: true,
     };
   }
@@ -485,7 +485,7 @@ export function hourglassSwitch(args: {
     return {
       active: true,
       volumeMultiple: Math.min(HOURGLASS_VOLUME_MAX, Math.max(HOURGLASS_VOLUME_MIN, mult)),
-      reason: `قیمت هفتگی زیر MA52 و RSI هفتگی ${fa1(weekly.rsi)} (≤ ${fa0(HOURGLASS_RSI_MAX)}) است ⇒ خرید دورهٔ جاری ${fa1(mult)} برابر${fundScore != null ? ` (نمرهٔ بنیادی ${fa0(fundScore)})` : ''}.`,
+      reason: `قیمت هفتگی زیر MA52 و RSI هفتگی ${fa1(weekly.rsi)} (≤ ${fa0(HOURGLASS_RSI_MAX)}) است؛ پس خرید دورهٔ جاری ${fa1(mult)} برابر${fundScore != null ? ` (نمرهٔ بنیادی ${fa0(fundScore)})` : ''}.`,
     };
   }
   return {

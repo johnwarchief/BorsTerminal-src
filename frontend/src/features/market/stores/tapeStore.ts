@@ -34,9 +34,9 @@ export const VOL_RATIO_DEFAULT = 3;
 export const SCREEN_ORDERS = ['tape_first', 'technical_first', 'fundamental_first'] as const;
 export type ScreenOrder = (typeof SCREEN_ORDERS)[number];
 export const SCREEN_ORDER_LABELS: Record<ScreenOrder, string> = {
-  tape_first: 'تابلو → تکنیکال → بنیادی',
-  technical_first: 'تکنیکال → تابلو → بنیادی',
-  fundamental_first: 'بنیادی → تابلو → تکنیکال',
+  tape_first: 'اول تابلوخوانی، سپس تکنیکال، بعد بنیادی',
+  technical_first: 'اول تکنیکال، سپس تابلوخوانی، بعد بنیادی',
+  fundamental_first: 'اول بنیادی، سپس تابلوخوانی، بعد تکنیکال',
 };
 
 /** ترکیب «خروج از انباشت»: هم‌زمان الگوی ساعت و حجم مشکوک */

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuthStore } from '@shared/stores/authStore';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 
 interface UserSettingsModalProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface UserSettingsModalProps {
 export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
   const currentUsername = useAuthStore((s) => s.username);
   const updateCredentials = useAuthStore((s) => s.updateCredentials);
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
 
   const [username, setUsername] = useState(currentUsername);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -86,21 +88,28 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="user-settings-title"
+      role="presentation"
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       {/* پس‌زمینه نیمه‌شفاف */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* بدنه دیالوگ */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         dir="rtl"
-        className="glass-panel relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-2xl transition-all"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-settings-title"
+        className="glass-panel relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-2xl transition-all outline-none overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* هدر پنجره */}

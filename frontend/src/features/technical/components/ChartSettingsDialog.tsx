@@ -10,6 +10,7 @@
 //     text-text-* / accent-*)، نه از هگزِ دست‌ساز — وگرنه دیالوگ در تمِ روشن
 //     با خودِ برنامه می‌جنگید.
 import { useState } from 'react';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import {
   useFtsConfigStore,
   type ChartType,
@@ -252,20 +253,25 @@ export function ChartSettingsDialog({
   const toggleDisplay = useFtsConfigStore((s) => s.toggleDisplay);
   const toggleIndicator = useFtsConfigStore((s) => s.toggleIndicator);
 
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
+
   if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-label="تنظیمات چارت"
+      role="presentation"
       data-testid="chart-settings"
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         dir="rtl"
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="تنظیمات چارت"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl outline-none overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border-c bg-bg-card/60 px-5 py-3">

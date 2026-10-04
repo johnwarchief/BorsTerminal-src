@@ -1,6 +1,9 @@
 import { useLocation } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { PALETTE_OPEN_EVENT } from './CommandPalette';
 import { SearchIcon } from '@shared/components/Icons';
+import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
 
 const TITLES: Record<string, string> = {
   '/market': 'تابلوخوانی / بازار',
@@ -11,12 +14,52 @@ const TITLES: Record<string, string> = {
   '/strategy-tree': 'درخت استراتژی FTS',
 };
 
+/** وضعیت اتصال از کشِ کوئریِ تابلو خوانده می‌شود؛ ادعای «آنلاین» بی‌سیگنال ممنوع.
+    فقط status/dataUpdatedAtِ کوئری خوانده می‌شود — رندرِ دادهٔ تابلو اینجا لازم نیست. */
+type FeedSnap = { status: string; dataUpdatedAt: number };
+const NO_FEED: FeedSnap = { status: 'idle', dataUpdatedAt: 0 };
+
+function readFeedSnap(qc: ReturnType<typeof useQueryClient>): FeedSnap {
+  const q = qc.getQueryCache().find({ queryKey: MARKET_FEED_KEY });
+  if (!q) return NO_FEED;
+  return { status: q.state.status, dataUpdatedAt: q.state.dataUpdatedAt };
+}
+
+function useFeedSnapshot(): FeedSnap {
+  const qc = useQueryClient();
+  const [snap, setSnap] = useState<FeedSnap>(() => readFeedSnap(qc));
+  useEffect(() => {
+    setSnap(readFeedSnap(qc));
+    const unsub = qc.getQueryCache().subscribe(() => {
+      const next = readFeedSnap(qc);
+      setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt ? prev : next));
+    });
+    return unsub;
+  }, [qc]);
+  return snap;
+}
+
+function feedStatus(state: FeedSnap) {
+  if (state.status === 'idle' && !state.dataUpdatedAt) {
+    return { tone: 'bg-text-muted', label: 'در انتظارِ رسیدنِ دادهٔ تابلو' };
+  }
+  if (state.status === 'error') {
+    return { tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کن' };
+  }
+  if (state.status === 'success') {
+    return { tone: 'bg-accent-green animate-pulse', label: 'سیستم آنلاین و متصل' };
+  }
+  return { tone: 'bg-accent-yellow', label: 'در حالِ دریافتِ داده' };
+}
+
 export function Topbar() {
   const { pathname } = useLocation();
   const base = '/' + (pathname.split('/')[1] ?? '');
   const title = TITLES[base] ?? 'ترمینال بورس';
   // در تب تکنیکال خودِ نوارِ چارت بجِ نماد و جستجو را دارد؛ دکمهٔ تکراری حذف است
   const showSearch = base !== '/technical';
+  const feedState = useFeedSnapshot();
+  const feed = feedStatus(feedState);
 
   return (
     <header className="glass-strip sticky top-0 z-40 mb-1 flex h-9 items-center justify-between px-3 sm:px-4">
@@ -25,8 +68,10 @@ export function Topbar() {
           {title}
         </h1>
         <span
-          className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent-green"
-          title="سیستم آنلاین و متصل"
+          role="status"
+          aria-label={feed.label}
+          className={`inline-block h-1.5 w-1.5 rounded-full ${feed.tone}`}
+          title={feed.label}
         />
       </div>
 

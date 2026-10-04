@@ -12,7 +12,7 @@
 // متن/آستانه/قاعدهٔ گره‌ها، پنلِ بازرسی و ویرایشگرِ زندهٔ پارامترها از نسخۀ
 // پیشین عیناً منتقل شده‌اند (بازسازیِ بصری، نه بازنویسیِ منطق). Source of Truth
 // داوری همچنان بک‌اند/پایتون است.
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
@@ -28,7 +28,7 @@ import {
   type FtsPreset,
   type FlowDirection,
 } from '../lib/ftsChartModel';
-import { HEADER_H, layoutMap, refPath } from '../lib/ftsChartLayout';
+import { HEADER_H, layoutMap, refPath, ROW_LEAD } from '../lib/ftsChartLayout';
 
 export type { FlowDirection, FtsChartNode } from '../lib/ftsChartModel';
 /** سازۀ پیشینِ یال‌ها (`getGraphLinks`) به مدلِ داده منتقل شد؛ از همین‌جا هم
@@ -187,12 +187,31 @@ export function ObsidianStrategyGraph({
     lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
+  // کریدورِ pan: با origin مرکزی، کادرِ محتوا [W/2±(W/2)z]+pan است؛ نگهبانِ ۱۲۰پیکسلی
+  // می‌گذارد کاربر بخش‌ها را بکشاند ولی کل نقشه از دید بیرون نمی‌رود (Task #78).
+  const clampPan = useCallback(
+    (p: { x: number; y: number }, z: number) => {
+      const M = 120;
+      const hw = (layout.width / 2) * z;
+      const hh = (layout.height / 2) * z;
+      const loX = M - layout.width / 2 - hw;
+      const hiX = layout.width / 2 - M + hw;
+      const loY = M - layout.height / 2 - hh;
+      const hiY = layout.height / 2 - M + hh;
+      return {
+        x: Math.min(Math.max(p.x, loX), hiX),
+        y: Math.min(Math.max(p.y, loY), hiY),
+      };
+    },
+    [layout.width, layout.height],
+  );
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingRef.current) return;
     const dx = e.clientX - lastMousePos.current.x;
     const dy = e.clientY - lastMousePos.current.y;
     lastMousePos.current = { x: e.clientX, y: e.clientY };
-    setPan((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+    setPan((prev) => clampPan({ x: prev.x + dx, y: prev.y + dy }, zoom));
   };
 
   const handleMouseUp = () => {
@@ -219,6 +238,14 @@ export function ObsidianStrategyGraph({
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
   }, [svgContainerRef]);
+
+  // با هر زوم (چرخ، +/−) کریدورِ pan تازه‌سازی می‌شود تا محتوا در دید بماند
+  useEffect(() => {
+    setPan((prev) => {
+      const next = clampPan(prev, zoom);
+      return next.x === prev.x && next.y === prev.y ? prev : next;
+    });
+  }, [zoom, clampPan]);
 
   const toggleCollapse = (id: string) => {
     setCollapsed((prev) => {
@@ -740,12 +767,20 @@ export function ObsidianStrategyGraph({
                       <>
                         <text
                           x={row.right - 2}
-                          y={row.midY + 4}
                           textAnchor="start"
                           fill={accent}
-                          className="text-[11px] font-black"
+                          className="font-black"
+                          fontSize={row.fs}
                         >
-                          {node.label}
+                          {row.lines.map((ln, li) => (
+                            <tspan
+                              key={li}
+                              x={row.right - 2}
+                              y={row.midY + 4 - ((row.lines.length - 1) * ROW_LEAD.head) / 2 + li * ROW_LEAD.head}
+                            >
+                              {ln}
+                            </tspan>
+                          ))}
                         </text>
                         {kids > 0 && (
                           <g
@@ -807,12 +842,20 @@ export function ObsidianStrategyGraph({
                         />
                         <text
                           x={row.right - 9}
-                          y={row.midY + 4}
                           textAnchor="start"
                           fill={isLight ? '#0f172a' : '#f8fafc'}
-                          className="text-[11.5px] font-black"
+                          className="font-black"
+                          fontSize={row.fs}
                         >
-                          {node.label}
+                          {row.lines.map((ln, li) => (
+                            <tspan
+                              key={li}
+                              x={row.right - 9}
+                              y={row.midY + 4 - ((row.lines.length - 1) * ROW_LEAD.leaf) / 2 + li * ROW_LEAD.leaf}
+                            >
+                              {ln}
+                            </tspan>
+                          ))}
                         </text>
                         {node.origin === 'program' && (
                           <rect

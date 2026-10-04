@@ -714,3 +714,32 @@ describe('پیچ‌ها رویِ نوارِ خودِ هر مرحله', () => {
     expect(ownerSection('funnel-tech-gate')).toBe('funnel-stage-technical');
   });
 });
+
+describe('قیف: snapshotِ بازگشت (Task #78 — scroll/stage پس از Back)', () => {
+  const SNAP_KEY = 'bors.funnel.snapshot.v1';
+  const renderSnap = () =>
+    renderRouted(
+      <QueryClientProvider client={new QueryClient()}>
+        <FtsFunnelStages />
+      </QueryClientProvider>,
+    );
+
+  it('کلیک روی سطر، مرحلۀ فعال را پیش از رفتن به Master ثبت می‌کند', () => {
+    sessionStorage.clear();
+    useFunnelPrefsStore.getState().reset();
+    renderSnap();
+    const tr = screen.getByTestId('funnel-stage-tape').querySelector('tbody tr');
+    fireEvent.click(tr!.querySelector('button')!);
+    const snap = JSON.parse(sessionStorage.getItem(SNAP_KEY) ?? '{}');
+    expect(snap.stage).toBe('tape');
+    expect(typeof snap.scroll).toBe('number');
+  });
+
+  it('snapshotِ ذخیره‌شده، تبِ مرحلۀ قیف را پس از بازگشت برمی‌گرداند', () => {
+    useFunnelPrefsStore.getState().reset();
+    sessionStorage.setItem(SNAP_KEY, JSON.stringify({ stage: 'fundamental', scroll: 0 }));
+    renderSnap();
+    expect(screen.getByTestId('funnel-step-fundamental')).toHaveAttribute('aria-selected', 'true');
+    sessionStorage.clear();
+  });
+});

@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppUpdater } from './useAppUpdater';
 import { openAppLog } from './api/diagnostics';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 
 interface UpdateManagerModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ interface UpdateManagerModalProps {
 }
 
 export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
   const {
     status,
     currentVersion,
@@ -60,21 +62,28 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="updater-title"
+      role="presentation"
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 selection:bg-neon-cyan/30"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       {/* بک‌دراپ */}
       <div
         className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity"
         onClick={onClose}
+        aria-hidden="true"
       />
 
       {/* پنجره مودال سایبرپانک */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         dir="rtl"
-        className="glass-panel relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all font-sans text-text-primary"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="updater-title"
+        className="glass-panel relative z-10 max-h-[92vh] overflow-y-auto overscroll-contain w-full max-w-lg rounded-2xl border border-[var(--hairline)] bg-bg-secondary p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all font-sans text-text-primary outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* نورپردازی پس‌زمینه */}

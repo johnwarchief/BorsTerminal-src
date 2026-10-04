@@ -1,9 +1,10 @@
 // widgets/FtsAnalystModal.tsx -- مودال گزارش تحلیلی و مشاور تشریحی FTS
 // بر پایه جزوه دوره نوسان‌گیری و سرمایه‌گذاری به سبک FTS (عرفان نصرتی) و چارت‌های درختی
-import { useEffect, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import {
   type PipelineEvaluation,
   type StrategyHorizon,
@@ -26,15 +27,7 @@ export function FtsAnalystModal({
   const navigate = useNavigate();
   const titleId = useId();
   const [activeTab, setActiveTab] = useState<AnalystTab>('narrative');
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
 
   if (!open) return null;
 
@@ -54,16 +47,19 @@ export function FtsAnalystModal({
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
+      role="presentation"
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="glass-panel relative flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl"
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="glass-panel relative flex max-h-[94vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border-c bg-bg-primary shadow-2xl outline-none overscroll-contain"
         data-testid="fts-analyst-modal"
       >
         {/* ۱. سربرگ مودال */}

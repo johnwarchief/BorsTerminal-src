@@ -121,10 +121,10 @@ describe('buildDossier — ترجمه، نه داوری', () => {
     expect(d.stages.every(s => s.status === 'unavailable' || s.status === 'reject')).toBe(true);
   });
 
-  it('جزئیاتِ تکنیکال عینِ رشته‌هایِ سرور است، نه بازنویسیِ فرانت', () => {
+  it('جزئیاتِ تکنیکال: متن‌هایِ موتور عین‌اند؛ کدهایِ انگلیسیِ خروج به واژگانِ مالک برگردانده می‌شوند', () => {
     const d = buildDossier(candidate(), FEED, 'فولاد');
     expect(d.technical.matrixDesc).toContain('هفتگی نزولی');
-    expect(d.technical.exitVerdict).toBe('hold');
+    expect(d.technical.exitVerdict).toBe('نگهداری');
     expect(d.technical.jetAth).toBe(false);
     expect(d.levels.ceiling).toBe(4500);
     expect(d.hourglass.desc ?? '—').not.toBe('فعال');
@@ -170,17 +170,17 @@ describe('MasterDossierPanel — پنج ثانیه اول', () => {
     expect(screen.getByTestId('dossier-verdict')).toBeInTheDocument();
     expect(screen.getByTestId('dossier-flow-gated')).toBeInTheDocument();
     expect(screen.getAllByTestId(/^dossier-stage-/)).toHaveLength(4);
-    expect(screen.getByText('REJECT')).toBeInTheDocument();
-    expect(screen.queryByText('DAILY')).not.toBeInTheDocument();
+    expect(screen.getByText('رد')).toBeInTheDocument();
+    expect(screen.queryByText('روند روزانه')).not.toBeInTheDocument();
   });
 
-  it('کنترلِ منفی: در حالتِ بازبودنِ گیت، DAILY نمایش داده می‌شود و REJECT نه', () => {
+  it('کنترلِ منفی: در حالتِ بازبودنِ گیت، روند روزانه نمایش داده می‌شود و ردِ دروازۀ تکنیکال نه', () => {
     const ok = JSON.parse(JSON.stringify(FEED));
     ok.fts.status = { code: 'entry_trigger', text: 'جت: شکست مقاومت', trigger: null, vetoed: false };
     ok.fts.trend.matrix = { decision: 'PERMITTED', setup: 'JET_OR_PULLBACK_HOLD', desc: '' };
     renderD(buildDossier(candidate({ trendW: 'up', trendD: 'up',
       status: st({ technical: 'pass' }) }), ok as FtsPlanFeed, 'فولاد'));
-    expect(screen.getByText('DAILY')).toBeInTheDocument();
+    expect(screen.getByText('روند روزانه')).toBeInTheDocument();
     expect(screen.queryByTestId('dossier-flow-gated')).not.toBeInTheDocument();
   });
 

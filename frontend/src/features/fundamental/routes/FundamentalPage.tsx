@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
+import { RetryAction } from '@shared/components/RetryAction';
 import { http, HttpError } from '@shared/api/http';
 import { toFaDigits } from '@shared/lib/fmt';
 import { statementAgeDays } from '@shared/lib/jalaali';
@@ -181,7 +182,11 @@ export default function FundamentalPage() {
            * ده‌ها ثانیه طول می‌کشد، پس کاربر پیامِ خطا را واقعی می‌خواند. */
           <EmptyState title="در حال بارگذاری غربالگری FTS…" hint="اولین اسکنِ کل بازار ممکن است تا یک دقیقه طول بکشد؛ جدول همین‌جا ظاهر می‌شود" />
         ) : screen.isError ? (
-          <EmptyState title="غربالگری FTS در دسترس نیست" hint="سرور غربالگری پاسخ نداد — کمی بعد دوباره امتحان کنید" />
+          <EmptyState
+            title="غربالگری FTS در دسترس نیست"
+            hint="سرور غربالگری پاسخ نداد — کمی بعد دوباره امتحان کنید"
+            action={<RetryAction onRetry={() => void refetchScreen()} testId="fund-screen-retry" />}
+          />
         ) : (
           <FtsScreenTable
             rows={screen.data?.data ?? []}
@@ -220,7 +225,15 @@ export default function FundamentalPage() {
           <h2 className="text-base font-black text-text-primary">{symbol}</h2>
           <FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />
         </div>
-        <EmptyState title={`دادهٔ کارت بنیادی ${symbol} نیامد`} hint={hint} />
+        <EmptyState
+          title={`دادهٔ کارت بنیادی ${symbol} نیامد`}
+          hint={hint}
+          action={
+            status === 404 ? undefined : (
+              <RetryAction onRetry={() => void card.refetch()} testId="fund-card-retry" />
+            )
+          }
+        />
       </div>
     );
   }

@@ -84,16 +84,16 @@ export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[]
 export type StageStatus = 'pass' | 'reject' | 'pending' | 'unavailable';
 
 export const STATUS_LABEL: Record<StageStatus, string> = {
-  pass: 'تایید',
+  pass: 'تأیید',
   reject: 'رد',
   pending: 'در انتظار',
-  unavailable: 'بی‌داده',
+  unavailable: 'داده در دسترس نیست',
 };
 
 export const STATUS_HINT: Record<StageStatus, string> = {
   pass: 'درِ جزوه باز است.',
   reject: 'موتور صریحاً رد کرد — این تصمیم است، نه کمبودِ داده.',
-  pending: 'موتور نگاه کرد و نظر نداد (نقطه‌زنیِ نسنجیده، هفتگیِ UNKNOWN، ابزارِ بی‌FTS).',
+  pending: 'موتور نگاه کرد و نظر نداد (نقطه‌زنی سنجیده‌نشده، روند هفتگی بی‌حکم، ابزار بی‌FTS).',
   unavailable: 'هیچ منبعی برایِ این مرحله نبود؛ «رد» نیست و نباید رد خوانده شود.',
 };
 
@@ -105,8 +105,8 @@ export const MODE_LABEL: Record<FunnelMode, string> = {
 };
 
 export const MODE_PATH: Record<FunnelMode, string> = {
-  reverse: 'تابلو ➔ تکنیکال ➔ بنیادی ➔ تحویل',
-  review: 'کلِ بازار ➔ بنیادی ➔ تکنیکال ➔ تحویل',
+  reverse: 'اول تابلوخوانی، سپس تکنیکال، بعد بنیادی، در پایان تحویل',
+  review: 'کلِ بازار از بنیادی شروع می‌شود، سپس تکنیکال، در پایان تحویل',
 };
 
 export const MODE_HINT: Record<FunnelMode, string> = {

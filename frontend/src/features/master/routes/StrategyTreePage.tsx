@@ -747,7 +747,7 @@ export default function StrategyTreePage() {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <strong className="text-sm font-black text-accent-red">ریجکت هفتگی (Reject صلب)</strong>
+                  <strong className="text-sm font-black text-accent-red">ردِ هفتگی — وتوی قطعی</strong>
                   <span className="text-2xs text-accent-red font-black">وتو</span>
                 </div>
                 <p className="text-xs text-text-secondary leading-relaxed font-medium">

@@ -82,10 +82,10 @@ describe('MasterFtsDetails — S/T/F/Strategy', () => {
     expect(t).toBeDefined();
   });
 
-  it('پشتیبان از key-levels می‌آید و با مقاومت قاطی نمی‌شود', () => {
+  it('حمایت از key-levels می‌آید و با مقاومت قاطی نمی‌شود', () => {
     renderD(cand());
     const tech = screen.getByTestId('details-technical').textContent ?? '';
-    expect(tech).toContain('پشتیبان');
+    expect(tech).toContain('حمایت');
     expect(tech).toContain('۱۳٬۲۰۰');
   });
 

@@ -274,6 +274,7 @@ export default function TechnicalPage() {
                           ? 'تحلیل از سرور گرفته نشد'
                           : null
                     }
+                    onRetry={() => void analysis.refetch()}
                   />
                   <FtsStatusCard
                     signal={signal}

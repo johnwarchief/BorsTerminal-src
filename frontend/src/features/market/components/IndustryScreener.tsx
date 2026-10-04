@@ -78,7 +78,7 @@ function IndustryLine({
 }
 
 export function IndustryScreener({ onPick }: { onPick?: (industry: string) => void } = {}) {
-  const { data, isLoading, isError } = useIndustries();
+  const { data, isLoading, isError, refetch } = useIndustries();
   const [mode, setMode] = useState<Mode>('flow');
 
   const rows = data?.rows ?? null;
@@ -113,7 +113,19 @@ export function IndustryScreener({ onPick }: { onPick?: (industry: string) => vo
       </div>
       {isLoading && !data ? (
         <span className="text-2xs text-text-secondary">در حال دریافت صنایع...</span>
-      ) : isError || !rows || rows.length === 0 ? (
+      ) : isError ? (
+        <span className="flex items-center gap-2 text-2xs text-text-muted">
+          صنایع دریافت نشد
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            data-testid="industries-retry"
+            className="rounded-md border border-accent-blue bg-accent-blue/10 px-2 py-0.5 font-bold text-accent-blue"
+          >
+            تلاش دوباره
+          </button>
+        </span>
+      ) : !rows || rows.length === 0 ? (
         <span className="text-2xs text-text-muted">بدون داده</span>
       ) : (
         <ul className="flex flex-col divide-y divide-border-c/40">

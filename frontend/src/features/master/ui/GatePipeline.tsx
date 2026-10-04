@@ -1,28 +1,28 @@
 // features/master/ui/GatePipeline.tsx -- استپر افقی متراکم چرخه فیلترهای ۴گانه FTS
-// یک نوار تک‌ردیفه: [فیلتر ۱: بنیاد] ─> [فیلتر ۲: تکنیکال] ─> [فیلتر ۳: تابلو] ─> [فیلتر ۴: سبد و ریسک]
+// یک نوار تک‌ردیفه: [فیلتر ۱: بنیادی] ─> [فیلتر ۲: تکنیکال] ─> [فیلتر ۳: تابلو] ─> [فیلتر ۴: سبد و ریسک]
 // هر کارت: وضعیت رنگی (عبور/رد/انتظار = Passed/Blocked/Pending) + Audit Popover با دلیل تحلیلی.
 import { fa0 } from '../lib/fmtNum';
 import type { StrictGate, StrictGateState } from '../lib/strictGates';
 
 /** نام‌های پایدار هر پله (سازگاری UI) */
 const GATE_TITLE: Record<StrictGate['id'], string> = {
-  fundamental: 'فیلتر ۱: بنیاد',
+  fundamental: 'فیلتر ۱: بنیادی',
   technical: 'فیلتر ۲: تکنیکال',
   tape: 'فیلتر ۳: تابلو',
   portfolio: 'فیلتر ۴: سبد و ریسک',
 };
 
 const GATE_SHORT: Record<StrictGate['id'], string> = {
-  fundamental: 'بنیاد',
+  fundamental: 'بنیادی',
   technical: 'تکنیکال',
   tape: 'تابلو',
   portfolio: 'سبد',
 };
 
-const STATUS_FA: Record<StrictGateState, { label: string; cls: string; en: string }> = {
-  passed: { label: 'عبور', cls: 'border-accent-green/40 bg-accent-green/12 text-accent-green', en: 'Passed' },
-  blocked: { label: 'رد', cls: 'border-accent-red/40 bg-accent-red/12 text-accent-red', en: 'Blocked' },
-  pending: { label: 'انتظار', cls: 'border-accent-yellow/40 bg-accent-yellow/12 text-accent-yellow', en: 'Pending' },
+const STATUS_FA: Record<StrictGateState, { label: string; cls: string }> = {
+  passed: { label: 'عبور', cls: 'border-accent-green/40 bg-accent-green/12 text-accent-green' },
+  blocked: { label: 'رد', cls: 'border-accent-red/40 bg-accent-red/12 text-accent-red' },
+  pending: { label: 'در انتظار', cls: 'border-accent-yellow/40 bg-accent-yellow/12 text-accent-yellow' },
 };
 
 function GateCard({ gate, index }: { gate: StrictGate; index: number }) {
@@ -38,7 +38,7 @@ function GateCard({ gate, index }: { gate: StrictGate; index: number }) {
         </span>
         <span
           className={`shrink-0 rounded-full border px-1.5 py-0.5 text-2xs font-bold ${st.cls}`}
-          title={`${st.en}${gate.veto ? ' · VETO' : ''}`}
+          title={`${st.label}${gate.veto ? ' — وتوی قطعی' : ''}`}
           aria-label={`وضعیت ${GATE_TITLE[gate.id]}: ${st.label}`}
         >
           {st.label}
@@ -83,7 +83,7 @@ export function GatePipeline({ gates }: { gates: StrictGate[] }) {
         </span>
       </div>
       <p className="mb-3 text-2xs leading-5 text-text-muted">
-        ترتیب سلسله‌مراتبی: [بنیاد] ─&gt; [تکنیکال ماژور/مینور] ─&gt; [تابلوخوانی] ─&gt; [سبد و رژیم ریسک] — «خرید پله‌ای» فقط با تایید هم‌زمان هر چهار فیلتر؛ تابلو تنها زمان‌سنج ورود است.
+        ترتیب سلسله‌مراتبی: [بنیادی] ─&gt; [تکنیکال ماژور/مینور] ─&gt; [تابلوخوانی] ─&gt; [سبد و رژیم ریسک] — «خرید پله‌ای» فقط با تایید هم‌زمان هر چهار فیلتر؛ تابلو تنها زمان‌سنج ورود است.
         (راهنمای وضعیت: عبور = Passed · رد = Blocked · انتظار = Pending)
       </p>
 

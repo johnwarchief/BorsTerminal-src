@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import { Badge } from '@shared/components/Badge';
 import { FTS_GUIDE_DEFAULTS, SALES_TO_MCAP_GUIDE_DEFAULT, useFtsConfig, useSaveFtsConfig, type FtsConfig } from '../api/useFtsConfig';
 import {
@@ -221,15 +222,8 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
   /** فیلتر حذف بر اساس شاخص — منبع حقیقت در lib/exclusionFilter (localStorage + کلید کانفیگ) */
   const excludeAxes = useExcludeAxes();
 
-  /** Esc در حالت باز می‌بندد — بدون هیچ anchor-math؛ پنل fixed سمت راست است */
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  /** Esc در حالت باز می‌بندد + تلهٔ فوکوس/بازگردانی فوکوس از هوک مشترکِ دیالوگ */
+  const panelRef = useDialogA11y<HTMLElement>({ open, onClose });
 
   useEffect(() => {
     if (cfg.data?.config) {
@@ -352,13 +346,20 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           تیلویند (که داخل @layer utilities هستند) مقدم است و `fixed` را
           باطل می‌کند — نتیجه: پنل به‌جای دراور ثابت سمت راست، داخل جریان
           صفحه و در پایین ظاهر می‌شود. ظاهر شیشه‌ای با utilityهای صریح
-          بازسازی شده تا positioning زیر هیچ قاعدهٔ بیرون‌از‌layer نرود. */}
+          بازسازی شده تا positioning زیر هیچ قاعدهٔ بیرون‌از‌layer نرود.
+          ⚠️ transition هم عمداً فقط transform/opacity است: در Chromium
+          transition-all مقدار گسستۀ visibility را تا میانهٔ ۲۰۰ms قدیمی
+          نگه می‌دارد و focusِ هم‌زمان با باز شدن پنل بی‌صدا رد می‌شد
+          (سنجشِ زندهٔ Round M/۷۸). */}
       <aside
+        ref={panelRef}
+        tabIndex={-1}
         aria-label="پنل تنظیمات پیش‌شرط‌های FTS"
         aria-hidden={!open}
         role="dialog"
+        aria-modal={open}
         data-testid="fts-settings-panel"
-        className={`fixed inset-y-0 start-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-e border-[var(--hairline)] bg-[var(--glass-tint)] shadow-[var(--glass-shadow)] backdrop-blur-md backdrop-saturate-125 transition-all duration-200 ease-out ${
+        className={`fixed inset-y-0 start-0 z-[9999] flex w-[420px] max-w-[92vw] shrink-0 flex-col rounded-none border-e border-[var(--hairline)] bg-[var(--glass-tint)] shadow-[var(--glass-shadow)] backdrop-blur-md backdrop-saturate-125 transition-[transform,opacity] duration-200 ease-out outline-none ${
           open ? 'visible translate-x-0 opacity-100' : 'invisible translate-x-full opacity-0'
         }`}
         {...{ inert: !open ? ('' as unknown as boolean) : undefined }}

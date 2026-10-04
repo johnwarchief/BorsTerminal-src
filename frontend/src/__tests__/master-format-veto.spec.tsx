@@ -273,10 +273,10 @@ describe('۴) استپر افقی متراکم چرخه فیلترهای ۴گا�
     expect(list.className).toContain('lg:flex-row');
     expect(list.querySelectorAll('li').length).toBe(4);
     // برچسب‌های پله‌ها
-    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۱: بنیادی')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۴: سبد و ریسک')).toBeInTheDocument();
     // وضعیت‌های رنگی
-    expect(screen.getAllByLabelText(/وضعیت فیلتر .*: (عبور|رد|انتظار)/).length).toBe(4);
+    expect(screen.getAllByLabelText(/وضعیت فیلتر .*: (عبور|رد|در انتظار)/).length).toBe(4);
     // Audit Popover در DOM هست (نمایش با هاور) — یکی برای هر فیلتر
     expect(within(pipeline).getAllByRole('tooltip').length).toBe(4);
     expect(screen.getAllByText(/دلیل تحلیلی وضعیت/).length).toBe(4);

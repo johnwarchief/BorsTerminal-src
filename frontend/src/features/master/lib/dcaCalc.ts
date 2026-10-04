@@ -98,7 +98,7 @@ export function buildTradeBlueprint(input: BlueprintInput): BlueprintResult {
   if (capital == null) {
     notes.push('سرمایهٔ کل ثبت نشده است؛ برای محاسبهٔ ریالی، سرمایهٔ فرضی را وارد کن.');
   } else if (input.assumedCapital) {
-    notes.push('این محاسبه با «سرمایهٔ فرضی پیش‌فرض» انجام شده است؛ عدد واقعی را در اینپوت سرمایهٔ کل جایگزین کن.');
+    notes.push('این محاسبه با «سرمایهٔ فرضی پیش‌فرض» انجام شده است؛ عدد واقعی را در ورودی سرمایهٔ کل جایگزین کن.');
   }
 
   const cap = input.industryCapPct > 0 ? input.industryCapPct : 20;

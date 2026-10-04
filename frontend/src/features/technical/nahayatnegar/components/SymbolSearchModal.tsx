@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconSearch, IconClose, IconCheck } from './TradingViewIcons';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import { http } from '@shared/api/http';
 
 export interface SymbolInfo {
@@ -130,6 +131,8 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
     };
   }, [isOpen]);
 
+  const panelRef = useDialogA11y<HTMLDivElement>({ open: isOpen, onClose });
+
   if (!isOpen) return null;
 
   // فیلتر کردن نمادها بر اساس جستجو و تب فعال
@@ -145,6 +148,7 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
 
   return (
     <div
+      role="presentation"
       style={{
         position: 'fixed',
         inset: 0,
@@ -159,6 +163,11 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="جستجوی نماد"
         style={{
           width: '540px',
           maxWidth: '92vw',
@@ -168,7 +177,8 @@ export const SymbolSearchModal: React.FC<SymbolSearchModalProps> = ({
           boxShadow: 'var(--glass-shadow)',
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          outline: 'none'
         }}
         onClick={(e) => e.stopPropagation()}
       >

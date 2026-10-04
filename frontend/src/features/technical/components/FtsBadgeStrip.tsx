@@ -2,7 +2,9 @@
 // معادل بج استریپ v10 در tech_rtv.js: روند D/W/M، هم راستایی، فیبو، جت، CHoCH،
 // شکار نقطه، دابل باتم، جعبه رنج و حکم موتور خروج. وضعیت خالی صادقانه نشان داده می شود.
 import { Badge } from '@shared/components/Badge';
+import { RetryAction } from '@shared/components/RetryAction';
 import { toFaDigits } from '@shared/lib/fmt';
+import { EXIT_SIGNAL_FA } from '../lib/levels';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 
 export const TREND_FA: Record<string, string> = {
@@ -86,11 +88,14 @@ export function FtsBadgeStrip({
   data,
   empty,
   error,
+  onRetry,
 }: {
   data: FtsAnalysisData | null | undefined;
   empty: boolean;
   /** پیامِ شکستِ موتور — بی‌این، نشان‌ها روی «error» تا ابد «در حال دریافت…» می‌ماندند */
   error?: string | null;
+  /** refetch واقعیِ کوئری تحلیل — فقط در حالت خطا دکمه می‌سازد */
+  onRetry?: () => void;
 }) {
   if (empty) {
     return (
@@ -105,6 +110,7 @@ export function FtsBadgeStrip({
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-error">
         <Badge tone="red">FTS</Badge>
         <span>تحلیل FTS نرسید — {error}</span>
+        {onRetry ? <RetryAction onRetry={onRetry} testId="fts-strip-retry" /> : null}
       </div>
     );
   }
@@ -204,7 +210,9 @@ export function FtsBadgeStrip({
     label: 'موتور خروج',
     value: vm.label,
     tone: vm.tone,
-    title: ex?.signals?.length ? `لایه های فعال: ${ex.signals.join('، ')}` : 'هیچ لایه خروجی فعال نیست',
+    title: ex?.signals?.length
+      ? `لایه های فعال: ${ex.signals.map((s) => EXIT_SIGNAL_FA[s] ?? s).join('، ')}`
+      : 'هیچ لایه خروجی فعال نیست',
   });
 
   return (

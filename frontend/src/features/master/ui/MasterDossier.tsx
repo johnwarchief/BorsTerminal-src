@@ -61,24 +61,24 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
         <Badge tone={TONE[d.verdict]}>{d.verdictText}</Badge>
         {d.verdictStage ? (
           <span className="text-2xs text-text-muted">
-            تعیین‌کننده: {d.verdictStage === 'tape' ? 'Selection' : d.verdictStage === 'technical' ? 'Technical' : d.verdictStage === 'fundamental' ? 'Fundamental' : 'Master'}
+            تعیین‌کننده: {d.verdictStage === 'tape' ? 'تابلوخوانی' : d.verdictStage === 'technical' ? 'تکنیکال' : d.verdictStage === 'fundamental' ? 'بنیادی' : 'تحویل'}
           </span>
         ) : null}
       </div>
 
-      {/* ── ۳) WEEKLY → DAILY → SETUP؛ در وتویِ هفتگی روزانه جایگزین نشان داده نمی‌شود ── */}
+      {/* ── ۳) روند هفتگی ← روند روزانه ← ستاپ؛ در وتویِ هفتگی روزانه جایگزین نشان داده نمی‌شود ── */}
       <div
         data-testid="dossier-flow"
         className="flex flex-col gap-1 rounded-xl border border-border-c bg-bg-card/60 px-3 py-2"
       >
         <div className="flex flex-wrap items-center gap-2 text-2xs">
-          <span className="w-16 shrink-0 text-text-muted">WEEKLY</span>
+          <span className="w-24 shrink-0 text-text-muted">روند هفتگی</span>
           <span className="font-bold text-text-primary">{d.flow.weekly}</span>
         </div>
         {d.flow.gated ? (
           <div className="flex flex-wrap items-center gap-2 text-2xs" data-testid="dossier-flow-gated">
-            <span className="w-16 shrink-0 text-text-muted">TECHNICAL</span>
-            <Badge tone="red">REJECT</Badge>
+            <span className="w-24 shrink-0 text-text-muted">دروازۀ تکنیکال</span>
+            <Badge tone="red">رد</Badge>
             <span className="text-text-secondary">
               علت: {d.flow.reason ?? 'گیتِ هفتگی بسته است'}
             </span>
@@ -86,11 +86,11 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2 text-2xs">
-              <span className="w-16 shrink-0 text-text-muted">DAILY</span>
+              <span className="w-24 shrink-0 text-text-muted">روند روزانه</span>
               <span className="font-bold text-text-primary">{d.flow.daily}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-2xs">
-              <span className="w-16 shrink-0 text-text-muted">SETUP</span>
+              <span className="w-24 shrink-0 text-text-muted">ستاپ</span>
               <span className="font-bold text-text-primary">{d.flow.setup ?? 'ستاپ فعالی ثبت نشده'}</span>
               {d.technical.trigger ? (
                 <span className="num text-text-muted">

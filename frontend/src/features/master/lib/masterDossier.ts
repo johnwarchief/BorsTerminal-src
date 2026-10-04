@@ -13,6 +13,7 @@ import {
 import { toFaDigits } from '@shared/lib/fmt';
 import { isoToJalali } from '@shared/lib/jalaali';
 import type { FtsPlanFeed } from '../api/useFtsPlan';
+import { STOP_BASIS_FA } from '@features/technical/lib/levels';
 
 export type DossierVerdict = 'confirmed' | 'watch' | 'wait' | 'reject' | 'insufficient';
 
@@ -26,10 +27,26 @@ export const VERDICT_LABEL: Record<DossierVerdict, string> = {
 };
 
 export const STAGE_LABEL: Record<FunnelStageKey, string> = {
-  tape: 'S — Selection',
-  technical: 'T — Technical',
-  fundamental: 'F — Fundamental',
-  handover: 'M — Master',
+  tape: 'S — تابلوخوانی',
+  technical: 'T — تکنیکال',
+  fundamental: 'F — بنیادی',
+  handover: 'M — تحویل',
+};
+
+/** ستاپ‌های trend.matrix از موتور خروجِ chart.py — ترجمۀ رشته‌ای، نه داوریِ دوم */
+const MATRIX_SETUP_FA: Record<string, string> = {
+  JET_OR_PULLBACK_HOLD: 'جت یا پولبک',
+  FIB_CHOCH_STEP_ENTRY: 'ورود پله‌ای فیبو/CHoCH',
+  SWING_DOUBLE_BOTTOM_OR_RANGE: 'کف دوقلو یا رنج',
+};
+
+/** کدهای verdict درِ exit_engine (api/chart.py) — همان واژگانِ VERDICT_META درِ نشان‌ها */
+const EXIT_VERDICT_FA: Record<string, string> = {
+  stop: 'حد ضرر',
+  exit: 'خروج',
+  caution: 'احتیاط',
+  hold: 'نگهداری',
+  unknown: 'سنجیده نشد',
 };
 
 const STATUS_ICON: Record<StageStatus, string> = {
@@ -76,8 +93,9 @@ export type MasterDossier = {
     code: string | null;
     trigger: { label: string | null; price: number | null; date: string | null } | null;
     basis: string | null;
-    /** حکمِ موتورِ خروج — همان رشتهٔ سرور (`hold`/`stop`/…) */
+    /** حکمِ موتورِ خروج، به واژگانِ مالک (`حد ضرر`/`خروج`/`احتیاط`/…) — کدِ خام ترجمه می‌شود، داوری نه */
     exitVerdict: string | null;
+    exitConfirmed: boolean;
     stopBasis: string | null;
     matrixDesc: string | null;
     jetAth: boolean | null;
@@ -137,7 +155,9 @@ export function buildDossier(
     // واژگانِ روند از خودِ payload است؛ `trendLabel` تنها ترجمهٔ رشته‌ای است
     weekly: trendLabel(candidate?.trendW ?? ftsW ?? undefined),
     daily: gated ? '—' : trendLabel(candidate?.trendD ?? ftsD ?? undefined),
-    setup: status?.trigger?.label ?? (matrix?.setup && matrix.setup !== 'NONE' ? matrix.setup : null),
+    setup:
+      status?.trigger?.label ??
+      (matrix?.setup && matrix.setup !== 'NONE' ? (MATRIX_SETUP_FA[matrix.setup] ?? matrix.setup) : null),
     gated,
     reason: gated ? (matrix?.desc ?? candidate?.why?.technical ?? null) : null,
   };
@@ -155,8 +175,12 @@ export function buildDossier(
         }
       : null,
     basis: feed?.analysis_basis ?? null,
-    exitVerdict: fts?.exit_engine?.verdict ?? null,
-    stopBasis: fts?.exit_engine?.l1?.stop_basis ?? null,
+    exitVerdict: fts?.exit_engine?.verdict ? (EXIT_VERDICT_FA[fts.exit_engine.verdict] ?? fts.exit_engine.verdict) : null,
+    /** موتور خروج صریحاً روی «حد ضرر» یا «خروج» ایستاده — منطقِ همین از کدِ خامِ verdict حساب می‌شود، نه از متنِ ترجمه‌شده */
+    exitConfirmed: fts?.exit_engine?.verdict === 'stop' || fts?.exit_engine?.verdict === 'exit',
+    stopBasis: fts?.exit_engine?.l1?.stop_basis
+      ? (STOP_BASIS_FA[fts.exit_engine.l1.stop_basis] ?? fts.exit_engine.l1.stop_basis)
+      : null,
     matrixDesc: matrix?.desc ?? null,
     jetAth: fts?.jet?.ath ?? null,
   };

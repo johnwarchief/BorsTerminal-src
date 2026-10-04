@@ -136,7 +136,7 @@ describe('داشبورد مستر v2', () => {
     expect(screen.getByText('Trade Execution Blueprint') || screen.getAllByText(/برنامه معاملاتی/).length).toBeTruthy();
     // فیلترهای ۴گانه
     expect(await screen.findByText('چرخه فیلترهای ۴گانه FTS')).toBeInTheDocument();
-    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۱: بنیادی')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۲: تکنیکال')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۳: تابلو')).toBeInTheDocument();
     // باکس synthesis

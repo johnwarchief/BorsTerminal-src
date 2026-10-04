@@ -405,7 +405,7 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
 
     expect(await screen.findByText('برآیند مستر برای شپنا')).toBeInTheDocument();
     // استپر ۴ فیلتر
-    expect(screen.getByText('فیلتر ۱: بنیاد')).toBeInTheDocument();
+    expect(screen.getByText('فیلتر ۱: بنیادی')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۲: تکنیکال')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۳: تابلو')).toBeInTheDocument();
     expect(screen.getByText('فیلتر ۴: سبد و ریسک')).toBeInTheDocument();

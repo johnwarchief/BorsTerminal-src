@@ -60,9 +60,10 @@ describe('کامپوننت اسکرینر صنعت', () => {
     expect(items()[2]).toMatch('سیمان');
   });
 
-  it('خطا/نبود داده حالت بدون داده', async () => {
+  it('خطا: پیام علت‌دار + دکمهٔ تلاش دوباره، نه «بدون داده» سکوت‌آلود', async () => {
     fetchMock.mockImplementation(() => Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) }));
     renderScreener();
-    await waitFor(() => expect(screen.getByText('بدون داده')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/صنایع دریافت نشد/)).toBeInTheDocument());
+    expect(screen.getByTestId('industries-retry')).toBeInTheDocument();
   });
 });

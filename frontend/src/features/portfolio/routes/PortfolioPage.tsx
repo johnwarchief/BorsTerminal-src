@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
+import { RetryAction } from '@shared/components/RetryAction';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -24,7 +25,7 @@ import { SectorMatrix } from '../components/SectorMatrix';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
-const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'بدون تصمیم' };
+const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
 
@@ -118,7 +119,14 @@ export default function PortfolioPage() {
   );
 
   if (portfolio.isLoading) return <EmptyState title="در حال دریافت سبد..." />;
-  if (portfolio.isError) return <EmptyState title="خطا در دریافت سبد" hint="اتصال بک اند را بررسی کن" />;
+  if (portfolio.isError)
+    return (
+      <EmptyState
+        title="خطا در دریافت سبد"
+        hint="اتصال بک اند را بررسی کن"
+        action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
+      />
+    );
 
   const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
   const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
@@ -291,12 +299,20 @@ export default function PortfolioPage() {
                         <tr
                           key={h.symbol}
                           className={`cursor-pointer border-b border-[var(--hairline)] transition-colors duration-200 odd:bg-bg-secondary/40 hover:bg-bg-card/60 ${h.symbol === symbol ? 'bg-accent-blue/12 outline outline-1 outline-border-accent' : ''}`}
+                          tabIndex={0}
+                          aria-label={`انتخاب ${h.symbol} در پرتفوی`}
                           onClick={() => setSymbol(h.symbol)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSymbol(h.symbol);
+                            }
+                          }}
                         >
                           <td className="px-3 py-2.5 font-bold text-text-primary">{h.symbol}</td>
                           <td className="px-3 py-2.5">
                             <Badge tone={STATUS_TONE[(h.status ?? 'pending').toLowerCase() as keyof typeof STATUS_TONE] ?? 'gray'}>
-                              {STATUS_LABEL[(h.status ?? 'pending').toLowerCase()] ?? h.status ?? 'بدون تصمیم'}
+                              {STATUS_LABEL[(h.status ?? 'pending').toLowerCase()] ?? h.status ?? 'در انتظار'}
                             </Badge>
                           </td>
                           <td className="px-3 py-2.5 text-text-primary" title={weightSourceLabel(h.weight_source) ?? undefined}>

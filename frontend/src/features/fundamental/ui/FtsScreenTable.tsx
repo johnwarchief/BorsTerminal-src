@@ -300,6 +300,14 @@ const ScreenerRow = memo(function ScreenerRow({
                 <tr
                   key={r.symbol}
                   onClick={() => r.symbol && !r.excluded && onSelect(r.symbol)}
+                  tabIndex={r.excluded ? -1 : 0}
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && r.symbol && !r.excluded) {
+                      e.preventDefault();
+                      onSelect(r.symbol);
+                    }
+                  }}
+                  aria-label={r.excluded ? undefined : `باز کردن کارت ${r.symbol}`}
                   style={{ height: ROW_H }}
                   className={`h-[46px] border-b border-border-c/40 transition-colors ${
                     r.excluded

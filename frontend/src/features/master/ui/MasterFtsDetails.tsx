@@ -22,6 +22,14 @@ const n = (v: number | null | undefined): string =>
 /** رشتهٔ جلالی از تاریخِ میلادیِ payload؛ نبودِ تاریخ ⇒ '—' */
 const jal = (iso: string | null | undefined): string => jalaliText(iso);
 
+/** رأیِ موتورِ غربالگری (api/fundamental.py) — ترجمۀ کد، بی‌داوریِ دوم */
+const SCREEN_VERDICT_FA: Record<string, string> = {
+  STRONG: 'سوپر بنیادی',
+  WATCH: 'واچ‌لیست',
+  REJECT: 'رد',
+  EXCLUDED: 'خارج از صف',
+};
+
 function Section({
   id, title, mark, children, open = false,
 }: { id: string; title: string; mark?: string; children: ReactNode; open?: boolean }) {
@@ -53,8 +61,8 @@ export function MasterFtsDetails({
 
   return (
     <div className="flex flex-col gap-2" data-testid="master-fts-details">
-      {/* ── S — Selection / تابلوخوانی ── */}
-      <Section id="details-selection" title="S — Selection (تابلوخوانی)" mark={MARK[candidate?.status.tape ?? 'unavailable'].icon}>
+      {/* ── S — تابلوخوانی ── */}
+      <Section id="details-selection" title="S — تابلوخوانی" mark={MARK[candidate?.status.tape ?? 'unavailable'].icon}>
         <p>{candidate?.why.tape || 'دلیلی برایِ درِ تابلو ثبت نشده'}</p>
         {tapeFilters.length ? (
           <ul className="flex flex-wrap gap-1.5">
@@ -65,29 +73,31 @@ export function MasterFtsDetails({
             ))}
           </ul>
         ) : (
-          <li>هیچ‌یک از پنج فیلترِ فایل برایِ همین نماد فعال نیست (نشانه٣ رد، نه نقصِ داده).</li>
+          <li>هیچ‌یک از پنج فیلترِ فایل برایِ همین نماد فعال نیست (نشانهٔ رد، نه کمبودِ داده).</li>
         )}
       </Section>
 
       {/* ── T — تکنیکال ── */}
-      <Section id="details-technical" title="T — Technical" mark={MARK[candidate?.status.technical ?? 'unavailable'].icon}>
+      <Section id="details-technical" title="T — تکنیکال" mark={MARK[candidate?.status.technical ?? 'unavailable'].icon}>
         <ul className="flex flex-col gap-1">
           <li>هفتگی: <b>{dossier.flow.weekly}</b> · روزانه: <b>{dossier.flow.gated ? '— (زیرِ وتو)' : dossier.flow.daily}</b></li>
           <li>ستاپِ فعال: <b>{dossier.flow.setup ?? '—'}</b>{t.matrixDesc ? ` · ${t.matrixDesc}` : ''}</li>
           <li className="num">
-            ورود (تریگر): {n(t.trigger?.price ?? null)}
+            نقطه ورود (تریگر): {n(t.trigger?.price ?? null)}
             {' · '}مقاومت: {n(dossier.levels.resistance ?? srResistance)}
-            {' · '}پشتیبان: {n(support)}
+            {' · '}حمایت: {n(support)}
           </li>
           <li className="num">
             حد ضرر: {n(dossier.levels.hardStop)}
-            {' · '}مبنا: {t.stopBasis === 'swing_low' ? 'کفِ سوینگ' : t.stopBasis === 'basket_price' ? 'قیمتِ خریدِ سبد' : t.stopBasis ?? '—'}
+            {' · '}مبنا: {t.stopBasis ?? '—'}
             {' · '}MA14: {n(dossier.levels.ma14)}
           </li>
           <li>
-            بی‌اعتباری: {t.exitVerdict === 'stop' || t.exitVerdict === 'exit'
-              ? `خروجِ تأییدشده (${t.exitVerdict})` : t.exitVerdict
-              ? `هنوز خروجِ تأییدشده نیست (${t.exitVerdict})` : '—'}
+            شرط ابطال: {t.exitVerdict
+              ? t.exitConfirmed
+                ? `خروجِ تأییدشده (${t.exitVerdict})`
+                : `هنوز خروجِ تأییدشده نیست (${t.exitVerdict})`
+              : '—'}
             {t.trigger?.date ? ` · تاریخِ تریگر: ${jal(t.trigger.date)}` : ''}
           </li>
           <li>مبنای سری: {t.basis ?? '—'} · متن موتور: {t.engineText ?? '—'}</li>
@@ -95,15 +105,15 @@ export function MasterFtsDetails({
       </Section>
 
       {/* ── F — بنیادی ── */}
-      <Section id="details-fundamental" title="F — Fundamental" mark={MARK[candidate?.status.fundamental ?? 'unavailable'].icon}>
+      <Section id="details-fundamental" title="F — بنیادی" mark={MARK[candidate?.status.fundamental ?? 'unavailable'].icon}>
         <p>
-          رأیِ موتور: <b>{sc?.verdict ?? '—'}</b>
+          رأیِ موتور: <b>{SCREEN_VERDICT_FA[sc?.verdict ?? ''] ?? sc?.verdict ?? '—'}</b>
           {sc ? ` · نمره: ${toFaDigits(sc.score)} از ۵` : ''}
         </p>
         <p>{candidate?.why.fundamental || 'دلیلِ ثبت‌شده‌ای برایِ بنیادی نیست'}</p>
         {sc?.excluded ? <p>خارج از صف: {sc.exclusion_reasons ?? 'بدونِ علتِ ثبت‌شده'}</p> : null}
         {sc?.applicable === false ? (
-          <p>این ابزار در پنج‌شاخصه نمی‌گنجد (NOT_APPLICABLE) — نه رد، نه قبول.</p>
+          <p>این ابزار در پنج‌شاخصه نمی‌گنجد — نه رد، نه قبول.</p>
         ) : null}
         <ul className="grid gap-1 sm:grid-cols-2">
           {IND_COLUMNS.map((c, i) => {
@@ -125,8 +135,8 @@ export function MasterFtsDetails({
         </ul>
       </Section>
 
-      {/* ── Strategy / Management — داورِ چهارم نیست ── */}
-      <Section id="details-strategy" title="Strategy / Management">
+      {/* ── استراتژی و مدیریت — داورِ چهارم نیست ── */}
+      <Section id="details-strategy" title="استراتژی و مدیریت">
         <ul className="flex flex-col gap-1">
           <li>
             ساعت شنی (هفتگی، سازۀ مستقلِ صفحهٔ ۴): {dossier.hourglass.active === null ? 'سنجیده نشد'

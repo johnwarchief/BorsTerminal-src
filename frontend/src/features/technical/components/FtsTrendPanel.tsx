@@ -5,6 +5,7 @@ import { Badge } from '@shared/components/Badge';
 import { toFaDigits, fmtPct } from '@shared/lib/fmt';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 import { TREND_FA, trendTone, verdictMeta } from './FtsBadgeStrip';
+import { EXIT_SIGNAL_FA, STOP_BASIS_FA } from '../lib/levels';
 
 function Row({ label, value, tone }: { label: string; value: string; tone?: 'green' | 'red' | 'yellow' | 'gray' }) {
   const color =
@@ -196,14 +197,14 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             value={fmtPrice(l1?.hard_stop)}
             tone={l1?.stop_hit ? 'red' : undefined}
           />
-          <Row label="مبنای حد ضرر" value={l1?.stop_basis === 'swing_low' ? 'کف سوینگ' : l1?.stop_basis ?? '-'} />
+          <Row label="مبنای حد ضرر" value={(l1?.stop_basis && STOP_BASIS_FA[l1.stop_basis]) ?? l1?.stop_basis ?? '-'} />
           <Row label="MA14 تعقیبی" value={fmtPrice(l1?.ma14)} tone={l1?.ma14_exit ? 'red' : undefined} />
           <Row label="RSI" value={l4?.rsi == null ? '-' : toFaDigits(l4.rsi.toFixed(1))} tone={l4?.rsi_divergence ? 'yellow' : undefined} />
           {ex?.signals && ex.signals.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
               {ex.signals.map((s) => (
                 <Badge key={s} tone="yellow">
-                  {s}
+                  {EXIT_SIGNAL_FA[s] ?? s}
                 </Badge>
               ))}
             </div>

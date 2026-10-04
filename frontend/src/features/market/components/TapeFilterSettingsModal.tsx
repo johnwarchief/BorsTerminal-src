@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { parseNum, toFaDigits } from '@shared/lib/fmt';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import {
   TAPE_PRESETS,
   isConfigCustomized,
@@ -58,6 +59,7 @@ export function TapeFilterSettingsModal({
   };
 
   const [activeTab, setActiveTab] = useState<'presets' | 'clock' | 'susp' | 'jet' | 'roobi' | 'noqteh' | 'smart' | 'basis'>('presets');
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose });
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
@@ -67,11 +69,16 @@ export function TapeFilterSettingsModal({
   return createPortal(
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/65 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150"
-      role="dialog"
-      aria-modal="true"
-      aria-label="شخصی‌سازی فیلترهای تابلو و الگوریتم‌ها"
+      role="presentation"
     >
-      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl border border-border-c/90 bg-bg-primary shadow-2xl overflow-hidden">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="شخصی‌سازی فیلترهای تابلو و الگوریتم‌ها"
+        className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl border border-border-c/90 bg-bg-primary shadow-2xl overflow-hidden outline-none overscroll-contain"
+      >
         {/* هدر مدال */}
         <div className="flex items-center justify-between border-b border-border-c/70 px-5 py-3.5 bg-bg-card/60 backdrop-blur">
           <div className="flex items-center gap-2.5">

@@ -7,6 +7,7 @@ import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { toFaDigits } from '@shared/lib/fmt';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { useDialogA11y } from '@shared/lib/useDialogA11y';
 import { Skeleton } from '@shared/components/Skeleton';
 
 type Dest = 'master' | 'technical' | 'market';
@@ -116,6 +117,8 @@ export function CommandPalette() {
     }
   };
 
+  const panelRef = useDialogA11y<HTMLDivElement>({ open, onClose: () => setOpen(false) });
+
   if (!open) return null;
 
   return (
@@ -125,7 +128,9 @@ export function CommandPalette() {
       role="presentation"
     >
       <div
-        className="glass-panel scale-in w-full max-w-xl overflow-hidden"
+        ref={panelRef}
+        tabIndex={-1}
+        className="glass-panel scale-in w-full max-w-xl overflow-hidden outline-none overscroll-contain"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
