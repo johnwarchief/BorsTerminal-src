@@ -39,6 +39,8 @@ export const BADGE_FILTER_KEY: Record<string, string> = {
   jet: 'f_jet',
   sweep: 'f_roobi',
   noqteh: 'f_noqteh',
+  smart: 'f_smart',
+  legal: 'f_legal',
 };
 
 export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[] {
@@ -103,6 +105,29 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
   }
   if (tapeFilterVerdict(row, 'f_noqteh', cfg)) {
     out.push({ key: 'noqteh', pattern: 'noqteh', tone: 'amber', label: 'نقطه', title: 'نقطه‌زنی: فاصله نزدیک از کف ۳۰ روزه', filter: true });
+  }
+  // دو فیلترِ تازۀ فایل — داوری‌شان عیناً پرچمِ بک‌اند است (case پیش‌فرضِ
+  // tapeFilterVerdict)، هیچ فرمولِ دوم درِ رابط نیست.
+  if (tapeFilterVerdict(row, 'f_smart', cfg)) {
+    out.push({
+      key: 'smart',
+      pattern: 'smart',
+      tone: 'cyan',
+      label: 'پول هوشمند',
+      title:
+        `ورود پول هوشمند: حجم ${row.vol_ratio_file != null ? toFaDigits(row.vol_ratio_file.toFixed(2)) : '—'}× مبنای ۳۰ نشست، سرانۀ خریدِ حقوقی ≥ فروشِ حقوقی، آخرین ≥ پایانی و درصدِ آخرین مثبت`,
+      filter: true,
+    });
+  }
+  if (tapeFilterVerdict(row, 'f_legal', cfg)) {
+    out.push({
+      key: 'legal',
+      pattern: 'legal',
+      tone: 'violet',
+      label: 'کد به کد',
+      title: 'کد به کد حقوقی به حقیقی: پول هوشمند + خریدِ حقوقی و فروشِ حقیقی هر کدام بیش از نصفِ حجمِ نشست',
+      filter: true,
+    });
   }
   if (pct != null && pct >= LIMIT_PCT) {
     out.push({ key: 'lu', pattern: 'limit-up', tone: 'green', label: 'صف+', title: 'صف خرید (تغییر ≥ ۴.۹٪)', filter: false });

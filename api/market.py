@@ -894,9 +894,9 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                            np.where(df["vol_dod"] <= 0.90, "down", "flat")))
 
         # ============================================================
-        # پنج فیلترِ تابلو — عینِ فرمول‌هایِ جزوه، در tape_flags.apply_tape_flags
+        # هفت فیلترِ تابلو — عینِ فرمول‌هایِ فایل، در tape_flags.apply_tape_flags
         # (اینجا دیگر چیزی محاسبه نمی‌شود؛ تنها نتیجه رویِ ستون‌هایِ نمایشی
-        #  اعمال می‌گردد تا تابلو و نشان‌هایِ ستونی یک عدد ببینند.)
+        #  اعمال می‌گردد تا تابلو، نشان‌هایِ ستونی و قیف — همه — یک داوری ببینند.)
         # متغیرها (از ExecFilterِ خودِ tsetmc.com): pl=pdv، pc=pcl، plp=درصدِ آخرین
         # نسبت به دیروز، tmin=آستانۀ مجاز پایین (allowed_min)، tvol/qtj=حجم،
         # tno/ztt=تعداد، zd1=تعدادِ سفارشِ سطرِ اولِ خرید، qd1=حجمِ همان سطر،
@@ -909,7 +909,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         df["resistance_59"] = flags["resistance_59"]
         df["dist_min30_pct"] = flags["dist_min30_pct"]
         df["suspicious_vol"] = flags["f_susp"]             # «ستونِ مشکوک» همان حجمِ ۳× است
-        for _k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh"):
+        for _k in ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh", "f_smart", "f_legal"):
             df[_k] = flags[_k]
 
         # Fail-safe: NaN/Inf → 0 (JSON safety)؛ سپس NaN حجمی → واقعاً null
@@ -955,7 +955,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                 continue
             else:
                 df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
-        for _k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh"):
+        for _k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh", "f_smart", "f_legal"):
             df[_k] = df[_k].fillna(False)
 
         records = _slim_records(df, drop_unused)

@@ -69,6 +69,10 @@ export const MarketRowSchema = z.object({
   f_clock: flag,
   f_jet: flag,
   f_noqteh: flag,
+  // دو فیلترِ جزوۀِ تازه — داوری‌شان درِ tape_flags.py است؛ رابط فقط پرچم را
+  // می‌خواند (بی‌آینۀِ منطقیِ دوم).
+  f_smart: flag,
+  f_legal: flag,
   is_live: flag,
   // سقفِ تک‌روزیِ kامین نشستِ آخر — [ih][k].PriceMax در فرمول‌هایِ TSETMC.
   // نبودنش یعنی آن نشست بی‌معامله بوده و سایت همان‌جا صفر می‌گذارد؛ «پلکانِ

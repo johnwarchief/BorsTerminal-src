@@ -66,6 +66,11 @@ function MenuChip({
 }
 
 /** چیپ ترکیبی (Split Chip): کلیک روی متن فیلتر را روشن/خاموش می‌کند و کلیک روی آیکون ⚙ پاپ‌اور تنظیمات همان فیلتر را باز می‌کند */
+
+/** دو فیلترِ فایل‌محور هیچ آستانۀ تنظیم‌شدنی ندارند — داوری‌شان عینِ پرچمِ
+ *  بک‌اند است؛ چرخ‌دندۀ بی‌محتوا دکمۀِ جعلیست و نمایش داده نمی‌شود. */
+const BACKEND_ONLY_FILTERS: readonly QuickFilter[] = ['f_smart', 'f_legal'];
+
 function SplitFilterChip({
   filter,
   active,
@@ -131,22 +136,26 @@ function SplitFilterChip({
         ) : null}
       </button>
 
-      <button
-        type="button"
-        onClick={handleOpenConfig}
-        title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
-        aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
-        className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
-      >
-        ⚙
-      </button>
+      {!BACKEND_ONLY_FILTERS.includes(filter) && (
+        <>
+          <button
+            type="button"
+            onClick={handleOpenConfig}
+            title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
+            aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
+            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
+          >
+            ⚙
+          </button>
 
-      <FilterConfigPopover
-        filter={filter}
-        open={popoverOpen}
-        anchorRect={anchorRect}
-        onClose={() => setPopoverOpen(false)}
-      />
+          <FilterConfigPopover
+            filter={filter}
+            open={popoverOpen}
+            anchorRect={anchorRect}
+            onClose={() => setPopoverOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -268,6 +277,8 @@ export function countQuickMatches(
     f_jet: 0,
     f_roobi: 0,
     f_noqteh: 0,
+    f_smart: 0,
+    f_legal: 0,
   };
   for (const r of rows) {
     for (const f of QUICK_FILTERS) {
@@ -326,7 +337,7 @@ export type HiddenInfo = { count: number; doors: Partial<Record<HiddenDoor, numb
 export function hiddenDoorOf(r: HiddenRow, ctx: HiddenCtx): HiddenDoor | null {
   const q = ctx.query.trim();
   // وقتی کاربر خودِ همین در را باز گذاشته، ردیفی از این در نمی‌گذرد؛ وگرنه
-  // تولتیپ چیزی را توضیح می‌دهد که کاربر уже لغو کرده است.
+  // توضیح چیزی را می‌گوید که کاربر خودش لغو کرده است.
   if (ctx.dropSuffix && isNumericSuffixSymbol(r.symbol)) return 'پسوندِ عددی';
   if (!ctx.assetTypes.includes(classifyAssetType(r))) return 'بازار/ابزارِ خاموش';
   // مثلِ خودِ درِ «فقط زنده»: با جستجویِ صریح جدول نمادِ خاموش را هم نشان می‌دهد (#197)

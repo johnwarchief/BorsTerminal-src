@@ -1,9 +1,10 @@
-# tape_flags.py -- پنج فیلترِ تابلوخوانی، عینِ فرمول‌هایِ فایلِ مالک
+# tape_flags.py -- فیلترهایِ تابلوخوانی، عینِ فرمول‌هایِ فایلِ مالک
 #
-# منبعِ حقیقت، پنج فایلِ دسکتاپ‌اند (`فیلتر جت.txt`، `حجم مشکوک.txt`،
-# `کف روبی صف فروش.txt`، `نقطه زنی.txt`، `الگوی ساعت.txt`) که همان‌ها را
-# `tools/tape_formula_parity.py` یک‌به‌یک با همین ماژول می‌سنجد. جزوه فقط
-# «چرا»یِ آستانه‌ها را توضیح می‌دهد؛ متنِ فایل، «چه»یِ فیلتر است.
+# منبعِ حقیقت، فایل‌هایِ جزوه‌اند (`فیلتر جت.txt`، `حجم مشکوک.txt`،
+# `کف روبی صف فروش.txt`، `نقطه زنی.txt`، `الگوی ساعت.txt`،
+# `ورود پول هوشمند.txt`، `ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt`)
+# که همان‌ها را `tools/tape_formula_parity.py` یک‌به‌یک با همین ماژول
+# می‌سنجد. جزوه فقط «چرا»یِ آستانه‌ها را توضیح می‌دهد؛ متنِ فایل، «چه»یِ فیلتر است.
 #
 # واژه‌هایِ TSETMC درِ فایل‌ها — عیناً از `ExecFilter` درِ باندلِ خودِ سایت
 # (tsetmc.com/main.f24603b0cc21e2598771.js) برداشته شده، نه از گلاسریِ شخصِ
@@ -73,6 +74,20 @@ SUSP_TRADES = 50
 NOQTEH_TRADES = 5
 JET_TRADES = 1                 # ``tno > 1``
 JET_MIN_TRADES = 100           # ``tno > 100`` — رأیِ ۱۸: عینِ فایل برگشت
+# ورودِ پولِ هوشمند (`docs/ورود پول هوشمند.txt`، سطرِ ۱):
+# ``tvol > 1.5*Σ[ih][0..29]/30 && Buy_I_Volume/Buy_CountI >= Sell_I_Volume/Sell_CountI
+#   && pl >= pc && plp > 0``
+# هیچ قیدِ tno درِ فایل نیست و اضافه نمی‌کنیم. سطرهایِ ۲ و ۳ همان فیلتر با
+# مبناءهایِ آمادۀِ سایت ``[is5]``/``[is6]``اند — این آرایه درِ بانکِ ما
+# ذخیره نمی‌شود، پس آن دو variant سنجیده **نمی‌شوند** (unavailable)، نه اینکه
+# جانشینِ حدسی برایشان بگذاریم. مبناءِ canonical همان Σ[ih][0..29]/۳۰ است.
+SMART_VOL_MULT = 1.5
+SMART_BP_GE = 1.0              # سرانۀِ سفارشِ خریدِ حقوقی >= سرانۀِ فروشِ حقوقی (عینِ ``>=``)
+# «کد به کدِ حقوقی به حقیقی» (`docs/ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt`)
+# همان چهار قید + ``Buy_I_Volume > 0.5*tvol && Sell_N_Volume > 0.5*tvol``.
+# توجه: قیدهایِ فایل «حقوقی می‌خرد / حقیقی می‌فروشد» را می‌خواهد؛ نامِ فایل
+# «حقوقی به حقیقی» است و این را عیناً از متنِ فایل پیروی می‌کنیم، نه از نام.
+LEGAL_SHARE_OF_TVOL = 0.5
 
 
 def _n(s: pd.Series) -> pd.Series:
@@ -269,10 +284,42 @@ def noqteh_flag(df: pd.DataFrame) -> pd.Series:
             & (_n(df["z_tot_tran"]) > NOQTEH_TRADES)).fillna(False)
 
 
-def apply_tape_flags(df: pd.DataFrame) -> pd.DataFrame:
-    """پنج پرچم + نسبت‌هایِ کمکی را می‌سازد؛ ورودی را دست نمی‌زند.
+def smart_money_flag(df: pd.DataFrame) -> pd.Series:
+    """F) ورودِ پولِ هوشمند، عینِ سطرِ ۱ فایل: ``tvol > 1.5*Σ[ih][0..29]/30 &&
+    Buy_I/Buy_CountI >= Sell_I/Sell_CountI && pl >= pc && plp > 0``.
 
-    پنج پرچم بر «همین نشست» شرط دارند (`_alive`)؛ نسبت‌ها و ستون‌هایِ نمایشی
+    سمتِ چپِ مقایسه درِ `buyer_power` همان سرانۀِ سفارشِ حقوقی است؛ فایل ضریبِ
+    جت (۱٫۵) را اینجا **نمی‌خواهد** و ``>=``ِ خالص است. صفر/صفر درِ سایت NaN می‌شود
+    و ExecFilter ردیف را بیرون می‌اندازد — اینجا همان NaN با `>=` نتیجه‌اش False
+    است، پس «بی‌معاملۀِ حقوقی» قبول نیست و حدسی ساخته نمی‌شود. پنجرۀِ ۳۰ِ ناقص
+    مثلِ بقیه یعنی «نسنج» (NaN)، نه تقسیمِ دیگری.
+    """
+    pc, pl, plp = _n(df["p_closing"]), _n(df["p_last"]), _n(df["percent_last"])
+    return ((formula_vol_ratio(df) > SMART_VOL_MULT)
+            & (buyer_power(df) >= SMART_BP_GE)
+            & (pc > 0) & (pl >= pc)
+            & (plp > 0)).fillna(False)
+
+
+def legal_to_retail_flag(df: pd.DataFrame) -> pd.Series:
+    """G) کد به کدِ حقوقی به حقیقی: پولِ هوشمند + ``Buy_I_Volume > 0.5*tvol`` +
+    ``Sell_N_Volume > 0.5*tvol`` — عینِ دو قیدِ افزودۀِ فایل.
+
+    حجمِ حقوقیِ خُردهُرد نمی‌تواند نصفِ کلِ نشستِ پُرحجم را پر کند؛ این دو قید
+    همین را از «پولِ هوشمندِ معمولی» جدا می‌کنند. نبودِ ستونِ client_type
+    (ct تهی) صفرِ جعلی است نه «داده نیست» — کوئریِ تابلو COALESCE(…,0) دارد،
+    پس 0.5*tvol رد می‌شود و همان رفتارِ ExecFilter می‌ماند.
+    """
+    tvol = _n(df["tvol"])
+    return (smart_money_flag(df)
+            & (_col(df, "buy_i_vol") > LEGAL_SHARE_OF_TVOL * tvol)
+            & (_col(df, "sell_n_vol") > LEGAL_SHARE_OF_TVOL * tvol)).fillna(False)
+
+
+def apply_tape_flags(df: pd.DataFrame) -> pd.DataFrame:
+    """هفت پرچم + نسبت‌هایِ کمکی را می‌سازد؛ ورودی را دست نمی‌زند.
+
+    پرچم‌ها بر «همین نشست» شرط دارند (`_alive`)؛ نسبت‌ها و ستون‌هایِ نمایشی
     نه — آن‌ها تاریخچند و باید برایِ ردیف‌هایِ بیرونِ تابلو هم حساب بمانند.
     """
     out = df.copy()
@@ -288,4 +335,6 @@ def apply_tape_flags(df: pd.DataFrame) -> pd.DataFrame:
     out["f_jet"] = jet_flag(out) & alive
     out["f_roobi"] = roobi_flag(out) & alive
     out["f_noqteh"] = noqteh_flag(out) & alive
+    out["f_smart"] = smart_money_flag(out) & alive
+    out["f_legal"] = legal_to_retail_flag(out) & alive
     return out

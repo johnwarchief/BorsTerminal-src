@@ -50,40 +50,44 @@ FILES = {
     "کفروبی": "کف روبی صف فروش.txt",
     "نقطه‌زنی": "نقطه زنی.txt",
     "الگوی ساعت": "الگوی ساعت.txt",
+    "پول هوشمند": "ورود پول هوشمند.txt",
+    "کد به کد": "ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt",
 }
 
+
+def resolve(fname: str) -> str:
+    """اول دسکتاپ (مبدأِ فایل‌هایِ مالک)، بعد `docs/` — نسخهٔ کامیت‌شده درِ ریپو."""
+    for d in (DESKTOP, "docs"):
+        p = os.path.join(d, fname)
+        if os.path.isfile(p):
+            return p
+    return os.path.join(DESKTOP, fname)
+
 SRC = "api/market.py"
-SQL = re.search(r'query = """(.*?)"""', open(SRC, encoding="utf-8").read(), re.S)
+SQL = re.search(r'(?:query|_BOARD_SQL) = """(.*?)"""', open(SRC, encoding="utf-8").read(), re.S)
 if not SQL:
     sys.exit("کوئریِ تابلو در api/market.py پیدا نشد")
 BOARD_SQL = SQL.group(1)
 
-# دو مجموعۀ تازه که در کوئریِ تابلو نیست: مجموعِ ۲۹ نشستِ پیش و کمینۀ ۲۸ نشستِ پیش
-# (هر دو «امروز» را هم می‌خواهند، چون فایل [ih][0] را داخلِ بازه می‌شمارد).
+# پنجرۀ [ih] از `tape_history` ساخته می‌شود — همان آرایۀِ خودِ سایت
+# (`GetClosingPriceDailyAllInst`، با ردیفِ صفر برایِ نشستِ بی‌معامله). پنجرۀِ
+# پیشینِ این ابزار از price_history ∪ daily_prices بود و پس از board_hist_fv
+# (سینکِ [ih]) با منبعِ فایل واگرفت شد: اندازه‌گیریِ ۱۴۰۵-۰۷-۱۲ — غمينو3 درِ
+# tape_history ۱٬۰۳۹٬۲۹۸ و درِ پنجرۀِ کهنه ۴۷٬۶۸۸٬۷۵۶ (سریِ والِد درِ
+# price_history رویِ نامِ یکسان می‌نشیند). مرجعِ فایل باید مستقل از
+# کوئریِ تابلو ساخته شود، ولی از همانِ منبعِ فایل.
 EXTRA_SQL = """
-    WITH iso AS (SELECT MAX(d_even) AS d FROM market_watch),
-    hist AS (
-        SELECT symbol, dt, MAX(high) high, MAX(low) low, MAX(volume) volume FROM (
-            SELECT i.l_val18 symbol, h.date dt, h.high, h.low, h.volume
-            FROM price_history h JOIN instruments i ON i.l_val18 = h.symbol
-            UNION ALL
-            SELECT i.l_val18, printf('%04d-%02d-%02d', d.d_even/10000, (d.d_even/100)%100, d.d_even%100),
-                   d.price_max, d.price_min, d.q_tot_tran
-            FROM daily_prices d JOIN instruments i ON i.ins_code = d.ins_code
-        ) GROUP BY symbol, dt
-    ),
-    rk AS (SELECT symbol, dt, low, volume,
-                  ROW_NUMBER() OVER (PARTITION BY symbol ORDER BY dt DESC) rn
-           FROM hist
-           WHERE dt <= (SELECT printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100) FROM iso))
+WITH th AS (
+    SELECT i.l_val18 AS symbol,
+           ROW_NUMBER() OVER (PARTITION BY t.ins_code ORDER BY t.d_even DESC) AS rn,
+           t.q_tot_tran5j AS volume, t.price_min AS low
+    FROM tape_history t JOIN instruments i ON i.ins_code = t.ins_code
+)
 SELECT symbol,
-       -- در این پنجره rn=1 «امروز» است، پس Σ[ih][0..29] = rn BETWEEN 1 AND 30
-       SUM(CASE WHEN rn BETWEEN 1 AND 30 THEN volume END) AS x_sum30,
-       -- [ih][0..28].PriceMin = امروز + ۲۸ نشستِ پیش = rn BETWEEN 1 AND 29
-       MIN(CASE WHEN rn BETWEEN 1 AND 29 THEN low END)    AS min_low_1_28,
-       -- نشست‌هایِ **پیش** از امروز (rn>=2)؛ شرطِ «سی نشستِ کامل» روی این شمرده می‌شود
-       SUM(CASE WHEN rn BETWEEN 2 AND 30 THEN 1 END)      AS prior_n
-FROM rk GROUP BY symbol
+       SUM(CASE WHEN rn <= 30 THEN volume END) AS x_sum30,
+       MIN(CASE WHEN rn <= 29 THEN low END)    AS min_low_1_28,
+       MAX(rn)                                  AS prior_n
+FROM th WHERE rn <= 60 GROUP BY symbol
 """
 
 conn = sqlite3.connect("market.db")
@@ -114,7 +118,8 @@ df = apply_tape_flags(df)
 
 for col in ("z_tot_tran", "x_sum30", "min_low_1_28", "month_avg_vol",
             "min30_low", "prev_day_vol", "p_last", "p_closing", "p_min",
-            "buy_i_vol", "buy_count_i", "sell_i_vol", "sell_count_i"):
+            "buy_i_vol", "buy_count_i", "sell_i_vol", "sell_count_i",
+            "sell_n_vol", "buy_n_vol"):
     if col in df.columns:
         df[col] = n(df[col])
 
@@ -133,12 +138,15 @@ buyer = (df["buy_i_vol"] / df["buy_count_i"].where(lambda s: s > 0)) / (
     df["sell_i_vol"] / df["sell_count_i"].where(lambda s: s > 0))
 
 
-prior_short = pd.to_numeric(df["prior_n"], errors="coerce").fillna(0) < 29
+prior_short = pd.to_numeric(df["prior_n"], errors="coerce").fillna(0) < 30
 
 
 def rep(name, code_col, file_rule):
     code = df[code_col].astype(bool)
-    file_rule = file_rule.fillna(False)
+    # رفتارِ خودِ ExecFilter: شاخصِ [ih][29] از طولِ آرایه بیرون بزند استثنا
+    # می‌دهد و ردیف از *همان* فیلتر می‌افتد — کم‌سابقه درِ فایل هم «نسنجیده»
+    # است، نه تقسیمِ ناقص (سرآمدِ tape_flags.py).
+    file_rule = file_rule.fillna(False) & ~prior_short
     print(f"\n== {name}   کد={int(code.sum())}   فایل={int(file_rule.sum())}   "
           f"مشترک={int((code & file_rule).sum())}")
     only_code, only_file = (code & ~file_rule), (file_rule & ~code)
@@ -188,6 +196,16 @@ cfield2 = ((pc - min_file) / pc * 100 * 100).round(2) / 100
 rep("نقطه‌زنی", "f_noqteh",
     (min_file > 0) & (cfield2 < 3) & (today_vol > 1 * base_file) & (tno > 5))
 
+# پول هوشمند (سطرِ ۱ فایل): tvol > 1.5*avg([ih][0..29]) && BuyI/ctBuyI >= SellI/ctSellI
+# && pl >= pc && plp > 0 — «plp» درِ ExecFilter درصدِ **آخرین** است (percent_last).
+plp_last = df["percent_last"] if "percent_last" in df.columns else plp
+sm_file = ((today_vol > 1.5 * base_file) & (buyer >= 1.0) & (pl >= pc) & (plp_last > 0))
+rep("پول هوشمند", "f_smart", sm_file)
+
+# کد به کد: همان چهار قید + Buy_I_Volume > 0.5*tvol && Sell_N_Volume > 0.5*tvol
+rep("کد به کد", "f_legal",
+    sm_file & (df["buy_i_vol"] > 0.5 * today_vol) & (df["sell_n_vol"] > 0.5 * today_vol))
+
 # کفروبی: qd1 در فایل «تعدادِ معاملاتِ نشستِ پیش» است؛ چنین ستونی در
 # price_history و daily_prices نیست → بازگشتِ معنادار ممکن نیست، نه صفر.
 print("\n== کفروبی   (qd1 = تعداد معاملاتِ نشستِ پیش)")
@@ -207,7 +225,7 @@ print(f"\nمبنایِ حجم: فایل امروز را هم داخلِ میان
 # فایل‌ها هنوز همان‌اند؟ (تا ابزار از منبعش جدا نیفتد)
 print("\nفایل‌هایِ مرجع:")
 for k, fn in FILES.items():
-    p = os.path.join(DESKTOP, fn)
+    p = resolve(fn)
     if os.path.isfile(p):
         txt = io.open(p, encoding="utf-8-sig").read().strip()
         print(f"  {k:<12} {len(txt):>5} نویسه  sha8={hashlib.sha256(txt.encode()).hexdigest()[:8]}")

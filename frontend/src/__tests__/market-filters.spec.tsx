@@ -76,7 +76,7 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
   });
 
   it('چیپ‌های سریع FTS مستقیماً روی نوار رندر شده و فعال/غیرفعال می‌شوند', () => {
-    render(<MarketFilters sectors={[]} matches={{ f_clock: 5, f_susp: 2, f_jet: 1, f_roobi: 3, f_noqteh: 0 }} />);
+    render(<MarketFilters sectors={[]} matches={{ f_clock: 5, f_susp: 2, f_jet: 1, f_roobi: 3, f_noqteh: 0, f_smart: 0, f_legal: 0 }} />);
     const clockChip = screen.getByText(/الگوی ساعت/);
     expect(clockChip).toBeInTheDocument();
     expect(screen.getByText('(۵)')).toBeInTheDocument();
@@ -105,13 +105,15 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
     render(
       <MarketFilters
         sectors={[]}
-        matches={{ f_clock: 29, f_susp: 45, f_jet: 5, f_roobi: 1, f_noqteh: 4 }}
+        matches={{ f_clock: 29, f_susp: 45, f_jet: 5, f_roobi: 1, f_noqteh: 4, f_smart: 0, f_legal: 0 }}
         hiddenInfo={{
           f_clock: { count: 49, doors: { 'پسوندِ عددی': 49 } },
           f_susp: { count: 51, doors: { 'پسوندِ عددی': 44, 'بازار/ابزارِ خاموش': 7 } },
           f_jet: { count: 0, doors: {} },
           f_roobi: { count: 30, doors: { 'نمادِ خاموش': 30 } },
           f_noqteh: { count: 7, doors: { جستجو: 5, صنعت: 2 } },
+          f_smart: { count: 0, doors: {} },
+          f_legal: { count: 0, doors: {} },
         }}
       />,
     );
@@ -140,6 +142,8 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
           f_jet: { count: 0, doors: {} },
           f_roobi: { count: 0, doors: {} },
           f_noqteh: { count: 0, doors: {} },
+          f_smart: { count: 0, doors: {} },
+          f_legal: { count: 0, doors: {} },
         }}
       />,
     );
@@ -161,6 +165,8 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
           f_jet: { count: 0, doors: {} },
           f_roobi: { count: 30, doors: { 'نمادِ خاموش': 30 } },
           f_noqteh: { count: 7, doors: { جستجو: 5, صنعت: 2 } },
+          f_smart: { count: 0, doors: {} },
+          f_legal: { count: 0, doors: {} },
         }}
       />,
     );

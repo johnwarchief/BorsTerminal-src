@@ -38,6 +38,9 @@ import {
   type UnmeasuredPolicy,
 } from '../stores/funnelPrefsStore';
 
+// پلِ ورودِ مسیرِ سفارشیِ قیف — همان پنج گره‌ای چارت ۳ ستون S؛ «پول هوشمند»
+// و «کد به کد» فیلترهایِ تازۀ فایل‌اند که از چیپ‌هایِ تابلو (QUICK_FILTERS درِ
+// tapeStore) دستی انتخاب می‌شوند و داوری‌شان عیناً پرچمِ بک‌اند است، نه آینه.
 const FILE_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh'] as const;
 
 /** واژگانِ روندِ موتور (`_fts_classify_trend`) به زبانِ خودِ چارت ۳ ستون T. */
