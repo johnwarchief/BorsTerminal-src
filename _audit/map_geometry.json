@@ -3,69 +3,8 @@
   "checks": [
     {
       "name": "برچسبِ هیچ گره‌ای از کارتِ خودش بیرون نمی‌زند",
-      "ok": false,
-      "detail": [
-        {
-          "id": "crit_sales_growth",
-          "label": "شاخص ۱: رشد فروش ماهانه (۴۰٪+)",
-          "over": 205
-        },
-        {
-          "id": "crit_3y_eps",
-          "label": "شاخص ۲: سودآوری مستمر ۳ ساله",
-          "over": 198
-        },
-        {
-          "id": "crit_gross_margin",
-          "label": "شاخص ۳: حاشیه سود ناخالص",
-          "over": 176
-        },
-        {
-          "id": "crit_ps_ratio",
-          "label": "شاخص ۴: فروش÷ارزش ≥ ۰٫۳۳",
-          "over": 181
-        },
-        {
-          "id": "crit_pricing_regime",
-          "label": "شاخص ۵: نوع نرخ‌گذاری",
-          "over": 136
-        },
-        {
-          "id": "fund_super",
-          "label": "💎 سوپربنیادی (رشد > ۴۰٪)",
-          "over": 157
-        },
-        {
-          "id": "fund_good",
-          "label": "بنیادی مطلوب (حاشیه > ۲۰٪)",
-          "over": 165
-        },
-        {
-          "id": "fund_medium",
-          "label": "بنیادی متوسط (فقط نوسانی)",
-          "over": 159
-        },
-        {
-          "id": "fund_weak",
-          "label": "⛔ رد صلب بنیادی (وتوی قطعی)",
-          "over": 183
-        },
-        {
-          "id": "tech_weekly_reject",
-          "label": "⛔ ریجکت هفتگی (وتوی قطعی)",
-          "over": 182
-        },
-        {
-          "id": "tech_weekly_up",
-          "label": "📈 تایم هفتگی صعودی",
-          "over": 131
-        },
-        {
-          "id": "setup_pullback",
-          "label": "↩️ ستاپ پولبک و بازآزمایی",
-          "over": 153
-        }
-      ]
+      "ok": true,
+      "detail": []
     },
     {
       "name": "چهار Zone با جایگاهِ ۰ تا ۳ رسم شده",
@@ -88,78 +27,17 @@
     },
     {
       "name": "بوم در ۱۰۸۰ بدون اسکرولِ عمودیِ زیاد جا می‌شود",
-      "ok": false,
+      "ok": true,
       "detail": {
-        "canvasH": 1192,
+        "canvasH": 890,
         "viewportH": 1080,
-        "pageH": 1999
+        "pageH": 1697
       }
     },
     {
       "name": "در ۱۳۶۶ هم متن‌ها درونِ کارت‌اند",
-      "ok": false,
-      "detail": [
-        {
-          "id": "crit_sales_growth",
-          "label": "شاخص ۱: رشد فروش ماهانه (۴۰٪+)",
-          "over": 160
-        },
-        {
-          "id": "crit_3y_eps",
-          "label": "شاخص ۲: سودآوری مستمر ۳ ساله",
-          "over": 154
-        },
-        {
-          "id": "crit_gross_margin",
-          "label": "شاخص ۳: حاشیه سود ناخالص",
-          "over": 137
-        },
-        {
-          "id": "crit_ps_ratio",
-          "label": "شاخص ۴: فروش÷ارزش ≥ ۰٫۳۳",
-          "over": 141
-        },
-        {
-          "id": "crit_pricing_regime",
-          "label": "شاخص ۵: نوع نرخ‌گذاری",
-          "over": 106
-        },
-        {
-          "id": "fund_super",
-          "label": "💎 سوپربنیادی (رشد > ۴۰٪)",
-          "over": 121
-        },
-        {
-          "id": "fund_good",
-          "label": "بنیادی مطلوب (حاشیه > ۲۰٪)",
-          "over": 128
-        },
-        {
-          "id": "fund_medium",
-          "label": "بنیادی متوسط (فقط نوسانی)",
-          "over": 123
-        },
-        {
-          "id": "fund_weak",
-          "label": "⛔ رد صلب بنیادی (وتوی قطعی)",
-          "over": 142
-        },
-        {
-          "id": "tech_weekly_reject",
-          "label": "⛔ ریجکت هفتگی (وتوی قطعی)",
-          "over": 141
-        },
-        {
-          "id": "tech_weekly_up",
-          "label": "📈 تایم هفتگی صعودی",
-          "over": 101
-        },
-        {
-          "id": "setup_pullback",
-          "label": "↩️ ستاپ پولبک و بازآزمایی",
-          "over": 118
-        }
-      ]
+      "ok": true,
+      "detail": []
     }
   ],
   "errors": [],
@@ -169,79 +47,18 @@
   ],
   "g1920": {
     "canvasCss": {
-      "w": 1630,
-      "h": 1192
+      "w": 1438,
+      "h": 890
     },
-    "viewBox": "0 0 1438 1052",
+    "viewBox": "0 0 1438 890",
     "rows": 78,
     "sample": {
-      "cardW": 277,
-      "textW": 215,
-      "cardH": 48
+      "cardW": 244,
+      "textW": 169,
+      "cardH": 33
     },
-    "overflowCount": 45,
-    "overflow": [
-      {
-        "id": "crit_sales_growth",
-        "label": "شاخص ۱: رشد فروش ماهانه (۴۰٪+)",
-        "over": 205
-      },
-      {
-        "id": "crit_3y_eps",
-        "label": "شاخص ۲: سودآوری مستمر ۳ ساله",
-        "over": 198
-      },
-      {
-        "id": "crit_gross_margin",
-        "label": "شاخص ۳: حاشیه سود ناخالص",
-        "over": 176
-      },
-      {
-        "id": "crit_ps_ratio",
-        "label": "شاخص ۴: فروش÷ارزش ≥ ۰٫۳۳",
-        "over": 181
-      },
-      {
-        "id": "crit_pricing_regime",
-        "label": "شاخص ۵: نوع نرخ‌گذاری",
-        "over": 136
-      },
-      {
-        "id": "fund_super",
-        "label": "💎 سوپربنیادی (رشد > ۴۰٪)",
-        "over": 157
-      },
-      {
-        "id": "fund_good",
-        "label": "بنیادی مطلوب (حاشیه > ۲۰٪)",
-        "over": 165
-      },
-      {
-        "id": "fund_medium",
-        "label": "بنیادی متوسط (فقط نوسانی)",
-        "over": 159
-      },
-      {
-        "id": "fund_weak",
-        "label": "⛔ رد صلب بنیادی (وتوی قطعی)",
-        "over": 183
-      },
-      {
-        "id": "tech_weekly_reject",
-        "label": "⛔ ریجکت هفتگی (وتوی قطعی)",
-        "over": 182
-      },
-      {
-        "id": "tech_weekly_up",
-        "label": "📈 تایم هفتگی صعودی",
-        "over": 131
-      },
-      {
-        "id": "setup_pullback",
-        "label": "↩️ ستاپ پولبک و بازآزمایی",
-        "over": 153
-      }
-    ],
+    "overflowCount": 0,
+    "overflow": [],
     "scroll": {
       "left": 0,
       "max": 0,
@@ -256,85 +73,24 @@
   },
   "htmlDir": "rtl",
   "tall": {
-    "canvasH": 1192,
+    "canvasH": 890,
     "viewportH": 1080,
-    "pageH": 1999
+    "pageH": 1697
   },
   "g1366": {
     "canvasCss": {
       "w": 1438,
-      "h": 1052
+      "h": 890
     },
-    "viewBox": "0 0 1438 1052",
+    "viewBox": "0 0 1438 890",
     "rows": 78,
     "sample": {
       "cardW": 244,
       "textW": 169,
-      "cardH": 42
+      "cardH": 33
     },
-    "overflowCount": 45,
-    "overflow": [
-      {
-        "id": "crit_sales_growth",
-        "label": "شاخص ۱: رشد فروش ماهانه (۴۰٪+)",
-        "over": 160
-      },
-      {
-        "id": "crit_3y_eps",
-        "label": "شاخص ۲: سودآوری مستمر ۳ ساله",
-        "over": 154
-      },
-      {
-        "id": "crit_gross_margin",
-        "label": "شاخص ۳: حاشیه سود ناخالص",
-        "over": 137
-      },
-      {
-        "id": "crit_ps_ratio",
-        "label": "شاخص ۴: فروش÷ارزش ≥ ۰٫۳۳",
-        "over": 141
-      },
-      {
-        "id": "crit_pricing_regime",
-        "label": "شاخص ۵: نوع نرخ‌گذاری",
-        "over": 106
-      },
-      {
-        "id": "fund_super",
-        "label": "💎 سوپربنیادی (رشد > ۴۰٪)",
-        "over": 121
-      },
-      {
-        "id": "fund_good",
-        "label": "بنیادی مطلوب (حاشیه > ۲۰٪)",
-        "over": 128
-      },
-      {
-        "id": "fund_medium",
-        "label": "بنیادی متوسط (فقط نوسانی)",
-        "over": 123
-      },
-      {
-        "id": "fund_weak",
-        "label": "⛔ رد صلب بنیادی (وتوی قطعی)",
-        "over": 142
-      },
-      {
-        "id": "tech_weekly_reject",
-        "label": "⛔ ریجکت هفتگی (وتوی قطعی)",
-        "over": 141
-      },
-      {
-        "id": "tech_weekly_up",
-        "label": "📈 تایم هفتگی صعودی",
-        "over": 101
-      },
-      {
-        "id": "setup_pullback",
-        "label": "↩️ ستاپ پولبک و بازآزمایی",
-        "over": 118
-      }
-    ],
+    "overflowCount": 0,
+    "overflow": [],
     "scroll": {
       "left": 0,
       "max": 282,

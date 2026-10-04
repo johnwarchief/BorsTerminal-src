@@ -3,7 +3,8 @@
   "methodology": {
    "version": "FTS-v10",
    "thresholds": {
-    "monetary_growth_min": 60.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
     "volume_growth_min": 0.0,
     "volume_breadth_min": 0.6,
     "eps_years": 3,
@@ -134,7 +135,8 @@
   "methodology": {
    "version": "FTS-v10",
    "thresholds": {
-    "monetary_growth_min": 60.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
     "volume_growth_min": 0.0,
     "volume_breadth_min": 0.6,
     "eps_years": 3,
@@ -275,7 +277,8 @@
   "methodology": {
    "version": "FTS-v10",
    "thresholds": {
-    "monetary_growth_min": 60.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
     "volume_growth_min": 0.0,
     "volume_breadth_min": 0.6,
     "eps_years": 3,
