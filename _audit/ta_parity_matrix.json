@@ -1,0 +1,678 @@
+{
+ "tool": "ta_parity_matrix.py",
+ "stamps": {
+  "run_started_local": "2026-10-04 16:31:10 +0330",
+  "run_started_utc": "2026-10-04 13:01:10 UTC",
+  "ta": {
+   "market0": "2026-10-04 16:31:10 +0330",
+   "histo": "2026-10-04 16:31:10 +0330",
+   "totals0": "2026-10-04 16:31:11 +0330",
+   "industries": "2026-10-04 16:31:11 +0330",
+   "mainwatch": "2026-10-04 16:31:11 +0330"
+  },
+  "ours_done_at_local": "2026-10-04 16:31:11 +0330",
+  "ours_done_at_utc": "2026-10-04 13:01:16 UTC",
+  "ta_drift": {
+   "second_fetch_local": "2026-10-04 16:31:16 +0330",
+   "second_d": 1631,
+   "first_d": 1631,
+   "ours_index_first": {
+    "d_even": 20261004,
+    "last": 7783279.08,
+    "change": -24789.63,
+    "pct": -0.32,
+    "ew_last": 2063268.8,
+    "ew_change": -5453.53,
+    "ew_pct": -0.26
+   },
+   "ours_index_second": {
+    "d_even": 20261004,
+    "last": 7783279.08,
+    "change": -24789.63,
+    "pct": -0.32,
+    "ew_last": 2063268.8,
+    "ew_change": -5453.53,
+    "ew_pct": -0.26
+   }
+  },
+  "run_finished_local": "2026-10-04 16:31:17 +0330"
+ },
+ "meta": {
+  "ta_m": {
+   "j": "1405/07/12",
+   "d": 1631
+  },
+  "our_asof": {
+   "d_even": 20261004,
+   "h_even": 163054,
+   "client_d_even": 20261004,
+   "client_lag_days": false,
+   "depth": true,
+   "top50": 50,
+   "n": 3870
+  },
+  "matched_industries": 33,
+  "overlap": 0,
+  "ta_mw": [
+   "اهرم",
+   "کچاد",
+   "نوری",
+   "شپدیس",
+   "شستا",
+   "فارس",
+   "وغدیر",
+   "وبصادر",
+   "شبندر",
+   "فملی",
+   "کگل",
+   "نارنج اهرم",
+   "بیدار",
+   "خساپا",
+   "فولاد",
+   "وتجارت",
+   "خودرو",
+   "موج",
+   "شپنا",
+   "وبملت"
+  ],
+  "our_top": [
+   "انتشار، چاپ و تکثیر",
+   2.99,
+   2.99,
+   0.5,
+   0.542973728
+  ],
+  "our_bot": [
+   "عمده فروشی",
+   -2.93,
+   -2.93,
+   2.1,
+   2.06262056
+  ],
+  "their_top": [
+   "انتشار، چاپ و تکثیر",
+   2.99,
+   2.99,
+   0.5,
+   0.542973728
+  ],
+  "their_bot": [
+   "لاستیک و پلاستیک",
+   -5.37,
+   -0.42,
+   243.3,
+   225.1609090868
+  ]
+ },
+ "identity_checks": [
+  {
+   "id": "m = st+sf+nsf (ارزش)",
+   "m": 994850725967400.0,
+   "sum": 994850725967400.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "m = st+sf+nsf (حجم)",
+   "m": 113315748467.0,
+   "sum": 113315748467.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "m = st+sf+nsf (جریان)",
+   "m": 30804322954248.0,
+   "sum": 30804322954250.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "st: i5 = i7−i10",
+   "i5": -6233737343168.0,
+   "i7-i10": -6757022502220.0,
+   "rel_err": 0.08394405
+  },
+  {
+   "id": "sf: i5 = i7−i10",
+   "i5": -2230501468760.0,
+   "i7-i10": -2230501468760.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "nsf: i5 = i7−i10",
+   "i5": 39268561766178.0,
+   "i7-i10": 39268561766179.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "cf: i5 = i7−i10",
+   "i5": 7102989390607.0,
+   "i7-i10": 7102989390607.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "scf: i5 = i7−i10",
+   "i5": -2597257951423.0,
+   "i7-i10": -2597257951424.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "lf: i5 = i7−i10",
+   "i5": 4255625797547.0,
+   "i7-i10": 4255625797548.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "m: i5 = i7−i10",
+   "i5": 30804322954248.0,
+   "i7-i10": 30804322954249.0,
+   "rel_err": 0.0
+  },
+  {
+   "id": "market0.s == histo.s1[1:13]",
+   "holds": true
+  },
+  {
+   "id": "sum(s1) == pp+pm",
+   "sum_s1": 863,
+   "pp_pm": 863
+  },
+  {
+   "id": "totals0.plus[-1] == market0.pp[0]",
+   "plus_last": 333.0,
+   "pp": 333
+  }
+ ],
+ "counts": {
+  "missing-source": 2,
+  "snapshot-timing": 2,
+  "match": 2,
+  "definition-gap": 24
+ },
+ "rows": [
+  {
+   "metric": "وضعیت کلی بازار (برچسب)",
+   "our_ref": "/api/mstat/smart-money → macro.label + verdict",
+   "their_ref": "بدونِ منبع — برچسب «وضعیت کنونی بازار» فقط در باندلِ صفحهٔ خانه دیده شد (_audit/ta_home_strings.txt:356,729)؛ هیچ فیلدِ عددیِ market0/histo-status به آن وصل نیست و /market پشتِ ورود است",
+   "our": "مساعد",
+   "their": "UNREACHABLE",
+   "tol": 0.005,
+   "note": "جست‌وجو شد: /data/market0 (کلیدها عددیِ بی‌متن)، /data/market/histo-status (سطل)، /data/market/chart/totals0 (سری زمانی)، رشته‌های باندل.",
+   "delta": null,
+   "delta_pct": null,
+   "verdict": "missing-source",
+   "cause_class": null,
+   "cause_evidence": null
+  },
+  {
+   "metric": "شاخص کل (مقدار)",
+   "our_ref": "/api/mstat/smart-money → macro.index.last",
+   "their_ref": "tradersarena.ir/data/market0 → iw[0]",
+   "our": 7783279.08,
+   "their": 7783176.57,
+   "tol": 0.05,
+   "note": "",
+   "delta": 102.51,
+   "delta_pct": 0.001,
+   "verdict": "snapshot-timing",
+   "cause_class": "snapshot-timing",
+   "cause_evidence": "هر دو سطر از GetMarketOverviewِ همان نشستند (برابریِ عینـی در ۱۴۰۵-۰۷-۰۴؛ TA-PARITY §۲). اختلافِ این اجرا فقط از فاصلۀ دو برداشت است: TA d=1631 در برابرِ asof ما h_even=163054"
+  },
+  {
+   "metric": "شاخص کل (تغییر روز)",
+   "our_ref": "/api/mstat/smart-money → macro.index.change",
+   "their_ref": "market0 → iw[1]",
+   "our": -24789.63,
+   "their": -24892.12,
+   "tol": 0.05,
+   "note": "",
+   "delta": 102.49,
+   "delta_pct": 0.412,
+   "verdict": "snapshot-timing",
+   "cause_class": "snapshot-timing",
+   "cause_evidence": "همان ۱۰۲٫۵ واحدِ سطرِ «مقدار» (تغییر = مقدارجاری − دیروز؛ دیروز مشترک است). سطرِ درصد عیناً یکی است (−۰٫۳۲) و درِ ۱۴۰۵-۰۷-۰۴ این دو عدد ده‌به‌ده برابر بودند (TA-PARITY §۲) — یعنی واگرایی از لحظۀ فریزشدنِ هر ناشر درِ تسویهٔ پسازساعت است: TA روی d=1631 ایستاده و ما روی h_even=163054"
+  },
+  {
+   "metric": "شاخص کل (درصد روز)",
+   "our_ref": "/api/mstat/smart-money → macro.index.pct",
+   "their_ref": "market0 → iw[2]",
+   "our": -0.32,
+   "their": -0.32,
+   "tol": 0.02,
+   "note": "",
+   "delta": 0.0,
+   "delta_pct": 0.0,
+   "verdict": "match",
+   "cause_class": null,
+   "cause_evidence": null
+  },
+  {
+   "metric": "تعداد مثبت",
+   "our_ref": "/api/mstat/thermometer → positive (گروه all؛ eq_all در یادداشت)",
+   "their_ref": "market0 → pp[0] (=سریِ plus در totals0)",
+   "our": 668,
+   "their": 333,
+   "tol": 0,
+   "note": "",
+   "delta": 335.0,
+   "delta_pct": 100.601,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "دامنۀ او 863 نماد است (اتحادِ درونِ خودش: pp+pm=863.0 == sum(s1)) در برابرِ 1362 نمادِ دارایِ درصدِ ما (all) / 1266 (eq_all). شمارِ او با هیچ سطلِ ما بازسازی نشد؛ دامنۀ «تغییرِ معنادار» او رمزگشایی‌نشده باقی است (TA-SCOPE-DECODE §۶، این دور هم تأیید کرد)"
+  },
+  {
+   "metric": "تعداد منفی",
+   "our_ref": "/api/mstat/thermometer → negative (گروه all)",
+   "their_ref": "market0 → pm[0] (=سریِ minus در totals0)",
+   "our": 686,
+   "their": 530,
+   "tol": 0,
+   "note": "",
+   "delta": 156.0,
+   "delta_pct": 29.434,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "همان دامنۀ 863تاییِ سطرِ بالا"
+  },
+  {
+   "metric": "درصد مثبت/منفی",
+   "our_ref": "/api/mstat/thermometer → positive_pct / negative_pct",
+   "their_ref": "نسبتِ حسابی از pp/pm او: plus/(plus+minus) — «درصدِ» مستقل در فیدش نیست",
+   "our": 49.0,
+   "their": 38.6,
+   "tol": 0.5,
+   "note": "",
+   "delta": 10.4,
+   "delta_pct": 26.943,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "منفیِ ما 50.4% رویِ دامنۀ 1362؛ او فقط نسبتِ دامنۀ ۸۶۳تاییِ خودش را می‌دهد"
+  },
+  {
+   "metric": "صف خرید (شمارِ نماد در صف)",
+   "our_ref": "/api/mstat/depth → buy_queue_count",
+   "their_ref": "totals0 → bq[-1] (شمارهٔ کوچک؛ معنا از توالیِ شمارشِ درون‌روزی: TA_PARITY_AUDIT §«عمقِ صف»)",
+   "our": 235,
+   "their": 169.0,
+   "tol": 0,
+   "note": "",
+   "delta": 66.0,
+   "delta_pct": 39.053,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "دامنۀ او همان ۸۶۳تایی است؛ ما رویِ کلِ 1616 سطرِ دارایِ عمق می‌شماریم. تبدیلِ واحد هم محتمل نیست چون bq[-1]=169.0 یک شمارۀ صحیحِ کوچک است نه ریال."
+  },
+  {
+   "metric": "صف فروش (شمارِ نماد در صف)",
+   "our_ref": "/api/mstat/depth → sell_queue_count",
+   "their_ref": "totals0 → sq[-1]",
+   "our": 500,
+   "their": 325.0,
+   "tol": 0,
+   "note": "",
+   "delta": 175.0,
+   "delta_pct": 53.846,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "همان دامنۀ صفِ خرید"
+  },
+  {
+   "metric": "صف خرید (ارزش)",
+   "our_ref": "/api/mstat/depth → buy_queue_b_toman (all/eq_all)",
+   "their_ref": "totals0 → bo[-1] — معنا/یکای این ستون رمزگشایی نشده (TA-SCOPE-DECODE آن را در «نیازمند پژوهش» گذاشته؛ هر نسبتِ ثابتی با ستون‌هایِ اثبات‌شده ندارد)",
+   "our": "all=58886.6 · eq_all=6652.3",
+   "their": 5636.5,
+   "tol": 5.0,
+   "note": "",
+   "delta": null,
+   "delta_pct": null,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "bo[-1]=5636.5 م.ت و so[-1]=4875.6 م.ت؛ این‌که «بهترین سفارش» است یا «ارزش صف» از فیدِ عمومی قابلِ اثبات نیست — پس هیچ ادعایِ برابری/خطا نمی‌کنیم."
+  },
+  {
+   "metric": "صف فروش (ارزش)",
+   "our_ref": "/api/mstat/depth → sell_queue_b_toman (all/eq_all)",
+   "their_ref": "totals0 → so[-1] (رمزگشایی‌نشده)",
+   "our": "all=14181.0 · eq_all=6503.0",
+   "their": 4875.6,
+   "tol": 5.0,
+   "note": "",
+   "delta": null,
+   "delta_pct": null,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "همان سطرِ بالا"
+  },
+  {
+   "metric": "ارزش معاملات — کل بازار (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[all].value_b_toman",
+   "their_ref": "market0 → m[1]/1e10 (دامنۀ او = st+sf+nsf؛ هویتِ جبریِ اثبات‌شده)",
+   "our": 94309.9,
+   "their": 99485.07259674,
+   "tol": 30.0,
+   "note": "",
+   "delta": -5175.172597,
+   "delta_pct": -5.202,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "واکاویِ Δِ این اجرا: کل -5175.2 = (687.9 سهام) + (-6993.0 ص.سهامی) + (1129.9 درآمدثابت) — همه از طبقه‌بندیِ زیرگونهٔ صندوق می‌آید که درِ docs/TA-SCOPE-DECODE.md §۳ و §۴ به‌عنوان تنها شکافِ بازِ «دامنه» ثبت شده است (TSETMC هیچ fundType رسمی نمی‌دهد؛ زیرنوع از نام حدس زده می‌شود؛ جهتِ دو سطرِ صندوق یکدیگر را می‌پوشانند)"
+  },
+  {
+   "metric": "ارزش — سهام و حق تقدم (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[stock_right].value_b_toman",
+   "their_ref": "market0 → st[1]/1e10",
+   "our": 39404.3,
+   "their": 38716.3590479899,
+   "tol": 30.0,
+   "note": "",
+   "delta": 687.940952,
+   "delta_pct": 1.777,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "Δ=+687.9 م.ت (+1.78%) — پیش‌تر درِ TA-SCOPE-DECODE §۴ اندازه‌گیری شد (نشتِ ردیف‌هایِ بی‌paper_type و تفاوتِ دامنۀ «سهام»؛ بازسنجش همان سند: +۲٫۶٪). واحد درست است (تبدیلِ ریال→م.ت = ۱e۱۰، §۱ همان سند) و نشستِ دو طرف یکی است."
+  },
+  {
+   "metric": "ارزش — ص.سهامی و مختلط (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[eq_fund].value_b_toman",
+   "their_ref": "market0 → sf[1]/1e10",
+   "our": 5610.4,
+   "their": 12603.4074862991,
+   "tol": 30.0,
+   "note": "",
+   "delta": -6993.007486,
+   "delta_pct": -55.485,
+   "verdict": "definition-gap",
+   "cause_class": "genuinely missing data",
+   "cause_evidence": "Δ=-6993.0 م.ت (-55.49%) — «تقسیمِ زیرگونهٔ صندوق» شکافِ اعلام‌شدۀ TA-SCOPE-DECODE §۴/§۵ است: TSETMC همهٔ صندوق‌ها را paperType=8 و بی‌fundType می‌دهد و زیرنوع از نام حدس زده می‌شود؛ بستنش بی‌منبعِ رسمی ممکن نیست (رأیِ pilot jev: «قاعدهٔ نام»، نه «نقشهٔ رسمی»). شاهدِ جابه‌جاییِ متقابل: Δِ سطرِ درآمدثابت = 1129.9 م.ت (جمعِ دو سطر ≈ صفرِ سطرِ کل)."
+  },
+  {
+   "metric": "ارزش — ص.درآمد ثابت (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[fixed_fund].value_b_toman",
+   "their_ref": "market0 → nsf[1]/1e10",
+   "our": 49295.2,
+   "their": 48165.306062451,
+   "tol": 30.0,
+   "note": "",
+   "delta": 1129.893938,
+   "delta_pct": 2.346,
+   "verdict": "definition-gap",
+   "cause_class": "genuinely missing data",
+   "cause_evidence": "Δ=+1129.9 م.ت (+2.35%) — همان شکافِ طبقۀ صندوق؛ جهتِ این Δ دقیقاً مخالفِ Δِ سطرِ «ص.سهامی و مختلط» است (§۵ سند: «جهتِ خطا درِ دو سطرِ مقابل یکدیگر را می‌پوشانند»)"
+  },
+  {
+   "metric": "حجم معاملات — کل بازار (میلیارد سهم)",
+   "our_ref": "/api/mstat/summary → rows[all].volume_b_shares",
+   "their_ref": "market0 → m[0]/1e9",
+   "our": 118.511,
+   "their": 113.315748467,
+   "tol": 0.6,
+   "note": "",
+   "delta": 5.195252,
+   "delta_pct": 4.585,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "همان خانوادۀ طبقه‌بندیِ صندوق که درِ سطرِ «ارزشِ کل» با واکاویِ عددیِ ( کل -5175.2 = (687.9 سهام) + (-6993.0 ص.سهامی) + (1129.9 درآمدثابت) — همه از طبق) بسته شد؛ جهتِ حجم (+5.20 میلیارد سهم ≈ +4.6%) با جهتِ ارزش هم‌خوان است و بیانگرِ دامنه است، نه یکای اشتباه (تبدیلِ ۱e۹ درِ TA-SCOPE-DECODE §۱ تأیید شده)."
+  },
+  {
+   "metric": "ورود/خروج پول — کل بازار (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[all].money_flow_b_toman",
+   "their_ref": "market0 → m[5]/1e10 (=m[7]−m[10]؛ هویتِ جبریِ اثبات‌شده)",
+   "our": -1633.0,
+   "their": 3080.4322954248,
+   "tol": 40.0,
+   "note": "",
+   "delta": -4713.432295,
+   "delta_pct": -153.012,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "شاهدِ این اجرا: جمعِ خریدِ حقیقی+حقوقیِ ما = 64368.5 م.ت == 68.3%ِ ارزشِ «کل»ِ خودمان، در حالی که درِ جبرِ او i7+i13 عیناً i1 است (۱۰۰٪؛ سطرِ «هویتِ جبری» همین جدول). پس ستونِ جریان/سرانهٔ ما رویِ پوششِ ناقصِ client_type حساب می‌شود و عددِ «کلِ» او همچنان بازسازی‌نشده است (TA-SCOPE-DECODE §۴: «جمعِ دو سطرِ بالا ±۰٫۵٪ ولی ترکیبِ جریانِ کل باز»; و درِ ۱۴۰۵-۰۷-۱۱ تعریفِ جریان رویِ دامنهٔ خرد تا ۳٪ خوانده بود: −۷٬۴۹۳ در برابرِ −۷٬۷۰۲). سطرِ «درآمد ثابت» (§۳ همین سند): Δجریان -4413.4 م.ت."
+  },
+  {
+   "metric": "ورود/خروج پول — سهام و حق تقدم (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[stock_right].money_flow_b_toman",
+   "their_ref": "market0 → st[5]/1e10",
+   "our": -691.4,
+   "their": -623.3737343168,
+   "tol": 40.0,
+   "note": "",
+   "delta": -68.026266,
+   "delta_pct": -10.913,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "شاهدِ این اجرا: جمعِ خریدِ حقیقی+حقوقیِ ما = 64368.5 م.ت == 68.3%ِ ارزشِ «کل»ِ خودمان، در حالی که درِ جبرِ او i7+i13 عیناً i1 است (۱۰۰٪؛ سطرِ «هویتِ جبری» همین جدول). پس ستونِ جریان/سرانهٔ ما رویِ پوششِ ناقصِ client_type حساب می‌شود و عددِ «کلِ» او همچنان بازسازی‌نشده است (TA-SCOPE-DECODE §۴: «جمعِ دو سطرِ بالا ±۰٫۵٪ ولی ترکیبِ جریانِ کل باز»; و درِ ۱۴۰۵-۰۷-۱۱ تعریفِ جریان رویِ دامنهٔ خرد تا ۳٪ خوانده بود: −۷٬۴۹۳ در برابرِ −۷٬۷۰۲). سطرِ «درآمد ثابت» (§۳ همین سند): Δجریان -4413.4 م.ت."
+  },
+  {
+   "metric": "ورود/خروج پول — ص.درآمد ثابت (م.ت)",
+   "our_ref": "/api/mstat/summary → rows[fixed_fund].money_flow_b_toman",
+   "their_ref": "market0 → nsf[5]/1e10",
+   "our": -486.5,
+   "their": 3926.8561766178,
+   "tol": 40.0,
+   "note": "",
+   "delta": -4413.356177,
+   "delta_pct": -112.389,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "شاهدِ این اجرا: جمعِ خریدِ حقیقی+حقوقیِ ما = 64368.5 م.ت == 68.3%ِ ارزشِ «کل»ِ خودمان، در حالی که درِ جبرِ او i7+i13 عیناً i1 است (۱۰۰٪؛ سطرِ «هویتِ جبری» همین جدول). پس ستونِ جریان/سرانهٔ ما رویِ پوششِ ناقصِ client_type حساب می‌شود و عددِ «کلِ» او همچنان بازسازی‌نشده است (TA-SCOPE-DECODE §۴: «جمعِ دو سطرِ بالا ±۰٫۵٪ ولی ترکیبِ جریانِ کل باز»; و درِ ۱۴۰۵-۰۷-۱۱ تعریفِ جریان رویِ دامنهٔ خرد تا ۳٪ خوانده بود: −۷٬۴۹۳ در برابرِ −۷٬۷۰۲). سطرِ «درآمد ثابت» (§۳ همین سند): Δجریان -4413.4 م.ت."
+  },
+  {
+   "metric": "قدرت خریدار (نسرتِ سرانه) — کل بازار",
+   "our_ref": "/api/mstat/summary → rows[all].buy_power",
+   "their_ref": "market0 → m[4]؛ هویتِ m[4]=m[2]/m[3] فقط برایِ ردیفِ «کل» اثبات شده — در ردیف‌هایِ دیگر سلوکِ یکسان ندارد (سنجشِ درونِ اجرا: ratio=m[2]/m[3])",
+   "our": 1.11,
+   "their": 1.18,
+   "tol": 0.02,
+   "note": "",
+   "delta": -0.07,
+   "delta_pct": -5.932,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "ریشۀ عددیِ ثابت‌شده درِ همین اجرا: شمارِ خریدارِ حقیقیِ او 508299 در برابرِ 446230 ما (-12.2%)، سرانۀ خریدِ او 105.2 در برابرِ 83.0 ما — با پوششِ 68.3%ِ client_typeِ ما (سطرِ جریان). این همان «مخرجِ فروشِ او منبعِ جدا دارد» است که درِ docs/fts-notes/TA_PARITY_AUDIT.md §۳ (سنجشِ ۱۴۰۵-۰۷-۱۱) ثبت شد و هنوز رأیِ مرجع ندارد."
+  },
+  {
+   "metric": "سرانۀ خرید (م.ت) — کل بازار",
+   "our_ref": "/api/mstat/summary → rows[all].pc_buy_m_toman",
+   "their_ref": "market0 → m[2]/1e7 (اثبات: m[2]=m[7]/m[6] در جبرِ خودِ او)",
+   "our": 83.0,
+   "their": 105.2406455,
+   "tol": 1.0,
+   "note": "",
+   "delta": -22.240645,
+   "delta_pct": -21.133,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "ریشۀ عددیِ ثابت‌شده درِ همین اجرا: شمارِ خریدارِ حقیقیِ او 508299 در برابرِ 446230 ما (-12.2%)، سرانۀ خریدِ او 105.2 در برابرِ 83.0 ما — با پوششِ 68.3%ِ client_typeِ ما (سطرِ جریان). این همان «مخرجِ فروشِ او منبعِ جدا دارد» است که درِ docs/fts-notes/TA_PARITY_AUDIT.md §۳ (سنجشِ ۱۴۰۵-۰۷-۱۱) ثبت شد و هنوز رأیِ مرجع ندارد."
+  },
+  {
+   "metric": "سرانۀ فروش (م.ت) — کل بازار",
+   "our_ref": "/api/mstat/summary → rows[all].pc_sell_m_toman",
+   "their_ref": "market0 → m[3]/1e7 (اثبات: m[3]=m[10]/m[11])",
+   "our": 74.5,
+   "their": 89.0601202,
+   "tol": 1.0,
+   "note": "",
+   "delta": -14.56012,
+   "delta_pct": -16.349,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "ریشۀ عددیِ ثابت‌شده درِ همین اجرا: شمارِ خریدارِ حقیقیِ او 508299 در برابرِ 446230 ما (-12.2%)، سرانۀ خریدِ او 105.2 در برابرِ 83.0 ما — با پوششِ 68.3%ِ client_typeِ ما (سطرِ جریان). این همان «مخرجِ فروشِ او منبعِ جدا دارد» است که درِ docs/fts-notes/TA_PARITY_AUDIT.md §۳ (سنجشِ ۱۴۰۵-۰۷-۱۱) ثبت شد و هنوز رأیِ مرجع ندارد."
+  },
+  {
+   "metric": "تعداد خریدارِ حقیقی (شمار)",
+   "our_ref": "/api/mstat/clientsplit → retail.buy_count",
+   "their_ref": "market0 → m[6]",
+   "our": 446230,
+   "their": 508299,
+   "tol": 0,
+   "note": "",
+   "delta": -62069.0,
+   "delta_pct": -12.211,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "ریشۀ عددیِ ثابت‌شده درِ همین اجرا: شمارِ خریدارِ حقیقیِ او 508299 در برابرِ 446230 ما (-12.2%)، سرانۀ خریدِ او 105.2 در برابرِ 83.0 ما — با پوششِ 68.3%ِ client_typeِ ما (سطرِ جریان). این همان «مخرجِ فروشِ او منبعِ جدا دارد» است که درِ docs/fts-notes/TA_PARITY_AUDIT.md §۳ (سنجشِ ۱۴۰۵-۰۷-۱۱) ثبت شد و هنوز رأیِ مرجع ندارد."
+  },
+  {
+   "metric": "تعداد فروشنندۀ حقیقی (شمار)",
+   "our_ref": "/api/mstat/clientsplit → retail.sell_count",
+   "their_ref": "market0 → m[11]",
+   "our": 519396,
+   "their": 566059,
+   "tol": 0,
+   "note": "",
+   "delta": -46663.0,
+   "delta_pct": -8.243,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "ریشۀ عددیِ ثابت‌شده درِ همین اجرا: شمارِ خریدارِ حقیقیِ او 508299 در برابرِ 446230 ما (-12.2%)، سرانۀ خریدِ او 105.2 در برابرِ 83.0 ما — با پوششِ 68.3%ِ client_typeِ ما (سطرِ جریان). این همان «مخرجِ فروشِ او منبعِ جدا دارد» است که درِ docs/fts-notes/TA_PARITY_AUDIT.md §۳ (سنجشِ ۱۴۰۵-۰۷-۱۱) ثبت شد و هنوز رأیِ مرجع ندارد."
+  },
+  {
+   "metric": "صنایع — برترین صنعتِ مثبت (%)",
+   "our_ref": "/api/mstat/industries → avg_pct (تلاقیِ نام‌هایِ مشترک)",
+   "their_ref": "data/industries-csv → ستونِ ۹ (کاندیدِ «درصدِ صنعت»؛ در چند ردیف عیناً برابر و در بقیه واگرا)",
+   "our": 2.99,
+   "their": 2.99,
+   "tol": 0.3,
+   "note": "",
+   "delta": 0.0,
+   "delta_pct": 0.0,
+   "verdict": "match",
+   "cause_class": "definition divergence",
+   "cause_evidence": "تطبیقِ نام: 33 صنعتِ مشترک. ستونِ ۹ او با میانگینِ بی‌وزنِ ما یکی نیست — واگراترینِ مشترک: لاستیک و پلاستیک (او -5.37، ما -0.42؛ ارزشِ همان صنعت او 225.2 در برابرِ ما 243.3 م.ت). پس نه واحد (عددها هم‌یکاست)، نه زمان (نشستِ بسته) — تعریفِ «درصدِ صنعت» واگرا و رمزگشایی‌نشده است."
+  },
+  {
+   "metric": "صنایع — بدترین صنعتِ منفی (%)",
+   "our_ref": "/api/mstat/industries → avg_pct",
+   "their_ref": "data/industries-csv → ستونِ ۹",
+   "our": -2.93,
+   "their": -5.37,
+   "tol": 0.3,
+   "note": "",
+   "delta": 2.44,
+   "delta_pct": 45.438,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "واگراترینِ مشترکِ این اجرا: لاستیک و پلاستیک — او -5.37، ما -0.42 (سطرِ «برترین» را ببینید؛ همان فرمولِ رمزگشایی‌نشده)"
+  },
+  {
+   "metric": "صنایع — پوششِ گروه‌ها (شمار)",
+   "our_ref": "/api/mstat/industries → len(rows)",
+   "their_ref": "data/industries-csv → len(rows)",
+   "our": 46,
+   "their": 61,
+   "tol": 0,
+   "note": "",
+   "delta": -15.0,
+   "delta_pct": -24.59,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "شکافِ ساختاریِ اثبات‌شده در ۱۴۰۵-۰۷-۰۴ و ۱۴۰۵-۰۷-۰۷: 61 گروهِ او در برابرِ 46 صنعتِ ما؛ ۱۵ گروهِ باقی عمدتاً دستهٔ صندوق‌اند (اهرمی/طلا/نقره/درآمد ثابت/شاخصی/بخشی/…)"
+  },
+  {
+   "metric": "سهام برگزیده — اشتراکِ فهرست ۲۰تایی",
+   "our_ref": "/api/mstat/mainwatch?sort=clock → rows[:20]",
+   "their_ref": "data/mainwatch/symbols → ۲۰ سطر (ستونِ ۲ = نماد)",
+   "our": 0,
+   "their": 20,
+   "tol": 0,
+   "note": "",
+   "delta": -20.0,
+   "delta_pct": -100.0,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "قاعدهٔ انتخابِ او از فیدِ عمومی قابلِ اثبات نیست (۲۰ سطر، ۲۰ ستونِ رمزگشایی‌نشده). اشتراکِ فهرستِ او با ۲۰ سطرِ برترِ «الگوی ساعت»ِ ما: 0 از ۲۰ — یعنی حتیِ دامنه هم یکی نیست. بازسنجشِ ۱۴۰۵-۰۷-۰۷: پوششِ حجمیِ ما ۱۲۰/۱۴۴۰ نماد بود."
+  },
+  {
+   "metric": "پهنای بازار — شمارِ کلِ سطل‌ها (breadth)",
+   "our_ref": "/api/mstat/histogram → histo12 counts + known",
+   "their_ref": "data/market/histo-status → s1 (۱۴ سطل، افق ۱روزه)",
+   "our": 1362,
+   "their": 863,
+   "tol": 0,
+   "note": "",
+   "delta": 499.0,
+   "delta_pct": 57.822,
+   "verdict": "definition-gap",
+   "cause_class": "definition divergence",
+   "cause_evidence": "مرزِ سطل‌هایِ او از باندلِ مبهم رمزگشایی نشده (TA_PARITY_AUDIT §دما/پوشش)؛ دامنۀ سطل‌های او 863 در برابرِ 1362 نمادِ دارایِ درصدِ ما — پس نه مقایسۀ سطل‌به‌سطل ممکن است نه ادعایِ خطا. افق‌های ۵/۱۰/۲۰/۶۰ روزه (s5…s60) اصلاً درِ برنامه نیستند (شکافِ تاییدشده)."
+  },
+  {
+   "metric": "پهنای بازار — سطل‌هایِ افق ۵ تا ۶۰ روزه",
+   "our_ref": "— (درِ برنامه نیست)",
+   "their_ref": "histo-status → s5/s10/s20/s60",
+   "our": null,
+   "their": 5,
+   "tol": 0,
+   "note": "",
+   "delta": null,
+   "delta_pct": null,
+   "verdict": "missing-source",
+   "cause_class": "genuinely missing data",
+   "cause_evidence": "شکافِ اعلام‌شده در ۱۴۰۵-۰۷-۰۴ و دوباره تأییدشده در ۱۴۰۵-۰۷-۰۷؛ «پهنای بازار در افق‌های ۵ تا ۶۰ روزه را نداریم» — ۴ افق × ۱۴ سطلِ او بی‌معادلِ لوکال است"
+  }
+ ],
+ "ours_api_shapes": {
+  "summary": {
+   "status": "str",
+   "asof": "dict",
+   "rows": "list"
+  },
+  "thermometer": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "depth": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "clientsplit": {
+   "status": "str",
+   "asof": "dict",
+   "tab": "str"
+  },
+  "mainwatch": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "industries": {
+   "status": "str",
+   "asof": "dict",
+   "rows": "list"
+  },
+  "smart-money": {
+   "status": "str",
+   "asof": "dict",
+   "macro": "dict"
+  },
+  "histogram": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "timeline": {
+   "status": "str",
+   "mode": "str",
+   "ready": "bool"
+  },
+  "thermometer:eq_all": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "depth:eq_all": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "thermometer:stock_right": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  },
+  "depth:stock_right": {
+   "status": "str",
+   "asof": "dict",
+   "group": "str"
+  }
+ }
+}
