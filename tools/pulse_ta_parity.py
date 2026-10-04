@@ -55,6 +55,12 @@ def ta_feed():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=None)
+    ap.add_argument("--api", default="http://127.0.0.1:8002",
+                    help="منبع «ما»: اپِ نصب‌شده. بانکِ رویِ دیسک پس از نهایه "
+                         "پشتِ RAM می‌ماند (client_type دیرهنگام flush می‌شود) و "
+                         "مقایسۀ فایل با فیدِ زندهٔ TA دو لحظه را می‌آورد — همان "
+                         "دامِ «جریانِ ۱۵۳٪» (۱۴۰۵-۰۷-۱۳: API = +۳٬۱۰۲ در برابرِ "
+                         "TA +۳٬۰۷۹؛ فایلِ همان ساعت −۱٬۶۳۳).")
     ap.add_argument("--json", default=os.path.join(ROOT, "_audit", "pulse_ta_parity.json"))
     args = ap.parse_args()
     db = args.db or os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs",
@@ -67,16 +73,30 @@ def main():
     except Exception as e:                                          # noqa: BLE001
         print("تریدرزآرنا در دسترس نیست:", type(e).__name__, e)
         return 3
-    conn = sqlite3.connect("file:" + db.replace("\\", "/") + "?mode=ro", uri=True)
-    conn.row_factory = sqlite3.Row
-    try:
-        s = ME.summary(conn)
-    finally:
-        conn.close()
-    ours = {r["key"]: r for r in s["rows"]}
-    meta = s["asof"]
+    ours: dict = {}
+    meta: dict = {}
+    src = "db"
+    if args.api:
+        try:
+            with urllib.request.urlopen(args.api.rstrip("/") + "/api/mstat/summary", timeout=15) as r:
+                s = json.loads(r.read().decode("utf-8"))
+            ours = {row["key"]: row for row in s["rows"]}
+            meta = s.get("asof") or {}
+            src = "api:" + args.api
+        except Exception as e:                                      # noqa: BLE001
+            print("API در دسترس نبود، به بانکِ دیسک برمی‌گردد (دو لحظه!):", type(e).__name__)
+    if not ours:
+        conn = sqlite3.connect("file:" + db.replace("\\", "/") + "?mode=ro", uri=True)
+        conn.row_factory = sqlite3.Row
+        try:
+            s = ME.summary(conn)
+        finally:
+            conn.close()
+        ours = {r["key"]: r for r in s["rows"]}
+        meta = s["asof"]
     lines = []
     out = {"taken_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+           "ours_source": src,
            "ta_day": ta.get("j"), "ta_hour": ta.get("d"), "app_asof": meta,
            "rows": []}
     for key, ta_label, our_key, metric in PAIRS:
