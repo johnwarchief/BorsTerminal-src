@@ -7,7 +7,9 @@
 //      دورِ ریخته‌ها نمی‌رود.
 //   3) ورودیِ قیف خودِ پنج فیلتر است، نه الگوهایِ محلی — «ساعت قوی» نماد را
 //      داخلِ قیف نمی‌آورد، چون فیلترنویسِ سایت آن را نمی‌شناسد.
+import type { ReactElement } from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { MarketRow } from '@shared/types/marketRow';
@@ -22,6 +24,9 @@ import {
 } from '@features/master/lib/ftsFunnel';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
+
+/** هر سطرِ قیف حالا `navigate()` می‌کند، پس تست‌ها هم درِ Router می‌نشینند. */
+const renderRouted = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { TechVerdict } from '@features/master/api/useFtsTechBoard';
 
@@ -172,7 +177,7 @@ describe('قیفِ FTS', () => {
   });
 
   it('هر مرحلۀ ردیف‌هایش را با کلیدِ پایدارِ نماد می‌دهد (FLIP بی‌کلید، پرش دارد)', () => {
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
@@ -233,7 +238,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
 
   it('پیچ‌ها در همان نوارِ قیف دستکاری می‌شوند و به حالتِ جزوه برمی‌گردند', async () => {
     useFunnelPrefsStore.getState().reset();
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
@@ -255,7 +260,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
     // صریحِ موتور) ⇒ بنیادی هیچ رسیدۀ داوری‌شده‌ای ندارد و باید همین را بگوید.
     feedMock.rows = [board({ symbol: 'همراه', f_susp: true })];
     try {
-      render(
+      renderRouted(
         <QueryClientProvider client={new QueryClient()}>
           <FtsFunnelStages preset="swing" />
         </QueryClientProvider>,
@@ -373,7 +378,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     })];
     feedMock.rows = [board({ symbol: 'بزرگ', f_susp: true })];
     try {
-      render(
+      renderRouted(
         <QueryClientProvider client={new QueryClient()}>
           <FtsFunnelStages preset="custom" />
         </QueryClientProvider>,
@@ -404,7 +409,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     })];
     feedMock.rows = [board({ symbol: 'خنثی‌صنعت', f_susp: true })];
     try {
-      render(
+      renderRouted(
         <QueryClientProvider client={new QueryClient()}>
           <FtsFunnelStages preset="custom" />
         </QueryClientProvider>,
@@ -422,7 +427,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
   });
 
   it('سرستون‌ها دیگر یکسان نیستند: تکنیکال هفتگی/روزانه/ستاپ دارد، تابلو ندارد', () => {    useFunnelPrefsStore.getState().reset();
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
@@ -447,7 +452,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
 
   it('روندِ هفتگی در جدولِ تکنیکال به زبانِ خودِ چارت نوشته می‌شود (نزولی، نه null)', () => {
     useFunnelPrefsStore.getState().reset();
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
@@ -459,7 +464,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
 
   it('کلیدِ درِ تکنیکال کنارِ همان مرحله است، با پیش‌فرضِ جزوه، و برگشت دارد', () => {
     useFunnelPrefsStore.getState().reset();
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
@@ -488,7 +493,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
  */
 describe('دربِ قیف: انتخابِ استراتژی رویِ خودِ قیف', () => {
   const renderFunnel = (props: Parameters<typeof FtsFunnelStages>[0]) =>
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages {...props} />
       </QueryClientProvider>,
@@ -613,7 +618,7 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
     screenMock.rows = [okScreen(SYM, { assembly_veto: true, assembly_days: 3 })];
     feedMock.rows = [board({ symbol: SYM, f_susp: true })];
     try {
-      render(
+      renderRouted(
         <QueryClientProvider client={new QueryClient()}>
           <FtsFunnelStages preset="custom" />
         </QueryClientProvider>,
@@ -642,7 +647,7 @@ describe('وتوی مجمع: زمان‌بندیِ ورود، نه ضعفِ بن
     screenMock.rows = [okScreen(SYM, { assembly_veto: true, assembly_days: 3 })];
     feedMock.rows = [board({ symbol: SYM, f_susp: true })];
     try {
-      render(
+      renderRouted(
         <QueryClientProvider client={new QueryClient()}>
           <FtsFunnelStages preset="custom" />
         </QueryClientProvider>,
@@ -670,7 +675,7 @@ describe('پیچ‌ها رویِ نوارِ خودِ هر مرحله', () => {
   const renderStages = () => {
     useFunnelPrefsStore.getState().reset();
     useTapeStore.setState({ quickFilters: [] });
-    render(
+    renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages preset="custom" />
       </QueryClientProvider>,

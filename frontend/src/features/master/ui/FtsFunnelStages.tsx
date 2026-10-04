@@ -12,6 +12,7 @@
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
@@ -599,6 +600,13 @@ export function FtsFunnelStages({
   onPresetChange?: (p: (typeof FUNNEL_PRESETS)[number]) => void;
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
+  const navigate = useNavigate();
+  // کلیکِ سطر یک گذرِ واقعی است، نه فقط یک استور: URL نماد را نگه می‌دارد تا
+  // «← بازگشت» و دکمۀ عقبِ مرورگر هر دو به همان قیف برسند (Round M §۱۰).
+  const pick = (s: string) => {
+    setSymbol(s);
+    navigate(`/master/${encodeURIComponent(s)}`);
+  };
   const [active, setActive] = useState<FunnelStageKey>('tape');
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
@@ -781,7 +789,7 @@ export function FtsFunnelStages({
             index={i}
             wide={wide}
             showMark={marks[i]}
-            onPick={setSymbol}
+            onPick={pick}
             active={active === s.key}
             opts={opts}
             emptyWhy={emptyWhy[s.key]}

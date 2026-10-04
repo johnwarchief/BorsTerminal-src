@@ -4,6 +4,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { toFaDigits, fmtInt } from '@shared/lib/fmt';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { ftsScoreOf } from '@contracts/fundamental';
+import { useParams } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { useMarketCloses } from '@features/portfolio/api/usePortfolio';
@@ -53,7 +54,11 @@ function LiveColumnStatus({ step }: { step: PipelineStep }) {
 }
 
 export default function StrategyTreePage() {
-  const symbol = useSymbolStore((s) => s.symbol);
+  // `/strategy-tree/:symbol` اعلام شده بود ولی خوانده نمی‌شد؛ لینکِ عمیق بی‌صدا
+  // نمادِ استور را نشان می‌داد. حالا URL مقدم است (مثلِ Master/Technical/Fundamental).
+  const { symbol: routeSymbol } = useParams();
+  const storedSymbol = useSymbolStore((s) => s.symbol);
+  const symbol = routeSymbol ?? storedSymbol;
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
 
