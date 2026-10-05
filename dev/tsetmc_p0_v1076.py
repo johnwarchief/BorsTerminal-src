@@ -420,6 +420,37 @@ def part_wiring():
     ck("price_adjust_events" not in open(MARKET_PY, encoding="utf-8").read(),
        "تابلو رویدادِ تعدیل را دور نمی‌ریزد ولی مسیرِ تازه هم نمی‌سازد")
 
+    # ── گاردِ تک‌نویسنده: کنترلِ منفی ──────────────────────────────────────
+    # خودِ گارد رویِ این ماشین پروسه‌ها را می‌شمارد؛ اینجا منطقِ داوری‌اش با
+    # ورودیِ ساختگی سنجیده می‌شود تا «دو بک‌اند رویِ یک بانک» حتماً قرمز شود
+    # (همان حالتی که ستون‌هایِ P1 را با هر سینکِ نسخۀ قدیمی پاک می‌کرد).
+    import importlib.util as _ilu
+    _gp = os.path.join(ROOT, "dev", "single_writer_guard.py")
+    ck(os.path.exists(_gp), "گاردِ تک‌نویسنده درِ dev هست")
+    ck("dev/single_writer_guard.py" in open(os.path.join(ROOT, "dev", "run_all_tests.py"),
+                                            encoding="utf-8").read(),
+       "گاردِ تک‌نویسنده درِ run_all_tests ثبت شده (بی‌ثبت = بی‌اثر)")
+    _sp = _ilu.spec_from_file_location("swg", _gp)
+    swg = _ilu.module_from_spec(_sp)
+    _sp.loader.exec_module(swg)
+    _fake = ["python.exe -m uvicorn app:app --port 8002",
+             "python.exe -m uvicorn app:app --port 8003"]
+    _real_ww, _real_lp = swg.windows_writers, swg.lock_probe
+    try:
+        swg.windows_writers = lambda: (_fake, None)
+        swg.lock_probe = lambda p: None
+        import io as _io
+        import contextlib as _cl
+        with _cl.redirect_stdout(_io.StringIO()):
+            rc_dual = swg.main()
+        swg.windows_writers = lambda: (_fake[:1], None)
+        with _cl.redirect_stdout(_io.StringIO()):
+            rc_single = swg.main()
+    finally:
+        swg.windows_writers, swg.lock_probe = _real_ww, _real_lp
+    ck(rc_dual == 1, "دو بک‌اند رویِ یک market.db ⇒ گارد قرمز می‌شود", str(rc_dual))
+    ck(rc_single == 0, "یک بک‌اند ⇒ گارد سبز است (کنترلِ منفی)", str(rc_single))
+
     # spec: هیچ api/*.py تازه‌ای نیامده، پس hiddenimports دست‌نخورده می‌ماند
     spec = open(SPEC, encoding="utf-8").read()
     ck("test_tsetmc" in spec, "test_tsetmc همان‌طور درِ hiddenimports هست")
@@ -457,6 +488,40 @@ def part_p1():
         ck(w[T.MW_COLS.index(col)] == want, f"`{col}` از همان پاسخ می‌نشیند",
            str(w[T.MW_COLS.index(col)]))
     ck(len(dy) == 15, "ردیفِ daily_prices دست‌نخورده مانده (۱۵ ستون)", str(len(dy)))
+
+    # ── پاسخِ لاغر نباید دادهٔ درستِ دیروز را پاک کند ─────────────────────
+    # سنجشِ زنده: همان MW_URL در 19:24 چهار کلیدِ P1 را داشت و در 20:57 هیچ‌کدام
+    # را نداشت (36 کلید). `INSERT OR REPLACE` ستونِ نگفته را NULL می‌کند.
+    lean = {k: v for k, v in raw.items()
+            if k not in ("flow", "pRedTran", "buyOP", "cGrValCot")}
+    lean["pcl"] = 800.0
+    it2, w2, _dy2 = T._mw_row(lean, 20261005, 20261005, "now2", {"34": "خودرو"}, {"x": 1})
+    db = sqlite3.connect(":memory:")
+    T.create_schema(db)
+    db.executemany(T._INST_INSERT, [it])
+    db.executemany(T._MW_INSERT, [w])
+    db.executemany(T._INST_INSERT, [it2])
+    db.executemany(T._MW_INSERT, [w2])
+    db.commit()
+    got_w = db.execute("SELECT p_closing, flow, p_red_tran, buy_op FROM market_watch"
+                       " WHERE ins_code=?", (raw["insCode"],)).fetchone()
+    got_i = db.execute("SELECT isin, c_gr_val_cot FROM instruments WHERE ins_code=?",
+                       (raw["insCode"],)).fetchone()
+    ck(got_w[0] == 800.0, "ستون‌هایِ قرارداد با پاسخِ تازه بازنویسی می‌شوند (p_closing)")
+    ck(got_w[1] == 1, "flow (کدِ بازار = شناسه) با پاسخِ لاغر پاک نمی‌شود", str(got_w))
+    ck(got_w[2] is None and got_w[3] is None,
+       "NAVهایِ روزانه (p_red_tran/buy_op) با پاسخِ لاغر NULL می‌مانند، نه کهنه")
+    ck(got_i == ("IRO1IKCO0008", "A1"),
+       "isin/c_gr_val_cot با پاسخِ لاغر حفظ می‌شوند", str(got_i))
+    db.close()
+
+    _src = open(TS_PY, encoding="utf-8").read()
+    ck(_src.count("p1_tail(") >= 3,
+       "دُمِ MW_COLS از یک تابع می‌آید (هم _mw_row، هم حلقۀ main)")
+    ck(_src.count('num(r.get("pRedTran"))') == 1,
+       "نگاشتِ pRedTran فقط یک‌جا درِ سورس نوشته شده (بی‌دو-منبعی)")
+    ck("INSERT OR REPLACE INTO market_watch" not in _src,
+       "نویسندۀ market_watch از REPLACEِ کاملِ ردیف بیرون آمده (COALESCE ممکن است)")
 
     # تک‌منبعِ مهاجرت: DDL دو مسیر باید یک ستون‌بندی داشته باشد
     tsrc = open(TS_PY, encoding="utf-8").read()

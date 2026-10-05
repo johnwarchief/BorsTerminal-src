@@ -101,7 +101,8 @@ MW_COLS = ("ins_code", "d_even", "h_even", "p_closing", "p_last", "price_min",
            "eps", "pe", "total_shares", "sector_code", "fetched_at") + _QUEUE_COLS + \
           ("market_cap", "market_cap_src",
            # سه کلیدِ خامِ همان `GetMarketWatch` که تا این دور دور ریخته می‌شدند
-           # (سنژشِ زنده ۱۴۰۵-۰۷-۱۳: هر ۳۸۴۷ ردیف این‌ها را دارد). هیچ‌کدام درِ
+           # (سنجشِ زنده: در 19:24 هر 3854 ردیف `flow` را داشت و در 20:57 هیچ
+           # ردیفی نداشت — پاسخِ لاغر؛ برایِ همین `flow` درِ _STICKY است). هیچ‌کدام درِ
            # کوئریِ تابلو و درِ بدنهٔ /api/market نمی‌نشینند — مصرف‌کننده ندارند
            # و بدنۀ سریال‌شدہ باید بایت‌به‌بایت یکی بماند.
            #   flow       = کدِ بازار (۱ بورس / ۲ فرابورس / …) — نه از `boards`
@@ -120,11 +121,47 @@ _MWI = {name: i for i, name in enumerate(MW_COLS)}
 _INST_COLS = ("ins_code", "l_val18", "l_val30", "sector_code", "sector_name",
               "total_shares", "eps", "pe", "base_vol", "updated_at", "paper_type",
               "isin", "c_gr_val_cot")
-_INST_INSERT = ("INSERT OR REPLACE INTO instruments (" + ", ".join(_INST_COLS)
-                + ") VALUES (" + ",".join("?" * len(_INST_COLS)) + ")")
-_MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
-              + ", ".join(MW_COLS) + ") VALUES ("
-              + ",".join("?" * len(MW_COLS)) + ")")
+# «هستیِ پایدار» در برابر «ارزشِ روز»: `GetMarketWatch` یکسان پاسخ نمی‌دهد.
+# سنجشِ همین ماشین (1405-07-13): در 19:24 همان MW_URL چهار کلیدِ
+# flow/pRedTran/buyOP/cGrValCot را در 3854/3854 ردیف داد و در 20:57 و 21:10
+# هیچ‌کدام را نداد (36 کلید، هر چهار نسخۀ URL، هر دو نوعِ session) — پس
+# نبودِشان «صفر شدنِ داده» نیست، «نگفتنِ داده» است. `INSERT OR REPLACE`
+# ستونِ نگفته را NULL می‌کند، یعنی هر پاسخِ لاغر دادهٔ درستِ دیروز را پاک
+# می‌کرد (اندازه‌گیری: flow از 3854 به 45 رسید).
+# قاعده: شناسه‌ها (isin/c_gr_val_cot/flow = کدِ بازار) نگه داشته می‌شوند؛
+# ارقامِ روزانۀ (p_red_tran/buy_op = NAVِ صدور/استرداد) نه — عددِ کهنهٔ NAV
+# از بی‌عدد بدتر است.
+_STICKY_INSTRUMENTS = ("isin", "c_gr_val_cot")
+_STICKY_MARKET_WATCH = ("flow",)
+
+
+def _upsert(table, cols, sticky):
+    """INSERT با نامِ ستون + «نگه‌داشتنِ ستون‌هایِ شناسه وقتی مبدأ نگفته».
+
+    `INSERT OR REPLACE` ردیف را می‌اندازد و دوباره می‌سازد، پس هر ستونِ
+    نگفته NULL می‌شود. اینجا هر ستون صریاً نوشته می‌شود (همان معنای REPLACE)
+    و فقط ستون‌هایِ *شناسه* با COALESCE از NULL شدنِ پاسخِ لاغر در امان‌اند.
+    بی‌`SET`ِ کامل، DO UPDATE بقیۀ ستون‌ها را کهنه نگه می‌داشت — یعنی
+    قراردادِ p_last/p_closing می‌شکست.
+    """
+    head = (f"INSERT INTO {table} (" + ", ".join(cols) + ") VALUES ("
+            + ",".join("?" * len(cols)) + ")")
+    upd = ", ".join(
+        f"{c} = COALESCE(excluded.{c}, {table}.{c})" if c in sticky else
+        f"{c} = excluded.{c}" for c in cols)
+    return head + " ON CONFLICT(ins_code) DO UPDATE SET " + upd
+
+
+_INST_INSERT = _upsert("instruments", _INST_COLS, _STICKY_INSTRUMENTS)
+_MW_INSERT = _upsert("market_watch", MW_COLS, _STICKY_MARKET_WATCH)
+# دُمِ مشترکِ هر دو سازندۀ tuple (هم `_mw_row` و هم حلقۀ `main()`): اگر این
+# سه کلیدِ خام دو جا جدا نوشته شوند، افزودنِ ستونِ ششم یک‌جا فراموش می‌شود.
+def p1_tail(r, mcap, mcap_src):
+    """(market_cap, market_cap_src, flow, p_red_tran, buy_op) = دُمِ MW_COLS."""
+    return (mcap, mcap_src, num(r.get("flow")), num(r.get("pRedTran")),
+            num(r.get("buyOP")))
+
+
 _DP_INSERT = ("INSERT OR REPLACE INTO daily_prices ("
               "ins_code, d_even, p_closing, price_min, price_max, price_yesterday,"
               " price_first, q_tot_tran, q_tot_cap, price_change, fetched_at,"
@@ -1442,7 +1479,7 @@ def create_schema(conn):
             ins_code TEXT PRIMARY KEY, l_val18 TEXT, l_val30 TEXT,
             sector_code TEXT, sector_name TEXT, total_shares REAL,
             eps REAL, pe REAL, base_vol REAL, updated_at TEXT,
-            -- isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو (سنژشِ زنده: هر ۳۸۴۷
+            -- isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو (سنجشِ زنده: هر ۳۸۴۷
             -- ردیف آن کلید را دارد). بی‌این هیچ مسیری به webgw (که با ISIN کلید
             -- می‌خورد) بسته نمی‌شود. c_gr_val_cot = گروهِ کالاییِ همان ردیف.
             -- paper_type اینجا نیست: آن را mstat_engine.MIGRATIONS می‌افزاید و
@@ -1969,8 +2006,7 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     w = (ins, d, num(r.get("hEven")), pcl, p_last, num(r.get("pmn")), num(r.get("pmx")),
     num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
     shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + \
-        (mcap, mcap_src, num(r.get("flow")), num(r.get("pRedTran")),
-         num(r.get("buyOP")))
+        p1_tail(r, mcap, mcap_src)
     dy = (ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
     now, mcap, mcap_src, trd, p_last)
     return it, w, dy
@@ -2388,9 +2424,7 @@ def main():
         mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
         watch.append((ins, d_even, num(r.get("hEven")), pcl, p_last, pmn, pmx,
                       amin, amax, py, pf, vol, val, trd, chg, eps, pe,
-                      shares, sec, now) + tuple(q)
-                     + (mcap, mcap_src, num(r.get("flow")),
-                        num(r.get("pRedTran")), num(r.get("buyOP"))))
+                      shares, sec, now) + tuple(q) + p1_tail(r, mcap, mcap_src))
         daily.append((ins, d_even, pcl, pmn, pmx, py, pf, vol, val, chg, now,
                       mcap, mcap_src, trd, p_last))
         if i % 250 == 0 or i == total:

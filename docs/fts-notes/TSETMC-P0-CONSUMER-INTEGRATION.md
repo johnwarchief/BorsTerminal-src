@@ -53,14 +53,97 @@ instruments : ('K1', 'IRB5AG9207C1', 'N4', None)
 ```
 
 So the five columns are written correctly by this code; the NULLs observed in
-`market.db` belong to a *different build writing the same DB file* on this machine
-(a second backend was listening on 127.0.0.1:8002 throughout this round; port 8003 was
-mine). During this round `instruments.isin` went from 0 to 3809 non-null while
-`market_watch.flow` stayed 0 — consistent with two writers, not with a mapping bug.
-Unverified: which build wins the last write on this machine, and whether the release
-build leaves flow populated (needs one full sync from the released EXE).
+`market.db` belonged to a *different build writing the same DB file* on this machine.
 
-## 1b) Bug found and fixed while wiring (would have shipped)
+### 1a) The dual writer is identified and gone (stage 1 of the follow-up round)
+
+The second backend was **not** the installed app and **not** a service:
+
+```
+PID 33400  python.exe -m uvicorn app:app --host 127.0.0.1 --port 8002
+  parent   22628 py.exe -3.14 -m uvicorn app:app --host 127.0.0.1 --port 8002
+  parent   32492 "C:\Program Files\Git\usr\bin\nohup.exe" py -3.14 -m uvicorn app:app … --port 8002
+  started  2026-10-04 10:28:58        /api/diagnostics/info → {"version":"1.0.73","frozen":false}
+```
+
+A `nohup`-ed leftover from a previous session, running in-memory code two versions
+behind the repo (`APP_VERSION` is now 1.0.75), with the same `WORK_DIR` → the same
+`market.db` and the same board-cache file. It was stopped (33400 + 22628 + 32492);
+nothing else on the machine holds the repo DB (`bors_entry`/`uvicorn` count = 0).
+
+Regression protection: `dev/single_writer_guard.py`, registered in
+`dev/run_all_tests.py` as `single writer: one backend per market.db`. It counts
+`python/py/pythonw` processes whose command line carries `uvicorn app:app` /
+`bors_entry`, and probes the write lock (`BEGIN IMMEDIATE`). Two writers ⇒ exit 1.
+Its judgement is covered by a **negative control** inside
+`dev/tsetmc_p0_v1076.py` (fake two-process list ⇒ 1, one ⇒ 0), so the guard cannot
+silently rot. On machines without PowerShell it skips with exit 0 (it is an
+environment guard, not a correctness one).
+
+### 1b) The source itself is intermittent — measured, and now handled
+
+After the dual writer was gone, one full sync (`test_tsetmc.main()`, 20:57) still
+*nulled* the P1 columns. Root cause is not our mapping — `GetMarketWatch` serves two
+shapes:
+
+| time | URL | rows | keys | `flow` / `pRedTran` / `buyOP` / `cGrValCot` |
+| --- | --- | --- | --- | --- |
+| 19:24 | `MW_URL` | 3854 | 41 | present in 3854 / 327 / 844 / 3854 |
+| 20:57, 21:10 | `MW_URL` + 3 variants (`market=0/1`, `withBestLimits=false`) | 3809 | 36 | **absent from every row** |
+
+Both session objects (`requests.Session()` and `make_session()`) got the same lean
+shape, so it is not our request. `insID` is stable in both (3809/3809).
+
+Consequence: `INSERT OR REPLACE` deletes and re-inserts the row, so every lean response
+erased values the rich response had stored — measured: `market_watch.flow` went
+3854 → 45, `c_gr_val_cot` 3854 → 45.
+
+Fix (stage 1): both writers are now explicit upserts — every column is assigned from
+`excluded.` (so contract columns like `p_closing`/`p_last` still overwrite exactly as
+before) **except** the identifier-like ones, which use `COALESCE(excluded.c, c)`:
+
+- sticky: `instruments.isin`, `instruments.c_gr_val_cot`, `market_watch.flow` (market code)
+- **not** sticky: `market_watch.p_red_tran`, `market_watch.buy_op` — those are daily NAV
+  numbers; a stale NAV presented as current is worse than NULL.
+
+Also de-duplicated: the five-column tail of `MW_COLS` is now built by one helper
+`p1_tail(r, mcap, mcap_src)` used by both `_mw_row` and the loop inside `main()`
+(previously the same three raw keys were written out twice — a second source of truth
+for the tuple shape). Guards: `p1_tail(` appears ≥3 times, `num(r.get("pRedTran"))`
+exactly once, no `INSERT OR REPLACE INTO market_watch`, and a functional
+rich-then-lean round-trip asserting: `p_closing` updates, `flow/isin/c_gr_val_cot`
+survive, `p_red_tran/buy_op` go NULL.
+
+### 1c) Persistence proven in the real DB (not in-memory)
+
+After the fix, one more full sync at 21:05:53 (the source happened to serve the rich
+shape again):
+
+| column | non-null | non-zero |
+| --- | --- | --- |
+| `instruments.isin` | 3854 / 5674 | — |
+| `instruments.c_gr_val_cot` | 3854 | — |
+| `market_watch.flow` | 3854 | 3854 (1:802, 2:943, 3:1802, 4:151, …) |
+| `market_watch.p_red_tran` | 3854 | 327 |
+| `market_watch.buy_op` | 3854 | 844 |
+
+Real rows read back from `market.db`:
+
+```
+('سينرژي',  'IRTEETFD0001', 'EZ', flow=6, p_red_tran=68932.0, buy_op=0.0)
+('هورسان',  'IRTEHOOR0001', 'EZ', flow=6, p_red_tran=10817.0, buy_op=0.0)
+('خورشيد',  'IRT3ZMRF0001', '1A', flow=2, p_red_tran=24579.0, buy_op=0.0)
+('ترمه',    'IRT1TRMF0001', '51', flow=1, p_red_tran=48119.0, buy_op=0.0)
+```
+
+`p_red_tran`/`buy_op` non-zero counts (327 / 844) match the source's own counts exactly,
+so nothing was invented. `PRAGMA quick_check` = `ok`, `PRAGMA integrity_check` = `ok`,
+`foreign_key_check` empty; tables: instruments 5674, market_watch 5674, tape_history
+187,033, client_type_value 200. `tape_history.q_tot_cap` is now 187,033 non-null with
+`typeof(fetched_at)='text'` — the named-insert fix of §1 landed on the upgraded DB too.
+
+
+## 1d) Bug found and fixed while wiring (would have shipped)
 
 Appending `flow/p_red_tran/buy_op` to the end of `MW_COLS` silently moved the negative
 indices used by the after-hours tick in `test_tsetmc.py`:
@@ -251,7 +334,8 @@ said 2 and was right.
 | full native coverage | 8.92 % of the target session (§10). Raising it needs either more budget (refused) or multi-session backfill (not built). |
 | `instrument_state` vs board gap | 228 instruments have state rows, 223 appear on today's board; 5 are delisted/suspended instruments with no board row. |
 | External JEV textual review | not run in this round (see §13). |
-| which build owns the last market_watch write on this machine | two backends share `market.db` here (8002 = not mine, 8003 = mine). `isin` refreshed, `flow` not. Needs one clean sync from a single build to confirm. |
+| which build owns the last market_watch write on this machine | **resolved**: it was a `nohup`-ed leftover `uvicorn app:app --port 8002` running in-memory v1.0.73 (see §1a). Stopped; `dev/single_writer_guard.py` now fails if two appear. |
+| `GetMarketWatch` field set | **open, source-side**: the same URL served 41 keys (with `flow`/`pRedTran`/`buyOP`/`cGrValCot`) at 19:24 and 36 keys without them at 20:57/21:10, for both session types and four URL variants. Handled by the sticky-column rule (§1b), not by guessing. |
 | `۲۰۰-۱۲-۲۲` in `candle_contract.py:14` / `api/chart.py:80` | a mangled date that predates this round; the year cannot be confirmed from `price_history` (no `فولاد` row on 12-22 with H=L outside body: measured rows are 2024-12-22 O=6050 H=6060 L=5860 C=6000 and 2025-12-22 O=3874 H=3915 L=3781 C=3839), so it was left untouched rather than guessed. |
 | guard copies of `market.db` | copying only `market.db` while a writer holds a 17 MB WAL yields `database disk image is malformed` (live `PRAGMA quick_check` = ok). One suite run failed exactly this way at 20:1x; re-run with all my servers closed. |
 
