@@ -422,7 +422,7 @@ changes that.
 | per-symbol TSETMC messages | `GetMsgByFlow` has no `insCode`; `GetMsgByInsCode` costs ≈2 MB per symbol. Not implemented; the Inspector shows the three families it does have. |
 | MarketWatch delta protocol | documented in `docs/TSETMC-DATA-GAP-MATRIX.md`; no change. |
 | full native coverage | 8.92 % of the target session (§10). Raising it needs either more budget (refused) or multi-session backfill (not built). |
-| `instrument_state` vs board gap | 228 instruments have state rows, 223 appear on today's board; 5 are delisted/suspended instruments with no board row. |
+| `instrument_state` vs board gap | 228 distinct instruments hold state rows (492 rows, all for session 20261005); **224** of them appear on the current board (was 223 when first measured — the board moved, the shape did not). |
 | External JEV textual review | **UNVERIFIED / timeout**: four attempts, all dead; a keyless `GET` to the same host fails identically at 15.2 s, so the outage is server-side (table in §13). No verdict was invented in its place. |
 | which build owns the last market_watch write on this machine | **resolved**: it was a `nohup`-ed leftover `uvicorn app:app --port 8002` running in-memory v1.0.73 (see §1a). Stopped; `dev/single_writer_guard.py` now fails if two appear. |
 | `GetMarketWatch` field set | **open, source-side**: the same URL served 41 keys (with `flow`/`pRedTran`/`buyOP`/`cGrValCot`) at 19:24 and 36 keys without them at 20:57/21:10, for both session types and four URL variants. Handled by the sticky-column rule (§1b), not by guessing. |
@@ -433,8 +433,8 @@ changes that.
 ## 12) Tests
 
 Backend (`dev/…`):
-- `tsetmc_p0_v1076`: **127 passed / 0 failed** (97 → 127 this round; +10 report checks,
-  +8 board/wiring checks, +3 tail-index checks, incl. `_KEEP_NULL` presence, named
+- `tsetmc_p0_v1076`: **۱۴۵ passed / 0 failed** (97 → 127 → ۱۴۵ across the two rounds; +10 report checks,
+  +8 board/wiring checks, +3 tail-index checks, +5 policy-table checks, incl. `_KEEP_NULL` presence, named
   tape_history insert proven on an *upgraded-order* fixture, "no `_factors_from_events`
   reads corporate events", "no new endpoint").
 - `mstat_local_v975` 206/0, `tape_filters_v1034` 216/0, `board_hist_cache_v1056` 24/0,
@@ -444,7 +444,7 @@ Backend (`dev/…`):
 - `dev/run_all_tests.py`: **85 suites OK, `ALL SUITES PASSED`** (see §13).
 
 Frontend: `tsc -b` clean, `eslint` clean on every touched file, full suite
-**1454 passed / 1 skipped (139 files)** — four new files:
+**1474 passed / 1 skipped (141 files)** — four new files of mine:
 `technical-corp-events.spec.ts` (8), `inspector-regulatory.spec.tsx` (7),
 `technical-board-context.spec.tsx` (6), `engine/ffc/ffcChannelTimeGuard.test.ts` (4,
 with the negative control described in §4).
@@ -461,10 +461,14 @@ holding a 17 MB WAL while the guard copied `market.db`; live `PRAGMA quick_check
 and the same guard passed after I closed my server. Not a data problem.
 
 Frontend: `tsc -b` clean · `eslint` clean on every touched file · `npm run build` clean ·
-`npx vitest run` → **139 files, 1454 passed / 1 skipped** (25 of them new in this
-round). The first run of this round failed two `StrategyTreePage` cases and the re-run
-passed them — timing-sensitive under a full-suite load, unrelated to the engine files
-touched here; recorded rather than hidden.
+`npx vitest run` → **141 files, 1474 passed / 1 skipped**. The first run of this round
+failed two `StrategyTreePage` cases and the re-run passed them — timing-sensitive under a
+full-suite load, unrelated to the engine files touched here; recorded rather than hidden.
+
+`tsc -b` and `eslint` are clean on every file this round changed, but the repo does **not**
+pass them right now: 1 tsc + 5 eslint errors sit in files that another session added and has
+not committed yet (`src/shared/components/ui/*`, `src/__tests__/live-number.spec.tsx` — all
+untracked). Left untouched on purpose; see the ownership note below.
 
 Live UI (jev-browser Chromium against my own dev backend on 127.0.0.1:8003, built SPA
 served by that backend, `sessionStorage` auth injected — no password typed):
@@ -530,6 +534,18 @@ Not proven live:
 | `4730d5f` | `test_tsetmc.py` (`_MWI` + the after-hours UPDATE), `dev/tsetmc_p0_v1076.py` |
 | `4bae4e5` | follow-up stage 1: `test_tsetmc.py` (sticky identifiers), `mstat_engine.py`, `dev/single_writer_guard.py` (new), `dev/run_all_tests.py`, `dev/tsetmc_p0_v1076.py`, this doc |
 | `8551fde` | follow-up stage 2: `api/chart.py` (the CDN branch), `frontend/src/features/technical/lib/corpEvents.ts`, `…/components/ChartSettingsDialog.tsx`, `frontend/src/__tests__/technical-corp-events.spec.ts`, `dev/tsetmc_p0_v1076.py`, this doc |
+| `9deb7d6` | follow-up stage 3: `…/engine/ffc/FastFinancialChartsEngine.ts` (`controlled.drawings` + ms timestamps), `…/components/FtsEngineChart.tsx` (honours the corporate-actions setting), `…/engine/ffc/ffcChannelTimeGuard.test.ts` (new), `tools/ffc_marker_pixel_probe.mts` (new), two `_audit/p0_ffc_marker_*.json`, this doc |
+| `f18709c` | follow-up stage 4: this doc only — the four failed pilot attempts, logged with endpoint/timeout/elapsed/error |
+| `95ee1ca` | follow-up stage 5: `api/chart.py` (docstring), `dev/tsetmc_p0_v1076.py` (fixture note), `docs/TSETMC-DATA-GAP-MATRIX.md`, `docs/fts-notes/TSETMC-P0-IMPLEMENTATION.md`, this doc, `_audit/corporate_type_code_probe.json` (new) |
+| `664215f` | follow-up stage 6: `dev/tsetmc_native_coverage_report.py` (three-policy block), `dev/tsetmc_p0_v1076.py` (+5 policy checks), this doc, `_audit/funnel_native_share.json` (new) |
+| `679e5e8` + `028e34c` | follow-up stages 7–8: `tools/clip_audit.mts` (ellipsis / visible-overflow split, `--theme`, `--sizes`, `--only`, `--selftest`), `tools/toolbar_reach_probe.mts` (new), three `_audit/responsive_clip_*.json` + `_audit/clip_selftest.json`, `docs/UI-RESPONSIVE-AUDIT.md` (new) |
+| `10fbec8` | follow-up stage 9 (root cause found by the regression itself): `dev/single_writer_guard.py` — count launches, not process lines |
+
+Ownership note for this round: `frontend/src/app/**`, `frontend/src/shared/components/{DataTable,Icons}.tsx`,
+`frontend/src/widgets/SymbolInspector.tsx`, `frontend/src/index.css`, `frontend/src/shared/styles/tokens.css`
+and `frontend/src/shared/components/ui/**` carry another session's uncommitted work. Nothing in this
+round touched them; the F1 finding (document height) is *about* two of them and was left unfixed for
+that reason.
 
 Architecture rule this round keeps: `TSETMC source → canonical layer (test_tsetmc) →
 API/selectors (api/market.py, api/chart.py) → UI consumers (board badges, chart markers,
