@@ -1,0 +1,286 @@
+{
+ "symbol": "پاسارگاد",
+ "viewport": "1600x900",
+ "resizedTo": "1366x768",
+ "base": "http://127.0.0.1:8003",
+ "dragPx": 220,
+ "window": 180,
+ "switched": {
+  "on": true,
+  "off": true
+ },
+ "bars": 405,
+ "eventsTotal": 13,
+ "eventsAnchoredToABar": 13,
+ "eventsInWindow": 9,
+ "windowEvents": [
+  {
+   "date": "2025-12-27",
+   "type": "shareChange",
+   "barIndex": 228
+  },
+  {
+   "date": "2026-01-11",
+   "type": "shareChange",
+   "barIndex": 238
+  },
+  {
+   "date": "2026-01-28",
+   "type": "shareChange",
+   "barIndex": 250
+  },
+  {
+   "date": "2026-04-18",
+   "type": "shareChange",
+   "barIndex": 290
+  },
+  {
+   "date": "2026-06-30",
+   "type": "shareChange",
+   "barIndex": 341
+  },
+  {
+   "date": "2026-07-19",
+   "type": "shareChange",
+   "barIndex": 351
+  },
+  {
+   "date": "2026-08-10",
+   "type": "shareChange",
+   "barIndex": 366
+  },
+  {
+   "date": "2026-08-19",
+   "type": "shareChange",
+   "barIndex": 372
+  },
+  {
+   "date": "2026-09-28",
+   "type": "shareChange",
+   "barIndex": 399
+  }
+ ],
+ "rawCounts": {
+  "on": {
+   "purple": 0,
+   "teal": 1598
+  },
+  "off": {
+   "purple": 0,
+   "teal": 62
+  }
+ },
+ "diffInk": {
+  "purple": 0,
+  "teal": 529
+ },
+ "fitPriceAdjust": {
+  "clusters": [],
+  "expected": 0,
+  "paired": 0,
+  "fit": null
+ },
+ "fitShareChange": {
+  "clusters": [
+   [
+    62,
+    70,
+    66,
+    18,
+    3
+   ],
+   [
+    125,
+    188,
+    143,
+    33,
+    6
+   ],
+   [
+    542,
+    992,
+    762,
+    417,
+    64
+   ],
+   [
+    1091,
+    1202,
+    1135,
+    61,
+    10
+   ]
+  ],
+  "expected": 9,
+  "paired": 4,
+  "fit": {
+   "pxPerBar": 23.55,
+   "intercept": -8234,
+   "maxAbsPx": 242.2,
+   "rmsPx": 170.3,
+   "r2": 0.8522
+  }
+ },
+ "priceAxisRows": {
+  "purple": 0,
+  "note": "ردیف‌هایِ بنفشِ خاموش برایِ بازرسی"
+ },
+ "pan": {
+  "dragPx": 220,
+  "beforeCenters": [
+   66,
+   130,
+   157,
+   188,
+   552,
+   665,
+   788,
+   859,
+   925,
+   963,
+   992,
+   1100,
+   1136,
+   1169,
+   1202
+  ],
+  "afterCenters": [
+   1,
+   32,
+   62,
+   88,
+   353,
+   419,
+   476,
+   836,
+   946,
+   1063,
+   1137,
+   1194
+  ],
+  "matched": [
+   {
+    "before": 66,
+    "want": 286,
+    "after": 353,
+    "offPx": 67
+   },
+   {
+    "before": 130,
+    "want": 350,
+    "after": 353,
+    "offPx": 3
+   },
+   {
+    "before": 157,
+    "want": 377,
+    "after": 353,
+    "offPx": 24
+   },
+   {
+    "before": 188,
+    "want": 408,
+    "after": 419,
+    "offPx": 11
+   },
+   {
+    "before": 552,
+    "want": 772,
+    "after": 836,
+    "offPx": 64
+   },
+   {
+    "before": 665,
+    "want": 885,
+    "after": 836,
+    "offPx": 49
+   },
+   {
+    "before": 788,
+    "want": 1008,
+    "after": 1063,
+    "offPx": 55
+   },
+   {
+    "before": 859,
+    "want": 1079,
+    "after": 1063,
+    "offPx": 16
+   },
+   {
+    "before": 925,
+    "want": 1145,
+    "after": 1137,
+    "offPx": 8
+   },
+   {
+    "before": 963,
+    "want": 1183,
+    "after": 1194,
+    "offPx": 11
+   },
+   {
+    "before": 992,
+    "want": 1212,
+    "after": 1194,
+    "offPx": 18
+   }
+  ],
+  "unmatched": 4,
+  "afterDiffInk": 521
+ },
+ "resize": {
+  "purpleClusters": [],
+  "tealClusters": [
+   [
+    500,
+    516,
+    506,
+    17,
+    3
+   ],
+   [
+    565,
+    589,
+    576,
+    23,
+    4
+   ],
+   [
+    614,
+    640,
+    624,
+    29,
+    5
+   ],
+   [
+    695,
+    711,
+    701,
+    17,
+    3
+   ],
+   [
+    762,
+    778,
+    769,
+    12,
+    2
+   ],
+   [
+    815,
+    815,
+    815,
+    5,
+    1
+   ]
+  ],
+  "onW": 976,
+  "offW": 976
+ },
+ "banners": {
+  "on": "موتور: Fast Financial Charts 2.2کندل: ۴۰۵لایهٔ FTS: ۱۸محورِ زمان میلادی است (متنِ جلالی فقط در برچسب‌ها)بازگشت به KLineCharts",
+  "off": "موتور: Fast Financial Charts 2.2کندل: ۴۰۵لایهٔ FTS: ۵محورِ زمان میلادی است (متنِ جلالی فقط در برچسب‌ها)بازگشت به KLineCharts"
+ },
+ "consoleErrors": []
+}

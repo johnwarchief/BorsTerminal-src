@@ -10,6 +10,7 @@ import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 import { engineEntry, paletteFromTheme, type ChartEngine, type ChartEngineId, type EngineBar, type EngineError } from '../engine';
 import { engineFtsLayers } from '../lib/engineFtsLayers';
 import { CORP_EVENT_GROUP, corpEventMarkers, type RawCorporateEvent } from '../lib/corpEvents';
+import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { epochToJalali, parseCandleTimestamp } from '../lib/jalaliDate';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 
@@ -38,6 +39,10 @@ export function FtsEngineChart({
   onEngineChange?: (id: ChartEngineId) => void;
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
+  // همان settingِ چارتِ اصلی (KLineChartWrapper): پیش‌فرض روشن، فقط با false
+  // خاموش می‌شود. بی‌این، نشانگرِ رویداد درِ این موتور هیچ‌وقت خاموش نمی‌شد و
+  // سنجشِ روشن/خاموشِ بوم هیچ تفاوتی نمی‌دید.
+  const showCorpActions = useFtsConfigStore((s) => s.view?.showCorporateActions !== false);
   const engineRef = useRef<ChartEngine | null>(null);
   const [engine, setEngine] = useState<ChartEngine | null>(null);
   const [errors, setErrors] = useState<EngineError[]>([]);
@@ -117,13 +122,15 @@ export function FtsEngineChart({
       ...engineFtsLayers({ fts, anchorTs: anchor, startTs: start, toDisp: (p) => p, tsForDate }),
       // رویدادهایِ شرکتیِ مبدأ: همان نگاشتِ مشترکِ هر دو موتور (lib/corpEvents).
       // روزی که درِ این سری نیست نشانگر نمی‌گیرد — جایِ حدسی رویِ محور نمی‌گذاریم.
-      ...corpEventMarkers({
-        events: corpEvents ?? [],
-        tsForDate,
-        valueForDate: (d) => barAt(tsForDate(d))?.low ?? null,
-      }),
+      ...(showCorpActions
+        ? corpEventMarkers({
+            events: corpEvents ?? [],
+            tsForDate,
+            valueForDate: (d) => barAt(tsForDate(d))?.low ?? null,
+          })
+        : []),
     ];
-  }, [bars, fts, corpEvents]);
+  }, [bars, fts, corpEvents, showCorpActions]);
 
   // هر گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
   useEffect(() => {

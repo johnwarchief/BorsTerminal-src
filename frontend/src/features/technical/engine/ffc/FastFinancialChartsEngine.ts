@@ -30,8 +30,10 @@ import type {
 } from '../types';
 
 const SERIES_ID = 'primary';
-/** واحدِ زمانیِ خودِ بسته ثانیه است؛ کندل‌هایِ ما میلی‌ثانیۀِ UTC --> تقسیم */
-const TS_DIVISOR = 1000;
+/** واحدِ زمانیِ خودِ بسته میلی‌ثانیۀِ UTC است (README‌اش: `ts: Date.now()` و
+ *  `ts: 1739990400000`) -- همان واحدِ کندل‌هایِ ما، پس تبدیلِ مقیاس لازم نیست.
+ *  پیش‌تر اینجا بر ۱۰۰۰ تقسیم می‌شد؛ سنجشِ زنده نشان داد محورِ زمان به‌جایِ
+ *  ۱۸۰ روز، چهار ساعت نشان می‌دهد و کندل‌ها روی هم می‌افتند. */
 
 function ffcChartType(mode: CandleStyleMode): FastFinancialChartProps['chartType'] {
   switch (mode) {
@@ -71,7 +73,7 @@ function toFfcDrawing(spec: ChartOverlaySpec): Record<string, unknown> | null {
     seriesId: SERIES_ID,
   };
   const pt = (p: ChartOverlaySpec['points'][number]) => ({
-    ts: (p.timestamp ?? 0) / TS_DIVISOR,
+    ts: p.timestamp ?? 0,
     price: p.value,
   });
   switch (spec.kind) {
@@ -148,9 +150,13 @@ export class FastFinancialChartsEngine implements ChartEngine {
       panes: [{ id: 'volume', stretchFactor: 0.28, minHeight: 80 }],
       indicators: [{ type: 'VOLUME', seriesId: SERIES_ID, pane: 'volume' }] as never,
       drawings: [],
+      // `updateProps` در خودِ بسته آرایهٔ `drawings` را فقط وقتی به store می‌دهد
+      // که `controlled.drawings` روشن باشد (پیش‌فرض خاموش). بدون این، هر
+      // patchِ لایه بی‌صدا دور ریخته می‌شد — همان چیزی که سنجشِ زنده نشان داد.
+      controlled: { drawings: true },
       localization: {
         priceFormatter: (v: number) => opts.formatPrice(v),
-        timeFormatter: (ts: number) => opts.formatTime(ts * TS_DIVISOR, 86_400_000),
+        timeFormatter: (ts: number) => opts.formatTime(ts, 86_400_000),
       } as never,
       defaultViewport: { type: 'last-bars', bars: opts.visibleBars ?? 120 },
       onCrosshairMove: (p: unknown) => this.onMove(p),
@@ -255,7 +261,7 @@ export class FastFinancialChartsEngine implements ChartEngine {
         {
           id: SERIES_ID,
           bars: bars.map((b) => ({
-            ts: b.timestamp / TS_DIVISOR,
+            ts: b.timestamp,
             open: b.open,
             high: b.high,
             low: b.low,
@@ -481,7 +487,7 @@ export class FastFinancialChartsEngine implements ChartEngine {
     const ts = d.ts ?? d.point?.ts;
     const price = d.price ?? d.point?.price;
     const info: CrosshairInfo = {
-      timestamp: typeof ts === 'number' ? ts * TS_DIVISOR : null,
+      timestamp: typeof ts === 'number' ? ts : null,
       price: typeof price === 'number' ? price : null,
       pane: null,
     };

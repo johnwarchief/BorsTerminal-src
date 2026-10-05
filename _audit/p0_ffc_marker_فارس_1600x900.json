@@ -1,0 +1,119 @@
+{
+ "symbol": "فارس",
+ "viewport": "1600x900",
+ "resizedTo": "1366x768",
+ "base": "http://127.0.0.1:8003",
+ "dragPx": 220,
+ "window": 180,
+ "switched": {
+  "on": true,
+  "off": true
+ },
+ "bars": 2952,
+ "eventsTotal": 10,
+ "eventsAnchoredToABar": 10,
+ "eventsInWindow": 3,
+ "windowEvents": [
+  {
+   "date": "2025-10-25",
+   "type": "priceAdjust",
+   "barIndex": 2816
+  },
+  {
+   "date": "2026-08-15",
+   "type": "shareChange",
+   "barIndex": 2923
+  },
+  {
+   "date": "2026-09-19",
+   "type": "priceAdjust",
+   "barIndex": 2940
+  }
+ ],
+ "rawCounts": {
+  "on": {
+   "purple": 154,
+   "teal": 301
+  },
+  "off": {
+   "purple": 0,
+   "teal": 30
+  }
+ },
+ "diffInk": {
+  "purple": 23,
+  "teal": 56
+ },
+ "fitPriceAdjust": {
+  "clusters": [
+   [
+    1031,
+    1043,
+    1037,
+    16,
+    3
+   ],
+   [
+    1086,
+    1086,
+    1086,
+    7,
+    1
+   ]
+  ],
+  "expected": 2,
+  "paired": 2,
+  "fit": null
+ },
+ "fitShareChange": {
+  "clusters": [
+   [
+    884,
+    902,
+    894,
+    15,
+    2
+   ],
+   [
+    950,
+    1041,
+    984,
+    41,
+    7
+   ]
+  ],
+  "expected": 1,
+  "paired": 1,
+  "fit": null
+ },
+ "priceAxisRows": {
+  "purple": 1,
+  "note": "ردیف‌هایِ بنفشِ خاموش برایِ بازرسی"
+ },
+ "pan": {
+  "dragPx": 220,
+  "beforeCenters": [
+   894,
+   960,
+   1012,
+   1037,
+   1041,
+   1086
+  ],
+  "afterCenters": [],
+  "matched": [],
+  "unmatched": 6,
+  "afterDiffInk": 0
+ },
+ "resize": {
+  "purpleClusters": [],
+  "tealClusters": [],
+  "onW": 976,
+  "offW": 976
+ },
+ "banners": {
+  "on": "موتور: Fast Financial Charts 2.2کندل: ۲۹۵۲لایهٔ FTS: ۱۳محورِ زمان میلادی است (متنِ جلالی فقط در برچسب‌ها)بازگشت به KLineCharts",
+  "off": "موتور: Fast Financial Charts 2.2کندل: ۲۹۵۲لایهٔ FTS: ۳محورِ زمان میلادی است (متنِ جلالی فقط در برچسب‌ها)بازگشت به KLineCharts"
+ },
+ "consoleErrors": []
+}

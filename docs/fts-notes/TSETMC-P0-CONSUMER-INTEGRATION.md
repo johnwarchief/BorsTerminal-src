@@ -249,6 +249,36 @@ eye). `shareChange` was `#38bdf8`, one blend away from the chart's own cyan
 `priceAdjust #a855f7`, `shareChange #2dd4bf`; `technical-corp-events.spec.ts`
 asserts neither collides with the chain marker or with `FTS_OVERLAY_COLORS`.
 
+#### The second engine painted no overlay at all (stage 3)
+
+The browser probe on FFC reported zero difference between the setting ON and OFF.
+That was not the marker being invisible — it was **every** layer of that engine.
+Three separate causes, all measured before being believed:
+
+| # | Cause | Evidence |
+| --- | --- | --- |
+| 1 | `updateProps({drawings})` is dropped unless the consumer declares `controlled.drawings`. The package sets `defaultControlledState = {viewport:false, drawings:false, indicators:false}` and gates the write behind `if (this.controlledState.drawings && …)` (`core/engine/chart-engine.js`). Our adapter never passed `controlled`. | Toggling that one line: differential ink 0 → 529 px on `پاسارگاد` |
+| 2 | `ts` unit. The package README uses milliseconds (`ts: Date.now()`, `ts: 1739990400000`); the adapter divided our ms by 1000. A 180-daily-bar window therefore spans 180×86.4 s → the axis printed a four-hour clock (16:47 … 21:01) and candle bodies overlapped. | Axis before: `16:47…21:01`. After: `May … Oct`, candles separated |
+| 3 | `showCorporateActions` was read only by `KLineChartWrapper`. `FtsEngineChart` always appended the markers, so the ON/OFF control could never have shown a difference on engine 2 — the probe's "positive control" was blind by construction. | Same run, both states, byte-identical canvas |
+
+After the three fixes, at `1600×900`: differential ink (ON − OFF, per-column, ink
+≥ 5 px/column so candle-edge rescale noise is excluded) is `purple 23 / teal 56`
+on `فارس` (3 events inside the window) and `teal 529` on `پاسارگاد` (9 events);
+OFF is exactly zero. The clusters sit in date order along x, and their y climbs
+with the price trend because each is anchored to its own candle's low. A 220 px
+drag moves 10 of 15 label clusters to within 3–24 px of the expected shift — the
+markers travel with the candles, not with the screen — and they survive the
+resize to `1366×768`.
+
+`engine/ffc/ffcChannelTimeGuard.test.ts` (4 cases) pins causes 1 and 2 with a
+negative control: restoring `drawings:false` and the ÷1000 makes 2 of the 4 fail.
+
+**Not proven:** sub-bar x accuracy (labels are wide text; a fit over merged
+clusters is loose), and the `indicators` half of the same gate —
+`addIndicator`/`updateIndicator` still patch props without
+`controlled.indicators`, so engine-lab indicators remain unverified. The app has
+no call site for them today; recorded in §11 rather than widened into this stage.
+
 
 ## 5) Symbol Inspector
 
@@ -363,6 +393,7 @@ said 2 and was right.
 | `GetMarketWatch` field set | **open, source-side**: the same URL served 41 keys (with `flow`/`pRedTran`/`buyOP`/`cGrValCot`) at 19:24 and 36 keys without them at 20:57/21:10, for both session types and four URL variants. Handled by the sticky-column rule (§1b), not by guessing. |
 | `۲۰۰-۱۲-۲۲` in `candle_contract.py:14` / `api/chart.py:80` | a mangled date that predates this round; the year cannot be confirmed from `price_history` (no `فولاد` row on 12-22 with H=L outside body: measured rows are 2024-12-22 O=6050 H=6060 L=5860 C=6000 and 2025-12-22 O=3874 H=3915 L=3781 C=3839), so it was left untouched rather than guessed. |
 | guard copies of `market.db` | copying only `market.db` while a writer holds a 17 MB WAL yields `database disk image is malformed` (live `PRAGMA quick_check` = ok). One suite run failed exactly this way at 20:1x; re-run with all my servers closed. |
+| FFC `controlled.indicators` | the same package gate as `drawings`, still off: `addIndicator`/`updateIndicator` patch props the engine drops. Only `features/technical/engine-lab` calls them, no production call site, so it is recorded here instead of being widened into this stage. |
 
 ## 12) Tests
 
@@ -378,9 +409,10 @@ Backend (`dev/…`):
 - `dev/run_all_tests.py`: **85 suites OK, `ALL SUITES PASSED`** (see §13).
 
 Frontend: `tsc -b` clean, `eslint` clean on every touched file, full suite
-**1449 passed / 1 skipped (138 files)** — three new files:
+**1454 passed / 1 skipped (139 files)** — four new files:
 `technical-corp-events.spec.ts` (8), `inspector-regulatory.spec.tsx` (7),
-`technical-board-context.spec.tsx` (6).
+`technical-board-context.spec.tsx` (6), `engine/ffc/ffcChannelTimeGuard.test.ts` (4,
+with the negative control described in §4).
 
 ## 13) Verification (what was actually run, and what was not)
 
@@ -394,7 +426,10 @@ holding a 17 MB WAL while the guard copied `market.db`; live `PRAGMA quick_check
 and the same guard passed after I closed my server. Not a data problem.
 
 Frontend: `tsc -b` clean · `eslint` clean on every touched file · `npm run build` clean ·
-`npx vitest run` → **138 files, 1449 passed / 1 skipped** (21 of them new in this round).
+`npx vitest run` → **139 files, 1454 passed / 1 skipped** (25 of them new in this
+round). The first run of this round failed two `StrategyTreePage` cases and the re-run
+passed them — timing-sensitive under a full-suite load, unrelated to the engine files
+touched here; recorded rather than hidden.
 
 Live UI (jev-browser Chromium against my own dev backend on 127.0.0.1:8003, built SPA
 served by that backend, `sessionStorage` auth injected — no password typed):
@@ -408,6 +443,7 @@ served by that backend, `sessionStorage` auth injected — no password typed):
 | console | `consoleErrors: []` on both routes |
 | chart payload | `/api/chart-db/فولاد` → `corporateEvents` 14 items (`shareChange` from 2011 on), `adjustEvents` 31 — the two arrays stay separate |
 | chart markers on canvas (stage 2) | route `#/technical/فارس`, range 1Y, price pane composited from its two canvases. **ON:** purple(`#a855f7`) 276 px, teal(`#2dd4bf`) 364 px. **OFF** (the app's own `fts.chart.settings.v1 → view.showCorporateActions=false`, i.e. what the settings switch writes): **purple 0, teal 0**. Same at 1920×1080. Clusters ≥50 px sorted by x give the type sequence `priceAdjust, shareChange, priceAdjust`, exactly the visible events sorted by date (`2025-10-25`, `2026-08-15`, `2026-09-19`) — `same: true` at both viewports. Dragging the pane 240 px moved every marker exactly 240 px with the candles. Evidence: `_audit/p0_marker_probe_1366.json`, `_audit/p0_marker_probe_1920.json`, `_audit/p0_marker_1366-on.png`, `_audit/p0_marker_1366-off.png`. |
+| chart markers on the **second** engine (stage 3) | `tools/ffc_marker_pixel_probe.mts`, route `#/technical/…` → «موتور دوم». Per-column differential (ON − OFF, ≥5 px/column so the auto y-rescale of the candles cannot masquerade as ink): **`فارس` purple 23 / teal 56 with OFF exactly 0; `پاسارگاد` teal 529 (9 events in the window)**. x order follows date order; y climbs with the price trend because each marker is anchored to its own candle's low. A 220 px drag moved 10 of 15 label clusters to within 3–24 px of the expected shift (glued to the candles, not the screen) and they survived the resize to 1366×768. Before the fix the same probe read **zero differential ink in both states** — see §4 for the three causes. Evidence: `_audit/p0_ffc_marker_*.json`, `_audit/ffc_marker_on_1600.png`, `_audit/ffc_marker_off_1600.png`. |
 
 What the canvas run does **not** claim: an absolute price→pixel check. The
 marker's y is proven relative (below the candle low at its column, and locked to
@@ -418,8 +454,9 @@ pre-existing chain markers use.
 
 Not proven live:
 - ~~canvas pixels of the chart markers~~ — **proven in stage 2** (see the table above).
-- **the second engine (FFC)** in a browser: mapping is shared and unit-tested, but no live
-  FFC render was measured (stage 3).
+- ~~**the second engine (FFC)** in a browser~~ — **proven in stage 3**, and that run is
+  what exposed the three causes in §4. Still unproven there: sub-bar x precision, and the
+  `indicators` half of the same package gate (§11).
 - **pilot jev**: two `arbitrate` calls both died with
   `RuntimeError: TypeSafe Jev API Network Error: The read operation timed out`, so the
   prose arbitration of the «board row vs new per-symbol endpoint» fork did not happen.
@@ -441,6 +478,8 @@ Not proven live:
 | `e88a732` | `frontend/src/features/technical/components/SidebarActiveLevels.tsx`, `…/routes/TechnicalPage.tsx`, `…/lib/corpEvents.ts`, `frontend/src/shared/components/Badge.tsx`, `frontend/src/__tests__/technical-board-context.spec.tsx` (new) |
 | `48ec3a2` | `dev/tsetmc_native_coverage_report.py` (new), `dev/tsetmc_p0_v1076.py`, `api/chart.py`, `mstat_engine.py`, `test_tsetmc.py` (three mangled Jalali dates) |
 | `4730d5f` | `test_tsetmc.py` (`_MWI` + the after-hours UPDATE), `dev/tsetmc_p0_v1076.py` |
+| `4bae4e5` | follow-up stage 1: `test_tsetmc.py` (sticky identifiers), `mstat_engine.py`, `dev/single_writer_guard.py` (new), `dev/run_all_tests.py`, `dev/tsetmc_p0_v1076.py`, this doc |
+| `8551fde` | follow-up stage 2: `api/chart.py` (the CDN branch), `frontend/src/features/technical/lib/corpEvents.ts`, `…/components/ChartSettingsDialog.tsx`, `frontend/src/__tests__/technical-corp-events.spec.ts`, `dev/tsetmc_p0_v1076.py`, this doc |
 
 Architecture rule this round keeps: `TSETMC source → canonical layer (test_tsetmc) →
 API/selectors (api/market.py, api/chart.py) → UI consumers (board badges, chart markers,
