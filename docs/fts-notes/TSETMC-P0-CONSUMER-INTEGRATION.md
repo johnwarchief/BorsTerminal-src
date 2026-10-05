@@ -225,6 +225,31 @@ means refetch coverage is partial, so this can persist for days; measured as an 
 Live read-back (repo code against this machine's DB): `فولاد` 14 events,
 `شبندر` 7, `خگستر` 6, `وپستا` 0, unknown symbol → `[]`.
 
+#### Gap found by the browser run (stage 2) and fixed
+
+The CDN branch of `/api/chart/{symbol}` — the branch the chart actually uses —
+**never received the key**: the wiring had gone into the local-fallback dict and
+`/api/chart-db` only. Proof from the browser's own network log: the response the
+page received had keys
+`[status, candles, volumes, factors, adjustEvents, adjustSource, adjustCapability, count, priceBasis…]`
+with no `corporateEvents`, while `/api/chart-db/فارس` returned 10. Fixed in this
+stage; after the fix the same log line reads `corporateEvents: 10`.
+
+The guard that was supposed to catch this counted occurrences of the key
+(`>= 3`) and was satisfied by the fallback dict mentioning it twice. It now
+asserts each of the three sites by its surrounding code, so a fourth path cannot
+be "counted" into existence.
+
+#### Colours
+
+The first colour for `priceAdjust` was `#f59e0b` — the same amber the pre-existing
+*chain* marker already uses, so the two could not be told apart (in pixels or by
+eye). `shareChange` was `#38bdf8`, one blend away from the chart's own cyan
+`#22d3ee`. Both canonical colours are now outside the chart palette:
+`priceAdjust #a855f7`, `shareChange #2dd4bf`; `technical-corp-events.spec.ts`
+asserts neither collides with the chain marker or with `FTS_OVERLAY_COLORS`.
+
+
 ## 5) Symbol Inspector
 
 `frontend/src/features/market/components/RegulatoryState.tsx`, mounted right after the
@@ -382,14 +407,19 @@ served by that backend, `sessionStorage` auth injected — no password typed):
 | Technical sidebar | `sidebar-board-context` = «از تابلو: متوقف نظارت», box 268×22 px, `clipped: []` |
 | console | `consoleErrors: []` on both routes |
 | chart payload | `/api/chart-db/فولاد` → `corporateEvents` 14 items (`shareChange` from 2011 on), `adjustEvents` 31 — the two arrays stay separate |
+| chart markers on canvas (stage 2) | route `#/technical/فارس`, range 1Y, price pane composited from its two canvases. **ON:** purple(`#a855f7`) 276 px, teal(`#2dd4bf`) 364 px. **OFF** (the app's own `fts.chart.settings.v1 → view.showCorporateActions=false`, i.e. what the settings switch writes): **purple 0, teal 0**. Same at 1920×1080. Clusters ≥50 px sorted by x give the type sequence `priceAdjust, shareChange, priceAdjust`, exactly the visible events sorted by date (`2025-10-25`, `2026-08-15`, `2026-09-19`) — `same: true` at both viewports. Dragging the pane 240 px moved every marker exactly 240 px with the candles. Evidence: `_audit/p0_marker_probe_1366.json`, `_audit/p0_marker_probe_1920.json`, `_audit/p0_marker_1366-on.png`, `_audit/p0_marker_1366-off.png`. |
+
+What the canvas run does **not** claim: an absolute price→pixel check. The
+marker's y is proven relative (below the candle low at its column, and locked to
+the candles under pan/zoom), and its x is proven by ordering and by panning, not
+by re-deriving klinecharts' own axis mapping — that mapping is the same one the
+pre-existing chain markers use.
+
 
 Not proven live:
-- **canvas pixels of the chart markers** — the overlay is drawn on canvas and the chart
-  instance is not reachable from the page; proof here is the payload, the shared mapping
-  tests, and a clean console. A pixel check (per `canvas-chart-live-pixel-check`) is still
-  open.
+- ~~canvas pixels of the chart markers~~ — **proven in stage 2** (see the table above).
 - **the second engine (FFC)** in a browser: mapping is shared and unit-tested, but no live
-  FFC screenshot was taken.
+  FFC render was measured (stage 3).
 - **pilot jev**: two `arbitrate` calls both died with
   `RuntimeError: TypeSafe Jev API Network Error: The read operation timed out`, so the
   prose arbitration of the «board row vs new per-symbol endpoint» fork did not happen.

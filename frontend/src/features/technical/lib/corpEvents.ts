@@ -21,10 +21,13 @@ export type RawCorporateEvent = {
 
 export const CORP_EVENT_GROUP = 'fts-corp-events';
 
-/** دو نوع، دو نشانِ روشن — کاربر با یک نگاه تفکیکشان کند */
+/** دو نوع، دو نشانِ روشن — کاربر با یک نگاه تفکیکشان کند.
+ *  رنگ‌ها از پالتِ خودِ چارت (کهرباییِ #f59e0b/#fbbf24، فیروزه‌ایِ #22d3ee،
+ *  سبزِ #10b981، قرمزِ #ff3860) دوری می‌کنند: هم با نشانگرِ زنجیرۀ تعدیل
+ *  قاطی نشود، هم سنجشِ پیکسلی بتواند هر نوع را جدا بشمارد. */
 const VISUAL: Record<CorpEventType, { letter: string; color: string; name: string }> = {
-  priceAdjust: { letter: 'ت', color: '#f59e0b', name: 'تعدیلِ پایانی' },
-  shareChange: { letter: 'س', color: '#38bdf8', name: 'تغییرِ سهام' },
+  priceAdjust: { letter: 'ت', color: '#a855f7', name: 'تعدیلِ پایانی' },
+  shareChange: { letter: 'س', color: '#2dd4bf', name: 'تغییرِ سهام' },
 };
 
 /** واحدِ «چند سهم» — سهامِ میلیاردی با fmtInt خوانده نمی‌شود (گرد می‌شود) */

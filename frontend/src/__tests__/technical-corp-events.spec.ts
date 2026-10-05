@@ -69,6 +69,19 @@ describe('نگاشتِ رویدادِ شرکتی → نشانگر', () => {
     expect(first.points[0].timestamp).toBe(t(D1));
     expect(first.points[0].value).toBe(input.valueForDate(D1));
   });
+
+  it('رنگِ دو نوع با نشانگرِ زنجیرۀ تعدیل و پالتِ خودِ چارت قاطی نمی‌شود', () => {
+    const colors = corpEventMarkers(input).map((m) => m.color);
+    const COLLIDING = [
+      '#f59e0b', // نشانگرِ زنجیرۀ تعدیل (A) درِ KLineChartWrapper
+      '#22d3ee', '#fbbf24', // fib/jet درِ FTS_OVERLAY_COLORS
+      '#10b981', '#ff3860', // pullback / chohRed
+    ].map((c) => c.toLowerCase());
+    for (const c of colors) {
+      expect(COLLIDING).not.toContain(c.toLowerCase());
+    }
+    expect(new Set(colors).size).toBe(2);
+  });
 });
 
 describe('سیمِ دو موتور به یک نگاشت', () => {

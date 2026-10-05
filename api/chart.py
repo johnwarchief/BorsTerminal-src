@@ -621,6 +621,10 @@ def get_chart_tsetmc(symbol: str):
             "adjustEvents": adj_events,
             "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
             "adjustCapability": _adjust_capability(adj_events, adjust_source),
+            # رویدادهایِ شرکتیِ مبدأ هم از همان بانکِ canonical می‌آیند (نه از
+            # CSV): مسیرِ CDN اگر این کلید را نداشت، چارت هیچ‌وقت نشانگرِ
+            # TSETMC نمی‌کشید — سنجشِ زندهٔ همین دور (۲۱:۲x) همان را نشان داد.
+            "corporateEvents": _corporate_events(symbol),
             "count": len(candles),
         }
         # یک‌بار کشف، همیشه خوانده: همین مجموعه، منبعِ مسیرِ آفلاین هم می‌شود.

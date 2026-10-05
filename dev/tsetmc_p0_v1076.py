@@ -315,9 +315,15 @@ def part_corp():
     ck(_calls and all("corporate" not in c.lower() for c in _calls),
        "هیچ حلقۀ تعدیلی از رویدادِ مبدأ نمی‌خواند (نمایش، بی‌محاسبهٔ دوم)",
        " | ".join(_calls))
-    ck(csrc.count('"corporateEvents"') >= 3,
-       "پاسخِ هر سه مسیرِ چارت (CDN، محلیِ فال‌بک، chart-db) کلید را دارد",
-       str(csrc.count('"corporateEvents"')))
+    # هر سه مسیرِ پاسخ باید کلید را داشته باشد — و «شمارِ کلید» گواه کافی
+    # نیست (فال‌بک دو بار آن را می‌گوید و شمار را پر می‌کند): هر سه نقطه
+    # صریح چک می‌شوند. دورِ پیشین دقیقاً همین CDN را جا انداخت.
+    ck('"corporateEvents": _corporate_events(symbol),\n            "count"' in csrc,
+       "مسیرِ CDNِ /api/chart کلیدِ corporateEvents را درِ همان result می‌گذارد")
+    ck('"corporateEvents": db_res.get("corporateEvents") or []' in csrc,
+       "فال‌بکِ محلیِ /api/chart کلید را از همان پاسخِ chart-db می‌گیرد")
+    ck('"corporateEvents": _corporate_events(symbol),\n             "liveInjected"' in csrc,
+       "/api/chart-db کلید را دارد")
     ck('"corporateEvents": _corporate_events(symbol)' in csrc
        and '"corporateEvents": db_res.get("corporateEvents")' in csrc,
        "رویداد درِ همان پاسخ‌هایِ موجود می‌آید — اندپوینتِ دوم ساخته نشده")
