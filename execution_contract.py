@@ -203,6 +203,30 @@ class ExecutionStatus(str, Enum):
     FAILED = "failed"
 
 
+class OrderState(str, Enum):
+    """وضعیتِ سفارش از دیدِ کارگزاری — جدا از چرخۀِ حیاتِ *اجرا*.
+
+    `ExecutionStatus` می‌گوید ما چه کاری کردیم (فرستادیم؟ تأیید گرفتیم؟)؛ این
+    می‌گوید سرور با سفارش چه می‌کند (درِ میز است؟ نصفه خورده؟). یکی جای دیگری
+    را پر نمی‌کند: یکِ سفارشِ ACKNOWLEDGED می‌تواند PARTIAL باشد و یکِ
+    RECONCILED ممکن است بعداً CANCELLED شده باشد. پیش‌فرض `UNKNOWN` است، چون هیچ
+    مرجعِ بازبینی‌شده‌ای وضعیتِ کاملِ سفارش را ثابت نکرده (§۷-الف) و حدس‌زدنش
+    یعنی به کاربر گفتن «اتفاقاً پر شده».
+    """
+    UNKNOWN = "unknown"
+    PENDING = "pending"        # پذیرفته، هنوز درِ بررسی/میز
+    OPEN = "open"              # فعال در میز
+    PARTIAL = "partial"        # بعضی حجم خورده
+    FILLED = "filled"
+    CANCELLED = "cancelled"
+    REJECTED = "rejected"
+
+
+#: وضعیت‌هایی که دیگر حرکتی درِ آنها نیست؛ پایشِ صف باید رویِ آنها بایستد.
+TERMINAL_ORDER_STATES = frozenset((OrderState.FILLED, OrderState.CANCELLED,
+                                   OrderState.REJECTED))
+
+
 @dataclass
 class ExecutionRecord:
     """ستونِ فقراتِ ردِّپا. target/actual/drift ماندگارند، نه فقط لاگ (§۷-ج)."""
@@ -223,6 +247,16 @@ class ExecutionRecord:
     drift_us: float | None = None
     clock_offset_ms: float | None = None
     broker_order_id: str | None = None
+    order_state: OrderState = OrderState.UNKNOWN
+    filled_quantity: float | None = None
+    #: آخرینِ مشاهدهٔ صف. `None` یعنی UNKNOWN، نه «اولِ صف» (§۱۸ دستورِ کار).
+    queue_position: int | None = None
+    volume_ahead: float | None = None
+    queue_as_of: str | None = None
+    #: رشتهٔ زمان‌دارِ (as_of, position, volume_ahead) از پایشِ صف — تا «تغییرِ
+    #: جایِ صف» یک اندازه‌گیری باشد، نه یکِ عددِ بی‌ریشهٔ لحظه‌ای.
+    queue_series: list[tuple[str, int | None, float | None]] = field(
+        default_factory=list)
     error_code: ErrorCode | None = None
     error_detail: str = ""
     attempts: int = 0

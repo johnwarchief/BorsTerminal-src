@@ -28,8 +28,8 @@ from typing import Callable, Iterable
 
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ExecutionRecord, ExecutionStatus,
-    InstrumentRef, OrderDraft, QueueSnapshot, Resolution, SessionState,
-    SessionStatus, Side, ErrorCode, redact,
+    InstrumentRef, OrderDraft, OrderState, QueueSnapshot, Resolution,
+    SessionState, SessionStatus, Side, ErrorCode, redact,
 )
 
 #: پیامدهایِ ممکنِ یک ارسال
@@ -56,7 +56,8 @@ class MockBrokerAdapter(BrokerAdapter):
                  session: SessionStatus | None = None,
                  clock: Callable[[], float] | None = None,
                  latency_ms: float = 0.0,
-                 duplicate_policy: str = "guard") -> None:
+                 duplicate_policy: str = "guard",
+                 order_states: dict[str, OrderState] | None = None) -> None:
         self._caps = capabilities or Capabilities(list_orders=True, order_state=True,
                                                   queue_position=True)
         self._by_symbol = {i.symbol: i for i in instruments}
@@ -65,6 +66,8 @@ class MockBrokerAdapter(BrokerAdapter):
         self._clock = clock or _default_clock()
         self._latency_ms = latency_ms
         self._duplicate_policy = duplicate_policy
+        #: وضعیتِ سفارشِ هر execution_id از دیدِ سرور؛ نبودش یعنی UNKNOWN.
+        self.order_states: dict[str, OrderState] = dict(order_states or {})
 
         #: هر درخواستِ *واقعاً ارسالی* به سرور (برایِ اثباتِ «بیرون نرفت»)
         self.wire_calls: list[str] = []
@@ -207,10 +210,23 @@ class MockBrokerAdapter(BrokerAdapter):
                   volume_ahead: float | None = None) -> None:
         self.queue_by_order[broker_order_id] = (position, volume_ahead)
 
+    def set_order_state(self, execution_id: str, state: OrderState,
+                        filled: float | None = None) -> None:
+        """تغییرِ وضعیتِ سفارش رویِ سرور — برایِ آزمونِ مسیرِ read-back."""
+        self.order_states[execution_id] = state
+        rec = self._by_execution.get(execution_id)
+        if rec is not None:
+            rec.order_state = state
+            if filled is not None:
+                rec.filled_quantity = filled
+
     def _accept(self, rec: ExecutionRecord) -> ExecutionRecord:
         rec.broker_order_id = f"MOCK-{self._next_id:05d}"
         self._next_id += 1
         rec.status = ExecutionStatus.ACKNOWLEDGED
+        #: کارگزاریِ واقعی همواره وضعیتِ سفارش را نمی‌گوید؛ `order_states`
+        #: خالی یعنی UNKNOWN بماند (§۱۸: نبودِ اطلاعات ≠ «اولِ صف»).
+        rec.order_state = self.order_states.get(rec.execution_id, OrderState.UNKNOWN)
         rec.note("server accepted")
         self.server_orders[rec.broker_order_id] = rec
         return rec

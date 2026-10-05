@@ -32,7 +32,8 @@ from typing import Callable, Mapping, Sequence
 
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
-    ExecutionStatus, OrderDraft, OrderMode, Side,
+    ExecutionStatus, OrderDraft, OrderMode, OrderState, QueueSnapshot,
+    TERMINAL_ORDER_STATES, Side,
 )
 from execution_timing import ClockState, DispatchPlan, Scheduler
 
@@ -61,6 +62,28 @@ class ModePolicy:
         if mode is OrderMode.FAST:
             return ModePolicy(False, False, False)
         return ModePolicy(False, True, True)          # ULTRA
+
+
+@dataclass(frozen=True)
+class QueueView:
+    """آنچه از صف می‌دانیم. سه حالتِ متفاوت، و تنها یکی «اطلاعات داریم» است.
+
+    • `supported=False` ⇒ کارگزاری اصلاً صف نمی‌دهد (capability).
+    • `supported=True` و `snapshot.known=False` ⇒ می‌دهد ولی برایِ این سفارش
+      چیزی ندارد (هنوز درِ صف ننشسته، یا endpoint خاموش است).
+    • `snapshot.known=True` ⇒ عددِ واقعی، همراه با `as_of`.
+
+    هیچ‌کدام صفرِ «اولِ صف شدید» نمی‌سازد (§۱۸ دستورِ کار).
+    """
+    execution_id: str
+    supported: bool
+    snapshot: QueueSnapshot | None
+    reason: str = ""
+    terminal: bool = False
+
+    @property
+    def known(self) -> bool:
+        return self.snapshot is not None and self.snapshot.known
 
 
 @dataclass
@@ -270,15 +293,27 @@ class ExecutionService:
         if not (caps.order_state or caps.list_orders):
             rec.note("verify unavailable: broker exposes no order read-back")
             return
-        found = None
-        if caps.order_state and rec.broker_order_id:
-            found = self.adapter.get_order(rec.broker_order_id)
-        if found is None and caps.list_orders:
-            found = next((o for o in self.adapter.get_orders()
-                          if o.execution_id == rec.execution_id), None)
+        found = self._read_back(rec, caps)
         rec.status = ExecutionStatus.RECONCILED if found is not None \
             else ExecutionStatus.UNKNOWN_RESULT
-        rec.note("verified" if found is not None else "not found in read-back")
+        if found is not None:
+            _carry_state(rec, found, "verified")
+        else:
+            rec.note("not found in read-back")
+
+    def _read_back(self, rec: ExecutionRecord,
+                   caps: Capabilities) -> ExecutionRecord | None:
+        """سفارشِ موجود را از سرور می‌پرسد. هیچ ارسالی نمی‌سازد و هیچ وضعیتی
+        را از خود نمی‌سازد: نبودِ read-back ⇒ None ⇒ همان UNKNOWN.
+        """
+        if caps.order_state and rec.broker_order_id:
+            found = self.adapter.get_order(rec.broker_order_id)
+            if found is not None:
+                return found
+        if caps.list_orders:
+            return next((o for o in self.adapter.get_orders()
+                         if o.execution_id == rec.execution_id), None)
+        return None
 
     def _dry_run_record(self, prepared: Prepared) -> ExecutionRecord:
         d = prepared.draft
@@ -312,11 +347,81 @@ class ExecutionService:
         if hit is not None:
             rec.status = ExecutionStatus.RECONCILED
             rec.broker_order_id = hit.broker_order_id
-            rec.note("reconciled from broker order list")
+            _carry_state(rec, hit, "reconciled from broker order list")
         else:
             rec.status = ExecutionStatus.FAILED
             rec.note("reconciled: broker has no such order")
         return rec
+
+    # ---- ۴-پ) خواندنِ وضعیت / صف (بندِ ۱۸) ---------------------------------
+    def refresh(self, execution_id: str) -> ExecutionRecord:
+        """نظرِ سرور دربارهٔ سفارشِ *موجود*. هیچ ارسالی نمی‌کند.
+
+        بعدِ `UNKNOWN_RESULT` باید `reconcile()` خوانده شود، نه این؛ `refresh`
+        رویِ رکوردی که هنوز معلوم نیست چه شده، سفارشِ دوم نمی‌سازد و وضعیت را
+        هم بی‌شواهد عوض نمی‌کند.
+        """
+        rec = self._ledger.get(execution_id)
+        if rec is None:
+            raise ExecutionError(ErrorCode.INVALID_EXECUTION_ID,
+                                 f"no such execution {execution_id}")
+        caps = self.adapter.capabilities()
+        found = None
+        if caps.order_state and rec.broker_order_id:
+            found = self.adapter.get_order(rec.broker_order_id)
+        if found is None and caps.list_orders:
+            found = next((o for o in self.adapter.get_orders()
+                          if o.execution_id == execution_id), None)
+        if found is None:
+            rec.note("refresh: read-back has nothing for this order")
+            return rec
+        _carry_state(rec, found, "refreshed from broker")
+        if rec.status in (ExecutionStatus.ACKNOWLEDGED, ExecutionStatus.DISPATCHED):
+            rec.status = ExecutionStatus.RECONCILED
+        return rec
+
+    def queue(self, execution_id: str) -> QueueView:
+        caps = self.adapter.capabilities()
+        rec = self._ledger.get(execution_id)
+        if rec is None:
+            raise ExecutionError(ErrorCode.INVALID_EXECUTION_ID,
+                                 f"no such execution {execution_id}")
+        if not caps.queue_position:
+            return QueueView(execution_id, False, None,
+                             "broker exposes no queue endpoint",
+                             rec.order_state in TERMINAL_ORDER_STATES)
+        if not rec.broker_order_id:
+            return QueueView(execution_id, True, None,
+                             "order id not known yet (nothing to ask about)",
+                             rec.order_state in TERMINAL_ORDER_STATES)
+        if rec.order_state in TERMINAL_ORDER_STATES:
+            return QueueView(execution_id, True, None,
+                             f"order already {rec.order_state.value}", True)
+        snap = self.adapter.get_queue_position(rec.broker_order_id)
+        if snap is None:
+            return QueueView(execution_id, True, None,
+                             "queue endpoint returned nothing", False)
+        rec.queue_position = snap.position
+        rec.volume_ahead = snap.volume_ahead
+        rec.queue_as_of = snap.as_of
+        rec.queue_series.append((snap.as_of or "", snap.position, snap.volume_ahead))
+        return QueueView(execution_id, True, snap, "", False)
+
+    def watch_queue(self, execution_id: str, samples: int = 3,
+                    interval_ms: int = 500, *,
+                    sleep: Callable[[float], None] = time.sleep) -> list[QueueView]:
+        """چندِ مشاهدهٔ پیاپی از صف. «تغییرِ جایِ صف» بدونِ رشتهٔ زمان‌دار
+        اندازه‌گیری نیست؛ و بی‌تواناییِ کارگزاری اصلاً سؤال نمی‌کند (§۱۸).
+        """
+        seen: list[QueueView] = []
+        for i in range(max(1, int(samples))):
+            view = self.queue(execution_id)
+            seen.append(view)
+            if not view.supported or view.terminal:
+                break
+            if i + 1 < max(1, int(samples)):
+                sleep(interval_ms / 1000.0)
+        return seen
 
     # ---- ۵) تکرار با گارد (بندِ ۱۵) ---------------------------------------
     def plan_repeat(self, draft: OrderDraft, count: int, delay_ms: int, *,
@@ -348,11 +453,31 @@ class ExecutionService:
                                  f"تعدادِ کلِ {total_qty:.0f} از سقف بیرون است")
 
     # ---- کمکي ------------------------------------------------------------
+    def _require(self, execution_id: str) -> ExecutionRecord:
+        rec = self._ledger.get(execution_id)
+        if rec is None:
+            raise ExecutionError(ErrorCode.INVALID_EXECUTION_ID,
+                                 f"no such execution {execution_id}")
+        return rec
+
     def record(self, execution_id: str) -> ExecutionRecord | None:
         return self._ledger.get(execution_id)
 
     def ledger(self) -> list[ExecutionRecord]:
         return list(self._ledger.values())
+
+
+def _carry_state(dst: ExecutionRecord, src: ExecutionRecord, why: str) -> None:
+    """وضعیتِ سرور را به رکوردِ خودمان منتقل می‌کند — و فقط همان را که هست.
+
+    `order_state` بی‌مقدارِ پیش‌فرض نمی‌ماند اگر سرور گفته؛ و اگر سرور نگفته،
+    UNKNOWN می‌ماند. حجمِ خورده هم از سرور کپی می‌شود، نه محاسبه.
+    """
+    if src.order_state is not OrderState.UNKNOWN:
+        dst.order_state = src.order_state
+    if src.filled_quantity is not None:
+        dst.filled_quantity = src.filled_quantity
+    dst.note(why)
 
 
 def _code_for(p: Preflight) -> ErrorCode:
@@ -371,5 +496,5 @@ def _code_for(p: Preflight) -> ErrorCode:
     return ErrorCode.BROKER_REJECTED
 
 
-__all__ = ["ExecutionService", "ExecutionError", "Preflight", "Prepared",
+__all__ = ["ExecutionService", "ExecutionError", "Preflight", "Prepared", "QueueView",
            "Limits", "ModePolicy"]
