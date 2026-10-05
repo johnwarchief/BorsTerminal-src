@@ -58,6 +58,12 @@ export function corpEventColor(kind: CorpEventType): string {
   return VISUAL[kind].color;
 }
 
+/** برچسبِ یک رویدادِ اخیر برایِ سایدبار/مستر — همان نگاشتِ نشانگر، بی‌نقشهٔ دوم */
+export function corpEventChipLabel(ev: RawCorporateEvent): string | null {
+  const kind = corpEventType(ev);
+  return kind ? `${VISUAL[kind].name} (${toFaDigits(ev.date ?? '')})` : null;
+}
+
 export type CorpMarkerInput = {
   events: readonly RawCorporateEvent[];
   /** «YYYY-MM-DD» → timestampِ کندل، یا null اگر آن روز درِ سری نیست */
@@ -65,6 +71,21 @@ export type CorpMarkerInput = {
   /** جایِ عمودیِ نشانگر رویِ همان کندل (کفِ کندل)، یا null اگر نیست */
   valueForDate: (date: string) => number | null;
 };
+
+/** رویدادهایِ *نشست‌هایِ پیشِ رو* — تازه‌ترینِ هر نوع. بیشتر از دو تا نمی‌شود
+ *  وگرنه «زمینه» به فهرستِ بلندِ تاریخ تبدیل می‌شود. */
+export function recentCorpEvents(events: readonly RawCorporateEvent[], days = 45): RawCorporateEvent[] {
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const byType = new Map<string, RawCorporateEvent>();
+  for (const ev of events) {
+    const kind = corpEventType(ev);
+    const date = typeof ev.date === 'string' ? ev.date.slice(0, 10) : null;
+    if (!kind || !date || date < cutoff) continue;
+    const seen = byType.get(kind);
+    if (!seen || String(seen.date) < date) byType.set(kind, ev);
+  }
+  return [...byType.values()].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
 
 export type CorpMarker = ChartOverlaySpec & {
   /** حرفِ نشانگر (ت/س) — موتورِ klinecharts دورِ دایره می‌نویسدش */

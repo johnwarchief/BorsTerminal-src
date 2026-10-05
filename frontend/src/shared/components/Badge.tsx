@@ -10,9 +10,19 @@ const TONES: Record<Tone, string> = {
   orange: 'bg-accent-susp-bg text-accent-susp border-accent-susp/30',
 };
 
-export function Badge({ tone = 'gray', children }: { tone?: Tone; children: React.ReactNode }) {
+export function Badge({
+  tone = 'gray',
+  children,
+  title,
+}: {
+  tone?: Tone;
+  children: React.ReactNode;
+  /** توضیحِ معنیِ بج — بی‌آن، بج به یک رنگِ بی‌متن بدل می‌شود */
+  title?: string;
+}) {
   return (
     <span
+      title={title}
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${TONES[tone]}`}
     >
       {children}

@@ -16,6 +16,14 @@ export type ActiveLevelsView = {
   setups: string[];
   /** «زمینه»ها (کمربند فیبو و…) — ستاپِ ورود نیستند، برای همین جدا نمایش داده می‌شوند */
   context: string[];
+  /** زمینهٔ ناظر/رویداد از canonicalِ TSETMC. رأیِ تازه‌ای نیست و درِ هیچ فرمولی
+   *  نمی‌نشیند؛ اگر ردیفِ تابلو نرسد null است (نه «سالم»). */
+  boardFlags?: {
+    stopped?: string | null;
+    stopSince?: string | null;
+    supervised?: boolean | null;
+    recentEvents?: string[] | null;
+  } | null;
   direction: 'bullish' | 'bearish' | 'neutral' | null;
 };
 
@@ -208,6 +216,30 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
           {active.context.map((c) => (
             <Badge key={c} tone="gray">
               {CONTEXT_FA[c] ?? c}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      {/* زمینهٔ ناظر/رویداد (TSETMC): فقط اطلاعِ همان چیزی که درِ Inspector کامل
+          خوانده می‌شود. نه ستاپِ ورود است، نه رأی، نه وزنِ تازه. */}
+      {active.boardFlags && (active.boardFlags.stopped || active.boardFlags.supervised
+        || (active.boardFlags.recentEvents?.length ?? 0) > 0) ? (
+        <div className="flex flex-wrap items-center gap-1" data-testid="sidebar-board-context">
+          <span className="text-[10px] text-text-muted">از تابلو:</span>
+          {active.boardFlags.stopped ? (
+            <Badge tone="red" title={`متوقف از ${toFaDigits(active.boardFlags.stopSince ?? '')} — جزئیات درِ Inspector`}>
+              متوقف
+            </Badge>
+          ) : null}
+          {active.boardFlags.supervised ? (
+            <Badge tone="yellow" title="زیرِ نظرِ سازمان — جزئیات درِ Inspector">
+              نظارت
+            </Badge>
+          ) : null}
+          {(active.boardFlags.recentEvents ?? []).map((e) => (
+            <Badge key={e} tone="blue" title="رویدادِ شرکتیِ مبدأ (TSETMC)">
+              {e}
             </Badge>
           ))}
         </div>

@@ -17,6 +17,7 @@ import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
 import { technicalSignal } from '../signals/technicalSignals';
 import { weeklyFromFts } from '../lib/weeklyFromFts';
+import { corpEventChipLabel, recentCorpEvents } from '../lib/corpEvents';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
@@ -200,13 +201,25 @@ export default function TechnicalPage() {
     return {
       symbol: viewSymbol,
       fts: analysis.data?.fts ?? null,
+      // زمینهٔ ناظر/رویداد از همان ردیفِ تابلو و همان پاسخِ چارت — نه درخواستِ
+      // تازه و نه رأیِ تازه؛ درِ هیچ فرمولی از این سه کلید استفاده نمی‌شود.
+      boardFlags: boardRow
+        ? {
+            stopped: boardRow.stop_state ?? null,
+            stopSince: boardRow.stop_since ?? null,
+            supervised: (boardRow.sup_flag ?? 0) >= 1,
+            recentEvents: recentCorpEvents(corpEvents ?? [])
+              .map(corpEventChipLabel)
+              .filter((x): x is string => !!x),
+          }
+        : null,
       ma100,
       lastClose: candles.length > 0 ? candles[candles.length - 1].close : null,
       setups: signal?.payload.setups ?? [],
       context: signal?.payload.context ?? [],
       direction: signal?.direction ?? null,
     };
-  }, [analysis.data, series.closes, signal, viewSymbol, candles]);
+  }, [analysis.data, series.closes, signal, viewSymbol, candles, boardRow, corpEvents]);
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
@@ -307,8 +320,20 @@ export default function TechnicalPage() {
               id: 'verdict',
               label: 'داوری',
               node: (
-                <div className="p-1">
+                <div className="flex flex-col gap-1.5 p-1">
                   <p className="text-xs leading-6 text-text-secondary">{signal?.rationale ?? 'در انتظار داده کافی...'}</p>
+                  {/* زمینهٔ ناظر: یک خط، بی‌رأیِ تازه. موتورِ FTS وضعیتِ معاملاتی را
+                      نمی‌سنجد و این خط هم چیزی به داوری اضافه نمی‌کند — فقط می‌گوید
+                      نماد رویِ تابلو کجا ایستاده (جزئیات درِ Inspector). */}
+                  {boardRow?.stop_state ? (
+                    <p className="text-2xs text-accent-red" data-testid="verdict-board-context">
+                      این نماد متوقف است — موتورِ داوری وضعیتِ معاملاتی را نمی‌سنجد؛ علت و تاریخ درِ Inspector
+                    </p>
+                  ) : boardRow && (boardRow.sup_flag ?? 0) >= 1 ? (
+                    <p className="text-2xs text-accent-yellow" data-testid="verdict-board-context">
+                      این نماد زیرِ نظرِ سازمان است — علت‌ها درِ Inspector
+                    </p>
+                  ) : null}
                 </div>
               ),
             },
