@@ -235,6 +235,9 @@ SUITES = [
     # SMART-MONEY: «ورود پول هوشمند» و «کد به کد» عینِ دو فایلِ تازهٔ جزوه،
     # درِ همان tape_flags؛ ماتریسِ حدی/بی‌داده + سیم‌کشیِ رابطِ بی‌آینه.
     ('dev/tape_smartmoney_v1074.py', 'tape smart-money: two new file filters, one canonical judge'),
+    # TREND-FIXTURES: سه جامعۀ ساختگی (HH/HL، LH/LL، برابر) ⇒ رأیِ چارت ص ۲؛
+    # ادعای محوری: روزانۀ صعودی وتوی هفتگی را نمی‌شکند؛ na ⇒ UNKNOWN نه REJECT.
+    ('dev/fts_trend_fixtures_v1075.py', 'fts trend fixtures: weekly gate beats daily setup'),
     # BOARD-HIST-CACHE: دو پنجرۀ روزانه به جدولِ مادی تبدیل شده‌اند. این گارد
     # سطر‌به‌سطر ثابت می‌کند نتیجه عوض نشده و بی‌اعتباری هم درست کار می‌کند
     # (تیکِ نشستِ جاری کش را نمی‌سوزاند؛ تصحیحِ نشستِ پیشین می‌سوزاند).
