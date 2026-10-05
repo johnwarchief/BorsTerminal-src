@@ -37,6 +37,7 @@ import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
 } from '../../lib/ftsOverlays';
+import { corpEventMarkers, type RawCorporateEvent } from '../../lib/corpEvents';
 import {
   clearSymbolDrawings,
   commit as commitHistory,
@@ -424,6 +425,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // داده‌های چارت
   const [rawCandles, setRawCandles] = useState<KLineData[]>([]);
   const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
+  // رویدادهایِ شرکتیِ مبدأ (TSETMC) — برایِ نشانگر، بی‌هیچ ضریبِ تازه
+  const [corpEvents, setCorpEvents] = useState<RawCorporateEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasData, setHasData] = useState<boolean>(true);
   // یادداشتِ منبع: وقتی مدار TSETMC نمی‌رسد، سریِ محلی جایش را می‌گیرد —
@@ -656,6 +659,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
       if (stale()) return;   // نماد یا زمانی عوض شده است — سریِ قبلی نباید بنشیند
       setCorporateActions(parsedActions);
+      // نبودِ این کلید (پاسخِ قدیمی/محلی) یعنی «رویدادی نگرفته‌ایم»، نه «رویدادی نیست»
+      setCorpEvents(Array.isArray(json?.corporateEvents) ? json.corporateEvents : []);
       setRawCandles(parsedCandles);
       setHasData(parsedCandles.length > 0);
       // منبعِ جایگزین و تواناییِ تعدیل هر دو باید خوانا باشند. سریِ محلی حالا همان
@@ -1650,17 +1655,20 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       // safe
     }
 
-    if (ftsView?.showCorporateActions === false || corporateActions.length === 0 || displayCandles.length === 0) {
+    if (ftsView?.showCorporateActions === false || displayCandles.length === 0) {
       return;
     }
+
+    const at = (ts: number) =>
+      displayCandles.find((c) => Math.abs(c.timestamp - ts) < 24 * 60 * 60 * 1000)
+      ?? displayCandles.find((c) => c.timestamp >= ts);
 
     try {
       corporateActions.forEach((action) => {
         // سرور نوعِ رویداد را نمی‌فرستد (فقط نسبتِ گسست قیمت پایه)، پس برچسبِ
         // «سود نقدی» یا «افزایش سرمایه» روی این مارکر ساختگی می‌شد؛ تنها عددِ
         // واقعیِ موجود همان نسبت است و همان نمایش داده می‌شود.
-        const matchCandle = displayCandles.find((c) => Math.abs(c.timestamp - action.timestamp) < 24 * 60 * 60 * 1000)
-          ?? displayCandles.find((c) => c.timestamp >= action.timestamp);
+        const matchCandle = at(action.timestamp);
 
         if (!matchCandle) return;
 
@@ -1680,6 +1688,39 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           },
         } as never);
       });
+
+      // رویدادهایِ شرکتیِ مبدأ (TSETMC): دو نوع، دو حرف. نگاشتِ نوع→حرف/رنگ/متن
+      // درِ lib/corpEvents نشسته تا موتورِ دوم همان را رسم کند، نه ترجمۀ دوم.
+      // ردیفِ عمودیِ جدا (=46/70) برایِ آن است که نشانگرِ زنجیره (=24) زیرِ این‌ها
+      // گم نشود.
+      corpEventMarkers({
+        events: corpEvents,
+        tsForDate: (d) => {
+          const t = parseCandleTimestamp(d);
+          return Number.isFinite(t) && t > 0 ? t : null;
+        },
+        valueForDate: (d) => {
+          const t = parseCandleTimestamp(d);
+          const c = Number.isFinite(t) ? at(t) : undefined;
+          return c ? c.low : null;
+        },
+      }).forEach((m) => {
+        const p = m.points[0];
+        if (!p || p.timestamp == null) return;
+        chart.createOverlay({
+          name: FTS_CORP_ACTION_OVERLAY,
+          groupId: corpGroupId,
+          lock: true,
+          points: [{ timestamp: p.timestamp, value: p.value }],
+          extendData: {
+            kind: m.letter,
+            letter: m.letter,
+            dy: m.letter === 'س' ? 70 : 46,
+            text: m.label ?? '',
+            color: m.color,
+          },
+        } as never);
+      });
     } catch (e) {
       void e;
     }
@@ -1691,7 +1732,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         void e;
       }
     };
-  }, [corporateActions, displayCandles, ftsView?.showCorporateActions]);
+  }, [corporateActions, corpEvents, displayCandles, ftsView?.showCorporateActions]);
 
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

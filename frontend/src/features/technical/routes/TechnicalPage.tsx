@@ -96,6 +96,8 @@ export default function TechnicalPage() {
   // FTSِ سرور تحلیل می‌کند. پیش‌تر روی کندلِ خام می‌دوید: دو طرفِ یک افزایشِ سرمایه
   // دو مقیاسِ قیمتی‌اند، پس MA/مقاومت/فیبو قاطی می‌شد (شاهد: کايزد ۵۸۱۰ ← ۲۶۴۲).
   const adjustEvents = feed.data?.adjustEvents;
+  // نشانگرِ رویدادِ شرکتی (تک‌منبعِ canonical) — درِ هر دو موتور از همین یکی می‌خواند
+  const corpEvents = feed.data?.corporateEvents;
   const candles = useMemo(
     () => applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined'),
     [feed.candles, adjustEvents],
@@ -221,6 +223,7 @@ export default function TechnicalPage() {
                 engineId="ffc"
                 bars={engineBars}
                 fts={analysis.data?.fts ?? null}
+                corpEvents={corpEvents}
                 dark={theme !== 'light'}
                 logScale={storePriceScale === 'logarithm'}
                 candleStyle={engineStyle}

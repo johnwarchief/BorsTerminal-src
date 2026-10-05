@@ -302,10 +302,25 @@ def part_corp():
     csrc = open(CHART_PY, encoding="utf-8").read()
     ck("GetPriceAdjustByFlow" in csrc and "رد شد" in csrc,
        "کامنتِ api/chart.py که می‌گفت «درِ فید نیست» با ارجاعِ سنجش اصلاح شده")
+    # این چک درِ دورِ پیشین «نمی‌خواند» را pin کرده بود؛ دورِ مصرف‌کننده آن را
+    # عمداً برگرداند: حالا چارت می‌خواند، ولی **برایِ نمایش**. چیزی که باید
+    # ثابت بماند همین است: هیچ‌کدام از این ردیف‌ها به زنجیرۀ تعدیل راه نمی‌یابند.
     ck("_adjust_events_from_rows" in csrc
-       and "FROM price_adjust_events" not in csrc
-       and "FROM share_change_events" not in csrc,
-       "منطقِ تعدیلِ چارت درِ این دور از مبدأ **نمی‌خواند** (اول سنجشِ واگرایی)")
+       and "FROM price_adjust_events" in csrc
+       and "FROM share_change_events" in csrc,
+       "رویدادهایِ مبدأ درِ canonical خوانده می‌شوند (pinِ دورِ پیشین، این دور برگشت)")
+    ck("_corporate_events" in csrc,
+       "یک تابعِ واحدِ خواندن، نه دو نگاشتِ جدا برایِ دو مسیرِ چارت")
+    _calls = re.findall(r"_factors_from_events\([^)\n]*\)", csrc)
+    ck(_calls and all("corporate" not in c.lower() for c in _calls),
+       "هیچ حلقۀ تعدیلی از رویدادِ مبدأ نمی‌خواند (نمایش، بی‌محاسبهٔ دوم)",
+       " | ".join(_calls))
+    ck(csrc.count('"corporateEvents"') >= 3,
+       "پاسخِ هر سه مسیرِ چارت (CDN، محلیِ فال‌بک، chart-db) کلید را دارد",
+       str(csrc.count('"corporateEvents"')))
+    ck('"corporateEvents": _corporate_events(symbol)' in csrc
+       and '"corporateEvents": db_res.get("corporateEvents")' in csrc,
+       "رویداد درِ همان پاسخ‌هایِ موجود می‌آید — اندپوینتِ دوم ساخته نشده")
 
 
 # ═════════════ P0-3 — وضعیت / تعلیق / نظارت / پیام ═════════════

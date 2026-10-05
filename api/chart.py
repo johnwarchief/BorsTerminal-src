@@ -276,6 +276,53 @@ def _d_even_to_date(d_even):
     return f"{s[:4]}-{s[4:6]}-{s[6:]}"
 
 
+def _corporate_events(symbol):
+    """رویدادهایِ شرکتیِ مبدأ برایِ **نشانه‌گذاریِ** رویِ چارت — نمایش، نه محاسبه.
+
+    دو جدولِ canonicalِ TSETMC (قیمتِ پایانیِ تعدیل‌شده در برابرِ خام، و سهامِ
+    قبل/بعد) را می‌خواند. هیچ ضریبِ تازه‌ای اینجا ساخته نمی‌شود و هیچ ردیفی به
+    `adjustEvents`/`_factors_from_events` راه ندارد: `ratio` درِ جدولِ مبدأ
+    «تعدیل‌شده ÷ خامِ همان روز» است و `ratio` درِ زنجیرۀ کشف‌شدۀ پیشین
+    «پایۀ امروز ÷ پایانیِ دیروز» — دو تعریفِ متفاوت، پس هیچ‌وقت در هم نمی‌ریزند.
+    نوعِ رویداد از **خودِ جدول** خوانده می‌شود، نه از `corporateTypeCode`
+    (که رمزگشایی‌نشده می‌ماند؛ ببین docs/TSETMC-DATA-GAP-MATRIX.md §17).
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+    except Exception:
+        return []
+    try:
+        _pred, _params = sym_pred("l_val18", symbol)
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return []
+        ins = str(row[0])
+        out = []
+        for d, raw, adj, src in conn.execute(
+                "SELECT d_even, p_closing_not_adjusted, p_closing, source"
+                " FROM price_adjust_events WHERE ins_code=? ORDER BY d_even", (ins,)):
+            dt = _d_even_to_date(d)
+            if dt:
+                out.append({"date": dt, "type": "priceAdjust", "from": raw, "to": adj,
+                            "source": src or "tsetmc"})
+        for d, old, new, src in conn.execute(
+                "SELECT d_even, shares_old, shares_new, source"
+                " FROM share_change_events WHERE ins_code=? ORDER BY d_even", (ins,)):
+            dt = _d_even_to_date(d)
+            if dt:
+                out.append({"date": dt, "type": "shareChange", "from": old, "to": new,
+                            "source": src or "tsetmc"})
+        out.sort(key=lambda e: e["date"])
+        return out
+    except Exception:
+        # نبودِ جدول‌هایِ P0 (بانکِ نسخۀ پیشین) چارت را نمی‌شکند: بی‌نشانه می‌ماند
+        return []
+    finally:
+        conn.close()
+
+
 def _watch_live_bar(symbol, after_date):
     """(bar, error) — کندلِ جلسهٔ جاری از market_watch، با تاریخِ خودِ جلسه.
 
@@ -451,6 +498,7 @@ def get_chart_tsetmc(symbol: str):
                     "adjustEvents": db_res.get("adjustEvents") or [],
                     "adjustSource": "local-db-fallback",
                     "adjustCapability": db_res.get("adjustCapability") or {},
+                    "corporateEvents": db_res.get("corporateEvents") or [],
                     # فرانت با این پرچم «منبعِ جایگزین» را روی چارت می‌نویسد:
                     # سریِ محلی هم کوتاه‌تر است و هم بی‌رویدادِ تعدیل، پس هر
                     # جابه‌جاییِ اعدادِ محور باید برای کاربر توضیح داشته باشد.
@@ -1111,6 +1159,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
              "candles": candles, "volumes": vols, "factors": facts,
              "adjustEvents": _evs, "adjustSource": _src,
              "adjustCapability": _cap,
+             "corporateEvents": _corporate_events(symbol),
              "liveInjected": live_injected,
              "liveError": live_error,
              "adjustment": adjustment,

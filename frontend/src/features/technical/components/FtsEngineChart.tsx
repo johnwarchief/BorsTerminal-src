@@ -9,15 +9,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 import { engineEntry, paletteFromTheme, type ChartEngine, type ChartEngineId, type EngineBar, type EngineError } from '../engine';
 import { engineFtsLayers } from '../lib/engineFtsLayers';
+import { CORP_EVENT_GROUP, corpEventMarkers, type RawCorporateEvent } from '../lib/corpEvents';
 import { epochToJalali, parseCandleTimestamp } from '../lib/jalaliDate';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 
-const GROUPS = ['fts-fib', 'fts-pattern'] as const;
+const GROUPS = ['fts-fib', 'fts-pattern', CORP_EVENT_GROUP] as const;
 
 export function FtsEngineChart({
   engineId,
   bars,
   fts,
+  corpEvents,
   dark,
   logScale,
   candleStyle,
@@ -26,6 +28,8 @@ export function FtsEngineChart({
   engineId: ChartEngineId;
   bars: EngineBar[];
   fts: FtsAnalysisData | null | undefined;
+  /** رویدادهایِ شرکتیِ مبدأ (TSETMC) — فقط نشانه‌گذاری، بی‌محاسبهٔ تعدیل */
+  corpEvents?: RawCorporateEvent[];
   dark: boolean;
   logScale: boolean;
   candleStyle: 'candles' | 'bars' | 'line' | 'area' | 'heikin';
@@ -101,19 +105,27 @@ export function FtsEngineChart({
     if (bars.length === 0) return [];
     const anchor = bars[bars.length - 1].timestamp;
     const start = bars[0].timestamp;
-    return engineFtsLayers({
-      fts,
-      anchorTs: anchor,
-      startTs: start,
-      toDisp: (p) => p,
-      tsForDate: (d) => {
-        const ts = parseCandleTimestamp(d);
-        return Number.isFinite(ts) && ts > 0 ? ts : null;
-      },
-    });
-  }, [bars, fts]);
+    const tsForDate = (d: string) => {
+      const ts = parseCandleTimestamp(d);
+      return Number.isFinite(ts) && ts > 0 ? ts : null;
+    };
+    const barAt = (ts: number | null) =>
+      ts == null ? undefined
+        : bars.find((b) => Math.abs(b.timestamp - ts) < 24 * 60 * 60 * 1000)
+          ?? bars.find((b) => b.timestamp >= ts);
+    return [
+      ...engineFtsLayers({ fts, anchorTs: anchor, startTs: start, toDisp: (p) => p, tsForDate }),
+      // رویدادهایِ شرکتیِ مبدأ: همان نگاشتِ مشترکِ هر دو موتور (lib/corpEvents).
+      // روزی که درِ این سری نیست نشانگر نمی‌گیرد — جایِ حدسی رویِ محور نمی‌گذاریم.
+      ...corpEventMarkers({
+        events: corpEvents ?? [],
+        tsForDate,
+        valueForDate: (d) => barAt(tsForDate(d))?.low ?? null,
+      }),
+    ];
+  }, [bars, fts, corpEvents]);
 
-  // دو گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
+  // هر گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
   useEffect(() => {
     if (!engine) return;
     const byGroup = new Map<string, typeof layers>();

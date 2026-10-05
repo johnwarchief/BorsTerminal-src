@@ -548,14 +548,18 @@ function registerFtsDrawing(reg: (def: RegisterOverlayDef) => void): void {
       const c = ctx.coordinates;
       if (!c[0] || typeof c[0].x !== 'number' || typeof c[0].y !== 'number') return [];
       const ext = (ctx.overlay.extendData ?? {}) as {
-        kind?: 'A';
+        kind?: string;
+        letter?: string;
         text?: string;
         color?: string;
+        dy?: number;
       };
       const x = c[0].x;
-      const y = c[0].y + 24;
+      // ردیفِ عمودیِ هر نوع: نشانگرِ زنجیرۀ تعدیل (=24) و دو نوعِ رویدادِ مبدأ
+      // (=46 و =70) رویِ هم نیفتند وگرنه متنِ یکی زیرِ دیگری گم می‌شود.
+      const y = c[0].y + (ext.dy ?? 24);
       const color = ext.color ?? '#f59e0b';
-      const letter = 'A';
+      const letter = ext.letter ?? 'A';
       return [
         {
           type: 'circle',

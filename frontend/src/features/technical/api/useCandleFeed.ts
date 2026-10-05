@@ -28,6 +28,16 @@ export const RawAdjustEvent = z.object({
 });
 export type RawAdjustEvent = z.infer<typeof RawAdjustEvent>;
 
+/** رویدادِ شرکتیِ مبدأ (TSETMC) — فقط برایِ نشانه‌گذاری، بی‌هیچ ضریبِ تازه */
+export const RawCorporateEvent = z.object({
+  date: z.string().nullish(),
+  type: z.string().nullish(),
+  from: z.number().nullish(),
+  to: z.number().nullish(),
+  source: z.string().nullish(),
+});
+export type RawCorporateEvent = z.infer<typeof RawCorporateEvent>;
+
 /** /api/chart/{symbol} — کندل تعدیل‌شده؛ خطا شکل {status:'error', message} دارد */
 const ChartSchema = z.object({
   status: z.string(),
@@ -35,6 +45,7 @@ const ChartSchema = z.object({
   volumes: z.array(RawVolume).nullish(),
   count: z.number().nullish(),
   adjustEvents: z.array(RawAdjustEvent).nullish(),
+  corporateEvents: z.array(RawCorporateEvent).nullish(),
 });
 
 /** /api/history/{symbol} — تاریخچهٔ محلی */
@@ -55,6 +66,8 @@ export type CandleFeedResult = {
    * نمی‌آید و یک افزایشِ سرمایه وسطِ بازه، خطِ مقایسه را بی‌دلیل می‌شکند.
    */
   adjustEvents: RawAdjustEvent[];
+  /** رویدادهایِ شرکتیِ مبدأ برایِ نشانگرِ چارت (نمایش؛ درِ زنجیرۀ تعدیل نمی‌نشیند) */
+  corporateEvents: RawCorporateEvent[];
 };
 
 export function toKLineData(
@@ -89,6 +102,7 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
         candles: chart.candles ?? [],
         volumes: chart.volumes ?? [],
         adjustEvents: chart.adjustEvents ?? [],
+        corporateEvents: chart.corporateEvents ?? [],
       };
     }
   } catch {
@@ -104,6 +118,7 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
     candles: history.candles ?? [],
     volumes: history.volumes ?? [],
     adjustEvents: [],
+    corporateEvents: [],
   };
 }
 
