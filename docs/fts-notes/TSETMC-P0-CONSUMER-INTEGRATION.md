@@ -378,6 +378,41 @@ The report tool is guarded (`part_report`, 10 new checks) and its first run corr
 own arithmetic: I expected `reconstructed=3` for a 4-target fixture with 2 rows; the tool
 said 2 and was right.
 
+### 10a) The coverage *policy*, not just the coverage number (stage 6)
+
+The table above says where we are. It does not say what to aim at, and that is the
+decision that would silently justify raising the cap. So the same tool now prints three
+named scopes with their **uncapped** cost — the budget itself is untouched (600, still
+asserted by the guard):
+
+| policy | scope | requests/day | × budget | days to first fill | same-session cache hit | fits today? |
+| --- | --- | --- | --- | --- | --- | --- |
+| **P1** every traded board symbol | 3505 | 3505 | 5.84× | 5.8 | 5.71 % | no |
+| **P2** target session (volume > 0) — what the writer asks today | 2243 | 2243 | 3.74× | 3.7 | 8.92 % | no |
+| **P3** consumer-driven (watchlist ∪ saved selections) | 0 on this machine | 0 | 0.0× | — | — | yes, trivially |
+
+Two facts the numbers force:
+
+- **A cache only saves the *same* session.** Every new trading day re-asks the whole
+  scope, so P1 and P2 are not "slowly affordable" — they are structurally over budget at
+  steady state (3505 and 2243 per day against a 600 cap). Backfilling history is a
+  one-time cost; refreshing is a daily one, and only P3's shape fits that.
+- **P3 as defined by the DB is empty here**, because the watchlist and
+  `selection_decisions` both hold 0 rows on this machine. The set that actually consumes
+  the value is the funnel, and the funnel is computed by `/api/fts`, not stored — so it is
+  measured separately: **50 candidates, 7 of them with a native value** for the session
+  (`_audit/funnel_native_share.json`). That is 14 % of the surface the app actually shows,
+  at 50 requests/day = 8 % of the budget.
+
+**Recommendation (owner's ruling still needed — it is a methodology choice, not a bug):**
+keep P2 as the *target* and make P3 (watchlist ∪ saved ∪ funnel output, ≤ ~120 symbols)
+the **guaranteed daily lane**, then spend the remainder of the existing cap on the
+highest-score uncovered P2 symbols as a backfill queue. That fills the whole target
+universe in ≈4 days without touching 600, and it degrades honestly: when the queue is
+busy, the funnel still gets its values because it has its own lane. What it does **not**
+do is P1 — covering every traded symbol daily needs ~6× the budget, and no cache policy
+changes that.
+
 ## 11) Left unresolved (documented status only, no work done)
 
 | item | status |

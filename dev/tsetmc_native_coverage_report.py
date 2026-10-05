@@ -90,7 +90,51 @@ def measure(conn) -> dict:
             "all_board_traded": board_rows,
         },
         "days_to_fill_board_at_current_budget": (round(board_rows / budget, 1) if budget else None),
+        "policies": policies(conn, universe, board_rows, kinds.get("native", 0), budget),
     }
+
+
+def policies(conn, target, board, native, budget):
+    """سه سیاستِ پوشش، با هزینهٔ *واقعی* (سقف‌نشده) تا «۶۰۰» پنهانشان نکند.
+
+    هر سیاست = دامنه‌ای که هر نشستِ تازه باید از نو پرسیده شود؛ کش فقط همان
+    نشست را نجات می‌دهد، پس «پر شدنِ یک‌بار» با «تازۀ روزانه» دو چیز است.
+    """
+    watch = 0
+    try:
+        watch = conn.execute("SELECT COUNT(*) FROM user_watchlists").fetchone()[0]
+    except sqlite3.Error:
+        pass
+    try:
+        watch = max(watch, conn.execute(
+            "SELECT COUNT(DISTINCT symbol) FROM selection_decisions").fetchone()[0])
+    except sqlite3.Error:
+        pass
+    out = []
+    for name, scope, note in (
+            ("P1 کلِّ تابلویِ معامله‌شده", board, "هر نمادی که امروز معامله دارد"),
+            ("P2 دامنهٔ هدفِ نشست (حجم>۰)", target, "همان مجموعه‌ای که موتور می‌پرسد"),
+            ("P3 مصرف‌محور (دیده‌بان ∪ انتخاب‌شده‌ها)", max(watch, 1) if watch else 0,
+             "فقط نمادهایی که کاربر واقعاً باز کرده — قیف درِ این شمار نیست، "
+             "چون خروجیِ API است نه ردیفِ بانک؛ سنجشِ جدا دارد: "
+             "_audit/funnel_native_share.json")):
+        if not scope:
+            out.append({"policy": name, "scope": 0, "requests_per_day": 0,
+                        "over_budget_x": 0.0, "days_to_first_fill": 0.0,
+                        "cache_hit_pct": 0.0, "fits_in_budget": True,
+                        "note": note})
+            continue
+        out.append({
+            "policy": name,
+            "scope": scope,
+            "requests_per_day": scope,
+            "over_budget_x": round(scope / budget, 2) if budget else None,
+            "days_to_first_fill": round(scope / budget, 1) if budget else None,
+            "cache_hit_pct": round(100.0 * min(native, scope) / scope, 2),
+            "fits_in_budget": scope <= budget,
+            "note": note,
+        })
+    return out
 
 
 def render(m: dict) -> str:
@@ -120,6 +164,20 @@ def render(m: dict) -> str:
         row("  دامنهٔ هدفِ نشست", m["estimated_requests_per_day"]["full_target_universe"]),
         row("  پرکردنِ کاملِ تابلو چند روز می‌برد",
             m["days_to_fill_board_at_current_budget"]),
+        "",
+        "سه سیاستِ پوشش، با هزینهٔ واقعی (سقف‌نشده) — بودجه تغییر نکرده:",
+        "  سیاست                                   دامنه  در/روز  ×سقف  روز تا پر  کش٪",
+    ] + [
+        row("  %s" % p["policy"],
+            "%6s  %6s  %5s  %8s  %5s%s" % (
+                p["scope"], p["requests_per_day"], p["over_budget_x"],
+                p["days_to_first_fill"], p["cache_hit_pct"],
+                "" if p["fits_in_budget"] else "  ← از سقف بیرون"))
+        for p in m.get("policies", [])
+    ] + [
+        "",
+        "  P3 قیف را نمی‌شمارد: خروجیِ `/api/fts` از بانک نیست؛ سنجشِ جدا دارد",
+        "  (_audit/funnel_native_share.json: ۵۰ نامزد، ۷ تای آن مبدأِ native).",
         "",
         "دو خانوادۀ دیگرِ P0 (درخواستِ ثابت، بی‌بودجهٔ نمادی):",
         row("  رویدادِ شرکتی درِ هر اجرا", m["other_p0_requests_per_run"]["corporate_events"]),

@@ -647,9 +647,19 @@ def part_report():
        "برآوردِ روزانه از سقفِ بودجه فراتر نمی‌رود (کلیپ دارد)")
     ck(str(m["estimated_requests_per_day"]["watchlist"]) == "0",
        "بی‌جدولِ دیده‌بان عددِ جعلی نمی‌سازد (صفر = بی‌داده، نه خطا)")
+    pol = {x["policy"][1]: x for x in m["policies"]}
+    ck(len(m["policies"]) == 3, "سه سیاستِ پوشش گزارش می‌شود", str(len(m["policies"])))
+    ck(pol["2"]["requests_per_day"] == m["target_universe"],
+       "سیاستِ P2 هزینه را سقف‌نشده می‌گوید (کلیپِ بودجه پنهانش می‌کرد)",
+       str(pol["2"]["requests_per_day"]))
+    ck(pol["2"]["over_budget_x"] == round(m["target_universe"] / T.CTV_BUDGET, 2),
+       "ضریبِ فراتر-از-سقف از بودجهٔ واقعی حساب می‌شود", str(pol["2"]["over_budget_x"]))
+    ck(pol["1"]["scope"] == m["board_traded_symbols"],
+       "P1 دامنه‌اش کلِّ تابلویِ معامله‌شده است، نه هدفِ نشست", str(pol["1"]["scope"]))
     text = rep.render(m)
     ck("پوششِ مبدأ" in text and "برآوردِ درخواست/روز" in text,
        "گزارشِ متنی هر دو بخش را دارد", text[:40])
+    ck("سه سیاستِ پوشش" in text, "گزارشِ متنی جدولِ سیاست‌ها را هم چاپ می‌کند")
     c.close()
 
 
