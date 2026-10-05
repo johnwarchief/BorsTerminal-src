@@ -350,7 +350,7 @@
 
 ### تست
 - AST + syntax validation ✓
-- `send_bale_msg` 실제 → message_id 4 (200 ok:true) ✓
+- `send_bale_msg` واقعی → message_id 4 (200 ok:true) ✓
 - `dispatch_alert` → `{"ok":true,"sent":{"bale":true}}` ✓
 - HTTP: `/api/notify/status` 200 + `/api/notify/test-all` ✓
 - Error boundary: توکن فیک → 403 → `False` (بدون استثنا) ✓

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""اندازه‌گیریِ کفِ دلتای onedir —证据ِ go/no-go برایِ Phase C (Velopack).
+"""اندازه‌گیریِ کفِ دلتای onedir — شاهدِ go/no-go برایِ Phase C (Velopack).
 
 سوال: آیا خروجیِ onedir واقعاً دیف‌های کوچک می‌دهد؟ onefile یک CArchiveِ
 فشردهٔ واحد است، پس diffِ دو بیلدِ روی همان سورس تقریباً هیچ پس‌اندازی

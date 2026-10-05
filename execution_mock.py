@@ -193,7 +193,7 @@ class MockBrokerAdapter(BrokerAdapter):
         self.wire_calls.append(f"cancel:{broker_order_id}")
         return broker_order_id in self.server_orders
 
-    # ---- کمکي -------------------------------------------------------------
+    # ---- کمکی -------------------------------------------------------------
     def _new_record(self, draft: OrderDraft) -> ExecutionRecord:
         rec = ExecutionRecord(
             execution_id=draft.execution_id, broker=self.name,

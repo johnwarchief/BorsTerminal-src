@@ -251,7 +251,7 @@ def part_plan():
         ck(True, "هدفِ بیرونِ پنجرهٔ مجاز رد می‌شود")
 
 
-# ── ) dispatch: spin، درفت، و مصونیت در برابر پرشِ ساعت ────────────────────
+# ── ۵) dispatch: spin، درفت، و مصونیت در برابر پرشِ ساعت ────────────────────
 def part_dispatch():
     fc = FakeClock(start_s=1000.0, wall_ms=1_760_000_000_000)
     sched = fc.scheduler(spin_window_ms=20.0)

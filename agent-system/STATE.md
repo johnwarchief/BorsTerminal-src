@@ -14,7 +14,7 @@
 | agent/technical | neat-plateau | 6d2c036 (+1 dirty) | **در حال کار** | 3f5fa69b-626f-4820-879c-3b31aaa419be |
 | agent/master-portfolio | mellow-brook | 4177e24 | clean، مرج‌شده | ac6ab3ac-ae87-4507-a70d-d321e6034ccf |
 
-## مأموریت باز (اگر迁移 وسط کار کردید، همین را re-dispatch کنید)
+## مأموریت باز (اگر مهاجرت وسط کار کردید، همین را re-dispatch کنید)
 **T-01 · Technical · RightDock:**
 ```
 ۱) Read TechnicalPage.tsx

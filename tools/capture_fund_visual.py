@@ -146,7 +146,7 @@ def run(base: str, width: int, height: int, vlm: Valen, tag: str) -> list:
         sc.evaluate("(el) => el.scrollBy({top: -1500})")
         pg.wait_for_timeout(700)
 
-        #排序ِ ستونِ امتیاز تا ردیف‌هایِ پایینِ نردبان هم دیده شوند
+        # مرتب‌سازیِ ستونِ امتیاز تا ردیف‌هایِ پایینِ نردبان هم دیده شوند
         try:
             pg.get_by_role("button", name=re.compile("امتیاز")).first.click()
             pg.wait_for_timeout(1200)

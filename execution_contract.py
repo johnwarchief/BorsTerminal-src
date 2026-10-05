@@ -149,7 +149,7 @@ class BrokerError(Exception):
         return self.code in RETRY_FORBIDDEN_CODES
 
 
-# ── ) توانایی و حالتِ نشست ──────────────────────────────────────────────────
+# ── ۴) توانایی و حالتِ نشست ──────────────────────────────────────────────────
 @dataclass(frozen=True)
 class Capabilities:
     """هر adapter صریح می‌گوید چه می‌تواند بکند. False یعنی «نیست»، نه «صفر»."""
@@ -190,7 +190,7 @@ class QueueSnapshot:
         return self.position is not None or self.volume_ahead is not None
 
 
-# ── ) رکوردِ اجرا ──────────────────────────────────────────────────────────
+# ── ۵) رکوردِ اجرا ──────────────────────────────────────────────────────────
 class ExecutionStatus(str, Enum):
     DRAFT = "draft"
     VALIDATED = "validated"
