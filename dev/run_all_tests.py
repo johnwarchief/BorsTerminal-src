@@ -252,6 +252,12 @@ SUITES = [
     # باشند. کنترلِ منفی: SloppyAdapter (retry + fallback به ISINِ «زر» + صفرِ
     # جعلیِ صف) باید درِ همین سوئیت بیفتد، وگرنه سوئیت کور است.
     ('dev/execution_contract_v1.py', 'sarkhati: broker contract on mock, no blind retry'),
+    # SARKHATI Stage H: موتورِ زمان. آفستِ NTP چندنمونه‌ای با *حالتِ* کیفیت
+    # (TRUSTED/DEGRADED/UNTRUSTED/UNAVAILABLE) و fail-safe بی‌صدا رد نمی‌شود؛
+    # مهلت رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند؛
+    # یک‌طرفه = نصفِ RTT نه کلِ آن (اشتباهِ مرجعِ Rust، §۷-ج). سرورِ SNTP بدل
+    # رویِ 127.0.0.1 است — هیچ درخواستِ واقعی به بیرون نمی‌رود.
+    ('dev/execution_timing_v1.py', 'sarkhati: monotonic-anchored scheduler + clock quality'),
     # BOARD-HIST-CACHE: دو پنجرۀ روزانه به جدولِ مادی تبدیل شده‌اند. این گارد
     # سطر‌به‌سطر ثابت می‌کند نتیجه عوض نشده و بی‌اعتباری هم درست کار می‌کند
     # (تیکِ نشستِ جاری کش را نمی‌سوزاند؛ تصحیحِ نشستِ پیشین می‌سوزاند).
