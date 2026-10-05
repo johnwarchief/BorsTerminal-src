@@ -388,7 +388,7 @@ said 2 and was right.
 | MarketWatch delta protocol | documented in `docs/TSETMC-DATA-GAP-MATRIX.md`; no change. |
 | full native coverage | 8.92 % of the target session (§10). Raising it needs either more budget (refused) or multi-session backfill (not built). |
 | `instrument_state` vs board gap | 228 instruments have state rows, 223 appear on today's board; 5 are delisted/suspended instruments with no board row. |
-| External JEV textual review | not run in this round (see §13). |
+| External JEV textual review | **UNVERIFIED / timeout**: four attempts, all dead; a keyless `GET` to the same host fails identically at 15.2 s, so the outage is server-side (table in §13). No verdict was invented in its place. |
 | which build owns the last market_watch write on this machine | **resolved**: it was a `nohup`-ed leftover `uvicorn app:app --port 8002` running in-memory v1.0.73 (see §1a). Stopped; `dev/single_writer_guard.py` now fails if two appear. |
 | `GetMarketWatch` field set | **open, source-side**: the same URL served 41 keys (with `flow`/`pRedTran`/`buyOP`/`cGrValCot`) at 19:24 and 36 keys without them at 20:57/21:10, for both session types and four URL variants. Handled by the sticky-column rule (§1b), not by guessing. |
 | `۲۰۰-۱۲-۲۲` in `candle_contract.py:14` / `api/chart.py:80` | a mangled date that predates this round; the year cannot be confirmed from `price_history` (no `فولاد` row on 12-22 with H=L outside body: measured rows are 2024-12-22 O=6050 H=6060 L=5860 C=6000 and 2025-12-22 O=3874 H=3915 L=3781 C=3839), so it was left untouched rather than guessed. |
@@ -457,9 +457,24 @@ Not proven live:
 - ~~**the second engine (FFC)** in a browser~~ — **proven in stage 3**, and that run is
   what exposed the three causes in §4. Still unproven there: sub-bar x precision, and the
   `indicators` half of the same package gate (§11).
-- **pilot jev**: two `arbitrate` calls both died with
-  `RuntimeError: TypeSafe Jev API Network Error: The read operation timed out`, so the
-  prose arbitration of the «board row vs new per-symbol endpoint» fork did not happen.
+- **pilot jev — UNVERIFIED / the service is unreachable, measured four ways.** Every
+  attempt died before any verdict came back; nothing was stubbed or paraphrased as a
+  judgment. Log:
+
+  | attempt | client | payload | timeout | elapsed | failure |
+  | --- | --- | --- | --- | --- | --- |
+  | 1 (stage 6 of the previous round) | `tools/pilot_ctl.py arbitrate` | «board row vs new per-symbol endpoint», 3 options | 3.0 s (package default) | ~3 s | `TimeoutError: The read operation timed out` |
+  | 2 (same round) | same | same fork, different wording | 3.0 s | ~3 s | same |
+  | 3 (this round, stage 4) | `JevPilot(timeout=60, max_retries=0).arbitrate` | FFC overlay-channel fork, 3 prose options, 341 chars | 60 s | **15.2 s** | `RuntimeError: TypeSafe Jev API Network Error: Remote end closed connection without response` |
+  | 4 (control, no prose sent) | `urllib` `GET https://api.typesafe.ai/` | — | 20 s | **15.2 s** | `RemoteDisconnected: Remote end closed connection without response` |
+
+  Attempt 3 rules out the client's own 3 s default; attempt 4 is a plain GET to the same
+  host with no key and no body, and it dies at the same 15.2 s — so the failure is on the
+  far side of `api.typesafe.ai/v1/systemone`, not in this repo, the payload, or the
+  timeout. The two forks that needed textual arbitration (the board-row-vs-endpoint shape
+  and the FFC overlay channel) are therefore decided by measurement + the owner's stated
+  rules only, and are listed as un-arbitrated here rather than claimed as reviewed.
+
 - **a released EXE**: everything measured here is repo code on this machine.
 - Environment note: a second, older backend kept rewriting the shared board cache/DB on
   this machine (127.0.0.1:8002, not started by me and left running). Two readings of the
