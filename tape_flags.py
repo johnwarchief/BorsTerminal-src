@@ -103,6 +103,19 @@ def _col(df: pd.DataFrame, name: str) -> pd.Series:
     return pd.Series(np.nan, index=df.index)
 
 
+def plp_series(df: pd.DataFrame) -> pd.Series:
+    """`plp` برایِ فیلترها — خامِ ExecFilter (`100*(pl−py)/py` با تنها قیدِ py>0).
+
+    کوئریِ تابلو `plp_raw` را می‌فرستد؛ `percent_last`ِ همان کوئری دو نگهبانِ
+    *نمایشی* دارد (سقفِ ۱۰۰٪ و py>۱) که رویِ اختیارِ ارزانِ پرنوسان عددِ درست
+    را تهی می‌کنند و فیلتر را بی‌داده می‌کردند (شاهدِ زندۀ ۱۳ آبان: طملت8068،
+    طتاص9019). مسیرهایِ قدیمیِ بی‌`plp_raw` همان percent_last را می‌خوانند.
+    """
+    if "plp_raw" in df.columns:
+        return _n(df["plp_raw"])
+    return _col(df, "percent_last")
+
+
 def _alive(df: pd.DataFrame) -> pd.Series:
     """ردیف‌هایِ تابلویِ **همین نشست**. پنج فیلتر دربارهٔ «امروز» حرف می‌زنند؛
     ردیفی که آخرینِ نشستِ بانکِ خودش دیروز است نمی‌تواند بگوید «حجمِ امروزِ من
@@ -217,7 +230,7 @@ def jet_flag(df: pd.DataFrame, lookback: int = max(JET_LADDER)) -> pd.Series:
     استراتژیک» بیرون گذاشته بود، در **فیلترِ تابلو** برمی‌گردد؛ مالک خواست
     نشانِ «جت» همان چیزی باشد که فیلترنویسِ TSETMC می‌دهد.
     """
-    pc, pl, plp = _n(df["p_closing"]), _n(df["p_last"]), _n(df["percent_last"])
+    pc, pl, plp = _n(df["p_closing"]), _n(df["p_last"]), plp_series(df)
     tno = _n(df["z_tot_tran"])
     res = resistance_ladder_high(df, lookback)
     return ((formula_vol_ratio(df) > JET_VOL_MULT)
@@ -250,7 +263,7 @@ def roobi_flag(df: pd.DataFrame) -> pd.Series:
     tmin = _col(df, "tmin")
     zd1 = _col(df, "buy_q1_cnt")
     qd1 = _col(df, "buy_q1_vol")
-    plp = _n(df["percent_last"])
+    plp = plp_series(df)
     return ((pl > 0) & (tmin > 0) & (pl == tmin)
             & (zd1 > ROOBI_ZD1_MIN)
             & (plp < ROOBI_MAX_CHANGE)
@@ -294,7 +307,7 @@ def smart_money_flag(df: pd.DataFrame) -> pd.Series:
     است، پس «بی‌معاملۀِ حقوقی» قبول نیست و حدسی ساخته نمی‌شود. پنجرۀِ ۳۰ِ ناقص
     مثلِ بقیه یعنی «نسنج» (NaN)، نه تقسیمِ دیگری.
     """
-    pc, pl, plp = _n(df["p_closing"]), _n(df["p_last"]), _n(df["percent_last"])
+    pc, pl, plp = _n(df["p_closing"]), _n(df["p_last"]), plp_series(df)
     return ((formula_vol_ratio(df) > SMART_VOL_MULT)
             & (buyer_power(df) >= SMART_BP_GE)
             & (pc > 0) & (pl >= pc)

@@ -121,6 +121,38 @@ def main():
     ck(not sm(is_live=False), "فسیلِ بیرونِ تابلو درِ پول هوشمند نمی‌نشیند")
     ck(not lg(is_live=False), "فسیل درِ کد به کد هم نمی‌نشیند")
 
+    # ── ۶-ب) plp خام در برابرِ نگهبانِ نمایشی (شاهدِ زنده ۱۳ آبان) ────────────
+    # اختیارِ py=1 که به ۳ می‌رسد: سایت plp=+۲۰٪ می‌بیند و ردیف را فیلتر
+    # می‌کند؛ `percent_last`ِ نمایشی همان را تهی می‌کند. فیلتر باید plp_raw
+    # را بخواند، نه ستونِ سانسور‌شده را.
+    from tape_flags import plp_series
+    import pandas as _pd
+    fr = plp_series(_pd.DataFrame([{"plp_raw": [200.0][0], "percent_last": None}]))
+    ck(float(fr.iloc[0]) == 200.0, "plp_series خامِ plp_raw را به ستونِ سانسور‌شده ترجیح می‌دهد", str(fr.iloc[0]))
+    fb = plp_series(_pd.DataFrame([{"percent_last": None}]))
+    ck(_pd.isna(fb.iloc[0]), "بی‌plp_raw (کوئریِ قدیمی) ⇒ همان percent_lastِ تهی — بی‌ساختگی")
+    ck(sm(price_yesterday=1.0, p_last=3.0, p_closing=3.0, percent_last=None, plp_raw=200.0),
+       "اختیارِ py=1→+۲۰۰٪: با plp خام قبول است (سایت همین را می‌زند)")
+    ck(sm(price_yesterday=4.0, p_last=9.0, p_closing=8.0, percent_last=None, plp_raw=125.0),
+       "اختیارِ py=4→+۱۲۵٪: سقفِ ۱۰۰٪ِ نمایشی فیلتر را نمی‌کُشد")
+    ck(not sm(price_yesterday=1.0, p_last=3.0, p_closing=3.0, percent_last=None),
+       "بی‌plp_raw و percent_lastِ تهی ⇒ نسنجیده، نه صفرِ جعلی (منفیِ همان ردیف)")
+    ck(not lg(price_yesterday=4.0, p_last=9.0, p_closing=8.0, percent_last=None,
+              plp_raw=125.0, buy_i_vol=1_000_000.0),
+       "منفیِ جهت‌دار: پول هوشمندِ درست با خریدِ حقوقیِ زیرِ نصفِ حجم ⇒ کد به کد رد")
+    LAD8 = {f"h{k}_max": 8.0 for k in (2, 5, 9, 19, 29, 39, 49, 59)}
+    flags_jet = apply_tape_flags(row(price_yesterday=4.0, p_last=9.0, p_closing=8.0,
+                                     percent_last=None, plp_raw=125.0,
+                                     tvol=12_000_000.0, q_tot_tran=12_000_000.0,
+                                     **LAD8)).iloc[0]
+    ck(bool(flags_jet["f_jet"]),
+       "جت هم plp را خام می‌خواند: +۱۲۵٪ با پلکانِ شکسته قبول است")
+    flags_rb = apply_tape_flags(row(p_last=900.0, tmin=900.0, price_yesterday=4000.0,
+                                    percent_last=None, percent_change=-3.0,
+                                    plp_raw=-77.5)).iloc[0]
+    ck(bool(flags_rb["f_roobi"]),
+       "کف‌روبی با plp خامِ منفیِ عمیق (اختیارِ ۴۰۰۰→۹۰۰ رویِ آستانه) قبول است")
+
     # ── ۷) سیم‌کشی — همان اشتباهِ نامِ ستونِ f_roobi تکرار نشود ───────────────
     fl = open(FLAGS_PY, encoding="utf-8").read()
     mk = open(MARKET_PY, encoding="utf-8").read()

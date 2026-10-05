@@ -36,7 +36,8 @@ CT_URL = f"{BASE}/ClientType/GetClientTypeAll"
 
 JET_LADDER = (2, 5, 9, 19, 29, 39, 49, 59)
 APP_FLAG = {"clock": "f_clock", "susp": "f_susp", "jet": "f_jet",
-            "roobi": "f_roobi", "noqteh": "f_noqteh"}
+            "roobi": "f_roobi", "noqteh": "f_noqteh",
+            "smart": "f_smart", "legal": "f_legal"}
 
 
 def get(url, key, tries=3, timeout=180):
@@ -110,6 +111,7 @@ def site_row(mw, hist, ct):
         "zd1": num(line.get("zmd")), "qd1": num(line.get("qmd")),
         "bp": (num(c.get("buy_I_Volume")), num(c.get("buy_CountI"))),
         "sp": (num(c.get("sell_I_Volume")), num(c.get("sell_CountI"))),
+        "sn": num(c.get("sell_N_Volume")),
         "dEven": mw.get("dEven"), "hEven": mw.get("hEven"),
     }
 
@@ -201,8 +203,35 @@ def eval_noqteh(v):
     return bool(base and (v["tvol"] or 0) > base and (v["tno"] or 0) > 5)
 
 
+def eval_smart(v):
+    """`docs/ورود پول هوشمند.txt` سطر ۱ — عینِ ExecFilter:
+    tvol>1.5*base30 && BuyI/ctBuyI >= SellI/ctSellI && pl>=pc && plp>0.
+    مخرجِ صفر در JS ⇒ NaN ⇒ شرط false (ردیف نمی‌نشیند) — اینجا هم همان."""
+    base = vol_base30(v)
+    if not base or (v["tvol"] or 0) <= 1.5 * base:
+        return False
+    bv, bc = v["bp"]
+    sv, sc = v["sp"]
+    if not (bc and sc):
+        return False
+    if (bv or 0.0) / bc < (sv or 0.0) / sc:
+        return False
+    return bool(v["pc"] and v["pc"] > 0 and v["pl"] is not None and v["pl"] >= v["pc"]
+                and v["plp"] is not None and v["plp"] > 0)
+
+
+def eval_legal(v):
+    """`...کد به کد...txt` سطر ۱: پول هوشمند + Buy_I_Volume>0.5*tvol + Sell_N_Volume>0.5*tvol."""
+    if not eval_smart(v):
+        return False
+    bv, _bc = v["bp"]
+    return bool((bv or 0.0) > 0.5 * (v["tvol"] or 0.0)
+                and (v["sn"] or 0.0) > 0.5 * (v["tvol"] or 0.0))
+
+
 CHECKS = (("clock", eval_clock), ("susp", eval_susp), ("jet", eval_jet),
-          ("roobi", eval_roobi), ("noqteh", eval_noqteh))
+          ("roobi", eval_roobi), ("noqteh", eval_noqteh),
+          ("smart", eval_smart), ("legal", eval_legal))
 
 
 def main():

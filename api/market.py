@@ -642,6 +642,7 @@ _DROP_FIELDS = frozenset((
     "sell_q_vol", "sell_q_val", "sell_q_cnt",
     "buy_q1_px", "sell_q1_vol", "sell_q1_px",
     "prev_day_vol", "d1_vol", "max30_high",
+    "plp_raw",                                                  # تنها ورودیِ فیلترها، نه نمایش
     "tmax", "vol_trend", "sell_power_i", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
 
     "d_even", "resistance_59", "dist_min30_pct",
@@ -872,6 +873,15 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         pct_last = ((_pl - py_ok) / py_ok * 100).round(2)
         pct_last = pct_last.where(pct_last.abs() <= 100.0)
         df["percent_last"] = pct_last.where(pct_last.notna(), None)
+        # `plp` خام برایِ فیلترها — عینِ ExecFilterِ سایت: `round(100*pc/py, 2)`
+        # با تنها قیدِ py>0. دو نگهبانِ بالا (سقفِ ۱۰۰٪ و کفِ py>1) برایِ *نمایشِ*
+        # تابلوین (اختیارِ ۴ریالی که به ۹ می‌رسد «+۱۲۵٪» واقعی است، نه خطا)؛
+        # وقتی رویِ ستونِ فیلتر هم می‌نشستند، «ورودِ پولِ هوشمند» دو ردیفِ درست
+        # را می‌کُشت (شاهدِ زنده ۱۴۰۵-۰۷-۱۳ ۰۹:۵۳: طملت8068 py=4→+۱۲۵٪،
+        # طتاص9019 py=1→+۲۰۰٪ — سایت علامت می‌زد، ما «بی‌داده»).
+        _py_raw = pd.to_numeric(df["price_yesterday"], errors="coerce")
+        _py_raw = _py_raw.where(_py_raw > 0)
+        df["plp_raw"] = ((_pl - _py_raw) / _py_raw * 100).round(2)
 
         _bc = pd.to_numeric(df["buy_count_i"], errors="coerce")
         _sc = pd.to_numeric(df["sell_count_i"], errors="coerce")
@@ -928,6 +938,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         _KEEP_NULL = ("vol_ratio", "vol_dod", "vol_trend", "dist_min30_pct",
                       "month_avg_vol", "prev_day_vol", "d1_vol",
                       "prior30_vol", "min_low_29", "percent_last", "percent_change",
+                      "plp_raw",
                       "vol_ratio_file", "hist_sessions", "tmin", "tmax", "buy_q1_cnt",
                       "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",
