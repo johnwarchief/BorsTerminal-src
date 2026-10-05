@@ -92,6 +92,11 @@ def _build_fixture() -> sqlite3.Connection:
         sel = ", ".join(f"NULL AS \"{col}\"" for col in cols)
         c.execute(f"CREATE TABLE {t} AS SELECT {sel} WHERE 0")
     src.close()
+    # کوئریِ تابلو جدول‌هایِ P0 را JOIN می‌کند؛ این‌ها درِ TABLES نیستند چون
+    # بانکِ مخزن ممکن است رویِ ماشینِ CI اصلاً آن‌ها را نداشته باشد. پس
+    # تک‌منبعِ DDL صدا زده می‌شود، نه کپیِ دستیِ ستون‌ها.
+    import tsetmc_p0_schema
+    tsetmc_p0_schema.create_all(c)
 
     def ins(table, cols, rows):
         ph = ",".join("?" * len(cols))
@@ -232,6 +237,11 @@ class _NoCloseConn:
 
     def commit(self):
         return self._real.commit()
+
+    def rollback(self):
+        # pandas رویِ خطایِ SQL اول rollback صدا می‌زند؛ بی‌این، AttributeError
+        # جایِ خطایِ واقعیِ کوئری را می‌گرفت.
+        return self._real.rollback()
 
     def close(self):
         pass

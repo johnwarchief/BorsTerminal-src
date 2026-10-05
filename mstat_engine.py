@@ -225,11 +225,14 @@ MIGRATIONS = {
     # «آخرین» درِ ردیفِ تابلو کلیدِ خامِ خودش را دارد (pdv — سنجشِ ۶/۶ نماد درِ
     # _audit/mw_last_key_probe.py)؛ مسیرِ کندل-از-تابلو از همین خوانده وگرنه NULL.
     "daily_prices": [("p_last", "REAL")],
-    # q_tot_cap = گردشِ ریالیِ همان نشست از همان ردیفِ پنجرۀ [ih] (سنjشِ زنده:
+    # q_tot_cap = گردشِ ریالیِ همان نشست از همان ردیفِ پنجرۀ [ih] (سنژشِ زنده:
     # `closingPriceDailyAllInst` این کلید را درِ هر ۱۸۴۱۱ ردیف دارد). تا این دور
     # دور ریخته می‌شد و هر فیلترِ «میانگینِ ارزشِ ۳۰ روز» مجبور بود ارزش را از
     # حجم×قیمت بسازد.
     "tape_history": [("q_tot_cap", "REAL")],
+    # kind (native|mixed) درِ نویسنده حساب می‌شود؛ بانکِ ساخته‌شدۀ پیش از این
+    # دور ستونش را ندارد و CREATE IF NOT EXISTS عوضش نمی‌کند.
+    "client_type_value": [("kind", "TEXT")],
 }
 
 SNAP_DDL = """CREATE TABLE IF NOT EXISTS mstat_snap (
@@ -254,6 +257,16 @@ def ensure_schema(conn) -> None:
             conn.execute(ddl)
         except Exception:
             pass
+    # دورِ P0: جدول‌هایِ canonicalِ ارزش/رویداد/وضعیت. DDL درِ
+    # `tsetmc_p0_schema` است (تک‌منبع) و این‌جا فقط «همراه هر اتصال» ساخته
+    # می‌شوند تا خوانندۀ api رویِ بانکِ نسخۀ قبلی 500 نگیرد، نه اینکه بی‌داده
+    # شود. بی‌این، کوئریِ تابلو با JOIN رویِ جدولِ نبودِ `instrument_state`
+    # می‌شکست.
+    try:
+        import tsetmc_p0_schema
+        tsetmc_p0_schema.create_all(conn)
+    except Exception:
+        pass
     for table, cols in MIGRATIONS.items():
         try:
             have = {r[1] for r in conn.execute("PRAGMA table_info(%s)" % table)}

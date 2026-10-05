@@ -135,5 +135,29 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
   if (pct != null && pct <= -LIMIT_PCT) {
     out.push({ key: 'ld', pattern: 'limit-down', tone: 'red', label: 'صف−', title: 'صف فروش (تغییر ≤ −۴.۹٪)', filter: false });
   }
+  // P0-3: وضعیتِ معاملاتی/نظارتی — یک بجِ کوچک، بی‌کارتِ جدا. متنِ کاملِ
+  // «چرا» درِ Inspector خوانده می‌شود، پس اینجا فقط علتِ نخست می‌آید.
+  // نبودِ هیچ‌کدام از این کلیدها یعنی «موردی ثبت نشده»، نه «سالم» — و
+  // خطایِ فید را همان `inspector-feed-error` می‌گوید، نه این بج.
+  if (row.stop_state) {
+    const why = (row.stop_reasons || '').split('\n')[0].trim();
+    out.push({
+      key: 'stopped',
+      pattern: 'stopped',
+      tone: 'red',
+      label: 'متوقف',
+      title: `${row.stop_state}${row.stop_since ? ` — از ${toFaDigits(row.stop_since)}` : ''}${why ? `\n${why}` : ''}`,
+      filter: false,
+    });
+  } else if (row.sup_flag) {
+    out.push({
+      key: 'supervised',
+      pattern: 'supervised',
+      tone: 'amber',
+      label: 'نظارت',
+      title: `زیرِ نظرِ سازمان${row.sup_reason_count ? ` (${toFaDigits(row.sup_reason_count)} دلیل)` : ''} — جزئیات درِ Inspector`,
+      filter: false,
+    });
+  }
   return out;
 }

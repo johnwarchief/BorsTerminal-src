@@ -142,8 +142,16 @@ def part_ctv():
     ck(rec is not None, "پاسخِ واقعیِ clientType (شیء، نه آرایه) خوانده می‌شود")
     ck(rec[2] == 9795900492781.0 and rec[4] == 8377684161902.0,
        "buy_I_Value و sell_I_Value عینِ مبدأ می‌نشینند (بدونِ ضرب)", str(rec[:5]))
-    ck(rec[1] == 20261004 and rec[8] == T.CTV_SOURCE,
-       "recDate و برچسبِ منبع درِ ردیف هست")
+    ck(rec[1] == 20261004 and rec[9] == T.CTV_SOURCE,
+       "recDate و برچسبِ منبع درِ ردیف هست", str(rec))
+    ck(rec[7] == "native",
+       "kind درِ همان ردیف می‌نشیند (provenance یک‌بار درِ نویسنده حساب می‌شود)",
+       str(rec[7]))
+    half = T.parse_client_type_value(
+        {"clientType": {"recDate": 20261004, "buy_I_Value": 5.0,
+                        "sell_I_Value": 7.0}}, "x", 20261004, "n")
+    ck(half is not None and half[7] == "mixed",
+       "دو ارزشِ خالی و دو ارزشِ پر ⇒ kind = mixed (نه native)", str(half and half[7]))
 
     ck(T.parse_client_type_value(LIVE_CTV["clientType"], "x", 1, "n") is not None,
        "ورودیِ بی‌wrapper (خودِ dict) هم پذیرفته می‌شود")
@@ -460,6 +468,27 @@ def part_p1():
     ck("ALTER TABLE tape_history" not in tsrc and "ADD COLUMN q_tot_cap" not in tsrc,
        "درِ test_tsetmc برایِ tape_history دستی ALTER نشده (تک‌منبعِ مهاجرت)")
 
+    # نوشتن باید با نامِ ستون باشد. `q_tot_cap` را MIGRATIONS رویِ بانکِ
+    # ارتقایافته به **آخر** می‌افزاید، پس ترتیبِ ستون‌ها آنجا (…، fetched_at،
+    # q_tot_cap) با بانکِ تازه یکی نیست و INSERT موقعیتی زمان را درِ ستونِ عددی
+    # می‌نشاند. اثباتِ مستقیم: یک بانکِ «ارتقایافته» می‌سازیم و می‌خوانیم.
+    ck("_TAPE_HIST_INSERT" in tsrc and "INTO {TAPE_HIST_TABLE} VALUES (" not in tsrc
+       and "INTO tape_history VALUES (" not in tsrc,
+       "نویسندۀ tape_history موقعیتی نیست (با نامِ ستون می‌نویسد)")
+    up = sqlite3.connect(":memory:")
+    up.execute("CREATE TABLE tape_history (ins_code TEXT NOT NULL, d_even INTEGER NOT"
+               " NULL, price_min REAL, price_max REAL, q_tot_tran5j REAL, fetched_at"
+               " TEXT, q_tot_cap REAL, PRIMARY KEY (ins_code, d_even))")
+    up.executemany(T._TAPE_HIST_INSERT, [("K1", 20260928, 90.0, 110.0, 3000.0,
+                                         5e8, "2026-09-28 11:00:00")])
+    got = up.execute("SELECT typeof(q_tot_cap), typeof(fetched_at), q_tot_cap,"
+                     " fetched_at FROM tape_history").fetchone()
+    ck(got[0] == "real" and got[1] == "text" and got[2] == 5e8
+       and got[3] == "2026-09-28 11:00:00",
+       "رویِ بانکِ ارتقایافته هم مقدار درِ q_tot_cap و زمان درِ fetched_at می‌نشیند",
+       str(got))
+    up.close()
+
     # و بدنهٔ تابلو نباید بزرگ‌تر شده باشد
     mkt = open(MARKET_PY, encoding="utf-8").read()
     for col in ("p_red_tran", "buy_op", "c_gr_val_cot", "\"flow\""):
@@ -468,6 +497,15 @@ def part_p1():
     ck(q.count("SELECT") >= 1 and "i.isin" not in q and "m.flow" not in q,
        "کوئریِ قابِ تابلو به ستون‌هایِ تازهٔ instruments/market_watch دست نمی‌زند",
        "isin-in-frame=%s flow-in-frame=%s" % ("isin" in q, "m.flow" in q))
+
+    # پاسِ «JSON safety» درِ api/market.py هر NaN را صفر می‌کند. کلیدهایِ
+    # وضعیت/نظارت باید از آن پاس **بیرون** بمانند وگرنه «موردی ثبت نشده» به
+    # «وضعیتِ صفر» بدل می‌شود. اندازۀ همین دور: با صفرها 5.60MB بدنه، و با
+    # قاعدهٔ درست 4.90MB — یعنی آن 0.70MB فقط دروغِ صفر بود.
+    keep = mkt.split("_KEEP_NULL = (")[1].split(")")[0] if "_KEEP_NULL = (" in mkt else ""
+    for col in ("st_code", "st_title", "sup_flag", "sup_title", "sup_reason_count",
+                "stop_state", "stop_since", "stop_reasons"):
+        ck(f'"{col}"' in keep, f"`{col}` درِ _KEEP_NULL می‌ماند (نبود ≠ صفر)")
 
 
 def main():

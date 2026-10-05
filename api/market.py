@@ -790,6 +790,45 @@ _BOARD_SQL = """
                 SELECT ins_code, MAX(d_even) AS d FROM client_type
                 WHERE d_even <= (SELECT d FROM iso)
                 GROUP BY ins_code
+            ),
+            -- P0-3 (1405-07-13): وضعیتِ معاملاتی/نظارتیِ نماد. هر سه CTE رویِ
+            -- جدول‌هایِ canonicalِ TSETMC می‌نشینند؛ هیچ محاسبۀ موازی درِ این
+            -- لایه نیست و هیچ‌کدام وارد verdict/FTS نمی‌شوند. بی‌ردیف = «موردی
+            -- ثبت نشده»، که با «خطا» و با «متوقف» یکی نیست.
+            st AS (
+                -- تازه‌ترین «تغییرِ وضعیتِ» هر نماد (instrument_state لاگ است
+                -- نه وضعیتِ روزانه؛ کلید سه‌تایی d_even + last_h_even)
+                SELECT ins_code, c_etaval, c_etaval_title FROM (
+                    SELECT ins_code, c_etaval, c_etaval_title,
+                           ROW_NUMBER() OVER (PARTITION BY ins_code
+                                             ORDER BY d_even DESC,
+                                                      last_h_even DESC) rn
+                    FROM instrument_state)
+                WHERE rn = 1
+            ),
+            sv AS (
+                -- حضور در این فهرست خودش داوریِ «زیرِ نظر» است: ستونِ
+                -- under_supervision درِ پاسخِ واقعی حتی برایِ نمادهای زیرِ نظر
+                -- صفر می‌آید (سنجشِ زنده 1405-07-13)، پس برچسب از «ردیف هست»
+                -- ساخته می‌شود نه از آن عدد.
+                SELECT ins_code, under_supervision_title,
+                       reason_count, reasons FROM supervision_state
+            ),
+            sr AS (
+                -- stop_reasons کلیدش l_val18 است (پاسخِ webgw آن را با همین
+                -- نوشتارِ بانک ذخیره می‌کند)؛ پیوند اینجا می‌خورد، نه درِ UI.
+                SELECT symbol, vaziyat_desc, last_date_change, dalils
+                FROM stop_reasons
+            ),
+            cv AS (
+                -- provenanceِ ارزشِ حقیقی/حقوقی. `kind` درِ نویسنده حساب و
+                -- ذخیره شده (native/mixed)؛ اینجا فقط خوانده می‌شود و نبودِ
+                -- ردیف = reconstructed. بی‌این، هر مصرف‌کننده خودش باید
+                -- چهار ستون را با صفر مقابله می‌کرد — دو منبعِ حقیقت.
+                SELECT v.ins_code, v.kind FROM client_type_value v
+                JOIN (SELECT ins_code, MAX(d_even) d FROM client_type_value
+                      GROUP BY ins_code) m
+                  ON m.ins_code = v.ins_code AND m.d = v.d_even
             )
             SELECT m.ins_code, i.l_val18 AS symbol, i.l_val30 AS name,
                    COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector_name,
@@ -815,7 +854,17 @@ _BOARD_SQL = """
                    v.min30_low, v.max30_high, v.d1_vol,
                    fv.h2_max, fv.h5_max, fv.h9_max, fv.h19_max, fv.h29_max,
                    fv.h39_max, fv.h49_max, fv.h59_max,
-                   fv.prior30_vol, fv.min_low_29, fv.hist_sessions
+                   fv.prior30_vol, fv.min_low_29, fv.hist_sessions,
+                   -- st_* / sup_* / stop_* : فقط برایِ نمادی که ردیفش هست
+                   -- می‌آیند (باقی NULL ⇒ _slim_records کلید را می‌اندازد، پس
+                   -- بدنه برایِ 5400 نماد بزرگ نمی‌شود).
+                   st.c_etaval AS st_code, st.c_etaval_title AS st_title,
+                   CASE WHEN sv.ins_code IS NULL THEN NULL ELSE 1 END AS sup_flag,
+                   sv.under_supervision_title AS sup_title,
+                   sv.reason_count AS sup_reason_count,
+                   sr.vaziyat_desc AS stop_state, sr.last_date_change AS stop_since,
+                   sr.dalils AS stop_reasons,
+                   COALESCE(cv.kind, 'reconstructed') AS ctv_kind
             FROM market_watch m
             JOIN instruments i ON i.ins_code = m.ins_code
             LEFT JOIN boards b ON b.ins_code = m.ins_code
@@ -823,6 +872,10 @@ _BOARD_SQL = """
             LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
             LEFT JOIN v ON v.symbol = i.l_val18
             LEFT JOIN fv ON fv.ins_code = m.ins_code
+            LEFT JOIN st ON st.ins_code = m.ins_code
+            LEFT JOIN sv ON sv.ins_code = m.ins_code
+            LEFT JOIN sr ON sr.symbol = i.l_val18
+            LEFT JOIN cv ON cv.ins_code = m.ins_code
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
 """
@@ -944,7 +997,14 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "buyer_power_raw", "resistance_59",
                       "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
-                      "min30_low", "max30_high")
+                      "min30_low", "max30_high",
+                      # P0-3/P0-1: نبودِ ردیفِ وضعیت/نظارت/علتِ توقف «موردی ثبت
+                      # نشده» است، نه «سالم» و نه «متوقف». اگر این کلیدها از پاسِ
+                      # «JSON safety» بگذرند، NaN به صفر بدل می‌شود و صفر درِ رابط
+                      # یعنی «ردیف هست ولی وضعیتش صفر است» — یعنی دروغِ بی‌صدا.
+                      "st_code", "st_title", "sup_flag", "sup_title",
+                      "sup_reason_count", "stop_state", "stop_since",
+                      "stop_reasons")
         # پاک‌سازی فقط رویِ ستون‌هایی که *سریال می‌شوند* و *nullِ نگهبان ندارند*:
         # پیش از این کلِ قاب (۷۲ ستون، از ۲۵ ستونِ بی‌خواننده) دو پاسِ تمام‌قد
         # `replace` + `fillna` می‌خورد و بعد ۳۱ ستون از نسخۀ پیشین برمی‌گشتند —

@@ -73,6 +73,11 @@ def build_fixture(n=12):
         sel = ", ".join(f'NULL AS "{col}"' for col in cols)
         c.execute(f"CREATE TABLE {t} AS SELECT {sel} WHERE 0")
     src.close()
+    # کوئریِ تابلو جدول‌هایِ P0 را JOIN می‌کند؛ این‌ها درِ TABLES نیستند چون
+    # بانکِ مخزن ممکن است اصلاً آن‌ها را نداشته باشد. تک‌منبعِ DDL صدا زده
+    # می‌شود تا فیکسچر و کوئری از یک ساختار بخوانند.
+    import tsetmc_p0_schema
+    tsetmc_p0_schema.create_all(c)
     # `CREATE TABLE AS` قیدها را کپی نمی‌کند و `INSERT OR REPLACE` بی‌UNIQUE
     # دیگر replace نمی‌کند — همان چیزی که تیکِ زنده رویش تعریف شده. پس کلیدهایِ
     # یکتایِ واقعیِ بانک را برمی‌گردانیم؛ بی‌این، گارد «۲ نوشتن» را سبز می‌دید
@@ -131,6 +136,11 @@ class _NoClose:
 
     def commit(self):
         return self._real.commit()
+
+    def rollback(self):
+        # pandas رویِ خطایِ SQL اول rollback صدا می‌زند؛ بی‌این، AttributeError
+        # جایِ خطایِ واقعیِ کوئری را می‌گیرد.
+        return self._real.rollback()
 
     def close(self):
         pass

@@ -27,6 +27,7 @@ a = Analysis(
         ('mstat_engine.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
+        ('tsetmc_p0_schema.py', '.'),
         ('watchlist_store.py', '.'),
         ('api', 'api'),
         # آپدیتِ درون‌برنامه‌ای: bors_minisign در ریشهٔ ریپو است و فقط از داخلِ
@@ -63,6 +64,11 @@ a = Analysis(
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # دورِ P0 (1405-07-13): `tsetmc_p0_schema` تک‌منبعِ DDL جدول‌هایِ
+                   # canonical است و هم از test_tsetmc و هم از mstat_engine.
+                   # ensure_schema خوانده می‌شود؛ نبودش درِ EXE یعنی 500 رویِ هر
+                   # درخواستِ تابلو.
+                   'tsetmc_p0_schema',
                    # پنج فیلترِ تابلو از api.market به ماژولِ خالصِ tape_flags
                    # منتقل شد تا نگهبانِ dev/tape_filters_v1034.py همان کد را
                    # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:

@@ -101,7 +101,7 @@ MW_COLS = ("ins_code", "d_even", "h_even", "p_closing", "p_last", "price_min",
            "eps", "pe", "total_shares", "sector_code", "fetched_at") + _QUEUE_COLS + \
           ("market_cap", "market_cap_src",
            # سه کلیدِ خامِ همان `GetMarketWatch` که تا این دور دور ریخته می‌شدند
-           # (سنjشِ زنده ۱۴۰۵-۰۷-۱۳: هر ۳۸۴۷ ردیف این‌ها را دارد). هیچ‌کدام درِ
+           # (سنژشِ زنده ۱۴۰۵-۰۷-۱۳: هر ۳۸۴۷ ردیف این‌ها را دارد). هیچ‌کدام درِ
            # کوئریِ تابلو و درِ بدنهٔ /api/market نمی‌نشینند — مصرف‌کننده ندارند
            # و بدنۀ سریال‌شدہ باید بایت‌به‌بایت یکی بماند.
            #   flow       = کدِ بازار (۱ بورس / ۲ فرابورس / …) — نه از `boards`
@@ -501,6 +501,17 @@ TAPE_HIST_RETRY_S = 6 * 3600
 # ندارد درِ پنج فیلتر بی‌صدا مردود می‌ماند. ۹۵٪ سقفِ محافظه‌کارانه‌ای است که با
 # پوششِ کاملِ سایت (۹۹+٪) فرقِ روشن دارد و بی‌دلیل هر سینک ۵۱ مگابایت نمی‌گیرد.
 TAPE_COVER_MIN = 0.95
+# نوشتن با نامِ ستون: بانکِ ارتقایافته این جدول را با پنج ستون ساخته و
+# `q_tot_cap` را `mstat_engine.MIGRATIONS` با ALTER به **آخر** افزوده است، پس
+# ترتیبِ ستون‌هایش (…، fetched_at، q_tot_cap) با بانکِ تازه (…، q_tot_cap،
+# fetched_at) یکی نیست. INSERT موقعیتی رویِ بانکِ ارتقایافته زمان را درِ
+# `q_tot_cap` و عدد را درِ `fetched_at` می‌نشاند — همان طبقهٔ باگی که رویِ
+# `client_type_value.kind` خوردیم. `recs` هم همین ترتیب را دارد.
+_TAPE_HIST_COLS = ("ins_code", "d_even", "price_min", "price_max",
+                   "q_tot_tran5j", "q_tot_cap", "fetched_at")
+_TAPE_HIST_INSERT = (f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} ("
+                     + ", ".join(_TAPE_HIST_COLS) + ") VALUES ("
+                     + ",".join("?" * len(_TAPE_HIST_COLS)) + ")")
 
 
 def ensure_tape_history_schema(conn):
@@ -692,7 +703,7 @@ def refresh_tape_history(conn, force=False, fetch=None):
                 return {"skipped": "partial-payload", "lost": covered_cur}
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
-    c.executemany(f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} VALUES (?,?,?,?,?,?,?)", recs)
+    c.executemany(_TAPE_HIST_INSERT, recs)
     c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
               (now_txt, now_txt, top, ""))
     conn.commit()
@@ -940,19 +951,16 @@ CTV_SOURCE = "tsetmc_clienttype_history"
 CTV_RETRY_S = 6 * 3600      # سقفِ تلاش برایِ یک نشست (الگوی TAPE_HIST_RETRY_S)
 CTV_BUDGET = 600            # حداکثرِ درخواست در هر اجرا
 
-CTV_TABLE_DDL = (
-    "CREATE TABLE IF NOT EXISTS client_type_value ("
-    " ins_code TEXT, d_even INTEGER, buy_i_val REAL, buy_n_val REAL,"
-    " sell_i_val REAL, sell_n_val REAL, buy_ddd_val REAL,"
-    " fetched_at TEXT, source TEXT, PRIMARY KEY (ins_code, d_even))")
+# DDL درِ tsetmc_p0_schema است؛ این نام فقط برایِ سازگاریِ فراخوانی‌هایِ موجود
+import tsetmc_p0_schema as _P0
+CTV_TABLE_DDL = _P0.CLIENT_TYPE_VALUE
 
 
 def ensure_client_type_value_schema(conn):
-    """میزِ ارزشِ مبدأ و حالتِ آن را می‌سازد (idempotent — بانکِ قدیمی هم برسد)."""
-    conn.execute(CTV_TABLE_DDL)
-    conn.execute("CREATE TABLE IF NOT EXISTS client_type_value_state ("
-                 "id INTEGER PRIMARY KEY CHECK (id = 1), last_attempt TEXT,"
-                 " last_ok TEXT, newest_d_even INTEGER, note TEXT)")
+    """میزِ ارزشِ مبدأ و حالتِ آن (DDL از tsetmc_p0_schema — تک‌منبع)."""
+    import tsetmc_p0_schema as P0
+    conn.execute(P0.CLIENT_TYPE_VALUE)
+    conn.execute(P0.CLIENT_TYPE_VALUE_STATE)
     conn.execute("INSERT OR IGNORE INTO client_type_value_state"
                  " (id, last_attempt, last_ok, newest_d_even, note) VALUES (1, NULL, NULL, 0, NULL)")
 
@@ -995,9 +1003,14 @@ def parse_client_type_value(payload, ins_code, d_even, now=None):
                                       "sell_I_Value", "sell_N_Value")]
     if all(v is None for v in vals):
         return None
+    # «native» فقط وقتی هر چهار ارزش آمده‌اند؛ وگرنه «mixed» (بعضی خانۀ خالی).
+    # «reconstructed» اینجا نوشته نمی‌شود چون ردیفی وجود ندارد که برچسب بگیرد —
+    # نبودِ ردیف خودش همان داوری است. یک‌بار درِ نویسنده حساب می‌شود تا
+    # مصرف‌کننده‌ها (SQL/UI) provenance را دوباره نسازند.
+    kind = "native" if all(v is not None for v in vals) else "mixed"
     rec_date = num(row.get("recDate"))
     return (ins_code, int(rec_date or d_even), vals[0], vals[1], vals[2], vals[3],
-            num(row.get("buy_DDD_Value")), now or "", CTV_SOURCE)
+            num(row.get("buy_DDD_Value")), kind, now or "", CTV_SOURCE)
 
 
 def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
@@ -1054,8 +1067,14 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
         if rec:
             rows.append(rec)
     if rows:
-        conn.executemany("INSERT OR REPLACE INTO client_type_value VALUES ("
-                         + ",".join("?" * 9) + ")", rows)
+        # نوشتنِ نام‌دار: `kind` بعداً با ALTER اضافه شد و به انتهای
+        # جدول چسبید، پس ترتیبِ tupleِ ما با ترتیبِ ستون‌هایِ بانک یکی
+        # نیست (نوشتنِ جایگاهی kind را درِ source می‌نشاند).
+        conn.executemany(
+            "INSERT OR REPLACE INTO client_type_value (ins_code, d_even,"
+            " buy_i_val, buy_n_val, sell_i_val, sell_n_val, buy_ddd_val,"
+            " kind, fetched_at, source) VALUES ("
+            + ",".join("?" * 10) + ")", rows)
     total = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
                          (day,)).fetchone()[0]
     conn.execute("UPDATE client_type_value_state SET last_ok=?, newest_d_even=?,"
@@ -1175,15 +1194,9 @@ def parse_share_change(rows, now=None):
 
 
 def ensure_corporate_schema(conn):
-    conn.execute("CREATE TABLE IF NOT EXISTS price_adjust_events ("
-                 " ins_code TEXT, d_even INTEGER, symbol TEXT,"
-                 " p_closing REAL, p_closing_not_adjusted REAL,"
-                 " corporate_type_code INTEGER, ratio REAL,"
-                 " source TEXT, fetched_at TEXT, PRIMARY KEY (ins_code, d_even))")
-    conn.execute("CREATE TABLE IF NOT EXISTS share_change_events ("
-                 " ins_code TEXT, d_even INTEGER, symbol TEXT,"
-                 " shares_old REAL, shares_new REAL, ratio REAL,"
-                 " source TEXT, fetched_at TEXT, PRIMARY KEY (ins_code, d_even))")
+    import tsetmc_p0_schema as P0
+    conn.execute(P0.PRICE_ADJUST_EVENTS)
+    conn.execute(P0.SHARE_CHANGE_EVENTS)
 
 
 def fetch_corporate_events(s, conn, now=None, get=None):
@@ -1338,22 +1351,10 @@ def parse_stop_reasons(items, now=None):
 
 
 def ensure_state_schema(conn):
-    conn.execute("CREATE TABLE IF NOT EXISTS instrument_state ("
-                 " ins_code TEXT, d_even INTEGER, c_etaval TEXT, c_etaval_title TEXT,"
-                 " under_supervision INTEGER,"
-                 " last_h_even INTEGER NOT NULL DEFAULT 0, real_heven INTEGER,"
-                 " source TEXT, fetched_at TEXT,"
-                 " PRIMARY KEY (ins_code, d_even, last_h_even))")
-    conn.execute("CREATE TABLE IF NOT EXISTS stop_reasons ("
-                 " symbol TEXT PRIMARY KEY, status_code INTEGER, vaziyat_desc TEXT,"
-                 " last_date_change TEXT, dalils TEXT, source TEXT, fetched_at TEXT)")
-    conn.execute("CREATE TABLE IF NOT EXISTS supervision_state ("
-                 " ins_code TEXT PRIMARY KEY, source_id INTEGER, list_index INTEGER,"
-                 " under_supervision INTEGER, under_supervision_title TEXT,"
-                 " reasons TEXT, reason_count INTEGER, source TEXT, fetched_at TEXT)")
-    conn.execute("CREATE TABLE IF NOT EXISTS tsetmc_messages ("
-                 " msg_idn INTEGER PRIMARY KEY, d_even INTEGER, h_even INTEGER,"
-                 " flow INTEGER, title TEXT, descr TEXT, source TEXT, fetched_at TEXT)")
+    import tsetmc_p0_schema as P0
+    for ddl in (P0.INSTRUMENT_STATE, P0.STOP_REASONS, P0.SUPERVISION_STATE,
+                P0.TSETMC_MESSAGES):
+        conn.execute(ddl)
 
 
 def fetch_state_and_notices(s, conn, now=None, get=None, webgw=None):
@@ -1436,7 +1437,7 @@ def create_schema(conn):
             ins_code TEXT PRIMARY KEY, l_val18 TEXT, l_val30 TEXT,
             sector_code TEXT, sector_name TEXT, total_shares REAL,
             eps REAL, pe REAL, base_vol REAL, updated_at TEXT,
-            -- isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو (سنjشِ زنده: هر ۳۸۴۷
+            -- isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو (سنژشِ زنده: هر ۳۸۴۷
             -- ردیف آن کلید را دارد). بی‌این هیچ مسیری به webgw (که با ISIN کلید
             -- می‌خورد) بسته نمی‌شود. c_gr_val_cot = گروهِ کالاییِ همان ردیف.
             -- paper_type اینجا نیست: آن را mstat_engine.MIGRATIONS می‌افزاید و
@@ -1477,71 +1478,6 @@ def create_schema(conn):
             buy_count_ddd INTEGER, sell_i_vol REAL, sell_n_vol REAL,
             sell_count_i INTEGER, sell_count_n INTEGER, fetched_at TEXT,
             PRIMARY KEY (ins_code, d_even));
-        -- ── P0-1 — ارزشِ ریالیِ مبدأ‌محورِ حقیقی/حقوقی ──────────────────────
-        -- `client_type` فقط حجم و تعداد دارد: GetClientTypeAll همین‌ها را
-        -- می‌فرستد و هیچ فیلدِ ارزشی ندارد (سنجشِ زنده ۱۴۰۵-۰۷-۱۳، ۲۲۳۶ ردیف).
-        -- ارزشِ واقعی فقط در GetClientTypeHistory/{ins}/{dEven} است
-        -- (buy_I_Value/buy_N_Value/sell_I_Value/sell_N_Value) و آن مسیر برایِ
-        -- *نشستِ جاری* HTTP 500 می‌دهد. پس جدولِ جدا با کلیدِ (نماد، نشست):
-        -- ردیفِ این جدول == «عددِ مبدأ»؛ نبودِ ردیف == «مبدأ نبود، همان
-        -- حجم×VWAPِ پیشین به‌کار رفته». هیچ‌وقت صفرِ جعلی نوشته نمی‌شود.
-        CREATE TABLE IF NOT EXISTS client_type_value (
-            ins_code TEXT, d_even INTEGER,
-            buy_i_val REAL, buy_n_val REAL, sell_i_val REAL, sell_n_val REAL,
-            buy_ddd_val REAL,
-            fetched_at TEXT, source TEXT,
-            PRIMARY KEY (ins_code, d_even));
-        CREATE TABLE IF NOT EXISTS client_type_value_state (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            last_attempt TEXT, last_ok TEXT, newest_d_even INTEGER, note TEXT);
-        -- ── P0-2 — رویدادهایِ شرکتیِ منتشرشده توسطِ خودِ TSETMC ─────────────
-        -- ادعایِ پیشینِ api/chart.py («هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست»)
-        -- با سنجشِ زنده رد شد: GetPriceAdjustByFlow و
-        -- GetInstrumentShareChangeByFlow هر دو بازارِ کامل را در چند درخواست
-        -- می‌دهند. این دو جدول «رویدادِ مبدأ» را نگه می‌دارند؛ منطقِ تعدیلِ
-        -- چارت درِ این دور به این‌ها وصل **نشده** (سنجشِ واگرایی اول).
-        CREATE TABLE IF NOT EXISTS price_adjust_events (
-            ins_code TEXT, d_even INTEGER, symbol TEXT,
-            p_closing REAL, p_closing_not_adjusted REAL,
-            corporate_type_code INTEGER, ratio REAL,
-            source TEXT, fetched_at TEXT,
-            PRIMARY KEY (ins_code, d_even));
-        CREATE TABLE IF NOT EXISTS share_change_events (
-            ins_code TEXT, d_even INTEGER, symbol TEXT,
-            shares_old REAL, shares_new REAL, ratio REAL,
-            source TEXT, fetched_at TEXT,
-            PRIMARY KEY (ins_code, d_even));
-        -- ── P0-3 — وضعیتِ نماد / تعلیق / نظارت / پیامِ ناظر ────────────────
-        CREATE TABLE IF NOT EXISTS instrument_state (
-            ins_code TEXT, d_even INTEGER,
-            c_etaval TEXT, c_etaval_title TEXT, under_supervision INTEGER,
-            last_h_even INTEGER NOT NULL DEFAULT 0, real_heven INTEGER,
-            source TEXT, fetched_at TEXT,
-            -- کلید سه‌تایی: GetInstrumentStateTop «تغییراتِ وضعیت» می‌دهد نه
-            -- وضعیتِ روزانه، و یک نماد در یک روز چند بار جابه‌جا می‌شود
-            -- (سنجشِ زنده: 500 رکورد با کلیدِ دوتایی فقط 225 ردیف می‌گذاشت).
-            PRIMARY KEY (ins_code, d_even, last_h_even));
-        -- webgw فقط «علتِ توقف» را دارد و کلیدش `nam` است — رشتهٔ
-        -- «نماد(نامِ کامل)»، نه insCode و نه ISIN. پس پیشوندِ قبل از «(» با
-        -- instruments.l_val18 می‌خواند و هر ردیفِ بی‌همتا دور ریخته می‌شود.
-        CREATE TABLE IF NOT EXISTS stop_reasons (
-            symbol TEXT PRIMARY KEY, status_code INTEGER,
-            vaziyat_desc TEXT, last_date_change TEXT, dalils TEXT,
-            source TEXT, fetched_at TEXT);
-        -- سنجشِ زنده ۱۴۵-۰-۱۳: این فهرست «وضعیتِ فعلیِ نظارت» است، نه تاریخچه —
-        -- `id` همیشه ۰، `userName` همیشه null و `insertionDateTime` همیشه
-        -- 0001-01-01 برمی‌گردد، پس هیچ کلیدِ زمانی‌ای ندارد و هر اجرا جای
-        -- کلِ جدول را می‌گیرد (snapshot، بی‌ادعایِ تاریخچه).
-        CREATE TABLE IF NOT EXISTS supervision_state (
-            ins_code TEXT PRIMARY KEY, source_id INTEGER, list_index INTEGER,
-            under_supervision INTEGER, under_supervision_title TEXT,
-            reasons TEXT, reason_count INTEGER,
-            source TEXT, fetched_at TEXT);
-        -- tseMsgIdn کلیدِ خودِ پیام است؛ این پیام‌ها insCode ندارند (فقط flow و
-        -- تاریخ) پس سرنشۀِ بازار، نه ستونِ نماد.
-        CREATE TABLE IF NOT EXISTS tsetmc_messages (
-            msg_idn INTEGER PRIMARY KEY, d_even INTEGER, h_even INTEGER,
-            flow INTEGER, title TEXT, descr TEXT, source TEXT, fetched_at TEXT);
         CREATE TABLE IF NOT EXISTS boards (
             ins_code TEXT PRIMARY KEY, board INTEGER);
         CREATE TABLE IF NOT EXISTS price_history (
@@ -1572,6 +1508,10 @@ def create_schema(conn):
     # v10: ستون ارزش بازار (بعد از _migrate، چون queue_cols این‌جا اضافه می‌شود)
     ensure_market_cap_schema(conn)
     ensure_tape_history_schema(conn)
+    # DDL جدول‌های P0 درِ tsetmc_p0_schema است (تک‌منبع؛ همان را
+    # mstat_engine.ensure_schema هم اجرا می‌کند)
+    import tsetmc_p0_schema
+    tsetmc_p0_schema.create_all(conn)
     conn.commit()
 
 

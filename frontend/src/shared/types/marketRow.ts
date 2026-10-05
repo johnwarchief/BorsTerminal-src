@@ -86,6 +86,29 @@ export const MarketRowSchema = z.object({
   h49_max: num,
   h59_max: num,
   min30_low: num,
+  // ── P0-3: وضعیتِ معاملاتی/نظارتی از TSETMC (canonical، بی‌محاسبۀ رابط) ──
+  // سه حالت جدا هستند و رابط حق ندارد یکی را جای دیگری بگذارد:
+  //   کلید نیامده/null = «موردی ثبت نشده»   ≠   «سالم» ≠ «متوقف» ≠ «خطا»
+  // خطایِ فید را `inspector-feed-error` جدا می‌گوید، نه این کلیدها.
+  // cEtaval/عنوانِ وضعیتِ آخرینِ تغییرِ ثبت‌شده (instrument_state)
+  st_code: z.string().nullish(),
+  st_title: z.string().nullish(),
+  // حضور در فهرست نظارت (supervision_state)؛ خودِ ستونِ under_supervision درِ
+  // پاسخِ واقعی حتی برایِ نمادهای زیرِ نظر صفر است، پس برچسب از «ردیف هست»
+  // می‌آید — نه از آن عدد.
+  sup_flag: num,
+  sup_title: z.string().nullish(),
+  sup_reason_count: num,
+  // علتِ توقف (webgw CompanyState → dalils)؛ متنِ کامل فقط درِ Inspector
+  // خوانده می‌شود، درِ تابلو تنها همین که «چرا» هست کافی است.
+  stop_state: z.string().nullish(),
+  stop_since: z.string().nullish(),
+  stop_reasons: z.string().nullish(),
+  // مبدأِ ارزشِ حقیقی/حقوقی: native | mixed | reconstructed. یک‌بار درِ نویسنده
+  // حساب شده و همین‌جا خوانده می‌شود؛ رابط حق ندارد از خودِ عددها بازسازیش کند.
+  // فقط درِ «جزئیات» نشان داده می‌شود — نه بج، نه ستونِ تابلو، و هرگز وارد
+  // داوری/FTS نمی‌شود.
+  ctv_kind: z.string().nullish(),
 });
 
 export type MarketRow = z.infer<typeof MarketRowSchema>;
