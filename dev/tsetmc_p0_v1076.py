@@ -524,12 +524,56 @@ def part_p1():
         ck(f'"{col}"' in keep, f"`{col}` درِ _KEEP_NULL می‌ماند (نبود ≠ صفر)")
 
 
+def part_report():
+    print("\n[گزارش] سنجشِ پوششِ مبدأ (بندِ ۱۰: اندازه‌گیری، نه افزایشِ بودجه)")
+    path = os.path.join(ROOT, "dev", "tsetmc_native_coverage_report.py")
+    src = open(path, encoding="utf-8").read()
+    ck(T.CTV_BUDGET == 600, "سقفِ 600 درخواست/روز دست‌نخورده باقی مانده")
+    ck("mode=ro" in src, "گزارش بانک را فقط‌خواندنی باز می‌کند (بی‌نوشتن)")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cov_report", path)
+    rep = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rep)
+
+    c = fresh_db()
+    day = 20261004
+    # دامنهٔ هدف = چهار نمادِ دارایِ جریان؛ دو ردیفِ مبدأ (یکی native، یکی mixed)
+    for i, ins in enumerate(("65883838195688438", "2109854662147869", "K3", "K4")):
+        c.execute("INSERT OR REPLACE INTO client_type (ins_code, d_even, buy_i_vol,"
+                  " sell_i_vol) VALUES (?,?,?,?)", (ins, day, 100.0 + i, 90.0 + i))
+    c.execute("INSERT INTO client_type_value (ins_code, d_even, buy_i_val, buy_n_val,"
+              " sell_i_val, sell_n_val, kind) VALUES (?,?,?,?,?,?,?)",
+              ("65883838195688438", day, 1.0, 2.0, 3.0, 4.0, "native"))
+    c.execute("INSERT INTO client_type_value (ins_code, d_even, buy_i_val, buy_n_val,"
+              " sell_i_val, sell_n_val, kind) VALUES (?,?,?,?,?,?,?)",
+              ("2109854662147869", day, 1.0, None, 3.0, None, "mixed"))
+    c.commit()
+    m = rep.measure(c)
+    ck(m["target_universe"] == 4 and m["native"] == 1 and m["mixed"] == 1,
+       "هدف و شمارِ native/mixed از خودِ بانک خوانده می‌شود", str(m["target_universe"]))
+    ck(m["reconstructed"] == 2,
+       "reconstructed = هدفِ بی‌ردیف (نه صفرِ جعلی، نه شمارِ ردیف‌ها)", str(m["reconstructed"]))
+    ck(m["native_coverage_of_target_pct"] == 25.0, "پوششِ مبدأ = ۱ از ۴ هدف", str(m["native_coverage_of_target_pct"]))
+    ck(m["cache_hit_pct"] == 50.0, "برخوردِ کش = ردیف‌هایِ موجود ÷ هدف", str(m["cache_hit_pct"]))
+    ck(m["avg_requests_per_symbol"] == 1.0,
+       "هر ردیف یک GetClientTypeHistory است → میانگینِ یک درخواست/نماد", str(m["avg_requests_per_symbol"]))
+    ck(m["estimated_requests_per_day"]["funnel_candidates"] <= T.CTV_BUDGET,
+       "برآوردِ روزانه از سقفِ بودجه فراتر نمی‌رود (کلیپ دارد)")
+    ck(str(m["estimated_requests_per_day"]["watchlist"]) == "0",
+       "بی‌جدولِ دیده‌بان عددِ جعلی نمی‌سازد (صفر = بی‌داده، نه خطا)")
+    text = rep.render(m)
+    ck("پوششِ مبدأ" in text and "برآوردِ درخواست/روز" in text,
+       "گزارشِ متنی هر دو بخش را دارد", text[:40])
+    c.close()
+
+
 def main():
     part_ctv()
     part_corp()
     part_state()
     part_p1()
     part_wiring()
+    part_report()
     print(f"\ntsetmc_p0_v1076: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0
 
