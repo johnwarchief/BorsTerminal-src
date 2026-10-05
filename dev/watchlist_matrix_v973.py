@@ -175,8 +175,22 @@ VERDICTS = {'CONFIRMED', 'PROBABLE', 'WATCH', 'WEAK', 'INSUFFICIENT'}
 if not os.path.exists(DB):
     ck(True, 'market.db missing -> live matrix section SKIPPED (static guards ran)')
 else:
+    # کپیِ یکدست: اپِ نصب‌شده درِ ساعتِ بازار هر ۹۰ ثانیه market.db را سینک
+    # می‌کند؛ بی‌این snapshot، «deterministic» و «byte-identical» رقابتِ با آن
+    # سینکِ بیرونی را می‌سنجیدند نه بی‌نوشتیِ سوئیت را (شاهد ۱۴۰۵-۰۷-۱۳
+    # ۰۹:۳۶: h0=55eb→h1=9668 بی‌آنکه سوئیت چیزی بنویسد). backupِ آنلاینِ
+    # sqlite بی‌قفل می‌گیرد و بی‌تغییرِ بانکِ اصلی تمام می‌شود.
+    import tempfile
+    SNAP = os.path.join(tempfile.gettempdir(), 'bors_wl_snap_%d.db' % os.getpid())
+    _src = sqlite3.connect('file:%s?mode=ro' % DB, uri=True)
+    _dst = sqlite3.connect(SNAP)
+    with _src:
+        _src.backup(_dst)
+    _dst.close()
+    _src.close()
+    DB = SNAP
     h0, m0 = digest(DB), os.path.getmtime(DB)
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect('file:%s?mode=ro' % DB.replace('\\', '/'), uri=True)
     conn.row_factory = sqlite3.Row
 
     # نمادهایِ برخوردِ نوشتاری (همان ۳۶ گروهی که باگ از آن‌ها می‌آمد)
@@ -261,6 +275,7 @@ else:
     h1, m1 = digest(DB), os.path.getmtime(DB)
     ck(h0 == h1 and m0 == m1,
        'market.db byte-identical after the whole suite (%s -> %s)' % (h0, h1))
+    os.remove(SNAP)
 
 n_bad = sum(1 for ok, _ in CHECKS if not ok)
 for ok, msg in CHECKS:
