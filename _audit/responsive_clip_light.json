@@ -1,0 +1,415 @@
+{
+  "base": "http://127.0.0.1:8003/",
+  "theme": "light",
+  "sizes": [
+    "1280x720",
+    "1366x768"
+  ],
+  "widths": {
+    "tape": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 534,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 455,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "technical": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div > div",
+            "cls": "nn-symbol-badge",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "fundamental": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 398,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 350,
+        "hits": [],
+        "state": null,
+        "opened": null
+      }
+    },
+    "portfolio": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 388,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 340,
+        "hits": [],
+        "state": null,
+        "opened": null
+      }
+    },
+    "palette": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 534,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 455,
+        "hits": [
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "bleeds",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      }
+    }
+  }
+}

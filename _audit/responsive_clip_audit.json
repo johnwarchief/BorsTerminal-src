@@ -1,0 +1,2960 @@
+{
+  "base": "http://127.0.0.1:8003/",
+  "sizes": [
+    "1280x720",
+    "1366x768",
+    "1600x900",
+    "1920x1080"
+  ],
+  "widths": {
+    "tape": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 534,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 26,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 23,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 24
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 24
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 455,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 13,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 25
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 25
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 425,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 411,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "tape-inspector": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 534,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 26,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 23,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 24
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 24
+          }
+        ],
+        "state": "inspector",
+        "opened": "inspector-clicked"
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 455,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 13,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 25
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 25
+          }
+        ],
+        "state": "inspector",
+        "opened": "inspector-clicked"
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 425,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "inspector",
+        "opened": "inspector-clicked"
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 411,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "inspector",
+        "opened": "inspector-clicked"
+      }
+    },
+    "technical": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 91,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 17,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 14,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 13,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 12,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > div",
+            "cls": "nn-symbol-badge",
+            "overX": 7,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-W]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "هفتگی",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-M]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ماهانه",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-ffc]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-toolbar-group",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div[nn-engine-switch]",
+            "cls": "nn-toolbar-group",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[compare-open]",
+            "cls": "nn-btn",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-D]",
+            "cls": "nn-btn active",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "روزانه",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 80,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 14,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 9,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 8,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-W]",
+            "cls": "nn-btn ",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "هفتگی",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-M]",
+            "cls": "nn-btn ",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ماهانه",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-ffc]",
+            "cls": "nn-btn ",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-toolbar-group",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div[nn-engine-switch]",
+            "cls": "nn-toolbar-group",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 41,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 7,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "technical-dialog": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 91,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 17,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 14,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 13,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 12,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > div",
+            "cls": "nn-symbol-badge",
+            "overX": 7,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-W]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "هفتگی",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-M]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ماهانه",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-ffc]",
+            "cls": "nn-btn ",
+            "overX": 6,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-toolbar-group",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div[nn-engine-switch]",
+            "cls": "nn-toolbar-group",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[compare-open]",
+            "cls": "nn-btn",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-D]",
+            "cls": "nn-btn active",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "روزانه",
+            "n": 1
+          }
+        ],
+        "state": "chartSettings",
+        "opened": "settings-open"
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 80,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 14,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-klinecharts]",
+            "cls": "nn-btn active",
+            "overX": 9,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-fib-levels-toggle]",
+            "cls": "nn-btn ",
+            "overX": 8,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-W]",
+            "cls": "nn-btn ",
+            "overX": 5,
+            "overY": 0,
+            "scrollable": false,
+            "text": "هفتگی",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > button[timeframe-M]",
+            "cls": "nn-btn ",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "ماهانه",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div[nn-engine-switch] > button[nn-engine-ffc]",
+            "cls": "nn-btn ",
+            "overX": 4,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-toolbar-group",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div[nn-engine-switch]",
+            "cls": "nn-toolbar-group",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "chartSettings",
+        "opened": "settings-open"
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 48,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "relative",
+            "overX": 9,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > header > div",
+            "cls": "nn-toolbar-group",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "header > div > button[nn-history-events-toggle]",
+            "cls": "nn-btn ",
+            "overX": 3,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "chartSettings",
+        "opened": "settings-open"
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 4,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "header > div > div",
+            "cls": "nn-select-dropdown",
+            "overX": 12,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          }
+        ],
+        "state": "chartSettings",
+        "opened": "settings-open"
+      }
+    },
+    "fundamental": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 398,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-green",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "+۵۶.۰٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "−۲.۵٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > div",
+            "cls": "flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whit",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 350,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-green",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "+۵۶.۰٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "−۲.۵٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > div",
+            "cls": "flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whit",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 120,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-green",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "+۵۶.۰٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "−۲.۵٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > div",
+            "cls": "flex items-center justify-center gap-1 font-mono text-2xs font-bold text-text-primary whit",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1a_monetary_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1a_monetary_growth] > div > span[fts-result-1a]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-green",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "+۵۶.۰٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[fts-card-cell-1b_volume_growth] > div",
+            "cls": "mb-1.5 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[fts-card-cell-1b_volume_growth] > div > span[fts-result-1b]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl text-accent-red",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "−۲.۵٪",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-2_eps_trend] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-2_eps_trend] > div > span[fts-result-2_eps_trend]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-3_gross_margin] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-3_gross_margin] > div > span[fts-result-3_gross_margin]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-4_sales_to_mcap] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-4_sales_to_mcap] > div > span[fts-result-4_sales_to_mcap]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > button[fts-card-cell-5_industry] > div",
+            "cls": "mb-1 flex items-end justify-between gap-1.5",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "button[fts-card-cell-5_industry] > div > span[fts-result-5_industry]",
+            "cls": "num font-mono text-lg leading-none font-black sm:text-xl ",
+            "overX": 0,
+            "overY": 6,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[fts-settings-trigger] > button[fts-settings-btn] > span",
+            "cls": "text-base leading-none",
+            "overX": 0,
+            "overY": 4,
+            "scrollable": false,
+            "text": "⚙",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "masterFunnel": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 388,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 308,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 176,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 2,
+        "hits": [],
+        "state": null,
+        "opened": null
+      }
+    },
+    "masterVerdict": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 9,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": [],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 0,
+        "hits": [],
+        "state": null,
+        "opened": null
+      }
+    },
+    "tree": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 981,
+        "hits": [
+          {
+            "kind": "scrollable",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "w-full overflow-x-auto overflow-y-hidden",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 914,
+        "hits": [
+          {
+            "kind": "scrollable",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "w-full overflow-x-auto overflow-y-hidden",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 784,
+        "hits": [
+          {
+            "kind": "scrollable",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "w-full overflow-x-auto overflow-y-hidden",
+            "overX": 0,
+            "overY": 0,
+            "scrollable": true,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 613,
+        "hits": [],
+        "state": null,
+        "opened": null
+      }
+    },
+    "portfolio": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 388,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 340,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 208,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 36,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > div",
+            "cls": "flex items-end gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "num text-3xl font-black text-text-primary",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "—",
+            "n": 1
+          }
+        ],
+        "state": null,
+        "opened": null
+      }
+    },
+    "palette": {
+      "1280x720": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 534,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 26,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 23,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 2
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 24
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 24
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      },
+      "1366x768": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 455,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-primary font-bold",
+            "overX": 13,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div[tape-row] > span",
+            "cls": "num text-end text-text-secondary",
+            "overX": 10,
+            "overY": 0,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 25
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 25
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      },
+      "1600x900": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 425,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 28
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      },
+      "1920x1080": {
+        "pageOverflowX": 0,
+        "pageOverflowY": 411,
+        "hits": [
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > div > span",
+            "cls": "text-3xl font-black leading-8 text-accent-green",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div > span > span",
+            "cls": "num",
+            "overX": 0,
+            "overY": 7,
+            "scrollable": false,
+            "text": "۳۷.۲",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-hemat] > div > div",
+            "cls": "flex items-baseline justify-center gap-2 py-0.5",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": false,
+            "path": "div[pulse-percapita] > div > div",
+            "cls": "flex items-center justify-between gap-2",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div > div > span",
+            "cls": "num text-2xl font-black leading-7 text-accent-red",
+            "overX": 0,
+            "overY": 5,
+            "scrollable": false,
+            "text": "۰.۳×",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-buy-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۴.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span > span[tape-sell-pc] > span",
+            "cls": "num inline-block rounded px-1 num font-bold",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "۱.۳",
+            "n": 33
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "div[tape-row] > span[tape-buy-sell] > span",
+            "cls": "flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-buy-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-green",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          },
+          {
+            "kind": "cut",
+            "hasTitle": true,
+            "path": "span[tape-buy-sell] > span > span[tape-sell-pc]",
+            "cls": "flex shrink-0 items-baseline gap-px text-accent-red",
+            "overX": 0,
+            "overY": 3,
+            "scrollable": false,
+            "text": "",
+            "n": 1
+          }
+        ],
+        "state": "palette",
+        "opened": "ctrl+k"
+      }
+    }
+  }
+}
