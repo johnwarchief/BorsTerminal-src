@@ -108,6 +108,11 @@ MW_COLS = ("ins_code", "d_even", "h_even", "p_closing", "p_last", "price_min",
            #   p_red_tran = قیمتِ استردادِ NAV (صندوق/ETF)
            #   buy_op     = قیمتِ صدورِ NAV
            "flow", "p_red_tran", "buy_op")
+# نگاشتِ «نامِ ستون → شاخصِ همان tuple». هر جایی که tuple را با شاخص می‌خواند
+# (مثل UPDATEِ پس از بستنِ بازار) باید از همین‌جا بگیرد، نه از `w[-2]`/`w[-1]`:
+# با هر ستونِ تازه انتهای tuple جابه‌جا می‌شود و شاخصِ منفی بی‌صدا
+# «بازار» را با «p_red_tran» عوض می‌کند.
+_MWI = {name: i for i, name in enumerate(MW_COLS)}
 # instruments با نامِ ستون نوشته می‌شود، نه موقعیتی: `paper_type` را
 # mstat_engine.MIGRATIONS با ALTER می‌افزاید، پس ترتیبِ ستون‌ها درِ بانکِ تازه
 # (DDL) با بانکِ ارتقایافته فرق می‌کند و INSERT موقعیتی رویِ یکی از دو مسیر
@@ -2181,7 +2186,8 @@ def tick_live(conn=None):
                           " z_tot_tran=?, price_change=?, market_cap=?, market_cap_src=?,"
                           " fetched_at=? WHERE ins_code=?",
                           [(w[2], w[3], w[4], w[5], w[6], w[11], w[12], w[13], w[14],
-                            w[-2], w[-1], w[19], w[0]) for w in wch])
+                            w[_MWI["market_cap"]], w[_MWI["market_cap_src"]], w[19], w[0])
+                           for w in wch])
             c.executemany("UPDATE daily_prices SET p_closing=?, price_min=?, price_max=?,"
                           " q_tot_tran=?, q_tot_cap=?, price_change=?, fetched_at=?,"
                           " market_cap=?, market_cap_src=?, z_tot_tran=?, p_last=?"

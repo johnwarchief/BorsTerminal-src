@@ -483,6 +483,17 @@ def part_p1():
     ck("ALTER TABLE tape_history" not in tsrc and "ADD COLUMN q_tot_cap" not in tsrc,
        "درِ test_tsetmc برایِ tape_history دستی ALTER نشده (تک‌منبعِ مهاجرت)")
 
+    # هر ستونِ تازه که به انتهای MW_COLS می‌چسبد، `w[-1]`/`w[-2]` را جابه‌جا می‌کند.
+    # درِ نوبتِ پس از بستنِ بازار همین دو شاخص، «ارزشِ بازار» را با p_red_tran و
+    # «منبعِ آن» را با buy_op عوض می‌کرد. قاعده: خواندنِ tuple با نامِ ستون.
+    ck(T._MWI["market_cap"] == len(T.MW_COLS) - 5 and T._MWI["buy_op"] == len(T.MW_COLS) - 1,
+       "دمایِ MW_COLS = market_cap، market_cap_src، flow، p_red_tran، buy_op",
+       str(T.MW_COLS[-5:]))
+    ck("w[-2], w[-1]" not in tsrc,
+       "درِ test_tsetmc دُمِ tuple با شاخصِ منفی خوانده نمی‌شود")
+    ck('_MWI["market_cap"]' in tsrc and '_MWI["market_cap_src"]' in tsrc,
+       "UPDATEِ پس از بستن، دو ستونِ ارزشِ بازار را از _MWI می‌گیرد")
+
     # نوشتن باید با نامِ ستون باشد. `q_tot_cap` را MIGRATIONS رویِ بانکِ
     # ارتقایافته به **آخر** می‌افزاید، پس ترتیبِ ستون‌ها آنجا (…، fetched_at،
     # q_tot_cap) با بانکِ تازه یکی نیست و INSERT موقعیتی زمان را درِ ستونِ عددی
