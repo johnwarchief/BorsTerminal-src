@@ -821,8 +821,11 @@ total_shares, eps, pe, base_vol, updated_at, paper_type`. پر می‌شود ا�
 | `Instrument/GetInstrumentShareChange/{ins}` | `instrumentShareChange` | `dEven, idn, insCode, lVal18AFC, lVal30, numberOfShareOld, numberOfShareNew` — 6 رویداد |
 | `Instrument/GetInstrumentShareChangeByFlow/{flow}/{days}` | همان | **2395 رکورد در یک درخواست** |
 
-`corporateTypeCode` هم هست — یعنی **نوعِ رویداد** (سود/افزایشِ سرمایه/…) کد دارد؛ در هیچ مرجعی
-decode نشده ⇒ **UNAVAILABLE/UNDECODED** (اعلام می‌کنم، حدس نمی‌زنم).
+`corporateTypeCode` هم در پاسخ هست — اما **همیشه null**. سنجشِ زنده (۱۴۰۵-۰۷-۱۳، چهار
+درخواست، `_audit/corporate_type_code_probe.json`): ۴۰۱۸ ردیفِ `priceAdjust` از هر دو flow و
+از `GetPriceAdjustList`، صفر ردیفِ غیرnull. مسیرِ `GetInstrumentShareChangeByFlow` اصلاً
+هیچ فیلدِ نوعی ندارد. پس این «کدِ رمزگشایی‌نشده» نیست، **فیلدِ خالی** است: چیزی برایِ
+decode کردن وجود ندارد، و هر نوعِ رویدادی که از آن ساخته می‌شد اختراع می‌بود.
 
 **مقایسه با ORBO:** ORBO دقیقاً همین دو مسیر را می‌گیرد (`PRICE_ADJUST`،
 `GetInstrumentShareChange`) و فرمولِ backward-cumulative می‌سازد (§4). یعنی **داده هست،
@@ -1166,8 +1169,10 @@ retention + 6 مسیرِ webgw (دور ۳ و ۴). اسکریپت‌ها در `/t
 
 چیزهایی که صریحاً **نمی‌دانم** و در هیچ حکمی استفاده نشده‌اند:
 
-1. **`corporateTypeCode`** در `priceAdjust` — وجودش LIVE است، معنایِ کدها هیچ مرجعی decode
-   نکرده. تا decode نشود، نوعِ رویدادِ تعدیل نامعلوم می‌ماند.
+1. **`corporateTypeCode`** در `priceAdjust` — کلید درِ پاسخ هست، مقدار هیچ‌وقت: ۴۰۱۸ از ۴۰۱۸
+   ردیفِ زنده null (بخشِ Events همین سند و `_audit/corporate_type_code_probe.json`). پس
+   «decode نشد» نیست، «خام است»؛ نوعِ رویدادِ تعدیل از **خودِ جدولِ مبدأ** خوانده می‌شود
+   (قیمتِ تعدیل‌شده در برابرِ خام)، نه از این فیلد.
 2. **`is51…is89`** در `InstValue.aspx` / `dataType` در `GetInstrumentStatistic` — 88 سطر با
    `dataTypeDesc` فارسی دیدم (چندتاش قابل‌خوانش بود: «میانگین ارزش معاملات در 3/12 ماه گذشته»)؛
    جدولِ کاملِ کدها فقط در `Site.aspx?ParTree=151715` است که باز نکردم.

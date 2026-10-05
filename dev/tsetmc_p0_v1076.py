@@ -60,6 +60,10 @@ LIVE_CTV = {"clientType": {
     "sell_I_Volume": 13254258707.0, "sell_N_Volume": 1024544145.0,
     "buy_I_Count": 1000, "buy_N_Count": 3, "sell_I_Count": 2000, "sell_N_Count": 5}}
 
+# ردیفِ دوم عمداً `corporateTypeCode: 2` دارد، هرچند مبدأی که ۱۳ آبان سنجیده شد
+# این فیلد را درِ ۴۰۱۸ ردیف null فرستاد (`_audit/corporate_type_code_probe.json`).
+# عددِ غیرواژِ «همیشه null» نیست: این بدل است، و چیزی که می‌سنجد این است که هرچه
+# مبدأ بفرستد بی‌ترجمه ذخیره می‌شود — نه اینکه مبدأ روزی ۲ فرستاده است.
 LIVE_ADJ = {"priceAdjust": [
     {"insCode": 0, "dEven": 20261004, "pClosing": 5710.0,
      "pClosingNotAdjusted": 5730.0, "corporateTypeCode": None,

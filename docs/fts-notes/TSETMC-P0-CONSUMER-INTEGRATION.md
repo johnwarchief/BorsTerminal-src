@@ -382,7 +382,7 @@ said 2 and was right.
 
 | item | status |
 | --- | --- |
-| `corporateTypeCode` decode | no authoritative mapping found in any reviewed source; stored raw, never decoded, never used as a label. Chart type comes from the table, not the code. |
+| `corporateTypeCode` decode | **not a missing decode — an empty field.** Measured live (2026-10-05, `_audit/corporate_type_code_probe.json`, 4 requests): 4018/4018 `priceAdjust` rows across both flows and `GetPriceAdjustList` return `corporateTypeCode: null`, and the share-change feed carries no type field at all. No reviewed reference names the codes either. Stored raw, never decoded, never used as a label; the chart's event type comes from **which table** the row is in. Nothing was invented to close this. |
 | orphan `stop_reasons` rows | **measured 0 today** (25/25 match `instruments.l_val18`). The 27 reported in `cf28e44` came from the pre-refresh DB; superseded, and the join is exact-match on the writer's own folding, so it can regress if webgw text changes. |
 | per-symbol TSETMC messages | `GetMsgByFlow` has no `insCode`; `GetMsgByInsCode` costs ≈2 MB per symbol. Not implemented; the Inspector shows the three families it does have. |
 | MarketWatch delta protocol | documented in `docs/TSETMC-DATA-GAP-MATRIX.md`; no change. |
