@@ -32,8 +32,14 @@ def ck(cond, msg):
 
 
 import mstat_engine as ME
+import test_tsetmc as TS
 
-MW_COLS = 33   # تعدادِ ستونِ market_watch — در seed و در INSERT همگام‌سازی قفل می‌شود
+# v10.7.6: شمارشِ ستون و اسکیما از خودِ مسیرِ نوشتن گرفته می‌شوند، نه از یک
+# کپیِ دستی. کپیِ دستی (MW_COLS=33 و DDLِ پایین) هر بار که یک ستونِ nullable
+# اضافه می‌شد بی‌صدا کهنه می‌ماند و گارد به‌جایِ «نویسندۀ واقعی vs جدولِ
+# واقعی»، «کهنۀ من vs کهنۀ من» را چک می‌کرد. DDL فقط برایِ هماندازیِ seed
+# نگه داشته شده و new_db() حالا create_schemaِ واقعی را رویش اجرا می‌کند.
+MW_COLS = len(TS.MW_COLS)   # تعدادِ ستونِ market_watch — در seed قفل می‌شود
 # v10: دو ستونِ ارزش بازار (market_cap, market_cap_src) به اسنپ‌شاتِ تابلو
 # اضافه شد. «تک‌منبعِ ارزش بازار» یعنی همین جدول؛ پس این گارد باید مطمئن شود
 # نوشتنِ همگام‌سازی هنوز تمامِ ستونهایِ جدول را پوشش میدهد.
@@ -72,6 +78,9 @@ def new_db():
     c = sqlite3.connect(":memory:")
     c.row_factory = sqlite3.Row
     c.executescript(DDL)
+    # create_schema همۀ جدول‌ها را با نویسنده می‌سازد و MIGRATIONS را می‌زند؛
+    # پس «جدولِ این گارد» == «جدولی که برنامه واقعاً می‌سازد».
+    TS.create_schema(c)
     return c
 
 
@@ -100,21 +109,23 @@ INS = [
 def seed(c, day=14040601, hour=123000):
     """ارقام طوری‌اند که هر ستون با دست قابلِ حساب باشد."""
     for ic, sym, nm, pt, sec in INS:
-        c.execute("INSERT INTO instruments VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        c.execute("INSERT INTO instruments (ins_code, l_val18, l_val30,"
+                  " sector_code, sector_name, total_shares, eps, pe,"
+                  " base_vol, updated_at, paper_type) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                   (ic, sym, nm, "68" if pt == 8 else "01", sec, 1e9, 100.0, 5.0,
                    1.0, "now", pt))
     # فولاد: پایانی ۱۰۰۰ / دیروز ۹۰۰ → +۱۱٫۱٪ ؛ آخرین ۹۵۰ → ساعت −۵٪؛ صف خرید خالص
-    c.execute("INSERT INTO market_watch VALUES (?" + ",?" * (MW_COLS - 1) + ")", mw((
+    c.execute(TS._MW_INSERT, mw((
         "i_st1", day, hour, 1000.0, 950.0, 900.0, 1050.0, 900.0, 1100.0, 900.0, 900.0,
         1e9, 1e13, 500.0, 100.0, None, None, 1e9, "01", "f",
         2e6, 2e9, 3.0, 0.0, 0.0, 0.0, 2e6, 1000.0)))
     # وبملت: صفرِ واقعی، عمق دوطرفه ⇒ هیچ‌کدام صف نیست
-    c.execute("INSERT INTO market_watch VALUES (?" + ",?" * (MW_COLS - 1) + ")", mw((
+    c.execute(TS._MW_INSERT, mw((
         "i_st2", day, hour, 500.0, 505.0, 490.0, 510.0, 450.0, 550.0, 500.0, 500.0,
         2e9, 1e12, 100.0, 5.0, None, None, 5e8, "01", "f",
         1e6, 5e8, 2.0, None, 5e8, 1.0, 1e6, 495.0)))
     # حق تقدم: −۳٪ با صف فروش
-    c.execute("INSERT INTO market_watch VALUES (?" + ",?" * (MW_COLS - 1) + ")", mw((
+    c.execute(TS._MW_INSERT, mw((
         "i_rt1", day, hour, 970.0, 960.0, 930.0, 1030.0, 900.0, 1030.0, 1000.0, 1000.0,
         1e8, 1e11, 10.0, -30.0, None, None, 1e8, "01", "f",
         0.0, 0.0, 0.0, 5e7, 5e10, 4.0)))
@@ -123,7 +134,7 @@ def seed(c, day=14040601, hour=123000):
     # None — در همگام‌سازیِ واقعی هم blDs عدد می‌دهد و تهی فقط وقتی است که کلید
     # نباشد؛ None در تست یعنی «عمق نیست» و نماد از شمارش بیرون می‌افتد.
     for k, ic in enumerate(("i_fe1", "i_fx1", "i_lv1", "i_gd1", "i_sv1", "i_op1")):
-        c.execute("INSERT INTO market_watch VALUES (?" + ",?" * (MW_COLS - 1) + ")", mw((
+        c.execute(TS._MW_INSERT, mw((
             ic, day, hour, 1000.0, 1000.0, 1000.0, 1000.0, 900.0, 1100.0,
             1000.0, 1000.0, 1e8, 1e11, 5.0, 0.0, None, None, 1e8, "68", "f",
             (1e6 if k % 2 == 0 else 0.0), (1e9 if k % 2 == 0 else 0.0), 1.0,
@@ -394,10 +405,12 @@ small = new_db(); seed(small)                                  # ۹ نماد
 big = new_db(); seed(big)
 for k in range(600):                                           # ۶۰۹ نماد
     ic = "big%04d" % k
-    big.execute("INSERT INTO instruments VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+    big.execute("INSERT INTO instruments (ins_code, l_val18, l_val30,"
+                  " sector_code, sector_name, total_shares, eps, pe,"
+                  " base_vol, updated_at, paper_type) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (ic, "s" + ic, "name" + ic, "01", "فلزات اساسي", 1e6, 1.0, 1.0,
                  1.0, "now", 1))
-    big.execute("INSERT INTO market_watch VALUES (?" + ",?" * (MW_COLS - 1) + ")", mw((
+    big.execute(TS._MW_INSERT, mw((
         ic, 14040601, 123000, 1000.0, 1000.0, 900.0, 1100.0, 900.0, 1100.0,
         1000.0, 1000.0, 1e5, 1e8, 3.0, 0.0, None, None, 1e6, "01", "f")))
 big.commit()
@@ -460,13 +473,24 @@ for _tbl, _sql in (("market_watch", TT._MW_INSERT), ("daily_prices", TT._DP_INSE
 
 ph_ = re.findall(r'market_watch VALUES \(" \+ ","\.join\("\?" \* (\d+)\)', src)
 ck(not ph_, "هیچ نوشتنِ جایگاهیِ market_watch بازشده نمانده (فقط نام‌دار)")
-phi_ = re.findall(r'instruments VALUES \(" \+ ","\.join\("\?" \* (\d+)\)', src)
-ck(phi_ and all(int(x) == len(real_ins) for x in phi_),
-   "placeholderهای instruments (%s) = %d ستون" % (phi_, len(real_ins)))
+# instruments هم باید نام‌دار باشد: `paper_type` را MIGRATIONS با ALTER می‌افزاید،
+# پس ترتیبِ ستون‌ها درِ بانکِ تازه با بانکِ ارتقایافته فرق می‌کند و نوشتنِ
+# جایگاهی رویِ یکی از دو مسیر ستون‌ها را جابه‌جا می‌نشاند.
+ck("_INST_INSERT" in src and "INSERT OR REPLACE INTO instruments VALUES" not in src,
+   "نوشتنِ instruments نام‌دار است (بی‌جابه‌جاییِ ستون بین بانکِ تازه و ارتقایافته)")
+ck(list(TS._INST_COLS) == list(real_ins),
+   "فهرستِ _INST_COLS دقیقاً ستونهایِ جدولِ instruments است"
+   " (جاافتاده=%r اضافه=%r)" % (sorted(set(real_ins) - set(TS._INST_COLS)),
+                                sorted(set(TS._INST_COLS) - set(real_ins))))
 mig = [n for t, cols in ME.MIGRATIONS.items() if t == "market_watch" for n, _ty in cols]
-# یازده‌اند: ششِ جمعِ پنج‌خط + چهارِ «خطِ اول»ِ حجم/قیمت + buy_q1_cnt، یعنی
-# همان (zd1)ِ فیلترنویسِ TSETMC که درِ «تعدادِ سفارشِ سطرِ اولِ خرید» است.
-ck(len(mig) == 11 and set(mig) <= set(real_mw), "همهٔ ۱۱ ستونِ عمق در ساختار هست")
+# ستونهایِ عمق = همان _QUEUE_COLS: ششِ جمعِ پنج‌خط + چهارِ «خطِ اول»ِ حجم/قیمت،
+# یعنی همان (zd1)ِ فیلترنویسِ TSETMC. «۱۱» را عددِ ثابت نمی‌کنیم تا ستونِ
+# غیرعمقِ تازه (flow/p_red_tran/buy_op) این چک را نشکند.
+qc = list(TS._QUEUE_COLS)
+ck(len(qc) == 11 and set(qc) <= set(mig) and set(mig) - set(qc) == {"flow", "p_red_tran",
+                                                                   "buy_op"},
+   "همۀ ۱۱ ستونِ عمق در مهاجرت هست و ستونهایِ تازه فقط سه کلیدِ خام‌اند"
+   " (mig-extra=%r)" % (sorted(set(mig) - set(qc)),))
 ck("withBestLimits=true" in src,
    "MW_URL باید withBestLimits=true بفرستد، وگرنه blDs نمی‌آید و کل پنلِ عمق تهی می‌ماند")
 ck("save_mstat_snapshot(conn)" in src,
@@ -486,8 +510,12 @@ ck(got[6] == 100 and got[7] == 500.0, "حجم/قیمت «خطِ اول» جدا 
 # (zd1) درِ فیلترنویسِ TSETMC = zmdِ سطرِ اول، نه تعدادِ کلِ پنج خط (گت[2]=4)
 ck(got[10] == 3, "تعدادِ سفارشِ سطرِ اولِ خرید = zmdِ ن=۱ (سه، نه جمعِ چهار)")
 ck(TS.queue_agg({"blDs": []}) is None, "blDs تهی = None (بی‌داده، نه صفر)")
-ck(list(TS._QUEUE_COLS) == mig,
-   "ترتیبِ _QUEUE_COLS با ترتیبِ بازگشتیِ queue_agg و ستون‌های مهاجرت یکی است")
+# ترتیبِ اولین ۱۱ ورودیِ مهاجرت باید دقیقاً _QUEUE_COLS باشد (همان ترتیبی که
+# queue_agg برمی‌گرداند); سه کلیدِ خامِ تازه (flow/p_red_tran/buy_op) بعد از آن‌ها
+# می‌آیند و عمق نیستند.
+ck(mig[:len(qc)] == qc,
+   "ترتیبِ _QUEUE_COLS با ترتیبِ بازگشتیِ queue_agg و ستون‌های مهاجرت یکی است"
+   " (mig[:11]=%r)" % (mig[:len(qc)],))
 
 
 # ==================== گارد ۱۱: سیم‌کشیِ UI (پروکسی بیرونی حذف شود) ============

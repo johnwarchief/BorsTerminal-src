@@ -555,7 +555,11 @@ def main():
         c.execute("CREATE TABLE market_watch (ins_code TEXT, d_even INTEGER, q_tot_tran REAL)")
         c.executemany("INSERT INTO market_watch VALUES (?,?,?)", board(traded_n))
         T.ensure_tape_history_schema(c)
-        c.executemany("INSERT INTO tape_history VALUES (?,?,?,?,?,?)",
+        # نوشتنِ نام‌دار: پنجرۀ [ih] ستونِ q_tot_cap گرفت و جایگاهیِ شش‌تایی
+        # رویِ بانکِ هفت‌ستونی می‌شکست.
+        c.executemany("INSERT INTO tape_history (ins_code, d_even, price_min,"
+                      " price_max, q_tot_tran5j, fetched_at)"
+                      " VALUES (?,?,?,?,?,?)",
                       [(s, DAY, 100.0, 200.0, 10.0, "") for s in hist_syms])
         c.commit()
         return c

@@ -8,6 +8,7 @@
 * bulk insert/update via executemany into market.db
 """
 import os
+import re
 import sqlite3
 import datetime
 import json
@@ -98,7 +99,24 @@ MW_COLS = ("ins_code", "d_even", "h_even", "p_closing", "p_last", "price_min",
            "price_max", "allowed_min", "allowed_max", "price_yesterday",
            "price_first", "q_tot_tran", "q_tot_cap", "z_tot_tran", "price_change",
            "eps", "pe", "total_shares", "sector_code", "fetched_at") + _QUEUE_COLS + \
-          ("market_cap", "market_cap_src")
+          ("market_cap", "market_cap_src",
+           # سه کلیدِ خامِ همان `GetMarketWatch` که تا این دور دور ریخته می‌شدند
+           # (سنjشِ زنده ۱۴۰۵-۰۷-۱۳: هر ۳۸۴۷ ردیف این‌ها را دارد). هیچ‌کدام درِ
+           # کوئریِ تابلو و درِ بدنهٔ /api/market نمی‌نشینند — مصرف‌کننده ندارند
+           # و بدنۀ سریال‌شدہ باید بایت‌به‌بایت یکی بماند.
+           #   flow       = کدِ بازار (۱ بورس / ۲ فرابورس / …) — نه از `boards`
+           #   p_red_tran = قیمتِ استردادِ NAV (صندوق/ETF)
+           #   buy_op     = قیمتِ صدورِ NAV
+           "flow", "p_red_tran", "buy_op")
+# instruments با نامِ ستون نوشته می‌شود، نه موقعیتی: `paper_type` را
+# mstat_engine.MIGRATIONS با ALTER می‌افزاید، پس ترتیبِ ستون‌ها درِ بانکِ تازه
+# (DDL) با بانکِ ارتقایافته فرق می‌کند و INSERT موقعیتی رویِ یکی از دو مسیر
+# ستون‌ها را جابه‌جا می‌نشاند.
+_INST_COLS = ("ins_code", "l_val18", "l_val30", "sector_code", "sector_name",
+              "total_shares", "eps", "pe", "base_vol", "updated_at", "paper_type",
+              "isin", "c_gr_val_cot")
+_INST_INSERT = ("INSERT OR REPLACE INTO instruments (" + ", ".join(_INST_COLS)
+                + ") VALUES (" + ",".join("?" * len(_INST_COLS)) + ")")
 _MW_INSERT = ("INSERT OR REPLACE INTO market_watch ("
               + ", ".join(MW_COLS) + ") VALUES ("
               + ",".join("?" * len(MW_COLS)) + ")")
@@ -491,11 +509,18 @@ def ensure_tape_history_schema(conn):
         CREATE TABLE IF NOT EXISTS {TAPE_HIST_TABLE} (
             ins_code TEXT NOT NULL, d_even INTEGER NOT NULL,
             price_min REAL, price_max REAL, q_tot_tran5j REAL,
+            -- q_tot_cap = ارزشِ معاملاتِ همان نشست (کلیدِ خامِ qTotCap). درِ همان
+            -- پاسخِ 24MB هست (سنجشِ زنده: 184911 ردیف، ردیفِ نمونه این کلید را
+            -- دارد) و پیش از این دور ریخته می‌شد؛ هر فیلترِ «میانگینِ ارزشِ ۳۰
+            -- روز» بی‌این مجبور است ارزش را از حجم×قیمت بسازد.
+            q_tot_cap REAL,
             fetched_at TEXT, PRIMARY KEY (ins_code, d_even));
         CREATE TABLE IF NOT EXISTS {TAPE_HIST_STATE} (
             id INTEGER PRIMARY KEY CHECK (id = 1),
             last_attempt TEXT, last_ok TEXT, newest_d_even INTEGER, note TEXT);
         """)
+    # ستونِ تازهٔ q_tot_cap را mstat_engine.MIGRATIONS می‌افزاید (تک‌منبعِ
+    # مهاجرتِ ستون)؛ این‌جا ALTER دوم نمی‌نویسیم.
 
 
 def fetch_tape_history(timeout=120, attempts=3, gap=20):
@@ -615,7 +640,8 @@ def refresh_tape_history(conn, force=False, fetch=None):
             continue
         recs.append((ins, int(d), num(x.get("priceMin")) or 0.0,
                      num(x.get("priceMax")) or 0.0,
-                     num(x.get("qTotTran5J")) or 0.0, now_txt))
+                     num(x.get("qTotTran5J")) or 0.0,
+                     num(x.get("qTotCap")), now_txt))
     if not recs:
         conn.execute(f"UPDATE {TAPE_HIST_STATE} SET note = 'no-rows' WHERE id = 1")
         conn.commit()
@@ -666,7 +692,7 @@ def refresh_tape_history(conn, force=False, fetch=None):
                 return {"skipped": "partial-payload", "lost": covered_cur}
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
-    c.executemany(f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} VALUES (?,?,?,?,?,?)", recs)
+    c.executemany(f"INSERT OR REPLACE INTO {TAPE_HIST_TABLE} VALUES (?,?,?,?,?,?,?)", recs)
     c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
               (now_txt, now_txt, top, ""))
     conn.commit()
@@ -898,6 +924,510 @@ def get_json(s, url, key):
         return []
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# P0 — سه خانوادۀ داده که تا این دور canonical نبودند
+#   P0-1  ارزشِ ریالیِ حقیقی/حقوقی (مبدأ، نه حجم×VWAP)
+#   P0-2  رویدادهایِ شرکتیِ منتشرشده (تعدیلِ قیمت / تغییرِ تعدادِ سهام)
+#   P0-3  وضعیتِ نماد / علتِ توقف / نظارت / پیامِ ناظر
+# سه حکمِ مشترک:
+#   ۱) مبدأ نباشد ⇒ **هیچ چیز نمی‌نویسیم**. نبودِ ردیف خودش داوری است
+#      («بازسازی به‌کار رفت») و جای آن صفرِ جعلی نمی‌نشیند.
+#   ۲) هر ردیف `source` دارد؛ مصرف‌کننده از همان می‌فهمد عدد مبدأ است یا مشتق.
+#   ۳) هیچ‌کدام در حلقۀ ۹۰ ثانیه‌ای نیستند: با throttle و بودجهٔ درخواست
+#      اجرا می‌شوند (الگوی refresh_tape_history).
+# ════════════════════════════════════════════════════════════════════════════
+CTV_SOURCE = "tsetmc_clienttype_history"
+CTV_RETRY_S = 6 * 3600      # سقفِ تلاش برایِ یک نشست (الگوی TAPE_HIST_RETRY_S)
+CTV_BUDGET = 600            # حداکثرِ درخواست در هر اجرا
+
+CTV_TABLE_DDL = (
+    "CREATE TABLE IF NOT EXISTS client_type_value ("
+    " ins_code TEXT, d_even INTEGER, buy_i_val REAL, buy_n_val REAL,"
+    " sell_i_val REAL, sell_n_val REAL, buy_ddd_val REAL,"
+    " fetched_at TEXT, source TEXT, PRIMARY KEY (ins_code, d_even))")
+
+
+def ensure_client_type_value_schema(conn):
+    """میزِ ارزشِ مبدأ و حالتِ آن را می‌سازد (idempotent — بانکِ قدیمی هم برسد)."""
+    conn.execute(CTV_TABLE_DDL)
+    conn.execute("CREATE TABLE IF NOT EXISTS client_type_value_state ("
+                 "id INTEGER PRIMARY KEY CHECK (id = 1), last_attempt TEXT,"
+                 " last_ok TEXT, newest_d_even INTEGER, note TEXT)")
+    conn.execute("INSERT OR IGNORE INTO client_type_value_state"
+                 " (id, last_attempt, last_ok, newest_d_even, note) VALUES (1, NULL, NULL, 0, NULL)")
+
+
+def ct_universe_sql():
+    """دامنهٔ بودجه‌دار: نمادهایی که مبدأ برایِ آن نشست «جریان» گزارش کرده.
+
+    این انتخابِ دامنهٔ فیلتر نیست — همان مجموعه‌ای که `client_type` برایِ همان
+    نشست ذخیره کرده، فقط به ترتیبِ نزولیِ مجموعِ حجم و با سقفِ درخواست. نمادی
+    که بیرونِ بودجه می‌ماند ردیفی در `client_type_value` ندارد و مصرف‌کننده
+    همان بازسازیِ پیشین را با `value_source='reconstructed'` می‌خواند.
+    """
+    return ("SELECT ins_code FROM client_type WHERE d_even = ? "
+            "AND (COALESCE(buy_i_vol,0)+COALESCE(buy_n_vol,0)"
+            "     +COALESCE(sell_i_vol,0)+COALESCE(sell_n_vol,0)) > 0 "
+            "ORDER BY (COALESCE(buy_i_vol,0)+COALESCE(buy_n_vol,0)"
+            "         +COALESCE(sell_i_vol,0)+COALESCE(sell_n_vol,0)) DESC, ins_code "
+            "LIMIT ?")
+
+
+def parse_client_type_value(payload, ins_code, d_even, now=None):
+    """پاسخِ GetClientTypeHistory → یک ردیفِ canonical، یا None.
+
+    `clientType` یک **شیء** است نه آرایه (سنجشِ زنده؛ fima هم با
+    `[resp['clientType']]` همین را می‌پیچد). سه شکلِ ورودی پذیرفته می‌شود:
+    `{"clientType": {...}}`، خودِ `{...}`ِ بی‌wrapper، و `[{...}]`.
+    هیچ‌وقت صفر نمی‌سازیم: اگر هیچ‌کدام از چهار ارزشِ ریالی عدد نبود، None
+    برمی‌گردد و نویسنده ردیفی نمی‌نویسد — نبودِ ردیف خودش داوری است.
+    """
+    if isinstance(payload, list):
+        payload = payload[0] if payload and isinstance(payload[0], dict) else None
+    if not isinstance(payload, dict):
+        return None
+    row = payload.get("clientType", payload)
+    if isinstance(row, list):
+        row = row[0] if row and isinstance(row[0], dict) else None
+    if not isinstance(row, dict):
+        return None
+    vals = [num(row.get(k)) for k in ("buy_I_Value", "buy_N_Value",
+                                      "sell_I_Value", "sell_N_Value")]
+    if all(v is None for v in vals):
+        return None
+    rec_date = num(row.get("recDate"))
+    return (ins_code, int(rec_date or d_even), vals[0], vals[1], vals[2], vals[3],
+            num(row.get("buy_DDD_Value")), now or "", CTV_SOURCE)
+
+
+def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
+                               session=None, fetch=None, now=None):
+    """ارزشِ مبدأ را برایِ یک نشستِ بسته پر می‌کند. برمی‌گرداند dictِ آمار.
+
+    رفتارِ دیدہ‌شده (۱۴۵-۰-۱۳): نشستِ جاری HTTP 500 می‌دهد، نشست‌هایِ بسته تا
+    `20260701` برمی‌گردند. پس ۵۰۰ «خطا» نیست و بوقِ خطا هم نمی‌زند؛ فقط ردیفی
+    نوشته نمی‌شود و provenance مصرف‌کننده رویِ `reconstructed` می‌ماند.
+    """
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ensure_client_type_value_schema(conn)
+    st = conn.execute("SELECT last_attempt, newest_d_even FROM client_type_value_state"
+                      " WHERE id=1").fetchone()
+    if day is None:
+        day = conn.execute("SELECT MAX(d_even) FROM client_type").fetchone()[0] or 0
+    if not day:
+        return {"skipped": "no-session", "written": 0}
+    have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
+                        (day,)).fetchone()[0]
+    want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
+                        (day,)).fetchone()[0]
+    if want and have >= want:
+        return {"skipped": "complete", "day": day, "written": have}
+    if not force and st and st[0]:
+        try:
+            age = (datetime.datetime.now()
+                   - datetime.datetime.strptime(st[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
+        except ValueError:
+            age = CTV_RETRY_S + 1.0
+        if age < CTV_RETRY_S:
+            return {"skipped": "throttled", "day": day, "written": have}
+    conn.execute("UPDATE client_type_value_state SET last_attempt=? WHERE id=1", (now,))
+    conn.commit()
+    done = {r[0] for r in conn.execute(
+        "SELECT ins_code FROM client_type_value WHERE d_even=?", (day,)).fetchall()}
+    todo = [r[0] for r in conn.execute(ct_universe_sql(), (day, int(limit))).fetchall()
+            if r[0] not in done]
+    if fetch is None:
+        s = session or make_session()
+
+        def fetch(c, _s=s, _day=day):
+            # `clientType` شیء است؛ polite_get با key همان شیء را بی‌change می‌دهد
+            return polite_get(_s, f"{BASE}/ClientType/GetClientTypeHistory/{c}/{_day}",
+                              "clientType")
+    rows, errs = [], 0
+    for c in todo:
+        try:
+            payload = fetch(c)
+        except Exception:
+            payload, errs = None, errs + 1
+            continue
+        rec = parse_client_type_value(payload, c, day, now)
+        if rec:
+            rows.append(rec)
+    if rows:
+        conn.executemany("INSERT OR REPLACE INTO client_type_value VALUES ("
+                         + ",".join("?" * 9) + ")", rows)
+    total = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
+                         (day,)).fetchone()[0]
+    conn.execute("UPDATE client_type_value_state SET last_ok=?, newest_d_even=?,"
+                 " note=? WHERE id=1",
+                 (now if rows else st[1] if st else None, day,
+                  f"day={day} written={len(rows)} total={total} errors={errs}"))
+    conn.commit()
+    market_state_touch()
+    return {"day": day, "written": len(rows), "total": total, "errors": errs,
+            "attempted": len(todo)}
+
+
+def market_state_touch():
+    """به لایۀ داغ خبر می‌دهد که «یک نویسندۀ ایستا چیزی عوض کرد».
+
+    بی‌این، تابلو از RAMِ بی‌تغییر می‌خواند و ردیف‌هایِ تازه بی‌صدا دیده
+    نمی‌شوند — همان شکلی که `refresh_tape_history` با `note_static_change`
+    جلوی‌اش را می‌گیرد.
+    """
+    try:
+        import market_state
+        market_state.note_static_change()
+    except Exception:
+        pass
+
+
+P0_STATE_DDL = ("CREATE TABLE IF NOT EXISTS tsetmc_p0_state ("
+                " name TEXT PRIMARY KEY, last_run TEXT)")
+
+
+def p0_due(conn, name, every_s, now=None):
+    """آیا این خانوادۀ P0 باید حالا اجرا شود؟ (throttleٔ مشترک، state در بانک).
+
+    بانکِ بی‌ردیف = «هرگز اجرا نشده» = وقتش رسیده. بی‌this، اولین اجرای بعد از
+    ارتقا هیچ‌وقت رخ نمی‌داد.
+    """
+    conn.execute(P0_STATE_DDL)
+    row = conn.execute("SELECT last_run FROM tsetmc_p0_state WHERE name=?",
+                       (name,)).fetchone()
+    if not row or not row[0]:
+        return True
+    try:
+        age = (datetime.datetime.now()
+               - datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
+    except ValueError:
+        return True
+    return age >= every_s
+
+
+def p0_mark(conn, name, now=None):
+    conn.execute(P0_STATE_DDL)
+    conn.execute("INSERT OR REPLACE INTO tsetmc_p0_state(name, last_run) VALUES (?,?)",
+                 (name, now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+
+def p0_summarize(name, stats):
+    """خلاصۀ یک‌سطری برایِ لاگ — هیچ عددی را از خود نمی‌سازد، فقط echo."""
+    if not isinstance(stats, dict):
+        return ""
+    keys = {"corporate-events": ("adjust", "share", "failed"),
+            "state-notices": ("state", "messages", "supervision", "stops", "failed"),
+            "client-values": ("written", "total", "errors", "skipped")}.get(name, ())
+    return " ".join(f"{k}={stats[k]}" for k in keys if k in stats)
+
+
+CORP_ADJ_SOURCE = "tsetmc_price_adjust_by_flow"
+CORP_SHARE_SOURCE = "tsetmc_share_change_by_flow"
+CORP_SIZE = 500        # سقفِ ردیفِ هر flow در هر اجرا (عددِ خودِ مبدأ بزرگ است)
+CORP_DAYS = 14         # پنجرۀ تغییرِ سهام: روز
+
+
+def parse_price_adjust(rows, now=None):
+    """`priceAdjust[]` → ردیف‌هایِ price_adjust_events.
+
+    دو عددِ مبدأ که تا پیش از این «درِ فید نیست» خوانده می‌شدند:
+    `pClosing` (پایانیِ تعدیل‌شده) و `pClosingNotAdjusted` (پایانیِ خام).
+    `ratio` مشتق است و درِ همان ستون با `source`ِ جداگانه می‌نشیند.
+    `corporateTypeCode` را **decode نمی‌کنیم** — هیچ منبعی معنایش را نگفته؛
+    فقط همان عددِ خام ذخیره می‌شود.
+    """
+    out = []
+    for r in rows or []:
+        if not isinstance(r, dict):
+            continue
+        ins = r.get("insCode") or (r.get("instrument") or {}).get("insCode")
+        d = num(r.get("dEven"))
+        adj, raw = num(r.get("pClosing")), num(r.get("pClosingNotAdjusted"))
+        if not ins or not d:
+            continue
+        ratio = round(adj / raw, 8) if (adj and raw) else None
+        inst = r.get("instrument") or {}
+        out.append((str(ins), int(d), inst.get("lVal18AFC") or r.get("lVal18AFC"),
+                    adj, raw, r.get("corporateTypeCode"), ratio,
+                    CORP_ADJ_SOURCE, now or ""))
+    return out
+
+
+def parse_share_change(rows, now=None):
+    """`instrumentShareChange[]` → ردیف‌هایِ share_change_events.
+
+    `numberOfShareOld/New` مبدأ‌اند؛ `ratio = old/new` همان قاعدۀ همیشگیِ
+    ضریبِ سهام است (ORBO: `factor_share = numberOfShareOld / numberOfShareNew`)
+    و مشتق شمرده می‌شود.
+    """
+    out = []
+    for r in rows or []:
+        if not isinstance(r, dict):
+            continue
+        ins, d = r.get("insCode"), num(r.get("dEven"))
+        old, new = num(r.get("numberOfShareOld")), num(r.get("numberOfShareNew"))
+        if not ins or not d:
+            continue
+        ratio = round(old / new, 8) if (old and new) else None
+        out.append((str(ins), int(d), r.get("lVal18AFC"), old, new, ratio,
+                    CORP_SHARE_SOURCE, now or ""))
+    return out
+
+
+def ensure_corporate_schema(conn):
+    conn.execute("CREATE TABLE IF NOT EXISTS price_adjust_events ("
+                 " ins_code TEXT, d_even INTEGER, symbol TEXT,"
+                 " p_closing REAL, p_closing_not_adjusted REAL,"
+                 " corporate_type_code INTEGER, ratio REAL,"
+                 " source TEXT, fetched_at TEXT, PRIMARY KEY (ins_code, d_even))")
+    conn.execute("CREATE TABLE IF NOT EXISTS share_change_events ("
+                 " ins_code TEXT, d_even INTEGER, symbol TEXT,"
+                 " shares_old REAL, shares_new REAL, ratio REAL,"
+                 " source TEXT, fetched_at TEXT, PRIMARY KEY (ins_code, d_even))")
+
+
+def fetch_corporate_events(s, conn, now=None, get=None):
+    """هر دو خانوادۀ رویداد، بازارِ کامل، در چهار درخواست.
+
+    `GetPriceAdjustByFlow/{flow}/{size}` و
+    `GetInstrumentShareChangeByFlow/{flow}/{days}` با flow=1 (بورس) و flow=2
+    (فرابورس) — همان الگویِ fan-out که fima هم دارد. بی‌پاسخ = بی‌نوشتن؛
+    نوشتنِ «رویدادی نبود» برایِ رویدادی که فقط پاسخ نگرفته، جعلِ داوری است.
+    """
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ensure_corporate_schema(conn)
+    get = get or (lambda u, k: polite_get(s, u, k))
+    stats = {"adjust": 0, "share": 0, "failed": 0}
+    adj, shr = [], []
+    for flow in (1, 2):
+        try:
+            adj += parse_price_adjust(
+                get(f"{BASE}/ClosingPrice/GetPriceAdjustByFlow/{flow}/{CORP_SIZE}",
+                    "priceAdjust"), now) or []
+        except Exception:
+            stats["failed"] += 1
+        try:
+            shr += parse_share_change(
+                get(f"{BASE}/Instrument/GetInstrumentShareChangeByFlow/{flow}/{CORP_DAYS}",
+                    "instrumentShareChange"), now) or []
+        except Exception:
+            stats["failed"] += 1
+    # کلیدِ هر دو جدول (ins_code, d_even) است؛ اگر مبدأ یک رویداد را درِ هر دو
+    # flow نشان بدهد، بی‌dedupe شمارشِ لاگ دو‌برابرِ ردیفِ بانک می‌شد.
+    adj = list({(r[0], r[1]): r for r in adj}.values())
+    shr = list({(r[0], r[1]): r for r in shr}.values())
+    if adj:
+        conn.executemany("INSERT OR REPLACE INTO price_adjust_events VALUES ("
+                         + ",".join("?" * 9) + ")", adj)
+    if shr:
+        conn.executemany("INSERT OR REPLACE INTO share_change_events VALUES ("
+                         + ",".join("?" * 8) + ")", shr)
+    conn.commit()
+    stats.update(adjust=len(adj), share=len(shr))
+    if adj or shr:
+        market_state_touch()
+    return stats
+
+
+STATE_SOURCE = "tsetmc_instrument_state_top"
+MSG_SOURCE = "tsetmc_msg_by_flow"
+SUPERVISION_SOURCE = "tsetmc_supervision_list"
+STOP_SOURCE = "webgw_company_state"
+STATE_TOP_N = 500
+MSG_TOP_N = 300
+SUPERVISION_SOURCES = ((1, (1, 2, 3)), (2, (1, 2, 3)))
+
+
+def parse_instrument_state(rows, now=None):
+    out = []
+    for r in rows or []:
+        if not isinstance(r, dict) or not r.get("insCode"):
+            continue
+        d, h = num(r.get("dEven")), num(r.get("hEven"))
+        out.append((str(r["insCode"]), int(d or 0),
+                    (r.get("cEtaval") or "").strip() or None, r.get("cEtavalTitle"),
+                    num(r.get("underSupervision")), int(h or 0),
+                    num(r.get("realHeven")), STATE_SOURCE, now or ""))
+    return out
+
+
+def parse_messages(rows, flow, now=None):
+    out = []
+    for r in rows or []:
+        if not isinstance(r, dict) or r.get("tseMsgIdn") is None:
+            continue
+        out.append((int(r["tseMsgIdn"]), num(r.get("dEven")), num(r.get("hEven")),
+                    num(r.get("flow")) if r.get("flow") is not None else flow,
+                    (r.get("tseTitle") or "").strip() or None,
+                    (r.get("tseDesc") or "").strip() or None,
+                    MSG_SOURCE, now or ""))
+    return out
+
+
+def split_supervision_reasons(reasons):
+    """`reasons` رشته‌ای است با جداکنندۀ `<br>` (همان که fima explode می‌کند).
+
+    بی‌decode نمی‌گذاریم که `<br>` درِ UI دیده شود؛ به فهرستِ متنی تبدیل و با
+    `\n` ذخیره می‌شود، و `reason_count` هم می‌نشیند.
+    """
+    parts = [p.strip() for p in re.split(r"<br\s*/?>", reasons or "") if p.strip()]
+    return "\n".join(parts), len(parts)
+
+
+def parse_supervision(payloads, now=None):
+    """`{source_id: {list_index: supervision[]}}` → ردیف‌هایِ supervision_state.
+
+    سنجشِ زنده: `id=0`، `userName=null`، `insertionDateTime=0001-01-01` — پس
+    این فهرست تاریخچه نیست، وضعیتِ فعلی است و کلِ جدول هر اجرا عوض می‌شود.
+    """
+    out = {}
+    for sid, lists in (payloads or {}).items():
+        for idx, rows in (lists or {}).items():
+            for r in rows or []:
+                if not isinstance(r, dict) or not r.get("insCode"):
+                    continue
+                ins = str(r["insCode"])
+                text, n = split_supervision_reasons(r.get("reasons"))
+                title = r.get("underSupervisionTitle")
+                cur = out.get(ins)
+                # یک نماد می‌تواند در چند فهرست بیاید؛ دلیل‌ها را یکی می‌کنیم
+                if cur and cur[5]:
+                    merged = cur[5] + ("\n" + text if text and text not in cur[5] else "")
+                    n = len([x for x in merged.split("\n") if x])
+                    out[ins] = (ins, sid, idx, num(r.get("underSupervision")),
+                                title or cur[4], merged, n, SUPERVISION_SOURCE, now or "")
+                else:
+                    out[ins] = (ins, sid, idx, num(r.get("underSupervision")),
+                                title, text, n, SUPERVISION_SOURCE, now or "")
+    return list(out.values())
+
+
+def fold_persian(s):
+    """عربى/فارسی را یکی می‌کند تا پیوندِ نماد بی‌صدا نشکند.
+
+    سنجشِ زنده: `instruments.l_val18` برخی نمادها را با ي/ک عربی نگه می‌دارد
+    («وامید»، «شبریز») و پاسخِ webgw همان نماد را با ی/ک فارسی می‌فرستد. بی‌این
+    تا، ۳۷ ردیف از ۵۲ ردیفِ «علت توقف» بی‌صدا دور ریخته می‌شد.
+    """
+    return (s or "").replace("\u064a", "\u06cc").replace("\u0643", "\u06a9").strip()
+
+
+def parse_stop_reasons(items, now=None):
+    """webgw `CompanyState/fa` → علتِ توقف.
+
+    کلیدِ این پاسخ `nam` است و شکلش «نماد(نامِ کامل)» — نه insCode و نه ISIN
+    (سنجشِ زنده: ۵۲ ردیف، `kodenamaddarsamane` همیشه null). پس پیشوندِ قبل از
+    «(» همان `l_val18` است؛ نمادی که درِ `instruments` نباشد ذخیره **نمی‌شود**،
+    چون بی‌کلیدِ پایدار، اتصالِ بعدی حدسی می‌شود.
+    """
+    out = []
+    for r in items or []:
+        if not isinstance(r, dict):
+            continue
+        raw = (r.get("nam") or "").strip()
+        sym = re.split(r"[（(]", raw)[0].strip()
+        if not sym:
+            continue
+        dalils = r.get("dalils")
+        if isinstance(dalils, (list, tuple)):
+            dalils = "\n".join(str(x).strip() for x in dalils if str(x).strip())
+        out.append((sym, num(r.get("statusCode")), (r.get("vaziyatdesc") or "").strip() or None,
+                    (r.get("lastdatechange") or "").strip() or None,
+                    (dalils or "").strip() or None, STOP_SOURCE, now or ""))
+    return out
+
+
+def ensure_state_schema(conn):
+    conn.execute("CREATE TABLE IF NOT EXISTS instrument_state ("
+                 " ins_code TEXT, d_even INTEGER, c_etaval TEXT, c_etaval_title TEXT,"
+                 " under_supervision INTEGER,"
+                 " last_h_even INTEGER NOT NULL DEFAULT 0, real_heven INTEGER,"
+                 " source TEXT, fetched_at TEXT,"
+                 " PRIMARY KEY (ins_code, d_even, last_h_even))")
+    conn.execute("CREATE TABLE IF NOT EXISTS stop_reasons ("
+                 " symbol TEXT PRIMARY KEY, status_code INTEGER, vaziyat_desc TEXT,"
+                 " last_date_change TEXT, dalils TEXT, source TEXT, fetched_at TEXT)")
+    conn.execute("CREATE TABLE IF NOT EXISTS supervision_state ("
+                 " ins_code TEXT PRIMARY KEY, source_id INTEGER, list_index INTEGER,"
+                 " under_supervision INTEGER, under_supervision_title TEXT,"
+                 " reasons TEXT, reason_count INTEGER, source TEXT, fetched_at TEXT)")
+    conn.execute("CREATE TABLE IF NOT EXISTS tsetmc_messages ("
+                 " msg_idn INTEGER PRIMARY KEY, d_even INTEGER, h_even INTEGER,"
+                 " flow INTEGER, title TEXT, descr TEXT, source TEXT, fetched_at TEXT)")
+
+
+def fetch_state_and_notices(s, conn, now=None, get=None, webgw=None):
+    """وضعیتِ نماد + پیام‌هایِ ناظر + نظارت + (اختیاری) علتِ توقف.
+
+    `webgw` تابعی است که فراخوانی‌اش اختیاری است: از IPِ غیرایرانی بلاک است و
+    اگر نبود، فقط «علتِ توقف» نمی‌آید — بقیه از CDN می‌آیند. هیچ‌کدام از این‌ها
+    منبعِ FTS نیستند و هیچ داوری را عوض نمی‌کنند.
+    """
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ensure_state_schema(conn)
+    get = get or (lambda u, k: polite_get(s, u, k))
+    stats = {"state": 0, "messages": 0, "supervision": 0, "stops": 0, "failed": 0}
+    try:
+        rows = parse_instrument_state(
+            get(f"{BASE}/MarketData/GetInstrumentStateTop/{STATE_TOP_N}",
+                "instrumentState"), now)
+        conn.executemany("INSERT OR REPLACE INTO instrument_state VALUES ("
+                         + ",".join("?" * 9) + ")", rows)
+        stats["state"] = len(rows)
+    except Exception:
+        stats["failed"] += 1
+    msgs = []
+    for flow in (1, 2):
+        try:
+            msgs += parse_messages(get(f"{BASE}/Msg/GetMsgByFlow/{flow}/{MSG_TOP_N}",
+                                       "msg"), flow, now) or []
+        except Exception:
+            stats["failed"] += 1
+    # یک پیام ممکن است درِ هر دو flow بیاید (flow=0 درِ خودِ پاسخ)؛ کلیدِ واقعی
+    # tseMsgIdn است، پس بی‌dedupe شمارشِ ما بیشتر ازِ ردیفِ بانک می‌شد.
+    uniq = {m[0]: m for m in msgs}
+    msgs = list(uniq.values())
+    if msgs:
+        conn.executemany("INSERT OR REPLACE INTO tsetmc_messages VALUES ("
+                         + ",".join("?" * 8) + ")", msgs)
+        stats["messages"] = len(msgs)
+    sup = {}
+    for sid, idxs in SUPERVISION_SOURCES:
+        for idx in idxs:
+            try:
+                sup.setdefault(sid, {})[idx] = get(
+                    f"{BASE}/Supervision/GetSupervisionListBySourceID/{sid}/{idx}",
+                    "supervision")
+            except Exception:
+                stats["failed"] += 1
+    srows = parse_supervision(sup, now)
+    if srows:
+        conn.execute("DELETE FROM supervision_state")   # snapshot، نه تاریخچه
+        conn.executemany("INSERT OR REPLACE INTO supervision_state VALUES ("
+                         + ",".join("?" * 9) + ")", srows)
+        stats["supervision"] = len(srows)
+    if webgw is not None:
+        try:
+            stops = parse_stop_reasons(webgw(), now)
+            # پیوند با l_val18 روی هر دو طرف تا-خورده می‌خورد: بانک بعضی نمادها
+            # را با ي/ک عربی نگه داشته و webgw همان‌ها را با ی/ک فارسی می‌فرستد.
+            known = {fold_persian(r[0]): r[0] for r in
+                     conn.execute("SELECT l_val18 FROM instruments")}
+            stops = [(known[fold_persian(t[0])],) + t[1:] for t in stops
+                     if fold_persian(t[0]) in known]
+            if stops:
+                conn.execute("DELETE FROM stop_reasons")   # snapshotِ وضعیتِ فعلی
+                conn.executemany("INSERT OR REPLACE INTO stop_reasons VALUES ("
+                                 + ",".join("?" * 7) + ")", stops)
+                stats["stops"] = len(stops)
+        except Exception:
+            stats["failed"] += 1
+    conn.commit()
+    if any(stats[k] for k in ("state", "messages", "supervision", "stops")):
+        market_state_touch()
+    return stats
+
+
 def create_schema(conn):
     conn.executescript(
         """
@@ -905,7 +1435,14 @@ def create_schema(conn):
         CREATE TABLE IF NOT EXISTS instruments (
             ins_code TEXT PRIMARY KEY, l_val18 TEXT, l_val30 TEXT,
             sector_code TEXT, sector_name TEXT, total_shares REAL,
-            eps REAL, pe REAL, base_vol REAL, updated_at TEXT);
+            eps REAL, pe REAL, base_vol REAL, updated_at TEXT,
+            -- isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو (سنjشِ زنده: هر ۳۸۴۷
+            -- ردیف آن کلید را دارد). بی‌این هیچ مسیری به webgw (که با ISIN کلید
+            -- می‌خورد) بسته نمی‌شود. c_gr_val_cot = گروهِ کالاییِ همان ردیف.
+            -- paper_type اینجا نیست: آن را mstat_engine.MIGRATIONS می‌افزاید و
+            -- تکرارش درِ DDL یعنی نوعِ ستون درِ بانکِ تازه با بانکِ ارتقایافته
+            -- فرق کند (TEXT در برابرِ INTEGER).
+            isin TEXT, c_gr_val_cot TEXT);
         -- l_val18 کلیدِ پیوندِ هر نماد است (financial_statements/monthly_sales/
         -- price_history همگی با آن join می‌شوند) ولی PK روی ins_code است؛ بدون
         -- این ایندکس، resolve() و bulk_scan مجبور به اسکنِ کاملِ ۵۱۲۹ ردیفی
@@ -919,7 +1456,8 @@ def create_schema(conn):
             price_first REAL, q_tot_tran REAL, q_tot_cap REAL,
             z_tot_tran REAL, price_change REAL, eps REAL, pe REAL,
             total_shares REAL, sector_code TEXT, fetched_at TEXT,
-            market_cap REAL, market_cap_src TEXT);
+            market_cap REAL, market_cap_src TEXT,
+            flow INTEGER, p_red_tran REAL, buy_op REAL);
         CREATE TABLE IF NOT EXISTS daily_prices (
             ins_code TEXT, d_even INTEGER, p_closing REAL, price_min REAL,
             price_max REAL, price_yesterday REAL, price_first REAL,
@@ -939,6 +1477,71 @@ def create_schema(conn):
             buy_count_ddd INTEGER, sell_i_vol REAL, sell_n_vol REAL,
             sell_count_i INTEGER, sell_count_n INTEGER, fetched_at TEXT,
             PRIMARY KEY (ins_code, d_even));
+        -- ── P0-1 — ارزشِ ریالیِ مبدأ‌محورِ حقیقی/حقوقی ──────────────────────
+        -- `client_type` فقط حجم و تعداد دارد: GetClientTypeAll همین‌ها را
+        -- می‌فرستد و هیچ فیلدِ ارزشی ندارد (سنجشِ زنده ۱۴۰۵-۰۷-۱۳، ۲۲۳۶ ردیف).
+        -- ارزشِ واقعی فقط در GetClientTypeHistory/{ins}/{dEven} است
+        -- (buy_I_Value/buy_N_Value/sell_I_Value/sell_N_Value) و آن مسیر برایِ
+        -- *نشستِ جاری* HTTP 500 می‌دهد. پس جدولِ جدا با کلیدِ (نماد، نشست):
+        -- ردیفِ این جدول == «عددِ مبدأ»؛ نبودِ ردیف == «مبدأ نبود، همان
+        -- حجم×VWAPِ پیشین به‌کار رفته». هیچ‌وقت صفرِ جعلی نوشته نمی‌شود.
+        CREATE TABLE IF NOT EXISTS client_type_value (
+            ins_code TEXT, d_even INTEGER,
+            buy_i_val REAL, buy_n_val REAL, sell_i_val REAL, sell_n_val REAL,
+            buy_ddd_val REAL,
+            fetched_at TEXT, source TEXT,
+            PRIMARY KEY (ins_code, d_even));
+        CREATE TABLE IF NOT EXISTS client_type_value_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            last_attempt TEXT, last_ok TEXT, newest_d_even INTEGER, note TEXT);
+        -- ── P0-2 — رویدادهایِ شرکتیِ منتشرشده توسطِ خودِ TSETMC ─────────────
+        -- ادعایِ پیشینِ api/chart.py («هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست»)
+        -- با سنجشِ زنده رد شد: GetPriceAdjustByFlow و
+        -- GetInstrumentShareChangeByFlow هر دو بازارِ کامل را در چند درخواست
+        -- می‌دهند. این دو جدول «رویدادِ مبدأ» را نگه می‌دارند؛ منطقِ تعدیلِ
+        -- چارت درِ این دور به این‌ها وصل **نشده** (سنجشِ واگرایی اول).
+        CREATE TABLE IF NOT EXISTS price_adjust_events (
+            ins_code TEXT, d_even INTEGER, symbol TEXT,
+            p_closing REAL, p_closing_not_adjusted REAL,
+            corporate_type_code INTEGER, ratio REAL,
+            source TEXT, fetched_at TEXT,
+            PRIMARY KEY (ins_code, d_even));
+        CREATE TABLE IF NOT EXISTS share_change_events (
+            ins_code TEXT, d_even INTEGER, symbol TEXT,
+            shares_old REAL, shares_new REAL, ratio REAL,
+            source TEXT, fetched_at TEXT,
+            PRIMARY KEY (ins_code, d_even));
+        -- ── P0-3 — وضعیتِ نماد / تعلیق / نظارت / پیامِ ناظر ────────────────
+        CREATE TABLE IF NOT EXISTS instrument_state (
+            ins_code TEXT, d_even INTEGER,
+            c_etaval TEXT, c_etaval_title TEXT, under_supervision INTEGER,
+            last_h_even INTEGER NOT NULL DEFAULT 0, real_heven INTEGER,
+            source TEXT, fetched_at TEXT,
+            -- کلید سه‌تایی: GetInstrumentStateTop «تغییراتِ وضعیت» می‌دهد نه
+            -- وضعیتِ روزانه، و یک نماد در یک روز چند بار جابه‌جا می‌شود
+            -- (سنجشِ زنده: 500 رکورد با کلیدِ دوتایی فقط 225 ردیف می‌گذاشت).
+            PRIMARY KEY (ins_code, d_even, last_h_even));
+        -- webgw فقط «علتِ توقف» را دارد و کلیدش `nam` است — رشتهٔ
+        -- «نماد(نامِ کامل)»، نه insCode و نه ISIN. پس پیشوندِ قبل از «(» با
+        -- instruments.l_val18 می‌خواند و هر ردیفِ بی‌همتا دور ریخته می‌شود.
+        CREATE TABLE IF NOT EXISTS stop_reasons (
+            symbol TEXT PRIMARY KEY, status_code INTEGER,
+            vaziyat_desc TEXT, last_date_change TEXT, dalils TEXT,
+            source TEXT, fetched_at TEXT);
+        -- سنجشِ زنده ۱۴۵-۰-۱۳: این فهرست «وضعیتِ فعلیِ نظارت» است، نه تاریخچه —
+        -- `id` همیشه ۰، `userName` همیشه null و `insertionDateTime` همیشه
+        -- 0001-01-01 برمی‌گردد، پس هیچ کلیدِ زمانی‌ای ندارد و هر اجرا جای
+        -- کلِ جدول را می‌گیرد (snapshot، بی‌ادعایِ تاریخچه).
+        CREATE TABLE IF NOT EXISTS supervision_state (
+            ins_code TEXT PRIMARY KEY, source_id INTEGER, list_index INTEGER,
+            under_supervision INTEGER, under_supervision_title TEXT,
+            reasons TEXT, reason_count INTEGER,
+            source TEXT, fetched_at TEXT);
+        -- tseMsgIdn کلیدِ خودِ پیام است؛ این پیام‌ها insCode ندارند (فقط flow و
+        -- تاریخ) پس سرنشۀِ بازار، نه ستونِ نماد.
+        CREATE TABLE IF NOT EXISTS tsetmc_messages (
+            msg_idn INTEGER PRIMARY KEY, d_even INTEGER, h_even INTEGER,
+            flow INTEGER, title TEXT, descr TEXT, source TEXT, fetched_at TEXT);
         CREATE TABLE IF NOT EXISTS boards (
             ins_code TEXT PRIMARY KEY, board INTEGER);
         CREATE TABLE IF NOT EXISTS price_history (
@@ -1415,11 +2018,14 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     it = None
     if sectors is not None and ptypes is not None:
         it = (ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
-        shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins))
+              shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins),
+              r.get("insID"), r.get("cGrValCot"))
     mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
     w = (ins, d, num(r.get("hEven")), pcl, p_last, num(r.get("pmn")), num(r.get("pmx")),
     num(r.get("pMin")), num(r.get("pMax")), py, pf, vol, val, trd, chg, eps, pe,
-    shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + (mcap, mcap_src)
+    shares, sec, now) + (queue_agg(r) or (None,) * len(_QUEUE_COLS)) + \
+        (mcap, mcap_src, num(r.get("flow")), num(r.get("pRedTran")),
+         num(r.get("buyOP")))
     dy = (ins, d, pcl, num(r.get("pmn")), num(r.get("pmx")), py, pf, vol, val, chg,
     now, mcap, mcap_src, trd, p_last)
     return it, w, dy
@@ -1477,7 +2083,7 @@ def _save_market_snapshot(s, conn):
                x.get("sell_CountI"), x.get("sell_CountN"), now)
               for x in ct if x.get("insCode")]
     c = conn.cursor()
-    c.executemany("INSERT OR REPLACE INTO instruments VALUES (" + ",".join("?" * 11) + ")", inst)
+    c.executemany(_INST_INSERT, inst)
     c.executemany(_MW_INSERT, watch)
     ensure_daily_tran_column(conn)
     c.executemany(_DP_INSERT, daily)
@@ -1831,11 +2437,14 @@ def main():
         if bk:
             book.append((ins, d_even, num(r.get("hEven")), bk, now))
         inst.append((ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
-                     shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins)))
+                     shares, eps, pe, num(r.get("bv")), now, ptypes.get(ins),
+                     r.get("insID"), r.get("cGrValCot")))
         mcap, mcap_src = board_market_cap(r, price=pcl, shares=shares)
         watch.append((ins, d_even, num(r.get("hEven")), pcl, p_last, pmn, pmx,
                       amin, amax, py, pf, vol, val, trd, chg, eps, pe,
-                      shares, sec, now) + tuple(q) + (mcap, mcap_src))
+                      shares, sec, now) + tuple(q)
+                     + (mcap, mcap_src, num(r.get("flow")),
+                        num(r.get("pRedTran")), num(r.get("buyOP"))))
         daily.append((ins, d_even, pcl, pmn, pmx, py, pf, vol, val, chg, now,
                       mcap, mcap_src, trd, p_last))
         if i % 250 == 0 or i == total:
@@ -1863,7 +2472,7 @@ def main():
     create_schema(conn)
     c = conn.cursor()
     write_progress("save", f"ذخیرهٔ {nfmt(len(watch))} نماد در پایگاه محلی ...", total, total)
-    c.executemany("INSERT OR REPLACE INTO instruments VALUES (" + ",".join("?" * 11) + ")", inst)
+    c.executemany(_INST_INSERT, inst)
     c.executemany(_MW_INSERT, watch)
     ensure_daily_tran_column(conn)
     c.executemany(_DP_INSERT, daily)
@@ -1901,6 +2510,24 @@ def main():
         refresh_tape_history(conn)
     except Exception as e:      # noqa: BLE001 — پنجره نو نشد، همگام‌سازی نمی‌شکند
         print(f"  [tape-history] خطای غیرمنتظره: {type(e).__name__}: {e}")
+
+    # ── P0 — سه خانوادۀ دادهٔ canonical، هیچ‌کدام در حلقۀ ۹۰ ثانیه‌ای نیستند ──
+    # `main()` هر ۹۰ ثانیه از app.py:232-246 صدا زده می‌شود، پس هر سه با
+    # throttleِ روزانه‌شان می‌دوند: یک بار در روز برایِ رویدادها و وضعیت‌ها، و
+    # برایِ ارزشِ مبدأ هر CTV_RETRY_S. خطای هر کدام جدا می‌خورد و همگام‌سازیِ
+    # تابلو را نمی‌شکند — این داده‌ها ورودیِ هیچ فیلتر یا گیتِ FTS نیستند.
+    for _name, _fn, _every in (
+            ("corporate-events", lambda: fetch_corporate_events(s, conn, now=now), 86400),
+            ("state-notices", lambda: fetch_state_and_notices(s, conn, now=now), 86400),
+            ("client-values", lambda: refresh_client_type_values(conn, now=now),
+             CTV_RETRY_S)):
+        try:
+            if p0_due(conn, _name, _every):
+                print(f"  [{_name}] {p0_summarize(_name, _fn())}")
+                p0_mark(conn, _name, now)
+        except Exception as e:      # noqa: BLE001
+            print(f"  [{_name}] خطای غیرمنتظره: {type(e).__name__}: {e}")
+    conn.commit()
 
     # کندل‌ها از خودِ تابلو — این تنها راهی است که price_history را در برنامه‌ای
     # که فقط «بروزرسانی تابلو» می‌زند، جلو می‌برد (پیش‌تر هیچ حلقه‌ای نمی‌نوشتش).

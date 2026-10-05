@@ -196,9 +196,18 @@ MIGRATIONS = {
         ("sell_q1_vol", "REAL"), ("sell_q1_px", "REAL"),
         # (zd1) درِ فیلترنویسِ TSETMC = تعدادِ سفارشِ سطرِ اولِ خرید
         ("buy_q1_cnt", "REAL"),
+        # P1ِ رایگان (docs/TSETMC-DATA-GAP-MATRIX.md §9.1): سه کلیدِ خامِ همان
+        # `GetMarketWatch` که دور ریخته می‌شدند. مصرف‌کنندۀ نمایشی ندارند، پس
+        # درِ کوئریِ تابلو و درِ بدنهٔ /api/market هم نمی‌نشینند.
+        ("flow", "INTEGER"),        # کدِ بازار از خودِ ردیف (۱ بورس / ۲ فرابورس)
+        ("p_red_tran", "REAL"),     # قیمتِ استردادِ NAV (صندوق/ETF)
+        ("buy_op", "REAL"),         # قیمتِ صدورِ NAV
     ],
     # طبقهٔ ابزار از فیلتر paperType خودِ TSETMC (۱/۲=سهام، ۴=حق تقدم، ۸=صندوق).
-    "instruments": [("paper_type", "INTEGER")],
+    # isin = کلیدِ خامِ `insID` درِ همان پاسخِ تابلو — تنها پلی که webgw (با ISIN
+    # کلید می‌خورد) را به نمادِ ما وصل می‌کند. c_gr_val_cot = گروهِ کالایی.
+    "instruments": [("paper_type", "INTEGER"), ("isin", "TEXT"),
+                    ("c_gr_val_cot", "TEXT")],
     # کارِ #73 قدمِ ۲ (docs/CANDLE-CONTRACT.md §۱-ث): `close` درِ این جدول همیشه
     # «قیمت پایانی» است و لنگرِ زنجیرِ تعدیل می‌ماند؛ `last` «آخرین قیمت» است و مبنایِ
     # نمایش/محاسباتِ انتخابی. تا این ستون نبود، `/api/chart-db` مجبور بود `last := close`
@@ -216,6 +225,11 @@ MIGRATIONS = {
     # «آخرین» درِ ردیفِ تابلو کلیدِ خامِ خودش را دارد (pdv — سنجشِ ۶/۶ نماد درِ
     # _audit/mw_last_key_probe.py)؛ مسیرِ کندل-از-تابلو از همین خوانده وگرنه NULL.
     "daily_prices": [("p_last", "REAL")],
+    # q_tot_cap = گردشِ ریالیِ همان نشست از همان ردیفِ پنجرۀ [ih] (سنjشِ زنده:
+    # `closingPriceDailyAllInst` این کلید را درِ هر ۱۸۴۱۱ ردیف دارد). تا این دور
+    # دور ریخته می‌شد و هر فیلترِ «میانگینِ ارزشِ ۳۰ روز» مجبور بود ارزش را از
+    # حجم×قیمت بسازد.
+    "tape_history": [("q_tot_cap", "REAL")],
 }
 
 SNAP_DDL = """CREATE TABLE IF NOT EXISTS mstat_snap (
@@ -228,7 +242,7 @@ SNAP_DDL = """CREATE TABLE IF NOT EXISTS mstat_snap (
 # نویسنده — جدول را داشته باشد و کوئریِ تابلو «no such table» نگیرد.
 TAPE_HIST_DDL = """CREATE TABLE IF NOT EXISTS tape_history (
             ins_code TEXT NOT NULL, d_even INTEGER NOT NULL,
-            price_min REAL, price_max REAL, q_tot_tran5j REAL,
+            price_min REAL, price_max REAL, q_tot_tran5j REAL, q_tot_cap REAL,
             fetched_at TEXT, PRIMARY KEY (ins_code, d_even))"""
 
 
@@ -561,6 +575,17 @@ def load_snapshot(conn, force: bool = False) -> dict:
     for r in conn.execute(
             "SELECT %s FROM client_type WHERE d_even=?" % _CT_ORDER, (cday,)).fetchall():
         client[r[0]] = r
+    # ارزشِ ریالیِ مبدأ (P0-1) درِ جدولِ جداست: `client_type` فقط حجم و تعداد
+    # دارد چون GetClientTypeAll همین‌ها را می‌فرستد. ردیفِ نبودن = «مبدأ نبود»،
+    # نه «صفر» — مصرف‌کننده (`money`) از همین می‌فهمد کدام عدد بازسازی است.
+    ctv = {}
+    try:
+        for r in conn.execute(
+                "SELECT ins_code, buy_i_val, buy_n_val, sell_i_val, sell_n_val,"
+                " buy_ddd_val FROM client_type_value WHERE d_even=?", (cday,)).fetchall():
+            ctv[r[0]] = r
+    except sqlite3.Error:
+        pass                                  # بانکِ کهنه: جدول هنوز نساخته نشده
 
     out = []
     keys = _row_keys(have_depth)
@@ -580,6 +605,7 @@ def load_snapshot(conn, force: bool = False) -> dict:
         d["clock_pct"] = (100.0 * _div(_f(plst) - _f(pcl), pcl)
                           if pcl and plst is not None and px_in_band(d, plst, pcl) else None)
         d["ct"] = client.get(d["ins_code"])
+        d["ctv"] = ctv.get(d["ins_code"])
         out.append(d)
 
     _CTX["conn"] = conn
@@ -736,12 +762,21 @@ def money(row, base_est) -> dict:
     اشتباهِ کلاسِ fts_engine را غیرممکن می‌کند.
     """
     ct = row.get("ct") or ()
+    ctv = row.get("ctv") or ()
     g = _CT_FIELDS
 
     def cget(name, default=0.0):
         if not ct or len(ct) <= g[name]:
             return default
         return ct[g[name]]
+
+    # نگاشتِ مبدأ: (نامِ ستونِ خودِ جدول ← خانه‌هایِ ۱..۵ ردیفِ client_type_value)
+    native = {}
+    if len(ctv) >= 6:
+        for name, i in zip(("buy_i_val", "buy_n_val", "sell_i_val", "sell_n_val",
+                            "buy_ddd_val"), range(1, 6)):
+            if ctv[i] is not None:
+                native[name] = float(ctv[i])
 
     vol, val = _f(row.get("q_vol")), _f(row.get("q_val"))
     vwap = _div(val, vol) or _f(row.get("p_closing")) or 0.0
@@ -758,11 +793,33 @@ def money(row, base_est) -> dict:
          "sq1_vol": opt("sell_q1_vol"), "sq1_px": opt("sell_q1_px"),
          "has_ct": bool(ct)}
 
-    m["retail_buy"] = _f(cget("buy_i_vol")) * vwap
-    m["retail_sell"] = _f(cget("sell_i_vol")) * vwap
-    m["inst_buy"] = _f(cget("buy_n_vol")) * vwap
-    m["inst_sell"] = _f(cget("sell_n_vol")) * vwap
-    m["ddd_buy"] = _f(cget("buy_ddd_vol")) * vwap
+    # ── ارزشِ هر گروه: مبدأ اولویت دارد، بازسازی فقط جای خانۀ خالی ─────────
+    # `client_type_value` تنها از GetClientTypeHistory پر می‌شود و آن مسیر برایِ
+    # *نشستِ جاری* HTTP 500 می‌دهد (سنجشِ زنده ۱۴۵-۰۷-۱۳؛ نشست‌هایِ بسته تا
+    # 20260701 برمی‌گردند). پس «ردیف نیست» قاعدۀ روز است و جای آن حجم×VWAPِ
+    # پیشین می‌نشیند — هرگز صفرِ جعلی نه.
+    # `value_source` فقط درِ قراردادِ audit/details می‌رود، نه درِ ستونِ تابلو.
+    #
+    # یک نتیجۀ جانبی که ارزشِ دانستن دارد: نسبت‌ها از این انتخاب مستقل‌اند.
+    # `power` = (buy_i_val/count) ÷ (sell_i_val/count) است و VWAP در صورت و
+    # مخرجِ همان کسر ساده می‌شود؛ پس «قدرت خریدار» بی‌تغییر می‌ماند. آنچه
+    # مبدأ‌ای می‌شود ارقامِ ریالیِ مطلق‌اند: خرید/فروشِ هر گروه و `flow` خالص.
+    _VALUE_SLOTS = (("retail_buy", "buy_i_val", "buy_i_vol"),
+                    ("retail_sell", "sell_i_val", "sell_i_vol"),
+                    ("inst_buy", "buy_n_val", "buy_n_vol"),
+                    ("inst_sell", "sell_n_val", "sell_n_vol"))
+    got = 0
+    for out_key, native_key, vol_key in _VALUE_SLOTS:
+        if native_key in native:
+            m[out_key] = native[native_key]
+            got += 1
+        else:
+            m[out_key] = _f(cget(vol_key)) * vwap
+    m["value_source"] = "native" if got == len(_VALUE_SLOTS) else (
+        "mixed" if got else "reconstructed")
+    m["ddd_buy"] = native.get("buy_ddd_val")
+    if m["ddd_buy"] is None:
+        m["ddd_buy"] = _f(cget("buy_ddd_vol")) * vwap
     m["n_buy_i"] = int(_f(cget("buy_count_i")))
     m["n_sell_i"] = int(_f(cget("sell_count_i")))
     m["n_buy_n"] = int(_f(cget("buy_count_n")))
