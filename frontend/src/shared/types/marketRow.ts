@@ -93,12 +93,18 @@ export const MarketRowSchema = z.object({
   // cEtaval/عنوانِ وضعیتِ آخرینِ تغییرِ ثبت‌شده (instrument_state)
   st_code: z.string().nullish(),
   st_title: z.string().nullish(),
+  // زمانِ همان تغییرِ وضعیت: d_even (۲۰۲۶۱۰۰۵) و last_h_even (۱۷۵۸۱۶) از خودِ لاگ
+  st_d: num,
+  st_h: num,
   // حضور در فهرست نظارت (supervision_state)؛ خودِ ستونِ under_supervision درِ
   // پاسخِ واقعی حتی برایِ نمادهای زیرِ نظر صفر است، پس برچسب از «ردیف هست»
   // می‌آید — نه از آن عدد.
   sup_flag: num,
   sup_title: z.string().nullish(),
   sup_reason_count: num,
+  // متنِ عللِ نظارت (supervision_state.reasons) — فقط ۱۴ ردیف درِ بانک دارد، پس
+  // هزینه‌اش درِ بدنه ناچیز است و Inspector «چرا زیرِ نظر» را از خودِ مبدأ می‌گوید.
+  sup_reasons: z.string().nullish(),
   // علتِ توقف (webgw CompanyState → dalils)؛ متنِ کامل فقط درِ Inspector
   // خوانده می‌شود، درِ تابلو تنها همین که «چرا» هست کافی است.
   stop_state: z.string().nullish(),

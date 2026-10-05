@@ -798,8 +798,8 @@ _BOARD_SQL = """
             st AS (
                 -- تازه‌ترین «تغییرِ وضعیتِ» هر نماد (instrument_state لاگ است
                 -- نه وضعیتِ روزانه؛ کلید سه‌تایی d_even + last_h_even)
-                SELECT ins_code, c_etaval, c_etaval_title FROM (
-                    SELECT ins_code, c_etaval, c_etaval_title,
+                SELECT ins_code, c_etaval, c_etaval_title, d_even, last_h_even FROM (
+                    SELECT ins_code, c_etaval, c_etaval_title, d_even, last_h_even,
                            ROW_NUMBER() OVER (PARTITION BY ins_code
                                              ORDER BY d_even DESC,
                                                       last_h_even DESC) rn
@@ -859,9 +859,11 @@ _BOARD_SQL = """
                    -- می‌آیند (باقی NULL ⇒ _slim_records کلید را می‌اندازد، پس
                    -- بدنه برایِ 5400 نماد بزرگ نمی‌شود).
                    st.c_etaval AS st_code, st.c_etaval_title AS st_title,
+                   st.d_even AS st_d, st.last_h_even AS st_h,
                    CASE WHEN sv.ins_code IS NULL THEN NULL ELSE 1 END AS sup_flag,
                    sv.under_supervision_title AS sup_title,
                    sv.reason_count AS sup_reason_count,
+                   sv.reasons AS sup_reasons,
                    sr.vaziyat_desc AS stop_state, sr.last_date_change AS stop_since,
                    sr.dalils AS stop_reasons,
                    COALESCE(cv.kind, 'reconstructed') AS ctv_kind
@@ -1002,8 +1004,9 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       # نشده» است، نه «سالم» و نه «متوقف». اگر این کلیدها از پاسِ
                       # «JSON safety» بگذرند، NaN به صفر بدل می‌شود و صفر درِ رابط
                       # یعنی «ردیف هست ولی وضعیتش صفر است» — یعنی دروغِ بی‌صدا.
-                      "st_code", "st_title", "sup_flag", "sup_title",
-                      "sup_reason_count", "stop_state", "stop_since",
+                      "st_code", "st_title", "st_d", "st_h",
+                      "sup_flag", "sup_title", "sup_reason_count", "sup_reasons",
+                      "stop_state", "stop_since",
                       "stop_reasons")
         # پاک‌سازی فقط رویِ ستون‌هایی که *سریال می‌شوند* و *nullِ نگهبان ندارند*:
         # پیش از این کلِ قاب (۷۲ ستون، از ۲۵ ستونِ بی‌خواننده) دو پاسِ تمام‌قد

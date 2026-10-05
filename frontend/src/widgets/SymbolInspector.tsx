@@ -23,6 +23,7 @@ import { basketRegimeFor } from '@features/portfolio/lib/basketRegime';
 import { useCapitalStore } from '@features/master/stores/capitalStore';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
+import { RegulatoryState } from '@features/market/components/RegulatoryState';
 import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
@@ -409,6 +410,10 @@ export function SymbolInspector() {
             </span>
           </div>
         </div>
+
+        {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد
+            یا نه» پیش از هر عددی خوانده می‌شود. متنِ کامل درِ بازشو. */}
+        <RegulatoryState row={rawRow} feedFailed={feed.isError} />
 
         {/* مینی کاکپیت مستر
             بج از «تصمیمِ قطعیِ گیت‌ها» می‌آید، نه از میانگینِ وزنیِ آرا: میانگین

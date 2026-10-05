@@ -518,8 +518,9 @@ def part_p1():
     # «وضعیتِ صفر» بدل می‌شود. اندازۀ همین دور: با صفرها 5.60MB بدنه، و با
     # قاعدهٔ درست 4.90MB — یعنی آن 0.70MB فقط دروغِ صفر بود.
     keep = mkt.split("_KEEP_NULL = (")[1].split(")")[0] if "_KEEP_NULL = (" in mkt else ""
-    for col in ("st_code", "st_title", "sup_flag", "sup_title", "sup_reason_count",
-                "stop_state", "stop_since", "stop_reasons"):
+    for col in ("st_code", "st_title", "st_d", "st_h", "sup_flag", "sup_title",
+                "sup_reason_count", "sup_reasons", "stop_state", "stop_since",
+                "stop_reasons"):
         ck(f'"{col}"' in keep, f"`{col}` درِ _KEEP_NULL می‌ماند (نبود ≠ صفر)")
 
 
