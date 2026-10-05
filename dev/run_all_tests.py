@@ -246,6 +246,12 @@ SUITES = [
     # ماندۀ 1.0.73 ستون‌هایِ تازه را با هر سینک NULL می‌کرد). این گارد همان
     # حالت را می‌گیرد؛ رویِ ماشینِ بدونِ PowerShell بی‌صدا skip می‌شود.
     ('dev/single_writer_guard.py', 'single writer: one backend per market.db'),
+    # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده
+    # نمی‌شود؛ بدلِ ما هم timeout را «پذیرفته‌شده درِ سرور، گم‌شده درِ کلاینت»
+    # می‌سازد تا مسیرِ UNKNOWN_RESULT → RECONCILE و تله‌یِ retryِ کور قابلِ اثبات
+    # باشند. کنترلِ منفی: SloppyAdapter (retry + fallback به ISINِ «زر» + صفرِ
+    # جعلیِ صف) باید درِ همین سوئیت بیفتد، وگرنه سوئیت کور است.
+    ('dev/execution_contract_v1.py', 'sarkhati: broker contract on mock, no blind retry'),
     # BOARD-HIST-CACHE: دو پنجرۀ روزانه به جدولِ مادی تبدیل شده‌اند. این گارد
     # سطر‌به‌سطر ثابت می‌کند نتیجه عوض نشده و بی‌اعتباری هم درست کار می‌کند
     # (تیکِ نشستِ جاری کش را نمی‌سوزاند؛ تصحیحِ نشستِ پیشین می‌سوزاند).

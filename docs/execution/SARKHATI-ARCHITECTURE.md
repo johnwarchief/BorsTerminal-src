@@ -428,11 +428,47 @@ adapter ای نوشته نشده — طبقِ قیدِ شما.
 
 ---
 
-## ۱۰) وضعیتِ دور
+## ۱۰) Stage D — قراردادِ اجرا درِ کد (بدل + آزمون، بی‌کارگزاریِ واقعی)
 
-Stage A ✅ (این سند، §۱ تا §۶) · Stage B ✅ (§۷، کدِ واقعیِ هر چهار مرجع خوانده
-شد؛ license ها سنجیده شدند) · **Stage C به بعد: شروع نشده.** هیچ کدِ execution،
-هیچ endpoint، هیچ UI و هیچ adapter ای درِ این ریپو نوشته نشده — طبقِ دستورِ کار،
-پیش از روشن‌شدنِ D1/D7/D8/D9.
+سه فایل تازه، هیچ‌کدام درِ `api/` نیست ⇒ هیچ endpoint تازه، هیچ `hiddenimports`
+تازه، هیچ رانشی درِ زنجیرۀِ ریلیز:
+
+| فایل | چیست |
+| --- | --- |
+| `execution_contract.py` | مدلِ دامنه (§۹) به‌صورتِ کد: `InstrumentRef.orderable()`، `OrderDraft.sanity()`، `ErrorCode`، `BrokerError.is_unknown_result` / `.retry_forbidden`، `Capabilities`، `QueueSnapshot` با `None` = UNKNOWN، `ExecutionRecord` (target/actual/drift ماندگار)، و `redact()` |
+| `execution_mock.py` | `MockBrokerAdapter` با پیامدهایِ قابلِ برنامه‌ریزی: `ok`، `timeout`، `http5xx`، `reject_price/quantity/broker`، `auth`، `expired`، `rate_limited`، `market_closed` |
+| `dev/execution_contract_v1.py` | قراردادِ قابلِ استفادهٔ مجدد (`run_contract(build)`) + کنترلِ منفی؛ درِ `dev/run_all_tests.py` ثبت شده |
+
+**دو چیزی که بدل دروغ نمی‌گوید** و اگر دروغ می‌گفت آزمون بی‌فایده بود:
+
+- `timeout` درِ بدل یعنی «سرور **پذیرفت** و ما ندیدیم»: سفارش درِ دفترِ سرور
+  می‌نشیند ولی فراخوان `BrokerError(TIMEOUT)` می‌گیرد. تنها راهی که می‌شود ثابت
+  کرد `UNKNOWN_RESULT → RECONCILE` کار می‌کند — و اینکه retryِ کور چه می‌کند.
+- `http5xx` یعنی «پاسخ نداد و نپذیرفت»: رفتارِ فراخوان همان است (reconcile) ولی
+  نتیجه‌اش فرق می‌کند (چیزی پیدا نمی‌شود)، پس کد نمی‌تواند دو را یکی حساب کند.
+
+case هایِ کلیدی: `blind_retry_after_timeout_really_duplicates` صراحتاً ثابت می‌کند
+ارسالِ دوباره با شناسۀِ تازه **دو** سفارشِ واقعی می‌سازد؛
+`missing_isin_is_not_orderable_and_never_hits_the_wire` با شمارندۀِ `wire_calls`
+ثابت می‌کند برایِ نمادِ بی‌ISIN **هیچ** درخواستی بیرون نمی‌رود؛
+`queue_without_capability_is_unknown_not_zero` و
+`cancel_without_capability_raises_unsupported` صفرِ جعلی را ممنوع می‌کنند.
+
+نتیجهٔ زنده: **۲۰ سبز / ۰ سرخ** (۱۷ case رویِ بدل + ۳ کنترلِ منفی). کنترلِ منفی:
+`SloppyAdapter` که هر سه باگِ §۷ را دارد درِ ۷ case می‌افتد و اگر سوئیت او را
+سبز می‌گذاشت، گارد خودش را FAIL می‌کرد. `struct_check` و `repo_hygiene` (۱۲۳/۱۲۳)
+هم سبزند.
+
+## ۱۱) وضعیتِ دور
+
+Stage A ✅ (§۱–§۶) · Stage B ✅ (§۷ — کدِ واقعیِ چهار مرجع، license سنجیده‌شده) ·
+Stage C ✅ (§۹ — مدلِ دامنه) · Stage D ✅ (§۱۰ — بدل + قرارداد + گارد) ·
+**هیچ کارگزاریِ واقعی صدا زده نشده**: هیچ endpoint، هیچ credential، هیچ سفارش.
+
+مرحله‌هایِ بعدیِ **وابسته به کارگزاریِ واقعی** (E لاگین، F ثبتِ سفارش، G صف)
+شروع نمی‌شوند تا D8/D1 روشن شوند (§۹-ث). مرحله‌هایِ مستقلِ باقی‌مانده که می‌شود
+بی‌اجازه جلو رفت: **H** موتورِ زمان‌بندی + ساعت (monotonic anchor و آفستِ
+اندازه‌گیری‌شده، بی‌NTPِ تک‌نمونه‌ای §۷-ج) و **I** بسترِ benchmarkِ latency رویِ
+همان بدل.
 
 ---
