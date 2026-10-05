@@ -263,6 +263,12 @@ SUITES = [
     # می‌شود؛ بی‌نمونۀِ کافی برآوردِ یک‌طرفه None است نه صفر؛ و ریاضِ صدک از
     # execution_timing وارد می‌شود تا دو منبعِ حقیقت نداشته باشیم.
     ('dev/execution_latency_v1.py', 'sarkhati: phased latency probe, no fabricated estimate'),
+    # SARKHATI Stage J: ارکستراسیونِ اجرا. dry-run پیش‌فرض است و درِ آن هیچ
+    # submit_order صدا زده نمی‌شود؛ بعدِ timeout تنها مسیرِ مجاز reconcile است
+    # (ارسالِ دوبل از لایۀِ adapter هم DUPLICATE_GUARD می‌خورد و وضعیتِ
+    # UNKNOWN_RESULT را بازنویسی نمی‌کند)؛ ULTRA بی‌prepare() رد می‌شود و
+    # تکرار بی‌تأییدِ صریح یا بی‌سقفِ ارزش/تعداد اجرا نمی‌شود.
+    ('dev/execution_service_v1.py', 'sarkhati: dry-run default, reconcile-only after unknown, limits'),
     # BOARD-HIST-CACHE: دو پنجرۀ روزانه به جدولِ مادی تبدیل شده‌اند. این گارد
     # سطر‌به‌سطر ثابت می‌کند نتیجه عوض نشده و بی‌اعتباری هم درست کار می‌کند
     # (تیکِ نشستِ جاری کش را نمی‌سوزاند؛ تصحیحِ نشستِ پیشین می‌سوزاند).

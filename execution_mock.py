@@ -76,6 +76,8 @@ class MockBrokerAdapter(BrokerAdapter):
         self._by_execution: dict[str, ExecutionRecord] = {}
         self._next_id = 1
         self.redacted_log: list[dict] = []
+        #: فقط وقتی خوانده می‌شود که capability `balances` روشن باشد
+        self.balances: dict[str, float] = {"cash": 0.0, "positions": {}}
 
     # ---- توانایی / نشست ---------------------------------------------------
     def capabilities(self) -> Capabilities:
@@ -176,6 +178,12 @@ class MockBrokerAdapter(BrokerAdapter):
         pos, vol = self.queue_by_order.get(broker_order_id, (None, None))
         return QueueSnapshot(position=pos, volume_ahead=vol,
                              as_of=self._iso(), source="mock")
+
+    def get_balances(self):
+        if not self._caps.balances:
+            return None            # «نمی‌دانیم» ≠ «صفر»
+        self.wire_calls.append("balances")
+        return dict(self.balances)
 
     def cancel_order(self, broker_order_id: str) -> bool:
         if not self._caps.cancel:

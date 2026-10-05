@@ -159,6 +159,8 @@ class Capabilities:
     queue_position: bool = False
     cancel: bool = False
     best_bid_ask: bool = False
+    #: آیا کارگزاری نقدینگی/موقعیت می‌دهد؟ نبودش یعنی UNKNOWN، نه صفر (§۱۶).
+    balances: bool = False
 
 
 class SessionState(str, Enum):
@@ -303,3 +305,7 @@ class BrokerAdapter:
 
     def cancel_order(self, broker_order_id: str) -> bool:              # pragma: no cover
         raise NotImplementedError
+
+    def get_balances(self) -> Mapping[str, float] | None:              # pragma: no cover
+        """نقدینگی/موقعیت. None یعنی «کارگزاری نمی‌دهد» — پیش‌فرضِ ایمن."""
+        return None
