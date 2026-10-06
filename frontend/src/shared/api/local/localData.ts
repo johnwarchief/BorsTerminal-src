@@ -241,6 +241,7 @@ export function getDb(): Promise<Database> {
     bootTiming.gunzipMs = Math.round(t2 - t1);
     bootTiming.openMs = Math.round(t3 - t2);
     bootTiming.totalMs = Math.round(t3 - t0);
+    Object.assign(window, { bootTiming });
     // چکِ بروزرسانی در پس‌زمینه — نه await می‌شود نه خطایش به UI می‌رسد
     setTimeout(() => { void maybeRefreshSnapshot(); }, 15000);
     return db;

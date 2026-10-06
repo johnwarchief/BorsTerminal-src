@@ -4,6 +4,9 @@ import { TooltipProvider } from '@shared/ui/Tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createHashRouter, RouterProvider } from 'react-router';
 import { AppShell } from '@app/layouts/AppShell';
+import { ErrorBoundary } from '@app/components/ErrorBoundary';
+import { MobileBootstrap } from '@app/components/MobileBootstrap';
+
 import { mainRoutes } from './routes';
 import './index.css';
 // استایل موبایل ایستا ایمپورت می‌شود (نه داینامیک) تا خطای بارگذاری chunk در
@@ -23,6 +26,25 @@ if (import.meta.env.VITE_LOCAL_DATA === '1') {
   void import('./shared/api/local/androidShell')
     .then((m) => m.mountAndroidBack())
     .catch(() => { /* پوستهٔ بومی نبود — رفتارِ مرورگر می‌ماند */ });
+}
+
+
+if (import.meta.env.VITE_LOCAL_DATA === '1') {
+  const ERROR_LOG_KEY = 'bors_mobile_errors';
+  const logError = (msg: unknown) => {
+    try {
+      const logs = JSON.parse(localStorage.getItem(ERROR_LOG_KEY) || '[]');
+      logs.unshift({ time: Date.now(), msg: String(msg) });
+      if (logs.length > 50) logs.pop();
+      localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(logs));
+    } catch {}
+  };
+  window.addEventListener('error', (e) => {
+    logError(e.error?.stack || e.message);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    logError(e.reason?.stack || e.reason || 'Unhandled Promise Rejection');
+  });
 }
 
 const queryClient = new QueryClient({
@@ -48,7 +70,7 @@ createRoot(document.getElementById('root')!).render(
       {/* یک Provider برایِ کلِ برنامه: تأخیرِ مشترک و «پرشِ سریع» بینِ دو
           راهنمایِ همسایه — اولی با تأخیر، بعدی‌ها فوری. */}
       <TooltipProvider>
-        <RouterProvider router={router} />
+        <ErrorBoundary><MobileBootstrap><RouterProvider router={router} /></MobileBootstrap></ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   </StrictMode>,
