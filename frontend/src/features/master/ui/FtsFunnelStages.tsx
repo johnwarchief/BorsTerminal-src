@@ -639,6 +639,7 @@ export function FtsFunnelStages({
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const [active, setActive] = useState<FunnelStageKey>('tape');
+  const resetTapeFilters = useTapeStore((s) => s.resetFilters);
 
   const feed = useMarketFeed();
   // limit همان شمارۀ خودِ هاب است تا کوئریِ مشترک دوباره ساخته نشود؛
@@ -723,7 +724,7 @@ export function FtsFunnelStages({
                   PRESET_ENTRY[p].label +
                   (quickFilters.length ? ' — فعلاً ورودیِ قیف را چیپ‌هایِ روشنِ تبِ تابلو تعیین می‌کنند، این درب مرحلۀ تکنیکال را می‌زند' : '')
                 }
-                onClick={() => onPresetChange(p)}
+                onClick={() => { resetTapeFilters(); onPresetChange(p); }}
                 className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
                   preset === p
                     ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'

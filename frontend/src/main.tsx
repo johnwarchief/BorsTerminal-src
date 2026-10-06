@@ -37,7 +37,7 @@ if (import.meta.env.VITE_LOCAL_DATA === '1') {
       logs.unshift({ time: Date.now(), msg: String(msg) });
       if (logs.length > 50) logs.pop();
       localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(logs));
-    } catch {}
+    } catch { /* ignore */ }
   };
   window.addEventListener('error', (e) => {
     logError(e.error?.stack || e.message);

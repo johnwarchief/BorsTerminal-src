@@ -358,8 +358,11 @@ function tapeRows(
   // ۱) تابلوخوانی: سبکِ انتخابی درِ درخت تعیین می‌کند کدام فیلترها دربِ قیف‌اند
   //    (چارت ۳). اگر کاربر خودِ چیپ‌هایِ تابلو را روشن کرده باشد، همان چیپ‌ها
   //    حاکم‌اند — قیف نباید چیزی نشان دهد که تبِ تابلو پشتِ آن نرفته است.
-  const entryFilters = quickFilters.length ? quickFilters : PRESET_ENTRY[preset].filters;
-  return { scope, picks: scope.filter((r) => entryFilters.some((f) => tapeFilterVerdict(r, f, cfg))) };
+  if (quickFilters.length > 0) {
+      return { scope, picks: scope.filter((r) => quickFilters.every((f) => tapeFilterVerdict(r, f, cfg))) };
+    }
+    const presetFilters = PRESET_ENTRY[preset].filters;
+    return { scope, picks: scope.filter((r) => presetFilters.some((f) => tapeFilterVerdict(r, f, cfg))) };
 }
 
 /**
