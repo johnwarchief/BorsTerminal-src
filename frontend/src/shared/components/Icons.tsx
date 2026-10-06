@@ -103,3 +103,38 @@ export function TreeIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+export function ArrowUpLeftIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M7 17V7h10" />
+      <path d="M17 17 7 7" />
+    </svg>
+  );
+}
+
+export function ArrowDownLeftIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M17 7 7 17" />
+      <path d="M17 17H7V7" />
+    </svg>
+  );
+}
+
+export function XIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
+export function LoaderIcon({ className, size = 14 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={`animate-spin ${className ?? ''}`} width={size} height={size}>
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
+  );
+}
+
+

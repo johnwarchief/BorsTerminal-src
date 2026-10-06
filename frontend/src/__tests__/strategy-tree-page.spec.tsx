@@ -1,4 +1,4 @@
-// __tests__/strategy-tree-page.spec.tsx -- تست‌های صفحه جامع درخت استراتژی FTS
+// __tests__/strategy-tree-page.spec.tsx -- تست‌های صفحه جامع نقشه راه و درخت تصمیم‌گیری FTS
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -31,92 +31,82 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
-describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS', () => {
+describe('StrategyTreePage — نقشه راه و درخت تصمیم‌گیری FTS', () => {
   beforeEach(() => {
     useSymbolStore.getState().clearSymbol();
   });
 
-  it('رندر سربرگ و ۴ فاز درختی بر پایه جزوه FTS', () => {
+  it('رندر سربرگ، نوار کاهش Universe و بوم نقشه راه FTS', () => {
     renderWithProviders(<StrategyTreePage />);
 
     // سربرگ
     expect(screen.getByText(/نقشه راه و درخت جامع استراتژی FTS/i)).toBeInTheDocument();
     expect(screen.getByText(/۴ چارت در یک نما/i)).toBeInTheDocument();
 
-    // نما از آنِ بوم ابسیدین است و گریدِ تکراری پیش‌فرض باز نمی‌شود
+    // بوم نقشه راه به صورت پیش‌فرض فعال است و گرید ۴ ستونه قدیمی حذف شده
     expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
-    expect(screen.queryByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/نمای گرید ۴ ستونه/i)).not.toBeInTheDocument();
 
-    // ارکان متناظر با ۴ صفحه جزوه در نمای گرید
-    fireEvent.click(screen.getByRole('button', { name: /نمای گرید ۴ ستونه/i }));
-    expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/۲\. فیلتر تکنیکال ۲ زمانه/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/۳\. تابلوخوانی و زمان‌سنج/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/۴\. مدیریت سرمایه و خروج/i).length).toBeGreaterThanOrEqual(1);
+    // نوار کاهش Universe و مراحل FTS
+    expect(screen.getByText(/کاهش کاندیداها در قیف FTS/i)).toBeInTheDocument();
+    expect(screen.getByText(/گام ۱: تابلوخوانی \(S\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/گام ۲: تکنیکال ۲ زمانه \(T\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/گام ۳: بنیادی ۵ شاخص \(F\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/تحویل نهایی \(Delivery\)/i)).toBeInTheDocument();
   });
 
-  it('تغییر سبک بازی: کلیک روی شخص روندگیر و ساعت شنی مسیرها را به‌روزرسانی می‌کند', () => {
+  it('سوییچ سبک معامله: انتخاب نوسان‌گیر، روندگیر، ساعت شنی و سفارشی', () => {
     renderWithProviders(<StrategyTreePage />);
 
     // کلیک روی شخص روندگیر
     const trendBtn = screen.getByRole('button', { name: /شخص روندگیر/i });
     fireEvent.click(trendBtn);
-
-    expect(screen.getByText(/پلن سهامداری و روندگیری FTS/i)).toBeInTheDocument();
+    expect(trendBtn).toHaveClass('font-black');
 
     // کلیک روی ساعت شنی
-    const hourglassBtn = screen.getByRole('button', { name: /استراتژی ساعت شنی/i });
+    const hourglassBtn = screen.getByRole('button', { name: /استراتژی ساعت شنی \(۳ تا ۱۰ ساله\)/i });
     fireEvent.click(hourglassBtn);
+    expect(hourglassBtn).toHaveClass('font-black');
 
-    expect(screen.getByText(/پلن سرمایه‌گذاری ساعت شنی FTS/i)).toBeInTheDocument();
-  });
-
-  it('حالت سفارشی (Custom Path): انتخاب دستی گره‌ها خلاصه استراتژی را تغییر می‌دهد', () => {
-    renderWithProviders(<StrategyTreePage />);
-
+    // کلیک روی مسیر سفارشی
     const customBtn = screen.getByRole('button', { name: /مسیر سفارشی/i });
     fireEvent.click(customBtn);
-
-    expect(screen.getByText(/پلن سفارشی معامله‌گر/i)).toBeInTheDocument();
+    expect(customBtn).toHaveClass('font-black');
   });
 
-  it('سوییچ نما: تغییر حالت نمایش بین گراف ابسیدین و تفکیک ۴ چارت کار می‌کند', () => {
+  it('سوییچ چیدمان: تغییر حالت بین نقشه راه FTS (Roadmap) و مداری (Orbit)', () => {
     renderWithProviders(<StrategyTreePage />);
 
-    // سوییچ به نمای خالص ابسیدین
-    const obsidianTab = screen.getByRole('button', { name: /نقشۀ ۴ چارت FTS/i });
-    fireEvent.click(obsidianTab);
-    expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
+    const flowBtn = screen.getByTestId('tree-layout-flow');
+    const orbitBtn = screen.getByTestId('tree-layout-orbit');
 
-    // سوییچ به نمای گرید ۴ ستونه
-    const gridTab = screen.getByRole('button', { name: /نمای گرید ۴ ستونه/i });
-    fireEvent.click(gridTab);
-    expect(screen.queryByTestId('obsidian-strategy-canvas')).not.toBeInTheDocument();
-    expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
+    expect(flowBtn).toBeInTheDocument();
+    expect(orbitBtn).toBeInTheDocument();
 
-    // سوییچ مجدد به ترکیبی
-    const bothTab = screen.getByRole('button', { name: /ترکیبی/i });
-    fireEvent.click(bothTab);
-    expect(screen.getByTestId('obsidian-strategy-canvas')).toBeInTheDocument();
-    expect(screen.getByText(/۱\. فیلتر بنیادی \(۵ شاخص کدال\)/i)).toBeInTheDocument();
+    // سوییچ به مداری
+    fireEvent.click(orbitBtn);
+    expect(orbitBtn).toHaveAttribute('aria-pressed', 'true');
+
+    // سوییچ بازگشت به نقشه راه
+    fireEvent.click(flowBtn);
+    expect(flowBtn).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('ویرایشگر تعاملی پارامترها: تغییر مقادیر استراتژی در استور و نمایش در دستورالعمل', () => {
+  it('باز شدن کشوی کاندیداهای مرحله با کلیک روی مشاهده کاندیداها', () => {
     renderWithProviders(<StrategyTreePage />);
 
-    // بررسی اسلایدر ضریب حجم مشکوک پیش‌فرض
-    expect(screen.getByText(/ضریب حجم مشکوک:/i)).toBeInTheDocument();
-    expect(screen.getByText(/جزوه: ۳\.۰×/i)).toBeInTheDocument();
+    // کلیک روی دکمه مشاهده کاندیداهای تابلو
+    const viewTapeBtn = screen.getByRole('button', { name: /مشاهده کاندیداهای تابلو/i });
+    fireEvent.click(viewTapeBtn);
 
-    // تغییر مقدار ضریب حجم مشکوک
-    const sliders = screen.getAllByRole('slider');
-    expect(sliders.length).toBeGreaterThanOrEqual(1);
-    fireEvent.change(sliders[0], { target: { value: '2.5' } });
+    // کشوی جدول کاندیداها باز می‌شود
+    expect(screen.getByTestId('stage-candidate-drawer')).toBeInTheDocument();
+    expect(screen.getByText(/کاندیداهای مرحله: غربالگری اول: تابلوخوانی/i)).toBeInTheDocument();
 
-    // دکمه بازنشانی به جزوه وجود دارد
-    const resetBtn = screen.getByRole('button', { name: /بازنشانی به جزوه/i });
-    expect(resetBtn).toBeInTheDocument();
-    fireEvent.click(resetBtn);
+    // دکمه بستن کشو
+    const closeBtn = screen.getByRole('button', { name: /بستن پنجره/i });
+    fireEvent.click(closeBtn);
+    expect(screen.queryByTestId('stage-candidate-drawer')).not.toBeInTheDocument();
   });
 
   it('لینک منوی درخت استراتژی FTS در سایدبار وجود دارد', () => {
@@ -126,11 +116,11 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(link).toHaveAttribute('href', '/strategy-tree');
   });
 
-  it('جستجوی تعاملی نماد و اعمال خودکار آن بر درخت استراتژی', () => {
+  it('جستجوی تعاملی نماد و اعمال خودکار آن بر نقشه راه استراتژی', () => {
     renderWithProviders(<StrategyTreePage />);
 
     // فیلد جستجو وجود دارد
-    const searchInput = screen.getByPlaceholderText(/جستجوی نماد یا شرکت/i);
+    const searchInput = screen.getByPlaceholderText(/جستجوی نماد برای تطبیق زنده/i);
     expect(searchInput).toBeInTheDocument();
 
     // تایپ نماد فولاد
@@ -144,7 +134,6 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     // سهم در استور و به عنوان نماد فعال ست شده
     expect(useSymbolStore.getState().symbol).toBe('فولاد');
     expect(screen.getAllByText(/نماد فعال:/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole('button', { name: /تطبیق/i })).toBeInTheDocument();
 
     // دکمه پاک کردن نماد
     const clearBtn = screen.getByRole('button', { name: /حذف نماد/i });
@@ -152,5 +141,3 @@ describe('StrategyTreePage — درخت استراتژی ۴ صفحه‌ای FTS'
     expect(useSymbolStore.getState().symbol).toBe('');
   });
 });
-
-

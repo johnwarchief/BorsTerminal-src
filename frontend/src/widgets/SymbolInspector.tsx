@@ -7,7 +7,7 @@ import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
 import { toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
 import { ftsScoreOf } from '@contracts/fundamental';
-import { FlashNum } from '@shared/components/FlashNum';
+import { LiveNumber } from '@shared/components/ui/live-number';
 import { Badge } from '@shared/components/Badge';
 import { RetryAction } from '@shared/components/RetryAction';
 import { aggregateSignals } from '@features/master/lib/masterMath';
@@ -397,16 +397,24 @@ export function SymbolInspector() {
           </nav>
         ) : null}
 
-        {/* قیمت و درصد با فلاش */}
+        {/* قیمت و درصد با انیمیشن زنده و فلاش مارکت */}
         <div className="flex items-end justify-between gap-2">
           <div>
             <div className="text-[8.5px] uppercase tracking-wider text-text-muted">آخرین معامله</div>
-            <FlashNum value={row?.pLast} render={(v) => toFaDigits(v == null ? '-' : Number(v.toFixed(2)).toString())} className="text-sm font-black text-text-primary" />
+            <LiveNumber
+              value={row?.pLast}
+              format={(v) => toFaDigits(Number(v.toFixed(2)).toString())}
+              className="text-sm font-black text-text-primary"
+            />
           </div>
           <div className="text-end">
             <div className="text-[8.5px] uppercase tracking-wider text-text-muted">تغییر روز</div>
             <span className={row?.percentChange != null && row.percentChange >= 0 ? 'text-accent-green' : 'text-accent-red'}>
-              <FlashNum value={row?.percentChange} render={(v) => (v == null ? '-' : fmtPct(v))} className="text-xs font-bold" />
+              <LiveNumber
+                value={row?.percentChange}
+                format={(v) => fmtPct(v)}
+                className="text-xs font-bold"
+              />
             </span>
           </div>
         </div>

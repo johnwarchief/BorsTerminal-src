@@ -760,7 +760,7 @@ if os.path.exists("market.db"):
     lt = ME.timeline(conn)
     ck(lt["points"] >= 1, "حداقل یک نقطهٔ تایم‌لاین از همگام‌سازی ثبت شده")
     # ---- #170: درِ «تداوم» باید روی دادهٔ واقعی نشست داشته باشد --------------
-    hist = ME.liquidity_history(conn)
+    hist = ME.liquidity_history(conn, limit=6)
     hk = [h for h in hist if h["value_hemat"]]
     ck(len(hk) >= ME.LIQ_CONTINUITY_MIN,
        "تداوم روی دادهٔ واقعی %d نشست دارد (بک‌فیلد از daily_prices)، نه «بدون داده»" % len(hk))

@@ -17,13 +17,40 @@ import {
   TreeIcon,
 } from '@shared/components/Icons';
 
-const NAV_ITEMS = [
-  { to: '/market', icon: MarketIcon, label: 'تابلوخوانی/بازار', end: false },
-  { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
-  { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
-  { to: '/master', icon: MasterIcon, label: 'استراتژی FTS', end: false },
-  { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
-  { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },
+interface NavItem {
+  to: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  end?: boolean;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'فضای تحلیل',
+    items: [
+      { to: '/market', icon: MarketIcon, label: 'تابلوخوانی/بازار', end: false },
+      { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
+      { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
+    ],
+  },
+  {
+    title: 'فرماندهی FTS',
+    items: [
+      { to: '/master', icon: MasterIcon, label: 'استراتژی FTS', end: false },
+      { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },
+    ],
+  },
+  {
+    title: 'سرمایه و دارایی',
+    items: [
+      { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -68,36 +95,55 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Nav Items */}
-      <nav className={`flex flex-col gap-1 ${collapsed ? 'w-full' : ''}`}>
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            title={item.label}
-            aria-label={item.label}
-            className={({ isActive }) =>
-              `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${
-                collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
-              } ${
-                isActive
-                  ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
-                  : 'text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className={`absolute bottom-1 start-0 top-1 w-[2.5px] rounded-full bg-neon-cyan transition-opacity duration-200 ${
-                    isActive ? 'opacity-100 shadow-[0_0_8px_var(--neon-cyan)]' : 'opacity-0'
-                  }`}
-                />
-                {collapsed ? <item.icon size={19} /> : <span className="flex items-center gap-2"><item.icon size={18} /><span>{item.label}</span></span>}
-              </>
-            )}
-          </NavLink>
+      {/* Nav Items grouped by Section */}
+      <nav className={`flex flex-col gap-2 ${collapsed ? 'w-full' : ''}`}>
+        {NAV_SECTIONS.map((sec, secIdx) => (
+          <div key={sec.title} className="flex flex-col gap-0.5">
+            {!collapsed ? (
+              <div className="px-2 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-text-muted select-none">
+                {sec.title}
+              </div>
+            ) : secIdx > 0 ? (
+              <div className="my-1 w-full border-t border-border-c/40" />
+            ) : null}
+
+            {sec.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                title={item.label}
+                aria-label={item.label}
+                className={({ isActive }) =>
+                  `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${
+                    collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
+                  } ${
+                    isActive
+                      ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue shadow-[inset_0_0_12px_rgba(56,189,248,0.12)]'
+                      : 'text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`absolute bottom-1 start-0 top-1 w-[2.5px] rounded-full bg-neon-cyan transition-opacity duration-200 ${
+                        isActive ? 'opacity-100 shadow-[0_0_8px_var(--neon-cyan)]' : 'opacity-0'
+                      }`}
+                    />
+                    {collapsed ? (
+                      <item.icon size={19} />
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <item.icon size={18} />
+                        <span>{item.label}</span>
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
 
