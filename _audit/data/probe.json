@@ -1,0 +1,59 @@
+{
+ "base": "http://127.0.0.1:4181/",
+ "steps": [
+  {
+   "step": "boot",
+   "timing": {
+    "source": "bundle",
+    "gzBytes": 0,
+    "rawBytes": 0,
+    "fetchMs": 294,
+    "gunzipMs": 0,
+    "openMs": 4,
+    "totalMs": 298
+   },
+   "tapeRows": 0,
+   "feedError": 1,
+   "sidebar": {
+    "y": 742,
+    "h": 58,
+    "bottom": 800
+   }
+  },
+  {
+   "step": "inspector-open",
+   "skipped": "ردیفِ تابلو نیست"
+  },
+  {
+   "step": "fundamental-universe",
+   "header": null,
+   "headerAny": null,
+   "domRows": 0,
+   "scrollWidth": null
+  },
+  {
+   "step": "fundamental-scrolled",
+   "scrollTop": -1,
+   "domRows": 0
+  },
+  {
+   "step": "chart-canvas",
+   "canvases": [],
+   "emptyState": 0
+  },
+  {
+   "step": "tree-flow",
+   "rails": 3,
+   "flow": {
+    "flowAnimation": "fts-path-flow running",
+    "flowOpacityKeyframes": true,
+    "comet": true,
+    "rootFlag": "1"
+   }
+  }
+ ],
+ "errors": [
+  "Access to fetch at 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json' from origin 'http://127.0.0.1",
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

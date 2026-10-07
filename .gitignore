@@ -23,7 +23,7 @@ build/
 dist/
 portable/
 releases/
-android/
+/android/
 backups/
 .v2cache/
 *.spec.bak

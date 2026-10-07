@@ -1,0 +1,105 @@
+{
+ "base": "http://127.0.0.1:4181/",
+ "viewport": {
+  "w": 360,
+  "h": 800
+ },
+ "steps": [
+  {
+   "step": "boot",
+   "borsMobile": true,
+   "bodyOverflowX": 360,
+   "sidebar": {
+    "x": 0,
+    "y": 742,
+    "w": 360,
+    "h": 58,
+    "bottom": 800,
+    "scrollW": 359,
+    "clientW": 359
+   },
+   "content": {
+    "x": 0,
+    "y": 0,
+    "w": 360,
+    "h": 800,
+    "bottom": 800,
+    "scrollW": 360,
+    "clientW": 360
+   },
+   "tapeScroll": null,
+   "tapeRows": 0,
+   "fatal": 0,
+   "feedError": 1
+  },
+  {
+   "step": "diagnostics",
+   "panel": "بیلد: probe-a02d0b2 WebView: Chrome/124 حالت: مرورگر/پیش‌نمایش بستهٔ داده: Error: no such table: meta ❌ TSETMC زنده: 3865 نماد ✅ منبعِ بسته: همراهِ APK راه‌اندازی: 59ms (دریافت 56 · بازگشایی 0 · باز کردن 3) ✅ صفحه: 360×800 · bors-mobile=true"
+  },
+  {
+   "step": "symbol-inspector",
+   "error": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"tape-row\"] button').first()\u001b[22m\n"
+  },
+  {
+   "step": "close-inspector",
+   "inspector": {
+    "x": -316,
+    "y": 39,
+    "w": 338,
+    "h": 703,
+    "bottom": 742,
+    "scrollW": 337,
+    "clientW": 337
+   }
+  },
+  {
+   "step": "fundamental",
+   "header": null,
+   "domRows": 0,
+   "scroll": null
+  },
+  {
+   "step": "funnel-overview",
+   "overview": 1,
+   "stepper": 1,
+   "stepperRect": {
+    "x": 24,
+    "y": 199,
+    "w": 313,
+    "h": 47,
+    "bottom": 246,
+    "scrollW": 720,
+    "clientW": 313
+   }
+  },
+  {
+   "step": "funnel-stage-technical",
+   "href": "http://127.0.0.1:4181/#/master?stage=technical&preset=trend",
+   "notFound": 0,
+   "stageView": 1,
+   "stageCard": 1,
+   "stepChips": 4
+  },
+  {
+   "step": "technical-chart",
+   "canvases": [],
+   "emptyState": 0,
+   "chartArea": {
+    "x": 10,
+    "y": 47,
+    "w": 341,
+    "h": 738,
+    "bottom": 785,
+    "scrollW": 341,
+    "clientW": 341
+   }
+  }
+ ],
+ "errors": [
+  "Access to fetch at 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json' from origin 'http://127.0.0.1:4181' has been blocked by CORS policy: ",
+  "Failed to load resource: net::ERR_FAILED"
+ ],
+ "badNet": [
+  "FAIL https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json"
+ ]
+}
