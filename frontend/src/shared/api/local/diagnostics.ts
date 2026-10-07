@@ -9,6 +9,7 @@
 // پنل باید کار کند (همان فلسفهٔ بنر قرمز localData).
 import { baked, metaValue, query, bootTiming } from './localData';
 import { liveWatch } from './live';
+import { overlayStatus } from './resolvers';
 
 const BUILD_TAG = (import.meta.env.VITE_BUILD_TAG as string | undefined) ?? 'بیلد محلی';
 
@@ -37,6 +38,23 @@ async function collect(): Promise<string> {
     const board = (await baked('market_board')) as { data?: unknown[] } | null;
     const rows = Array.isArray(board?.data) ? board.data.length : 0;
     parts.push(row('تابلوی آفلاین', `${rows} ردیف`, rows > 0));
+    // شمارشِ جهانِ داده — «کم بودنِ تب» data است یا UI، از همین‌جا خوانده می‌شود
+    const scr = (await baked('screener')) as { count?: number; data?: unknown[] } | null;
+    const screenRows = Array.isArray(scr?.data) ? scr.data.length : 0;
+    parts.push(row('بنیادی (اسکرینر)', `${screenRows} ردیف · count=${scr?.count ?? '؟'}`, screenRows > 0));
+    const perSymbol = await query(
+      "SELECT substr(key, 1, instr(key, '/') - 1) AS grp, count(*) AS c FROM baked " +
+      "WHERE instr(key, '/') > 0 GROUP BY grp ORDER BY c DESC");
+    parts.push(row('پختِ هر-نماد', perSymbol.map((r) => `${String(r.grp)}=${String(r.c)}`).join(' · '), true));
+    let ph = 'جدول price_history نیست';
+    try {
+      const hist = await query('SELECT count(*) AS n, count(DISTINCT symbol) AS s, min(date) AS a, max(date) AS b FROM price_history');
+      const h = hist[0] ?? {};
+      ph = `${String(h.n ?? 0)} کندل · ${String(h.s ?? 0)} نماد · ${String(h.a ?? '؟')} ← ${String(h.b ?? '؟')}`;
+    } catch { /* اسنپ‌شاتِ بی‌تاریخچه — همان چیزی که پنل باید بگوید */ }
+    parts.push(row('تاریخچۀ چارت', ph));
+    const ov = overlayStatus();
+    parts.push(row('آخرین رونشانیِ زندۀ تابلو', ov ? `${ov.patched} ردیف · ${ov.at}` : 'هنوز رونشانی نشده', !!ov));
   } catch (e) {
     parts.push(row('بستهٔ داده', e instanceof Error ? `${e.name}: ${e.message}` : String(e), false));
   }
