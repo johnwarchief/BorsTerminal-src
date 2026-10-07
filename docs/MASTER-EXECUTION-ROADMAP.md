@@ -955,26 +955,294 @@ Every release candidate should have:
 
 ---
 
-# 10. P1 — Full-universe and performance quality
+# 10. P0/P1 — Maximum performance + minimum resource consumption
 
-Where the product concept requires the full universe, do not solve scale problems by silently shrinking the universe.
+Performance is a first-class product requirement, not a cosmetic optimization.
 
-Preferred architecture:
+The target is **maximum practical responsiveness and throughput while using the minimum practical CPU, RAM, GPU, disk I/O, network bandwidth, battery/power, and background work required to preserve full functionality**.
 
-- Full dataset
-- Virtualization/pagination
-- Indexed search
-- Efficient filtering
-- Bounded rendering
-- Explicit user-selected limits where appropriate
+This phase must optimize the real application under realistic market conditions, not only synthetic benchmarks.
+
+## 10.1 Non-negotiable principles
+
+- Never improve performance by silently removing analytical capability.
+- Never reduce the universe, candle history, indicators, FTS evidence, chart tools, or live data merely to make benchmarks look better.
+- Never disable animations or UX behavior solely to hide performance problems; optimize the implementation first.
+- Never replace correct real-time data with fabricated, stale, or lower-quality data for performance.
+- Do not introduce hidden hard caps such as 60/120 symbols when the product requirement is the full universe.
+- Prefer architectural fixes over micro-optimizations.
+- Measure before and after every material optimization.
+- Optimize Desktop and Android separately where their runtime constraints differ, while preserving one canonical analytical meaning.
+
+## 10.2 Baseline and measurement contract
+
+Before a performance change, record a reproducible baseline.
+
+Measure at minimum:
+
+- App startup time
+- Time to first usable market data
+- Time to first chart render
+- Time to interactive Strategy FTS
+- Market update latency
+- Backend API latency
+- Database query latency
+- Full-universe filter/screen time
+- FTS funnel processing time
+- Chart render/frame performance
+- Memory usage at idle
+- Memory usage during active market updates
+- CPU usage at idle
+- CPU usage during market-open/live updates
+- GPU usage where applicable
+- Network requests per minute
+- Network bytes per minute
+- Disk I/O
+- Android battery/power impact where measurable
+
+Every optimization must report:
+
+**before → change → after → workload → environment → trade-offs**
+
+No “performance improved” claim without measurements.
+
+## 10.3 Full-universe scale
+
+Where the product concept requires the full universe:
+
+- Keep the full dataset available.
+- Use virtualization for large tables/lists.
+- Use indexed search and filtering.
+- Bound only the amount of UI actually rendered, not the underlying analytical universe.
+- Batch expensive calculations where safe.
+- Avoid repeated full-universe recomputation when only a small subset of data changed.
+- Make user-selected limits explicit rather than silently imposed by code.
+- Audit every existing cap, slice, LIMIT, page size, query cap, cache cap, and early-return path.
 
 For the FTS Funnel especially:
 
-- Preserve the full candidate universe
-- Use virtualization
-- Avoid hidden 60/120-symbol caps unless explicitly part of a canonical rule
+- Preserve the full candidate universe.
+- Use virtualization.
+- Eliminate hidden 60/120-symbol caps unless a canonical business rule explicitly requires one.
+- Ensure the full-universe result count is consistent across backend, frontend, and export/inspection paths.
 
-Performance optimization must not remove analytical capability.
+## 10.4 Real-time market efficiency
+
+The live market path must be optimized for both responsiveness and resource discipline.
+
+Investigate and measure:
+
+- Polling frequency
+- Request duplication
+- Request coalescing
+- Cache effectiveness
+- Incremental versus full refresh
+- Payload size
+- Compression effectiveness
+- Parsing/serialization cost
+- Backend fan-out
+- Frontend state-update frequency
+- Re-render frequency
+- Table row virtualization
+- Chart update frequency
+- Indicator recomputation frequency
+- Derived-data memoization
+- Worker/background computation opportunities
+- Database connection/query reuse
+
+A new market tick should update only the parts that actually changed.
+
+Avoid patterns such as:
+
+**one tick → full database scan → full API recomputation → full frontend tree rerender → full chart redraw**
+
+when an incremental path is valid.
+
+## 10.5 Database and backend efficiency
+
+Profile the entire data path:
+
+**source → ingestion → storage → query → calculation → API → serialization → frontend → rendering**
+
+Investigate:
+
+- Missing/unused indexes
+- Expensive joins
+- Repeated queries
+- N+1 access patterns
+- Full-table scans
+- Oversized payloads
+- Duplicate calculations
+- Unbounded in-memory caches
+- Serialization/deserialization overhead
+- Unnecessary database copies
+- Stale/duplicate runtime processes
+- Inefficient snapshot loading
+- Startup work that can be deferred safely
+
+Any database optimization must preserve exact market/FTS semantics.
+
+## 10.6 Frontend rendering efficiency
+
+The frontend must remain responsive under a live market feed and full-universe workloads.
+
+Measure and optimize:
+
+- React/component rerender frequency
+- Large component trees
+- Expensive selectors/computations
+- Table virtualization
+- Chart redraw frequency
+- DOM node count
+- Layout/reflow cost
+- Animation cost
+- Number formatting cost under rapid updates
+- State fan-out
+- Event listener count
+- Memory retention/leaks
+
+The numeric transition system defined earlier must remain smooth while avoiding excessive timers, RAF loops, rerenders, or duplicate animation jobs.
+
+## 10.7 Chart performance
+
+Chart correctness and chart performance are both mandatory.
+
+Measure with:
+
+- Large historical datasets
+- Multiple overlays
+- FTS annotations
+- Fibonacci zones
+- BOS/CHoCH markers
+- MA/indicator layers
+- Zoom/pan
+- Live updates
+- Multiple symbols
+- Daily and weekly timeframes
+
+Optimize without changing:
+
+- Candle semantics
+- Time/price coordinates
+- Indicator formulas
+- FTS decisions
+- Overlay meaning
+- User-visible analytical capability
+
+Prefer incremental drawing/update paths where the chart engine permits them.
+
+## 10.8 Resource ceilings and graceful degradation
+
+Define practical resource budgets for normal machines, including the user's stated low-resource target.
+
+At minimum track:
+
+- CPU
+- RAM
+- GPU
+- Network
+- Disk
+- Power/battery on Android
+
+The app should degrade gracefully when resources become constrained:
+
+- reduce redundant refresh work
+- defer non-critical background work
+- pause computations for hidden/off-screen views when safe
+- lower update frequency for non-critical secondary visuals
+- release unused resources
+- avoid runaway queues
+
+Graceful degradation must never silently change canonical FTS or market results.
+
+## 10.9 Cache strategy
+
+Create an explicit cache hierarchy and invalidation policy.
+
+For each cache document:
+
+- What is cached?
+- TTL/freshness?
+- Invalidation trigger?
+- Maximum size?
+- Memory/disk location?
+- Is stale data allowed?
+- Who is authoritative when cache and live data disagree?
+
+Caches must not create semantic drift between Desktop and Android.
+
+## 10.10 Concurrency and scheduling
+
+Audit background work for:
+
+- Duplicate timers
+- Overlapping polls
+- Race conditions
+- Long-running tasks blocking UI
+- Unbounded task queues
+- Excess worker creation
+- Repeated computation caused by dependency churn
+
+Use bounded concurrency.
+
+There must be one clear owner for each recurring market/data job wherever practical.
+
+## 10.11 Android-specific resource efficiency
+
+Android has a stricter resource budget than Desktop.
+
+Validate:
+
+- Startup memory
+- Snapshot loading memory
+- Database open/read cost
+- Chart memory
+- List virtualization
+- Background work
+- Network usage
+- CPU during live updates
+- Battery impact
+- Behavior on lower-end supported devices
+
+Do not solve Android performance by reducing the analytical universe or silently omitting required data.
+
+## 10.12 Performance regression suite
+
+Maintain repeatable workloads:
+
+1. Cold startup
+2. Warm startup
+3. Market open
+4. High-update market period
+5. Full 873+ symbol universe
+6. FTS Funnel processing
+7. Strategy FTS chart with all accepted overlays
+8. Fast symbol switching
+9. Long-history chart
+10. Android offline snapshot load
+11. Android live/refresh mode
+12. Rapid numeric updates
+
+Track historical results so a later change cannot silently regress performance.
+
+## 10.13 Acceptance gate
+
+A performance optimization is accepted only when:
+
+- Correctness is unchanged.
+- Full required functionality remains available.
+- Before/after measurements are recorded.
+- Resource usage does not regress materially without an explicit reason.
+- No hidden capability-reducing cap was introduced.
+- Realistic market workloads remain responsive.
+- No memory leak, runaway task, or duplicated polling is introduced.
+- Desktop and Android behavior remain semantically aligned.
+
+The final target is:
+
+**faster response + lower resource consumption + full analytical capability + stable live behavior**
+
+—not merely a higher benchmark number.
 
 ---
 
