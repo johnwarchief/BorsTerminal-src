@@ -346,7 +346,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
       { ...DEFAULT_FUNNEL_OPTIONS, ...opts },
     );
 
-  it('پیش‌فرضِ جزوه: تکنیکال غربال می‌کند (رأیِ ملغی‌شدۀ «فقط نشانه» برگشته نیست)', () => {
+  it('پیش‌فرضِ قیف: تکنیکال غربال می‌کند، اما فقط وتوی هفتگی را حذف می‌کند', () => {
     expect(DEFAULT_FUNNEL_OPTIONS.techScreens).toBe(true);
   });
 
@@ -460,7 +460,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
       </QueryClientProvider>,
     );
     const tech = within(screen.getByTestId('funnel-stage-technical'));
-    for (const h of ['هفتگی', 'روزانه', 'ستاپ', 'داوری']) {
+    for (const h of ['هفتگی', 'روزانه', 'شواهد', 'امتیاز', 'داوری']) {
       expect(tech.getByRole('columnheader', { name: h })).toBeInTheDocument();
     }
     expect(tech.queryByRole('columnheader', { name: 'حجم/ماه' })).not.toBeInTheDocument();
