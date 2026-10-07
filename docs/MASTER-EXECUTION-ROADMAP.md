@@ -39,6 +39,116 @@ Do not spend major effort polishing secondary screens while the Strategy FTS wor
 
 ---
 
+
+# Completeness gates — cross-cutting work that cannot be skipped
+
+The roadmap is not complete merely because the visible feature list is complete. The following foundations are mandatory release gates across Desktop and Android.
+
+## A. Runtime / backend / database integrity
+
+Before declaring a release stable:
+
+- Remove or isolate obsolete backend/runtime processes that can conflict with the current application.
+- Verify exactly which backend process/database/snapshot the application is using.
+- Verify API routes used by every consumer.
+- Eliminate duplicate or shadow implementations that can produce different answers.
+- Verify startup/shutdown and offline/online state transitions.
+- Verify the canonical data source for market, candle, fundamental, order-book, and FTS outputs.
+- Record database/snapshot version and freshness.
+- Never declare a data-source issue resolved without reproducing it and identifying the actual cause.
+
+## B. TSETMC consumer-integration completeness
+
+The TSETMC data work is not complete when a backend field exists.
+
+For every newly added/changed TSETMC field:
+
+**source → parser → storage → API → Desktop consumer → Android consumer → UI/result → validation**
+
+must be traced end-to-end.
+
+A field that exists in the database but is not consumed correctly by the application is considered incomplete.
+
+## C. Desktop / Android canonical synchronization
+
+Desktop and Android must be continuously checked for semantic drift.
+
+Required:
+
+- Android must incorporate accepted canonical main-branch engine changes.
+- Shared calculations should have one canonical implementation where practical.
+- Mobile-only adapters may transform transport/rendering but must not reinterpret FTS semantics.
+- Each aggregate Android release must declare its base main commit and mobile-specific commits.
+- The final APK must be built from the intended commit and verified against that exact source.
+- Offline snapshot freshness must be checked before release.
+- Known missing-data or partial-history cases must be visible rather than silently presented as complete.
+
+## D. Chart-engine browser-level integration
+
+A chart feature is not complete because its TypeScript/Python unit tests pass.
+
+For both chart engines and all important drawing tools:
+
+- Verify the actual browser integration path.
+- Verify the renderer receives the canonical backend data.
+- Verify overlays are visible on the real chart.
+- Verify coordinate/time/price mapping.
+- Verify zoom/pan behavior.
+- Verify daily versus weekly timeframe semantics.
+- Verify adjusted versus unadjusted data semantics.
+- Verify drawing persistence/interaction where applicable.
+- Verify no runtime fetch path points to an unavailable server in offline/mobile contexts.
+
+Use browser-level evidence for acceptance, not source-code inspection alone.
+
+## E. Data freshness / snapshot integrity
+
+For every offline or baked dataset:
+
+- Record build timestamp.
+- Record latest candle/data timestamp.
+- Record symbol/universe count.
+- Record row counts for major datasets.
+- Verify that build-time and runtime data dates are internally consistent.
+- Detect stale snapshots automatically where practical.
+- Investigate unexplained gaps in symbol history.
+- Do not treat an intentionally omitted raw table as a missing-data bug without checking the snapshot contract.
+
+## F. Release engineering gate
+
+Every Desktop/Android release must have:
+
+**source commit → tests → build → artifact → checksum → install/run verification → release/tag verification**
+
+No step is implied by another.
+
+Claims such as "built", "released", or "verified" require evidence.
+
+## G. Documentation/source-of-truth hygiene
+
+Before implementing or changing a formula:
+
+- Identify the canonical source.
+- Identify conflicting/stale documents.
+- Resolve conflicts explicitly.
+- Do not mix an old report/spec into a current rule without authorization.
+- Preserve owner rulings when they are declared canonical.
+- Record meaningful rule changes in the authoritative documentation before changing production logic.
+
+## H. Research/reference discipline
+
+When an external product is used as a reference:
+
+- TradersArena is the primary market/UI parity reference where observable.
+- TSE/TSETMC is the primary market-data provenance/reference.
+- Rahavard may be used as a technical/chart reference, including visual/indicator behavior available through the user's subscription.
+- PDFs and internal docs remain authoritative for BorsTerminal-specific methodology.
+- External research explains implementation techniques; it does not silently become a BorsTerminal rule.
+
+For difficult technical features, preserve a research record containing source, date, observation, interpretation, and confidence.
+
+---
+
 # Cross-cutting UX requirement — Stable numeric transitions
 
 Live market numbers must change **smoothly and truthfully**.
