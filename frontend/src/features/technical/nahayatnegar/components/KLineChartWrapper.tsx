@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-restricted-syntax -- registerOverlay و registerIndicator در اعلان نوعِ npm نیامده‌اند؛ بدون any کامپایل نمی‌شود */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- registerOverlay و registerIndicator در اعلان نوعِ npm نیامده‌اند؛ بدون any کامپایل نمی‌شود */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
+import { http } from '@shared/api/http';
 
 /** کراس‌هیرِ فعلی، از مسیری که در این باندل واقعاً وجود دارد.
  *
@@ -554,13 +555,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         url = '/api/index/tedpix?limit=0';
       }
 
-      let res: Response | null = null;
       let json: any = null;
       try {
-        res = await fetch(url, { signal: ac.signal });
-        if (res.ok) {
-          json = await res.json();
-        }
+        // از `http()` نه `fetch()` — دو دلیل: قانونِ «fetch بیرونِ shared/api/http.ts
+        // ممنوع»، و اینکه رویِ اندروید فقط همین لایه است که `resolveLocal` را می‌داند؛
+        // با fetchِ خام آدرسِ /api/chart در WebView بیک‌اندی ندارد و چارت خالی می‌ماند.
+        json = await http<any>(url, { signal: ac.signal });
       } catch {
         // خطای شبکه - تلاش با اندپوینت محلی؛ لکن لغوِ عمدی (نماد عوض شد) ادامه نمی‌دهند
         if (ac.signal.aborted) return;
@@ -575,15 +575,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (!Array.isArray(rawList) || rawList.length <= 1) {
         try {
           const histUrl = `/api/history/${encodeURIComponent(symbol)}`;
-          const histRes = await fetch(histUrl, { signal: ac.signal });
-          if (histRes.ok) {
-            const histJson = await histRes.json();
-            const histList = Array.isArray(histJson) ? histJson : (histJson?.candles || histJson?.data || []);
-            if (Array.isArray(histList) && histList.length > 1) {
-              json = histJson;
-              rawList = histList;
-              layer = 'local';
-            }
+          const histJson: any = await http<any>(histUrl, { signal: ac.signal });
+          const histList = Array.isArray(histJson) ? histJson : (histJson?.candles || histJson?.data || []);
+          if (Array.isArray(histList) && histList.length > 1) {
+            json = histJson;
+            rawList = histList;
+            layer = 'local';
           }
         } catch {
           // خطا در فال‌بک دوم
@@ -596,15 +593,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           const fallbackUrl = (symbol === 'شاخص کل' || symbol === 'TEDPIX')
             ? '/api/chart-db/فولاد'
             : `/api/chart-db/${encodeURIComponent(symbol)}`;
-          const fbRes = await fetch(fallbackUrl, { signal: ac.signal });
-          if (fbRes.ok) {
-            const fbJson = await fbRes.json();
-            const fbList = Array.isArray(fbJson) ? fbJson : (fbJson?.candles || fbJson?.data || []);
-            if (Array.isArray(fbList) && fbList.length > 0) {
-              json = fbJson;
-              rawList = fbList;
-              layer = 'local';
-            }
+          const fbJson: any = await http<any>(fallbackUrl, { signal: ac.signal });
+          const fbList = Array.isArray(fbJson) ? fbJson : (fbJson?.candles || fbJson?.data || []);
+          if (Array.isArray(fbList) && fbList.length > 0) {
+            json = fbJson;
+            rawList = fbList;
+            layer = 'local';
           }
         } catch {
           // خطا در فال‌بک سوم
