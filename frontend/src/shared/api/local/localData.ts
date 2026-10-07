@@ -17,6 +17,98 @@ const SNAPSHOT_URL =
   (import.meta.env.VITE_SNAPSHOT_URL as string | undefined) ?? '/mobile_snapshot.db.gz';
 const CACHE_NAME = 'bors-mobile-snapshot-v1';
 
+export type BootProgressPhase = 'download' | 'decompress' | 'database';
+
+export type BootProgress = {
+  phase: BootProgressPhase;
+  source: 'cache' | 'bundle' | 'release' | '';
+  loadedBytes: number;
+  totalBytes: number;
+  percent: number | null;
+  overallPercent: number | null;
+};
+
+type BootProgressListener = (progress: BootProgress) => void;
+const bootProgressListeners = new Set<BootProgressListener>();
+
+/** ثبت listener برای صفحهٔ آماده‌سازی اولیهٔ موبایل. */
+export function subscribeBootProgress(listener: BootProgressListener): () => void {
+  bootProgressListeners.add(listener);
+  return () => bootProgressListeners.delete(listener);
+}
+
+function emitBootProgress(progress: BootProgress): void {
+  for (const listener of bootProgressListeners) {
+    try { listener(progress); } catch { /* UI listener نباید boot را متوقف کند */ }
+  }
+}
+
+function makeBootProgress(
+  phase: BootProgressPhase,
+  source: BootProgress['source'],
+  loadedBytes: number,
+  totalBytes: number,
+): BootProgress {
+  const percent = totalBytes > 0
+    ? Math.min(100, Math.max(0, Math.round((loadedBytes / totalBytes) * 100)))
+    : null;
+
+  let overallPercent: number | null = null;
+  if (phase === 'download' && percent !== null) {
+    // ۷۵٪ از آمادگی به دریافت بسته اختصاص دارد؛ ۲۵٪ برای بازگشایی و
+    // ساخت دیتابیس. این درصد کلّی است و زمان واقعی را ادعا نمی‌کند.
+    overallPercent = Math.round(percent * 0.75);
+  } else if (phase === 'decompress') {
+    overallPercent = 75;
+  } else if (phase === 'database') {
+    overallPercent = 95;
+  }
+
+  return { phase, source, loadedBytes, totalBytes, percent, overallPercent };
+}
+
+function emitDownloadProgress(
+  source: BootProgress['source'],
+  loadedBytes: number,
+  totalBytes: number,
+): void {
+  emitBootProgress(makeBootProgress('download', source, loadedBytes, totalBytes));
+}
+
+/**
+ * Response را به ArrayBuffer تبدیل می‌کند و هنگام خواندن، پیشرفت را گزارش می‌دهد.
+ * اگر content-length در WebView در دسترس نباشد، درصد null می‌ماند تا عدد جعلی نسازیم.
+ */
+async function responseArrayBufferWithProgress(
+  response: Response,
+  source: BootProgress['source'],
+): Promise<ArrayBuffer> {
+  const total = Number(response.headers.get('content-length') ?? 0);
+  emitDownloadProgress(source, 0, total);
+
+  if (!response.body || typeof response.body.pipeThrough !== 'function') {
+    const buf = await response.arrayBuffer();
+    emitDownloadProgress(source, buf.byteLength, total || buf.byteLength);
+    return buf;
+  }
+
+  let loaded = 0;
+  const counted = response.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        loaded += chunk.byteLength;
+        emitDownloadProgress(source, loaded, total);
+        controller.enqueue(chunk);
+      },
+    }),
+  );
+
+  const buf = await new Response(counted).arrayBuffer();
+  emitDownloadProgress(source, buf.byteLength, total || buf.byteLength);
+  return buf;
+}
+
+
 // --- بروزرسانی خودکار داده از GitHub Releases (بدون سرور، بدون هزینه) -----
 // یک بار در روز metaی کوچک (~۲۰۰ بایت) چک می‌شود؛ اگر built_at جدیدتر بود،
 // gz کامل در پس‌زمینه دانلود و در Cache API جایگزین می‌شود — از اجرای بعدی
@@ -88,7 +180,12 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
   try {
     cache = await caches.open(CACHE_NAME);
     const hit = await cache.match(SNAPSHOT_URL);
-    if (hit) { bootTiming.source = 'cache'; return await hit.arrayBuffer(); }
+    if (hit) {
+      bootTiming.source = 'cache';
+      const buf = await hit.arrayBuffer();
+      emitDownloadProgress('cache', buf.byteLength, buf.byteLength);
+      return buf;
+    }
   } catch {
     cache = null; // Cache API در برخی WebViewها نیست — مستقیم دانلود کن
   }
@@ -112,6 +209,9 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
   // شده بود؛ فقط به‌عنوانِ راهِ دومِ بارگذاریِ اول وصل نبود.
   if (!local) {
     try {
+      // CapacitorHttp در این مسیر پاسخ باینری را یکجا برمی‌گرداند؛ تا قبل از
+      // برگشت پاسخ درصد قابل‌اتکایی نداریم، بنابراین indeterminate می‌ماند.
+      emitDownloadProgress('release', 0, 0);
       const buf = await nativeGetBytes(REMOTE_GZ_URL);
       // همان وارسیِ بروزرسانیِ روزانه: gz معتبر و به‌قدرِ کافی بزرگ، تا
       // صفحهٔ خطایِ HTML به‌جایِ دیتابیس ذخیره نشود.
@@ -122,6 +222,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
             try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
           }
           bootTiming.source = 'release';
+          emitDownloadProgress('release', buf.byteLength, buf.byteLength);
           return buf;
         }
       }
@@ -142,7 +243,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
     }
   }
   bootTiming.source = 'bundle';
-  return local.arrayBuffer();
+  return responseArrayBufferWithProgress(local, 'bundle');
 }
 
 async function gunzip(buf: ArrayBuffer): Promise<Uint8Array> {
@@ -231,9 +332,14 @@ export function getDb(): Promise<Database> {
       fetchSnapshot(),
     ]);
     const t1 = performance.now();
+    const gzSource = bootTiming.source;
+    emitBootProgress(makeBootProgress('decompress', gzSource, 0, 0));
     const bytes = await gunzip(gz);
+    emitBootProgress(makeBootProgress('decompress', gzSource, 1, 1));
     const t2 = performance.now();
+    emitBootProgress(makeBootProgress('database', gzSource, 0, 0));
     const db = new SQL.Database(bytes);
+    emitBootProgress(makeBootProgress('database', gzSource, 1, 1));
     const t3 = performance.now();
     bootTiming.gzBytes = gz.byteLength;
     bootTiming.rawBytes = bytes.byteLength;
