@@ -1723,90 +1723,144 @@ def _fts_fib_zones(candles, swings):
     }
 
 
-def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6):
-    """ستاپ جت (Jet) — شکستِ پلکانِ مقاومت + شکستِ **سقفِ ایستاده**.
+def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, entry_window_days=3):
+    """ستاپ جت FTS — شکست مقاومت استاتیک/سقف تاریخی + کندل تثبیت + پنجرۀ ورود ۳ روزه.
 
-    قاعدۀ production (رأیِ مالک، دورِ J): جت **فقط برایِ `candles[-1]`** حساب و
-    منتشر می‌شود. جت یک واقعهٔ «همین امروز» است، نه یک برچسبِ تاریخی؛ پس هیچ
-    مسیری در برنامه نباید مارکرِ جتِ گذشته بسازد (`_fts_setup_history` و
-    لایۀ چارت از این قاعده مستثنی‌اند: جتِ تاریخی رسم نمی‌شود). در `tools/fts_signal_lab.py`
-    محاسبهٔ جت روی هر کندل فقط برایِ پژوهشِ تاریخی مجاز است و با مسیرِ production
-    یکی نمی‌شود.
+    تعریف چارت FTS:
+      «یک نماد بنیادی از سقف تاریخی یا مقاومت استاتیک عبور کند و کندل تثبیت بزند؛
+      تا ۳ روز فرصت ورود وجود دارد.»
 
-    دو لایه، دو معنی:
+    active دیگر از فیلترِ تابلو/JET_LADDER ساخته نمی‌شود. JET_LADDER فقط فیلترِ
+    Selectionِ نوسان‌گیر است. تحلیل production وضعیتِ امروز را منتشر می‌کند؛ برای
+    پنجرۀ سه‌روزه فقط سه کندل آخر جهت یافتن breakout اخیر بررسی می‌شوند.
 
-      • `active` = پلکانِ هشت‌نقطه‌ایِ جزوه (JET_LADDER از tape_flags). این همان
-        چیزی است که بجِ تابلو می‌زند، پس چارت و تابلو در «آیا امروز سقفِ تک‌روزی
-       ‌ها شکسته شد» یک جواب می‌دهند (باگِ JET-BREAK).
-      • `static_broke` = عبور از **بالاترین highِ ۲۵۰ نشستِ اخیر** (بدون شش
-        نشستِ آخر). جزوه ص ۲۷ جت را «عبور از مقاومتِ **استاتیک** (حتماً استاتیک
-        باشد، یعنی افقی رسم شده) + کندل تثبیت» می‌داند، نه «بالاترینِ ۶۰ روز».
+    مقاومت استاتیکِ قابل‌محاسبه = بالاترین high پنجرۀ ۲۵۰ نشستِ پیش از شکست، با همان
+    محافظِ ۶ نشست. اگر این پنجره کافی نباشد، سقف تاریخیِ قبل از شکست fallback است.
+    این یک proxy مکانیکی برای مقاومت افقیِ قابل‌محاسبه است، نه خط دستیِ کاربر.
 
-    سنجشِ تاریخی (tools/fts_signal_lab.py، ۷۲۵ نماد / ۲۹۷٬۱۹۴ کندل / first-touch
-    +۸٪−۵٪ در ۲۰ نشست؛ نرخِ پایه = ۰٫۳۸۱):
-        پلکانِ تنها            precision ۰٫۵۶۱   (۱۱٬۲۶۹ آتش)
-        سقفِ ایستاده ۲۵۰       precision ۰٫۶۱۰   (۴٬۵۰۷ آتش)
-        سقفِ ایستاده ۱۲۰      precision ۰٫۵۷۶
-        پلکان بدونِ بدنهٔ صعودی precision ۰٫۵۴۵   ← «کندل تثبیت» +۰٫۰۱۶ واحد می‌دهد
-    پس `tier="strong"` یعنی هر دو لایه رد شده‌اند — همان چیزی که جزوه می‌خواهد.
-    سقفِ ۲۵۰ نشست زیرمجموعۀ پلکان است (پنجره، هشت نقطۀ پلکان را می‌پوشاند)، پس
-    «قوی» هیچ‌وقت با بجِ تابلو در نمی‌افتد.
+    کندل تثبیت = close بالاتر از مقاومت + بدنهٔ صعودی + بسته‌شدن روز قبل در/زیر سطح.
+    پس ادامهٔ حرکت در روزهای بعد Jet تازه تولید نمی‌کند، ولی تا ۳ روز در وضعیت active
+    باقی می‌ماند.
 
-    سابقهٔ کمتر از پنجره ⇒ `static_broke = None` (سنجیده نشد)، نه False.
-    خروجی: {'active','resistance','ath','close','pct_above_res','ceiling',
-            'static_broke','tier','reason'}.
+    خروجی: active, resistance, resistance_date, resistance_type, ath, close,
+    pct_above_res, ceiling, ceiling_date, static_broke, breakout_date,
+    entry_window_days, days_remaining, tier, reason
     """
-    need = 1 + max(ladder)
-    if len(candles) < need:
-        # «تاریخچه کم است» رأیِ «نیست» نیست. پیش از این همین‌جا active=False
-        # می‌شد و نمادِ تازه‌وارد در چارت و در ستون «تک» همان ✗ را می‌گرفت که
-        # نمادِ «شکست نکردۀ» واقعی می‌گیرد. (رأیِ مالک: null ≠ false.)
-        return {"active": None, "resistance": None, "ath": None,
-                "close": None, "pct_above_res": None, "ceiling": None,
-                "resistance_date": None, "ceiling_date": None,
-                "static_broke": None, "tier": None,
-                "reason": f"تاریخچه به {need} نشست نمی‌رسد (این {len(candles)}) — سنجیده نشد"}
+    n = len(candles)
+    if n < 2:
+        return {
+            "active": None, "resistance": None, "resistance_date": None,
+            "resistance_type": None, "ath": None, "close": None,
+            "pct_above_res": None, "ceiling": None, "ceiling_date": None,
+            "static_broke": None, "breakout_date": None,
+            "entry_window_days": entry_window_days, "days_remaining": None,
+            "tier": None, "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد",
+        }
+
+    def level_before(idx):
+        eligible_end = max(0, idx - ceiling_skip)
+        eligible = candles[:eligible_end]
+        if not eligible:
+            return None, None, None
+
+        ath_i = max(range(len(eligible)), key=lambda j: float(eligible[j]["high"]))
+        ath = float(eligible[ath_i]["high"])
+        ath_date = str(eligible[ath_i].get("time") or "")[:10] or None
+
+        if len(eligible) >= ceiling_win:
+            win = eligible[-ceiling_win:]
+            wi = max(range(len(win)), key=lambda j: float(win[j]["high"]))
+            ceiling = float(win[wi]["high"])
+            ceiling_date = str(win[wi].get("time") or "")[:10] or None
+            return ceiling, ceiling_date, "static"
+
+        return ath, ath_date, "historical_high"
+
+    found = None
+    start = max(1, n - max(1, int(entry_window_days)))
+    for i in range(n - 1, start - 1, -1):
+        level, level_date, level_type = level_before(i)
+        if level is None or level <= 0:
+            continue
+        c = candles[i]
+        prev = candles[i - 1]
+        close = float(c["close"])
+        op = float(c["open"])
+        prev_close = float(prev["close"])
+        confirmed = close > level and close >= op and prev_close <= level
+        if confirmed:
+            found = {
+                "idx": i,
+                "level": level,
+                "level_date": level_date,
+                "level_type": level_type,
+            }
+            break
+
     last = candles[-1]
-    # [ih][k] = k نشستِ پیش از امروز = candles[-1-k]
-    res_k = max(ladder, key=lambda k: float(candles[-1 - k]["high"]))
-    res = float(candles[-1 - res_k]["high"])
-    # تاریخِ همان کندلِ سقف: لایۀ نمایش با این عدد، خطِ مقاومت را فقط تا جایی
-    # می‌کشد که واقعاً به ستاپ مربوط است (پیش‌تر خطِ تمام‌عرض رویِ کلِ تاریخ بود).
-    # `.get` نه []*: تحلیل نباید بی‌تاریخِ یک ردیف کرش کند (درِ production
-    # _fts_clean_candles آن را حذف می‌کند، ولی تابعِ دیتکت total می‌ماند)
-    resistance_date = str(candles[-1 - res_k].get("time") or "")[:10] or None
-    ath_res = max(float(c["high"]) for c in candles[:-1])
     close = float(last["close"])
-    up_body = close >= float(last["open"])
-    active = bool(res > 0 and close > res and up_body)
-    # سقفِ ایستاده: بالاترین highِ پنجره، بی‌`ceiling_skip` نشستِ آخر (وگرنه
-    # خودِ شکستِ امروز سقفِ خودش را می‌بلعد).
-    ceil_n = len(candles) - ceiling_skip
-    ceiling = None
-    ceiling_date = None
-    static_broke = None
-    if ceil_n >= ceiling_win:
-        win = candles[ceil_n - ceiling_win:ceil_n]
-        ck_i = max(range(len(win)), key=lambda j: float(win[j]["high"]))
-        ceiling = float(win[ck_i]["high"])
-        ceiling_date = str(win[ck_i].get("time") or "")[:10] or None
-        if ceiling > 0:
-            static_broke = bool(close > ceiling and up_body)
-    tier = ("strong" if (active and static_broke) else
-            "breakout" if active else
-            None if active is None and static_broke is None else "none")
-    return {"active": active, "resistance": round(res, 2),
-            "resistance_date": resistance_date,
-            "ceiling_date": ceiling_date,
+    last_level, last_level_date, last_level_type = level_before(n - 1)
+    if last_level is None:
+        return {
+            "active": None, "resistance": None, "resistance_date": None,
+            "resistance_type": None, "ath": None, "close": round(close, 2),
+            "pct_above_res": None, "ceiling": None, "ceiling_date": None,
+            "static_broke": None, "breakout_date": None,
+            "entry_window_days": entry_window_days, "days_remaining": None,
+            "tier": None, "reason": "مقاومت قابل محاسبه نیست — سنجیده نشد",
+        }
+
+    prior = candles[:-1]
+    ath_res = max((float(c["high"]) for c in prior), default=0.0)
+    ath_hit = bool(ath_res > 0 and close > ath_res)
+
+    if found is not None:
+        age = (n - 1) - found["idx"]
+        days_remaining = max(0, int(entry_window_days) - age)
+        active = age < int(entry_window_days)
+        res = float(found["level"])
+        tier = "confirmed" if active else "expired"
+        reason = (
+            "شکست " + str(found["level_type"]) + " + کندل تثبیت؛ " +
+            str(days_remaining) + " روز از پنجرۀ ورود باقی است"
+            if active else
+            "شکست و تثبیت جت ثبت شده ولی پنجرۀ ۳ روزه تمام شده"
+        )
+        return {
+            "active": active,
+            "resistance": round(res, 2),
+            "resistance_date": found["level_date"],
+            "resistance_type": found["level_type"],
             "ath": bool(abs(res - ath_res) / ath_res < 0.002 if ath_res else False),
-            "ceiling": round(ceiling, 2) if ceiling else None,
-            "static_broke": static_broke, "tier": tier,
             "close": round(close, 2),
             "pct_above_res": round((close - res) / res * 100.0, 2) if res else None,
-            "reason": None if active else (
-                "بدنهٔ نزولی: پایانی زیر آخرینِ بازِ همین نشست" if close > res
-                else "آخرین هنوز زیر پلکان مقاومت است")}
+            "ceiling": round(last_level, 2) if last_level_type == "static" else None,
+            "ceiling_date": last_level_date if last_level_type == "static" else None,
+            "static_broke": True,
+            "breakout_date": str(candles[found["idx"]].get("time") or "")[:10] or None,
+            "entry_window_days": int(entry_window_days),
+            "days_remaining": days_remaining if active else 0,
+            "tier": tier,
+            "reason": reason,
+        }
 
+    return {
+        "active": False,
+        "resistance": round(float(last_level), 2),
+        "resistance_date": last_level_date,
+        "resistance_type": last_level_type,
+        "ath": ath_hit,
+        "close": round(close, 2),
+        "pct_above_res": round((close - last_level) / last_level * 100.0, 2) if last_level else None,
+        "ceiling": round(last_level, 2) if last_level_type == "static" else None,
+        "ceiling_date": last_level_date if last_level_type == "static" else None,
+        "static_broke": False,
+        "breakout_date": None,
+        "entry_window_days": int(entry_window_days),
+        "days_remaining": 0,
+        "tier": "none",
+        "reason": "شکستِ جتِ تأییدشده در پنجرۀ ۳ روزه وجود ندارد",
+    }
 
 def _fts_choch(candles, swings, confirm_days=_FTS_CHOCH_DAYS, margin=_FTS_CHOCH_MARGIN):
     """CHoCH (Change of Character) — شکستِ قطعیِ آخرین پیوتِ مخالفِ روند.
@@ -2646,8 +2700,8 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         else:
             out["trend"]["matrix"] = {
                 "decision": "PERMITTED",
-                "setup": "SWING_DOUBLE_BOTTOM_OR_RANGE",
-                "desc": "هفتگی صعودی + روزانه خنثی: ستاپ کف دوقلو یا خرید در کف باکس رنج؛ نوسان‌گیری زیر ۳ ماه",
+                "setup": "DOUBLE_BOTTOM_OR_LAST_STRUCTURE",
+                "desc": "هفتگی صعودی + روزانه خنثی: کف دوقلو یا ورود در آخرین کف روند صعودی/آخرین سقف روند نزولی",
             }
 
     w_reason = _fts_trend_reason(out["trend"]["W"])
