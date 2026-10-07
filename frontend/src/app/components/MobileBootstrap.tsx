@@ -61,7 +61,7 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === 'loading') {
-    const percent = progress?.overallPercent ?? progress?.percent ?? null;
+    const percent = progress?.percent ?? progress?.overallPercent ?? null;
     const downloaded = progress?.loadedBytes ?? 0;
     const total = progress?.totalBytes ?? 0;
     const remaining = total > 0 ? Math.max(0, total - downloaded) : 0;
