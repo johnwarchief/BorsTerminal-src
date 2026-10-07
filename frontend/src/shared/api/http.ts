@@ -21,7 +21,7 @@ export interface HttpOptions {
   baseDelayMs?: number;
   signal?: AbortSignal;
   /** متد HTTP — پیش‌فرض GET؛ POST برای ذخیرهٔ تنظیمات (B5 داخل http.ts مجاز است) */
-  method?: 'GET' | 'POST' | 'PUT';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   /** بدنهٔ درخواست — همراه با method: 'POST' به صورت JSON ارسال می‌شود */
   body?: unknown;
   /**

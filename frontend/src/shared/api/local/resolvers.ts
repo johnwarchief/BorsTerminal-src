@@ -29,6 +29,13 @@ async function boardPayload(): Promise<Record<string, unknown>> {
   return boardMemo;
 }
 
+/** برای پنل عیب‌یابی: آخرین رونشانیِ زندهٔ تابلو (چند ردیف، کِی) */
+export function overlayStatus(): { patched: number; at: string } | null {
+  const o = boardMemo?.live_overlay as { patched?: number; at?: string } | undefined;
+  if (!o || typeof o.at !== 'string') return null;
+  return { patched: Number(o.patched ?? 0), at: o.at };
+}
+
 /** قیمت پایانی نمادها از تابلوی حافظه — برای وزن‌دهی ارزشی سبد */
 export async function boardCloses(): Promise<Map<string, number>> {
   const out = new Map<string, number>();
@@ -52,31 +59,50 @@ async function bakedOr404(key: string, url: string): Promise<unknown> {
 /** کندل/حجم از price_history — همتای /api/history بک‌اند (فیلتر و dedupe یکسان) */
 async function historyPayload(symbol: string): Promise<{
   status: string;
-  candles: { time: string; open: number; high: number; low: number; close: number }[];
+  candles: { time: string; open: number; high: number; low: number; close: number;
+             closing?: number; last?: number | null }[];
   volumes: { time: string; value: number; color: string }[];
 }> {
-  const rows = await query(
-    `SELECT date, open, high, low, close, volume FROM price_history
-      WHERE replace(replace(trim(symbol),'ي','ی'),'ك','ک') = ?
-      ORDER BY date ASC`,
-    [normFa(symbol)],
-  );
+  // `last` درِ اسنپ‌شات‌هایِ تازه هست (price_history از v10.7.0 این ستون را
+  // کپی می‌کند) و درِ بسته‌هایِ کهنه نیست — بی‌ستون، پایانی همان مبنایِ نمایش
+  // می‌ماند، نه جعلِ `last := close`.
+  let rows: Record<string, unknown>[];
+  let hasLast = true;
+  try {
+    rows = await query(
+      `SELECT date, open, high, low, close, volume, last FROM price_history
+        WHERE replace(replace(trim(symbol),'ي','ی'),'ك','ک') = ?
+        ORDER BY date ASC`,
+      [normFa(symbol)],
+    );
+  } catch {
+    hasLast = false;
+    rows = await query(
+      `SELECT date, open, high, low, close, volume FROM price_history
+        WHERE replace(replace(trim(symbol),'ي','ی'),'ك','ک') = ?
+        ORDER BY date ASC`,
+      [normFa(symbol)],
+    );
+  }
   // حذف تکراریِ روز (کلید دسکتاپ: symbol,date — املای دوگانه ⇒ رکورد پرحجم‌تر می‌ماند)
-  const byDate = new Map<string, { o: number; h: number; l: number; c: number; v: number }>();
+  const byDate = new Map<string, { o: number; h: number; l: number; c: number; v: number; last: number | null }>();
   for (const r of rows) {
     const t = String(r.date ?? '');
     const o = Number(r.open), h = Number(r.high), l = Number(r.low), c = Number(r.close);
     const v = Number(r.volume ?? 0) || 0;
+    const ls = hasLast ? Number(r.last) : NaN;
+    const last = Number.isFinite(ls) && ls > 0 ? ls : null;
     if (!t || !Number.isFinite(o) || !Number.isFinite(h) || !Number.isFinite(l) || !Number.isFinite(c)) continue;
     if (c <= 0 || h <= 0) continue;
     const prev = byDate.get(t);
-    if (!prev || v > prev.v) byDate.set(t, { o, h, l, c, v });
+    if (!prev || v > prev.v) byDate.set(t, { o, h, l, c, v, last });
   }
   const dates = [...byDate.keys()].sort();
   const upC = 'rgba(34, 197, 94, 0.4)', dnC = 'rgba(239, 68, 68, 0.4)';
   const candles = dates.map((t) => {
     const k = byDate.get(t)!;
-    return { time: t, open: k.o, high: k.h, low: k.l, close: k.c };
+    // مبنایِ نمایش = آخرین (همان پیش‌فرضِ price_basis دسکتاپ)، لنگرِ تعدیل = پایانی
+    return { time: t, open: k.o, high: k.h, low: k.l, close: k.last ?? k.c, closing: k.c, last: k.last };
   });
   const volumes = dates.map((t) => {
     const k = byDate.get(t)!;
@@ -87,20 +113,24 @@ async function historyPayload(symbol: string): Promise<{
 
 type HistoryOut = Awaited<ReturnType<typeof historyPayload>>;
 
+/** نماد → ins_code (جدیدترین سریِ نماد) — همان lookupِ دسکتاپ */
+async function insCodeFor(symbol: string): Promise<string> {
+  const rows = await query(
+    `SELECT ins_code FROM instruments
+      WHERE replace(replace(replace(trim(l_val18),'ي','ی'),'ك','ک'),'ى','ی') = ?
+      ORDER BY updated_at DESC LIMIT 1`,
+    [normFa(symbol)],
+  );
+  return rows.length ? String(rows[0].ins_code ?? '') : '';
+}
+
 /**
  * چارت کامل از CSV زندهٔ TSETMC (کندل خام + رویدادهای تعدیل + factors) —
  * همان مسیر /api/chart دسکتاپ. null یعنی زنده در دسترس نیست ⇒ پختِ محلی.
  */
 async function liveChartPayload(symbol: string): Promise<Record<string, unknown> | null> {
   try {
-    // همان lookup دسکتاپ: نمادِ نرمال‌شده → ins_code (جدیدترین سری نماد)
-    const rows = await query(
-      `SELECT ins_code FROM instruments
-        WHERE replace(replace(replace(trim(l_val18),'ي','ی'),'ك','ک'),'ى','ی') = ?
-        ORDER BY updated_at DESC LIMIT 1`,
-      [normFa(symbol)],
-    );
-    const insCode = rows.length ? String(rows[0].ins_code ?? '') : '';
+    const insCode = await insCodeFor(symbol);
     if (!insCode) return null;
     const res = await liveChart(insCode, symbol);
     if (!res || typeof res !== 'object') return null;
@@ -112,7 +142,7 @@ async function liveChartPayload(symbol: string): Promise<Record<string, unknown>
       const volumes = out.volumes as { time: string }[];
       const factors = out.factors as { time: string; factor: number }[];
       const candle = { time: live.time, open: live.open, high: live.high, low: live.low,
-                       close: live.close, last: live.close };
+                       close: live.last ?? live.close, last: live.last ?? undefined };
       const vol = { time: live.time, value: live.volume,
                     color: live.close >= live.open ? '#10b981' : '#f43f5e' };
       const last = candles[candles.length - 1];
@@ -139,7 +169,8 @@ async function withTodayCandle(h: HistoryOut, symbol: string): Promise<HistoryOu
     if (!live) return h;
     const today = tehranToday();
     const last = h.candles[h.candles.length - 1];
-    const candle = { time: live.time, open: live.open, high: live.high, low: live.low, close: live.close };
+    const candle = { time: live.time, open: live.open, high: live.high, low: live.low,
+                     close: live.last ?? live.close, last: live.last };
     const vol = { time: live.time, value: live.volume,
                   color: live.close >= live.open ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)' };
     if (last && last.time === today) {
@@ -231,8 +262,22 @@ export async function resolveLocal(
   }
   if (p(1) === 'chart-db' && seg.length === 3) return withTodayCandle(await historyPayload(p(2)), p(2));
   if (p(1) === 'order-book' && seg.length === 3) {
-    const data = await baked(`orderbook/${p(2)}`);
-    return data ?? { status: 'no_data', symbol: p(2), levels: [] };
+    const sym = p(2);
+    // عمقِ زنده از همان blDs که دسکتاپ درِ `order_book` می‌نویسد — صفِ دیدنیِ
+    // گوشی نباید به اسنپ‌شاتِ روزِ پخت گیر کند («سرخطی» از همین پنج خط خوانده می‌شود).
+    const ins = await insCodeFor(sym);
+    const mw = ins ? (await liveWatch())?.get(ins) : undefined;
+    if (mw?.levels.length) {
+      return {
+        status: 'ok', symbol: sym, levels: mw.levels,
+        session: { d_even: mw.den, h_even: mw.hen, updated_at: new Date().toISOString() },
+        totals: mw.q
+          ? { buy_vol: mw.q.bq, buy_cnt: mw.q.bc, sell_vol: mw.q.sq, sell_cnt: mw.q.sc }
+          : null,
+      };
+    }
+    const data = await baked(`orderbook/${sym}`);
+    return data ?? { status: 'no_data', symbol: sym, levels: [] };
   }
   if (p(1) === 'market' && p(2) === 'intraday') {
     // سری درون‌روزی از تیک‌های زندهٔ سرور ساخته می‌شود؛ در اسنپ‌شات معنا ندارد
