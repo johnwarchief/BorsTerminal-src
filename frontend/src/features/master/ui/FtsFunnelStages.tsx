@@ -152,7 +152,7 @@ const MARK_LABEL = STATUS_LABEL;
  */
 type ColKey =
   | 'symbol' | 'last' | 'chg' | 'vol' | 'pattern'
-  | 'weekly' | 'daily' | 'setup' | 'techPoints' | 'mark'
+  | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'mark'
   | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'basket';
 
 const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
@@ -162,7 +162,8 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   vol: { label: 'حجم/ماه', title: 'حجم امروز ÷ میانگین ماهانه', end: true },
   pattern: { label: 'نشانه', title: 'فیلترهای جزوه‌ای که این ردیف رد کرده است' },
   weekly: { label: 'هفتگی', title: 'روند هفتگی — چارت ۲: نزولی و خنثی = reject', end: true },
-  daily: { label: 'روزانه', title: 'روند روزانه — شاخه‌بندی پولبک/جت، فیبو/CHoCH، کف دوقلو', end: true },
+  daily: { label: 'روزانه', title: 'روند روزانه — شاخه بعدی بر اساس این روند تعیین می‌شود', end: true },
+  branch: { label: 'شاخه', title: 'شاخه FTS بر اساس روند روزانه' },
   setup: { label: 'شواهد', title: 'ستاپ‌های فعال؛ فقط شواهد کمکی و نه گیت عبور' },
   techPoints: { label: 'امتیاز', title: 'امتیاز کمکی Ranking؛ روند هفتگی/روزانه اصل است و ستاپ‌ها فقط تا ۲ امتیاز کمکی دارند', end: true },
   mark: { label: 'داوری', title: 'حکم این مرحله بر اساس روند هفتگی سپس روزانه', end: true },
@@ -177,7 +178,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
   tape: ['symbol', 'last', 'chg', 'vol', 'pattern'],
-  technical: ['symbol', 'weekly', 'daily', 'setup', 'techPoints', 'mark'],
+  technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark'],
   fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score'],
   handover: ['symbol', 'weekly', 'score', 'basket'],
 };
@@ -195,7 +196,7 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
  */
 const COL_W: Record<ColKey, number> = {
   symbol: 20, last: 13, chg: 12, vol: 11, pattern: 32,
-  weekly: 14, daily: 14, setup: 23, techPoints: 11, mark: 14,
+  weekly: 13, daily: 13, branch: 20, setup: 20, techPoints: 10, mark: 13,
   ind1: 14, ind2: 14, ind3: 14, ind4: 14, ind5: 14, score: 10, basket: 30,
 };
 
@@ -272,6 +273,8 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       return <TrendCell t={e.trendW} />;
     case 'daily':
       return <TrendCell t={e.trendD} />;
+    case 'branch':
+      return <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary">{e.dailyStrategy || '—'}</td>;
     case 'setup':
       return <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary">{e.setups || '—'}</td>;
     case 'techPoints':
