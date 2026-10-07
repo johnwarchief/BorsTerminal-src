@@ -2118,3 +2118,56 @@ Until this roadmap is superseded:
 When choosing between polishing a secondary feature and improving Strategy FTS correctness, research depth, chart intelligence, explainability, usability, or validation, prefer Strategy FTS unless there is a critical reliability blocker elsewhere.
 
 The desired end state is a **deep, trustworthy, visually explainable FTS decision system** integrated into the rest of BorsTerminal—not merely a collection of disconnected features.
+
+---
+
+# 15. Execution state ledger — updated by the running agent
+
+This section is the live state of the roadmap above. Every claim carries a commit, a test, or a
+measurement. Nothing is recorded as PASS without evidence; unproven items stay `UNVERIFIED`.
+
+## 15.1 Phase 0 — Android (`arena/fts-mobile-uiux-20261007`, base_main_commit `e23e240`)
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| A0-1 | Branch consumes canonical `main` | `ACCEPTED` | merge `a02d0b2`; `dev/version_anchor_guard.py` → 6 anchors = 1.0.78 |
+| A0-2 | Fundamental shows the full universe | `ACCEPTED-PROVISIONAL` | `b47595a`. Root cause of "59 companies": offline resolver honours `?limit` while `api/screener.py` ignores it, and `useFtsScreen` asked for 60. Baked snapshot holds 873 rows (679 non-excluded), counted from `mobile_snapshot.db.gz`. Pixel proof of 873 rendered rows: `UNVERIFIED` → A3 |
+| A0-3 | Chart renders offline | `ACCEPTED-PROVISIONAL` | `2dbc1ab` + `ccd2226`: three raw `fetch()` calls replaced by `http()` (`resolveLocal` is wired only there). Candle contract pulled onto desktop: no `last := close` fabrication, no clamping, `widen()` geometry, zero-volume adjustment signal. On-device pixels: `UNVERIFIED` → A3 |
+| A0-4 | Live board overlay completeness | `ACCEPTED` | `tmin`/`tmax`/`d_even` overlaid, `is_live` recomputed like `api/market.py:552`; `mobile-live-overlay.spec.ts` (7 tests, fixture from the desktop `_mw` shape, includes a negative control) |
+| A0-5 | Queue / depth view (owner ruling: view only) | `ACCEPTED` | five live `blDs` lines mirror `test_tsetmc.py::book_lines`; resolver test covers live / baked / `no_data` |
+| A0-6 | Funnel stage links resolve | `ACCEPTED` | `e80df0b`. `funnelStagePath` emitted `/master/stage/…` with no such route — dead on Desktop too. Live at 360×800: `#/master?stage=technical&preset=trend`, zero `route-not-found` |
+| A0-7 | Portrait layout and inspector sheet | `ACCEPTED-PROVISIONAL` | `adc9ae2`: missing `data-shell` attributes added, dead selectors retargeted. Measured 360×800: nav `{y:742,h:58}`, inspector `{w:338, y:39…742}`. Owner visual verdict pending |
+| A0-8 | Strategy-tree flow animation restored | `ACCEPTED-PROVISIONAL` | owner ruling "bring it back"; live: `animation-name: fts-path-flow`, `play-state: running`, `data-tree-flow-running=1` |
+| A0-9 | Snapshot freshness diagnostics on device | `ACCEPTED` | `933a72a` — package version/`built_at`, screener rows, per-symbol bake counts, candle depth/range, last live board patch |
+| A0-10 | Mobile test/type gates locally | `ACCEPTED` | vitest 1486 passed / 0 failed (145 files), `tsc -b` 0 errors, `eslint src` 0, `dev/persian_glyph_guard.py` 4/4 |
+
+## 15.2 Open phase-0 items
+
+| ID | Item | State | Note |
+| --- | --- | --- | --- |
+| A1 | Snapshot re-bake | `IMPLEMENTING` | Shipped bundle: `built_at 2026-10-07T09:29` but `price_history` ends 2026-09-29 and lacks `last`/`value`/`src`. Contract to document: codal raw tables are deliberately not baked; only their cooked output is |
+| A2 | `npm test` in `mobile.yml` | `READY` | Mobile guard tests never run in CI today |
+| A3 | Final Android verification | `TESTING` | Harness limit: Playwright's Chromium returns `204`/empty for the 10–23 MB snapshot fetch (0.2 MB works) while `curl` returns 200 — evidence path must avoid that (direct CDP session or documented lightweight bundle) |
+| A4 | Final Android release record | `ACCEPTED-PROVISIONAL` | `mobile-uiux-data-progress-ccd2226`, APK 33,002,123 B, sha256 `88c495ecf204649d887a7ffc75d3fa9ee1b569a2d6271840c8dc6ef99c178eab`; to be re-cut after A1–A3 |
+
+## 15.3 Discovered outside the roadmap (classified)
+
+| ID | Finding | Class | Priority | State |
+| --- | --- | --- | --- | --- |
+| D-1 | Tape flags on the phone are the baked values; they are not recomputed after the live patch. Frontend-vs-python equality was measured on 1312 perturbed real rows and matched (`tape-fuzz-parity`) | FEATURE GAP | phase 0/1 | `DISCOVERED` |
+| D-2 | `instruments` accumulates: 5861 rows in the bank, 2306 with an older `d_even`; the same live endpoint returned 3865 rows today — the bake prunes nothing | DATA HYGIENE | with A1 | `DISCOVERED` |
+| D-3 | `mobile.yml` tags `mobile-uiux-data-progress-<sha>`, not the `mobile-parity-<sha>` naming in the mission | RELEASE DISCIPLINE | with A4 | `DISCOVERED` |
+| D-4 | `guards` CI job fails on `main` already: `dev/market_hot_state_v1077.py` reads its schema from `market.db(.lzma)`, which is not tracked, so CI builds an empty bank and asserts "table instruments gone from schema" | CI DEBT | independent | `BLOCKED` (needs a committed schema fixture or an explicit skip) |
+| D-5 | Backend gate not run locally this session: a foreign `uvicorn` on 127.0.0.1:8002 shares `market.db` and was not killed | PROCESS | low | `UNVERIFIED` |
+| D-6 | Live Codal rate-limit/quota check needs an Iranian egress; `cdn.tsetmc.com` returns 403 from this machine | EXTERNAL | phase 1 | `UNVERIFIED` |
+
+## 15.4 Conflict register
+
+| ID | Conflict | Ruling | State |
+| --- | --- | --- | --- |
+| C-1 | "Is the style door a gate or evidence?" — `fts-candidate-engine` tests vs `techMark` hierarchy | Owner (2026-10-08): weekly then daily is the judge; setups (jet/fib/point-hunt) are evidence and points only; fibo is context, never a trigger | `RESOLVED` — three tests migrated, the null≠false guard they protected is still asserted |
+
+## 15.5 Next item selected
+
+A1 (snapshot re-bake) → A2 (`npm test` in CI) → A3 (verification evidence) → A4 (release record) →
+phase 1 S-1 (locate the two Sarkhati research repositories already named in this project's docs).
