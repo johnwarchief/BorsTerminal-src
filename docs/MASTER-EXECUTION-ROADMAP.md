@@ -174,6 +174,66 @@ Use a fixed benchmark universe, multiple dates, and both ordinary symbols and di
 
 Every parity claim needs evidence.
 
+## 1.5 Filter formula source-of-truth and TSE validation
+
+The filter definitions stored as TXT files under `docs/` are **locked canonical inputs** for the corresponding filter formulas.
+
+Current filter reference files include:
+
+- `docs/الگوی ساعت.txt`
+- `docs/حجم مشکوک.txt`
+- `docs/فیلتر جت.txt`
+- `docs/نقطه زنی.txt`
+- `docs/ورود پول هوشمند.txt`
+- `docs/ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt`
+- `docs/کف روبی صف فروش.txt`
+
+### Hard rule
+
+For every filter:
+
+- Use the referenced TXT file as the canonical formula source.
+- Do not add thresholds, conditions, variables, weights, exclusions, time windows, or extra logic that are not supported by that source.
+- Do not remove or alter a documented condition merely to increase the number of results.
+- Do not silently reinterpret a formula because another website or implementation uses a different convention.
+- Any required interpretation or ambiguity must be documented first and resolved against evidence before implementation.
+- UI labels and result explanations must correspond to the actual canonical formula.
+
+### TSE/TSETMC validation
+
+Filter results must be validated inside the `تابلوخوانی` / market-board experience against observable TSE/TSETMC data.
+
+For each filter, create a repeatable validation set containing:
+
+- Symbols that should match
+- Symbols that should not match
+- Edge cases
+- Required raw TSE/TSETMC fields
+- Expected filter output
+- Actual BorsTerminal output
+- Timestamp/date of the comparison
+
+The comparison must verify both:
+
+1. **Formula correctness** — the filter uses exactly the conditions defined by its TXT source.
+2. **Data correctness** — the input fields in BorsTerminal correspond to the relevant TSE/TSETMC fields and semantics.
+
+Any mismatch must be classified as:
+
+`FORMULA BUG / DATA MAPPING BUG / TSE-TSETMC DIFFERENCE / TIMING DIFFERENCE / SOURCE AMBIGUITY / UNVERIFIED`
+
+No filter is considered complete merely because it returns plausible-looking symbols.
+
+### Acceptance gate per filter
+
+Filters are processed **one at a time**:
+
+**Read TXT → map every condition → implement → unit test → run against TSE/TSETMC → inspect results in تابلوخوانی → record evidence → ACCEPT → next filter**
+
+Do not batch-implement all filters and then assume they are correct.
+Do not move to the next filter after a failed or unverified one.
+
+
 ### Exit gate
 
 Phase 1 is complete only when:
