@@ -1,0 +1,89 @@
+name: Fresh bootstrap smoke test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bors_config.py'
+      - 'bors_entry.py'
+      - 'requirements.txt'
+      - 'tests/ci_fresh_bootstrap.py'
+      - '.github/workflows/fresh-bootstrap-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Assert source has no market baseline
+        shell: bash
+        run: |
+          test ! -f market.db.lzma
+          test ! -f market.db
+          echo "PASS: source checkout contains no market DB baseline"
+
+      - name: Run fresh bootstrap using external Release
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, sys, tempfile, sqlite3
+          sys.path.insert(0, os.getcwd())
+          import bors_config as bc
+
+          with tempfile.TemporaryDirectory(prefix="bors-fresh-") as td:
+              old_work = bc.WORK_DIR
+              old_db = bc.DB_PATH
+              bc.WORK_DIR = td
+              bc.DB_PATH = os.path.join(td, "market.db")
+
+              path = bc.ensure_market_db(verbose=True)
+              assert path == bc.DB_PATH, (path, bc.DB_PATH)
+              assert os.path.isfile(path), path
+
+              conn = sqlite3.connect(path)
+              try:
+                  tables = {r[0] for r in conn.execute(
+                      "SELECT name FROM sqlite_master WHERE type='table'")}
+                  required = {"instruments", "daily_prices", "financial_statements", "market_totals"}
+                  missing = sorted(required - tables)
+                  assert not missing, f"missing tables: {missing}"
+
+                  checks = {
+                      "instruments": "SELECT COUNT(*) FROM instruments",
+                      "daily_prices": "SELECT COUNT(*) FROM daily_prices",
+                      "financial_statements": "SELECT COUNT(*) FROM financial_statements",
+                      "market_totals": "SELECT COUNT(*) FROM market_totals",
+                  }
+                  counts = {k: int(conn.execute(q).fetchone()[0]) for k, q in checks.items()}
+                  print("BOOTSTRAP_COUNTS", counts)
+                  assert counts["instruments"] > 0
+                  assert counts["daily_prices"] > 0
+                  assert counts["financial_statements"] > 0
+                  assert counts["market_totals"] > 0
+              finally:
+                  conn.close()
+
+              # Exercise the same modules imported by the real app paths.
+              import fts_engine
+              import codal_engine
+              print("IMPORT_OK fts_engine codal_engine")
+
+              bc.WORK_DIR = old_work
+              bc.DB_PATH = old_db
+
+          print("FRESH_BOOTSTRAP_SMOKE_OK")
+          PY
+
+      - name: Verify source tree still excludes market baseline
+        shell: bash
+        run: |
+          test ! -f market.db.lzma
+          echo "PASS: no DB baseline entered the source checkout"
