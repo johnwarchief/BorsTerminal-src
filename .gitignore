@@ -145,7 +145,6 @@ codal.db.lzma.sig
 
 
 *.lzma
-!market.db.lzma
 releases/
 .cluster/
 .opencode/
@@ -188,3 +187,8 @@ price_basis.json
 _audit/indicator_audit/candles.json
 _audit/indicator_audit/ts_out.json
 _audit/indicator_audit/__pycache__/
+
+# ---- Regenerable audit output ----
+_audit/*.json
+!_audit/ra_parity_report.json
+!_audit/parity_root_cause.json

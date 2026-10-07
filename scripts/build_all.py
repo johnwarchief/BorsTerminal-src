@@ -5,7 +5,7 @@
     python scripts/build_all.py --skip-npm # فقط PyInstaller (فرانت از قبل ساخته)
 
 خروجی: dist/BorsTerminal_Ultimate/ (پوشه اجرایی مستقل)
-سپس دستی کنارش بگذار: market.db.lzma (اولین اجرا خودش extract می‌کند)
+دادهٔ بازار دیگر جزو سورس‌ریپو یا خروجی build نیست؛ bootstrap آن را از Release data asset دریافت می‌کند.
 """
 import argparse
 import os
@@ -48,12 +48,8 @@ def main():
         print('[ERR] expected output missing:', OUT)
         sys.exit(1)
 
-    # market.db.lzma کنار exe -- داده اجرایی (نه داخل باینری)
-    src = os.path.join(ROOT, 'market.db.lzma')
-    if os.path.exists(src):
-        dst = os.path.join(OUT, 'market.db.lzma')
-        shutil.copy2(src, dst)
-        print(f'[OK] data: market.db.lzma -> {dst}')
+    # market.db.lzma عمداً در خروجی build کپی نمی‌شود.
+    # نصب تازه آن را از Release data asset دریافت می‌کند.
 
     total = 0
     for dirpath, _dirs, files in os.walk(OUT):

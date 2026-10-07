@@ -270,12 +270,8 @@ def _render_flags():
     return []
 
 def _data_root():
-    """پوشهٔ داده‌ها: کنارِ EXE، یا _internal در بیلدِ onedir.
+    """ریشهٔ دادهٔ محلی؛ baseline بازار در نصب تازه از Release دریافت می‌شود."""
 
-    v1.0.15: PyInstaller در onedir تمامِ datas را در _internal می‌گذارد،
-    نه کنارِ EXE. جستجویِ نسبیِ market.db فقط cwd را می‌بیند و رویِ
-    نصبِ تمیز شکست می‌خورد («market.db not found»).
-    """
     if getattr(sys, "frozen", False):
         base = os.path.dirname(os.path.abspath(sys.executable))
     else:
@@ -309,9 +305,9 @@ def _preflight():
     root = _data_root()
     print(f"  data root: {root}")
     if not os.path.exists(db):
-        print("  [ERR] market.db not found next to this EXE.")
-        print("        Keep market.db/.lzma in the SAME folder as the EXE")
-        print("        (it is inside the release ZIP, extract all files together).")
+        print("  [ERR] market.db baseline is unavailable.")
+        print("        The app downloads it from the external Release data asset.")
+        print("        Check network access and retry the application.")
         ok = False
     else:
         try:

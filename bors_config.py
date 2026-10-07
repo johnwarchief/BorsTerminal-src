@@ -162,6 +162,79 @@ def _sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+MARKET_DATA_RELEASE_TAG = "data-latest"
+MARKET_DATA_RELEASE_BASE = (
+    "https://github.com/johnwarchief/BorsTerminal/releases/download/"
+    + MARKET_DATA_RELEASE_TAG + "/"
+)
+MARKET_DATA_RELEASE_ASSET = MARKET_DATA_RELEASE_BASE + "market.db.lzma"
+MARKET_DATA_RELEASE_META = MARKET_DATA_RELEASE_BASE + "market.db.meta.json"
+
+
+def _download_market_db_lzma(verbose=False):
+    """Download and verify the external market baseline release."""
+    import hashlib
+    import json
+    import tempfile
+    import urllib.request
+
+    os.makedirs(WORK_DIR, exist_ok=True)
+    target = os.path.join(WORK_DIR, "market.db.lzma")
+    tmp = None
+    try:
+        req = urllib.request.Request(
+            MARKET_DATA_RELEASE_META,
+            headers={"User-Agent": "BorsTerminal-DataBootstrap/1"},
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            meta = json.loads(resp.read().decode("utf-8"))
+
+        want_sha = str(meta.get("sha256", "")).lower()
+        want_size = int(meta.get("size", 0) or 0)
+        if len(want_sha) != 64 or any(c not in "0123456789abcdef" for c in want_sha):
+            raise ValueError("market-data release metadata has no valid sha256")
+
+        fd, tmp = tempfile.mkstemp(prefix="market.db.", suffix=".lzma", dir=WORK_DIR)
+        os.close(fd)
+
+        h = hashlib.sha256()
+        total = 0
+        req = urllib.request.Request(
+            MARKET_DATA_RELEASE_ASSET,
+            headers={"User-Agent": "BorsTerminal-DataBootstrap/1"},
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp, open(tmp, "wb") as out:
+            while True:
+                chunk = resp.read(1024 * 1024)
+                if not chunk:
+                    break
+                out.write(chunk)
+                h.update(chunk)
+                total += len(chunk)
+
+        got_sha = h.hexdigest()
+        if want_size and total != want_size:
+            raise ValueError("market.db.lzma size mismatch: %d != %d" % (total, want_size))
+        if got_sha != want_sha:
+            raise ValueError("market.db.lzma sha256 mismatch: %s != %s" % (got_sha, want_sha))
+
+        os.replace(tmp, target)
+        tmp = None
+        if verbose:
+            print("  [OK]  market.db.lzma downloaded from Release (%.1f MB)" % (total / 1048576.0))
+        return target
+    except Exception as e:
+        if verbose:
+            print("  [ERR] market.db.lzma Release download failed:", e)
+        return None
+    finally:
+        if tmp:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+
+
 def _find_bundled_db_lzma():
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
     for candidate in (os.path.join(exe_dir, "market.db.lzma"),
@@ -465,6 +538,8 @@ def ensure_market_db(verbose=False):
     و tape_history‌اش (۱۵۱٫۳۵۶ ردیف) هم می‌توانست برود.
     """
     src_lzma = _find_bundled_db_lzma()
+    if not src_lzma:
+        src_lzma = _download_market_db_lzma(verbose=verbose)
     want = None
     if src_lzma:
         try:

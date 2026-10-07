@@ -1,0 +1,62 @@
+name: Publish market data asset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'market.db.lzma'
+      - '.github/workflows/market-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-market-data:
+    if: ${{ hashFiles('market.db.lzma') != '' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      DATA_REPO: johnwarchief/BorsTerminal
+      DATA_TAG: data-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Require publishing token
+        shell: bash
+        run: |
+          test -n "$GH_TOKEN" || { echo "RELEASE_TOKEN is required"; exit 1; }
+
+      - name: Generate metadata
+        shell: bash
+        run: |
+          python - <<'PY'
+          import datetime, hashlib, json, pathlib, subprocess
+          p = pathlib.Path("market.db.lzma")
+          meta = {
+              "asset": p.name,
+              "size": p.stat().st_size,
+              "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+              "source_repo": "johnwarchief/BorsTerminal-src",
+              "source_commit": subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip(),
+              "published_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+          pathlib.Path("market.db.meta.json").write_text(
+              json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          PY
+
+      - name: Create or update data release
+        shell: bash
+        run: |
+          if gh release view "$DATA_TAG" --repo "$DATA_REPO" >/dev/null 2>&1; then
+            echo "[=] release $DATA_TAG exists"
+          else
+            gh release create "$DATA_TAG" --repo "$DATA_REPO" \
+              --title "BorsTerminal Market Data (latest)" \
+              --prerelease \
+              --notes "External market.db.lzma baseline. The source repository intentionally does not track this database."
+          fi
+          gh release upload "$DATA_TAG" market.db.lzma market.db.meta.json \
+            --repo "$DATA_REPO" --clobber
