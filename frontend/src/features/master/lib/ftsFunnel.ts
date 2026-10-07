@@ -197,8 +197,10 @@ export type Candidate = {
   /** روندِ دو زمانه همان‌طور که موتور می‌بیند: 'up' | 'down' | 'range' | 'na' | null */
   trendW: string | null;
   trendD: string | null;
-  /** ستاپ‌های فعالِ این نماد (جت/فیبو/CHoCH/…) — ستونِ مرحلۀ تکنیکال */
+  /** ستاپ‌های فعالِ این نماد (جت/فیبو/CHoCH/…) — فقط شواهدِ مثبت/کمکی، نه گیت */
   setups: string;
+  /** امتیازِ کمکیِ تکنیکال برای Ranking؛ هرگز درِ T را به‌تنهایی باز/بسته نمی‌کند. */
+  technicalPoints: number | null;
   /** تک‌تکِ پنج شاخص: pass / reject / pending — همان سطرهای صفحۀ ۱ چارت */
   inds: StageStatus[];
   /** رأیِ تکنیکال از کجا آمده: `live` = `/api/fts/{symbol}`، `screen` = غنی‌سازیِ
@@ -344,90 +346,105 @@ export function techFromVerdict(v: TechVerdict): TechSignals {
 }
 
 /**
- * ستاپ‌هایِ پذیرفتنیِ هر سبک — عینِ گره‌هایِ «setup» درِ درخت استراتژی
- * (`StrategyTreePage.activeNodes`) و شرحِ همان افق‌ها: نوسان‌گیر با جت یا
- * ترازِ نزدیکِ فیبو وارد می‌شود، روندگیر با فیبو/CHoCH/جت پله‌ای می‌خرد،
- * ساعت شنی ستاپِ عمیقِ خودش را می‌خواهد.
+ * ستاپ‌ها در مرحلۀ T «branch/evidence» هستند، نه شرطِ عبور.
+ *
+ * چارتِ چهارصفحه‌ای ابتدا ماتریسِ روند را می‌خواند: هفتگی نزولی/خنثی => reject؛
+ * هفتگی صعودی => ورود به شاخهٔ روزانه. روزانهٔ صعودی/نزولی/خنثی هر سه شاخهٔ معتبرند.
+ * پولبک، جت، فیبو، CHoCH، کف دوقلو، باکس رنج، ساعت شنی و نقطه‌زنی فقط شواهدِ کمکی‌اند.
+ * «پولبک» تا وقتی فیلد مستقل و قابل اتکایی از API نداشته باشد این‌جا جعل نمی‌شود.
  */
-const PRESET_SETUP: Record<TreePreset, { label: string; test: (t: TechSignals) => boolean }> = {
-  swing: {
-    label: `جت یا فیبوی ${toFaDigits('33-40')}`,
-    test: (t) => t.jet || t.fibZone === '33-40',
-  },
-  trend: {
-    // چارت ۳ برایِ روندگیر: کف‌روبی + نقطه‌زنی (ورود رویِ کفِ سوم یا پنجمِ
-    // کانال) — همان دو گره‌ای که درختِ روندگیر حالا به آن می‌رسد. فیبو/CHoCH/جت
-    // از ستاپ‌هایِ پذیرفتنیِ همین سبک می‌مانند (درخت آن‌ها را هم دارد).
-    label: `فیبو یا CHoCH یا جت یا کفِ ${toFaDigits('3')}/${toFaDigits('5')}`,
-    test: (t) => t.fibZone != null || t.chochBull || t.jet || t.pointHunt === true,
-  },
-  hourglass: {
-    label: 'ستاپِ عمیقِ ساعت شنی',
-    test: (t) => t.hourglass,
-  },
-  custom: {
-    label: 'هر ستاپِ جزوه',
-    test: (t) => t.jet || t.fibZone != null || t.chochBull || t.doubleBottom || t.rangeBreak || t.hourglass,
-  },
-};
+function setupEvidenceCount(t: TechSignals): number {
+  return [
+    t.jet,
+    t.fibZone != null,
+    t.chochBull,
+    t.doubleBottom,
+    t.rangeBreak,
+    t.hourglass,
+    t.pointHunt === true,
+  ].filter(Boolean).length;
+}
 
-/** ستاپ‌هایی که همین حالا روی نماد فعال‌اند — برایِ توضیحِ «چرا رد شد» */
+/**
+ * امتیازِ Ranking-only است و قانونِ جدیدِ FTS محسوب نمی‌شود:
+ * روندِ هفتگی وزنِ پایه‌ای بالاتری از هر ستاپ دارد؛ ستاپ‌ها فقط امتیازِ کمکی‌اند.
+ * weekly=2؛ daily=2 در صعودی و 1 در شاخهٔ نزولی/خنثی؛ setups حداکثر 2.
+ */
+export function technicalEvidencePoints(t: TechSignals | null): number | null {
+  if (!t || t.trendW !== 'up') return null;
+  if (t.trendD !== 'up' && t.trendD !== 'down' && t.trendD !== 'range') return null;
+  const weeklyPoints = 2;
+  const dailyPoints = t.trendD === 'up' ? 2 : 1;
+  const setupPoints = Math.min(2, setupEvidenceCount(t));
+  return weeklyPoints + dailyPoints + setupPoints;
+}
+
+/** ستاپ‌هایی که همین حالا روی نماد فعال‌اند — برایِ نمایشِ شواهد */
 function activeSetups(t: TechSignals): string {
   const on: string[] = [];
   if (t.jet) on.push('جت');
   if (t.fibZone) on.push(`فیبوی ${toFaDigits(t.fibZone)}`);
   if (t.chochBull) on.push('CHoCHِ صعودی');
   if (t.doubleBottom) on.push('کفِ دوقلو');
-  if (t.rangeBreak) on.push('کفِ باکسِ رنج');
+  if (t.rangeBreak) on.push('باکسِ رنج');
   if (t.hourglass) on.push('ساعت شنی');
   if (t.pointHunt === true) on.push('نقطه‌زنی');
   return on.join(' + ');
 }
 
 /**
- * درِ تکنیکال — ستون T درِ چارت (تکنیکالِ دو زمانه):
- *   وتوی هفتگی ⇒ رد. بی‌رأی یا UNKNOWN ⇒ «در انتظار»، نه رد.
- *   هفتگی صعودی + ستاپِ همان سبک ⇒ قبول. هفتگی صعودیِ بی‌ستاپِ سبک ⇒ رد،
- *   چون درِ درخت «ستاپ» گرهٔ ورود است، نه تزیینات.
- * رأیِ هفتگی از `trend.matrix.decision`ِ بک‌اند می‌آید تا قیف و جدولِ بنیادی
- * و بج‌ها هیچ‌وقت دو داوریِ متفاوت نداشته باشند.
- * هیچ منبعی نبود ⇒ `unavailable`؛ و برایِ روندگیر، اگر تنها ستاپِ باقی‌مانده
- * نقطه‌زنی باشد و منبع آن نسنجیده باشد ⇒ `pending` (نه رد).
+ * درِ تکنیکال — ترتیبِ قطعیِ داوری:
+ *   ۱) روندِ هفتگی
+ *   ۲) روندِ روزانه
+ *   ۳) ستاپ‌ها فقط شواهد/امتیاز کمکی
+ *
+ * از چارت: هفتگی نزولی یا خنثی => REJECT. هفتگی صعودی وارد شاخهٔ روزانه می‌شود؛
+ * روزانهٔ صعودی/نزولی/خنثی همگی شاخه‌های معتبر خریدند، پس روزانهٔ نزولی یا خنثی
+ * به‌خودی‌خود REJECT نیست. اگر یکی از دو روند ناشناخته باشد => PENDING.
  */
-function techMark(
-  t: TechSignals | null,
-  preset: TreePreset,
-): { s: StageStatus; why: string } {
+function techMark(t: TechSignals | null): { s: StageStatus; why: string } {
   if (!t) {
     return {
       s: 'unavailable',
-      why: 'تکنیکال: تحلیلِ دو زمانه روی این نماد اجرا نشده (نه در اسکرینر، نه در رأیِ زنده) — سنجیده نشد، وتو نیست',
+      why: 'تکنیکال: تحلیلِ دو زمانه روی این نماد اجرا نشده — سنجیده نشد، وتو نیست',
     };
   }
-  if (t.decision === 'REJECT' || t.weeklyVeto) {
-    return { s: 'reject', why: `تکنیکال: وتوی هفتگیِ چارت — ${t.matrixDesc ?? 'روندِ هفتگی صعودی نیست'}` };
+
+  const weekly = t.trendW;
+  if (weekly === 'down' || weekly === 'range') {
+    return { s: 'reject', why: `تکنیکال: روندِ هفتگی ${trendLabel(weekly)} است — وتوی FTS` };
   }
-  if (t.decision == null || t.decision === 'UNKNOWN') {
-    return {
-      s: 'pending',
-      why: 'تکنیکال: روندِ هفتگی قابلِ تشخیص نیست (کمتر از دو پیوتِ کامل) — نظر داده نمی‌شود',
-    };
-  }
-  const gate = PRESET_SETUP[preset];
-  const act = activeSetups(t);
-  if (!gate.test(t)) {
-    if (preset === 'trend' && t.pointHunt === null) {
-      return {
-        s: 'pending',
-        why: `تکنیکال: هفتگی صعودی است؛ ستاپ‌هایِ سنجیده («${gate.label}») هیچ‌کدام روشن نیست و نقطه‌زنی درِ این منبع سنجیده نشده — نظر داده نمی‌شود${act ? ` — ستاپِ فعال: ${act}` : ''}`,
-      };
+
+  // اگر روند خام در پاسخ نیامده ولی موتور رأیِ صریحِ وتو داده، همان رأی را حفظ می‌کنیم.
+  if (weekly == null || weekly === 'na') {
+    if (t.weeklyVeto || t.decision === 'REJECT') {
+      return { s: 'reject', why: `تکنیکال: رأیِ صریحِ موتور برایِ وتوی هفتگی — ${t.matrixDesc ?? 'روندِ هفتگی مجاز نیست'}` };
     }
     return {
-      s: 'reject',
-      why: `تکنیکال: هفتگی صعودی است ولی ستاپِ «${gate.label}» نیست${act ? ` — ستاپِ فعالِ او: ${act}` : ' — ستاپِ فعالی نیست'}`,
+      s: 'pending',
+      why: 'تکنیکال: روندِ هفتگی قابلِ تشخیص نیست — هنوز نمی‌توان وارد شاخهٔ روزانه شد',
     };
   }
-  return { s: 'pass', why: `تکنیکال: هفتگی صعودی + ستاپِ «${gate.label}»${act ? ` (${act})` : ''}` };
+
+  if (weekly !== 'up') {
+    return { s: 'pending', why: 'تکنیکال: وضعیتِ روندِ هفتگی نامشخص است — رأیِ قطعی داده نمی‌شود' };
+  }
+
+  const daily = t.trendD;
+  const act = activeSetups(t);
+  if (daily === 'up') {
+    return { s: 'pass', why: `تکنیکال: هفتگی صعودی + روزانه صعودی${act ? ` — شواهد: ${act}` : ''}` };
+  }
+  if (daily === 'down') {
+    return { s: 'pass', why: `تکنیکال: هفتگی صعودی + روزانه نزولی — شاخهٔ فیبو/CHoCH${act ? `؛ شواهد: ${act}` : ''}` };
+  }
+  if (daily === 'range') {
+    return { s: 'pass', why: `تکنیکال: هفتگی صعودی + روزانه خنثی — شاخهٔ کف/محدوده${act ? `؛ شواهد: ${act}` : ''}` };
+  }
+  return {
+    s: 'pending',
+    why: 'تکنیکال: روندِ روزانه قابلِ تشخیص نیست — قبل از عبور باید شاخهٔ روزانه مشخص شود',
+  };
 }
 
 /**
@@ -651,7 +668,7 @@ export function evaluateCandidate(input: CandidateInput): Candidate {
   // رأیِ تازهٔ `/api/fts` مقدم است (همین حالا برایِ همین نماد خوانده شده)؛
   // اگر نبود، ردیفِ اسکرینر همان موتور را دارد.
   const sig = (live ? techFromVerdict(live) : null) ?? techFromScreen(screen);
-  const t = techMark(sig, preset);
+  const t = techMark(sig);
   const kind = classifyAssetType({
     symbol,
     name: row?.name ?? screen?.name ?? null,
@@ -698,6 +715,7 @@ export function evaluateCandidate(input: CandidateInput): Candidate {
     trendW: sig?.trendW ?? null,
     trendD: sig?.trendD ?? null,
     setups: sig ? activeSetups(sig) : '',
+    technicalPoints: technicalEvidencePoints(sig),
     inds: indMarks(screen),
     techSource: live ? 'live' : sig ? 'screen' : null,
     jetEvidence: sig?.jetEvidence ?? null,
