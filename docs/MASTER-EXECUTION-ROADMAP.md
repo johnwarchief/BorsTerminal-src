@@ -2145,8 +2145,8 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 
 | ID | Item | State | Note |
 | --- | --- | --- | --- |
-| A1 | Snapshot re-bake | `IMPLEMENTING` | Shipped bundle: `built_at 2026-10-07T09:29` but `price_history` ends 2026-09-29 and lacks `last`/`value`/`src`. Contract to document: codal raw tables are deliberately not baked; only their cooked output is |
-| A2 | `npm test` in `mobile.yml` | `READY` | Mobile guard tests never run in CI today |
+| A1 | Snapshot re-bake | `ACCEPTED` | Rebuilt from the current bank: `app_version 1.0.78`, `built_at 2026-10-08T02:34`, `baked_ok 4627`, `baked_fail 0` (1 skip, see D-7). `price_history` 433,922 rows / 6,031 symbols ending **2026-10-07** with `last`/`value`/`src`; universe grew 873 → **922** rows. Published to `mobile-latest`: `mobile_snapshot.db.gz` 62,030,206 B + meta. Cost recorded honestly: the bundled APK asset goes 23 MB → 59 MB gz (raw 126 MB, VACUUM changes nothing) — shrinking it would mean dropping data, which the roadmap forbids; the alternative (ship the APK without a bundle and let the app pull `release`) is a separate owner decision. Codal contract documented: raw codal tables are deliberately not baked, only their cooked output (`screener`, `fundamental/*`, `quarters/*`) |
+| A2 | `npm test` in `mobile.yml` | `ACCEPTED` | CI now runs `npx tsc -b` + `npx vitest run` after `npm ci` and before `vite build`, so a red guard can no longer produce an APK. Release tag renamed to `mobile-parity-<sha>` and the notes now carry `base_main_commit`, artifact size and sha256 (D-3 closed) |
 | A3 | Final Android verification | `TESTING` | Harness limit: Playwright's Chromium returns `204`/empty for the 10–23 MB snapshot fetch (0.2 MB works) while `curl` returns 200 — evidence path must avoid that (direct CDP session or documented lightweight bundle) |
 | A4 | Final Android release record | `ACCEPTED-PROVISIONAL` | `mobile-uiux-data-progress-ccd2226`, APK 33,002,123 B, sha256 `88c495ecf204649d887a7ffc75d3fa9ee1b569a2d6271840c8dc6ef99c178eab`; to be re-cut after A1–A3 |
 
@@ -2156,7 +2156,7 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | --- | --- | --- | --- | --- |
 | D-1 | Tape flags on the phone are the baked values; they are not recomputed after the live patch. Frontend-vs-python equality was measured on 1312 perturbed real rows and matched (`tape-fuzz-parity`) | FEATURE GAP | phase 0/1 | `DISCOVERED` |
 | D-2 | `instruments` accumulates: 5861 rows in the bank, 2306 with an older `d_even`; the same live endpoint returned 3865 rows today — the bake prunes nothing | DATA HYGIENE | with A1 | `DISCOVERED` |
-| D-3 | `mobile.yml` tags `mobile-uiux-data-progress-<sha>`, not the `mobile-parity-<sha>` naming in the mission | RELEASE DISCIPLINE | with A4 | `DISCOVERED` |
+| D-3 | `mobile.yml` tagged `mobile-uiux-data-progress-<sha>` instead of `mobile-parity-<sha>`, and its notes carried no base commit or checksum | RELEASE DISCIPLINE | with A4 | `RESOLVED` (A2 commit) |
 | D-4 | `guards` CI job fails on `main` already: `dev/market_hot_state_v1077.py` reads its schema from `market.db(.lzma)`, which is not tracked, so CI builds an empty bank and asserts "table instruments gone from schema" | CI DEBT | independent | `BLOCKED` (needs a committed schema fixture or an explicit skip) |
 | D-5 | Backend gate not run locally this session: a foreign `uvicorn` on 127.0.0.1:8002 shares `market.db` and was not killed | PROCESS | low | `UNVERIFIED` |
 | D-6 | Live Codal rate-limit/quota check needs an Iranian egress; `cdn.tsetmc.com` returns 403 from this machine | EXTERNAL | phase 1 | `UNVERIFIED` |
@@ -2167,7 +2167,13 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | --- | --- | --- | --- |
 | C-1 | "Is the style door a gate or evidence?" — `fts-candidate-engine` tests vs `techMark` hierarchy | Owner (2026-10-08): weekly then daily is the judge; setups (jet/fib/point-hunt) are evidence and points only; fibo is context, never a trigger | `RESOLVED` — three tests migrated, the null≠false guard they protected is still asserted |
 
+## 15.6 Data findings from the re-bake
+
+| ID | Finding | Class | State |
+| --- | --- | --- | --- |
+| D-7 | One screener symbol is stored as `معيار ` — trailing space and Arabic `ي` — in `price_history` and `instruments`; `/api/fundamental/معيار` returns 404 so the bake skipped exactly one of 922 symbols | DATA HYGIENE (canonical layer) | `DISCOVERED` — fix belongs in the shared symbol reader, not in a clamp |
+| D-8 | Universe drift: the same canonical `/api/screener` now returns 922 rows where the shipped snapshot had 873 — the old number quoted in reports is stale | DATA | `DISCOVERED` |
+
 ## 15.5 Next item selected
 
-A1 (snapshot re-bake) → A2 (`npm test` in CI) → A3 (verification evidence) → A4 (release record) →
-phase 1 S-1 (locate the two Sarkhati research repositories already named in this project's docs).
+A3 (final Android verification with browser evidence) → A4 (release record) → phase 1 S-1 (locate the two Sarkhati research repositories already named in this project's docs).
