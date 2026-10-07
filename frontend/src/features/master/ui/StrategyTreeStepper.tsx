@@ -1,0 +1,49 @@
+import { Link } from 'react-router';
+import type { FtsZone } from '../lib/ftsChartModel';
+
+export const TREE_STAGES = [
+  { zone: 'S' as FtsZone, short: 'S', title: 'تابلوخوانی', page: 'صفحه ۳' },
+  { zone: 'T' as FtsZone, short: 'T', title: 'تکنیکال', page: 'صفحه ۲' },
+  { zone: 'F' as FtsZone, short: 'F', title: 'بنیادی', page: 'صفحه ۱' },
+  { zone: 'M' as FtsZone, short: 'M', title: 'مدیریت و استراتژی', page: 'صفحه ۴' },
+] as const;
+
+export function treeStagePath(zone: FtsZone, preset?: string, symbol?: string | null) {
+  const q = new URLSearchParams();
+  q.set('page', zone);
+  if (preset) q.set('preset', preset);
+  if (symbol) q.set('symbol', symbol);
+  return `/strategy-tree?${q.toString()}`;
+}
+
+export function StrategyTreeStepper({ active, preset, symbol }: { active: FtsZone | null; preset: string; symbol?: string | null }) {
+  return (
+    <nav aria-label="صفحات درخت استراتژی FTS" data-testid="strategy-tree-stepper" className="w-full overflow-x-auto pb-1">
+      <div className="flex min-w-[760px] items-center gap-2">
+        {TREE_STAGES.map((stage, i) => {
+          const selected = stage.zone === active;
+          return (
+            <div key={stage.zone} className="flex flex-1 items-center gap-2">
+              <Link
+                to={treeStagePath(stage.zone, preset, symbol)}
+                aria-current={selected ? 'page' : undefined}
+                className={selected
+                  ? 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-accent-blue/60 bg-accent-blue/10 px-3 py-2'
+                  : 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-2 text-text-muted hover:border-accent-blue/40 hover:text-text-primary'}
+              >
+                <span className={selected ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent-blue/20 text-xs font-black text-accent-blue' : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border-c bg-bg-primary text-xs font-black'}>
+                  {stage.short}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-2xs font-black">{stage.title}</span>
+                  <span className="block text-3xs text-text-muted">{stage.page}</span>
+                </span>
+              </Link>
+              {i < TREE_STAGES.length - 1 ? <span className="shrink-0 text-lg text-text-muted" aria-hidden>←</span> : null}
+            </div>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
