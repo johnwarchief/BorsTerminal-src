@@ -6,7 +6,6 @@ on:
       - 'arena/**'
     paths:
       - 'frontend/**'
-      - '.github/workflows/mobile.yml'
 
 permissions:
   contents: write
@@ -65,10 +64,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          TAG=mobile-uiux-20261007
+          TAG="mobile-uiux-data-progress-${GITHUB_SHA::7}"
           APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
-          gh release create "$TAG" --prerelease --target "$GITHUB_SHA"             --title "BorsTerminal Android UI/UX Test — ${GITHUB_SHA::7}"             --notes "نسخهٔ آزمایشی اندروید برای بررسی UI/UX قیف FTS و درخت استراتژی.
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA"             --title "BorsTerminal Android — Offline Data Progress — ${GITHUB_SHA::7}"             --notes "نسخهٔ آزمایشی اندروید برای نمایش پیشرفت آماده‌سازی داده‌های آفلاین و UI/UX قیف FTS.
           commit: $GITHUB_SHA
-          snapshot داده از mobile-latest برای تست رابط کاربری reuse شده است.
+          snapshot داده از mobile-latest برای تست reuse شده است.
           این ریلیز مستقل از mobile-latest است."
           gh release upload "$TAG" "$APK#bors-terminal-mobile-uiux.apk" --clobber
