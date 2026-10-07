@@ -1032,6 +1032,31 @@ Longer-term:
 
 ---
 
+
+# 13.5. Backlog governance — no work may remain undocumented
+
+Every new audit finding, bug, parity gap, research question, or requested feature must be classified into this roadmap before implementation.
+
+Each tracked item should have:
+
+- Priority: P0 / P1 / P2 / P3
+- Scope: Desktop / Android / Shared
+- Source/reference
+- Current state
+- Acceptance criteria
+- Validation method
+- Dependencies
+- Final status: PASS / FAIL / BLOCKED / UNVERIFIED
+
+Agents must not create an unofficial parallel roadmap in chat or in ad-hoc notes.
+
+When an audit discovers an issue that is not already represented here:
+
+**record it → classify it → assign its place in the sequence → implement → validate → update status**
+
+This is the mechanism intended to prevent repeated prompts and forgotten work.
+
+
 # 14. Work discipline — how agents must execute this roadmap
 
 ## 14.1 No giant mixed prompts for analytical work
