@@ -155,12 +155,14 @@ describe('قیفِ FTS', () => {
     expect(swing?.trendW).toBe('up');
     expect(swing?.trendD).toBe('down');
     expect(swing?.why.technical).toContain('فیبو');
+    expect(swing?.dailyStrategy).toBe('فیبوناچی / CHoCH');
     const trend = build('trend').stages.technical.entries.find((e) => e.symbol === 'سپ');
     // «سپ» بدون ستاپِ سنجیده هم عبور می‌کند؛ چون هفتگی صعودی و روزانه خنثی
     // شاخهٔ معتبر چارت است. ستاپ‌ها فقط شواهد/امتیاز کمکی‌اند.
     expect(trend?.status.technical).toBe('pass');
     expect(trend?.trendW).toBe('up');
     expect(trend?.trendD).toBe('range');
+    expect(trend?.dailyStrategy).toBe('کف دوقلو / آخرین کف-سقف ساختاری');
     expect(trend?.techSource).toBe('screen');
   });
 
@@ -169,9 +171,9 @@ describe('قیفِ FTS', () => {
     const فولاد = f.stages.technical.entries.find((e) => e.symbol === 'فولاد');
     const شپنا = f.stages.technical.entries.find((e) => e.symbol === 'شپنا');
     const سپ = f.stages.technical.entries.find((e) => e.symbol === 'سپ');
-    expect(فولاد?.technicalPoints).toBe(5); // weekly up + daily up + one setup
-    expect(شپنا?.technicalPoints).toBe(4); // weekly up + daily down + one setup
-    expect(سپ?.technicalPoints).toBe(3); // weekly up + daily range + no setup
+    expect(فولاد?.technicalPoints).toBe(5); // weekly up + daily up + jet evidence
+    expect(شپنا?.technicalPoints).toBe(4); // weekly up + daily down + fib evidence
+    expect(سپ?.technicalPoints).toBe(3); // weekly up + daily range + no double-bottom evidence
   });
 
   it('بدونِ روندِ روزانهٔ معتبر، تکنیکال pending است و ستاپ جایِ روند را نمی‌گیرد', () => {
@@ -458,7 +460,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
       </QueryClientProvider>,
     );
     const tech = within(screen.getByTestId('funnel-stage-technical'));
-    for (const h of ['هفتگی', 'روزانه', 'شواهد', 'امتیاز', 'داوری']) {
+    for (const h of ['هفتگی', 'روزانه', 'شاخه', 'شواهد', 'امتیاز', 'داوری']) {
       expect(tech.getByRole('columnheader', { name: h })).toBeInTheDocument();
     }
     expect(tech.queryByRole('columnheader', { name: 'حجم/ماه' })).not.toBeInTheDocument();
