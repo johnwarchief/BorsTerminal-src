@@ -11,10 +11,10 @@ type BootProgress = {
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '۰ بایت';
-  if (bytes < 1024) return \`\${Math.round(bytes)} بایت\`;
+  if (bytes < 1024) return `${Math.round(bytes)} بایت`;
   const mb = bytes / (1024 * 1024);
-  if (mb < 10) return \`\${mb.toFixed(1)} مگابایت\`;
-  return \`\${mb.toFixed(0)} مگابایت\`;
+  if (mb < 10) return `${mb.toFixed(1)} مگابایت`;
+  return `${mb.toFixed(0)} مگابایت`;
 }
 
 function phaseTitle(progress: BootProgress | null): string {
@@ -84,7 +84,7 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
               </p>
             </div>
             <div className="shrink-0 text-lg font-bold tabular-nums" aria-live="polite">
-              {percent === null ? '…' : \`\${percent}٪\`}
+              {percent === null ? '…' : `${percent}٪`}
             </div>
           </div>
 
@@ -100,7 +100,7 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
               className={percent === null
                 ? 'h-full w-1/3 rounded-full bg-accent-blue animate-pulse'
                 : 'h-full rounded-full bg-accent-blue transition-[width] duration-200 ease-out'}
-              style={percent === null ? undefined : { width: \`\${progressWidth}%\` }}
+              style={percent === null ? undefined : { width: `${progressWidth}%` }}
             />
           </div>
 
