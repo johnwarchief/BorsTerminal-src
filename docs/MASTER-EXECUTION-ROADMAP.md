@@ -530,141 +530,294 @@ Otherwise the target remains:
 
 **Tauri + WebView2 + optimized React/chart architecture**
 
-## F.6 Future architecture research — Rust backend vs Python and possible full replatform
+## F.6 Future Technology Stack / Replatform Study — maximize freedom, quality, and long-term capability
 
 This is a **research item, not a current migration order**.
 
-Before locking the long-term Desktop/backend architecture, BorsTerminal should explicitly investigate whether the current Python/FastAPI backend remains the best engineering choice or whether a Rust backend, a hybrid architecture, or a broader language/runtime change would materially improve the product.
+The long-term architecture must remain open to replacing individual technologies — or the entire stack — when evidence shows that doing so would give BorsTerminal materially better performance, resource efficiency, developer velocity, product capability, portability, maintainability, or freedom to evolve.
 
-### Important distinction
+The question is therefore **not** “Should BorsTerminal use Rust?” and **not** “Should BorsTerminal use React?”
 
-React is the frontend technology and does not inherently require Python or Rust. Tauri provides a native Rust layer that can expose typed Commands and asynchronous operations directly to the web frontend, so Rust can be tightly integrated with the Tauri shell. However, that integration alone does not prove that replacing the existing FastAPI backend is worthwhile. citeturn959847search0turn959847search1
+The real question is:
 
-FastAPI is already capable of asynchronous/high-performance API workloads, so a Rust rewrite must demonstrate a meaningful product-level advantage rather than relying on language-level assumptions. citeturn959847search3turn959847search5turn959847search6
+**What technology stack gives BorsTerminal the strongest long-term foundation for a professional financial terminal, advanced charting, real-time market data, Strategy FTS, automation, Android/Desktop clients, local ML, and future capabilities?**
 
-### Candidate architectures
+### No technology is sacred
 
-Compare at minimum:
+Treat all current choices as revisable:
 
-1. **Current hybrid** — Tauri + React + Python/FastAPI + SQLite
-2. **Tauri + React + Rust backend** — Rust owns the local service/data/engine layer
-3. **Hybrid Rust/Python** — Rust for hot-path/runtime/integration components, Python for data/analytics/ML where its ecosystem is materially stronger
-4. **Full backend replatform** — replace Python services systematically with Rust where justified
-5. **Broader full-stack replatform** — evaluate only if evidence shows the current language/runtime boundaries themselves are the bottleneck
+- Python / FastAPI
+- React / TypeScript
+- Tauri
+- WebView2
+- SQLite
+- Vite
+- current chart libraries
+- current state-management libraries
+- current packaging/update technology
 
-Do not replace working components merely for architectural fashion.
+A working component must not be replaced merely because another language is fashionable. Conversely, no existing component should be protected from replacement when profiling and research demonstrate a better option.
+
+### Candidate technology families
+
+At minimum investigate and compare:
+
+1. **Current Web stack** — React/TypeScript + Tauri + Python/FastAPI + SQLite
+2. **Tauri + alternative frontend** — evaluate React against alternatives such as Svelte, Vue, Solid, or other mature options when they provide a measurable advantage for large, highly interactive financial UIs.
+3. **Tauri + Rust services/backend** — Rust for local services, hot paths, concurrency, data processing, or selected engines.
+4. **Hybrid multi-language architecture** — use the best language per subsystem, with explicit boundaries.
+5. **Go desktop stack** — e.g. Wails or comparable architecture when Go materially improves simplicity, runtime/resource use, or developer productivity. Wails uses the OS webview rather than bundling Chromium. 
+6. **.NET desktop stack** — Avalonia/WinUI/WPF or related architecture when native desktop capability, tooling, maintainability, or cross-platform needs justify migration.
+7. **Flutter/Dart** — evaluate for a unified desktop/mobile UI architecture with native desktop compilation.
+8. **Qt/C++/QML** — evaluate for maximum native control, graphics capability, desktop maturity, and long-term performance.
+9. **Kotlin Multiplatform / Compose or another modern native/cross-platform stack** — evaluate only where its product and ecosystem advantages are demonstrated.
+10. **Other emerging stacks** — may be evaluated when a concrete technical advantage is demonstrated.
+
+These are research candidates, not preselected winners.
+
+### Frontend research is independent from backend research
+
+Do not assume changing the backend requires changing the frontend.
+
+Evaluate separately:
+
+**UI framework → rendering model → state model → chart integration → native bridge → backend/service layer → packaging**
+
+A future BorsTerminal could legitimately use, for example:
+
+**React + Rust**
+**Svelte + Python**
+**Flutter + Rust**
+**Avalonia + C#**
+**Qt/QML + C++**
+**React + Go**
+**React + Python**
+
+or another combination.
 
 ### Research dimensions
 
-The investigation must compare real BorsTerminal workloads, not generic hello-world benchmarks:
+Use real BorsTerminal workloads, not generic benchmarks.
+
+#### Product capability
+
+- Rich financial tables
+- Real-time market updates
+- Advanced charting
+- Multiple chart engines
+- FTS chart annotations
+- Complex filters
+- Full-universe screening
+- Order-book/tape presentation
+- Multi-window workflows
+- Keyboard/mouse power-user workflows
+- Touch/mobile workflows
+- RTL/Farsi UI
+- Offline mode
+- Local ML/inference
+- Future trading automation
+
+#### Performance
 
 - Cold startup
 - Warm startup
-- Peak and steady-state RAM
-- CPU at idle
-- CPU during market-open/live feed
+- Time to first usable UI
+- Time to first market data
+- Time to first chart
+- CPU idle
+- CPU during live market
+- CPU during FTS Funnel/full-universe analysis
+- RAM idle
+- Peak RAM
+- GPU usage/frame stability
+- Chart rendering latency
+- Large-history chart performance
+- Full-universe filtering speed
 - Market tick throughput
-- Market API latency
-- Full-universe screening
-- FTS Funnel calculation
-- FTS technical analysis
-- Chart-data preparation
-- SQLite read/write throughput
-- Concurrent background jobs
-- Data ingestion
-- Codal/TSETMC synchronization
-- Serialization/IPC cost
-- Error handling and recovery
-- Process lifecycle
-- Crash isolation
-- Binary/package size
-- Update size
-- Build time
-- Cross-platform feasibility
-- Developer productivity
-- Testability
+- Backend latency
+- IPC/bridge latency
+- Disk I/O
+- Battery/power on mobile
+
+#### Engineering freedom
+
+- Ability to access native OS APIs
+- Ability to add custom native capabilities
+- Ability to implement high-performance engines
+- Interoperability with C/C++/Rust/Python/Go/.NET libraries
+- Availability of mature packages
+- Ease of embedding specialized algorithms
+- Ease of adding new chart engines
+- Ease of supporting new platforms
+- Ease of creating plugins/modules
+
+#### Development quality
+
+- Type safety
+- Debugging
+- Testing
+- Profiling
 - Observability
-- Security
-- Long-term maintenance cost
+- Static analysis
+- Refactoring safety
+- IDE/tooling quality
+- Build/release complexity
+- CI/CD
+- Documentation quality
+- Community/ecosystem maturity
+- Developer hiring/onboarding
 
-### Rust-specific questions
+#### Deployment and operations
 
-Determine whether Rust would materially improve:
+- Installer size
+- Runtime dependencies
+- WebView/browser dependencies
+- Native dependency management
+- Update mechanism
+- Delta/full update strategy
+- Code signing
+- Crash recovery
+- Rollback
+- Offline installation
+- Windows support
+- Android support
+- Linux support if desired
+- macOS support if desired
 
-- high-frequency market update paths
-- concurrent polling/scheduling
-- CPU-bound technical calculations
+#### Long-term risk
+
+- Project maturity
+- Vendor/platform lock-in
+- License implications
+- Security maintenance
+- Breaking-change frequency
+- Dependency churn
+- Bus-factor concerns
+- Long-term support
+- Availability of specialist developers
+
+### Architecture patterns to compare
+
+Do not compare only programming languages. Compare complete architectures:
+
+**A. Web UI + local HTTP service**
+
+**B. Web UI + in-process native commands/bridge**
+
+**C. Web UI + native sidecar/service**
+
+**D. Fully native UI + native backend**
+
+**E. Unified cross-platform native UI + shared core**
+
+**F. Hybrid polyglot core with language-specific frontends**
+
+Measure the operational cost and benefit of each.
+
+### Special question: is React still the best frontend for BorsTerminal?
+
+Do not assume the answer.
+
+Research whether React remains the best choice for:
+
+- Very large live tables
+- High-frequency numeric updates
+- Dense financial dashboards
+- Complex chart overlays
+- Advanced keyboard workflows
+- Fine-grained rendering control
+- Memory efficiency
+- Mobile responsiveness
+- Maintainability at BorsTerminal's eventual scale
+
+Compare against serious alternatives using the actual application, not demo benchmarks.
+
+### Special question: should Python remain in the critical path?
+
+Profile the real application first.
+
+Possible reasons to move parts away from Python:
+
+- CPU-bound hot paths
+- high-frequency concurrency
 - memory footprint
-- sidecar/process lifecycle
-- IPC between native shell and frontend
-- deterministic/background execution
-- application startup
-- crash isolation
-- long-running stability
+- startup/package size
+- native integration
+- long-running reliability
 
-Also measure the costs:
+Possible reasons to keep Python:
 
-- rewrite effort
-- crate maturity for required functionality
-- SQLite/data tooling equivalence
-- PDF/document/data processing ecosystem
-- numerical/statistical tooling
-- ML interoperability
-- developer complexity
-- debugging/maintenance overhead
-- migration risk
+- data tooling
+- scientific/numerical ecosystem
+- ML ecosystem
+- rapid development
+- existing proven business logic
+- mature internal tooling
 
-### Python-specific questions
+Do not rewrite simply because another language is theoretically faster.
 
-Do not assume Python is slow without locating the actual bottleneck.
+### Special question: should Tauri remain the desktop shell?
 
-Profile whether current bottlenecks are caused by:
+Compare Tauri against viable alternatives based on:
 
-- SQLite/query design
-- repeated calculations
-- serialization
-- duplicate work
-- polling architecture
-- IPC/network transport
-- Python CPU-bound code
-- frontend rendering
-- chart drawing
-- startup packaging
-- memory/cache behavior
+- Native window capabilities
+- renderer performance
+- startup
+- memory
+- multi-window behavior
+- security
+- update system
+- native API access
+- backend integration
+- installer complexity
+- long-term maintenance
 
-A Rust rewrite is justified only when profiling identifies bottlenecks that Rust can materially improve or when the architectural simplification is itself worth the migration cost.
+Tauri currently remains the preferred migration target for the Desktop architecture, but this study may overturn that choice if another architecture demonstrates a decisive real-world advantage.
 
-### React/Tauri integration research
+### Migration strategy
 
-Measure whether moving selected backend operations from HTTP localhost calls to Tauri Commands/events/channels reduces latency, resource usage, complexity, or reliability issues.
+If a better architecture is identified:
 
-Do not send large analytical datasets through inefficient JSON IPC when a more suitable binary/streaming path is available. Tauri's own documentation notes that large JSON return values can be slower and provides optimized IPC response/channel mechanisms for heavier data flows. citeturn959847search0turn959847search2
+**prototype → benchmark → prove one subsystem → migrate incrementally → validate → continue**
 
-### Decision rule
+Do not perform a giant rewrite without a proven migration path.
 
-Do not decide Rust vs Python by ideology.
+Allow mixed architectures temporarily when that reduces risk.
 
-Choose the architecture that produces the best measured combination of:
+Examples:
 
-**correctness + performance + resource efficiency + reliability + developer velocity + maintainability + analytical ecosystem + release simplicity**
+- Move market tick processing to Rust while keeping Python analytics.
+- Move one chart engine or rendering-heavy subsystem to a different frontend stack.
+- Keep React during backend migration.
+- Keep Python for ML/data tooling while native code owns runtime hot paths.
 
-### Migration rule
+### Final decision rule
 
-If the research proves Rust is materially better for the long-term architecture:
+Select the architecture that maximizes:
 
-**prototype → benchmark → migrate one bounded subsystem → validate → migrate next subsystem**
+**correctness + performance + resource efficiency + product capability + engineering freedom + development velocity + maintainability + security + release simplicity**
 
-Do not perform a single giant rewrite.
+while minimizing:
 
-If the research does not prove a meaningful advantage, keep Python/FastAPI and optimize its actual bottlenecks.
+**migration risk + operational complexity + ecosystem risk + lock-in + long-term maintenance cost**
 
 ### Acceptance
 
-This research is complete only when a documented benchmark report compares at least two viable architectures on representative BorsTerminal workloads and records:
+This study is complete only when multiple viable stacks have been compared using representative BorsTerminal workloads and the report contains:
 
-**measurement → interpretation → migration cost → risks → recommendation → confidence**
+**candidate stack → workload → measurements → capability differences → migration cost → risks → recommendation → confidence**
 
-The result is a roadmap decision, not an assumption that Rust is automatically better.
+The result may be:
+
+- keep the current stack
+- partially replatform
+- replace one layer
+- replace several layers
+- or perform a staged full replatform
+
+but it must be an evidence-based architecture decision.
+
+Never turn a language preference into an architectural requirement without evidence.
 
 ## G. Documentation/source-of-truth hygiene
 
