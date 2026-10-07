@@ -304,6 +304,232 @@ Test at least:
 
 Every update path must end in a verified runnable installation.
 
+## F.3 Desktop packaging architecture — migrate to real Tauri runtime
+
+The long-term Desktop target is **real Tauri v2 runtime**, not a repository that merely contains Tauri tooling while the distributed product is PyInstaller/FastAPI + Inno.
+
+The migration must be treated as an architectural project and must not be rushed.
+
+### Current state
+
+The current repository contains a Tauri v2 shell, updater plugin, NSIS/MSI configuration, and signing infrastructure, but the distributed Windows product is still the Python/PyInstaller backend packaged by Inno Setup.
+
+This dual-path architecture is a source of complexity and documentation drift.
+
+### Target state
+
+Preferred target:
+
+**Tauri native shell → React frontend → Python/FastAPI sidecar → local data/runtime**
+
+with one canonical Desktop packaging and update path.
+
+The Python backend remains available where necessary; the migration does not permit changing analytical semantics merely to fit the packaging technology.
+
+### Migration gates
+
+Before switching the production channel:
+
+1. Prove Tauri can launch the complete application.
+2. Prove the Python/FastAPI backend can run reliably as a managed sidecar.
+3. Prove startup/shutdown and process cleanup.
+4. Prove local API communication and security boundaries.
+5. Prove database access and writable-data locations.
+6. Prove all chart engines and browser-level integrations.
+7. Prove offline operation.
+8. Prove first-launch preparation.
+9. Prove update, rollback, and recovery.
+10. Compare startup time, RAM, CPU, disk, and installer size against the current production build.
+11. Install and run the release artifact on a clean Windows environment.
+12. Only after all gates pass, switch the public production installer/update channel.
+
+### Canonical architecture rule
+
+After migration is accepted, avoid maintaining two competing Desktop packaging/runtime paths unless there is a documented compatibility reason.
+
+Old packaging code may remain temporarily during migration, but it must be clearly marked:
+
+**legacy / migration-only / not production**
+
+### Updater target
+
+Prefer the official Tauri v2 updater path once the app is genuinely running under Tauri.
+
+Use signed updater artifacts and version-bound trust.
+
+The current Tauri updater supports signed Windows NSIS/MSI updater artifacts. Current Tauri documentation also supports requiring the signed artifact version to match the announced version; this must be evaluated and enabled where compatible with the release system.
+
+The custom Python updater may remain only as a migration bridge until parity with the official updater is demonstrated.
+
+### Delta strategy
+
+Do not assume that a custom overlay patch is automatically superior.
+
+Benchmark:
+
+- Tauri updater package
+- Full installer
+- Current overlay delta
+- Any future binary/differential delta system
+
+Choose the smallest trustworthy update mechanism that preserves rollback/recovery and does not create file-version drift.
+
+### Migration acceptance
+
+The new Tauri distribution is accepted only when:
+
+- The user-visible product is functionally equivalent or better.
+- Performance is equal or better.
+- Resource use is equal or better.
+- Installer/update reliability is equal or better.
+- Signing and integrity checks are equal or better.
+- Data/configuration survive updates.
+- Very old installations have a documented full-installer recovery path.
+- No production route depends on the obsolete packaging path.
+
+## F.4 Installer hardening and lifecycle audit
+
+The installer itself is a product component and must be reviewed independently from the updater.
+
+Audit and validate:
+
+- Fresh install
+- Upgrade
+- Repair
+- Uninstall
+- Reinstall
+- Per-user installation
+- All-users installation
+- UAC behavior
+- Non-ASCII installation paths
+- Spaces in paths
+- Existing installation discovery
+- Existing-process handling
+- Locked files
+- Insufficient disk
+- Antivirus/Defender interaction
+- Interrupted installation
+- Interrupted update
+- Rollback/recovery
+- User-data preservation
+- Database/schema migration
+- Orphan cleanup
+- Uninstall cleanliness
+- Start Menu/Desktop shortcuts
+- Registry/AppId/DisplayVersion consistency
+- Installer signing
+- Payload signing
+- Hash/signature verification
+
+### Installer data boundary
+
+Define explicitly:
+
+**Application files**
+**User data**
+**Database**
+**Configuration**
+**Cache**
+**Logs**
+
+The installer/updater must know which category may be replaced, migrated, preserved, or deleted.
+
+Never use broad recursive deletion as a substitute for a versioned data lifecycle.
+
+### Current Inno-specific audit items
+
+The present Inno installer and updater contain several deliberate protections that must be preserved or revalidated during migration:
+
+- Per-user default install with optional elevation
+- Existing-install discovery
+- Repair/reinstall maintenance choices
+- Separate runtime database handling
+- Cleanup of stale `_internal` payload during full installer upgrades
+- Preservation of user-owned `user.db` and FTS threshold configuration
+- Version/registry synchronization
+- Installer password handling
+- Minisign verification before update installation
+
+These mechanisms should become explicit migration test cases rather than assumptions.
+
+### Installer acceptance
+
+No installer path is accepted from source inspection alone.
+
+Use clean-machine and upgrade-matrix testing and record:
+
+**version → installation mode → operation → result → preserved data → registry state → artifact hash/signature**
+
+## F.5 Desktop window and rendering-stack evaluation
+
+The application already has a native Tauri window concept; **the window container and the web renderer are separate concerns**.
+
+The first research question is therefore not “can the app have an independent window?” — it already can — but:
+
+**Which rendering stack gives BorsTerminal the best combination of correctness, performance, memory use, compatibility, chart capability, startup time, and maintainability?**
+
+### Candidate classes
+
+Evaluate:
+
+1. **Tauri + WebView2 (current Windows target)** — lowest migration cost and strong Windows integration.
+2. **Tauri + another platform webview** where officially supported by the target platform — relevant for cross-platform, not a Windows replacement for WebView2.
+3. **CEF / bundled Chromium** — evaluate only if a concrete WebView2 limitation is demonstrated; expect larger footprint and additional runtime/update responsibility.
+4. **Native UI stack (WinUI 3 / WPF / Qt / Avalonia / similar)** — evaluate only as a true alternative architecture because this is not a drop-in renderer swap and would require substantial frontend/chart/UI migration.
+
+### Mandatory research questions
+
+Measure, do not assume:
+
+- Cold startup
+- Warm startup
+- RAM idle
+- RAM with live market feed
+- CPU during market updates
+- GPU/frame behavior
+- Chart rendering latency
+- Large-candle-history performance
+- Number of overlays/annotations supported
+- Accessibility
+- RTL/Farsi behavior
+- Clipboard/file dialogs/notifications
+- Multi-window behavior
+- Process isolation
+- Offline behavior
+- Windows version coverage
+- Installer size
+- Update size
+- Update reliability
+- Security model
+- Development/maintenance cost
+
+### Current WebView2 position
+
+For the current React/Tauri architecture, **WebView2 should remain the default candidate unless measurements demonstrate a material blocker**.
+
+Tauri officially uses WebView2 on Windows. WebView2 is Chromium-based and updates through the Evergreen runtime; Microsoft recommends Evergreen for most applications because it reduces storage overhead and receives ongoing performance/security updates.
+
+Do not switch away from WebView2 merely because it is called a “WebView”.
+
+### Fixed versus Evergreen
+
+Evaluate:
+
+- Evergreen WebView2 — preferred default for a normal consumer installation.
+- Fixed Version WebView2 — only where reproducibility/offline/compatibility requirements justify the much larger footprint and added runtime servicing responsibility.
+
+Current Microsoft documentation indicates Fixed Version runtimes add a very large package footprint compared with Evergreen, so this choice must be benchmarked against the user's low-resource objective.
+
+### Acceptance
+
+Do not replace WebView2 unless an alternative demonstrates, on real BorsTerminal workloads:
+
+**equal or better correctness + materially better performance/resource usage + acceptable installer/update footprint + acceptable maintenance/security burden**
+
+Otherwise the target remains:
+
+**Tauri + WebView2 + optimized React/chart architecture**
+
 ## G. Documentation/source-of-truth hygiene
 
 Before implementing or changing a formula:
