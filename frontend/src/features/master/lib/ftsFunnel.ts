@@ -197,6 +197,8 @@ export type Candidate = {
   /** روندِ دو زمانه همان‌طور که موتور می‌بیند: 'up' | 'down' | 'range' | 'na' | null */
   trendW: string | null;
   trendD: string | null;
+  /** شاخهٔ روزانه طبق چارت: جت/پولبک، فیبوناچی/CHoCH یا کف‌دوقلو/آخرین ساختار */
+  dailyStrategy: string | null;
   /** ستاپ‌های فعالِ این نماد (جت/فیبو/CHoCH/…) — فقط شواهدِ مثبت/کمکی، نه گیت */
   setups: string;
   /** امتیازِ کمکیِ تکنیکال برای Ranking؛ هرگز درِ T را به‌تنهایی باز/بسته نمی‌کند. */
@@ -353,22 +355,39 @@ export function techFromVerdict(v: TechVerdict): TechSignals {
  * پولبک، جت، فیبو، CHoCH، کف دوقلو، باکس رنج، ساعت شنی و نقطه‌زنی فقط شواهدِ کمکی‌اند.
  * «پولبک» تا وقتی فیلد مستقل و قابل اتکایی از API نداشته باشد این‌جا جعل نمی‌شود.
  */
+function dailyBranchFor(t: TechSignals): string | null {
+  if (t.trendD === 'up') return 'جت / پولبک';
+  if (t.trendD === 'down') return 'فیبوناچی / CHoCH';
+  if (t.trendD === 'range') return 'کف دوقلو / آخرین کف-سقف ساختاری';
+  return null;
+}
+
 function setupEvidenceCount(t: TechSignals): number {
-  return [
-    t.jet,
-    t.fibZone != null,
-    t.chochBull,
-    t.doubleBottom,
-    t.rangeBreak,
-    t.hourglass,
-    t.pointHunt === true,
-  ].filter(Boolean).length;
+  if (t.trendD === 'up') {
+    // Pullback فیلد مستقل ندارد؛ فقط Jet واقعی را از API می‌پذیریم.
+    return t.jet ? 1 : 0;
+  }
+  if (t.trendD === 'down') {
+    return [t.fibZone != null, t.chochBull].filter(Boolean).length;
+  }
+  if (t.trendD === 'range') {
+    return t.doubleBottom ? 1 : 0;
+  }
+  return 0;
 }
 
 /**
- * امتیازِ Ranking-only است و قانونِ جدیدِ FTS محسوب نمی‌شود:
- * روندِ هفتگی وزنِ پایه‌ای بالاتری از هر ستاپ دارد؛ ستاپ‌ها فقط امتیازِ کمکی‌اند.
- * weekly=2؛ daily=2 در صعودی و 1 در شاخهٔ نزولی/خنثی؛ setups حداکثر 2.
+ * متنِ شاخهٔ روزانه فقط از روند می‌آید، نه از فعال‌شدنِ ستاپ.
+ * این تفاوت مهم است: «روزانه صعودی» یعنی شاخهٔ Jet/Pullback، حتی اگر
+ * موتور هنوز Jet یا Pullback قطعی پیدا نکرده باشد.
+ */
+export function technicalDailyBranch(t: TechSignals | null): string | null {
+  return t ? dailyBranchFor(t) : null;
+}
+
+/**
+ * امتیازِ Ranking-only: روندِ هفتگی/روزانه پایه است و فقط شواهدِ مربوط به
+ * شاخهٔ همان روزانه امتیاز کمکی می‌گیرند. این عدد هیچ‌گاه درِ T را باز یا بسته نمی‌کند.
  */
 export function technicalEvidencePoints(t: TechSignals | null): number | null {
   if (!t || t.trendW !== 'up') return null;
@@ -378,6 +397,7 @@ export function technicalEvidencePoints(t: TechSignals | null): number | null {
   const setupPoints = Math.min(2, setupEvidenceCount(t));
   return weeklyPoints + dailyPoints + setupPoints;
 }
+
 
 /** ستاپ‌هایی که همین حالا روی نماد فعال‌اند — برایِ نمایشِ شواهد */
 function activeSetups(t: TechSignals): string {
@@ -714,6 +734,7 @@ export function evaluateCandidate(input: CandidateInput): Candidate {
     score: f.score,
     trendW: sig?.trendW ?? null,
     trendD: sig?.trendD ?? null,
+    dailyStrategy: technicalDailyBranch(sig),
     setups: sig ? activeSetups(sig) : '',
     technicalPoints: technicalEvidencePoints(sig),
     inds: indMarks(screen),
