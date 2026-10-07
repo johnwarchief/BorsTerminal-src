@@ -530,6 +530,142 @@ Otherwise the target remains:
 
 **Tauri + WebView2 + optimized React/chart architecture**
 
+## F.6 Future architecture research — Rust backend vs Python and possible full replatform
+
+This is a **research item, not a current migration order**.
+
+Before locking the long-term Desktop/backend architecture, BorsTerminal should explicitly investigate whether the current Python/FastAPI backend remains the best engineering choice or whether a Rust backend, a hybrid architecture, or a broader language/runtime change would materially improve the product.
+
+### Important distinction
+
+React is the frontend technology and does not inherently require Python or Rust. Tauri provides a native Rust layer that can expose typed Commands and asynchronous operations directly to the web frontend, so Rust can be tightly integrated with the Tauri shell. However, that integration alone does not prove that replacing the existing FastAPI backend is worthwhile. citeturn959847search0turn959847search1
+
+FastAPI is already capable of asynchronous/high-performance API workloads, so a Rust rewrite must demonstrate a meaningful product-level advantage rather than relying on language-level assumptions. citeturn959847search3turn959847search5turn959847search6
+
+### Candidate architectures
+
+Compare at minimum:
+
+1. **Current hybrid** — Tauri + React + Python/FastAPI + SQLite
+2. **Tauri + React + Rust backend** — Rust owns the local service/data/engine layer
+3. **Hybrid Rust/Python** — Rust for hot-path/runtime/integration components, Python for data/analytics/ML where its ecosystem is materially stronger
+4. **Full backend replatform** — replace Python services systematically with Rust where justified
+5. **Broader full-stack replatform** — evaluate only if evidence shows the current language/runtime boundaries themselves are the bottleneck
+
+Do not replace working components merely for architectural fashion.
+
+### Research dimensions
+
+The investigation must compare real BorsTerminal workloads, not generic hello-world benchmarks:
+
+- Cold startup
+- Warm startup
+- Peak and steady-state RAM
+- CPU at idle
+- CPU during market-open/live feed
+- Market tick throughput
+- Market API latency
+- Full-universe screening
+- FTS Funnel calculation
+- FTS technical analysis
+- Chart-data preparation
+- SQLite read/write throughput
+- Concurrent background jobs
+- Data ingestion
+- Codal/TSETMC synchronization
+- Serialization/IPC cost
+- Error handling and recovery
+- Process lifecycle
+- Crash isolation
+- Binary/package size
+- Update size
+- Build time
+- Cross-platform feasibility
+- Developer productivity
+- Testability
+- Observability
+- Security
+- Long-term maintenance cost
+
+### Rust-specific questions
+
+Determine whether Rust would materially improve:
+
+- high-frequency market update paths
+- concurrent polling/scheduling
+- CPU-bound technical calculations
+- memory footprint
+- sidecar/process lifecycle
+- IPC between native shell and frontend
+- deterministic/background execution
+- application startup
+- crash isolation
+- long-running stability
+
+Also measure the costs:
+
+- rewrite effort
+- crate maturity for required functionality
+- SQLite/data tooling equivalence
+- PDF/document/data processing ecosystem
+- numerical/statistical tooling
+- ML interoperability
+- developer complexity
+- debugging/maintenance overhead
+- migration risk
+
+### Python-specific questions
+
+Do not assume Python is slow without locating the actual bottleneck.
+
+Profile whether current bottlenecks are caused by:
+
+- SQLite/query design
+- repeated calculations
+- serialization
+- duplicate work
+- polling architecture
+- IPC/network transport
+- Python CPU-bound code
+- frontend rendering
+- chart drawing
+- startup packaging
+- memory/cache behavior
+
+A Rust rewrite is justified only when profiling identifies bottlenecks that Rust can materially improve or when the architectural simplification is itself worth the migration cost.
+
+### React/Tauri integration research
+
+Measure whether moving selected backend operations from HTTP localhost calls to Tauri Commands/events/channels reduces latency, resource usage, complexity, or reliability issues.
+
+Do not send large analytical datasets through inefficient JSON IPC when a more suitable binary/streaming path is available. Tauri's own documentation notes that large JSON return values can be slower and provides optimized IPC response/channel mechanisms for heavier data flows. citeturn959847search0turn959847search2
+
+### Decision rule
+
+Do not decide Rust vs Python by ideology.
+
+Choose the architecture that produces the best measured combination of:
+
+**correctness + performance + resource efficiency + reliability + developer velocity + maintainability + analytical ecosystem + release simplicity**
+
+### Migration rule
+
+If the research proves Rust is materially better for the long-term architecture:
+
+**prototype → benchmark → migrate one bounded subsystem → validate → migrate next subsystem**
+
+Do not perform a single giant rewrite.
+
+If the research does not prove a meaningful advantage, keep Python/FastAPI and optimize its actual bottlenecks.
+
+### Acceptance
+
+This research is complete only when a documented benchmark report compares at least two viable architectures on representative BorsTerminal workloads and records:
+
+**measurement → interpretation → migration cost → risks → recommendation → confidence**
+
+The result is a roadmap decision, not an assumption that Rust is automatically better.
+
 ## G. Documentation/source-of-truth hygiene
 
 Before implementing or changing a formula:
