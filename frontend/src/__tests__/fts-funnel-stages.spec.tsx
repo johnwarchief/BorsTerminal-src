@@ -156,10 +156,8 @@ describe('قیفِ FTS', () => {
     expect(swing?.trendD).toBe('down');
     expect(swing?.why.technical).toContain('فیبو');
     const trend = build('trend').stages.technical.entries.find((e) => e.symbol === 'سپ');
-    // «سپ» تنها ستاپِ قابل‌پذیرشِ روندگیر را دارد که نقطه‌زنی است، و اسکرینر
-    // هرگز `point_hunt` منتشر نمی‌کند. پیش از این، نبودِ فیلد «false» خوانده
-    // می‌شد و نماد رد می‌خورد؛ حالا `pending` است — از نبودِ داده نتیجه نمی‌گیریم
-    // (#7). رأیِ زندهٔ /api/fts اگر باشد همان‌جا به pass/reject عوض می‌شود.
+    // «سپ» بدون ستاپِ سنجیده هم عبور می‌کند؛ چون هفتگی صعودی و روزانه خنثی
+    // شاخهٔ معتبر چارت است. ستاپ‌ها فقط شواهد/امتیاز کمکی‌اند.
     expect(trend?.status.technical).toBe('pass');
     expect(trend?.trendW).toBe('up');
     expect(trend?.trendD).toBe('range');
@@ -236,13 +234,13 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
     expect(DEFAULT_FUNNEL_OPTIONS.unmeasured).toBe('hold');
     const f = buildWith();
     // شپنا نمرۀ ۲ دارد ⇒ زیرِ کفِ سه؛ خار بی‌ردیفِ اسکرینر است ⇒ صف
-    expect(syms(f.stages.fundamental.entries)).toEqual(['فولاد']);
+    expect(syms(f.stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
     expect(syms(f.stages.fundamental.pending)).toEqual(['خار']);
-    expect(syms(f.stages.handover.entries)).toEqual(['فولاد']);
+    expect(syms(f.stages.handover.entries)).toEqual(['سپ', 'فولاد']);
   });
 
   it('کفِ دو، ردیفِ نمره‌دو را رد نمی‌کند و کفِ پنج فقط نمره‌پنج را نگه می‌دارد', () => {
-    expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['شپنا', 'سپ', 'فولاد']);
+    expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['سپ', 'شپنا', 'فولاد']);
     expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
     // علتِ رد هم کفِ دستِ کاربر را می‌گوید، نه «سه»ی ثابت
     const five = buildWith({ fundFloor: 5 });
@@ -259,7 +257,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
 
     const drop = buildWith({ unmeasured: 'drop' });
     expect(drop.stages.fundamental.pending).toHaveLength(0);
-    expect(syms(drop.stages.fundamental.entries)).toEqual(['فولاد']);
+    expect(syms(drop.stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
     // شپنا (ردِ صریح) + خار (حذف‌شدۀ سنجیده‌نشده) ⇒ دو افت
     expect(drop.stages.fundamental.dropped).toBe(2);
   });
@@ -362,7 +360,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     // برچسب و دلیل سرِ جایشان‌اند تا کاربر بداند چرا این دو رد شده‌اند
     const hamrah = off.stages.technical.entries.find((e) => e.symbol === 'همراه');
     expect(hamrah?.status.technical).toBe('reject');
-    expect(hamrah?.why.technical).toContain('وتوی هفتگی');
+    expect(hamrah?.why.technical).toContain('روندِ هفتگی');
     // و به مرحلۀ بنیادی رسیده‌اند: آنجا خودشان داوری می‌شوند
     expect(syms(off.stages.fundamental.entries)).toEqual(['سپ', 'فولاد', 'همراه']);
     // (شپنا بنیادش رد است — نمرۀ ۲ زیرِ کفِ سه — پس از همین‌جا می‌افتد)
