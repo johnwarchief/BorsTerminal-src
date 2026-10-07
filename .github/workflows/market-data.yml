@@ -28,7 +28,7 @@ jobs:
       - name: Restore market baseline from source history
         shell: bash
         run: |
-          curl --fail --location --retry 3 --output market.db.lzma \\
+          curl --fail --location --retry 3 --output market.db.lzma \
             "https://raw.githubusercontent.com/johnwarchief/BorsTerminal-src/$SOURCE_REF/market.db.lzma"
           test -s market.db.lzma
 
@@ -41,14 +41,14 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
-          import datetime, hashlib, json, pathlib, subprocess
+          import datetime, hashlib, json, pathlib, os
           p = pathlib.Path("market.db.lzma")
           meta = {
               "asset": p.name,
               "size": p.stat().st_size,
               "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
               "source_repo": "johnwarchief/BorsTerminal-src",
-              "source_commit": subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip(),
+              "source_commit": os.environ["SOURCE_REF"],
               "published_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
           }
           pathlib.Path("market.db.meta.json").write_text(
