@@ -1,8 +1,8 @@
 // __tests__/fts-funnel-stages.spec.tsx -- منطقِ قیف: کجا کم می‌شود و کجا نباید بشود
 //
 // سه رأیِ این قیف درِ تست می‌نشینند، چون هر سه «سکوت» می‌کنند اگر نشکنند:
-//   1) تکنیکال غربال می‌کند (رأیِ تازهٔ مالک، جای رأیِ 1405-07-07): وتوی هفتگی
-//      و نبودِ ستاپِ همان سبک نماد را بیرون می‌اندازد.
+//   1) تکنیکال به‌ترتیب روندِ هفتگی سپس روزانه داوری می‌شود: فقط هفتگیِ نزولی/خنثی وتو است؛
+//      روزانه سه شاخهٔ معتبر دارد و ستاپ‌ها فقط شواهد/امتیاز کمکی‌اند.
 //   2) بی‌داده وتو نیست: ردیفی که اسکرینر تحلیلش نکرده «سنجیده نشد» است و به
 //      دورِ ریخته‌ها نمی‌رود.
 //   3) ورودیِ قیف خودِ پنج فیلتر است، نه الگوهایِ محلی — «ساعت قوی» نماد را
@@ -100,19 +100,19 @@ describe('قیفِ FTS', () => {
     expect(syms(build('swing').stages.tape.entries)).not.toContain('قوی‌محلی');
   });
 
-  it('تکنیکال غربال می‌کند: وتوی هفتگی و نبودِ ستاپ بیرون می‌افتند، بی‌داده نه', () => {
+  it('تکنیکال: هفتگی داورِ اصلی است و نبودِ ستاپ دیگر گیت نیست', () => {
     const f = build();
     expect(f.stages.technical.entries).toHaveLength(f.stages.tape.entries.length);
-    // همراه = وتوی هفتگی، سپ = هفتگی صعودی بی‌ستاپ
-    expect(f.stages.technical.dropped).toBe(2);
+    // همراه = وتوی هفتگی؛ سپ = هفتگی صعودی + روزانه خنثی، بدون نیاز به ستاپ
+    expect(f.stages.technical.dropped).toBe(1);
     expect(markOf(f, 'technical', 'همراه')).toBe('reject');
-    expect(markOf(f, 'technical', 'سپ')).toBe('reject');
+    expect(markOf(f, 'technical', 'سپ')).toBe('pass');
     // خار تحلیل نشده: «سنجیده نشد» — وتو نیست
     expect(f.stages.technical.entries.find((e) => e.symbol === 'خار')?.status.technical).toBe('unavailable');
     expect(f.stages.technical.unmeasured).toBe(1);
-    // هیچ‌کدام از دو ردِ تکنیکال به بنیادی نمی‌رسند
+    // فقط وتوی هفتگی به بنیادی نمی‌رسد؛ نمادِ بی‌ستاپ ولی دارای روند معتبر می‌رسد
     expect(syms(f.stages.fundamental.entries)).not.toContain('همراه');
-    expect(syms(f.stages.fundamental.entries)).not.toContain('سپ');
+    expect(syms(f.stages.fundamental.entries)).toContain('سپ');
   });
 
   it('رأیِ زندۀ /api/fts درِ تکنیکال را می‌بندد، حتی وقتی اسکرینر تحلیل نکرده', () => {
@@ -149,18 +149,46 @@ describe('قیفِ FTS', () => {
     expect(syms(f.stages.fundamental.pending)).not.toContain('خار');
   });
 
-  it('ستاپِ پذیرفتنی از سبک می‌آید: فیبوی 61.8-70 برای نوسان‌گیر ستاپ نیست، برای روندگیر هست', () => {
+  it('شاخهٔ روزانه تعیین‌کنندهٔ متن و ستاپ‌ها فقط شواهدِ کمکی هستند', () => {
     const swing = build('swing').stages.technical.entries.find((e) => e.symbol === 'شپنا');
-    expect(swing?.status.technical).toBe('reject');
-    expect(swing?.why.technical).toContain('ستاپ');
+    expect(swing?.status.technical).toBe('pass');
+    expect(swing?.trendW).toBe('up');
+    expect(swing?.trendD).toBe('down');
+    expect(swing?.why.technical).toContain('فیبو');
     const trend = build('trend').stages.technical.entries.find((e) => e.symbol === 'سپ');
     // «سپ» تنها ستاپِ قابل‌پذیرشِ روندگیر را دارد که نقطه‌زنی است، و اسکرینر
     // هرگز `point_hunt` منتشر نمی‌کند. پیش از این، نبودِ فیلد «false» خوانده
     // می‌شد و نماد رد می‌خورد؛ حالا `pending` است — از نبودِ داده نتیجه نمی‌گیریم
     // (#7). رأیِ زندهٔ /api/fts اگر باشد همان‌جا به pass/reject عوض می‌شود.
-    expect(trend?.status.technical).toBe('pending');
-    expect(trend?.why.technical).toContain('نقطه‌زنی');
+    expect(trend?.status.technical).toBe('pass');
+    expect(trend?.trendW).toBe('up');
+    expect(trend?.trendD).toBe('range');
     expect(trend?.techSource).toBe('screen');
+  });
+
+  it('امتیاز تکنیکال: روندها از ستاپ‌ها مهم‌ترند و ستاپ گیت نیست', () => {
+    const f = build();
+    const فولاد = f.stages.technical.entries.find((e) => e.symbol === 'فولاد');
+    const شپنا = f.stages.technical.entries.find((e) => e.symbol === 'شپنا');
+    const سپ = f.stages.technical.entries.find((e) => e.symbol === 'سپ');
+    expect(فولاد?.technicalPoints).toBe(5); // weekly up + daily up + one setup
+    expect(شپنا?.technicalPoints).toBe(4); // weekly up + daily down + one setup
+    expect(سپ?.technicalPoints).toBe(3); // weekly up + daily range + no setup
+  });
+
+  it('بدونِ روندِ روزانهٔ معتبر، تکنیکال pending است و ستاپ جایِ روند را نمی‌گیرد', () => {
+    const rows = [board({ symbol: 'ناقص', f_susp: true })];
+    const screens = [screened('ناقص', 5, {
+      tech_matrix_decision: 'PERMITTED',
+      tech_trend_w: 'up',
+      tech_trend_d: null,
+      tech_jet: true,
+      i1_pass: true, i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+    })];
+    const f = buildFunnel(rows, DEFAULT_TAPE_FILTER_CONFIG, [], screens, new Set(), 'custom');
+    const e = f.stages.technical.entries.find((x) => x.symbol === 'ناقص');
+    expect(e?.status.technical).toBe('pending');
+    expect(e?.technicalPoints).toBeNull();
   });
 
   it('بنیادی: ردِ صریح می‌افتد، بی‌گزارش در صفِ خودش می‌ماند و به تحویل نمی‌رود', () => {
@@ -300,8 +328,7 @@ vi.mock('@features/master/api/useFtsTechBoard', () => ({
 }));
 
 /**
- * مالک: «هر بخش باید ستونِ مربوط به خودش را داشته باشد، مثلا تکنیکال هفتگی
- * صعودیه یا نزولی … یکاری هم بکن که تکنیکال رد نشن تا به بنیادی برسن».
+ * مالک: «اول روند هفتگی، بعد روزانه؛ جت/پولبک و بقیۀ شاخه‌ها امتیاز مثبت باشند، نه گیت.»
  * دو چیزِ این‌جا تست می‌شود: سرستون‌هایِ جدا برایِ هر مرحله (تا پیش از این
  * چهار جدول یک سرستون مشترک داشتند)، و کلیدِ «خودم چک می‌کنم» که با
  * پیش‌فرضِ جزوه (غربال) خاموش است و ردشده‌ها را فقط برچسب می‌زند.
@@ -331,7 +358,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     const off = buildWith({ techScreens: false });
     // هیچی حذف نشده، پس dropped صفر است؛ شمارِ رد خورده پنهان نمی‌شود
     expect(off.stages.technical.dropped).toBe(0);
-    expect(off.stages.technical.rejected).toBe(2);
+    expect(off.stages.technical.rejected).toBe(1);
     // برچسب و دلیل سرِ جایشان‌اند تا کاربر بداند چرا این دو رد شده‌اند
     const hamrah = off.stages.technical.entries.find((e) => e.symbol === 'همراه');
     expect(hamrah?.status.technical).toBe('reject');
