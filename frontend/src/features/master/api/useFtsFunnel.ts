@@ -85,9 +85,10 @@ function sharedFunnelUniverse(...args: UniverseArgs): ReturnType<typeof funnelUn
 }
 
 export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {  const feed = useMarketFeed();
-  // limit همان شمارۀ همیشۀ این تب است تا کوئریِ مشترک دوباره ساخته نشود؛
-  // خودِ بک‌اند limit را نمی‌خواند و هر ۸۷۳ شرکتِ واجد را می‌فرستد.
-  const screen = useFtsScreen(120);
+  // یک درخواستِ مشترک با تبِ بنیادی (کلیدِ ۰ = کلِ universe). رویِ موبایل
+  // resolverِ محلی `?limit` را جدی می‌گیرد، پس هر دو مصرف‌کننده باید «همه»
+  // بخواهند وگرنه قیف از ۱۲۰ ردیفِ اول داوری می‌کند.
+  const screen = useFtsScreen();
   const portfolio = usePortfolio();
   const cfg = useTapeStore((s) => s.tapeFilterConfig);
   const quickFilters = useTapeStore((s) => s.quickFilters);

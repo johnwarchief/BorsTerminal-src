@@ -32,8 +32,10 @@ const NONE: SymbolVeto = {
   screen: null,
 };
 
-/** کلیدهایِ `useFtsScreen` که در برنامه مصرف می‌شوند — هر کدام اگر کش شده باشد خوانده می‌شود */
-const SCREEN_KEYS: readonly number[] = [120, 60];
+/** کلیدهایِ `useFtsScreen` که در برنامه مصرف می‌شوند — هر کدام اگر کش شده باشد خوانده می‌شود.
+ *  ۰ = کلِ universe (پیش‌فرضِ هر دو مصرف‌کننده)؛ ۱۲۰ و ۶۰ برایِ کش‌هایِ کهنه‌ای
+ *  است که درِ همین نشست هنوز با کلیدِ تازه ساخته نشده‌اند. */
+const SCREEN_KEYS: readonly number[] = [0, 120, 60];
 
 export function useSymbolVeto(symbol: string): SymbolVeto {
   const qc = useQueryClient();
