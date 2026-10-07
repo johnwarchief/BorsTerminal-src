@@ -39,6 +39,51 @@ Do not spend major effort polishing secondary screens while the Strategy FTS wor
 
 ---
 
+# Cross-cutting UX requirement — Stable numeric transitions
+
+Live market numbers must change **smoothly and truthfully**.
+
+Current undesirable behavior: when a value changes, the UI may show strange intermediate numbers before reaching the real value. This is not acceptable.
+
+Example:
+
+1990 → 1993
+
+The user should perceive a calm transition toward 1993, not unrelated or exaggerated transient values.
+
+## Required behavior
+
+- The displayed value must start from the last valid displayed value and converge to the newest authoritative value.
+- Intermediate animation values must be mathematically interpolated between old and new values.
+- Never generate intermediate numbers outside the old/new interval merely for visual effect.
+- For an upward change, the visible transition must not temporarily move downward; for a downward change, it must not temporarily move upward, except when a newer authoritative market tick supersedes the current target.
+- Rapid incoming ticks should be coalesced so the user sees a stable transition rather than dozens of competing animations.
+- A new authoritative value should update the animation target cleanly rather than restarting from an unrelated number.
+- Invalid, stale, null, or semantically incompatible values must not participate in the animation.
+- The final rendered number must exactly equal the authoritative value after the transition.
+- Formatting, separators, decimals, signs, and units must remain correct throughout the transition.
+- Important live figures such as price, volume, value, trade count, queue size, and other rapidly changing metrics should use a consistent transition system rather than independent ad-hoc animations.
+- The transition must remain lightweight and must not increase CPU usage significantly during live market updates.
+- Respect reduced-motion/accessibility preferences without changing numeric correctness.
+
+## Acceptance
+
+Validate with real rapid market updates and deterministic test sequences such as:
+
+1990 → 1993
+1993 → 1990
+1990 → 1990
+1990 → 2040
+2040 → 1990
+multiple rapid ticks before an animation completes
+null/stale/invalid tick between valid values
+
+The visual result must be calm, monotonic where mathematically appropriate, free of fabricated intermediate values, and end exactly at the latest valid value.
+
+This is a **global UX requirement**, not a cosmetic feature limited to one screen.
+
+---
+
 # 1. P0 — 100% verified parity with TradersArena
 
 **This is the first major gate.**
