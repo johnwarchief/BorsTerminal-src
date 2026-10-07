@@ -1,0 +1,207 @@
+# ساخت اپ اندروید (APK) + اسنپ‌شات دادهٔ موبایل — اجرای دستی از تب Actions
+#
+# چرا CI؟ بیلد اندروید به Android SDK/Java نیاز دارد که روی هر ماشینی نیست؛
+# runner گیت‌هاب هر دو را از پیش دارد. خروجی به‌صورت artifact بارگذاری می‌شود:
+#   - bors-mobile-apk: اپ قابل نصب (debug — امضای release در گام بعدی)
+#   - mobile-snapshot: mobile_snapshot.db.gz (برای آپلود کنار ریلیزها)
+#
+# نکتهٔ داده: runner آی‌پی خارجی دارد و اندپوینت‌های زندهٔ TSETMC (tedpix و
+# همتایانش) در پخت skip می‌شوند — مشکلی نیست، چون خود گوشی آن‌ها را زنده
+# می‌گیرد (لایهٔ live). دادهٔ پایه از market.db.lzma خود مخزن می‌آید.
+name: mobile-apk
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'arena/**'          # شاخهٔ کاری موبایل — هر push یک APK تازه می‌سازد
+    paths:
+      - 'frontend/**'
+      - 'scripts/build_mobile_snapshot.py'
+      - '.github/workflows/mobile.yml'
+      - 'market.db.lzma'
+
+permissions:
+  contents: write   # برای انتشار APK و اسنپ‌شات در تگ غلتان mobile-latest
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- پخت اسنپ‌شات موبایل (پایتون + market.db مخزن) ----
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: نصب وابستگی‌های بک‌اند
+        run: pip install fastapi uvicorn orjson "numpy==2.0.2" "pandas==2.2.3" requests httpx
+      - name: استخراج market.db از اسنپ‌شات مخزن
+        run: |
+          python - <<'PY'
+          import lzma
+          with lzma.open('market.db.lzma','rb') as f, open('market.db','wb') as o:
+              while True:
+                  b = f.read(1 << 24)
+                  if not b:
+                      break
+                  o.write(b)
+          print('market.db extracted')
+          PY
+      - name: پخت اسنپ‌شات موبایل
+        run: python scripts/build_mobile_snapshot.py --no-lzma
+
+      # ---- بیلد فرانت در حالت موبایل ----
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: نصب و بیلد فرانت (VITE_LOCAL_DATA=1)
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          # برچسب بیلد در پنل عیب‌یابی 🛠 اپ نشان داده می‌شود تا همیشه معلوم
+          # باشد APK نصب‌شده واقعاً از کدام بیلد است.
+          export VITE_BUILD_TAG="run${GITHUB_RUN_NUMBER} · ${GITHUB_SHA::7} · $(date -u +%Y-%m-%d_%H:%M)"
+          VITE_LOCAL_DATA=1 npm run build
+          cp ../dist_mobile/mobile_snapshot.db.gz dist/
+
+      # ---- بیلد اندروید ----
+      # Capacitor 8 (AGP 8.13 / Gradle 8.14) به Java 21 نیاز دارد — با 17 بیلد می‌شکند
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: همگام‌سازی Capacitor و بیلد APK
+        working-directory: frontend
+        run: |
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      # ---- امضای release (اختیاری): فقط اگر سکرت‌های keystore تعریف شده باشند ----
+      # ساخت keystore (یک بار، روی PC):
+      #   keytool -genkey -v -keystore bors.keystore -alias bors -keyalg RSA -validity 10000
+      #   base64 -w0 bors.keystore  →  سکرت ANDROID_KEYSTORE_B64
+      # سکرت‌ها: ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
+      - name: بیلد release امضاشده (اختیاری)
+        working-directory: frontend/android
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KS_B64" ]; then
+            echo "سکرت keystore تعریف نشده — فقط APK دیباگ ساخته می‌شود (قابل نصب است)."
+            exit 0
+          fi
+          echo "$KS_B64" | base64 -d > release.keystore
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$PWD/release.keystore" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="${KEY_PASS:-$KS_PASS}"
+
+      - name: بارگذاری APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bors-mobile-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: بارگذاری APK امضاشده (اگر keystore بود)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bors-mobile-apk-release
+          path: frontend/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: ignore
+      - name: بارگذاری اسنپ‌شات داده (gz + meta برای آپلود کنار ریلیز)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-snapshot
+          path: |
+            dist_mobile/mobile_snapshot.db.gz
+            dist_mobile/mobile_snapshot.db.meta.json
+          if-no-files-found: error
+
+      # ---- انتشار در Releases: تگ غلتان mobile-latest (pre-release) ----
+      # عمداً pre-release است تا «Latest» مخزن همچنان ریلیز رسمی دسکتاپ بماند.
+      # نام دارایی‌ها ثابت است تا لینک دانلود همیشگی باشد؛ بروزرسانی خودکار
+      # دادهٔ اپ (localData.ts) هم از همین تگ mobile-latest می‌خواند.
+      - name: انتشار APK و داده در تگ mobile-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          VER=$(python -c "import bors_config; print(bors_config.APP_VERSION)")
+          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk bors-terminal-mobile.apk
+          # اگر release امضاشده هم ساخته شده باشد، همان را با نام اصلی منتشر کن
+          REL_APK=$(ls frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1 || true)
+          if [ -n "$REL_APK" ]; then cp "$REL_APK" bors-terminal-mobile.apk; fi
+          # بستهٔ رمزدار برای توزیع (همان سیاست ستاپ‌های ویندوز): ZIP رمزدار —
+          # RAR روی CI در دسترس نیست (انحصاری)؛ این ZIP را WinRAR/ZArchiver/RAR
+          # با همان رمز همیشگی باز می‌کنند. رمز این‌جا در مخزن خصوصی می‌ماند.
+          rm -f bors-terminal-mobile.zip
+          zip -j -P 'BorsTerminal-2026' bors-terminal-mobile.zip bors-terminal-mobile.apk
+          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER}
+          - bors-terminal-mobile.apk: نصبِ مستقیم رویِ گوشی (کامیت ${GITHUB_SHA::7})
+          - دادهٔ آفلاین کامل داخل APK است؛ داخل ایران تابلو/چارت زنده از TSETMC می‌آید.
+          - mobile_snapshot.db.gz + meta: بستهٔ داده برای بروزرسانی خودکارِ درون‌برنامه‌ای."
+          gh release create mobile-latest --prerelease --target "$GITHUB_SHA" \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES" 2>/dev/null || \
+          gh release edit mobile-latest --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES"
+          gh release upload mobile-latest --clobber \
+            bors-terminal-mobile.apk \
+            bors-terminal-mobile.zip \
+            dist_mobile/mobile_snapshot.db.gz \
+            dist_mobile/mobile_snapshot.db.meta.json
+
+      # ---- انتشار در مخزن عمومی BorsTerminal (اختیاری، با PAT) ----
+      # GITHUB_TOKEN فقط به همین مخزن دسترسی دارد؛ برای مخزن عمومی یک
+      # Fine-grained PAT با دسترسی Contents:Read&Write روی johnwarchief/BorsTerminal
+      # بساز و به‌عنوان سکرت PUBLIC_RELEASE_TOKEN اضافه کن. تا وقتی این سکرت
+      # نیست، این گام بی‌صدا رد می‌شود و ریلیز فقط در همین مخزن (-src) می‌ماند.
+      # چرا مخزن عمومی مهم است: (الف) هر کسی بدون لاگین APK را دانلود می‌کند؛
+      # (ب) بروزرسانی خودکار دادهٔ اپ (localData.ts) بی‌احراز fetch می‌کند و
+      # روی مخزن خصوصی همیشه 404 می‌گیرد.
+      - name: انتشار در مخزن عمومی BorsTerminal (اختیاری)
+        env:
+          # RELEASE_TOKEN همان توکنی است که ریلیزِ ویندوز سال‌هاست با آن
+          # رویِ مخزنِ عمومی می‌نویسد (release.yml خط ۴۰۵). تا امروز این
+          # گام فقط PUBLIC_RELEASE_TOKEN را می‌شناخت که هرگز تعریف نشده
+          # بود، پس هر بار بی‌صدا رد می‌شد و APK فقط در مخزنِ -src می‌ماند
+          # — جایی که کنارِ ریلیزهایِ ویندوز دیده نمی‌شود.
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN || secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "نه PUBLIC_RELEASE_TOKEN نه RELEASE_TOKEN تعریف نشده — انتشار عمومی رد شد (ریلیز در -src هست)."
+            exit 0
+          fi
+          set -e
+          VER=$(python -c "import bors_config; print(bors_config.APP_VERSION)")
+          PUB=johnwarchief/BorsTerminal
+          NOTES="اپ اندروید بورس‌ترمینال — نسخهٔ ${VER}
+          - bors-terminal-mobile.zip: اپ اندروید (رمزدار — همان رمز ستاپ‌های ویندوز)؛
+            باز کردن با WinRAR/ZArchiver/RAR، بعد نصب APK داخلش
+          - دادهٔ آفلاین کامل داخل خود اپ است؛ داخل ایران تابلو/چارت/شاخص زنده از TSETMC می‌آید
+          - mobile_snapshot.db.gz + meta: بستهٔ داده — اپ روزی یک‌بار خودش چک و آپدیت می‌کند"
+          gh release create mobile-latest -R "$PUB" --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES" 2>/dev/null || \
+          gh release edit mobile-latest -R "$PUB" --prerelease \
+            --title "اپ موبایل (آخرین بیلد) — v${VER}" \
+            --notes "$NOTES"
+          # هم APK خام (نصبِ مستقیم رویِ گوشی) و هم ZIP رمزدار (همان سیاستِ
+          # ستاپ‌هایِ ویندوز، برایِ توزیع). دادهٔ اسنپ‌شات عمداً بی‌رمز است
+          # چون بروزرسانیِ خودکارِ اپ مستقیم fetchش می‌کند.
+          gh release upload mobile-latest -R "$PUB" --clobber \
+            bors-terminal-mobile.apk \
+            bors-terminal-mobile.zip \
+            dist_mobile/mobile_snapshot.db.gz \
+            dist_mobile/mobile_snapshot.db.meta.json
