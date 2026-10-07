@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import type { FtsZone } from '../lib/ftsChartModel';
+import { useTreeFlowStore } from '../stores/treeFlowStore';
 
 export const TREE_STAGES = [
   { zone: 'S' as FtsZone, short: 'S', title: 'تابلوخوانی', page: 'صفحه ۳' },
@@ -17,6 +18,11 @@ export function treeStagePath(zone: FtsZone, preset?: string, symbol?: string | 
 }
 
 export function StrategyTreeStepper({ active, preset, symbol }: { active: FtsZone | null; preset: string; symbol?: string | null }) {
+  // جریانِ مسیر از همان تنظیمِ درون‌برنامه خوانده می‌شود (پیش‌فرض «همیشه»):
+  // فلگِ `html[data-tree-flow-running]` را خودِ استور می‌زند؛ بی‌این import
+  // انیمیشنِ درخت بی‌صدا از UI رفته بود (گاردِ flash-idle همان را می‌گیرد).
+  const mode = useTreeFlowStore((s) => s.mode);
+  const flowing = mode !== 'off';
   return (
     <nav aria-label="صفحات درخت استراتژی FTS" data-testid="strategy-tree-stepper" className="w-full overflow-x-auto pb-1">
       <div className="flex min-w-[760px] items-center gap-2">
@@ -39,7 +45,25 @@ export function StrategyTreeStepper({ active, preset, symbol }: { active: FtsZon
                   <span className="block text-3xs text-text-muted">{stage.page}</span>
                 </span>
               </Link>
-              {i < TREE_STAGES.length - 1 ? <span className="shrink-0 text-lg text-text-muted" aria-hidden>←</span> : null}
+              {i < TREE_STAGES.length - 1 ? (
+                <span
+                  className="relative flex h-6 w-7 shrink-0 items-center text-accent-blue/70"
+                  aria-hidden
+                  data-testid={`tree-flow-rail-${stage.zone}`}
+                >
+                  {flowing ? (
+                    <span className="fts-path-flow" style={{ width: '100%', height: 2, background: 'currentColor' }} />
+                  ) : (
+                    <span style={{ width: '100%', height: 2, background: 'currentColor', opacity: 0.35 }} />
+                  )}
+                  {flowing && TREE_STAGES[i + 1].zone === active ? (
+                    <span
+                      className="fts-comet"
+                      style={{ position: 'absolute', insetInlineEnd: 0, width: 6, height: 6, borderRadius: 9999, background: 'currentColor' }}
+                    />
+                  ) : null}
+                </span>
+              ) : null}
             </div>
           );
         })}

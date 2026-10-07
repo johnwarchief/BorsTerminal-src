@@ -647,10 +647,16 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
 export function FtsFunnelStages({
   preset = 'custom',
   onPresetChange,
+  only,
+  onStageSelect,
 }: {
   preset?: TreePreset;
   /** وقتی والد، دربِ قیف را از استورِ استراتژی می‌خواند؛ بی‌این کلیدها رسم نمی‌شوند */
   onPresetChange?: (p: (typeof FUNNEL_PRESETS)[number]) => void;
+  /** حالتِ مسیریافته: فقط کارتِ همین مرحله؛ فهرستِ چهارتایی درِ گام چهارم می‌ماند */
+  only?: FunnelStageKey;
+  /** درِ حالتِ مسیریافته: تب به‌جای اسکرول، به routeِ همان مرحله می‌رود */
+  onStageSelect?: (stage: FunnelStageKey) => void;
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
@@ -697,6 +703,7 @@ export function FtsFunnelStages({
   }, [snap, funnel]);
 
   const stages = ORDER.map((k) => funnel.stages[k]);
+  const shownKeys = only ? [only] : ORDER;
   // شمارشِ واقعیِ درِ تحویل: «چند تا واقعاً» — نه اینکه برایِ رسیدن به ۱۰ نماد
   // ضعیف اضافه شود. هدف‌هایِ جزوه فقط مرجعِ کناری‌اند.
   const hc = funnel.counts.handover;
@@ -830,9 +837,13 @@ export function FtsFunnelStages({
               key={s.key}
               type="button"
               role="tab"
-              aria-selected={active === s.key}
+              aria-selected={(only ?? active) === s.key}
               data-testid={`funnel-step-${s.key}`}
               onClick={() => {
+                if (onStageSelect) {
+                  onStageSelect(s.key);
+                  return;
+                }
                 setActive(s.key);
                 // تب قیف فقط هایلایت نبود؛ کاربر انتظار داشت همان مرحله را ببیند
                 const card = document.querySelector(`[data-testid="funnel-stage-${s.key}"]`) as HTMLElement | null;
@@ -873,7 +884,7 @@ export function FtsFunnelStages({
 
 
       <div className="flex flex-col gap-2">
-        {stages.map((s, i) => (
+        {stages.map((s, i) => (shownKeys.includes(s.key) ? (
           <StageCard
             key={s.key}
             stage={s}
@@ -881,11 +892,11 @@ export function FtsFunnelStages({
             wide={wide}
             showMark={marks[i]}
             onPick={pick}
-            active={active === s.key}
+            active={(only ?? active) === s.key}
             opts={opts}
             emptyWhy={emptyWhy[s.key]}
           />
-        ))}
+        ) : null))}
       </div>
     </section>
   );

@@ -27,11 +27,12 @@ function candidate(status: Record<FunnelStageKey, StageStatus>, symbol = 'خود
   return {
     symbol, name: 'سایپا', sector: 'خودرو', status, why,
     score: 4, trendW: 'up', trendD: 'up', setups: 'جت',
+    dailyStrategy: 'جت / پولبک', technicalPoints: 5,
     inds: [], patterns: [], techSource: 'live', kind: 'stock',
     row: { p_last: 131, percent_change: 0.8 } as Candidate['row'],
     screen: null, jetEvidence: null, assemblyVeto: false, assemblyWhy: '',
-    portfolio: null, screenRank: 2,
-  } as Candidate;
+    screenRank: 2,
+  };
 }
 
 const feed = (over: { vetoed?: boolean; code?: string; text?: string; trigger?: unknown; decision?: string; desc?: string } = {}) =>

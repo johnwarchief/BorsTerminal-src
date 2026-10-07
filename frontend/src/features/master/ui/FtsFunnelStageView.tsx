@@ -1,10 +1,11 @@
-import { Link, useSearchParams, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useFtsFunnel } from '../api/useFtsFunnel';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { FUNNEL_STAGES, funnelStagePath, FtsProcessStepper } from './FtsProcessStepper';
-import { STATUS_LABEL, trendLabel, type FunnelStageKey, type StageStatus } from '../lib/ftsFunnel';
+import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
+import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
 
 const INFO: Record<Exclude<FunnelStageKey, 'handover'>, { title: string; purpose: string; rules: string[]; tone: string }> = {
   tape: { title: 'تابلوخوانی و انتخاب', purpose: 'ورودی‌های این مرحله و دلیل عبور آن‌ها از فیلترهای سبک انتخابی را ببینید.', rules: ['نوسان‌گیر: ساعت + جت + حجم مشکوک', 'روندگیر: کف‌روبی + نقطه‌زنی'], tone: 'accent-yellow' },
@@ -12,62 +13,28 @@ const INFO: Record<Exclude<FunnelStageKey, 'handover'>, { title: string; purpose
   fundamental: { title: 'بنیادی پنج‌شاخصه', purpose: 'پنج شاخص کنار هم دیده می‌شوند تا دلیل امتیاز هر شرکت روشن باشد.', rules: ['رشد فروش', 'EPS سه‌ساله', 'حاشیه سود ناخالص', 'فروش ۱۲ ماهه ÷ ارزش بازار', 'نرخ‌گذاری'], tone: 'accent-green' },
 };
 
-const STATUS_CLASS: Record<StageStatus, string> = {
-  pass: 'border-accent-green/40 bg-accent-green/10 text-accent-green',
-  reject: 'border-accent-red/40 bg-accent-red/10 text-accent-red',
-  pending: 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow',
-  unavailable: 'border-border-c bg-bg-secondary text-text-muted',
-};
-
-function CandidateCard({ stage, candidate }: { stage: Exclude<FunnelStageKey, 'handover'>; candidate: import('../lib/ftsFunnel').Candidate }) {
-  const setSymbol = useSymbolStore((s) => s.setSymbol);
-  const navigate = useNavigate();
-  const st = candidate.status[stage];
-  return (
-    <button
-      type="button"
-      onClick={() => { setSymbol(candidate.symbol); navigate('/master/' + encodeURIComponent(candidate.symbol)); }}
-      className="group w-full text-start rounded-2xl border border-border-c bg-bg-primary/35 p-3 transition-all hover:border-accent-blue/40 hover:bg-bg-card"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="text-sm font-black text-text-primary">{candidate.symbol}</div>
-          <div className="mt-0.5 max-w-[260px] truncate text-3xs text-text-muted">{candidate.name}</div>
-        </div>
-        <span className={`rounded-lg border px-2 py-1 text-3xs font-black ${STATUS_CLASS[st]}`}>{STATUS_LABEL[st]}</span>
-      </div>
-      {stage === 'tape' ? (
-        <div className="mt-2 text-2xs text-text-secondary">{candidate.patterns.length ? candidate.patterns.join(' · ') : 'نشانهٔ ویژه‌ای ثبت نشده است'}</div>
-      ) : null}
-      {stage === 'technical' ? (
-        <div className="mt-2 flex flex-wrap gap-1.5 text-2xs">
-          <span className="rounded-lg border border-border-c px-2 py-1 text-text-secondary">W: {trendLabel(candidate.trendW)}</span>
-          <span className="rounded-lg border border-border-c px-2 py-1 text-text-secondary">D: {trendLabel(candidate.trendD)}</span>
-          <span className="rounded-lg border border-accent-blue/20 bg-accent-blue/5 px-2 py-1 font-bold text-accent-blue">{candidate.dailyStrategy || 'شاخه نامشخص'}</span>
-          {candidate.setups ? <span className="rounded-lg border border-border-c px-2 py-1 text-text-secondary">{candidate.setups}</span> : null}
-        </div>
-      ) : null}
-      {stage === 'fundamental' ? (
-        <div className="mt-2 text-2xs font-bold text-text-secondary">امتیاز: {candidate.score == null ? '—' : `${toFaDigits(candidate.score)} از ۵`}</div>
-      ) : null}
-      <div className="mt-2 border-t border-border-c/50 pt-2 text-2xs leading-5 text-text-muted">
-        <span className="font-black text-text-secondary">چرا؟ </span>{candidate.why[stage] || 'دلیل ثبت نشده است.'}
-      </div>
-    </button>
-  );
-}
-
-export default function FtsFunnelStageView({ stage }: { stage: Exclude<FunnelStageKey, 'handover'> }) {
+/** نمای یک مرحلۀ قیف: سرصفحۀ همان در + جدولِ خودِ قیف (یک پیاده‌سازی، دو رندر). */
+export default function FtsFunnelStageView({
+  stage,
+  onPresetChange,
+}: {
+  stage: Exclude<FunnelStageKey, 'handover'>;
+  onPresetChange?: (p: Exclude<TreePreset, 'custom'>) => void;
+}) {
   const [params] = useSearchParams();
   const horizon = useStrategyStore((s) => s.horizon);
   const preset = (['swing', 'trend', 'hourglass', 'custom'] as const).includes(params.get('preset') as never)
-    ? params.get('preset') as 'swing' | 'trend' | 'hourglass' | 'custom'
+    ? params.get('preset') as TreePreset
     : horizon;
   const selected = useSymbolStore((s) => s.symbol);
+  const navigate = useNavigate();
   const { funnel, loading, mode } = useFtsFunnel(preset);
   const data = funnel.stages[stage];
   const info = INFO[stage];
   const stats = data.summary;
+  const idx = FUNNEL_STAGES.findIndex((s) => s.key === stage);
+  const prev = FUNNEL_STAGES[Math.max(0, idx - 1)]?.key ?? 'tape';
+  const next = FUNNEL_STAGES[Math.min(FUNNEL_STAGES.length - 1, idx + 1)]?.key ?? 'handover';
 
   return (
     <div className="flex w-full flex-col gap-4" data-testid={`fts-stage-${stage}`}>
@@ -88,19 +55,16 @@ export default function FtsFunnelStageView({ stage }: { stage: Exclude<FunnelSta
         <div className="mt-4 text-3xs text-text-muted">حالت: {mode === 'review' ? 'مرور کامل بازار' : 'مهندسی معکوس'}{loading ? ' · در حال تازه‌سازی' : ''}</div>
       </section>
 
-      <section className="rounded-3xl border border-border-c bg-bg-card/70 p-3 sm:p-4">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-black text-text-primary">فهرست کامل این مرحله</h2>
-          <span className="text-3xs text-text-muted">روی هر کارت = بازکردن جزئیات همان نماد</span>
-        </div>
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {data.entries.map((candidate) => <CandidateCard key={candidate.symbol} stage={stage} candidate={candidate} />)}
-        </div>
-      </section>
+      <FtsFunnelAllStages
+        preset={preset}
+        onPresetChange={onPresetChange}
+        only={stage}
+        onStageSelect={(k) => navigate(funnelStagePath(k, preset, selected || null))}
+      />
 
       <div className="flex items-center justify-between gap-2 text-2xs">
-        <Link to={funnelStagePath(FUNNEL_STAGES[Math.max(0, FUNNEL_STAGES.findIndex((s) => s.key === stage) - 1)]?.key || 'tape', preset, selected || null)} className="text-text-muted hover:text-accent-blue">← مرحله قبل</Link>
-        <Link to={funnelStagePath('handover', preset, selected || null)} className="font-black text-emerald-400 hover:text-emerald-300">نمای کامل قیف →</Link>
+        <Link to={funnelStagePath(prev, preset, selected || null)} className="text-text-muted hover:text-accent-blue">← مرحله قبل</Link>
+        <Link to={funnelStagePath(next, preset, selected || null)} className="font-black text-accent-blue hover:text-accent-blue/80">مرحلۀ بعد ←</Link>
       </div>
     </div>
   );

@@ -432,7 +432,7 @@ function techMark(t: TechSignals | null): { s: StageStatus; why: string } {
 
   const weekly = t.trendW;
   if (weekly === 'down' || weekly === 'range') {
-    return { s: 'reject', why: `تکنیکال: روندِ هفتگی ${trendLabel(weekly)} است — وتوی FTS` };
+    return { s: 'reject', why: `تکنیکال: روندِ هفتگی ${trendLabel(weekly)} است — وتوی هفتگی` };
   }
 
   // اگر روند خام در پاسخ نیامده ولی موتور رأیِ صریحِ وتو داده، همان رأی را حفظ می‌کنیم.
@@ -684,7 +684,7 @@ export type CandidateInput = {
  * خوانده می‌شود).
  */
 export function evaluateCandidate(input: CandidateInput): Candidate {
-  const { symbol, cfg, row, screen, live, preset, opts, ctx, entryFilters, portfolioSet, screenRank } = input;
+  const { symbol, cfg, row, screen, live, opts, ctx, entryFilters, portfolioSet, screenRank } = input;
   // رأیِ تازهٔ `/api/fts` مقدم است (همین حالا برایِ همین نماد خوانده شده)؛
   // اگر نبود، ردیفِ اسکرینر همان موتور را دارد.
   const sig = (live ? techFromVerdict(live) : null) ?? techFromScreen(screen);

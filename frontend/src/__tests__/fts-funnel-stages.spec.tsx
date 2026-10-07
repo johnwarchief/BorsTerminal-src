@@ -25,8 +25,11 @@ import {
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 
-/** هر سطرِ قیف حالا `navigate()` می‌کند، پس تست‌ها هم درِ Router می‌نشینند. */
-const renderRouted = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
+/** هر سطرِ قیف حالا `navigate()` می‌کند، پس تست‌ها هم درِ Router می‌نشینند.
+ *  نمای چهارمرحلۀِ کامل در گام چهارم می‌ماند (`?stage=handover`) — جایی که این
+ *  تست‌ها ساخته شدند؛ پس پیش‌فرضِ رندر همان‌جاست، نه صفحۀ مرکز کنترل. */
+const renderRouted = (ui: ReactElement, at = '/master?stage=handover&preset=custom') =>
+  render(<MemoryRouter initialEntries={[at]}>{ui}</MemoryRouter>);
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type { TechVerdict } from '@features/master/api/useFtsTechBoard';
 
@@ -209,6 +212,7 @@ describe('قیفِ FTS', () => {
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
       </QueryClientProvider>,
+      '/master',
     );
     expect(useTapeStore.getState().quickFilters).toEqual([]);
     expect(screen.getByTestId('fts-funnel-overview')).toBeInTheDocument();
@@ -538,6 +542,7 @@ describe('دربِ قیف: انتخابِ استراتژی رویِ خودِ ق�
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages {...props} />
       </QueryClientProvider>,
+      '/master?stage=handover',
     );
 
   it('بی‌onPresetChange هیچ کلیدی رسم نمی‌شود (قیفِ ایستا کلیدِ مرده ندارد)', () => {
