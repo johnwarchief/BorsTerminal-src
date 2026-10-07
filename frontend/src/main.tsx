@@ -1,50 +1,17 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { TooltipProvider } from '@shared/ui/Tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createHashRouter, RouterProvider } from 'react-router';
 import { AppShell } from '@app/layouts/AppShell';
-import { ErrorBoundary } from '@app/components/ErrorBoundary';
-import { MobileBootstrap } from '@app/components/MobileBootstrap';
-
 import { mainRoutes } from './routes';
+import { MobileBootstrap } from '@app/components/MobileBootstrap';
 import './index.css';
-// استایل موبایل ایستا ایمپورت می‌شود (نه داینامیک) تا خطای بارگذاری chunk در
-// WebView نتواند پوسته را بشکند؛ همهٔ قواعدش پشت html.bors-mobile است و در
-// دسکتاپ کاملاً بی‌اثر می‌ماند (~۲KB).
 import './shared/styles/mobile.css';
 
-// بیلد موبایل (VITE_LOCAL_DATA='1'): کلاس پوستهٔ موبایل روی ریشهٔ سند +
-// پنل عیب‌یابی روی خود دستگاه (دکمهٔ 🛠).
 if (import.meta.env.VITE_LOCAL_DATA === '1') {
   document.documentElement.classList.add('bors-mobile');
-  void import('./shared/api/local/diagnostics')
-    .then((m) => m.mountDiagnostics())
-    .catch(() => { /* پنل عیب‌یابی نیامد — اپ بدون آن هم کار می‌کند */ });
-  // دکمهٔ بازگشتِ سخت‌افزاری. بی‌این، اندروید با یک لمس کلِ اپ را می‌بندد
-  // و بارگذاریِ بعدی یعنی بازکردنِ دوبارهٔ دیتابیسِ ۲۲ مگابایتی.
-  void import('./shared/api/local/androidShell')
-    .then((m) => m.mountAndroidBack())
-    .catch(() => { /* پوستهٔ بومی نبود — رفتارِ مرورگر می‌ماند */ });
-}
-
-
-if (import.meta.env.VITE_LOCAL_DATA === '1') {
-  const ERROR_LOG_KEY = 'bors_mobile_errors';
-  const logError = (msg: unknown) => {
-    try {
-      const logs = JSON.parse(localStorage.getItem(ERROR_LOG_KEY) || '[]');
-      logs.unshift({ time: Date.now(), msg: String(msg) });
-      if (logs.length > 50) logs.pop();
-      localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(logs));
-    } catch { /* ignore */ }
-  };
-  window.addEventListener('error', (e) => {
-    logError(e.error?.stack || e.message);
-  });
-  window.addEventListener('unhandledrejection', (e) => {
-    logError(e.reason?.stack || e.reason || 'Unhandled Promise Rejection');
-  });
+  void import('./shared/api/local/diagnostics').then((m) => m.mountDiagnostics()).catch(() => {});
+  void import('./shared/api/local/androidShell').then((m) => m.mountAndroidBack()).catch(() => {});
 }
 
 const queryClient = new QueryClient({
@@ -67,11 +34,7 @@ const router = createHashRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      {/* یک Provider برایِ کلِ برنامه: تأخیرِ مشترک و «پرشِ سریع» بینِ دو
-          راهنمایِ همسایه — اولی با تأخیر، بعدی‌ها فوری. */}
-      <TooltipProvider>
-        <ErrorBoundary><MobileBootstrap><RouterProvider router={router} /></MobileBootstrap></ErrorBoundary>
-      </TooltipProvider>
+      <MobileBootstrap><RouterProvider router={router} /></MobileBootstrap>
     </QueryClientProvider>
   </StrictMode>,
 );
