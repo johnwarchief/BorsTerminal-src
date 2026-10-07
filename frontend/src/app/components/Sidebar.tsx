@@ -70,6 +70,7 @@ export function Sidebar() {
   return (
     <aside
       aria-label="نوار کناری"
+      data-shell="sidebar"
       data-collapsed={collapsed ? 'true' : undefined}
       className={`glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap-2.5 overflow-y-auto rounded-none border-y-0 border-e border-border-c transition-[width] duration-200 ease-out ${
         collapsed ? 'w-[var(--sidebar-w-collapsed)] items-center p-2' : 'w-[var(--sidebar-w)] px-2.5 py-3'

@@ -27,12 +27,26 @@ describe('چیدمانِ موبایل', () => {
     expect(css).toContain('env(safe-area-inset-bottom)');
   });
 
-  it('در عمودی، بومِ درخت کفِ عرض دارد تا برچسب‌ها خوانا بماند', () => {
-    // بی‌این، بومِ ۱۹۶۰ پیکسلی در ۴۱۲ پیکسل با مقیاسِ ۰٫۲۱ رسم می‌شد.
+  it('در عمودی، نوارِ مراحلِ قیف و درخت اسکرولِ افقی با کفِ لمسی دارد', () => {
+    // بومِ ۱۹۶۰ پیکسلیِ درختِ استراتژی از UI رفته بود و قاعدۀ
+    // [data-testid='strategy-canvas-wrap'] مرده ماند (گاردِ
+    // mobile-selectors همان را می‌گیرد). کفِ عرضِ واقعیِ امروز، چیپ‌هایِ
+    // ۷۲۰/۷۶۰ پیکسلیِ دو نوارِ مرحله است — همان‌ها باید کشیده شوند.
     const b = mediaBlock('orientation: portrait');
-    // انتخابگر از obsidian-strategy-canvas به strategy-canvas-wrap رفت:
-    // کفِ عرض باید رویِ *ظرف* باشد نه خودِ svg، وگرنه نسبتِ ابعاد می‌شکند.
-    expect(b).toMatch(/strategy-canvas-wrap'\]\s*\{[\s\S]*?min-width:\s*760px/);
+    expect(b).toMatch(/fts-process-stepper'[\s\S]*?overflow-x:\s*auto/);
+    expect(b).toMatch(/strategy-tree-stepper'[\s\S]*?overflow-x:\s*auto/);
+    expect(b).toMatch(/strategy-tree-stepper'\] button[\s\S]*?min-height:\s*44px/);
+    expect(b).not.toContain('strategy-canvas-wrap');
+  });
+
+  it('اینسپکتورِ موبایل کشو است، نه پوشانندۀ کلِ صفحه', () => {
+    // گزارشِ مالک: «وقتی یک نماد را می‌زنی، سایدبار سمتِ چپ کلِ صفحهٔ گوشی
+    // را می‌پوشاند» — `width:100vw` رویِ `top-0/bottom-0` می‌نشست و نوارِ
+    // ناوبری و سرِ صفحه را می‌خورد.
+    const b = mediaBlock('max-width: 820px');
+    expect(b).toMatch(/aside\[data-shell='inspector'\][\s\S]*?top:\s*calc\(env\(safe-area-inset-top\)/);
+    expect(b).toContain('bottom: calc(58px + env(safe-area-inset-bottom))');
+    expect(b).toContain('width: min(100vw, 26rem)');
   });
 
   it('در عمودی، جدول‌هایِ عریض کفِ عرض دارند — و فقط همان‌ها', () => {
