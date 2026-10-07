@@ -57,6 +57,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.12.0",
     "jsdom": "^30.0.1",
+    "playwright": "^1.63.0",
     "playwright-core": "^1.63.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",

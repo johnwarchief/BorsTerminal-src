@@ -831,6 +831,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     if (!chart) return;
     chartRef.current = chart;
+      (window as any).__TEST_CHART__ = chart;
     setIsChartReady(true);
 
     // مطالعۀ «همسنج»: ثبتِ ماژولار و بی‌منو — فقط دکمۀ همسنجی آن را می‌سازد،

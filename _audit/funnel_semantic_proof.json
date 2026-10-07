@@ -1,0 +1,28 @@
+{
+  "semanticProof": {
+    "1_initial_custom": {
+      "tape": [],
+      "technical": [],
+      "fundamental": [],
+      "delivery": []
+    },
+    "2_A_only_fsusp": {
+      "tape": [],
+      "technical": [],
+      "fundamental": [],
+      "delivery": []
+    },
+    "3_A_and_B": {
+      "tape": [],
+      "technical": [],
+      "fundamental": [],
+      "delivery": []
+    },
+    "4_A_B_C": {
+      "tape": [],
+      "technical": [],
+      "fundamental": [],
+      "delivery": []
+    }
+  }
+}
