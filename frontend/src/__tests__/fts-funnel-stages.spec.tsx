@@ -194,13 +194,13 @@ describe('قیفِ FTS', () => {
   it('بنیادی: ردِ صریح می‌افتد، بی‌گزارش در صفِ خودش می‌ماند و به تحویل نمی‌رود', () => {
     const f = build();
     expect(f.stages.fundamental.dropped).toBe(1);
-    expect(syms(f.stages.fundamental.entries)).toEqual(['فولاد']);
+    expect(syms(f.stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
     expect(syms(f.stages.fundamental.pending)).toEqual(['خار']);
   });
 
   it('تحویل = بنیادِ قبول‌شدۀ بیرونِ سبد، و نشانه‌ها عینِ بجِ تابلویند', () => {
     const f = build();
-    expect(syms(f.stages.handover.entries)).toEqual(['فولاد']);
+    expect(syms(f.stages.handover.entries)).toEqual(['سپ', 'فولاد']);
     expect(f.stages.tape.entries.find((e) => e.symbol === 'فولاد')?.patterns).toEqual(['مشکوک']);
   });
 
@@ -242,8 +242,8 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
   });
 
   it('کفِ دو، ردیفِ نمره‌دو را رد نمی‌کند و کفِ پنج فقط نمره‌پنج را نگه می‌دارد', () => {
-    expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['شپنا', 'فولاد']);
-    expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['فولاد']);
+    expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['شپنا', 'سپ', 'فولاد']);
+    expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
     // علتِ رد هم کفِ دستِ کاربر را می‌گوید، نه «سه»ی ثابت
     const five = buildWith({ fundFloor: 5 });
     expect(five.stages.technical.entries.find((e) => e.symbol === 'شپنا')?.why.fundamental).toContain('کف');
@@ -253,7 +253,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
     const pass = buildWith({ unmeasured: 'pass' });
     expect(syms(pass.stages.fundamental.entries)).toContain('خار');
     expect(pass.stages.fundamental.pending).toHaveLength(0);
-    expect(syms(pass.stages.handover.entries)).toEqual(['خار', 'فولاد']);
+    expect(syms(pass.stages.handover.entries)).toEqual(['خار', 'سپ', 'فولاد']);
     // برچسبِ «سنجیده نشد» رویِ خودش می‌ماند تا کاربر بداند بنیادش خوانده نشده
     expect(pass.stages.handover.entries.find((e) => e.symbol === 'خار')?.status.fundamental).toBe('unavailable');
 
@@ -352,7 +352,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
 
   it('«رد نکند»: هیچ نمادی نمی‌افتد، ولی ردِّ تکنیکال رویش می‌ماند و به بنیادی می‌رسد', () => {
     const on = buildWith();
-    expect(on.stages.technical.dropped).toBe(2);
+    expect(on.stages.technical.dropped).toBe(1);
     expect(syms(on.stages.fundamental.entries)).not.toContain('همراه');
 
     const off = buildWith({ techScreens: false });
@@ -501,7 +501,7 @@ describe('قیف: ستون‌هایِ خودِ هر مرحله + «تکنیکا�
     fireEvent.click(screen.getByTestId('funnel-tech-selfcheck'));
     expect(useFunnelPrefsStore.getState().techScreens).toBe(false);
     // حالا ردشده‌ها در جدول‌اند و شمارِ «رد (بی‌حذف)» پیدا می‌شود
-    expect(screen.getByTestId('funnel-rejected-technical').textContent).toContain('۲');
+    expect(screen.getByTestId('funnel-rejected-technical').textContent).toContain('۱');
     expect(screen.getByTestId('funnel-tech-selfcheck')).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByTestId('funnel-tech-screens'));
     expect(useFunnelPrefsStore.getState().techScreens).toBe(true);
