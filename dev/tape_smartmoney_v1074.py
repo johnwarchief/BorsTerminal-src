@@ -167,7 +167,7 @@ def main():
         ("tapeStore", STORE_TS, ("'f_smart'", "'f_legal'",
                                  "ورود پول هوشمند", "کد به کد")),
         # پلِ ورودِ قیف عمداً پنج‌گره‌ایِ چارت ۳ مانده — چکِ ضدِ تورمِ پیش‌فرض:
-        ("ftsFunnel", FUNNEL_TS, ("const FILE_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh']",)),
+        ("ftsFunnel", FUNNEL_TS, ("PRESET_ENTRY:",)),
     ):
         src = open(path, encoding="utf-8").read()
         for needle in needles:
