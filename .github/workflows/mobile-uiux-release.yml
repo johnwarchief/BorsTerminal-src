@@ -1,0 +1,77 @@
+name: mobile-uiux-release
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'arena/fts-mobile-uiux-20261007'
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/mobile-uiux-release.yml'
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and build mobile frontend
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          export VITE_BUILD_TAG="uiux-\${GITHUB_SHA::7} · \${GITHUB_RUN_NUMBER}"
+          VITE_LOCAL_DATA=1 npm run build
+          curl -fL --retry 3 \
+            https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz \
+            -o dist/mobile_snapshot.db.gz
+          test -s dist/mobile_snapshot.db.gz
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Sync Capacitor and build APK
+        working-directory: frontend
+        run: |
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK
+        run: |
+          APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          sha256sum "$APK"
+          stat -c '%n %s bytes' "$APK"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bors-mobile-uiux-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Publish UI/UX test release
+        env:
+          GH_TOKEN: \${{ github.token }}
+        run: |
+          set -e
+          TAG=mobile-uiux-20261007
+          APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "BorsTerminal Android UI/UX Test — \${GITHUB_SHA::7}" \
+            --notes "نسخهٔ آزمایشی اندروید برای بررسی UI/UX قیف FTS و درخت استراتژی.
+          commit: $GITHUB_SHA
+          دادهٔ محلی: snapshot موجود در mobile-latest برای تست رابط کاربری reuse شده است.
+          این ریلیز مستقل از mobile-latest است."
+          gh release upload "$TAG" "$APK#bors-terminal-mobile-uiux.apk" --clobber
