@@ -13,15 +13,24 @@ permissions:
 
 jobs:
   publish-market-data:
-    if: ${{ hashFiles('market.db.lzma') != '' }}
+    # Bootstrap once from the last source commit that still contained the DB; later runs may override SOURCE_REF.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
       DATA_REPO: johnwarchief/BorsTerminal
       DATA_TAG: data-latest
+      SOURCE_REF: 2e73cf1cec1f90bd965ecf59cca02f4295a15c8a
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Restore market baseline from source history
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 --output market.db.lzma \\
+            "https://raw.githubusercontent.com/johnwarchief/BorsTerminal-src/$SOURCE_REF/market.db.lzma"
+          test -s market.db.lzma
 
       - name: Require publishing token
         shell: bash
