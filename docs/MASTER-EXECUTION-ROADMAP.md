@@ -199,6 +199,104 @@ For every filter:
 - Any required interpretation or ambiguity must be documented first and resolved against evidence before implementation.
 - UI labels and result explanations must correspond to the actual canonical formula.
 
+## 1.6 Configurable filter parameters without changing the canonical formula
+
+The source TXT files remain the canonical definition of each filter, but the application must expose a clear **parameter/settings layer** for values that are legitimately configurable.
+
+This means:
+
+- **Formula structure is locked.**
+- **User-configurable parameters are editable.**
+- **Canonical/default values come from the TXT source.**
+- A changed value is a **configuration override**, not a silent modification of the source formula.
+
+### Required settings model
+
+Every configurable filter parameter should have:
+
+- Parameter name
+- Human-readable label
+- Type
+- Unit
+- Minimum/maximum allowed value where meaningful
+- Default/canonical value
+- Current user value
+- Source reference (TXT file / section when applicable)
+- Description of what changing it affects
+- Reset-to-default action
+
+Example:
+
+```
+Volume threshold
+Default: 2.0x
+Current: 2.5x
+Source: docs/حجم مشکوک.txt
+[Reset to default]
+```
+
+### Where settings must exist
+
+The settings architecture must be available from both:
+
+**تابلوخوانی**
+- Keep and improve the existing filter-settings capability.
+- Make every configurable field discoverable and understandable.
+- Show whether a value is default or customized.
+- Make reset-to-default immediate and reliable.
+
+**Strategy FTS**
+- Provide an equivalent settings/configuration area for parameters that are explicitly configurable within FTS.
+- Clearly separate canonical FTS rules from user-tunable parameters.
+- Do not expose parameters that would change a non-configurable FTS rule.
+
+### Presets
+
+Support versioned/user-selectable presets where practical:
+
+- Canonical / Default
+- Custom
+- Potential future named presets
+
+The **Canonical / Default** preset must always represent the documented source-of-truth configuration.
+
+### Auditability
+
+Every result should be traceable to:
+
+```
+Formula version
++
+Parameter set/version
++
+Current parameter values
++
+Data timestamp
+```
+
+The UI should make it possible to answer:
+
+**"Why did this symbol match this filter/FTS condition?"**
+
+If a user changes a parameter, the result should visibly indicate that the analysis is using a custom configuration.
+
+### Hard boundary
+
+User settings may change only parameters explicitly designated as configurable.
+
+They must not be used to:
+
+- Add a new condition
+- Remove a mandatory condition
+- Change the logical structure of the filter
+- Override a hard FTS rejection
+- Invent a new indicator/threshold not supported by the source
+- Turn an unsupported formula into an apparently official/canonical rule
+
+If a value is not explicitly configurable by the source/specification, it stays fixed until the source-of-truth documentation is formally changed.
+
+---
+
 ### TSE/TSETMC validation
 
 Filter results must be validated inside the `تابلوخوانی` / market-board experience against observable TSE/TSETMC data.
