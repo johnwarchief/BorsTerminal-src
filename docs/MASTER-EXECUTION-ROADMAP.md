@@ -124,6 +124,186 @@ No step is implied by another.
 
 Claims such as "built", "released", or "verified" require evidence.
 
+## F.1 First-install / first-launch contract
+
+The first-run experience is a production feature and must be designed, measured, and tested deliberately.
+
+The application must define exactly what happens after a fresh installation on:
+
+- A normal/recommended machine/device
+- A low-resource machine/device
+- A device with slow storage
+- A device with limited free disk space
+- An offline device
+- A partially interrupted first launch
+
+The user must never be left with an apparently frozen application or an ambiguous blank screen.
+
+### Required first-launch state machine
+
+The application should expose explicit states such as:
+
+**Installed → Checking environment → Preparing runtime/data → Loading essential data → Ready**
+
+with failure/retry states where necessary.
+
+The first launch must distinguish:
+
+- Application startup
+- Database/snapshot preparation
+- Cache creation
+- Data download/update
+- Decompression/indexing/migration
+- UI readiness
+
+Do not block the whole UI behind long-running work when a useful shell/status screen can be shown safely.
+
+### First-launch UX
+
+Show:
+
+- What the application is doing
+- Progress where measurable
+- Downloaded/remaining data where applicable
+- Current stage
+- Estimated size requirements where known
+- Retry/resume action
+- Clear error messages
+- Safe recovery path
+
+Never display fake progress.
+
+If exact progress is impossible, show an honest indeterminate state rather than fabricated percentages.
+
+### Low-resource profile
+
+Define an explicit low-resource operating profile.
+
+The application should:
+
+- Detect constrained CPU/RAM/storage conditions where practical
+- Defer non-critical work
+- Avoid starting all heavy analyses simultaneously
+- Load essential market/UI functionality first
+- Build secondary indexes/caches lazily where safe
+- Bound memory growth
+- Avoid excessive startup processes
+- Provide a usable degraded mode without changing canonical analytical results
+
+The low-resource mode must not silently remove required FTS or market functionality.
+
+### First-launch acceptance
+
+Test cold first launch, repeated first launch, interrupted launch, insufficient disk, offline launch, and low-resource hardware.
+
+Record:
+
+**time to first UI → time to first usable data → time to ready → peak RAM/CPU → disk usage → network usage**
+
+and compare against defined product budgets.
+
+## F.2 Update compatibility and legacy-version fallback
+
+Updates must work even when the installed version is too old to consume the current delta/patch format.
+
+The updater must implement a compatibility decision before applying a package:
+
+**Current version → update channel → patch compatibility check → Delta update OR Full-package fallback**
+
+### Delta-update rules
+
+- Never assume every old version supports delta patches.
+- Determine a minimum supported base version for each delta package.
+- Verify applicability against the exact installed version/build identity.
+- Reject incompatible deltas before attempting mutation.
+- Never leave the installation half-updated because an incompatible patch was selected.
+- Do not rely on users manually installing several historical versions unless that is explicitly the documented recovery path.
+
+### Full-package fallback
+
+When the installed version is too old, corrupted, structurally incompatible, or otherwise outside the delta range:
+
+**Download full installer/package → verify checksum/signature → preserve user data/configuration where compatible → migrate data → install/replace safely → verify new version → clean up old package**
+
+The fallback path must be automatic or clearly offered to the user.
+
+The user should not need to understand delta patches or version internals.
+
+### Supported-version policy
+
+Define and document:
+
+- Current version
+- Minimum supported update-from version
+- Minimum supported data/schema version
+- Whether direct update is supported from N versions back
+- When full installer is mandatory
+- End-of-support behavior for extremely old releases
+
+An outdated installation must receive a clear message and a supported recovery path.
+
+### Interrupted update / rollback
+
+The updater must tolerate:
+
+- Network interruption
+- Power loss
+- Application termination
+- Insufficient disk
+- Signature/checksum failure
+- Corrupt package
+- Failed migration
+- Failed post-install verification
+
+Use atomic replacement/staging where the updater technology supports it.
+
+Never destroy the last known-good installation before the new version has passed verification.
+
+Provide rollback/recovery when the packaging system supports it.
+
+### User data preservation
+
+Updates must not casually delete:
+
+- User settings
+- Custom filter parameters
+- FTS configuration
+- Local watch/portfolio state
+- Cache/configuration that is explicitly intended to persist
+
+Schema/data migrations must be versioned and reversible where practical.
+
+### Update UX
+
+The user should be told only what matters:
+
+- New version available
+- What kind of update is being performed
+- Download/progress
+- Restart requirement
+- Success/failure
+- Recovery action when needed
+
+Do not expose confusing internal updater terminology unless useful.
+
+### Update acceptance matrix
+
+Test at least:
+
+1. Current version → current+1 delta
+2. Supported older version → current delta
+3. Very old version without delta support → full installer
+4. Corrupted/out-of-range installation → recovery/full installer
+5. Interrupted download
+6. Interrupted installation
+7. Insufficient disk
+8. Invalid checksum/signature
+9. Failed migration
+10. Successful post-update launch
+11. Rollback/recovery path where supported
+
+Every update path must end in a verified runnable installation.
+
 ## G. Documentation/source-of-truth hygiene
 
 Before implementing or changing a formula:
