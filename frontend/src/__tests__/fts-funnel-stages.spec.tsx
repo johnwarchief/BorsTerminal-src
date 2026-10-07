@@ -241,7 +241,7 @@ describe('پیچ‌هایِ درِ بنیادی (حقِ انتخاب دستِ ک
 
   it('کفِ دو، ردیفِ نمره‌دو را رد نمی‌کند و کفِ پنج فقط نمره‌پنج را نگه می‌دارد', () => {
     expect(syms(buildWith({ fundFloor: 2 }).stages.fundamental.entries)).toEqual(['سپ', 'شپنا', 'فولاد']);
-    expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['سپ', 'فولاد']);
+    expect(syms(buildWith({ fundFloor: 5 }).stages.fundamental.entries)).toEqual(['فولاد']);
     // علتِ رد هم کفِ دستِ کاربر را می‌گوید، نه «سه»ی ثابت
     const five = buildWith({ fundFloor: 5 });
     expect(five.stages.technical.entries.find((e) => e.symbol === 'شپنا')?.why.fundamental).toContain('کف');
