@@ -19,6 +19,7 @@ import { patternBadges } from '../lib/tapeBadges';
 import { powerTone } from '../api/useMarketPulse';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import WatchlistStar from '@shared/components/WatchlistStar';
 
 type SortKey =
   | 'symbol'
@@ -310,6 +311,7 @@ export const TapeRow = memo(function TapeRow({
             افزودنِ یک فرزندِ مستقیمِ grid از جا درمی‌رود. */}
         <SymbolSelectBox symbol={String(row.symbol ?? '')} name={String(row.name ?? '')}
                          insCode={row.ins_code ?? null} />
+        <WatchlistStar symbol={String(row.symbol ?? '')} name={String(row.name ?? '')} />
         {row.symbol}
         <span className="truncate text-xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>

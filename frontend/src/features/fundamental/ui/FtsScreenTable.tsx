@@ -32,6 +32,7 @@ import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason'
 import { AuditBadge, type AuditEvidenceInput } from '../components/AuditBadge';
 import { screenAuditEvidence } from '../lib/auditEvidence';
 import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import WatchlistStar from '@shared/components/WatchlistStar';
 import {
   EXCLUDE_LABEL,
   applyExcludeFilter,
@@ -336,6 +337,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             (`useFtsScreen.ts:9-88`)، پس هویت اینجا همان
                             `normalizeFa(symbol)` است و عددِ ساختگی نمی‌سازیم. */}
                         <SymbolSelectBox symbol={String(r.symbol ?? '')} name={String(r.name ?? '')} />
+                        <WatchlistStar symbol={String(r.symbol ?? '')} name={String(r.name ?? '')} />
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                           {r.symbol}
                         </span>

@@ -22,6 +22,7 @@ import { useAssetValues } from '../stores/assetValues';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
+import WatchlistSection from '../components/WatchlistSection';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
@@ -392,6 +393,9 @@ export default function PortfolioPage() {
               </table>
             </div>
           </div>
+
+          {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
+          <WatchlistSection />
         </>
       )}
     </div>

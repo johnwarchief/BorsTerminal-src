@@ -80,7 +80,11 @@ def remove(conn: sqlite3.Connection, symbol: str) -> int:
 def get(conn: sqlite3.Connection, symbol_norm: str) -> Optional[dict]:
     r = conn.execute("SELECT * FROM user_watchlists WHERE symbol_norm = ?",
                      (symbol_norm,)).fetchone()
-    return _row(r)
+    # `_row(None)` رویِ `None.keys()` می‌ترکید، و `get()` تنها راهِ پرسیدنِ
+    # «هست یا نیست» است: پس افزودنِ هر نمادِ **نو** درِ `POST /api/watchlist`
+    # قبل از رسیدنِ INSERT با خطایِ `'NoneType' object has no attribute 'keys'`
+    # برمی‌گشت (handler خودش `is None` را انتظار دارد).
+    return _row(r) if r is not None else None
 
 
 def list_rows(conn: sqlite3.Connection) -> list:
