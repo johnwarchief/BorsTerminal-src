@@ -2185,6 +2185,20 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `IMPLEMENTING` | The doc lists stage K as the remaining broker-independent work |
 | S-4 | Real-broker stages E/F/G-real/I-live/L | `BLOCKED-OWNER` | D8 (which Mofid platform: EasyTrader/MTS vs Online-Plus/Titan — two protocols, two adapters) and D1 (is a real-account PoC allowed) per §۹-ث. No endpoint, no credential, no order has ever been called |
 
+## 15.9 Android boot wait (owner report 2026-10-08: «تا ۱۰ دقیقه در حال دریافت داده‌های آفلاین»)
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| B-1 | Payload trim | `ACCEPTED` | The snapshot carried 126 MB of raw tables no phone query ever touches. `mstat_snap` alone was 56.0 MB of payload; `market_watch`/`boards`/`market_index`/`market_totals`/`market_liquidity` and `price_history.value`/`src` were the rest. gz **62,030,206 → 16,179,264 B (−73.9%)**, raw **132,440,064 → 70,619,136 B**. Capability untouched: 922 symbols × 5 endpoints and 433,922 candle rows — `baked_ok=4627 skip=1` (the 1 is D-7), same as before the trim |
+| B-2 | Nothing was removed that the phone reads | `ACCEPTED` | `grep` of `frontend/src`: the only raw-table queries are `instruments`, `price_history`, `baked`, `meta`. The board comes live from TSETMC, the pulse from baked `mstat/*` — proven on screen with the trimmed bundle (پنج‌مظنه + صف + شاخص‌ها filled in `_audit/mobile_boot_ready.png`) |
+| B-3 | Bundle/cache/release ordering | `ACCEPTED` | The APK bundle is read and no longer duplicated into Cache API; a background refresh is used only when its stamp beats the bundle's (`VITE_SNAPSHOT_STAMP`, CI reads it from the published `meta.json`); a bundle that is not gz (a 200 + index.html from an asset server) is rejected instead of opened as a database. 7 tests in `mobile-boot-source.spec.ts` |
+| B-4 | The percent went backwards on screen | `ACCEPTED` | Live probe caught the card showing download-percent then overall-percent: 100٪ → ۷۵٪. One continuous scale now (0→70 download, 85 unpack, 95 database) + bytes + elapsed seconds |
+| B-5 | Closed drawer leaked onto the screen | `ACCEPTED` | `html.bors-mobile .glass-panel.fixed { right:0 !important }` outranked the sheet rule, so in RTL the drawer sat 52 px inside the viewport and a *closed* inspector left «تکنیکال/نماد» clipped at the edge. Measured before: `left:-286 right:52 onScreen:true`; after: `left:-338 right:0 onScreen:false`, open state flush left (`left:0`, ✕ at top 46 px) |
+| B-6 | Live harness | `ACCEPTED` | `tools/mobile_boot_probe.mts` serves the real snapshot from a throttled local asset (content-length + streamed body, like the WebView) and reads the boot card in Chromium; `--kbps 1200` → 140 samples, 0→85 monotone, longest visible line 35 chars |
+| B-7 | Real handset | `UNVERIFIED` | No phone was measured. WebView asset-server behaviour, mobile radio throughput and memory pressure on the owner's device are not covered by the Chromium numbers above |
+
+Releases cut for this unit: `mobile-parity-037a9d6` (payload + loader) and `mobile-parity-b336ad3` (percent + drawer + live probe). `mobile-latest` now serves the 16,179,264 B bundle with `built_at 2026-10-08T16:16:15`.
+
 ## 15.5 Next item selected
 
 Phase 1 **S-3**: put a FastAPI router and a thin Desktop page in front of the existing execution service, dry-run/mock only, explicitly labelled experimental. S-4 stays `BLOCKED-OWNER` until D8/D1 are answered. Phase 2 (trading bot) is not started: the analytical feature in front of it must be accepted first, and the bot must consume the canonical FTS signal rather than judge again.
