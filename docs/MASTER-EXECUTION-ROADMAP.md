@@ -2416,9 +2416,9 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | --- | --- | --- | --- |
 | S-1 | Reference repositories | `ACCEPTED` | Already in the repo: `docs/execution/SARKHATI-ARCHITECTURE.md` §۶ names `RezaMahdaviiDev/mofid`, `m-fazel/Sarkhati`, `Sir-Sorg/Stock-Headline-Script-Mofid`, `Mkhorasani99/sarkhat`; §۷ records the license verdict (two with no license, two GPL-3.0 ⇒ no code copied; their 50/100 ms claims are not accepted as facts) |
 | S-2 | Engine vs research | `ACCEPTED` | `execution_contract/service/timing/latency/mock` and the `dev/execution_*` guards match doc stages C/D/H/I/J/G; `git grep` across `api/` and `frontend/` is empty ⇒ no router, no UI |
-| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `IMPLEMENTING` | The doc lists stage K as the remaining broker-independent work |
+| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `DEFERRED` | Owner reprioritized execution: FTS Funnel is the active milestone and must be accepted before Sarkhati continues |
 | S-4 | Real-broker stages E/F/G-real/I-live/L | `BLOCKED-OWNER` | D8 (which Mofid platform: EasyTrader/MTS vs Online-Plus/Titan — two protocols, two adapters) and D1 (is a real-account PoC allowed) per §۹-ث. No endpoint, no credential, no order has ever been called |
 
 ## 15.5 Next item selected
 
-Current owner priority is **FTS Funnel / Strategy FTS Decision Workspace**. The next implementation item is the Funnel milestone defined in §4.0: canonical full-universe filter registry, sequential intersection/custom presets, verified Swing/Trend/Hourglass modes, Fundamental Auto/Smart with mandatory first-three gates, decision trace, browser/TSE validation, and acceptance. The existing Sarkhati S-3 work remains queued and must not overtake this milestone.
+Current owner priority is **FTS Funnel / Strategy FTS Decision Workspace**. **S-3 Sarkhati is explicitly DEFERRED** until this milestone is accepted. The next implementation item is the Funnel milestone defined in §4.0: canonical full-universe filter registry, sequential intersection/custom presets, verified Swing/Trend/Hourglass modes, Fundamental Auto/Smart with mandatory first-three gates, decision trace, browser/TSE validation, and acceptance. No new Sarkhati implementation should overtake this milestone.
