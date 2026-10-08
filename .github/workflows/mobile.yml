@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -23,10 +25,22 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install and build mobile frontend
+      - name: Install mobile frontend
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      # گیتِ تست: بدونِ این، گاردهایِ موبایل (انتخابگرِ مرده، resolver آفلاین،
+      # برابریِ تیب، روتِ قیف) هیچ‌وقت درِ CI اجرا نمی‌شدند و APK از رویِ کدِ
+      # قرمز ساخته می‌شد. صفرِ خطا درِ tsc شرطِ ساختِ اپ است.
+      - name: Type-check and run the frontend suite
         working-directory: frontend
         run: |
-          npm ci --no-audit --no-fund
+          npx tsc -b
+          npx vitest run
+
+      - name: Build mobile frontend
+        working-directory: frontend
+        run: |
           export VITE_BUILD_TAG="uiux-${GITHUB_SHA::7} · run${GITHUB_RUN_NUMBER}"
           VITE_LOCAL_DATA=1 npm run build
           curl -fL --retry 3             https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz             -o dist/mobile_snapshot.db.gz
@@ -59,15 +73,26 @@ jobs:
           path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Publish UI/UX test release
+      - name: Publish Android release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          TAG="mobile-uiux-data-progress-${GITHUB_SHA::7}"
+          SHA="${GITHUB_SHA::7}"
+          # base_main_commit = جایی که این شاخه از main جدا شده؛ بی‌این، ریلیزِ
+          # موبایل قابلِ ردیابی به کدِ دسکتاپ نیست
+          git fetch -q origin main
+          BASE=$(git merge-base origin/main "$GITHUB_SHA")
           APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
-          gh release create "$TAG" --prerelease --target "$GITHUB_SHA"             --title "BorsTerminal Android — Offline Data Progress — ${GITHUB_SHA::7}"             --notes "نسخهٔ آزمایشی اندروید برای نمایش پیشرفت آماده‌سازی داده‌های آفلاین و UI/UX قیف FTS.
-          commit: $GITHUB_SHA
-          snapshot داده از mobile-latest برای تست reuse شده است.
-          این ریلیز مستقل از mobile-latest است."
-          gh release upload "$TAG" "$APK#bors-terminal-mobile-uiux.apk" --clobber
+          SUM=$(sha256sum "$APK" | cut -d' ' -f1)
+          SIZE=$(stat -c '%s' "$APK")
+          TAG="mobile-parity-$SHA"
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA"             --title "BorsTerminal Android — parity pack — $SHA"             --notes "بستۀ تجمیعیِ اندروید (یک ریلیز، نه per-fix).
+
+          source commit: $GITHUB_SHA
+          base_main_commit: $BASE
+          build: frontend tsc + vitest سبز، سپس vite build (VITE_LOCAL_DATA=1) و gradlew assembleDebug
+          artifact: app-debug.apk · $SIZE بایت · sha256 $SUM
+          snapshot داده: از mobile-latest reuse شده (تازگی و بازپخت درِ docs/MASTER-EXECUTION-ROADMAP.md §15 ثبت می‌شود)
+          وضعیتِ آیتم‌ها و شاهد هر کدام: docs/MASTER-EXECUTION-ROADMAP.md §15"
+          gh release upload "$TAG" "$APK#bors-terminal-mobile.apk" --clobber
