@@ -2256,6 +2256,54 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 **FINAL STATUS of the milestone: NOT COMPLETE.** Backend decision layer is accepted;
 the frontend still judges, so the funnel is not yet "one canonical engine + a renderer".
 
+## 15.14 Funnel integration is green on `funnel-api-wip` (2026-10-08, later in the same day)
+
+Owner instruction: continue on the branch and fix the harness, do not drop the canonical
+backend. Done - the branch is green and the UI no longer judges.
+
+| commit | what |
+| --- | --- |
+| `5a34395` | the funnel spec now renders a hand-written `/api/funnel` payload; 15 cases replace the 42 that called `buildFunnel`; `StageRow` takes its stage key so the tape card's دلیل column stopped rendering «—» for every row; `moved()` applies the destination index after removal; `useFtsFunnel` read `portfolio.data` as an array (it is `{status, decisions,...}`) and crashed three master specs as unhandled exceptions |
+| `93af3bc` | `SymbolInspector` reads `stageProgressFor(funnel, symbol)` from the same answer instead of re-running `symbolStageProgress` on one symbol; statuses are merged per stage because the tape row only carries `status.tape` |
+
+Evidence, all run after the last change: `tsc` 0 errors, **1417 passed / 3 skipped (139
+files)**, no unhandled errors; `funnel_engine` guard 26/26, `funnel_registry` guard 7 filters /
+21 params, `persian_glyph_guard` 4/4.
+
+### §37 verified - the runtime no longer imports any browser-side judge
+
+`grep` over `frontend/src` (excluding `__tests__`) for `buildFunnel`, `symbolStageProgress`,
+`funnelUniverse`, `techQueryQueue`, `useFtsTechBoard`: the only remaining hit is a **type**
+import (`TechVerdict`) inside `lib/ftsFunnel.ts`. Everything else is prose in comments.
+
+### What is still dead-but-present (attempted this session, reverted)
+
+`buildFunnel`, `evaluateCandidate`, `symbolStageProgress`, `funnelUniverse`, `techQueryQueue`,
+`tapePickedSymbols`, `officialRankMap`, `orderOfficial`, `techFromScreen`, `techFromVerdict`,
+`technicalDailyBranch`, `technicalEvidencePoints` and `api/useFtsTechBoard.ts` (which owns
+`TECH_QUERY_CAP = 60`) are unreferenced by the app but still in the tree, and
+`__tests__/fts-candidate-engine.spec.tsx` still exercises them.
+
+A first deletion pass mangled `ftsFunnel.ts` (line-slice removed the tail of the `Candidate`
+type and duplicated `Funnel`/`FunnelStage`), so the file was restored from HEAD and the branch
+was left green. **The deletion is not a text-slicing job**: it needs the type block, the two
+`import type` lines and the candidate-engine spec handled together, then `tsc` as the gate.
+
+### Still open before ACCEPTED
+
+1. Delete the dead judges + `useFtsTechBoard` + `fts-candidate-engine.spec.tsx` (its decision
+   coverage exists as the 26 python cases), keeping `StageProgress`/`statusToProgress`/labels.
+2. Custom builder UI in the workspace header (state is ready: chain, moveFilter, savedChains).
+3. Handover columns + inspector fed by `timeline`.
+4. Backend caps: wire `funnel_tech_scan`, separate the `watchlist` label from enrichment,
+   remove `scan_all[:cap]`.
+5. React "setState during render" root cause; classify the 3 skipped tests.
+6. Browser validation 1366/1920/360 with `_audit/funnel_final_*.json`; TSETMC on >= 20 symbols;
+   full-universe benchmark.
+
+Release: still not built. Funnel: IMPLEMENTING (one step closer - the UI now renders the
+canonical answer).
+
 ## 15.5 Next item selected
 
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
