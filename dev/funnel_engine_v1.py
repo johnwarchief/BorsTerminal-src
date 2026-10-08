@@ -389,8 +389,28 @@ u5 = FE.evaluate(U4 + [board("افزون", f_susp=True)], U4S + [screen("افز�
 ck(u5["universe"]["screening"] == u4["universe"]["screening"] + 1,
    "۴۱) Y با خودِ داده تغییر می‌کند، نه با عددی درِ کد")
 
+# -- ۴۲) برچسبِ زمان‌مندِ توقف (رأیِ مالک §۸: «ممنوع-متوقف (طی معاملات)»)
+# «توقفِ امروز» غلط است: لاگِ وضعیت ساعت‌مند است و نماد می‌تواند درِ همان نشست
+# اول مجاز و بعداً متوقف شده باشد (شاهدِ زنده: آوند۴ — ۱۴:۲۴:۵۷).
+SAME = {"symbol": "هم‌نشست", "is_live": True, "st_code": "IS", "st_title": "ممنوع-متوقف",
+        "st_d": 20261007.0, "st_h": 142457.0, "d_even": 20261007}
+PRIOR = {**SAME, "symbol": "نشستِ‌پیش", "st_d": 20261003.0}
+NOKEY = {**SAME, "symbol": "بی‌نشست", "st_d": None, "st_h": None, "d_even": None}
+ck_elig, ck_code, ck_why = FE.screening_eligibility(SAME)
+ck(not ck_elig and ck_code == "FORBIDDEN_STATE" and "(طی معاملات" in ck_why
+   and "۱۴:۲۴" in ck_why,
+   "۴۲) وتوی درونِ همین نشست ⇒ «(طی معاملات)» با ساعتِ خودِ لاگ، نه «توقفِ امروز»")
+ck_elig2, _, ck_why2 = FE.screening_eligibility(PRIOR)
+ck(not ck_elig2 and "از نشستِ" in ck_why2 and "طی معاملات" not in ck_why2,
+   "۴۲) وتوی نشستِ پیش‌تر صادقانه همان نشست را می‌گوید و ادّعایِ «طی معاملات» ندارد")
+ck_elig3, _, ck_why3 = FE.screening_eligibility(NOKEY)
+ck(not ck_elig3 and "طی معاملات" not in ck_why3 and "از نشستِ" not in ck_why3,
+   "۴۲) بی‌نشستِ قابل‌مقایسه هیچ برچسبِ زمانی جعلی نمی‌سازد")
+ck(not any(c.isascii() and c.isdigit() for c in ck_why),
+   "۴۲) عددِ نمایشیِ این علت فارسی است (قاعدۀ رقمِ فارسی درِ متنِ فارسی)")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {42} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43} بندِ مأموریت")

@@ -82,12 +82,50 @@ FORBIDDEN_TITLES = ("ممنوع",)       # «ممنوع…»: اجازه ندا�
 STOPPED_MARK = "متوقف"              # پسوندِ «-متوقف» در همان برچسبِ رسمی
 
 
-def screening_eligibility(row: dict) -> tuple[bool, str, str]:
+def _fa_digits(v) -> str:
+    """رقمِ فارسی با همان قاعدۀ AGENTS (chr(0x06F0+d)) — رقمِ دست‌کاری‌شده درِ
+    متنِ فارسی می‌دزدد، پس عددِ نمایشی از همین‌جا فارسی می‌رود."""
+    return "".join(chr(0x06F0 + int(c)) if c.isdigit() else c for c in str(v))
+
+
+def _state_reason(row: dict, title: str, session_day: int | None = None) -> str:
+    """برچسبِ زمان‌مندِ وضعیت — رأیِ مالک (§۸): «ممنوع-متوقف (طی معاملات)».
+
+    لاگِ وضعیتِ TSETMC رویداد-محور و ساعت‌مند است: یک نماد می‌تواند درِ همان نشست
+    اول مجاز باشد و بعد متوقف شود (سنجشِ زنده: «آوند۴» ۱۴:۰۸:۰۷ مجاز-متوقف ←
+    ۱۴:۰۸:۰۸ مجاز-محفوظ ← ۱۴:۲۴:۴۲ مجاز ← ۱۴:۲۴:۵۷ ممنوع-متوقف). پس «توقفِ
+    امروز» غلط است؛ آنچه معلوم است این است که وتو درِ *همین* نشستِ تابلو ثبت
+    شده یا درِ نشستی پیش‌تر.
+    """
+    st_d = _num(row.get("st_d"))
+    d = _num(session_day if session_day else row.get("d_even"))
+    hhmm = ""
+    h = _num(row.get("st_h"))
+    if h:
+        s = f"{int(h):06d}"
+        hhmm = f"{s[:2]}:{s[2:4]}"
+    same_session = bool(st_d and d and st_d == d)
+    if same_session:
+        return f"{title} (طی معاملات" + (f" — ساعت {_fa_digits(hhmm)}" if hhmm else "") + ")"
+    if st_d:
+        return f"{title} — از نشستِ {_fa_digits(int(st_d))}"
+    return f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+
+
+def screening_eligibility(row: dict, session_day: int | None = None) -> tuple[bool, str, str]:
     """(قابل‌غربال؟، کدِ علت، علتِ فارسی) — فقط از دادهٔ رسمیِ خودِ ردیف.
 
     وتوها به ترتیبِ قطعیت خوانده می‌شوند: نبودِ ردیفِ نشستِ جاری، سپس تعلیقِ
     صریح (`stop_reasons`)، سپس آخرینِ وضعیتِ ثبت‌شدۀ نماد. نبودِ هیچ‌یک از
     اینها «مجاز» نیست بلکه «وتویی ثبت نشده» است — و غربالگری می‌شود.
+
+    بندِ اول همان دروازهٔ *موجودِ* تابلوخوانی است، نه یک اختراع: `is_live`
+    (`api/market.py:551-552`) که هر هفت پرچمِ تابلو به آن AND می‌شوند
+    (`tape_flags._alive`: «پنج فیلتر دربارهٔ «امروز» حرف می‌زنند… ردیفی که
+    آخرینِ نشستِ بانکِ خودش دیروز است نمی‌تواند بگوید حجمِ امروزِ من سه برابر
+    مبناءست») و همان چیزی که خودِ تابلو به‌صورت `live_count`/`fossil_count`
+    منتشر می‌کند (`api/market.py:1039-1041`) و «نبض بازار» هم با همان
+    `d_even = MAX(d_even)` جامعه می‌بندد (`mstat_engine.load_snapshot`).
     """
     title = str(row.get("st_title") or "").strip()
     code = str(row.get("st_code") or "").strip()
@@ -96,9 +134,9 @@ def screening_eligibility(row: dict) -> tuple[bool, str, str]:
     if row.get("stop_state"):
         return False, "STOPPED", f"متوقف: {row.get('stop_state')}"
     if title.startswith(FORBIDDEN_TITLES):
-        return False, "FORBIDDEN_STATE", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+        return False, "FORBIDDEN_STATE", _state_reason(row, title, session_day)
     if STOPPED_MARK in title:
-        return False, "STOPPED", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+        return False, "STOPPED", _state_reason(row, title, session_day)
     if title.startswith(PERMITTED_TITLES):
         return True, "PERMITTED_STATE", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
     if title or code:
@@ -725,6 +763,7 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
 
 def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              preset: str = "trend", custom_chain: Iterable[str] | None = None,
+             session_day: int | None = None,
              fund_mode: str = "standard",
              params: dict[str, dict[str, Any]] | None = None,
              exceptions: dict[str, list[str]] | None = None,
@@ -768,7 +807,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     screening: list[dict] = []
     excluded: list[dict] = []
     for r in joined:
-        ok, code, human = screening_eligibility(r)
+        ok, code, human = screening_eligibility(r, session_day)
         r["_screening_eligible"] = ok
         r["_exclusion_code"] = code
         r["_exclusion_reason"] = human

@@ -797,8 +797,9 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
                 <span className="num ms-auto shrink-0 text-text-secondary">
                   {e.last ? fmtInt(e.last) : '—'}
                 </span>
-                <span className="shrink-0 text-text-muted" title={e.humanReason}>
-                  {labelOf(e.reasonCode)}
+                <span className="max-w-[46ch] shrink-0 truncate text-text-muted"
+                      title={e.humanReason}>
+                  {e.humanReason || labelOf(e.reasonCode)}
                 </span>
               </div>
             );

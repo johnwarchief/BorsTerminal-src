@@ -32,10 +32,14 @@ _FUNNEL_CACHE: dict[str, Any] = {"key": "", "payload": None, "ts": 0.0}
 TTL_S = 8.0
 
 
-def _board_rows() -> list[dict]:
-    """ردیف‌هایِ تابلو از همان کشِ `/api/market`؛ اگر اجرا سرد بود، یک‌بار
-    هم‌زمان ساخته می‌شود (همان مسیری که نخِ پس‌زمینه می‌رود) — نه یک بدنۀ
-    سومِ بی‌ربط، و نه «بدونِ داده»ای که فقط به‌خاطرِ زمانِ بوت باشد."""
+def _board_snapshot() -> tuple[list[dict], int | None]:
+    """ردیف‌هایِ تابلو + **شمارۀ نشست** از همان کشِ `/api/market`.
+
+    نشست لازم است چون ردیفِ serialised شده `d_even` ندارد (درِ `drop_unused`
+    می‌افتد) و برچسبِ زمان‌مندِ توقف (§۸ رأیِ مالک: «ممنوع-متوقف (طی معاملات)»)
+    بدونِ آن یا دروغ می‌گوید یا هرگز روشن نمی‌شود. `meta.d_even` همان چیزی است
+    که خودِ تابلو منتشر می‌کند — یک منبعِ واحد، نه حدسِ ثانیهٔ ساعت.
+    """
     from api.market import (_MarketInternalRequest, _build_market_response,
                             _market_snapshot)
 
@@ -44,11 +48,22 @@ def _board_rows() -> list[dict]:
         resp = _build_market_response(_MarketInternalRequest())
         body = getattr(resp, "body", None) or b""
     if not body:
-        return []
+        return [], None
     data = body if isinstance(body, dict) else json.loads(
         body.decode("utf-8") if isinstance(body, bytes) else body)
-    rows = data.get("data") if isinstance(data, dict) else None
-    return list(rows or [])
+    if not isinstance(data, dict):
+        return [], None
+    rows = list(data.get("data") or [])
+    try:
+        session = int((data.get("meta") or {}).get("d_even") or 0) or None
+    except (TypeError, ValueError):
+        session = None
+    return rows, session
+
+
+def _board_rows() -> list[dict]:
+    """فقط ردیف‌ها (برایِ مصرف‌کننده‌هایی که نشست لازم ندارند)."""
+    return _board_snapshot()[0]
 
 
 def _screen_rows() -> list[dict]:
@@ -180,7 +195,8 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         out["cached_for_ms"] = int((now - _FUNNEL_CACHE["ts"]) * 1000)
         return out
 
-    board, screen = _board_rows(), _screen_rows()
+    board, session = _board_snapshot()
+    screen = _screen_rows()
     if not board:
         return {"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
                 "universe": {"board": 0, "screened": len(screen)}}
@@ -188,7 +204,7 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     try:
         payload = FE.evaluate(board, screen, preset=preset, custom_chain=chain,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
-                              tech_scan=scan, tech_sigs=sigs)
+                              tech_scan=scan, tech_sigs=sigs, session_day=session)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین
