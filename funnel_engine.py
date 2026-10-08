@@ -177,7 +177,7 @@ def technical_stage(rows: list[dict]) -> dict:
     return {"survivors": kept, "decisions": steps, "counts": counts, "dropped": dropped}
 
 
-# ── ) بنیادی: سه حالتِ سخت‌گیری، بلاکرهایِ واقعی ──────────────────────────
+# ── ۳) بنیادی: سه حالتِ سخت‌گیری، بلاکرهایِ واقعی ──────────────────────────
 BLOCKERS = ("i1", "i2", "i3")
 SUPPORTING = ("i4", "i5")
 IND_LABEL = {"i1": "I1 رشد فروش", "i2": "I2 EPS سه‌ساله", "i3": "I3 حاشیه سود ناخالص",
