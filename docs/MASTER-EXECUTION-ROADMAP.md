@@ -2256,6 +2256,65 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 **FINAL STATUS of the milestone: NOT COMPLETE.** Backend decision layer is accepted;
 the frontend still judges, so the funnel is not yet "one canonical engine + a renderer".
 
+## 15.13 Final Funnel milestone - state at the end of this session (2026-10-08)
+
+Committed on `roadmap-main` (green: tsc 0 errors, 1444 passed / 3 skipped, glyph guard 4/4,
+funnel guards 26/26 + registry OK):
+
+| commit | what |
+| --- | --- |
+| `277defb` | `funnel_engine.py` + `api/funnel.py` + the 22-case guard - the canonical judge |
+| `6dda8e5` | `/api/funnel` returns render-ready rows per stage and a per-symbol timeline (guard extended to 26) |
+| `8747849` | restored the section digit the editor ate (guard was run after the commit - wrong order, recorded) |
+
+WIP preserved on branch **`funnel-api-wip`** (`862185b` + `4a...` rank commit), pushed to
+`github`. It switches `useFtsFunnel` to POST `/api/funnel` through `lib/funnelView.ts`
+(DTO -> view model, no thresholds in the mapper), removes the per-symbol technical budget
+from the runtime path, and adds the canonical Custom state: ordered chain with
+add/remove/move, three fundamental strictness modes, explicit per-symbol exceptions, saved
+presets with chain + parameters + registry version + timestamps.
+
+**That branch is not green**: 26 cases in `fts-funnel-stages.spec.tsx` still stub
+`/api/market` + `/api/screener`, so they render an empty funnel. It was kept off
+`roadmap-main` deliberately rather than committed red or dropped.
+
+### §14 reconciled - the 1200 vs 922 numbers
+
+| number | what it is | source |
+| --- | --- | --- |
+| 1200 | **TEST FIXTURE** - synthetic rows in `dev/funnel_engine_v1.py` case 20, used only to prove the engine does not truncate | guard case 20 |
+| 5865 | rows in `/api/market` for the last session (2026-10-07) - the funnel's tape universe | live smoke, this bank |
+| 922 | rows in `/api/screener` - companies with codal coverage; symbols outside it have no fundamental verdict | live smoke (`universe.screened`) |
+| 433,922 | candle rows in `price_history` (6,031 symbol spellings) - history depth, not a universe | §15.10 B-1 |
+
+So there is no contradiction: 1200 is a fixture, 5865 is the tape universe, 922 is the
+fundamental-covered subset of it. The API reports all three as `universe.board /
+universe.screened / universe.joined` on every answer.
+
+### Remaining work to reach ACCEPTED (order matters; each its own commit on `funnel-api-wip`)
+
+1. Replace the funnel spec harness with a `/api/funnel` payload fixture; move the decision
+   assertions to the python guard (already 26 cases). Get the branch green.
+2. Delete `buildFunnel`, `techMark`, `fundMark`, `evaluateCandidate`, `funnelUniverse`,
+   `techQueryQueue`, `useFtsTechBoard` (`TECH_QUERY_CAP=60` dies with it) and point
+   `SymbolInspector`'s stage chips at the same payload instead of `symbolStageProgress`.
+3. Custom builder in the workspace header: registry-driven add/remove/reorder + save/rename/
+   load/reset presets (§8, §10, §29, §30).
+4. Handover table columns + inspector fed by `timeline` (§21-§24), progressive disclosure.
+5. Lift the backend caps: wire `funnel_tech_scan` into `/api/screener`, separate the
+   `watchlist` label from tech enrichment, remove `scan_all[:cap]`; classify every remaining
+   `slice`/`LIMIT` as display-only / concurrency / truncation (§11-§13, §36).
+6. Reproduce and fix the React "setState during render" warning with a root cause, not a
+   suppression (§27).
+7. Classify the 3 skipped tests (§28); full frontend suite green (§29).
+8. Browser validation at 1366/1920/360 with `_audit/funnel_final_<w>.json` evidence (§30-31).
+9. TSETMC/TSE validation on >= 20 real symbols with the required classification (§32-33).
+10. Full-universe benchmark: universe_count, processing_time, peak_memory, request_count,
+    cache_hit_rate, concurrency, final_survivor_count (§35).
+
+**Release: NOT BUILT** (per §40). **Funnel status: IMPLEMENTING** - backend judge accepted,
+frontend switch written but not green, so "one canonical judge" is not yet true in the app.
+
 ## 15.5 Next item selected
 
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
