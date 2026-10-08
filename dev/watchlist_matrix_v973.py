@@ -277,6 +277,43 @@ else:
        'market.db byte-identical after the whole suite (%s -> %s)' % (h0, h1))
     os.remove(SNAP)
 
+
+# ---- 1405-07-17: ONE market-cap basis for I4 and for the sidebar ----
+# The guard's snapshot copy is already deleted at this point, and these three
+# assertions are about the *schema/code contract*, so they read market.db
+# read-only (same bytes the suite just verified byte-for-byte).
+import confidence_engine as CE
+_mc = sqlite3.connect('file:market.db?mode=ro', uri=True)
+try:
+    _m = CE.mcap_map(_mc)
+    ck(bool(_m), "mcap_map builds the canonical market cap for the whole market once (no N+1)")
+    _pairs = _mc.execute(
+        "SELECT m.market_cap, i.ins_code, m.allowed_min, m.allowed_max "
+        "FROM market_watch m JOIN instruments i ON i.ins_code=m.ins_code "
+        "WHERE m.d_even=(SELECT MAX(d_even) FROM market_watch) "
+        "AND m.market_cap > 0 LIMIT 400").fetchall()
+    # Only the rows that PASS the single dead-band gate must equal the official
+    # column. The gated ones legitimately fall back to the last valid
+    # daily_prices cap — that is the canonical hierarchy, not a second formula.
+    def _gated(amin, amax):
+        return (float(amin or 0) > 0 and float(amax or 0) > 0 and float(amax) <= float(amin))
+    _ok = [(raw, ic) for raw, ic, amin, amax in _pairs if not _gated(amin, amax)]
+    _gated_n = len(_pairs) - len(_ok)
+    _bad = [ic for raw, ic in _ok if abs((_m.get(ic) or 0.0) - float(raw)) > 0.005 * float(raw)]
+    ck(not _bad, "I4's denominator IS the board's official column on every row the "
+       "dead-band gate accepts (%d accepted, %d gated→history, %d differ)"
+       % (len(_ok), _gated_n, len(_bad)))
+    _fbody = io.open("confidence_engine.py", encoding="utf-8").read()
+    _fbody = _fbody.split("def conf_fund(", 1)[1].split(chr(10) + "def ", 1)[0]
+    ck('watch.get("p_closing")) * _f(' not in _fbody and '"mcap"' in _fbody,
+       "conf_fund no longer derives p_closing x total_shares locally; one answer per symbol")
+    _board = io.open("api/market.py", encoding="utf-8").read()
+    ck("@MCAP@" in _board and "mcap_bulk_expr(conn" in _board,
+       "the sidebar's market cap IS fts_engine.mcap_bulk_expr (the very expression I4 "
+       "divides by) — two surfaces, one formula, no second judge")
+finally:
+    _mc.close()
+
 n_bad = sum(1 for ok, _ in CHECKS if not ok)
 for ok, msg in CHECKS:
     print('  %s %s' % ('PASS' if ok else 'FAIL', msg))

@@ -32,6 +32,12 @@ export const MarketRowSchema = z.object({
   q_tot_tran: num,
   z_tot_tran: num,
   q_tot_cap: num,
+  // ارزشِ بازارِ *همین نشست* (ریال) — همان ستونِ رسمیِ که مخرجِ I4 اول از آن
+  // می‌خواند (`fts_engine.mcap_bulk_expr`)، با دروازۀ «بانِ مرده» از همان
+  // تک‌تعریف. نبود ⇒ کلید نمی‌آید (بی‌داده ≠ صفر). `mcap_src` منشأ را می‌گوید:
+  // tse_raw (ستونِ marketValue خودِ سایت) | tse_board_calc | …_backfill.
+  mcap: num,
+  mcap_src: z.string().nullish(),
   tvol: num,
   vol_ratio: num,
   pe: num,

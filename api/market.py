@@ -546,7 +546,7 @@ def _board_query_frame(conn):
     global _HIST_CHECKED_AT
     ensure_board_history(conn)
     _HIST_CHECKED_AT = time.time()
-    df = pd.read_sql_query(_BOARD_SQL, conn)
+    df = pd.read_sql_query(_board_sql(conn), conn)
     df = df.drop_duplicates(subset="ins_code", keep="first").set_index("ins_code")
     last_deven = df["d_even"].max() if len(df) else None
     df["is_live"] = (df["d_even"] == last_deven) if last_deven is not None else True
@@ -866,7 +866,15 @@ _BOARD_SQL = """
                    sv.reasons AS sup_reasons,
                    sr.vaziyat_desc AS stop_state, sr.last_date_change AS stop_since,
                    sr.dalils AS stop_reasons,
-                   COALESCE(cv.kind, 'reconstructed') AS ctv_kind
+                   COALESCE(cv.kind, 'reconstructed') AS ctv_kind,
+                   -- ارزشِ بازارِ *همین نشست* (رأیِ مالک ۱۴۰۵-۰۷-۱۷: سایدبار
+                   -- «در یک نگاه» باید همین را ببیند). همان ستونِ رسمیِ که
+                   -- مخرجِ I4 اول از آن می‌خواند (`fts_engine.mcap_bulk_expr`:
+                   -- market_watch.market_cap → آخرین daily_prices معتبر). اینجا
+                   -- فقط لایۀ *جاری* می‌آید، با دروازۀ بانِ مرده از همان
+                   -- تک‌تعریف (`mcap_dead_band_sql`)؛ ستون نبود ⇒ NULL، نه صفر.
+                   CAST(NULL AS REAL) AS mcap,
+                   CAST(NULL AS REAL) AS mcap_src
             FROM market_watch m
             JOIN instruments i ON i.ins_code = m.ins_code
             LEFT JOIN boards b ON b.ins_code = m.ins_code
@@ -881,6 +889,50 @@ _BOARD_SQL = """
             WHERE m.ins_code IS NOT NULL
             ORDER BY m.d_even DESC, i.l_val18 ASC
 """
+
+
+
+_MCAP_SQL_CACHE: dict = {"sig": None, "sql": ""}
+
+
+def _board_sql(conn) -> str:
+    """همان _BOARD_SQL با خانۀ ارزشِ بازارِ *همین* نشست.
+
+    سایدبارِ «در یک نگاه» باید همین عددِ جاری را نشان بدهد (رأیِ مالک
+    ۱۴۰۵-۰۷-۱۷). دو نکته عمداً همین‌جا رعایت شده:
+      • دروازۀ «بانِ مرده» از همان تک‌تعریفِ `fts_engine.mcap_dead_band_sql`
+        می‌آید — سایدبار داورِ دوم نمی‌سازد؛ ردیفی که بازۀ مجازِ معتبر ندارد
+        ارزشِ بازارِ ساختگی نمی‌گیرد.
+      • نبودِ ستون در بانکِ کهنه ⇒ NULL، نه صفر و نه کرشِ کوئری.
+    مخرجِ I4 هم همین ستون را اول می‌خواند (`fts_engine.mcap_bulk_expr`:
+    market_watch.market_cap ← آخرین daily_prices معتبر)؛ لایۀ «تاریخچۀ fallback»
+    درِ همین کوئریِ داغ نیست (هر ردیف یک subquery می‌خواست) و درِ کارتِ نماد
+    با همان asof نشان داده می‌شود.
+    """
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(market_watch)")}
+    sig = ("market_cap" in cols, "allowed_min" in cols and "allowed_max" in cols)
+    if _MCAP_SQL_CACHE["sig"] != sig or not _MCAP_SQL_CACHE["sql"]:
+        if sig[0]:
+            import fts_engine as _F
+            gate = (_F.mcap_dead_band_sql("m") if sig[1]
+                    else "(1=0)")        # بانِ نامعلوم ⇒ دروازۀ بی‌اثر
+            # SAME expression the fundamental engine uses for I4's denominator
+            # (`mcap_bulk_expr`: official column -> last valid daily_prices cap,
+            # behind the one dead-band gate). Two surfaces, one formula — so a
+            # sidebar number can never disagree with the index that judges it.
+            mcap = _F.mcap_bulk_expr(conn, alias="i", board="m")
+            src = "CASE WHEN NOT %s THEN m.market_cap_src END" % gate
+        else:
+            mcap = src = "CAST(NULL AS REAL)"
+        # متنِ پایه دو placeholderِ *قابل‌اجرا* دارد (`CAST(NULL AS REAL)`)، نه
+        # توکنِ ناشناخته: دو مصرف‌کننده متنِ این SQL را با regex ازِ فایلِ منبع
+        # می‌گیرند و مستقیم اجرا می‌کنند (`dev/board_hist_cache_v1056.py:172`،
+        # `tools/tape_formula_parity.py:67`) و SQLِ بی‌اجرا آن‌ها را می‌شکند.
+        _MCAP_SQL_CACHE["sql"] = (_BOARD_SQL
+            .replace("CAST(NULL AS REAL) AS mcap,", "%s AS mcap," % mcap)
+            .replace("CAST(NULL AS REAL) AS mcap_src", "%s AS mcap_src" % src))
+        _MCAP_SQL_CACHE["sig"] = sig
+    return _MCAP_SQL_CACHE["sql"]
 
 
 def _build_market_response(request: Request, drop_unused=True, store_cache=True):
@@ -995,6 +1047,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "prior30_vol", "min_low_29", "percent_last", "percent_change",
                       "plp_raw",
                       "vol_ratio_file", "hist_sessions", "tmin", "tmax", "buy_q1_cnt",
+                      "mcap", "mcap_src",
                       "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",
                       "h2_max", "h5_max", "h9_max", "h19_max",

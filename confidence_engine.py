@@ -252,6 +252,34 @@ def watch_map(conn: sqlite3.Connection) -> dict:
             for r in rows}
 
 
+def mcap_map(conn: sqlite3.Connection) -> dict:
+    """{ins_code: mcap_rials} از همان تک‌تعریفِ fts_engine (بدونِ N+1).
+    ستونِ نبود ⇒ {} و مصرف‌کننده «بی‌داده» می‌گیرد، نه صفر — قاعدۀ خودِ
+    `mcap_bulk_expr`: «هرگز جعلِ قیمتِ آخرین × سهامِ ثبتی».
+    """
+    try:
+        expr = fts_engine.mcap_bulk_expr(conn)
+        rows = conn.execute(
+            f"SELECT i.ins_code, {expr} FROM instruments i "
+            "LEFT JOIN market_watch m ON m.ins_code = i.ins_code").fetchall()
+    except sqlite3.Error:
+        return {}
+    return {r[0]: _f(r[1]) for r in rows if r[0]}
+
+
+def _mcap_one(conn: sqlite3.Connection, ins_code: str):
+    """ارزشِ بازارِ canonicalِ یک نماد، برایِ مسیرِ بی‌ctx (همان mcap_map، یک ردیف)."""
+    try:
+        expr = fts_engine.mcap_bulk_expr(conn)
+        row = conn.execute(
+            f"SELECT {expr} FROM instruments i "
+            "LEFT JOIN market_watch m ON m.ins_code = i.ins_code "
+            "WHERE i.ins_code = ?", (ins_code,)).fetchone()
+    except sqlite3.Error:
+        return None
+    return _f(row[0]) if row else None
+
+
 def watch_one(conn: sqlite3.Connection, ins_code: str) -> dict:
     """market_watch یک نماد — جایگزین تک‌کوئریِ watch_map برای مسیر بی‌ctx.
 
@@ -283,6 +311,11 @@ def build_ctx(conn: sqlite3.Connection, cfg: dict = None) -> dict:
         "tape": tape_rows(conn, int(cfg["tape_lookback"])),
         "daily": daily_map(conn),
         "watch": watch_map(conn),
+        # ارزشِ بازارِ canonical (fts_engine.mcap_bulk_expr: ستونِ رسمیِ
+        # market_watch ← آخرین daily_prices معتبر، با دروازۀ بانِ مرده).
+        # بی‌این نقشه، conf_fund «p_closing × total_shares» را خودش می‌ساخت
+        # و مخرجِ I4 با آنچۀ که اسکرینر/کارت می‌خوانند فرق می‌کرد.
+        "mcap": mcap_map(conn),
         "sessions": fts_engine.market_sessions(conn),
         # تزریق نقشه‌های بنیادی: scan_symbol خودش این‌ها را تک‌کوئری می‌سازد،
         # ولی در حلقهٔ نماد‌به‌نماد به N+1 تبدیل می‌شوند. اینجا یک‌بار ساخته
@@ -943,7 +976,14 @@ def conf_fund(conn: sqlite3.Connection, symbol: str, ctx: dict = None,
     watch = ((x.get("watch") or {}).get(ins) if x.get("watch")
              else watch_one(conn, ins)) if ins else None
     watch = watch or {}
-    mcap = _f(watch.get("p_closing")) * _f((entry or {}).get("total_shares"))
+    # مخرجِ I4 = همان ارزشِ بازاری که اسکرینر و کارت می‌خوانند. پیش‌تر این‌جا
+    # حاصلِ «p_closing × total_sharesِ ثبتی» محلی ساخته می‌شد و دو جوابِ متفاوت
+    # برایِ یک نماد می‌ساخت. بی‌نقشۀ mcap و بی‌ردیف ⇒ None ⇒ «بی‌داده»؛ نه صفر،
+    # نه جعلِ «قیمتِ آخرین × سهامِ ثبتی» (قاعدۀ خودِ mcap_bulk_expr).
+    mcap = _f((x.get("mcap") or {}).get(ins)) if x.get("mcap") is not None else None
+    if (mcap or 0) <= 0 and ins:
+        mcap = _mcap_one(conn, ins)
+    mcap = mcap if (mcap or 0) > 0 else None   # بی‌مبنایِ معتبر ⇒ None، نه صفر
     sector = (entry or {}).get("sector") or "سایر"
     total_mcap = _f(x.get("total_mcap_rials") or idx.get("total_mcap_rials"))
     key = norm(db_symbol)

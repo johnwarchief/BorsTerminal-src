@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
-import { toFaDigits } from '@shared/lib/fmt';
+import { fmtHemmat, toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { LiveNumber } from '@shared/components/ui/live-number';
@@ -193,6 +193,15 @@ export function SymbolInspector() {
    *  دوباره اجرا می‌کرد (داورِ دوم). حالا وضعیت‌ها خوانده می‌شوند؛ اگر نماد درِ
    *  پاسخ نبود، هر چهار گام unknown است، نه رد. */
   const { funnel } = useFtsFunnel('custom');
+  // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
+  // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
+  const cand = useMemo(() => {
+    for (const k of ['fundamental', 'technical', 'handover', 'tape'] as const) {
+      const hit = funnel.stages[k].entries.find((e) => e.symbol === symbol);
+      if (hit) return hit;
+    }
+    return null;
+  }, [funnel, symbol]);
   const progress = useMemo(() => stageProgressFor(funnel, symbol), [funnel, symbol]);
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
@@ -417,6 +426,36 @@ export function SymbolInspector() {
               />
             </span>
           </div>
+        </div>
+
+        {/* ارزشِ بازار و I4 از یک مبنایِ واحد (رأیِ مالک ۱۴۰۵-۰۷-۱۷): همان
+            `market_watch.market_cap` که مخرجِ I4 درِ موتور است، اینجا می‌نشیند —
+            پس «two market cap» درِ رابط نداریم. TSETMC برایِ هر نماد `marketValue`
+            ساختاریاره نمی‌فرستد (سنجشِ زنده: فقط سطحِ بازار)، لذا مبنا همان
+            ستونِ تابلو با برچسبِ منشأ است. نبودِ عدد ⇒ «بی‌داده»، هرگز صفر. */}
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+             data-testid="inspector-market-cap">
+          <span className="text-[9px] text-text-muted">ارزشِ بازار</span>
+          <span className="num text-[11px] font-bold text-text-primary"
+                title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
+                       + `${rawRow?.is_live === false ? 'آخرینِ نشستِ تابلو' : 'نشستِ جاریِ تابلو'}`}>
+            {rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
+          </span>
+          <span className="text-[9px] text-text-muted">I4</span>
+          {cand?.screen?.sales_to_mcap != null ? (
+            <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
+                  data-testid="inspector-i4"
+                  title={`فروشِ ۱۲ ماهه (برآورد): ${cand.screen.annual_sales_bt != null
+                    ? `${toFaDigits(cand.screen.annual_sales_bt)} میلیارد تومان` : 'بی‌داده'}`
+                    + ` ÷ ارزشِ بازار: ${rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'} — `
+                    + 'فرمولِ موتورِ بنیادی (fts_engine.sales_to_marketcap)، همان مخرجِ سایدبار'}
+                  className="num text-[11px] font-bold text-accent-blue hover:underline">
+              {toFaDigits(Number(cand.screen.sales_to_mcap).toFixed(2))}×
+            </Link>
+          ) : (
+            <span className="num text-[11px] text-text-muted" data-testid="inspector-i4"
+                  title="I4 = فروشِ ۱۲ ماهه ÷ ارزشِ بازار؛ عددی از موتور نرسیده">بی‌داده</span>
+          )}
         </div>
 
         {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد
