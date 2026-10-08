@@ -149,3 +149,34 @@ export function funnelFromApi(payload: ApiPayload, fallbackMode: FunnelMode = 'r
     targets: { initial: 50, watchlist: 10, basketMin: 5, basketMax: 7 },
   };
 }
+
+/** جایِ یک نماد در چهار گام — از همان entriesِ پاسخِ سرور.
+ *
+ *  جایگزینِ `symbolStageProgress` است که قواعدِ قیف را رویِ تک‌ناماد درِ مرورگر
+ *  دوباره اجرا می‌کرد. اینجا فقط وضعیت‌هایِ ثبت‌شدۀ سرور خوانده می‌شوند؛ اگر
+ *  نماد درِ پاسخ نبود، هر چهار گام `unknown` است (نه رد، نه قبول). */
+export function stageProgressFor(
+  funnel: Funnel, symbol: string,
+): { key: FunnelStageKey; state: 'passed' | 'blocked' | 'waiting' | 'unknown'; why: string }[] {
+  // هر گام ردیفِ خودش را دارد و status همان گام را می‌گوید؛ پس وضعیت‌ها از
+  // همهٔ ردیف‌هایِ همین نماد جمع می‌شوند (نخستِ یافت‌شده کافی نبود: ردیفِ گامِ
+  // تابلو فقط status.tape را دارد و چراغِ تکنیکال unknown می‌ماند).
+  let found: Candidate | null = null;
+  const merged: Record<FunnelStageKey, StageStatus> = {
+    tape: 'unavailable', technical: 'unavailable', fundamental: 'unavailable', handover: 'unavailable',
+  };
+  for (const key of STAGES) {
+    const hit = funnel.stages[key].entries.find((e) => e.symbol === symbol);
+    if (!hit) continue;
+    found = found ?? hit;
+    if (hit.status[key]) merged[key] = hit.status[key];
+  }
+  return STAGES.map((key) => {
+    const st = merged[key] === 'unavailable' ? found?.status[key] : merged[key];
+    const state = st === 'pass' ? 'passed'
+      : st === 'reject' ? 'blocked'
+      : st === 'pending' ? 'waiting' : 'unknown';
+    const hit = funnel.stages[key].entries.find((e) => e.symbol === symbol);
+    return { key, state, why: hit?.why[key] || found?.why[key] || '' };
+  });
+}

@@ -29,9 +29,8 @@ import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
-import { symbolStageProgress } from '@features/master/lib/ftsFunnel';
-import { useTapeStore } from '@features/market/stores/tapeStore';
-import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
+import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { stageProgressFor } from '@features/master/lib/funnelView';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -189,28 +188,12 @@ export function SymbolInspector() {
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
   const rawRow = useInspectorRawRow();
-  const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
-  const tapeQuickFilters = useTapeStore((s) => s.quickFilters);
-  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
-  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
-  const techScreens = useFunnelPrefsStore((s) => s.techScreens);
-  /** جایِ خودِ نماد در قیف — از همان `buildFunnel`، رویِ تک‌ردیفِ همین نماد.
-   *  سبکِ درخت محلیِ تبِ درخت است و این‌جا در دسترس نیست، پس «مسیر سفارشی»
-   *  (هر پنج فیلترِ درب) مبنا است؛ tooltipِ هر چیپ همان را می‌گوید. */
-  const progress = useMemo(
-    () =>
-      symbolStageProgress(
-        rawRow,
-        tapeCfg,
-        tapeQuickFilters ?? [],
-        veto.screen,
-        regime.inBasket === true,
-        'custom',
-        new Map(),
-        { fundFloor, unmeasured, techScreens },
-      ),
-    [rawRow, tapeCfg, tapeQuickFilters, veto.screen, regime.inBasket, fundFloor, unmeasured, techScreens],
-  );
+  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند.
+   *  پیشِ این `symbolStageProgress` قواعدِ چهار در را رویِ تک‌ناماد درِ مرورگر
+   *  دوباره اجرا می‌کرد (داورِ دوم). حالا وضعیت‌ها خوانده می‌شوند؛ اگر نماد درِ
+   *  پاسخ نبود، هر چهار گام unknown است، نه رد. */
+  const { funnel } = useFtsFunnel('custom');
+  const progress = useMemo(() => stageProgressFor(funnel, symbol), [funnel, symbol]);
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
 
