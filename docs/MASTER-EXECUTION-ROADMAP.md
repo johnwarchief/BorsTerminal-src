@@ -2364,6 +2364,90 @@ Today's live funnel ends at 0 PASS with explicit reasons (the tape survivors are
 no codal coverage, and the weekly judge rejects or cannot classify them).
 
 
+## 15.16 Funnel validation: warning fixed, browser walked, benchmark and TSETMC measured (2026-10-08)
+
+React warning (`122143d`) — reproduced, root-caused, not suppressed:
+`Warning: Cannot update a component (%s) while rendering a different component (%s)`
+with the substituted names printed after the string; stack
+`dispatchSetState <- Topbar.tsx:47 <- query-cache Set.forEach`. Cause:
+`useFeedSnapshot` calls `setSnap` synchronously from the TanStack Query **cache
+subscription**, and mounting the funnel's observer notifies that subscription
+during `FtsFunnelStages`' render phase. Fix: defer the listener body one
+microtask. Now **0 errors / 0 warnings at all three viewports** (was 6 at 1366).
+
+Live browser walk `_audit/funnel_final_check.mts` -> `_audit/funnel_final_dev2.json`
++ `funnel_final_{1366,1920,360}.png`, against the real backend on this worktree:
+
+| viewport | pageOverflowX | table px / box px | reason cells | ruled vs universe | technical not_required |
+| --- | --- | --- | --- | --- | --- |
+| 1366x768 | 0 | 1196 / 1198 | 18 of 18 filled | حکم ۵۸۶۳ = کلِ universe | ۵۷۶۱ لازم نبود |
+| 1920x1080 | 0 | 1670 / 1672 | 18 of 18 | same | same |
+| 360x800 | 0 | 278 / 280 | 18 of 18 | same | same |
+
+Steps executed at every viewport: enter (default = tape) -> swing -> trend ->
+custom -> add two registry filters -> reorder -> remove -> save -> reset ->
+load -> row click -> technical -> fundamental -> handover -> back.
+Ordered intersection proved by the UI's own numbers: `[f_clock, f_susp]` printed
+`f_clock ۵۸۶۳ ← ۵۰`, `[f_susp, f_clock]` after reorder printed
+`f_susp ۵۰ ← ۱۹` / `f_clock ۵۸۶۳ ← ۵۰`.
+Row click kept the stage (`?stage=technical` - bug found and fixed: `pick()` used
+the component's internal active instead of the routed one) and Back returned to it.
+Registry gave 7 filters including `f_smart` / `f_legal` (the old five-chip list is gone).
+
+Two more defects the walk exposed and fixed:
+- switching preset/chain blanked the dominant table to `universe: ۰` for the whole
+  POST; now `placeholderData: keepPreviousData` + an explicit «در حالِ تازه‌سازی» chip.
+- the inspector collapsed `not_required` into `unknown` («سنجیده نشده»); it is now its
+  own state with «لازم نبود» and the blocking stage in the title.
+
+Skipped tests classified (§28) - all three were **FIXED**, not accepted as skipped:
+they needed fixtures that did not exist on this machine. Built from the live bank:
+`_audit/live_rows.json` (5865 rows from /api/market) and
+`tools/tape_parity_fuzz.py --rows 140` => 1312 mutated cases.
+`tape-fuzz-parity` 2/2 pass; `tape-badge-chip-parity` 8/8 pass including the
+three-way live check (backend flag == frontend formula == row badge) for all five
+filters: f_clock [50,50,50], f_susp [102,102,102], f_jet [8,8,8], f_roobi [19,19,19],
+f_noqteh [17,17,17]. `_audit/*` stays gitignored by design (PC gate, not CI).
+
+Full-universe benchmark (§35) `tools/funnel_universe_benchmark.py` ->
+`_audit/funnel_universe_benchmark.json`: universe 5863 (board 5865, 2 duplicate rows
+deduped, screened 922), `evaluate()` 1.87-2.34 s per case, peak 40-48 MB, six cases
+(swing / trend / two custom chains / empty chain / hard fundamental), cache cold
+2113 ms -> warm 902 ms (the remaining cost is serialising the answer), concurrency:
+`evaluate()` is single-threaded and the technical verdicts are built in a background
+thread, never awaited by a request. `no_truncation_proof: true` - every case has
+`matrix rows == universe` and every stage's five statuses sum to the universe.
+
+TSETMC/TSE validation (§32-33) `tools/tse_live_filter_parity.py` ->
+`_audit/tse_filter_parity_final.json`, live at 21:38 against the app snapshot of
+21:18 (7207 comparison rows, 2273 traded):
+
+| filter | site | app | match | only_site | only_app |
+| --- | --- | --- | --- | --- | --- |
+| clock | 49 | 50 | 49 | 0 | 1 |
+| susp | 102 | 102 | 102 | 0 | 0 |
+| jet | 8 | 8 | 8 | 0 | 0 |
+| roobi | 18 | 19 | 18 | 0 | 1 |
+| noqteh | 17 | 17 | 17 | 0 | 0 |
+| smart | 143 | 147 | 143 | 0 | 4 |
+| legal | 34 | 34 | 34 | 0 | 0 |
+
+Every one of the 6 `only_app` rows classified in `_audit/funnel_tse_diff_classify.py`:
+**all DATA_DIFFERENCE, zero RULE_DIFFERENCE, zero BUG** - one symbol is absent from
+the site's live `GetMarketWatch` payload, the other five differ on `zd1/bp/sp/sn/h_len`
+(their clientType and history inputs are not identical between the two snapshots).
+An earlier draft of that probe compared only five fields and mislabelled them
+RULE_DIFFERENCE; the instrument was wrong, not the app - the check now compares all
+ten variables the formulas read.
+
+Open before ACCEPTED: /api/screener's own `tech_*` enrichment and weekly veto are
+still limited to `watchlist_max=50` rows (the funnel no longer depends on them);
+the technical scan covers 16 of 6032 symbols with history and is ~25 s per cold
+symbol, so the universe-wide verdicts are still filling in the background;
+handover columns + the trace-fed inspector (§21-22); the same completeness counters
+on Android (§9); owner questions Q-1..Q-5.
+
+
 ## 15.5 Next item selected
 
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
