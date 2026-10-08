@@ -1478,20 +1478,58 @@ A feature that is not accepted does not become the foundation for the next featu
 
 # 5. FTS reference hierarchy
 
-For every FTS analytical feature, use this research order.
+For every FTS analytical feature, rule change, parameter change, or semantic decision, use this mandatory hierarchy.
 
-### Primary sources
+### L0 — Owner rulings
 
-- docs/FTS_SPEC.md
-- docs/fts-notes/OWNER_RULINGS.md
-- docs/جزوه FTS.pdf
+- `docs/fts-notes/OWNER_RULINGS.md`
+
+This is the highest-priority source for explicit owner decisions and for resolving conflicts.
+
+### L1 — FTS methodology sources
+
+- `docs/جزوه FTS.pdf`
+- Relevant FTS/chart PDFs
+- Faithful extracted/transcribed FTS source text
+
+These define the underlying methodology and process.
+
+### L2 — Derived implementation specification
+
+- `docs/FTS_SPEC.md`
+
+This is a derived implementation specification. It must follow L0/L1 and must be corrected when it drifts from them. It must never override L0/L1.
+
+### L3 — Parity / audit / research evidence
+
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Other audit/research documents
+
+These provide evidence, implementation context, and reference behavior. They cannot silently redefine an FTS rule.
+
+### L4 — Code
+
+The code is the executor of the rules, never the source-of-truth for the rules.
+
+### Conflict protocol
+
+For every FTS rule or parameter change:
+
+1. Read L0/L1 first.
+2. Check L2/L3 for drift or contradiction.
+3. If L0/L1 resolve the conflict, update derived documents and code to match.
+4. If L0/L1 are ambiguous or conflict, mark the item `BLOCKED-OWNER`.
+5. Never use existing code to justify a rule that contradicts a higher-level source.
 
 ### Technical/chart sources
 
-- docs/CANDLE-CONTRACT.md
-- docs/CHART-FOUR-PAGES-PARITY.md
-- docs/CHART-PARITY-REFERENCE.md
-- Relevant technical/chart PDFs in docs/
+The following remain important technical references but do not outrank the FTS hierarchy:
+
+- `docs/CANDLE-CONTRACT.md`
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Relevant technical/chart PDFs in `docs/`
 
 ### External research
 
