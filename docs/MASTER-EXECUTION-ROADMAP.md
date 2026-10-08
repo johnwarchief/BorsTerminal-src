@@ -2222,6 +2222,40 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 | U-7 | Browser validation | `ACCEPTED` | `tools/jev_ui_check.mts` at 1366/1920/360 → `_audit/funnel_workspace_check.json`: three modes present, no overview page, `دلیل` present, `pageOverflowX: 0` at every width. One React "setState during render" warning appeared only in the 1366 run and its cause is not yet isolated - recorded, not dismissed |
 | U-8 | Logic untouched | `ACCEPTED` | No change under `lib/ftsFunnel.ts`, `tape_flags.py`, `fts_engine.py` or `api/*` in this commit; tsc clean and 1444 passed / 3 skipped |
 
+## 15.12 Final Funnel milestone (owner mission 2026-10-08, §1-46) - IN PROGRESS
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| X-1 | Re-audit before coding | `ACCEPTED` | §15.10 F-1..F-13 plus this round's re-read of the current tree (the UX commit changed the files the earlier audit described, so the audit was redone against `d0314b6`, not against the report) |
+| X-2 | Canonical backend judge | `ACCEPTED` | `funnel_engine.py` + `api/funnel.py` (`GET/POST /api/funnel`, `GET /api/funnel/registry`). Guard `dev/funnel_engine_v1.py` = the mission's 22 required cases, each with expectations written outside the engine. Registered in `run_all_tests.py`, in `fts_terminal.spec` hiddenimports, and in `api/__init__.py` |
+| X-3 | Sequential intersection is real | `ACCEPTED` | Live smoke on this bank: `custom [f_susp, f_noqteh]` = 5865 → 121 → 4, and `[f_noqteh, f_susp]` records different per-stage counts. Guard case 3 fails if OR logic leaks (it would match 2) |
+| X-4 | Weekly-first technical gate | `ACCEPTED` | down/neutral reject, up only then daily, branch map per the four-page chart, `UNKNOWN` = PENDING not reject; guard case 12 proves jet+CHoCH+5 points never break a weekly veto |
+| X-5 | Fundamental hard/standard/exception | `ACCEPTED` | standard blocks on I1∧I2∧I3, hard requires all five, missing data is PENDING, exception keeps `canonical=REJECT` beside `effective=PASS WITH EXCEPTION` with the indicator and reason code in the trace; a wrong exception does nothing |
+| X-6 | Handover ranking without invented weights | `ACCEPTED` | final → no-exception → existing fundamental score → existing technical points → backend rank → symbol, with `display_rank`; 1200 in = 1200 out and the engine source contains no slice |
+| X-7 | **Frontend still runs its own judge** | `OPEN - BLOCKING` | `lib/ftsFunnel.ts` (`buildFunnel`, `techMark`, `fundMark`) and `tapeAlgorithms.tapeFilterVerdict` are still the browser-side verdict path used by the table. Until the table renders `/api/funnel`, the mission's "one judge" rule is NOT met and the funnel cannot be called complete |
+| X-8 | Custom builder (add/remove/reorder/save presets) | `OPEN` | Registry is served and the chain is honoured by the engine; the UI control does not exist yet |
+| X-9 | Hidden caps | `OPEN` | `TECH_QUERY_CAP=60`, `watchlist_max=50` gating tech enrichment, and `scan_all[:cap]` all still stand. `funnel_tech_scan.py` is built and measured but not wired |
+| X-10 | React "setState during render" | `OPEN` | Seen only in the 1366 live run; cause not isolated yet |
+| X-11 | 3 skipped tests | `OPEN` | Classified as required by §42, not yet resolved |
+| X-12 | TSE/TSETMC validation, browser validation, inspector | `OPEN` | §24, §33, §40 |
+
+### Order of the remaining work (each its own commit)
+
+1. `useFtsFunnel` → fetch `/api/funnel` (POST with chain/fund_mode/params/exceptions) and
+   return the server payload unchanged; delete `buildFunnel`/`techMark`/`fundMark` verdicts
+   and make `tapeFilterVerdict` read the backend flag (the live-board mirror stays only as a
+   parity-guarded display path, or dies).
+2. Custom builder in the workspace header: registry-driven add/remove/reorder + saved
+   presets (ordered ids, parameter set, registry+formula version, fundamental mode,
+   technical settings, timestamp).
+3. Handover table + inspector with the trace (§23, §24), progressive disclosure.
+4. Wire `funnel_tech_scan` into `/api/screener`, lift the caps, re-measure.
+5. Isolate the React warning, classify the skipped tests, browser validation at
+   1366/1920/360, TSETMC validation on >= 20 real symbols.
+
+**FINAL STATUS of the milestone: NOT COMPLETE.** Backend decision layer is accepted;
+the frontend still judges, so the funnel is not yet "one canonical engine + a renderer".
+
 ## 15.5 Next item selected
 
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
