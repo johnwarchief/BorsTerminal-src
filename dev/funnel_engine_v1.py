@@ -214,8 +214,68 @@ for k in ("symbol", "name", "sector", "last", "change_pct", "vol_ratio", "patter
 else:
     ck(True, "۲۶) ردیفِ نمایشی هر ستونی که جدول می‌خواهد را از API می‌گیرد (بدون join فرانت)")
 
+# ── قانونِ جامع: تک‌تکِ نمادها وضعیتِ صریح دارند (§8 و §10) ────────────────
+U = [board(f"n{i}", f_susp=(i % 3 == 0), f_noqteh=(i % 4 == 0)) for i in range(40)]
+SC = [screen(f"n{i}", **(UP if i % 5 else W_DOWN), **OK_FUND) for i in range(40)]
+M = FE.evaluate(U, SC, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+uni = M["universe"]["joined"]
+ck(uni == 40, "۲۷) جامعۀ ورودی شمرده و درِ پاسخ است")
+for stage in ("tape", "technical", "fundamental", "handover"):
+    tot = sum(M["coverage"][stage].values())
+    ck(tot == uni, f"۲۸) {stage}: جمعِ وضعیت‌ها = جامعۀ ورودی ({tot} = {uni})")
+ck(set(M["status_matrix"]) == {f"n{i}" for i in range(40)},
+   "۲۹) هیچ نمادی از matrix بیرون نیفتاده (بی‌سایلنت‌دراپ)")
+DUP = [board("تکراری", f_susp=True), board("تکراری", f_susp=True), board("دیگر", f_susp=True)]
+DP = FE.evaluate(DUP, [screen("تکراری", **UP, **OK_FUND), screen("دیگر", **UP, **OK_FUND)],
+                 preset="custom", custom_chain=["f_susp"])
+ck(DP["universe"]["board"] == 3 and DP["universe"]["joined"] == 2
+   and DP["universe"]["duplicate_rows"] == 1,
+   "۳۵) ردیفِ هم‌نام دوم نماد شمرده نمی‌شود و صریح گزارش می‌شود")
+ck(len(DP["status_matrix"]) == DP["universe"]["joined"]
+   == sum(DP["coverage"]["handover"].values()),
+   "۳۵) matrix، جامعۀ یکتا و جمعِ وضعیت‌ها هر سه یک عدد")
+bad = [s for s, row in M["status_matrix"].items()
+       if any(c["status"] not in FE.STATUSES or not c.get("reason_code") for c in row.values())]
+ck(not bad, "۳۰) هر خانۀ matrix وضعیتِ معتبر + reason_code دارد")
+rej = sorted(s for s, row in M["status_matrix"].items() if row["tape"]["status"] == FE.REJECT)
+ck(rej and all(M["status_matrix"][s]["technical"]["status"] == FE.NOT_REQUIRED for s in rej),
+   "۳۱) ردشدۀ تابلو درِ تکنیکال NOT_REQUIRED است، نه «سنجیده نشده»")
+ck(all(M["status_matrix"][s]["technical"]["reason_code"] == "NOT_REQUIRED_AFTER_TAPE_REJECT"
+       for s in rej), "۳۱) علتِ اجرا‌نشدن هم درِ trace ثبت می‌شود")
+ck(all(M["status_matrix"][s]["fundamental"]["status"] == FE.NOT_REQUIRED for s in rej),
+   "۳۱) بنیادی هم برای همان نماد NOT_REQUIRED است، نه حذف")
+# نمادی که ردیفِ اسکرینر ندارد: تکنیکال UNAVAILABLE (نه سنجیده‌نشِ مبهم) و
+# بنیادی NOT_REQUIRED با علت؛ تحویل هم UNAVAILABLE می‌گوید، نه حذفِ نماد.
+no_screen = [board("بی‌کدال", f_susp=True), board("باکدال", f_susp=True),
+             screen("باکدال", **UP, **OK_FUND)]
+NS = FE.evaluate(no_screen, [screen("باکدال", **UP, **OK_FUND)],
+                 preset="custom", custom_chain=["f_susp"])
+row_ns = NS["status_matrix"]["بی‌کدال"]
+ck(row_ns["technical"]["status"] == FE.UNAVAILABLE
+   and row_ns["technical"]["reason_code"] == "TECH_UNMEASURED",
+   "۳۲) نمادِ بی‌ردیفِ اسکرینر: تکنیکال UNAVAILABLE با کد، نه سنجیده‌نشِ مبهم")
+ck(row_ns["fundamental"]["status"] == FE.NOT_REQUIRED
+   and row_ns["fundamental"]["reason_code"].startswith("NOT_REQUIRED_AFTER"),
+   "۳۲) بنیادیِ آن نماد NOT_REQUIRED است با علت، نه غایب")
+ck(row_ns["handover"]["status"] == FE.UNAVAILABLE
+   and row_ns["handover"]["reason_code"] == "NO_FINAL_SOURCE",
+   "۳۲) تحویل هم وضعیت دارد: بی‌منبع، نه گم‌شده")
+# بلاکرِ بی‌داده ⇒ PENDING با کدِ هر شاخص (نه pass، نه reject)
+miss = FE.evaluate([board("کم‌گزارش", f_susp=True)],
+                   [screen("کم‌گزارش", **UP, i1_pass=None, i2_pass=1, i3_pass=1,
+                           i4_pass=1, i5_pass=1, score=4, primary_score=2)],
+                   preset="custom", custom_chain=["f_susp"])
+mr = miss["status_matrix"]["کم‌گزارش"]
+ck(mr["fundamental"]["status"] == FE.PENDING
+   and mr["fundamental"]["reason_code"] == "FUND_I1_MISSING",
+   "۳۳) I1 بی‌گزارش = PENDING با کدِ FUND_I1_MISSING")
+ck(mr["handover"]["status"] == FE.PENDING,
+   "۳۳) تحویل هم همان انتظار را می‌گوید، نماد ناپدید نمی‌شود")
+ck(all(isinstance(M["status_matrix"][s]["handover"].get("display_rank"), int)
+       for s, row in M["status_matrix"].items() if row["handover"]["status"] == FE.PASS),
+   "۳۴) رتبۀ نمایشی برایِ هر پذیرفته‌شده ثبت شده")
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {26} بندِ مأموریت")
+print(f"funnel_engine guard OK — {36} بندِ مأموریت")

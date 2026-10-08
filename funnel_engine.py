@@ -44,6 +44,11 @@ ENGINE_VERSION = "1"
 
 # وضعیت‌هایِ چهارحالته — همان معنا درِ کلِ قیف (UNAVAILABLE ≠ REJECT).
 PASS, REJECT, PENDING, UNAVAILABLE = "pass", "reject", "pending", "unavailable"
+# پنجمین وضعیتِ رسمی: مرحلۀ بعدی اجرا نشده چون مرحلۀ قبل نماد را رد کرده.
+# این «سنجیده نشد» نیس — یک حکمِ قطعیِ زنجیره‌ای است و درِ trace هم همین‌طور
+# نوشته می‌شود (رأیِ مالک: «هیچ نمادی نباید با وضعیت سنجیده نشده خارج شود»).
+NOT_REQUIRED = "not_required"
+STATUSES = (PASS, REJECT, PENDING, UNAVAILABLE, NOT_REQUIRED)
 
 # ستونِ پرچمِ هر فیلتر درِ ردیفِ تابلو — نام‌ها از رجیستری می‌آیند، نه از
 # یک فهرستِ دستیِ دیگر.
@@ -135,7 +140,9 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
             "source_ref": f"{f.source_file}#{f.source_sha256}",
             "formula_version": f.formula_version,
             "backend_impl": f.backend_impl,
-            "status": PASS if removed else PENDING if unmeasured else PASS,
+            # سه‌حالته و افتراقی: چیزی حذف شده (reject)، هیچ‌چیز حذف نشده ولی
+            # بعضی پرچم‌ها ساخته نشده‌اند (pending)، یا همه‌چیز سنجیده و خورده شده.
+            "status": REJECT if removed else (PENDING if unmeasured else PASS),
         })
         survivors = matched
     return {"survivors": survivors, "steps": steps, "dropped": dropped}
@@ -399,6 +406,106 @@ def resolve_chain(preset: str, custom: Iterable[str] | None) -> tuple[str, ...]:
     return chain
 
 
+def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
+                  hand: dict) -> tuple[dict, dict]:
+    """وضعیتِ هر چهار گام برایِ **تک‌تکِ** نمادهایِ جامعۀ ورودی.
+
+    قاعدۀ مالک: هیچ نمادی گم نمی‌شود و هیچ «سنجیده نشده»ای بی‌دلیل نیست. دو
+    دلیلِ مجاز و افتراقی وجود دارد:
+      UNAVAILABLE                 منبعی برایِ سنجشِ آن گام نیست (مثلاً پوششِ کدال)
+      NOT_REQUIRED                گامِ قبل نماد را رد کرده، پس این گام اجرا نمی‌شود
+    جمعِ شمارشِ هر گام باید دقیقاً با جامعۀ ورودی بخواند؛ گاردِ
+    `dev/funnel_engine_v1.py` همین را می‌بندد.
+    """
+    survivors = {str(r.get("symbol") or "") for r in tape["survivors"]}
+    dropped_first: dict[str, dict] = {}
+    for step in tape["steps"]:
+        for sym in tape["dropped"].get(step["filter_id"], []):
+            dropped_first.setdefault(sym, step)
+    tech_by = {d["symbol"]: d for d in tech["decisions"]}
+    fund_by = {d["symbol"]: d for d in fund["decisions"]}
+    hand_by = {e["symbol"]: e for e in hand["entries"]}
+
+    matrix: dict[str, dict[str, dict]] = {}
+    coverage: dict[str, dict[str, int]] = {
+        "tape": {k: 0 for k in STATUSES}, "technical": {k: 0 for k in STATUSES},
+        "fundamental": {k: 0 for k in STATUSES}, "handover": {k: 0 for k in STATUSES},
+    }
+
+    def code_of(decisions: dict, sym: str) -> str:
+        w = (decisions.get(sym) or {}).get("why") or []
+        return w[0].get("code", "") if w else ""
+
+    for r in joined:
+        sym = str(r.get("symbol") or "")
+        t = tech_by.get(sym)
+        f = fund_by.get(sym)
+        h = hand_by.get(sym)
+        step = dropped_first.get(sym)
+        if step is not None:
+            tape_st = {"status": REJECT,
+                       "reason_code": f"TAPE_{step['filter_id'].upper()}_NO_MATCH",
+                       "human_reason": f"{step['label']} — نشانه در این نماد نیست",
+                       "stage_ref": step["source_ref"]}
+        elif sym in survivors:
+            tape_st = {"status": PASS, "reason_code": "TAPE_PASSED",
+                       "human_reason": "همۀ فیلترهایِ زنجیره را خورده شده"}
+        else:
+            tape_st = {"status": UNAVAILABLE, "reason_code": "TAPE_NO_FLAG",
+                       "human_reason": "پرچم این نماد در این نشست ساخته نشده"}
+
+        if tape_st["status"] != PASS:
+            tech_st = {"status": NOT_REQUIRED,
+                       "reason_code": "NOT_REQUIRED_AFTER_TAPE_REJECT",
+                       "human_reason": "تابلو نماد را رد کرده؛ تکنیکال اجرا نمی‌شود"}
+        elif t is None:
+            tech_st = {"status": UNAVAILABLE, "reason_code": "TECH_NO_VERDICT",
+                       "human_reason": "سریِ تکنیکال برای این نماد ساخته نشد"}
+        else:
+            tech_st = {"status": t["status"],
+                       "reason_code": code_of(tech_by, sym) or "TECH_PASSED",
+                       "human_reason": " · ".join(w["text"] for w in (t.get("why") or []))}
+
+        if tech_st["status"] in (REJECT, UNAVAILABLE, NOT_REQUIRED):
+            why_stage = "تابلو" if tape_st["status"] != PASS else "تکنیکال"
+            fund_st = {"status": NOT_REQUIRED,
+                       "reason_code": f"NOT_REQUIRED_AFTER_{'TAPE' if tape_st['status'] != PASS else 'TECHNICAL'}_"
+                                      + ("REJECT" if tech_st["status"] in (REJECT, NOT_REQUIRED) and tape_st["status"] == PASS else "STOP"),
+                       "human_reason": f"{why_stage} نماد را رد کرده؛ بنیادی اجرا نمی‌شود"}
+        elif f is None:
+            fund_st = {"status": UNAVAILABLE, "reason_code": "FUND_NO_CODAL_COVERAGE",
+                       "human_reason": "پوشش کدال این نماد در اسکرینر نیست"}
+        else:
+            fund_st = {"status": f["effective"],
+                       "reason_code": code_of(fund_by, sym) or "FUND_PASSED",
+                       "human_reason": " · ".join(w["text"] for w in (f.get("why") or [])),
+                       "canonical": f["canonical"], "exceptions": f.get("exceptions") or []}
+
+        if h is not None:
+            hand_st = {"status": h["final"],
+                       "reason_code": (h.get("why") or [{}])[0].get("code", "")
+                                      or ("ASSEMBLY_VETO" if h.get("assembly_veto") else "FINAL_PASS"),
+                       "human_reason": " · ".join(w["text"] for w in (h.get("why") or [])),
+                       "display_rank": h.get("display_rank")}
+        else:
+            prior = [tape_st["status"], tech_st["status"], fund_st["status"]]
+            if REJECT in prior:
+                hand_st = {"status": REJECT, "reason_code": "NOT_ELIGIBLE_AFTER_PRIOR_REJECT",
+                           "human_reason": "در گامِ پیشین رد شده"}
+            elif PENDING in prior:
+                hand_st = {"status": PENDING, "reason_code": "WAITING_FOR_DATA",
+                           "human_reason": "در انتظارِ داده/گزارش"}
+            else:
+                hand_st = {"status": UNAVAILABLE, "reason_code": "NO_FINAL_SOURCE",
+                           "human_reason": "منبعی برای حکم نهایی نبود"}
+
+        row = {"tape": tape_st, "technical": tech_st, "fundamental": fund_st, "handover": hand_st}
+        matrix[sym] = row
+        for stage, cell in row.items():
+            coverage[stage][cell["status"]] = coverage[stage].get(cell["status"], 0) + 1
+    return matrix, coverage
+
+
 def _view(joined: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
           chain: tuple[str, ...]) -> dict:
     """ردیف‌هایِ آمادهٔ رندر برایِ هر چهار گام + خطِ زمانِ هر نماد.
@@ -496,14 +603,25 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
 
     # تابلوخوانی رویِ ردیفِ خودِ تابلو؛ ردیفِ اسکرینر به همان نماد می‌چسبد تا
     # مراحلِ بعدی از یک منبعِ واحدِ عدد بخوانند.
-    joined = []
+    # جامع = نماد، نه ردیف. دو ردیفِ هم‌نام درِ تابلو (املایِ دوگانه یا نوشتۀ
+    # تکراری) دو نماد نیستند؛ بی‌این یکی‌کردن، matrix (کلیدش نماد) از coverage
+    # (شمارشِ ردیف) کم می‌شد و جمعِ وضعیت‌ها با جامعۀ واقعی نمی‌خواند.
+    seen: dict[str, dict] = {}
+    dupes = 0
     for r in board_rows:
-        sym = str(r.get("symbol") or "")
-        s = screen_by.get(sym) or {}
+        sym = str(r.get("symbol") or "").strip().replace("ي", "ی").replace("ك", "ک")
+        if not sym:
+            continue
+        if sym in seen:
+            dupes += 1
+            continue
+        scr = screen_by.get(sym) or screen_by.get(str(r.get("symbol") or "")) or {}
         row = dict(r)
-        for k, v in s.items():
+        row["symbol"] = sym
+        for k, v in scr.items():
             row.setdefault(k, v)
-        joined.append(row)
+        seen[sym] = row
+    joined = list(seen.values())
 
     tape = tape_stage(joined, chain, params)
     tech = technical_stage(tape["survivors"])
@@ -514,6 +632,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
                                            if _tri(r.get("assembly_veto")) is True])
 
     view = _view(view_rows, tape, tech, fund, hand, chain)
+    matrix, coverage = status_matrix(joined, tape, tech, fund, hand)
     return {
         "status": "success",
         "engine_version": ENGINE_VERSION,
@@ -523,7 +642,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "chain": list(chain),
         "fund_mode": fund_mode,
         "universe": {"board": len(board_rows), "screened": len(screen_rows),
-                     "joined": len(joined)},
+                     "joined": len(joined), "duplicate_rows": dupes},
         "stages": {
             "tape": {"steps": tape["steps"],
                      "input": len(joined), "matched": len(tape["survivors"]),
@@ -536,6 +655,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "handover": hand["entries"],
         "entries": view["entries"],
         "timeline": view["timeline"],
+        "status_matrix": matrix,
+        "coverage": coverage,
         "trace": {
             "tape_dropped": {k: v for k, v in tape["dropped"].items() if v},
             "technical": tech["decisions"],
