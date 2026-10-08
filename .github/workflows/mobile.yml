@@ -42,9 +42,18 @@ jobs:
         working-directory: frontend
         run: |
           export VITE_BUILD_TAG="uiux-${GITHUB_SHA::7} · run${GITHUB_RUN_NUMBER}"
+          # مهرِ بستۀ داده (built_at از meta.json کنارِ همان gz): گوشی با آن
+          # می‌فهمد نسخۀ کشیدۀ پس‌زمینه از بستۀ همراهِ APK تازه‌تر است یا نه.
+          # بی‌مهر، نسخۀ کهنۀ کشیده‌شده بر APKِ تازه می‌برد (localData.ts).
+          # نبودِ meta.json بیلد را نمی‌شکند: فقط مهر خالی می‌ماند.
+          BASE=https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest
+          STAMP=$(curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" \
+                  | python3 -c 'import json,sys;print(json.load(sys.stdin)["built_at"])' 2>/dev/null || true)
+          export VITE_SNAPSHOT_STAMP="$STAMP"
           VITE_LOCAL_DATA=1 npm run build
-          curl -fL --retry 3             https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz             -o dist/mobile_snapshot.db.gz
+          curl -fL --retry 3 "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz
           test -s dist/mobile_snapshot.db.gz
+          echo "snapshot stamp=${STAMP:-none} bytes=$(stat -c '%s' dist/mobile_snapshot.db.gz)"
 
       - uses: actions/setup-java@v5
         with:

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toFaDigits } from '@shared/lib/fmt';
 
 type BootProgress = {
   phase: 'download' | 'decompress' | 'database';
@@ -11,28 +12,40 @@ type BootProgress = {
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '۰ بایت';
-  if (bytes < 1024) return `${Math.round(bytes)} بایت`;
+  if (bytes < 1024) return `${toFaDigits(Math.round(bytes))} بایت`;
   const mb = bytes / (1024 * 1024);
-  if (mb < 10) return `${mb.toFixed(1)} مگابایت`;
-  return `${mb.toFixed(0)} مگابایت`;
+  return `${toFaDigits(mb < 10 ? mb.toFixed(1) : Math.round(mb))} مگابایت`;
 }
 
 function phaseTitle(progress: BootProgress | null): string {
-  if (!progress) return 'در حال آماده‌سازی داده‌های آفلاین…';
+  if (!progress) return 'آماده‌سازی دادهٔ آفلاین…';
   switch (progress.phase) {
     case 'download':
-      return 'در حال دریافت داده‌های آفلاین…';
+      return 'دریافت دادهٔ آفلاین…';
     case 'decompress':
-      return 'در حال بازگشایی داده‌های آفلاین…';
+      return 'بازگشایی بسته…';
     case 'database':
-      return 'در حال آماده‌سازی پایگاه داده…';
+      return 'ساختن پایگاه داده…';
   }
+}
+
+/** یک خط: حجمِ دریافت‌شده (فقط وقتی منبع آن را اعلام کرده) و زمانِ گذشته.
+ *  بی‌عددِ حجم، زمان تنها شاهدِ زنده ماندنِ مرحله است. */
+function statusLine(progress: BootProgress | null, elapsedS: number): string {
+  const spent = `${toFaDigits(elapsedS)} ثانیه`;
+  if (!progress) return spent;
+  if (progress.phase !== 'download') return spent;
+  if (progress.totalBytes > 0) {
+    return `${formatBytes(progress.loadedBytes)} از ${formatBytes(progress.totalBytes)} · ${spent}`;
+  }
+  return `بدونِ حجمِ اعلامی · ${spent}`;
 }
 
 export function MobileBootstrap({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [progress, setProgress] = useState<BootProgress | null>(null);
+  const [elapsedS, setElapsedS] = useState(0);
 
   useEffect(() => {
     if (import.meta.env.VITE_LOCAL_DATA !== '1') {
@@ -60,36 +73,33 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (status !== 'loading') return;
+    const t0 = Date.now();
+    const id = window.setInterval(() => setElapsedS(Math.round((Date.now() - t0) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [status]);
+
   if (status === 'loading') {
     const percent = progress?.percent ?? progress?.overallPercent ?? null;
-    const downloaded = progress?.loadedBytes ?? 0;
-    const total = progress?.totalBytes ?? 0;
-    const remaining = total > 0 ? Math.max(0, total - downloaded) : 0;
-    const hasDownloadSize = progress?.phase === 'download' && total > 0;
-    const progressWidth = percent === null ? 32 : Math.max(4, Math.min(100, percent));
+    const width = percent === null ? 32 : Math.max(4, Math.min(100, percent));
 
     return (
       <div
         dir="rtl"
-        className="flex h-screen w-screen flex-col items-center justify-center bg-bg-primary text-text-primary p-6 text-center"
+        data-testid="mobile-boot"
+        className="flex h-screen w-screen flex-col items-center justify-center bg-bg-primary p-6 text-center text-text-primary"
       >
-        <div className="mb-5 w-full max-w-sm rounded-2xl border border-bg-secondary bg-bg-primary/70 p-5 shadow-lg">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="text-right">
-              <h2 className="text-base font-bold">{phaseTitle(progress)}</h2>
-              <p className="mt-1 text-xs text-text-muted">
-                {progress?.phase === 'download'
-                  ? 'پیشرفت دریافت بر اساس حجم واقعی بسته محاسبه می‌شود.'
-                  : 'پس از دریافت، داده‌ها بازگشایی و برای استفادهٔ آفلاین آماده می‌شوند.'}
-              </p>
-            </div>
+        <div className="w-full max-w-sm rounded-2xl border border-bg-secondary bg-bg-primary/70 p-5 shadow-lg">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-right text-base font-bold">{phaseTitle(progress)}</h2>
             <div className="shrink-0 text-lg font-bold tabular-nums" aria-live="polite">
-              {percent === null ? '…' : `${percent}٪`}
+              {percent === null ? '…' : `${toFaDigits(percent)}٪`}
             </div>
           </div>
 
           <div
-            className="h-2.5 w-full overflow-hidden rounded-full bg-bg-secondary"
+            className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-bg-secondary"
             role="progressbar"
             aria-label="پیشرفت آماده‌سازی داده‌های آفلاین"
             aria-valuemin={0}
@@ -100,37 +110,11 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
               className={percent === null
                 ? 'h-full w-1/3 rounded-full bg-accent-blue animate-pulse'
                 : 'h-full rounded-full bg-accent-blue transition-[width] duration-200 ease-out'}
-              style={percent === null ? undefined : { width: `${progressWidth}%` }}
+              style={percent === null ? undefined : { width: `${width}%` }}
             />
           </div>
 
-          {hasDownloadSize ? (
-            <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-bg-secondary/60 p-2">
-                <div className="text-text-muted">دریافت‌شده</div>
-                <div className="mt-1 font-bold tabular-nums">{formatBytes(downloaded)}</div>
-              </div>
-              <div className="rounded-lg bg-bg-secondary/60 p-2">
-                <div className="text-text-muted">باقی‌مانده</div>
-                <div className="mt-1 font-bold tabular-nums">{formatBytes(remaining)}</div>
-              </div>
-              <div className="col-span-2 text-text-muted">
-                {formatBytes(total)} حجم کل بسته
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 text-xs text-text-muted">
-              {progress?.phase === 'download'
-                ? 'در حال دریافت بسته… حجم نهایی هنوز از پاسخ منبع مشخص نشده است.'
-                : progress?.phase === 'decompress'
-                  ? 'دریافت کامل شد؛ بازگشایی بسته در حال انجام است.'
-                  : 'دیتابیس در حال ساخته‌شدن و آماده‌سازی است.'}
-            </div>
-          )}
-        </div>
-
-        <div className="text-[11px] text-text-muted">
-          لطفاً برنامه را نبندید؛ این مرحله بیشتر در اولین اجرا یا پس از پاک‌شدن داده‌های محلی طول می‌کشد.
+          <p className="mt-3 text-xs tabular-nums text-text-muted">{statusLine(progress, elapsedS)}</p>
         </div>
       </div>
     );

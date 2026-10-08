@@ -17,6 +17,13 @@ const SNAPSHOT_URL =
   (import.meta.env.VITE_SNAPSHOT_URL as string | undefined) ?? '/mobile_snapshot.db.gz';
 const CACHE_NAME = 'bors-mobile-snapshot-v1';
 
+// بستۀ همراهِ APK تا چه تاریخِ پختی است. CI آن را از meta.json کنارِ همان gz
+// می‌خواند و به vite می‌دهد؛ بی‌این مهر، کشِ دورِ پیش (دادۀ APKِ کهنه) در اولین
+// اجرای نصبِ تازه بر بستۀ جدیدِ همراهِ برنامه می‌برد و گوشی دادهٔ کهنه نشان
+// می‌داد. نبودش (بیلد محلی) = رفتارِ قبلی: هرچه درِ کش بود خوانده می‌شود.
+const BUNDLE_STAMP = (import.meta.env.VITE_SNAPSHOT_STAMP as string | undefined) ?? '';
+const STAMP_KEY = 'bors_snapshot_cached_stamp';
+
 export type BootProgressPhase = 'download' | 'decompress' | 'database';
 
 export type BootProgress = {
@@ -159,12 +166,11 @@ async function maybeRefreshSnapshot(): Promise<void> {
     const localBuilt = (await metaValue('built_at')) ?? '';
     if (remoteBuilt <= localBuilt) return; // همین دادهٔ فعلی یا قدیمی‌تر
     const buf = await nativeGetBytes(REMOTE_GZ_URL);
-    if (!buf) return;
-    // sanity: gz معتبر و به‌قدر کافی بزرگ باشد (صفحهٔ خطای HTML جایگزین نشود)
-    const head = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
-    if (buf.byteLength < 1_000_000 || head[0] !== 0x1f || head[1] !== 0x8b) return;
+    if (!isGz(buf)) return;
     const cache = await caches.open(CACHE_NAME);
     await cache.put(SNAPSHOT_URL, new Response(buf));
+    // مهرِ همین بسته: اجرایِ بعدی با دیدنِ آن می‌فهمد کش از APK تازه‌تر است
+    localStorage.setItem(STAMP_KEY, remoteBuilt);
   } catch { /* آفلاین/Cache API غایب — دفعهٔ بعد دوباره تلاش می‌شود */ }
 }
 
@@ -173,12 +179,36 @@ export const __isMeteredForTest = (): boolean => isMeteredConnection();
 
 export const __fetchSnapshotForTest = (): Promise<ArrayBuffer> => fetchSnapshot();
 
+/** کشِ بسته را با مهرِ آن پاک می‌کند — همان‌جا که بستۀ خودِ برنامه مرجع است. */
+async function dropCachedSnapshot(cache: Cache | null): Promise<void> {
+  try { await cache?.delete(SNAPSHOT_URL); } catch { /* کش نبود */ }
+  try { localStorage.removeItem(STAMP_KEY); } catch { /* مهم نیست */ }
+}
+
+/** وارسیِ gz. کفِ حجم برایِ مسیرهایِ شبکه است (صفحهٔ خطایِ HTML جایِ
+ *  دیتابیس را نگیرد)؛ برایِ بستۀ خودِ برنامه همین دو بایتِ اول کافی است —
+ *  سرورِ محلی می‌تواند مسیرِ ناشناخته را با ۲۰۰ و index.html جواب بدهد. */
+function isGz(buf: ArrayBuffer | null, minBytes = 1_000_000): buf is ArrayBuffer {
+  if (!buf || buf.byteLength < minBytes) return false;
+  const h = new Uint8Array(buf, 0, 2);
+  return h[0] === 0x1f && h[1] === 0x8b;
+}
+
 async function fetchSnapshot(): Promise<ArrayBuffer> {
-  // Cache API: دانلود ~۱۵MB فقط یک‌بار در عمر نصب؛ تازه‌سازی = پاک کردن کش
-  // (دکمهٔ «بروزرسانی داده» بعداً همین کش را حذف و دوباره دانلود می‌کند).
+  // ترتیب: ۱) نسخۀ کشیده‌شده در پس‌زمینه، اگر از بستۀ خودِ APK تازه‌تر باشد
+  //        ۲) بستۀ همراهِ APK (مسیر عادی — بی‌نیاز به شبکه)
+  //        ۳) همان بسته از ریلیزِ mobile-latest (نصبِ ناقص / بیلدِ بی‌بسته)
   let cache: Cache | null = null;
   try {
     cache = await caches.open(CACHE_NAME);
+  } catch {
+    cache = null; // Cache API در برخی WebViewها نیست
+  }
+
+  const cachedStamp = (() => {
+    try { return localStorage.getItem(STAMP_KEY) ?? ''; } catch { return ''; }
+  })();
+  if (cache && cachedStamp && (!BUNDLE_STAMP || cachedStamp > BUNDLE_STAMP)) {
     const hit = await cache.match(SNAPSHOT_URL);
     if (hit) {
       bootTiming.source = 'cache';
@@ -186,10 +216,13 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
       emitDownloadProgress('cache', buf.byteLength, buf.byteLength);
       return buf;
     }
-  } catch {
-    cache = null; // Cache API در برخی WebViewها نیست — مستقیم دانلود کن
+    // مهر هست و بسته نیست (کشِ دورِ پیش پاک شده) — مهر را هم بردار
+    await dropCachedSnapshot(cache);
   }
-  // ۱) بستهٔ همراهِ APK (مسیر عادی — بی‌نیاز به شبکه)
+
+  // ۲) بستۀ همراهِ APK. دیگر درِ Cache API ذخیره نمی‌شود: رویِ گوشی هست،
+  // خواندنش از asset بی‌شبکه است، و یک‌برگِ ۱۵ مگابایتیِ اضافه فقط حافظه
+  // وِ گوشی را می‌گیرد و بعداً دادهٔ کهنه می‌شود.
   let local: Response | null = null;
   let localWhy = '';
   try {
@@ -199,34 +232,33 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
     localWhy = e instanceof Error ? e.message : String(e);
   }
 
-  // ۲) پشتیبان: همان بسته از ریلیزِ mobile-latest.
-  //
-  // چرا لازم شد: تا پیش از این اگر فایلِ درونِ APK به هر دلیلی باز نمی‌شد —
-  // بیلدی که بسته در آن جا نیفتاده، نصبِ ناقص، یا WebViewای که فایلِ ۲۲
-  // مگابایتی را از سرورِ مجازیِ خودش نمی‌دهد — اپ کاملاً می‌مرد: یک نوارِ
-  // قرمز و همهٔ کارت‌ها «بدون داده». در حالی که همان بسته روی ریلیز هست و
-  // کدِ دانلودش (nativeGetBytes) هم از قبل برای بروزرسانیِ روزانه نوشته
-  // شده بود؛ فقط به‌عنوانِ راهِ دومِ بارگذاریِ اول وصل نبود.
-  if (!local) {
+  if (local) {
+    const buf = await responseArrayBufferWithProgress(local, 'bundle');
+    if (isGz(buf, 2)) {
+      bootTiming.source = 'bundle';
+      // اگر دورِ پیش چیزی کش شده بود، حالا خودِ برنامه مرجع است و برگۀ
+      // کهنه‌اش باید برود — هم ۱۵ مگابایتِ حافظه آزاد می‌شود هم دادهٔ کهنه.
+      if (cache && cachedStamp) await dropCachedSnapshot(cache);
+      return buf;
+    }
+    localWhy = 'بستۀ همراهِ برنامه gz نبود';
+  }
+
+  // ۳) پشتیبان: همان بسته از ریلیز. اول fetchِ معمولی — پاسخِ streaming
+  // درصدِ واقعیِ بایت را می‌دهد؛ اگر WebView به دیوارِ CORS خورد درگاهِ بومی
+  // می‌آید و آن‌جا یکجا است، پس درصد نمی‌سازیم و indeterminate می‌ماند.
+  let buf: ArrayBuffer | null = null;
+  try {
+    const r = await fetch(REMOTE_GZ_URL);
+    if (r.ok) buf = await responseArrayBufferWithProgress(r, 'release');
+  } catch { /* CORS/شبکه — درگاهِ بومی */ }
+  if (!isGz(buf)) {
+    emitDownloadProgress('release', 0, 0);
     try {
-      // CapacitorHttp در این مسیر پاسخ باینری را یکجا برمی‌گرداند؛ تا قبل از
-      // برگشت پاسخ درصد قابل‌اتکایی نداریم، بنابراین indeterminate می‌ماند.
-      emitDownloadProgress('release', 0, 0);
-      const buf = await nativeGetBytes(REMOTE_GZ_URL);
-      // همان وارسیِ بروزرسانیِ روزانه: gz معتبر و به‌قدرِ کافی بزرگ، تا
-      // صفحهٔ خطایِ HTML به‌جایِ دیتابیس ذخیره نشود.
-      if (buf && buf.byteLength >= 1_000_000) {
-        const h = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
-        if (h[0] === 0x1f && h[1] === 0x8b) {
-          if (cache) {
-            try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
-          }
-          bootTiming.source = 'release';
-          emitDownloadProgress('release', buf.byteLength, buf.byteLength);
-          return buf;
-        }
-      }
+      buf = await nativeGetBytes(REMOTE_GZ_URL);
     } catch { /* شبکه هم نبود — پیامِ زیر را می‌دهیم */ }
+  }
+  if (!isGz(buf)) {
     throw new HttpError(
       0,
       SNAPSHOT_URL,
@@ -234,16 +266,14 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
       + 'یک‌بار با اینترنتِ متصل باز کنید تا بسته دانلود شود.',
     );
   }
-
   if (cache) {
-    try {
-      await cache.put(SNAPSHOT_URL, local.clone());
-    } catch {
-      /* جای کافی نبود — فقط از همین پاسخ استفاده کن */
-    }
+    // کپی برایِ کش: `buf` بعد از این هنوز مصرف می‌شود (بازگشایی و دیتابیس)،
+    // پس نباید وابستهٔ مالکیتِ پاسخ بماند.
+    try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
   }
-  bootTiming.source = 'bundle';
-  return responseArrayBufferWithProgress(local, 'bundle');
+  bootTiming.source = 'release';
+  emitDownloadProgress('release', buf.byteLength, buf.byteLength);
+  return buf;
 }
 
 async function gunzip(buf: ArrayBuffer): Promise<Uint8Array> {
@@ -348,6 +378,14 @@ export function getDb(): Promise<Database> {
     bootTiming.openMs = Math.round(t3 - t2);
     bootTiming.totalMs = Math.round(t3 - t0);
     Object.assign(window, { bootTiming });
+    // اگر بسته از ریلیز آمد و درِ کش نشست، مهرش را از خودِ دیتابیس خواندن:
+    // اجرایِ بعدی باید بداند کش از بستۀ همراهِ APK تازه‌تر است.
+    if (bootTiming.source === 'release') {
+      const built = db.exec("SELECT value FROM meta WHERE key='built_at'")[0]?.values?.[0]?.[0];
+      if (typeof built === 'string' && built) {
+        try { localStorage.setItem(STAMP_KEY, built); } catch { /* مهم نیست */ }
+      }
+    }
     // چکِ بروزرسانی در پس‌زمینه — نه await می‌شود نه خطایش به UI می‌رسد
     setTimeout(() => { void maybeRefreshSnapshot(); }, 15000);
     return db;

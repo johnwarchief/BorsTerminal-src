@@ -55,6 +55,20 @@ export async function nativeGetText(
   return res.text();
 }
 
+/** base64 → بایت. حلقۀ بایت‌به‌بایت رویِ بستۀ چندده‌مگابایتیِ داده رویِ گوشی
+ *  دقیقه‌ها می‌برد و WebView را از حافظه می‌اندازد؛ data: URL درِ خودِ موتور
+ *  رمزگشایی می‌شود. مسیرِ دستی فقط درازگشت است، نه راهِ عادی. */
+async function base64ToBytes(b64: string): Promise<ArrayBuffer> {
+  try {
+    const r = await fetch(`data:application/octet-stream;base64,${b64}`);
+    if (r.ok) return await r.arrayBuffer();
+  } catch { /* موتورِ قدیمی data: را از fetch رد می‌کند */ }
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
 /** GET باینری (بستهٔ دادهٔ GitHub)؛ null اگر شبکه/وضعیت غیر ۲xx */
 export async function nativeGetBytes(url: string): Promise<ArrayBuffer | null> {
   if (isNative()) {
@@ -62,10 +76,7 @@ export async function nativeGetBytes(url: string): Promise<ArrayBuffer | null> {
                                           connectTimeout: 15000, readTimeout: 120000 });
     if (res.status < 200 || res.status >= 300 || typeof res.data !== 'string') return null;
     // پل بومی باینری را base64 می‌دهد
-    const bin = atob(res.data);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes.buffer;
+    return base64ToBytes(res.data);
   }
   const res = await fetch(url);
   if (!res.ok) return null;

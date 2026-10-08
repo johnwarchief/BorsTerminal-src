@@ -41,19 +41,21 @@ try:
 except (AttributeError, ValueError, OSError):
     pass
 
-# جدول‌های خامی که خود گوشی لازم دارد (چارت آفلاین + fallback تابلو).
-# جدول‌های کدال خام (financial_statements/monthly_sales/codal_notices) عمداً
-# کپی نمی‌شوند: خروجی پخته‌شان در baked هست و حذفشان اسنپ‌شات را سبک می‌کند.
+# جدول‌های خامی که خود گوشی واقعاً می‌خواند. تنها دو کوئری روی جدول‌های خام
+# درِ موبایل هست (resolvers.ts و selectionLocal.ts): کندل از price_history و
+# نماد/جست‌وجو از instruments. بقیهٔ جدول‌ها — از جمله mstat_snap که یک‌تنه
+# بزرگ‌ترین جزءِ بسته بود — هیچ‌جا خوانده نمی‌شوند: تابلو، نبض بازار و اسکرینر
+# از بسته‌هایِ پختۀ baked می‌آیند و دادهٔ زنده را خودِ گوشی از TSETMC می‌گیرد.
+# با ۴۳۳٬۹۲۲ ردیفِ تاریخچه، این فهرست حجمِ دانلود و حافظهٔ WebView را تعیین
+# می‌کند، پس افزودنِ جدولِ «شاید لازمش داشته باشیم» اینجا ممنوع است.
 RAW_TABLES = (
     "instruments",
-    "market_watch",
     "price_history",
-    "boards",
-    "market_index",
-    "market_totals",
-    "market_liquidity",
-    "mstat_snap",
 )
+
+# price_history ستون‌به‌ستون برداشته می‌شود: value و src درِ هیچ کوئریِ
+# موبایلی نیستند و رویِ همان ۴۳۳٬۹۲۲ ردیف مگابایتِ خامِ بی‌مصرف‌اند.
+PH_COLUMNS = ("symbol", "date", "open", "high", "low", "close", "volume", "last")
 
 # اندپوینت‌های سراسری (یک‌بار پخت). نام کلید ↔ مسیر.
 GLOBAL_ENDPOINTS = {
@@ -185,7 +187,16 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
         if t not in src_tables:
             print(f"  [skip] جدول {t} در market.db نیست")
             continue
-        dst.execute(f'CREATE TABLE "{t}" AS SELECT * FROM src."{t}"')
+        have = [r[1] for r in dst.execute(f'PRAGMA src.table_info("{t}")')]
+        if t == "price_history":
+            take = [c for c in PH_COLUMNS if c in have]
+            gone = [c for c in PH_COLUMNS if c not in have]
+            if gone:
+                print(f"  [note] price_history این ستون‌ها را ندارد: {gone}")
+        else:
+            take = have
+        sel = ", ".join(f'"{c}"' for c in take)
+        dst.execute(f'CREATE TABLE "{t}" AS SELECT {sel} FROM src."{t}"')
     dst.commit()
     try:
         dst.execute("DETACH DATABASE src")
