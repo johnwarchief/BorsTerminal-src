@@ -53,7 +53,12 @@ jobs:
           VITE_LOCAL_DATA=1 npm run build
           curl -fL --retry 3 "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz
           test -s dist/mobile_snapshot.db.gz
-          echo "snapshot stamp=${STAMP:-none} bytes=$(stat -c '%s' dist/mobile_snapshot.db.gz)"
+          SNAP_BYTES=$(stat -c '%s' dist/mobile_snapshot.db.gz)
+          echo "snapshot stamp=${STAMP:-none} bytes=$SNAP_BYTES"
+          # قدمِ بسته درِ متنِ ریلیز هم نوشته می‌شود: «کدام دادۀ داخلِ APK است»
+          # بی‌این عدد درِ ریلیز قابلِ استناد نیست.
+          echo "SNAP_STAMP=${STAMP:-none}" >> "$GITHUB_ENV"
+          echo "SNAP_BYTES=$SNAP_BYTES" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v5
         with:
@@ -102,6 +107,6 @@ jobs:
           base_main_commit: $BASE
           build: frontend tsc + vitest سبز، سپس vite build (VITE_LOCAL_DATA=1) و gradlew assembleDebug
           artifact: app-debug.apk · $SIZE بایت · sha256 $SUM
-          snapshot داده: از mobile-latest reuse شده (تازگی و بازپخت درِ docs/MASTER-EXECUTION-ROADMAP.md §15 ثبت می‌شود)
+          snapshot داده: mobile-latest · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} (تازگی و بازپخت درِ docs/MASTER-EXECUTION-ROADMAP.md §15 ثبت می‌شود)
           وضعیتِ آیتم‌ها و شاهد هر کدام: docs/MASTER-EXECUTION-ROADMAP.md §15"
           gh release upload "$TAG" "$APK#bors-terminal-mobile.apk" --clobber
