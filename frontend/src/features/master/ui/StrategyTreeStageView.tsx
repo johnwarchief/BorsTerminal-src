@@ -98,7 +98,7 @@ export default function StrategyTreeStageView({ zone }: { zone: FtsZone }) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-black text-text-primary">نماد فعال: {candidate.symbol}</span>
               <span className="text-2xs text-accent-blue font-bold">
-                {zone === 'T' ? `W: ${candidate.trendW || '—'} · D: ${candidate.trendD || '—'} · ${candidate.dailyStrategy || '—'}` : 'وضعیت این صفحه از قیف زنده خوانده می‌شود'}
+                {zone === 'T' ? `W: ${candidate.trendW || '—'} · D: ${candidate.trendD || '—'} · ${candidate.dailyStrategy || '—'}` : 'وضعیت این صفحه از غربالگری زنده خوانده می‌شود'}
               </span>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function StrategyTreeStageView({ zone }: { zone: FtsZone }) {
 
       <div className="flex items-center justify-between gap-2">
         {prev ? <Link to={treeStagePath(prev, preset, symbol || null)} className="rounded-xl border border-border-c bg-bg-card px-3 py-2 text-2xs font-bold text-text-secondary hover:border-accent-blue/50 hover:text-accent-blue">← صفحه قبل</Link> : <span />}
-        {next ? <Link to={treeStagePath(next, preset, symbol || null)} className="rounded-xl border border-accent-blue/40 bg-accent-blue/10 px-3 py-2 text-2xs font-black text-accent-blue hover:bg-accent-blue/15">صفحه بعد →</Link> : <Link to="/master" className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-2xs font-black text-emerald-400">رفتن به قیف FTS</Link>}
+        {next ? <Link to={treeStagePath(next, preset, symbol || null)} className="rounded-xl border border-accent-blue/40 bg-accent-blue/10 px-3 py-2 text-2xs font-black text-accent-blue hover:bg-accent-blue/15">صفحه بعد →</Link> : <Link to="/master" className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-2xs font-black text-emerald-400">رفتن به غربالگری FTS</Link>}
       </div>
     </div>
   );

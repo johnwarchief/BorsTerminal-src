@@ -39,7 +39,7 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'فرماندهی FTS',
+    title: 'غربالگری FTS',
     items: [
       { to: '/master', icon: MasterIcon, label: 'استراتژی FTS', end: false },
       { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },

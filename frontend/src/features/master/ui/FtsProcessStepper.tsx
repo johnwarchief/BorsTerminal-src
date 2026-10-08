@@ -31,7 +31,7 @@ export function FtsProcessStepper({
   symbol?: string | null;
 }) {
   return (
-    <nav aria-label="مراحل قیف FTS" data-testid="fts-process-stepper" className="w-full">
+    <nav aria-label="مراحل غربالگری FTS" data-testid="fts-process-stepper" className="w-full">
       <div className="flex items-center gap-1">
         {FUNNEL_STAGES.map((stage) => {
           const isActive = stage.key === active;

@@ -220,7 +220,7 @@ export function buildDossier(
         icon: STATUS_ICON[k === 'technical' && gated ? 'reject' : 'unavailable'],
         why: k === 'technical'
           ? (flow.reason ?? status?.text ?? 'رأیِ زندهٔ موتور خوانده شد؛ دلیلِ در ثبت نشده')
-          : 'در جامعۀ قیف نیست — سنجیده نشد، وتو نیست',
+          : 'در جامعۀ غربالگری نیست — سنجیده نشد، وتو نیست',
       })),
       flow,
       technical: tech,

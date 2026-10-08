@@ -37,13 +37,13 @@ export const DEFAULT_UNMEASURED: UnmeasuredPolicy = 'hold';
 export const UNMEASURED_LABEL: Record<UnmeasuredPolicy, string> = {
   hold: 'در انتظارِ گزارش',
   pass: 'عبور با برچسب',
-  drop: 'حذف از قیف',
+  drop: 'حذف از غربالگری',
 };
 
 export const UNMEASURED_HINT: Record<UnmeasuredPolicy, string> = {
   hold: 'نه رد می‌شوند نه تحویل؛ در گروهِ «سنجیده نشد» زیرِ همان مرحله می‌مانند — قانونِ جزوه.',
   pass: 'با برچسبِ «سنجیده نشد» به تحویل می‌روند؛ خودتان می‌دانید که بنیادشان خوانده نشده.',
-  drop: 'از قیف بیرون می‌افتند تا فهرستِ تحویل فقط سنجیده‌ها را نشان دهد.',
+  drop: 'از غربالگری بیرون می‌افتند تا فهرستِ تحویل فقط سنجیده‌ها را نشان دهد.',
 };
 
 /** پیش‌فرض: تکنیکال غربال می‌کند، ولی فقط وتوی صریحِ روند هفتگی درِ حذف است. */
@@ -52,7 +52,7 @@ export const DEFAULT_TECH_SCREENS = true;
 export const TECH_SCREEN_LABEL = { on: 'رد می‌کند', off: 'خودم چک می‌کنم' } as const;
 
 export const TECH_SCREEN_HINT = {
-  on: 'وتوی هفتگیِ نزولی/خنثی نماد را از قیف بیرون می‌اندازد؛ Jet/Fib/CHoCH و سایر ستاپ‌ها فقط امتیاز کمکی‌اند.',
+  on: 'وتوی هفتگیِ نزولی/خنثی نماد را از غربالگری بیرون می‌اندازد؛ Jet/Fib/CHoCH و سایر ستاپ‌ها فقط امتیاز کمکی‌اند.',
   off: 'وتوی هفتگی فقط برچسب می‌خورد و به بنیادی می‌رسد؛ ستاپ‌ها در هیچ حالتی گیت حذف نیستند.',
 } as const;
 

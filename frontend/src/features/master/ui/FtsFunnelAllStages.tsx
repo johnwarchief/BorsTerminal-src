@@ -71,7 +71,7 @@ function fundRule(o: FunnelOptions): string {
       ? 'و بی‌گزارش در صفِ خودش می‌ماند'
       : o.unmeasured === 'pass'
         ? 'و بی‌گزارش با برچسبِ «سنجیده نشد» عبور می‌کند'
-        : 'و بی‌گزارش از قیف حذف می‌شود';
+        : 'و بی‌گزارش از غربالگری حذف می‌شود';
   return `پنج شاخصِ کدال: ${toFaDigits(o.fundFloor)} از ${toFaDigits(FUND_FLOOR_MAX)} به بالا به تحویل می‌رود، ردِ صریح می‌افتد ${un}.`;
 }
 
@@ -178,7 +178,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   score: { label: 'بنیادی', title: 'جمع پنج شاخص', end: true },
   // حکمِ بی‌دلیل نگه ندارید: همین «دلیل» را پیشِ این فقط `title`ِ ردیف می‌داد و
   // برای دیدنش باید نشانگر را نگه می‌داشتید (رویِ لمسی اصلاً دیده نمی‌شد).
-  why: { label: 'دلیل', title: 'دلیلِ همین حکم — همان متنی که موتورِ قیف ساخته' },
+  why: { label: 'دلیل', title: 'دلیلِ همین حکم — همان متنی که موتورِ غربالگری ساخته' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
 };
 
@@ -429,7 +429,7 @@ function StageCard({
           <span
             data-testid={`funnel-rejected-${stage.key}`}
             className="num rounded-full bg-accent-red/10 px-2 py-0.5 text-2xs font-bold text-accent-red"
-            title="رد خورده ولی از قیف بیرون نیفتاده — «خودم چک می‌کنم» روشن است"
+            title="رد خورده ولی از غربالگری بیرون نیفتاده — «خودم چک می‌کنم» روشن است"
           >
             {toFaDigits(stage.rejected)} رد (بی‌حذف)
           </span>
@@ -657,7 +657,7 @@ function TapeStagePrefs({ picked }: { picked: number }) {
       data-testid="funnel-tape-prefs"
       className="flex flex-wrap items-center gap-1"
       role="group"
-      aria-label="فیلترهای ورودی قیف"
+      aria-label="فیلترهای ورودی غربالگری"
     >
       {QUICK_FILTERS.map((f: QuickFilter) => {
         const on = quickFilters.includes(f);
@@ -668,7 +668,7 @@ function TapeStagePrefs({ picked }: { picked: number }) {
             data-testid={`funnel-tape-chip-${f}`}
             aria-pressed={on}
             onClick={() => toggle(f)}
-            title={on ? 'روشن — این فیلتر ورودیِ قیف را می‌سازد' : 'خاموش — با این فیلتر نمادها کمتر می‌شوند'}
+            title={on ? 'روشن — این فیلتر ورودیِ غربالگری را می‌سازد' : 'خاموش — با این فیلتر نمادها کمتر می‌شوند'}
             className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
               on
                 ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
@@ -920,7 +920,7 @@ export function FtsFunnelStages({
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-sm font-black text-text-primary">قیفِ غربالگری FTS</h2>
+        <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
         {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
             جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label="حالتِ کشفِ نماد" data-testid="funnel-mode-picker">
@@ -1041,7 +1041,7 @@ export function FtsFunnelStages({
           ))}
         </div>
         <span className="ms-auto text-3xs text-text-muted">
-          ورودیِ قیف: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
+          ورودیِ غربالگری: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
           از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
         </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،

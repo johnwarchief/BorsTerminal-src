@@ -38,7 +38,7 @@ export const mainRoutes: RouteObject[] = [
         <h1 className="text-lg font-black text-text-primary">این نشانی در اپ ثبت نشده است</h1>
         <p className="text-2xs text-text-muted" data-testid="route-not-found-path">{window.location.hash}</p>
         <Link to="/master" className="rounded-xl border border-accent-blue/50 px-3 py-1.5 text-2xs font-bold text-accent-blue">
-          رفتن به قیف FTS
+          رفتن به غربالگری FTS
         </Link>
       </div>
     ),

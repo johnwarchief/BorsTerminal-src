@@ -326,7 +326,7 @@ export default function MasterPage() {
         <Link to="/strategy-tree" className="hover:text-accent-blue">استراتژی FTS</Link>
         <span aria-hidden>/</span>
         <Link to="/master" onClick={(e) => { e.preventDefault(); goBackToFunnel(); }} className="hover:text-accent-blue">
-          قیف غربالگری
+          غربالگری FTS
         </Link>
         <span aria-hidden>/</span>
         <span className="font-bold text-text-primary">{symbol}</span>
@@ -348,7 +348,7 @@ export default function MasterPage() {
             onClick={goBackToFunnel}
             className="rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
           >
-            قیفِ غربالگری
+            غربالگری FTS
           </button>
           <span className="text-2xs uppercase tracking-widest text-text-muted">
             {activeCount > 0 ? `${toFaDigits(activeCount)} سیگنال فعال در رای گیری` : 'بدون سیگنال فعال'}

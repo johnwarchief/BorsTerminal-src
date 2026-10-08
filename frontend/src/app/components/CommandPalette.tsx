@@ -130,7 +130,7 @@ export function CommandPalette() {
       {
         kind: 'command',
         id: 'cmd-funnel',
-        label: 'باز کردن قیفِ غربالگری',
+        label: 'باز کردن غربالگری FTS',
         hint: 'دستور',
         run: () => {
           clearSymbol();

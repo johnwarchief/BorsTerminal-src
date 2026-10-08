@@ -392,7 +392,7 @@ export function SymbolInspector() {
                 ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
                 : stageIdx < INSPECTOR_STAGES.length - 1
                   ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
-                  : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ قیف`}
+                  : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ غربالگری`}
             </span>
           </nav>
         ) : null}

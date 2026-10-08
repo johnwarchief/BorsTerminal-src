@@ -52,10 +52,10 @@ describe('نشانگر مرحله در سایدبار چپ', () => {
     expect(strip.textContent).toContain('مرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکال');
   });
 
-  it('در پایۀ قیف پیامِ «پایِ قیف» می‌آید و هر سه مرحلۀ قبل گذشته‌اند', () => {
+  it('در پایۀ غربالگری پیامِ «پایِ غربالگری» می‌آید و هر سه مرحلۀ قبل گذشته‌اند', () => {
     renderAt('/master/شپنا');
     expect(screen.getByTestId('inspector-stage-handover')).toHaveAttribute('aria-current', 'step');
-    expect(screen.getByTestId('inspector-stage-next').textContent).toContain('پایِ قیف');
+    expect(screen.getByTestId('inspector-stage-next').textContent).toContain('پایِ غربالگری');
   });
 
   it('در تب بیرونِ قیف نشانگر مرحله نمی‌آید (چیزی را حدس نمی‌زند)', () => {
