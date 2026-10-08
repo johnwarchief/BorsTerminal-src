@@ -43,7 +43,10 @@ export default function WatchlistStar({
           toggle.mutate({ symbol, name, remove: inList });
         }
       }}
-      className={`-m-1 shrink-0 cursor-pointer px-1 text-sm leading-none ${inList ? 'text-accent-amber' : 'text-text-muted hover:text-accent-amber'} ${className}`}
+      // همان قاعدۀ جعبۀ انتخاب (رأیِ مالک ۱۴۰۵-۰۷-۱۷): با hoverِ ردیف یا focus
+      // ظاهر می‌شود، و وقتی نماد عضو واچ‌لیست است همیشه دیده می‌شود — ستاره
+      // همان‌جا نشانۀ «ماندگار بودن» است، پنهانش یعنی اطلاعاتِ دیدنی حذف شده.
+      className={`-m-1 shrink-0 cursor-pointer px-1 text-sm leading-none transition-opacity duration-150 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[in-list=1]:opacity-100 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${inList ? 'text-accent-amber' : 'text-text-muted hover:text-accent-amber'} ${className}`}
     >
       {inList ? '★' : '☆'}
     </button>

@@ -48,7 +48,11 @@ export default function SymbolSelectBox({
       onKeyDown={(e) => {
         if (e.key === ' ' || e.key === 'Enter') act(e);
       }}
-      className={`-m-1 grid shrink-0 cursor-pointer place-items-center rounded-full p-1 ${className}`}
+      // رأیِ مالک ۱۴۰۵-۰۷-۱۷: جدول تمیز بماند — جعبه فقط با hoverِ **ردیف**
+      // (§29ِ مأموریت: اندروید hover ندارد ⇒ با `hover:none` همیشه دیده می‌شود)
+      // یا با focus صفحه‌کلید؛ و وقتی روشن است پنهان نمی‌شود، وگرنه «کدام را
+      // انتخاب کردم؟» دوباره بی‌جواب می‌ماند.
+      className={`-m-1 grid shrink-0 cursor-pointer place-items-center rounded-full p-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 aria-[checked=true]:opacity-100 [@media(hover:none)]:opacity-100 motion-reduce:transition-none ${className}`}
     >
       <span
         aria-hidden

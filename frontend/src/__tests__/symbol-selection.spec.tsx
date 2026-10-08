@@ -129,6 +129,31 @@ describe('جعبه درِ ردیفِ تابلو', () => {
   });
 });
 
+// رأیِ مالک ۱۴۰۵-۰۷-۱۷: «مربعِ کوچک یا ستاره فقط اگر موس رویِ همان ردیف رفت نشان
+// داده بشه.» jsdom توانِ :hover ندارد، پس این پروند *قراردادِ* کلاس را می‌پاید (که
+// ویرایشِ بعدی آن را نیاندازد) و رفتارِ دیدنی را _audit/ws7e_hover_reveal.mts رویِ
+// مرورگرِ واقعی می‌سنجد.
+describe('پنهان تا hoverِ ردیف', () => {
+  it('ردیف حملۀ group دارد و نشانگرها با opacity-0 شروع می‌شوند', () => {
+    render(<TapeRow row={marketRow()} selected={false} onSelect={vi.fn()} />);
+    expect(screen.getByTestId('tape-row').className).toContain('group');
+    for (const id of ['select-box-فولاد', 'watch-star-فولاد']) {
+      const cls = String(screen.getByTestId(id).className);
+      expect(cls).toContain('opacity-0');
+      expect(cls).toContain('group-hover:opacity-100');
+      expect(cls).toContain('focus-visible:opacity-100');
+      expect(cls).toContain('[@media(hover:none)]:opacity-100');   // اندروید hover ندارد
+      expect(cls).toContain('motion-reduce:transition-none');
+    }
+  });
+
+  it('ستارۀ عضوِ واچ‌لیست همیشه دیده می‌شود (حذفِ اطلاعاتِ دیدنی ممنوع)', () => {
+    render(<TapeRow row={marketRow()} selected={false} onSelect={vi.fn()} />);
+    expect(String(screen.getByTestId('watch-star-فولاد').className))
+      .toContain('data-[in-list=1]:opacity-100');
+  });
+});
+
 describe('جعبه درِ جدول بنیادی', () => {
   it('همان store را می‌زند — انتخابِ بنیادی درِ تابلو هم دیده می‌شود', () => {
     const onSelect = vi.fn();

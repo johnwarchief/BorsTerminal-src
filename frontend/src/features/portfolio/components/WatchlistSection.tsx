@@ -107,7 +107,7 @@ export default function WatchlistSection() {
                 const f = r.feed;
                 const live = f ? (f.is_live === false ? 'آخرینِ نشست' : 'زنده') : 'بی‌ردیفِ تابلو';
                 return (
-                  <tr key={r.norm || r.symbol} className="border-b border-border-c/40 last:border-0">
+                  <tr key={r.norm || r.symbol} className="group border-b border-border-c/40 last:border-0">
                     <td className="px-2 py-1 text-start">
                       <span className="flex items-center gap-1.5">
                         <WatchlistStar symbol={r.symbol} name={r.name} />
