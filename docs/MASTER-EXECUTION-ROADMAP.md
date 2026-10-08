@@ -2185,6 +2185,28 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `IMPLEMENTING` | The doc lists stage K as the remaining broker-independent work |
 | S-4 | Real-broker stages E/F/G-real/I-live/L | `BLOCKED-OWNER` | D8 (which Mofid platform: EasyTrader/MTS vs Online-Plus/Titan — two protocols, two adapters) and D1 (is a real-account PoC allowed) per §۹-ث. No endpoint, no credential, no order has ever been called |
 
+## 15.10 FTS Funnel → Decision Workspace (owner mission 2026-10-08, audit stage)
+
+The owner's new mission makes the funnel the top priority: **Sarkhati S-3 is paused**
+(`api/execution.py` stays uncommitted WIP in this worktree), no Auto-Fibonacci or other
+FTS chart feature starts before this milestone is `ACCEPTED`.
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| F-1 | Canonical filter registry read out of the sources | `ACCEPTED` | 7 TXT filters documented with verbatim thresholds in `docs/fts-notes/FUNNEL-WORKSPACE-AUDIT-1405-07-16.md` §۱; `f_smart`/`f_legal` exist in `tape_flags.py:351-352` but are outside `FILE_FILTERS` (`ftsFunnel.ts:44`) — the funnel registry does not cover the sources |
+| F-2 | Judge-location audit | `ACCEPTED` | Four parallel judge stacks listed with file:line (audit §۴). `tapeFilterVerdict` (`tapeAlgorithms.ts:409-414`) prefers the frontend formula over the backend flag, so the frontend is the *primary* tape judge today; `ftsPipelineEvaluator.ts:241-249` judges a 1% clock gap while the TXT and `tape_flags.py:62` say 2% — the mirrors have already diverged |
+| F-3 | Fundamental gate audit | `ACCEPTED` | No AND-gate: `api/fundamental.py:1226-1229` yields `WATCH` at `score>=3` even when a blocker failed — measured 307 of 922 symbols with `primary_score<3` today. Missing data: I1/I2/I4 → REJECT (263 / 542 / 84 rows), I5 with an empty sector → PASS (504 neutral rows, 129 of them with no `sector_name`); `PENDING` does not exist in the backend |
+| F-4 | Preset provenance | `ACCEPTED` | swing/trend match chart-3 and the notebook; **hourglass has no tape filter in any source** (it is MA52 + weekly RSI5 ≤ 30, already implemented at `api/chart.py:2767-2790`) while `PRESET_ENTRY` currently borrows `f_roobi,f_clock` → `UNVERIFIED`, owner ruling Q-1 |
+| F-5 | Hidden caps inventory | `ACCEPTED` | `TECH_QUERY_CAP=60` (`useFtsTechBoard.ts:77`), `watchlist_max=50` gating backend tech enrichment (`screener.py:444-458`, `fts_engine.py:2005-2006`), plus 60/20 limits in adjacent hooks (audit §۶) |
+| F-6 | Acceptance-gate mapping (22 items) | `ACCEPTED` | audit §۹ — 3 items partially satisfied, the rest open |
+| F-7 | Stages R → E → C → U → T | `PENDING` | audit §۱۰; one commit per stage |
+| F-8 | Owner rulings Q-1…Q-5 | `BLOCKED-OWNER` | hourglass tape set, `tno>100` in the funnel, `dist>=0` floor, whether 50/10/5-7 (ruling ۶) are visible stage targets or compute caps, and I5-with-no-sector state. None of them blocks stage R |
+
 ## 15.5 Next item selected
 
-Phase 1 **S-3**: put a FastAPI router and a thin Desktop page in front of the existing execution service, dry-run/mock only, explicitly labelled experimental. S-4 stays `BLOCKED-OWNER` until D8/D1 are answered. Phase 2 (trading bot) is not started: the analytical feature in front of it must be accepted first, and the bot must consume the canonical FTS signal rather than judge again.
+**FTS Funnel stage R** — the canonical filter registry in the backend (`funnel_registry.py`:
+filter_id, name, description, source_file, source_hash, formula_version, params, availability,
+backend impl, test reference for all seven TXT filters), because every later stage consumes it.
+Phase 1 **S-3** (execution router) is `PAUSED` by the owner's mission until the funnel milestone
+is `ACCEPTED`; S-4 stays `BLOCKED-OWNER` (D8/D1). Phase 2 (trading bot) is not started: the bot
+must consume the canonical FTS signal rather than judge again.
