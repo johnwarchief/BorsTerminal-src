@@ -103,14 +103,18 @@ describe('زنجیرۀ اصلیِ مهندسیِ معکوس', () => {
     expect(c.why.technical).toContain('وتوی هفتگی');
   });
 
-  it('گیتِ ستاپ به شاخۀ درستِ هفتگی می‌نشیند: هفتگی صعودی + ستاپِ همان سبک', () => {
-    // نوسان‌گیر: جت قبول، فیبو ۶۱.۸-۷۰ قبول نیست
+  it('ستاپ گیت نیست — داورِ T فقط روند است، اما امتیازِ کمکی فرق می‌کند', () => {
+    // رأیِ مالک (۱۴۰۵-۰۷-۱۶): هفتگی سپس روزانه داوری می‌کند؛ «فیبو context است،
+    // نه تریگر» (OWNER_RULINGS §۲ بند ۳). پس فیبو ۶۱.۸-۷۰ نماد را رد نمی‌کند —
+    // فقط شواهدِ همان شاخه را نمی‌گیرد. (پیش از این همین تست reject می‌خواست؛
+    // با رأیِ تازه migrate شد، نه برای سبز شدن.)
     const jet = run(ROWS, SCREENS, { preset: 'swing', tech: new Map([['فولاد', verdict({ jet: true })]]) });
     expect(one(jet, 'فولاد').status.technical).toBe('pass');
+    expect(one(jet, 'فولاد').technicalPoints).toBe(5);
     const fib61 = run(ROWS, SCREENS, { preset: 'swing', tech: new Map([['فولاد', verdict({ fibZone: '61.8-70' })]]) });
-    expect(one(fib61, 'فولاد').status.technical).toBe('reject');
-    const fib33 = run(ROWS, SCREENS, { preset: 'swing', tech: new Map([['فولاد', verdict({ fibZone: '33-40' })]]) });
-    expect(one(fib33, 'فولاد').status.technical).toBe('pass');
+    expect(one(fib61, 'فولاد').status.technical).toBe('pass');
+    expect(one(fib61, 'فولاد').technicalPoints).toBe(4);
+    expect(one(fib61, 'فولاد').setups).toContain('فیبوی');
   });
 
   it('هفتگیِ UNKNOWN نظر نمی‌دهد — نه رد است نه قبول', () => {
@@ -188,12 +192,15 @@ describe('نقطه‌زنی از false مصنوعی نتیجه نمی‌شود (
   const trendRows = [board({ symbol: 'سپ', f_noqteh: true })];
   const trendScreens = [five('سپ', { tech_matrix_decision: 'PERMITTED', tech_trend_w: 'up', tech_trend_d: 'range' })];
 
-  it('اسکرینر فیلدِ نقطه‌زنی ندارد ⇒ pending، نه رد', () => {
+  it('اسکرینر فیلدِ نقطه‌زنی ندارد ⇒ درِ شواهد «بی‌داده» می‌ماند، نه false', () => {
     const f = run(trendRows, trendScreens, { preset: 'trend' });
     const c = one(f, 'سپ');
-    expect(c.status.technical).toBe('pending');
-    expect(c.why.technical).toContain('سنجیده نشده');
+    // داورِ T روند است: هفتگی صعودی + روزانه خنثی ⇒ شاخۀ کف/محدوده، نه رد
+    expect(c.status.technical).toBe('pass');
+    expect(c.why.technical).toContain('خنثی');
     expect(c.techSource).toBe('screen');
+    // نبودِ داده جعل نمی‌شود: نقطه‌زنیِ نسنجیده در شواهد نمی‌نشیند
+    expect(c.setups).not.toContain('نقطه‌زنی');
   });
 
   it('رأیِ زندهٔ /api/fts اگر نقطه‌زنی را فعال بداند ⇒ قبول', () => {
@@ -205,12 +212,15 @@ describe('نقطه‌زنی از false مصنوعی نتیجه نمی‌شود (
     expect(one(f, 'سپ').setups).toContain('نقطه‌زنی');
   });
 
-  it('رأیِ زنده اگر نقطه‌زنی را صریحاً false بداند ⇒ رد (این‌جا داده هست)', () => {
+  it('رأیِ زنده با نقطه‌زنیِ صریحاً false ⇒ رد نیست، درِ شواهد هم نمی‌آید', () => {
     const f = run(trendRows, trendScreens, {
       preset: 'trend',
       tech: new Map([['سپ', verdict({ pointHunt: false })]]),
     });
-    expect(one(f, 'سپ').status.technical).toBe('reject');
+    const c = one(f, 'سپ');
+    expect(c.status.technical).toBe('pass');
+    expect(c.setups).not.toContain('نقطه‌زنی');
+    expect(c.technicalPoints).toBe(4);
   });
 });
 

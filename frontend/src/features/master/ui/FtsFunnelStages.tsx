@@ -9,7 +9,7 @@ export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
 
 const VALID_PRESETS: readonly TreePreset[] = ['swing', 'trend', 'hourglass', 'custom'];
 
-export function FtsFunnelStages({ preset }: { preset?: TreePreset; onPresetChange?: (preset: Exclude<TreePreset, 'custom'>) => void }) {
+export function FtsFunnelStages({ preset, onPresetChange }: { preset?: TreePreset; onPresetChange?: (preset: Exclude<TreePreset, 'custom'>) => void }) {
   const [params] = useSearchParams();
   const stage = params.get('stage') as FunnelStageKey | null;
   const activePreset = VALID_PRESETS.includes(params.get('preset') as TreePreset)
@@ -21,12 +21,12 @@ export function FtsFunnelStages({ preset }: { preset?: TreePreset; onPresetChang
     return (
       <div className="flex w-full flex-col gap-4" data-testid="fts-funnel-final-view">
         <FtsProcessStepper active="handover" preset={activePreset} symbol={symbol} />
-        <FtsFunnelAllStages preset={activePreset} />
+        <FtsFunnelAllStages preset={activePreset} onPresetChange={onPresetChange} />
       </div>
     );
   }
   if (stage === 'tape' || stage === 'technical' || stage === 'fundamental') {
-    return <FtsFunnelStageView stage={stage} />;
+    return <FtsFunnelStageView stage={stage} onPresetChange={onPresetChange} />;
   }
   return <FtsFunnelOverview />;
 }

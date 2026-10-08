@@ -53,7 +53,7 @@ describe('AppShell smoke', () => {
     await import('@features/master/routes/MasterPage');
     renderApp('/master');
     await waitFor(() => {
-      expect(screen.getByTestId('funnel-stage-tape')).toBeInTheDocument();
+      expect(screen.getByTestId('fts-funnel-overview')).toBeInTheDocument();
     });
     expect(screen.queryByText('نمادی انتخاب نشده')).not.toBeInTheDocument();
   });

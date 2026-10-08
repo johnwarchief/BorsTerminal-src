@@ -134,7 +134,7 @@ function cssHasGlobalIdlePause(css: string): boolean {
  * را برای درخت FTS حذف کردی؟». کد حذف نشده بود؛ دروازۀ بی‌کاری خوابانده بودش.
  */
 const GRAPH = readFileSync(
-  path.resolve(import.meta.dirname, '../../src/features/master/components/ObsidianStrategyGraph.tsx'),
+  path.resolve(import.meta.dirname, '../features/master/ui/StrategyTreeStepper.tsx'),
   'utf8',
 );
 const flowClasses = [

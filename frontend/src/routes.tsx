@@ -1,4 +1,4 @@
-import { RouteObject } from 'react-router';
+import { Link, type RouteObject } from 'react-router';
 import { Lazy } from '@shared/components/Lazy';
 
 const page = (load: () => Promise<{ default: React.ComponentType }>) => (
@@ -29,5 +29,18 @@ export const mainRoutes: RouteObject[] = [
   {
     path: 'master/:symbol?',
     element: page(() => import('@features/master/routes/MasterPage')),
+  },
+  // هیچ آدرسی بی‌صفحه نماند: لینکِ مرده باید خودش را نشان دهد، نه صفحه‌ای سفید.
+  {
+    path: '*',
+    element: (
+      <div className="flex flex-col items-start gap-3 p-6" data-testid="route-not-found">
+        <h1 className="text-lg font-black text-text-primary">این نشانی در اپ ثبت نشده است</h1>
+        <p className="text-2xs text-text-muted" data-testid="route-not-found-path">{window.location.hash}</p>
+        <Link to="/master" className="rounded-xl border border-accent-blue/50 px-3 py-1.5 text-2xs font-bold text-accent-blue">
+          رفتن به قیف FTS
+        </Link>
+      </div>
+    ),
   },
 ];

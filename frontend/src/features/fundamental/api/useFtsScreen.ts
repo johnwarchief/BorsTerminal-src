@@ -99,11 +99,15 @@ const FtsScreenSchema = z.object({
 });
 export type FtsScreen = z.infer<typeof FtsScreenSchema>;
 
-export function useFtsScreen(limit = 60) {
+/** `limit = 0` یعنی کلِ universe. بک‌اند (`api/screener.py`) اصلاً پارامتر
+ *  `limit` ندارد، پس برابریِ دسکتاپ/موبایل همان «همه» است؛ برشِ ۶۰تاییِ
+ *  پیشین رویِ اندروید ۸۷۳ شرکت را به «۵۹ شرکت از ۶۰» می‌رساند. */
+export function useFtsScreen(limit = 0) {
+  const suffix = limit > 0 ? `?limit=${limit}` : '';
   return useQuery({
     queryKey: ['fts-screen', limit],
     queryFn: ({ signal }) =>
-      http<FtsScreen>(`/api/screener?limit=${limit}`, { schema: FtsScreenSchema, signal }),
+      http<FtsScreen>(`/api/screener${suffix}`, { schema: FtsScreenSchema, signal }),
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     refetchOnWindowFocus: false,

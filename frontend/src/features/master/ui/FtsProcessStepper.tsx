@@ -9,9 +9,10 @@ export const FUNNEL_STAGES = [
 ] as const;
 
 export function funnelStagePath(stage: FunnelStageKey, preset?: string, symbol?: string | null) {
-  const suffix = symbol ? `/${encodeURIComponent(symbol)}` : '';
-  const q = preset ? `?preset=${encodeURIComponent(preset)}` : '';
-  return `/master/stage/${stage}${suffix}${q}`;
+  const q = new URLSearchParams({ stage });
+  if (preset) q.set('preset', preset);
+  if (symbol) q.set('symbol', symbol);
+  return `/master?${q.toString()}`;
 }
 
 export function FtsProcessStepper({

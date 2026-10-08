@@ -173,10 +173,10 @@ export function useRemoveBasketDecision() {
       const sym = (symbol ?? '').trim();
       if (!sym) throw new HttpError(0, '/api/selection/decision/', 'نماد خالی است');
       const url = `/api/selection/decision/${encodeURIComponent(sym)}`;
-      // DELETE در shared/api/http.ts پشتیبانی نمی‌شود؛ fetch مستقیم فقط داخل zones مجاز api (قاعده B5)
-      const res = await fetch(url, { method: 'DELETE', headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new HttpError(res.status, url);
-      const data = DecisionDeleteSchema.parse(await res.json());
+      // DELETE از همان `http()` می‌رود: روی گوشی `resolveLocal` حتماً باید ببیندش
+      // (همین‌جا حذفِ تصمیم در localStorage پیاده شده) — با fetchِ خام WebView
+      // آدرس را ۴۰۴ می‌داد و «بررسی‌نشده» شدن هرگز ذخیره نمی‌شد.
+      const data = DecisionDeleteSchema.parse(await http<unknown>(url, { method: 'DELETE' }));
       if (data.status !== 'success') {
         throw new HttpError(0, url, data.message || 'حذف تصمیم ناموفق بود');
       }
