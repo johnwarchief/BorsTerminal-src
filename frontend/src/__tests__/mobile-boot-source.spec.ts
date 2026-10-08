@@ -166,6 +166,21 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     expect(first?.percent).toBeNull();
   });
 
+  it('درصدِ آمادگی درِ سه مرحله عقب نمی‌رود', async () => {
+    // قبلاً عددِ صفحه درصدِ دریافت بود و بعد percentِ کلی، پس رقم از ۱۰۰٪
+    // به ۷۵٪ برمی‌گشت — کاربر آن را پس‌رفتِ دریافت می‌خواند.
+    mod = await load('2026-10-08T16:16:15');
+    const steps = [
+      mod.__bootProgressForTest('download', 0, 16_179_264).overallPercent,
+      mod.__bootProgressForTest('download', 8_089_632, 16_179_264).overallPercent,
+      mod.__bootProgressForTest('download', 16_179_264, 16_179_264).overallPercent,
+      mod.__bootProgressForTest('decompress', 0, 0).overallPercent,
+      mod.__bootProgressForTest('database', 0, 0).overallPercent,
+    ].filter((n): n is number => n !== null);
+    expect(steps.every((n, i) => i === 0 || n >= steps[i - 1])).toBe(true);
+    expect(steps).toEqual([0, 35, 70, 85, 95]);
+  });
+
   it('صفحۀ پاسخِ HTML جایِ دیتابیس را نمی‌گیرد — حتی از خودِ برنامه', async () => {
     // سرورِ محلی/WebViewِ خرابه می‌تواند مسیرِ بسته را با ۲۰۰ و index.html
     // جواب بدهد؛ اگر آن «بسته» پذیرفته شود، sql.js بی‌معنی می‌سوزد و همه‌جا

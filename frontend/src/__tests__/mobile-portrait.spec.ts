@@ -47,6 +47,10 @@ describe('چیدمانِ موبایل', () => {
     expect(b).toMatch(/aside\[data-shell='inspector'\][\s\S]*?top:\s*calc\(env\(safe-area-inset-top\)/);
     expect(b).toContain('bottom: calc(58px + env(safe-area-inset-bottom))');
     expect(b).toContain('width: min(100vw, 26rem)');
+    // لبه باید صریح بسته باشد: با right:0 هم‌زمان، درِ RTL کشو ۵۲ پیکسل از
+    // حالتِ بسته رویِ صفحه جا می‌ماند (کشویِ بسته باید کامل بیرون برود).
+    expect(b).toMatch(/aside\[data-shell='inspector'\][\s\S]*?left:\s*0\s*!important/);
+    expect(b).toMatch(/aside\[data-shell='inspector'\][\s\S]*?right:\s*auto\s*!important/);
   });
 
   it('در عمودی، جدول‌هایِ عریض کفِ عرض دارند — و فقط همان‌ها', () => {

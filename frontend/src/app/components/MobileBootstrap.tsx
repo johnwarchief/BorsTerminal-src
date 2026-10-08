@@ -81,7 +81,8 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
   }, [status]);
 
   if (status === 'loading') {
-    const percent = progress?.percent ?? progress?.overallPercent ?? null;
+    // یک عددِ پیوسته برایِ هر سه مرحله (دریافت ۰→۷۰، بازگشایی ۸۵، دیتابیس ۹۵)
+    const percent = progress?.overallPercent ?? null;
     const width = percent === null ? 32 : Math.max(4, Math.min(100, percent));
 
     return (

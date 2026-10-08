@@ -77,9 +77,12 @@
     font-size: 11px;
   }
 
-  /* ۴) پنل‌ها و مودال‌های شناور: تمام‌عرض، بدون بیرون‌زدگی */
+  /* ۴) پنل‌ها و مودال‌های شناور: تمام‌عرض، بدون بیرون‌زدگی.
+     کشویِ نماد از این قاعده بیرون است: `right:0` با `left:0` هم‌زمان درِ RTL
+     جعبه را به لبۀ راست می‌چسباند و کشویِ بسته ۵۲ پیکسل رویِ صفحه جا می‌ماند
+     (قاعدۀ بند ۷ خودش لبه را می‌بندد). */
   html.bors-mobile [role='dialog'],
-  html.bors-mobile .glass-panel.fixed {
+  html.bors-mobile .glass-panel.fixed:not([data-shell='inspector']) {
     max-width: 100vw !important;
     left: 0 !important;
     right: 0 !important;
@@ -107,6 +110,12 @@
     width: min(100vw, 26rem) !important;
     max-width: 100vw !important;
     padding-bottom: 0;
+    /* کشو با `left-0` و عرضِ ثابت ساخته شده؛ درِ سندِ RTL اگر right هم صفر
+       بماند جعبه به لبۀ راست می‌چسبد (390−338=۵۲ پیکسل جابه‌جا) و آن‌وقت
+       درِ حالتِ بسته −۱۰۰٪ فقط ۵۲ پیکسل از متنِ «تکنیکال/نماد» را رویِ صفحه
+       جا می‌گذارد. لبه را صریح می‌بندیم تا کشویِ بسته کامل بیرون برود. */
+    left: 0 !important;
+    right: auto !important;
   }
   /* ✕ و ردیف‌هایِ لمسیِ اینسپکتور نباید از دسترسِ انگشت خارج شوند */
   html.bors-mobile aside[data-shell='inspector'] button {

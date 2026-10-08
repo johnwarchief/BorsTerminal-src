@@ -62,11 +62,13 @@ function makeBootProgress(
 
   let overallPercent: number | null = null;
   if (phase === 'download' && percent !== null) {
-    // ۷۵٪ از آمادگی به دریافت بسته اختصاص دارد؛ ۲۵٪ برای بازگشایی و
-    // ساخت دیتابیس. این درصد کلّی است و زمان واقعی را ادعا نمی‌کند.
-    overallPercent = Math.round(percent * 0.75);
+    // ۷۰٪ از آمادگی به دریافت بسته است، بازگشایی تا ۸۵٪ و ساخت دیتابیس تا
+    // ۹۵٪. همین عددِ پیوسته نمایش داده می‌شود: اگر درصدِ دریافت و بعد
+    // درصدِ کلی نشان داده می‌شد، رقم از ۱۰۰٪ به ۷۵٪ برمی‌گشت و کاربر آن را
+    // پس‌رفت می‌خواند. این درصد کلّی است و زمانِ واقعی را ادعا نمی‌کند.
+    overallPercent = Math.round(percent * 0.7);
   } else if (phase === 'decompress') {
-    overallPercent = 75;
+    overallPercent = 85;
   } else if (phase === 'database') {
     overallPercent = 95;
   }
@@ -178,6 +180,10 @@ async function maybeRefreshSnapshot(): Promise<void> {
 export const __isMeteredForTest = (): boolean => isMeteredConnection();
 
 export const __fetchSnapshotForTest = (): Promise<ArrayBuffer> => fetchSnapshot();
+
+/** فقط برایِ تست — وزن‌هایِ درصدِ آمادگی درِ سه مرحله. */
+export const __bootProgressForTest = (phase: BootProgressPhase, loaded: number, total: number) =>
+  makeBootProgress(phase, 'bundle', loaded, total);
 
 /** کشِ بسته را با مهرِ آن پاک می‌کند — همان‌جا که بستۀ خودِ برنامه مرجع است. */
 async function dropCachedSnapshot(cache: Cache | null): Promise<void> {
