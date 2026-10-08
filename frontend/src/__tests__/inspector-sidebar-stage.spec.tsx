@@ -82,22 +82,36 @@ describe('جایِ خودِ نماد در قیف (#67)', () => {
   const row = (over: Record<string, unknown>) => ({
     symbol: 'شپنا', name: 'شبکه برق', sector: 'برق', status: {}, why: {}, ...over,
   });
-  const payload = (entries: Record<string, unknown[]>) => ({
+  const payload = (entries: Record<string, unknown[]>, matrix?: Record<string, unknown>) => ({
     status: 'success', engine_version: '1', ruleset_version: 'x', as_of: Math.floor(Date.now() / 1000),
     preset: 'custom', chain: [], fund_mode: 'standard',
     universe: { board: 1, screened: 1, joined: 1 },
-    stages: {}, entries, timeline: {}, handover: [],
+    stages: {}, entries, status_matrix: matrix, timeline: {}, handover: [],
   } as unknown as ApiPayload);
 
   it('بی‌علامت ⇒ چراغِ تابلو قرمز و خطِ «ایستاده در تابلوخوانی»', () => {
     renderAt('/market', 'شپنا', seedFunnel(payload({
       tape: [row({ status: { tape: 'reject' },
                    why: { tape: [{ code: 'TAPE_F_SUSP_NO_MATCH', text: 'حجم مشکوک — نشانه نیست' }] } })],
+    }, {
+      // پاسخِ موتورِ تازه برایِ سه گامِ بعدی حکمِ صریح می‌فرستد؛ «بی‌حکم» نداریم
+      شپنا: {
+        tape: { status: 'reject', reason_code: 'TAPE_F_SUSP_NO_MATCH', human_reason: 'حجم مشکوک — نشانه نیست' },
+        technical: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                     human_reason: 'تابلو نماد را رد کرده؛ تکنیکال اجرا نمی‌شود' },
+        fundamental: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                       human_reason: 'تابلو نماد را رد کرده؛ بنیادی اجرا نمی‌شود' },
+        handover: { status: 'reject', reason_code: 'NOT_ELIGIBLE_AFTER_PRIOR_REJECT',
+                    human_reason: 'در گامِ پیشین رد شده' },
+      },
     })));
     expect(screen.getByTestId('inspector-stage-tape')).toHaveAttribute('data-stage-state', 'blocked');
     expect(screen.getByTestId('inspector-stage-next').textContent).toContain('ایستاده در «تابلوخوانی»');
-    // بالادستِ بسته: سه مرحلۀ بعدی رأی ندارند، پس «سنجیده نشده» جایش را می‌گیرد
-    expect(screen.getByTestId('inspector-stage-technical')).toHaveAttribute('data-stage-state', 'unknown');
+    // بالادستِ بسته ≠ «سنجیده نشده»: حکمِ صریحِ «لازم نبود» با ذکرِ گامِ بازدارنده
+    expect(screen.getByTestId('inspector-stage-technical')).toHaveAttribute('data-stage-state', 'not_required');
+    expect(screen.getByTestId('inspector-stage-note-technical')).toHaveTextContent('لازم نبود');
+    expect(screen.getByTestId('inspector-stage-technical').getAttribute('title'))
+      .toContain('تابلو نماد را رد کرده');
   });
 
   it('تابلو سبز + وتوی هفتگی ⇒ چراغِ تکنیکال قرمز و همان‌جا ایستاده', () => {

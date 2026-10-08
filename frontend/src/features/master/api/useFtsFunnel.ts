@@ -7,7 +7,7 @@
 // و هر آنچه جدول می‌خواند از پاسخِ سرور می‌آید. هیچ شمارشِ FTS درِ کلاینت
 // حساب نمی‌شود؛ نگاشتِ نام‌ها درِ `lib/funnelView.ts` است و بس.
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { useTapeStore } from '@features/market/stores/tapeStore';
@@ -76,6 +76,7 @@ export function useFtsFunnel(
   /** پیشرفتِ اسکنِ تکنیکال درِ پاسخِ سرور — برایِ خطِ «چرا بعضی در انتظارند» */
   scan: { pending: number; running: boolean; queued: number };
   loading: boolean;
+  refreshing: boolean;
   error: string | null;
   basket: Set<string>;
   quickFilters: string[];
@@ -108,6 +109,11 @@ export function useFtsFunnel(
       body: { preset: request.preset, chain: request.chain, fund_mode: request.fundMode,
               exceptions: request.exceptions },
     }),
+    // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه
+    // به صفر می‌افتاد («universe: ۰») و کاربر فکر می‌کرد بازار خالی است. پاسخِ
+    // قبلی رویِ صفحه می‌ماند تا جدید بنشیند؛ markerِ loading هم همین‌جا دیده
+    // می‌شود، پس «کهنه» با «تازه» قاطی نمی‌شود.
+    placeholderData: keepPreviousData,
     refetchInterval: 60_000,
     staleTime: 5_000,
   });
@@ -134,6 +140,9 @@ export function useFtsFunnel(
       queued: q.data?.tech_scan?.queued ?? 0,
     },
     loading: q.isPending,
+    /** پاسخِ رویِ صفحه پاسخِ *قبلی* است و تازه‌اش در راه است — باید دیده شود،
+     *  وگرنه keepPreviousData یعنی «کهنه» بی‌برچسب. */
+    refreshing: !!q.isPlaceholderData || q.isFetching,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
     // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،
     // نه از فرضِ آرایه — آن ساختار { status, decisions, counts, limits } است.

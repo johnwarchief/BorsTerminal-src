@@ -30,8 +30,15 @@ function useFeedSnapshot(): FeedSnap {
   useEffect(() => {
     setSnap(readFeedSnap(qc));
     const unsub = qc.getQueryCache().subscribe(() => {
-      const next = readFeedSnap(qc);
-      setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt ? prev : next));
+      // چرا defer: خودِ notify شدنِ cache هم‌زمان درِ render-phaseِ کامپوننتِ
+      // دیگری اتفاق می‌افتد (مثلاً وقتی قیف mount می‌شود و observer تازه‌اش را
+      // به cache وصل می‌کند). setSnap درِ همان لحظه یعنی «به‌هنگامِ رندرِ
+      // کامپوننتِ دیگر state را عوض کردی» — هشدارِ Reactِ همان است. یک
+      // microtask بعد، همان عدد خوانده می‌شود و پیام می‌رود.
+      queueMicrotask(() => {
+        const next = readFeedSnap(qc);
+        setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt ? prev : next));
+      });
     });
     return unsub;
   }, [qc]);

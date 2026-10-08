@@ -364,10 +364,17 @@ export function SymbolInspector() {
                           ? 'bg-accent-red'
                           : st === 'waiting'
                             ? 'bg-accent-yellow'
-                            : 'bg-border-c'
+                            : st === 'not_required'
+                              ? 'bg-border-c/40 ring-1 ring-border-c/60'
+                              : 'bg-border-c'
                     }`}
                   />
                   {s.label}
+                  {st === 'not_required' ? (
+                    <span className="text-[9px] font-normal opacity-70" data-testid={`inspector-stage-note-${s.key}`}>
+                      · لازم نبود
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}

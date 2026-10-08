@@ -760,7 +760,11 @@ export function FtsFunnelStages({
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
   const [snap] = useState(readFunnelSnap);
-  const [active, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  const [activeState, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  // درِ حالتِ مسیریافته (`only`) گامِ واقعی همان `only` است، نه stateِ داخلیِ
+  // این کامپوننت (که از snapshotِ قدیم پر شده). بی‌این، کلیکِ سطر درِ گامِ
+  // تکنیکال آدرسِ `?stage=tape` می‌ساخت و بازگشت کاربر را یک گام عقب می‌برد.
+  const active = only ?? activeState;
   // کلیکِ سطر یک گذرِ واقعی است، نه فقط یک استور: URL نماد را نگه می‌دارد تا
   // «← بازگشت» و دکمۀ عقبِ مرورگر هر دو به همان قیف برسند (Round M §۱۰).
   const pick = (s: string) => {
@@ -778,7 +782,7 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, scan, quickFilters, opts } = useFtsFunnel(preset);
+  const { funnel, mode, tape, tech, scan, refreshing, quickFilters, opts } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);
 
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
@@ -897,6 +901,17 @@ export function FtsFunnelStages({
           لازم نبود: {toFaDigits(hc.not_required)}
         </span>
         <span className="text-text-secondary" data-testid="funnel-count-universe">| universe: {toFaDigits(funnel.total)}</span>
+        {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
+            پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
+        {refreshing && funnel.total > 0 ? (
+          <span
+            data-testid="funnel-refreshing"
+            className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+            title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
+          >
+            در حالِ تازه‌سازی
+          </span>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1" role="tablist">
@@ -905,7 +920,7 @@ export function FtsFunnelStages({
               key={s.key}
               type="button"
               role="tab"
-              aria-selected={(only ?? active) === s.key}
+              aria-selected={active === s.key}
               data-testid={`funnel-step-${s.key}`}
               onClick={() => {
                 if (onStageSelect) {
@@ -968,7 +983,7 @@ export function FtsFunnelStages({
             wide={wide}
             showMark={marks[i]}
             onPick={pick}
-            active={(only ?? active) === s.key}
+            active={active === s.key}
             opts={opts}
             emptyWhy={emptyWhy[s.key]}
           />
