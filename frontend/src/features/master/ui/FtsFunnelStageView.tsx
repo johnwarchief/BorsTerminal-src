@@ -35,8 +35,8 @@ export default function FtsFunnelStageView({
             {mode === 'review' ? 'مرور کامل بازار' : 'مهندسی معکوس'}
           </span>
         </h2>
-        <span className="text-3xs tabular-nums text-text-muted">
-          {toFaDigits(data.entries.length)} نماد درِ این گام
+        <span className="text-3xs tabular-nums text-text-muted" data-testid={`fts-stage-count-${stage}`}>
+          {toFaDigits(data.summary.pass)} عبور از {toFaDigits(data.ruled)} نمادِ universe
         </span>
       </div>
       <FtsFunnelAllStages

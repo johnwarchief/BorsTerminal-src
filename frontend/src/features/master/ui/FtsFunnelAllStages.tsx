@@ -13,6 +13,7 @@
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
@@ -26,6 +27,7 @@ import {
   TAPE_FRESHNESS_LABEL,
   PRESET_ENTRY,
   STATUS_LABEL,
+  STATUS_HINT,
   IND_COLUMNS,
   trendLabel,
   type FunnelEntry,
@@ -73,6 +75,10 @@ function fundRule(o: FunnelOptions): string {
 }
 
 const ORDER: FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
+
+/** ارتفاعِ تقریبیِ یک سطرِ جدول — مبنایِ مجازی‌سازیِ بدنه (سلول‌ها `py-1` +
+ *  متنِ ۱۲px؛ همان عددی که `TapeTable` برایِ سطرهایِ خودش اندازه گرفته است). */
+const ROW_H = 29;
 
 // ---- برگشتِ قیف (Round M §۹، باقی‌ماندۀ ۲): مرحلۀ فعال و scroll پیش از رفتن به
 // Master در sessionStorage ثبت می‌شوند و پس از بازگشت یک‌بار بازخوانده می‌شوند.
@@ -133,6 +139,7 @@ const MARK_DOT: Record<StageStatus, string> = {
   reject: 'bg-accent-red',
   pending: 'bg-accent-yellow',
   unavailable: 'bg-border-c',
+  not_required: 'bg-border-c/40',
 };
 /** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
 const MARK_LABEL = STATUS_LABEL;
@@ -219,11 +226,12 @@ const TREND_COLOR: Record<string, string> = {
 /** سلولِ «ردیفِ پنج‌شاخصه»: ✓ / ✗ / — با عددِ خودش، نه فقط رنگ.
  *  عددِ غیرمعقول همان نشانِ جدولِ غربالگری را می‌گیرد (نه حذفِ عدد). */
 function IndCell({ mark, value, hint }: { mark: StageStatus; value: string | null; hint?: string | null }) {
-  const glyph = mark === 'pass' ? '✓' : mark === 'reject' ? '✗' : mark === 'pending' ? '…' : '—';
+  const glyph = mark === 'pass' ? '✓' : mark === 'reject' ? '✗' : mark === 'pending' ? '…'
+    : mark === 'not_required' ? '·' : '—';
   const cls =
     mark === 'pass' ? 'text-accent-green' : mark === 'reject' ? 'text-accent-red' : 'text-text-muted';
   return (
-    <td className={`truncate px-2 py-1 text-end ${cls}`} title={hint ?? value ?? MARK_LABEL[mark]}>
+    <td className={`truncate px-2 py-1 text-end ${cls}`} title={hint ?? MARK_LABEL[mark]}>
       {value ? <span className="ms-1 opacity-70">{value}</span> : null}
       {hint ? <span className="text-accent-yellow">⚠</span> : null}
       <span className="font-black">{glyph}</span>
@@ -316,7 +324,16 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
   }
 }
 
-/** یک مرحلۀ قیف: سرشماره + نوارِ کاهش + جدولِ ردیف‌ها با FLIP */
+/** یک مرحلۀ قیف: سرشماره + نوارِ کاهش + جدولِ ردیف‌ها با FLIP
+ *
+ *  جدولِ هر مرحله **کلِ جامعۀ ورودی** است، نه فقط رسیدگان: قاعدۀ مالک این است
+ *  که هیچ نمادی «بی‌حکم» از قیف بیرون نیفتد، پس نمادی که تابلو ردش کرده درِ
+ *  مرحلۀ تکنیکال هم دیده می‌شود و حکمش `not_required` است با دلیلِ گامِ
+ *  بازدارنده. بی‌این، نبودنِ یک نماد از جدولِ دوم خوانده می‌شد به «سنجیده
+ *  نشد». پنج‌هزار ردیفِ DOM رویِ هم اسکرول را می‌خواباند، پس بدنه مجازی‌سازی
+ *  شده است (`@tanstack/react-virtual`) — همان کاری که جدولِ تابلو می‌کند؛
+ *  virtualization نمایش است، حذف نه: شمارشِ سرِ جدول همیشه کلِ ردیف‌ها را
+ *  می‌گوید. */
 function StageCard({
   stage,
   index,
@@ -339,11 +356,43 @@ function StageCard({
   const bodyRef = useRef<HTMLDivElement>(null);
   const rows = stage.entries;
   useFlip({ root: bodyRef, deps: [rows.map((r) => r.symbol).join(' ')] });
-  const pct = wide > 0 ? Math.round((rows.length / wide) * 100) : 0;
+  // نوارِ کاهش = سهمِ عبوری‌هایِ همین گام از کلِ جامعۀ ورودی. پیش‌تر عرضش
+  // «ردیفِ این مرحله ÷ پهن‌ترین مرحله» بود؛ وقتی هر چهار مرحله کلِ universe را
+  // می‌شمارند آن کسر همیشه ~۱ می‌شد و قیف دیگر شکلِ قیف نداشت.
+  const passed = stage.summary.pass;
+  const pct = wide > 0 ? Math.round((passed / wide) * 100) : 0;
   const cols = STAGE_COLS[stage.key];
   const techScreens = useFunnelPrefsStore((s) => s.techScreens);
   const setTechScreens = useFunnelPrefsStore((s) => s.setTechScreens);
   const rule = stage.key === 'fundamental' ? fundRule(opts) : STAGE_RULE[stage.key];
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const virt = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_H,
+    overscan: 8,
+    initialRect: { width: 0, height: 280 },
+  });
+  const vRows = virt.getVirtualItems();
+  const padTop = vRows.length ? vRows[0].start : 0;
+  const padBottom = vRows.length
+    ? Math.max(0, virt.getTotalSize() - (vRows[vRows.length - 1].start + ROW_H))
+    : 0;
+  const pendingRef = useRef<HTMLDivElement | null>(null);
+  const pendingVirt = useVirtualizer({
+    count: stage.pending.length,
+    getScrollElement: () => pendingRef.current,
+    estimateSize: () => ROW_H,
+    overscan: 6,
+    initialRect: { width: 0, height: 160 },
+  });
+  const pRows = pendingVirt.getVirtualItems();
+  const padTopP = pRows.length ? pRows[0].start : 0;
+  const padBottomP = pRows.length
+    ? Math.max(0, pendingVirt.getTotalSize() - (pRows[pRows.length - 1].start + ROW_H))
+    : 0;
+  const unseen = rows.length + stage.pending.length - stage.ruled;
 
   return (
     <section
@@ -363,8 +412,9 @@ function StageCard({
           {toFaDigits(index + 1)}
         </span>
         <h3 className="text-xs font-black text-text-primary sm:text-sm">{STAGE_TITLE[stage.key]}</h3>
-        <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary">
-          {toFaDigits(rows.length)} نماد
+        <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
+              title="تک‌تکِ نمادهایِ جامعۀ ورودی درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
+          {toFaDigits(stage.ruled)} نماد
         </span>
         {stage.dropped > 0 ? (
           <span className="num rounded-full bg-accent-red/15 px-2 py-0.5 text-2xs font-black text-accent-red">
@@ -383,17 +433,43 @@ function StageCard({
           </span>
         ) : null}
         {stage.unmeasured > 0 ? (
-          <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-medium text-text-muted">
-            {toFaDigits(stage.unmeasured)} سنجیده‌نشده
+          <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-medium text-text-muted"
+                title={STATUS_HINT.unavailable}>
+            {toFaDigits(stage.unmeasured)} بی‌داده
           </span>
         ) : null}
+        {/* «لازم نبود» ≠ «سنجیده نشده»: این نمادها حکمِ صریح دارند — گامِ پیشین
+            ردشانه کرده. بی‌این chip، پریدنِ نماد از گامِ دوم سوم خوانده می‌شد. */}
+        {stage.notRequired > 0 ? (
+          <span
+            data-testid={`funnel-not-required-${stage.key}`}
+            className="num rounded-full bg-bg-secondary/70 px-2 py-0.5 text-2xs font-medium text-text-muted"
+            title={STATUS_HINT.not_required}
+          >
+            {toFaDigits(stage.notRequired)} لازم نبود
+          </span>
+        ) : null}
+        {/* گاردِ جامعیت درِ screen: جمعِ پنج وضعیت باید با جامعۀ ورودی بخواند.
+            نخواند یعنی نمادی بی‌حکم گم شده — این عدد خودِ بک‌اند است، نه شمارشِ
+            ردیف‌هایِ دیدنیِ جدول. */}
+        <span
+          data-testid={`funnel-ruled-${stage.key}`}
+          className={`num rounded-full px-2 py-0.5 text-2xs font-bold ${
+            unseen === 0 ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-red/15 text-accent-red'
+          }`}
+          title={unseen === 0
+            ? 'تک‌تکِ نمادهایِ جامعۀ ورودی درِ این گام حکم دارند (pass + reject + pending + بی‌داده + لازم نبود = universe)'
+            : `${toFaDigits(unseen)} نماد درِ این گام حکم ندارد — نقصِ معماری، نه حالتِ عادی`}
+        >
+          حکم: {toFaDigits(stage.ruled)}{unseen === 0 ? ' = کلِ universe' : ` ≠ ${toFaDigits(stage.ruled + unseen)}`}
+        </span>
         {/* مالک: «تنظیماتِ مرحلۀ بنیادی رو روی نوارِ جدول بنیادی بذار». پیش‌تر یک
             نوارِ سراسری زیرِ چهار مرحله بود؛ هر مرحله پیچ‌هایِ خودش را رویِ
             نوارِ خودش می‌گیرد — همان کاری که کلیدِ تکنیکال از قبل می‌کرد. */}
         {stage.key === 'fundamental' ? (
-          <FundStagePrefs passed={stage.entries.length} techScreens={techScreens} />
+          <FundStagePrefs passed={stage.summary.pass} techScreens={techScreens} />
         ) : null}
-        {stage.key === 'tape' ? <TapeStagePrefs picked={stage.entries.length} /> : null}
+        {stage.key === 'tape' ? <TapeStagePrefs picked={stage.summary.pass} /> : null}
         {/* کنترلِ درِ تکنیکال کنارِ همین مرحله نشسته است، نه در منویِ سراسری. */}
         {stage.key === 'technical' ? (
           <span
@@ -424,7 +500,7 @@ function StageCard({
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
       </header>
 
-      <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto">
+      <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
             {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
@@ -446,51 +522,65 @@ function StageCard({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
-                          stageKey={stage.key} onPick={onPick} />
-              ))}
+              {padTop > 0 ? <tr aria-hidden style={{ height: padTop }} /> : null}
+              {vRows.map((vr) => {
+                const r = rows[vr.index];
+                return (
+                  <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
+                            stageKey={stage.key} onPick={onPick} />
+                );
+              })}
+              {padBottom > 0 ? <tr aria-hidden style={{ height: padBottom }} /> : null}
             </tbody>
           </table>
         )}
       </div>
 
-      {/* گروهِ «سنجیده نشد»: نه مردود است نه تحویل. بی‌این، نبودنِ گزارشِ کدال
-          «رد» به‌نظر می‌رسید و کاربر نمادی را از دست می‌داد که فقط بی‌داده است. */}
+      {/* گروهِ «در انتظار»: نه مردود است نه تحویل. بی‌این، نبودنِ گزارشِ کدال
+          «رد» به‌نظر می‌رسید و کاربر نمادی را از دست می‌داد که فقط بی‌داده است.
+          این ردیف‌ها از جدولِ بالا جدا شده‌اند (تکراری نیستند) ولی همچنان
+          شمارشان درِ coverageِ همان مرحله می‌نشیند. */}
       {stage.pending.length > 0 ? (
         <div data-testid={`funnel-pending-${stage.key}`} className="border-t border-dashed border-border-c/70 bg-bg-secondary/40">
           <p className="px-3 py-1.5 text-3xs font-bold text-text-muted">
             {stage.key === 'handover'
               ? `متوقف درِ تحویل — نه رد شده، نه آماده (${toFaDigits(stage.pending.length)})`
-              : `بنیادی‌اش سنجیده نشده — در انتظارِ گزارشِ کدال (${toFaDigits(stage.pending.length)})`}
+              : `در انتظارِ حکم — موتور نگاه کرد و نظر نداد (${toFaDigits(stage.pending.length)})`}
           </p>
-          <table className="w-full table-fixed border-collapse text-xs">
-            {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
-                بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
-                بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
-            <ColGroup cols={cols} />
-            <thead className="text-3xs text-text-muted">
-              <tr>
-                {cols.map((k) => (
-                  <th key={k} className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}>
-                    {COL[k].label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {stage.pending.map((r) => (
-                <StageRow
-                  key={r.symbol}
-                  entry={r}
-                  cols={cols}
-                  showMark={stage.key === 'handover' ? 'handover' : 'fund'}
-                  stageKey={stage.key}
-                  onPick={onPick}
-                />
-              ))}
-            </tbody>
-          </table>
+          <div ref={pendingRef} className="max-h-[160px] overflow-y-auto">
+            <table className="w-full table-fixed border-collapse text-xs">
+              {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
+                  بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
+                  بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
+              <ColGroup cols={cols} />
+              <thead className="sticky top-0 text-3xs text-text-muted">
+                <tr>
+                  {cols.map((k) => (
+                    <th key={k} className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}>
+                      {COL[k].label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {padTopP > 0 ? <tr aria-hidden style={{ height: padTopP }} /> : null}
+                {pRows.map((vr) => {
+                  const r = stage.pending[vr.index];
+                  return (
+                    <StageRow
+                      key={r.symbol}
+                      entry={r}
+                      cols={cols}
+                      showMark={stage.key === 'handover' ? 'handover' : 'fund'}
+                      stageKey={stage.key}
+                      onPick={onPick}
+                    />
+                  );
+                })}
+                {padBottomP > 0 ? <tr aria-hidden style={{ height: padBottomP }} /> : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : null}
     </section>
@@ -719,7 +809,7 @@ export function FtsFunnelStages({
   // شمارشِ واقعیِ درِ تحویل: «چند تا واقعاً» — نه اینکه برایِ رسیدن به ۱۰ نماد
   // ضعیف اضافه شود. هدف‌هایِ جزوه فقط مرجعِ کناری‌اند.
   const hc = funnel.counts.handover;
-  const wide = Math.max(1, ...stages.map((s) => s.entries.length));
+  const wide = Math.max(1, funnel.total);
   const marks: ('tech' | 'fund' | 'handover' | null)[] = [null, 'tech', 'fund', 'handover'];
 
   // «چرا خالی است» باید خودش را بگوید، وگرنه مرحلۀ خالی با مرحلۀ خراب یکی
@@ -791,8 +881,10 @@ export function FtsFunnelStages({
         </div>
       </div>
       {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
-          با عددِ خودِ بازار. هدف‌هایِ جزوه (۵۰ و ۱۰ و -۷) فقط مرجعِ کناری‌اند و
-          هیچ‌جا گیتِ عبور نیستند. */}
+          / Not-required با عددِ خودِ بازار. این پنج از `coverage`ِ بک‌اند می‌آیند،
+          یعنی شمارشِ **کلِ** جامعۀ ورودی درِ هر گام — پس جمعشان همان universe است
+          و نمادی بی‌حکم نمی‌ماند. هدف‌هایِ جزوه (۵۰ و ۱۰ و ۵-۷) فقط مرجعِ کناری‌اند
+          و هیچ‌جا گیتِ عبور نیستند. */}
       <div
         className="flex flex-wrap items-center gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
         data-testid="funnel-counts"
@@ -801,15 +893,10 @@ export function FtsFunnelStages({
         <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
         <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
         <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
-        <span className="text-text-secondary">| universe: {toFaDigits(funnel.total)}</span>
-        <span
-          className="text-text-secondary"
-          title="چند کاندید در این نشست داوریِ تکنیکال شدند — کلِ جامعۀ ورودی، بی‌بودجه و بی‌سقف"
-          data-testid="funnel-tech-coverage"
-        >
-          تکنیکال سنجیده شده: {toFaDigits(tech.resolved)} از {toFaDigits(tech.wanted)}
+        <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
+          لازم نبود: {toFaDigits(hc.not_required)}
         </span>
-        <span className="text-text-secondary">هدفِ جزوه: ۵۰  ۱۰  ۵-۷</span>
+        <span className="text-text-secondary" data-testid="funnel-count-universe">| universe: {toFaDigits(funnel.total)}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1" role="tablist">
@@ -841,7 +928,9 @@ export function FtsFunnelStages({
               }`}
             >
               {toFaDigits(i + 1)}. {STAGE_TITLE[s.key]}
-              <span className="num ms-1 opacity-80">({toFaDigits(s.entries.length)})</span>
+              <span className="num ms-1 opacity-80" title={`عبور از این گام: ${toFaDigits(s.summary.pass)} از ${toFaDigits(s.ruled)} نمادِ جامعۀ ورودی`}>
+                ({toFaDigits(s.summary.pass)})
+              </span>
             </button>
           ))}
         </div>

@@ -1,7 +1,7 @@
 // __tests__/fts-funnel-stages.spec.tsx — رندرِ قیف از پاسخِ /api/funnel
 //
 // این پرونده «منطق داوری» را تست نمی‌کند؛ منطق داوری درِ `funnel_engine.py` است و
-// ۲۶ case درِ `dev/funnel_engine_v1.py` (ثبت‌شدۀ بیرونِ موتور) آن را می‌سنجد.
+// ۳۷ case درِ `dev/funnel_engine_v1.py` (ثبت‌شدۀ بیرونِ موتور) آن را می‌سنجد.
 // چیزی که اینجا اثبات می‌شود دو چیز است:
 //   ۱) فرانت همان حکمِ سرور را نمایش می‌دهد و دوباره داوری نمی‌کند — با ردیفِ
 //      عمداً متناقض درِ فیکسچر («همراه» نشانه و امتیازِ پنج دارد ولی پاسخ می‌گوید
@@ -11,13 +11,28 @@
 import type { ReactElement } from 'react';
 import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { funnelFromApi } from '@features/master/lib/funnelView';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { FUNNEL_FIXTURE, installFunnelApi } from './fixtures/funnelApi';
+
+// بدنهٔ هر جدولِ قیف مجازی‌سازی شده (پنج‌هزار ردیفِ universe رویِ هم)، و jsdom
+// اندازه ندارد؛ همان الگوی `fts-screen.spec.tsx`: پنجره‌ای به بزرگیِ فهرست.
+vi.mock('@tanstack/react-virtual', async (orig) => {
+  const mod = await orig<typeof import('@tanstack/react-virtual')>();
+  const WINDOW = 50;
+  return {
+    ...mod,
+    useVirtualizer: (opts: { count: number; estimateSize?: (i: number) => number }) => ({
+      getTotalSize: () => opts.count * 29,
+      getVirtualItems: () => Array.from({ length: Math.min(opts.count, WINDOW) },
+                                        (_, i) => ({ key: i, index: i, start: i * 29 })),
+    }),
+  };
+});
 
 let restoreFetch = () => {};
 
@@ -68,11 +83,14 @@ describe('قیف از پاسخِ سرور', () => {
     expect(within(table).getAllByText(/گزارشش نرسیده/).length).toBeGreaterThan(0);
     first.unmount();
     await ready('/master?stage=handover&preset=custom');
-    // گام چهارم فقط تحویل را نشان می‌دهد؛ «شپنا» درِ کارتِ بنیادی همان‌جا می‌ماند
-    // (سنجیده‌نشده) و هرگز به فهرستِ تحویل نمی‌آید.
+    // گام چهارم: «شپنا» درِ جدولِ اصلیِ تحویل نیست (بنیادش سنجیده نشده) و فقط
+    // درِ صفِ «در انتظار»ِ همان کارت می‌نشیند.
     const hand = screen.getByTestId('funnel-stage-handover');
-    expect(within(hand).queryByText('شپنا')).not.toBeInTheDocument();
-    expect(within(hand).getByText('فولاد')).toBeInTheDocument();
+    const main = within(within(hand).getByTestId('funnel-scroll-handover'));
+    expect(main.queryByText('شپنا')).not.toBeInTheDocument();
+    expect(main.getByText('فولاد')).toBeInTheDocument();
+    expect(within(within(hand).getByTestId('funnel-pending-handover')).getByText('شپنا'))
+      .toBeInTheDocument();
   });
 
   it('دلیلِ هر ردیف درِ خودِ جدول دیده می‌شود، نه در tooltip', async () => {
@@ -82,21 +100,44 @@ describe('قیف از پاسخِ سرور', () => {
     expect(within(tape).getByTestId('funnel-why-سپ').textContent).toContain('حجم مشکوک');
   });
 
-  it('شمارشِ هر گام از همان پاسخ می‌آید: ورودی، ماندگار، حذف‌شده', async () => {
+  it('شمارشِ هر گام از همان پاسخ می‌آید: پنج وضعیت رویِ کلِ universe', async () => {
     const f = funnelFromApi(FUNNEL_FIXTURE);
-    expect(f.stages.tape.summary.pass).toBe(2);
-    expect(f.stages.tape.entries).toHaveLength(3);
+    expect(f.total).toBe(4);
+    expect(f.boardScope).toBe(4);
+    // coverageِ بک‌اند عیناً می‌نشیند — فرانت چیزی نمی‌شمارد که سرور گفته باشد.
+    expect(f.counts.tape).toEqual({ pass: 3, reject: 1, pending: 0, unavailable: 0, not_required: 0 });
+    expect(f.counts.technical.not_required).toBe(1);   // «سپ» درِ تابلو رد شده
+    expect(f.counts.fundamental.not_required).toBe(2); // «سپ» + «همراه»
     expect(f.stages.technical.entries.find((e) => e.symbol === 'همراه')?.status.technical).toBe('reject');
-    expect(f.stages.fundamental.entries.find((e) => e.symbol === 'شپنا')?.status.fundamental)
+    expect(f.stages.fundamental.pending.find((e) => e.symbol === 'شپنا')?.status.fundamental)
       .toBe('pending');
-    expect(f.total).toBe(922);
-    expect(f.boardScope).toBe(5865);
   });
 
-  it('هیچ سقفِ پنهانی درِ مسیرِ نمایش نیست: هرچه پاسخ بدهد همان‌قدر ردیف است', async () => {
+  it('هیچ نمادی از هیچ گامی گم نمی‌شود: جدولِ هر گام = کلِ universe', () => {
     const f = funnelFromApi(FUNNEL_FIXTURE);
-    expect(f.stages.tape.entries.length).toBe(FUNNEL_FIXTURE.entries!.tape!.length);
-    expect(f.stages.handover.entries.length).toBe(FUNNEL_FIXTURE.entries!.handover!.length);
+    for (const key of ['tape', 'technical', 'fundamental', 'handover'] as const) {
+      const s = f.stages[key];
+      expect(s.entries.length + s.pending.length, key).toBe(f.total);
+      expect(s.ruled, key).toBe(f.total);
+      expect(s.summary.pass + s.summary.reject + s.summary.pending
+              + s.summary.unavailable + s.summary.not_required, key).toBe(f.total);
+    }
+    // آنکه تابلو رد کرده درِ گامِ تکنیکال هم دیده می‌شود، با حکمِ «لازم نبود» —
+    // نه اینکه غیب شود و «سنجیده نشده» خوانده شود.
+    const sep = f.stages.technical.entries.find((e) => e.symbol === 'سپ');
+    expect(sep?.status.technical).toBe('not_required');
+    expect(sep?.why.technical).toContain('تابلو نماد را رد کرده');
+  });
+
+  it('«لازم نبود» درِ خودِ جدول دیده می‌شود، نه در tooltip', async () => {
+    await ready('/master?stage=technical&preset=custom');
+    const tech = screen.getByTestId('funnel-stage-technical');
+    expect(within(tech).getByTestId('funnel-not-required-technical').textContent)
+      .toContain('۱ لازم نبود');
+    expect(within(tech).getByTestId('funnel-why-سپ').textContent)
+      .toContain('تابلو نماد را رد کرده');
+    expect(within(tech).getByTestId('funnel-ruled-technical').textContent)
+      .toContain('کلِ universe');
   });
 });
 
@@ -203,7 +244,9 @@ describe('حفظِ حالت', () => {
 
   it('پاسخِ بی‌داده صفحه را نمی‌شکند: جای خالی با علت می‌آید', async () => {
     restoreFetch();
-    restoreFetch = installFunnelApi({ ...FUNNEL_FIXTURE, entries: {}, status: 'no_data' });
+    // پاسخِ واقعیِ no_data هیچ ردیفی ندارد: نه entries، نه matrix، نه coverage.
+    restoreFetch = installFunnelApi({ ...FUNNEL_FIXTURE, entries: {}, status_matrix: {},
+                                       coverage: undefined, status: 'no_data' });
     withClient(<FtsFunnelStages preset="custom" onPresetChange={() => {}} />,
                '/master?stage=handover&preset=custom');
     await waitFor(() => expect(screen.getByTestId('funnel-stage-handover')).toBeInTheDocument());

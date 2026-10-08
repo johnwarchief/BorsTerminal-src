@@ -54,6 +54,7 @@ const STATUS_ICON: Record<StageStatus, string> = {
   reject: '❌',
   pending: '⏳',
   unavailable: '○',
+  not_required: '·',
 };
 
 export type DossierStage = {

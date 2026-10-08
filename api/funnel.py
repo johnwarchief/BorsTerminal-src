@@ -4,9 +4,10 @@
 و ردیف‌هایِ اسکرینر (با پنج شاخص و `tech_*`) به `funnel_engine.evaluate()`
 می‌روند و حکمِ نهایی + trace + شمارشِ هر مرحله برمی‌گردد.
 
-دو مسیر:
+سه مسیر:
   GET  /api/funnel?preset=trend&fund_mode=standard
   POST /api/funnel   {preset, chain, fund_mode, params, exceptions}
+  GET  /api/funnel/trace?symbol=X&preset=…   (خطِ زمانِ یک نماد)
 
 منبعِ داده همان کشِ `/api/market` و `/api/screener` است — یعنی قیف داده‌اش را
 از همان جایی می‌خواند که جدولِ تابلو و جدولِ بنیادی می‌خوانند (نه یک نسخۀ
@@ -63,6 +64,30 @@ def get_registry():
     return REG.as_json()
 
 
+@router.get("/api/funnel/trace")
+def get_trace(symbol: str, preset: str = "trend", chain: str = "",
+              fund_mode: str = "standard"):
+    """خطِ زمانِ یک نماد: Universe ← تابلو ← هر فیلتر ← تکنیکال ← بنیادی ← تحویل.
+
+    چرا جدا: `timeline` برایِ تک‌تکِ ۵٫۸ هزار نماد درِ پاسخِ فهرست می‌آمد و نیمی
+    از حجمِ پاسخ می‌شد، در حالی که یک «چرا؟» درِ بازرِس فقط یک نماد را می‌خواهد.
+    چیزی حذف نشده — همان داده، درِ درخواستِ خودش، از همان کشِ هشت‌ثانیه‌ای.
+    """
+    payload = _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
+                   full=True)
+    tl = (payload.get("timeline") or {}).get(symbol)
+    cell = (payload.get("status_matrix") or {}).get(symbol)
+    if tl is None and cell is None:
+        return {"status": "not_found", "symbol": symbol,
+                "message": "این نماد درِ جامعۀ این نشست نیست",
+                "universe": payload.get("universe")}
+    return {"status": "success", "symbol": symbol, "timeline": tl or [],
+            "matrix": cell, "universe": payload.get("universe"),
+            "engine_version": payload.get("engine_version"),
+            "ruleset_version": payload.get("ruleset_version"),
+            "as_of": payload.get("as_of")}
+
+
 @router.get("/api/funnel")
 def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard"):
     return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {})
@@ -83,8 +108,19 @@ async def post_funnel(request: Request):
     )
 
 
+def _strip(payload: dict) -> dict:
+    """پاسخِ فهرست بی‌`timeline`: خطِ زمانِ همهٔ نمادها ۹ مگابایت از ۱۹ مگابایت
+    پاسخ را می‌گرفت و جدول هیچ‌وقت همه‌اش را نمی‌خواند. `/api/funnel/trace`
+    همان را نمادبه‌نماد می‌دهد؛ وضعیتِ هر نماد درِ هر گام همچنان درِ
+    `status_matrix` هست، پس هیچ «سنجیده نشده»ای از پاسخ نمی‌افتد."""
+    out = dict(payload)
+    out.pop("timeline", None)
+    return out
+
+
 def _run(preset: str, chain: list[str], fund_mode: str,
-         params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]]) -> dict:
+         params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+         full: bool = False) -> dict:
     if preset not in REG.PRESET_BY_ID:
         return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
     if fund_mode not in ("hard", "standard", "exception"):
@@ -94,7 +130,10 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                      ensure_ascii=False)
     now = time.time()
     if _FUNNEL_CACHE["key"] == key and now - _FUNNEL_CACHE["ts"] < TTL_S and _FUNNEL_CACHE["payload"]:
-        out = dict(_FUNNEL_CACHE["payload"])
+        cached = _FUNNEL_CACHE["payload"]
+        if full:
+            return cached
+        out = _strip(cached)
         out["cached_for_ms"] = int((now - _FUNNEL_CACHE["ts"]) * 1000)
         return out
 
@@ -108,4 +147,4 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     _FUNNEL_CACHE.update({"key": key, "payload": payload, "ts": now})
-    return payload
+    return payload if full else _strip(payload)

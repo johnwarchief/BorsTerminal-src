@@ -29,13 +29,13 @@ export const FUNNEL_FIXTURE: ApiPayload = {
   preset: 'custom',
   chain: ['f_susp', 'f_noqteh'],
   fund_mode: 'standard',
-  universe: { board: 5865, screened: 922, joined: 922 },
+  universe: { board: 4, screened: 3, joined: 4, duplicate_rows: 0 },
   stages: {
     tape: {
-      input: 922, matched: 3, removed: 919,
+      input: 4, matched: 3, removed: 1,
       steps: [
-        { stage: 'tape', seq: 1, filter_id: 'f_susp', label: 'حجم مشکوک', input_count: 922,
-          matched_count: 3, removed_count: 919, unmeasured_count: 0,
+        { stage: 'tape', seq: 1, filter_id: 'f_susp', label: 'حجم مشکوک', input_count: 4,
+          matched_count: 3, removed_count: 1, unmeasured_count: 0,
           parameter_set: { vol_mult: 3, min_trades: 50 },
           source_ref: 'docs/حجم مشکوک.txt#b8a185c4168be33e', formula_version: 'txt-1',
           backend_impl: 'tape_flags.suspicious_flag' },
@@ -46,10 +46,10 @@ export const FUNNEL_FIXTURE: ApiPayload = {
           backend_impl: 'tape_flags.noqteh_flag' },
       ],
     },
-    technical: { input: 3, matched: 2, counts: { pass: 2, reject: 1, pending: 0, unavailable: 0 } },
-    fundamental: { input: 2, matched: 1, mode: 'standard',
-                   counts: { pass: 1, reject: 0, pending: 1, unavailable: 0 } },
-    handover: { input: 1, matched: 1, counts: { pass: 1, reject: 0, pending: 0, unavailable: 0 } },
+    technical: { matched: 2, counts: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 } },
+    fundamental: { matched: 1, mode: 'standard',
+                   counts: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2 } },
+    handover: { matched: 1, counts: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0 } },
   },
   entries: {
     tape: [
@@ -100,6 +100,48 @@ export const FUNNEL_FIXTURE: ApiPayload = {
       { stage: 'fundamental', status: 'pass', reason_code: '', human_reason: '' },
       { stage: 'handover', status: 'pass', reason_code: '', human_reason: '' },
     ],
+  },
+  /** وضعیتِ هر چهار گام برایِ هر چهار نماد — همان چیزی که بک‌اند از
+   *  `status_matrix` می‌دهد. چهار نمادِ این فیکسچر چهار سرنوشتِ متفاوت‌اند:
+   *  عبورِ کامل، ردِ تکنیکال، ردِ تابلو، و بنیادیِ در انتظار. */
+  status_matrix: {
+    'فولاد': {
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      technical: { status: 'pass', reason_code: 'WEEKLY_TREND_UP', human_reason: 'روند هفتگی صعودی' },
+      fundamental: { status: 'pass', reason_code: 'FUND_PASSED', human_reason: 'سه بلاکر تأیید است' },
+      handover: { status: 'pass', reason_code: 'FINAL_PASS', human_reason: 'قبول در هر چهار در', display_rank: 1 },
+    },
+    'همراه': {
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      technical: { status: 'reject', reason_code: 'WEEKLY_TREND_DOWN', human_reason: 'روند هفتگی نزولی — وتوی قطعی' },
+      fundamental: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TECHNICAL_STOP',
+                     human_reason: 'تکنیکال نماد را رد کرده؛ بنیادی اجرا نمی‌شود' },
+      handover: { status: 'reject', reason_code: 'NOT_ELIGIBLE_AFTER_PRIOR_REJECT',
+                  human_reason: 'در گامِ پیشین رد شده' },
+    },
+    'سپ': {
+      tape: { status: 'reject', reason_code: 'TAPE_F_SUSP_NO_MATCH',
+              human_reason: 'حجم مشکوک — نشانه در این نماد نیست' },
+      technical: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                   human_reason: 'تابلو نماد را رد کرده؛ تکنیکال اجرا نمی‌شود' },
+      fundamental: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                     human_reason: 'تابلو نماد را رد کرده؛ بنیادی اجرا نمی‌شود' },
+      handover: { status: 'reject', reason_code: 'NOT_ELIGIBLE_AFTER_PRIOR_REJECT',
+                  human_reason: 'در گامِ پیشین رد شده' },
+    },
+    'شپنا': {
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      technical: { status: 'pass', reason_code: 'WEEKLY_TREND_UP', human_reason: 'روند هفتگی صعودی' },
+      fundamental: { status: 'pending', reason_code: 'FUND_I1_MISSING',
+                     human_reason: 'I1 رشد فروش گزارشش نرسیده — رد نیست، سنجیده نشده' },
+      handover: { status: 'pending', reason_code: 'WAITING_FOR_DATA', human_reason: 'در انتظارِ داده/گزارش' },
+    },
+  },
+  coverage: {
+    tape: { pass: 3, reject: 1, pending: 0, unavailable: 0, not_required: 0 },
+    technical: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 },
+    fundamental: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2 },
+    handover: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0 },
   },
   handover: [{ symbol: 'فولاد', final: 'pass', exception: false, fund_score: 5,
                tech_points: 2, backend_rank: 1, display_rank: 1 }],

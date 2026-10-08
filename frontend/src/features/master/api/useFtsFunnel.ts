@@ -16,6 +16,9 @@ import {
   type Funnel,
   type FunnelMode,
   type FunnelOptions,
+  type FunnelStage,
+  type FunnelStageKey,
+  type StageSummary,
   type TapeFreshness,
   type TreePreset,
 } from '../lib/ftsFunnel';
@@ -29,21 +32,27 @@ export type FunnelRequest = {
   exceptions: Record<string, string[]>;
 };
 
+const EMPTY_SUM: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
+const emptyStage = (key: FunnelStageKey): FunnelStage => ({
+  key, entries: [], dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
+  ruled: 0, pending: [], summary: { ...EMPTY_SUM },
+});
+
 const EMPTY: Funnel = {
   mode: 'reverse', tape: 'unavailable',
   techCoverage: { universe: 0, live: 0, fromScreen: 0, none: 0 },
   stages: {
-    tape: { key: 'tape', entries: [], dropped: 0, rejected: 0, unmeasured: 0, pending: [], summary: { pass: 0, reject: 0, pending: 0, unavailable: 0 } },
-    technical: { key: 'technical', entries: [], dropped: 0, rejected: 0, unmeasured: 0, pending: [], summary: { pass: 0, reject: 0, pending: 0, unavailable: 0 } },
-    fundamental: { key: 'fundamental', entries: [], dropped: 0, rejected: 0, unmeasured: 0, pending: [], summary: { pass: 0, reject: 0, pending: 0, unavailable: 0 } },
-    handover: { key: 'handover', entries: [], dropped: 0, rejected: 0, unmeasured: 0, pending: [], summary: { pass: 0, reject: 0, pending: 0, unavailable: 0 } },
+    tape: emptyStage('tape'),
+    technical: emptyStage('technical'),
+    fundamental: emptyStage('fundamental'),
+    handover: emptyStage('handover'),
   },
   boardScope: 0, total: 0,
   counts: {
-    tape: { pass: 0, reject: 0, pending: 0, unavailable: 0 },
-    technical: { pass: 0, reject: 0, pending: 0, unavailable: 0 },
-    fundamental: { pass: 0, reject: 0, pending: 0, unavailable: 0 },
-    handover: { pass: 0, reject: 0, pending: 0, unavailable: 0 },
+    tape: { ...EMPTY_SUM },
+    technical: { ...EMPTY_SUM },
+    fundamental: { ...EMPTY_SUM },
+    handover: { ...EMPTY_SUM },
   },
   targets: { initial: 50, watchlist: 10, basketMin: 5, basketMax: 7 },
 };
@@ -104,7 +113,11 @@ export function useFtsFunnel(
   const funnel = useMemo<Funnel>(() => (q.data ? funnelFromApi(q.data, mode) : EMPTY),
                                  [q.data, mode]);
   const universe = q.data?.universe?.joined ?? 0;
-  const matched = q.data?.stages?.technical?.input ?? 0;
+  // «سنجیده شده» = هر نمادی که گامِ تکنیکال درباره‌اش حکمی نوشته است. آنکه
+  // تابلو ردش کرده به این گام نرسیده (`not_required`) و درِ شمار حساب نمی‌آید؛
+  // این تقسیمِ شمارش است، نه داوریِ تازه.
+  const tc = funnel.counts.technical;
+  const resolved = tc.pass + tc.reject + tc.pending + tc.unavailable;
 
   return {
     funnel,
@@ -112,7 +125,7 @@ export function useFtsFunnel(
     tape: funnel.tape,
     // بودجۀ /api/fts دیگر معنا ندارد: تکنیکالِ هر نماد درِ همان پاسخِ قیف است.
     queue: { symbols: [], beyondCap: 0 },
-    tech: { wanted: universe, resolved: matched, loading: q.isFetching },
+    tech: { wanted: universe, resolved, loading: q.isFetching },
     loading: q.isPending,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
     // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،

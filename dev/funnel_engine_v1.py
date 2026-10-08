@@ -274,8 +274,28 @@ ck(mr["handover"]["status"] == FE.PENDING,
 ck(all(isinstance(M["status_matrix"][s]["handover"].get("display_rank"), int)
        for s, row in M["status_matrix"].items() if row["handover"]["status"] == FE.PASS),
    "۳۴) رتبۀ نمایشی برایِ هر پذیرفته‌شده ثبت شده")
+
+# -- ۳۶) پیمانِ HTTP: همان جامعیت باید از سیم هم عبور کند
+# پاسخِ فهرست عمداً بی‌`timeline` است (خطِ زمانِ ۵٫۸ هزار نماد نیمی از پاسخ بود
+# و جدولِ فهرست هرگز همه‌اش را نمی‌خواند). دو چیز نباید با این برش برود:
+# `status_matrix` (حکمِ هر نماد درِ هر گام) و `coverage` (جمعِ پنج وضعیت).
+import api.funnel as FA
+STRIPPED = FA._strip(M)
+ck("timeline" not in STRIPPED,
+   "۳۶) خطِ زمانِ همهٔ نمادها از پاسخِ فهرست بیرون است، نه از داوری")
+ck("status_matrix" in STRIPPED and "coverage" in STRIPPED,
+   "۳۶) برشِ پاسخ، matrix و coverage را دست نمی‌زند")
+_FIVE = ("pass", "reject", "pending", "unavailable", "not_required")
+ck(all(sum(STRIPPED["coverage"][g].get(s, 0) for s in _FIVE) == STRIPPED["universe"]["joined"]
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۳۶) جمعِ پنج وضعیت درِ هر گام == جامعۀ ورودی، رویِ سیمِ HTTP هم")
+ck(len(STRIPPED["status_matrix"]) == STRIPPED["universe"]["joined"],
+   "۳۶) یک سطرِ وضعیت برایِ هر نمادِ universe درِ پاسخ هست")
+ck(all(set(cell) >= {"status", "reason_code", "human_reason"}
+       for row in STRIPPED["status_matrix"].values() for cell in row.values()),
+   "۳۶) هر سلولِ پاسخ حکم + کدِ دلیل + متنِ دلیل دارد")
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {36} بندِ مأموریت")
+print(f"funnel_engine guard OK — {37} بندِ مأموریت")

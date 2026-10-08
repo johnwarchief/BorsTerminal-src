@@ -13,7 +13,8 @@ const MARK: Record<StageStatus, { icon: string; tone: 'green' | 'red' | 'yellow'
   pass: { icon: '✅', tone: 'green', word: 'قبول' },
   reject: { icon: '❌', tone: 'red', word: 'رد' },
   pending: { icon: '⏳', tone: 'yellow', word: 'در انتظار' },
-  unavailable: { icon: '○', tone: 'blue', word: 'سنجیده نشد' },
+  unavailable: { icon: '○', tone: 'blue', word: 'بی‌داده' },
+  not_required: { icon: '·', tone: 'blue', word: 'لازم نبود' },
 };
 
 const n = (v: number | null | undefined): string =>
