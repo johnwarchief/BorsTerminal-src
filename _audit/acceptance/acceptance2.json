@@ -1,0 +1,51 @@
+{
+ "base": "http://127.0.0.1:4181/",
+ "checks": {
+  "queue.inspector": {
+   "state": "PASS",
+   "inspector": {
+    "x": 22,
+    "y": 39,
+    "w": 338,
+    "h": 703,
+    "bottom": 742,
+    "scrollW": 337,
+    "clientW": 337,
+    "scrollH": 794
+   },
+   "nav": {
+    "x": 0,
+    "y": 742,
+    "w": 360,
+    "h": 58,
+    "bottom": 800,
+    "scrollW": 359,
+    "clientW": 359,
+    "scrollH": 100
+   },
+   "navVisible": true,
+   "depthWords": true,
+   "bestLimit": false,
+   "snippet": "وبشهرح ح . صنايع‌ بهشهر(هلدينگ محصولات غذايي و آشاميدني به جز قند و شكر سنجاق ✕ تابلوخوانی تکنیکال بنیادی تحویل مرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکال آخرین معامله ۶۲۸۰ تغییر روز ۱.۴٪ وضعیتِ ناظر: موردی ثبت نشده … در انتظارِ سنجش بنیادی هنوز سنجیده نشده نمره ب"
+  },
+  "fundamental.scrollEnd": {
+   "state": "PASS",
+   "rowsInDom": 22,
+   "scrollTop": 29708,
+   "firstBefore": "آلومينا آلوميناي ايران الف ✓ ب ✓ ۶۸٪ ✓ ۱",
+   "firstAfter": ""
+  },
+  "offline.technicalFromSnapshot": {
+   "state": "FAIL",
+   "inkCanvases": 0,
+   "emptyState": 0,
+   "offline": true,
+   "note": "دیتابیس از همان بارِ اول در حافظه ماند؛ شبکه فقط برای زندهٔ TSETMC لازم است"
+  }
+ },
+ "errors": [
+  "Access to fetch at 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json' from origin 'http://127.0.0.1",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+ ]
+}

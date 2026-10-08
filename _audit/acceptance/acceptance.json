@@ -1,0 +1,199 @@
+{
+ "base": "http://127.0.0.1:4181/",
+ "startedAt": "2026-10-07T23:52:20.823Z",
+ "checks": {
+  "portrait.market.layout": {
+   "state": "PASS",
+   "nav": {
+    "x": 0,
+    "y": 742,
+    "w": 360,
+    "h": 58,
+    "bottom": 800,
+    "scrollW": 359,
+    "clientW": 359
+   },
+   "content": {
+    "x": 0,
+    "y": 0,
+    "w": 360,
+    "h": 2021,
+    "bottom": 2021,
+    "scrollW": 360,
+    "clientW": 360
+   },
+   "tapeRows": 26,
+   "navIsBottomBar": true,
+   "horizontalOverflow": 0
+  },
+  "portrait.market.liveOverlay": {
+   "state": "PASS",
+   "tsetmcLive": "3924 نماد ✅",
+   "board": "5865 ردیف ✅",
+   "fundamental": null,
+   "perSymbol": "calendar=927 · quarters=922 · orderbook=922 · fts=922 · fundamental=921 · mstat=6 · index=1 ✅",
+   "candles": "433922 کندل · 6031 نماد · 2024-08-24 ← 2026-10-07",
+   "overlay": "3924 ردیف · 2026-10-07T23:52:30.072Z ✅",
+   "packageVer": "v1.0.78 · 2026-10-08T02:34:01 · 4627 بسته ✅",
+   "boot": "822ms (دریافت 346 · بازگشایی 443 · باز کردن 33) ✅"
+  },
+  "portrait.market.orderQueue": {
+   "state": "FAIL",
+   "why": "no tape row"
+  },
+  "fundamental.universe": {
+   "state": "PASS",
+   "headerText": "۶۵۸ شرکت از ۹۲۲",
+   "rowsInDom": 23,
+   "scroller": {
+    "x": 11,
+    "y": 236,
+    "w": 339,
+    "h": 600,
+    "bottom": 836,
+    "scrollW": 920,
+    "clientW": 339
+   },
+   "virtualized": true
+  },
+  "fundamental.scrollEnd": {
+   "state": "FAIL",
+   "scrollHeight": 30308,
+   "top": 0,
+   "rows": 23
+  },
+  "technical.chart": {
+   "state": "PASS",
+   "canvases": [
+    {
+     "w": 224,
+     "h": 525,
+     "ink": 5545
+    },
+    {
+     "w": 224,
+     "h": 525,
+     "ink": 8895
+    },
+    {
+     "w": 69,
+     "h": 525,
+     "ink": 4046
+    },
+    {
+     "w": 69,
+     "h": 525,
+     "ink": 0
+    },
+    {
+     "w": 224,
+     "h": 110,
+     "ink": 5193
+    },
+    {
+     "w": 224,
+     "h": 110,
+     "ink": 0
+    },
+    {
+     "w": 69,
+     "h": 110,
+     "ink": 359
+    },
+    {
+     "w": 69,
+     "h": 110,
+     "ink": 0
+    },
+    {
+     "w": 224,
+     "h": 32,
+     "ink": 785
+    },
+    {
+     "w": 224,
+     "h": 32,
+     "ink": 0
+    }
+   ],
+   "emptyState": 0,
+   "chartArea": {
+    "x": 10,
+    "y": 47,
+    "w": 341,
+    "h": 738,
+    "bottom": 785,
+    "scrollW": 341,
+    "clientW": 341
+   },
+   "inkCanvases": 5
+  },
+  "funnel.stages": {
+   "state": "PASS",
+   "overview": 1,
+   "chips": 4,
+   "stages": {
+    "tape": {
+     "href": "/master?stage=tape&preset=trend",
+     "notFound": 0,
+     "stageCard": 1,
+     "rows": 15
+    },
+    "technical": {
+     "href": "/master?stage=technical&preset=trend",
+     "notFound": 0,
+     "stageCard": 1,
+     "rows": 15
+    },
+    "fundamental": {
+     "href": "/master?stage=fundamental&preset=trend",
+     "notFound": 0,
+     "stageCard": 1,
+     "rows": 8
+    },
+    "handover": {
+     "href": "/master?stage=handover&preset=trend",
+     "notFound": 0,
+     "stageCard": 1,
+     "rows": 2
+    }
+   }
+  },
+  "tree.flow": {
+   "state": "PASS",
+   "rails": 3,
+   "animationName": "fts-path-flow",
+   "playState": "running",
+   "comet": true,
+   "rootFlag": "1"
+  },
+  "landscape.market": {
+   "state": "PASS",
+   "nav": {
+    "x": 760,
+    "y": 0,
+    "w": 52,
+    "h": 375,
+    "bottom": 375,
+    "scrollW": 50,
+    "clientW": 50
+   },
+   "tapeRows": 23,
+   "horizontalOverflow": 0,
+   "railOnSide": true
+  },
+  "offline.technicalFromSnapshot": {
+   "state": "FAIL",
+   "offline": true,
+   "inkCanvases": 0
+  }
+ },
+ "errors": [
+  "Access to fetch at 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json' from origin 'http://127.0.0.1",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of \"text/html\". Strict MIME type checking is",
+  "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+  "pageerror: Error: Unable to preload CSS for /assets/TechnicalPage-DB544epO.css"
+ ],
+ "finishedAt": "2026-10-07T23:57:57.686Z"
+}

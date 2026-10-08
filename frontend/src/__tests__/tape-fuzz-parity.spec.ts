@@ -7,7 +7,7 @@
 // دو بار خوانده می‌شود: tape_flags.py (مرجعِ عینِ ExecFilterِ سایت) و
 // tapeFilterVerdict() درِ فرانت. اختلافِ این‌جا همان اختلافی است که فردا صبح
 // درِ تابلو دیده می‌شود.
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { MarketRow } from '@shared/types/marketRow';
@@ -22,11 +22,20 @@ type Corpus = {
   expected: Record<(typeof FLAGS)[number], boolean[]>;
 };
 
-const corpus = JSON.parse(
-  readFileSync(resolve(process.cwd(), '../_audit/tape_parity_fuzz.json'), 'utf8'),
-) as Corpus;
+// کورپوس از /api/marketِ زنده رویِ PC ساخته می‌شود (tools/tape_parity_fuzz.py) و
+// `_audit/*.json` عمداً در گیت نیست؛ پس این گیتِ PC است، نه CI. بی‌کورپوس صریح
+// skip می‌شود تا «اجرا نشد» با «سبز شد» قاطی نشود — نه اینکه ادعا حذف شود.
+const CORPUS_PATH = resolve(process.cwd(), '../_audit/tape_parity_fuzz.json');
+const hasCorpus = existsSync(CORPUS_PATH);
+if (!hasCorpus) {
+  console.warn(`[tape-fuzz-parity] SKIPPED — corpus نیست (${CORPUS_PATH}); `
+    + 'بساز: python tools/tape_parity_fuzz.py --rows 140 --out _audit/tape_parity_fuzz.json');
+}
+const corpus: Corpus = hasCorpus
+  ? (JSON.parse(readFileSync(CORPUS_PATH, 'utf8')) as Corpus)
+  : { seed: 0, count: 0, rows: [], expected: {} as Corpus['expected'] };
 
-describe('برابریِ تفاضلیِ پنج فیلترِ تابلو', () => {
+describe.skipIf(!hasCorpus)('برابریِ تفاضلیِ پنج فیلترِ تابلو', () => {
   it('هیچ حالتی از ۷۳۲ حالتِ به‌هم‌ریخته میانِ فرانت و مرجعِ پایتون فرق نمی‌کند', () => {
     const diffs: string[] = [];
     corpus.rows.forEach((row, i) => {
