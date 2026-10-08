@@ -4,7 +4,7 @@
 // سنجیده نشده بود. قاعدۀ مخزن (dev/weekly_veto_guard.py، dev/assembly_veto_v1064.py):
 // بی‌داده وتو نیست.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -120,6 +120,9 @@ describe('سایدبار چپ: ردِ قطعی با «هنوز سنجیده نش
   it('سیگنالِ پرتفو بی‌payload پنل را نمی‌شکند', () => {
     useSignalStore.getState().publishSignal(sig('portfolio', { payload: null }));
     expect(() => renderInspector()).not.toThrow();
+    // §۱۵.۲۰: چراغِ سبد به صفحۀ «جزئیات بازار» رفته؛ ادعا همان است، فقط یک
+    // کلیک جلوتر.
+    fireEvent.click(screen.getByTestId('inspector-tab-detail'));
     expect(screen.getByText('پرتفوی')).toBeInTheDocument();
   });
 });

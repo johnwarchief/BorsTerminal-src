@@ -1,6 +1,6 @@
 // تست سایدبار چپ (#48 نشانگر مرحلۀ تبِ فعال، #49 پنج مظنه در سایدبار،
 // #67 «مرحلۀ خودِ نماد» — همان قیف، نه قاعدۀ دوم)
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
@@ -74,8 +74,15 @@ describe('نشانگر مرحله در سایدبار چپ', () => {
     expect(screen.queryByTestId('inspector-stage')).not.toBeInTheDocument();
   });
 
-  it('پنج مظنه در سایدبار چپ نشسته است', () => {
+  // §۱۵.۲۰: پنج مظنه نه حذف شده، بلکه به صفحۀ «جزئیات بازار» رفته و بسته
+  // به‌پیش‌فرض است. دو ادعا اینجا زنده می‌مانند: (۱) بی‌باز کردن، پرسشی به
+  // عمقِ بازار نمی‌رود؛ (۲) با دو کلیک همان عمق پیشِ کاربر است.
+  it('پنج مظنه در «جزئیات بازار» است و بی‌باز کردن پرسیده نمی‌شود', () => {
     renderAt('/market');
+    expect(screen.queryByTestId('sidebar-orderbook')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('inspector-tab-detail'));
+    expect(screen.queryByTestId('sidebar-orderbook')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('inspector-quotes-toggle'));
     expect(screen.getByTestId('sidebar-orderbook')).toBeInTheDocument();
   });
 });

@@ -33,15 +33,21 @@ function sig(agent: AgentSignal['agentId'], direction: AgentSignal['direction'],
   };
 }
 
-function renderInspector() {
+function renderInspector(path = '/') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <SymbolInspector />
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+// §۱۵.۲۰ دو صفحۀ محلی: هر چه به «جزئیات بازار» رفته با یک کلیک دیده می‌شود —
+// تست‌ها بازنویسیِ ادعا نیستند، دنبالۀ جابه‌جایی‌اند.
+function openDetail() {
+  fireEvent.click(screen.getByTestId('inspector-tab-detail'));
 }
 
 describe('سایدبار بازرسی نماد', () => {
@@ -63,6 +69,7 @@ describe('سایدبار بازرسی نماد', () => {
     const aside = screen.getByLabelText('بازرسی نماد شپنا');
     expect(aside.className).toContain('translate-x-0');
     expect(screen.getAllByText('شپنا').length).toBeGreaterThan(0);
+    openDetail();
     expect(screen.getByText(/چارت تکنیکال ↗/)).toBeInTheDocument();
     expect(screen.getByText('بررسی کدال ↗')).toBeInTheDocument();
   });
@@ -76,7 +83,7 @@ describe('سایدبار بازرسی نماد', () => {
     expect(aside.className).toContain('-translate-x-full');
   });
 
-  it('مینی گیج و چهار چراغ با سیگنال فعال رندر می شوند', () => {
+  it('صفحۀ «در یک نگاه»: گیج، دو چراغ، قدرت خرید/فروش و حجم/ارزش', () => {
     useSymbolStore.getState().setSymbol('شپنا');
     const bus = useSignalStore.getState();
     bus.publishSignal(sig('fundamental', 'bullish', 80));
@@ -87,9 +94,39 @@ describe('سایدبار بازرسی نماد', () => {
     expect(screen.getByLabelText('گیج برآیند')).toBeInTheDocument();
     expect(screen.getByText('نمره بنیادی')).toBeInTheDocument();
     expect(screen.getByText('تکنیکال FTS')).toBeInTheDocument();
-    expect(screen.getByText('سرانه خریدار')).toBeInTheDocument();
+    // §۱۵.۲۰: «سرانۀ خریدار» دیگر چراغِ جدا نیست؛ همان دو سرانه + نوارِ سهم +
+    // نسبت درِ خانۀ «قدرت خرید/فروش» می‌نشینند (یک implementation، دو مصرف‌کننده).
+    expect(screen.getByTestId('inspector-power')).toBeInTheDocument();
+    expect(screen.getByTestId('inspector-buy-sell')).toBeInTheDocument();
+    expect(screen.getByTestId('inspector-volume')).toBeInTheDocument();
+    expect(screen.getByTestId('inspector-events')).toBeInTheDocument();
+    // چراغِ سبد و پیوندِ «چارت تکنیکال» به صفحۀ دوم رفته‌اند؛ بی‌باز کردنش نباید دیده شود
+    expect(screen.queryByText('پرتفوی')).not.toBeInTheDocument();
+    openDetail();
     expect(screen.getByText('پرتفوی')).toBeInTheDocument();
-    expect(screen.getByText('نگهداری')).toBeInTheDocument();
+    expect(screen.getAllByText('نگهداری').length).toBeGreaterThan(0);
+  });
+
+  // ترتیبِ سطرها رأیِ مالک است، نه سلیقۀ پیاده‌ساز (§۱۵.۲۰): یک تستِ ترتیب،
+  // اگر جابه‌جاییِ بعدی چیزی را از صفحۀ اول بیاندازد سرِ همین‌جا می‌شکند.
+  it('ترتیبِ «در یک نظرة» همان رأیِ ۱۴۰۵-۰۷-۱۷ است', () => {
+    useSymbolStore.getState().setSymbol('شپنا');
+    // نشانگرِ مرحلۀ غربالگری فقط در مسیرِ خودِ قیف می‌آید (§تب‌هایِ بیرونِ قیف
+    // null)، پس سنجشِ ترتیب باید درِ همان مسیر باشد.
+    renderInspector('/technical/شپنا');
+    const want = ['inspector-volume', 'inspector-market-cap', 'inspector-power',
+                  'inspector-regulatory', 'تکنیکال FTS', 'نمره بنیادی',
+                  'inspector-stage', 'inspector-events', 'inspector-veto-why'];
+    const glance = screen.getByTestId('inspector-page-glance');
+    const seen: string[] = [];
+    glance.querySelectorAll('*').forEach((el) => {
+      const tid = el.getAttribute('data-testid');
+      const hit = tid && want.includes(tid) ? tid
+        : /^(تکنیکال FTS|نمره بنیادی)$/.test((el.textContent ?? '').trim())
+          ? (el.textContent ?? '').trim() : null;
+      if (hit && seen[seen.length - 1] !== hit && !seen.includes(hit)) seen.push(hit);
+    });
+    expect(seen).toEqual(want);
   });
 
   it('بدون سیگنال برچسب بدون داده می دهد', () => {

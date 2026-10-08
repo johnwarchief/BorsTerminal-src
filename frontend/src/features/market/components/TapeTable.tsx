@@ -3,7 +3,7 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { MarketRow } from '@shared/types/marketRow';
-import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
+import { billionRialText, fmtInt, fmtPct, toBillionRial, toFaDigits } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
@@ -14,9 +14,9 @@ import {
   detectSweep,
   lastCloseDiff,
 } from '../lib/tapePatterns';
-import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from '../lib/tapeFts';
+import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
 import { patternBadges } from '../lib/tapeBadges';
-import { powerTone } from '../api/useMarketPulse';
+import { BuySellCell } from './BuySellCell';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import SymbolSelectBox from '@shared/components/SymbolSelectBox';
 import WatchlistStar from '@shared/components/WatchlistStar';
@@ -99,10 +99,6 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   },
 ];
 
-/** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
-function toBillionRial(rials: number | null | undefined): number | null {
-  return typeof rials === 'number' && Number.isFinite(rials) ? rials / 1e9 : null;
-}
 
 const NEG = Number.NEGATIVE_INFINITY;
 
@@ -154,85 +150,6 @@ const MICRO_TONES = {
 } as const;
 
 type MicroTone = keyof typeof MICRO_TONES;
-
-/** رنگِ عددِ نسبت از همان آستانه‌های ۱.۵/۰.۸ِ نبض بازار — این‌جا داوری نمی‌شود */
-function powerClass(tone: 'good' | 'mid' | 'bad' | null): string {
-  if (tone === 'good') return 'text-accent-green font-bold';
-  if (tone === 'bad') return 'text-accent-red font-bold';
-  if (tone === 'mid') return 'text-accent-yellow';
-  return 'text-text-secondary';
-}
-
-const mt = (v: number | null): string => (v == null ? '—' : `${toFaDigits(v.toFixed(1))} م.ت`);
-
-/** سرانه به میلیون تومان: عددِ tabular + واحدِ جدا. واحد در spanِ خودش است چون
- *  `.num` جهت را ltr می‌کند و «۵.۰ م.ت» را در آن «م.ت ۵.۰» می‌خواند. داده نیست ⇒
- *  فقط «—»؛ صفرِ جعلی نه. بالای ۱۰۰ اعشار نمی‌ماند (همان قاعدهٔ ستونِ ارزش):
- *  سرانۀِ صدها میلیونی با یک رقم اعشار در ستونِ ۱۱۸ پیکسلی جا نمی‌شد. */
-function pcText(v: number): string {
-  return v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1));
-}
-
-function PcNum({ v, className, testId }: { v: number | null; className: string; testId: string }) {
-  return (
-    <span data-testid={testId} className={`flex shrink-0 items-baseline gap-px ${className}`}>
-      {/* سرانه‌ها هم مثلِ بقیۀِ ستون‌هایِ عددی فلاش می‌گیرند (#12): تا پیش از این
-          تنها «نسبتِ خرید/فروش» رنگ می‌دید و دو عددِ بالایِ همان خانه بی‌خبر عوض
-          می‌شدند. */}
-      <FlashNum
-        value={v}
-        className="num font-bold"
-        render={(x) => (x == null ? '—' : pcText(x))}
-      />
-      {v != null && <span className="text-3xs opacity-80">م.ت</span>}
-    </span>
-  );
-}
-
-/**
- * ستونِ خرید/فروش (#146 و #172): دو خط. بالا خودِ دو سرانه (میلیون تومان) — سبز
- * خرید در راست، قرمز فروش در چپ؛ پایین نوارِ سهم و نسبتِ خرید به فروش. تا پیش از
- * #172 دو سرانه فقط در title بود و «با دیدنِ ستون جزئیات زیادی نمی‌داد».
- * یک طرف غایب ⇒ «—» و بی‌نوار: نبودِ داده «فروش صفر» یا «خرید صددرصد» نیست.
- */
-function BuySellCell({
-  buyPc,
-  sellPc,
-  power,
-}: {
-  buyPc: number | null;
-  sellPc: number | null;
-  power: number | null | undefined;
-}) {
-  const share = buySellShare(buyPc, sellPc);
-  return (
-    <span
-      data-testid="tape-buy-sell"
-      className="flex min-w-0 flex-col gap-0.5"
-      title={`سرانۀ خرید ${mt(buyPc)} · سرانۀ فروش ${mt(sellPc)} — نسبتِ خرید به فروش ${
-        power == null ? '—' : `${toFaDigits(power.toFixed(2))}×`
-      }`}
-    >
-      <span className="flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none">
-        <PcNum v={buyPc} className="text-accent-green" testId="tape-buy-pc" />
-        <PcNum v={sellPc} className="text-accent-red" testId="tape-sell-pc" />
-      </span>
-      <span className="flex min-w-0 items-center gap-1">
-        <span dir="rtl" aria-hidden className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-card/80">
-          {share == null ? null : (
-            <>
-              <span className="bg-accent-green transition-[width] duration-300 ease-out" style={{ width: `${share * 100}%` }} />
-              <span className="bg-accent-red transition-[width] duration-300 ease-out" style={{ width: `${(1 - share) * 100}%` }} />
-            </>
-          )}
-        </span>
-        <span className={`num shrink-0 text-2xs ${powerClass(powerTone(power))}`}>
-          <FlashNum value={power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
-        </span>
-      </span>
-    </span>
-  );
-}
 
 /** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
 function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
@@ -344,8 +261,7 @@ export const TapeRow = memo(function TapeRow({
         <FlashNum value={row.z_tot_tran} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
       <span className="num text-end text-text-secondary" title={row.q_tot_cap != null ? `${fmtInt(row.q_tot_cap)} ریال` : undefined}>
-        <FlashNum value={toBillionRial(row.q_tot_cap)}
-                  render={(v) => (v == null ? '-' : v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1)))} />
+        <FlashNum value={toBillionRial(row.q_tot_cap)} render={billionRialText} />
       </span>
       <span
         className={`num text-end ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
