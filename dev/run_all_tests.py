@@ -252,6 +252,10 @@ SUITES = [
     # ruleset_version را عوض می‌کند). ساعت‌شنی عمداً زنجیرۀ تهی دارد تا هیچ
     # فیلترِ بی‌منبعی برایش اختراع نشود.
     ('dev/funnel_registry_v1.py', 'funnel registry: every txt filter pinned to its source'),
+    # FUNNEL ENGINE: داورِ canonical — اشتراکِ ترتیبی، وتوی هفتگی، سه
+    # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
+    # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
+    ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
     # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده
     # نمی‌شود؛ بدلِ ما هم timeout را «پذیرفته‌شده درِ سرور، گم‌شده درِ کلاینت»
     # می‌سازد تا مسیرِ UNKNOWN_RESULT → RECONCILE و تله‌یِ retryِ کور قابلِ اثبات

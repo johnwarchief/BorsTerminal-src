@@ -63,7 +63,7 @@ a = Analysis(
                    # presetهاست و api/funnel آن را سطح-بال import می‌کند؛ مثلِ بقیۀ
                    # ماژول‌هایِ ریشه صریح فهرست می‌شود وگرنه EXE رویِ اولین درخواستِ
                    # قیف ModuleNotFoundError می‌دهد.
-                   'funnel_registry',
+                   'funnel_registry', 'funnel_engine', 'funnel_tech_scan',
                    # کارِ #73 (بخشِ بنیادی، ۱۴۰۵-۰۷-۱۰): `codal_periods` تنها تعریفِ
                    # «دورۀ گزارش» است و fts_engine / api.fundamental / api.screener /
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
