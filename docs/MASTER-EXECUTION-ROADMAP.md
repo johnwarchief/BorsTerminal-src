@@ -2464,7 +2464,7 @@ canonical FTS signal rather than judge again.
 
 ## 15.6 WS-7 — دو جامعه، واژگانِ غربالگری، walkِ واقعیِ واچ‌لیست (۱۴۰۵-۰۷-۱۷)
 
- landed (branch `funnel-api-wip`, five commits):
+ پنج کار درِ این دور نشست (branch `funnel-api-wip`، پنج کامیت):
 
 | کار | حکم | شاهد |
 | --- | --- | --- |
