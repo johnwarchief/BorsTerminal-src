@@ -366,7 +366,9 @@ export function SymbolInspector() {
                             ? 'bg-accent-yellow'
                             : st === 'not_required'
                               ? 'bg-border-c/40 ring-1 ring-border-c/60'
-                              : 'bg-border-c'
+                              : st === 'not_in_universe'
+                                ? 'bg-bg-secondary ring-1 ring-border-c'
+                                : 'bg-border-c'
                     }`}
                   />
                   {s.label}
@@ -375,11 +377,18 @@ export function SymbolInspector() {
                       · لازم نبود
                     </span>
                   ) : null}
+                  {st === 'not_in_universe' ? (
+                    <span className="text-[9px] font-normal opacity-70" data-testid="inspector-stage-out">
+                      · خارج از جامعه
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
             <span className="w-full text-[9.5px] font-normal text-text-muted" data-testid="inspector-stage-next">
-              {stoppedAt >= 0
+              {progress[0]?.state === 'not_in_universe'
+                ? `خارج از جامعۀ غربالگری — ${progress[0].why}`
+                : stoppedAt >= 0
                 ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
                 : stageIdx < INSPECTOR_STAGES.length - 1
                   ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`

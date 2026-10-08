@@ -48,6 +48,8 @@ const EMPTY: Funnel = {
     handover: emptyStage('handover'),
   },
   boardScope: 0, total: 0,
+  marketUniverse: 0, excludedCount: 0, exclusions: [], exclusionCounts: {},
+  exclusionLabels: {},
   counts: {
     tape: { ...EMPTY_SUM },
     technical: { ...EMPTY_SUM },

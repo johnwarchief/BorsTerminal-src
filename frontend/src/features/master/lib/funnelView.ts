@@ -13,6 +13,7 @@ import type {
   StageStatus,
   StageSummary,
   TreePreset,
+  UniverseExclusion,
 } from './ftsFunnel';
 
 export type ApiWhy = { code?: string; text?: string; stage?: string; seq?: number;
@@ -55,7 +56,17 @@ export type ApiPayload = {
   status: string; message?: string;
   engine_version?: string; ruleset_version?: string; as_of?: number;
   preset?: TreePreset; chain?: string[]; fund_mode?: string;
-  universe?: { board: number; screened: number; joined: number; duplicate_rows?: number };
+  /** `board` ردیف خامِ تابلو است (با تکراری)، `market` جامعۀ نمادها (یک‌شده)،
+   *  `screening` فقط زنده‌ها/واجدِ شرایط، `excluded` باقیِ نمادها. همیشۀ
+   *  `market = screening + excluded` درِ گاردِ بک‌اند بسته شده. */
+  universe?: { board: number; screened: number; joined: number; duplicate_rows?: number;
+    market?: number; screening?: number; excluded?: number;
+    exclusion_counts?: Record<string, number>; exclusion_labels?: Record<string, string> };
+  /** علتِ خروجِ تک‌تکِ نمادهایِ بیرون از جامعۀ غربالگری (پاسخِ موتور) */
+  exclusions?: Array<{ symbol: string; name?: string; sector?: string;
+    last?: number | null; reason_code?: string; human_reason?: string;
+    st_code?: string | null; st_title?: string | null;
+    stop_state?: string | null; is_live?: boolean | null }>;
   stages?: Record<FunnelStageKey, {
     steps?: ApiStep[]; input?: number; matched?: number; removed?: number;
     counts?: Partial<Record<StageStatus, number>>; mode?: string }>;
@@ -180,15 +191,21 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
   for (const k of STAGES) {
     richBy[k] = new Map((payload.entries?.[k] ?? []).map((r) => [r.symbol, r]));
   }
-  // ترتیبِ جامعۀ ورودی از خودِ `status_matrix` می‌آید (همان ترتیبِ `joined` درِ
-  // موتور). اگر پاسخی matrix نداشته باشد (پاسخِ قدیمی)، نمادها از ردیف‌هایِ
-  // خودِ stages جمع می‌شوند — هیچ‌کدام جا نمی‌مانند.
+  // ترتیبِ جامعۀ غربالگری از خودِ `status_matrix` می‌آید (همان ترتیبِ `joined`
+  // درِ موتور)، **بیرون‌زدۀ نمادهایِ خارج از جامعه**: رأیِ مالک ۱۴۰۵-۰۷-۱۶ این
+  // است که جدولِ گام‌ها با آنها شلوغ نشود؛ علتشان درِ `funnel.exclusions` و
+  // بخشِ بازشوندهٔ خودش می‌نشیند. اگر پاسخی matrix نداشته باشد (پاسخِ قدیمی)،
+  // نمادها از ردیف‌هایِ خودِ stages جمع می‌شوند — هیچ‌کدام جا نمی‌مانند.
+  const excludedSyms = new Set((payload.exclusions ?? []).map((e) => e.symbol));
   const syms: string[] = [];
   const seen = new Set<string>();
-  for (const sym of Object.keys(matrix)) if (!seen.has(sym)) { seen.add(sym); syms.push(sym); }
+  for (const sym of Object.keys(matrix)) {
+    if (seen.has(sym) || excludedSyms.has(sym)) continue;
+    seen.add(sym); syms.push(sym);
+  }
   for (const k of STAGES) {
     for (const r of payload.entries?.[k] ?? []) {
-      if (!seen.has(r.symbol)) { seen.add(r.symbol); syms.push(r.symbol); }
+      if (!seen.has(r.symbol) && !excludedSyms.has(r.symbol)) { seen.add(r.symbol); syms.push(r.symbol); }
     }
   }
   const baseOf = (sym: string) => richBy.tape.get(sym) ?? richBy.technical.get(sym)
@@ -206,7 +223,12 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
       ? summaryOf(given)
       : (() => {
           const s: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
-          for (const c of rows) s[c.status[key]] += 1;
+          // خارج از جامعه درِ پنج عددِ گام نیست (جدولِ گام فقط جامعۀ غربالگری
+          // است)؛ بی‌این شرط، شمارشِ محلی با `coverage` نمی‌خواند.
+          for (const c of rows) {
+            const st = c.status[key];
+            if (st !== 'not_in_universe') s[st] += 1;
+          }
           return s;
         })();
     stages[key] = {
@@ -230,19 +252,32 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
     };
     counts[key] = sum;
   }
-  const joined = payload.universe?.joined ?? syms.length;
+  const screening = payload.universe?.screening ?? syms.length;
+  const exclusions: UniverseExclusion[] = (payload.exclusions ?? []).map((e) => ({
+    symbol: e.symbol, name: e.name ?? '', sector: e.sector ?? '', last: e.last ?? null,
+    reasonCode: e.reason_code ?? '', humanReason: e.human_reason ?? '',
+    stateCode: e.st_code ?? null, stateTitle: e.st_title ?? null,
+    stopState: e.stop_state ?? null, isLive: e.is_live ?? null,
+  }));
+  const excludedCount = payload.universe?.excluded ?? exclusions.length;
   return {
     mode: fallbackMode,
     tape: (payload.as_of && Date.now() / 1000 - payload.as_of < 900) ? 'live' : 'stale',
     techCoverage: {
-      universe: joined,
+      universe: screening,
       live: Math.max(0, sumSummary(counts.technical) - counts.technical.not_required),
       fromScreen: 0,
       none: counts.technical.unavailable,
     },
     stages,
     boardScope: payload.universe?.board ?? 0,
-    total: joined,
+    total: screening,
+    marketUniverse: payload.universe?.market
+      ?? payload.universe?.joined ?? screening + excludedCount,
+    excludedCount,
+    exclusions,
+    exclusionCounts: payload.universe?.exclusion_counts ?? {},
+    exclusionLabels: payload.universe?.exclusion_labels ?? {},
     counts,
     targets: { initial: 50, watchlist: 10, basketMin: 5, basketMax: 7 },
   };
@@ -255,7 +290,16 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
  *  نماد درِ پاسخ نبود، هر چهار گام `unknown` است (نه رد، نه قبول). */
 export function stageProgressFor(
   funnel: Funnel, symbol: string,
-): { key: FunnelStageKey; state: 'passed' | 'blocked' | 'waiting' | 'not_required' | 'unknown'; why: string }[] {
+): { key: FunnelStageKey; state: 'passed' | 'blocked' | 'waiting' | 'not_required'
+                | 'not_in_universe' | 'unknown'; why: string }[] {
+  // نمادِ خارج از جامعۀ غربالگری درِ هیچ جدولِ گامی نیست (رأیِ مالک)؛ اگر اینجا
+  // بی‌کار می‌ماند، سایدبار او را «سنجیده نشده» می‌خواند — دقیقاً همان چیزی که
+  // ممنوع است. علتش را از `exclusionsِ` خودِ سرور می‌گیرد.
+  const out = funnel.exclusions.find((e) => e.symbol === symbol);
+  if (out) {
+    const why = out.humanReason || out.reasonCode || '';
+    return STAGES.map((key) => ({ key, state: 'not_in_universe' as const, why }));
+  }
   // هر گام ردیفِ خودش را دارد و status همان گام را می‌گوید؛ پس وضعیت‌ها از
   // همهٔ ردیف‌هایِ همین نماد جمع می‌شوند (نخستِ یافت‌شده کافی نبود: ردیفِ گامِ
   // تابلو فقط status.tape را دارد و چراغِ تکنیکال unknown می‌ماند).
@@ -273,11 +317,12 @@ export function stageProgressFor(
     const st = merged[key] === 'unavailable' ? found?.status[key] : merged[key];
     // «لازم نبود» یک حکمِ صریح است (گامِ پیشین جلوش را گرفته) و با «بی‌حکم/unknown»
     // یکی نیست — قاعدۀ مالک: هیچ نمادی با «سنجیده نشده» از قیف بیرون نمی‌ماند.
-    const state: 'passed' | 'blocked' | 'waiting' | 'not_required' | 'unknown' =
+    const state: 'passed' | 'blocked' | 'waiting' | 'not_required' | 'not_in_universe' | 'unknown' =
       st === 'pass' ? 'passed'
         : st === 'reject' ? 'blocked'
         : st === 'pending' ? 'waiting'
-        : st === 'not_required' ? 'not_required' : 'unknown';
+        : st === 'not_required' ? 'not_required'
+        : st === 'not_in_universe' ? 'not_in_universe' : 'unknown';
     const hit = funnel.stages[key].entries.find((e) => e.symbol === symbol);
     return { key, state, why: hit?.why[key] || found?.why[key] || '' };
   });

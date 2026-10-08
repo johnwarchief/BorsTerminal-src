@@ -73,7 +73,7 @@ for (const width of WIDTHS) {
     // پاسخِ first funnel باید واقعاً رسیده باشد (universe غیرصفر) — بی‌این،
     // هر شمارشی رویِ صفحۀ خالی خوانده می‌شد و «۰» را به‌جایِ عددِ بازار می‌گفت.
     await page.waitForFunction(() => {
-      const el = document.querySelector('[data-testid="funnel-count-universe"]');
+      const el = document.querySelector('[data-testid="funnel-universe-screening"]');
       return el ? !/: *۰+$/.test((el.textContent ?? '').trim()) : false;
     }, undefined, { timeout: 90_000 });
 
@@ -145,7 +145,7 @@ for (const width of WIDTHS) {
           .map((el) => `${el.getAttribute('data-testid')!.replace('funnel-chain-count-', '')}:${el.textContent}`));
     }
     try {
-      await page.waitForFunction(() => !/: *۰+$/.test((document.querySelector('[data-testid="funnel-count-universe"]')?.textContent ?? '').trim()),
+      await page.waitForFunction(() => !/: *۰+$/.test((document.querySelector('[data-testid="funnel-universe-screening"]')?.textContent ?? '').trim()),
                                  undefined, { timeout: 60_000 });
     } catch { /* ثبتِ خودِ عدد درِ steps.table کافی است */ }
     steps.table = await page.evaluate(() => {

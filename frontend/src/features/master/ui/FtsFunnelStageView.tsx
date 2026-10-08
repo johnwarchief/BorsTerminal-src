@@ -36,7 +36,7 @@ export default function FtsFunnelStageView({
           </span>
         </h2>
         <span className="text-3xs tabular-nums text-text-muted" data-testid={`fts-stage-count-${stage}`}>
-          {toFaDigits(data.summary.pass)} عبور از {toFaDigits(data.ruled)} نمادِ universe
+          {toFaDigits(data.summary.pass)} عبور از {toFaDigits(data.ruled)} نمادِ جامعۀ غربالگری
         </span>
       </div>
       <FtsFunnelAllStages

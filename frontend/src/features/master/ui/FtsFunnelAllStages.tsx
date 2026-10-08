@@ -33,6 +33,7 @@ import {
   type FunnelEntry,
   type FunnelStage,
   type FunnelStageKey,
+  type Funnel,
   type FunnelOptions,
   type StageStatus,
   type TreePreset,
@@ -140,6 +141,7 @@ const MARK_DOT: Record<StageStatus, string> = {
   pending: 'bg-accent-yellow',
   unavailable: 'bg-border-c',
   not_required: 'bg-border-c/40',
+  not_in_universe: 'bg-bg-secondary',
 };
 /** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
 const MARK_LABEL = STATUS_LABEL;
@@ -413,7 +415,7 @@ function StageCard({
         </span>
         <h3 className="text-xs font-black text-text-primary sm:text-sm">{STAGE_TITLE[stage.key]}</h3>
         <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
-              title="تک‌تکِ نمادهایِ جامعۀ ورودی درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
+              title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
           {toFaDigits(stage.ruled)} نماد
         </span>
         {stage.dropped > 0 ? (
@@ -458,10 +460,10 @@ function StageCard({
             unseen === 0 ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-red/15 text-accent-red'
           }`}
           title={unseen === 0
-            ? 'تک‌تکِ نمادهایِ جامعۀ ورودی درِ این گام حکم دارند (pass + reject + pending + بی‌داده + لازم نبود = universe)'
+            ? 'تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام حکم دارند (pass + reject + pending + بی‌داده + لازم نبود = Y)'
             : `${toFaDigits(unseen)} نماد درِ این گام حکم ندارد — نقصِ معماری، نه حالتِ عادی`}
         >
-          حکم: {toFaDigits(stage.ruled)}{unseen === 0 ? ' = کلِ universe' : ` ≠ ${toFaDigits(stage.ruled + unseen)}`}
+          حکم: {toFaDigits(stage.ruled)}{unseen === 0 ? ' = کلِ جامعۀ غربالگری' : ` ≠ ${toFaDigits(stage.ruled + unseen)}`}
         </span>
         {/* مالک: «تنظیماتِ مرحلۀ بنیادی رو روی نوارِ جدول بنیادی بذار». پیش‌تر یک
             نوارِ سراسری زیرِ چهار مرحله بود؛ هر مرحله پیچ‌هایِ خودش را رویِ
@@ -746,6 +748,67 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
   );
 }
 
+/** بخشِ بازشوندهٔ «خارج از جامعۀ غربالگری».
+ *
+ *  این نمادها نه رد شده‌اند نه «سنجیده نشده»: وضعیتِ رسمیِ بازار اجازهٔ غربال
+ *  نمی‌دهد، پس درِ جدولِ چهار گام نمی‌نشینند (رأیِ مالک ۱۴۰۵-۰۷-۱۶: «جدول را
+ *  با این نمادها شلوغ نکن… برای Z یک بخش بازشونده/Inspector بگذار که علتِ
+ *  خروج را نشان دهد»). فهرست مجازی و بی‌سقف است: علتِ هر نماد عیناً از
+ *  `human_reasonِ` خودِ موتور می‌آید، واژۀ دومی ساخته نمی‌شود. */
+function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: string) => void }) {
+  const rows = funnel.exclusions;
+  const ref = useRef<HTMLDivElement | null>(null);
+  const virt = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => ref.current,
+    estimateSize: () => 26,
+    overscan: 10,
+    initialRect: { width: 0, height: 224 },
+  });
+  const reasons = Object.entries(funnel.exclusionCounts).sort((a, b) => b[1] - a[1]);
+  const labelOf = (code: string) => funnel.exclusionLabels[code] ?? code;
+  return (
+    <div className="glass-panel rounded-xl border border-border-c bg-bg-card/40 p-2"
+         data-testid="funnel-exclusions">
+      <div className="mb-1 flex flex-wrap items-center gap-2 text-3xs font-bold text-text-muted">
+        <span>علتِ خروج:</span>
+        {reasons.map(([code, count]) => (
+          <span key={code} data-testid={`funnel-exclusion-${code}`}
+                className="num rounded-full bg-bg-secondary px-2 py-0.5">
+            {labelOf(code)}: {toFaDigits(count)}
+          </span>
+        ))}
+        {!reasons.length ? <span data-testid="funnel-exclusion-none">چیزی خارج از جامعه نیست.</span> : null}
+      </div>
+      <div ref={ref} className="max-h-56 overflow-y-auto">
+        <div className="relative" style={{ height: virt.getTotalSize() }}>
+          {virt.getVirtualItems().map((it) => {
+            const e = rows[it.index];
+            return (
+              <div key={e.symbol} data-index={it.index}
+                   className="absolute inset-x-0 flex items-center gap-2 border-b border-border-c/40 px-1 text-2xs"
+                   style={{ top: it.start, height: it.size }}>
+                <button type="button" data-testid={`funnel-exclusion-row-${e.symbol}`}
+                        onClick={() => onPick(e.symbol)}
+                        className="shrink-0 font-black text-text-primary hover:text-accent-blue">
+                  {e.symbol}
+                </button>
+                <span className="min-w-0 truncate text-text-muted">{e.name}</span>
+                <span className="num ms-auto shrink-0 text-text-secondary">
+                  {e.last ? fmtInt(e.last) : '—'}
+                </span>
+                <span className="shrink-0 text-text-muted" title={e.humanReason}>
+                  {labelOf(e.reasonCode)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FtsFunnelStages({
   preset = 'custom',
   only,
@@ -760,6 +823,9 @@ export function FtsFunnelStages({
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
   const [snap] = useState(readFunnelSnap);
+  // «خارج از جامعۀ غربالگری» بسته است تا جدولِ گام‌ها با این ردیف‌ها شلوغ
+  // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
+  const [showExcluded, setShowExcluded] = useState(false);
   const [activeState, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
   // درِ حالتِ مسیریافته (`only`) گامِ واقعی همان `only` است، نه stateِ داخلیِ
   // این کامپوننت (که از snapshotِ قدیم پر شده). بی‌این، کلیکِ سطر درِ گامِ
@@ -821,7 +887,7 @@ export function FtsFunnelStages({
   const fund = funnel.stages.fundamental;
   const hand = funnel.stages.handover;
   const emptyWhy: Record<FunnelStageKey, string | null> = {
-    tape: funnel.total ? null : 'این نشست هیچِ یک از پنج فیلترِ جزوه را رد نکرد.',
+    tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این نشست نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
     technical: funnel.stages.technical.entries.length
       ? null
       : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
@@ -886,7 +952,7 @@ export function FtsFunnelStages({
       </div>
       {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
           / Not-required با عددِ خودِ بازار. این پنج از `coverage`ِ بک‌اند می‌آیند،
-          یعنی شمارشِ **کلِ** جامعۀ ورودی درِ هر گام — پس جمعشان همان universe است
+          یعنی شمارشِ **کلِ جامعۀ غربالگری** درِ هر گام — پس جمعشان همان Y است
           و نمادی بی‌حکم نمی‌ماند. هدف‌هایِ جزوه (۵۰ و ۱۰ و ۵-۷) فقط مرجعِ کناری‌اند
           و هیچ‌جا گیتِ عبور نیستند. */}
       <div
@@ -900,7 +966,31 @@ export function FtsFunnelStages({
         <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
           لازم نبود: {toFaDigits(hc.not_required)}
         </span>
-        <span className="text-text-secondary" data-testid="funnel-count-universe">| universe: {toFaDigits(funnel.total)}</span>
+        {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
+            خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
+            (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. */}
+        <span className="text-text-secondary" data-testid="funnel-universe-market"
+              title="تک‌تکِ نمادهایِ این نشستِ تابلو (ردیفِ تکراری یکی‌شده)">
+          | جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
+        </span>
+        <span className="text-accent-blue" data-testid="funnel-universe-screening"
+              title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
+          / واجدِ غربالگری: {toFaDigits(funnel.total)}
+        </span>
+        <button
+          type="button"
+          data-testid="funnel-universe-excluded"
+          aria-expanded={showExcluded}
+          onClick={() => setShowExcluded((v) => !v)}
+          title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
+          className={`rounded-full border px-2 py-0.5 transition-colors ${
+            showExcluded
+              ? 'border-accent-yellow/50 bg-accent-yellow/15 text-accent-yellow'
+              : 'border-border-c bg-bg-secondary text-text-muted hover:text-text-primary'
+          }`}
+        >
+          / خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
+        </button>
         {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
             پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
         {refreshing && funnel.total > 0 ? (
@@ -913,6 +1003,7 @@ export function FtsFunnelStages({
           </span>
         ) : null}
       </div>
+      {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1" role="tablist">
           {stages.map((s, i) => (
@@ -951,7 +1042,7 @@ export function FtsFunnelStages({
         </div>
         <span className="ms-auto text-3xs text-text-muted">
           ورودیِ قیف: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
-          از {toFaDigits(funnel.boardScope)} نمادِ زندهٔ تابلو، {toFaDigits(funnel.total)} نشانه
+          از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
         </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،
             و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود

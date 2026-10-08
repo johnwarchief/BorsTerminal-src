@@ -29,7 +29,10 @@ export const FUNNEL_FIXTURE: ApiPayload = {
   preset: 'custom',
   chain: ['f_susp', 'f_noqteh'],
   fund_mode: 'standard',
-  universe: { board: 4, screened: 3, joined: 4, duplicate_rows: 0 },
+  universe: { board: 5, screened: 3, joined: 5, duplicate_rows: 0,
+              market: 5, screening: 4, excluded: 1,
+              exclusion_counts: { STOPPED: 1 },
+              exclusion_labels: { STOPPED: 'متوقف' } },
   stages: {
     tape: {
       input: 4, matched: 3, removed: 1,
@@ -91,7 +94,8 @@ export const FUNNEL_FIXTURE: ApiPayload = {
   },
   timeline: {
     'فولاد': [
-      { stage: 'universe', status: 'pass', reason_code: 'IN_UNIVERSE', human_reason: 'در جامعۀ این نشست',
+      { stage: 'universe', status: 'pass', reason_code: 'IN_SCREENING_UNIVERSE',
+        human_reason: 'وضعیتِ رسمیِ نماد اجازهٔ غربال می‌دهد؛ در جامعۀ غربالگریِ این نشست',
         input_count: 922, output_count: 922, source: 'api/market' },
       { stage: 'tape:f_susp', status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'حجم مشکوک — خورده شد',
         input_count: 922, output_count: 3, source: 'docs/حجم مشکوک.txt#b8a185c4168be33e',
@@ -101,9 +105,9 @@ export const FUNNEL_FIXTURE: ApiPayload = {
       { stage: 'handover', status: 'pass', reason_code: '', human_reason: '' },
     ],
   },
-  /** وضعیتِ هر چهار گام برایِ هر چهار نماد — همان چیزی که بک‌اند از
-   *  `status_matrix` می‌دهد. چهار نمادِ این فیکسچر چهار سرنوشتِ متفاوت‌اند:
-   *  عبورِ کامل، ردِ تکنیکال، ردِ تابلو، و بنیادیِ در انتظار. */
+  /** وضعیتِ هر چهار گام برایِ هر پنج نماد — همان چیزی که بک‌اند از
+   *  `status_matrix` می‌دهد. پنج سرنوشتِ متفاوت: عبورِ کامل، ردِ تکنیکال،
+   *  ردِ تابلو، بنیادیِ در انتظار، و نمادی که اصلاً درِ جامعۀ غربالگری نیست. */
   status_matrix: {
     'فولاد': {
       tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
@@ -136,12 +140,25 @@ export const FUNNEL_FIXTURE: ApiPayload = {
                      human_reason: 'I1 رشد فروش گزارشش نرسیده — رد نیست، سنجیده نشده' },
       handover: { status: 'pending', reason_code: 'WAITING_FOR_DATA', human_reason: 'در انتظارِ داده/گزارش' },
     },
+    // پنجمین نماد درِ جامعۀ تابلو است ولی درِ جامعۀ غربالگری نیست: تعلیقِ
+    // رسمی. نه رد شده و نه «سنجیده نشده» — و درِ هیچ جدولِ گامی نباید ظاهر شود.
+    'آبادا': {
+      tape: { status: 'not_in_universe', reason_code: 'STOPPED', human_reason: 'متوقف: مشمول فرایند تعلیق' },
+      technical: { status: 'not_in_universe', reason_code: 'STOPPED', human_reason: 'متوقف: مشمول فرایند تعلیق' },
+      fundamental: { status: 'not_in_universe', reason_code: 'STOPPED', human_reason: 'متوقف: مشمول فرایند تعلیق' },
+      handover: { status: 'not_in_universe', reason_code: 'STOPPED', human_reason: 'متوقف: مشمول فرایند تعلیق' },
+    },
   },
+  exclusions: [
+    { symbol: 'آبادا', name: 'توليد نيروي برق آبادان', sector: 'برق', last: 11450,
+      reason_code: 'STOPPED', human_reason: 'متوقف: مشمول فرایند تعلیق',
+      st_code: null, st_title: null, stop_state: 'مشمول فرایند تعلیق', is_live: true },
+  ],
   coverage: {
-    tape: { pass: 3, reject: 1, pending: 0, unavailable: 0, not_required: 0 },
-    technical: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 },
-    fundamental: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2 },
-    handover: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0 },
+    tape: { pass: 3, reject: 1, pending: 0, unavailable: 0, not_required: 0, not_in_universe: 1 },
+    technical: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1, not_in_universe: 1 },
+    fundamental: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2, not_in_universe: 1 },
+    handover: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0, not_in_universe: 1 },
   },
   // اسکنِ تکنیکال درِ پس‌زمینه است؛ پاسخِ همین لحظه می‌گوید چند نماد هنوز
   // داوریِ ساخته‌شد ندارند (باید درِ UI دیده شود، نه اینکه غیب باشد).

@@ -14,7 +14,7 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
-import { funnelFromApi } from '@features/master/lib/funnelView';
+import { funnelFromApi, stageProgressFor } from '@features/master/lib/funnelView';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { FUNNEL_FIXTURE, installFunnelApi } from './fixtures/funnelApi';
@@ -100,10 +100,13 @@ describe('قیف از پاسخِ سرور', () => {
     expect(within(tape).getByTestId('funnel-why-سپ').textContent).toContain('حجم مشکوک');
   });
 
-  it('شمارشِ هر گام از همان پاسخ می‌آید: پنج وضعیت رویِ کلِ universe', async () => {
+  it('شمارشِ هر گام از همان پاسخ می‌آید: پنج وضعیت رویِ جامعۀ غربالگری', async () => {
     const f = funnelFromApi(FUNNEL_FIXTURE);
-    expect(f.total).toBe(4);
-    expect(f.boardScope).toBe(4);
+    expect(f.total).toBe(4);                       // Y = واجدِ شرایطِ غربالگری
+    expect(f.marketUniverse).toBe(5);              // X = جامعۀ تابلو
+    expect(f.excludedCount).toBe(1);               // Z = خارج‌ها
+    expect(f.marketUniverse).toBe(f.total + f.excludedCount); // X = Y + Z
+    expect(f.boardScope).toBe(5);
     // coverageِ بک‌اند عیناً می‌نشیند — فرانت چیزی نمی‌شمارد که سرور گفته باشد.
     expect(f.counts.tape).toEqual({ pass: 3, reject: 1, pending: 0, unavailable: 0, not_required: 0 });
     expect(f.counts.technical.not_required).toBe(1);   // «سپ» درِ تابلو رد شده
@@ -113,7 +116,20 @@ describe('قیف از پاسخِ سرور', () => {
       .toBe('pending');
   });
 
-  it('هیچ نمادی از هیچ گامی گم نمی‌شود: جدولِ هر گام = کلِ universe', () => {
+  it('خارج از جامعۀ غربالگری درِ هیچ جدولِ گامی نمی‌نشیند (جدول شلوغ نمی‌شود)', () => {
+    const f = funnelFromApi(FUNNEL_FIXTURE);
+    for (const key of ['tape', 'technical', 'fundamental', 'handover'] as const) {
+      expect(f.stages[key].entries.some((e) => e.symbol === 'آبادا'), key).toBe(false);
+      expect(f.stages[key].pending.some((e) => e.symbol === 'آبادا'), key).toBe(false);
+    }
+    // ولی گم هم نمی‌شود: علتش درِ مدل هست و از خودِ سرور آمده، نه ساختگی.
+    expect(f.exclusions.map((e) => e.symbol)).toEqual(['آبادا']);
+    expect(f.exclusions[0].reasonCode).toBe('STOPPED');
+    expect(f.exclusions[0].humanReason).toContain('مشمول فرایند تعلیق');
+    expect(f.exclusionLabels.STOPPED).toBe('متوقف');
+  });
+
+  it('هیچ نمادی از هیچ گامی گم نمی‌شود: جدولِ هر گام = کلِ جامعۀ غربالگری', () => {
     const f = funnelFromApi(FUNNEL_FIXTURE);
     for (const key of ['tape', 'technical', 'fundamental', 'handover'] as const) {
       const s = f.stages[key];
@@ -144,7 +160,36 @@ describe('قیف از پاسخِ سرور', () => {
     expect(within(tech).getByTestId('funnel-why-سپ').textContent)
       .toContain('تابلو نماد را رد کرده');
     expect(within(tech).getByTestId('funnel-ruled-technical').textContent)
-      .toContain('کلِ universe');
+      .toContain('کلِ جامعۀ غربالگری');
+  });
+
+  it('سایدبار نمادِ خارج از جامعه را «سنجیده نشده» نمی‌خواند', () => {
+    const f = funnelFromApi(FUNNEL_FIXTURE);
+    const p = stageProgressFor(f, 'آبادا');
+    expect(p.map((x) => x.state))
+      .toEqual(['not_in_universe', 'not_in_universe', 'not_in_universe', 'not_in_universe']);
+    expect(p[0].why).toContain('مشمول فرایند تعلیق');
+    // نمادِ داخلِ جامعه همان حکمهایِ همیشگی را می‌گیرد — این شاخهٔ جدید کورشان نمی‌کند.
+    expect(stageProgressFor(f, 'سپ')[0].state).toBe('blocked');
+    expect(stageProgressFor(f, 'فولاد').map((x) => x.state))
+      .toEqual(['passed', 'passed', 'passed', 'passed']);
+  });
+
+  it('خلاصۀ دو جامعه درِ خطِ شمارش؛ علتِ خروج فقط درِ بخشِ بازشونده', async () => {
+    await ready('/master?stage=tape&preset=custom');
+    // X / Y / Z هر سه رویِ صفحه‌اند — نه یکی به‌جای دیگری.
+    expect(screen.getByTestId('funnel-universe-market').textContent).toContain('۵');
+    expect(screen.getByTestId('funnel-universe-screening').textContent).toContain('۴');
+    const toggle = screen.getByTestId('funnel-universe-excluded');
+    expect(toggle.textContent).toContain('۱');
+    // بسته است: خارج‌ها درِ جدولِ گام‌ها شلوغی نمی‌کنند.
+    expect(screen.queryByTestId('funnel-exclusions')).not.toBeInTheDocument();
+    fireEvent.click(toggle);
+    const panel = screen.getByTestId('funnel-exclusions');
+    expect(within(panel).getByTestId('funnel-exclusion-STOPPED').textContent)
+      .toContain('متوقف');
+    expect(within(panel).getByTestId('funnel-exclusion-row-آبادا').textContent)
+      .toContain('آبادا');
   });
 });
 

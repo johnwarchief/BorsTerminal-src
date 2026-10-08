@@ -324,8 +324,73 @@ ck(all(sum(g_scan["coverage"][s].get(x, 0) for x in _FIVE2) == 3
        for s in ("tape", "technical", "fundamental", "handover")),
    "۳۷) با سه حالتِ تازه هم جمعِ وضعیت‌ها == جامعۀ ورودی")
 
+# -- ۳۸) جامعۀ تابلو ≠ جامعۀ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۱۶، بندِ ۱۴ و ۱۵)
+# چهار نمادِ همۀ فیلتر را دارند؛ سه تا از آنها به سه علتِ *متفاوت* از جامعۀ
+# غربالگری بیرون‌اند. ملاک، وضعیتِ رسمیِ بازار است — نه عددِ اختراعی.
+U4 = [board("سالم", f_susp=True),
+     {**board("متوقف", f_susp=True), "stop_state": "تعلیق شده"},
+     {**board("کهنه", f_susp=True), "is_live": False},
+     {**board("ممنوع", f_susp=True), "st_code": "IS", "st_title": "ممنوع-متوقف"}]
+U4S = [screen("سالم", **UP, **OK_FUND), screen("متوقف", **UP, **OK_FUND),
+       screen("کهنه", **UP, **OK_FUND), screen("ممنوع", **UP, **OK_FUND)]
+u4 = FE.evaluate(U4, U4S, preset="custom", custom_chain=["f_susp"])
+ck(u4["universe"]["market"] == 4 and u4["universe"]["screening"] == 1
+   and u4["universe"]["excluded"] == 3,
+   "۳۸) X=۴ نمادِ تابلو، Y=۱ جامعۀ غربالگری، Z=۳ خارج — هر سه جدا شمرده می‌شوند")
+ck(u4["universe"]["market"] == u4["universe"]["screening"] + u4["universe"]["excluded"],
+   "۳۸) X = Y + Z درِ خودِ پاسخ")
+ck([e["symbol"] for e in u4["entries"]["tape"]] == ["سالم"],
+   "۳۸) خارج‌ها درِ جدولِ گام نمی‌نشینند (رأیِ مالک: جدول را شلوغ نکن)")
+ck(all(u4["status_matrix"]["کهنه"][g]["status"] == FE.NOT_IN_UNIVERSE
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۳۸) خارج از جامعه درِ هر چهار گام همان وضعیت است — نه reject و نه pending")
+ck({e["symbol"]: e["reason_code"] for e in u4["exclusions"]}
+   == {"متوقف": "STOPPED", "کهنه": "NOT_LIVE_SESSION", "ممنوع": "FORBIDDEN_STATE"},
+   "۳۸) علتِ خروجِ تک‌تکِ خارج‌ها ثبت می‌شود (هیچ‌کس بی‌علت حذف نمی‌شود)")
+ck(u4["universe"]["exclusion_labels"].get("STOPPED")
+   and set(u4["universe"]["exclusion_labels"]) == set(u4["universe"]["exclusion_counts"]),
+   "۳۸) واژۀ فارسیِ هر علت از خودِ موتور می‌آید، نه از رابط")
+
+# -- ۳۹) «زنده» ≠ «امروز معامله داشت» (رأیِ صریحِ مالک، بندِ ۱۴)
+V2 = [{**board("بی‌معامله", f_susp=True), "is_live": True, "q_tot_tran": 0},
+      {**board("پرحجم_ممنوع", f_susp=True), "is_live": True, "q_tot_tran": 9_999_999,
+       "st_code": "I", "st_title": "ممنوع"}]
+v2 = FE.evaluate(V2, [screen("بی‌معامله"), screen("پرحجم_ممنوع")],
+                 preset="custom", custom_chain=["f_susp"])
+ck(v2["universe"]["screening"] == 1
+   and [e["symbol"] for e in v2["exclusions"]] == ["پرحجم_ممنوع"],
+   "۳۹) حجمِ امروز نمادی را داخل جامعه نمی‌کند؛ وضعیتِ ممنوع بیرونش می‌اندازد")
+ck(v2["status_matrix"]["بی‌معامله"]["tape"]["status"] == FE.PASS,
+   "۳۹) نمادِ بی‌معاملۀ امروز درِ جامعۀ غربالگری می‌ماند و حکم می‌گیرد")
+
+# -- ۴۰) silent drop ممنوع، دو سو (بندِ ۱۶: «هیچ نمادی نباید بی‌حکم بماند»)
+_SIX = ("pass", "reject", "pending", "unavailable", "not_required", FE.NOT_IN_UNIVERSE)
+ck(all(sum(u4["coverage"][g].values()) == 4 for g in ("tape", "technical",
+       "fundamental", "handover")),
+   "۴۰) جمعِ شش وضعیت درِ هر گام == جامعۀ تابلو (X)")
+ck(all(sum(u4["coverage"][g].get(s, 0) for s in _SIX if s != FE.NOT_IN_UNIVERSE) == 1
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۴۰) جمعِ پنج وضعیتِ گام == جامعۀ غربالگری (Y) — هیچ نمادِ واجدِ شرایط بی‌حکم نیست")
+ck(len(u4["status_matrix"]) == 4, "۴۰) سطرِ وضعیت برایِ هر چهار نماد هست، خارج‌ها هم")
+
+# -- ۴۱) جامعۀ غربالگری پویا است: نه عددِ ثابت، نه سقفِ واچ‌لیست
+_SRC = open("funnel_engine.py", encoding="utf-8").read()
+ck("2273" not in _SRC and "3991" not in _SRC,
+   "۴۱) هیچ شمارۀ جامعۀ ثابتی (۲۲۷۳ / ۳۹۹۱) درِ موتور ننوشته شده")
+BIG = [board(f"ن{i:03d}", f_susp=True) for i in range(121)]
+BIGS = [screen(f"ن{i:03d}") for i in range(121)]
+big = FE.evaluate(BIG, BIGS, preset="custom", custom_chain=["f_susp"])
+ck(big["universe"]["screening"] == 121 and len(big["status_matrix"]) == 121
+   and len(big["entries"]["tape"]) == 121,
+   "۴۱) ۱۲۱ نماد ورودی ⇒ ۱۲۱ نماد درِ غربالگری؛ ظرفیتِ واچ‌لیست (۶۰) هیچ‌جا جامعۀ "
+   "غربالگری را کوتاه نمی‌کند")
+u5 = FE.evaluate(U4 + [board("افزون", f_susp=True)], U4S + [screen("افزون")],
+                 preset="custom", custom_chain=["f_susp"])
+ck(u5["universe"]["screening"] == u4["universe"]["screening"] + 1,
+   "۴۱) Y با خودِ داده تغییر می‌کند، نه با عددی درِ کد")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {38} بندِ مأموریت")
+print(f"funnel_engine guard OK — {42} بندِ مأموریت")

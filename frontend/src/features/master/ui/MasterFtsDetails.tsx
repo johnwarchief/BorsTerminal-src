@@ -15,6 +15,7 @@ const MARK: Record<StageStatus, { icon: string; tone: 'green' | 'red' | 'yellow'
   pending: { icon: '⏳', tone: 'yellow', word: 'در انتظار' },
   unavailable: { icon: '○', tone: 'blue', word: 'بی‌داده' },
   not_required: { icon: '·', tone: 'blue', word: 'لازم نبود' },
+  not_in_universe: { icon: '⊘', tone: 'blue', word: 'خارج از جامعه' },
 };
 
 const n = (v: number | null | undefined): string =>

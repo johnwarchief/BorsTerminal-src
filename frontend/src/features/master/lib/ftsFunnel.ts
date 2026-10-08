@@ -7,8 +7,10 @@
 // را به همین مدلِ نمایشی برمی‌گرداند. آنچه اینجا مانده نوع‌ها، برچسب‌ها و
 // واژگانِ وضعیت‌اند: هیچ `if` قاعده‌ای، هیچ آستانه‌ای، هیچ `slice`اي.
 //
-// پنج‌حالته — تنها واژگانِ وضعیتِ هر گام درِ کلِ فرانت (بندِ ۱۹ و ۳۵ از قانونِ
-// مالک: «سنجیده نشده» ممنوع؛ هر نماد درِ هر گام یک حکمِ قابلِ توضیح دارد):
+// پنج حالت + یک وضعیتِ جامعۀ غربالگری — تنها واژگانِ وضعیتِ هر گام درِ کلِ
+// فرانت (بندِ ۱۹
+// و ۳۵ از قانونِ مالک: «سنجیده نشده» ممنوع؛ هر نماد درِ هر گام یک حکمِ قابلِ
+// توضیح دارد):
 //   pass         درِ جزوه باز
 //   reject       درِ جزوه بسته — داوریِ صریحِ موتور
 //   pending      موتور نگاه کرد و نظر نمی‌دهد (هفتگی UNKNOWN، صندوق «FTS ندارد»،
@@ -17,6 +19,10 @@
 //   not_required گامِ پیشین نماد را رد کرده؛ این گام اجرا نمی‌شود. توقفِ قطعی و
 //               توضیح‌دار است، نه «بی‌سنجش» — reason_code نامِ گامِ بازدارنده را
 //               درِ خودِ کد می‌نویسد (NOT_REQUIRED_AFTER_TAPE_REJECT و…).
+//   not_in_universe نماد اصلاً عضو جامعۀ غربالگری نبود (وضعیتِ رسمیِ بازار
+//               اجازه نمی‌دهد) — نه «رد» است و نه «سنجیده نشده»؛ درِ جدولِ
+//               گام‌ها نمایش داده نمی‌شود و درِ «خارج از جامعۀ غربالگری» با
+//               علتش می‌نشیند (رأیِ مالک ۱۴۰۵-۰۷-۱۶).
 import type { MarketRow } from '@shared/types/marketRow';
 import type { AssetType } from '@features/market/lib/assetType';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
@@ -72,8 +78,11 @@ export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[]
   custom: { label: 'مسیر سفارشی (انتخاب دستی)', filters: [...FILE_FILTERS] },
 };
 
-/** پنج‌حالته — تنها واژگانِ داوریِ کشفِ نماد درِ کلِ فرانت. */
-export type StageStatus = 'pass' | 'reject' | 'pending' | 'unavailable' | 'not_required';
+/** شش‌حالته — تنها واژگانِ داوریِ کشفِ نماد درِ کلِ فرانت (مقادیرِ
+ *  `funnel_engine.STATUSES`؛ ششمین (`not_in_universe`) حکمِ گام نیست، عضو
+ *  نبودنِ نماد درِ خودِ جامعۀ غربالگری است). */
+export type StageStatus = 'pass' | 'reject' | 'pending' | 'unavailable'
+  | 'not_required' | 'not_in_universe';
 
 export const STATUS_LABEL: Record<StageStatus, string> = {
   pass: 'تأیید',
@@ -81,6 +90,7 @@ export const STATUS_LABEL: Record<StageStatus, string> = {
   pending: 'در انتظار',
   unavailable: 'داده در دسترس نیست',
   not_required: 'لازم نبود',
+  not_in_universe: 'خارج از جامعۀ غربالگری',
 };
 
 export const STATUS_HINT: Record<StageStatus, string> = {
@@ -89,6 +99,7 @@ export const STATUS_HINT: Record<StageStatus, string> = {
   pending: 'موتور نگاه کرد و نظر نداد (نقطه‌زنی سنجیده‌نشده، روند هفتگی بی‌حکم، ابزار بی‌FTS).',
   unavailable: 'هیچ منبعی برایِ این مرحله نبود؛ «رد» نیست و نباید رد خوانده شود.',
   not_required: 'گامِ پیشینِ قیف نماد را رد کرده بود؛ این گام اجرا نمی‌شود. توقفِ توضیح‌دار است، نه «سنجیده نشده».',
+  not_in_universe: 'این نماد عضو جامعۀ غربالگری نبود: وضعیتِ رسمیِ بازار (تعلیق، ممنوع، یا ردیفِ نشستِ کهنه) اجازهٔ غربال نمی‌دهد. نه «رد» است و نه «سنجیده نشده».',
 };
 
 export type FunnelMode = 'reverse' | 'review';
@@ -164,9 +175,11 @@ export const DEFAULT_FUNNEL_CONTEXT: FunnelContext = {
 };
 
 /** شمارشِ هر مرحلۀ قیف — «چند تا واقعاً ماند»، نه «چند تا خواسته بود».
- *  جمعِ این پنج عدد درِ هر گام باید با جامعۀ ورودی بخواند (گاردِ مالک:
- *  `input universe == output evaluated symbols`); «سنجیده نشده» جایِ خودِ
- *  `pending`/`unavailable` را پر نمی‌کند، چون نبودش یعنی نمادی بی‌حکم مانده. */
+ *  جمعِ این پنج عدد درِ هر گام باید با جامعۀ غربالگری (`Funnel.total`) بخواند
+ *  (گاردِ مالک: `input universe == output evaluated symbols`); «سنجیده نشده»
+ *  جایِ خودِ `pending`/`unavailable` را پر نمی‌کند، چون نبودش یعنی نمادی
+ *  بی‌حکم مانده. نمادهایِ خارج از جامعه درِ این پنج عدد نیستند و ششمین
+ *  وضعیتِ `coverage` (`not_in_universe`) شمارشان را جدا می‌دهد. */
 export type StageSummary = {
   pass: number;
   reject: number;
@@ -249,6 +262,22 @@ export type FunnelStage = {
   summary: StageSummary;
 };
 
+/** یک نمادِ بیرون از جامعۀ غربالگری — با علتِ استخراج‌شدۀ خودِ بازار.
+ *  درِ جدولِ چهار گام نمایش داده نمی‌شود (رأیِ مالک: جدول را شلوغ نکن); درِ
+ *  بخشِ بازشوندهٔ «خارج از جامعۀ غربالگری» و درِ بازرِسِ همان نماد می‌نشیند. */
+export type UniverseExclusion = {
+  symbol: string;
+  name: string;
+  sector: string;
+  last: number | null;
+  reasonCode: string;
+  humanReason: string;
+  stateCode: string | null;
+  stateTitle: string | null;
+  stopState: string | null;
+  isLive: boolean | null;
+};
+
 export type Funnel = {
   mode: FunnelMode;
   tape: TapeFreshness;
@@ -259,8 +288,20 @@ export type Funnel = {
   /** نمادهایِ جامعِ دو مرحلۀ آخر = آنچه درِ تحویل است */
   stages: Record<FunnelStageKey, FunnelStage>;
   boardScope: number;
+  /** جامعۀ غربالگری — همان چیزی که جدولِ هر گام از آن ساخته می‌شود و جمعِ
+   *  پنج وضعیتِ هر گام با آن می‌خواند. */
   total: number;
-  /** شمارشِ واقعیِ هر چهار در */
+  /** جامعۀ تابلو: تک‌تکِ نمادهایِ این نشست (غربالگری + خارج‌ها). `X = Y + Z`. */
+  marketUniverse: number;
+  /** شمارِ خارج از جامعۀ غربالگری (Z) */
+  excludedCount: number;
+  /** علتِ خروجِ تک‌تکِ خارج‌ها، به همان ترتیبِ خودِ تابلو */
+  exclusions: UniverseExclusion[];
+  /** شمارشِ علت‌ها (مثلاً `NOT_LIVE_SESSION: ۱۸۷۲`) — از خودِ بک‌اند */
+  exclusionCounts: Record<string, number>;
+  /** واژۀ فارسیِ هر علت، همان‌که موتور می‌گوید (رابط دوم نمی‌سازد) */
+  exclusionLabels: Record<string, string>;
+  /** شمارشِ واقعیِ هر چهار در (رویِ جامعۀ غربالگری) */
   counts: Record<FunnelStageKey, StageSummary>;
   /** هدف‌هایِ جزوه (رأیِ ۶): هیچ‌کدام گیت نیستند، فقط مرجعِ نمایش‌اند. */
   targets: { initial: number; watchlist: number; basketMin: number; basketMax: number };

@@ -48,7 +48,72 @@ PASS, REJECT, PENDING, UNAVAILABLE = "pass", "reject", "pending", "unavailable"
 # این «سنجیده نشد» نیس — یک حکمِ قطعیِ زنجیره‌ای است و درِ trace هم همین‌طور
 # نوشته می‌شود (رأیِ مالک: «هیچ نمادی نباید با وضعیت سنجیده نشده خارج شود»).
 NOT_REQUIRED = "not_required"
-STATUSES = (PASS, REJECT, PENDING, UNAVAILABLE, NOT_REQUIRED)
+# ششمین وضعیتِ رسمی — بیرون از خودِ جامعۀ غربالگری، نه رد، نه «سنجیده نشده»:
+# نمادی که وضعیتِ رسمیِ بازار اجازهٔ غربال شدن نمی‌دهد اصلاً candidate نیست.
+# (رأیِ مالک ۱۴۰۵-۰۷-۱۶: «NOT_IN_SCREENING_UNIVERSE ≠ REJECT و ≠ سنجیده نشده»)
+NOT_IN_UNIVERSE = "not_in_universe"
+STATUSES = (PASS, REJECT, PENDING, UNAVAILABLE, NOT_REQUIRED, NOT_IN_UNIVERSE)
+
+# ── واجدِ شرایطِ غربالگری ────────────────────────────────────────────────
+# هیچ آستانه‌ای از خودِ این فایل نیامده. سه سیگنالی که مصرف می‌شود هر سه درِ
+# ردیفِ تابلو از خودِ سازوکارِ رسمیِ بازار می‌آیند:
+#   `is_live`       ← `api/market.py:551-552` (ردیفِ نشستِ جدید vs snapshotِ کهنه)
+#   `st_code/title` ← آخرینِ لاگِ `instrument_state.c_etaval(_title)`
+#                     (`api/market.py:799-806, 861`) — «مجاز»، «مجاز-محفوظ»،
+#                     «مجاز-متوقف»، «ممنوع»، «ممنوع-محفوظ»، «ممنوع-متوقف»
+#   `stop_state`    ← `stop_reasons.vaziyat_desc` (`api/market.py:869`) با متنِ
+#                     «تعلیق شده» / «مشمول فرایند تعلیق» — همان چیزی که بجِ
+#                     «متوقف» تابلو است (`tapeBadges.ts:142-161`).
+#
+# رأیِ صریحِ مالک (۱۴۰۵-۰۷-۱۶): «زنده» با «امروز معامله داشت» یکی نیست. سنجشِ
+# همین نشستِ market.db (۱۴۰۵-۰۷-۱۶، `market_watch` در d_even=20261007):
+#   ردیفِ نشستِ جاری (is_live)  = 3992   ← جامعۀ پویا، نه عددِ ثابت
+#   از آنها بدونِ هیچ معامله‌ای = 1705   ← پس live ⊃ «معامله داشت»؛ حجمِ امروز
+#   از آنها با معاملۀ امروز    = 2287   ← ملاکِ غربالگری نیست
+# ردیف‌هایِ کهنه (d_even نشست‌هایِ پیشین، تا 20260821) نمادهایی هستند که درِ
+# تازۀترین نشستِ تابلو اصلاً حاضر نیستند؛ اینها بیرون می‌مانند.
+#
+# نکته‌ای که یک بار غلط شد و اینجا ثبت می‌شود: `instrument_state` لاگِ *تغییرِ*
+# وضعیت است، نه وضعیتِ جاریِ همهٔ نمادها — درِ همین بانک تنها ۴۹۶ نماد از ۵۸۶۵
+# ردیفِ وضعیت دارد. پس «ردیفِ وضعیت ندارد» یعنی «هیچ وتوی ثبت‌شدۀ معتبر نیست»،
+# نه «غیرمجاز»؛ بی‌این تفکیک جامعۀ غربالگری به ۷ نماد می‌افتاد.
+PERMITTED_TITLES = ("مجاز",)        # «مجاز…»: اجازهٔ معامله دارد
+FORBIDDEN_TITLES = ("ممنوع",)       # «ممنوع…»: اجازه ندارد
+STOPPED_MARK = "متوقف"              # پسوندِ «-متوقف» در همان برچسبِ رسمی
+
+
+def screening_eligibility(row: dict) -> tuple[bool, str, str]:
+    """(قابل‌غربال؟، کدِ علت، علتِ فارسی) — فقط از دادهٔ رسمیِ خودِ ردیف.
+
+    وتوها به ترتیبِ قطعیت خوانده می‌شوند: نبودِ ردیفِ نشستِ جاری، سپس تعلیقِ
+    صریح (`stop_reasons`)، سپس آخرینِ وضعیتِ ثبت‌شدۀ نماد. نبودِ هیچ‌یک از
+    اینها «مجاز» نیست بلکه «وتویی ثبت نشده» است — و غربالگری می‌شود.
+    """
+    title = str(row.get("st_title") or "").strip()
+    code = str(row.get("st_code") or "").strip()
+    if row.get("is_live") is False:
+        return False, "NOT_LIVE_SESSION", "درِ تازۀترین نشستِ تابلو حاضر نیست (ردیفِ کهنه)"
+    if row.get("stop_state"):
+        return False, "STOPPED", f"متوقف: {row.get('stop_state')}"
+    if title.startswith(FORBIDDEN_TITLES):
+        return False, "FORBIDDEN_STATE", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+    if STOPPED_MARK in title:
+        return False, "STOPPED", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+    if title.startswith(PERMITTED_TITLES):
+        return True, "PERMITTED_STATE", f"وضعیتِ ثبت‌شدۀ نماد: {title}"
+    if title or code:
+        return True, "NO_BLOCKING_STATE", f"وتوی معتبری ثبت نشده (وضعیت: {title or code})"
+    return True, "NO_BLOCKING_STATE", "وضعیتی برایِ این نماد ثبت نشده — وتویی نیست"
+
+
+# برچسبِ کوتاهِ هر علت، کنارِ همان جایی که علت ساخته می‌شود. رابطِ کاربر این
+# واژگان را از پاسخِ سرور می‌خواند (`universe.exclusion_labels`) و دومی نمی‌سازد.
+EXCLUSION_LABEL = {
+    "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه",
+    "STOPPED": "متوقف",
+    "FORBIDDEN_STATE": "ممنوع",
+}
+
 
 # ستونِ پرچمِ هر فیلتر درِ ردیفِ تابلو — نام‌ها از رجیستری می‌آیند، نه از
 # یک فهرستِ دستیِ دیگر.
@@ -441,16 +506,19 @@ def resolve_chain(preset: str, custom: Iterable[str] | None) -> tuple[str, ...]:
     return chain
 
 
-def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
+def status_matrix(market: list[dict], tape: dict, tech: dict, fund: dict,
                   hand: dict) -> tuple[dict, dict]:
-    """وضعیتِ هر چهار گام برایِ **تک‌تکِ** نمادهایِ جامعۀ ورودی.
+    """وضعیتِ هر چهار گام برایِ **تک‌تکِ** نمادهایِ جامعۀ تابلو.
 
-    قاعدۀ مالک: هیچ نمادی گم نمی‌شود و هیچ «سنجیده نشده»ای بی‌دلیل نیست. دو
+    قاعدۀ مالک: هیچ نمادی گم نمی‌شود و هیچ «سنجیده نشده»ای بی‌دلیل نیست. سه
     دلیلِ مجاز و افتراقی وجود دارد:
       UNAVAILABLE                 منبعی برایِ سنجشِ آن گام نیست (مثلاً پوششِ کدال)
       NOT_REQUIRED                گامِ قبل نماد را رد کرده، پس این گام اجرا نمی‌شود
-    جمعِ شمارشِ هر گام باید دقیقاً با جامعۀ ورودی بخواند؛ گاردِ
-    `dev/funnel_engine_v1.py` همین را می‌بندد.
+      NOT_IN_UNIVERSE             نماد اصلاً عضو جامعۀ غربالگری نیست (وضعیتِ
+                                  رسمیِ بازار اجازه نمی‌دهد) — نه رد، نه بی‌حکم
+    جمعِ شمارشِ هر گام باید دقیقاً با جامعۀ تابلو بخواند و جمعِ بدونِ
+    `not_in_universe` با جامعۀ غربالگری؛ گاردِ `dev/funnel_engine_v1.py`
+    هر دو را می‌بندد.
     """
     survivors = {str(r.get("symbol") or "") for r in tape["survivors"]}
     dropped_first: dict[str, dict] = {}
@@ -480,8 +548,22 @@ def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
             return f"{stage_name} هنوز حکم نداده؛ {next_name} اجرا نمی‌شود"
         return f"{stage_name} داوری‌پذیر نبود؛ {next_name} اجرا نمی‌شود"
 
-    for r in joined:
+    for r in market:
         sym = str(r.get("symbol") or "")
+        if not r.get("_screening_eligible"):
+            # خارج از جامعۀ غربالگری: درِ هر چهار گام همان وضعیتِ مستقل، با
+            # علتِ استخراج‌شده از وضعیتِ رسمیِ نماد. هیچ گامی اجرا نشده چون
+            # نماد candidate نبوده — نه اینکه داوری‌اش نکرده باشیم.
+            out_cell = {"status": NOT_IN_UNIVERSE,
+                        "reason_code": r.get("_exclusion_code") or "STATE_NOT_RECORDED",
+                        "human_reason": r.get("_exclusion_reason")
+                        or "وضعیتِ رسمیِ نماد اجازهٔ غربال نمی‌دهد"}
+            row = {stage: dict(out_cell) for stage in
+                   ("tape", "technical", "fundamental", "handover")}
+            matrix[sym] = row
+            for stage, cell in row.items():
+                coverage[stage][cell["status"]] = coverage[stage].get(cell["status"], 0) + 1
+            continue
         t = tech_by.get(sym)
         f = fund_by.get(sym)
         h = hand_by.get(sym)
@@ -554,13 +636,14 @@ def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
     return matrix, coverage
 
 
-def _view(joined: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
+def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
           chain: tuple[str, ...]) -> dict:
     """ردیف‌هایِ آمادهٔ رندر برایِ هر چهار گام + خطِ زمانِ هر نماد.
 
-    هیچ داوریِ تازه‌ای درِ این تابع نیست: وضعیتِ هر نماد از همان تصمیمی خوانده
-    می‌شود که سه گامِ قبل گرفته‌اند. جایی که تصمیمی ثبت نشده `unavailable`
-    می‌نشیند، نه `pass`.
+    فقط جامعۀ غربالگری اینجا می‌آید (ردیف‌هایِ خارج از جامعه درِ payload جدا
+    می‌شوند و جدول را شلوغ نمی‌کنند). هیچ داوریِ تازه‌ای درِ این تابع نیست:
+    وضعیتِ هر نماد از همان تصمیمی خوانده می‌شود که سه گامِ قبل گرفته‌اند.
+    جایی که تصمیمی ثبت نشده `unavailable` می‌نشیند، نه `pass`.
     """
     tech_by = {d["symbol"]: d for d in tech["decisions"]}
     fund_by = {d["symbol"]: d for d in fund["decisions"]}
@@ -573,7 +656,7 @@ def _view(joined: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
 
     entries: dict[str, list[dict]] = {"tape": [], "technical": [], "fundamental": [], "handover": []}
     timeline: dict[str, list[dict]] = {}
-    for r in joined:
+    for r in screening:
         sym = str(r.get("symbol") or "")
         t = tech_by.get(sym)
         f = fund_by.get(sym)
@@ -607,9 +690,13 @@ def _view(joined: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
                 status={stage_key: st[stage_key]},
                 why={stage_key: [{"code": c, "text": human[stage_key]} for c in codes[stage_key] if c]},
                 chain=chain))
-        step_rows = [{"stage": "universe", "status": PASS, "reason_code": "IN_UNIVERSE",
-                      "human_reason": "در جامعۀ این نشست", "input_count": len(joined),
-                      "output_count": len(joined), "source": "api/market", "timestamp": None}]
+        step_rows = [{"stage": "universe", "status": PASS,
+                      "reason_code": "IN_SCREENING_UNIVERSE",
+                      "human_reason": "وضعیتِ رسمیِ نماد اجازهٔ غربال می‌دهد؛ "
+                                      "در جامعۀ غربالگریِ این نشست",
+                      "input_count": len(screening), "output_count": len(screening),
+                      "source": "api/market + instrument_state/stop_reasons",
+                      "timestamp": None}]
         for sp in tape["steps"]:
             hit = next((w for w in why if w.get("stage") == "tape" and w.get("seq") == sp["seq"]), None)
             step_rows.append({
@@ -673,16 +760,46 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         seen[sym] = row
     joined = list(seen.values())
 
-    tape = tape_stage(joined, chain, params)
+    # ── جامعۀ تابلو ≠ جامعۀ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۱۶) ──────────────
+    # «Live» هرگز برابر «امروز معامله داشته» نیست: ملاک، وضعیتِ رسمیِ نماد درِ
+    # خودِ بازار است (`screening_eligibility`). نمادِ خارج از جامعۀ غربالگری
+    # نه REJECT است نه «سنجیده نشده» — وضعیتی مستقل می‌گیرد و درِ جدولِ اصلی
+    # نمایش داده نمی‌شود؛ فقط در خلاصه و بخشِ بازشوندهٔ «خارج از جامعه».
+    screening: list[dict] = []
+    excluded: list[dict] = []
+    for r in joined:
+        ok, code, human = screening_eligibility(r)
+        r["_screening_eligible"] = ok
+        r["_exclusion_code"] = code
+        r["_exclusion_reason"] = human
+        (screening if ok else excluded).append(r)
+
+    tape = tape_stage(screening, chain, params)
     tech = technical_stage(tape["survivors"], tech_scan, tech_sigs)
     fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
-    view_rows = joined
     hand = handover_stage(fund["survivors"], tape, tech, fund,
-                          assembly_vetoed=[str(r.get("symbol") or "") for r in joined
+                          assembly_vetoed=[str(r.get("symbol") or "") for r in screening
                                            if _tri(r.get("assembly_veto")) is True])
 
-    view = _view(view_rows, tape, tech, fund, hand, chain)
+    view = _view(screening, tape, tech, fund, hand, chain)
     matrix, coverage = status_matrix(joined, tape, tech, fund, hand)
+    for r in excluded:
+        # Inspector برایِ نمادِ خارج از جامعه هم باید علت بدهد، نه «پیدا نشد».
+        view["timeline"][str(r.get("symbol") or "")] = [{
+            "stage": "universe", "status": NOT_IN_UNIVERSE,
+            "reason_code": r["_exclusion_code"], "human_reason": r["_exclusion_reason"],
+            "input_count": len(joined), "output_count": len(screening),
+            "source": "instrument_state/stop_reasons (api/market.py:861-869)",
+            "timestamp": None}]
+    exclusions = [{"symbol": str(r.get("symbol") or ""), "name": r.get("name") or "",
+                   "sector": r.get("sector_name") or r.get("sector") or "",
+                   "last": _num(r.get("p_last")), "reason_code": r["_exclusion_code"],
+                   "human_reason": r["_exclusion_reason"], "st_code": r.get("st_code"),
+                   "st_title": r.get("st_title"), "stop_state": r.get("stop_state"),
+                   "is_live": r.get("is_live")} for r in excluded]
+    exclusion_counts: dict[str, int] = {}
+    for r in excluded:
+        exclusion_counts[r["_exclusion_code"]] = exclusion_counts.get(r["_exclusion_code"], 0) + 1
     return {
         "status": "success",
         "engine_version": ENGINE_VERSION,
@@ -692,17 +809,23 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "chain": list(chain),
         "fund_mode": fund_mode,
         "universe": {"board": len(board_rows), "screened": len(screen_rows),
-                     "joined": len(joined), "duplicate_rows": dupes},
+                     "joined": len(joined), "duplicate_rows": dupes,
+                     "market": len(joined), "screening": len(screening),
+                     "excluded": len(excluded),
+                     "exclusion_counts": exclusion_counts,
+                     "exclusion_labels": {k: EXCLUSION_LABEL.get(k, k)
+                                          for k in exclusion_counts}},
         "stages": {
             "tape": {"steps": tape["steps"],
-                     "input": len(joined), "matched": len(tape["survivors"]),
-                     "removed": len(joined) - len(tape["survivors"])},
+                     "input": len(screening), "matched": len(tape["survivors"]),
+                     "removed": len(screening) - len(tape["survivors"])},
             "technical": {"counts": tech["counts"], "matched": len(tech["survivors"])},
             "fundamental": {"counts": fund["counts"], "matched": len(fund["survivors"]),
                             "mode": fund_mode},
             "handover": {"counts": hand["counts"], "matched": len(hand["entries"])},
         },
         "handover": hand["entries"],
+        "exclusions": exclusions,
         "entries": view["entries"],
         "timeline": view["timeline"],
         "status_matrix": matrix,

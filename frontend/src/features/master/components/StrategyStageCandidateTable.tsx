@@ -33,6 +33,7 @@ const STATUS_BADGE_STYLE: Record<StageStatus, { bg: string; text: string; label:
   pending: { bg: 'bg-accent-yellow/15 border-accent-yellow/40', text: 'text-accent-yellow', label: 'در انتظار (PENDING)' },
   unavailable: { bg: 'bg-border-c/40 border-border-c', text: 'text-text-muted', label: 'بی‌داده (UNAVAILABLE)' },
   not_required: { bg: 'bg-border-c/25 border-border-c/60', text: 'text-text-muted', label: 'لازم نبود (NOT REQUIRED)' },
+  not_in_universe: { bg: 'bg-bg-secondary border-border-c/40', text: 'text-text-muted', label: 'خارج از جامعۀ غربالگری' },
 };
 
 export const StrategyStageCandidateTable = React.memo(function StrategyStageCandidateTable({
