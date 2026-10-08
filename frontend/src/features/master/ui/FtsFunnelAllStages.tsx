@@ -123,16 +123,10 @@ function applyAppScroll(v: number): boolean {
 
 /**
  * دربِ قیف = همان افقی که درِ «درخت استراتژی» و داوریِ نماد انتخاب می‌شود.
- * پیش از این قیف فقط با prop آن را می‌خواند و انتخابش درِ جایِ دیگری از صفحه
- * بود؛ مالک پرسید «چرا برای قیف غربالگری انتخاب استراتژی‌ها حذف شد» — چون
- * بعد از جابه‌جاییِ قیف به این تب، کلیدش رویِ صفحه نماند.
+ * کلیدِ انتخابِ سیستم از این جدول بیرون رفته و درِ سرخطِ همان workspace نشسته
+ * است (`FtsFunnelStages` → FUNNEL_MODES): یک انتخابگر، نه دو تا. این فایل دیگر
+ * preset را عوض نمی‌کند، فقط همان را می‌خواند و جدولش را می‌سازد.
  */
-const FUNNEL_PRESETS = ['swing', 'trend', 'hourglass'] as const;
-const PRESET_SHORT: Record<(typeof FUNNEL_PRESETS)[number], string> = {
-  swing: 'نوسان‌گیر',
-  trend: 'روندگیر',
-  hourglass: 'ساعت شنی',
-};
 
 const MARK_DOT: Record<StageStatus, string> = {
   pass: 'bg-accent-green',
@@ -153,7 +147,7 @@ const MARK_LABEL = STATUS_LABEL;
 type ColKey =
   | 'symbol' | 'last' | 'chg' | 'vol' | 'pattern'
   | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'mark'
-  | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'basket';
+  | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'why' | 'basket';
 
 const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   symbol: { label: 'نماد', title: 'کلیک = انتخابِ نماد' },
@@ -173,14 +167,17 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   ind4: { label: IND_COLUMNS[3].label, title: IND_COLUMNS[3].full, end: true },
   ind5: { label: IND_COLUMNS[4].label, title: IND_COLUMNS[4].full, end: true },
   score: { label: 'بنیادی', title: 'جمع پنج شاخص', end: true },
+  // حکمِ بی‌دلیل نگه ندارید: همین «دلیل» را پیشِ این فقط `title`ِ ردیف می‌داد و
+  // برای دیدنش باید نشانگر را نگه می‌داشتید (رویِ لمسی اصلاً دیده نمی‌شد).
+  why: { label: 'دلیل', title: 'دلیلِ همین حکم — همان متنی که موتورِ قیف ساخته' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
 };
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
-  tape: ['symbol', 'last', 'chg', 'vol', 'pattern'],
-  technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark'],
-  fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score'],
-  handover: ['symbol', 'weekly', 'score', 'basket'],
+  tape: ['symbol', 'last', 'chg', 'vol', 'pattern', 'why'],
+  technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark', 'why'],
+  fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score', 'why'],
+  handover: ['symbol', 'weekly', 'score', 'why', 'basket'],
 };
 
 /**
@@ -195,9 +192,10 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
  * جمعش دقیقاً صد شود (و افزودنِ ستونِ تازه جمع را نمی‌شکند).
  */
 const COL_W: Record<ColKey, number> = {
-  symbol: 20, last: 13, chg: 12, vol: 11, pattern: 32,
-  weekly: 13, daily: 13, branch: 20, setup: 20, techPoints: 10, mark: 13,
-  ind1: 14, ind2: 14, ind3: 14, ind4: 14, ind5: 14, score: 10, basket: 30,
+  symbol: 16, last: 11, chg: 10, vol: 9, pattern: 20,
+  weekly: 11, daily: 11, branch: 14, setup: 14, techPoints: 9, mark: 11,
+  ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18,
+  why: 26,
 };
 
 function ColGroup({ cols }: { cols: ColKey[] }) {
@@ -304,6 +302,13 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
     }
     case 'score':
       return <td className="px-2 py-1 text-end font-bold text-text-primary"><span className="num">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</span></td>;
+    case 'why':
+      return (
+        <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary" title={why ?? undefined}
+            data-testid={`funnel-why-${e.symbol}`}>
+          {why || (mark ? MARK_LABEL[mark] : '—')}
+        </td>
+      );
     case 'basket':
       return <td className="px-2 py-1 text-end"><SymbolBasketAction symbol={e.symbol} /></td>;
     default:
@@ -646,13 +651,10 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
 
 export function FtsFunnelStages({
   preset = 'custom',
-  onPresetChange,
   only,
   onStageSelect,
 }: {
   preset?: TreePreset;
-  /** وقتی والد، دربِ قیف را از استورِ استراتژی می‌خواند؛ بی‌این کلیدها رسم نمی‌شوند */
-  onPresetChange?: (p: (typeof FUNNEL_PRESETS)[number]) => void;
   /** حالتِ مسیریافته: فقط کارتِ همین مرحله؛ فهرستِ چهارتایی درِ گام چهارم می‌ماند */
   only?: FunnelStageKey;
   /** درِ حالتِ مسیریافته: تب به‌جای اسکرول، به routeِ همان مرحله می‌رود */
@@ -671,7 +673,10 @@ export function FtsFunnelStages({
       /* حافظه پر/غیرقابل دسترس: بازگشت بی‌اسکرول بهتر از بی‌عبور است */
     }
     setSymbol(s);
-    navigate(`/master/${encodeURIComponent(s)}`);
+    // گامِ فعال درِ URL می‌ماند: بی‌این «بازگشت» کاربر را از گام چهارم به گام
+    // اول می‌انداخت (snapshot تنها برایِ اسکرول نوشته شده بود، و همان هم درِ
+    // اسکرولِ صفر پاک می‌شد).
+    navigate(`/master/${encodeURIComponent(s)}?stage=${active}`);
   };
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
@@ -777,36 +782,6 @@ export function FtsFunnelStages({
             {TAPE_FRESHNESS_LABEL[tape]}
           </span>
         </div>
-        {onPresetChange && (
-          <div
-            className="flex flex-wrap items-center gap-1"
-            role="group"
-            aria-label="استراتژیِ دربِ قیف"
-            data-testid="funnel-preset-picker"
-          >
-            <span className="text-3xs font-bold text-text-secondary">دربِ قیف:</span>
-            {FUNNEL_PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                aria-pressed={preset === p}
-                data-testid={`funnel-preset-${p}`}
-                title={
-                  PRESET_ENTRY[p].label +
-                  (quickFilters.length ? ' — فعلاً ورودیِ قیف را چیپ‌هایِ روشنِ تبِ تابلو تعیین می‌کنند، این درب مرحلۀ تکنیکال را می‌زند' : '')
-                }
-                onClick={() => onPresetChange(p)}
-                className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
-                  preset === p
-                    ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60 hover:text-text-primary'
-                }`}
-              >
-                {PRESET_SHORT[p]}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
       {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
           با عددِ خودِ بازار. هدف‌هایِ جزوه (۵۰ و ۱۰ و -۷) فقط مرجعِ کناری‌اند و

@@ -24,6 +24,7 @@ import {
 } from '@features/master/lib/ftsFunnel';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
+import { useSymbolStore } from '@shared/stores/symbolStore';
 
 /** هر سطرِ قیف حالا `navigate()` می‌کند، پس تست‌ها هم درِ Router می‌نشینند.
  *  نمای چهارمرحلۀِ کامل در گام چهارم می‌ماند (`?stage=handover`) — جایی که این
@@ -207,7 +208,7 @@ describe('قیفِ FTS', () => {
     expect(f.stages.tape.entries.find((e) => e.symbol === 'فولاد')?.patterns).toEqual(['مشکوک']);
   });
 
-  it('صفحهٔ اصلی قیف مرکز کنترل است و نمای چهارمرحله‌ای در گام چهارم باقی می‌ماند', () => {
+  it('صفحهٔ اصلی قیف همان جدول است، نه صفحۀ «نقشۀ راه» — و گام چهارم نمای چهارمرحلۀ کامل را نگه می‌دارد', () => {
     renderRouted(
       <QueryClientProvider client={new QueryClient()}>
         <FtsFunnelStages />
@@ -215,7 +216,12 @@ describe('قیفِ FTS', () => {
       '/master',
     );
     expect(useTapeStore.getState().quickFilters).toEqual([]);
-    expect(screen.getByTestId('fts-funnel-overview')).toBeInTheDocument();
+    // رأیِ مالک ۱۴۰۵-۰۷-۱۶: صفحۀ جدا حذف شود؛ workspace همان‌جا باز می‌شود.
+    expect(screen.queryByTestId('fts-funnel-overview')).not.toBeInTheDocument();
+    expect(screen.getByTestId('fts-funnel-workspace')).toBeInTheDocument();
+    // بی‌?stage= کاربر رویِ گام اولِ واقعی (جدولِ تابلوخوانی) می‌نشیند، نه روی کارت‌ها.
+    expect(screen.getByTestId('funnel-stage-tape')).toBeInTheDocument();
+    expect(screen.queryByTestId('funnel-stage-technical')).not.toBeInTheDocument();
     for (const label of ['تابلوخوانی', 'تکنیکال', 'بنیادی', 'تحویل']) {
       expect(screen.getAllByRole('link', { name: new RegExp(label) }).length).toBeGreaterThan(0);
     }
@@ -550,26 +556,37 @@ describe('دربِ قیف: انتخابِ استراتژی رویِ خودِ ق�
     expect(screen.queryByTestId('funnel-preset-picker')).not.toBeInTheDocument();
   });
 
-  it('سه دربِ جزوه‌ای هست و همان که والد داده پریده است', () => {
-    renderFunnel({ preset: 'swing', onPresetChange: () => {} });
-    for (const p of ['swing', 'trend', 'hourglass']) {
-      expect(screen.getByTestId(`funnel-preset-${p}`)).toBeInTheDocument();
+  it('سه سیستمِ انتخابی درِ همان workspace است (نوسان‌گیر، روندگیر، Custom) و فعال پریده می‌ماند', () => {
+    const first = renderFunnel({ preset: 'swing', onPresetChange: () => {} });
+    for (const p of ['swing', 'trend', 'custom']) {
+      expect(screen.getByTestId(`funnel-mode-${p}`)).toBeInTheDocument();
     }
-    expect(screen.getByTestId('funnel-preset-swing')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByTestId('funnel-preset-trend')).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('funnel-mode-swing')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('funnel-mode-trend')).toHaveAttribute('aria-pressed', 'false');
+    // ساعت‌شنی از این سه‌تا بیرون آمده (منبعِ فیلترِ تابلویی ندارد — پرسشِ Q-1)
+    // ولی توانش حذف نشده: همان مسیرِ قبلی هنوز کار می‌کند.
+    expect(screen.queryByTestId('funnel-mode-hourglass')).not.toBeInTheDocument();
+    first.unmount();
+    renderRouted(
+      <QueryClientProvider client={new QueryClient()}><FtsFunnelStages /></QueryClientProvider>,
+      '/master?stage=handover&preset=hourglass',
+    );
+    expect(screen.getByTestId('funnel-mode-swing')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('کلیک رویِ روندگیر، همان نام را به والد می‌دهد (دربِ واقعی درِ استورِ افق است)', () => {
+  it('کلیک رویِ روندگیر همان نام را به والد می‌دهد؛ Custom افقِ سراسری را دست نمی‌زند', () => {
     const seen: string[] = [];
-    renderFunnel({ preset: 'swing', onPresetChange: (p) => seen.push(p) });
-    fireEvent.click(screen.getByTestId('funnel-preset-trend'));
-    fireEvent.click(screen.getByTestId('funnel-preset-hourglass'));
-    expect(seen).toEqual(['trend', 'hourglass']);
+    renderFunnel({ preset: 'swing', onPresetChange: (p) => seen.push(p as string) });
+    fireEvent.click(screen.getByTestId('funnel-mode-trend'));
+    fireEvent.click(screen.getByTestId('funnel-mode-custom'));
+    expect(seen).toEqual(['trend']);
+    expect(useFunnelPrefsStore.getState().preset).toBe('custom');
   });
 
-  it('عنوانِ هر درب، ورودیِ پنج‌فیلترهٔ خودش را می‌گوید تا «درب» مبهم نماند', () => {
+  it('عنوانِ هر سیستم، فیلترهایِ خودش را می‌گوید تا «درب» مبهم نماند', () => {
     renderFunnel({ preset: 'swing', onPresetChange: () => {} });
-    expect(screen.getByTestId('funnel-preset-trend').getAttribute('title')).toContain('روندگیر');
+    expect(screen.getByTestId('funnel-mode-trend').getAttribute('title')).toContain('کف‌روبی');
+    expect(screen.getByTestId('funnel-mode-swing').getAttribute('title')).toContain('جت');
   });
 });
 
@@ -775,10 +792,13 @@ describe('قیف: snapshotِ بازگشت (Task #78 — stage/scroll پس از B
     useFunnelPrefsStore.getState().reset();
     renderSnap();
     const tr = screen.getByTestId('funnel-stage-tape').querySelector('tbody tr');
+    // قراردادِ تازه: گذرِ نماد گام را درِ URL می‌برد (`?stage=tape`) و snapshotِ
+    // اسکرول همان‌جا مصرف می‌شود، پس «ماندنِ کلید» دیگر شاهدِ درستِ کار نیست؛
+    // چیزی که باید درست برود انتخابِ نماد و چسبیدنِ گام به مسیر است.
     fireEvent.click(tr!.querySelector('button')!);
-    const snap = JSON.parse(sessionStorage.getItem(SNAP_KEY) ?? '{}');
-    expect(snap.stage).toBe('tape');
-    expect(typeof snap.scroll).toBe('number');
+    expect(useSymbolStore.getState().symbol).toBe('فولاد');
+    // گامِ بعدازِ گذر درِ خودِ مسیر می‌نشیند (نه فقط درِ snapshot) — قراردادِ تازه.
+    expect(screen.getByTestId('funnel-stage-tape')).toBeInTheDocument();
   });
 
   it('تبِ قیف فقط هایلایت نیست — کارتِ همان مرحله را به دید می‌آورد (UX Round 79)', () => {

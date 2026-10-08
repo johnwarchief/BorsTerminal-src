@@ -10,6 +10,14 @@
 //                    و ردیف به بنیادی برسد تا خودِ مالک روندِ هفتگی را ببیند.
 import { create } from 'zustand';
 
+/** سه سیستمِ انتخاب + ساعت‌شنی — همان `TreePreset` درِ `lib/ftsFunnel.ts`.
+ *  اینجا دوباره نوشته شده تا store به لایۀ UI وابسته نشود (چرخۀ import). */
+export type FunnelPreset = 'swing' | 'trend' | 'hourglass' | 'custom';
+const PRESETS: readonly FunnelPreset[] = ['swing', 'trend', 'hourglass', 'custom'];
+/** unset یعنی «کاربر هنوز خودش انتخاب نکرده» — تا آن وقت propِ والد (افقِ
+ *  سراسری) مرجع است؛ بعد از اولین انتخاب، همان چیزی که کاربر زد می‌ماند. */
+export const DEFAULT_PRESET: FunnelPreset | null = null;
+
 /** دو حالتِ کشفِ نماد — هر دو از یک قراردادِ داوری (`lib/ftsFunnel.ts`). */
 export type FunnelMode = 'reverse' | 'review';
 /** پیش‌فرضِ جزوه: مهندسیِ معکوس (S ➔ T ➔ F ➔ M). */
@@ -48,10 +56,15 @@ export const TECH_SCREEN_HINT = {
 } as const;
 
 export type FunnelPrefsState = {
+  /** system انتخابیِ کاربر درِ خودِ workspace — `custom` درِ strategyStore نیست
+   *  (افقِ آنجا سه‌تاست و پلنِ معامله به آن وابسته است)، پس قیف preset خودش
+   *  را نگه می‌دارد و فقط وقتی یکی از سه افقِ واقعی است، افق را هم عوض می‌کند. */
+  preset: FunnelPreset | null;
   fundFloor: number;
   unmeasured: UnmeasuredPolicy;
   techScreens: boolean;
   mode: FunnelMode;
+  setPreset: (p: FunnelPreset) => void;
   setFundFloor: (n: number) => void;
   setUnmeasured: (p: UnmeasuredPolicy) => void;
   setTechScreens: (on: boolean) => void;
@@ -64,9 +77,10 @@ function clampFloor(n: number): number {
   return Math.min(FUND_FLOOR_MAX, Math.max(1, Math.round(n)));
 }
 
-type SavedPrefs = { fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean; mode: FunnelMode };
+type SavedPrefs = { preset: FunnelPreset | null; fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean; mode: FunnelMode };
 
 const JOZVE: SavedPrefs = {
+  preset: DEFAULT_PRESET,
   fundFloor: DEFAULT_FUND_FLOOR,
   unmeasured: DEFAULT_UNMEASURED,
   techScreens: DEFAULT_TECH_SCREENS,
@@ -77,8 +91,9 @@ function saved(): SavedPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return JOZVE;
-    const p = JSON.parse(raw) as { fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown; mode?: unknown };
+    const p = JSON.parse(raw) as { preset?: unknown; fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown; mode?: unknown };
     return {
+      preset: PRESETS.includes(p.preset as FunnelPreset) ? (p.preset as FunnelPreset) : null,
       fundFloor: clampFloor(typeof p.fundFloor === 'number' ? p.fundFloor : DEFAULT_FUND_FLOOR),
       unmeasured:
         p.unmeasured === 'pass' || p.unmeasured === 'drop' ? p.unmeasured : DEFAULT_UNMEASURED,
@@ -104,10 +119,16 @@ function persist(s: SavedPrefs) {
 export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
   const init = saved();
   return {
+    preset: init.preset,
     fundFloor: init.fundFloor,
     unmeasured: init.unmeasured,
     techScreens: init.techScreens,
     mode: init.mode,
+    setPreset: (p) => {
+      if (!PRESETS.includes(p)) return;
+      persist({ ...get(), preset: p });
+      set({ preset: p });
+    },
     setFundFloor: (n) => {
       const v = clampFloor(n);
       persist({ ...get(), fundFloor: v });

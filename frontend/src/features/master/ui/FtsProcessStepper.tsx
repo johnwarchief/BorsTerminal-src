@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { toFaDigits } from '@shared/lib/fmt';
 import type { FunnelStageKey } from '../lib/ftsFunnel';
 
 export const FUNNEL_STAGES = [
@@ -15,6 +16,11 @@ export function funnelStagePath(stage: FunnelStageKey, preset?: string, symbol?:
   return `/master?${q.toString()}`;
 }
 
+/** گام‌هایِ قیف — یک ردیفِ tabِ فشرده.
+ *
+ *  پیشِ این هر گام کارتِ ۸×۸ با سطرِ دوم («اکنون در این مرحله هستید») بود و
+ *  `min-w-[720px]` می‌خواست؛ مالک آن را «navigationِ بزرگ» شمرد. خودِ جدول
+ *  باید اول دیده شود، پس این‌جا فقط چهار برچسب است. */
 export function FtsProcessStepper({
   active,
   preset,
@@ -25,33 +31,24 @@ export function FtsProcessStepper({
   symbol?: string | null;
 }) {
   return (
-    <nav aria-label="مراحل قیف FTS" data-testid="fts-process-stepper" className="w-full overflow-x-auto pb-1">
-      <div className="flex min-w-[720px] items-center gap-2">
-        {FUNNEL_STAGES.map((stage, i) => {
+    <nav aria-label="مراحل قیف FTS" data-testid="fts-process-stepper" className="w-full">
+      <div className="flex items-center gap-1">
+        {FUNNEL_STAGES.map((stage) => {
           const isActive = stage.key === active;
           return (
-            <div key={stage.key} className="flex min-w-0 flex-1 items-center gap-2">
-              <Link
-                to={funnelStagePath(stage.key, preset, symbol)}
-                aria-current={isActive ? 'step' : undefined}
-                className={
-                  isActive
-                    ? 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-accent-blue/60 bg-accent-blue/10 px-3 py-2 shadow-sm'
-                    : 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-border-c bg-bg-card/50 px-3 py-2 text-text-muted transition-colors hover:border-accent-blue/40 hover:text-text-primary'
-                }
-              >
-                <span className={isActive ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent-blue/20 text-xs font-black text-accent-blue' : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border-c bg-bg-primary text-xs font-black text-text-muted'}>
-                  {stage.short}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-2xs font-black">{stage.page} · {stage.title}</span>
-                  <span className="mt-0.5 block truncate text-3xs text-text-muted">
-                    {isActive ? 'اکنون در این مرحله هستید' : 'رفتن به این مرحله'}
-                  </span>
-                </span>
-              </Link>
-              {i < FUNNEL_STAGES.length - 1 ? <span className="shrink-0 text-lg text-text-muted" aria-hidden>←</span> : null}
-            </div>
+            <Link
+              key={stage.key}
+              to={funnelStagePath(stage.key, preset, symbol)}
+              aria-current={isActive ? 'step' : undefined}
+              data-testid={`fts-step-${stage.key}`}
+              className={
+                isActive
+                  ? 'rounded-lg border border-accent-blue/60 bg-accent-blue/15 px-2.5 py-1 text-2xs font-black text-accent-blue'
+                  : 'rounded-lg border border-border-c bg-bg-card/50 px-2.5 py-1 text-2xs font-bold text-text-muted hover:border-accent-blue/40 hover:text-text-primary'
+              }
+            >
+              <span className="num">{toFaDigits(stage.index)}</span> · {stage.title}
+            </Link>
           );
         })}
       </div>

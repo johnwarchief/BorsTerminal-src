@@ -53,7 +53,9 @@ describe('AppShell smoke', () => {
     await import('@features/master/routes/MasterPage');
     renderApp('/master');
     await waitFor(() => {
-      expect(screen.getByTestId('fts-funnel-overview')).toBeInTheDocument();
+      // «نقشۀ راه قیف» حذف شده: /master باید مستقیم workspaceِ قیف باشد.
+      expect(screen.getByTestId('fts-funnel-workspace')).toBeInTheDocument();
+      expect(screen.queryByTestId('fts-funnel-overview')).not.toBeInTheDocument();
     });
     expect(screen.queryByText('نمادی انتخاب نشده')).not.toBeInTheDocument();
   });
