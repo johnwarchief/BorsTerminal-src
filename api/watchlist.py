@@ -26,7 +26,7 @@ def get_watchlist():
         finally:
             conn.close()
         return {"status": "success", "count": len(rows), "data": rows,
-                "limit": watchlist_store.MAX_WATCHLIST}
+                "limit": watchlist_store.USER_WATCHLIST_MAX}
     except Exception as e:
         return {"status": "error", "message": str(e)[:200]}
 
@@ -35,7 +35,7 @@ def post_watchlist(payload: dict = None):
     """افزودن/بروزرسانی یک نماد در واچ‌لیست (upsert با کلید نرمال).
 
     سقفِ «حداکثر سهمِ واچ‌لیست» از پنلِ تنظیمات کدال خوانده میشود (نه فقط
-    گاردِ سختِ watchlist_store.MAX_WATCHLIST) — جزوه می‌گوید نهایتاً ۵۰ سهم؛
+    گاردِ سختِ watchlist_store.USER_WATCHLIST_MAX) — جزوه می‌گوید نهایتاً ۵۰ سهم؛
     اگر کاربر آن را عوض کند، همین‌جا اعمال میشود. نمادِ از قبل موجود همیشه
     آزاد است (وگرنه «ویرایش یادداشت» پشتِ سقف گیر می‌کرد).
     """
@@ -49,7 +49,7 @@ def post_watchlist(payload: dict = None):
         conn = get_user_db()
         try:
             cap = int(load_fts_config().get("watchlist_max", 50) or 50)
-            cap = max(1, min(cap, watchlist_store.MAX_WATCHLIST))
+            cap = max(1, min(cap, watchlist_store.USER_WATCHLIST_MAX))
             if (watchlist_store.get(conn, fts_engine.norm_fa(symbol)) is None
                     and watchlist_store.count(conn) >= cap):
                 return {"status": "error", "message":
@@ -102,7 +102,7 @@ def get_watchlist_matrix(symbols: str = Query(None)):
         probe = None
         if raw and raw.strip():
             probe = [s.strip() for s in raw.split(",") if s.strip()]
-            probe = probe[:watchlist_store.MAX_WATCHLIST]
+            probe = probe[:watchlist_store.MATRIX_PROBE_MAX]
         conn = get_user_db()
         try:
             out = watchlist_store.matrix(conn, symbols=probe,

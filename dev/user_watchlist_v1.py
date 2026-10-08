@@ -68,24 +68,24 @@ def main() -> int:
         ck(n == 1 and WS.count(conn) == 1,
            "۸) حذف با نوشتارِ عربی، ردیفِ فارسی را برمی‌دارد (یکی بودنِ هویت درِ حذف)")
 
-        # توقعِ اولِ من این بود که خودِ store تا MAX_WATCHLIST نگهش می‌دارد.
+        # توقعِ اولِ من این بود که خودِ store تا USER_WATCHLIST_MAX نگهش می‌دارد.
         # نداشتنِ آن درِ store واقعیت است و عمدی: سیاستِ سقف درِ route نشسته
         # (`api/watchlist.py:51-56` — `watchlist_max` پنل کدال، clamp شده با
-        # MAX_WATCHLIST). اینجا همان تفکیکِ لایه قفل می‌شود:
+        # USER_WATCHLIST_MAX). اینجا همان تفکیکِ لایه قفل می‌شود:
         # store بی‌سقف است، پس هر فراخوانِ مستقیمِ add (legacy/test) سقف را
         # نمی‌بیند — و دقیقاً به همین دلیل سقفِ route باید گارد شود، نه فرض.
         before = WS.count(conn)
-        for i in range(WS.MAX_WATCHLIST):
+        for i in range(WS.USER_WATCHLIST_MAX):
             WS.add(conn, "نماد" + str(i))
         conn.commit()
-        ck(WS.count(conn) == before + WS.MAX_WATCHLIST,
+        ck(WS.count(conn) == before + WS.USER_WATCHLIST_MAX,
            "۹) store خودش سقف ندارد (سقف درِ route است) ⇒ عددِ بی‌گاردهایِ لایۀ دیگر")
     finally:
         conn.close()
         os.unlink(path)
 
     src = open(os.path.join(ROOT, "api", "watchlist.py"), encoding="utf-8").read()
-    ck("MAX_WATCHLIST" in src and "watchlist_max" in src,
+    ck("USER_WATCHLIST_MAX" in src and "watchlist_max" in src,
        "۹-ب) سقفِ واقعی درِ route هر دو را می‌خواند: کلیدِ پنل + گاردِ سختِ store")
 
     # ۱۰/۱۱) ظرفیتِ کاربر هرگز نباید دامنۀ غربالگری را ببرد (§۱۰ task)
@@ -93,21 +93,38 @@ def main() -> int:
     for rel in ("funnel_engine.py", "api/funnel.py", "funnel_tech_scan.py",
                 "funnel_registry.py", "api/screener.py"):
         body = open(os.path.join(ROOT, rel), encoding="utf-8").read()
-        if "MAX_WATCHLIST" in body or "user_watchlists" in body:
+        if "USER_WATCHLIST_MAX" in body or "user_watchlists" in body:
             forbidden.append(rel)
     ck(not forbidden,
        "۱۰) هیچ مسیرِ غربالگری به سقف/جدولِ واچ‌لیستِ کاربر دست نمی‌زند"
        + ("" if not forbidden else " — نشتی: " + ", ".join(forbidden)))
     src = open(os.path.join(ROOT, "api", "watchlist.py"), encoding="utf-8").read()
     ck("watchlist_max" in src,
-       "۱۱) کلیدِ پیکربندیِ «watchlist_max» هنوز دو معنا را حمل می‌کند (کاربر + "
-       "غنی‌سازیِ اسکرینر) ⇒ تفکیکِ نامِ بند ۹/۱۰ درِ WS-3.6 باز است و این بند "
-       "جا‌بازگذاشتنِ آن را فراموش نمی‌کند")
+       "۱۱) کلیدِ پنلِ «watchlist_max» (سیمِ تنظیماتِ کدال) دست‌نخورده مانده — چیزی که "
+       "بند ۹/۱۰ خواستش تفکیکِ *نامِ کد* بود، نه شکستنِ قراردادِ فرانت/اندروید")
+    # ۱۱-ب) تفکیکِ واقعاً انجام‌شده: سه مفهوم، سه نام. قبلاً این‌جا یک پینِ
+    # «باز است» نشسته بود؛ پینِ باگ‌ِ شناخته‌شده درِ همان تغییر باید برگردد
+    # (قاعدۀ کار)، پس این بند حالا *اثباتِ* تفکیک است نه ثبتِ کمبود.
+    ws_src = open(os.path.join(ROOT, "watchlist_store.py"), encoding="utf-8").read()
+    ck("USER_WATCHLIST_MAX" in ws_src and "MATRIX_PROBE_MAX" in ws_src,
+       "۱۱-ب) ظرفیتِ کاربر و سقفِ ماتریس دو ثابتِ جدا اند (USER_WATCHLIST_MAX / MATRIX_PROBE_MAX)")
+    stale = [rel for rel in ("watchlist_store.py", "api/watchlist.py", "api/screener.py",
+                             "funnel_engine.py")
+             if "MAX_WATCHLIST" in open(os.path.join(ROOT, rel), encoding="utf-8").read()]
+    ck(not stale, "۱۱-پ) هیچ نامِ دوپهلوِ «MAX_WATCHLIST» درِ این چهار فایل نمانده"
+       + ("" if not stale else " — نشتی: " + ", ".join(stale)))
+    # ۱۲) ماتریس دادهٔ بازار را از market.db می‌خواند، نه از connِ کاربر (باگِ
+    # `no such table: instruments` — همین سبب شد `/api/watchlist/matrix?symbols=` بشکند).
+    body = ws_src.split("def matrix(", 1)[1]
+    body = body.split("\ndef ", 1)[0]
+    ck("bors_config.DB_PATH" in body and "build_ctx(conn)" not in body,
+       "۱۲) ماتریس برایِ محاسبهٔ بازار connectionِ خودش (market.db) را می‌سازد؛ "
+       "connِ کاربر فقط برایِ ردیف/یادداشت است")
     print()
     if FAILED:
         print(f"user_watchlist guard: {len(FAILED)} FAILED")
         return 1
-    print(f"user_watchlist guard OK — 10 band")
+    print(f"user_watchlist guard OK — 13 band")
     return 0
 
 

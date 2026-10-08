@@ -24,7 +24,15 @@ from typing import Iterable, Optional
 import confidence_engine
 import fts_engine
 
-MAX_WATCHLIST = 60          # سقف محافظتی؛ ماتریسِ بدون سقف یک درخواست سنگین می‌سازد
+# سه مفهومِ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶، §۹ و §۱۰ — پیش‌تر هر سه «watchlist_max»
+# نام داشتند و یکی از زیرِ بارِ دیگری له می‌شد):
+#   USER_WATCHLIST_MAX  ظرفیتِ خودِ واچ‌لیستِ کاربر — اینکه چند نماد *ماندگار*
+#                       نگاه داشته می‌شود. هیچ جای دیگری نباید این عدد را به‌عنوان
+#                       سقفِ محاسبه یا نمایش مصرف کند.
+#   MATRIX_PROBE_MAX    سقفِ ردیف‌هایِ یک ماتریسِ آزمایشی (سنگینیِ یک درخواستِ
+#                       HTTP)، نه ظرفیتِ کاربر.
+USER_WATCHLIST_MAX = 60
+MATRIX_PROBE_MAX = 60
 MAX_NOTE = 200
 MAX_NAME = 120
 
@@ -123,15 +131,26 @@ def matrix(conn: sqlite3.Connection, symbols: Iterable = None,
         syms = [r["symbol"] for r in rows]
         meta = {fts_engine.norm_fa(r["symbol"]): r for r in rows}
     else:
-        syms = [str(s).strip() for s in symbols if str(s or "").strip()][:MAX_WATCHLIST]
+        syms = [str(s).strip() for s in symbols if str(s or "").strip()][:MATRIX_PROBE_MAX]
         meta = {}
     if not syms:
         return {"status": "success", "count": 0, "rows": [], "asof": {},
-                "limit": MAX_WATCHLIST}
-    ctx = confidence_engine.build_ctx(conn)
-    fund_rows = confidence_engine.fund_map(conn, cfg=fts_cfg)
-    out = confidence_engine.triple_many(conn, syms, ctx=ctx, cfg=cfg,
-                                        fts_cfg=fts_cfg, fund_rows=fund_rows)
+                "limit": MATRIX_PROBE_MAX, "capacity": USER_WATCHLIST_MAX}
+    # `conn` اینجا connectionsِ *کاربر* است (user.db: جدولِ واچ‌لیست و یادداشت‌ها).
+    # سه تابعِ confidence_engine اما جدول‌های بازار (instruments،
+    # financial_statements، market_watch، …) را می‌خوانند و آن‌ها درِ market.db
+    # اند. بی‌این تفکیک، `/api/watchlist/matrix?symbols=…` با
+    # `no such table: instruments` می‌شکست (سابقاً همین اتفاق می‌افتاد و فقط
+    # حالتِ «خودِ جدول» کار می‌کرد، آن هم وقتی واچ‌لیست خالی بود).
+    import bors_config
+    mconn = sqlite3.connect(bors_config.DB_PATH, timeout=30)
+    try:
+        ctx = confidence_engine.build_ctx(mconn)
+        fund_rows = confidence_engine.fund_map(mconn, cfg=fts_cfg)
+        out = confidence_engine.triple_many(mconn, syms, ctx=ctx, cfg=cfg,
+                                           fts_cfg=fts_cfg, fund_rows=fund_rows)
+    finally:
+        mconn.close()
     for rec in out:
         m = meta.get(fts_engine.norm_fa(rec.get("symbol") or "")) or {}
         rec["note"] = m.get("note") or ""
@@ -146,6 +165,7 @@ def matrix(conn: sqlite3.Connection, symbols: Iterable = None,
                 and r["asof"].get(k)]
         return max(vals, key=lambda v: str(v)) if vals else None
     return {"status": "success", "count": len(out), "rows": out,
-            "limit": MAX_WATCHLIST,
+            "limit": MATRIX_PROBE_MAX,
+            "capacity": USER_WATCHLIST_MAX,
             "asof": {"tech": _latest("tech"), "tape": _latest("tape"),
                      "fund": _latest("fund")}}
