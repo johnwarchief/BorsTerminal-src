@@ -2209,9 +2209,24 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 
 | F-13 | Stage C first cut built and measured | `PARTIAL` | `funnel_tech_scan.py` (not wired into `/api/screener` yet): one `funnel_tech_scan` table, `tech_fields_from_fts()` as the **only** copy of the extraction (the screener will call it, so no second judge is created), signature-based incremental reuse, CLI. Re-measured after removing a double history fetch: **serial 0.57 s/symbol → 922 symbols ≈ 8.8 min cold**, a repeat call 0.02 s (cache), `universe()` over 433,922 rows 0.4 s. **Four threads made it 10× worse** (68 s for 12 symbols), so the default is one worker. Remaining: scope the scan to the screener's ~922 symbols (not the 6031 spellings in `price_history`; 3710 traded in `market_watch`, 1263 with ≥60 sessions), wire the screener to the table, then lift `watchlist_max`/`TECH_QUERY_CAP` |
 
+## 15.11 Funnel UX restructure (owner mission 2026-10-08, presentation only)
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| U-1 | «نقشۀ راه قیف» page deleted | `ACCEPTED` | `FtsFunnelOverview.tsx` deleted; `/master` now opens the stage table itself (`fts-funnel-workspace`), `?stage=` keeps addressing the four stages and defaults to the first |
+| U-2 | Three modes in one workspace | `ACCEPTED` | `FUNNEL_MODES` = نوسان‌گیر / روندگیر / Custom in one segmented row; hourglass left out of the selector because no source gives it a tape filter (Q-1) but `?preset=hourglass` still works, so no capability was deleted |
+| U-3 | Table is the centre | `ACCEPTED` | The stage hero (title + purpose + 4 stat cards + rule chips) is gone; the duplicate in-table preset picker is gone; counts live on one line above the table |
+| U-4 | Reason visible without a second page | `ACCEPTED` | New `دلیل` column renders the engine's own reason string per row (it was only a `title` tooltip before, invisible on touch) |
+| U-5 | Stage survives a row click | `ACCEPTED` | `pick()` navigates to `/master/<symbol>?stage=<active>`; the workspace also falls back to the Task-#78 snapshot. Found by the retargeted snapshot test, which had passed only because the deleted overview page never consumed the snapshot |
+| U-6 | Custom: pick filters | `PARTIAL` | Selection works through the existing board chips (`funnel-tape-chip-*`) shown in the tape stage; **reordering the chain is not built yet** and the engine still intersects the picked set as a set, so order is display-only until stage E |
+| U-7 | Browser validation | `ACCEPTED` | `tools/jev_ui_check.mts` at 1366/1920/360 → `_audit/funnel_workspace_check.json`: three modes present, no overview page, `دلیل` present, `pageOverflowX: 0` at every width. One React "setState during render" warning appeared only in the 1366 run and its cause is not yet isolated - recorded, not dismissed |
+| U-8 | Logic untouched | `ACCEPTED` | No change under `lib/ftsFunnel.ts`, `tape_flags.py`, `fts_engine.py` or `api/*` in this commit; tsc clean and 1444 passed / 3 skipped |
+
 ## 15.5 Next item selected
 
-**FTS Funnel stage C** — replace the per-symbol technical enrichment of the top-50
+**FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
+already-picked filters, display-only until the engine consumes the order), then replace the
+per-symbol technical enrichment of the top-50
 (`api/screener.py:456-458`, `fts_engine.scan_all` `[:cap]`) with one batched full-universe
 scan (single candle load, parallel verdicts, scan-level `as_of`), then measure the cold
 rebuild. Stage E builds the intersection engine on top of it.
