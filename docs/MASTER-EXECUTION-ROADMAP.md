@@ -2315,6 +2315,289 @@ universe.screened / universe.joined` on every answer.
 **Release: NOT BUILT** (per §40). **Funnel status: IMPLEMENTING** - backend judge accepted,
 frontend switch written but not green, so "one canonical judge" is not yet true in the app.
 
+## 15.14 Execution roadmap — سرخطی + ربات معامله‌گر
+
+این بخش معماری اجرایی آینده را تثبیت می‌کند. سرخطی و ربات معامله‌گر یک محصول واحد نیستند:
+سرخطی = execution/timing capability و ربات معامله‌گر = complete signal-to-order lifecycle.
+هیچ‌کدام نباید منطق FTS را دوباره داوری کنند.
+
+### منابع مرجع اصلی
+
+1. **Mofid / EasyTrader Auto-Buy Bot**
+   https://github.com/RezaMahdaviiDev/mofid
+   - مرجع تحقیق برای browser/API execution، session handling، order submission، latency models، fallback و transaction validation.
+   - فقط به‌عنوان reference/research استفاده شود؛ هیچ کد یا credential از آن کپی نشود.
+   - ادعاهای latency یا «اول صف» تا زمانی که با اندازه‌گیری مستقل BorsTerminal اثبات نشده‌اند، fact محسوب نشوند.
+
+2. **Sarkhati**
+   https://github.com/m-fazel/Sarkhati
+   - مرجع تحقیق برای multi-broker execution، MofidOnlinePlus/EasyTrader adapters، authentication، rate limiting، calibration، batching، logging و execution loop.
+   - معماری و قراردادها استخراج شوند؛ کد پروژه بدون بررسی license و بدون نیاز واقعی کپی نشود.
+   - credential، cookie، bearer token و session واقعی هرگز وارد repository نشود.
+
+### اصل معماری
+
+مسیر canonical باید این باشد:
+
+FTS/Strategy Signal
+→ Signal Normalizer
+→ Risk Gate
+→ Execution Planner
+→ Timing/Sarkhati Scheduler
+→ Broker Adapter
+→ Order State Machine
+→ Broker/Event Reconciliation
+→ Position/Portfolio State
+→ Audit Log
+
+قواعد FTS فقط در upstream باقی می‌مانند. لایه execution حق ندارد trend/fundamental/technical را دوباره محاسبه یا override کند.
+ربات فقط می‌تواند یک signal پذیرفته‌شده را به تصمیم اجرایی تبدیل کند.
+
+### مرحله 0 — Deep Research و استخراج قراردادها
+
+قبل از implementation:
+
+- هر دو repository را file-by-file برای مسیر order submission، session/auth، timing، retry، rate-limit، batching، validation و error handling بررسی کن.
+- برای Mofid حداقل EasyTrader و در صورت وجود مسیر مستقل MofidOnlinePlus را جداگانه مستند کن.
+- برای Sarkhati همه broker adapters و abstractionهای مشترک را استخراج کن.
+- برای هر broker این جدول را بساز:
+  login/session → instrument identity/ISIN → buy/sell payload → validity → quantity rules → price rules → response → order id → fill/cancel/reject → retry behavior → rate limit → timeout
+- فقط چیزهایی را که از source یا measurement به‌دست آمده‌اند ثبت کن؛ endpoint، field، timing یا قابلیت اختراع نشود.
+- نتیجه در docs/execution/ ثبت و source URL + commit/ref + license evidence پین شود.
+
+**Gate:** research complete + source mapping complete + هیچ claim بدون evidence.
+
+### مرحله 1 — Canonical execution contracts
+
+مدل‌های مستقل از broker تعریف شوند:
+
+- SignalIntent
+- RiskDecision
+- ExecutionPlan
+- BrokerOrderRequest
+- OrderState
+- ExecutionEvent
+- Fill
+- PositionSnapshot
+- ReconciliationEvent
+
+هر object باید symbol, isin, side, price, quantity, strategy/signal id، created_at، source/as_of و correlation/order idهای لازم را داشته باشد.
+
+**Gate:** هیچ broker-specific field نباید وارد مدل canonical شود مگر با adapter mapping صریح.
+
+### مرحله 2 — Clock و market-session foundation
+
+قبل از سرخطی:
+
+- منبع زمان رسمی و timezone تهران مشخص شود.
+- monotonic clock برای latency measurements استفاده شود.
+- drift/offset با NTP در صورت دسترس اندازه‌گیری شود.
+- market open/close، pre-open، pause، halt و پایان session به‌صورت state machine تعریف شود.
+- timestampهای signal، receive، decision، submit، ack، fill و reconciliation جدا ذخیره شوند.
+
+**Gate:** latency end-to-end قابل اندازه‌گیری و قابل بازسازی باشد.
+
+### مرحله 3 — سرخطی به‌عنوان Timing/Execution subsystem
+
+سرخطی را به یک capability مستقل تبدیل کن، نه یک دکمه‌ی «خرید سریع».
+
+زنجیره:
+
+Market/Signal Event
+→ readiness check
+→ clock gate
+→ order construction
+→ scheduling
+→ broker submission
+→ acknowledgement
+→ queue/market-state observation
+→ reconciliation
+
+برای هر اقدام این latencyها ثبت شوند:
+
+market event → app receive → decision → serialization → network → broker ack → exchange-visible result
+
+هدف، کمینه‌کردن و اندازه‌گیری end-to-end latency است؛ **هیچ ادعای «اول صف بودن» بدون evidence مستقیم قابل قبول نیست.**
+
+Queue-position research باید فقط از داده‌های قابل مشاهده استفاده کند. در صورت نبودن observability، وضعیت UNVERIFIED بماند.
+
+### مرحله 4 — Execution planner و scheduler
+
+Planner مشخص کند:
+
+- آیا signal قابل اجراست؟
+- چه مقدار مجاز است؟
+- چه قیمتی طبق policy مجاز است؟
+- چه زمانی باید submit شود؟
+- آیا order باید split/batch شود؟
+- timeout و retry policy چیست؟
+- چه شرایطی باعث cancel/replace/stop می‌شود؟
+
+Scheduler برای سرخطی باید deterministic و latency-aware باشد و queueهای داخلی بدون bound رشد نکنند.
+
+### مرحله 5 — Broker adapter layer
+
+هر broker یک adapter مستقل داشته باشد:
+
+BrokerAdapter
+→ authenticate/session
+→ resolve instrument
+→ submit
+→ query status
+→ cancel/replace
+→ fetch fills/position
+→ normalize errors
+
+اول adapterهای research-backed برای Mofid بساز:
+
+- EasyTrader
+- MofidOnlinePlus، فقط بعد از اثبات contract مستقل آن
+
+بعد brokerهای دیگر Sarkhati به‌عنوان adapterهای جدا اضافه شوند.
+
+هر adapter باید mock implementation داشته باشد.
+
+### مرحله 6 — Order State Machine
+
+stateهای canonical حداقل:
+
+CREATED → READY → SUBMITTING → ACCEPTED/REJECTED → PARTIALLY_FILLED → FILLED → CANCELED/EXPIRED
+
+و error/retry transitionها نیز صریح باشند.
+
+هیچ response موفق HTTP به‌تنهایی نباید به معنی FILLED تعبیر شود.
+
+Order id، broker response، timestamps و transition reason برای هر transition ذخیره شوند.
+
+### مرحله 7 — Reconciliation و Portfolio truth
+
+پس از submit:
+
+local intent ≠ broker accepted ≠ exchange execution ≠ local position
+
+بنابراین reconciliation مستقل لازم است:
+
+- order status
+- filled quantity
+- remaining quantity
+- average fill price
+- cash/buying power
+- position
+- stale/open orders
+
+هر اختلاف باید به RECONCILIATION_PENDING یا RECONCILIATION_ERROR برود و silently fixed نشود.
+
+### مرحله 8 — Risk Gate + Kill Switch
+
+قبل از هر submission:
+
+- max order value
+- max position exposure
+- max daily loss / configured risk budget
+- duplicate-order guard
+- stale-signal guard
+- price/quantity validity
+- market-session validity
+- broker/session validity
+- global kill switch
+
+Risk باید قبل از execution planner submission تصمیم بگیرد و execution نباید بتواند آن را دور بزند.
+
+### مرحله 9 — Dry-run، Replay و deterministic testbed
+
+قبل از هر حساب واقعی:
+
+- dry-run بدون network mutation
+- recorded-market replay
+- deterministic clock
+- mock broker
+- synthetic reject/timeout/partial-fill/cancel scenarios
+- duplicate-event tests
+- out-of-order event tests
+- reconnect/session-expiry tests
+- rate-limit tests
+
+برای سرخطی، replay باید latency budget را هم شبیه‌سازی کند.
+
+**Gate:** state machine و reconciliation در همه سناریوهای قراردادی deterministic باشند.
+
+### مرحله 10 — Shadow/Paper execution
+
+سیگنال واقعی BorsTerminal وارد execution pipeline شود اما broker واقعی mutation نداشته باشد.
+
+ثبت شود:
+
+signal → planned order → theoretical submit time → theoretical queue position → theoretical fill → slippage → missed opportunity
+
+این مرحله باید روی market session واقعی یا recorded session اجرا و report شود.
+
+### مرحله 11 — Broker integration validation
+
+برای هر broker:
+
+- login/session lifecycle
+- instrument resolution
+- one-shot test
+- invalid order
+- rejected order
+- timeout
+- expired session
+- duplicate submit
+- partial fill
+- cancel
+- reconnect
+- reconciliation
+
+هیچ credential واقعی داخل test fixture یا Git commit قرار نگیرد.
+
+### مرحله 12 — Live execution فقط بعد از Owner Gate
+
+Live execution آخرین milestone است، نه بخشی از MVP.
+
+ترتیب:
+
+Dry-run PASS
+→ Replay PASS
+→ Shadow/Paper PASS
+→ Broker integration PASS
+→ Reconciliation PASS
+→ Kill-switch PASS
+→ Owner explicit approval
+→ محدودترین live rollout
+→ اندازه‌گیری
+→ افزایش تدریجی دامنه
+
+اولین live rollout باید محدود، reversible و audit-heavy باشد.
+هیچ auto-live activation، credential persistence ناامن یا افزایش خودکار حجم سفارش مجاز نیست.
+
+### مرحله 13 — Production observability
+
+Dashboard/Logs باید حداقل نشان دهند:
+
+signal id, symbol, broker, order id, state, planned price, submitted price, filled price, quantity, latency, retry count, rejection/error, reconciliation status, kill-switch state
+
+برای سرخطی نیز breakdown کامل latency و تعداد/زمان retryها نمایش داده شود.
+
+### Architecture acceptance gate
+
+سرخطی و ربات معامله‌گر فقط وقتی ACCEPTED می‌شوند که:
+
+- source research برای هر broker مستند شده باشد.
+- canonical execution contracts مستقل از broker باشند.
+- FTS دوباره در execution judge نشود.
+- clock/session state معتبر باشد.
+- order state machine و reconciliation تست شده باشند.
+- dry-run/replay/shadow کامل شده باشند.
+- latency با p50/p95/p99 اندازه‌گیری شده باشد.
+- هیچ hidden queue/cap/retry behavior بدون سند وجود نداشته باشد.
+- هیچ credential واقعی در source control نباشد.
+- live execution بدون Owner Gate فعال نشود.
+- برای هر claim مربوط به «سرعت»، «اول صف» یا «پرشدن» evidence قابل بازتولید وجود داشته باشد.
+
+**Priority relation to current roadmap:**
+FTS Funnel تا ACCEPTED اولویت بالاتر دارد. پس از پذیرش Funnel، کار سرخطی از مرحله 0 تحقیق → 1 تا 10 implementation/validation شروع شود.
+ربات معامله‌گر پس از تثبیت execution subsystem و acceptance مراحل 0–10، از مرحله 11 به بعد وارد broker integration و سپس live gate شود.
+اجرای هم‌زمان featureهای chart/ML نباید باعث شود execution contracts یا reconciliation ناتمام بمانند.
 ## 15.5 Next item selected
 
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
