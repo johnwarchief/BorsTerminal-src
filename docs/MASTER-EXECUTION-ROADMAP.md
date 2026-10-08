@@ -2460,3 +2460,45 @@ Phase 1 **S-3** (execution router) is `PAUSED` by the owner's mission until the 
 is `ACCEPTED` (`api/execution.py` sits uncommitted in this worktree); S-4 stays
 `BLOCKED-OWNER` (D8/D1). Phase 2 (trading bot) is not started: the bot must consume the
 canonical FTS signal rather than judge again.
+
+
+## 15.6 WS-7 — دو جامعه، واژگانِ غربالگری، walkِ واقعیِ واچ‌لیست (۱۴۰۵-۰۷-۱۷)
+
+ landed (branch `funnel-api-wip`, five commits):
+
+| کار | حکم | شاهد |
+| --- | --- | --- |
+| جامعۀ تابلو ≠ جامعۀ غربالگری | **پیاده و زنده** | `X=5863 / Y=3655 / Z=2208`؛ `X=Y+Z`؛ `docs/SCREENING-UNIVERSE-LIVE-STATE-1405-07-17.md`؛ `_audit/ws7_universe_check.mts` |
+| live ≠ «امروز معامله داشت» | **اثبات‌شده از داده** | ۳۹۹۲ ردیفِ نشستِ جاری که ۱۷۰۵شان بی‌معامله‌اند؛ شاهدِ مستقلِ `price_history` ۲۲۹۲ |
+| «NOT IN SCREENING UNIVERSE» | **وضعیتِ ششمِ رسمی** | `not_in_universe` درِ matrix/trace/رابط؛ نه reject، نه «سنجیده نشده» |
+| گاردها | **۴۲ بند سبز + کنترلِ منفی** | `dev/funnel_engine_v1.py` ۳۸-۴۱؛ جهشِ عمدی → ۷ FAIL → بازگشت از copy |
+| rename: Funnel → غربالگری | **فقط متنِ دیدنی** | ۲۲ رشته درِ ۱۴ فایل؛ walkِ DOM درِ پنج مسیر: صفر «قیف»؛ `_audit/ws7b_rename_check.mts` |
+| walkِ واقعیِ واچ‌لیست | **۱۰/۱۰ سبز** | optimistic (فقط POST+GET)، ماندگاری با reload، سطر درِ Portfolio → پرتفوی فعلی، ستارۀ بنیادی، حذف؛ `_audit/ws7c_watchlist_walk.mts` |
+| `/api/watchlist/matrix?symbols=` | **از مرگ برگشت** | `no such table: instruments` → حالا verdict می‌دهد؛ تفکیکِ `USER_WATCHLIST_MAX` / `MATRIX_PROBE_MAX`؛ گارد ۱۳ بند |
+| `api.funnel` درِ hiddenimports | **نقصِ ریلیزِ واقعی برطرف** | EXE رویِ اولین `/api/funnel` می‌مرد؛ `onedir_contract_v11` الان PASS |
+
+open, in this order:
+
+1. **Sidebar «در یک نگاه»** (رأیِ ۱: حذفِ Quick Scan به‌عنوان قابلیتِ مستقل؛ رفتارش
+   کلیکِ نماد ⇒ داوریِ هدفمندِ کامل ⇒ سایدبار). امروز هیچ «Quick Scan»ی درِ این
+   کارتر ساخته نشده بود، پس چیزی برای حذف نیست؛ کاری که مانده ساختِ همان سطرِ
+   «در یک نگاه» است (تک‌نگار: `stageProgressFor` سطرِ خارج از جامعه را هم می‌دهد).
+2. **AssemblyEvent** — مدلِ canonical از sourceهایِ راستی‌آزمایی‌شده
+   (`Codal/GetPreparedDataByInsCode`، `MarketData/GetInstrumentState`،
+   `GetInstrumentShareChange`)؛ `DPS = UNAVAILABLE`؛ `decision_date = null` بی‌دادهٔ
+   ساختاریافته؛ تاریخِ انتشار با labelِ خودش. کامنتِ گمراه‌کنندۀ
+   `codal_fetcher.py:3588-3590` هم درِ همین بند.
+3. **Android parity** — واژگانِ «غربالگری»، واچ‌لیست، و شمارشِ تکمیلِ جامعۀ
+   غربالگری درِ `BorsTerminal-android` (کارترِ جدا).
+4. **زنجیرۀ acceptance روند** (Trend milestone): G1 candle parity، corpusِ
+   دستیِ ۳۰-۵۰ نماد، Rahavard/TradersArena فقط به‌عنوان مرجع، و
+   `docs/validation/FTS-TREND-VALIDATION.md`. G3/G5/G6/G7 سبزند
+   (`dev/fts_trend_pit_v1.py`، ۱۳ بند)؛ **parityِ بیرونی هنوز UNVERIFIED**.
+
+still red in this worktree *and* in the untouched one (not caused by this work,
+each with identical counts): `tape_filters_v1034` 214/2، `test_fts_technical_tristate`
+32/37، `test_fts_roundj` ۱ سرخ، `chart_api_check_v95` (فایلِ بایگانیِ gitignored).
+
+pilot jev: سه درخواستِ داوری درِ دوراهیِ «نبودِ ردیفِ وضعیت» هر سه `read timeout`
+دادند ⇒ آن تصمیم **UNVERIFIED-BY-PILOT** ثبت شد و قضاوتش با مالک است.
+Release ساخته نشد (milestone هنوز ACCEPTED نیست).
