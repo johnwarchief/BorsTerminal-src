@@ -85,7 +85,14 @@ a = Analysis(
                    'market_state',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
-                   'api.screener', 'api._sync_market', 'api._export',
+                   'api.screener',
+                   # دورِ قیف: `api_router` ماژولِ funnel را هم درِ بدنهٔ تابع import
+                   # می‌کند (api/__init__.py:13)، پس ایستیک‌اسکن آن را نمی‌بیند و
+                   # ماژول درِ PYZ نبود — EXE رویِ اولین /api/funnel
+                   # ModuleNotFoundError می‌داد. گاردِ dev/onedir_contract_v11.py
+                   # همین را گرفت.
+                   'api.funnel',
+                   'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
                    'api._pipeline', 'api.engine', 'watchlist_store',
                    # api/__init__.py:12 از api_router دو ماژولِ دیگر را هم import

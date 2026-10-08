@@ -25,12 +25,27 @@ await ctx.addInitScript(() => sessionStorage.setItem('bors_auth_session', 'true'
 const page = await ctx.newPage();
 const consoleErrors: string[] = [];
 page.on('console', (m: any) => {
-  if (m.type() === 'error' || m.type() === 'warning') consoleErrors.push(`${m.type()}: ${m.text().slice(0, 160)}`);
+  if (m.type() === 'error' || m.type() === 'warning') {
+    const loc = m.location?.() ?? {};
+    consoleErrors.push(`${m.type()}: ${m.text().slice(0, 160)} @ ${String(loc.url ?? '')}:${loc.lineNumber ?? ''}`);
+  }
 });
 page.on('pageerror', (e: any) => consoleErrors.push(`pageerror: ${String(e.message).slice(0, 160)}`));
 const badResponses: string[] = [];
+const aborted: string[] = [];
+const apiLog: string[] = [];
 page.on('response', (r: any) => {
-  if (r.status() >= 400) badResponses.push(`${r.status()} ${String(r.url()).replace(/^https?:\/\/[^/]+/, '')}`);
+  const u = String(r.url()).replace(/^https?:\/\/[^/]+/, '');
+  if (u.includes('/api/')) apiLog.push(`${r.status()} ${u}`);
+  if (r.status() >= 400) badResponses.push(`${r.status()} ${u}`);
+});
+// ERR_ABORTED خطایِ سرور نیست (درِ dev خودِ React Query/StrictMode درخواستِ اول
+// را لغو می‌کند و دوباره می‌زند)؛ پس جدا ثبت می‌شود و با «۴xx/۵xx» یکی نمی‌شود.
+page.on('requestfailed', (rq: any) => {
+  const t = String(rq.failure()?.errorText ?? '');
+  const u = `${String(rq.url()).replace(/^https?:\/\/[^/]+/, '')} :: ${t}`;
+  if (t.includes('ERR_ABORTED')) aborted.push(u);
+  else badResponses.push(`FAILED ${u}`);
 });
 
 const num = (s: string | null) => {
@@ -43,7 +58,16 @@ const num = (s: string | null) => {
 
 await page.goto(`${BASE}#/master`, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('[data-testid="funnel-stage-tape"]', { timeout: 180_000 });
-await page.waitForSelector('[data-testid="funnel-universe-market"]', { timeout: 120_000 });
+// «صفر» درِ این خط یعنی پاسخِ قیف هنوز نرسیده (مدلِ خالی همان‌جا صفر می‌گذارد)،
+// نه اینکه بازار خالی است — پس تا غیرصفر شدنِ X صبر می‌کنیم و بعد می‌خوانیم.
+await page.waitForFunction(() => {
+  const t = document.querySelector('[data-testid="funnel-universe-market"]')?.textContent ?? '';
+  return /[۱-۹]/.test(t);
+}, undefined, { timeout: 180_000 });
+await page.waitForFunction(() => {
+  const t = document.querySelector('[data-testid="funnel-universe-screening"]')?.textContent ?? '';
+  return /[۱-۹]/.test(t);
+}, undefined, { timeout: 60_000 });
 
 const read = async () => page.evaluate(() => {
   const t = (sel: string) => document.querySelector(`[data-testid="${sel}"]`)?.textContent ?? null;
@@ -104,6 +128,9 @@ const result = {
   panelHiddenBeforeOpen: before.panelOpen === false,
   consoleErrors: consoleErrors.slice(0, 12), consoleErrorCount: consoleErrors.length,
   badResponses: badResponses.slice(0, 12), badResponseCount: badResponses.length,
+  abortedRequests: aborted.slice(0, 12), abortedCount: aborted.length,
+  apiErrors: apiLog.filter((l) => !l.startsWith('200') && !l.startsWith('204') && !l.startsWith('304')).slice(0, 12),
+  apiRequestCount: apiLog.length,
   verdicts: {
     summary_shows_three_numbers: X !== null && Y !== null && Z !== null,
     X_equals_Y_plus_Z: X === Y + Z,
