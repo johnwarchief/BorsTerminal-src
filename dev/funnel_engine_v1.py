@@ -189,8 +189,33 @@ ck(".slice(" not in src and "[:60]" not in src and "[:50]" not in src,
 ck(hx["handover"][0]["why"] and all("code" in w for w in hx["handover"][0]["why"]),
    "۲۲) هر ردیفِ تحویل دلیلِ رمزگذاری‌شده (reason_code) دارد")
 
+# ── نمایِ آمادهٔ رندر (خط ۵، ۶، ۷ و ۲۶ مأموریت) ────────────────────────────
+V = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+tape_syms = {e["symbol"] for e in V["entries"]["tape"] if e["status"]["tape"] == "pass"}
+tech_syms = {e["symbol"] for e in V["entries"]["technical"]}
+fund_syms = {e["symbol"] for e in V["entries"]["fundamental"]}
+ck(tech_syms <= tape_syms and fund_syms <= tech_syms,
+   "۲۳) survivors هر گام زیرمجموعۀ گامِ قبلی است (Y ⊆ X) — درِ همان پاسخِ API")
+tl = V["timeline"]["ب"]
+ck([t["stage"] for t in tl] == ["universe", "tape:f_susp", "tape:f_noqteh"],
+   "۲۴) خطِ زمانِ نمادِ ردشده درِ همان فیلتر می‌ایستد و ادامه نمی‌یابد")
+ck(all(t.get("reason_code") and t.get("human_reason") and "input_count" in t for t in tl),
+   "۲۴) هر گامِ trace دلیلِ رمزگذاری‌شده + شمارۀ ورودی/خروجی دارد")
+ck(tl[-1]["source"].startswith("docs/") and "formula_version" in tl[-1],
+   "۲۴) منبع و نسخۀ فرمولِ همان فیلتر درِ trace هست، نه فقط نامِ مرحله")
+ck(all("source_ref" in st and st["parameter_set"] for st in V["stages"]["tape"]["steps"]),
+   "۲۵) هر مرحلۀ زنجیره parameter_set و source_ref خودش را درِ پاسخ دارد")
+row = V["entries"]["tape"][0]
+for k in ("symbol", "name", "sector", "last", "change_pct", "vol_ratio", "patterns",
+          "status", "why", "score", "weekly", "daily", "branch", "inds", "as_of"):
+    if k not in row:
+        ck(False, f"۲۶) ردیفِ نمایشی ستونِ {k} را ندارد")
+        break
+else:
+    ck(True, "۲۶) ردیفِ نمایشی هر ستونی که جدول می‌خواهد را از API می‌گیرد (بدون join فرانت)")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {22} بندِ مأموریت")
+print(f"funnel_engine guard OK — {26} بندِ مأموریت")

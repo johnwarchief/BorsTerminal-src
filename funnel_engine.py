@@ -50,6 +50,14 @@ PASS, REJECT, PENDING, UNAVAILABLE = "pass", "reject", "pending", "unavailable"
 FLAG_OF = {f.filter_id: f.filter_id for f in REG.FILTERS}
 
 
+def _why_of(row: dict) -> list[dict]:
+    """دفترچۀ ردیف‌محورِ دلیل‌ها (همان ردیفِ ورودی، کلیدِ زیرخطی)."""
+    key = "_funnel_why"
+    if key not in row:
+        row[key] = []
+    return row[key]  # type: ignore[no-any-return]
+
+
 def _tri(v: Any) -> bool | None:
     """سه‌حالۀ صادقانه: 1/0/«نبود» ⇒ True/False/None (هیچ‌چیز pass نیست)."""
     if v is None or v == "" or v == "—":
@@ -101,6 +109,19 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
                 if v is None:
                     unmeasured.append(sym)
         dropped[fid] = removed
+        for r in survivors:
+            if _tri(r.get(flag)) is False:
+                _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
+                                   "status": REJECT, "reason_code": f"TAPE_{fid.upper()}_NO_MATCH",
+                                   "human_reason": f"{f.name} — نشانه در این نماد نیست",
+                                   "input_count": before, "output_count": len(matched),
+                                   "source": f.source_file, "formula_version": f.formula_version})
+            elif _tri(r.get(flag)) is None:
+                _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
+                                   "status": UNAVAILABLE, "reason_code": f"TAPE_{fid.upper()}_UNMEASURED",
+                                   "human_reason": f"{f.name} — پرچم این نماد ساخته نشده",
+                                   "input_count": before, "output_count": len(matched),
+                                   "source": f.source_file, "formula_version": f.formula_version})
         steps.append({
             "stage": "tape",
             "seq": len(steps) + 1,
@@ -311,6 +332,57 @@ def handover_stage(rows: list[dict], tape: dict, tech: dict, fund: dict,
     }}
 
 
+# ── نمایش ──────────────────────────────────────────────────────────────────
+# این بلوک فقط «ستون‌هایی که جدول می‌خواند» را از همان ردیفِ ورودی برمی‌دارد.
+# هیچ قیاسِ آستانه‌ای درِ آن نیست؛ اگر روزی چیزی شبیه `if x > th` اینجا ظاهر شد،
+# آن یک داورِ دوم است نه نمایش.
+_LABEL_OF = {"f_clock": "ساعت", "f_susp": "مشکوک", "f_jet": "جت", "f_roobi": "کف‌روب",
+             "f_noqteh": "نقطه", "f_smart": "پول هوشمند", "f_legal": "کد به کد"}
+
+
+def _display(r: dict, *, patterns: list[str] | None = None,
+             status: dict[str, str] | None = None,
+             why: dict[str, list[dict]] | None = None,
+             chain: tuple[str, ...] = ()) -> dict:
+    """یک ردیفِ آمادهِ رندر برایِ جدول — با traceِ همان نماد."""
+    sym = str(r.get("symbol") or "")
+    return {
+        "symbol": sym,
+        "name": r.get("name") or "",
+        "sector": r.get("sector_name") or r.get("sector") or "",
+        "last": _num(r.get("p_last")),
+        "closing": _num(r.get("p_closing")),
+        "change_pct": _num(r.get("percent_change")),
+        "vol_ratio": _num(r.get("vol_ratio")),
+        "patterns": patterns if patterns is not None
+        else [_LABEL_OF[f] for f in REG.filter_ids() if _tri(r.get(f)) is True],
+        "status": status or {},
+        "why": why or {},
+        "chain": list(chain),
+        "score": _num(r.get("score")),
+        "primary_score": _num(r.get("primary_score")),
+        "weekly": r.get("tech_trend_w"), "daily": r.get("tech_trend_d"),
+        "branch": BRANCH_OF.get(str(r.get("tech_trend_d") or ""), None),
+        "matrix": r.get("tech_matrix_decision"),
+        "tech_status": r.get("tech_status"),
+        "tech_points": _num(r.get("tech_points")),
+        "evidence": [k for k in ("tech_jet", "tech_choch_bull", "tech_double_bottom",
+                                 "tech_range_break") if _tri(r.get(k)) is True],
+        "fib_zone": r.get("tech_fib_zone"),
+        "hourglass": _tri(r.get("tech_hourglass_active")),
+        "inds": {k: _tri(r.get(f"{k}_pass")) for k in (*BLOCKERS, *SUPPORTING)},
+        "ind_values": {"i1": _num(r.get("rev_growth")), "i2": _num(r.get("eps_last")),
+                       "i3": _num(r.get("gross_margin")), "i4": _num(r.get("sales_to_mcap"))},
+        "pricing_mode": r.get("pricing_mode"),
+        "excluded": bool(r.get("excluded")),
+        "exclusion_reasons": r.get("exclusion_reasons") or "",
+        "assembly_veto": _tri(r.get("assembly_veto")) is True,
+        "assembly_why": r.get("assembly_why") or "",
+        "as_of": r.get("as_of"),
+        "is_live": r.get("is_live"),
+    }
+
+
 # ── حلقۀ اصلی ─────────────────────────────────────────────────────────────
 def resolve_chain(preset: str, custom: Iterable[str] | None) -> tuple[str, ...]:
     p = REG.PRESET_BY_ID.get(preset)
@@ -323,6 +395,88 @@ def resolve_chain(preset: str, custom: Iterable[str] | None) -> tuple[str, ...]:
         if fid not in REG.BY_ID:
             raise KeyError(f"فیلترِ ناشناخته درِ زنجیره: {fid}")
     return chain
+
+
+def _view(joined: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
+          chain: tuple[str, ...]) -> dict:
+    """ردیف‌هایِ آمادهٔ رندر برایِ هر چهار گام + خطِ زمانِ هر نماد.
+
+    هیچ داوریِ تازه‌ای درِ این تابع نیست: وضعیتِ هر نماد از همان تصمیمی خوانده
+    می‌شود که سه گامِ قبل گرفته‌اند. جایی که تصمیمی ثبت نشده `unavailable`
+    می‌نشیند، نه `pass`.
+    """
+    tech_by = {d["symbol"]: d for d in tech["decisions"]}
+    fund_by = {d["symbol"]: d for d in fund["decisions"]}
+    hand_by = {e["symbol"]: e for e in hand["entries"]}
+    tape_surv = {str(r.get("symbol") or "") for r in tape["survivors"]}
+    dropped_at: dict[str, dict] = {}
+    for step in tape["steps"]:
+        for sym in tape["dropped"].get(step["filter_id"], []):
+            dropped_at.setdefault(sym, step)
+
+    entries: dict[str, list[dict]] = {"tape": [], "technical": [], "fundamental": [], "handover": []}
+    timeline: dict[str, list[dict]] = {}
+    for r in joined:
+        sym = str(r.get("symbol") or "")
+        t = tech_by.get(sym)
+        f = fund_by.get(sym)
+        h = hand_by.get(sym)
+        tape_status = PASS if sym in tape_surv else REJECT if sym in dropped_at else PENDING
+        why = list(r.get("_funnel_why") or [])
+        st = {"tape": tape_status,
+              "technical": (t or {}).get("status", UNAVAILABLE if sym in tape_surv else PENDING),
+              "fundamental": (f or {}).get("effective", UNAVAILABLE if t and t["status"] == PASS else PENDING),
+              "handover": (h or {}).get("final", UNAVAILABLE if f and f["effective"] == PASS else PENDING)}
+        human = {"tape": next((w["human_reason"] for w in reversed(why) if w.get("stage") == "tape"),
+                              "همهٔ فیلترهای زنجیره را رد کرده" if tape_status == PASS else ""),
+                 "technical": " · ".join(w["text"] for w in (t or {}).get("why") or []),
+                 "fundamental": " · ".join(w["text"] for w in (f or {}).get("why") or []),
+                 "handover": " · ".join(w["text"] for w in (h or {}).get("why") or [])}
+        codes = {"tape": [w.get("reason_code", "") for w in why if w.get("stage") == "tape"],
+                 "technical": [w["code"] for w in (t or {}).get("why") or []],
+                 "fundamental": [w["code"] for w in (f or {}).get("why") or []],
+                 "handover": [w["code"] for w in (h or {}).get("why") or []]}
+        for stage_key in ("tape", "technical", "fundamental", "handover"):
+            if stage_key == "tape" and sym not in tape_surv and sym not in dropped_at:
+                continue  # هرگز نرسیده به این گام
+            if stage_key == "technical" and t is None:
+                continue
+            if stage_key == "fundamental" and f is None:
+                continue
+            if stage_key == "handover" and h is None and st["fundamental"] != PASS:
+                continue
+            entries[stage_key].append(_display(
+                r, patterns=None,
+                status={stage_key: st[stage_key]},
+                why={stage_key: [{"code": c, "text": human[stage_key]} for c in codes[stage_key] if c]},
+                chain=chain))
+        step_rows = [{"stage": "universe", "status": PASS, "reason_code": "IN_UNIVERSE",
+                      "human_reason": "در جامعۀ این نشست", "input_count": len(joined),
+                      "output_count": len(joined), "source": "api/market", "timestamp": None}]
+        for sp in tape["steps"]:
+            hit = next((w for w in why if w.get("stage") == "tape" and w.get("seq") == sp["seq"]), None)
+            step_rows.append({
+                "stage": f"tape:{sp['filter_id']}", "seq": sp["seq"],
+                "status": (PASS if sym in tape_surv or
+                           all(sym not in tape["dropped"].get(x["filter_id"], []) for x in tape["steps"][:sp["seq"]])
+                           else REJECT),
+                "reason_code": (hit or {}).get("reason_code", "TAPE_PASSED"),
+                "human_reason": (hit or {}).get("human_reason", f"{sp['label']} — خورده شد"),
+                "input_count": sp["input_count"], "output_count": sp["matched_count"],
+                "source": sp["source_ref"], "formula_version": sp["formula_version"],
+                "filter_id": sp["filter_id"], "label": sp["label"],
+                "parameter_set": sp["parameter_set"], "timestamp": None})
+        for key, dec in (("technical", t), ("fundamental", f), ("handover", h)):
+            if not dec:
+                continue
+            w0 = (dec.get("why") or [{}])[0]
+            step_rows.append({
+                "stage": key, "status": dec.get("effective") or dec.get("status") or dec.get("final") or PENDING,
+                "reason_code": w0.get("code", ""), "human_reason": w0.get("text", ""),
+                "input_count": None, "output_count": None,
+                "source": "funnel_engine", "timestamp": None})
+        timeline[sym] = step_rows
+    return {"entries": entries, "timeline": timeline}
 
 
 def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
@@ -350,10 +504,12 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     tape = tape_stage(joined, chain, params)
     tech = technical_stage(tape["survivors"])
     fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
+    view_rows = joined
     hand = handover_stage(fund["survivors"], tape, tech, fund,
                           assembly_vetoed=[str(r.get("symbol") or "") for r in joined
                                            if _tri(r.get("assembly_veto")) is True])
 
+    view = _view(view_rows, tape, tech, fund, hand, chain)
     return {
         "status": "success",
         "engine_version": ENGINE_VERSION,
@@ -374,6 +530,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
             "handover": {"counts": hand["counts"], "matched": len(hand["entries"])},
         },
         "handover": hand["entries"],
+        "entries": view["entries"],
+        "timeline": view["timeline"],
         "trace": {
             "tape_dropped": {k: v for k, v in tape["dropped"].items() if v},
             "technical": tech["decisions"],
