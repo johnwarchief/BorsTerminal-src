@@ -380,6 +380,8 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "assembly_why": r.get("assembly_why") or "",
         "as_of": r.get("as_of"),
         "is_live": r.get("is_live"),
+        # رتبۀ رسمیِ بک‌اند همان است که اسکرینر ساخته؛ اینجا فقط حمل می‌شود.
+        "rank": r.get("_backend_rank"),
     }
 
 
@@ -488,6 +490,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
     screen_by = {str(r.get("symbol") or ""): r for r in screen_rows}
+    for i, r in enumerate(screen_rows):
+        r["_backend_rank"] = i  # ترتیبِ خودِ /api/screener (screener.py:440)
     chain = resolve_chain(preset, custom_chain)
 
     # تابلوخوانی رویِ ردیفِ خودِ تابلو؛ ردیفِ اسکرینر به همان نماد می‌چسبد تا
