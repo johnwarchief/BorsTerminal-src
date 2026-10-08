@@ -155,20 +155,55 @@ BRANCH_OF = {
     "range": "کف دوقلو / آخرین ساختار حمایت-مقاومت",
 }
 
+# ستون‌هایی که `funnel_tech_scan` برایِ هر نماد نگه می‌دارد و گامِ تکنیکال
+# می‌خواند — همان نام‌هایِ `/api/screener`، پس یک داوری دو منبع دارد.
+_TECH_KEYS = ("tech_trend_w", "tech_trend_d", "tech_trend_m", "tech_alignment",
+              "tech_status", "tech_matrix_decision", "tech_matrix_setup",
+              "tech_jet", "tech_choch_bull", "tech_choch_bear", "tech_double_bottom",
+              "tech_range_break", "tech_fib_zone", "tech_exit_verdict",
+              "tech_hourglass_active", "tech_hourglass_action")
 
-def technical_stage(rows: list[dict]) -> dict:
-    """گیتِ روند — داور همان `trend.matrix` بک‌اند است، نه محاسبۀ دوباره."""
+
+def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
+                    sigs: dict[str, str] | None = None) -> dict:
+    """گیتِ روند — داور همان `trend.matrix` بک‌اند است، نه محاسبۀ دوباره.
+
+    `tech` ردیف‌هایِ `funnel_tech_scan` است (نماد → ستون‌هایِ tech_*). چرا لازم
+    شد: `api/screener.py` تکنیکال را فقط برایِ `watchlist_max=50` ردیفِ اول
+    می‌ساخت، پس رسیدگانِ تابلو که درِ آن پنجاه نبودند هیچ رأیی نداشتند — یعنی
+    یک سقفِ *تصمیم*، نه نمایش. با این ورودی، هر نمادی که به این گام می‌رسد
+    داوری می‌شود؛ چیزی حذف نمی‌شود و چیزی هم حدس زده نمی‌شود:
+
+      سابقهٔ قیمتی دارد ولی اسکن هنوز نوبتش نشده  ⇒ PENDING / TECH_SCAN_PENDING
+      هیچ سابقهٔ قیمتی در بانک ندارد               ⇒ UNAVAILABLE / TECH_NO_HISTORY
+      اسکن شده و تحلیل رأیی نداده                  ⇒ UNAVAILABLE / TECH_UNMEASURED
+
+    بی‌`sigs` (فراخوانیِ مستقیمِ گارد) رفتارِ پیشین می‌ماند: TECH_UNMEASURED.
+    """
     kept, steps, dropped = [], [], []
     counts = {PASS: 0, REJECT: 0, PENDING: 0, UNAVAILABLE: 0}
     for r in rows:
         sym = str(r.get("symbol") or "")
+        t = (tech or {}).get(sym)
+        if t:
+            r = {**r, **{k: t[k] for k in _TECH_KEYS
+                         if t.get(k) is not None and r.get(k) in (None, "")}}
         w = (r.get("tech_trend_w") or "").strip() or None
         d = (r.get("tech_trend_d") or "").strip() or None
         mat = (r.get("tech_matrix_decision") or "").strip() or None
         why: list[dict[str, str]] = []
         if not (w or d or mat):
-            status = UNAVAILABLE
-            why.append({"code": "TECH_UNMEASURED", "text": "تکنیکال این نماد سنجیده نشده"})
+            if sigs is not None and not sigs.get(sym):
+                status = UNAVAILABLE
+                why.append({"code": "TECH_NO_HISTORY",
+                            "text": "هیچ سابقۀ قیمتی در بانکِ محلی برایِ این نماد نیست"})
+            elif sigs is not None:
+                status = PENDING
+                why.append({"code": "TECH_SCAN_PENDING",
+                            "text": "داوریِ تکنیکال این نماد هنوز ساخته نشده — اسکن در جریان است"})
+            else:
+                status = UNAVAILABLE
+                why.append({"code": "TECH_UNMEASURED", "text": "تکنیکال این نماد سنجیده نشده"})
         elif mat == "UNKNOWN":
             # کمتر از دو پیوتِ کاملِ هفتگی: رأی دادن درِ اینجا یعنی حدس زدن.
             status = PENDING
@@ -436,6 +471,15 @@ def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
         w = (decisions.get(sym) or {}).get("why") or []
         return w[0].get("code", "") if w else ""
 
+    def stop_text(stage_name: str, st: str, next_name: str) -> str:
+        """علتِ اجرا‌نشدنِ گامِ بعد باید بگوید گامِ پیشی *چه* کرد: رد، هنوز
+        نگفته، یا داوری‌پذیر نبود. «رد کرده» برایِ PENDING دروغ است."""
+        if st == REJECT:
+            return f"{stage_name} نماد را رد کرده؛ {next_name} اجرا نمی‌شود"
+        if st == PENDING:
+            return f"{stage_name} هنوز حکم نداده؛ {next_name} اجرا نمی‌شود"
+        return f"{stage_name} داوری‌پذیر نبود؛ {next_name} اجرا نمی‌شود"
+
     for r in joined:
         sym = str(r.get("symbol") or "")
         t = tech_by.get(sym)
@@ -456,8 +500,10 @@ def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
 
         if tape_st["status"] != PASS:
             tech_st = {"status": NOT_REQUIRED,
-                       "reason_code": "NOT_REQUIRED_AFTER_TAPE_REJECT",
-                       "human_reason": "تابلو نماد را رد کرده؛ تکنیکال اجرا نمی‌شود"}
+                       "reason_code": "NOT_REQUIRED_AFTER_TAPE_REJECT"
+                                      if tape_st["status"] == REJECT
+                                      else "NOT_REQUIRED_AFTER_TAPE_STOP",
+                       "human_reason": stop_text("تابلو", tape_st["status"], "تکنیکال")}
         elif t is None:
             tech_st = {"status": UNAVAILABLE, "reason_code": "TECH_NO_VERDICT",
                        "human_reason": "سریِ تکنیکال برای این نماد ساخته نشد"}
@@ -466,12 +512,14 @@ def status_matrix(joined: list[dict], tape: dict, tech: dict, fund: dict,
                        "reason_code": code_of(tech_by, sym) or "TECH_PASSED",
                        "human_reason": " · ".join(w["text"] for w in (t.get("why") or []))}
 
-        if tech_st["status"] in (REJECT, UNAVAILABLE, NOT_REQUIRED):
-            why_stage = "تابلو" if tape_st["status"] != PASS else "تکنیکال"
+        if tech_st["status"] != PASS:
+            gate = "TAPE" if tape_st["status"] != PASS else "TECHNICAL"
+            why_stage = "تابلو" if gate == "TAPE" else "تکنیکال"
+            why_st = tape_st["status"] if gate == "TAPE" else tech_st["status"]
             fund_st = {"status": NOT_REQUIRED,
-                       "reason_code": f"NOT_REQUIRED_AFTER_{'TAPE' if tape_st['status'] != PASS else 'TECHNICAL'}_"
-                                      + ("REJECT" if tech_st["status"] in (REJECT, NOT_REQUIRED) and tape_st["status"] == PASS else "STOP"),
-                       "human_reason": f"{why_stage} نماد را رد کرده؛ بنیادی اجرا نمی‌شود"}
+                       "reason_code": f"NOT_REQUIRED_AFTER_{gate}_"
+                                      + ("REJECT" if why_st == REJECT else "STOP"),
+                       "human_reason": stop_text(why_stage, why_st, "بنیادی")}
         elif f is None:
             fund_st = {"status": UNAVAILABLE, "reason_code": "FUND_NO_CODAL_COVERAGE",
                        "human_reason": "پوشش کدال این نماد در اسکرینر نیست"}
@@ -593,6 +641,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              fund_mode: str = "standard",
              params: dict[str, dict[str, Any]] | None = None,
              exceptions: dict[str, list[str]] | None = None,
+             tech_scan: dict[str, dict] | None = None,
+             tech_sigs: dict[str, str] | None = None,
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
@@ -624,7 +674,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     joined = list(seen.values())
 
     tape = tape_stage(joined, chain, params)
-    tech = technical_stage(tape["survivors"])
+    tech = technical_stage(tape["survivors"], tech_scan, tech_sigs)
     fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
     view_rows = joined
     hand = handover_stage(fund["survivors"], tape, tech, fund,

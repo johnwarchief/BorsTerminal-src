@@ -2291,18 +2291,78 @@ was left green. **The deletion is not a text-slicing job**: it needs the type bl
 
 ### Still open before ACCEPTED
 
-1. Delete the dead judges + `useFtsTechBoard` + `fts-candidate-engine.spec.tsx` (its decision
-   coverage exists as the 26 python cases), keeping `StageProgress`/`statusToProgress`/labels.
+1. DONE (15.15): the dead judges, `useFtsTechBoard` and `fts-candidate-engine.spec.tsx` are
+   deleted; decision coverage lives in the 38 python bands only.
 2. Custom builder UI in the workspace header (state is ready: chain, moveFilter, savedChains).
 3. Handover columns + inspector fed by `timeline`.
-4. Backend caps: wire `funnel_tech_scan`, separate the `watchlist` label from enrichment,
-   remove `scan_all[:cap]`.
+4. PARTLY DONE (15.15): `funnel_tech_scan` is wired into `/api/funnel` (verdicts come from
+   the scan table, not the top-50). Still open: `/api/screener` enrichment + weekly veto
+   remain capped at `watchlist_max`, and `scan_all[:cap]`.
 5. React "setState during render" root cause; classify the 3 skipped tests.
 6. Browser validation 1366/1920/360 with `_audit/funnel_final_*.json`; TSETMC on >= 20 symbols;
    full-universe benchmark.
 
 Release: still not built. Funnel: IMPLEMENTING (one step closer - the UI now renders the
 canonical answer).
+
+## 15.15 Completeness rule enforced end to end (2026-10-08 / 1405-07-16, later the same day)
+
+Owner rule: «هیچ نمادی نباید با وضعیت «سنجیده نشده» از Funnel خارج شود» plus the
+mandatory guard `input universe count == output evaluated-symbol count`.
+
+Backend (commit `1ffd11a`, `d10f618`):
+- `status_matrix()` + `coverage` in `funnel_engine.py`: one explicit status per symbol per
+  stage, with `reason_code` + `human_reason`. Five statuses: pass / reject / pending /
+  unavailable / **not_required**.
+- Universe is keyed by normalized symbol; duplicate board rows are reported
+  (`duplicate_rows`) instead of silently double-counting.
+- Live identity on this bank: `board 5865, screened 922, joined 5863, duplicate_rows 2`;
+  every stage sums to 5863.
+- `technical_stage()` now takes `tech_scan` + `tech_sigs` and separates three honest cases:
+  verdict available -> judge; history exists but the scan has not run -> `PENDING` /
+  `TECH_SCAN_PENDING`; no price history at all -> `UNAVAILABLE` / `TECH_NO_HISTORY`.
+- Stop reasons are status-aware (`stop_text`): a pending upstream stage no longer claims the
+  symbol was "rejected".
+
+API:
+- `GET /api/funnel/trace?symbol=` serves the per-symbol timeline on demand; the list
+  response drops `timeline` - payload **18.9 MB -> 9.1 MB** with identical decisions.
+- `_tech_context()` reads verdicts from `funnel_tech_scan` (60s cache) instead of the
+  screener's enriched top-50; leftovers are queued into a background thread, so no HTTP
+  request ever waits for a scan.
+
+Measured cost of the scan (this bank, 4 real tape survivors): 99.5 s for 4 symbols
+=> ~25 s per cold symbol (history fetch), 0.02 s when the stored signature matches.
+A cold full 922-symbol pass is therefore **hours**, not the 8.8 minutes the earlier
+0.57 s/symbol figure suggested - which is exactly why it is background + PENDING.
+
+Frontend (P0 second judge removed):
+- `ftsFunnel.ts` 920 -> ~260 lines: `buildFunnel`, `evaluateCandidate`, `techMark`, `fundMark`,
+  `tapeMarkOf`, `tapeRows`, `symbolStageProgress`, `funnelUniverse`, `techQueryQueue`,
+  `orderOfficial`, `officialRankMap`, the `techFrom*`/`technical*` helpers and `FUNNEL_TARGETS`
+  are gone. What remains is types, labels and display metadata only.
+- `api/useFtsTechBoard.ts` deleted - its `TECH_QUERY_CAP = 60` was a decision queue (case B of
+  the cap table). `__tests__/fts-candidate-engine.spec.tsx` deleted with it (classification:
+  OBSOLETE - it tested the browser judge that no longer exists; decision coverage is the
+  38 python bands).
+- `funnelFromApi()` builds one row per universe symbol per stage from `status_matrix`,
+  enriched by that stage's own rich row; counts come from backend `coverage`.
+- Every stage table now renders the whole universe (virtualized body + virtualized pending
+  group), the header shows the five statuses and «حکم: N = کلِ universe», and the tab badge
+  shows the pass count. `not_required` = «لازم نبود» in labels, dots, badges, dossier, details.
+- Background scan progress is visible: «تکنیکال در انتظارِ اسکن: N».
+
+Gates: `tsc -b` 0 errors; `vitest run` 1400 passed / 3 skipped / 138 files;
+`funnel_engine_v1` OK (38 bands); `funnel_registry_v1` OK (7 filters, 21 params);
+`persian_glyph_guard` 4/4.
+
+Open: `api/screener.py` still computes `tech_*` only for `watchlist_max=50` rows and applies
+the weekly veto only to them - the funnel no longer depends on it, the screener table does.
+Also open: Custom builder UI, handover inspector from `/api/funnel/trace`, the React warning,
+classifying the 3 skipped tests, browser + TSETMC validation, full-universe benchmark.
+Today's live funnel ends at 0 PASS with explicit reasons (the tape survivors are ETFs:
+no codal coverage, and the weekly judge rejects or cannot classify them).
+
 
 ## 15.5 Next item selected
 

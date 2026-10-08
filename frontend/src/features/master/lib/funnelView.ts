@@ -67,6 +67,10 @@ export type ApiPayload = {
   /** شمارشِ وضعیت‌هایِ هر گام رویِ کلِ جامعۀ ورودی — جمعش با `universe.joined`
    *  باید بخواند (گاردِ مالک: هیچ نمادی بی‌حکم نمی‌ماند). */
   coverage?: Record<FunnelStageKey, Partial<Record<StageStatus, number>>>;
+  /** وضعیتِ اسکنِ پس‌زمینۀ تکنیکال: نمادهایی که به گام رسیده‌اند ولی داوری‌شان
+   *  هنوز ساخته نشده. نبودش یعنی همه ساخته شده، نه اینکه چیزی پنهان است. */
+  tech_scan?: { pending_symbols?: number; running?: boolean; queued?: number;
+    done?: number; failed?: number; in_flight?: number; error?: string | null };
   timeline?: Record<string, ApiWhy[]>;
   handover?: Array<Record<string, unknown> & { symbol: string }>;
 };

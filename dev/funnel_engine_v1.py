@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""dev/funnel_engine_v1.py — گاردِ داورِ canonicalِ قیف (۲۲ بندِ مأموریت)
+"""dev/funnel_engine_v1.py — گاردِ داورِ canonicalِ قیف (۳۸ بندِ مأموریت)
 
 همۀ «انتظار»ها بیرونِ موتور و با دستِ خودِ این فایل نوشته شده‌اند: ردیف‌هایِ
 ساختگیِ مشخص می‌سازم و عددِ درست را از قبل می‌دانم. اگر موتور انتظار را عوض
@@ -294,8 +294,38 @@ ck(len(STRIPPED["status_matrix"]) == STRIPPED["universe"]["joined"],
 ck(all(set(cell) >= {"status", "reason_code", "human_reason"}
        for row in STRIPPED["status_matrix"].values() for cell in row.values()),
    "۳۶) هر سلولِ پاسخ حکم + کدِ دلیل + متنِ دلیل دارد")
+# -- ۳۷) تکنیکال از داوریِ کلِ جوامع خوانده می‌شود، نه از پنجاه ردیفِ اسکرینر
+# `api/screener.py` فقط `watchlist_max` ردیفِ اول را غنی می‌کند؛ اگر قیف همان
+# را منبعِ رأیِ تکنیکال می‌گذاشت، رسیدگانِ پنجاه‌ویکم هیچ‌وقت داوری نمی‌شدند.
+# اینجا موتور `tech_scan` (ردیف‌هایِ `funnel_tech_scan`) و `tech_sigs` (امضایِ
+# داده) می‌گیرد و سه حالت را از هم جدا می‌کند: رأیِ ساخته‌شده / در انتظارِ
+# اسکن / بی‌سابقهٔ قیمتی.
+BS = [board("بی‌تحلیل", f_susp=True), board("درصف", f_susp=True), board("بی‌سابقه", f_susp=True)]
+BSR = [screen("بی‌تحلیل"), screen("درصف"), screen("بی‌سابقه")]
+g_scan = FE.evaluate(BS, BSR, preset="custom", custom_chain=["f_susp"],
+                     tech_scan={"بی‌تحلیل": {"tech_trend_w": "up", "tech_trend_d": "down",
+                                               "tech_matrix_decision": "PERMITTED"}},
+                     tech_sigs={"بی‌تحلیل": "1405-07-16|128", "درصف": "1405-07-16|94"})
+M1 = g_scan["status_matrix"]["بی‌تحلیل"]["technical"]
+ck(M1["status"] == FE.PASS and M1["reason_code"] == "WEEKLY_TREND_UP",
+   "۳۷) رسیدۀ پنجاه‌ویکم از ردیفِ اسکن داوری می‌گیرد (نه از سقفِ اسکرینر)")
+ck(g_scan["status_matrix"]["بی‌تحلیل"]["technical"]["human_reason"],
+   "۳۷) دلیلِ همان رأی هم درِ پاسخ است")
+M2 = g_scan["status_matrix"]["درصف"]["technical"]
+ck(M2["status"] == FE.PENDING and M2["reason_code"] == "TECH_SCAN_PENDING",
+   "۳۷) سابقه دارد و اسکن نرسیده ⇒ PENDING با کد، نه «سنجیده نشده» و نه حذف")
+ck(g_scan["status_matrix"]["درصف"]["fundamental"]["status"] == FE.NOT_REQUIRED,
+   "۳۷) گامِ بعد از توقفِ گامِ قبل خبردار است، نه بی‌حکم")
+M3 = g_scan["status_matrix"]["بی‌سابقه"]["technical"]
+ck(M3["status"] == FE.UNAVAILABLE and M3["reason_code"] == "TECH_NO_HISTORY",
+   "۳۷) هیچ سابقۀ قیمتی = UNAVAILABLE با کدِ خودش (تلاشِ بی‌حاصل نیست، نشدنی است)")
+_FIVE2 = ("pass", "reject", "pending", "unavailable", "not_required")
+ck(all(sum(g_scan["coverage"][s].get(x, 0) for x in _FIVE2) == 3
+       for s in ("tape", "technical", "fundamental", "handover")),
+   "۳۷) با سه حالتِ تازه هم جمعِ وضعیت‌ها == جامعۀ ورودی")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {37} بندِ مأموریت")
+print(f"funnel_engine guard OK — {38} بندِ مأموریت")

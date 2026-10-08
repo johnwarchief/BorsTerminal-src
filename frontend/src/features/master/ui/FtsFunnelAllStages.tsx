@@ -778,7 +778,7 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, quickFilters, opts } = useFtsFunnel(preset);
+  const { funnel, mode, tape, tech, scan, quickFilters, opts } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);
 
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
@@ -938,16 +938,22 @@ export function FtsFunnelStages({
           ورودیِ قیف: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
           از {toFaDigits(funnel.boardScope)} نمادِ زندهٔ تابلو، {toFaDigits(funnel.total)} نشانه
         </span>
-        {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست. */}
+        {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،
+            و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود
+            (۹۲۲ نماد ≈ چند دقیقه)، پس سرخطِ پیشرفتِ خودش را می‌گیرد. */}
         {tech.wanted > 0 ? (
           <span
             data-testid="funnel-tech-coverage"
             className={`num rounded-full px-2 py-0.5 text-2xs font-bold ${
-              tech.loading ? 'bg-accent-yellow/15 text-accent-yellow' : 'bg-bg-secondary text-text-secondary'
+              scan.pending ? 'bg-accent-yellow/15 text-accent-yellow' : 'bg-bg-secondary text-text-secondary'
             }`}
+            title={scan.pending
+              ? `${toFaDigits(scan.pending)} نماد به گامِ تکنیکال رسیده ولی داوری‌اش هنوز ساخته نشده؛ صفِ پس‌زمینه: ${toFaDigits(scan.queued)}${scan.running ? ' — در حالِ ساختن' : ''}`
+              : 'داوریِ تکنیکال برایِ هر نمادی که به این گام رسیده ساخته شده'}
           >
-            {tech.loading ? 'تکنیکال در حالِ خواندن: ' : 'تکنیکال سنجیده شده: '}
-            {toFaDigits(tech.resolved)} از {toFaDigits(tech.wanted)}
+            {scan.pending
+              ? `تکنیکال در انتظارِ اسکن: ${toFaDigits(scan.pending)} — سنجیده‌شده: ${toFaDigits(tech.resolved)} از ${toFaDigits(tech.wanted)}`
+              : `تکنیکال سنجیده شده: ${toFaDigits(tech.resolved)} از ${toFaDigits(tech.wanted)}`}
           </span>
         ) : null}
       </div>

@@ -143,6 +143,9 @@ export const FUNNEL_FIXTURE: ApiPayload = {
     fundamental: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2 },
     handover: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0 },
   },
+  // اسکنِ تکنیکال درِ پس‌زمینه است؛ پاسخِ همین لحظه می‌گوید چند نماد هنوز
+  // داوریِ ساخته‌شد ندارند (باید درِ UI دیده شود، نه اینکه غیب باشد).
+  tech_scan: { pending_symbols: 2, running: true, queued: 2, done: 18, failed: 0 },
   handover: [{ symbol: 'فولاد', final: 'pass', exception: false, fund_score: 5,
                tech_points: 2, backend_rank: 1, display_rank: 1 }],
 };

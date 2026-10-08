@@ -73,6 +73,8 @@ export function useFtsFunnel(
   tape: TapeFreshness;
   queue: { symbols: string[]; beyondCap: number };
   tech: { wanted: number; resolved: number; loading: boolean };
+  /** پیشرفتِ اسکنِ تکنیکال درِ پاسخِ سرور — برایِ خطِ «چرا بعضی در انتظارند» */
+  scan: { pending: number; running: boolean; queued: number };
   loading: boolean;
   error: string | null;
   basket: Set<string>;
@@ -126,6 +128,11 @@ export function useFtsFunnel(
     // بودجۀ /api/fts دیگر معنا ندارد: تکنیکالِ هر نماد درِ همان پاسخِ قیف است.
     queue: { symbols: [], beyondCap: 0 },
     tech: { wanted: universe, resolved, loading: q.isFetching },
+    scan: {
+      pending: q.data?.tech_scan?.pending_symbols ?? 0,
+      running: !!q.data?.tech_scan?.running,
+      queued: q.data?.tech_scan?.queued ?? 0,
+    },
     loading: q.isPending,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
     // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،

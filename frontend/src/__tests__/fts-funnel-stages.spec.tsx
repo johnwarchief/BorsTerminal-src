@@ -129,6 +129,13 @@ describe('قیف از پاسخِ سرور', () => {
     expect(sep?.why.technical).toContain('تابلو نماد را رد کرده');
   });
 
+  it('اسکنِ نرسیدهٔ تکنیکال پنهان نمی‌ماند', async () => {
+    await ready('/master?stage=technical&preset=custom');
+    const line = screen.getByTestId('funnel-tech-coverage');
+    expect(line.textContent).toContain('تکنیکال در انتظارِ اسکن');
+    expect(line.textContent).toContain('۲');
+  });
+
   it('«لازم نبود» درِ خودِ جدول دیده می‌شود، نه در tooltip', async () => {
     await ready('/master?stage=technical&preset=custom');
     const tech = screen.getByTestId('funnel-stage-technical');

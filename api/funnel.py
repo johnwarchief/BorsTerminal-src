@@ -58,6 +58,49 @@ def _screen_rows() -> list[dict]:
     return list(payload.get("data") or [])
 
 
+# ── زمینۀ تکنیکال: داوریِ ازپیش‌ساخته + امضایِ داده ──────────────────────
+_TECH_CTX: dict[str, Any] = {"ts": 0.0, "scan": {}, "sigs": {}}
+
+
+def _tech_context(max_age_s: float = 60.0) -> tuple[dict, dict]:
+    """ستون‌هایِ tech_* را از `funnel_tech_scan` می‌خواند، نه از پنجاه ردیفِ
+    اولِ اسکرینر. امضا هم همان‌جا می‌گوید کدام نماد اصلاً سابقهٔ قیمتی دارد.
+
+    یک دقیقه کش: خواندنِ امضا رویِ ۴۳۳ هزار ردیف ~۰٫۴s است و هر پرسشِ قیف
+    لازم نیست دوباره بزند. رشتهٔ پس‌زمینه جدول را تازه می‌کند و این‌جا فقط
+    خوانده می‌شود — پس هیچ درخواستی منتظرِ داوری نمی‌ماند."""
+    import sqlite3
+
+    import funnel_tech_scan as SCAN
+    from bors_config import DB_PATH
+
+    now = time.time()
+    if _TECH_CTX["scan"] and now - _TECH_CTX["ts"] < max_age_s:
+        return _TECH_CTX["scan"], _TECH_CTX["sigs"]
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        scan = SCAN.stored(conn)
+        sigs = SCAN.sig_map(conn)
+    except sqlite3.Error:
+        # بانکِ نبوده یا قفل است: داوریِ ناقص بهتر از پاسخِ ساختگی نیست —
+        # موتور همان حالت‌هایِ صریح (PENDING/UNAVAILABLE) را می‌گوید.
+        return {}, {}
+    finally:
+        conn.close()
+    _TECH_CTX.update({"ts": now, "scan": scan, "sigs": sigs})
+    return scan, sigs
+
+
+def _need_scan(payload: dict) -> list[str]:
+    """نمادهایی که به این گام رسیده‌اند ولی داوریِ ساخته‌شدۀ تکنیکال ندارند."""
+    out = []
+    for dec in (payload.get("trace") or {}).get("technical") or []:
+        codes = {w.get("code") for w in (dec.get("why") or [])}
+        if codes & {"TECH_SCAN_PENDING", "TECH_UNMEASURED"}:
+            out.append(str(dec.get("symbol") or ""))
+    return [s for s in out if s]
+
+
 @router.get("/api/funnel/registry")
 def get_registry():
     """همان رجیستری که موتور می‌خواند — فهرستِ Custom از اینجا می‌آید."""
@@ -141,10 +184,21 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     if not board:
         return {"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
                 "universe": {"board": 0, "screened": len(screen)}}
+    scan, sigs = _tech_context()
     try:
         payload = FE.evaluate(board, screen, preset=preset, custom_chain=chain,
-                              fund_mode=fund_mode, params=params, exceptions=exceptions)
+                              fund_mode=fund_mode, params=params, exceptions=exceptions,
+                              tech_scan=scan, tech_sigs=sigs)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
+    # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین
+    # درخواست تغییرِ وضعیت نمی‌دهد (منتظر نمی‌مانیم)، ولی پرسشِ بعدی رأی دارد.
+    todo = _need_scan(payload)
+    if todo:
+        import funnel_tech_scan as SCAN
+        payload["tech_scan"] = {"pending_symbols": len(todo), **(SCAN.start_refresh(todo))}
+    else:
+        import funnel_tech_scan as SCAN
+        payload["tech_scan"] = {"pending_symbols": 0, **SCAN.bg_status()}
     _FUNNEL_CACHE.update({"key": key, "payload": payload, "ts": now})
     return payload if full else _strip(payload)

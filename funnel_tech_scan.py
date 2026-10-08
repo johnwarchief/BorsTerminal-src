@@ -38,9 +38,11 @@ import argparse
 import json
 import os
 import sqlite3
+import threading
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Iterable
 
 REPO = os.path.dirname(os.path.abspath(__file__))
 if REPO not in sys.path:
@@ -240,6 +242,149 @@ def run(conn: sqlite3.Connection, *, force: bool = False, workers: int = 1,
             "reused": reusable, "queued": len(todo), "forced": force,
             "as_of": now, "ms": int((time.time() - t0) * 1000),
             "workers": workers, "ruleset_version": ruleset}
+
+
+# ── خواندن/ساختنِ داوری برایِ یک فهرستِ نماد (مسیرِ قیف) ───────────────────
+def read(conn: sqlite3.Connection, symbols: Iterable[str]) -> dict[str, dict]:
+    """داوریِ ذخیره‌شدۀ همین نمادها — بی‌fetch و بی‌SELECTِ هر-نماد.
+
+    چیزی که نبودش «سقف» می‌سازد: قیف باید برایِ *هر* رسیدگی که به این گام
+    رسیده رأی داشته باشد، پس ستون‌ها از همین جدولِ یک‌بار-ساخته‌شده خوانده
+    می‌شوند، نه از ۵۰ ردیفِ اولِ اسکرینر.
+    """
+    want = list(dict.fromkeys(norm_symbol(str(s)) for s in symbols if s))
+    if not want:
+        return {}
+    ensure_schema(conn)
+    cols = ", ".join(_COLUMNS)
+    out: dict[str, dict] = {}
+    for i in range(0, len(want), 500):
+        part = want[i:i + 500]
+        marks = ", ".join("?" * len(part))
+        for r in conn.execute(f"SELECT symbol, {cols} FROM {TABLE} WHERE symbol IN ({marks})", part):
+            out[str(r[0])] = dict(zip(("symbol", *_COLUMNS), r))
+    return out
+
+
+def sig_map(conn: sqlite3.Connection) -> dict[str, str]:
+    """امضایِ دادهٔ هر نماد؛ نمادی که درِ `price_history` ردیفی ندارد اینجا هم
+    نیست — یعنی تکنیکالش سنجیدنی نیست (UNAVAILABLE)، نه «هنوز نوبتش نشده»."""
+    return dict(universe(conn))
+
+
+def _todo_for(conn: sqlite3.Connection, symbols: Iterable[str],
+              sigs: dict[str, str]) -> tuple[list[tuple[str, str]], int, int]:
+    """(چه‌چیزی باید سنجیده شود، چند تا آماده است، چند تا بی‌سابقه‌اند)."""
+    have = stored(conn)
+    todo: list[tuple[str, str]] = []
+    ready = nohist = 0
+    for sym in dict.fromkeys(norm_symbol(str(s)) for s in symbols if s):
+        sig = sigs.get(sym, "")
+        if not sig:
+            nohist += 1
+            continue
+        if have.get(sym, {}).get("sig") == sig:
+            ready += 1
+            continue
+        todo.append((sym, sig))
+    return todo, ready, nohist
+
+
+def refresh(conn: sqlite3.Connection, symbols: Iterable[str], *, workers: int = 1) -> dict:
+    """همان بازنشانیِ `run`، ولی فقط رویِ یک فهرستِ نماد (افزایشیِ امضامحور)."""
+    t0 = time.time()
+    ensure_schema(conn)
+    sigs = sig_map(conn)
+    todo, ready, nohist = _todo_for(conn, symbols, sigs)
+    done = failed = 0
+    now = int(time.time())
+    eng = os.environ.get("BORS_ENGINE_VERSION") or "dev"
+    ruleset = REG.RULESET_VERSION
+    if todo:
+        with ThreadPoolExecutor(max_workers=max(1, min(workers, 16))) as pool:
+            for sym, fields in pool.map(lambda a: _one(*a), todo):
+                if fields is None:
+                    failed += 1
+                    continue
+                vals = [fields.get(c) for c in _COLUMNS]
+                conn.execute(
+                    f"INSERT OR REPLACE INTO {TABLE}(symbol, {', '.join(_COLUMNS)}, as_of,"
+                    f" engine_version, ruleset_version)"
+                    f" VALUES (?, {', '.join('?' * len(_COLUMNS))}, ?, ?, ?)",
+                    [sym, *vals, now, eng, ruleset])
+                done += 1
+        conn.commit()
+    return {"requested": ready + nohist + len(todo), "computed": done, "failed": failed,
+            "reused": ready, "no_history": nohist, "queued": len(todo), "as_of": now,
+            "ms": int((time.time() - t0) * 1000)}
+
+
+# ── پشت‌زمینه: داوری را هیچ درخواستِ HTTPی منتظر نمی‌ماند ─────────────────
+# هزینه‌ای که درِ مسیرِ درخواست نمی‌نشیند: اندازه‌گیریِ ۱۴۰۵-۰۷-۱۶ رویِ همین
+# بانک، چهار رسیدۀ تابلو = 99.5s ⇒ ~۲۵ ثانیه برایِ هر نمادِ سرد (fetchِ
+# تاریخچه)، و ۰٫۰۲s برایِ نمادی که امضایش با ردیفِ ذخیره‌شده می‌خواند. کلِ
+# ۹۲۲ نمادِ سرد پس ساعت‌ها کار است، نه دقیقه؛ دقیقاً برای همین اسکن درِ
+# رشتهٔ پس‌زمینه می‌رود و پاسخِ همان لحظه TECH_SCAN_PENDING می‌گوید — نه
+# حذفِ نماد، نه داوریِ نصفه.
+_BG_LOCK = threading.Lock()
+_BG = {"thread": None, "todo": set(), "done": 0, "failed": 0, "error": None,
+       "attempted": set(), "last_ms": 0}
+
+
+def _bg_worker() -> None:
+    from bors_config import DB_PATH
+    conn = sqlite3.connect(DB_PATH, timeout=60)
+    try:
+        while True:
+            with _BG_LOCK:
+                batch = sorted(_BG["todo"])[:40]
+                _BG["todo"] -= set(batch)
+                _BG["attempted"] |= set(batch)
+            if not batch:
+                with _BG_LOCK:
+                    if not _BG["todo"]:
+                        _BG["thread"] = None
+                        return
+                continue
+            out = refresh(conn, batch)
+            with _BG_LOCK:
+                _BG["done"] += int(out.get("computed") or 0)
+                _BG["failed"] += int(out.get("failed") or 0)
+                _BG["last_ms"] = int(out.get("ms") or 0)
+                # نمادی که سنجیده نشد (fetch شکست) از «در حال» بیرون می‌رود تا
+                # دورِ بعد دوباره شانسش باشد؛ بی‌این یک بار شکست = ابدی.
+                _BG["attempted"] -= set(batch)
+    except Exception as e:  # هر خطایی باید دیده شود، نه اینکه رشته خاموش بمیرد
+        with _BG_LOCK:
+            _BG["error"] = f"{type(e).__name__}: {e}"
+            _BG["thread"] = None
+    finally:
+        conn.close()
+
+
+def start_refresh(symbols: Iterable[str]) -> dict:
+    """این نمادها را درِ پس‌زمینه بساز؛ فوراً برمی‌گردد (هیچ داوریِ منتظره‌ای نیست)."""
+    want = [norm_symbol(str(s)) for s in symbols if s]
+    with _BG_LOCK:
+        if _BG["thread"] is None or not _BG["thread"].is_alive():
+            _BG["todo"] = set(want)
+            _BG["thread"] = threading.Thread(target=_bg_worker, daemon=True,
+                                             name="funnel-tech-scan")
+            _BG["thread"].start()
+        else:
+            # نمادی که همین حالا در حالِ سنجش است را دوباره صف نکن (fetchِ تکراری)
+            _BG["todo"] |= {s for s in want if s not in _BG["attempted"]}
+        return {"running": True, "queued": len(_BG["todo"]), "done": _BG["done"],
+                "failed": _BG["failed"], "in_flight": len(_BG["attempted"]),
+                "error": _BG["error"]}
+
+
+def bg_status() -> dict:
+    with _BG_LOCK:
+        return {"running": bool(_BG["thread"] and _BG["thread"].is_alive()),
+                "queued": len(_BG["todo"]), "done": _BG["done"], "failed": _BG["failed"],
+                "in_flight": len(_BG["attempted"]), "last_ms": _BG["last_ms"],
+                "error": _BG["error"]}
 
 
 def freshness(conn: sqlite3.Connection) -> dict:
