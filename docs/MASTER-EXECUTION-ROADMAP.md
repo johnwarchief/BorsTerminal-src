@@ -2199,14 +2199,18 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 | F-4 | Preset provenance | `ACCEPTED` | swing/trend match chart-3 and the notebook; **hourglass has no tape filter in any source** (it is MA52 + weekly RSI5 ≤ 30, already implemented at `api/chart.py:2767-2790`) while `PRESET_ENTRY` currently borrows `f_roobi,f_clock` → `UNVERIFIED`, owner ruling Q-1 |
 | F-5 | Hidden caps inventory | `ACCEPTED` | `TECH_QUERY_CAP=60` (`useFtsTechBoard.ts:77`), `watchlist_max=50` gating backend tech enrichment (`screener.py:444-458`, `fts_engine.py:2005-2006`), plus 60/20 limits in adjacent hooks (audit §۶) |
 | F-6 | Acceptance-gate mapping (22 items) | `ACCEPTED` | audit §۹ — 3 items partially satisfied, the rest open |
-| F-7 | Stages R → E → C → U → T | `PENDING` | audit §۱۰; one commit per stage |
-| F-8 | Owner rulings Q-1…Q-5 | `BLOCKED-OWNER` | hourglass tape set, `tno>100` in the funnel, `dist>=0` floor, whether 50/10/5-7 (ruling ۶) are visible stage targets or compute caps, and I5-with-no-sector state. None of them blocks stage R |
+| F-7 | Stage R — canonical filter registry | `ACCEPTED` | `funnel_registry.py`: 7 filters (the five plus `f_smart`/`f_legal`), each with source_file + pinned sha256 + formula_version + backend_impl + 21 params whose values come from `tape_flags` constants, `configurable=True` only where the notebook hands the dial to the user. Guard `dev/funnel_registry_v1.py` (registered in `run_all_tests.py`) checks coverage, hashes, importability, "the number appears in the cited text", and carries a negative control that moves `ruleset_version` (555648ebff52) when a threshold is nudged. `fts_terminal.spec` hiddenimports updated |
+| F-9 | Cost of removing the technical-scan cap | `MEASURED` | `_fts_analyze_symbol` on 40 symbols: median **248 ms**, p90 411 ms, max 600 ms → **252 s single-threaded for 922 symbols**. That is why `api/screener.py:456-458` enriches only the 50 watchlist rows. Stage C therefore cannot be a one-line cap removal: it needs one batched candle load + parallel/incremental verdict computation keyed by a scan `as_of`, with the per-symbol 900 s TTL cache kept for the interactive path |
+| F-8 | Stages C → E → U → T | `PENDING` | audit §۱۰ — C = batched full-universe technical scan and cap removal, E = `funnel_engine` + `/api/funnel` (sequential intersection, per-stage counts, I1∧I2∧I3 gate with PASS/REJECT/PENDING/UNAVAILABLE, decision trace), U = workspace UI with the frontend judges retired, T = tests + live + 20-symbol TSETMC validation |
+| F-10 | Owner rulings Q-1…Q-5 | `BLOCKED-OWNER` | hourglass tape set, `tno>100` in the funnel, `dist>=0` floor, whether 50/10/5-7 (ruling ۶) are visible stage targets or compute caps, and I5-with-no-sector state. None of them blocks stage C or E |
 
 ## 15.5 Next item selected
 
-**FTS Funnel stage R** — the canonical filter registry in the backend (`funnel_registry.py`:
-filter_id, name, description, source_file, source_hash, formula_version, params, availability,
-backend impl, test reference for all seven TXT filters), because every later stage consumes it.
+**FTS Funnel stage C** — replace the per-symbol technical enrichment of the top-50
+(`api/screener.py:456-458`, `fts_engine.scan_all` `[:cap]`) with one batched full-universe
+scan (single candle load, parallel verdicts, scan-level `as_of`), then measure the cold
+rebuild. Stage E builds the intersection engine on top of it.
 Phase 1 **S-3** (execution router) is `PAUSED` by the owner's mission until the funnel milestone
-is `ACCEPTED`; S-4 stays `BLOCKED-OWNER` (D8/D1). Phase 2 (trading bot) is not started: the bot
-must consume the canonical FTS signal rather than judge again.
+is `ACCEPTED` (`api/execution.py` sits uncommitted in this worktree); S-4 stays
+`BLOCKED-OWNER` (D8/D1). Phase 2 (trading bot) is not started: the bot must consume the
+canonical FTS signal rather than judge again.
