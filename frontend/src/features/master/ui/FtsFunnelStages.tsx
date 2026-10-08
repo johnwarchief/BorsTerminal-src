@@ -13,6 +13,7 @@ import { useSearchParams } from 'react-router';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import FtsFunnelStageView from './FtsFunnelStageView';
+import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
 import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
 import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
@@ -105,6 +106,9 @@ export function FtsFunnelStages({
       </div>
 
       <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol} />
+
+      {/* Custom همان‌جا ویرایش می‌شود (§۲۹): نه صفحۀ تازه، نه drawerِ سنگین. */}
+      {activePreset === 'custom' ? <FtsCustomChainBuilder /> : null}
 
       {stage === 'handover' ? (
         <div className="flex w-full flex-col gap-1" data-testid="fts-funnel-final-view">

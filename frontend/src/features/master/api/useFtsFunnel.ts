@@ -34,7 +34,7 @@ export type FunnelRequest = {
 
 const EMPTY_SUM: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
 const emptyStage = (key: FunnelStageKey): FunnelStage => ({
-  key, entries: [], dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
+  key, entries: [], steps: [], dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
   ruled: 0, pending: [], summary: { ...EMPTY_SUM },
 });
 

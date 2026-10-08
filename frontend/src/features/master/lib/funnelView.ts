@@ -211,6 +211,14 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
         })();
     stages[key] = {
       key,
+      // حملِ بی‌داوریِ گام‌هایِ درونیِ تابلو (شمارشِ ترتیب‌محور از موتور)
+      steps: (payload.stages?.[key]?.steps ?? []).map((s) => ({
+        seq: s.seq ?? 0, filter_id: s.filter_id ?? '', label: s.label ?? s.filter_id ?? '',
+        input_count: s.input_count, matched_count: s.matched_count,
+        removed_count: s.removed_count, unmeasured_count: s.unmeasured_count,
+        source_ref: s.source_ref, formula_version: s.formula_version,
+        parameter_set: s.parameter_set, status: s.status,
+      })),
       entries: rows.filter((c) => c.status[key] !== 'pending'),
       dropped: sum.reject,
       rejected: sum.reject,

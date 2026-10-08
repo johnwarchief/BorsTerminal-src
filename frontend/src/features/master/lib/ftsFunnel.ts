@@ -217,9 +217,20 @@ export type Candidate = {
 /** سازۀ پیشینِ `FunnelEntry` — نامِ کوتاهِ همان کاندید، برایِ خواناییِ رندررها. */
 export type FunnelEntry = Candidate;
 
+/** یک گام از زنجیرۀ تابلو — شمارشِ ترتیب‌محور، همان چیزی که موتور گفته است.
+ *  نمایشِ «۵۸۶۵ → ۱۲۱ → ۴» اثباتِ دیدنیِ اشتراکِ ترتیبی است، نه چیزِ دیگری. */
+export type StageStep = {
+  seq: number; filter_id: string; label: string;
+  input_count: number; matched_count: number; removed_count: number;
+  unmeasured_count?: number; source_ref?: string; formula_version?: string;
+  parameter_set?: Record<string, unknown>; status?: StageStatus;
+};
+
 export type FunnelStage = {
   key: FunnelStageKey;
   entries: Candidate[];
+  /** گام‌هایِ درونیِ همین مرحله (فعلاً تابلو: هر فیلتر با شمارشِ خودش) */
+  steps: StageStep[];
   /** چه تعداد از مرحلۀ قبل بیرون افتاد (تکنیکال و بنیادی هر دو حذف می‌کنند) */
   dropped: number;
   /** چه تعداد روی این مرحله برچسبِ «رد» خوردند — با «رد نکند، خودم چک می‌کنم»

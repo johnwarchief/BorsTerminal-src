@@ -236,6 +236,60 @@ describe('زنجیرۀ Custom', () => {
   });
 });
 
+describe('بازسازِ Custom درِ همان workspace (§۵ §۸ §۱۰)', () => {
+  it('فیلترها از رجیستری می‌آیند، نه از arrayِ پنج‌تاییِ پیشین', async () => {
+    await ready('/master?stage=tape&preset=custom');
+    fireEvent.click(screen.getByTestId('funnel-chain-add'));
+    const menu = screen.getByTestId('funnel-chain-menu');
+    // «پول هوشمند» و «کد به کد» درِ چیپ‌هایِ قدیمیِ Custom نبودند؛ درِ رجیستری هستند
+    expect(within(menu).getByTestId('funnel-chain-pick-f_smart')).toBeInTheDocument();
+    expect(within(menu).getByTestId('funnel-chain-pick-f_legal')).toBeInTheDocument();
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(7);
+  });
+
+  it('افزودن، شمارشِ ترتیبیِ همان گام را کنارِ چیپ می‌گذارد', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    await ready('/master?stage=tape&preset=custom');
+    const chip = screen.getByTestId('funnel-chain-f_susp');
+    expect(within(chip).getByTestId('funnel-chain-count-f_susp').textContent).toBe('۴ ← ۳');
+  });
+
+  it('جابه‌جاییِ چیپ، ترتیبِ زنجیره را عوض می‌کند', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    useFunnelPrefsStore.getState().addFilter('f_noqteh');
+    await ready('/master?stage=tape&preset=custom');
+    fireEvent.click(screen.getByTestId('funnel-chain-up-f_noqteh'));
+    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_noqteh', 'f_susp']);
+    const order = Array.from(
+      document.querySelectorAll('[data-testid^="funnel-chain-f_"]'),
+    ).map((el) => el.getAttribute('data-testid'));
+    expect(order).toEqual(['funnel-chain-f_noqteh', 'funnel-chain-f_susp']);
+  });
+
+  it('ذخیره و بازخوانی، همان زنجیره را دقیق برمی‌گرداند', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    useFunnelPrefsStore.getState().addFilter('f_noqteh');
+    await ready('/master?stage=tape&preset=custom');
+    fireEvent.change(screen.getByTestId('funnel-chain-name'), { target: { value: 'فیلترِ من' } });
+    fireEvent.click(screen.getByTestId('funnel-chain-save'));
+    expect(useFunnelPrefsStore.getState().savedChains[0].chain).toEqual(['f_susp', 'f_noqteh']);
+    expect(useFunnelPrefsStore.getState().savedChains[0].registryVersion).toBe('deadbeefcafe');
+    fireEvent.click(screen.getByTestId('funnel-chain-reset'));
+    expect(useFunnelPrefsStore.getState().chain).toEqual([]);
+    fireEvent.click(screen.getByTestId('funnel-chain-load-فیلترِ من'));
+    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_susp', 'f_noqteh']);
+  });
+
+  it('حذفِ چیپ فقط همان فیلتر را از زنجیره بیرون می‌اندازد', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    useFunnelPrefsStore.getState().addFilter('f_jet');
+    await ready('/master?stage=tape&preset=custom');
+    fireEvent.click(screen.getByTestId('funnel-chain-remove-f_susp'));
+    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_jet']);
+    expect(screen.queryByTestId('funnel-chain-f_susp')).not.toBeInTheDocument();
+  });
+});
+
 describe('حفظِ حالت', () => {
   it('گذر از سطر، گام را درِ مسیر نگه می‌دارد تا بازگشت به همان‌جا برگردد', async () => {
     withClient(<FtsFunnelStages preset="custom" onPresetChange={() => {}} />,

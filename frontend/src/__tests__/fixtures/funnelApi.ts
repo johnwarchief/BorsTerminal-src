@@ -150,11 +150,59 @@ export const FUNNEL_FIXTURE: ApiPayload = {
                tech_points: 2, backend_rank: 1, display_rank: 1 }],
 };
 
+/** رجیستریِ دستی — همان هفت فیلترِ `funnel_registry.py`، با دستِ خودِ این فایل.
+ *  تستِ Custom باید ثابت کند چیپ‌ها از *رجیستری* می‌آیند، نه از arrayِ پنج‌تاییِ
+ *  پیشین؛ پس «پول هوشمند» و «کد به کد» هم درِ این فهرست می‌آیند. */
+export const REGISTRY_FIXTURE = {
+  registry_version: '7',
+  ruleset_version: 'deadbeefcafe',
+  filters: [
+    { filter_id: 'f_clock', name: 'الگوی ساعت', description: 'دو ساعتِ اولِ پرحجم',
+      source_file: 'docs/الگوی ساعت.txt', source_hash: '6637192e4d10a73d',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.clock_flag',
+      availability: 'backend', status: 'canonical', params: [{ param_id: 'start', label: 'شروع', value: 1 }] },
+    { filter_id: 'f_susp', name: 'حجم مشکوک', description: 'سه برابرِ میانگینِ سی نشست',
+      source_file: 'docs/حجم مشکوک.txt', source_hash: 'b8a185c4168be33e',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.suspicious_flag',
+      availability: 'backend', status: 'canonical',
+      params: [{ param_id: 'vol_mult', label: 'ضریبِ حجم', value: 3 },
+               { param_id: 'min_trades', label: 'حداقلِ معامله', value: 50 }] },
+    { filter_id: 'f_jet', name: 'جت', description: 'بسته‌شدنِ شکافِ قیمتی',
+      source_file: 'docs/جت.txt', source_hash: 'e93cab46073567c0',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.jet_flag',
+      availability: 'backend', status: 'canonical', params: [] },
+    { filter_id: 'f_roobi', name: 'کف‌روبی', description: 'کف‌روبیِ خریدار',
+      source_file: 'docs/کفروبی.txt', source_hash: '053a12a7c96b6e4f',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.roobi_flag',
+      availability: 'backend', status: 'canonical', params: [] },
+    { filter_id: 'f_noqteh', name: 'نقطه زنی', description: 'تک‌معامله‌هایِ نقطه‌ای',
+      source_file: 'docs/نقطه زنی.txt', source_hash: 'e5d4fd99a6811443',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.noqteh_flag',
+      availability: 'backend', status: 'canonical', params: [] },
+    { filter_id: 'f_smart', name: 'ورود پول هوشمند', description: 'تغییرِ مالکیتِ محسوس',
+      source_file: 'docs/پول هوشمند.txt', source_hash: '590e52a23c78166f',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.smart_money_flag',
+      availability: 'backend', status: 'canonical', params: [] },
+    { filter_id: 'f_legal', name: 'کد به کد', description: 'انتقالِ کدِ حقیقی به حقوقی',
+      source_file: 'docs/کد به کد.txt', source_hash: '92adf93e9d5e1df4',
+      formula_version: 'txt-1', backend_impl: 'tape_flags.legal_transfer_flag',
+      availability: 'backend', status: 'canonical', params: [] },
+  ],
+  presets: [],
+  unimplemented_filters: [],
+  gates: {},
+};
+
 /** جایگزینِ fetch درِ تست‌هایِ رندر: هر `/api/funnel` همین پاسخ را می‌گیرد. */
 export function installFunnelApi(payload: ApiPayload = FUNNEL_FIXTURE) {
   const real = globalThis.fetch;
   globalThis.fetch = async (input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes('/api/funnel/registry')) {
+      return new Response(JSON.stringify(REGISTRY_FIXTURE), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      });
+    }
     if (url.includes('/api/funnel')) {
       return new Response(JSON.stringify(payload), {
         status: 200, headers: { 'content-type': 'application/json' },
