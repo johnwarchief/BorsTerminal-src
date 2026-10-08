@@ -2204,6 +2204,9 @@ FTS chart feature starts before this milestone is `ACCEPTED`.
 | F-8 | Stages C → E → U → T | `PENDING` | audit §۱۰ — C = batched full-universe technical scan and cap removal, E = `funnel_engine` + `/api/funnel` (sequential intersection, per-stage counts, I1∧I2∧I3 gate with PASS/REJECT/PENDING/UNAVAILABLE, decision trace), U = workspace UI with the frontend judges retired, T = tests + live + 20-symbol TSETMC validation |
 | F-10 | Owner rulings Q-1…Q-5 | `BLOCKED-OWNER` | hourglass tape set, `tno>100` in the funnel, `dist>=0` floor, whether 50/10/5-7 (ruling ۶) are visible stage targets or compute caps, and I5-with-no-sector state. None of them blocks stage C or E |
 
+| F-11 | Why the cap exists (measured, not assumed) | `MEASURED` | `_fts_analysis_series` (`api/chart.py:2900-2943`) reads the **CDN chart per symbol** and only falls back to the local bank, so the 248 ms is mostly network. The local bank today: 6031 symbols, but only 1263 with ≥60 sessions, 737 with ≥252, max depth 512, none ≥756 — a local-only scan would silently change verdicts for the shallow rest |
+| F-12 | Stage C design (chosen) | `PENDING-BUILD` | Batched **incremental** full-universe technical scan in a new root module: reuse `_fts_analysis_series` + `_fts_analyze_candles` unchanged (one code path, so no board-vs-funnel parity risk), bounded worker pool, skip symbols whose `(symbol, last_close, basis)` already has a stored verdict, write `funnel_tech_scan(symbol, trend_w, trend_d, matrix_decision, hourglass_*, jet_*, basis, as_of, engine_version, ruleset_version)`. `/api/screener` joins that table instead of the per-row call and the `watchlist` flag goes back to being a label, not a compute gate. Cold cost and steady-state cost are both reported before the caps are declared lifted |
+
 ## 15.5 Next item selected
 
 **FTS Funnel stage C** — replace the per-symbol technical enrichment of the top-50
