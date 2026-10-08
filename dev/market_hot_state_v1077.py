@@ -49,11 +49,19 @@ TABLES = ["instruments", "boards", "market_watch", "client_type",
 
 
 def _schema_source():
+    """بانکِ مرجعِ ساختار — اگر رویِ این ماشین باشد.
+
+    عمداً «اختیاری»: market.db و market.db.lzma هر دو در گیت نیستند، پس درِ CI
+    هیچ‌کدام وجود ندارد و گارد باید از DDLِ خودِ مخزن بخواند، نه اینکه با
+    «table instruments gone from schema» بسوزد (همان چیزی که `guards` را رویِ
+    main قرمز کرده بود).
+    """
     plain = os.path.join(REPO, "market.db")
     if os.path.exists(plain):
         return plain
     packed = os.path.join(REPO, "market.db.lzma")
-    assert os.path.exists(packed), "no market.db and no market.db.lzma"
+    if not os.path.exists(packed):
+        return None
     import lzma
     import shutil
     import tempfile
@@ -64,15 +72,30 @@ def _schema_source():
 
 
 def build_fixture(n=12):
-    """بانکِ ساختگی با همان ساختارِ واقعی و n نمادِ معامله‌شده."""
-    src = sqlite3.connect(f"file:{_schema_source().replace(os.sep, '/')}?mode=ro", uri=True)
+    """بانکِ ساختگی با همان ساختارِ رسمی و n نمادِ معامله‌شده.
+
+    ساختار از DDLِ مخزن (`test_tsetmc.create_schema`) ساخته می‌شود؛ اگر بانکِ
+    واقعیِ همین ماشین هست، ستون‌هایش هم راستی‌آزمایی می‌شوند تا فیکسچر از
+    همان چیزی بخواند که کاربر رویِ دیسکش دارد.
+    """
     c = sqlite3.connect(":memory:")
+    T.create_schema(c)
+    src = None
+    src_path = _schema_source()
+    if src_path:
+        src = sqlite3.connect(f"file:{src_path.replace(os.sep, '/')}?mode=ro", uri=True)
     for t in TABLES:
-        cols = [r[1] for r in src.execute(f"PRAGMA table_info({t})")]
-        assert cols, f"table {t} gone from schema — guard is stale"
+        cols = [r[1] for r in c.execute(f"PRAGMA table_info({t})")]
+        assert cols, f"table {t} missing from the repo DDL — guard or schema is stale"
+        if src is not None:
+            real = [r[1] for r in src.execute(f"PRAGMA table_info({t})")]
+            missing = [x for x in real if x not in cols]
+            assert not missing, f"{t}: ستونِ بانکِ واقعی در DDL نیست: {missing}"
         sel = ", ".join(f'NULL AS "{col}"' for col in cols)
+        c.execute(f"DROP TABLE {t}")
         c.execute(f"CREATE TABLE {t} AS SELECT {sel} WHERE 0")
-    src.close()
+    if src is not None:
+        src.close()
     # کوئریِ تابلو جدول‌هایِ P0 را JOIN می‌کند؛ این‌ها درِ TABLES نیستند چون
     # بانکِ مخزن ممکن است اصلاً آن‌ها را نداشته باشد. تک‌منبعِ DDL صدا زده
     # می‌شود تا فیکسچر و کوئری از یک ساختار بخوانند.
