@@ -518,6 +518,10 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "inds": {k: _tri(r.get(f"{k}_pass")) for k in (*BLOCKERS, *SUPPORTING)},
         "ind_values": {"i1": _num(r.get("rev_growth")), "i2": _num(r.get("eps_last")),
                        "i3": _num(r.get("gross_margin")), "i4": _num(r.get("sales_to_mcap"))},
+        # برآوردِ فروشِ ۱۲ ماهه (میلیارد تومان) — برایِ اینکه رابط بتواند
+        # نسبتِ **زنده** را با ارزشِ بازارِ همین ردیف نشان بدهد بدونِ اینکه
+        # حکمِ موتور را دوباره بسازد (رأیِ مالک ۱۴۰۵-۰۷-۱۷، بندِ ۱).
+        "annual_sales_bt": _num(r.get("annual_sales_bt")),
         "pricing_mode": r.get("pricing_mode"),
         "excluded": bool(r.get("excluded")),
         "exclusion_reasons": r.get("exclusion_reasons") or "",

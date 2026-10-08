@@ -1,6 +1,6 @@
 // widgets/SymbolInspector.tsx -- داک باریک نماد در لبه چپ (فاز 8)
 // دید متمرکز روی تک‌سهم در کنار دید کلان همه تب‌ها.
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
@@ -144,7 +144,8 @@ function StatusLight({
 }
 
 export function SymbolInspector() {
-  const symbol = useSymbolStore((s) => s.symbol);
+  const storedSymbol = useSymbolStore((s) => s.symbol);
+  const setSymbol = useSymbolStore((s) => s.setSymbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const togglePin = useSymbolStore((s) => s.togglePin);
   const pinned = useSymbolStore((s) => s.pinned);
@@ -152,6 +153,19 @@ export function SymbolInspector() {
   const feed = useMarketFeed();
   const { pathname } = useLocation();
   const stageIdx = stageIndexForPath(pathname);
+  // نشانی منبعِ نماد هم هست. پیش‌تر این پنل فقط استور را می‌خواند، پس هر
+  // پیوندِ مستقیمِ ‎#/master/فولاد (لینک، «عقب» مرورگر، بازکردنِ دوباره پس از
+  // ری‌استارت) سایدبار را خالی می‌گذاشت — نه فقط عددِ تازه، حتی «آخرین معامله»
+  // هم «-» می‌ماند چون ردیفِ تابلو هرگز resolve نمی‌شد.
+  const routeSymbol = useMemo(() => {
+    const m = /^\/master\/([^/?#]+)/.exec(pathname ?? '');
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+  }, [pathname]);
+  const symbol = routeSymbol ?? storedSymbol;
+  useEffect(() => {
+    if (routeSymbol && routeSymbol !== storedSymbol) setSymbol(routeSymbol);
+  }, [routeSymbol, storedSymbol, setSymbol]);
 
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
   const inputs = useMemo(() => (symbol ? getActiveSignals(symbol) : {}), [symbol, entry]);
@@ -442,20 +456,43 @@ export function SymbolInspector() {
             {rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
           </span>
           <span className="text-[9px] text-text-muted">I4</span>
-          {cand?.screen?.sales_to_mcap != null ? (
-            <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
-                  data-testid="inspector-i4"
-                  title={`فروشِ ۱۲ ماهه (برآورد): ${cand.screen.annual_sales_bt != null
-                    ? `${toFaDigits(cand.screen.annual_sales_bt)} میلیارد تومان` : 'بی‌داده'}`
-                    + ` ÷ ارزشِ بازار: ${rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'} — `
-                    + 'فرمولِ موتورِ بنیادی (fts_engine.sales_to_marketcap)، همان مخرجِ سایدبار'}
-                  className="num text-[11px] font-bold text-accent-blue hover:underline">
-              {toFaDigits(Number(cand.screen.sales_to_mcap).toFixed(2))}×
-            </Link>
-          ) : (
-            <span className="num text-[11px] text-text-muted" data-testid="inspector-i4"
-                  title="I4 = فروشِ ۱۲ ماهه ÷ ارزشِ بازار؛ عددی از موتور نرسیده">بی‌داده</span>
-          )}
+          {(() => {
+            // رأیِ I4ِ موتور دست‌نخورده است؛ آنچه اینجا نشان داده می‌شود
+            // «نسبتِ با ارزشِ بازارِ همین ردیفِ تابلو» است:
+            //   فروشِ ۱۲ ماهه (برآورد، میلیارد تومان) × ۱e10 ÷ mcap(ریال)
+            // و اگر با نسبتِ ثبت‌شدۀ موتور نمی‌خواند، **هر دو** عدد دیده
+            // می‌شوند — نه بازنویسیِ بی‌صدایِ حکم، نه داورِ دوم درِ فرانت.
+            const salesBt = cand?.screen?.annual_sales_bt ?? null;
+            const cached = cand?.screen?.sales_to_mcap ?? null;
+            const mcap = rawRow?.mcap ?? null;
+            const live = salesBt != null && mcap ? (salesBt * 1e10) / mcap : null;
+            const shown = live ?? cached;
+            if (shown == null) {
+              return <span className="num text-[11px] text-text-muted" data-testid="inspector-i4"
+                           title="I4 = فروشِ ۱۲ ماهه ÷ ارزشِ بازار؛ نه فروش داریم نه مبنایِ معتبر">بی‌داده</span>;
+            }
+            const differs = live != null && cached != null && Math.abs(live - cached) > 0.005;
+            return (
+              <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
+                    data-testid="inspector-i4"
+                    title={`فروشِ ۱۲ ماهه (برآورد): ${salesBt != null ? toFaDigits(Math.round(salesBt)) : '—'} میلیارد تومان`
+                      + ` ÷ ارزشِ بازارِ همین ردیف: ${mcap != null ? fmtHemmat(mcap) : '—'}`
+                      + ` ⇒ ${toFaDigits(shown.toFixed(2))}×`
+                      + (differs ? ` — نسبتِ ثبت‌شدۀ موتور: ${toFaDigits(cached!.toFixed(2))}×`
+                                 : ' — با نسبتِ ثبت‌شدۀ موتور می‌خواند')
+                      + '\nمبنایِ ارزشِ بازار: TSETMC (' + (rawRow?.mcap_src || 'بی‌منبع') + ')؛'
+                      + ' حکمِ پذیرش/رد را همان موتورِ بنیادی می‌دهد، این عدد فقط نسبتِ زنده است.'}
+                    className="num flex items-baseline gap-1 text-[11px] font-bold text-accent-blue hover:underline">
+                {toFaDigits(shown.toFixed(2))}×
+                {differs ? (
+                  <span className="text-[8.5px] font-normal text-accent-amber"
+                        data-testid="inspector-i4-diverges">
+                    (موتور: {toFaDigits((cached as number).toFixed(2))}×)
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })()}
         </div>
 
         {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد

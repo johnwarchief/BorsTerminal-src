@@ -32,7 +32,10 @@ export type ApiRow = {
   tech_points?: number | null; evidence?: string[]; fib_zone?: string | null;
   hourglass?: boolean | null;
   inds?: Record<string, StageStatus | boolean | null>;
-  ind_values?: Record<string, number | null>; pricing_mode?: string | null;
+  ind_values?: Record<string, number | null>;
+  /** برآوردِ فروشِ ۱۲ ماهه (میلیارد تومان) — از خودِ موتور، برایِ نسبتِ زنده */
+  annual_sales_bt?: number | null;
+  pricing_mode?: string | null;
   excluded?: boolean; exclusion_reasons?: string; assembly_veto?: boolean;
   assembly_why?: string; as_of?: number | null; is_live?: boolean | null;
   /** رتبۀ رسمیِ بک‌اند (/api/screener) — حملِ عدد است، نه رتبۀ تازه */
@@ -141,6 +144,7 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     excluded: !!r.excluded, exclusion_reasons: r.exclusion_reasons ?? '',
     rev_growth: r.ind_values?.i1 ?? null, eps_last: r.ind_values?.i2 ?? null,
     gross_margin: r.ind_values?.i3 ?? null, sales_to_mcap: r.ind_values?.i4 ?? null,
+    annual_sales_bt: r.annual_sales_bt ?? null,
     tech_trend_w: r.weekly ?? null, tech_trend_d: r.daily ?? null,
     tech_matrix_decision: r.matrix ?? null, tech_status: r.tech_status ?? null,
     tech_fib_zone: r.fib_zone ?? null, tech_hourglass_active: r.hourglass ?? null,

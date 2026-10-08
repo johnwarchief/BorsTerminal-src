@@ -40,6 +40,12 @@ const res: Record<string, unknown> = { symbol: SYM, serverMcapRial: row.mcap ?? 
 
 await page.goto(`${BASE}#/master/${encodeURIComponent(SYM)}`, { waitUntil: 'domcontentloaded' });
 await page.waitForSelector('[data-testid="inspector-market-cap"]', { timeout: 90_000 });
+// خوراکِ تابلو هنوز نرسیده بود و پنل «همه خالی» رندر می‌شد (قیمت هم «-» بود)؛
+// بی‌این صبر، سنجش «بی‌داده» را به‌جای عددِ واقعی می‌گفت (سنجشِ معیوب ≠ نقصِ اپ).
+await page.waitForFunction(() => {
+  const t = document.body.innerText || '';
+  return !/آخرین معامله\s*-/.test(t) && /آخرین معامله/.test(t);
+}, undefined, { timeout: 90_000 });
 res.ui = await page.evaluate(() => ({
   capText: document.querySelector('[data-testid="inspector-market-cap"]')?.textContent?.trim() ?? null,
   capTitle: document.querySelector('[data-testid="inspector-market-cap"] span[title]')?.getAttribute('title') ?? null,
@@ -49,6 +55,18 @@ res.ui = await page.evaluate(() => ({
     .map((s) => (s.textContent ?? '').trim()).slice(0, 4),
 }));
 await page.screenshot({ path: '_audit/ws7d_sidebar_mcap.png' });
+// تشخیصِ محلی: آیا خودِ ردیف resolve شده؟ (قیمت/درصد پر باشند ⇒ ردیف هست و
+// فقط کلیدِ mcap گم شده؛ خالی باشند ⇒ ردیف resolve نمی‌شود.)
+res.panelText = await page.evaluate(() => {
+  const el = document.querySelector('[data-testid="inspector-market-cap"]');
+  const panel = el?.closest('div.rounded-2xl, aside, section') ?? el?.parentElement?.parentElement;
+  return (panel?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 260);
+});
+res.rowFromServer = await page.evaluate(async (sym: string) => {
+  const d: any = await (await fetch('/api/market')).json();
+  const row = (d.data || []).find((x: any) => x.symbol === sym);
+  return row ? { keys: Object.keys(row).length, mcap: row.mcap ?? null, p_last: row.p_last ?? null } : null;
+}, SYM);
 
 // نمادی که mcap ندارد ⇒ «بی‌داده»، نه صفر
 if (noCap.symbol) {
