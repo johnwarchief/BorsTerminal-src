@@ -257,6 +257,7 @@ SUITES = [
     # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
     ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
     ('dev/user_watchlist_v1.py', 'user watchlist CRUD: get() on a missing row, upsert identity, cap layering'),
+    ('dev/fts_trend_pit_v1.py', 'trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead'),
     # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده
     # نمی‌شود؛ بدلِ ما هم timeout را «پذیرفته‌شده درِ سرور، گم‌شده درِ کلاینت»
     # می‌سازد تا مسیرِ UNKNOWN_RESULT → RECONCILE و تله‌یِ retryِ کور قابلِ اثبات
