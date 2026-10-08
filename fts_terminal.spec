@@ -59,6 +59,11 @@ a = Analysis(
                    # سطح-بال import می‌کنند. مثل tape_flags صریح فهرست می‌شود: نبودنش
                    # EXE را روی اولین درخواستِ چارت می‌کشد.
                    'price_basis', 'candle_contract',
+                   # دورِ قیف (1405-07-16): `funnel_registry` تک‌منبعِ فیلترها و
+                   # presetهاست و api/funnel آن را سطح-بال import می‌کند؛ مثلِ بقیۀ
+                   # ماژول‌هایِ ریشه صریح فهرست می‌شود وگرنه EXE رویِ اولین درخواستِ
+                   # قیف ModuleNotFoundError می‌دهد.
+                   'funnel_registry',
                    # کارِ #73 (بخشِ بنیادی، ۱۴۰۵-۰۷-۱۰): `codal_periods` تنها تعریفِ
                    # «دورۀ گزارش» است و fts_engine / api.fundamental / api.screener /
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
