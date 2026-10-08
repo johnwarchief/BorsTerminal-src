@@ -797,11 +797,10 @@ export function FtsFunnelStages({
         <span className="text-text-secondary">| universe: {toFaDigits(funnel.total)}</span>
         <span
           className="text-text-secondary"
-          title="چند کاندید رأیِ زندۀ /api/fts گرفتند — بودجه سقفِ TECH_QUERY_CAP دارد و بیرونِ آن «بی‌داده» می‌ماند، نه «رد»"
+          title="چند کاندید در این نشست داوریِ تکنیکال شدند — کلِ جامعۀ ورودی، بی‌بودجه و بی‌سقف"
           data-testid="funnel-tech-coverage"
         >
-          تکنیکالِ زنده: {toFaDigits(funnel.techCoverage.live)} از {toFaDigits(funnel.techCoverage.universe)}
-          {tech.beyondCap > 0 ? ` — ${toFaDigits(tech.beyondCap)} بیرونِ بودجه` : ''}
+          تکنیکال سنجیده شده: {toFaDigits(tech.resolved)} از {toFaDigits(tech.wanted)}
         </span>
         <span className="text-text-secondary">هدفِ جزوه: ۵۰  ۱۰  ۵-۷</span>
       </div>
