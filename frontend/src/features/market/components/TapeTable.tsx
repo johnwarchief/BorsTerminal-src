@@ -18,6 +18,7 @@ import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from
 import { patternBadges } from '../lib/tapeBadges';
 import { powerTone } from '../api/useMarketPulse';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
+import SymbolSelectBox from '@shared/components/SymbolSelectBox';
 
 type SortKey =
   | 'symbol'
@@ -304,7 +305,11 @@ export const TapeRow = memo(function TapeRow({
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 40 }}
     >
-      <span className="font-bold text-base text-text-primary flex items-baseline gap-1.5 truncate">
+      <span className="font-bold text-base text-text-primary flex items-center gap-1.5 truncate">
+        {/* جعبۀ انتخاب داخلِ همان ستونِ نماد است، نه ستونِ تازه: `ROW_GRID` با
+            افزودنِ یک فرزندِ مستقیمِ grid از جا درمی‌رود. */}
+        <SymbolSelectBox symbol={String(row.symbol ?? '')} name={String(row.name ?? '')}
+                         insCode={row.ins_code ?? null} />
         {row.symbol}
         <span className="truncate text-xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
