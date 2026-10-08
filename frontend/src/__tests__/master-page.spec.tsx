@@ -1,5 +1,6 @@
 // تست داشبورد مستر v2: گیتینگ، برنامه معاملاتی، synthesis با fetch ماک‌شده
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { FUNNEL_FIXTURE } from './fixtures/funnelApi';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -112,6 +113,9 @@ beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockImplementation((url: string) => {
     const u = String(url);
+    if (u.includes('/api/funnel')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(FUNNEL_FIXTURE) } as unknown as Response);
+    }
     if (u.startsWith('/api/fts/')) {
       return Promise.resolve({ ok: true, json: () => Promise.resolve(ftsFeed()) } as unknown as Response);
     }

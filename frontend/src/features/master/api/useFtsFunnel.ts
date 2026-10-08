@@ -115,7 +115,10 @@ export function useFtsFunnel(
     tech: { wanted: universe, resolved: matched, loading: q.isFetching },
     loading: q.isPending,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
-    basket: new Set(((portfolio.data ?? []) as Array<{ symbol: string }>).map((b) => b.symbol)),
+    // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،
+    // نه از فرضِ آرایه — آن ساختار { status, decisions, counts, limits } است.
+    basket: new Set(((portfolio.data as { decisions?: Array<{ symbol: string }> } | undefined)
+      ?.decisions ?? []).map((d) => d.symbol)),
     quickFilters,
     opts,
     request,

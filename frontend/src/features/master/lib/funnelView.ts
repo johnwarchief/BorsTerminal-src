@@ -15,7 +15,7 @@ import type {
 } from './ftsFunnel';
 
 export type ApiWhy = { code?: string; text?: string; stage?: string; seq?: number;
-  filter_id?: string; status?: StageStatus; reason_code?: string; human_reason?: string;
+  label?: string; filter_id?: string; status?: StageStatus; reason_code?: string; human_reason?: string;
   input_count?: number | null; output_count?: number | null; source?: string;
   source_ref?: string; formula_version?: string; parameter_set?: Record<string, unknown> };
 

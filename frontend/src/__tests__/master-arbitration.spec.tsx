@@ -1,5 +1,6 @@
 // تست بازطراحی تب ایجنت ارشد (M-03): ماشین وتو، استپر ۴ گیتی، خلاصهٔ آفلاین، DCA و اکشن‌ها
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FUNNEL_FIXTURE } from './fixtures/funnelApi';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -167,6 +168,9 @@ beforeEach(() => {
   fetchMock.mockImplementation((url: string, opts?: { method?: string }) => {
     const u = String(url);
     const ok = (body: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as unknown as Response);
+    if (u.includes('/api/funnel')) {
+      return ok(FUNNEL_FIXTURE);
+    }
     if (u.startsWith('/api/fts/')) return ok(ftsFeed());
     if (u.startsWith('/api/selection/portfolio'))
       return ok({ status: 'success', decisions: [{ symbol: 'شپنا', status: 'accept', weight_eff_pct: 5, sector: 'فلزات اساسي' }], counts: {}, limits: {} });

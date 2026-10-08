@@ -174,15 +174,14 @@ function persist(s: SavedPrefs) {
 }
 
 
-function clampIndex(n: number, len: number): number {
-  return Math.max(0, Math.min(len - 1, Math.round(n)));
-}
-
 function moved<T>(list: T[], from: number, to: number): T[] {
   if (from === to || from < 0 || from >= list.length) return list;
   const out = list.slice();
   const [x] = out.splice(from, 1);
-  out.splice(clampIndex(to, out.length), 0, x);
+  // مقصد رویِ آرایۀ *بدونِ* عنصرِ جابه‌جاشده حساب می‌شود؛ به‌همین سبب
+  // «برَدنِ اولی به آخر» با to = len-1 درست درمی‌آید (کُشتنِ یک عنصر، جا را
+  // یک‌دانه جلو می‌آورد).
+  out.splice(Math.max(0, Math.min(to, out.length)), 0, x);
   return out;
 }
 

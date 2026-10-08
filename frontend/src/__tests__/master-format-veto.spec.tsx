@@ -1,5 +1,6 @@
 // تست M-05: فرمت اعداد، وتوی سخت‌گیرانه (بدون بازتوزیع وزن)، سرمایهٔ فرضی DCA، استپر متراکم ۴ گیتی
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FUNNEL_FIXTURE } from './fixtures/funnelApi';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -139,6 +140,9 @@ beforeEach(() => {
   fetchMock.mockImplementation((url: string) => {
     const u = String(url);
     const ok = (body: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as unknown as Response);
+    if (u.includes('/api/funnel')) {
+      return ok(FUNNEL_FIXTURE);
+    }
     if (u.startsWith('/api/fts/')) return ok(ftsFeed());
     if (u.startsWith('/api/selection/portfolio')) return ok({ status: 'success', decisions: [], counts: {}, limits: {} });
     if (u.startsWith('/api/market')) return ok({ status: 'ok', count: 0, data: [] });

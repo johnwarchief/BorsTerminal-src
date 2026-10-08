@@ -447,7 +447,8 @@ function StageCard({
             </thead>
             <tbody>
               {rows.map((r) => (
-                <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark} onPick={onPick} />
+                <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
+                          stageKey={stage.key} onPick={onPick} />
               ))}
             </tbody>
           </table>
@@ -484,6 +485,7 @@ function StageCard({
                   entry={r}
                   cols={cols}
                   showMark={stage.key === 'handover' ? 'handover' : 'fund'}
+                  stageKey={stage.key}
                   onPick={onPick}
                 />
               ))}
@@ -499,16 +501,21 @@ function StageRow({
   entry,
   cols,
   showMark,
+  stageKey,
   onPick,
 }: {
   entry: FunnelEntry;
   cols: ColKey[];
   showMark: 'tech' | 'fund' | 'handover' | null;
+  /** دلیلِ هر ردیف از همان گامی است که کارت نمایشش می‌دهد — درِ «تابلوخوانی»
+   *  هم باید نوشته باشد کدام فیلتر ردش کرد؛ پیشِ این showMark آن را null می‌گذاشت
+   *  و ستونِ دلیل درِ آن گام همیشه «—» می‌ماند. */
+  stageKey: FunnelStageKey;
   onPick: (s: string) => void;
 }) {
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
-  const mark = showMark ? entry.status[key] : null;
-  const why = showMark ? entry.why[key] : null;
+  const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
+  const why = entry.why[stageKey] || null;
   // وتوی مجمع فقط درِ مرحلۀ «تحویل» نماد را بیرون می‌اندازد، ولی برچسبش در
   // همهٔ مرحله‌ها می‌نشیند: وگرنه کاربر می‌بیند نمادی که درِ بنیادی قبول شده
   // در مرحلۀ آخر غیب شده و هیچ دلیلی برایش نوشته نیست.
