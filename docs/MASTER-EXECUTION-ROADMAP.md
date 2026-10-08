@@ -2450,6 +2450,10 @@ on Android (§9); owner questions Q-1..Q-5.
 
 ## 15.5 Next item selected
 
+* superseded by §15.17 (2026-10-09): U-6 and the Custom builder are done, the funnel consumes
+the canonical engine, and the next cut is the AssemblyEvent unit in
+`docs/ASSEMBLY-EVENT-PLAN-1405-07-17.md`. The text below is kept as written then.*
+
 **FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
 already-picked filters, display-only until the engine consumes the order), then replace the
 per-symbol technical enrichment of the top-50
@@ -2462,7 +2466,7 @@ is `ACCEPTED` (`api/execution.py` sits uncommitted in this worktree); S-4 stays
 canonical FTS signal rather than judge again.
 
 
-## 15.6 WS-7 — دو جامعه، واژگانِ غربالگری، walkِ واقعیِ واچ‌لیست (۱۴۰۵-۰۷-۱۷)
+## 15.17 WS-7 — دو جامعه، واژگانِ غربالگری، walkِ واقعیِ واچ‌لیست (۱۴۰۵-۰۷-۱۷)
 
  پنج کار درِ این دور نشست (branch `funnel-api-wip`، پنج کامیت):
 
