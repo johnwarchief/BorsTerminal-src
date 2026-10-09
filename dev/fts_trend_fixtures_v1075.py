@@ -140,5 +140,29 @@ ck(o2["trend"]["W"]["trend"] == "up", "اصلاحِ روزانه هفتگیِ ص
 ck(o2["trend"]["D"]["trend"] == "down", "روزانۀ نزولیِ تازه خوانده می‌شود", str(o2["trend"]["D"]))
 ck(mx(o2)["setup"] == "FIB_CHOCH_STEP_ENTRY", "صعودی+نزولی ⇒ فیبو/CHoCH (عینِ چارت ص ۲)", str(mx(o2)))
 
+# ── ) تأییدِ موقعیتِ قیمت: سقفِ تازه ⇒ up، حتی اگر دو پیوتِ آخر LH/LL باشند ──
+# ریشۀِ ایراد: فنوال/فولادِ هفتگی رویِ دو پیوتِ کهنه «down» می‌گرفتند در حالی کهِ
+# قیمت در سقفِ تاریخی بسته شده بود. قاعدۀِ درست: اگر بستۀِ اخیر از هر دو سقفِ
+# پیوتِ پیشین بالاتر باشد، ساختارِ نزولی شکسته شده ⇒ up (و زیرِ هر دو کف ⇒ down).
+def _piv_series(last_close, n=14):
+    return [{"time": (dt.date(2024, 1, 1) + dt.timedelta(days=i)).isoformat(),
+             "open": 0, "high": last_close, "low": 0, "close": last_close if i == n - 1 else 90}
+            for i in range(n)]
+
+SWINGS_LH_LL = [  # دو سقفِ پایین‌تر و دو کفِ پایین‌تر ⇒ محلی = down
+    {"idx": 2, "price": 100.0, "kind": "high", "time": "2024-01-03"},
+    {"idx": 5, "price": 80.0, "kind": "low", "time": "2024-01-06"},
+    {"idx": 8, "price": 95.0, "kind": "high", "time": "2024-01-09"},
+    {"idx": 11, "price": 78.0, "kind": "low", "time": "2024-01-12"},
+]
+d_up = CH._fts_classify_trend(SWINGS_LH_LL, series=_piv_series(105.0))
+ck(d_up["trend"] == "up", "قیمت بالایِ هر دو سقفِ اخیر ⇒ up (شکستِ ساختارِ نزولی)", str(d_up))
+ck(d_up.get("price_confirm") == "new-high-above-recent-pivots", "علتِ up در فیلدِ price_confirm ثبت شد", str(d_up.get("price_confirm")))
+d_dn = CH._fts_classify_trend(SWINGS_LH_LL, series=_piv_series(70.0))
+ck(d_dn["trend"] == "down", "قیمت زیرِ هر دو کفِ اخیر ⇒ down (تأییدِ نزولی)", str(d_dn))
+d_mid = CH._fts_classify_trend(SWINGS_LH_LL, series=_piv_series(90.0))
+ck(d_mid["trend"] == "down", "قیمتِ میانی بدونِ شکست ⇒ همان LH/LL ⇒ down (تستِ کنترل)", str(d_mid))
+
+
 print(f"\nfts_trend_fixtures_v1075: {PASSED} passed / {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

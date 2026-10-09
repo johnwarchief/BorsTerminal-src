@@ -1362,7 +1362,7 @@ _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساو�
 # شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
 # (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
 # یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
-FTS_TECH_RULESET_VERSION = "2"   # «۲»: jet کم‌سابقه⇒null + آستانۀ ۶۰ کندل (P0-2)
+FTS_TECH_RULESET_VERSION = "3"   # «۳»: تأییدِ موقعیتِ قیمت (شکستِ سقف/کفِ آخر بر شمارشِ دو پیوتِ کهنه ترجیح می‌یابد)
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
@@ -1569,13 +1569,37 @@ def _fts_classify_trend(swings, tol=_FTS_EQUAL_TOL, series=None,
                "last_low_time": lows[-1].get("time"), "prev_low_time": lows[-2].get("time"),
                "stale_bars": None, "window": None}
 
+        # تأییدِ موقعیتِ قیمت رویِ ساختار: نمی‌شود در «سقفِ تازه» نزولی بود.
+        # اگر بستۀِ اخیر از هر دو سقفِ پیوتِ اخیر (ماکسِ h1,h2) بالاتر باشد،
+        # ساختارِ نزولی شکسته شده و جهت صعودی است؛ و برعکس زیرِ هر دو کفِ اخیر ⇒
+        # نزولی. بی‌این، فنوال/فولادِ هفتگی رویِ دو پیوتِ کهنه «down» می‌گرفتند
+        # در حالی کهِ قیمت در سقفِ تاریخی بود (دروازۀ قیف را می‌بست). آستانه
+        # «بالاتر/پایین‌تر از هر دو» است، نه یکِ پیوت، تا پولبکِ ۰٫۵٪ درِ روندِ
+        # نزولیِ واقعی اشتباهاً جهت عوض نکند. `piv["trend"]` خام می‌ماند (نسخۀِ
+        # ممیزیِ «pivots» باید رأیِ خالصِ پیوت باشد)؛ اعمال در وقتِ بازگشت.
+        if series:
+            last_close = float(series[-1].get("close") or 0)
+            if last_close > max(h1, h2) * (1 + tol):
+                piv["price_confirm"] = "new-high-above-recent-pivots"
+            elif last_close > 0 and last_close < min(l1, l2) * (1 - tol):
+                piv["price_confirm"] = "new-low-below-recent-pivots"
+
+    def _with_price_confirm(p):
+        # فقط رأیِ نهایی را عوض می‌کند؛ نسخهٔ «pivots» خام می‌ماند.
+        pc = p.get("price_confirm")
+        if not pc:
+            return p
+        q = dict(p)
+        q["trend"] = "up" if pc == "new-high-above-recent-pivots" else "down"
+        return q
+
     if series is None:
         return piv if piv is not None else base
     n = len(series)
     newest = max((s["idx"] for s in swings), default=-1)
     gap = n - 1 - newest
     if piv is not None and gap <= stale_bars:
-        return piv
+        return _with_price_confirm(piv)
     win = _fts_recent_window_trend(series)
     if win is None:
         return piv if piv is not None else base
