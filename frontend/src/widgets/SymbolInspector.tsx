@@ -34,6 +34,8 @@ import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
+import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
 import { stageProgressFor } from '@features/master/lib/funnelView';
 
 const ACTION_FA = {
@@ -210,7 +212,7 @@ export function SymbolInspector() {
    *  پیشِ این `symbolStageProgress` قواعدِ چهار در را رویِ تک‌ناماد درِ مرورگر
    *  دوباره اجرا می‌کرد (داورِ دوم). حالا وضعیت‌ها خوانده می‌شوند؛ اگر نماد درِ
    *  پاسخ نبود، هر چهار گام unknown است، نه رد. */
-  const { funnel } = useFtsFunnel('custom');
+  const { funnel, request: funnelRequest } = useFtsFunnel('custom');
   // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
   // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
   const cand = useMemo(() => {
@@ -304,6 +306,9 @@ export function SymbolInspector() {
   };
   // رویدادها از همان تقویمِ خودِ بک‌اند (`/api/calendar/<symbol>`) خوانده می‌شوند
   // با همان کشِ شش‌ساعته‌اش — نه از یک منبعِ دومِ اختراعیِ درِ فرانت.
+  // ردپایِ فیلتر‌به‌فیلتر از همان درخواستِ جدولِ غربالگری — تا سایدبار و جدول
+  // یک حکم داشته باشند، نه دو تا.
+  const trace = useFunnelTrace(symbol, funnelRequest);
   const calEvents = useCalendarEvents(symbol);
   const events = useMemo(() => (calEvents.data?.events ?? []).slice(0, 3), [calEvents.data]);
 
@@ -697,6 +702,27 @@ export function SymbolInspector() {
 
           {/* جریان حجم درون‌روز — کارتِ خودکفا (عنوان و محورِ خودش را دارد) */}
           <VolumeFlowMini symbol={symbol} compact />
+
+          {/* ردپا — همان `timeline`ِ موتور برایِ همین نماد: کدام فیلتر، با چه
+              دلیلی، با چه ورودی/خروجی‌ای رد یا قبولش کرد. بی‌این، سایدبار فقط
+              «ایستاده در مرحلۀ X» را می‌گفت. */}
+          <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1.5"
+               data-testid="inspector-trace">
+            <div className="mb-1 text-[10px] font-bold text-text-secondary">ردپایِ غربالگری</div>
+            {trace.isError ? (
+              <span className="text-[10px] text-accent-red" data-testid="funnel-trace-error">
+                ردپا نمی‌رسد
+              </span>
+            ) : trace.isPending ? (
+              <span className="text-[10px] text-text-muted" data-testid="funnel-trace-loading">
+                در حالِ خواندنِ ردپا
+              </span>
+            ) : (
+              <FunnelTraceList steps={trace.data?.timeline ?? []}
+                               rulesetVersion={trace.data?.ruleset_version ?? null}
+                               asOf={trace.data?.as_of ?? null} />
+            )}
+          </div>
 
           <div className="flex flex-col gap-0.5">
               <StatusLight

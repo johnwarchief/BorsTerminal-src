@@ -153,14 +153,22 @@ def get_registry():
 
 @router.get("/api/funnel/trace")
 def get_trace(symbol: str, preset: str = "trend", chain: str = "",
-              fund_mode: str = "standard"):
+              fund_mode: str = "standard", exceptions: str = ""):
     """خطِ زمانِ یک نماد: Universe ← تابلو ← هر فیلتر ← تکنیکال ← بنیادی ← تحویل.
 
     چرا جدا: `timeline` برایِ تک‌تکِ ۵٫۸ هزار نماد درِ پاسخِ فهرست می‌آمد و نیمی
     از حجمِ پاسخ می‌شد، در حالی که یک «چرا؟» درِ بازرِس فقط یک نماد را می‌خواهد.
     چیزی حذف نشده — همان داده، درِ درخواستِ خودش، از همان کشِ هشت‌ثانیه‌ای.
     """
-    payload = _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
+    # همان پارامترهایی که جدولِ غربالگری می‌فرستد — وگرنه بازرِس و جدول دو
+    # حکمِ متفاوت برایِ یک نماد نشان می‌دهند (کلیدِ کشِ `_run` هم همین است، پس
+    # درخواستِ ردپا معمولاً به همان پاسخِ آماده می‌خورد و اجرایِ دوم نیست).
+    try:
+        exc = json.loads(exceptions) if exceptions else {}
+        exc = exc if isinstance(exc, dict) else {}
+    except ValueError:
+        exc = {}
+    payload = _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, exc,
                    full=True)
     tl = (payload.get("timeline") or {}).get(symbol)
     cell = (payload.get("status_matrix") or {}).get(symbol)
