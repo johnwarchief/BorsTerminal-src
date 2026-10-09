@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { FTS_SIGNAL_LABEL } from '@shared/lib/ftsSignals';
 
 const flag = z.boolean().nullish();
 
@@ -62,12 +63,12 @@ export type FtsSignalTag = { label: string; tone: 'green' | 'red' | 'blue' | 'gr
  *  جایِ ایستادن را می‌گوید، نه اینکه بخر (سنجش: داخلِ باند edge ندارد). */
 export function ftsSignalTags(r: ScreenerRow): FtsSignalTag[] {
   const t: FtsSignalTag[] = [];
-  if (r.tech_hourglass_active) t.push({ label: 'ساعت شنی (۲x-۴x)', tone: 'green', role: 'signal' });
-  if (r.tech_jet) t.push({ label: 'جت', tone: 'green', role: 'signal' });
-  if (r.tech_choch_bull) t.push({ label: 'CHoCH صعودی', tone: 'green', role: 'signal' });
-  if (r.tech_choch_bear) t.push({ label: 'CHoCH نزولی', tone: 'red', role: 'signal' });
-  if (r.tech_double_bottom) t.push({ label: 'کف دوقلو', tone: 'green', role: 'signal' });
-  if (r.tech_range_break) t.push({ label: 'خروج از انباشت', tone: 'green', role: 'signal' });
+  if (r.tech_hourglass_active) t.push({ label: FTS_SIGNAL_LABEL.tech_hourglass_active, tone: 'green', role: 'signal' });
+  if (r.tech_jet) t.push({ label: FTS_SIGNAL_LABEL.tech_jet, tone: 'green', role: 'signal' });
+  if (r.tech_choch_bull) t.push({ label: FTS_SIGNAL_LABEL.tech_choch_bull, tone: 'green', role: 'signal' });
+  if (r.tech_choch_bear) t.push({ label: FTS_SIGNAL_LABEL.tech_choch_bear, tone: 'red', role: 'signal' });
+  if (r.tech_double_bottom) t.push({ label: FTS_SIGNAL_LABEL.tech_double_bottom, tone: 'green', role: 'signal' });
+  if (r.tech_range_break) t.push({ label: FTS_SIGNAL_LABEL.tech_range_break, tone: 'green', role: 'signal' });
   if (r.tech_fib_zone) t.push({ label: `موقعیت فیبو ${r.tech_fib_zone}`, tone: 'gray', role: 'context' });
   if (r.tech_matrix_decision === 'REJECT') t.push({ label: 'وتوی هفتگی', tone: 'red', role: 'signal' });
   return t;

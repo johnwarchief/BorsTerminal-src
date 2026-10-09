@@ -488,9 +488,23 @@ _LABEL_OF = {"f_clock": "ساعت", "f_susp": "مشکوک", "f_jet": "جت", "f_
 def _display(r: dict, *, patterns: list[str] | None = None,
              status: dict[str, str] | None = None,
              why: dict[str, list[dict]] | None = None,
-             chain: tuple[str, ...] = ()) -> dict:
-    """یک ردیفِ آمادهِ رندر برایِ جدول — با traceِ همان نماد."""
+             chain: tuple[str, ...] = (),
+             tech: dict | None = None) -> dict:
+    """یک ردیفِ آمادهِ رندر برایِ جدول — با traceِ همان نماد.
+
+    `tech` همان گامِ داوریِ تکنیکال است. بی‌آن، پنج ستونِ جدولِ تکنیکال از
+    `tech_trend_w/d`ِ ردیفِ تابلو خوانده می‌شدند که فقط درِ مسیرِ اسکرینر پر
+    می‌شوند؛ درِ غربالگری پس «هفتگی/روزانه/شاخه/شواهد/امتیاز» برایِ همهٔ ردیف‌ها
+    '—' می‌ماند (سنجشِ زنده: ۵ ستونِ خالی در ۱۹ ردیفِ دیدنی) در حالی که همان
+    داوری درِ متنِ «دلیل» نوشته شده بود. داوریِ دوم اینجا ساخته نمی‌شود؛ فقط
+    خروجیِ همان گام به ستون‌هایش می‌رسد."""
     sym = str(r.get("symbol") or "")
+    tv = tech or {}
+    w = r.get("tech_trend_w") or tv.get("weekly")
+    d = r.get("tech_trend_d") or tv.get("daily")
+    ev = [k for k in ("tech_jet", "tech_choch_bull", "tech_double_bottom",
+                      "tech_range_break") if _tri(r.get(k)) is True] or (tv.get("evidence") or [])
+    pts = r.get("tech_points")
     return {
         "symbol": sym,
         "name": r.get("name") or "",
@@ -506,13 +520,12 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "chain": list(chain),
         "score": _num(r.get("score")),
         "primary_score": _num(r.get("primary_score")),
-        "weekly": r.get("tech_trend_w"), "daily": r.get("tech_trend_d"),
-        "branch": BRANCH_OF.get(str(r.get("tech_trend_d") or ""), None),
-        "matrix": r.get("tech_matrix_decision"),
-        "tech_status": r.get("tech_status"),
-        "tech_points": _num(r.get("tech_points")),
-        "evidence": [k for k in ("tech_jet", "tech_choch_bull", "tech_double_bottom",
-                                 "tech_range_break") if _tri(r.get(k)) is True],
+        "weekly": w, "daily": d,
+        "branch": BRANCH_OF.get(str(d or ""), None) or tv.get("branch"),
+        "matrix": r.get("tech_matrix_decision") or tv.get("matrix"),
+        "tech_status": r.get("tech_status") or tv.get("status"),
+        "tech_points": _num(pts) if pts is not None else _num(tv.get("points")),
+        "evidence": ev,
         "fib_zone": r.get("tech_fib_zone"),
         "hourglass": _tri(r.get("tech_hourglass_active")),
         "inds": {k: _tri(r.get(f"{k}_pass")) for k in (*BLOCKERS, *SUPPORTING)},
@@ -733,7 +746,7 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
                 r, patterns=None,
                 status={stage_key: st[stage_key]},
                 why={stage_key: [dict(i) for i in items[stage_key]]},
-                chain=chain))
+                chain=chain, tech=t))
         step_rows = [{"stage": "universe", "status": PASS,
                       "reason_code": "IN_SCREENING_UNIVERSE",
                       "human_reason": "وضعیتِ رسمیِ نماد اجازهٔ غربال می‌دهد؛ "

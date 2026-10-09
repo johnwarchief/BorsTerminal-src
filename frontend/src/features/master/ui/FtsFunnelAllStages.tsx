@@ -202,7 +202,11 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
  */
 const COL_W: Record<ColKey, number> = {
   symbol: 16, last: 11, chg: 10, vol: 9, pattern: 20,
-  weekly: 11, daily: 11, branch: 14, setup: 14, techPoints: 9, mark: 11,
+  // فقط «شواهد» و دو ستونِ کوتاه عوض شدند (سنجشِ زنده ws10): با برچسبِ فارسی
+  // ۱۶۸ پیکسل می‌خواست و ۱۵۰ می‌گرفت؛ «امتیاز» و «علامت» کوتاه‌ترین ستون‌های
+  // همین جدول‌اند. «دلیل» عمداً دست‌نخورده است — متن‌های ۳۳۵ و ۸۳۶ پیکسلی با
+  // هیچ تقسیمی رویِ یک خط جا نمی‌شوند و شکلشان رأیِ مالک را می‌خواهد.
+  weekly: 11, daily: 11, branch: 14, setup: 17, techPoints: 6, mark: 9,
   ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18,
   why: 26,
 };

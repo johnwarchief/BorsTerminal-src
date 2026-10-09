@@ -4,6 +4,7 @@
 // قاعده‌ای ندارد: فقط نام‌هایِ پاسخِ `/api/funnel` را به همان چیزی تبدیل می‌کند
 // که جدول می‌خواند. جایی که پاسخ چیزی ندارد، `null` می‌ماند — نه حدس.
 import type { MarketRow } from '@shared/types/marketRow';
+import { ftsSignalListText } from '@shared/lib/ftsSignals';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type {
   Candidate,
@@ -162,7 +163,7 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     score: r?.score ?? null,
     trendW: r?.weekly ?? null, trendD: r?.daily ?? null,
     dailyStrategy: r?.branch ?? null,
-    setups: (r?.evidence ?? []).join(' + '),
+    setups: ftsSignalListText(r?.evidence ?? []),
     technicalPoints: r?.tech_points ?? null,
     inds,
     techSource: r && (r.matrix || r.weekly) ? 'screen' : null,
