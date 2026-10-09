@@ -37,6 +37,25 @@ The goal is not merely to have an FTS tab that exists. It should become the core
 
 Do not spend major effort polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity are still uncertain.
 
+## Current owner priority override — active execution order
+
+The numbered sections below describe the product architecture; the following order is the **current execution priority** and supersedes the older high-level ordering whenever they differ:
+
+1. Finish and verify Android release blockers.
+2. **FTS Funnel / Strategy FTS Decision Workspace — CURRENT ACTIVE PRIORITY.**
+3. سرخطی / execution timing and queue workspace.
+4. ربات معامله‌گر — architecture, sandbox and paper trading first; live remains gated.
+5. FTS chart intelligence — one analytical feature at a time, each independently researched and accepted.
+6. Global UI/UX redesign and onboarding, with disproportionate investment in Strategy FTS.
+7. Third chart engine integration: `trading-vue-js` through an isolated renderer adapter.
+8. Installer / updater / runtime modernization and migration hardening.
+9. Master / Portfolio refinement.
+10. Local ML Engine.
+11. Advanced automation / research.
+
+Critical reliability, data-integrity, security and broken-release blockers may interrupt this sequence.
+
+
 ---
 
 
@@ -1154,7 +1173,7 @@ Phase 1 is complete only when:
 
 # 2. P0 — سرخطی / execution timing and queue workspace
 
-After market parity, implement the real product workflow for سرخطی.
+After the current FTS Funnel milestone is accepted, resume the سرخطی workstream (with market parity foundations continuously enforced).
 
 ## 2.1 Product definition
 
@@ -1229,7 +1248,7 @@ Until a real broker integration is validated:
 
 # 3. P0 — ربات معامله‌گر / automated trading
 
-Only after market and timing foundations are trustworthy.
+Execute this workstream after the current FTS Funnel milestone and the required سرخطی foundations are accepted. The bot must consume canonical FTS/Market decisions rather than create a second judge.
 
 This is a separate system from the analytical FTS engine.
 
@@ -1278,6 +1297,167 @@ No live trading until paper/simulation behavior is verified and broker integrati
 
 # 4. P0/P1 — FTS Strategy chart intelligence
 
+
+## 4.0 Current P0 focus — FTS Funnel architecture and Decision Workspace
+
+**This is the next major product milestone. Implement this before starting new FTS chart-analysis modules.**
+
+The Funnel is not merely four UI pages. It is a configurable, explainable, canonical decision workspace.
+
+### 4.0.1 Canonical architecture
+
+Use:
+
+```text
+Full Universe
+    ↓
+Funnel Preset / Custom Filter Chain
+    ↓
+Stage-by-stage intersection
+    ↓
+Technical Structure / Trend
+    ↓
+Fundamental Auto/Smart Gate
+    ↓
+Decision Trace
+    ↓
+Strategy FTS Workspace
+    ↓
+Chart / downstream engines
+```
+
+There must be **one canonical backend decision**. Frontend components render that decision and its evidence; they must not become a second FTS judge.
+
+### 4.0.2 Custom Funnel Builder
+
+The user must be able to create a **Custom Funnel** from the complete canonical filter registry.
+
+The registry must be generated/maintained from the real `docs/*.txt` filter sources and must include every supported canonical filter, including the smart-money / code-to-code filters if their TXT sources are present.
+
+Do not maintain an incomplete hand-written five-filter list when the source registry contains more filters.
+
+The user can:
+
+- Add a filter
+- Remove a filter
+- Reorder filters
+- Save a named preset
+- Reset to canonical/default preset
+- See the active filter chain
+- See the remaining symbol count after every step
+- See why a symbol was removed at each step
+
+### 4.0.3 Sequential intersection semantics
+
+For a selected chain:
+
+```text
+F1 → F2 → F3 → ... → Fn
+```
+
+each filter operates on the survivors of the previous filter:
+
+```text
+Universe
+∩ F1
+∩ F2
+∩ F3
+...
+∩ Fn
+```
+
+This is **intersection (اشتراک) by default** and the order is meaningful for presentation, diagnostics and stage counts.
+
+Do not silently turn selected filters into OR logic.
+
+Every stage must expose:
+
+```text
+input_count
+matched_count
+removed_count
+filter_id
+parameter_set
+source_ref
+timestamp
+```
+
+The full analytical universe remains available; large result sets must use virtualization rather than hidden hard caps.
+
+### 4.0.4 Built-in strategy modes
+
+Provide verified presets for:
+
+- **نوسان‌گیر**
+- **روندگیر**
+- **ساعت شنی**
+- **Custom**
+
+The current repository already contains preset concepts for these modes. Before treating their exact filter composition as canonical, verify each composition against the FTS chart/PDF/source material.
+
+Do not invent a filter relationship merely because the name suggests one.
+
+For **ساعت شنی**, specifically verify the existing references/implementation (including any MA52/RSI5 weekly interpretation) before promoting it to a canonical rule. If evidence is insufficient, keep the preset visible as research/unverified rather than silently inventing semantics.
+
+### 4.0.5 Fundamental Auto / Smart system
+
+The Funnel must have an **Auto/Smart Fundamental** mode that evaluates the five canonical fundamental indicators.
+
+The minimum acceptance rule is:
+
+**The first three indicators are mandatory gates.**
+
+Therefore:
+
+- I1 — Sales/revenue growth must pass the canonical floor.
+- I2 — Three-year EPS condition must pass its canonical rule.
+- I3 — Gross-profit margin must pass the canonical floor.
+- I4 and I5 are additional evidence/scoring context and must not compensate for failure of any of I1–I3.
+- Missing data in any mandatory first-three indicator must not be silently treated as a pass.
+
+The exact formulas and thresholds still come from the canonical FTS sources/OWNER_RULINGS; this section defines the gate structure, not new formulas.
+
+The UI should clearly distinguish:
+
+```text
+AUTO / SMART
+→ mandatory blockers
+→ supporting indicators
+→ final fundamental decision
+```
+
+### 4.0.6 Funnel + process visualization
+
+For every candidate, the user must be able to see:
+
+```text
+Universe
+→ Selected filter chain
+→ Technical / Trend gate
+→ Daily branch
+→ Fundamental Auto/Smart
+→ Final FTS decision
+```
+
+Every accept/reject/pending/unavailable state must have a reason and provenance.
+
+### 4.0.7 Funnel acceptance
+
+Do not consider the Funnel complete until:
+
+- Custom filter chain works on the full universe.
+- Selected filters are applied sequentially by intersection.
+- Every filter is sourced from the canonical registry.
+- Built-in Swing/Trend/Hourglass modes are verified.
+- Fundamental Auto/Smart requires all first three indicators to pass.
+- Stage counts are reproducible.
+- Every candidate has reason codes and provenance.
+- No hidden 60/120-symbol cap remains.
+- Results are browser-validated.
+- Relevant filter results are checked against TSE/TSETMC in تابلوخوانی.
+- A saved custom preset can be reproduced exactly from its parameter set/version.
+
+
 ## The most important long-term workstream
 
 This phase receives **very high investment**.
@@ -1298,20 +1478,58 @@ A feature that is not accepted does not become the foundation for the next featu
 
 # 5. FTS reference hierarchy
 
-For every FTS analytical feature, use this research order.
+For every FTS analytical feature, rule change, parameter change, or semantic decision, use this mandatory hierarchy.
 
-### Primary sources
+### L0 — Owner rulings
 
-- docs/FTS_SPEC.md
-- docs/fts-notes/OWNER_RULINGS.md
-- docs/جزوه FTS.pdf
+- `docs/fts-notes/OWNER_RULINGS.md`
+
+This is the highest-priority source for explicit owner decisions and for resolving conflicts.
+
+### L1 — FTS methodology sources
+
+- `docs/جزوه FTS.pdf`
+- Relevant FTS/chart PDFs
+- Faithful extracted/transcribed FTS source text
+
+These define the underlying methodology and process.
+
+### L2 — Derived implementation specification
+
+- `docs/FTS_SPEC.md`
+
+This is a derived implementation specification. It must follow L0/L1 and must be corrected when it drifts from them. It must never override L0/L1.
+
+### L3 — Parity / audit / research evidence
+
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Other audit/research documents
+
+These provide evidence, implementation context, and reference behavior. They cannot silently redefine an FTS rule.
+
+### L4 — Code
+
+The code is the executor of the rules, never the source-of-truth for the rules.
+
+### Conflict protocol
+
+For every FTS rule or parameter change:
+
+1. Read L0/L1 first.
+2. Check L2/L3 for drift or contradiction.
+3. If L0/L1 resolve the conflict, update derived documents and code to match.
+4. If L0/L1 are ambiguous or conflict, mark the item `BLOCKED-OWNER`.
+5. Never use existing code to justify a rule that contradicts a higher-level source.
 
 ### Technical/chart sources
 
-- docs/CANDLE-CONTRACT.md
-- docs/CHART-FOUR-PAGES-PARITY.md
-- docs/CHART-PARITY-REFERENCE.md
-- Relevant technical/chart PDFs in docs/
+The following remain important technical references but do not outrank the FTS hierarchy:
+
+- `docs/CANDLE-CONTRACT.md`
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Relevant technical/chart PDFs in `docs/`
 
 ### External research
 
@@ -2071,17 +2289,33 @@ Ambiguity must be documented and resolved through evidence.
 
 # 15. Master priority order
 
-The intended high-level sequence is:
+The **current execution order** is:
 
-1. TradersArena parity
-2. سرخطی / execution timing
-3. ربات معامله‌گر
-4. FTS chart intelligence — one feature at a time
-5. Full Strategy FTS integration
-6. Advanced UI/UX
-7. Master / Portfolio refinement
-8. Local ML Engine
-9. Advanced automation / research
+1. Android release completion / verification blockers
+2. **FTS Funnel + Strategy FTS Decision Workspace — current highest active priority**
+3. سرخطی / execution timing and queue workspace
+4. ربات معامله‌گر / automated trading
+5. FTS chart intelligence — one feature at a time, sequentially accepted
+6. Global UI/UX and onboarding
+7. Third chart engine — `trading-vue-js` via isolated adapter
+8. Installer / updater / runtime modernization
+9. Master / Portfolio refinement
+10. Local ML Engine
+11. Advanced automation / research
+
+### Funnel priority rule
+
+Until the Funnel is accepted, do not start unrelated new FTS chart-analysis modules.
+
+The Funnel milestone specifically includes:
+
+- Full-universe custom filter-chain builder
+- Sequential filter intersection
+- Built-in **نوسان‌گیر / روندگیر / ساعت شنی** modes
+- Parameterized custom presets
+- Fundamental **Auto/Smart** mode with the first three fundamental indicators as mandatory acceptance gates
+- Stage counts, reason codes, provenance and reproducibility
+- TSE/TSETMC validation in **تابلوخوانی**
 
 ### Important exception
 
@@ -2182,7 +2416,7 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | --- | --- | --- | --- |
 | S-1 | Reference repositories | `ACCEPTED` | Already in the repo: `docs/execution/SARKHATI-ARCHITECTURE.md` §۶ names `RezaMahdaviiDev/mofid`, `m-fazel/Sarkhati`, `Sir-Sorg/Stock-Headline-Script-Mofid`, `Mkhorasani99/sarkhat`; §۷ records the license verdict (two with no license, two GPL-3.0 ⇒ no code copied; their 50/100 ms claims are not accepted as facts) |
 | S-2 | Engine vs research | `ACCEPTED` | `execution_contract/service/timing/latency/mock` and the `dev/execution_*` guards match doc stages C/D/H/I/J/G; `git grep` across `api/` and `frontend/` is empty ⇒ no router, no UI |
-| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `IMPLEMENTING` | The doc lists stage K as the remaining broker-independent work |
+| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `DEFERRED` | Owner reprioritized execution: FTS Funnel is the active milestone and must be accepted before Sarkhati continues |
 | S-4 | Real-broker stages E/F/G-real/I-live/L | `BLOCKED-OWNER` | D8 (which Mofid platform: EasyTrader/MTS vs Online-Plus/Titan — two protocols, two adapters) and D1 (is a real-account PoC allowed) per §۹-ث. No endpoint, no credential, no order has ever been called |
 
 ## 15.10 FTS Funnel → Decision Workspace (owner mission 2026-10-08, audit stage)
@@ -2449,6 +2683,8 @@ on Android (§9); owner questions Q-1..Q-5.
 
 
 ## 15.5 Next item selected
+
+Current owner priority is **FTS Funnel / Strategy FTS Decision Workspace**. **S-3 Sarkhati is explicitly DEFERRED** until this milestone is accepted. The next implementation item is the Funnel milestone defined in §4.0: canonical full-universe filter registry, sequential intersection/custom presets, verified Swing/Trend/Hourglass modes, Fundamental Auto/Smart with mandatory first-three gates, decision trace, browser/TSE validation, and acceptance. No new Sarkhati implementation should overtake this milestone.
 
 * superseded by §15.17 (2026-10-09): U-6 and the Custom builder are done, the funnel consumes
 the canonical engine, and the next cut is the AssemblyEvent unit in
