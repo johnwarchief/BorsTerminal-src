@@ -15,7 +15,7 @@ import { Badge } from '@shared/components/ui/badge';
 type Dest = 'master' | 'technical' | 'fundamental' | 'strategy-tree' | 'market';
 
 const DESTS: { id: Dest; label: string }[] = [
-  { id: 'master', label: 'مستر FTS' },
+  { id: 'master', label: 'غربالگری FTS' },
   { id: 'technical', label: 'تکنیکال' },
   { id: 'fundamental', label: 'بنیادی' },
   { id: 'strategy-tree', label: 'درخت FTS' },
@@ -26,7 +26,7 @@ const PAGES: { path: string; label: string; hint: string }[] = [
   { path: '/market', label: 'تابلوخوانی / بازار', hint: 'تب' },
   { path: '/technical', label: 'تحلیل تکنیکال', hint: 'تب' },
   { path: '/fundamental', label: 'تحلیل بنیادی', hint: 'تب' },
-  { path: '/master', label: 'استراتژی FTS', hint: 'تب' },
+  { path: '/master', label: 'تابلوی غربالگری', hint: 'تب' },
   { path: '/strategy-tree', label: 'درخت استراتژی', hint: 'تب' },
   { path: '/portfolio', label: 'مدیریت پرتفوی', hint: 'تب' },
 ];

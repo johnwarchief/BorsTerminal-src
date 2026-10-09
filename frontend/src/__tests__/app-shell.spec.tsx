@@ -45,8 +45,13 @@ describe('AppShell smoke', () => {
     renderApp('/');
     await waitFor(() => {
       expect(screen.getByText('تابلوخوانی/بازار')).toBeInTheDocument();
-      expect(screen.getByText('استراتژی FTS')).toBeInTheDocument();
+      expect(screen.getByText('تابلوی غربالگری')).toBeInTheDocument();
     });
+    // رأیِ واژگان: یک مقصد، یک نام. «استراتژی FTS» و «مستر FTS» نام‌هایِ قدیمیِ
+    // همان /master بودند و با «غربالگری FTS» سه اسم برایِ یک تب می‌ساختند.
+    expect(screen.queryByText('استراتژی FTS')).not.toBeInTheDocument();
+    expect(screen.queryByText('مستر FTS')).not.toBeInTheDocument();
+    expect(screen.getByText('غربالگری FTS')).toBeInTheDocument();   // عنوانِ گروه
   });
 
   it('روت /master بدون نماد، قیفِ غربالگری را به‌جای پیامِ خالی نشان می دهد', async () => {

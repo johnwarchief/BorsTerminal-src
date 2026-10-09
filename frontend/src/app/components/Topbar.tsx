@@ -11,7 +11,7 @@ const TITLES: Record<string, string> = {
   '/technical': 'تحلیل تکنیکال',
   '/fundamental': 'تحلیل بنیادی',
   '/portfolio': 'مدیریت پرتفوی',
-  '/master': 'استراتژی FTS',
+  '/master': 'غربالگری FTS',
   '/strategy-tree': 'درخت استراتژی FTS',
 };
 

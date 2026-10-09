@@ -41,8 +41,11 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'غربالگری FTS',
     items: [
-      { to: '/master', icon: MasterIcon, label: 'استراتژی FTS', end: false },
-      { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی FTS', end: false },
+      // رأیِ واژگان: نامِ عمومیِ این تب «غربالگری FTS» است (قبلاً «استراتژی FTS»
+      // و درِ جایِ دیگر «مستر FTS» بود — سه نام برایِ یک مقصد). عنوانِ گروه هم
+      // همان است، پس آیتم با کارِ خودش صدا می‌زند تا دو خطِ هم‌نام نشیند.
+      { to: '/master', icon: MasterIcon, label: 'تابلوی غربالگری', end: false },
+      { to: '/strategy-tree', icon: TreeIcon, label: 'درخت استراتژی', end: false },
     ],
   },
   {
