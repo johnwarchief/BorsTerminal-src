@@ -41,7 +41,12 @@ WEIGHTS = {"structure": 1.3, "slope": 1.2, "ma": 1.0, "eff": 0.9}
 
 
 def load_candles(cur, symbol, as_of):
-    """OHLCV صعودی تا as_of (برشِ واقعیِ تاریخی؛ بی‌نشتِ آینده)."""
+    """OHLCV صعودی تا as_of (برشِ واقعیِ تاریخی؛ بی‌نشتِ آینده).
+
+    هشدار: این مسیر `price_history` خام را می‌دهد و تعدیلِ عملکردی را اعمال
+    نمی‌کند؛ برایِ سنجشِ هم‌مبنا باِ production از `load_candles_fts` استفاده کن.
+    این تابع فقط برایِ مواردِ آفلاین/فرضیِ نگه‌دارنده نگه داشته شده است.
+    """
     cur.execute("SELECT date,open,high,low,close FROM price_history "
                 "WHERE symbol=? AND date<=? ORDER BY date", (symbol, as_of))
     out = []
@@ -52,6 +57,24 @@ def load_candles(cur, symbol, as_of):
         except (TypeError, ValueError):
             continue
     return out
+
+
+def load_candles_fts(symbol, as_of=None):
+    """سریِ کندلِ تعدیل‌شده از همان مسیرِ production (`_fts_analysis_series`).
+
+    سنجشِ روند باید رویِ همان داده‌ای باشد کهِ production می‌بیند (تعدیلِ عملکردی،
+    لنگرِ CDN/بانکِ محلی). بی‌این، ابزارِ خامِ `price_history` شکافِ افزایشِ سرمایه
+    را ریزشِ واقعی می‌شمارد و مارون را «نزولی» می‌داد در حالی کهِ production «صعودی»
+    می‌گوید. برشِ as_of باِ همان `_candles_upto_asof`ِ موتور انجام می‌شود.
+    بازگشت: (candles, basis)؛ candles خالی اگر هیچ منبعی نبود.
+    """
+    try:
+        series, basis = CH._fts_analysis_series(symbol)
+    except Exception:
+        return [], "unavailable"
+    if as_of:
+        series = CH._candles_upto_asof(series, as_of)
+    return series, basis
 
 
 def atr_pct(candles, n=14):
@@ -211,7 +234,7 @@ def main():
         step = max(1, len(counts) // 40)
         picked = [counts[i][0] for i in range(0, len(counts), step)][: 48]
         for sym in picked:
-            latest = load_candles(cur, sym, "9999-12-31")
+            latest, _b = load_candles_fts(sym, None)
             if not latest:
                 continue
             last = latest[-1]["time"]
@@ -229,7 +252,7 @@ def main():
 
     rows = []
     for sym, as_of in pairs:
-        daily = load_candles(cur, sym, as_of)
+        daily, _b = load_candles_fts(sym, as_of)
         weekly = CH._fts_resample(daily, "W") if len(daily) >= 4 else []
         rows.append(classify_one(daily, "D", as_of, sym))
         rows.append(classify_one(weekly, "W", as_of, sym))

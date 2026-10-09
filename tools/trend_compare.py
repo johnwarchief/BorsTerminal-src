@@ -80,7 +80,7 @@ def main():
 
     rows = []
     for sym in candidates:
-        daily = tl.load_candles(cur, sym, a.as_of)
+        daily, basis = tl.load_candles_fts(sym, a.as_of)
         if not daily:
             continue
         weekly = CH._fts_resample(daily, "W") if len(daily) >= 4 else []
@@ -94,7 +94,7 @@ def main():
         nd = "range" if newD == "neutral" else newD
         nw = "range" if newW == "neutral" else newW
         rows.append({
-            "symbol": sym, "as_of": a.as_of, "basis": "raw-db-close(تعدیل=ذخیره‌شده)",
+            "symbol": sym, "as_of": a.as_of, "basis": f"fts-{basis}",
             "bars_d": len(daily), "bars_w": len(weekly),
             "old_daily": oD, "old_weekly": oW,
             "new_daily": nd, "new_weekly": nw,
