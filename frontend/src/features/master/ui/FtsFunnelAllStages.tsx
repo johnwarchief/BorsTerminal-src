@@ -206,9 +206,9 @@ const COL_W: Record<ColKey, number> = {
   // ۱۶۸ پیکسل می‌خواست و ۱۵۰ می‌گرفت؛ «امتیاز» و «علامت» کوتاه‌ترین ستون‌های
   // همین جدول‌اند. «دلیل» عمداً دست‌نخورده است — متن‌های ۳۳۵ و ۸۳۶ پیکسلی با
   // هیچ تقسیمی رویِ یک خط جا نمی‌شوند و شکلشان رأیِ مالک را می‌خواهد.
-  weekly: 11, daily: 11, branch: 14, setup: 17, techPoints: 6, mark: 9,
+  weekly: 11, daily: 11, branch: 19, setup: 17, techPoints: 6, mark: 11,
   ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18,
-  why: 26,
+  why: 22,
 };
 
 function ColGroup({ cols }: { cols: ColKey[] }) {

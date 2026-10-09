@@ -33,9 +33,14 @@ describe('چیدمان پاسخ‌گو — جدول بنیادی', () => {
     expect(panel?.className).toContain('max-w-full');
     const scroller = screen.getByTestId('fts-screen-scroll');
     expect(scroller.className).toContain('overflow-auto');
-    // جدول عرض کمینه دارد ولی درونِ اسکرولر می‌ماند
+    // جدول عرض کمینه دارد ولی درونِ اسکرولر می‌ماند. عددِ کمینه *قید* است، نه
+    // سلیقه: روبشِ زنده (ws10) دید درِ viewportِ ۱۳۶۶ با پنلِ نمادِ باز، ظرفِ
+    // جدول ۱۱۹۶ پیکسل است و `min-w-[1240px]` همان‌جا ۴۴ پیکسل را پشتِ لبه می‌برد
+    // (سرریزِ افقی). پس کمینه باید از تنگ‌ترین ظرفِ واقعی کمتر بماند.
     const table = container.querySelector('table');
-    expect(table?.className).toContain('min-w-[1240px]');
+    const minW = Number(/min-w-\[(\d+)px\]/.exec(String(table?.className))?.[1] ?? 0);
+    expect(minW).toBeGreaterThan(0);
+    expect(minW).toBeLessThanOrEqual(1196);
   });
 
   it('نوار جدول اسلات تنظیمات را می‌پذیرد (بدون عنوان بالای جدول)', () => {
