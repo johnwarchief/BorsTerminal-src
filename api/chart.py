@@ -1346,6 +1346,7 @@ PATTERNS_CACHE = {}
 _FTS_STALE_BARS = 8         # فاصلهٔ تازه‌ترین پیوتِ تأییدشده تا امروز که «ساختار کهنه» حساب می‌شود
 _FTS_STALE_WINDOW = 52      # بازهٔ سنجشِ مستقیمِ روند (همان ۵۲ دورهٔ MA52)
 _FTS_STALE_MIN_BARS = 12    # کمینهٔ کندل برای سنجشِ مستقیم؛ کمتر از آن رأی نمی‌دهیم
+_FTS_JET_MIN_BARS = 60      # کمینۀ تاریخچۀ جت: کمتر از «شصت نشستِ شناخته‌شده» ارزیابی ممکن نیست ⇒ null
 _FTS_STALE_MOVE_MIN = 0.05  # کمینهٔ جابه‌جاییِ کلِ بازه برای اعلامِ جهت
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
@@ -1826,10 +1827,15 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, 
     entry_window_days, days_remaining, tier, reason
     """
     n = len(candles)
-    if n < 2:
+    # رأیِ مالک: «نبودِ دادهٔ کافی برایِ ارزیابی ⇒ null؛ منفی فقط وقتی که ارزیابی
+    # واقعاً ممکن بوده.» جت به پنجرۀ ایستادۀ مقاومت نیاز دارد؛ با کمتر از کفِ
+    # ۶۰ کندل (همان کفِ «شصت نشستِ شناخته‌شده» درِ فیلترِ جتِ تابلو) ارزیابی
+    # ممکن نیست ⇒ سنجیده‌نشده، نه «رد». (خط ۷۷۱/۱۲۳۸ همین کف را دارند.)
+    if n < _FTS_JET_MIN_BARS:
+        _c = float(candles[-1]["close"]) if n >= 1 else None
         return {
             "active": None, "resistance": None, "resistance_date": None,
-            "resistance_type": None, "ath": None, "close": None,
+            "resistance_type": None, "ath": None, "close": round(_c, 2) if _c is not None else None,
             "pct_above_res": None, "ceiling": None, "ceiling_date": None,
             "static_broke": None, "breakout_date": None,
             "entry_window_days": entry_window_days, "days_remaining": None,

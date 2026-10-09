@@ -12,7 +12,7 @@ SUITES = [
     ('dev/test_fts_isolation.py',     'FTS filter isolation'),
     ('dev/fts_pipeline_v981.py',      'codal FTS pipeline + ADB fallback + session window'),
     ('dev/test_calendar_v92.py',      'calendar py<->js categories'),
-    ('dev/chart_api_check_v95.py',    'KLineCharts v10 API guard'),
+    ('dev/chart_api_check_v95.py',    'chart API guard: installed klinecharts v10 exports, no dead legacy path'),
     ('dev/fts_m141_parity_v97.py',    'm141/liquidity parity + anti-N+1'),
     ('dev/adb_resilience_v972.py',    'ADB retry/reconnect + wifi restore'),
     ('dev/confidence_engine_v973.py', 'triple-confirmation confidence engine'),
