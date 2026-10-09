@@ -162,6 +162,17 @@ def _sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+def _report(progress, phase, done=0, total=0):
+    """پیشرفت را به صفحۀ بوت می‌رساند. هیچ گزارشی نباید مسیر ساختِ دیتابیس را
+    بشکند، پس خطای گزارش خورده می‌شود (صفحۀ بوت اختیاری است)."""
+    if not progress:
+        return
+    try:
+        progress(phase, done, total)
+    except Exception:
+        pass
+
+
 MARKET_DATA_RELEASE_TAG = "data-latest"
 MARKET_DATA_RELEASE_BASE = (
     "https://github.com/johnwarchief/BorsTerminal/releases/download/"
@@ -171,7 +182,7 @@ MARKET_DATA_RELEASE_ASSET = MARKET_DATA_RELEASE_BASE + "market.db.lzma"
 MARKET_DATA_RELEASE_META = MARKET_DATA_RELEASE_BASE + "market.db.meta.json"
 
 
-def _download_market_db_lzma(verbose=False):
+def _download_market_db_lzma(verbose=False, progress=None):
     """Download and verify the external market baseline release."""
     import hashlib
     import json
@@ -181,6 +192,7 @@ def _download_market_db_lzma(verbose=False):
     os.makedirs(WORK_DIR, exist_ok=True)
     target = os.path.join(WORK_DIR, "market.db.lzma")
     tmp = None
+    _report(progress, "data-meta")
     try:
         req = urllib.request.Request(
             MARKET_DATA_RELEASE_META,
@@ -211,6 +223,7 @@ def _download_market_db_lzma(verbose=False):
                 out.write(chunk)
                 h.update(chunk)
                 total += len(chunk)
+                _report(progress, "download", total, want_size)
 
         got_sha = h.hexdigest()
         if want_size and total != want_size:
@@ -518,7 +531,7 @@ def prune_stale_frontend_assets(dist_dir, marker_version, verbose=False):
     return len(dead)
 
 
-def ensure_market_db(verbose=False):
+def ensure_market_db(verbose=False, progress=None):
     """(idempotent) market.db را از market.db.lzma می‌سازد یا تازه می‌کند.
 
     دو شرطِ جدا گلوگاه بودند:
@@ -537,9 +550,10 @@ def ensure_market_db(verbose=False):
     ۳۷۵٫۱۵۴ ردیف بود، با یکِ «نصبِ کامل» به ۸۷٫۱۴۶ و ۳۲۱٫۳۸۹ ردیفِ baseline برمی‌گشت
     و tape_history‌اش (۱۵۱٫۳۵۶ ردیف) هم می‌توانست برود.
     """
+    _report(progress, "check")
     src_lzma = _find_bundled_db_lzma()
     if not src_lzma:
-        src_lzma = _download_market_db_lzma(verbose=verbose)
+        src_lzma = _download_market_db_lzma(verbose=verbose, progress=progress)
     want = None
     if src_lzma:
         try:
@@ -555,9 +569,10 @@ def ensure_market_db(verbose=False):
             return DB_PATH
         if complete:
             # سالم است و فقط baseline عوض شده ⇒ ادغام، نه جایگزینی.
-            fresh = _extract_market_db(src_lzma, verbose=verbose,
+            fresh = _extract_market_db(src_lzma, verbose=verbose, progress=progress,
                                        scratch_name="market.db.baseline.new")
             if fresh:
+                _report(progress, "merge")
                 _union_forward(DB_PATH, fresh, verbose=verbose)
                 try:
                     os.remove(fresh)
@@ -568,6 +583,7 @@ def ensure_market_db(verbose=False):
         # تا این‌جا فقط دیتابیسِ ناقص/خراب می‌رسد: سالم‌ها بالا ادغام شدند.
         if verbose:
             print("  [..]  market.db is incomplete — re-extracting from market.db.lzma")
+        _report(progress, "rebuild")
         stale_path = DB_PATH + ".stale"
         try:
             os.replace(DB_PATH, stale_path)
@@ -583,23 +599,28 @@ def ensure_market_db(verbose=False):
             except OSError:
                 pass
         # baselineِ تازه را استخراج کن، بعد دادهٔ کاربر را از نسخهٔ قدیمی برگردان
-        new_db = _extract_market_db(src_lzma, verbose=verbose)
+        new_db = _extract_market_db(src_lzma, verbose=verbose, progress=progress)
         if new_db:
             _carry_user_tables(stale_path, new_db, verbose=verbose)
             _write_baseline_stamp(want or "")
         return new_db or DB_PATH
 
-    new_db = _extract_market_db(src_lzma, verbose=verbose)
+    new_db = _extract_market_db(src_lzma, verbose=verbose, progress=progress)
     if new_db:
         _write_baseline_stamp(want or "")
     return new_db or DB_PATH
 
 
-def _extract_market_db(src_lzma, verbose=False, scratch_name=None):
+def _extract_market_db(src_lzma, verbose=False, scratch_name=None, progress=None):
     """market.db.lzma را به WORK_DIR/market.db باز می‌کند. None یعنی نشد.
 
     scratch_name داده شود یعنی فقط بازکردنِ موقت برایِ ادغام: فایلِ market.dbِ
     کاربر دست‌نخورده می‌ماند و مسیرِ باز شده برایِ پاک‌شدن به caller برمی‌گردد.
+
+    جریان‌خوان (به‌جای یک‌بار `lzma.decompress(کلِ فایل)`): هم memory را از
+    ~۱۵۵ مگابایتِ هم‌زمان پایین می‌آورد، هم به صفحۀ بوت عددِ واقعی می‌دهد.
+    برابر بودنِ خروجیِ دو مسیر روی market.db.lzma واقعی سنجیده شد (یکسان،
+    sha256 91fbc4ee…b825)، و جای‌گیریِ `raw.tell()` تا انتهای فایل ثابت شد.
     """
     if not src_lzma:
         return None
@@ -608,10 +629,17 @@ def _extract_market_db(src_lzma, verbose=False, scratch_name=None):
         os.makedirs(WORK_DIR, exist_ok=True)
         target_db = os.path.join(WORK_DIR, scratch_name or "market.db")
         tmp = target_db + ".part"
+        comp_total = os.path.getsize(src_lzma)
         if verbose:
             print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
-        with open(src_lzma, "rb") as fi, open(tmp, "wb") as fo:
-            fo.write(lzma.decompress(fi.read()))
+        with open(src_lzma, "rb") as raw, lzma.LZMAFile(raw, mode="rb") as fi, \
+                open(tmp, "wb") as fo:
+            while True:
+                block = fi.read(1 << 22)
+                if not block:
+                    break
+                fo.write(block)
+                _report(progress, "extract", raw.tell(), comp_total)
         if not _REQUIRED_MARKET_TABLES <= _market_db_tables(tmp):
             if verbose:
                 print("  [ERR] extracted market.db is missing required tables")

@@ -283,7 +283,187 @@ def _data_root():
     return base
 
 
-def _preflight():
+# ── صفحۀ بوت: پیشرفتِ اولین اجرا ──────────────────────────────────────────
+# تا این نسخه پنجره فقط *بعد* از بالا آمدنِ uvicorn باز می‌شد؛ در اولین اجرا
+# دریافتِ market.db.lzma (۵۷ مگابایت) و بازکردنش (۹۸ مگابایت) روی سیستمِ ضعیف
+# دقیقه‌ها طول می‌کشد و در آن مدّت کاربر هیچ چیز رویِ صفحه نمی‌دید — فقط یک
+# پروسۀ بی‌صدا در تسک‌منیجر. این سرورِ کوچکِ stdlib روی یک پورتِ آزاد همان
+# لحظۀ اول پنجره را با متنِ فارسیِ پیشرفت بالا می‌آورد؛ وقتی اپِ واقعی آماده
+# شد خودِ صفحۀ بوت آدرس را عوض می‌کند. پس دو سرور روی یک پورت نمی‌نشینند و
+# مسیرِ «سرورِ ما روی ۸۰۰۱ از قبل بالاست» دست‌نخورده می‌ماند.
+#
+# هیچ رقمی در متنِ پایتون تایپ نمی‌شود: JSON عددِ لاتین می‌برد و صفحۀ بوت با
+# 0x06F0 فارسی‌اش می‌کند (قاعدۀ «رقمِ دزدیده‌شده» در AGENTS.md).
+_BOOT_PHASES = {
+    "check": "بررسیِ پایگاهِ دادهٔ بازار",
+    "data-meta": "خواندنِ نشانیِ بستۀ داده",
+    "download": "دریافتِ دادهٔ بازار",
+    "extract": "بازکردنِ پایگاهِ دادهٔ بازار",
+    "merge": "ادغامِ ردیف‌هایِ تازهٔ بازار",
+    "rebuild": "ساختِ دوبارۀ پایگاهِ داده",
+    "serve": "راه‌اندازیِ موتورِ برنامه",
+}
+_BOOT = {"phase": "check", "pct": None, "detail": "", "ready": False,
+         "url": None, "error": None}
+_BOOT_LOCK = threading.Lock()
+
+_BOOT_HTML = """<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بورس‌ترمینال</title>
+<style>
+ html,body{height:100%;margin:0;background:#0b0f17;color:#e6edf7;
+  font:14px/1.9 Tahoma,'Segoe UI',sans-serif}
+ .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+ .card{width:min(560px,100%);background:#111827;border:1px solid #1f2a3a;
+  border-radius:18px;padding:28px 26px;box-shadow:0 18px 60px rgba(0,0,0,.55)}
+ .brand{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;
+  border-radius:9px;background:linear-gradient(135deg,#38bdf8,#2563eb);color:#04121f;
+  font-weight:900;margin-bottom:14px}
+ h1{margin:0 0 4px;font-size:17px;font-weight:900}
+ .sub{margin:0 0 20px;font-size:11px;color:#8ea3bd;letter-spacing:.4px}
+ .phase{margin:0 0 10px;font-size:13px;font-weight:700;color:#cfe3ff;min-height:20px}
+ .bar{height:8px;border-radius:99px;background:#16212f;overflow:hidden}
+ .bar i{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#38bdf8,#22d3ee);transition:width .35s ease}
+ .bar.indet i{width:38%;animation:slide 1.25s ease-in-out infinite alternate}
+ @keyframes slide{from{transform:translateX(0)}to{transform:translateX(175%)}}
+ .detail{margin:10px 0 0;font-size:11px;color:#8ea3bd;min-height:18px}
+ .note{margin:18px 0 0;font-size:11px;color:#6f8199}
+ .err{margin:0 0 10px;font-size:13px;font-weight:700;color:#fca5a5}
+</style></head><body>
+<div class="wrap"><div class="card">
+ <div class="brand">&#1576;</div>
+ <h1>بورس‌ترمینال</h1>
+ <p class="sub">FTS v2.1</p>
+ <p class="err" id="err" style="display:none"></p>
+ <p class="phase" id="phase">&nbsp;</p>
+ <div class="bar indet" id="bar"><i id="fill"></i></div>
+ <p class="detail" id="detail">&nbsp;</p>
+ <p class="note" id="note">لطفاً این پنجره را نبندید؛ برنامه خودش ادامه می‌دهد.</p>
+</div></div>
+<script>
+ var fa = function (s) {
+   return String(s).replace(/[0-9]/g, function (d) { return String.fromCharCode(0x06F0 + (+d)); });
+ };
+ var elPhase = document.getElementById('phase'), elDetail = document.getElementById('detail');
+ var elBar = document.getElementById('bar'), elFill = document.getElementById('fill');
+ var elErr = document.getElementById('err'), elNote = document.getElementById('note');
+ function setStatus(p) {
+   if (p.error) {
+     elErr.style.display = 'block'; elErr.textContent = p.error;
+     elBar.style.display = 'none'; elDetail.textContent = '';
+     elNote.textContent = '\u0628\u0631\u0646\u0627\u0645\u0647 \u0631\u0627 \u0628\u0633\u062a\u0647 \u0648 \u062f\u0648\u0628\u0627\u0631\u0647 \u0628\u0627\u0632 \u06a9\u0646\u06cc\u062f.';
+     return;
+   }
+   elPhase.textContent = p.text || '';
+   if (typeof p.pct === 'number') {
+     elBar.className = 'bar';
+     elFill.style.width = Math.max(2, Math.min(100, p.pct)) + '%';
+     elDetail.textContent = fa(p.pct) + '\u066a' + (p.detail ? ' \u00b7 ' + fa(p.detail) : '');
+   } else {
+     elBar.className = 'bar indet'; elFill.style.width = '';
+     elDetail.textContent = p.detail || '';
+   }
+   if (p.ready && p.url) {
+     elPhase.textContent = '\u0622\u0645\u0627\u062f\u0647 \u0634\u062f';
+     elBar.className = 'bar'; elFill.style.width = '100%';
+     elDetail.textContent = '';
+     location.replace(p.url);
+   }
+ }
+ function poll() {
+   fetch('/boot-status', {cache: 'no-store'}).then(function (r) { return r.json(); })
+     .then(setStatus).catch(function () { setTimeout(poll, 1200); });
+ }
+ poll(); setInterval(poll, 500);
+</script></body></html>
+"""
+
+
+def _boot_update(**kw):
+    with _BOOT_LOCK:
+        _BOOT.update(kw)
+
+
+def _boot_progress(phase, done=0, total=0):
+    """پیشرفتِ ساختِ دیتابیس را برایِ صفحۀ بوت ثبت می‌کند (از نخِ worker)."""
+    pct = None
+    detail = ""
+    try:
+        d, t = float(done), float(total)
+        if t > 0 and d >= 0:
+            pct = int(100.0 * d / t)
+            detail = "%.1f / %.1f MB" % (d / 1048576.0, t / 1048576.0)
+    except (TypeError, ValueError):
+        pct = None
+    _boot_update(phase=phase, pct=pct, detail=detail)
+
+
+def _boot_fail(message):
+    _boot_update(error=message, ready=False, pct=None, detail="")
+    _note('boot failed: %s' % message)
+
+
+def _boot_ready(url):
+    _boot_update(ready=True, url=url, pct=100, error=None)
+
+
+def _start_boot_server():
+    """سرورِ موقتِ صفحۀ بوت روی پورتِ آزادِ سیستمی. None یعنی نشد — آن‌وقت
+    برنامه دقیقاً مثلِ قبل (بدونِ صفحۀ پیشرفت) بالا می‌آید."""
+    try:
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import json as _json
+    except Exception as e:
+        _note('boot page modules unavailable: %s' % e)
+        return None
+
+    class _Handler(BaseHTTPRequestHandler):
+        server_version = "BorsBoot/1.0"
+
+        def log_message(self, *args):
+            pass                       # صفحۀ بوت لاگِ access تولید نمی‌کند
+
+        def _send(self, code, body, ctype):
+            data = body.encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", ctype + "; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            path = self.path.split("?", 1)[0]
+            if path == "/boot-status":
+                with _BOOT_LOCK:
+                    payload = dict(_BOOT)
+                    payload["text"] = _BOOT_PHASES.get(_BOOT["phase"], "")
+                self._send(200, _json.dumps(payload, ensure_ascii=False),
+                           "application/json")
+            elif path in ("/", "/index.html"):
+                self._send(200, _BOOT_HTML, "text/html")
+            elif path == "/favicon.ico":
+                # کرومیوم بی‌آیکون این را می‌خواهد؛ ۴۰۴ آن در کنسولِ صفحۀ بوت
+                # خطا می‌نویسد و سنجشِ «بی‌خطا» را قرمز می‌کند.
+                self.send_response(204)
+                self.end_headers()
+            else:
+                self._send(404, "{}", "application/json")
+
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+    except Exception as e:
+        _note('boot server could not bind: %s' % e)
+        return None
+    srv.daemon_threads = True
+    threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.5},
+                     daemon=True).start()
+    return srv, srv.server_address[1]
+
+
+def _preflight(progress=None):
     """هوشمند: پیش‌اجرا + چک DB ها (مثل run_terminal)"""
     print("=" * 66)
     print("  BorsTerminal_Ultimate - smart preflight")
@@ -297,7 +477,7 @@ def _preflight():
     # بازمی‌گرداند، با نقلِ جدول‌هایِ کاربر.
     try:
         import bors_config
-        db = bors_config.ensure_market_db(verbose=True)
+        db = bors_config.ensure_market_db(verbose=True, progress=progress)
     except Exception as e:
         print("  [ERR] ensure_market_db failed:", e)
         db = os.path.join(_data_root(), "market.db")
@@ -524,28 +704,17 @@ def _serve():
         # پورت اشغال است ولی سرورِ ما نیست → پورت آزادِ دیگر
         port = pick_free_port(port)
         print(f'[OK] port busy -> using free port {port}')
-    if not _preflight():
-        # v1.0.15: console=False → sys.stdin می‌تواند None باشد و input()
-        # با «RuntimeError: lost sys.stdin» کلِ برنامه را می‌کشد. فقط در
-        # حالتی که واقعاً کنسول هست منتظر می‌شویم.
-        if sys.stdin is not None and sys.stdin.isatty():
-            try:
-                input('Press Enter to close...')
-            except Exception:
-                pass
-        return 'preflight-failed'
-    import uvicorn
-    def run():
-        import logging
-        # اخطارها (مثلاً FutureWarningِ pandas درِ مسیرِ تابلو) بی‌این خط سطرِ
-        # بی‌ساعت می‌سازند؛ سروِ py.warnings درِ _log_config_with_clock ساعت دارد.
-        logging.captureWarnings(True)
-        uvicorn.run('app:app', host='127.0.0.1', port=port, log_level='info',
-                    log_config=_log_config_with_clock())
-    th = threading.Thread(target=run, daemon=True)
-    th.start()
-    threading.Thread(target=_beat_loop, args=(port,), daemon=True).start()
-    if wait_http(port):
+    boot = _start_boot_server()
+    if boot is None:
+        # سرورِ بوت بالا نیامد (مثلاً بستنِ localhost توسطِ امنیتی): همان
+        # مسیرِ همیشگی، فقط بی‌صفحۀ پیشرفت.
+        if not _preflight():
+            _exit_preflight_failure()
+            return 'preflight-failed'
+        _start_uvicorn(port)
+        if not wait_http(port):
+            print('[ERR] server did not start')
+            return 'http-never-came-up'
         print(f'[OK] http://127.0.0.1:{port}')
         url = f'http://127.0.0.1:{port}'
         if open_native_window(url):
@@ -554,15 +723,92 @@ def _serve():
             _note('native window closed')
             return 'window-closed'  # پنجرهٔ بومی بسته شد → خروج
         open_app_window(url)
+        return _hold_open()
+    return _serve_with_boot(port, boot[1])
+
+
+def _exit_preflight_failure():
+    """v1.0.15: console=False → sys.stdin می‌تواند None باشد و input()
+    با «RuntimeError: lost sys.stdin» کلِ برنامه را می‌کشد. فقط در
+    حالتی که واقعاً کنسول هست منتظر می‌شویم."""
+    if sys.stdin is not None and sys.stdin.isatty():
+        try:
+            input('Press Enter to close...')
+        except Exception:
+            pass
+
+
+def _start_uvicorn(port):
+    """uvicorn را در نخِ daemon بالا می‌آورد؛ ضربانِ زنده‌بودن هم همین‌جا."""
+    import uvicorn
+
+    def run():
+        import logging
+        # اخطارها (مثلاً FutureWarningِ pandas درِ مسیرِ تابلو) بی‌این خط سطرِ
+        # بی‌ساعت می‌سازند؛ سروِ py.warnings درِ _log_config_with_clock ساعت دارد.
+        logging.captureWarnings(True)
+        uvicorn.run('app:app', host='127.0.0.1', port=port, log_level='info',
+                    log_config=_log_config_with_clock())
+    threading.Thread(target=run, daemon=True).start()
+    threading.Thread(target=_beat_loop, args=(port,), daemon=True).start()
+
+
+def _bootstrap_worker(port, out):
+    """نخِ سنگینِ مسیرِ بوت: اولِ دیتابیس (با گزارشِ پیشرفت)، بعدِ سرور، بعد
+    تسلیمِ آدرس به صفحۀ بوت. نتیجه در `out` می‌نشیند تا نخِ اصلی بداند پنجره
+    چرا بسته شده است."""
+    if not _preflight(progress=_boot_progress):
+        _boot_fail('پایگاهِ دادهٔ بازار ساخته نشد. اتصالِ اینترنت را بررسی کنید '
+                   'و برنامه را دوباره باز کنید.')
+        out['result'] = 'preflight-failed'
+        return
+    _boot_update(phase='serve')
+    _start_uvicorn(port)
+    if wait_http(port):
+        print(f'[OK] http://127.0.0.1:{port}')
+        _boot_ready(f'http://127.0.0.1:{port}/')
+        out['result'] = 'serving'
     else:
         print('[ERR] server did not start')
-        return 'http-never-came-up'
+        _boot_fail('سرورِ محلی بالا نیامد. فایلِ logs/bors.log را ببینید.')
+        out['result'] = 'http-never-came-up'
+
+
+def _hold_open():
+    """پروسه را زنده نگه می‌دارد تا پنجرۀ مرورگر/سرور بمیرد؛ KeyboardInterrupt
+    تنها خروجِ عادی است."""
     try:
         while True:
             time.sleep(3600)
     except KeyboardInterrupt:
         return 'interrupted'
     return 'loop-ended'
+
+
+def _serve_with_boot(port, boot_port):
+    """پنجره را *همان لحظه* روی صفحۀ بوت باز می‌کند و کارِ سنگین را به نخِ
+    worker می‌سپارد. صفحۀ بوت خودش وقتی سرورِ واقعی آماده شد آدرس را عوض
+    می‌کند؛ سرورِ بوت تا پایانِ پروسه روی پورتِ آزاد می‌ماند (بی‌خطر: فقط یک
+    صفحۀ ثابت و یک JSON می‌دهد)."""
+    out = {}
+    threading.Thread(target=_bootstrap_worker, args=(port, out), daemon=True).start()
+    url = f'http://127.0.0.1:{boot_port}/'
+    if open_native_window(url):
+        _note('native window closed (boot worker: %s)'
+              % (out.get('result') or 'never-finished'))
+        return 'window-closed'
+    open_app_window(url)
+    # مسیرِ مرورگر: شکستِ قطعی پروسه را آزاد می‌کند، با مهلتی تا پیامِ خطا
+    # رویِ صفحه بماند و خوانده شود (بی‌این‌جا نصبِ بی‌اینترنت بی‌صدا می‌مرد).
+    for _ in range(600):
+        if out.get('result'):
+            break
+        time.sleep(0.1)
+    res = out.get('result')
+    if res and res != 'serving':
+        time.sleep(45)
+        return res
+    return _hold_open()
 
 
 def main():

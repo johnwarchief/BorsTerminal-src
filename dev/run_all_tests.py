@@ -310,6 +310,12 @@ SUITES = [
     # صفرِ ساختگی در مقایسهٔ ترکیبِ سبد با هدف.
     ('dev/portfolio_weights_v1035.py',
                                      'portfolio weights: value-based + no fake zero'),
+    # BOOT-1 (۱۴۰۵-۰۷-۱۷): اولین اجرا باید پیشرفت نشان دهد. دو مسیرِ ساختِ
+    # market.db (دریافت از Release، استخراجِ lzma) عددِ واقعی می‌دهند و صفحۀ
+    # بوتِ فارسی همان‌ها را سرو می‌کند؛ بی‌این گارد «صفحه سفیدِ بی‌خبر» دوباره
+    # برمی‌گردد.
+    ('dev/boot_page_v1081.py',
+                                     'boot page: real download/extract progress, RTL page, handoff + error'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
