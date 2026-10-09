@@ -305,6 +305,9 @@ SUITES = [
     # می‌بیند، بدنۀ RAM-overlay سطر‌به‌سطر همان بدنۀ SQLite است، و
     # /api/market/delta یا exact است یا صریح `full` — هیچ‌وقت نصفه.
     ('dev/market_hot_state_v1077.py', 'hot state: field-aware diff, RAM==SQL board, honest delta'),
+    # Stage-2 «در یک نگاه»: سه قیمتِ روزانه از ستونِ واقعی، بی‌نشتِ عمق درِ تابلو،
+    # و تطابقِ نماد درِ /api/order-book (نبودِ مقدار ⇒ حذفِ کلید، نه صفر/جایگزین).
+    ('dev/sidebar_market_fields_v1082.py', 'sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding'),
     # #119 + #120 (مانیتورینگِ زندهٔ ۱۴۰۵-۰۷-۰۴): روزِ client_type باید روزِ
     # نشستِ معامله‌شده باشد، پنجرۀِ بازار یک‌جا تعریف شود، و «نبودنِ داده»
     # دماسنج را «نامساعد» نکند.
