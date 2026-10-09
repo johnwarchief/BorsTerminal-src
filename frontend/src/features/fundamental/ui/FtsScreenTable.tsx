@@ -177,7 +177,7 @@ const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: strin
 };
 
 /** ارتفاع ثابت ردیف جدول (پیکسل) — همگام دقیق با DOM برای جلوگیری از لگ و پرش اسکرول */
-const ROW_H = 46;
+const ROW_H = 52;
 
 /** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
  *  (پیش از آن با برچسب علت‌دار یا برچسب سابقهٔ ناقص رندر می‌شوند). */
@@ -311,7 +311,7 @@ const ScreenerRow = memo(function ScreenerRow({
                   }}
                   aria-label={r.excluded ? undefined : `باز کردن کارت ${r.symbol}`}
                   style={{ height: ROW_H }}
-                  className={`h-[46px] border-b border-border-c/40 transition-colors ${
+                  className={`h-[52px] border-b border-border-c/40 transition-colors ${
                     r.excluded
                       ? 'cursor-not-allowed bg-accent-red/5 opacity-55'
                       : `cursor-pointer group ${stripe === 'odd' ? 'bg-bg-secondary' : 'bg-bg-primary'} hover:bg-accent-blue/10`
@@ -932,7 +932,7 @@ export function FtsScreenTable({
       {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت تا پایینِ
           جدول فضای خالی نماند و در هر رزولوشنی (به‌ویژه لپ‌تاپ) درست و کامل پر شود. */}
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-200px)] min-h-[320px] overflow-auto overscroll-contain">
-        <table className="w-full min-w-[1120px] table-fixed text-start text-xs">
+        <table className="w-full min-w-[1180px] table-fixed text-start text-sm">
           <colgroup>
             {/* ستونِ نماد ۱۸٪ بود که در ۱۹۲۰ پهنای بی‌مصرف می‌گرفت؛ ۱۴٪ اندازهٔ
                 خودِ نماد + یک برچسبِ کوتاه است. عرضِ آزادشده به سری EPS رفت. */}
@@ -952,7 +952,7 @@ export function FtsScreenTable({
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-20 bg-bg-card shadow-xs">
-            <tr className="bg-bg-card text-2xs text-text-secondary border-b border-[var(--hairline)]">
+            <tr className="bg-bg-card text-xs text-text-secondary border-b border-[var(--hairline)]">
               {COLS.map((c, i) =>
                 c.key ? (
                   <th key={c.label} className="px-3 py-2.5 font-bold tracking-wide text-start">

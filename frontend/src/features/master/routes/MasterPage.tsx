@@ -323,7 +323,7 @@ export default function MasterPage() {
         >
           ← بازگشت
         </button>
-        <Link to="/strategy-tree" className="hover:text-accent-blue">استراتژی FTS</Link>
+        <Link to="/strategy-tree" className="hover:text-accent-blue">درخت استراتژی</Link>
         <span aria-hidden>/</span>
         <Link to="/master" onClick={(e) => { e.preventDefault(); goBackToFunnel(); }} className="hover:text-accent-blue">
           غربالگری FTS

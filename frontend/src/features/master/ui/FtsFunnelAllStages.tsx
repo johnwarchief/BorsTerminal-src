@@ -20,6 +20,7 @@ import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
+import { useVerdictChanges } from '../lib/funnelChangeTrack';
 import {
   MODE_HINT,
   MODE_LABEL,
@@ -284,19 +285,19 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
     case 'vol':
       return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</span></td>;
     case 'pattern':
-      return <td className="truncate px-2 py-1 text-start text-3xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
+      return <td className="truncate px-2 py-1 text-start text-2xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
     case 'weekly':
       return <TrendCell t={e.trendW} />;
     case 'daily':
       return <TrendCell t={e.trendD} />;
     case 'branch':
-      return <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary">{e.dailyStrategy || '—'}</td>;
+      return <td className="truncate px-2 py-1 text-start text-2xs text-text-secondary">{e.dailyStrategy || '—'}</td>;
     case 'setup':
-      return <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary">{e.setups || '—'}</td>;
+      return <td className="truncate px-2 py-1 text-start text-2xs text-text-secondary">{e.setups || '—'}</td>;
     case 'techPoints':
-      return <td className="px-2 py-1 text-end text-3xs font-bold text-text-primary"><span className="num">{e.technicalPoints != null ? toFaDigits(e.technicalPoints) : '—'}</span></td>;
+      return <td className="px-2 py-1 text-end text-2xs font-bold text-text-primary"><span className="num">{e.technicalPoints != null ? toFaDigits(e.technicalPoints) : '—'}</span></td>;
     case 'mark':
-      return <td className="truncate px-2 py-1 text-end text-3xs font-bold" title={why ?? undefined}>{mark ? MARK_LABEL[mark] : '—'}</td>;
+      return <td className="truncate px-2 py-1 text-end text-2xs font-bold" title={why ?? undefined}>{mark ? MARK_LABEL[mark] : '—'}</td>;
     case 'ind1':
     case 'ind2':
     case 'ind3':
@@ -322,7 +323,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       return <td className="px-2 py-1 text-end font-bold text-text-primary"><span className="num">{e.score != null ? `${toFaDigits(e.score)}/۵` : '—'}</span></td>;
     case 'why':
       return (
-        <td className="truncate px-2 py-1 text-start text-3xs text-text-secondary" title={why ?? undefined}
+        <td className="truncate px-2 py-1 text-start text-2xs text-text-secondary" title={why ?? undefined}
             data-testid={`funnel-why-${e.symbol}`}>
           {why || (mark ? MARK_LABEL[mark] : '—')}
         </td>
@@ -376,13 +377,17 @@ function StageCard({
   const setTechScreens = useFunnelPrefsStore((s) => s.setTechScreens);
   const rule = stage.key === 'fundamental' ? fundRule(opts) : STAGE_RULE[stage.key];
 
+  // «چه چیزی همین حالا عوض شد»: ردیف‌هایِ داورى‌تازه و جابه‌جاییِ شمارِ گام.
+  // هیچ عددِ تازه‌ای ساخته نمی‌شود — فقط دورۀ پیشین با این دور مقایسه می‌شود.
+  const { changed, delta } = useVerdictChanges(stage.key, rows,
+                                               { passed, ruled: stage.ruled });
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const virt = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_H,
     overscan: 8,
-    initialRect: { width: 0, height: 280 },
+    initialRect: { width: 0, height: 380 },
   });
   const vRows = virt.getVirtualItems();
   const padTop = vRows.length ? vRows[0].start : 0;
@@ -426,6 +431,18 @@ function StageCard({
               title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
           {toFaDigits(stage.ruled)} نماد
         </span>
+        {delta && (delta.passed !== 0 || delta.ruled !== 0) ? (
+          <span data-testid={`funnel-delta-${stage.key}`}
+                key={`${delta.passed}:${delta.ruled}`}
+                title="تغییرِ همین دور نسبت به دورِ پیشِ قیف"
+                className={`num fts-delta-chip rounded-full px-2 py-0.5 text-2xs font-black ${
+                  delta.passed > 0 ? 'bg-accent-green/15 text-accent-green'
+                    : delta.passed < 0 ? 'bg-accent-red/15 text-accent-red'
+                      : 'bg-bg-secondary text-text-muted'
+                }`}>
+            {delta.passed > 0 ? '+' : ''}{toFaDigits(delta.passed)} عبور
+          </span>
+        ) : null}
         {stage.dropped > 0 ? (
           <span className="num rounded-full bg-accent-red/15 px-2 py-0.5 text-2xs font-black text-accent-red">
             − {toFaDigits(stage.dropped)}
@@ -510,15 +527,15 @@ function StageCard({
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
       </header>
 
-      <div ref={bodyRef} className="relative max-h-[280px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
             {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
           </p>
         ) : (
-          <table className="w-full table-fixed border-collapse text-xs">
+          <table className="w-full table-fixed border-collapse text-sm">
             <ColGroup cols={cols} />
-            <thead className="sticky top-0 bg-bg-primary/95 text-3xs text-text-muted backdrop-blur-sm">
+            <thead className="sticky top-0 bg-bg-primary/95 text-2xs text-text-muted backdrop-blur-sm">
               <tr>
                 {cols.map((k) => (
                   <th
@@ -537,7 +554,8 @@ function StageCard({
                 const r = rows[vr.index];
                 return (
                   <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
-                            stageKey={stage.key} onPick={onPick} />
+                            stageKey={stage.key} onPick={onPick}
+                            changed={changed.has(r.symbol)} />
                 );
               })}
               {padBottom > 0 ? <tr aria-hidden style={{ height: padBottom }} /> : null}
@@ -558,12 +576,12 @@ function StageCard({
               : `در انتظارِ حکم — موتور نگاه کرد و نظر نداد (${toFaDigits(stage.pending.length)})`}
           </p>
           <div ref={pendingRef} className="max-h-[160px] overflow-y-auto">
-            <table className="w-full table-fixed border-collapse text-xs">
+            <table className="w-full table-fixed border-collapse text-sm">
               {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
                   بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
                   بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
               <ColGroup cols={cols} />
-              <thead className="sticky top-0 text-3xs text-text-muted">
+              <thead className="sticky top-0 text-2xs text-text-muted">
                 <tr>
                   {cols.map((k) => (
                     <th key={k} className={`truncate px-2 py-1 font-bold ${COL[k].end ? 'text-end' : 'text-start'}`}>
@@ -603,6 +621,7 @@ function StageRow({
   showMark,
   stageKey,
   onPick,
+  changed,
 }: {
   entry: FunnelEntry;
   cols: ColKey[];
@@ -612,6 +631,9 @@ function StageRow({
    *  و ستونِ دلیل درِ آن گام همیشه «—» می‌ماند. */
   stageKey: FunnelStageKey;
   onPick: (s: string) => void;
+  /** حکمِ این نماد درِ دورِ اخیر عوض شده — ردیف یک لحظه روشن می‌شود تا
+   *  «زنده بودنِ» قیف دیده شود (نه یک داوریِ تازه). */
+  changed?: boolean;
 }) {
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
   const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
@@ -623,7 +645,8 @@ function StageRow({
   return (
     <tr
       data-fkey={entry.symbol}
-      className="border-b border-border-c/40 last:border-0 hover:bg-bg-card/70"
+      data-changed={changed ? '1' : undefined}
+      className={`border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
       title={rowTitle}
     >
       <td className="px-2 py-1 text-start">

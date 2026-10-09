@@ -19,7 +19,7 @@ const PKG = process.env.JEV_BROWSER_DIR
 const { chromium } = await import(pathToFileURL(`${PKG}/node_modules/playwright/index.mjs`).href);
 mkdirSync('_audit', { recursive: true });
 const OUT = '_audit/ws13_boot_page.json';
-const APP_PORT = 8021;
+const APP_PORT = 8031; // ۸۰۲۱ را سرورِ devِ خودمان اشغال دارد
 
 type Drill = { proc: any; bootUrl: string; lines: string[]; kill: () => void };
 

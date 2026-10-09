@@ -366,7 +366,7 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
+        <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => {
             const k = h.key;
             if (k == null) {

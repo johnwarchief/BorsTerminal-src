@@ -626,3 +626,32 @@ html[data-idle='1']:not([data-hidden='1']) .fts-path-flow,
 html[data-idle='1']:not([data-hidden='1']) .fts-comet {
   animation-play-state: running !important;
 }
+
+/* ── ردیفِ «همین حالا حکمش عوض شد» درِ جدول غربالگری FTS ─────────────────
+   قیف زنده است؛ کاربر باید ببیند *کدام* حکم تازه شده، نه فقط این‌که شمار
+   عوض شده. یک فلاشِ کوتاهِ لبه‌ای، بی‌تغییرِ ارتفاعِ ردیف (ارتفاع با
+   ROW_Hِ مجازی‌سازی قفل است؛ چیزی که اندازه عوض کند اسکرول می‌لنگد). */
+@keyframes fts-row-flash {
+  0% { background-color: rgba(56, 189, 248, 0.22); }
+  70% { background-color: rgba(56, 189, 248, 0.10); }
+  100% { background-color: transparent; }
+}
+tr.fts-row-changed > td {
+  animation: fts-row-flash 2.6s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* بی‌انیمیشن هم خبر می‌رسد: زمینۀ کم‌رنگ رویِ ردیف می‌ماند. */
+  tr.fts-row-changed > td { animation: none; background-color: rgba(56, 189, 248, 0.10); }
+}
+
+/* چیپِ دلتا «همین دور» است، نه «همیشه»: با هر عددِ تازه دوباره متولد می‌شود
+   (key درِ کامپوننت) و بعد از چند ثانیه محو می‌شود تا کاربر دورِ کهنه را
+   زنده نپندارد. */
+@keyframes fts-chip-fade {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.fts-delta-chip { animation: fts-chip-fade 9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .fts-delta-chip { animation: none; }
+}

@@ -1,4 +1,4 @@
-import { Link, type RouteObject } from 'react-router';
+import { Link, Navigate, type RouteObject } from 'react-router';
 import { Lazy } from '@shared/components/Lazy';
 
 const page = (load: () => Promise<{ default: React.ComponentType }>) => (
@@ -6,7 +6,10 @@ const page = (load: () => Promise<{ default: React.ComponentType }>) => (
 );
 
 export const mainRoutes: RouteObject[] = [
-  { path: '', element: page(() => import('@features/market/routes/MarketPage')) },
+  // رأیِ مالک (۱۴۰۵-۰۷-۱۷): صفحهٔ نخستِ برنامه غربالگری FTS است. مسیرِ خالی
+  // redirect می‌شود نه element، تا آدرسِ نوارِ نشانی همان /master بماند و
+  // نوارِ کناری هم درست روشن شود.
+  { path: '', element: <Navigate to="/master" replace /> },
   { path: 'market', element: page(() => import('@features/market/routes/MarketPage')) },
   {
     path: 'fundamental/:symbol?',

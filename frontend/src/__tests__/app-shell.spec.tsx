@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -45,13 +45,27 @@ describe('AppShell smoke', () => {
     renderApp('/');
     await waitFor(() => {
       expect(screen.getByText('تابلوخوانی/بازار')).toBeInTheDocument();
-      expect(screen.getByText('تابلوی غربالگری')).toBeInTheDocument();
+      expect(screen.getByText('استراتژی FTS')).toBeInTheDocument();
     });
-    // رأیِ واژگان: یک مقصد، یک نام. «استراتژی FTS» و «مستر FTS» نام‌هایِ قدیمیِ
-    // همان /master بودند و با «غربالگری FTS» سه اسم برایِ یک تب می‌ساختند.
-    expect(screen.queryByText('استراتژی FTS')).not.toBeInTheDocument();
-    expect(screen.queryByText('مستر FTS')).not.toBeInTheDocument();
-    expect(screen.getByText('غربالگری FTS')).toBeInTheDocument();   // عنوانِ گروه
+    // رأیِ واژگانِ مالک (۱۴۰۵-۰۷-۱۷): /master «استراتژی FTS» صدا می‌زند؛
+    // «تابلوی غربالگری» و «مستر FTS» دیگر نامِ این مقصد نیستند. عنوانِ گروه
+    // («غربالگری FTS») و عنوانِ درونِ صفحه سرِ جایشان می‌مانند، پس جستجو درِ
+    // خودِ سایدبار قفل می‌شود وگرنه دو «غربالگری FTS» با هم قاطی می‌کنند.
+    const sidebar = (await screen.findByLabelText('نوار کناری')) as HTMLElement;
+    expect(within(sidebar).queryByText('تابلوی غربالگری')).not.toBeInTheDocument();
+    expect(within(sidebar).queryByText('مستر FTS')).not.toBeInTheDocument();
+    expect(within(sidebar).getByText('غربالگری FTS')).toBeInTheDocument();   // عنوانِ گروه
+    expect(within(sidebar).getByText('درخت استراتژی')).toBeInTheDocument();
+  });
+
+  it('صفحۀ نخستِ برنامه غربالگری FTS است (رأیِ مالک)', async () => {
+    await import('@features/master/routes/MasterPage');
+    renderApp('/');
+    // '/' دیگر تابلو نیست: باید قیف را بنشاند.
+    await waitFor(() => {
+      expect(screen.getByTestId('fts-funnel-workspace')).toBeInTheDocument();
+    }, { timeout: 4000 });
+    expect(screen.queryByTestId('tape-scroll')).not.toBeInTheDocument();
   });
 
   it('روت /master بدون نماد، قیفِ غربالگری را به‌جای پیامِ خالی نشان می دهد', async () => {

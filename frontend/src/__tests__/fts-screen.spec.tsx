@@ -410,7 +410,9 @@ describe('کارایی جدول غربالگری (F-08)', () => {
     const opts = rv.__virtualOptions?.();
     expect(opts).toBeTruthy();
     expect(opts!.count).toBe(200);
-    expect(opts!.estimateSize?.(0)).toBe(46);
+    // ارتفاعِ ردیف با فونتِ درشتِ جدول بالا رفت (46 → 52)؛ سنجشِ زنده
+    // offsetHeightِ واقعی را همین ۵۲ اندازه گرفت، پس پین، پینِ عددِ تازه است.
+    expect(opts!.estimateSize?.(0)).toBe(52);
     expect(opts!.overscan).toBe(8);
   });
 
