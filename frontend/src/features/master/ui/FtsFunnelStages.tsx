@@ -10,8 +10,8 @@
 // یک منبعِ عدد، نه دو تا. اینجا فقط سیستمِ انتخاب و گام عوض می‌شوند.
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
+import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import FtsFunnelStageView from './FtsFunnelStageView';
 import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
@@ -21,7 +21,6 @@ import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
 export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
 
 const VALID_STAGES: readonly FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
-const VALID_PRESETS: readonly FunnelPreset[] = ['swing', 'trend', 'hourglass', 'custom'];
 
 /** سه سیستمِ انتخابیِ مالک — بزرگ، یک‌جا، بی‌صفحۀ جدا.
  *  «ساعت شنی» درِ این سه‌تا نیست: درِ هیچ منبعی فیلترِ تابلویی ندارد و
@@ -58,15 +57,10 @@ export function FtsFunnelStages({
   });
   const stage = rawStage && VALID_STAGES.includes(rawStage) ? rawStage : snapStage ?? 'tape';
 
-  const horizon = useStrategyStore((s) => s.horizon);
-  const savedPreset = useFunnelPrefsStore((s) => s.preset);
   const setPreset = useFunnelPrefsStore((s) => s.setPreset);
-  const rawPreset = params.get('preset') as FunnelPreset | null;
-  // URL > انتخابِ خودِ کاربر > propِ والد (افقِ سراسری). بی‌این ترتیب یا
-  // انتخابِ Custom با هر رندرِ تازه پاک می‌شد یا propِ والد هیچ‌وقت حاکم نبود.
-  const activePreset = rawPreset && VALID_PRESETS.includes(rawPreset)
-    ? rawPreset
-    : savedPreset ?? preset ?? horizon;
+  // presetِ فعال از تنها منبعِ مشترک (URL > انتخابِ کاربر > prop=افق) — همانی که
+  // dossier و سایدبار می‌خوانند، پس یک درخواستِ canonical به هر سه سطح می‌رسد.
+  const activePreset = useActiveFunnelPreset(preset);
   const choose = (p: FunnelPreset) => {
     setPreset(p);
     // «Custom» افقِ سراسری نیست (پلنِ معامله و وزنِ پله به افق نگاه می‌کنند)؛

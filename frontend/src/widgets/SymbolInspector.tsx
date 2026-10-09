@@ -34,6 +34,7 @@ import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
 import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
 import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
 import { stageProgressFor } from '@features/master/lib/funnelView';
@@ -208,11 +209,10 @@ export function SymbolInspector() {
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
   const rawRow = useInspectorRawRow();
-  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند.
-   *  پیشِ این `symbolStageProgress` قواعدِ چهار در را رویِ تک‌ناماد درِ مرورگر
-   *  دوباره اجرا می‌کرد (داورِ دوم). حالا وضعیت‌ها خوانده می‌شوند؛ اگر نماد درِ
-   *  پاسخ نبود، هر چهار گام unknown است، نه رد. */
-  const { funnel, request: funnelRequest } = useFtsFunnel('custom');
+  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
+   *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
+   *  (جدول، dossier، سایدبار) سه مدلِ متفاوت از یک universe را می‌سنجیدند. */
+  const { funnel, request: funnelRequest } = useFtsFunnel(useActiveFunnelPreset());
   // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
   // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
   const cand = useMemo(() => {

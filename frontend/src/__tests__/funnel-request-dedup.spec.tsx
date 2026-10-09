@@ -8,6 +8,7 @@
 import { render, waitFor, cleanup } from '@testing-library/react';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { FUNNEL_FIXTURE } from './fixtures/funnelApi';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
 import type { TreePreset } from '@features/master/lib/ftsFunnel';
@@ -31,7 +32,7 @@ function withProvider(ui: React.ReactNode) {
 
 beforeEach(() => {
   fetchMock.mockReset();
-  fetchMock.mockImplementation((url: string) => Promise.resolve(
+  fetchMock.mockImplementation(() => Promise.resolve(
     { ok: true, json: () => Promise.resolve(FUNNEL_FIXTURE) } as unknown as Response));
 });
 afterEach(() => cleanup());
@@ -76,5 +77,28 @@ describe('یک درخواستِ canonical، چند مصرف‌کننده (P0-4)'
     // دو Consumer با هم ⇒ یک fetch؛ در مجموعِ این تست نباید بیش از دو fetch شود
     // (دو Consumer رندرِ اول یک fetch، و هیچ fetchِ دوتایی برایِ یک کلید).
     expect(funnelPosts().length).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('unifyِ preset (URL > کاربر > افق) — سطحِ mount', () => {
+  it('جدول + سایدبار یک preset فعال ⇒ دقیقاً یک POSTِ کلِ universe', async () => {
+    const { useSymbolStore } = await import('@shared/stores/symbolStore');
+    useSymbolStore.getState().setSymbol('شپنا');
+    const { default: FtsFunnelStages } = await import('@features/master/ui/FtsFunnelStages');
+    const { SymbolInspector } = await import('@widgets/SymbolInspector');
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={['/master']}>
+          <FtsFunnelStages />
+          <SymbolInspector />
+        </MemoryRouter>
+      </QueryClientProvider>);
+    await waitFor(() => expect(funnelPosts().length).toBeGreaterThan(0));
+    await new Promise((r) => setTimeout(r, 120));
+    // پیش از unify: یک POSTِ trend (جدول) + یک POSTِ custom (سایدبار) = دو.
+    // پس از unify: هر دو کلیدِ یکسان ⇒ یک fetchِ مشترک.
+    expect(funnelPosts().length).toBe(1);
+    useSymbolStore.getState().clearSymbol();
   });
 });
