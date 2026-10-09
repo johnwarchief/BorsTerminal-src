@@ -21,6 +21,7 @@ import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketA
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
+import { FunnelErrorBanner } from './FunnelErrorBanner';
 import {
   MODE_HINT,
   MODE_LABEL,
@@ -880,7 +881,7 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, scan, refreshing, quickFilters, opts } = useFtsFunnel(preset);
+  const { funnel, mode, tape, tech, scan, refreshing, quickFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);
 
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
@@ -951,6 +952,7 @@ export function FtsFunnelStages({
 
   return (
     <section className="flex flex-col gap-2">
+      {error ? <FunnelErrorBanner onRetry={retry} blocking={!hasData} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
         {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ

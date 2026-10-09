@@ -1,9 +1,7 @@
 import { useLocation, useNavigate, Link } from 'react-router';
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { PALETTE_OPEN_EVENT } from './CommandPalette';
 import { SearchIcon } from '@shared/components/Icons';
-import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
+import { FreshnessBadge } from '@shared/components/FreshnessBadge';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const TITLES: Record<string, string> = {
@@ -14,49 +12,6 @@ const TITLES: Record<string, string> = {
   '/master': 'غربالگری FTS',
   '/strategy-tree': 'درخت استراتژی FTS',
 };
-
-type FeedSnap = { status: string; dataUpdatedAt: number };
-const NO_FEED: FeedSnap = { status: 'idle', dataUpdatedAt: 0 };
-
-function readFeedSnap(qc: ReturnType<typeof useQueryClient>): FeedSnap {
-  const q = qc.getQueryCache().find({ queryKey: MARKET_FEED_KEY });
-  if (!q) return NO_FEED;
-  return { status: q.state.status, dataUpdatedAt: q.state.dataUpdatedAt };
-}
-
-function useFeedSnapshot(): FeedSnap {
-  const qc = useQueryClient();
-  const [snap, setSnap] = useState<FeedSnap>(() => readFeedSnap(qc));
-  useEffect(() => {
-    setSnap(readFeedSnap(qc));
-    const unsub = qc.getQueryCache().subscribe(() => {
-      // چرا defer: خودِ notify شدنِ cache هم‌زمان درِ render-phaseِ کامپوننتِ
-      // دیگری اتفاق می‌افتد (مثلاً وقتی قیف mount می‌شود و observer تازه‌اش را
-      // به cache وصل می‌کند). setSnap درِ همان لحظه یعنی «به‌هنگامِ رندرِ
-      // کامپوننتِ دیگر state را عوض کردی» — هشدارِ Reactِ همان است. یک
-      // microtask بعد، همان عدد خوانده می‌شود و پیام می‌رود.
-      queueMicrotask(() => {
-        const next = readFeedSnap(qc);
-        setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt ? prev : next));
-      });
-    });
-    return unsub;
-  }, [qc]);
-  return snap;
-}
-
-function feedStatus(state: FeedSnap) {
-  if (state.status === 'idle' && !state.dataUpdatedAt) {
-    return { tone: 'bg-text-muted', label: 'در انتظارِ رسیدنِ دادهٔ تابلو' };
-  }
-  if (state.status === 'error') {
-    return { tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کن' };
-  }
-  if (state.status === 'success') {
-    return { tone: 'bg-accent-green animate-pulse', label: 'سیستم آنلاین و متصل' };
-  }
-  return { tone: 'bg-accent-yellow', label: 'در حالِ دریافتِ داده' };
-}
 
 export function Topbar() {
   const { pathname } = useLocation();
@@ -69,8 +24,6 @@ export function Topbar() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
 
   const showSearch = base !== '/technical';
-  const feedState = useFeedSnapshot();
-  const feed = feedStatus(feedState);
 
   const handlePinnedClick = (s: string) => {
     setSymbol(s);
@@ -81,14 +34,9 @@ export function Topbar() {
 
   return (
     <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
-      {/* سمت راست: نشان وضعیت + Breadcrumb ناوبری */}
+      {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
-        <span
-          role="status"
-          aria-label={feed.label}
-          className={`inline-block h-2 w-2 shrink-0 rounded-full ${feed.tone}`}
-          title={feed.label}
-        />
+        <FreshnessBadge />
 
         <nav aria-label="موقعیت در برنامه" className="flex items-center gap-1.5 text-xs">
           <Link

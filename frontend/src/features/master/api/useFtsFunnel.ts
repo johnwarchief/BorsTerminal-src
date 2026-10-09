@@ -81,6 +81,8 @@ export function useFtsFunnel(
   loading: boolean;
   refreshing: boolean;
   error: string | null;
+  hasData: boolean;
+  retry: () => void;
   basket: Set<string>;
   quickFilters: string[];
   opts: FunnelOptions;
@@ -156,6 +158,11 @@ export function useFtsFunnel(
      *  وگرنه keepPreviousData یعنی «کهنه» بی‌برچسب. */
     refreshing: !!q.isPlaceholderData || q.isFetching,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
+    /** آیا همین حالا دادهٔ معتبری رویِ صفحه هست؟ مصرف‌کننده با این، «خطا» را از
+     *  «خالی» جدا می‌کند: خطا با دادهٔ قبلی ⇒ بنرِ کنارِ جدول، نه empty-state. */
+    hasData: !!q.data,
+    /** Retryِ همان query — دکمهٔ بی‌اثر نه؛ همان fetchِ واقعی را دوباره می‌زند. */
+    retry: () => void q.refetch(),
     // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،
     // نه از فرضِ آرایه — آن ساختار { status, decisions, counts, limits } است.
     basket: new Set(((portfolio.data as { decisions?: Array<{ symbol: string }> } | undefined)

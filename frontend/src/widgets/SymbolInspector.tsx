@@ -37,6 +37,7 @@ import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
 import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
 import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
 import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
+import { FunnelErrorBanner } from '@features/master/ui/FunnelErrorBanner';
 import { stageProgressFor } from '@features/master/lib/funnelView';
 import { IND_COLUMNS, STATUS_LABEL, trendLabel } from '@features/master/lib/ftsFunnel';
 
@@ -231,7 +232,7 @@ export function SymbolInspector() {
   /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
    *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
    *  (جدول، dossier، سایدبار) سه مدلِ متفاوت از یک universe را می‌سنجیدند. */
-  const { funnel, request: funnelRequest } = useFtsFunnel(useActiveFunnelPreset());
+  const { funnel, request: funnelRequest, error: funnelError, hasData: funnelHasData, retry: funnelRetry } = useFtsFunnel(useActiveFunnelPreset());
   // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
   // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
   const cand = useMemo(() => {
@@ -733,6 +734,8 @@ export function SymbolInspector() {
                     : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ غربالگری`}
               </span>
             </nav>
+          ) : funnelError && !funnelHasData ? (
+            <FunnelErrorBanner onRetry={funnelRetry} blocking />
           ) : null}
 
           {/* ── ۱۵.۲۰ رویدادها — عنوانِ خودِ اطلاعیه از تقویمِ نماد
