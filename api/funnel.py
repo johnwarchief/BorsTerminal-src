@@ -16,7 +16,9 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
+from collections import OrderedDict
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -26,7 +28,34 @@ import funnel_registry as REG
 
 router = APIRouter()
 
-_FUNNEL_CACHE: dict[str, Any] = {"key": "", "payload": None, "ts": 0.0}
+# کشِ قیف یک‌خانۀ «کلیدِ آخر» بود. صفحۀ مستر دو مصرف‌کنندۀ هم‌زمان دارد
+# (کاکپیت با presetِ horizon و جدولِ غربالگری با presetِ انتخابی، به‌علاوه
+# پنلِ نماد که 'custom' می‌خواهد)؛ پس هر دو پرسشِ متناوب *miss* می‌خورد و
+# موتورِ کامل (~۰.۸-۱.۵ ثانیه رویِ ۵۸۶۳ ردیف) درِ هر poll دوباره اجرا می‌شد —
+# یعنی دقیقاً همان جایی که مالک «درِ ساعتِ بازار خیلی سریع» می‌خواهد.
+# حالا چند کلیدِ آخر نگه داشته می‌شود. سقفِ تعداد از *حافظه* می‌آید نه سلیقه:
+# هر payload چند مگابایت است، پس دو خانۀ LRU بیشترِ صفحۀ واقعی را پوشش می‌دهد
+# و سومینِ تازه، کهنه‌ترین را بیرون می‌کند.
+_FUNNEL_CACHE: "OrderedDict[str, dict[str, Any]]" = OrderedDict()
+_FUNNEL_CACHE_MAX = 2
+_FUNNEL_CACHE_LOCK = threading.Lock()
+
+
+def _cache_get(key: str, now: float) -> dict[str, Any] | None:
+    with _FUNNEL_CACHE_LOCK:
+        ent = _FUNNEL_CACHE.get(key)
+        if not ent or not ent.get("payload") or now - ent["ts"] >= TTL_S:
+            return None
+        _FUNNEL_CACHE.move_to_end(key)
+        return ent
+
+
+def _cache_put(key: str, payload: dict, now: float) -> None:
+    with _FUNNEL_CACHE_LOCK:
+        _FUNNEL_CACHE[key] = {"payload": payload, "ts": now}
+        _FUNNEL_CACHE.move_to_end(key)
+        while len(_FUNNEL_CACHE) > _FUNNEL_CACHE_MAX:
+            _FUNNEL_CACHE.popitem(last=False)
 # قیف رویِ همان ریتمِ تابلو تازه می‌شود؛ کشِ کوتاه جلویِ هر-کلیدِ Custom را
 # از دوباره‌خوانیِ ۳۷۰۰ ردیف می‌گیرد، بی‌آنکه حکمی را کهنه کند.
 TTL_S = 8.0
@@ -187,12 +216,13 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                       sorted((k, sorted(v)) for k, v in exceptions.items())],
                      ensure_ascii=False)
     now = time.time()
-    if _FUNNEL_CACHE["key"] == key and now - _FUNNEL_CACHE["ts"] < TTL_S and _FUNNEL_CACHE["payload"]:
-        cached = _FUNNEL_CACHE["payload"]
+    hit = _cache_get(key, now)
+    if hit:
+        cached = hit["payload"]
         if full:
             return cached
         out = _strip(cached)
-        out["cached_for_ms"] = int((now - _FUNNEL_CACHE["ts"]) * 1000)
+        out["cached_for_ms"] = int((now - hit["ts"]) * 1000)
         return out
 
     board, session = _board_snapshot()
@@ -216,5 +246,5 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     else:
         import funnel_tech_scan as SCAN
         payload["tech_scan"] = {"pending_symbols": 0, **SCAN.bg_status()}
-    _FUNNEL_CACHE.update({"key": key, "payload": payload, "ts": now})
+    _cache_put(key, payload, now)
     return payload if full else _strip(payload)

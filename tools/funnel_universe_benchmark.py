@@ -21,7 +21,11 @@ sys.path.insert(0, ROOT)
 
 import funnel_engine as FE  # noqa: E402
 
-STATUSES = ("pass", "reject", "pending", "unavailable", "not_required")
+# واژگانِ وضعیت ازِ خودِ موتور خوانده می‌شود، نه از کپیِ دستِ این‌جا: §۱۵.۱۷
+# ششمین حالت (not_in_universe) را افزود و این ابزار بی‌آن پنج حالت را با
+# جامعۀ کامل نمی‌خواند و «ثابتِ no-truncation» را دروغ می‌گفت (سنجش: جمعِ هر
+# گام ۵۸۶۳ است، نه ۳۶۵).
+STATUSES = FE.STATUSES
 
 
 
@@ -74,6 +78,11 @@ def main() -> int:
         cov = out["coverage"]
         bad = [s for s in ("tape", "technical", "fundamental", "handover")
                if sum(cov[s].get(k, 0) for k in STATUSES) != joined]
+        u = out["universe"]
+        # رأیِ §۱۵.۱۷: جامعۀ تابلو = واجدانِ غربال + خارج‌شدگان. بی‌این خط،
+        # ابزارِ benchmark خودِ تقسیمِ تازه را نمی‌دید.
+        assert u["market"] == u["screening"] + u["excluded"], (
+            "X = Y + شکست نشد: " + json.dumps({k: u[k] for k in ("market", "screening", "excluded")}))
         runs.append({
             "case": label,
             "ms": ms,
