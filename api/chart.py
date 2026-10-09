@@ -9,6 +9,13 @@ from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache, APP_VE
 from tape_flags import JET_LADDER
 import candle_contract
 import price_basis
+import os as _os
+import trend_classify
+# موتورِ تشخیصِ روند: legacy (پیش‌فرض = رفتارِ امروز) | hybrid. با env عوض می‌شود تا
+# درِ dev مسیرِ ترکیبی واقعاً فعال/قابل‌مشاهده باشد و برگشت به قبلی روشن بماند.
+# این flag فقط «برچسبِ روند» را می‌سازد؛ جت همیشه `_fts_classify_trend` را می‌خواند
+# و دروازۀ هفتگی قیف همان `trend.matrix` را — پس قانونِ قیف و منطقِ جت عوض نمی‌شود.
+TREND_ENGINE = (_os.environ.get("BORS_TREND_ENGINE") or "legacy").strip().lower()
 from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
 from fastapi import Query
@@ -2722,11 +2729,15 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
     w = _fts_resample(candles, "W")
     m = _fts_resample(candles, "M")
+    # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
+    # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
+    # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
+    _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
     out = {
         "trend": {
-            "D": _fts_classify_trend(swings_d, series=candles),
-            "W": _fts_classify_trend(_fts_swings(w, k=2), series=w),
-            "M": _fts_classify_trend(_fts_swings(m, k=2), series=m),
+            "D": _tf(swings_d, series=candles),
+            "W": _tf(_fts_swings(w, k=2), series=w),
+            "M": _tf(_fts_swings(m, k=2), series=m),
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -3012,7 +3023,7 @@ def _fts_analysis_cache_key(symbol, last_close, entry_hint, basis, as_of):
     متفاوت دو کلیدِ جدا می‌سازند؛ پس ترتیبِ کلید بخشی از قراردادِ آن گارد است.
     """
     return (f"{symbol}|tf=daily|{last_close}|{entry_hint}"
-            f"|asof={as_of or ''}|rs={FTS_TECH_RULESET_VERSION}|v={APP_VERSION}|{basis}")
+            f"|asof={as_of or ''}|rs={FTS_TECH_RULESET_VERSION}|eng={TREND_ENGINE}|{basis}")
 
 
 def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
@@ -3060,6 +3071,7 @@ def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
     _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
               "analysis_basis": basis, "bars": len(candles),
+              "trend_engine": TREND_ENGINE,
               "adjustCapability": _adjust_capability(_evs, _src)}
     if as_of:
         result["as_of"] = as_of
