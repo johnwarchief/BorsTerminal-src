@@ -86,6 +86,8 @@ SUITES = [
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
+    ('dev/test_fts_asof_cutoff.py',
+     'FTS analysis as_of is a real input cutoff; the cache key carries as_of + build so cutoffs never leak'),
     ('_audit/candle_integrity_roundj.py',
      'candle integrity + published-TSETMC parity along feed → engine → chart'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
