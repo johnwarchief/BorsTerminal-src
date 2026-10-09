@@ -4,12 +4,12 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useFtsFunnel } from '../api/useFtsFunnel';
+import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import {
   activeIdsForPreset,
   buildFtsChartModel,
   descendantsOf,
   ZONE_BY_KEY,
-  type FtsPreset,
   type FtsZone,
   type FtsChartNode,
 } from '../lib/ftsChartModel';
@@ -23,10 +23,6 @@ const TONE: Record<FtsZone, { border: string; text: string; soft: string; dot: s
   M: { border: 'border-rose-500/40', text: 'text-rose-400', soft: 'bg-rose-500/7', dot: 'bg-rose-400' },
 };
 
-function presetFrom(value: string | null, fallback: FtsPreset): FtsPreset {
-  return value === 'swing' || value === 'trend' || value === 'hourglass' || value === 'custom' ? value : fallback;
-}
-
 function leaves(model: ReturnType<typeof buildFtsChartModel>, id: string): FtsChartNode[] {
   return descendantsOf(model, id).map((x) => model.byId.get(x)).filter((x): x is FtsChartNode => Boolean(x && x.kind === 'leaf'));
 }
@@ -36,7 +32,8 @@ export default function StrategyTreeStageView({ zone }: { zone: FtsZone }) {
   const horizon = useStrategyStore((s) => s.horizon);
   const symbolStore = useSymbolStore((s) => s.symbol);
   const symbol = params.get('symbol') || symbolStore || '';
-  const preset = presetFrom(params.get('preset'), horizon);
+  // همان presetِ canonicalِ سراسری (URL > انتخابِ کاربر > افق) — نه URL→horizon تنها (#M2.1).
+  const preset = useActiveFunnelPreset(horizon);
   const strategyParams = useStrategyParamsStore((s) => s.params);
   const model = useMemo(() => buildFtsChartModel(strategyParams), [strategyParams]);
   const active = useMemo(() => activeIdsForPreset(preset, model), [preset, model]);

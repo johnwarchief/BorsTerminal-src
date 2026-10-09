@@ -53,9 +53,12 @@ describe('کامپوننت های تابلو', () => {
 
   it('پنل مشکوک الگوی ساعت را فهرست می کند', () => {
     const onSelect = vi.fn();
-    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000, vol_ratio_file: 0.5 })]} onSelect={onSelect} />);
+    // شپنا هر دو پرچمِ canonicalِ تابلو را دارد (همان f_clock/f_susp که چیپ و ستون
+    // می‌خوانند)؛ پنل دیگر فرمولِ جدا نمی‌سازد، پس عضویت = داوریِ چیپ (#M2.3).
+    render(<SuspiciousPanel rows={[row({ f_clock: true, f_susp: true }), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000, vol_ratio_file: 0.5 })]} onSelect={onSelect} />);
     // شپنا هم در بخش ساعت هم در بخش حجم مشکوک است (حجم 5 برابر میانگین)
     expect(screen.getAllByText('شپنا')).toHaveLength(2);
+    // خودرو هیچ پرچمی ندارد و داوریِ canonical هم ردش می‌کند ⇒ در هیچ بخشی نمی‌آید
     expect(screen.queryByText('خودرو')).not.toBeInTheDocument();
   });
 });
