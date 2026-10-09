@@ -973,14 +973,17 @@ export function FtsFunnelStages({
         </span>
         {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
             خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
-            (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. */}
+            (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. سه عدد درِ یک خانۀ
+            مرزی‌اند و «|» و «/» متنِ جداکننده حذف شد: درِ RTL آن‌ها لبهٔ
+            جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
+        <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
         <span className="text-text-secondary" data-testid="funnel-universe-market"
               title="تک‌تکِ نمادهایِ این نشستِ تابلو (ردیفِ تکراری یکی‌شده)">
-          | جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
+          جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
         </span>
         <span className="text-accent-blue" data-testid="funnel-universe-screening"
               title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
-          / واجدِ غربالگری: {toFaDigits(funnel.total)}
+          واجدِ غربالگری: {toFaDigits(funnel.total)}
         </span>
         <button
           type="button"
@@ -988,14 +991,13 @@ export function FtsFunnelStages({
           aria-expanded={showExcluded}
           onClick={() => setShowExcluded((v) => !v)}
           title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
-          className={`rounded-full border px-2 py-0.5 transition-colors ${
-            showExcluded
-              ? 'border-accent-yellow/50 bg-accent-yellow/15 text-accent-yellow'
-              : 'border-border-c bg-bg-secondary text-text-muted hover:text-text-primary'
+          className={`rounded-full px-1.5 py-0.5 transition-colors ${
+            showExcluded ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted hover:text-text-primary'
           }`}
         >
-          / خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
+          خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
         </button>
+        </span>
         {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
             پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
         {refreshing && funnel.total > 0 ? (
