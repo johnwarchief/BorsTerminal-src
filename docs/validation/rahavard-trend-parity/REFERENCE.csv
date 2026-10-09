@@ -1,0 +1,12 @@
+symbol,asset_id,ra_name_full,ts_name_full,identity_confirmed,last_candle_date,timeframe,adjustment,human_label,structure_observed,reason,algo_contaminated,screenshot
+خساپا,172,ساپا (بورس تهران),خساپا,YES-pending-full-name-check,2026-10-07,D,عملکردی,up,"پایۀ بلند ~۷۰۰ تا اواسط ۲۰۲۵، سپس صعودِ HH+HL تا ~۳۰۰ و پولبکِ بالای ۲۵۰۰؛ کف‌ها و سقف‌های بالاترِ متوالی",ساختارِ صعودیِ واضحِ انتهای نمودار,Y(خروجی الگوریتم زودهنگام دیده شد),ra_172_daily_amali_linear.png
+طلا,2672,صندوق طلا - پشتوانه چندکالایی پارسیا,?,NO-باید نامِ کاملِ نمادِ BorsTerminal تطبیق شود,,,,,,,,,
+# ---- روشِ قابل‌تکرار (Pipeline) ----
+# 1) بازکردنِ نمودار: https://rahavard365.com/asset/<id>/chart
+# 2) تعدیلِ عملکردی: در selectِ داخلِ iframe مقدارِ گزینه = type7 (برچسب «عملکردی»)، سپس dispatch change.
+# 3) OHLC خام (نیازمندِ sessionِ اپ؛ fetchِ top-frame ⇒ 401):
+#    GET /api/v2/chart/bars?countback=300&symbol=exchange.asset:<id>:real_close:type7&resolution=<D|W>&from=<ISO>&to=<ISO>
+#    ⇒ اگر 401 داد، برچسب از خودِ نمودارِ رندرشده (اسکرین‌شات) خوانده می‌شود (روشِ انسانیِ مدنظرِ مالک).
+# 4) تطبیقِ هویت: نامِ کاملِ Rahavard باید با instruments.l_val30 درِ BorsTerminal یکی باشد، وگرنه ردیف کنار گذاشته می‌شود.
+# 5) برچسب فقط از ساختارِ قابل‌مشاهده؛ خروجیِ هیچ الگوریتمی پیش از برچسب دیده نشود (نمونه‌هایِ آلوده علامت Y).
+# 6) پروتکلِ کامل: PROTOCOL.md
