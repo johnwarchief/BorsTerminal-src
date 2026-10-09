@@ -308,9 +308,18 @@ try:
     ck('watch.get("p_closing")) * _f(' not in _fbody and '"mcap"' in _fbody,
        "conf_fund no longer derives p_closing x total_shares locally; one answer per symbol")
     _board = io.open("api/market.py", encoding="utf-8").read()
-    ck("@MCAP@" in _board and "mcap_bulk_expr(conn" in _board,
+    # این بند در اصل توکن `@MCAP@` را می‌پایست؛ آن توکن عمداً بازنشسته شد، چون دو
+    # مصرف‌کنندۀ متنِ این SQL را با regex از فایلِ منبع می‌گیرند و *مستقیم اجرا*
+    # می‌کنند (`dev/board_hist_cache_v1056.py`، `tools/tape_formula_parity.py`) و
+    # SQLِ بی‌اجرا آن‌ها را می‌شکند. پس حالا خودِ قراردادِ تازه پین می‌شود:
+    # ۱) ستونِ مبنایِ ساید همان `fts_engine.mcap_bulk_expr` است (یک فرمول، نه داورِ دوم)
+    # ۲) متنِ پایه باید *قابل‌اجرا* بماند (placeholderِ CAST) و توکن برنگردد.
+    ck("mcap_bulk_expr(conn" in _board,
        "the sidebar's market cap IS fts_engine.mcap_bulk_expr (the very expression I4 "
        "divides by) — two surfaces, one formula, no second judge")
+    ck("CAST(NULL AS REAL) AS mcap" in _board and "@MCAP@" not in _board,
+       "the board SQL stays executable (placeholder, not a token) — the two tools that "
+       "regex-and-run it keep working")
 finally:
     _mc.close()
 
