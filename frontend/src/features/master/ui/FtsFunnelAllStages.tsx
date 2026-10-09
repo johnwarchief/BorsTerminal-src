@@ -186,7 +186,11 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
   tape: ['symbol', 'last', 'chg', 'vol', 'pattern', 'why'],
   technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark', 'why'],
   fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score', 'why'],
-  handover: ['symbol', 'weekly', 'score', 'why', 'basket'],
+  // گامِ تحویل دو ستونِ روندِ روزانه و شاخه را کم داشت، در حالی که همان داده
+  // درِ پاسخِ سرور هست (`daily`/`branch`) و درِ گامِ تکنیکال هم نشان داده می‌شود؛
+  // خوانندۀ «تحویل» باید بدود سهم با کدام شاخه به این گام رسیده، نه فقط اینکه
+  // هفتگی صعودی بوده. واژۀ تازه‌ای اضافه نشد: سرستون‌ها همان تعریف‌هایِ موجودند.
+  handover: ['symbol', 'weekly', 'daily', 'branch', 'score', 'why', 'basket'],
 };
 
 /**
