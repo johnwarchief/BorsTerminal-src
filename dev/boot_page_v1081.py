@@ -295,6 +295,9 @@ def main():
         import shutil
         shutil.rmtree(scratch, ignore_errors=True)
     print('\n%d سنجش سبز، %d سرخ' % (PASS, len(FAIL)))
+    # خطِ لاتین: `dev/run_all_tests.py` شمارش را از همین قالب می‌خواند و با
+    # متنِ فارسی تنها «۰ pass / ۰ fail» گزارش می‌شد (سبز بودنِ خودِ گارد نه).
+    print('%d pass / %d fail' % (PASS, len(FAIL)))
     if FAIL:
         for f in FAIL:
             print('  RED: ' + f)
