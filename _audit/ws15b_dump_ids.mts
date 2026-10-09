@@ -8,7 +8,8 @@ const b = await chromium.launch({ headless: true, executablePath: process.env.JE
 const c = await b.newContext({ viewport: { width: 1600, height: 900 } });
 await c.addInitScript(() => sessionStorage.setItem('bors_auth_session', 'true'));
 const p = await c.newPage();
-await p.goto('http://127.0.0.1:8021/', { waitUntil: 'networkidle' });
+const BASE = process.argv.includes('--url') ? process.argv[process.argv.indexOf('--url') + 1] : 'http://127.0.0.1:8021/';
+await p.goto(BASE, { waitUntil: 'domcontentloaded' });
 await p.waitForTimeout(12000);
 console.log('LANDING_URL: ' + p.url());
 console.log('FUNNEL_ON_LANDING: ' + await p.evaluate(() =>
