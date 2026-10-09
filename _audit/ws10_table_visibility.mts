@@ -45,20 +45,34 @@ const SCAN = () => {
     });
     const dupHeads: string[] = [];
     heads.forEach((h, i) => { if (h && heads.indexOf(h) < i) dupHeads.push(h); });
+    // «دو ستونِ هم‌محتوا» یعنی ستونِ تکراری، نه دو ستونِ *خالی*. درِ جدولِ صنایعِ
+    // پرتفوی وقتی سرمایه ثبت نشده، «وزن» و «وضعیت» هر دو «بدون داده» می‌نویسند
+    // و سنسور این را تکرار گزارش می‌کرد (بازبینیِ دستی: داده یکی نیست، جای‌نما
+    // یکی است). جای‌نماها از مقایسه بیرون می‌مانند و تراکمِشان جدا شمرده می‌شود.
+    const PLACE = new Set(['بدون داده', 'بدون پوزیشن', '—', '-', 'بی‌داده', 'خالی']);
+    const isPlace = (v: string) => PLACE.has(v.trim());
+    const cellsOf = (i: number) => [...t.querySelectorAll('tbody tr')]
+      .map((tr) => (tr.children[i]?.textContent ?? '').trim());
     const dupCols: [number, number][] = [];
     for (let i = 0; i < heads.length; i++) {
       for (let j = i + 1; j < heads.length; j++) {
+        const ca = cellsOf(i), cb = cellsOf(j);
+        if (ca.length > 0 && ca.every(isPlace) && cb.every(isPlace)) continue;
         const a = colText(i), b = colText(j);
         if (a.length > 3 && a === b) dupCols.push([i, j]);
       }
     }
+    const placeholderCols = heads
+      .map((h, i) => ({ h, cells: cellsOf(i) }))
+      .filter((x) => x.cells.length > 0 && x.cells.every(isPlace))
+      .map((x) => x.h);
     return {
       testid: t.getAttribute('data-testid') ?? t.closest('[data-testid]')?.getAttribute('data-testid') ?? null,
       widthPx: Math.round(r.width),
       viewportShare: Number((r.width / innerWidth).toFixed(2)),
       rowsN, colN: heads.length, heads: heads.slice(0, 14),
       hostOverflowX: host ? Math.max(0, host.scrollWidth - host.clientWidth) : 0,
-      clipped, dupHeads, dupCols,
+      clipped, dupHeads, dupCols, placeholderCols,
     };
   });
 };
@@ -89,7 +103,8 @@ for (const [route, v] of Object.entries<any>(pages)) {
                t.hostOverflowX ? `OVERFLOW +${t.hostOverflowX}px` : 'no overflow',
                t.clipped.length ? `CLIPPED ${t.clipped.length}: ${JSON.stringify(t.clipped[0], null, 0)}` : 'no clip',
                t.dupHeads.length ? `DUP HEADS ${JSON.stringify(t.dupHeads)}` : '-',
-               t.dupCols.length ? `DUP COLS ${JSON.stringify(t.dupCols)}` : '-'].join('  |  '));
+               t.dupCols.length ? `DUP COLS ${JSON.stringify(t.dupCols)}` : '-',
+               t.placeholderCols?.length ? `ALL-PLACEHOLDER COLS: ${JSON.stringify(t.placeholderCols)}` : ''].join('  |  '));
   }
   if (!v.tables.length) rows.push(`${route}  |  ${v.painted ? 'no table found' : 'NOT PAINTED (timeout)'}`);
   if (v.pageErrors.length) rows.push(`${route}  |  errors ${JSON.stringify(v.pageErrors.slice(0, 2))}`);
