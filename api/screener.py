@@ -178,7 +178,12 @@ def _apply_assembly_veto(rows):
         base = " · ".join(x for x in str(r.get("exclusion_reasons") or "").split(" · ")
                           if x.strip() and not x.startswith(_ASM_VETO_PREFIX))
         ev = asm.get(str(r.get("symbol") or "").translate(norm).strip())
-        if ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED:
+        # رأیِ §۲۴: عددی که از تاریخِ انتشارِ اطلاعیه آمده، تاریخِ مجمع نیست.
+        # پیش از این `extract_when` بی‌علامت همان را جایِ تاریخِ جلسه می‌گذاشت و
+        # وتوی سبد رویِ «تصمیمات مجمع…» (بی‌تاریخِ جلسه) روشن می‌شد. حالا فقط
+        # منشأِ عنوان‌محور وتو می‌سازد؛ بقیه برچسبِ «اطلاعیه» می‌مانند.
+        if (ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED
+                or ev.get("date_source") != "title"):
             r["assembly_veto"] = False
             r["exclusion_reasons"] = base
             out.append(r)

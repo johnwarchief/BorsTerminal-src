@@ -13,6 +13,10 @@ export const CalEventSchema = z.object({
   ts: z.number().nullish(),
   title: z.string().nullish(),
   cat: z.string().nullish(),
+  // منشأِ تاریخ (§۲۴ِ رأی): «title» تاریخِ جلسه است، «publication_fallback» فقط
+  // انتشارِ اطلاعیه. ردیف‌هایِ کهنۀ کش این را بی‌مقدار می‌فرستند ⇒ همان fallback.
+  date_source: z.enum(['title', 'publication_fallback']).nullish(),
+  published_at: z.string().nullish(),
 });
 
 export type CalEventRow = z.infer<typeof CalEventSchema>;

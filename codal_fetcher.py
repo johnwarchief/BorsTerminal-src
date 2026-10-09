@@ -3586,8 +3586,13 @@ def fetch_symbol(symbol):
         pass
 
     # 2) Targeted extraction: ONLY monthly-activity + financial-statement reports
-    #    (board-assignment / assembly notices are stored as notices but never
-    #    deep-extracted — keeps bandwidth low and avoids IP bans)
+    #    (board-assignment / assembly notices never reach codal_notices at all:
+    #    `kind_of()` blacklists the words آگهی/دعوت/تصمیمات/تغییر/لغو and the
+    #    self-learned whitelist is mined only from successfully extracted
+    #    financial/monthly titles — verified on this checkout, 20 patterns from
+    #    1032 titles, all four assembly-title probes rejected. So "stored but
+    #    not deep-extracted" would be wrong: they are not stored. The calendar
+    #    family is fetched separately by dev/calendar_fetcher.py → cache.json.)
     ms_done = {r[0] for r in conn.execute(
         "SELECT tracing_no FROM monthly_sales "
         "WHERE (monthly_revenue IS NOT NULL AND monthly_revenue != 0) "

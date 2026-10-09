@@ -635,6 +635,12 @@ export function SymbolInspector() {
                       title={`${e.date} — ${e.title ?? ''}`}>
                     <span className="num text-text-muted">{jalaliOf(e.date)}</span>
                     {' '}{e.title ?? '—'}
+                    {/* رأیِ §۲۴: اگر عنوانِ اطلاعیه تاریخِ جلسه را نمی‌گفت، این عدد
+                        فقط تاریخِ انتشار است — بی‌علامت گذاشتنش «X روز تا مجمع»
+                        به کاربر می‌فروشد. */}
+                    {e.date_source === 'title' ? null : (
+                      <span className="text-text-muted" data-testid="inspector-event-published"> (انتشار)</span>
+                    )}
                   </li>
                 ))}
               </ul>

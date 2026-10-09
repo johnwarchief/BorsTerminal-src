@@ -43,10 +43,15 @@ function sig(agent: AgentSignal['agentId'], patch: Partial<AgentSignal> = {}): A
 const isoIn = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
 /** پاسخِ تقویم: رویدادِ مجمعِ خواستۀ آزمون */
-function calendarWith(cat: string, days = 3) {
+function calendarWith(cat: string, days = 3, source: string = 'title') {
   fetchMock.mockImplementation((url: string) => {
     const body = String(url).includes('/api/calendar/upcoming')
-      ? { status: 'ok', days: 14, count: 1, items: [{ symbol: SYM, date: isoIn(days), cat, title: 'آگهی دعوت به مجمع' }] }
+      ? { status: 'ok', days: 14, count: 1, items: [{
+          symbol: SYM, date: isoIn(days), cat,
+          // «مورخ …» در عنوان ⇒ منشأ title (§۲۴ِ رأی). بی‌این میدان واکشی‌شده
+          // وتو نمی‌سازد؛ سنجه‌هایِ زیر همین را می‌سنجند.
+          title: 'آگهی دعوت به مجمع مورخ ۱۴۰۵/۰۷/۲۰',
+          date_source: source }] }
       : { status: 'ok', data: [], items: [], decisions: [] };
     return Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as unknown as Response);
   });
@@ -91,6 +96,19 @@ describe('سایدبار چپ: ردِ قطعی با «هنوز سنجیده نش
     expect(await screen.findByText('وتو')).toBeInTheDocument();
     expect(screen.getByText('ورود متوقف')).toBeInTheDocument();
     expect(screen.getByTestId('inspector-veto-why').textContent).toContain('مجمع');
+  });
+
+  // §۲۴ِ رأی درِ خودِ سایدبار: عددی که از انتشارِ اطلاعیه آمده تاریخِ مجمع نیست.
+  // بک‌اند این را درِ `dev/test_calendar_v92.py` می‌پاید؛ اینجا مصرف‌کنندۀ
+  // فرانتیِ همان میدان سنجیده می‌شود، چون سایدبار رأیِ دومِ خودش را دارد.
+  it('مجمعِ بی‌تاریخِ جلسه در عنوان ⇒ سایدبار وتو نمی‌کند، «در انتظار» هم نه — برچسبِ اطلاعیه', () => {
+    calendarWith('assembly', 3, 'publication_fallback');
+    useSignalStore.getState().publishSignal(sig('fundamental'));
+    useSignalStore.getState().publishSignal(sig('technical'));
+    useSignalStore.getState().publishSignal(sig('tape'));
+    renderInspector();
+    const why = screen.getByTestId('inspector-veto-why').textContent ?? '';
+    expect(why).not.toContain('مجمع');
   });
 
   it('لغو/تعویقِ مجمع وتو نمی‌سازد (همان قاعدۀ بک‌اند: تاریخِ نامعلوم)', () => {

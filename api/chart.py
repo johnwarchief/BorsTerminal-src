@@ -863,6 +863,31 @@ def _cal_cache_events():
     return _cal_cache["events"]
 
 
+# ── منشأِ تاریخِ رویداد (§۲۳ و §۲۴ِ رأیِ مالک) ────────────────────────────────
+# «آیا خودِ عنوان، تاریخِ جلسه را می‌گوید؟» — همان شرطی که واکشی‌کننده برای
+# انتخابِ تاریخِ رویداد به کار می‌برد (`dev/calendar_fetcher.py`، DATE_RE).
+# ردیف‌هایِ قدیمیِ cache.json این علامت را ندارند و reingest هم درِ این milestone
+# ممنوع است (رأیِ §۲۶)، پس منشأ از خودِ عنوانِ ذخیره‌شده بازسازی می‌شود؛ نه از
+# حدس، نه از تاریخِ انتشار.
+_FA_NUM = str.maketrans({chr(0x06F0 + i): str(i) for i in range(10)}
+                        | {chr(0x0660 + i): str(i) for i in range(10)})
+_TITLE_DATE_RE = __import__("re").compile(r"(?:مورخ|مؤرخ|تاریخ)\s*\d{4}/\d{1,2}/\d{1,2}")
+
+
+def event_date_source(ev: dict) -> str:
+    """`"title"` | `"publication_fallback"` — هیچ حالتِ سومی وجود ندارد.
+
+    نبودِ علامت رویِ ردیفِ کهنه با «تاریخِ مجمع» یکی نیست: اگر عنوان تاریخِ
+    جلسه نداشته باشد، آن عدد فقط تاریخِ انتشارِ اطلاعیه است و وتو رویِ آن
+    روشن نمی‌شود.
+    """
+    src = str(ev.get("date_source") or "").strip()
+    if src in ("title", "publication_fallback"):
+        return src
+    title = str(ev.get("event_title") or ev.get("description") or "").translate(_FA_NUM)
+    return "title" if _TITLE_DATE_RE.search(title) else "publication_fallback"
+
+
 def _cal_events_for(symbol):
     """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
     _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
@@ -887,6 +912,10 @@ def _cal_events_for(symbol):
             "ts": int(_tg((dt.year, dt.month, dt.day, 12, 0, 0, 0, 0, 0))) * 1000,
             "title": title,
             "cat": _cal_classify(title, int(ev.get("event_type_id") or 0)),
+            # همان دو میدانِ `upcoming`: رابطِ تقویمِ نماد هم باید بداند این تاریخ
+            # تاریخِ جلسه است یا فقط انتشارِ اطلاعیه.
+            "date_source": event_date_source(ev),
+            "published_at": ev.get("published_at"),
         })
     out.sort(key=lambda x: x["ts"])
     return out
@@ -959,7 +988,12 @@ def _upcoming_by(cats, days: int, title_re=None) -> dict:
             and cur["cat"] != "assemblyChange"
         ):
             best[sym] = {"symbol": sym, "date": d.isoformat(), "cat": cat,
-                         "title": title[:140]}
+                         "title": title[:140],
+                         # دو میدانِ تازه برایِ همین مصرف‌کننده‌هاست: وتو فقط با
+                         # «title» روشن می‌شود و رابط «تاریخِ انتشار» را جدا
+                         # برچسب می‌زند. نبودش ⇒ هیچ‌کدام.
+                         "date_source": event_date_source(ev),
+                         "published_at": ev.get("published_at")}
     return best
 
 

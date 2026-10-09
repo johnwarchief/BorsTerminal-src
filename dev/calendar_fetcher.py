@@ -176,10 +176,12 @@ def extract_when(title: str, pub_iso: str):
         try:
             jy, jm, jd = int(m.group(1)), int(m.group(2)), int(m.group(3))
             gy, gm, gd = j2g(jy, jm, jd)
-            return f"{gy:04d}-{gm:02d}-{gd:02d}T{ev_time}:00+03:30", ev_time
+            return f"{gy:04d}-{gm:02d}-{gd:02d}T{ev_time}:00+03:30", ev_time, "title"
         except Exception:
             pass
-    return pub_iso, ev_time
+    # رأیِ §۲۴: این عدد تاریخِ جلسه نیست، تاریخِ انتشارِ اطلاعیه است. بی‌علامت
+    # گذاشتنش مجاز نبود، پس منشأ هم برگردانده می‌شود و درِ ردیف می‌نشیند.
+    return pub_iso, ev_time, "publication_fallback"
 
 
 def letter_url(u):
@@ -551,7 +553,7 @@ def fetch_month(session, jy, jm, rotate=False, req_counter=None, max_pages=60,
             if not pub_iso:
                 continue
             # v2.1: تاریخ برگزاری رویداد از عنوان (مورخ ...) — نه تاریخ انتشار
-            iso, ev_time = extract_when(title, pub_iso)
+            iso, ev_time, date_src = extract_when(title, pub_iso)
             # v9.2: طبقه‌بندی عنوان‌محور (classify_tid) — همان تفسیری که فرانت از
             # event_type_id می‌خواند؛ «پرداخت سود» حالا از دل تصمیمات مجمع درمی‌آید.
             etid = fixed_tid if fixed_tid is not None else classify_tid(title)
@@ -564,6 +566,11 @@ def fetch_month(session, jy, jm, rotate=False, req_counter=None, max_pages=60,
                 "event_title": title,
                 "event_type_id": etid,
                 "event_time": ev_time,
+                # منشأِ تاریخِ رویداد و خودِ تاریخِ انتشار — دو میدانِ تازه که
+                # مصرف‌کننده‌ها (برچسبِ جدول، وتوی سبد، پنلِ نماد) به آن نگاه
+                # می‌کنند. «X روز تا مجمع» فقط با date_source == "title".
+                "date_source": date_src,
+                "published_at": pub_iso,
                 "link": letter_url(L.get("Url"))
             })
     return events

@@ -22,10 +22,20 @@ export interface CalEvent {
   date: string;
   title?: string | null;
   cat?: string | null;
+  /** منشأِ همین تاریخ (§۲۴ِ رأیِ مالک): «title» یعنی خودِ عنوانِ اطلاعیه تاریخِ
+   *  جلسه را گفته؛ «publication_fallback» یعنی عدد فقط تاریخِ انتشار است و
+   *  هیچ «چند روز تا مجمع»ی از آن ساخته نمی‌شود. */
+  date_source?: 'title' | 'publication_fallback' | null;
+  /** تاریخِ انتشارِ خودِ اطلاعیه (ISO) — برایِ برچسبِ جداگانهٔ «تاریخ انتشار» */
+  published_at?: string | null;
 }
 
 export interface AssemblyBadgeInfo {
-  kind: 'near' | 'change';
+  /** 'notice' = اطلاعیهٔ خانوادۀ مجمع که تاریخِ جلسه در عنوانش نیست؛
+   *  برچسب دارد، شمارشِ معکوس ندارد، و وتو هم نمی‌سازد. */
+  kind: 'near' | 'change' | 'notice';
+  /** منشأِ تاریخِ همین برچسب — همان چیزی که مصرف‌کننده برایِ وتو می‌بیند */
+  dateSource: 'title' | 'publication_fallback';
   /** فاصله تا مجمع به روز — فقط برای near (۰ = امروز) */
   days: number;
   /** تاریخ ISO رویداد */
@@ -36,7 +46,7 @@ export interface AssemblyBadgeInfo {
   label: string;
   /** عنوان کامل رویداد کدال برای tooltip */
   detail: string;
-  testId: 'assembly-near-badge' | 'assembly-change-badge';
+  testId: 'assembly-near-badge' | 'assembly-change-badge' | 'assembly-notice-badge';
 }
 
 const FA_TZ = 'Asia/Tehran';
@@ -101,17 +111,24 @@ export function pickAssemblyBadge(
   const upcoming = sorted.filter((e) => dayDiff(todayIso, e.date) >= 0);
   const pastDesc = sorted.filter((e) => dayDiff(todayIso, e.date) < 0).reverse();
 
-  const mk = (kind: 'near' | 'change', ev: CalEvent, days: number, label: string): AssemblyBadgeInfo => ({
+  const srcOf = (e: CalEvent): 'title' | 'publication_fallback' =>
+    e.date_source === 'title' ? 'title' : 'publication_fallback';
+
+  const mk = (kind: AssemblyBadgeInfo['kind'], ev: CalEvent, days: number, label: string): AssemblyBadgeInfo => ({
     kind,
+    dateSource: srcOf(ev),
     days,
     date: ev.date,
     jalali: jalaliOf(ev.date),
     label,
     detail: String(ev.title ?? ''),
-    testId: kind === 'near' ? 'assembly-near-badge' : 'assembly-change-badge',
+    testId: kind === 'near' ? 'assembly-near-badge'
+      : kind === 'notice' ? 'assembly-notice-badge' : 'assembly-change-badge',
   });
 
-  const next = upcoming[0] ?? null;
+  // اولِ رویدادی که *خودِ عنوانش* تاریخِ جلسه را می‌گوید؛ اگر فقط اطلاعیه‌ای با
+  // تاریخِ انتشار باقی مانده باشد، آن برچسبِ «notice» می‌شود — بی‌شمارشِ روز.
+  const next = upcoming.find((e) => srcOf(e) === 'title') ?? null;
   if (next != null) {
     if (next.cat === 'assemblyChange') {
       // آخرین خبرِ پیش‌رو تغییر مجمع است — تاریخ قدیمِ مجمع معتبر نیست
@@ -122,6 +139,12 @@ export function pickAssemblyBadge(
     const daysText = days === 0 ? 'امروز' : days === 1 ? 'فردا' : `${toFaDigits(days)} روز دیگر`;
     const head = next.cat === 'assemblyExtra' ? 'مجمع فوق‌العاده نزدیک' : 'مجمع نزدیک';
     return mk('near', next, days, `${head} — ${daysText} (${jalaliOf(next.date)})`);
+  }
+
+  const notice = upcoming[0] ?? null;
+  if (notice != null) {
+    return mk('notice', notice, 0,
+      `اطلاعیۀ مجمع — تاریخِ انتشار: ${jalaliOf(notice.date)}`);
   }
 
   const lastPast = pastDesc[0];

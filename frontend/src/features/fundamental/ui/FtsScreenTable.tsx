@@ -383,7 +383,12 @@ const ScreenerRow = memo(function ScreenerRow({
                                 : 'bg-accent-blue/20 text-accent-blue border-accent-blue/30'
                             }`}
                           >
-                            مجمع {assembly.jalali.split('-').slice(-2).join('/')}
+                            {/* §۲۴: اگر تاریخ از عنوانِ اطلاعیه نیامده، عدد فقط
+                                تاریخِ انتشار است — پس واژۀ «مجمع» هم نمی‌تواند
+                                تنها برچسب باشد؛ «اطلاعیه» می‌نشیند تا خواننده
+                                «مجمعِ فلان‌روز» را نخواند. */}
+                            {assembly.kind === 'notice' ? 'اطلاعیه' : 'مجمع'}{' '}
+                            {assembly.jalali.split('-').slice(-2).join('/')}
                           </span>
                         ) : null}
                         {/* «افزایش سرمایه» — فقط برچسب. رأیِ pilot (#53): این رویداد

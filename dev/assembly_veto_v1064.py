@@ -44,8 +44,13 @@ TODAY = datetime.date.today()
 _in3 = (TODAY + datetime.timedelta(days=3)).isoformat()
 
 
-def ev(cat, date):
-    return {"symbol": "فولاد", "date": date, "cat": cat, "title": "آگهی دعوت به مجمع"}
+def ev(cat, date, source="title"):
+    # `date_source` همان میدانی است که `api/chart.upcoming_assemblies` حالا
+    # برمی‌گرداند (§۲۴ِ رأی): «title» یعنی خودِ عنوان تاریخِ جلسه را گفته.
+    # استابِ این گارد هم باید همان قرارداد را حمل کند، وگرنه آزمون چیزِ دیگری
+    # را می‌سنجد که درِ تولید وجود ندارد.
+    return {"symbol": "فولاد", "date": date, "cat": cat,
+            "title": "آگهی دعوت به مجمع مورخ ۱۴۰۵/۰۷/۲۰", "date_source": source}
 
 
 def row(**kw):
@@ -82,6 +87,15 @@ for cat, label in (("assembly", "عمومی"), ("assemblyExtra", "فوق‌ال�
        "%s ⇒ دلیل با رقمِ فارسی نوشته می‌شود (%r)" % (cat, out["exclusion_reasons"]))
     ck(out["excluded"] is False,
        "%s ⇒ `excluded` دست‌نخورده: مجمع ضعفِ بنیادی نیست، خاکستری‌کردنِ ردیف دروغ است" % cat)
+
+# ── ۱-ب) تاریخِ انتشار جایِ تاریخِ مجمع ⇒ وتو روشن نمی‌شود (رأیِ §۲۴) ─────────
+stub_calendar({"فولاد": ev("assembly", _in3, "publication_fallback")})
+out = SC._apply_assembly_veto([row()])[0]
+ck(out["assembly_veto"] is False,
+   "بی‌تاریخِ جلسه در عنوان ⇒ وتو نمی‌شود (proxy به fact بدل نمی‌شود)")
+ck(out["watchlist"] is True, "جایِ واچ‌لیست هم بی‌دلیل آزاد نمی‌شود")
+ck("وتوی مجمع" not in out["exclusion_reasons"],
+   "دلیلی به ردیف اضافه نمی‌شود وقتی منشأِ تاریخ فقط انتشار است")
 
 # ── ۲) لغو/تعویق ⇒ وتو نیست ──────────────────────────────────────────────────
 stub_calendar({"فولاد": ev("assemblyChange", _in3)})

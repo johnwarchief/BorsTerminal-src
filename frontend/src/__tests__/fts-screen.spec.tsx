@@ -486,7 +486,10 @@ describe('برچسب و وتوی مجمعِ ردیف', () => {
   const IN40 = plusDays(TODAY, 40);
 
   const events = (date: string, cat = 'assembly') => ({
-    شپنا: [{ date, cat, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه' }],
+    // «آگهی دعوت به مجمع…» تاریخِ جلسه را در عنوان دارد ⇒ منشأ title. بی‌این
+    // میدان (§۲۴ِ رأی) برچسب شمارشِ معکوس نمی‌سازد.
+    شپنا: [{ date, cat, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه',
+             date_source: 'title' as const }],
   });
 
   const badge = () => screen.queryByTestId('row-assembly-veto-badge');
@@ -522,6 +525,25 @@ describe('برچسب و وتوی مجمعِ ردیف', () => {
     expect(badge()).toBeNull();
     expect(near()).not.toBeNull();
     expect(near()?.textContent).toContain('مجمع');
+  });
+
+  // §۲۴ِ رأی: اگر عنوانِ اطلاعیه تاریخِ جلسه را نمی‌گفت، عددِ تقویم فقط تاریخِ
+  // انتشار است ⇒ نه شمارشِ معکوس، نه وتو. برچسبِ «اطلاعیه» می‌ماند.
+  it('بی‌تاریخِ جلسه در عنوان ⇒ برچسبِ «اطلاعیه» با تاریخِ انتشار، بی‌«چند روز دیگر»', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: false })]}
+        onSelect={() => {}}
+        assemblyEvents={{ شپنا: [{ date: IN3, cat: 'assembly', date_source: 'publication_fallback' as const,
+                                   title: 'تصمیمات مجمع عمومی عادی سالیانه' }] }}
+      />,
+    );
+    expect(badge()).toBeNull();          // وتو نمی‌شود
+    const n = screen.queryByTestId('row-assembly-notice-badge');
+    expect(n).not.toBeNull();
+    expect(near()).toBeNull();           // برچسبِ «مجمعِ نزدیک» هم نمی‌گیرد
+    expect(n?.textContent).toContain('اطلاعیه');
+    expect(n?.textContent).not.toMatch(/روز دیگر|فردا|امروز/);
   });
 
   it('لغو/تعویق برچسبِ تغییر می‌گیرد و وتو نمی‌شود (تاریخِ نامعلوم، وتوی ساختگی است)', () => {
@@ -602,7 +624,7 @@ describe('برچسب «افزایش سرمایه» در ردیف', () => {
       <FtsScreenTable
         rows={[row({ assembly_veto: true, assembly_date: d, assembly_days: 4 })]}
         onSelect={() => {}}
-        assemblyEvents={{ شپنا: [{ date: d, cat: 'assembly', title: 'آگهی دعوت به مجمع' }] }}
+        assemblyEvents={{ شپنا: [{ date: d, cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع' }] }}
         capitalEvents={cap(d)}
       />,
     );

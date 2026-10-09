@@ -11,6 +11,10 @@ const UpcomingItemSchema = z.object({
   date: z.string(),
   cat: z.string().nullish(),
   title: z.string().nullish(),
+  // بی‌این دو میدان، `groupBySymbol` منبعِ تاریخ را دور می‌ریخت و وتوی سایدبار
+  // برایِ مجمعِ واقعاً تاریخ‌دار هم خاموش می‌شد (§۲۴ِ رأی).
+  date_source: z.enum(['title', 'publication_fallback']).nullish(),
+  published_at: z.string().nullish(),
 });
 
 const UpcomingSchema = z.object({
@@ -48,7 +52,8 @@ export function groupBySymbol(
   for (const it of items ?? []) {
     const sym = String(it.symbol ?? '').trim();
     if (!sym) continue;
-    (out[sym] ??= []).push({ date: it.date, title: it.title ?? null, cat: it.cat ?? null });
+    (out[sym] ??= []).push({ date: it.date, title: it.title ?? null, cat: it.cat ?? null,
+      date_source: it.date_source ?? null, published_at: it.published_at ?? null });
   }
   return out;
 }
