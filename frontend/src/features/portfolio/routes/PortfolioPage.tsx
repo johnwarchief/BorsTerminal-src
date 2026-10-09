@@ -6,6 +6,7 @@ import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
+import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -62,6 +63,12 @@ export default function PortfolioPage() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const portfolio = usePortfolio();
   const closes = useMarketCloses();
+  // سنِ دو منبعِ این صفحه جداست: قیمتِ پایانی از فیدِ زندهٔ تابلو، و وزن/تخصیصِ
+  // سبد از snapshotِ `/api/selection/portfolio` (ریتمِ نشست). وقتی سبد از قیمت
+  // عقب‌تر است صریح گفته می‌شود، نه اینکه عددِ کهنه «به‌روز» جا بزند (#M3.2).
+  const basketAgeMs = portfolio.dataUpdatedAt && closes.dataUpdatedAt
+    ? Math.max(0, closes.dataUpdatedAt - portfolio.dataUpdatedAt)
+    : 0;
   const [tab, setTab] = useState<BoardTab>('portfolio');
   const [editOpen, setEditOpen] = useState(false);
 
@@ -170,6 +177,15 @@ export default function PortfolioPage() {
         >
           پرتفوی فعلی
         </button>
+        {basketAgeMs > 30_000 ? (
+          <span
+            data-testid="portfolio-basket-age"
+            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (۳۰s درِ نشست) است"
+            className="num ms-auto rounded-full bg-accent-yellow/10 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+          >
+            سبد: {fmtAge(portfolio.dataUpdatedAt)} · قیمت: {fmtAge(closes.dataUpdatedAt)}
+          </span>
+        ) : null}
       </div>
 
       {view === 'target' ? (

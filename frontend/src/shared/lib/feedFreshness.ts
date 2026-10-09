@@ -9,7 +9,7 @@
 // سیگنال‌ها همه از خودِ فیدِ canonical‌اند: `status`/`dataUpdatedAt` (ساعتِ کلاینت،
 // clock-safe)، شمارندۀ ردیفهایِ نشستِ جاری از `is_live` (live_count)، و `marketOpen`
 // از marketHours. هیچِ timestampِ ساختگی و هیچ آستانۀ اختراعی نیست؛ تنها مرزِ
-// «متوقف» از常数ِ موجودِ `CLOSED_POLL_MS` می‌آید (اگر درِ بازارِ باز بیش از ریتمِ
+// «متوقف» از عددِ موجودِ `CLOSED_POLL_MS` می‌آید (اگر درِ بازارِ باز بیش از ریتمِ
 //ِ بسته از فید خبری نشد، تازه‌سازی خوابیده است).
 import { CLOSED_POLL_MS, isMarketOpen } from './marketHours';
 
