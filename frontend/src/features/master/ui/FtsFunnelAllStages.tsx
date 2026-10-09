@@ -1046,22 +1046,30 @@ export function FtsFunnelStages({
           از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
         </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،
-            و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود
-            (۹۲۲ نماد ≈ چند دقیقه)، پس سرخطِ پیشرفتِ خودش را می‌گیرد. */}
+            و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود،
+            پس سرخطِ پیشرفتِ خودش را می‌گیرد — و وقتی در حالِ ساختن است همین خط
+            زنده می‌شود: نقطۀ تپندۀ همان شمارِ ساخته‌شده و صف، تا معلوم باشد
+            عددِ جدول در راه است نه تمام‌شده (رأیِ مالک: «زنده نشان بدهد»). */}
         {tech.wanted > 0 ? (
-          <span
-            data-testid="funnel-tech-coverage"
-            className={`num rounded-full px-2 py-0.5 text-2xs font-bold ${
-              scan.pending ? 'bg-accent-yellow/15 text-accent-yellow' : 'bg-bg-secondary text-text-secondary'
-            }`}
-            title={scan.pending
-              ? `${toFaDigits(scan.pending)} نماد به گامِ تکنیکال رسیده ولی داوری‌اش هنوز ساخته نشده؛ صفِ پس‌زمینه: ${toFaDigits(scan.queued)}${scan.running ? ' — در حالِ ساختن' : ''}`
-              : 'داوریِ تکنیکال برایِ هر نمادی که به این گام رسیده ساخته شده'}
-          >
-            {scan.pending
-              ? `تکنیکال در انتظارِ اسکن: ${toFaDigits(scan.pending)} — سنجیده‌شده: ${toFaDigits(tech.resolved)} از ${toFaDigits(tech.wanted)}`
-              : `تکنیکال سنجیده شده: ${toFaDigits(tech.resolved)} از ${toFaDigits(tech.wanted)}`}
-          </span>
+          scan.running || scan.pending > 0 ? (
+            <span
+              data-testid="funnel-computing"
+              className="num inline-flex items-center gap-1.5 rounded-full bg-accent-yellow/15 px-2 py-0.5 text-2xs font-bold text-accent-yellow"
+              title={`اسکنِ پس‌زمینه در حالِ کار است: ${toFaDigits(scan.done)} داوری ساخته شده، ${toFaDigits(scan.queued)} نماد در صف.`}
+            >
+              <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent-yellow" />
+              در حال محاسبه — ساخته‌شده: {toFaDigits(scan.done)} · در صف: {toFaDigits(scan.queued)}
+              {' '}· سنجیده‌شده: {toFaDigits(tech.resolved)} از {toFaDigits(tech.wanted)}
+            </span>
+          ) : (
+            <span
+              data-testid="funnel-tech-coverage"
+              className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
+              title="داوریِ تکنیکال برایِ هر نمادی که به این گام رسیده ساخته شده"
+            >
+              {`تکنیکال سنجیده شده: ${toFaDigits(tech.resolved)} از ${toFaDigits(tech.wanted)}`}
+            </span>
+          )
         ) : null}
       </div>
 

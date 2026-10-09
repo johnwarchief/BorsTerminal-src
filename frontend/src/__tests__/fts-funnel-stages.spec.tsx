@@ -145,11 +145,27 @@ describe('قیف از پاسخِ سرور', () => {
     expect(sep?.why.technical).toContain('تابلو نماد را رد کرده');
   });
 
-  it('اسکنِ نرسیدهٔ تکنیکال پنهان نمی‌ماند', async () => {
+  // رأیِ مالک ۱۴۰۵-۰۷-۱۷: «به‌صورتِ زنده نشان بدهد در حال محاسبه». تا اسکنِ
+  // پس‌زمینه running است یا نمادی در انتظارِ داوری، سرخط جای خودش را با
+  // «در حال محاسبه» + شمارِ ساخته‌شده و صف عوض می‌کند.
+  it('اسکنِ نرسیدهٔ تکنیکال پنهان نمی‌ماند و «در حال محاسبه» نشان می‌دهد', async () => {
     await ready('/master?stage=technical&preset=custom');
-    const line = screen.getByTestId('funnel-tech-coverage');
-    expect(line.textContent).toContain('تکنیکال در انتظارِ اسکن');
-    expect(line.textContent).toContain('۲');
+    const line = screen.getByTestId('funnel-computing');
+    expect(line.textContent).toContain('در حال محاسبه');
+    expect(line.textContent).toContain('ساخته‌شده: ۱۸');
+    expect(line.textContent).toContain('در صف: ۲');
+    expect(screen.queryByTestId('funnel-tech-coverage')).not.toBeInTheDocument();
+  });
+
+  it('بی‌صف، همان سرخط به «سنجیده شده» برمی‌گردد (برچسبِ در حال محاسبه همیشگی نیست)', async () => {
+    restoreFetch();
+    restoreFetch = installFunnelApi({
+      ...FUNNEL_FIXTURE,
+      tech_scan: { pending_symbols: 0, running: false, queued: 0, done: 20, failed: 0 },
+    });
+    await ready('/master?stage=technical&preset=custom');
+    expect(screen.queryByTestId('funnel-computing')).not.toBeInTheDocument();
+    expect(screen.getByTestId('funnel-tech-coverage').textContent).toContain('تکنیکال سنجیده شده');
   });
 
   it('«لازم نبود» درِ خودِ جدول دیده می‌شود، نه در tooltip', async () => {

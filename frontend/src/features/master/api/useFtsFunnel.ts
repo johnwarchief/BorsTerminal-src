@@ -9,6 +9,7 @@
 import { useMemo } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
+import { sessionPollMs } from '@shared/lib/marketHours';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 import {
@@ -76,7 +77,7 @@ export function useFtsFunnel(
   queue: { symbols: string[]; beyondCap: number };
   tech: { wanted: number; resolved: number; loading: boolean };
   /** پیشرفتِ اسکنِ تکنیکال درِ پاسخِ سرور — برایِ خطِ «چرا بعضی در انتظارند» */
-  scan: { pending: number; running: boolean; queued: number };
+  scan: { pending: number; running: boolean; queued: number; done: number };
   loading: boolean;
   refreshing: boolean;
   error: string | null;
@@ -116,7 +117,15 @@ export function useFtsFunnel(
     // قبلی رویِ صفحه می‌ماند تا جدید بنشیند؛ markerِ loading هم همین‌جا دیده
     // می‌شود، پس «کهنه» با «تازه» قاطی نمی‌شود.
     placeholderData: keepPreviousData,
-    refetchInterval: 60_000,
+    // ریتمِ تازه‌سازی دیگر ثابتِ ۶۰ ثانیه نیست: درِ ساعتِ بازار ۲۰ ثانیه و
+    // بیرونِ آن ریتمِ آرامِ تابلو (`sessionPollMs`) — و تا اسکنِ تکنیکال صف
+    // داشته باشد ۵ ثانیه، وگرنه «در حال محاسبه» فقط یک نوشته می‌ماند و نمادها
+    // جلویِ چشمِ کاربر جابه‌جا نمی‌شوند.
+    refetchInterval: (query) => {
+      const ts = query.state.data?.tech_scan;
+      if (ts?.running || (ts?.pending_symbols ?? 0) > 0) return 5_000;
+      return sessionPollMs(20_000);
+    },
     staleTime: 5_000,
   });
 
@@ -140,6 +149,7 @@ export function useFtsFunnel(
       pending: q.data?.tech_scan?.pending_symbols ?? 0,
       running: !!q.data?.tech_scan?.running,
       queued: q.data?.tech_scan?.queued ?? 0,
+      done: q.data?.tech_scan?.done ?? 0,
     },
     loading: q.isPending,
     /** پاسخِ رویِ صفحه پاسخِ *قبلی* است و تازه‌اش در راه است — باید دیده شود،

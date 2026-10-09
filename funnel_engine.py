@@ -709,15 +709,17 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
               "technical": (t or {}).get("status", UNAVAILABLE if sym in tape_surv else PENDING),
               "fundamental": (f or {}).get("effective", UNAVAILABLE if t and t["status"] == PASS else PENDING),
               "handover": (h or {}).get("final", UNAVAILABLE if f and f["effective"] == PASS else PENDING)}
-        human = {"tape": next((w["human_reason"] for w in reversed(why) if w.get("stage") == "tape"),
-                              "همهٔ فیلترهای زنجیره را رد کرده" if tape_status == PASS else ""),
-                 "technical": " · ".join(w["text"] for w in (t or {}).get("why") or []),
-                 "fundamental": " · ".join(w["text"] for w in (f or {}).get("why") or []),
-                 "handover": " · ".join(w["text"] for w in (h or {}).get("why") or [])}
-        codes = {"tape": [w.get("reason_code", "") for w in why if w.get("stage") == "tape"],
-                 "technical": [w["code"] for w in (t or {}).get("why") or []],
-                 "fundamental": [w["code"] for w in (f or {}).get("why") or []],
-                 "handover": [w["code"] for w in (h or {}).get("why") or []]}
+        # هر دلیل باید متنِ *خودش* را ببرد. پیش از این هر آیتمِ why متنِ aggregate
+        # را می‌داشت، پس ردیفی که دو دلیل داشت همان متن را دوبار می‌دید
+        # («روند هفتگی صعودی · روزانه up ⇒ …» ×۲ — ۱۱۷۳ ردیف از ۸۵۷ درِ سنجشِ
+        # زنده) و ستونِ دلیل سرریز می‌کرد. اینجا تک‌تعریفِ جفتِ (code, text) است.
+        items = {
+            "technical": [{"code": w["code"], "text": w["text"]} for w in (t or {}).get("why") or []],
+            "fundamental": [{"code": w["code"], "text": w["text"]} for w in (f or {}).get("why") or []],
+            "handover": [{"code": w["code"], "text": w["text"]} for w in (h or {}).get("why") or []],
+            "tape": [{"code": w.get("reason_code", ""), "text": w.get("human_reason", "")}
+                     for w in why if w.get("stage") == "tape"],
+        }
         for stage_key in ("tape", "technical", "fundamental", "handover"):
             if stage_key == "tape" and sym not in tape_surv and sym not in dropped_at:
                 continue  # هرگز نرسیده به این گام
@@ -730,7 +732,7 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
             entries[stage_key].append(_display(
                 r, patterns=None,
                 status={stage_key: st[stage_key]},
-                why={stage_key: [{"code": c, "text": human[stage_key]} for c in codes[stage_key] if c]},
+                why={stage_key: [dict(i) for i in items[stage_key]]},
                 chain=chain))
         step_rows = [{"stage": "universe", "status": PASS,
                       "reason_code": "IN_SCREENING_UNIVERSE",
