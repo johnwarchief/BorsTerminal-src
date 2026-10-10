@@ -108,6 +108,13 @@ function cfgNum(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+/** رأیِ مالک (1405-07-20): شاخص ۴ درصد نشان داده می‌شود، نه «×».
+ *  تعریف و مقدارِ موتور دست‌نخورده است؛ فقط عرضِ ×۱۰ و ٪ اضافه می‌شود، پس
+ *  عددِ کارت با عددِ جدولِ غربال و با «بالای ۳۰٪»ِ جزوه می‌خواند. */
+function pct(v: number | null | undefined): string {
+  return v == null ? '—' : `${toFaDigits((v * 100).toFixed(1))}٪`;
+}
+
 /**
  * برچسبِ نتیجه (#149 و #169): واژۀ کیفیت را یک‌بار و رو‌به‌را می‌نویسد. هیچ
  * داوریِ تازه‌ای این‌جا ساخته نمی‌شود — `pass` همان پرچمِ موتور است و «ایده‌آل»
@@ -707,18 +714,18 @@ export function FtsCard({
                   {potPct != null
                     ? `${toFaDigits(potPct.toFixed(1))}٪`
                     : salesRatio != null
-                      ? `${toFaDigits(salesRatio.toFixed(2))}×`
+                      ? pct(salesRatio)
                       : '—'}
                 </span>
               );
 
               extraNode = (
                 <span className="num mt-0.5 block truncate text-3xs text-text-muted" data-testid="fts-card-4-secondary"
-                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${toFaDigits(salesFloor.toFixed(2))}×`}>
+                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
                   {salesRatio == null
                     ? 'نسبت فروش به ارزش بازار: بدون داده'
-                    : `نسبت فروش ÷ ارزش بازار ${toFaDigits(salesRatio.toFixed(2))}×` +
-                      (salesFloor == null ? '' : ` · کف ${toFaDigits(salesFloor.toFixed(2))}×`)}
+                    : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
+                      (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
                 </span>
               );
 
