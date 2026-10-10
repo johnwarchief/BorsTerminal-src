@@ -1,4 +1,4 @@
-// features/fundamental/ui/FtsSettingsDrawer.tsx -- پنل تنظیمات پیش‌شرط‌های FTS
+// FtsSettingsDrawer.tsx -- پنل تنظیمات مشترک FTS (پیش‌شرط‌های بنیادی + پارامترهای تکنیکال ساعت‌شنی)
 // اتصال مستقیم به fts_thresholds.json از طریق GET/POST /api/fts/config.
 // پنل Overlay ثابت سمت راست است: با createPortal به document.body و
 // `fixed inset-y-0 start-0 w-[420px]` — مستقل از اسکرول کانتینر داخلی
