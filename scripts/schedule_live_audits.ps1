@@ -20,6 +20,7 @@
 # با observed_at ثبت می‌شود، پس می‌توان دید کدامِ پنجره پوششِ داده نشده است.
 
 param([switch]$Remove)
+$ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $Py = "python"
@@ -29,7 +30,6 @@ $Jobs = @(
 )
 
 foreach ($j in $Jobs) {
-  $taskPath = "\" + $j.Id
   if ($Remove) {
     Unregister-ScheduledTask -TaskName $j.Id -Confirm:$false -ErrorAction SilentlyContinue
     Write-Host "removed $($j.Id)"
@@ -38,15 +38,28 @@ foreach ($j in $Jobs) {
   $workdir = $RepoRoot
   $argument = "`"$workdir\$($j.Script)`" $($j.Arg)"
   $action = New-ScheduledTaskAction -Execute $Py -Argument $argument -WorkingDirectory $workdir
-  # هر ۱۵ دقیقه درِ بازۀِ ۰۸:۴۵–۱۲:۳۰، شنبه..چهارشنبه
-  $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday,Sunday,Monday,Tuesday,Wednesday `
-             -At "08:45" -RepetitionInterval (New-TimeSpan -Minutes 15) `
-             -RepetitionDuration (New-TimeSpan -Hours 4)
+  # شنبه..چهارشنبه ۰۸:۴۵ هر ۱۵ دقیقه تا ۴ ساعت. Repetition را از یک triggerِ -Once
+  # می‌گیریم و رویِ -Weekly می‌گذاریم؛ -Weekly مستقیماً -RepetitionInterval قبول نمی‌کند.
+  $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday,Sunday,Monday,Tuesday,Wednesday -At "08:45"
+  $rep = (New-ScheduledTaskTrigger -Once -At "08:45" `
+            -RepetitionInterval (New-TimeSpan -Minutes 15) `
+            -RepetitionDuration (New-TimeSpan -Hours 4)).Repetition
+  $trigger.Repetition = $rep
   $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
              -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 2) `
              -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 5)
-  $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
-  Register-ScheduledTask -TaskName $j.Id -Action $action -Trigger $trigger -Settings $settings `
+  # S4U (اجرا حتی وقتی کاربر خارج است) ادمین می‌خواهد؛ اگر رد شد، به Interactive
+  # برمی‌گردیم (وقتی درِ ویندوز لاگین هستید اجرا می‌شود — به باز بودنِ ترمینالِ
+  # کدنویس وابسته نیست).
+  try {
+    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
+    Register-ScheduledTask -TaskName $j.Id -Action $action -Trigger $trigger -Settings $settings `
              -Principal $principal -Description "BorsTerminal live audit ($($j.Id))" -Force | Out-Null
-  Write-Host "registered $($j.Id) -> $Py $argument"
+    Write-Host "registered $($j.Id) [S4U] -> $Py $argument"
+  } catch {
+    $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
+    Register-ScheduledTask -TaskName $j.Id -Action $action -Trigger $trigger -Settings $settings `
+             -Principal $principal -Description "BorsTerminal live audit ($($j.Id))" -Force | Out-Null
+    Write-Host "registered $($j.Id) [Interactive — S4U لازم‌داشت ادمین] -> $Py $argument"
+  }
 }
