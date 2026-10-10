@@ -265,12 +265,17 @@ jobs:
         shell: pwsh
         run: |
           # بند ۴ مأموریتِ انتشار: پرتابیل از *همان* بیلدِ Release ساخته می‌شود،
-          # نه از پوشۀ نصب‌شده. سه چیز را موفا می‌داریم:
+          # نه از پوشۀ نصب‌شده. سه چیز را مراعات می‌کنیم:
           #   • نشانۀ bors_portable.flag کنارِ EXE (bors_config.is_portable همین
           #     را می‌خواند؛ «نوشتنی‌بودنِ پوشه» هرگز دلیلِ پرتابیل بودن نیست)
           #   • بیرون‌گذاشتنِ دادۀ زمانِ اجرا (وگرنه تنظیم/واچ‌لیستِ رانر به
           #     کاربر می‌رسید) -- همان فهرستِ release.ps1
-          #   • market.db.lzma کنارِ EXE؛ نبودش یعنی اپ بالا می‌آید و تابلو خالی
+          #   • market.db.lzma کنارِ EXE؛ نبودش یعنی اپ بالا می‌آید و تا اولین
+          #     سینک تابلو خالی است. بانک درِ گیت نیست (*.lzma ایگنور است) و CI هم
+          #     آن را از ریلیزِ بیرونیِ data-latest می‌گیرد، پس اینجا هم از همان
+          #     منبع دانلود می‌شود؛ اگر دانلود نشد، ریلیز متوقف نمی‌شود -- فقط
+          #     پرتابیل هم مثلِ نصابِ CI درِ اولین اجرا دانلود می‌کند و این با
+          #     ::warning:: ثبت می‌شود.
           #continue-on-error نیست: ریلیزی که پرتابیل ندارد خواستۀ مأموریت را
           #تحویل نداده، پس بهتر است قرمز شود تا اینکه سبز و ناقص منتشر شود.
           $ErrorActionPreference = 'Stop'
@@ -291,7 +296,15 @@ jobs:
             Where-Object { $exclude -notcontains $_.Name } |
             ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $stage -Recurse -Force }
           if (-not (Test-Path "$stage/market.db.lzma")) {
-            Write-Output "::error::[portable] market.db.lzma کنارِ باندل نیست؛ پرتابیل بی‌داده می‌ماند"; exit 1
+            try {
+              curl.exe --fail --location --retry 2 --output "$stage/market.db.lzma" `
+                "https://github.com/johnwarchief/BorsTerminal/releases/download/data-latest/market.db.lzma"
+            } catch { Write-Output "::warning::[portable] دانلودِ بانکِ بیس‌لاین نشد" }
+          }
+          if (-not (Test-Path "$stage/market.db.lzma")) {
+            Write-Output "::warning::[portable] market.db.lzma درِ بسته نیست؛ نسخۀ Portable مثلِ نصابِ CI درِ اولین اجرا آن را دانلود می‌کند (تابلو تا wtedy خالی است)"
+          } else {
+            Write-Output "::notice::[portable] market.db.lzma درِ بسته: $([math]::Round((Get-Item "$stage/market.db.lzma").Length / 1MB, 1)) MB"
           }
           Set-Content -LiteralPath "$stage/bors_portable.flag" -Value "bors-portable" -Encoding ascii
           if (Test-Path "docs/PORTABLE-README.txt") {

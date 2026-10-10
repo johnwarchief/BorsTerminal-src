@@ -16,6 +16,7 @@
 """
 import importlib
 import os
+import re
 import sys
 import tempfile
 
@@ -295,8 +296,19 @@ if os.path.exists(ci):
     y = open(ci, encoding="utf-8", errors="replace").read()
     ck("CI هم ZIPِ پرتابیل می‌سازد (از همان بیلدِ نصاب)",
        "Portable" in y and "Compress-Archive" in y, "")
-    ck("CI پرتابیل را پیشِ انتشارِ نصاب می‌سازد (همان commit، همان dist)",
-       y.find("Build Portable ZIP") < y.find("python scripts/publish_github_release.py"), "")
+    ck("CI پرتابیل را پیشِ انتشار می‌سازد (همان commit، همان dist)",
+       0 <= y.find("Build Portable ZIP") < y.find("python scripts/publish_github_release.py"), "")
+    step = (y.split("Build Portable ZIP", 1)[-1].split("Build Delta Patch", 1)[0]
+            if "Build Portable ZIP" in y else "")
+    ck("CI هم نشانۀ پرتابیل را می‌نویسد", "bors_portable.flag" in step, "")
+    ck("CI هم دادِ زمانِ اجرا را بیرون می‌گذارد", "$exclude" in step and "user.db" in step, "")
+    ck("مرحلۀ پرتابیل continue-on-error ندارد (ریلیزِ بی‌پرتابیل سبز نمی‌شود)",
+       bool(step) and not re.search(r"^\s*continue-on-error:\s*true", step, re.M), "")
+    # بانکِ بیس‌لاین درِ گیت نیست (*.lzma ایگنور) و CI آن را از ریلیزِ بیرونیِ
+    # data-latest می‌گیرد؛ نبودنش نباید کلِ انتشار را بخواباند، چون نصابِ CI هم
+    # همین راه را می‌رود و برنامه درِ اولین اجرا دانلود می‌کند.
+    ck("CI بی‌بانک هشدار می‌دهد نه خطایِ مرگبار",
+       bool(step) and "data-latest" in step and "::error::[portable] market.db.lzma" not in step, "")
 else:
     ck("release.yml پیدا نشد", None)
 
@@ -311,7 +323,7 @@ else:
 
 # ── ۶) امضایِ نصاب درِ پرتابیل نباید از راهِ دیگری باز شود ──────────────────
 src_upd = open(os.path.join(ROOT, "api", "update.py"), encoding="utf-8").read()
-ck("download و install هر دو لایۀ محافظتِ پرتابیل دارند",
+ck("check/download/install سه لایۀ محافظتِ پرتابیل دارند",
    src_upd.count("is_portable()") >= 3, src_upd.count("is_portable()"))
 ck("متنِ راهنمایِ پرتابیل یک‌جا تعریف شده (نه سه نسخه‌ی متفرق)",
    src_upd.count("PORTABLE_UPDATE_MESSAGE") >= 3, src_upd.count("PORTABLE_UPDATE_MESSAGE"))
