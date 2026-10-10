@@ -179,7 +179,8 @@ def _probe_gpu():
              "$ErrorActionPreference='SilentlyContinue';"
              "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name;"
              "[Environment]::PhysicalMemory"],
-            capture_output=True, text=True, timeout=20, shell=True)
+            capture_output=True, text=True, timeout=20, shell=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except Exception:
         ps = None
     if ps is not None:
@@ -194,7 +195,8 @@ def _probe_gpu():
         try:                                   # جایگزینِ wmic برای ویندوزهای قدیمی
             out = subprocess.run(
                 ["wmic", "path", "win32_VideoController", "get", "name"],
-                capture_output=True, text=True, timeout=15, shell=True)
+                capture_output=True, text=True, timeout=15, shell=True,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             for ln in (out.stdout or "").splitlines():
                 ln = ln.strip()
                 if ln and ln.lower() != "name":
