@@ -73,6 +73,11 @@ a = Analysis(
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # بند ۲ مأموریت (1405-07-20): `client_split` تنها تعریفِ
+                   # درصدِ حقیقی/حقوقی است و api/market.py + mstat_engine آن را
+                   # سطح-بال import می‌کنند؛ نبودنش EXE را رویِ اولین درخواستِ
+                   # تابلو می‌کشد (همان الگوی price_basis/codal_periods).
+                   'client_split',
                    # دورِ P0 (1405-07-13): `tsetmc_p0_schema` تک‌منبعِ DDL جدول‌هایِ
                    # canonical است و هم از test_tsetmc و هم از mstat_engine.
                    # ensure_schema خوانده می‌شود؛ نبودش درِ EXE یعنی 500 رویِ هر
