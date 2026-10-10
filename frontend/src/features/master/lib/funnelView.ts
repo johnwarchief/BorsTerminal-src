@@ -68,6 +68,8 @@ export type ApiPayload = {
    *  `market = screening + excluded` درِ گاردِ بک‌اند بسته شده. */
   universe?: { board: number; screened: number; joined: number; duplicate_rows?: number;
     market?: number; screening?: number; excluded?: number;
+    /** پرچمِ واقعیِ اعمال‌شده درِ موتور (`drop_numeric_suffix`) */
+    drop_numeric_suffix?: boolean;
     exclusion_counts?: Record<string, number>; exclusion_labels?: Record<string, string> };
   /** علتِ خروجِ تک‌تکِ نمادهایِ بیرون از جامعۀ غربالگری (پاسخِ موتور) */
   exclusions?: Array<{ symbol: string; name?: string; sector?: string;
@@ -288,6 +290,10 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
       ?? payload.universe?.joined ?? screening + excludedCount,
     excludedCount,
     exclusions,
+    // `null` = سرور این را نگفته (پاسخِ قدیم). رابط به‌جایِ حدسِ خودِ store،
+    // همین را با خواستۀ کاربر مقابله می‌کند.
+    dropSuffixApplied: typeof payload.universe?.drop_numeric_suffix === 'boolean'
+      ? payload.universe.drop_numeric_suffix : null,
     exclusionCounts: payload.universe?.exclusion_counts ?? {},
     exclusionLabels: payload.universe?.exclusion_labels ?? {},
     counts,

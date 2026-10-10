@@ -6,8 +6,8 @@
 // می‌گردد، تب‌هایش همیشه دیدنی‌اند، با hover/focus/کلیدِ توقف مکث می‌کند، و بعدِ
 // هر تعامل از همان‌جا ادامه می‌دهد (نه از ابتدا).
 //
-// هیچ درخواستِ تازه‌ای نمی‌زند: هر پنج صفحّه از همان کوئری‌هایی خوانده می‌شود که
-// صفحۀ وضعیت بالفعل باز کرده (market-pulse / histogram / clientsplit / thermometer).
+// هیچ درخواستِ تازه‌ای نمی‌زند: هر چهار صفحّه از همان کوئری‌هایی خوانده می‌شود که
+// صفحۀ وضعیت بالفعل باز کرده (market-pulse / clientsplit).
 // TanStack Query کلیدِ مشترک را یکی می‌شمارد، پس افزودنِ این نوار مصرفِ شبکه را
 // بالا نمی‌برد -- و این خودش شرطِ هفتمِ پذیرش است.
 import { useEffect, useMemo, useState } from 'react';
@@ -15,14 +15,13 @@ import { toFaDigits, fmtInt, fmtPct, fmtHemmat } from '@shared/lib/fmt';
 import { MarqueeTrack } from '@shared/components/MarqueeTrack';
 import { PageDots, PageTabs, RotateToggle, prefersReducedMotion, usePageRotator, type RotatorPage } from '@shared/components/PageRotator';
 import { pulseDepth, pulseEqAll, pulseHemat, pulseIndex, pulseTradeValueAllMarketHemat, type MarketPulseData } from '../api/useMarketPulse';
-import type { ClientSplitFeed, HistogramFeed } from '../api/useMarketStatusFeed';
+import type { ClientSplitFeed } from '../api/useMarketStatusFeed';
 
 const PAGES: readonly RotatorPage[] = [
   { id: 'breadth', label: 'پهنای بازار', hint: 'چند نماد مثبت، چند منفی، چند سنجیده نشد' },
   { id: 'flow', label: 'جریان پول', hint: 'سرانهٔ خرید و فروشِ حقیقی و قدرت خریدار' },
   { id: 'value', label: 'شاخص و ارزش', hint: 'شاخص کل، گردش امروز و همتِ بازار' },
   { id: 'queues', label: 'صف‌ها', hint: 'تعادل ارزش صف خرید و فروش' },
-  { id: 'quality', label: 'کیفیتِ داده', hint: 'چند ردیف سنجیده شد و چند نه' },
 ];
 
 /** یک سطرِ «عنوان: مقدار» -- نبودِ مقدار خط تیره است، نه صفر */
@@ -58,11 +57,9 @@ function readMode(): TickerMode {
 
 export function MarketStatusTicker({
   pulse,
-  histogram,
   split,
 }: {
   pulse: MarketPulseData | null | undefined;
-  histogram: HistogramFeed | null | undefined;
   split: ClientSplitFeed | null | undefined;
 }) {
   const [mode, setMode] = useState<TickerMode>(readMode);
@@ -87,7 +84,7 @@ export function MarketStatusTicker({
   const hemat = pulseHemat(pulse);
   const tradeHemat = pulseTradeValueAllMarketHemat(pulse);
 
-  /** هر پنج صفحّه یک گروهِ «برچسب + واقعیت‌ها» است؛ حالتِ پیوسته همان گروه‌ها
+  /** هر چهار صفحّه یک گروهِ «برچسب + واقعیت‌ها» است؛ حالتِ پیوسته همان گروه‌ها
    *  را درِ یک نوارِ روان می‌چیند، پس عددِ دوم یا محاسبۀِ دومی ساخته نمی‌شود. */
   const groups = useMemo(() => {
     const g: Record<string, React.ReactNode> = {
@@ -139,19 +136,11 @@ export function MarketStatusTicker({
           عمقِ صف برایِ این نشست نرسید — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه صفِ خالی.
         </span>
       ),
-      quality: (
-        <>
-          <Fact label="سنجیده‌شده" value={orDash(histogram?.known)} />
-          <Fact label="بی‌درصد" value={orDash(histogram?.nodata)} tone="muted" />
-          <Fact label="بی‌معامله" value={orDash(histogram?.not_traded)} tone="muted" />
-          <Fact label="جامعۀ نمادها" value={orDash(thermo ? (thermo.positive ?? 0) + (thermo.negative ?? 0) + (thermo.zero ?? 0) + (thermo.nodata ?? 0) + (thermo.not_traded ?? 0) : null)} />
-        </>
-      ),
     };
     return g;
-  }, [thermo, eq, idx, tradeHemat, hemat, depth, split, histogram]);
+  }, [thermo, eq, idx, tradeHemat, hemat, depth, split]);
 
-  const body = groups[rotator.page] ?? groups.quality;
+  const body = groups[rotator.page] ?? groups.breadth;
 
   const active = PAGES.find((p) => p.id === rotator.page) ?? PAGES[0];
 
@@ -168,7 +157,7 @@ export function MarketStatusTicker({
           onSelect={(id) => { rotator.setPage(id); setMode('paged'); }}
           testId="ticker-tabs"
           ariaLabel="صفحّه‌هایِ خلاصۀ وضعیت بازار"
-          className="grid-cols-2 sm:grid-cols-5"
+          className="grid-cols-2 sm:grid-cols-4"
         />
         <div className="flex items-center gap-2">
           <ModeToggle mode={mode} onMode={setMode} />

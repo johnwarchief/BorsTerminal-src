@@ -24,17 +24,12 @@ import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
 import WatchlistSection from '../components/WatchlistSection';
-import WatchMarketWorkspace from '../components/WatchMarketWorkspace';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
 const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
-/** دو زیرتبِ مستقلِ این ناحیه: «پرتفوی من» = دارایی‌هایِ واقعیِ همین کاربر،
- *  «دیده‌بان بازار» = جدولِ رصد + سه‌پنلی. نمادهایِ دیدهبان هرگز به‌عنوانِ
- *  داراییِ پرتفوی حساب نمی‌شوند (منبعِ داده جدا: watchSymbolsStore). */
-type PortfolioSection = 'mine' | 'watch';
 
 /** فاصله قیمت تا حد ضرر به درصد؛ null یعنی داده ناقص */
 export function distanceToStopPct(price: number | null, stop: number | null): number | null {
@@ -75,7 +70,6 @@ export default function PortfolioPage() {
     ? Math.max(0, closes.dataUpdatedAt - portfolio.dataUpdatedAt)
     : 0;
   const [tab, setTab] = useState<BoardTab>('portfolio');
-  const [section, setSection] = useState<PortfolioSection>('mine');
   const [editOpen, setEditOpen] = useState(false);
 
   const view = useTargetAllocation((s) => s.view);
@@ -155,37 +149,12 @@ export default function PortfolioPage() {
     { id: 'rejects', label: 'حذف شده', count: rejects.length },
   ];
 
-  const sections: { id: PortfolioSection; label: string }[] = [
-    { id: 'mine', label: 'پرتفوی من' },
-    { id: 'watch', label: 'دیده‌بان بازار' },
-  ];
-
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
-      {/* زیرتب‌هایِ مستقلِ ناحیۀِ پرتفوی (§P2) */}
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="زیرتب‌های پرتفوی">
-        {sections.map((sec) => (
-          <button
-            key={sec.id}
-            type="button"
-            role="tab"
-            data-testid={`portfolio-section-${sec.id}`}
-            aria-selected={section === sec.id}
-            onClick={() => setSection(sec.id)}
-            className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
-              section === sec.id
-                ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-                : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-            }`}
-          >
-            {sec.label}
-          </button>
-        ))}
-      </div>
-
-      {section === 'watch' ? (
-        <WatchMarketWorkspace />
-      ) : mineGate != null ? (
+      {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): «دیده‌بان بازار» تبِّ اصلیِ ناوبری است (/watch)،
+          پس زیرتبِّ تکراری ازِ این ناحیه بیرون رفت. «واچ‌لیست» (§۱ و §۶task)
+          همان‌جا می‌ماند: فهرستِ ستاره‌دارِ خودِ کاربر، نه رصدِ بازار. */}
+      {mineGate != null ? (
         mineGate
       ) : (
         <>

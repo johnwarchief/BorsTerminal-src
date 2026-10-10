@@ -210,10 +210,14 @@ export const REGISTRY_FIXTURE = {
   gates: {},
 };
 
+/** بدنهٔ هر پرسشِ `/api/funnel` که ازِ این mock رد شده — برایِ اثباتِ اینکه
+ *  پارامترِ مؤثر (مثلاً `drop_suffix`) واقعاً رویِ سیم می‌رود، نه فقط درِ store. */
+export const funnelCalls: Array<Record<string, unknown>> = [];
+
 /** جایگزینِ fetch درِ تست‌هایِ رندر: هر `/api/funnel` همین پاسخ را می‌گیرد. */
 export function installFunnelApi(payload: ApiPayload = FUNNEL_FIXTURE) {
   const real = globalThis.fetch;
-  globalThis.fetch = async (input: RequestInfo | URL) => {
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.includes('/api/funnel/registry')) {
       return new Response(JSON.stringify(REGISTRY_FIXTURE), {
@@ -221,6 +225,11 @@ export function installFunnelApi(payload: ApiPayload = FUNNEL_FIXTURE) {
       });
     }
     if (url.includes('/api/funnel')) {
+      try {
+        if (typeof init?.body === 'string') funnelCalls.push(JSON.parse(init.body) as Record<string, unknown>);
+      } catch {
+        /* بدنهٔ غیرِ JSON فقط ثبت نمی‌شود */
+      }
       return new Response(JSON.stringify(payload), {
         status: 200, headers: { 'content-type': 'application/json' },
       });
@@ -231,5 +240,8 @@ export function installFunnelApi(payload: ApiPayload = FUNNEL_FIXTURE) {
       status: 404, headers: { 'content-type': 'application/json' },
     });
   };
-  return () => { globalThis.fetch = real; };
+  return () => {
+    globalThis.fetch = real;
+    funnelCalls.length = 0;
+  };
 }

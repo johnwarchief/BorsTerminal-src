@@ -178,7 +178,8 @@ def get_registry():
 
 @router.get("/api/funnel/trace")
 def get_trace(symbol: str, preset: str = "trend", chain: str = "",
-              fund_mode: str = "standard", exceptions: str = ""):
+              fund_mode: str = "standard", exceptions: str = "",
+              drop_suffix: bool = True):
     """خطِ زمانِ یک نماد: Universe ← تابلو ← هر فیلتر ← تکنیکال ← بنیادی ← تحویل.
 
     چرا جدا: `timeline` برایِ تک‌تکِ ۵٫۸ هزار نماد درِ پاسخِ فهرست می‌آمد و نیمی
@@ -194,7 +195,7 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
     except ValueError:
         exc = {}
     payload = _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, exc,
-                   full=True)
+                   full=True, drop_suffix=drop_suffix)
     tl = (payload.get("timeline") or {}).get(symbol)
     cell = (payload.get("status_matrix") or {}).get(symbol)
     if tl is None and cell is None:
@@ -209,8 +210,10 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
 
 
 @router.get("/api/funnel")
-def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard"):
-    return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {})
+def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
+               drop_suffix: bool = True):
+    return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
+                 drop_suffix=drop_suffix)
 
 
 @router.post("/api/funnel")
@@ -218,6 +221,8 @@ async def post_funnel(request: Request):
     b = await request.json()
     if not isinstance(b, dict):
         b = {}
+    # نبودِ کلید = رفتارِ محصول (روشن، عینِ تبِ تابلو). `False` صریح یعنی نشان بده.
+    drop_suffix = True if b.get("drop_suffix") is None else bool(b.get("drop_suffix"))
     return _run(
         str(b.get("preset") or "trend"),
         [str(x) for x in (b.get("chain") or [])],
@@ -225,6 +230,7 @@ async def post_funnel(request: Request):
         b.get("params") if isinstance(b.get("params"), dict) else {},
         {str(k): [str(x) for x in (v or [])] for k, v in (b.get("exceptions") or {}).items()}
         if isinstance(b.get("exceptions"), dict) else {},
+        drop_suffix=drop_suffix,
     )
 
 
@@ -240,13 +246,14 @@ def _strip(payload: dict) -> dict:
 
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
-         full: bool = False) -> dict:
+         full: bool = False, drop_suffix: bool = True) -> dict:
     if preset not in REG.PRESET_BY_ID:
         return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
     if fund_mode not in ("hard", "standard", "exception"):
         return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}
     key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
-                      sorted((k, sorted(v)) for k, v in exceptions.items())],
+                      sorted((k, sorted(v)) for k, v in exceptions.items()),
+                      bool(drop_suffix)],
                      ensure_ascii=False)
     now = time.time()
     hit = _cache_get(key, now)
@@ -270,7 +277,8 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         payload = FE.evaluate(board, screen, preset=preset, custom_chain=chain,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
                               tech_scan=scan, tech_sigs=sigs, session_day=session,
-                              universe_priority=uni_pri, universe_status=uni_st)
+                              universe_priority=uni_pri, universe_status=uni_st,
+                              drop_numeric_suffix=drop_suffix)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین

@@ -306,6 +306,8 @@ export type Funnel = {
   marketUniverse: number;
   /** شمارِ خارج از جامعۀ غربالگری (Z) */
   excludedCount: number;
+  /** آیا موتور واقعاً «حذفِ پسوندِ عددی» را اعمال کرد؟ `null` = پاسخِ بی‌این field */
+  dropSuffixApplied: boolean | null;
   /** علتِ خروجِ تک‌تکِ خارج‌ها، به همان ترتیبِ خودِ تابلو */
   exclusions: UniverseExclusion[];
   /** شمارشِ علت‌ها (مثلاً `NOT_LIVE_SESSION: ۱۸۷۲`) — از خودِ بک‌اند */

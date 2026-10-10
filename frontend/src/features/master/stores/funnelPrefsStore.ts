@@ -49,6 +49,12 @@ export const UNMEASURED_HINT: Record<UnmeasuredPolicy, string> = {
 /** پیش‌فرض: تکنیکال غربال می‌کند، ولی فقط وتوی صریحِ روند هفتگی درِ حذف است. */
 export const DEFAULT_TECH_SCREENS = true;
 
+/** «حذفِ پسوندِ عددی» — عینِ همان گزینه درِ تبِ تابلو و با همان پیش‌فرضِ روشن
+ *  (رأیِ مالک ۱۴۰۵-۰۷-۲۲). روشن = نمادهایِ پسونددار (فولاد۱، خودرو۲) اصلاً
+ *  واردِ جامعۀ غربالگری نمی‌شوند؛ داوری درِ بک‌اند (`funnel_engine`) انجام
+ *  می‌شود نه دوباره اینجا، پس شمارش‌ها و جدول یک عدد می‌بینند. */
+export const DEFAULT_DROP_SUFFIX = true;
+
 export const TECH_SCREEN_LABEL = { on: 'رد می‌کند', off: 'خودم چک می‌کنم' } as const;
 
 export const TECH_SCREEN_HINT = {
@@ -119,11 +125,14 @@ export type FunnelPrefsState = {
   fundFloor: number;
   unmeasured: UnmeasuredPolicy;
   techScreens: boolean;
+  /** روشن = نمادهایِ پسونددار از جامعۀ غربالگری بیرون (پیش‌فرضِ جزوه/تابلو) */
+  dropSuffix: boolean;
   mode: FunnelMode;
   setPreset: (p: FunnelPreset) => void;
   setFundFloor: (n: number) => void;
   setUnmeasured: (p: UnmeasuredPolicy) => void;
   setTechScreens: (on: boolean) => void;
+  setDropSuffix: (on: boolean) => void;
   setMode: (m: FunnelMode) => void;
   reset: () => void;
   resetToCanonical: () => void;
@@ -134,13 +143,15 @@ function clampFloor(n: number): number {
   return Math.min(FUND_FLOOR_MAX, Math.max(1, Math.round(n)));
 }
 
-type SavedPrefs = { preset: FunnelPreset | null; fundFloor: number; unmeasured: UnmeasuredPolicy; techScreens: boolean; mode: FunnelMode };
+type SavedPrefs = { preset: FunnelPreset | null; fundFloor: number; unmeasured: UnmeasuredPolicy;
+                   techScreens: boolean; dropSuffix: boolean; mode: FunnelMode };
 
 const JOZVE: SavedPrefs = {
   preset: DEFAULT_PRESET,
   fundFloor: DEFAULT_FUND_FLOOR,
   unmeasured: DEFAULT_UNMEASURED,
   techScreens: DEFAULT_TECH_SCREENS,
+  dropSuffix: DEFAULT_DROP_SUFFIX,
   mode: DEFAULT_FUNNEL_MODE,
 };
 
@@ -148,7 +159,8 @@ function saved(): SavedPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return JOZVE;
-    const p = JSON.parse(raw) as { preset?: unknown; fundFloor?: unknown; unmeasured?: unknown; techScreens?: unknown; mode?: unknown };
+    const p = JSON.parse(raw) as { preset?: unknown; fundFloor?: unknown; unmeasured?: unknown;
+                                   techScreens?: unknown; dropSuffix?: unknown; mode?: unknown };
     return {
       preset: PRESETS.includes(p.preset as FunnelPreset) ? (p.preset as FunnelPreset) : null,
       fundFloor: clampFloor(typeof p.fundFloor === 'number' ? p.fundFloor : DEFAULT_FUND_FLOOR),
@@ -157,6 +169,8 @@ function saved(): SavedPrefs {
       // کلیدِ تازه: فایلِ ذخیره‌شده‌هایِ قدیم این را ندارد. نبودش یعنی همان
       // رفتارِ همیشگی (غربال)، نه تغییرِ بی‌صدا.
       techScreens: typeof p.techScreens === 'boolean' ? p.techScreens : DEFAULT_TECH_SCREENS,
+      // نبودِ این کلید هم یعنی پیش‌فرضِ جزوه (حذف)، نه «نشان بده».
+      dropSuffix: typeof p.dropSuffix === 'boolean' ? p.dropSuffix : DEFAULT_DROP_SUFFIX,
       // نبودِ کلیدِ mode درِ فایل‌هایِ قدیم یعنی همان رفتارِ همیشگی (معکوس).
       mode: p.mode === 'review' ? 'review' : DEFAULT_FUNNEL_MODE,
     };
@@ -243,6 +257,7 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     fundFloor: init.fundFloor,
     unmeasured: init.unmeasured,
     techScreens: init.techScreens,
+    dropSuffix: init.dropSuffix,
     mode: init.mode,
     setPreset: (p) => {
       if (!PRESETS.includes(p)) return;
@@ -261,6 +276,10 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     setTechScreens: (on) => {
       persist({ ...get(), techScreens: on });
       set({ techScreens: on });
+    },
+    setDropSuffix: (on) => {
+      persist({ ...get(), dropSuffix: on });
+      set({ dropSuffix: on });
     },
     setMode: (m) => {
       persist({ ...get(), mode: m });

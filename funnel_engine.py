@@ -35,6 +35,7 @@
 """
 from __future__ import annotations
 
+import re
 import time
 from typing import Any, Iterable
 
@@ -150,6 +151,7 @@ EXCLUSION_LABEL = {
     "NOT_LIVE_SESSION": "ردیفِ نشستِ کهنه",
     "STOPPED": "متوقف",
     "FORBIDDEN_STATE": "ممنوع",
+    "NUMERIC_SUFFIX": "پسوندِ عددی",
 }
 
 
@@ -209,6 +211,18 @@ def norm_symbol(v: Any) -> str:
 def _symbols(rows: list[dict]) -> list[str]:
     """نام‌هایِ نمادِ یک گام، به همان ترتیبِ عبور — فهرستِ منتقل‌شده به گامِ بعد."""
     return [str(r.get("symbol") or "") for r in rows]
+
+
+# «حذفِ پسوندِ عددی» — همان درِ تبِ تابلو (`tapeFts.isNumericSuffixSymbol`
+# با /[0-9۰-۹]$/ و پیش‌فرضِ روشن). نمادی که رقمِ آخر دارد نسخهٔ افزودۀِ همان
+# برند است («خودرو۲»، حق‌تقدم، اختیارِ سررسیددار) و جزوه آن را تابلویِ اصلی
+# نمی‌شمارد. رقم‌ها با chr() ساخته می‌شوند، نه با نوشتنِ «۰-۹» درِ متنِ سورس.
+_SUFFIX_RE = re.compile("[0-9" + "".join(chr(0x06F0 + d) for d in range(10)) + "]$")
+
+
+def has_numeric_suffix(symbol: Any) -> bool:
+    """آیا نوشتارِ نماد به رقم ختم می‌شود؟ ( LATIN و فارسی، عینِ regexِ تابلو )"""
+    return bool(_SUFFIX_RE.search(norm_symbol(symbol)))
 
 
 def _tape_unmeasurable(r: dict[str, Any], fid: str) -> bool:
@@ -913,6 +927,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              tech_sigs: dict[str, str] | None = None,
              universe_priority: dict[str, int] | None = None,
              universe_status: dict[str, str] | None = None,
+             drop_numeric_suffix: bool = False,
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
@@ -953,7 +968,15 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     screening: list[dict] = []
     excluded: list[dict] = []
     for r in joined:
-        ok, code, human = screening_eligibility(r, session_day)
+        # «حذفِ پسوندِ عددی» (رأیِ مالک ۱۴۰۵-۰۷-۲۲، عینِ درِ تبِ تابلو و پیش‌فرضِ
+        # روشن): نمادِ افزودهدار اصلاً candidate نیست، پس رد محسوب نمی‌شود —
+        # مثلِ بقیۀ وتوها درِ «خارج از جامعۀ غربالگری» می‌نشیند و جمعِ پنج
+        # وضعیت با جامعۀ ورودی می‌ماند.
+        if drop_numeric_suffix and has_numeric_suffix(r.get("symbol")):
+            ok, code, human = (False, "NUMERIC_SUFFIX",
+                               "پسوندِ عددی دارد — نسخۀ افزودۀ همان برند، نه نمادِ اصلی")
+        else:
+            ok, code, human = screening_eligibility(r, session_day)
         r["_screening_eligible"] = ok
         r["_exclusion_code"] = code
         r["_exclusion_reason"] = human
@@ -1017,6 +1040,9 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "universe": {"board": len(board_rows), "screened": len(screen_rows),
                      "joined": len(joined), "duplicate_rows": dupes,
                      "market": len(joined), "screening": len(screening),
+                     # همان پرچمی که موتور واقعاً مصرف کرد — رابط به‌جایِ حدسِ
+                     # وضعیتِ خودِ store، این را می‌خواند.
+                     "drop_numeric_suffix": bool(drop_numeric_suffix),
                      "excluded": len(excluded),
                      "exclusion_counts": exclusion_counts,
                      "exclusion_labels": {k: EXCLUSION_LABEL.get(k, k)

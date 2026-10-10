@@ -379,6 +379,8 @@ function StageCard({
   active,
   opts,
   emptyWhy,
+  collapsed = false,
+  onToggle,
 }: {
   stage: FunnelStage;
   index: number;
@@ -388,6 +390,9 @@ function StageCard({
   active: boolean;
   opts: FunnelOptions;
   emptyWhy: string | null;
+  /** سه مرحلۀ اول با پیش‌فرضِ بسته (رأیِ مالک ۱۴۰۵-۰۷-۲۲) */
+  collapsed?: boolean;
+  onToggle?: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   // ترتیبِ نمایش (عبور_then_زنده) — خروجیِ موتور، فقط رو‌به‌رو شده.
@@ -454,6 +459,18 @@ function StageCard({
           {toFaDigits(index + 1)}
         </span>
         <h3 className="text-xs font-black text-text-primary sm:text-sm">{STAGE_TITLE[stage.key]}</h3>
+        {onToggle ? (
+          <button
+            type="button"
+            data-testid={`funnel-stage-toggle-${stage.key}`}
+            aria-expanded={!collapsed}
+            onClick={onToggle}
+            title={collapsed ? 'باز کردنِ جدولِ این مرحله' : 'بستنِ جدولِ این مرحله'}
+            className="shrink-0 rounded-md border border-border-c bg-bg-card px-1.5 py-0.5 text-2xs font-bold text-text-muted transition-colors hover:border-accent-blue/60 hover:text-text-primary"
+          >
+            {collapsed ? '▼' : '▲'}
+          </button>
+        ) : null}
         <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
               title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
           {toFaDigits(stage.ruled)} نماد
@@ -554,6 +571,9 @@ function StageCard({
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
       </header>
 
+      {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
+          باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
+      {collapsed ? null : (<>
       <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
@@ -638,6 +658,7 @@ function StageCard({
           </div>
         </div>
       ) : null}
+      </>)}
     </section>
   );
 }
@@ -886,6 +907,16 @@ export function FtsFunnelStages({
   // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
   const [showExcluded, setShowExcluded] = useState(false);
   const [activeState, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه جدولِ اول بسته‌اند و «نمادهای عبوری» (تحویل) باز —
+  // چیزی که کاربر می‌خواهد ببیند همان آخری است، نه اینکه چهار جدول را اسکرول کند.
+  // درِ حالتِ مسیریافته (`only`) همان یک کارت باز می‌ماند، چون کاربر صریح
+  // به‌آن مرحله رفته است. کلیک رویِ گامِ بسته، خودش را باز می‌کند (کنترلِ
+  // جاافتاده باقی نمی‌ماند).
+  const [openStages, setOpenStages] = useState<Record<FunnelStageKey, boolean>>({
+    tape: false, technical: false, fundamental: false, handover: true,
+  });
+  const dropSuffix = useFunnelPrefsStore((s) => s.dropSuffix);
+  const setDropSuffix = useFunnelPrefsStore((s) => s.setDropSuffix);
   // درِ حالتِ مسیریافته (`only`) گامِ واقعی همان `only` است، نه stateِ داخلیِ
   // این کامپوننت (که از snapshotِ قدیم پر شده). بی‌این، کلیکِ سطر درِ گامِ
   // تکنیکال آدرسِ `?stage=tape` می‌ساخت و بازگشت کاربر را یک گام عقب می‌برد.
@@ -1088,6 +1119,7 @@ export function FtsFunnelStages({
               aria-selected={active === s.key}
               data-testid={`funnel-step-${s.key}`}
               onClick={() => {
+                setOpenStages((prev) => ({ ...prev, [s.key]: true }));
                 if (onStageSelect) {
                   onStageSelect(s.key);
                   return;
@@ -1114,6 +1146,35 @@ export function FtsFunnelStages({
             </button>
           ))}
         </div>
+        {/* «حذفِ پسوندِ عددی» — همان گزینه و همان پیش‌فرضِ تبِ تابلو، اینجا درِ
+            سطحِ جامعۀ غربالگری (بک‌اند) اعمال می‌شود تا شمارش‌ها با جدول یکی
+            بمانند. نشانهٔ کهنه: اگر موتور غیرِ خواستِ کاربر عمل کند صریح گفته
+            می‌شود، نه اینکه عددِ جدول بی‌توضیح جابه‌جا شود. */}
+        <button
+          type="button"
+          onClick={() => setDropSuffix(!dropSuffix)}
+          aria-pressed={dropSuffix}
+          data-testid="funnel-numeric-suffix-toggle"
+          title={dropSuffix
+            ? 'روشن (پیش‌فرض): نمادهایِ پسونددار (فولاد۱، خودرو۲) واردِ جامعۀ غربالگری نمی‌شوند؛ درِ «خارج از جامعۀ غربالگری» با همین علت دیده می‌شوند.'
+            : 'خاموش: نمادهایِ پسونددار هم مثلِ بقیه داوری می‌شوند.'}
+          className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${
+            dropSuffix
+              ? 'border-accent-blue/50 bg-accent-blue/15 text-accent-blue'
+              : 'border-border-c bg-bg-card text-text-muted hover:text-text-primary'
+          }`}
+        >
+          حذفِ پسوندِ عددی
+        </button>
+        {funnel.dropSuffixApplied !== null && funnel.dropSuffixApplied !== dropSuffix ? (
+          <span
+            data-testid="funnel-suffix-mismatch"
+            className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+            title="پاسخِ سرور با خواستِ این کلید نمی‌خواند — کلیدِ کشِ تازه را منتظر بمانید"
+          >
+            اعمال‌نشده درِ سرور
+          </span>
+        ) : null}
         <span className="ms-auto text-3xs text-text-muted">
           ورودیِ غربالگری: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
           از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
@@ -1159,6 +1220,8 @@ export function FtsFunnelStages({
             active={active === s.key}
             opts={opts}
             emptyWhy={emptyWhy[s.key]}
+            collapsed={!only && !openStages[s.key]}
+            onToggle={() => setOpenStages((prev) => ({ ...prev, [s.key]: !prev[s.key] }))}
           />
         ) : null))}
       </div>

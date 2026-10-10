@@ -451,8 +451,43 @@ ck(bool(_rows), f"۴۶) سنسورِ این بند کور نیست: دستِ‌�
 ck(all(r["input_count"] is not None and r["output_count"] is not None for r in _rows),
    f"۴۶) خطِ زمانِ تکنیکال/بنیادی/تحویل شمارۀ ورودی/خروجیِ خودِ گام را دارد، نه None")
 
+# ── ۴۷) «حذفِ پسوندِ عددی» — رأیِ مالک ۱۴۰۵-۰۷-۲۲، عینِ درِ تبِ تابلو ──────
+# نمادِ افزودهدار («فولاد۲»، «وشپنا۱») اصلاً candidate نیست، و نبودنش «رد» هم
+# نیست: مثلِ بقیۀ وتوها درِ «خارج از جامعۀ غربالگری» با علتِ خودش می‌نشیند، پس
+# جمعِ جامعۀ تابلو (X) با غربالگری (Y) + خارج‌ها (Z) می‌خواند.
+SUF_B = [board("فولاد", f_susp=True), board("فولاد۲", f_susp=True),
+         board("وشپنا۱", f_susp=True), board("پ", f_susp=False)]
+SUF_S = [screen("فولاد", **UP, **OK_FUND), screen("فولاد۲", **UP, **OK_FUND),
+         screen("وشپنا۱", **UP, **OK_FUND), screen("پ", **UP, **OK_FUND)]
+d_on = FE.evaluate(SUF_B, SUF_S, preset="custom", custom_chain=["f_susp"],
+                   drop_numeric_suffix=True)
+d_off = FE.evaluate(SUF_B, SUF_S, preset="custom", custom_chain=["f_susp"])
+u_on, u_off = d_on["universe"], d_off["universe"]
+ck(u_on["drop_numeric_suffix"] is True and u_off.get("drop_numeric_suffix") is False,
+   f"۴۷) پرچمِ اعمال‌شده درِ پاسخ می‌نشیند — رابط حدس نمی‌زند")
+ck(u_on["screening"] == 2 and u_on["excluded"] == 2
+   and u_on["market"] == u_on["screening"] + u_on["excluded"],
+   f"۴۷) روشن: ۴ نماد → ۲ غربال + ۲ خارج، و X = Y + ز")
+ck(u_on["exclusion_counts"] == {"NUMERIC_SUFFIX": 2}
+   and u_on["exclusion_labels"].get("NUMERIC_SUFFIX") == "پسوندِ عددی",
+   f"۴۷) علتِ خروج با شمار و برچسبِ فارسیِ خودش گزارش می‌شود")
+ck(u_off["screening"] == 4 and u_off["excluded"] == 0,
+   f"۴۷) خاموش: همان چهار نماد مثلِ پیش داوری می‌شوند (چیزی بی‌صدا نمی‌میرد)")
+ck(not any(FE.has_numeric_suffix(s) for s in d_on["stages"]["tape"]["survivors"])
+   and all(any(e["symbol"] == s and e["reason_code"] == "NUMERIC_SUFFIX"
+               for e in d_on["exclusions"])
+           for s in ("فولاد۲", "وشپنا۱")),
+   f"۴۷) هیچ نمادِ پسونددار به گامِ بعد نمی‌رسد و هر دو درِ فهرستِ علّت‌ها هست")
+# parity با regexِ خودِ تابلو درِ `tapeFts.isNumericSuffixSymbol` = /[0-9۰-۹]$/
+ck([FE.has_numeric_suffix(s) for s in
+    ("خودرو2", "خودرو۲", "10", "۳", "فولاد", "پ", "ش", "", "  ش  ", "حق‌تقدم۴")]
+   == [True, True, True, True, False, False, False, False, False, True],
+   f"۴۷) سنجشِ پسوند با /[0-9۰-۹]$/ِ تابلو یکی است (latin و فارسی، با trim)")
+ck(FE.has_numeric_suffix("خودرو٢") is False,
+   f"۴۷) ارقامِ عربیِ هندی (٠-٩) درِ regexِ تابلو نیست و اینجا هم نیست — دو در یکی")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43 + 9} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43 + 9 + 7} بندِ مأموریت")

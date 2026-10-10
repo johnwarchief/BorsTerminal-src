@@ -7,15 +7,11 @@ import { matchFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { useMarketFeed } from '../api/useMarketFeed';
-import { useMarketPulse } from '../api/useMarketPulse';
 import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
 import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
-import { MarketPulseBar } from '../components/MarketPulseBar';
-import { MarketStatusPanel } from '../components/MarketStatusPanel';
-import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 
@@ -62,7 +58,6 @@ export function applyFilters(
 
 export default function MarketPage() {
   const { data, isLoading, isError, refetch, dataUpdatedAt, isFetching } = useMarketFeed();
-  const { data: pulse, isLoading: pulseLoading } = useMarketPulse();
   const rows = useMemo(() => data?.data ?? [], [data]);
 
   const query = useTapeStore((s) => s.query);
@@ -217,12 +212,9 @@ export default function MarketPage() {
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2">
-      <MarketStatusPanel />
-      <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
-
-      {/* نمودارهای جریان سفارش‌ها بالای نوار تابلو */}
-      <MicroChartsDrawer />
-
+      {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه بلوکِ «وضعیت بازار»، «نبض» و «نمودارهای
+          درون‌روز» تکرارِ تبِّ مستقلِ «وضعیت بازار»اند و ازِ این صفحه بیرون
+          رفتند؛ تابلو فقط فیلتر + جدول + کشویِ نظارت می‌ماند. */}
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}

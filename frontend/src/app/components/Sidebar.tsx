@@ -8,7 +8,6 @@ import { ThemeToggle } from './ThemeToggle';
 import { UserSettingsModal } from '@widgets/UserSettingsModal';
 import { UpdateManagerModal } from '@widgets/UpdateManagerModal';
 import {
-  BellIcon,
   ChevronIcon,
   FundamentalIcon,
   MarketIcon,
@@ -45,9 +44,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { to: '/market', icon: MarketIcon, label: 'تابلوخوانی', end: false },
       { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
       { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
-      // بند ۶ مأموریت (1405-07-20): مرکزِ اعلانِ درون‌برنامه — منبعش اطلاعیه‌هایِ
-      // کدالِ خودِ برنامه است، نه یک فیدِ بیرونیِ تازه.
-      { to: '/notifications', icon: BellIcon, label: 'مرکز اعلان', end: true },
+      // رأیِ مالک (۱۴۰۵-۰۷-۲۲): «مرکز اعلان» تبِّ اصلی نیست — زنگِ نوارِ بالا
+      // همان صفحّه را باز می‌کند، پس مقصد درِ routes.tsx می‌ماند و ازِ ناوبری
+      // بیرون می‌آید.
     ],
   },
   {

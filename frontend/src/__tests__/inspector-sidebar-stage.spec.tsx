@@ -93,7 +93,10 @@ describe('جایِ خودِ نماد در قیف (#67)', () => {
   // نه ردیفِ خامِ تابلو + اسکرینر (آن دو ورودیِ داورِ دوم بودند).
   const seedFunnel = (payload: ApiPayload) => (qc: QueryClient) => {
     qc.setQueryData(
-      funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard', exceptions: {} }),
+      funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard', exceptions: {},
+                       // کلیدِ کش باید همان پارامترِ مؤثرِ فرستاده‌شده باشد،
+                       // وگرنه seedِ تست به درخواستِ واقعیِ سایدبار نمی‌خورد.
+                       dropSuffix: true }),
       payload,
     );
   };

@@ -48,17 +48,21 @@ export interface TraceRequest {
   chain: readonly string[];
   fundMode: string;
   exceptions: Record<string, string[]>;
+  /** عینِ جدول: اگر پسوندِ عددی از جامعه بیرون رفته، ردپا هم همان را می‌گوید. */
+  dropSuffix?: boolean;
 }
 
 export function useFunnelTrace(symbol: string | null | undefined, req: TraceRequest) {
   const sym = String(symbol ?? '').trim();
+  const drop = req.dropSuffix !== false;
   const qs = `preset=${encodeURIComponent(req.preset)}`
     + `&chain=${encodeURIComponent(req.chain.join(','))}`
     + `&fund_mode=${encodeURIComponent(req.fundMode)}`
-    + `&exceptions=${encodeURIComponent(JSON.stringify(req.exceptions ?? {}))}`;
+    + `&exceptions=${encodeURIComponent(JSON.stringify(req.exceptions ?? {}))}`
+    + `&drop_suffix=${String(drop)}`;
   return useQuery({
     queryKey: ['funnel-trace', sym, req.preset, req.chain.join(','), req.fundMode,
-               JSON.stringify(req.exceptions ?? {})],
+               JSON.stringify(req.exceptions ?? {}), drop ? 'ds1' : 'ds0'],
     queryFn: ({ signal }) =>
       http<FunnelTrace>(`/api/funnel/trace?symbol=${encodeURIComponent(sym)}&${qs}`, {
         schema: TraceSchema,

@@ -55,6 +55,10 @@ describe('AppShell smoke', () => {
       ).map((a) => a.getAttribute('aria-label'));
       expect(navLinks.slice(0, 2)).toEqual(['وضعیت بازار', 'تابلوخوانی']);
       expect(navLinks).toContain('دیده‌بان بازار');
+      // رأیِ مالک (۱۴۰۵-۰۷-۲۲): مرکزِ اعلان ازِ ناوبری بیرون رفت چون زنگِ
+      // نوارِ بالا (/notifications) همان صفحه را می‌گشاید.
+      expect(navLinks).not.toContain('مرکز اعلان');
+      expect(screen.getByTestId('topbar-notifications')).toBeInTheDocument();
     });
     // رأیِ واژگانِ مالک (۱۴۰۵-۰۷-۱۷): /master «استراتژی FTS» صدا می‌زند؛
     // «تابلوی غربالگری» و «مستر FTS» دیگر نامِ این مقصد نیستند. عنوانِ گروه

@@ -122,10 +122,6 @@ const pulse = {
   },
 } as unknown as Record<string, unknown>;
 
-const histogram = {
-  status: 'ok', group: 'all', histo12: [], known: 931, nodata: 16, not_traded: 54, total: 985,
-} as unknown as Record<string, unknown>;
-
 const split = {
   status: 'ok', tab: 'all', symbols: 985, money_flow_b_toman: -4055.9,
   retail: { buy_b_toman: 18877.8, sell_b_toman: 22933.7 },
@@ -139,7 +135,7 @@ function renderTicker(pulseArg: unknown = pulse, mode: 'paged' | 'continuous' = 
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MarketStatusTicker pulse={pulseArg as never} histogram={histogram as never} split={split as never} />
+      <MarketStatusTicker pulse={pulseArg as never} split={split as never} />
     </QueryClientProvider>,
   );
 }
@@ -147,12 +143,15 @@ function renderTicker(pulseArg: unknown = pulse, mode: 'paged' | 'continuous' = 
 describe('نوارِ خلاصۀ چرخشی', () => {
   beforeEach(() => localStorage.clear());
 
-  it('پنج تبِ دستی همیشه دیدنی‌اند و صفحۀ فعال aria-current می‌گیرد', () => {
+  it('چهار تبِ دستی همیشه دیدنی‌اند و صفحۀ فعال aria-current می‌گیرد', () => {
     renderTicker();
-    for (const id of ['breadth', 'flow', 'value', 'queues', 'quality']) {
+    for (const id of ['breadth', 'flow', 'value', 'queues']) {
       expect(screen.getByTestId(`ticker-tabs-${id}`)).toBeInTheDocument();
     }
     expect(screen.getByTestId('ticker-tabs-breadth')).toHaveAttribute('aria-current', 'page');
+    // «کیفیتِ داده» رأیِ مالک (۱۴۰۵-۰۷-۲۲) برایِ حذف است: شمارشِ سنجیده‌شده
+    // خودش درِ «پهنای بازار» و جدولِ توزیعِ درصد هست.
+    expect(screen.queryByTestId('ticker-tabs-quality')).not.toBeInTheDocument();
   });
 
   it('عددِ هر صفحّه از همان داده است؛ نبودِ داده صفر نمی‌شود', () => {
@@ -171,12 +170,12 @@ describe('نوارِ خلاصۀ چرخشی', () => {
     expect(screen.queryByTestId('ticker-fact-ارزش صف خرید')).not.toBeInTheDocument();
   });
 
-  it('حالتِ پیوسته: همهٔ پنج گروه درِ یک نوارِ روان می‌آیند و هر گروه برچسب دارد', () => {
+  it('حالتِ پیوسته: همهٔ چهار گروه درِ یک نوارِ روان می‌آیند و هر گروه برچسب دارد', () => {
     renderTicker(pulse, 'continuous');
     expect(screen.getByTestId('ticker-continuous')).toBeInTheDocument();
     expect(screen.getByTestId('ticker-marquee').getAttribute('data-state')).toBe('running');
     expect(screen.getByTestId('ticker-marquee').getAttribute('data-direction')).toBe('rtl');
-    for (const id of ['breadth', 'flow', 'value', 'queues', 'quality']) {
+    for (const id of ['breadth', 'flow', 'value', 'queues']) {
       // دو نسخه: نسخۀِ اصلی و نسخۀِ بی‌درزِ aria-hidden — پس getAll، نه get
       expect(screen.getAllByTestId(`ticker-group-${id}`)).toHaveLength(2);
     }

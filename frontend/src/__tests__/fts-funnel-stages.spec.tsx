@@ -17,7 +17,8 @@ import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { funnelFromApi, stageProgressFor } from '@features/master/lib/funnelView';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { FUNNEL_FIXTURE, installFunnelApi } from './fixtures/funnelApi';
+import { FUNNEL_FIXTURE, funnelCalls, installFunnelApi } from './fixtures/funnelApi';
+import { funnelQueryKey } from '@features/master/api/useFtsFunnel';
 
 // بدنهٔ هر جدولِ قیف مجازی‌سازی شده (پنج‌هزار ردیفِ universe رویِ هم)، و jsdom
 // اندازه ندارد؛ همان الگوی `fts-screen.spec.tsx`: پنجره‌ای به بزرگیِ فهرست.
@@ -382,6 +383,10 @@ describe('حفظِ حالت', () => {
   it('گذر از سطر، گام را درِ مسیر نگه می‌دارد تا بازگشت به همان‌جا برگردد', async () => {
     withClient(<FtsFunnelStages preset="custom" onPresetChange={() => {}} />,
                '/master?stage=handover&preset=custom');
+    await waitFor(() => expect(screen.getByTestId('funnel-stage-tape')).toBeInTheDocument());
+    // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه مرحلۀ اول بسته‌اند — برایِ گذر از سطر، اول
+    // مرحلۀ تابلوخوانی را با کلیدِ خودش باز می‌کنیم.
+    fireEvent.click(screen.getByTestId('funnel-stage-toggle-tape'));
     await waitFor(() => expect(
       screen.getByTestId('funnel-stage-tape').querySelector('tbody tr')).toBeTruthy(),
       { timeout: 4000 });
@@ -400,5 +405,46 @@ describe('حفظِ حالت', () => {
                '/master?stage=handover&preset=custom');
     await waitFor(() => expect(screen.getByTestId('funnel-stage-handover')).toBeInTheDocument());
     expect(screen.getByTestId('funnel-stage-handover').querySelectorAll('tbody tr')).toHaveLength(0);
+  });
+});
+
+describe('پیش‌فرضِ دیدنیِ مرحلۀ تحویل (رأیِ مالک ۱۴۰۵-۰۷-۲۲)', () => {
+  it('سه جدولِ اول بسته‌اند و جدولِ تحویل باز است', async () => {
+    await ready('/master?stage=handover&preset=custom');
+    for (const k of ['tape', 'technical', 'fundamental']) {
+      expect(screen.getByTestId(`funnel-stage-toggle-${k}`))
+        .toHaveAttribute('aria-expanded', 'false');
+      // بسته یعنی بدنه‌اش درِ DOM نیست، نه فقط پنهان (چهار جدولِ باز = بی‌اسکرول
+      // رسیدن به تحویل ممکن نبود).
+      expect(screen.queryByTestId(`funnel-scroll-${k}`)).not.toBeInTheDocument();
+      // کنترل‌هایِ خودِ مرحله (چیپ‌ها و کلیدِ تکنیکال) درِ سرِ کارت می‌مانند
+      expect(screen.getByTestId(`funnel-stage-${k}`)).toBeInTheDocument();
+    }
+    expect(screen.getByTestId('funnel-stage-toggle-handover'))
+      .toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('funnel-scroll-handover')).toBeInTheDocument();
+    // گامِ بسته با کلیکِ خودش باز می‌شود — کنترلِ جاافتاده باقی نمی‌ماند.
+    fireEvent.click(screen.getByTestId('funnel-step-technical'));
+    expect(screen.getByTestId('funnel-stage-toggle-technical'))
+      .toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('funnel-scroll-technical')).toBeInTheDocument();
+  });
+
+  it('«حذفِ پسوندِ عددی» پیش‌فرض روشن است و به موتور گفته می‌شود', async () => {
+    funnelCalls.length = 0;
+    await ready('/master?stage=handover&preset=custom');
+    const btn = screen.getByTestId('funnel-numeric-suffix-toggle');
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
+    expect(useFunnelPrefsStore.getState().dropSuffix).toBe(true);
+    expect(funnelCalls.at(-1)?.drop_suffix).toBe(true);
+    fireEvent.click(btn);
+    expect(useFunnelPrefsStore.getState().dropSuffix).toBe(false);
+    await waitFor(() => expect(funnelCalls.at(-1)?.drop_suffix).toBe(false));
+    // خاموش‌کردن همِ پیش‌فرضِ همیشگیِ موتور نیست که بی‌درخواست بماند؛ کلیدِ کش
+    // عوض می‌شود تا پاسخِ حالتِ دیگر رویِ جدول ننشیند.
+    expect(funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard',
+                            exceptions: {}, dropSuffix: false }))
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard',
+                                    exceptions: {}, dropSuffix: true }));
   });
 });

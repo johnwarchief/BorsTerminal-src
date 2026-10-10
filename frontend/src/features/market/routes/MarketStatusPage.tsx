@@ -34,7 +34,7 @@ export default function MarketStatusPage() {
   return (
     <div className="flex w-full max-w-none flex-col gap-2" data-testid="market-status-page">
       <MarketStatusPanel />
-      <MarketStatusTicker pulse={pulse} histogram={histo.data} split={split.data} />
+      <MarketStatusTicker pulse={pulse} split={split.data} />
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
 
       {/* بند ۵ مأموریت: پیش از هر حکمی، خودِ مرحلِ نشست و اینکه چه چیزی در این

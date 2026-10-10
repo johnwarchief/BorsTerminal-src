@@ -32,6 +32,9 @@ export type FunnelRequest = {
   chain: string[];
   fundMode: FundStrictness;
   exceptions: Record<string, string[]>;
+  /** «حذفِ پسوندِ عددی» — پارامترِ مؤثرِ خودِ موتور است، پس درِ کلیدِ کش هم
+   *  می‌نشیند (تغییرش نباید پاسخِ حالتِ دیگر را نشان دهد). */
+  dropSuffix: boolean;
 };
 
 const EMPTY_SUM: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
@@ -50,7 +53,7 @@ const EMPTY: Funnel = {
     handover: emptyStage('handover'),
   },
   boardScope: 0, total: 0, asOf: null,
-  marketUniverse: 0, excludedCount: 0, exclusions: [], exclusionCounts: {},
+  marketUniverse: 0, excludedCount: 0, dropSuffixApplied: null, exclusions: [], exclusionCounts: {},
   exclusionLabels: {},
   counts: {
     tape: { ...EMPTY_SUM },
@@ -63,7 +66,7 @@ const EMPTY: Funnel = {
 
 export function funnelQueryKey(req: FunnelRequest): string[] {
   return ['funnel', req.preset, req.chain.join(','), req.fundMode,
-          JSON.stringify(req.exceptions)];
+          JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0'];
 }
 
 /** درخواستِ قیف از سرور. `mode` فقط نمایشِ ریتمِ کشف است (معکوس/مرور) و داوری
@@ -94,6 +97,7 @@ export function useFtsFunnel(
   const fundMode = useFunnelPrefsStore((s) => s.fundMode);
   const chainPref = useFunnelPrefsStore((s) => s.chain);
   const exceptions = useFunnelPrefsStore((s) => s.exceptions);
+  const dropSuffixPref = useFunnelPrefsStore((s) => s.dropSuffix);
   const opts: FunnelOptions = {
     ...DEFAULT_FUNNEL_OPTIONS,
     ...useFunnelPrefsStore.getState(),
@@ -117,8 +121,9 @@ export function useFtsFunnel(
     chain: overrides.chain ?? (preset === 'custom' ? (urlChain ?? chainPref) : []),
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
+    dropSuffix: dropSuffixPref,
     ...overrides,
-  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions]);
+  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref]);
 
   const q = useQuery({
     queryKey: funnelQueryKey(request),
@@ -129,7 +134,7 @@ export function useFtsFunnel(
       // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
       signal: ctx.signal,
       body: { preset: request.preset, chain: request.chain, fund_mode: request.fundMode,
-              exceptions: request.exceptions },
+              exceptions: request.exceptions, drop_suffix: request.dropSuffix },
     }),
     // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه
     // به صفر می‌افتاد («universe: ۰») و کاربر فکر می‌کرد بازار خالی است. پاسخِ
