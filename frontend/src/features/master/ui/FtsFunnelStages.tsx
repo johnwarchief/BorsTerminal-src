@@ -39,7 +39,7 @@ export function FtsFunnelStages({
   preset?: TreePreset;
   onPresetChange?: (p: 'swing' | 'trend' | 'hourglass') => void;
 }) {
-  const [params] = useSearchParams();
+  const [params, setSearchParams] = useSearchParams();
   const rawStage = params.get('stage') as FunnelStageKey | null;
   // گذرِ نماد از رویِ سطر، گام را درِ خودِ URL می‌نویسد؛ این شاخه فقط برایِ
   // «بازگشت» است: بی‌اش، برگشتن از صفحۀ نماد کاربر را از گام چهارم به گامِ اول
@@ -63,6 +63,16 @@ export function FtsFunnelStages({
   const activePreset = useActiveFunnelPreset(preset);
   const choose = (p: FunnelPreset) => {
     setPreset(p);
+    // «منبعِ واحدِ معتبر» یعنی URL برنده است؛ پس کلیکِ کاربر باید خودِ URL را
+    // عوض کند، نه فقط store را. بی‌این، هرگاه صفحه با `?preset=` باز شده باشد
+    // (لینکِ StrategyTree/stepper) activePreset رویِ مقدارِ URL قفل می‌ماند و
+    // کلیکِ دکمهٔ Preset جدول را هرگز تازه نمی‌کند (باگِ P0). بقیۀ پارامترها
+    // (symbol/stage) حفظ می‌شوند.
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('preset', p);
+      return next;
+    }, { replace: true });
     // «Custom» افقِ سراسری نیست (پلنِ معامله و وزنِ پله به افق نگاه می‌کنند)؛
     // سه افقِ واقعی درِ هر دو جا نوشته می‌شوند.
     if (p !== 'custom') onPresetChange?.(p);
