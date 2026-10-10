@@ -1195,7 +1195,8 @@ def _status_window() -> dict:
     """
     out = {"market_open": None, "sync_window": None, "tick_writes": None,
            "source": "backend"}
-    now = datetime.datetime.now()
+    import datetime as _dt
+    now = _dt.datetime.now()
     try:
         import market_universe as MU
         out["market_open"] = bool(MU.market_is_open())
