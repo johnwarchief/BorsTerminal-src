@@ -1,16 +1,15 @@
 ---
 name: bors-live-ui-check
-description: Run a live browser check of the BorsTerminal UI through the jev-browser Chromium harness and prove the result from its own JSON. Use after any frontend change when the work is to be called done, when a jev_ui_check run reports every testid as null or absent, when a second click or a tab switch must be verified, or before claiming a fix reached the shipped build. Covers the JEV_CHROME path, MSYS_NO_PATHCONV for hash routes, backend port discovery, and the harness-broken versus component-broken distinction.
+description: Legacy Jev-browser live UI check, retained for fallback and comparison during the requested Jev-to-Laya migration. Live browser evidence remains required after frontend changes, but use verified Laya/Playwright/CDP once configured; do not treat this Jev-specific harness as the permanent canonical decision layer.
 ---
 
-# Bors live UI check
+# Bors live UI check (legacy Jev harness)
+
+> **Status as of 2026-10-10:** Jev-to-Laya migration was requested, but is not yet proved. This file documents the legacy Jev harness. Continue requiring live browser evidence, but use the verified Laya/Playwright/CDP path when available. Until then, run a real browser check with the tools that actually work and mark Laya migration `UNVERIFIED`.
 
 ## Overview
 
-One pipeline: build, start the right backend, run the jev-browser harness with the two
-environment values it needs, then read its JSON before believing anything. Three failures
-repeated across sessions because each has a specific hidden cause; none of them look like
-a harness problem, all of them look like the feature is missing.
+One pipeline: build, start the right backend, run a real browser check with the available harness, then inspect its output before believing anything. If the legacy Jev harness is used, its environment requirements and failure modes below still apply.
 
 ## Step 1 - Fresh bundle first
 
