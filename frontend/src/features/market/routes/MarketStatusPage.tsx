@@ -6,6 +6,7 @@
 // فازهای نشست، نمودارهای درون‌روز، صنایع و نمادهای زیرِ نظر.
 // هیچ بلوکی عددِ ساختگی نمی‌سازد: هر کدام loading / error / بی‌داده دارد.
 import { MarketStatusPanel } from '../components/MarketStatusPanel';
+import { MarketStatusTicker } from '../components/MarketStatusTicker';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { TimelineCharts } from '../components/MicroChartsDrawer';
 import {
@@ -30,6 +31,7 @@ export default function MarketStatusPage() {
   return (
     <div className="flex w-full max-w-none flex-col gap-2" data-testid="market-status-page">
       <MarketStatusPanel />
+      <MarketStatusTicker pulse={pulse} histogram={histo.data} split={split.data} />
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
