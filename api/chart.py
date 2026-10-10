@@ -2689,7 +2689,7 @@ def _fts_exit_engine(candles, entry_hint=None):
 # v10 - single-symbol FTS analysis (payload assembly + endpoint)
 # ============================================================================
 
-FTS_ANALYSIS_CACHE = {}          # {key: (ts, payload)}; key = symbol|close
+FTS_ANALYSIS_CACHE = {}          # {key: (ts, payload)}; symbol/close/context + active hourglass settings
 FTS_ANALYSIS_CACHE_MAX = 3000    # size cap (bulk-screener style churn safe)
 FTS_ANALYSIS_TTL = 900.0         # seconds; payload recomputed after expiry
 
@@ -3049,12 +3049,10 @@ def _fts_analysis_series(symbol):
 def _fts_analyze_symbol(symbol, entry_hint=None):
     """Cached single-symbol FTS payload for /api/fts/{symbol} and badges.
 
-    Cache key = symbol + last daily close + entry hint: the hard stop is
-    entry-dependent, so a cached swing-basis payload must never answer an
-    `entry` request. Intra-day live-candle churn recomputes freely, but
-    repeated calls with unchanged closes (the common case for the badge strip
-    polling the same symbol) are served from cache. TTL guards against a
-    static close with drifting intraday fields.
+    Cache key includes symbol, last daily close, entry hint, price basis, and
+    active hourglass settings. If a user changes RSI period/threshold/MA52
+    mode, the old 900s result must not answer the new configuration. TTL still
+    guards against a static close with drifting intraday fields.
     """
     import time as _t
     now = _t.time()
@@ -3070,7 +3068,15 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     # مبنایِ ذخیرۀ کاربر می‌سازد، و برایِ نمادی که آخرینِ کندلش last==closing
     # باشد «آخرینِ ته‌بندی» عوض نمی‌شود ⇒ بی‌این، عوض‌کردنِ مبنایِ قیمت تا
     # FTS_ANALYSIS_TTL (۹۰۰ ثانیه) همان داوریِ مبنایِ قبلی را برمی‌گرداند.
-    key = f"{symbol}|{last_close}|{entry_hint}|{basis}"
+    # Include the effective strategy parameters: frontend invalidation cannot
+    # clear this process-local cache, and same-close requests are otherwise stale.
+    hg_cfg = _fts_hourglass_settings()
+    hg_key = (
+        f"rsi={hg_cfg['hourglass_rsi_period']}:"
+        f"oversold={hg_cfg['hourglass_rsi_oversold']:.6g}:"
+        f"ma52={hg_cfg['hourglass_ma52_position']}"
+    )
+    key = f"{symbol}|{last_close}|{entry_hint}|{basis}|{hg_key}"
     cached = FTS_ANALYSIS_CACHE.get(key)
     if cached and (now - cached[0]) < FTS_ANALYSIS_TTL:
         return cached[1]
