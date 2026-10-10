@@ -25,8 +25,50 @@ from fastapi import APIRouter, Request
 
 import funnel_engine as FE
 import funnel_registry as REG
+import market_universe as MU
 
 router = APIRouter()
+
+# ردیابِ بی‌حالتِ وضعیتِ معاملاتیِ جهان — وضعیتِ هر نماد را از snapshotِ دورِ
+# پیشین می‌سنجد تا «معاملۀِ انجام‌شده» را از «تغییرِ دفترِ سفارش» جدا کند.
+# دامنه از کلِ تابلو ساخته می‌شود، نه ۶۰ ردیفِ اول؛ هیچ نمادِ واجدِ شرایطی
+# حذف نمی‌شود — فقط اولویتِ نمایشش تعیین می‌گردد.
+_UNIVERSE = MU.UniverseTracker()
+_TZ_TEHRAN_MIN = 210  # +03:30
+
+
+def _tehran_now():
+    import datetime as dt
+    return dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=_TZ_TEHRAN_MIN)
+
+
+def _tehran_market_open(now=None) -> bool:
+    now = now or _tehran_now()
+    # شنبه..چهارشنبه = weekday 5,6,0,1,2 (python Mon=0..Sun=6)؛ ۰۸:۴۵–۱۲:۳۰
+    return now.weekday() in (5, 6, 0, 1, 2) and \
+        dt_time(8, 45) <= now.time() <= dt_time(12, 30)
+
+
+from datetime import time as dt_time  # noqa: E402  (برایِ خواناییِ یکتا درِ تابعِ بالا)
+
+
+@router.get("/api/universe/live")
+def get_universe_live():
+    """وضعیتِ معاملاتیِ هر نماد + اولویتِ نمایش + شمارشِ جهان.
+
+    بر پایۀِ فیلدهایِ واقعیِ تابلو (z_tot_tran/q_tot_cap برایِ معاملۀِ انجام‌شده،
+    buy_q*/sell_q*/p_last برایِ مظنه، stop_state برایِ توقف، fetched_at برایِ کهنگی).
+    تغییرِ قیمتِ تنها هرگز دلیلِ معامله نیست.
+    """
+    board, _session = _board_snapshot()
+    if not board:
+        return {"status": "no_data", "message": "تابلو هنوز ساخته نشده",
+                "universe": {}, "symbols": []}
+    now = time.time()
+    open_now = _tehran_market_open()
+    ranked, counts = _UNIVERSE.observe(board, market_open=open_now, now_wall=now)
+    return {"status": "success", "market_open": open_now, "counts": counts,
+            "symbols": ranked}
 
 # کشِ قیف یک‌خانۀ «کلیدِ آخر» بود. صفحۀ مستر دو مصرف‌کنندۀ هم‌زمان دارد
 # (کاکپیت با presetِ horizon و جدولِ غربالگری با presetِ انتخابی، به‌علاوه
