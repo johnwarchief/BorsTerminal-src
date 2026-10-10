@@ -17,6 +17,12 @@ export const mainRoutes: RouteObject[] = [
     path: 'market-status',
     element: page(() => import('@features/market/routes/MarketStatusPage')),
   },
+  // بند ۶ مأموریت (1405-07-20): مرکزِ اعلانِ درون‌برنامه از ناوبری باز می‌شود؛
+  // منبعش اطلاعیه‌هایِ کدالِ خودِ برنامه است، نه یک فیدِ بیرونیِ تازه.
+  {
+    path: 'notifications',
+    element: page(() => import('@features/market/routes/NotificationsPage')),
+  },
   {
     path: 'fundamental/:symbol?',
     element: page(() => import('@features/fundamental/routes/FundamentalPage')),

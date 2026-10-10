@@ -253,6 +253,9 @@ SUITES = [
     # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
     ('dev/test_screener_funnel_gate_v1.py',
                                       'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # بند ۶ مأموریت: مرکزِ اعلان از کدال، با ادغامِ تکراری و بی‌تيترِ ساختگی.
+    ('dev/test_notifications_v1.py',
+                                      'notification centre: codal-only source, explainable levels, dedupe'),
     # بند ۵ مأموریت: مرحلِ جلسه از وضعیتِ رسمیِ بازار، و داوری بی‌مرحل ممنوع.
     ('dev/test_market_phase_v1.py',
                                       'session phase from the official market state; no verdict without a phase'),

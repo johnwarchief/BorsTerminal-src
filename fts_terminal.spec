@@ -82,6 +82,11 @@ a = Analysis(
                    # مرحلِ جلسه است و mstat_engine آن را import می‌کند؛ مثلِ
                    # بقیۀ ماژول‌هایِ ریشه صریح فهرست می‌شود.                       
                    'market_phase',
+                   # بند ۶ مأموریت (1405-07-20): `notifications` تنها طبقه‌بندِ
+                   # اطلاعیه‌هاست و api/notifications آن را سطح-بال import
+                   # می‌کند؛ نبودنش EXE را رویِ اولین درخواستِ مرکزِ اعلان
+                   # می‌کشد (همان قاعدۀ AGENTS.md برایِ هر ماژولِ ریشه).
+                   'notifications',
                    # دورِ P0 (1405-07-13): `tsetmc_p0_schema` تک‌منبعِ DDL جدول‌هایِ
                    # canonical است و هم از test_tsetmc و هم از mstat_engine.
                    # ensure_schema خوانده می‌شود؛ نبودش درِ EXE یعنی 500 رویِ هر
@@ -105,6 +110,11 @@ a = Analysis(
                    # ModuleNotFoundError می‌داد. گاردِ dev/onedir_contract_v11.py
                    # همین را گرفت.
                    'api.funnel',
+                   # بند ۶ مأموریت (1405-07-20): `api_router` مرکزِ اعلان را هم
+                   # درِ بدنهٔ تابع import می‌کند (api/__init__.py)؛ بی‌این خط
+                   # EXE رویِ اولین /api/notifications/* می‌شکند — همان چیزی که
+                   # گاردِ dev/onedir_contract_v11.py درِ همین دور گرفت.
+                   'api.notifications',
                    'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
                    'api._pipeline', 'api.engine', 'watchlist_store',
