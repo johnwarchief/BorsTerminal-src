@@ -287,6 +287,8 @@ def main():
                     CH.CDN_OFFLINE_UNTIL = 0.0
                 else:
                     CH.CDN_OFFLINE_UNTIL = time.time() + (0.0 if from_cdn else 90.0)
+                if from_cdn or a.source == "cdn":
+                    cdn_req += 1
                 rec = audit_one(CH, sym, today)
                 rec["observed_at"] = tehran_now().isoformat(timespec="seconds")
                 rec["rev"] = cur_rev
@@ -311,7 +313,7 @@ def main():
         summary = {"rev": cur_rev, "observed_at": tehran_now().isoformat(timespec="seconds"),
                    "shard": f"{index}/{passes}", "universe_size": len(syms),
                    "n_symbols": n_done, "errors": errs, "changed_decisions": changed,
-                   "cdn_requests": sum(1 for _ in range(0)), "yield_waits": yields,
+                   "cdn_requests": cdn_req, "yield_waits": yields,
                    "source": a.source, "elapsed_s": round(time.time() - t0, 1)}
         print("FTS LIVE AUDIT:", json.dumps(summary, ensure_ascii=False))
         print("خروجی:", dayfile)

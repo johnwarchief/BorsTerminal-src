@@ -187,6 +187,31 @@ def fetch_board():
     return None, None, None
 
 
+def ours_allowed_band(conn, ins_code):
+    """سقف/کفِ مجازِ قیمتِ *همین نشست* از بانکِ خودِ برنامه.
+
+    چرا این دو ستون و نه `h*_max`: سنجشِ امروز ثابت کرد `h5_max`/`h19_max`
+    «بیشینۀِ قیمت درِ نشستِ ششم/بیستم»‌اند (api/market.py:358-360) و هیچ ربطی به
+    سقفِ مجازِ امروز ندارند — مقابله‌شان با `psGelStaMax` اختلافِ ساختگی می‌ساخت.
+    درِ مقابلِ واقعیِ `staticThreshold.psGelStaMin/Max` درِ TSETMC، ستون‌هایِ
+    `allowed_min`/`allowed_max` درِ `market_watch` است (اندازۀِ today: برایِ دو
+    نماد آزموده عیناً برابر بود — «آ س پ» ۲۴٬۸۴۰/۲۶٬۳۶۰ و «آتيمس» ۱٬۰۶۳٬۹۶۸/
+    ۱٬۱۲۹٬۷۸۰). این endpointِ `/api/market` آن دو ستون را بیرون نمی‌دهد
+    (`drop_unused`)، پس از همان بانکِ خوانده می‌شوند.
+    """
+    if not ins_code:
+        return None
+    try:
+        r = conn.execute("SELECT allowed_min, allowed_max FROM market_watch "
+                         "WHERE ins_code = ? ORDER BY d_even DESC LIMIT 1",
+                         (str(ins_code),)).fetchone()
+        if not r or r[0] is None or r[1] is None:
+            return None
+        return {"allowed_min": round(float(r[0]), 4), "allowed_max": round(float(r[1]), 4)}
+    except Exception:
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
@@ -221,6 +246,12 @@ def main():
         symkeys = ("symbol", "l_val18", "ins_code", "isin")
         step = max(1, round(len(rows) / a.compare)) if a.compare > 0 else 0
         compared = 0
+        # بانکِ محلی فقط برایِ خواندنِ هم‌ارزِ خودیِ عددِ TSETMC (حالتِ ro: هرگز
+        # نویسندهٔ market.db نمی‌شویم — آن قاعدۀِ single-writer است).
+        try:
+            dbg_conn = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=30)
+        except sqlite3.Error:
+            dbg_conn = None
         dayfile = os.path.join(OUTDIR, f"audit-{now:%Y%m%d}.jsonl")
         # stream + flush: اجرایِ طولانی باید از بیرون قابلِ دید باشد؛ اگر کشته
         # شود، آنچه نوشته شده از دست نمی‌رود.
@@ -253,21 +284,29 @@ def main():
                     them = tsetmc_instrument_info(r.get("ins_code"))
                     rec["tsetmc"] = them
                     rec["ours_for_compare"] = ours
-                    # اختلافِ عددی، همان‌جا و بدونِ تفسیر: تحلیلِ «کدام خانۀِ خطا»
-                    # کارِ مالک/گزارش است، نه حدسِ این Tool.
-                    if them.get("tsetmc_static_max") is not None:
-                        rec["delta_static_max_minus_h19"] = round(
-                            float(them["tsetmc_static_max"]) - float(rec.get("h19_max") or 0), 4)
-                        rec["delta_static_min_plus_h19"] = round(
-                            float(rec.get("h19_max") or 0) - float(them.get("tsetmc_static_min") or 0), 4)
+                    band = ours_allowed_band(dbg_conn, r.get("ins_code"))
+                    rec["ours_allowed"] = band
+                    # اختلافِ عددیِ **فقط درِ همان کمیتی که ثابت شده هم‌معنایند**:
+                    #   • شمارۀِ نشست (`dEven`) — هر دو طرف
+                    #   • سقف/کفِ مجازِ قیمت — `allowed_max/min` ما در برابر
+                    #     `psGelStaMax/Min` آن‌ها (سنجشِ ۱۴۰۵-۰۷-۱۸ رویِ دو نماد:
+                    #     برابریِ کامل)
+                    # `qTotTran5JAvg` عمداً مقابله نمی‌شود: برایِ «آ س پ» نه با
+                    # میانگینِ پنجِ نشستِ `z_tot_tran` (۲۹) خواند و نه با `q_tot_cap`
+                    # (۱٬۹۳۰٬۰۰۰٬۰۰۰) — یعنی واحد/مفهومِ آن میدان راستی‌آزمایی نشده
+                    # و عددِ اختلافِ ساختگی از آن درنمی‌آید؛ وضعیتش UNVERIFIED می‌ماند.
                     if them.get("tsetmc_d_even") is not None and d_even is not None:
                         rec["delta_d_even"] = int(them["tsetmc_d_even"]) - int(d_even)
-                    if them.get("tsetmc_q_tot_tran_5j_avg") is not None:
-                        rec["delta_5j_avg_minus_month_avg"] = round(
-                            float(them["tsetmc_q_tot_tran_5j_avg"])
-                            - float(rec.get("month_avg_vol") or 0), 2)
+                    if band and them.get("tsetmc_static_max") is not None:
+                        rec["delta_allowed_max"] = round(float(them["tsetmc_static_max"])
+                                                         - band["allowed_max"], 4)
+                        rec["delta_allowed_min"] = round(float(them["tsetmc_static_min"])
+                                                         - band["allowed_min"], 4) if (
+                            them.get("tsetmc_static_min") is not None) else None
                     time.sleep(0.2)      # احترامِ نرخِ درخواستِ بیرونی
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        if dbg_conn:
+            dbg_conn.close()
         have_f = [c for c in FILTERS if c in (rows[0] if rows else {})]
         nflag = sum(1 for r in rows for c in have_f if r.get(c))
         summary = {"observed_at": tehran_now().isoformat(timespec="seconds"), "source": base,

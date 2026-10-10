@@ -2123,9 +2123,14 @@ def tick_window_open(now_dt=None) -> bool:
     همان شرطی که `tick_live` اولِ کار می‌زند؛ بی‌تعریفِ مشترک، هر خوانندهٔ دیگر
     (UIِ «وضعیت بازار»، سنجش‌ها، لاگِ Job) دربِ دومِ خودش را می‌پخت و با واقعیتِ
     حلقه نمی‌خواند.
+
+    روز از ماژولِ تاریخ خوانده می‌شود و ساعت از `%H%M` — دقیقاً مثلِ دروازۀِ
+    پیشین. بی‌این تفکیک، گاردهایی که ساعتِ ساختگی می‌زنند (یکِ stubِ بی‌`weekday`
+    درِ `dev/market_tick_v1045.py` و `dev/market_hot_state_v1077.py`) می‌شکستند.
     """
     n = now_dt or datetime.datetime.now()
-    return n.weekday() not in (3, 4) and "0855" <= n.strftime("%H%M") < "2000"
+    return datetime.date.today().weekday() not in (3, 4) \
+        and "0855" <= n.strftime("%H%M") < "2000"
 
 
 def _tick_session():
