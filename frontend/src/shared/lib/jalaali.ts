@@ -1,3 +1,4 @@
+import { toFaDigits } from './fmt';
 // shared/lib/jalaali.ts -- تبدیل تاریخ جلالی به میلادی (الگوریتم استاندارد)
 // پورت حداقلی jalaali-js برای سن صورت مالی؛ بدون وابستگی.
 // تقسیم و باقیمانده با معنای برشی (مانند jalaali-js) نه کف -- برای اعداد منفی فرق می کند
@@ -127,4 +128,14 @@ export function statementAgeDays(periodEnd: string | null | undefined, nowMs = D
   const t = jalToEpochMs(periodEnd);
   if (t == null) return null;
   return Math.max(0, Math.floor((nowMs - t) / 86_400_000));
+}
+/** ۲۰۲۶۱۰۰۵ (شمارۀ نشستِ TSETMC) → «۱۴۰۵/۰۷/۱۳»؛ بی‌اعتبار ⇒ null، نه صفر.
+ *  تنها تبدیلِ d_even درِ کلِ برنامه — سایدبار، تابلو و درصدِ حقیقی/حقوقی همه
+ *  همین را می‌خوانند (بند ۲ مأموریت: یک تعریف، بی‌نسخۀ دوم درِ رابط). */
+export function dEvenToJalali(d: number | null | undefined): string | null {
+  if (d == null || d <= 0) return null;
+  const s = String(Math.trunc(d));
+  if (s.length !== 8) return null;
+  const j = isoToJalali(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`);
+  return j ? toFaDigits(j) : null;
 }

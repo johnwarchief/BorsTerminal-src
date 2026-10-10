@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
+import { ClientSharePct } from '@shared/components/ClientSharePct';
 import { PHASE_LABEL, useExecutionStatus, type OrderPhase } from '../lib/orderClient';
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -81,6 +82,10 @@ export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: Market
         </InfoRow>
         <InfoRow label="حجم / ارزش"><span className="num">{row?.q_tot_tran != null ? fmtInt(row.q_tot_tran) : '—'} · {billionRialText(toBillionRial(row?.q_tot_cap))} میلیارد ریال</span></InfoRow>
         <InfoRow label="نسبتِ حجم"><span className="num">{row?.vol_ratio != null ? toFaDigits(row.vol_ratio.toFixed(2)) : '—'}</span></InfoRow>
+        {/* بند ۲ مأموریت + درخواستِ مالک (کنارِ نسبتِ خریدار/فروشنده درِ دیده‌بان):
+            سهمِ حقیقی/حقوقی از **ارزشِ** خرید و فروش. همان ستون‌هایِ تابلو که
+            `client_split.py` ساخته — دیدۀبان عددِ دوم نمی‌سازد. */}
+        <ClientSharePct row={row} dense testId="watch-client-share" className="my-1" />
         <InfoRow label="وضعیتِ معاملاتی">
           {stopped ? (
             <span className="text-accent-red" title={row?.stop_reasons ?? undefined}>متوقف</span>

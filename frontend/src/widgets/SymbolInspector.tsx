@@ -25,6 +25,7 @@ import { AuditBadge } from '@features/fundamental/components/AuditBadge';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { RegulatoryState } from '@features/market/components/RegulatoryState';
 import { BuySellCell } from '@features/market/components/BuySellCell';
+import { ClientSharePct } from '@shared/components/ClientSharePct';
 import { buyPerCapitaMt, sellPerCapitaMt } from '@features/market/lib/tapeFts';
 import { useCalendarEvents } from '@features/fundamental/api/useCalendarEvents';
 import { jalaliOf } from '@features/fundamental/lib/assemblyEvent';
@@ -601,6 +602,11 @@ export function SymbolInspector() {
                          buyPc={rawRow ? buyPerCapitaMt(rawRow) : null}
                          sellPc={rawRow ? sellPerCapitaMt(rawRow) : null}
                          power={rawRow?.buyer_power} />
+            {/* بند ۲ مأموریت (رأیِ مالک 1405-07-20): سهمِ حقیقی/حقوقی از **ارزشِ**
+                خرید و فروش، درِ همان خانۀ نسبتِ خریدار/فروشنده. عددها را بک‌اند
+                ساخته (`client_split.py`)؛ این‌جا فقط نمایش است و نبودِ عدد
+                «نامشخص» خوانده می‌شود، نه صفر و نه سهمِ حجم. */}
+            <ClientSharePct row={rawRow} dense testId="inspector-client-share" />
           </div>
 
           {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد

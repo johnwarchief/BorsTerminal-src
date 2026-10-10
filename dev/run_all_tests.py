@@ -247,6 +247,9 @@ SUITES = [
     # مبدأ و fallbackِ سالم، رویدادهایِ شرکتیِ منتشرشده، و وضعیت/تعلیق/نظارت/
     # پیام. چکِ ضدِ نشت: هیچ‌کدام به فیلتر/گیت/طبقۀ روند وصل نشوند.
     ('dev/tsetmc_p0_v1076.py', 'tsetmc p0: native client values, corporate events, state'),
+    # بند ۲ مأموریت (رأیِ مالک 1405-07-20): درصدِ حقیقی/حقوقی **ارزش‌محور** است،
+    # دو سمت مستقل، بی‌بازسازی از حجم — و تک‌تعریف درِ `client_split.py`.
+    ('dev/test_client_split_v1.py', 'real/legal share: value basis, both sides independent, no volume estimate'),
     # SINGLE-WRITER: دورِ P0 دو بک‌اند هم‌زمان رویِ یک market.db داشت (نسخۀ
     # ماندۀ 1.0.73 ستون‌هایِ تازه را با هر سینک NULL می‌کرد). این گارد همان
     # حالت را می‌گیرد؛ رویِ ماشینِ بدونِ PowerShell بی‌صدا skip می‌شود.

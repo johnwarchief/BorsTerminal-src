@@ -9,6 +9,7 @@ from ._core import _count_procs, get_db
 from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, FTS_LEGACY_LISTS, FTS_LEGACY_SCALARS, FTS_LIST_KEYS, FTS_STR_KEYS, MARKET_STATUS_PATH
 from bors_flags import _ORJ
 import market_state
+from client_split import shares as _client_shares
 from tape_flags import apply_tape_flags
 from fastapi import APIRouter
 from fastapi import Request
@@ -685,6 +686,12 @@ _DROP_FIELDS = frozenset((
     "tmax", "vol_trend", "sell_power_i", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
 
     "d_even", "resistance_59", "dist_min30_pct",
+    # چهار ارزشِ خامِ مبدأ فقط ورودیِ `client_split.py`‌اند؛ رابط عددِ
+    # حساب‌شده (درصد) و نشستِ خودش را می‌خواند، نه ریالِ خامِ هر گروه را —
+    # وگرنه هر مصرف‌کننده خودش کسرِ دومِ خودی می‌ساخت (همان چیزی که بند ۲
+    # مأموریت منع می‌کند). `ctv_d` و `pct_is_current` می‌مانند: تاریخِ خودِ
+    # عدد و «همین نشست یا نه» باید درِ رابط خوانده شود.
+    "ctv_buy_i_val", "ctv_buy_n_val", "ctv_sell_i_val", "ctv_sell_n_val",
 ))
 
 
@@ -864,7 +871,15 @@ _BOARD_SQL = """
                 -- ذخیره شده (native/mixed)؛ اینجا فقط خوانده می‌شود و نبودِ
                 -- ردیف = reconstructed. بی‌این، هر مصرف‌کننده خودش باید
                 -- چهار ستون را با صفر مقابله می‌کرد — دو منبعِ حقیقت.
-                SELECT v.ins_code, v.kind FROM client_type_value v
+                -- بند ۲ مأموریت (رأیِ مالک 1405-07-20): همین ردیف تنها ورودیِ
+                -- درصدِ حقیقی/حقوقی است. چهار ارزشِ ریالی هم‌جا می‌آیند تا
+                -- کسر درِ `client_split.py` حساب شود — تازه‌ترین ردیفِ هر نماد،
+                -- با نشانیِ خودِ نشست (`ctv_d`) و پرچمِ «همین نشست یا نه»
+                -- (`pct_is_current`)، تا دادهٔ نشستِ پیشین هرگز زنده خوانده
+                -- نشود. هیچ بازسازیِ حجم×قیمت درِ این لایه نیست.
+                SELECT v.ins_code, v.kind, v.d_even,
+                       v.buy_i_val, v.buy_n_val, v.sell_i_val, v.sell_n_val
+                FROM client_type_value v
                 JOIN (SELECT ins_code, MAX(d_even) d FROM client_type_value
                       GROUP BY ins_code) m
                   ON m.ins_code = v.ins_code AND m.d = v.d_even
@@ -912,6 +927,14 @@ _BOARD_SQL = """
                    sr.vaziyat_desc AS stop_state, sr.last_date_change AS stop_since,
                    sr.dalils AS stop_reasons,
                    COALESCE(cv.kind, 'reconstructed') AS ctv_kind,
+                   -- چهار ارزشِ ریالیِ مبدأ + نشستِ خودِ همان ردیف. ستون‌هایِ
+                   -- خامِ ctv_* درِ `_DROP_FIELDS` می‌مانند (رویِ سیم نمی‌آیند)؛
+                   -- تنها چیزی که به رابط می‌رسد درصدِ حساب‌شده درِ پایتون است.
+                   cv.d_even AS ctv_d,
+                   cv.buy_i_val AS ctv_buy_i_val, cv.buy_n_val AS ctv_buy_n_val,
+                   cv.sell_i_val AS ctv_sell_i_val, cv.sell_n_val AS ctv_sell_n_val,
+                   CASE WHEN cv.d_even IS NULL THEN NULL
+                        WHEN cv.d_even = m.d_even THEN 1 ELSE 0 END AS pct_is_current,
                    -- ارزشِ بازارِ *همین نشست* (رأیِ مالک ۱۴۰۵-۰۷-۱۷: سایدبار
                    -- «در یک نگاه» باید همین را ببیند). همان ستونِ رسمیِ که
                    -- مخرجِ I4 اول از آن می‌خواند (`fts_engine.mcap_bulk_expr`:
@@ -1048,6 +1071,21 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         df["buy_power_i"] = buy_per_i.round(0)
         df["sell_power_i"] = sell_per_i.round(0)
 
+        # ── درصدِ حقیقی/حقوقی — بند ۲ مأموریت (رأیِ مالک 1405-07-20) ──────────
+        # مبنایِ **ارزش**، نه حجم؛ کسرِ تعریف‌شده درِ `client_split.py` حساب
+        # می‌شود و هیچ لایۀ دیگری (فرانت، کارت بنیادی، دیده‌بان) دوباره
+        # درصد نمی‌سازد. ورودی فقط چهار ارزشِ مبدأِ `client_type_value` است:
+        # نبودِ ردیف یا خانۀ خالی ⇒ None ⇒ «نامشخص». حجم×قیمت اینجا حساب
+        # نمی‌شود — حتی VWAP، چون مالک صریحاً تخمینِ ارزش را رد کرده است.
+        # `ctv_d` و `pct_is_current` هم می‌آیند تا نشستِ خودِ عدد مشخص باشد و
+        # درصدِ نشستِ پیشین هرگز زنده خوانده نشود (بند ۵.۶ همان قاعده است).
+        _cs = [_client_shares(bi, bn, si, sn) for bi, bn, si, sn in zip(
+            df["ctv_buy_i_val"], df["ctv_buy_n_val"],
+            df["ctv_sell_i_val"], df["ctv_sell_n_val"])]
+        for _k in ("retail_buy_pct", "legal_buy_pct",
+                   "retail_sell_pct", "legal_sell_pct", "pct_basis"):
+            df[_k] = [c[_k] for c in _cs]
+
         # ---------- روند حجم: tvol vs آخرین روز معاملاتی (day-over-day, Null-safe) ----------
         pdv = df["prev_day_vol"].where(df["prev_day_vol"] > 0)     # <=0/NaN → NaN
         df["vol_dod"] = (df["tvol"] / pdv).round(2)                # NaN where no prev day
@@ -1101,6 +1139,16 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "mcap", "mcap_src",
                       "buyer_power", "buy_power_i", "sell_power_i",
                       "buyer_power_raw", "resistance_59",
+                      # بند ۲ مأموریت (رأیِ مالک 1405-07-20): «نامشخص» با «صفر»
+                      # یکی نیست. اگر ارزشِ مبدأ برایِ همین نمادِ همین نشست نبود،
+                      # درصد هیچ‌جا حساب نمی‌شود و حقِ این پاس نیست آن را ۰ کند —
+                      # ۰٪ یعنی «حقیقی هیچی نخرید»، که رأیِ جعلیِ بازار است.
+                      # `pct_basis` رشته است، و `fillna(0)` رشته‌ها کلید را به
+                      # رابطِ عددی می‌فروشد؛ `ctv_d`/`pct_is_current` هم همین‌طور
+                      # (۰ یعنی «ردیفِ مبدأ نیست»، نه «نشستِ صفر»).
+                      "retail_buy_pct", "legal_buy_pct",
+                      "retail_sell_pct", "legal_sell_pct",
+                      "pct_basis", "ctv_d", "pct_is_current",
                       "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
                       "min30_low", "max30_high",

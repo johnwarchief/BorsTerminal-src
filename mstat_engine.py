@@ -36,6 +36,8 @@ import sqlite3
 import zlib
 from typing import Optional
 
+from client_split import aggregate_shares
+
 # ---- یکاها ----
 B_TUMAN_FROM_RIAL = 1e10     # ریال → میلیارد تومان
 M_TUMAN_FROM_RIAL = 1e7      # ریال → میلیون تومان
@@ -1690,21 +1692,23 @@ def client_split(conn, tab: str = "all") -> dict:
     """تعداد/ارزش/درصدِ خرید و فروشِ حقیقی در برابر حقوقی، به تفکیک تب."""
     rows, meta = enrich(conn)
     a = _agg(_select(rows, _TAB_CAT.get(tab, "all")))
-    tot_buy, tot_sell = a["rb"] + a["ib"], a["rs"] + a["is"]
-
-    def pct(part, whole):
-        return None if not whole else round(100.0 * part / whole, 1)
+    # همان کسرِ تک‌تعریف (`client_split.py`) — بی‌درصدِ دومِ خودیِ این لایه. دو
+    # سمت مستقل‌اند و سهمِ حقوقی مکملِ همان سمت است؛ مخرجِ صفر ⇒ None، نه «۰٪».
+    # (جمعِ ارزش از `money()` می‌آید: اگر مبدأ نبود این لایه با حجم×VWAP
+    # بازسازی کرده و `value_source` را جدا اعلام می‌کند، پس منشأ گم نمی‌شود.)
+    rbuy, ibuy = aggregate_shares(a["rb"], a["ib"])
+    rsell, isell = aggregate_shares(a["rs"], a["is"])
 
     bt = lambda v: round(v / B_TUMAN_FROM_RIAL, 1)
     return {"status": "ok", "asof": meta, "tab": tab, "symbols": a["n"],
             "retail": {"buy_count": a["nbi"], "buy_b_toman": bt(a["rb"]),
-                       "buy_pct": pct(a["rb"], tot_buy),
+                       "buy_pct": rbuy,
                        "sell_count": a["nsi"], "sell_b_toman": bt(a["rs"]),
-                       "sell_pct": pct(a["rs"], tot_sell)},
+                       "sell_pct": rsell},
             "institutional": {"buy_count": a["nbn"], "buy_b_toman": bt(a["ib"]),
-                              "buy_pct": pct(a["ib"], tot_buy),
+                              "buy_pct": ibuy,
                               "sell_count": a["nsn"], "sell_b_toman": bt(a["is"]),
-                              "sell_pct": pct(a["is"], tot_sell)},
+                              "sell_pct": isell},
             "pc_buy_m_toman": None if a["pc_buy_mt"] is None else round(a["pc_buy_mt"], 1),
             "pc_sell_m_toman": None if a["pc_sell_mt"] is None else round(a["pc_sell_mt"], 1),
             "power": None if a["power"] is None else round(a["power"], 2),

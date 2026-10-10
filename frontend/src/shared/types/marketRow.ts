@@ -147,6 +147,19 @@ export const MarketRowSchema = z.object({
   // فقط درِ «جزئیات» نشان داده می‌شود — نه بج، نه ستونِ تابلو، و هرگز وارد
   // داوری/FTS نمی‌شود.
   ctv_kind: z.string().nullish(),
+  // ── بند ۲ مأموریت (رأیِ مالک 1405-07-20): درصدِ حقیقی/حقوقی **ارزش‌محور** ──
+  // هر چهار درصد درِ `client_split.py` (بک‌اند) از ارزشِ ریالیِ مبدأ حساب شده
+  //‌اند؛ دو سمت مستقل‌اند و هیچ‌کدام از حجم ساخته نمی‌شود. نبودِ کلید =
+  // «نامشخص» — نه صفر. `ctv_d` نشستِ خودِ عدد است و `pct_is_current` می‌گوید
+  // همان نشستِ تابلو هست یا نشستِ پیشین؛ رابط تاریخِ خودِ عدد را می‌نویسد تا
+  // دادهٔ پیشین زنده خوانده نشود.
+  retail_buy_pct: num,
+  legal_buy_pct: num,
+  retail_sell_pct: num,
+  legal_sell_pct: num,
+  pct_basis: z.string().nullish(),
+  ctv_d: num,
+  pct_is_current: num,
 });
 
 export type MarketRow = z.infer<typeof MarketRowSchema>;

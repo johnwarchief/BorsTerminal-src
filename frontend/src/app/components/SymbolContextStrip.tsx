@@ -6,6 +6,7 @@ import { toFaDigits, fmtPct, fmtInt } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { LiveNumber } from '@shared/components/ui/live-number';
+import { ClientShareInline } from '@shared/components/ClientSharePct';
 
 export function SymbolContextStrip() {
   const symbol = useSymbolStore((s) => s.symbol);
@@ -147,6 +148,19 @@ export function SymbolContextStrip() {
                     : 'text-text-secondary font-bold'
               }
             />
+          </div>
+        ) : null}
+
+        {/* بند ۲ مأموریت: سهمِ حقیقی/حقوقی از ارزشِ خرید و فروش، همان عددِ
+            بک‌اند (`client_split.py`) از ردیفِ خودِ تابلو — کنارِ نسبتِ
+            خریدار/فروشنده، درِ نوارِزمینۀ نماد که روی صفحۀ بنیادی هم می‌آید.
+            «ح/حقوقی» نیست: برچسبِ کامل درِ title نشسته است. */}
+        {rawRow ? (
+          <div className="hidden items-baseline gap-1.5 sm:flex" data-testid="strip-client-share">
+            <span className="text-text-muted text-3xs font-sans">سهمِ حقیقی از ارزش:</span>
+            <ClientShareInline row={rawRow} side="buy" testId="strip-client-share-buy" />
+            <span className="text-text-muted text-3xs">/</span>
+            <ClientShareInline row={rawRow} side="sell" testId="strip-client-share-sell" />
           </div>
         ) : null}
       </div>

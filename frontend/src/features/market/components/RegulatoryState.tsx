@@ -7,19 +7,11 @@
 //   ردیفِ تابلو نمی‌رسد       → «اطلاعات در دسترس نیست»
 //   فید خطا داده            → همان بنرِ inspector-feed-error (اینجا تکرار نمی‌شود)
 import { toFaDigits } from '@shared/lib/fmt';
-import { isoToJalali } from '@shared/lib/jalaali';
+import { dEvenToJalali } from '@shared/lib/jalaali';
 import type { MarketRow } from '@shared/types/marketRow';
 
 const NOT_RECORDED = 'موردی ثبت نشده';
 const UNAVAILABLE = 'اطلاعات در دسترس نیست';
-
-/** 20261005 → «۱۴۰۵/۰۷/۱۳»؛ بی‌اعتبار را «-» می‌دهد نه صفر */
-function dEvenToJalali(d: number | null | undefined): string | null {
-  if (d == null || d <= 0) return null;
-  const s = String(d);
-  if (s.length !== 8) return null;
-  return isoToJalali(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`);
-}
 
 function hEvenToTime(h: number | null | undefined): string | null {
   if (h == null || h <= 0) return null;
