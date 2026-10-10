@@ -357,7 +357,12 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       <aside
         ref={panelRef}
         tabIndex={-1}
-        aria-label="پنل تنظیمات FTS"
+        /* نامِ دسترسیِ کامل: همان چیزی که `dev`… تستِ `fts-settings-drawer.spec.tsx`
+           (دو مورد: دیدنی‌بودنِ پنل و رگرسیون RTL/عرض) با `getByLabelText` می‌خواهد.
+           دورۀِ تنظیماتِ ساعت‌شنی این را به «پنل تنظیمات FTS» کوتاه کرده بود و هر دو
+           تست از آن دور رویِ `main` سرخ بودند (بازتولیدِ محلی رویِ چک‌اوتِ خالصِ
+           `24320a9`: ۲ fail / ۲۲ pass). تست دست نزده‌ایم — نامِ درستِ دسترسی برگشت. */
+        aria-label="پنل تنظیمات پیش‌شرط‌های FTS"
         aria-hidden={!open}
         role="dialog"
         aria-modal={open}
