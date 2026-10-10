@@ -1,0 +1,306 @@
+{
+  "base": "http://127.0.0.1:8002",
+  "at": "2026-10-10T20:02:20.583Z",
+  "symbol": "فولاد",
+  "viewport": "1366x768",
+  "tol": 8,
+  "server_fib": {
+    "zone_33_40": {
+      "lo": 3713.05,
+      "hi": 3778.02,
+      "in_zone": false
+    },
+    "zone_618_70": {
+      "lo": 3446.99,
+      "hi": 3517.76,
+      "in_zone": false
+    },
+    "levels": 7
+  },
+  "seeds": {
+    "on": 4096581810,
+    "off": 2035274467,
+    "on_again": 413567900,
+    "on_control": 413567900
+  },
+  "pixels": {
+    "on": 1093184,
+    "off": 1093184,
+    "on_again": 1093184,
+    "on_control": 1093184
+  },
+  "canvases": {
+    "on": 8,
+    "off": 8,
+    "on_again": 8,
+    "on_control": 8
+  },
+  "sizes": [
+    "859x479",
+    "859x479",
+    "69x479",
+    "69x479",
+    "859x110",
+    "859x110",
+    "69x110",
+    "69x110"
+  ],
+  "diff_on_vs_off": {
+    "changed": 5343,
+    "total": 1093184
+  },
+  "diff_on_vs_on_again": {
+    "changed": 34,
+    "total": 1093184
+  },
+  "ambient_drift": {
+    "changed": 0,
+    "total": 1093184
+  },
+  "per_canvas_on_vs_off": [
+    {
+      "canvas": 0,
+      "changed": 0,
+      "total": 411461
+    },
+    {
+      "canvas": 1,
+      "changed": 5343,
+      "total": 411461
+    },
+    {
+      "canvas": 2,
+      "changed": 0,
+      "total": 33051
+    },
+    {
+      "canvas": 3,
+      "changed": 0,
+      "total": 33051
+    },
+    {
+      "canvas": 4,
+      "changed": 0,
+      "total": 94490
+    },
+    {
+      "canvas": 5,
+      "changed": 0,
+      "total": 94490
+    },
+    {
+      "canvas": 6,
+      "changed": 0,
+      "total": 7590
+    },
+    {
+      "canvas": 7,
+      "changed": 0,
+      "total": 7590
+    }
+  ],
+  "per_canvas_on_vs_on_again": [
+    {
+      "canvas": 0,
+      "changed": 0,
+      "total": 411461
+    },
+    {
+      "canvas": 1,
+      "changed": 34,
+      "total": 411461
+    },
+    {
+      "canvas": 2,
+      "changed": 0,
+      "total": 33051
+    },
+    {
+      "canvas": 3,
+      "changed": 0,
+      "total": 33051
+    },
+    {
+      "canvas": 4,
+      "changed": 0,
+      "total": 94490
+    },
+    {
+      "canvas": 5,
+      "changed": 0,
+      "total": 94490
+    },
+    {
+      "canvas": 6,
+      "changed": 0,
+      "total": 7590
+    },
+    {
+      "canvas": 7,
+      "changed": 0,
+      "total": 7590
+    }
+  ],
+  "by_size": {
+    "859x479": {
+      "changed": 5343,
+      "total": 822922
+    },
+    "69x479": {
+      "changed": 0,
+      "total": 66102
+    },
+    "859x110": {
+      "changed": 0,
+      "total": 188980
+    },
+    "69x110": {
+      "changed": 0,
+      "total": 15180
+    }
+  },
+  "checks": [
+    {
+      "n": "کلیدِ لایه‌های FTS رویِ چارتِ زنده دیدنی است و حالتش خوانده می‌شود",
+      "ok": true,
+      "d": {
+        "before": "true",
+        "after": "true"
+      }
+    },
+    {
+      "n": "فیبو/کمربندهایِ «فولاد» درِ پاسخِ سرور هست (پس چیزی برای دیدن هست)",
+      "ok": true,
+      "d": {
+        "zone_33_40": {
+          "lo": 3713.05,
+          "hi": 3778.02,
+          "in_zone": false
+        },
+        "zone_618_70": {
+          "lo": 3446.99,
+          "hi": 3517.76,
+          "in_zone": false
+        },
+        "levels": 7
+      }
+    },
+    {
+      "n": "تفاوت درِ پنلِ قیمت است نه فقط نوارِ محور (بیش از ۵۰٪ پیکسلِ عوض‌شده)",
+      "ok": true,
+      "d": {
+        "bySize": {
+          "859x479": {
+            "changed": 5343,
+            "total": 822922
+          },
+          "69x479": {
+            "changed": 0,
+            "total": 66102
+          },
+          "859x110": {
+            "changed": 0,
+            "total": 188980
+          },
+          "69x110": {
+            "changed": 0,
+            "total": 15180
+          }
+        },
+        "sizes": [
+          "859x479",
+          "859x479",
+          "69x479",
+          "69x479",
+          "859x110",
+          "859x110",
+          "69x110",
+          "69x110"
+        ],
+        "perCanvas": [
+          {
+            "canvas": 0,
+            "changed": 0,
+            "total": 411461
+          },
+          {
+            "canvas": 1,
+            "changed": 5343,
+            "total": 411461
+          },
+          {
+            "canvas": 2,
+            "changed": 0,
+            "total": 33051
+          },
+          {
+            "canvas": 3,
+            "changed": 0,
+            "total": 33051
+          },
+          {
+            "canvas": 4,
+            "changed": 0,
+            "total": 94490
+          },
+          {
+            "canvas": 5,
+            "changed": 0,
+            "total": 94490
+          },
+          {
+            "canvas": 6,
+            "changed": 0,
+            "total": 7590
+          },
+          {
+            "canvas": 7,
+            "changed": 0,
+            "total": 7590
+          }
+        ],
+        "shareOfChangeInPricePane": 100
+      }
+    },
+    {
+      "n": "با خاموش‌کردنِ لایه‌ها پیکسلِ چارت عوض می‌شود (لایه دیدنی است، نه فقط ثبت‌شده)",
+      "ok": true,
+      "d": {
+        "changed": 5343,
+        "total": 1093184,
+        "pct": 0.489,
+        "note": null
+      }
+    },
+    {
+      "n": "برگشتنِ لایه‌ها صحنه را به اول برمی‌گرداند؛ باقی‌مانده درِ نوسانِ محیطِ چارتِ زنده است",
+      "ok": true,
+      "d": {
+        "changedBack": 34,
+        "ambientDrift": 0,
+        "layerDelta": 5343,
+        "note": null
+      }
+    },
+    {
+      "n": "بوم‌های خوانده‌شده همۀ بزرگ‌تر از آیکون‌اند (سنسور کر نیست)",
+      "ok": true,
+      "d": {
+        "canvases": 8,
+        "pixels": 1093184,
+        "sizes": [
+          "859x479",
+          "859x479",
+          "69x479",
+          "69x479",
+          "859x110",
+          "859x110",
+          "69x110",
+          "69x110"
+        ]
+      }
+    }
+  ],
+  "passed": 6,
+  "failed": []
+}
