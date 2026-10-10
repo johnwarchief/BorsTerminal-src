@@ -1,0 +1,109 @@
+{
+  "base": "http://127.0.0.1:8002",
+  "at": "2026-10-10T19:09:55.031Z",
+  "state_running": "running",
+  "reqs_during_motion": 1,
+  "frame_window": {
+    "frames": 451,
+    "fps": 180,
+    "medianGapMs": 5.6,
+    "p95GapMs": 5.7
+  },
+  "checks": [
+    {
+      "n": "نوار واقعاً جابه‌جا می‌شود (transform عوض شد)",
+      "ok": true,
+      "d": {
+        "t0": "transform: translate3d(600.138px, 0px, 0px);",
+        "t1": "transform: translate3d(705.604px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "با hover می‌ایستد",
+      "ok": true,
+      "d": {
+        "h0": "transform: translate3d(710.51px, 0px, 0px);",
+        "h1": "transform: translate3d(710.51px, 0px, 0px);",
+        "state": "paused"
+      }
+    },
+    {
+      "n": "با جداکردنِ نشانگر از همان‌جا ادامه می‌دهد",
+      "ok": true,
+      "d": {
+        "after": "transform: translate3d(777.706px, 0px, 0px);",
+        "h1": "transform: translate3d(710.51px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "دکمۀِ توقف رویِ نوار حرکت را می‌بندد",
+      "ok": true,
+      "d": {
+        "p0": "transform: translate3d(778.403px, 0px, 0px);",
+        "p1": "transform: translate3d(778.403px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "دکمۀِ توقف دیدنی و رویِ نوار باقی است",
+      "ok": true,
+      "d": true
+    },
+    {
+      "n": "دوباره روشن شد و نشانگر بیرون است ⇒ حرکت برگشت",
+      "ok": true,
+      "d": {
+        "p0": "transform: translate3d(778.403px, 0px, 0px);",
+        "resumed": "transform: translate3d(853.772px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "نرخِ فریم درِ ۱۳۶×۷۶۸ رویِ همین ماشین ≥ ۳۰fps است",
+      "ok": true,
+      "d": {
+        "frames": 451,
+        "fps": 180,
+        "medianGapMs": 5.6,
+        "p95GapMs": 5.7
+      }
+    },
+    {
+      "n": "میانهٔ فاصلۀِ فریم زیرِ ۴۰ms است (محاسبۀِ سنگین درِ هر فریم نیست)",
+      "ok": true,
+      "d": {
+        "frames": 451,
+        "fps": 180,
+        "medianGapMs": 5.6,
+        "p95GapMs": 5.7
+      }
+    },
+    {
+      "n": "تغییرِ اندازه نوار را به صفر برنمی‌گرداند",
+      "ok": true,
+      "d": {
+        "beforeResize": "transform: translate3d(958.999px, 0px, 0px);",
+        "afterResize": "transform: translate3d(990.503px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "کنترلِ رسیدن: درِ کاهشِ حرکت هم نوار رویِ صفحه است",
+      "ok": true,
+      "d": true
+    },
+    {
+      "n": "با کاهشِ حرکت نوار می‌ایستد",
+      "ok": true,
+      "d": {
+        "r0": "transform: translate3d(0px, 0px, 0px);",
+        "r1": "transform: translate3d(0px, 0px, 0px);"
+      }
+    },
+    {
+      "n": "با کاهشِ حرکت نسخۀِ دوم حذف می‌شود و محتوا خوانا می‌ماند",
+      "ok": true,
+      "d": {
+        "copies": 0,
+        "len": 330
+      }
+    }
+  ]
+}

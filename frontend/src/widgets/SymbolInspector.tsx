@@ -841,7 +841,10 @@ export function SymbolInspector() {
               )}
             </button>
             {quotesOpen ? (
-              <div className="mt-1">
+              /* بازخوردِ بازشدن: همان .panel-inِ مشترک (با احترامِ
+                 prefers-reduced-motion درِ index.css) — پنل بی‌حرکت باز نمی‌شود
+                 و بی‌محاسبۀِ سنگین هم می‌ماند. */
+              <div className="panel-in mt-1">
                 <OrderBookFive symbol={symbol} candle={rawRow} compact testId="sidebar-orderbook" />
               </div>
             ) : null}

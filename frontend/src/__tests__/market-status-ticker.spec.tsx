@@ -131,7 +131,11 @@ const split = {
   retail: { buy_b_toman: 18877.8, sell_b_toman: 22933.7 },
 } as unknown as Record<string, unknown>;
 
-function renderTicker(pulseArg: unknown = pulse) {
+/** حالتِ نوار از localStorage خوانده می‌شود و پیش‌فرضش «پیوسته» است؛ آنجا
+ *  هر fact دو بار رویِ DOM می‌نشیند (یک دورِ بی‌درز برایِ نوارِ روان)، پس
+ *  آزمون‌هایِ «یک سطرِ مشخص» حالتِ صفحه‌ای را صریح می‌خواهند. */
+function renderTicker(pulseArg: unknown = pulse, mode: 'paged' | 'continuous' = 'paged') {
+  localStorage.setItem('market.status.ticker.mode.v1', mode);
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
@@ -165,6 +169,30 @@ describe('نوارِ خلاصۀ چرخشی', () => {
     fireEvent.click(screen.getByTestId('ticker-tabs-queues'));
     expect(screen.getByTestId('ticker-no-depth')).toBeInTheDocument();
     expect(screen.queryByTestId('ticker-fact-ارزش صف خرید')).not.toBeInTheDocument();
+  });
+
+  it('حالتِ پیوسته: همهٔ پنج گروه درِ یک نوارِ روان می‌آیند و هر گروه برچسب دارد', () => {
+    renderTicker(pulse, 'continuous');
+    expect(screen.getByTestId('ticker-continuous')).toBeInTheDocument();
+    expect(screen.getByTestId('ticker-marquee').getAttribute('data-state')).toBe('running');
+    expect(screen.getByTestId('ticker-marquee').getAttribute('data-direction')).toBe('rtl');
+    for (const id of ['breadth', 'flow', 'value', 'queues', 'quality']) {
+      // دو نسخه: نسخۀِ اصلی و نسخۀِ بی‌درزِ aria-hidden — پس getAll، نه get
+      expect(screen.getAllByTestId(`ticker-group-${id}`)).toHaveLength(2);
+    }
+    // نسخهٔ دومِ محتوا فقط برایِ بی‌درز بودنِ دور است و برایِ فناوریِ کمکی بی‌معناست
+    expect(document.querySelectorAll('[data-testid="ticker-marquee-copy-2"]').length).toBe(1);
+    expect(document.querySelector('[data-testid="ticker-marquee-copy-2"]')?.getAttribute('aria-hidden'))
+      .toBe('true');
+  });
+
+  it('کلیدِ حالت رویِ خودِ نوار می‌ماند (کنترلِ جاافتاده = حذف‌شدۀ دیدنی)', () => {
+    renderTicker(pulse, 'continuous');
+    const modeBtn = screen.getByTestId('ticker-mode-toggle');
+    expect(modeBtn.textContent).toContain('پیوسته');
+    fireEvent.click(modeBtn);
+    expect(localStorage.getItem('market.status.ticker.mode.v1')).toBe('paged');
+    expect(screen.getByTestId('ticker-body')).toBeInTheDocument();
   });
 
   it('کلیدِ توقف رویِ نوار هم کار می‌کند (همان تنظیمِ مشترک)', () => {
