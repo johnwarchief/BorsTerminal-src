@@ -10,9 +10,11 @@
 // راه‌اندازی نشده. هیچ سفارشِ واقعی ازِ این صفحه بیرون نمی‌رود و هیچ stateای
 // جزِ نمایشِ محلی عوض نمی‌شود. کدِ اتصالِ بعدی همین slot را پر می‌کند؛
 // بازنویسیِ UI لازم نیست.
+import { useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
+import { PHASE_LABEL, useExecutionStatus, type OrderPhase } from '../lib/orderClient';
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -26,6 +28,10 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: MarketRow | null }) {
   const st = row?.st_title || row?.st_code || null;
   const stopped = row?.stop_state != null && row.stop_state !== '';
+  const { gate } = useExecutionStatus();
+  // محلی و بی‌درخواست: مقدارِ سفارش تا اتصالِ واقعی هیچ‌جا نمی‌رود
+  const [qty, setQty] = useState('');
+  const [phase] = useState<OrderPhase>('idle');
 
   return (
     <div className="glass-panel flex h-full min-w-0 flex-col gap-1.5 rounded-2xl p-2.5" data-testid="watch-summary" data-symbol={symbol}>
@@ -39,6 +45,21 @@ export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: Market
         ) : row ? (
           <span className="ms-auto"><Badge tone="green">زنده</Badge></span>
         ) : null}
+      </div>
+
+      {/* سرآمدِ قیمتی مثلِ چیدمانِ مرجع: عددِ درشتِ آخرین و تغییرِ همان کنارش */}
+      <div className="flex flex-wrap items-baseline gap-x-2 rounded-lg bg-bg-card/60 px-2 py-1.5">
+        <span className="num text-lg font-black leading-6 text-text-primary" data-testid="watch-summary-last">
+          {row?.p_last != null ? fmtInt(row.p_last) : '—'}
+        </span>
+        <span className={`num text-2xs font-bold ${
+          (row?.percent_change ?? 0) > 0 ? 'text-accent-green' : (row?.percent_change ?? 0) < 0 ? 'text-accent-red' : 'text-text-secondary'
+        }`} data-testid="watch-summary-pct">
+          {row?.percent_change != null ? fmtPct(row.percent_change) : 'بی‌درصد'}
+        </span>
+        <span className="num ms-auto text-3xs text-text-muted" data-testid="watch-summary-row-time">
+          ساعتِ ردیف: {row?.row_h != null ? toFaDigits(String(Math.floor(row.row_h)).padStart(6, '0').slice(0, 4).replace(/(\d\d)(\d\d)/, '$1:$2')) : '—'}
+        </span>
       </div>
 
       <p className="line-clamp-2 text-2xs leading-5 text-text-secondary" title={row?.name ?? ''}>
@@ -71,39 +92,103 @@ export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: Market
         </InfoRow>
       </div>
 
-      {/* ── جایگاهِ پنلِ تریدر/اجرا (الزاماً خالی و بی‌کارکرد) ── */}
+      {/* ── پنلِ تریدر/اجرا: slotها از امروز، کارکرد از روزِ آداپتور ─────────
+         «غیرفعال» از پاسخِ `api/execution.py` خوانده می‌شود (capabilities و
+         live_enabled)، نه از متنِ ثابتِ رابط؛ بی‌این روزی که اتصال بنشیند باید
+         نیمۀ این صفحه بازنویسی می‌شد. هیچ place/cancel از اینجا زده نمی‌شود. */}
       <div
         className="mt-auto rounded-xl border border-dashed border-border-c bg-bg-card/40 p-2"
         data-testid="watch-order-panel"
+        data-can-trade={gate.canTrade ? 'true' : 'false'}
       >
         <div className="mb-1.5 flex items-center justify-between gap-1">
           <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
-          <Badge tone="gray">اتصالِ ربات فعال نیست</Badge>
+          <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}>
+            {gate.endpointPresent
+              ? `سرویسِ اجرا: ${gate.status?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
+              : 'سرویسِ اجرا نیست'}
+          </Badge>
         </div>
+
+        <div className="mb-1.5 grid grid-cols-2 gap-1.5">
+          <label className="flex flex-col gap-0.5 text-3xs text-text-muted">
+            مقدار (سهم)
+            <input
+              type="text"
+              inputMode="numeric"
+              value={qty}
+              onChange={(e) => setQty(e.target.value.replace(/[^\d٬]/g, ''))}
+              data-testid="watch-order-qty"
+              placeholder="مثلاً ۱۰۰۰"
+              className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary placeholder:text-text-muted"
+            />
+          </label>
+          <div className="flex flex-col justify-end gap-0.5 text-3xs text-text-muted">
+            قدرت خرید / موجودی
+            <span className="num text-2xs font-bold text-text-primary" data-testid="watch-order-balance">
+              {gate.caps?.balances === true
+                ? (row?.buy_power_i != null ? `${toFaDigits(row.buy_power_i.toFixed(2))}×` : '—')
+                : 'بی‌داده'}
+            </span>
+            <span className="text-3xs leading-3 text-text-muted" data-testid="watch-order-balance-note">
+              {gate.caps?.balances === true
+                ? 'از سرانۀ تابلو؛ موجودِ نقدِ کارگزاری نیست'
+                : 'کارگزاری موجودی نمی‌دهد (capabilities.balances: false) — صفر جا نمی‌زند'}
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-1.5">
           <button
             type="button"
-            disabled
-            aria-disabled="true"
+            disabled={!gate.canTrade}
+            aria-disabled={!gate.canTrade}
             data-testid="watch-order-buy"
-            title="ارسالِ سفارشِ واقعی فعال نیست — آداپتورِ کارگزاری در دستِ ساخت است"
-            className="cursor-not-allowed rounded-lg bg-accent-green/10 px-2 py-1.5 text-2xs font-black text-accent-green/50"
+            title={gate.canTrade ? 'ارسالِ سفارشِ خرید' : gate.reason}
+            className={`rounded-lg px-2 py-1.5 text-2xs font-black ${
+              gate.canTrade
+                ? 'bg-accent-green/15 text-accent-green hover:bg-accent-green/25'
+                : 'cursor-not-allowed bg-accent-green/10 text-accent-green/50'
+            }`}
           >
             خرید
           </button>
           <button
             type="button"
-            disabled
-            aria-disabled="true"
+            disabled={!gate.canTrade}
+            aria-disabled={!gate.canTrade}
             data-testid="watch-order-sell"
-            title="ارسالِ سفارشِ واقعی فعال نیست — آداپتورِ کارگزاری در دستِ ساخت است"
-            className="cursor-not-allowed rounded-lg bg-accent-red/10 px-2 py-1.5 text-2xs font-black text-accent-red/50"
+            title={gate.canTrade ? 'ارسالِ سفارشِ فروش' : gate.reason}
+            className={`rounded-lg px-2 py-1.5 text-2xs font-black ${
+              gate.canTrade
+                ? 'bg-accent-red/15 text-accent-red hover:bg-accent-red/25'
+                : 'cursor-not-allowed bg-accent-red/10 text-accent-red/50'
+            }`}
           >
             فروش
           </button>
         </div>
-        <p className="mt-1 text-3xs leading-4 text-text-muted">
-          این جایگاهِ پنلِ تریدر است؛ تا راه‌اندازیِ اتصالِ کارگزاری هیچ سفارشی ازِ اینجا ارسال نمی‌شود.
+
+        <div className="mt-1.5 flex items-center justify-between gap-1.5">
+          <span className="text-3xs text-text-muted" data-testid="watch-order-phase">
+            وضعیتِ سفارش: {PHASE_LABEL[phase]}
+          </span>
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            data-testid="watch-kill-switch"
+            title={`Kill Switch بی‌اتصالِ واقعی معنا ندارد — ${gate.reason}`}
+            className="cursor-not-allowed rounded-lg border border-accent-red/40 px-2 py-0.5 text-3xs font-black text-accent-red/50"
+          >
+            Kill Switch
+          </button>
+        </div>
+
+        <p className="mt-1 text-3xs leading-4 text-text-muted" data-testid="watch-order-reason">
+          {gate.canTrade
+            ? 'اتصالِ اجرا فعال است؛ پیش‌فرود و سقفها را خودِ سرویس تعیین می‌کند.'
+            : `${gate.reason}. تا پیش از اتصالِ تأییدشده هیچ سفارشی از این صفحه ارسال نمی‌شود.`}
         </p>
       </div>
     </div>
