@@ -2108,9 +2108,24 @@ _TICK_SESSION_LOCK = __import__("threading").Lock()
 # می‌سازند — و سقفِ ۲۰:۰۰ برای پاتولوژیک؛ آخرینِ واقعیِ hEven سایت ~۱۶ است.
 TICK_QUIET_S = 600.0
 TICK_LISTEN_POLL_S = 60.0
+# سقفِ زمانِ یکِ درخواستِ تیک (connect, read). بی‌این، اتصالِ آویزانِ TSETMC حلقه
+# را چندِ دقیقه بلوکه می‌کند (سنجشِ زنده: ۹۴۵ ثانیه بی‌revision).
+TICK_TIMEOUT_S = (4.0, 12.0)
 _TICK_PREV_SIG = None
 _TICK_LAST_CHANGE = 0.0
 _TICK_LAST_PROBE = 0.0
+_TICK_STATS = {"ok": 0, "empty": 0, "slow_over_10s": 0, "last_s": 0.0, "max_s": 0.0}
+
+
+def tick_window_open(now_dt=None) -> bool:
+    """دربِ نوشتنِ تیک، یک‌جا: شنبه..چهارشنبه، ۰۸:۵۵ تا ۲۰:۰۰.
+
+    همان شرطی که `tick_live` اولِ کار می‌زند؛ بی‌تعریفِ مشترک، هر خوانندهٔ دیگر
+    (UIِ «وضعیت بازار»، سنجش‌ها، لاگِ Job) دربِ دومِ خودش را می‌پخت و با واقعیتِ
+    حلقه نمی‌خواند.
+    """
+    n = now_dt or datetime.datetime.now()
+    return n.weekday() not in (3, 4) and "0855" <= n.strftime("%H%M") < "2000"
 
 
 def _tick_session():
@@ -2165,7 +2180,7 @@ def tick_live(conn=None):
     wd = datetime.date.today().weekday()          # 3=پنجشنبه, 4=جمعه
     now_dt = datetime.datetime.now()
     hhmm = now_dt.strftime("%H%M")
-    if wd in (3, 4) or hhmm < "0855" or hhmm >= "2000":
+    if not tick_window_open(now_dt):
         return 0
     after_hours = hhmm >= "1230"
     import time as _t
@@ -2175,9 +2190,23 @@ def tick_live(conn=None):
     if listen and mono - _TICK_LAST_PROBE < TICK_LISTEN_POLL_S:
         return 0
     s = _tick_session()
-    mw_raw = polite_get(s, MW_URL, "marketwatch")
+    # سقفِ زمانِ یکِ تیک: `polite_get` بی‌این پارامتر تا ۹۰ ثانیه رویِ یکِ اتصالِ
+    # آویزان می‌نشیند (و Retryِ درونِ adapter سه بار تکرار می‌کند) — یعنی یکِ
+    # درخواستِ کند، حلقۀِ پنج‌ثانیه‌ای را چندِ دقیقه قفل می‌کند. سنجشِ زندهٔ
+    # ۱۴۰۵-۰۷-۱۸: revision از ۱۱:۰۶:۳۶ تا ۱۱:۲۲:۲۱ تکان نخورد (۹۴۵ ثانیه) درحالی‌که
+    # فرانت درست هر ۵ ثانیه می‌پرسید. تیک باید سریع ناامید شود و دورِ بعد امتحان
+    # کند، نه این‌که کلِ راهِ اعدادِ زنده را بلوکه کند.
+    mw_raw = polite_get(s, MW_URL, "marketwatch", timeout=TICK_TIMEOUT_S)
     if not mw_raw:
+        _TICK_STATS["empty"] += 1
         return 0
+    _req_s = _t.monotonic() - mono
+    _TICK_STATS["ok"] += 1
+    _TICK_STATS["last_s"] = round(_req_s, 2)
+    if _req_s > _TICK_STATS["max_s"]:
+        _TICK_STATS["max_s"] = round(_req_s, 2)
+    if _req_s > 10.0:
+        _TICK_STATS["slow_over_10s"] += 1
     _tick_observe(mw_raw, mono, listen)
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     today = int(datetime.date.today().strftime("%Y%m%d"))
@@ -2245,6 +2274,39 @@ def tick_live(conn=None):
     finally:
         if own:
             conn.close()
+
+
+def tick_health() -> dict:
+    """وضعیتِ حلقۀِ تیک — برایِ بخشِ «وضعیت بازار» و برایِ سنجشِ «چرا عدد عوض نشد».
+
+    سه چیزِ جدا اینجا خوانده می‌شوند، چون سه علتِ جدا دارند:
+      • خنک‌شدنِ ۴۲۹ (`cooldown_remaining_s`) ⇒ حلقه خواب است، داده نمی‌رسد
+      • گوش‌دادنِ پس ازِ دَه دقیقه سکوت (`listening`) ⇒ ریتمِ عمداً آرام
+      • بی‌تغییریِ خودِ تابلو (`since_change_s`) ⇒ چیزی برایِ نوشتن نیست
+    تا پیش از این هیچ‌کدام از این‌ها درِ UI دیده نمی‌شد، پس «تازه نبودن» همیشه
+    شکلِ یکِ ادعایِ مبهمِ «داده کهنه» داشت.
+    """
+    import time as _t
+    now = _t.monotonic()
+    p = getattr(_TICK_SESSION, "_polite", {}) if _TICK_SESSION is not None else {}
+    cd_left = max(0.0, float(p.get("cooldown", 0.0)) - now)
+    last_change = _TICK_LAST_CHANGE
+    last_probe = _TICK_LAST_PROBE
+    after_hours = datetime.datetime.now().strftime("%H%M") >= "1230"
+    return {
+        "cooldown_remaining_s": round(cd_left, 1),
+        "cooldown_level": int(p.get("cooldown_level", 0) or 0),
+        "listening": bool(last_change and after_hours
+                          and now - last_change > TICK_QUIET_S),
+        "since_change_s": round(now - last_change, 1) if last_change else None,
+        "since_probe_s": round(now - last_probe, 1) if last_probe else None,
+        "quiet_limit_s": TICK_QUIET_S,
+        "listen_poll_s": TICK_LISTEN_POLL_S,
+        "after_hours": after_hours,
+        "requests_open": tick_window_open(),
+        "cycle": dict(_TICK_STATS),
+        "timeout_s": TICK_TIMEOUT_S,
+    }
 
 
 def main():

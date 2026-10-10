@@ -23,7 +23,13 @@ param([switch]$Remove)
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$Py = "python"
+# «python» رویِ PATH معمولاً aliasِ WindowsApps است که درِ Task Scheduler (محیطِ
+# غیرتعاملی) با 0x80070002 «file not found» می‌شکند. مسیرِ مطلقِ مفسرِ واقعی را
+# از sys.executable می‌گیریم.
+$Py = ((python -c "import sys;print(sys.executable)") 2>$null)
+if (-not $Py) { $Py = "python" }
+$Py = "$Py".Trim()
+Write-Host "interpreter: $Py"
 $Jobs = @(
   @{ Id="BorsFTSLiveAudit";  Script="tools\fts_live_audit.py";        Arg="--limit 0" },
   @{ Id="BorsTapeLiveAudit"; Script="tools\market_tape_live_audit.py"; Arg="--limit 0 --compare 12" }

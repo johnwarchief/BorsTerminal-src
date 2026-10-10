@@ -165,6 +165,18 @@ def _spa_index():
     return FileResponse(idx)
 
 
+def _fetch_loops_enabled() -> bool:
+    """آیا حلقه‌هایِ شبکه‌ایِ تابلو (سینک/تیکِ زنده) درِ این اجرا فعال باشند؟
+
+    با `BORS_NO_FETCH_LOOPS=1` خاموش می‌شوند. دلیلِ وجودش: سنجشِ زندهٔ UI/endpoint
+    رویِ نسخۀِ dev (پورتِ دوم) نیاز است، ولی آن اجرا هم همان `market.db` و همان
+    IPِ نسخۀِ نصب‌شده را می‌گیرد؛ دو حلقۀِ تیکِ ۵ثانیه‌ای رویِ یکِ IP یعنی ۴۲۹ و
+    یعنی «اعدادِ دیر عوض می‌شوند» درِ همانِ نشستِ واقعیِ مالک. با این درب، dev
+    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد.
+    """
+    return (os.environ.get("BORS_NO_FETCH_LOOPS") or "").strip().lower() not in ("1", "true", "yes")
+
+
 @app.on_event("startup")
 def _startup_sync_market():
     """هوک استارت FastAPI: اجرای uvicorn (باش با bat) → تابلو در هر اجرا آپدیت می‌شود.
@@ -194,8 +206,12 @@ def _startup_sync_market():
         print(f"[startup] codal schema migrate failed (non-fatal): {e}")
 
     try:
-        threading.Thread(target=_sync_market_on_start, daemon=True).start()
-        print("[startup] market sync thread spawned")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_sync_market_on_start, daemon=True).start()
+            print("[startup] market sync thread spawned")
+        else:
+            print("[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش "
+                  "(دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)")
     except Exception as e:
         print(f"[startup] market sync thread failed: {e}")
 
@@ -240,8 +256,9 @@ def _startup_sync_market():
                 print(f"[startup] board refresh loop: {_e}")
             _t.sleep(90)
     try:
-        threading.Thread(target=_board_refresh_loop, daemon=True).start()
-        print("[startup] board refresh loop spawned (90s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_board_refresh_loop, daemon=True).start()
+            print("[startup] board refresh loop spawned (90s, session-windowed)")
     except Exception as _e:
         print(f"[startup] board refresh loop failed: {_e}")
 
@@ -278,8 +295,9 @@ def _startup_sync_market():
                 print(f"[startup] board tick loop: {_e}")
             _t.sleep(5)
     try:
-        threading.Thread(target=_board_tick_loop, daemon=True).start()
-        print("[startup] board tick loop spawned (5s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_board_tick_loop, daemon=True).start()
+            print("[startup] board tick loop spawned (5s, session-windowed)")
     except Exception as _e:
         print(f"[startup] board tick loop failed: {_e}")
 
@@ -312,8 +330,9 @@ def _startup_sync_market():
                 print(f"[startup] pulse snapshot loop: {_e}")
             _t.sleep(300)
     try:
-        threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
-        print("[startup] pulse snapshot loop spawned (300s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
+            print("[startup] pulse snapshot loop spawned (300s, session-windowed)")
     except Exception as _e:
         print(f"[startup] pulse snapshot loop failed: {_e}")
 
