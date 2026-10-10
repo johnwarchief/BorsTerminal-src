@@ -93,8 +93,8 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 | `*.tauri_updater_key*` (کلیدِ خصوصیِ امضا) | gitignored؛ فقط pubkey در `tauri.conf.json` و `api/update.UPDATE_PUBKEY` کامیت می‌شود |
 | `adb_config.json`, `codal_control.json`, `market.db`, `codal.db` | gitignored؛ `market.db` از `market.db.lzma` بازسازی می‌شود (`ensure_market_db()` در `bors_config.py`) |
 | `RELEASE_TOKEN` برایِ انتشار روی مخزنِ توزیع | secretِ CI، نه فایلِ ریپو |
-| `TYPESAFE_API_KEY` و `~/.jev_pilot/config.json` | محیطیِ ماشینِ من برایِ pilot jev؛ بدونِ آن `tools/pilot_ctl.py` فوراً exit می‌کند |
-| `JEV_BROWSER_DIR` / `JEV_CHROME` | مسیرِ پکیجِ Playwright و chromium روی همان ماشین؛ در `skills/bors-live-ui-check/` توضیح دارد |
+| **Legacy Jev only:** `TYPESAFE_API_KEY` و `~/.jev_pilot/config.json` | فقط برای اجرای fallback قدیمیِ `tools/pilot_ctl.py`؛ پیش‌نیاز عمومی Qoder یا Laya نیست |
+| **Legacy Jev only:** `JEV_BROWSER_DIR` / `JEV_CHROME` | فقط مسیرهای harness قدیمی؛ برای Laya/Playwright عمومی لازم نیستند مگر همان harness اجرا شود |
 
 ## ایجنتِ داده/بک‌اند (codal) — رابطِ ابزارها
 
