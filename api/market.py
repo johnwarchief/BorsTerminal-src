@@ -541,6 +541,9 @@ _LIVE_FROM_WATCH = {
     "sell_q_vol": "sell_q_vol", "sell_q_val": "sell_q_val", "sell_q_cnt": "sell_q_cnt",
     "buy_q1_vol": "buy_q1_vol", "buy_q1_px": "buy_q1_px", "buy_q1_cnt": "buy_q1_cnt",
     "sell_q1_vol": "sell_q1_vol", "sell_q1_px": "sell_q1_px",
+    # زمانِ سطر هم باید از همان حالتِ داغ تازه شود؛ وگرنه ستونِ «به‌روزرسانی»
+    # درِ نشستِ زنده رویِ ساعتِ نخستین قابِ ایستا می‌ماند.
+    "row_h": "h_even",
 }
 
 
@@ -673,7 +676,10 @@ _DROP_FIELDS = frozenset((
     "buy_n_vol", "sell_n_vol",                               # صفِ حقوقی/حقیقی درِ تابلو خوانده نمی‌شود
     "buy_q_vol", "buy_q_val", "buy_q_cnt",
     "sell_q_vol", "sell_q_val", "sell_q_cnt",
-    "buy_q1_px", "sell_q1_vol", "sell_q1_px",
+    # `buy_q1_px` / `sell_q1_px` / `sell_q1_vol` از این فهرست بیرون آمدند:
+    # «دیده‌بان بازار» همان چهار خانۀِ تقاضا/عرضۀِ صفِ اول را ستون می‌خواهد
+    # (رأیِ مالک 1405-07-20) و منبعشان خودِ `market_watch` است — بی‌این، رابط
+    # چاره‌ای نداشت جز N درخواستِ `/api/order-book` برایِ هر ردیف.
     "prev_day_vol", "d1_vol", "max30_high",
     "plp_raw",                                                  # تنها ورودیِ فیلترها، نه نمایش
     "tmax", "vol_trend", "sell_power_i", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
@@ -881,6 +887,11 @@ _BOARD_SQL = """
                    m.sell_q_vol, m.sell_q_val, m.sell_q_cnt,
                    m.buy_q1_vol, m.buy_q1_px, m.sell_q1_vol, m.sell_q1_px,
                    m.buy_q1_cnt,
+                   -- زمانِ خودِ همین ردیف (TSETMC هر نماد را در ساعتِ خودش
+                   -- به‌روز می‌کند؛ 682 مقدارِ متفاوت در 2917 ردیفِ همین نشست).
+                   -- بی‌این، «زمان آخرین به‌روزرسانی» فقط ساعتِ کلیِ سینک بود و
+                   -- ردیفِ بی‌معامله را هم «تازه» نشان می‌داد.
+                   m.h_even AS row_h,
                    -- (tmin)/(tmax) درِ فیلترنویس = آستانۀ مجاز، نه کفِ نشست؛
                    -- خودِ ExecFilter آن‌ها را به element.pMin/pMax بدل می‌کند.
                    m.allowed_min AS tmin, m.allowed_max AS tmax,
