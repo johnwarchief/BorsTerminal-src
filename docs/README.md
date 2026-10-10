@@ -14,6 +14,8 @@
 
 ## مرجع و تقدم اسناد FTS
 
+قواعد پارامترهای پیش‌فرض و قابلیت سفارشی‌سازی ساعت شنی در [fts-notes/OWNER_RULINGS.md](fts-notes/OWNER_RULINGS.md) رأی شده‌اند؛ قرارداد اجرایی و تست پذیرش در [FTS-USER-CONFIGURATION-SPEC.md](FTS-USER-CONFIGURATION-SPEC.md) است. سند طراحی به‌تنهایی اثبات نمی‌کند که UI و موتور به‌روزرسانی شده‌اند.
+
 در تعارض قواعد روش‌شناسی، این ترتیب را رعایت کنید:
 
 1. **منابع اصلی روش‌شناسی:** [جزوهٔ FTS](%D8%AC%D8%B2%D9%88%D9%87%20FTS.pdf) و [چارت چهارصفحه‌ای FTS](FTS.CHART_3.pdf).
@@ -26,6 +28,7 @@
 | سند | کاربرد درست | محدودیت |
 |---|---|---|
 | [`AGENT-INDEX.md`](AGENT-INDEX.md) | مسیر‌یابی کد، به‌صورت تولیدشده | وضعیت جاری کارها یا منبع قواعد کسب‌وکار نیست |
+| [`FTS-USER-CONFIGURATION-SPEC.md`](FTS-USER-CONFIGURATION-SPEC.md) | قرارداد پارامترهای قابل تنظیم FTS، ساعت‌شنی و معیارهای پذیرش | سند طراحی؛ اجرای کد فقط پس از پاس‌شدن تست‌های پذیرش تأیید می‌شود |
 | [`CANDLE-CONTRACT.md`](CANDLE-CONTRACT.md) | قرارداد داده و مبنای کندل | گزارش parity تاریخ‌دار، برابری کامل امروز را اثبات نمی‌کند |
 | [`RAHAVARD-PARITY-INVENTORY.md`](RAHAVARD-PARITY-INVENTORY.md) | inventory فنی و شواهد یک سنجش | یافته‌ها را بدون تاریخ/کد جاری تعمیم ندهید |
 | [`CHART-PARITY-REFERENCE.md`](CHART-PARITY-REFERENCE.md) | رفتار و قابلیت‌های UX چارت با مرجع TradingView/Arshan | مرجع روش‌شناسی FTS یا حقیقت داده/تعدیل نیست |
