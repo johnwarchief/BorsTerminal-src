@@ -29,7 +29,8 @@ import { ClientSharePct } from '@shared/components/ClientSharePct';
 import { buyPerCapitaMt, sellPerCapitaMt } from '@features/market/lib/tapeFts';
 import { useCalendarEvents } from '@features/fundamental/api/useCalendarEvents';
 import { jalaliOf } from '@features/fundamental/lib/assemblyEvent';
-import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
+import { OrderBookFive } from '@shared/components/OrderBookFive';
+import { FormingCandle } from '@shared/components/FormingCandle';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
@@ -424,7 +425,9 @@ export function SymbolInspector() {
 
         <div data-testid="inspector-page-glance"
              className={page === 'glance' ? 'flex flex-col gap-2' : 'hidden'}>
-          {/* قیمت و درصد با انیمیشن زنده و فلاش مارکت */}
+          {/* ── بند ۱.۲ مأموریت: پنلِ راستِ مرجع (شناسۀ نماد + قیمتِ روز + کندلِ
+              در حالِ تشکیل) درِ «در یک نگاه». کندل از چهار قیمتِ خودِ همین ردیف
+              رسم می‌شود؛ بی‌آن چهار عدد «—» است با علتش، نه بدنهٔ ساختگی. ── */}
           <div className="flex items-end justify-between gap-2">
             <div>
               <div className="text-[8.5px] uppercase tracking-wider text-text-muted">آخرین معامله</div>
@@ -434,6 +437,7 @@ export function SymbolInspector() {
                 className="text-sm font-black text-text-primary"
               />
             </div>
+            <FormingCandle candle={rawRow} width={18} height={26} testId="inspector-day-candle" />
             <div className="text-end">
               <div className="text-[8.5px] uppercase tracking-wider text-text-muted">تغییر روز</div>
               <span className={row?.percentChange != null && row.percentChange >= 0 ? 'text-accent-green' : 'text-accent-red'}>
@@ -826,15 +830,19 @@ export function SymbolInspector() {
                data-testid="inspector-quotes">
             <button type="button" onClick={() => setQuotesOpen((v) => !v)} aria-expanded={quotesOpen}
                     data-testid="inspector-quotes-toggle"
-                    className="flex w-full items-center justify-between gap-2 text-[10px] font-bold text-text-secondary">
-              <span>پنج مظنه</span>
-              <span className="text-[9px] font-normal text-accent-blue">
-                {quotesOpen ? 'بستن' : 'نمایش'}
-              </span>
+                    className={`flex w-full items-center gap-2 text-[10px] font-bold text-text-secondary ${quotesOpen ? 'justify-end' : 'justify-between'}`}>
+              {quotesOpen ? (
+                <span className="text-[9px] font-normal text-accent-blue">بستن</span>
+              ) : (
+                <>
+                  <span>پنج مظنه</span>
+                  <span className="text-[9px] font-normal text-accent-blue">نمایش</span>
+                </>
+              )}
             </button>
             {quotesOpen ? (
               <div className="mt-1">
-                <SidebarOrderBook symbol={symbol} compact />
+                <OrderBookFive symbol={symbol} candle={rawRow} compact testId="sidebar-orderbook" />
               </div>
             ) : null}
           </div>

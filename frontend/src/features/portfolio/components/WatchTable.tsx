@@ -15,6 +15,7 @@
 // ترازِ عددی طبقِ گاردِ UI: مقدارِ num در لبۀِ start، بعدش نشان؛ جدولِ عریض درِ
 // `min-w-0 max-w-full overflow-auto`.
 import { useMemo } from 'react';
+import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
@@ -63,31 +64,6 @@ function queueCell(px: number | null | undefined) {
 }
 
 /** کندلِ همین نشست (اول/بیشینه/کمترین/آخرین از همان ردیفِ فید) — بی‌منبعِ دوم */
-function DayCandle({ row }: { row: MarketRow | null }) {
-  const o = row?.p_first ?? null;
-  const hi = row?.p_max ?? null;
-  const lo = row?.p_min ?? null;
-  const cl = row?.p_last ?? row?.p_closing ?? null;
-  if (o == null || hi == null || lo == null || cl == null || !(hi >= lo) || hi <= 0) {
-    return <span className="text-3xs text-text-muted" title="اول/بیشینه/کمترینِ همین نشست نرسیده">—</span>;
-  }
-  const span = hi - lo || Math.max(1, hi * 0.001);
-  const y = (v: number) => 2 + (1 - (v - lo) / span) * 20;
-  const up = cl >= o;
-  const color = up ? 'var(--accent-green, #089981)' : 'var(--accent-red, #f23645)';
-  const top = y(Math.max(o, cl));
-  const bottom = y(Math.min(o, cl));
-  return (
-    <svg width="14" height="24" viewBox="0 0 14 24" role="img"
-         aria-label={`اول ${fmtInt(o)} · بیشینه ${fmtInt(hi)} · کمینه ${fmtInt(lo)} · آخرین ${fmtInt(cl)}`}
-         data-testid="watch-day-candle">
-      <title>{`اول ${fmtInt(o)} · بیشینه ${fmtInt(hi)} · کمینه ${fmtInt(lo)} · آخرین ${fmtInt(cl)}`}</title>
-      <line x1="7" x2="7" y1={y(hi)} y2={y(lo)} stroke={color} strokeWidth="1" />
-      <rect x="3" y={top} width="8" height={Math.max(1.5, bottom - top)} fill={color} />
-    </svg>
-  );
-}
-
 type Props = {
   symbols: string[];
   selected: string;
@@ -178,7 +154,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                       {pct != null ? fmtPct(pct) : '—'}
                     </span>
                   </td>
-                  <td className={`${TD} text-center`}><DayCandle row={row} /></td>
+                  <td className={`${TD} text-center`}><FormingCandle candle={row} testId="watch-day-candle" /></td>
                   <td className={TD}>
                     <span className="num text-text-secondary">{row?.p_closing != null ? fmtInt(row.p_closing) : '—'}</span>
                   </td>

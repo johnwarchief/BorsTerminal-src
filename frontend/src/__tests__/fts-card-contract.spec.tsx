@@ -235,7 +235,14 @@ describe('کف‌های کارت FTS — از پاسخِ بک‌اند، نه ع
     const m = screen.getByTestId('fts-card-cell-3_gross_margin').textContent ?? '';
     expect(m).toMatch(/≥\s*۲۶٪/);
     expect(m).toContain('مطلوبِ جزوه: ۲۸٪');
-    expect(screen.getByTestId('fts-card-cell-4_sales_to_mcap').textContent).toMatch(/۰[./]۷۷×/);
+    // رأیِ مالک (1405-07-20): شاخص ۴ درصدی نمایش داده می‌شود، پس کفِ ۰٫۷۷ِ
+    // بک‌اند درِ همین سلول به شکلِ ۷۷٪ خوانده می‌شود — عددِ تازه‌ای از UI ساخته
+    // نمی‌شود، فقط عرض عوض شده است (×۱۰۰).
+    const c4 = screen.getByTestId('fts-card-cell-4_sales_to_mcap').textContent ?? '';
+    expect(c4).toContain('کف');
+    expect(c4).toMatch(/۷۷/);
+    expect(c4).toMatch(/٪/);
+    expect(c4).not.toMatch(/۰\.۷۷×/);   // عرضِ × دیگر برنمی‌گردد
     // هیچ‌کدام از کف‌های پیش‌فرض نباید جای عددِ بک‌اند نشسته باشد
     expect(m).not.toMatch(/≥\s*۲۰٪/);
   });

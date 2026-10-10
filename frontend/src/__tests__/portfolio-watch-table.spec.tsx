@@ -48,6 +48,16 @@ function mockFeed(rows: MarketRow[], status?: unknown) {
   });
 }
 
+/** خانۀ کندل حالا همیشه رندر می‌شود (حتی بی‌داده، با «—»ِ صریح)؛ پس «حاضر
+ *  بودنش» دیگر نشانۀ رسیدنِ ردیف نیست — آزمون رویِ سطرِ خالی رد می‌شد و سبز
+ *  می‌ماند (همان دامی که دورِ پیش درِ همین پرونده دیدیم). منتظر همان مقداری
+ *  می‌نشینیم که فقط با ردیفِ فید رویِ سطر می‌آید. */
+const cellHas = (testId: string, text: string) =>
+  waitFor(() => expect(screen.getByTestId(testId).textContent).toContain(text), { timeout: 4000 });
+const drawnCandles = () =>
+  document.querySelectorAll('[data-testid="watch-day-candle"]:not([data-state="incomplete"])').length;
+const candlesDrawn = (n: number) => waitFor(() => expect(drawnCandles()).toBe(n), { timeout: 4000 });
+
 function renderTable(rows: MarketRow[], onSelect = vi.fn()) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -68,8 +78,8 @@ describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
   it('قیمت و حجمِ تقاضا/عرضه از همان ردیفِ فید می‌آیند (بی‌درخواستِ عمق ردیف‌به‌ردیف)', async () => {
     mockFeed([row()]);
     renderTable([row()]);
-    await waitFor(() => expect(screen.getByTestId('watch-day-candle')).toBeInTheDocument());
     const tr = screen.getByTestId('watch-row-شپنا');
+    await cellHas('watch-row-شپنا', '۱٬۰۲۴');
     expect(tr.textContent).toContain('۱٬۰۲۴');// قیمت تقاضا
     expect(tr.textContent).toContain('۱٬۰۲۶');// قیمت عرضه
     expect(tr.textContent).toContain('۴۴٬۶۰۰');// حجم تقاضا
@@ -91,8 +101,7 @@ describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
         <WatchTable symbols={['خودرو', 'فولاد']} selected="" onSelect={() => {}} onRemove={() => {}} />
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(document.querySelectorAll('[data-testid="watch-day-candle"]').length).toBe(2));
-    expect(screen.getByTestId('watch-row-خودرو').textContent).toContain('بی‌صف');
+    await cellHas('watch-row-خودرو', 'بی‌صف');
     expect(screen.getByTestId('watch-row-فولاد').textContent).toContain('—');
   });
 
@@ -100,16 +109,21 @@ describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
     const a = row(); const b = row({ symbol: 'بی‌کندل', p_max: null, p_min: null });
     mockFeed([a, b]);
     renderTable([a, b]);
-    await waitFor(() => expect(document.querySelectorAll('[data-testid="watch-day-candle"]').length).toBe(1));
-    const svg = document.querySelector('[data-testid="watch-day-candle"]');
-    expect(svg?.getAttribute('aria-label')).toContain('بیشینه');
+    // هر دو ردیف خانۀ کندل دارند (خانه باید پیدا باشد تا «نکشیدہ» از «نبودِ
+    // ستون» جدا بماند)؛ تفاوت درِ data-state است: رسم شدۀ SVG یا «—».
+    await candlesDrawn(1);   // یک ردیف کندلِ رسم‌شده دارد، «بی‌كندل» نه
+    const drawn = document.querySelector('[data-testid="watch-day-candle"][data-state="up"], [data-testid="watch-day-candle"][data-state="down"]');
+    expect(drawn?.tagName.toLowerCase()).toBe('svg');
+    expect(drawn?.getAttribute('aria-label')).toContain('بیشینه');
+    const flat = document.querySelector('[data-testid="watch-day-candle"][data-state="incomplete"]');
+    expect(flat?.textContent).toBe('—');
     expect(screen.getByTestId('watch-row-بی‌کندل').textContent).toContain('—');
   });
 
   it('کلیک رویِ ردیف همان نماد را به بالایِ صفحه می‌دهد (هماهنگیِ سه پنل)', async () => {
     mockFeed([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
     const onSelect = renderTable([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
-    await waitFor(() => expect(document.querySelectorAll('[data-testid="watch-day-candle"]').length).toBe(2));
+    await cellHas('watch-row-فولاد', '۱٬۰۰۰');
     fireEvent.click(screen.getByTestId('watch-row-فولاد'));
     expect(onSelect).toHaveBeenCalledWith('فولاد');
   });

@@ -18,7 +18,7 @@ import { useSymbolSearch } from '../api/useSymbolSearch';
 import { useWatchSymbolsStore, WATCH_MAX } from '../stores/watchSymbolsStore';
 import { WatchTable } from './WatchTable';
 import { WatchMiniChart } from './WatchMiniChart';
-import { WatchOrderBookPanel } from './WatchOrderBookPanel';
+import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { WatchSummaryPanel } from './WatchSummaryPanel';
 
 function AddSymbolBar() {
@@ -153,7 +153,8 @@ export default function WatchMarketWorkspace() {
 
       <div className="grid min-w-0 max-w-full grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
         <WatchMiniChart symbol={effective} />
-        <WatchOrderBookPanel symbol={effective} />
+        <OrderBookFive symbol={effective} candle={summaryRow.data ?? null} testId="watch-orderbook"
+                      className="glass-panel h-full min-w-0 rounded-2xl p-2.5" />
         <WatchSummaryPanel symbol={effective} row={summaryRow.data ?? null} />
       </div>
 
