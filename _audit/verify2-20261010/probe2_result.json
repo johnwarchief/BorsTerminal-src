@@ -1,0 +1,403 @@
+{
+ "item": 2,
+ "started_at_local": "2026-10-10T14:04:54",
+ "console_errors": [],
+ "bad_responses": [],
+ "symbols": [],
+ "reads": [
+  {
+   "header_symbol": "سصفها",
+   "glance_tab_active": "page",
+   "trend": "روندروزانۀ—هفتگی—جت—",
+   "chips": [
+    {
+     "testid": "inspector-ind-i1",
+     "label": "رشد فروش",
+     "value": "۶۹۰.۶٪",
+     "title": "درآمد و فروش از ابتدای سال تا اکنون، در برابرِ سالِ قبل (کفِ ۴۰٪، هدفِ ۶۰٪) — وضعیت: تأیید",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-green/40 bg-accent-green/10 text-accent-green"
+    },
+    {
+     "testid": "inspector-ind-i2",
+     "label": "EPSِ سه‌ساله",
+     "value": "۱٬۹۴۴",
+     "title": "EPS (سود و زیان) سه سال گذشته — وضعیت: داده در دسترس نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow"
+    },
+    {
+     "testid": "inspector-ind-i3",
+     "label": "حاشیه ناخالص",
+     "value": "۴۰.۴٪",
+     "title": "حاشیه سود ناخالص (کفِ ۲۰٪، استانداردِ ۳۰٪) — وضعیت: تأیید",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-green/40 bg-accent-green/10 text-accent-green"
+    },
+    {
+     "testid": "inspector-ind-i4",
+     "label": "فروش÷ارزش",
+     "value": "۰.۲۳×",
+     "title": "تخمینِ فروشِ ۱۲ ماهه ÷ ارزش بازار (کفِ ۰٫۳۳، ایده‌آلِ ۱٫۰) — وضعیت: رد",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-red/40 bg-accent-red/10 text-accent-red"
+    },
+    {
+     "testid": "inspector-ind-i5",
+     "label": "نرخ‌گذاری",
+     "value": "free",
+     "title": "نرخ‌گذاری دلاری/ریالی — دستوری بودن وتو است — وضعیت: تأیید",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-green/40 bg-accent-green/10 text-accent-green"
+    }
+   ],
+   "wrap_text": "رشد فروش۶۹۰.۶٪EPSِ سه‌ساله۱٬۹۴۴حاشیه ناخالص۴۰.۴٪فروش÷ارزش۰.۲۳×نرخ‌گذاریfree",
+   "no_data_any": false,
+   "aside_text_head": "سصفهاسيمان‌اصفهان‌سيمان، آهك و گچسنجاق✕در یک نگاهجزئیات بازارآخرین معامله۱۹۲۳۱۹۲۳تغییر روز-۱.۳٪-۱.۳٪پایانی۱٬۸۸۰٪آخرین۱.۰٪اولین۱٬۸۵۷بیشینه۱٬۹۲۹کمینه۱٬۸۴۷حجم۲۵۱٬۳۶۲٬۲۹۲تعداد۳٬۲۵۱ارزش (م.ریال)۴۷۳ارزشِ بازار۱۲.۰۳ همتI4۰.۲۳×قدرت خرید/فروشالگوی ساعت۵۰.۲م.ت۶۳.۷م.ت۰.۷۹وضعیتِ ناظر: موردی ثبت نشدهتکنیکال FTS-نمره بنیادی-روندروزانۀ—هفتگی—جت—رشد فروش۶۹۰.۶٪EPSِ سه‌ساله۱٬۹۴۴حاشیه ناخالص۴۰.۴٪فروش÷ارزش۰.۲۳×نرخ‌گذاریfreeتابلوخوانیتکنیکال· لازم نبودبنیادی· لازم نبودتحویلایستاده در «تابلوخوانی» — کف روبی صف فروش — نشانه در این نماد نیسترویدادهاهمه ↗رویدادی ثبت نشده…در انتظارِ سنجشبنیادی هنوز سنجیده نشدهSymbol Inspector · FTS",
+   "symbol_clicked": "سصفها",
+   "api": {
+    "rev_growth": 690.6,
+    "eps_last": 1944.0,
+    "gross_margin": 40.4,
+    "sales_to_mcap": 0.23,
+    "pricing_mode": "free",
+    "annualize_months": 6,
+    "assembly_date": null,
+    "i1_na": null,
+    "i2_na": true,
+    "i3_na": false,
+    "i4_na": false,
+    "i1_pass": true,
+    "i2_pass": null,
+    "i3_pass": true,
+    "i4_pass": false,
+    "i5_pass": true,
+    "verdict": "WATCH",
+    "name": "سيمان‌اصفهان‌"
+   },
+   "api_top_level_as_of": 1791627080,
+   "first_board_row": "✓ ☆ هوشيار صندوق س.هوش تصميم -س ۲۵٬۶۳۴ ۲۵٬۵۳۲ ۰.۴٪ ۲.۶٪ ۳.۰٪ ۴٬۱۰۴٬۵۳۹ ۳۶ ۱۰۵ ۱۴.۴× ۱٬۷۸۷ م.ت ۳۷۹ م.ت ۴.۷۲ پول هوشمند"
+  },
+  {
+   "header_symbol": "دتوزيع",
+   "glance_tab_active": "page",
+   "trend": "روندروزانۀ—هفتگی—جت—",
+   "chips": [
+    {
+     "testid": "inspector-ind-i1",
+     "label": "رشد فروش",
+     "value": "—",
+     "title": "درآمد و فروش از ابتدای سال تا اکنون، در برابرِ سالِ قبل (کفِ ۴۰٪، هدفِ ۶۰٪) — هنوز داوری‌ای برای این شاخص نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-border-c/60 text-text-muted"
+    },
+    {
+     "testid": "inspector-ind-i2",
+     "label": "EPSِ سه‌ساله",
+     "value": "—",
+     "title": "EPS (سود و زیان) سه سال گذشته — هنوز داوری‌ای برای این شاخص نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-border-c/60 text-text-muted"
+    },
+    {
+     "testid": "inspector-ind-i3",
+     "label": "حاشیه ناخالص",
+     "value": "—",
+     "title": "حاشیه سود ناخالص (کفِ ۲۰٪، استانداردِ ۳۰٪) — هنوز داوری‌ای برای این شاخص نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-border-c/60 text-text-muted"
+    },
+    {
+     "testid": "inspector-ind-i4",
+     "label": "فروش÷ارزش",
+     "value": "—",
+     "title": "تخمینِ فروشِ ۱۲ ماهه ÷ ارزش بازار (کفِ ۰٫۳۳، ایده‌آلِ ۱٫۰) — هنوز داوری‌ای برای این شاخص نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-border-c/60 text-text-muted"
+    },
+    {
+     "testid": "inspector-ind-i5",
+     "label": "نرخ‌گذاری",
+     "value": "—",
+     "title": "نرخ‌گذاری دلاری/ریالی — دستوری بودن وتو است — هنوز داوری‌ای برای این شاخص نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-border-c/60 text-text-muted"
+    }
+   ],
+   "wrap_text": "رشد فروش—EPSِ سه‌ساله—حاشیه ناخالص—فروش÷ارزش—نرخ‌گذاری—",
+   "no_data_any": false,
+   "aside_text_head": "دتوزيعتوزيع دارو پخشمواد و محصولات داروييسنجاق✕در یک نگاهجزئیات بازارآخرین معامله۸۱۸۰۸۱۸۰تغییر روز-۱.۳٪۲.۹٪پایانی۸٬۲۶۰٪آخرین۱.۹٪اولین۸٬۲۷۰بیشینه۸٬۲۷۰کمینه۸٬۰۶۰حجم۳۶۷٬۲۱۷٬۳۱۳تعداد۴٬۵۹۶ارزش (م.ریال)۳٬۰۳۵ارزشِ بازار۲۴.۷۸ همتI4بی‌دادهقدرت خرید/فروشحجم مشکوک۱۴۸م.ت۳۰۶م.ت۰.۴۸وضعیتِ ناظر: موردی ثبت نشدهتکنیکال FTS-نمره بنیادی-روندروزانۀ—هفتگی—جت—رشد فروش—EPSِ سه‌ساله—حاشیه ناخالص—فروش÷ارزش—نرخ‌گذاری—تابلوخوانیتکنیکالبنیادیتحویلمرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکالرویدادهاهمه ↗رویدادی ثبت نشده…در انتظارِ سنجشبنیادی هنوز سنجیده نشدهSymbol Inspector · FTS",
+   "symbol_clicked": "دتوزيع",
+   "api": {
+    "rev_growth": 145.5,
+    "eps_last": 1240.0,
+    "gross_margin": 9.9,
+    "sales_to_mcap": 1.75,
+    "pricing_mode": "neutral",
+    "annualize_months": 12,
+    "assembly_date": null,
+    "i1_na": null,
+    "i2_na": false,
+    "i3_na": false,
+    "i4_na": false,
+    "i1_pass": true,
+    "i2_pass": false,
+    "i3_pass": false,
+    "i4_pass": true,
+    "i5_pass": true,
+    "verdict": "WATCH",
+    "name": "توزيع دارو پخش"
+   },
+   "api_top_level_as_of": 1791627080,
+   "first_board_row": "✓ ☆ هوشيار صندوق س.هوش تصميم -س ۲۵٬۶۳۴ ۲۵٬۵۳۲ ۰.۴٪ ۲.۶٪ ۳.۰٪ ۴٬۱۰۴٬۵۳۹ ۳۶ ۱۰۵ ۱۴.۴× ۱٬۷۸۷ م.ت ۳۷۹ م.ت ۴.۷۲ پول هوشمند"
+  },
+  {
+   "header_symbol": "درپاد",
+   "glance_tab_active": "page",
+   "trend": "روندروزانۀ—هفتگی—جت—",
+   "chips": [
+    {
+     "testid": "inspector-ind-i1",
+     "label": "رشد فروش",
+     "value": "-۳۷.۶٪",
+     "title": "درآمد و فروش از ابتدای سال تا اکنون، در برابرِ سالِ قبل (کفِ ۴۰٪، هدفِ ۶۰٪) — وضعیت: رد",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-red/40 bg-accent-red/10 text-accent-red"
+    },
+    {
+     "testid": "inspector-ind-i2",
+     "label": "EPSِ سه‌ساله",
+     "value": "۱۴۰",
+     "title": "EPS (سود و زیان) سه سال گذشته — وضعیت: داده در دسترس نیست",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow"
+    },
+    {
+     "testid": "inspector-ind-i3",
+     "label": "حاشیه ناخالص",
+     "value": "۱۱.۴٪",
+     "title": "حاشیه سود ناخالص (کفِ ۲۰٪، استانداردِ ۳۰٪) — وضعیت: رد",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-red/40 bg-accent-red/10 text-accent-red"
+    },
+    {
+     "testid": "inspector-ind-i4",
+     "label": "فروش÷ارزش",
+     "value": "۰.۴۱×",
+     "title": "تخمینِ فروشِ ۱۲ ماهه ÷ ارزش بازار (کفِ ۰٫۳۳، ایده‌آلِ ۱٫۰) — وضعیت: تأیید",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-green/40 bg-accent-green/10 text-accent-green"
+    },
+    {
+     "testid": "inspector-ind-i5",
+     "label": "نرخ‌گذاری",
+     "value": "free",
+     "title": "نرخ‌گذاری دلاری/ریالی — دستوری بودن وتو است — وضعیت: تأیید",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 border-accent-green/40 bg-accent-green/10 text-accent-green"
+    }
+   ],
+   "wrap_text": "رشد فروش-۳۷.۶٪EPSِ سه‌ساله۱۴۰حاشیه ناخالص۱۱.۴٪فروش÷ارزش۰.۴۱×نرخ‌گذاریfree",
+   "no_data_any": false,
+   "aside_text_head": "درپادگروه صنعتي درپاد تبريزفلزات اساسيسنجاق✕در یک نگاهجزئیات بازارآخرین معامله۵۱۲۰۵۱۲۰تغییر روز-۱.۰٪-۱.۰٪پایانی۵٬۱۵۰٪آخرین-۱.۵٪اولین۵٬۳۵۰بیشینه۵٬۳۵۰کمینه۵٬۰۵۰حجم۱۰۱٬۲۰۳٬۶۹۸تعداد۳٬۲۱۳ارزش (م.ریال)۵۲۱ارزشِ بازار۴.۶۳ همتI4۰.۴۱×قدرت خرید/فروشحجم مشکوک۸۴.۰م.ت۲۷.۱م.ت۳.۱۰وضعیتِ ناظر: موردی ثبت نشدهتکنیکال FTS-نمره بنیادی-روندروزانۀ—هفتگی—جت—رشد فروش-۳۷.۶٪EPSِ سه‌ساله۱۴۰حاشیه ناخالص۱۱.۴٪فروش÷ارزش۰.۴۱×نرخ‌گذاریfreeتابلوخوانیتکنیکال· لازم نبودبنیادی· لازم نبودتحویلایستاده در «تابلوخوانی» — کف روبی صف فروش — نشانه در این نماد نیسترویدادهاهمه ↗رویدادی ثبت نشده…در انتظارِ سنجشبنیادی هنوز سنجیده نشدهSymbol Inspector · FTS",
+   "symbol_clicked": "درپاد",
+   "api": {
+    "rev_growth": -37.6,
+    "eps_last": 140.0,
+    "gross_margin": 11.4,
+    "sales_to_mcap": 0.41,
+    "pricing_mode": "free",
+    "annualize_months": 5,
+    "assembly_date": null,
+    "i1_na": null,
+    "i2_na": true,
+    "i3_na": false,
+    "i4_na": false,
+    "i1_pass": false,
+    "i2_pass": null,
+    "i3_pass": false,
+    "i4_pass": true,
+    "i5_pass": true,
+    "verdict": "REJECT",
+    "name": "گروه صنعتي درپاد تبريز"
+   },
+   "api_top_level_as_of": 1791627080,
+   "first_board_row": "✓ ☆ هوشيار صندوق س.هوش تصميم -س ۲۵٬۶۳۴ ۲۵٬۵۳۲ ۰.۴٪ ۲.۶٪ ۳.۰٪ ۴٬۱۰۴٬۵۳۹ ۳۶ ۱۰۵ ۱۴.۴× ۱٬۷۸۷ م.ت ۳۷۹ م.ت ۴.۷۲ پول هوشمند"
+  }
+ ],
+ "href": "http://127.0.0.1:8002/#/market",
+ "board_rows": [
+  {
+   "idx": 0,
+   "symbol": "هوشيار",
+   "name": "صندوق س.هوش تصميم -س",
+   "raw": "✓☆هوشيارصندوق س.هوش تصميم -س"
+  },
+  {
+   "idx": 1,
+   "symbol": "سصفها",
+   "name": "سيمان‌اصفهان‌",
+   "raw": "✓☆سصفهاسيمان‌اصفهان‌"
+  },
+  {
+   "idx": 2,
+   "symbol": "دتوزيع",
+   "name": "توزيع دارو پخش",
+   "raw": "✓☆دتوزيعتوزيع دارو پخش"
+  },
+  {
+   "idx": 3,
+   "symbol": "ثنا",
+   "name": "صندوق س.زرين نهال ثنا-س",
+   "raw": "✓☆ثناصندوق س.زرين نهال ثنا-س"
+  },
+  {
+   "idx": 4,
+   "symbol": "درپاد",
+   "name": "گروه صنعتي درپاد تبريز",
+   "raw": "✓☆درپادگروه صنعتي درپاد تبريز"
+  },
+  {
+   "idx": 5,
+   "symbol": "دزاگرس",
+   "name": "دارويي و نهاده هاي زاگرس دارو",
+   "raw": "✓☆دزاگرسدارويي و نهاده هاي زاگرس دارو"
+  },
+  {
+   "idx": 6,
+   "symbol": "فطلوع",
+   "name": "طلوع فولاد پارس",
+   "raw": "✓☆فطلوعطلوع فولاد پارس"
+  },
+  {
+   "idx": 7,
+   "symbol": "شفارا",
+   "name": "پتروشيمي فارابي",
+   "raw": "✓☆شفاراپتروشيمي فارابي"
+  },
+  {
+   "idx": 8,
+   "symbol": "وپايا",
+   "name": "سرمايه گذاري پايا تدبيرپارسا",
+   "raw": "✓☆وپاياسرمايه گذاري پايا تدبيرپارسا"
+  },
+  {
+   "idx": 9,
+   "symbol": "فوكا",
+   "name": "فولاد كاويان",
+   "raw": "✓☆فوكافولاد كاويان"
+  },
+  {
+   "idx": 10,
+   "symbol": "لبن",
+   "name": "صنايع دامپروري و لبني رضوي",
+   "raw": "✓☆لبنصنايع دامپروري و لبني رضوي"
+  },
+  {
+   "idx": 11,
+   "symbol": "ناما",
+   "name": "توليدي مخازن گازطبيعي آسياناما",
+   "raw": "✓☆ناماتوليدي مخازن گازطبيعي آسياناما"
+  },
+  {
+   "idx": 12,
+   "symbol": "واحيا",
+   "name": "م .صنايع و معادن احياء سپاهان",
+   "raw": "✓☆واحيام .صنايع و معادن احياء سپاهان"
+  },
+  {
+   "idx": 13,
+   "symbol": "اتكام",
+   "name": "بيمه اتكايي امين",
+   "raw": "✓☆اتكامبيمه اتكايي امين"
+  },
+  {
+   "idx": 14,
+   "symbol": "سها",
+   "name": "صندوق س مشترك مبين سرمايه-سهام",
+   "raw": "✓☆سهاصندوق س مشترك مبين سرمايه-سهام"
+  },
+  {
+   "idx": 15,
+   "symbol": "شفا",
+   "name": "سرمايه گذاري شفادارو",
+   "raw": "✓☆شفاسرمايه گذاري شفادارو"
+  },
+  {
+   "idx": 16,
+   "symbol": "هماي",
+   "name": "صندوق س هماي آگاه-ثابت",
+   "raw": "✓☆همايصندوق س هماي آگاه-ثابت"
+  },
+  {
+   "idx": 17,
+   "symbol": "الكترومادح",
+   "name": "ح . صنايع الكترونيك ماديران",
+   "raw": "✓☆الكترومادحح . صنايع الكترونيك ماديران"
+  },
+  {
+   "idx": 18,
+   "symbol": "ثابت اكسيژن",
+   "name": "ص.س.درآمد ثابت اكسيژن-د",
+   "raw": "✓☆ثابت اكسيژنص.س.درآمد ثابت اكسيژن-د"
+  },
+  {
+   "idx": 19,
+   "symbol": "الكتروماد",
+   "name": "صنايع الكترونيك ماديران",
+   "raw": "✓☆الكترومادصنايع الكترونيك ماديران"
+  },
+  {
+   "idx": 20,
+   "symbol": "داترا",
+   "name": "آترا زيست آراي",
+   "raw": "✓☆داتراآترا زيست آراي"
+  },
+  {
+   "idx": 21,
+   "symbol": "فاسمين",
+   "name": "كالسيمين‌",
+   "raw": "✓☆فاسمينكالسيمين‌"
+  },
+  {
+   "idx": 22,
+   "symbol": "اوان",
+   "name": "مبين وان كيش",
+   "raw": "✓☆اوانمبين وان كيش"
+  },
+  {
+   "idx": 23,
+   "symbol": "بترانس",
+   "name": "ايران‌ ترانسفو",
+   "raw": "✓☆بترانسايران‌ ترانسفو"
+  },
+  {
+   "idx": 24,
+   "symbol": "سيدكو",
+   "name": "سرمايه گذاري توسعه صنايع سيمان",
+   "raw": "✓☆سيدكوسرمايه گذاري توسعه صنايع سيمان"
+  },
+  {
+   "idx": 25,
+   "symbol": "فپرديس",
+   "name": "صنعت تجارت پرديس آذربايجان",
+   "raw": "✓☆فپرديسصنعت تجارت پرديس آذربايجان"
+  },
+  {
+   "idx": 26,
+   "symbol": "ولپارس",
+   "name": "ليزينگ پارسيان",
+   "raw": "✓☆ولپارسليزينگ پارسيان"
+  },
+  {
+   "idx": 27,
+   "symbol": "فاما",
+   "name": "صنعتي‌ آما",
+   "raw": "✓☆فاماصنعتي‌ آما"
+  },
+  {
+   "idx": 28,
+   "symbol": "لخانه",
+   "name": "لوازم‌ خانگي‌ پارس‌",
+   "raw": "✓☆لخانهلوازم‌ خانگي‌ پارس‌"
+  },
+  {
+   "idx": 29,
+   "symbol": "ولبهمن",
+   "name": "شركت بهمن ليزينگ",
+   "raw": "✓☆ولبهمنشركت بهمن ليزينگ"
+  }
+ ],
+ "picked": [
+  "سصفها",
+  "دتوزيع",
+  "درپاد"
+ ],
+ "picked_reason": "سه نمادِ اولِ صفِ جدولِ تابلو که در /api/screener هم ردیف دارند",
+ "ended_at_local": "2026-10-10T14:05:12"
+}
