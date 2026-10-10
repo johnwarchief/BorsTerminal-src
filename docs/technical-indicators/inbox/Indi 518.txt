@@ -1,0 +1,431 @@
+//@version=6
+indicator(
+     title            = "MSnR Double Breakout Failed Level",
+     overlay          = true,
+     max_lines_count  = 500,
+     max_labels_count = 500,
+     max_bars_back    = 500
+     )
+
+// ==========================================================
+// MSnR Double Breakout Failed Level
+//
+// A Double Breakout level is where a staircase of turning points was run out.
+// This script shows the ones that did NOT hold: the level price came back
+// through, and what was support is now resistance - or the other way round.
+//
+// THE TWO BUILDING BLOCKS
+//
+//   A Level   a green candle followed by a red one. The green candle's CLOSE is
+//             the level. Buyers pushed, sellers took it straight back.
+//   V Level   a red candle followed by a green one. The red candle's CLOSE is
+//             the level. Sellers pushed, buyers took it straight back.
+//
+// DOUBLE BREAKOUT
+//
+// Two same-side levels are held as a rolling pair. On the A side that is a
+// descending pair - A1 above, A2 below. When a candle CLOSES above A1, the
+// staircase has been run out and A2, the innermost step, is the DBO A level.
+// The V side is the exact mirror: an ascending pair, a close below V1, and V2
+// is the DBO V level. When a new same-side level appears while the pair is
+// waiting: it did NOT break the inner step -> the pair SLIDES one along; it
+// DID break the inner step -> the pair RESTARTS from that level.
+//
+// DOUBLE BREAKOUT FAILED
+//
+// A DBO A level sits below price when it is confirmed - the confirming candle
+// closed above A1, and A1 is above A2. It FAILS when a RED candle later CLOSES
+// below it. A DBO V level fails when a GREEN candle later CLOSES above it.
+//
+//   -- A2 ---------------------  DBO A level, support
+//                  |  red candle closes below
+//   -- A2 ---------------------  DBO A Failed, now resistance
+//
+// A wick through the level does not count, and neither does a doji. A level
+// fails once; it never flips back. Only failed levels are drawn.
+//
+// All detection reads closed candles only. The running candle is never used.
+// ==========================================================
+
+// ============================ INPUTS ============================
+gScan  = "Double Breakout"
+gType  = "Failed Level Types"
+gStyle = "Level Style"
+gLabel = "Labels"
+gTable = "Summary Table"
+
+candleLen = input.int(200, "Scan Length (closed candles)", minval = 20, maxval = 2000, group = gScan,
+     tooltip = "How far back the search reaches. A pair that has been waiting longer than this is abandoned. A Double Breakout level is watched for a failure only while the candle it came from is inside this window, and a failed level is dropped once that candle is older than this. The running candle is always excluded.")
+maxLevels = input.int(6, "Max Levels Shown", minval = 1, maxval = 50, group = gScan,
+     tooltip = "Only this many of the most recent failures are drawn. Older ones are still counted in the table, they are just not on the chart.")
+
+showAF = input.bool(true, "DBO A Failed", group = gType,
+     tooltip = "A DBO A level that a red candle has closed below.")
+showVF = input.bool(true, "DBO V Failed", group = gType,
+     tooltip = "A DBO V level that a green candle has closed above.")
+
+bearColor   = input.color(#ef4444, "DBO A Failed Color", group = gStyle)
+bullColor   = input.color(#22c55e, "DBO V Failed Color", group = gStyle)
+lineWidth   = input.int(1, "Level Line Width", minval = 1, maxval = 4, group = gStyle)
+extendRight = input.bool(true, "Extend Levels Right", group = gStyle,
+     tooltip = "On: a failed level runs from its candle to the right edge of the chart. Off: it stops on the candle that broke it.")
+
+showLabels     = input.bool(true, "Show Labels", group = gLabel)
+labelSizeStr   = input.string("Small", "Label Size", options = ["Tiny", "Small", "Normal", "Large"], group = gLabel)
+labelOffsetPct = input.int(25, "Label Distance from Candle (%)", minval = 0, maxval = 300, group = gLabel,
+     tooltip = "How far the label sits from the candle that broke the level, as a percentage of the 14-candle average true range.")
+
+showTable    = input.bool(true, "Show Summary Table", group = gTable)
+tablePosStr  = input.string("Top Right", "Table Position", options = ["Top Right", "Middle Right", "Bottom Right", "Top Left", "Bottom Left"], group = gTable)
+tableSizeStr = input.string("Small", "Table Size", options = ["Tiny", "Small", "Normal"], group = gTable)
+
+// ============================ STYLE CONSTANTS ============================
+labelBull = #107a34
+labelBear = #b22222
+tableHead = #000000
+tableBg   = #1e222d
+tableEdge = #363a45
+
+labelSize = labelSizeStr == "Tiny" ? size.tiny : labelSizeStr == "Small" ? size.small : labelSizeStr == "Large" ? size.large : size.normal
+tableSize = tableSizeStr == "Tiny" ? size.tiny : tableSizeStr == "Normal" ? size.normal : size.small
+tablePos  = tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Middle Right" ? position.middle_right : tablePosStr == "Bottom Right" ? position.bottom_right : tablePosStr == "Top Left" ? position.top_left : position.bottom_left
+
+MAX_STORED = 120
+
+// ============================ LEVEL MODEL ============================
+// Every confirmed Double Breakout level is kept and watched. Only a failed one
+// is ever drawn.
+type Level
+    float price
+    int   originBar     // the A2 / V2 candle the level was read from
+    int   confirmBar    // the candle whose close confirmed the Double Breakout
+    bool  isA           // true = DBO A (fails downward), false = DBO V
+    bool  failed
+    int   failBar       // the candle whose close broke the level
+    float failHigh      // that candle's high and low, so its label can be
+    float failLow       // parked clear of it
+    int   failSeq       // order of failure, newest = highest
+    line  ln
+    label lb
+
+var array<Level> levels = array.new<Level>()
+var int failCount = 0
+
+// ============================ ROLLING PAIR STATE ============================
+var float a1 = na
+var int   a1Bar = na
+var float a2 = na
+var int   a2Bar = na
+var bool  aWait = false
+
+var float v1 = na
+var int   v1Bar = na
+var float v2 = na
+var int   v2Bar = na
+var bool  vWait = false
+
+// ============================ SIGNALS ============================
+bool  sigAF = false
+bool  sigVF = false
+float pxAF  = na
+float pxVF  = na
+
+// ============================ HELPERS ============================
+isGreen(int i) => close[i] > open[i]
+isRed(int i)   => close[i] < open[i]
+
+killDrawing(Level lv) =>
+    if not na(lv.ln)
+        line.delete(lv.ln)
+        lv.ln := na
+    if not na(lv.lb)
+        label.delete(lv.lb)
+        lv.lb := na
+
+pushLevel(float px, int oBar, int cBar, bool isA) =>
+    Level lv = Level.new(
+         price      = px,
+         originBar  = oBar,
+         confirmBar = cBar,
+         isA        = isA,
+         failed     = false)
+    array.push(levels, lv)
+    if array.size(levels) > MAX_STORED
+        Level oldest = array.shift(levels)
+        killDrawing(oldest)
+
+// ============================ SUMMARY TABLE ============================
+var table sumTable = table.new(tablePos, 3, 4, border_width = 1, border_color = tableEdge)
+
+// ============================ ATR FOR LABEL SPACING ============================
+float atrVal = ta.atr(14)
+
+// The colour of the candle that just closed, read once per candle for the failure test.
+bool redNow   = close < open
+bool greenNow = close > open
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+// ============================ MAIN ENGINE (BAR CLOSE ONLY) ============================
+if barstate.isconfirmed and bar_index >= 2
+
+    // ---------- 1. Housekeeping ----------
+    // A waiting pair is abandoned once its outer step is older than the window.
+    if not na(a1Bar) and bar_index - a1Bar > candleLen
+        a1 := na
+        a1Bar := na
+        a2 := na
+        a2Bar := na
+        aWait := false
+
+    if not na(v1Bar) and bar_index - v1Bar > candleLen
+        v1 := na
+        v1Bar := na
+        v2 := na
+        v2Bar := na
+        vWait := false
+
+    // A level leaves the watch, and the chart, once its candle is older than the window.
+    if array.size(levels) > 0
+        for i = array.size(levels) - 1 to 0
+            Level lv = array.get(levels, i)
+            if bar_index - lv.originBar > candleLen
+                killDrawing(lv)
+                array.remove(levels, i)
+
+    // ---------- 2. Failures on the candle that just closed ----------
+    // Run before this candle's own confirmations, so a level can never be
+    // failed by the candle that confirmed it.
+    if array.size(levels) > 0
+        for i = 0 to array.size(levels) - 1
+            Level lv = array.get(levels, i)
+            if not lv.failed and bar_index > lv.confirmBar
+                bool broke = lv.isA ? (redNow and close < lv.price) : (greenNow and close > lv.price)
+                if broke
+                    lv.failed   := true
+                    lv.failBar  := bar_index
+                    lv.failHigh := high
+                    lv.failLow  := low
+                    failCount   += 1
+                    lv.failSeq  := failCount
+                    if lv.isA
+                        sigAF := true
+                        pxAF  := lv.price
+                    else
+                        sigVF := true
+                        pxVF  := lv.price
+
+    // ---------- 3. New A / V Levels on the candle that just closed ----------
+    // [1] is the level candle, [0] is the candle that reversed it.
+    bool  aNew   = isGreen(1) and isRed(0)
+    bool  vNew   = isRed(1) and isGreen(0)
+    float lvlPx  = close[1]
+    int   lvlBar = bar_index - 1
+
+    // ---------- 4. A side: breakout first, then slide / restart / build ----------
+    float doneA    = na
+    int   doneABar = na
+
+    if aWait and not na(a1) and not na(a2) and close > a1
+        // The staircase has been run out. A2 is the level.
+        doneA    := a2
+        doneABar := a2Bar
+        a1 := na
+        a1Bar := na
+        a2 := na
+        a2Bar := na
+        aWait := false
+        // A level printing on this same candle can only belong to the next
+        // search, so it opens it rather than being lost.
+        if aNew
+            a1 := lvlPx
+            a1Bar := lvlBar
+    else if aNew
+        if aWait
+            if lvlPx < a2
+                // Inner step not broken - the pair slides one along.
+                a1 := a2
+                a1Bar := a2Bar
+                a2 := lvlPx
+                a2Bar := lvlBar
+            else
+                // Inner step broken but the outer one held - restart here.
+                a1 := lvlPx
+                a1Bar := lvlBar
+                a2 := na
+                a2Bar := na
+                aWait := false
+        else if na(a1)
+            a1 := lvlPx
+            a1Bar := lvlBar
+        else if na(a2)
+            if lvlPx < a1
+                a2 := lvlPx
+                a2Bar := lvlBar
+                aWait := true
+            else
+                a1 := lvlPx
+                a1Bar := lvlBar
+
+    // ---------- 5. V side: exact mirror ----------
+    float doneV    = na
+    int   doneVBar = na
+
+    if vWait and not na(v1) and not na(v2) and close < v1
+        doneV    := v2
+        doneVBar := v2Bar
+        v1 := na
+        v1Bar := na
+        v2 := na
+        v2Bar := na
+        vWait := false
+        if vNew
+            v1 := lvlPx
+            v1Bar := lvlBar
+    else if vNew
+        if vWait
+            if lvlPx > v2
+                v1 := v2
+                v1Bar := v2Bar
+                v2 := lvlPx
+                v2Bar := lvlBar
+            else
+                v1 := lvlPx
+                v1Bar := lvlBar
+                v2 := na
+                v2Bar := na
+                vWait := false
+        else if na(v1)
+            v1 := lvlPx
+            v1Bar := lvlBar
+        else if na(v2)
+            if lvlPx > v1
+                v2 := lvlPx
+                v2Bar := lvlBar
+                vWait := true
+            else
+                v1 := lvlPx
+                v1Bar := lvlBar
+
+    // ---------- 6. Record the confirmations - watched from the next candle on ----------
+    if not na(doneA)
+        pushLevel(doneA, doneABar, bar_index, true)
+    if not na(doneV)
+        pushLevel(doneV, doneVBar, bar_index, false)
+
+    // ---------- 7. Draw the newest failures and count ----------
+    // The newest Max Levels Shown failures of the switched-on types are drawn,
+    // worked out again from the whole list on every candle. A type that is
+    // switched off does not use up a place.
+    array<int> seqs = array.new<int>()
+    int cA  = 0
+    int cV  = 0
+    int cAF = 0
+    int cVF = 0
+    if array.size(levels) > 0
+        for i = 0 to array.size(levels) - 1
+            Level lv = array.get(levels, i)
+            if lv.isA
+                cA += 1
+            else
+                cV += 1
+            if lv.failed
+                if lv.isA
+                    cAF += 1
+                else
+                    cVF += 1
+                if (lv.isA and showAF) or (not lv.isA and showVF)
+                    array.push(seqs, lv.failSeq)
+
+    int cutSeq = 0
+    if array.size(seqs) > maxLevels
+        array.sort(seqs, order.descending)
+        cutSeq := array.get(seqs, maxLevels - 1)
+
+    if array.size(levels) > 0
+        for i = 0 to array.size(levels) - 1
+            Level lv = array.get(levels, i)
+            bool typeOn  = lv.isA ? showAF : showVF
+            bool allowed = lv.failed and typeOn and lv.failSeq >= cutSeq
+            if not allowed
+                killDrawing(lv)
+            else
+                color col = lv.isA ? bearColor : bullColor
+                int   x2  = extendRight ? bar_index : lv.failBar
+                if na(lv.ln)
+                    // One bar past the start at least, so the line has a slope to extend.
+                    lv.ln := line.new(lv.originBar, lv.price, math.max(x2, lv.originBar + 1), lv.price,
+                         xloc   = xloc.bar_index,
+                         extend = extendRight ? extend.right : extend.none,
+                         color  = col,
+                         width  = lineWidth,
+                         style  = line.style_solid)
+                else
+                    line.set_x2(lv.ln, math.max(x2, lv.originBar + 1))
+                    line.set_extend(lv.ln, extendRight ? extend.right : extend.none)
+                    line.set_color(lv.ln, col)
+                    line.set_width(lv.ln, lineWidth)
+
+                if showLabels
+                    // The label marks the candle that broke the level - over its
+                    // high on a failed DBO A (now resistance), under its low on a
+                    // failed DBO V (now support). ATR is not ready on the first
+                    // candles of a chart.
+                    float off = na(atrVal) ? 0.0 : atrVal * labelOffsetPct * 0.01
+                    float y   = lv.isA ? lv.failHigh + off : lv.failLow - off
+                    if na(lv.lb)
+                        lv.lb := label.new(lv.failBar, y, lv.isA ? "DBO A Failed" : "DBO V Failed",
+                             xloc      = xloc.bar_index,
+                             yloc      = yloc.price,
+                             style     = lv.isA ? label.style_label_down : label.style_label_up,
+                             color     = lv.isA ? labelBear : labelBull,
+                             textcolor = color.white,
+                             size      = labelSize)
+                    else
+                        label.set_size(lv.lb, labelSize)
+                else
+                    if not na(lv.lb)
+                        label.delete(lv.lb)
+                        lv.lb := na
+
+    // ---------- 8. Summary table ----------
+    if showTable
+        table.cell(sumTable, 0, 0, "Level",  bgcolor = tableHead, text_color = color.white, text_size = tableSize, text_halign = text.align_left)
+        table.cell(sumTable, 1, 0, "DBO A",  bgcolor = tableHead, text_color = color.white, text_size = tableSize)
+        table.cell(sumTable, 2, 0, "DBO V",  bgcolor = tableHead, text_color = color.white, text_size = tableSize)
+
+        // Found = every Double Breakout level inside the scan window; it splits
+        // into the Failed ones, which are the only ones drawn, and the ones
+        // still holding, which are not drawn.
+        table.cell(sumTable, 0, 1, "DBO Found", bgcolor = tableBg, text_color = color.white, text_size = tableSize, text_halign = text.align_left)
+        table.cell(sumTable, 1, 1, str.tostring(cA), bgcolor = tableBg, text_color = color.white, text_size = tableSize)
+        table.cell(sumTable, 2, 1, str.tostring(cV), bgcolor = tableBg, text_color = color.white, text_size = tableSize)
+
+        table.cell(sumTable, 0, 2, "Failed", bgcolor = tableBg, text_color = color.white, text_size = tableSize, text_halign = text.align_left)
+        table.cell(sumTable, 1, 2, str.tostring(cAF), bgcolor = tableBg, text_color = bearColor, text_size = tableSize)
+        table.cell(sumTable, 2, 2, str.tostring(cVF), bgcolor = tableBg, text_color = bullColor, text_size = tableSize)
+
+        table.cell(sumTable, 0, 3, "Still Holding", bgcolor = tableBg, text_color = color.white, text_size = tableSize, text_halign = text.align_left)
+        table.cell(sumTable, 1, 3, str.tostring(cA - cAF), bgcolor = tableBg, text_color = color.white, text_size = tableSize)
+        table.cell(sumTable, 2, 3, str.tostring(cV - cVF), bgcolor = tableBg, text_color = color.white, text_size = tableSize)
+    else
+        table.clear(sumTable, 0, 0, 2, 3)
+
+// ============================ ALERTS ============================
+alertcondition(sigAF, title = "DBO A Failed", message = "DBO A Failed | {{ticker}} {{interval}} | Close {{close}}")
+alertcondition(sigVF, title = "DBO V Failed", message = "DBO V Failed | {{ticker}} {{interval}} | Close {{close}}")
+
+// Dynamic message for the "Any alert() function call" alert type.
+alertMsg(string tag, float px) =>
+    tag + " | " + syminfo.ticker + " " + timeframe.period + " | Level " + str.tostring(px, format.mintick) + " | Close " + str.tostring(close, format.mintick)
+
+if barstate.isconfirmed
+    if sigAF
+        alert(alertMsg("DBO A Failed", pxAF), alert.freq_once_per_bar_close)
+    if sigVF
+        alert(alertMsg("DBO V Failed", pxVF), alert.freq_once_per_bar_close)
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)
