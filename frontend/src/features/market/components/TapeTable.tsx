@@ -292,6 +292,8 @@ export function TapeTable({
   isLoading,
   isError,
   onRetry,
+  emptyNote,
+  onClearFilters,
 }: {
   rows: MarketRow[];
   selected: string;
@@ -300,6 +302,9 @@ export function TapeTable({
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  /** علتِ خالی‌ماندن با نامِ درها؛ بی‌آن «نبود» به «غلطِ فیلتر» ترجمه می‌شد */
+  emptyNote?: string | null;
+  onClearFilters?: () => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
@@ -352,7 +357,24 @@ export function TapeTable({
     if (isLoading) {
       return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین نشستِ داده کمی طول می‌کشد" />;
     }
-    return <EmptyState title="نمادی با این فیلترها نیست" hint="فیلترها را کم کن یا جستجو را پاک کن" />;
+    return (
+      <EmptyState
+        title="نمادی با این فیلترها نیست"
+        hint={emptyNote || 'فیلترها را کم کن یا جستجو را پاک کن'}
+        action={
+          onClearFilters ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              data-testid="tape-clear-filters"
+              className="rounded-lg border border-accent-blue bg-accent-blue/10 px-3 py-1 text-xs font-bold text-accent-blue"
+            >
+              خاموش‌کردنِ فیلترها
+            </button>
+          ) : undefined
+        }
+      />
+    );
   }
 
   const toggle = (k: SortKey) => {

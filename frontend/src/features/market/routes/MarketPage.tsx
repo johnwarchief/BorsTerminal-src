@@ -1,16 +1,17 @@
 // features/market/routes/MarketPage.tsx -- صفحه تابلو بازار (ایجنت 3)
 import { useEffect, useMemo } from 'react';
 import type { MarketRow } from '@shared/types/marketRow';
+import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignals } from '@shared/lib/signalBus';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { useMarketFeed } from '../api/useMarketFeed';
 import { useMarketPulse } from '../api/useMarketPulse';
-import { classifyAssetType, type AssetType } from '../lib/assetType';
+import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
-import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
+import { matchesDirection, matchesExitAccum, matchesVolRatio, QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
 import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
 import { MarketStatusPanel } from '../components/MarketStatusPanel';
@@ -79,6 +80,7 @@ export default function MarketPage() {
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const setSector = useTapeStore((s) => s.setSector);
+  const resetFilters = useTapeStore((s) => s.resetFilters);
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const setRefetchIntervalMs = useMarketStore((s) => s.setRefetchIntervalMs);
 
@@ -174,6 +176,32 @@ export default function MarketPage() {
   const signals = useMemo(() => rowsToTapeSignals(filtered), [filtered]);
 
   /**
+   * جدولِ خالی باید بگوید *کدام در* ردیف‌ها را نگه داشته است. سنجشِ زنده:
+   * «فقط بازار پایه» جدول را صفر می‌کرد و تنها راهنما «فیلترها را کم کن» بود؛
+   * کاربر نمی‌فهمید نمادها پنهان‌اند یا واقعاً واجدِ شرط نیستند.
+   */
+  const emptyNote = useMemo(() => {
+    if (filtered.length > 0) return null;
+    const doors: string[] = [];
+    if (quickFilters.length) {
+      doors.push(`فیلترهایِ روشن: ${quickFilters.map((f) => QUICK_LABELS[f as QuickFilter]).join('، ')}`);
+    }
+    if (sector) doors.push(`صنعتِ «${sector}»`);
+    if (query.trim()) doors.push(`جستجوی «${query.trim()}»`);
+    if (liveOnly) doors.push('فقط زنده');
+    if (!showNumericSuffix) doors.push('پسوندِ عددی پنهان');
+    if (assetTypes.length === 1) doors.push(`فقط بازارِ «${ASSET_LABELS[assetTypes[0]]}»`);
+    const hidden = quickFilters.reduce(
+      (s, f) => s + (hiddenInfo?.[f as QuickFilter]?.count ?? 0),
+      0,
+    );
+    const head = doors.length ? doors.join(' · ') : 'بی‌فیلترِ سریع';
+    return hidden > 0
+      ? `${head} — ${toFaDigits(hidden)} ردیفِ واجدِ شرط درِ این نما باز نشد؛ درهایِ بالا را بردار`
+      : `${head} — با این ترکیب هیچ ردیفی واجدِ شرط نیست`;
+  }, [filtered.length, quickFilters, sector, query, liveOnly, showNumericSuffix, assetTypes, hiddenInfo]);
+
+  /**
    * انتشار سیگنال های تابلو در باس: تک اسلات ایجنت «تابلو» روی هر نماد.
    * برای هر نماد فقط قاطع ترین سیگنالش منتشر می شود تا باس یکدست بماند.
    */
@@ -217,6 +245,8 @@ export default function MarketPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={refetch}
+        emptyNote={emptyNote}
+        onClearFilters={resetFilters}
       />
       <WatchDrawer rows={filtered} onSelect={setSymbol} onPickSector={setSector} />
     </div>

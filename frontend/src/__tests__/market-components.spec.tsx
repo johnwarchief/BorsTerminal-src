@@ -51,6 +51,22 @@ describe('کامپوننت های تابلو', () => {
     expect(screen.getByText('نمادی با این فیلترها نیست')).toBeInTheDocument();
   });
 
+  it('جدولِ خالی با علتِ نام‌برده و دکمۀِ بازگشت می‌آید، نه فقط «فیلتر را کم کن»', () => {
+    const onClear = vi.fn();
+    render(
+      <TapeTable
+        rows={[]}
+        selected=""
+        onSelect={() => {}}
+        emptyNote="فقط بازارِ «فرابورس - بازار پایه» — ۳ ردیفِ واجدِ شرط درِ این نما باز نشد"
+        onClearFilters={onClear}
+      />,
+    );
+    expect(screen.getByText(/۳ ردیفِ واجدِ شرط/)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('tape-clear-filters'));
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
   it('پنل مشکوک الگوی ساعت را فهرست می کند', () => {
     const onSelect = vi.fn();
     // شپنا هر دو پرچمِ canonicalِ تابلو را دارد (همان f_clock/f_susp که چیپ و ستون
