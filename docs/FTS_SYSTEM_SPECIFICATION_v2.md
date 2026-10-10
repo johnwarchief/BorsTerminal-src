@@ -1,7 +1,9 @@
 # FTS_SYSTEM_SPECIFICATION.md
-> نسخه: ۲.۱ (بازبینی‌شده و نهایی برای پیاده‌سازی کد)
+
+> **SPEC مشتق‌شده و نیازمند تطبیق:** عنوان «نهایی/Strict Production Rules» به معنی برتری بر PDF روش‌شناسی یا رأی‌های صریح بعدی مالک نیست. پیش از هر تغییر production، مفاد این سند را با docs/جزوه FTS.pdf، docs/FTS.CHART_3.pdf و docs/fts-notes/OWNER_RULINGS.md تطبیق دهید. تقدم مستندات در docs/README.md است.
+> نسخهٔ تاریخی: ۲.۱ — مشخصات مهندسی مشتق‌شده؛ نیازمند تطبیق با منبع اولیه و رأی‌های بعدی
 > مخاطب: تمام ایجنت‌های سیستم (Head, Fundamental, Technical, Tape, Portfolio)
-> وضعیت: قوانین اجرایی سخت‌گیرانه (Strict Production Rules)
+> وضعیت: مرجع کمکی پیاده‌سازی؛ پیش از اعمال در production، هر قانون باید با منبع اولیه و رأی مالک تطبیق داده شود
 
 ---
 

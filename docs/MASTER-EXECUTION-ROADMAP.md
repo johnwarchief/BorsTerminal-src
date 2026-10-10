@@ -1,6 +1,8 @@
 # BorsTerminal — Master Execution Roadmap
 
-**Status:** Active master roadmap  
+> **تفاوت roadmap با صف کار جاری:** این سند یک roadmap/ledger بزرگ و دارای بخش‌های تاریخ‌دار است. بخش «Current owner priority override» در ادامه به زمان ثبت 2026-10-07 تعلق دارد و Android-first را در اولویت می‌گذارد؛ آن را بدون تطبیق با دستور جدیدتر مالک برای branch اصلی/دسکتاپ، صف کار فعلی فرض نکنید. دستورهای جدیدتر مالک مقدم‌اند. مرجع تقدم مستندات: docs/README.md.
+
+**Status:** Master roadmap / implementation ledger; last update 2026-10-07. Revalidate current priorities against newer owner instructions.  
 **Date:** 2026-10-07  
 **Priority:** This document defines the execution order for the remaining major BorsTerminal work.
 
