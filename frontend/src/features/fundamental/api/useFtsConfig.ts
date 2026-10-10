@@ -80,7 +80,7 @@ export const FTS_GUIDE_DEFAULTS = {
   /** آستانه اجرایی قابل تنظیم؛ مقدار canonical استخراج‌شده از PDF نیست */
   hourglass_rsi_oversold: 30,
   /** پیش‌فرض سازگاری با موتور موجود؛ کاربر می‌تواند above/either را انتخاب کند */
-  hourglass_ma52_position: "below" as const,
+  hourglass_ma52_position: 'below',
 } as const;
 
 /** پیش‌فرضِ کشوی تنظیمات: کف فروش/ارزش بازار ۳۳٪ (مطلوب ۱۰۰٪) */
