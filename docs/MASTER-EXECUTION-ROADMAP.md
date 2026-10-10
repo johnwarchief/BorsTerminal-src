@@ -4,7 +4,7 @@
 
 **Status:** Master roadmap / implementation ledger; last update 2026-10-07. Revalidate current priorities against newer owner instructions.  
 **Date:** 2026-10-07  
-**Priority:** This document defines the execution order for the remaining major BorsTerminal work.
+**Priority (historical):** This document records an execution order last updated on 2026-10-07; it does not define today's active task order. Follow the dated owner-priority note at the top and newer explicit owner instructions.
 
 > This roadmap is intentionally sequential. For high-risk analytical features, do not start the next item until the current item has been researched, implemented, tested, externally/referentially checked, and explicitly accepted.
 
@@ -22,11 +22,11 @@ The objective is to make BorsTerminal:
 6. Powerful enough for advanced users
 7. Extensible toward automation, trading bots, and local ML
 
-### Strategic priority
+### Strategic priority — historical snapshot from 2026-10-07
 
-**The FTS Strategy tab is currently the most important product area.**
+**At the 2026-10-07 snapshot, the FTS Strategy tab was treated as the most important product area.**
 
-Engineering time, research time, UX refinement, chart work, testing, and validation should be disproportionately concentrated on:
+The historical recommendation for that period was to concentrate engineering time, research time, UX refinement, chart work, testing, and validation on:
 
 - استراتژی FTS
 - FTS Funnel
@@ -35,16 +35,16 @@ Engineering time, research time, UX refinement, chart work, testing, and validat
 - FTS chart annotations
 - Master/Portfolio integration of FTS results
 
-The goal is not merely to have an FTS tab that exists. It should become the core decision-support workspace of BorsTerminal.
+The goal recorded at that time was not merely to have an FTS tab that exists, but to make it the core decision-support workspace of BorsTerminal.
 
-Do not spend major effort polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity are still uncertain.
+That historical directive deprioritized polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity remained uncertain; do not apply it over a newer owner-priority instruction.
 
 ## Owner priority override — historical snapshot from 2026-10-07
 
 The numbered sections below describe the priority order recorded on 2026-10-07. This list is a historical decision snapshot, not proof of the active priority after 2026-10-10; newer direct owner instructions supersede it:
 
 1. Finish and verify Android release blockers.
-2. **FTS Funnel / Strategy FTS Decision Workspace — CURRENT ACTIVE PRIORITY.**
+2. **FTS Funnel / Strategy FTS Decision Workspace — HISTORICAL PRIORITY (2026-10-07).**
 3. سرخطی / execution timing and queue workspace.
 4. ربات معامله‌گر — architecture, sandbox and paper trading first; live remains gated.
 5. FTS chart intelligence — one analytical feature at a time, each independently researched and accepted.
