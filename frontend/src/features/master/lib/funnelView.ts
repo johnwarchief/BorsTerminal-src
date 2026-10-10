@@ -39,6 +39,9 @@ export type ApiRow = {
   pricing_mode?: string | null;
   excluded?: boolean; exclusion_reasons?: string; assembly_veto?: boolean;
   assembly_why?: string; as_of?: number | null; is_live?: boolean | null;
+  /** وضعیتِ معاملاتیِ این نماد درِ جهانِ زنده (از `market_universe`) — نمایش و
+   *  اولویت، نه داوری: هیچ نمادی به‌خاطرِ وضعیتش از غربالگری حذف نمی‌شود. */
+  universe_priority?: number | null; universe_status?: string | null;
   /** رتبۀ رسمیِ بک‌اند (/api/screener) — حملِ عدد است، نه رتبۀ تازه */
   rank?: number | null;
 };
@@ -171,6 +174,9 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     assemblyVeto: !!r?.assembly_veto,
     assemblyWhy: r?.assembly_why ?? '',
     screenRank: r?.rank ?? null,
+    // وضعیتِ معاملاتی از جهانِ زندهٔ خودِ بک‌اند؛ null یعنی هنوز مشاهده نشده.
+    universePriority: typeof r?.universe_priority === 'number' ? r.universe_priority : null,
+    universeStatus: r?.universe_status ?? null,
   };
 }
 
@@ -276,6 +282,7 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
     },
     stages,
     boardScope: payload.universe?.board ?? 0,
+    asOf: payload.as_of ?? null,
     total: screening,
     marketUniverse: payload.universe?.market
       ?? payload.universe?.joined ?? screening + excludedCount,

@@ -153,6 +153,11 @@ export const MarketFeedSchema = z.object({
   status: z.string(),
   /** ویرایشِ حالتِ داغِ این بدنه — پولینگِ بعدی `?since=rev` می‌شود. */
   rev: z.number().nullish(),
+  /** لحظۀِ (epoch ms، ساعتِ خودِ کلاینت) که *داده* عوض شد — نه لحظه‌ای که یکِ
+   *  پاسخِ HTTP رسید. تا پیش از این تازگی از `dataUpdatedAt` سنجیده می‌شد و آن
+   *  با هر دورِ «unchanged» هم نو می‌شد؛ سنجشِ زنده ۱۴۰۵-۰۷-۱۸: revision ۹۴۵
+   *  ثانیه تکان نخورد و نشانگر همان‌وقت «لحظاتی پیش» می‌گفت. */
+  rev_at: z.number().nullish(),
   count: z.number().nullish(),
   data: z.array(MarketRowSchema),
   meta: MarketMetaSchema.nullish(),

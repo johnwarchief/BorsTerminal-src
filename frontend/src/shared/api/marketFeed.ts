@@ -38,6 +38,10 @@ export const MARKET_FEED_KEY = ['market-feed'] as const;
 let rows: MarketRow[] = [];
 let indexBy = new Map<string, number>();
 let rev = -1;
+/** لحظه‌ای که *داده* عوض شد (epoch msِ کلاینت)، نه لحظه‌ی رسیدنِ پاسخ. هر دورِ
+ *  «unchanged» هم `dataUpdatedAt` را نو می‌کند، پس تازگیِ واقعی باید از این
+ *  شمارنده خوانده شود — وگرنه نشانگر رویِ دادهٔ منجمد «لحظاتی پیش» می‌گوید. */
+let revAt = 0;
 let meta: MarketFeed['meta'] = null;
 let counts = { count: 0, live_count: 0, fossil_count: 0 };
 /** سرورِ بی‌/api/market/delta (نسخۀ قدیمیِ نصب‌شده) ⇒ تا پایانِ عمرِ تب کامل می‌گیریم. */
@@ -45,9 +49,9 @@ let deltaUnsupported = false;
 
 /** تنها سازندۀ wrapper؛ بعدِ هر adopt/applyDelta/reset صدا زده می‌شود. تا آن
  *  لحظه snapshot() همان مرجع قبلی را می‌دهد و «بی‌تغییری» واقعاً بی‌تغییری است. */
-let snap: MarketFeed = { status: 'success', data: rows, meta, ...counts };
+let snap: MarketFeed = { status: 'success', data: rows, meta, rev: null, rev_at: null, ...counts };
 function rebuildSnapshot(): void {
-  snap = { status: 'success', data: rows, meta, ...counts };
+  snap = { status: 'success', data: rows, meta, rev, rev_at: revAt, ...counts };
 }
 
 function snapshot(): MarketFeed {
@@ -67,6 +71,9 @@ function adopt(f: MarketFeed): MarketFeed {
   // پس پولینگِ بعدی دقیقاً از همین نقطه دلتا می‌خواهد. بی‌rev هر دور یک
   // بدنۀ ۴ مگابایتی می‌شد — یعنی همان وضعیتِ پیش از حالتِ داغ.
   rev = typeof f.rev === 'number' ? f.rev : -1;
+  // بدنۀ کامل = وضعیتِ امروزِ تابلو؛ بی‌این خط، `rev_at`ِ اولین بارگذاری صفر
+  // می‌ماند و تازگی «هیچ‌وقت» خوانده می‌شد.
+  revAt = Date.now();
   rebuildSnapshot();
   return f;
 }
@@ -90,6 +97,7 @@ function applyDelta(r: Delta): boolean {
   // آمده یا رفته که دلتا آن را ندارد — merge را ول می‌کنیم و کامل می‌خواهیم.
   if (r.count != null && r.count !== next.length) return false;
   rows = next;
+  if (r.rev !== rev) revAt = Date.now();   // داده واقعاً عوض شده، نه این‌که پاسخ آمده
   rev = r.rev;
   if (r.meta) meta = r.meta;
   counts = {
@@ -164,6 +172,7 @@ export function resetMarketFeedMirror() {
   rows = [];
   indexBy = new Map();
   rev = -1;
+  revAt = 0;
   meta = null;
   counts = { count: 0, live_count: 0, fossil_count: 0 };
   deltaUnsupported = false;
@@ -171,5 +180,5 @@ export function resetMarketFeedMirror() {
 }
 
 export function marketFeedMirrorSize() {
-  return { rows: rows.length, rev };
+  return { rows: rows.length, rev, revAt };
 }

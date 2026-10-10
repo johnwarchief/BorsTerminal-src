@@ -108,6 +108,15 @@ export function useSaveFtsConfig() {
       qc.invalidateQueries({ queryKey: ['fts-config'] });
       qc.invalidateQueries({ queryKey: ['fts-screen'] });
       qc.invalidateQueries({ queryKey: ['fts-card'] });
+      // THRESHOLD-FANOUT: آستانه یکی است، ولی مصرف‌کننده‌هایش چهار کشِ جدا بودند.
+      // بی‌این سه خط، بعد از عوض‌کردنِ آستانه تصمیمِ «دروازۀ بنیادی» تا ۶۰ دقیقه
+      // و «حد ضرر» تا ۳۰ دقیقه همان رأیِ قبلی را نگه می‌داشت (`staleTime` درِ
+      // useFundGate.ts:20-29 و useStopLossBoard.ts:85-111) و قیفِ غربالگری هم تا
+      // پولینگِ بعدی — یعنی کاربر آستانه را عوض می‌کرد و رنگِ جدول تکان نمی‌خورد.
+      qc.invalidateQueries({ queryKey: ['fund-gate'] });
+      qc.invalidateQueries({ queryKey: ['stop-fund'] });
+      qc.invalidateQueries({ queryKey: ['stop-fts'] });
+      qc.invalidateQueries({ queryKey: ['funnel'] });
     },
   });
 }

@@ -11,7 +11,7 @@
 //     «سنجیده نشد» می‌خورد و درِ قیف نمی‌سوزد.
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -336,6 +336,30 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
   }
 }
 
+/** ترتیبِ نمایشِ ردیف‌ها درِ هر گام: عبوری‌ها رو‌به‌رو، و درِ میانشان آنچه همین
+ *  حالا معامله دارد بالاتر. داوری و شمارشِ موتور دست‌نخورده‌اند — همین ردیف‌ها،
+ *  همین حکم‌ها؛ فقط جابه‌جا می‌شوند.
+ *
+ *  چرا لازم شد (باگِ P0): هر چهار گام «کلِ جامعۀ غربالگری» را با ترتیبِ ثابتِ
+ *  خودِ تابلو می‌داد، پس کلیک رویِ Preset هیچ چیزِ دیدنی را درِ جدول عوض نمی‌کرد
+ *  و شمارۀِ سرِ گام («حکم: ۲۸۱۳ = کلِ جامعۀ غربالگری») برایِ همهٔ presetها یکی
+ *  می‌ماند. سنجشِ زندهٔ ۱۴۰۵-۰۷-۱۸ همین را نشان داد ( عبورِ تابلو: نوسان‌گیر ۱،
+ *  روندگیر ۰، ساعت‌شنی ۲۷۹۸ — و جدول بی‌تغییر).
+ */
+const VERDICT_RANK: Record<StageStatus, number> = {
+  pass: 0, pending: 1, unavailable: 2, reject: 3, not_required: 4, not_in_universe: 5,
+};
+
+export function orderStageRows(key: FunnelStageKey, entries: FunnelEntry[]): FunnelEntry[] {
+  const keyed = entries.map((c, i) => ({
+    c, i,
+    v: VERDICT_RANK[c.status?.[key]] ?? 9,
+    p: c.universePriority ?? 9,
+  }));
+  keyed.sort((a, b) => (a.v - b.v) || (a.p - b.p) || (a.i - b.i));
+  return keyed.map((k) => k.c);
+}
+
 /** یک مرحلۀ قیف: سرشماره + نوارِ کاهش + جدولِ ردیف‌ها با FLIP
  *
  *  جدولِ هر مرحله **کلِ جامعۀ ورودی** است، نه فقط رسیدگان: قاعدۀ مالک این است
@@ -366,7 +390,9 @@ function StageCard({
   emptyWhy: string | null;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
-  const rows = stage.entries;
+  // ترتیبِ نمایش (عبور_then_زنده) — خروجیِ موتور، فقط رو‌به‌رو شده.
+  const rows = useMemo(() => orderStageRows(stage.key, stage.entries),
+                       [stage.key, stage.entries]);
   useFlip({ root: bodyRef, deps: [rows.map((r) => r.symbol).join(' ')] });
   // نوارِ کاهش = سهمِ عبوری‌هایِ همین گام از کلِ جامعۀ ورودی. پیش‌تر عرضش
   // «ردیفِ این مرحله ÷ پهن‌ترین مرحله» بود؛ وقتی هر چهار مرحله کلِ universe را
@@ -981,6 +1007,18 @@ export function FtsFunnelStages({
             title="تازگیِ خوراکِ تابلو — دادهٔ آخرینِ نشست جایِ زنده خوانده نمی‌شود"
           >
             {TAPE_FRESHNESS_LABEL[tape]}
+          </span>
+          {/* آخرین محاسبۀِ *موفق* از خودِ سرور (`as_of`) — ساعتِ همان ماشین. بی‌این،
+              «در حال محاسبه» هیچ نقطۀِ پایانی نداشت و کاربر نمی‌دانست عددی که می‌بیند
+              متعلق به کِی است (بندِ «وضعیت پردازش و تازگی» مأموریت). */}
+          <span
+            className="num rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
+            data-testid="funnel-as-of"
+            title="زمانِ داوریِ این پاسخ درِ سرور"
+          >
+            {funnel.asOf
+              ? `محاسبه: ${new Date(funnel.asOf * 1000).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`
+              : 'محاسبه: گزارش نشده'}
           </span>
         </div>
       </div>

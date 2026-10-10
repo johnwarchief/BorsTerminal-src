@@ -21,6 +21,11 @@ export type FeedFreshnessInput = {
   status: string;
   /** زمانِ دریافتِ آخرینِ پاسخِ موفق (epoch ms، ساعتِ خودِ کلاینت). */
   dataUpdatedAt: number;
+  /** زمانِ آخرینِ عوض‌شدنِ *خودِ داده* (revِ تازه؛ epoch msِ کلاینت)؛ null یعنی
+   *  منبعِ ما (نسخۀ قدیمیِ بک‌اند بی‌`rev_at`) این را گزارش نمی‌کند.
+   *  چرا لازم شد: هر دورِ «unchanged» هم `dataUpdatedAt` را نو می‌کند، پس با
+   *  سنجشِ زنده ۹۴۵ ثانیه بی‌تغییریِ revision، نشانگر «لحظاتی پیش» می‌گفت. */
+  dataChangedAt?: number | null;
   /** چند ردیف به نشستِ جاری تعلق دارند (`is_live`)؛ null یعنی گزارش نشده. */
   liveCount?: number | null;
   /** کلِ ردیفها؛ برایِ بافت. */
@@ -42,6 +47,9 @@ export type FeedStatus = {
   pulse: boolean;
   /** سنِ آخرینِ دریافت بر حسبِ میلی‌ثانیه؛ null یعنی چیزی دریافت نشده. */
   ageMs: number | null;
+  /** سنِ آخرینِ عوض‌شدنِ *داده*؛ null یعنی هنوز داده‌ای نبوده. این عدد با
+   *  `ageMs` فرق دارد: «درخواست رسید» پاسخِ HTTP است، «عدد عوض شد» بازار. */
+  dataAgeMs?: number | null;
 };
 
 /**
@@ -57,10 +65,15 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   const open = s.marketOpen ?? isMarketOpen(new Date(s.now));
   const hasData = s.dataUpdatedAt > 0;
   const ageMs = hasData ? Math.max(0, s.now - s.dataUpdatedAt) : null;
+  // سنِ *داده*: اگر بک‌اند rev_at داد، از همان؛ وگرنه از رسیدنِ پاسخ (رفتارِ
+  // پیشین، با نسخۀ قدیمیِ نصبی). دو چیزِ جدا را فقط وقتی خلط می‌کنیم که منبعِ
+  // درستش موجود نباشد — و آن را درِ `dataAgeSource` صادقانه می‌گوییم.
+  const changedKnown = s.dataChangedAt != null && s.dataChangedAt > 0;
+  const dataAgeMs = changedKnown ? Math.max(0, s.now - (s.dataChangedAt as number)) : ageMs;
 
   if (s.status === 'error') {
     return {
-      connection: 'error', freshness: 'stale', pulse: false, ageMs,
+      connection: 'error', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
       tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کن',
     };
   }
@@ -68,6 +81,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
     const connecting = s.status === 'loading' || s.status === 'pending';
     return {
       connection: 'connecting', freshness: 'unknown', pulse: false, ageMs: null,
+      dataAgeMs: null,
       tone: connecting ? 'bg-accent-yellow' : 'bg-text-muted',
       label: connecting ? 'در حالِ دریافتِ داده' : 'در انتظارِ رسیدنِ دادهٔ تابلو',
     };
@@ -76,35 +90,38 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   // بازار بسته: تابلوی آخرینِ نشست نشان داده می‌شود؛ این «زنده» نیست و «خطا» هم نیست.
   if (!open) {
     return {
-      connection: 'ok', freshness: 'closed', pulse: false, ageMs,
+      connection: 'ok', freshness: 'closed', pulse: false, ageMs, dataAgeMs,
       tone: 'bg-accent-blue', label: 'بازار بسته — تابلوی آخرینِ نشست',
     };
   }
 
   // بازار باز: آیا ردیفهایِ همان نشستِ جاری (is_live) حاضر‌اند؟
   const liveKnown = s.liveCount != null;
-  const stalled = ageMs != null && ageMs > CLOSED_POLL_MS;
+  const stalled = dataAgeMs != null && dataAgeMs > CLOSED_POLL_MS;
 
   if (!liveKnown) {
     return {
-      connection: 'ok', freshness: 'unknown', pulse: false, ageMs,
+      connection: 'ok', freshness: 'unknown', pulse: false, ageMs, dataAgeMs,
       tone: 'bg-text-muted', label: 'متصل — تازگیِ داده نامشخص',
     };
   }
   if ((s.liveCount ?? 0) === 0) {
     return {
-      connection: 'ok', freshness: 'stale', pulse: false, ageMs,
+      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
       tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از نشستِ جاری در تابلو نیست',
     };
   }
   if (stalled) {
     return {
-      connection: 'ok', freshness: 'stale', pulse: false, ageMs,
-      tone: 'bg-accent-yellow', label: 'کهنه — تازه‌سازیِ تابلو متوقف شده',
+      connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
+      tone: 'bg-accent-yellow',
+      label: changedKnown
+        ? 'ایستاده — هیچ عددی از تازۀِ این پنجره عوض نشده (درخواست‌ها می‌رسند)'
+        : 'کهنه — تازه‌سازیِ تابلو متوقف شده',
     };
   }
   return {
-    connection: 'ok', freshness: 'live', pulse: true, ageMs,
+    connection: 'ok', freshness: 'live', pulse: true, ageMs, dataAgeMs,
     tone: 'bg-accent-green', label: 'مستقیم — بازار باز',
   };
 }

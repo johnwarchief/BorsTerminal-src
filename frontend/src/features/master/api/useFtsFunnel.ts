@@ -7,6 +7,7 @@
 // و هر آنچه جدول می‌خواند از پاسخِ سرور می‌آید. هیچ شمارشِ FTS درِ کلاینت
 // حساب نمی‌شود؛ نگاشتِ نام‌ها درِ `lib/funnelView.ts` است و بس.
 import { useMemo } from 'react';
+import { useSearchParams } from 'react-router';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
@@ -48,7 +49,7 @@ const EMPTY: Funnel = {
     fundamental: emptyStage('fundamental'),
     handover: emptyStage('handover'),
   },
-  boardScope: 0, total: 0,
+  boardScope: 0, total: 0, asOf: null,
   marketUniverse: 0, excludedCount: 0, exclusions: [], exclusionCounts: {},
   exclusionLabels: {},
   counts: {
@@ -98,19 +99,35 @@ export function useFtsFunnel(
     ...useFunnelPrefsStore.getState(),
   };
   const portfolio = usePortfolio();
+  // `?chain=` درِ URL باید بر انتخابِ ذخیره‌شده بردگی کند، وگرنه لینکِ
+  // «برو به این زنجیره» (stepper/StrategyTree/کاوشِ مرورگر) همان جدولِ خالیِ
+  // custom را می‌دهد. سنجشِ ۱۴۰۵-۰۷-۱۸: `?preset=custom&chain=f_clock` رویِ API
+  // عبورِ ۵۴ نماد می‌داد و جدولِ UI ۲۸۱۲ — یعنی زنجیرۀِ URL هرگز خوانده نمی‌شد.
+  // بی‌`chain` درِ URL، همان رفتارِ پیشین (زنجیرۀِ کاربر درِ builder).
+  const [searchParams] = useSearchParams();
+  const urlChain = useMemo(() => {
+    const raw = searchParams.get('chain');
+    if (!raw) return null;
+    const ids = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return ids.length ? ids : null;
+  }, [searchParams]);
 
   const request = useMemo<FunnelRequest>(() => ({
     preset,
-    chain: overrides.chain ?? (preset === 'custom' ? chainPref : []),
+    chain: overrides.chain ?? (preset === 'custom' ? (urlChain ?? chainPref) : []),
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
     ...overrides,
-  }), [preset, overrides, chainPref, fundMode, exceptions]);
+  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions]);
 
   const q = useQuery({
     queryKey: funnelQueryKey(request),
-    queryFn: () => http<ApiPayload>('/api/funnel', {
+    queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
       method: 'POST',
+      // لغوِ درخواستِ کهنه: هر پاسخِ قیف چندِ مگابایت است (سنجشِ زنده: ۷٫۷ تا
+      // ۱۰٫۹ مگابایت درِ هر کلیک). بی‌`signal`، با عوض‌کردنِ سریعِ preset آن
+      // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
+      signal: ctx.signal,
       body: { preset: request.preset, chain: request.chain, fund_mode: request.fundMode,
               exceptions: request.exceptions },
     }),

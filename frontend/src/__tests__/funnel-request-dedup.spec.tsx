@@ -27,7 +27,14 @@ function Consumer({ preset }: { preset: TreePreset }) {
 
 function withProvider(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  // `useFtsFunnel` از این دور `?chain=` را از URL می‌خواند (باگِ P0: لینکِ
+  // «برو به این زنجیره» نادیده گرفته می‌شد)، پس به Router نیاز دارد. بی‌این
+  // wrapping تست با invariantِ react-router می‌افتد؛ داوریِ تست عوض نشده.
+  return render(
+    <MemoryRouter initialEntries={['/master']}>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -66,22 +73,42 @@ describe('یک درخواستِ canonical، چند مصرف‌کننده (P0-4)'
       </div>);
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     // رندرِ دوباره با همان درخواست: باید از cache بخواند، نه fetchِ تازه.
+    // (همان MemoryRouterِ بیرونی باید دوباره پیچیده شود — `rerender` کل درختِ
+    // همان render را عوض می‌کند و بی‌Router، useSearchParams می‌شکند.)
     rerender(
-      <QueryClientProvider client={new QueryClient()}>
-        <div>
-          <Consumer preset="trend" />
-          <Consumer preset="trend" />
-        </div>
-      </QueryClientProvider>);
+      <MemoryRouter initialEntries={['/master']}>
+        <QueryClientProvider client={new QueryClient()}>
+          <div>
+            <Consumer preset="trend" />
+            <Consumer preset="trend" />
+          </div>
+        </QueryClientProvider>
+      </MemoryRouter>);
     await new Promise((r) => setTimeout(r, 40));
     // دو Consumer با هم ⇒ یک fetch؛ در مجموعِ این تست نباید بیش از دو fetch شود
     // (دو Consumer رندرِ اول یک fetch، و هیچ fetchِ دوتایی برایِ یک کلید).
     expect(funnelPosts().length).toBeLessThanOrEqual(2);
   });
+
+  // CHAIN-FROM-URL: `?preset=custom&chain=f_clock,f_jet` باید همان زنجیره را به
+  // سرور بفرستد. سنجشِ زندهٔ ۱۴۰۵-۰۷-۱۸: API با آن زنجیره ۵۴ عبور می‌داد و جدول
+  // ۲۸۱۲ — یعنی لینکِ «برو به این زنجیره» (stepper/StrategyTree) نادیده خوانده
+  // می‌شد و زنجیرۀِ خالیِ ذخیره‌شده جای آن می‌نشست.
+  it('`?chain=` درِ URL به بدنهٔ درخواست می‌رسد (و بی‌آن، زنجیرۀِ builder)', async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    render(
+      <MemoryRouter initialEntries={['/master?preset=custom&chain=f_clock,f_jet']}>
+        <QueryClientProvider client={qc}><Consumer preset="custom" /></QueryClientProvider>
+      </MemoryRouter>);
+    await waitFor(() => expect(funnelPosts().length).toBe(1));
+    const body = JSON.stringify(fetchMock.mock.calls
+      .map((c) => c[1]).find((o) => String((o as { body?: string })?.body ?? '').includes('f_clock')));
+    expect(body).toContain('f_clock');
+    expect(body).toContain('f_jet');
+  });
 });
 
-describe('unifyِ preset (URL > کاربر > افق) — سطحِ mount', () => {
-  it('جدول + سایدبار یک preset فعال ⇒ دقیقاً یک POSTِ کلِ universe', async () => {
+describe('unifyِ preset (URL > کاربر > افق) — سطحِ mount', () => {  it('جدول + سایدبار یک preset فعال ⇒ دقیقاً یک POSTِ کلِ universe', async () => {
     const { useSymbolStore } = await import('@shared/stores/symbolStore');
     useSymbolStore.getState().setSymbol('شپنا');
     const { default: FtsFunnelStages } = await import('@features/master/ui/FtsFunnelStages');

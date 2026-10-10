@@ -49,6 +49,38 @@ describe('computeFeedStatus — اتصال ≠ تازگی', () => {
     expect(st.label).toContain('متوقف');
   });
 
+  // REV-AT-AGE: سنجشِ زندهٔ ۱۴۰۵-۰۷-۱۸ — `revision` نودوچهار و نیم دقیقه تکان
+  // نخورد و نشانگر «(به‌روزرسانی: لحظاتی پیش)» می‌گفت، چون هر دورِ «unchanged»
+  // هم `dataUpdatedAt` را نو می‌کند. تازگی باید از عوض‌شدنِ *داده* سنجیده شود.
+  it('درخواست‌ها می‌رسند ولی هیچ عددی عوض نشده ⇒ stale، با گفتنِ هر دو سن', () => {
+    const st = computeFeedStatus({
+      status: 'success', dataUpdatedAt: NOW - 3_000, dataChangedAt: NOW - 945_000,
+      liveCount: 2890, totalCount: 5865, now: NOW, marketOpen: true,
+    });
+    expect(st.freshness).toBe('stale');
+    expect(st.connection).toBe('ok');       // اتصال سالم است؛ انکارش نکن
+    expect(st.dataAgeMs).toBe(945_000);     // سنِ داده
+    expect(st.ageMs).toBe(3_000);           // سنِ پاسخِ HTTP — دو مفهومِ جدا
+    expect(st.label).toContain('عوض');
+  });
+
+  it('با عوض‌شدنِ اخیرِ داده، همان ورودی ⇒ live', () => {
+    const st = computeFeedStatus({
+      status: 'success', dataUpdatedAt: NOW - 3_000, dataChangedAt: NOW - 4_000,
+      liveCount: 2890, totalCount: 5865, now: NOW, marketOpen: true,
+    });
+    expect(st.freshness).toBe('live');
+  });
+
+  it('بک‌اندِ بی‌`rev_at` (نسخۀ قدیمیِ نصبی) ⇒ رفتارِ پیشین، نه برچسبِ ساختگی', () => {
+    const st = computeFeedStatus({
+      status: 'success', dataUpdatedAt: NOW - 3_000, dataChangedAt: null,
+      liveCount: 2890, totalCount: 5865, now: NOW, marketOpen: true,
+    });
+    expect(st.freshness).toBe('live');
+    expect(st.label).not.toContain('عوض');
+  });
+
   it('live_count گزارش نشده ⇒ unknown (تازگی را قطعی نمی‌کند)', () => {
     const st = computeFeedStatus({ status: 'success', dataUpdatedAt: NOW - 2_000, liveCount: null, totalCount: null, now: NOW, marketOpen: true });
     expect(st.freshness).toBe('unknown');

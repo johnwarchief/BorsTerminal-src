@@ -9,15 +9,18 @@ import type { MarketFeed } from '@shared/types/marketRow';
 import { computeFeedStatus, type FeedStatus } from '@shared/lib/feedFreshness';
 import { fmtAge } from '@shared/lib/time';
 
-type Snap = { status: string; dataUpdatedAt: number; liveCount: number | null; total: number | null };
+type Snap = { status: string; dataUpdatedAt: number; dataChangedAt: number | null;
+              liveCount: number | null; total: number | null };
 
 function readSnap(qc: ReturnType<typeof useQueryClient>): Snap {
   const q = qc.getQueryCache().find({ queryKey: MARKET_FEED_KEY });
-  if (!q) return { status: 'idle', dataUpdatedAt: 0, liveCount: null, total: null };
+  if (!q) return { status: 'idle', dataUpdatedAt: 0, dataChangedAt: null, liveCount: null, total: null };
   const d = q.state.data as MarketFeed | undefined;
   return {
     status: q.state.status,
     dataUpdatedAt: q.state.dataUpdatedAt,
+    // «کی عدد عوض شد» از خودِ فید، نه از رسیدنِ پاسخِ HTTP.
+    dataChangedAt: d?.rev_at ?? null,
     liveCount: d?.live_count ?? null,
     total: d?.count ?? null,
   };
@@ -34,6 +37,7 @@ export function FreshnessBadge() {
       queueMicrotask(() => {
         const next = readSnap(qc);
         setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt
+          && prev.dataChangedAt === next.dataChangedAt
           && prev.liveCount === next.liveCount && prev.total === next.total ? prev : next));
         setNow(Date.now());
       });
@@ -44,7 +48,7 @@ export function FreshnessBadge() {
   }, [qc]);
 
   const st: FeedStatus = computeFeedStatus({
-    status: snap.status, dataUpdatedAt: snap.dataUpdatedAt,
+    status: snap.status, dataUpdatedAt: snap.dataUpdatedAt, dataChangedAt: snap.dataChangedAt,
     liveCount: snap.liveCount, totalCount: snap.total, now,
   });
 
@@ -55,8 +59,14 @@ export function FreshnessBadge() {
       data-testid="freshness-badge"
       data-freshness={st.freshness}
       data-connection={st.connection}
+      data-data-age-ms={st.dataAgeMs ?? ''}
       className="inline-flex shrink-0 items-center gap-1.5"
-      title={st.ageMs != null ? `${st.label} · آخرین دریافت: ${fmtAge(snap.dataUpdatedAt, now)}` : st.label}
+      title={st.ageMs != null
+        ? `${st.label} · آخرین دریافت: ${fmtAge(snap.dataUpdatedAt, now)}`
+          + (snap.dataChangedAt
+            ? ` · آخرین عوض‌شدنِ داده: ${fmtAge(snap.dataChangedAt, now)}`
+            : '')
+        : st.label}
     >
       <span aria-hidden
         className={`inline-block h-2 w-2 rounded-full ${st.tone} ${st.pulse ? 'animate-pulse' : ''}`} />
