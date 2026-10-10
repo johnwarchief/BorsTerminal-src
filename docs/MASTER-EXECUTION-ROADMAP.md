@@ -1,6 +1,6 @@
 # BorsTerminal — Master Execution Roadmap
 
-> **تفاوت roadmap با صف کار جاری:** این سند یک roadmap/ledger بزرگ و دارای بخش‌های تاریخ‌دار است. بخش «Current owner priority override» در ادامه به زمان ثبت 2026-10-07 تعلق دارد و Android-first را در اولویت می‌گذارد؛ آن را بدون تطبیق با دستور جدیدتر مالک برای branch اصلی/دسکتاپ، صف کار فعلی فرض نکنید. دستورهای جدیدتر مالک مقدم‌اند. مرجع تقدم مستندات: docs/README.md.
+> **تفاوت roadmap با صف کار جاری:** این سند یک roadmap/ledger تاریخی و دارای بخش‌های تاریخ‌دار است. اولویت Android-first ثبت‌شده در 2026-10-07 از آن تاریخ آمده و نباید بدون تطبیق با دستور جدیدتر مالک، صف کار فعلی فرض شود. در 2026-10-10 مالک کار جاری را روی شاخهٔ اصلیِ دسکتاپ متمرکز کرده است: رفع P0های Market Feed و Preset غربالگری، اتصال Universe زنده به جدول، تثبیت دو Job پایش بازار، تکمیل وضعیت بازار/پنج فیلتر تابلوخوانی و موارد باز UI/UX؛ سپس ارزیابی دروازهٔ سرخطی. این فهرست یک snapshot تاریخ‌دار است، نه جایگزین دائمی Roadmap. مرجع تقدم مستندات: docs/README.md.
 
 **Status:** Master roadmap / implementation ledger; last update 2026-10-07. Revalidate current priorities against newer owner instructions.  
 **Date:** 2026-10-07  
@@ -39,9 +39,9 @@ The goal is not merely to have an FTS tab that exists. It should become the core
 
 Do not spend major effort polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity are still uncertain.
 
-## Current owner priority override — active execution order
+## Owner priority override — historical snapshot from 2026-10-07
 
-The numbered sections below describe the product architecture; the following order is the **current execution priority** and supersedes the older high-level ordering whenever they differ:
+The numbered sections below describe the priority order recorded on 2026-10-07. This list is a historical decision snapshot, not proof of the active priority after 2026-10-10; newer direct owner instructions supersede it:
 
 1. Finish and verify Android release blockers.
 2. **FTS Funnel / Strategy FTS Decision Workspace — CURRENT ACTIVE PRIORITY.**
