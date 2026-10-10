@@ -114,6 +114,47 @@ def main():
         CH.FTS_CONFIG_PATH = original_chart_path
         CH._FTS_HG_SETTINGS_CACHE.update(original_cache)
 
+            # Verify the 900s single-symbol cache does not hide settings updates.
+            original_series = CH._fts_analysis_series
+            original_events = CH._stored_adjust_events
+            original_source = CH._stored_adjust_source
+            original_capability = CH._adjust_capability
+            original_analysis_cache = dict(CH.FTS_ANALYSIS_CACHE)
+            try:
+                CH._fts_analysis_series = lambda _symbol: (series, "test-basis")
+                CH._stored_adjust_events = lambda _symbol: []
+                CH._stored_adjust_source = lambda _symbol: "test-source"
+                CH._adjust_capability = lambda _events, _source: {}
+                CH.FTS_ANALYSIS_CACHE.clear()
+
+                first_save = M.set_fts_config({
+                    "hourglass_rsi_period": 7,
+                    "hourglass_rsi_oversold": 30,
+                    "hourglass_ma52_position": "below",
+                })
+                first_cached = CH._fts_analyze_symbol("HG-CACHE")
+                second_save = M.set_fts_config({
+                    "hourglass_rsi_period": 9,
+                    "hourglass_rsi_oversold": 50,
+                    "hourglass_ma52_position": "above",
+                })
+                second_cached = CH._fts_analyze_symbol("HG-CACHE")
+                first_hg = (first_cached.get("fts") or {}).get("hourglass") or {}
+                second_hg = (second_cached.get("fts") or {}).get("hourglass") or {}
+                ck("server 900s cache is keyed by active hourglass settings",
+                   first_save.get("status") == "success" and second_save.get("status") == "success"
+                   and first_hg.get("rsi_period") == 7
+                   and second_hg.get("rsi_period") == 9
+                   and second_hg.get("rsi_oversold") == 50.0
+                   and second_hg.get("ma52_position_mode") == "above")
+            finally:
+                CH._fts_analysis_series = original_series
+                CH._stored_adjust_events = original_events
+                CH._stored_adjust_source = original_source
+                CH._adjust_capability = original_capability
+                CH.FTS_ANALYSIS_CACHE.clear()
+                CH.FTS_ANALYSIS_CACHE.update(original_analysis_cache)
+
     print(f"\n{PASS + FAIL} checks, {FAIL} failures")
     print("HOURGLASS USER SETTINGS " + ("OK" if not FAIL else "FAILED"))
     return 0 if not FAIL else 1
