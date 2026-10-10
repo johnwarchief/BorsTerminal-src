@@ -19,6 +19,7 @@ import { technicalSignal } from '../signals/technicalSignals';
 import { weeklyFromFts } from '../lib/weeklyFromFts';
 import { corpEventChipLabel, recentCorpEvents } from '../lib/corpEvents';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
+import { FtsSettingsTrigger } from '../../fundamental/ui/FtsSettingsDrawer';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
@@ -74,6 +75,7 @@ export default function TechnicalPage() {
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ftsSettingsOpen, setFtsSettingsOpen] = useState(false);
 
   const replayActive = useReplayStore((s) => s.active);
   const replayCursor = useReplayStore((s) => s.cursor);
@@ -230,6 +232,9 @@ export default function TechnicalPage() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
+          <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
+            <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
+          </div>
           {chartEngine === 'ffc' ? (
             <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
               <FtsEngineChart
