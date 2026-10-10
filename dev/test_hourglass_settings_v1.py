@@ -81,9 +81,14 @@ def main():
             })
             above = CH._fts_analyze_candles("HG-TEST", series)["hourglass"]
             ck("changed RSI period and threshold apply to engine output",
-               saved9.get("status") == "success" and above.get("rsi_period") == 9 and above.get("rsi_oversold") == 50.0)
-            ck("above mode is carried into the decision metadata",
-               above.get("ma52_position_mode") == "above" and isinstance(above.get("ma52_position_match"), bool))
+               saved9.get("status") == "success" and above.get("rsi_period") == 9 and above.get("rsi_oversold") == 50.0
+               and above.get("weekly_rsi") is not None and above.get("weekly_rsi") != below.get("weekly_rsi"))
+            ck("above mode matches actual price-vs-MA52 geometry",
+               above.get("ma52_position_mode") == "above"
+               and above.get("ma52_position_match") == (above.get("weekly_close") > above.get("ma52")))
+            ck("below mode matches actual price-vs-MA52 geometry",
+               below.get("ma52_position_mode") == "below"
+               and below.get("ma52_position_match") == (below.get("weekly_close") < below.get("ma52")))
 
             saved_either = M.set_fts_config({
                 "hourglass_rsi_period": 7,
