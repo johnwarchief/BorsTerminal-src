@@ -6,6 +6,7 @@ import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
+import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -23,12 +24,17 @@ import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
 import WatchlistSection from '../components/WatchlistSection';
+import WatchMarketWorkspace from '../components/WatchMarketWorkspace';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
 const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
+/** دو زیرتبِ مستقلِ این ناحیه: «پرتفوی من» = دارایی‌هایِ واقعیِ همین کاربر،
+ *  «دیده‌بان بازار» = جدولِ رصد + سه‌پنلی. نمادهایِ دیدهبان هرگز به‌عنوانِ
+ *  داراییِ پرتفوی حساب نمی‌شوند (منبعِ داده جدا: watchSymbolsStore). */
+type PortfolioSection = 'mine' | 'watch';
 
 /** فاصله قیمت تا حد ضرر به درصد؛ null یعنی داده ناقص */
 export function distanceToStopPct(price: number | null, stop: number | null): number | null {
@@ -62,7 +68,14 @@ export default function PortfolioPage() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const portfolio = usePortfolio();
   const closes = useMarketCloses();
+  // سنِ دو منبعِ این صفحه جداست: قیمتِ پایانی از فیدِ زندهٔ تابلو، و وزن/تخصیصِ
+  // سبد از snapshotِ `/api/selection/portfolio` (ریتمِ نشست). وقتی سبد از قیمت
+  // عقب‌تر است صریح گفته می‌شود، نه اینکه عددِ کهنه «به‌روز» جا بزند (#M3.2).
+  const basketAgeMs = portfolio.dataUpdatedAt && closes.dataUpdatedAt
+    ? Math.max(0, closes.dataUpdatedAt - portfolio.dataUpdatedAt)
+    : 0;
   const [tab, setTab] = useState<BoardTab>('portfolio');
+  const [section, setSection] = useState<PortfolioSection>('mine');
   const [editOpen, setEditOpen] = useState(false);
 
   const view = useTargetAllocation((s) => s.view);
@@ -119,15 +132,17 @@ export default function PortfolioPage() {
     [classes, holdings, limits?.class_mix_pct, limits?.portfolio_value_toman, assetTotal, assetValues],
   );
 
-  if (portfolio.isLoading) return <EmptyState title="در حال دریافت سبد..." />;
-  if (portfolio.isError)
-    return (
-      <EmptyState
-        title="خطا در دریافت سبد"
-        hint="اتصال بک اند را بررسی کن"
-        action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
-      />
-    );
+  // دروازۀِ بارگذاری/خطا فقط ناظرِ «پرتفوی من» است؛ زیرتبِ «دیده‌بان بازار»
+  // به snapshotِ سبد نیازی ندارد و با سبدِ در حالِ لود نباید سفید شود.
+  const mineGate = portfolio.isLoading ? (
+    <EmptyState title="در حال دریافت سبد..." />
+  ) : portfolio.isError ? (
+    <EmptyState
+      title="خطا در دریافت سبد"
+      hint="اتصال بک اند را بررسی کن"
+      action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
+    />
+  ) : null;
 
   const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
   const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
@@ -140,9 +155,41 @@ export default function PortfolioPage() {
     { id: 'rejects', label: 'حذف شده', count: rejects.length },
   ];
 
+  const sections: { id: PortfolioSection; label: string }[] = [
+    { id: 'mine', label: 'پرتفوی من' },
+    { id: 'watch', label: 'دیده‌بان بازار' },
+  ];
+
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
-      {/* سوییچر دوگانه */}
+      {/* زیرتب‌هایِ مستقلِ ناحیۀِ پرتفوی (§P2) */}
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="زیرتب‌های پرتفوی">
+        {sections.map((sec) => (
+          <button
+            key={sec.id}
+            type="button"
+            role="tab"
+            data-testid={`portfolio-section-${sec.id}`}
+            aria-selected={section === sec.id}
+            onClick={() => setSection(sec.id)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
+              section === sec.id
+                ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
+                : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
+            }`}
+          >
+            {sec.label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'watch' ? (
+        <WatchMarketWorkspace />
+      ) : mineGate != null ? (
+        mineGate
+      ) : (
+        <>
+          {/* سوییچر دوگانه */}
       <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
         <button
           type="button"
@@ -170,6 +217,15 @@ export default function PortfolioPage() {
         >
           پرتفوی فعلی
         </button>
+        {basketAgeMs > 30_000 ? (
+          <span
+            data-testid="portfolio-basket-age"
+            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (۳۰s درِ نشست) است"
+            className="num ms-auto rounded-full bg-accent-yellow/10 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+          >
+            سبد: {fmtAge(portfolio.dataUpdatedAt)} · قیمت: {fmtAge(closes.dataUpdatedAt)}
+          </span>
+        ) : null}
       </div>
 
       {view === 'target' ? (
@@ -396,6 +452,8 @@ export default function PortfolioPage() {
 
           {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
           <WatchlistSection />
+        </>
+      )}
         </>
       )}
     </div>

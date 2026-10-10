@@ -108,7 +108,7 @@ describe('جایِ خودِ نماد در قیف (#67)', () => {
   } as unknown as ApiPayload);
 
   it('بی‌علامت ⇒ چراغِ تابلو قرمز و خطِ «ایستاده در تابلوخوانی»', () => {
-    renderAt('/market', 'شپنا', seedFunnel(payload({
+    renderAt('/market?preset=custom', 'شپنا', seedFunnel(payload({
       tape: [row({ status: { tape: 'reject' },
                    why: { tape: [{ code: 'TAPE_F_SUSP_NO_MATCH', text: 'حجم مشکوک — نشانه نیست' }] } })],
     }, {
@@ -133,7 +133,7 @@ describe('جایِ خودِ نماد در قیف (#67)', () => {
   });
 
   it('تابلو سبز + وتوی هفتگی ⇒ چراغِ تکنیکال قرمز و همان‌جا ایستاده', () => {
-    renderAt('/technical/شپنا', 'شپنا', seedFunnel(payload({
+    renderAt('/technical/شپنا?preset=custom', 'شپنا', seedFunnel(payload({
       tape: [row({ status: { tape: 'pass' } })],
       technical: [row({ status: { tape: 'pass', technical: 'reject' }, weekly: 'down',
                         why: { technical: [{ code: 'WEEKLY_TREND_DOWN', text: 'روند هفتگی نزولی — وتوی قطعی' }] } })],
@@ -145,7 +145,7 @@ describe('جایِ خودِ نماد در قیف (#67)', () => {
   });
 
   it('نماد در پاسخِ قیف نیست ⇒ هیچ مرحله‌ای قرمز نمی‌شود (بی‌داده وتو نیست)', () => {
-    renderAt('/market', 'شپنا', seedFunnel(payload({
+    renderAt('/market?preset=custom', 'شپنا', seedFunnel(payload({
       tape: [row({ symbol: 'فولاد', status: { tape: 'pass' } })],
     })));
     for (const s of INSPECTOR_STAGES) {

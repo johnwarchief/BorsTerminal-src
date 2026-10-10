@@ -2,8 +2,8 @@
 // الگوی Raycast / Bloomberg / Linear: دسترسی سریع به نمادها، صفحات، و فرمان‌های اصلی
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { http } from '@shared/api/http';
-import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
+import { useMarketFeedShared } from '@shared/api/marketFeed';
+import type { MarketFeed } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useUiStore } from '@shared/stores/uiStore';
 import { toFaDigits } from '@shared/lib/fmt';
@@ -34,6 +34,11 @@ const PAGES: { path: string; label: string; hint: string }[] = [
 
 type Row = { symbol: string; name: string; sector: string };
 
+// انتخابگرِ پایدار (مرجع ثابت) — نقشه بردنِ کل تابلو فقط وقتی داده عوض می‌شود
+// اجرا می‌شود، نه هر رندر؛ وگرنه mappingِ ۵٬۸۰۰ ردیف درِ هر کلیدِ کیبورد سوخت می‌شد.
+const selectPaletteRows = (f: MarketFeed): Row[] =>
+  (f.data ?? []).filter((r) => r.symbol).map((r) => ({ symbol: r.symbol, name: r.name ?? '', sector: r.sector_name ?? '' }));
+
 type Item =
   | { kind: 'symbol'; id: string; row: Row; recent?: boolean; pinned?: boolean }
   | { kind: 'page'; id: string; page: (typeof PAGES)[number] }
@@ -59,34 +64,18 @@ export function CommandPalette() {
   const [query, setQuery] = useState('');
   const [dest, setDest] = useState<Dest>('master');
   const [cursor, setCursor] = useState(0);
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  // جست‌وجو از همان فیدِ مشترکِ تابلو می‌خواند (select فقط) — نه یکِ fetchِ دومِ
+  // /api/market که snapshotِ جدا و کهنه نگه می‌داشت (#M2.2). کلیدِ یکی ⇒ درخواستِ یکی.
+  const feed = useMarketFeedShared(selectPaletteRows);
+  const rows = feed.data ?? null;
+  const loading = feed.isPending;
+  const error = !!feed.error && rows === null;
   const inputRef = useRef<HTMLInputElement>(null);
-  const loadedOnce = useRef(false);
 
   const openPalette = useCallback(() => {
     setOpen(true);
     setQuery('');
     setCursor(0);
-    setError(false);
-    if (!loadedOnce.current) {
-      loadedOnce.current = true;
-      setLoading(true);
-      http<MarketFeed>('/api/market', { schema: MarketFeedSchema })
-        .then((feed) =>
-          setRows(
-            feed.data
-              .filter((r) => r.symbol)
-              .map((r) => ({ symbol: r.symbol, name: r.name ?? '', sector: r.sector_name ?? '' })),
-          ),
-        )
-        .catch(() => {
-          setError(true);
-          loadedOnce.current = false;
-        })
-        .finally(() => setLoading(false));
-    }
   }, []);
 
   useEffect(() => {

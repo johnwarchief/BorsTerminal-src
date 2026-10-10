@@ -117,8 +117,10 @@ export function MicroChartsDrawer() {
   // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
   // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند. خطا استثناست: سربالاییِ
   // بی‌پایانِ «لود نشده» با «نمی‌رسد» یکی نیست — بی‌این، خرابیِ تایم‌لاین بی‌صدا می‌ماند.
-  if (isLoading) return null;
-  if (isError) {
+  if (isLoading && !data) return null;
+  // خطای polling فقط وقتی بلاکینگ است که هیچ داده‌ای هرگز نیامده؛ با دادهٔ
+  // موجود، نمودارها می‌مانند و پایین یک برچسبِ «تازه‌سازی ناموفق» می‌آید (#M1.3).
+  if (isError && !data) {
     return (
       <div
         data-testid="micro-charts-error"
@@ -133,6 +135,13 @@ export function MicroChartsDrawer() {
 
   return (
     <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
+      {isError ? (
+        <span className="flex items-center justify-between gap-2 text-2xs text-accent-yellow"
+              data-testid="micro-charts-degraded">
+          <span>تازه‌سازیِ تایم‌لاین ناموفق بود؛ نمودار از آخرینِ پاسخِ موفق است</span>
+          <RetryAction onRetry={() => void refetch()} testId="micro-charts-degraded-retry" />
+        </span>
+      ) : null}
       <CollapseToggle
         open={open}
         onToggle={() => setOpen((v) => !v)}

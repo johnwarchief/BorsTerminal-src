@@ -12,7 +12,7 @@ SUITES = [
     ('dev/test_fts_isolation.py',     'FTS filter isolation'),
     ('dev/fts_pipeline_v981.py',      'codal FTS pipeline + ADB fallback + session window'),
     ('dev/test_calendar_v92.py',      'calendar py<->js categories'),
-    ('dev/chart_api_check_v95.py',    'KLineCharts v10 API guard'),
+    ('dev/chart_api_check_v95.py',    'chart API guard: installed klinecharts v10 exports, no dead legacy path'),
     ('dev/fts_m141_parity_v97.py',    'm141/liquidity parity + anti-N+1'),
     ('dev/adb_resilience_v972.py',    'ADB retry/reconnect + wifi restore'),
     ('dev/confidence_engine_v973.py', 'triple-confirmation confidence engine'),
@@ -86,6 +86,10 @@ SUITES = [
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
+    ('dev/test_fts_asof_cutoff.py',
+     'FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak'),
+    ('dev/test_trend_engine_flag.py',
+     'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
      'candle integrity + published-TSETMC parity along feed → engine → chart'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
@@ -257,6 +261,17 @@ SUITES = [
     # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
     # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
     ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
+    # FUNNEL PRESET DISTINCT: هر Preset باید **خروجِ موتور** را عوض کند، نه فقط
+    # عنوانِ دکمه. این گارد تا پیش از این درِ `run_all_tests` ثبت نبود (باگِ P0:
+    # «تغییر Preset جدول را عوض نمی‌کند» سبز می‌ماند) و فقط رجیستری را می‌خواند؛
+    # حالا خروجیِ واقعیِ `FE.evaluate` رویِ fixture هم مقابله می‌شود، پس هیچ
+    # presetی نمی‌تواند بی‌صدا کپیِ دیگری شود.
+    ('dev/funnel_preset_distinct_v1.py', 'funnel presets: distinct chains, gates AND distinct engine output'),
+    # UNIVERSE LIVE: طبقه‌بندیِ وضعیتِ معاملاتی (معاملۀ انجام‌شده ≠ تغییرِ دفتر)،
+    # یکی‌کردنِ ردیفِ تکراریِ هم‌نام و کهنگی از سنِ خودِ بدنهٔ تابلو. ثبت نشدنی
+    # بود و درِ `run_all_tests` نبود؛ endpointِ `/api/universe/live` هم از
+    # `api/funnel.py` به `api/market.py` رفت (یکِ ردیاب، یکِ راننده).
+    ('dev/market_universe_v1.py', 'live trading-status universe: executed vs quoted, dedupe, staleness'),
     ('dev/user_watchlist_v1.py', 'user watchlist CRUD: get() on a missing row, upsert identity, cap layering'),
     ('dev/fts_trend_pit_v1.py', 'trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead'),
     # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده
@@ -302,6 +317,9 @@ SUITES = [
     # می‌بیند، بدنۀ RAM-overlay سطر‌به‌سطر همان بدنۀ SQLite است، و
     # /api/market/delta یا exact است یا صریح `full` — هیچ‌وقت نصفه.
     ('dev/market_hot_state_v1077.py', 'hot state: field-aware diff, RAM==SQL board, honest delta'),
+    # Stage-2 «در یک نگاه»: سه قیمتِ روزانه از ستونِ واقعی، بی‌نشتِ عمق درِ تابلو،
+    # و تطابقِ نماد درِ /api/order-book (نبودِ مقدار ⇒ حذفِ کلید، نه صفر/جایگزین).
+    ('dev/sidebar_market_fields_v1082.py', 'sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding'),
     # #119 + #120 (مانیتورینگِ زندهٔ ۱۴۰۵-۰۷-۰۴): روزِ client_type باید روزِ
     # نشستِ معامله‌شده باشد، پنجرۀِ بازار یک‌جا تعریف شود، و «نبودنِ داده»
     # دماسنج را «نامساعد» نکند.

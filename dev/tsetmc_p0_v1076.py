@@ -603,7 +603,22 @@ def part_p1():
     # وضعیت/نظارت باید از آن پاس **بیرون** بمانند وگرنه «موردی ثبت نشده» به
     # «وضعیتِ صفر» بدل می‌شود. اندازۀ همین دور: با صفرها 5.60MB بدنه، و با
     # قاعدهٔ درست 4.90MB — یعنی آن 0.70MB فقط دروغِ صفر بود.
-    keep = mkt.split("_KEEP_NULL = (")[1].split(")")[0] if "_KEEP_NULL = (" in mkt else ""
+    # خواندنِ تاپلِ _KEEP_NULL با ast — نه با split(")") کُند؛ آن split رویِ اولینِ
+    # «)» داخلِ کامنتهایِ میانیِ تاپل (مثلاً «(NaN)») می‌شکست و ستون‌هایِ بعدیِ
+    # تاپل را نمی‌دید. خودِ کد درست است؛ پارسرِ گارد شکننده بود.
+    keep = ""
+    try:
+        import ast as _ast
+        for _node in _ast.walk(_ast.parse(mkt)):
+            if isinstance(_node, _ast.Assign):
+                for _t in _node.targets:
+                    if (isinstance(_t, _ast.Name) and _t.id == "_KEEP_NULL"
+                            and isinstance(_node.value, _ast.Tuple)):
+                        keep = ",".join('"%s"' % _e.value
+                                        for _e in _node.value.elts
+                                        if isinstance(_e, _ast.Constant) and isinstance(_e.value, str))
+    except Exception:
+        keep = mkt.split("_KEEP_NULL = (")[1].split(")")[0] if "_KEEP_NULL = (" in mkt else ""
     for col in ("st_code", "st_title", "st_d", "st_h", "sup_flag", "sup_title",
                 "sup_reason_count", "sup_reasons", "stop_state", "stop_since",
                 "stop_reasons"):

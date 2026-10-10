@@ -160,10 +160,18 @@ describe('۴) نقطۀ وضعیتِ تاپ‌بار از سیگنالِ واقع
     );
   });
 
-  it('خوراکِ سالم ⇒ سبزِ «سیستم آنلاین و متصل»', async () => {
+  it('خوراکِ سالم ⇒ اتصالِ تأییدشده، نه ادعایِ «زنده» بی‌سنجشِ تازگی', async () => {
+    // M1 «سیستم آنلاین و متصل» (که فقط موفقیتِ HTTP بود) را با تفکیکِ اتصال/تازگی
+    // عوض کرد. FeedProbe دادهٔ بی‌live_count می‌دهد، پس تازگی «نامشخص/بسته» است
+    // ولی اتصال سالم؛ دقیقاً همین تفکیک را می‌سنجیم، نه یک برچسب ثابت.
     render(withBar(<><FeedProbe ok /><Topbar /></>));
-    await waitFor(() =>
-      expect(screen.getByRole('status').getAttribute('aria-label')).toBe('سیستم آنلاین و متصل'),
-    );
+    const badge = await waitFor(() => {
+      const el = screen.getByTestId('freshness-badge');
+      expect(el).toHaveAttribute('data-connection', 'ok');
+      return el;
+    });
+    expect(['live', 'closed', 'unknown', 'stale']).toContain(badge.getAttribute('data-freshness'));
+    // دیگر هرگز رویِ پاسخِ موفق بی‌سنجشِ منبع «آنلاین و متصل» نمی‌گوید:
+    expect(badge.getAttribute('aria-label')).not.toBe('سیستم آنلاین و متصل');
   });
 });

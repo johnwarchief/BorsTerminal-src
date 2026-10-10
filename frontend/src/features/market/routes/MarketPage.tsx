@@ -13,6 +13,7 @@ import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
 import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
 import { MarketPulseBar } from '../components/MarketPulseBar';
+import { MarketStatusPanel } from '../components/MarketStatusPanel';
 import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
@@ -188,6 +189,7 @@ export default function MarketPage() {
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2">
+      <MarketStatusPanel />
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
 
       {/* نمودارهای جریان سفارش‌ها بالای نوار تابلو */}

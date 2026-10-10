@@ -111,9 +111,22 @@ export function IndustryScreener({ onPick }: { onPick?: (industry: string) => vo
           </button>
         </div>
       </div>
+      {/* خطای polling دادهٔ معتبر را پاک نمی‌کند: تا ردیفی هست، همان نشان داده
+          می‌شود و فقط یک برچسبِ «تازه‌سازی ناموفق» بالای فهرست می‌نشیند؛ حالتِ
+          بلاکینگِ «دریافت نشد» فقط وقتی است که هیچ داده‌ای هرگز نیامده (#M1.3). */}
+      {isError && rows && rows.length > 0 ? (
+        <span className="flex items-center justify-between gap-2 text-2xs text-accent-yellow"
+              data-testid="industries-degraded">
+          <span>تازه‌سازیِ صنایع ناموفق بود؛ فهرست از آخرینِ پاسخِ موفق است</span>
+          <button type="button" onClick={() => void refetch()} data-testid="industries-retry"
+                  className="rounded-md border border-accent-blue bg-accent-blue/10 px-2 py-0.5 font-bold text-accent-blue">
+            تلاش دوباره
+          </button>
+        </span>
+      ) : null}
       {isLoading && !data ? (
         <span className="text-2xs text-text-secondary">در حال دریافت صنایع...</span>
-      ) : isError ? (
+      ) : isError && (!rows || rows.length === 0) ? (
         <span className="flex items-center gap-2 text-2xs text-text-muted">
           صنایع دریافت نشد
           <button

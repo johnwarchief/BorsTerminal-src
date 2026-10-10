@@ -119,11 +119,11 @@ def build_fixture(n=12):
         c.execute("INSERT INTO boards (ins_code, board) VALUES (?,?)", (code, "بورس"))
         c.execute("INSERT INTO market_watch (ins_code, d_even, h_even, p_closing, p_last,"
                   " q_tot_tran, q_tot_cap, z_tot_tran, price_yesterday, price_change, pe, eps,"
-                  " price_max, price_min, allowed_min, allowed_max, buy_q_vol, buy_q1_vol,"
+                  " price_max, price_min, price_first, allowed_min, allowed_max, buy_q_vol, buy_q1_vol,"
                   " sell_q_vol, fetched_at, market_cap, market_cap_src)"
-                  " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                   (code, 20260928, 110000 + i, 100 + i, 101 + i, 5000 + i * 10, 5e5 + i * 10,
-                   50 + i, 100, 1.0, 8.0, 12.0, 105 + i, 98, 90, 110, 10, 5, 9,
+                   50 + i, 100, 1.0, 8.0, 12.0, 105 + i, 98, 102 + i, 90, 110, 10, 5, 9,
                    "2026-09-28 11:00:00", 1e9, "tsetmc"))
         c.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
                   " sell_i_vol, sell_n_vol, buy_count_i, sell_count_i)"
@@ -307,10 +307,17 @@ def board_part():
 
     d0, by0 = board_payload()
     ck("مسیرِ SQL کوئریِ تابلو را زد", _SQL_RUNS["n"] >= 1, str(_SQL_RUNS["n"]))
+    # Stage-2: سه قیمتِ روزانه (p_first/p_max/p_min) حالا عمداً درِ بدنه‌اند؛
+    # گارد باید ستون‌هایی را بسنجد که *هنوز* بی‌مصرف‌کننده‌اند و حذف می‌مانند.
     ck("بدنه بی‌فیلدهایِ بی‌خواننده ساخته شد",
-       all("eps" not in r and "p_max" not in r and "d_even" not in r
+       all("eps" not in r and "tmax" not in r and "d_even" not in r
            for r in d0["data"]),
        str(sorted(k for k in d0["data"][0])[:6]))
+    ck("سه قیمتِ روزانه درِ بدنۀ عادی برگشتند (Stage-2)",
+       all(("p_max" in r and "p_min" in r and "p_first" in r)
+           for r in d0["data"] if r.get("symbol", "").startswith("نماد")),
+       str(sorted(set().union(*[set(r) for r in d0["data"][:3]]) &
+                  {"p_max", "p_min", "p_first"})))
     ck("بی‌تیکِ زنده، متا از کوئری می‌آید (نه صفرِ جعلی)",
        d0["meta"]["d_even"] in (None, 20260928) and MS.last_cycle_at() == "",
        str(d0["meta"]))
@@ -389,8 +396,8 @@ def board_part():
            {"eps", "p_max", "p_min", "suspicious_vol", "d_even", "prev_day_vol",
             "tmax", "vol_trend"} <= keys_all,
            str(sorted({"eps", "p_max", "d_even", "tmax"} - keys_all)))
-        ck("بدنۀ عادی همان ستون‌ها را نمی‌فرستد (وگرنه صرفِ ۴۵٪ معنا ندارد)",
-           not ({"eps", "p_max", "suspicious_vol"} & set(d1b["data"][0].keys())))
+        ck("بدنۀ عادی همان ستون‌هایِ بی‌مصرف را نمی‌فرستد (وگرنه صرفِ ۴۵٪ معنا ندارد)",
+           not ({"eps", "suspicious_vol"} & set(d1b["data"][0].keys())))
         after_body, after_etag, _ = M._market_snapshot()
         ck("و این بدنۀ ابزار جایِ کشِ تابلو را نمی‌گیرد (برقی‌ماندِ یکسان)",
            after_etag == before_etag and after_body == before_body)

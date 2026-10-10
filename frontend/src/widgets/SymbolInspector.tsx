@@ -34,9 +34,12 @@ import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
 import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
 import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
+import { FunnelErrorBanner } from '@features/master/ui/FunnelErrorBanner';
 import { stageProgressFor } from '@features/master/lib/funnelView';
+import { IND_COLUMNS, STATUS_LABEL, trendLabel } from '@features/master/lib/ftsFunnel';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -149,6 +152,24 @@ function StatusLight({
   );
 }
 
+/** چیپِ روندِ یک تایم‌فریم — واژگانِ موتور (`up`/`down`/`range`/`na`) به زبانِ
+ *  چارت ۳؛ `na`/نبود ⇒ «بی‌ساختار» و بی‌رنگ، که «نزولی» نیست. هیچ روندِ ساختگی
+ *  از نبودِ داده ساخته نمی‌شود. */
+function TrendChip({ side, value }: { side: string; value: string | null }) {
+  const tone = value === 'up' ? 'text-accent-green'
+    : value === 'down' ? 'text-accent-red'
+    : value === 'range' ? 'text-accent-yellow'
+    : 'text-text-muted';
+  return (
+    <span className="flex items-baseline gap-1">
+      <span className="text-[9px] text-text-muted">{side}</span>
+      <span className={`num font-bold ${tone}`} data-testid={`inspector-trend-${side}`}>
+        {trendLabel(value)}
+      </span>
+    </span>
+  );
+}
+
 export function SymbolInspector() {
   const storedSymbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
@@ -208,11 +229,10 @@ export function SymbolInspector() {
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
   const rawRow = useInspectorRawRow();
-  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند.
-   *  پیشِ این `symbolStageProgress` قواعدِ چهار در را رویِ تک‌ناماد درِ مرورگر
-   *  دوباره اجرا می‌کرد (داورِ دوم). حالا وضعیت‌ها خوانده می‌شوند؛ اگر نماد درِ
-   *  پاسخ نبود، هر چهار گام unknown است، نه رد. */
-  const { funnel, request: funnelRequest } = useFtsFunnel('custom');
+  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
+   *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
+   *  (جدول، dossier، سایدبار) سه مدلِ متفاوت از یک universe را می‌سنجیدند. */
+  const { funnel, request: funnelRequest, error: funnelError, hasData: funnelHasData, retry: funnelRetry } = useFtsFunnel(useActiveFunnelPreset());
   // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
   // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
   const cand = useMemo(() => {
@@ -422,6 +442,52 @@ export function SymbolInspector() {
             </div>
           </div>
 
+          {/* ── بخش ۲ («در یک نگاه»): وضعیتِ قیمت — همان ستون‌هایِ تابلو، بی‌محاسبه
+              درِ رابط. «٪ آخرین» (p_last به دیروز) از «٪ پایانی» (percent_change،
+              p_closing به دیروز) جدا می‌ماند؛ یکی جای دیگری نمی‌نشیند. اولین/
+              بیشترین/کمترین از `p_first`/`p_max`/`p_min` خوانده می‌شوند و صفرِ
+              واقعیِ این سه «مبادله‌ای در این سطح نبود» است، نه قیمتِ صفر ⇒ «—» با
+              منشأ درِ title. نبودِ کلید ⇒ «—» (بی‌داده)، نه پرشدن با آخرین/پایانی. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
+               data-testid="inspector-price-grid">
+            <span className="flex items-baseline gap-1 text-text-muted">
+              پایانی
+              <span className="num font-bold text-text-primary" data-testid="inspector-p-closing"
+                    title={rawRow?.p_closing != null ? fmtInt(rawRow.p_closing) : 'قیمتِ پایانی درِ پاسخ نیست'}>
+                {rawRow?.p_closing != null ? fmtInt(rawRow.p_closing) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              ٪آخرین
+              <span className={`num font-bold ${rawRow?.percent_last != null && rawRow.percent_last >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                    data-testid="inspector-percent-last"
+                    title="درصدِ آخرین به دیروز (p_last÷price_yesterday) — با ٪پایانی یکی نیست">
+                {fmtPct(rawRow?.percent_last)}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              اولین
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-first"
+                    title={rawRow?.p_first ? fmtInt(rawRow.p_first) : 'اولینِ مبادله هنوز ثبت نشده یا درِ پاسخ نیست'}>
+                {rawRow?.p_first ? fmtInt(rawRow.p_first) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              بیشینه
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-max"
+                    title={rawRow?.p_max ? fmtInt(rawRow.p_max) : 'بیشترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
+                {rawRow?.p_max ? fmtInt(rawRow.p_max) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              کمینه
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-min"
+                    title={rawRow?.p_min ? fmtInt(rawRow.p_min) : 'کمترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
+                {rawRow?.p_min ? fmtInt(rawRow.p_min) : '—'}
+              </span>
+            </span>
+          </div>
+
           {/* ── ۱۵.۲۰ حجم/تعداد و ارزشِ معاملات — دو مقدارِ همان ستون‌هایِ تابلو
               با همان واحد. اینجا عددِ تازه‌ای محاسبه نمی‌شود؛ فقط همان‌ها خوانده
               می‌شود (تک‌تعریفِ واحد درِ `shared/lib/fmt`). */}
@@ -547,6 +613,60 @@ export function SymbolInspector() {
               />
           </div>
 
+          {/* ── بخش ۷ («در یک نگاه»): نمای فشردهٔ تکنیکال — روندِ روزانه و هفتگی از
+              همان خروجیِ canonicalِ قیف (`cand.trendD`/`cand.trendW` ← `trend.matrix`)
+              و جت از پرچمِ canonicalِ تابلو (`f_jet` درِ tape_flags). بی‌نامزدِ رسیدن
+              به این گام ⇒ «—»، که با «نزولی» یکی نیست؛ هیچ روندِ ساختگی ساخته نمی‌شود. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
+               data-testid="inspector-trend">
+            <span className="text-[9px] text-text-muted">روند</span>
+            <TrendChip side="روزانۀ" value={cand?.trendD ?? null} />
+            <TrendChip side="هفتگی" value={cand?.trendW ?? null} />
+            <span className="flex items-center gap-1" data-testid="inspector-jet">
+              <span className="text-[9px] text-text-muted">جت</span>
+              <span className={`rounded px-1 font-bold ${
+                rawRow?.f_jet ? 'bg-accent-amber/15 text-accent-amber' : 'text-text-muted'
+              }`} title={rawRow?.f_jet ? 'پرچمِ جت از داوریِ canonicalِ تابلو (f_jet)' : 'جتِ canonical روشن نیست'}>
+                {rawRow?.f_jet ? '✓' : '—'}
+              </span>
+            </span>
+          </div>
+
+          {/* ── بخش ۸ («در یک نگاه»): پنج شاخصِ بنیادی از همان پاسخِ غربالگری —
+              مقدار از `cand.screen`، حکم از `cand.inds`؛ هیچ محاسبهٔ دومی درِ رابط
+              نیست و هیچ شاخصِ ناقص به صفر بدل نمی‌شود. نبودِ مقدار ⇒ «—» با علتِ
+              «داده نیست» یا «لازم نبود» (حکمِ خودِ گام)، نه نتیجهٔ تأییدشده. */}
+          <div className="flex flex-wrap items-center gap-1 text-[9.5px]"
+               data-testid="inspector-i1-i5">
+            {IND_COLUMNS.map((col, i) => {
+              const st = cand?.inds?.[i] ?? null;
+              const val = i === 0 ? cand?.screen?.rev_growth
+                : i === 1 ? cand?.screen?.eps_last
+                : i === 2 ? cand?.screen?.gross_margin
+                : i === 3 ? cand?.screen?.sales_to_mcap
+                : cand?.screen?.pricing_mode;
+              const txt = i === 0 || i === 2
+                ? (val == null ? '—' : fmtPct(val as number))
+                : i === 3
+                  ? (val == null ? '—' : toFaDigits((val as number).toFixed(2)) + '×')
+                  : i === 1
+                    ? (val == null ? '—' : fmtInt(val as number))
+                    : (val == null || val === '' ? '—' : String(val));
+              const tone = st === 'pass' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green'
+                : st === 'reject' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
+                : st === 'pending' || st === 'unavailable' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow'
+                : 'border-border-c/60 text-text-muted';
+              return (
+                <span key={col.key} data-testid={`inspector-ind-${col.key}`}
+                      title={`${col.full}${st ? ` — وضعیت: ${STATUS_LABEL[st]}` : ' — هنوز داوری‌ای برای این شاخص نیست'}`}
+                      className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${tone}`}>
+                  <span className="opacity-70">{col.label}</span>
+                  <span className="num font-bold">{txt}</span>
+                </span>
+              );
+            })}
+          </div>
+
           {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف
               («این سهم کجا ایستاده»). حلقه‌ها از همان `symbolStageProgress`ِ قیف
               می‌آیند — سایدبار قواعدِ دومی نمی‌سازد. */}
@@ -614,6 +734,8 @@ export function SymbolInspector() {
                     : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ غربالگری`}
               </span>
             </nav>
+          ) : funnelError && !funnelHasData ? (
+            <FunnelErrorBanner onRetry={funnelRetry} blocking />
           ) : null}
 
           {/* ── ۱۵.۲۰ رویدادها — عنوانِ خودِ اطلاعیه از تقویمِ نماد

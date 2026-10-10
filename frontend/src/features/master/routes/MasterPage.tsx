@@ -34,6 +34,7 @@ import {
 import { buildManagementSummary, halfExitPlan } from '../lib/managementSummary';
 import { evaluateFtsPipeline, recommendHorizon } from '../lib/ftsPipelineEvaluator';
 import { useFtsFunnel } from '../api/useFtsFunnel';
+import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import { buildDossier, findCandidate } from '../lib/masterDossier';
 import { MasterDossierPanel } from '../ui/MasterDossier';
 import { MasterFtsDetails } from '../ui/MasterFtsDetails';
@@ -117,7 +118,7 @@ export default function MasterPage() {
   // برآیندِ تک‌ناماد (Round L): کاندیدِ همان مدلِ قیف + همان `/api/fts/{symbol}`.
   // `buildDossier` چیزی داوری نمی‌کند — فقط دو منبعِ کاننیکال را ترجمه می‌کند،
   // پس Master و قیف و سایدبار یک حکم می‌دهند، نه سه حکم.
-  const { funnel } = useFtsFunnel(horizon);
+  const { funnel } = useFtsFunnel(useActiveFunnelPreset(horizon));
   const candidate = useMemo(
     () => findCandidate([funnel.stages.tape.entries, funnel.stages.fundamental.entries], symbol ?? ''),
     [funnel, symbol],

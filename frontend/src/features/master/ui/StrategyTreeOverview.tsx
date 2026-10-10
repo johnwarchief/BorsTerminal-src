@@ -4,12 +4,12 @@ import { toFaDigits } from '@shared/lib/fmt';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useFtsFunnel } from '../api/useFtsFunnel';
+import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import {
   activeIdsForPreset,
   buildFtsChartModel,
   descendantsOf,
   ZONE_BY_KEY,
-  type FtsPreset,
   type FtsZone,
 } from '../lib/ftsChartModel';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
@@ -29,10 +29,6 @@ const TONE: Record<FtsZone, { border: string; text: string; soft: string }> = {
   M: { border: 'border-rose-500/40', text: 'text-rose-400', soft: 'bg-rose-500/8' },
 };
 
-function presetFromQuery(value: string | null, fallback: FtsPreset): FtsPreset {
-  return value === 'swing' || value === 'trend' || value === 'hourglass' || value === 'custom' ? value : fallback;
-}
-
 function leafCount(model: ReturnType<typeof buildFtsChartModel>, id: string) {
   return descendantsOf(model, id).filter((n) => model.byId.get(n)?.kind === 'leaf').length;
 }
@@ -49,7 +45,9 @@ export default function StrategyTreeOverview() {
   const storedSymbol = useSymbolStore((s) => s.symbol);
   const symbol = params.get('symbol') || storedSymbol;
   const strategyParams = useStrategyParamsStore((s) => s.params);
-  const preset = presetFromQuery(params.get('preset'), horizon);
+  // presetِ درخت از همان تصمیمِ canonicalِ سراسری می‌آید (URL > انتخابِ کاربر > افق)،
+  // نه از URL→horizon تنها؛ وگرنه همان universe دوِ قیفِ متفاوت می‌ساخت (#M2.1).
+  const preset = useActiveFunnelPreset(horizon);
   const model = useMemo(() => buildFtsChartModel(strategyParams), [strategyParams]);
   const active = useMemo(() => activeIdsForPreset(preset, model), [preset, model]);
   const { funnel } = useFtsFunnel(preset);

@@ -5,10 +5,18 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
+from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
+                         _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
 import candle_contract
 import price_basis
+import os as _os
+import trend_classify
+# موتورِ تشخیصِ روند: legacy (پیش‌فرض = رفتارِ امروز) | hybrid. با env عوض می‌شود تا
+# درِ dev مسیرِ ترکیبی واقعاً فعال/قابل‌مشاهده باشد و برگشت به قبلی روشن بماند.
+# این flag فقط «برچسبِ روند» را می‌سازد؛ جت همیشه `_fts_classify_trend` را می‌خواند
+# و دروازۀ هفتگی قیف همان `trend.matrix` را — پس قانونِ قیف و منطقِ جت عوض نمی‌شود.
+TREND_ENGINE = (_os.environ.get("BORS_TREND_ENGINE") or "legacy").strip().lower()
 from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
 from fastapi import Query
@@ -1397,9 +1405,16 @@ PATTERNS_CACHE = {}
 _FTS_STALE_BARS = 8         # فاصلهٔ تازه‌ترین پیوتِ تأییدشده تا امروز که «ساختار کهنه» حساب می‌شود
 _FTS_STALE_WINDOW = 52      # بازهٔ سنجشِ مستقیمِ روند (همان ۵۲ دورهٔ MA52)
 _FTS_STALE_MIN_BARS = 12    # کمینهٔ کندل برای سنجشِ مستقیم؛ کمتر از آن رأی نمی‌دهیم
+_FTS_JET_MIN_BARS = 60      # کمینۀ تاریخچۀ جت: کمتر از «شصت نشستِ شناخته‌شده» ارزیابی ممکن نیست ⇒ null
 _FTS_STALE_MOVE_MIN = 0.05  # کمینهٔ جابه‌جاییِ کلِ بازه برای اعلامِ جهت
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
+# نسخهٔ قواعدِ تحلیلِ تکنیکالِ چارت (`_fts_classify_trend` + وزن‌ها + resample +
+# jet/choch/fib/point-hunt). این شمارۀ بیلد نیست؛ هر بار که یکی از این قواعد عوض
+# شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
+# (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
+# یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
+FTS_TECH_RULESET_VERSION = "3"   # «۳»: تأییدِ موقعیتِ قیمت (شکستِ سقف/کفِ آخر بر شمارشِ دو پیوتِ کهنه ترجیح می‌یابد)
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
@@ -1606,13 +1621,37 @@ def _fts_classify_trend(swings, tol=_FTS_EQUAL_TOL, series=None,
                "last_low_time": lows[-1].get("time"), "prev_low_time": lows[-2].get("time"),
                "stale_bars": None, "window": None}
 
+        # تأییدِ موقعیتِ قیمت رویِ ساختار: نمی‌شود در «سقفِ تازه» نزولی بود.
+        # اگر بستۀِ اخیر از هر دو سقفِ پیوتِ اخیر (ماکسِ h1,h2) بالاتر باشد،
+        # ساختارِ نزولی شکسته شده و جهت صعودی است؛ و برعکس زیرِ هر دو کفِ اخیر ⇒
+        # نزولی. بی‌این، فنوال/فولادِ هفتگی رویِ دو پیوتِ کهنه «down» می‌گرفتند
+        # در حالی کهِ قیمت در سقفِ تاریخی بود (دروازۀ قیف را می‌بست). آستانه
+        # «بالاتر/پایین‌تر از هر دو» است، نه یکِ پیوت، تا پولبکِ ۰٫۵٪ درِ روندِ
+        # نزولیِ واقعی اشتباهاً جهت عوض نکند. `piv["trend"]` خام می‌ماند (نسخۀِ
+        # ممیزیِ «pivots» باید رأیِ خالصِ پیوت باشد)؛ اعمال در وقتِ بازگشت.
+        if series:
+            last_close = float(series[-1].get("close") or 0)
+            if last_close > max(h1, h2) * (1 + tol):
+                piv["price_confirm"] = "new-high-above-recent-pivots"
+            elif last_close > 0 and last_close < min(l1, l2) * (1 - tol):
+                piv["price_confirm"] = "new-low-below-recent-pivots"
+
+    def _with_price_confirm(p):
+        # فقط رأیِ نهایی را عوض می‌کند؛ نسخهٔ «pivots» خام می‌ماند.
+        pc = p.get("price_confirm")
+        if not pc:
+            return p
+        q = dict(p)
+        q["trend"] = "up" if pc == "new-high-above-recent-pivots" else "down"
+        return q
+
     if series is None:
         return piv if piv is not None else base
     n = len(series)
     newest = max((s["idx"] for s in swings), default=-1)
     gap = n - 1 - newest
     if piv is not None and gap <= stale_bars:
-        return piv
+        return _with_price_confirm(piv)
     win = _fts_recent_window_trend(series)
     if win is None:
         return piv if piv is not None else base
@@ -1877,10 +1916,15 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, 
     entry_window_days, days_remaining, tier, reason
     """
     n = len(candles)
-    if n < 2:
+    # رأیِ مالک: «نبودِ دادهٔ کافی برایِ ارزیابی ⇒ null؛ منفی فقط وقتی که ارزیابی
+    # واقعاً ممکن بوده.» جت به پنجرۀ ایستادۀ مقاومت نیاز دارد؛ با کمتر از کفِ
+    # ۶۰ کندل (همان کفِ «شصت نشستِ شناخته‌شده» درِ فیلترِ جتِ تابلو) ارزیابی
+    # ممکن نیست ⇒ سنجیده‌نشده، نه «رد». (خط ۷۷۱/۱۲۳۸ همین کف را دارند.)
+    if n < _FTS_JET_MIN_BARS:
+        _c = float(candles[-1]["close"]) if n >= 1 else None
         return {
             "active": None, "resistance": None, "resistance_date": None,
-            "resistance_type": None, "ath": None, "close": None,
+            "resistance_type": None, "ath": None, "close": round(_c, 2) if _c is not None else None,
             "pct_above_res": None, "ceiling": None, "ceiling_date": None,
             "static_broke": None, "breakout_date": None,
             "entry_window_days": entry_window_days, "days_remaining": None,
@@ -2761,11 +2805,15 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
     w = _fts_resample(candles, "W")
     m = _fts_resample(candles, "M")
+    # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
+    # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
+    # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
+    _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
     out = {
         "trend": {
-            "D": _fts_classify_trend(swings_d, series=candles),
-            "W": _fts_classify_trend(_fts_swings(w, k=2), series=w),
-            "M": _fts_classify_trend(_fts_swings(m, k=2), series=m),
+            "D": _tf(swings_d, series=candles),
+            "W": _tf(_fts_swings(w, k=2), series=w),
+            "M": _tf(_fts_swings(m, k=2), series=m),
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -3046,13 +3094,52 @@ def _fts_analysis_series(symbol):
     return cands, "local-db-raw"
 
 
-def _fts_analyze_symbol(symbol, entry_hint=None):
+def _candles_upto_asof(candles, as_of):
+    """برشِ واقعیِ ورودی به کندل‌هایِجلسۀ `as_of` و پیش‌تر.
+
+    `as_of` رشتهٔ 'YYYY-MM-DD' است؛ کندل‌هایِ این مسیر هم قرارداداً همین شکلِ
+    تاریخ را درِ `time` دارند (`'time' ('YYYY-MM-DD')` درِ docstringِ این فایل).
+    بیِ `as_of` هیچ برشی نمی‌شود ⇒ رفتارِ امروز دست‌نخورده. مقایسهٔ رشته‌ایِ ISO
+    با ترتیبِ زمانی یکی است، پس این یک cutoffِ واقعی است، نه تزئینِ کلیدِ کش.
+    """
+    if not as_of:
+        return candles
+    return [c for c in candles if str(c.get("time", ""))[:10] <= as_of]
+
+
+def _fts_analysis_cache_key(symbol, last_close, entry_hint, basis, as_of, hg_key: str = ""):
+    """هویتِ کاملِ کشِ تحلیلِ FTS — هر چیزی که نتیجه را عوض می‌کند اینجا باشد.
+
+    symbol + tf (قفلِ روزانه: D/W/M همه از همین سریِ روزانه ساخته می‌شوند) +
+    آخرینِ بستۀِ برشیده + entry_hint (hard-stop به آن وابسته است) + as_of (cutoff)
+    + نسخهٔ قواعد + بیلد + **تنظیمِ فعالِ ساعتِ شنی** + **مبنایِ تعدیل در آخر**.
+    مبنا عمداً آخرینِ فیلد است: گاردِ `dev/fts_cache_basis_v1078` اثبات می‌کند دو
+    مبنایِ متفاوت دو نتیجهٔ جدا می‌سازند؛ پس ترتیبِ کلید بخشی از قرارداد است.
+    `hg_key` هم از همین دور درِ کلید است: `dev/test_hourglass_settings_v1.py` ثابت
+    می‌کند با عوض‌شدنِ RSI/آستانه/حالتِ MA52، کشِ ۹۰۰ ثانیه‌ای نباید رأیِ مبنایِ
+    قبلی را جواب بدهد — چون این کشِ درونِ پروسه است و باطل‌کردنِ فرانت آن را پاک
+    نمی‌کند. بی‌این فیلد، تغییرِ تنظیمِ ساعتِ شنی تا ۱۵ دقیقه بی‌اثر می‌ماند.
+    """
+    return (f"{symbol}|tf=daily|{last_close}|{entry_hint}"
+            f"|asof={as_of or ''}|rs={FTS_TECH_RULESET_VERSION}|eng={TREND_ENGINE}"
+            + (f"|hg={hg_key}" if hg_key else "")
+            + f"|{basis}")
+
+
+def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
     """Cached single-symbol FTS payload for /api/fts/{symbol} and badges.
 
-    Cache key includes symbol, last daily close, entry hint, price basis, and
-    active hourglass settings. If a user changes RSI period/threshold/MA52
-    mode, the old 900s result must not answer the new configuration. TTL still
-    guards against a static close with drifting intraday fields.
+    Cache key = symbol + tf + last daily close + entry hint + price basis + as_of +
+    build/ruleset + the active hourglass settings. The hard stop is entry-dependent,
+    so a cached swing-basis payload must never answer an `entry` request. `as_of` is a
+    REAL historical cutoff: the input candles are sliced to sessions <= as_of before
+    the engine runs, so the weekly/daily verdict at T can never be moved by data that
+    post-dates T, and no result computed at one cutoff can leak to another. The build
+    (APP_VERSION) tags the ruleset so a new release never serves an old-rulebook
+    payload from cache. If the user changes RSI period/threshold/MA52 mode, the old
+    900s result must not answer the new configuration either — this cache is
+    process-local and frontend invalidation cannot clear it. TTL still guards against
+    a static close with drifting intraday fields.
     """
     import time as _t
     now = _t.time()
@@ -3062,21 +3149,29 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
         return {"status": "error", "symbol": symbol, "message": str(e)}
     if not candles:
         return {"status": "empty", "symbol": symbol, "fts": None}
+    # برشِ واقعیِ as_of: فقط کندل‌هایِجلسۀ T و پیش‌تر به موتور می‌روند؛ پس دادهٔ
+    # بعد از T هرگز حکمِ تاریخیِ T را جابه‌جا نمی‌کند.
+    if as_of:
+        candles = _candles_upto_asof(candles, as_of)
+        if not candles:
+            return {"status": "empty", "symbol": symbol, "fts": None, "as_of": as_of}
     last_close = candles[-1].get("close")
     # مبنایِ قیمت هم درِ کلید است، مثلِ سه کشِ دیگر (key-levels، ma، patterns درِ
     # همین فایل) و مثلِ باقیِ مسیرِ چارت: `_fts_analysis_series` سری را با
     # مبنایِ ذخیرۀ کاربر می‌سازد، و برایِ نمادی که آخرینِ کندلش last==closing
     # باشد «آخرینِ ته‌بندی» عوض نمی‌شود ⇒ بی‌این، عوض‌کردنِ مبنایِ قیمت تا
     # FTS_ANALYSIS_TTL (۹۰۰ ثانیه) همان داوریِ مبنایِ قبلی را برمی‌گرداند.
-    # Include the effective strategy parameters: frontend invalidation cannot
-    # clear this process-local cache, and same-close requests are otherwise stale.
+    # تنظیمِ فعالِ ساعتِ شنی هم درِ کلید: باطل‌کردنِ فرانت این کشِ درونِ پروسه را
+    # پاک نمی‌کند و درخواستِ هم‌بسته وگرنه تا TTL (=۹۰۰s) همان داوریِ تنظیمِ قبلی را
+    # می‌گیرد. as_of و build هم: دو cutoffِ متفاوت هرگز به هم نشت نمی‌کنند، و ریلیزِ
+    # تازه با rulebookِ نو کشِ rulebookِ قبلی را جواب نمی‌دهد.
     hg_cfg = _fts_hourglass_settings()
     hg_key = (
         f"rsi={hg_cfg['hourglass_rsi_period']}:"
         f"oversold={hg_cfg['hourglass_rsi_oversold']:.6g}:"
         f"ma52={hg_cfg['hourglass_ma52_position']}"
     )
-    key = f"{symbol}|{last_close}|{entry_hint}|{basis}|{hg_key}"
+    key = _fts_analysis_cache_key(symbol, last_close, entry_hint, basis, as_of, hg_key)
     cached = FTS_ANALYSIS_CACHE.get(key)
     if cached and (now - cached[0]) < FTS_ANALYSIS_TTL:
         return cached[1]
@@ -3088,7 +3183,10 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
               "analysis_basis": basis, "bars": len(candles),
+              "trend_engine": TREND_ENGINE,
               "adjustCapability": _adjust_capability(_evs, _src)}
+    if as_of:
+        result["as_of"] = as_of
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:
         FTS_ANALYSIS_CACHE.clear()
     FTS_ANALYSIS_CACHE[key] = (now, result)
@@ -3096,14 +3194,19 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
 
 
 @router.get("/api/fts/{symbol}")
-def get_fts(symbol: str):
+def get_fts(symbol: str, as_of: str | None = None):
     """Light analysis-only payload for the tech-view badge strip.
 
     Same FTS engine as the embedded chart payload; separate endpoint so the
     UI can refresh badges without refetching full candle history. The user's
     saved basket price is resolved here (not in the engine) so the hard stop
     can be «۵٪ زیرِ قیمتِ خرید» when the symbol is actually held.
+
+    `as_of` (YYYY-MM-DD) replays the verdict as of a past session: only candles
+    dated <= as_of reach the engine, and the cache key carries it, so a
+    historical answer can neither be moved by later data nor cross-serve another
+    cutoff. Without it the behaviour is byte-for-byte today's live analysis.
     """
-    return _fts_analyze_symbol(symbol, entry_hint=_basket_entry(symbol))
+    return _fts_analyze_symbol(symbol, entry_hint=_basket_entry(symbol), as_of=as_of)
 
 # __FTS_APPEND__

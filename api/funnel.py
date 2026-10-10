@@ -25,8 +25,33 @@ from fastapi import APIRouter, Request
 
 import funnel_engine as FE
 import funnel_registry as REG
+import market_universe as MU
 
 router = APIRouter()
+
+# ردیابِ وضعیتِ معاملاتیِ جهان دیگر درِ این فایل نیست: یکِ ردیابِ مشترک درِ
+# `market_universe` است و **بازسازیِ کشِ تابلو** (`api/market.py:_observe_universe`)
+# آن را جلو می‌بَرَد؛ دامنه از کلِ تابلو ساخته می‌شود، نه ۶۰ ردیفِ اول، و هیچ نمادِ
+# واجدِ شرایطی حذف نمی‌شود — فقط برچسبِ وضعیت و اولویتِ نمایشش ثبت می‌گردد.
+#
+# مسیرِ `/api/universe/live` هم به `api/market.py` رفته است (پیش‌ازین `_UNIVERSE.observe`
+# فقط با درخواستِ خودِ endpoint جلو می‌رفت، پس «وضعیتِ زندهٔ جهان» بی‌آن درخواست هرگز
+# تازه نمی‌شد و با revisionِ بازار بی‌ربط بود).
+
+
+def _universe_priority() -> dict:
+    """نماد → اولویتِ نمایشِ زنده (کمتر = بالاتر)؛ خالی یعنی هنوز مشاهده نشده."""
+    try:
+        return dict(MU.latest().get("priority") or {})
+    except Exception:
+        return {}
+
+
+def _universe_status() -> dict:
+    try:
+        return dict(MU.latest().get("status_by") or {})
+    except Exception:
+        return {}
 
 # کشِ قیف یک‌خانۀ «کلیدِ آخر» بود. صفحۀ مستر دو مصرف‌کنندۀ هم‌زمان دارد
 # (کاکپیت با presetِ horizon و جدولِ غربالگری با presetِ انتخابی، به‌علاوه
@@ -239,10 +264,13 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         return {"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
                 "universe": {"board": 0, "screened": len(screen)}}
     scan, sigs = _tech_context()
+    uni_pri = _universe_priority()
+    uni_st = _universe_status()
     try:
         payload = FE.evaluate(board, screen, preset=preset, custom_chain=chain,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
-                              tech_scan=scan, tech_sigs=sigs, session_day=session)
+                              tech_scan=scan, tech_sigs=sigs, session_day=session,
+                              universe_priority=uni_pri, universe_status=uni_st)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین
