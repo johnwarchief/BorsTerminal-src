@@ -1,9 +1,11 @@
 ---
 name: canvas-chart-live-pixel-check
-description: Live pixel verification of canvas-rendered charts (klinecharts, ECharts, TradingView-style) via Playwright/jev-browser. Use when a change to a canvas chart's scale, axis mapping, overlays, crosshair, or text must be proven visible on screen, when unit tests are green but the chart looks wrong to a user, or when a "nothing moved / scale held" claim needs evidence. DOM testids, store assertions, and vitest prove data was written, not that pixels changed.
+description: Live pixel verification of canvas-rendered charts via Playwright/CDP; Jev-browser is an optional legacy driver only. Use when chart scale, overlays, crosshair, or text must be proven visible on screen; DOM tests alone do not prove pixels changed.
 ---
 
 # Canvas Chart Live Pixel Check
+
+> **Driver note (2026-10-10):** the owner requested Jev → Laya migration. This skill's measurement method (real pixels, positive control) remains valid; the Jev-specific harness invocation is legacy. Prefer Playwright/CDP or a verified Laya browser driver. Do not infer that Laya is installed or fully migrated merely from this note.
 
 ## Overview
 
@@ -13,7 +15,7 @@ Prove chart behavior in actual pixels. Canvas charts paint outside the DOM, so e
 
 1. Rebuild the bundle before probing (`npm run build` or project equivalent). The served port delivers `dist/`, so a stale bundle reproduces already-fixed bugs and you will "discover" a bug that no longer exists. If the harness reports an error, compare bundle and source mtimes before investigating.
 2. Serve the app with the correct backend port and use the real route format (e.g. hash-router URLs like `/#/technical`; a path-style URL can render a different page with no error at all).
-3. For jev-browser-style harnesses on Windows/Git Bash: point `JEV_CHROME` at the cached `chrome-win64/chrome.exe`, and prefix commands with `MSYS_NO_PATHCONV=1` so `#/route` arguments survive. A mangled URL shows up as "every element absent" — check `href` and `bodyText` in the harness JSON before concluding anything about the app.
+3. If using the legacy jev-browser-style harness on Windows/Git Bash: point `JEV_CHROME` at the cached `chrome-win64/chrome.exe`, and prefix commands with `MSYS_NO_PATHCONV=1` so `#/route` arguments survive. A mangled URL shows up as "every element absent" — check `href` and `bodyText` in the harness JSON before concluding anything about the app.
 4. Run the probe at two viewports (e.g. 1366×900 and 1920×1080). A bad metric was once exposed only at the wider size.
 
 ## Core probe: composite layers, count colored ink

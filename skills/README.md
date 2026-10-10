@@ -13,8 +13,8 @@
 | `bors-build-install-guard` | هنگامِ بیلد/نصبِ بسته تا گاردهای موجود (pinِ numpy، بسته‌بندیِ onedir، `hiddenimports` در `fts_terminal.spec`، fallbackها) نشکنند |
 | `bors-code-review` | **بعد از** نوشتنِ کد و **پیش از** کامیت — بازبینیِ امنیت، باگ، race، لبه‌ها، کارایی و تست‌ها بر پایهٔ حالت‌های شکستِ همین پروژه |
 | `bors-frontend-ui-guard` | هنگامِ تغییرِ رابط کاربری (چیدمان، تراز جدول‌ها، RTL، ارتفاع، ارقامِ فارسی) |
-| `bors-dual-jev-verification` | **بستنِ هر واحدِ کار**: هم pilot و هم مرورگرِ زنده، و چسباندنِ هر دو حکم در گزارش |
-| `bors-jev-verification` | همان دورِ دوjeوی، با جزئیاتِ `tools/pilot_ctl.py` و حالت‌هایِ شکستِ آن |
+| `bors-dual-jev-verification` | **روش Jev قدیمی/جایگزین موقت** در دورهٔ مهاجرت؛ مسیر canonical تازه نیست |
+| `bors-jev-verification` | راهنمای میراثیِ pilot/Jev؛ تا اثبات Laya فقط برای fallback یا مقایسه استفاده شود |
 | `bors-live-ui-check` | بعد از هر تغییرِ دیدنی: سنجشِ زنده با Chromium و قضاوت از JSONِ خودِ سنجش |
 | `bors-installed-vs-dev-diagnosis` | وقتی عددی در تابلویِ نصبی صفر/null است: تفاضلِ همان لحظه بین دو بک‌اند، قبل از دست‌زدن به UI |
 | `canvas-chart-live-pixel-check` | وقتی نمودارِ canvas (کندل/سطوح/فلاش) عوض می‌شود: تستِ واحد سبز است ولی پیکسل ندیده‌ایم |
@@ -23,16 +23,19 @@
 
 ۱) `bors-architecture` (اگر ساختار در خطر است) → ۲) کد → ۳) `bors-frontend-ui-guard` /
 `bors-installed-vs-dev-diagnosis` هرکدام که به تغییرِ شما می‌خورد → ۴) `bors-code-review` →
-۵) `bors-dual-jev-verification` برایِ بستنِ کار → ۶) اگر ریلیز است: `bors-build-install-guard`
+۵) راستی‌آزمایی مرورگر زنده با Laya پس از اثبات اتصال؛ تا آن زمان Playwright/CDP موجود را اجرا و وضعیت Laya را `UNVERIFIED` ثبت کنید → ۶) اگر ریلیز است: `bors-build-install-guard`
 سپس `bors-build-release`.
 
 ## روی ماشینِ تازه
 
 فرمان‌ها، نام‌گذاریِ بیلد/ریلیز و قیدهایِ شکست‌پذیر در `../AGENTS.md`‌اند. دو چیز در گیت نیست و
 باید رویِ همان ماشین ساخته/صادر شود: رمزِ نصاب (`installer/.setup_password.iss`) و کلیدِ خصوصیِ
-امضا (`*.tauri_updater_key*`). برایِ سنجشِ زنده همچنین `TYPESAFE_API_KEY` (pilot) و
-`JEV_BROWSER_DIR` / `JEV_CHROME` (Chromiumِ Playwright رویِ همان ماشین) لازم‌اند؛
-بی‌آن‌ها `tools/pilot_ctl.py` فوراً exit می‌کند و سنجشِ مرورگر بالا نمی‌آید.
+امضا (`*.tauri_updater_key*`).
+
+> **فقط برای workflow میراثی Jev:** `TYPESAFE_API_KEY`، `JEV_BROWSER_DIR` و `JEV_CHROME` وابستگی‌های محیطی ابزارهای Jev هستند؛ آن‌ها را پیش‌نیاز عمومی Qoder یا مسیر Laya تلقی نکنید. مالک در 2026-10-10 مهاجرت به Laya را خواسته است، اما تا زمانی که اتصال واقعی Laya تست نشده، مهاجرت `UNVERIFIED` است. برای اثبات UI همچنان از Playwright/CDP موجود استفاده کنید و ابزار واقعی اجراشده را گزارش دهید.
 
 قاعدهٔ حاکم بر همه: گاردهای `dev/run_all_tests.py` مرجعِ درستی‌اند؛ تغییر تا وقتی سبز نشوند تمام‌شده نیست —
 و «سبز شدنِ jsdom» به‌تنهایی اثباتِ رابطِ زنده نیست.
+
+
+> **وضعیت مهاجرت Jev → Laya (2026-10-10):** مالک درخواست جایگزینی مسیر تصمیم‌گیری/مرورگر Jev با Laya را داده است؛ مهاجرت هنوز با اجرای واقعی Qoder اثبات نشده. بنابراین skills با نام Jev در این مخزن راهنمای میراثی و fallback هستند، نه الزامِ خودکار برای هر واحد کار. تا زمانی که Laya با تصمیم ساختاریافته و اقدام واقعی مرورگر end-to-end پاس نشده، آزمون زندهٔ UI را با Playwright/CDP موجود انجام دهید و مهاجرت را `UNVERIFIED` نگه دارید. فایل‌ها و متغیرهای Jev را فقط پس از آزمون موفق مسیر جایگزین حذف کنید.

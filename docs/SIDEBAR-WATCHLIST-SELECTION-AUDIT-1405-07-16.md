@@ -1,5 +1,8 @@
 # ممیزیِ انتخابِ نماد، واچ‌لیست، سایدبار و مجمع — ۱۴۰۵-۰۷-۱۶
 
+> **Snapshot وابسته به worktree قدیمی:** این گزارش به کار `BorsTerminal-roadmap` و شاخهٔ `funnel-api-wip` تعلق دارد. وضعیت واچ‌لیست، Sidebar و Universe ممکن است بعداً عوض شده باشد؛ هر یافتهٔ باز را با `main`، `/api/universe/live` و UI فعلی دوباره تأیید کنید.
+
+
 Commit 1 از taskِ «Symbol Selection, Real Watchlist, Two-Page Sidebar, Quick Scan, Live
 Assembly Status». این فایل **فقط** وضعِ موجود را با شاهدِ `file:line` ثبت می‌کند و
 قصدِ کدِ جدید ندارد. ریشهٔ کار: worktree ‏`BorsTerminal-roadmap` ‏(شاخۀ `funnel-api-wip`)؛

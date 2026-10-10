@@ -7,7 +7,7 @@
 - پنجرهٔ بومی: WebView2 (pywebview) بدون مرورگر/تب/نوار آدرس؛ در صورت نبودِ WebView2 به مرورگر fallback می‌کند.
 - داده: اسنپ‌شاتِ آمادهٔ `market.db.lzma` (اولین اجرا خودش استخراج می‌کند) + به‌روزرسانی از TSETMC/کدال.
 
-> این مخزن، آینهٔ **خصوصیِ منبع** است. باینری‌های منتشرشده روی مخزنِ عمومیِ [`johnwarchief/BorsTerminal`](https://github.com/johnwarchief/BorsTerminal/releases) قرار می‌گیرند.
+> این مخزن، مخزنِ منبعِ کد است. باینری‌های منتشرشده روی مخزنِ عمومیِ [`johnwarchief/BorsTerminal`](https://github.com/johnwarchief/BorsTerminal/releases) قرار می‌گیرند.
 
 ## اجرا (توسعه)
 
@@ -81,7 +81,7 @@ python scripts/publish_github_release.py
 | `skills/` | اسکیل‌های دستیار برای نگهداریِ همین پروژه |
 | `market.db.lzma` | اسنپ‌شاتِ دادهٔ ارسالی |
 
-نقشهٔ دقیق‌ترِ ماژول‌ها: `REPO_MAP.md`. راهنمای به‌روزرسانی: `UPDATE.md`. تاریخچهٔ نسخه‌ها: `CHANGELOG.md`.
+برای شروعِ خواندن مستندات و ترتیبِ تقدم منابع: `docs/README.md`. قواعد ایجنت و ساختار کد: `AGENTS.md` و نقشهٔ تولیدشدهٔ `docs/AGENT-INDEX.md`. `REPO_MAP.md` و `UPDATE.md` راهنماهای تاریخی/نیازمند تطبیق‌اند؛ برای متن انتشار از `docs/RELEASE_NOTES.md` و برای نسخهٔ جاری کد از `bors_config.py` استفاده کنید. `CHANGELOG.md` تاریخچهٔ ناقص است.
 
 ## اسکیل‌ها
 
