@@ -9,7 +9,7 @@
 //   ۳) تازگیِ داده — آخرین بار چه وقت *عددی* عوض شد؟ (`rev_at` درِ فید)
 // هیچ‌کدام از این سه جای دو تای دیگر را پر نمی‌کند و هیچ عددی اینجا ساخته نمی‌شود:
 // همه از `/api/live-stats` (پنجره، تیک، جهان) و از خودِ فیدِ تابلو می‌آیند.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
 import type { MarketFeed } from '@shared/types/marketRow';
@@ -73,7 +73,14 @@ export function MarketStatusPanel() {
   const qc = useQueryClient();
   const { data: stats, isError, error, refetch } = useLiveStats();
   const [open, setOpen] = useState(false);
-  const now = Date.now();
+  // ساعتِ خودِ پنل: اگر فقط به داده‌یِ کوئری تکیه کنیم، تا `live-stats` عوض نشود
+  // رندر نمی‌شود و «سنِ داده» رویِ عددِ همان لحظه می‌ماند (سنجشِ مرورگر: «۵۱ ثانیه»
+  // یکِ دقیقه ثابت ماند). ۱۵ ثانیه یک‌بار بی‌هزینه است و همین پنجرۀِ کوئری است.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, []);
 
   // اتصال/دریافت/تازگی از همان فیدِ مشترک (بدونِ درخواستِ دوم).
   const feed = useMemo(() => {
