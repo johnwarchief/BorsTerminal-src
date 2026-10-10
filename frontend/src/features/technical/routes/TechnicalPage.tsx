@@ -29,7 +29,7 @@ import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
-import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
+import { useNnTedipx } from '../nahayatnegar/lib/useNnData';
 import { applyAdjustmentToCandles, mapBackendAdjustEvents } from '../nahayatnegar/lib/adjustments';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
@@ -89,9 +89,21 @@ export default function TechnicalPage() {
   // داکِ پایین و پنل‌های FTS از همین نمادِ نمایشی تغذیه می‌شوند. پیش‌تر روی
   // `symbol` (تهی تا کاربر چیزی انتخاب نکند) قفل بودند، پس پنل‌هایِ پایینِ تب
   // برای کسی که هنوز نمادی انتخاب نکرده اصلاً در DOM نمی‌آمد (#185).
-  const nn = useNnChartData(viewSymbol);
-  const tedipx = useNnTedipx();
+  // #M3.1: `useNnChartData` و `useCandleFeed` هر دو `/api/chart/{symbol}` را برایِ
+  // همانِ نماد می‌خواندند (دوِ کوئریِ هم‌محتوا، دوِ cache، دوِ «مبنا»). حالا همان
+  // یکِ منبعِ canonical (`['candles',symbol]` با فال‌بک /api/history) می‌ماند و
+  // طول/خطا/لودینگِ داک و ریپلی همه از همان آبجکتِ cache‌شده خوانده می‌شوند تا
+  // هیچ‌وقت عددِ داک با کندلِ چارت واگرایی نکند. (بومِ canvas با لایۀ سومِ
+  // `/api/chart-db` خودش می‌کشد — قراردادِ جدا و مستند، نه اینِ داک.)
   const feed = useCandleFeed(viewSymbol);
+  const tedipx = useNnTedipx();
+  const nn = {
+    data: feed.candles,
+    status: feed.data?.status ?? null,
+    isLoading: feed.isLoading,
+    isError: feed.isError,
+    refetch: feed.refetch,
+  };
   const analysis = useFtsAnalysis(viewSymbol);
   const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
 

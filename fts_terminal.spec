@@ -64,6 +64,10 @@ a = Analysis(
                    # ماژول‌هایِ ریشه صریح فهرست می‌شود وگرنه EXE رویِ اولین درخواستِ
                    # قیف ModuleNotFoundError می‌دهد.
                    'funnel_registry', 'funnel_engine', 'funnel_tech_scan',
+                   # Universe زنده (وضعیت معاملاتیِ نماد): api/funnel آن را سطح-بال
+                   # import می‌کند و خودِ api.funnel درِ function-body وارد می‌شود؛
+                   # نبودنش EXE را روی اولین /api/universe/live می‌کشد.
+                   'market_universe',
                    # کارِ #73 (بخشِ بنیادی، ۱۴۰۵-۰۷-۱۰): `codal_periods` تنها تعریفِ
                    # «دورۀ گزارش» است و fts_engine / api.fundamental / api.screener /
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین

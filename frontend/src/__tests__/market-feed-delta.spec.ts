@@ -56,7 +56,7 @@ describe('marketFeed — حالتِ داغ در کلاینت', () => {
     const f = await call();
     expect(httpMock.mock.calls[0][0]).toBe('/api/market');
     expect(f.data[0].p_closing).toBe(1000);
-    expect(marketFeedMirrorSize()).toEqual({ rows: 1, rev: 7 });
+    expect(marketFeedMirrorSize()).toEqual({ rows: 1, rev: 7, revAt: expect.any(Number) });
   });
 
   it('دومین کوئری دلتاست، همان‌جا از همان rev', async () => {
@@ -82,6 +82,31 @@ describe('marketFeed — حالتِ داغ در کلاینت', () => {
     const f3 = await call();
     expect(f3).toBe(f2);
     expect(httpMock).toHaveBeenCalledTimes(3);
+  });
+
+  // REV-AT: «زمانِ عوض‌شدنِ داده» باید از «زمانِ رسیدنِ پاسخ» جدا باشد — باگِ
+  // اثبات‌شدۀ زنده: نودوچهار دقیقه بی‌revision و نشانگر «لحظاتی پیش».
+  it('دلتایِ واقعی revAt را جلو می‌برد و «unchanged» آن را تکان نمی‌دهد', async () => {
+    let t = 1_000_000;
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => t);
+    try {
+      httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 1000 })], 4));
+      await call();
+      expect(marketFeedMirrorSize().revAt).toBe(1_000_000);
+      httpMock.mockResolvedValueOnce({ status: 'unchanged', rev: 4, count: 1, rows: undefined });
+      t = 1_060_000;
+      await call();
+      expect(marketFeedMirrorSize().revAt).toBe(1_000_000);   // هیچ عددی عوض نشده
+      expect(marketFeedMirrorSize().rev).toBe(4);
+      httpMock.mockResolvedValueOnce({ status: 'delta', rev: 5, count: 1,
+                                       rows: [row('A', 'شپنا', { p_closing: 1010 })] });
+      t = 1_110_000;
+      await call();
+      expect(marketFeedMirrorSize().revAt).toBe(1_110_000);   // داده عوض شد
+      expect(marketFeedMirrorSize().rev).toBe(5);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('countِ ناهمخوان ⇒ بدنۀ کامل، نه mergeِ ناقص (ردیفِ کم/زیاد از دلتا پنهان می‌ماند)', async () => {

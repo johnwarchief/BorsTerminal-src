@@ -1,0 +1,173 @@
+﻿symbol,timeframe,as_of,outcome,trend,confidence,score,agreement,bars,atr_pct,structure,ER,pro,con,reasons
+آرتا06,D,2026-09-21,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+آرتا06,W,2026-09-21,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+حياتح2,D,2026-09-26,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+حياتح2,W,2026-09-26,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضجار9015,D,2026-10-04,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضجار9015,W,2026-10-04,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+طوتعاون318,D,2026-06-20,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طوتعاون318,W,2026-06-20,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ولغدر4,D,2026-08-17,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ولغدر4,W,2026-08-17,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+اگ050954,D,2026-08-25,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+اگ050954,W,2026-08-25,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+اگ050954,D,2026-08-31,insufficient_data,,0.0,,,2,,no-series,,,,"MISSING:structure,slope,ma,eff"
+اگ050954,W,2026-08-31,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضموج316,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضموج316,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضموج316,D,2026-06-14,insufficient_data,,0.0,,,2,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضموج316,W,2026-06-14,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+مي ر 50,D,2026-09-30,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+مي ر 50,W,2026-09-30,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+مي ر 50,D,2026-10-03,insufficient_data,,0.0,,,2,,no-series,,,,"MISSING:structure,slope,ma,eff"
+مي ر 50,W,2026-10-03,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+شبريز2,D,2026-07-21,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+شبريز2,W,2026-07-21,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+شبريز2,D,2026-07-25,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+شبريز2,W,2026-07-25,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+كم ر 33,D,2026-09-07,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+كم ر 33,W,2026-09-07,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+كم ر 33,D,2026-09-09,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+كم ر 33,W,2026-09-09,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+صمهان712,D,2026-08-08,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+صمهان712,W,2026-08-08,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+صمهان712,D,2026-10-06,insufficient_data,,0.0,,,4,,no-series,,,,"MISSING:structure,slope,ma,eff"
+صمهان712,W,2026-10-06,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+يارا4,D,2026-06-14,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+يارا4,W,2026-06-14,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+يارا4,D,2026-08-29,insufficient_data,,0.0,,,4,,no-series,,,,"MISSING:structure,slope,ma,eff"
+يارا4,W,2026-08-29,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضملي1000,D,2026-10-03,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضملي1000,W,2026-10-03,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضملي1000,D,2026-10-07,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضملي1000,W,2026-10-07,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+صغدير707,D,2026-06-17,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+صغدير707,W,2026-06-17,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+صغدير707,D,2026-09-20,insufficient_data,,0.0,,,6,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+صغدير707,W,2026-09-20,insufficient_data,,0.0,,,6,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضموج527,D,2026-08-03,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضموج527,W,2026-08-03,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضموج527,D,2026-08-16,insufficient_data,,0.0,,,7,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضموج527,W,2026-08-16,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+وهور2,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+وهور2,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+وهور2,D,2026-10-04,insufficient_data,,0.0,,,8,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+وهور2,W,2026-10-04,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طفزر721,D,2026-09-22,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طفزر721,W,2026-09-22,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+طفزر721,D,2026-10-07,insufficient_data,,0.0,,,10,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+طفزر721,W,2026-10-07,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضذوب9035,D,2026-09-12,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضذوب9035,W,2026-09-12,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضذوب9035,D,2026-10-07,insufficient_data,,0.0,,,12,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضذوب9035,W,2026-10-07,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طهرم9026,D,2026-09-21,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طهرم9026,W,2026-09-21,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+طهرم9026,D,2026-10-07,insufficient_data,,0.0,,,13,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+طهرم9026,W,2026-10-07,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضراز6010,D,2026-08-08,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضراز6010,W,2026-08-08,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضراز6010,D,2026-08-26,insufficient_data,,0.0,,,15,0.2488,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضراز6010,W,2026-08-26,insufficient_data,,0.0,,,3,,no-series,,,,"MISSING:structure,slope,ma,eff"
+بموتو2,D,2024-09-14,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+بموتو2,W,2024-09-14,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+بموتو2,D,2026-08-21,insufficient_data,,0.0,,,17,0.0675,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+بموتو2,W,2026-08-21,insufficient_data,,0.0,,,14,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضبساما925,D,2026-09-06,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضبساما925,W,2026-09-06,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضبساما925,D,2026-10-07,insufficient_data,,0.0,,,19,0.289,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضبساما925,W,2026-10-07,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضستا7064,D,2026-09-09,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضستا7064,W,2026-09-09,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضستا7064,D,2026-10-07,insufficient_data,,0.0,,,21,72.5,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,ma,eff"
+ضستا7064,W,2026-10-07,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طملي5031,D,2026-06-14,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طملي5031,W,2026-06-14,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+طملي5031,D,2026-08-03,classified,up,0.087,0.2928,0.0,23,100.7143,HH+HL,,structure,slope,structure=HH+HL ; slopeZ={'slope20': -0.0005} ; ma={'ma': 'insufficient'} ; ER=None ; score=0.293 ; pro=['structure'] ; con=['slope'] ; agreement=0.0 ; bars=23 ; atr%=100.7143
+طملي5031,W,2026-08-03,insufficient_data,,0.0,,,7,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+طهرم4028,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+طهرم4028,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+طهرم4028,D,2026-07-22,insufficient_data,,0.0,,,26,45.1429,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,ma,eff"
+طهرم4028,W,2026-07-22,insufficient_data,,0.0,,,6,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضخود9057,D,2026-08-29,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضخود9057,W,2026-08-29,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضخود9057,D,2026-10-07,classified,down,0.381,-0.2261,1.0,29,0.3264,flat,,slope,,structure=flat ; slopeZ={'slope20': -0.0593} ; ma={'ma': 'insufficient'} ; ER=None ; score=-0.226 ; pro=['slope'] ; con=[] ; agreement=1.0 ; bars=29 ; atr%=0.3264
+ضخود9057,W,2026-10-07,insufficient_data,,0.0,,,6,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضذوب8031,D,2026-08-18,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضذوب8031,W,2026-08-18,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضذوب8031,D,2026-10-07,classified,down,0.369,-0.1422,1.0,32,0.6118,flat,0.057,slope,eff,structure=flat ; slopeZ={'slope20': -0.0319} ; ma={'ma': 'insufficient'} ; ER=0.057 ; score=-0.142 ; pro=['slope'] ; con=['eff'] ; agreement=1.0 ; bars=32 ; atr%=0.6118
+ضذوب8031,W,2026-10-07,insufficient_data,,0.0,,,8,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضسپا6049,D,2026-07-08,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضسپا6049,W,2026-07-08,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضسپا6049,D,2026-09-16,classified,neutral,0.382,-0.1076,1.0,36,2.9286,flat,0.171,,,structure=flat ; slopeZ={'slope20': -0.0137} ; ma={'ma': 'insufficient'} ; ER=0.171 ; score=-0.108 ; pro=[] ; con=[] ; agreement=1.0 ; bars=36 ; atr%=2.9286
+ضسپا6049,W,2026-09-16,insufficient_data,,0.0,,,9,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+غمينو3,D,2026-06-21,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+غمينو3,W,2026-06-21,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+غمينو3,D,2026-10-06,classified,up,0.476,0.3253,1.0,40,0.0314,flat,0.257,slope|eff,,"structure=flat ; slopeZ={'slope20': 0.3274} ; ma={'ma': 'insufficient'} ; ER=0.257 ; score=0.325 ; pro=['slope', 'eff'] ; con=[] ; agreement=1.0 ; bars=40 ; atr%=0.0314"
+غمينو3,W,2026-10-06,insufficient_data,,0.0,,,16,0.0573,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضملي9033,D,2026-08-08,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضملي9033,W,2026-08-08,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضملي9033,D,2026-10-07,classified,neutral,0.112,0.0951,0.0,45,0.1062,LL+LH,0.579,,,structure=LL+LH ; slopeZ={'slope20': 0.1692} ; ma={'ma': 'insufficient'} ; ER=0.579 ; score=0.095 ; pro=[] ; con=[] ; agreement=0.0 ; bars=45 ; atr%=0.1062
+ضملي9033,W,2026-10-07,insufficient_data,,0.0,,,9,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+ضهرم5032,D,2026-06-08,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+ضهرم5032,W,2026-06-08,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+ضهرم5032,D,2026-08-21,classified,up,0.554,0.5637,1.0,49,0.3513,HH+HL,0.022,structure|slope,eff,"structure=HH+HL ; slopeZ={'slope20': 0.3519} ; ma={'ma': 'insufficient'} ; ER=0.022 ; score=0.564 ; pro=['structure', 'slope'] ; con=['eff'] ; agreement=1.0 ; bars=49 ; atr%=0.3513"
+ضهرم5032,W,2026-08-21,insufficient_data,,0.0,,,11,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+زريران,D,2026-07-12,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+زريران,W,2026-07-12,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+زريران,D,2026-10-07,classified,up,0.638,0.8713,1.0,55,0.0283,HH+HL,0.373,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.1489, 'slope50': 0.2878} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.373 ; score=0.871 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=55 ; atr%=0.0283"
+زريران,W,2026-10-07,insufficient_data,,0.0,,,12,,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+آلا2,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+آلا2,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+آلا2,D,2026-06-16,insufficient_data,,0.0,,,4,,no-series,,,,"MISSING:structure,slope,ma,eff"
+آلا2,W,2026-06-16,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+آلا2,D,2026-10-07,classified,down,0.468,-0.2273,1.0,63,,flat,0.0,ma,,"structure=flat ; slopeZ={} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': False} ; ER=0.0 ; score=-0.227 ; pro=['ma'] ; con=[] ; agreement=1.0 ; bars=63 ; atr%=None"
+آلا2,W,2026-10-07,classified,neutral,0.0,0.0,0.0,17,,flat,,,,structure=flat ; slopeZ={} ; ma={'ma': 'insufficient'} ; ER=None ; score=0.0 ; pro=[] ; con=[] ; agreement=0.0 ; bars=17 ; atr%=None
+خاذين,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+خاذين,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+خاذين,D,2026-07-08,insufficient_data,,0.0,,,16,0.0433,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+خاذين,W,2026-07-08,insufficient_data,,0.0,,,4,,no-series,,,,"MISSING:structure,slope,ma,eff"
+خاذين,D,2026-10-07,classified,up,0.665,0.526,1.0,75,0.0459,flat,0.275,slope|ma|eff,,"structure=flat ; slopeZ={'slope20': 0.0356, 'slope50': 0.2639} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.275 ; score=0.526 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=75 ; atr%=0.0459"
+خاذين,W,2026-10-07,insufficient_data,,0.0,,,17,0.0799,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+بنكر,D,2026-06-13,insufficient_data,,0.0,,,1,,no-series,,,,"MISSING:structure,slope,ma,eff"
+بنكر,W,2026-06-13,insufficient_data,,0.0,,,0,,,,,,MISSING:no-data-at-or-before-as_of
+بنكر,D,2026-07-15,insufficient_data,,0.0,,,21,0.0426,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,ma,eff"
+بنكر,W,2026-07-15,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+بنكر,D,2026-10-07,classified,up,0.671,0.5351,1.0,80,0.0285,flat,0.187,slope|ma|eff,,"structure=flat ; slopeZ={'slope20': 0.097, 'slope50': 0.2643} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.187 ; score=0.535 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=80 ; atr%=0.0285"
+بنكر,W,2026-10-07,insufficient_data,,0.0,,,17,0.0713,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+زفارس,D,2025-12-01,insufficient_data,,0.0,,,18,0.0314,کم‌پیوت (۲+۲ تأیید نشد),,,,"MISSING:structure,slope,ma,eff"
+زفارس,W,2025-12-01,insufficient_data,,0.0,,,5,,no-series,,,,"MISSING:structure,slope,ma,eff"
+زفارس,D,2026-07-15,classified,up,0.456,0.4452,0.333,108,0.0353,HH+LL,0.455,slope|ma|eff,structure,"structure=HH+LL ; slopeZ={'slope20': 0.2366, 'slope50': 0.2252} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.455 ; score=0.445 ; pro=['slope', 'ma', 'eff'] ; con=['structure'] ; agreement=0.33 ; bars=108 ; atr%=0.0353"
+زفارس,W,2026-07-15,classified,up,0.051,0.1247,0.0,25,0.0803,HH+LL,,slope,structure,structure=HH+LL ; slopeZ={'slope20': 0.1873} ; ma={'ma': 'insufficient'} ; ER=None ; score=0.125 ; pro=['slope'] ; con=['structure'] ; agreement=0.0 ; bars=25 ; atr%=0.0803
+زفارس,D,2026-10-07,classified,up,0.817,0.5417,1.0,167,0.0378,flat,0.232,slope|ma|eff,,"structure=flat ; slopeZ={'slope20': 0.0557, 'slope50': 0.245, 'slope120': 0.2211} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.232 ; score=0.542 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=167 ; atr%=0.0378"
+زفارس,W,2026-10-07,classified,up,0.849,0.6517,1.0,37,0.0919,HH+HL,0.408,structure|slope|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.7203} ; ma={'ma': 'insufficient'} ; ER=0.408 ; score=0.652 ; pro=['structure', 'slope', 'eff'] ; con=[] ; agreement=1.0 ; bars=37 ; atr%=0.0919"
+گلديس,D,2026-02-08,classified,up,0.855,0.8516,1.0,215,0.0529,HH+HL,0.276,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.1365, 'slope50': 0.2216, 'slope120': 0.208} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.276 ; score=0.852 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=215 ; atr%=0.0529"
+گلديس,W,2026-02-08,classified,up,0.925,0.6959,1.0,47,0.0847,HH+HL,0.624,structure|slope|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.4612} ; ma={'ma': 'insufficient'} ; ER=0.624 ; score=0.696 ; pro=['structure', 'slope', 'eff'] ; con=[] ; agreement=1.0 ; bars=47 ; atr%=0.0847"
+گلديس,D,2026-07-15,classified,neutral,0.218,-0.0796,0.333,305,0.0254,LL+LH,0.056,,,"structure=LL+LH ; slopeZ={'slope20': 0.1292, 'slope50': -0.0734, 'slope120': 0.0956} ; ma={'ma20_gt_50': False, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.056 ; score=-0.08 ; pro=[] ; con=[] ; agreement=0.33 ; bars=305 ; atr%=0.0254"
+گلديس,W,2026-07-15,classified,up,0.356,0.2874,0.333,67,0.0793,HH+LL,0.227,slope|ma|eff,structure,"structure=HH+LL ; slopeZ={'slope20': -0.0229, 'slope50': 0.3732} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.227 ; score=0.287 ; pro=['slope', 'ma', 'eff'] ; con=['structure'] ; agreement=0.33 ; bars=67 ; atr%=0.0793"
+گلديس,D,2026-10-07,classified,up,0.876,0.8705,1.0,364,0.0297,HH+HL,0.381,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.1509, 'slope50': 0.2738, 'slope120': 0.1199} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.381 ; score=0.871 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=364 ; atr%=0.0297"
+گلديس,W,2026-10-07,classified,up,0.855,0.7045,1.0,79,0.0621,LH+HL,0.277,structure|slope|ma|eff,,"structure=LH+HL ; slopeZ={'slope20': 0.276, 'slope50': 0.4126} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.277 ; score=0.704 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=79 ; atr%=0.0621"
+پارسان,D,2025-10-21,classified,neutral,0.24,-0.0912,0.333,269,0.0358,LL+LH,0.137,,,"structure=LL+LH ; slopeZ={'slope20': 0.1783, 'slope50': 0.1594, 'slope120': 0.0001} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.137 ; score=-0.091 ; pro=[] ; con=[] ; agreement=0.33 ; bars=269 ; atr%=0.0358"
+پارسان,W,2025-10-21,classified,up,0.811,0.5771,1.0,59,0.07,HH+HL,0.112,structure|slope|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.0581, 'slope50': 0.2324} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.112 ; score=0.577 ; pro=['structure', 'slope', 'eff'] ; con=[] ; agreement=1.0 ; bars=59 ; atr%=0.07"
+پارسان,D,2026-07-15,classified,down,0.823,-0.816,1.0,359,0.0415,LL+LH,0.117,structure|slope|ma|eff,,"structure=LL+LH ; slopeZ={'slope20': -0.1567, 'slope50': -0.328, 'slope120': -0.1161} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': False} ; ER=0.117 ; score=-0.816 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=359 ; atr%=0.0415"
+پارسان,W,2026-07-15,classified,down,0.834,-0.7577,1.0,79,0.2965,LL+LH,0.169,structure|slope|ma|eff,,"structure=LL+LH ; slopeZ={'slope20': -0.1052, 'slope50': -0.0379} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': False} ; ER=0.169 ; score=-0.758 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=79 ; atr%=0.2965"
+پارسان,D,2026-10-07,classified,neutral,0.125,0.0915,0.0,418,0.0392,flat,0.398,,,"structure=flat ; slopeZ={'slope20': 0.1216, 'slope50': 0.2749, 'slope120': -0.0986} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.398 ; score=0.091 ; pro=[] ; con=[] ; agreement=0.0 ; bars=418 ; atr%=0.0392"
+پارسان,W,2026-10-07,classified,down,0.849,-0.6807,1.0,91,0.0824,LL+LH,0.243,structure|slope|ma|eff,,"structure=LL+LH ; slopeZ={'slope20': 0.1278, 'slope50': -0.0923} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': False} ; ER=0.243 ; score=-0.681 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=91 ; atr%=0.0824"
+غويتا,D,2025-12-02,classified,up,0.275,0.1889,0.333,285,0.0371,LH+HL,0.068,structure|ma|eff,slope,"structure=LH+HL ; slopeZ={'slope20': -0.0144, 'slope50': 0.0856, 'slope120': -0.0367} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.068 ; score=0.189 ; pro=['structure', 'ma', 'eff'] ; con=['slope'] ; agreement=0.33 ; bars=285 ; atr%=0.0371"
+غويتا,W,2025-12-02,classified,neutral,0.211,-0.0864,0.333,64,0.0735,LH+HL,0.007,,,"structure=LH+HL ; slopeZ={'slope20': -0.0163, 'slope50': 0.0042} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': False} ; ER=0.007 ; score=-0.086 ; pro=[] ; con=[] ; agreement=0.33 ; bars=64 ; atr%=0.0735"
+غويتا,D,2026-07-15,classified,up,0.425,0.3097,0.333,375,0.0386,LL+LH,0.515,slope|ma|eff,structure,"structure=LL+LH ; slopeZ={'slope20': 0.1498, 'slope50': 0.3833, 'slope120': 0.2157} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.515 ; score=0.31 ; pro=['slope', 'ma', 'eff'] ; con=['structure'] ; agreement=0.33 ; bars=375 ; atr%=0.0386"
+غويتا,W,2026-07-15,classified,up,0.482,0.4465,0.333,84,0.088,HH+LL,0.461,slope|ma|eff,structure,"structure=HH+LL ; slopeZ={'slope20': 0.5049, 'slope50': 0.2175} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.461 ; score=0.446 ; pro=['slope', 'ma', 'eff'] ; con=['structure'] ; agreement=0.33 ; bars=84 ; atr%=0.088"
+غويتا,D,2026-10-07,classified,up,0.897,0.8945,1.0,434,0.0311,HH+HL,0.484,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.3835, 'slope50': 0.3515, 'slope120': 0.4572} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.484 ; score=0.894 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=434 ; atr%=0.0311"
+غويتا,W,2026-10-07,classified,up,0.902,0.9,1.0,96,0.0803,HH+HL,0.511,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 1.6445, 'slope50': 0.5103} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.511 ; score=0.9 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=96 ; atr%=0.0803"
+قشير,D,2025-12-01,classified,neutral,0.231,0.0828,0.333,294,0.0377,HH+LL,0.113,,,"structure=HH+LL ; slopeZ={'slope20': -0.0304, 'slope50': 0.1002, 'slope120': -0.008} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.113 ; score=0.083 ; pro=[] ; con=[] ; agreement=0.33 ; bars=294 ; atr%=0.0377"
+قشير,W,2025-12-01,classified,up,0.688,0.3721,1.0,65,0.0676,HH+HL,0.01,structure|slope,eff,"structure=HH+HL ; slopeZ={'slope20': 0.0104, 'slope50': 0.0167} ; ma={'ma20_gt_50': False, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.01 ; score=0.372 ; pro=['structure', 'slope'] ; con=['eff'] ; agreement=1.0 ; bars=65 ; atr%=0.0676"
+قشير,D,2026-07-08,classified,up,0.39,0.3303,0.333,384,0.0426,HH+LL,0.293,slope|ma|eff,structure,"structure=HH+LL ; slopeZ={'slope20': -0.0163, 'slope50': 0.1365, 'slope120': 0.0483} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.293 ; score=0.33 ; pro=['slope', 'ma', 'eff'] ; con=['structure'] ; agreement=0.33 ; bars=384 ; atr%=0.0426"
+قشير,W,2026-07-08,classified,up,0.859,0.8303,1.0,85,0.0816,HH+HL,0.293,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.1575, 'slope50': 0.0672} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.293 ; score=0.83 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=85 ; atr%=0.0816"
+قشير,D,2026-10-07,classified,up,0.779,0.4829,1.0,443,0.0441,flat,0.189,slope|ma|eff,,"structure=flat ; slopeZ={'slope20': -0.058, 'slope50': 0.1766, 'slope120': 0.1162} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=0.189 ; score=0.483 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=443 ; atr%=0.0441"
+قشير,W,2026-10-07,classified,up,0.861,0.8579,1.0,98,0.0803,HH+HL,0.305,structure|slope|ma|eff,,"structure=HH+HL ; slopeZ={'slope20': 0.4314, 'slope50': 0.251} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=0.305 ; score=0.858 ; pro=['structure', 'slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=98 ; atr%=0.0803"
+كيان,D,2026-02-15,classified,up,1.0,0.7045,1.0,355,0.0014,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 1.0298, 'slope50': 0.9817, 'slope120': 1.0116} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=1.0 ; score=0.705 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=355 ; atr%=0.0014"
+كيان,W,2026-02-15,classified,up,1.0,0.7045,1.0,77,0.0055,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 1.1158, 'slope50': 1.2556} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=1.0 ; score=0.705 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=77 ; atr%=0.0055"
+كيان,D,2026-07-15,classified,up,1.0,0.7045,1.0,445,0.0017,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 0.9015, 'slope50': 0.844, 'slope120': 0.951} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=1.0 ; score=0.705 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=445 ; atr%=0.0017"
+كيان,W,2026-07-15,classified,up,1.0,0.7045,1.0,97,0.0063,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 1.1415, 'slope50': 1.1707} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=1.0 ; score=0.705 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=97 ; atr%=0.0063"
+كيان,D,2026-10-07,classified,up,1.0,0.7045,1.0,504,0.0014,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 0.9283, 'slope50': 0.9552, 'slope120': 1.0379} ; ma={'ma20_gt_50': True, 'ma50_gt_200': True, 'px_gt_ma50': True} ; ER=1.0 ; score=0.704 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=504 ; atr%=0.0014"
+كيان,W,2026-10-07,classified,up,1.0,0.7045,1.0,109,0.0066,کم‌پیوت (۲+۲ تأیید نشد),1.0,slope|ma|eff,,"structure=کم‌پیوت (۲+۲ تأیید نشد) ; slopeZ={'slope20': 1.0265, 'slope50': 1.1345} ; ma={'ma20_gt_50': True, 'ma50_gt_200': False, 'px_gt_ma50': True} ; ER=1.0 ; score=0.705 ; pro=['slope', 'ma', 'eff'] ; con=[] ; agreement=1.0 ; bars=109 ; atr%=0.0066"

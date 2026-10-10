@@ -79,21 +79,28 @@ n = len(hist)
 # کندلِ آخر: بدنهٔ صعودی و پایانی بالای هر دو سطح
 hist[-1] = dict(hist[-1], open=113.0, high=118.0, low=112.5, close=117.0)
 jj = CH._fts_jet_setup(hist)
-ck("جت: پلکان شکسته ⇒ active=True", jj["active"] is True, jj)
-ck("جت: سقفِ ایستاده هم شکسته ⇒ static_broke=True", jj["static_broke"] is True, jj)
-ck("جت: tier = strong", jj["tier"] == "strong", jj)
+ck("جت: شکستِ سقفِ ایستاده ⇒ active=True", jj["active"] is True, jj)
+ck("جت: شکستِ سقفِ ایستاده ⇒ static_broke=True", jj["static_broke"] is True, jj)
+# مدلِ اصلیِ جت: confirmed / expired / none (رأیِ مالک ۱۴۰۵-۰۷: strong/breakout
+# بدونِ مستندِ جزوه برنمی‌گردد). شکستِ تأییدشدهٔ امروز ⇒ confirmed.
+ck("جت: tier = confirmed", jj["tier"] == "confirmed", jj)
 ck("جت: ceiling منتشر می‌شود", jj.get("ceiling") is not None, jj)
 
-# شکستِ فقطِ پلکان (زیرِ سقفِ ایستاده) ⇒ breakout، نه strong
+# زیرِ سقفِ ایستاده، شکستِ دیگری نیست ⇒ رأیِ منفیِ واقعی (ارزیابی ممکن بوده،
+# پس false نه null). tier = none.
 mid = bars([100.0] * 250 + wave([100, 140, 100, 118], n_per=8))
 mid[-1] = dict(mid[-1], open=126.0, high=131.0, low=125.5, close=130.0)
 jm = CH._fts_jet_setup(mid)
 ck("جت: سقفِ ایستاده دست‌نخورده ⇒ static_broke=False", jm["static_broke"] is False, jm)
-ck("جت: لایۀ اول رد شده ⇒ tier = breakout", jm["tier"] == "breakout", jm)
+ck("جت: ارزیابی ممکن بود ولی نشکست ⇒ tier = none (نه null)", jm["tier"] == "none", jm)
+# قاعدۀ null≠false در همان یک نگاه: تاریخچۀ کافی ⇒ رأیِ دوهایی، نه سنجیده‌نشده.
+ck("جتِ باسابقه هیچ‌وقت null نمی‌دهد",
+   jj["tier"] is not None and jm["tier"] is not None
+   and jj["active"] is not None and jm["active"] is not None, (jj["tier"], jm["tier"]))
 
-# سقفِ ایستاده زیرمجموعۀ پلکان است: هیچ‌وقت «قوی» بدونِ شکستِ پلکان نمی‌شود
-ck("هیامی نیست: strong ⇒ active (سقفِ ایستاده پلکان را می‌پوشاند)",
-   all((CH._fts_jet_setup(x)["tier"] != "strong")
+# هیچ رأیِ confirmed بدونِ active نیست (تأییدِ شکستِ امروز).
+ck("هیامی نیست: confirmed ⇒ active",
+   all((CH._fts_jet_setup(x)["tier"] != "confirmed")
        or CH._fts_jet_setup(x)["active"] is True for x in (hist, mid)))
 
 # ══════════════ ۳) CHoCH: تأییدِ دودرۀ جزوه ══════════════

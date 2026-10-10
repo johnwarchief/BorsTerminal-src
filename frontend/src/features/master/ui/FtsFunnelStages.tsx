@@ -10,8 +10,8 @@
 // یک منبعِ عدد، نه دو تا. اینجا فقط سیستمِ انتخاب و گام عوض می‌شوند.
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useStrategyStore } from '@shared/stores/strategyStore';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
+import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import FtsFunnelStageView from './FtsFunnelStageView';
 import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
@@ -21,7 +21,6 @@ import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
 export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
 
 const VALID_STAGES: readonly FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
-const VALID_PRESETS: readonly FunnelPreset[] = ['swing', 'trend', 'hourglass', 'custom'];
 
 /** سه سیستمِ انتخابیِ مالک — بزرگ، یک‌جا، بی‌صفحۀ جدا.
  *  «ساعت شنی» درِ این سه‌تا نیست: درِ هیچ منبعی فیلترِ تابلویی ندارد و
@@ -40,7 +39,7 @@ export function FtsFunnelStages({
   preset?: TreePreset;
   onPresetChange?: (p: 'swing' | 'trend' | 'hourglass') => void;
 }) {
-  const [params] = useSearchParams();
+  const [params, setSearchParams] = useSearchParams();
   const rawStage = params.get('stage') as FunnelStageKey | null;
   // گذرِ نماد از رویِ سطر، گام را درِ خودِ URL می‌نویسد؛ این شاخه فقط برایِ
   // «بازگشت» است: بی‌اش، برگشتن از صفحۀ نماد کاربر را از گام چهارم به گامِ اول
@@ -58,17 +57,22 @@ export function FtsFunnelStages({
   });
   const stage = rawStage && VALID_STAGES.includes(rawStage) ? rawStage : snapStage ?? 'tape';
 
-  const horizon = useStrategyStore((s) => s.horizon);
-  const savedPreset = useFunnelPrefsStore((s) => s.preset);
   const setPreset = useFunnelPrefsStore((s) => s.setPreset);
-  const rawPreset = params.get('preset') as FunnelPreset | null;
-  // URL > انتخابِ خودِ کاربر > propِ والد (افقِ سراسری). بی‌این ترتیب یا
-  // انتخابِ Custom با هر رندرِ تازه پاک می‌شد یا propِ والد هیچ‌وقت حاکم نبود.
-  const activePreset = rawPreset && VALID_PRESETS.includes(rawPreset)
-    ? rawPreset
-    : savedPreset ?? preset ?? horizon;
+  // presetِ فعال از تنها منبعِ مشترک (URL > انتخابِ کاربر > prop=افق) — همانی که
+  // dossier و سایدبار می‌خوانند، پس یک درخواستِ canonical به هر سه سطح می‌رسد.
+  const activePreset = useActiveFunnelPreset(preset);
   const choose = (p: FunnelPreset) => {
     setPreset(p);
+    // «منبعِ واحدِ معتبر» یعنی URL برنده است؛ پس کلیکِ کاربر باید خودِ URL را
+    // عوض کند، نه فقط store را. بی‌این، هرگاه صفحه با `?preset=` باز شده باشد
+    // (لینکِ StrategyTree/stepper) activePreset رویِ مقدارِ URL قفل می‌ماند و
+    // کلیکِ دکمهٔ Preset جدول را هرگز تازه نمی‌کند (باگِ P0). بقیۀ پارامترها
+    // (symbol/stage) حفظ می‌شوند.
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('preset', p);
+      return next;
+    }, { replace: true });
     // «Custom» افقِ سراسری نیست (پلنِ معامله و وزنِ پله به افق نگاه می‌کنند)؛
     // سه افقِ واقعی درِ هر دو جا نوشته می‌شوند.
     if (p !== 'custom') onPresetChange?.(p);
