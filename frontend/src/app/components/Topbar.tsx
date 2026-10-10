@@ -6,6 +6,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const TITLES: Record<string, string> = {
   '/market': 'تابلوخوانی / بازار',
+  '/market-status': 'وضعیت بازار',
   '/technical': 'تحلیل تکنیکال',
   '/fundamental': 'تحلیل بنیادی',
   '/portfolio': 'مدیریت پرتفوی',

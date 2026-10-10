@@ -11,6 +11,12 @@ export const mainRoutes: RouteObject[] = [
   // نوارِ کناری هم درست روشن شود.
   { path: '', element: <Navigate to="/master" replace /> },
   { path: 'market', element: page(() => import('@features/market/routes/MarketPage')) },
+  // رأیِ مالک (۱۴۰۵-۰۷-۲۰): «وضعیت بازار» باید از ناوبری باز شود، نه فقط نوارِ
+  // بالایِ تابلو باشد.
+  {
+    path: 'market-status',
+    element: page(() => import('@features/market/routes/MarketStatusPage')),
+  },
   {
     path: 'fundamental/:symbol?',
     element: page(() => import('@features/fundamental/routes/FundamentalPage')),

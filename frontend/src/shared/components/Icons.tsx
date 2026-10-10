@@ -103,6 +103,15 @@ export function TreeIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+/** نبض/خطِ وضعیت — برایِ مقصدِ «وضعیت بازار» درِ ناوبری */
+export function StatusIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M3 12h3.5l2-5 3 10 2.5-5H21" />
+    </svg>
+  );
+}
+
 export function ArrowUpLeftIcon({ className, size = 14 }: IconProps) {
   return (
     <svg {...SVG_PROPS} className={className} width={size} height={size}>

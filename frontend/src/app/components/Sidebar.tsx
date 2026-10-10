@@ -13,6 +13,7 @@ import {
   MarketIcon,
   MasterIcon,
   PortfolioIcon,
+  StatusIcon,
   TechnicalIcon,
   TreeIcon,
 } from '@shared/components/Icons';
@@ -29,11 +30,15 @@ interface NavSection {
   items: NavItem[];
 }
 
-const NAV_SECTIONS: NavSection[] = [
+// آزمودنی: رسیدۀ ناوبری از همین فایل خوانده می‌شود تا «منوی مستقل» ثابت شود
+export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'فضای تحلیل',
     items: [
       { to: '/market', icon: MarketIcon, label: 'تابلوخوانی/بازار', end: false },
+      // رأیِ مالک (۱۴۰۵-۰۷-۲۰): وضعیتِ بازار یک مقصدِ مستقلِ ناوبری است، نه فقط
+      // نوارِ بالایِ تابلو.
+      { to: '/market-status', icon: StatusIcon, label: 'وضعیت بازار', end: true },
       { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
       { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
     ],
