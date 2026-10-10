@@ -1,5 +1,8 @@
 # TSETMC P0 — Consumer Integration (1405-07-13)
 
+> **Snapshot ادغام مصرف‌کنندگان:** شواهد این گزارش به کد و دادهٔ نشست ۲۰۲۶-۱۰-۰۵ مربوط است. برای تعیین اینکه هر P0 امروز کامل یا باز است، گزارش تاریخی را به‌تنهایی مبنا نگیرید؛ کامیت‌های بعدی، کد جاری و آزمون‌های مصرف‌کننده مرجع وضعیت فعلی‌اند.
+
+
 Round: canonical P0 data → real consumers in BorsTerminal.
 No parallel computation, no FTS logic change, no budget change.
 
