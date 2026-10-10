@@ -120,22 +120,22 @@ const pulse = {
     status: 'ok', group: 'eq_all', positive: 610, negative: 292, zero: 13, nodata: 16,
     not_traded: 54, positive_pct: 66.7, negative_pct: 31.9,
   },
-} as never;
+} as unknown as Record<string, unknown>;
 
 const histogram = {
   status: 'ok', group: 'all', histo12: [], known: 931, nodata: 16, not_traded: 54, total: 985,
-} as never;
+} as unknown as Record<string, unknown>;
 
 const split = {
   status: 'ok', tab: 'all', symbols: 985, money_flow_b_toman: -4055.9,
   retail: { buy_b_toman: 18877.8, sell_b_toman: 22933.7 },
-} as never;
+} as unknown as Record<string, unknown>;
 
 function renderTicker(pulseArg: unknown = pulse) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MarketStatusTicker pulse={pulseArg as never} histogram={histogram} split={split} />
+      <MarketStatusTicker pulse={pulseArg as never} histogram={histogram as never} split={split as never} />
     </QueryClientProvider>,
   );
 }
@@ -156,12 +156,12 @@ describe('نوارِ خلاصۀ چرخشی', () => {
     expect(screen.getByTestId('ticker-fact-مثبت').textContent).toBe('۶۱۰');
     expect(screen.getByTestId('ticker-fact-منفی').textContent).toBe('۲۹۲');
     first.unmount();
-    renderTicker({ ...pulse, thermometer: null, depth: null });
+    renderTicker({ ...pulse, thermometer: null, depth: null } as Record<string, unknown>);
     expect(screen.getByTestId('ticker-fact-مثبت').textContent).toBe('—');
   });
 
   it('عمقِ نرسیده «بی‌داده» می‌گوید، نه صفِ صفر', () => {
-    renderTicker({ ...pulse, depth: { ...pulse.depth, depth_available: false } });
+    renderTicker({ ...pulse, depth: { ...(pulse.depth as object), depth_available: false } } as Record<string, unknown>);
     fireEvent.click(screen.getByTestId('ticker-tabs-queues'));
     expect(screen.getByTestId('ticker-no-depth')).toBeInTheDocument();
     expect(screen.queryByTestId('ticker-fact-ارزش صف خرید')).not.toBeInTheDocument();
