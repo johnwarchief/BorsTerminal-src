@@ -49,9 +49,16 @@ function stubSizes() {
   Object.defineProperty(HTMLElement.prototype, 'scrollWidth', { configurable: true, value: 800 });
   Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, value: 400 });
 }
+// این دو رویِ HTMLElement.prototype می‌نشینند؛ بی‌پاک‌کردن، هر پروندۀ دیگری
+// که درِ همین worker اجرا شود پهنایِ ساختگی می‌گیرد (دو آزمونِ بی‌ربط درِ دورِ
+// اولِ همین دور قرمز شدند — نوسان از همین‌جا بود).
+function unstubSizes() {
+  delete (HTMLElement.prototype as unknown as { scrollWidth?: number }).scrollWidth;
+  delete (HTMLElement.prototype as unknown as { clientWidth?: number }).clientWidth;
+}
 
 beforeEach(() => { installRaf(); renders = 0; reduced(false); stubSizes(); });
-afterEach(() => { vi.unstubAllGlobals(); });
+afterEach(() => { unstubSizes(); vi.unstubAllGlobals(); });
 
 describe('MarqueeTrack', () => {
   it('درِ حالتِ روان transform درِ DOM عوض می‌شود و React ری‌رندر نمی‌کند', () => {
