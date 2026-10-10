@@ -45,7 +45,7 @@ that config file unreachable to everyone including its owner.
 
 ### Prose-only gate (mechanical, not convention)
 
-Owner ruling: **no source code is sent to `api.typesafe.ai`.** `pilot_ctl.py` enforces it by
+Historical Jev-pilot privacy constraint (still relevant only if that legacy tool is used): **no source code is sent to `api.typesafe.ai`.** `pilot_ctl.py` enforces it by
 rejecting any `context` or `option` containing `{`, `}`, `;`, a `<tag>`, `=>`, `&&`, `||`,
 `self.`, `this.`, a line starting with `import|from|def|class|const|let|var|function|return|export`,
 or more than 1200 characters. The refusal looks like a tool error, not a policy message.
