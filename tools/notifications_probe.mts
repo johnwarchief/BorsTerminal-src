@@ -4,7 +4,7 @@
  *   • صفحه از همان API پر می‌شود و هر ردیف لینکِ codal.ir دارد (تيترِ بی‌منبع نه)
  *   • «خوانده شد» درِ همین دستگاه می‌ماند (با reload برمی‌گردد)
  *   • زنگولۀِ نوارِ بالا همان شمارۀِ ناخوانده را می‌دهد و به همان صفحه می‌رود
- *   • درِ ۱۳۶×۷۶۸ سرریزِ افقی نیست
+ *   • درِ ۱۳۶۶×۷۶۸ سرریزِ افقی نیست
  *
  *   MSYS_NO_PATHCONV=1 JEV_CHROME=... node --experimental-strip-types \
  *     tools/notifications_probe.mts --url http://127.0.0.1:8002/
@@ -88,7 +88,7 @@ const checks: Array<[string, boolean, unknown]> = [
   ['«خوانده شد» بلافاصله رویِ ردیف می‌نشیند', marked === '1', { marked, firstId }],
   ['«خوانده شد» با reload می‌ماند (درِ همین دستگاه)', afterReload.read === '1' && afterReload.stored.includes('"read"'),
     afterReload],
-  ['بی‌سرریزِ افقی درِ ۱۳۶×۷۶۸', d0.overflowX <= 0, d0.overflowX],
+  ['بی‌سرریزِ افقی درِ ۱۳۶۶×۷۶۸', d0.overflowX <= 0, d0.overflowX],
 ];
 writeFileSync(`${OUT}.json`, JSON.stringify({ api_count: api.count, src, dom: d0, marked, afterReload,
   checks: checks.map(([n, ok, d]) => ({ n, ok, d })) }, null, 2));

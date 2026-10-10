@@ -110,7 +110,7 @@ const perf = await page.evaluate(() => new Promise((res) => {
   requestAnimationFrame(tick);
 }));
 out.frame_window = perf;
-checks.push(['نرخِ فریم درِ ۱۳۶×۷۶۸ رویِ همین ماشین ≥ ۳۰fps است',
+checks.push(['نرخِ فریم درِ ۱۳۶۶×۷۶۸ رویِ همین ماشین ≥ ۳۰fps است',
   (perf as { fps: number }).fps >= 30, perf]);
 checks.push(['میانهٔ فاصلۀِ فریم زیرِ ۴۰ms است (محاسبۀِ سنگین درِ هر فریم نیست)',
   (perf as { medianGapMs: number }).medianGapMs < 40, perf]);

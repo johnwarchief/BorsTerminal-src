@@ -61,7 +61,7 @@ const checks: Array<[string, boolean, unknown]> = [
     { allowed: api.verdict_allowed, verdict: dom.verdict }],
   ['ستونِ مرحل درِ پاسخِ خلاصه هم هست (یک منبع برای هر دو بلوک)',
     summary?.phase?.phase === api.phase, { summary: summary?.phase?.phase, api: api.phase }],
-  ['بی‌سرریزِ افقی درِ ۱۳۶×۷۶۸', dom.overflowX <= 0, dom.overflowX],
+  ['بی‌سرریزِ افقی درِ ۱۳۶۶×۷۶۸', dom.overflowX <= 0, dom.overflowX],
 ];
 writeFileSync(`${OUT}.json`, JSON.stringify({ api, summary_phase: summary?.phase,
                                               health: summary?.health, dom,

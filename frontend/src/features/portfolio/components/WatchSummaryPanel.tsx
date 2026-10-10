@@ -84,7 +84,7 @@ export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: Market
         <InfoRow label="نسبتِ حجم"><span className="num">{row?.vol_ratio != null ? toFaDigits(row.vol_ratio.toFixed(2)) : '—'}</span></InfoRow>
         {/* بند ۲ مأموریت + درخواستِ مالک (کنارِ نسبتِ خریدار/فروشنده درِ دیده‌بان):
             سهمِ حقیقی/حقوقی از **ارزشِ** خرید و فروش. همان ستون‌هایِ تابلو که
-            `client_split.py` ساخته — دیدۀبان عددِ دوم نمی‌سازد. */}
+            `client_split.py` ساخته — دیده‌بان عددِ دوم نمی‌سازد. */}
         <ClientSharePct row={row} dense testId="watch-client-share" className="my-1" />
         <InfoRow label="وضعیتِ معاملاتی">
           {stopped ? (

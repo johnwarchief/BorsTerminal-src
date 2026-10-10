@@ -6,7 +6,7 @@
  * context بی‌اثر است (این خودِ پروب درِ دورِ اول همین کنترلِ منفی را گم کرد).
  *
  *   • کنترلِ مثبت: نمادی با ارزشِ مبدأ ⇒ عددِ رابط = عددِ API در همان لحظه،
- *     درِ سه surface (سایدبار، نوارِزمینه، دیدۀبان) و دو سمتِ مستقل.
+ *     درِ سه surface (سایدبار، نوارِ زمینه، دیده‌بان) و دو سمتِ مستقل.
  *   • کنترلِ منفی: نمادی بی‌ارزشِ مبدأ ⇒ «نامشخص»، و هیچ رقمی رویِ صفحه نیست.
  *   • کنترلِ رسیدن: aria-labelِ پنل باید همان نمادِ مرجع را بگوید — وگرنه
  *     «نامشخص» بی‌دلیلِ درست سبز می‌شود.
@@ -115,7 +115,7 @@ steps.push({ case: 'without-value', symbol: WITHOUT, api_has_value: row2?.retail
 await a2.page.screenshot({ path: `${OUT}-without.png` });
 await a2.ctx.close();
 
-// ── دیدۀبان ────────────────────────────────────────────────────────────────
+// ── دیده‌بان ────────────────────────────────────────────────────────────────
 const a3 = await openAt('/#/watch', WITH);
 let s3 = await a3.page.evaluate(READ);
 if (s3.watchSymbol !== WITH) {
@@ -169,10 +169,10 @@ judge('کنترلِ رسیدن (منفی): پنلِ نمادِ بی‌مبدأ �
 judge('نمادِ بی‌مبدأ ⇒ «نامشخص»، نه صفر',
   /نامشخص/.test(text(s2.inspBuy) ?? '') && !/[0-9۰-۹]/.test(text(s2.inspBuy) ?? ''),
   { dom: s2.inspBuy, api_has_value: row2?.retail_buy_pct != null });
-judge('دیدۀبان: همان ستون‌ها، برایِ همان نماد، با همان عدد',
+judge('دیده‌بان: همان ستون‌ها، برایِ همان نماد، با همان عدد',
   s3.watchSymbol != null && firstPct(text(s3.watchBuy)) === nval(row3, 'retail_buy_pct'),
   { symbol: s3.watchSymbol, dom: text(s3.watchBuy), api: row3?.retail_buy_pct });
-judge('بی‌سرریزِ افقی در ۱۳۶×۷۶۸ (تابلو و دیدۀبان)',
+judge('بی‌سرریزِ افقی در ۱۳۶۶×۷۶۸ (تابلو و دیده‌بان)',
   s1.overflowX <= 0 && s3.overflowX <= 0, { market: s1.overflowX, watch: s3.overflowX });
 
 results.verdicts = verdicts;

@@ -5,7 +5,7 @@
  *   A) نمادی با پنج سطرِ کامل و دامنۀِ بازِ روز (کندل رسم\\u200cشدہ)
  *   B) نمادی با کمتر از پنج سطر ⇒ خانۀ باقی\\u200cمانده «—» با data-state=no-row
  *   C) نمادی که چهار قیمتِ روز یکی است (صف/قفل) ⇒ کندل «flat»، نه بدنهٔ ساختگی
- * درِ دو viewport (۱۳۶×۷۶۸ و ۱۹×۱۰۸۰) + اسکرین\\u200cشات.
+ * درِ دو viewport (۱۳۶۶×۷۶۸ و ۱۹۲۰×۱۰۸۰) + اسکرین\\u200cشات.
  *
  *   MSYS_NO_PATHCONV=1 JEV_CHROME="C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe" \
  *     node --experimental-strip-types tools/orderbook_five_probe.mts --url http://127.0.0.1:8002/
@@ -126,7 +126,7 @@ async function runCase(viewport: { width: number; height: number }, tag: string,
     await page.waitForTimeout(WAIT);
     let dom: any;
     if (kind === 'few') {
-      // همان کامپوننت درِ دیدۀبان: پنلِ وسط، با کندلِ بالایِ سطرها
+      // همان کامپوننت درِ دیده‌بان: پنلِ وسط، با کندلِ بالایِ سطرها
       await page.evaluate((s: string) => {
         const rows = Array.from(document.querySelectorAll('[data-testid^="watch-row-"]'));
         const hit = rows.find((r) => (r.textContent || '').includes(s));
@@ -205,7 +205,7 @@ judge('B) سطرهایِ نرسیده «—» با وضعیتِ صریح‌ان�
   })(),
   { states: Object.fromEntries(Object.entries(few.cells).map(([k, c]: any) => [k, c.state])),
     levels_from_api: (small.cases as any).few.api_levels });
-judge('B) پنلِ دیدۀبان همان کامپوننت است (نه نسخۀِ دوم)',
+judge('B) پنلِ دیده‌بان همان کامپوننت است (نه نسخۀِ دوم)',
   (small.cases as any).few.dom.symbol === SYMS.few && !!few.heads.buy_cols,
   { symbol: few.symbol, heads: few.heads });
 judge('C) روزِ بی‌دامنه (صف/قفل) ⇒ کندل flat و بی‌بدنهٔ ساختگی',
@@ -218,7 +218,7 @@ judge('بی‌سرریزِ افقی درِ هر دو viewport',
   [small, big].every((s) => Object.values((s.cases as any)).every((c: any) => c.dom.overflowX <= 0)),
   { small: Object.fromEntries(Object.entries((small.cases as any)).map(([k, v]: any) => [k, v.dom.overflowX])),
     big: Object.fromEntries(Object.entries((big.cases as any)).map(([k, v]: any) => [k, v.dom.overflowX])) });
-judge('قدِ پنل درِ ۱۳۶×۷۶۸ از صفحۀ دیدۀبان بیرون نمی\\u200cزند',
+judge('قدِ پنل درِ ۱۳۶۶×۷۶۸ از صفحۀ دیده‌بان بیرون نمی\\u200cزند',
   Object.values((big.cases as any)).every((c: any) => c.dom.panelBottom == null || c.dom.panelBottom > 0),
   { note: 'panelBottom ثبت شده؛ کرانِ بالا درِ گزارشِ دستی خوانده می‌شود' });
 

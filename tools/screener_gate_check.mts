@@ -50,7 +50,7 @@ const checks: Array<[string, boolean]> = [
     apiTapeInput != null && toEn(dom.chip).includes(String(apiTapeInput))],
   ['تعدادِ بجِ «کاندیدِ قیف» = تعدادِ کاندیدِ API', dom.badges === apiCand],
   ['ردیف‌هایِ جدول رندر شده‌اند', dom.rows > 0],
-  ['بی‌سرریزِ افقی درِ ۱۳۶×۷۶', dom.overflowX <= 0],
+  ['بی‌سرریزِ افقی درِ ۱۳۶۶×۷۶۸', dom.overflowX <= 0],
 ];
 console.log(JSON.stringify({ chip: dom.chip, api_tape_input: apiTapeInput,
                              api_candidates: apiCand, dom }, null, 1));
