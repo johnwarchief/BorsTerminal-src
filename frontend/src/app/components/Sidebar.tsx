@@ -23,6 +23,8 @@ interface NavItem {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   end?: boolean;
+  /** زیرِ آیتمِ همسایه نشان داده می‌شود (دیده‌بان: تبِّ مستقلِ زیرِ پرتفوی) */
+  sub?: boolean;
 }
 
 interface NavSection {
@@ -35,10 +37,11 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'فضای تحلیل',
     items: [
-      { to: '/market', icon: MarketIcon, label: 'تابلوخوانی/بازار', end: false },
-      // رأیِ مالک (۱۴۰۵-۰۷-۲۰): وضعیتِ بازار یک مقصدِ مستقلِ ناوبری است، نه فقط
-      // نوارِ بالایِ تابلو.
+      // رأیِ مالک (۱۴۰۵-۰۷-۲۰): «وضعیت بازار» اولین تب است، و
+      // «تابلوخوانی / بازار» دیگر «/بازار» ندارد -- چون وضعیتِ بازار از درونِ
+      // تابلو به مقصدی مستقل رفته است.
       { to: '/market-status', icon: StatusIcon, label: 'وضعیت بازار', end: true },
+      { to: '/market', icon: MarketIcon, label: 'تابلوخوانی', end: false },
       { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
       { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
     ],
@@ -58,6 +61,10 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'سرمایه و دارایی',
     items: [
       { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
+      // رأیِ مالک (1405-07-20): دیده‌بان از درونِ پرتفوی بیرون آمد و تبِّ مستقل شد،
+      // ولی همان‌جا زیرِ گروهِ «سرمایه و دارایی» و با دندانه نشان داده می‌شود که
+      // تعلقش به پرتفوی گم نشود.
+      { to: '/watch', icon: StatusIcon, label: 'دیده‌بان بازار', end: true, sub: true },
     ],
   },
 ];
@@ -124,8 +131,9 @@ export function Sidebar() {
                 end={item.end}
                 title={item.label}
                 aria-label={item.label}
+                data-testid={item.sub ? 'nav-sub-watch' : undefined}
                 className={({ isActive }) =>
-                  `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${
+                  `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${item.sub && !collapsed ? 'ms-3 text-2xs' : ''} ${
                     collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
                   } ${
                     isActive

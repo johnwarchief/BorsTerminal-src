@@ -44,8 +44,17 @@ describe('AppShell smoke', () => {
   it('سایدبار فارسی رندر می شود', async () => {
     renderApp('/');
     await waitFor(() => {
-      expect(screen.getByText('تابلوخوانی/بازار')).toBeInTheDocument();
-      expect(screen.getByText('استراتژی FTS')).toBeInTheDocument();
+      const sidebar0 = screen.getByLabelText('نوار کناری') as HTMLElement;
+      expect(within(sidebar0).getByText('تابلوخوانی')).toBeInTheDocument();
+      expect(within(sidebar0).getByText('استراتژی FTS')).toBeInTheDocument();
+      // رأیِ مالک (1405-07-20): «وضعیت بازار» اولین تبِ فضای تحلیل است و
+      // «/بازار» از نامِ تابلوخوانی افتاده؛ دیده‌بان هم تبِّ مستقلش را دارد.
+      expect(within(sidebar0).queryByText('تابلوخوانی/بازار')).not.toBeInTheDocument();
+      const navLinks = Array.from(
+        (screen.getByLabelText('نوار کناری') as HTMLElement).querySelectorAll('nav a[aria-label]'),
+      ).map((a) => a.getAttribute('aria-label'));
+      expect(navLinks.slice(0, 2)).toEqual(['وضعیت بازار', 'تابلوخوانی']);
+      expect(navLinks).toContain('دیده‌بان بازار');
     });
     // رأیِ واژگانِ مالک (۱۴۰۵-۰۷-۱۷): /master «استراتژی FTS» صدا می‌زند؛
     // «تابلوی غربالگری» و «مستر FTS» دیگر نامِ این مقصد نیستند. عنوانِ گروه

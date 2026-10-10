@@ -249,7 +249,10 @@ export function SymbolInspector() {
   const hardVeto = veto.assembly.veto || veto.weekly.veto || decision?.action === 'veto';
   const awaiting =
     !hardVeto && (decision?.action === 'veto_gate1' || decision?.action === 'veto_gate2');
-  const gaugeMode: 'score' | 'veto' | 'wait' = hardVeto ? 'veto' : awaiting ? 'wait' : 'score';
+  // رأیِ مالک (1405-07-20): «در انتظار سنجش» درِ سایدبار ممنوع است. این دو
+  // اکشن هیچ محاسبۀ معطّلی را معنی نمی‌کنند -- گیتِ مرحلۀ قیف برایِ این نماد
+  // باز نشده است، پس همان لحظه هم حکمِ خودش را دارد: «مسدود».
+  const gaugeMode: 'score' | 'veto' | 'wait' = hardVeto || awaiting ? 'veto' : 'score';
   const isVeto = hardVeto;
   /** نامِ گیت‌هایی که سبز نیستند — خطِ دومِ کاکپیت، تا «چرا نه» مبهم نماند */
   const blockers = (strictRes?.gates ?? [])
@@ -262,13 +265,13 @@ export function SymbolInspector() {
       ? `وتوی هفتگی${veto.weekly.desc ? ` — ${veto.weekly.desc}` : ' — روند هفتگی صعودی نیست'}`
       : awaiting
         ? decision?.action === 'veto_gate1'
-          ? 'بنیادی هنوز سنجیده نشده'
-          : 'تکنیکال هنوز سنجیده نشده'
+          ? 'گیتِ بنیادیِ این نماد باز نیست (تکنیکال عبور نکرده)'
+          : 'گیتِ تکنیکالِ این نماد باز نیست (تابلو/هفتگی عبور نکرده)'
         : blockers
           ? `سد: ${blockers}`
           : verdict && symbol
             ? `${toFaDigits(verdict.usedSignalIds.length)}/۴ سیگنال`
-            : 'در انتظار سیگنال';
+            : 'بی‌سیگنالِ فعال';
 
   const open = symbol.length > 0;
   const pct = isVeto ? 0 : verdict ? (verdict.compositeScore + 100) / 2 : 50;
@@ -491,7 +494,11 @@ export function SymbolInspector() {
           {/* ── ۱۵.۲۰ حجم/تعداد و ارزشِ معاملات — دو مقدارِ همان ستون‌هایِ تابلو
               با همان واحد. اینجا عددِ تازه‌ای محاسبه نمی‌شود؛ فقط همان‌ها خوانده
               می‌شود (تک‌تعریفِ واحد درِ `shared/lib/fmt`). */}
-          <div className="grid grid-cols-3 items-end gap-1 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+          {/* دو ستون به‌جای سه‌تا (رأیِ مالک 1405-07-20: «حجم و تعداد تو‌هم
+              رفته و قابل دیدن نیست»): درِ عرضِ این سایدبار، عددِ هفت‌رقمیِ
+              جداشده با «٬» درِ ستونِ یک‌سومی جا نمی‌شود و می‌شکند. ارزشِ
+              معاملات که بلندترین عدد است، یک سطرِ تمام‌عرض می‌گیرد. */}
+          <div className="grid grid-cols-2 items-end gap-x-2 gap-y-1 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
                data-testid="inspector-volume">
             <div className="min-w-0">
               <div className="text-[8.5px] text-text-muted">حجم</div>
@@ -509,7 +516,7 @@ export function SymbolInspector() {
                 {rawRow?.z_tot_tran != null ? fmtInt(rawRow.z_tot_tran) : 'بی‌داده'}
               </div>
             </div>
-            <div className="min-w-0">
+            <div className="col-span-2 min-w-0 border-t border-[var(--hairline)] pt-1">
               <div className="truncate text-[8.5px] text-text-muted">ارزش (م.ریال)</div>
               <div className="num truncate text-[10.5px] font-bold text-text-primary"
                    data-testid="inspector-value-num"
@@ -537,6 +544,8 @@ export function SymbolInspector() {
               // رأیِ I4ِ موتور دست‌نخورده است؛ آنچه اینجا نشان داده می‌شود
               // «نسبتِ با ارزشِ بازارِ همین ردیفِ تابلو» است:
               //   فروشِ ۱۲ ماهه (برآورد، میلیارد تومان) × ۱e10 ÷ mcap(ریال)
+              // رأیِ مالک (1405-07-20): نمایش درصدی است (×۱۰۰ و ٪)؛ خودِ نسبت و حکمِ موتور
+              // دست‌نخورده‌اند.
               // و اگر با نسبتِ ثبت‌شدۀ موتور نمی‌خواند، **هر دو** عدد دیده
               // می‌شوند — نه بازنویسیِ بی‌صدایِ حکم، نه داورِ دوم درِ فرانت.
               const salesBt = cand?.screen?.annual_sales_bt ?? null;
@@ -554,17 +563,17 @@ export function SymbolInspector() {
                       data-testid="inspector-i4"
                       title={`فروشِ ۱۲ ماهه (برآورد): ${salesBt != null ? toFaDigits(Math.round(salesBt)) : '—'} میلیارد تومان`
                         + ` ÷ ارزشِ بازارِ همین ردیف: ${mcap != null ? fmtHemmat(mcap) : '—'}`
-                        + ` ⇒ ${toFaDigits(shown.toFixed(2))}×`
-                        + (differs ? ` — نسبتِ ثبت‌شدۀ موتور: ${toFaDigits(cached!.toFixed(2))}×`
+                        + ` ⇒ ${toFaDigits((shown * 100).toFixed(1))}٪`
+                        + (differs ? ` — نسبتِ ثبت‌شدۀ موتور: ${toFaDigits((cached! * 100).toFixed(1))}٪`
                                    : ' — با نسبتِ ثبت‌شدۀ موتور می‌خواند')
                         + '\nمبنایِ ارزشِ بازار: TSETMC (' + (rawRow?.mcap_src || 'بی‌منبع') + ')؛'
                         + ' حکمِ پذیرش/رد را همان موتورِ بنیادی می‌دهد، این عدد فقط نسبتِ زنده است.'}
                       className="num flex items-baseline gap-1 text-[11px] font-bold text-accent-blue hover:underline">
-                  {toFaDigits(shown.toFixed(2))}×
+                  {toFaDigits((shown * 100).toFixed(1))}٪
                   {differs ? (
                     <span className="text-[8.5px] font-normal text-accent-amber"
                           data-testid="inspector-i4-diverges">
-                      (موتور: {toFaDigits((cached as number).toFixed(2))}×)
+                      (موتور: {toFaDigits(((cached as number) * 100).toFixed(1))}٪)
                     </span>
                   ) : null}
                 </Link>
@@ -784,7 +793,9 @@ export function SymbolInspector() {
               {hardVeto ? (
                 <Badge tone="red">ورود متوقف</Badge>
               ) : awaiting ? (
-                <Badge tone="yellow">در انتظارِ سنجش</Badge>
+                <Badge tone="red" title="این «در حالِ محاسبه» نیست: گیتِ مرحلۀ قیف بسته است">
+                  {decision?.action === 'veto_gate1' ? 'مسدود در بنیادی' : 'مسدود در تکنیکال'}
+                </Badge>
               ) : decision ? (
                 <Badge tone={DECISION_TONE[decision.action]}>{decision.label}</Badge>
               ) : verdict ? (

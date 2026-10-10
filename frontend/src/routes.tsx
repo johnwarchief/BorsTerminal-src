@@ -35,6 +35,13 @@ export const mainRoutes: RouteObject[] = [
     element: page(() => import('@features/master/routes/StrategyTreePage')),
   },
   { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
+  // رأیِ مالک (1405-07-20): دیده‌بان تبِّ مستقل است، ولی درِ ناوبری زیرِ گروهِ
+  // پرتفوی نشان داده می‌شود. خودِ زیرتب درِ /portfolio هم دست‌نخورده می‌ماند تا
+  // نشانی‌هایِ پیشین نشکنند.
+  {
+    path: 'watch',
+    element: page(() => import('@features/portfolio/components/WatchMarketWorkspace')),
+  },
   {
     path: 'master/:symbol?',
     element: page(() => import('@features/master/routes/MasterPage')),

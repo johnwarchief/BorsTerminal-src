@@ -25,12 +25,13 @@ const DESTS: { id: Dest; label: string }[] = [
 const PAGES: { path: string; label: string; hint: string }[] = [
   // صفحۀ نخستِ برنامه «استراتژی FTS» است، پس درِ پالت هم اول می‌آید.
   { path: '/master', label: 'استراتژی FTS', hint: 'تب' },
-  { path: '/market', label: 'تابلوخوانی / بازار', hint: 'تب' },
   { path: '/market-status', label: 'وضعیت بازار', hint: 'تب' },
+  { path: '/market', label: 'تابلوخوانی', hint: 'تب' },
   { path: '/technical', label: 'تحلیل تکنیکال', hint: 'تب' },
   { path: '/fundamental', label: 'تحلیل بنیادی', hint: 'تب' },
   { path: '/strategy-tree', label: 'درخت استراتژی', hint: 'تب' },
   { path: '/portfolio', label: 'مدیریت پرتفوی', hint: 'تب' },
+  { path: '/watch', label: 'دیده‌بان بازار', hint: 'تب' },
 ];
 
 type Row = { symbol: string; name: string; sector: string };

@@ -5,8 +5,9 @@ import { FreshnessBadge } from '@shared/components/FreshnessBadge';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const TITLES: Record<string, string> = {
-  '/market': 'تابلوخوانی / بازار',
+  '/market': 'تابلوخوانی',
   '/market-status': 'وضعیت بازار',
+  '/watch': 'دیده‌بان بازار',
   '/technical': 'تحلیل تکنیکال',
   '/fundamental': 'تحلیل بنیادی',
   '/portfolio': 'مدیریت پرتفوی',
