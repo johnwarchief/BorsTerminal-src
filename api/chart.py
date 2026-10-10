@@ -5,7 +5,7 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
+from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
 from tape_flags import JET_LADDER
 import candle_contract
 import price_basis
@@ -22,6 +22,57 @@ import time
 
 
 router = APIRouter()
+
+
+# Cache settings by file signature: FTS analysis can run for hundreds of symbols.
+_FTS_HG_SETTINGS_LOCK = threading.Lock()
+_FTS_HG_SETTINGS_CACHE = {"signature": None, "values": None}
+
+
+def _fts_hourglass_settings():
+    try:
+        stat = os.stat(FTS_CONFIG_PATH)
+        signature = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        signature = None
+    cached = _FTS_HG_SETTINGS_CACHE
+    if cached["values"] is not None and cached["signature"] == signature:
+        return dict(cached["values"])
+
+    with _FTS_HG_SETTINGS_LOCK:
+        try:
+            stat = os.stat(FTS_CONFIG_PATH)
+            signature = (stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            signature = None
+        cached = _FTS_HG_SETTINGS_CACHE
+        if cached["values"] is not None and cached["signature"] == signature:
+            return dict(cached["values"])
+
+        values = {
+            "hourglass_rsi_period": int(FTS_DEFAULTS.get("hourglass_rsi_period", 7)),
+            "hourglass_rsi_oversold": float(FTS_DEFAULTS.get("hourglass_rsi_oversold", 30.0)),
+            "hourglass_ma52_position": FTS_DEFAULTS.get("hourglass_ma52_position", "below"),
+        }
+        try:
+            with open(FTS_CONFIG_PATH, encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                period = float(raw.get("hourglass_rsi_period", values["hourglass_rsi_period"]))
+                oversold = float(raw.get("hourglass_rsi_oversold", values["hourglass_rsi_oversold"]))
+                mode = raw.get("hourglass_ma52_position", values["hourglass_ma52_position"])
+                if period.is_integer() and 2 <= period <= 100:
+                    values["hourglass_rsi_period"] = int(period)
+                if 5.0 <= oversold <= 50.0:
+                    values["hourglass_rsi_oversold"] = oversold
+                if mode in ("below", "above", "either"):
+                    values["hourglass_ma52_position"] = mode
+        except (OSError, ValueError, TypeError):
+            # Missing, older or partially-written settings fall back safely.
+            pass
+        _FTS_HG_SETTINGS_CACHE["signature"] = signature
+        _FTS_HG_SETTINGS_CACHE["values"] = dict(values)
+        return dict(values)
 
 
 CDN_OFFLINE_UNTIL = 0.0
@@ -2795,49 +2846,67 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
             if why:
                 _mx["desc"] = f"{_mx['desc']} — {why}"
 
-    # استراتژی ساعت شنی پیشرفته FTS طبق بخش ۵ سند رسمی FTS v2.1
+    # تنظیمات کاربر فقط بر ساعت شنی اثر می‌گذارند؛ RSI(14) خروج مستقل است.
+    hg_cfg = _fts_hourglass_settings()
+    rsi_period = hg_cfg["hourglass_rsi_period"]
+    rsi_oversold = hg_cfg["hourglass_rsi_oversold"]
+    ma52_position_mode = hg_cfg["hourglass_ma52_position"]
     closes_w = [float(c["close"]) for c in w] if w else []
-    if len(closes_w) >= 15:
-        rsi5_w = _fts_rsi(closes_w, 5)
-        last_cw = closes_w[-1]
-        last_rsi5 = rsi5_w[-1] if rsi5_w else None
-        # MA52 فقط با پنجاه‌ودو نشستِ هفتگیِ واقعی. پیش از این دوره با
-        # «کمترینِ پنجاه‌ودو و طولِ سابقه» ساخته می‌شد و همان عددِ کوتاه‌تر با
-        # نامِ ma52 منتشر و در شرطِ «خریدِ ۲ تا ۴ برابری» به کار می‌رفت: نمادی
-        # با چهارده هفته، میانگینِ چهارده‌هفته‌اش را زیرِ پا داشت و ساعت شنی
-        # روشن می‌شد. عددی که موتور نگفته نباید جایِ عددِ دیگر را بزند.
-        ma_ok = len(closes_w) >= 52
-        ma52_w = _fts_ma(closes_w, 52) if ma_ok else []
-        last_ma52 = ma52_w[-1] if ma52_w else None
-        is_hg_active = bool(last_ma52 and last_cw < last_ma52 and (last_rsi5 is not None and last_rsi5 <= 30.0))
-        out["hourglass"] = {
-            # MA52 با کمتر از ۵۲ کندل هفتگی ساخته نمی‌شود ⇒ ساعت شنی **نظر
-            # نمی‌دهد** (None)، نه «غیرفعال». پیش از این desc می‌گفت «نظر نمی‌دهد»
-            # ولی active=False می‌داد و UI همان ✗ را می‌کشید.
-            "active": is_hg_active if ma_ok else None,
-            "weekly_close": round(last_cw, 2),
-            "ma52": round(last_ma52, 2) if last_ma52 else None,
-            "weekly_bars": len(closes_w),
-            "weekly_rsi5": round(last_rsi5, 1) if last_rsi5 is not None else None,
-            "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
-                       "NORMAL" if ma_ok else "UNKNOWN"),
-            "desc": (
-                "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)"
-                if is_hg_active
-                else ("MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
-                      if not ma_ok else "شرایط ساعت شنی برقرار نیست")
-            ),
-        }
+    weekly_rsi_values = _fts_rsi(closes_w, rsi_period)
+    last_cw = closes_w[-1] if closes_w else None
+    last_rsi = weekly_rsi_values[-1] if weekly_rsi_values else None
+
+    # MA52 فقط با ۵۲ کندل هفتگی واقعی؛ RSI هم باید warm-up کافی داشته باشد.
+    ma_ok = len(closes_w) >= 52
+    rsi_ok = last_rsi is not None
+    ma52_w = _fts_ma(closes_w, 52) if ma_ok else []
+    last_ma52 = ma52_w[-1] if ma52_w else None
+
+    if ma_ok and last_ma52 is not None and last_cw is not None:
+        if ma52_position_mode == "below":
+            ma52_position_match = last_cw < last_ma52
+        elif ma52_position_mode == "above":
+            ma52_position_match = last_cw > last_ma52
+        else:
+            # either: MA52 در خروجی باقی می‌ماند، اما جهت آن شرط فعال‌سازی نیست.
+            ma52_position_match = True
     else:
-        out["hourglass"] = {
-            "active": None,
-            "weekly_close": None,
-            "ma52": None,
-            "weekly_rsi5": None,
-            "weekly_bars": len(closes_w),
-            "action": "UNKNOWN",
-            "desc": "سابقه هفتگی کمتر از حد نصاب (۱۵ کندل) — ساعت شنی سنجیده نمی‌شود",
-        }
+        ma52_position_match = None
+
+    enough_data = ma_ok and rsi_ok
+    is_hg_active = bool(
+        enough_data and ma52_position_match and last_rsi is not None and last_rsi <= rsi_oversold
+    )
+    if is_hg_active:
+        if ma52_position_mode == "below":
+            hg_desc = "ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی در آستانه اشباع فروش (افزایش خرید ۲ تا ۴ برابر)"
+        elif ma52_position_mode == "above":
+            hg_desc = "ساعت شنی فعال: قیمت هفتگی بالای MA52 و RSI هفتگی در آستانه اشباع فروش (افزایش خرید ۲ تا ۴ برابر)"
+        else:
+            hg_desc = "ساعت شنی فعال: RSI هفتگی در آستانه اشباع فروش؛ گیت جهت MA52 خاموش است (افزایش خرید ۲ تا ۴ برابر)"
+    elif not ma_ok:
+        hg_desc = "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+    elif not rsi_ok:
+        hg_desc = f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست"
+    else:
+        hg_desc = "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
+
+    out["hourglass"] = {
+        "active": is_hg_active if enough_data else None,
+        "weekly_close": round(last_cw, 2) if last_cw is not None else None,
+        "ma52": round(last_ma52, 2) if last_ma52 is not None else None,
+        "weekly_bars": len(closes_w),
+        "weekly_rsi": round(last_rsi, 1) if last_rsi is not None else None,
+        # Alias سازگاری برای UI قدیمی؛ مقدار با دوره فعال محاسبه می‌شود.
+        "weekly_rsi5": round(last_rsi, 1) if last_rsi is not None else None,
+        "rsi_period": rsi_period,
+        "rsi_oversold": rsi_oversold,
+        "ma52_position_mode": ma52_position_mode,
+        "ma52_position_match": ma52_position_match,
+        "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
+                   "NORMAL" if enough_data else "UNKNOWN"),
+        "desc": hg_desc,
+    }
 
     box = _fts_double_bottom(candles, swings_d)
     out["double_bottom"] = box["double_bottom"]

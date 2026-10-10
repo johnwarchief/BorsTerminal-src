@@ -1,4 +1,4 @@
-// features/fundamental/ui/FtsSettingsDrawer.tsx -- پنل تنظیمات پیش‌شرط‌های FTS
+// FtsSettingsDrawer.tsx -- پنل تنظیمات مشترک FTS (پیش‌شرط‌های بنیادی + پارامترهای تکنیکال ساعت‌شنی)
 // اتصال مستقیم به fts_thresholds.json از طریق GET/POST /api/fts/config.
 // پنل Overlay ثابت سمت راست است: با createPortal به document.body و
 // `fixed inset-y-0 start-0 w-[420px]` — مستقل از اسکرول کانتینر داخلی
@@ -27,7 +27,7 @@ import {
 /** فیلدهایی که کشو ویرایش می‌کند — بقیهٔ کلیدها هنگام ذخیره از config فعلی می‌آیند */
 type DraftConfig = Pick<
   FtsConfig,
-  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min' | 'v10_inflation_basis'
+  'growth_min' | 'margin_min' | 'industry_mode' | 'suspended_max_stale_sessions' | 'v10_eps_years' | 'v10_sales_to_mcap_min' | 'profit_potential_min' | 'v10_inflation_basis' | 'hourglass_rsi_period' | 'hourglass_rsi_oversold' | 'hourglass_ma52_position'
 > & { v10_sales_to_mcap_min: number; v10_monetary_growth_min: number; v10_inflation_basis: number };
 
 /** حالت گیت نرخ‌گذاری دستوری — چندگزینه‌ای به‌جای تاگل خشک */
@@ -70,6 +70,9 @@ function draftFrom(c: FtsConfig | null | undefined): DraftConfig {
     profit_potential_min: c?.profit_potential_min ?? POTENTIAL_GUIDE_DEFAULT,
     /** مبنای تورم در شاخص ۱ب — مالک ۱۴۰۵-۰۷-۰۴ خواست کاربر خودش عوضش کند؛ بدون این کلید = ۶۰٪ جزوه */
     v10_inflation_basis: c?.v10_inflation_basis ?? FTS_GUIDE_DEFAULTS.v10_inflation_basis,
+    hourglass_rsi_period: c?.hourglass_rsi_period ?? FTS_GUIDE_DEFAULTS.hourglass_rsi_period,
+    hourglass_rsi_oversold: c?.hourglass_rsi_oversold ?? FTS_GUIDE_DEFAULTS.hourglass_rsi_oversold,
+    hourglass_ma52_position: c?.hourglass_ma52_position ?? FTS_GUIDE_DEFAULTS.hourglass_ma52_position,
   };
 }
 
@@ -354,7 +357,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
       <aside
         ref={panelRef}
         tabIndex={-1}
-        aria-label="پنل تنظیمات پیش‌شرط‌های FTS"
+        aria-label="پنل تنظیمات FTS"
         aria-hidden={!open}
         role="dialog"
         aria-modal={open}
@@ -377,6 +380,59 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-5">
+
+        <div className="flex flex-col gap-3 rounded-xl border border-accent-blue/30 bg-accent-blue/[0.04] p-3" data-testid="fts-hourglass-settings">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-black text-text-primary">تنظیمات تکنیکال ساعت‌شنی</span>
+            <span className="rounded-md border border-accent-blue/30 px-1.5 py-0.5 text-2xs font-bold text-accent-blue">قابل‌سفارشی‌سازی</span>
+          </div>
+          <span className="text-2xs leading-snug text-text-muted">
+            این گزینه‌ها فقط ساعت‌شنی را تغییر می‌دهند؛ RSI لایه خروج/واگرایی مستقل می‌ماند. مقادیر ۳۰ و «زیر MA52» پیش‌فرض اجرایی‌اند، نه قوانین قطعی PDF.
+          </span>
+          <Slider
+            label="دوره RSI هفتگی ساعت‌شنی"
+            value={draft.hourglass_rsi_period}
+            min={2}
+            max={100}
+            step={1}
+            formatValue={(v) => toFaDigits(v)}
+            hint="پیش‌فرض مالک: RSI(7). تغییر این مقدار به RSI لایه خروج دست نمی‌زند."
+            onChange={(v) => setDraft((d) => ({ ...d, hourglass_rsi_period: v }))}
+          />
+          <Slider
+            label="آستانه اشباع فروش ساعت‌شنی"
+            value={draft.hourglass_rsi_oversold}
+            min={5}
+            max={50}
+            step={1}
+            hint="اگر RSI فعال از این عدد کمتر یا مساوی باشد، شرط اشباع فروش برقرار است. پیش‌فرض اجرایی ۳۰؛ قابل تغییر."
+            onChange={(v) => setDraft((d) => ({ ...d, hourglass_rsi_oversold: v }))}
+          />
+          <div className="flex flex-col gap-1.5" role="group" aria-label="شرط جهت قیمت نسبت به MA52">
+            <span className="text-xs font-bold text-text-primary">شرط قیمت نسبت به MA52 هفتگی</span>
+            {([
+              { value: 'below', label: 'زیر MA52' },
+              { value: 'above', label: 'بالای MA52' },
+              { value: 'either', label: 'بدون شرط جهت' },
+            ] as const).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={draft.hourglass_ma52_position === option.value}
+                onClick={() => setDraft((d) => ({ ...d, hourglass_ma52_position: option.value }))}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-start text-2xs font-bold transition-colors ${draft.hourglass_ma52_position === option.value ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue' : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary hover:border-border-accent'}`}
+              >
+                <span aria-hidden className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 ${draft.hourglass_ma52_position === option.value ? 'border-accent-blue' : 'border-text-muted/40'}`}>
+                  {draft.hourglass_ma52_position === option.value ? <span className="h-1.5 w-1.5 rounded-full bg-accent-blue" /> : null}
+                </span>
+                {option.label}
+              </button>
+            ))}
+            <span className="text-2xs leading-snug text-text-muted">«بدون شرط جهت» MA52 را از خروجی حذف نمی‌کند؛ فقط مقایسه بالا/پایین در فعال‌سازی ساعت‌شنی را غیرفعال می‌کند.</span>
+          </div>
+        </div>
+
         <Slider
           label="حداقل درصد رشد درآمد کدال"
           value={draft.growth_min}
@@ -576,7 +632,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
           </div>
         ) : save.isSuccess && save.data?.ok ? (
           <div className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-2xs text-accent-green">
-            پیش‌شرط‌ها ذخیره شد
+            تنظیمات FTS ذخیره شد
           </div>
         ) : null}
 

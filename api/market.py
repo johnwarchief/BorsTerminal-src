@@ -78,11 +78,36 @@ def load_fts_config() -> dict:
                 cfg[k] = int(float(v))
             except (TypeError, ValueError):
                 cfg[k] = FTS_DEFAULTS[k]
+        elif k.endswith("_period"):
+            try:
+                parsed = float(v)
+                cfg[k] = int(parsed) if parsed.is_integer() else FTS_DEFAULTS[k]
+            except (TypeError, ValueError):
+                cfg[k] = FTS_DEFAULTS[k]
         else:
             try:
                 cfg[k] = float(v)
             except (TypeError, ValueError):
                 cfg[k] = FTS_DEFAULTS[k]
+    # پاک‌سازی تنظیمات ساعت‌شنی قدیمی/دستی؛ config بد نباید موتور را از کار بیندازد.
+    try:
+        period = int(cfg.get("hourglass_rsi_period", FTS_DEFAULTS["hourglass_rsi_period"]))
+        if not 2 <= period <= 100:
+            period = FTS_DEFAULTS["hourglass_rsi_period"]
+    except (TypeError, ValueError):
+        period = FTS_DEFAULTS["hourglass_rsi_period"]
+    try:
+        oversold = float(cfg.get("hourglass_rsi_oversold", FTS_DEFAULTS["hourglass_rsi_oversold"]))
+        if not 5.0 <= oversold <= 50.0:
+            oversold = FTS_DEFAULTS["hourglass_rsi_oversold"]
+    except (TypeError, ValueError):
+        oversold = FTS_DEFAULTS["hourglass_rsi_oversold"]
+    mode = cfg.get("hourglass_ma52_position", FTS_DEFAULTS["hourglass_ma52_position"])
+    if mode not in ("below", "above", "either"):
+        mode = FTS_DEFAULTS["hourglass_ma52_position"]
+    cfg["hourglass_rsi_period"] = period
+    cfg["hourglass_rsi_oversold"] = oversold
+    cfg["hourglass_ma52_position"] = mode
     return cfg
 
 def _market_running():
@@ -1288,6 +1313,17 @@ def set_fts_config(payload: dict = None):
                 continue
             if cfg[k] < 0:
                 errors[k] = "مقدار منفی مجاز نیست"
+        elif k.endswith("_period"):
+            try:
+                parsed = float(v)
+                if not parsed.is_integer():
+                    raise ValueError("integer required")
+                cfg[k] = int(parsed)
+            except (TypeError, ValueError):
+                errors[k] = "عدد صحیحِ معتبر نیست"
+                continue
+            if cfg[k] < 0:
+                errors[k] = "مقدار منفی مجاز نیست"
         else:
             try:
                 cfg[k] = float(v)
@@ -1298,7 +1334,11 @@ def set_fts_config(payload: dict = None):
                 errors[k] = "مقدار منفی مجاز نیست"
     if str(cfg.get("industry_mode") or "").strip() not in _FTS_INDUSTRY_MODES:
         errors["industry_mode"] = "حالتِ شناخته‌شده‌ای نیست"
-    for k, lo, hi in (("watchlist_max", 1, 500), ("eps_years", 1, 12),
+    if cfg.get("hourglass_ma52_position") not in ("below", "above", "either"):
+        errors["hourglass_ma52_position"] = "یکی از حالت‌های below، above یا either را انتخاب کنید"
+    if not 5.0 <= float(cfg["hourglass_rsi_oversold"]) <= 50.0:
+        errors["hourglass_rsi_oversold"] = "باید بین ۵ و ۵۰ باشد"
+    for k, lo, hi in (("watchlist_max", 1, 500), ("hourglass_rsi_period", 2, 100), ("eps_years", 1, 12),
                       ("v10_eps_years", 1, 12),
                       ("suspended_max_stale_sessions", 1, 20)):
         if k in cfg and isinstance(cfg[k], int) and not (lo <= cfg[k] <= hi):
