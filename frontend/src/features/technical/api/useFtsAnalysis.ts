@@ -177,6 +177,13 @@ const HourglassStrategy = z.object({
   // تعدادِ کندلِ هفتگیِ واقعی: ma52 فقط با ۵۲ تا از این‌ها سنجیده می‌شود و
   // زیرِ آن «سنجیده نشد» است، نه میانگینِ کوتاه‌ترِ جا‌زده.
   weekly_bars: z.number().nullable().nullish(),
+  weekly_rsi: z.number().nullable().nullish(),
+  /** پارامترهای مؤثر ساعت‌شنی؛ برای توضیح و ممیزی تنظیمات فعال */
+  rsi_period: z.number().int().nullish(),
+  rsi_oversold: z.number().nullish(),
+  ma52_position_mode: z.enum(["below", "above", "either"]).nullish(),
+  ma52_position_match: z.boolean().nullable().nullish(),
+  /** نام legacy؛ backend همین مقدار را برای سازگاری هم برمی‌گرداند. */
   weekly_rsi5: z.number().nullable().nullish(),
   action: z.string().nullish(),
   desc: z.string().nullish(),
