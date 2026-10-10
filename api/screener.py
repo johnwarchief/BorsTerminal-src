@@ -266,7 +266,10 @@ def _apply_funnel_gate(rows, gate):
     out = []
     for r in rows:
         r = dict(r)
-        sym = str(r.get("symbol") or "")
+        # کلیدِ matrix نرمال است (`funnel_engine.norm_symbol`)؛ جستجو با رشتهٔ خام
+        # یعنی هر نمادی که «ك/ي/ى» عربی دارد بی‌سروصدا «در تابلو نیست» می‌شد —
+        # درِ سنجشِ ۱۴۰۵-۰۷-۱۹: ۳۸۷ از ۴۹۰ ردیفِ گم‌شده فقط املا داشتند.
+        sym = FE.norm_symbol(r.get("symbol"))
         cell = matrix.get(sym) or {}
         t = (cell.get("tape") or {}).get("status")
         x = (cell.get("technical") or {}).get("status")
@@ -297,11 +300,11 @@ def _apply_funnel_gate(rows, gate):
 
 def _only_symbols(rows, wanted):
     """`symbols=` فقط کم می‌کند، هیچ‌وقت زیاد: راهِ دورزدنِ قیف نمی‌شود."""
-    norm = str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})
-    want = {str(s).translate(norm).strip() for s in wanted if str(s).strip()}
+    import funnel_engine as FE
+    want = {FE.norm_symbol(s) for s in wanted if str(s).strip()}
     if not want:
         return rows, 0
-    kept = [r for r in rows if str(r.get("symbol") or "").translate(norm).strip() in want]
+    kept = [r for r in rows if FE.norm_symbol(r.get("symbol")) in want]
     return kept, len(want)
 
 

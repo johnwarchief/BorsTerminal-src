@@ -120,6 +120,30 @@ ck("symbols= خالی = بی‌فیلتر (همان همۀِ ردیف‌ها)", 
 kept4, _ = _only_symbols([{"symbol": "كيان"}], ["کیان"])
 ck("normalizationِ نماد درِ دروازه هم کار می‌کند", len(kept4) == 1, kept4)
 
+# ── کلیدِ matrix با جستجویِ ردیفِ اسکرینر باید یکی باشد (نقضِ بند ۷.۱، رفع شد) ─
+# موتورِ قیف کلیدها را نرمال می‌سازد (`funnel_engine.norm_symbol`: ك→ک، ي→ی، ى→ی).
+# اگر جستجو با رشتهٔ خام باشد، «آلومينا»یِ اسکرینر با «آلومینا»یِ تابلو دو نماد
+# می‌شود و ردیف بی‌سروصدا `not_in_board` می‌گیرد. سنجشِ ۱۴۰۵-۰۷-۱۹ رویِ بانکِ
+# واقعی: ۴۹۰ ردیف گم‌شده که ۳۸۷‌شان فقط املا داشتند، و ۱۹ کاندیدِ درستِ preset
+# custom پشتِ همان برچسب پنهان بود (۱۶ دیده می‌شد، ۳۵ بود).
+ck("norm_symbol هر سه نویسۀِ عربی را به فارسی می‌برد",
+   FE.norm_symbol("آلومينا") == "آلومینا" and FE.norm_symbol("كوچين") == "کوچین"
+   and FE.norm_symbol("قى") == "قی" and FE.norm_symbol("  فولاد ") == "فولاد",
+   [FE.norm_symbol(x) for x in ("آلومينا", "كوچين", "قى", "  فولاد ")])
+m_ar = matrix(**{"آلومینا": (FE.PASS, FE.PASS, FE.PASS)})
+ann_ar = _apply_funnel_gate([{"symbol": "آلومينا"}], gate_applied(m_ar))
+ck("ردیفِ اسکرینر با املایِ عربی به سلولِ نرمال‌شده می‌رسد (نه not_in_board)",
+   ann_ar[0]["gate_state"] == "applied" and ann_ar[0]["funnel_candidate"] is True, ann_ar[0])
+m_ar2 = matrix(**{"کوچین": (FE.PASS, FE.PASS, FE.REJECT)})
+ann_ar2 = _apply_funnel_gate([{"symbol": "كوچين"}], gate_applied(m_ar2))
+ck("همین مسیرِ نرمال «ردِ بنیادی» را هم درست می‌خواند (نه فقط کاندید)",
+   ann_ar2[0]["gate_state"] == "applied" and ann_ar2[0]["funnel_candidate"] is False
+   and ann_ar2[0]["fundamental_status"] == FE.REJECT, ann_ar2[0])
+kept5, _ = _only_symbols([{"symbol": "آلومينا"}], ["آلومینا"])
+ck("دروازه و سلول‌یابی از یک تعریفِ نرمال‌سازی تغذیه می‌شوند",
+   len(kept5) == 1 and FE.norm_symbol(kept5[0]["symbol"]) in
+   (m_ar.keys()), kept5)
+
 # ── دروازۀِ دورزدن وجود ندارد ────────────────────────────────────────────────
 sig = inspect.signature(get_screener)
 ck("هیچ پارامترِ «بی‌قیف»/«skip» درِ route نیست",
@@ -169,6 +193,23 @@ else:
         chain = gate["block"].get("chain") or []
         ck("واقعی: preset/chainِ به‌کاررفته اعلام می‌شود",
            bool(gate["block"].get("preset")) and isinstance(chain, list), gate["block"].get("preset"))
+        # گم‌شدنِ املایی نباید دگر‌بار برگردد: هر ردیفِ not_in_board باید واقعاً
+        # درِ matrix نباشد (با هر دو املا)، و شمارۀ کاندیدِ رابط با شمارشِ مستقیمِ
+        # سلول‌هایِ سه‌pass یکی باشد.
+        mx = gate["matrix"]
+        arb = [r for r in ann if r["gate_state"] == "not_in_board"]
+        phantom = [r["symbol"] for r in arb
+                   if FE.norm_symbol(r["symbol"]) in mx or str(r["symbol"]) in mx]
+        ck("واقعی: هیچ not_in_boardی درِ matrix وجود ندارد (گم‌شدنِ املایی = صفر)",
+           not phantom, phantom[:6])
+        three_pass = {s for s, c in mx.items()
+                      if all(((c or {}).get(k) or {}).get("status") == FE.PASS
+                             for k in ("tape", "technical", "fundamental"))}
+        real_cand = {r["symbol"] for r in cand if not r.get("weekly_veto")
+                     and not r.get("assembly_veto")}
+        ck("واقعی: کاندیدهایِ رابط ⊆ سلول‌هایِ سه‌passِ موتور (بی‌ادعایِ تساویِ مطلق)",
+           real_cand <= {s for s in three_pass} | {FE.norm_symbol(x) for x in three_pass},
+           list(real_cand - three_pass)[:6])
 
 print("─" * 72)
 print(f"نتیجۀِ گاردِ قیفِ اسکرینر: {PASS}_pass / {FAIL}_fail / {SKIP}_skip")

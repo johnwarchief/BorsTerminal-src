@@ -188,6 +188,24 @@ def _num(v: Any) -> float | None:
     return f
 
 
+_SYM_TRANS = str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})
+
+
+def norm_symbol(v: Any) -> str:
+    """یک شکلِ نوشتاریِ نماد — تنها تعریفِ این تبدیل درِ کلِ قیف.
+
+    بانک هر دو املا را نگه می‌دارد («ك/ي/ى» عربی درِ بعضی نمادها، «ک/ی» فارسی درِ
+    بقیه). وقتی matrix با کلیدِ نرمال‌شده ساخته شود و جستجو با رشتهٔ خام، ردیفِ
+    همان نماد بی‌سروصدا «در تابلو نیست» می‌شود و کاندیدِ واقعی در رابط گم می‌شود —
+    سنجدش درِ ۱۴۰۵-۰۷-۱۹: از ۴۹۰ ردیفِ گم‌شده ۳۸۷ فقط اختلافِ املا داشتند و ۱۹
+    کاندیدِ درستِ presetِ custom پشتِ «not_in_board» پنهان بود. پس هر لایه
+    (ساختِ matrix، پیوندِ ردیفِ اسکرینر، فیلترِ `symbols=`) همین یک تابع را صدا
+    می‌زند. `ى→ی` هم نمادِ هم‌نامی نمی‌سازد: رویِ ۵۸۶۳ نمادِ یکتایِ واقعیِ تابلو
+    صفر برخورد سنجیده شد.
+    """
+    return str(v or "").strip().translate(_SYM_TRANS)
+
+
 def _symbols(rows: list[dict]) -> list[str]:
     """نام‌هایِ نمادِ یک گام، به همان ترتیبِ عبور — فهرستِ منتقل‌شده به گامِ بعد."""
     return [str(r.get("symbol") or "") for r in rows]
@@ -898,7 +916,9 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
-    screen_by = {str(r.get("symbol") or ""): r for r in screen_rows}
+    # کلیدِ screen_by هم نرمال است تا پیوندِ تابلو↔اسکرینر با یک املا نشکند
+    # (همان نقضِ بندِ ۷.۱ که ۳۸۷ ردیف را «در تابلو نیست» می‌شمرد).
+    screen_by = {norm_symbol(r.get("symbol")): r for r in screen_rows}
     for i, r in enumerate(screen_rows):
         r["_backend_rank"] = i  # ترتیبِ خودِ /api/screener (screener.py:440)
     chain = resolve_chain(preset, custom_chain)
@@ -911,7 +931,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     seen: dict[str, dict] = {}
     dupes = 0
     for r in board_rows:
-        sym = str(r.get("symbol") or "").strip().replace("ي", "ی").replace("ك", "ک")
+        sym = norm_symbol(r.get("symbol"))
         if not sym:
             continue
         if sym in seen:
