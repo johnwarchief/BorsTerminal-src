@@ -409,8 +409,50 @@ ck(not ck_elig3 and "طی معاملات" not in ck_why3 and "از نشستِ" n
 ck(not any(c.isascii() and c.isdigit() for c in ck_why),
    "۴۲) عددِ نمایشیِ این علت فارسی است (قاعدۀ رقمِ فارسی درِ متنِ فارسی)")
 
+# ── ۴۳/۴۴: «سنجیده نشد» از «رد شد» جداست و فهرستِ منتقل‌شده خواندنی است ─────
+UM = board("کم‌سابقه", f_susp=False)
+UM.update({"hist_sessions": 10, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+OK_ROW = board("کافى", f_susp=False)
+OK_ROW.update({"hist_sessions": 60, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+HIT = board("خورده", f_susp=True)
+HIT.update({"hist_sessions": 60, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+UMV = FE.tape_stage([UM, OK_ROW, HIT], ("f_susp",))
+um_step = UMV["steps"][0]
+ck(um_step["unmeasured_count"] == 1 and um_step["removed_count"] == 1 and um_step["matched_count"] == 1,
+   f"۴۳) ردیفِ بی‌مبنایِ ۳۰-نشست «سنجیده نشد» است، نه رد — و ردِ واقعی جدا شمرده می‌شود")
+ck(um_step["input_count"] == um_step["matched_count"] + um_step["removed_count"] + um_step["unmeasured_count"],
+   f"۴۳) حسابِ گام می‌بندد: ورودی = عبورکرده + رد + سنجیده‌نشده")
+ck([str(r.get("symbol")) for r in UMV["survivors"]] == ["خورده"],
+   f"۴۳) سنجیده‌نشده و ردشده هیچ‌کدام منتقل نمی‌شوند؛ فقط خوردهٔ واقعی")
+_um_why = [w for w in UM["_funnel_why"] if w.get("stage") == "tape"]
+_ok_why = [w for w in OK_ROW["_funnel_why"] if w.get("stage") == "tape"]
+ck(_um_why and _um_why[0]["status"] == FE.UNAVAILABLE and _um_why[0]["reason_code"].endswith("UNMEASURED"),
+   f"۴۳) دلیلِ دفترچه برایِ سنجیده‌نشده UNAVAILABLE است، نه TAPE_*_NO_MATCH")
+ck(_ok_why and _ok_why[0]["status"] == FE.REJECT and _ok_why[0]["reason_code"].endswith("NO_MATCH"),
+   f"۴۴) ردیفی که مبناء دارد و نخورده، همان ردِ قطعی می‌ماند (کنترلِ منفی)")
+
+V2 = FE.evaluate([dict(r) for r in B], [dict(r) for r in S], preset="custom",
+                 custom_chain=["f_susp", "f_noqteh"])
+st2 = V2["stages"]
+ck(all(isinstance(st2[k].get("survivors"), list) for k in ("tape", "technical", "fundamental", "handover")),
+   f"۴۴) هر گام فهرستِ صریحِ نمادهایِ منتقل‌شده را درِ پاسخ دارد")
+ck(len(st2["technical"]["survivors"]) == st2["technical"]["matched"]
+   and set(st2["technical"]["survivors"]) <= set(st2["tape"]["survivors"])
+   and set(st2["fundamental"]["survivors"]) <= set(st2["technical"]["survivors"])
+   and set(st2["handover"]["survivors"]) <= set(st2["fundamental"]["survivors"]),
+   f"۴۵) فهرست‌ها با شمارش می‌خوانند و هر گام زیرمجموعۀ گامِ پیشین است")
+ck(st2["technical"].get("input") == st2["tape"]["matched"]
+   and st2["fundamental"].get("input") == st2["technical"]["matched"],
+   f"۴۵) input هر گام = matchedِ گامِ قبل (زنجیره درِ پاسخ اثبات می‌شود، نه درِ متن)")
+_reached = [(sym, [t for t in tl_ if t["stage"] in ("technical", "fundamental", "handover")])
+              for sym, tl_ in V2["timeline"].items()]
+_rows = [r for _, rows_ in _reached for r in rows_]
+ck(bool(_rows), f"۴۶) سنسورِ این بند کور نیست: دستِ‌کم یک نماد به گامِ تکنیکال می‌رسد")
+ck(all(r["input_count"] is not None and r["output_count"] is not None for r in _rows),
+   f"۴۶) خطِ زمانِ تکنیکال/بنیادی/تحویل شمارۀ ورودی/خروجیِ خودِ گام را دارد، نه None")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43 + 9} بندِ مأموریت")

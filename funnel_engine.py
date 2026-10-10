@@ -188,6 +188,44 @@ def _num(v: Any) -> float | None:
     return f
 
 
+def _symbols(rows: list[dict]) -> list[str]:
+    """نام‌هایِ نمادِ یک گام، به همان ترتیبِ عبور — فهرستِ منتقل‌شده به گامِ بعد."""
+    return [str(r.get("symbol") or "") for r in rows]
+
+
+def _tape_unmeasurable(r: dict[str, Any], fid: str) -> bool:
+    """آیا پرچمِ این ردیف اصلاً ساخته‌شدنی بود؟
+
+    `tape_flags` درِ جایِ سنجش‌ناشدنی NaN می‌گذارد و تابلو همان را False می‌کند
+    (آینۀ ExecFilterِ خودِ سایت، که چنین ردیفی را بیرون می‌اندازد). این False درِ
+    قیف دو معنی داشت: «سنجید و نخورد» و «سنجیده نشد». دومی از شواهدِ خودِ ردیف
+    خوانده می‌شود — همان آستانه‌هایِ `tape_flags`، نه عددِ تازه — تا UNAVAILABLE
+    از REJECT جدا بماند و «بی‌داده» رأیِ قطعی نسازد.
+    """
+    from tape_flags import LOW_BASE_SESSIONS, VOL_BASE_SESSIONS
+
+    # همان قاعدۀ رابط (tapeAlgorithms.tapeFilterVerdict): ردیفی که ستون‌هایِ
+    # فرمول را اصلاً ندارد (پنلِ قدیمی، ردیفِ ساختهٔ تست) فرمول‌سنجی‌شدنی نیست،
+    # پس پرچمِ بک‌اند تنها داوریِ صادق است و «ساخته‌نشدن» از آن «سنجیده‌نشدن»
+    # نمی‌سازیم.
+    if (r.get("hist_sessions") is None and r.get("prior30_vol") is None
+            and r.get("min_low_29") is None and r.get("tmin") is None):
+        return False
+
+    if fid == "f_roobi":
+        # کف‌روبی تاریخچۀ ۳۰-نشست نمی‌خواهد؛ آستانۀِ مجازِ پایین و صفِ سطرِ اول می‌خواهد
+        return not (_num(r.get("tmin")) and _num(r.get("buy_q1_cnt")) is not None
+                    and _num(r.get("buy_q1_vol")) is not None)
+    if _num(r.get("z_tot_tran")) is None:
+        return True
+    if fid == "f_clock" and not _num(r.get("p_closing")):
+        return True
+    if fid == "f_noqteh":
+        # کفِ فایل از [ih][0..28] خوانده می‌شود، نه ستونِ نمایشی
+        return not _num(r.get("min_low_29")) or (_num(r.get("hist_sessions")) or 0) < LOW_BASE_SESSIONS
+    return (_num(r.get("hist_sessions")) or 0) < VOL_BASE_SESSIONS
+
+
 # ── ۱) تابلوخوانی: اشتراکِ ترتیبیِ زنجیره ─────────────────────────────────
 def tape_stage(rows: list[dict], chain: tuple[str, ...],
                params: dict[str, dict[str, Any]] | None = None) -> dict:
@@ -208,7 +246,13 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
         for r in survivors:
             sym = str(r.get("symbol") or "")
             v = _tri(r.get(flag))
-            if v is False:
+            if v is False and _tape_unmeasurable(r, fid):
+                # «سنجیده نشد» نه تأیید است نه رد: دلیلش درِ دفترچه UNAVAILABLE
+                # است، ولی درِ فهرستِ منتقل‌شده به گامِ بعد هم نمی‌نشیند —
+                # وگرنۀ «بی‌داده» خودش رأیِ ورود می‌شد. (رأیِ مالک برایِ پرچمِ
+                # غایبِ مطلق — None — دست‌نخورده می‌ماند: آن ردیف حذف نمی‌شود.)
+                unmeasured.append(sym)
+            elif v is False:
                 removed.append(sym)
             else:
                 # True ماند؛ None هم حذف نمی‌شود ولی «سنجیده نشد» برچسب
@@ -218,13 +262,24 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
                     unmeasured.append(sym)
         dropped[fid] = removed
         for r in survivors:
-            if _tri(r.get(flag)) is False:
+            # دفترچۀ دلیل همان داوریِ بالا را می‌نویسد، نه محاسبۀ دوم: اگر
+            # پرچم False ولی سنجش‌ناشدنی بود، دلیل UNAVAILABLE است نه NO_MATCH.
+            fv = _tri(r.get(flag))
+            sym = str(r.get("symbol") or "")
+            if fv is False and _tape_unmeasurable(r, fid):
+                _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
+                                   "status": UNAVAILABLE, "reason_code": f"TAPE_{fid.upper()}_UNMEASURED",
+                                   "human_reason": f"{f.name} — این نماد اندازه‌گیری‌شدنی نبود "
+                                                   "(مبنایِ تاریخچۀ فایل را ندارد)، پس رد نشده",
+                                   "input_count": before, "output_count": len(matched),
+                                   "source": f.source_file, "formula_version": f.formula_version})
+            elif fv is False:
                 _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
                                    "status": REJECT, "reason_code": f"TAPE_{fid.upper()}_NO_MATCH",
                                    "human_reason": f"{f.name} — نشانه در این نماد نیست",
                                    "input_count": before, "output_count": len(matched),
                                    "source": f.source_file, "formula_version": f.formula_version})
-            elif _tri(r.get(flag)) is None:
+            elif fv is None:
                 _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
                                    "status": UNAVAILABLE, "reason_code": f"TAPE_{fid.upper()}_UNMEASURED",
                                    "human_reason": f"{f.name} — پرچم این نماد ساخته نشده",
@@ -237,8 +292,12 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
             "label": f.name,
             "input_count": before,
             "matched_count": len(matched),
-            "removed_count": before - len(matched),
+            # حسابِ گام باید ببندد: ورودی = عبورکرده + ردشده + سنجیده‌نشده.
+            # پیش از این removed = before - matched بود و «سنجیده‌نشده» داخلِ
+            # «رد» حل می‌شد؛ حالا هر سه جدا شمرده می‌شوند.
+            "removed_count": len(removed),
             "unmeasured_count": len(unmeasured),
+            "not_forwarded_count": before - len(matched),
             "parameter_set": params.get(fid) or {p.param_id: p.value for p in f.params if p.value is not None},
             "source_ref": f"{f.source_file}#{f.source_sha256}",
             "formula_version": f.formula_version,
@@ -323,8 +382,11 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
         sym = str(r.get("symbol") or "")
         t = (tech or {}).get(sym)
         if t:
-            r = {**r, **{k: t[k] for k in _TECH_KEYS
-                         if t.get(k) is not None and r.get(k) in (None, "")}}
+            # اسکنِ تمامِ جهان تازه‌ترین منبع است؛ ستون‌های tech_* رویِ ردیف از
+            # پاسخِ کش‌شدۀ /api/screener می‌آیند (کشِ ۱۲ ساعته). بی‌این ترتیب،
+            # رأیِ کهنهٔ اسکرینر رأیِ تازهٔ اسکن را درِ همان ۵۰ ردیفِ اول سایه
+            # می‌کرد — یعنی دو منبع، یک داوریِ غیرقابل‌اتکا.
+            r = {**r, **{k: t[k] for k in _TECH_KEYS if t.get(k) is not None}}
         w = (r.get("tech_trend_w") or "").strip() or None
         d = (r.get("tech_trend_d") or "").strip() or None
         mat = (r.get("tech_matrix_decision") or "").strip() or None
@@ -803,14 +865,21 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
                 "source": sp["source_ref"], "formula_version": sp["formula_version"],
                 "filter_id": sp["filter_id"], "label": sp["label"],
                 "parameter_set": sp["parameter_set"], "timestamp": None})
-        for key, dec in (("technical", t), ("fundamental", f), ("handover", h)):
+        for key, dec, io_counts in (
+            ("technical", t, (len(tape["survivors"]), len(tech["survivors"]))),
+            ("fundamental", f, (len(tech["survivors"]), len(fund["survivors"]))),
+            ("handover", h, (len(fund["survivors"]), len(hand["entries"]))),
+        ):
             if not dec:
                 continue
             w0 = (dec.get("why") or [{}])[0]
             step_rows.append({
                 "stage": key, "status": dec.get("effective") or dec.get("status") or dec.get("final") or PENDING,
                 "reason_code": w0.get("code", ""), "human_reason": w0.get("text", ""),
-                "input_count": None, "output_count": None,
+                # شمارۀ خودِ گام، نه None: «چند نماد وارد این گام شد و چند تا
+                # بیرون آمد» باید درِ ردیفِ همین نماد هم خوانده شود، وگرنه
+                # ردیابیِ زنجیره فقط درِ جمعِ کلِ مرحله ممکن است.
+                "input_count": io_counts[0], "output_count": io_counts[1],
                 "source": "funnel_engine", "timestamp": None})
         timeline[sym] = step_rows
     return {"entries": entries, "timeline": timeline}
@@ -933,13 +1002,23 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
                      "exclusion_labels": {k: EXCLUSION_LABEL.get(k, k)
                                           for k in exclusion_counts}},
         "stages": {
+            # «survivors» = فهرستِ صریحِ نمادهایی که به گامِ بعد رفته‌اند. بی‌آن،
+            # انتقالِ بینِ گام‌ها فقط استنتاجی بود (از entries کمِ dropped) و
+            # ادعایِ «تکنیکال ⊆ تابلو» را نمی‌شد از خودِ پاسخ خواند.
             "tape": {"steps": tape["steps"],
                      "input": len(screening), "matched": len(tape["survivors"]),
-                     "removed": len(screening) - len(tape["survivors"])},
-            "technical": {"counts": tech["counts"], "matched": len(tech["survivors"])},
+                     "removed": len(screening) - len(tape["survivors"]),
+                     "survivors": _symbols(tape["survivors"])},
+            "technical": {"counts": tech["counts"], "matched": len(tech["survivors"]),
+                          "input": len(tape["survivors"]),
+                          "survivors": _symbols(tech["survivors"])},
             "fundamental": {"counts": fund["counts"], "matched": len(fund["survivors"]),
-                            "mode": fund_mode},
-            "handover": {"counts": hand["counts"], "matched": len(hand["entries"])},
+                            "input": len(tech["survivors"]),
+                            "mode": fund_mode,
+                            "survivors": _symbols(fund["survivors"])},
+            "handover": {"counts": hand["counts"], "matched": len(hand["entries"]),
+                         "input": len(fund["survivors"]),
+                         "survivors": [str(e.get("symbol") or "") for e in hand["entries"]]},
         },
         "handover": hand["entries"],
         "exclusions": exclusions,
