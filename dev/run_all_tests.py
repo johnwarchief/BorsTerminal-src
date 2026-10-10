@@ -260,6 +260,17 @@ SUITES = [
     # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
     # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
     ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
+    # FUNNEL PRESET DISTINCT: هر Preset باید **خروجِ موتور** را عوض کند، نه فقط
+    # عنوانِ دکمه. این گارد تا پیش از این درِ `run_all_tests` ثبت نبود (باگِ P0:
+    # «تغییر Preset جدول را عوض نمی‌کند» سبز می‌ماند) و فقط رجیستری را می‌خواند؛
+    # حالا خروجیِ واقعیِ `FE.evaluate` رویِ fixture هم مقابله می‌شود، پس هیچ
+    # presetی نمی‌تواند بی‌صدا کپیِ دیگری شود.
+    ('dev/funnel_preset_distinct_v1.py', 'funnel presets: distinct chains, gates AND distinct engine output'),
+    # UNIVERSE LIVE: طبقه‌بندیِ وضعیتِ معاملاتی (معاملۀ انجام‌شده ≠ تغییرِ دفتر)،
+    # یکی‌کردنِ ردیفِ تکراریِ هم‌نام و کهنگی از سنِ خودِ بدنهٔ تابلو. ثبت نشدنی
+    # بود و درِ `run_all_tests` نبود؛ endpointِ `/api/universe/live` هم از
+    # `api/funnel.py` به `api/market.py` رفت (یکِ ردیاب، یکِ راننده).
+    ('dev/market_universe_v1.py', 'live trading-status universe: executed vs quoted, dedupe, staleness'),
     ('dev/user_watchlist_v1.py', 'user watchlist CRUD: get() on a missing row, upsert identity, cap layering'),
     ('dev/fts_trend_pit_v1.py', 'trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead'),
     # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده

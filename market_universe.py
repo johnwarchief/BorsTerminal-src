@@ -49,6 +49,32 @@ _ETAVAUL_FORBIDDEN_MARKERS = ("توقف", "ممنوع", "بسته", "غيرمج�
 DEFAULT_TRADE_WINDOW_S = 120.0   # «معاملۀِ اخیر» تا این اندازه از آخرین افزایشِ شمارنده
 DEFAULT_STALE_WINDOW_S = 180.0   # feed کهنه اگر fetched_at قدیمی‌تر از این باشد
 
+# ── دربِ معاملۀِ تابلو، یک‌جا درِ همین ماژول ────────────────────────────────
+# دو تعریفِ موازی از «بازار باز است» درِ repo بود: `api/funnel.py:45-70`
+# (۰۸:۴۵–۱۲:۳۰) و `mstat_engine.in_trading_session` (۰۹:۰۰–۱۳:۰۰). این دو
+# یکی نیستند و هر دو درست‌اند: اولی «تابلو می‌تواند معامله ببیند» است (با
+# پیش‌گشایی) و دومی «پنجرۀِ سینکِ نبض بازار». اما طبقه‌بندیِ وضعیتِ نماد فقط
+# معنایِ اول را می‌خواهد — پس همین‌جا تعریف می‌شود و بقیه از اینجا می‌خوانند،
+# تا «وضعیت جهان» و «وضعیت نمایش» دو ساعتِ مختلف نداشته باشند.
+TEHRAN_OFFSET_MIN = 210          # +۰۳:۳۰ (Iran DST ندارد)
+BOARD_OPEN_HM = (8, 45)
+BOARD_CLOSE_HM = (12, 30)
+
+
+def tehran_now():
+    import datetime as _dt
+    return _dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(minutes=TEHRAN_OFFSET_MIN)
+
+
+def market_is_open(now=None) -> bool:
+    """شنبه..چهارشنبۀِ ۰۸:۴۵ تا ۱۲:۳۰ تهران — دربِ معاملۀِ تابلو."""
+    import datetime as _dt
+    n = now or tehran_now()
+    open_at = _dt.time(*BOARD_OPEN_HM)
+    close_at = _dt.time(*BOARD_CLOSE_HM)
+    # weekday: Mon=0..Sun=6 ⇒ شنبه=5، یکشنبه=6؛ پنجشنبه/جمعه (3،4) تعطیل
+    return n.weekday() in (5, 6, 0, 1, 2) and open_at <= n.time() <= close_at
+
 
 def _f(v: Any) -> float:
     try:
@@ -86,19 +112,29 @@ def _is_suspended(row: dict) -> bool:
     return False
 
 
-def _feed_age_s(row: dict, now_wall: float) -> Optional[float]:
+def _feed_age_s(row: dict, now_wall: float,
+                board_age_s: Optional[float] = None) -> Optional[float]:
+    """سنِ دادهٔ این ردیف.
+
+    ردیف‌هایِ `/api/market` میدانِ `fetched_at`ِ اختصاصی ندارند (سنجشِ زنده:
+    صفر ردیف از ۵۸۶۵) — whole board از یکِ درخواستِ واحد می‌آید، پس سنِ هر ردیف
+    همان سنِ خودِ بدنهٔ تابلو است. بی‌این پارامتر، `STALE_DATA` هرگز روشن
+    نمی‌شد و «دادهٔ کهنه» درِ شمارشِ جهان همیشه صفر گزارش می‌شد.
+    """
     fa = row.get("fetched_at") or row.get("feed_ts")
     try:
         fa = float(fa)
     except (TypeError, ValueError):
-        return None
-    return now_wall - fa
+        return None if board_age_s is None else float(board_age_s)
+    age = now_wall - fa
+    return age if age >= 0 else (float(board_age_s) if board_age_s is not None else age)
 
 
 def classify_trading_status(cur: dict, prev: Optional[dict], *,
                             market_open: bool, now_wall: Optional[float] = None,
                             trade_window_s: float = DEFAULT_TRADE_WINDOW_S,
-                            stale_window_s: float = DEFAULT_STALE_WINDOW_S) -> dict:
+                            stale_window_s: float = DEFAULT_STALE_WINDOW_S,
+                            board_age_s: Optional[float] = None) -> dict:
     """وضعیتِ یکِ نماد را از مشاهدۀِ فعلی + قبلی می‌سنجد. تابعِ خالصِ قابل‌تست."""
     now_wall = now_wall if now_wall is not None else time.time()
     ev: dict[str, Any] = {"market_open": market_open}
@@ -113,7 +149,7 @@ def classify_trading_status(cur: dict, prev: Optional[dict], *,
         return {"status": SUSPENDED, "reason": "suspended-by-source",
                 "evidence": {**ev, "stop_state": cur.get("stop_state"), "st_code": cur.get("st_code")}}
 
-    age = _feed_age_s(cur, now_wall)
+    age = _feed_age_s(cur, now_wall, board_age_s=board_age_s)
     ev["feed_age_s"] = None if age is None else round(age, 1)
     if age is not None and age > stale_window_s:
         return {"status": STALE_DATA, "reason": "feed-too-old", "evidence": ev}
@@ -191,23 +227,39 @@ class UniverseTracker:
 
     def observe(self, rows: Iterable[dict], *, market_open: bool,
                 now_wall: Optional[float] = None,
+                board_age_s: Optional[float] = None,
                 key: str = "symbol") -> tuple[list[dict], dict]:
+        """یک دور مشاهدهٔ کلِ تابلو. `board_age_s` سنِ خودِ بدنهٔ تابلو است.
+
+        نمادِ تکراری درِ تابلو واقعیت دارد (سنجشِ زنده: دو ردیفِ هم‌نام)؛ بی‌یکی‌کردن،
+        ردیفِ دوم به‌جایِ «دورِ پیشینِ خودش» ردیفِ اول را می‌بیند و دلتایِ **جعلی**
+        می‌سازد — یعنی TRADING_ACTIVE‌ای که هیچ معاملۀ واقعیِ آن پشتش نیست (دقیقاً
+        همان چیزی که سنجشِ این دور نشان داد: افزایشِ ۴۲۰ رویِ بدنهٔ بی‌تغییر).
+        """
         now_wall = now_wall if now_wall is not None else time.time()
         results: list[dict] = []
         counts = {"total": 0, "eligible": 0, "trading": 0, "quote": 0,
-                  "no_trade": 0, "stale": 0, "suspended": 0, "unknown": 0}
+                  "no_trade": 0, "stale": 0, "suspended": 0, "unknown": 0,
+                  "duplicate_rows": 0, "market_closed": 0}
+        seen: set[str] = set()
         for r in rows:
             sym = r.get(key) or r.get("ins_code")
             if not sym:
                 continue
+            sk = str(sym)
+            if sk in seen:
+                counts["duplicate_rows"] += 1
+                continue
+            seen.add(sk)
             counts["total"] += 1
-            prev = self._prev.get(str(sym))
+            prev = self._prev.get(sk)
             cls = classify_trading_status(r, prev, market_open=market_open, now_wall=now_wall,
                                           trade_window_s=self.trade_window_s,
-                                          stale_window_s=self.stale_window_s)
-            self._prev[str(sym)] = r   # snapshot برایِ دورِ بعد
+                                          stale_window_s=self.stale_window_s,
+                                          board_age_s=board_age_s)
+            self._prev[sk] = r   # snapshot برایِ دورِ بعد
             st = cls["status"]
-            rec = {"symbol": sym, "status": st, "reason": cls["reason"],
+            rec = {"symbol": sk, "status": st, "reason": cls["reason"],
                    "evidence": cls["evidence"], "priority": PRIORITY.get(st, 9)}
             results.append(rec)
             if st in (TRADING_ACTIVE, QUOTE_ACTIVE_NO_TRADE, NO_RECENT_TRADE):
@@ -215,6 +267,59 @@ class UniverseTracker:
             counts[{"TRADING_ACTIVE": "trading", "QUOTE_ACTIVE_NO_TRADE": "quote",
                     "NO_RECENT_TRADE": "no_trade", "STALE_DATA": "stale",
                     "SUSPENDED": "suspended", "UNKNOWN": "unknown",
-                    "MARKET_CLOSED": "unknown"}.get(st, "unknown")] += 1
+                    "MARKET_CLOSED": "market_closed"}.get(st, "unknown")] += 1
         results.sort(key=lambda x: x["priority"])
         return results, counts
+
+
+# ── تک‌نسخهٔ مشترک ───────────────────────────────────────────────────────────
+# یکِ ردیاب، یکِ راننده. پیش‌ازین `_UNIVERSE` درِ `api/funnel.py` بود و فقط وقتی
+# جلو می‌رفت که کسی خودِ `/api/universe/live` را می‌زد؛ یعنی «وضعیتِ زندهٔ جهان»
+# تنها وقتی زنده بود که کاربر آن endpoint را درخواست کند. حالا راننده **بازسازیِ
+# کشِ تابلو** است (هر revision یکِ مشاهده) و همه‌یِ خواننده‌ها آخرین وضعیت را از
+# اینجا می‌خوانند — پس دو مصرف‌کننده با دو ریتم، همدیگر را فاسد نمی‌کنند.
+_TRACKER = UniverseTracker()
+_LATEST: dict[str, Any] = {"at": 0.0, "counts": {}, "priority": {}, "market_open": None,
+                           "observed_rows": 0, "revision": None}
+
+
+def observe_board(rows: Iterable[dict], *, market_open: bool, revision: Optional[int] = None,
+                  board_age_s: Optional[float] = None,
+                  now_wall: Optional[float] = None) -> dict:
+    """یک دور مشاهدهٔ کلِ تابلو و ثبتِ آخرین وضعیتِ مشترک. خلاصه را برمی‌گرداند."""
+    now_wall = now_wall if now_wall is not None else time.time()
+    ranked, counts = _TRACKER.observe(list(rows), market_open=market_open,
+                                      now_wall=now_wall, board_age_s=board_age_s)
+    priority = {str(r["symbol"]): int(r["priority"]) for r in ranked}
+    status_by = {str(r["symbol"]): str(r["status"]) for r in ranked}
+    _LATEST.update({"at": now_wall, "counts": counts, "priority": priority,
+                    "status_by": status_by, "market_open": bool(market_open),
+                    "observed_rows": len(ranked), "revision": revision})
+    return _summary()
+
+
+def _summary() -> dict:
+    return {"at": _LATEST["at"], "counts": _LATEST["counts"],
+            "market_open": _LATEST["market_open"], "observed_rows": _LATEST["observed_rows"],
+            "revision": _LATEST["revision"]}
+
+
+def latest() -> dict:
+    """آخرین وضعیتِ مشترک (بدونِ مشاهدهٔ تازه)."""
+    return dict(_LATEST)
+
+
+def priority_of(symbol: str) -> int:
+    return int(_LATEST.get("priority", {}).get(str(symbol), 9))
+
+
+def status_of(symbol: str) -> Optional[str]:
+    return _LATEST.get("status_by", {}).get(str(symbol))
+
+
+def reset() -> None:
+    """فقط برایِ تست: ردیاب و آخرین مشاهده از نو."""
+    global _TRACKER, _LATEST
+    _TRACKER = UniverseTracker()
+    _LATEST = {"at": 0.0, "counts": {}, "priority": {}, "status_by": {},
+               "market_open": None, "observed_rows": 0, "revision": None}

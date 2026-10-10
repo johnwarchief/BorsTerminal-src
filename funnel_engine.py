@@ -267,9 +267,41 @@ _TECH_KEYS = ("tech_trend_w", "tech_trend_d", "tech_trend_m", "tech_alignment",
               "tech_hourglass_active", "tech_hourglass_action")
 
 
+def _hourglass_verdict(r: dict, sigs: dict[str, str] | None, sym: str) -> tuple[str, list[dict]]:
+    """دروازۀِ «ساعتِ شنی»: رأی از سیگنالِ هفتگیِ MA52/RSI(5)، نه از داورِ روند.
+
+    متنِ جزوه (jozve_FTS_handwright_pages_25-34.md:74 و چارت ۳ سطر ۱۴): «MA = 52
+    تایم هفتگی؛ RSI = 5 تایم هفتگی» و «در تایم هفتگی یا بالاتر فقط کار می‌کند».
+    همان سیگنال درِ production ساخته می‌شود (`api/chart.py` → `out["hourglass"]`
+    → `funnel_tech_scan.tech_hourglass_active`)؛ این‌جا فقط *مصرف* می‌شود، چیزی
+    محاسبه یا وضع نمی‌شود. آستانه‌ها رأیِ مالک‌اند و از همین رجیستری می‌آیند.
+
+    چرا این شاخه لازم بود: `technical_gate` درِ رجیستری تعریف شده بود ولی هیچ‌جا
+    خوانده نمی‌شد — یعنی `hourglass` و `custom[]` عیناً یکِ خروجی داشتند و
+    «تغییرِ preset» برایِ کاربر فقط عوض‌شدنِ یکِ عنوان بود.
+    """
+    hg = _tri(r.get("tech_hourglass_active"))
+    if hg is None:
+        if sigs is not None and not sigs.get(sym):
+            return UNAVAILABLE, [{"code": "TECH_NO_HISTORY",
+                                  "text": "هیچ سابقۀ قیمتی در بانکِ محلی برایِ این نماد نیست"}]
+        if sigs is not None:
+            return PENDING, [{"code": "TECH_SCAN_PENDING",
+                              "text": "داوریِ تکنیکال این نماد هنوز ساخته نشده — اسکن در جریان است"}]
+        return UNAVAILABLE, [{"code": "TECH_UNMEASURED", "text": "تکنیکال این نماد سنجیده نشده"}]
+    action = str(r.get("tech_hourglass_action") or "").strip()
+    if hg:
+        return PASS, [{"code": "HOURGLASS_WEEKLY_ACTIVE",
+                       "text": "ساعتِ شنیِ هفتگی فعال — زیرِ MA=۵۲ هفتگی با RSI(۵)ِ اشباعِ کف"
+                               + (f" ({action})" if action else "")}]
+    return REJECT, [{"code": "HOURGLASS_INACTIVE",
+                     "text": "ساعتِ شنیِ هفتگی فعال نیست — شرطِ MA=۵۲ و RSI(۵)ِ هفتگی ندارد"}]
+
+
 def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
-                    sigs: dict[str, str] | None = None) -> dict:
-    """گیتِ روند — داور همان `trend.matrix` بک‌اند است، نه محاسبۀ دوباره.
+                    sigs: dict[str, str] | None = None,
+                    gate: str | None = None) -> dict:
+    """گیتِ تکنیکال — داور همان موتورِ production است، نه محاسبۀ دوباره.
 
     `tech` ردیف‌هایِ `funnel_tech_scan` است (نماد → ستون‌هایِ tech_*). چرا لازم
     شد: `api/screener.py` تکنیکال را فقط برایِ `watchlist_max=50` ردیفِ اول
@@ -282,7 +314,9 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
       اسکن شده و تحلیل رأیی نداده                  ⇒ UNAVAILABLE / TECH_UNMEASURED
 
     بی‌`sigs` (فراخوانیِ مستقیمِ گارد) رفتارِ پیشین می‌ماند: TECH_UNMEASURED.
+    `gate` دروازۀِ خودِ preset است (`REG.TREND_GATE` یا `REG.HOURGLASS_GATE`).
     """
+    gate = gate or REG.TREND_GATE
     kept, steps, dropped = [], [], []
     counts = {PASS: 0, REJECT: 0, PENDING: 0, UNAVAILABLE: 0}
     for r in rows:
@@ -295,7 +329,9 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
         d = (r.get("tech_trend_d") or "").strip() or None
         mat = (r.get("tech_matrix_decision") or "").strip() or None
         why: list[dict[str, str]] = []
-        if not (w or d or mat):
+        if gate == REG.HOURGLASS_GATE:
+            status, why = _hourglass_verdict(r, sigs, sym)
+        elif not (w or d or mat):
             if sigs is not None and not sigs.get(sym):
                 status = UNAVAILABLE
                 why.append({"code": "TECH_NO_HISTORY",
@@ -788,6 +824,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              exceptions: dict[str, list[str]] | None = None,
              tech_scan: dict[str, dict] | None = None,
              tech_sigs: dict[str, str] | None = None,
+             universe_priority: dict[str, int] | None = None,
+             universe_status: dict[str, str] | None = None,
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
@@ -833,7 +871,11 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         (screening if ok else excluded).append(r)
 
     tape = tape_stage(screening, chain, params)
-    tech = technical_stage(tape["survivors"], tech_scan, tech_sigs)
+    # دروازۀِ تکنیکال از خودِ preset خوانده می‌شود (تا پیش از این `technical_gate`
+    # فقط درِ رجیستری نوشته شده بود و هیچ‌جا مصرف نمی‌شد).
+    gate = (REG.PRESET_BY_ID[preset].technical_gate if preset in REG.PRESET_BY_ID
+            else REG.TREND_GATE)
+    tech = technical_stage(tape["survivors"], tech_scan, tech_sigs, gate=gate)
     fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
     hand = handover_stage(fund["survivors"], tape, tech, fund,
                           assembly_vetoed=[str(r.get("symbol") or "") for r in screening
@@ -841,6 +883,23 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
 
     view = _view(screening, tape, tech, fund, hand, chain)
     matrix, coverage = status_matrix(joined, tape, tech, fund, hand)
+    # ── برچسبِ وضعیتِ معاملاتی (جهانِ زنده) ───────────────────────────────
+    # هیچ نمادی به‌خاطرِ وضعیتش از غربالگری حذف نمی‌شود و ترتیبِ داوریِ مالک
+    # (`final → exception → fund_score → tech_points → backend_rank → symbol`)
+    # هم دست‌نخورده می‌ماند؛ اینجا فقط **دیده می‌شود** که کدام نماد همین حالا
+    # معامله دارد، تا UI بتواند «زنده‌ها» را رو‌به‌رو بگذارد. بی‌این، اولویتِ
+    # نمایشِ TRADING_ACTIVE فقط درِ یکِ endpointِ جدا می‌ماند و به جدولِ قیف
+    # هیچ‌وقت نمی‌رسید.
+    if universe_priority or universe_status:
+        for _rows in view["entries"].values():
+            for _e in _rows:
+                _sym = str(_e.get("symbol") or "")
+                _e["universe_priority"] = (universe_priority or {}).get(_sym)
+                _e["universe_status"] = (universe_status or {}).get(_sym)
+        for _e in hand["entries"]:
+            _sym = str(_e.get("symbol") or "")
+            _e["universe_priority"] = (universe_priority or {}).get(_sym)
+            _e["universe_status"] = (universe_status or {}).get(_sym)
     for r in excluded:
         # Inspector برایِ نمادِ خارج از جامعه هم باید علت بدهد، نه «پیدا نشد».
         view["timeline"][str(r.get("symbol") or "")] = [{

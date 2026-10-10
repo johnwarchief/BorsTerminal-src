@@ -29,46 +29,29 @@ import market_universe as MU
 
 router = APIRouter()
 
-# ردیابِ بی‌حالتِ وضعیتِ معاملاتیِ جهان — وضعیتِ هر نماد را از snapshotِ دورِ
-# پیشین می‌سنجد تا «معاملۀِ انجام‌شده» را از «تغییرِ دفترِ سفارش» جدا کند.
-# دامنه از کلِ تابلو ساخته می‌شود، نه ۶۰ ردیفِ اول؛ هیچ نمادِ واجدِ شرایطی
-# حذف نمی‌شود — فقط اولویتِ نمایشش تعیین می‌گردد.
-_UNIVERSE = MU.UniverseTracker()
-_TZ_TEHRAN_MIN = 210  # +03:30
+# ردیابِ وضعیتِ معاملاتیِ جهان دیگر درِ این فایل نیست: یکِ ردیابِ مشترک درِ
+# `market_universe` است و **بازسازیِ کشِ تابلو** (`api/market.py:_observe_universe`)
+# آن را جلو می‌بَرَد؛ دامنه از کلِ تابلو ساخته می‌شود، نه ۶۰ ردیفِ اول، و هیچ نمادِ
+# واجدِ شرایطی حذف نمی‌شود — فقط برچسبِ وضعیت و اولویتِ نمایشش ثبت می‌گردد.
+#
+# مسیرِ `/api/universe/live` هم به `api/market.py` رفته است (پیش‌ازین `_UNIVERSE.observe`
+# فقط با درخواستِ خودِ endpoint جلو می‌رفت، پس «وضعیتِ زندهٔ جهان» بی‌آن درخواست هرگز
+# تازه نمی‌شد و با revisionِ بازار بی‌ربط بود).
 
 
-def _tehran_now():
-    import datetime as dt
-    return dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=_TZ_TEHRAN_MIN)
+def _universe_priority() -> dict:
+    """نماد → اولویتِ نمایشِ زنده (کمتر = بالاتر)؛ خالی یعنی هنوز مشاهده نشده."""
+    try:
+        return dict(MU.latest().get("priority") or {})
+    except Exception:
+        return {}
 
 
-def _tehran_market_open(now=None) -> bool:
-    now = now or _tehran_now()
-    # شنبه..چهارشنبه = weekday 5,6,0,1,2 (python Mon=0..Sun=6)؛ ۰۸:۴۵–۱۲:۳۰
-    return now.weekday() in (5, 6, 0, 1, 2) and \
-        dt_time(8, 45) <= now.time() <= dt_time(12, 30)
-
-
-from datetime import time as dt_time  # noqa: E402  (برایِ خواناییِ یکتا درِ تابعِ بالا)
-
-
-@router.get("/api/universe/live")
-def get_universe_live():
-    """وضعیتِ معاملاتیِ هر نماد + اولویتِ نمایش + شمارشِ جهان.
-
-    بر پایۀِ فیلدهایِ واقعیِ تابلو (z_tot_tran/q_tot_cap برایِ معاملۀِ انجام‌شده،
-    buy_q*/sell_q*/p_last برایِ مظنه، stop_state برایِ توقف، fetched_at برایِ کهنگی).
-    تغییرِ قیمتِ تنها هرگز دلیلِ معامله نیست.
-    """
-    board, _session = _board_snapshot()
-    if not board:
-        return {"status": "no_data", "message": "تابلو هنوز ساخته نشده",
-                "universe": {}, "symbols": []}
-    now = time.time()
-    open_now = _tehran_market_open()
-    ranked, counts = _UNIVERSE.observe(board, market_open=open_now, now_wall=now)
-    return {"status": "success", "market_open": open_now, "counts": counts,
-            "symbols": ranked}
+def _universe_status() -> dict:
+    try:
+        return dict(MU.latest().get("status_by") or {})
+    except Exception:
+        return {}
 
 # کشِ قیف یک‌خانۀ «کلیدِ آخر» بود. صفحۀ مستر دو مصرف‌کنندۀ هم‌زمان دارد
 # (کاکپیت با presetِ horizon و جدولِ غربالگری با presetِ انتخابی، به‌علاوه
@@ -281,10 +264,13 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         return {"status": "no_data", "message": "تابلو هنوز در این اجرا ساخته نشده",
                 "universe": {"board": 0, "screened": len(screen)}}
     scan, sigs = _tech_context()
+    uni_pri = _universe_priority()
+    uni_st = _universe_status()
     try:
         payload = FE.evaluate(board, screen, preset=preset, custom_chain=chain,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
-                              tech_scan=scan, tech_sigs=sigs, session_day=session)
+                              tech_scan=scan, tech_sigs=sigs, session_day=session,
+                              universe_priority=uni_pri, universe_status=uni_st)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین

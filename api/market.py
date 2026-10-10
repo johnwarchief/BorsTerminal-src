@@ -1120,6 +1120,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
             # بدنۀ تابلویِ کاربر را عوض کند.
             _mirror(records, meta, counts, built_rev)
             _market_store(body, etag, now)
+            _observe_universe(records, meta, built_rev, now)
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
         # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match
@@ -1185,12 +1186,119 @@ def _ORJ_JSON(payload) -> Response:
                     headers={"Cache-Control": "no-store"})
 
 
+def _status_window() -> dict:
+    """سه دربِ جدا، سه اسمِ جدا — تا «وصل است» با «تازه است» یکی خوانده نشود.
+
+    • `market_open`  : تابلو می‌تواند معامله ببیند (۰۸:۴۵–۱۲:۳۰ تهران)
+    • `sync_window`  : پنجرۀِ سینکِ نبض/همگام‌سازی (mstat_engine، ۰۹:۰۰–۱۳:۰۰)
+    • `tick_writes`  : دربِ خودِ حلقۀِ تیک (تا ۲۰:۰۰؛ پس از بستن هم می‌چرخد)
+    """
+    out = {"market_open": None, "sync_window": None, "tick_writes": None,
+           "source": "backend"}
+    now = datetime.datetime.now()
+    try:
+        import market_universe as MU
+        out["market_open"] = bool(MU.market_is_open())
+    except Exception as _e:
+        out["market_open_error"] = str(_e)[:120]
+    try:
+        import mstat_engine
+        hm = now.hour * 10000 + now.minute * 100 + now.second
+        out["sync_window"] = bool(mstat_engine.in_trading_session(hm, now))
+    except Exception as _e:
+        out["sync_window_error"] = str(_e)[:120]
+    try:
+        import test_tsetmc as _TS
+        out["tick_writes"] = bool(_TS.tick_window_open(now))
+    except Exception as _e:
+        out["tick_writes_error"] = str(_e)[:120]
+    return out
+
+
+def _tick_status() -> dict:
+    try:
+        import test_tsetmc as _TS
+        return _TS.tick_health()
+    except Exception as _e:
+        return {"error": str(_e)[:160]}
+
+
+def _board_age_s(meta: dict, now: float):
+    """سنِ خودِ بدنهٔ تابلو از `meta.last_sync` (زمانِ چرخه، نه fetched_atِ ردیف)."""
+    at = (meta or {}).get("last_sync")
+    if not at:
+        return None
+    try:
+        import calendar
+        st = time.strptime(str(at), "%Y-%m-%d %H:%M:%S")
+        return max(0.0, now - calendar.timegm(st) + time.timezone)
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def _observe_universe(records, meta, rev, now: float) -> None:
+    """جهانِ وضعیتِ معاملاتی از همان بازسازیِ کشِ تابلو جلو می‌رود.
+
+    پیش‌ازین ردیاب فقط وقتی حرکت می‌کرد که کسی `/api/universe/live` را می‌زد؛
+    یعنی «وضعیتِ زندهٔ جهان» بی‌درخواستِ آن endpoint هرگز تازه نمی‌شد و با
+    revisionِ بازار بی‌ربط بود. یکِ راننده (این‌جا)، همهٔ خواننده‌ها آخرین
+    وضعیت را می‌خوانند. هزینه: یکِ پیمایشِ خالص رویِ همان ردیف‌هایی که تازه
+    سریال‌سازی شده‌اند (چندِ ده میلی‌ثانیه)، بی‌هیچ درخواستِ شبکه.
+    """
+    try:
+        import market_universe as MU
+        MU.observe_board(records, market_open=bool(MU.market_is_open()),
+                         revision=rev, board_age_s=_board_age_s(meta, now),
+                         now_wall=now)
+    except Exception as _e:
+        print(f"[market] universe observe failed: {_e}")
+
+
+def _universe_counts() -> dict:
+    try:
+        import market_universe as MU
+        s = MU.latest()
+        return {"at": s.get("at"), "counts": s.get("counts") or {},
+                "observed_rows": s.get("observed_rows", 0),
+                "market_open": s.get("market_open"), "revision": s.get("revision")}
+    except Exception as _e:
+        return {"error": str(_e)[:160]}
+
+
+@router.get("/api/universe/live")
+def universe_live():
+    """آخرین وضعیتِ معاملاتیِ کلِ جهان + شمارش‌ها (بدونِ درخواستِ بیرونی).
+
+    داده از همان بازسازیِ کشِ تابلو می‌آید (`_observe_universe`)؛ این endpoint
+    چیزی مشاهده نمی‌کند و فقط می‌خواند، پس دو مصرف‌کننده با دو ریتم، ردیابِ
+    مشترک را فاسد نمی‌کنند. اگر هنوز هیچ بازسازی‌ای نشده، صادقانه `no_data`.
+    """
+    import market_universe as MU
+    latest = MU.latest()
+    if not latest.get("observed_rows"):
+        return {"status": "no_data", "message": "جهان هنوز در این اجرا مشاهده نشده",
+                "counts": {}, "symbols": []}
+    pri = latest.get("priority") or {}
+    status_by = latest.get("status_by") or {}
+    ranked = [{"symbol": k, "status": status_by.get(k), "priority": v}
+              for k, v in sorted(pri.items(), key=lambda kv: (kv[1], kv[0]))]
+    return {"status": "success", "market_open": latest.get("market_open"),
+            "observed_at": latest.get("at"), "revision": latest.get("revision"),
+            "counts": latest.get("counts") or {}, "symbols": ranked}
+
+
 @router.get("/api/live-stats")
 def live_stats():
     """شمارنده‌هایِ حالتِ داغ — برایِ اینکه «چه‌قدر واقعاً عوض شد» دیده شود.
 
     بی‌این endpoint ادعاهایِ «دلتا نوشتن‌ها را یک‌دهم کرد» فقط حرف می‌ماند؛
     چرخۀ benchmarkِ کار #73 همین اعداد را قبل/بعد مقابله می‌کند.
+
+    از این دور سه چیزِ جدا هم همین‌جا خوانده می‌شوند (بخشِ «وضعیت بازار» همین
+    سه را جدا جدا نشان می‌دهد، وگرنه «وصل است» با «تازه است» یکی حساب می‌شود):
+      • `window` — دربِ نشست/تابلو از خودِ بک‌اند، نه از ساعتِ مرورگر
+      • `tick`   — سلامتِ حلقۀِ تیک (خنک‌شدنِ ۴۲۹، گوش‌دادن، آخرینِ تغییر)
+      • `universe` — شمارشِ وضعیتِ معاملاتیِ نمادها (فعال/مظنه/متوقف/نامعلوم)
     """
     from .market import _STATIC_FRAME
     s = market_state.stats()
@@ -1198,6 +1306,9 @@ def live_stats():
     s["board_rows"] = int(len(_STATIC_FRAME["df"])) if _STATIC_FRAME.get("df") is not None else 0
     s["delta_mirror_rows"] = len(_mirror_snapshot()[0])
     s["subscribed"] = sorted(market_state.subscriptions())
+    s["window"] = _status_window()
+    s["tick"] = _tick_status()
+    s["universe"] = _universe_counts()
     return {"status": "success", "data": s}
 
 
