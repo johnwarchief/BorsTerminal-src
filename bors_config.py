@@ -732,6 +732,10 @@ FTS_DEFAULTS = {
     # فهرست‌ها با «,» یا «،» نوشته میشوند و با norm_fa نرمال‌سازی می‌شوند.
     "include_industries": [],
     "exclude_industries": [],
+    # تنظیمات مستقلِ ساعت‌شنی تکنیکال؛ دوره RSI آن با RSI(14) خروج یکسان نیست.
+    "hourglass_rsi_period": 7,
+    "hourglass_rsi_oversold": 30.0,  # پیش‌فرض اجرایی قابل‌تغییر، نه عدد قطعی PDF
+    "hourglass_ma52_position": "below",  # below | above | either؛ below برای سازگاری
 }
 
 FTS_LEGACY_SCALARS = {
@@ -742,7 +746,7 @@ FTS_LEGACY_SCALARS = {
 FTS_LEGACY_LISTS = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
 FTS_LIST_KEYS = ("mandatory_sectors", "free_sectors", "include_industries",
                  "exclude_industries", "exclude_rejected_indicators")
-FTS_STR_KEYS = ("industry_mode",)
+FTS_STR_KEYS = ("industry_mode", "hourglass_ma52_position")
 
 _CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
 _cal_cache = {"mtime": 0.0, "events": []}
