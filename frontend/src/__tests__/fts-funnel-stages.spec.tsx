@@ -295,6 +295,33 @@ describe('زنجیرۀ Custom', () => {
     useFunnelPrefsStore.getState().setException('شپنا', []);
     expect(useFunnelPrefsStore.getState().exceptions).toEqual({});
   });
+
+  it('جزیرۀِ شمارش جهتِ سطر را نمی‌شکند: ورودی سمتِ راستِ پیک، خروجی سمتِ چپ', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    await ready('/master?stage=tape&preset=custom');
+    const count = screen.getByTestId('funnel-chain-count-f_susp');
+    // .num رویِ کلِ رشته direction:ltr می‌آورد و دو عدد را جابه‌جا می‌کند؛
+    // باید فقط دورِ هر عدد بماند و خودِ رشته درِ جریانِ RTL بنشیند.
+    expect(count.className.split(/\s+/)).not.toContain('num');
+    const nums = Array.from(count.querySelectorAll('.num')).map((n) => n.textContent);
+    expect(nums).toEqual(['۴', '۳']);
+    expect(count.textContent).toBe('۴ ← ۳');
+  });
+
+  it('بینِ دو چیپ، عملگرِ اشتراک دیده می‌شود و ترتیبش با زنجیره یکی است', async () => {
+    useFunnelPrefsStore.getState().addFilter('f_susp');
+    useFunnelPrefsStore.getState().addFilter('f_noqteh');
+    await ready('/master?stage=tape&preset=custom');
+    const row = screen.getByTestId('funnel-chain-row');
+    const seq = Array.from(row.querySelectorAll('[data-testid]')).map((el) => el.getAttribute('data-testid'));
+    const first = seq.indexOf('funnel-chain-f_susp');
+    const and = seq.indexOf('funnel-chain-and');
+    const second = seq.indexOf('funnel-chain-f_noqteh');
+    expect(first).toBeGreaterThanOrEqual(0);
+    expect(and).toBeGreaterThan(first);
+    expect(second).toBeGreaterThan(and);
+    expect(row.querySelectorAll('[data-testid="funnel-chain-and"]')).toHaveLength(1);
+  });
 });
 
 describe('بازسازِ Custom درِ همان workspace (§۵ §۸ §۱۰)', () => {

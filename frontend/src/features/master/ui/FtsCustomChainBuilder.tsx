@@ -54,48 +54,67 @@ export default function FtsCustomChainBuilder() {
           const f = filters.find((x) => x.filter_id === id);
           const st = stepOf(steps, id);
           return (
-            <span
-              key={id}
-              data-testid={`funnel-chain-${id}`}
-              className="flex items-center gap-1 rounded-lg border border-accent-blue/40 bg-accent-blue/10 px-1.5 py-0.5 text-2xs font-bold text-text-primary"
-              title={f ? `${f.description ?? ''}\nمنبع: ${f.source_file ?? ''}#${f.source_hash ?? ''}\nفرمول: ${f.formula_version ?? ''}` : id}
-            >
-              <span className="num opacity-60">{toFaDigits(i + 1)}</span>
-              <span className="truncate max-w-[16ch]">{f?.name ?? id}</span>
-              {st ? (
-                <span className="num text-3xs text-text-secondary" data-testid={`funnel-chain-count-${id}`}>
-                  {toFaDigits(st.input_count)} ← {toFaDigits(st.matched_count)}
+            <span key={id} className="flex items-center gap-1.5">
+              {i > 0 ? (
+                <span
+                  className="num-text text-3xs font-normal text-text-muted"
+                  data-testid="funnel-chain-and"
+                  title="دو فیلترِ کنارِ هم «و»ند: فیلترِ بعدی فقط رویِ بازماندۀ قبلی اجرا می‌شود"
+                >
+                  و
                 </span>
               ) : null}
-              <button
-                type="button"
-                aria-label="یک گام بالا"
-                data-testid={`funnel-chain-up-${id}`}
-                disabled={i === 0}
-                onClick={() => moveFilter(i, i - 1)}
-                className="px-0.5 text-text-muted hover:text-accent-blue disabled:opacity-30"
+              <span
+                data-testid={`funnel-chain-${id}`}
+                className="flex items-center gap-1 rounded-lg border border-accent-blue/40 bg-accent-blue/10 px-1.5 py-0.5 text-2xs font-bold text-text-primary"
+                title={f ? `${f.description ?? ''}\nمنبع: ${f.source_file ?? ''}#${f.source_hash ?? ''}\nفرمول: ${f.formula_version ?? ''}` : id}
               >
-                ↑
-              </button>
-              <button
-                type="button"
-                aria-label="یک گام پایین"
-                data-testid={`funnel-chain-down-${id}`}
-                disabled={i === chain.length - 1}
-                onClick={() => moveFilter(i, i + 1)}
-                className="px-0.5 text-text-muted hover:text-accent-blue disabled:opacity-30"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                aria-label="حذف از زنجیره"
-                data-testid={`funnel-chain-remove-${id}`}
-                onClick={() => removeFilter(id)}
-                className="px-0.5 text-text-muted hover:text-accent-red"
-              >
-                ×
-              </button>
+                <span className="num opacity-60">{toFaDigits(i + 1)}</span>
+                <span className="truncate max-w-[16ch]">{f?.name ?? id}</span>
+                {st ? (
+                  // «۲۷۸ ← ۲۳»: درِ RTL ورودی باید سمتِ راستِ پیک بنشیند. کلاسِ
+                  // .num رویِ کلِ رشته جهتِ کلِ جزیره را LTR می‌کرد و ورودی/خروجی
+                  // جا به جا می‌شدند؛ اینجا هر عدد جزیرۀ خودش است و پیک درِ جریانِ
+                  // راست‌به‌چپِ سطر می‌ماند.
+                  <span
+                    className="num-text text-3xs text-text-secondary"
+                    data-testid={`funnel-chain-count-${id}`}
+                  >
+                    <span className="num">{toFaDigits(st.input_count)}</span>
+                    {' ← '}
+                    <span className="num">{toFaDigits(st.matched_count)}</span>
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label="یک گام جلوتر (نزدیک‌تر به سرِ زنجیره)"
+                  data-testid={`funnel-chain-up-${id}`}
+                  disabled={i === 0}
+                  onClick={() => moveFilter(i, i - 1)}
+                  className="px-0.5 text-text-muted hover:text-accent-blue disabled:opacity-30"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  aria-label="یک گام بعدتر (نزدیک‌تر به انتهای زنجیره)"
+                  data-testid={`funnel-chain-down-${id}`}
+                  disabled={i === chain.length - 1}
+                  onClick={() => moveFilter(i, i + 1)}
+                  className="px-0.5 text-text-muted hover:text-accent-blue disabled:opacity-30"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  aria-label="حذف از زنجیره"
+                  data-testid={`funnel-chain-remove-${id}`}
+                  onClick={() => removeFilter(id)}
+                  className="px-0.5 text-text-muted hover:text-accent-red"
+                >
+                  ×
+                </button>
+              </span>
             </span>
           );
         })}
@@ -200,9 +219,13 @@ export default function FtsCustomChainBuilder() {
       </div>
       {chain.length ? (
         <p className="text-3xs text-text-muted" data-testid="funnel-chain-note">
-          اشتراکِ ترتیبی است، نه OR: هر فیلتر فقط رویِ بازماندۀ فیلترِ قبل اجرا می‌شود ·
-          رجیستری: {toFaDigits(filters.length)} فیلتر · ruleset{' '}
-          <span className="num opacity-70">{rulesetVersion || '—'}</span>
+          {/* دو تکهٔ لاتین (OR و شناسۀِ قواعد) بی‌جزیره درِ متنِ فارسی، نقطه‌گذارِ
+              چسبیده به‌شان را به لبۀِ دیگرِ جمله می‌اندازد. هر دو درِ spanِ جدا. */}
+          اشتراکِ ترتیبی است، <span dir="ltr">OR</span> نیست — هر فیلتر فقط رویِ
+          بازماندۀ فیلترِ قبل اجرا می‌شود · رجیستری: {toFaDigits(filters.length)} فیلتر ·{' '}
+          <span dir="ltr" className="inline-block">
+            ruleset <span className="num opacity-70">{rulesetVersion || '—'}</span>
+          </span>
         </p>
       ) : null}
     </div>
