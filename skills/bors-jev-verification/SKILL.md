@@ -1,16 +1,15 @@
 ---
 name: bors-jev-verification
-description: Close a unit of BorsTerminal work with BOTH jev tools - the jev-pilot judgment call (tools/pilot_ctl.py arbitrate/stuck/guard, prose-only, no source code leaves the machine) and the live browser proof. Use when the owner says «از دوتا jev استفاده کن», before calling any fix or release verified, when choosing between two candidate fixes, when a retry loop is going in circles, or before a destructive operation. The browser command lines themselves live in bors-live-ui-check; the installed-vs-dev data diagnosis lives in bors-installed-vs-dev-diagnosis.
+description: Legacy Jev verification workflow retained for fallback/migration comparison after the owner's 2026-10-10 request to replace Jev with Laya. Do not treat as the canonical automatic workflow; use only for Jev-specific fallback or explicit comparison.
 ---
 
-# Bors jev verification (two-tool close-out)
+# Bors Jev verification (legacy two-tool close-out)
+
+> **Status as of 2026-10-10:** the owner has since requested migration from Jev to Laya. This document records the prior rule and must not override the newer request. Retain the old tools only until a replacement is tested; do not claim the migration has happened without actual Qoder configuration and end-to-end evidence.
 
 ## Overview
 
-The owner's standing rule, restated several times: **every unit of work is closed with both
-jev tools** - a judgment call from jev-pilot *and* a live browser check. Green vitest, a
-passing guard, or a plausible screenshot alone is not done. This skill is the judgment half
-plus the pairing discipline.
+Live browser evidence remains required; however, this Jev-specific judgment/browser pairing is now a legacy fallback. Prefer Laya only after its actual decision and browser action are verified. Until then, use existing Playwright/CDP checks and explicitly report the Laya migration as unverified.
 
 ## The two halves and their order
 
