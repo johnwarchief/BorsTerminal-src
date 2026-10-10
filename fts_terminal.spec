@@ -78,6 +78,10 @@ a = Analysis(
                    # سطح-بال import می‌کنند؛ نبودنش EXE را رویِ اولین درخواستِ
                    # تابلو می‌کشد (همان الگوی price_basis/codal_periods).
                    'client_split',
+                   # بند ۵ مأموریت (1405-07-20): `market_phase` تنها تعریفِ
+                   # مرحلِ جلسه است و mstat_engine آن را import می‌کند؛ مثلِ
+                   # بقیۀ ماژول‌هایِ ریشه صریح فهرست می‌شود.                       
+                   'market_phase',
                    # دورِ P0 (1405-07-13): `tsetmc_p0_schema` تک‌منبعِ DDL جدول‌هایِ
                    # canonical است و هم از test_tsetmc و هم از mstat_engine.
                    # ensure_schema خوانده می‌شود؛ نبودش درِ EXE یعنی 500 رویِ هر

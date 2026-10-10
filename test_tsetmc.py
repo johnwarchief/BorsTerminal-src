@@ -294,6 +294,16 @@ def ensure_market_index_schema(conn):
         " d_even INTEGER PRIMARY KEY, idx_last REAL, idx_change REAL, idx_pct REAL,"
         " ew_last REAL, ew_change REAL, ew_pct REAL,"
         " z_tot_tran REAL, q_tot_cap REAL, q_tot_tran REAL, updated_at TEXT)")
+    # دورِ هوشمندسازیِ وضعیت بازار (بند ۵ مأموریت، 1405-07-20): همان پاسخِ
+    # رسمیِ بورس `marketState`/`marketStateTitle` و ساعتِ خودِ فعالیت را هم
+    # می‌فرستد و تا پیش از این دور ریخته می‌شد؛ پس برنامه «بازار باز است یا
+    # نه» را از ساعتِ دیواریِ خودش حدس می‌زد. سه ستونِ جدید با ALTER می‌آیند
+    # (پایگاهِ بسته‌بندی‌شدۀ کهنه ستون ندارد) و نوشتار از این پس نامی است.
+    cols = {r[1] for r in conn.execute(f"PRAGMA table_info({MARKET_INDEX_TABLE})")}
+    for name, typ in (("market_state", "TEXT"), ("market_state_title", "TEXT"),
+                      ("activity_h_even", "INTEGER")):
+        if name not in cols:
+            conn.execute(f"ALTER TABLE {MARKET_INDEX_TABLE} ADD COLUMN {name} {typ}")
 
 
 def _idx_pct(last, change):
@@ -318,8 +328,14 @@ def save_market_index(conn, ov, d_even, now=None):
     if last <= 0 and ew_last <= 0:
         return False
     ensure_market_index_schema(conn)
+    # نوشتارِ **نامی**: سه ستونِ تازه به انتهای جدول می‌چسبند و INSERTِ جایگاهی
+    # با ۱۱ علامتِ سؤال، `market_state` را درِ `updated_at` می‌نشاند (همان
+    # اشتباهی که درِ client_type_value دیدیم).
     conn.execute(
-        f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} (d_even, idx_last, idx_change,"
+        " idx_pct, ew_last, ew_change, ew_pct, z_tot_tran, q_tot_cap, q_tot_tran,"
+        " updated_at, market_state, market_state_title, activity_h_even)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (int(d_even),
          last or None, num(ov.get("indexChange")) or None,
          _idx_pct(last, num(ov.get("indexChange"))),
@@ -327,7 +343,10 @@ def save_market_index(conn, ov, d_even, now=None):
          _idx_pct(ew_last, num(ov.get("indexEqualWeightedChange"))),
          num(ov.get("marketActivityZTotTran")), num(ov.get("marketActivityQTotCap")),
          num(ov.get("marketActivityQTotTran")),
-         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+         (str(ov.get("marketState")).strip() or None) if ov.get("marketState") else None,
+         (str(ov.get("marketStateTitle")).strip() or None) if ov.get("marketStateTitle") else None,
+         int(num(ov.get("marketActivityHEven")) or 0) or None))
     conn.commit()
     return True
 

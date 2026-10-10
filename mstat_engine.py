@@ -956,9 +956,22 @@ def summary(conn) -> dict:
             "buy_power_up": bool(a["power"] is not None and a["power"] >= 1.0),
             "money_flow_b_toman": round(a["flow_bt"], 1),
         })
-    return {"status": "ok", "asof": meta, "rows": out,
+    import market_phase as MP
+    ph = MP.from_db(conn)
+    return {"status": "ok", "asof": meta, "rows": out, "phase": ph,
             "health": macro_health_from(_agg(buckets["eq_all"]), _agg(buckets["all"]),
-                                        *market_total_rials(conn))}
+                                        *market_total_rials(conn), phase=ph)}
+
+
+def session_phase(conn) -> dict:
+    """مرحلِ جلسه از وضعیتِ رسمیِ بازار — تنها نقطۀِ خواندنِ `market_phase`.
+
+    `status` همین‌جا می‌نشیند (نه درِ route): schemaیِ فرانت آن را لازم می‌خواهد
+    و بی‌این، پاسخِ سالم درِ رابط «خطا» خوانده می‌شود (سنجشِ زنده 1405-07-20 —
+    پروبِ مرورگری همان را گرفت).
+    """
+    import market_phase as MP
+    return dict(MP.from_db(conn), status="ok")
 
 
 def market_index(conn) -> dict | None:
@@ -1039,7 +1052,7 @@ def market_total_rials(conn) -> tuple:
 
 
 def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
-                      total_source: str = "") -> dict:
+                      total_source: str = "", phase: dict | None = None) -> dict:
     """برچسب سلامت کلان از ارزش معاملات (سند FTS صفحهٔ ۳): ≥۲۰ همت مساعد.
 
     مبنای برچسب «سهام، حق تقدم و ص.سهامی» است، نه کلِ جدول. کلِ بازار با شمارشِ
@@ -1053,6 +1066,25 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
     رسمیِ TSETMC. پیش‌تر این دو یکی پنداشته شده بودند و نبض بازار گردشِ روز را
     زیرِ تیترِ «ارزش کل بازار» می‌برد.
     """
+    # بند ۵ مأموریت (رأیِ مالک 1405-07-20): مرحلِ جلسه داور است، نه ساعتِ
+    # دیواری. پیش از آغازِ معاملات، درِ تعطیلیِ رسمی، یا وقتی وضعیتِ رسمی
+    # خوانده نشده، «نامساعد/رکود» صادر نمی‌شود — همان چیزی که پیش از این از
+    # نبودِ ردیفِ معامله ساخته می‌شد. (آستانه‌ها دست‌نخورده‌اند: HEMAT_GOOD/
+    # HEMAT_BAD همان سندِ FTS است؛ اینجا فقط دروازۀِ داوری بسته می‌شود.)
+    if phase is not None and not phase.get("verdict_allowed"):
+        return {"value_hemat": None, "state": "nodata",
+                "label": phase.get("label") or "بدون داده",
+                "basis": "eq_all",
+                "phase": phase.get("phase"), "phase_source": phase.get("phase_source"),
+                "phase_official": bool(phase.get("official")),
+                "session_day": phase.get("session_day"),
+                "why": [phase.get("why_not", {}).get(k, "")
+                        for k in phase.get("not_computable", []) if k != "order_pressure"],
+                "trade_value_all_market_hemat": None,
+                "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
+                "market_value_source": total_source or None,
+                "excellent": False,
+                "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD}
     if not eq or not eq.get("n_traded"):
         # نشستِ هنوز-معامله‌نشده (پیش از بازگشایی، تعطیل، یا سینکِ کهنه) عددِ
         # صفر نیست: داوری ندارد. پیش از این همین حالت «نامساعد / رکود روز»
@@ -1071,19 +1103,29 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
         state, label = "bad", "نامساعد"
     else:
         state, label = "mid", "متوسط"
-    return {"value_hemat": round(hemat, 2), "state": state, "label": label,
-            "basis": "eq_all",
+    out = {"value_hemat": round(hemat, 2), "state": state, "label": label,
+           "basis": "eq_all",
+           # بند ۵.۵ و ۵.۶: حکم باید بگوید رویِ کدام نشست و از کدام منبعِ
+           # رسمی صادر شده — وگرنه عددِ دیروز زنده خوانده می‌شود.
+           "phase": (phase or {}).get("phase"),
+           "phase_label": (phase or {}).get("label"),
+           "phase_source": (phase or {}).get("phase_source"),
+           "phase_official": (phase or {}).get("official"),
+           "session_day": (phase or {}).get("session_day"),
+           "session_is_live": (phase or {}).get("is_live"),
             "trade_value_all_market_hemat": round(allmkt["val_hemat"], 2) if allmkt else None,
             "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
             "market_value_source": total_source or None,
-            "excellent": hemat >= HEMAT_EXCELLENT,
-            "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD, "excellent_min": HEMAT_EXCELLENT}
+           "excellent": hemat >= HEMAT_EXCELLENT,
+           "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD, "excellent_min": HEMAT_EXCELLENT}
+    return out
 
 
 def macro_health(conn) -> dict:
     rows, _meta = enrich(conn)
+    import market_phase as MP
     return macro_health_from(_agg(_select(rows, "eq_all")), _agg(_select(rows, "all")),
-                             *market_total_rials(conn))
+                             *market_total_rials(conn), phase=MP.from_db(conn))
 
 
 # ================================ v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند =================

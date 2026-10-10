@@ -127,6 +127,45 @@ export function useMstatPhases() {
   });
 }
 
+// ── مرحلِ جلسه از وضعیتِ رسمیِ بازار (بند ۵ مأموریت، 1405-07-20) ─────────────
+// هیچ حکمی اینجا ساخته نمی‌شود: `verdict_allowed` و فهرستِ «چه چیزی در این
+// مرحل معنا ندارد» از خودِ `market_phase.py` می‌آید. `official=false` یعنی
+// برنامه فقط تقویم را دیده است — رابط همین را صریح می‌نویسد.
+export const SessionPhaseSchema = z.object({
+  status: z.string(),
+  phase: z.string(),
+  label: z.string(),
+  phase_source: str,
+  official: z.boolean().nullish(),
+  official_state: str,
+  official_state_title: str,
+  session_day: num,
+  activity_h_even: num,
+  is_live: z.boolean().nullish(),
+  verdict_allowed: z.boolean().nullish(),
+  computable: z.record(z.string(), z.boolean()).nullish(),
+  not_computable: z.array(z.string()).nullish(),
+  why_not: z.record(z.string(), z.string()).nullish(),
+  data_updated_at: str,
+  clock_now: str,
+  session_start: str,
+  session_end: str,
+  source: str,
+});
+export type SessionPhaseFeed = z.infer<typeof SessionPhaseSchema>;
+
+export function useMstatSessionPhase() {
+  return useQuery({
+    queryKey: ['mstat-session-phase'],
+    queryFn: ({ signal }) =>
+      http<SessionPhaseFeed>('/api/mstat/phase', { schema: SessionPhaseSchema, signal }),
+    staleTime: 30_000,
+    gcTime: 10 * 60_000,
+    refetchInterval: () => sessionPollMs(SNAPSHOT_POLL_MS),
+    refetchOnWindowFocus: false,
+  });
+}
+
 export const MainWatchRowSchema = z.object({
   symbol: z.string(),
   ins_code: str,

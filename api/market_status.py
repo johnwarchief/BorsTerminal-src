@@ -104,6 +104,20 @@ def mstat_clientsplit(tab: str = Query("all")):
     """گام ۲.۴ و ۵.۱ — تفکیک حقیقی/حقوقی به تفکیک تب."""
     return _mstat_call(_mstat.client_split, tab)
 
+@router.get("/api/mstat/phase")
+def mstat_phase():
+    """مرحلِ جلسه از وضعیتِ **رسمیِ** بازار (بند ۵ مأموریت، 1405-07-20).
+
+    تنها منبعش `MarketData/GetMarketOverviewِ` خودِ بورس است که درِ جدولِ
+    `market_index` می‌نشیند (نویسنده: `test_tsetmc.save_market_index`)؛
+    `market_phase.py` فقط ترجمه می‌کند و آستانۀ تازۀ نمی‌سازد. بی‌ردیفِ رسمی
+    `phase_source` برچسبِ ساعتی می‌گیرد و `official: false` — تا رابط بگوید
+    این حدسِ تقویم است، نه رأیِ بازار. (توجه: `/api/mstat/phases` چیزِ دیگری
+    است — شمارندهٔ چرخشِ وضعیتِ نمادها.)
+    """
+    return _mstat_call(_mstat.session_phase)
+
+
 @router.get("/api/mstat/mainwatch")
 def mstat_mainwatch(group: str = Query("eq_all"), industry: str = Query(""),
                     sort: str = Query("clock"), desc: bool = Query(True),

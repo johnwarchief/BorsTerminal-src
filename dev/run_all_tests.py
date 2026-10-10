@@ -253,6 +253,9 @@ SUITES = [
     # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
     ('dev/test_screener_funnel_gate_v1.py',
                                       'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # بند ۵ مأموریت: مرحلِ جلسه از وضعیتِ رسمیِ بازار، و داوری بی‌مرحل ممنوع.
+    ('dev/test_market_phase_v1.py',
+                                      'session phase from the official market state; no verdict without a phase'),
     # SINGLE-WRITER: دورِ P0 دو بک‌اند هم‌زمان رویِ یک market.db داشت (نسخۀ
     # ماندۀ 1.0.73 ستون‌هایِ تازه را با هر سینک NULL می‌کرد). این گارد همان
     # حالت را می‌گیرد؛ رویِ ماشینِ بدونِ PowerShell بی‌صدا skip می‌شود.
