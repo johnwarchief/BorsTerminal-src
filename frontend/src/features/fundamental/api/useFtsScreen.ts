@@ -84,6 +84,18 @@ export const FtsScreenRowSchema = z.object({
   tech_matrix_desc: z.string().nullable().nullish(),
   tech_hourglass_active: z.boolean().nullish(),
   tech_hourglass_action: z.string().nullable().nullish(),
+  // ── بند ۷.۱ مأموریت: پرچمِ قیف رویِ همین ردیف (از `status_matrix`ِ خودِ قیف) ──
+  // سه وضعیتِ جدا هستند و جدول حق ندارد یکی را جای دیگری بگذارد:
+  //   pass / reject / unavailable (سنجیده نشد) / not_required (گامِ قبل بست) /
+  //   not_in_universe — و `gate_state` می‌گوید داوریِ قیف اصلاً به این ردیف
+  //   رسید یا نه. `funnel_candidate` تنها وقتی true است که هر سه گام pass
+  //   باشند؛ هیچ پارامتری آن را بی‌عبور از تابلوخوانی و تکنیکال سبز نمی‌کند.
+  tape_status: z.string().nullish(),
+  technical_status: z.string().nullish(),
+  fundamental_status: z.string().nullish(),
+  technical_reason: z.string().nullish(),
+  gate_state: z.string().nullish(),
+  funnel_candidate: z.boolean().nullish(),
 });
 export type FtsScreenRow = z.infer<typeof FtsScreenRowSchema>;
 
@@ -96,8 +108,28 @@ const FtsScreenSchema = z.object({
   /** زمانِ خودِ اسکن (epoch ثانیه) — کشِ ۱۲ ساعته یعنی «پاسخِ امروز» می‌تواند
    *  دادهٔ دیروز باشد؛ تازگیِ کاندید از همین خوانده می‌شود. */
   as_of: z.number().nullish(),
+  /** شمارشِ ورودی/خروجیِ هر گام + preset/chain/qاعلۀِ به‌کاررفته. `state` غیرِ
+   *  applied یعنی قیف ساخته نشد؛ درِ آن حالت هیچ ردیفی کاندید نیست. */
+  funnel_gate: z
+    .object({
+      state: z.string(),
+      preset: z.string().nullish(),
+      chain: z.array(z.string()).nullish(),
+      ruleset_version: z.string().nullish(),
+      as_of: z.number().nullish(),
+      message: z.string().nullish(),
+      stages: z.record(z.string(), z.record(z.string(), z.unknown())).nullish(),
+      coverage: z.record(z.string(), z.record(z.string(), z.number())).nullish(),
+    })
+    .nullish(),
+  requested_symbols: z.number().nullish(),
 });
 export type FtsScreen = z.infer<typeof FtsScreenSchema>;
+
+/** شمارشِ گام‌هایِ قیف آن‌طور که `/api/screener` می‌فرستد (بند ۷.۱ مأموریت).
+ *  جدول هیچ گامی را خودش حساب نمی‌کند؛ این فقط می‌گوید پرچمِ «کاندیدِ قیف» رویِ
+ *  کدام preset/chain نشسته و چند نماد درِ هر گام مانده‌اند. */
+export type FtsFunnelGate = NonNullable<FtsScreen['funnel_gate']>;
 
 /** `limit = 0` یعنی کلِ universe. بک‌اند (`api/screener.py`) اصلاً پارامتر
  *  `limit` ندارد، پس برابریِ دسکتاپ/موبایل همان «همه» است؛ برشِ ۶۰تاییِ

@@ -17,7 +17,7 @@ import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
-import type { FtsScreenRow } from '../api/useFtsScreen';
+import type { FtsScreenRow, FtsFunnelGate } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
@@ -346,6 +346,15 @@ const ScreenerRow = memo(function ScreenerRow({
                             ساعت شنی
                           </span>
                         ) : null}
+                        {r.funnel_candidate ? (
+                          <span
+                            data-testid="row-funnel-candidate"
+                            title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
+                          >
+                            کاندیدِ قیف
+                          </span>
+                        ) : null}
                         {r.tech_jet ? (
                           <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
                             جت
@@ -640,6 +649,41 @@ const ScreenerRow = memo(function ScreenerRow({
               );
 });
 
+/** شمارۀِ گام‌هایِ قیف از خودِ `/api/screener` (بند ۷.۱ مأموریت). جدول هیچ گامی
+ *  را خودش حساب نمی‌کند و هیچ آستانه‌ای هم اینجا نیست؛ فقط می‌گوید پرچمِ
+ *  «کاندیدِ قیف» رویِ کدام preset/chain نشسته و درِ هر گام چند نماد مانده.
+ *  بی‌قیف (خطا/unavailable) صریح گفته می‌شود — سکوتِ سبز ممنوع. */
+function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
+  if (!gate) return null;
+  const st = gate.stages ?? {};
+  const n = (k: string) => {
+    const v = (st[k] ?? {}) as Record<string, unknown>;
+    return { input: Number(v.input ?? 0), matched: Number(v.matched ?? 0) };
+  };
+  const t = n('tape'), x = n('technical'), f = n('fundamental');
+  const applied = gate.state === 'applied';
+  const text = applied
+    ? `قیف ${gate.preset ?? '—'} · تابلو ${toFaDigits(t.input)}→${toFaDigits(t.matched)}`
+      + ` · تکنیکال ${toFaDigits(x.matched)} · بنیادی ${toFaDigits(f.matched)}`
+    : 'قیف نرسید — کاندیدِ قیف نشان داده نمی‌شود';
+  return (
+    <span
+      data-testid="fts-funnel-gate"
+      data-state={gate.state}
+      title={applied
+        ? `زنجیرۀ تابلوخوانی: ${(gate.chain ?? []).join('، ') || 'بی‌فیلتر'} · `
+          + 'کاندیدِ قیف فقط ردیفی است که هر سه گام pass باشد و وتوی هفتگی/مجمع نداشته باشد.'
+        : String(gate.message ?? gate.state)}
+      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold ${
+        applied ? 'border-[var(--hairline)] bg-bg-primary text-text-secondary'
+                : 'border-accent-red/40 bg-accent-red/10 text-accent-red'
+      }`}
+    >
+      {text}
+    </span>
+  );
+}
+
 export function FtsScreenTable({
   rows,
   onSelect,
@@ -649,6 +693,7 @@ export function FtsScreenTable({
   assemblyEvents = null,
   capitalEvents = null,
   settingsSlot,
+  funnelGate = null,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
@@ -664,6 +709,10 @@ export function FtsScreenTable({
   capitalEvents?: Record<string, CalEvent[]> | null;
   /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
   settingsSlot?: ReactNode;
+  /** شمارشِ گام‌هایِ قیف از خودِ `/api/screener` (بند ۷.۱ مأموریت). جدول هیچ
+   *  گامی را خودش حساب نمی‌کند؛ این فقط می‌گوید پرچمِ «کاندیدِ قیف» رویِ کدام
+   *  preset/chain نشسته است. */
+  funnelGate?: FtsFunnelGate | null;
 }) {
   /** برچسب مجمعِ یک نماد؛ منطق انتخاب در lib/assemblyEvent.ts (آزمون‌شده) است */
   const assemblyBadge = (sym: string) =>
@@ -927,6 +976,7 @@ export function FtsScreenTable({
         >
           ⏳ ساعت شنی FTS ({toFaDigits(presetCounts.hourglass)})
         </button>
+        <FunnelGateChip gate={funnelGate} />
       </div>
 
       {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت تا پایینِ

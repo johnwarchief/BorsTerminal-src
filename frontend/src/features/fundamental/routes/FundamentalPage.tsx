@@ -195,6 +195,7 @@ export default function FundamentalPage() {
             dbUpdate={dbUpd}
             assemblyEvents={assemblyMap}
             capitalEvents={capitalMap}
+            funnelGate={screen.data?.funnel_gate ?? null}
             settingsSlot={<FtsSettingsTrigger open={drawerOpen} onToggle={() => setDrawerOpen((v) => !v)} />}
             onSelect={(s) => {
               setSymbol(s);

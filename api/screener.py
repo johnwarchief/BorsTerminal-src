@@ -204,9 +204,110 @@ def _apply_assembly_veto(rows):
     return out
 
 
+def _funnel_gate(preset: str, chain: list[str]):
+    """عضویتِ مرحله‌ایِ قیف، از همان `api/funnel._run` (تک‌تعریفِ زنجیره).
+
+    بند ۷.۱ مأموریت (رأیِ مالک 1405-07-20): اسکرینر نباید اسکنِ مستقلِ
+    بنیادی‌اولِ کلِ بازار باشد؛ حکمِ «کاندید» باید بقایۀِ تابلوخوانی و بعد
+    تکنیکال باشد. اینجا چیزی حساب نمی‌شود — فقط `status_matrix`ِ خودِ قیف
+    خوانده می‌شود، پس دو تعریف از «رد شد / سنجیده نشد / لازم نیست» نداریم.
+
+    بیرونِ کشِ ۱۲ساعتهٔ اسکرینر صدا زده می‌شود (مثلِ وتوی مجمع): حکمِ قیف
+    لحظه‌ای است و کشِ ۱۲ ساعته آن را کهنه می‌کند. خودِ `api/funnel` هشت
+    ثانیه کش دارد، پس هزینهٔ هر پرسشِ اسکرینر درِ ساعتِ بازار ~= صفر است.
+
+    بی‌قیف (خطا، تابلویِ نساخته، presetِ ناشناخته) ⇒ `state` چیزِ دیگری است و
+    هیچ ردیفی کاندید نمی‌شود؛ «نداریم» هرگز جای «قبول» را نمی‌گیرد.
+    """
+    try:
+        from api.funnel import _run
+        payload = _run(preset, chain, "standard", {}, {})
+    except Exception as e:                       # بی‌صدا قیف را رد نمی‌کنیم: اعلام
+        return {"state": "error", "matrix": {}, "block": {"state": "error",
+                                                          "message": "%s: %s" % (type(e).__name__, e)}}
+    if not isinstance(payload, dict) or payload.get("status") != "success":
+        return {"state": "unavailable", "matrix": {},
+                "block": {"state": "unavailable",
+                          "message": str((payload or {}).get("message")
+                                         or (payload or {}).get("status") or "")}}
+    stages = payload.get("stages") or {}
+    return {
+        "state": "applied",
+        "matrix": payload.get("status_matrix") or {},
+        "block": {
+            "state": "applied",
+            "preset": payload.get("preset"),
+            "chain": payload.get("chain"),
+            "ruleset_version": payload.get("ruleset_version"),
+            "engine_version": payload.get("engine_version"),
+            "as_of": payload.get("as_of"),
+            # شمارشِ ورودی/خروجیِ هر گام — زنجیره از خودِ پاسخ خواندنی است
+            "stages": {k: {kk: vv for kk, vv in (v or {}).items() if kk != "survivors"}
+                       for k, v in stages.items()},
+            "coverage": payload.get("coverage"),
+        },
+    }
+
+
+def _apply_funnel_gate(rows, gate):
+    """پرچمِ قیف رویِ هر ردیف، از `status_matrix`ِ همان preset.
+
+    سه چیز جدا می‌مانند (قاعدۀِ مالک: «سنجیده‌نشده» ≠ «رد»):
+      tape_status / technical_status / fundamental_status = وضعیتِ canonical
+      funnel_candidate = هر سه گام PASS و بی‌وتویِ هفتگی/مجمع
+      gate_state = آیا اصلاً داوریِ قیف به این ردیف رسید (`applied`) یا منبعش
+                   نبود (`unavailable`/`error`) — درِ دومی هیچ کاندیدی نیست.
+    `watchlist` دست‌نخورده می‌ماند: همان کوتاه‌کردۀِ بنیادیِ `watchlist_max`
+    است و مصرف‌کنندۀِ خودش را دارد؛ ادعایِ «عبور از قیف» عددِ دیگری است.
+    """
+    import funnel_engine as FE
+    matrix = gate.get("matrix") or {}
+    applied = gate.get("state") == "applied"
+    out = []
+    for r in rows:
+        r = dict(r)
+        sym = str(r.get("symbol") or "")
+        cell = matrix.get(sym) or {}
+        t = (cell.get("tape") or {}).get("status")
+        x = (cell.get("technical") or {}).get("status")
+        f = (cell.get("fundamental") or {}).get("status")
+        r["tape_status"] = t
+        r["technical_status"] = x
+        r["fundamental_status"] = f
+        if not applied:
+            r["gate_state"] = str(gate.get("state") or "unavailable")
+            r["funnel_candidate"] = False
+            out.append(r)
+            continue
+        if not cell:
+            # ردیفِ اسکرینر هست ولی در جامعۀِ تابلویِ امروز نیست (نمادِ تعطیل/
+            # حذف‌شده). این «رد» نیست؛ «قیف امروز آن را ندید» است.
+            r["gate_state"] = "not_in_board"
+            r["funnel_candidate"] = False
+            out.append(r)
+            continue
+        r["gate_state"] = "applied"
+        r["funnel_candidate"] = bool(t == FE.PASS and x == FE.PASS and f == FE.PASS
+                                     and not r.get("weekly_veto") and not r.get("assembly_veto"))
+        if x not in (None, FE.PASS):
+            r["technical_reason"] = (cell.get("technical") or {}).get("human_reason")
+        out.append(r)
+    return out
+
+
+def _only_symbols(rows, wanted):
+    """`symbols=` فقط کم می‌کند، هیچ‌وقت زیاد: راهِ دورزدنِ قیف نمی‌شود."""
+    norm = str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})
+    want = {str(s).translate(norm).strip() for s in wanted if str(s).strip()}
+    if not want:
+        return rows, 0
+    kept = [r for r in rows if str(r.get("symbol") or "").translate(norm).strip() in want]
+    return kept, len(want)
+
+
 @router.get("/api/screener")
-def get_screener():
-    """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8).
+def get_screener(symbols: str = "", preset: str = "trend", chain: str = ""):
+    """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8)، علامت‌خورده با قیف.
 
     در v7.3 این endpoint امتیاز را روی مقیاس ۰..۷ و با معیارهای خارج از ۵ محور
     می‌بست (ROE>15، mcap>1e13، شمارش دوبارهٔ رشد فروش، P/S به‌جای فروش÷ارزش بازار،
@@ -214,14 +315,26 @@ def get_screener():
     اکنون امتیاز دقیقاً تعداد پنج محور است (۰..۵) و نمادهای تعلیق/بیمه/دستوری
     با پرچم excluded علامت می‌خورند.
 
-    وتوی مجمع بیرونِ کش و روی هر درخواست تازه حساب می‌شود (`_apply_assembly_veto`).
+    وتوی مجمع و پرچمِ قیف بیرونِ کش و روی هر درخواست تازه حساب می‌شوند
+    (`_apply_assembly_veto`، `_apply_funnel_gate`). بند ۷.۱ مأموریت:
+      • `symbols=` ورودِ صریحِ نمادهایِ عبورکرده از تکنیکال است (بقایایِ قیف)
+        و فقط مجموعه را کم می‌کند؛
+      • `preset=` فقط انتخابِ شاخۀِ قیف است، نه خاموش‌کردنش — هیچ پارامتری
+        `funnel_candidate` را بی‌عبور از تابلوخوانی و تکنیکال true نمی‌کند.
     """
     payload = _screener_cached()
     rows = (payload or {}).get("data")
     if not isinstance(rows, list) or not rows:
         return payload
+    wanted = [s for s in str(symbols or "").split(",") if s.strip()]
+    rows, asked = _only_symbols(rows, wanted)
+    gate = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
     fresh = dict(payload)
-    fresh["data"] = _apply_assembly_veto(rows)
+    fresh["data"] = _apply_funnel_gate(_apply_assembly_veto(rows), gate)
+    fresh["count"] = len(fresh["data"])
+    fresh["funnel_gate"] = gate["block"]
+    if asked:
+        fresh["requested_symbols"] = asked
     return fresh
 
 
