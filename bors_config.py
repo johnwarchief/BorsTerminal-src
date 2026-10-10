@@ -40,20 +40,120 @@ def _user_data_dir():
         "BorsTerminal_Ultimate", "data")
 
 
+# ────────────────────────── حالتِ Portable (صریح) ──────────────────────────
+# پرتابیل بودن را با «آیا پوشه نوشتنی است؟» حدس نمی‌زنیم: آن حدس دو نسخۀ
+# هم‌زمان (نصبیِ writable و ZIPِ استخراج‌شده) را به هم می‌چسباند. اینجا دو
+# نشانه روشن داریم و هیچ‌یک به دسترسی وابسته نیست.
+PORTABLE_MARKER = "bors_portable.flag"
+PORTABLE_DEFAULT_PORT = 8101      # نصبی روی 8001 می‌ماند؛ پرتابیل همیشه جدا
+INSTALLED_DEFAULT_PORT = 8001
+
+
+def _exe_dir():
+    """پوشۀ خودِ باینری (dev: ریشۀ ریپو) — یک‌بار خوانده می‌شود.
+
+    اگر هر فراخوانی `sys.executable`ِ زنده را بخواند، `portable_data_dir()` بعداً
+    می‌تواند پوشۀ دیگری بدهد (درِ آزمون که sys.executable را برمی‌گردانند، یا درِ
+    اجرای دوبارۀ خودِ برنامه). مسیرِ دادی که یک‌بار حساب شده باید همان بماند.
+    """
+    return os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
+
+
+EXE_DIR = _exe_dir()
+
+
+def _decide_portable() -> bool:
+    env = (os.environ.get("BORS_PORTABLE") or "").strip().lower()
+    if env in ("1", "true", "yes", "on"):
+        return True
+    if env in ("0", "false", "no", "off"):
+        return False
+    return os.path.isfile(os.path.join(EXE_DIR, PORTABLE_MARKER))
+
+
+# تصمیمِ حالت یک‌بار درِ import گرفته می‌شود، نه درِ هر فراخوانی: WORK_DIR هم
+# همان‌جا حساب می‌شود، و اگر `is_portable()` بعداً `sys.frozen`ِ زنده را بخواند
+# ممکن است یک لایه «پرتابیل» و لایۀ دیگر «dev» بگوید (گاردِ portable دقیقاً
+# همین دوپایی را دید). درِ عمرِ یک پروسه نه `sys.frozen` عوض می‌شود نه محیط.
+_FROZEN = bool(getattr(sys, "frozen", False))
+IS_PORTABLE = _decide_portable()
+RUNTIME_MODE = "portable" if IS_PORTABLE else ("installed" if _FROZEN else "dev")
+
+
+def is_portable():
+    """True اگر این اجرا نسخۀ Portable باشد.
+
+    ۱) `BORS_PORTABLE=1|0` — تصمیمِ صریحِ اپراتور/آزمون (0 خاموشِ صریح است).
+    ۲) فایلِ `bors_portable.flag` کنارِ EXE — همان چیزی که Build-Portable در
+        ZIP می‌گذارد؛ پس هر ZIPِ استخراج‌شده پرتابیل است و هر نصبِ Inno نیست.
+    هیچ‌کدام به نوشتنی‌بودنِ پوشه وابسته نیست؛ آن حدس نسخۀ نصبیِ writable را
+    با پرتابیل یکی می‌کرد.
+    """
+    return IS_PORTABLE
+
+
+def portable_data_dir():
+    """پوشۀ دادهِ پرتابیل: `<exe_dir>/data` — مستقل از نسخۀ نصبی."""
+    return os.path.join(EXE_DIR, "data")
+
+
+def runtime_mode():
+    """'portable' | 'installed' | 'dev' — همان چیزی که UI و آپدیتِر اعلام می‌کنند."""
+    return RUNTIME_MODE
+
+
+def instance_id():
+    """اثرِ انگشتِ این اجرا: پوشۀ واقعیِ داده.
+
+    لانچر با این عدد می‌فهمد سروری که روی پورت نشسته *همین* نسخۀ پرتابیل است
+    یا نسخۀ نصبیِ کنارِ دست؛ بدونِ آن، دومین اجرای پرتابیل به سرور 8001
+    می‌چسبید و کاربر دادۀ نسخۀ نصبی را می‌دید در حالی که فکر می‌کرد پرتابیل
+    باز کرده است.
+    """
+    import hashlib
+    try:
+        real = os.path.realpath(WORK_DIR)
+    except OSError:
+        real = WORK_DIR
+    return hashlib.sha1(real.encode("utf-8", "replace")).hexdigest()[:12]
+
+
+def portable_data_problem():
+    """متنِ خطا اگر پوشۀ دادهِ پرتابیل ساخته/نوشتنی نشود؛ None یعنی سالم.
+
+    در پرتابیل «سکوت و جابه‌جایی به LOCALAPPDATA» مجاز نیست: کاربر باید بداند
+    کجا گیر کرده، وگرنه دو نسخۀ روی هم نوشته‌اند و فکر می‌کند داده مانده است.
+    """
+    if not is_portable():
+        return None
+    d = portable_data_dir()
+    try:
+        os.makedirs(d, exist_ok=True)
+    except OSError as e:
+        return f"پوشۀ دادهِ پرتابیل ساخته نشد: {d} ({e})"
+    if not _writable(d):
+        return f"پوشۀ دادهِ پرتابیل نوشتنی نیست: {d}"
+    return None
+
+
 def _work_dir():
     """مسیر نوشتن فایل‌های وضعیت/تنظیمات.
 
-    در حالت EXE اولویت با پوشهٔ کنار باینری است (حالت پرتابیل: وقتی ZIP را
-    در یک پوشهٔ نوشتنی باز می‌کنید همان‌جا کار می‌کند)، اما اگر آن پوشه
-    نوشتنی نباشد (نصب در Program Files با PrivilegesRequired=admin) تمام
-    داده‌های کاربر به %LOCALAPPDATA%\\BorsTerminal_Ultimate منتقل می‌شوند؛
-    در غیر این صورت استخراج market.db.lzma و سینک بازار با «Permission
-    denied» گیر می‌کنند. در حالت dev همان ریشهٔ ریپو است.
+    سه حالت، و تشخیصِ پرتابیل **صریح** است نه حدسِ دسترسی:
+      ۱) پرتابیل (نشانۀ کنارِ EXE یا `BORS_PORTABLE=1`): داده در
+         `<exe_dir>/data` می‌ماند و هرگز به %LOCALAPPDATA% نسخۀ نصبی نمی‌رود،
+         پس دو نسخۀ هم‌زمان یک فایل را نمی‌نویسند.
+      ۲) EXE نصبی: اولویت با پوشۀ کنارِ باینری؛ اگر نوشتنی نبود (نصب در
+         Program Files با admin) داده به %LOCALAPPDATA%\\BorsTerminal_Ultimate
+         می‌رود؛ وگرنه استخراج market.db.lzma و سینک با «Permission denied»
+         گیر می‌کنند.
+      ۳) dev: ریشۀ ریپو.
     """
-    if getattr(sys, "frozen", False):
-        exe_dir = os.path.dirname(sys.executable)
-        if _writable(exe_dir):
-            return exe_dir
+    if _FROZEN:
+        if IS_PORTABLE:
+            return portable_data_dir()
+        if _writable(EXE_DIR):
+            return EXE_DIR
         return _user_data_dir()
     return _SRC_DIR
 
@@ -97,6 +197,11 @@ def _resolve_market_db():
     # را کنارِ db بسازد که ممکن نیست → «unable to open database file» روی
     # هر اتصال. مثلِ _work_dir() از exe_dirِ غیرنوشتنی صرف‌نظر می‌کنیم.
     dirs = [exe_dir, WORK_DIR] if _writable(exe_dir) else [WORK_DIR]
+    # در پرتابیل WORK_DIR = <exe>/data است؛ فایلِ کنارِ EXE (جای market.db در
+    # نصبِ نوشتنی) نباید جلوی دادۀ خودِ پرتابیل را بگیرد، وگرنه دو نسخۀ
+    # هم‌زمان یک بانک را باز می‌کنند و «ماندگاری دادۀ پرتابیل» دروغ می‌شود.
+    if is_portable():
+        dirs = [WORK_DIR]
     # v1.0.16: در بیلدِ onedir، PyInstaller داده‌ها را در _internal می‌گذارد.
     # اگر آنجا market.db با دادهٔ کدال هست، باید بر فایلِ کوچکِ کنارِ EXE
     # (که همگام‌سازیِ زندهٔ تابلو می‌سازد) ارجح باشد.
@@ -757,4 +862,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.0.82"
+APP_VERSION = "1.0.83"

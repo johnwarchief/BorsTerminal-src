@@ -364,15 +364,78 @@ function Build-Base {
     git archive --format=zip --output="$out" HEAD
     Write-Host ("  -> " + $out + "  (" + [math]::Round((Get-Item $out).Length/1MB,2) + " MB)")
 }
+# دادۀ زمانِ اجرا که هرگز درِ ZIPِ پرتابیل نمی‌رود. نبودِ این فهرست یعنی
+# بیلدِ رویِ ماشینِ بیلد، تنظیمات/واچ‌لیست/دیتابیسِ همان ماشین را به کاربر
+# بعدی می‌فرستد (همان اشتباهی که درِ پچِ دلتا هم اصلاح شد).
+$PORTABLE_EXCLUDE = @(
+    'data', 'market.db', 'market.db-shm', 'market.db-wal',
+    'user.db', 'user.db-shm', 'user.db-wal',
+    'price_basis.json', '.screener_cache.json', 'sync_status.json',
+    'sync_ondemand.json', 'market_sync.json', 'codal_control.json',
+    'adb_config.json', 'updater.log', 'app.log', 'webview2', 'logs'
+)
+
 function Build-Portable {
+    # پرتابیل = همان بیلدِ Release (همان commit، همان dist) + نشانۀ حالتِ صریح،
+    # بی‌نصابِ Inno. «ZIP کردنِ تصادفیِ پوشۀ نصب‌شده» نبودنش هم مجاز است و
+    # تشخیصِ حالت را به writable بودنِ پوشه واگذار نمی‌کنیم: فایلِ
+    # bors_portable.flag کنارِ EXE همان چیزی است که bors_config.is_portable()
+    # می‌خواند، پس ZIPِ استخراج‌شده در هر پوشه‌ای پرتابیل است و نسخۀ نصبی نه.
     Assert-DistFresh
     if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
-    $stage = "$root\releases\portable_$ver"
+
+    $appVer = $null
+    $cfgSrc = Join-Path $root 'bors_config.py'
+    if (Test-Path $cfgSrc) {
+        $m = [regex]::Match((Get-Content $cfgSrc -Raw), 'APP_VERSION\s*=\s*"([^"]+)"')
+        if ($m.Success) { $appVer = $m.Groups[1].Value }
+    }
+    if (-not $appVer) { Write-Error '[portable] APP_VERSION از bors_config.py خوانده نشد. ABORT.'; exit 1 }
+    if ($issVer -and ($issVer -ne $appVer)) {
+        Write-Error "[portable] نسخه نمی‌خواند: app=$appVer installer=$issVer. ABORT."
+        exit 1
+    }
+
+    $stage = Join-Path $root "releases\portable_v$appVer"
+    if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
     New-Item -ItemType Directory -Path $stage -Force | Out-Null
-    Copy-Item "$Bundle\*" $stage -Recurse -Force
-    if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$stage\market.db.lzma" -Force }
-    Write-Host "[portable] staged: $stage"
+
+    # کپی با بیرون‌گذاشتنِ دادۀ زمانِ اجرا (نه Copy-Itemِ کلِ پوشه)
+    Get-ChildItem -LiteralPath $Bundle -Force | Where-Object {
+        $PORTABLE_EXCLUDE -notcontains $_.Name
+    } | ForEach-Object {
+        Copy-Item -LiteralPath $_.FullName -Destination $stage -Recurse -Force
+    }
+
+    # market.db.lzma کنارِ EXE: پرتابیل هم دادۀ بازار را از همین مسیر باز
+    # می‌کند (onedirِ کنارِ باینری، نه داخلِ آن). نبودش یعنی تابلویِ خالی.
+    if (-not (Test-Path (Join-Path $stage 'market.db.lzma'))) {
+        if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' $stage -Force }
+    }
+    if (-not (Test-Path (Join-Path $stage 'market.db.lzma'))) {
+        Write-Error '[portable] market.db.lzma درِ بسته نیست: پرتابیل بالا می‌آید ولی تابلو خالی می‌ماند. ABORT.'
+        exit 1
+    }
+
+    # نشانۀ حالتِ صریح + README (پیش‌نیازها روشن: WebView2 و اینترنت)
+    Set-Content -LiteralPath (Join-Path $stage 'bors_portable.flag') -Value "bors-portable`n" -Encoding ascii
+    $readme = Join-Path $root 'docs\PORTABLE-README.txt'
+    if (Test-Path $readme) { Copy-Item $readme (Join-Path $stage 'README-PORTABLE.txt') -Force }
+
+    $zip = Join-Path $DistRoot "BorsTerminal_Ultimate_Portable_v$appVer.zip"
+    if (Test-Path $zip) { Remove-Item $zip -Force }
+    New-Item -ItemType Directory -Path $DistRoot -Force | Out-Null
+    $entries = Get-ChildItem -LiteralPath $stage -Force | ForEach-Object { $_.FullName }
+    Compress-Archive -LiteralPath $entries -DestinationPath $zip -CompressionLevel Optimal
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $zip)) {
+        Write-Error '[portable] ZIP ساخته نشد. ABORT.'; exit 1
+    }
+    $sha = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLower()
+    Write-Host ("[portable] ZIP: " + $zip + "  (" + [math]::Round((Get-Item $zip).Length/1MB,1) + " MB)")
+    Write-Host ("[portable] SHA256: " + $sha)
+    Write-Host ("[portable] marker: bors_portable.flag  data dir: <extracted>\data  port: 8101")
 }
+
 
 function Build-Patch {
     # v1.0.10: پچِ دلتای امضاشده. scripts/make_patch.py کلِ distِ تازه را به

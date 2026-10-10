@@ -259,6 +259,10 @@ SUITES = [
     # بند ۵ مأموریت: مرحلِ جلسه از وضعیتِ رسمیِ بازار، و داوری بی‌مرحل ممنوع.
     ('dev/test_market_phase_v1.py',
                                       'session phase from the official market state; no verdict without a phase'),
+    # بندِ ۴ مأموریتِ انتشار: Portable صریح (نشانۀ کنارِ EXE)، دادۀ جدا، پورتِ
+    # جدا، و «Inno درِ پرتابیل هرگز اجرا نمی‌شود».
+    ('dev/test_portable_v1.py',
+                                      'portable mode: explicit marker, isolated data/port, never spawns the installer'),
     # SINGLE-WRITER: دورِ P0 دو بک‌اند هم‌زمان رویِ یک market.db داشت (نسخۀ
     # ماندۀ 1.0.73 ستون‌هایِ تازه را با هر سینک NULL می‌کرد). این گارد همان
     # حالت را می‌گیرد؛ رویِ ماشینِ بدونِ PowerShell بی‌صدا skip می‌شود.

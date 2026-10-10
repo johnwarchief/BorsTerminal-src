@@ -43,6 +43,10 @@ interface CheckResponse {
   delta?: boolean;
   /** حجمِ بایتِ بستهٔ انتخاب‌شده (پچ یا نصب‌کننده) */
   size?: number;
+  /** نسخۀ Portable: بک‌اند نصب را رد می‌کند و لینکِ ZIP می‌دهد (api/update.py) */
+  portable?: boolean;
+  /** False یعنی «بسته را نمی‌توان اینجا نصب کرد» — درِ پرتابیل همیشه false */
+  installable?: boolean;
 }
 
 interface ProgressResponse {
@@ -137,6 +141,8 @@ export function useAppUpdater() {
   // v1.0.10: این به‌روزرسانی پچِ دلتاست (فقط تغییرات) یا نصبِ کامل؟
   const [isDelta, setIsDelta] = useState<boolean>(false);
   const [packageSize, setPackageSize] = useState<number>(0);
+  // نسخۀ Portable: { url, message } یا null — راهِ به‌روزرسانیِ پرتابیل لینک است
+  const [portableUpdate, setPortableUpdate] = useState<{ url: string; message: string } | null>(null);
 
   // مانیفستِ دریافت‌شده از /api/update/check (url + signature) برای مرحلهٔ download
   const pendingUpdateRef = useRef<PendingUpdate | null>(null);
@@ -174,12 +180,27 @@ export function useAppUpdater() {
       }
       setCurrentVersion(data.current_version || currentVersion);
 
-      if (data.available && data.url && data.signature) {
+      // پرتابیل: هیچ بسته‌ای نصب نمی‌شود (بک‌اند هم download/install را رد می‌کند)؛
+      // کاربر لینکِ ZIPِ نسخۀ تازه را می‌بیند، نه دکمۀ «دریافت و نصب».
+      if (data.available && data.portable) {
+        pendingUpdateRef.current = null;
+        setPortableUpdate({ url: data.url || '', message: data.message || '' });
+        setNewVersion(data.latest_version || null);
+        setReleaseNotes(data.notes || 'نسخهٔ جدید شامل بهبودهای امنیتی و عملکردی است.');
+        setReleaseDate(data.date || new Date().toISOString());
+        setIsDelta(false);
+        setPackageSize(Number(data.size || 0));
+        setStatus('available');
+        return true;
+      }
+
+      if (data.available && data.url && !data.portable && data.signature) {
         pendingUpdateRef.current = {
           url: data.url,
           signature: data.signature,
           version: data.latest_version || '',
         };
+        setPortableUpdate(null);
         setNewVersion(data.latest_version || null);
         setReleaseNotes(data.notes || 'نسخهٔ جدید شامل بهبودهای امنیتی و عملکردی است.');
         setReleaseDate(data.date || new Date().toISOString());
@@ -190,6 +211,7 @@ export function useAppUpdater() {
       }
 
       pendingUpdateRef.current = null;
+      setPortableUpdate(null);
       setStatus('up-to-date');
       return false;
     } catch (err) {
@@ -400,6 +422,7 @@ export function useAppUpdater() {
     totalBytes,
     isDelta,
     packageSize,
+    portableUpdate,
     errorMessage,
     manualFile,
     checkForUpdates,

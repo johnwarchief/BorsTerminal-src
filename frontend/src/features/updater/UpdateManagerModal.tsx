@@ -23,6 +23,7 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
     totalBytes,
     isDelta,
     packageSize,
+    portableUpdate,
     errorMessage,
     checkForUpdates,
     startDownloadAndInstall,
@@ -199,6 +200,29 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                {portableUpdate ? (
+                  <>
+                    {/* پرتابیل: نصاب اجرا نمی‌شود؛ راهِ به‌روزرسانی لینکِ ZIP است */}
+                    <p className="ms-0 max-w-full text-2xs leading-relaxed text-text-secondary"
+                       data-testid="updater-portable-note">
+                      {portableUpdate.message ||
+                        'این نسخۀ Portable است؛ به‌روزرسانی با دانلودِ ZIPِ تازه انجام می‌شود، نه نصبِ خودکار.'}
+                    </p>
+                    {portableUpdate.url && (
+                      <a
+                        href={portableUpdate.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        data-testid="updater-portable-zip"
+                        className="flex items-center gap-1.5 rounded-xl border border-neon-cyan/60 bg-neon-cyan/20 px-4 py-2 text-xs font-black text-neon-cyan transition-all hover:bg-neon-cyan/30 active:scale-95"
+                      >
+                        <span>دریافت ZIPِ Portable</span>
+                        <span>↗</span>
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <>
                 <a
                   href={
                     newVersion
@@ -220,6 +244,8 @@ export function UpdateManagerModal({ open, onClose }: UpdateManagerModalProps) {
                   <span>دریافت و استقرار خودکار</span>
                   <span>⇩</span>
                 </button>
+                  </>
+                )}
               </div>
             </div>
           )}

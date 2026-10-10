@@ -522,13 +522,22 @@ def port_open(p):
     finally:
         s.close()
 
-def server_is_ours(p):
-    """آیا سرورِ در حال اجرا مالِ همین برنامه است (نه سرویس دیگر روی همان پورت)؟"""
+def server_is_ours(p, want_instance=None):
+    """آیا سرورِ در حال اجرا مالِ همین برنامه است (نه سرویس دیگر روی همان پورت)؟
+
+    `want_instance` برایِ نسخۀ Portable است: «سرورِ ما» یعنی سروری که *همین
+    پوشۀ داده* را باز کرده، نه هر BorsTerminal دیگری. بی‌این، اجرای دومِ ZIP
+    به سرورِ نسخۀ نصبی (8001) می‌چسبید و دادۀ آن را نشان می‌داد.
+    """
     import urllib.request, json
     try:
         with urllib.request.urlopen(f'http://127.0.0.1:{p}/api/update/version', timeout=2) as r:
             data = json.loads(r.read().decode('utf-8', 'replace'))
-            return 'version' in data
+            if 'version' not in data:
+                return False
+            if want_instance is None:
+                return True
+            return data.get('instance') == want_instance
     except Exception:
         return False
 
@@ -590,6 +599,16 @@ def _webview_storage_dir():
     تفاوتِ دو مسیر بود، نه باگِ فرانت‌اند.
     """
     base = os.environ.get('LOCALAPPDATA') or os.path.expanduser('~')
+    # در پرتابیل پروفایل هم باید کنارِ خودِ پوشهٔ پرتابیل بماند، وگرنه دو
+    # نسخۀ هم‌زمان یک localStorage و یک پروفایل WebView2 را قفل می‌کنند
+    # («ماندگاری دادۀ پرتابیل» و «اجرای هم‌زمان» هر دو با این شرط سنجیده
+    # می‌شوند).
+    try:
+        import bors_config
+        if bors_config.runtime_mode() == 'portable':
+            base = bors_config.WORK_DIR
+    except Exception:
+        pass
     d = os.path.join(base, 'BorsTerminal_Ultimate', 'webview2')
     try:
         os.makedirs(d, exist_ok=True)
@@ -693,8 +712,33 @@ def _serve():
     # نامفهوم ندهیم. هشدار نمایش می‌دهیم و ادامه می‌دهیم (نه مسدود).
     if WIN_TOO_OLD:
         _warn_old_windows()
-    port = int(os.environ.get('BORS_PORT', '8001'))
-    if port_open(port) and server_is_ours(port):
+    import bors_config
+    portable = bors_config.runtime_mode() == 'portable'
+    if portable:
+        # پوشۀ دادهِ پرتابیل نوشتنی نباشد «سکوت و جابه‌جایی به LOCALAPPDATA»
+        # مجاز نیست: کاربر باید بداند کجا گیر کرده است.
+        problem = bors_config.portable_data_problem()
+        if problem:
+            print(f'[ERR] {problem}')
+            _note(f'portable data dir refused: {problem}')
+            try:
+                import ctypes
+                ctypes.windll.user32.MessageBoxW(
+                    0,
+                    problem + "\n\n" +
+                    "ZIP را در پوشه‌ای که حقِ نوشتن دارید استخراج کنید "
+                    "(مثلاً Desktop یا Documents) و دوباره اجرا کنید.",
+                    "BorsTerminal — پوشۀ داده", 0x10)
+            except Exception:
+                print(problem)
+            return 'portable-data-unwritable'
+    want = bors_config.instance_id() if portable else None
+    default_port = str(bors_config.PORTABLE_DEFAULT_PORT if portable
+                       else bors_config.INSTALLED_DEFAULT_PORT)
+    port = int(os.environ.get('BORS_PORT', default_port))
+    if portable:
+        print(f'[OK] portable mode: data={bors_config.WORK_DIR} port={port}')
+    if port_open(port) and server_is_ours(port, want):
         print(f'[OK] Server already running on {port} -> open window')
         url = f'http://127.0.0.1:{port}'
         if open_native_window(url):
@@ -703,7 +747,7 @@ def _serve():
         open_app_window(url)
         return 'already-running-browser'
     if port_open(port):
-        # پورت اشغال است ولی سرورِ ما نیست → پورت آزادِ دیگر
+        # پورت اشغال است (یا سرورِ ما نیست، یا سرورِ نسخۀ دیگری است) → پورت آزاد
         port = pick_free_port(port)
         print(f'[OK] port busy -> using free port {port}')
     boot = _start_boot_server()

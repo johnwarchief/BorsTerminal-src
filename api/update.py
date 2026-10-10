@@ -47,6 +47,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from bors_config import APP_VERSION
+import bors_config
 from bors_minisign import verify_minisign
 
 router = APIRouter()
@@ -66,6 +67,33 @@ LATEST_JSON_URL = ("https://github.com/johnwarchief/BorsTerminal"
                    "/releases/latest/download/latest.json")
 PLATFORM_KEY = "windows-x86_64"
 USER_AGENT = "BorsTerminal-Updater/" + APP_VERSION
+
+# پرتابیل: به‌روزرسانی = دانلودِ ZIPِ تازه، نه اجرایِ نصاب. متنِ یک‌جایِ اعلام.
+PORTABLE_UPDATE_MESSAGE = (
+    "این نسخۀ Portable است؛ نصب‌کنندهٔ ویندوز اجرا نمی‌شود (چون فایل‌های بیرونِ "
+    "پوشۀ خودش را می‌سازد و پوشۀ باز‌شده را خراب می‌کند). برای به‌روزرسانی، ZIPِ "
+    "نسخۀ تازه را از صفحۀ Release دانلود کنید، در پوشه‌ای نو استخراج کنید، و "
+    "پوشۀ «data» خود را از نسخهٔ پیشین به پوشۀ تازه کپی کنید (یا همان‌جا ادامه دهید)."
+)
+
+
+def _portable_zip_url(manifest: dict, latest: str) -> str:
+    """نشانیِ ZIPِ پرتابیلِ همان نسخه — از مانیفست، وگرنه از قراردادِ نامِ دارایی.
+
+    نام‌گذاریِ دارایی درِ release.yml و Build-Portable یکی است، پس نبودِ کلیدِ
+    `portable` درِ یک ریلیزِ قدیمی هم لینکِ درست می‌دهد؛ ولی لینکِ ساختگی نیست:
+    اگر ریلیزِ تازه پرتابیل نداشته باشد، کاربر 404 می‌بیند و همان‌جا درِ پیامِ
+    دانلود می‌فهمد، نه اینکه نصاب رویِ پوشۀ او اجرا شود.
+    """
+    p = manifest.get("portable") or {}
+    url = str(p.get("url") or "").strip()
+    if url:
+        return url
+    if not latest:
+        return ""
+    return (f"https://github.com/johnwarchief/BorsTerminal/releases/latest/download/"
+            f"BorsTerminal_Ultimate_Portable_v{latest}.zip")
+
 # AppId در installer/bors_setup.iss (کروشه‌های بیرونی توسط Inno حذف می‌شوند)
 APP_ID = "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}"
 APP_EXE = "BorsTerminal_Ultimate.exe"
@@ -489,15 +517,20 @@ def _spawn_patch_apply(patch_zip):
 # ---------------------------------------------------------------------------
 @router.get("/api/update/version")
 def update_version():
-    """نسخهٔ فعلیِ برنامه (منبعِ واحد: bors_config.APP_VERSION)."""
-    # یک پَچ فقط فایل‌ها را جایگزین می‌کند، پس DisplayVersionِ رجیستری
-    # می‌تواند پشت بماند. اینجا خودش را تعمیر می‌کنیم تا Add/Remove
-    # Programs همیشه با نسخهٔ واقعیِ در حالِ اجرا موافق باشد.
+    """نسخهٔ فعلیِ برنامه (منبعِ واحد: bors_config.APP_VERSION) + هویّتِ اجرا.
+
+    `mode` و `instance` برایِ لانچر است: نسخۀ Portable باید بفهمد سروری که روی
+    پورت نشسته *همین* پوشۀ داده را باز کرده یا نسخۀ نصبیِ کنارِ دست. یک پَچ
+    فقط فایل‌ها را جایگزین می‌کند، پس DisplayVersionِ رجیستری می‌تواند پشت
+    بماند؛ اینجا خودش را تعمیر می‌کنیم تا Add/Remove Programs همیشه با نسخهٔ
+    واقعیِ در حالِ اجرا موافق باشد.
+    """
     try:
         _sync_display_version()
     except Exception:
         pass
-    return {"version": APP_VERSION, "tauri": False}
+    return {"version": APP_VERSION, "tauri": False,
+            "mode": bors_config.runtime_mode(), "instance": bors_config.instance_id()}
 
 
 @router.get("/api/update/check")
@@ -517,6 +550,26 @@ def update_check():
     # نصبِ کامل نشان می‌دهد (حجمِ بسیار کمتر). انتخابِ نهایی در download انجام
     # می‌شود تا بینِ check و download تغییرِ نسخه رخ ندهد.
     patch = _select_patch(manifest) if available else None
+    if bors_config.is_portable():
+        # پرتابیل هرگز Inno Setup را اجرا نمی‌کند: نصاب فایل‌های بیرونِ پوشۀ
+        # خودش را می‌سازد و در بہی حالت پوشۀ ZIPِ باز شده را خراب می‌کند.
+        # مسیرِ درستِ به‌روزرسانی، دانلودِ ZIPِ تازه است.
+        return {
+            "status": "success",
+            "current_version": APP_VERSION,
+            "latest_version": latest,
+            "available": available,
+            "notes": manifest.get("notes") or "",
+            "date": manifest.get("pub_date") or "",
+            "url": _portable_zip_url(manifest, latest) if available else "",
+            "signature": "",
+            "updater": "portable",
+            "delta": False,
+            "installable": False,
+            "portable": True,
+            "message": PORTABLE_UPDATE_MESSAGE if available else "",
+            "size": int(((manifest.get("portable") or {}).get("size")) or 0),
+        }
     return {
         "status": "success",
         "current_version": APP_VERSION,
@@ -540,6 +593,13 @@ class DownloadRequest(BaseModel):
 
 @router.post("/api/update/download")
 def update_download(req: DownloadRequest = DownloadRequest()):
+    if bors_config.is_portable():
+        # ۵۷ مگابایتِ نصاب برایِ پوشه‌ای که هرگز نباید نصب شود دانلود نمی‌شود؛
+        # راهِ پرتابیل لینکِ ZIP است (بندِ «به‌روزرسانی Portable»).
+        return {"status": "error", "portable": True,
+                "message": PORTABLE_UPDATE_MESSAGE,
+                "url": _portable_zip_url(_LAST_MANIFEST or {},
+                                         str((_LAST_MANIFEST or {}).get("version") or ""))}
     with _LOCK:
         manifest = _LAST_MANIFEST or {}
         platform = _platform_of(manifest)
@@ -584,6 +644,14 @@ def update_progress():
 
 
 def _run_install(installer, signature, is_patch=False):
+    if bors_config.is_portable():
+        # لایۀِ دفاعیِ دوم: حتی اگر رابط بگوید «نصب» (نسخۀِ قدیمیِ فرانت، درخواستِ
+        # دستی)، درِ پرتابیل Inno اجرا نمی‌شود. نصاب فایل‌های بیرونِ پوشۀ خودش
+        # می‌سازد و پوشۀ ZIPِ باز‌شده را نیمه‌نصب می‌کند.
+        return {"status": "error", "portable": True,
+                "message": PORTABLE_UPDATE_MESSAGE,
+                "url": _portable_zip_url(_LAST_MANIFEST or {},
+                                         str((_LAST_MANIFEST or {}).get("version") or ""))}
     """مرحلهٔ نهایی: تأییدِ دوبارهٔ امضا → اعمالِ پچ یا نصبِ سایلنت → خروج.
 
     اگر ``is_patch`` باشد و مسیرِ نصب نوشتنی باشد، پچِ overlay از طریقِ
