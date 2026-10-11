@@ -10,15 +10,17 @@
 # قواعدِ زمان (anti-repaint):
 #   - یک extreme فقط وقتی پیوت می‌شود که closeِ کندلی از آن به اندازهٔ آستانه
 #     فاصله گرفته باشد؛ confirm_idx/confirm_time همان کندلِ برگشت است.
-#   - ekstremumِ بی‌برگشت «pending» اعلام می‌شود و رسم نمی‌شود.
-#   - مسئولیتِ برشِ کندلِ در حال تشکیل با فراخوان است (سریِ بستۀ بسته بدهید --
+#   - قله/درهایِ بی‌برگشت «pending» اعلام می‌شود و رسم نمی‌شود.
+#   - مسئولیتِ برشِ کندلِ در حال تشکیل با فراخوان است (سریِ کندل‌هایِ بسته‌شده بدهید --
 #     همان قراردادِ _fts_clean_candles در api/chart.py).
 #
 # صداقتِ آستانه: ATR_MULT و FLOOR_PCT پارامترِ اجرایِ این موتورِ مقایسه‌ای‌اند؛
 # جزوه برای ZigZagِ آستانه‌دار عددی نمی‌دهد (سطرهایِ AMBIGUOUS در
 # FTS-RULE-ALGORITHM-MAP.md -- اختراع نمی‌شود). این موتور در قیف/داوریِ رسمی
-# وارد نمی‌شود؛ مصرفش harnessِ مقایسه (dev/structure_engine3_compare_v1.py)
-# و لایۀ «موتورِ سوم» است، بی‌تغییرِ رأیِ `/api/fts`.
+# وارد نمی‌شود و در کاتالوگِ چارت هم لایه ندارد (تصمیمِ مستند:
+# docs/technical-indicators/implemented/FTS-INDICATOR-LAYERS-1405-07-19.md §۳)؛
+# مصرفش harnessِ مقایسه (dev/structure_engine3_compare_v1.py) است،
+# بی‌تغییرِ رأیِ `/api/fts`.
 
 from __future__ import annotations
 

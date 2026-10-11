@@ -29,6 +29,8 @@
 |---|---|---|
 | [`AGENT-INDEX.md`](AGENT-INDEX.md) | مسیر‌یابی کد، به‌صورت تولیدشده | وضعیت جاری کارها یا منبع قواعد کسب‌وکار نیست |
 | [`FTS-USER-CONFIGURATION-SPEC.md`](FTS-USER-CONFIGURATION-SPEC.md) | قرارداد پارامترهای قابل تنظیم FTS، ساعت‌شنی و معیارهای پذیرش | سند طراحی؛ اجرای کد فقط پس از پاس‌شدن تست‌های پذیرش تأیید می‌شود |
+| [`FTS-RULE-ALGORITHM-MAP.md`](FTS-RULE-ALGORITHM-MAP.md) | نگاشتِ قاعدۀ جزوه → الگوریتم → ترسیم، با سطرهای AMBIGUOUS | منبع قاعده همان PDF است؛ سطر «نیازمند رأی» آستانه ندارد و اختراع نمی‌شود |
+| [`FTS-INDICATOR-MISSION-PLAN.md`](FTS-INDICATOR-MISSION-PLAN.md) | نقشۀ مأموریتِ مهندسی لایه‌ها و تصمیم‌های معماری (ازجمله مرز موتور سوم) | snapshotِ یک دور است؛ وضعیت جاری کار را از کد و گیت‌ها بپرسید |
 | [`CANDLE-CONTRACT.md`](CANDLE-CONTRACT.md) | قرارداد داده و مبنای کندل | گزارش parity تاریخ‌دار، برابری کامل امروز را اثبات نمی‌کند |
 | [`RAHAVARD-PARITY-INVENTORY.md`](RAHAVARD-PARITY-INVENTORY.md) | inventory فنی و شواهد یک سنجش | یافته‌ها را بدون تاریخ/کد جاری تعمیم ندهید |
 | [`TECHNICAL-RAHAVARD-PARITY-AUDIT.md`](TECHNICAL-RAHAVARD-PARITY-AUDIT.md) | سنجش ۲۷ نمادِ لایه‌های FTS (پیوت/ساختار/روند) با مرجع رهاورد، تاریخ ۱۴۰۵-۰۷-۱۹ | پاریتیِ داده و ثباتِ رأی را اثبات می‌کند، نه درستیِ برچسبِ روند؛ دو شکافِ منطقی و دو واگراییِ ضریبِ تعدیل در آن باز مانده‌اند |
