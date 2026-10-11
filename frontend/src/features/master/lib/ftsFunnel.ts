@@ -98,7 +98,7 @@ export const PRESET_MOTIVE: Record<TreePreset, string> = {
   swing: 'نوسان‌گیر: از تابلو وارد می‌شود؛ ساعت و جت و حجم مشکوک نشانهٔ پولِ امروزند.',
   trend: 'روندگیر: کف سوم یا پنجم؛ حجم مشکوک لازم نیست (جزوه: «روندگیر به حجم مشکوک نیازی ندارد»).',
   hourglass: 'ساعت شنی: فیلترِ تابلویی ندارد؛ دربش MA=52 و RSI=5 در تایم هفتگی است.',
-  custom: 'مسیر سفارشی: همان چیپ‌هایی که درِ تابلو روشن کردید.',
+  custom: 'مسیر سفارشی: خودتان فیلترها را انتخاب و مرتب می‌کنید؛ چیپ‌هایِ بالایِ غربالگری همین زنجیره را کم و زیاد می‌کنند.',
 };
 
 /** شش‌حالته — تنها واژگانِ داوریِ کشفِ نماد درِ کلِ فرانت (مقادیرِ
@@ -308,6 +308,13 @@ export type UniverseExclusion = {
   isLive: boolean | null;
 };
 
+/** شمارشِ مستقلِ یک فیلتر رویِ کلِّ جامعۀ غربالگری — از `stages.tape.filter_counts`
+ *  خودِ موتور. «نامزد» همان `matched` است؛ `unmeasured` پرچمی است که موتور درباره‌اش
+ *  نظر نداد (نه رد، نه قبول). */
+export type FilterCount = {
+  name: string; matched: number; removed: number; unmeasured: number; input: number;
+};
+
 export type Funnel = {
   mode: FunnelMode;
   tape: TapeFreshness;
@@ -339,6 +346,9 @@ export type Funnel = {
   exclusionLabels: Record<string, string>;
   /** شمارشِ واقعیِ هر چهار در (رویِ جامعۀ غربالگری) */
   counts: Record<FunnelStageKey, StageSummary>;
+  /** نامزدِ هر یک از هفت فیلتر، مستقل از زنجیره و از اشتراک/اجتماع — برایِ عددِ
+   *  کنارِ چیپ‌هایِ نوارِ غربالگری. `{}` = پاسخِ سرورِ قدیمی این را نگفته. */
+  filterCounts: Record<string, FilterCount>;
   /** هدف‌هایِ جزوه (رأیِ ۶): هیچ‌کدام گیت نیستند، فقط مرجعِ نمایش‌اند. */
   targets: { initial: number; watchlist: number; basketMin: number; basketMax: number };
 };

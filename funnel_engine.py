@@ -589,6 +589,24 @@ def _tape_stage_union(rows: list[dict], chain: tuple[str, ...],
     return {"survivors": survivors, "steps": steps, "dropped": dropped, "logic": "or"}
 
 
+def filter_counts(rows: list[dict]) -> dict[str, dict[str, int]]:
+    """نامزد‌هایِ هر فیلتر، مستقل و رویِ کلِّ جامعۀ غربالگری — بی‌زنجیره، بی‌منطق.
+
+    چرا جدا از `steps`: شمارشِ گامِ تابلو ترتیبی است (اشتراک) یا فقطِ چیپ‌هایِ
+    روشن (اجتماع)؛ هیچ‌کدام به پرسشِ «این فیلتر به‌تنهایی چند نامزد دارد» جواب
+    نمی‌دهد. نوارِ غربالگری همین را کنارِ هر فیلتر می‌نویسد تا معلوم باشد کدام
+    فیلتر گرسنۀ دادۀِ سینک است و کدام همه را رد می‌کند.
+    """
+    out: dict[str, dict[str, int]] = {}
+    for f in REG.FILTERS:
+        flag = FLAG_OF[f.filter_id]
+        yes = sum(1 for r in rows if _tri(r.get(flag)) is True)
+        no = sum(1 for r in rows if _tri(r.get(flag)) is False)
+        out[f.filter_id] = {"name": f.name, "matched": yes, "removed": no,
+                            "unmeasured": len(rows) - yes - no, "input": len(rows)}
+    return out
+
+
 # ── ۱) تابلوخوانی: اشتراکِ ترتیبیِ زنجیره ─────────────────────────────────
 def tape_stage(rows: list[dict], chain: tuple[str, ...],
                params: dict[str, dict[str, Any]] | None = None,
@@ -1424,6 +1442,9 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
             "tape": {"steps": tape["steps"], "logic": tape.get("logic") or "and",
                      "input": len(screening), "matched": len(tape["survivors"]),
                      "removed": len(screening) - len(tape["survivors"]),
+                     # شمارشِ مستقلِ هر فیلتر رویِ همین جامعۀ ورودی — برایِ
+                     # عددِ کنارِ چیپ‌هایِ نوارِ غربالگری (خواستِ ۱۴۰۵-۰۷-۲۰).
+                     "filter_counts": filter_counts(screening),
                      "survivors": _symbols(tape["survivors"])},
             "technical": {"counts": tech["counts"], "matched": len(tech["survivors"]),
                           "input": len(tape["survivors"]),

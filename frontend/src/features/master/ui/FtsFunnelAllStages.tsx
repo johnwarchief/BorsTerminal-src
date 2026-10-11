@@ -15,9 +15,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
+import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
+import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
@@ -33,6 +35,7 @@ import {
   STATUS_HINT,
   IND_COLUMNS,
   trendLabel,
+  type FilterCount,
   type FunnelEntry,
   type FunnelStage,
   type FunnelStageKey,
@@ -160,7 +163,7 @@ type ColKey =
   | 'symbol' | 'last' | 'chg' | 'vol' | 'pattern'
   | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'mark'
   | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'why' | 'basket'
-  | 'candle';
+  | 'watch' | 'candle';
 
 const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   symbol: { label: 'نماد', title: 'کلیک = انتخابِ نماد' },
@@ -189,6 +192,9 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   // بی‌OHLC همان «—»ِ خودِ ویجت می‌آید؛ کندلِ ساختگی ساخته نمی‌شود.
   candle: { label: 'کندل روز', title: 'اولین، بیشینه، کمینه و آخرینِ همین نشست — عینِ تبِّ تابلو' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
+  // رأیِ مالک: رسیدۀ «تحویل» باید راهِ رفتن به «دیده‌بان» را هم داشته باشد —
+  // رصد، نه تصمیمِ سرمایه‌ای.
+  watch: { label: 'دیده‌بان', title: 'افزودن به تبِّ اصلیِ دیده‌بان بازار', end: true },
 };
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
@@ -199,7 +205,7 @@ const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
   // درِ پاسخِ سرور هست (`daily`/`branch`) و درِ گامِ تکنیکال هم نشان داده می‌شود؛
   // خوانندۀ «تحویل» باید بدود سهم با کدام شاخه به این گام رسیده، نه فقط اینکه
   // هفتگی صعودی بوده. واژۀ تازه‌ای اضافه نشد: سرستون‌ها همان تعریف‌هایِ موجودند.
-  handover: ['symbol', 'weekly', 'daily', 'branch', 'candle', 'score', 'why', 'basket'],
+  handover: ['symbol', 'weekly', 'daily', 'branch', 'candle', 'score', 'why', 'watch', 'basket'],
 };
 
 /**
@@ -220,7 +226,7 @@ const COL_W: Record<ColKey, number> = {
   // همین جدول‌اند. «دلیل» عمداً دست‌نخورده است — متن‌های ۳۳۵ و ۸۳۶ پیکسلی با
   // هیچ تقسیمی رویِ یک خط جا نمی‌شوند و شکلشان رأیِ مالک را می‌خواهد.
   weekly: 11, daily: 11, branch: 19, setup: 17, techPoints: 6, mark: 11,
-  ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18,
+  ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18, watch: 12,
   why: 22, candle: 5,
 };
 
@@ -348,6 +354,8 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       );
     case 'basket':
       return <td className="px-2 py-1 text-end"><SymbolBasketAction symbol={e.symbol} /></td>;
+    case 'watch':
+      return <td className="px-2 py-1 text-end"><SymbolWatchAction symbol={e.symbol} /></td>;
     default:
       return null;
   }
@@ -561,7 +569,9 @@ function StageCard({
         {stage.key === 'fundamental' ? (
           <FundStagePrefs passed={stage.summary.pass} techScreens={techScreens} />
         ) : null}
-        {stage.key === 'tape' ? <TapeStagePrefs picked={stage.summary.pass} /> : null}
+        {/* چیپ‌هایِ فیلتر از این کارت رفتند: سه مرحلۀ اول بسته‌اند و کنترلِ
+            داخلِ کارتِ بسته دیده نمی‌شد (رأیِ مالک ۱۴۰۵-۰۷-۲۰). جابه‌جا شدند،
+            حذف نشدند — نوارِ بالایِ همین صفحه، با عددِ نامزدِ هر فیلتر. */}
         {/* کنترلِ درِ تکنیکال کنارِ همین مرحله نشسته است، نه در منویِ سراسری. */}
         {stage.key === 'technical' ? (
           <span
@@ -745,30 +755,43 @@ function StageRow({
 }
 
 /**
- * چیپ‌هایِ پنج فیلترِ جزوه رویِ نوارِ خودِ مرحلۀ «تابلو» — «نحوۀ غربالگری» همین
- * است: کدامِ پنج درِ ورودی باز باشند. این همان `quickFilters` تبِ تابلو است، پس
- * دو منبعِ حقیقت نیست و از قیف روشن شدنش هم عوضی در نمی‌آید.
+ * چیپ‌هایِ هفت فیلترِ رجیستری + کلیدِ اشتراک/اجتماع. با رأیِ مالکِ ۱۴۰۵-۰۷-۲۰
+ * از سرِ کارتِ «تابلوخوانی» به **نوارِ بالایِ غربالگری** آمد: سه مرحلۀ اول
+ * بسته‌اند، پس کنترلی که داخلِ کارتِ بسته است درِ عمل دیده نمی‌شد.
+ * عددِ کنارِ هر چیپ نامزدِ خودِ همان فیلتر رویِ کلِّ جامعۀ غربالگری است
+ * (`funnel_engine.filter_counts`) — مستقل از زنجیره و از اشتراک/اجتماع، تا
+ * معلوم باشد کدام فیلتر گرسنۀ دادۀِ سینک است. این همان `quickFilters` تبِّ
+ * تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن شدنش هم عوضی در نمی‌آید.
  */
-function TapeStagePrefs({ picked }: { picked: number }) {
-  const quickFilters = useTapeStore((s) => s.quickFilters);
-  const toggle = useTapeStore((s) => s.toggleQuickFilter);
+function TapeStagePrefs({ picked, counts, filters }: {
+  picked: number;
+  counts: Record<string, FilterCount>;
+  filters: { active: string[]; source: 'chips' | 'chain'; toggle: (f: string) => void };
+}) {
+  const logic = useScreenFilterStore((s) => s.logic);
+  const setLogic = useScreenFilterStore((s) => s.setLogic);
+  const onCount = filters.active.length;
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="flex flex-wrap items-center gap-1"
+      className="flex flex-wrap items-center justify-end gap-1"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
       {QUICK_FILTERS.map((f: QuickFilter) => {
-        const on = quickFilters.includes(f);
+        const on = filters.active.includes(f);
+        const c = counts[f];
         return (
           <button
             key={f}
             type="button"
             data-testid={`funnel-tape-chip-${f}`}
             aria-pressed={on}
-            onClick={() => toggle(f)}
-            title={on ? 'روشن — این فیلتر ورودیِ غربالگری را می‌سازد' : 'خاموش — با این فیلتر نمادها کمتر می‌شوند'}
+            onClick={() => filters.toggle(f)}
+            title={c
+              ? `${QUICK_LABELS[f]} — ${toFaDigits(c.matched)} نامزد از ${toFaDigits(c.input)} نمادِ غربالگری`
+                + `؛ ${toFaDigits(c.removed)} رد، ${toFaDigits(c.unmeasured)} بی‌حکم`
+              : `${QUICK_LABELS[f]} — شمارشِ نامزد از سرور نرسید`}
             className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
               on
                 ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
@@ -776,9 +799,33 @@ function TapeStagePrefs({ picked }: { picked: number }) {
             }`}
           >
             {QUICK_LABELS[f]}
+            <span className="num ms-1 font-black opacity-95">
+              {c ? `(${toFaDigits(c.matched)})` : '(—)'}
+            </span>
           </button>
         );
       })}
+      {/* یک کلید، دو حالت: «اشتراک» یعنی هر چیپِ روشن لازم است، «اجتماع» یعنی
+          کم‌از‌یکی. همان `bors.screen.logic.v1` که کنارِ چیپ‌هایِ تبِّ تابلو است. */}
+      <button
+        type="button"
+        data-testid="funnel-screen-logic"
+        aria-pressed={logic === 'or'}
+        disabled={onCount === 0}
+        onClick={() => setLogic(logic === 'or' ? 'and' : 'or')}
+        title={onCount === 0
+          ? 'بی‌فیلترِ روشن معنی ندارد — اول کم‌از‌یکی از چیپ‌هایِ بالا را روشن کن'
+          : logic === 'or'
+            ? `اجتماع: داشتنِ کم‌از‌یکی از ${toFaDigits(onCount)} فیلترِ روشن کافی است`
+            : `اشتراک: نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
+        className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+          logic === 'or'
+            ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
+            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+        }`}
+      >
+        {logic === 'or' ? 'اجتماع' : 'اشتراک'}
+      </button>
       <span className="num text-3xs text-text-muted">ورودی: {toFaDigits(picked)}</span>
     </span>
   );
@@ -959,7 +1006,7 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, scan, refreshing, quickFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
+  const { funnel, mode, tape, tech, scan, refreshing, screenFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
   const setMode = useFunnelPrefsStore((s) => s.setMode);
 
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
@@ -1031,7 +1078,7 @@ export function FtsFunnelStages({
   return (
     <section className="flex flex-col gap-2">
       {error ? <FunnelErrorBanner onRetry={retry} blocking={!hasData} /> : null}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
         {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
             جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
@@ -1078,9 +1125,11 @@ export function FtsFunnelStages({
           / Not-required با عددِ خودِ بازار. این پنج از `coverage`ِ بک‌اند می‌آیند،
           یعنی شمارشِ **کلِ جامعۀ غربالگری** درِ هر گام — پس جمعشان همان Y است
           و نمادی بی‌حکم نمی‌ماند. هدف‌هایِ جزوه (۵۰ و ۱۰ و ۵-۷) فقط مرجعِ کناری‌اند
-          و هیچ‌جا گیتِ عبور نیستند. */}
+          و هیچ‌جا گیتِ عبور نیستند.
+          `justify-end` با رأیِ مالک (۱۴۰۵-۰۷-۲۰) آمده: درِ RTL لبۀِ پایانِ خطِ
+          اصلی سمتِ چپِ صفحه است — سرستون و شمارش‌ها باید آن‌جا بایستند. */}
       <div
-        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
+        className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
         data-testid="funnel-counts"
       >
         <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
@@ -1129,6 +1178,10 @@ export function FtsFunnelStages({
           </span>
         ) : null}
       </div>
+      {/* چیپ‌هایِ فیلتر + کلیدِ اشتراک/اجتماع، با نامزدِ زندهٔ هر فیلتر — نوارِ
+          بالایِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰). */}
+      <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
+                      filters={screenFilters} />
       {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap items-center gap-1" role="tablist">
@@ -1197,7 +1250,12 @@ export function FtsFunnelStages({
           </span>
         ) : null}
         <span className="ms-auto text-3xs text-text-muted">
-          ورودیِ غربالگری: {quickFilters.length ? 'چیپ‌هایِ روشنِ تبِ تابلو' : PRESET_ENTRY[preset].label} ·{' '}
+          {/* منبعِ فعلیِ زنجیره صریح گفته می‌شود: درِ Custom چیپ‌ها زنجیرۀِ خودِ
+              شخص را کم و زیاد می‌کنند، درِ بقیۀ اشخاص چیپ‌هایِ تبِّ تابلو. */}
+          ورودیِ غربالگری:{' '}
+          {screenFilters.active.length
+            ? `${screenFilters.source === 'chain' ? 'زنجیرۀِ خودِ شما' : 'چیپ‌هایِ روشنِ تابلو'} (${toFaDigits(screenFilters.active.length)})`
+            : (preset === 'custom' ? 'زنجیرۀِ Custom خالی است' : PRESET_ENTRY[preset].label)} ·{' '}
           از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
         </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،

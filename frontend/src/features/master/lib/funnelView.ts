@@ -8,6 +8,7 @@ import { ftsSignalListText } from '@shared/lib/ftsSignals';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type {
   Candidate,
+  FilterCount,
   Funnel,
   FunnelMode,
   FunnelStageKey,
@@ -81,7 +82,10 @@ export type ApiPayload = {
     stop_state?: string | null; is_live?: boolean | null }>;
   stages?: Record<FunnelStageKey, {
     steps?: ApiStep[]; input?: number; matched?: number; removed?: number;
-    counts?: Partial<Record<StageStatus, number>>; mode?: string }>;
+    counts?: Partial<Record<StageStatus, number>>; mode?: string;
+    /** نامزدِ مستقلِ هر فیلتر رویِ جامعۀ غربالگری (`funnel_engine.filter_counts`) */
+    filter_counts?: Record<string, { name?: string; matched?: number;
+      removed?: number; unmeasured?: number; input?: number }> }>;
   entries?: Partial<Record<FunnelStageKey, ApiRow[]>>;
   /** وضعیتِ هر چهار گام برایِ تک‌تکِ نمادهایِ جامعۀ ورودی — منبعِ canonicalِ
    *  «این نماد درِ این گام چه حکمی دارد». خطِ زمانِ خودِ نماد با
@@ -277,6 +281,15 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
     stopState: e.stop_state ?? null, isLive: e.is_live ?? null,
   }));
   const excludedCount = payload.universe?.excluded ?? exclusions.length;
+  // نگاشتِ نامِ فیلترها از خودِ پاسخ؛ اگر سرور نگفت، `{}` می‌ماند و رابط عددی
+  // نمی‌سازد (هیچ شمارشی درِ مرورگر حساب نمی‌شود).
+  const filterCounts = {} as Record<string, FilterCount>;
+  for (const [fid, c] of Object.entries(payload.stages?.tape?.filter_counts ?? {})) {
+    filterCounts[fid] = {
+      name: c.name ?? fid, matched: c.matched ?? 0, removed: c.removed ?? 0,
+      unmeasured: c.unmeasured ?? 0, input: c.input ?? 0,
+    };
+  }
   return {
     mode: fallbackMode,
     tape: (payload.as_of && Date.now() / 1000 - payload.as_of < 900) ? 'live' : 'stale',
@@ -300,6 +313,7 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
       ? payload.universe.drop_numeric_suffix : null,
     exclusionCounts: payload.universe?.exclusion_counts ?? {},
     exclusionLabels: payload.universe?.exclusion_labels ?? {},
+    filterCounts,
     counts,
     targets: { initial: 50, watchlist: 10, basketMin: 5, basketMax: 7 },
   };

@@ -12,7 +12,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { http } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
-import { useTapeStore } from '@features/market/stores/tapeStore';
+import { useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
   DEFAULT_FUNNEL_OPTIONS,
@@ -59,6 +59,7 @@ const EMPTY: Funnel = {
   boardScope: 0, total: 0, asOf: null,
   marketUniverse: 0, excludedCount: 0, dropSuffixApplied: null, exclusions: [], exclusionCounts: {},
   exclusionLabels: {},
+  filterCounts: {},
   counts: {
     tape: { ...EMPTY_SUM },
     technical: { ...EMPTY_SUM },
@@ -93,6 +94,10 @@ export function useFtsFunnel(
   retry: () => void;
   basket: Set<string>;
   quickFilters: string[];
+  /** چیپ‌هایِ فیلترِ نوارِ غربالگری: همان فهرستی که همین دور داوری می‌شود، و
+   *  کلیدِ روشن/خاموشی که به همان منبع می‌نویسد (درِ Custom زنجیرۀِ شخص،
+   *  درِ بقیه چیپ‌هایِ تبِّ تابلو). بی‌این، چیپ درِ Custom بی‌اثر می‌شد. */
+  screenFilters: { active: string[]; source: 'chips' | 'chain'; toggle: (f: string) => void };
   opts: FunnelOptions;
   request: FunnelRequest;
 } {
@@ -101,6 +106,8 @@ export function useFtsFunnel(
   const mode = useFunnelPrefsStore((s) => s.mode);
   const fundMode = useFunnelPrefsStore((s) => s.fundMode);
   const chainPref = useFunnelPrefsStore((s) => s.chain);
+  const addChainFilter = useFunnelPrefsStore((s) => s.addFilter);
+  const removeChainFilter = useFunnelPrefsStore((s) => s.removeFilter);
   const exceptions = useFunnelPrefsStore((s) => s.exceptions);
   const dropSuffixPref = useFunnelPrefsStore((s) => s.dropSuffix);
   const opts: FunnelOptions = {
@@ -123,11 +130,12 @@ export function useFtsFunnel(
 
   const request = useMemo<FunnelRequest>(() => ({
     preset,
-    // چیپ‌هایِ روشنِ خودِ تابلو غربالگری را می‌سازند (رأیِ مالک ۱۴۰۵-۰۷-۲۰).
-    // بی‌انتخاب، زنجیرۀِ خودِ شخص می‌ماند — رفتارِ دیروز دست‌نخورده.
-    chain: overrides.chain ?? (urlChain
-      ?? (quickFilters.length ? quickFilters
-          : (preset === 'custom' ? chainPref : []))),
+    // دو منطقِ انتخاب، یک قاعدۀِ منبع (بعد از بازگشتِ Custom): «Custom» یعنی
+    // زنجیرۀِ خودِ شخص — همان فهرستی که سازنده مرتب می‌کند و همان که چیپ‌هایِ
+    // بالایِ غربالگری روشن/خاموش می‌کنند. بقیۀ اشخاص از چیپ‌هایِ تبِّ تابلو
+    // ساخته می‌شوند؛ بی‌انتخاب، زنجیرۀِ خودِ شخصِ رجیستری درِ سرور می‌ماند.
+    chain: overrides.chain ?? urlChain
+      ?? (preset === 'custom' ? chainPref : quickFilters),
     logic: overrides.logic ?? screenLogic,
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
@@ -135,6 +143,20 @@ export function useFtsFunnel(
     ...overrides,
   }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref,
       quickFilters, screenLogic]);
+
+  // چیپ‌هایِ نوارِ غربالگری با همان منبعی که داوری می‌شود حرف می‌زنند: درِ
+  // Custom زنجیرۀِ شخص، درِ بقیه چیپ‌هایِ تبِّ تابلو.
+  const screenFilters = useMemo(() => ({
+    active: preset === 'custom' ? chainPref : quickFilters,
+    source: (preset === 'custom' ? 'chain' : 'chips') as 'chips' | 'chain',
+    toggle: (f: string) => {
+      if (preset === 'custom') {
+        if (chainPref.includes(f)) removeChainFilter(f); else addChainFilter(f);
+      } else {
+        useTapeStore.getState().toggleQuickFilter(f as QuickFilter);
+      }
+    },
+  }), [preset, chainPref, quickFilters, addChainFilter, removeChainFilter]);
 
   const q = useQuery({
     queryKey: funnelQueryKey(request),
@@ -202,6 +224,7 @@ export function useFtsFunnel(
     basket: new Set(((portfolio.data as { decisions?: Array<{ symbol: string }> } | undefined)
       ?.decisions ?? []).map((d) => d.symbol)),
     quickFilters,
+    screenFilters,
     opts,
     request,
   };

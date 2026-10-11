@@ -639,8 +639,43 @@ ck("first" in _by["ب"] and _by["ب"]["first"] is None
    f"۴۹) بی‌OHLC کلید تهی می‌ماند (صفرِ ساختگی کندل نمی‌سازد): "
    f"{_by['ب'].get('first')!r}")
 
+
+# ── ۵۰) نامزدِ مستقلِّ هر فیلتر رویِ جامعۀ غربالگری ────────────────────
+# خواستِ مالک بعد ازِ بازگشتِ Custom: «برایِ هرکدوم عدد بزار، زنده محاسبه کنه
+# که بدونیم هر فیلتر چقد نامزد داره». دو شمارش با هم قاطی می‌شوند:
+#   • `steps` ترتیبی است — فیلترِ دوم فقط رویِ بازماندۀ اول اجرا می‌شود، پس
+#     «نامزدِ خودِ فیلتر» را نمی‌دهد.
+#   • `filter_counts` هر فیلتر را رویِ **کلِّ** جامعۀ ورودی می‌شمارد، بی‌زنجیره
+#     و بی‌منطق، و سه حالت را جدا می‌گیرد: نامزد / رد / بی‌حکم.
+_fc = o["stages"]["tape"]["filter_counts"]
+ck(set(_fc) == set(REG.filter_ids()),
+   "۵۰) هر هفت فیلترِ رجیستری شمارش دارد، نه فقط زنجیره: " + str(sorted(_fc)))
+ck(_fc["f_susp"]["matched"] == 2 and _fc["f_susp"]["removed"] == 2
+   and _fc["f_susp"]["unmeasured"] == 0 and _fc["f_susp"]["input"] == 4,
+   "۵۰) حجم مشکوک رویِ کلِّ جامعۀ ورودی شمرده می‌شود: " + str(_fc["f_susp"]))
+# الف) نامزد ≠ بازماندۀ ترتیبی: درِ زنجیرۀ [f_susp, f_noqteh] گامِ دوم یک ردیف
+#    تحویل می‌گیرد، ولی خودِ نقطه‌زنی رویِ جامعۀ کامل دو نامزد دارد.
+ck(t2["matched_count"] == 1 and _fc["f_noqteh"]["matched"] == 2,
+   "۵۰) عددِ چیپ نامزدِ مستقل است، نه بازماندۀِ ترتیبی: "
+   + str(t2["matched_count"]) + " در برابرِ " + str(_fc["f_noqteh"]["matched"]))
+# ب) بی‌زنجیره هم همان شمارش می‌آید (زنجیره درِ نامزدِ هر فیلتر بی‌اثر است)
+_o2 = FE.evaluate(B, S, preset="trend")
+ck(_o2["stages"]["tape"]["filter_counts"] == _fc,
+   "۵۰) زنجیره درِ نامزدِ هر فیلتر بی‌اثر است")
+# پ) اجتماع هم همان یک شمارش را می‌دهد (منطقِ ترکیب است، نه منطقِ سنجش)
+_o3 = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp"], tape_logic="or")
+ck(_o3["stages"]["tape"]["filter_counts"] == _fc,
+   "۵۰) منطقِ اشتراک/اجتماع نامزدِ هر فیلتر را جابه‌جا نمی‌کند")
+# ت) پرچمِ بی‌حکم «رد» شمرده نمی‌شود (UNAVAILABLE ≠ REJECT درِ همین شمارش هم)
+_B4 = [board("الف", f_susp=None), board("ب", f_susp=True)]
+_o4 = FE.evaluate(_B4, [screen("الف", **UP, **OK_FUND), screen("ب", **UP, **OK_FUND)],
+                  preset="custom", custom_chain=["f_susp"])
+_fc4 = _o4["stages"]["tape"]["filter_counts"]["f_susp"]
+ck(_fc4["matched"] == 1 and _fc4["removed"] == 0 and _fc4["unmeasured"] == 1,
+   "۵۰) بی‌حکم درِ نامزد و رد نمی‌نشیند: " + str(_fc4))
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43 + 9 + 7 + 8 + 2} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43 + 9 + 7 + 8 + 2 + 6} بندِ مأموریت")

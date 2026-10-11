@@ -13,6 +13,7 @@ import { useSearchParams } from 'react-router';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import FtsFunnelStageView from './FtsFunnelStageView';
+import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
 import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
 import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
@@ -26,12 +27,13 @@ const VALID_STAGES: readonly FunnelStageKey[] = ['tape', 'technical', 'fundament
  *  «ساعت شنی» درِ این سه‌تا نیست: درِ هیچ منبعی فیلترِ تابلویی ندارد و
  *  تعریفش گیتِ تکنیکالِ هفتگی است (پرسشِ Q-1 درِ ممیزیِ قیف)؛ مسیرِ
  *  `?preset=hourglass` دست‌نخورده کار می‌کند، پس توانی حذف نشده است.
- *  «Custom» با رأیِ مالکِ ۱۴۰۵-۰۷-۲۰ از این نوار رفت: فیلترها را همان
- *  چیپ‌هایِ تبِّ تابلو روشن/خاموش می‌کنند (با کلیدِ اشتراک/اجتماع)، پس سازندۀ
- *  زنجیرۀ جدا درِ این تب دیگر دو راه برایِ یک کار است. */
+ *  «Custom» با رأیِ مالک برگشت (۱۴۰۵-۰۷-۲۰، دورِ دومِ همان رأی): چیپ‌هایِ
+ *  نوارِ غربالگری مجموعه را روشن می‌کنند و همین سازنده ترتیبشان را — دو
+ *  نمایی از یک زنجیره، نه دو منطقِ داوری. */
 export const FUNNEL_MODES: readonly { key: FunnelPreset; label: string; hint: string }[] = [
   { key: 'swing', label: 'نوسان‌گیر', hint: 'الگوی ساعت + جت + حجم مشکوک' },
   { key: 'trend', label: 'روندگیر', hint: 'کف‌روبی + نقطه‌زنی' },
+  { key: 'custom', label: 'Custom', hint: 'خودت فیلتر را انتخاب و مرتب می‌کنی' },
 ];
 
 export function FtsFunnelStages({
@@ -137,13 +139,16 @@ export function FtsFunnelStages({
             {PRESET_MOTIVE[preview as keyof typeof PRESET_MOTIVE]}
           </div>
           <div className="mt-0.5 text-text-muted">
-            چیپ‌هایِ تبِّ تابلو همین فهرست را کم و زیاد می‌کنند؛ کلیدِ
-            «اشتراک/اجتماع» هم همان‌جاست.
+            چیپ‌هایِ بالایِ غربالگری همین فهرست را کم و زیاد می‌کنند؛ کلیدِ
+            «اشتراک/اجتماع» هم همان‌جاست. درِ Custom همین چیپ‌ها زنجیرۀِ سازنده را روشن می‌کنند.
           </div>
         </div>
       ) : null}
 
       <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol} />
+
+      {/* Custom همان‌جا ویرایش می‌شود (§۲۹): نه صفحۀ تازه، نه drawerِ سنگین. */}
+      {activePreset === 'custom' ? <FtsCustomChainBuilder /> : null}
 
       {stage === 'handover' ? (
         <div className="flex w-full flex-col gap-1" data-testid="fts-funnel-final-view">

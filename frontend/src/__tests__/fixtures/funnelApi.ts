@@ -50,6 +50,18 @@ export const FUNNEL_FIXTURE: ApiPayload = {
           source_ref: 'docs/نقطه زنی.txt#e5d4fd99a6811443', formula_version: 'txt-1',
           backend_impl: 'tape_flags.noqteh_flag' },
       ],
+      // شمارشِ مستقلِ هر فیلتر رویِ کلِّ جامعۀ غربالگری — عینِ
+      // `funnel_engine.filter_counts`. دو تا عمداً صفرند تا عددِ «گرسنه» هم
+      // دیده شود (رأیِ مالک: هر چیپ باید نامزدش را زنده بگوید).
+      filter_counts: {
+        f_clock: { name: 'الگوی ساعت', matched: 0, removed: 4, unmeasured: 0, input: 4 },
+        f_susp: { name: 'حجم مشکوک', matched: 3, removed: 1, unmeasured: 0, input: 4 },
+        f_jet: { name: 'فیلتر جت', matched: 1, removed: 3, unmeasured: 0, input: 4 },
+        f_roobi: { name: 'کف‌روبی', matched: 2, removed: 2, unmeasured: 0, input: 4 },
+        f_noqteh: { name: 'نقطه زنی', matched: 2, removed: 1, unmeasured: 1, input: 4 },
+        f_smart: { name: 'ورود پول هوشمند', matched: 0, removed: 2, unmeasured: 2, input: 4 },
+        f_legal: { name: 'کد به کد حقوقی به حقیقی', matched: 1, removed: 3, unmeasured: 0, input: 4 },
+      },
     },
     technical: { matched: 2, counts: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 } },
     fundamental: { matched: 1, mode: 'standard',
