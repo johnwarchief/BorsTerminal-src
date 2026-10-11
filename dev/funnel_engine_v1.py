@@ -467,7 +467,7 @@ ck(u_on["drop_numeric_suffix"] is True and u_off.get("drop_numeric_suffix") is F
    f"۴۷) پرچمِ اعمال‌شده درِ پاسخ می‌نشیند — رابط حدس نمی‌زند")
 ck(u_on["screening"] == 2 and u_on["excluded"] == 2
    and u_on["market"] == u_on["screening"] + u_on["excluded"],
-   f"۴۷) روشن: ۴ نماد → ۲ غربال + ۲ خارج، و X = Y + ز")
+   f"۴۷) روشن: ۴ نماد → ۲ غربال + ۲ خارج، و X = Y + Z")
 ck(u_on["exclusion_counts"] == {"NUMERIC_SUFFIX": 2}
    and u_on["exclusion_labels"].get("NUMERIC_SUFFIX") == "پسوندِ عددی",
    f"۴۷) علتِ خروج با شمار و برچسبِ فارسیِ خودش گزارش می‌شود")
@@ -486,8 +486,80 @@ ck([FE.has_numeric_suffix(s) for s in
 ck(FE.has_numeric_suffix("خودرو٢") is False,
    f"۴۷) ارقامِ عربیِ هندی (٠-٩) درِ regexِ تابلو نیست و اینجا هم نیست — دو در یکی")
 
+# ── ۴۸) «دلیل»ِ دیدنی: کدام بندِ فایل خورد، با عددِ خودِ ردیف ──────────────
+# رأیِ مالک (۱۴۰۵-۰۷۰۲۲): «{فیلتر} — نشانه در این نماد نیست» رویِ صدها ردیفِ
+# یکسان هیچ چیزی نمی‌گفت. متنِ تازه قیدها را به ترتیبِ خودِ فایل می‌سنجد؛
+# آستانه‌ها از `tape_flags` خوانده می‌شوند، پس اگر جمله اشتباه باشد عددِ ردیف
+# هم اشتباه است — و کنترلِ منفی همان‌جا این را می‌گیرد.
+def roobi(sym, **over):
+    """ردیفِ کف‌روبی با ورودی‌هایِ خامِ خودِ فایل (pl، tmin، zd1، plp، qd1)."""
+    r = board(sym, f_roobi=False)
+    r.update({"p_last": 1000.0, "p_closing": 990.0, "plp_raw": -2.0, "tmin": 900.0,
+              "buy_q1_cnt": 5.0, "buy_q1_vol": 400.0, "z_tot_tran": 60.0,
+              "tvol": 1000.0, "prior30_vol": 30000.0, "hist_sessions": 60.0,
+              "min_low_29": 995.0})
+    r.update(over)
+    return r
+
+
+S_OK = [screen("الف", **UP, **OK_FUND)]
+# الف) بندِ اول می‌افتد: آخرین رویِ کفِ مجاز ننشسته
+g1 = FE.evaluate([roobi("الف", p_last=1000.0, tmin=900.0)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+why1 = g1["status_matrix"]["الف"]["tape"]["human_reason"]
+ck("کف روبی" in why1 and "ننشست" in why1 and "۱۰۰۰" in why1 and "۹۰۰" in why1,
+   f"۴۸) بندِ اولِ کف‌روبی با عددِ خودِ ردیف نوشته می‌شود: {why1}")
+ck("نشانه در این نماد نیست" not in why1,
+   f"۴۸) متنِ عمومیِ بی‌محتوا دیگر جانشینِ دلیلِ قابلِ اثبات نمی‌شود")
+
+# ب) کنترلِ منفی: فقط tmin را برابرِ آخرین می‌کنیم ⇒ دلیل باید به بندِ دوم
+#    (صفِ سطرِ اول) برود. اگر متن ثابت بماند، سنسور کور است.
+g2 = FE.evaluate([roobi("الف", p_last=900.0, tmin=900.0, buy_q1_cnt=1.0)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+why2 = g2["status_matrix"]["الف"]["tape"]["human_reason"]
+ck(why2 != why1 and "سطرِ اول" in why2,
+   f"۴۸) سنسور کور نیست: با اصلاحِ بندِ اول، دلیل به بندِ بعد می‌رود: {why2}")
+
+# پ) ردیفی که هیچ بندی از آن قابلِ اثبات نیست (ستون‌هایِ فرمول غایب) ⇒
+#    «سنجیده نشد» با علتِ نبودِ همان ورودی، نه «رد».
+g3 = FE.evaluate([roobi("الف", tmin=None, buy_q1_cnt=None, buy_q1_vol=None)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+cell3 = g3["status_matrix"]["الف"]["tape"]
+ck(cell3["status"] == "unavailable" and "آستانۀ مجاز" in cell3["human_reason"],
+   f"۴۸) سنجیده‌نشده علتِ ورودیِ گم‌شده را می‌گوید، نه «رد»: {cell3['human_reason']}")
+
+# ت) دفترچه و ماتریس یک جمله دارند (دو تعریفِ «دلیل» درِ یک پاسخ ممنوع)
+ent = (g2["entries"].get("tape") or [])
+twhy = next((w["text"] for r in ent if r.get("symbol") == "الف"
+             for w in (r.get("why") or {}).get("tape") or []), None)
+ck(twhy == why2, f"۴۸) متنِ ستونِ «دلیل» درِ جدول همان جمله‌ای است که ماتریس می‌گوید")
+
+# ث) دو کمبودِ ورودیِ جدا، دو نامِ جدا — و هیچ‌وقت «حجم کم است»:
+g4 = FE.evaluate([roobi("الف", f_susp=False, prior30_vol=None, hist_sessions=12.0)], S_OK,
+                 preset="custom", custom_chain=["f_susp"])
+cell4 = g4["status_matrix"]["الف"]["tape"]
+ck(cell4["status"] == "unavailable" and "جمعِ حجمِ ۳۰ نشستِ پیش نرسیده" in cell4["human_reason"]
+   and "مبناء" not in cell4["human_reason"],
+   f"۴۸) جمعِ حجمِ غایب ⇒ کمبودِ ورودی، نه «حجم کم»: {cell4['human_reason']}")
+g4b = FE.evaluate([roobi("الف", f_susp=False, prior30_vol=30000.0, hist_sessions=12.0)], S_OK,
+                  preset="custom", custom_chain=["f_susp"])
+cell4b = g4b["status_matrix"]["الف"]["tape"]
+ck(cell4b["status"] == "unavailable" and "۱۲ نشست" in cell4b["human_reason"]
+   and "مبناء" not in cell4b["human_reason"],
+   f"۴۸) پنجرۀ ۳۰ نشستِ ناقص با شمارۀِ خودِ ردیف نامیده می‌شود: {cell4b['human_reason']}")
+
+# ج) عددِ آستانه درِ متن از خودِ `tape_flags` می‌آید، نه از بازنویسیِ این فایل
+import tape_flags as TF  # noqa: E402
+g5 = FE.evaluate([roobi("الف", f_susp=False, f_roobi=True, tvol=60.0,
+                        prior30_vol=30000.0, hist_sessions=60.0)], S_OK,
+                 preset="custom", custom_chain=["f_susp"])
+why5 = g5["status_matrix"]["الف"]["tape"]["human_reason"]
+# مبناء = ۳۰۰۰۰/۳۰ = ۱۰۰۰؛ حجمِ امروز ۶۰ ⇒ نسبت ۰٫۰۶، و فایل ۳× می‌خواهد
+ck("مبناء" in why5 and "۰٫۰۶" in why5 and "۳" in why5 and "." not in why5,
+   f"۴۸) دلیلِ حجمِ مشکوک نسبتِ خودِ ردیف و آستانۀ فایل را با هم می‌نویسد: {why5}")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43 + 9 + 7} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43 + 9 + 7 + 8} بندِ مأموریت")

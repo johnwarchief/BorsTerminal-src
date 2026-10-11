@@ -258,6 +258,242 @@ def _tape_unmeasurable(r: dict[str, Any], fid: str) -> bool:
     return (_num(r.get("hist_sessions")) or 0) < VOL_BASE_SESSIONS
 
 
+def _unmeasured_why(r: dict[str, Any], fid: str) -> str | None:
+    """چرا سنجش ممکن نبود؟ همان شاخه‌هایِ `_tape_unmeasurable`، با متنِ علت.
+
+    «داده در دسترس نیست» به‌تنهایی چیزی نمی‌گوید؛ ردیف باید بگوید *کدام* ورودی
+    کم است (آستانۀ مجاز، صفِ سطرِ اول، پنجرۀ ۳۰ نشست…) تا کاربر بداند این
+    «رد» نیست و کجا باید تازه شود. None یعنی سنجش‌شدنی بود.
+    """
+    from tape_flags import LOW_BASE_SESSIONS, VOL_BASE_SESSIONS
+
+    if (r.get("hist_sessions") is None and r.get("prior30_vol") is None
+            and r.get("min_low_29") is None and r.get("tmin") is None):
+        # ردیف بی‌ستون‌هایِ فرمول (پنلِ قدیمی/ساختۀ تست) — همان شاخۀ بالا
+        return None
+    if fid == "f_roobi":
+        if not _num(r.get("tmin")):
+            return "آستانۀ مجازِ پایینِ این نشست نرسیده"
+        if _num(r.get("buy_q1_cnt")) is None or _num(r.get("buy_q1_vol")) is None:
+            return "صفِ خریدِ سطرِ اولِ این نماد نرسیده"
+        return None
+    if _num(r.get("z_tot_tran")) is None:
+        return "تعدادِ معاملاتِ این نشست نرسیده"
+    if fid == "f_clock" and not _num(r.get("p_closing")):
+        return "قیمتِ پایانیِ این نشست نرسیده"
+    if fid == "f_noqteh":
+        if not _num(r.get("min_low_29")):
+            return "کمینۀِ ۲۹ نشستِ پیش نرسیده"
+        if (_num(r.get("hist_sessions")) or 0) < LOW_BASE_SESSIONS:
+            return f"سابقۀِ نماد به ۲۹ نشست نمی‌رسد ({_fa_digits(int(_num(r.get('hist_sessions')) or 0))} نشست)"
+        return None
+    hist = _num(r.get("hist_sessions")) or 0
+    if not _num(r.get("prior30_vol")):
+        return "جمعِ حجمِ ۳۰ نشستِ پیش نرسیده"
+    if hist < VOL_BASE_SESSIONS:
+        return f"پنجرۀِ ۳۰ نشستِ فایل کامل نیست ({_fa_digits(int(hist))} نشست)"
+    return None
+
+
+def _tape_unmeasurable(r: dict[str, Any], fid: str) -> bool:
+    """بولینِ همان سنجش — تنها تعریف درِ `_unmeasured_why` است."""
+    return _unmeasured_why(r, fid) is not None
+
+
+# ── «دلیل»ِ دیدنی: کدام بندِ فایل خورد، با عددِ خودِ همان ردیف ──────────────
+# رأیِ مالک (۱۴۰۵-۰۷-۲۲): «{فیلتر} — نشانه در این نماد نیست» رویِ ۱۰۲۷ ردیفِ
+# یکسان هیچ چیزی نمی‌گفت. متنِ تازه همان چهار/شش قیدِ خودِ فایل را به ترتیب
+# می‌سنجد و اولینِ قیدِ ردشده را با عددِ ردیف می‌نویسد. آستانه‌ها ازِ خودِ
+# `tape_flags` خوانده می‌شوند — عددِ دومی اینجا نوشته نمی‌شود — و اگر چیزی
+# قابلِ اثبات نبود None برمی‌گردد تا متنِ عمومیِ صادق بماند.
+def _fa_num(v: float, digits: int = 2) -> str:
+    """رقمِ فارسی با ممیزِ فارسی (٫) — نقطۀ لاتین درِ متنِ RTL شکستِ عدد است."""
+    return _fa_digits(str(round(float(v), digits))).replace(".", "٫")
+
+
+def _fa_n(v: float) -> str:
+    """آستانه درِ متن — عددِ درست‌محور بی‌اعشار می‌آید (۳ نه ۳٫۰)."""
+    f = float(v)
+    return _fa_digits(str(int(f))) if f.is_integer() else _fa_num(f)
+
+
+def _row_ratio(r: dict[str, Any]) -> float | None:
+    """حجمِ این نشست ÷ مبناءِ فایل (Σ[ih][0..29]÷۳۰)؛ None یعنی مبناء نبود."""
+    from tape_flags import VOL_BASE_SESSIONS
+    hist = _num(r.get("hist_sessions")) or 0
+    p30 = _num(r.get("prior30_vol"))
+    tvol = _num(r.get("tvol"))
+    if not p30 or p30 <= 0 or hist < VOL_BASE_SESSIONS or tvol is None:
+        return None
+    return tvol / (p30 / VOL_BASE_SESSIONS)
+
+
+def _row_plp(r: dict[str, Any]) -> float | None:
+    """`plp` عینِ `tape_flags.plp_series`: خامِ امروز، وگرنه درصدِ آخرین."""
+    raw = r.get("plp_raw")
+    return _num(raw) if raw is not None else _num(r.get("percent_last"))
+
+
+def _row_bp(r: dict[str, Any]) -> float | None:
+    """سرانۀِ سفارشِ خریدِ حقوقی ÷ سرانۀِ فروشِ حقوقی؛ None یعنی سنجیده نشد."""
+    bc, sc = _num(r.get("buy_count_i")), _num(r.get("sell_count_i"))
+    if not bc or bc <= 0 or not sc or sc <= 0:
+        return None
+    si = _num(r.get("sell_i_vol")) or 0.0
+    bi = _num(r.get("buy_i_vol")) or 0.0
+    if si <= 0:
+        return None
+    return (bi / bc) / (si / sc)
+
+
+def _row_ladder(r: dict[str, Any]) -> float | None:
+    """سقفِ پلکانِ جت ([ih][2..59].PriceMax)؛ None یعنی پنجره کامل نیست."""
+    from tape_flags import JET_LADDER
+    hist = _num(r.get("hist_sessions")) or 0
+    if hist < max(JET_LADDER) + 1:
+        return None
+    return max((_num(r.get(f"h{k}_max")) or 0.0) for k in JET_LADDER)
+
+
+def _tape_miss(r: dict[str, Any], fid: str) -> str | None:
+    """اولین قیدِ ردشده درِ همان فایل، با عددِ ردیف — یا None."""
+    import tape_flags as TF
+
+    pl, pc = _num(r.get("p_last")), _num(r.get("p_closing"))
+    tvol, tno = _num(r.get("tvol")), _num(r.get("z_tot_tran"))
+    plp = _row_plp(r)
+    ratio = _row_ratio(r)
+
+    def vol_over(mult: float) -> str | None:
+        if ratio is None or ratio > mult:
+            return None
+        return f"حجمِ امروز {_fa_num(ratio)}× مبناءست، فایل بیش از {_fa_n(mult)}× می‌خواهد"
+
+    def trades_over(n: float) -> str | None:
+        if tno is None or tno > n:
+            return None
+        return f"تعدادِ معامله {_fa_digits(int(tno))} است، فایل بیش از {_fa_n(n)} می‌خواهد"
+
+    def closing_ge() -> str | None:
+        if pc is None or pl is None or pc <= 0:
+            return None
+        if pl >= pc:
+            return None
+        return f"آخرینِ {_fa_n(pl)} زیرِ پایانیِ {_fa_n(pc)} ماند، فایل `pl >= pc` می‌خواهد"
+
+    def plp_pos() -> str | None:
+        if plp is None or plp > 0:
+            return None
+        return f"تغییرِ آخرین {_fa_num(plp)}٪ است، فایل بالایِ صفر می‌خواهد"
+
+    def bp_ge(mult: float) -> str | None:
+        bp = _row_bp(r)
+        if bp is None or bp >= mult:
+            return None
+        return (f"سرانۀِ خریدِ حقوقی {_fa_num(bp)}× سرانۀِ فروشِ حقوقی است، "
+                f"فایل دستِ‌کم {_fa_n(mult)}× می‌خواهد")
+
+    if fid == "f_clock":
+        for chk in (
+            lambda: (None if (pc and pl is not None and pl >= pc * (1 + TF.CLOCK_DELTA)) else
+                     f"اختلافِ آخرین و پایانی "
+                     f"{_fa_num(100 * (pl - pc) / pc) if (pc and pl is not None) else '—'}٪ است، "
+                     f"فایل دستِ‌کم {_fa_n(round(TF.CLOCK_DELTA * 100))}٪ بالا می‌خواهد"),
+            lambda: vol_over(1.0),
+            lambda: trades_over(TF.CLOCK_TRADES),
+        ):
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    if fid == "f_susp":
+        for chk in (lambda: vol_over(TF.SUSP_VOL_MULT), lambda: trades_over(TF.SUSP_TRADES)):
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    if fid == "f_roobi":
+        tmin = _num(r.get("tmin"))
+        zd1, qd1 = _num(r.get("buy_q1_cnt")), _num(r.get("buy_q1_vol"))
+        for chk in (
+            lambda: (None if (pl is not None and tmin and pl == tmin) else
+                     f"آخرینِ {_fa_n(pl) if pl is not None else '—'} رویِ کفِ مجازِ "
+                     f"{_fa_n(tmin) if tmin else '—'} ننشست"),
+            lambda: (None if (zd1 is not None and zd1 > TF.ROOBI_ZD1_MIN) else
+                     f"صفِ خریدِ سطرِ اول {_fa_digits(int(zd1)) if zd1 is not None else '—'} سفارش دارد، "
+                     f"فایل بیش از {_fa_digits(TF.ROOBI_ZD1_MIN)} می‌خواهد"),
+            lambda: (None if (plp is not None and plp < TF.ROOBI_MAX_CHANGE) else
+                     f"تغییرِ آخرین {_fa_num(plp) if plp is not None else '—'}٪ است، "
+                     f"فایل زیرِ {_fa_n(TF.ROOBI_MAX_CHANGE)}٪ می‌خواهد"),
+            lambda: (None if (qd1 is not None and qd1 > TF.ROOBI_QD1_MIN) else
+                     f"حجمِ صفِ اولِ خرید {_fa_digits(int(qd1)) if qd1 is not None else '—'} است، "
+                     f"فایل بیش از {_fa_digits(TF.ROOBI_QD1_MIN)} می‌خواهد"),
+        ):
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    if fid == "f_noqteh":
+        low = _num(r.get("min_low_29"))
+        dist = None
+        if pc and low not in (None, 0):
+            hist = _num(r.get("hist_sessions")) or 0
+            if hist >= TF.LOW_BASE_SESSIONS:
+                dist = round((pc - low) / pc * 100, 2)
+        for chk in (
+            lambda: (None if (dist is not None and dist < TF.NOQTEH_MAX_DIST) else
+                     f"فاصله تا کمینۀِ ۲۹ نشست {_fa_num(dist) if dist is not None else '—'}٪ است، "
+                     f"فایل زیرِ {_fa_n(TF.NOQTEH_MAX_DIST)}٪ می‌خواهد"),
+            lambda: vol_over(1.0),
+            lambda: trades_over(TF.NOQTEH_TRADES),
+        ):
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    if fid == "f_jet":
+        def ladder_miss() -> str | None:
+            res = _row_ladder(r)
+            if res is None or pl is None:
+                return None              # پنجره کامل نبود — ادعایِ «نگذشتن» مجاز نیست
+            if res <= 0 or pl > res:
+                return None
+            return f"آخرینِ {_fa_n(pl)} از سقفِ پلکانِ ۵۹ نشست ({_fa_n(res)}) نگذشت"
+
+        for chk in (lambda: vol_over(TF.JET_VOL_MULT), lambda: bp_ge(TF.JET_BUYER_POWER),
+                    closing_ge, plp_pos, ladder_miss,
+                    lambda: trades_over(TF.JET_MIN_TRADES)):
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    if fid in ("f_smart", "f_legal"):
+        checks = [lambda: vol_over(TF.SMART_VOL_MULT), lambda: bp_ge(TF.SMART_BP_GE),
+                  closing_ge, plp_pos]
+        if fid == "f_legal":
+            bi, sn = _num(r.get("buy_i_vol")), _num(r.get("sell_n_vol"))
+            cap = (TF.LEGAL_SHARE_OF_TVOL * tvol) if tvol is not None else None
+
+            def legal_buy_miss() -> str | None:
+                if cap is None or bi is None or bi > cap:
+                    return None
+                return (f"حجمِ خریدِ حقوقی {_fa_n(bi)} نصفِ حجمِ نشست "
+                        f"({_fa_n(cap)}) را پر نمی‌کند")
+
+            def legal_sell_miss() -> str | None:
+                if cap is None or sn is None or sn > cap:
+                    return None
+                return (f"حجمِ فروشِ حقیقی {_fa_n(sn)} نصفِ حجمِ نشست "
+                        f"({_fa_n(cap)}) را پر نمی‌کند")
+            checks += [legal_buy_miss, legal_sell_miss]
+        for chk in checks:
+            if (msg := chk()) is not None:
+                return msg
+        return None
+
+    return None
+
+
 # ── ۱) تابلوخوانی: اشتراکِ ترتیبیِ زنجیره ─────────────────────────────────
 def tape_stage(rows: list[dict], chain: tuple[str, ...],
                params: dict[str, dict[str, Any]] | None = None) -> dict:
@@ -299,16 +535,22 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
             fv = _tri(r.get(flag))
             sym = str(r.get("symbol") or "")
             if fv is False and _tape_unmeasurable(r, fid):
+                why_txt = _unmeasured_why(r, fid) or "مبنایِ تاریخچۀ فایل را ندارد"
+                r["_tape_why_text"] = f"{f.name} — {why_txt}، پس رد نشده"
                 _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
                                    "status": UNAVAILABLE, "reason_code": f"TAPE_{fid.upper()}_UNMEASURED",
-                                   "human_reason": f"{f.name} — این نماد اندازه‌گیری‌شدنی نبود "
-                                                   "(مبنایِ تاریخچۀ فایل را ندارد)، پس رد نشده",
+                                   "human_reason": r["_tape_why_text"],
                                    "input_count": before, "output_count": len(matched),
                                    "source": f.source_file, "formula_version": f.formula_version})
             elif fv is False:
+                # «کدام بندِ فایل نخورد» با عددِ خودِ ردیف؛ اگر چیزی قابلِ اثبات
+                # نبود همان متنِ عمومیِ صادق می‌ماند (ادعایِ جعلی ساخته نمی‌شود).
+                miss = _tape_miss(r, fid)
+                r["_tape_why_text"] = (f"{f.name} — {miss}" if miss
+                                       else f"{f.name} — نشانه در این نماد نیست")
                 _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
                                    "status": REJECT, "reason_code": f"TAPE_{fid.upper()}_NO_MATCH",
-                                   "human_reason": f"{f.name} — نشانه در این نماد نیست",
+                                   "human_reason": r["_tape_why_text"],
                                    "input_count": before, "output_count": len(matched),
                                    "source": f.source_file, "formula_version": f.formula_version})
             elif fv is None:
@@ -756,11 +998,19 @@ def status_matrix(market: list[dict], tape: dict, tech: dict, fund: dict,
         if step is not None:
             tape_st = {"status": REJECT,
                        "reason_code": f"TAPE_{step['filter_id'].upper()}_NO_MATCH",
-                       "human_reason": f"{step['label']} — نشانه در این نماد نیست",
+                       # همان دلیلی که درِ دفترچه نوشته شد — ماتریس و جدولِ
+                       # مرحله یک جمله دارند، نه دو تا.
+                       "human_reason": r.get("_tape_why_text")
+                                      or f"{step['label']} — نشانه در این نماد نیست",
                        "stage_ref": step["source_ref"]}
         elif sym in survivors:
             tape_st = {"status": PASS, "reason_code": "TAPE_PASSED",
                        "human_reason": "همۀ فیلترهایِ زنجیره را خورده شده"}
+        elif r.get("_tape_why_text"):
+            # سنجیده‌نشده با علتِ همان ورودی — «پرچم ساخته نشده» به‌تنهایی
+            # نمی‌گوید کدام ورودی کم بوده است.
+            tape_st = {"status": UNAVAILABLE, "reason_code": "TAPE_UNMEASURED",
+                       "human_reason": r["_tape_why_text"]}
         else:
             tape_st = {"status": UNAVAILABLE, "reason_code": "TAPE_NO_FLAG",
                        "human_reason": "پرچم این نماد در این نشست ساخته نشده"}
