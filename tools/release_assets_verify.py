@@ -1,4 +1,4 @@
-"""راستی‌آزماییِ مستقلِ دارایی‌هایِ ریلیزِ v1.0.84 (بی‌برنامه).
+"""راستی‌آزماییِ مستقلِ دارایی‌هایِ انتشار (بی‌برنامه، از خودِ latest.json).
 
 هرچه چاپ می‌شود از همین‌جا می‌آید: دانلودِ مستقیمِ هر دارایی از GitHub، شمارشِ
 sha256 و size، و بررسیِ امضایِ minisign با کلیدِ عمومیِ خودِ آپدیتِرِ برنامه
@@ -21,16 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.update import UPDATE_PUBKEY            # noqa: E402
 from bors_minisign import verify_minisign       # noqa: E402
 
-# دارایی‌هایی که امضا دارند و باید رمزنگاری‌شان راستی‌آزمایی شود
-SIGNED = [
-    f"BorsTerminal_Ultimate_Setup_{TAG}.exe",
-    f"BorsTerminal_Patch_1.0.83_to_{TAG[1:]}.zip",
-    f"BorsTerminal_Patch_1.0.82_to_{TAG[1:]}.zip",
-    f"BorsTerminal_Patch_1.0.81_to_{TAG[1:]}.zip",
-]
-# فقط هش/اندازه (بدونِ امضا): ZIP پرتابیل
-UNSIGNED = [f"BorsTerminal_Ultimate_Portable_{TAG}.zip"]
-
+# دارایی‌ها از خودِ latest.json خوانده می‌شوند (پایینِ همین فایل) — اینجا فهرستِ
+# دست‌نویس نمی‌شود تا حذفِ یکِ دلتا ابزار را نخواباند.
 R = {"tag": TAG, "pubkey_prefix": UPDATE_PUBKEY[:24], "assets": []}
 
 
@@ -102,9 +94,21 @@ for plat in (L.get("platforms") or {}).values():
 R["latest_json"] = {"version": L.get("version"), "declared": sizes}
 print("اندازه‌هایِ اعلامی درِ latest.json:", json.dumps(sizes, ensure_ascii=False)[:300])
 
+# فهرستِ دارایی‌ها از خودِ latest.json می‌آید — همان چیزی که آپدیتِرِ درون‌اپ
+# می‌خواند. نسخهٔ پیشین نامِ دلتاها را دست‌نویس داشت و با نبودنِ یکِ دلتا رویِ
+# ۴۰۴ می‌ترکید (سنجشِ v1.0.85: CI فقط سه نسخۀ پیشین را می‌سازد، پس دلتای
+# ۱.۰.۸۱ نیست و راهِ ارتقایِ آن نسخّه نصابِ کامل است).
+SIGNED = [os.path.basename(e["url"]) for e in (L.get("patches") or [])]
+SIGNED += [os.path.basename(p["url"]) for p in (L.get("platforms") or {}).values()
+           if isinstance(p, dict) and p.get("url")]
+UNSIGNED = [os.path.basename(port["url"])] if port.get("url") else []
+R["delta_sources"] = sorted({n.split("_Patch_")[1].split("_to_")[0]
+                             for n in SIGNED if "_Patch_" in n})
+print("دلتاهایِ اعلامی از latest.json:", R["delta_sources"])
+print("دارایی‌هایِ امضادار:", len(SIGNED), "بی‌امضا:", len(UNSIGNED))
+
 rows = [check(n, sizes.get(n, -1), True) for n in SIGNED]
 rows += [check(n, sizes.get(n, -1), False) for n in UNSIGNED]
-
 json.dump(R, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 bad = [r["name"] for r in rows if r["signature_ok"] is False]
 print(f"\n{len(rows)} دارایی سنجیده شد؛ امضایِ ناقص: {bad or 'هیچ'} — {OUT}")

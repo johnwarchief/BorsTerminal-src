@@ -188,12 +188,47 @@ step(f"Version.txt درِ کپی مهرِ {TO} را گرفت", f"app_version={TO
 step("patch_from و git_commitِ درست مهر شده‌اند",
      f"patch_from={FROM}" in stamp and GIT_COMMIT in stamp, stamp.strip().replace("\n", " | "))
 
+# درِ بیلدِ فریزشده (onedir) فایلِ `_internal/bors_config.py` وجود ندارد، پس
+# سنجۀ پیشین همیشه «خوانده نشد» می‌داد و یک قرمزِ ساختگی درِ شواهد می‌گذاشت.
+# نسخه را یا از فایلِ منبع می‌خوانیم (اجرایِ dev) یا از خودِ اپِ وصله‌خورده
+# (با BOOT=1): بالا می‌آوریم، از اندپوینتِ زنده می‌خوانیم، و فقط PIDی را می‌کشیم
+# که خودمان بالا آورده‌ایم. بی‌BOOT=1 این سنجه «سنجیده نشد» می‌ماند، نه «رد».
 bc = os.path.join(COPY, "_internal", "bors_config.py")
 if not os.path.isfile(bc):
     bc = os.path.join(COPY, "bors_config.py")
-code = open(bc, encoding="utf-8", errors="replace").read() if os.path.isfile(bc) else ""
-step(f"bors_config درِ کپی هم {TO} می‌گوید (لنگرِ نسخه با Version.txt میخواند)",
-     f'APP_VERSION = "{TO}"' in code, "bors_config.py" if code else "خوانده نشد")
+if os.path.isfile(bc):
+    code = open(bc, encoding="utf-8", errors="replace").read()
+    step(f"bors_config درِ کپی هم {TO} می‌گوید (لنگرِ نسخه با Version.txt میخواند)",
+         f'APP_VERSION = "{TO}"' in code, "bors_config.py")
+elif (os.environ.get("BOOT") or "").strip() == "1":
+    import subprocess
+    boot_port = int(os.environ.get("BOOT_PORT", str(PORT + 1)))
+    exe = os.path.join(COPY, "BorsTerminal_Ultimate.exe")
+    proc = subprocess.Popen([exe], cwd=COPY,
+                            env=dict(os.environ, BORS_PORT=str(boot_port),
+                                     BORS_NO_FETCH_LOOPS="1"),
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
+    seen = None
+    try:
+        for _ in range(75):
+            time.sleep(2)
+            try:
+                seen = api("/api/update/version", timeout=15).get("version")
+                if seen:
+                    break
+            except Exception:
+                continue
+    finally:
+        proc.kill()          # فقط همین PID — هرگز نامِ تصویر را نمی‌کشیم
+    step(f"اپِ وصله‌خورده واقعاً بالا می‌آید و {TO} را اعلام می‌کند (پورتِ {boot_port})",
+         seen == TO, f"version={seen}")
+    R["boot"] = {"port": boot_port, "version": seen, "pid": proc.pid}
+else:
+    R["steps"].append({"name": f"نسخۀ {TO} درِ بیلدِ فریزشده از اندپوینتِ زنده",
+                       "ok": None, "skipped": True,
+                       "detail": "بیلدِ onedir بی‌bors_config.py است؛ با BOOT=1 سنجیده می‌شود"})
+    print(f"  skip اپِ وصله‌خورده سنجیده نشد (بیلدِ فریزشده بی‌bors_config.py؛ BOOT=1)")
 
 post = {"user_db": stat(os.path.join(COPY, "user.db")),
         "rows": user_rows(os.path.join(COPY, "user.db")),
@@ -214,5 +249,8 @@ step("درختِ نسخۀ اصلیِ کاربر اصلاً تغییر نکرد (
 
 json.dump(R, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 ok = sum(1 for s in R["steps"] if s["ok"])
-print(f"\n{ok}/{len(R['steps'])} — {OUT}")
-sys.exit(0 if ok == len(R["steps"]) else 1)
+measured = sum(1 for s in R["steps"] if s.get("ok") is not None)
+skipped = len(R["steps"]) - measured
+print(f"\n{ok}/{measured} سنجیده‌شده" + (f"، {skipped} سنجیده‌نشده" if skipped else "")
+      + f" — {OUT}")
+sys.exit(0 if ok == measured else 1)
