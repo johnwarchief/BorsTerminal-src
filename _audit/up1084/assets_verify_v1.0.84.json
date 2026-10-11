@@ -1,0 +1,56 @@
+{
+ "tag": "v1.0.84",
+ "pubkey_prefix": "dW50cnVzdGVkIGNvbW1lbnQ6",
+ "assets": [
+  {
+   "name": "BorsTerminal_Ultimate_Setup_v1.0.84.exe",
+   "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Ultimate_Setup_v1.0.84.exe",
+   "bytes_local": 40558012,
+   "sha256_local": "4821d31772f4f3891e0b42f788ab0cd764a392cbcc9cadd734da7472022cb3cc",
+   "size_matches_manifest": true,
+   "signature_ok": true
+  },
+  {
+   "name": "BorsTerminal_Patch_1.0.83_to_1.0.84.zip",
+   "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.83_to_1.0.84.zip",
+   "bytes_local": 15773026,
+   "sha256_local": "0cfeb9ca06f050ff42ceb67653e0c19f10326ccdd508db341b7780824f8be44c",
+   "size_matches_manifest": true,
+   "signature_ok": true
+  },
+  {
+   "name": "BorsTerminal_Patch_1.0.82_to_1.0.84.zip",
+   "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.82_to_1.0.84.zip",
+   "bytes_local": 15832712,
+   "sha256_local": "80ee07839392d84c3f0855db7efcae46fea73119df7f1fb7745258c6635162dd",
+   "size_matches_manifest": true,
+   "signature_ok": true
+  },
+  {
+   "name": "BorsTerminal_Patch_1.0.81_to_1.0.84.zip",
+   "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.81_to_1.0.84.zip",
+   "bytes_local": 15896943,
+   "sha256_local": "10a5fe42846b6fd911cf335dd5eefee341a36f098acc461c5d4de61e3173f22b",
+   "size_matches_manifest": true,
+   "signature_ok": true
+  },
+  {
+   "name": "BorsTerminal_Ultimate_Portable_v1.0.84.zip",
+   "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Ultimate_Portable_v1.0.84.zip",
+   "bytes_local": 116008063,
+   "sha256_local": "c5898b177d72e806c4371a0377ba5aea0723997f030f82c1fb2803a42848235a",
+   "size_matches_manifest": true,
+   "signature_ok": null
+  }
+ ],
+ "latest_json": {
+  "version": "1.0.84",
+  "declared": {
+   "BorsTerminal_Patch_1.0.81_to_1.0.84.zip": 15896943,
+   "BorsTerminal_Patch_1.0.82_to_1.0.84.zip": 15832712,
+   "BorsTerminal_Patch_1.0.83_to_1.0.84.zip": 15773026,
+   "BorsTerminal_Ultimate_Portable_v1.0.84.zip": 116008063,
+   "BorsTerminal_Ultimate_Setup_v1.0.84.exe": 40558012
+  }
+ }
+}

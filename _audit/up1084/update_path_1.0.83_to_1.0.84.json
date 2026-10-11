@@ -1,0 +1,183 @@
+{
+ "port": 8124,
+ "copy": "C:\\Users\\PCMOD\\Desktop\\up1084_verify\\app",
+ "from": "1.0.83",
+ "to": "1.0.84",
+ "asset": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.83_to_1.0.84.zip",
+ "steps": [
+  {
+   "name": "کپیِ 1.0.83 رویِ پورتِ 8124 بالا آمد",
+   "ok": true,
+   "detail": "{'version': '1.0.83', 'tauri': False, 'mode': 'installed', 'instance': '064d102d850f'}"
+  },
+  {
+   "name": "نسخۀ در حالِ اجرا 1.0.83 است (پیش از پچ)",
+   "ok": true,
+   "detail": "{'version': '1.0.83', 'tauri': False, 'mode': 'installed', 'instance': '064d102d850f'}"
+  },
+  {
+   "name": "کپی در حالتِ نصبی است نه پرتابیل (آپدیتر مجاز به پچ)",
+   "ok": true,
+   "detail": "{'mode': 'installed'}"
+  },
+  {
+   "name": "user.dbِ کپی ردیفِ کاربر دارد (پیش از پچ خوانده شد)",
+   "ok": true,
+   "detail": "[('فولاد', 'آزمونِ پچ 1084')]"
+  },
+  {
+   "name": "درختِ نسخۀ اصلیِ کاربر برایِ مقایسه مهر شد",
+   "ok": true,
+   "detail": "('d756b87c1c8d93c0', 1628)"
+  },
+  {
+   "name": "check نسخهٔ 1.0.84 را اعلام می‌کند",
+   "ok": true,
+   "detail": "{'available': True, 'latest_version': '1.0.84'}"
+  },
+  {
+   "name": "check پچِ دلتا را به نصبِ کامل ترجیح می‌دهد (delta=true)",
+   "ok": true,
+   "detail": "{'delta': True, 'url_tail': '1.0.84/BorsTerminal_Patch_1.0.83_to_1.0.84.zip'}"
+  },
+  {
+   "name": "همان URLِ پچِ 1.0.83→1.0.84 درِ مانیفستِ عمومی است",
+   "ok": true,
+   "detail": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.83_to_1.0.84.zip"
+  },
+  {
+   "name": "اندازۀ اعلامی با اندازۀ دانلودِ مستقل یکی است",
+   "ok": true,
+   "detail": "{'check': 15773026, 'independent': 15773026}"
+  },
+  {
+   "name": "download به حالتِ ready رسید (امضا و هش درِ سرور راستیآزمایی شد)",
+   "ok": true,
+   "detail": "{'status': 'ready', 'downloaded': 15773026, 'total': 15773026, 'version': '1.0.84'}"
+  },
+  {
+   "name": "فایلِ موقتِ دانلودی رویِ دیسک هست و sizeاش با مانیفست می‌خواند",
+   "ok": true,
+   "detail": "{'path': 'C:\\\\Users\\\\PCMOD\\\\AppData\\\\Local\\\\Temp\\\\bors_update\\\\BorsTerminal_Patch_1.0.83_to_1.0.84.zip', 'bytes': 15773026}"
+  },
+  {
+   "name": "هشِ فایلِ دانلودیِ برنامه = هشِ دانلودِ مستقلِ همان دارایی",
+   "ok": true,
+   "detail": "0cfeb9ca06f050ff42ceb67653e0c19f10326ccdd508db341b7780824f8be44c"
+  },
+  {
+   "name": "امضایِ minisignِ پچ با کلیدِ عمومیِ خودِ آپدیتِر تأیید شد",
+   "ok": true,
+   "detail": "verify_minisign ok"
+  },
+  {
+   "name": "install پذیرفته شد (پاسخ یا resetِ عمدیِ پایانِ پروسه)",
+   "ok": true,
+   "detail": "{'status': 'installing', 'mode': None, 'message': None}"
+  },
+  {
+   "name": "Version.txt درِ کپی مهرِ 1.0.84 را گرفت",
+   "ok": true,
+   "detail": "app_version=1.0.84 | patch_from=1.0.83 | git_commit=9546c81 | built=2026-10-11 01:53"
+  },
+  {
+   "name": "patch_from و git_commitِ درست مهر شده‌اند",
+   "ok": true,
+   "detail": "app_version=1.0.84 | patch_from=1.0.83 | git_commit=9546c81 | built=2026-10-11 01:53"
+  },
+  {
+   "name": "bors_config درِ کپی هم 1.0.84 می‌گوید (لنگرِ نسخه با Version.txt میخواند)",
+   "ok": false,
+   "detail": "خوانده نشد"
+  },
+  {
+   "name": "user.dbِ کاربر درِ کپی دست نخورد (size و mtime یکی ماند)",
+   "ok": true,
+   "detail": "{'pre': {'size': 24576, 'mtime': 1791684203}, 'post': {'size': 24576, 'mtime': 1791684203}}"
+  },
+  {
+   "name": "همان سطرها بعد از پچ از اتصالِ تازه خوانده شدند (دادۀ کاربر زنده ماند)",
+   "ok": true,
+   "detail": "{'pre': [('فولاد', 'آزمونِ پچ 1084')], 'post': [('فولاد', 'آزمونِ پچ 1084')]}"
+  },
+  {
+   "name": "تنظیم/کشِ کاربر (.screener_cache.json) دست نخورد",
+   "ok": true,
+   "detail": "{'pre': {'size': 970162, 'mtime': 1791684109}, 'post': {'size': 970162, 'mtime': 1791684109}}"
+  },
+  {
+   "name": "درختِ نسخۀ اصلیِ کاربر اصلاً تغییر نکرد (مهرِ پیش = مهرِ پس)",
+   "ok": true,
+   "detail": "{'pre': ('d756b87c1c8d93c0', 1628), 'post': ('d756b87c1c8d93c0', 1628)}"
+  }
+ ],
+ "pre": {
+  "user_db": {
+   "size": 24576,
+   "mtime": 1791684203
+  },
+  "rows": [
+   [
+    "فولاد",
+    "آزمونِ پچ 1084"
+   ]
+  ],
+  "screener_cache": {
+   "size": 970162,
+   "mtime": 1791684109
+  },
+  "orig_tree": [
+   "d756b87c1c8d93c0",
+   1628
+  ]
+ },
+ "check": {
+  "status": "success",
+  "current_version": "1.0.83",
+  "latest_version": "1.0.84",
+  "available": true,
+  "notes": "### ◆ غربالگری: حذفِ پسوندِ عددی، جدولِ تحویل رو‌به‌رو، دلیلِ بندبه‌بند، و پرشدنِ جاهای بی‌نمودار\n\n**«حذفِ پسوندِ عددی» درِ غربالگری — پیش‌فرض روشن.** همان گزینه‌ای که درِ تبِّ\nتابلو داشتید حالا درِ غربالگری هم هست: نمادهایی که رقمِ آخر دارند (فولاد۱،\nخودرو۲ — نسخۀ افزودۀ همان برند) واردِ جامعۀ غربالگری نمی‌شوند. داوری درِ همان\nموتورِ قیف انجام می‌شود، پس شمارش‌ها و جدولِ چهار گام یک عدد می‌بینند. این\nنمادها «رد» نشده‌اند: درِ «خارج از جامعۀ غربالگری» با علتِ «پسوندِ عددی»\nدیده می‌شوند و با خاموش‌کردنِ گزینه برمی‌گردند. رویِ دادۀ نشستِ ۱۴۰۵-۰۷-۱۸،\n۴٬۶۷۴ نماد از ۵٬۸۹۰ نمادِ تابلو پسوندِ عددی داشتند و جامعۀ غربالگری ۱٬۰۵۵ نماد\nماند.\n\n**درِ «نمادهای عبوری»، سه جدولِ اول بسته است.** تا پیش از این هر چهار جدولِ\nتابلوخوانی/تکنیکال/بنیادی/تحویل باز بودند و رسیدن به جدولِ تحویل یعنی اسکرول.\nحالا سه تای اول بسته‌اند و جدولِ تحویل باز؛ با کلیک رویِ شمارهٔ هر گام همان\nجدول باز می‌شود و چیپ‌ها و کلیدهایِ تنظیمِ همان مرحله سرِ جایش می‌ماند.\n\n**«دلیل» درِ جدول حالا می‌گوید کدام بندِ فایل نخورد.** پیش از این رویِ ۱٬۰۲۷\nردیفِ یکسان فقط نوشته می‌شد «کف روبی صف فروش — نشانه در این نماد نیست». حالا\nهمان بند با عددِ خودِ ردیف می‌آید: «کف روبی صف فروش — آخرینِ ۹٬۰۵۰ رویِ کفِ\nمجازِ ۸٬۵۳۰ ننشست» یا «حجم مشکوک — حجمِ امروز ۰٫۶۲× مبناءست، فایل بیش از ۳×\nمی‌خواهد». ردیفی که اصلاً سنجیده نشده هم علتِ ورودیِ گم‌شده را می‌خواند\n(«آستانۀ مجازِ پایینِ این نشست نرسیده»، «پنجرۀِ ۳۰ نشستِ فایل کامل نیست\n(۱۲ نشست)») — «رد» نیست. آستانه‌ها عوض نشده‌اند: فقط گفته می‌شود کدام قیدِ\nخودِ فایل نخورده.\n\n**«نمادهای زیرِ نظر» درِ «وضعیت بازار».** سه پرچمِ خودِ فیلترنویسِ تابلو —\nحجم مشکوک، ورود پول هوشمند، و کد به کدِ حقوقی به حقیقی — کنارِ همان ستونِ\nالگوی ساعت نشست (با همان نام‌ها و همان فرمول‌هایِ جزوه؛ داوری دوباره ساخته\nنمی‌شود) و ستونِ «کندل روز» هم اضافه شد. اگر پرچمی از فیدِ تابلو نرسد، جدول\nصریح می‌گوید «پرچم از فیدِ تابلو نرسید» — جایِ خالی با «ندارد» اشتباه نمی‌شود.\n\n**دیده‌بان دو ستونِ وضعیت گرفت.** «تکنیکال» و «بنیادی» هر نماد از همان\nماتریسِ تأییدِ سه‌گانۀ خودِ برنامه خوانده می‌شود (تأیید / هشدار / رد / بی‌داده)\nبا علتِ هر هشدار درِ tooltip؛ یک درخواست برایِ کلِ فهرست، نه نماد‌به‌نماد.\n\n**نمودار جاهایی که نبود.** جدول‌هایِ غربالگری هم «کندل روز» دارند (مرحلۀ\nتابلوخوانی و نمادهای عبوری) — همان شکلِ ستونِ تابلو، نه نمودارِ تازه: رویِ\nهمان نشست ۹۶۷ از ۱٬۰۴۶ ردیفِ مرحلۀ تابلو بدنةِ کامل داشت و باقی «—» می‌مانند،\nنه کندلِ ساخته‌شده.\n\n**تکراری‌ها و چیزهایِ غیرلازم بیرون رفتند:** تبِّ اصلیِ «مرکز اعلان» (زنگولۀ\nنوارِ بالا همان صفحه را باز می‌کند)، صفحۀ «کیفیتِ داده» درِ نوارِ چرخشیِ وضعیت\nبازار ( شمارشش درِ «پهنای بازار» و جدولِ توزیعِ درصد هست)، سه بلوکِ تکراریِ\n«تابلوخوانی» که عیناً درِ «وضعیت بازار» هم بودند (وضعیت بازار، نوارِ نبض، و\nنمودارهای درون‌روز — تابلو حالا فیلتر + جدول + کشویِ نظارت است، بی‌یک درخواستِ\nاضافه)، و زیرتبِّ «دیده‌بان بازار» ازِ «مدیریت پرتفوی» (دیده‌بان تبِّ مستقل\nدارد؛ «واچ‌لیست» ستاره‌دار درِ پرتفوی می‌ماند).\n\n**تعمیرِ دادۀ حقوقی/حقیقی.** درصدِ حقیقی/حقوقیِ ارزش‌محور ازِ جدولِ\n`client_type_value` خوانده می‌شود و آن جدول برایِ نشستِ آخر **صفر** ردیف داشت\n(۱٬۵۹۳ ردیفِ client_type در برابرِ صفر ردیفِ ارزش)، پس این ستون‌ها «—» می‌ماندند.\nعلت وقت‌سنجی بود نه نبودِ منبع: تلاش همیشه برایِ «همین نشستِ باز» می‌رفت و\nخودِ TSETMC برایِ نشستِ نهایه‌نشده ۵۰۰ می‌دهد، و همان تلاشِ بی‌نتیجه پنجرۀ\nشش‌ساعته را می‌سوزاند. حالا تازه‌ترین نشستِ کامل‌نشده خوانده می‌شود و اگر\nپنجرۀ نشستِ مسدود بود، به کهنه‌ترِ ناقص می‌رسد. سقفِ درخواستِ روزانه\nدست‌نخورده مانده است (چهار تلاش × ۶۰۰ نماد).\n\n**محدودیتِ دانستنی:** تطبیقِ عدد‌به‌عددِ «وضعیت بازار» با تریدرزآرنا رویِ\nهمان نشستِ بسته سنجیده شد (ارزشِ کلِ بازار −۱٫۷۶٪، سهام −۰٫۵۳٪، ص.اهرمی\n۰٫۰۰٪؛ جریانِ نقدی هنوز توضیحِ کاملِ خانگی ندارد و ریشه‌اش با همین تعمیرِ\n`client_type_value` بازبینی می‌شود). سنجشِ نهایی درِ ساعاتِ بازار انجام شده و\nگزارش می‌شود — پیش از آن، «تطبیقِ ۱۰۰٪» ادعا نمی‌شود.",
+  "date": "Sun, 11 Oct 2026 01:54:04 +0000",
+  "url": "https://github.com/johnwarchief/BorsTerminal/releases/download/v1.0.84/BorsTerminal_Patch_1.0.83_to_1.0.84.zip",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0xCRUk2czE5cnJzMFI3STM5U2Ivei9uaTh6dEhsTXg5Q0lLRVp0aU1SWi9IZDI3Zm84V0JTT0RQUzFKRlNScGx4dk9XSXRvTkFFTGdLN0s0c3pZN1FnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNjgzNjIxCWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC44M190b18xLjAuODQuemlwCmFDY2tlcm1ETFFaK01KQlExNWM5bkRnaDFMejF1cEVvR1ZRejhEcFNmUWtCWC9sRTd4SVM5YzR4eUU3SlBmZ0VvOU1OQnlkc0FocE5PS0dTWDE1VUFnPT0K",
+  "updater": "python",
+  "delta": true,
+  "size": 15773026
+ },
+ "progress": {
+  "status": "ready",
+  "downloaded": 15773026,
+  "total": 15773026,
+  "version": "1.0.84",
+  "path": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors_update\\BorsTerminal_Patch_1.0.83_to_1.0.84.zip",
+  "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSMkFQRXVkYjh3Q0xCRUk2czE5cnJzMFI3STM5U2Ivei9uaTh6dEhsTXg5Q0lLRVp0aU1SWi9IZDI3Zm84V0JTT0RQUzFKRlNScGx4dk9XSXRvTkFFTGdLN0s0c3pZN1FnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkxNjgzNjIxCWZpbGU6Qm9yc1Rlcm1pbmFsX1BhdGNoXzEuMC44M190b18xLjAuODQuemlwCmFDY2tlcm1ETFFaK01KQlExNWM5bkRnaDFMejF1cEVvR1ZRejhEcFNmUWtCWC9sRTd4SVM5YzR4eUU3SlBmZ0VvOU1OQnlkc0FocE5PS0dTWDE1VUFnPT0K",
+  "message": "",
+  "is_patch": true
+ },
+ "install": {
+  "status": "installing",
+  "delta": true,
+  "applier": "C:\\Users\\PCMOD\\Desktop\\up1084_verify\\app\\apply_update.bat"
+ },
+ "version_txt": "app_version=1.0.84\npatch_from=1.0.83\ngit_commit=9546c81\nbuilt=2026-10-11 01:53",
+ "post": {
+  "user_db": {
+   "size": 24576,
+   "mtime": 1791684203
+  },
+  "rows": [
+   [
+    "فولاد",
+    "آزمونِ پچ 1084"
+   ]
+  ],
+  "screener_cache": {
+   "size": 970162,
+   "mtime": 1791684109
+  },
+  "orig_tree": [
+   "d756b87c1c8d93c0",
+   1628
+  ]
+ }
+}
