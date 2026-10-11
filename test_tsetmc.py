@@ -1276,8 +1276,12 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
     conn.commit()
     done = {r[0] for r in conn.execute(
         "SELECT ins_code FROM client_type_value WHERE d_even=?", (day,)).fetchall()}
-    todo = [r[0] for r in conn.execute(ct_universe_sql(), (day, int(limit))).fetchall()
-            if r[0] not in done]
+    # پنجرهٔ بودجه باید رویِ مانده بلغزد: LIMIT درونِ SQL دامنهٔ کل را
+    # می‌بُرد (۶۰۰تایِ پرحجمِ همیشگی) و بعد ازِ یک اجرا todo خالی می‌ماند —
+    # سنجشِ ۱۴۰۵-۰۷-۲۱ رویِ بانکِ زنده: done دقیقاً همان top-۶۰۰ بود و
+    # پوششِ ۲۰۲۶۱۰۱۰ از ۲۵٪ تکان نمی‌خورد. سقفِ درخواست حالا رویِ مانده است.
+    todo = [r[0] for r in conn.execute(ct_universe_sql(), (day, 10**6)).fetchall()
+            if r[0] not in done][: int(limit)]
     if fetch is None:
         s = session or make_session()
 
