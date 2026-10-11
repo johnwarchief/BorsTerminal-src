@@ -81,7 +81,7 @@ export function FtsFunnelStages({
   };
   const symbol = params.get('symbol');
   // پیش‌نمایشِ هر شخص (رأیِ مالک ۱۴۰۵-۰۷-۲۰): با هاور یا فوکوس، فهرستِ فیلترها
-  // و انگیزه‌اش خوانده شود — نه فقط یک `title` که درِ برنامه可读 نیست.
+  // و انگیزه‌اش خوانده شود — نه فقط یک `title` که درِ برنامه خوانده نمی‌شود.
   const [preview, setPreview] = useState<FunnelPreset | null>(null);
 
   return (
