@@ -10,3 +10,19 @@ _audit/last_blast_radius/csv_cache/
 _audit/last_blast_radius/market_copy.db
 _audit/last_blast_radius/partial.jsonl
 _audit/last_blast_radius/run.log
+# scratchِ دورِ «تطبیقِ عددی و بصری با ره‌آورد ۳۶۵»: لاگِ stdout، گرفتنی‌هایِ HTML/JSِ بیرونی،
+# اسکریپت‌هایِ تشخیصِ ویندوز و نشانه‌هایِ موقت (هیچ‌کدام شاهدِ قابلِ بازبینی نیستند)
+*.stdout.txt
+*_stdout.txt
+*_home.html
+*_buildmanifest.js
+*_chartpage.html
+ps_*.ps1
+ra365_session_host.port
+ra365_session_host.log
+ta_ui_probe.json
+ta_ui_recon.json
+merge_gates.txt
+merge_gate.log
+ta_chart_nocookie.html
+commitmsg.txt
