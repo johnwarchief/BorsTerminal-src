@@ -308,7 +308,7 @@ def _tape_unmeasurable(r: dict[str, Any], fid: str) -> bool:
 # قابلِ اثبات نبود None برمی‌گردد تا متنِ عمومیِ صادق بماند.
 def _fa_num(v: float, digits: int = 2) -> str:
     """رقمِ فارسی با ممیزِ فارسی (٫) — نقطۀ لاتین درِ متنِ RTL شکستِ عدد است."""
-    return _fa_digits(str(round(float(v), digits))).replace(".", "٫")
+    return _fa_digits(f"{float(v):.{digits}f}").replace(".", "٫")
 
 
 def _fa_n(v: float) -> str:

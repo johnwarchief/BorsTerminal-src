@@ -62,13 +62,25 @@ def appears_in(value: float, tokens: set[float]) -> bool:
 
 
 # ── ۱ و ۲) پوششِ فایل‌ها و اثرِ انگشتی ─────────────────────────────────────
+# `docs/*.txt` دو چیز است: فرمول‌هایِ جزوه (که هرکدام باید درِ رجیستری جایگاه
+# داشته باشند) و چند متنِ راهبری که هیچ فیلتری از ایشان ساخته نمی‌شود. این
+# فهرست فقط «متنِ غیرفرمول» را بیرون می‌گذارد — اگر فایلِ .txt تازه‌ای بیاید و
+# نه فرمولِ ثبت‌شده باشد و نه اینجا نام برده شود، بندِ پایین همچنان قرمز می‌شود.
+# PORTABLE-README.txt: راهنمایِ نسخۀ Portable است که `release.ps1` درِ بسته
+# می‌گذارد (هیچ فیلتری ندارد).
+NON_FORMULA_TXT = {"PORTABLE-README.txt"}
+
 txt_files = sorted(glob.glob(os.path.join(REPO, "docs", "*.txt")))
-txt_names = {os.path.basename(p) for p in txt_files}
+all_txt = {os.path.basename(p) for p in txt_files}
+formula_txt = {n for n in all_txt if n not in NON_FORMULA_TXT}
 reg_names = {os.path.basename(f.source_file) for f in R.FILTERS}
-ck(bool(txt_names), f"{len(txt_names)} فایلِ فیلتر درِ docs/ پیدا شد")
-ck(reg_names <= txt_names, "هر فایلِ ارجاع‌داده‌شده درِ docs/ واقعاً هست")
-ck(txt_names == reg_names,
-   f"همۀ فایل‌هایِ docs/*.txt درِ رجیستری‌اند (رجیسترشده {len(reg_names)} از {len(txt_names)})")
+ck(bool(formula_txt), f"{len(formula_txt)} فایلِ فیلتر درِ docs/ پیدا شد")
+ck(reg_names <= all_txt, "هر فایلِ ارجاع‌داده‌شده درِ docs/ واقعاً هست")
+ck(not (NON_FORMULA_TXT & reg_names),
+   "هیچ «متنِ غیرفرمول» درِ رجیستری جایگاه ندارد (فهرستِ بالا تقلبی نمی‌شود)")
+ck(formula_txt == reg_names,
+   f"همۀ فایل‌هایِ فرمولِ docs/*.txt درِ رجیستری‌اند (رجیسترشده {len(reg_names)} از {len(formula_txt)})")
+txt_names = formula_txt
 missing = sorted(txt_names - reg_names)
 if missing:
     print("        بی‌جایگاه:", ", ".join(missing))
