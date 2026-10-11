@@ -31,6 +31,7 @@
 | [`FTS-USER-CONFIGURATION-SPEC.md`](FTS-USER-CONFIGURATION-SPEC.md) | قرارداد پارامترهای قابل تنظیم FTS، ساعت‌شنی و معیارهای پذیرش | سند طراحی؛ اجرای کد فقط پس از پاس‌شدن تست‌های پذیرش تأیید می‌شود |
 | [`CANDLE-CONTRACT.md`](CANDLE-CONTRACT.md) | قرارداد داده و مبنای کندل | گزارش parity تاریخ‌دار، برابری کامل امروز را اثبات نمی‌کند |
 | [`RAHAVARD-PARITY-INVENTORY.md`](RAHAVARD-PARITY-INVENTORY.md) | inventory فنی و شواهد یک سنجش | یافته‌ها را بدون تاریخ/کد جاری تعمیم ندهید |
+| [`TECHNICAL-RAHAVARD-PARITY-AUDIT.md`](TECHNICAL-RAHAVARD-PARITY-AUDIT.md) | سنجش ۲۷ نمادِ لایه‌های FTS (پیوت/ساختار/روند) با مرجع رهاورد، تاریخ ۱۴۰۵-۰۷-۱۹ | پاریتیِ داده و ثباتِ رأی را اثبات می‌کند، نه درستیِ برچسبِ روند؛ دو شکافِ منطقی و دو واگراییِ ضریبِ تعدیل در آن باز مانده‌اند |
 | [`CHART-PARITY-REFERENCE.md`](CHART-PARITY-REFERENCE.md) | رفتار و قابلیت‌های UX چارت با مرجع TradingView/Arshan | مرجع روش‌شناسی FTS یا حقیقت داده/تعدیل نیست |
 | [`validation/TRADERSARENA-MARKET-STATUS-PARITY.md`](validation/TRADERSARENA-MARKET-STATUS-PARITY.md) | سنجش وضعیت بازار در یک زمان مشخص | PASS یک فیلد/نشست به همهٔ فیلدها/نشست‌ها تعمیم نمی‌یابد |
 | [`TSETMC-DATA-GAP-MATRIX.md`](TSETMC-DATA-GAP-MATRIX.md) | نقشهٔ شکاف‌های داده در زمان ممیزی | بدون تطبیق مجدد، فهرست قطعی باگ‌های امروز نیست |
