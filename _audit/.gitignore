@@ -17,6 +17,9 @@ _audit/last_blast_radius/run.log
 *_home.html
 *_buildmanifest.js
 *_chartpage.html
+# استثنا: این یکی درِ `docs/CANDLE-CONTRACT.md` (§ timeframes) و `_audit/ra_monthly_bucket.py`
+# به‌عنوان شاهدِ «کدِ timeframe از markupِ خودِ صفحه» ارجاع شده، پس درِ گیت می‌ماند.
+!ra_chartpage.html
 ps_*.ps1
 ra365_session_host.port
 ra365_session_host.log
@@ -26,3 +29,7 @@ merge_gates.txt
 merge_gate.log
 ta_chart_nocookie.html
 commitmsg.txt
+# stdout/لاگِ عدّادها (ra365_*.py) — بازتولیدشدنی‌اند؛ شاهدِ عددی درِ CSV/JSON وِ §۹ِ
+# گزارشِ parity است، نه درِ این فایل‌ها.
+_*.out
+_*.log

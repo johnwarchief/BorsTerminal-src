@@ -11,7 +11,8 @@ import urllib.request
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 BASE = "http://127.0.0.1:8000"
-OUT = "_audit/ra365_product_bars.json"
+# خروجی از argv می‌آید تا «پیش» و «پس» دو فایلِ جدا بمانند و مقایسه تکرارپذیر باشد.
+OUT = sys.argv[1] if len(sys.argv) > 1 else "_audit/ra365_product_bars.json"
 
 corpus = json.load(open("_audit/ra365_corpus.json", encoding="utf-8"))
 out = {}
@@ -30,6 +31,7 @@ for c in corpus:
             "status": j.get("status"),
             "count": j.get("count"),
             "adjustSource": j.get("adjustSource"),
+            "adjustCapability": j.get("adjustCapability"),
             "priceBasis": j.get("priceBasis"),
             "priceBasisRequested": j.get("priceBasisRequested"),
             "seconds": round(time.time() - t0, 2),

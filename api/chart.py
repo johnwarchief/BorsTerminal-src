@@ -228,7 +228,14 @@ _ADJ_TABLE_DDL = ("CREATE TABLE IF NOT EXISTS adjust_events("
 # مسیرِ آفلاین برایِ نمادی که واقعاً تعدیل ندارد هشدارِ جعلی می‌داد.
 _ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
                     "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
-_ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache")
+_ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache",
+                      # کشف از گسستِ CSV، عددِ رویداد از دفترِ رویدادِ مبدأِ TSETMC
+                      "ledger+base-price-discontinuity")
+# فقط این سه «از CSVِ کاملِ تاریخِ زنده خوانده‌ایم» است، پس فقط همین‌ها حقِّ
+# جانشینیِ کلِ مجموعهٔ کشِ یک نماد را دارند. `local-cache` برچسبِ *خواندن* است، نه
+# کشفِ تازه؛ اگر روزی به نویسندۀِ کش برسد، نباید ردیفِ دیدہ‌شدۀِ دیگری را پاک کند.
+_ADJ_DISCOVERY_SOURCES = ("base-price-discontinuity", "no-adjustment-event",
+                          "ledger+base-price-discontinuity")
 _ADJ_FUNCTIONAL_REASON = (
     "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: "
     "افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. "
@@ -246,19 +253,37 @@ _ADJ_FUNCTIONAL_REASON = (
 
 
 def _store_adjust_events(symbol, events, source):
-    """رویدادها و داوریِ منبع را می‌نویسد — تا فال‌بک، همان مجموعه را داشته باشد."""
+    """رویدادها و داوریِ منبع را می‌نویسد — تا فال‌بک، همان مجموعه را داشته باشد.
+
+    «جانشینیِ» مجموعه، نه upsert: کاشفِ زنده هر بار CSV کاملِ تاریخ را می‌پیماید
+    (`GetClosingPriceDailyListCSV/<ins>/19900101`)، پس ردیفِ کشی که درِ این پیمایش
+    نیست دیگر هیچ پشتیبانیِ داده‌ای ندارد و باید برود. بی‌این دو دستهٔ ردیف درِ کش
+    می‌ماند و دوبار اعمال می‌شد: (الف) رویدادهایِ ۱۴۰۲-۰۱-۰۸ که
+    با بک‌فیلِ ستونِ «قیمت پایه» از CSV حذف شده بودند، (ب) ردیف‌هایِ تاریخ‌جابه‌جا
+    شدۀ قاعدۀِ ردشدۀِ تیزکردن. سنجش: ۶۵ ردیفِ شبح درِ ۲۹ نماد (`_audit/_ghost_probe.py`)،
+    حاصل‌ضربِ شبح‌هایِ یک نماد تا ۰٫۷۷ → میانۀِ خطایِ بازوِ دیتابیس ۰٫۶۴٪ → ۶٫۱۵٪.
+    تنها این سه منبعِ «کشف‌شده از CSV» مجاز به جانشینی‌اند؛ `local-cache` و منبعِ
+    خالی یعنی «چیزی ندیده‌ایم»، پس هیچ ردیفِ دیدہ‌شدۀِ دیگری را پاک نمی‌کنند.
+    """
     if not source:
         return
+    known = source in _ADJ_KNOWN_SOURCES
+    # جانشینیِ کلِ مجموعه فقط برایِ کشفِ کاملِ CSV (بالا); «ندیدیم» یعنی دست‌نخورده.
+    authoritative = source in _ADJ_DISCOVERY_SOURCES
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         try:
             conn.execute(_ADJ_TABLE_DDL)
             conn.execute(_ADJ_VERDICT_DDL)
-            if events and source in _ADJ_KNOWN_SOURCES:
-                conn.executemany(
-                    "INSERT OR REPLACE INTO adjust_events(symbol, date, ratio, source) "
-                    "VALUES (?,?,?,?)",
-                    [(symbol, e["date"], float(e["ratio"]), source) for e in events])
+            if known:
+                if authoritative:
+                    conn.execute("DELETE FROM adjust_events WHERE symbol=?", (symbol,))
+                if events:
+                    conn.executemany(
+                        "INSERT OR REPLACE INTO adjust_events(symbol, date, ratio, source) "
+                        "VALUES (?,?,?,?)",
+                        [(symbol, e["date"], float(e["ratio"]), e.get("source") or source)
+                         for e in events])
             conn.execute("INSERT OR REPLACE INTO adjust_verdict(symbol, source, checked_at) "
                          "VALUES (?,?,date('now'))", (symbol, source))
             conn.commit()
@@ -285,23 +310,206 @@ def _stored_adjust_source(symbol):
 
 
 def _stored_adjust_events(symbol):
-    """مجموعهٔ رویدادِ یک‌بارکشف‌شده، یا [] وقتی هنوز چیزی ندیده‌ایم."""
+    """مجموعهٔ رویدادِ یک‌بارکشف‌شده، یا [] وقتی هنوز چیزی ندیده‌ایم.
+
+    تیزکردنِ مبدأ اینجا هم اجرا می‌شود (و idempotent است): ردیف‌هایی که *پیش* از این
+    گام با ضریبِ گردِ CSV نشسته‌اند، با همان قاعدۀ پذیرش به عددِ دقیقِ مبدأ
+    برمی‌گردند. بی‌این، کشِ کهنه دقیقاً همان ۰٫۰۳۵٪ خطایِ شبهرن را نگه می‌داشت.
+    """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         try:
             conn.execute(_ADJ_TABLE_DDL)
-            rows = conn.execute(
-                "SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date",
-                (symbol,)).fetchall()
+            try:
+                rows = conn.execute(
+                    "SELECT date, ratio, source FROM adjust_events WHERE symbol=? ORDER BY date",
+                    (symbol,)).fetchall()
+            except sqlite3.OperationalError:
+                # بانکِ نسخۀِ پیشین ستونِ source را ندارد: بی‌برچسب خوانده می‌شود،
+                # نه اینکه کلِ رویدادها دور ریخته شوند.
+                rows = [tuple(r) + ("",) for r in conn.execute(
+                    "SELECT date, ratio FROM adjust_events WHERE symbol=? ORDER BY date",
+                    (symbol,)).fetchall()]
         finally:
             conn.close()
     except Exception:
         return []
-    return [{"date": r[0], "ratio": float(r[1])} for r in rows if r[1]]
+    ev = [{"date": r[0], "ratio": float(r[1]),
+           **({"source": r[2]} if len(r) > 2 and r[2] else {})} for r in rows if r[1]]
+    if not ev:
+        return []
+    sharpened, _, _ = _sharpen_events_with_ledger(symbol, ev)
+    return sharpened
 
 
-def _adjust_capability(events, source):
-    """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست."""
+# ═════ تیزکردنِ ضریب با دفترِ رویدادِ مبدأ (RC3) ═════
+# سنجشِ دورِ تطبیق با رهاورد (`docs/RAHAVARD-CANDLE-ADJUSTMENT-PARITY-1405-07-20.md` §۴-RC3):
+# ضریبِ گسستِ «قیمت پایه» از عددِ **ردِپِردِ TSETMC** خوانده می‌شود، پس گرد است و روی
+# وقفۀِ معاملاتی چند تکه می‌شود. خطایِ اندازه‌گیری‌شدۀ ضریبِ هر رویداد درِ گام‌هایِ
+# تک‌رویدادی: میانه ۰٫۰۵۸٪، p۹۰ ۰٫۴۴۵٪، بیشینه ۶٫۳۰٪ (۱۰۳ گام). دو نمونۀِ واقعی:
+#   شبهرن ۱۴۰۵-۰۶-۲۹: ما ۰٫۲۸۳۷۸۷ (گامِ ۳٫۵۲۳۷۷۰) در برابرِ ۱۸٬۰۰۰٬۰۰۰٬۰۰۰٬۰۰۰ →
+#     ۶۳٬۴۵۰٬۰۰۰٬۰۰۰٬۰۰۰=self ۰٫۲۸۳۶۸۷۹۴ (گامِ ۳٫۵۲۵ دقیق) — ۰٫۰۳۵٪ خطا روی کلِ تاریخِ قبل.
+#   ولانا ۱۴۰۵-۰۵-۱۱: یک اقدامِ با آورده درِ سه رویدادِ ما خُرد شد (۰٫۳۰۰۴۴۸ × ۰٫۹۹۸۵۰۷ ×
+#     ۱٫۲۶۳۰۷۹ = ۲٫۶۳۹۰۵۹) در برابرِ گامِ ۲٫۶۶۲۸۳۵ِ مرجع → ۰٫۹۰٪ روی کلِ تاریخِ قبل.
+# خودِ TSETMC این اعداد را منتشر می‌کند و درِ بانکِ محلی می‌نشینند
+# (`test_tsetmc.py:parse_price_adjust` و `parse_share_change` → `price_adjust_events`/
+# `share_change_events`، docs/TSETMC-DATA-GAP-MATRIX.md §17). آن‌ها همان واحدِ
+# `adjustEvents.ratio` را می‌دهند: پایانیِ تعدیل‌شده ÷ خام، و سهامِ قدیم ÷ جدید.
+#
+# چرا «تیزکردن» و نه «جایگزینیِ کامل»: coverageِ این دو جدول سنجیده‌شده و ناقص است
+# (۱۴۰۵-۰۷-۲۰ روی همان ۲۹ نماد): `price_adjust_events` سقفِ ۵۰۰ردیفِ هر flow را دارد و
+# پیشِ ۲۰۲۴-۰۷-۲۱ هیچ ردیفی ندارد؛ `share_change_events` پنجرۀِ ۱۴روزۀِ انباشتی است و
+# حفره دارد (ولانا: صفر ردیف در هر دو جدول، با وجودِ سه رویدادِ شناخته‌شده). پس
+# گسستِ CSV همان «کاشفِ رویداد» می‌ماند و دفترِ مبدأ فقط «عددِ دقیقِ همان رویداد» را
+# می‌دهد؛ جایی که دفتر ردیفی ندارد، رفتارِ پیشین دست‌نخورده است.
+#
+# چرا تلورانسِ ۰٫۱٪ و نه عددِ دیگری: توزیعِ «فاصلهٔ دو منبع» سنجیده شد (۳۳۸ جفتِ
+# نامزد درِ پنجرۀِ ±۱۰ روز، `_audit/_tol_probe.py`): ۶۷ جفتِ زیرِ ۰٫۰۱٪، ۵۴ جفتِ
+# ۰٫۰۱–۰٫۰۵٪، ۱۳ جفتِ ۰٫۰۵–۰٫۱٪، و بعد **فرا**: ۲ جفتِ ۰٫۱–۰٫۲٪، ۳ جفتِ ۰٫۲–۰٫۵٪،
+# ۴ جفتِ ۰٫۵–۱٪، و سپس ۱۹۵ جفتِ بالایِ ۱٪ (بیشینه ۵۰۲٪ — روشن «رویدادِ دیگر»).
+# پس کرانِ ۰٫۱٪ درِ فضایِ خالیِ میانِ «همان رویداد با نویزِ گردکردن» و «رویدادِ دیگر»
+# نشسته است، نه آستانه‌ای که اختراع شده باشد. ردیفِ بی‌ربط از همین فاصله رد می‌شود —
+# نمونۀِ ولانا: نسبتِ سهام ۰٫۳۰۰ در برابرِ گسستِ دیدہ‌شده ۰٫۳۷۵۵ یعنی ۲۵٪ اختلاف، پس
+# آن ردیفِ افزایشِ با آورده هرگز جای عددِ درست را نمی‌گیرد.
+#
+# دو چیزی که آزمونِ کنترل‌شدۀِ قواعد رد کرد (`_audit/ra365_ledger_ab.py` — کندل‌ها
+# و رویدادها از یک ضبطِ یخ‌زده، پس هر جا عدد عوض می‌شود فقط اثرِ خودِ قاعده است):
+# ۱) چرخشِ تاریخِ رویداد به `dEven` مبدأ: درِ سنجشِ یخ‌زده هیچ بهبودی نداد (میانه و p۹۰
+#    با «ضریبِ تنها» عیناً یکی شد: ۰٫۲۱۶۲٪ / ۱٫۶۱۳۷٪) و ۳۹ تاریخ را جابه‌جا کرد.
+# ۲) جمعِ چند رویدادِ CSV به یک ردیفِ مبدأ (که درِ نسخۀِ اولِ همین رفع بود، با چرخشِ
+#    تاریخ): جدولِ کش کلیدِ (symbol,date) دارد، پس دو رویداد روی یک تاریخ = بازنویسیِ
+#    ردیفِ یکی با ضریبِ دیگری. اندازه‌گیریِ اثر: فاکتورِ دیتابیسِ لخزر درِ ۲۰۲۵-۰۸-۲۶
+#    از ۰٫۵۵۰۲ به ۰٫۳۲۱۷ افتاد (رویدادِ ۱٫۷۱۱۱۱۱ِ ۲۰۲۶-۰۷-۲۲ بی‌صدا غیب شد:
+#    ۰٫۵۵۰۲ ÷ ۱٫۷۱۱۱۱ = ۰٫۳۲۱۵) و میانۀِ خطایِ آن بازو
+#    ۶٫۷۱٪ → ۳۷٫۴۸٪ پرید؛ ومعادن هم ۰٫۷۷۲۹ → ۰٫۸۴۸۷ شد. با قاعدۀِ فعلی هر دو
+#    بازگردیده‌اند (۰٫۵۵۰۴ و ۰٫۷۷۲۹). حذفِ رویدادِ واقعی بدتر از ضریبِ کم‌دقت است —
+#    همان استدلالِ درِ لنگرِ `_adjust_events_from_rows`. پس اگر دو رویداد یک ردیفِ مبدأ
+#    را مطالبه کنند، هیچ‌کدام تیز نمی‌شود و درِ `ledger_ambiguous` می‌نشیند: بی‌طرفی، نه حذف.
+#
+# چرا با این حال «ضریبِ مبدأ» می‌نشیند، هرچند میانۀِ خطایِ کلِ پیکره ۰٫۲۱۰۵٪ → ۰٫۲۱۶۲٪
+# می‌شود (۰٫۰۰۶ واحدِ درصدی — درِ آمارِ همین سنجش، نویز): عددِ ما از ردِپِردِ گردِ
+# TSETMC ساخته می‌شود و عددِ مبدأ از خودِ مبدأ بی‌گرد. مرجع (رهاورد) هم زنجیرۀِ خود را
+# از همان ردِپِردِ گرد می‌سازد، پس «نزدیک‌تر به مرجع» دلیلِ درستی نیست و این ۰٫۰۰۶ واحدِ
+# درصدی دورترشدن هم دلیلِ رد نیست. درِ ۱۱ نماد از ۲۹ نزدیک‌تر شد (خودرو ۰٫۰۲۵۷٪ → ۰٫۰۰۰۰٪،
+# شنفت ۰٫۲۴۴۶ → ۰٫۱۶۹۲، شبهرن ۰٫۱۰۰۱ → ۰٫۰۷۵۵، فزر ۰٫۱۲۳۱ → ۰٫۰۸۸۲) و درِ ۱۴ نماد به
+# همان اندازه دورتر (بیشینۀِ جابه‌جایی ۰٫۱۰ واحدِ درصدی). معیارِ انتخاب، تعریفِ درستِ
+# عدد است نه مقایسۀِ ظاهری — و قاعدۀِ مأموریت هم همین است: منطقِ داده را برایِ
+# نزدیک‌شدنِ ظاهری تغییر نمی‌دهیم.
+_LEDGER_AGREE_TOL = 0.001
+_LEDGER_WINDOW_DAYS = 10
+
+
+def _ledger_events_for(symbol):
+    """ردیف‌هایِ مبدأِ تعدیل برایِ یک نماد: [{'date','ratio','kind'}] — بی‌نوشتنِ حدس.
+
+    هر دو خانوادۀِ جدولِ canonical خوانده می‌شوند؛ نسبتِ تهی یا یک (بی‌اثر) کنار
+    می‌رود. نبودِ جدول‌ها (بانکِ نسخۀِ پیشین) یا نبودِ نماد = لیستِ خالی، نه خطا.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        return []
+    try:
+        _pred, _params = sym_pred("l_val18", symbol)
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return []
+        ins = str(row[0])
+        out = []
+        for q, kind in (("SELECT d_even, ratio FROM price_adjust_events "
+                        "WHERE ins_code=?", "priceAdjust"),
+                       ("SELECT d_even, ratio FROM share_change_events "
+                        "WHERE ins_code=?", "shareChange")):
+            try:
+                for d_even, ratio in conn.execute(q, (ins,)):
+                    dt = _d_even_to_date(d_even)
+                    r = float(ratio or 0)
+                    if dt and r > 0 and abs(r - 1.0) > ADJ_TOL:
+                        out.append({"date": dt, "ratio": r, "kind": kind})
+            except Exception:
+                continue    # جدولِ این خانواده درِ این بانک نیست
+        out.sort(key=lambda e: e["date"])
+        return out
+    except Exception:
+        return []
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _sharpen_events_with_ledger(symbol, events):
+    """(events, sharpened, ambiguous) — عددِ رویدادِ دیدہ‌شده از مبدأ، تاریخِ دیدہ‌شده دست‌نخورده.
+
+    قاعدۀِ پذیرشِ ردیفِ مبدأ برایِ رویدادِ d با ضریبِ r:
+      ۱) |تاریخِ ردیف − d| ≤ _LEDGER_WINDOW_DAYS روز، و
+      ۲) |ratio_ردیف / r − ۱| ≤ _LEDGER_AGREE_TOL (پنجرۀِ خالیِ میانیِ بالا).
+    از ردیف‌هایِ پذیرفته‌شده نزدیک‌ترین تاریخ می‌نشیند؛ درِ تساویِ فاصله،
+    `priceAdjust` بر `shareChange` تقدم دارد (عددِ مستقیمِ قیمت است، نه مشتقِ سهام).
+    **هیچ رویدادی حذف نمی‌شود و هیچ تاریخی جابه‌جا نمی‌شود** (توضیحِ سنجیده: بلوکِ
+    کامنتِ بالا). اگر یک ردیفِ مبدأ را دو رویدادِ مختلف مطالبه کنند، هیچ‌کدام تیز
+    نمی‌شود و هر دو درِ `ambiguous` شمرده می‌شوند — داوریِ مبهم بهتر از حذفِ عددِ واقعی است.
+    بی‌ردیفِ مبدأ: رویداد با همان عددِ پیشین برمی‌گردد (نه صفر، نه حدس).
+    """
+    ev = [dict(e) for e in (events or [])]
+    if not ev:
+        return ev, 0, 0
+    ledger = _ledger_events_for(symbol)
+    if not ledger:
+        return ev, 0, 0
+    claims = {}
+    for i, e in enumerate(ev):
+        try:
+            d0 = datetime.datetime.strptime(str(e["date"])[:10], "%Y-%m-%d").date()
+            r0 = float(e.get("ratio") or 0)
+        except Exception:
+            continue
+        if r0 <= 0:
+            continue
+        best = None
+        for lr in ledger:
+            try:
+                dd = abs((datetime.datetime.strptime(lr["date"], "%Y-%m-%d").date() - d0).days)
+            except Exception:
+                continue
+            if dd > _LEDGER_WINDOW_DAYS:
+                continue
+            if abs(lr["ratio"] / r0 - 1.0) > _LEDGER_AGREE_TOL:
+                continue
+            key = (dd, 0 if lr["kind"] == "priceAdjust" else 1)
+            if best is None or key < best[0]:
+                best = (key, lr)
+        if best:
+            claims[i] = best[1]
+    owners = {}
+    for i, lr in claims.items():
+        owners.setdefault(lr["date"] + "|" + lr["kind"], []).append(i)
+    sharpened = ambiguous = 0
+    for i, e in enumerate(ev):
+        lr = claims.get(i)
+        if lr and len(owners[lr["date"] + "|" + lr["kind"]]) == 1:
+            e["ratio"] = round(lr["ratio"], 8)
+            e["source"] = lr["kind"]
+            sharpened += 1
+        else:
+            if lr:
+                ambiguous += 1
+            e["source"] = "base-price-discontinuity"
+    ev.sort(key=lambda x: str(x["date"]))
+    return ev, sharpened, ambiguous
+
+
+def _adjust_capability(events, source, ledger=None):
+    """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست.
+
+    `ledger` شمارۀِ تیزکردنِ مبدأ است (چند رویداد از دفترِ مبدأ عدد گرفت، چند رویداد
+    مبهم ماند چون یک ردیفِ مبدأ را با رویدادِ دیگری تقسیم کردند) تا مصرف‌کننده بداند
+    زنجیره از کجا آمده؛ درِ مسیرِ آفلاین که عددِ رویدادها از کش خوانده می‌شود، None
+    می‌ماند («اندازه‌گیری نشد» ≠ «صفر»).
+    """
     return {
         "source": source,
         "combined_available": source in _ADJ_KNOWN_SOURCES,
@@ -309,6 +517,8 @@ def _adjust_capability(events, source):
         "functional_available": False,
         "functional_reason": _ADJ_FUNCTIONAL_REASON,
         "event_count": len(events or []),
+        "ledger_sharpened": (ledger or {}).get("sharpened"),
+        "ledger_ambiguous": (ledger or {}).get("ambiguous"),
     }
 
 
@@ -640,7 +850,19 @@ def get_chart_tsetmc(symbol: str):
         # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
         # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
         adj_events, anchored = _adjust_events_from_rows(all_rows)
-        adjust_source = ("base-price-discontinuity" if adj_events
+        # ضریبِ گسستِ CSV کاشف است نه عددِ دقیق؛ همان رویداد را از دفترِ مبدأِ
+        # TSETMC تیز می‌کنیم (توضیحِ کامل و ارقامِ سنجیده: _sharpen_events_with_ledger).
+        # تاریخِ رویداد و تعدادش دست نمی‌خورد، پس پرشِ روزِ تعدیل همان‌جا می‌ماند و
+        # جای‌گامِ جعلی ساخته نمی‌شود؛ فاصلۀِ ضریبِ مبدأ تا گسستِ دیدہ‌شده کرانِ
+        # _LEDGER_AGREE_TOL (۰٫۱٪) را دارد و درِ سنجش، میانۀِ اثرش روی کلِ پیکره
+        # ۰٫۰۰۶ واحدِ درصدی بود (`_audit/ra365_ledger_ab.py`).
+        adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
+        _led_n = sum(1 for e in adj_events
+                     if e.get("source") in ("priceAdjust", "shareChange"))
+        # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
+        # گسستِ CSV است، پس حتی با ضریبِ کاملِ مبدأ نامِ ترکیبی می‌ماند.
+        adjust_source = ("ledger+base-price-discontinuity" if _led_n
+                         else "base-price-discontinuity" if adj_events
                          else "base-not-anchored" if not anchored
                          else "no-adjustment-event")
         # ۳) فاکتور تعدیل (back-adjustment، مقیاس روز آخر):
@@ -680,7 +902,9 @@ def get_chart_tsetmc(symbol: str):
             "factors": factors,
             "adjustEvents": adj_events,
             "adjustSource": adjust_source,   # v8.7 FIX-2 (دیگر APF+gap-detector نیست)
-            "adjustCapability": _adjust_capability(adj_events, adjust_source),
+            "adjustCapability": _adjust_capability(
+                adj_events, adjust_source,
+                {"sharpened": _sharp_n, "ambiguous": _amb_n}),
             # رویدادهایِ شرکتیِ مبدأ هم از همان بانکِ canonical می‌آیند (نه از
             # CSV): مسیرِ CDN اگر این کلید را نداشت، چارت هیچ‌وقت نشانگرِ
             # TSETMC نمی‌کشید — سنجشِ زندهٔ همین دور (۲۱:۲x) همان را نشان داد.

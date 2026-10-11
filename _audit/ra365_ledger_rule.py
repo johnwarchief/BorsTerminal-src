@@ -1,7 +1,7 @@
 # _audit/ra365_ledger_rule.py -- آیا گامِ تعدیلِ مرجع از دفترِ شرکتی (capital-change/dps) بازسازی می‌شود؟
 # سه حدسِ آزمون‌پذیر (هیچ‌کدام ساخته نمی‌شوند؛ همه از داده خوانده می‌شوند):
 #   H1  افزایشِ صرفِ ذخیره (contribution_percent == 0)  ->  گام = new_capital / previous_capital
-#   H2  افزایشِ با آورده (contribution_percent  >  0)   ->  گام = (N_old + N_new*(S/P)) / (N_old+N_new) ...即在 blend
+#   H2  افزایشِ با آورده (contribution_percent  >  0)   ->  گام = (N_old + N_new*(S/P)) / (N_old+N_new) درِ فرمولِ ترکیبی
 #   H3  سودِ نقدی (dps)                                  ->  گام = P / (P - dps)
 # مرجع: گام از ratio(type7/type0). ما: گام از ratio رویدادهایِ adjust_events.
 import json

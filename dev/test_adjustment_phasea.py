@@ -238,6 +238,108 @@ if HAS_BANK:
 else:
     ck("بانکِ محلی برایِ سنجشِ فال‌بک", None, "market.db درِ این محیط نیست — SKIP")
 
+# ─── جانشینیِ مجموعهٔ کش (ردیفِ شبح) ───
+# بازنویسیِ بانکِ واقعی نشود: این بخش رویِ یک بانکِ موقتِ جدا اجرا می‌شود.
+# چرا آزمون لازم است: نویسندۀِ کشupsert-only بود و هیچ‌گاه ردیفِ کهنه را برنمی‌داشت.
+# کاشفِ زنده هر بار CSV کاملِ تاریخ را می‌پیماید، پس ردیفی که درِ آن پیمایش نیست
+# دیگر پشتیبانیِ داده‌ای ندارد؛ ماندنش یعنی «یک ضریبِ اضافی روی کلِ تاریخِ قبل» —
+# همان نقصی که میانۀِ بازوِ دیتابیس را ۰٫۶۴٪ → ۶٫۱۵٪ برد (`_audit/_ghost_probe.py`).
+import tempfile  # noqa: E402
+_tmp_db = os.path.join(tempfile.mkdtemp(prefix="adj_ghost_"), "ghost.db")
+_DB_OLD = CH.DB_PATH
+CH.DB_PATH = _tmp_db
+try:
+    GSYM = "شبحِ_آزمون"
+    g_all = [{"date": "2024-01-05", "ratio": 0.90, "source": "base-price-discontinuity"},
+             {"date": "2024-06-02", "ratio": 0.80, "source": "base-price-discontinuity"},
+             {"date": "2024-09-01", "ratio": 0.95, "source": "priceAdjust"}]
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    ck("کشِ initial هر سه ردیف را دارد",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+    # کشفِ تازه همان نماد، ردیفِ میانی را دیگر نمی‌بیند (بک‌فیلِ مبدأ) → باید برود
+    CH._store_adjust_events(GSYM, [g_all[0], g_all[2]], "base-price-discontinuity")
+    g_after = [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+    ck("کشفِ کاملِ تازه، ردیفِ نمانده را از کش می‌زداید (جانشینی، نه upsert)",
+       g_after == ["2024-01-05", "2024-09-01"], g_after)
+    g_fac = CH._factors_from_events(["2024-01-01"], CH._stored_adjust_events(GSYM))
+    ck("کنترلِ منفی: ضریبِ ردیفِ زدوده‌شده از فاکتور بیرون می‌آید (۰٫۸۵۵ نه ۰٫۶۸۴)",
+       abs(g_fac[0] - 0.855) < 1e-9, g_fac)
+    # منبعِ «کشف‌شده از CSV» نه: حقِّ پاک‌کردنِ ردیفِ دیدہ‌شدۀِ دیگر را ندارد
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    CH._store_adjust_events(GSYM, [g_all[0]], "local-cache")
+    ck("منبعِ غیرِکشفی (local-cache) هیچ ردیفِ دیدہ‌شدۀِ دیگری را پاک نمی‌کند",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+    # «رویدادی نیست» یک داوریِ کامل است: مجموعه باید خالی شود، نه پر از شبح
+    CH._store_adjust_events(GSYM, [], "no-adjustment-event")
+    ck("داوریِ «رویدادی نیست» مجموعهٔ کش را خالی می‌کند",
+       CH._stored_adjust_events(GSYM) == [], CH._stored_adjust_events(GSYM))
+    # منبعِ خارج از شمارۀِ منابع: نه ردیفی می‌نویسد، نه ردیفِ دیگری را می‌زداید
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    CH._store_adjust_events(GSYM, [g_all[1]], "some-future-source")
+    ck("منبعِ ناشناخته نه ردیفی می‌نویسد نه ردیفِ دیدہ‌شده را پاک می‌کند",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+finally:
+    CH.DB_PATH = _DB_OLD
+
+# ─── تیزکردنِ ضریبِ رویداد با دفترِ رویدادِ مبدأ (RC3) ───
+# ledger جعلی تزریق می‌شود (`_ledger_events_for`) تا هر چهار شاخۀِ قاعدۀِ پذیرش
+# بدونِ وابستگی به پوششِ بانکِ واقعی سنجیده شوند. عددِ مرجع از خودِ پروندهاست:
+# بانکِ واقعی پوششِ ناقص دارد (پیشِ ۲۰۲۴-۰۷-۲۱ هیچ ردیفِ تعدیل، ولانا صفر ردیف)،
+# پس نبودِ ردیف باید «دست‌نخورده» بدهد نه «صفر» و نه «حدس».
+_LED = [{"date": "2026-09-17", "ratio": 0.2836879433, "kind": "priceAdjust"},
+        {"date": "2026-09-17", "ratio": 0.2836879433, "kind": "shareChange"},
+        {"date": "2024-03-17", "ratio": 1.0031515, "kind": "priceAdjust"},
+        {"date": "2020-01-05", "ratio": 0.9, "kind": "priceAdjust"}]
+_LED_OLD = CH._ledger_events_for
+CH._ledger_events_for = lambda s: list(_LED)
+try:
+    # ۱) همان رویداد، عددِ گردِ ما ← عددِ بی‌گردِ مبدأ؛ تاریخ دست‌نخورده
+    ev = [{"date": "2026-09-20", "ratio": 0.283787, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    o1 = [dict(x) for x in o]
+    ck("ردیفِ مبدأ درِ پنجره و تلورانس ⇒ عددِ دقیقِ مبدأ می‌نشیند",
+       n_sharp == 1 and abs(o[0]["ratio"] - round(0.2836879433, 8)) < 1e-12 and
+       o[0]["source"] == "priceAdjust", o)
+    ck("تاریخِ رویدادِ دیدہ‌شده جابه‌جا نمی‌شود (۱۰ روز فاصله با ردیفِ مبدأ)",
+       o[0]["date"] == "2026-09-20", o[0]["date"])
+    ck("درِ تساویِ فاصله، priceAdjust بر shareChange تقدم دارد",
+       o[0]["source"] == "priceAdjust", o[0]["source"])
+    # ۲) ردیفِ مبدأ «رویدادِ دیگر» نباید مصرف شود (ولانا: ۰٫۳۰۰ در برابرِ ۰٫۳۷۵۵)
+    ev = [{"date": "2026-09-20", "ratio": 0.3755, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    ck("اختلافِ بیش از تلورانس ⇒ دست‌نخورده و بی‌برچسبِ مبدأ",
+       n_sharp == 0 and abs(o[0]["ratio"] - 0.3755) < 1e-12 and
+       o[0]["source"] == "base-price-discontinuity", o)
+    # ۳) دو رویدادِ یک ردیف ⇒ هیچ‌کدام تیز نمی‌شود (بی‌طرفی، نه حذف)
+    ev = [{"date": "2019-12-28", "ratio": 0.9005, "source": "base-price-discontinuity"},
+          {"date": "2020-01-12", "ratio": 0.8998, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    ck("دو رویداد برایِ یک ردیفِ مبدأ ⇒ هیچ‌کدام تیز نمی‌شود، هیچ‌کدام حذف نمی‌شود",
+       n_sharp == 0 and n_amb == 2 and len(o) == 2 and
+       all(e["source"] == "base-price-discontinuity" for e in o), (o, n_amb))
+    # ۴) بی‌ردیفِ مبدأ (پوششِ ناقصِ بانک) ⇒ دقیقاً رفتارِ پیشین
+    CH._ledger_events_for = lambda s: []
+    ev = [{"date": "2026-07-01", "ratio": 0.333453, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("ولانا", ev)
+    ck("بی‌ردیفِ مبدأ: عددِ پیشین دست‌نخورده برمی‌گردد (نه صفر، نه حدس)",
+       n_sharp == 0 and abs(o[0]["ratio"] - 0.333453) < 1e-12, o)
+    # ۵) تیزکردن رویِ تکرارِ خواندن نباید چیزی را عوض کند (مسیرِ کش هر بار می‌خواند)
+    CH._ledger_events_for = lambda s: list(_LED)
+    one = [dict(x) for x in o1]
+    twice = CH._sharpen_events_with_ledger("تست", one)[0]
+    ck("تیزکردن idempotent است (خواندنِ دوبلۀِ کش عدد را جابه‌جا نمی‌کند)",
+       [(e["date"], round(e["ratio"], 10), e.get("source")) for e in one]
+       == [(e["date"], round(e["ratio"], 10), e.get("source")) for e in twice],
+       (one, twice))
+finally:
+    CH._ledger_events_for = _LED_OLD
+
 print("─" * 72)
 print(f"نتیجه: {PASS}_pass / {FAIL}_fail / {SKIP}_skip")
 sys.exit(1 if FAIL else 0)
