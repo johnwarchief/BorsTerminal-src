@@ -354,6 +354,16 @@ SUITES = [
     # برمی‌گردد.
     ('dev/boot_page_v1081.py',
                                      'boot page: real download/extract progress, RTL page, handoff + error'),
+    # مرحلۀ ۷ (مأموریتِ مهندسیِ اندیکاتورهای FTS): «موتورِ سوم» باید تفاوتِ
+    # الگوریتمیِ محاسبه‌پذیر داشته باشد، نه بازمصرفِ فراکتال با نامِ تازه. این
+    # harness همان سری را به هر دو موتور می‌دهد و روی دادهٔ محلی هم می‌سنجد.
+    ('dev/structure_engine3_compare_v1.py',
+                                     'engine3 vs engine1: provably different pivot sets, both anti-repaint'),
+    # مرحلۀ ۱۰: هر لایه دو زمان دارد (وقوع و تأیید) و هیچ انوتیشنی از آینده نگاه
+    # نمی‌کند — prefix-stability در هر دو موتور + payload کاملِ /api/fts + کندلِ
+    # در حال تشکیل + هر دو مبنایِ رأیِ روند.
+    ('dev/fts_antirepaint_v1086.py',
+                                     'anti-repaint: two-time pivots, prefix-stability, no future-look in payload'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
