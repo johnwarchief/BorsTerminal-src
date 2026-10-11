@@ -824,15 +824,24 @@ def get_key_levels(symbol: str):
                          "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()  # صعودی
+        # P0 #12: شمارشِ شفاف — «چند ردیف خام آمد، چند روزِ یکتا ماند». dedupِ
+        # حجمِ ردیفِ تکراریِ روز (نمادِ دو-املا) بی‌صدا تاریخچه را کم می‌کند؛
+        # مصرف‌کننده باید بداند عرضۀ LIMIT ۲۵۰ پیش از dedup بوده است.
+        _bars_effective = len(rows)
         # سطوح کلیدی رویِ همان مبنایی رسم می‌شوند که چارت نشان می‌دهد (§۱-ث شرطِ ۱):
         # پیش از این این endpoint خامِ پایانی را می‌خواند و «مقاومت» با عددِ چارت نمی‌خواند.
         price_basis.apply_basis(rows)
-        if len(rows) < 60:
+        if _bars_effective < 60:
+            # P0 #1: پیامِ ناکافی با عدد — «چند تا هست، چند تا لازم است».
             return {"status": "ok", "symbol": symbol, "levels": [], "blocks": [],
-                    "count": 0, "message": "تاریخچهٔ کافی نیست (< 60 روز)"}
+                    "count": 0, "insufficient_history": True,
+                    "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                    "message": f"تاریخچهٔ موجود: {_fts_fa(_bars_effective)} روز؛ "
+                               f"حداقل لازم: ۶۰"}
         result = _key_levels_from_history(rows)
         result.update({"status": "ok", "symbol": symbol,
-                       "message": f"{len(rows)} روز آخر"})
+                       "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                       "message": f"{_fts_fa(_bars_effective)} روزِ آخر (از {_fts_fa(len(_raw))} ردیف خام)"})
         KEY_LEVELS_CACHE[_ck_levels] = (time.time(), result)
         return result
     except Exception as e:
@@ -1294,9 +1303,16 @@ def get_patterns(symbol: str):
                          "close": r[5], "volume": r[6], "last": r[7]})
         conn.close()
         rows.reverse()
-        if len(rows) < 60:
+        # P0 #12: شمارشِ شفافِ dedup (مثلِ key-levels) — مصرف‌کننده بداند چند ردیف
+        # خام چند روزِ یکتا شده و LIMIT ۲۵۰ کجا خورده است.
+        _bars_effective = len(rows)
+        if _bars_effective < 60:
+            # P0 #1: «تاریخچه کافی نیست» به‌تنهایی حرف نمی‌زند؛ عددِ موجود و لازم.
             return {"status": "ok", "symbol": symbol, "overlays": [], "count": 0,
-                    "message": "تاریخچه کافی نیست"}
+                    "insufficient_history": True,
+                    "raw_rows": len(_raw), "bars_effective": _bars_effective,
+                    "message": f"تاریخچهٔ موجود: {_fts_fa(_bars_effective)} روز؛ "
+                               f"حداقل لازم: ۶۰"}
         # FIX v7.2: سطحها باید در فضای تعدیلشده باشند (chart با factor رسم میکند) — وگرنه Y-mismatch
         evs = _adjust_events_for(symbol, rows)
         # مبنایِ قیمت پیش از ضربِ فاکتور انتخاب می‌شود (تنها نقطۀ انتخاب؛ §۱-ث شرطِ ۱)،
@@ -1349,7 +1365,9 @@ def get_patterns(symbol: str):
                        {"timestamp": ts_of(last20[-1]["date"]), "value": lo}],
             "styles": {"color": "#2962ff"},
         })
-        result = {"status": "ok", "symbol": symbol, "overlays": overlays, "count": len(overlays)}
+        result = {"status": "ok", "symbol": symbol, "overlays": overlays,
+                  "count": len(overlays),
+                  "raw_rows": len(_raw), "bars_effective": _bars_effective}
         PATTERNS_CACHE[_ck_pat] = (_t.time(), result)
         return result
     except Exception as e:
@@ -1414,13 +1432,20 @@ _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساو�
 # شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
 # (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
 # یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
-FTS_TECH_RULESET_VERSION = "3"   # «۳»: تأییدِ موقعیتِ قیمت (شکستِ سقف/کفِ آخر بر شمارشِ دو پیوتِ کهنه ترجیح می‌یابد)
+FTS_TECH_RULESET_VERSION = "4"   # «۴»: خروج MA14 با مرجع هم‌خوان شد (یک کندل کامل بسته زیر MA، نه دو بدنه) + فیبو بدون پایِ ساختگی + پیام‌هایِ ناکافی با تعداد
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
 # ۰٫۴۹۸ در برابر ۰٫۴۷۵ یک‌روزه (lab، ۷۲ نماد؛ نرخِ پایه ۰٫۳۸۱).
 _FTS_CHOCH_DAYS = 2
 _FTS_CHOCH_MARGIN = 0.01
+# پارامترهایِ اجرایىِ باند (canonical نیستند — جزوه پهنای باند نمی‌گوید):
+# پیش‌تر رابطِ FFC آن‌ها را سرِ خود ±۲٪/±۳٪ می‌ساخت؛ حالا سرور منتشر می‌کند
+# تا دو موتور یک هندسه ببینند و «سرور عدد نگفته رسم نمی‌شود» نشکند.
+_FTS_THIRD_PEAK_BAND_PCT = 2.0   #٪ اطرافِ سطحِ سقفِ سومِ تخت
+_FTS_HOURGLASS_BAND_PCT = 3.0    #٪ اطرافِ MA52 برایِ سایۀ ساعتِ شنی
+# تلورانسِ «لمس» درِ شکارِ نقطه و پولبک — یک عدد، دو مصرف (پارامترِ اجرایى).
+_FTS_POINT_TOUCH_TOL = 0.005
 # تریگرِ ورودِ جت دیگر «ماکسِ ۶۰ کندلِ قبل» را نمی‌بیند؛ پلکانِ هشت‌نقطه‌ایِ
 # جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
@@ -1472,8 +1497,12 @@ def _fts_swings(series, k=3):
 
     سقف پیوت: high[i] ≥ high هر دو طرف تا k کندل (و اکیداً بزرگ‌تر از یک طرف).
     کف پیوت:  low[i]  ≤ low  هر دو طرف تا k کندل.
-    خروجی: [{'idx', 'price', 'kind': 'high'|'low'}] مرتب زمانی. k بزرگ‌تر =
+    خروجی: [{'idx', 'price', 'kind': 'high'|'low', 'time',
+             'confirm_idx', 'confirm_time'}] مرتب زمانی. k بزرگ‌تر =
     فقط پیوت‌های «مهم‌تر» (روی ماهانه k=2 می‌گذاریم چون کندل کم داریم).
+    زمان وقوع (idx) از زمان شناخت (idx+k) جدا منتشر می‌شود — قاعدۀ anti-repaint:
+    نقطه‌ای که امروز تأیید شده در دیروز «اطلاع قطعی» نبود؛ رابط باید بداند
+    مارکرِ ساختار از کدام کندل به بعد مجاز است.
     """
     n = len(series)
     if n < 2 * k + 2:
@@ -1486,11 +1515,60 @@ def _fts_swings(series, k=3):
         win_l_l = [series[j]["low"] for j in range(i - k, i)]
         win_r_l = [series[j]["low"] for j in range(i + 1, i + k + 1)]
         t = str(series[i].get("time") or "")[:10]
+        ct = str(series[i + k].get("time") or "")[:10]
         if hi >= max(win_l_h) and hi >= max(win_r_h):
-            out.append({"idx": i, "price": float(hi), "kind": "high", "time": t})
+            out.append({"idx": i, "price": float(hi), "kind": "high", "time": t,
+                        "confirm_idx": i + k, "confirm_time": ct})
         if lo <= min(win_l_l) and lo <= min(win_r_l):
-            out.append({"idx": i, "price": float(lo), "kind": "low", "time": t})
+            out.append({"idx": i, "price": float(lo), "kind": "low", "time": t,
+                        "confirm_idx": i + k, "confirm_time": ct})
     return out
+
+
+def _fts_structure_points(swings, limit=14):
+    """ساختار HH/HL/LH/LLِ FTS به‌صورت نقاطِ قابل‌رسم (جزوه ص۷: صعودی = کف و سقف
+    بالاتر؛ نزولی = کف و سقف پایین‌تر؛ برابر = خنثی).
+
+    هر پیوتِ تأییدشده با هم‌جنسِ قبلی‌اش مقایسه می‌شود؛ تلورانسِ «مساوی» همان
+    `_FTS_EQUAL_TOL`ِ رأیِ روند است (دو عددِ جدا برایِ یک مفهوم). خروجی فقط نقاطِ
+    تأییدشده است و زمانِ وقوع را از زمانِ تأیید جدا می‌برَد — رابط برایِ مارکرِ
+    تاریخی باید `confirm_time` را ملاک کند (قاعدۀ anti-repaint).
+    خروجی: [{'idx','time','confirm_idx','confirm_time','price','kind','label',
+             'ref_time','ref_price'}]
+    """
+    last_h = last_l = None
+    pts = []
+    for s in swings:
+        p = float(s["price"])
+        if s["kind"] == "high":
+            ref = last_h
+            label = "H"
+            if ref is not None and ref["price"] > 0:
+                if p > ref["price"] * (1.0 + _FTS_EQUAL_TOL):
+                    label = "HH"
+                elif p < ref["price"] * (1.0 - _FTS_EQUAL_TOL):
+                    label = "LH"
+                else:
+                    label = "HE"
+            last_h = s
+        else:
+            ref = last_l
+            label = "L"
+            if ref is not None and ref["price"] > 0:
+                if p > ref["price"] * (1.0 + _FTS_EQUAL_TOL):
+                    label = "HL"
+                elif p < ref["price"] * (1.0 - _FTS_EQUAL_TOL):
+                    label = "LL"
+                else:
+                    label = "LE"
+            last_l = s
+        pts.append({"idx": s["idx"], "time": s.get("time"),
+                    "confirm_idx": s.get("confirm_idx"),
+                    "confirm_time": s.get("confirm_time"),
+                    "price": round(p, 2), "kind": s["kind"], "label": label,
+                    "ref_time": (ref or {}).get("time"),
+                    "ref_price": round(float(ref["price"]), 2) if ref else None})
+    return pts[-limit:]
 
 
 def _fts_recent_window_trend(series, window=_FTS_STALE_WINDOW):
@@ -1773,7 +1851,8 @@ def _fts_fib_leg(candles, swings):
     جهتِ موج را روندِ ساختاریِ خودِ FTS (`_fts_classify_trend` روی پیوت‌های روزانه)
     می‌گوید، نه «کدام پیوت آخر از همه تازه‌تر است» — چون در یک رشدِ بی‌وقفه آخرین
     پیوتِ سقف سه کندلِ پیش است و آن تعریف، موجِ صعودی را نزولی می‌خواند.
-    خروجی: {'direction', 'start_idx', 'end_idx', 'high', 'low'} یا None.
+    خروجی: {'direction', 'start_idx', 'end_idx', 'high', 'low'} یا None؛
+    موجِ بی‌پیوت کلیدِ افزودۀ 'provisional': True می‌گیرد.
     """
     n = len(candles)
     if n < 2:
@@ -1781,10 +1860,18 @@ def _fts_fib_leg(candles, swings):
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
     if not highs and not lows:
-        hi_idx = max(range(n), key=lambda i: candles[i]["high"])
-        return {"direction": "up", "start_idx": 0, "end_idx": n - 1,
-                "high": float(candles[hi_idx]["high"]),
-                "low": min(float(c["low"]) for c in candles)}
+        # P0 #4 + #161: بدونِ پیوتِ فراکتالی، موجِ تأییدشده شناخته‌شده نیست؛
+        # پیش از این همین min/max با اقتدارِ ساختارِ تأییدشده منتشر می‌شد (پایِ
+        # ساختگی). حالا موجِ min/max با پرچمِ `provisional` می‌آید — یعنی همان
+        # «در حال تشکیل»ِ مجازِ P0، نه بی‌داده و نه رأیِ قطعی. نمادی که مستقیم به
+        # سقف بالا رفته (باگِ فولادِ #161) کمربندِ واقعیِ همان رشد را می‌گیرد و
+        # رابط از روی `provisional` می‌نویسد «ساختارِ موج هنوز تأیید نشده».
+        lo_i = min(range(n), key=lambda i: candles[i]["low"])
+        hi_i = max(range(n), key=lambda i: candles[i]["high"])
+        return {"direction": "up" if hi_i >= lo_i else "down",
+                "start_idx": min(lo_i, hi_i), "end_idx": n - 1,
+                "high": float(candles[hi_i]["high"]),
+                "low": float(candles[lo_i]["low"]), "provisional": True}
     # «هیچ پایانیِ پس از idx زیرِ قیمت نبسته» — با کمینهٔ پس‌رو، یک‌بار محاسبه
     close = [float(c["close"]) for c in candles]
     suf_min = [0.0] * (n + 1)
@@ -1888,7 +1975,9 @@ def _fts_fib_zones(candles, swings):
         "leg": {"direction": leg["direction"],
                 "start": str(candles[leg["start_idx"]]["time"])[:10],
                 "end": str(candles[leg["end_idx"]]["time"])[:10],
-                "high": round(top, 2), "low": round(bot, 2)},
+                "high": round(top, 2), "low": round(bot, 2),
+                # موجِ بی‌پیوت = «در حال تشکیل»، نه ساختارِ تأییدشده (P0 #4).
+                "provisional": bool(leg.get("provisional"))},
     }
 
 
@@ -1928,7 +2017,11 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, 
             "pct_above_res": None, "ceiling": None, "ceiling_date": None,
             "static_broke": None, "breakout_date": None,
             "entry_window_days": entry_window_days, "days_remaining": None,
-            "tier": None, "reason": "تاریخچه برای سنجش جت کافی نیست — سنجیده نشد",
+            "tier": None,
+            # P0 #2: پیامِ ناکافی با تعداد؛ active عمداً None می‌ماند (سنجیده نشد).
+            "reason": (f"تاریخچه برای سنجش جت کافی نیست — سنجیده نشد "
+                       f"({_fts_fa(n)} کندل موجود، حداقل لازم {_fts_fa(_FTS_JET_MIN_BARS)})"),
+            "bars_available": n, "bars_required": _FTS_JET_MIN_BARS,
         }
 
     def level_before(idx):
@@ -2144,12 +2237,25 @@ def _fts_point_hunt(candles, swings):
     out = {"touches": None, "floor_price": None, "active": None, "bounced": None,
            "floor_idx": None, "floor_date": None, "trigger_idx": None,
            "trigger_date": None,
-           "reason": "دو سقفِ جدا یا ده کندل سابقه نیست — کانال سنجیده نشد"}
-    if len(highs) < 2 or not lows or len(candles) < 10:
+           "reason": "کانال سنجیده نشد"}
+    # P0 #3: سه علتِ متمایز، سه پیام با تعداد — «سقف کم است» با «سابقه کم است»
+    # با «سقف‌ها چسبیده‌اند (الگو در حال تشکیل)» یکی نیست.
+    if len(highs) < 2:
+        out["reason"] = (f"سقفِ مستقلِ کافی نیست ({_fts_fa(len(highs))} از ۲ لازم) "
+                         f"— کانال سنجیده نشد")
+        return out
+    if not lows:
+        out["reason"] = "هیچ کفِ تأییدشده‌ای نیست — کانال سنجیده نشد"
+        return out
+    if len(candles) < 10:
+        out["reason"] = (f"سابقه کم است ({_fts_fa(len(candles))} کندل، حداقل ۱۰ لازم) "
+                         f"— کانال سنجیده نشد")
         return out
     h2, h1 = highs[-2], highs[-1]
     if h1["idx"] - h2["idx"] < 3:
-        return out                                   # کانال بی‌معنی (سقف‌های چسبیده)
+        out["reason"] = (f"دو سقفِ آخر چسبیده‌اند (فاصله {_fts_fa(h1['idx'] - h2['idx'])} "
+                         f"کندل، حداقل ۳ لازم) — الگو در حال تشکیل")
+        return out
     out["reason"] = None
     slope = (h1["price"] - h2["price"]) / (h1["idx"] - h2["idx"])
     anchor_low = min((l for l in lows if h2["idx"] < l["idx"] <= h1["idx"]),
@@ -2157,7 +2263,7 @@ def _fts_point_hunt(candles, swings):
     if anchor_low is None:
         anchor_low = min(lows, key=lambda l: l["price"])
     floor_at = lambda i: anchor_low["price"] + slope * (i - anchor_low["idx"])
-    tol = 0.005
+    tol = _FTS_POINT_TOUCH_TOL
     touches = 0
     for i in range(anchor_low["idx"], len(candles)):
         if candles[i]["low"] <= floor_at(i) * (1 + tol):
@@ -2217,6 +2323,68 @@ def _fts_double_bottom(candles, swings):
         box.update(active=bool(broke), top=round(top, 2), bottom=round(bot, 2),
                    pct_above_top=round((last["close"] - top) / top * 100.0, 2) if broke else None)
     return {"double_bottom": dbl, "range_box": box}
+
+
+def _fts_pullback_setup(candles, swings, trend_d, weekly_trend=None):
+    """پولبکِ شاخۀ صعودی (جزوه ص۸-۹ و ص۳۴؛ چارت مرجع ص۲: صعودی → جت یا پولبک).
+
+    تعریفِ مرجع: در روند صعودی، قیمت به «آخرین سقفِ شکسته‌شده» بازمی‌گردد و
+    «برمی‌گردد» — یعنی لمسِ سطح + حفظِ آن به‌عنوان حمایت در همان روز. بازگشت
+    شرطِ خودِ تعریف است، نه آستانۀ افزوده (لمسِ تنها ستاپ نیست؛ همان درسِ
+    اندازۀ شکارِ نقطه: لمس+ریباند نویز را می‌گیرد). پولبکی که در تایم هفتگی هم
+    باشد معتبرتر است (جزوه ص۹) — اینجا `weekly_confirms` فقط زمینه است، نه گیت.
+
+    سطحِ پولبک = آخرین پیوتِ سقفِ تأییدشده (top)؛ کندلِ سقف نباید امروز باشد
+    (پولبک بعد از تشکیل سقف معنا دارد). لمس: lowِ امروز ≤ سطح×(۱+tol)؛
+    ریباند: پایانی بالای سطح + بدنهٔ صعودی. tol = همان ۰٫۵٪ لمسِ شکارِ نقطه —
+    پارامترِ اجرایى، canonical نیست (آستانه‌های جزوه نیست).
+    سه‌حالته: روند na یا بی‌سقف ⇒ None با علت و تعداد؛ روند صعودیِ روشن ولی
+    بی‌لمس ⇒ active=False (سنجیده شد، ستاپ نیست).
+    خروجی: {'active','touching','level','level_date','level_age_bars',
+            'weekly_confirms','gap_pct','reason'}.
+    """
+    out = {"active": None, "touching": None, "level": None, "level_date": None,
+           "level_age_bars": None, "weekly_confirms": None, "gap_pct": None,
+           "reason": None}
+    hp = [s for s in swings if s["kind"] == "high"]
+    if trend_d in (None, "na"):
+        out["reason"] = (f"روند روزانه سنجیده نشد ({_fts_fa(len(hp))} سقفِ تأییدشده) "
+                         f"— پولبک ارزیابی نشد")
+        return out
+    if trend_d != "up":
+        out.update(active=False, touching=False)
+        out["reason"] = "شاخۀ پولبک فقط در روند صعودی تعریف شده — روند روزانه صعودی نیست"
+        return out
+    if not hp or not candles or len(candles) < 3:
+        out["reason"] = (f"سقفِ تأییدشده یا کندلِ کافی نیست ({_fts_fa(len(hp))} سقف، "
+                         f"{_fts_fa(len(candles))} کندل)")
+        return out
+    top = hp[-1]
+    if top["idx"] >= len(candles) - 1:
+        out["reason"] = "آخرین سقفِ تأییدشده خودِ کندلِ امروز است — پولبک بعد از سقف سنجیده می‌شود"
+        return out
+    level = float(top["price"])
+    last = candles[-1]
+    tol = _FTS_POINT_TOUCH_TOL
+    touching = bool(float(last["low"]) <= level * (1.0 + tol))
+    bounced = bool(touching and float(last["close"]) > level
+                   and float(last["close"]) > float(last["open"]))
+    out["level"] = round(level, 2)
+    out["level_date"] = str(candles[top["idx"]]["time"])[:10]
+    out["level_age_bars"] = len(candles) - 1 - top["idx"]
+    out["touching"] = bool(touching)
+    out["active"] = bool(bounced)
+    if weekly_trend is not None:
+        out["weekly_confirms"] = bool(weekly_trend == "up")
+    if not touching:
+        gap = (float(last["low"]) / level - 1.0) * 100.0
+        out["gap_pct"] = round(gap, 2)
+        out["reason"] = (f"قیمت به آخرین سقف نرسیده ({_fts_fa(round(gap, 2))}٪ فاصلۀ کفِ امروز "
+                         f"تا سطح {_fts_fa(out['level'])})")
+    elif not bounced:
+        out["reason"] = ("لمسِ سطحِ پولبک رخ داده ولی بازگشت (پایانی بالای سطح با بدنهٔ صعودی) "
+                         "تأیید نشده — ستاپ در حال تشکیل")
+    return out
 
 
 _FTS_SETUP_LABELS = {"choch": "CHoCH", "dbl": "دابل‌باتم"}
@@ -2329,10 +2497,10 @@ def _fts_exit_layer1(candles, entry_hint=None):
       به دلیل پنجرهٔ k کندل تأخیر دارد، این کف همیشه تا دیروز شناخته می‌شود و
       با _stop_refs در confidence_engine.py هم‌خوان است: «swing stop = ۵٪ زیر
       آخرین کف مهم»).
-    ▪ خروج تعقیبی (Trailing): «بدنهٔ» کندل روزانه کاملاً زیر MA14 بسته شود —
-      یعنی max(open, close) < MA14. شرطِ بدنه (نه wick) باعث می‌شود سکه‌های
-      سایه‌دارِ یک‌روزه علامت اشتباه ندهند؛ دو کندل متوالی برای قطعیتِ سیگنال
-      لازم است (کندل اول = هشدار، دوم = تأیید خروج).
+    ▪ خروج تعقیبی (Trailing): «یک کندل کامل» روزانه — بدنه و سایه‌ها — کاملاً زیر
+      MA14 بسته شود (highِ کندلِ بسته < MA14ِ همان کندل)؛ این متنِ چارت مرجع است
+      (FTS.CHART_3 ص۳). کندلِ درحال‌تشکیلِ امروز حداکثر «pending/هشدار» می‌سازد،
+      نه خروجِ تأییدشده.
     خروجی: {'hard_stop', 'stop_basis', 'stop_hit', 'ma14_exit', 'ma14_exit_pending',
             'ma14', 'close'}.
     سه‌حالۀ L1: `stop_hit`/`ma14_exit`/`ma14_exit_pending` وقتی `None`اند که موتور
@@ -2360,21 +2528,37 @@ def _fts_exit_layer1(candles, entry_hint=None):
     stop_px, basis = max(cand, key=lambda x: x[0])
     out["hard_stop"] = round(stop_px, 2)
     out["stop_basis"] = basis
+    # P0 #5: کفِ نوسان‌گیر ۲۰ کندلِ بسته می‌خواهد؛ با کمتر از آن عدد منتشر
+    # می‌شود ولی با پرچم «در حال تشکیل» — پیش از این روی ۳ کندل با اقتدارِ کامل
+    # رأی می‌داد (بی‌صدا degrade).
+    if len(closed) < 20 and basis == "swing_low":
+        out["stop_basis"] = "swing_low_forming"
+        out["stop_reason"] = (f"کفِ ۲۰ کندلِ بسته هنوز کامل نیست "
+                              f"({_fts_fa(len(closed))} از ۲۰) — حد ضرر در حال تشکیل")
+    else:
+        out["stop_reason"] = None
     out["stop_hit"] = bool(close < stop_px)
     # --- خروج تعقیبی MA14 ---
+    # مرجع (FTS.CHART_3 ص۳ / جزوه ص۲۲): «MA=14 — تشکیل یک کندل کامل زیر MA».
+    # کندلِ کاملِ بسته، همه‌قد (سایه‌ها هم): high < MA14 همان کندل ⇒ خروجِ تأیید.
+    # پیش از این «دو بدنهٔ متوالی زیر MA» می‌خواست — افزودهٔ کد بود و ممیزی
+    # FTS-TREND-CLASSIFIER (بند ۳۹) آن را MISMATCH منبع/کد دانست؛ اینجا با منبع
+    # هم‌خوان شد. کندلِ درحال‌تشکیلِ امروز رأی قطعی نمی‌دهد: اگر تمام‌قد زیر MA
+    # بسته باشد «pending» (هشدار) می‌شود، نه exit.
     closes = [float(c["close"]) for c in candles]
     ma14 = _fts_ma(closes, 14)
     out["ma14"] = ma14[-1] if ma14 else None
     if out["ma14"] is None:
         return out
-    body_top = max(float(last["open"]), close)
-    body_below = body_top < out["ma14"]
-    prev_below = False
+    last_high = float(last["high"])
+    prev_closed_complete_below = None
     if len(candles) >= 2 and ma14[-2] is not None:
-        p = candles[-2]
-        prev_below = max(float(p["open"]), float(p["close"])) < ma14[-2]
-    out["ma14_exit"] = bool(body_below and prev_below)   # دو بدنهٔ متوالی زیر MA14
-    out["ma14_exit_pending"] = bool(body_below and not prev_below)  # هشدار (کندل اول)
+        prev_closed_complete_below = float(candles[-2]["high"]) < ma14[-2]
+    if prev_closed_complete_below is None:
+        return out
+    out["ma14_exit"] = bool(prev_closed_complete_below)
+    out["ma14_exit_pending"] = bool(last_high < out["ma14"]
+                                    and not prev_closed_complete_below)
     return out
 
 
@@ -2440,11 +2624,18 @@ def _fts_exit_layer3(candles, swings):
     سه سقف، دو کف) — `False` فقط وقتی است که الگو سنجیده شد و برقرار نبود.
     """
     out = {"third_peak": None, "double_top": None, "hs_break": None,
-           "neckline": None, "level": None, "third_peak_level": None}
+           "neckline": None, "level": None, "third_peak_level": None,
+           "reason": None}
     if len(candles) < 15:
+        # P0 #6: زیرِ کفِ معلوم، همه None می‌مانند — ولی باید با پیام، نه بی‌صدا.
+        out["reason"] = (f"لایهٔ ۳ سنجیده نشد ({_fts_fa(len(candles))} کندل، "
+                         f"حداقل ۱۵ لازم)")
         return out
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
+    if len(highs) < 2 or len(lows) < 2:
+        out["reason"] = (f"پیوتِ الگو کافی نیست (سقف‌ها {_fts_fa(len(highs))}، "
+                         f"کف‌ها {_fts_fa(len(lows))})")
     last = float(candles[-1]["close"])
     # --- سقف سوم ---
     if len(highs) >= 3:
@@ -2453,6 +2644,10 @@ def _fts_exit_layer3(candles, swings):
         out["third_peak"] = bool(m > 0 and (m - min(h1, h2, h3)) / m <= 0.01)
         if out["third_peak"]:
             out["third_peak_level"] = round(m, 2)
+    # عرض باندِ اطرافِ سطحِ سقف سوم — پارامترِ اجرایى (جزوه آن را نمی‌گوید؛ فقط
+    # «نزدیک خط روند» با آستانهٔ ۱۰٪/۵٪). تا پیش از این ±۲٪ درِ رابطِ FFC ساخته
+    # می‌شد (B4)؛ حالا سرور منتشر می‌کند تا هر دو موتور یک هندسه ببینند.
+    out["third_peak_band_pct"] = _FTS_THIRD_PEAK_BAND_PCT
     # --- دابل‌تاپ ---
     if len(highs) >= 2:
         h1, h2 = highs[-2]["price"], highs[-1]["price"]
@@ -2505,14 +2700,22 @@ def _fts_exit_layer4(candles):
     `None` می‌مانند (سنجیده نشد)، نه `False`.
     """
     out = {"rsi_divergence": None, "rsi_rollover": None,
-           "rsi": None, "rsi_prev_peak": None}
+           "rsi": None, "rsi_prev_peak": None, "reason": None}
     if len(candles) < 30:
+        # P0 #6: بی‌صدا نبودنِ لایه باید «علت با تعداد» داشته باشد.
+        out["reason"] = (f"لایهٔ ۴ سنجیده نشد ({_fts_fa(len(candles))} کندل، "
+                         f"حداقل ۳۰ لازم)")
         return out
     closes = [float(c["close"]) for c in candles]
     rsi = _fts_rsi(closes, 14)
     out["rsi"] = rsi[-1]
     swings = _fts_swings(candles, k=_FTS_SWING_K)
     highs = [s for s in swings if s["kind"] == "high"]
+    if out["rsi"] is None:
+        out["reason"] = (f"RSI(14) نپخته است ({_fts_fa(len(closes))} کندل، "
+                         f"حداقل ۱۶ لازم)")
+    elif len(highs) < 2:
+        out["reason"] = f"دو سقفِ پیوت برایِ واگرایی نیست ({_fts_fa(len(highs))} سقف)"
     if len(highs) >= 2:
         h1, h2 = highs[-2], highs[-1]
 
@@ -2545,6 +2748,7 @@ def _fts_exit_layer4(candles):
 _FTS_ROLES = {
     "jet": "entry", "choch_bullish": "entry", "point_hunt": "entry",
     "double_bottom": "entry", "range_break": "entry", "hourglass": "entry",
+    "pullback": "entry",
     "fib_zone": "context", "trend": "context", "support_resistance": "context",
     "third_peak": "warning", "rsi_divergence": "warning",
     "rsi_rollover": "warning", "ma14_pending": "warning",
@@ -2560,6 +2764,7 @@ _FTS_TRIGGER_LABELS = {
     "double_bottom": "کفِ دوقلو",
     "range_break": "شکستِ باکسِ رنج",
     "hourglass": "ساعتِ شنی",
+    "pullback": "پولبک",
 }
 
 # اولویتِ وضعیتِ عمومی (رأیِ مالک، دورِ J): از جدی‌ترین به کم‌اهمیت‌ترین
@@ -2607,6 +2812,7 @@ def _fts_status_block(candles, out):
     jet = out.get("jet") or {}
     choch = out.get("choch") or {}
     ph = out.get("point_hunt") or {}
+    pb = out.get("pullback") or {}
     dbl = out.get("double_bottom") or {}
     box = out.get("range_box") or {}
     hg = out.get("hourglass") or {}
@@ -2615,6 +2821,7 @@ def _fts_status_block(candles, out):
     # --- تریگرِ فعلی (نقش entry) ---
     trig_candidates = [
         ("jet", jet.get("active"), jet.get("resistance"), last_date),
+        ("pullback", pb.get("active"), pb.get("level"), last_date),
         ("point_hunt", ph.get("active"), ph.get("floor_price"), ph.get("trigger_date")),
         ("choch_bullish", choch.get("bullish"), choch.get("level"), last_date),
         ("double_bottom", dbl.get("active"), dbl.get("neckline"), last_date),
@@ -2799,6 +3006,7 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
       point_hunt       - channel-floor touch count {'touches','floor_price',...}
       double_bottom    - {'active','neckline','pct_above_neck'}
       range_box        - {'active','top','bottom','pct_above_top'}
+      pullback         - uptrend-retest setup {'active','touching','level',...}
       exit_engine      - four-layer verdict {'verdict','signals','l1'..'l4'}
     """
     candles = _fts_clean_candles(candles)
@@ -2809,10 +3017,11 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
     # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
     _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
+    swings_w = _fts_swings(w, k=2)
     out = {
         "trend": {
             "D": _tf(swings_d, series=candles),
-            "W": _tf(_fts_swings(w, k=2), series=w),
+            "W": _tf(swings_w, series=w),
             "M": _tf(_fts_swings(m, k=2), series=m),
             "alignment": "na",
         },
@@ -2824,6 +3033,11 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "range_box": {"active": False, "top": None, "bottom": None, "pct_above_top": None},
         "exit_engine": None,
     }
+    # نقاطِ ساختاریِ برچسب‌دار (HH/HL/LH/LL) — لایۀ «ساختار روند» روی چارت، با
+    # زمانِ وقوع جدا از زمانِ تأیید (anti-repaint). روزانه تحلیل اصلی است؛ هفتگی
+    # زمینه/فیلتر.
+    out["structure_points"] = {"D": _fts_structure_points(swings_d),
+                               "W": _fts_structure_points(swings_w)}
     # Alignment: all three timeframes agree and are directional.
     tD = out["trend"]["D"]["trend"]
     tW = out["trend"]["W"]["trend"]
@@ -2933,9 +3147,13 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         else:
             hg_desc = "ساعت شنی فعال: RSI هفتگی در آستانه اشباع فروش؛ گیت جهت MA52 خاموش است (افزایش خرید ۲ تا ۴ برابر)"
     elif not ma_ok:
-        hg_desc = "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+        # P0 #7: تعدادِ موجود درِ خودِ متن — نه فقط کناریِ payload.
+        hg_desc = (f"MA52 سنجیده نشد ({_fts_fa(len(closes_w))} کندل هفتگی، "
+                   f"حداقل ۵۲ لازم) — ساعت شنی نظر نمی‌دهد")
     elif not rsi_ok:
-        hg_desc = f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست"
+        hg_desc = (f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست "
+                   f"({_fts_fa(len(closes_w))} کندل هفتگی، حداقل "
+                   f"{_fts_fa(rsi_period + 2)} لازم)")
     else:
         hg_desc = "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
 
@@ -2951,6 +3169,8 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "rsi_oversold": rsi_oversold,
         "ma52_position_mode": ma52_position_mode,
         "ma52_position_match": ma52_position_match,
+        # پهنای سایۀ MA52 — پارامترِ اجرایىِ سرور (B4)، نه ساختۀ رابط.
+        "ma52_band_pct": _FTS_HOURGLASS_BAND_PCT,
         "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
                    "NORMAL" if enough_data else "UNKNOWN"),
         "desc": hg_desc,
@@ -2959,8 +3179,16 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     box = _fts_double_bottom(candles, swings_d)
     out["double_bottom"] = box["double_bottom"]
     out["range_box"] = box["range_box"]
+    # شاخۀ پولبکِ روند صعودی (چارت ص۲: صعودی → جت یا پولبک) — پس از محاسبۀ روند.
+    out["pullback"] = _fts_pullback_setup(candles, swings_d, tD, weekly_trend=tW)
     out["exit_engine"] = _fts_exit_engine(candles, entry_hint=entry_hint)
     out["setups"] = _fts_setup_history(candles, swings_d)
+    # P0 #11: فهرستِ خالیِ زیرِ کفِ تاریخچه «۰ ستاپ» نیست؛ «ستاپ‌ها سنجیده نشد».
+    _need_bars = 1 + max(JET_LADDER) + 1
+    out["setups_state"] = ("ok" if len(candles) >= _need_bars
+                           else "insufficient_history")
+    out["setups_bars_available"] = len(candles)
+    out["setups_bars_required"] = _need_bars
     # وضعیتِ عمومیِ canonical + جدولِ نقش‌ها: تنها منبعِ متنِ «وضعیت FTS» درِ رابط
     out["status"] = _fts_status_block(candles, out)
     out["roles"] = _fts_roles_table()

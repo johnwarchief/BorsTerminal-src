@@ -102,6 +102,18 @@ def classify_trend(swings, series=None):
     """drop-in برایِ `_fts_classify_trend`. swings رویِ همان تایم‌فریمِ series."""
     candles = series or []
     closes = [c["close"] for c in candles]
+    # P0 #10: `MIN_WEEKLY` از ثابتِ مرده به گیتِ واقعیِ کمینۀ سنجش وصل شد —
+    # کمتر از ۸ کندل هیچ مؤلفه‌ای (شیب/MA/کارایی) رأی معتبر نمی‌دهد ⇒ na صریح،
+    # نه عددِ نیمه‌پخته. (کفِ ۶۰ جت تعمیم داده نشده؛ این کفِ خودِ الگوریتم است.)
+    if len(candles) < MIN_WEEKLY:
+        return {"hh": None, "hl": None, "basis": "hybrid", "last_high": None,
+                "prev_high": None, "last_low": None, "prev_low": None,
+                "last_high_time": None, "prev_high_time": None,
+                "last_low_time": None, "prev_low_time": None,
+                "stale_bars": None, "window": None,
+                "trend": "na", "outcome": "insufficient_data", "confidence": 0.0,
+                "score": None, "evidence": {},
+                "reason_codes": [f"INSUFFICIENT_BARS: {len(candles)} < {MIN_WEEKLY}"]}
     is_weekly = len(candles) < 60   # هفتگی کندلِ کمتری دارد؛ کفِ تحلیلِ هفتگی کوچک‌تر است
     sv, sevid, s_ok = _structure(swings)
     ap = _atr_pct(candles)

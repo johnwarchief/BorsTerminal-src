@@ -148,8 +148,15 @@ ck(CE._daily_setups([90.0] + [85.0] * 15, ch_highs, [80.0] * 16, [1000.0] * 16, 
 ck(CE._daily_setups([80.0] + [85.0] * 15, ch_highs, [80.0] * 16, [1000.0] * 16, C)["choch"] is False,
    "same structure, unreclaimed close -> no CHoCH")
 ck(CE._choch([1.0] * 5, [1.0]) is None, "too few bars -> None (unknown), not False")
-ck(all(v is None or isinstance(v, bool) for v in s1.values()),
+ck(all(k == "setups_reason" or v is None or isinstance(v, bool) for k, v in s1.items()),
    "every setup is bool-or-None (UI never receives a number it must guess)")
+# P0 #9: همهٔ کلیدها همیشه منتشر می‌شوند — حتی زیرِ کفِ تاریخچه (None با علت، نه ناپدید).
+_ck = CE._daily_setups([100.0] * 10, [100.0] * 10, [100.0] * 10, [100.0] * 10, C)
+ck(all(k in _ck for k in ("breakout", "heavy_volume", "pullback", "fibonacci",
+                          "choch", "bearish_div")),
+   "all setup keys are published even under the bar floor (P0 #9)")
+ck(isinstance(_ck.get("setups_reason"), str) and "10" in _ck["setups_reason"],
+   "reason carries the real bar count (latin digits deliberate, per P0 pattern)")
 sr = CE._stop_refs([100.0] * 8 + [90.0] + [100.0] * 8,
                    [100.0] * 8 + [80.0] + [100.0] * 8, C)
 ck(sr["ma14"] is not None and sr["rising_low"] == 80.0,
