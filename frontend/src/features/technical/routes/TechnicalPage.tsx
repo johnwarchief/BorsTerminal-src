@@ -23,7 +23,10 @@ import { FtsSettingsTrigger } from '../../fundamental/ui/FtsSettingsDrawer';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
+import { FtsIndicatorPanel } from '../components/FtsIndicatorPanel';
+import { FtsLayerLegend } from '../components/FtsLayerLegend';
 import { PatternToggles } from '../components/PatternToggles';
+import { epochToJalali } from '../lib/jalaliDate';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
@@ -126,6 +129,9 @@ export default function TechnicalPage() {
   const storeTimeframe = useFtsConfigStore((s) => s.timeframe);
   const storeChartType = useFtsConfigStore((s) => s.chartType);
   const storePriceScale = useFtsConfigStore((s) => s.priceScale);
+  // افسانۀ گوشۀ چارت (همان کلیدِ تب «خط وضعیت» در تنظیمات) حالا دو موتور را
+  // یکی می‌پوشاند: لایه‌های FTS از رجیستری خوانده می‌شوند، نه از stateِ چارت.
+  const showChartLegend = useFtsConfigStore((s) => s.view?.showLegend !== false);
   const theme = useUiStore((s) => s.theme);
   const engineBars = useMemo<EngineBar[]>(
     () =>
@@ -145,6 +151,10 @@ export default function TechnicalPage() {
       : storeChartType === 'ohlc' ? 'bars'
       : storeChartType === 'heikin_ashi' ? 'heikin'
       : 'candles';
+
+  // تاریخِ آخرین کندلِ دید (جلالی، همان که رویِ محور خوانده می‌شود) — خطِ
+  // «تازگیِ» پنلِ لایه‌ها. بی‌کندل هیچ تاریخی ساخته نمی‌شود.
+  const lastBarDate = candles.length > 0 ? epochToJalali(candles[candles.length - 1].timestamp) : null;
 
   // رأیِ هفتگی از همان موتورِ FTSِ سرور می‌آید و داخلِ سیگنال منتشر می‌شود؛ گیتِ
   // وتوی هفتگیِ تبِ مستر و سایدبارِ چپ فقط از همین می‌خوانند. پیش‌تر هیچ‌کس این
@@ -298,6 +308,15 @@ export default function TechnicalPage() {
             </div>
           )}
           <PriceAlertBanner rows={marketData?.data} />
+          {showChartLegend ? (
+            <div className="absolute bottom-9 start-3 z-40" data-testid="fts-legend-host">
+              <FtsLayerLegend
+                fts={analysis.data?.fts ?? null}
+                engineId={chartEngine}
+                adjustmentEvents={adjustEvents?.length ?? null}
+              />
+            </div>
+          ) : null}
         </div>
 
         <FtsDock
@@ -330,6 +349,20 @@ export default function TechnicalPage() {
               ),
             },
             { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
+            {
+              id: 'layers',
+              label: 'لایه‌های FTS',
+              node: (
+                <FtsIndicatorPanel
+                  fts={analysis.data?.fts ?? null}
+                  basis={analysis.data?.analysis_basis ?? null}
+                  bars={analysis.data?.bars ?? null}
+                  lastBarDate={lastBarDate}
+                  fetchedAtMs={analysis.dataUpdatedAt > 0 ? analysis.dataUpdatedAt : null}
+                  adjustmentEvents={adjustEvents?.length ?? null}
+                />
+              ),
+            },
             { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
             { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
 

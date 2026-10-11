@@ -395,6 +395,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const ftsChartType = useFtsConfigStore((s) => s.chartType);
   const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
   const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
+  const setFtsView = useFtsConfigStore((s) => s.setView);
 
   // مبنایِ اولیه «All»: چارت با تمامِ سریِ دریافتی باز می‌شود. «۱Y» هایلایت می‌شد
   // در حالی که هیچ زومی انجام نمی‌گرفت — برچسبِ دروغ‌گفتۀ کنترلِ مرده.
@@ -462,8 +463,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // و دستی روشن می‌شوند: ۱) هفت سطحِ فیبو (کمربندها همیشه می‌مانند) و
   // ۲) رویدادهایِ تاریخیِ CHoCH/دابل‌باتم. جتِ تاریخی اصلاً رسم نمی‌شود — موتور
   // هم دیگر آن را در `setups` نمی‌فرستد.
-  const [showFibLevels, setShowFibLevels] = useState<boolean>(false);
-  const [showHistoryEvents, setShowHistoryEvents] = useState<boolean>(false);
+  // این دو دیگر stateِ این کامپوننت نیستند (ftsConfigStore.view): پنلِ کاتالوگِ
+  // لایه‌ها بیرونِ چارت است و باید همان پرچم را به هر دو موتور برساند؛ دو
+  // سوییچِ واگرا یعنی یک رجیستریِ دروغگو (مرحلۀ ۶).
+  const showFibLevels = ftsView.showFibLevels === true;
+  const showHistoryEvents = ftsView.showHistoryEvents === true;
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -2393,9 +2397,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         isFtsActive={isFtsActive}
         onToggleFts={() => setIsFtsActive(!isFtsActive)}
         showFibLevels={showFibLevels}
-        onToggleFibLevels={() => setShowFibLevels(!showFibLevels)}
+        onToggleFibLevels={() => setFtsView({ showFibLevels: !showFibLevels })}
         showHistoryEvents={showHistoryEvents}
-        onToggleHistoryEvents={() => setShowHistoryEvents(!showHistoryEvents)}
+        onToggleHistoryEvents={() => setFtsView({ showHistoryEvents: !showHistoryEvents })}
         chartEngine={chartEngine}
         onEngineChange={onEngineChange}
         replayActive={replayActive}

@@ -47,6 +47,9 @@ export function FtsEngineChart({
   // خاموش می‌شود. بی‌این، نشانگرِ رویداد درِ این موتور هیچ‌وقت خاموش نمی‌شد و
   // سنجشِ روشن/خاموشِ بوم هیچ تفاوتی نمی‌دید.
   const showCorpActions = useFtsConfigStore((s) => s.view?.showCorporateActions !== false);
+  // همان دو پرچمِ چارتِ اصلی از همان منبعِ حقیقت -- سوییچِ کاتالوگِ لایه‌ها بیرونِ
+  // چارت است و اگر این موتور آن‌ها را نخواند، «توسلِ مستقل» درِ رجیستری دروغ می‌شد.
+  const showFibLevels = useFtsConfigStore((s) => s.view?.showFibLevels === true);
   const engineRef = useRef<ChartEngine | null>(null);
   const [engine, setEngine] = useState<ChartEngine | null>(null);
   const [errors, setErrors] = useState<EngineError[]>([]);
@@ -130,7 +133,14 @@ export function FtsEngineChart({
     const dLast = bars[bars.length - 1].close;
     const r = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
     return [
-      ...engineFtsLayers({ fts, anchorTs: anchor, startTs: start, toDisp: (p) => p * r, tsForDate }),
+      ...engineFtsLayers({
+        fts,
+        anchorTs: anchor,
+        startTs: start,
+        toDisp: (p) => p * r,
+        tsForDate,
+        showFibLevels,
+      }),
       // رویدادهایِ شرکتیِ مبدأ: همان نگاشتِ مشترکِ هر دو موتور (lib/corpEvents).
       // روزی که درِ این سری نیست نشانگر نمی‌گیرد — جایِ حدسی رویِ محور نمی‌گذاریم.
       ...(showCorpActions
@@ -141,7 +151,7 @@ export function FtsEngineChart({
           })
         : []),
     ];
-  }, [bars, fts, refClose, corpEvents, showCorpActions]);
+  }, [bars, fts, refClose, corpEvents, showCorpActions, showFibLevels]);
 
   // هر گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
   useEffect(() => {

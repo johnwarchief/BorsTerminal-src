@@ -68,13 +68,15 @@ export const FTS_INDICATOR_CATALOG: readonly FtsIndicatorEntry[] = [
   {
     id: 'fib-belt-33-40', fa: 'پل اول فیبو ۳۳–۴۰٪', en: 'Fibonacci first bridge',
     group: 'fibonacci', display: ['band'], source: 'fib.zone_33_40',
-    rule: 'فیبوناچی (کمربندها/پل)', toggle: 'showFibLevels',
+    // سلسله‌مراتبِ دورِ J: کمربندها همیشه می‌مانند و فقط «هفت سطح» پشتِ
+    // showFibLevels است؛ توسلِ جدایِ این دو کمربند درِ هیچ موتوری وجود ندارد.
+    rule: 'فیبوناچی (کمربندها/پل)', toggle: null,
     engines: { klinecharts: true, ffc: true },
   },
   {
     id: 'fib-belt-618-70', fa: 'کمربند طلایی ۶۱.۸–۷۰٪', en: 'Fibonacci golden belt',
     group: 'fibonacci', display: ['band'], source: 'fib.zone_618_70',
-    rule: 'فیبوناچی (کمربندها/پل)', toggle: 'showFibLevels',
+    rule: 'فیبوناچی (کمربندها/پل)', toggle: null,
     engines: { klinecharts: true, ffc: true },
   },
   {
