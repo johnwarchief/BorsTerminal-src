@@ -5,13 +5,11 @@
 // است تا در ۷۶۸ پیکسلِ ارتفاعِ صفحه جدول هم جا بماند.
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
 import { RetryAction } from '@shared/components/RetryAction';
-import { dEvenToJalali as dEvenToJalaliText } from '@shared/lib/jalaali';
 import type {
   AsOf,
   ClientSplitFeed,
   HistogramFeed,
   PhasesFeed,
-  SessionPhaseFeed,
 } from '../api/useMarketStatusFeed';
 import { asOfText } from '../api/useMarketStatusFeed';
 
@@ -217,87 +215,6 @@ export function ClientSplitPanel({
   );
 }
 
-/** چراغِ مرحلِ جلسه — تنها جایی که برنامه می‌گوید «الان در کدام مرحلِ خودِ
- *  بازاریم» و این عدد از وضعیتِ **رسمی** می‌آید، نه از ساعتِ دیواری.
- *  بند ۵ مأموریت (رأیِ مالک 1405-07-20): پیش از آغازِ معاملات و درِ تعطیلی،
- *  حکمِ «نامساعد» صادر نمی‌شود؛ فهرستِ «چه چیزی معنا ندارد» با علتش می‌آید. */
-const METRIC_LABEL: Record<string, string> = {
-  realized_flow: 'جریانِ پولِ تحقق‌یافته',
-  order_pressure: 'فشارِ سفارش‌ها (دفترِ صف)',
-  session_vs_threshold: 'سنجشِ جمعِ نشست با آستانۀِ تمام‌روز',
-  close_price_final: 'قیمتِ پایانیِ نهایی',
-};
-
-export function MarketPhasePanel({
-  data, isLoading, isError, onRetry,
-}: {
-  data: SessionPhaseFeed | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  onRetry: () => void;
-}) {
-  const d = data;
-  const missing = (d?.not_computable ?? []).filter((k) => k !== 'order_pressure');
-  return (
-    <StatusPanel testId="status-session-phase" title="مرحلِ جلسه"
-                 hint="وضعیتِ رسمیِ خودِ بازار از GetMarketOverview — نه حدسِ ساعت">
-      {isError && !d ? (
-        <PanelError testId="status-session-phase" onRetry={onRetry} />
-      ) : isLoading && !d ? (
-        <PanelLoading testId="status-session-phase" />
-      ) : !d ? (
-        <p className="text-2xs text-text-muted" data-testid="status-session-phase-empty">
-          وضعیتِ رسمیِ بازار نمی‌رسد — مرحل ادعا نمی‌شود.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span
-              data-testid="status-session-phase-label"
-              data-phase={d.phase}
-              data-live={d.is_live ? '1' : '0'}
-              className={`rounded-full border px-2 py-0.5 text-2xs font-black ${
-                d.is_live
-                  ? 'border-accent-green/50 bg-accent-green/10 text-accent-green'
-                  : d.verdict_allowed
-                    ? 'border-border-c bg-bg-card text-text-secondary'
-                    : 'border-accent-amber/50 bg-accent-amber/10 text-accent-amber'
-              }`}
-            >
-              {d.label}
-            </span>
-            <span className="text-3xs text-text-muted" data-testid="status-session-phase-source"
-                  title={`منبع: ${d.phase_source ?? '—'} — وضعیتِ خامِ بازار: ${d.official_state ?? '—'} (${d.official_state_title ?? '—'})`}>
-              {d.official ? 'از وضعیتِ رسمیِ بازار' : 'از تقویم — وضعیتِ رسمی نرسیده'}
-            </span>
-            {d.session_day ? (
-              <span className="num text-3xs text-text-muted" data-testid="status-session-phase-day">
-                نشستِ {dEvenToJalaliText(d.session_day)}
-              </span>
-            ) : null}
-          </div>
-          <p className="text-3xs leading-5 text-text-muted" data-testid="status-session-phase-verdict">
-            {d.verdict_allowed
-              ? 'این نشست قابلِ داوری است؛ حکمِ «مساعد/نامساعد» از همان آستانه‌هایِ سندِ FTS می‌آید.'
-              : 'درِ این مرحل هیچ حکمِ مساعد/نامساعدی صادر نمی‌شود — نه مثبت، نه منفی.'}
-          </p>
-          {missing.length ? (
-            <ul className="flex flex-col gap-0.5" data-testid="status-session-phase-missing">
-              {missing.map((k) => (
-                <li key={k} className="flex flex-wrap items-baseline gap-1 text-3xs text-text-muted">
-                  <span className="text-accent-amber">•</span>
-                  <span>{METRIC_LABEL[k] ?? k}:</span>
-                  <span>{d.why_not?.[k] ?? 'در این مرحل تعریف ندارد'}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      )}
-    </StatusPanel>
-  );
-}
-
 /** فازهای نشست — چند بار هر جهتِ جابه‌جایی رخ داد (معادلِ نمودارِ وضعیتِ تریدرزآرنا) */
 export function SessionPhasesPanel({
   data,
@@ -318,7 +235,7 @@ export function SessionPhasesPanel({
     <StatusPanel
       testId="status-phases"
       title="چرخشِ وضعیتِ نمادها"
-      hint="جابه‌جاییِ وضعیتِ هر نماد (صفِ خرید/فروش/مثبت/منفی) بین دو نقطۀِ نمونه‌برداریِ متوالی — مرحلِ نشستِ بازار را درِ «مرحلِ جلسه» جدا می‌خوانید"
+      hint="جابه‌جاییِ وضعیتِ هر نماد (صفِ خرید/فروش/مثبت/منفی) بین دو نقطۀِ نمونه‌برداریِ متوالی"
     >
       {isError && !data ? (
         <PanelError testId="status-phases" onRetry={onRetry} />

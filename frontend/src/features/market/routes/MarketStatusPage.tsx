@@ -12,7 +12,6 @@ import { TimelineCharts } from '../components/MicroChartsDrawer';
 import {
   BreadthHistogram,
   ClientSplitPanel,
-  MarketPhasePanel,
   SessionPhasesPanel,
 } from '../components/MarketStatusPanels';
 import { IndustriesTable, MainWatchTable } from '../components/MarketStatusTables';
@@ -21,7 +20,6 @@ import {
   useMstatClientSplit,
   useMstatHistogram,
   useMstatPhases,
-  useMstatSessionPhase,
 } from '../api/useMarketStatusFeed';
 
 export default function MarketStatusPage() {
@@ -29,22 +27,12 @@ export default function MarketStatusPage() {
   const histo = useMstatHistogram();
   const split = useMstatClientSplit();
   const phases = useMstatPhases();
-  const sessionPhase = useMstatSessionPhase();
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2" data-testid="market-status-page">
       <MarketStatusPanel />
       <MarketStatusTicker pulse={pulse} split={split.data} />
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
-
-      {/* بند ۵ مأموریت: پیش از هر حکمی، خودِ مرحلِ نشست و اینکه چه چیزی در این
-          مرحل معنا دارد. تنها منبعش وضعیتِ رسمیِ خودِ بازار است. */}
-      <MarketPhasePanel
-        data={sessionPhase.data}
-        isLoading={sessionPhase.isLoading}
-        isError={sessionPhase.isError}
-        onRetry={() => void sessionPhase.refetch()}
-      />
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
         <BreadthHistogram

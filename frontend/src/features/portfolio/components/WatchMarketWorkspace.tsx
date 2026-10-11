@@ -17,7 +17,7 @@ import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useSymbolSearch } from '../api/useSymbolSearch';
 import { useWatchSymbolsStore, WATCH_MAX } from '../stores/watchSymbolsStore';
 import { WatchTable } from './WatchTable';
-import { WatchMiniChart } from './WatchMiniChart';
+import { WatchChartDeck } from './WatchChartDeck';
 import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { WatchSummaryPanel } from './WatchSummaryPanel';
 
@@ -152,7 +152,12 @@ export default function WatchMarketWorkspace() {
       )}
 
       <div className="grid min-w-0 max-w-full grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-        <WatchMiniChart symbol={effective} />
+        {/* کارتِ نمودار چندصفحهایِ خودِ نمادها شد (دو ورقه درِ هر نماد، با دو
+            شاخصِ بنیادی درِ ورقۀِ اول و سه‌تایِ آخر درِ ورقۀِ دوم)؛ پس این خانه
+            از سه ستونِ هم‌قدِ نمادِ مؤثر بیرون است و تنها می‌ایستد. */}
+        <div className="lg:col-span-2 xl:col-span-3">
+          <WatchChartDeck symbols={symbols} selected={effective} onSelect={setSymbol} />
+        </div>
         <OrderBookFive symbol={effective} candle={summaryRow.data ?? null} testId="watch-orderbook"
                       className="glass-panel h-full min-w-0 rounded-2xl p-2.5" />
         <WatchSummaryPanel symbol={effective} row={summaryRow.data ?? null} />

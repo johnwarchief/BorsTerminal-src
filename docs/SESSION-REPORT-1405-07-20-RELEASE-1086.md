@@ -28,7 +28,7 @@
 | سوریتِ فرانت | ۱۵۷ فایل / ۱۵۸۱ pass / ۳ skip / ۰ fail (`--maxWorkers=2`) |
 | `npx tsc -b` | صفر خطا |
 | ESLint (فایل‌هایِ دست‌خورده) | پاک؛ مرزِ FSD هم نگه داشته شد (اشتراکِ منطق درِ `shared/stores` می‌نشیند، نه importِ فیچر‌به‌فیچر) |
-| `dev/persian_glyph_guard.py` | ۴/۰ — همین گارد «可读»ِ دستِ خودم را درِ کامنتِ فارسیِ `FtsFunnelStages.tsx` گرفت و پیش از کامیت پاک شد |
+| `dev/persian_glyph_guard.py` | ۴/۰ — همین گارد «دو نویسهٔ چینی»ِ دستِ خودم را درِ کامنتِ فارسیِ `FtsFunnelStages.tsx` گرفت و پیش از کامیت پاک شد |
 | `dev/version_anchor_guard.py` | ۶ لنگر روی ۱.۰.۸۶، OK |
 | `dev/funnel_engine_v1.py` | ۶۹ بند / ۰ خطا (۱۴ بندِ تازه: اجتماع، بردگیِ چیپ بر زنجیرۀ شخص، مهرِ منطق درِ پاسخ، دلیلِ عبور، و کنترلِ منفیِ «فیلترِ ناشناخته حتی با override خطا می‌دهد») |
 | پروبِ زنده `tools/screen_chips_probe.mts` | **۹/۹** رویِ بکاندِ ۸۰۰۵ با `BORS_NO_FETCH_LOOPS=1` (بی‌درخواستِ اضافه به TSETMC) — `tools/screen_chips_probe.png` و `.json` |
