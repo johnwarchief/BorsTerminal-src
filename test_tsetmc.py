@@ -1010,6 +1010,10 @@ def get_json(s, url, key):
 # ════════════════════════════════════════════════════════════════════════════
 CTV_SOURCE = "tsetmc_clienttype_history"
 CTV_RETRY_S = 6 * 3600      # سقفِ تلاش برایِ یک نشست (الگوی TAPE_HIST_RETRY_S)
+# نشستی که بودجه‌اش تمام نشده ولی ردیف‌هایِ کم‌حجمش باقی‌اند: هر ۳۰ دقیقه
+# ادامه می‌دهد. بی‌این، تلاشِ سوختۀ «همین نشستِ باز» پنجرۀ شش‌ساعته را
+# می‌بست و آن نشست هرگز کامل نمی‌شد (سنجشِ ۱۴۰۵-۰۷-۱۹: ۰ ردیف از ۱۵۹۳).
+CTV_RESUME_S = 30 * 60
 CTV_BUDGET = 600            # حداکثرِ درخواست در هر اجرا
 
 # DDL درِ tsetmc_p0_schema است؛ این نام فقط برایِ سازگاریِ فراخوانی‌هایِ موجود
@@ -1018,12 +1022,36 @@ CTV_TABLE_DDL = _P0.CLIENT_TYPE_VALUE
 
 
 def ensure_client_type_value_schema(conn):
-    """میزِ ارزشِ مبدأ و حالتِ آن (DDL از tsetmc_p0_schema — تک‌منبع)."""
+    """میزِ ارزشِ مبدأ و حالتِ آن (DDL از tsetmc_p0_schema — تک‌منبع).
+
+    پنجرۀ تلاشِ هر نشست درِ `tsetmc_p0_state` با نامِ `client-values:<day>`
+    می‌نشیند (تکمیلِ سطرِ خودِ تابع) — هیچ ستونِ تازه‌ای به بانکِ ارتقایافته
+    لازم نیست.
+    """
     import tsetmc_p0_schema as P0
     conn.execute(P0.CLIENT_TYPE_VALUE)
     conn.execute(P0.CLIENT_TYPE_VALUE_STATE)
     conn.execute("INSERT OR IGNORE INTO client_type_value_state"
                  " (id, last_attempt, last_ok, newest_d_even, note) VALUES (1, NULL, NULL, 0, NULL)")
+
+
+def ct_candidate_days(conn):
+    """نشست‌هایی که هنوز مبدأِ همه‌یِ نمادهایشان نرسیده — تازه‌ترین اول.
+
+    چرا لازم شد: انتخابِ هدف بی «MAX(d_even) از client_type» بود، یعنی همیشه
+    «همین نشستِ باز». خودِ TSETMC برایِ نشستِ جاریِ نهایه‌نشده HTTP 500 می‌دهد
+    (سنجدش درِ همین فایل)، پس آن تلاش هرگز چیزی نمی‌نوشد ولی `last_attempt` را
+    می‌سوزاند و نشستِ دیروز — که منبعش آماده است — درِ صفِ شش‌ساعته می‌مرد.
+    سنجشِ ۱۴۰۵-۰۷-۱۹ رویِ بانکِ زندۀ همین ماشین: `client_type` برایِ ۲۰۲۶۱۰۱۰
+    ۱۵۹۳ ردیف دارد و `client_type_value` صفر؛ با یک fetchِ آزمایشیِ ۱۲نمادی از
+    همان نشست، ۱۲ از ۱۲ ردیف `native` نوشته شد. یعنی منبع هست و گیتِ وقت‌سنجی
+    مانع بوده، نه نبودِ داده.
+    """
+    return conn.execute(
+        "SELECT c.d_even, COUNT(*) AS want,"
+        "       (SELECT COUNT(*) FROM client_type_value v WHERE v.d_even = c.d_even) AS have"
+        "  FROM client_type c GROUP BY c.d_even HAVING have < want ORDER BY c.d_even DESC"
+    ).fetchall()
 
 
 def ct_universe_sql():
@@ -1074,6 +1102,41 @@ def parse_client_type_value(payload, ins_code, d_even, now=None):
             num(row.get("buy_DDD_Value")), kind, now or "", CTV_SOURCE)
 
 
+def _ct_window_name(day) -> str:
+    """نامِ سطرِ حالتِ «ارزشِ مبدأ» برایِ یک نشست — پنجره به‌ازایِ نشست است، نه سراسری.
+
+    بی‌این، تنها «آخرینِ نشستِ تلاش‌شده» حافظه داشت: یک نشستِ بازِ ۵۰۰‌ده پنجرۀ
+    شش‌ساعته را می‌سوخت، و تلاشِ بعدی رویِ نشستِ دیگر آن را فراموش می‌کرد و
+    همان نشستِ شکسته را دوباره صدا می‌زد (چکش‌زدن به منبع).
+    """
+    return "client-values:%s" % day
+
+
+def _ct_window_ok(conn, day, now, have) -> bool:
+    """آیا این نشست حالا مجاز به تلاش است؟
+
+    پیشرفتِ واقعی (`have > 0`) ⇒ پنجرۀ کوتاهِ ادامه، تا بودجه‌ی ۶۰تایی درِ همان
+    روز تمام شود. بی‌پیشرفت (۵۰۰ِ نشستِ باز) ⇒ همان سقفِ شش‌ساعته.
+    """
+    conn.execute(P0_STATE_DDL)
+    row = conn.execute("SELECT last_run FROM tsetmc_p0_state WHERE name=?",
+                       (_ct_window_name(day),)).fetchone()
+    if not row or not row[0]:
+        return True
+    try:
+        age = (datetime.datetime.strptime(now, "%Y-%m-%d %H:%M:%S")
+               - datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
+    except (TypeError, ValueError):
+        return True
+    return age >= (CTV_RESUME_S if (have or 0) > 0 else CTV_RETRY_S)
+
+
+def _ct_window_mark(conn, day, now) -> None:
+    conn.execute(P0_STATE_DDL)
+    conn.execute("INSERT OR REPLACE INTO tsetmc_p0_state (name, last_run) VALUES (?, ?)",
+                 (_ct_window_name(day), now))
+
+
 def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
                                session=None, fetch=None, now=None):
     """ارزشِ مبدأ را برایِ یک نشستِ بسته پر می‌کند. برمی‌گرداند dictِ آمار.
@@ -1081,30 +1144,43 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
     رفتارِ دیدہ‌شده (۱۴۰۵-۰۷-۱۳): نشستِ جاری HTTP 500 می‌دهد، نشست‌هایِ بسته تا
     `20260701` برمی‌گردند. پس ۵۰۰ «خطا» نیست و بوقِ خطا هم نمی‌زند؛ فقط ردیفی
     نوشته نمی‌شود و provenance مصرف‌کننده رویِ `reconstructed` می‌ماند.
+
+    انتخابِ هدف (رأیِ مالک ۱۴۰۵-۰۷-۲۲، «حقوقی/حقیقی باید با تریدرزآرنا یکی
+    باشد»): تازه‌ترین نشستی که هنوز کامل نشده، و اگر پنجرۀ استراحتِ آن بسته
+    بود نشستِ کهنه‌ترِ ناقص. بی‌این، «همین نشستِ باز» هر بار ۵۰۰ می‌گرفت و
+    پنجرۀ شش‌ساعته را می‌سوزاند، و نشستِ دیروز — که منبعش آماده است — هرگز
+    خوانده نمی‌شد (سنجشِ ۱۴۰۵-۰۷-۱۹: ۱۵۹۳ ردیف client_type و صفر ردیف
+    client_type_value؛ با یک fetchِ آزمایشیِ ۱۲نمادی از همان نشست، ۱۲ از ۱۲
+    ردیفِ native نوشته شد — یعنی منبع بود و گیتِ وقت‌سنجی مانع).
     """
     now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ensure_client_type_value_schema(conn)
-    st = conn.execute("SELECT last_attempt, newest_d_even FROM client_type_value_state"
-                      " WHERE id=1").fetchone()
+    cands = ct_candidate_days(conn)
     if day is None:
-        day = conn.execute("SELECT MAX(d_even) FROM client_type").fetchone()[0] or 0
+        if not cands:
+            return {"skipped": "no-session", "written": 0}
+        picked = next(((d, w, h) for d, w, h in cands
+                       if force or _ct_window_ok(conn, d, now, h)), None)
+        if picked is None:
+            d0, w0, h0 = cands[0]
+            return {"skipped": "throttled", "day": d0, "written": h0}
+        day, want, have = picked
+    else:
+        have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
+                            (day,)).fetchone()[0]
+        want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
+                            (day,)).fetchone()[0]
+        if want and have >= want:
+            return {"skipped": "complete", "day": day, "written": have}
     if not day:
         return {"skipped": "no-session", "written": 0}
-    have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
-                        (day,)).fetchone()[0]
-    want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
-                        (day,)).fetchone()[0]
-    if want and have >= want:
-        return {"skipped": "complete", "day": day, "written": have}
-    if not force and st and st[0]:
-        try:
-            age = (datetime.datetime.now()
-                   - datetime.datetime.strptime(st[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
-        except ValueError:
-            age = CTV_RETRY_S + 1.0
-        if age < CTV_RETRY_S:
-            return {"skipped": "throttled", "day": day, "written": have}
+    if not force and not _ct_window_ok(conn, day, now, have):
+        # هدف هنوز پنجرۀ استراحتِ خودش را نگه می‌دارد (تلاشِ بی‌پیشرفت)
+        return {"skipped": "throttled", "day": day, "written": have}
+    # پنجره پیش از واکشی بسته می‌شود، نه بعدش: اگر فرآیند درِ وسطِ ۶۰۰ درخواست
+    # بمیرد، دورۀ بعد بی‌درخواستِ دوباره نپرد.
     conn.execute("UPDATE client_type_value_state SET last_attempt=? WHERE id=1", (now,))
+    _ct_window_mark(conn, day, now)
     conn.commit()
     done = {r[0] for r in conn.execute(
         "SELECT ins_code FROM client_type_value WHERE d_even=?", (day,)).fetchall()}
@@ -1138,9 +1214,11 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
             + ",".join("?" * 10) + ")", rows)
     total = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
                          (day,)).fetchone()[0]
-    conn.execute("UPDATE client_type_value_state SET last_ok=?, newest_d_even=?,"
-                 " note=? WHERE id=1",
-                 (now if rows else st[1] if st else None, day,
+    # `last_ok` فقط با پیشرفت تازه می‌شود (COALESCE، نه جای‌گزینی با شمارۀِ نشست —
+    # آن یک اشتباهِ نوعیِ پیشین بود: newest_d_even درِ ستونِ زمان می‌نشست).
+    conn.execute("UPDATE client_type_value_state SET last_ok=COALESCE(?, last_ok),"
+                 " newest_d_even=?, note=? WHERE id=1",
+                 (now if rows else None, day,
                   f"day={day} written={len(rows)} total={total} errors={errs}"))
     conn.commit()
     market_state_touch()
@@ -2585,6 +2663,11 @@ def main():
     for _name, _fn, _every in (
             ("corporate-events", lambda: fetch_corporate_events(s, conn, now=now), 86400),
             ("state-notices", lambda: fetch_state_and_notices(s, conn, now=now), 86400),
+            # سقفِ روز دست‌نخورده: چهار تلاش × بودجۀ ۶۰تایی. چیزی که عوض شد
+            # *انتخابِ هدف* است (تازه‌ترین نشستِ کامل‌نشده) و پنجرۀ هر نشست درِ
+            # خودِ تابع — بی‌این، یک تلاشِ بی‌نتیجه رویِ «همین نشستِ باز» درِ
+            # ۰۹:۳۷ کلِ روز را قفل می‌کرد و آن نشست هرگز خوانده نمی‌شد
+            # (سنجشِ ۱۴۰۵-۰۷-۱۹: client_type ۱۵۹۳ ردیف، client_type_value صفر).
             ("client-values", lambda: refresh_client_type_values(conn, now=now),
              CTV_RETRY_S)):
         try:

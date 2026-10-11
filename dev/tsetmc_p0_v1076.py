@@ -247,6 +247,65 @@ def part_ctv():
                                        now="2026-10-05 13:00:01")
     ck(st3.get("skipped") in ("complete", "throttled"),
        "دوباره‌کاری با throttle/coverage رد می‌شود", str(st3))
+
+    # ── گرسنگیِ نشست: هدف باید «تازه‌ترین نشستِ کامل‌نشده» باشد، نه MAX(d_even) ──
+    # سنجشِ ۱۴۰۵-۰۷-۱۹ رویِ بانکِ همین ماشین: client_type برایِ ۲۰۲۶۱۰۱۰ چهارده‌هزار
+    # ردیفِ خودش را داشت (۱۵۹۳) و client_type_value صفر — چون هدف همیشه «همین
+    # نشستِ باز» بود، ۵۰۰ می‌گرفت، و پنجرۀ شش‌ساعته را می‌سوزاند. این سه ردیفِ
+    # دستی همان شکل را می‌سازد: دو نشستِ کهنه‌ترِ خواندنی و یک نشستِ بازِ ۵۰۰‌ده.
+    c2 = sqlite3.connect(":memory:")
+    T.create_schema(c2)
+    T.ensure_client_type_value_schema(c2)
+    for _day in (20261004, 20261008, 20261010):
+        c2.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
+                   " buy_ddd_vol, buy_count_i, buy_count_n, sell_i_vol, sell_n_vol,"
+                   " sell_count_i, sell_count_n) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                   ("I-%d" % _day, _day, 100.0, 10.0, 0.0, 5, 1, 60.0, 20.0, 3, 1))
+    c2.commit()
+
+    # recDate تهی ⇒ `parse` خودِ d_evenِ هدف را می‌نویسد (ردیف به همان نشست می‌رود)
+    def ok_fetch(code, day=None):
+        return {"clientType": {"buy_I_Value": 10.0, "buy_N_Value": 1.0,
+                               "sell_I_Value": 5.0, "sell_N_Value": 2.0}}
+
+    def dead_fetch(code):
+        return None                      # نشستِ باز: ۵۰۰ → هیچ
+
+    picked = T.refresh_client_type_values(c2, fetch=dead_fetch,
+                                         now="2026-10-10 10:00:00")
+    ck(picked.get("day") == 20261010 and picked.get("written") == 0,
+       "۱) هدفِ اول = تازه‌ترین نشستِ کامل‌نشده (نه کهنه)", str(picked))
+
+    # تلاشِ دوم یک ثانیه بعد: نشستِ ۲۰۲۶۱۰۱۰ پیشرفتی نکرد، پس پنجرۀ بلند را
+    # نگه می‌دارد؛ حلقه باید به نشستِ کهنه‌ترِ ناقص برود، نه اینکه بخوابد.
+    fell = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                        now="2026-10-10 10:00:01")
+    ck(fell.get("day") == 20261008 and fell.get("written") == 1,
+       "۲) نشستِ مسدود نشستِ کهنه‌تر را جا نمی‌گذارد (گرسنگی تمام شد)", str(fell))
+
+    third = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                         now="2026-10-10 10:00:02")
+    ck(third.get("day") == 20261004 and third.get("written") == 1,
+       "۳) صفِ نشست‌هایِ ناقص به ترتیبِ تازه→کهنه خالی می‌شود", str(third))
+
+    none_left = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                             now="2026-10-10 10:00:03")
+    ck(none_left.get("skipped") == "throttled" and none_left.get("day") == 20261010,
+       "۴) وقتی فقط نشستِ مسدود مانده، بی‌مصرف به منبع چکش زده نمی‌شود", str(none_left))
+
+    # کنترلِ منفی: پنجره واقعاً شش‌ساعته است، نه یک‌ساعته — یک ثانیه کم و زیادش
+    # باید نتیجه را عوض کند.
+    still = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                         now="2026-10-10 15:59:00")
+    ck(still.get("skipped") == "throttled", "۵) یک دقیقه پیش از پنجره هنوز مسدود", str(still))
+    after = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                         now="2026-10-10 16:01:00")
+    ck(after.get("day") == 20261010 and after.get("written") == 1,
+       "۵) با گذشتِ پنجره، همان نشست دوباره خوانده می‌شود", str(after))
+    ck(c2.execute("SELECT COUNT(*) FROM client_type_value").fetchone()[0] == 3,
+       "۶) هر سه نشستِ بانک بالاخره ردیفِ مبدأ دارند",
+       str([tuple(r) for r in c2.execute("SELECT d_even, COUNT(*) FROM client_type_value GROUP BY d_even")]))
+    c2.close()
     conn.close()
 
 
@@ -417,6 +476,13 @@ def part_wiring():
     for call in ("fetch_corporate_events(s, conn", "fetch_state_and_notices(s, conn",
                  "refresh_client_type_values(conn"):
         ck(call in tsrc, f"main() واقعاً `{call}` را صدا می‌زند")
+    # هدف از «MAX(d_even)» بیرون آمده (تازه‌ترین نشستِ کامل‌نشده)، و دروازۀ
+    # حلقه همان سقفِ چهار تلاشِ روزانه می‌ماند — اصلاحِ گرسنگی نباید به
+    # افزایشِ نرخِ درخواست به TSETMC تبدیل شود.
+    ck("def ct_candidate_days" in tsrc and "ct_candidate_days(conn)" in tsrc,
+       "هدفِ ارزشِ مبدأ از صفِ نشست‌هایِ ناقص انتخاب می‌شود")
+    ck('refresh_client_type_values(conn, now=now),\n             CTV_RETRY_S' in tsrc,
+       "دروازۀ حلقه دست‌نخورده (چهار بودجه در روز)، پنجره‌ها درِ خودِ تابع‌اند")
     ck(tsrc.count("except Exception as e:") >= 4 and "p0_due(conn, _name" in tsrc,
        "هر سه خانواده try/except و throttle دارند (حلقۀ ۹۰ ثانیه‌ای نمی‌شکند)")
 
