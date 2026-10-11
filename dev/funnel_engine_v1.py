@@ -558,8 +558,29 @@ why5 = g5["status_matrix"]["الف"]["tape"]["human_reason"]
 ck("مبناء" in why5 and "۰٫۰۶" in why5 and "۳" in why5 and "." not in why5,
    f"۴۸) دلیلِ حجمِ مشکوک نسبتِ خودِ ردیف و آستانۀ فایل را با هم می‌نویسد: {why5}")
 
+# ── ۴۹) بدنۀِ همین نشست درِ ردیف‌هایِ قیف (ستونِ «کندل روز») ────────────────
+# رأیِ مالک (۱۴۰۵-۰۷-۲۲): «جاهایی که می‌طلبد نمودار هم باشد». قیف همان
+# ردیف‌هایِ تابلو را می‌نماید ولی هیچ شکلی از نشستِشان نمی‌داد. سه کلیدِ
+# first/high/low عیناً از ردیفِ تابلو حمل می‌شوند — نبودنشان None می‌ماند،
+# نه صفر (صفر درِ کندل یعنی «اولینِ مبادله رویِ صفر افتاد»).
+_b1 = board("الف", f_susp=True)
+_b1.update({"p_first": 980.0, "p_max": 1010.0, "p_min": 960.0,
+            "p_last": 1000.0, "p_closing": 990.0})
+_b2 = board("ب", f_susp=True)
+E49 = FE.evaluate([_b1, _b2], [screen("الف", **UP, **OK_FUND), screen("ب", **UP, **OK_FUND)],
+                  preset="custom", custom_chain=["f_susp"])
+_by = {r["symbol"]: r for r in E49["entries"]["tape"]}
+ck(_by["الف"].get("first") == 980.0 and _by["الف"].get("high") == 1010.0
+   and _by["الف"].get("low") == 960.0,
+   f"۴۹) بدنۀِ نشست از ردیفِ تابلو به ردیفِ قیف می‌رسد: "
+   f"{_by['الف'].get('first')}/{_by['الف'].get('high')}/{_by['الف'].get('low')}")
+ck("first" in _by["ب"] and _by["ب"]["first"] is None
+   and _by["ب"]["high"] is None and _by["ب"]["low"] is None,
+   f"۴۹) بی‌OHLC کلید تهی می‌ماند (صفرِ ساختگی کندل نمی‌سازد): "
+   f"{_by['ب'].get('first')!r}")
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43 + 9 + 7 + 8} بندِ مأموریت")
+print(f"funnel_engine guard OK — {43 + 9 + 7 + 8 + 2} بندِ مأموریت")

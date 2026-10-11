@@ -19,12 +19,15 @@ function feed(payload: unknown) {
 }
 
 const ASOF = { d_even: 20261010, h_even: 102343 };
-const row = (symbol: string, tape_flags: Record<string, boolean> | null) => ({
+const row = (symbol: string, tape_flags: Record<string, boolean> | null,
+             ohlc: { first?: number; high?: number; low?: number } = { first: 980, high: 1010, low: 970 }) => ({
   symbol, ins_code: `c-${symbol}`, name: symbol, industry: 'فلزات', cls: 'سهامی', kind: 'stock',
   vol_b_shares: 100, trades: 60, val_b_toman: 42, p_last: 1000, p_closing: 990,
+  p_first: ohlc.first ?? null, p_max: ohlc.high ?? null, p_min: ohlc.low ?? null,
   pct_last: 1, pct_close: 1, clock_pct: 2.5, pc_buy: 5, pc_sell: 4, power: 1.6,
   flow_b_toman: 3, tape_flags,
 });
+
 const payload = (rows: unknown[], source: string | null | undefined = 'api/market') => ({
   status: 'ok', asof: ASOF, group: 'eq_all', industry: '', sort: 'clock', sort_col: 'clock_pct',
   desc: true, total: rows.length, clock_hits: rows.length,
@@ -75,6 +78,17 @@ describe('ستون نشان در نمادهای زیرِ نظر', () => {
     await waitFor(() => expect(screen.getByTestId('mainwatch-row-همراه')).toBeInTheDocument());
     expect(screen.queryAllByTestId(/^mainwatch-flag-/)).toHaveLength(0);
     expect(screen.getByTestId('status-mainwatch').textContent).toContain('پرچم از فیدِ تابلو نرسید');
+  });
+
+  it('کندلِ همین نشست رسم می‌شود، و بی‌OHLC «—» است نه کندلِ ساختگی', async () => {
+    feed(payload([row('فولاد', null, { first: 980, high: 1010, low: 960 }),
+                  row('شپنا', null, { first: undefined, high: undefined, low: undefined })]));
+    renderTable();
+    await waitFor(() => expect(screen.getByTestId('mainwatch-row-فولاد')).toBeInTheDocument());
+    const up = screen.getByTestId('mainwatch-candle-فولاد');
+    expect(up.getAttribute('data-state')).toBe('up');   // آخرین ۱۰۰۰ بالایِ اولین ۹۸۰
+    expect(screen.getByTestId('mainwatch-candle-شپنا').getAttribute('data-state')).toBe('incomplete');
+    expect(screen.getByTestId('mainwatch-candle-شپنا').textContent).toBe('—');
   });
 
   it('نمادی که درِ فیدِ تابلو نبود صریح «بی‌پرچم» است — با «پرچمی ندارد» یکی نیست', async () => {

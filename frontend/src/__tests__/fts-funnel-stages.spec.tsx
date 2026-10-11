@@ -101,6 +101,17 @@ describe('قیف از پاسخِ سرور', () => {
     expect(within(tape).getByTestId('funnel-why-سپ').textContent).toContain('حجم مشکوک');
   });
 
+  it('کندلِ همین نشست درِ جدولِ غربالگری هم رسم می‌شود (رأیِ ۱۴۰۵-۰۷-۲۲: نمودار جاهایی که می‌طلبد)', async () => {
+    await ready('/master?stage=tape&preset=custom');
+    const tape = screen.getByTestId('funnel-stage-tape');
+    expect(within(tape).getByRole('columnheader', { name: 'کندل روز' })).toBeInTheDocument();
+    // فولاد درِ فیکسچر OHLC دارد (اول ۹۸۰ ← آخرین ۱۰۰۰): صعودی رسم می‌شود
+    const c = within(tape).getByTestId('funnel-candle-فولاد');
+    expect(c.getAttribute('data-state')).toBe('up');
+    // شپنا OHLC ندارد: «—»، نه کندلِ ساخته‌شده از پایانی
+    expect(within(tape).getByTestId('funnel-candle-شپنا').getAttribute('data-state')).toBe('incomplete');
+  });
+
   it('شمارشِ هر گام از همان پاسخ می‌آید: پنج وضعیت رویِ جامعۀ غربالگری', async () => {
     const f = funnelFromApi(FUNNEL_FIXTURE);
     expect(f.total).toBe(4);                       // Y = واجدِ شرایطِ غربالگری

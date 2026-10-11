@@ -883,6 +883,11 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "sector": r.get("sector_name") or r.get("sector") or "",
         "last": _num(r.get("p_last")),
         "closing": _num(r.get("p_closing")),
+        # بدنۀِ همین نشست، عیناً از همان ردیفِ تابلو (`p_first`/`p_max`/`p_min`
+        # که از ۱۴۰۵-۰۷-۱۹ رویِ سیم می‌آیند). ستونِ «کندل روز» درِ قیف همین
+        # سه را می‌خواهد؛ نبودنشان «—» است، نه کندلِ ساختگی.
+        "first": _num(r.get("p_first")), "high": _num(r.get("p_max")),
+        "low": _num(r.get("p_min")),
         "change_pct": _num(r.get("percent_change")),
         "vol_ratio": _num(r.get("vol_ratio")),
         "patterns": patterns if patterns is not None

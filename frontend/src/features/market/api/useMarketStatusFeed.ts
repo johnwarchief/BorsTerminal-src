@@ -178,6 +178,11 @@ export const MainWatchRowSchema = z.object({
   val_b_toman: num,
   p_last: num,
   p_closing: num,
+  /** بدنۀِ همین نشست برایِ ویجتِ «کندل روز» (`FormingCandle` درِ تبِّ تابلو)؛
+   *  تهی یعنی اولینِ مبادله هنوز نیفتاده — کندلِ ساختگی ساخته نمی‌شود. */
+  p_first: num,
+  p_max: num,
+  p_min: num,
   pct_last: num,
   pct_close: num,
   clock_pct: num,

@@ -5,6 +5,7 @@
 // داده‌اش نرسد صفر نمی‌شود — خط تیره می‌ماند.
 import { useMemo, useState } from 'react';
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
+import { FormingCandle } from '@shared/components/FormingCandle';
 import { RetryAction } from '@shared/components/RetryAction';
 import { useIndustries, type IndustryRow } from '../api/useIndustries';
 import { useMstatMainwatch, type MainWatchRow } from '../api/useMarketStatusFeed';
@@ -124,6 +125,7 @@ export function MainWatchTable() {
                   <th className={TH}>صنعت</th>
                   <th className={`${TH} text-start`}>آخرین</th>
                   <th className={`${TH} text-start`}>پایانی</th>
+                  <th className={`${TH} text-center`}>کندل روز</th>
                   <th className={`${TH} text-start`}>تغییر٪</th>
                   <th className={`${TH} text-start`}>ساعت٪</th>
                   <th className={`${TH} text-start`}>نشان</th>
@@ -144,6 +146,9 @@ export function MainWatchTable() {
                     </td>
                     <td className={`${TD} text-start`}>
                       <span className="num">{fmtInt(r.p_closing)}</span>
+                    </td>
+                    <td className={`${TD} text-center`}>
+                      <FormingCandle candle={r} testId={`mainwatch-candle-${r.symbol}`} />
                     </td>
                     <td className={`${TD} text-start`}>
                       <span className={`num ${r.pct_close != null && r.pct_close < 0 ? 'text-accent-red' : 'text-accent-green'}`}>

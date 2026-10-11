@@ -1804,6 +1804,10 @@ def mainwatch(conn, group: str = "eq_all", industry: str = "", sort: str = "cloc
             "trades": m["trades"],
             "val_b_toman": round(m["val"] / B_TUMAN_FROM_RIAL, 1),
             "p_last": _f(plst) if ok_last else None, "p_closing": _f(pcl),
+            # بدنۀِ همین نشست برایِ ویجتِ «کندل روز» (همان `FormingCandle` درِ
+            # تابلو). هیچ‌کده ساختگی نیست: نبودِ اولینِ مبادله یعنی کلید تهی.
+            "p_first": _f(r.get("p_first")), "p_max": _f(r.get("p_max")),
+            "p_min": _f(r.get("p_min")),
             "pct_last": (100.0 * _div(_f(plst) - _f(py), py)
                          if py and ok_last and px_near(py, pcl) else None),
             "pct_close": r.get("pct"),

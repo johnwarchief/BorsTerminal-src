@@ -13,6 +13,8 @@ const row = (
   symbol: string, name: string, over: Record<string, unknown> = {},
 ) => ({
   symbol, name, sector: 'فلزات اساسي', last: 1000, closing: 990, change_pct: 1.0,
+  // بدنۀِ همین نشست برایِ ستونِ «کندل روز» — پیش‌فرض تهی (کندل رسم نمی‌شود)
+  first: null, high: null, low: null,
   vol_ratio: 1.4, patterns: [] as string[], status: {}, why: {}, chain: [] as string[],
   score: null, primary_score: null, weekly: null, daily: null, branch: null,
   matrix: null, tech_status: null, tech_points: null, evidence: [] as string[],
@@ -56,7 +58,9 @@ export const FUNNEL_FIXTURE: ApiPayload = {
   },
   entries: {
     tape: [
+      // بدنهٔ کاملِ نشست دارد ⇒ ستون «کندل روز» باید آن را رسم کند
       row('فولاد', 'فولاد مبارکه اصفهان', { patterns: ['مشکوک', 'نقطه'],
+        first: 980, high: 1010, low: 960,
         status: { tape: 'pass' }, rank: 1 }),
       row('همراه', 'همراه اول', { patterns: ['مشکوک'], score: 5,
         status: { tape: 'pass' }, rank: 2 }),

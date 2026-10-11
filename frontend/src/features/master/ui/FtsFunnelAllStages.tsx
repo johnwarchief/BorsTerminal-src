@@ -18,6 +18,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { QUICK_FILTERS, QUICK_LABELS, useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
+import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
@@ -158,7 +159,8 @@ const MARK_LABEL = STATUS_LABEL;
 type ColKey =
   | 'symbol' | 'last' | 'chg' | 'vol' | 'pattern'
   | 'weekly' | 'daily' | 'branch' | 'setup' | 'techPoints' | 'mark'
-  | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'why' | 'basket';
+  | 'ind1' | 'ind2' | 'ind3' | 'ind4' | 'ind5' | 'score' | 'why' | 'basket'
+  | 'candle';
 
 const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   symbol: { label: 'نماد', title: 'کلیک = انتخابِ نماد' },
@@ -181,18 +183,23 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   // حکمِ بی‌دلیل نگه ندارید: همین «دلیل» را پیشِ این فقط `title`ِ ردیف می‌داد و
   // برای دیدنش باید نشانگر را نگه می‌داشتید (رویِ لمسی اصلاً دیده نمی‌شد).
   why: { label: 'دلیل', title: 'دلیلِ همین حکم — همان متنی که موتورِ غربالگری ساخته' },
+  // همان ویجتِ ستونِ «کندل روز» درِ تبِّ تابلو (`FormingCandle`)، نه نمودارِ
+  // تازه: رأیِ مالک ۱۴۰۵-۰۷-۲۲ «جاهایی که می‌طلبد نمودار هم باشد» — جدولِ
+  // غربالگری تنها جایِ برنامه بود که همین ردیف‌ها را بی‌شکلِ نشست می‌نمود.
+  // بی‌OHLC همان «—»ِ خودِ ویجت می‌آید؛ کندلِ ساختگی ساخته نمی‌شود.
+  candle: { label: 'کندل روز', title: 'اولین، بیشینه، کمینه و آخرینِ همین نشست — عینِ تبِّ تابلو' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
 };
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
-  tape: ['symbol', 'last', 'chg', 'vol', 'pattern', 'why'],
+  tape: ['symbol', 'last', 'chg', 'vol', 'candle', 'pattern', 'why'],
   technical: ['symbol', 'weekly', 'daily', 'branch', 'setup', 'techPoints', 'mark', 'why'],
   fundamental: ['symbol', 'ind1', 'ind2', 'ind3', 'ind4', 'ind5', 'score', 'why'],
   // گامِ تحویل دو ستونِ روندِ روزانه و شاخه را کم داشت، در حالی که همان داده
   // درِ پاسخِ سرور هست (`daily`/`branch`) و درِ گامِ تکنیکال هم نشان داده می‌شود؛
   // خوانندۀ «تحویل» باید بدود سهم با کدام شاخه به این گام رسیده، نه فقط اینکه
   // هفتگی صعودی بوده. واژۀ تازه‌ای اضافه نشد: سرستون‌ها همان تعریف‌هایِ موجودند.
-  handover: ['symbol', 'weekly', 'daily', 'branch', 'score', 'why', 'basket'],
+  handover: ['symbol', 'weekly', 'daily', 'branch', 'candle', 'score', 'why', 'basket'],
 };
 
 /**
@@ -214,7 +221,7 @@ const COL_W: Record<ColKey, number> = {
   // هیچ تقسیمی رویِ یک خط جا نمی‌شوند و شکلشان رأیِ مالک را می‌خواهد.
   weekly: 11, daily: 11, branch: 19, setup: 17, techPoints: 6, mark: 11,
   ind1: 12, ind2: 12, ind3: 12, ind4: 12, ind5: 12, score: 9, basket: 18,
-  why: 22,
+  why: 22, candle: 5,
 };
 
 function ColGroup({ cols }: { cols: ColKey[] }) {
@@ -287,6 +294,13 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</span></td>;
     case 'pattern':
       return <td className="truncate px-2 py-1 text-start text-2xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
+    case 'candle':
+      // همان ویجتِ تبِّ تابلو، با همان تستیدِ قابلِ ردیابی؛ بی‌OHLC «—» می‌ماند
+      return (
+        <td className="px-2 py-1 text-center">
+          <FormingCandle candle={r ?? null} testId={`funnel-candle-${e.symbol}`} />
+        </td>
+      );
     case 'weekly':
       return <TrendCell t={e.trendW} />;
     case 'daily':

@@ -26,6 +26,9 @@ export type ApiWhy = { code?: string; text?: string; stage?: string; seq?: numbe
 export type ApiRow = {
   symbol: string; name?: string; sector?: string; last?: number | null;
   closing?: number | null; change_pct?: number | null; vol_ratio?: number | null;
+  /** بدنۀِ همین نشست (اولین/بیشینه/کمینه) — برایِ ستونِ «کندل روز»؛ تهی یعنی
+   *  اولینِ مبادله نیفتاده (صفرِ ساختگی نمی‌آید). */
+  first?: number | null; high?: number | null; low?: number | null;
   patterns?: string[]; status?: Partial<Record<FunnelStageKey, StageStatus>> | Record<string, StageStatus>;
   why?: Record<string, ApiWhy[]>; chain?: string[]; score?: number | null;
   primary_score?: number | null; weekly?: string | null; daily?: string | null;
@@ -141,6 +144,7 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
   const row: MarketRow | null = r ? {
     symbol: sym, name: r.name ?? '', sector_name: r.sector ?? '',
     p_last: r.last ?? null, p_closing: r.closing ?? null,
+    p_first: r.first ?? null, p_max: r.high ?? null, p_min: r.low ?? null,
     percent_change: r.change_pct ?? null, vol_ratio: r.vol_ratio ?? null,
     is_live: r.is_live ?? true,
   } as unknown as MarketRow : null;
