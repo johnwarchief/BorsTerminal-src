@@ -72,10 +72,33 @@ export type TreePreset = 'swing' | 'trend' | 'hourglass' | 'custom';
 export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[] }> = {
   swing: { label: 'شخص نوسان‌گیر (زیر ۳ ماه)', filters: ['f_clock', 'f_jet', 'f_susp'] },
   trend: { label: 'شخص روندگیر (بالای ۳ ماه)', filters: ['f_roobi', 'f_noqteh'] },
-  hourglass: { label: 'استراتژی ساعت شنی (۳ تا ۱۰ ساله)', filters: ['f_roobi', 'f_clock'] },
+  // رأیِ Q-1 و `funnel_registry.py`: ساعت شنی درِ هیچ منبعی فیلترِ تابلویی ندارد
+  // (تعریفش گیتِ هفتگی MA=52/RSI=5 است). آینهٔ فرانت پیش‌تر کف‌روبی+ساعت را
+  // قرض می‌گرفت که بی‌منبع بود و با موتور نمی‌خواند.
+  hourglass: { label: 'استراتژی ساعت شنی (۳ تا ۱۰ ساله)', filters: [] },
   // مسیرِ دستی: خودِ کاربر گره‌ها را چیده، پس قیف با پنج فیلتر باز می‌شود و
   // چیپ‌هایِ روشنِ تبِ تابلو همان‌ها را باریک می‌کنند.
   custom: { label: 'مسیر سفارشی (انتخاب دستی)', filters: [...FILE_FILTERS] },
+};
+
+/** نامِ خودِ چیپ‌ها، برایِ پیش‌نمایِ/personِ انتخابی (۱۴۰۵-۰۷-۲۰). هفت تا، عینِ
+ *  `tapeStore.QUICK_FILTERS` — master از market import نمی‌گیرد (مرزِ FSD). */
+export const FILTER_LABEL: Record<string, string> = {
+  f_clock: 'الگوی ساعت',
+  f_susp: 'حجم مشکوک',
+  f_jet: 'فیلتر جت',
+  f_roobi: 'کف‌روبی',
+  f_noqteh: 'نقطه زنی',
+  f_smart: 'ورود پول هوشمند',
+  f_legal: 'کد به کد حقوقی به حقیقی',
+};
+
+/** انگیزۀ هر شخص، به زبانِ خودِ فایل (چارت ۳ و جزوه) — برایِ پیش‌نمایش. */
+export const PRESET_MOTIVE: Record<TreePreset, string> = {
+  swing: 'نوسان‌گیر: از تابلو وارد می‌شود؛ ساعت و جت و حجم مشکوک نشانهٔ پولِ امروزند.',
+  trend: 'روندگیر: کف سوم یا پنجم؛ حجم مشکوک لازم نیست (جزوه: «روندگیر به حجم مشکوک نیازی ندارد»).',
+  hourglass: 'ساعت شنی: فیلترِ تابلویی ندارد؛ دربش MA=52 و RSI=5 در تایم هفتگی است.',
+  custom: 'مسیر سفارشی: همان چیپ‌هایی که درِ تابلو روشن کردید.',
 };
 
 /** شش‌حالته — تنها واژگانِ داوریِ کشفِ نماد درِ کلِ فرانت (مقادیرِ

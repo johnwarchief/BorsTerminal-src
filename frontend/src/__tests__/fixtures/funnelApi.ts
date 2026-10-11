@@ -114,13 +114,13 @@ export const FUNNEL_FIXTURE: ApiPayload = {
    *  ردِ تابلو، بنیادیِ در انتظار، و نمادی که اصلاً درِ جامعۀ غربالگری نیست. */
   status_matrix: {
     'فولاد': {
-      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'خورده شده: حجم مشکوک · نقطه زنی' },
       technical: { status: 'pass', reason_code: 'WEEKLY_TREND_UP', human_reason: 'روند هفتگی صعودی' },
       fundamental: { status: 'pass', reason_code: 'FUND_PASSED', human_reason: 'سه بلاکر تأیید است' },
       handover: { status: 'pass', reason_code: 'FINAL_PASS', human_reason: 'قبول در هر چهار در', display_rank: 1 },
     },
     'همراه': {
-      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'خورده شده: حجم مشکوک · نقطه زنی' },
       technical: { status: 'reject', reason_code: 'WEEKLY_TREND_DOWN', human_reason: 'روند هفتگی نزولی — وتوی قطعی' },
       fundamental: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TECHNICAL_STOP',
                      human_reason: 'تکنیکال نماد را رد کرده؛ بنیادی اجرا نمی‌شود' },
@@ -138,7 +138,7 @@ export const FUNNEL_FIXTURE: ApiPayload = {
                   human_reason: 'در گامِ پیشین رد شده' },
     },
     'شپنا': {
-      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'همۀ فیلترهایِ زنجیره را خورده شده' },
+      tape: { status: 'pass', reason_code: 'TAPE_PASSED', human_reason: 'خورده شده: حجم مشکوک · نقطه زنی' },
       technical: { status: 'pass', reason_code: 'WEEKLY_TREND_UP', human_reason: 'روند هفتگی صعودی' },
       fundamental: { status: 'pending', reason_code: 'FUND_I1_MISSING',
                      human_reason: 'I1 رشد فروش گزارشش نرسیده — رد نیست، سنجیده نشده' },

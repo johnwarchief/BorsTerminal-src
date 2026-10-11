@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { fmtAge } from '@shared/lib/time';
 import { SearchIcon } from '@shared/components/Icons';
 import { ASSET_LABELS, ASSET_TYPES, classifyAssetType, type AssetType } from '../lib/assetType';
@@ -430,6 +431,10 @@ export function MarketFilters({
   const assetTypes = useTapeStore((s) => s.assetTypes);
   const quickFilters = useTapeStore((s) => s.quickFilters);
   const toggleQuickFilter = useTapeStore((s) => s.toggleQuickFilter);
+  // منطقِ ترکیبِ چیپ‌ها درِ غربالگری (نه درِ فیلترِ خودِ جدول) — همان چیزی که
+  // قیف به بک‌اند می‌فرستد.
+  const screenLogic = useScreenFilterStore((s) => s.logic);
+  const setScreenLogic = useScreenFilterStore((s) => s.setLogic);
   const sector = useTapeStore((s) => s.sector);
   const setSector = useTapeStore((s) => s.setSector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
@@ -505,6 +510,26 @@ export function MarketFilters({
             hidden={hiddenInfo?.[f]}
           />
         ))}
+
+        {/* اشتراک/اجتماع — رأیِ مالک ۱۴۰۵-۰۷-۲۰: همین‌جا، کنارِ همان چیپ‌ها، نه درِ
+            تبِ استراتژی. بی‌انتخاب غیرفعال است تا معنای جعلی نداشته باشد. */}
+        <button
+          type="button"
+          onClick={() => setScreenLogic(screenLogic === 'and' ? 'or' : 'and')}
+          disabled={quickFilters.length === 0}
+          aria-pressed={screenLogic === 'or'}
+          data-testid="screen-logic-toggle"
+          title={quickFilters.length === 0
+            ? 'دو یا چند فیلتر را روشن کنید تا اشتراک/اجتماع معنا پیدا کند'
+            : screenLogic === 'and'
+              ? `اشتراک: نماد باید هر ${toFaDigits(quickFilters.length)} فیلترِ روشن را داشته باشد`
+              : `اجتماع: داشتنِ کم‌از‌یکی از ${toFaDigits(quickFilters.length)} فیلترِ روشن کافی است`}
+          className={`${CONTROL_CLS} shrink-0 disabled:opacity-40 ${
+            screenLogic === 'or' ? 'border-accent-blue text-accent-blue' : ''
+          }`}
+        >
+          {screenLogic === 'and' ? 'اشتراک' : 'اجتماع'}
+        </button>
 
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">

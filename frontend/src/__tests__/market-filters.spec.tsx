@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MarketFilters } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
   DEFAULT_ASSET_TYPES,
   VOL_RATIO_DEFAULT,
@@ -338,5 +339,49 @@ describe('سوییچِ «حذفِ پسوندِ عددی» در نوارِ فیل
     expect(toggle().getAttribute('title')).toContain('پیش‌فرضِ تابلو');
     fireEvent.click(toggle());
     expect(toggle().getAttribute('title')).toContain('نشست‌هایِ قدیمی');
+  });
+});
+
+describe('کلیدِ اشتراک/اجتماعِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰)', () => {
+  const logic = () => screen.getByTestId('screen-logic-toggle');
+
+  beforeEach(() => {
+    useTapeStore.getState().resetFilters();
+    useScreenFilterStore.getState().setLogic('and');
+  });
+
+  it('با هیچ چیپِ روشن غیرفعال است — «اجتماع» بی‌موضوع پیشنهاد نمی‌شود', () => {
+    render(<MarketFilters sectors={[]} />);
+    expect(logic()).toBeDisabled();
+    expect(logic().textContent).toBe('اشتراک');
+  });
+
+  it('با یک چیپ فعال می‌شود و کلیک، منطق را برمی‌گرداند و ذخیره می‌کند', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/حجم مشکوک/));
+    expect(logic()).toBeEnabled();
+    fireEvent.click(logic());
+    expect(useScreenFilterStore.getState().logic).toBe('or');
+    expect(logic()).toHaveAttribute('aria-pressed', 'true');
+    expect(localStorage.getItem('bors.screen.logic.v1')).toBe('or');
+    fireEvent.click(logic());
+    expect(useScreenFilterStore.getState().logic).toBe('and');
+  });
+
+  it('متنِ راهنما شمارۀ واقعیِ چیپ‌هایِ روشن را می‌گوید، نه عددِ دست‌نویس', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/حجم مشکوک/));
+    fireEvent.click(screen.getByText(/کف‌روبی/));
+    expect(logic().getAttribute('title')).toContain('۲');
+    fireEvent.click(logic());
+    expect(logic().getAttribute('title')).toContain('کم‌از‌یکی از ۲');
+  });
+
+  it('«پاک کردن» تابلو انتخابِ غربالگری را هم بی‌اثر می‌کند (یکی، نه دو تا)', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/نقطه زنی/));
+    fireEvent.click(screen.getByTestId('filters-reset'));
+    expect(useTapeStore.getState().quickFilters).toEqual([]);
+    expect(logic()).toBeDisabled();
   });
 });

@@ -179,7 +179,7 @@ def get_registry():
 @router.get("/api/funnel/trace")
 def get_trace(symbol: str, preset: str = "trend", chain: str = "",
               fund_mode: str = "standard", exceptions: str = "",
-              drop_suffix: bool = True):
+              drop_suffix: bool = True, logic: str = "and"):
     """خطِ زمانِ یک نماد: Universe ← تابلو ← هر فیلتر ← تکنیکال ← بنیادی ← تحویل.
 
     چرا جدا: `timeline` برایِ تک‌تکِ ۵٫۸ هزار نماد درِ پاسخِ فهرست می‌آمد و نیمی
@@ -195,7 +195,7 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
     except ValueError:
         exc = {}
     payload = _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, exc,
-                   full=True, drop_suffix=drop_suffix)
+                   full=True, drop_suffix=drop_suffix, logic=logic)
     tl = (payload.get("timeline") or {}).get(symbol)
     cell = (payload.get("status_matrix") or {}).get(symbol)
     if tl is None and cell is None:
@@ -211,9 +211,9 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
 
 @router.get("/api/funnel")
 def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
-               drop_suffix: bool = True):
+               drop_suffix: bool = True, logic: str = "and"):
     return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
-                 drop_suffix=drop_suffix)
+                 drop_suffix=drop_suffix, logic=logic)
 
 
 @router.post("/api/funnel")
@@ -223,6 +223,8 @@ async def post_funnel(request: Request):
         b = {}
     # نبودِ کلید = رفتارِ محصول (روشن، عینِ تبِ تابلو). `False` صریح یعنی نشان بده.
     drop_suffix = True if b.get("drop_suffix") is None else bool(b.get("drop_suffix"))
+    # نبودِ `logic` = اشتراک (رفتارِ دیروز)؛ `or` صریح یعنی اجتماعِ چیپ‌هایِ تابلو.
+    logic = str(b.get("logic") or "and")
     return _run(
         str(b.get("preset") or "trend"),
         [str(x) for x in (b.get("chain") or [])],
@@ -231,6 +233,7 @@ async def post_funnel(request: Request):
         {str(k): [str(x) for x in (v or [])] for k, v in (b.get("exceptions") or {}).items()}
         if isinstance(b.get("exceptions"), dict) else {},
         drop_suffix=drop_suffix,
+        logic=logic,
     )
 
 
@@ -246,14 +249,19 @@ def _strip(payload: dict) -> dict:
 
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
-         full: bool = False, drop_suffix: bool = True) -> dict:
+         full: bool = False, drop_suffix: bool = True, logic: str = "and") -> dict:
     if preset not in REG.PRESET_BY_ID:
         return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
     if fund_mode not in ("hard", "standard", "exception"):
         return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}
+    # کلیدِ اشتراک/اجتماع (رأیِ مالک ۱۴۰۵-۰۷-۲۰): بی‌استثنایِ مقداریِ دیگر،
+    # پیش‌فرض «and» است و کشِ دو حالت از هم جدا می‌ماند.
+    logic = (logic or "and").strip().lower()
+    if logic not in ("and", "or"):
+        return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}
     key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
                       sorted((k, sorted(v)) for k, v in exceptions.items()),
-                      bool(drop_suffix)],
+                      bool(drop_suffix), logic],
                      ensure_ascii=False)
     now = time.time()
     hit = _cache_get(key, now)
@@ -278,7 +286,7 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
                               tech_scan=scan, tech_sigs=sigs, session_day=session,
                               universe_priority=uni_pri, universe_status=uni_st,
-                              drop_numeric_suffix=drop_suffix)
+                              drop_numeric_suffix=drop_suffix, tape_logic=logic)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین

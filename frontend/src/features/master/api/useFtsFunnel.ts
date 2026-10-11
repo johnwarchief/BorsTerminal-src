@@ -13,6 +13,7 @@ import { http } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { useTapeStore } from '@features/market/stores/tapeStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
   DEFAULT_FUNNEL_OPTIONS,
   type Funnel,
@@ -30,6 +31,9 @@ import { useFunnelPrefsStore, type FundStrictness } from '../stores/funnelPrefsS
 export type FunnelRequest = {
   preset: TreePreset;
   chain: string[];
+  /** ترکیبِ چیپ‌هایِ روشن: «and» = هرچه دارد، «or» = کم‌از‌یکی. پیش‌فرضِ موتور
+   *  هم and است، پس بی‌کلیدِ تازه رفتارِ دیروز می‌ماند. */
+  logic: 'and' | 'or';
   fundMode: FundStrictness;
   exceptions: Record<string, string[]>;
   /** «حذفِ پسوندِ عددی» — پارامترِ مؤثرِ خودِ موتور است، پس درِ کلیدِ کش هم
@@ -65,7 +69,7 @@ const EMPTY: Funnel = {
 };
 
 export function funnelQueryKey(req: FunnelRequest): string[] {
-  return ['funnel', req.preset, req.chain.join(','), req.fundMode,
+  return ['funnel', req.preset, req.chain.join(','), req.logic, req.fundMode,
           JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0'];
 }
 
@@ -93,6 +97,7 @@ export function useFtsFunnel(
   request: FunnelRequest;
 } {
   const quickFilters = useTapeStore((s) => s.quickFilters);
+  const screenLogic = useScreenFilterStore((s) => s.logic);
   const mode = useFunnelPrefsStore((s) => s.mode);
   const fundMode = useFunnelPrefsStore((s) => s.fundMode);
   const chainPref = useFunnelPrefsStore((s) => s.chain);
@@ -118,12 +123,18 @@ export function useFtsFunnel(
 
   const request = useMemo<FunnelRequest>(() => ({
     preset,
-    chain: overrides.chain ?? (preset === 'custom' ? (urlChain ?? chainPref) : []),
+    // چیپ‌هایِ روشنِ خودِ تابلو غربالگری را می‌سازند (رأیِ مالک ۱۴۰۵-۰۷-۲۰).
+    // بی‌انتخاب، زنجیرۀِ خودِ شخص می‌ماند — رفتارِ دیروز دست‌نخورده.
+    chain: overrides.chain ?? (urlChain
+      ?? (quickFilters.length ? quickFilters
+          : (preset === 'custom' ? chainPref : []))),
+    logic: overrides.logic ?? screenLogic,
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
     dropSuffix: dropSuffixPref,
     ...overrides,
-  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref]);
+  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref,
+      quickFilters, screenLogic]);
 
   const q = useQuery({
     queryKey: funnelQueryKey(request),
@@ -133,7 +144,8 @@ export function useFtsFunnel(
       // ۱۰٫۹ مگابایت درِ هر کلیک). بی‌`signal`، با عوض‌کردنِ سریعِ preset آن
       // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
       signal: ctx.signal,
-      body: { preset: request.preset, chain: request.chain, fund_mode: request.fundMode,
+      body: { preset: request.preset, chain: request.chain, logic: request.logic,
+              fund_mode: request.fundMode,
               exceptions: request.exceptions, drop_suffix: request.dropSuffix },
     }),
     // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه

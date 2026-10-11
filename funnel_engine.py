@@ -494,11 +494,113 @@ def _tape_miss(r: dict[str, Any], fid: str) -> str | None:
     return None
 
 
+def _tape_pass_text(r: dict, chain: tuple[str, ...]) -> tuple[str, str]:
+    """نامِ برچسب‌هایی که همین ردیف واقعاً دارد — یک متن، دو مصرف (ماتریس و جدول)."""
+    hits = [REG.BY_ID[f].name for f in chain
+            if f in REG.BY_ID and _tri(r.get(FLAG_OF.get(f, f))) is True]
+    if hits:
+        return "TAPE_PASSED", "خورده شده: " + " · ".join(hits)
+    if not chain:
+        return "TAPE_NO_FILTER_DEFINED", "گامِ تابلو برایِ این شخص فیلتری ندارد"
+    return "TAPE_PASSED_UNFLAGGED", "پرچمِ هیچ فیلترِ انتخابی رویِ این ردیف True نیست"
+
+
+def _tape_pass_why(r: dict, chain: tuple[str, ...], params: dict[str, dict[str, Any]]) -> None:
+    """دفترچۀ دلیل برایِ ردیفی که گامِ تابلو را خورده است.
+
+    بی‌این، ردیفِ عبوری هیچ سطرِ دلیلی نداشت و جدول «تأیید» می‌نوشید — مالک
+    (۱۴۰۵-۰۷-۲۰): «ینی چی تایید؟ باید برچسب‌هایِ تابلوخوانی را بنویسه». اینجا هم
+    فقط آنچه درِ همان ردیف واقعاً True است نام برده می‌شود؛ عددی ساخته نمی‌شود.
+    """
+    code, text = _tape_pass_text(r, chain)
+    _why_of(r).append({"stage": "tape", "seq": 0, "filter_id": ",".join(chain),
+                       "status": PASS, "reason_code": code, "human_reason": text})
+
+
+def _tape_stage_union(rows: list[dict], chain: tuple[str, ...],
+                      params: dict[str, dict[str, Any]]) -> dict:
+    """اجتماع: هر فیلتر رویِ کلِ جامعۀ ورودی شمرده می‌شود و عبور = کم‌از‌یک نشانه.
+
+    «سنجیده‌نشده» رأیِ ورود نیست: ردیفی که هیچ فیلتری True‌اش نباشد ولی بعضی‌شان
+    بی‌پرچم باشد، مثلِ پیشین UNAVAILABLE می‌ماند، و ردیفی که همه را صریح False
+    دارد REJECT است با دلیلی که **همۀ** قیدها را نام می‌برد (درِ اشتراک فقطِ اولی
+    نوشته می‌شد، چون صف واقعاً ترتیبی است).
+    """
+    steps: list[dict] = []
+    matched_syms: set[str] = set()
+    for fid in chain:
+        f = REG.BY_ID.get(fid)
+        if f is None:
+            raise KeyError(f"فیلترِ ناشناخته درِ زنجیره: {fid}")
+        flag = FLAG_OF[fid]
+        yes = [r for r in rows if _tri(r.get(flag)) is True]
+        no = [r for r in rows if _tri(r.get(flag)) is False]
+        unknown = [r for r in rows if _tri(r.get(flag)) is None]
+        matched_syms |= {str(r.get("symbol") or "") for r in yes}
+        steps.append({
+            "stage": "tape", "seq": len(steps) + 1, "filter_id": fid, "label": f.name,
+            "input_count": len(rows), "matched_count": len(yes),
+            "removed_count": len(no), "unmeasured_count": len(unknown),
+            # درِ اجتماع چیزی به «بازماندۀ مرحلۀ قبل» تحویل داده نمی‌شود؛ هر
+            # فیلتر شمارشِ مستقلِ خودش را رویِ همان جامعۀ ورودی دارد.
+            "not_forwarded_count": 0,
+            "parameter_set": params.get(fid) or {p.param_id: p.value for p in f.params
+                                                 if p.value is not None},
+            "source_ref": f"{f.source_file}#{f.source_sha256}",
+            "formula_version": f.formula_version, "backend_impl": f.backend_impl,
+            "status": REJECT if len(matched_syms) == 0 and no else PASS,
+            "logic": "or",
+        })
+    survivors: list[dict] = []
+    dropped: dict[str, list[str]] = {fid: [] for fid in chain}
+    for r in rows:
+        sym = str(r.get("symbol") or "")
+        if sym in matched_syms:
+            survivors.append(r)
+            _tape_pass_why(r, chain, params)
+            continue
+        falses = [fid for fid in chain if _tri(r.get(FLAG_OF[fid])) is False]
+        unknowns = [fid for fid in chain if _tri(r.get(FLAG_OF[fid])) is None]
+        for fid in falses:
+            dropped[fid].append(sym)
+        if falses:
+            parts = []
+            for fid in falses[:3]:
+                miss = _tape_miss(r, fid)
+                parts.append(f"{REG.BY_ID[fid].name} — {miss}" if miss
+                             else REG.BY_ID[fid].name)
+            if len(falses) > 3:
+                parts.append(f"و {_fa_digits(len(falses) - 3)} قیدِ دیگر")
+            r["_tape_why_text"] = "هیچ‌یک از فیلترهایِ انتخابی نخورد: " + " · ".join(parts)
+            _why_of(r).append({"stage": "tape", "seq": 0,
+                               "filter_id": ",".join(falses), "status": REJECT,
+                               "reason_code": "TAPE_UNION_NO_MATCH",
+                               "human_reason": r["_tape_why_text"],
+                               "source": REG.BY_ID[falses[0]].source_file,
+                               "formula_version": REG.BY_ID[falses[0]].formula_version})
+        elif unknowns:
+            fids = unknowns[0]
+            why_txt = _unmeasured_why(r, fids) or "مبنایِ تاریخچۀ فایل را ندارد"
+            r["_tape_why_text"] = f"{REG.BY_ID[fids].name} — {why_txt}، پس رد نشده"
+            _why_of(r).append({"stage": "tape", "seq": 0,
+                               "filter_id": ",".join(unknowns), "status": UNAVAILABLE,
+                               "reason_code": f"TAPE_{fids.upper()}_UNMEASURED",
+                               "human_reason": r["_tape_why_text"]})
+    return {"survivors": survivors, "steps": steps, "dropped": dropped, "logic": "or"}
+
+
 # ── ۱) تابلوخوانی: اشتراکِ ترتیبیِ زنجیره ─────────────────────────────────
 def tape_stage(rows: list[dict], chain: tuple[str, ...],
-               params: dict[str, dict[str, Any]] | None = None) -> dict:
-    """U ∩ F1  F2 … با شمارۀ واقعیِ هر مرحله رویِ بازماندۀ مرحلۀ قبل."""
+               params: dict[str, dict[str, Any]] | None = None,
+               logic: str = "and") -> dict:
+    """U ∩ F1 ∩ F2 … (اشتراک) یا U ∪ F1 ∪ F2 … (اجتماع)، با شمارۀ واقعیِ هر فیلتر.
+
+    `logic="or"` کلیدِ «اشتراک/اجتماع»ی است که مالک کنارِ همان چیپ‌هایِ تابلو
+    خواست (۱۴۰۵-۰۷-۲۰). پیش‌فرض اشتراک است، پس رفتارِ امروز عوض نمی‌شود.
+    """
     params = params or {}
+    if (logic or "and").strip().lower() == "or" and chain:
+        return _tape_stage_union(rows, chain, params)
     survivors = list(rows)
     steps: list[dict] = []
     dropped: dict[str, list[str]] = {}
@@ -581,7 +683,11 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
             "status": REJECT if removed else (PENDING if unmeasured else PASS),
         })
         survivors = matched
-    return {"survivors": survivors, "steps": steps, "dropped": dropped}
+    for r in survivors:
+        # دلیلِ عبور هم درِ همان دفترچه نوشته می‌شود تا ستونِ «دلیل» برایِ ردیفِ
+        # قبول‌شده خالی نماند (جدول آن‌وقت «تأیید» می‌گذاشت).
+        _tape_pass_why(r, chain, params)
+    return {"survivors": survivors, "steps": steps, "dropped": dropped, "logic": "and"}
 
 
 # ── ۲) تکنیکال: هفتگی اول، بعد روزانه ─────────────────────────────────────
@@ -929,13 +1035,16 @@ def resolve_chain(preset: str, custom: Iterable[str] | None) -> tuple[str, ...]:
     p = REG.PRESET_BY_ID.get(preset)
     if p is None:
         raise KeyError(f"presetِ ناشناخته: {preset}")
-    if p.preset_id != "custom":
-        return p.chain
     chain = tuple(custom or ())
     for fid in chain:
         if fid not in REG.BY_ID:
             raise KeyError(f"فیلترِ ناشناخته درِ زنجیره: {fid}")
-    return chain
+    # رأیِ مالک (۱۴۰۵-۰۷-۲۰): چیپ‌هایِ خودِ تابلو غربالگری را می‌سازند، پس
+    # انتخابِ فعالِ کاربر بر زنجیرۀ پیش‌فرضِ شخص بردگی می‌کند. بی‌انتخاب، همان
+    # شخصِ قبلی می‌ماند (رفتارِ امروز دست‌نخورده).
+    if chain:
+        return chain
+    return p.chain
 
 
 def status_matrix(market: list[dict], tape: dict, tech: dict, fund: dict,
@@ -953,6 +1062,9 @@ def status_matrix(market: list[dict], tape: dict, tech: dict, fund: dict,
     هر دو را می‌بندد.
     """
     survivors = {str(r.get("symbol") or "") for r in tape["survivors"]}
+    # زنجیرۀ واقعی از خودِ خروجیِ گام خوانده می‌شود (نه از پارامتر)، تا دلیلِ
+    # عبور همان پرچم‌هایی را نام ببرد که موتور واقعاً مصرف کرده است.
+    chain = tuple(str(s.get("filter_id") or "") for s in tape["steps"])
     dropped_first: dict[str, dict] = {}
     for step in tape["steps"]:
         for sym in tape["dropped"].get(step["filter_id"], []):
@@ -1009,8 +1121,8 @@ def status_matrix(market: list[dict], tape: dict, tech: dict, fund: dict,
                                       or f"{step['label']} — نشانه در این نماد نیست",
                        "stage_ref": step["source_ref"]}
         elif sym in survivors:
-            tape_st = {"status": PASS, "reason_code": "TAPE_PASSED",
-                       "human_reason": "همۀ فیلترهایِ زنجیره را خورده شده"}
+            pcode, ptext = _tape_pass_text(r, chain)
+            tape_st = {"status": PASS, "reason_code": pcode, "human_reason": ptext}
         elif r.get("_tape_why_text"):
             # سنجیده‌نشده با علتِ همان ورودی — «پرچم ساخته نشده» به‌تنهایی
             # نمی‌گوید کدام ورودی کم بوده است.
@@ -1183,6 +1295,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              universe_priority: dict[str, int] | None = None,
              universe_status: dict[str, str] | None = None,
              drop_numeric_suffix: bool = False,
+             tape_logic: str = "and",
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
@@ -1237,7 +1350,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         r["_exclusion_reason"] = human
         (screening if ok else excluded).append(r)
 
-    tape = tape_stage(screening, chain, params)
+    tape = tape_stage(screening, chain, params, logic=tape_logic)
     # دروازۀِ تکنیکال از خودِ preset خوانده می‌شود (تا پیش از این `technical_gate`
     # فقط درِ رجیستری نوشته شده بود و هیچ‌جا مصرف نمی‌شد).
     gate = (REG.PRESET_BY_ID[preset].technical_gate if preset in REG.PRESET_BY_ID
@@ -1291,6 +1404,8 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "as_of": as_of,
         "preset": preset,
         "chain": list(chain),
+        # رابط باید منطقِ واقعیِ گامِ تابلو را از پاسخ بخواند، نه از store خودش.
+        "tape_logic": tape.get("logic") or "and",
         "fund_mode": fund_mode,
         "universe": {"board": len(board_rows), "screened": len(screen_rows),
                      "joined": len(joined), "duplicate_rows": dupes,
@@ -1306,7 +1421,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
             # «survivors» = فهرستِ صریحِ نمادهایی که به گامِ بعد رفته‌اند. بی‌آن،
             # انتقالِ بینِ گام‌ها فقط استنتاجی بود (از entries کمِ dropped) و
             # ادعایِ «تکنیکال ⊆ تابلو» را نمی‌شد از خودِ پاسخ خواند.
-            "tape": {"steps": tape["steps"],
+            "tape": {"steps": tape["steps"], "logic": tape.get("logic") or "and",
                      "input": len(screening), "matched": len(tape["survivors"]),
                      "removed": len(screening) - len(tape["survivors"]),
                      "survivors": _symbols(tape["survivors"])},

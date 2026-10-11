@@ -82,6 +82,66 @@ o4 = FE.evaluate(B, S, preset="custom", custom_chain=["f_smart"])
 ck(o4["stages"]["tape"]["steps"][0]["label"] == "ورود پول هوشمند",
    "۴) فیلترِ پولِ هوشمند از چیپِ تابلو به زنجیرۀ قیف رسیده")
 
+# ── ۴ب) اشتراک / اجتماع — رأیِ مالک ۱۴۰۵-۰۷-۲۰ ────────────────────────────
+# چیپ‌هایِ خودِ تابلو غربالگری را می‌سازند و یک کلید روشن/خاموش مشخص می‌کند
+# نماد باید **همۀ** انتخاب‌ها را داشته باشد یا **کم‌از‌یکی** را.
+ou = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"],
+                 tape_logic="or")
+su = ou["stages"]["tape"]["steps"]
+ck(ou.get("tape_logic") == "or" and ou["stages"]["tape"].get("logic") == "or",
+   f"۴ب) منطقِ اجتماع درِ پاسخ مهر می‌شود (رابط حدس نمی‌زند) — {ou.get('tape_logic')}")
+ck(all(s["input_count"] == 4 for s in su),
+   f"۴ب) درِ اجتماع هر فیلتر رویِ کلِ جامعۀ ورودی شمرده می‌شود، نه بازماندۀ فیلترِ دیگر — "
+   f"{[s['input_count'] for s in su]}")
+ck(su[0]["matched_count"] == 2 and su[1]["matched_count"] == 2,
+   f"۴ب) شمارشِ هر دو فیلتر درست است (حجم‌مشکوک ۲، نقطه‌زنی ۲) — "
+   f"{[s['matched_count'] for s in su]}")
+ck(sorted(e["symbol"] for e in ou["handover"]) == ["الف", "ب", "پ"],
+   "۴ب) اجتماع: هر سه نمادی که کم‌از‌یک نشانه دارند عبور می‌کنند (اشتراک فقط «الف» را می‌داد)")
+ck(ou["stages"]["tape"]["matched"] == 3,
+   f"۴ب) شمارِ عبوریِ گامِ تابلو با اجتماع می‌خواند — {ou['stages']['tape']['matched']}")
+# کنترلِ منفی: «ت» هیچ‌کدام را ندارد ⇒ با اجتماع هم رد است، و دلیلش هر دو
+# فیلترِ انتخابی را می‌شمارد (نه یک جملهٔ عمومی).
+ct = ou["status_matrix"]["ت"]["tape"]
+ck(ct["status"] == FE.REJECT,
+   f"۴ث) نمادِ بی‌نشانه با اجتماع هم رد می‌ماند (اجتماع درِ باز نیست) — {ct['status']}")
+ck("فیلتر" in ct["human_reason"] and ("حجم" in ct["human_reason"] or "نقطه" in ct["human_reason"]),
+   f"۴ث) دلیلِ ردِ اجتماع هر دو فیلترِ انتخابی را می‌نامد — {ct['human_reason']}")
+# پیش‌فرض باید دقیقاً رفتارِ دیروز باشد (کنترلِ بی‌تغییری)
+ob = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+ck(sorted(e["symbol"] for e in ob["handover"]) == ["الف"] and ob.get("tape_logic") == "and",
+   f"۴چ) بی‌درخواستِ صریح، منطقِ اشتراک می‌ماند — {[e['symbol'] for e in ob['handover']]}")
+
+# ── ۴پ) چیپ‌هایِ تابلو بر زنجیرۀ پیش‌فرضِ شخص بردگی می‌کنند ──────────────
+ck(FE.resolve_chain("trend", ("f_clock",)) == ("f_clock",),
+   "۴پ) انتخابِ فعالِ کاربر (چیپ) زنجیرۀ «روندگیر» را عوض می‌کند")
+ck(FE.resolve_chain("trend", ()) == REG.PRESET_BY_ID["trend"].chain,
+   "۴پ) بی‌انتخابِ کاربر، زنجیرۀ خودِ شخص دست‌نخورده می‌ماند")
+ck(FE.resolve_chain("custom", ("f_roobi", "f_jet")) == ("f_roobi", "f_jet"),
+   "۴پ) custom همچنان همان زنجیرۀ دستی را می‌گیرد")
+try:
+    FE.resolve_chain("trend", ("f_not_a_filter",))
+    ck(False, "۴پ) فیلترِ ناشناخته حتی با overrideِ شخص باید خطا بدهد")
+except KeyError:
+    ck(True, "۴پ) فیلترِ ناشناخته حتی با overrideِ شخص خطا می‌دهد")
+
+# ── ۴ت) «نشانه» و «دلیل»ِ ردیفِ عبوری ─────────────────────────────────────
+# مالک: ستونِ نشانه باید بگوید این نماد کدام برچسب‌هایِ تابلو را دارد، نه اینکه
+# صرفاً بنویسد «تأیید»؛ و دلیلِ عبور هم باید همان برچسب‌ها را بگوید.
+VP = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+ent = {e["symbol"]: e for e in VP["entries"]["tape"]}
+ce = ent.get("ب") or {}
+ck(ce.get("patterns") == ["مشکوک"],
+   f"۴ت) نمادی که فقط «حجم مشکوک» دارد همان را درِ نشانه می‌گیرد نه «تأیید» — "
+   f"{ce.get('patterns')}")
+ta = ent.get("الف") or {}
+why_tape = " ".join((w.get("text") or w.get("human_reason") or "")
+                    for w in (ta.get("why", {}) or {}).get("tape", []))
+ck("همۀ فیلترهایِ زنجیره" not in why_tape,
+   f"۴ت) دلیلِ عبور دیگر جملهٔ عمومی «همۀ فیلترهایِ زنجیره» نیست — {why_tape}")
+ck(any(k in why_tape for k in ("حجم", "نقطه")),
+   f"۴ت) دلیلِ عبور نامِ فیلترهایی که خورده شده را می‌نویسد — {why_tape}")
+
 import json  # noqa: E402
 chain_a = ["f_susp", "f_noqteh", "f_smart"]
 run1 = FE.evaluate(B, S, preset="custom", custom_chain=chain_a, as_of=1)

@@ -13,10 +13,10 @@ import { useSearchParams } from 'react-router';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import FtsFunnelStageView from './FtsFunnelStageView';
-import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
 import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
 import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
+import { FILTER_LABEL, PRESET_MOTIVE, PRESET_ENTRY } from '../lib/ftsFunnel';
 
 export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
 
@@ -25,11 +25,13 @@ const VALID_STAGES: readonly FunnelStageKey[] = ['tape', 'technical', 'fundament
 /** سه سیستمِ انتخابیِ مالک — بزرگ، یک‌جا، بی‌صفحۀ جدا.
  *  «ساعت شنی» درِ این سه‌تا نیست: درِ هیچ منبعی فیلترِ تابلویی ندارد و
  *  تعریفش گیتِ تکنیکالِ هفتگی است (پرسشِ Q-1 درِ ممیزیِ قیف)؛ مسیرِ
- *  `?preset=hourglass` دست‌نخورده کار می‌کند، پس توانی حذف نشده است. */
+ *  `?preset=hourglass` دست‌نخورده کار می‌کند، پس توانی حذف نشده است.
+ *  «Custom» با رأیِ مالکِ ۱۴۰۵-۰۷-۲۰ از این نوار رفت: فیلترها را همان
+ *  چیپ‌هایِ تبِّ تابلو روشن/خاموش می‌کنند (با کلیدِ اشتراک/اجتماع)، پس سازندۀ
+ *  زنجیرۀ جدا درِ این تب دیگر دو راه برایِ یک کار است. */
 export const FUNNEL_MODES: readonly { key: FunnelPreset; label: string; hint: string }[] = [
   { key: 'swing', label: 'نوسان‌گیر', hint: 'الگوی ساعت + جت + حجم مشکوک' },
   { key: 'trend', label: 'روندگیر', hint: 'کف‌روبی + نقطه‌زنی' },
-  { key: 'custom', label: 'Custom', hint: 'خودت فیلتر را انتخاب و مرتب می‌کنی' },
 ];
 
 export function FtsFunnelStages({
@@ -78,6 +80,9 @@ export function FtsFunnelStages({
     if (p !== 'custom') onPresetChange?.(p);
   };
   const symbol = params.get('symbol');
+  // پیش‌نمایشِ هر شخص (رأیِ مالک ۱۴۰۵-۰۷-۲۰): با هاور یا فوکوس، فهرستِ فیلترها
+  // و انگیزه‌اش خوانده شود — نه فقط یک `title` که درِ برنامه可读 نیست.
+  const [preview, setPreview] = useState<FunnelPreset | null>(null);
 
   return (
     <div className="flex w-full flex-col gap-2" data-testid="fts-funnel-workspace">
@@ -97,6 +102,10 @@ export function FtsFunnelStages({
               title={m.hint}
               data-testid={`funnel-mode-${m.key}`}
               onClick={() => choose(m.key)}
+              onMouseEnter={() => setPreview(m.key)}
+              onMouseLeave={() => setPreview((p) => (p === m.key ? null : p))}
+              onFocus={() => setPreview(m.key)}
+              onBlur={() => setPreview((p) => (p === m.key ? null : p))}
               className={
                 on
                   ? 'rounded-xl border border-accent-blue bg-accent-blue/15 px-4 py-2 text-sm font-black text-accent-blue'
@@ -109,10 +118,32 @@ export function FtsFunnelStages({
         })}
       </div>
 
-      <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol} />
+      {preview ? (
+        <div
+          className="glass-panel rounded-xl border border-border-c/70 px-3 py-2 text-2xs text-text-secondary"
+          data-testid={`funnel-preset-preview-${preview}`}
+          role="note"
+        >
+          <div className="font-bold text-text-primary">
+            {PRESET_ENTRY[preview as keyof typeof PRESET_ENTRY]?.label ?? preview}
+          </div>
+          <div className="mt-0.5">
+            فیلترها:
+            {' '}
+            {(PRESET_ENTRY[preview as keyof typeof PRESET_ENTRY]?.filters ?? [])
+              .map((f) => FILTER_LABEL[f] ?? f).join(' + ') || 'بی‌فیلترِ تابلو'}
+          </div>
+          <div className="mt-0.5">
+            {PRESET_MOTIVE[preview as keyof typeof PRESET_MOTIVE]}
+          </div>
+          <div className="mt-0.5 text-text-muted">
+            چیپ‌هایِ تبِّ تابلو همین فهرست را کم و زیاد می‌کنند؛ کلیدِ
+            «اشتراک/اجتماع» هم همان‌جاست.
+          </div>
+        </div>
+      ) : null}
 
-      {/* Custom همان‌جا ویرایش می‌شود (§۲۹): نه صفحۀ تازه، نه drawerِ سنگین. */}
-      {activePreset === 'custom' ? <FtsCustomChainBuilder /> : null}
+      <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol} />
 
       {stage === 'handover' ? (
         <div className="flex w-full flex-col gap-1" data-testid="fts-funnel-final-view">

@@ -293,7 +293,10 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
     case 'vol':
       return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</span></td>;
     case 'pattern':
-      return <td className="truncate px-2 py-1 text-start text-2xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : (mark ? MARK_LABEL[mark] : '—')}</td>;
+      // ستونِ «نشانه» برچسب‌هایِ خودِ تابلو را می‌نویسد؛ نبودنشان «بی‌نشانه»
+      // است نه «تأیید» (رأیِ مالک ۱۴۰۵-۰۷-۲۰: «ینی چی تایید؟»). داوریِ ردیف
+      // درِ ستونِ حکم و دلیل می‌ماند.
+      return <td className="truncate px-2 py-1 text-start text-2xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : 'بی‌نشانه'}</td>;
     case 'candle':
       // همان ویجتِ تبِّ تابلو، با همان تستیدِ قابلِ ردیابی؛ بی‌OHLC «—» می‌ماند
       return (
@@ -427,10 +430,14 @@ function StageCard({
   // هیچ عددِ تازه‌ای ساخته نمی‌شود — فقط دورۀ پیشین با این دور مقایسه می‌شود.
   const { changed, delta } = useVerdictChanges(stage.key, rows,
                                                { passed, ruled: stage.ruled });
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // قوسِ اسکرولِ همین کارت همان بدنه است (bodyRef). پیش‌تر مجازی‌ساز refِ دومی
+  // می‌خواست که هرگز به DOM وصل نمی‌شد، پس هیچ اسکرولی نمی‌دید و فقط پنجرۀ
+  // initialRect را می‌ساخت: رویِ ۹۰۶ ردیفِ تابلو ۲۳ ردیف درِ DOM می‌ماند و
+  // اسکرول تا انتها هیچ ردیفِ تازه‌ای اضافه نمی‌کرد (اثبات:
+  // tools/funnel_scroll_probe.mts). یک عنصر، یک ref.
   const virt = useVirtualizer({
     count: rows.length,
-    getScrollElement: () => scrollRef.current,
+    getScrollElement: () => bodyRef.current,
     estimateSize: () => ROW_H,
     overscan: 8,
     initialRect: { width: 0, height: 380 },

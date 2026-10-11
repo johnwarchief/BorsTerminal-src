@@ -16,6 +16,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FtsFunnelStages } from '@features/master/ui/FtsFunnelStages';
 import { funnelFromApi, stageProgressFor } from '@features/master/lib/funnelView';
 import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
+import { useTapeStore } from '@features/market/stores/tapeStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
+import { PRESET_ENTRY } from '@features/master/lib/ftsFunnel';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { FUNNEL_FIXTURE, funnelCalls, installFunnelApi } from './fixtures/funnelApi';
 import { funnelQueryKey } from '@features/master/api/useFtsFunnel';
@@ -52,6 +55,10 @@ beforeEach(() => {
   sessionStorage.clear();
   useFunnelPrefsStore.getState().reset();
   useFunnelPrefsStore.getState().resetToCanonical();
+  // چیپ‌هایِ تابلو و کلیدِ اشتراک/اجتماع حالا واردِ درخواستِ قیف می‌شوند؛ بی‌
+  // بازنشانی، هر تست وضعیتِ تستِ قبلی را با خود می‌آورد.
+  useTapeStore.getState().resetFilters();
+  useScreenFilterStore.getState().setLogic('and');
   restoreFetch = installFunnelApi();
 });
 
@@ -230,24 +237,26 @@ describe('ساختارِ workspace (رأیِ مالک ۱۴-۰۷-۶)', () => {
     expect(screen.queryByTestId('funnel-stage-technical')).not.toBeInTheDocument();
   });
 
-  it('سه سیستمِ انتخابی یک‌جا و فعال پریده می‌ماند؛ ساعت‌شنی درِ انتخابگر نیست', async () => {
+  it('دو سیستمِ انتخابی یک‌جا و فعال پریده می‌ماند؛ ساعت‌شنی و Custom درِ انتخابگر نیستند', async () => {
     await ready('/master?stage=tape&preset=swing');
-    for (const m of ['swing', 'trend', 'custom']) {
+    for (const m of ['swing', 'trend']) {
       expect(screen.getByTestId(`funnel-mode-${m}`)).toBeInTheDocument();
     }
+    // Custom با رأیِ مالک ۱۴۰۵-۰۷-۲۰ از نوار رفت: چیپ‌هایِ خودِ تابلو همان کار
+    // را می‌کنند (با کلیدِ اشتراک/اجتماع).
+    expect(screen.queryByTestId('funnel-mode-custom')).not.toBeInTheDocument();
     expect(screen.getByTestId('funnel-mode-swing')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.queryByTestId('funnel-mode-hourglass')).not.toBeInTheDocument();
   });
 
-  it('کلیک رویِ روندگیر افق را به والد می‌دهد؛ Custom افق سراسری را دست نمی‌زند', async () => {
+  it('کلیک رویِ روندگیر افق را به والد می‌دهد و انتخاب را می‌خواباند', async () => {
     const seen: string[] = [];
     withClient(<FtsFunnelStages preset="swing" onPresetChange={(p) => seen.push(p)} />,
                '/master?stage=tape');
     await waitFor(() => expect(screen.getByTestId('funnel-mode-trend')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('funnel-mode-trend'));
-    fireEvent.click(screen.getByTestId('funnel-mode-custom'));
     expect(seen).toEqual(['trend']);
-    expect(useFunnelPrefsStore.getState().preset).toBe('custom');
+    expect(useFunnelPrefsStore.getState().preset).toBe('trend');
   });
 
   it('چهار گام به‌صورتِ تب‌هایِ فشرده‌اند و گامِ فعال aria-current دارد', async () => {
@@ -308,85 +317,81 @@ describe('زنجیرۀ Custom', () => {
     expect(useFunnelPrefsStore.getState().exceptions).toEqual({});
   });
 
-  it('جزیرۀِ شمارش جهتِ سطر را نمی‌شکند: ورودی سمتِ راستِ پیک، خروجی سمتِ چپ', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    await ready('/master?stage=tape&preset=custom');
-    const count = screen.getByTestId('funnel-chain-count-f_susp');
-    // .num رویِ کلِ رشته direction:ltr می‌آورد و دو عدد را جابه‌جا می‌کند؛
-    // باید فقط دورِ هر عدد بماند و خودِ رشته درِ جریانِ RTL بنشیند.
-    expect(count.className.split(/\s+/)).not.toContain('num');
-    const nums = Array.from(count.querySelectorAll('.num')).map((n) => n.textContent);
-    expect(nums).toEqual(['۴', '۳']);
-    expect(count.textContent).toBe('۴ ← ۳');
+  it('چیپ‌هایِ روشنِ تابلو زنجیرۀ غربالگری می‌شوند (رأیِ مالک ۱۴۰۵-۰۷-۲۰)', async () => {
+    useTapeStore.getState().toggleQuickFilter('f_susp');
+    await ready('/master?stage=tape');
+    const body = funnelCalls[funnelCalls.length - 1];
+    expect(body.chain).toEqual(['f_susp']);
+    // بی‌درخواستِ صریح، اشتراک (رفتارِ همیشگیِ موتور) می‌ماند.
+    expect(body.logic).toBe('and');
   });
 
-  it('بینِ دو چیپ، عملگرِ اشتراک دیده می‌شود و ترتیبش با زنجیره یکی است', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    useFunnelPrefsStore.getState().addFilter('f_noqteh');
-    await ready('/master?stage=tape&preset=custom');
-    const row = screen.getByTestId('funnel-chain-row');
-    const seq = Array.from(row.querySelectorAll('[data-testid]')).map((el) => el.getAttribute('data-testid'));
-    const first = seq.indexOf('funnel-chain-f_susp');
-    const and = seq.indexOf('funnel-chain-and');
-    const second = seq.indexOf('funnel-chain-f_noqteh');
-    expect(first).toBeGreaterThanOrEqual(0);
-    expect(and).toBeGreaterThan(first);
-    expect(second).toBeGreaterThan(and);
-    expect(row.querySelectorAll('[data-testid="funnel-chain-and"]')).toHaveLength(1);
+  it('بی‌چیپِ روشن، زنجیرۀ خودِ شخص به موتور می‌رسد (نه صفِ تهی)', async () => {
+    await ready('/master?stage=tape&preset=trend');
+    const body = funnelCalls[funnelCalls.length - 1];
+    expect(body.chain).toEqual([]);
+    expect(body.preset).toBe('trend');
+  });
+
+  it('کلیدِ اشتراک/اجتماع همان درخواست را عوض می‌کند و کشِ دو حالت جداست', async () => {
+    useTapeStore.getState().toggleQuickFilter('f_susp');
+    useScreenFilterStore.getState().setLogic('or');
+    await ready('/master?stage=tape');
+    expect(funnelCalls[funnelCalls.length - 1].logic).toBe('or');
+    expect(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'or',
+                            fundMode: 'standard', exceptions: {}, dropSuffix: true }))
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'and',
+                                    fundMode: 'standard', exceptions: {}, dropSuffix: true }));
+    useScreenFilterStore.getState().setLogic('and');
+  });
+
+  it('پیش‌نمایِ شخص با هاور، فیلترها و انگیزه‌اش را می‌گوید', async () => {
+    await ready('/master?stage=tape');
+    expect(screen.queryByTestId('funnel-preset-preview-trend')).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId('funnel-mode-trend'));
+    const pv = screen.getByTestId('funnel-preset-preview-trend');
+    expect(pv.textContent).toContain('کف‌روبی');
+    expect(pv.textContent).toContain('نقطه زنی');
+    expect(pv.textContent).toContain('حجم مشکوک');   // «به حجم مشکوک نیازی ندارد»
+    fireEvent.mouseLeave(screen.getByTestId('funnel-mode-trend'));
+    expect(screen.queryByTestId('funnel-preset-preview-trend')).not.toBeInTheDocument();
+  });
+
+  it('ساعت شنی درِ پیش‌نمایش بی‌فیلترِ تابلو خوانده می‌شود (رأیِ Q-1)', async () => {
+    await ready('/master?stage=tape');
+    fireEvent.mouseEnter(screen.getByTestId('funnel-mode-trend'));   // پیش‌تر فقط دو دکمه‌اند
+    expect(screen.getByTestId('funnel-preset-preview-trend')).toBeInTheDocument();
+    expect(PRESET_ENTRY.hourglass.filters).toEqual([]);
   });
 });
 
-describe('بازسازِ Custom درِ همان workspace (§۵ §۸ §۱۰)', () => {
-  it('فیلترها از رجیستری می‌آیند، نه از arrayِ پنج‌تاییِ پیشین', async () => {
+describe('حذفِ سازندۀ زنجیرۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۲۰)', () => {
+  it('«افزودن فیلتر» و چیپ‌هایِ زنجیره درِ workspace نیستند', async () => {
     await ready('/master?stage=tape&preset=custom');
-    fireEvent.click(screen.getByTestId('funnel-chain-add'));
-    const menu = screen.getByTestId('funnel-chain-menu');
-    // «پول هوشمند» و «کد به کد» درِ چیپ‌هایِ قدیمیِ Custom نبودند؛ درِ رجیستری هستند
-    expect(within(menu).getByTestId('funnel-chain-pick-f_smart')).toBeInTheDocument();
-    expect(within(menu).getByTestId('funnel-chain-pick-f_legal')).toBeInTheDocument();
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(7);
+    expect(screen.queryByTestId('funnel-chain-add')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('funnel-chain-menu')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('funnel-chain-row')).not.toBeInTheDocument();
   });
 
-  it('افزودن، شمارشِ ترتیبیِ همان گام را کنارِ چیپ می‌گذارد', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    await ready('/master?stage=tape&preset=custom');
-    const chip = screen.getByTestId('funnel-chain-f_susp');
-    expect(within(chip).getByTestId('funnel-chain-count-f_susp').textContent).toBe('۴ ← ۳');
+  it('نوارِ انتخاب دو شخص را می‌گذارد و Custom را نه؛ ساعت‌شنی هم درِ این سه‌تا نیست', async () => {
+    await ready('/master?stage=tape');
+    expect(screen.getByTestId('funnel-mode-swing')).toBeInTheDocument();
+    expect(screen.getByTestId('funnel-mode-trend')).toBeInTheDocument();
+    expect(screen.queryByTestId('funnel-mode-custom')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('funnel-mode-hourglass')).not.toBeInTheDocument();
   });
 
-  it('جابه‌جاییِ چیپ، ترتیبِ زنجیره را عوض می‌کند', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    useFunnelPrefsStore.getState().addFilter('f_noqteh');
-    await ready('/master?stage=tape&preset=custom');
-    fireEvent.click(screen.getByTestId('funnel-chain-up-f_noqteh'));
-    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_noqteh', 'f_susp']);
-    const order = Array.from(
-      document.querySelectorAll('[data-testid^="funnel-chain-f_"]'),
-    ).map((el) => el.getAttribute('data-testid'));
-    expect(order).toEqual(['funnel-chain-f_noqteh', 'funnel-chain-f_susp']);
+  it('لینکِ `?preset=custom&chain=` همچنان کار می‌کند (قدیمی‌ها نمی‌شکنند)', async () => {
+    await ready('/master?stage=tape&preset=custom&chain=f_clock');
+    const body = funnelCalls[funnelCalls.length - 1];
+    expect(body.preset).toBe('custom');
+    expect(body.chain).toEqual(['f_clock']);
   });
 
-  it('ذخیره و بازخوانی، همان زنجیره را دقیق برمی‌گرداند', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    useFunnelPrefsStore.getState().addFilter('f_noqteh');
-    await ready('/master?stage=tape&preset=custom');
-    fireEvent.change(screen.getByTestId('funnel-chain-name'), { target: { value: 'فیلترِ من' } });
-    fireEvent.click(screen.getByTestId('funnel-chain-save'));
-    expect(useFunnelPrefsStore.getState().savedChains[0].chain).toEqual(['f_susp', 'f_noqteh']);
-    expect(useFunnelPrefsStore.getState().savedChains[0].registryVersion).toBe('deadbeefcafe');
-    fireEvent.click(screen.getByTestId('funnel-chain-reset'));
-    expect(useFunnelPrefsStore.getState().chain).toEqual([]);
-    fireEvent.click(screen.getByTestId('funnel-chain-load-فیلترِ من'));
-    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_susp', 'f_noqteh']);
-  });
-
-  it('حذفِ چیپ فقط همان فیلتر را از زنجیره بیرون می‌اندازد', async () => {
-    useFunnelPrefsStore.getState().addFilter('f_susp');
-    useFunnelPrefsStore.getState().addFilter('f_jet');
-    await ready('/master?stage=tape&preset=custom');
-    fireEvent.click(screen.getByTestId('funnel-chain-remove-f_susp'));
-    expect(useFunnelPrefsStore.getState().chain).toEqual(['f_jet']);
-    expect(screen.queryByTestId('funnel-chain-f_susp')).not.toBeInTheDocument();
+  it('درخواستِ قیف هر دو پارامترِ تازه را با خود می‌برد (کلیدِ کشِ بی‌logic گمراه‌کننده بود)', () => {
+    const k = funnelQueryKey({ preset: 'trend', chain: [], logic: 'and', fundMode: 'standard',
+                               exceptions: {}, dropSuffix: true });
+    expect(k).toContain('and');
   });
 });
 
@@ -453,9 +458,9 @@ describe('پیش‌فرضِ دیدنیِ مرحلۀ تحویل (رأیِ مال�
     await waitFor(() => expect(funnelCalls.at(-1)?.drop_suffix).toBe(false));
     // خاموش‌کردن همِ پیش‌فرضِ همیشگیِ موتور نیست که بی‌درخواست بماند؛ کلیدِ کش
     // عوض می‌شود تا پاسخِ حالتِ دیگر رویِ جدول ننشیند.
-    expect(funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard',
+    expect(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
                             exceptions: {}, dropSuffix: false }))
-      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], fundMode: 'standard',
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
                                     exceptions: {}, dropSuffix: true }));
   });
 });
