@@ -1014,6 +1014,9 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "low": _num(r.get("p_min")),
         "change_pct": _num(r.get("percent_change")),
         "vol_ratio": _num(r.get("vol_ratio")),
+        # حجمِ همین نشست برایِ ستونِ «حجم» جدولِ استراتژی — بدونِ آن ستون همیشه
+        # «—» می‌ماند (ردیفِ قیف حجم نمی‌آورد و رابط حق ساختنش را ندارد).
+        "tvol": _num(r.get("tvol")),
         "patterns": patterns if patterns is not None
         else [_LABEL_OF[f] for f in REG.filter_ids() if _tri(r.get(f)) is True],
         "status": status or {},

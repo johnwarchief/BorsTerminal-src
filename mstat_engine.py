@@ -1052,7 +1052,8 @@ def market_total_rials(conn) -> tuple:
 
 
 def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
-                      total_source: str = "", phase: dict | None = None) -> dict:
+                      total_source: str = "", phase: dict | None = None,
+                      conn=None) -> dict:
     """برچسب سلامت کلان از ارزش معاملات (سند FTS صفحهٔ ۳): ≥۲۰ همت مساعد.
 
     مبنای برچسب «سهام، حق تقدم و ص.سهامی» است، نه کلِ جدول. کلِ بازار با شمارشِ
@@ -1089,8 +1090,28 @@ def macro_health_from(eq: dict, allmkt: dict = None, total_rials: float = 0.0,
         # نشستِ هنوز-معامله‌نشده (پیش از بازگشایی، تعطیل، یا سینکِ کهنه) عددِ
         # صفر نیست: داوری ندارد. پیش از این همین حالت «نامساعد / رکود روز»
         # می‌شد، در حالی که همان لحظه جریانِ پولِ نشستِ پیش را مثبت نشان می‌داد.
+        # تفکیکِ علت: «نشستِ هنوز بی‌معامله» با «سینکِ کهنه» یکی نیست —
+        # هر دو پیش‌تر همین «بدون داده» را می‌دادند. نشستِ خودِ فاز و آخرین
+        # نشستِ دارای گردشِ واقعی (از market_liquidity) همراهِ حکم می‌آیند.
+        _last_sess = _last_val = None
+        if conn is not None:
+            try:
+                _r = conn.execute(
+                    "SELECT d_even, value_hemat FROM market_liquidity"
+                    " WHERE value_hemat > 0 ORDER BY d_even DESC LIMIT 1").fetchone()
+                if _r:
+                    _last_sess, _last_val = int(_f(_r[0])), round(_f(_r[1]), 2)
+            except sqlite3.Error:
+                pass
         return {"value_hemat": None, "state": "nodata", "label": "بدون داده",
                 "basis": "eq_all",
+                "cause": ("no_trades_yet" if (phase or {}).get("is_live")
+                          else "unknown"),
+                "session_day": (phase or {}).get("session_day"),
+                "phase": (phase or {}).get("phase"),
+                "phase_source": (phase or {}).get("phase_source"),
+                "last_traded_session": _last_sess,
+                "last_value_hemat": _last_val,
                 "trade_value_all_market_hemat": None,
                 "market_value_hemat": round(total_rials / HEMAT_FROM_RIAL, 1) if total_rials > 0 else None,
                 "market_value_source": total_source or None,
@@ -1125,7 +1146,8 @@ def macro_health(conn) -> dict:
     rows, _meta = enrich(conn)
     import market_phase as MP
     return macro_health_from(_agg(_select(rows, "eq_all")), _agg(_select(rows, "all")),
-                             *market_total_rials(conn), phase=MP.from_db(conn))
+                             *market_total_rials(conn), phase=MP.from_db(conn),
+                             conn=conn)
 
 
 # ================================ v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند =================
@@ -1469,7 +1491,9 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     bear = entry.get("bearish_pct")
     if bear is None:
         breadth_state, breadth_label, breadth_vote = "nodata", "بدون داده", 0
-        breadth_detail = None
+        _known = entry.get("known")
+        breadth_detail = ("%s نمادِ معامله‌شده شمرده شد" % _fa_num(_known)
+                          if _known else None)
     elif entry.get("active"):
         # جزوه: ۸۰٪ منفی یعنی «بازار هنوز فرصت‌های ورود دارد» — رأیِ مثبت.
         breadth_state, breadth_label, breadth_vote = "ok", "فرصتِ ورود", 1

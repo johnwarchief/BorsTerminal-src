@@ -40,7 +40,8 @@ def post_watchlist(payload: dict = None):
     آزاد است (وگرنه «ویرایش یادداشت» پشتِ سقف گیر می‌کرد).
     """
     if not payload:
-        return {"status": "error", "message": "بدون داده"}
+        return {"status": "error",
+                "message": "بدنهٔ درخواست خالی است — کلید symbol لازم است"}
     symbol = str(payload.get("symbol") or "").strip()
     if not symbol:
         return {"status": "error", "message": "نماد ارسال نشده"}
