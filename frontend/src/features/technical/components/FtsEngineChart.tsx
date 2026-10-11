@@ -14,12 +14,13 @@ import { useFtsConfigStore } from '../stores/ftsConfigStore';
 import { epochToJalali, parseCandleTimestamp } from '../lib/jalaliDate';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 
-const GROUPS = ['fts-fib', 'fts-pattern', CORP_EVENT_GROUP] as const;
+const GROUPS = ['fts-fib', 'fts-pattern', 'fts-structure', CORP_EVENT_GROUP] as const;
 
 export function FtsEngineChart({
   engineId,
   bars,
   fts,
+  refClose,
   corpEvents,
   dark,
   logScale,
@@ -29,6 +30,9 @@ export function FtsEngineChart({
   engineId: ChartEngineId;
   bars: EngineBar[];
   fts: FtsAnalysisData | null | undefined;
+  /** آخرین بستۀ سریِ تحلیلِ سرور (`ref_close` درِ `/api/fts`) — لنگرِ نگاشتِ
+   *  عددِ سرور به فضایِ کندلِ رسم‌شده. فاقدش ⇒ بی‌تعدیل (r=1)، نه حدس. */
+  refClose?: number | null;
   /** رویدادهایِ شرکتیِ مبدأ (TSETMC) — فقط نشانه‌گذاری، بی‌محاسبهٔ تعدیل */
   corpEvents?: RawCorporateEvent[];
   dark: boolean;
@@ -118,8 +122,15 @@ export function FtsEngineChart({
       ts == null ? undefined
         : bars.find((b) => Math.abs(b.timestamp - ts) < 24 * 60 * 60 * 1000)
           ?? bars.find((b) => b.timestamp >= ts);
+    // فضایِ رسم ≠ فضایِ محاسبه (B5، قاعدۀ لایۀ ۴ در klinecharts): عددِ سرور با
+    // نسبتِ آخرین کندلِ نمایشی به آخرین بستۀ سریِ تحلیل رویِ محور می‌آید. سرور
+    // «روی چه مبنایی حساب شد» را با `ref_close` خودش می‌گوید؛ بی‌لنگر ⇒ r=1،
+    // نه ساختنِ ضریبِ حدسی.
+    const aLast = typeof refClose === 'number' && refClose > 0 ? refClose : 0;
+    const dLast = bars[bars.length - 1].close;
+    const r = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
     return [
-      ...engineFtsLayers({ fts, anchorTs: anchor, startTs: start, toDisp: (p) => p, tsForDate }),
+      ...engineFtsLayers({ fts, anchorTs: anchor, startTs: start, toDisp: (p) => p * r, tsForDate }),
       // رویدادهایِ شرکتیِ مبدأ: همان نگاشتِ مشترکِ هر دو موتور (lib/corpEvents).
       // روزی که درِ این سری نیست نشانگر نمی‌گیرد — جایِ حدسی رویِ محور نمی‌گذاریم.
       ...(showCorpActions
@@ -130,7 +141,7 @@ export function FtsEngineChart({
           })
         : []),
     ];
-  }, [bars, fts, corpEvents, showCorpActions]);
+  }, [bars, fts, refClose, corpEvents, showCorpActions]);
 
   // هر گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
   useEffect(() => {

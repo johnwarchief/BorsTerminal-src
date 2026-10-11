@@ -253,6 +253,7 @@ export default function TechnicalPage() {
                 engineId="ffc"
                 bars={engineBars}
                 fts={analysis.data?.fts ?? null}
+                refClose={analysis.data?.ref_close ?? null}
                 corpEvents={corpEvents}
                 dark={theme !== 'light'}
                 logScale={storePriceScale === 'logarithm'}

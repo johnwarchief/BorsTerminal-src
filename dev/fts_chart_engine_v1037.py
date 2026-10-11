@@ -232,8 +232,14 @@ ck("سقفِ ارتفاعِ بصریِ کمربند درِ نگاشت تعریف
    "BAND_MAX_OF_VIEW" in po and "(hi - lo) / span > BAND_MAX_OF_VIEW" in po)
 ck("هر دو کمربند (سقف سوم و ساعت شنی) از همان pushBand عبور می‌کنند",
    po.count("pushBand(") == 2 and po.count("'ftsZoneBands'") == 2)
-ck("شاخۀ «فقط دو خطِ سطح» یک بار و داخلِ همان helper تعریف شده",
-   po.count("linesOnly: true") == 1)
+# دورِ مأموریت FTS (B4): کمربند به پهنایِ اعلامِ سرور است؛ بی‌band_pctِ سرور
+# خطِ سطحِ تنها رسم می‌شود و ±۲٪/±۳٪ ساخته نمی‌شود. پس `linesOnly` سه‌جا هست:
+# یک‌بار شاخۀ بی‌رونقِ pushBand (سقف ارتفاع) + دو fallbackِ بی‌پارامتر.
+# نامِ «یک‌بار» به همان شاخۀ سقفِ ارتفاع برمی‌گردد — با شمارشِ مستقیمِ شرط.
+ck("شاخۀ «فقط دو خطِ سطح» هنوز یک‌جا داخلِ همان شرطِ سقف است",
+   po.count("(hi - lo) / span > BAND_MAX_OF_VIEW") == 1)
+ck("بی‌پارامترِ سرور دو fallbackِ سطحی مجاز است، نه باندِ جعلی (B4)",
+   po.count("linesOnly: true") == 3 and po.count("pushBand(") == 2)
 ck("چارت دامنهٔ دید (low/high) را به نگاشت می‌دهد — بی‌آن سقفِ ارتفاع محاسبه نمی‌شود",
    "low: c.low, high: c.high" in wrapper)
 

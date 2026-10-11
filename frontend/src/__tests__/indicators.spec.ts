@@ -52,6 +52,19 @@ describe('سوینگ و خطوط', () => {
     expect(majorResistance([], 120)).toBeNull();
   });
 
+  it('B6: اندیسِ SwingPoint مطلق است، حتی وقتی lookback آرایه را برش می‌زند', () => {
+    // ۱۰ پیشوندِ بی‌پیوت + همان سری با lookback کوتاه‌تر از کل — شاخۀ swing
+    // دیگر اندیسِ نسبیِ slice نمی‌دهد؛ سقفِ ۱۲ در نسبی ۷ ⇒ مطلق ۱۷.
+    const padded = [1, 1.5, 1.2, 1.4, 1.3, 1.5, 1.2, 1.4, 1.3, 1.5, ...highs];
+    const r = majorResistance(padded, 15);
+    expect(r?.price).toBe(12);
+    expect(r?.index).toBe(17);
+    const paddedLows = [3, 2.5, 2.8, 2.6, 2.9, 2.5, 2.8, 2.6, 2.9, 2.5, ...lows];
+    const s = majorSupport(paddedLows, 19);
+    expect(s?.price).toBe(2);
+    expect(s?.index).toBe(23); // ۱۳ + ۱۰ پیشوند — فضایِ مطلق، بی‌نسبتِ slice
+  });
+
   it('میانگین حجم و تهی', () => {
     expect(avgVolume([10, 20, 30], 3)).toBe(20);
     expect(avgVolume([null, null], 5)).toBeNull();

@@ -38,7 +38,7 @@ import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
 import { buildDossier, findCandidate } from '../lib/masterDossier';
 import { MasterDossierPanel } from '../ui/MasterDossier';
 import { MasterFtsDetails } from '../ui/MasterFtsDetails';
-import { useKeyLevels, supportResistance } from '../api/useKeyLevels';
+import { useKeyLevels, supportResistance, keyLevelsNote } from '../api/useKeyLevels';
 import { patternBadges } from '@features/market/lib/tapeBadges';
 import { useTapeStore } from '@features/market/stores/tapeStore';
 import { useCapitalStore } from '../stores/capitalStore';
@@ -138,6 +138,9 @@ export default function MasterPage() {
     () => supportResistance(keyLevels.data?.levels, planFeed.data?.fts?.jet?.close ?? null),
     [keyLevels.data, planFeed.data],
   );
+  // پیامِ صادقِ key-levels («تاریخچه کافی نیست — ۳۰ از ۶۰») — P0#12: سرور
+  // می‌گوید، اینجا فقط خوانده می‌شود، داوریِ دوم نیست.
+  const levelsNote = useMemo(() => keyLevelsNote(keyLevels.data), [keyLevels.data]);
   /** جزئیات و برنامهٔ معاملاتی — capability دست‌نخورده، فقط زیرِ خلاصه */
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const plan = useMemo(() => {
@@ -385,6 +388,7 @@ export default function MasterPage() {
         badges={tapeBadges}
         support={sr.support}
         srResistance={sr.resistance}
+        levelsNote={levelsNote}
       />
 
       {/* خلاصه اول، جزئیات دوم، پیشرفته سوم (§13): هیچ چیزی حذف نشده —

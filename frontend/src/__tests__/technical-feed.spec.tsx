@@ -44,10 +44,14 @@ describe('وضعیت FTS', () => {
     expect(veto.text).toContain('وتوی');
     expect(resolveFtsStatusView(st('hard_stop', 'حدِ ضرر'), false).tone).toBe('red');
     expect(resolveFtsStatusView(st('warning', 'هشدار'), false).tone).toBe('yellow');
-    // بی‌وضعیتِ موتور هیچ متنِ ثابتی ساخته نمی‌شود
+    // بی‌وضعیتِ موتور (not_evaluated) ⇒ کدِ متمایزِ `pending`، نه `insufficient`:
+    // «موتور هنوز رأی منتشر نکرده» با «دادهٔ ناکافی» یکی نیست (P0§3).
     const none = resolveFtsStatusView({ payload: {} } as never, false);
-    expect(none.code).toBe('insufficient');
+    expect(none.code).toBe('pending');
     expect(none.text).toContain('وضعیتِ عمومی');
+    // وقتی موتور صریحاً insufficient گفته، همان کد باید حفظ شود
+    expect(resolveFtsStatusView(st('insufficient', 'داده برای داوری کافی نیست'), false).code)
+      .toBe('insufficient');
   });
 
   it('قانون عبور گیت: بدون حذف و امتیاز دست کم 3', () => {

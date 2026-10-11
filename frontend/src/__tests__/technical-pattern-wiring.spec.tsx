@@ -1,6 +1,6 @@
 // تستِ اتصالِ لایۀ «الگوهای FTS» — #193
 // داورِ الگو فقط یک جاست: /api/fts. این‌جا two چیز می‌سنجیم:
-//   ۱) patternInputsFromFts هر هشت داور را از دهانۀ درستِ payload برمی‌دارد
+//   ۱) patternInputsFromFts هر داور را از دهانۀ درستِ payload برمی‌دارد
 //      و هیچ عددِ ساختگی (صفرِ جا‌نشین، اندیسِ بی‌ربط) نمی‌سازد
 //   ۲) buildPatternOverlays به ترجیحِ کاربر احترام می‌دهد و بی‌داده چیزی نمی‌کارد
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -30,9 +30,11 @@ function noPatterns(): PatternInputs {
     double: { active: false, level: null, breakout: false },
     doubleTop: { active: false, level: null },
     headShoulders: { active: false, neckline: null },
-    thirdPeak: { active: false, level: null },
+    thirdPeak: { active: false, level: null, bandPct: null },
     ma14Exit: { active: false, level: null },
-    hourglass: { active: false, ma52Weekly: null, rsi5Weekly: null },
+    hourglass: { active: false, ma52Weekly: null, rsi5Weekly: null, bandPct: null },
+    pullback: { active: false, touching: false, level: null, weeklyConfirms: null },
+    structure: [],
     roles: {},
   };
 }
@@ -47,14 +49,23 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     exit_engine: {
       verdict: 'hold',
       l1: { ma14_exit: true, ma14: 2450 },
-      l3: { hs_break: true, neckline: 2210, third_peak: true, third_peak_level: 3050 },
+      l3: { hs_break: true, neckline: 2210, third_peak: true, third_peak_level: 3050,
+            third_peak_band_pct: 2.0 },
     },
-    hourglass: { active: true, ma52: 2980, weekly_rsi5: 24.6 },
+    hourglass: { active: true, ma52: 2980, weekly_rsi5: 24.6, ma52_band_pct: 3.0 },
+    pullback: { active: true, touching: true, level: 2400, weekly_confirms: true },
+    structure_points: {
+      D: [
+        { idx: 3, time: '2026-01-04', confirm_idx: 5, confirm_time: '2026-01-06', price: 1900, kind: 'low', label: 'HL' },
+        { idx: 9, time: '2026-01-10', confirm_idx: 11, confirm_time: '2026-01-12', price: 2600, kind: 'high', label: 'HH' },
+      ],
+      W: [],
+    },
     roles: { jet: 'entry', point_hunt: 'entry', choch_bullish: 'entry', double_bottom: 'entry',
              hs_break: 'exit', third_peak: 'warning', ma14_exit: 'exit', fib_zone: 'context' },
   } as unknown as FtsAnalysisData;
 
-  it('هر هشت داور از جایِ خودش برداشته می‌شود، نه از حدسِ چارت', () => {
+  it('هر داور از جایِ خودش برداشته می‌شود، نه از حدسِ چارت — پهنای باند هم از سرور (B4)', () => {
     const i = patternInputsFromFts(payload, plain);
     expect(i.jet).toEqual({ active: true, level: 2758, fromTs: null });
     expect(i.choch).toEqual({ active: true, bullish: true, bearish: false, level: 1900 });
@@ -66,9 +77,17 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     expect(i.pointHunt.anchorTs).toBe(Date.parse('2026-01-05T00:00:00Z'));
     expect(i.double).toEqual({ active: true, level: 2100, breakout: true });
     expect(i.headShoulders).toEqual({ active: true, neckline: 2210 });
-    expect(i.thirdPeak).toEqual({ active: true, level: 3050 });
+    expect(i.thirdPeak).toEqual({ active: true, level: 3050, bandPct: 2.0 });
     expect(i.ma14Exit).toEqual({ active: true, level: 2450 });
-    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 });
+    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi5Weekly: 24.6, bandPct: 3.0 });
+    expect(i.pullback).toEqual({ active: true, touching: true, level: 2400, weeklyConfirms: true });
+    // ساختار: فقط نقاطِ تأییدشدهٔ سرور با زمانِ وقوع + زمانِ تأیید (ضدِ repaint)
+    expect(i.structure).toEqual([
+      { ts: Date.parse('2026-01-04T00:00:00Z'), value: 1900, label: 'HL',
+        confirmTs: Date.parse('2026-01-06T00:00:00Z') },
+      { ts: Date.parse('2026-01-10T00:00:00Z'), value: 2600, label: 'HH',
+        confirmTs: Date.parse('2026-01-12T00:00:00Z') },
+    ]);
     expect(i.roles.jet).toBe('entry');
     expect(i.roles.third_peak).toBe('warning');
   });
@@ -154,13 +173,60 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     expect(s!.points[0].timestamp).toBe(t0 + 29 * DAY);
   });
 
-  it('ساعت شنی بی‌MA52 باندِ تخت نمی‌سازد؛ با MA52 هم‌عرضِ ۳٪ می‌کشد', () => {
+  it('ساعت شنی بی‌MA52 باندِ تخت نمی‌سازد؛ با MA52 باند به پهنایِ اعلامِ سرور می‌کشد (B4)', () => {
     const bare = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: null, rsi5Weekly: 24 } }, PATTERN_PREFS_DEFAULT, barRows);
     expect(bare.find((s) => s.kind === 'hourglass')).toBeUndefined();
-    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 } }, PATTERN_PREFS_DEFAULT, barRows);
+    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, rsi5Weekly: 24.6, bandPct: 3.0 } }, PATTERN_PREFS_DEFAULT, barRows);
     const band = full.find((s) => s.kind === 'hourglass')!;
     expect(band.points[0].value).toBeCloseTo(2980 * 1.03, 6);
     expect(band.points[1].value).toBeCloseTo(2980 * 0.97, 6);
+  });
+
+  it('بی‌bandPctِ سرور هیچ باندی ساخته نمی‌شود — خطِ سطحِ تنها، نه ±۲٪/±۳٪ِ جعلی (B4)', () => {
+    const tp = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101, bandPct: null } }, PATTERN_PREFS_DEFAULT, barRows)
+      .filter((s) => s.kind === 'thirdpeak');
+    expect(tp).toHaveLength(1);
+    expect(tp[0].points).toHaveLength(1);
+    expect(tp[0].points[0].value).toBe(101);
+    expect(tp.some((s) => s.points.some((p) => p.value !== 101))).toBe(false);
+    const hg = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 101, rsi5Weekly: 22, bandPct: null } }, PATTERN_PREFS_DEFAULT, barRows)
+      .filter((s) => s.kind === 'hourglass');
+    expect(hg).toHaveLength(1);
+    expect(hg[0].points.every((p) => p.value === 101)).toBe(true);
+  });
+
+  it('پولبک: سطح همیشه دیده می‌شود؛ مارکرِ ستاپ فقط با تأییدِ امروز (ضدِ repaint)', () => {
+    const forming = buildPatternOverlays(
+      { ...noPatterns(), pullback: { active: false, touching: true, level: 2400, weeklyConfirms: true } },
+      PATTERN_PREFS_DEFAULT, barRows,
+    ).filter((s) => s.kind === 'pullback');
+    expect(forming).toHaveLength(1);
+    expect(forming[0].overlayName).toBe('ftsJetLine');
+    expect(String(forming[0].extendData?.label)).toContain('در حال تشکیل');
+    const confirmed = buildPatternOverlays(
+      { ...noPatterns(), pullback: { active: true, touching: true, level: 2400, weeklyConfirms: true } },
+      PATTERN_PREFS_DEFAULT, barRows,
+    ).filter((s) => s.kind === 'pullback');
+    expect(confirmed).toHaveLength(2);
+    expect(confirmed.some((s) => s.overlayName === 'ftsPullbackMarker')).toBe(true);
+  });
+
+  it('ساختارِ روند: مارکرِ هر نقطۀ تأییدشده با confirmTs در شواهد؛ بی‌قیمتِ معتبر چیزی نمی‌کاریم', () => {
+    const specs = buildPatternOverlays(
+      { ...noPatterns(), structure: [
+        { ts: t0 + 3 * DAY, value: 1900, label: 'HL', confirmTs: t0 + 5 * DAY },
+        { ts: t0 + 9 * DAY, value: 2600, label: 'HH', confirmTs: null },
+      ] },
+      PATTERN_PREFS_DEFAULT, barRows,
+    ).filter((s) => s.kind === 'structure');
+    expect(specs).toHaveLength(2);
+    expect(specs[0].extendData?.confirmTs).toBe(t0 + 5 * DAY);
+    expect(specs[0].styles).toBeTruthy();
+    const bad = buildPatternOverlays(
+      { ...noPatterns(), structure: [{ ts: t0 + DAY, value: 0, label: 'LL', confirmTs: null }] },
+      PATTERN_PREFS_DEFAULT, barRows,
+    );
+    expect(bad.find((s) => s.kind === 'structure')).toBeUndefined();
   });
 
   // #193 داورِ jev-pilot «الف»: کمربندِ بلندتر از یک‌پنجمِ دید، پنل را پر می‌کرد
@@ -172,7 +238,7 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     const wideRows = Array.from({ length: 40 }, (_, i) => ({ timestamp: t0 + i * DAY, low: 60, high: 140 }));
 
     it('دیدِ تنگ ⇒ به‌جایِ مستطیلِ پر، دو خطِ سطحِ تمام‌عرض از همان دو سطحِ سرور', () => {
-      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101 } }, PATTERN_PREFS_DEFAULT, tightRows);
+      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101, bandPct: 2.0 } }, PATTERN_PREFS_DEFAULT, tightRows);
       const tp = specs.filter((s) => s.kind === 'thirdpeak');
       expect(tp).toHaveLength(2);
       expect(tp.every((s) => s.points.length === 1)).toBe(true);
@@ -182,19 +248,19 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     });
 
     it('دیدِ باز ⇒ همان کمربند با پرکردنِ ملایم (یکِ اورلیِ دونقطه‌ای)', () => {
-      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101 } }, PATTERN_PREFS_DEFAULT, wideRows);
+      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101, bandPct: 2.0 } }, PATTERN_PREFS_DEFAULT, wideRows);
       const tp = specs.filter((s) => s.kind === 'thirdpeak');
       expect(tp).toHaveLength(1);
       expect(tp[0].points).toHaveLength(2);
     });
 
     it('بی‌low/high (دامنۀ دید نامعلوم) کمربند حذف یا باریک نمی‌شود — حدس نمی‌زنیم', () => {
-      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101 } }, PATTERN_PREFS_DEFAULT, rows(40));
+      const specs = buildPatternOverlays({ ...noPatterns(), thirdPeak: { active: true, level: 101, bandPct: 2.0 } }, PATTERN_PREFS_DEFAULT, rows(40));
       expect(specs.filter((s) => s.kind === 'thirdpeak')[0].points).toHaveLength(2);
     });
 
     it('ساعت شنی هم از همان سقفِ ارتفاعِ بصری عبور می‌کند', () => {
-      const hg = { active: true, ma52Weekly: 101, rsi5Weekly: 22 };
+      const hg = { active: true, ma52Weekly: 101, rsi5Weekly: 22, bandPct: 3.0 };
       const tight = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, tightRows).filter((s) => s.kind === 'hourglass');
       const wide = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, wideRows).filter((s) => s.kind === 'hourglass');
       expect(tight).toHaveLength(2);
@@ -209,18 +275,18 @@ describe('سوییچ‌های UI (PatternToggles) + پایداری', () => {
     usePatternPrefsStore.getState().reset();
   });
 
-  it('هشت الگو، همه روشن؛ فیبو حذف شده چون لایۀ ۴ِ سرور خودش را می‌کشد (#193)', () => {
+  it('ده الگو، همه روشن؛ فیبو حذف شده چون لایۀ ۴ِ سرور خودش را می‌کشد (#193)', () => {
     const kinds = Object.keys(PATTERN_PREFS_DEFAULT);
-    expect(kinds).toHaveLength(8);
+    expect(kinds).toHaveLength(10);
     expect(kinds).not.toContain('fib');
     expect(kinds.every((k) => PATTERN_PREFS_DEFAULT[k as keyof PatternPrefs].enabled)).toBe(true);
     expect(PATTERN_PREFS_DEFAULT.jet.opacity).toBeLessThanOrEqual(0.2);
   });
 
-  it('هشت توسلِ روشن/خاموش/رنگ/شفافیت رندر می‌شوند', () => {
+  it('ده توسلِ روشن/خاموش/رنگ/شفافیت رندر می‌شوند', () => {
     render(<PatternToggles />);
     expect(screen.getByTestId('pattern-toggles')).toBeInTheDocument();
-    for (const k of ['jet', 'choch', 'pointhunt', 'double', 'headshoulders', 'thirdpeak', 'ma14exit', 'hourglass']) {
+    for (const k of ['jet', 'choch', 'pointhunt', 'double', 'headshoulders', 'thirdpeak', 'ma14exit', 'hourglass', 'pullback', 'structure']) {
       expect(screen.getByTestId(`pattern-toggle-${k}`)).toBeInTheDocument();
       expect(screen.getByTestId(`pattern-color-${k}`)).toBeInTheDocument();
       expect(screen.getByTestId(`pattern-opacity-${k}`)).toBeInTheDocument();
@@ -242,7 +308,7 @@ describe('سوییچ‌های UI (PatternToggles) + پایداری', () => {
     // store ماژول-سطحی یک‌بار ساخته می‌شود؛ بازخوانیِ صریحِ load را با reset می‌سنجیم
     usePatternPrefsStore.getState().reset();
     const prefs = usePatternPrefsStore.getState().prefs as unknown as Record<string, unknown>;
-    expect(Object.keys(prefs)).toHaveLength(8);
+    expect(Object.keys(prefs)).toHaveLength(10);
     expect(prefs.fib).toBeUndefined();
   });
 

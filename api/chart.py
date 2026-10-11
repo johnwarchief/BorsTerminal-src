@@ -2875,6 +2875,14 @@ def _fts_status_block(candles, out):
     text = FTS_STATUS_TEXT[code]
     if code == "entry_trigger":
         text = "%s: %s" % (text, trig["label"])
+    if code == "insufficient":
+        # P0: «بی‌داده» با تعدادِ واقعی — موتور اجرا شده و همهٔ لایه‌ها زیرِ
+        # کفِ تاریخچه‌اند؛ نه اینکه رأیی منتشر نشده باشد (آن حالت در رابط
+        # کدِ `pending` می‌گیرد، چون اصلاً به این بلوک نمی‌رسد).
+        avail, req = out.get("setups_bars_available"), out.get("setups_bars_required")
+        if isinstance(avail, int) and isinstance(req, int):
+            text = ("%s (سابقه: %s کندل، حداقل لازم %s)"
+                    % (text, _fts_fa(avail), _fts_fa(req)))
     if code == "weekly_veto" and jet.get("active") is True:
         text = "%s (جتِ امروز هم فعال است، ولی وتو بر ورود غالب است)" % text
     return {"code": code, "text": text, "trigger": trig,
@@ -3411,6 +3419,10 @@ def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
     _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
               "analysis_basis": basis, "bars": len(candles),
+              # آخرین بستۀ همان سریِ تحلیل — لنگرِ رندرهایِ دوموتوره. چارت
+              # با نسبتِ کندلِ نمایشی به این عدد، عددِ سرور را روی محور می‌آورد
+              # (قاعدۀ لایۀ ۴); بی‌این، FFC در مبنای raw لایه را جابه‌جا می‌زد.
+              "ref_close": last_close,
               "trend_engine": TREND_ENGINE,
               "adjustCapability": _adjust_capability(_evs, _src)}
     if as_of:

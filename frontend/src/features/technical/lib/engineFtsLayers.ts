@@ -81,6 +81,8 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
 
   // ۱) کمربندهای فیبو -- عددِ سرور، جهتِ سرور (موجِ نزولی از کف به بالا)
   const fib = fts.fib;
+  // موجِ provisional = ساختارِ تأییدشده نیست (P0#4)؛ برچسب باید این را بگوید.
+  const forming = fib?.leg?.provisional === true ? ' (در حال تشکیل)' : '';
   for (const [key, edge, fill, label] of [
     ['zone_33_40', FTS_OVERLAY_COLORS.fibStep1Edge, FTS_OVERLAY_COLORS.fibStep1, 'پله اول ۳۳-۴۰٪'],
     ['zone_618_70', FTS_OVERLAY_COLORS.fibStep2Edge, FTS_OVERLAY_COLORS.fibStep2, 'کمربند طلایی ۶۱.۸-۷۰٪'],
@@ -88,7 +90,7 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
     const z = fib?.[key];
     const lo = disp(z?.lo);
     const hi = disp(z?.hi);
-    if (lo != null && hi != null && hi > lo) out.push(band(`fib-${key}`, 'fts-fib', lo, hi, label, edge, fill, i));
+    if (lo != null && hi != null && hi > lo) out.push(band(`fib-${key}`, 'fts-fib', lo, hi, label + forming, edge, fill, i));
   }
   for (const lv of i.showFibLevels ? fib?.levels ?? [] : []) {
     const p = disp(lv.price);
@@ -174,15 +176,56 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   if (fts.exit_engine?.l1?.ma14_exit === true && ma14 != null) {
     out.push(level('ma14-exit', ma14, 'خروج (زیر MA14)', '#fb7185', i));
   }
+  // پهنای باند از سرور (B4): «سرور عدد نگفته رسم نمی‌شود» — بی‌band_pct
+  // سطحِ تنها می‌مانیم و ناحیه نمی‌سازیم؛ ±۲٪/±۳٪ِ دست‌نویسِ پیشین حذف.
   const third = disp(fts.exit_engine?.l3?.third_peak_level);
+  const thirdBand = num(fts.exit_engine?.l3?.third_peak_band_pct);
   if (fts.exit_engine?.l3?.third_peak === true && third != null) {
-    out.push(band('third-peak', 'fts-pattern', i.toDisp(third * 0.98), i.toDisp(third * 1.02),
-      'منطقه پرریسک سقف سوم', '#facc15', 'rgba(250, 204, 21, 0.12)', i));
+    if (thirdBand != null) {
+      const f = thirdBand / 100;
+      out.push(band('third-peak', 'fts-pattern', i.toDisp(third * (1 - f)), i.toDisp(third * (1 + f)),
+        'منطقه پرریسک سقف سوم', '#facc15', 'rgba(250, 204, 21, 0.12)', i));
+    } else {
+      out.push(level('third-peak', third, 'سقف سوم', '#facc15', i, true));
+    }
   }
   const ma52 = disp(fts.hourglass?.ma52);
+  const ma52Band = num(fts.hourglass?.ma52_band_pct);
   if (fts.hourglass?.active === true && ma52 != null) {
-    out.push(band('hourglass', 'fts-pattern', i.toDisp(ma52 * 0.97), i.toDisp(ma52 * 1.03),
-      'ساعت شنی', '#38bdf8', 'rgba(56, 189, 248, 0.12)', i));
+    if (ma52Band != null) {
+      const f = ma52Band / 100;
+      out.push(band('hourglass', 'fts-pattern', i.toDisp(ma52 * (1 - f)), i.toDisp(ma52 * (1 + f)),
+        'ساعت شنی', '#38bdf8', 'rgba(56, 189, 248, 0.12)', i));
+    } else {
+      out.push(level('hourglass', ma52, 'ساعت شنی', '#38bdf8', i, true));
+    }
+  }
+
+  // ۵) پولبکِ شاخۀ صعودی — سطحِ آخرین سقف + وضعیتِ لمسر/ستاپ، بی‌عددِ ساختگی
+  const pbLevel = disp(fts.pullback?.level);
+  if (pbLevel != null && (fts.pullback?.touching === true || fts.pullback?.active === true)) {
+    out.push(level('pullback', pbLevel,
+      fts.pullback?.active === true ? 'پولبک (تأیید)' : 'پولبک (در حال تشکیل)',
+      '#34d399', i, fts.pullback?.active !== true));
+  }
+
+  // ۶) نقاطِ ساختاریِ تأییدشده (HH/HL/LH/LL) — لایۀ «ساختار روند». زمانِ
+  // تأیید (confirm_time) درِ خودِ نقطه است تا کلیکِ شواهد «کِی فهمیدیم» را
+  // جدا از «کِی رخ داد» بگوید؛ رسم فقط رویِ پیوت‌هایِ تأییدشدهٔ داخل دید.
+  for (const p of fts.structure_points?.D ?? []) {
+    const v = disp(p.price);
+    const ts = i.tsForDate(String(p.time).slice(0, 10));
+    if (v == null || ts == null) continue;
+    const bear = p.label === 'LH' || p.label === 'LL';
+    out.push({
+      id: `structure-D-${p.time}`,
+      kind: 'marker',
+      group: 'fts-structure',
+      points: [{ timestamp: ts, value: v }],
+      color: bear ? '#f87171' : '#4ade80',
+      label: p.label,
+      width: 1,
+    });
   }
 
   return out;

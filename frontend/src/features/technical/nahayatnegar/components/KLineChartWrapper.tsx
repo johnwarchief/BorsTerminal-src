@@ -37,6 +37,7 @@ import type { ChartEngineId } from '../../engine';
 import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
+  PULLBACK_MARKER_OVERLAY,
 } from '../../lib/ftsOverlays';
 import { corpEventMarkers, type RawCorporateEvent } from '../../lib/corpEvents';
 import {
@@ -182,15 +183,16 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
   const p0 = spec.points[0];
 
   // گرامرِ بصریِ per-pattern — هر الگو شکل/استایلِ مخصوصِ خودش را دارد (فاز ۴+).
-  // ۱) مارکرها (نقطه‌زنی ◎ / خروج زیر MA14 ⨯): چیپِ برچسب‌دار روی خودِ کندل.
-  if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross') {
-    const glyph = spec.kind === 'ma14exit' ? '⨯' : '◎';
+  // ۱) مارکرها (نقطه‌زنی ◎ / خروج زیر MA14 ⨯ / ساختار HH…HL…): چیپِ برچسب‌دار روی خودِ کندل.
+  if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross'
+      || spec.overlayName === 'ftsStructureMarker') {
+    const glyph = spec.kind === 'ma14exit' ? '⨯' : spec.kind === 'structure' ? '' : '◎';
     return {
       name: 'simpleAnnotation',
       groupId: PATTERN_GROUP_ID,
       lock: true,
       points: [{ timestamp: p0.timestamp, value: p0.value }],
-      extendData: `${glyph} ${spec.label}`,
+      extendData: glyph ? `${glyph} ${spec.label}` : spec.label,
       styles: {
         text: {
           color,
@@ -206,6 +208,17 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
           paddingBottom: 1,
         },
       },
+    };
+  }
+
+  // ۱ب) مارکرِ مثلثیِ پولبک — اورلیِ ثبت‌شدۀ خودش (چیپِ متن نبود، سهمِ بصریِ ستاپ)
+  if (spec.overlayName === PULLBACK_MARKER_OVERLAY) {
+    return {
+      name: PULLBACK_MARKER_OVERLAY,
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [{ timestamp: p0.timestamp, value: p0.value }],
+      extendData: { label: spec.label, color },
     };
   }
 

@@ -25,6 +25,9 @@ const TONE_BY_CODE: Record<string, Tone> = {
   context_only: 'blue',
   no_signal: 'gray',
   insufficient: 'gray',
+  // P0§3: «موتور رأی منتشر نکرده» با «دادهٔ ناکافی» یکی نیست — کد و لحنِ متمایز
+  // تا not_evaluated خودش را به‌جایِ insufficient_history نفروشد.
+  pending: 'blue',
   gate_rejected: 'red',
 };
 
@@ -40,10 +43,12 @@ export function resolveFtsStatusView(
   }
   const st = signal?.payload.status;
   if (!st) {
+    // P0§3: not_evaluated (موتور اجرا نشده/پیلود نرسیده) ≠ insufficient (موتور
+    // گفت داده کم است). کدِ `pending` این دو را درِ رابط جدا می‌کند.
     return {
-      code: 'insufficient',
+      code: 'pending',
       text: 'موتور FTS هنوز وضعیتِ عمومی را منتشر نکرده',
-      tone: 'gray',
+      tone: 'blue',
     };
   }
   return { code: st.code, text: st.text, tone: TONE_BY_CODE[st.code] ?? 'gray' };
