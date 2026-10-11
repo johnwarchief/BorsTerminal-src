@@ -1475,7 +1475,9 @@ def set_fts_config(payload: dict = None):
     جدول عوض شود.
     """
     if not payload:
-        return {"status": "error", "message": "بدون داده"}
+        return {"status": "error",
+                "message": "پیکربندی خالی رسید — بدنه باید حداقل یکی از "
+                           "%s کلیدِ معتبر را داشته باشد" % len(FTS_DEFAULTS)}
     aliases = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
     cfg = dict(FTS_DEFAULTS)
     errors = {}

@@ -709,7 +709,8 @@ def refresh_tape_history(conn, force=False, fetch=None):
         # یعنی غربالگری «بدون داده» — سنجشِ ۱۴۰۵-۰۷-۲۰ رویِ بانکِ نصبی).
         limit = TAPE_HIST_RETRY_S
         if have < 1 or (last_note or "").startswith(("low-coverage", "partial-payload",
-                                                     "no-rows", "budget")):
+                                                     "no-rows", "budget",
+                                                     "no-traded-set")):
             limit = TAPE_HIST_LOW_S
         try:
             age = (now - datetime.datetime.strptime(last_attempt,
@@ -807,8 +808,15 @@ def refresh_tape_history(conn, force=False, fetch=None):
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
     c.executemany(_TAPE_HIST_INSERT, recs)
+    # تابلویِ رول‌شدهٔ پیش‌ازبازگشایی همهٔ حجم‌ها صفر است و traded_n=0 همهٔ
+    # گیت‌هایِ پوشش را خنثی می‌کند؛ اگر همان‌جا note خالی بماند، قفلِ
+    # شش‌ساعته می‌افتد و نخستین fetchِ پس‌ازبازگشایی — که پوشش را againstِ
+    # مجموعۀ واقعیِ معامله‌شده می‌سنجد — روز پشتِ تایمر می‌ماند. خانوادۀ
+    # no-traded-set همان ۳۰دقیقهٔ retry است و بعدازظهرِ تعطیلی/کندیِ منبع هم
+    # فقط همان یک نشستِ بی‌معامله را هر نیم‌ساعت دوباره می‌آزماید.
+    note = "" if traded_n else "no-traded-set"
     c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
-              (now_txt, now_txt, top, ""))
+              (now_txt, now_txt, top, note))
     conn.commit()
     print(f"  [tape-history] {len(recs):,} ردیفِ [ih] از سایت (نشست تا {top})")
     return {"rows": len(recs), "newest": top}

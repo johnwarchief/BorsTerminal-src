@@ -27,9 +27,18 @@ function cand(over: Partial<Candidate> = {}): Candidate {
     status, why: { tape: 'نشانهٔ ساعت روشن', technical: 'هفتگی صعودی', fundamental: 'سه شاخص سنجیده نشده', handover: 'صبر' },
     score: 3, trendW: 'up', trendD: 'up', setups: 'جت', inds: ['pass', 'pending', 'unavailable', 'pass', 'reject'],
     patterns: ['ساعت'], techSource: 'live', kind: 'stock',
-    row: { symbol: 'شکاش', p_last: 13700, percent_change: 1.1 } as Candidate['row'],
-    screen: { score: 3, verdict: 'WATCH', eps_last: 812, gross_margin: null, sales_to_mcap: null,
-              excluded: false, applicable: true, exclusion_reasons: null } as Candidate['screen'],
+    row: { symbol: 'شکاش', p_last: 13700, percent_change: 1.1 },
+    screen: {
+      symbol: 'شکاش', name: 'شکاش', sector_name: 'خودرو',
+      score: 3, pricing_mode: null,
+      excluded: false, exclusion_reasons: '',
+      rev_growth: null, eps_last: 812, gross_margin: null, sales_to_mcap: null,
+      annual_sales_bt: null,
+      tech_trend_w: null, tech_trend_d: null,
+      tech_matrix_decision: null, tech_status: null,
+      tech_fib_zone: null, tech_hourglass_active: null,
+      assembly_veto: false, verdict: 'WATCH', applicable: true,
+    },
     jetEvidence: null, assemblyVeto: false, assemblyWhy: '', screenRank: 4, ...over,
   } as Candidate;
 }

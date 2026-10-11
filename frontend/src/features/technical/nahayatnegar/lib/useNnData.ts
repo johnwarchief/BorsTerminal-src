@@ -37,14 +37,19 @@ const TedpixSchema = z.object({
   volumes: z.array(VolSchema).nullish(),
 });
 
-/** کندل‌های API (رشته تاریخ) → KLineData (میلی‌ثانیه) */
-export function toKLine(candles: { time: string; open: number; high: number; low: number; close: number }[], volByTime: Record<string, number> = {}): KLineData[] {
+/** کندل‌های API (رشته تاریخ) → KLineData (میلی‌ثانیه). حجم فقط وقتی می‌نشیند
+ * که برای همان کندل آمده باشد — صفرِ ساختگی برای «حجم ناشناخته» نمی‌آید. */
+export function toKLine(candles: { time: string; open: number; high: number; low: number; close: number }[], volByTime?: Record<string, number>): KLineData[] {
   const out: KLineData[] = [];
   for (const c of candles) {
     const ts = Date.parse(`${c.time}T00:00:00Z`);
     if (!Number.isFinite(ts)) continue;
     if (![c.open, c.high, c.low, c.close].every((v) => Number.isFinite(v) && v > 0)) continue;
-    out.push({ timestamp: ts, open: c.open, high: c.high, low: c.low, close: c.close, volume: volByTime[c.time] ?? 0 } as unknown as KLineData);
+    const vol = volByTime?.[c.time];
+    out.push({
+      timestamp: ts, open: c.open, high: c.high, low: c.low, close: c.close,
+      ...(vol != null ? { volume: vol } : {}),
+    } as unknown as KLineData);
   }
   return out.sort((a, b) => a.timestamp - b.timestamp);
 }

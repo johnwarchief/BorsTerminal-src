@@ -161,3 +161,30 @@ describe('hiddenDoorOf/countHiddenMatches: هر ردیفِ پنهان یک در'
     }
   });
 });
+
+describe('اشتراک و اجتماعِ چیپ‌ها رویِ جدولِ تابلو (رأیِ مالک ۱۴۰۵-۰۷-۱۹)', () => {
+  // دو چیپِ روشن: «اجتماع» باید هر سه را بیاورد (اختصاصی‌ها + مشترک)، «اشتراک»
+  // فقط مشترک. تا پیش از این جدولِ تابلو هیچ‌وقت `screenLogic` را نمی‌خواند، پس
+  // کلیدِ اجتماع فقط درِ درخواستِ قیف اثر داشت وِ اینجا بی‌تغییر می‌ماند.
+  const set = [
+    row({ symbol: 'هربود', f_clock: true, f_susp: true }),
+    row({ symbol: 'فقطساعت', f_clock: true, f_susp: false }),
+    row({ symbol: 'فقطمشکوک', f_clock: false, f_susp: true }),
+    row({ symbol: 'هیچکدام', f_clock: false, f_susp: false }),
+  ];
+  const symbols = (logic?: 'and' | 'or') =>
+    applyFilters(set, '', [...ASSET_TYPES], ['f_clock', 'f_susp'], '', false, 'all', false, 3, false, undefined, logic)
+      .map((r) => r.symbol);
+
+  it('اجتماع: هرِکدام از دو چیپ کافی است — اختصاصی‌ها هم، مشترک هم', () => {
+    expect(symbols('or')).toEqual(['هربود', 'فقطساعت', 'فقطمشکوک']);
+  });
+
+  it('اشتراک: فقط ردیفی که هر دو را دارد', () => {
+    expect(symbols('and')).toEqual(['هربود']);
+  });
+
+  it('بی‌کلید (پیش‌فرض) همان اشتراک دیروز است', () => {
+    expect(symbols()).toEqual(['هربود']);
+  });
+});

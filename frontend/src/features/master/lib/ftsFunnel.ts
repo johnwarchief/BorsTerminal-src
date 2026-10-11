@@ -23,9 +23,8 @@
 //               اجازه نمی‌دهد) — نه «رد» است و نه «سنجیده نشده»؛ درِ جدولِ
 //               گام‌ها نمایش داده نمی‌شود و درِ «خارج از جامعۀ غربالگری» با
 //               علتش می‌نشیند (رأیِ مالک ۱۴۰۵-۰۷-۱۶).
-import type { MarketRow } from '@shared/types/marketRow';
 import type { AssetType } from '@features/market/lib/assetType';
-import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
+import type { FunnelRowView, FunnelScreenView } from './funnelView';
 import {
   DEFAULT_FUND_FLOOR,
   DEFAULT_TECH_SCREENS,
@@ -217,8 +216,10 @@ export type Candidate = {
   sector: string;
   /** طبقهٔ ابزار — همان «صندوق/اختیار/حق تقدم» که پنج‌شاخصه دربارهٔ آنها نظر نمی‌دهد */
   kind: AssetType;
-  row: MarketRow | null;
-  screen: FtsScreenRow | null;
+  /** ردیفِ نمایشیِ قیف — فقط فیلدهای `FunnelRowView`؛ پرچم‌های تابلو اینجا نیستند */
+  row: FunnelRowView | null;
+  /** همان برای اسکرین — `score` اینجا null‌پذیر است، نه بازهٔ ۰..۵ِ اسکرینر */
+  screen: FunnelScreenView | null;
   /** برچسبِ پنج فیلترِ فایل که این ردیف درِ تابلو رد کرد — عینِ بجِ ستونِ «الگو» */
   patterns: string[];
   /** چهار درِ قیف، با یک واژگانِ واحد */

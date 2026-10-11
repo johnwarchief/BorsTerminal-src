@@ -105,7 +105,7 @@ describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
     expect(screen.getByTestId('watch-row-فولاد').textContent).toContain('—');
   });
 
-  it('کندلِ روز از اول/بیشینه/کمینه/آخرینِ همان ردیف ساخته می‌شود و بی‌داده «—» است', async () => {
+  it('کندلِ روز از اول/بیشترین/کمترین/آخرینِ همان ردیف ساخته می‌شود و بی‌داده «—» است', async () => {
     const a = row(); const b = row({ symbol: 'بی‌کندل', p_max: null, p_min: null });
     mockFeed([a, b]);
     renderTable([a, b]);
@@ -114,7 +114,7 @@ describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
     await candlesDrawn(1);   // یک ردیف کندلِ رسم‌شده دارد، «بی‌كندل» نه
     const drawn = document.querySelector('[data-testid="watch-day-candle"][data-state="up"], [data-testid="watch-day-candle"][data-state="down"]');
     expect(drawn?.tagName.toLowerCase()).toBe('svg');
-    expect(drawn?.getAttribute('aria-label')).toContain('بیشینه');
+    expect(drawn?.getAttribute('aria-label')).toContain('بیشترین');
     const flat = document.querySelector('[data-testid="watch-day-candle"][data-state="incomplete"]');
     expect(flat?.textContent).toBe('—');
     expect(screen.getByTestId('watch-row-بی‌کندل').textContent).toContain('—');

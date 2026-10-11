@@ -8,7 +8,7 @@
 // این فایل هیچ داوری‌ای حساب نمی‌کند و هیچ شمارشی هم نمی‌سازد: شمارش‌ها و
 // «تکنیکال سنجیده‌شده» درِ سرخطِ خودِ جدول (`FtsFunnelAllStages`) می‌مانند —
 // یک منبعِ عدد، نه دو تا. اینجا فقط سیستمِ انتخاب و گام عوض می‌شوند.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
@@ -85,6 +85,23 @@ export function FtsFunnelStages({
   // پیش‌نمایشِ هر شخص (رأیِ مالک ۱۴۰۵-۰۷-۲۰): با هاور یا فوکوس، فهرستِ فیلترها
   // و انگیزه‌اش خوانده شود — نه فقط یک `title` که درِ برنامه خوانده نمی‌شود.
   const [preview, setPreview] = useState<FunnelPreset | null>(null);
+  // رأیِ ۱۴۰۵-۰۷-۱۹: «موس رو متن هم بیاد باز بمونه». بسته شدن با یک تأخیرِ کوتاه
+  // رخ می‌دهد تا عبورِ موس از فاصلۀِ بینِ دکمه و متنِ پیش‌نمایش آن را نخوابد.
+  const closeTimer = useRef<number | null>(null);
+  const showPreview = (p: FunnelPreset) => {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setPreview(p);
+  };
+  const scheduleClose = () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => { setPreview(null); closeTimer.current = null; }, 160);
+  };
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
 
   return (
     <div className="flex w-full flex-col gap-2" data-testid="fts-funnel-workspace">
@@ -104,9 +121,9 @@ export function FtsFunnelStages({
               title={m.hint}
               data-testid={`funnel-mode-${m.key}`}
               onClick={() => choose(m.key)}
-              onMouseEnter={() => setPreview(m.key)}
-              onMouseLeave={() => setPreview((p) => (p === m.key ? null : p))}
-              onFocus={() => setPreview(m.key)}
+              onMouseEnter={() => showPreview(m.key)}
+              onMouseLeave={scheduleClose}
+              onFocus={() => showPreview(m.key)}
               onBlur={() => setPreview((p) => (p === m.key ? null : p))}
               className={
                 on
@@ -125,6 +142,8 @@ export function FtsFunnelStages({
           className="glass-panel rounded-xl border border-border-c/70 px-3 py-2 text-2xs text-text-secondary"
           data-testid={`funnel-preset-preview-${preview}`}
           role="note"
+          onMouseEnter={() => showPreview(preview)}
+          onMouseLeave={scheduleClose}
         >
           <div className="font-bold text-text-primary">
             {PRESET_ENTRY[preview as keyof typeof PRESET_ENTRY]?.label ?? preview}

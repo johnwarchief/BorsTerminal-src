@@ -22,6 +22,7 @@ import {
   type QuickFilter,
 } from '../stores/tapeStore';
 import {
+  tapeFilterState,
   tapeFilterVerdict,
   type TapeFilterConfig,
 } from '../lib/tapeAlgorithms';
@@ -78,6 +79,7 @@ function SplitFilterChip({
   onToggle,
   count,
   hidden,
+  uneval,
 }: {
   filter: QuickFilter;
   active: boolean;
@@ -85,6 +87,8 @@ function SplitFilterChip({
   count?: number;
   /** چند ردیفِ واجدِ شرط درِ نمایِ فعلی را باز نکردند، و کدام در هر کدام را */
   hidden?: HiddenInfo;
+  /** چند ردیف فیلتر رویشان اصلاً اجرا نشده — با «رد» یکی دانسته نمی‌شود */
+  uneval?: number;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const chipRef = useRef<HTMLDivElement>(null);
@@ -107,6 +111,11 @@ function SplitFilterChip({
       : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند`
         + (doorLabel ? ` (${doorLabel})` : '')
         + doorHint;
+  // شمارشِ «سنجیده نشد» هم‌محدودۀ شمارشِ خودِ چیپ است (ردیف‌های همین نما)، نه
+  // کلِ تابلو — پس قیدِ «در تابلویِ فعلی» در متن می‌آید و عدد جا نمی‌زند.
+  const fullTitle = uneval != null && uneval > 0
+    ? `${chipTitle} — ${toFaDigits(uneval)} ردیف در تابلویِ فعلی سنجیده نشد (داده/تاریخچه در دسترس نبود)`
+    : chipTitle;
 
   return (
     <div
@@ -121,7 +130,7 @@ function SplitFilterChip({
         type="button"
         onClick={onToggle}
         aria-pressed={active}
-        title={chipTitle}
+        title={fullTitle}
         className="flex items-center ps-2.5 pe-1 py-0.5 focus:outline-none"
       >
         <span>{QUICK_LABELS[filter]}</span>
@@ -295,6 +304,39 @@ export function countQuickMatches(
   return out;
 }
 
+/**
+ * ردیف‌هایی که فیلتر رویشان اصلاً اجرا نشده (پرچمِ null)، به تفکیکِ فیلتر.
+ * جدا از شمارشِ pass می‌ماند تا تولتیپِ چیپ بگوید «N سنجیده نشد» — نه اینکه
+ * عددِ کوچکِ چیپ به‌جای «رد»، «نبودِ داده» را هم پنهان کند (مأموریت P0).
+ */
+export function countUnevaluated(
+  rows: MarketRowsLike,
+  config?: TapeFilterConfig,
+): Record<QuickFilter, number> {
+  const out: Record<QuickFilter, number> = {
+    f_clock: 0,
+    f_susp: 0,
+    f_jet: 0,
+    f_roobi: 0,
+    f_noqteh: 0,
+    f_smart: 0,
+    f_legal: 0,
+  };
+  for (const r of rows) {
+    for (const f of QUICK_FILTERS) {
+      const state = config
+        ? tapeFilterState(r as unknown as Parameters<typeof tapeFilterState>[0], f, config)
+        : r[f] == null
+          ? 'unevaluated'
+          : r[f]
+            ? 'pass'
+            : 'fail';
+      if (state === 'unevaluated') out[f] += 1;
+    }
+  }
+  return out;
+}
+
 type MarketRowsLike = { [K in QuickFilter]?: boolean | null }[];
 
 /** ردیفِ خاموش‌شده: همان ردیفِ جدول، با فیلدهایی که درها می‌خوانند */
@@ -400,6 +442,7 @@ export function MarketFilters({
   sectors,
   matches,
   hiddenInfo,
+  unevaluated,
   shown,
   total,
   pollMs,
@@ -415,6 +458,8 @@ export function MarketFilters({
   /** ردیف‌هایِ واجدِ شرطی که درِ نمایِ فعلی را باز نکردند، با تفکیکِ هر در —
    *  توضیحِ «چرا چیپ کمتر از فیلترنویسِ TSETMC است» */
   hiddenInfo?: Record<QuickFilter, HiddenInfo>;
+  /** ردیف‌هایی که فیلتر رویشان اجرا نشده، به تفکیکِ فیلتر (مأموریت P0) */
+  unevaluated?: Record<QuickFilter, number>;
   shown?: number;
   total?: number;
   pollMs?: number;
@@ -508,6 +553,7 @@ export function MarketFilters({
             onToggle={() => toggleQuickFilter(f)}
             count={matches?.[f]}
             hidden={hiddenInfo?.[f]}
+            uneval={unevaluated?.[f]}
           />
         ))}
 

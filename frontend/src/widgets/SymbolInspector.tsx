@@ -36,6 +36,9 @@ import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
+import { useFtsAnalysis } from '@features/technical/api/useFtsAnalysis';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
 import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
 import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
@@ -245,6 +248,45 @@ export function SymbolInspector() {
     return null;
   }, [funnel, symbol]);
   const progress = useMemo(() => stageProgressFor(funnel, symbol), [funnel, symbol]);
+
+  /** سنجشِ بی‌زنجیره. ردیفِ قیف فقط برایِ نمادی پُر است که از درِ زنجیرۀِ انتخابی
+   *  گذشته باشد؛ پس تاگلِ «اشتراک/اجتماع» و حتی بازکردنِ تبِ بنیادی، روند و پنج
+   *  شاخصِ همین نماد را عوض می‌کرد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «اصلاً نباید ربطی
+   *  داشته باشن»). اسکرینر کلِ جامعۀ غربالگری را یک‌جا می‌سنجد — همان اعداد،
+   *  بی‌وابستگی به فیلترِ تابلو. درخواستِ این‌جا تازه نیست: همان کلیدِ کشِ تب. */
+  const screenRes = useFtsScreen(0);
+  const screen = useMemo(() => {
+    const rows = screenRes.data?.data;
+    if (!rows?.length || !symbol) return veto.screen;
+    const want = normalizeFa(symbol);
+    return rows.find((r) => r.symbol === symbol)
+      ?? rows.find((r) => normalizeFa(r.symbol ?? '') === want)
+      ?? veto.screen;
+  }, [screenRes.data, symbol, veto.screen]);
+  /** روند از داوریِ *تک‌نمادیِ* موتور می‌آید (`/api/fts/{symbol}`): همان چیزی که
+   *  تبِ تکنیکال می‌سازد و به هیچ زنجیره‌ای وابسته نیست. پیش‌تر از ردیفِ قیف
+   *  خوانده می‌شد و آن ردیف فقط وقتی هست که نماد از درهایِ انتخابی رد شده باشد —
+   *  پس کلیدِ «اشتراک/اجتماع» صعودی/نزولیِ یک نماد را عوض می‌کرد. اسکرینر
+   *  جانشین است (۹۲۲ نمادِ غربالگری) و نبودنش «—» می‌ماند، نه حدس. */
+  const analysis = useFtsAnalysis(symbol ?? '');
+  const trendD = analysis.data?.fts?.trend?.D?.trend ?? screen?.tech_trend_d ?? null;
+  const trendW = analysis.data?.fts?.trend?.W?.trend ?? screen?.tech_trend_w ?? null;
+  /** مقدار و حکمِ هر پنج شاخص: ردیفِ اسکرینر که باشد، همان می‌برد (بی‌وابستگی
+   *  به فیلترِ تابلو)؛ اگر اصلاً ردیفی نبود، شاخص‌ها از همان ردیفِ غربالگری
+   *  خوانده می‌شوند. عددِ دو منبع با هم قاطی نمی‌شوند. */
+  const SCREEN_PASS = [screen?.i1_pass, screen?.i2_pass, screen?.i3_pass, screen?.i4_pass, screen?.i5_pass];
+  const SCR_IDX = [
+    () => screen?.rev_growth, () => screen?.eps_last, () => screen?.gross_margin,
+    () => screen?.sales_to_mcap, () => screen?.pricing_mode,
+  ];
+  const CAND_IDX = [
+    () => cand?.screen?.rev_growth, () => cand?.screen?.eps_last, () => cand?.screen?.gross_margin,
+    () => cand?.screen?.sales_to_mcap, () => cand?.screen?.pricing_mode,
+  ];
+  const indValueAt = (i: number) => (screen ? SCR_IDX[i]() : CAND_IDX[i]());
+  const indMarkAt = (i: number) => screen
+    ? (SCREEN_PASS[i] === true ? 'pass' : SCREEN_PASS[i] === false ? 'reject' : 'unavailable')
+    : (cand?.inds?.[i] ?? null);
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
 
@@ -437,7 +479,7 @@ export function SymbolInspector() {
                 className="text-sm font-black text-text-primary"
               />
             </div>
-            <FormingCandle candle={rawRow} width={18} height={26} testId="inspector-day-candle" />
+            <FormingCandle candle={rawRow} width={30} height={10} testId="inspector-day-candle" />
             <div className="text-end">
               <div className="text-[8.5px] uppercase tracking-wider text-text-muted">تغییر روز</div>
               <span className={row?.percentChange != null && row.percentChange >= 0 ? 'text-accent-green' : 'text-accent-red'}>
@@ -476,22 +518,28 @@ export function SymbolInspector() {
             <span className="flex items-baseline gap-1 text-text-muted">
               اولین
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-first"
-                    title={rawRow?.p_first ? fmtInt(rawRow.p_first) : 'اولینِ مبادله هنوز ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_first ? fmtInt(rawRow.p_first) : '—'}
+                    title={rawRow?.p_first != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ اولین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_first != null && rawRow.p_first > 0 ? fmtInt(rawRow.p_first) : '—'}
               </span>
             </span>
             <span className="flex items-baseline gap-1 text-text-muted">
-              بیشینه
+              بیشترین
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-max"
-                    title={rawRow?.p_max ? fmtInt(rawRow.p_max) : 'بیشترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_max ? fmtInt(rawRow.p_max) : '—'}
+                    title={rawRow?.p_max != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ بیشترین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_max != null && rawRow.p_max > 0 ? fmtInt(rawRow.p_max) : '—'}
               </span>
             </span>
             <span className="flex items-baseline gap-1 text-text-muted">
-              کمینه
+              کمترین
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-min"
-                    title={rawRow?.p_min ? fmtInt(rawRow.p_min) : 'کمترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_min ? fmtInt(rawRow.p_min) : '—'}
+                    title={rawRow?.p_min != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ کمترین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_min != null && rawRow.p_min > 0 ? fmtInt(rawRow.p_min) : '—'}
               </span>
             </span>
           </div>
@@ -542,7 +590,7 @@ export function SymbolInspector() {
             <span className="num text-[11px] font-bold text-text-primary"
                   title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
                          + `${rawRow?.is_live === false ? 'آخرینِ نشستِ تابلو' : 'نشستِ جاریِ تابلو'}`}>
-              {rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
+              {rawRow?.mcap != null ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
             </span>
             <span className="text-[9px] text-text-muted">I4</span>
             {(() => {
@@ -618,17 +666,31 @@ export function SymbolInspector() {
           <RegulatoryState row={rawRow} feedFailed={feed.isError} />
 
           <div className="flex flex-col gap-0.5">
+              {/* روند از داوریِ بی‌زنجیرۀ اسکرینر خوانده می‌شود؛ سیگنالِ باس فقط
+                  جانشین است، وگرنه فیلترِ تابلو رنگِ همین دو خط را عوض می‌کرد. */}
               <StatusLight
                 label="تکنیکال FTS"
-                value={tech == null ? '-' : tech.direction === 'bullish' ? 'صعودی' : tech.direction === 'bearish' ? 'نزولی' : 'خنثی'}
-                tone={tech == null ? 'gray' : tech.direction === 'bullish' ? 'green' : tech.direction === 'bearish' ? 'red' : 'yellow'}
-                hint={tech?.rationale}
+                value={trendD === 'up' ? 'صعودی'
+                  : trendD === 'down' ? 'نزولی'
+                    : trendD ? 'خنثی'
+                      : tech == null ? '-' : tech.direction === 'bullish' ? 'صعودی' : tech.direction === 'bearish' ? 'نزولی' : 'خنثی'}
+                tone={trendD === 'up' ? 'green'
+                  : trendD === 'down' ? 'red'
+                    : trendD ? 'yellow'
+                      : tech == null ? 'gray' : tech.direction === 'bullish' ? 'green' : tech.direction === 'bearish' ? 'red' : 'yellow'}
+                hint={tech?.rationale ?? screen?.tech_matrix_desc ?? undefined}
               />
               <StatusLight
                 label="نمره بنیادی"
-                value={fund?.score == null ? '-' : toFaDigits(fund.score)}
-                tone={fund == null ? 'gray' : fund.direction === 'bullish' ? 'green' : fund.direction === 'bearish' ? 'red' : 'yellow'}
-                hint={fund?.rationale}
+                value={(screen?.score ?? cand?.score ?? fund?.score) == null
+                  ? '-'
+                  : toFaDigits((screen?.score ?? cand?.score ?? (fund?.score as number)))}
+                tone={screen?.verdict === 'STRONG' || cand?.status.fundamental === 'pass' ? 'green'
+                  : screen?.verdict === 'REJECT' || cand?.status.fundamental === 'reject' ? 'red'
+                    : fund?.direction === 'bullish' ? 'green'
+                      : fund?.direction === 'bearish' ? 'red'
+                        : (screen || cand || fund) ? 'yellow' : 'gray'}
+                hint={screen?.exclusion_reasons ?? cand?.why.fundamental ?? fund?.rationale ?? undefined}
               />
           </div>
 
@@ -639,8 +701,8 @@ export function SymbolInspector() {
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
                data-testid="inspector-trend">
             <span className="text-[9px] text-text-muted">روند</span>
-            <TrendChip side="روزانۀ" value={cand?.trendD ?? null} />
-            <TrendChip side="هفتگی" value={cand?.trendW ?? null} />
+            <TrendChip side="روزانۀ" value={trendD} />
+            <TrendChip side="هفتگی" value={trendW} />
             <span className="flex items-center gap-1" data-testid="inspector-jet">
               <span className="text-[9px] text-text-muted">جت</span>
               <span className={`rounded px-1 font-bold ${
@@ -658,12 +720,8 @@ export function SymbolInspector() {
           <div className="flex flex-wrap items-center gap-1 text-[9.5px]"
                data-testid="inspector-i1-i5">
             {IND_COLUMNS.map((col, i) => {
-              const st = cand?.inds?.[i] ?? null;
-              const val = i === 0 ? cand?.screen?.rev_growth
-                : i === 1 ? cand?.screen?.eps_last
-                : i === 2 ? cand?.screen?.gross_margin
-                : i === 3 ? cand?.screen?.sales_to_mcap
-                : cand?.screen?.pricing_mode;
+              const st = indMarkAt(i);
+              const val = indValueAt(i);
               const txt = i === 0 || i === 2
                 ? (val == null ? '—' : fmtPct(val as number))
                 : i === 3

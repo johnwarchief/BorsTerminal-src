@@ -46,7 +46,7 @@ type SortKey =
  * ستون‌ها ۶→۴ و حاشیهٔ ردیف ۱۲→۸ آمد تا حدِ آستانهٔ عرض بالا نکند.
  */
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(118px,1.1fr)_minmax(142px,1.5fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(124px,1.0fr)_minmax(60px,0.8fr)_minmax(56px,0.78fr)_minmax(56px,0.75fr)_minmax(170px,1.45fr)_minmax(142px,1.5fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
 const TABLE_MIN_W = 'min-w-[1100px]';
@@ -139,7 +139,10 @@ function pctTone(pct: number | null | undefined): string {
   return 'text-text-secondary';
 }
 
-const MICRO_TONES = {
+/** پالتِ بج‌هایِ تابلو — صادر شده تا جدولِ غربالگری هم *همان* برچسب‌ها را با
+ *  همان رنگ بدهد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «همون برچسب‌های تابلوخوانی») و نه
+ *  ترجمۀ دومی از них. */
+export const MICRO_TONES = {
   violet: 'bg-purple-100 text-purple-950 border border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
   amber: 'bg-amber-100 text-amber-950 border border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
   cyan: 'bg-sky-100 text-sky-950 border border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
@@ -149,10 +152,10 @@ const MICRO_TONES = {
   gray: 'bg-slate-200 text-slate-900 border border-slate-300 dark:bg-bg-card/90 dark:text-text-primary dark:border-border-c',
 } as const;
 
-type MicroTone = keyof typeof MICRO_TONES;
+export type MicroTone = keyof typeof MICRO_TONES;
 
 /** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
-function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
+export function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
   return (
     <span
       data-testid={`badge-${pattern}`}

@@ -17,6 +17,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
+import { MicroBadge, type MicroTone } from '@features/market/components/TapeTable';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
@@ -64,7 +65,7 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
 };
 
 const STAGE_RULE: Record<FunnelStageKey, string> = {
-  tape: 'نمادهایی که همین نشست دستِ‌کم یکی از پنج فیلترِ جزوه را رد کرده‌اند — عینِ چیپ و بجِ تبِ تابلو.',
+  tape: 'نمادهایی که از درِ فیلترهایِ روشنِ همین نشست عبور کرده‌اند — عینِ داوریِ چیپ و بجِ تبِّ تابلو. مردودها درِ جدول نمی‌نشینند؛ شمارشان درِ همین سرخط است.',
   technical: 'ترتیبِ T: اول روند هفتگی، بعد روند روزانه؛ هفتگی نزولی/خنثی = وتو. هر سه شاخهٔ روزانهٔ صعودی/نزولی/خنثی معتبرند؛ جت، پولبک، فیبو، CHoCH و دیگر ستاپ‌ها فقط شواهد و امتیاز کمکی‌اند، نه گیت.',
   fundamental: '',
   handover: 'فقط آنچه بنیادش قبول شده و تا ۱۴ روز مجمعِ عمومی پیشِ رو ندارد. وتوی مجمع زمان‌بندیِ ورود است نه ضعفِ بنیادی — نمره دست‌نخورده می‌ماند و فردا خودش برمی‌گردد.',
@@ -170,7 +171,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   last: { label: 'آخرین', title: 'قیمت آخرین معامله', end: true },
   chg: { label: 'تغییر٪', title: 'تغییر درصدی امروز', end: true },
   vol: { label: 'حجم/ماه', title: 'حجم امروز ÷ میانگین ماهانه', end: true },
-  pattern: { label: 'نشانه', title: 'فیلترهای جزوه‌ای که این ردیف رد کرده است' },
+  pattern: { label: 'نشانه', title: 'نشانه‌هایِ همان نشست، با همان برچسب و رنگِ تبِّ تابلو' },
   weekly: { label: 'هفتگی', title: 'روند هفتگی — چارت ۲: نزولی و خنثی = reject', end: true },
   daily: { label: 'روزانه', title: 'روند روزانه — شاخه بعدی بر اساس این روند تعیین می‌شود', end: true },
   branch: { label: 'شاخه', title: 'شاخه FTS بر اساس روند روزانه' },
@@ -190,11 +191,30 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   // تازه: رأیِ مالک ۱۴۰۵-۰۷-۲۲ «جاهایی که می‌طلبد نمودار هم باشد» — جدولِ
   // غربالگری تنها جایِ برنامه بود که همین ردیف‌ها را بی‌شکلِ نشست می‌نمود.
   // بی‌OHLC همان «—»ِ خودِ ویجت می‌آید؛ کندلِ ساختگی ساخته نمی‌شود.
-  candle: { label: 'کندل روز', title: 'اولین، بیشینه، کمینه و آخرینِ همین نشست — عینِ تبِّ تابلو' },
+  candle: { label: 'کندل روز', title: 'اولین، بیشترین، کمترین و آخرینِ همین نشست — عینِ تبِّ تابلو' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
   // رأیِ مالک: رسیدۀ «تحویل» باید راهِ رفتن به «دیده‌بان» را هم داشته باشد —
   // رصد، نه تصمیمِ سرمایه‌ای.
   watch: { label: 'دیده‌بان', title: 'افزودن به تبِّ اصلیِ دیده‌بان بازار', end: true },
+};
+
+/** رنگِ هر نشانه، همان تقسیمِ تبِّ تابلو (`tapeBadges.patternBadges`):
+ *  ساعت/violet، طلایی و حجم مشکوک و نقطه/amber، جت و پول هوشمند/cyan،
+ *  کف‌روب/emerald، صف+/green، صف−/red. */
+const PATTERN_TONE: Record<string, MicroTone> = {
+  'ساعت': 'violet',
+  'طلایی': 'amber',
+  'مشکوک': 'amber',
+  'حجم مشکوک': 'amber',
+  'جت': 'cyan',
+  'پول هوشمند': 'cyan',
+  'کفروب': 'emerald',
+  'کف‌روب': 'emerald',
+  'نقطه': 'amber',
+  'نقطه‌زنی': 'amber',
+  'کد به کد': 'violet',
+  'صف+': 'green',
+  'صف−': 'red',
 };
 
 const STAGE_COLS: Record<FunnelStageKey, ColKey[]> = {
@@ -298,11 +318,24 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
       );
     case 'vol':
       return <td className="truncate px-2 py-1 text-end text-text-secondary"><span className="num">{r?.vol_ratio != null ? `${toFaDigits(r.vol_ratio.toFixed(1))}×` : '—'}</span></td>;
-    case 'pattern':
-      // ستونِ «نشانه» برچسب‌هایِ خودِ تابلو را می‌نویسد؛ نبودنشان «بی‌نشانه»
-      // است نه «تأیید» (رأیِ مالک ۱۴۰۵-۰۷-۲۰: «ینی چی تایید؟»). داوریِ ردیف
-      // درِ ستونِ حکم و دلیل می‌ماند.
-      return <td className="truncate px-2 py-1 text-start text-2xs text-text-muted">{e.patterns.length ? e.patterns.join(' + ') : 'بی‌نشانه'}</td>;
+    case 'pattern': {
+      // همان برچسب‌هایِ تبِّ تابلو، همان رنگ‌ها (رأیِ مالک ۱۴۰۵-۰۷-۱۹): متنِ
+      // «ساعت + مشکوک» بج‌شمار نبود؛ اینجا هر نشانه یک pillِ جداست. نبودنشان
+      // «بی‌نشانه» است نه «تأیید».
+      return (
+        <td className="px-2 py-1 text-start">
+          <span data-testid={`funnel-patterns-${e.symbol}`} className="flex min-w-0 flex-wrap items-center gap-0.5">
+            {e.patterns.length
+              ? e.patterns.map((p) => (
+                  <MicroBadge key={p} pattern={p} tone={PATTERN_TONE[p] ?? 'gray'} title={`نشانهٔ تابلو: ${p}`}>
+                    {p}
+                  </MicroBadge>
+                ))
+              : <span className="text-2xs text-text-muted">بی‌نشانه</span>}
+          </span>
+        </td>
+      );
+    }
     case 'candle':
       // همان ویجتِ تبِّ تابلو، با همان تستیدِ قابلِ ردیابی؛ بی‌OHLC «—» می‌ماند
       return (
@@ -420,9 +453,15 @@ function StageCard({
   onToggle?: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  // رأیِ مالک ۱۴۰۵-۰۷-۱۹: «جدول‌های استراتژی FTS فقط باید نمادهایی که پاس میشن
+  // رو نشون بدن». حکمِ رد/بی‌داده/لازم‌نبود هیچ‌جا پاک نمی‌شود — درِ شمارش‌های
+  // همین کارت، درِ خطِ «چرا» و درِ بازرسیِ نماد می‌ماند؛ فقط بدنهٔ جدول محلِ
+  // ردیف‌هایِ مردود نیست.
+  const passedRows = useMemo(() => stage.entries.filter((e) => e.status[stage.key] === 'pass'),
+                             [stage]);
   // ترتیبِ نمایش (عبور_then_زنده) — خروجیِ موتور، فقط رو‌به‌رو شده.
-  const rows = useMemo(() => orderStageRows(stage.key, stage.entries),
-                       [stage.key, stage.entries]);
+  const rows = useMemo(() => orderStageRows(stage.key, passedRows),
+                       [stage.key, passedRows]);
   useFlip({ root: bodyRef, deps: [rows.map((r) => r.symbol).join(' ')] });
   // نوارِ کاهش = سهمِ عبوری‌هایِ همین گام از کلِ جامعۀ ورودی. پیش‌تر عرضش
   // «ردیفِ این مرحله ÷ پهن‌ترین مرحله» بود؛ وقتی هر چهار مرحله کلِ universe را
@@ -468,7 +507,9 @@ function StageCard({
   const padBottomP = pRows.length
     ? Math.max(0, pendingVirt.getTotalSize() - (pRows[pRows.length - 1].start + ROW_H))
     : 0;
-  const unseen = rows.length + stage.pending.length - stage.ruled;
+  // «بی‌حکم» از کلِ ردیف‌هایِ همین گام خوانده می‌شود، نه از آنچه جدول نشان می‌دهد:
+  // جدول از رأیِ مالک فقط پاس‌شده‌ها را می‌شمارد.
+  const unseen = stage.entries.length + stage.pending.length - stage.ruled;
 
   return (
     <section
@@ -501,7 +542,7 @@ function StageCard({
           </button>
         ) : null}
         <span className="num rounded-full bg-bg-secondary px-2 py-0.5 text-2xs font-bold text-text-secondary"
-              title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام دیده می‌شوند — نه فقط عبوری‌ها">
+              title="تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام حکم دارند؛ بدنهٔ جدول فقط عبوری‌ها را می‌شمارد (رأیِ مالک ۱۴۰۵-۰۷-۱۹) و بقیه درِ همین خطِ شمارش و درِ بازرسیِ نماد خوانده می‌شوند">
           {toFaDigits(stage.ruled)} نماد
         </span>
         {delta && (delta.passed !== 0 || delta.ruled !== 0) ? (
@@ -517,7 +558,9 @@ function StageCard({
           </span>
         ) : null}
         {stage.dropped > 0 ? (
-          <span className="num rounded-full bg-accent-red/15 px-2 py-0.5 text-2xs font-black text-accent-red">
+          <span className="num rounded-full bg-accent-red/15 px-2 py-0.5 text-2xs font-black text-accent-red"
+                data-testid={`funnel-dropped-${stage.key}`}
+                title="چند نماد درِ این گام رد شده‌اند — بدنهٔ جدول فقط عبوری‌ها را می‌شمارد، پس شمارشان همین‌جا خوانده می‌شود">
             − {toFaDigits(stage.dropped)}
           </span>
         ) : null}
@@ -941,8 +984,9 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
                   {e.symbol}
                 </button>
                 <span className="min-w-0 truncate text-text-muted">{e.name}</span>
-                <span className="num ms-auto shrink-0 text-text-secondary">
-                  {e.last ? fmtInt(e.last) : '—'}
+                <span className="num ms-auto shrink-0 text-text-secondary"
+                      title={e.last != null && e.last <= 0 ? 'صفرِ واقعی: مبادله‌ای ثبت نشده' : undefined}>
+                  {e.last != null ? fmtInt(e.last) : '—'}
                 </span>
                 <span className="max-w-[46ch] shrink-0 truncate text-text-muted"
                       title={e.humanReason}>
@@ -960,13 +1004,10 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
 export function FtsFunnelStages({
   preset = 'custom',
   only,
-  onStageSelect,
 }: {
   preset?: TreePreset;
   /** حالتِ مسیریافته: فقط کارتِ همین مرحله؛ فهرستِ چهارتایی درِ گام چهارم می‌ماند */
   only?: FunnelStageKey;
-  /** درِ حالتِ مسیریافته: تب به‌جای اسکرول، به routeِ همان مرحله می‌رود */
-  onStageSelect?: (stage: FunnelStageKey) => void;
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
@@ -974,7 +1015,7 @@ export function FtsFunnelStages({
   // «خارج از جامعۀ غربالگری» بسته است تا جدولِ گام‌ها با این ردیف‌ها شلوغ
   // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
   const [showExcluded, setShowExcluded] = useState(false);
-  const [activeState, setActive] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  const [activeState] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
   // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه جدولِ اول بسته‌اند و «نمادهای عبوری» (تحویل) باز —
   // چیزی که کاربر می‌خواهد ببیند همان آخری است، نه اینکه چهار جدول را اسکرول کند.
   // درِ حالتِ مسیریافته (`only`) همان یک کارت باز می‌ماند، چون کاربر صریح
@@ -1078,7 +1119,10 @@ export function FtsFunnelStages({
   return (
     <section className="flex flex-col gap-2">
       {error ? <FunnelErrorBanner onRetry={retry} blocking={!hasData} /> : null}
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      {/* سرستونِ غربالگری سمتِ راست می‌ایستد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): عنوانِ صفحه،
+          دو حالتِ کشف، تازگیِ تابلو و ساعتِ محاسبه. خطِ شمارش‌ها پایین‌تر همان
+          لبۀِ چپ را نگه می‌دارد (رأیِ ۱۴۰۵-۰۷-۲۰). */}
+      <div className="flex flex-wrap items-center justify-start gap-2">
         <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
         {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
             جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
@@ -1183,43 +1227,10 @@ export function FtsFunnelStages({
       <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
                       filters={screenFilters} />
       {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
+      {/* فهرستِ چهار گام این‌جا حذف شد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): «بالاش همین هست
+          که انتخاب می‌کنیم کدام صفحه» — ناوبریِ `FtsProcessStepper` بالایِ همین
+          جدول گام را از URL می‌خواند و همین کارت را باز می‌کند. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-1" role="tablist">
-          {stages.map((s, i) => (
-            <button
-              key={s.key}
-              type="button"
-              role="tab"
-              aria-selected={active === s.key}
-              data-testid={`funnel-step-${s.key}`}
-              onClick={() => {
-                setOpenStages((prev) => ({ ...prev, [s.key]: true }));
-                if (onStageSelect) {
-                  onStageSelect(s.key);
-                  return;
-                }
-                setActive(s.key);
-                // تب قیف فقط هایلایت نبود؛ کاربر انتظار داشت همان مرحله را ببیند
-                const card = document.querySelector(`[data-testid="funnel-stage-${s.key}"]`) as HTMLElement | null;
-                if (card) {
-                  card.style.scrollMarginTop = '3.2rem';
-                  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-                  card.scrollIntoView?.({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-                }
-              }}
-              className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
-                active === s.key
-                  ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                  : 'border-border-c bg-bg-card text-text-secondary hover:border-accent-blue/60'
-              }`}
-            >
-              {toFaDigits(i + 1)}. {STAGE_TITLE[s.key]}
-              <span className="num ms-1 opacity-80" title={`عبور از این گام: ${toFaDigits(s.summary.pass)} از ${toFaDigits(s.ruled)} نمادِ جامعۀ ورودی`}>
-                ({toFaDigits(s.summary.pass)})
-              </span>
-            </button>
-          ))}
-        </div>
         {/* «حذفِ پسوندِ عددی» — همان گزینه و همان پیش‌فرضِ تبِ تابلو، اینجا درِ
             سطحِ جامعۀ غربالگری (بک‌اند) اعمال می‌شود تا شمارش‌ها با جدول یکی
             بمانند. نشانهٔ کهنه: اگر موتور غیرِ خواستِ کاربر عمل کند صریح گفته

@@ -158,7 +158,7 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
             حکمِ خروج: {d.technical.exitVerdict ?? '—'} · مبنایِ حد ضرر: {d.technical.stopBasis ?? '—'}
           </li>
           <li className="num">
-            سقفِ تاریخی: {d.technical.jetAth === null ? '—' : d.technical.jetAth ? 'بله' : 'خیر'}
+            سقفِ تاریخی: {d.technical.jetAth == null ? '—' : d.technical.jetAth ? 'بله' : 'خیر'}
             {' · '}
             {money(d.levels.ceiling)}
           </li>

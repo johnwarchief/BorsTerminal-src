@@ -78,11 +78,14 @@ describe('قیف از پاسخِ سرور', () => {
   it('حکمِ سرور عیناً نمایش داده می‌شود — فرانت دوباره داوری نمی‌کند', async () => {
     await ready('/master?stage=technical&preset=custom');
     const table = screen.getByTestId('funnel-stage-technical');
-    // «همراه» نشانه دارد و امتیاز پنج، ولی پاسخ می‌گوید تکنیکالش رد است.
-    const why = within(table).getByTestId('funnel-why-همراه');
-    expect(why.textContent).toContain('وتوی قطعی');
-    // روندِ هفتگی هم از همان پاسخ می‌آید (نه از محاسبۀ ستاپ در فرانت)
-    expect(within(table).getAllByText('نزولی').length).toBeGreaterThan(0);
+    // بدنهٔ جدولِ گام فقط عبوری‌ها را می‌شمارد (رأیِ مالک ۱۴۰۵-۰۷-۱۹)؛ متنِ
+    // «فولاد» عینِ human_reasonِ سرور است و داوریِ دومی درِ فرانت حساب نمی‌شود.
+    expect(within(table).getByTestId('funnel-why-فولاد').textContent).toContain('روند هفتگی صعودی');
+    expect(within(table).getAllByText('صعودی').length).toBeGreaterThan(0);
+    // «همراه» را سرور رد کرده: درِ بدنه نیست، ولی حکمش درِ شمارشِ همان گام می‌آید.
+    expect(within(within(table).getByTestId('funnel-scroll-technical')).queryByText('همراه'))
+      .not.toBeInTheDocument();
+    expect(within(table).getByTestId('funnel-dropped-technical').textContent).toContain('۱');
   });
 
   it('ردیفی که پاسخ می‌گوید سنجیده‌نشده، درِ «در انتظار» می‌ماند و به تحویل نمی‌رود', async () => {
@@ -105,7 +108,11 @@ describe('قیف از پاسخِ سرور', () => {
     await ready('/master?stage=tape&preset=custom');
     const tape = screen.getByTestId('funnel-stage-tape');
     expect(within(tape).getByRole('columnheader', { name: 'دلیل' })).toBeInTheDocument();
-    expect(within(tape).getByTestId('funnel-why-سپ').textContent).toContain('حجم مشکوک');
+    // ردیفِ عبوری (فولاد) دلیلش را درِ ستون می‌نویسد؛ «سپ» مردودِ همان گام است و
+    // از بدنه بیرون رفته (رأیِ مالک ۱۴۰۵-۰۷-۱۹) — علتش درِ شمارشِ گام و بازرسیِ
+    // نماد می‌ماند، نه درِ جدولِ شلوغ.
+    expect(within(tape).getByTestId('funnel-why-فولاد').textContent).toContain('حجم مشکوک');
+    expect(within(within(tape).getByTestId('funnel-scroll-tape')).queryByText('سپ')).not.toBeInTheDocument();
   });
 
   it('کندلِ همین نشست درِ جدولِ غربالگری هم رسم می‌شود (رأیِ ۱۴۰۵-۰۷-۲۲: نمودار جاهایی که می‌طلبد)', async () => {
@@ -187,13 +194,15 @@ describe('قیف از پاسخِ سرور', () => {
     expect(screen.getByTestId('funnel-tech-coverage').textContent).toContain('تکنیکال سنجیده شده');
   });
 
-  it('«لازم نبود» درِ خودِ جدول دیده می‌شود، نه در tooltip', async () => {
+  it('«لازم نبود» درِ شمارشِ گام دیده می‌شود، نه در tooltip', async () => {
     await ready('/master?stage=technical&preset=custom');
     const tech = screen.getByTestId('funnel-stage-technical');
     expect(within(tech).getByTestId('funnel-not-required-technical').textContent)
       .toContain('۱ لازم نبود');
-    expect(within(tech).getByTestId('funnel-why-سپ').textContent)
-      .toContain('تابلو نماد را رد کرده');
+    // ردیفِ «لازم نبود» از بدنهٔ جدول بیرون است (جدول فقط عبوری‌ها) — ولی بی‌حکم
+    // نمی‌ماند: گاردِ جامعیت همان عدد را درِ خطِ «حکم» نگه می‌دارد.
+    expect(within(within(tech).getByTestId('funnel-scroll-technical')).queryByText('سپ'))
+      .not.toBeInTheDocument();
     expect(within(tech).getByTestId('funnel-ruled-technical').textContent)
       .toContain('کلِ جامعۀ غربالگری');
   });
@@ -355,7 +364,13 @@ describe('زنجیرۀ Custom', () => {
     expect(pv.textContent).toContain('نقطه زنی');
     expect(pv.textContent).toContain('حجم مشکوک');   // «به حجم مشکوک نیازی ندارد»
     fireEvent.mouseLeave(screen.getByTestId('funnel-mode-trend'));
-    expect(screen.queryByTestId('funnel-preset-preview-trend')).not.toBeInTheDocument();
+    // عبورِ موس از دکمه به متنِ پیش‌نمایش آن را نمی‌خواباند (رأیِ مالک
+    // ۱۴۰۵-۰۷-۱۹: «موس رو متن هم بیاد باز بمونه»): درِ همان لحظه بسته نمی‌شود.
+    expect(screen.getByTestId('funnel-preset-preview-trend')).toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByTestId('funnel-preset-preview-trend'));
+    fireEvent.mouseLeave(screen.getByTestId('funnel-preset-preview-trend'));
+    await waitFor(() => expect(screen.queryByTestId('funnel-preset-preview-trend'))
+      .not.toBeInTheDocument(), { timeout: 800 });
   });
 
   it('ساعت شنی درِ پیش‌نمایش بی‌فیلترِ تابلو خوانده می‌شود (رأیِ Q-1)', async () => {
@@ -465,8 +480,10 @@ describe('پیش‌فرضِ دیدنیِ مرحلۀ تحویل (رأیِ مال�
     expect(screen.getByTestId('funnel-stage-toggle-handover'))
       .toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByTestId('funnel-scroll-handover')).toBeInTheDocument();
-    // گامِ بسته با کلیکِ خودش باز می‌شود — کنترلِ جاافتاده باقی نمی‌ماند.
-    fireEvent.click(screen.getByTestId('funnel-step-technical'));
+    // گامِ بسته با کنترلِ خودش باز می‌شود. فهرستِ تب‌هایِ مرحله حذف شده (رأیِ
+    // مالک ۱۴۰۵-۰۷-۱۹: «بالاش همین هست که انتخاب می‌کنیم کدام صفحه»)، پس کلیدِ
+    // بازکردن همان دکمۀ ▲ سرِ کارت است و کنترلی جاافتاده باقی نمی‌ماند.
+    fireEvent.click(screen.getByTestId('funnel-stage-toggle-technical'));
     expect(screen.getByTestId('funnel-stage-toggle-technical'))
       .toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByTestId('funnel-scroll-technical')).toBeInTheDocument();

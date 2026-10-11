@@ -231,7 +231,8 @@ def post_selection_decision(payload: dict = None):
     به حالت «بررسی‌نشده» برگردد (به‌جای نگه‌داشتن ردیف بی‌اثر).
     """
     if not payload:
-        return {"status": "error", "message": "بدون داده"}
+        return {"status": "error",
+                "message": "بدنهٔ درخواست خالی است — کلیدهای symbol و status لازم‌اند"}
     symbol = str(payload.get("symbol") or "").strip()
     if not symbol:
         return {"status": "error", "message": "نماد ارسال نشده"}
