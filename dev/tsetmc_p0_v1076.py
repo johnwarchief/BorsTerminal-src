@@ -271,41 +271,157 @@ def part_ctv():
     def dead_fetch(code):
         return None                      # نشستِ باز: ۵۰۰ → هیچ
 
-    picked = T.refresh_client_type_values(c2, fetch=dead_fetch,
-                                         now="2026-10-10 10:00:00")
-    ck(picked.get("day") == 20261010 and picked.get("written") == 0,
-       "۱) هدفِ اول = تازه‌ترین نشستِ کامل‌نشده (نه کهنه)", str(picked))
+    # ── قاعدۀ ۱۴۰۵-۰۷-۲۰ ۰۹:۰۹: نشستِ باز اصلاً هدف نیست ──
+    # سنجشِ زنده (همین ساعت، همین ماشین): GetClientTypeHistory برایِ ۲۰۲۶۱۰۱۱
+    # سه از سه بار HTTP 500 داد و برایِ همان سه نماد درِ ۲۰۲۶۱۰۱۰ سه از سه بار
+    # ۲۰۰ — یعنی ۵۰۰ «خطای گذرا» نیست، نشستِ نهایه‌نشده تعریفِ داده ندارد.
+    # پیش از این قاعده، حلقه تازه‌ترین نشستِ کامل‌نشده را برمی‌گزید و آن درِ
+    # ساعتِ معاملات **همان نشستِ باز** بود: ۱۰۷ درخواستِ مرده (سنجشِ بکاندِ
+    # ۱۰۸ ردیفِ client_typeِ امروز، صفر ردیفِ client_type_value) که قفلِ
+    # `_MARKET_SYNC_LOCK` را ۲۰+ دقیقه نگه داشت و `market_index` را روی
+    # marketState="P" از ۰۸:۵۶ قفل کرد — یعنی نبض بازار کلِ نشست را
+    # «مرحل نامشخص» و `verdict_allowed=False` خواند.
+    calls = []
 
-    # تلاشِ دوم یک ثانیه بعد: نشستِ ۲۰۲۶۱۰۱۰ پیشرفتی نکرد، پس پنجرۀ بلند را
-    # نگه می‌دارد؛ حلقه باید به نشستِ کهنه‌ترِ ناقص برود، نه اینکه بخوابد.
+    def counting_dead(code):
+        calls.append(code)
+        return None
+
+    picked = T.refresh_client_type_values(c2, fetch=counting_dead,
+                                         now="2026-10-10 10:00:00")
+    ck(picked.get("day") == 20261008 and picked.get("written") == 0,
+       "۱) هدف = تازه‌ترین نشستِ **بستهٔ** کامل‌نشده؛ نشستِ باز از صف بیرون می‌ماند",
+       str(picked))
+    ck(calls == ["I-20261008"],
+       "۱ب) بی‌هیچ درخواستی رویِ نشستِ باز (فقط نمادِ نشستِ هدف صدا زده شد)",
+       str(calls))
+    ck(c2.execute("SELECT COUNT(*) FROM tsetmc_p0_state WHERE name='client-values:20261010'"
+                  ).fetchone()[0] == 0,
+       "۱پ) پنجرۀ نشستِ باز بی‌مصرف بسته نمی‌شود")
+
+    ck(T._ct_session_is_closed(20261010,
+       __import__("datetime").datetime(2026, 10, 10, 10, 0, 0)) is False,
+       "۱ث) پیش از پایانِ رسمیِ نشست ⇒ بسته نیست")
+    ck(T._ct_session_is_closed(20261010,
+       __import__("datetime").datetime(2026, 10, 10, 12, 31, 0)) is True,
+       "۱ج) پس از پایانِ رسمیِ نشست ⇒ بسته است (همان SESSION_ENDِ market_phase)")
+    ck(T._ct_session_is_closed(20261008,
+       __import__("datetime").datetime(2026, 10, 10, 10, 0, 0)) is True,
+       "۱چ) نشستِ کهنه‌تر بی‌هیچ قیدِ ساعتی بسته است")
+
+    # تلاشِ دوم یک ثانیه بعد: ۲۰۲۶۱۰۰۸ پنجرۀ شش‌ساعته‌اش را دارد (ردیفی هم
+    # ننوشت)، پس صف باید به کهنه‌ترِ بسته برود، نه بخوابد.
     fell = T.refresh_client_type_values(c2, fetch=ok_fetch,
                                         now="2026-10-10 10:00:01")
-    ck(fell.get("day") == 20261008 and fell.get("written") == 1,
+    ck(fell.get("day") == 20261004 and fell.get("written") == 1,
        "۲) نشستِ مسدود نشستِ کهنه‌تر را جا نمی‌گذارد (گرسنگی تمام شد)", str(fell))
 
-    third = T.refresh_client_type_values(c2, fetch=ok_fetch,
-                                         now="2026-10-10 10:00:02")
-    ck(third.get("day") == 20261004 and third.get("written") == 1,
-       "۳) صفِ نشست‌هایِ ناقص به ترتیبِ تازه→کهنه خالی می‌شود", str(third))
-
     none_left = T.refresh_client_type_values(c2, fetch=ok_fetch,
-                                             now="2026-10-10 10:00:03")
-    ck(none_left.get("skipped") == "throttled" and none_left.get("day") == 20261010,
-       "۴) وقتی فقط نشستِ مسدود مانده، بی‌مصرف به منبع چکش زده نمی‌شود", str(none_left))
+                                             now="2026-10-10 10:00:02")
+    ck(none_left.get("skipped") == "throttled" and none_left.get("day") == 20261008,
+       "۳) وقتی فقط نشستِ باز/مسدود مانده، بی‌مصرف به منبع چکش زده نمی‌شود",
+       str(none_left))
 
-    # کنترلِ منفی: پنجره واقعاً شش‌ساعته است، نه یک‌ساعته — یک ثانیه کم و زیادش
-    # باید نتیجه را عوض کند.
+    # کنترلِ منفیِ پنجره: نشستِ کهنه تا شش ساعت خواب است، و روزِ خودش به‌محضِ
+    # گذشتنِ SESSION_ENDِ خودِ بازار (۱۲:۳۰) وارد صف می‌شود.
+    wake = T.refresh_client_type_values(c2, fetch=ok_fetch,
+                                        now="2026-10-10 13:00:00")
+    ck(wake.get("day") == 20261010 and wake.get("written") == 1,
+       "۴) پس از پایانِ نشست، روزِ خودش وارد صف می‌شود (ممنوعیت فقط تا ۱۲:۳۰)",
+       str(wake))
     still = T.refresh_client_type_values(c2, fetch=ok_fetch,
-                                         now="2026-10-10 15:59:00")
-    ck(still.get("skipped") == "throttled", "۵) یک دقیقه پیش از پنجره هنوز مسدود", str(still))
+                                         now="2026-10-10 13:00:01")
+    ck(still.get("skipped") == "throttled" and still.get("day") == 20261008,
+       "۵) نشستِ کهنه یک‌سومِ پنجرۀ شش‌ساعته‌اش هنوز خواب است", str(still))
     after = T.refresh_client_type_values(c2, fetch=ok_fetch,
-                                         now="2026-10-10 16:01:00")
-    ck(after.get("day") == 20261010 and after.get("written") == 1,
-       "۵) با گذشتِ پنجره، همان نشست دوباره خوانده می‌شود", str(after))
+                                         now="2026-10-10 16:00:01")
+    ck(after.get("day") == 20261008 and after.get("written") == 1,
+       "۵ب) با گذشتِ پنجره، همان نشست دوباره خوانده می‌شود", str(after))
     ck(c2.execute("SELECT COUNT(*) FROM client_type_value").fetchone()[0] == 3,
-       "۶) هر سه نشستِ بانک بالاخره ردیفِ مبدأ دارند",
+       "۶) هر سه نشستِ بانک ردیفِ مبدأ دارند (نشستِ باز فقط پس از پایانِ نشست)",
        str([tuple(r) for r in c2.execute("SELECT d_even, COUNT(*) FROM client_type_value GROUP BY d_even")]))
     c2.close()
+
+    # کنترلِ منفیِ force: ممنوعیت یک قیدِ زمان‌بندی است، نه حذفِ قابلیت —
+    # درخواستِ صریحِ کاربر (دکَمۀ دستی) نشستِ باز را هم می‌خواند.
+    c4 = sqlite3.connect(":memory:")
+    T.create_schema(c4)
+    T.ensure_client_type_value_schema(c4)
+    c4.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
+               " buy_ddd_vol, buy_count_i, buy_count_n, sell_i_vol, sell_n_vol,"
+               " sell_count_i, sell_count_n) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+               ("I-LIVE", 20261010, 100.0, 10.0, 0.0, 5, 1, 60.0, 20.0, 3, 1))
+    c4.commit()
+    auto = T.refresh_client_type_values(c4, fetch=ok_fetch, now="2026-10-10 10:00:00")
+    ck(auto.get("skipped") in ("no-closed-session", "throttled"),
+       "۶پ) بی‌force، حتی اگر تنها نامزدِ بانک نشستِ باز باشد خوانده نمی‌شود", str(auto))
+    man = T.refresh_client_type_values(c4, day=20261010, fetch=ok_fetch,
+                                       now="2026-10-10 10:00:00", force=True)
+    ck(man.get("day") == 20261010 and man.get("written") == 1,
+       "۶ت) با forceِ دستی همان نشستِ باز خوانده می‌شود", str(man))
+    c4.close()
+
+    # ── دو مهارکنندۀ زمانِ اجرا (تازگیِ تابلو نباید پشتِ این مرحلۀ شبکه‌ای بخوابد) ──
+    c3 = sqlite3.connect(":memory:")
+    T.create_schema(c3)
+    T.ensure_client_type_value_schema(c3)
+    for i in range(40):
+        c3.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
+                   " buy_ddd_vol, buy_count_i, buy_count_n, sell_i_vol, sell_n_vol,"
+                   " sell_count_i, sell_count_n) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                   ("I-%03d" % i, 20261004, 100.0, 10.0, 0.0, 5, 1, 60.0, 20.0, 3, 1))
+    c3.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
+               " buy_ddd_vol, buy_count_i, buy_count_n, sell_i_vol, sell_n_vol,"
+               " sell_count_i, sell_count_n) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+               ("I-LIVE", 20261011, 100.0, 10.0, 0.0, 5, 1, 60.0, 20.0, 3, 1))
+    c3.commit()
+
+    n3 = []
+
+    def all_dead(code):
+        n3.append(code)
+        return None
+
+    st = T.refresh_client_type_values(c3, day=20261004, fetch=all_dead,
+                                      now="2026-10-05 13:00:00", force=True)
+    ck(st.get("aborted") == "no-payload" and len(n3) == T.CTV_ABANDON_AFTER,
+       "۷) نشستِ بی‌پاسخ پس از CTV_ABANDON_AFTER نماد رها می‌شود (نه ۶۰۰تا)",
+       f"aborted={st.get('aborted')} calls={len(n3)}")
+    ck(st.get("no_payload") == T.CTV_ABANDON_AFTER,
+       "۷ب) شمارِ پاسخ‌هایِ بی‌داده درِ آمار ثبت می‌شود (errors=۰ گمراه‌کننده بود)",
+       str(st))
+    # کنترلِ منفی: یک موفقیت درِ میان، شمارنده را صفر می‌کند ⇒ صف نمی‌شکند.
+    n4 = []
+
+    def mostly_dead(code):
+        n4.append(code)
+        if len(n4) == T.CTV_ABANDON_AFTER:
+            return ok_fetch(code)
+        return None
+    st2 = T.refresh_client_type_values(c3, day=20261004, fetch=mostly_dead,
+                                       now="2026-10-05 13:00:00", force=True,
+                                       limit=T.CTV_ABANDON_AFTER * 3)
+    ck(st2.get("written") == 1 and st2.get("aborted") is None,
+       "۷پ) موفقیتِ بینِ راه شمارنده را صفر می‌کند (شاخۀ شکست صف نمی‌کند)",
+       f"written={st2.get('written')} aborted={st2.get('aborted')} calls={len(n4)}")
+
+    # بودجۀ زمانی: با سقفِ صفرِ ثانیه باید بی‌درنگ بایستد و آمار بدهد.
+    _budget = T.CTV_RUN_BUDGET_S
+    try:
+        T.CTV_RUN_BUDGET_S = 0.0
+        n5 = []
+
+        def timed(code):
+            n5.append(code)
+            return ok_fetch(code)
+        st3 = T.refresh_client_type_values(c3, day=20261004, fetch=timed,
+                                           now="2026-10-05 13:00:00", force=True)
+        ck(st3.get("aborted") == "time-budget" and len(n5) <= 2,
+           "۸) سقفِ زمانِ اجرا مرحلۀ شبکه‌ای را کوتاه می‌کند تا حلقۀ تازۀ تابلو"
+           " پشتِ قفلِ سینک نماند", f"aborted={st3.get('aborted')} calls={len(n5)}")
+    finally:
+        T.CTV_RUN_BUDGET_S = _budget
+    c3.close()
     conn.close()
 
 

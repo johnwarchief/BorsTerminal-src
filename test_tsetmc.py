@@ -562,6 +562,13 @@ TAPE_HIST_RETRY_S = 6 * 3600
 # ندارد درِ پنج فیلتر بی‌صدا مردود می‌ماند. ۹۵٪ سقفِ محافظه‌کارانه‌ای است که با
 # پوششِ کاملِ سایت (۹۹+٪) فرقِ روشن دارد و بی‌دلیل هر سینک ۵۱ مگابایت نمی‌گیرد.
 TAPE_COVER_MIN = 0.95
+# سقفِ زمانِ کلِ مرحلۀ [ih] در هر دور. CDN همین صبح (۱۴۰۵-۰۷-۲۰ ۰۹:۳۷) بیش از
+# ۱۲۰ ثانیه بی‌پاسخ ماند؛ بی‌سقف، سه تلاشِ ۱۲۰ ثانیه‌ای قفلِ سینک را ~۷ دقیقه
+# نگه می‌داشت و تازگیِ تابلو/وضعیتِ رسمیِ بازار پشتش می‌خوابید.
+TAPE_FETCH_BUDGET_S = 45.0
+# پنجرۀ بی‌پوشش (یا پاسخِ کوتاه) «خطای قطعی» نیست که شش ساعت قفل شود؛
+# دهۀ دقیقه دوباره آزموده می‌شود — بی‌این، پنج فیلتر تا عصر خاموش می‌مانند.
+TAPE_HIST_LOW_S = 30 * 60
 # نوشتن با نامِ ستون: بانکِ ارتقایافته این جدول را با پنج ستون ساخته و
 # `q_tot_cap` را `mstat_engine.MIGRATIONS` با ALTER به **آخر** افزوده است، پس
 # ترتیبِ ستون‌هایش (…، fetched_at، q_tot_cap) با بانکِ تازه (…، q_tot_cap،
@@ -595,18 +602,26 @@ def ensure_tape_history_schema(conn):
     # مهاجرتِ ستون)؛ این‌جا ALTER دوم نمی‌نویسیم.
 
 
-def fetch_tape_history(timeout=120, attempts=3, gap=20):
+def fetch_tape_history(timeout=45, attempts=3, gap=20, budget=None):
     """([ih] rows | None, خطا). None یعنی «نگرفتم» — با «خالی گرفت» یکی نیست.
 
     بی‌stream تنها راهِ آزموده‌شده است: با stream=True همین پاسخ ۱۸۰ ثانیه
     بی‌پاسخ ماند و ترکید، و درخواستِ معمولی در ۳ ثانیه تمام می‌شود. کشِ CDN
-    گاه سرد است، پس چند تلاشِ فاصله‌دار.
+    گاه سرد است، پس چند تلاشِ فاصله‌دار — ولی کلِ مرحلۀ شبکه‌ای زیرِ
+    `budget` ثانیه می‌ماند (سنجشِ ۱۴۰۵-۰۷-۲۰ ۰۹:۳۷: خودِ همین آدرس بیش از
+    ۱۲۰ ثانیه read-timeout داد؛ بی‌سقف، تابلو و وضعیتِ رسمیِ بازار پشتِ
+    قفلِ سینک می‌خوابیدند).
     """
     import time as _t
     err = "empty-response"
+    deadline = _t.monotonic() + (TAPE_FETCH_BUDGET_S if budget is None else budget)
     for i in range(attempts):
+        left = deadline - _t.monotonic()
+        if left <= 0:
+            return None, f"budget({err})"
         try:
-            r = requests.get(TAPE_HIST_URL, headers=HEADERS, timeout=timeout)
+            r = requests.get(TAPE_HIST_URL, headers=HEADERS,
+                             timeout=min(float(timeout), left))
             r.raise_for_status()
             rows = r.json().get(TAPE_HIST_KEY) or []
         except (requests.exceptions.RequestException, ValueError, OSError,
@@ -615,7 +630,7 @@ def fetch_tape_history(timeout=120, attempts=3, gap=20):
             rows = []
         if rows:
             return rows, None
-        if i + 1 < attempts:
+        if i + 1 < attempts and deadline - _t.monotonic() > gap:
             _t.sleep(gap)
     return None, err
 
@@ -688,13 +703,20 @@ def refresh_tape_history(conn, force=False, fetch=None):
     # HTTPErrorِ گذرا از CDN در ۱۰:۰۶، و پنج فیلتر تا بعدازظهر صفر ماندند.
     # وقتی جدول خالی است، «پنجرۀ کهنه»ای برای محفوظ‌داشتن وجود ندارد؛
     # تایمر بی‌موضوع است و باید هر دورِ سینک دوباره tried شود.)
-    if not force and have and last_attempt and last_note != "attempt":
+    if not force and last_attempt and last_note != "attempt":
+        # پنجرۀ خالی را روزها پشتِ تایمرِ شش‌ساعته نگه ندار: پاسخِ کوتاه یا
+        # بی‌پوشش با TAPE_HIST_LOW_S دوباره آزموده می‌شود (پنج فیلترِ بی‌پنجره
+        # یعنی غربالگری «بدون داده» — سنجشِ ۱۴۰۵-۰۷-۲۰ رویِ بانکِ نصبی).
+        limit = TAPE_HIST_RETRY_S
+        if have < 1 or (last_note or "").startswith(("low-coverage", "partial-payload",
+                                                     "no-rows", "budget")):
+            limit = TAPE_HIST_LOW_S
         try:
             age = (now - datetime.datetime.strptime(last_attempt,
                                                     "%Y-%m-%d %H:%M:%S")).total_seconds()
         except ValueError:
-            age = TAPE_HIST_RETRY_S + 1.0
-        if age < TAPE_HIST_RETRY_S:
+            age = limit + 1.0
+        if age < limit:
             return {"skipped": "throttled"}
     conn.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
                  (now_txt, last_ok, newest, "attempt"))
@@ -710,6 +732,13 @@ def refresh_tape_history(conn, force=False, fetch=None):
         ins, d = x.get("insCode"), x.get("dEven")
         if not ins or not d:
             continue
+        # «شاخص» هم درِ این پاسخ هست، با insCode=۰. بی‌این خط، پنجرۀ [ih] رویِ
+        # بانکِ نصبی ۶۰ ردیفِ `ins_code='0'` شد و هیچ نمادی پوشش نگرفت — یعنی
+        # هفت فیلترِ تابلو و گامِ تابلوی غربالگری بی‌صدا «بدون داده» خوانده
+        # شدند (سنجشِ ۱۴۰۵-۰۷-۲۰ ۰۹:۳۴ رویِ همین ماشین: tape_history =
+        # ۶۰ ردیف/۱ «نماد» در برابرِ ۱۸۰٬۵۰۹ ردیف/۳٬۶۰۲ نماد در بانکِ توسعه).
+        if str(ins).strip() in ("0", "0.0"):
+            continue
         recs.append((ins, int(d), num(x.get("priceMin")) or 0.0,
                      num(x.get("priceMax")) or 0.0,
                      num(x.get("qTotTran5J")) or 0.0,
@@ -719,6 +748,36 @@ def refresh_tape_history(conn, force=False, fetch=None):
         conn.commit()
         return {"error": "no-rows"}
     top = max(r[1] for r in recs)
+    # پوششِ پاسخ **پیش از هر نوشتنی** و **حتی وقتی جدول خالی است** سنجیده
+    # می‌شود: بی‌این شرطِ دوم، نخستین نوشتنِ پس از نصب می‌توانست پنجرۀ
+    # بی‌ارزش را جای همه بگذارد و «تازگی»ِ بعدی (`newest >= board_day`) روزها
+    # به منبع چکش بزند.
+    cur = conn.cursor()
+    cur.execute("CREATE TEMP TABLE _new_window (ins_code TEXT PRIMARY KEY)")
+    cur.executemany("INSERT OR IGNORE INTO _new_window VALUES (?)",
+                    [(r[0],) for r in recs])
+    traded_n, covered_new, covered_cur = cur.execute(
+        "SELECT COUNT(*),"
+        " SUM(CASE WHEN EXISTS (SELECT 1 FROM _new_window w WHERE w.ins_code = m.ins_code)"
+        "          THEN 1 ELSE 0 END),"
+        f" SUM(CASE WHEN EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)"
+        "          THEN 1 ELSE 0 END)"
+        " FROM market_watch m WHERE m.d_even = ? AND COALESCE(m.q_tot_tran, 0) > 0",
+        (board_day,)).fetchone()
+    cur.execute("DROP TABLE _new_window")
+    traded_n = traded_n or 0
+    ratio_new = (covered_new or 0) / traded_n if traded_n else 1.0
+    ratio_cur = (covered_cur or 0) / traded_n if traded_n else 0.0
+    if traded_n and ratio_new < TAPE_COVER_MIN:
+        conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                     (f"low-coverage:{covered_new or 0}/{traded_n}",))
+        conn.commit()
+        print(f"  [tape-history] پاسخِ سایت {covered_new or 0:,} از {traded_n:,} نمادِ "
+              f"معامله‌شده را پوشش می‌دهد ({ratio_new * 100:.1f}٪، زیرِ کفِ "
+              f"{TAPE_COVER_MIN * 100:.0f}٪) — پنجره "
+              f"{'دست‌نخورده ماند' if have else 'پر نشد'}")
+        return {"skipped": "low-coverage", "covered": covered_new or 0,
+                "traded": traded_n, "window_rows_kept": have}
     # پنجره را بی‌سرنوشت عوض نکن: پاسخِ سایت گاه **کوتاه** می‌آید (اندازۀ
     # ۱۴۰۵-۰۷-۰۷: همان endpoint یک دور ۳٬۲۳۸ نماد داد و دور بعد ۳٬۹۴۱). بی‌این
     # بند، همان پاسخِ کوتاهِ ۰۸:۵۵ جای پنجرۀ کامل را می‌گرفت و ۵۸۸ نمادِ
@@ -727,41 +786,24 @@ def refresh_tape_history(conn, force=False, fetch=None):
     #   ۱) همان نشست با پوششِ کمتر → دادهٔ ناقص دادهٔ کهنه را نمی‌بَرَد؛
     #   ۲) نشستِ تازه‌تر ولی زیرِ کفِ پوشش، در حالی که پنجرۀ فعلی بالای کف است
     #      → تازگیِ یک نشست ارزشِ خاموش‌کردنِ صدها نماد را ندارد.
-    if have:
-        cur = conn.cursor()
-        cur.execute("CREATE TEMP TABLE _new_window (ins_code TEXT PRIMARY KEY)")
-        cur.executemany("INSERT OR IGNORE INTO _new_window VALUES (?)",
-                        [(r[0],) for r in recs])
-        traded_n, covered_new, covered_cur = cur.execute(
-            "SELECT COUNT(*),"
-            " SUM(CASE WHEN EXISTS (SELECT 1 FROM _new_window w WHERE w.ins_code = m.ins_code)"
-            "          THEN 1 ELSE 0 END),"
-            f" SUM(CASE WHEN EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)"
-            "          THEN 1 ELSE 0 END)"
-            " FROM market_watch m WHERE m.d_even = ? AND COALESCE(m.q_tot_tran, 0) > 0",
-            (board_day,)).fetchone()
-        cur.execute("DROP TABLE _new_window")
-        traded_n = traded_n or 0
-        if traded_n:
-            ratio_new = (covered_new or 0) / traded_n
-            ratio_cur = (covered_cur or 0) / traded_n
-            if top <= (newest or 0) and (covered_new or 0) < (covered_cur or 0):
-                lost = (covered_cur or 0) - (covered_new or 0)
-                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
-                             (f"partial-payload:{lost}",))
-                conn.commit()
-                print(f"  [tape-history] پاسخِ سایت {lost:,} نمادِ معامله‌شده را ندارد که "
-                      f"پنجرۀ فعلی دارد — پنجره دست‌نخورده ماند")
-                return {"skipped": "partial-payload", "lost": lost}
-            if (top > (newest or 0) and ratio_new < TAPE_COVER_MIN
-                    and ratio_cur >= TAPE_COVER_MIN):
-                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
-                             ("partial-payload:collapse",))
-                conn.commit()
-                print(f"  [tape-history] نشستِ تازه آمد ولی پوشش به "
-                      f"{ratio_new * 100:.1f}٪ افتاد (پنجرۀ فعلی {ratio_cur * 100:.1f}٪) — "
-                      f"پنجرۀ کاملِ فعلی ماند")
-                return {"skipped": "partial-payload", "lost": covered_cur}
+    if have and traded_n:
+        if top <= (newest or 0) and (covered_new or 0) < (covered_cur or 0):
+            lost = (covered_cur or 0) - (covered_new or 0)
+            conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                         (f"partial-payload:{lost}",))
+            conn.commit()
+            print(f"  [tape-history] پاسخِ سایت {lost:,} نمادِ معامله‌شده را ندارد که "
+                  f"پنجرۀ فعلی دارد — پنجره دست‌نخورده ماند")
+            return {"skipped": "partial-payload", "lost": lost}
+        if (top > (newest or 0) and ratio_new < TAPE_COVER_MIN
+                and ratio_cur >= TAPE_COVER_MIN):
+            conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                         ("partial-payload:collapse",))
+            conn.commit()
+            print(f"  [tape-history] نشستِ تازه آمد ولی پوشش به "
+                  f"{ratio_new * 100:.1f}٪ افتاد (پنجرۀ فعلی {ratio_cur * 100:.1f}٪) — "
+                  f"پنجرۀ کاملِ فعلی ماند")
+            return {"skipped": "partial-payload", "lost": covered_cur}
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
     c.executemany(_TAPE_HIST_INSERT, recs)
@@ -1015,6 +1057,14 @@ CTV_RETRY_S = 6 * 3600      # سقفِ تلاش برایِ یک نشست (الگ
 # می‌بست و آن نشست هرگز کامل نمی‌شد (سنجشِ ۱۴۰۵-۰۷-۱۹: ۰ ردیف از ۱۵۹۳).
 CTV_RESUME_S = 30 * 60
 CTV_BUDGET = 600            # حداکثرِ درخواست در هر اجرا
+# دو مهارکنندۀ افزون بر بودجهٔ شمارشی (سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۰ ۰۹:۰۹–۰۹:۲۰:
+# یک مرحلۀ شبکه‌ای طولانی قفلِ `_MARKET_SYNC_LOCK` را نگه داشت و تازگیِ تابلو،
+# `market_index` و وضعیتِ رسمیِ بازار را برایِ ۲۰+ دقیقه خواباند):
+#   • نشستِ بی‌داده پس از این همه نمادِ پشتِ‌سرهم رها می‌شود، نه تا سقفِ ۶۰۰تا؛
+#   • هر اجرا حداکثر این قدر ثانیه رویِ شبکه وقت می‌گیرد و دورِ بعد از پنجرۀ
+#     ادامه (CTV_RESUME_S) همان نشستِ ناقص را برمی‌دارد.
+CTV_ABANDON_AFTER = 10
+CTV_RUN_BUDGET_S = 90.0
 
 # DDL درِ tsetmc_p0_schema است؛ این نام فقط برایِ سازگاریِ فراخوانی‌هایِ موجود
 import tsetmc_p0_schema as _P0
@@ -1137,6 +1187,40 @@ def _ct_window_mark(conn, day, now) -> None:
                  (_ct_window_name(day), now))
 
 
+def _now_dt(now):
+    """`now` رشتهٔ «YYYY-MM-DD HH:MM:SS» یا datetime → datetime (برِ گیتِ ساعتی)."""
+    if isinstance(now, datetime.datetime):
+        return now
+    try:
+        return datetime.datetime.strptime(now, "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return datetime.datetime.now()
+
+
+def _ct_session_is_closed(day, now_dt=None) -> bool:
+    """آیا این نشست از دیدِ خودِ بازار تمام شده؟ (منبع برایِ نشستِ باز ۵۰۰ می‌دهد)
+
+    سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۰ ۰۹:۰۹ همین ماشین: `GetClientTypeHistory` برایِ
+    نشستِ ۲۰۲۶۱۰۱۱ سه از سه بار HTTP 500 داد و همان سه نماد برایِ ۲۰۲۶۱۰۱۰ سه
+    از سه بار ۲۰۰ — یعنی ۵۰۰ِ نشستِ باز خطایِ گذرا نیست، تعریفِ داده هنوز
+    نیست. نبودِ این گیت دو خسارت داشت: سوختنِ پنجرۀ شش‌ساعتهٔ نشستِ باز، و
+    نگه‌داشتنِ قفلِ سینک با ~۱۰۷ درخواستِ مرده در ~۲۰ دقیقه، که `market_index`
+    را روی marketState="P"ِ ساعتِ ۰۸:۵۶ خواباند و کلِ نشست «مرحل نامشخص /
+    verdict_allowed=False» خوانده شد.
+
+    مرزِ «بسته شدن» آستانهٔ تازه نیست: پایانِ اعلام‌شدۀ خودِ بازار
+    (`market_phase.SESSION_END`) است.
+    """
+    n = now_dt or datetime.datetime.now()
+    try:
+        if int(day) != int(n.strftime("%Y%m%d")):
+            return True
+    except (TypeError, ValueError):
+        return True
+    import market_phase
+    return n.time() >= market_phase.SESSION_END
+
+
 def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
                                session=None, fetch=None, now=None):
     """ارزشِ مبدأ را برایِ یک نشستِ بسته پر می‌کند. برمی‌گرداند dictِ آمار.
@@ -1159,13 +1243,21 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
     if day is None:
         if not cands:
             return {"skipped": "no-session", "written": 0}
-        picked = next(((d, w, h) for d, w, h in cands
+        # نشستِ باز از صف بیرون می‌رود (مگر با forceِ دستی): منبع برایش ۵۰۰
+        # می‌دهد و هر تلاشِ بی‌نتیجه پنجرۀ شش‌ساعته‌اش را می‌سوزاند.
+        elig = [c for c in cands if force or _ct_session_is_closed(c[0], _now_dt(now))]
+        if not elig:
+            return {"skipped": "no-closed-session", "written": 0,
+                    "candidates": [c[0] for c in cands]}
+        picked = next(((d, w, h) for d, w, h in elig
                        if force or _ct_window_ok(conn, d, now, h)), None)
         if picked is None:
-            d0, w0, h0 = cands[0]
+            d0, w0, h0 = elig[0]
             return {"skipped": "throttled", "day": d0, "written": h0}
         day, want, have = picked
     else:
+        if not force and not _ct_session_is_closed(day, _now_dt(now)):
+            return {"skipped": "open-session", "day": day, "written": 0}
         have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
                             (day,)).fetchone()[0]
         want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
@@ -1193,16 +1285,31 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
             # `clientType` شیء است؛ polite_get با key همان شیء را بی‌change می‌دهد
             return polite_get(_s, f"{BASE}/ClientType/GetClientTypeHistory/{c}/{_day}",
                               "clientType")
-    rows, errs = [], 0
+    rows, errs, dead, aborted = [], 0, 0, None
+    import time as _t
+    _t0 = _t.monotonic()
     for c in todo:
         try:
             payload = fetch(c)
         except Exception:
             payload, errs = None, errs + 1
-            continue
-        rec = parse_client_type_value(payload, c, day, now)
-        if rec:
-            rows.append(rec)
+        if payload is None:
+            # نشستِ بی‌داده تا سقفِ ۶۰تا چکش نمی‌خورد: ده نمادِ پشتِ‌سرهم
+            # بی‌پاسخ ⇒ همین اجرا را ببند و پنجره را بباز (تلاشِ بعدی ۶ ساعت).
+            dead += 1
+            if not rows and dead >= CTV_ABANDON_AFTER:
+                aborted = "no-payload"
+                break
+        else:
+            dead = 0
+            rec = parse_client_type_value(payload, c, day, now)
+            if rec:
+                rows.append(rec)
+        if _t.monotonic() - _t0 > CTV_RUN_BUDGET_S:
+            # مرحلۀ شبکه‌ای نباید تازگیِ تابلو را پشتِ قفلِ سینک بخواباند؛
+            # نشستِ ناقص می‌ماند و پنجرۀ ادامه (۳۰ دقیقه) دوباره برمی‌داردش.
+            aborted = "time-budget"
+            break
     if rows:
         # نوشتنِ نام‌دار: `kind` بعداً با ALTER اضافه شد و به انتهای
         # جدول چسبید، پس ترتیبِ tupleِ ما با ترتیبِ ستون‌هایِ بانک یکی
@@ -1219,11 +1326,13 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
     conn.execute("UPDATE client_type_value_state SET last_ok=COALESCE(?, last_ok),"
                  " newest_d_even=?, note=? WHERE id=1",
                  (now if rows else None, day,
-                  f"day={day} written={len(rows)} total={total} errors={errs}"))
+                  f"day={day} written={len(rows)} total={total} errors={errs}"
+                  f" no_payload={dead}" + (f" aborted={aborted}" if aborted else "")))
     conn.commit()
     market_state_touch()
     return {"day": day, "written": len(rows), "total": total, "errors": errs,
-            "attempted": len(todo)}
+            "no_payload": dead, "aborted": aborted,
+            "ran_s": round(_t.monotonic() - _t0, 1), "attempted": len(todo)}
 
 
 def market_state_touch():
