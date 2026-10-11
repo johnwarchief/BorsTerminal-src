@@ -49,7 +49,7 @@ export function candleGeometry(c: CandleOHLC | null | undefined) {
 }
 
 export function FormingCandle({
-  candle, width = 14, height = 24, testId = 'forming-candle',
+  candle, width = 28, height = 10, testId = 'forming-candle',
 }: {
   candle: CandleOHLC | null | undefined;
   width?: number;
@@ -57,24 +57,39 @@ export function FormingCandle({
   testId?: string;
 }) {
   const g = candleGeometry(candle);
-  const mid = width / 2;
   const tone = TONE[g.state];
-  const label = `اول ${g.open != null ? fmtInt(g.open) : '—'} · بیشینه ${g.high != null ? fmtInt(g.high) : '—'} · `
-    + `کمینه ${g.low != null ? fmtInt(g.low) : '—'} · آخرین ${g.last != null ? fmtInt(g.last) : '—'}`;
-  if (g.state === 'incomplete') {
+  const label = `اول ${g.open != null ? fmtInt(g.open) : '—'} · بیشترین ${g.high != null ? fmtInt(g.high) : '—'} · `
+    + `کمترین ${g.low != null ? fmtInt(g.low) : '—'} · آخرین ${g.last != null ? fmtInt(g.last) : '—'}`;
+  const open = g.open;
+  const high = g.high;
+  const low = g.low;
+  const last = g.last;
+  if (g.state === 'incomplete' || open == null || high == null || low == null || last == null) {
     return (
       <span className="num-text text-3xs text-text-muted" data-testid={testId}
             data-state="incomplete"
-            title="اول/بیشینه/کمینهٔ همین نشست نرسیده — کندلی رسم نمی‌شود">—</span>
+            title="اول/بیشترین/کمترینِ همین نشست نرسیده — کندلی رسم نمی‌شود">—</span>
     );
   }
-  const bodyH = Math.max(1.5, g.bottom - g.top);
+  // محورِ قیمت افقی است (چپ = کمترین، راست = بیشترین) تا با محورِ زمانِ چارت‌های
+  // خودِ برنامه قاطی نشود و درِ خانۀ باریکِ جدول ارتفاع نگیرد. بدنه از اول تا
+  // آخرین، و خطِ نازک دامنۀ کمترینِ تا بیشترین.
+  const PAD = 1;
+  const span = Math.max(high - low, 1e-9);
+  const x = (v: number) => PAD + ((v - low) / span) * (width - 2 * PAD);
+  const midY = height / 2;
+  const bodyL = x(Math.min(open, last));
+  const bodyR = x(Math.max(open, last));
+  const bodyW = Math.max(1.5, bodyR - bodyL);
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img"
-         aria-label={label} data-testid={testId} data-state={g.state} data-dir={g.state}>
+         aria-label={label} data-testid={testId} data-state={g.state} data-dir={g.state}
+         style={{ direction: 'ltr' }}>
       <title>{label}</title>
-      <line x1={mid} x2={mid} y1={TOP + 0.5} y2={GROUND} stroke={tone} strokeWidth={1} />
-      <rect x={width * 0.22} y={g.top} width={width * 0.56} height={bodyH} fill={tone} />
+      <line x1={x(low)} x2={x(high)} y1={midY} y2={midY} stroke={tone} strokeWidth={1} opacity={0.55} />
+      <rect x={bodyL} y={height * 0.2} width={bodyW} height={Math.max(2, height * 0.6)} fill={tone} rx={0.5} />
+      <line x1={x(low)} x2={x(low)} y1={height * 0.28} y2={height * 0.72} stroke={tone} strokeWidth={1} />
+      <line x1={x(high)} x2={x(high)} y1={height * 0.28} y2={height * 0.72} stroke={tone} strokeWidth={1} />
     </svg>
   );
 }
@@ -99,7 +114,7 @@ export function FormingCandleStrip({
          data-testid={testId} data-state={g.state}
          title={symbol ? `کندلِ روزِ ${symbol} که هنوز در حالِ تشکیل است` : 'کندلِ روزِ در حالِ تشکیل'}>
       <span className="flex items-center gap-1.5">
-        <FormingCandle candle={candle} testId={`${testId}-glyph`} width={18} height={26} />
+        <FormingCandle candle={candle} testId={`${testId}-glyph`} width={30} height={10} />
         <span className="text-3xs font-bold text-text-secondary">کندلِ امروز</span>
       </span>
       <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">

@@ -39,11 +39,7 @@ export default function FtsFunnelStageView({
           {toFaDigits(data.summary.pass)} عبور از {toFaDigits(data.ruled)} نمادِ جامعۀ غربالگری
         </span>
       </div>
-      <FtsFunnelAllStages
-        preset={preset}
-        only={stage}
-        onStageSelect={() => undefined}
-      />
+      <FtsFunnelAllStages preset={preset} only={stage} />
     </div>
   );
 }

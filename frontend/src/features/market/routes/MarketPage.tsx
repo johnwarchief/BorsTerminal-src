@@ -6,6 +6,7 @@ import { publishSignals } from '@shared/lib/signalBus';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { useMarketFeed } from '../api/useMarketFeed';
 import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
@@ -32,18 +33,25 @@ export function applyFilters(
   volRatioMin: number,
   exitAccum = false,
   filterConfig?: TapeFilterConfig,
+  /** «اشتراک» = همهٔ چیپ‌های روشن لازم‌اند؛ «اجتماع» = کم‌از‌یکی کافی است.
+   *  تا پیش از این جدولِ تابلو فقط اشتراک را می‌شناخت و کلیدِ اجتماع هیچ اثری
+   *  روی‌اش نداشت (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «هر دو رو نشون بده، هم مشترک هارو»). */
+  quickLogic: 'and' | 'or' = 'and',
 ): MarketRow[] {
   const q = query.trim();
+  const passes = (r: MarketRow, f: string) =>
+    filterConfig
+      ? tapeFilterVerdict(r, f, filterConfig)
+      : !!(r as unknown as Record<string, unknown>)[f];
   return rows.filter((r) => {
     if (q && !(matchFa(r.symbol, q) || matchFa(r.name, q))) return false;
     if (sector && (r.sector_name ?? '') !== sector) return false;
     if (!assetTypes.includes(classifyAssetType(r))) return false;
-    for (const f of quickFilters) {
-      if (filterConfig) {
-        if (!tapeFilterVerdict(r, f, filterConfig)) return false;
-      } else {
-        if (!(r as unknown as Record<string, unknown>)[f]) return false;
-      }
+    if (quickFilters.length) {
+      const hit = quickLogic === 'or'
+        ? quickFilters.some((f) => passes(r, f))
+        : quickFilters.every((f) => passes(r, f));
+      if (!hit) return false;
     }
     // #197: جدول بی‌پیش‌فرض فقط «همین نشست» را می‌نمایاند؛ ولی وقتی کاربر
     // خودش نمادی را نوشته منظورش دیدنِ همان نماد است، پس جستجو از این بند
@@ -63,6 +71,8 @@ export default function MarketPage() {
   const query = useTapeStore((s) => s.query);
   const assetTypes = useTapeStore((s) => s.assetTypes);
   const quickFilters = useTapeStore((s) => s.quickFilters);
+  // کلیدِ اشتراک/اجتماع همان است که چیپ‌ها نشان می‌دهند و قیف هم می‌فرستد.
+  const screenLogic = useScreenFilterStore((s) => s.logic);
   const sector = useTapeStore((s) => s.sector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
   const direction = useTapeStore((s) => s.direction);
@@ -174,8 +184,9 @@ export default function MarketPage() {
             volRatioMin,
             exitAccum,
             tapeFilterConfig,
+            screenLogic,
           ),
-    [filterBase, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
+    [filterBase, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig, screenLogic],
   );
 
   const signals = useMemo(() => rowsToTapeSignals(filtered), [filtered]);
@@ -189,7 +200,8 @@ export default function MarketPage() {
     if (filtered.length > 0) return null;
     const doors: string[] = [];
     if (quickFilters.length) {
-      doors.push(`فیلترهایِ روشن: ${quickFilters.map((f) => QUICK_LABELS[f as QuickFilter]).join('، ')}`);
+      const names = quickFilters.map((f) => QUICK_LABELS[f as QuickFilter]).join('، ');
+      doors.push(`${screenLogic === 'or' ? 'اجتماعِ' : 'اشتراکِ'} ${names}`);
     }
     if (sector) doors.push(`صنعتِ «${sector}»`);
     if (query.trim()) doors.push(`جستجوی «${query.trim()}»`);
@@ -204,7 +216,7 @@ export default function MarketPage() {
     return hidden > 0
       ? `${head} — ${toFaDigits(hidden)} ردیفِ واجدِ شرط درِ این نما باز نشد؛ درهایِ بالا را بردار`
       : `${head} — با این ترکیب هیچ ردیفی واجدِ شرط نیست`;
-  }, [filtered.length, quickFilters, sector, query, liveOnly, showNumericSuffix, assetTypes, hiddenInfo]);
+  }, [filtered.length, quickFilters, screenLogic, sector, query, liveOnly, showNumericSuffix, assetTypes, hiddenInfo]);
 
   /**
    * انتشار سیگنال های تابلو در باس: تک اسلات ایجنت «تابلو» روی هر نماد.

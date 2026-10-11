@@ -70,6 +70,14 @@ async function renderGlance(rows: MarketRow[]) {
   mockFetch((url) => {
     if (url.includes('/api/funnel/registry')) return resp(REGISTRY_FIXTURE);
     if (url.includes('/api/funnel')) return resp(FUNNEL_FIXTURE);
+    // روند درِ سایدبار از داوریِ تک‌نمادیِ موتور خوانده می‌شود (`/api/fts/{symbol}`)
+    // — بی‌وابستگی به زنجیره و کلیدِ اشتراک/اجتماع (رأیِ مالک ۱۴۰۵-۰۷-۱۹).
+    if (url.includes('/api/fts/')) {
+      return resp({ status: 'success', symbol: 'فولاد', fts: { trend: { D: { trend: 'down' }, W: { trend: 'up' } } } });
+    }
+    // اسکرینر (۹۲۲ نمادِ غربالگری) را عمداً خالی می‌گذاریم تا پنج شاخص از همان
+    // ردیفِ غربالگری خوانده شوند و این تستِ پیشین بی‌تغییر سنجیده شود.
+    if (url.includes('/api/screener')) return resp({ status: 'success', data: [] });
     if (url.includes('/api/order-book')) return resp({ status: 'no_data', levels: [] });
     return resp({ status: 'no_data' }, 404);
   });
@@ -95,15 +103,15 @@ describe('«در یک نگاه» — بخشِ قیمت', () => {
     expect(screen.getByTestId('inspector-percent-last').textContent).not.toContain(fmtPct(2.63));
   });
 
-  it('اولین=۰ ⇒ «—» (مبادله نبود) ولی بیشینه معتبر و کمینۀ نیامده ⇒ «—»', async () => {
+  it('اولین=۰ ⇒ «—» (مبادله نبود) ولی بیشترین معتبر و کمترینِ نیامده ⇒ «—»', async () => {
     await renderGlance([board({ p_first: 0, p_max: 990, p_min: undefined })]);
-    // صفرِ اولین با هیچِ بیشینه/کمینه قاطی نمی‌شود:
+    // صفرِ اولین با هیچِ بیشترین/کمترین قاطی نمی‌شود:
     expect(screen.getByTestId('inspector-p-first').textContent).toBe('—');
     expect(screen.getByTestId('inspector-p-max').textContent).toContain(fmtInt(990));
     expect(screen.getByTestId('inspector-p-min').textContent).toBe('—');
   });
 
-  it('مقدارِ معتبرِ اولین/بیشینه/کمینه از فیلدهایِ تازه خوانده می‌شود', async () => {
+  it('مقدارِ معتبرِ اولین/بیشترین/کمترین از فیلدهایِ تازه خوانده می‌شود', async () => {
     await renderGlance([board({ p_first: 958, p_max: 992, p_min: 951 })]);
     expect(screen.getByTestId('inspector-p-first').textContent).toContain(fmtInt(958));
     expect(screen.getByTestId('inspector-p-max').textContent).toContain(fmtInt(992));
@@ -112,7 +120,7 @@ describe('«در یک نگاه» — بخشِ قیمت', () => {
 });
 
 describe('«در یک نگاه» — روند و پنج‌شاخصه (از همان قیف)', () => {
-  it('روندِ روزانۀ نزولی و هفتگیِ صعودی از خروجیِ canonicalِ قیف می‌آید', async () => {
+  it('روندِ روزانۀ نزولی و هفتگیِ صعودی از داوریِ تک‌نمادیِ موتور می‌آید', async () => {
     await renderGlance([board()]);
     expect(screen.getByTestId('inspector-trend-روزانۀ').textContent).toBe('نزولی');
     // جتِ canonical (f_jet=true) روشن است — نه روندِ اختراعی.
