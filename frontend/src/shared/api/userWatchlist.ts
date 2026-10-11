@@ -122,3 +122,64 @@ export function watchlistLabel(symbol: string, inList: boolean): string {
     ? `«${symbol}» درِ واچ‌لیست است — کلیک برایِ حذف`
     : `«${symbol}» را به واچ‌لیست اضافه کن (ماندگار، برایِ رصدِ روزهایِ بعد)`;
 }
+
+/** ستون‌هایِ «تأیید سه‌گانه» — چهار حالته، دقیقاً همان `PILLAR_STATES`ِ
+ *  `confidence_engine.py:109`. «بی‌داده» رأی نمی‌دهد و با «رد» یکی نیست. */
+export type MatrixState = 'pass' | 'warn' | 'fail' | 'nodata';
+
+export const MATRIX_STATE_LABEL: Record<MatrixState, string> = {
+  pass: 'تأیید',
+  warn: 'هشدار',
+  fail: 'رد',
+  nodata: 'بی‌داده',
+};
+
+export type WatchMatrixRow = {
+  symbol: string;
+  states?: Partial<Record<'tech' | 'tape' | 'fund', string>>;
+  /** تفصیلِ هر ستون از خودِ موتور (`_pillar`): علت‌ها و زمانِ سنجش. رابطِ کاربر
+   *  این را درِ title می‌گذارد تا «هشدار» بی‌دلیل نماند. */
+  pillars?: Partial<Record<'tech' | 'tape' | 'fund',
+    { state?: string; reasons?: string[]; asof?: string | number | null } | undefined>>;
+  verdict?: string | null;
+  conf_reasons?: string[];
+  notes?: string[];
+  asof?: Partial<Record<'tech' | 'tape' | 'fund', string | number | null>>;
+};
+
+type WatchMatrixPayload = {
+  status: string; count: number; rows?: WatchMatrixRow[]; message?: string;
+  limit?: number | null;
+  asof?: Record<string, string | number | null>;
+};
+
+/** وضعیتِ تکنیکال/تابلو/بنیادیِ چند نماد در یک درخواست —
+ *  `GET /api/watchlist/matrix?symbols=…` (`api/watchlist.py:85`،
+ *  `watchlist_store.matrix()` با `triple_many`، ضدِN+1). داوری درِ
+ *  `confidence_engine` است؛ این‌جا فقط خوانده می‌شود.
+ *
+ *  سقفِ بک‌اند `MATRIX_PROBE_MAX = 60` است (`watchlist_store.py:35`)؛ دیدهبانِ
+ *  محلی تا `WATCH_MAX` نماد دارد، پس فهرست بی‌برش می‌رسد. کوئریِ بی‌نماد
+ *  زده نمی‌شود (`enabled`) و پولینگِ تازه‌ای به ریتمِ تابلو اضافه نمی‌شود:
+ *  یک بار در هر دو دقیقه، بی‌تازگیِ خودکارِ پنجره. */
+export function useWatchMatrix(symbols: readonly string[]) {
+  const key = symbols.map((s) => normalizeFa(s)).sort().join(',');
+  return useQuery<WatchMatrixPayload>({
+    queryKey: ['user-watchlist-matrix', key],
+    queryFn: ({ signal }) =>
+      http<WatchMatrixPayload>(`/api/watchlist/matrix?symbols=${encodeURIComponent(symbols.join(','))}`,
+                               { signal }),
+    enabled: key.length > 0,
+    staleTime: 120_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+  });
+}
+
+/** نماد (هر دو املا) → ردیفِ ماتریس */
+export function matrixBySymbol(rows: readonly WatchMatrixRow[] | undefined): Map<string, WatchMatrixRow> {
+  const m = new Map<string, WatchMatrixRow>();
+  for (const r of rows ?? []) m.set(normalizeFa(String(r.symbol ?? '')), r);
+  return m;
+}

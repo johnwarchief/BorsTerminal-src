@@ -19,6 +19,10 @@ import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
+import {
+  MATRIX_STATE_LABEL, matrixBySymbol, useWatchMatrix,
+  type MatrixState, type WatchMatrixRow,
+} from '@shared/api/userWatchlist';
 import type { MarketFeed, MarketRow } from '@shared/types/marketRow';
 
 /** نگاشتِ نماد(نرمال) → ردیفِ فید؛ ممو بر اساسِ مرجعِ آرایه تا هر pollِ بی‌تغییری
@@ -74,9 +78,65 @@ type Props = {
 const TH = 'px-2 py-1.5 text-start text-3xs font-bold whitespace-nowrap';
 const TD = 'px-2 py-1 text-start whitespace-nowrap';
 
+/** «تکنیکال» و «بنیادی» درِ دیده‌بان (رأیِ مالک ۱۴۰۵-۰۷-۲۲): دو ستونِ وضعیت،
+ *  با همان چهار حالتِ `confidence_engine.PILLAR_STATES`. داوری اینجا ساخته
+ *  نمی‌شود — `/api/watchlist/matrix` همان «تأیید سه‌گانه» را می‌دهد که سبدگردانی
+ *  می‌خواند، پس دو داور نداریم. نبودِ ردیفِ ماتریس «—» است نه «رد». */
+const PILLAR_TONE: Record<MatrixState, string> = {
+  pass: 'text-accent-green',
+  warn: 'text-accent-yellow',
+  fail: 'text-accent-red',
+  nodata: 'text-text-muted',
+};
+
+function asState(v: string | undefined | null): MatrixState | null {
+  return v === 'pass' || v === 'warn' || v === 'fail' || v === 'nodata' ? v : null;
+}
+
+function PillarCell({ row, pillar, pending }: {
+  row: WatchMatrixRow | undefined;
+  pillar: 'tech' | 'fund';
+  pending: boolean;
+}) {
+  if (!row) {
+    return (
+      <span
+        className="text-2xs text-text-muted"
+        title={pending ? 'ماتریسِ تأیید در راه است' : 'این نماد درِ ماتریسِ تأیید نیست'}
+      >
+        {pending ? '…' : '—'}
+      </span>
+    );
+  }
+  const st = asState(row.states?.[pillar] ?? row.pillars?.[pillar]?.state);
+  if (!st) return <span className="text-2xs text-text-muted" title="وضعیتی برایِ این ستون نرسید">—</span>;
+  const det = row.pillars?.[pillar];
+  const reasons = (det?.reasons ?? []).filter(Boolean).join(' · ');
+  const asof = det?.asof ?? row.asof?.[pillar] ?? null;
+  const title = [MATRIX_STATE_LABEL[st], reasons, asof != null ? `سنجش: ${asof}` : null]
+    .filter(Boolean).join(' — ');
+  return (
+    <span
+      data-testid={`watch-${pillar}-${row.symbol ?? ''}`}
+      className={`text-2xs font-bold ${PILLAR_TONE[st]}`}
+      title={title}
+    >
+      {MATRIX_STATE_LABEL[st]}
+    </span>
+  );
+}
+
 export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
   const feedQ = useMarketFeedShared(selectRowMap, 60_000);
   const byNorm = feedQ.data ?? EMPTY_MAP;
+  // یک درخواست برایِ کلِ فهرستِ رصد (ضدِN+1 درِ خودِ بک‌اند هم همین‌طور)، بی‌
+  // پولینگِ موازی با ریتمِ تابلو.
+  const matrixQ = useWatchMatrix(symbols);
+  const mtx = useMemo(() => matrixBySymbol(matrixQ.data?.rows), [matrixQ.data]);
+  const matrixPending = matrixQ.isPending && symbols.length > 0;
+  // اندپوینتِ خطا را با HTTP ۲۰۰ و `status: 'error'` می‌دهد (`api/watchlist.py:112`)،
+  // پس `isError` تنها شرطِ «نرسید» نیست.
+  const matrixFailed = matrixQ.isError || (matrixQ.data != null && matrixQ.data.status !== 'success');
 
   const rows = useMemo(
     () => symbols.map((s) => ({ symbol: s, row: byNorm.get(normalizeFa(s)) ?? null })),
@@ -86,7 +146,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
   return (
     <div className="glass-panel min-w-0 max-w-full overflow-hidden rounded-2xl" data-testid="watch-table">
       <div className="max-w-full overflow-auto">
-        <table className="w-full min-w-[1040px] border-collapse text-xs">
+        <table className="w-full min-w-[1140px] border-collapse text-xs">
           <thead>
             <tr className="bg-bg-card/70 text-start text-3xs uppercase tracking-wider text-text-secondary">
               <th className={TH}>نماد</th>
@@ -102,6 +162,8 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
               <th className={`${TH} bg-accent-red/10 text-accent-red`}>قیمت عرضه</th>
               <th className={`${TH} bg-accent-red/10 text-accent-red`}>حجم عرضه</th>
               <th className={TH}>وضعیت</th>
+              <th className={TH}>تکنیکال</th>
+              <th className={TH}>بنیادی</th>
               <th className={TH}>به‌روزرسانی</th>
               <th className={TH}>حذف</th>
             </tr>
@@ -174,6 +236,12 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                     <span className={`text-2xs font-bold ${st.tone}`} title={st.title}>{st.text}</span>
                     {row && row.is_live === false ? <span className="ms-1 text-3xs text-accent-yellow" title="قیمت‌ها آخرینِ نشستِ بسته‌شده است">آخرینِ نشست</span> : null}
                   </td>
+                  <td className={TD}>
+                    <PillarCell row={mtx.get(normalizeFa(symbol))} pillar="tech" pending={matrixPending} />
+                  </td>
+                  <td className={TD}>
+                    <PillarCell row={mtx.get(normalizeFa(symbol))} pillar="fund" pending={matrixPending} />
+                  </td>
                   <td className={TD} title="ساعتِ خودِ همین ردیف در تابلو (نه ساعتِ کلیِ همگام‌سازی)">
                     <span className="num text-2xs text-text-secondary">{hhmm(row?.row_h)}</span>
                   </td>
@@ -200,6 +268,16 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
       <footer className="flex flex-wrap items-center gap-2 border-t border-border-c/60 px-3 py-1.5 text-3xs text-text-muted">
         <span className="num">{toFaDigits(rows.length)} نمادِ رصدشده</span>
         <span title="قیمت/حجم/صف‌ها از همان فیدِ مشترکِ تابلو (دلتا) می‌آید">داده با هر دورِ فیدِ زندهٔ تابلو تازه می‌شود؛ دکمۀ «تازگی‌سازی» دستی لازم نیست</span>
+        <span
+          data-testid="watch-matrix-state"
+          title="«تکنیکال» و «بنیادی» همان تأییدِ سه‌گانۀ خودِ برنامه است (`/api/watchlist/matrix`)، در یک درخواست برایِ کلِ فهرست"
+        >
+          {matrixFailed
+            ? 'ماتریسِ تأیید نرسید — دو ستونِ وضعیت «—» می‌مانند'
+            : matrixPending && !matrixQ.data
+              ? 'ماتریسِ تأیید در راه است…'
+              : `وضعیت‌ها از ماتریسِ تأیید (${toFaDigits(mtx.size)} نماد)`}
+        </span>
         <span data-testid="watch-feed-state" className="ms-auto">
           {feedQ.isError ? (
             <span className="text-accent-red">خطایِ فید — اعدادِ پایین آخرینِ پاسخِ موفق‌اند</span>

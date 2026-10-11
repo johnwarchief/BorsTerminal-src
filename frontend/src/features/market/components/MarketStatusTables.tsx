@@ -62,11 +62,48 @@ function TableShell({
   );
 }
 
+/** سه پرچمِ تابلو که مالک درِ این جدول هم می‌خواهد (رأیِ ۱۴۰۵-۰۷-۲۲): حجمِ
+ *  مشکوک، ورودِ پولِ هوشمند، و کد به کدِ حقوقی به حقیقی. نام‌ها عینِ
+ *  `QUICK_LABELS` درِ تبِ تابلو است؛ داوری درِ `tape_flags.py` و فایل‌هایِ
+ *  جزوه (`docs/حجم مشکوک.txt`، `docs/ورود پول هوشمند.txt`،
+ *  `docs/ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt`) و این جدول فقط
+ *  همان پرچم را می‌خواند. */
+const WATCH_FLAGS: { key: 'f_susp' | 'f_smart' | 'f_legal'; chip: string; full: string; tone: string }[] = [
+  { key: 'f_susp', chip: 'مشکوک', full: 'حجم مشکوک', tone: 'bg-accent-amber/15 text-accent-amber' },
+  { key: 'f_smart', chip: 'پول هوشمند', full: 'ورود پول هوشمند', tone: 'bg-accent-green/15 text-accent-green' },
+  { key: 'f_legal', chip: 'کد به کد', full: 'کد به کد حقوقی به حقیقی', tone: 'bg-accent-red/15 text-accent-red' },
+];
+
+function FlagChips({ row, sourced }: { row: MainWatchRow; sourced: boolean }) {
+  if (!sourced) return <span className="text-text-muted">—</span>;
+  const flags = row.tape_flags;
+  if (!flags) return <span className="text-3xs text-text-muted" title="این نماد درِ فیدِ تابلو نبود">بی‌پرچم</span>;
+  const on = WATCH_FLAGS.filter((f) => flags[f.key]);
+  if (!on.length) return <span className="text-text-muted">—</span>;
+  return (
+    <span className="flex flex-wrap items-center gap-1">
+      {on.map((f) => (
+        <span
+          key={f.key}
+          title={f.full}
+          data-testid={`mainwatch-flag-${f.key}-${row.symbol}`}
+          className={`rounded px-1 text-3xs font-bold ${f.tone}`}
+        >
+          {f.chip}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** نمادهایِ زیرِ نظرِ همان نشست، با قاعدۀ «الگوی ساعت»ِ خودِ موتور */
 export function MainWatchTable() {
   const { data, isLoading, isError, refetch } = useMstatMainwatch();
   const rows = data?.rows ?? [];
   const rule = data?.clock_rule;
+  // «پرچم نرسید» با «پرچمی ندارد» یکی نیست: بی‌فیدِ تابلو ستون «—» می‌ماند و
+  // پایینِ جدول هم همین را می‌گوید، تا هیچ نمادی بی‌دلیلِ «سالم» به‌نظر نرسد.
+  const sourced = data?.tape_flags_source === 'api/market';
   return (
     <TableShell
       testId="status-mainwatch"
@@ -89,6 +126,7 @@ export function MainWatchTable() {
                   <th className={`${TH} text-start`}>پایانی</th>
                   <th className={`${TH} text-start`}>تغییر٪</th>
                   <th className={`${TH} text-start`}>ساعت٪</th>
+                  <th className={`${TH} text-start`}>نشان</th>
                   <th className={`${TH} text-start`}>ارزش</th>
                   <th className={`${TH} text-start`}>تعداد</th>
                   <th className={`${TH} text-start`}>قدرت</th>
@@ -116,6 +154,9 @@ export function MainWatchTable() {
                       <span className="num">{fmtPct(r.clock_pct ?? null)}</span>
                     </td>
                     <td className={`${TD} text-start`}>
+                      <FlagChips row={r} sourced={sourced} />
+                    </td>
+                    <td className={`${TD} text-start`}>
                       <span className="num">{fmtInt(r.val_b_toman)}</span>
                     </td>
                     <td className={`${TD} text-start`}>
@@ -135,6 +176,8 @@ export function MainWatchTable() {
               ? `بالای ${fmtPct(rule.min_pct ?? null)} و بیش از ${toFaDigits(rule.min_trades ?? 0)} معامله`
               : 'قواعدِ نرسیده'}{' '}
             ساخته می‌شود.
+            {' '}«نشان» همان سه پرچمِ فیلترنویسِ تابلوست (حجم مشکوک، ورود پول هوشمند،
+            کد به کد حقوقی به حقیقی){sourced ? '' : ' — پرچم از فیدِ تابلو نرسید'}.
           </p>
         </>
       ) : null}

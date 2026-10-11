@@ -185,6 +185,14 @@ export const MainWatchRowSchema = z.object({
   pc_sell: num,
   power: num,
   flow_b_toman: num,
+  /** هفت پرچمِ تابلو، عیناً از `tape_flags.apply_tape_flags` (نه محاسبۀ دوم).
+   *  null یعنی این نماد در فیدِ تابلو نبود؛ با «پرچمی ندارد» یکی نیست. */
+  tape_flags: z
+    .object({
+      f_clock: z.boolean(), f_susp: z.boolean(), f_jet: z.boolean(), f_roobi: z.boolean(),
+      f_noqteh: z.boolean(), f_smart: z.boolean(), f_legal: z.boolean(),
+    })
+    .nullish(),
 });
 export type MainWatchRow = z.infer<typeof MainWatchRowSchema>;
 
@@ -202,6 +210,9 @@ export const MainWatchSchema = z.object({
     .object({ min_pct: num, min_trades: num, min_price: num })
     .nullish(),
   rows: z.array(MainWatchRowSchema).nullish(),
+  /** 'api/market' = پرچم‌ها از فیدِ تابلو منتقل شده‌اند؛ 'unavailable' = منبع
+   *  نرسید و جدول باید صریح بگوید «پرچم نرسید»، نه اینکه بج‌ها غیب شوند. */
+  tape_flags_source: z.string().nullish(),
   source: str,
 });
 export type MainWatchFeed = z.infer<typeof MainWatchSchema>;

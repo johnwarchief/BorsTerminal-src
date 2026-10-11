@@ -231,3 +231,71 @@ describe('تازگیِ بی‌دکمۀ دستی', () => {
     }
   });
 });
+
+describe('ستون‌هایِ «تکنیکال» و «بنیادی» درِ دیده‌بان (رأیِ مالک ۱۴۰۵-۰۷-۲۲)', () => {
+  /** ماتریسِ تأیید درِ همان mock نشسته است؛ داوری ازِ `confidence_engine`
+   *  می‌آید، پس این تست فقط منتقل‌شدنِ چهار حالت را می‌سنجد. */
+  function mockFeedAndMatrix(rows: MarketRow[], matrixRows: unknown[]) {
+    fetchMock.mockImplementation((url: string) => {
+      if (String(url).includes('/api/watchlist/matrix')) {
+        return Promise.resolve(json({ status: 'success', count: matrixRows.length,
+                                     rows: matrixRows, limit: 60, asof: {} }));
+      }
+      return Promise.resolve(json(feed(rows)));
+    });
+  }
+
+  it('هر چهار حالتِ ستون، با نامِ فارسیِ خودش و علتِ رد/هشدار درِ title', async () => {
+    mockFeedAndMatrix([row(), row({ symbol: 'فولاد', ins_code: 'A2' })], [
+      { symbol: 'شپنا', states: { tech: 'pass', fund: 'warn' },
+        pillars: { fund: { state: 'warn', reasons: ['ماده ۱۴۱ / زیان‌ده'], asof: '2026-10-10' } },
+        asof: { tech: '2026-10-10' } },
+      { symbol: 'فولاد', states: { tech: 'fail', fund: 'nodata' },
+        pillars: { tech: { state: 'fail', reasons: ['کندل کافی نیست (۴۵ < ۵۰)'] } } },
+    ]);
+    renderTable([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
+    await cellHas('watch-tech-شپنا', 'تأیید');
+    expect(screen.getByTestId('watch-fund-شپنا').textContent).toBe('هشدار');
+    expect(screen.getByTestId('watch-fund-شپنا').getAttribute('title')).toContain('ماده ۱۴۱ / زیان‌ده');
+    expect(screen.getByTestId('watch-tech-فولاد').textContent).toBe('رد');
+    // «بی‌داده» رأی نیست: رنگِ خنثی و متنِ خودش، نه «رد»
+    expect(screen.getByTestId('watch-fund-فولاد').textContent).toBe('بی‌داده');
+    expect(screen.getByTestId('watch-fund-فولاد').className).toContain('text-text-muted');
+    // یک درخواستِ ماتریس برایِ کلِ فهرست، نه یکی به‌ازای هر نماد
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.filter((u) => u.includes('/api/watchlist/matrix'))).toHaveLength(1);
+  });
+
+  it('نمادی که ماتریس ندارد «—» است و پاورقی منبع را می‌گوید', async () => {
+    mockFeedAndMatrix([row({ symbol: 'ولرز' })], []);
+    renderTable([row({ symbol: 'ولرز' })]);
+    await cellHas('watch-row-ولرز', '۱٬۰۲۴');
+    const tr = screen.getByTestId('watch-row-ولرز');
+    expect(tr.textContent).toContain('—');
+    expect(screen.getByTestId('watch-matrix-state').textContent).toContain('۰ نماد');
+  });
+
+  it('بی‌ماتریس جدول نمی‌شکند: هم «۲۰۰ با statusِ error» و هم HTTP ۴۰۴ به پاورقی می‌آیند', async () => {
+    // مسیرِ واقعی: `api/watchlist.py` استثنا را می‌گیرد و با ۲۰۰ و
+    // `status: 'error'` برمی‌گرداند؛ `isError` درِ react-query این را خطا نمی‌داند.
+    fetchMock.mockImplementation((url: string) => Promise.resolve(json(
+      String(url).includes('/api/watchlist/matrix')
+        ? { status: 'error', message: 'no such table', count: 0, rows: [] }
+        : feed([row()]),
+    )));
+    renderTable([row()]);
+    await cellHas('watch-row-شپنا', '۱٬۰۲۴');
+    await waitFor(() => expect(screen.getByTestId('watch-matrix-state').textContent)
+      .toContain('ماتریسِ تأیید نرسید'));
+    expect(screen.getByTestId('watch-row-شپنا').textContent).toContain('—');
+
+    // مسیرِ سخت‌تر: HTTP ۴۰۴ (غیرِ قابلِ تکرار) ⇒ خطایِ واقعیِ کوئری
+    fetchMock.mockImplementation((url: string) => (String(url).includes('/api/watchlist/matrix')
+      ? Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ detail: 'x' }) } as unknown as Response)
+      : Promise.resolve(json(feed([row({ symbol: 'فولاد', ins_code: 'B1' })])))));
+    renderTable([row({ symbol: 'فولاد', ins_code: 'B1' })]);
+    await cellHas('watch-row-فولاد', '۱٬۰۲۴');
+    expect(screen.getAllByTestId('watch-matrix-state').some((n) => n.textContent?.includes('ماتریسِ تأیید نرسید')))
+      .toBe(true);
+  });
+});

@@ -15,6 +15,7 @@ import time
 
 import market_state as _MS
 import mstat_engine as _mstat
+import funnel_engine as _FE
 
 
 router = APIRouter()
@@ -79,6 +80,48 @@ def _mstat_call(fn, *args, **kw):
             _MSTAT_CACHE[full_key] = (now, out)
     return dict(out)
 
+# ── پرچم‌هایِ تابلو درِ «نمادهای زیرِ نظر» ─────────────────────────────────
+# هفت پرچم را `tape_flags.apply_tape_flags` می‌سازد و `/api/market` رویِ ردیف‌ها
+# می‌نشاند. موتورِ نبض (`mstat_engine.mainwatch`) آن‌ها را حساب نمی‌کند، پس
+# اینجا فقط *منتقل* می‌شوند: هیچ فرمولِ دومی درِ این فایل نساخته می‌شود — رأیِ
+# مالک (۱۴۰۵-۰۷-۲۲) «حجمِ مشکوک / ورودِ پول / کد به کد» را درِ این جدول هم
+# می‌خواهد، نه درِ تبِ تابلو تنها.
+TAPE_FLAG_KEYS = ("f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh", "f_smart", "f_legal")
+
+
+def _tape_flag_map() -> dict:
+    """نماد → پرچم‌ها. `{}` یعنی منبع نرسید — با «پرچمی ندارد» یکی نیست."""
+    try:
+        from api.funnel import _board_rows
+        rows = _board_rows() or []
+    except Exception:
+        return {}
+    out: dict = {}
+    for r in rows:
+        key = _FE.norm_symbol(r.get("symbol"))
+        if not key or key in out:
+            continue
+        out[key] = {k: bool(r.get(k)) for k in TAPE_FLAG_KEYS}
+    return out
+
+
+def _attach_tape_flags(payload):
+    if not isinstance(payload, dict) or payload.get("status") != "ok":
+        return payload
+    flags = _tape_flag_map()
+    if not flags:
+        payload["tape_flags_source"] = "unavailable"
+        return payload
+    for r in (payload.get("rows") or []):
+        r["tape_flags"] = flags.get(_FE.norm_symbol(r.get("symbol")))
+    payload["tape_flags_source"] = "api/market"
+    return payload
+
+
+def _mainwatch_with_flags(conn, group, industry, sort, desc, limit):
+    return _attach_tape_flags(_mstat.mainwatch(conn, group, industry, sort, desc, limit))
+
+
 @router.get("/api/mstat/summary")
 def mstat_summary():
     """گام ۱ — جدول نه‌سطری خلاصهٔ معاملات خرد + برچسب سلامت کلان."""
@@ -123,7 +166,7 @@ def mstat_mainwatch(group: str = Query("eq_all"), industry: str = Query(""),
                     sort: str = Query("clock"), desc: bool = Query(True),
                     limit: int = Query(120)):
     """گام ۵.۲ — تابلوی نمادها؛ ستونِ اختلاف آخرین/پایانی مرتب‌شدنی است."""
-    return _mstat_call(_mstat.mainwatch, group, industry, sort, desc, limit)
+    return _mstat_call(_mainwatch_with_flags, group, industry, sort, desc, limit)
 
 @router.get("/api/mstat/industries")
 def mstat_industries():
@@ -170,7 +213,7 @@ def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
                 "histogram": _mstat.histogram(conn, group),
                 "depth": _mstat.depth(conn, group),
                 "clientsplit": _mstat.client_split(conn, "all"),
-                "mainwatch": _mstat.mainwatch(conn, group, "", "clock", True, limit),
+                "mainwatch": _mainwatch_with_flags(conn, group, "", "clock", True, limit),
                 "industries": _mstat.industries(conn),
                 "smartmoney": _mstat.smart_money(conn),
                 "timeline": _mstat.timeline(conn, "cum"),
