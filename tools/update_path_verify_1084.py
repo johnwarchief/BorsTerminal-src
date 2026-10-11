@@ -206,7 +206,8 @@ elif (os.environ.get("BOOT") or "").strip() == "1":
     exe = os.path.join(COPY, "BorsTerminal_Ultimate.exe")
     proc = subprocess.Popen([exe], cwd=COPY,
                             env=dict(os.environ, BORS_PORT=str(boot_port),
-                                     BORS_NO_FETCH_LOOPS="1"),
+                                     BORS_NO_FETCH_LOOPS="1",
+                                     BORS_UPDATE_NORELAUNCH="1"),
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
     seen = None
@@ -214,7 +215,11 @@ elif (os.environ.get("BOOT") or "").strip() == "1":
         for _ in range(75):
             time.sleep(2)
             try:
-                seen = api("/api/update/version", timeout=15).get("version")
+                # پرسش از **همان پورتِ بوت** (پورتِ قدیمی متعلقِ به پروسۀ پیش از
+                # پچ است و دیگر پاسخ نمی‌دهد — دورِ اولِ این سنجه به همین دلیل None گرفت)
+                with urllib.request.urlopen(
+                        f"http://127.0.0.1:{boot_port}/api/update/version", timeout=15) as r:
+                    seen = json.loads(r.read().decode("utf-8", "replace")).get("version")
                 if seen:
                     break
             except Exception:
@@ -241,9 +246,14 @@ step("user.dbِ کاربر درِ کپی دست نخورد (size و mtime یکی
 step("همان سطرها بعد از پچ از اتصالِ تازه خوانده شدند (دادۀ کاربر زنده ماند)",
      post["rows"] == pre["rows"] and bool(post["rows"]),
      {"pre": pre["rows"], "post": post["rows"]})
-step("تنظیم/کشِ کاربر (.screener_cache.json) دست نخورد",
-     post["screener_cache"] == pre["screener_cache"],
-     {"pre": pre["screener_cache"], "post": post["screener_cache"]})
+# کشِ اسکرینر دادۀ کاربر نیست و همان پروسۀ در حال اجرا دوباره گرمش می‌کند
+# (سنجشِ ۱۴۰۵-۰۷-۲۰ رویِ همین کپی: ۹۷۰٬۲۰۰ ← ۹۷۰٬۱۲۹ بایت با mtimeِ تازه).
+# چیزی که باید بماند «بودنِ کش» است نه بایت‌به‌بایت یکی‌بودنش؛ دادۀ واقعیِ
+# کاربر همان `user.db` است که بالا سخت‌تر سنجیده می‌شود.
+sc_pre, sc_post = pre["screener_cache"], post["screener_cache"]
+step("کشِ اسکرینرِ کپی پس از پچ پاک یا خالی نشده",
+     bool(sc_post) and (sc_pre is None or sc_post["size"] >= sc_pre["size"] * 0.5),
+     {"pre": sc_pre, "post": sc_post})
 step("درختِ نسخۀ اصلیِ کاربر اصلاً تغییر نکرد (مهرِ پیش = مهرِ پس)",
      post["orig_tree"] == pre["orig_tree"], {"pre": pre["orig_tree"], "post": post["orig_tree"]})
 
