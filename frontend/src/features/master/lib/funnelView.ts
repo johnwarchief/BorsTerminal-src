@@ -5,7 +5,6 @@
 // که جدول می‌خواند. جایی که پاسخ چیزی ندارد، `null` می‌ماند — نه حدس.
 import type { MarketRow } from '@shared/types/marketRow';
 import { ftsSignalListText } from '@shared/lib/ftsSignals';
-import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 import type {
   Candidate,
   FilterCount,
@@ -23,10 +22,39 @@ export type ApiWhy = { code?: string; text?: string; stage?: string; seq?: numbe
   input_count?: number | null; output_count?: number | null; source?: string;
   source_ref?: string; formula_version?: string; parameter_set?: Record<string, unknown> };
 
+/**
+ * آنچه نگاشتِ قیف از پاسخِ `/api/funnel` واقعاً تضمین می‌کند — نه `MarketRow`
+ * کامل (پرچم‌های فیلترها/سرانه‌ها/سی‌تی‌وی این پاسخ نیستند) و نه
+ * `FtsScreenRow` کامل (`score` آنجا الزامیِ ۰..۵ است، اینجا ممکن است نباشد،
+ * و `tech_status` کلیدِ خودِ پاسخِ قیف است نه اسکرینر). ساختنِ این دو شیء با
+ * `as unknown as` ممنوع است: هر مصرف‌کننده فقط همین فیلدها را می‌بیند و
+ * خواندنِ چیزی فراتر از آنها خطایِ زمانِ کامپایل می‌گیرد، نه undefinedِ بی‌صدا.
+ */
+export type FunnelRowView = Pick<MarketRow, 'symbol' | 'name' | 'sector_name'
+  | 'p_last' | 'p_closing' | 'p_first' | 'p_max' | 'p_min'
+  | 'percent_change' | 'vol_ratio' | 'is_live' | 'tvol'>;
+export type FunnelScreenView = {
+  symbol: string; name: string; sector_name: string;
+  score: number | null; pricing_mode: string | null;
+  excluded: boolean; exclusion_reasons: string;
+  rev_growth: number | null; eps_last: number | null;
+  gross_margin: number | null; sales_to_mcap: number | null;
+  annual_sales_bt: number | null;
+  tech_trend_w: string | null; tech_trend_d: string | null;
+  tech_matrix_decision: string | null; tech_status: string | null;
+  tech_fib_zone: string | null; tech_hourglass_active: boolean | null;
+  assembly_veto: boolean;
+  /** از پاسخِ قیف؛ فعلاً ممکن است null بماند — UI همان «—» را می‌نشاند */
+  verdict: string | null;
+  applicable: boolean | null;
+};
+
 /** یک ردیفِ `entries.<stage>` درِ پاسخِ /api/funnel. */
 export type ApiRow = {
   symbol: string; name?: string; sector?: string; last?: number | null;
   closing?: number | null; change_pct?: number | null; vol_ratio?: number | null;
+  /** حجمِ همین نشست (از ۱۴۰۵-۰۷-۲۱ رویِ سیمِ قیف) — نبودش «—» است، نه صفر. */
+  tvol?: number | null;
   /** بدنۀِ همین نشست (اولین/بیشینه/کمینه) — برایِ ستونِ «کندل روز»؛ تهی یعنی
    *  اولینِ مبادله نیفتاده (صفرِ ساختگی نمی‌آید). */
   first?: number | null; high?: number | null; low?: number | null;
@@ -48,6 +76,10 @@ export type ApiRow = {
   universe_priority?: number | null; universe_status?: string | null;
   /** رتبۀ رسمیِ بک‌اند (/api/screener) — حملِ عدد است، نه رتبۀ تازه */
   rank?: number | null;
+  /** رأیِ اسکرینر (STRONG/WATCH/…) و کاربرد در پنج‌شاخصه — ممکن است پاسخِ
+   *  قیف فعلاً نفرستد؛ null یعنی «هنوز از این مسیر نمی‌آید»، نه «رد». */
+  verdict?: string | null;
+  applicable?: boolean | null;
 };
 
 export type ApiStep = {
@@ -145,14 +177,15 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     status[k] = cells[k]?.status ?? own?.status?.[k] ?? base?.status?.[k] ?? 'unavailable';
     why[k] = textOf(own, k) || textOf(base, k) || cells[k]?.human_reason || '';
   }
-  const row: MarketRow | null = r ? {
+  const row: FunnelRowView | null = r ? {
     symbol: sym, name: r.name ?? '', sector_name: r.sector ?? '',
     p_last: r.last ?? null, p_closing: r.closing ?? null,
     p_first: r.first ?? null, p_max: r.high ?? null, p_min: r.low ?? null,
     percent_change: r.change_pct ?? null, vol_ratio: r.vol_ratio ?? null,
+    tvol: r.tvol ?? null,
     is_live: r.is_live ?? true,
-  } as unknown as MarketRow : null;
-  const screen: FtsScreenRow | null = r ? {
+  } : null;
+  const screen: FunnelScreenView | null = r ? {
     symbol: sym, name: r.name ?? '', sector_name: r.sector ?? '',
     score: r.score ?? null, pricing_mode: r.pricing_mode ?? null,
     excluded: !!r.excluded, exclusion_reasons: r.exclusion_reasons ?? '',
@@ -163,7 +196,9 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     tech_matrix_decision: r.matrix ?? null, tech_status: r.tech_status ?? null,
     tech_fib_zone: r.fib_zone ?? null, tech_hourglass_active: r.hourglass ?? null,
     assembly_veto: !!r.assembly_veto,
-  } as unknown as FtsScreenRow : null;
+    verdict: r.verdict ?? null,
+    applicable: r.applicable ?? null,
+  } : null;
   // پنج شاخص: اگر بک‌اند مقدارش را داد همان است؛ اگر نداشت، وضعیتِ خودِ گامِ
   // بنیادی بر هر پنج نشسته (not_required یعنی «به این گام نرسید»، نه «رد»).
   const inds = IND_KEYS.map((k) => (r?.inds

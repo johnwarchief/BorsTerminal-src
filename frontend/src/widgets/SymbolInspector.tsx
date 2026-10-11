@@ -476,22 +476,28 @@ export function SymbolInspector() {
             <span className="flex items-baseline gap-1 text-text-muted">
               اولین
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-first"
-                    title={rawRow?.p_first ? fmtInt(rawRow.p_first) : 'اولینِ مبادله هنوز ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_first ? fmtInt(rawRow.p_first) : '—'}
+                    title={rawRow?.p_first != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ اولین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_first != null && rawRow.p_first > 0 ? fmtInt(rawRow.p_first) : '—'}
               </span>
             </span>
             <span className="flex items-baseline gap-1 text-text-muted">
               بیشینه
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-max"
-                    title={rawRow?.p_max ? fmtInt(rawRow.p_max) : 'بیشترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_max ? fmtInt(rawRow.p_max) : '—'}
+                    title={rawRow?.p_max != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ بیشینه در پاسخِ تابلو نیست'}>
+                {rawRow?.p_max != null && rawRow.p_max > 0 ? fmtInt(rawRow.p_max) : '—'}
               </span>
             </span>
             <span className="flex items-baseline gap-1 text-text-muted">
               کمینه
               <span className="num font-bold text-text-secondary" data-testid="inspector-p-min"
-                    title={rawRow?.p_min ? fmtInt(rawRow.p_min) : 'کمترینِ همین نشست ثبت نشده یا درِ پاسخ نیست'}>
-                {rawRow?.p_min ? fmtInt(rawRow.p_min) : '—'}
+                    title={rawRow?.p_min != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ کمینه در پاسخِ تابلو نیست'}>
+                {rawRow?.p_min != null && rawRow.p_min > 0 ? fmtInt(rawRow.p_min) : '—'}
               </span>
             </span>
           </div>
@@ -542,7 +548,7 @@ export function SymbolInspector() {
             <span className="num text-[11px] font-bold text-text-primary"
                   title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
                          + `${rawRow?.is_live === false ? 'آخرینِ نشستِ تابلو' : 'نشستِ جاریِ تابلو'}`}>
-              {rawRow?.mcap ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
+              {rawRow?.mcap != null ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
             </span>
             <span className="text-[9px] text-text-muted">I4</span>
             {(() => {

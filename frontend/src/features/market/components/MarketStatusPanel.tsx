@@ -14,7 +14,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
 import type { MarketFeed } from '@shared/types/marketRow';
 import { computeFeedStatus } from '@shared/lib/feedFreshness';
-import { isMarketOpen } from '@shared/lib/marketHours';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useLiveStats } from '../api/useLiveStats';
 
@@ -113,7 +112,9 @@ export function MarketStatusPanel() {
   // می‌شود و همان دروغِ «لحظاتی پیش» رویِ دادهٔ نودوچهار دقیقه یخ‌زده تکرار می‌شود.
   const cycleAtMs = parseLocalStamp(d.last_cycle_at ?? feed.lastSync);
   const cycleAgoMs = cycleAtMs == null ? null : Math.max(0, now - cycleAtMs);
-  const marketOpenBackend = win.market_open ?? isMarketOpen(new Date(now));
+  // حدسِ محلی حذف شد (مأموریت P0): اگر بک‌اند پنجره را نفرستاد، «نامعلوم» می‌ایستد
+  // — همان‌طور که ردیفِ بازِ جزئیات (:۱۹۷) از قبل می‌گفت؛ تراشه دیگر خلافِ آن عدد نمی‌دهد.
+  const marketOpenBackend: boolean | null = win.market_open ?? null;
   const stalledByServer = typeof tick.cooldown_remaining_s === 'number'
     && tick.cooldown_remaining_s > 0;
 
@@ -138,9 +139,12 @@ export function MarketStatusPanel() {
         </button>
         <Chip
           label="بازار"
-          value={marketOpenBackend ? 'باز' : 'بسته'}
-          tone={marketOpenBackend ? 'text-accent-green' : 'text-text-muted'}
-          title="پنجرۀ معاملۀ تابلو از خودِ بک‌اند (۰۸:۴۵–۱۲:۳۰ تهران)"
+          value={marketOpenBackend == null ? 'نامعلوم' : marketOpenBackend ? 'باز' : 'بسته'}
+          tone={marketOpenBackend == null ? 'text-accent-yellow'
+            : marketOpenBackend ? 'text-accent-green' : 'text-text-muted'}
+          title={marketOpenBackend == null
+            ? 'پنجره از بک‌اند نیامد — حدسِ ساعتِ محلی عمداً گذاشته نشده است'
+            : 'پنجرۀ معاملۀ تابلو از خودِ بک‌اند (۰۸:۴۵–۱۲:۳۰ تهران)'}
         />
         <Chip
           label="اتصال"
@@ -164,9 +168,9 @@ export function MarketStatusPanel() {
         />
         <Chip
           label="ویرایش"
-          value={toFaDigits(feed.rev ?? 0)}
+          value={feed.rev == null ? '—' : toFaDigits(feed.rev)}
           tone="text-text-secondary"
-          title={`ردیفِ نشستِ جاری: ${toFaDigits(feed.liveCount ?? 0)} از ${toFaDigits(feed.total ?? 0)}`}
+          title={`ردیفِ نشستِ جاری: ${feed.liveCount == null ? '—' : toFaDigits(feed.liveCount)} از ${feed.total == null ? '—' : toFaDigits(feed.total)}`}
         />
         {stalledByServer ? (
           <Chip
@@ -200,12 +204,12 @@ export function MarketStatusPanel() {
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="font-black text-text-primary">حلقۀ تیک</span>
-            <span>چرخه‌ها: {toFaDigits(d.cycles ?? 0)} · بدونِ تغییر: {toFaDigits(d.nochange_cycles ?? 0)}</span>
+            <span>چرخه‌ها: {d.cycles == null ? '—' : toFaDigits(d.cycles)} · بدونِ تغییر: {d.nochange_cycles == null ? '—' : toFaDigits(d.nochange_cycles)}</span>
             <span>مدتِ آخرین چرخه: {tick ? fmtSec(d.last_cycle_s ?? null) : '—'}</span>
             <span className="num">گوش‌دادن: {tick.listening ? 'بله' : 'نه'} ·
               بی‌تغییری: {fmtSec(tick.since_change_s ?? null)}</span>
-            <span className="num">درخواست‌های خنک‌شده: {toFaDigits(tick.cooldown_level ?? 0)} ·
-              آویزان بیش از ۱۰s: {toFaDigits(tick.cycle?.slow_over_10s ?? 0)}</span>
+            <span className="num">درخواست‌های خنک‌شده: {tick.cooldown_level == null ? '—' : toFaDigits(tick.cooldown_level)} ·
+              آویزان بیش از ۱۰s: {tick.cycle?.slow_over_10s == null ? '—' : toFaDigits(tick.cycle.slow_over_10s)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="font-black text-text-primary">جهانِ نمادها</span>

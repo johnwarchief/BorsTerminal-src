@@ -45,7 +45,6 @@ export interface AdjustmentCapability {
   functionalAvailable: boolean;
   /** دلیلِ human-readableِ نبودِ تعدیلِ عملکردی (متنِ سرور، بی‌بازنویسی) */
   functionalReason: string;
-  eventCount: number;
 }
 
 const UNKNOWN_CAPABILITY: AdjustmentCapability = {
@@ -53,7 +52,6 @@ const UNKNOWN_CAPABILITY: AdjustmentCapability = {
   combinedAvailable: false,
   functionalAvailable: false,
   functionalReason: 'پاسخِ سرور بلوکِ تواناییِ تعدیل ندارد؛ تعدیلِ رویداد تأیید نشده است.',
-  eventCount: 0,
 };
 
 /**
@@ -70,7 +68,6 @@ export function readAdjustmentCapability(raw: unknown): AdjustmentCapability {
     combinedAvailable: c.combined_available === true,
     functionalAvailable: c.functional_available === true,
     functionalReason: String(c.functional_reason ?? UNKNOWN_CAPABILITY.functionalReason),
-    eventCount: Number(c.event_count ?? 0) || 0,
   };
 }
 

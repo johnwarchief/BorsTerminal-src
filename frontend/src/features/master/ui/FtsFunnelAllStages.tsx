@@ -941,8 +941,9 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
                   {e.symbol}
                 </button>
                 <span className="min-w-0 truncate text-text-muted">{e.name}</span>
-                <span className="num ms-auto shrink-0 text-text-secondary">
-                  {e.last ? fmtInt(e.last) : '—'}
+                <span className="num ms-auto shrink-0 text-text-secondary"
+                      title={e.last != null && e.last <= 0 ? 'صفرِ واقعی: مبادله‌ای ثبت نشده' : undefined}>
+                  {e.last != null ? fmtInt(e.last) : '—'}
                 </span>
                 <span className="max-w-[46ch] shrink-0 truncate text-text-muted"
                       title={e.humanReason}>

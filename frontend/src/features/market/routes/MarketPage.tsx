@@ -11,7 +11,7 @@ import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetTyp
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
-import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
+import { countHiddenMatches, countQuickMatches, countUnevaluated, MarketFilters } from '../components/MarketFilters';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 
@@ -148,6 +148,16 @@ export default function MarketPage() {
     [filterBase, tapeFilterConfig],
   );
 
+  // چند ردیف هر فیلتر رویشان اجرا نشده (مأموریت P0) — فقط در تولتیپِ چیپ می‌آید.
+  const quickUnevaluated = useMemo(
+    () =>
+      countUnevaluated(
+        filterBase as unknown as Parameters<typeof countUnevaluated>[0],
+        tapeFilterConfig,
+      ),
+    [filterBase, tapeFilterConfig],
+  );
+
   const filtered = useMemo(
     () =>
       quickFilters.length === 0
@@ -219,6 +229,7 @@ export default function MarketPage() {
         sectors={sectors}
         matches={quickMatches}
         hiddenInfo={hiddenInfo}
+        unevaluated={quickUnevaluated}
         shown={filtered.length}
         total={rows.length}
         pollMs={refetchIntervalMs}

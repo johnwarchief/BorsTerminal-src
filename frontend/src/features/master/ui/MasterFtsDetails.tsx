@@ -110,7 +110,7 @@ export function MasterFtsDetails({
       <Section id="details-fundamental" title="F — بنیادی" mark={MARK[candidate?.status.fundamental ?? 'unavailable'].icon}>
         <p>
           رأیِ موتور: <b>{SCREEN_VERDICT_FA[sc?.verdict ?? ''] ?? sc?.verdict ?? '—'}</b>
-          {sc ? ` · نمره: ${toFaDigits(sc.score)} از ۵` : ''}
+          {sc && sc.score != null ? ` · نمره: ${toFaDigits(sc.score)} از ۵` : ''}
         </p>
         <p>{candidate?.why.fundamental || 'دلیلِ ثبت‌شده‌ای برایِ بنیادی نیست'}</p>
         {sc?.excluded ? <p>خارج از صف: {sc.exclusion_reasons ?? 'بدونِ علتِ ثبت‌شده'}</p> : null}
