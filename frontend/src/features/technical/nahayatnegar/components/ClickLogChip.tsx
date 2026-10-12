@@ -42,7 +42,7 @@ export function ClickLogChip({ symbol }: { symbol: string }) {
       {open ? (
         <div
           data-testid="chart-click-list"
-          title="کلیک‌هایِ این نشست و نشست‌هایِ پیش — از لاگِ محلیِ همین برنامه"
+          title="کلیک‌هایِ این اجرا و اجراهایِ پیش — از لاگِ محلیِ همین برنامه"
           style={{
             position: 'absolute',
             bottom: '26px',

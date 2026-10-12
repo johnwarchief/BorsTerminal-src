@@ -56,7 +56,7 @@ export default function MarketStatusPage() {
       </div>
 
       <div className="glass-panel flex min-w-0 flex-col gap-2 rounded-xl border border-border-c p-2.5">
-        <h3 className="text-2xs font-black text-text-primary">نمودارهای درون‌روزِ همین نشست</h3>
+        <h3 className="text-2xs font-black text-text-primary">نمودارهای درون‌روزیِ همین روز معاملاتی</h3>
         <TimelineCharts />
       </div>
 

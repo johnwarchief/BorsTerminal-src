@@ -474,7 +474,7 @@ export function FtsCard({
                       </div>
 
                       {!physicalApplicable ? (
-                        <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود</span>
+                        <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد؛ بنابراین این شاخص برای آن کاربرد ندارد</span>
                       ) : (
                         <>
                           <div className="flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5">
@@ -560,8 +560,8 @@ export function FtsCard({
                 >
                   {i2?.na === true
                     ? i2?.consolidated_used
-                      ? 'N/A (تلفیقی)'
-                      : 'N/A'
+                      ? 'کاربرد ندارد (مبنایِ تلفیقی)'
+                      : 'کاربرد ندارد'
                     : epsRising
                       ? `${toFaDigits(epsYearsReq)} سالِ رشد`
                       : epsYears
@@ -746,8 +746,8 @@ export function FtsCard({
               );
               benchmarkHint =
                 potFloor == null
-                  ? 'کفِ پتانسیل از بک‌اند نرسید'
-                  : `کفِ پتانسیل سود ${toFaDigits(potFloor)}٪ از ارزش بازار`;
+                  ? 'حداقل معیار پتانسیل از سرور دریافت نشد'
+                  : `حداقل معیار پتانسیل سود: ${toFaDigits(potFloor)}٪ از ارزش بازار`;
             } else if (key === '5_industry') {
               const indLabel =
                 industryMode !== undefined
@@ -818,7 +818,7 @@ export function FtsCard({
                       data-testid={`fts-cell-gap-${key}`}
                       className="shrink-0 text-3xs leading-snug text-text-muted"
                     >
-                      {axisNa ? 'N/A' : gapLabel(key)}
+                      {axisNa ? 'کاربرد ندارد' : gapLabel(key)}
                     </span>
                   ) : null}
                 </div>

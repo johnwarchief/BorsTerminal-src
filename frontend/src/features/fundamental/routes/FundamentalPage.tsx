@@ -272,7 +272,7 @@ export default function FundamentalPage() {
         <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ</h3>
-            <Badge tone="yellow">N/A</Badge>
+            <Badge tone="yellow">قابل ارزیابی نیست</Badge>
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
             این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛

@@ -59,7 +59,7 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   // سرستون افقی اسکرول می‌خورد.
   { key: 'symbol', label: 'نماد' },
   { key: 'p_last', label: 'آخرین' },
-  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین نشست (p_closing)' },
+  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین روز معاملاتی (p_closing)' },
   // اختلافِ آخرین تا پایانی بغلِ پایانی نشسته (#194): هر دو ستونِ یک مقایسه‌اند
   // — «آخرین» و «پایانی» و «فاصلۀ این دو» — و جدا از هم خوانده نمی‌شوند.
   {
@@ -358,7 +358,7 @@ export function TapeTable({
       );
     }
     if (isLoading) {
-      return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین نشستِ داده کمی طول می‌کشد" />;
+      return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین دریافتِ داده کمی طول می‌کشد" />;
     }
     return (
       <EmptyState

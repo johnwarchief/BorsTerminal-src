@@ -234,7 +234,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                   </td>
                   <td className={TD}>
                     <span className={`text-2xs font-bold ${st.tone}`} title={st.title}>{st.text}</span>
-                    {row && row.is_live === false ? <span className="ms-1 text-3xs text-accent-yellow" title="قیمت‌ها آخرینِ نشستِ بسته‌شده است">آخرینِ نشست</span> : null}
+                    {row && row.is_live === false ? <span className="ms-1 text-3xs text-accent-yellow" title="قیمت‌ها از آخرین روز معاملاتیِ بسته‌شده است">آخرین داده</span> : null}
                   </td>
                   <td className={TD}>
                     <PillarCell row={mtx.get(normalizeFa(symbol))} pillar="tech" pending={matrixPending} />

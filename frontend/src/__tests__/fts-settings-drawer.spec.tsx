@@ -175,7 +175,7 @@ describe('پنل تنظیمات FTS', () => {
     expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument();
     expect(screen.getByText('همه صنایع')).toBeInTheDocument();
     expect(screen.getByText('حذف نمادهای مشمول تعلیق')).toBeInTheDocument();
-    expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument();
+    expect(screen.getByText('بازگردانی تنظیمات به پیش‌فرض FTS')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('ذخیرهٔ پیش‌شرط‌ها')).toBeInTheDocument();
     });
@@ -279,8 +279,8 @@ describe('پنل تنظیمات FTS', () => {
 
   it('Reset پیش‌فرض‌های جزوه را می فرستد و اسلایدرها را بازنشانی می کند', async () => {
     renderDrawer();
-    await waitFor(() => expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('بازگشت به مقادیر جزوه'));
+    await waitFor(() => expect(screen.getByText('بازگردانی تنظیمات به پیش‌فرض FTS')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('بازگردانی تنظیمات به پیش‌فرض FTS'));
     await waitFor(() => {
       const post = fetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
       expect(post).toBeDefined();
@@ -328,7 +328,7 @@ describe('پنل تنظیمات FTS', () => {
     // متن‌ها باید بتوانند بشکنند تا در عرض ۳۲۰px کشو کات نشوند
     const label = screen.getByText('حذف نمادهای مشمول تعلیق');
     expect(label.className).toContain('break-words');
-    const hint = screen.getByText('نماد با ۳ نشست عقب‌مانده از تابلو');
+    const hint = screen.getByText('نماد با ۳ روز معاملاتی عقب‌ماندگی از تابلو');
     expect(hint.className).toContain('break-words');
     // ظرف متن flex-1 + min-w-0 دارد تا عرض مؤثر بگیرد
     const textCol = label.parentElement;
@@ -461,8 +461,8 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
 
   it('Reset مقادیر سند v2.1 را برمی‌گرداند (پوشش ۴۰٪ و دروازه‌های سخت پیش‌فرض)', async () => {
     renderDrawer();
-    await waitFor(() => expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('بازگشت به مقادیر جزوه'));
+    await waitFor(() => expect(screen.getByText('بازگردانی تنظیمات به پیش‌فرض FTS')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('بازگردانی تنظیمات به پیش‌فرض FTS'));
     const body = await lastPosted();
     expect(body.profit_potential_min).toBe(40);
     expect(body.v10_potential_min).toBe(40);

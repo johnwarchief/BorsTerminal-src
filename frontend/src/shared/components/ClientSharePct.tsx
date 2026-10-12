@@ -32,7 +32,7 @@ function pctText(v: number | null | undefined): string | null {
 function unknownReason(row: ClientShareFields): string {
   if (row.pct_basis == null && row.ctv_d == null) {
     return 'ارزشِ خرید و فروشِ حقیقی و حقوقی برایِ این نماد منتشر نشده است. '
-      + 'TSETMC مبدأِ ارزش را پس از پایانِ نشست می‌دهد و ما هرگز از ضربِ حجم در '
+      + 'TSETMC مبدأِ ارزش را پس از پایانِ روز معاملاتی می‌دهد و ما هرگز از ضربِ حجم در '
       + 'قیمت نمی‌سازیم؛ پس «نامشخص» خوانده می‌شود، نه صفر.';
   }
   return 'ارزشِ مبدأ برایِ این نماد کامل نیست (یک گروه عدد ندارد)، پس سهمِ آن '
@@ -42,8 +42,8 @@ function unknownReason(row: ClientShareFields): string {
 function sessionNote(row: ClientShareFields): string {
   const d = dEvenToJalali(row.ctv_d);
   if (!d) return '';
-  if (row.pct_is_current === 1) return ` — از نشستِ همان روزِ تابلو (${d})`;
-  return ` — از نشستِ ${d}؛ TSETMC ارزشِ گروه‌ها را برایِ نشستِ جاری هنوز منتشر نکرده`;
+  if (row.pct_is_current === 1) return ` — از همان روزِ تابلو (${d})`;
+  return ` — از ${d}؛ TSETMC ارزشِ گروه‌ها را برای روزِ جاری هنوز منتشر نکرده`;
 }
 
 function SideRow({

@@ -83,7 +83,7 @@ export function rejectReasons(
     volPct != null && vol?.threshold != null
       ? `رشد تولیدی ${pct(volPct)} — کف ${fa(vol.threshold)}٪` +
         (vol?.price_benchmark_pct != null ? ` (مبنای تورم ${fa(vol.price_benchmark_pct)}٪)` : '')
-      : why(vol?.reason) ?? 'رشد تولیدی به کف نرسید',
+      : why(vol?.reason) ?? 'رشد تولیدی به حد تعیین‌شده نرسیده است',
     why(vol?.reason) ?? 'رشد تولیدی سنجیده نشد',
   );
   // «۳ از ۳ سال» علتِ رد نیست — فقط می‌گوید چند سال در دسترس بوده؛ تنها وقتی
@@ -91,20 +91,20 @@ export function rejectReasons(
   const i2Short =
     i2?.years_available != null && i2?.years_required != null &&
     i2.years_available < i2.years_required
-      ? `سابقۀ EPS کامل نیست — ${fa(Math.min(i2.years_available, i2.years_required), 0)} از ${fa(i2.years_required, 0)} سال`
+      ? `سابقۀ سود هر سهم (EPS) کامل نیست — ${fa(Math.min(i2.years_available, i2.years_required), 0)} از ${fa(i2.years_required, 0)} سال`
       : null;
   push(
     '2_eps_trend',
     passes['2_eps_trend'],
-    i2Short ?? why(i2?.reason) ?? 'روند سه‌سالۀ EPS صعودیِ متوالی نیست',
-    i2Short ?? why(i2?.reason) ?? 'سابقۀ EPS کامل نیست',
+    i2Short ?? why(i2?.reason) ?? 'سود هر سهم در هر سه سال پیاپی افزایش نداشته است',
+    i2Short ?? why(i2?.reason) ?? 'سابقۀ سود هر سهم (EPS) در کدال کامل نیست',
   );
   push(
     '3_gross_margin',
     passes['3_gross_margin'],
     i3?.margin_pct != null && i3?.threshold != null
       ? `حاشیۀ ناخالص ${fa(i3.margin_pct)}٪ — کف ${fa(i3.threshold)}٪`
-      : why(i3?.reason) ?? 'حاشیۀ سود ناخالص زیرِ کف است',
+      : why(i3?.reason) ?? 'حاشیۀ سود ناخالص کمتر از حد تعیین‌شده است',
     why(i3?.reason) ?? 'حاشیۀ ناخالص سنجیده نشد',
   );
   push(
@@ -112,7 +112,7 @@ export function rejectReasons(
     passes['4a_sales_to_mcap'],
     i4?.sales_to_mcap != null && i4?.sales_threshold != null
       ? `نسبت فروش به ارزش بازار ${fa(i4.sales_to_mcap, 2)}× — کف ${fa(i4.sales_threshold, 2)}×`
-      : why(i4?.reason) ?? 'نسبت فروش به ارزش بازار زیرِ کف است',
+      : why(i4?.reason) ?? 'نسبت فروش سالانه به ارزش بازار کمتر از حد تعیین‌شده است',
     why(i4?.reason) ?? 'نسبت فروش سنجیده نشد',
   );
   push(
@@ -120,7 +120,7 @@ export function rejectReasons(
     passes['4b_profit_potential'],
     i4?.potential_pct != null && i4?.potential_threshold != null
       ? `پتانسیل سود ${fa(i4.potential_pct)}٪ — کف ${fa(i4.potential_threshold)}٪`
-      : why(i4?.reason) ?? 'پتانسیل سود به کف نرسید',
+      : why(i4?.reason) ?? 'پتانسیل سود برآوردشده به حد تعیین‌شده نرسیده است',
     why(i4?.reason) ?? 'پتانسیل سود سنجیده نشد',
   );
   push(
@@ -128,8 +128,8 @@ export function rejectReasons(
     passes['5_industry'],
     // موتور برای این محور عددی ندارد؛ آنچه می‌فرستد خودِ برچسبِ رژیم است
     // («قیمت‌گذاری دستوری» / «خنثی — نیازمند بررسی موردی»). همان نوشته می‌شود.
-    why(i5?.label) ?? 'رژیم قیمت‌گذاری صنعت دستوری است',
-    why(i5?.label) ?? 'رژیم قیمت‌گذاری صنعت نامعلوم است',
+    why(i5?.label) ?? 'قیمت‌گذاری در این صنعت دستوری است',
+    why(i5?.label) ?? 'نوع قیمت‌گذاری این صنعت مشخص نیست',
   );
   return order.map((label) => {
     const b = buckets.get(label) as { details: string[]; hardFail: boolean };

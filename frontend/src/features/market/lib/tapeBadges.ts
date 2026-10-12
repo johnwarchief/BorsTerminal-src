@@ -60,7 +60,7 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
       tone: goldenHour ? 'amber' : 'violet',
       label: 'ساعت',
       title:
-        `الگوی ساعت: پایانی بالاتر از آخرین${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
+        `الگوی ساعت: آخرین معامله بالاتر از قیمت پایانی${diff != null ? ` · اختلاف آخرین و پایانی: ${fmtPct(diff * 100)}` : ''}`
         + (strongHour ? ` · ${STRONG_HOUR_LABEL} — ${STRONG_CLOCK_HINT}` : ''),
       filter: true,
     });
@@ -72,7 +72,9 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
       label: 'ساعت قوی',
       title:
         `${STRONG_HOUR_LABEL} — ${STRONG_CLOCK_HINT}`
-        + (diff != null ? ` · دلتا: ${fmtPct(diff * 100)}` : ''),
+        + (diff != null
+          ? ` · دلتا (اختلاف قیمت آخرین معامله و پایانی): ${fmtPct(diff * 100)}`
+          : ''),
       filter: false,
     });
   } else if (goldenHour) {
@@ -104,7 +106,7 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
     out.push({ key: 'sweep', pattern: 'sweep', tone: 'emerald', label: 'کف‌روب', title: `کف‌روب: ${SWEEP_HINT}`, filter: true });
   }
   if (tapeFilterVerdict(row, 'f_noqteh', cfg)) {
-    out.push({ key: 'noqteh', pattern: 'noqteh', tone: 'amber', label: 'نقطه', title: 'نقطه‌زنی: فاصله نزدیک از کف ۳۰ روزه', filter: true });
+    out.push({ key: 'noqteh', pattern: 'noqteh', tone: 'amber', label: 'نقطه', title: 'نقطه‌زنی: قیمت به کف ۳۰ روز اخیر نزدیک است', filter: true });
   }
   // دو فیلترِ تازۀ فایل — داوری‌شان عیناً پرچمِ بک‌اند است (case پیش‌فرضِ
   // tapeFilterVerdict)، هیچ فرمولِ دوم درِ رابط نیست.
@@ -115,7 +117,7 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
       tone: 'cyan',
       label: 'پول هوشمند',
       title:
-        `ورود پول هوشمند: حجم ${row.vol_ratio_file != null ? toFaDigits(row.vol_ratio_file.toFixed(2)) : '—'}× مبنای ۳۰ نشست، سرانۀ خریدِ حقوقی ≥ فروشِ حقوقی، آخرین ≥ پایانی و درصدِ آخرین مثبت`,
+        `ورود پول هوشمند: حجم ${row.vol_ratio_file != null ? toFaDigits(row.vol_ratio_file.toFixed(2)) : '—'}× مبنای ۳۰ روز معاملاتی، سرانۀ خریدِ حقوقی ≥ فروشِ حقوقی، آخرین ≥ پایانی و درصدِ آخرین مثبت`,
       filter: true,
     });
   }
@@ -125,7 +127,9 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
       pattern: 'legal',
       tone: 'violet',
       label: 'کد به کد',
-      title: 'کد به کد حقوقی به حقیقی: پول هوشمند + خریدِ حقوقی و فروشِ حقیقی هر کدام بیش از نصفِ حجمِ نشست',
+      title:
+        'کدبه‌کد حقوقی به حقیقی: شرط پول هوشمند برقرار است و خرید حقوقی و فروش حقیقی، '
+        + 'هرکدام بیش از نیمی از حجم معاملات امروز هستند',
       filter: true,
     });
   }

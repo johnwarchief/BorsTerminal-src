@@ -103,7 +103,7 @@ export function BreadthHistogram({
         <PanelLoading testId="status-histogram" />
       ) : buckets.length === 0 ? (
         <p data-testid="status-histogram-empty" className="text-2xs text-text-muted">
-          سطلی برایِ این نشست ساخته نشده — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه بازارِ بی‌حرکت.
+          سطلی برایِ این نوبت ساخته نشده — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه بازارِ بی‌حرکت.
         </p>
       ) : (
         <>

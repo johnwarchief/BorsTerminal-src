@@ -600,7 +600,7 @@ export function fibZoneSpecs(
     out.push({
       lo: z1.lo,
       hi: z1.hi,
-      label: `پله اول ۳۳-۴۰٪ (${fmtPrice(z1.lo)} - ${fmtPrice(z1.hi)})`,
+      label: `زون اصلاح ۳۳-۴۰٪ (${fmtPrice(z1.lo)} - ${fmtPrice(z1.hi)})`,
       color: FTS_OVERLAY_COLORS.fibStep1,
       edge: FTS_OVERLAY_COLORS.fibStep1Edge,
       textColor: FTS_OVERLAY_COLORS.fibText,
@@ -611,7 +611,7 @@ export function fibZoneSpecs(
     out.push({
       lo: z2.lo,
       hi: z2.hi,
-      label: `کمربند طلایی ۶۱.۸-۷۰٪ (${fmtPrice(z2.lo)} - ${fmtPrice(z2.hi)})`,
+      label: `زون طلایی ۶۱.۸-۷۰٪ (${fmtPrice(z2.lo)} - ${fmtPrice(z2.hi)})`,
       color: FTS_OVERLAY_COLORS.fibStep2,
       edge: FTS_OVERLAY_COLORS.fibStep2Edge,
       textColor: FTS_OVERLAY_COLORS.fibText2,

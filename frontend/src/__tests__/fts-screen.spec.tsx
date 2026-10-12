@@ -189,10 +189,12 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     );
     expect(screen.getByText('ناقص')).toBeInTheDocument();
     // جای برچسب عمومی «شکاف داده»، علتِ همان شاخص نمایش داده میشود
-    expect(screen.getAllByText('گزارش ماهانهٔ کدال نیست').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('گزارش ماهانۀ فروش در کدال موجود نیست').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('سابقهٔ EPS سالانه ثبت نشده').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('سود ناخالص در کدال نیست').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('سالانه‌سازی فروش کدال ناقص').length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText('گزارش‌های ماهانه برای برآورد فروش سالانه کامل نیستند').length,
+    ).toBeGreaterThanOrEqual(1);
     // برچسب عمومی حذف شده — هیچجا «شکاف داده» نداریم
     expect(screen.queryByText('شکاف داده')).not.toBeInTheDocument();
   });
@@ -202,7 +204,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     const cell = screen.getByTestId('fts-gap-reason-1a_monetary_growth');
     // از F-06: خودِ برچسبِ علت یک بج ممیزی است و متن tooltip کوتاه روی همان بج می‌ماند
     const title = cell.getAttribute('title') ?? '';
-    expect(title).toContain('گزارش ماهانه');
+    expect(title).toContain('گزارش ماهانۀ');
     expect(title).toContain('مشابه');
     expect(title).toContain('راه‌حل');
   });

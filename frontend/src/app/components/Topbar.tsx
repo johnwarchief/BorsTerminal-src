@@ -103,9 +103,9 @@ export function Topbar() {
   );
 }
 
-/** زنگولۀِ مرکزِ اعلان — شمارۀِ ناخوانده از همان فیدِ خودِ صفحه می‌آید؛ خودِ
+/** زنگولۀِ مرکزِ اعلان — شمارۀِ خوانده‌نشده از همان فیدِ خودِ صفحه می‌آید؛ خودِ
  *  آیکون هیچ منطقِ خبری‌ای ندارد (رأیِ مالک، بند ۶: «زنگوله بی‌منبع کافی نیست»).
- *  بی‌پاسخ/خطا ⇒ بی‌شماره، نه «صفر ناخوانده» و نه انیمیشنِ هشدار. */
+ *  بی‌پاسخ/خطا ⇒ بی‌شماره، نه «صفر خوانده‌نشده» و نه انیمیشنِ هشدار. */
 function NoticeBell() {
   const feed = useNoticeFeed([], 60);
   const read = useNoticePrefsStore((st) => st.read);
@@ -115,8 +115,8 @@ function NoticeBell() {
   return (
     <Link
       to="/notifications"
-      aria-label={known ? `مرکز اعلان — ${unread} ناخوانده` : 'مرکز اعلان'}
-      title="مرکزِ اعلان: اطلاعیه‌هایِ کدال با لینکِ اصلی و دلیلِ اهمیت"
+      aria-label={known ? `اعلان‌ها — ${unread} خوانده‌نشده` : 'اعلان‌ها'}
+      title="اعلان‌ها: اطلاعیه‌های کدال همراه با پیوند اصلی و توضیح اهمیت هر مورد"
       data-testid="topbar-notifications"
       data-state={known ? 'ok' : 'unknown'}
       className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"

@@ -78,7 +78,7 @@ export function WatchMiniChart({ symbol }: { symbol: string }) {
       <div className="flex flex-wrap items-baseline gap-1.5 text-xs">
         <h4 className="font-black text-text-primary">کندلِ روزانه</h4>
         <span className="font-bold text-accent-blue">{symbol || '—'}</span>
-        <span className="num text-2xs text-text-secondary">{toFaDigits(WATCH_CHART_LAST)} نشستِ آخر</span>
+        <span className="num text-2xs text-text-secondary">آخرین {toFaDigits(WATCH_CHART_LAST)} روز معاملاتی</span>
         {last ? (
           <span className="num ms-auto text-2xs text-text-muted">
             {dateLabel(last.time)} · <span className={chg != null && chg < 0 ? 'text-accent-red' : 'text-accent-green'}>

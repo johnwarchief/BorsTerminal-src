@@ -53,17 +53,17 @@ describe('ClientSharePct', () => {
     expect(txt('cs-half-sell')).toContain('نامشخص');
   });
 
-  it('عددِ نشستِ پیشین با تاریخِ خودش خوانده می‌شود، نه به‌عنوان زنده', () => {
+  it('عددِ روزِ پیشین با تاریخِ خودش خوانده می‌شود، نه به‌عنوان زنده', () => {
     render(<ClientSharePct row={ok} testId="cs-old" />);
     const note = screen.getByTestId('cs-old-buy').getAttribute('title') ?? '';
     expect(note).toContain('۱۴۰۵/۰۷/۱۵');
     expect(note).toContain('هنوز منتشر نکرده');
   });
 
-  it('همان نشستِ تابلو: «از نشستِ همان روزِ تابلو» با تاریخ', () => {
+  it('همان روزِ تابلو: «از همان روزِ تابلو» با تاریخ', () => {
     render(<ClientSharePct row={{ ...ok, pct_is_current: 1 }} testId="cs-cur" />);
     expect(screen.getByTestId('cs-cur-buy').getAttribute('title'))
-      .toContain('از نشستِ همان روزِ تابلو');
+      .toContain('از همان روزِ تابلو');
   });
 
   it('نسخۀِ تک‌خط: دو مقدارِ مستقل درِ buy و sell، و بی‌داده ⇒ نامشخص', () => {

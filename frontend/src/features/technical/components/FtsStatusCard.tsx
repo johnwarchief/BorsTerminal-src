@@ -36,13 +36,13 @@ export function resolveFtsStatusView(
   gateBlocked: boolean,
 ): FtsStatusView {
   if (gateBlocked) {
-    return { code: 'gate_rejected', text: 'مردود در گیت ریسک', tone: 'red' };
+    return { code: 'gate_rejected', text: 'تأیید نشد؛ شرط مدیریت ریسک برقرار نیست', tone: 'red' };
   }
   const st = signal?.payload.status;
   if (!st) {
     return {
       code: 'insufficient',
-      text: 'موتور FTS هنوز وضعیتِ عمومی را منتشر نکرده',
+      text: 'هنوز نتیجهٔ تحلیل FTS دریافت نشده است',
       tone: 'gray',
     };
   }
@@ -84,15 +84,15 @@ export function FtsStatusCard({
             <span className="num font-bold text-neon-cyan">{toFaDigits(jetPrice.toFixed(0))}</span>
           </span>
         ) : (
-          <span data-testid="fts-jet-reason">{jetReason || 'موتور سطحی برایِ امروز نگفت'}</span>
+          <span data-testid="fts-jet-reason">{jetReason || 'برای امروز سطح جت مشخص نشده است'}</span>
         )}
         {signal?.score != null ? (
           <span>
-            امتیاز همگرایی:{' '}
+            امتیاز هم‌سویی تحلیل‌ها:{' '}
             <span className="num font-bold text-text-primary">{toFaDigits(signal.score)}</span>
           </span>
         ) : null}
-        {signal ? <span>{signal.rationale}</span> : <span>در انتظار داده...</span>}
+        {signal ? <span>{signal.rationale}</span> : <span>در انتظار دریافت تحلیل…</span>}
       </div>
     </div>
   );

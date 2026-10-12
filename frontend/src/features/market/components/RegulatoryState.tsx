@@ -56,7 +56,7 @@ export function RegulatoryState({
         data-testid="inspector-regulatory"
         data-regulatory-state="none"
         className="rounded-lg border border-dashed border-[var(--hairline)] px-2 py-1 text-3xs text-text-muted"
-        title="هیچ رکوردِ وضعیتی برایِ این نماد از TSETMC نرسیده — این «سالم بودن» نیست"
+        title="وضعیت این نماد از TSETMC دریافت نشده است؛ بنابراین نمی‌توان نتیجه گرفت که نماد بدون مشکل است"
       >
         وضعیتِ ناظر: {NOT_RECORDED}
       </div>
@@ -130,7 +130,7 @@ export function RegulatoryState({
           ) : null}
           {/* مبدأِ عددِ ریالیِ حقیقی/حقوقی — فقط اینجا خوانده می‌شود، نه درِ ستونِ تابلو،
               و هرگز واردِ داوری نمی‌شود. */}
-          <li title="پیش‌آمدِ ریالی از خودِ TSETMC می‌آید یا از حجم × میانگینِ وزنی ساخته شده">
+          <li title="ارزش معاملۀ این سطر از TSETMC دریافت می‌شود یا از حاصل‌ضرب حجم در میانگین وزنی محاسبه شده">
             مبدأِ ارزشِ معامله: {KIND_FA[row.ctv_kind ?? 'reconstructed'] ?? UNAVAILABLE}
           </li>
         </ul>

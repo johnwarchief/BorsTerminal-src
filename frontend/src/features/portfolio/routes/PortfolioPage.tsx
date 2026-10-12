@@ -27,7 +27,7 @@ import WatchlistSection from '../components/WatchlistSection';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
-const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
+const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف‌شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
 
@@ -133,20 +133,20 @@ export default function PortfolioPage() {
   ) : portfolio.isError ? (
     <EmptyState
       title="خطا در دریافت سبد"
-      hint="اتصال بک اند را بررسی کن"
+      hint="اتصال بک‌اند را بررسی کنید"
       action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
     />
   ) : null;
 
   const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
-  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
+  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف‌شده‌ها';
   const sumWeight = limits?.sum_weight_pct;
   const weightCap = limits?.weight_cap_pct;
 
   const tabs: { id: BoardTab; label: string; count: number }[] = [
     { id: 'portfolio', label: 'سبد', count: holdings.length },
     { id: 'monitor', label: 'زیر نظر', count: monitor.length },
-    { id: 'rejects', label: 'حذف شده', count: rejects.length },
+    { id: 'rejects', label: 'حذف‌شده', count: rejects.length },
   ];
 
   return (
@@ -189,7 +189,7 @@ export default function PortfolioPage() {
         {basketAgeMs > 30_000 ? (
           <span
             data-testid="portfolio-basket-age"
-            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (۳۰s درِ نشست) است"
+            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (هر ۳۰ ثانیه) است"
             className="num ms-auto rounded-full bg-accent-yellow/10 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
           >
             سبد: {fmtAge(portfolio.dataUpdatedAt)} · قیمت: {fmtAge(closes.dataUpdatedAt)}
@@ -225,7 +225,7 @@ export default function PortfolioPage() {
             <SymbolBasketAction symbol="" addMode />
             <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
             <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
-            <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
+            <Badge tone="red">حذف‌شده {toFaDigits(counts.reject ?? 0)}</Badge>
             {sumWeight != null ? (
               <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>
                 جمع وزن {toFaDigits(sumWeight)} درصد
@@ -239,7 +239,8 @@ export default function PortfolioPage() {
             ) : null}
             {limits?.value_missing_count ? (
               <Badge tone="gray">
-                {toFaDigits(limits.value_missing_count)} ردیف تعداد ندارد — وزن خودکار حساب نمی‌شود
+                در {toFaDigits(limits.value_missing_count)} ردیف تعداد ثبت نشده است؛ وزن این
+                ردیف‌ها به‌صورت خودکار محاسبه نمی‌شود
               </Badge>
             ) : null}
             {weightCap != null ? <Badge tone="gray">سقف وزن هر نماد {toFaDigits(weightCap)} درصد</Badge> : null}
@@ -352,8 +353,8 @@ export default function PortfolioPage() {
                             {h.qty != null && h.qty > 0 ? (
                               <span className="num text-xs text-text-primary">{fmtInt(h.qty)}</span>
                             ) : (
-                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن خودکار حساب نمی‌شود">
-                                بدون تعداد
+                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن این ردیف به‌صورت خودکار محاسبه نمی‌شود">
+                                تعداد ثبت نشده
                               </span>
                             )}
                           </td>

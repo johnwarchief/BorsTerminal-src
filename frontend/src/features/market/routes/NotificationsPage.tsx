@@ -120,7 +120,7 @@ export default function NotificationsPage() {
       {/* ── سلامتِ منبع: «چیزی نیست» با «نرسیده» یکی نیست ─────────────────── */}
       <section className="glass-panel flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-c px-2.5 py-2"
                data-testid="notice-sources" data-state={srcState}>
-        <span className="text-2xs font-black text-text-primary">مرکزِ اعلان</span>
+        <span className="text-2xs font-black text-text-primary">اعلان‌ها</span>
         <span className="text-3xs text-text-muted" data-testid="notice-source-name">
           منبع: {src?.label ?? 'کدال (سازمانِ بورس)'}
         </span>
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
           </button>
         ))}
         <Badge tone="gray">
-          ناخوانده: <span className="num">{toFaDigits(unread)}</span> از {toFaDigits(visible.length)}
+          خوانده‌نشده: <span className="num">{toFaDigits(unread)}</span> از {toFaDigits(visible.length)}
         </Badge>
       </div>
 

@@ -58,7 +58,7 @@ export function jetBadges(f: FtsAnalysisData): { label: string; tone: 'green' | 
   ];
 }
 
-/** نشان های روند چند تایم فریمی + هم راستایی */
+/** نشان‌های روند در چند تایم‌فریم + هم‌راستایی */
 export function trendBadges(f: FtsAnalysisData): { label: string; value: string; tone: 'green' | 'red' | 'yellow' | 'gray'; title: string }[] {
   const t = f.trend;
   const out: { label: string; value: string; tone: 'green' | 'red' | 'yellow' | 'gray'; title: string }[] = [];
@@ -75,10 +75,10 @@ export function trendBadges(f: FtsAnalysisData): { label: string; value: string;
   const align = t?.alignment;
   if (align === 'up' || align === 'down') {
     out.push({
-      label: 'هم راستایی',
+      label: 'هم‌راستایی',
       value: align === 'up' ? 'صعودی' : 'نزولی',
       tone: align === 'up' ? 'green' : 'red',
-      title: 'هر سه تایم فریم هم جهت هستند',
+      title: 'هر سه تایم‌فریم هم‌جهت هستند',
     });
   }
   return out;
@@ -101,7 +101,7 @@ export function FtsBadgeStrip({
     return (
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-empty">
         <Badge tone="gray">FTS</Badge>
-        <span>تحلیل سمت سرور برای این نماد موجود نیست (تاریخچه خالی)</span>
+        <span>برای این نماد تحلیل FTS آماده نیست؛ تاریخچۀ کندل‌ها در دسترس نیست</span>
       </div>
     );
   }
@@ -109,7 +109,7 @@ export function FtsBadgeStrip({
     return (
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-error">
         <Badge tone="red">FTS</Badge>
-        <span>تحلیل FTS نرسید — {error}</span>
+        <span>دریافت تحلیل FTS ناموفق بود — {error}</span>
         {onRetry ? <RetryAction onRetry={onRetry} testId="fts-strip-retry" /> : null}
       </div>
     );
@@ -118,7 +118,7 @@ export function FtsBadgeStrip({
     return (
       <div className="glass-panel flex flex-wrap items-center gap-2 rounded-2xl p-3 text-xs text-text-muted" data-testid="fts-badges-loading">
         <Badge tone="gray">FTS</Badge>
-        <span>در حال دریافت نشان های تحلیل...</span>
+        <span>در حال دریافت نشانه‌های تحلیل FTS…</span>
       </div>
     );
   }
@@ -130,12 +130,24 @@ export function FtsBadgeStrip({
   }
 
   const fib = data.fib;
-  // فیبو «زمینه» است نه سیگنالِ ورود (سنجشِ دورِ I: داخلِ کمربند بودن edge ندارد)
+  // فیبو «زمینه» است نه سیگنالِ ورود (سنجشِ دورِ I: داخلِ زون بودن edge ندارد)
   if (fib?.zone_33_40?.in_zone) {
-    items.push({ label: 'موقعیت فیبو', value: '۳۳-۴۰٪', tone: 'gray', title: 'قیمت داخل کمربند اصلاح ۳۳ تا ۴۰ درصد است — زمینه، نه سیگنالِ ورود' });
+    items.push({
+      label: 'موقعیت فیبو',
+      value: '۳۳-۴۰٪',
+      tone: 'gray',
+      title:
+        'قیمت داخل زون اصلاح فیبوناچی ۳۳ تا ۴۰ درصد است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود',
+    });
   }
   if (fib?.zone_618_70?.in_zone) {
-    items.push({ label: 'موقعیت فیبو', value: '۶۱.۸-۷۰٪', tone: 'gray', title: 'قیمت داخل کمربند طلایی اصلاح است — زمینه، نه سیگنالِ ورود' });
+    items.push({
+      label: 'موقعیت فیبو',
+      value: '۶۱.۸-۷۰٪',
+      tone: 'gray',
+      title:
+        'قیمت داخل زون طلایی فیبوناچی (اصلاح ۶۱٫۸ تا ۷۰ درصد) است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود',
+    });
   }
 
   for (const b of jetBadges(data)) {
@@ -164,11 +176,15 @@ export function FtsBadgeStrip({
   }
 
   if (data.double_bottom?.active) {
-    items.push({ label: 'دابل باتم', tone: 'green', title: 'شکست یقه دابل باتم تایید شد' });
+    items.push({ label: 'دابل باتم', tone: 'green', title: 'شکست خط گردن الگوی دابل باتم تأیید شد' });
   }
 
   if (data.range_box?.active) {
-    items.push({ label: 'شکست جعبه', tone: 'green', title: 'پایانی بالای سقف جعبه رنج بسته شد' });
+    items.push({
+      label: 'شکست جعبه',
+      tone: 'green',
+      title: 'قیمت پایانی بالاتر از سقف محدودۀ رنج بسته شد',
+    });
   }
 
   const mat = data.trend?.matrix;

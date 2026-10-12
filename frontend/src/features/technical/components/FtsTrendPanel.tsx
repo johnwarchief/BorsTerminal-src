@@ -45,7 +45,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
     return (
       <div className="glass-panel p-4">
         <h3 className="mb-2 text-sm font-black text-text-primary">تحلیل ساختاری FTS</h3>
-        <p className="text-xs text-text-muted">در انتظار داده تحلیل...</p>
+        <p className="text-xs text-text-muted">در انتظار دریافت تحلیل…</p>
       </div>
     );
   }
@@ -67,7 +67,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
 
       {/* روند چند تایم فریمی با پیوت ها */}
       <div>
-        <div className="mb-1.5 text-[11px] font-bold text-text-secondary">روند چند تایم فریمی (ساختار HH/HL)</div>
+        <div className="mb-1.5 text-[11px] font-bold text-text-secondary">روند در چند تایم‌فریم (ساختار HH/HL)</div>
         <div className="grid grid-cols-3 gap-2">
           {(['D', 'W', 'M'] as const).map((k) => {
             const leg = t?.[k];
@@ -100,7 +100,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         {t?.alignment === 'up' || t?.alignment === 'down' ? (
           <div className="mt-1.5">
             <Badge tone={t.alignment === 'up' ? 'green' : 'red'}>
-              هم راستایی سه تایم فریم: {t.alignment === 'up' ? 'صعودی' : 'نزولی'}
+              هم‌راستایی سه تایم‌فریم: {t.alignment === 'up' ? 'صعودی' : 'نزولی'}
             </Badge>
           </div>
         ) : null}
@@ -135,9 +135,11 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         </div>
       ) : null}
 
-      {/* کمربند های فیبوناچی */}
+      {/* زون‌های فیبوناچی */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">کمربند های فیبوناچی (مقیاس لگاریتمی)</div>
+        <div className="mb-1 text-[11px] font-bold text-text-secondary">
+          زون‌های فیبوناچی (مقیاس لگاریتمی) — زمینۀ تحلیل، نه سیگنال ورود
+        </div>
         {fib ? (
           <div className="grid grid-cols-2 gap-2">
             <div
@@ -146,8 +148,8 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
               }`}
             >
               <div className="mb-0.5 flex items-center justify-between text-[10px]">
-                <span className="text-text-secondary">اصلاح ۳۳-۴۰٪</span>
-                {fib.zone_33_40?.in_zone ? <Badge tone="blue">داخل کمربند</Badge> : null}
+                <span className="text-text-secondary">زون اصلاح ۳۳-۴۰٪</span>
+                {fib.zone_33_40?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
               <div className="num text-xs font-bold text-text-primary">
                 {fmtPrice(fib.zone_33_40?.lo)} تا {fmtPrice(fib.zone_33_40?.hi)}
@@ -159,8 +161,8 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
               }`}
             >
               <div className="mb-0.5 flex items-center justify-between text-[10px]">
-                <span className="text-text-secondary">کمربند طلایی ۶۱.۸-۷۰٪</span>
-                {fib.zone_618_70?.in_zone ? <Badge tone="blue">داخل کمربند</Badge> : null}
+                <span className="text-text-secondary">زون طلایی ۶۱.۸-۷۰٪</span>
+                {fib.zone_618_70?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
               <div className="num text-xs font-bold text-text-primary">
                 {fmtPrice(fib.zone_618_70?.lo)} تا {fmtPrice(fib.zone_618_70?.hi)}
@@ -168,7 +170,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             </div>
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">سقف/کف پیوت کافی برای کمربند وجود ندارد</p>
+          <p className="text-[10px] text-text-muted">سقف/کف پیوت کافی برای ساخت زون وجود ندارد</p>
         )}
       </div>
 
@@ -184,7 +186,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             ))}
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">ستاپ فعالی از موتور سمت سرور گزارش نشده</p>
+          <p className="text-[10px] text-text-muted">موتور سرور هیچ ستاپ فعالی گزارش نکرده است</p>
         )}
       </div>
 

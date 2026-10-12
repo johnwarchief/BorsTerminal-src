@@ -186,7 +186,7 @@ describe('داشبورد مستر v2', () => {
   it('بدون سیگنال حالت خالی تمیز دارد', async () => {
     renderMaster();
     await waitFor(() => {
-      expect(screen.getByText('هنوز سیگنالی در باس نیست')).toBeInTheDocument();
+      expect(screen.getByText('هنوز هیچ سیگنالی دریافت نشده است')).toBeInTheDocument();
     });
   });
 

@@ -174,16 +174,24 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
 
       <Section title="ترازها">
         <Row
-          label="کمربند ۳۳–۴۰٪ (لگاریتمی)"
+          label="زون اصلاح ۳۳–۴۰٪ (لگاریتمی)"
           value={zone(fts?.fib?.zone_33_40?.lo, fts?.fib?.zone_33_40?.hi)}
           tone="blue"
-          title={fts?.fib?.zone_33_40?.in_zone ? 'پایانیِ امروز داخل این کمربند است' : 'پایانیِ امروز بیرون از این کمربند'}
+          title={
+            fts?.fib?.zone_33_40?.in_zone
+              ? 'قیمت پایانی امروز داخل این زون است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود'
+              : 'قیمت پایانی امروز بیرون از این زون است'
+          }
         />
         <Row
-          label="کمربند طلایی ۶۱.۸–۷۰٪"
+          label="زون طلایی ۶۱.۸–۷۰٪"
           value={zone(fts?.fib?.zone_618_70?.lo, fts?.fib?.zone_618_70?.hi)}
           tone="blue"
-          title={fts?.fib?.zone_618_70?.in_zone ? 'پایانیِ امروز داخل این کمربند است' : 'پایانیِ امروز بیرون از این کمربند'}
+          title={
+            fts?.fib?.zone_618_70?.in_zone
+              ? 'قیمت پایانی امروز داخل این زون است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود'
+              : 'قیمت پایانی امروز بیرون از این زون است'
+          }
         />
         <Row label="تراز مبنا (کف موج ۱.۰)" value={price(fts?.fib?.retrace_base_low)} />
         {active.ma100 != null ? <Row label="خط ماژور MA(100)" value={price(active.ma100)} /> : null}
@@ -247,7 +255,7 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
 
       <p className="text-[10px] leading-4 text-text-muted">
         همهٔ اعداد از تحلیلِ سرورِ همین نماد است (FTS_SPEC بخش اول، بندهای ۳ و ۵). قیمت خریدِ سبد در حد ضرر لحاظ
-        می‌شود؛ اگر نماد در سبد نباشد، مبنای حد ضرر کف ۲۰ نشستِ اخیر است.
+        می‌شود؛ اگر نماد در سبد نباشد، مبنای حد ضرر کف ۲۰ روز معاملاتیِ اخیر است.
       </p>
     </div>
   );

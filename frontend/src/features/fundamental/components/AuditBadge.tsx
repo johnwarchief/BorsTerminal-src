@@ -34,7 +34,10 @@ export interface AuditEvidence {
 const STATE_STYLE: Record<AuditState, { cls: string; label: string }> = {
   pass: { cls: 'border-accent-green/40 bg-accent-green/15 text-accent-green shadow-xs', label: 'قبول' },
   fail: { cls: 'border-accent-red/40 bg-accent-red/15 text-accent-red shadow-xs', label: 'مردود' },
-  na: { cls: 'border-border-c bg-bg-card text-text-secondary shadow-xs', label: 'N/A' },
+  // «na» درِ این بج یعنی رأیی ساخته نشد (FtsCard:132 — `pass == null`)، پس
+  // «قابل ارزیابی نیست» است؛ «کاربرد ندارد» وضعیتِ دیگری است و جایِ خودش
+  // نوشته می‌شود (رأیِ مالک ۱۴۵-۰۷-۲۱).
+  na: { cls: 'border-border-c bg-bg-card text-text-secondary shadow-xs', label: 'قابل ارزیابی نیست' },
 };
 
 const NO_AUDIT_TEXT = 'توضیحات تکمیلی برای این وضعیت ثبت نشده است.';
@@ -107,8 +110,15 @@ export function AuditReasonCard({
           <thead>
             <tr className="text-text-muted">
               <th className="py-1 text-start font-bold">مقدار نماد</th>
-              <th className="py-1 text-start font-bold">تارگت FTS</th>
-              <th className="py-1 text-start font-bold">انحراف</th>
+              <th
+                className="py-1 text-start font-bold"
+                title="حداقل مقدار مصوب در FTS برای همین شاخص — معیار قبولی"
+              >
+                تارگت FTS
+              </th>
+              <th className="py-1 text-start font-bold" title="فاصلۀ مقدارِ نماد تا همان حد معیار">
+                فاصله تا حد معیار
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -124,7 +134,7 @@ export function AuditReasonCard({
                 data-testid="audit-deviation"
               >
                 {dev == null
-                  ? 'قابل‌محاسبه نیست'
+                  ? 'قابل ارزیابی نیست'
                   : `${dev.delta >= 0 ? '+' : '−'}${toFaDigits(Math.abs(dev.delta).toFixed(2))}${ev.unit ?? ''}${
                       dev.pct == null ? '' : ` (${toFaDigits(Math.abs(dev.pct).toFixed(0))}٪)`
                     }`}

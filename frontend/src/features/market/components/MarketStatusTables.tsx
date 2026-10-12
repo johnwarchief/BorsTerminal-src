@@ -54,7 +54,7 @@ function TableShell({
         </div>
       ) : empty ? (
         <p data-testid={`${testId}-empty`} className="px-2 py-3 text-2xs text-text-muted">
-          ردیفی نرسید — «بی‌داده» یعنی این نشست اندازه‌گیری‌شدنی ندارد، نه این‌که بازار ساکت است.
+          ردیفی نرسید — «بی‌داده» یعنی این نوبت اندازه‌گیری‌شدنی ندارد، نه این‌که بازار ساکت است.
         </p>
       ) : (
         children

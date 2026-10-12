@@ -70,7 +70,7 @@ describe('علتِ دقیقِ رد (#205)', () => {
   it('«۵ از ۳ سال» بی‌معناست — سالِ اضافی علتِ رد نمی‌شود (#217)', () => {
     const lines = rejectReasons({ '2_eps_trend': false }, { '2': { years_available: 5, years_required: 3 } } as never);
     const text = rejectLineText(lines[0]);
-    expect(text).toContain('صعودیِ متوالی نیست');
+    expect(text).toContain('سود هر سهم در هر سه سال پیاپی افزایش نداشته است');
     expect(text).not.toContain('از');
   });
 
@@ -111,6 +111,8 @@ describe('علتِ دقیقِ رد (#205)', () => {
 
   it('عددِ نبود ⇒ حدس نمی‌زند؛ متنِ علت می‌ماند بدونِ رقمِ ساختگی', () => {
     const lines = rejectReasons({ '3_gross_margin': false }, { '3': {} } as never);
-    expect(rejectLineText(lines[0])).toBe('۳. حاشیه سود ناخالص — حاشیۀ سود ناخالص زیرِ کف است');
+    expect(rejectLineText(lines[0])).toBe(
+      '۳. حاشیه سود ناخالص — حاشیۀ سود ناخالص کمتر از حد تعیین‌شده است',
+    );
   });
 });

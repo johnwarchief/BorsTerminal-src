@@ -429,7 +429,7 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     const block = screen.getByTestId('potential-formula');
     // جای برچسب عمومی «بدون داده» / «شکاف داده»، علتِ همان متغیر می‌آید
     expect(within(block).getByText('حاشیهٔ ناخالص ثبت نشده')).toBeInTheDocument();
-    expect(within(block).getByText('خروجی قابل محاسبه نیست')).toBeInTheDocument();
+    expect(within(block).getByText('این مقدار با اطلاعات فعلی قابل محاسبه نیست')).toBeInTheDocument();
     expect(within(block).queryByText('بدون داده')).not.toBeInTheDocument();
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
     expect(within(block).getByText(/D: ارزش بازار/).textContent).toContain('۲.۷۲');
@@ -458,7 +458,9 @@ describe('N/A رشد تولیدی در کارت FTS', () => {
     render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} physicalApplicable={false} />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toBe('نظر نمی‌دهد');
-    expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
+    expect(
+      within(cell).getByText('این شرکت محصول فیزیکی ندارد؛ بنابراین این شاخص برای آن کاربرد ندارد'),
+    ).toBeInTheDocument();
     expect(cell.className).not.toContain('rose');
   });
 
@@ -498,7 +500,7 @@ describe('DataGapBanner — پاک‌سازی متون خام موتور', () =>
     expect(banner.textContent).not.toContain('گیتِ');
     expect(banner.textContent).not.toContain('×۱۲÷م');
     expect(banner.textContent).toContain('شاخص ۴');
-    expect(banner.textContent).toContain('گزارش‌های ماهانهٔ کدال برای سالانه‌سازی فروش کافی نیست');
+    expect(banner.textContent).toContain('گزارش‌های ماهانۀ کدال برای سالانه‌سازی فروش کافی نیست');
     expect(banner.textContent).toContain('شاخص ۲');
     expect(banner.textContent).toContain('سابقه با میاندورهٔ کوتاهِ سالِ جاری تکمیل شده');
   });

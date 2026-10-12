@@ -453,10 +453,10 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
 
   it('هیچ سیگنالی ⇒ حالت خالی تمیز می‌ماند', async () => {
     renderMaster();
-    expect(await screen.findByText('هنوز سیگنالی در باس نیست')).toBeInTheDocument();
+    expect(await screen.findByText('هنوز هیچ سیگنالی دریافت نشده است')).toBeInTheDocument();
   });
 
-  it('در وضعیت وتو (فیلتر ۲): گیج نمره «وتو / فاقد تایید» و بج «ورود ممنوع (توقف در فیلتر دوم)» نشان می‌دهد', async () => {
+  it('در وضعیت وتو (فیلتر ۲): گیج نمره «وتو / تأیید نشده» و بج «ورود ممنوع (توقف در فیلتر دوم)» نشان می‌دهد', async () => {
     useSignalStore.getState().publishSignal(fundSig('bullish', 85, { metrics: { gross_margin: 26, growth_pct: 45 } }));
     // تکنیکال بدون ستاپ شکست و منفی ⇒ وتو در فیلتر ۲
     useSignalStore.getState().publishSignal(techSig('neutral', 40, []));
@@ -464,7 +464,7 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
 
     expect(await screen.findByText('برآیند مستر برای شپنا')).toBeInTheDocument();
     // در وضعیت وتو، برچسب صریح داخل گیج و بج قرمز رندر می‌شوند:
-    expect(screen.getByText('وتو / فاقد تایید')).toBeInTheDocument();
+    expect(screen.getByText('وتو / تأیید نشده')).toBeInTheDocument();
     expect(screen.getByText('ورود ممنوع (توقف در فیلتر دوم)')).toBeInTheDocument();
     expect(screen.queryByText('خرید قوی')).toBeNull();
     useSignalStore.getState().clearSignals();

@@ -137,7 +137,7 @@ export function TimelineCharts() {
       {isError ? (
         <span className="flex items-center justify-between gap-2 text-2xs text-accent-yellow"
               data-testid="micro-charts-degraded">
-          <span>تازه‌سازیِ تایم‌لاین ناموفق بود؛ نمودار از آخرینِ پاسخِ موفق است</span>
+          <span>به‌روزرسانیِ تایم‌لاین ناموفق بود؛ نمودار از آخرینِ پاسخِ موفق است</span>
           <RetryAction onRetry={() => void refetch()} testId="micro-charts-degraded-retry" />
         </span>
       ) : null}

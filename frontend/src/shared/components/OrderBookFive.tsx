@@ -182,7 +182,7 @@ export function OrderBookFive({
           </div>
           {!compact ? (
             <p className="text-3xs leading-4 text-text-muted">
-              قیمت و حجم از blDsِ همین نشستِ خودِ تابلو است؛ «—» یعنی آن سطر برایِ
+              قیمت و حجم از blDsِ همین روزِ خودِ تابلو است؛ «—» یعنی آن سطر برایِ
               این نماد ثبت نشده، نه اینکه صف صفر باشد.
             </p>
           ) : null}

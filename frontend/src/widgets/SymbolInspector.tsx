@@ -589,7 +589,7 @@ export function SymbolInspector() {
             <span className="text-[9px] text-text-muted">ارزشِ بازار</span>
             <span className="num text-[11px] font-bold text-text-primary"
                   title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
-                         + `${rawRow?.is_live === false ? 'آخرینِ نشستِ تابلو' : 'نشستِ جاریِ تابلو'}`}>
+                         + `${rawRow?.is_live === false ? 'تابلوی آخرین روز معاملاتی' : 'تابلوی امروز'}`}>
               {rawRow?.mcap != null ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
             </span>
             <span className="text-[9px] text-text-muted">I4</span>

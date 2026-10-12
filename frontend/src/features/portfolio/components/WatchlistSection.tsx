@@ -68,7 +68,7 @@ export default function WatchlistSection() {
           data-testid="portfolio-watchlist-refresh"
           className="ms-auto rounded-lg border border-border-c px-2 py-0.5 text-3xs font-bold text-text-secondary hover:border-accent-blue hover:text-accent-blue"
         >
-          تازه‌سازی
+          به‌روزرسانی
         </button>
       </header>
 
@@ -81,8 +81,8 @@ export default function WatchlistSection() {
         </div>
       ) : priced.length === 0 ? (
         <p className="px-3 py-3 text-3xs text-text-muted" data-testid="portfolio-watchlist-empty">
-          خالی است. درِ تابلوخوانی یا بنیادی رویِ ☆ کنارِ نماد بزن تا برایِ رصدِ
-          روزهایِ بعد اینجا بماند.
+          واچ‌لیست خالی است. در صفحۀ تابلوخوانی یا بنیادی روی ☆ کنارِ نماد کلیک کنید تا
+          برای پیگیریِ روزهایِ آینده ذخیره شود.
         </p>
       ) : (
         <div className="max-h-[300px] overflow-y-auto">
@@ -97,7 +97,7 @@ export default function WatchlistSection() {
                 <th className="px-2 py-1 text-start font-bold">نماد</th>
                 <th className="px-2 py-1 text-end font-bold">آخرین</th>
                 <th className="px-2 py-1 text-end font-bold">تغییر٪</th>
-                <th className="px-2 py-1 text-start font-bold">وضعیتِ نشست</th>
+                <th className="px-2 py-1 text-start font-bold">وضعیت تابلو</th>
                 <th className="px-2 py-1 text-start font-bold">به فهرست از</th>
                 <th className="px-2 py-1 text-end font-bold">اقدام</th>
               </tr>
@@ -105,7 +105,7 @@ export default function WatchlistSection() {
             <tbody>
               {priced.map((r) => {
                 const f = r.feed;
-                const live = f ? (f.is_live === false ? 'آخرینِ نشست' : 'زنده') : 'بی‌ردیفِ تابلو';
+                const live = f ? (f.is_live === false ? 'آخرین داده' : 'زنده') : 'در تابلو نیست';
                 return (
                   <tr key={r.norm || r.symbol} className="group border-b border-border-c/40 last:border-0">
                     <td className="px-2 py-1 text-start">

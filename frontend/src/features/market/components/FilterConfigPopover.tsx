@@ -29,9 +29,10 @@ function BasisToggles({ showLowBase }: { showLowBase?: boolean }) {
           className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
         />
         <span className="text-2xs font-semibold leading-4">
-          امروز داخلِ مبنایِ میانگین
+          حجم امروز در محاسبۀ میانگین لحاظ شود
           <span className="block text-3xs text-text-muted font-normal mt-0.5">
-            حجمِ امروز در میانگینِ سی‌نشست هم می‌نشیند (مبناء تقسیمِ ۳۱). پیش‌فرضِ جزوه: خاموش.
+            اگر روشن باشد حجم امروز هم در میانگین حساب می‌شود و تعداد روزهای معاملاتی مبنا به ۳۱
+            می‌رسد. پیش‌فرض FTS: خاموش.
           </span>
         </span>
       </label>
@@ -44,9 +45,10 @@ function BasisToggles({ showLowBase }: { showLowBase?: boolean }) {
             className="mt-0.5 size-3.5 accent-[var(--accent-blue)]"
           />
           <span className="text-2xs font-semibold leading-4">
-            دروازۀ ۲۹-نشستِ تاریخچه
+            شرط سابقۀ ۲۹ روز معاملاتی
             <span className="block text-3xs text-text-muted font-normal mt-0.5">
-              روشن: کفِ نقطه‌زنی فقط با آرایۀِ کاملِ فایل. خاموش: نمادِ کم‌سابقه با کمینۀِ موجود.
+              روشن: نقطه‌زنی فقط با سابقۀ کامل ۲۹ روز معاملاتی انجام می‌شود. خاموش: نمادهای
+              کم‌سابقه با استفاده از داده‌های موجود بررسی می‌شوند.
             </span>
           </span>
         </label>
@@ -296,7 +298,8 @@ export function FilterConfigPopover({
               />
             </div>
             <div>
-              <span className="block font-semibold text-text-primary mb-1">تایم‌فریم شکست سقف:</span>
+              <span className="block font-semibold text-text-primary mb-1">
+                تایم‌فریم شکست سقف (بازۀ انتخابی برای بررسی):</span>
               <div className="flex flex-wrap gap-1">
                 {JET_LADDER.map((d) => (
                   <button
@@ -314,8 +317,8 @@ export function FilterConfigPopover({
                 ))}
               </div>
               <p className="text-3xs text-text-muted mt-1 leading-4">
-                همهٔ نقاطِ کوتاه‌تر از انتخابِ شما هم باید شکسته شوند؛ ۵۹ روزه همان
-                پلکانِ کاملِ جزوه است.
+                برای تأیید جت، سقف‌های بازه‌های کوتاه‌تر از انتخاب شما هم باید شکسته شوند.
+                بازۀ ۵۹روزه تمام بازه‌های تعریف‌شدۀ FTS را پوشش می‌دهد.
               </p>
             </div>
           </>

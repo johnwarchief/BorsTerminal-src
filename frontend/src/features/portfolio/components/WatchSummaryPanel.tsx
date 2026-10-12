@@ -40,9 +40,9 @@ export function WatchSummaryPanel({ symbol, row }: { symbol: string; row: Market
         <h4 className="text-xs font-black text-text-primary">خلاصۀِ نماد</h4>
         <span className="text-2xs font-bold text-accent-blue">{symbol || '—'}</span>
         {row == null && symbol ? (
-          <span className="ms-auto"><Badge tone="gray">بی‌ردیفِ تابلو</Badge></span>
+          <span className="ms-auto"><Badge tone="gray">در تابلو نیست</Badge></span>
         ) : row?.is_live === false ? (
-          <span className="ms-auto"><Badge tone="yellow">آخرینِ نشست</Badge></span>
+          <span className="ms-auto"><Badge tone="yellow">آخرین داده</Badge></span>
         ) : row ? (
           <span className="ms-auto"><Badge tone="green">زنده</Badge></span>
         ) : null}

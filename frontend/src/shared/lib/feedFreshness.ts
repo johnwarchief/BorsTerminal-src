@@ -74,7 +74,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   if (s.status === 'error') {
     return {
       connection: 'error', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
-      tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کن',
+      tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کنید',
     };
   }
   if (!hasData) {
@@ -91,7 +91,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   if (!open) {
     return {
       connection: 'ok', freshness: 'closed', pulse: false, ageMs, dataAgeMs,
-      tone: 'bg-accent-blue', label: 'بازار بسته — تابلوی آخرینِ نشست',
+      tone: 'bg-accent-blue', label: 'بازار بسته — تابلوی آخرین روز معاملاتی',
     };
   }
 
@@ -108,7 +108,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   if ((s.liveCount ?? 0) === 0) {
     return {
       connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
-      tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از نشستِ جاری در تابلو نیست',
+      tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از امروزِ تابلو در دسترس نیست',
     };
   }
   if (stalled) {
@@ -117,7 +117,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
       tone: 'bg-accent-yellow',
       label: changedKnown
         ? 'ایستاده — هیچ عددی از تازۀِ این پنجره عوض نشده (درخواست‌ها می‌رسند)'
-        : 'کهنه — تازه‌سازیِ تابلو متوقف شده',
+        : 'کهنه — به‌روزرسانیِ تابلو متوقف شده',
     };
   }
   return {

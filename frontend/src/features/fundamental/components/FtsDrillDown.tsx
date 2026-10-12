@@ -146,7 +146,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </div>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
-              <span className="font-mono text-sm font-black text-text-primary">
+              <span
+                className="font-mono text-sm font-black text-text-primary"
+                title="ب.ت = میلیارد تومان"
+              >
                 {now == null ? '—' : `${fmtInt(now)} ب.ت`}
               </span>
             </div>
@@ -167,7 +170,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </div>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
-              <span className="font-mono text-sm font-black text-text-primary">
+              <span
+                className="font-mono text-sm font-black text-text-primary"
+                title="ب.ت = میلیارد تومان"
+              >
                 {prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
               </span>
             </div>
@@ -339,7 +345,7 @@ function Panel2({ card }: { card: FtsCard }) {
               data-testid="drilldown-eps-na"
               className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow"
             >
-              {ind?.consolidated_used ? 'N/A — مبنایِ تلفیقی' : 'N/A — لایه اجرا نمی‌شود'}
+              {ind?.consolidated_used ? 'کاربرد ندارد — مبنایِ تلفیقی' : 'کاربرد ندارد — این لایه اجرا نمی‌شود'}
             </span>
           </GapHint>
         ) : rising == null && realYears < 2 ? (
@@ -455,7 +461,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         : ind?.optimal === true
           ? 'ideal'
           : 'conditional';
-  const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'N/A' };
+  const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'قابل ارزیابی نیست' };
   // روند خطی ۶ فصل حاشیهٔ **ناخالص** فصلی (تفکیک‌شده از fundMath).
   // #102: مبنای مقایسه با درآمد، سود ناخالص است. FiscalQuarter.margin از
   // سود ناخالص ساخته می‌شود و وقتی آن NULL است (صندوق/هلدینگ بدون سطر بهای
@@ -469,7 +475,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
-          {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
+          {margin == null ? 'قابل ارزیابی نیست' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
         </Badge>
         {ind?.basis ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
@@ -548,7 +554,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
 
       <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰{ind?.period_end ? ` · دوره: ${toFaDigits(ind.period_end)}` : ''}
-        {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — N/A' : ''}
+        {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — کاربرد ندارد' : ''}
       </p>
     </div>
   );
