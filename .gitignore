@@ -192,6 +192,10 @@ _audit/indicator_audit/__pycache__/
 _audit/*.json
 !_audit/ra_parity_report.json
 !_audit/parity_root_cause.json
+# ماتریسِ عددیِ جاروبِ رجیستری و آزمونِ یکپارچۀ سه‌موتوره: سه سندِ `reviewed/`
+# (ب-۸، ب-۹ و مرحلۀ ۷) ستون‌هایشان را از همین فایل می‌خوانند، پس ادعایِ
+# «اندازه‌گیریِ مرورگر» بی‌این فقط سطرِ متنی است. ۱۶KB، بی‌هیچ اعتبارِ نشست.
+!_audit/fts_layers_e2e.json
 
 # خروجیِ Jobهایِ پایشِ زنده (لاگِ اجرا، نه کد)
 _audit/fts_live_audit/
