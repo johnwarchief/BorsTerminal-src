@@ -21,8 +21,12 @@ import { MicroBadge, type MicroTone } from '@features/market/components/TapeTabl
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
+import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import { useSelectedSymbolsStore } from '@shared/stores/selectedSymbolsStore';
+import { useWatchlistAddMany } from '@shared/api/userWatchlist';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
@@ -647,6 +651,14 @@ function StageCard({
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
       </header>
 
+      {/* انتخاب و عملیاتِ دسته‌ای — فقط درِ «جدول تحویل» (بندِ اول مأموریتِ
+          پروندۀ نماد). بیرون از بدنهٔ اسکرول‌شونده می‌نشیند تا با سرستونِ
+          چسبانِ جدول در نیفتد، و یک خط نازک است: کنترلی که دیده نشود، کنترلی
+          است که حذف شده خوانده می‌شود. */}
+      {stage.key === 'handover' && !collapsed ? (
+        <HandoverActions rows={rows} onPick={onPick} />
+      ) : null}
+
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
           باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
       {collapsed ? null : (<>
@@ -678,6 +690,7 @@ function StageCard({
                 return (
                   <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
                             stageKey={stage.key} onPick={onPick}
+                            selectable={stage.key === 'handover'}
                             changed={changed.has(r.symbol)} />
                 );
               })}
@@ -725,6 +738,7 @@ function StageCard({
                       showMark={stage.key === 'handover' ? 'handover' : 'fund'}
                       stageKey={stage.key}
                       onPick={onPick}
+                      selectable={stage.key === 'handover'}
                     />
                   );
                 })}
@@ -739,6 +753,117 @@ function StageCard({
   );
 }
 
+/** نوارِ انتخاب و عملیاتِ «جدول تحویل» (بندِ اول مأموریتِ پروندۀ نماد).
+ *
+ *  سه چیز را با هم نگه می‌دارد: انتخاب از فهرست، افزودنِ دسته‌ای به واچ‌لیست،
+ *  و بردنِ نماد به برآیند. «افزودنِ دسته‌ای» انتخاب را پاک نمی‌کند (مالک:
+ *  «انتخاب‌ها در زمان عملیات دسته‌ای از بین نروند»)، و پیغامِ نتیجه سه شمارۀ
+ *  جدا می‌دهد: افزوده‌شده، از قبل موجود، و نپذیرفته‌شده (سقفِ واچ‌لیست درِ
+ *  `api/watchlist.py:53` واقعی است و بی‌این شمار کاربر ردِّ بی‌صدا می‌دید).
+ *  عملیات فقط رویِ نمادهایِ واقعاً انتخاب‌شده می‌دود؛ «همه» یعنی همان
+ *  ردیف‌هایی که همین حالا درِ جدولِ تحویل‌اند (عبورکرده‌هایِ دورِ جاری). */
+function HandoverActions({ rows, onPick }: {
+  rows: FunnelEntry[];
+  onPick: (s: string) => void;
+}) {
+  const items = useSelectedSymbolsStore((s) => s.items);
+  const addMany = useSelectedSymbolsStore((s) => s.addMany);
+  const clearSel = useSelectedSymbolsStore((s) => s.clear);
+  const addWatch = useWatchlistAddMany();
+  const [msg, setMsg] = useState<string | null>(null);
+  const selectedCount = items.length;
+  // «چندتای انتخابی درِ همین جدول‌اند» با «چندتا انتخاب شده» یکی نیست: فهرستِ
+  // انتخاب سراسری است و از تابلو/بنیادی هم پر می‌شود.
+  const inRows = useMemo(() => {
+    const norms = new Set(items.map((i) => i.norm));
+    return rows.filter((r) => norms.has(normalizeFa(r.symbol))).length;
+  }, [items, rows]);
+  const target = useMemo(() => {
+    const norms = new Set(items.map((i) => i.norm));
+    const hit = rows.find((r) => norms.has(normalizeFa(r.symbol)));
+    return hit?.symbol ?? items[0]?.symbol ?? null;
+  }, [items, rows]);
+
+  const runAdd = () => {
+    setMsg(null);
+    addWatch.mutate(items.map((i) => ({ symbol: i.symbol, name: i.name })), {
+      onSuccess: (r) => {
+        const parts = [`افزوده شد: ${toFaDigits(r.added)}`,
+                       `از قبل در واچ‌لیست: ${toFaDigits(r.already)}`];
+        if (r.failed) parts.push(`نشد: ${toFaDigits(r.failed)}`);
+        setMsg(parts.join(' · ') + (r.message ? ` — ${r.message}` : ''));
+      },
+      onError: (e) => setMsg(`افزودن ناموفق: ${e instanceof Error ? e.message : 'خطا'}`),
+    });
+  };
+
+  return (
+    <div
+      data-testid="funnel-handover-actions"
+      className="relative flex flex-wrap items-center gap-1.5 border-b border-border-c/60 bg-bg-secondary/50 px-3 py-1 text-2xs"
+    >
+      <button
+        type="button"
+        data-testid="funnel-select-all"
+        onClick={() => { setMsg(null); addMany(rows.map((r) => ({ symbol: r.symbol, name: r.name }))); }}
+        disabled={!rows.length}
+        title="همۀ عبوری‌های همین دور از جدول تحویل انتخاب می‌شوند؛ نمادی که انتخاب است دوباره شمارش نمی‌شود"
+        className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue disabled:opacity-40"
+      >
+        انتخاب همۀ نتایج فعلی ({toFaDigits(rows.length)})
+      </button>
+      {selectedCount > 0 ? (
+        <button
+          type="button"
+          data-testid="funnel-select-clear"
+          onClick={() => { clearSel(); setMsg(null); }}
+          className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-muted hover:border-accent-red/60 hover:text-accent-red"
+        >
+          لغو انتخاب
+        </button>
+      ) : null}
+      <span
+        data-testid="funnel-selection-count"
+        className={`font-bold ${selectedCount ? 'text-accent-blue' : 'text-text-muted'}`}
+      >
+        {selectedCount
+          ? `${toFaDigits(selectedCount)} نماد انتخاب شده (${toFaDigits(inRows)} در این جدول)`
+          : 'چیزی انتخاب نشده'}
+      </span>
+      {selectedCount > 0 ? (
+        <>
+          <button
+            type="button"
+            data-testid="funnel-bulk-watch"
+            onClick={runAdd}
+            disabled={addWatch.isPending}
+            title="نمادهای انتخاب‌شده به واچ‌لیست اضافه می‌شوند؛ رکورد تکراری ساخته نمی‌شود و انتخاب نمی‌سوزد"
+            className="rounded-md border border-accent-blue/50 bg-accent-blue/15 px-2 py-0.5 font-black text-accent-blue hover:bg-accent-blue/25 disabled:opacity-50"
+          >
+            {addWatch.isPending ? 'در حال افزودن…' : `افزودن به واچ‌لیست (${toFaDigits(selectedCount)})`}
+          </button>
+          {target ? (
+            <button
+              type="button"
+              data-testid="funnel-bulk-review"
+              onClick={() => { setMsg(null); onPick(target); }}
+              title="پروندۀ کاملِ همین نماد در صفحهٔ برآیند باز می‌شود؛ از همان‌جا می‌توان به نماد بعدیِ انتخابی رفت"
+              className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
+            >
+              بررسی در برآیند
+            </button>
+          ) : null}
+        </>
+      ) : null}
+      {msg ? (
+        <span data-testid="funnel-bulk-result" className="min-w-0 truncate text-text-muted" title={msg}>
+          {msg}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function StageRow({
   entry,
   cols,
@@ -746,6 +871,7 @@ function StageRow({
   stageKey,
   onPick,
   changed,
+  selectable = false,
 }: {
   entry: FunnelEntry;
   cols: ColKey[];
@@ -758,6 +884,10 @@ function StageRow({
   /** حکمِ این نماد درِ دورِ اخیر عوض شده — ردیف یک لحظه روشن می‌شود تا
    *  «زنده بودنِ» قیف دیده شود (نه یک داوریِ تازه). */
   changed?: boolean;
+  /** جعبۀ انتخاب فقط درِ «جدول تحویل» (بندِ اول مأموریتِ پروندۀ نماد). ستونِ
+   *  تازه نمی‌سازد — داخلِ همان سلولِ نماد می‌نشیند، همان قراردادی که
+   *  `SymbolSelectBox` درِ تابلو رعایت می‌کند و افزودنِ ستونِ جدید grid را کج کرد. */
+  selectable?: boolean;
 }) {
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
   const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
@@ -770,15 +900,17 @@ function StageRow({
     <tr
       data-fkey={entry.symbol}
       data-changed={changed ? '1' : undefined}
-      className={`border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
+      className={`group border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
       title={rowTitle}
     >
       <td className="px-2 py-1 text-start">
-        <button
-          type="button"
-          onClick={() => onPick(entry.symbol)}
-          className="flex max-w-[16ch] items-center gap-1 truncate font-black text-text-primary hover:text-accent-blue"
-        >
+        <div className="flex min-w-0 items-center gap-0.5">
+          {selectable ? <SymbolSelectBox symbol={entry.symbol} name={entry.name ?? ''} /> : null}
+          <button
+            type="button"
+            onClick={() => onPick(entry.symbol)}
+            className="flex min-w-0 max-w-[15ch] items-center gap-1 truncate font-black text-text-primary hover:text-accent-blue"
+          >
           {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
           <span className="truncate">{entry.symbol}</span>
           {entry.assemblyVeto ? (
@@ -790,7 +922,7 @@ function StageRow({
               وتوی مجمع
             </span>
           ) : null}
-          {/* عبور با ملاحظات: رأیِ مالک ۱۴۵-۰۷-۲۱ — سه PASS کافی است، پس این
+          {/* عبور با ملاحظات: رأیِ مالک ۱۴۰۵-۰۷-۲۱ — سه PASS کافی است، پس این
               نماد درِ فهرستِ عبوری‌هاست؛ زرد فقط می‌گوید کدام‌ها سنجیده نشدند یا
               رد شدند. متنِ علت را خودِ موتور نوشته، اینجا بازنویسی نمی‌شود. */}
           {entry.fundCaveat ? (
@@ -802,7 +934,8 @@ function StageRow({
               عبور با ملاحظات
             </span>
           ) : null}
-        </button>
+          </button>
+        </div>
       </td>
       {cols.filter((k) => k !== 'symbol').map((k) => (
         <Cell key={k} k={k} e={entry} mark={mark} why={why} />
@@ -817,7 +950,7 @@ function StageRow({
  * بسته‌اند، پس کنترلی که داخلِ کارتِ بسته است درِ عمل دیده نمی‌شد.
  * عددِ کنارِ هر چیپ نامزدِ همان فیلتر رویِ **نامزدِ جاری** است
  * (`funnel_engine.filter_counts` با زنجیره و منطقِ همین دور) — رأیِ مالک
- * ۱۴۵-۰۷-۲۱: «وقتی حجم مشکوک روشن است، جت بگوید از این‌ها چندتا». بی‌هیچ
+ * ۱۴۰۵-۰۷-۲۱: «وقتی حجم مشکوک روشن است، جت بگوید از این‌ها چندتا». بی‌هیچ
  * چیپِ روشن مبنایِ شمارش کلِّ جامعۀ غربالگری است، پس عددِ همیشگی می‌ماند.
  * این همان `quickFilters` تبِّ تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن
  * شدنش هم عوضی در نمی‌آید.

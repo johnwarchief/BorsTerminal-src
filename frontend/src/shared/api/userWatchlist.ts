@@ -25,6 +25,10 @@ export type WatchlistRow = {
 export type WatchlistPayload = {
   status: string; count: number; data?: WatchlistRow[]; limit?: number | null;
   message?: string; watch?: WatchlistRow; deleted?: number;
+  /** خودِ بانک می‌گوید این نماد از قبل بود یا نه (`api/watchlist.py`:
+   *  `watchlist_store.get(norm)` پیش از upsert) — مبنایِ شمارۀ «از قبل موجود»
+   *  درِ افزودنِ دسته‌ای، تا فرانت به حافظۀِ خودش وابسته نباشد. */
+  existed?: boolean;
 };
 
 export const WATCHLIST_QUERY_KEY = ['user-watchlist'];
@@ -175,6 +179,43 @@ export function useWatchMatrix(symbols: readonly string[]) {
     refetchOnWindowFocus: false,
     refetchInterval: false,
   });
+}
+
+/** افزودنِ دسته‌ای به واچ‌لیست (نوارِ عملیاتِ جدولِ تحویل).
+ *
+ *  چرا سری و نه `Promise.all`: سقفِ واچ‌لیست درِ بک‌اند با `count >= cap`
+ *  داوری می‌شود (`api/watchlist.py:53`)؛ درخواست‌هایِ همزمان هر دو به همان
+ *  شمار می‌رسیدند و سهم‌هایی قبول می‌شدند که سقف را می‌شکستند. چرا «از قبل
+ *  موجود» را سرور می‌گوید: POST یک upsert است و اگر فرانت آن را از کشِ خودش
+ *  حدس می‌زد، کاربری که فهرست را باز نکرده بود «۳ تازه» می‌دید درحالی‌که هیچ‌کدام
+ *  تازه نبودند — و مالک دقیقاً همین تفکیکِ صادق را خواسته است. */
+export type AddManyResult = { added: number; already: number; failed: number; message: string | null };
+
+export type WatchItem = { symbol: string; name?: string };
+
+export function useWatchlistAddMany() {
+  const qc = useWatchlistClient();
+  return useMutation<AddManyResult, Error, WatchItem[]>({
+    mutationFn: async (items) => {
+      const out: AddManyResult = { added: 0, already: 0, failed: 0, message: null };
+      for (const it of items) {
+        if (!normalizeFa(it.symbol)) continue;
+        try {
+          const r = await http<WatchlistPayload>(
+            '/api/watchlist', { method: 'POST', body: { symbol: it.symbol, name: it.name ?? '' } });
+          if (r.status === 'success') {
+            // «از قبل موجود» را سرور می‌گوید، نه حدسِ فرانت از کش
+            if (r.existed) out.already++; else out.added++;
+          } else { out.failed++; out.message = r.message ?? 'سرور نپذیرفت'; }
+        } catch (e) {
+          out.failed++;
+          out.message = e instanceof Error ? e.message : 'درخواست ناموفق';
+        }
+      }
+      return out;
+    },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: WATCHLIST_QUERY_KEY }); },
+  }, qc);
 }
 
 /** نماد (هر دو املا) → ردیفِ ماتریس */

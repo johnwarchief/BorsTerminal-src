@@ -69,6 +69,10 @@ type SelectionState = {
   items: SelectedSymbol[];
   /** روشن/خاموش کردنِ یک نماد — کلیکِ دوباره از فهرست بیرون می‌اندازد */
   toggle: (input: SelectionInput) => void;
+  /** افزودنِ دسته‌ای — نمادی که هست دوباره اضافه نمی‌شود (عملیاتِ «انتخاب همه»
+   *  نباید فهرست را دو برابر کند). شمارۀ افزوده‌شده برمی‌گردد تا رابط بتواند
+   *  صادق بگوید «N تایِ تازه». */
+  addMany: (inputs: SelectionInput[]) => number;
   remove: (symbol: string) => void;
   clear: () => void;
 };
@@ -85,6 +89,23 @@ export const useSelectedSymbolsStore = create<SelectionState>((set, get) => ({
       : [...cur, { norm, symbol, name, insCode, addedAt: Date.now() }];
     write(next);
     set({ items: next });
+  },
+  addMany: (inputs) => {
+    const cur = get().items;
+    const seen = new Set(cur.map((i) => i.norm));
+    const now = Date.now();
+    const fresh: SelectedSymbol[] = [];
+    inputs.forEach(({ symbol, name = '', insCode = null }, k) => {
+      const norm = normalizeFa(symbol);
+      if (!norm || seen.has(norm)) return;
+      seen.add(norm);
+      fresh.push({ norm, symbol, name, insCode, addedAt: now + k });
+    });
+    if (!fresh.length) return 0;
+    const next = [...cur, ...fresh];
+    write(next);
+    set({ items: next });
+    return fresh.length;
   },
   remove: (symbol) => {
     const norm = normalizeFa(symbol);
