@@ -44,6 +44,7 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         // پرچم‌هایِ لایه که از stateِ چارت به ftsConfigStore منتقل شدند (مرحلۀ ۶)
         showFibLevels: false,
         showHistoryEvents: false,
+        showStructure3: false,
         gridColor: '#242731',
         gridStyle: 'solid',
         showGridHorz: true,

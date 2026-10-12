@@ -16,11 +16,14 @@
 #
 # صداقتِ آستانه: ATR_MULT و FLOOR_PCT پارامترِ اجرایِ این موتورِ مقایسه‌ای‌اند؛
 # جزوه برای ZigZagِ آستانه‌دار عددی نمی‌دهد (سطرهایِ AMBIGUOUS در
-# FTS-RULE-ALGORITHM-MAP.md -- اختراع نمی‌شود). این موتور در قیف/داوریِ رسمی
-# وارد نمی‌شود و در کاتالوگِ چارت هم لایه ندارد (تصمیمِ مستند:
-# docs/technical-indicators/implemented/FTS-INDICATOR-LAYERS-1405-07-19.md §۳)؛
-# مصرفش harnessِ مقایسه (dev/structure_engine3_compare_v1.py) است،
-# بی‌تغییرِ رأیِ `/api/fts`.
+# FTS-RULE-ALGORITHM-MAP.md -- اختراع نمی‌شود). در دورِ تطبیقِ دوم (مرحلۀ ۲) این
+# موتور به رابطِ APIِ بی‌رأیِ `/api/structure3` و لایۀ تصویریِ گروهِ `fts-e3`
+# (توسلِ `view.showStructure3`، پیش‌فرض خاموش) وصل شد؛ مصرفِ harness
+# (dev/structure_engine3_compare_v1.py) هم سرِ جایش است. مرزِ سه‌موتوره با
+# مسیر/کش/گروه/برچسبِ جدا نگه داشته می‌شود، پس رأیِ `/api/fts` بی‌تغییر می‌ماند
+# (گارد: dev/test_structure3_engine.py). جزئیات و تنها مانعِ باقی‌مانده
+# (لینکِ مرجعِ مالک): docs/technical-indicators/implemented/
+# FTS-INDICATOR-LAYERS-1405-07-19.md §۳-ب.
 
 from __future__ import annotations
 

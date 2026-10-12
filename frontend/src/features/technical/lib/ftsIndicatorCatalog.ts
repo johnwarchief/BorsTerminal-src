@@ -18,9 +18,19 @@ export type IndicatorGroupId =
 
 export type DisplayKind = 'level' | 'band' | 'segment' | 'marker' | 'panel';
 
+/** پرچم‌هایِ view درِ ftsConfigStore که توسلِ لایه می‌شوند -- یک فهرست، سه
+ *  مصرف (کاتالوگ/پنل/تست)؛ بی‌این، سوییچِ اعلان‌شدنِ یک لایه درِ جایی می‌مرد. */
+export const CHART_VIEW_FLAGS = [
+  'showFibLevels',
+  'showHistoryEvents',
+  'showCorporateActions',
+  'showStructure3',
+] as const;
+export type ChartViewFlag = (typeof CHART_VIEW_FLAGS)[number];
+
 /** سوییچِ مستقلِ لایه: کلیدِ PatternPrefs یا flagِ نوارِ ابزار؛ null یعنی
  *  لایه همیشه با موتور می‌آید (پنلِ وضعیت) و توسلِ جدا ندارد. */
-export type LayerToggle = PatternKind | 'showFibLevels' | 'showHistoryEvents' | 'showCorporateActions' | null;
+export type LayerToggle = PatternKind | ChartViewFlag | null;
 
 export type FtsIndicatorEntry = {
   /** شناسهٔ پایدار — در legend، شواهدِ کلیک و لاگ‌ها همین خوانده می‌شود */
@@ -63,6 +73,27 @@ export const FTS_INDICATOR_CATALOG: readonly FtsIndicatorEntry[] = [
     id: 'structure-points', fa: 'نقاط ساختار (HH/HL/LH/LL)', en: 'Structure pivot points',
     group: 'structure', display: ['marker'], source: 'structure_points.D',
     rule: 'روند ساختاری صعودی/نزولی/خنثی', toggle: 'structure',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
+    id: 'e3-zigzag',
+    fa: 'موتور سوم - خط زیگزاگ (ATR٪)', en: 'Engine 3 thresholded zigzag',
+    group: 'structure', display: ['segment', 'marker'],
+    // دهانۀ موتورِ سوم `/api/structure3` است نه `/api/fts`؛ پرانتز همان
+    // قراردادِ `corp-actions` است (چیزی که از این payload نمی‌آید، درِ تستِ
+    // «دهانۀ زنده» ادعا نمی‌شود).
+    source: '(/api/structure3 -> points)',
+    rule: '— خارج از قواعد جزوه؛ لایۀ مقایسۀ بی‌رأی (FTS-RULE-ALGORITHM-MAP: بدونِ مرجعِ عددی)',
+    toggle: 'showStructure3',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
+    id: 'e3-choch',
+    fa: 'موتور سوم - واژگونی ساختار (CHoCH)', en: 'Engine 3 CHoCH events',
+    group: 'structure', display: ['marker'],
+    source: '(/api/structure3 -> choch)',
+    rule: '— خارج از قواعد جزوه؛ لایۀ مقایسۀ بی‌رأی، تعریفِ «دو جفتِ پیشین» درِ خودِ موتورِ سوم',
+    toggle: 'showStructure3',
     engines: { klinecharts: true, ffc: true },
   },
   {

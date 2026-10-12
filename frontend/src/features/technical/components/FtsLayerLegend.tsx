@@ -3,9 +3,10 @@
 // رجیستری + همان رنگ‌هایِ ترجیحات ساخته می‌شود، پس «افسانه» چیزی را که چارت
 // نگفته تضمین نمی‌کند: لایه‌ای که درِ این موتور رسم نمی‌شود (engines[*] = false)
 // درِ افسانه هم نیست.
-import { CATALOG_GROUPS, FTS_INDICATOR_CATALOG, type IndicatorGroupId } from '../lib/ftsIndicatorCatalog';
+import { CATALOG_GROUPS, CHART_VIEW_FLAGS, FTS_INDICATOR_CATALOG, type IndicatorGroupId } from '../lib/ftsIndicatorCatalog';
 import { LAYER_STATE_FA, layerEvidence } from '../lib/ftsLayerEvidence';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
+import type { Structure3Data } from '../api/useStructure3';
 import type { PatternPrefs } from '../lib/patternOverlays';
 import { usePatternPrefsStore } from '../stores/patternPrefsStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
@@ -18,15 +19,17 @@ function useLayerFlags() {
   const togglePattern = usePatternPrefsStore((s) => s.toggle);
   const view = useFtsConfigStore((s) => s.view);
   const setView = useFtsConfigStore((s) => s.setView);
+  // پرچم‌های view از همان فهرستِ کاتالوگ خوانده می‌شوند؛ «توسلِ پیش‌فرض روشن»
+  // فقط رویدادهایِ شرکتی است، بقیه با true صریح روشن می‌شوند.
+  const flag = (t: string): boolean =>
+    t === 'showCorporateActions' ? view?.showCorporateActions !== false : view?.[t as keyof typeof view] === true;
   const enabled = (t: string | null): boolean | null => {
     if (t === null) return null;
-    if (t === 'showFibLevels') return view?.showFibLevels === true;
-    if (t === 'showHistoryEvents') return view?.showHistoryEvents === true;
-    if (t === 'showCorporateActions') return view?.showCorporateActions !== false;
+    if ((CHART_VIEW_FLAGS as readonly string[]).includes(t)) return flag(t);
     return prefs[t as keyof PatternPrefs]?.enabled ?? null;
   };
   return { prefs, enabled, setEnabled: (t: string | null, on: boolean) => {
-    if (t === 'showFibLevels' || t === 'showHistoryEvents' || t === 'showCorporateActions') {
+    if (t && (CHART_VIEW_FLAGS as readonly string[]).includes(t)) {
       setView({ [t]: on } as Partial<typeof view>);
       return;
     }
@@ -38,17 +41,19 @@ export function FtsLayerLegend({
   fts,
   engineId,
   adjustmentEvents,
+  e3,
 }: {
   fts: FtsAnalysisData | null | undefined;
   engineId: ChartEngineId;
   adjustmentEvents?: number | null;
+  e3?: Structure3Data | null;
 }) {
   const { prefs, enabled, setEnabled } = useLayerFlags();
   const drawn = FTS_INDICATOR_CATALOG.filter((e) => {
     if (e.engines[engineId] !== true) return false;
     const on = enabled(e.toggle);
     if (on === false) return false;
-    const st = layerEvidence(e, fts, { adjustmentEvents: adjustmentEvents ?? null }).state;
+    const st = layerEvidence(e, fts, { adjustmentEvents: adjustmentEvents ?? null, structure3: e3 ?? null }).state;
     // افسانه جایِ «لایه‌ای که همین حالا رویِ بوم است» است؛ پیش‌نویس هم رسم
     // می‌شود (برچسبِ «در حال تشکیل» دارد) پس می‌آید، «فعال نیست» نه.
     return st === 'active' || st === 'forming';
@@ -67,7 +72,7 @@ export function FtsLayerLegend({
       <span className="text-3xs font-bold text-text-secondary">افسانۀ FTS</span>
       {drawn.map((e) => {
         const groupTitle = CATALOG_GROUPS[e.group as IndicatorGroupId].fa;
-        const state = layerEvidence(e, fts, { adjustmentEvents: adjustmentEvents ?? null }).state;
+        const state = layerEvidence(e, fts, { adjustmentEvents: adjustmentEvents ?? null, structure3: e3 ?? null }).state;
         const chip = (
           <span className="flex items-center gap-1.5 text-3xs text-text-secondary">
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: layerColor(e, prefs) }} aria-hidden="true" />

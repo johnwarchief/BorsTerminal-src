@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CATALOG_GROUPS,
+  CHART_VIEW_FLAGS,
   FTS_INDICATOR_CATALOG,
   catalogEntry,
   catalogForGroup,
@@ -22,12 +23,25 @@ describe('کاتالوگِ اندیکاتور FTS', () => {
   });
 
   it('هر toggleِ اعلامی یا کلیدِ PatternPrefs است یا flagِ شناخته‌شده', () => {
-    const FLAGS = new Set(['showFibLevels', 'showHistoryEvents', 'showCorporateActions']);
+    const FLAGS = new Set<string>(CHART_VIEW_FLAGS);
     for (const e of FTS_INDICATOR_CATALOG) {
       if (e.toggle === null) continue;
       const isPref = e.toggle in PATTERN_PREFS_DEFAULT;
       const isFlag = FLAGS.has(e.toggle);
       expect(isPref || isFlag, `${e.id} → ${String(e.toggle)}`).toBe(true);
+    }
+  });
+
+  it('لایه‌هایِ موتورِ سوم بی‌رأیند و درِ هر دو موتور رسم می‌شوند', () => {
+    // §مرحلۀ ۲: خروجیِ موتورِ سوم نباید با رأیِ رسمی FTS قاطی شود؛ تنها
+    // منبعِ لایه‌ها `/api/structure3` است (پرانتِجِ source = دهانۀ زنده نیست).
+    for (const id of ['e3-zigzag', 'e3-choch']) {
+      const e = catalogEntry(id);
+      expect(e, id).toBeTruthy();
+      expect(e?.toggle).toBe('showStructure3');
+      expect(e?.engines).toEqual({ klinecharts: true, ffc: true });
+      expect(e?.source.startsWith('(/api/structure3'), `${id} → ${e?.source}`).toBe(true);
+      expect(e?.rule.includes('بی‌رأی'), `${id} rule`).toBe(true);
     }
   });
 

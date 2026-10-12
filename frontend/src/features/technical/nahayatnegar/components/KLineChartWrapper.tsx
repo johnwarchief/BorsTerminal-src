@@ -89,12 +89,17 @@ import '../styles/nahayatNegarStyles.css';
 // تحلیل FTS را صفحه می‌دهد (#161)؛ چارت هیچ چیز را دوباره حساب نمی‌کند و خودشان
 // کوئری نمی‌زند — همان شیئی که پنلِ «وضعیت FTS» می‌خواند به این اورلی‌ها می‌رسد.
 import type { FtsAnalysisData } from '../../api/useFtsAnalysis';
+import type { Structure3Data } from '../../api/useStructure3';
+import { e3KlinechartsOverlay, structure3Layers } from '../../lib/structure3Layers';
 
 export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   fts?: FtsAnalysisData | null;
+  /** قراردادِ موتورِ سوم از صفحه (`/api/structure3`)؛ چارت کوئری نمی‌زند،
+   *  فقط نقشه می‌زند -- همان قاعدۀ #161. بی‌آن یا بی‌`showStructure3` لایه نیست. */
+  e3?: Structure3Data | null;
   replayActive?: boolean;
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
@@ -171,6 +176,8 @@ function formatJalali(timestamp: number, type?: string): string {  try {
 // --- فاز ۴: نگاشت خروجی داورهای FTSِ سرور به اورلی‌های موتور چارت (آورلی‌های توکار v10) ---
 // گروه مستقل «fts_pattern_overlays»؛ الگوی خاموش ⇒ هیچ اورلی‌ای ساخته نمی‌شود.
 const PATTERN_GROUP_ID = 'fts_pattern_overlays';
+/** گروهِ لایۀ موتورِ سوم؛ جدا از الگوها تا ترسیمِ این موتور با FTS قاطی نشود */
+const E3_GROUP_ID = 'fts_e3_overlays';
 
 function patternOverlayColor(spec: PatternOverlaySpec): string {
   const st = spec.styles as { color?: unknown } | undefined;
@@ -298,6 +305,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialName = 'ایران خودرو',
   boardRow,
   fts,
+  e3,
   replayActive,
   chartEngine,
   onEngineChange,
@@ -468,6 +476,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // سوییچِ واگرا یعنی یک رجیستریِ دروغگو (مرحلۀ ۶).
   const showFibLevels = ftsView.showFibLevels === true;
   const showHistoryEvents = ftsView.showHistoryEvents === true;
+  // لایۀ موتورِ سوم (`/api/structure3`)؛ پیش‌فرض خاموش و بی‌رأیِ رسمی.
+  const showStructure3 = ftsView.showStructure3 === true;
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -732,7 +742,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
         return all
           .filter((o) => o && typeof o.name === 'string' &&
-            (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions'].includes(o.name))))
+            (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions', 'fts_e3_overlays'].includes(o.name))))
           .map((o) => ({
             name: o.name as string,
             groupId: 'fts-draw',
@@ -1744,6 +1754,50 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
     };
   }, [corporateActions, corpEvents, displayCandles, ftsView?.showCorporateActions]);
+
+  // لایۀ موتورِ سوم (`/api/structure3`) — خطِ شکستۀ زیگزاگ + برچسبِ پیوت‌ها و
+  // رویدادهای CHoCHِ خودِ موتور. گروه، رنگ و امضایِ برچسب («م۳») جدا از لایه‌های
+  // FTS است، پس درِ چارت با نقاطِ ساختاریِ موتورِ اول یکی خوانده نمی‌شود و
+  // رأیِ رسمی FTS را جابه‌جا نمی‌کند (بند ۴ طرحِ مأموریت). بی‌`showStructure3`
+  // نه درخواستی می‌رود و نه اورلی‌ای می‌ماند؛ `pending`ِ موتور هرگز رسم نمی‌شود
+  // (پیوتِ تأییدنشده = repaint).
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const clearE3 = () => {
+      try {
+        chart.removeOverlay({ groupId: E3_GROUP_ID } as never);
+      } catch {
+        // safe
+      }
+    };
+    clearE3();
+    const payload = e3;
+    if (!showStructure3 || payload?.status !== 'success' || renderCandles.length === 0) return;
+    const aLast = typeof payload.ref_close === 'number' && payload.ref_close > 0 ? payload.ref_close : 0;
+    const dLast = renderCandles[renderCandles.length - 1].close;
+    const k = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
+    const specs = structure3Layers({
+      e3: payload,
+      startTs: renderCandles[0].timestamp,
+      anchorTs: renderCandles[renderCandles.length - 1].timestamp,
+      toDisp: (p) => p * k,
+      tsForDate: (date) => {
+        const ts = parseCandleTimestamp(date);
+        return Number.isFinite(ts) && ts > 0 ? ts : null;
+      },
+    });
+    for (const s of specs) {
+      const made = e3KlinechartsOverlay(s, E3_GROUP_ID);
+      if (!made) continue;
+      try {
+        chart.createOverlay(made as never);
+      } catch {
+        // اورلیِ نگرفته‌شده نباید رسمِ بقیۀ لایه را متوقف کند
+      }
+    }
+    return clearE3;
+  }, [e3, showStructure3, renderCandles]);
 
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

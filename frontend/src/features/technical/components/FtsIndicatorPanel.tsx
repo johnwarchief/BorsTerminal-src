@@ -7,21 +7,26 @@ import { useMemo, useState } from 'react';
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
-import { CATALOG_GROUPS, FTS_INDICATOR_CATALOG, type FtsIndicatorEntry, type IndicatorGroupId, type LayerToggle } from '../lib/ftsIndicatorCatalog';
+import type { Structure3Data } from '../api/useStructure3';
+import { CATALOG_GROUPS, CHART_VIEW_FLAGS, FTS_INDICATOR_CATALOG, type FtsIndicatorEntry, type IndicatorGroupId, type LayerToggle } from '../lib/ftsIndicatorCatalog';
+import { E3_COLORS } from '../lib/structure3Layers';
 import { LAYER_STATE_FA, layerEvidence, type LayerState } from '../lib/ftsLayerEvidence';
 import { FTS_OVERLAY_COLORS } from '../lib/ftsOverlays';
 import { PATTERN_LABELS, type PatternKind, type PatternPrefs } from '../lib/patternOverlays';
 import { usePatternPrefsStore } from '../stores/patternPrefsStore';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
 
-/** پرچم‌های نوارِ ابزار (درِ view store)، نه الگوهایِ PatternPrefs */
-const VIEW_FLAGS = ['showFibLevels', 'showHistoryEvents', 'showCorporateActions'] as const;
+/** پرچم‌های نوارِ ابزار (درِ view store)، نه الگوهایِ PatternPrefs -- یک فهرستِ
+ *  مشترک با کاتالوگ و تست، تا سوییچِ اعلام‌شدنِ لایه‌ای درِ جایی نمرد. */
+const VIEW_FLAGS = CHART_VIEW_FLAGS;
 type ViewFlag = (typeof VIEW_FLAGS)[number];
 
 const FLAG_COLORS: Record<ViewFlag, string> = {
   showFibLevels: FTS_OVERLAY_COLORS.fibText,
   showHistoryEvents: FTS_OVERLAY_COLORS.fibText2,
   showCorporateActions: '#8a93a6',
+  // رنگِ خودِ لایه، از پالتِ موتورِ سوم -- نه یک پالتِ دوم درِ پنل
+  showStructure3: E3_COLORS.line,
 };
 
 /** لایه‌های بی‌توسلِ الگو که رنگشان درِ نگاشتِ لایه ثابت است */
@@ -73,6 +78,7 @@ export function FtsIndicatorPanel({
   lastBarDate,
   fetchedAtMs,
   adjustmentEvents,
+  e3,
 }: {
   fts: FtsAnalysisData | null | undefined;
   basis?: string | null;
@@ -80,6 +86,8 @@ export function FtsIndicatorPanel({
   lastBarDate?: string | null;
   fetchedAtMs?: number | null;
   adjustmentEvents?: number | null;
+  /** قراردادِ موتورِ سوم (`/api/structure3`) -- شواهدِ دو سطرِ e3 فقط از این است */
+  e3?: Structure3Data | null;
 }) {
   const prefs = usePatternPrefsStore((s) => s.prefs);
   const togglePattern = usePatternPrefsStore((s) => s.toggle);
@@ -113,7 +121,7 @@ export function FtsIndicatorPanel({
   };
 
   const evidenceOf = (entry: FtsIndicatorEntry) =>
-    layerEvidence(entry, fts, { adjustmentEvents: adjustmentEvents ?? null });
+    layerEvidence(entry, fts, { adjustmentEvents: adjustmentEvents ?? null, structure3: e3 ?? null });
 
   return (
     <div className="glass-panel flex flex-col gap-2.5 p-3" data-testid="fts-layer-panel" dir="rtl">

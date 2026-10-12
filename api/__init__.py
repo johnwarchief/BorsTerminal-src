@@ -9,13 +9,13 @@ from fastapi import APIRouter
 
 def api_router() -> APIRouter:
     """Aggregate every module router into one APIRouter."""
-    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics)
+    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics, structure3)
     import codal_fetcher
 
     agg = APIRouter()
     mods = [market, chart, selection, watchlist, fundamental, market_status, screener, funnel,
             _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine,
-            market_index, diagnostics]
+            market_index, diagnostics, structure3]
     # /api/adb/* کنترل ADB است (خاموش‌کردن Wi-Fi کاربر، حالت پرواز گوشیِ او) —
     # مخصوصِ ماشینِ توسعه‌دهنده. در EXE ثبت نمی‌شود تا هیچ درِ ورودیِ محلی
     # روی پورت ۸۰۰۱ باقی نماند.

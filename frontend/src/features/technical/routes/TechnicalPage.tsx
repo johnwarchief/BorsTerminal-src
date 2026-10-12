@@ -15,6 +15,7 @@ import type { EngineBar } from '../engine';
 import { useCandleFeed } from '../api/useCandleFeed';
 import { useFundGate } from '../api/useFundGate';
 import { useFtsAnalysis } from '../api/useFtsAnalysis';
+import { useStructure3 } from '../api/useStructure3';
 import { technicalSignal } from '../signals/technicalSignals';
 import { weeklyFromFts } from '../lib/weeklyFromFts';
 import { corpEventChipLabel, recentCorpEvents } from '../lib/corpEvents';
@@ -108,6 +109,10 @@ export default function TechnicalPage() {
     refetch: feed.refetch,
   };
   const analysis = useFtsAnalysis(viewSymbol);
+  // موتورِ سوم: لایۀ مقایسۀ بی‌رأی، پیش‌فرض خاموش. تا کاربر روشن نکند درخواستی
+  // نمی‌رود (`enabled`)، پس «رجیستریِ زنده» بی‌مصرفِ شبکه نمی‌شود.
+  const showStructure3 = useFtsConfigStore((s) => s.view?.showStructure3 === true);
+  const e3 = useStructure3(viewSymbol, showStructure3);
   const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
 
   // سیگنالِ تکنیکال باید همان سریِ تعدیل‌شده‌ای را ببیند که چارت می‌رسمد و موتورِ
@@ -264,6 +269,7 @@ export default function TechnicalPage() {
                 bars={engineBars}
                 fts={analysis.data?.fts ?? null}
                 refClose={analysis.data?.ref_close ?? null}
+                e3={e3.data ?? null}
                 corpEvents={corpEvents}
                 dark={theme !== 'light'}
                 logScale={storePriceScale === 'logarithm'}
@@ -297,6 +303,7 @@ export default function TechnicalPage() {
                   initialName={boardRow?.name || viewSymbol}
                   boardRow={boardRow}
                   fts={analysis.data?.fts ?? null}
+                  e3={e3.data ?? null}
                   replayActive={replayActive}
                   chartEngine={chartEngine}
                   onEngineChange={setChartEngine}
@@ -314,6 +321,7 @@ export default function TechnicalPage() {
                 fts={analysis.data?.fts ?? null}
                 engineId={chartEngine}
                 adjustmentEvents={adjustEvents?.length ?? null}
+                e3={e3.data ?? null}
               />
             </div>
           ) : null}
@@ -360,6 +368,7 @@ export default function TechnicalPage() {
                   lastBarDate={lastBarDate}
                   fetchedAtMs={analysis.dataUpdatedAt > 0 ? analysis.dataUpdatedAt : null}
                   adjustmentEvents={adjustEvents?.length ?? null}
+                  e3={e3.data ?? null}
                 />
               ),
             },

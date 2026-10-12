@@ -8,6 +8,7 @@
 // بازنویسیِ آن، یعنی ساختنِ یک روایتِ دوم درِ فرانت.
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
+import type { Structure3Data } from '../api/useStructure3';
 import { TREND_FA } from '../components/FtsBadgeStrip';
 import type { FtsIndicatorEntry } from './ftsIndicatorCatalog';
 
@@ -36,9 +37,11 @@ export type LayerEvidence = {
   note: string | null;
 };
 
-/** دهانه‌هایی که از `/api/fts` نمی‌آیند (رویدادهایِ شرکتی از feedِ مبدأ) */
+/** دهانه‌هایی که از `/api/fts` نمی‌آیند (رویدادهایِ شرکتی از feedِ مبدأ،
+ *  ساختارِ موتورِ سوم از `/api/structure3`) */
 export type EvidenceFeed = {
   adjustmentEvents?: number | null;
+  structure3?: Structure3Data | null;
 };
 
 const ev = (
@@ -271,6 +274,62 @@ const READERS: Record<string, Reader> = {
     const c = n(feed.adjustmentEvents);
     if (c == null) return ev('not-published');
     return ev(c > 0 ? 'active' : 'inactive', [{ label: 'رویدادهایِ تعدیل', value: `${toFaDigits(c)} رویداد` }]);
+  },
+
+  // لایۀ موتورِ سوم: دهانۀ `/api/structure3` است نه `/api/fts` (مثلِ
+  // `corp-actions`). بی‌پاسخ «منتشر نشده» است، «صفر پیوت» نه؛ پاسخِ ناکافی هم
+  // حالتِ جدای خودش را دارد -- سه‌حالتهایِ این فایل درِ موتورِ سوم هم رعایت می‌شود.
+  'e3-zigzag': (_fts, feed) => {
+    const e3 = feed.structure3;
+    if (!e3) return ev('not-published');
+    if (e3.status === 'error') return ev('not-published', [], null, null, e3.message ?? null);
+    const facts: EvidenceFact[] = [];
+    const pr = e3.params;
+    txt(facts, 'آستانه‌ها (از خودِ موتور)',
+      pr ? `ATR ${toFaDigits(pr.atr_period)} · ×${toFaDigits(pr.atr_mult)} · کفِ ${toFaDigits(pr.floor_pct)}٪` : null);
+    txt(facts, 'مبنایِ سری', e3.basis);
+    num(facts, 'کندلِ تحلیل', e3.bars);
+    const meta = e3.meta;
+    // دو شمارِ meta معنایِ خودِ `_threshold` را دارند: `atr_used` یعنی «ATRِ معتبر
+    // درِ آستانه حساب شد» -- وگرنه فقطِ کفِ٪ جاری بوده. پس «ATR» با «آستانه‌ای که
+    // ATR ساخت» یکی نیست و برچسب هم همین را می‌گوید.
+    num(facts, 'تأیید با ATRِ معتبر', meta?.confirmed_atr);
+    num(facts, 'تأیید بی‌ATR (کف‌محور)', meta?.confirmed_floor_only);
+    num(facts, 'کندل بی‌ATR', meta?.atr_missing_bars);
+    if (meta?.pending) {
+      facts.push({
+        label: 'ساختارِ تأییدنشده (بی‌رسم)',
+        value: `${meta.pending.kind === 'high' ? 'سقف' : meta.pending.kind === 'low' ? 'کف' : '—'} ${
+          typeof meta.pending.price === 'number' ? fmtInt(meta.pending.price) : '—'
+        }`,
+      });
+    }
+    if (e3.status !== 'success') {
+      return ev('insufficient', facts, null, null, e3.message ?? 'تاریخچه برای زیگزاگ ناکافی است');
+    }
+    const pts = e3.points ?? [];
+    num(facts, 'پیوتِ تأییدشده', pts.length);
+    if (pts.length === 0) {
+      return ev('inactive', facts, null, null, e3.rule_source ?? null);
+    }
+    const last = pts[pts.length - 1];
+    return ev('active', facts, last.time, last.confirm_time ?? null, e3.rule_source ?? null);
+  },
+
+  'e3-choch': (_fts, feed) => {
+    const e3 = feed.structure3;
+    if (!e3 || e3.status !== 'success') {
+      return ev(e3 ? 'insufficient' : 'not-published', [], null, null, e3?.message ?? null);
+    }
+    const list = e3.choch ?? [];
+    const facts: EvidenceFact[] = [{ label: 'واژگونیِ ساختاری', value: `${toFaDigits(list.length)} رویداد` }];
+    if (list.length === 0) {
+      return ev('inactive', facts, null, null, 'هیچ پیوتِ هم‌سمتی الگویِ دو جفتِ پیشین را نشکسته است');
+    }
+    const last = list[list.length - 1];
+    num(facts, 'سطحِ واژگونی', last.level);
+    facts.push({ label: 'جهت', value: last.direction === 'bullish' ? 'صعودی' : 'نزولی' });
+    return ev('active', facts, last.time, last.confirm_time ?? null, e3.rule_source ?? null);
   },
 };
 

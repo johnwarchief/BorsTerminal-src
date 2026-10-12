@@ -123,6 +123,11 @@ a = Analysis(
                    # بودند و در آرشیوِ PYZ نیستند. اگر مسیرِ import هرگز به دیسک
                    # نرسد، EXE با ModuleNotFoundError می‌میرد.
                    'api.market_index', 'api.diagnostics',
+                   # مرحلۀ ۲ دورِ تطبیقِ دوم: `/api/structure3` موتورِ سوم را به‌عنوان
+                   # رابطِ بی‌رأی منتشر می‌کند و `structure_engine3` را سطح-بال import
+                   # می‌کند؛ `api_router` هم ماژول را درِ بدنهٔ تابع import می‌کند، پس
+                   # هر دو صریح فهرست می‌شوند (گاردِ dev/onedir_contract_v11.py).
+                   'api.structure3', 'structure_engine3',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

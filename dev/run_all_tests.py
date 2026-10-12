@@ -91,6 +91,14 @@ SUITES = [
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
     ('dev/test_fts_asof_cutoff.py',
      'FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak'),
+    # مرحلۀ ۲ دورِ تطبیقِ دوم: موتورِ سوم حالا رابطِ APIِ جدایِ بی‌رأی دارد
+    # (`/api/structure3`)، پس قراردادش باید آزمودنی باشد نه فقط harness:
+    # چهار حالتِ صریحِ ورودی، آستانه‌هایی که فقط از خودِ موتور خوانده می‌شوند،
+    # پیشوند-پایداری/بی‌دادهٔ آینده، تفکیکِ ATR از کف، و اینکه هیچ چیزی درِ
+    # کشِ رأیِ رسمی FTS نوشته نمی‌شود.
+    ('dev/test_structure3_engine.py',
+     'engine 3 contract: explicit input states, thresholds only from the engine itself, '
+     'prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote'),
     ('dev/test_trend_engine_flag.py',
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',

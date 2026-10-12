@@ -3,16 +3,18 @@
 // چرا این فایل درِ `dev/run_all_tests.py` نیست: سوئیت‌هایِ آن باید آفلاین بدوند و
 // سرورِ dev بسته باشد (AGENTS.md §گیت‌ها). این اسکریپت عمداً *برعکس* است — به
 // بک‌اندِ زنده (127.0.0.1:8001) و vite (5173) نیاز دارد و همان چیزی را می‌سنجد که
-// vitest نمی‌تواند: رندرِ واقعیِ چارت، داکِ «لایه‌های FTS»، سوییچِ زنده، و کارتِ
-// شواهد درِ هر دو موتور (klinecharts ⇄ FFC).
+// vitest نمی‌تواند: رندرِ واقعیِ چارت، داکِ «لایه‌های FTS»، سوییچِ زنده، کارتِ
+// شواهد درِ هر دو موتور (klinecharts ⇄ FFC)، و لایۀ بی‌رأیِ موتورِ سوم
+// (`/api/structure3` → گروهِ `fts-e3`) که پیش‌فرض خاموش است و همین‌جا روشن می‌شود.
 //
 // اجرا:
 //   python -m uvicorn app:app --port 8001        # ترمینالِ ۱
 //   cd frontend && npm run dev                   # ترمینالِ ۲
 //   node dev/fts_layers_e2e_v1.js --symbol فولاد  # ترمینالِ ۳
 //
-// خروجی: `_audit/fts_layers_e2e.json` + دو اسکرین‌شات (یکی هر موتور). بی‌سرور،
-// صریحاً FAIL می‌شود — «رد شدنِ بی‌خبر» نداریم.
+// خروجی: `_audit/fts_layers_e2e.json` + اسکرین‌شاتِ هر موتور + پیش/پسِ بومِ
+// لایۀ موتورِ سوم (`e3_<engine>_canvas_off.png` / `_on.png`). بی‌سرور، صریحاً
+// FAIL می‌شود — «رد شدنِ بی‌خبر» نداریم.
 const fs = require('fs');
 const path = require('path');
 
@@ -74,7 +76,15 @@ async function waitForFeed(page, engineId) {
   await page.waitForFunction(() => {
     const els = Array.from(document.querySelectorAll('[data-testid^="fts-layer-state-"]'));
     return els.some((e) => e.textContent.trim() === 'فعال');
-  }, { timeout: 60000 }).catch(() => { /* بی‌پنلِ باز: خودِ ck بعدی می‌گوید */ });
+  }, null, { timeout: 60000 }).catch(() => { /* بی‌پنلِ باز: خودِ ck بعدی می‌گوید */ });
+  // شمارِ «فعال» کافی نیست: `corp-actions` از feedِ رویدادهایِ تعدیل می‌آید و
+  // زودتر از `/api/fts` روشن می‌شود، پس درِ کشِ سردِ موتورِ اول پنل هنوز
+  // «اعلام نشده» است. خطِ تازگی پر می‌شود ⇔ تحلیلِ FTS رسیده؛ منتظرِ همان می‌مانیم
+  // تا «زود آمدنِ سنجش» به پایِ منطقِ لایه‌ها نوشته نشود.
+  await page.waitForFunction(() => {
+    const e = document.querySelector('[data-testid="fts-layer-freshness"]');
+    return !!e && /کندل[^\d۰-۹]*[۰-۹0-9]/.test(e.textContent) && !/اعلام نشده/.test(e.textContent);
+  }, null, { timeout: 90000 }).catch(() => { /* نرسید: ckِ تازگی صادقاً FAIL می‌گوید */ });
   return Date.now() - t0;
 }
 
@@ -144,6 +154,108 @@ async function probe(page, engineId) {
   await page.screenshot({ path: path.join(OUT_DIR, `e2e_layers_${engineId}.png`), fullPage: false });
 }
 
+// لایۀ موتورِ سوم (`/api/structure3`): پیش‌فرض خاموش و بی‌رأی است، پس سنجشِ آن
+// سه چیز را می‌خواهد -- (۱) خاموش بودن واقعاً «منتشر نشده» است نه صفرِ ساختگی،
+// (۲) روشن‌کردن کوئریِ واقعی را می‌زند و لایه را «فعال» می‌کند، (۳) رویِ بوم
+// چیزی عوض می‌شود. بندِ سوم را نمی‌توان با تستِ واحد اثبات کرد (کدِ ترسیم درِ
+// بوم است)، پس از راهِ مقایسۀ تصویرِ بوم سنجیده می‌شود.
+async function probeE3(page, engineId, hostSel) {
+  const stateOf = (id) => page.$eval(`[data-testid="fts-layer-state-${id}"]`, (e) => e.textContent.trim());
+  const rows = await page.$$eval('[data-testid^="fts-layer-row-"]', (els) =>
+    els.map((e) => e.getAttribute('data-testid').replace('fts-layer-row-', '')));
+  for (const id of ['e3-zigzag', 'e3-choch']) {
+    ck(`${engineId}: کاتالوگ سطرِ «${id}» را دارد`, rows.includes(id), rows.length + ' سطر');
+  }
+
+  const readFlag = async () => {
+    const raw = JSON.parse((await page.evaluate((k) => localStorage.getItem(k), CONFIG_KEY)) || '{}');
+    return !!(raw && raw.view && raw.view.showStructure3 === true);
+  };
+  FACTS[engineId + '_e3_off_flag'] = await readFlag();
+  ck(`${engineId}: موتورِ سوم پیش‌فرض خاموش است`, (await readFlag()) === false);
+  const offState = await stateOf('e3-zigzag').catch(() => '');
+  FACTS[engineId + '_e3_off_state'] = offState;
+  ck(`${engineId}: بی‌کوئری، لایه «منتشر نشده» است نه «صفر»`, offState === 'منتشر نشده', offState);
+
+  const canvasSel = `${hostSel} canvas`;
+  const shot = async () => {
+    const el = await page.$(canvasSel);
+    return el ? el.screenshot() : null;
+  };
+  const off1 = await shot();
+  const off2 = await shot();
+  ck(`${engineId}: بومِ پیش از روشن‌کردن گرفته شد`, !!off1 && !!off2);
+  // کنترلِ بی‌تحركی: دو بار در یک وضعیت باید یکی باشد، وگرنه «تغییر» بی‌معناست
+  const animates = off1 && off2 && Buffer.compare(off1, off2) !== 0;
+  FACTS[engineId + '_e3_canvas_animates'] = animates;
+
+  const resp = page.waitForResponse((r) => r.url().includes('/api/structure3'), { timeout: 90000 });
+  await page.click('[data-testid="fts-layer-toggle-e3-zigzag"]');
+  const got = await resp.catch(() => null);
+  ck(`${engineId}: روشن‌کردنِ لایه کوئریِ /api/structure3 را می‌زند`, !!got,
+    got ? `${got.status()} ${new URL(got.url()).pathname}` : 'بی‌پاسخ');
+  ck(`${engineId}: ترجیحِ showStructure3 درِ localStorage ثبت شد`, (await readFlag()) === true);
+
+  await page.waitForFunction((id) => {
+    const e = document.querySelector(`[data-testid="fts-layer-state-${id}"]`);
+    return !!e && e.textContent.trim() !== 'منتشر نشده';
+  }, 'e3-zigzag', { timeout: 90000 }).catch(() => null);
+  const onState = await stateOf('e3-zigzag').catch(() => '');
+  FACTS[engineId + '_e3_on_state'] = onState;
+  ck(`${engineId}: لایه رویِ دادهٔ زنده «فعال» شد`, onState === 'فعال', onState);
+  await page.waitForTimeout(1200);   // افکتِ ترسیم + یک قابِ رسم
+
+  const on1 = await shot();
+  if (off1 && on1) {
+    const changed = Buffer.compare(off1, on1) !== 0;
+    FACTS[engineId + '_e3_canvas_bytes'] = { off: off1.length, on: on1.length, animates };
+    if (animates) {
+      console.log('  NOTE بوم در وضعیتِ بی‌تحرك هم تفاوت می‌کند؛ مقایسۀ تصویر گویا نیست');
+    } else {
+      ck(`${engineId}: روشن‌کردنِ لایهٔ موتورِ سوم بوم را عوض می‌کند (رسمِ واقعی)`, changed,
+        `${off1.length} → ${on1.length} بایت`);
+    }
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+    fs.writeFileSync(path.join(OUT_DIR, `e3_${engineId}_canvas_off.png`), off1);
+    fs.writeFileSync(path.join(OUT_DIR, `e3_${engineId}_canvas_on.png`), on1);
+  }
+
+  const status = await page.textContent('[data-testid="fts-e3-status"]').catch(() => null);
+  if (status != null) {
+    FACTS[engineId + '_e3_status'] = status;
+    ck(`${engineId}: خطِ وضعیتِ موتورِ سوم شمارِ پیوتِ واقعی را می‌گوید`,
+      /[۰-۹0-9]+\s*پیوت/.test(status) && /بی‌رأی/.test(status), status.slice(0, 90));
+  }
+
+  const evBtn = await page.$('[data-testid="fts-layer-evidence-btn-e3-zigzag"]');
+  ck(`${engineId}: دکمهٔ «شواهد» برایِ لایۀ موتورِ سوم هست`, !!evBtn);
+  if (evBtn) {
+    await evBtn.click();
+    await page.waitForSelector('[data-testid="fts-layer-evidence"]', { timeout: 8000 });
+    const rule = await page.textContent('[data-testid="fts-evidence-rule"]');
+    const src = await page.textContent('[data-testid="fts-evidence-source"]');
+    const times = await page.textContent('[data-testid="fts-evidence-times"]').catch(() => '');
+    const body = await page.textContent('[data-testid="fts-layer-evidence"]');
+    FACTS[engineId + '_e3_evidence'] = { rule, src, times };
+    ck(`${engineId}: کارتِ شواهدِ موتورِ سوم صریح «خارج از قواعد جزوه» را می‌گوید`,
+      /خارج از قواعد جزوه/.test(rule || ''), (rule || '').slice(0, 90));
+    ck(`${engineId}: کارتِ شواهد دهانۀ /api/structure3 را نام می‌برد`,
+      /api\/structure3/.test(src || ''), (src || '').slice(0, 90));
+    ck(`${engineId}: کارتِ شواهد آستانه‌ها را از خودِ موتور می‌خواند`,
+      /ATR/.test(body || '') && /کفِ/.test(body || ''), (body || '').slice(0, 120));
+    ck(`${engineId}: کارتِ شواهدِ موتورِ سوم دو زمان را جدا می‌نویسد`,
+      /رخ داد/.test(times || '') && /فهمیدیم/.test(times || ''), (times || '').slice(0, 120));
+  }
+
+  const legend = await page.$$eval('[data-testid^="fts-legend-item-"]', (els) =>
+    els.map((e) => e.getAttribute('data-testid').replace('fts-legend-item-', ''))).catch(() => []);
+  FACTS[engineId + '_e3_legend'] = legend;
+  ck(`${engineId}: افسانه هم ردیفِ موتورِ سوم را بعد از روشن‌کردن نشان می‌دهد`,
+    legend.includes('e3-zigzag'), legend.join(','));
+
+  await page.screenshot({ path: path.join(OUT_DIR, `e2e_e3_${engineId}.png`), fullPage: false });
+}
+
 (async () => {
   const url = `${BASE}/#/technical/${encodeURIComponent(SYMBOL)}`;
   const browser = await chromium.launch({
@@ -194,6 +306,7 @@ async function probe(page, engineId) {
       const waitedMs = await waitForFeed(page, engine);
       FACTS[engine + '_feed_ms'] = waitedMs;
       await probe(page, engine);
+      await probeE3(page, engine, hostSel);
       ck(`${engine}: بی‌خطایِ console/pageerror`, errors.length === 0, errors.slice(0, 2).join(' | '));
       await ctx.close();
     }
