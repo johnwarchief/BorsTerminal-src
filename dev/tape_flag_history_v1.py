@@ -125,10 +125,32 @@ def main():
 
     # ── ۲) «غیرفعال» در برابر «ثبت نشده» ────────────────────────────────────────
     h = H.history_for(conn, ["A+", "B", "D"], days=20)
+
+    # پاسخ باید با **orjson** سریال شود: `_ORJ_JSON` کلیدِ عددی را رد می‌کند
+    # (`TypeError: Dict key must be str`) و مسیرِ واقعیِ /api/tape-history ۵۰۰
+    # می‌داد، درحالی‌که `json.dumps` همان را بی‌صدا به رشته تبدیل می‌کرد — یعنی
+    # تستِ بدونِ این چک، خودِ باگ را نمی‌دید (شاهدِ زنده ۱۴۰۵-۰۷-۲۱).
+    try:
+        import orjson
+    except ImportError:
+        orjson = None
+    if orjson is None:
+        print("  --   orjson نصب نیست؛ چکِ سریال‌سازی بی‌اثر است (درِ اپ نصب است)")
+    else:
+        try:
+            orjson.dumps(h)
+            ck(True, "پاسخِ history_for با orjson سریال می‌شود (کلیدها رشته‌اند)")
+        except TypeError as e:
+            ck(False, "پاسخِ history_for با orjson سریال نمی‌شود", str(e))
+        try:
+            orjson.dumps({12345678: 1})
+            ck(False, "نگهبان کور است: orjson کلیدِ عددی را رد نمی‌کند")
+        except TypeError:
+            ck(True, "چکِ سریال‌سازی کور نیست (کلیدِ عددی را همان‌جا می‌گیرد)")
     a = h["by_symbol"]["A+"]["f_susp"]
-    ck(a["total"] == 1 and a["days"][d1]["active"] is True,
+    ck(a["total"] == 1 and a["days"][str(d1)]["active"] is True,
        "فیلترِ روشن در روزِ خودش: active")
-    ck(a["days"][d2]["active"] is False,
+    ck(a["days"][str(d2)]["active"] is False,
        "روزی که رصد شده ولی فیلتر روشن نبوده ⇒ غیرفعال (نه «بدون داده»)")
     d_fs = h["by_symbol"]["D"]["f_susp"]
     ck(d_fs["total"] == 0 and all(v["active"] is False for v in d_fs["days"].values()),
@@ -137,7 +159,7 @@ def main():
     ck(h["by_symbol"]["A+"]["f_jet"]["total"] == 2,
        "جت در هر دو روز روشن بوده ⇒ مجموعِ دفعات = ۲", str(h["by_symbol"]["A+"]["f_jet"]["total"]))
     ck(h["by_symbol"]["A+"]["f_jet"]["last_seen_at"] is not None
-       and h["by_symbol"]["A+"]["f_jet"]["last_seen_at"] >= h["by_symbol"]["A+"]["f_jet"]["days"][d1]["last_at"],
+       and h["by_symbol"]["A+"]["f_jet"]["last_seen_at"] >= h["by_symbol"]["A+"]["f_jet"]["days"][str(d1)]["last_at"],
        "آخرین مشاهده از ردیف‌ها خوانده می‌شود")
 
     # روزی که هرگز رصد نشده نباید در تقویم ظاهر شود (وگرنه «غیرفعال»ِ ساختگی است)

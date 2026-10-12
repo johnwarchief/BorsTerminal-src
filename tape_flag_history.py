@@ -234,19 +234,21 @@ def history_for(conn, ins_codes, days: int = 20) -> dict:
             ev = json.loads(evidence) if evidence else {}
         except (TypeError, ValueError):
             ev = {}
-        f["days"][int(d_even)] = {"active": True, "first_at": first_at, "last_at": last_at,
-                                  "passes": int(passes or 1), "evidence": ev}
+        f["days"][str(int(d_even))] = {"active": True, "first_at": first_at, "last_at": last_at,
+                                       "passes": int(passes or 1), "evidence": ev}
         f["total"] += 1
         if last_at and (f["last_seen_at"] is None or last_at > f["last_seen_at"]):
             f["last_seen_at"] = last_at
-    # روزهایِ ثبت‌شدۀ بدونِ ردیف = «غیرفعال» (نه نبودِ داده)
+    # روزهایِ ثبت‌شدۀ بدونِ ردیف = «غیرفعال» (نه نبودِ داده). کلیدِ روز **رشته**
+    # است: orjson کلیدِ عددی را رد می‌کند (`TypeError: Dict key must be str`) و
+    # مسیرِ /api/tape-history ازِ همین پاس ۵۰۰ می‌داد (شاهدِ زنده ۱۴۰۵-۰۷-۲۱).
     for code in codes:
         s = by.setdefault(code, {})
         for flag in FLAGS:
             f = s.setdefault(flag, {"days": {}, "total": 0, "last_seen_at": None})
             for d in cal:
-                f["days"].setdefault(d, {"active": False, "first_at": None, "last_at": None,
-                                         "passes": 0, "evidence": {}})
+                f["days"].setdefault(str(d), {"active": False, "first_at": None, "last_at": None,
+                                              "passes": 0, "evidence": {}})
     return out
 
 
