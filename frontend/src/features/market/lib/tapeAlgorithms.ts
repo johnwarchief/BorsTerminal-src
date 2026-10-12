@@ -505,7 +505,7 @@ export function tapeFilterState(
     return raw === true ? 'pass' : raw === false ? 'fail' : 'unevaluated';
   }
   // ردیفِ بیرونِ تابلویِ امروز را سایت اصلاً نمی‌سنجد (درِ باندش ردیفی نیست)،
-  // پس «رد» نشان‌دادنش نتیجهٔ ساختگی است (رأیِ مالک ۱۴۵-۰۷-۲۱: وضعیتِ
+  // پس «رد» نشان‌دادنش نتیجهٔ ساختگی است (رأیِ مالک ۱۴۰۵-۰۷-۲۱: وضعیتِ
   // فعال‌بودن جدا نمایش داده شود). جریانِ پولِ نخبگان از این قید آزاد است.
   if (!isLiveBoardRow(r) && filterKey !== 'f_smart_flow') return 'unevaluated';
   if (tapeFilterUnmeasured(r, filterKey, cfg)) return 'unevaluated';

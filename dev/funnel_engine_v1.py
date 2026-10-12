@@ -200,7 +200,7 @@ def fund(symbols_rows, mode, exc=None):
 one_i3_bad = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=0,
                                     i4_pass=1, i5_pass=1, score=4, primary_score=2)])
 std = fund(one_i3_bad, "standard")
-# رأیِ مالک (مأموریت ۱۴۰-۰۷-۱): عبور = حداقل سه شاخص PASS، حتی با بعضی رد.
+# رأیِ مالک (مأموریت ۱۴۰۵-۰۷-۲۱): عبور = حداقل سه شاخص PASS، حتی با بعضی رد.
 # پیش از این همان ردیف «رد» بود چون I3 بلاکرِ جزوه شمرده می‌شد.
 ck(std["handover"], "۱۳) standard: ۴ PASS با یک I3 رد ⇒ عبور (قاعدهٔ حداقل سه PASS)")
 ck(std["trace"]["fundamental"][0]["caveat"] is True,

@@ -36,7 +36,7 @@ const STATE_STYLE: Record<AuditState, { cls: string; label: string }> = {
   fail: { cls: 'border-accent-red/40 bg-accent-red/15 text-accent-red shadow-xs', label: 'مردود' },
   // «na» درِ این بج یعنی رأیی ساخته نشد (FtsCard:132 — `pass == null`)، پس
   // «قابل ارزیابی نیست» است؛ «کاربرد ندارد» وضعیتِ دیگری است و جایِ خودش
-  // نوشته می‌شود (رأیِ مالک ۱۴۵-۰۷-۲۱).
+  // نوشته می‌شود (رأیِ مالک ۱۴۰۵-۰۷-۲۱).
   na: { cls: 'border-border-c bg-bg-card text-text-secondary shadow-xs', label: 'قابل ارزیابی نیست' },
 };
 
