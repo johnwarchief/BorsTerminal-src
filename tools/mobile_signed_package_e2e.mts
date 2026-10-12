@@ -69,15 +69,16 @@ type Mode = {
   flipManifest: boolean;       // یکِ بایتِ manifest عوض می‌شود
   truncateGz: boolean;         // فقط نصفِ بایت‌ها تحویل می‌شود
   corruptGz: boolean;          // یکِ بایتِ میانیِ gz عوض می‌شود
+  bundleAbsent: boolean;       // بستۀِ همراهِ APK نیست (۴۰۴) ⇒ بنرِ مرگبار
 };
 const mode: Mode = {
   pkg: 'pkg1', offline: false, noSig: false, otherKey: false, flipSig: false,
-  flipManifest: false, truncateGz: false, corruptGz: false,
+  flipManifest: false, truncateGz: false, corruptGz: false, bundleAbsent: false,
 };
 const reset = (pkg: string) => {
   Object.assign(mode, {
     pkg, offline: false, noSig: false, otherKey: false, flipSig: false,
-    flipManifest: false, truncateGz: false, corruptGz: false,
+    flipManifest: false, truncateGz: false, corruptGz: false, bundleAbsent: false,
   });
 };
 
@@ -141,6 +142,7 @@ const BUNDLE_BYTES = readFileSync(BUNDLE_GZ);
 const srv = createServer((req, res) => {
   const u = decodeURIComponent((req.url ?? '/').split('?')[0]);
   if (u === '/probe_bundle.js') {
+    if (mode.bundleAbsent) { res.writeHead(404); return res.end('no bundled package'); }
     res.writeHead(200, { 'content-type': 'application/javascript',
                          'content-length': String(BUNDLE_BYTES.byteLength) });
     return res.end(BUNDLE_BYTES);
@@ -521,6 +523,78 @@ say('S17b', 'هیچ pointerی ساخته نشد', 'null', JSON.stringify(st.acti
 say('S17c', 'دادۀِ همراهِ برنامه همچنان مصرف می‌شود', '> 0', String(rows17), rows17 > 0);
 results.S17 = { legacy, storage: st, boardRows: rows17 };
 await shot('S17_legacy_manifest_rejected');
+
+// S18 — بستۀ **امضاشده ولی از سریِ دیگر**: همان بایت‌ها و امضایِ درستِ کلیدِ
+// بیلد، فقط manifest سریِ کهنه را اعلام می‌کند. «درست بودن» جایِ «مربوط بودن»
+// را نمی‌گیرد ⇒ `series-mismatch`، و pkg2 (فعالِ پس ازِ بازگشت) دست‌نخورده می‌ماند.
+reset('pkg_wrong_series');
+panel = await openPanel();
+const stBefore18 = await readStorage();
+const activeBefore18 = String(stBefore18.active?.packageId ?? '');
+const wrongSeries = await clickCheck();
+st = await readStorage();
+say('S18a', 'بستۀ سریِ دیگر حتی با امضایِ معتبر رد شد', 'series-mismatch', wrongSeries,
+    wrongSeries.includes('series-mismatch'));
+say('S18b', 'با ردِ سری، وضعیتِ فعال تکان نخورد', activeBefore18 || 'null',
+    JSON.stringify(st.active?.packageId ?? null),
+    String(st.active?.packageId ?? '') === activeBefore18
+    || (!st.active && activeBefore18 === ''));
+say('S18c', 'بسته‌هایِ سالمِ staging دست‌نخورده ماندند', String(st.staging.length),
+    JSON.stringify(st.staging.map((u: string) => u.replace(/^.*\//, ''))),
+    st.staging.length >= 1);
+results.S18 = { wrongSeries, storageBefore: stBefore18, storage: st };
+await shot('S18_series_mismatch');
+
+// S19 — لحظۀ واقعیِ نیاز: بوت شکست خورد و بنرِ مرگبار می‌آید. بی‌بستۀِ همراه
+// و با بستۀِ تازه‌ای که SQLite‌اش باز نمی‌شود، کاربر نباید فقط «تلاش دوباره»
+// داشته باشد؛ اگر یکِ بستۀِ **فعال‌شدۀِ معتبر** درِ حافظه مانده باشد، همین‌جا
+// دکمۀِ بازگشت ساخته می‌شود و همان بسته را فعال می‌کند (کش را پاک نکن!).
+reset('baddb');
+mode.bundleAbsent = true;
+const stBefore19 = await readStorage();
+const prevCandidates: string[] = Array.isArray(stBefore19.previous)
+  ? stBefore19.previous.map((x: { packageId?: string }) => String(x?.packageId ?? '')) : [];
+const wantPrev = prevCandidates[0] ?? '';
+say('S19۰', 'پیش ازِ بوتِ شکست‌خورده، یکِ نامزدِ معتبر درِ حافظه هست', 'non-empty',
+    JSON.stringify(prevCandidates), wantPrev !== '');
+// ردیفِ فعال را ازِ حافظه می‌بریم تا pointer بی‌بسته شود و بوت بهِ ریلیز برود
+const activeRow = String(stBefore19.active?.cacheKey ?? '');
+await page.evaluate(async (key: string) => {
+  const c = await caches.open('bors-mobile-snapshot-staging-v2');
+  if (key) await c.delete(new URL(key, location.href).href);
+}, activeRow);
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForSelector('#bors-fatal-banner', { timeout: 180000 }).catch(() => {});
+const bannerTxt = await page.evaluate(() => (document.getElementById('bors-fatal-banner')?.textContent ?? '').trim());
+const bannerBtns = await page.evaluate(() => Array.from(
+  document.querySelectorAll('#bors-fatal-banner button')).map((b) => (b.textContent ?? '').trim()));
+say('S19a', 'بوتِ بی‌بسته با بنرِ مرگبار روبه‌رو می‌شود (نه صفحهٔ سفید)', 'bors-fatal-banner',
+    bannerTxt.slice(0, 120), bannerTxt.includes('بارگذاری بستهٔ دادهٔ آفلاین شکست خورد'));
+say('S19b', 'دکمۀِ بازگشت درِ بنر، با همان نامزدِ معتبر ساخته شد', wantPrev,
+    JSON.stringify(bannerBtns), bannerBtns.some((t: string) => t.startsWith('بازگشت به') && t.includes(wantPrev)));
+await page.evaluate(() => {
+  const bs = Array.from(document.querySelectorAll('#bors-fatal-banner button'));
+  const rb = bs.find((b) => (b.textContent ?? '').startsWith('بازگشت به'));
+  if (rb) rb.click();
+});
+await page.waitForTimeout(3000);
+const st19 = await readStorage();
+say('S19c', 'بازگشت ازِ بنر، pointer را به همان نامزد برد', wantPrev,
+    JSON.stringify(st19.active?.packageId ?? null), st19.active?.packageId === wantPrev);
+// بستۀِ نامزد هنوز درِ حافظه است ⇒ بوتِ بعدی ازِ آن خوانده می‌شود، بی‌دانلود
+mode.bundleAbsent = false;
+await page.reload({ waitUntil: 'domcontentloaded' });
+await waitForBoot();
+panel = await openPanel();
+st = await readStorage();
+const src19 = String(panel?.['منبعِ بسته'] ?? '');
+const rows19 = await boardRows();
+say('S19d', 'پس ازِ بازگشت، همان بسته ازِ کش خوانده می‌شود و تابلو داده دارد',
+    'کش / > 0 ردیف', `${src19} · pointer=${st.active?.packageId} · ردیف=${rows19}`,
+    src19.includes('کش') && st.active?.packageId === wantPrev && rows19 > 0);
+results.S19 = { bannerTxt, bannerBtns, storage: st19, afterReload: { src: src19, rows: rows19 } };
+await shot('S19_banner_rollback');
+
 
 // ── گزارش ──────────────────────────────────────────────────────────────────
 const rep = await writeReport();

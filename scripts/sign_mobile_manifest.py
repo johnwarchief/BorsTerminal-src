@@ -68,8 +68,13 @@ def _backend():
 
 
 # ── کلید ────────────────────────────────────────────────────────────────────
-def keygen(out_dir: str) -> dict:
-    """جفت‌کلیدِ Ed25519. اگر out_dir داخلِ مخزن باشد، رد می‌شود (کلید درِ گیت نیست)."""
+def keygen(out_dir: str, passphrase: bytes | None = None) -> dict:
+    """جفت‌کلیدِ Ed25519. اگر out_dir داخلِ مخزن باشد، رد می‌شود (کلید درِ گیت نیست).
+
+    با `passphrase`، PEMِ خصوصی **رمزدار** ساخته می‌شود (PKCS#8 + BestAvailable) —
+    همان چیزی که برایِ کلیدِ انتشار لازم است؛ بی‌آن، فایلِ خامِ رویِ دیسک تنها
+    لایۀ حفاظت است و این برایِ کلیدِ واقعی قابلِ دفاع نیست.
+    """
     out_abs = os.path.abspath(out_dir)
     repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if out_abs.startswith(repo + os.sep) or out_abs == repo:
@@ -82,38 +87,57 @@ def keygen(out_dir: str) -> dict:
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric import ed25519
         k = ed25519.Ed25519PrivateKey.generate()
+        enc = (serialization.BestAvailableEncryption(passphrase) if passphrase
+               else serialization.NoEncryption())
         with open(priv, "wb") as f:
             f.write(k.private_bytes(serialization.Encoding.PEM,
-                                    serialization.PrivateFormat.PKCS8,
-                                    serialization.NoEncryption()))
+                                    serialization.PrivateFormat.PKCS8, enc))
         with open(pub, "wb") as f:
             f.write(k.public_key().public_bytes(serialization.Encoding.PEM,
                                                 serialization.PublicFormat.SubjectPublicKeyInfo))
     elif be == "openssl":
-        _run(["openssl", "genpkey", "-algorithm", "ed25519", "-out", priv])
-        _run(["openssl", "pkey", "-pubout", "-in", priv, "-out", pub])
+        _run(["openssl", "genpkey", "-algorithm", "ed25519", "-out", priv]
+             + (["-pass", "env:%s" % KEY_PASS_ENV, "-cipher", "aes-256-cbc"] if passphrase else []))
+        _run(["openssl", "pkey", "-in", priv, "-pubout", "-out", pub]
+             + (["-passin", "env:%s" % KEY_PASS_ENV] if passphrase else []))
     else:
         raise SystemExit("BLOCKED: نه cryptography و نه openssl در دسترس نیست — "
                          "کلیدِ امضایِ manifest ساخته نمی‌شود (کلید آزمایشیِ ساختگی نه)")
-    return {"backend": be, "private": priv, "public": pub,
+    return {"backend": be, "private": priv, "public": pub, "encrypted": bool(passphrase),
             "public_key_id": key_id_from_pem(pub)}
 
 
 def _pub_der(pem_path: str) -> bytes:
-    """DERِ SubjectPublicKeyInfo — از فایلِ کلید عمومی **یا** خصوصی (هر دو مجاز)."""
+    """DERِ SubjectPublicKeyInfo — از فایلِ کلید عمومی **یا** خصوصی (هر دو مجاز).
+
+    خصوصیِ رمزدار هم خوانده می‌شود، با عبارتِ عبورِ `BORS_MOBILE_MANIFEST_KEY_PASS`.
+    پیام‌هایِ خطا فقط نامِ متغیر را می‌گویند؛ هیچ‌جا مقدارِ رمز یا خودِ PEM چاپ
+    نمی‌شود (لاگِ CI و `ps` جایِ آمنی نیستند).
+    """
     be = _backend()
     if be == "cryptography":
         from cryptography.hazmat.primitives import serialization
+
+        def as_der(pub) -> bytes:
+            return pub.public_bytes(serialization.Encoding.DER,
+                                    serialization.PublicFormat.SubjectPublicKeyInfo)
+
         blob = open(pem_path, "rb").read()
         try:
-            key = serialization.load_pem_private_key(blob, password=None)
-            pub = key.public_key()
+            return as_der(serialization.load_pem_private_key(blob, password=None).public_key())
+        except TypeError:
+            pw = _key_passphrase()
+            if not pw:
+                raise SystemExit("BLOCKED: کلیدِ خصوصی رمز دارد و BORS_MOBILE_MANIFEST_KEY_PASS "
+                                 "تنظیم نشده است")
+            return as_der(serialization.load_pem_private_key(blob, password=pw).public_key())
         except ValueError:
-            pub = serialization.load_pem_public_key(blob)
-        return pub.public_bytes(
-            serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
+            return as_der(serialization.load_pem_public_key(blob))
     # openssl: `pkey -in` هم private و هم public PEM را می‌خواند و عمومی می‌دهد
-    r = _run(["openssl", "pkey", "-in", pem_path, "-pubout", "-outform", "DER"])
+    cmd = ["openssl", "pkey", "-in", pem_path, "-pubout", "-outform", "DER"]
+    if _key_passphrase():
+        cmd += ["-passin", "env:%s" % KEY_PASS_ENV]
+    r = _run(cmd)
     return r.stdout
 
 
@@ -140,15 +164,38 @@ def pubinfo(pem_path: str) -> dict:
 
 
 # ── امضا / بررسی ────────────────────────────────────────────────────────────
+KEY_PASS_ENV = "BORS_MOBILE_MANIFEST_KEY_PASS"
+
+
+def _key_passphrase() -> bytes | None:
+    """عبارتِ عبورِ کلیدِ خصوصی، فقط از محیط. هیچ‌جا چاپ نمی‌شود و درِ آرگومانِ
+    خطِ فرمان نمی‌آید (آن درِ `ps` و لاگِ CI دیده می‌شود)."""
+    v = os.environ.get(KEY_PASS_ENV, "").strip()
+    return v.encode("utf-8") if v else None
+
+
 def _sign_bytes(data: bytes, priv_path: str) -> bytes:
     be = _backend()
     if be == "cryptography":
         from cryptography.hazmat.primitives import serialization
-        k = serialization.load_pem_private_key(open(priv_path, "rb").read(), password=None)
+        blob = open(priv_path, "rb").read()
+        pw = _key_passphrase()
+        try:
+            k = serialization.load_pem_private_key(blob, password=None)
+        except TypeError:
+            # کلید رمز است. بی‌عبارتِ عبور **تلاشِ کور** نمی‌کنیم — پیامِ cryptography
+            # گاهی خودِ عبارت را درِ trace تکرار می‌کند.
+            if not pw:
+                raise SystemExit("BLOCKED: کلیدِ خصوصی رمز دارد و %s تنظیم نشده است "
+                                 "(عبارتِ عبور درِ لاگ/آرگومان چاپ نمی‌شود)" % KEY_PASS_ENV)
+            k = serialization.load_pem_private_key(blob, password=pw)
         return k.sign(data)
     tmp = _tmpfile(data)
+    cmd = ["openssl", "pkeyutl", "-sign", "-inkey", priv_path, "-rawin", "-in", tmp]
+    if _key_passphrase():
+        cmd += ["-passin", "env:%s" % KEY_PASS_ENV]
     try:
-        r = _run(["openssl", "pkeyutl", "-sign", "-inkey", priv_path, "-rawin", "-in", tmp])
+        r = _run(cmd)
         return r.stdout
     finally:
         os.unlink(tmp)
@@ -261,10 +308,22 @@ def main() -> int:
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--allow-env-key", action="store_true",
                     help="کلید از BORS_MOBILE_MANIFEST_KEY_PEM (متنِ PEM درِ secret CI)")
+    ap.add_argument("--encrypted", action="store_true",
+                    help="با --keygen: PEMِ خصوصی **رمزدار** ساخته شود؛ عبارتِ عبور از "
+                         "%s خوانده می‌شود و هیچ‌جا چاپ نمی‌شود" % KEY_PASS_ENV)
     a = ap.parse_args()
 
     if a.keygen:
-        print(json.dumps(keygen(a.out_dir), ensure_ascii=False, indent=1))
+        pw = None
+        if a.encrypted:
+            pw = _key_passphrase()
+            if not pw:
+                print(json.dumps({"status": "BLOCKED",
+                                  "reason": "%s تنظیم نشده ⇒ کلیدِ رمزدار ساخته نمی‌شود "
+                                            "(کلیدِ خامِ دیسک برایِ کلیدِ انتشار قابلِ دفاع نیست)"
+                                            % KEY_PASS_ENV}, ensure_ascii=False))
+                return 3
+        print(json.dumps(keygen(a.out_dir, passphrase=pw), ensure_ascii=False, indent=1))
         return 0
 
     if a.pubinfo:

@@ -62,7 +62,7 @@ export type ParsedSig = {
 export function parseSigBlock(text: string): ParsedSig | SigCheck {
   let t = String(text || "").trim();
   if (t && !t.startsWith("untrusted comment:")) {
-    try { t = atob(t.replace(/\s+/g, "")).replace(/^﻿/, ""); }
+    try { t = atob(t.replace(/\s+/g, "")).replace(/^\uFEFF/, ""); }
     catch { /* ممکن است واقعاً base64 نباشد؛ پایین رد می‌شود */ }
   }
   const lines = t.split(/\r?\n/).filter((l) => l.length > 0);

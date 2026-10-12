@@ -14,6 +14,7 @@ import { HttpError } from '../http';
 import { nativeGetBytes } from './nativeHttp';
 import {
   parseManifest, parsePointer, verifyBytes, validateDatabase, versionAtLeast, sha256Hex,
+  checkSeries,
   type ActivePointer, type DbProbe, type SnapshotManifest,
 } from './snapshotPackage';
 import { bundledManifestPublicKey, verifyManifestSignature } from './manifestSignature';
@@ -145,6 +146,10 @@ const REMOTE_GZ_URL = `${REMOTE_BASE}/mobile_snapshot.db.gz`;
 /** امضا **کنارِ** manifest، نه داخلِ آن (`scripts/sign_mobile_manifest.py`) — تا
  *  بایت‌هایِ امضاشده همان بایت‌هایِ دانلودی بمانند و دورِ باطلی نسازیم. */
 const REMOTE_SIG_URL = `${REMOTE_META_URL}.sig`;
+/** سریِ انتشاری که این بیلد برایش ساخته شده (`VITE_SNAPSHOT_SERIES`). خالی =
+ *  بیلد محلی ⇒ داوریِ سری نمی‌شود؛ بیلدِ CI همیشه سری دارد و بسته‌ای که سریِ
+ *  دیگری دارد یا اصلاً سری اعلام نمی‌کند رد می‌شود (`checkSeries`). */
+const BAKED_SERIES = (import.meta.env.VITE_SNAPSHOT_SERIES as string | undefined)?.trim() ?? '';
 
 /** manifest را فقط با امضایِ معتبر می‌خواند: بایتِ خام ← .sig ← parseManifest.
  *  ترتیب عمدی است: **هیچ فیلدی از manifest پیش از تأییدِ اصالت خوانده نمی‌شود.**
@@ -176,7 +181,11 @@ async function fetchSignedManifest():
     return { ok: false, reason: 'manifest-unparsable',
              detail: `پس ازِ امضایِ معتبر، JSON تجزیه نشد: ${e instanceof Error ? e.message : String(e)}` };
   }
-  return parseManifest(json);
+  const parsed = parseManifest(json);
+  if (!parsed.ok) return parsed;
+  // سری، **پس از** اصالت و **پیش از** هر مصرفی داوری می‌شود: بستۀ امضاشدۀ
+  // سریِ دیگر هم قبول نیست — «درست بودن» با «مربوط بودن» یکی نیست.
+  return checkSeries(parsed.value, BAKED_SERIES);
 }
 
 // کلیدهایِ وضعیت. جدا بودنشان عمدی است: «کی آخرین بار **موفق** بررسی شد» با
@@ -697,6 +706,28 @@ function showFatalBanner(message: string): void {
       })();
     };
     el.appendChild(btn);
+
+    // «بازگشت به نسخۀ پیشین» — همین‌جا، درِ لحظهٔ نیاز. بنر یعنی بستۀِ تازه
+    // باز نشد؛ اگر یکِ بستۀ **فعال‌شدۀِ معتبر** درِ حافظه مانده باشد (همان
+    // نامزدِ rollback)، کاربر باید بتواند همان را برگرداند، نه اینکه کش را
+    // پاک کند و هر دو بسته را از دست بدهد. بی‌نامزدِ معتبر، دکمه ساخته نمی‌شود.
+    const prevCandidate = readPreviousPointers()[0];
+    if (prevCandidate) {
+      const rb = document.createElement('button');
+      rb.type = 'button';
+      rb.textContent = `بازگشت به ${prevCandidate.packageId}`;
+      rb.onclick = () => {
+        rb.disabled = true;
+        rb.textContent = 'در حال بازگشت…';
+        void rollbackToPreviousPackage().then((r) => {
+          if (r.ok) { location.reload(); return; }
+          // بازنگشت ⇒ صادق بگوییم و بنر را بی‌اعتمادیِ نصف‌نصفه نگذاریم
+          rb.textContent = `بازنگشت: ${r.detail}`;
+        });
+      };
+      el.appendChild(rb);
+    }
+
     document.body.appendChild(el);
   } catch { /* حتی بنر هم نشد — دستِ‌کم خطا در کنسول هست */ }
 }

@@ -624,4 +624,84 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
     expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-gg02');
     expect(JSON.parse(localStorage.getItem(USER_DATA_KEY)!).decisions).toEqual(['شپنا']);
   });
+
+  // ── مرحلۀ ۲ (دور ۵): سریِ انتشار صریح داوری می‌شود، نه حدس از URL ──────────
+  const V2 = 'mobile-latest-v2';
+
+  it('۲۴) بیلد با سریِ v2 + manifestِ هم‌سری ⇒ قبول و فعال‌سازی', async () => {
+    vi.stubEnv('VITE_SNAPSHOT_SERIES', V2);
+    mod = await load();
+    const m = await makeManifest({ series: V2, package_id: '20261012T090000-ss01' });
+    serveRelease(m.bytes, m.manifest);
+    const out = await mod.requestManualCheck();
+    expect(out?.ok, out?.detail).toBe(true);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-ss01');
+  });
+
+  it('۲۵) بستۀ امضاشدۀ سریِ دیگر ⇒ series-mismatch و نسخۀ فعالِ پیشین می‌ماند', async () => {
+    const first = await makeManifest({ series: V2, package_id: '20261012T090000-ss02',
+                                       built_at: '2026-10-12T09:00:00' });
+    serveRelease(first.bytes, first.manifest);
+    vi.stubEnv('VITE_SNAPSHOT_SERIES', V2);
+    mod = await load();
+    expect((await mod.requestManualCheck())?.ok).toBe(true);
+    const active = JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId;
+    // همان بایت‌ها، امضایِ درست، فقط سریِ دیگری اعلام شده (جا‌به‌جاییِ فایل درِ tag)
+    const other = await makeManifest({ series: 'mobile-latest', package_id: '20261013T090000-ss03',
+                                       built_at: '2026-10-13T09:00:00' });
+    serveRelease(other.bytes, other.manifest);
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/series-mismatch/);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe(active);
+    expect(cacheOf(STAGING).size).toBe(1);                 // نه چیزِ تازه ماند، نه سالم رفت
+  });
+
+  it('۲۶) manifestِ بی‌سری (سازندۀ کهنه) درِ بیلدِ سری‌دار ⇒ series-unknown، بی‌فعال‌سازی', async () => {
+    vi.stubEnv('VITE_SNAPSHOT_SERIES', V2);
+    mod = await load();
+    const m = await makeManifest({ package_id: '20261012T090000-ss04' });   // بدون series
+    serveRelease(m.bytes, m.manifest);
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/series-unknown/);
+    expect(localStorage.getItem(POINTER_KEY)).toBeNull();
+    // کنترلِ سنجه: همان manifest با بیلدِ بی‌سری (رفتارِ محلی) پذیرفته می‌شود —
+    // پس ردّ بالا کارِ دروازۀ سری است، نه یکِ شرطِ همیشه‌خاموش.
+    vi.stubEnv('VITE_SNAPSHOT_SERIES', '');
+    mod = await load();
+    const m2 = await makeManifest({ package_id: '20261012T090000-ss05',
+                                    built_at: '2026-10-12T10:00:00' });
+    serveRelease(m2.bytes, m2.manifest);
+    expect((await mod.requestManualCheck())?.ok).toBe(true);
+  });
+
+  it('۲۷) بنرِ مرگبار دکمۀِ بازگشت را فقط با نامزدِ معتبر می‌سازد و همان را فعال می‌کند', async () => {
+    mod = await load();
+    // الف) بی‌فعال‌سازی: فقط «تلاش دوباره» — هیچ وعدِ بازگشتی نیست
+    mod.__showFatalBannerForTest('بی‌داده');
+    const b0 = document.getElementById('bors-fatal-banner');
+    expect(b0?.querySelectorAll('button').length).toBe(1);
+    expect(b0?.textContent ?? '').not.toContain('بازگشت به');
+    b0?.remove();
+
+    // ب) دو فعال‌سازی ⇒ نامزدِ بازگشت هست ⇒ دکمه هست و کارِ واقعی می‌کند
+    for (const [pid, at] of ([['20261011T090000-hh01', '2026-10-11T09:00:00'], ['20261012T090000-hh02', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      expect((await mod.requestManualCheck())?.ok).toBe(true);
+    }
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-hh02');
+    mod.__showFatalBannerForTest('بستۀِ تازه باز نشد');
+    const b = document.getElementById('bors-fatal-banner');
+    const btns = Array.from(b?.querySelectorAll('button') ?? []);
+    const rb = btns.find((x) => (x.textContent ?? '').startsWith('بازگشت به'));
+    expect(rb).toBeTruthy();
+    expect(rb?.textContent).toContain('20261011T090000-hh01');
+    rb?.click();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261011T090000-hh01');
+    // بستۀِ ردشدهٔ تازه، پیشینِ سالم را جابه‌جا نکرده بود؛ حالا کاربر همان را برگرداند
+    expect([...cacheOf(STAGING).keys()].some((k) => k.includes('hh01'))).toBe(true);
+  });
 });

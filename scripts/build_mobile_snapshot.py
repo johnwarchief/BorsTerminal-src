@@ -66,6 +66,13 @@ MANIFEST_SCHEMA_VERSION = 2
 # «بسته چه هست» یکِ عدد بمانند؛ بی‌این سنجش، همان چک قبلی تنهایِ بی‌معنا بود.
 DB_SCHEMA_VERSION = 1
 
+# سریِ انتشار. `mobile-latest` همان چیزی است که گوشی‌هایِ کهنه امروز می‌خوانند
+# (manifestِ چهارکلیدی، بی‌امضا) — برایِ سازگاریِ عقب‌رو **دست‌نخورده می‌ماند**.
+# بستۀِ امضاشدۀ v2 رویِ سریِ مستقلِ خودش منتشر می‌شود و کلاینت هم همان سری را
+# درِ بیلد دارد (`VITE_SNAPSHOT_SERIES`)؛ انتخابِ سری صریح است، نه حدس از URL.
+SERIES_DEFAULT = "mobile-latest-v2"
+SERIES_LEGACY = "mobile-latest"
+
 # با `--require-signature` روشن می‌شود (مسیرِ انتشار). پیش‌فرض خاموش است تا بیلدِ
 # کاندید/محلی بی‌کلید نشکند؛ artifactِ بی‌امضا درِ CI هرگز منتشر نمی‌شود.
 REQUIRE_SIGNATURE = False
@@ -113,8 +120,15 @@ def _symbols_from_screener(payload) -> list:
     rows = payload.get("data") or []
     out = []
     for r in rows:
-        s = (r.get("symbol") or "").strip() if isinstance(r, dict) else ""
-        if s:
+        # نماد **عینِ** چیزی که درِ اسکرینر است می‌ماند. `.strip()` اینجا فاصلۀ
+        # انتهاییِ «معيار » را می‌کَند، ولی رابطِ کاربر همان نماد را با فاصله
+        # می‌فرستد (`encodeURIComponent(symbol)`) ⇒ کلیدِ پختۀ آفلاین با
+        # کلیدِ درخواستِ موقعِ اجرا یکی نمی‌ماند و کارتِ آن نماد رویِ گوشی خالی
+        # می‌شد (و درِ بیلد هم `[skip] …/api/fundamental/معيار → 404` ثبت می‌شد،
+        # همان `baked_fail: 1`). تنها چیزی که حذف می‌شود ردیفِ بی‌نماد/فضاست.
+        s = r.get("symbol") if isinstance(r, dict) else ""
+        s = "" if s is None else str(s)
+        if s and s.strip():
             out.append(s)
     return out
 
@@ -163,7 +177,7 @@ def sign_manifest(meta_json: str, require: bool = False) -> dict:
             os.unlink(tmp)
 
 
-def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
+def build(out_dir: str, limit: int = 0, do_lzma: bool = True, series: str = SERIES_DEFAULT) -> str:
     from fastapi.testclient import TestClient  # import دیرهنگام: بعد از chdir
     import app as appmod
 
@@ -341,6 +355,10 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
         "required_baked_keys": ["market_board"],
         # چیدمانِ دیتابیسِ بسته — کلاینت با meta.schema داخلِ بسته می‌سنجد
         "db_schema": DB_SCHEMA_VERSION,
+        # سریِ انتشار: کلاینتِ همین شاخه فقط بستۀ هم‌سریِ خودش را قبول می‌کند
+        # (`checkSeries`)؛ بی‌این، جا‌به‌جایِ فایل‌ها درِ دو tag دادۀِ نسلِ دیگر
+        # را رویِ گوشی می‌نشاند و هیچ خطایی هم نمی‌داد.
+        "series": series,
     }
     # امضا رویِ **بایت‌هایِ فایل** است، پس جداکننده‌هایِ خط باید بینِ Windows و
     # Linuxِ CI یکسان بمانند (با CRLF، هم digestِ manifest هم اعتبارِ امضا بهِ
@@ -376,10 +394,13 @@ def main() -> None:
     ap.add_argument("--no-lzma", action="store_true", help="بدون فشرده‌سازی")
     ap.add_argument("--require-signature", action="store_true",
                     help="مسیرِ انتشار: بی‌کلیدِ امضا، بیلد **می‌شکند** (نه artifactِ بی‌امضا)")
+    ap.add_argument("--series", default=SERIES_DEFAULT,
+                    help="سریِ انتشاری که این بسته برایش پخته می‌شود (درِ manifest نوشته "
+                         "می‌شود؛ کلاینت هم‌سری می‌خواهد). پیش‌فرض: %s" % SERIES_DEFAULT)
     args = ap.parse_args()
     global REQUIRE_SIGNATURE
     REQUIRE_SIGNATURE = bool(args.require_signature)
-    build(args.out, limit=args.limit, do_lzma=not args.no_lzma)
+    build(args.out, limit=args.limit, do_lzma=not args.no_lzma, series=args.series.strip())
 
 
 if __name__ == "__main__":

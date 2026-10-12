@@ -128,6 +128,10 @@ jobs:
           # کلاینت هم دقیقاً همان سری را می‌خواند که APK از آن پخته شده؛
           # بی‌این، بیلدِ سریِ تازه درِ برنامه هنوز mobile-latestِ کهنه را چک می‌کرد.
           export VITE_SNAPSHOT_REMOTE="$BASE"
+          # سری، درِ خودِ manifest هم نوشته می‌شود (`--series` درِ سازنده) و
+          # کلاینت ناهمخوان را رد می‌کند (`checkSeries`) — پس «URL درست بود ولی
+          # بستۀ نسلِ دیگر بود» ساکت نمی‌گذرد.
+          export VITE_SNAPSHOT_SERIES="$SNAPSHOT_SERIES"
           echo "snapshot series=$SNAPSHOT_SERIES remote=$BASE"
           VITE_LOCAL_DATA=1 npm run build
           curl -fL --retry 3 "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz

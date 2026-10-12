@@ -194,6 +194,57 @@ def main():
             mpath, out_sig, pub_b64) is True, "۱۷ امضایِ env-route درِ verify می‌خواند")
         chk("BORS_MOBILE_MANIFEST_KEY_PEM" not in (p3.stdout + p3.stderr),
             "۱۸ متنِ کلید درِ stdout/stderr لاگ نمی‌شود")
+
+        # ── کلیدِ رمزدار (روالِ کلیدِ انتشار؛ مرحلۀ ۳ دورِ ۵) ─────────────────
+        kdir2 = tempfile.mkdtemp(prefix="bors-guard-keys-enc-")
+        try:
+            PW = "guard-passphrase-not-a-real-secret"
+            env3 = dict(env)
+            env3["BORS_MOBILE_MANIFEST_KEY_PASS"] = PW
+            pk = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "sign_mobile_manifest.py"),
+                                 "--keygen", "--out-dir", kdir2, "--encrypted"],
+                                capture_output=True, text=True, encoding="utf-8", env=env3)
+            kg2 = json.loads(pk.stdout) if pk.returncode == 0 else {}
+            enc_blob = open(kg2.get("private", ""), "rb").read().decode("utf-8", "replace") \
+                if kg2.get("private") else ""
+            chk(pk.returncode == 0 and "ENCRYPTED PRIVATE KEY" in enc_blob,
+                "۱۹ --keygen --encrypted PEMِ رمزدار می‌سازد", (pk.stderr or "")[:120])
+            chk(kg2.get("encrypted") is True and len(kg2.get("public_key_id", "")) == 16,
+                "۱۹ب key_id از کلیدِ رمزدار هم خوانده می‌شود", json.dumps(kg2)[:120])
+            chk(PW not in (pk.stdout + pk.stderr),
+                "۱۹پ عبارتِ عبور درِ خروجیِ keygen تکرار نمی‌شود")
+            # بی‌عبارتِ عبور ⇒ BLOCKED، و پیام **فقط نامِ متغیر** را می‌گوید
+            env4 = dict(env)
+            env4.pop("BORS_MOBILE_MANIFEST_KEY_PASS", None)
+            p4 = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "sign_mobile_manifest.py"),
+                                 "--key", kg2["private"], "--in", mpath,
+                                 "--out", os.path.join(work, "enc.sig")],
+                                capture_output=True, text=True, encoding="utf-8", env=env4)
+            chk(p4.returncode != 0 and "BLOCKED" in (p4.stdout + p4.stderr)
+                and "BORS_MOBILE_MANIFEST_KEY_PASS" in (p4.stdout + p4.stderr),
+                "۲۰ کلیدِ رمزدار بی‌عبارتِ عبور می‌شکند و نامِ متغیر را می‌گوید",
+                (p4.stdout + p4.stderr)[-140:])
+            chk(PW not in (p4.stdout + p4.stderr) and "ENCRYPTED" not in p4.stdout,
+                "۲۰ب پیامِ شکست نه رمز را می‌گوید نه بدنهٔ PEM")
+            # با عبارتِ عبور ⇒ همان دورۀ امضا/بررسی
+            mpath3 = os.path.join(work, "meta_enc.json")
+            shutil.copyfile(mpath, mpath3)
+            p5 = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "sign_mobile_manifest.py"),
+                                 "--key", kg2["private"], "--in", mpath3,
+                                 "--out", os.path.join(work, "enc.sig")],
+                                capture_output=True, text=True, encoding="utf-8", env=env3)
+            r5 = json.loads(p5.stdout) if p5.returncode == 0 else {}
+            chk(p5.returncode == 0 and r5.get("key_id") == kg2["public_key_id"],
+                "۲۱ امضا با کلیدِ رمزدار + عبارتِ عبورِ محیط همان key_id را می‌دهد",
+                (p5.stderr or "")[:140])
+            chk(p5.returncode == 0 and sm.verify(mpath3, os.path.join(work, "enc.sig"),
+                                                 kg2["public"]) is True,
+                "۲۲ امضایِ کلیدِ رمزدار درِ verify می‌خواند")
+            chk(p5.returncode == 0 and os.path.exists(os.path.join(work, "enc.sig"))
+                and open(os.path.join(work, "enc.sig"), encoding="utf-8").read().count("\n") == 4,
+                "۲۲ب بلوکِ امضا همان چهارخطِ minisign است")
+        finally:
+            shutil.rmtree(kdir2, ignore_errors=True)
     finally:
         shutil.rmtree(keydir, ignore_errors=True)
         shutil.rmtree(work, ignore_errors=True)

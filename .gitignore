@@ -197,6 +197,9 @@ _audit/*.json
 #   node --experimental-strip-types tools/mobile_old_client_compat_probe.mts
 !_audit/mobile_stage5_e2e.json
 !_audit/mobile_stage6_old_client.json
+# دورِ ۵ (Stage 8): همان دو پروب با سناربِ سری و بازگشت از بنرِ خطا.
+!_audit/mobile_stage8_e2e.json
+!_audit/mobile_stage8_old_client.json
 
 # خروجیِ بیلدِ موبایل (snapshot db + bundle) — بازتولیدشدنی، ~127MB
 /dist_mobile/

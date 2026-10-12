@@ -217,6 +217,13 @@ SUITES = [
     # ساختنِ artifact امضاشده مسدود، و هیچ کلیدِ خصوصی داخلِ مخزن ساخته نمی‌شود.
     ('dev/mobile_manifest_sign_v1079.py',
                                      'mobile data manifest is signed (minisign Ed25519); every invalid case rejected; no key in repo'),
+    # ریشۀ `baked_fail: 1`: نماد «معيار » درِ بانک با فاصلۀ انتهایی ذخیره شده،
+    # رابط هم همان را عیناً می‌فرستد، ولی سازنده با `.strip()` رشتهٔ دیگری می‌ساخت —
+    # پس هم بیلد ۴۰۴ می‌گرفت هم کلیدِ پختۀ آفلاین با کلیدِ درخواستِ اجرا نمی‌خواند
+    # (کارتِ آن نماد رویِ گوشی خالی می‌ماند). گارد هم‌کلیدیِ پخت/اجرا را می‌سنجد،
+    # با کنترلِ منفیِ رفتارِ پیشین و با سنجشِ رویِ snapshotِ مستقل.
+    ('dev/mobile_bake_key_parity_v1079.py',
+                                     'baked key == runtime key for every screener symbol (trailing-space symbol no longer lost)'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

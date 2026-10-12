@@ -1,0 +1,1281 @@
+{
+ "generated_at": "2026-10-12T23:07:45.684Z",
+ "origin": "http://127.0.0.1:1776",
+ "mode": "full-chain",
+ "engine": {
+  "chromium": "151.0.7922.34",
+  "executable": "C:/Users/PCMOD/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe"
+ },
+ "artifacts": {
+  "dist": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal-android\\frontend\\dist",
+  "release_dir": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal-android\\_audit\\tmp\\stage5\\release",
+  "bundle_gz": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal-android\\_audit\\tmp\\stage5\\release\\pkg1\\mobile_snapshot.db.gz",
+  "bundle_gz_bytes": 1449480,
+  "packages": {
+   "pkg1": {
+    "schema_version": 2,
+    "package_id": "20261013T012901-6f35a0ea",
+    "app_version": "1.0.79",
+    "min_app_version": "1.0.79",
+    "built_at": "2026-10-13T01:29:01",
+    "gz_bytes": 1449480,
+    "gz_sha256": "6f35a0ea3e59ea51c570c03158687193f2aaaf77bc287594b396fec20f5131bd",
+    "db_bytes": 9035776,
+    "baked_ok": 48,
+    "baked_fail": 0,
+    "tables": [
+     "baked",
+     "meta",
+     "instruments",
+     "price_history"
+    ],
+    "required_baked_keys": [
+     "market_board"
+    ],
+    "db_schema": 1,
+    "series": "mobile-latest-v2"
+   },
+   "pkg2": {
+    "schema_version": 2,
+    "package_id": "20261013T012938-5c915dd3",
+    "app_version": "1.0.79",
+    "min_app_version": "1.0.79",
+    "built_at": "2026-10-13T01:29:38",
+    "gz_bytes": 1383679,
+    "gz_sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+    "db_bytes": 8847360,
+    "baked_ok": 48,
+    "baked_fail": 0,
+    "tables": [
+     "baked",
+     "meta",
+     "instruments",
+     "price_history"
+    ],
+    "required_baked_keys": [
+     "market_board"
+    ],
+    "db_schema": 1,
+    "series": "mobile-latest-v2"
+   },
+   "pkg3": {
+    "schema_version": 2,
+    "package_id": "20261013T013054-ed35f8f1",
+    "app_version": "1.0.79",
+    "min_app_version": "1.0.79",
+    "built_at": "2026-10-13T01:30:54",
+    "gz_bytes": 1329505,
+    "gz_sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+    "db_bytes": 8679424,
+    "baked_ok": 48,
+    "baked_fail": 0,
+    "tables": [
+     "baked",
+     "meta",
+     "instruments",
+     "price_history"
+    ],
+    "required_baked_keys": [
+     "market_board"
+    ],
+    "db_schema": 1,
+    "series": "mobile-latest-v2"
+   },
+   "baddb": {
+    "schema_version": 2,
+    "package_id": "20261013T013221-8d5c439e",
+    "app_version": "1.0.79",
+    "min_app_version": "1.0.79",
+    "built_at": "2026-10-13T01:32:21",
+    "gz_bytes": 1329299,
+    "gz_sha256": "8d5c439e6ed00c876c2b394e3a52a94ab8d3b832266c17dcffef38ed501cd77a",
+    "db_bytes": 8679424,
+    "baked_ok": 48,
+    "baked_fail": 0,
+    "tables": [
+     "baked",
+     "meta",
+     "instruments",
+     "price_history"
+    ],
+    "required_baked_keys": [
+     "market_board"
+    ],
+    "db_schema": 1,
+    "series": "mobile-latest-v2"
+   }
+  }
+ },
+ "counts": {
+  "checks": 74,
+  "passed": 74,
+  "failed": 0
+ },
+ "verdict": "PASS",
+ "console_errors": [
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED"
+ ],
+ "checks": [
+  {
+   "id": "S0a",
+   "step": "منبعِ بسته درِ راه‌اندازیِ اول",
+   "expect": "همراهِ APK",
+   "observed": "همراهِ APK",
+   "pass": true
+  },
+  {
+   "id": "S0b",
+   "step": "داده از resolver خوانده می‌شود",
+   "expect": "> 0 کندل",
+   "observed": "9949 کندل · 2450 نماد · 2024-08-24 ← 2026-10-12",
+   "pass": true
+  },
+  {
+   "id": "S0c",
+   "step": "بی‌فعال‌سازی، pointer نوشته نمی‌شود",
+   "expect": "null",
+   "observed": "null",
+   "pass": true
+  },
+  {
+   "id": "S0d",
+   "step": "ردیف‌های تابلو از بسته",
+   "expect": "> 0",
+   "observed": "27",
+   "pass": true
+  },
+  {
+   "id": "S1a",
+   "step": "دکمۀ بررسی پس ازِ فعال‌سازی",
+   "expect": "نسخۀ تازه فعال شد",
+   "observed": "بررسی شد — نسخۀ تازه فعال شد",
+   "pass": true
+  },
+  {
+   "id": "S1b",
+   "step": "pointer = package_idِ بستۀ امضاشده",
+   "expect": "20261013T012901-6f35a0ea",
+   "observed": "\"20261013T012901-6f35a0ea\"",
+   "pass": true
+  },
+  {
+   "id": "S1c",
+   "step": "یکِ بسته در staging",
+   "expect": "1",
+   "observed": "1",
+   "pass": true
+  },
+  {
+   "id": "S1d",
+   "step": "مُهرِ built_at نوشته شد",
+   "expect": "2026-10-13T01:29:01",
+   "observed": "2026-10-13T01:29:01",
+   "pass": true
+  },
+  {
+   "id": "S2a",
+   "step": "فعال‌سازیِ دوم",
+   "expect": "فعال شد",
+   "observed": "بررسی شد — نسخۀ تازه فعال شد",
+   "pass": true
+  },
+  {
+   "id": "S2b",
+   "step": "pointer = pkg2",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S2c",
+   "step": "pkg1 به‌عنوانِ نامزدِ بازگشت ماند",
+   "expect": "20261013T012901-6f35a0ea",
+   "observed": "20261013T012901-6f35a0ea",
+   "pass": true
+  },
+  {
+   "id": "S2d",
+   "step": "دو بسته در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S3a",
+   "step": "فعال‌سازیِ سوم",
+   "expect": "فعال شد",
+   "observed": "بررسی شد — نسخۀ تازه فعال شد",
+   "pass": true
+  },
+  {
+   "id": "S3b",
+   "step": "pointer = pkg3",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S3c",
+   "step": "نامزدِ بازگشت = pkg2 (نه pkg1)",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S3d",
+   "step": "سومِ بسته‌ها پاک شد؛ فقط دو تا می‌ماند",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S3e",
+   "step": "بستۀِ pkg1 از staging رفت",
+   "expect": "absent",
+   "observed": "20261013T012938-5c915dd3,20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S4a",
+   "step": "منبع پس ازِ reload",
+   "expect": "کشِ دستگاه",
+   "observed": "کشِ دستگاه",
+   "pass": true
+  },
+  {
+   "id": "S4b",
+   "step": "دادۀِ pkg3 در حافظه باز شد (۴٧٤۰ کندل)",
+   "expect": "pkg3 candles",
+   "observed": "4740 کندل · 2497 نماد · 2025-02-26 ← 2026-10-12",
+   "pass": true
+  },
+  {
+   "id": "S4c",
+   "step": "تابلو پس ازِ reload ردیف دارد",
+   "expect": "> 0",
+   "observed": "27",
+   "pass": true
+  },
+  {
+   "id": "S5a",
+   "step": "امضا نیست: رأیِ کلاینت",
+   "expect": "signature-missing",
+   "observed": "بررسی نشد: manifest: signature-missing — فایلِ امضا (.sig) نبود",
+   "pass": true
+  },
+  {
+   "id": "S5b",
+   "step": "امضا نیست: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S5c",
+   "step": "امضا نیست: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S5d",
+   "step": "امضا نیست: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S6a",
+   "step": "امضا دست‌خورده: رأیِ کلاینت",
+   "expect": "signature-invalid",
+   "observed": "بررسی نشد: manifest: signature-invalid — امضا با این بایت‌هایِ manifest نمی‌خواند",
+   "pass": true
+  },
+  {
+   "id": "S6b",
+   "step": "امضا دست‌خورده: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S6c",
+   "step": "امضا دست‌خورده: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S6d",
+   "step": "امضا دست‌خورده: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S7a",
+   "step": "امضا با کلیدِ دیگر: رأیِ کلاینت",
+   "expect": "signature-key-mismatch",
+   "observed": "بررسی نشد: manifest: signature-key-mismatch — key_id نخواند: 0bb0abcc89016d21 در برابرِ 943988b82e5fb6fa",
+   "pass": true
+  },
+  {
+   "id": "S7b",
+   "step": "امضا با کلیدِ دیگر: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S7c",
+   "step": "امضا با کلیدِ دیگر: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S7d",
+   "step": "امضا با کلیدِ دیگر: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S8a",
+   "step": "manifest دست‌خورده: رأیِ کلاینت",
+   "expect": "signature-invalid",
+   "observed": "بررسی نشد: manifest: signature-invalid — امضا با این بایت‌هایِ manifest نمی‌خواند",
+   "pass": true
+  },
+  {
+   "id": "S8b",
+   "step": "manifest دست‌خورده: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S8c",
+   "step": "manifest دست‌خورده: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S8d",
+   "step": "manifest دست‌خورده: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S9a",
+   "step": "gz نصفه: رأیِ کلاینت",
+   "expect": "size-mismatch",
+   "observed": "بررسی نشد: size-mismatch: انتظار 1329299، دریافت 664649 بایت",
+   "pass": true
+  },
+  {
+   "id": "S9b",
+   "step": "gz نصفه: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S9c",
+   "step": "gz نصفه: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S9d",
+   "step": "gz نصفه: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S10a",
+   "step": "gz دست‌خورده: رأیِ کلاینت",
+   "expect": "digest-mismatch",
+   "observed": "بررسی نشد: digest-mismatch: sha256 نخواند: a89944b842ea… در برابرِ 8d5c439e6ed0…",
+   "pass": true
+  },
+  {
+   "id": "S10b",
+   "step": "gz دست‌خورده: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S10c",
+   "step": "gz دست‌خورده: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S10d",
+   "step": "gz دست‌خورده: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S11a",
+   "step": "دیتابیسِ بسته خراب (امضا/SHA سالم): رأیِ کلاینت",
+   "expect": "db-",
+   "observed": "بررسی نشد: db-open-failed: file is not a database",
+   "pass": true
+  },
+  {
+   "id": "S11b",
+   "step": "دیتابیسِ بسته خراب (امضا/SHA سالم): بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S11c",
+   "step": "دیتابیسِ بسته خراب (امضا/SHA سالم): نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S11d",
+   "step": "دیتابیسِ بسته خراب (امضا/SHA سالم): دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S12a",
+   "step": "ریلیز در دسترس نیست: رأیِ کلاینت",
+   "expect": "manifest-missing",
+   "observed": "بررسی نشد: manifest: manifest-missing — manifest خالی بود",
+   "pass": true
+  },
+  {
+   "id": "S12b",
+   "step": "ریلیز در دسترس نیست: بستۀ فعال عوض نشد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S12c",
+   "step": "ریلیز در دسترس نیست: نامزدِ بازگشت سالم ماند",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S12d",
+   "step": "ریلیز در دسترس نیست: دو بستهٔ سالم در staging",
+   "expect": "2",
+   "observed": "2",
+   "pass": true
+  },
+  {
+   "id": "S13a",
+   "step": "پس ازِ ۸ شکست، دادۀ pkg3 خوانده می‌شود",
+   "expect": "pkg3 candles",
+   "observed": "4740 کندل · 2497 نماد · 2025-02-26 ← 2026-10-12",
+   "pass": true
+  },
+  {
+   "id": "S13b",
+   "step": "تابلو پس ازِ شکست‌ها ردیف دارد",
+   "expect": "> 0",
+   "observed": "27",
+   "pass": true
+  },
+  {
+   "id": "S14a",
+   "step": "دکمۀ بازگشت فقط با نامزدِ معتبر دیده می‌شود",
+   "expect": "present",
+   "observed": "true",
+   "pass": true
+  },
+  {
+   "id": "S14b",
+   "step": "نتیجهٔ بازگشت",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "بازگشت شد: 20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S14c",
+   "step": "pointer = pkg2",
+   "expect": "20261013T012938-5c915dd3",
+   "observed": "20261013T012938-5c915dd3",
+   "pass": true
+  },
+  {
+   "id": "S14d",
+   "step": "pkg3 شد نامزدِ بازگشت",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "20261013T013054-ed35f8f1",
+   "pass": true
+  },
+  {
+   "id": "S15a",
+   "step": "پس ازِ بازگشت، دادۀ pkg2 مصرف می‌شود",
+   "expect": "pkg2 candles",
+   "observed": "6874 کندل · 2489 نماد · 2024-08-24 ← 2026-10-12",
+   "pass": true
+  },
+  {
+   "id": "S16a",
+   "step": "بستۀ فعالِ pointer پاک شد",
+   "expect": "deleted",
+   "observed": "{\"ok\":true,\"left\":[\"http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz\"]}",
+   "pass": true
+  },
+  {
+   "id": "S16b",
+   "step": "pointerِ بی‌بسته بازنشسته شد",
+   "expect": "null",
+   "observed": "null",
+   "pass": true
+  },
+  {
+   "id": "S16c",
+   "step": "برنامه به بستۀِ همراهِ APK برگشت",
+   "expect": "همراهِ APK",
+   "observed": "همراهِ APK",
+   "pass": true
+  },
+  {
+   "id": "S16d",
+   "step": "تابلو بی‌کرش داده دارد",
+   "expect": "> 0",
+   "observed": "27",
+   "pass": true
+  },
+  {
+   "id": "S17a",
+   "step": "manifestِ کهنه (schema_version/package_id نیست) رد شد",
+   "expect": "manifest-field-missing",
+   "observed": "بررسی نشد: manifest: manifest-field-missing — schema_version نیست",
+   "pass": true
+  },
+  {
+   "id": "S17b",
+   "step": "هیچ pointerی ساخته نشد",
+   "expect": "null",
+   "observed": "null",
+   "pass": true
+  },
+  {
+   "id": "S17c",
+   "step": "دادۀِ همراهِ برنامه همچنان مصرف می‌شود",
+   "expect": "> 0",
+   "observed": "27",
+   "pass": true
+  },
+  {
+   "id": "S18a",
+   "step": "بستۀ سریِ دیگر حتی با امضایِ معتبر رد شد",
+   "expect": "series-mismatch",
+   "observed": "بررسی نشد: manifest: series-mismatch — series=mobile-latest در برابرِ سریِ همراهِ برنامه (mobile-latest-v2)",
+   "pass": true
+  },
+  {
+   "id": "S18b",
+   "step": "با ردِ سری، وضعیتِ فعال تکان نخورد",
+   "expect": "null",
+   "observed": "null",
+   "pass": true
+  },
+  {
+   "id": "S18c",
+   "step": "بسته‌هایِ سالمِ staging دست‌نخورده ماندند",
+   "expect": "1",
+   "observed": "[\"20261013T013054-ed35f8f1.gz\"]",
+   "pass": true
+  },
+  {
+   "id": "S19۰",
+   "step": "پیش ازِ بوتِ شکست‌خورده، یکِ نامزدِ معتبر درِ حافظه هست",
+   "expect": "non-empty",
+   "observed": "[\"20261013T013054-ed35f8f1\"]",
+   "pass": true
+  },
+  {
+   "id": "S19a",
+   "step": "بوتِ بی‌بسته با بنرِ مرگبار روبه‌رو می‌شود (نه صفحهٔ سفید)",
+   "expect": "bors-fatal-banner",
+   "observed": "⛔ بارگذاری بستهٔ دادهٔ آفلاین شکست خورد: HttpError: بستۀِ داده رد شد: db-open-failed: file is not a database. نسخهٔ پیشی",
+   "pass": true
+  },
+  {
+   "id": "S19b",
+   "step": "دکمۀِ بازگشت درِ بنر، با همان نامزدِ معتبر ساخته شد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "[\"تلاش دوباره\",\"بازگشت به 20261013T013054-ed35f8f1\"]",
+   "pass": true
+  },
+  {
+   "id": "S19c",
+   "step": "بازگشت ازِ بنر، pointer را به همان نامزد برد",
+   "expect": "20261013T013054-ed35f8f1",
+   "observed": "\"20261013T013054-ed35f8f1\"",
+   "pass": true
+  },
+  {
+   "id": "S19d",
+   "step": "پس ازِ بازگشت، همان بسته ازِ کش خوانده می‌شود و تابلو داده دارد",
+   "expect": "کش / > 0 ردیف",
+   "observed": "کشِ دستگاه · pointer=20261013T013054-ed35f8f1 · ردیف=27",
+   "pass": true
+  }
+ ],
+ "results": {
+  "S0": {
+   "panel": {
+    "بیلد": "e2e-stage8",
+    "WebView": "Chrome/151.0.0.0",
+    "حالت": "مرورگر/پیش‌نمایش",
+    "بستهٔ داده": "v1.0.79 · 2026-10-13T01:29:01 · 48 بسته ✅",
+    "تابلوی آفلاین": "5921 ردیف ✅",
+    "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+    "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+    "تاریخچۀ چارت": "9949 کندل · 2450 نماد · 2024-08-24 ← 2026-10-12",
+    "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+    "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+    "منبعِ بسته": "همراهِ APK",
+    "راه‌اندازی": "69ms  (دریافت 36 · بازگشایی 28 · باز کردن 5) ✅",
+    "حجمِ بسته": "1.4MB فشرده ← 8.6MB در حافظه",
+    "بستۀِ فعال": "بستۀ همراهِ برنامه (بی‌فعال‌سازیِ تازه) ❌",
+    "آخرینِ نتیجه": "هنوز بررسی نشده",
+    "صفحه": "390×844 · bors-mobile=true"
+   },
+   "storage": {
+    "active": null,
+    "previous": null,
+    "stamp": "",
+    "staging": [],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "0"
+   },
+   "boardRows": 27
+  },
+  "S1": {
+   "outcome": "بررسی شد — نسخۀ تازه فعال شد",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T012901-6f35a0ea.gz",
+     "packageId": "20261013T012901-6f35a0ea",
+     "builtAt": "2026-10-13T01:29:01",
+     "sha256": "6f35a0ea3e59ea51c570c03158687193f2aaaf77bc287594b396fec20f5131bd",
+     "activatedAt": 1791846447487,
+     "schema": 2
+    },
+    "previous": null,
+    "stamp": "2026-10-13T01:29:01",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012901-6f35a0ea.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "0"
+   },
+   "manifest": {
+    "schema_version": 2,
+    "package_id": "20261013T012901-6f35a0ea",
+    "app_version": "1.0.79",
+    "min_app_version": "1.0.79",
+    "built_at": "2026-10-13T01:29:01",
+    "gz_bytes": 1449480,
+    "gz_sha256": "6f35a0ea3e59ea51c570c03158687193f2aaaf77bc287594b396fec20f5131bd",
+    "db_bytes": 9035776,
+    "baked_ok": 48,
+    "baked_fail": 0,
+    "tables": [
+     "baked",
+     "meta",
+     "instruments",
+     "price_history"
+    ],
+    "required_baked_keys": [
+     "market_board"
+    ],
+    "db_schema": 1,
+    "series": "mobile-latest-v2"
+   }
+  },
+  "S2": {
+   "outcome": "بررسی شد — نسخۀ تازه فعال شد",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+     "packageId": "20261013T012938-5c915dd3",
+     "builtAt": "2026-10-13T01:29:38",
+     "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+     "activatedAt": 1791846448464,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012901-6f35a0ea.gz",
+      "packageId": "20261013T012901-6f35a0ea",
+      "builtAt": "2026-10-13T01:29:01",
+      "sha256": "6f35a0ea3e59ea51c570c03158687193f2aaaf77bc287594b396fec20f5131bd",
+      "activatedAt": 1791846447487,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:29:38",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012901-6f35a0ea.gz",
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "0"
+   }
+  },
+  "S3": {
+   "outcome": "بررسی شد — نسخۀ تازه فعال شد",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "0"
+   },
+   "stagingIds": [
+    "20261013T012938-5c915dd3",
+    "20261013T013054-ed35f8f1"
+   ]
+  },
+  "S4": {
+   "panel": {
+    "بیلد": "e2e-stage8",
+    "WebView": "Chrome/151.0.0.0",
+    "حالت": "مرورگر/پیش‌نمایش",
+    "بستهٔ داده": "v1.0.79 · 2026-10-13T01:30:54 · 48 بسته ✅",
+    "تابلوی آفلاین": "5921 ردیف ✅",
+    "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+    "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+    "تاریخچۀ چارت": "4740 کندل · 2497 نماد · 2025-02-26 ← 2026-10-12",
+    "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+    "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+    "منبعِ بسته": "کشِ دستگاه",
+    "راه‌اندازی": "40ms  (دریافت 15 · بازگشایی 21 · باز کردن 3) ✅",
+    "حجمِ بسته": "1.3MB فشرده ← 8.3MB در حافظه",
+    "بستۀِ فعال": "20261013T013054-ed35f8f1 · 2026-10-13T01:30:54 ✅",
+    "آخرینِ نتیجه": "هنوز بررسی نشده",
+    "آخرینِ فعال‌سازیِ موفق": "۱۴۰۵/۷/۲۱, ۲:۳۷:۲۹",
+    "صفحه": "390×844 · bors-mobile=true"
+   },
+   "boardRows": 27
+  },
+  "S5": {
+   "outcome": "بررسی نشد: manifest: signature-missing — فایلِ امضا (.sig) نبود",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "1"
+   }
+  },
+  "S6": {
+   "outcome": "بررسی نشد: manifest: signature-invalid — امضا با این بایت‌هایِ manifest نمی‌خواند",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "2"
+   }
+  },
+  "S7": {
+   "outcome": "بررسی نشد: manifest: signature-key-mismatch — key_id نخواند: 0bb0abcc89016d21 در برابرِ 943988b82e5fb6fa",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "3"
+   }
+  },
+  "S8": {
+   "outcome": "بررسی نشد: manifest: signature-invalid — امضا با این بایت‌هایِ manifest نمی‌خواند",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "4"
+   }
+  },
+  "S9": {
+   "outcome": "بررسی نشد: size-mismatch: انتظار 1329299، دریافت 664649 بایت",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "5"
+   }
+  },
+  "S10": {
+   "outcome": "بررسی نشد: digest-mismatch: sha256 نخواند: a89944b842ea… در برابرِ 8d5c439e6ed0…",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "6"
+   }
+  },
+  "S11": {
+   "outcome": "بررسی نشد: db-open-failed: file is not a database",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "7"
+   }
+  },
+  "S12": {
+   "outcome": "بررسی نشد: manifest: manifest-missing — manifest خالی بود",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+      "packageId": "20261013T012938-5c915dd3",
+      "builtAt": "2026-10-13T01:29:38",
+      "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+      "activatedAt": 1791846448464,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "8"
+   }
+  },
+  "S13": {
+   "panel": {
+    "بیلد": "e2e-stage8",
+    "WebView": "Chrome/151.0.0.0",
+    "حالت": "مرورگر/پیش‌نمایش",
+    "بستهٔ داده": "v1.0.79 · 2026-10-13T01:30:54 · 48 بسته ✅",
+    "تابلوی آفلاین": "5921 ردیف ✅",
+    "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+    "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+    "تاریخچۀ چارت": "4740 کندل · 2497 نماد · 2025-02-26 ← 2026-10-12",
+    "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+    "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+    "منبعِ بسته": "کشِ دستگاه",
+    "راه‌اندازی": "31ms  (دریافت 9 · بازگشایی 21 · باز کردن 2) ✅",
+    "حجمِ بسته": "1.3MB فشرده ← 8.3MB در حافظه",
+    "بستۀِ فعال": "20261013T013054-ed35f8f1 · 2026-10-13T01:30:54 ✅",
+    "آخرینِ نتیجه": "هنوز بررسی نشده",
+    "تلاشِ دوباره": "8 شکستِ پی‌درپی · 640 دقیقه دیگر",
+    "آخرینِ فعال‌سازیِ موفق": "۱۴۰۵/۷/۲۱, ۲:۳۷:۲۹",
+    "صفحه": "390×844 · bors-mobile=true"
+   },
+   "boardRows": 27
+  },
+  "S14": {
+   "rbText": "بازگشت شد: 20261013T012938-5c915dd3",
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T012938-5c915dd3.gz",
+     "packageId": "20261013T012938-5c915dd3",
+     "builtAt": "2026-10-13T01:29:38",
+     "sha256": "5c915dd34f960f5d8ccc167850bc00cd33379ba72d03404fca199330ceb39c92",
+     "activatedAt": 1791846448464,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+      "packageId": "20261013T013054-ed35f8f1",
+      "builtAt": "2026-10-13T01:30:54",
+      "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+      "activatedAt": 1791846449437,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:29:38",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T012938-5c915dd3.gz",
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "8"
+   }
+  },
+  "S15": {
+   "panel": {
+    "بیلد": "e2e-stage8",
+    "WebView": "Chrome/151.0.0.0",
+    "حالت": "مرورگر/پیش‌نمایش",
+    "بستهٔ داده": "v1.0.79 · 2026-10-13T01:29:38 · 48 بسته ✅",
+    "تابلوی آفلاین": "5921 ردیف ✅",
+    "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+    "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+    "تاریخچۀ چارت": "6874 کندل · 2489 نماد · 2024-08-24 ← 2026-10-12",
+    "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+    "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+    "منبعِ بسته": "کشِ دستگاه",
+    "راه‌اندازی": "42ms  (دریافت 14 · بازگشایی 27 · باز کردن 2) ✅",
+    "حجمِ بسته": "1.3MB فشرده ← 8.4MB در حافظه",
+    "بستۀِ فعال": "20261013T012938-5c915dd3 · 2026-10-13T01:29:38 ✅",
+    "آخرینِ نتیجه": "هنوز بررسی نشده",
+    "تلاشِ دوباره": "8 شکستِ پی‌درپی · 640 دقیقه دیگر",
+    "آخرینِ فعال‌سازیِ موفق": "۱۴۰۵/۷/۲۱, ۲:۳۷:۲۹",
+    "صفحه": "390×844 · bors-mobile=true"
+   }
+  },
+  "S16": {
+   "gone": {
+    "ok": true,
+    "left": [
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ]
+   },
+   "panel": {
+    "بیلد": "e2e-stage8",
+    "WebView": "Chrome/151.0.0.0",
+    "حالت": "مرورگر/پیش‌نمایش",
+    "بستهٔ داده": "v1.0.79 · 2026-10-13T01:29:01 · 48 بسته ✅",
+    "تابلوی آفلاین": "5921 ردیف ✅",
+    "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+    "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+    "تاریخچۀ چارت": "9949 کندل · 2450 نماد · 2024-08-24 ← 2026-10-12",
+    "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+    "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+    "منبعِ بسته": "همراهِ APK",
+    "راه‌اندازی": "79ms  (دریافت 46 · بازگشایی 31 · باز کردن 2) ✅",
+    "حجمِ بسته": "1.4MB فشرده ← 8.6MB در حافظه",
+    "بستۀِ فعال": "بستۀ همراهِ برنامه (بی‌فعال‌سازیِ تازه) ❌",
+    "آخرینِ نتیجه": "هنوز بررسی نشده",
+    "تلاشِ دوباره": "8 شکستِ پی‌درپی · 640 دقیقه دیگر",
+    "آخرینِ فعال‌سازیِ موفق": "۱۴۰۵/۷/۲۱, ۲:۳۷:۲۹",
+    "صفحه": "390×844 · bors-mobile=true"
+   },
+   "boardRows": 27,
+   "deletedKey": "pkg/20261013T012938-5c915dd3.gz"
+  },
+  "S17": {
+   "legacy": "بررسی نشد: manifest: manifest-field-missing — schema_version نیست",
+   "storage": {
+    "active": null,
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+      "packageId": "20261013T013054-ed35f8f1",
+      "builtAt": "2026-10-13T01:30:54",
+      "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+      "activatedAt": 1791846449437,
+      "schema": 2
+     }
+    ],
+    "stamp": "",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "9"
+   },
+   "boardRows": 27
+  },
+  "S18": {
+   "wrongSeries": "بررسی نشد: manifest: series-mismatch — series=mobile-latest در برابرِ سریِ همراهِ برنامه (mobile-latest-v2)",
+   "storageBefore": {
+    "active": null,
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+      "packageId": "20261013T013054-ed35f8f1",
+      "builtAt": "2026-10-13T01:30:54",
+      "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+      "activatedAt": 1791846449437,
+      "schema": 2
+     }
+    ],
+    "stamp": "",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "9"
+   },
+   "storage": {
+    "active": null,
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+      "packageId": "20261013T013054-ed35f8f1",
+      "builtAt": "2026-10-13T01:30:54",
+      "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+      "activatedAt": 1791846449437,
+      "schema": 2
+     }
+    ],
+    "stamp": "",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "10"
+   }
+  },
+  "S19": {
+   "bannerTxt": "⛔ بارگذاری بستهٔ دادهٔ آفلاین شکست خورد: HttpError: بستۀِ داده رد شد: db-open-failed: file is not a database. نسخهٔ پیشینِ برنامه دست‌نخورده مانده است.تلاش دوبارهبازگشت به 20261013T013054-ed35f8f1",
+   "bannerBtns": [
+    "تلاش دوباره",
+    "بازگشت به 20261013T013054-ed35f8f1"
+   ],
+   "storage": {
+    "active": {
+     "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+     "packageId": "20261013T013054-ed35f8f1",
+     "builtAt": "2026-10-13T01:30:54",
+     "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+     "activatedAt": 1791846449437,
+     "schema": 2
+    },
+    "previous": [
+     {
+      "cacheKey": "pkg/20261013T013054-ed35f8f1.gz",
+      "packageId": "20261013T013054-ed35f8f1",
+      "builtAt": "2026-10-13T01:30:54",
+      "sha256": "ed35f8f15b61455944c14af5453ab1c90fd8d06d525865afc6e8c87e5226e276",
+      "activatedAt": 1791846449437,
+      "schema": 2
+     }
+    ],
+    "stamp": "2026-10-13T01:30:54",
+    "staging": [
+     "http://127.0.0.1:1776/pkg/20261013T013054-ed35f8f1.gz"
+    ],
+    "legacy": [],
+    "cachesOk": true,
+    "failStreak": "10"
+   },
+   "afterReload": {
+    "src": "کشِ دستگاه",
+    "rows": 27
+   }
+  }
+ },
+ "limitation": "Chromiumِ دسکتاپ؛ Cache API و crypto.subtle واقعی‌اند، ولی Android WebView اثبات نشده است. بایت‌هایِ gz با page.route تحویل می‌شود چون همین harness پاسخِ بزرگِ `.gz` را ۲۰۴ می‌کند (شاهد: _audit/tmp/stage5/gz_fetch_check.mts)."
+}

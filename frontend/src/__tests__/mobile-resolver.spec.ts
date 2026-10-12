@@ -63,6 +63,34 @@ describe('/api/screener در حالتِ آفلاین', () => {
   });
 });
 
+describe('هم‌کلیدیِ پخت و اجرا برایِ نمادِ فاصلهدار', () => {
+  // «معيار » درِ بانک با فاصلۀ انتهایی است؛ کارتِ آفلاین فقط وقتی پیدا می‌شود که
+  // کلیدِ resolveLocal همان رشتهٔ خام باشد. strip در هر سوئی (بیلد یا resolver)
+  // رشتهٔ دیگری می‌سازد و کارت خالی می‌ماند.
+  const DIRTY = 'معيار ';
+  const CARD = { status: 'success', symbol: DIRTY, score: 3 };
+
+  it('کلیدِ decodeشده از مسیر، همان کلیدِ پختۀ خام است', async () => {
+    bakedMap.set(`fundamental/${DIRTY}`, CARD);
+    const out = (await resolveLocal('/api/fundamental/' + encodeURIComponent(DIRTY), 'GET')) as
+      { symbol?: string; status?: string };
+    expect(out?.status).toBe('success');
+    expect(out?.symbol).toBe(DIRTY);
+  });
+
+  it('کلیدِ بریده‌شده جایِ نمادِ خام را نمی‌گیرد (سنجه کور نیست)', async () => {
+    bakedMap.set(`fundamental/${DIRTY.trim()}`, CARD);
+    let msg = '';
+    try {
+      await resolveLocal('/api/fundamental/' + encodeURIComponent(DIRTY), 'GET');
+    } catch (e) { msg = e instanceof Error ? e.message : String(e); }
+    // خطا باید نامِ کلیدِ **خام** را بگوید: یعنی resolver همان رشته را خواسته،
+    // نه رشتهٔ بریده‌شده‌ای که بیلدِ کهنه می‌پخت.
+    expect(msg).toContain(`fundamental/${DIRTY}`);
+    expect(msg).not.toContain(`fundamental/${DIRTY.trim()}\b`);
+  });
+});
+
 describe('تاریخچۀ چارت از price_history', () => {
   const ph = (withLast: boolean) => {
     sql.mockImplementation(async (text: string) => {

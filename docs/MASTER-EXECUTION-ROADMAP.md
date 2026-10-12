@@ -2172,7 +2172,7 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 
 | ID | Finding | Class | State |
 | --- | --- | --- | --- |
-| D-7 | One screener symbol is stored as `معيار ` — trailing space and Arabic `ي` — in `price_history` and `instruments`; `/api/fundamental/معيار` returns 404 so the bake skipped exactly one of 922 symbols | DATA HYGIENE (canonical layer) | `DISCOVERED` — fix belongs in the shared symbol reader, not in a clamp |
+| D-7 | One screener symbol is stored as `معيار ` — trailing space and Arabic `ي` — in `instruments.l_val18` (1 row), `price_history` (365), `financial_statements` (8), `monthly_sales` (3), `codal_notices` (39); `/api/fundamental/معيار` (stripped) returns 404 while the raw string returns 200 | DATA HYGIENE (canonical layer) | `PARTLY RESOLVED` (stage 8): the bake no longer strips the symbol, so `baked_fail 1 → 0` and the offline key equals the runtime key (`dev/mobile_bake_key_parity_v1079.py`, 13 checks + 2 resolver tests in `mobile-resolver.spec.ts`). A one-sided clamp was measured and rejected: reading the company name from `codal_notices` made the stripped symbol answer 200 with a *second* truth (`sector='سایر'`, `revenue=473900`) against the raw form's (`sector='سرمايه گذاريها'`, `revenue=0`), so `api/fundamental.py` was reverted to baseline. The dirty stored symbol itself remains in the shared reader — owner ruling, not a clamp |
 | D-8 | Universe drift: the same canonical `/api/screener` now returns 922 rows where the shipped snapshot had 873 — the old number quoted in reports is stale | DATA | `DISCOVERED` |
 
 

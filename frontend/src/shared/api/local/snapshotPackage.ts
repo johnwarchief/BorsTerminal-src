@@ -37,6 +37,12 @@ export type SnapshotManifest = {
    *  `schema_version` یکی نیست: آن نسخۀ *قراردادِ manifest* است، این نسخۀ *فایلِ
    *  SQLite*. اگر سازنده هر دو را بفرستد، کلاینت مقایسه می‌کند. */
   db_schema?: number;
+  /** سریِ انتشاری که این بسته برایش پخته شده (`mobile-latest` = کهنه،
+   *  `mobile-latest-v2` = سریِ امضاشدۀ v2). انتخابِ سری باید **صریح** باشد، نه
+   *  حدس از URL یا نسخۀ مبهم: کلاینتی که برای یک سری بیلد شده، بستۀ سریِ دیگر
+   *  را رد می‌کند — وگرنه یکِ اشتباه درِ مسیرِ ریلیز، دادۀِ نسلِ دیگر را رویِ
+   *  گوشی می‌نشاند. */
+  series?: string;
 };
 
 export type RejectReason =
@@ -45,7 +51,7 @@ export type RejectReason =
   | 'size-mismatch' | 'digest-missing-on-device' | 'digest-mismatch'
   | 'not-gzip' | 'gunzip-failed' | 'db-open-failed' | 'table-missing'
   | 'baked-key-missing' | 'meta-missing' | 'storage-unavailable' | 'storage-full'
-  | 'db-schema-mismatch';
+  | 'db-schema-mismatch' | 'series-mismatch' | 'series-unknown';
 
 export type Check<T> = { ok: true; value: T } | { ok: false; reason: RejectReason; detail: string };
 
@@ -68,6 +74,23 @@ export function parseManifest(raw: unknown): Check<SnapshotManifest> {
   if (!Number.isInteger(gzBytes) || gzBytes <= 0) return bad('manifest-field-missing', 'gz_bytes درست نیست');
   if (!/^[0-9a-f]{64}$/i.test(String(m.gz_sha256))) return bad('manifest-field-missing', 'gz_sha256 شکلِ sha256 ندارد');
   return { ok: true, value: m as unknown as SnapshotManifest };
+}
+
+/** بسته باید برای همين سریِ انتشاری باشد که کلاینت برایش بیلد شده.
+ *  `bakedSeries` خالی = بیلد محلی/بی‌سری ⇒ داوری نمی‌شود (نه پذیرشِ بی‌معنای
+ *  هر چیزِ دیگر: سازنده هم همیشه سری را می‌نویسد، پس بسته‌ای که سری ندارد از
+ *  سازندۀ کهنه آمده و با `series-unknown` رد می‌شود). */
+export function checkSeries(m: SnapshotManifest, bakedSeries: string):
+  Check<SnapshotManifest> {
+  if (!bakedSeries) return { ok: true, value: m };
+  if (typeof m.series !== 'string' || !m.series) {
+    return bad('series-unknown', 'manifest سریِ انتشار را ندارد؛ این بسته از '
+      + 'سازندۀ بی‌قراردادِ v2 آمده و برای این بیلد تأیید نشده است');
+  }
+  if (m.series !== bakedSeries) {
+    return bad('series-mismatch', `series=${m.series} در برابرِ سریِ همراهِ برنامه (${bakedSeries})`);
+  }
+  return { ok: true, value: m };
 }
 
 /** مقایسۀ نسخۀ جلالیِ «۱۴۵/۰/۱۳…» نه — نسخه‌های نقطه‌چینِ اپ (APP_VERSION). */
