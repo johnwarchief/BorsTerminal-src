@@ -107,6 +107,12 @@ SUITES = [
     # کنترلِ منفی روی‌اش اجرا می‌شود — سبزی که خطا را نمی‌بیند دلیلِ درستی نیست.
     ('dev/test_rule_map_citations.py',
      'FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file'),
+    # مرحلۀ ۳: سه مسیرِ زندۀ موتورِ اول که هیچ آزمونِ مستقیمی نداشتند (پولبک،
+    # سطوحِ کلیدی + order-block، نقاطِ ساختاری) و قاعدۀ اکیدِ پیوت — کندلِ
+    # تک‌قیمتیِ TSETMC (فولاد: ۳۰٪ سطرها H==L) نباید «سقفِ تأییدشده» بسازد،
+    # بدونِ آنکه هیچ حکمی جابه‌جا شود (سنجیده شد: ۹ نماد، داوری بایت‌به‌بایت یکسان).
+    ('dev/test_fts_untested_paths_v1.py',
+     'pullback / key-levels / structure-points behavior + the strict pivot rule (flat TSETMC rows draw no ceiling)'),
     ('dev/test_trend_engine_flag.py',
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',

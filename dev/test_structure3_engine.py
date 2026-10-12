@@ -210,13 +210,18 @@ try:
 
     # ── ۵) مرزِ سه‌موتوره: رأیِ FTS دست‌نخورده ────────────────────────────
     CH.FTS_ANALYSIS_CACHE.clear()
+    rs_before = CH.FTS_TECH_RULESET_VERSION
     with_candles(LOW)
     S3.analyze_symbol("X")
     S3.analyze_symbol("X", as_of=T)
     ck("موتورِ سوم درِ کشِ تحلیلِ FTS هیچ چیزی نمی‌نویسد",
        len(CH.FTS_ANALYSIS_CACHE) == 0, list(CH.FTS_ANALYSIS_CACHE))
-    ck("نسخۀ قواعدِ رأیِ رسمی عوض نشده (FTS_TECH_RULESET_VERSION)",
-       CH.FTS_TECH_RULESET_VERSION == "4", CH.FTS_TECH_RULESET_VERSION)
+    # invariantِ واقعی «دست‌نخورده» است، نه عددِ خاص: مرحلۀ ۳ قواعدِ موتورِ اول را
+    # عوض می‌کند (بند ۵: قاعدۀ اکیدِ پیوت) و هر بار باید کش را عوض کند؛ گاردِ
+    # شمارهٔ ثابت آن bump را «شکستِ موتورِ سوم» نشان می‌داد.
+    ck("نسخۀ قواعدِ رأیِ رسمی را موتورِ سوم عوض نمی‌کند (پیش/پس از دو فراخوان E3)",
+       CH.FTS_TECH_RULESET_VERSION == rs_before and bool(str(rs_before).strip()),
+       (rs_before, CH.FTS_TECH_RULESET_VERSION))
     ck("موتورِ سوم `structure_points`/`trend`ِ موتورِ اول را نمی‌سازد",
        "structure_points" not in ok and "trend" not in ok, sorted(ok)[:12])
 

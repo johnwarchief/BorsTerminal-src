@@ -33,3 +33,15 @@ commitmsg.txt
 # گزارشِ parity است، نه درِ این فایل‌ها.
 _*.out
 _*.log
+
+# اسکریپت‌هایِ جای‌گزین‌شده‌ای که هیچ سندِ منتشرشده‌ای به آن‌ها ارجاع نمی‌دهد (نسخۀ
+# نهاییِ همان سنجش‌ها کامیت شده: `_ghost_probe.py`، `_lakhazar_csv2.py`). رویِ دیسک
+# می‌مانند تا اگر لازمی شد دوباره اجرا شوند، ولی شاهدِ قابلِ بازبینی نیستند
+# (قاعدۀ AGENTS: فایلِ موقتِ untracked نماند و کامیت هم نشود).
+_20230328_probe.py
+_cache_probe.py
+_ghost_probe_clean.py
+_ghost_probe_v3.py
+_lakhazar_csv_probe.py
+_live_probe.py
+RA365-ADJUST-RULERULE-2026-10-12.csv

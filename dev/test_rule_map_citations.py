@@ -104,11 +104,16 @@ def check_all(doc):
 
     # ── ۱) نام‌هایِ ارجاع‌شده ─────────────────────────────────────────────
     # `NAME*` درِ سند یعنی «هر تابعی با این پیشوند»؛ بی‌ستاره باید نامِ دقیق باشد
-    # (پیشوندِ آزاد، `_daily` را به `_daily_setups` می‌چسباند و گارد را کور می‌کند).
+    # (پیشوندِ آزاد, `_daily` را به `_daily_setups` می‌چسباند و گارد را کور می‌کند).
     # نامِ پیشِ پسوندِ فایل (`OWNER_RULINGS.md`) ارجاعِ کد نیست.
+    # lookbehind عمدی است: ستونِ «نمایش» مسیرِ فیلدِ payload را هم می‌برد
+    # (`l4.rsi_prev_peak`، `structure_points.W`) و زیرِ رشتهٔ یک ثابتِ واقعی
+    # (`FTS_TECH_RULESET_VERSION`) هم `_`-دار است؛ بی‌آن، گارد نام‌هایِ موجود را
+    # «تعریف‌نشده» می‌گفت و ارزشِ اخطارش می‌سوخت. نامِ تابعِ ارجاع‌شده همیشه
+    # اولِ توکنِ پشتِ بک‌تیک می‌آید، پس دقیقاً همان‌جا سنجیده می‌شود.
     cited = []
     for span in re.findall(r"`([^`]+)`", doc):
-        for m in re.finditer(r"(_[A-Za-z]\w*)(\*|:\d+)?", span):
+        for m in re.finditer(r"(?<!\w)(_[A-Za-z]\w*)(\*|:\d+)?", span):
             if span[m.end():m.end() + 1] == ".":
                 continue
             cited.append((m.group(1), m.group(2) == "*", span))
@@ -153,7 +158,7 @@ def check_all(doc):
                   if re.search(rf"(?<![\w-]){re.escape(lab)}(?![\w-])", code)}
         hit = None
         for span in re.findall(r"`([^`]+)`", code):
-            for m in re.finditer(r"(_[A-Za-z]\w*)(?::\d+)?", span):
+            for m in re.finditer(r"(?<!\w)(_[A-Za-z]\w*)(?::\d+)?", span):
                 name = m.group(1)
                 where = defs.get(name)
                 if where is None:               # سنجهٔ ۱ مسئولِ این است
@@ -179,17 +184,37 @@ def check_all(doc):
     return res, len(cited)
 
 
+def line_probe(doc):
+    """لنگرِ کنترلِ منفیِ سنجهٔ ۲ از خودِ سند خوانده می‌شود، نه از عددِ ثابت.
+
+    ارجاع‌های `NAME:LINE` با هر ویرایشِ chart.py جابه‌جا می‌شوند؛ اگر لنگرِ
+    کنترلِ منفی هم عددِ ثابت باشد، گارد توانِ دیدنِ خطا را از دست می‌دهد
+    («لنگر پیدا نشد» = گاردِ کور). اینجا نخستین ارجاعِ زندهٔ سند برداشته می‌شود
+    و شمارۀ سطرِ قطعی‌ناادرستِ همان فایل جای آن می‌نشیند.
+    """
+    for name, num in re.findall(r"`(_[A-Za-z]\w*):(\d+)`", doc):
+        where, real = defs.get(name), line_of.get(name)
+        if where is None or real is None:
+            continue
+        lines = (files_text.get(where) or "").splitlines()
+        for bad in (1, len(lines), real - 1, real + 1):
+            if bad != real and 1 <= bad <= len(lines) and name not in lines[bad - 1]:
+                return f"`{name}:{num}`", f"`{name}:{bad}`"
+    return None, None
+
+
 def negative_control(doc):
     """هر سنجه باید روی سندِ دست‌کاری‌شده قرمز شود؛ وگرنه سبزش دلیلِ درستی نیست."""
+    old_line, new_line = line_probe(doc)
     probes = [
         (C_NAME, "`_fts_classify_trend`", "`_fts_nosuch_symbol_at_all`"),
-        (C_LINE, "_fts_jet_setup:2208", "_fts_jet_setup:1902"),
+        (C_LINE, old_line, new_line),
         (C_CODE, "| engine1 |", "|  |"),
         (C_ATTR, "engine1 `_fts_exit_layer1`", "tape `_fts_exit_layer1`"),
     ]
     out = []
     for expect, old, new in probes:
-        if old not in doc:
+        if not old or old not in doc:
             out.append((f"کنترلِ منفیِ {expect}", False,
                         f"لنگرِ «{old}» در سند پیدا نشد — خودِ گارد کور شده"))
             continue
