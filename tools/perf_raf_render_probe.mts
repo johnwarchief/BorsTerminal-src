@@ -290,6 +290,81 @@ out.network = {
             fulls: joined.filter((j) => j.kind === 'full').length,
             playwrightBodiesCaptured: bodies.filter((b) => b.body).length },
 };
+const perResp = joined.map((j) => {
+  const after = ev.filter((x) => x.t > j.at && x.t <= j.at + 4000);
+  const VAL = new Set(['flash', 'text', 'textReplaced']);
+  const syms = new Set(after.filter((x) => VAL.has(x.kind)).map((x) => x.sym).filter(Boolean));
+  const objSyms = new Set(after.filter((x) => x.kind === 'title').map((x) => x.sym).filter(Boolean));
+  // KALIBRATION (perf_probe_calib: attributionRecovery): پنجرۀِ [+2.5s] کارِ
+  // بی‌ربطِ میاندو نمونه‌ها را هم می‌گیرد و هزینه را ~۴-۶× بیش‌نسبت می‌دهد؛ پنجرۀِ
+  // تنگِ [+0, +۷۰۰ms] بهِ سنجشِ چسبیده نزدیک‌تر است. هر دو گزارش می‌شوند.
+  const beforeS = series.filter((s) => s.t <= j.at);
+  const s0 = beforeS[beforeS.length - 1] ?? series[0];
+  const sTight = series.filter((s) => s.t >= j.at + 700)[0] ?? series[series.length - 1];
+  const sWide = series.filter((s) => s.t > j.at + 2500)[0] ?? series[series.length - 1];
+  const inDelta = new Set(j.body?.symbols ?? []);
+  // واحد: CDP Performance.*Duration برحسبِ **ثانیه** است. بی‌ضربِ ۱۰۰۰، ۶۸ms به
+  // شکلِ «۰.۱ms» خوانده می‌شود — باگِ واحدی که درِ Stage 6 رخ داد و درِ Stage 7
+  // با سریِ خامِ ذخیره‌شده کشف شد (perf_probe_calib → attributionRecovery).
+  const dms = (a: number, b: number) => +(((b - a) * 1000)).toFixed(1);
+  return { at: j.at, kind: j.kind, bodyKind: j.body?.kind ?? null, rev: j.body?.rev ?? null,
+           rowsInDelta: j.body?.rows ?? null, pageBytes: j.pageBytes, last_sync: j.body?.last_sync ?? null,
+           visibleRowsNamedInDelta: (j.kind === 'delta' ? symStart.filter((s) => inDelta.has(s)).length : null),
+           domEvents4s: after.length,
+           mutationBatches4s: bTimes.filter((t) => t > j.at && t <= j.at + 4000).length,
+           visibleRowsValueChanged: syms.size, visibleRowsDataObjectReplaced: objSyms.size,
+           changedSymbols: [...syms].slice(0, 12),
+           elemsAdded: after.filter((x) => x.kind === 'added').length,
+           elemsRemoved: after.filter((x) => x.kind === 'removed').length,
+           cellCharData: after.filter((x) => x.kind === 'text').length,
+           cellTextReplaced: after.filter((x) => x.kind === 'textReplaced').length,
+           cellsFlash: after.filter((x) => x.kind === 'flash').length,
+           scriptMsTight: dms(s0.script, sTight.script), taskMsTight: dms(s0.task, sTight.task),
+           layoutMsTight: dms(s0.layout, sTight.layout), styleMsTight: dms(s0.style, sTight.style),
+           tightWindowMs: sTight.t - s0.t,
+           scriptMsWide: dms(s0.script, sWide.script), taskMsWide: dms(s0.task, sWide.task),
+           layoutMsWide: dms(s0.layout, sWide.layout), styleMsWide: dms(s0.style, sWide.style),
+           wideWindowMs: sWide.t - s0.t, cadenceMs: CADENCE };
+});
+
+// KALIBRATION (Stage 7): یکِ پاسخِ unchanged (۱۶۱ بایت، صفرِ ردیف، صفرِ DOM) هم درِ
+// پنجرۀِ ~۱ ثانیه‌ای خودِ poll هزینه دارد — سنجیده: ~۱۷ms script / ~۱۰۵ms task.
+// پس «هزینۀِ دلتا» بدونِ کسرِ اینِ کف، ادعاست. baseline ازِ همانِ اجرا ساخته می‌شود
+// تا کفِ همانِ ماشین/همانِ بارِ پس‌زمینه باشد، نه عددي ازِ جایِ دیگر.
+const q = (xs: number[], p: number) => {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  return +s[Math.min(s.length - 1, Math.floor(s.length * p))].toFixed(1);
+};
+const unchangedR = perResp.filter((r) => r.bodyKind === 'unchanged');
+const changedR = perResp.filter((r) => r.bodyKind === 'delta');
+const med = (xs: number[]) => q(xs, 0.5);
+const baseline = {
+  nUnchanged: unchangedR.length,
+  nChanged: changedR.length,
+  medianScriptMs: med(unchangedR.map((r) => r.scriptMsTight)),
+  medianTaskMs: med(unchangedR.map((r) => r.taskMsTight)),
+  medianStyleMs: med(unchangedR.map((r) => r.styleMsTight)),
+  p95ScriptMs: q(unchangedR.map((r) => r.scriptMsTight), 0.95),
+  maxScriptMs: q(unchangedR.map((r) => r.scriptMsTight), 1),
+  note: 'کفِ pollِ بی\u200cتغییری ازِ همانِ اجرا. n<3 یعنی اینِ عدد فقطِ یکِ مشاهده است، نه توزیع.',
+};
+// کسرِ کف ازِ هرِ دلتایِ دارایِ تغییر (منفیِ ممکن = کفِ بالاتر ازِ مشاهده؛ پنهانش نمی\u200cکنیم)
+for (const r of changedR) {
+  Object.assign(r, {
+    netScriptMsVsUnchanged: baseline.medianScriptMs == null ? null : +(r.scriptMsTight - baseline.medianScriptMs).toFixed(1),
+    netTaskMsVsUnchanged: baseline.medianTaskMs == null ? null : +(r.taskMsTight - baseline.medianTaskMs).toFixed(1),
+    netStyleMsVsUnchanged: baseline.medianStyleMs == null ? null : +(r.styleMsTight - baseline.medianStyleMs).toFixed(1),
+  });
+}
+const method = {
+  validSamples: { responses: joined.length, deltasWithChanges: changedR.length, unchangedBaselineN: unchangedR.length },
+  attributionRule: 's0 = آخرینِ نمونۀِ ≤ t_response؛ پنجرۀِ tight تا اولینِ نمونۀِ ≥ +۷۰۰ms؛ wide تا > +۲۵۰۰ms. cadence=' + CADENCE + 'ms ⇒ عرضِ واقعیِ پنجره درِ tightWindowMs/wideWindowMs نوشته شده است.',
+  overAttributionKnown: 'پنجره بی‌ربط هم می‌گیرد (Stage 7: ~۴-۶× بیش\u200cنسبتِ script). برایِ عددِ خالصِ هرِ دلتا، net*VsUnchanged را بخوان، نه scriptMsTight را.',
+  statisticsOnlyIfEnoughN: 'median/P95 را فقط با n≥۵ گزارش کن؛ با n کمتر، تنها «مشاهده» است.',
+  notMeasurable: 'تعدادِ React render/commit؛ زمانِ انتشارِ داده درِ TSETMC (Source→Backend).',
+};
+
 out.board = {
   selectorInstall: install, selftest,
   blocked: joined.length === 0
@@ -310,42 +385,9 @@ out.board = {
               otherAttr: windowOnly('otherAttr'),
               sensorSelfMs: +windowOnly('sensorMs').toFixed(2), sensorBatchesHandled: windowOnly('sensorCalls'),
               note: 'cellsValueChanged = سلولِ دیدنیِ تغییرمقدار، نه تعدادِ renderِ React. addedElems/removedElems = کوه‌کشیِ ساختار (ردیف/گره)، textNodes* = فقطِ گرهٔ متنی. هرگز این شمارۀِ گره را معادلِ شمارۀِ ردیف نخوان. sensorSelfMs = وقتِ خودِ ناظر (سربارِ ابزار، از وقتِ برنامه جدا؛ کفِ دقتِ ساعتِ اینِ Chromium ~۰.۱ms).' },
-  perResponse: joined.map((j) => {
-    const after = ev.filter((x) => x.t > j.at && x.t <= j.at + 4000);
-    const VAL = new Set(['flash', 'text', 'textReplaced']);
-    const syms = new Set(after.filter((x) => VAL.has(x.kind)).map((x) => x.sym).filter(Boolean));
-    const objSyms = new Set(after.filter((x) => x.kind === 'title').map((x) => x.sym).filter(Boolean));
-    // KALIBRATION (perf_probe_calib: attributionRecovery): پنجرۀِ [+2.5s] کارِ
-    // بی‌ربطِ میاندو نمونه‌ها را هم می‌گیرد و هزینه را ~۴-۶× بیش‌نسبت می‌دهد؛ پنجرۀِ
-    // تنگِ [+0, +۷۰۰ms] بهِ سنجشِ چسبیده نزدیک‌تر است. هر دو گزارش می‌شوند.
-    const beforeS = series.filter((s) => s.t <= j.at);
-    const s0 = beforeS[beforeS.length - 1] ?? series[0];
-    const sTight = series.filter((s) => s.t >= j.at + 700)[0] ?? series[series.length - 1];
-    const sWide = series.filter((s) => s.t > j.at + 2500)[0] ?? series[series.length - 1];
-    const inDelta = new Set(j.body?.symbols ?? []);
-    // واحد: CDP Performance.*Duration برحسبِ **ثانیه** است. بی‌ضربِ ۱۰۰۰، ۶۸ms به
-    // شکلِ «۰.۱ms» خوانده می‌شود — باگِ واحدی که درِ Stage 6 رخ داد و درِ Stage 7
-    // با سریِ خامِ ذخیره‌شده کشف شد (perf_probe_calib → attributionRecovery).
-    const dms = (a: number, b: number) => +(((b - a) * 1000)).toFixed(1);
-    return { at: j.at, kind: j.kind, bodyKind: j.body?.kind ?? null, rev: j.body?.rev ?? null,
-             rowsInDelta: j.body?.rows ?? null, pageBytes: j.pageBytes, last_sync: j.body?.last_sync ?? null,
-             visibleRowsNamedInDelta: (j.kind === 'delta' ? symStart.filter((s) => inDelta.has(s)).length : null),
-             domEvents4s: after.length,
-             mutationBatches4s: bTimes.filter((t) => t > j.at && t <= j.at + 4000).length,
-             visibleRowsValueChanged: syms.size, visibleRowsDataObjectReplaced: objSyms.size,
-             changedSymbols: [...syms].slice(0, 12),
-             elemsAdded: after.filter((x) => x.kind === 'added').length,
-             elemsRemoved: after.filter((x) => x.kind === 'removed').length,
-             cellCharData: after.filter((x) => x.kind === 'text').length,
-             cellTextReplaced: after.filter((x) => x.kind === 'textReplaced').length,
-             cellsFlash: after.filter((x) => x.kind === 'flash').length,
-             scriptMsTight: dms(s0.script, sTight.script), taskMsTight: dms(s0.task, sTight.task),
-             layoutMsTight: dms(s0.layout, sTight.layout), styleMsTight: dms(s0.style, sTight.style),
-             tightWindowMs: sTight.t - s0.t,
-             scriptMsWide: dms(s0.script, sWide.script), taskMsWide: dms(s0.task, sWide.task),
-             layoutMsWide: dms(s0.layout, sWide.layout), styleMsWide: dms(s0.style, sWide.style),
-             wideWindowMs: sWide.t - s0.t, cadenceMs: CADENCE };
-  }),
+  perResponse: perResp,
+  costBaseline: baseline,
+  method: method,
   visibleSymbols: { start: symStart, end: symEnd },
   costSeries: series,
   costSeriesSamples: series.length,

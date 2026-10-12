@@ -138,7 +138,7 @@ check('موتور هم دو منطق را مهر می‌کند و اجتماع �
   && (serverCmp.or.matched ?? 0) > (serverCmp.and.matched ?? 0),
   JSON.stringify(serverCmp));
 
-// ۳) پیش‌نمایِ هاور (هاورِ واقعی: Reactِ enter/leave را با رویدادِ بومیِ的合成 نمی‌سازند)
+// ۳) پیش‌نمایِ هاور (هاورِ واقعی: Reactِ enter/leave را با رویدادِ بومیِ ساختگی نمی‌سازند)
 await page.locator('[data-testid="funnel-mode-trend"]').first().hover({ timeout: 8000 });
 await page.waitForTimeout(700);
 const preview = await page.evaluate(() =>
