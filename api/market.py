@@ -5,12 +5,13 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import _count_procs, get_db
+from ._core import _count_procs, get_db, get_user_db
 from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, FTS_LEGACY_LISTS, FTS_LEGACY_SCALARS, FTS_LIST_KEYS, FTS_STR_KEYS, MARKET_STATUS_PATH
 from bors_flags import _ORJ
 import market_state
 from client_split import shares as _client_shares
 from tape_flags import apply_tape_flags
+import tape_flag_history
 from fastapi import APIRouter
 from fastapi import Request
 from fastapi.responses import Response
@@ -1316,6 +1317,33 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         for _k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh", "f_smart", "f_legal"):
             df[_k] = df[_k].fillna(False)
 
+        # ── سابقۀ ماندگارِ «کدام فیلتر، کدام نماد، کدام روز» ────────────────────
+        # فقط ردیف‌هایِ زنده ثبت می‌شوند. `[is6]`، آستانۀ مجاز و صفِ امروز درِ
+        # بانکِ کهنه نیستند (`tse_inst_stat` و `market_watch` بازنویسی می‌شوند)،
+        # پس داوریِ امروز را به روزِ پیشین نسبت دادن همان «دادۀ ساختگی» است که
+        # مالک منع کرده؛ روزِ ثبت = `d_even` خودِ ردیفِ زنده. نشانه (`sync_count`)
+        # می‌گوید این داده نو است؛ بی‌آن هر پولینگ بعد از تعطیلی بازار یک «دفعۀ»
+        # جعلی به شمارش اضافه می‌کرد.
+        # محلِ نگهداری `user.db` است نه `market.db`: بیس‌لاینِ ریلیز با هر نصب/
+        # بروزرسانی عوض می‌شود و سابقۀ کاربر نباید با آن برود. خطای اینجا تابلو
+        # را نمی‌شکند (بلعیده و درِ پاسخِ `/api/tape-history` گزارش می‌شود).
+        _live_df = df[df["is_live"]] if "is_live" in df.columns else df
+        if len(_live_df):
+            _hconn = None
+            try:
+                _hconn = get_user_db()
+                tape_flag_history.record_observations(
+                    _hconn, _live_df, int(_live_df["d_even"].max() or 0),
+                    token=market_state.sync_count())
+            except Exception as _he:                      # noqa: BLE001
+                tape_flag_history.note_error(_he)
+            finally:
+                if _hconn is not None:
+                    try:
+                        _hconn.close()
+                    except sqlite3.Error:
+                        pass
+
         records = _slim_records(df, drop_unused)
         # یکِ پاس رویِ ستونِ bool، نه سه تا (`sum` و بعد `~df[...]` و `sum` دوبار):
         # دو تای آخرِ پیشین برایِ هر بازسازی یکِ قابِ ۵٬۶۰۰×۱ جدید می‌ساختند، فقط
@@ -1393,6 +1421,26 @@ def get_market_delta(since: int = -1):
         _kick_market_rebuild()
     return _ORJ_JSON({"status": "delta", "rev": mirror_rev, "rows": rows,
                       "meta": meta, **counts})
+
+
+@router.get("/api/tape-history")
+def get_tape_history(symbols: str = "", days: int = 20):
+    """سابقۀ چندروزۀ هفت فیلترِ تابلو، از ردیف‌هایِ واقعاً ثبت‌شده.
+
+    هیچ داوریِ تازه‌ای نمی‌سازد: همان `tape_flag_day` را می‌خواند که مسیرِ تابلو
+    نوشته است. `days` تقویمِ روزهایِ **رصدشده** است (نه روزهای تقویمی)؛ پس
+    `by_symbol[...]["days"]` فقط روزهای ثبت‌شده را دارد و نبودِ یک روز یعنی
+    «ثبت نشده» — که با «غیرفعال» یکی نیست. `reliable_from` اولین روزی است که
+    این جدول درِ آن نوشته شده و پیش‌از آن هیچ سابقه‌ای قابل‌اعتماد نیست.
+    """
+    codes = [s.strip() for s in symbols.split(",") if s.strip()][:400]
+    conn = get_user_db()
+    try:
+        tape_flag_history.ensure(conn)
+        body = tape_flag_history.history_for(conn, codes, days=max(1, min(int(days or 20), 120)))
+    finally:
+        conn.close()
+    return _ORJ_JSON(dict(status="success", **body))
 
 
 def _ORJ_JSON(payload) -> Response:
