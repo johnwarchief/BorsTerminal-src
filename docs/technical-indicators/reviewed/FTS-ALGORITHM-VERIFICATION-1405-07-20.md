@@ -40,7 +40,7 @@
 | `_fts_point_hunt` | نقطه‌زنی کفِ سوم/پنجم | `point_hunt` → لایۀ `point-hunt` | `test_fts_roundj.py`، `test_fts_technical_tristate.py` … ۵ فایل |
 | `_fts_double_bottom` + `range_box` | کف/سقف دوقلو؛ باکسِ رنج | `double_bottom` → لایۀ `double-bottom`؛ `range_box` → **فقط بج/پنل** (`FtsBadgeStrip.tsx:170`، `FtsTrendPanel.tsx:36`، `technicalSignals.ts:187,258`) | `test_fts_technical_tristate.py` (تنها ارجاع) |
 | `_fts_pullback_setup` (2568) | پولبک (جزوه ص۸-۹) | `pullback` → لایۀ `pullback` (`ftsIndicatorCatalog.ts:126`) | **این دور اضافه شد** — `dev/test_fts_untested_paths_v1.py` (پیش‌تر صفر) |
-| `_fts_exit_layer1..4` + `_fts_exit_engine` (3135) | SL نوسانگیر؛ خروج MA14؛ سقف سوم؛ واگرایی RSI | `l1` و `l3` در `engineFtsLayers.ts:173-183`؛ `verdict`/`l1` در `masterDossier.ts:180-193`، `useStopLossBoard.ts:119`؛ `l4.rsi`/`l4.rsi_divergence` در `FtsTrendPanel.tsx:202` و `technicalSignals.ts:133` | `test_fts_roundj.py`، `fts_engine_honesty_v1066.py`، `engine_change_impact_v1066.py` |
+| `_fts_exit_layer1..4` + `_fts_exit_engine` (3135) | SL نوسانگیر؛ خروج MA14؛ سقف سوم؛ واگرایی RSI | `l1` و `l3` در `engineFtsLayers.ts:173-183`؛ `verdict`/`l1` در `masterDossier.ts:180-193`، `useStopLossBoard.ts:119`؛ `l4.rsi`/`l4.rsi_divergence`/`l4.rsi_prev_peak` در `FtsTrendPanel.tsx:209` و `technicalSignals.ts:133` | `test_fts_roundj.py`، `fts_engine_honesty_v1066.py`، `engine_change_impact_v1066.py` |
 | `_fts_hourglass_settings` + مسیرِ ساعت شنی | ساعت شنی (رأی #24) | `hourglass` → لایۀ `hourglass` | `test_hourglass_settings_v1.py`، `test_roundm_freeze.py` |
 | `_fts_resample` / `_fts_scaled` / `_fts_ma` / `_fts_rsi` | TFهای_mix، مبنایِ تعدیل، MA/RSI | overlayهای MA و پان RSI | `indicator_math_v1074.py`، `ce_weekly_bucket_v1073.py`، `price_basis_v1070.py`، `fts_series_basis_v1036.py` |
 | `_fts_roles_table` (3026) / `_fts_status_block` | جدولِ نقش (رأی #15/#16) | `patternOverlays.ts:223,257`؛ بنرِ وضعیت | ترانزیتیو از `test_fts_roundj.py`/`test_fts_technical_tristate.py` |
@@ -98,7 +98,7 @@ ZigZag آستانه‌دار با `ATR_PERIOD=14`، `ATR_MULT=1.0`، `FLOOR_PCT=
 | # | یافته | شاهد | وضعیت |
 |---|---|---|---|
 | ب-۱ | `structure_points.W` منتشر می‌شد ولی هیچ‌جا خوانده نمی‌شد (فقط `.D`) | مصرف از این دور: `engineFtsLayers.ts:240` (مارکرِ `structure-W-<time>` با برچسبِ `(W)`)، `patternOverlays.ts:224` + `KLineChartWrapper.tsx:194` (همان `(W)` در چارتِ klinecharts)، شواهد: `ftsLayerEvidence.ts:205`، کاتالوگ: `ftsIndicatorCatalog.ts:79` | بسته شد (رسم در هر دو موتور + ردیفِ کاتالوگ + شواهد، با آزمون). رسمِ دیدنی در مرورگر: سنجیده نشده |
-| ب-۲ | `exit_engine.l2.level/touches` و `l4.rsi_prev_peak` خوانده نمی‌شوند؛ «خطِ واگرایی RSI» که map وعده می‌داد رسم نمی‌شود (فقط تُنِ ردیفِ RSI در پنل و بجِ `bearish_div`) | `technicalSignals.ts:133`، `FtsTrendPanel.tsx:202`؛ نبودِ هر `l2.level` در فرانت | سطرِ map اصلاح شد («رسم نمی‌شود» با ذکرِ مصرف‌کننده)؛ رسم = کارِ مرحلۀ ۶ |
+| ب-۲ | `exit_engine.l2.level/touches` و `l4.rsi_prev_peak` خوانده نمی‌شوند؛ «خطِ واگرایی RSI» که map وعده می‌داد رسم نمی‌شود (فقط تُنِ ردیفِ RSI در پنل و بجِ `bearish_div`) | `technicalSignals.ts:133`، `FtsTrendPanel.tsx:209`؛ نبودِ هر `l2.level` در فرانت | بسته شد (تصمیمِ مستند، نه رسم) — `l2` عینِ `choch.level`/`point_hunt.{floor_price,touches}` است که از قبل رسم‌اند، خطِ واگرایی با payloadِ امروز صادقانه رسم‌ناپذیر است، و `l4.rsi_prev_peak` از این دور درِ همان ردیفِ RSI مصرف دارد (مثبت+منفی). شاهد و رأی: بخشِ «بستنِ ب-۲» زیرِ همین جدول |
 | ب-۳ | `range_box` باکسِ رنج را رسم نمی‌کرد و لایۀ کاتالوگی نداشت | افزوده: `chart.py:2567` (`start_date`/`end_date` همان ۲۰ کندلِ قاعده، بی‌تغییرِ داوری)، `patternOverlays.ts:541` (از همان `pushBand`ِ مشترک، پس سقفِ ارتفاع به جعبه هم می‌خورد)، `engineFtsLayers.ts:149`، کراندارسازیِ رسم در `KLineChartWrapper.tsx:256` و `:297`، کاتالوگ `ftsIndicatorCatalog.ts:151`، شواهد `ftsLayerEvidence.ts:192` | بسته شد — باکس فقط بینِ دو کرانۀ خودش کشیده می‌شود، بی‌تاریخِ سرور اصلاً رسم نمی‌شود، و باکسِ بلندتر از یک‌پنجمِ دید به دو خطِ سقف/کف تنزل می‌کند. دیدنی در مرورگر: سنجیده نشده |
 | ب-۴ | `/api/patterns/{symbol}` صفرِ مصرف‌کنندۀ رابطِ کاربری دارد | grep در `frontend/src`: صفر؛ در `dev/` یک مصرف‌کنندۀ آزمون هست (`dev/stale_wiring_v1073.py:146` و `:150` — انزوایِ `PATTERNS_CACHE` به‌ازایِ مبنایِ قیمت، آفلاین بی‌شبکه) و `dev/price_last_value_v1070.py:139` آن را به‌عنوانِ کرانۀ متنی می‌خواند | باز؛ **تصحیحِ ادعایِ این دور:** سطرِ پیشین («grep در dev فقط سطرِ تعریف») غلط بود و اصلاح شد. وصل‌کردنش به چارت یعنی دو دستۀ مستقلِ S/R رویِ یک نمودار (در کنارِ `exit_engine`/`range_box` موتورِ ۱) — رأیِ مالک لازم است، نه انتخابِ این دور |
 | ب-۵ | `majorResistance`/`majorSupport` صفرِ مصرف‌کنندۀ رابطِ کاربری دارند (فقط آزمون) | تعریف: `indicators.ts:158` و `:171`؛ خوانندگانِ امروز: `indicators.spec.ts:50-63`، `technical-weekly-wiring.spec.ts:183-184`. تنها واردکنندۀ `lib/indicators` درِ Features یعنی `mabnaIndicators.ts:23` فقط `ema/rsi/sma` را می‌آورد. تاریخچۀ گلوگاه (با `git log -S` و `git show` خوانده شد): `3495fbe` مصرفِ سیگنالِ جتِ فرانت را برداشت («رأیِ تکنیکال فقط از موتورِ FTSِ سرور») و `5408fba` نقضِ B6 (قاطیِ اندیسِ نسبی/مطلق) را با تست بست؛ ستونِ «پیش از این» در `FTS-7-Phase-Progress.md:135` همان تاریخچه را می‌گوید، پس سند غلط نیست | باز — تصمیمِ مالک: وصل، یا حذفِ کدِ بی‌مصرف با آزمون‌هایش. این دور هیچ رابطِ تازه‌ای به منبعِ دومِ «مقاومت ماژور» اضافه نکرد (دو دستۀ مستقلِ S/R رویِ یک چارت = رأیِ قاطی) |
@@ -149,9 +149,51 @@ ZigZag آستانه‌دار با `ATR_PERIOD=14`، `ATR_MULT=1.0`، `FLOOR_PCT=
   + ۱۴ هفتگی) می‌رسند؛ اگر رویِ چارتِ واقعی شلوغ باشد، تصمیمِ «کاهشِ سقفِ W» یا «جداسازیِ
   سوییچِ هفتگی» مالک است، نه این دور (سوییچِ `structure` هر دو TF را با هم خاموش/روشن می‌کند).
 
+### بستنِ ب-۲ (این دور) — رأیِ «رسم نمی‌شود»، با شاهدِ سه‌ادعایی
+
+هیچ رأیِ رسمیِ FTS و هیچ آستانه‌ای در این بخش عوض نشد؛ فقط مصرف‌کننده‌ها و کرانه‌هایِ
+رسم خوانده شدند. سه ادعا، سه اندازه‌گیری:
+
+* **`exit_engine.l2.level/touches` منتشر شدۀ تازه‌ای نیستند، کپیِ لایۀ رسم‌شده‌اند:**
+  `chart.py:2832` همان `ch["level"]` (یعنی `fts.choch.level`) و `chart.py:2844` همان
+  `round(floor, 2)` (یعنی `point_hunt.floor_price`) را بیرون می‌دهد؛ `chart.py:2834` هم
+  `ph["touches"]` است. هر دو از پیش رویِ چارت می‌آیند: خطِ سطحِ CHoCH در
+  `patternOverlays.ts:349` (مقدارش از `:184`)، و خط/مارکرِ نقطه‌زنی در
+  `patternOverlays.ts:363` (کف از `:188`، «… لمس» همان شمارۀ `l2.touches`)؛
+  مصرف‌کننده‌هایِ دیگرِ همان لمس: `engineFtsLayers.ts:173`، `ftsLayerEvidence.ts:221`،
+  `FtsBadgeStrip.tsx:157`، `FtsTrendPanel.tsx:227`. پس «خوانده نمی‌شوند» یعنی **لایۀ
+  تکراری**، نه دادۀ بی‌مصرفِ تازه؛ رسمِ دوباره‌شان دو خطِ رویِ هم با دو منبعِ رأی می‌ساخت
+  (همان کلاسِ خطرِ ب-۴). **رأی: رسم نمی‌شود.**
+* **واگرایی امروز *گزارش* می‌شود، *رسم* نمی‌شود:** رأی از `technicalSignals.ts:133` ⇒ بجِ
+  `bearish_div`، و تُنِ ردیفِ RSI در `FtsTrendPanel.tsx:209`. از این دور عددِ یتیم هم مصرف
+  دارد: `l4.rsi_prev_peak` درِ همان ردیف خوانده می‌شود (`FtsTrendPanel.tsx:60`) و فقط وقتی
+  واگرایی رأی شده باشد «(اوجِ پیشین …)» می‌گیرد — بی‌واگرایی ردیف همان RSIِ تنهاست
+  (`technical-badges.spec.tsx`: دو آزمون، مثبت و منفی). هفت سطرِ افزوده‌شده همهٔ ارجاع‌های
+  پایین‌ترِ همین فایل را جابه‌جا کرد، پس بازهمسانی شدند: `:202`→`:209` (این سند و map)،
+  و `:71-95`→`:78-102` و `:81-91`→`:88-98` در `docs/HANDOFF-FTS-TAB-OPEN-WORK.md`.
+* **دو مانعِ اندازه‌گیری‌شده برایِ رسمِ صادقانۀ «خطِ واگرایی» با payloadِ امروز:**
+  (۱) کرانه‌ها منتشر نمی‌شوند: `chart.py:2964-2976` دو سقفِ پیوت (`h1`/`h2`) و اوجِ RSIِ دوم
+  (`r2`) را می‌سازد، ولی خروجیِ لایه فقط بولینِ نتیجه و `r1` است و **هیچ timestampی در `l4`
+  نیست** — خطِ بی‌کرانه یا با عددِ ساختگی کشیده می‌شد (همان نقضِ B4 که فرانت هندسه می‌ساخت)
+  یا دروغ می‌گفت. (۲) مقصدِ رسم وجود ندارد: `ChartOverlaySpec.pane?: 'price' | 'volume'`
+  (`engine/types.ts:60`)، FFC هر چیزِ غیرِ volume را رویِ سریِ قیمت می‌گذارد
+  (`FastFinancialChartsEngine.ts:353`)، آداپتورِ klinecharts اورلی را در `candle_pane`
+  می‌سازد (`KLineChartsEngine.ts:363`)، و پنلِ RSI فقط با سوییچِ کاربر ساخته می‌شود
+  (`KLineChartWrapper.tsx:2369`). خطی که مختصاتش «واحدِ RSI» است رویِ محورِ قیمت رسم نمی‌شود.
+
+**چرا برخلافِ باکسِ رنج فیلدِ اطلاعاتی اضافه نکردم:** فیلدهایِ کرانۀ `l4` بی‌مقصدِ RSI هیچ
+مصرف‌کننده‌ای نمی‌داشتند، پس دقیقاً همان ب-۱ (منتشر کردن و خوانده نشدن) را می‌ساختند. برشِ
+درست یک کارِ کامل است، نه نصفه: دو `time`/`price`/`rsi` در `l4` + مقصدِ پنل در رابط +
+رندر در هر سه موتور + آزمون — بیرونِ دستورِ این دور، و به رأیِ مالک نیاز دارد.
+**راه‌میانِ «محاسبه در فرانت» هم رد شد:** `lib/indicators.ts:207` RSI را دارد، ولی واگرایی
+رأیِ سرور است؛ خطی که فرانت با RSIِ خودش می‌کشید با بجِ سرور قاطی می‌شد (دو منبعِ حقیقت)،
+با این اینکه گرم‌کردنِ RSI سه‌جا یکسان نیست (B3) و انحرافِ معیار هم نمونه/جمعیتی فرق دارد (B7).
+
 ## ۶) چیزی که در این دور **سنجیده نشد**
 
 * رسمِ دیدنیِ هر لایه در مرورگر (شرطِ ۵) → مرحلۀ ۵/۶ با Playwright رویِ نشستِ احراز هویت‌شده.
+* برشِ کاملِ «خطِ واگرایی RSI» (کرانۀ `l4` + مقصدِ پنل در رابط + رندرِ سه‌موتوره + آزمون): این دور
+  فقط مانع‌ها را سنجید و رأیِ «رسم نمی‌شود» را مستند کرد؛ انجامش بیرونِ دستورِ این دور است.
 * تطبیقِ عددیِ موتورِ ۳ با الگوریتمِ مرجعِ بیرونی (لینکِ مرجع در دسترس نیست).
 * فرمولِ اندیکاتورهایِ بیرونی (MACD/MACD_TV/RSI_TV/CCI_TV و بقیۀ تمپلیت‌های `react-klinecharts-ui`) با تعریفِ TradingView سنجیده **نشده** — کدِ شخصِ ثالث است و درِ این مخزن فقط ثبت/رندرِ آن گارد شده.
 * هیچ آستانۀ AMBIGUOUS تازه‌ای اختراع نشد؛ هیچ مقدارِ مرجعی ساخته نشد.

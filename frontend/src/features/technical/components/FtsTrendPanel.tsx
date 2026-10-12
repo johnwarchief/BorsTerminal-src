@@ -55,6 +55,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
   const ex = data.exit_engine;
   const l1 = ex?.l1;
   const l4 = ex?.l4;
+  // واگرایی رویِ چارت رسم نمی‌شود (کرانۀ l4 منتشر نشده)، پس اوجِ پیشینِ RSI همین‌جا
+  // خوانده می‌شود تا تُنِ زردِ ردیف بی‌توضیح نماند؛ بی‌واگرایی، فقط خودِ RSI.
+  const divPeak = l4?.rsi_divergence === true ? l4.rsi_prev_peak ?? null : null;
+  const rsiRowValue = l4?.rsi == null
+    ? '-'
+    : toFaDigits(l4.rsi.toFixed(1)) +
+      (divPeak == null ? '' : ` (اوجِ پیشین ${toFaDigits(divPeak.toFixed(1))})`);
   const vm = verdictMeta(ex?.verdict);
   const setups = setupBadgesOf(data);
 
@@ -199,7 +206,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
           />
           <Row label="مبنای حد ضرر" value={(l1?.stop_basis && STOP_BASIS_FA[l1.stop_basis]) ?? l1?.stop_basis ?? '-'} />
           <Row label="MA14 تعقیبی" value={fmtPrice(l1?.ma14)} tone={l1?.ma14_exit ? 'red' : undefined} />
-          <Row label="RSI" value={l4?.rsi == null ? '-' : toFaDigits(l4.rsi.toFixed(1))} tone={l4?.rsi_divergence ? 'yellow' : undefined} />
+          <Row label="RSI" value={rsiRowValue} tone={l4?.rsi_divergence ? 'yellow' : undefined} />
           {ex?.signals && ex.signals.length > 0 ? (
             <div className="mt-1 flex flex-wrap gap-1">
               {ex.signals.map((s) => (

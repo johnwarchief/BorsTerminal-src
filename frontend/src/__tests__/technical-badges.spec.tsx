@@ -134,4 +134,22 @@ describe('کارت تحلیل ساختاری', () => {
     const panel = screen.getByTestId('fts-trend-panel');
     expect(panel.textContent).toContain('مقاومت جت');
   });
+
+  // ب-۲: «خطِ واگرایی RSI» رویِ چارت رسم نمی‌شود (کرانۀ l4 از سرور منتشر نمی‌شود)،
+  // پس همان عددِ سرور درِ ردیفی خوانده می‌شود که تُنش زرد می‌شود. آزمونِ دوم
+  // کنترلِ منفی است: در fixture واگرایی false است ولی `rsi_prev_peak` عدد دارد
+  // (۴۱.۱) — همان حالتِ «عددِ یتیم» که نباید نمایش داده شود.
+  it('واگرایی RSI: اوجِ پیشین از سرور درِ همان ردیفِ RSI می‌آید', () => {
+    const f = fixture();
+    f.exit_engine!.l4 = { ...f.exit_engine!.l4, rsi_divergence: true };
+    render(<FtsTrendPanel data={f} />);
+    const panel = screen.getByTestId('fts-trend-panel');
+    expect(panel.textContent).toContain('۵۲.۵');
+    expect(panel.textContent).toContain('اوجِ پیشین ۴۱.۱');
+  });
+
+  it('بی‌واگرایی، ردیفِ RSI عددِ اوجِ پیشین را نشان نمی‌دهد', () => {
+    render(<FtsTrendPanel data={fixture()} />);
+    expect(screen.getByTestId('fts-trend-panel').textContent).not.toContain('اوجِ پیشین');
+  });
 });
