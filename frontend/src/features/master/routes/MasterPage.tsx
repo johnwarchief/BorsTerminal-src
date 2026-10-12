@@ -5,8 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
+import WatchlistStar from '@shared/components/WatchlistStar';
 import { toFaDigits } from '@shared/lib/fmt';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useSelectedSymbolsStore } from '@shared/stores/selectedSymbolsStore';
 import { useStrategyStore } from '@shared/stores/strategyStore';
 import { getActiveSignals, useSignalStore } from '@shared/stores/signalStore';
 import { AGENT_WEIGHTS } from '@contracts/signal';
@@ -79,6 +82,7 @@ export default function MasterPage() {
   const navigate = useNavigate();
   const stored = useSymbolStore((s) => s.symbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
+  const setSymbol = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
 
   const horizon = useStrategyStore((s) => s.horizon);
@@ -104,6 +108,20 @@ export default function MasterPage() {
     clearSymbol();
     if (location.key && location.key !== 'default') navigate(-1);
     else navigate('/master');
+  };
+  /** صفِ مرور = فهرستِ انتخابِ سراسری (همان که درِ جدول تحویل ساخته شد).
+   *  بندِ اول مأموریت: «انتقال دسته‌ای نباید بی‌صدا از دست برود» — پس هر نمادِ
+   *  انتخابی از همین‌جا در دسترس است، نه فقط همان یکی که باز شده. */
+  const selItems = useSelectedSymbolsStore((s) => s.items);
+  const queueIdx = useMemo(
+    () => selItems.findIndex((i) => i.norm === normalizeFa(symbol ?? '')),
+    [selItems, symbol],
+  );
+  const goQueue = (delta: number) => {
+    const nxt = selItems[queueIdx + delta];
+    if (!nxt) return;
+    setSymbol(nxt.symbol);
+    navigate(`/master/${encodeURIComponent(nxt.symbol)}${location.search}`);
   };
   const [analystModalOpen, setAnalystModalOpen] = useState(false);
   const [treeModalOpen, setTreeModalOpen] = useState(false);
@@ -341,6 +359,37 @@ export default function MasterPage() {
         <h2 className="text-base font-black text-text-primary">برآیند مستر برای {symbol}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <SymbolBasketAction symbol={symbol} />
+          {/* ستارۀ ماندگار: «درِ واچ‌لیست» بودنِ همین نماد از همان /api/watchlist
+              خوانده می‌شود که جدولِ تابلو و نوارِ عملیاتِ تحویل می‌خواندند —
+              دو عضویتِ جدا برایِ یک نماد نداریم. */}
+          <WatchlistStar symbol={symbol} name={candidate?.name ?? ''} />
+          {queueIdx >= 0 && selItems.length > 1 ? (
+            <span className="flex items-center gap-1" data-testid="master-queue-nav">
+              <button
+                type="button"
+                data-testid="master-queue-prev"
+                onClick={() => goQueue(-1)}
+                disabled={queueIdx === 0}
+                title="نمادِ قبلی از فهرستِ انتخاب"
+                className="rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue disabled:opacity-40"
+              >
+                ← قبلی
+              </button>
+              <span className="num text-2xs text-text-muted" data-testid="master-queue-pos">
+                {toFaDigits(queueIdx + 1)}/{toFaDigits(selItems.length)}
+              </span>
+              <button
+                type="button"
+                data-testid="master-queue-next"
+                onClick={() => goQueue(1)}
+                disabled={queueIdx >= selItems.length - 1}
+                title="نمادِ بعدی از فهرستِ انتخاب"
+                className="rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue disabled:opacity-40"
+              >
+                بعدی →
+              </button>
+            </span>
+          ) : null}
           {/* راهِ بازگشت به قیف: با پاک‌شدنِ نماد، همین تب دوباره غربالگری را
               نشان می‌دهد (قیف فقط در حالتِ بی‌نماد زنده است تا رایگانِ CPU باشد). */}
           <button

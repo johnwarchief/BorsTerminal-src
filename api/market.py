@@ -1424,20 +1424,21 @@ def get_market_delta(since: int = -1):
 
 
 @router.get("/api/tape-history")
-def get_tape_history(symbols: str = "", days: int = 20):
+def get_tape_history(codes: str = "", days: int = 20):
     """سابقۀ چندروزۀ هفت فیلترِ تابلو، از ردیف‌هایِ واقعاً ثبت‌شده.
 
     هیچ داوریِ تازه‌ای نمی‌سازد: همان `tape_flag_day` را می‌خواند که مسیرِ تابلو
-    نوشته است. `days` تقویمِ روزهایِ **رصدشده** است (نه روزهای تقویمی)؛ پس
-    `by_symbol[...]["days"]` فقط روزهای ثبت‌شده را دارد و نبودِ یک روز یعنی
-    «ثبت نشده» — که با «غیرفعال» یکی نیست. `reliable_from` اولین روزی است که
-    این جدول درِ آن نوشته شده و پیش‌از آن هیچ سابقه‌ای قابل‌اعتماد نیست.
+    نوشته است. `codes` فهرستِ `ins_code` است (شناسۀ پایدار، نه نامِ نمایشی).
+    `days` تقویمِ روزهایِ **رصدشده** است (نه روزهای تقویمی)؛ پس
+    `by_symbol[...][flag]["days"]` فقط روزهای ثبت‌شده را دارد و نبودِ یک روز یعنی
+    «ثبت نشده» — که با «غیرفعال» یکی نیست. `reliable_from` اولین روزی است که این
+    جدول درِ آن نوشته شده و پیش‌از آن هیچ سابقه‌ای قابل‌اعتماد نیست.
     """
-    codes = [s.strip() for s in symbols.split(",") if s.strip()][:400]
+    wanted = [s.strip() for s in codes.split(",") if s.strip()][:400]
     conn = get_user_db()
     try:
         tape_flag_history.ensure(conn)
-        body = tape_flag_history.history_for(conn, codes, days=max(1, min(int(days or 20), 120)))
+        body = tape_flag_history.history_for(conn, wanted, days=max(1, min(int(days or 20), 120)))
     finally:
         conn.close()
     return _ORJ_JSON(dict(status="success", **body))

@@ -1,6 +1,7 @@
 // __tests__/master-fts-details.spec.tsx — جزئیاتِ چهار صفحه (§۱–۵ Round M)
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MasterFtsDetails } from '@features/master/ui/MasterFtsDetails';
 import { supportResistance } from '@features/master/api/useKeyLevels';
 import { buildDossier, type MasterDossier } from '@features/master/lib/masterDossier';
@@ -61,9 +62,14 @@ describe('supportResistance — فقط مقایسه، بی‌آستانه', () =
 });
 
 describe('MasterFtsDetails — S/T/F/Strategy', () => {
+  // بخشِ S از دورِ مأموریتِ پروندۀ نماد، سابقۀ چندروزه را هم می‌خواند
+  // (`TapeHistoryPanel` → دو query)؛ پرونده باید با همان providerِ مشترکِ اپ
+  // رندر شود، نه بی‌آن.
   const renderD = (c: Candidate | null) =>
     render(
-      <MasterFtsDetails candidate={c} dossier={dossierOf(c)} badges={[]} support={13200} srResistance={14000} />,
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MasterFtsDetails candidate={c} dossier={dossierOf(c)} badges={[]} support={13200} srResistance={14000} />
+      </QueryClientProvider>,
     );
 
   it('هر پنج شاخصِ بنیادی با برچسبِ جزوه می‌آیند', () => {

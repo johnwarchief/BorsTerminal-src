@@ -195,10 +195,18 @@ describe('ورودِ بی‌کلیک به زیرتبِ دیده‌بان', () =>
         <W />
       </QueryClientProvider>,
     );
+    // پرونده درِ تب‌هاست (مأموریتِ پروندۀ نماد، بندِ ۲): سه پنل حذف نشده‌اند،
+    // هر یک تبِّ خودش را دارد — پس تست هم تب را می‌زند و همان ادعا را می‌کند.
+    await waitFor(() => expect(screen.getByTestId('watch-summary')).toHaveAttribute('data-symbol', 'شپنا'));
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
     await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'شپنا'));
-
-    expect(screen.getByTestId('watch-orderbook')).toHaveAttribute('data-symbol', 'شپنا');
-    expect(screen.getByTestId('watch-summary')).toHaveAttribute('data-symbol', 'شپنا');
+    fireEvent.click(screen.getByTestId('watch-tab-market'));
+    await waitFor(() => expect(screen.getByTestId('watch-orderbook')).toHaveAttribute('data-symbol', 'شپنا'));
+    // تب با انتخابِ نماد عوض نمی‌شود (کاربر وسطِ بررسیِ چارت نباید به اول بپرد)
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
+    fireEvent.click(screen.getByTestId('watch-row-فولاد'));
+    await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'فولاد'));
+    expect(screen.getByTestId('watch-tab-chart')).toHaveAttribute('aria-selected', 'true');
   });
 });
 

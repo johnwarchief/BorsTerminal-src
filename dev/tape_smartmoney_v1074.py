@@ -25,6 +25,7 @@ FLAGS_PY = os.path.join(ROOT, "tape_flags.py")
 MARKET_PY = os.path.join(ROOT, "api", "market.py")
 ROW_TS = os.path.join(ROOT, "frontend", "src", "shared", "types", "marketRow.ts")
 STORE_TS = os.path.join(ROOT, "frontend", "src", "features", "market", "stores", "tapeStore.ts")
+TAPE_FLAGS_TS = os.path.join(ROOT, "frontend", "src", "shared", "lib", "tapeFlags.ts")
 FUNNEL_TS = os.path.join(ROOT, "frontend", "src", "features", "master", "lib", "ftsFunnel.ts")
 
 PASS = FAIL = 0
@@ -183,8 +184,12 @@ def main():
     ck('"f_smart", "f_legal"' in mk, "پاک‌سازیِ NaN هم دو تازه را پوشش می‌دهد")
     for name, path, needles in (
         ("marketRow", ROW_TS, ("f_smart: flag", "f_legal: flag")),
-        ("tapeStore", STORE_TS, ("'f_smart'", "'f_legal'",
-                                 "ورود پول هوشمند", "کد به کد")),
+        # نامِ دو فیلترِ تازه از `tapeStore` به `shared/lib/tapeFlags.ts` منتقل
+        # شد (پروندۀ نماد درِ سه سطح نام می‌خواهد؛ دو منبعِ حقیقت ممنوع). store
+        # کلیدها را نگه می‌دارد و لیبل را از تک‌منبع می‌خواند.
+        ("tapeStore", STORE_TS, ("'f_smart'", "'f_legal'", "TAPE_FLAG_LABELS")),
+        ("tapeFlags", TAPE_FLAGS_TS, ("ورود پول هوشمند", "کد به کد",
+                                      "'f_smart'", "'f_legal'")),
         # پلِ ورودِ قیف عمداً پنج‌گره‌ایِ چارت ۳ مانده — چکِ ضدِ تورمِ پیش‌فرض:
         ("ftsFunnel", FUNNEL_TS, ("PRESET_ENTRY:",)),
     ):
