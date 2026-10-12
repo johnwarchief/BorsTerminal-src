@@ -2106,24 +2106,24 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
         # تطبیق چند-نویشتاری (ك/ي عربی ↔ فارسی): ورودیِ کاربر ممکن است فارسی
         # باشد و رکوردهای کدالِ همان نماد با نوشتار عربی ذخیره شده باشند.
         _fp, _fa = fts_engine.sym_in("symbol", symbol)
+        # تمام candidateهای نماد خوانده می‌شوند؛ LIMIT قبل از انتخاب مرجع
+        # می‌توانست چند اطلاعیه از یک دوره را وارد پنجره کند و دوره‌های یکتا را حذف کند.
+        # publish_date خام عمداً مرتب نمی‌شود: ارقام فارسی/ASCII در DB مخلوط‌اند.
         _raw = conn.execute(
             "SELECT period_end, period_months, revenue, gross_profit,"
-            " operating_profit, net_profit, basic_eps, publish_date"
+            " operating_profit, net_profit, basic_eps, publish_date,"
+            " title, tracing_no, report_kind"
             " FROM financial_statements"
-            " WHERE %s AND %s ORDER BY period_end DESC, publish_date DESC LIMIT ?"
-            % (_fp, CP.DATED_SQL),
-            (*_fa, max(1, min(limit, 40)))).fetchall()
-        # حذف تکراریِ (period_end, period_months): نمادِ دو-املا می‌تواند یک دوره را
-        # در دو نوشتار داشته باشد؛ تازه‌ترین ردیف می‌ماند.
-        _seen, rows = set(), []
-        for r in _raw:
-            k = (r[0], r[1])
-            if k in _seen:
-                continue
-            _seen.add(k)
-            rows.append(r)
-        return {"status": "success", "symbol": symbol, "count": len(rows),
-                "quarters": [dict(r) for r in rows]}
+            " WHERE %s AND %s" % (_fp, CP.DATED_SQL),
+            (*_fa,)).fetchall()
+        _selected = fts_engine.quarter_reference_rows(_raw, limit=max(1, min(limit, 40)))
+        _public_fields = (
+            "period_end", "period_months", "revenue", "gross_profit",
+            "operating_profit", "net_profit", "basic_eps", "publish_date",
+        )
+        quarters = [{key: row.get(key) for key in _public_fields} for row in _selected]
+        return {"status": "success", "symbol": symbol, "count": len(quarters),
+                "quarters": quarters}
     finally:
         conn.close()
 
