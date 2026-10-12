@@ -65,6 +65,11 @@ export type ApiRow = {
   tech_points?: number | null; evidence?: string[]; fib_zone?: string | null;
   hourglass?: boolean | null;
   inds?: Record<string, StageStatus | boolean | null>;
+  /** «عبور با ملاحظات»: حداقل سه شاخص PASS ولی بعضی رد/ناقص — رأیِ مالک
+   *  ۱۴۰۵-۰۷-۲۱. نشان است، نه وزن: امتیاز و رتبه را دست نمی‌زند. */
+  fund_caveat?: boolean | null;
+  fund_passed?: number | null;
+  fund_min_pass?: number | null;
   ind_values?: Record<string, number | null>;
   /** برآوردِ فروشِ ۱۲ ماهه (میلیارد تومان) — از خودِ موتور، برایِ نسبتِ زنده */
   annual_sales_bt?: number | null;
@@ -142,6 +147,7 @@ function markOf(v: StageStatus | boolean | null | undefined): StageStatus {
   if (v === false || v === 'reject') return 'reject';
   if (v === 'pending') return 'pending';
   if (v === 'not_required') return 'not_required';
+  if (v === 'not_applicable') return 'not_applicable';
   return 'unavailable';
 }
 
@@ -214,6 +220,9 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     setups: ftsSignalListText(r?.evidence ?? []),
     technicalPoints: r?.tech_points ?? null,
     inds,
+    fundCaveat: !!r?.fund_caveat,
+    fundPassed: typeof r?.fund_passed === 'number' ? r.fund_passed : null,
+    fundMinPass: typeof r?.fund_min_pass === 'number' ? r.fund_min_pass : null,
     techSource: r && (r.matrix || r.weekly) ? 'screen' : null,
     jetEvidence: null,
     assemblyVeto: !!r?.assembly_veto,
@@ -279,11 +288,12 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
       ? summaryOf(given)
       : (() => {
           const s: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
-          // خارج از جامعه درِ پنج عددِ گام نیست (جدولِ گام فقط جامعۀ غربالگری
-          // است)؛ بی‌این شرط، شمارشِ محلی با `coverage` نمی‌خواند.
+          // خارج از جامعه و «کاربرد ندارد» درِ پنج عددِ گام نیستند (اولی
+          // عضویت است، دومی وضعیتِ یک *شاخص* است نه گام)؛ بی‌این شرط،
+          // شمارشِ محلی با `coverage` نمی‌خواند.
           for (const c of rows) {
             const st = c.status[key];
-            if (st !== 'not_in_universe') s[st] += 1;
+            if (st !== 'not_in_universe' && st !== 'not_applicable') s[st] += 1;
           }
           return s;
         })();

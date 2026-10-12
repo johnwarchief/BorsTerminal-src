@@ -165,8 +165,14 @@ def _build_fixture() -> sqlite3.Connection:
 
 
 # ── بازگردانیِ کوئریِ تک‌پیسّه از متنِ ماژول ───────────────────────────────
-def _queries():
-    """(live_with_tables, monolithic) — هر دو از خودِ api/market.py."""
+def _queries(conn=None):
+    """(live_with_tables, monolithic) — هر دو از خودِ api/market.py.
+
+    `conn` داده شود، CTEِ پنجره از همان منبعی ساخته می‌شود که خودِ اپ انتخاب
+    می‌کند (`tape_ih_slot` اگر باشد، وگرنه `tape_history`). بی‌این، گارد
+    پنجرۀ اسلات‌محورِ تازه را با پنجرۀ ردیف‌محورِ کهنه می‌سنجد و «در دو مسیر
+    یکی است» بر اثرِ همین مقایسه قرمز می‌شد — نه به‌خاطرِ باگ.
+    """
     import api.market as mk
     src = open(os.path.join(REPO, "api", "market.py"), encoding="utf-8").read()
     m = re.search(r'_BOARD_SQL = """(.*?)"""\n', src, re.DOTALL)
@@ -184,7 +190,15 @@ def _queries():
         return strip_tail(body)
 
     vcte = cte_body(mk._HIST_V_SQL, "v")
-    fcte = cte_body(mk._HIST_FV_SQL, "fv")
+    if conn is not None and mk._has_tape_slots(conn):
+        # پنجرۀ اسلات‌محور یک کوئریِ مستقلِ `WITH … SELECT … FROM fv` است، پس
+        # کلِ آن داخل `fv AS ( … )` می‌نشیند (WITH تودرتو در SQLite مجاز است —
+        # سنجیده شد). بی‌این، مرجعِ «تک‌پیسّه» همان پنجرۀ کهنه را می‌ساخت و
+        # «در دو مسیر یکی است» به‌خاطرِ مقایسه با باگِ رفع‌شده قرمز می‌شد.
+        inner = "\n".join("  " + l for l in mk._HIST_FV_SLOT_SQL.strip().splitlines())
+        fcte = "fv AS (\n" + inner + "\n)"
+    else:
+        fcte = cte_body(mk._HIST_FV_SQL, "fv")
     stub_v = re.search(r"\n *v AS MATERIALIZED \(SELECT \* FROM board_hist_v\),", live)
     stub_f = re.search(r"\n *fv AS MATERIALIZED \(SELECT \* FROM board_hist_fv\),", live)
     assert stub_v and stub_f, "stub CTE text changed — update this guard"
@@ -473,7 +487,10 @@ def main():
     mk._HIST_CACHE_KEY = (None,)
     flags = {}
     recs_by_label = {}
-    for label, sql in (("materialized", live_sql), ("monolithic", mono_sql)):
+    # مرجعِ «تک‌پیسّه» باید از همان پنجره‌ای بسازد که اپ رویِ این بانک انتخاب
+    # می‌کند؛ بانکِ واقعی `tape_ih_slot` دارد، فیکسچورِ مصنوعی ندارد.
+    _, live_sql2, mono_sql2 = _queries(c2)
+    for label, sql in (("materialized", live_sql2), ("monolithic", mono_sql2)):
         flags[label], recs_by_label[label] = _pipeline_flags(mk, c2, sql)
     if seed_symbol:
         hit = {k: (seed_symbol in flags[k]["f_jet"]) for k in flags}

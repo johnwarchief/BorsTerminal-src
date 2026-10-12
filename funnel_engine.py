@@ -53,7 +53,14 @@ NOT_REQUIRED = "not_required"
 # نمادی که وضعیتِ رسمیِ بازار اجازهٔ غربال شدن نمی‌دهد اصلاً candidate نیست.
 # (رأیِ مالک ۱۴۰۵-۰۷-۱۶: «NOT_IN_SCREENING_UNIVERSE ≠ REJECT و ≠ سنجیده نشده»)
 NOT_IN_UNIVERSE = "not_in_universe"
-STATUSES = (PASS, REJECT, PENDING, UNAVAILABLE, NOT_REQUIRED, NOT_IN_UNIVERSE)
+# هفتمین وضعیت — مخصوصِ **یک شاخص**: خودِ منبع می‌گوید این شاخص برایِ این
+# نماد نظر نمی‌دهد (مبنایِ تلفیقی، نبودِ سطرِ بهای تمام‌شده، طبقۀ صندوق).
+# با `not_required` (گامِ پیشین رد کرد) یکی نیست، و با `pending` (داده نرسید)
+# هم نیست — رأیِ مالک ۱۴۵-۰۷-۲۱: «کاربرد ندارد» و «قابل ارزیابی نیست» دو
+# وضعیتِ جدااند.
+NOT_APPLICABLE = "not_applicable"
+STATUSES = (PASS, REJECT, PENDING, UNAVAILABLE, NOT_REQUIRED, NOT_IN_UNIVERSE,
+            NOT_APPLICABLE)
 
 # ── واجدِ شرایطِ غربالگری ────────────────────────────────────────────────
 # هیچ آستانه‌ای از خودِ این فایل نیامده. سه سیگنالی که مصرف می‌شود هر سه درِ
@@ -589,21 +596,52 @@ def _tape_stage_union(rows: list[dict], chain: tuple[str, ...],
     return {"survivors": survivors, "steps": steps, "dropped": dropped, "logic": "or"}
 
 
-def filter_counts(rows: list[dict]) -> dict[str, dict[str, int]]:
-    """نامزد‌هایِ هر فیلتر، مستقل و رویِ کلِّ جامعۀ غربالگری — بی‌زنجیره، بی‌منطق.
+def filter_counts(rows: list[dict], chain: Iterable[str] = (),
+                  logic: str = "and") -> dict[str, dict[str, int]]:
+    """نامزدِ هر فیلتر درِ **همان مجموعه‌ای که الان رویِ میز است** (رأیِ مالک ۱۴۵-۰۷-۲۱).
 
-    چرا جدا از `steps`: شمارشِ گامِ تابلو ترتیبی است (اشتراک) یا فقطِ چیپ‌هایِ
-    روشن (اجتماع)؛ هیچ‌کدام به پرسشِ «این فیلتر به‌تنهایی چند نامزد دارد» جواب
-    نمی‌دهد. نوارِ غربالگری همین را کنارِ هر فیلتر می‌نویسد تا معلوم باشد کدام
-    فیلتر گرسنۀ دادۀِ سینک است و کدام همه را رد می‌کند.
+    پیش از این عددِ کنارِ هر چیپ همیشه شمارِ مستقلِ همان فیلتر درِ کلِّ بازار
+    بود؛ پس با یک چیپِ روشن، بقیه نمی‌گفتند از آن نامزدها چندتا با فیلترِ دیگر
+    هم‌خوان‌اند. حالا مبنایِ شمارشِ هر چیپ، ردیف‌هایی است که *بقیۀ* چیپ‌هایِ
+    روشن را پاس کرده‌اند (leave-one-out — تا خودِ چیپِ روشن هم به شمارۀ کلِّ
+    ردیف‌ها نچسبد). درِ «اجتماع» همان قاعده با اتحادِ بقیه است.
+
+    `matched + removed + unmeasured == input` برایِ هر چیپ برقرار می‌ماند، و
+    `universe` همان جامعۀ کل است. بی‌هیچ چیپِ روشن، مبنایِ شمارش کلِّ جامعۀ
+    غربالگری است — یعنی عددِ دیروز دست‌نخورده می‌ماند تا کاربر چیزی انتخاب کند.
     """
+    ids = [f.filter_id for f in REG.FILTERS]
+    bits: list[tuple[int, int]] = []
+    for r in rows:
+        p = u = 0
+        for j, fid in enumerate(ids):
+            t = _tri(r.get(FLAG_OF[fid]))
+            if t is True:
+                p |= 1 << j
+            elif t is None:
+                u |= 1 << j
+        bits.append((p, u))
+    sel = set(chain or ())
+    universe = len(rows)
     out: dict[str, dict[str, int]] = {}
-    for f in REG.FILTERS:
-        flag = FLAG_OF[f.filter_id]
-        yes = sum(1 for r in rows if _tri(r.get(flag)) is True)
-        no = sum(1 for r in rows if _tri(r.get(flag)) is False)
-        out[f.filter_id] = {"name": f.name, "matched": yes, "removed": no,
-                            "unmeasured": len(rows) - yes - no, "input": len(rows)}
+    for j, fid in enumerate(ids):
+        others = [k for k, g in enumerate(ids) if g in sel and g != fid]
+        mask = 0
+        for k in others:
+            mask |= 1 << k
+        yes = no = un = base = 0
+        for p, u in bits:
+            if others and not ((p & mask) != 0 if logic == "or" else (p & mask) == mask):
+                continue
+            base += 1
+            if p >> j & 1:
+                yes += 1
+            elif u >> j & 1:
+                un += 1
+            else:
+                no += 1
+        out[fid] = {"name": REG.BY_ID[fid].name, "matched": yes, "removed": no,
+                    "unmeasured": un, "input": base, "universe": universe}
     return out
 
 
@@ -839,19 +877,93 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
     return {"survivors": kept, "decisions": steps, "counts": counts, "dropped": dropped}
 
 
-# ── ۳) بنیادی: سه حالتِ سخت‌گیری، بلاکرهایِ واقعی ──────────────────────────
+# ── ۳) بنیادی: عبور با حداقلِ سه شاخصِ PASS، سه حالتِ سخت‌گیری ─────────────
 BLOCKERS = ("i1", "i2", "i3")
 SUPPORTING = ("i4", "i5")
+IND_KEYS = (*BLOCKERS, *SUPPORTING)
 IND_LABEL = {"i1": "I1 رشد فروش", "i2": "I2 EPS سه‌ساله", "i3": "I3 حاشیه سود ناخالص",
              "i4": "I4 فروش ۱۲ماه ÷ ارزش بازار", "i5": "I5 نرخ‌گذاری"}
+# رأیِ مالک (مأموریت ۱۴۰۵-۰۷-۲۱): نمادی از غربال بنیادی عبور می‌کند که **حداقل
+# سه شاخص PASS** داشته باشد — حتی اگر بعضی شاخص‌ها رد شده باشند یا داده نداشته
+# باشند. شاخصِ فاقد داده هرگز PASS شمرده نمی‌شود.
+FUND_MIN_PASS = 3
+# چهارحالۀ یک شاخص — همان واژۀ رسمیِ قیف، نه واژۀ تازه:
+#   PASS / REJECT (=FAIL) / PENDING (=داده‌ای نیست) / NOT_REQUIRED (=کاربرد ندارد)
+NA_SIGNALS = {"i2": "i2_na", "i3": "i3_na", "i4": "i4_na"}
+# «نظر ندادنِ عمدی» را خودِ اسکرینر می‌گوید (api/screener.py:514): سابقۀ
+# تلفیقی برایِ I2، و معافیتِ صنعت/کسب‌وکار برایِ I3 و I4. نبودِ حکم با
+# بی‌کاربرد بودن یکی نیست — رأیِ ۱۳ و ۱۶ جزوه.
+
+
+def _ind_state(k: str, mark: bool | None, row: dict) -> str:
+    """چهارحالۀ یک شاخص — PASS / REJECT / PENDING / NOT_APPLICABLE.
+
+    سیگنالِ NOT_APPLICABLE فقط از خودِ داده خوانده می‌شود (`i2_na`/`i3_na`/
+    `i4_na`): جزوه مبنایِ تلفیقی یا نبودِ سطرِ بهای تمام‌شده را «نظر ندادن»
+    می‌داند، نه «رد» و نه «داده نرسیده». هیچ شاخصِ بی‌داده‌ای به PASS یا FAIL
+    جعلی تبدیل نمی‌شود.
+    """
+    if row.get(NA_SIGNALS.get(k, "_")) is True:
+        return NOT_APPLICABLE
+    if mark is None:
+        return PENDING
+    return PASS if mark else REJECT
+
+
+def _fund_note(n_pass: int, n_fail: int, n_unknown: int, n_na: int) -> str:
+    """علتِ عبور، ساخته‌شده از شمارِ واقعیِ خودِ داوری — نه متنِ ثابت."""
+    parts = [f"{_fa_digits(n_pass)} شاخص تأیید شد"]
+    if n_fail:
+        parts.append(f"{_fa_digits(n_fail)} شاخص رد شد")
+    if n_unknown:
+        parts.append(f"اطلاعات {_fa_digits(n_unknown)} شاخص موجود نیست")
+    if n_na:
+        parts.append(f"{_fa_digits(n_na)} شاخص برایِ این نماد کاربرد ندارد")
+    return "عبور با ملاحظات: " + "؛ ".join(parts)
+
+
+def _fund_counts(states: dict[str, str]) -> tuple[int, int, int, int]:
+    """(PASS, FAIL, بی‌داده, بی‌کاربرد) از وضعیت‌هایِ چهارحالۀ یک ردیف."""
+    return (sum(1 for s in states.values() if s == PASS),
+            sum(1 for s in states.values() if s == REJECT),
+            sum(1 for s in states.values() if s == PENDING),
+            sum(1 for s in states.values() if s == NOT_APPLICABLE))
+
+
+def indicator_states(row: dict) -> dict[str, str]:
+    """وضعیتِ چهارحالۀ هر شاخص از ردیفِ خام — تنها تعریفِ این نگاشت.
+
+    جدولِ غربالگری و قیف هر دو همین را می‌خوانند؛ بی‌این، یک ردیف درِ دو
+    صفحه دو حکم می‌گرفت (همان اشتباهی که درِ `_screen_verdict` ثبت شده بود).
+    """
+    return {k: _ind_state(k, _tri(row.get(f"{k}_pass")), row) for k in IND_KEYS}
+
+
+def passes_fundamental(row: dict) -> bool:
+    """قاعدهٔ عبور: حداقل `FUND_MIN_PASS` شاخصِ واقعاً PASS (رأیِ مالک ۱۴۵-۰۷-۲۱)."""
+    return _fund_counts(indicator_states(row))[0] >= FUND_MIN_PASS
+
+
+def fund_caveat(row: dict) -> bool:
+    """آیا این عبور «با ملاحظات» است؟ (رد یا دادهٔ ناقص رویِ میز هست)"""
+    n_pass, n_fail, n_unknown, n_na = _fund_counts(indicator_states(row))
+    return n_pass >= FUND_MIN_PASS and bool(n_fail or n_unknown or n_na)
 
 
 def fundamental_stage(rows: list[dict], mode: str = "standard",
                       exceptions: dict[str, list[str]] | None = None,
                       now: int | None = None) -> dict:
-    """I1∧I2∧I3 بلاکر (standard)، هر پنج (hard)، استثنایِ صریح (exception).
+    """عبور = حداقل `FUND_MIN_PASS` شاخص PASS (رأیِ مالک ۱۴۰۵-۰۷-۲۱).
 
-    canonical هرگز عوض نمی‌شود؛ فقط `effective` با برچسب جابه‌جا می‌شود.
+    پیش از این سه بلاکر (I1∧I2∧I3) حکم را تنهایی می‌دادند؛ حالا شمارِ شاخص‌هایِ
+    واقعاً‌تأییدشده ملاک است، پس «۳ PASS + ۲ فاقد داده» و «۴ PASS + ۱ رد» عبور
+    می‌کنند — با نشانِ «عبور با ملاحظات». کمتر از سه PASS عبور نیست؛ و اگر
+    نماد هنوز شاخصِ سنجیده‌نشده دارد، حکمش PENDING است نه ردِ قطعی (بی‌داده ≠
+    مردود). حالتِ `hard` همان سخت‌گیریِ همیشگی را نگه می‌دارد (هر پنج)، چون
+    کلیدِ سخت‌گیریِ خودِ مالک است و زیرِ قاعدهٔ عمومی نمی‌آید.
+
+    امتیازِ عددی (`score`/`primary_score`) و ترتیبِ رتبه‌بندی هیچ‌کدام دست
+    نمی‌خورند؛ ملاحظات فقط *نشان* داده می‌شود، نه وزنِ پنهان.
     """
     exceptions = exceptions or {}
     now = now or int(time.time())
@@ -859,60 +971,63 @@ def fundamental_stage(rows: list[dict], mode: str = "standard",
     counts = {PASS: 0, REJECT: 0, PENDING: 0, UNAVAILABLE: 0}
     for r in rows:
         sym = str(r.get("symbol") or "")
-        marks = {k: _tri(r.get(f"{k}_pass")) for k in (*BLOCKERS, *SUPPORTING)}
+        marks = {k: _tri(r.get(f"{k}_pass")) for k in IND_KEYS}
+        states = indicator_states(r)
         detail = [{
             "indicator": k.upper(), "label": IND_LABEL[k], "status": marks[k],
+            "state": states[k],
             "value": _num(r.get({"i1": "rev_growth", "i2": "eps_last", "i3": "gross_margin",
                                  "i4": "sales_to_mcap"}.get(k, "") or "_")),
             "threshold": r.get({"i1": "growth_min", "i3": "margin_min", "i4": "sales_to_mcap_min"}.get(k, "") or "_"),
             "as_of": r.get("as_of"), "source": "codal",
-        } for k in (*BLOCKERS, *SUPPORTING)]
-        missing = [k for k in BLOCKERS if marks[k] is None]
-        blocked = [k for k in BLOCKERS if marks[k] is False]
-        support_missing = [k for k in SUPPORTING if marks[k] is None]
+        } for k in IND_KEYS]
+        n_pass, n_fail, n_unknown, n_na = _fund_counts(states)
+        failed = [k for k in IND_KEYS if states[k] == REJECT]
+        unknown = [k for k in IND_KEYS if states[k] == PENDING]
         why: list[dict[str, str]] = []
-        if mode == "hard":
-            fail = [k for k in (*BLOCKERS, *SUPPORTING) if marks[k] is False]
-            miss = [k for k in (*BLOCKERS, *SUPPORTING) if marks[k] is None]
-            if fail:
-                status = REJECT
-                why += [{"code": f"FUND_{k.upper()}_REJECT", "text": f"{IND_LABEL[k]} تأیید نشده"} for k in fail]
-            elif miss:
-                status = PENDING
-                why += [{"code": f"FUND_{k.upper()}_MISSING", "text": f"{IND_LABEL[k]} سنجیده نشده"} for k in miss]
-            else:
-                status = PASS
-        else:  # standard و exception هر دو canonical را یکسان می‌سنجند
-            if blocked:
-                status = REJECT
-                why += [{"code": f"FUND_{k.upper()}_REJECT",
-                         "text": f"{IND_LABEL[k]} زیرِ کف — بلاکرِ جزوه"} for k in blocked]
-            elif missing:
-                status = PENDING
-                why += [{"code": f"FUND_{k.upper()}_MISSING",
-                         "text": f"{IND_LABEL[k]} گزارشش نرسیده — رد نیست، سنجیده نشده"} for k in missing]
-            elif support_missing and mode == "hard":
-                status = PENDING
-            else:
-                status = PASS
-        canonical = status
         granted = [k.upper() for k in exceptions.get(sym, []) if k.upper() in ("I1", "I2", "I3")]
-        effective = status
-        if mode == "exception" and status == REJECT and granted:
-            failed = {k.upper() for k in blocked}
-            if failed and failed <= set(granted):
-                # فقط بلاکرهایِ واقعاً‌ردشده بخشوده می‌شوند؛ بی‌این، استثنا
-                # جایِ هر چیزی را می‌گرفت.
-                effective = PASS
-                why.append({"code": "EXCEPTION_APPLIED",
-                            "text": "استثنای بنیادی: " + "، ".join(sorted(granted))})
-        if status == PASS and support_missing:
-            why.append({"code": "FUND_SUPPORT_MISSING",
-                        "text": "شاهدِ بنیادی کامل نیست: " + "، ".join(k.upper() for k in support_missing)})
+        # استثنا همان کاری را می‌کند که همیشه می‌کرد: شاخصِ بخشوده‌شده جایِ
+        # ردشده را می‌گیرد. بی‌این، «استثنای صریح» زیرِ قاعدهٔ تازه بی‌اثر می‌شد.
+        grant_keys = [k for k in ("i1", "i2", "i3") if k.upper() in granted and states[k] != PASS]
+        # canonical بدونِ بخشش سنجیده می‌شود، effective با آن — دو حکمِ جدا.
+        counted = n_pass + (len(grant_keys) if mode == "exception" else 0)
+
+        def _verdict(n: int) -> str:
+            if mode == "hard":
+                return REJECT if failed else (PENDING if unknown else PASS)
+            if n >= FUND_MIN_PASS:
+                return PASS
+            return PENDING if unknown else REJECT
+        status = _verdict(n_pass)
+        caveat = bool(n_fail or n_unknown or n_na)
+        if mode == "hard":
+            why += ([{"code": f"FUND_{k.upper()}_REJECT", "text": f"{IND_LABEL[k]} تأیید نشده"} for k in failed]
+                    or [{"code": f"FUND_{k.upper()}_MISSING", "text": f"{IND_LABEL[k]} سنجیده نشده"} for k in unknown])
+        else:  # standard و exception هر دو با قاعدهٔ «حداقل سه PASS» می‌سنجند
+            if status == PENDING:
+                why += [{"code": f"FUND_{k.upper()}_MISSING",
+                         "text": f"{IND_LABEL[k]} گزارشش نرسیده — رد نیست، سنجیده نشده"} for k in unknown]
+            elif status == REJECT:
+                why.append({"code": "FUND_BELOW_MIN_PASS",
+                            "text": f"{_fa_digits(n_pass)} شاخص از {_fa_digits(FUND_MIN_PASS)} تأیید لازم"})
+            # نامِ شاخص‌هایِ ردشده نوشته می‌شود؛ «با ملاحظات» باید بگوید
+            # کدام‌ها رد شده‌اند، نه فقط این‌که چندتا.
+            why += [{"code": f"FUND_{k.upper()}_REJECT", "text": f"{IND_LABEL[k]} زیرِ کف"} for k in failed]
+            if status == PASS and unknown:
+                why += [{"code": f"FUND_{k.upper()}_MISSING",
+                         "text": f"{IND_LABEL[k]} سنجیده نشده"} for k in unknown]
+        canonical = status
+        effective = _verdict(counted)
+        if effective == PASS and canonical != PASS:
+            why.append({"code": "EXCEPTION_APPLIED",
+                        "text": "استثنای بنیادی: " + "، ".join(sorted(granted))})
+        if effective == PASS and caveat:
+            why.append({"code": "FUND_PASSED_WITH_CAVEATS", "text": _fund_note(n_pass, n_fail, n_unknown, n_na)})
         counts[status] += 1
         row_out = dict(r)
         row_out["_fund_canonical"] = canonical
         row_out["_fund_effective"] = effective
+        row_out["_fund_caveat"] = bool(effective == PASS and caveat)
         row_out["_fund_exceptions"] = sorted(granted) if effective == PASS and granted else []
         if effective == PASS:
             kept.append(row_out)
@@ -921,7 +1036,11 @@ def fundamental_stage(rows: list[dict], mode: str = "standard",
         steps.append({
             "stage": "fundamental", "symbol": sym, "mode": mode,
             "canonical": canonical, "effective": effective,
+            "caveat": row_out["_fund_caveat"],
             "exceptions": row_out["_fund_exceptions"],
+            "indicators_passed": n_pass, "indicators_failed": n_fail,
+            "indicators_unknown": n_unknown, "indicators_na": n_na,
+            "min_pass_required": FUND_MIN_PASS,
             "score": _num(r.get("score")), "primary_score": _num(r.get("primary_score")),
             "indicators": detail, "why": why,
         })
@@ -947,6 +1066,10 @@ def handover_stage(rows: list[dict], tape: dict, tech: dict, fund: dict,
             "name": r.get("name") or "",
             "final": REJECT if sym in veto else PASS,
             "exception": bool(exc),
+            # «عبور با ملاحظات» از همان یک داوریِ بنیادی می‌آید؛ اینجا داورِ
+            # دوم ساخته نمی‌شود، فقط پرچمِ نشان به جدولِ تحویل می‌رسد.
+            "fund_caveat": bool(f.get("caveat")),
+            "fund_passed": _num(f.get("indicators_passed")),
             "fund_score": _num(r.get("score")),
             "tech_points": _num(r.get("tech_points")),
             "backend_rank": rank_by.get(sym),
@@ -985,7 +1108,8 @@ def _display(r: dict, *, patterns: list[str] | None = None,
              status: dict[str, str] | None = None,
              why: dict[str, list[dict]] | None = None,
              chain: tuple[str, ...] = (),
-             tech: dict | None = None) -> dict:
+             tech: dict | None = None,
+             fund: dict | None = None) -> dict:
     """یک ردیفِ آمادهِ رندر برایِ جدول — با traceِ همان نماد.
 
     `tech` همان گامِ داوریِ تکنیکال است. بی‌آن، پنج ستونِ جدولِ تکنیکال از
@@ -1032,7 +1156,14 @@ def _display(r: dict, *, patterns: list[str] | None = None,
         "evidence": ev,
         "fib_zone": r.get("tech_fib_zone"),
         "hourglass": _tri(r.get("tech_hourglass_active")),
-        "inds": {k: _tri(r.get(f"{k}_pass")) for k in (*BLOCKERS, *SUPPORTING)},
+        # چهارحالۀ هر شاخص از خودِ گامِ بنیادی خوانده می‌شود (نه دوباره ساختنش):
+        # PASS / REJECT / PENDING (=بی‌داده) / NOT_REQUIRED (=کاربرد ندارد).
+        "inds": {d["indicator"].lower(): d.get("state") or _tri(r.get(f"{d['indicator'].lower()}_pass"))
+                 for d in (fund or {}).get("indicators") or []} or
+                {k: _tri(r.get(f"{k}_pass")) for k in IND_KEYS},
+        "fund_caveat": bool((fund or {}).get("caveat")),
+        "fund_passed": _num((fund or {}).get("indicators_passed")),
+        "fund_min_pass": FUND_MIN_PASS,
         "ind_values": {"i1": _num(r.get("rev_growth")), "i2": _num(r.get("eps_last")),
                        "i3": _num(r.get("gross_margin")), "i4": _num(r.get("sales_to_mcap"))},
         # برآوردِ فروشِ ۱۲ ماهه (میلیارد تومان) — برایِ اینکه رابط بتواند
@@ -1264,7 +1395,7 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
                 r, patterns=None,
                 status={stage_key: st[stage_key]},
                 why={stage_key: [dict(i) for i in items[stage_key]]},
-                chain=chain, tech=t))
+                chain=chain, tech=t, fund=f))
         step_rows = [{"stage": "universe", "status": PASS,
                       "reason_code": "IN_SCREENING_UNIVERSE",
                       "human_reason": "وضعیتِ رسمیِ نماد اجازهٔ غربال می‌دهد؛ "
@@ -1445,9 +1576,11 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
             "tape": {"steps": tape["steps"], "logic": tape.get("logic") or "and",
                      "input": len(screening), "matched": len(tape["survivors"]),
                      "removed": len(screening) - len(tape["survivors"]),
-                     # شمارشِ مستقلِ هر فیلتر رویِ همین جامعۀ ورودی — برایِ
-                     # عددِ کنارِ چیپ‌هایِ نوارِ غربالگری (خواستِ ۱۴۰۵-۰۷-۲۰).
-                     "filter_counts": filter_counts(screening),
+                     # شمارشِ هر فیلتر رویِ نامزدِ جاری (leave-one-out از همین
+                     # زنجیره و همین منطق) — برایِ عددِ کنارِ چیپ‌هایِ نوارِ
+                     # غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۱).
+                     "filter_counts": filter_counts(screening, chain,
+                                                    (tape.get("logic") or "and")),
                      "survivors": _symbols(tape["survivors"])},
             "technical": {"counts": tech["counts"], "matched": len(tech["survivors"]),
                           "input": len(tape["survivors"]),

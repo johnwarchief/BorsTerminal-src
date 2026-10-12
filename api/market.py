@@ -394,6 +394,48 @@ WITH -- ── پنجرۀ [ih]، عینِ منبعِ خودِ سایت ───
 SELECT * FROM fv
 """
 
+_HIST_FV_SLOT_SQL = """
+WITH -- ── پنجرۀ [ih] از باندِ خودِ دیدۀبان: شاخصِ اسلات، نه ترتیبِ ردیف ─────
+            -- `tape_ih_slot` را `test_tsetmc.refresh_tape_slots` از
+            -- `tsev2/data/ClosingPriceAll.aspx` می‌سازد — همان درخواستی که خودِ
+            -- `mw.LoadInstHistory` با آن `[ih]` را می‌چیند و اسلاتش **شمارۀ
+            -- نشستِ همان نماد** است (۰ = آخرینِ منتشرشده). سنجشِ ۱۴۰۵-۰۷-۲۰:
+            -- ۱۸۱٬۹۷۱ ردیف از ۳٬۶۰۹ نماد، و ۴۷٪ شان ردیفِ بی‌معامله‌اند (حجم
+            -- صفر، قیمت صفر) — همان‌ها که پنجرۀ ردیف‌محورِ قدیمی نداشت و
+            -- ۳۵٬۵۸۸ اسلاتِ سایت درِ بانک غایب بود (۱۸٬۶۰۶ تای داخل [0..29]).
+            -- قاعدهٔ داوری هم عینِ JS است: اگر اسلاتِ خواسته‌شده نبود،
+            -- `[ih][k]` درِ سایت `undefined` است و `.QTotTran5J` روی آن
+            -- TypeError می‌دهد ⇒ ردیف بیرون می‌افتد. پس «سی اسلاتِ کامل»
+            -- پیش‌شرط است، نه «بر تعدادِ موجود تقسیم کن».
+            th AS MATERIALIZED (
+                SELECT ins_code, slot, price_min, price_max, q_tot_tran5j AS volume
+                FROM tape_ih_slot WHERE slot <= 59
+            ),
+            fv AS (
+                SELECT ins_code,
+                       COUNT(CASE WHEN slot <= 29 THEN 1 END) AS n30,
+                       SUM(CASE WHEN slot <= 29 THEN volume END) AS prior30_vol,
+                       MAX(slot) + 1 AS hist_sessions,
+                       COUNT(CASE WHEN slot <= 28 THEN 1 END) AS n29,
+                       MIN(CASE WHEN slot <= 28 THEN price_min END) AS min_low_29,
+                       MAX(CASE WHEN slot = 2  THEN price_max END) AS h2_max,
+                       MAX(CASE WHEN slot = 5  THEN price_max END) AS h5_max,
+                       MAX(CASE WHEN slot = 9  THEN price_max END) AS h9_max,
+                       MAX(CASE WHEN slot = 19 THEN price_max END) AS h19_max,
+                       MAX(CASE WHEN slot = 29 THEN price_max END) AS h29_max,
+                       MAX(CASE WHEN slot = 39 THEN price_max END) AS h39_max,
+                       MAX(CASE WHEN slot = 49 THEN price_max END) AS h49_max,
+                       MAX(CASE WHEN slot = 59 THEN price_max END) AS h59_max
+                FROM th GROUP BY ins_code
+            )
+SELECT ins_code,
+       CASE WHEN n30 < 30 THEN NULL ELSE prior30_vol END AS prior30_vol,
+       hist_sessions,
+       CASE WHEN n29 < 29 THEN 0 ELSE min_low_29 END AS min_low_29,
+       h2_max, h5_max, h9_max, h19_max, h29_max, h39_max, h49_max, h59_max
+FROM fv
+"""
+
 _HIST_LOCK = threading.Lock()
 
 # تاریخِ نشستِ جاری به قالبِ `price_history.date`. سینکِ کندل از تابلو همین
@@ -401,6 +443,51 @@ _HIST_LOCK = threading.Lock()
 # امضا که این ردیف‌ها را ببیند، کش را بی‌دلیل می‌سوزاند.
 _LIVE_DT = ("(SELECT printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100)"
             " FROM (SELECT MAX(d_even) AS d FROM market_watch))")
+
+
+def ensure_window_tables(conn):
+    """دو جدولِ تازه را درِ مسیرِ خواندن هم موجود می‌کند.
+
+    بانکِ baselineِ نصاب آن‌ها را ندارد و کوئریِ تابلو آن‌ها را **بی‌قید**
+    می‌خواند؛ بی‌این، نخستین درخواستِ پس از نصب با «no such table» می‌شکست.
+    ساختنِ خالی هیچ داوری‌ای را عوض نمی‌کند (همان `LEFT JOIN` رویِ جدولِ خالی
+    ⇒ ستون‌ها NULL ⇒ «سنجیده نشد»)، و سینک بعداً پرش می‌کند.
+    """
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tape_ih_slot ("
+        " ins_code TEXT NOT NULL, slot INTEGER NOT NULL, d_even INTEGER,"
+        " price_min REAL, price_max REAL, q_tot_tran5j REAL, q_tot_cap REAL,"
+        " z_tot_tran REAL, p_closing REAL, fetched_at TEXT,"
+        " PRIMARY KEY (ins_code, slot))")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tse_inst_stat ("
+        " ins_code TEXT PRIMARY KEY, is5 REAL, is6 REAL,"
+        " q_tot_tran5j_avg REAL, fetched_at TEXT)")
+
+
+_SLOT_WARNED = False
+
+
+def _has_tape_slots(conn):
+    """آیا پنجرۀ اسلات‌محورِ دیدۀبان نشسته است؟ (نبود ⇒ همان مسیرِ ردیف‌محور)
+
+    افتادن به مسیرِ کهنه یک بار **گزارش** می‌شود: بی‌این، نبودِ `tape_ih_slot`
+    یا خالی‌بودنش همان «تطبیقِ صفر اختلاف» را رویِ پنجرۀ غایه می‌ساخت و هیچ‌کس
+    نمی‌فهمید کدام مسیر جاری بوده (رأیِ مالک ۱۴۰۵-۰۷-۲۱، بند ).
+    """
+    global _SLOT_WARNED
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM tape_ih_slot").fetchone()[0]
+    except sqlite3.Error:
+        n = -1
+    if n > 0:
+        return True
+    if not _SLOT_WARNED:
+        _SLOT_WARNED = True
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [market] پنجرۀ اسلات‌محورِ [ih] "
+              f"در دسترس نیست (rows={n}) — پنج فیلتر رویِ پنجرۀ ردیف‌محورِ کهنه "
+              f"حساب می‌شوند")
+    return False
 
 
 def _history_signature(conn):
@@ -423,6 +510,19 @@ def _history_signature(conn):
     بازنویسیِ بی‌تغییریِ یک نشستِ پیشین (حذفِ همسان و درجِ همسان) پنجره را
     عوض نمی‌کند که ارزشِ بازسازی داشته باشد.
     """
+    def _has(name):
+        # بانکِ baselineِ نصاب این جدول‌ها را ندارد؛ اشاره‌کردنِ آن‌ها درِ SQL
+        # پیش از ساخت‌شدن خطای «no such table» می‌دهد و کلِ کوئریِ تابلو را
+        # می‌شکند، پس فقط وقتی به متنِ امضا افزوده می‌شوند که موجود باشند.
+        return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                            (name,)).fetchone() is not None
+
+    extra = ""
+    for name, terms in (("tape_ih_slot", ("COUNT(*)", "COALESCE(SUM(q_tot_tran5j)"
+                                          " + SUM(price_max), 0)")),
+                        ("tse_inst_stat", ("COUNT(*)", "COALESCE(SUM(is6), 0)"))):
+        if _has(name):
+            extra += "".join(f",\n       (SELECT {t} FROM {name})" for t in terms)
     row = conn.execute(
         "SELECT (SELECT MAX(d_even) FROM market_watch),"
         "       (SELECT COUNT(*) FROM price_history)"
@@ -437,6 +537,10 @@ def _history_signature(conn):
         "         WHERE d_even < (SELECT MAX(d_even) FROM market_watch)),"
         "       (SELECT COUNT(*) FROM tape_history),"
         "       (SELECT SUM(price_max) + SUM(price_min) + SUM(q_tot_tran5j) FROM tape_history)"
+        # پنجرۀ اسلات‌محور و [is5]/[is6] هم باید بی‌از‌نو‌سازیِ پنجره را
+        # بی‌امضا نکنند: هر دو درِ یک دورِ سینک عوض می‌شوند و داوریِ پنج فیلتر
+        # مستقیماً به آن‌ها وابسته است.
+        + extra
     ).fetchone()
     try:
         tape_ok = conn.execute(
@@ -457,8 +561,14 @@ def _rebuild_history_windows(conn):
     باید پنجرۀ [ih] خالی بدهد، نه خطا — همان چیزی که کوئریِ تکپیسّه هم
     می‌داد (LEFT JOIN رویِ fvِ خالی ⇒ ستون‌ها NULL).
     """
-    for table, sql, source in (("board_hist_v", _HIST_V_SQL, "price_history"),
-                               ("board_hist_fv", _HIST_FV_SQL, "tape_history")):
+    for table, sql, source in (
+            ("board_hist_v", _HIST_V_SQL, "price_history"),
+            # پنجرۀ [ih]: اگر باندِ دیدۀبان نشسته باشد اسلات‌محور (عینِ سایت)،
+            # وگرنه همان ردیف‌محورِ قدیمی — بانکِ تازه‌نصب یا دوری که
+            # ClosingPriceAll.aspx نگرفته هنوز پنجره دارد و بی‌دلیل خاموش نمی‌شود.
+            ("board_hist_fv",
+             _HIST_FV_SLOT_SQL if _has_tape_slots(conn) else _HIST_FV_SQL,
+             "tape_ih_slot" if _has_tape_slots(conn) else "tape_history")):
         n_src = conn.execute(f"SELECT COUNT(*) FROM {source}").fetchone()[0]
         tmp = table + "_new"
         conn.execute(f"DROP TABLE IF EXISTS {tmp}")
@@ -476,6 +586,7 @@ def _rebuild_history_windows(conn):
 def ensure_board_history(conn):
     """دو پنجره باید پیش از کوئریِ تابلو موجود و به‌روز باشند."""
     global _HIST_CACHE_KEY
+    ensure_window_tables(conn)
     sig = _history_signature(conn)
     with _HIST_LOCK:
         have = _HIST_CACHE_KEY[0] == sig
@@ -883,6 +994,14 @@ _BOARD_SQL = """
                 JOIN (SELECT ins_code, MAX(d_even) d FROM client_type_value
                       GROUP BY ins_code) m
                   ON m.ins_code = v.ins_code AND m.d = v.d_even
+            ),
+            isv AS (
+                -- [is5]/[is6] عینِ عددِ سایت از `InstValue.aspx?t=a` — همان
+                -- چیزی که خطِ دوم/سومِ «ورود پول هوشمند» و «کدبه‌کد» می‌خواهد.
+                -- نبودنِ ردیف = `undefined` درِ JS = ردیف از فهرست بیرون
+                -- (سنجشِ ۱۴۰۵-۰۷-۲۰: کلید ۶ فقط برایِ ۹۸۵ از ۳٬۴۴۶ نمادِ
+                -- جامعۀ امروز منتشر می‌شود). اینجا هم NULL می‌ماند، نه صفر.
+                SELECT ins_code, is5, is6 FROM tse_inst_stat
             )
             SELECT m.ins_code, i.l_val18 AS symbol, i.l_val30 AS name,
                    COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector_name,
@@ -915,6 +1034,13 @@ _BOARD_SQL = """
                    fv.h2_max, fv.h5_max, fv.h9_max, fv.h19_max, fv.h29_max,
                    fv.h39_max, fv.h49_max, fv.h59_max,
                    fv.prior30_vol, fv.min_low_29, fv.hist_sessions,
+                   -- [is5]/[is6] درِ فیلترنویس؛ نبودنش‌شان «رد» نیست،
+                   -- «سنجیده نشد» است (خطِ دوم/سومِ فایل رویِ همان عدد می‌شکند).
+                   -- [is5]/[is6] درِ فیلترنویس؛ نبودنش‌شان «رد» نیست،
+                   -- «سنجیده نشد» است (خطِ دوم/سومِ فایل رویِ همان عدد می‌شکند).
+                   -- نامِ ستون عینِ توکنِ فایل است، چون `tape_flags` همان را
+                   -- می‌خواند و رابط هم با همان پرچمِ «سنجیده نشد» را جدا می‌کند.
+                   isv.is5 AS is5, isv.is6 AS is6,
                    -- st_* / sup_* / stop_* : فقط برایِ نمادی که ردیفش هست
                    -- می‌آیند (باقی NULL ⇒ _slim_records کلید را می‌اندازد، پس
                    -- بدنه برایِ 5400 نماد بزرگ نمی‌شود).
@@ -950,6 +1076,7 @@ _BOARD_SQL = """
             LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
             LEFT JOIN v ON v.symbol = i.l_val18
             LEFT JOIN fv ON fv.ins_code = m.ins_code
+            LEFT JOIN isv ON isv.ins_code = m.ins_code
             LEFT JOIN st ON st.ins_code = m.ins_code
             LEFT JOIN sv ON sv.ins_code = m.ins_code
             LEFT JOIN sr ON sr.symbol = i.l_val18
@@ -1152,6 +1279,11 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
                       "min30_low", "max30_high",
+                      # [is5]/[is6] هم null-نگهدار: نبودششان درِ سایت «ردیف
+                      # بیرون می‌افتد» است، نه «مبنای صفر». اگر به ۰ تبدیل شوند،
+                      # `tvol > 1.5*0` برایِ هر نمادی درست می‌شود و رابط هم هیچ‌وقت
+                      # نمی‌تواند «سنجیده نشد» را از «رد» جدا کند.
+                      "is5", "is6",
                       # P0-3/P0-1: نبودِ ردیفِ وضعیت/نظارت/علتِ توقف «موردی ثبت
                       # نشده» است، نه «سالم» و نه «متوقف». اگر این کلیدها از پاسِ
                       # «JSON safety» بگذرند، NaN به صفر بدل می‌شود و صفر درِ رابط

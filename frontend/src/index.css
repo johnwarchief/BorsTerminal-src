@@ -491,6 +491,19 @@ details[open] > summary .disclosure-chevron {
   .app-content[data-inspector='open'] {
     padding-left: var(--inspector-w);
   }
+
+  /* ارتفاعِ چیزی که بالایِ `.app-content` چسبان مانده (تاپ‌بار h-9 = ۳۶px، و
+     نوارِ نماد sticky top-9 با min-h-[38px] + py-1 ≈ ۴۶px دیگر). هر نوارِ
+     چسبانِ میانی باید از همین متغیر فاصله بگیرد تا هیچ‌چیز را نپوشاند —
+     پیش از این مقدارِ top دستی درِ هر کامپوننت نوشته می‌شد و با تغییرِ
+     تاپ‌بار زیرِ نوارِ فیلترها سرستون قاطی می‌شد. */
+  .app-content {
+    --pinned-h: 36px;
+  }
+
+  .app-content:has(.symbol-strip-bar) {
+    --pinned-h: 82px;
+  }
 }
 
 @media (max-width: 1023.98px) {

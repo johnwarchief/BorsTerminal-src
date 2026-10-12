@@ -463,13 +463,18 @@ export function tapeFilterUnmeasured(
         || (gate(cfg.noqteh.minVolRatio) && volMissing);
     case 'f_smart_flow':
       return num(r.buyer_power) == null || volMissing;
-    case 'f_smart': {
-      // داوریِ این چیپ پرچمِ بک‌اند است (فرمولِ محلی ندارد)، پس «سنجیده نشد» را
-      // فقط وقتی می‌گوییم که همان پرچم false باشد و ورودیِ فرمولِ فایل — مبنای
-      // Σ[ih][0..29] و درصدِ آخرین — درِ خودِ ردیف نیامده باشد. با پرچمِ true
-      // هیچ حکمی جابه‌جا نمی‌شود.
-      const flag = (r as unknown as Record<string, unknown>).f_smart === true;
-      return !flag && (volMissing || num(r.percent_last) == null);
+    case 'f_smart':
+    // «پول هوشمند» و «کدبه‌کد» درِ فایل سه خط دارند و داوریِ نهاییِ خطِ آخر با
+    // `[is6]` می‌گردد. سایت برایِ ۲٬۴۶۱ از ۳٬۴۴۶ نمادِ امروز اصلاً کلید ۶ را
+    // منتشر نمی‌کند؛ آنجا `1.5*undefined` ⇒ NaN ⇒ ردیف بیرون می‌افتد. پس نبودِ
+    // همین عدد «سنجیده نشد» است، نه «رد» — و ربطی به نبودِ حجم ندارد
+    // (سنجشِ ۱۴۰۵-۰۷-۲۰: با مبناءِ Σ[ih]/۳۰ داوری‌ها جابه‌جا می‌شد؛ پرچمِ
+    // بک‌اند حالا عیناً همان `[is6]` را می‌سنجد). خطِ دوم `[is5]` است، ولی
+    // مقدارش درِ `eval` دور ریخته می‌شود و استثنای هم نمی‌دهد، پس نبودش
+    // «سنجیده نشد» نیست (۱۳۱ موجودِ InstValue کلید ۶ دارند و کلید ۵ نه).
+    case 'f_legal': {
+      const flag = (r as unknown as Record<string, unknown>)[filterKey] === true;
+      return !flag && num(r.is6) == null;
     }
     default:
       // فیلترهایی که فرمولِ محلی ندارند (کد به کد) داوری‌شان پرچمِ بک‌اند است؛
@@ -499,10 +504,10 @@ export function tapeFilterState(
   if (!hasTapeFormulaInputs(r)) {
     return raw === true ? 'pass' : raw === false ? 'fail' : 'unevaluated';
   }
-  // ردیفِ بیرونِ تابلویِ امروز علتِ خودش را دارد (از نشستِ خودشِ قدیمی خوانده
-  // می‌شود)؛ «سنجیده نشد» برچسبِ آن نیست. جریانِ پولِ نخبگان از این قید آزاد است.
-  if ((isLiveBoardRow(r) || filterKey === 'f_smart_flow') && tapeFilterUnmeasured(r, filterKey, cfg)) {
-    return 'unevaluated';
-  }
+  // ردیفِ بیرونِ تابلویِ امروز را سایت اصلاً نمی‌سنجد (درِ باندش ردیفی نیست)،
+  // پس «رد» نشان‌دادنش نتیجهٔ ساختگی است (رأیِ مالک ۱۴۵-۰۷-۲۱: وضعیتِ
+  // فعال‌بودن جدا نمایش داده شود). جریانِ پولِ نخبگان از این قید آزاد است.
+  if (!isLiveBoardRow(r) && filterKey !== 'f_smart_flow') return 'unevaluated';
+  if (tapeFilterUnmeasured(r, filterKey, cfg)) return 'unevaluated';
   return evaluateDynamicQuickFilter(r, filterKey, cfg) ? 'pass' : 'fail';
 }

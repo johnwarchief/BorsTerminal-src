@@ -79,7 +79,7 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
     // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
     `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-      r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
+      r.i1b_applicable === false ? 'کاربرد ندارد' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
     pct(r.gross_margin),
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
@@ -355,6 +355,15 @@ const ScreenerRow = memo(function ScreenerRow({
                             کاندیدِ قیف
                           </span>
                         ) : null}
+                        {r.fund_caveat ? (
+                          <span
+                            data-testid="row-fund-caveat"
+                            title={`عبور با ملاحظات: ${r.fund_passed ?? '—'} شاخص PASS — حداقل ۳ کافی است؛ بقیهٔ شاخص‌ها رد شده‌اند یا داده ندارند`}
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/30"
+                          >
+                            عبور با ملاحظات
+                          </span>
+                        ) : null}
                         {r.tech_jet ? (
                           <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
                             جت
@@ -446,7 +455,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
                                N/Aِ اشتباه می‌خورد. */
                             <GapMark
-                              label="N/A (قابل اعمال نیست)"
+                              label="کاربرد ندارد"
                               tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
                               evidence={ev.i1b}
                               testId="fts-na-1b_volume_growth"
@@ -482,7 +491,7 @@ const ScreenerRow = memo(function ScreenerRow({
                              ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
                              (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
                           <GapMark
-                            label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
+                            label={r.eps_consolidated ? "کاربرد ندارد (تلفیقی)" : "کاربرد ندارد"}
                             tooltip={
                               r.eps_consolidated
                                 ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
@@ -531,7 +540,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
@@ -562,7 +571,7 @@ const ScreenerRow = memo(function ScreenerRow({
                         {i4 === 'gap' ? (
                           r.i4_na === true ? (
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
@@ -992,9 +1001,11 @@ export function FtsScreenTable({
             <col className="w-[18%]" />
             {/* شاخص ۲ سری EPS دارد (سه عدد + درصد رشد) — با بزرگ‌ترشدنِ فونتِ این ستون،
                 عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. ۲۸→۲۳:
-                سنجشِ زنده (ws10) نشان داد خانۀ الف/ب با «N/A (قابل اعمال نیست)» ۲۰۸
-                پیکسل می‌خواهد و ۱۶۲ می‌گیرد؛ «N/A» واژۀ خودِ جزوه است (رأیِ ۱۳) و
-                کوتاه‌تر نمی‌شود، پس عرض جابه‌جا شد. */}
+                سنجشِ زنده (ws10) نشان داد خانۀ الف/ب با برچسبِ بلند ۲۰۸
+                پیکسل می‌خواهد و 162 می‌گیرد. رأیِ 2026-10-12 (بند ۳) به‌جای «N/A» واژۀ
+                خودِ وضعیت را می‌نشیند («کاربرد ندارد» برایِ شاخصِ بی‌کاربرد،
+                «قابل ارزیابی نیست» برایِ دادهٔ نرسیده) و علت درِ tooltip می‌ماند،
+                پس خانۀ جدول کوتاه ماند. */}
             <col className="w-[23%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />

@@ -1867,8 +1867,12 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     else:
         passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
 
-    passes = {"1_growth": bool(g and g["pass"]),
-              "2_eps_trend": bool(e and e["pass"]),
+    # رأیِ ۱۶ رویِ I1 و I2 هم، درِ هر دو مسیر: چیزی که هرگز محاسبه نشد «سنجیده
+    # نشده» است نه «رد». بی‌این، قاعدهٔ «حداقل سه شاخص PASS» نمادِ بی‌گزارش را
+    # مردود می‌شمرد و کارت با اسکرین دو جوابِ متفاوت می‌داد (گاردِ پاریتیِ
+    # پنج‌محوره درِ dev/fts_engine_paths_parity_v1076.py).
+    passes = {"1_growth": (None if not g or g.get("growth_pct") is None else bool(g["pass"])),
+              "2_eps_trend": (None if not e or e.get("data_gap") else bool(e["pass"])),
               # رأی ۱۶ برایِ شاخص ۳ هم: حاشیه‌ای که هرگز ساخته نشد «سنجیده نشده»
               # است نه «رد». شاخص ۴ درِ همین دیکشنری از قبل سه‌حالۀ None داشت؛
               # این ستون bool بود ⇒ `bulk_scan` (None) با `/api/fts` (False) دو
@@ -2207,7 +2211,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         growth = None
         if d and d["ytd_prev"]:
             growth = (d["ytd_now"] / d["ytd_prev"] - 1.0) * 100.0
-        i1 = growth is not None and growth >= g_min
+        # رأیِ ۱۶ رویِ هر دو شاخصِ اول: رشدی که هرگز ساخته نشد «سنجیده نشده»،
+        # نه «رد». بی‌این، قاعدهٔ «حداقل سه شاخص PASS» نمادِ بی‌گزارش را با
+        # نمادِ مردود یکِ عدد می‌شمرد. (امتیازِ عددی عوض نمی‌شود: `None` مثلِ
+        # `False` در `sum(1 for _p in … if _p)` شمرده نمی‌شود.)
+        i1 = None if growth is None else growth >= g_min
 
         # ۲) روند EPS — همان نردبانی که کارت می‌خواند: `eps_assessment`.
         # پیش از این bulk سلسلۀ‌مراتبِ دومِ خودش را داشت («۲ ردیفِ همگن یا بیشتر»
@@ -2217,8 +2225,16 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # است (ix_fs_symbol) — عددش درِ گزارشِ این دور سنجیده شده.
         _eps = eps_assessment(conn, key, years=eps_years, sector=sector)
         eps_series = _eps.get("eps_series")
-        i2 = bool(_eps.get("pass"))
         data_gap2 = bool(_eps.get("data_gap"))
+        # همان پیش‌گیتِ کارت: برایِ صنعتِ بیمه شاخص ۲ رأی نمی‌دهد
+        # (`eps_trend_3y` بی‌این، کارت را از اسکرینر جدا می‌کرد — سنجشِ
+        # dev/fts_engine_paths_parity_v1076.py: ۳۰ نماد واگرا). «رأی نمی‌دهد»
+        # یعنی None + i2_na، همان قراردادِ آزمونِ جزوه
+        # (`i2_na: true, i2_pass: null`) — نه رد، نه قبول.
+        _ins2 = is_insurance_sector(sector)
+        # رأیِ ۱۶ رویِ I2 هم: سابقۀ ناکافی «سنجیده نشده» است، نه «رد»؛
+        # `i2_na` (ص ۴ جزوه — مبنایِ تلفیقی) درِ قیف NOT_APPLICABLE می‌شود.
+        i2 = None if (data_gap2 or _ins2) else bool(_eps.get("pass"))
         eps_avail = int(_eps.get("years_available") or 0)
 
         # ۳) حاشیه سود ناخالص = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰
@@ -2320,7 +2336,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # جدول همان ✗ «رد» را می‌گیرد در حالی که جزوه (ص ۴) تلفیقی را
             # مبنایِ داوری نمی‌داند — نه مردود و نه مطلوب.
             "eps_consolidated": bool(_eps.get("consolidated_used")),
-            "i2_na": bool(_eps.get("na")),
+            "i2_na": bool(_eps.get("na")) or _ins2,
             "eps_years_available": min(eps_avail, eps_years),
             "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),

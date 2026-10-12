@@ -114,12 +114,29 @@ describe('هیچ حکمی جابه‌جا نمی‌شود', () => {
     expect(tapeFilterState(r, 'f_smart', CFG)).toBe('pass');
   });
 
-  it('کد به کد را رابط نمی‌سنجد ⇒ با پرچمِ false همان «رد» می‌ماند', () => {
-    // ورودیِ این فیلتر (حجمِ حقوقی/حقیقی) درِ پاسخِ تابلو نیست؛ پس هیچ‌وقت
-    // «سنجیده نشد» نمی‌گیرد و عددِ ساختگی هم پشتش نیست.
-    const r = full({ f_legal: false });
-    expect(tapeFilterUnmeasured(r, 'f_legal', CFG)).toBe(false);
-    expect(tapeFilterState(r, 'f_legal', CFG)).toBe('fail');
+  it('کد به کد بی‌[is6] «سنجیده نشد» می‌گیرد؛ با مبناءِ سایت همان «رد» است', () => {
+    // خطِ سومِ فایل `(tvol) > 1.5*[is6]` است و سایت کلید ۶ را برایِ بیشترِ
+    // نمادها منتشر نمی‌کند ⇒ آنجا `undefined` و ردیف بیرون می‌افتد. پس نبودِ
+    // عدد «رد» نیست؛ و آمدنش هم حقِ داوری می‌دهد، نه صفرِ ساختگی.
+    const noBase = full({ f_legal: false, is5: null, is6: null });
+    expect(tapeFilterUnmeasured(noBase, 'f_legal', CFG)).toBe(true);
+    expect(tapeFilterState(noBase, 'f_legal', CFG)).toBe('unevaluated');
+    const withBase = full({ f_legal: false, is5: 1_000_000, is6: 900_000 });
+    expect(tapeFilterUnmeasured(withBase, 'f_legal', CFG)).toBe(false);
+    expect(tapeFilterState(withBase, 'f_legal', CFG)).toBe('fail');
+    // [is5] دروازه نیست: خطِ دوم اجرا می‌شود ولی ارزشش درِ `eval` دور ریخته
+    // می‌شود و مقایسه با `undefined` استثنای هم نمی‌دهد (۱۳۱ موجودِ InstValue
+    // کلید ۶ دارند و کلید ۵ نه — سایت ایشان را می‌سنجد، پس رابط هم باید بزند).
+    const only6 = full({ f_legal: false, is5: null, is6: 900_000 });
+    expect(tapeFilterUnmeasured(only6, 'f_legal', CFG)).toBe(false);
+    expect(tapeFilterState(only6, 'f_legal', CFG)).toBe('fail');
+    // پول هوشمند هم از همان مبناء می‌گذرد، نه از حجمِ تقریبی
+    expect(tapeFilterState(full({ f_smart: false, is5: null, is6: null }), 'f_smart', CFG))
+      .toBe('unevaluated');
+    expect(tapeFilterState(full({ f_smart: true, is5: null, is6: null }), 'f_smart', CFG))
+      .toBe('pass');
+    expect(tapeFilterState(full({ f_smart: false, is5: null, is6: 900_000 }), 'f_smart', CFG))
+      .toBe('fail');
   });
 });
 
@@ -131,8 +148,14 @@ describe('پنل‌هایِ قدیمی و ردیف‌هایِ خاموش دست�
     expect(tapeFilterState({ symbol: 'قدیمی' } as unknown as MarketRow, 'f_clock', CFG)).toBe('unevaluated');
   });
 
-  it('ردیفِ خاموش (بیرونِ تابلویِ امروز) «سنجیده نشد» نمی‌گیرد — علتِ خودش را دارد', () => {
+  it('ردیفِ خاموش (بیرونِ تابلویِ امروز) «رد» نمی‌شود — وضعیتش جدا خوانده می‌شود', () => {
+    // رأیِ مالک ۱۴۵-۰۷-۲۱، بند ۱: سایت چنین ردیفی را اصلاً نمی‌سنجد، پس
+    // «✗ رد» برچسبِ ساختگی است. نمایش «سنجیده نشد» است و داوریِ فیلترکردن
+    // عوض نمی‌شود: ردیفِ خاموش همچنان قبول نیست.
     const r = full({ is_live: false, vol_ratio_file: null });
-    expect(tapeFilterState(r, 'f_clock', CFG)).toBe('fail');
+    expect(tapeFilterState(r, 'f_clock', CFG)).toBe('unevaluated');
+    expect(tapeFilterVerdict(r, 'f_clock', CFG)).toBe(false);
+    // جریانِ پولِ نخبگان پنلِ خودی است و از این قید آزاد ماند.
+    expect(tapeFilterState(full({ is_live: false }), 'f_smart_flow', CFG)).not.toBe('unevaluated');
   });
 });

@@ -45,6 +45,9 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 import fts_engine
 import mstat_engine
+# تنها تعریفِ «وضعیت هر شاخص» و «عبور با ملاحظات» درِ موتور قیف است؛ اینجا
+# مصرف‌کننده‌ایم، نه داورِ دوم.
+from funnel_engine import fund_caveat, indicator_states
 # تنها تعریفِ «دورۀ گزارش» — همان که `codal_fetcher` می‌نویسد و `fts_engine` می‌خواند.
 import codal_periods as CP
 import datetime
@@ -1842,6 +1845,13 @@ def api_fundamental_screen(
         item = dict(r)
         item["name"] = name
         item["fts_verdict"] = _screen_verdict(r)
+        # «عبور با ملاحظات» از همان یک داورِ قیف خوانده می‌شود (رأیِ مالک
+        # ۱۴۰۵-۰۷-۲۱: حداقل سه شاخص PASS). رأیِ عددی و رتبه دست نمی‌خورند؛
+        # این فقط نشانِ جدول است که بگوید عبور مشروط بوده یا نه.
+        _st = indicator_states(r)
+        item["fund_states"] = {k: _st[k] for k in _st}
+        item["fund_passed"] = sum(1 for s in _st.values() if s == "pass")
+        item["fund_caveat"] = fund_caveat(r)
 
         if verdict and verdict != "ALL" and item["fts_verdict"] != verdict:
             continue

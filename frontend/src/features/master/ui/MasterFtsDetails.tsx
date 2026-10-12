@@ -16,6 +16,7 @@ const MARK: Record<StageStatus, { icon: string; tone: 'green' | 'red' | 'yellow'
   unavailable: { icon: '○', tone: 'blue', word: 'بی‌داده' },
   not_required: { icon: '·', tone: 'blue', word: 'لازم نبود' },
   not_in_universe: { icon: '⊘', tone: 'blue', word: 'خارج از جامعه' },
+  not_applicable: { icon: '∅', tone: 'blue', word: 'کاربرد ندارد' },
 };
 
 const n = (v: number | null | undefined): string =>

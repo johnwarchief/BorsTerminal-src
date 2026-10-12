@@ -56,6 +56,10 @@ export const FtsScreenRowSchema = z.object({
   excluded: z.boolean().nullish(),
   /** صندوق در پنج‌شاخصه نمی‌گنجد ⇒ حکمِ NOT_APPLICABLE، نه REJECTED */
   applicable: z.boolean().nullish(),
+  /** «عبور با ملاحظات» (رأیِ مالک ۱۴۰۵-۰۷-۲۱): حداقل سه شاخص PASS ولی بعضی
+   *  رد/ناقص. از خودِ موتورِ قیف می‌آید — جدول شمار را دوباره حساب نمی‌کند. */
+  fund_caveat: z.boolean().nullish(),
+  fund_passed: z.number().nullish(),
   exclusion_reasons: z.string().nullish(),
   m141: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),

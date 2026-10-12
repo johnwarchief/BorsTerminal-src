@@ -12,7 +12,7 @@ import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetTyp
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
 import { matchesDirection, matchesExitAccum, matchesVolRatio, QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
-import { countHiddenMatches, countQuickMatches, countUnevaluated, MarketFilters } from '../components/MarketFilters';
+import { countHiddenMatches, countQuickFilters, MarketFilters } from '../components/MarketFilters';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 
@@ -149,24 +149,22 @@ export default function MarketPage() {
     [hiddenRows, assetTypes, liveOnly, query, sector, showNumericSuffix, tapeFilterConfig],
   );
 
-  const quickMatches = useMemo(
+  // شمارنده‌ها به نامزدِ جاری گره خورده‌اند: با یک چیپِ روشن، عددِ بقیه می‌گوید
+  // «از این‌ها چندتا آن فیلتر را هم دارند» (رأیِ مالک ۱۴۵-۰۷-۲۱).
+  const quickCounts = useMemo(
     () =>
-      countQuickMatches(
-        filterBase as unknown as Parameters<typeof countQuickMatches>[0],
+      countQuickFilters(
+        filterBase as unknown as Parameters<typeof countQuickFilters>[0],
         tapeFilterConfig,
+        quickFilters,
+        screenLogic,
       ),
-    [filterBase, tapeFilterConfig],
+    [filterBase, tapeFilterConfig, quickFilters, screenLogic],
   );
+  const quickMatches = quickCounts.matched;
 
   // چند ردیف هر فیلتر رویشان اجرا نشده (مأموریت P0) — فقط در تولتیپِ چیپ می‌آید.
-  const quickUnevaluated = useMemo(
-    () =>
-      countUnevaluated(
-        filterBase as unknown as Parameters<typeof countUnevaluated>[0],
-        tapeFilterConfig,
-      ),
-    [filterBase, tapeFilterConfig],
-  );
+  const quickUnevaluated = quickCounts.unevaluated;
 
   const filtered = useMemo(
     () =>
@@ -212,10 +210,10 @@ export default function MarketPage() {
       (s, f) => s + (hiddenInfo?.[f as QuickFilter]?.count ?? 0),
       0,
     );
-    const head = doors.length ? doors.join(' · ') : 'بی‌فیلترِ سریع';
+    const head = doors.length ? doors.join(' · ') : 'بدون فیلترِ سریع';
     return hidden > 0
-      ? `${head} — ${toFaDigits(hidden)} ردیفِ واجدِ شرط درِ این نما باز نشد؛ درهایِ بالا را بردار`
-      : `${head} — با این ترکیب هیچ ردیفی واجدِ شرط نیست`;
+      ? `${head} — ${toFaDigits(hidden)} نمادِ واجدِ شرایط با فیلترهای فعلی پنهان مانده؛ فیلترها را تغییر دهید`
+      : `${head} — با فیلترهای فعلی، هیچ نمادی واجدِ شرایط نیست`;
   }, [filtered.length, quickFilters, screenLogic, sector, query, liveOnly, showNumericSuffix, assetTypes, hiddenInfo]);
 
   /**

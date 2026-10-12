@@ -65,10 +65,10 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
 };
 
 const STAGE_RULE: Record<FunnelStageKey, string> = {
-  tape: 'نمادهایی که از درِ فیلترهایِ روشنِ همین نشست عبور کرده‌اند — عینِ داوریِ چیپ و بجِ تبِّ تابلو. مردودها درِ جدول نمی‌نشینند؛ شمارشان درِ همین سرخط است.',
-  technical: 'ترتیبِ T: اول روند هفتگی، بعد روند روزانه؛ هفتگی نزولی/خنثی = وتو. هر سه شاخهٔ روزانهٔ صعودی/نزولی/خنثی معتبرند؛ جت، پولبک، فیبو، CHoCH و دیگر ستاپ‌ها فقط شواهد و امتیاز کمکی‌اند، نه گیت.',
+  tape: 'نمادهایی که از درِ فیلترهایِ روشنِ امروز عبور کرده‌اند — عینِ داوریِ چیپ و بجِ تبِّ تابلو. نمادهای عبورنکرده درِ جدول نمی‌نشینند؛ شمارشان درِ همین سرخط است.',
+  technical: 'ابتدا روند هفتگی بررسی می‌شود؛ اگر نزولی یا خنثی باشد، نماد از این مسیر عبور نمی‌کند. سپس روند روزانه سنجیده می‌شود و شواهدی مانند جت، پولبک و فیبوناچی امتیاز می‌دهند — هر سه شاخۀ روزانۀ صعودی/نزولی/خنثی معتبرند و این شواهد گیت نیستند.',
   fundamental: '',
-  handover: 'فقط آنچه بنیادش قبول شده و تا ۱۴ روز مجمعِ عمومی پیشِ رو ندارد. وتوی مجمع زمان‌بندیِ ورود است نه ضعفِ بنیادی — نمره دست‌نخورده می‌ماند و فردا خودش برمی‌گردد.',
+  handover: 'فقط نمادهایی به مرحلۀ تحویل می‌رسند که شرط بنیادی لازم را دارند و در ۱۴ روز آیندۀ کاری مجمع عمومی پیشِ رو ندارند. وجودِ مجمع به‌تنهایی به معنای ضعفِ بنیادی نیست و فقط زمانِ بررسیِ ورود را جابه‌جا می‌کند؛ نمره دست‌نخورده می‌ماند.',
 };
 
 /** شرحِ درِ بنیادی به دو پیچِ دستِ کاربر وصل است تا متنِ rule دروغِ پیش‌فرض نگوید. */
@@ -149,6 +149,7 @@ const MARK_DOT: Record<StageStatus, string> = {
   unavailable: 'bg-border-c',
   not_required: 'bg-border-c/40',
   not_in_universe: 'bg-bg-secondary',
+  not_applicable: 'bg-border-c/30',
 };
 /** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
 const MARK_LABEL = STATUS_LABEL;
@@ -171,7 +172,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   last: { label: 'آخرین', title: 'قیمت آخرین معامله', end: true },
   chg: { label: 'تغییر٪', title: 'تغییر درصدی امروز', end: true },
   vol: { label: 'حجم/ماه', title: 'حجم امروز ÷ میانگین ماهانه', end: true },
-  pattern: { label: 'نشانه', title: 'نشانه‌هایِ همان نشست، با همان برچسب و رنگِ تبِّ تابلو' },
+  pattern: { label: 'نشانه', title: 'الگوهای تابلوخوانی که این نماد امروز دارد — همان برچسب و رنگِ تبِّ تابلو' },
   weekly: { label: 'هفتگی', title: 'روند هفتگی — چارت ۲: نزولی و خنثی = reject', end: true },
   daily: { label: 'روزانه', title: 'روند روزانه — شاخه بعدی بر اساس این روند تعیین می‌شود', end: true },
   branch: { label: 'شاخه', title: 'شاخه FTS بر اساس روند روزانه' },
@@ -191,7 +192,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   // تازه: رأیِ مالک ۱۴۰۵-۰۷-۲۲ «جاهایی که می‌طلبد نمودار هم باشد» — جدولِ
   // غربالگری تنها جایِ برنامه بود که همین ردیف‌ها را بی‌شکلِ نشست می‌نمود.
   // بی‌OHLC همان «—»ِ خودِ ویجت می‌آید؛ کندلِ ساختگی ساخته نمی‌شود.
-  candle: { label: 'کندل روز', title: 'اولین، بیشترین، کمترین و آخرینِ همین نشست — عینِ تبِّ تابلو' },
+  candle: { label: 'کندل روز', title: 'اولین، بیشترین، کمترین و آخرینِ همین روز معاملاتی — عینِ تبِّ تابلو' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
   // رأیِ مالک: رسیدۀ «تحویل» باید راهِ رفتن به «دیده‌بان» را هم داشته باشد —
   // رصد، نه تصمیمِ سرمایه‌ای.
@@ -406,6 +407,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
  */
 const VERDICT_RANK: Record<StageStatus, number> = {
   pass: 0, pending: 1, unavailable: 2, reject: 3, not_required: 4, not_in_universe: 5,
+  not_applicable: 6,
 };
 
 export function orderStageRows(key: FunnelStageKey, entries: FunnelEntry[]): FunnelEntry[] {
@@ -602,7 +604,7 @@ function StageCard({
           }`}
           title={unseen === 0
             ? 'تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام حکم دارند (pass + reject + pending + بی‌داده + لازم نبود = Y)'
-            : `${toFaDigits(unseen)} نماد درِ این گام حکم ندارد — نقصِ معماری، نه حالتِ عادی`}
+            : `${toFaDigits(unseen)} نماد در این گام بی‌حکم مانده است؛ نتیجهٔ این مرحله برایشان مشخص نشده و نیاز به بررسی دارد`}
         >
           حکم: {toFaDigits(stage.ruled)}{unseen === 0 ? ' = کلِ جامعۀ غربالگری' : ` ≠ ${toFaDigits(stage.ruled + unseen)}`}
         </span>
@@ -693,8 +695,8 @@ function StageCard({
         <div data-testid={`funnel-pending-${stage.key}`} className="border-t border-dashed border-border-c/70 bg-bg-secondary/40">
           <p className="px-3 py-1.5 text-3xs font-bold text-text-muted">
             {stage.key === 'handover'
-              ? `متوقف درِ تحویل — نه رد شده، نه آماده (${toFaDigits(stage.pending.length)})`
-              : `در انتظارِ حکم — موتور نگاه کرد و نظر نداد (${toFaDigits(stage.pending.length)})`}
+              ? `نگه‌داشته در مرحلۀ تحویل: هنوز آمادهٔ عبور نیست و رد قطعی هم نشده است (${toFaDigits(stage.pending.length)})`
+              : `بررسی شده اما نتیجهٔ قطعی ندارد؛ بنابراین رد نشده است (${toFaDigits(stage.pending.length)})`}
           </p>
           <div ref={pendingRef} className="max-h-[160px] overflow-y-auto">
             <table className="w-full table-fixed border-collapse text-sm">
@@ -788,6 +790,18 @@ function StageRow({
               وتوی مجمع
             </span>
           ) : null}
+          {/* عبور با ملاحظات: رأیِ مالک ۱۴۵-۰۷-۲۱ — سه PASS کافی است، پس این
+              نماد درِ فهرستِ عبوری‌هاست؛ زرد فقط می‌گوید کدام‌ها سنجیده نشدند یا
+              رد شدند. متنِ علت را خودِ موتور نوشته، اینجا بازنویسی نمی‌شود. */}
+          {entry.fundCaveat ? (
+            <span
+              data-testid={`funnel-fund-caveat-${entry.symbol}`}
+              className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
+              title={entry.why.fundamental || 'عبور با ملاحظات'}
+            >
+              عبور با ملاحظات
+            </span>
+          ) : null}
         </button>
       </td>
       {cols.filter((k) => k !== 'symbol').map((k) => (
@@ -801,10 +815,12 @@ function StageRow({
  * چیپ‌هایِ هفت فیلترِ رجیستری + کلیدِ اشتراک/اجتماع. با رأیِ مالکِ ۱۴۰۵-۰۷-۲۰
  * از سرِ کارتِ «تابلوخوانی» به **نوارِ بالایِ غربالگری** آمد: سه مرحلۀ اول
  * بسته‌اند، پس کنترلی که داخلِ کارتِ بسته است درِ عمل دیده نمی‌شد.
- * عددِ کنارِ هر چیپ نامزدِ خودِ همان فیلتر رویِ کلِّ جامعۀ غربالگری است
- * (`funnel_engine.filter_counts`) — مستقل از زنجیره و از اشتراک/اجتماع، تا
- * معلوم باشد کدام فیلتر گرسنۀ دادۀِ سینک است. این همان `quickFilters` تبِّ
- * تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن شدنش هم عوضی در نمی‌آید.
+ * عددِ کنارِ هر چیپ نامزدِ همان فیلتر رویِ **نامزدِ جاری** است
+ * (`funnel_engine.filter_counts` با زنجیره و منطقِ همین دور) — رأیِ مالک
+ * ۱۴۵-۰۷-۲۱: «وقتی حجم مشکوک روشن است، جت بگوید از این‌ها چندتا». بی‌هیچ
+ * چیپِ روشن مبنایِ شمارش کلِّ جامعۀ غربالگری است، پس عددِ همیشگی می‌ماند.
+ * این همان `quickFilters` تبِّ تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن
+ * شدنش هم عوضی در نمی‌آید.
  */
 function TapeStagePrefs({ picked, counts, filters }: {
   picked: number;
@@ -817,7 +833,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="flex flex-wrap items-center justify-end gap-1"
+      className="sticky top-[var(--pinned-h)] z-20 -mx-1 flex flex-wrap items-center justify-end gap-1 rounded-lg bg-bg-card/95 px-1 py-0.5 backdrop-blur-sm"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
@@ -832,8 +848,9 @@ function TapeStagePrefs({ picked, counts, filters }: {
             aria-pressed={on}
             onClick={() => filters.toggle(f)}
             title={c
-              ? `${QUICK_LABELS[f]} — ${toFaDigits(c.matched)} نامزد از ${toFaDigits(c.input)} نمادِ غربالگری`
+              ? `${QUICK_LABELS[f]} — ${toFaDigits(c.matched)} نامزد از ${toFaDigits(c.input)} ردیفِ نامزدِ فعلی`
                 + `؛ ${toFaDigits(c.removed)} رد، ${toFaDigits(c.unmeasured)} بی‌حکم`
+                + (c.universe ? ` (کلِّ جامعۀ غربالگری: ${toFaDigits(c.universe)})` : '')
               : `${QUICK_LABELS[f]} — شمارشِ نامزد از سرور نرسید`}
             className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
               on
@@ -848,8 +865,9 @@ function TapeStagePrefs({ picked, counts, filters }: {
           </button>
         );
       })}
-      {/* یک کلید، دو حالت: «اشتراک» یعنی هر چیپِ روشن لازم است، «اجتماع» یعنی
-          کم‌از‌یکی. همان `bors.screen.logic.v1` که کنارِ چیپ‌هایِ تبِّ تابلو است. */}
+      {/* یک کلید، دو حالت: «اشتراک» یعنی هر چیپِ روشن لازم است (AND)، «اجتماع» یعنی
+          داشتنِ یکی کافی است (OR). همان `bors.screen.logic.v1` که کنارِ چیپ‌هایِ تبِّ
+          تابلو است. */}
       <button
         type="button"
         data-testid="funnel-screen-logic"
@@ -857,10 +875,10 @@ function TapeStagePrefs({ picked, counts, filters }: {
         disabled={onCount === 0}
         onClick={() => setLogic(logic === 'or' ? 'and' : 'or')}
         title={onCount === 0
-          ? 'بی‌فیلترِ روشن معنی ندارد — اول کم‌از‌یکی از چیپ‌هایِ بالا را روشن کن'
+          ? 'برای شروع غربالگری، دست‌کم یک فیلتر را روشن کنید'
           : logic === 'or'
-            ? `اجتماع: داشتنِ کم‌از‌یکی از ${toFaDigits(onCount)} فیلترِ روشن کافی است`
-            : `اشتراک: نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
+            ? `اجتماع (OR): داشتنِ حداقل یکی از ${toFaDigits(onCount)} فیلترِ روشن کافی است`
+            : `اشتراک (AND): نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
         className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
           logic === 'or'
             ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
@@ -893,10 +911,13 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
       data-testid="funnel-prefs"
       className="flex flex-wrap items-center gap-x-2 gap-y-1"
     >
-      <span className="text-2xs font-black text-text-secondary" title={`پیش‌فرضِ جزوه: ${toFaDigits(DEFAULT_FUND_FLOOR)} از ${toFaDigits(FUND_FLOOR_MAX)}`}>
-        کفِ نمره
+      <span
+        className="text-2xs font-black text-text-secondary"
+        title={`پیش‌فرض FTS: ${toFaDigits(DEFAULT_FUND_FLOOR)} از ${toFaDigits(FUND_FLOOR_MAX)}`}
+      >
+        حداقل امتیاز بنیادی
       </span>
-      <span className="flex items-center gap-1" role="group" aria-label="کفِ نمرۀ پنج‌شاخصه">
+      <span className="flex items-center gap-1" role="group" aria-label="حداقل امتیاز بنیادی از پنج شاخص">
         {Array.from({ length: FUND_FLOOR_MAX }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
@@ -905,7 +926,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
             aria-pressed={fundFloor === n}
             onClick={() => setFundFloor(n)}
             className={`num h-6 w-6 rounded-md border text-2xs font-black transition-colors ${chip(fundFloor === n)}`}
-            title={n === DEFAULT_FUND_FLOOR ? 'پیش‌فرضِ جزوه' : undefined}
+            title={n === DEFAULT_FUND_FLOOR ? 'پیش‌فرض FTS' : undefined}
           >
             {toFaDigits(n)}
           </button>
@@ -930,8 +951,14 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
         عبور با این پیچ‌ها: {toFaDigits(passed)}
       </span>
       {fundFloor !== DEFAULT_FUND_FLOOR || unmeasured !== 'hold' || !techScreens ? (
-        <button type="button" data-testid="funnel-prefs-reset" onClick={reset} className="text-3xs font-bold text-text-muted underline hover:text-accent-amber">
-          بازگشت به جزوه
+        <button
+          type="button"
+          data-testid="funnel-prefs-reset"
+          onClick={reset}
+          title="بازگردانی تنظیمات به پیش‌فرض FTS"
+          className="text-3xs font-bold text-text-muted underline hover:text-accent-amber"
+        >
+          بازگردانی به پیش‌فرض FTS
         </button>
       ) : null}
     </div>
@@ -1086,7 +1113,7 @@ export function FtsFunnelStages({
   const fund = funnel.stages.fundamental;
   const hand = funnel.stages.handover;
   const emptyWhy: Record<FunnelStageKey, string | null> = {
-    tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این نشست نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
+    tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این روز نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
     technical: funnel.stages.technical.entries.length
       ? null
       : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
@@ -1147,7 +1174,7 @@ export function FtsFunnelStages({
           <span
             className="rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
             data-testid="funnel-tape-freshness"
-            title="تازگیِ خوراکِ تابلو — دادهٔ آخرینِ نشست جایِ زنده خوانده نمی‌شود"
+            title="تازگیِ خوراکِ تابلو — دادهٔ آخرین روز معاملاتی جایِ زنده خوانده نمی‌شود"
           >
             {TAPE_FRESHNESS_LABEL[tape]}
           </span>
@@ -1190,7 +1217,7 @@ export function FtsFunnelStages({
             جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
         <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
         <span className="text-text-secondary" data-testid="funnel-universe-market"
-              title="تک‌تکِ نمادهایِ این نشستِ تابلو (ردیفِ تکراری یکی‌شده)">
+              title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
           جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
         </span>
         <span className="text-accent-blue" data-testid="funnel-universe-screening"
@@ -1218,7 +1245,7 @@ export function FtsFunnelStages({
             className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
             title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
           >
-            در حالِ تازه‌سازی
+            در حالِ به‌روزرسانی
           </span>
         ) : null}
       </div>
