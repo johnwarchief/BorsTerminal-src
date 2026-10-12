@@ -482,6 +482,45 @@ async function probeE3(page, engineId, hostSel) {
   await page.screenshot({ path: path.join(OUT_DIR, `e2e_e3_${engineId}.png`), fullPage: false });
 }
 
+// مرحلۀ ۷ -- آزمونِ *یکپارچۀ* سه موتور، نه سه آزمونِ جدا. `/api/structure3` عینِ
+// `/api/fts` از `_fts_analysis_series(symbol)` می‌خواند (`api/structure3.py:54`) و
+// رابطِ کاربری هیچ `mabna` به `/api/fts` نمی‌فرستد (`useFtsAnalysis.ts:322`)، پس
+// مبنایِ سری، عمقِ تحلیل و لنگرِ نمایشِ دو پاسخ باید یکی باشد. اگر واگرا شوند،
+// چارت دو ضریبِ متفاوت (`r` و `r3` در `FtsEngineChart.tsx:153`) رویِ یک محور می‌زند
+// و لایۀ «مقایسۀ بی‌رأی» دیگر رویِ همان قیمت‌هایِ موتورِ اول نیست.
+// پاسخ‌ها از *همان نشستِ مرورگر* شنود می‌شوند (نه درخواستِ جدا از پایتون): همان
+// کشِ CDNِ سرور، همان لحظه، همان مسیرِ تولیدیِ رابط.
+async function probeEnginesAgree(engineId, seen, seenUrl) {
+  const f = seen.fts || null;
+  const e = seen.e3 || null;
+  const wire = {
+    url: { fts: seenUrl.fts || null, e3: seenUrl.e3 || null },
+    fts: f && { status: f.status, basis: f.analysis_basis, bars: f.bars, ref_close: f.ref_close,
+                pivots_D: (f.fts?.structure_points?.D || []).length,
+                pivots_W: (f.fts?.structure_points?.W || []).length },
+    e3: e && { status: e.status, basis: e.basis, bars: e.bars, ref_close: e.ref_close,
+               pivots: (e.points || []).length, choch: (e.choch || []).length,
+               official: e.official, voting: e.voting },
+  };
+  FACTS[engineId + '_wire_agreement'] = wire;
+  ck(`${engineId}: پاسخِ هر دو موتور درِ همان نشستِ مرورگر شنود شد`, !!f && !!e,
+    JSON.stringify({ fts: !!f, e3: !!e, urls: wire.url }));
+  if (!f || !e) return;
+  ck(`${engineId}: هر دو پاسخ status:successاند (نه empty/insufficient ساختگی)`,
+    f.status === 'success' && e.status === 'success', `${f.status} / ${e.status}`);
+  ck(`${engineId}: مبنا و عمقِ سریِ دو موتور یکی است (مقایسه رویِ همان کندل‌ها)`,
+    f.analysis_basis === e.basis && f.bars === e.bars,
+    `مبنایِ ۱=${f.analysis_basis} · ۳=${e.basis} · کندلِ ۱=${f.bars} · ۳=${e.bars}`);
+  ck(`${engineId}: لنگرِ نمایشِ دو موتور یکی است (وگرنه r و r3 دو ضریبِ جدا می‌شوند)`,
+    typeof f.ref_close === 'number' && typeof e.ref_close === 'number' &&
+    Math.abs(f.ref_close - e.ref_close) < 1e-9,
+    `${f.ref_close} ⇄ ${e.ref_close}`);
+  // ادعایِ مرحلۀ ۲ درِ سیمِ زنده (نه دادهٔ کاشته‌شدۀ تستِ واحد): این لایه رأی نمی‌دهد
+  ck(`${engineId}: درِ دادوستدِ زنده هم موتورِ سوم بی‌رأی اعلام می‌شود`,
+    e.official === false && e.voting === false, `official=${e.official} voting=${e.voting}`);
+  console.log(`  NOTE ${engineId}: شمارِ پیوت -- موتورِ ۱ (D/W): ${wire.fts.pivots_D}/${wire.fts.pivots_W} · موتورِ ۳: ${wire.e3.pivots} (دو الگوریتمِ جدا، هیچ‌کدام با دیگری جمع نمی‌شود)`);
+}
+
 (async () => {
   const url = `${BASE}/#/technical/${encodeURIComponent(SYMBOL)}`;
   const browser = await chromium.launch({
@@ -494,6 +533,28 @@ async function probeE3(page, engineId, hostSel) {
       const page = await ctx.newPage();
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e && e.message)));
+      // شنودِ همان دو درخواستِ تولیدیِ رابط (نه درخواستِ جدا از بیرون): هر کدام یک‌بار،
+      // نخستینِ پاسخِ کامل. `structure3` درِ `probeE3` زده می‌شود، پس اینجا پر می‌شود.
+      // دامینِ `/api/fts/` تنها نیست: `/api/fts/config` هم همین زیررشته را دارد و
+      // `status:success` می‌فرستد، ولی `analysis_basis` و `bars` درِ آن نیست — این
+      // اشتباه درِ دورِ اولِ مرحلۀ ۷ رخ داد و مقایسه را به `undefined ⇄ عدد` انداخت.
+      const seen = {};
+      const seenUrl = {};
+      page.on('response', async (r) => {
+        const u = r.url() || '';
+        const isCfg = /\/api\/fts\/config(\?|$)/.test(u);
+        const key = u.includes('/api/structure3') ? 'e3'
+          : (u.includes('/api/fts/') && !isCfg ? 'fts' : null);
+        if (!key || seen[key]) return;
+        try {
+          const body = await r.json();
+          // دهانۀ مقایسه باید درِ بدنه باشد، وگرنه پاسخِ دیگری جا را پر کرده است
+          if (body && body.status && (key === 'e3' ? body.basis : body.analysis_basis)) {
+            seen[key] = body;
+            seenUrl[key] = u.replace(/^https?:\/\/[^/]+/, '');
+          }
+        } catch (_) { /* بی‌خبر رد می‌شویم و ck می‌گوید */ }
+      });
       await page.addInitScript(([key, eng]) => {
         try {
           const raw = JSON.parse(localStorage.getItem(key) || '{}');
@@ -533,6 +594,7 @@ async function probeE3(page, engineId, hostSel) {
       FACTS[engine + '_feed_ms'] = waitedMs;
       await probe(page, engine, hostSel);
       await probeE3(page, engine, hostSel);
+      await probeEnginesAgree(engine, seen, seenUrl);
       ck(`${engine}: بی‌خطایِ console/pageerror`, errors.length === 0, errors.slice(0, 2).join(' | '));
       await ctx.close();
     }
