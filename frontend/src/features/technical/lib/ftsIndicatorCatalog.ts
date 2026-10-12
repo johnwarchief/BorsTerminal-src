@@ -172,6 +172,20 @@ export const FTS_INDICATOR_CATALOG: readonly FtsIndicatorEntry[] = [
     engines: { klinecharts: true, ffc: true },
   },
   {
+    id: 'double-top', fa: 'خط گردن سقف دوقلو', en: 'Double-top neckline',
+    // همان لایۀ «دوقلو» درِ چارتِ کهنه، سمتِ سقف (`l3.double_top` + `l3.level`).
+    // سطرِ جدیدِ مرحلۀ ۶: لایه رسم می‌شد ولی درِ رجیستری نبود.
+    group: 'exit-risk', display: ['level'], source: 'exit_engine.l3.double_top',
+    rule: 'سقف دوقلو (خروج)', toggle: 'double',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
+    id: 'head-shoulders', fa: 'خط گردن سر و شانه', en: 'Head-and-shoulders neckline',
+    group: 'exit-risk', display: ['level'], source: 'exit_engine.l3.hs_break',
+    rule: 'سر و شانه = CHoCH (خروج)', toggle: 'headshoulders',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
     id: 'hourglass', fa: 'ساعت شنی (MA52 هفتگی)', en: 'Hourglass MA52 band',
     group: 'exit-risk', display: ['band', 'level'], source: 'hourglass',
     rule: 'ساعت شنی (استراتژی)', toggle: 'hourglass',

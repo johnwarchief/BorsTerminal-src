@@ -55,7 +55,9 @@ export const PATTERN_PREFS_DEFAULT: PatternPrefs = {
   rangebox: { enabled: true, color: '#fbbf24', opacity: 0.12 },
 };
 
-const alpha = (hex: string, op: number): string => {
+/** hex + شفافیت → rgba؛ تنها راهِ ساختِ tintِ کمربند درِ هر دو موتور (موتورِ دوم
+ *  از همین می‌گذرد تا رنگِ prefs دو موتور را یکی نگه دارد). */
+export const alpha = (hex: string, op: number): string => {
   const a = Math.max(0, Math.min(1, op));
   const h = hex.replace('#', '');
   if (h.length !== 6) return hex;

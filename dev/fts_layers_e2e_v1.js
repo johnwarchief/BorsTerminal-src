@@ -88,7 +88,7 @@ async function waitForFeed(page, engineId) {
   return Date.now() - t0;
 }
 
-async function probe(page, engineId) {
+async function probe(page, engineId, hostSel) {
   const rows = await page.$$eval('[data-testid^="fts-layer-row-"]', (els) =>
     els.map((e) => e.getAttribute('data-testid').replace('fts-layer-row-', '')),
   );
@@ -144,11 +144,106 @@ async function probe(page, engineId) {
       /رخ داد/.test(times || '') && /فهمیدیم/.test(times || ''), (times || '').slice(0, 120));
   }
 
+  // ب-۱ درِ مرورگر: پیوتِ هفتگی سوییچِ مستقل ندارد (`structure` هر دو TF را با هم
+  // خاموش/روشن می‌کند)، پس تفاوتِ بوم به «هفتگی» قابلِ انتساب نیست و آن را ادعا
+  // نمی‌کنیم. درِ عوض، شمارِ هفتگی از کارتِ شواهد خوانده می‌شود: صفرنبودِ دادۀ
+  // واقعیِ سرور، نه عددِ ساختگیِ فرانت.
+  const wBtn = await page.$('[data-testid="fts-layer-evidence-btn-structure-points-weekly"]');
+  ck(`${engineId}: دکمهٔ «شواهد» برایِ پیوتِ ساختارِ هفتگی هست`, !!wBtn);
+  if (wBtn) {
+    await wBtn.click();
+    await page.waitForSelector('[data-testid="fts-layer-evidence"]', { timeout: 8000 });
+    const wf = await page.$$eval('[data-testid="fts-layer-evidence"] dl > div', (els) =>
+      els.map((e) => [((e.querySelector('dt') || {}).textContent || ''),
+                      ((e.querySelector('dd') || {}).textContent || '')])).catch(() => []);
+    FACTS[engineId + '_weekly_facts'] = Object.fromEntries(wf.map(([a, b]) => [a.trim(), b.trim()]));
+    const cnt = ((wf.find(([a]) => a.includes('پیوت')) || ['', ''])[1] || '').trim();
+    ck(`${engineId}: کارتِ شواهدِ هفتگی شمارِ واقعیِ پیوت را می‌گوید`,
+      /[1-9۱-۹]/.test(cnt), cnt);
+    const wsrc = await page.textContent('[data-testid="fts-evidence-source"]');
+    ck(`${engineId}: کارتِ شواهدِ هفتگی دهانۀ structure_points.W را نام می‌برد`,
+      /structure_points\.W/.test(wsrc || ''), (wsrc || '').slice(0, 90));
+  }
+
   const legend = await page.$$eval('[data-testid^="fts-legend-item-"]', (els) =>
     els.map((e) => e.getAttribute('data-testid').replace('fts-legend-item-', '')),
   ).catch(() => []);
   FACTS[engineId + '_legend'] = legend;
   ck(`${engineId}: افسانۀ چارت از همان رجیستری پر می‌شود`, legend.length >= 1, legend.join(','));
+
+  // ب-۳ درِ مرورگر: سطرِ کاتالوگ، سطرِ افسانه و «فعال» بودن هیچ‌کدام ثابت نمی‌کنند
+  // پیکسل رویِ بوم می‌آید («کلیکِ دکمه ≠ آزمون»). سوییچِ اختصاصیِ جعبۀ رنج را
+  // خاموش/روشن می‌کنیم و تصویرِ بوم را می‌سنجیم؛ کنترلِ بی‌تحركی مثلِ probeE3،
+  // وگرنه «تفاوت» بی‌معناست. دو کلیک، وضعیتِ پیش از آزمایش را برمی‌گرداند.
+  const boxBtn = await page.$('[data-testid="fts-layer-toggle-range-box"]');
+  ck(`${engineId}: سوییچِ اختصاصیِ «جعبۀ رنج» درِ پنل هست`, !!boxBtn);
+  if (boxBtn) {
+    // «بوم» تک‌بوم نیست: klinecharts v10 هر پنل را رویِ یک canvas می‌کشد، پس مقایسۀ
+    // فقطِ اولی می‌تواند یک رسمِ واقعی را «بی‌تغییر» نشان دهد. همهٔ بوم‌های میزبان
+    // سنجیده می‌شوند و شمارهٔ بومِ تغییریافته درِ FACTS می‌نشیند.
+    const shots = async () => {
+      const els = await page.$$(`${hostSel} canvas`);
+      const bufs = [];
+      for (const el of els) bufs.push(await el.screenshot());
+      return bufs;
+    };
+    const cmp = (a, b) => a.map((buf, i) => (buf && b[i] ? Buffer.compare(buf, b[i]) !== 0 : null));
+    // دو ادعا جدا می‌شوند: (الف) سوییچ به *نگاشتِ لایه‌ها* می‌رسد — شمارِ «لایهٔ FTS»
+    // درِ پنلِ موتورِ دوم کم و زیاد می‌شود؛ (ب) آن لایه رویِ *بوم* هم دیده می‌شود.
+    // بی‌(الف) می‌توان پیکسل را با یک ریدرِ تصادفی عوض دید و بی‌(ب) شمارِ لایه فقط
+    // حرفِ کد است؛ مرحلۀ ۶ هر دو را می‌خواهد. درِ چارتِ کهنه این خط نیست ⇒ NOTE.
+    const layerCount = async () => {
+      const t = await page.$eval('[data-testid="fts-engine-layer-count"]',
+        (e) => e.textContent).catch(() => null);
+      if (!t) return null;
+      const latin = t.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+      const m = latin.match(/(\d+)/);
+      return m ? Number(m[1]) : null;
+    };
+    const nBefore = await layerCount();
+    const idle1 = await shots();
+    const idle2 = await shots();
+    const animates = cmp(idle1, idle2).some((x) => x === true);
+    FACTS[engineId + '_box_canvas_animates'] = animates;
+    FACTS[engineId + '_box_canvas_count'] = idle1.length;
+    await boxBtn.click();
+    await page.waitForTimeout(1200);
+    const nOff = await layerCount();
+    const off = await shots();
+    await boxBtn.click();
+    await page.waitForTimeout(1200);
+    const nOn = await layerCount();
+    const on = await shots();
+    const diff = cmp(off, on);
+    FACTS[engineId + '_box_layer_count'] = { before: nBefore, off: nOff, on: nOn };
+    if (nBefore == null) {
+      console.log(`  NOTE ${engineId}: شمارِ لایه درِ این میزبان منتشر نمی‌شود (چارتِ کهنه)؛ ادعۀ «سوییچ به نگاشت رسید» اینجا سنجیده نمی‌شود`);
+    } else {
+      ck(`${engineId}: خاموش‌کردنِ جعبۀ رنج یک لایه از نگاشت کم می‌کند و روشن‌کردن پس می‌دهد (Prefs → لایه)`,
+        nOff === nBefore - 1 && nOn === nBefore, `${nBefore} → ${nOff} → ${nOn}`);
+    }
+    FACTS[engineId + '_box_canvas_bytes'] = {
+      canvases: off.length,
+      off: off.map((b) => b && b.length), on: on.map((b) => b && b.length),
+      changed_indexes: diff.map((c, i) => (c ? i : -1)).filter((i) => i >= 0), animates,
+    };
+    const changed = diff.some((x) => x === true);
+    if (animates) {
+      console.log(`  NOTE ${engineId}: بوم در وضعیتِ بی‌تحرك هم فرق می‌کند؛ مقایسۀ جعبۀ رنج گویا نیست`);
+    } else {
+      ck(`${engineId}: خاموش/روشن‌کردنِ جعبۀ رنج بوم را عوض می‌کند (رسمِ واقعی، ب-۳)`,
+        changed, `${off.length} بوم · تغییر: ${diff.map((c, i) => (c ? i : null)).filter((x) => x !== null).join(',') || 'هیچ‌کدام'}`);
+      fs.mkdirSync(OUT_DIR, { recursive: true });
+      // فقطِ بومِ نخستِ تغییریافته (یا صفر) ذخیره می‌شود تا جفتِ پیش/پس گم نشود
+      const pick = diff.findIndex((c) => c === true);
+      const idx = pick >= 0 ? pick : 0;
+      if (off[idx]) fs.writeFileSync(path.join(OUT_DIR, `box_${engineId}_canvas${idx}_off.png`), off[idx]);
+      if (on[idx]) fs.writeFileSync(path.join(OUT_DIR, `box_${engineId}_canvas${idx}_on.png`), on[idx]);
+    }
+    const boxState = await page.$eval('[data-testid="fts-layer-state-range-box"]',
+      (e) => e.textContent.trim()).catch(() => '');
+    ck(`${engineId}: بعد از دو کلیک، جعبۀ رنج به «فعال» برمی‌گردد`, boxState === 'فعال', boxState);
+  }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   await page.screenshot({ path: path.join(OUT_DIR, `e2e_layers_${engineId}.png`), fullPage: false });
@@ -305,7 +400,7 @@ async function probeE3(page, engineId, hostSel) {
       ck(`${engine}: تبِ داکِ «لایه‌های FTS» باز شد`, true);
       const waitedMs = await waitForFeed(page, engine);
       FACTS[engine + '_feed_ms'] = waitedMs;
-      await probe(page, engine);
+      await probe(page, engine, hostSel);
       await probeE3(page, engine, hostSel);
       ck(`${engine}: بی‌خطایِ console/pageerror`, errors.length === 0, errors.slice(0, 2).join(' | '));
       await ctx.close();

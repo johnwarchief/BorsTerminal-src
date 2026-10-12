@@ -13,6 +13,7 @@ import { engineFtsLayers } from '../lib/engineFtsLayers';
 import { E3_GROUP, structure3Layers } from '../lib/structure3Layers';
 import { CORP_EVENT_GROUP, corpEventMarkers, type RawCorporateEvent } from '../lib/corpEvents';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
+import { usePatternPrefsStore } from '../stores/patternPrefsStore';
 import { epochToJalali, parseCandleTimestamp } from '../lib/jalaliDate';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 
@@ -58,6 +59,11 @@ export function FtsEngineChart({
   const showFibLevels = useFtsConfigStore((s) => s.view?.showFibLevels === true);
   // موتورِ سوم: لایۀ مقایسۀ بی‌رأی، پیش‌فرض خاموش (آستانه‌هایش رأیِ جزوه ندارند).
   const showStructure3 = useFtsConfigStore((s) => s.view?.showStructure3 === true);
+  // سوییچ‌هایِ کاتالوگِ لایه (`fts-pattern-prefs`): چارتِ کهنه این‌ها را می‌خواند
+  // (`patternOverlays.ts` :: `on(kind)`)، پس این موتور هم باید بخواندشان — وگرنه
+  // سوییچِ پنل فقط localStorage را عوض می‌کند. مرحلۀ ۶ بومِ زنده: خاموش/روشن‌کردنِ
+  // «جعبۀ رنج» درِ FFC هیچ‌یک از شش بوم را عوض نمی‌کرد (پیوتِ واقعی، نه ادعا).
+  const patternPrefs = usePatternPrefsStore((s) => s.prefs);
   const engineRef = useRef<ChartEngine | null>(null);
   const [engine, setEngine] = useState<ChartEngine | null>(null);
   const [errors, setErrors] = useState<EngineError[]>([]);
@@ -153,6 +159,7 @@ export function FtsEngineChart({
         toDisp: (p) => p * r,
         tsForDate,
         showFibLevels,
+        prefs: patternPrefs,
       }),
       ...(showStructure3
         ? structure3Layers({
@@ -173,7 +180,7 @@ export function FtsEngineChart({
           })
         : []),
     ];
-  }, [bars, fts, refClose, e3, showStructure3, corpEvents, showCorpActions, showFibLevels]);
+  }, [bars, fts, refClose, e3, showStructure3, corpEvents, showCorpActions, showFibLevels, patternPrefs]);
 
   // هر گروه، هر بار کاملِ جایگزین -- وگرنه لایه‌های تکراری روی هم می‌نشینند
   useEffect(() => {
@@ -215,7 +222,9 @@ export function FtsEngineChart({
       <div className="flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] px-2 py-1 text-[10px] text-text-muted">
         <span className="font-bold text-text-secondary">موتور: {caps ? caps.label : engineId}</span>
         <span>کندل: {toFaDigits(bars.length)}</span>
-        <span>لایهٔ FTS: {toFaDigits(layers.length)}</span>
+        {/* شمارِ لایه‌ها دو ادعایِ مرحلۀ ۶ را از هم جدا می‌کند: «سوییچ به نگاشت
+            رسید» (عدد عوض می‌شود) و «رویِ بوم هم دیده شد» (بوم عوض می‌شود). */}
+        <span data-testid="fts-engine-layer-count">لایهٔ FTS: {toFaDigits(layers.length)}</span>
         {/* وضعیتِ موتورِ سوم رویِ بوم: «چقدر از آن واقعاً آمده» -- برایِ سنجشِ
             روشن/خاموش و برایِ شواهدِ Playwright همین خط خوانده می‌شود. */}
         {showStructure3 ? (

@@ -1,11 +1,18 @@
 // __tests__/ffc-engine-v1066.spec.ts -- موتورِ دوم باید همان تحلیلِ سرور را بگوید
-// FFC از رابطِ موتور (engine/) اورلی می‌گیرد: level/band/segment/marker. این دو
-// سنجش می‌گویند (۱) نگاشتِ `/api/fts` → لایه‌ها هیچ عددی از خودش نمی‌سازد و هیچ
-// لایه‌ای را دو بار نمی‌کارد، (۲) انتخابِ موتور در تنظیمات می‌نشیند و مقدارِ
-// ناشناخته (یا موتورِ حذف‌شده از رجیستری) چارت را نمی‌اندازد.
+// FFC از رابطِ موتور (engine/) اورلی می‌گیرد: level/band/segment/marker. این سنجش‌ها
+// می‌گویند (۱) نگاشتِ `/api/fts` → لایه‌ها هیچ عددی از خودش نمی‌سازد و هیچ لایه‌ای
+// را دو بار نمی‌کارد، (۲) انتخابِ موتور در تنظیمات می‌نشیند و مقدارِ ناشناخته (یا
+// موتورِ حذف‌شده از رجیستری) چارت را نمی‌اندازد، (۳) هر سوییچِ کاتالوگ درِ همین
+// موتور هم مسیرِ رسم دارد (مرحلۀ ۶: دکمه به تنهایی آزمون نیست).
 import { describe, expect, it } from 'vitest';
 import { engineFtsLayers } from '@features/technical/lib/engineFtsLayers';
 import { ENGINE_REGISTRY } from '@features/technical/engine';
+import { FTS_INDICATOR_CATALOG } from '@features/technical/lib/ftsIndicatorCatalog';
+import {
+  PATTERN_PREFS_DEFAULT,
+  type PatternKind,
+  type PatternPrefs,
+} from '@features/technical/lib/patternOverlays';
 import type { FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
 
 const T0 = Date.UTC(2026, 0, 5);
@@ -120,5 +127,95 @@ describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
     const ffc = ENGINE_REGISTRY.find((e) => e.id === 'ffc');
     expect(ffc?.production).toBe(true);
     expect(ENGINE_REGISTRY.filter((e) => e.production).map((e) => e.id)).toEqual(['klinecharts', 'ffc']);
+  });
+});
+
+// مرحلۀ ۶: «صرفاً کلیک رویِ دکمهٔ ابزار آزمونِ موفق نیست». سنجشِ زندهٔ بوم نشان داد
+// سوییچ‌هایِ کاتالوگ درِ موتورِ دوم هیچ پیکسلی را تکان نمی‌دهند (`prefs` به نگاشت
+// نمی‌رسید) — این‌ها همان مسیر را از درِ تابعِ نگاشت می‌بندند.
+describe('سوییچ‌هایِ کاتالوگ درِ موتورِ دوم (#227)', () => {
+  /** هر سوییچِ کاتالوگ لا‌اقلِ یک لایه دارد — بی‌این، آزمونِ «خاموش شد» بی‌معناست */
+  const ALL = {
+    ...payload,
+    choch: { bullish: true, bearish: false, level: 1180 },
+    pullback: { active: true, touching: true, level: 1420 },
+    range_box: { active: true, top: 1500, bottom: 1300, start_date: '2026-01-06', end_date: '2026-01-08' },
+    structure_points: {
+      D: [{ time: '2026-01-07', price: 1250, label: 'HL', confirm_time: '2026-01-09' }],
+      W: [{ time: '2026-01-05', price: 1210, label: 'LH', confirm_time: '2026-01-12' }],
+    },
+    exit_engine: {
+      verdict: 'caution',
+      l1: { hard_stop: 1049, ma14: 1270, ma14_exit: true },
+      l3: { third_peak: true, third_peak_level: 1500, third_peak_band_pct: 2,
+            double_top: true, level: 1470, hs_break: true, neckline: 1440 },
+    },
+  } as unknown as FtsAnalysisData;
+
+  /** سوییچ → لایه‌هایی که فقط زیرِ همان سوییچ رسم می‌شوند (جدولِ صریح، تا
+   *  «همه‌چیز کم شد» به جایِ «لایۀِ درست کم شد» سبز نشود) */
+  const LAYERS_OF: Record<PatternKind, (id: string) => boolean> = {
+    jet: (id) => id === 'jet',
+    choch: (id) => id === 'choch',
+    pointhunt: (id) => id === 'point-hunt',
+    double: (id) => id === 'double-bottom' || id === 'double-top',
+    headshoulders: (id) => id === 'head-shoulders',
+    thirdpeak: (id) => id === 'third-peak',
+    ma14exit: (id) => id === 'ma14-exit',
+    hourglass: (id) => id === 'hourglass',
+    pullback: (id) => id === 'pullback',
+    structure: (id) => id.startsWith('structure-'),
+    rangebox: (id) => id === 'range-box',
+  };
+
+  const prefsOf = (off: PatternKind[]): PatternPrefs =>
+    Object.fromEntries(
+      Object.entries(PATTERN_PREFS_DEFAULT).map(([k, v]) => [k, { ...v, enabled: !off.includes(k as PatternKind) }]),
+    ) as PatternPrefs;
+
+  const idsOf = (prefs?: PatternPrefs) => engineFtsLayers({ ...plain, fts: ALL, prefs }).map((l) => l.id);
+
+  it('هر سوییچی که کاتالوگ اعلام می‌کند درِ این موتور هم لایۀ خودش را دارد', () => {
+    const declared = new Set(
+      FTS_INDICATOR_CATALOG.map((e) => e.toggle).filter((t) => t !== null && t in PATTERN_PREFS_DEFAULT),
+    );
+    const gated = Object.keys(LAYERS_OF) as PatternKind[];
+    expect(declared.size, 'رجیستری و جدولِ سوییچ‌ها هم‌اندازه‌اند').toBe(gated.length);
+    for (const k of gated) expect(declared.has(k), `سوییچِ ${k} درِ کاتالوگ ثبت شده`).toBe(true);
+    const ids = idsOf();
+    for (const k of gated) expect(ids.some(LAYERS_OF[k]), `سوییچِ ${k} لایه می‌سازد`).toBe(true);
+  });
+
+  it('خاموش‌کردنِ هر سوییچ دقیقاً لایه‌هایِ خودش را برمی‌دارد', () => {
+    const all = idsOf();
+    for (const k of Object.keys(LAYERS_OF) as PatternKind[]) {
+      const hit = LAYERS_OF[k];
+      const after = idsOf(prefsOf([k]));
+      const gone = all.filter((id) => !after.includes(id));
+      expect(gone.sort(), `سوییچِ ${k} فقط لایه‌هایِ خودش را حذف می‌کند`)
+        .toEqual(all.filter(hit).sort());
+      // و لایه‌هایِ بقیه سرِ جایشان می‌مانند
+      expect(after.length).toBe(all.length - all.filter(hit).length);
+    }
+  });
+
+  it('بی‌prefs همان رفتارِ پیشین: همه روشن (پیش‌فرضِ enabled !== false)', () => {
+    expect(idsOf()).toEqual(idsOf(PATTERN_PREFS_DEFAULT));
+    expect(idsOf()).toContain('double-top');
+    expect(idsOf()).toContain('head-shoulders');
+  });
+
+  it('رنگِ لایه از همان prefs می‌آید، نه از ثابتِ این فایل (تفاتِ CHoCH)', () => {
+    const base = engineFtsLayers({ ...plain, fts: ALL });
+    // با پیش‌فرض‌ها دو موتور یک رنگ دارند: `col(kind)` درِ کهنه == اینجا
+    expect(base.find((l) => l.id === 'choch')!.color).toBe(PATTERN_PREFS_DEFAULT.choch.color);
+    const box = base.find((l) => l.id === 'range-box')!;
+    expect(box.color).toBe(PATTERN_PREFS_DEFAULT.rangebox.color);
+    expect(box.fill).toBe('rgba(251, 191, 36, 0.12)');
+    const custom = engineFtsLayers({
+      ...plain, fts: ALL,
+      prefs: { ...PATTERN_PREFS_DEFAULT, choch: { ...PATTERN_PREFS_DEFAULT.choch, color: '#ff0000' } },
+    });
+    expect(custom.find((l) => l.id === 'choch')!.color).toBe('#ff0000');
   });
 });

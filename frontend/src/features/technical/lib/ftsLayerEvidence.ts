@@ -247,6 +247,26 @@ const READERS: Record<string, Reader> = {
     return ev('inactive', facts, null, null, l3.reason ?? null);
   },
 
+  // سقف دوقلو و سر و شانه: همان لایۀ ۳، دو پرچمِ جدا (`double_top`/`hs_break`).
+  // تاریخِ رخداد درِ l3 منتشر نمی‌شود، پس «کِی رخ داد» جایِ حدسی نمی‌گیرد.
+  'double-top': (fts) => {
+    const l3 = fts?.exit_engine?.l3;
+    if (!l3) return ev('not-published');
+    const facts: EvidenceFact[] = [];
+    num(facts, 'خطِ گردن', l3.level ?? l3.neckline);
+    if (l3.double_top === true) return ev('active', facts);
+    return ev('inactive', facts, null, null, l3.reason ?? null);
+  },
+
+  'head-shoulders': (fts) => {
+    const l3 = fts?.exit_engine?.l3;
+    if (!l3) return ev('not-published');
+    const facts: EvidenceFact[] = [];
+    num(facts, 'خطِ گردن', l3.neckline);
+    if (l3.hs_break === true) return ev('active', facts);
+    return ev('inactive', facts, null, null, l3.reason ?? null);
+  },
+
   'hourglass': (fts) => {
     const h = fts?.hourglass;
     if (!h) return ev('not-published');
