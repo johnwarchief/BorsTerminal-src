@@ -175,31 +175,32 @@ async function probe(page, engineId, hostSel) {
   // پیکسل رویِ بوم می‌آید («کلیکِ دکمه ≠ آزمون»). سوییچِ اختصاصیِ جعبۀ رنج را
   // خاموش/روشن می‌کنیم و تصویرِ بوم را می‌سنجیم؛ کنترلِ بی‌تحركی مثلِ probeE3،
   // وگرنه «تفاوت» بی‌معناست. دو کلیک، وضعیتِ پیش از آزمایش را برمی‌گرداند.
+  // «بوم» تک‌بوم نیست: klinecharts v10 هر پنل را رویِ یک canvas می‌کشد (و FFC شش بوم
+  // دارد)، پس مقایسۀ فقطِ اولی می‌تواند یک رسمِ واقعی را «بی‌تغییر» نشان دهد. همهٔ
+  // بوم‌های میزبان سنجیده می‌شوند و شمارهٔ بومِ تغییریافته درِ FACTS می‌نشیند.
+  const shots = async () => {
+    const els = await page.$$(`${hostSel} canvas`);
+    const bufs = [];
+    for (const el of els) bufs.push(await el.screenshot());
+    return bufs;
+  };
+  const cmp = (a, b) => a.map((buf, i) => (buf && b[i] ? Buffer.compare(buf, b[i]) !== 0 : null));
+  // دو ادعا جدا می‌شوند: (الف) سوییچ به *نگاشتِ لایه‌ها* می‌رسد — شمارِ «لایهٔ FTS»
+  // درِ پنلِ موتورِ دوم کم و زیاد می‌شود؛ (ب) آن لایه رویِ *بوم* هم دیده می‌شود.
+  // بی‌(الف) می‌توان پیکسل را با یک ریدرِ تصادفی عوض دید و بی‌(ب) شمارِ لایه فقط
+  // حرفِ کد است؛ مرحلۀ ۶ هر دو را می‌خواهد. درِ چارتِ کهنه این خط نیست ⇒ NOTE.
+  const layerCount = async () => {
+    const t = await page.$eval('[data-testid="fts-engine-layer-count"]',
+      (e) => e.textContent).catch(() => null);
+    if (!t) return null;
+    const latin = t.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+    const m = latin.match(/(\d+)/);
+    return m ? Number(m[1]) : null;
+  };
+
   const boxBtn = await page.$('[data-testid="fts-layer-toggle-range-box"]');
   ck(`${engineId}: سوییچِ اختصاصیِ «جعبۀ رنج» درِ پنل هست`, !!boxBtn);
   if (boxBtn) {
-    // «بوم» تک‌بوم نیست: klinecharts v10 هر پنل را رویِ یک canvas می‌کشد، پس مقایسۀ
-    // فقطِ اولی می‌تواند یک رسمِ واقعی را «بی‌تغییر» نشان دهد. همهٔ بوم‌های میزبان
-    // سنجیده می‌شوند و شمارهٔ بومِ تغییریافته درِ FACTS می‌نشیند.
-    const shots = async () => {
-      const els = await page.$$(`${hostSel} canvas`);
-      const bufs = [];
-      for (const el of els) bufs.push(await el.screenshot());
-      return bufs;
-    };
-    const cmp = (a, b) => a.map((buf, i) => (buf && b[i] ? Buffer.compare(buf, b[i]) !== 0 : null));
-    // دو ادعا جدا می‌شوند: (الف) سوییچ به *نگاشتِ لایه‌ها* می‌رسد — شمارِ «لایهٔ FTS»
-    // درِ پنلِ موتورِ دوم کم و زیاد می‌شود؛ (ب) آن لایه رویِ *بوم* هم دیده می‌شود.
-    // بی‌(الف) می‌توان پیکسل را با یک ریدرِ تصادفی عوض دید و بی‌(ب) شمارِ لایه فقط
-    // حرفِ کد است؛ مرحلۀ ۶ هر دو را می‌خواهد. درِ چارتِ کهنه این خط نیست ⇒ NOTE.
-    const layerCount = async () => {
-      const t = await page.$eval('[data-testid="fts-engine-layer-count"]',
-        (e) => e.textContent).catch(() => null);
-      if (!t) return null;
-      const latin = t.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
-      const m = latin.match(/(\d+)/);
-      return m ? Number(m[1]) : null;
-    };
     const nBefore = await layerCount();
     const idle1 = await shots();
     const idle2 = await shots();
@@ -243,6 +244,136 @@ async function probe(page, engineId, hostSel) {
     const boxState = await page.$eval('[data-testid="fts-layer-state-range-box"]',
       (e) => e.textContent.trim()).catch(() => '');
     ck(`${engineId}: بعد از دو کلیک، جعبۀ رنج به «فعال» برمی‌گردد`, boxState === 'فعال', boxState);
+  }
+
+  // ب-۸ درِ کلِ رجیستری: سنجشِ یک سوییچ ثابت نمی‌کند بقیه هم وصل‌اند. پنل برایِ هر سطر دو
+  // ادعایِ ماشین‌خوان دارد: وضعیتِ داده («فعال» / «فعال نیست» / «منتشر نشده») و ستونِ
+  // صداقتِ موتور (`K ✓/✗` و `F ✓/✗` = «امروز رویِ بوم می‌آید»). پس سوییچِ هر سطر یکی‌یکی زده
+  // می‌شود و اثرش با دو سیگنال سنجیده می‌شود -- شمارِ لایه (نگاشت) و بایتِ بوم (پیکسل) -- و
+  // با همان ادعا مقایسه می‌شود. دو رأیِ سخت بیرون می‌آید:
+  //   ادعای «رسم می‌شود» + اثرِ صفر ⇒ رجیستر شده ولی رسم نمی‌شود (همان کلاسِ ب-۸) -- قرمز
+  //   ادعای «رسم نمی‌شود» + اثرِ غیرصفر ⇒ ستونِ رجیستری خلافِ واقع می‌گوید -- قرمز
+  // سطری سوییچِ مستقل ندارد (دکمه‌اش `disabled`: «همیشه با موتور می‌آید») یا قاعدۀ چرخیدۀ
+  // همان موتور را ندارد، کلیک نمی‌شود و فقط درِ FACTS ثبت می‌گردد -- سبزِ الکی نیست.
+  // سطرهایِ موتورِ سوم بیرونِ این حلقه‌اند: `probeE3` حالتِ اوّلیۀ «خاموش و بی‌کوئری» را
+  // می‌سنجد و کلیکِ اینجا همان حالت را آلوده می‌کند (درِ همین دور آزموده شد).
+  const claims = Object.fromEntries(await page.$$eval('[data-testid^="fts-layer-row-"]', (els) =>
+    els.map((e) => [e.getAttribute('data-testid').replace('fts-layer-row-', ''),
+      { k: /K ✓/.test(e.textContent || ''), f: /F ✓/.test(e.textContent || '') }])));
+  const engineClaim = engineId === 'ffc' ? 'f' : 'k';
+  const toggleIds = (await page.$$eval('[data-testid^="fts-layer-toggle-"]', (els) =>
+    els.map((e) => e.getAttribute('data-testid').replace('fts-layer-toggle-', ''))))
+    .filter((id) => !id.startsWith('e3-'));
+  // سطرِ بی‌سوییچِ مستقل دکمه‌اش `disabled` است («همیشه با موتور می‌آید»)، و کلیک روی
+  // دکمهٔ غیرفعال تایم‌اوتِ ۳۰ ثانیه‌ای می‌دهد؛ پس خوانده و ثبت می‌شود، نه کلیک.
+  const disabledIds = await page.$$eval('[data-testid^="fts-layer-toggle-"][disabled]', (els) =>
+    els.map((e) => e.getAttribute('data-testid').replace('fts-layer-toggle-', '')));
+  const idleA = await shots();
+  const idleB = await shots();
+  const anim = cmp(idleA, idleB).some((x) => x === true);
+  FACTS[engineId + '_sweep_canvas_count'] = idleA.length;
+  FACTS[engineId + '_sweep_canvas_animates'] = anim;
+  FACTS[engineId + '_sweep_no_own_switch'] = disabledIds;
+  const base = await layerCount();
+  const matrix = {};
+  for (const id of toggleIds) {
+    const state = (states.find(([k]) => k === id) || ['', ''])[1];
+    const claim = claims[id] ? claims[id][engineClaim] : null;
+    if (disabledIds.includes(id)) {
+      matrix[id] = { state, claim, layer_delta: null, pixels: null, moved: null, restored: null, no_own_switch: true };
+      continue;
+    }
+    const btn = await page.$(`[data-testid="fts-layer-toggle-${id}"]`);
+    if (!btn) {
+      matrix[id] = { state, claim, layer_delta: null, pixels: null, moved: null, restored: null, missing: true };
+      continue;
+    }
+    await btn.click();
+    await page.waitForTimeout(700);
+    const nOff = await layerCount();
+    const offShots = anim ? null : await shots();
+    await btn.click();
+    await page.waitForTimeout(700);
+    const nOn = await layerCount();
+    const onShots = anim ? null : await shots();
+    // اثر درِ دو سیگنال جدا سنجیده می‌شود؛ هیچ‌کدام تنها کافی نیست:
+    //   layer_delta ≠ 0 ⇒ سوییچ به نگاشتِ لایه رسید (Prefs → موتور)
+    //   pixels > 0     ⇒ آن لایه رویِ بوم هم دیدنی شد
+    // `moved` یعنی «کم‌اثر نبود» با هر یک از دو سیگنالِ قابل‌سنجش؛ پس میزبانی که شمارِ لایه
+    // منتشر نمی‌کند (چارتِ کهنه) با بوم قضاوت می‌شود، و میزبانِ بی‌تحركِ گویا هر دو را دارد.
+    const layerDelta = base != null && nOff != null ? base - nOff : null;
+    const pixels = offShots && onShots ? cmp(offShots, onShots).filter((c) => c === true).length : null;
+    matrix[id] = {
+      state,
+      claim,
+      layer_delta: layerDelta,
+      pixels,
+      moved: layerDelta == null && pixels == null ? null : ((layerDelta ?? 0) !== 0 || (pixels ?? 0) > 0),
+      restored: base == null || nOn == null ? null : nOn === base,
+    };
+  }
+  FACTS[engineId + '_switch_matrix'] = matrix;
+
+  // سطرهایِ سنجیده‌شدنی: سوییچِ مستقل دارند، ادعایِ موتورِ این میزبان را خوانده‌ایم، اثرش
+  // قابل‌سنجش بود، و قاعدۀ خودشان «فعال» است. «فعال نیست» و «منتشر نشده» یعنی داده‌ای نیست
+  // که رسم شود؛ صفر بودنِ اثرشان درِ آن حالت نقضِ ادعا نیست (وگرنه قرمزِ الکی می‌داد).
+  const auditable = toggleIds.filter((id) => matrix[id] && !matrix[id].no_own_switch && !matrix[id].missing
+    && matrix[id].claim != null && matrix[id].moved != null && matrix[id].state === 'فعال');
+  const skipped = toggleIds.filter((id) => !auditable.includes(id));
+  FACTS[engineId + '_sweep_skipped'] = skipped.map((id) => `${id}:${matrix[id]?.state ?? '?'}`);
+  if (auditable.length === 0) {
+    console.log(`  NOTE ${engineId}: هیچ سطرِ «فعالِ» سنجیدنی درِ این میزبان نبود (شمارِ لایه منتشر نمی‌شود${anim ? ' و بوم بی‌تحرك گویا نیست' : ''})؛ ماتریسِ «سوییچ → اثر» اینجا رأی نمی‌دهد`);
+  } else {
+    // ادعای «رسم می‌شود» + اثرِ صفر ⇒ رجیستر شده ولی رسم نمی‌شود (همان کلاسِ ب-۸)
+    const over = auditable.filter((id) => matrix[id].claim === true && matrix[id].moved === false);
+    // ادعای «رسم نمی‌شود» + اثرِ غیرصفر ⇒ ستونِ صداقتِ رجیستری خلافِ واقع می‌گوید
+    const under = auditable.filter((id) => matrix[id].claim === false && matrix[id].moved === true);
+    const claimTrue = auditable.filter((id) => matrix[id].claim === true);
+    const claimFalse = auditable.filter((id) => matrix[id].claim === false);
+    // هیچ‌کدام از این رأی‌ها رویِ فهرستِ خالی سبز نمی‌شوند (سبزِ الکی = ادعایِ آزمونِ اجراشده).
+    if (claimTrue.length) {
+      ck(`${engineId}: سطرهایِ «رسم می‌شود» درِ این موتور واقعاً سوییچ‌پذیرند (ب-۸)`,
+        over.length === 0,
+        `${claimTrue.length} سطرِ فعال با ادعایِ رسم · بی‌اثر: ${over.join(',') || 'هیچ'}`);
+    } else {
+      console.log(`  NOTE ${engineId}: سطرِ «فعالِ» با ادعایِ رسم که سوییچش سنجیدنی باشد نداشتیم؛ ادعایِ (الف) اینجا رأی ندارد`);
+    }
+    if (claimFalse.length) {
+      ck(`${engineId}: سطرهایِ «رسم نمی‌شود» درِ این موتور بی‌اثرند (ستونِ K/F صادق است)`,
+        under.length === 0,
+        `${claimFalse.length} سطرِ فعال با ادعایِ عدمِ رسم · اثردار: ${under.join(',') || 'هیچ'}`);
+    } else {
+      console.log(`  NOTE ${engineId}: سطرِ «فعالِ» با ادعایِ «رسم نمی‌شود» که سوییچش سنجیدنی باشد نداشتیم؛ ادعایِ (ب) اینجا رأی ندارد`);
+    }
+    const turned = toggleIds.filter((id) => matrix[id]?.moved === true);
+    ck(`${engineId}: سوییچ‌هایِ پنل درِ نگاشتِ لایه یا بوم بی‌اثر نیستند (ب-۸)`,
+      turned.length >= 1,
+      `${turned.length} سوییچ اثر داشت · ${base ?? 'بی‌شمار'} لایه · ${turned.join(',')}`);
+    const restorable = toggleIds.filter((id) => matrix[id]?.restored != null);
+    if (restorable.length) {
+      ck(`${engineId}: هر سوییچ بعد از دو کلیک شمارِ لایه را دقیقاً برمی‌گرداند (بی‌نشتِ وضعیت)`,
+        restorable.every((id) => matrix[id].restored === true),
+        restorable.map((id) => `${id}:${matrix[id].restored}`).join(','));
+    } else {
+      console.log(`  NOTE ${engineId}: شمارِ لایه درِ این میزبان منتشر نمی‌شود؛ بازگشتِ شمار پس از دو کلیک اینجا سنجیده نمی‌شود (فقط اثرِ بوم)`);
+    }
+    // سطرِ «فعال نیست» که بومی را عوض می‌کند: قاعدۀ آن لایه امروز تأیید نشده ولی
+    // چیزی رویِ بوم هست. درِ پولبک این تفاوتِ خودِ دو مسیرِ رسم است (کهنه خطِ سطح را
+    // بی‌تأیید می‌کشد، موتورِ دوم نه) و finding شده، نه سبزِ الکی.
+    const movedInactive = toggleIds.filter((id) => matrix[id] && !matrix[id].no_own_switch
+      && matrix[id].state !== 'فعال' && matrix[id].moved === true);
+    if (movedInactive.length) {
+      console.log(`  NOTE ${engineId}: سطر(ها)ی «فعال نیست» ولی اثردار رویِ بوم (تأییدِ علت درِ گزارش): ${movedInactive.join(',')}`);
+    }
+    if (skipped.length) {
+      console.log(`  NOTE ${engineId}: سطرهایی که درِ این دور رأی ندارند (بی‌سوییچِ مستقل / بی‌داده / بی‌ادعا): ${FACTS[engineId + '_sweep_skipped'].join(',')}`);
+    }
+    const noPixels = auditable.filter((id) => (matrix[id].layer_delta ?? 0) !== 0 && matrix[id].pixels === 0);
+    if (anim) {
+      console.log(`  NOTE ${engineId}: بوم درِ وضعیتِ بی‌تحرك هم فرق می‌کند؛ ستونِ پیکسلِ ماتریس ثبت نشده (گویا نیست)`);
+    } else if (noPixels.length) {
+      console.log(`  NOTE ${engineId}: لایه دارد ولی هیچ بومی عوض نمی‌شود (احتمالاً بیرونِ دید یا پنلِ دیگر): ${noPixels.join(',')}`);
+    }
   }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
