@@ -1570,17 +1570,10 @@ def day_verdict(conn, sm: dict = None, when=None, phase: dict = None) -> dict:
         flow_state, flow_label, flow_vote = "ok", "پولِ تازه واردِ سهام", 1
     elif not flow.get("eq_inflow") and _f(eq_val) < 0:
         # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «وضعِ مطلوب ندارد».
-        # در نشستِ جاری یک منفیِ لحظه‌ای حکم نیست: نیم‌ساعتِ اولِ جزوه و
-        # تداومِ «۳» اختلافِ پیاپی (FLOW_CONFIRM_DELTAS، قرض تا رأیِ مالک).
-        trend, n_dl = _flow_trend(conn, sess_day, asof.get("h_even"))
-        in_formation = hm < FORMATION_END_HM   # هر نقطۀ پیش از ۰۹:۳۰ (نیم‌ساعتِ اولِ جزوه)
+        # رأیِ مالک 1405-07-21: خودِ این شاهد واقعی است و درِ نمایش داده می‌شود؛
+        # قاطع‌بودنش درِ «حکم» سنجیده می‌شود (دورۀ شکل‌گیری + سه ارزیابیِ
+        # متوالیِ معتبر)، نه با خفه‌کردنِ رنگِ شاهد.
         flow_state, flow_label, flow_vote = "bad", "خروجِ پول از سهام", -1
-        if partial and (in_formation or not (trend == "worsening" and n_dl >= FLOW_CONFIRM_DELTAS)):
-            flow_state, flow_label, flow_vote = "mid", "شواهدِ اولیهٔ خروج", 0
-            flow_detail = ("بازار تازه باز شده؛ برای ارزیابی جریانِ پول هنوز دادهٔ کافی نداریم"
-                           if in_formation else
-                           "پیوستگیِ نزولی در %s اختلافِ پیاپیِ امروز دیده نشد؛ رأیِ قاطع نیست"
-                           % _fa_num(FLOW_CONFIRM_DELTAS))
     elif flow.get("eq_inflow") and flow.get("fixed_outflow"):
         flow_state, flow_label, flow_vote = "mid", "ورودِ پولِ ناقص", 0
     else:
@@ -1608,6 +1601,7 @@ def day_verdict(conn, sm: dict = None, when=None, phase: dict = None) -> dict:
         _why = [w for w in (ph.get("why_not") or {}).values() if w]
         reason = "در مرحلِ «%s» حکمی صادر نمی‌شود%s" % (
             ph.get("label"), (" — " + " · ".join(_why)) if _why else "")
+        forming, start_hm, streak = False, None, 0
     else:
         decisive = [g for g in gates if g["vote"]]
         negative = [g for g in decisive if g["vote"] < 0]
@@ -1628,11 +1622,29 @@ def day_verdict(conn, sm: dict = None, when=None, phase: dict = None) -> dict:
             verdict, vlabel = "wait", "صبر — نشانه‌ها مخالف‌اند"
             reason = "موافقِ ورود — %s · مخالفِ ورود — %s" % (
                 _clause(positive, "، "), _clause(negative, "، "))
+
+        # ── رأیِ مالک 1405-07-21 (بند ۱/۲): دورۀ شکل‌گیری از آغازِ واقعیِ
+        # معاملات (نخستین نقطۀ پُرمعاملۀ mstat_snap، نه ساعتِ دیواری) و حکمِ
+        # منفی فقط پس از ۳ ارزیابیِ متوالیِ معتبر رویِ دادهٔ تازه.
+        start_hm = _session_start_hm(conn, sess_day) if partial else None
+        forming = bool(partial) and (hm < 0 or start_hm is None or hm < start_hm + FORMATION_MINUTES)
+        streak = _neg_streak(sess_day, asof.get("h_even"),
+                             negative_now=(verdict == "avoid"),
+                             positive_now=(verdict in ("go", "watch")))
+        if verdict == "avoid" and (forming or streak < VERDICT_CONFIRM_COUNT):
+            verdict, vlabel = "nodata", "شواهدِ اولیهٔ منفی — هنوز تأیید نشده"
+            reason += " · ارزیابیِ معتبرِ متوالی: %s از %s" % (
+                _fa_num(streak), _fa_num(VERDICT_CONFIRM_COUNT))
+            if forming:
+                reason += " · بازار در دورۀ شکل‌گیریِ داده است"
+    trend, n_dl = _flow_trend(conn, sess_day, asof.get("h_even"))
     return {"status": "ok", "verdict": verdict, "label": vlabel, "reason": reason,
             "gates": gates, "basis": "fts_notes_p13_p14",
             "phase": {k: ph.get(k) for k in ("phase", "label", "phase_source", "official",
                                              "session_day", "is_live", "verdict_allowed")},
-            "market_state": _market_state(ph, asof, gates, verdict, hm, conn, sess_day)}
+            "market_state": _market_state(ph, asof, gates, verdict, hm, conn, sess_day,
+                                          forming=forming, start_hm=start_hm,
+                                          streak=streak, trend=(trend, n_dl))}
 
 
 def _hm_from_h_even(h_even) -> int:
@@ -1646,12 +1658,55 @@ def _hm_from_h_even(h_even) -> int:
     return int(s[0:2]) * 60 + int(s[2:4])
 
 
-# ---- دو قرضِ ساختاری تا رأیِ صریحِ مالک (docs/plans/MARKET-STATE-STAGES-1405-07-20.md):
-# پایانِ «نیم‌ساعتِ اول» همان مرزِ میانیِ پنجرۀ درآمد ثابتِ خودِ جزوه (ص۱۴) است و
-# شمارۀ تداوم همان ۳ِ جزوه (LIQ_CONTINUITY_MIN) که روی نقطه‌هایِ mstat_snap خوانده
-# می‌شود. آستانۀ داوریِ تازه‌ای نیست — فقط مرزِ «کی رأی قاطع شدنی است».
-FORMATION_END_HM = 570                       # ۰۹:۳۰ — انتهای نیم‌ساعتِ اولِ جزوه
-FLOW_CONFIRM_DELTAS = LIQ_CONTINUITY_MIN     # ۳ اختلافِ پیاپی
+# رأیِ مالک 1405-07-21 (بند ۱/۲ِ اصلاحِ وضعیت بازار): دورۀ شکل‌گیری = ۳۰ دقیقۀ
+# پس از آغازِ واقعیِ معاملات — آغاز از خودِ داده خوانده می‌شود (نخستین نقطۀ
+# پُرمعاملۀ mstat_snap)، نه ساعتِ دیواری؛ و حکمِ منفی فقط پس از ۳ ارزیابیِ
+# متوالیِ معتبر رویِ دادهٔ تازه (تکرارِ همان h_even مشاهدهٔ مستقل نیست).
+FORMATION_MINUTES = 30
+VERDICT_CONFIRM_COUNT = 3
+
+
+def _session_start_hm(conn, day):
+    """نخستین دقیقۀِ امروز که mstat_snap ارزشِ معاملۀ غیرصفر دارد = آغازِ واقعی.
+    None یعنی هنوز نقطۀ معتبری نیست — دورۀ شکل‌گیری باز می‌ماند (بی‌ادعایِ ساعت)."""
+    if not day:
+        return None
+    try:
+        rows = conn.execute(
+            "SELECT h_even, agg FROM mstat_snap WHERE d_even=? AND h_even>=? ORDER BY h_even",
+            (int(day), SESSION_OPEN_HM)).fetchall()
+    except sqlite3.Error:
+        return None
+    for h, a in rows:
+        try:
+            j = json.loads(a)
+        except Exception:
+            continue
+        v = j.get("val_bt")
+        if isinstance(v, (int, float)) and v > 0:
+            s = "%06d" % int(_f(h))
+            return int(s[0:2]) * 60 + int(s[2:4])
+    return None
+
+
+# شمارشِ ارزیابی‌هایِ منفیِ متوالی رویِ دادهٔ تازه — درون‌فرآیندی؛ با هر
+# راه‌اندازیِ دوباره از نو می‌شمارد (سه مشاهدهٔ مستقلِ واقعاً تازه لازم است).
+_ASSESS: dict = {}
+
+
+def _neg_streak(day, h_even, negative_now=False, positive_now=False) -> int:
+    key = str(day)
+    st = _ASSESS.get(key) or {"h": -1, "neg": 0}
+    h = int(_f(h_even))
+    if h > st["h"]:                       # فقط دادهٔ تازه‌تر ارزیابیِ مستقل است
+        st["h"] = h
+        if negative_now:
+            st["neg"] += 1
+        elif positive_now:
+            st["neg"] = 0                 # شاهدِ مخالف: شمارشِ تأیید بازنشانی می‌شود
+        # بی‌طرف/نامعتبر/ناشناخته: نه می‌شمارد، نه بازنشانی می‌کند — صادقانه نامشخص
+        _ASSESS[key] = st
+    return st["neg"]
 
 
 def _flow_trend(conn, day, h_even) -> tuple:
@@ -1667,7 +1722,7 @@ def _flow_trend(conn, day, h_even) -> tuple:
         rows = conn.execute(
             "SELECT agg FROM mstat_snap WHERE d_even=? AND h_even<=? AND h_even>=? "
             "ORDER BY h_even DESC LIMIT ?",
-            (int(day), int(h_even), SESSION_OPEN_HM, FLOW_CONFIRM_DELTAS + 1)).fetchall()
+            (int(day), int(h_even), SESSION_OPEN_HM, VERDICT_CONFIRM_COUNT + 1)).fetchall()
     except sqlite3.Error:
         return ("nodata", 0)
     vals = []
@@ -1737,12 +1792,21 @@ def _same_clock_ref(conn, day, h_even, field, max_days: int = 8) -> tuple:
 _STATE_MEMO: dict = {}
 
 
+def _hm_to_clock(minutes) -> str | None:
+    """۵۴۷ → «۰۹:۰۷» با رقمِ فارسی؛ None بی‌مقدار."""
+    if minutes is None:
+        return None
+    return ("%02d:%02d" % divmod(int(minutes), 60)).translate(_FA_DIGITS)
+
+
 def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
-                  conn, sess_day) -> dict:
+                  conn, sess_day, forming=False, start_hm=None, streak=0,
+                  trend=("nodata", 0)) -> dict:
     """وضعیتِ مرحله‌مندِ بازار — جدا از حکمِ ورود: مرحل، شدتِ شواهد، محدودیتِ داده.
 
-    §۷ مأموریت: هیچ درصدِ احتمال و هیچ «امتیانِ اطمینان»ی اینجا ساخته نمی‌شود؛
+    §۷ مأموریت: هیچ درصدِ احتمال و هیچ «امتیازِ اطمینان»ی اینجا ساخته نمی‌شود؛
     `evidence_strength` صفتِ کیفیِ همان شمارِ شاهدِ قاطعِ لحظه است.
+    دورۀ شکل‌گیری از آغازِ واقعیِ معاملات خوانده می‌شود (رأیِ مالک 1405-07-21).
     """
     p = ph.get("phase")
     stale_clients = bool(asof.get("client_lag_days"))
@@ -1750,10 +1814,9 @@ def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
     limitations = [w for w in (ph.get("why_not") or {}).values() if w]
     if stale_clients:
         limitations.append("تفکیکِ حقیقی/حقوقی هنوز به روزِ نشست نرسیده")
-    since_open = hm - 540 if (p == "continuous" and hm >= 540) else None
+    since_open = hm - start_hm if (p == "continuous" and start_hm is not None and hm >= start_hm) else None
     strong_neg = [g for g in gates if g["vote"] < 0]
     strong_pos = [g for g in gates if g["vote"] > 0]
-    early = [g for g in gates if g["label_state"] == "شواهدِ اولیهٔ خروج"]
     if p == "pre_open":
         stage, stage_label = "pre_open", "پیش از آغازِ معاملات — هنوز مبنایِ تصمیم نیست"
     elif p == "holiday":
@@ -1762,14 +1825,20 @@ def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
         stage, stage_label = "after_close", "پایانِ نشست — حکم رویِ جمعِ نهایی"
     elif p == "unknown":
         stage, stage_label = "data_limited", "مرحلِ رسمیِ بازار خوانده نشده — ارزیابیِ قابل‌اعتماد نیست"
-    elif hm < FORMATION_END_HM:
-        stage, stage_label = "forming", "بازار تازه باز شده — دورۀ شکل‌گیریِ داده"
-    elif early and verdict == "nodata":
-        stage, stage_label = ("forming", "نشانه‌هایِ اولیه در حالِ مشاهده است، هنوز تأیید نشده — بازار در حالِ شکل‌گیری")
-    elif verdict == "nodata" or stale_clients:
-        stage, stage_label = "data_limited", "دادهٔ کافی یا معتبر نیست"
+    elif forming:
+        stage, stage_label = ("forming",
+                              "بازار تازه باز شده — دورۀ شکل‌گیریِ داده"
+                              + (" (تا %s)" % _hm_to_clock(start_hm + FORMATION_MINUTES)
+                                 if start_hm is not None else " (۳۰ دقیقۀ پس از آغازِ واقعی)"))
+    elif verdict == "avoid" or stale_clients:
+        if verdict == "avoid":
+            stage, stage_label = "risky", "فشارِ فروش در چند شاهدِ مستقل تأیید شده — ریسکِ بازار بالا رفته"
+        else:
+            stage, stage_label = "data_limited", "دادهٔ کافی یا معتبر نیست"
     elif strong_neg and not strong_pos:
-        stage, stage_label = "risky", "فشارِ فروش در چند شاهدِ مستقل تأیید شده — ریسکِ بازار بالا رفته"
+        stage, stage_label = ("risky_pending",
+                              "فشارِ فروش در حالِ مشاهده است — برایِ حکمِ قطعی %s ارزیابیِ معتبرِ متوالی لازم است (%s از %s)"
+                              % (_fa_num(VERDICT_CONFIRM_COUNT), _fa_num(streak), _fa_num(VERDICT_CONFIRM_COUNT)))
     elif strong_pos and not strong_neg:
         if verdict == "go":
             stage, stage_label = "confirmed", "جریانِ ورودِ پول تأیید شده و مشارکت در حال گسترش است"
@@ -1779,11 +1848,16 @@ def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
         stage, stage_label = "mixed", "نشانه‌ها مخالف‌اند — پایشِ فعال"
     direction = ("مثبت" if strong_pos and not strong_neg else
                  "منفی" if strong_neg and not strong_pos else
-                 "ترکیبی" if strong_pos and strong_neg else
-                 "اولیه" if early else "بی‌جهت")
+                 "ترکیبی" if strong_pos and strong_neg else "بی‌جهت")
     strength = ("قابل‌اتکا (جمعِ نهایی)" if p in ("closed", "holiday") else
-                "شواهدِ اولیه" if stage == "forming" or early else
+                "شواهدِ اولیه" if stage in ("forming", "risky_pending") else
                 "پایدار" if (strong_neg or strong_pos) else "کافی نیست")
+    trend_text = {"worsening": "در حالِ تضعیف", "improving": "در حالِ تقویت",
+                  "mixed": "مختلط"}.get(trend[0])
+    if trend_text and trend[1]:
+        trend_text = "روندِ جریانِ امروز: %s (%s تغییرِ متوالی)" % (trend_text, _fa_num(trend[1]))
+    else:
+        trend_text = None
     pace = None
     if p == "continuous":
         ref, n = _same_clock_ref(conn, sess_day, asof.get("h_even"), "val_bt")
@@ -1795,10 +1869,13 @@ def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
     _STATE_MEMO[memo_key] = verdict
     return {"stage": stage, "stage_label": stage_label,
             "minutes_since_open": since_open,
-            "since_open_text": ("%s دقیقه از آغاز" % _fa_num(since_open)) if since_open is not None else None,
+            "since_open_text": ("%s دقیقه از آغازِ واقعی" % _fa_num(since_open)) if since_open is not None else None,
+            "session_start_clock": _hm_to_clock(start_hm),
+            "confirm_streak": streak, "confirm_required": VERDICT_CONFIRM_COUNT,
             "data_clock": data_clock, "data_h_even": asof.get("h_even"),
             "client_day": asof.get("client_d_even"), "stale_clients": stale_clients,
             "evidence_direction": direction, "evidence_strength": strength,
+            "flow_trend": trend_text,
             "for": [g["short"] + ": " + g["label_state"] for g in strong_pos],
             "against": [g["short"] + ": " + g["label_state"] for g in strong_neg],
             "changed_from": prev if prev and prev != verdict else None,

@@ -231,6 +231,9 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
               {ms?.pace_note ? (
                 <li data-testid="pulse-verdict-pace" className="text-3xs leading-snug text-text-muted">{ms.pace_note}</li>
               ) : null}
+              {ms?.flow_trend ? (
+                <li data-testid="pulse-verdict-trend" className="text-3xs leading-snug text-text-muted">{ms.flow_trend}</li>
+              ) : null}
               {ms?.changed_from ? (
                 <li data-testid="pulse-verdict-change" className="text-3xs leading-snug text-text-muted">
                   تغییرِ وضعیت نسبت به ارزیابیِ پیش: از «{ms.changed_from}»

@@ -1,20 +1,18 @@
-# dev/test_market_state_stages_v1.py — بند ۲/۳/۴/۶ مأموریت 1405-07-20:
-# «وضعیت بازار هوشمند و زمان‌مند» — حکم بی‌مرحل ممنوع، ابتدای روز با کل روز مقایسه نشود
-"""دو لایه:
+# dev/test_market_state_stages_v1.py — رأی‌های ۱ و ۲ مالک (1405-07-21):
+# دورۀ شکل‌گیری از آغازِ واقعی + حکمِ منفی فقط با ۳ ارزیابیِ متوالیِ معتبر
+"""سه لایه:
 
-    الف) سناریوهایِ کنترل‌شدهٔ bi‑دیتابیس روی day_verdict/_market_state:
-       پیش‌آغاز با فلوئِ منفیِ دیروز ⇒ نه «وارد نشو»؛ نقدینگیِ یک‌طرفه در
-       نشستِ جاری؛ تازگیِ client_type؛ آستانهٔ «شواهدِ اولیه» تا ۰۹:۳۰؛
-       رأیِ منفی فقط با ۳ اختلافِ پیاپی؛ نشستِ بسته همان رفتارِ کهنی.
-    ب) replayِ بی‌آینده از mstat_snapِ واقعی (market.db، فقط‑خواندنی):
-       هر نقطه فقط با نقطه‌های h_even<= خودش داوری می‌شود؛ کنترلِ منفی با
-       کاشتنِ نقطۀ «آینده» ثابت می‌کند درِ trend کور نیست و نگاه به آینده
-       ندارد؛ و کنترلِ «روزِ بدِ تمام‌شده» ثابت می‌کند درِ منفی بکُند نمی‌کند.
+    الف) سناریوهایِ کنترل‌شدهٔ day_verdict/_market_state:
+       شمارشِ سه ارزیابیِ متوالی رویِ دادهٔ تازه؛ تکرارِ همان h_even مشاهدهٔ
+       مستقل نیست؛ شاهدِ مخالف بازنشانی می‌کند؛ ارزیابیِ نامعتبر نه می‌شمارد
+       نه بازنشانی؛ دورۀ شکل‌گیری = آغازِ واقعی (نخستین نقطۀ پُرمعاملۀ
+       mstat_snap) + ۳۰ دقیقه، بی‌ساعتِ دیواری؛ بی‌آغازِ شناخته حکمِ منفی
+       صادر نمی‌شود.
+    ب) replayِ بی‌آینده از mstat_snapِ واقعی (market.db، فقط‑خواندنی).
+    ج) کنترلِ instrument: درِ منفی رویِ روزِ نزولیِ واقعی زنده است.
 
-نتیجه با همان قالبِ `X_pass / Y_fail / Z_skip` (سه فرمتِ قابل‌پارسِ run_all_tests).
+نتیجه با قالبِ `X_pass / Y_fail / Z_skip` (سه فرمتِ قابل‌پارسِ run_all_tests).
 """
-import datetime
-import io
 import json
 import os
 import sqlite3
@@ -57,10 +55,27 @@ COMP_PRE = {"realized_flow": False, "order_pressure": True,
             "session_vs_threshold": False, "close_price_final": False}
 COMP_FINAL = {"realized_flow": True, "order_pressure": False,
               "session_vs_threshold": True, "close_price_final": True}
-PH_CONT = ph("continuous", True, True, COMP_CONT)
 PH_PRE = ph("pre_open", False, False, COMP_PRE,
             {"realized_flow": "هنوز معامله‌ای ثبت نشده"})
 PH_CLOSED = ph("closed", True, False, COMP_FINAL)
+
+
+def ph_cont(day=20261012):
+    return ph("continuous", True, True, COMP_CONT,
+              {"close_price_final": "قیمت پایانیِ نهایی هنوز ساخته نشده"}, day=day)
+
+
+def fresh_db(points):
+    """mstat_snapِ ساختگی: points = [(day, h_even, flow_eq_bt, val_bt)]"""
+    con = sqlite3.connect(":memory:")
+    con.execute("CREATE TABLE mstat_snap (d_even int, h_even int, ts text, agg text)")
+    for row in points:
+        d, h, fl = row[0], row[1], row[2]
+        val = row[3] if len(row) > 3 else 30000.0
+        con.execute("INSERT INTO mstat_snap VALUES (?,?,?,?)",
+                    (d, h, "x", json.dumps({"flow_eq_bt": fl, "val_bt": val})))
+    con.commit()
+    return con
 
 
 def sm(flow=None, macro=None, asof=None):
@@ -68,206 +83,212 @@ def sm(flow=None, macro=None, asof=None):
             "asof": asof if asof is not None else
             {"d_even": 20261012, "h_even": 90500,
              "client_d_even": 20261012, "client_lag_days": False}}
+    base.update({k: v for k, v in (("flow", flow), ("macro", macro), ("asof", asof)) if v is not None})
     return base
 
 
-def fresh_db(points):
-    """mstat_snapِ ساختگی: points = [(day, h_even, flow_eq_bt)]"""
-    con = sqlite3.connect(":memory:")
-    con.execute("CREATE TABLE mstat_snap (d_even int, h_even int, ts text, agg text)")
-    for d, h, f in points:
-        con.execute("INSERT INTO mstat_snap VALUES (?,?,?,?)",
-                    (d, h, "x", json.dumps({"flow_eq_bt": f, "val_bt": 30000})))
-    con.commit()
-    return con
+NEG = {"eq_flow_b_toman": -150.0, "fixed_flow_b_toman": 10.0,
+       "eq_inflow": False, "fixed_outflow": False, "gold_flow_b_toman": None}
+POS = {"eq_flow_b_toman": 120.0, "fixed_flow_b_toman": -80.0,
+       "eq_inflow": True, "fixed_outflow": True, "gold_flow_b_toman": -12.0}
+MID = {"value_hemat": 18.0, "state": "mid", "label": "متوسط", "partial_session": True}
 
 
-STALE = {"d_even": 20261012, "h_even": 61105, "client_d_even": 20261011,
-         "client_lag_days": True}
-NEG_FLOW = {"eq_flow_b_toman": -280.8, "fixed_flow_b_toman": -1417.9,
-            "eq_inflow": False, "fixed_outflow": True, "gold_flow_b_toman": 0.0}
+def asof_at(h, day=20261012, lag=False, client_day=None):
+    return {"d_even": day, "h_even": h, "client_d_even": client_day or day,
+            "client_lag_days": lag}
 
-# ── الف) سناریوهایِ کنترل‌شده ────────────────────────────────────────────────
-con = fresh_db([])
 
-v = ME.day_verdict(con, sm(flow=NEG_FLOW, asof=STALE), phase=PH_PRE)
-ck("پیش‌آغاز + فلوئِ منفیِ دیروز ⇒ حکم صادر نمی‌شود (بند ۶: نه «وارد نشو»)",
-   v["verdict"] == "nodata" and "وارد نشو" not in v["label"], v["label"])
-f = [g for g in v["gates"] if g["key"] == "flow"][0]
-ck("درِ پولِ حقیقی با client_lag «بدون داده» است، نه «خروج»",
-   f["state"] == "nodata" and f["vote"] == 0, f)
-ck("مرحلِ بی‌اجازه درِ حکم دیده می‌شود (phase در payload)",
-   v.get("phase", {}).get("phase") == "pre_open" and
-   v.get("phase", {}).get("verdict_allowed") is False)
-ck("وضعیتِ مرحله‌مند پیش‌آغاز: pre_open", v["market_state"]["stage"] == "pre_open",
-   v["market_state"])
+# نقاطِ امروز با آغازِ واقعی ۰۹:۰۰ (نخستین val_bt>0 در 90005)
+DAY_PTS = [(20261012, 90005, -10), (20261012, 93500, -30), (20261012, 93800, -60),
+           (20261012, 94100, -100), (20261012, 94400, -150), (20261012, 94700, -210)]
 
-v = ME.day_verdict(con, sm(macro={"value_hemat": 4.2, "state": "bad",
-                                  "label": "نامساعد", "partial_session": True},
-                           flow=NEG_FLOW,
-                           asof={"d_even": 20261012, "h_even": 90500,
-                                 "client_d_even": 20261012, "client_lag_days": False}),
-                   phase=PH_CONT)
-lq = [g for g in v["gates"] if g["key"] == "liquidity"][0]
-ck("09:05 با ۴ همتِ ناقص ⇒ نقدینگی رأیِ منفی نمی‌دهد (بند ۳: ابتدای روز ≠ کل روز)",
-   lq["vote"] == 0 and lq["state"] == "mid", lq)
-ck("09:05 فلوئِ منفی فقط «شواهدِ اولیه» است، نه حکم",
-   v["verdict"] != "avoid" and
-   [g for g in v["gates"] if g["key"] == "flow"][0]["vote"] == 0, v["verdict"])
-ck("مرحلۀ ۰۹:۰۵ = شکل‌گیریِ داده با شمارۀ دقیقِ دقیقه",
-   v["market_state"]["stage"] == "forming" and v["market_state"]["minutes_since_open"] == 5,
-   v["market_state"])
+# ── الف) سه ارزیابیِ متوالیِ معتبر ──────────────────────────────────────────
+ME._ASSESS.clear(); ME._STATE_MEMO.clear()
+con = fresh_db(DAY_PTS)
+v1 = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93500)), phase=ph_cont())
+v2 = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93800)), phase=ph_cont())
+v3 = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(94100)), phase=ph_cont())
+ck("ارزیابیِ اولِ منفی ⇒ «شواهدِ اولیه»، نه «وارد نشو»",
+   v1["verdict"] == "nodata" and "وارد نشو" not in v1["label"], v1["label"])
+ck("ارزیابیِ دوم هم هنوز تأیید نیست", v2["verdict"] == "nodata", v2["label"])
+ck("ارزیابیِ سومِ متوالیِ معتبر ⇒ حکمِ منفی آزاد می‌شود",
+   v3["verdict"] == "avoid" and v3["market_state"]["stage"] == "risky",
+   (v3["verdict"], v3["market_state"]["stage"], v3["market_state"]["confirm_streak"]))
+ck("درِ شاهد درِ همهٔ سه ارزیابی قرمزِ صادق است (نمایش ≠ حکم)",
+   [g for g in v1["gates"] if g["key"] == "flow"][0]["vote"] == -1,
+   [g for g in v1["gates"] if g["key"] == "flow"][0])
 
-pos_pts = [(20261012, h, fl) for h, fl in
-           [(93500, 10), (93800, 20), (94100, 30), (94400, 45)]]
-con2 = fresh_db(pos_pts)
-NEG_BIG = {"eq_flow_b_toman": -50.0, "fixed_flow_b_toman": 10,
-           "eq_inflow": False, "fixed_outflow": False, "gold_flow_b_toman": None}
-v = ME.day_verdict(con2, sm(macro={"value_hemat": 18.0, "state": "mid",
-                                   "label": "متوسط", "partial_session": True},
-                            flow=NEG_BIG,
-                            asof={"d_even": 20261012, "h_even": 94400,
-                                  "client_d_even": 20261012, "client_lag_days": False}),
-                   phase=PH_CONT)
-f = [g for g in v["gates"] if g["key"] == "flow"][0]
-ck("تجمعیِ منفی ولی روندِ امروز صعودی ⇒ رأیِ منفیِ قاطع نمی‌دهد (§۴ تغییرِ جهت)",
-   f["vote"] == 0, f)
+# تکرارِ همان h_even مشاهدهٔ مستقل نیست
+ME._ASSESS.clear()
+con = fresh_db(DAY_PTS)
+seq = [ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93500)), phase=ph_cont())
+       for _ in range(5)]
+ck("پنج ارزیابی رویِ یک h_evenِ یکسان ⇒ هرگز avoid (تکرارِ دادهٔ کهنه مستقل نیست)",
+   all(v["verdict"] != "avoid" for v in seq)
+   and ME._ASSESS["20261012"]["neg"] == 1, ME._ASSESS.get("20261012"))
 
-bad_pts = [(20261012, h, fl) for h, fl in
-           [(92000, -10), (93000, -30), (93500, -60), (94000, -100), (94400, -150)]]
-con3 = fresh_db(bad_pts)
-v = ME.day_verdict(con3, sm(macro={"value_hemat": 18.0, "state": "mid",
-                                   "label": "متوسط", "partial_session": True},
-                            flow={"eq_flow_b_toman": -150.0, "fixed_flow_b_toman": 10,
-                                  "eq_inflow": False, "fixed_outflow": False,
-                                  "gold_flow_b_toman": None},
-                            asof={"d_even": 20261012, "h_even": 94400,
-                                  "client_d_even": 20261012, "client_lag_days": False}),
-                   phase=PH_CONT)
-f = [g for g in v["gates"] if g["key"] == "flow"][0]
-ck("پس از ۰۹:۳۰ با ۳ اختلافِ نزولیِ پیاپی ⇒ رأیِ منفیِ قاطع آزاد می‌شود",
-   f["vote"] == -1 and v["verdict"] == "avoid", (f, v["verdict"]))
-ck("وضعیتِ «پرریسک» جدا از حکمِ ورود در payload است",
-   v["market_state"]["stage"] == "risky" and v["market_state"]["against"],
-   v["market_state"])
+# شاهدِ مخالف بازنشانی می‌کند
+ME._ASSESS.clear()
+con = fresh_db(DAY_PTS)
+ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93500)), phase=ph_cont())
+ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93800)), phase=ph_cont())
+ME.day_verdict(con, sm(macro=MID, flow=POS, asof=asof_at(94100)), phase=ph_cont())
+v_after = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(94400)), phase=ph_cont())
+ck("شاهدِ مثبتِ میانی ⇒ شمارشِ تأیید بازنشانی شد (منفیِ بعد از آن تنها ارزیابیِ ۱ است)",
+   v_after["verdict"] != "avoid" and ME._ASSESS["20261012"]["neg"] == 1,
+   ME._ASSESS.get("20261012"))
 
-v = ME.day_verdict(con3, sm(macro={"value_hemat": 6.2, "state": "bad",
-                                   "label": "نامساعد", "bad_max": 10.0},
-                            flow=NEG_BIG), phase=PH_CLOSED)
-ck("رفتارِ کهنیِ نشستِ بسته (جمعِ نهایی ۶.۲ همت ⇒ وارد نشو) دست‌نخورده",
-   v["verdict"] == "avoid" and v["market_state"]["stage"] == "after_close",
+# ارزیابیِ نامعتبر (client lag) نه می‌شمارد نه بازنشانی می‌کند
+ME._ASSESS.clear()
+con = fresh_db(DAY_PTS)
+ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93500)), phase=ph_cont())
+ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93800)), phase=ph_cont())
+v_stale = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(94000, lag=True, client_day=20261011)),
+                         phase=ph_cont())
+st = dict(ME._ASSESS["20261012"])
+ck("ارزیابیِ با دادهٔ نامعتبر ⇒ وضعیتِ منفیِ تأییدشده نیست",
+   v_stale["verdict"] != "avoid", v_stale["label"])
+ck("… و شمارشِ قبلی (۲) نه زیاد شد نه بازنشانی", st["neg"] == 2, st)
+v_third = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(94100)), phase=ph_cont())
+ck("سومین ارزیابیِ معتبرِ پس از وقفه ⇒ avoid", v_third["verdict"] == "avoid", v_third["label"])
+
+# ── دورۀ شکل‌گیری از آغازِ واقعی ────────────────────────────────────────────
+ME._ASSESS.clear()
+# آغازِ واقعی ۰۹:۰۷؛ ارزیابی‌های ۰۹:۲۰/۰۹:۲۵/۰۹:۲۸ همه منفی ولی در شکل‌گیری‌اند
+late_pts = [(20261012, 90700, -10), (20261012, 92000, -30), (20261012, 92500, -60),
+            (20261012, 92800, -100)]
+con = fresh_db(late_pts)
+vs = [ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(h)), phase=ph_cont())
+      for h in (92000, 92500, 92800)]
+ck("آغازِ واقعی ۰۹:۰۷ ⇒ تا ۰۹:۳۷ شکل‌گیری است، سه ارزیابیِ منفی هم avoid نمی‌سازد",
+   all(v["verdict"] != "avoid" for v in vs)
+   and all(v["market_state"]["stage"] == "forming" for v in vs),
+   [v["market_state"]["stage"] for v in vs])
+ck("آغازِ واقعی از داده خوانده می‌شود (۰۹:۰۷) نه ساعتِ دیواری",
+   ME._market_state(ph_cont(), asof_at(92000), [], "nodata", 9*60+20, con, 20261012,
+                    forming=True, start_hm=ME._session_start_hm(con, 20261012))
+   ["session_start_clock"] == "۰۹:۰۷",
+   ME._session_start_hm(con, 20261012))
+# پس از ۰۹:۳۷ همان سه‌شمارش آزاد می‌شود
+ME._ASSESS.clear()
+con = fresh_db(late_pts + [(20261012, 93800, -140), (20261012, 94100, -180),
+                           (20261012, 94400, -230)])
+vs2 = [ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(h)), phase=ph_cont())
+       for h in (93800, 94100, 94400)]
+ck("۰۹:۳۷ به بعد ⇒ سه ارزیابیِ متوالیِ تازه حکمِ منفی را تأیید می‌کند",
+   vs2[0]["verdict"] != "avoid" and vs2[1]["verdict"] != "avoid"
+   and vs2[2]["verdict"] == "avoid", [v["verdict"] for v in vs2])
+
+# آغازِ نامشخص (بی‌نقطۀ پُرمعامله) ⇒ شکل‌گیری باز می‌ماند
+ME._ASSESS.clear()
+con = fresh_db([(20261012, 91000, -5, 0.0)])      # نقطه هست ولی بی‌ارزشِ معامله
+v = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(94400)), phase=ph_cont())
+ck("آغازِ واقعیِ ناشناخته ⇒ دورۀ شکل‌گیری بستۀ نمی‌شود؛ حکمِ منفی صادر نمی‌شود",
+   v["verdict"] != "avoid" and v["market_state"]["stage"] == "forming",
    (v["verdict"], v["market_state"]["stage"]))
 
-v = ME.day_verdict(con, sm(macro={"value_hemat": 27.0, "state": "good",
-                                  "label": "مساعد", "partial_session": True,
-                                  "good_min": 20.0},
-                           flow={"eq_flow_b_toman": 120.0, "fixed_flow_b_toman": -80.0,
-                                 "eq_inflow": True, "fixed_outflow": True,
-                                 "gold_flow_b_toman": None},
-                           asof={"d_even": 20261012, "h_even": 103000,
-                                 "client_d_even": 20261012, "client_lag_days": False}),
-                   phase=PH_CONT)
-lq = [g for g in v["gates"] if g["key"] == "liquidity"][0]
-ck("نقدینگیِ یک‌طرفه: ۲۷ همتِ میانهٔ روز رأیِ مثبتِ قطعی است",
-   lq["vote"] == 1, lq)
-ck("جهتِ شواهد مثبت + مرحلهٔ تأیید",
-   v["market_state"]["evidence_direction"] == "مثبت" and
-   v["market_state"]["stage"] in ("confirmed", "establishing"), v["market_state"])
+# ── قواعدِ پیشین دست‌نخورده ─────────────────────────────────────────────────
+ME._ASSESS.clear()
+con = fresh_db([])
+v = ME.day_verdict(con, sm(flow=NEG, asof=asof_at(61105, lag=True, client_day=20261011)),
+                   phase=PH_PRE)
+f = [g for g in v["gates"] if g["key"] == "flow"][0]
+ck("پیش‌آغاز + فلوئِ منفیِ دیروز ⇒ نه حکم، و درِ flow «بدون داده»",
+   v["verdict"] == "nodata" and f["state"] == "nodata"
+   and v["market_state"]["stage"] == "pre_open", (v["label"], f["state"]))
 
-# کنترلِ منفیِ درِ trend: کاشتنِ نقطۀ «آینده» نباید داوریِ لحظۀ پیش را عوض کند
-pts = [(20261012, h, fl) for h, fl in
-       [(92000, 10), (93000, 20), (93500, 30), (94000, 40)]]
-con4 = fresh_db(pts + [(20261012, 95500, -9999)])
-v_now = ME.day_verdict(con4, sm(macro={"value_hemat": 18.0, "state": "mid",
-                                       "label": "متوسط", "partial_session": True},
-                                flow=NEG_BIG,
-                                asof={"d_even": 20261012, "h_even": 94000,
-                                      "client_d_even": 20261012, "client_lag_days": False}),
-                       phase=PH_CONT)
-ck("بی‌نگاه‌به‌آینده: نقطۀ ۰۹:۵۵ِ کاشته‌شده در داوریِ ۰۹:۴۰ راه ندارد",
-   [g for g in v_now["gates"] if g["key"] == "flow"][0]["vote"] == 0, v_now)
-trend, n = ME._flow_trend(con4, 20261012, 94000)
-ck("trend فقط نقاطِ <= لحظه را می‌شمارد", n == 3 and trend == "improving", (trend, n))
+v = ME.day_verdict(con, sm(macro={"value_hemat": 4.2, "state": "bad", "label": "نامساعد",
+                                  "partial_session": True, "bad_max": 10.0},
+                           flow=NEG, asof=asof_at(90500)), phase=ph_cont())
+lq = [g for g in v["gates"] if g["key"] == "liquidity"][0]
+ck("نقدینگیِ یک‌طرفه: ۴.۲ همتِ ناقص رأیِ منفی نمی‌دهد",
+   lq["vote"] == 0 and lq["state"] == "mid", lq)
+
+ME._ASSESS.clear()
+con = fresh_db([])
+vs = [ME.day_verdict(con, sm(macro={"value_hemat": 6.2, "state": "bad", "label": "نامساعد",
+                                    "bad_max": 10.0},
+                             flow=NEG, asof=asof_at(123000 + i)), phase=PH_CLOSED)
+      for i in range(3)]
+ck("رفتارِ کهنیِ نشستِ بسته بازنشانی نشد: سه ارزیابی ⇒ «وارد نشو» روی جمعِ نهایی",
+   vs[2]["verdict"] == "avoid" and "وارد نشو" in vs[2]["label"], [v["verdict"] for v in vs])
+
+# بی‌نگاه‌به‌آینده: نقطۀ «آینده» در داوریِ لحظۀ پیش راه ندارد
+ME._ASSESS.clear()
+con = fresh_db([(20261012, 90005, 10), (20261012, 93000, 20), (20261012, 93500, 30),
+                (20261012, 95500, -9999)])
+v_now = ME.day_verdict(con, sm(macro=MID, flow=NEG, asof=asof_at(93500)), phase=ph_cont())
+trend, n = ME._flow_trend(con, 20261012, 93500)
+ck("trend فقط نقاطِ <= لحظه را می‌شمارد (۰۹:۵۵ِ کاشته‌شده دیده نمی‌شود)",
+   n == 2 and trend == "improving", (trend, n))
 
 # متن‌ها: رقمِ لاتین در هیچ متنِ دیدنیِ جدیدی نباشد
-ms = v["market_state"]
-txt = "".join([str(ms.get(k)) for k in ("stage_label", "since_open_text",
-                                        "evidence_strength", "pace_note")])
+ms = v3["market_state"]
+txt = "".join([str(ms.get(k)) for k in ("stage_label", "since_open_text", "evidence_strength",
+                                        "pace_note", "flow_trend", "session_start_clock")])
 ck("متنِ وضعیت با رقمِ فارسی نوشته می‌شود",
    not any(c.isascii() and c.isdigit() for c in txt), txt)
 
-# ── ب) replayِ mstat_snapِ واقعی (بی‌آینده، روزهایِ رفتارِ متفاوت) ──────────
+# ── ب) replayِ mstat_snapِ واقعی (بی‌آینده، آغازِ واقعی از خودِ داده) ───────
 DB = os.path.join(ROOT, "market.db")
 if not os.path.exists(DB):
-    SKIP += 1
     print("  SKIP  market.db نیست — replayِ تاریخی انجام نشد")
+    SKIP += 1
 else:
     con5 = sqlite3.connect("file:" + DB.replace("\\", "/") + "?mode=ro", uri=True)
     days = [int(r[0]) for r in con5.execute(
         "SELECT d_even, COUNT(*) c FROM mstat_snap GROUP BY d_even HAVING c>=40"
         " ORDER BY d_even DESC LIMIT 8").fetchall()]
-    if len(days) < 3:
-        ck("دست‌کم ۳ روزِ پرنقطه برای replay", None)
-    else:
-        n_days = 0
-        for d in days:
-            rows = con5.execute(
-                "SELECT h_even, agg FROM mstat_snap WHERE d_even=? AND h_even>=? AND h_even<=?"
-                " ORDER BY h_even", (d, ME.SESSION_OPEN_HM, ME.SESSION_CLOSE_HM)).fetchall()
-            pts = []
-            for h, a in rows:
-                try:
-                    j = json.loads(a)
-                except Exception:
-                    continue
-                if isinstance(j.get("flow_eq_bt"), (int, float)):
-                    pts.append((int(h), float(j["flow_eq_bt"]), float(j.get("val_bt") or 0)))
-            if len(pts) < 40:
+    n_days = 0
+    for d in days:
+        rows = con5.execute(
+            "SELECT h_even, agg FROM mstat_snap WHERE d_even=? AND h_even>=? AND h_even<=?"
+            " ORDER BY h_even",
+            (d, ME.SESSION_OPEN_HM, ME.SESSION_CLOSE_HM)).fetchall()
+        pts = []
+        for h, a in rows:
+            try:
+                j = json.loads(a)
+            except Exception:
                 continue
-            n_days += 1
-            ph_day = ph("continuous", True, True, COMP_CONT, day=d)
-            # داوریِ هر نقطه فقط با تاریخچۀ <= همان نقطه (ساختِ replay با کپیِ تدریجی)
-            seen = []
-            bad_early = bad_formation = 0
-            last_avoid = None
-            for i, (h, fl, val) in enumerate(pts):
-                seen.append((d, h, fl))
-                if h < 93000:                      # پیش از ۰۹:۳۰
-                    conr = fresh_db(seen)
-                    vr = ME.day_verdict(conr, sm(
-                        macro={"value_hemat": None, "state": "nodata",
-                               "partial_session": True},
-                        flow={"eq_flow_b_toman": fl, "fixed_flow_b_toman": 0.0,
-                              "eq_inflow": fl > 0, "fixed_outflow": False,
-                              "gold_flow_b_toman": None},
-                        asof={"d_even": d, "h_even": h, "client_d_even": d,
-                              "client_lag_days": False}), phase=ph_day)
-                    if vr["verdict"] == "avoid":
-                        bad_early += 1
-                    if vr["market_state"]["stage"] != "forming":
-                        bad_formation += 1
-            ck(f"replay {d}: هیچ «وارد نشو»ای در نیم‌ساعتِ اول صادر نشد ({len(pts)} نقطه)",
-               bad_early == 0, bad_early)
-            ck(f"replay {d}: هر نقطۀ پیش از ۰۹:۳۰ در مرحلۀ شکل‌گیری است",
-               bad_formation == 0, bad_formation)
-            # کنترلِ instrument: درِ منفی روی همین روزِ واقعی کار می‌کند؟
-            # آخرین ۶ نقطه اگر پیوسته نزولی باشند، داوریِ آخر باید قاطع شود
-            tail = [p[1] for p in pts[-ME.FLOW_CONFIRM_DELTAS - 1:]]
-            deltas = [tail[i + 1] - tail[i] for i in range(len(tail) - 1)]
-            if all(dl <= 0 for dl in deltas) and pts[-1][1] < 0:
-                conr = fresh_db([(d, h, fl) for h, fl, _v in pts])
-                vr = ME.day_verdict(conr, sm(
-                    macro={"value_hemat": 18.0, "state": "mid", "label": "متوسط",
-                           "partial_session": True},
-                    flow={"eq_flow_b_toman": pts[-1][1], "fixed_flow_b_toman": 0.0,
-                          "eq_inflow": False, "fixed_outflow": False,
-                          "gold_flow_b_toman": None},
-                    asof={"d_even": d, "h_even": pts[-1][0], "client_d_even": d,
-                          "client_lag_days": False}), phase=ph_day)
-                last_avoid = vr["verdict"]
-                ck(f"replay {d}: روزِ نزولیِ پایانی ⇒ درِ منفی زنده است (کنترلِ instrument)",
-                   last_avoid == "avoid", vr["label"])
-        ck("دست‌کم ۳ روزِ واقعی replay شد", (n_days >= 3) if n_days >= 1 else None, n_days)
+            if isinstance(j.get("flow_eq_bt"), (int, float)):
+                pts.append((int(h), float(j["flow_eq_bt"]), float(j.get("val_bt") or 0)))
+        if len(pts) < 40:
+            continue
+        n_days += 1
+        # آغازِ واقعی از خودِ سریِ replay (نخستین val_bt>0) — بی‌ساعتِ دیواری
+        first_val = next((h for h, _fl, v in pts if v > 0), None)
+        start_min = None
+        if first_val is not None:
+            s = "%06d" % first_val
+            start_min = int(s[0:2]) * 60 + int(s[2:4])
+        ME._ASSESS.clear()
+        seen = []
+        bad_early = bad_prethird = 0
+        avoid_seen_at = None
+        for h, fl, val in pts:
+            seen.append((d, h, fl, val))
+            conr = fresh_db(seen)
+            vr = ME.day_verdict(conr, sm(
+                macro={"value_hemat": None, "state": "nodata", "partial_session": True},
+                flow={"eq_flow_b_toman": fl, "fixed_flow_b_toman": 0.0,
+                      "eq_inflow": fl > 0, "fixed_outflow": False, "gold_flow_b_toman": None},
+                asof=asof_at(h, day=d)), phase=ph_cont(day=d))
+            hm_ = (h // 10000) * 60 + (h // 100) % 100
+            in_form = start_min is None or hm_ < start_min + ME.FORMATION_MINUTES
+            if vr["verdict"] == "avoid":
+                if avoid_seen_at is None:
+                    avoid_seen_at = h
+                if in_form:
+                    bad_early += 1
+                if ME._ASSESS.get(str(d), {}).get("neg", 0) < ME.VERDICT_CONFIRM_COUNT:
+                    bad_prethird += 1
+        ck(f"replay {d}: هیچ «وارد نشو»ای در دورۀ شکل‌گیریِ واقعی صادر نشد ({len(pts)} نقطه)",
+           bad_early == 0, bad_early)
+        ck(f"replay {d}: هیچ avoid پیش از سه ارزیابیِ متوالیِ معتبر نیست",
+           bad_prethird == 0, bad_prethird)
+    ck("دست‌کم ۳ روزِ واقعی replay شد", (n_days >= 3) if n_days >= 1 else None, n_days)
     con5.close()
 
 print("─" * 72)

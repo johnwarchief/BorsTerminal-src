@@ -616,10 +616,26 @@ ck("verdict" in ME.smart_money(_vc),
 
 
 def _vd(**sm):
-    """day_verdict روی یک پول‌هوشمندِ ساختگی — درها جدا آزمایش شوند."""
+    """day_verdict روی یک پول‌هوشمندِ ساختگی — درها جدا آزمایش شوند.
+
+    رأیِ مالک 1405-07-21: حکمِ منفی فقط پس از ۳ ارزیابیِ متوالیِ معتبر رویِ
+    دادهٔ تازه. بی‌asofِ صریح، هر صدا یک h_evenِ تازه می‌گیرد تا شمارشِ
+    ارزیابی‌ها درِ تست‌هایِ تک‌دری «نامعتبر/بی‌شمارش» بماند نه تصادفاً سه‌تایی.
+    """
     base = {"macro": {}, "watch_entry": {}, "flow": {}, "asof": {}}
     base.update(sm)
     return ME.day_verdict(_vc, base)
+
+
+def _vd_neg3(**sm):
+    """سه ارزیابیِ متوالی رویِ دادهٔ تازه (h_evenِ رو‌به‌جلو) ⇒ آستانۀ تأییدِ منفی."""
+    ME._ASSESS.clear()
+    out = None
+    for i in range(ME.VERDICT_CONFIRM_COUNT):
+        a = dict(sm.get("asof") or {})
+        a.setdefault("h_even", 123000 + i)
+        out = _vd(**{**sm, "asof": a})
+    return out
 
 
 _empty = _vd()
@@ -631,8 +647,15 @@ _dry = _vd(macro={"value_hemat": None, "state": "nodata"})
 _liq_dry = [g for g in _dry["gates"] if g["key"] == "liquidity"][0]
 ck(_liq_dry["label_state"] == "بدون داده" and _liq_dry["state"] == "nodata",
    "درِ نقدینگی روی بی‌داده «بدون داده» است، نه «نامساعد»")
-_bad = _vd(macro={"value_hemat": 6.2, "state": "bad", "label": "نامساعد", "bad_max": 10.0})
-ck(_bad["verdict"] == "avoid", "همتِ ۶.۲ (زیرِ ۱۰) ⇒ «امروز وارد نشو»")
+# رأیِ مالک 1405-07-21: تک‌ارزیابیِ منفی حکم نیست؛ سه ارزیابیِ متوالیِ معتبر لازم است.
+ME._ASSESS.clear()
+_bad1 = _vd(macro={"value_hemat": 6.2, "state": "bad", "label": "نامساعد", "bad_max": 10.0},
+            asof={"h_even": 123000})
+ck(_bad1["verdict"] != "avoid" and "وارد نشو" not in _bad1["label"],
+   "تک‌ارزیابیِ منفی ⇒ «شواهدِ اولیه»، نه «وارد نشو»")
+_bad = _vd_neg3(macro={"value_hemat": 6.2, "state": "bad", "label": "نامساعد", "bad_max": 10.0})
+ck(_bad["verdict"] == "avoid",
+   "سه ارزیابیِ متوالیِ معتبر با همتِ ۶.۲ ⇒ «امروز وارد نشو»")
 _hi = _vd(macro={"value_hemat": 63.0, "state": "good", "label": "مساعد",
                  "excellent": True, "good_min": 20.0})
 ck("عالی" in _hi["gates"][0]["label_state"], "بالایِ ۵۰ همت «عالی» است، نه فقط «مساعد»")
