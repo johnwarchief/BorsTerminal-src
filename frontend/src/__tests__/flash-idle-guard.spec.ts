@@ -44,8 +44,9 @@ function reduceKillSelectors(block: string): string {
 }
 
 describe('گاردِ فلش و دروازۀ بی‌کاری', () => {
-  it('کامپوننتِ سلول همان دو کلاسی را می‌زند که CSS می‌شناسد', () => {
-    expect(flashClasses.sort()).toEqual(['flash-down', 'flash-up']);
+  it('کامپوننتِ سلول هر سه کلاسِ فلاش را می‌زند که CSS می‌شناسد', () => {
+    // دو جهت‌دارِ تابلو (سبز/قرمز) + یکِ بی‌جهتِ آبیِ دیدۀ‌بان
+    expect(flashClasses.sort()).toEqual(['flash-down', 'flash-neutral', 'flash-up']);
   });
 
   it('گاردِ بی‌کاری هنوز همه‌چیز را pause می‌کند (صرفه‌جوییِ GPU حفظ شود)', () => {
@@ -60,25 +61,33 @@ describe('گاردِ فلش و دروازۀ بی‌کاری', () => {
     expect(exempt.slice(0, 400)).toMatch(/animation-play-state:\s*running\s*!important/);
   });
 
-  it('فلش یک‌موردی است نه بی‌پایان، و مدتشان یکی است', () => {
-    const decls = flashClasses.map((cls) => {
+  it('فلاش‌ها یک‌موردی‌اند؛ جفتِ جهت‌دار یک ریتمِ تیک، و بی‌جهتِ دیدۀ‌بان مدتِ مستقلِ زیرِ یک ثانیه', () => {
+    const decl = (cls: string) => {
       const m = new RegExp(`\\.${cls}\\s*\\{\\s*animation:\\s*([^;]+);`).exec(CSS);
       expect(m, `تعریفِ .${cls}`).not.toBeNull();
       return m![1];
-    });
-    for (const decl of decls) {
-      expect(decl).not.toContain('infinite');
-      // مدت دیگر عددِ ثابت نیست: از ریتمِ تازۀِ تابلو می‌آید (flashClock.ts)
-      expect(decl, 'مدتِ فلاش به متغیرِ بازۀِ تیک وصل نیست').toContain('var(--bors-flash-dur');
+    };
+    // جفتِ جهت‌دارِ تابلو: یک‌موردی، به ریتمِ تازۀِ تابلو وصل (flashClock)، و هر دو یک مبنا
+    const dir = ['flash-up', 'flash-down'].map(decl);
+    for (const d of dir) {
+      expect(d).not.toContain('infinite');
+      expect(d, 'مدتِ فلاشِ جهت‌دار به متغیرِ بازۀِ تیک وصل نیست').toContain('var(--bors-flash-dur');
     }
-    // هر دو کلاس باید یک مبنایِ مدت داشته باشند، وگرنه بالا/پایین دو ریتم می‌شوند
-    expect(new Set(decls.map((d) => d.replace(/\bflash-(up|down)\b/, 'X'))).size).toBe(1);
+    expect(new Set(dir.map((d) => d.replace(/\bflash-(up|down)\b/, 'X'))).size).toBe(1);
+    // فلاشِ بی‌جهتِ دیدۀ‌بان: یک‌موردی، با مدتِ متغیریِ خودش — نه ریتمِ تابلو، و زیرِ یک ثانیه
+    const neu = decl('flash-neutral');
+    expect(neu).not.toContain('infinite');
+    expect(neu, 'فلاشِ دیدۀ‌بان باید مدتِ متغیریِ مستقل داشته باشد').toContain('var(--bors-flash-neutral-dur');
+    const sec = /,\s*([\d.]+)s\)/.exec(neu);
+    expect(sec, 'مبنایِ ثانیهٔ فلاشِ دیدۀ‌بان').not.toBeNull();
+    expect(parseFloat(sec![1]), 'فلاشِ دیدۀ‌بان باید زیرِ یک ثانیه باشد').toBeLessThan(1);
   });
 
   it('حرکتِ کاهش‌یافته هنوز فلاش را خاموش می‌کند (دست‌نخورده ماندنِ دسترس‌پذیری)', () => {
     const reduced = reduceBlock(CSS);
     expect(reduced).toContain('.flash-up');
     expect(reduced).toContain('.flash-down');
+    expect(reduced, 'آبیِ بی‌جهتِ دیدۀ‌بان هم باید زیرِ کاهشِ حرکت خاموش شود').toContain('.flash-neutral');
     // نه برشِ طولی: قواعدِ داخلِ بلوک به ترتیبِ متن مهم‌اند، نه به فاصلهٔ ۵۰۰ حرف.
     expect(reduced).toMatch(/animation:\s*none\s*!important/);
   });

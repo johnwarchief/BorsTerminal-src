@@ -17,6 +17,7 @@
 // `min-w-0 max-w-full overflow-auto`.
 import { useMemo } from 'react';
 import { FormingCandle } from '@shared/components/FormingCandle';
+import { FlashNum } from '@shared/components/FlashNum';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
@@ -210,30 +211,33 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                     <span className="line-clamp-2 block text-3xs leading-3 text-text-muted">{row?.name ?? ''}</span>
                   </td>
                   <td className={TD}>
-                    <span className="num text-text-secondary">{row?.q_tot_tran != null ? fmtInt(row.q_tot_tran) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.q_tot_tran ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="text-text-secondary" />
                   </td>
                   <td className={TD}>
-                    <span className="num text-text-secondary">{row?.z_tot_tran != null ? fmtInt(row.z_tot_tran) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.z_tot_tran ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="text-text-secondary" />
                   </td>
                   <td className={TD}>
-                    <span className="num text-text-secondary">{billionRialText(toBillionRial(row?.q_tot_cap))}</span>
+                    <FlashNum variant="neutral" value={toBillionRial(row?.q_tot_cap ?? null)} render={billionRialText} className="text-text-secondary" />
                   </td>
                   <td className={TD}>
-                    <span className="num font-bold text-text-primary">{row?.p_last != null ? fmtInt(row.p_last) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.p_last ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="font-bold text-text-primary" />
                   </td>
                   <td className={TD}>
-                    <span className={`num font-bold ${
-                      pct == null ? 'text-text-muted' : pct > 0 ? 'text-accent-green' : pct < 0 ? 'text-accent-red' : 'text-text-secondary'
-                    }`}>
-                      {pct != null ? fmtPct(pct) : '—'}
-                    </span>
+                    <FlashNum
+                      variant="neutral"
+                      value={pct}
+                      render={(v) => (v == null ? '—' : fmtPct(v))}
+                      className={`font-bold ${
+                        pct == null ? 'text-text-muted' : pct > 0 ? 'text-accent-green' : pct < 0 ? 'text-accent-red' : 'text-text-secondary'
+                      }`}
+                    />
                   </td>
                   <td className={`${TD} text-center`}><FormingCandle candle={row} testId="watch-day-candle" /></td>
                   <td className={TD}>
-                    <span className="num text-text-secondary">{row?.p_closing != null ? fmtInt(row.p_closing) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.p_closing ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="text-text-secondary" />
                   </td>
                   <td className={`${TD} bg-accent-green/5`} title="حجمِ سفارشِ سطرِ اولِ صفِ خرید">
-                    <span className="num font-bold text-accent-green">{row?.buy_q1_vol != null ? fmtInt(row.buy_q1_vol) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.buy_q1_vol ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="font-bold text-accent-green" />
                   </td>
                   <td className={`${TD} bg-accent-green/5`} title={dem.title || 'قیمتِ سطرِ اولِ صفِ خرید'}>
                     <span className={`num font-bold text-accent-green ${dem.tone}`}>{dem.text}</span>
@@ -242,7 +246,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                     <span className={`num font-bold text-accent-red ${sup.tone}`}>{sup.text}</span>
                   </td>
                   <td className={`${TD} bg-accent-red/5`} title="حجمِ سفارشِ سطرِ اولِ صفِ فروش">
-                    <span className="num font-bold text-accent-red">{row?.sell_q1_vol != null ? fmtInt(row.sell_q1_vol) : '—'}</span>
+                    <FlashNum variant="neutral" value={row?.sell_q1_vol ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="font-bold text-accent-red" />
                   </td>
                   <td className={TD}>
                     <span className={`text-2xs font-bold ${st.tone}`} title={st.title}>{st.text}</span>

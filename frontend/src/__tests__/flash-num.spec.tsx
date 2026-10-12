@@ -69,6 +69,39 @@ describe('FlashNum — فلش لحظه‌ای بدون رفرش', () => {
   });
 });
 
+describe('FlashNum variant="neutral" — فلاشِ آبیِ بی‌جهتِ دیده‌بان', () => {
+  it('افزایشِ مقدار flash-neutral می‌گیرد، نه flash-up', () => {
+    const { rerender } = render(<FlashNum variant="neutral" value={100} render={r} />);
+    rerender(<FlashNum variant="neutral" value={125} render={r} />);
+    const el = screen.getByText('125');
+    expect(el.className).toContain('flash-neutral');
+    expect(el.className).not.toMatch(/flash-(up|down)/);
+  });
+
+  it('کاهشِ مقدار هم همان flash-neutral (جهت معنا ندارد)', () => {
+    const { rerender } = render(<FlashNum variant="neutral" value={200} render={r} />);
+    rerender(<FlashNum variant="neutral" value={150} render={r} />);
+    const el = screen.getByText('150');
+    expect(el.className).toContain('flash-neutral');
+    expect(el.className).not.toMatch(/flash-(up|down)/);
+  });
+
+  it('بی‌جهت: جعبه‌ای (rounded/px-1) ندارد تا عرضِ ستونِ دیده‌بان دست‌نخورده بماند', () => {
+    const { rerender } = render(<FlashNum variant="neutral" value={10} render={r} />);
+    const neutral = screen.getByText('10');
+    expect(neutral.className).not.toMatch(/rounded|px-1/);
+    rerender(<FlashNum value={10} render={r} />);
+    const market = screen.getByText('10');
+    expect(market.className).toMatch(/rounded/); // market جعبه دارد (پس‌زمینه)
+  });
+
+  it('null→عدد در حالتِ neutral هم فلاش نمی‌زند', () => {
+    const { rerender } = render(<FlashNum variant="neutral" value={null} render={r} />);
+    rerender(<FlashNum variant="neutral" value={7} render={r} />);
+    expect(screen.getByText('7').className).not.toContain('flash-neutral');
+  });
+});
+
 // ── فلاشِ واقعیِ تابلو ───────────────────────────────────────────────────────
 // واحدِ FlashNum سبز بود ولی هیچ‌کس ثابت نمی‌کرد ستون‌هایِ تابلو به آن وصل
 //اند؛ یعنی «flash کار نمی‌کند» می‌توانست بی‌آزمون بماند. اینجا همان مسیرِ

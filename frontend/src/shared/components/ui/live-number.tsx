@@ -113,9 +113,12 @@ export function LiveNumber({
       el.classList.add(isUp ? 'live-flash-up' : 'live-flash-down');
 
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      // تایمرِ پاکسازی باید از خودِ انیمیشنِ فلاش (۱٫۱s در index.css) بلندتر
+      // باشد؛ وگرنه کلاسِ رنگ را در میانه می‌بَرید و همان «پرشِ ناگهانی به
+      // عقب» برمی‌گردد که می‌خواستیم حذفش کنیم.
       flashTimerRef.current = setTimeout(() => {
         el.classList.remove('live-flash-up', 'live-flash-down');
-      }, 700);
+      }, 1150);
     }
 
     // ۶. بررسی prefers-reduced-motion (با ایمنی کامل در تست‌های jsdom)
