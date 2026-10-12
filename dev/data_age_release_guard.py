@@ -60,6 +60,10 @@ DDL = """
   CREATE TABLE market_totals(d_even INT, market_value REAL, updated_at TEXT);
   CREATE TABLE codal_notices(tracing_no INT, fetched_at TEXT);
   CREATE TABLE financial_statements(id INTEGER PRIMARY KEY);
+  CREATE TABLE tape_history(ins_code TEXT, d_even INT, q_tot_tran5j REAL);
+  CREATE TABLE tape_ih_slot(ins_code TEXT, slot INT, d_even INT, price_min REAL,
+                            price_max REAL, q_tot_tran5j REAL, q_tot_cap REAL);
+  CREATE TABLE tse_inst_stat(ins_code TEXT PRIMARY KEY, is5 REAL, is6 REAL);
 """
 
 
@@ -74,6 +78,11 @@ def make_db(path, day=20260101, synced="2026-01-01 09:00:00", full=True, fs_rows
         c.execute("INSERT INTO market_totals VALUES(?,?,?)", (day, 1.0, synced))
         c.execute("INSERT INTO codal_notices VALUES(1,?)", (synced,))
         c.executemany("INSERT INTO financial_statements DEFAULT VALUES", [()] * fs_rows)
+        # پنجرۀ [ih] و [is6] هم درِ همین فیکسچور می‌نشینند: گاردِ ساختارِ
+        # ریلیز (بند ۲) نبودنشان را رد می‌کند، پس «بانکِ سالم» باید داشته باشد.
+        c.executemany("INSERT INTO tape_ih_slot VALUES(?,?,?,?,?,?,?)",
+                      [("x", s, day, 1.0, 2.0, 10.0, 20.0) for s in range(30)])
+        c.execute("INSERT INTO tse_inst_stat VALUES('x',NULL,1000.0)")
     else:
         c.execute("CREATE TABLE instruments(ins_code TEXT)")
     c.commit()
