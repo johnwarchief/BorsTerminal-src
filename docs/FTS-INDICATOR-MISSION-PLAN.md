@@ -31,7 +31,7 @@
 | B3 | ناسازگاری warm-up RSI سه‌جا (16/15/15) | `chart.py:1734`، `confidence_engine.py:457`، `indicators.ts` | قرارداد (رأی مالک لازم — موقت: هر موتور کفِ خود را با عدد بگوید) |
 | B4 | هندسۀ جعلی client: باند ±۲٪/±۳٪ سقف سوم/ساعت‌شنی در FFC ساخته می‌شود؛ سرور فقط سطح می‌دهد | `engineFtsLayers.ts:179,184-185` | معماری — باند به سرور منتقل می‌شود (پارامتر اجرایِ مستند، نه قاعدۀ جزوه) |
 | B5 | `toDisp` در FFC همانی است ⇒ در حالت تعدیل‌شده لایه‌ها روی کندل تعدیل‌شده با قیمتِ تعدیل‌نشده می‌افتند | `FtsEngineChart.tsx:122` | صحت رندر |
-| B6 | `majorResistance/Support`: فضای index ناسازگار (نسبی slice vs مطلق fallback) | `indicators.ts:154-160` | زمین‌لاغم (فعلاً بی‌مصرف) |
+| B6 | `majorResistance/Support`: فضای index ناسازگار (نسبی slice vs مطلق fallback) | `indicators.ts:154-160` | زمین‌لاغم (فعلاً بی‌مصرف) — نقضِ index در `5408fba` با تست بسته شد؛ بی‌مصرفی (صفر مصرف‌کنندۀ UI، مصرف‌کننده از `3495fbe` برداشته شد) هنوز رأیِ مالک می‌خواهد: وصل یا حذف |
 | B7 | `STDEV_SAMPLE=false` (جمعیتی) در برابر Pine نمونه | `mabnaIndicators.ts:158-166` | اختلاف مستندِ باقی‌مانده |
 | B8 | overlayهای ثبت‌شدۀ بی‌مصرف `ftsJetMarker/ftsPullbackMarker` | `ftsOverlays.ts:37,167-175` | مرده — به `status.trigger` وصل یا حذف |
 | B9 | `MIN_WEEKLY=8` ثابت مرده | `trend_classify.py:20` | P0 #10 |
