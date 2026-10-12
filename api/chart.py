@@ -213,8 +213,56 @@ def _adjust_events_from_rows(all_rows):
             if abs(r2 - 1.0) > ADJ_TOL:
                 by_date.setdefault(row["time"], {"date": row["time"], "ratio": round(r2, 6)})
         prev = row
+    by_date = _collapse_zero_volume_runs(asc, by_date)
     adj_events = sorted(by_date.values(), key=lambda e: e["date"])
     return adj_events, True
+
+
+def _collapse_zero_volume_runs(asc, by_date):
+    """رویدادهایِ درونِ یک بلوکِ پیوستۀ «بدونِ معامله» را به یک رویدادِ واحد تبدیل می‌کند.
+
+    چرا: درِ دورۀِ توقفِ معامله، TSETMC چند سطرِ VOL=0 با «قیمتِ پایه»هایِ اداریِ
+    متفاوت منتشر می‌کند (ولانا ۰۷-۲۸/۰۸-۰۱/۰۸-۰۲؛ لخزر ۰۷-۲۲/۲۵/۲۶). شمارشگرِ (ی) رویِ
+    هر جابه‌جاییِ پایه آتش می‌زند و یک اقدامِ شرکتی را به سه رویداد می‌شکند؛ دفترِ
+    شرکتیِ مرجع همان را یک گامِ ترکیبی ثبت می‌کند.
+
+    هویتِ رویداد از شواهد می‌آید نه از پنجرۀِ تقویمی: هیچ معاملۀ possible درِ میانهٔ
+    بلوکِ VOL=0 نبوده، پس نمی‌تواند رویدادِ بازارِ مستقلی میانِ آن‌ها افتاده باشد.
+    فقط بلوک‌هایِ پیوستۀِ length≥2 با ≥۲ رویداد ادغام می‌شوند؛ سطرِ معاملاتیِ واقعی
+    (VOL>0) بلوک را می‌شکند تا دو تعدیلِ مستقل هرگز ادغام نشوند.
+
+    بی‌خطر بودنِ سری: ضربِ تلسکوپیِ نسبت‌ها برابرِ نسبتِ پایۀِ آخر به پایانیِ پیش ازِ
+    بلوک است؛ هیچ کندلی درِ میانهٔ بلوکِ VOL=0 وجود ندارد (سطرهایِ بدونِ معامله کندل
+    نمی‌شوند)، پس فاکتورِ تحویلیِ همهٔ تاریخ‌ها بیتغییر می‌ماند و فقط «تعدادِ رویداد» و
+    «تاریخِ مؤثرِ واحد» درست می‌شود — تطبیقِ یک‌به‌یکِ دفترِ مبدأ (§_sharpen_events) هم
+    از سه-به-یک شدنِ رویداد سود می‌برد، نه اینکه دستکاریِ ظاهری باشد.
+    """
+    runs, cur = [], []
+    for row in asc:
+        if row.get("vol") == 0.0:
+            cur.append(row["time"])
+        else:
+            if len(cur) >= 2:
+                runs.append(cur)
+            cur = []
+    if len(cur) >= 2:
+        runs.append(cur)
+    for run in runs:
+        ev = [by_date[t] for t in run if t in by_date]
+        if len(ev) <= 1:
+            continue          # رویدادِ واحد یا هیچ — ادغامی لازم نیست
+        net = 1.0
+        for e in ev:
+            net *= e["ratio"]
+        anchor = run[-1]      # مؤثرترین تاریخِ بلوک = آخرین سطرِ بدونِ معامله
+        if anchor not in by_date:
+            by_date[anchor] = {"date": anchor, "ratio": 1.0}
+        by_date[anchor]["ratio"] = round(net, 6)
+        by_date[anchor]["collapsed"] = len(ev)
+        for t in run:
+            if t != anchor:
+                by_date.pop(t, None)
+    return by_date
 
 
 # ═════ رویدادهایِ تعدیلِ کاننیکال: یک‌بار کشف، همیشه خوانده ═════
@@ -1349,9 +1397,36 @@ def get_calendar_events(symbol: str):
                 "message": str(e), "events": []}
 
 
+def _sma_series(pairs, windows):
+    """میانگینِ متحرکِ ساده رویِ [(date, price) صعودی] برایِ هر پنجره.
+
+    یگانۀ محاسبهٔ MA درِ `/api/ma` — همین تابع درِ آزمونِ عددیِ مستقل هم صدا زده
+    می‌شود تا «چیزی که تست می‌کند» و «چیزی که سرو می‌شود» یکی باشند. صورتِ کسر
+    پنجره است نه شمارِ کلِ سطرها (`acc / w`)، و پیش ازِ `w-1` مقدارِ `None`
+    برمی‌گردد (نه میانگینِ ناقص).
+    """
+    ma = {}
+    for w in windows:
+        ser, acc = [], 0.0
+        for i, (d, c) in enumerate(pairs):
+            acc += c
+            if i >= w:
+                acc -= pairs[i - w][1]
+            ser.append([d, round(acc / w, 2) if i >= w - 1 else None])
+        ma[f"ma{w}"] = ser
+    return ma
+
+
 @router.get("/api/ma/{symbol}")
 def get_ma_events(symbol: str, days: int = Query(730)):
-    """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) از price_history + رویدادهای تقویم نماد."""
+    """میانگینهای متحرک (۵/۲۰/۵۰/۱۲۰) + رویدادهای تقویم نماد.
+
+    سریِ MA از همان زنجیرۀِ تعدیلِ کاننیکالِ چارت می‌گذرد (نه خامِ price_history):
+    رویدادهایِ یک‌بارکشف‌شدۀِ نماد با `_factors_from_events` اعمال می‌شوند تا `ma{w}`
+    و MA دیدنیِ چارت برایِ یکِ نمادِ تعدیل‌شدۀِ یکسان، دو جوابِ متفاوت ندهند (RC1/منبع).
+    مبنایِ last/closing عیناً از `price_basis` می‌آید. `bars`/`adjustSource`/`adjusted`
+    درِ پاسخ صراحتِ منبع را می‌دهند؛ افزودنِ این کلیدها سازگارِ عقب‌رو است.
+    """
     import time as _t
     days = max(120, min(int(days or 730), 2000))
     ck = f"{symbol}|{days}|{price_basis.current()}"
@@ -1378,23 +1453,21 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         # ma{w} و کندل‌هایِ چارت هرگز دو جوابِ متفاوت برایِ یکِ روز نمی‌دهند.
         _ma_rows = [{"time": r[0], "close": r[1], "last": r[3]} for r in rows]
         price_basis.apply_basis(_ma_rows)
-        closes = [(c["time"], float(c["close"])) for c in _ma_rows if c["close"] is not None]
-        ma = {}
-        for w in MA_WINDOWS:
-            # میانگینِ متحرک = جمعِ پنجره ÷ **عرضِ پنجره**. نسخهٔ پیشین `(i+1)` را
-            # می‌آورد: برایِ i≥w صورتِ کسر درستِ پنجره بود ولی شمارنده بهِ
-            # «شمارِ کلِ سطرها» می‌رفت، پس عددِ ارسالی میانگینِ متحرک نبود بلکه
-            # میانگینِ کلِ تاریخِ نماد (سنجیده: ۴۶٬۴۰۲ از ۴۶٬۴۱۴ نقطه درِ ۱۲ نماد،
-            # خطایِ نسبی ~۹۹٪ — `_audit/indicator_audit/`).
-            ser, acc = [], 0.0
-            for i, (d, c) in enumerate(closes):
-                acc += c
-                if i >= w:
-                    acc -= closes[i - w][1]
-                ser.append([d, round(acc / w, 2) if i >= w - 1 else None])
-            ma[f"ma{w}"] = ser
+        # زنجیرۀِ تعدیلِ کاننیکال — همان قاعدۀِ get_chart_db، رویِ همان تاریخ‌ها.
+        _evs = _stored_adjust_events(symbol)
+        _src = ("local-cache" if _evs
+                else _stored_adjust_source(symbol) or "local-db-unseen")
+        _cap = _adjust_capability(_evs, _src)
+        _adjusted = bool(_cap.get("combined_available"))
+        _fct = (_factors_from_events([str(c["time"])[:10] for c in _ma_rows], _evs)
+                if _adjusted else [1.0] * len(_ma_rows))
+        closes = [(c["time"], round(float(c["close"]) * f, 6))
+                  for c, f in zip(_ma_rows, _fct) if c["close"] is not None]
+        ma = _sma_series(closes, MA_WINDOWS)
         result = {"status": "ok", "symbol": symbol, "periods": MA_WINDOWS,
-                  "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes)}
+                  "ma": ma, "events": _cal_events_for(symbol), "bars": len(closes),
+                  "basis": price_basis.current(), "adjusted": _adjusted,
+                  "adjustSource": _src}
         MA_CACHE[ck] = (_t.time(), result)
         return result
     except Exception as e:

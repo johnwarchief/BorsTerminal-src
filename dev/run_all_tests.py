@@ -82,6 +82,16 @@ SUITES = [
      'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
+    # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
+    # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
+    ('dev/test_fts_zero_volume_collapse_v1.py',
+     'RC3: several VOL=0 halt rows collapse to ONE event; telescoped factor (series) unchanged; independent events never merge'),
+    ('dev/test_fts_basis_anchor_v1.py',
+     'RC1: switching display basis (last<->closing) never moves the CLOSING adjustment anchor and never fabricates a missing last'),
+    ('dev/test_fts_ma_source_v1.py',
+     'api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA'),
+    ('dev/test_candle_boundary_v1.py',
+     'RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
@@ -423,12 +433,21 @@ def run(argv, label):
     # واقعاً سبز شده است.
     mf = re.search(r'(\d+) \u0628\u0631\u0631\u0633\u06cc \u0633\u0628\u0632\u060c (\d+) \u0634\u06a9\u0633\u062a', txt)
     mp = re.search(r'(\d+) passed[ ,/]+(\d+) failed', txt)
+    # گاردهایی که «N سبز، M قرمز» یا «N_pass / M_fail» چاپ می‌کنند (آزمون‌هایِ
+    # Phase 2 و test_adjustment_phasea). رأی همچنان rc==0 است؛ این فقط شمارِ
+    # گزارش‌شده را درست می‌کند تا سطرِ «۰/۰» گمراه‌کننده نباشد.
+    ms = re.search(r'(\d+) \u0633\u0628\u0632[\u060c, ]+(\d+) \u0642\u0631\u0645\u0632', txt)
+    mu = re.search(r'(\d+)_pass\s*/\s*(\d+)_fail', txt)
     if m:
         detail = '%s/%s' % (m.group(1), m.group(2))
     elif mf:
         detail = '%s/%s' % (mf.group(1), int(mf.group(1)) + int(mf.group(2)))
     elif mp:
         detail = '%s/%s' % (mp.group(1), int(mp.group(1)) + int(mp.group(2)))
+    elif ms:
+        detail = '%s/%s' % (ms.group(1), int(ms.group(1)) + int(ms.group(2)))
+    elif mu:
+        detail = '%s/%s' % (mu.group(1), int(mu.group(1)) + int(mu.group(2)))
     else:
         detail = '%d pass / %d fail' % (n, f)
     ok = (r.returncode == 0)
