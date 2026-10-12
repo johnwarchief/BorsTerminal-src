@@ -132,6 +132,10 @@ const RangeBox = z.object({
   active: z.boolean().nullish(),
   top: z.number().nullish(),
   bottom: z.number().nullish(),
+  // کرانۀ زمانیِ خودِ جعبه (همان ۲۰ کندلِ قاعدۀ سرور) — بی‌این باکس روی کلِ
+  // دید کشیده می‌شد و extentِ واقعیِ قاعده را دروغ می‌گفت (مرحلۀ ۶).
+  start_date: z.string().nullish(),
+  end_date: z.string().nullish(),
   pct_above_top: z.number().nullish(),
   reason: z.string().nullish(),
 });

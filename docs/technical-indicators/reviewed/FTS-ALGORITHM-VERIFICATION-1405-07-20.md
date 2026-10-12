@@ -31,7 +31,7 @@
 | تابع (سطر) | قاعدۀ مرجع (map) | مصرف‌کنندهٔ خروجی (فرانت) | آزمونِ مستقیم |
 |---|---|---|---|
 | `_fts_swings` (1719) | روند ساختاری؛ پیوت k=3/k=2 | پایهٔ همهٔ لایه‌های ساختاری | `dev/fts_antirepaint_v1086.py`، `dev/test_fts_untested_paths_v1.py`، ۱۳ فایل دیگر |
-| `_fts_structure_points` (1768) | HH/HL/LH/LL (جزوه ص۷) | `patternOverlays.ts:216`، `engineFtsLayers.ts:215`، `ftsLayerEvidence.ts:118` — فقط `.D` | `dev/test_fts_untested_paths_v1.py`، `fts_antirepaint_v1086.py` |
+| `_fts_structure_points` (1768) | HH/HL/LH/LL (جزوه ص۷) | `patternOverlays.ts:224`، `engineFtsLayers.ts:240`، `ftsLayerEvidence.ts:118` (روزانۀ `.D`) + `:205` (هفتگیِ `.W` — از این دور) | `dev/test_fts_untested_paths_v1.py`، `fts_antirepaint_v1086.py` |
 | `_fts_classify_trend` (1854) | رأیِ روند + تلورانسِ ۰٫۵٪ | `trend.matrix` → پنل/بنر/قیف | `fts_trend_fixtures_v1075.py`، `fts_trend_staleness_v1064.py`، `test_fts_technical_tristate.py` … ۸ فایل |
 | `_fts_recent_window_trend` (1814) | رأیِ بازهٔ کهنه (پایلوت گزینه B) | از همان `trend` خوانده می‌شود | ترانزیتیو (از `fts_trend_staleness_v1064.py`؛ بی‌ارجاعِ نامی) |
 | `_fts_jet_setup` (2224) | جت (رأی #17) | `jet` → لایۀ `jet` + مارکرِ کندلِ آخر | `test_fts_roundj.py`، `test_fts_technical_tristate.py`، `test_trend_engine_flag.py` … ۸ فایل |
@@ -97,13 +97,49 @@ ZigZag آستانه‌دار با `ATR_PERIOD=14`، `ATR_MULT=1.0`، `FLOOR_PCT=
 
 | # | یافته | شاهد | وضعیت |
 |---|---|---|---|
-| ب-۱ | `structure_points.W` منتشر می‌شود ولی هیچ‌جا خوانده نمی‌شود (فقط `.D`) | schema: `useFtsAnalysis.ts:284`؛ مصرف‌ها: `engineFtsLayers.ts:215`، `patternOverlays.ts:216` | باز — یا لایه می‌شود یا از payload بیرون می‌آید |
+| ب-۱ | `structure_points.W` منتشر می‌شد ولی هیچ‌جا خوانده نمی‌شد (فقط `.D`) | مصرف از این دور: `engineFtsLayers.ts:240` (مارکرِ `structure-W-<time>` با برچسبِ `(W)`)، `patternOverlays.ts:224` + `KLineChartWrapper.tsx:194` (همان `(W)` در چارتِ klinecharts)، شواهد: `ftsLayerEvidence.ts:205`، کاتالوگ: `ftsIndicatorCatalog.ts:79` | بسته شد (رسم در هر دو موتور + ردیفِ کاتالوگ + شواهد، با آزمون). رسمِ دیدنی در مرورگر: سنجیده نشده |
 | ب-۲ | `exit_engine.l2.level/touches` و `l4.rsi_prev_peak` خوانده نمی‌شوند؛ «خطِ واگرایی RSI» که map وعده می‌داد رسم نمی‌شود (فقط تُنِ ردیفِ RSI در پنل و بجِ `bearish_div`) | `technicalSignals.ts:133`، `FtsTrendPanel.tsx:202`؛ نبودِ هر `l2.level` در فرانت | سطرِ map اصلاح شد («رسم نمی‌شود» با ذکرِ مصرف‌کننده)؛ رسم = کارِ مرحلۀ ۶ |
-| ب-۳ | `range_box` باکسِ رنج را رسم نمی‌کند و لایۀ کاتالوگی ندارد | `FtsBadgeStrip.tsx:170`، `FtsTrendPanel.tsx:36`، `technicalSignals.ts:187,258` | باز (مرحلۀ ۶) |
+| ب-۳ | `range_box` باکسِ رنج را رسم نمی‌کرد و لایۀ کاتالوگی نداشت | افزوده: `chart.py:2567` (`start_date`/`end_date` همان ۲۰ کندلِ قاعده، بی‌تغییرِ داوری)، `patternOverlays.ts:541` (از همان `pushBand`ِ مشترک، پس سقفِ ارتفاع به جعبه هم می‌خورد)، `engineFtsLayers.ts:149`، کراندارسازیِ رسم در `KLineChartWrapper.tsx:256` و `:297`، کاتالوگ `ftsIndicatorCatalog.ts:151`، شواهد `ftsLayerEvidence.ts:192` | بسته شد — باکس فقط بینِ دو کرانۀ خودش کشیده می‌شود، بی‌تاریخِ سرور اصلاً رسم نمی‌شود، و باکسِ بلندتر از یک‌پنجمِ دید به دو خطِ سقف/کف تنزل می‌کند. دیدنی در مرورگر: سنجیده نشده |
 | ب-۴ | `/api/patterns/{symbol}` صفرِ مصرف‌کننده دارد | grep در `frontend/src`، `tools/`، `dev/`: فقط سطرِ تعریف | باز؛ یا وصل می‌شود یا صریح «غیرفعال» ثبت |
 | ب-۵ | `majorResistance`/`majorSupport` فقط در آزمون‌های vitest خوانده می‌شوند | `indicators.spec.ts:8-9`، `technical-weekly-wiring.spec.ts:183-184` | همان B6 (تصمیمِ مرحلۀ ۶) |
 | ب-۶ | ریاضِ MA/EMA/RSI/ATR در پنج جایِ جدا تکرار شده: `chart.py::_fts_ma/_fts_rsi`، `confidence_engine.py:340/450`، `structure_engine3.py:45`، `trend_classify.py:23`، `frontend/lib/indicators.ts:21/48/207` | grepِ تعریف‌ها | ثبت؛ یک‌پارچه‌سازی بیرونِ دستورِ این دور است (ریسکِ شکستنِ سه موتور) |
 | ب-۷ | `trend_classify.classify_trend` تنها با `BORS_TREND_ENGINE=hybrid` قابلِ دسترس است | `dev/test_trend_engine_flag.py` (۸/۸) | مسیرِ legacy بایت‌به‌بایت یکسان گارد شده؛ تصمیمِ حذف/نگهداشت با مالک |
+
+### بستنِ ب-۱ و ب-۳ (این دور) — آنچه واقعاً سنجیده شد
+
+هیچ رأیِ رسمیِ FTS و هیچ آستانه‌ای در این بخش عوض نشد؛ فقط «خوانده/رسم شدنِ» خروجیِ
+همان قاعده اضافه شد. کرانۀ زمانیِ باکس از خودِ قاعدۀ سرور (`candles[-21:-1]`) منتشر
+می‌شود تا چیزی که رسم می‌شود با چیزی که قاعده می‌گوید یکی باشد.
+
+* اندازه‌گیریِ واقعی (مسیرِ تولید، `api.chart.get_fts` با کندلِ TSETMC، ۱۴۰۵-۰۷-۲۰):
+  وبملت `top=1621 / bottom=1419`، ولانا `5720 / 4530`، فولاد `4100 / 3008` با
+  `active=true` و `pct_above_top=2.93`، خودرو `786 / 642`، شپنا `14670 / 12200`؛
+  بازۀ باکس برایِ چهار نمادِ نخست `2026-09-13 → 2026-10-10` و برایِ شپنا
+  `2026-09-05 → 2026-09-30` (آخرین کندلِ معاملاتیِ خودش، نه «الان»).
+  پیوت‌هایِ هفتگی هم درِ همان payload زنده بودند (۱۴ ردیفِ W در هر پنج نماد) — یعنی شکاف،
+  مصرف نبود نه داده.
+* آزمون‌های افزوده‌شده (۱۱ آزمونِ تازه، همه سبز):
+  `ffc-engine-v1066.spec.ts` (باکسِ کراندار + عدمِ رسم بی‌تاریخ + مقیاسِ تعدیل؛ مارکرِ D و W با `(W)`)،
+  `technical-pattern-wiring.spec.tsx` (نگاشتِ `range_box` و `structure_points.W`؛ یازده سوییچِ UI؛
+  و «جعبۀ رنج هم زیرِ همان سقفِ ارتفاع است»: دیدِ تنگ ⇒ دو خطِ سطح، دیدِ باز ⇒ مستطیلِ کراندار)،
+  `technical-fts-overlays.spec.tsx` (چارتِ klinecharts: تنها مستطیلِ گروهِ الگوها همان باکسِ
+  `2025-01-07→2025-01-09` است، و با بی‌تاریخ هیچ `rect` نمی‌سازد؛ باکسِ بلندتر از یک‌پنجمِ دید
+  به دو `horizontalStraightLine` با همان دو سطحِ سرور تنزل می‌کند؛ مارکرِ `(W)` سرِ کندلِ خودش)،
+  `technical-indicator-panel.spec.tsx` (شواهدِ `range-box`: سقف/کف/درصد + «ناکافی» بی‌عدد؛
+  شواهدِ `structure-points-weekly`: شمارش و «کِی فهمیدیم» جدا).
+* باکس از همان تابعِ مشترکِ کمربندها (`pushBand` در `patternOverlays.ts:541`) می‌گذرد؛ داورِ ساختاریِ
+  `dev/fts_chart_engine_v1037.py` شمارشِ «همه از `pushBand`» را ۲ → ۳ کرد (سقفِ سوم، ساعتِ شنی،
+  جعبۀ رنج) و همان گاردِ `linesOnly: true == 3` و تک‌شرطیِ سقفِ ارتفاع هنوز سبز است — قاعده
+  ضعیف نشده، کمربندِ تازه‌ای زیرِ همان سقف رفته است.
+* آنچه باز می‌ماند: دیدنِ همین دو لایه در مرورگر رویِ چارتِ واقعیِ رهاورد (شرطِ ۵) و
+  آزمونِ مستقیمِ آدپترِ `engine/klinecharts` (`btsBand`) — آن به مرحلۀ ۷/۸ موکول شد.
+  تفاوتِ بین‌موتوریِ سقفِ ارتفاع: `BAND_MAX_OF_VIEW` فقط درِ نگاشتِ چارتِ کهنه
+  (`patternOverlays.ts`) است؛ مسیرِ `engineFtsLayers` (FFC و آداپتورِ klinecharts) برای هیچ
+  کمربندی سقفِ ارتفاع ندارد. این ریشۀِ پیشین است نه ساخته‌شدۀ این باکس، و بی‌سنجشِ پیکسلیِ
+  زنده (شرطِ ۵، مسدود) عددِ آستانه درِ آن موتور نمی‌سازم.
+  چگالیِ بصری هم سنجیده نشده: با پیوت‌هایِ فعلی، مارکرهایِ ساختار از ۱۴ به ۲۸ (۱۴ روزانه
+  + ۱۴ هفتگی) می‌رسند؛ اگر رویِ چارتِ واقعی شلوغ باشد، تصمیمِ «کاهشِ سقفِ W» یا «جداسازیِ
+  سوییچِ هفتگی» مالک است، نه این دور (سوییچِ `structure` هر دو TF را با هم خاموش/روشن می‌کند).
 
 ## ۶) چیزی که در این دور **سنجیده نشد**
 

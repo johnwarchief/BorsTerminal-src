@@ -72,6 +72,50 @@ describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
     expect(broken.find((l) => l.id === 'fib-zone_33_40')).toBeUndefined();
   });
 
+  it('جعبۀ رنج با کرانِ بازۀ خودش رسم می‌شود؛ بی‌تاریخِ سرور اصلاً رسم نمی‌شود (ب-۳)', () => {
+    const withBox = (box: Record<string, unknown>) =>
+      engineFtsLayers({ ...plain, fts: { range_box: box } as unknown as FtsAnalysisData })
+        .find((l) => l.id === 'range-box');
+    const drawn = withBox({ top: 1500, bottom: 1300, active: true, start_date: '2026-01-06', end_date: '2026-01-26' })!;
+    expect(drawn.kind).toBe('band');
+    expect(drawn.points.map((p) => p.timestamp))
+      .toEqual([Date.parse('2026-01-06T00:00:00Z'), Date.parse('2026-01-26T00:00:00Z')]);
+    expect(drawn.points.map((p) => p.value)).toEqual([1300, 1500]);
+    expect(drawn.label).toBe('شکست جعبه رنج');
+    expect(withBox({ top: 1500, bottom: 1300, active: false, start_date: '2026-01-06', end_date: '2026-01-26' })!.label)
+      .toBe('جعبه رنج');
+    // extentِ باکس از خودِ قاعدۀ سرور است؛ بی‌کرانِ زمانی، رسمِ تمام‌عرض دروغ می‌گفت
+    expect(withBox({ top: 1500, bottom: 1300, active: true })).toBeUndefined();
+    expect(withBox({ top: 1500, bottom: 1300, active: true, start_date: '2026-01-06' })).toBeUndefined();
+    expect(withBox({ top: null, bottom: 1300, start_date: '2026-01-06', end_date: '2026-01-26' })).toBeUndefined();
+    const scaled = engineFtsLayers({
+      ...plain,
+      toDisp: (p) => p * 0.5,
+      fts: { range_box: { top: 1500, bottom: 1300, start_date: '2026-01-06', end_date: '2026-01-26' } } as unknown as FtsAnalysisData,
+    }).find((l) => l.id === 'range-box')!;
+    expect(scaled.points.map((p) => p.value)).toEqual([650, 750]);
+  });
+
+  it('پیوت‌هایِ ساختار از هر دو TF می‌آیند و هفتگی با پسوندِ (W) خوانده می‌شود (ب-۱)', () => {
+    const layers = engineFtsLayers({
+      ...plain,
+      fts: {
+        structure_points: {
+          D: [{ time: '2026-01-06', price: 1400, label: 'HL', confirm_time: '2026-01-08' }],
+          W: [{ time: '2026-01-05', price: 1200, label: 'LL', confirm_time: '2026-01-12' }],
+        },
+      } as unknown as FtsAnalysisData,
+    }).filter((l) => l.group === 'fts-structure');
+    expect(layers.map((l) => `${l.id}:${l.label}`))
+      .toEqual(['structure-D-2026-01-06:HL', 'structure-W-2026-01-05:LL (W)']);
+    expect(layers.find((l) => l.id === 'structure-W-2026-01-05')!.color).toBe('#f87171');
+    const broken = engineFtsLayers({
+      ...plain,
+      fts: { structure_points: { D: [{ time: '2026-01-07', price: 0, label: 'HH', confirm_time: null }] } } as unknown as FtsAnalysisData,
+    }).filter((l) => l.group === 'fts-structure');
+    expect(broken).toEqual([]);
+  });
+
   it('موتورِ دوم در رجیستری «تولیدی» است و klinecharts همان پیش‌فرضِ ساخت است', () => {
     const ffc = ENGINE_REGISTRY.find((e) => e.id === 'ffc');
     expect(ffc?.production).toBe(true);

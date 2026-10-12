@@ -189,6 +189,31 @@ const READERS: Record<string, Reader> = {
     return ev('inactive', facts, null, null, d.reason ?? null);
   },
 
+  'range-box': (fts) => {
+    const b = fts?.range_box;
+    if (!b) return ev('not-published');
+    const facts: EvidenceFact[] = [];
+    num(facts, 'سقفِ باکس', b.top);
+    num(facts, 'کفِ باکس', b.bottom);
+    num(facts, 'درصدِ بالایِ سقف', b.pct_above_top);
+    if (b.active === true) {
+      return ev('active', facts, b.end_date ?? null, null, b.start_date ? `بازۀ باکس از ${toFaDigits(b.start_date)}` : null);
+    }
+    return ev(b.top == null ? 'insufficient' : 'inactive', facts, b.end_date ?? null, null, b.reason ?? null);
+  },
+
+  'structure-points-weekly': (fts) => {
+    const pts = fts?.structure_points?.W ?? [];
+    if (pts.length === 0) return ev('inactive', [], null, null, 'پیوتِ هفتگیِ تأییدشده‌ای درِ این تاریخچه نیست');
+    const last = pts[pts.length - 1];
+    const facts: EvidenceFact[] = [
+      { label: 'پیوت‌هایِ هفتگی', value: `${toFaDigits(pts.length)} نقطه` },
+      { label: 'آخرین برچسب', value: last.label },
+    ];
+    num(facts, 'قیمتِ تأییدشده', last.price);
+    return ev('active', facts, last.time ?? null, last.confirm_time ?? null);
+  },
+
   'point-hunt': (fts) => {
     const p = fts?.point_hunt;
     if (!p) return ev('not-published');

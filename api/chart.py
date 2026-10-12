@@ -2534,7 +2534,7 @@ def _fts_double_bottom(candles, swings):
     جعبهٔ رنج: سقف جعبه = ماکسِ high در ۲۰ کندل اخیر منهای کندل آخر، کف جعبه =
     مینِ low همان پنجره. تریگر شکست: پایانیِ امروز بالای سقف جعبه با بدنهٔ صعودی.
     خروجی: {'double_bottom': {'active','neckline','pct_above_neck'},
-            'range_box': {'active','top','bottom','pct_above_top'}}.
+            'range_box': {'active','top','bottom','start_date','end_date','pct_above_top'}}.
     """
     lows = [s for s in swings if s["kind"] == "low"]
     highs = [s for s in swings if s["kind"] == "high"]
@@ -2552,6 +2552,7 @@ def _fts_double_bottom(candles, swings):
             dbl.update(active=bool(hit), neckline=round(neck, 2),
                        pct_above_neck=round((last - neck) / neck * 100.0, 2) if hit else None)
     box = {"active": None, "top": None, "bottom": None, "pct_above_top": None,
+           "start_date": None, "end_date": None,
            "reason": "۲۱ کندل سابقه بسته نیست — باکس رنج سنجیده نشد"}
     if len(candles) >= 21:
         box["reason"] = None
@@ -2561,6 +2562,9 @@ def _fts_double_bottom(candles, swings):
         last = candles[-1]
         broke = last["close"] > top and last["close"] >= last["open"]
         box.update(active=bool(broke), top=round(top, 2), bottom=round(bot, 2),
+                   # دو کرانۀ زمانیِ همان ۲۰ کندل — صرفاً اطلاعِ «جعبه کجاست» برایِ
+                   # رسمِ درست (مرحلۀ ۶)؛ داوریِ شکست تغییری نمی‌کند.
+                   start_date=str(win[0]["time"])[:10], end_date=str(win[-1]["time"])[:10],
                    pct_above_top=round((last["close"] - top) / top * 100.0, 2) if broke else None)
     return {"double_bottom": dbl, "range_box": box}
 
@@ -3253,7 +3257,7 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
       choch            - structural break {'bearish','bullish','level','label'}
       point_hunt       - channel-floor touch count {'touches','floor_price',...}
       double_bottom    - {'active','neckline','pct_above_neck'}
-      range_box        - {'active','top','bottom','pct_above_top'}
+      range_box        - {'active','top','bottom','start_date','end_date','pct_above_top'}
       pullback         - uptrend-retest setup {'active','touching','level',...}
       exit_engine      - four-layer verdict {'verdict','signals','l1'..'l4'}
     """
@@ -3278,7 +3282,8 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "choch": _fts_choch(candles, swings_d),
         "point_hunt": _fts_point_hunt(candles, swings_d),
         "double_bottom": {"active": False, "neckline": None, "pct_above_neck": None},
-        "range_box": {"active": False, "top": None, "bottom": None, "pct_above_top": None},
+        "range_box": {"active": False, "top": None, "bottom": None,
+                      "start_date": None, "end_date": None, "pct_above_top": None},
         "exit_engine": None,
     }
     # نقاطِ ساختاریِ برچسب‌دار (HH/HL/LH/LL) — لایۀ «ساختار روند» روی چارت، با

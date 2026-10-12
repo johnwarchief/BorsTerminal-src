@@ -137,6 +137,29 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   if (fts.double_bottom?.active === true && neck != null) {
     out.push(level('double-bottom', neck, 'خط گردن (کف دوقلو)', '#10b981', i));
   }
+  // جعبۀ رنج — باکسِ کراندار به همان ۲۰ کندلی که قاعدۀ سرور تعریف کرده است؛
+  // بی‌start_date/end_date از سرور هیچ باکسی نمی‌کشیم، چون extent روی کلِ دید
+  // دروغ می‌گفت (مرحلۀ ۶، شکافِ ب-۳).
+  const boxTop = disp(fts.range_box?.top);
+  const boxBottom = disp(fts.range_box?.bottom);
+  const boxStart = fts.range_box?.start_date ? i.tsForDate(fts.range_box.start_date) : null;
+  const boxEnd = fts.range_box?.end_date ? i.tsForDate(fts.range_box.end_date) : null;
+  if (boxTop != null && boxBottom != null && boxStart != null && boxEnd != null) {
+    out.push({
+      id: 'range-box',
+      kind: 'band',
+      group: 'fts-pattern',
+      points: [
+        { timestamp: boxStart, value: boxBottom },
+        { timestamp: boxEnd, value: boxTop },
+      ],
+      color: '#fbbf24',
+      fill: 'rgba(251, 191, 36, 0.12)',
+      label: fts.range_box?.active === true ? 'شکست جعبه رنج' : 'جعبه رنج',
+      width: 1,
+      dashed: true,
+    });
+  }
   const floor = disp(fts.point_hunt?.floor_price);
   // مارکرِ خرید رویِ کندلِ تریگر است، نه لنگرِ کفِ کانال (#221)
   const triggerTs = fts.point_hunt?.trigger_date ? i.tsForDate(fts.point_hunt.trigger_date) : null;
@@ -212,20 +235,24 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
   // ۶) نقاطِ ساختاریِ تأییدشده (HH/HL/LH/LL) — لایۀ «ساختار روند». زمانِ
   // تأیید (confirm_time) درِ خودِ نقطه است تا کلیکِ شواهد «کِی فهمیدیم» را
   // جدا از «کِی رخ داد» بگوید؛ رسم فقط رویِ پیوت‌هایِ تأییدشدهٔ داخل دید.
-  for (const p of fts.structure_points?.D ?? []) {
-    const v = disp(p.price);
-    const ts = i.tsForDate(String(p.time).slice(0, 10));
-    if (v == null || ts == null) continue;
-    const bear = p.label === 'LH' || p.label === 'LL';
-    out.push({
-      id: `structure-D-${p.time}`,
-      kind: 'marker',
-      group: 'fts-structure',
-      points: [{ timestamp: ts, value: v }],
-      color: bear ? '#f87171' : '#4ade80',
-      label: p.label,
-      width: 1,
-    });
+  // روزانۀ مرجع + هفتگیِ زمینه (هر دو درِ payload؛ تا نسخهٔ W فقط منتشر
+  // نمی‌شد و هیچ‌جا خوانده نمی‌شد — شکافِ ب-۱).
+  for (const [tf, pts] of [['D', fts.structure_points?.D], ['W', fts.structure_points?.W]] as const) {
+    for (const p of pts ?? []) {
+      const v = disp(p.price);
+      const ts = i.tsForDate(String(p.time).slice(0, 10));
+      if (v == null || ts == null) continue;
+      const bear = p.label === 'LH' || p.label === 'LL';
+      out.push({
+        id: `structure-${tf}-${p.time}`,
+        kind: 'marker',
+        group: 'fts-structure',
+        points: [{ timestamp: ts, value: v }],
+        color: bear ? '#f87171' : '#4ade80',
+        label: tf === 'W' ? `${p.label} (W)` : p.label,
+        width: 1,
+      });
+    }
   }
 
   return out;

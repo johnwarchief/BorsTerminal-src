@@ -74,6 +74,52 @@ describe('لایۀ شواهد (lib/ftsLayerEvidence)', () => {
     expect(e.confirmedAt).toBe('2026-02-08');
   });
 
+  it('ساختارِ هفتگی: شمارشِ خودِ سرور با ارقامِ فارسی، بی‌پیوتِ W «غیرفعال» است نه حدس (ب-۱)', () => {
+    const weekly = {
+      structure_points: {
+        D: jetOn.structure_points?.D ?? [],
+        W: [
+          { idx: 2, time: '2026-01-17', confirm_idx: 4, confirm_time: '2026-01-23', price: 1750, kind: 'low', label: 'LL' },
+          { idx: 8, time: '2026-02-01', confirm_idx: 11, confirm_time: '2026-02-06', price: 2480, kind: 'high', label: 'HH' },
+        ],
+      },
+    } as unknown as FtsAnalysisData;
+    const e = layerEvidence(catalogEntry('structure-points-weekly')!, weekly);
+    expect(e.state).toBe('active');
+    expect(e.occurredAt).toBe('2026-02-01');
+    expect(e.confirmedAt).toBe('2026-02-06');
+    expect(e.facts.find((f) => f.label === 'پیوت‌هایِ هفتگی')?.value).toBe('۲ نقطه');
+    expect(e.facts.find((f) => f.label === 'آخرین برچسب')?.value).toBe('HH');
+    expect(layerEvidence(catalogEntry('structure-points-weekly')!, jetOn).state).toBe('inactive');
+    expect(layerEvidence(catalogEntry('structure-points-weekly')!, null).state).toBe('inactive');
+    expect(layerEvidence(catalogEntry('structure-points-weekly')!, null).note).toContain('پیوتِ هفتگی');
+  });
+
+  it('جعبۀ رنج: سقف/کف/درصد از سرور + کرانۀ زمانیِ باکس؛ بی‌عدد «ناکافی» (ب-۳)', () => {
+    const box = {
+      range_box: {
+        active: true, top: 2750, bottom: 2410, pct_above_top: 1.2,
+        start_date: '2026-01-06', end_date: '2026-01-26', reason: null,
+      },
+    } as unknown as FtsAnalysisData;
+    const e = layerEvidence(catalogEntry('range-box')!, box);
+    expect(e.state).toBe('active');
+    expect(e.occurredAt).toBe('2026-01-26');
+    expect(e.facts.find((f) => f.label === 'سقفِ باکس')?.value).toBe('۲٬۷۵۰');
+    expect(e.facts.find((f) => f.label === 'کفِ باکس')?.value).toBe('۲٬۴۱۰');
+    expect(e.note).toContain('۲۰۲۶-۰۱-۰۶');
+    const quiet = {
+      range_box: { active: false, top: 2750, bottom: 2410, pct_above_top: null, end_date: '2026-01-26', reason: 'بستهٔ سقف' },
+    } as unknown as FtsAnalysisData;
+    expect(layerEvidence(catalogEntry('range-box')!, quiet).state).toBe('inactive');
+    const empty = { range_box: { active: false, top: null, bottom: null, reason: '۲۱ کندل سابقه بسته نیست' } } as unknown as FtsAnalysisData;
+    const n = layerEvidence(catalogEntry('range-box')!, empty);
+    expect(n.state).toBe('insufficient');
+    expect(n.facts).toEqual([]);
+    expect(n.note).toBe('۲۱ کندل سابقه بسته نیست');
+    expect(layerEvidence(catalogEntry('range-box')!, jetOn).state).toBe('not-published');
+  });
+
   it('لایۀ غیرِ payload (رویدادهای شرکتی) از feed خوانده می‌شود، نه از `/api/fts`', () => {
     const entry = catalogEntry('corp-actions')!;
     expect(layerEvidence(entry, jetOn).state).toBe('not-published');

@@ -7,14 +7,22 @@ type OverlayCfg = { name?: string; groupId?: string; points?: { timestamp: numbe
   extendData?: unknown; [key: string]: unknown };
 
 let overlays: OverlayCfg[] = [];
+/** لایۀ «الگوهای FTS» گروهٍ جدا دارد (`fts_pattern_overlays`) — جعبۀ رنج و
+ *  مارکرهای ساختار آن‌جا رسم می‌شوند، نه در گروهِ سطوحِ فیبو/تریگر. */
+let patternOverlays: OverlayCfg[] = [];
 const chartStub = () => ({
   setDataLoader: vi.fn(), setSymbol: vi.fn<(o: unknown) => void>(), setPeriod: vi.fn(),
   setFormatter: vi.fn(), createIndicator: vi.fn(), removeIndicator: vi.fn(),
   setPaneOptions: vi.fn(), setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideOverlay: vi.fn(),
   removeOverlay: vi.fn((q?: { groupId?: string }) => {
     if (q?.groupId === 'fts_strategy_overlays') overlays = [];
+    if (q?.groupId === 'fts_pattern_overlays') patternOverlays = [];
   }),
-  createOverlay: vi.fn((cfg: OverlayCfg) => { if (cfg.groupId === 'fts_strategy_overlays') overlays.push(cfg); return 'ov'; }),
+  createOverlay: vi.fn((cfg: OverlayCfg) => {
+    if (cfg.groupId === 'fts_strategy_overlays') overlays.push(cfg);
+    if (cfg.groupId === 'fts_pattern_overlays') patternOverlays.push(cfg);
+    return 'ov';
+  }),
   resetData: vi.fn(), resize: vi.fn(), getConvertPictureUrl: vi.fn(() => ''),
   subscribeAction: vi.fn(), scrollToRealTime: vi.fn(), getDataList: vi.fn(() => []),
   setScrollEnabled: vi.fn(), getOverlays: vi.fn(() => [] as unknown[]),
@@ -53,15 +61,16 @@ const FTS = {
   },
   roles: { jet: 'entry', fib_zone: 'context' },
   exit_engine: { verdict: 'exit', l1: { ma14_exit: true } },
-} as never;
+} as Record<string, unknown>;
 
 const CANDLES = ['2025-01-06', '2025-01-07', '2025-01-08', '2025-01-09', '2025-01-10']
   .map((time, i) => ({ time, open: 100 + i, high: 102 + i, low: 99 + i, close: 101 + i, volume: 10 }));
 
 const dayUtc = (s: string) => Date.parse(`${s}T00:00:00Z`);
 
-async function renderChart() {
+async function renderChart(fts: unknown = FTS) {
   overlays = [];
+  patternOverlays = [];
   vi.stubGlobal('fetch', vi.fn(async (url: unknown) => {
     const u = String(url);
     if (u.startsWith('/api/chart/')) {
@@ -70,7 +79,7 @@ async function renderChart() {
     }
     return { ok: false, json: async () => ({}) } as never;
   }));
-  render(<KLineChartWrapper initialSymbol="فولاد" fts={FTS} />);
+  render(<KLineChartWrapper initialSymbol="فولاد" fts={fts as never} />);
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
   // از «تعدیل عملکردی» (پیش‌فرض) به «بدون تعدیل» تا عددِ محور همان ریالِ سرور باشد
   await act(async () => { fireEvent.click(document.querySelector('[title="نوع تعدیل قیمت"]') as HTMLElement); });
@@ -113,7 +122,7 @@ describe('اورلی FTS روی چارت، از دادهٔ سرور (#161)', () 
 
   it('هیچ عددِ فیبویی که سرور نگفته روی چارت نمی‌نشیند', async () => {
     await renderChart();
-    const allowed = new Set((FTS as never as { fib: { levels: { price: number }[] } }).fib.levels.map((l) => l.price));
+    const allowed = new Set((FTS as unknown as { fib: { levels: { price: number }[] } }).fib.levels.map((l) => l.price));
     for (const o of drawn('horizontalStraightLine')) {
       expect(allowed.has(o.points?.[0]?.value as number)).toBe(true);
     }
@@ -152,5 +161,61 @@ describe('اورلی FTS روی چارت، از دادهٔ سرور (#161)', () 
   it('هشدار خروج از موتورِ سرور می‌آید، نه از شرطِ تک‌کندلیِ چارت', async () => {
     await renderChart();
     expect((document.querySelector('.nn-fts-exit-alert')?.textContent ?? '')).toContain('هشدار خروج');
+  });
+
+  // مرحلۀ ۶، شکافِ ب-۳: باکسِ رنج ۲۰ کندلی است؛ رسمِ تمام‌عرضِ آن دروغ می‌گفت
+  it('جعبۀ رنج درِ چارت کرانۀ بازۀ خودش را می‌گیرد و کمربندهای فیبو تمام‌عرض می‌مانند', async () => {
+    // دیدِ این فیکسچر ۹۹→۱۰۶ است؛ باکسِ ۱۰۳→۱۰۴ یک‌هفتمِ پنل ⇒ مستطیلِ کراندار
+    await renderChart({
+      ...FTS,
+      range_box: { active: true, top: 104, bottom: 103, pct_above_top: 1.4,
+                   start_date: '2025-01-07', end_date: '2025-01-09' },
+    });
+    const rects = patternOverlays.filter((o) => o.name === 'rect');
+    const box = rects.filter((r) => r.points?.[0]?.timestamp === dayUtc('2025-01-07'));
+    expect(box).toHaveLength(1);
+    expect(box[0].points?.map((p) => p.timestamp)).toEqual([dayUtc('2025-01-07'), dayUtc('2025-01-09')]);
+    expect(box[0].points?.map((p) => p.value)).toEqual([104, 103]);
+    // تنها مستطیلِ این گروه همان باکس است ⇒ باکس روی کلِ دید کشیده نشده
+    expect(rects).toHaveLength(1);
+  });
+
+  it('باکسِ بلندتر از یک‌پنجمِ دید مستطیل نمی‌شود — به دو خطِ سطحِ سقف/کف تنزل می‌کند (#193)', async () => {
+    // همان قاعدۀ سرور، بلندتر از دید (۱۰۱→۱۰۶ از دامنهٔ ۹۹→۱۰۶): سقفِ ارتفاعِ
+    // بصری جعبه را هم می‌گیرد؛ سطوح دست‌نخورده می‌مانند، فقط شکلِ رسم عوض می‌شود.
+    await renderChart({
+      ...FTS,
+      range_box: { active: true, top: 106, bottom: 101, pct_above_top: 1.4,
+                   start_date: '2025-01-07', end_date: '2025-01-09' },
+    });
+    expect(patternOverlays.filter((o) => o.name === 'rect')).toHaveLength(0);
+    const lines = patternOverlays
+      .filter((o) => o.name === 'horizontalStraightLine')
+      .map((o) => o.points?.[0]?.value);
+    expect(lines).toEqual([106, 101]);
+  });
+
+  it('جعبۀ رنجِ بی‌کرانِ زمانی رویِ چارت نمی‌آید — extent حدس نیست', async () => {
+    await renderChart({ ...FTS, range_box: { active: true, top: 210, bottom: 140 } });
+    expect(patternOverlays.filter((o) => o.name === 'rect')).toHaveLength(0);
+    expect(patternOverlays.some((o) => o.points?.some((p) => p.value === 210))).toBe(false);
+  });
+
+  // مرحلۀ ۶، شکافِ ب-۱: نسخۀ Wِ ساختار منتشر می‌شد ولی هیچ‌جا خوانده نمی‌شد
+  it('پیوتِ هفتگیِ ساختار با برچسبِ (W) رویِ کندلِ خودش می‌نشیند', async () => {
+    await renderChart({
+      ...FTS,
+      structure_points: {
+        D: [{ idx: 1, time: '2025-01-07', confirm_idx: 3, confirm_time: '2025-01-09', price: 101, kind: 'low', label: 'HL' }],
+        W: [{ idx: 2, time: '2025-01-08', confirm_idx: 4, confirm_time: '2025-01-10', price: 103, kind: 'high', label: 'LH' }],
+      },
+    });
+    const marks = patternOverlays
+      .filter((o) => o.name === 'simpleAnnotation')
+      .map((o) => ({ label: String(o.extendData), ts: o.points?.[0]?.timestamp, v: o.points?.[0]?.value }));
+    expect(marks).toEqual([
+      { label: 'HL', ts: dayUtc('2025-01-07'), v: 101 },
+      { label: 'LH (W)', ts: dayUtc('2025-01-08'), v: 103 },
+    ]);
   });
 });

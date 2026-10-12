@@ -76,6 +76,13 @@ export const FTS_INDICATOR_CATALOG: readonly FtsIndicatorEntry[] = [
     engines: { klinecharts: true, ffc: true },
   },
   {
+    id: 'structure-points-weekly', fa: 'نقاط ساختار هفتگی (زمینه)',
+    en: 'Weekly structure pivot points',
+    group: 'structure', display: ['marker'], source: 'structure_points.W',
+    rule: 'روند ساختاری صعودی/نزولی/خنثی', toggle: 'structure',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
     id: 'e3-zigzag',
     fa: 'موتور سوم - خط زیگزاگ (ATR٪)', en: 'Engine 3 thresholded zigzag',
     group: 'structure', display: ['segment', 'marker'],
@@ -138,6 +145,12 @@ export const FTS_INDICATOR_CATALOG: readonly FtsIndicatorEntry[] = [
     id: 'double-bottom', fa: 'خط گردن کف دوقلو', en: 'Double-bottom neckline',
     group: 'entry-setup', display: ['level'], source: 'double_bottom.neckline',
     rule: 'کف دوقلو', toggle: 'double',
+    engines: { klinecharts: true, ffc: true },
+  },
+  {
+    id: 'range-box', fa: 'جعبه رنج (سقف/کف ۲۰ کندل)', en: 'Range box',
+    group: 'entry-setup', display: ['band'], source: 'range_box',
+    rule: 'محدودهٔ رنج + خروج از باکس', toggle: 'rangebox',
     engines: { klinecharts: true, ffc: true },
   },
   {

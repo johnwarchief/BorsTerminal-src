@@ -20,7 +20,8 @@ export type PatternKind =
   | 'ma14exit'
   | 'hourglass'
   | 'pullback'
-  | 'structure';
+  | 'structure'
+  | 'rangebox';
 
 export const PATTERN_LABELS: Record<PatternKind, string> = {
   jet: 'جت (شکست مقاومت)',
@@ -33,6 +34,7 @@ export const PATTERN_LABELS: Record<PatternKind, string> = {
   hourglass: 'ساعت شنی (MA52/RSI)',
   pullback: 'پولبک',
   structure: 'ساختار روند (HH/HL/LH/LL)',
+  rangebox: 'جعبه رنج (سقف/کف ۲۰ کندل)',
 };
 
 export type PatternPref = { enabled: boolean; color: string; opacity: number };
@@ -50,6 +52,7 @@ export const PATTERN_PREFS_DEFAULT: PatternPrefs = {
   hourglass: { enabled: true, color: '#38bdf8', opacity: 0.12 },
   pullback: { enabled: true, color: '#34d399', opacity: 0.9 },
   structure: { enabled: true, color: '#4ade80', opacity: 0.9 },
+  rangebox: { enabled: true, color: '#fbbf24', opacity: 0.12 },
 };
 
 const alpha = (hex: string, op: number): string => {
@@ -131,8 +134,12 @@ export type PatternInputs = {
   hourglass: { active: boolean; ma52Weekly: number | null; rsi5Weekly: number | null; bandPct?: number | null };
   /** پولبکِ شاخۀ صعودی — سطح + لمس + تأیید؛ none یعنی «سرور نگفته» */
   pullback?: { active: boolean; touching: boolean; level: number | null; weeklyConfirms: boolean | null };
-  /** نقاط ساختاریِ تأییدشده از سرور (HH/HL/LH/LL) — بی‌محاسبۀ مرورگر */
-  structure?: { ts: number; value: number; label: string; confirmTs: number | null }[];
+  /** نقاط ساختاریِ تأییدشده از سرور (HH/HL/LH/LL) — بی‌محاسبۀ مرورگر.
+   *  `tf` جدا می‌ماند تا مارکرِ هفتگی (زمینه) با روزانه (مرجع) قاطی نشود. */
+  structure?: { ts: number; value: number; label: string; confirmTs: number | null; tf?: 'D' | 'W' }[];
+  /** جعبۀ رنج: کرانۀ زمانی از خودِ سرور (۲۰ کندلِ قاعده) — بی‌تاریخ، باکس
+   *  روی کلِ دید کشیده نمی‌شود (extent دروغ می‌گفت). */
+  rangeBox?: { top: number | null; bottom: number | null; startTs: number | null; endTs: number | null; active: boolean };
   roles: Record<string, SignalRole>;
 };
 
@@ -213,13 +220,24 @@ export function patternInputsFromFts(
     },
     // فقط پیوت‌هایِ تأییدشدهٔ سرور، با زمانِ وقوعِ خودشان؛ confirm_time جدا
     // می‌آید تا شواهدِ کلیک «کِی فهمیدیم» را از «کِی شد» تفکیک کند (ضدِ repaint).
-    structure: (fts?.structure_points?.D ?? []).flatMap((p) => {
+    // روزانۀ مرجع + هفتگیِ زمینه (هر دو از همان payloadِ `structure_points`).
+    structure: [
+      ...((fts?.structure_points?.D ?? []).map((p) => ({ p, tf: 'D' as const }))),
+      ...((fts?.structure_points?.W ?? []).map((p) => ({ p, tf: 'W' as const }))),
+    ].flatMap(({ p, tf }) => {
       const v = price(p.price, toDisp);
       const ts = v == null ? null : tsForDate(String(p.time).slice(0, 10));
       if (ts == null || v == null) return [];
       const confirmTs = p.confirm_time ? tsForDate(String(p.confirm_time).slice(0, 10)) : null;
-      return [{ ts, value: v, label: p.label, confirmTs }];
+      return [{ ts, value: v, label: p.label, confirmTs, tf }];
     }),
+    rangeBox: {
+      top: price(fts?.range_box?.top, toDisp),
+      bottom: price(fts?.range_box?.bottom, toDisp),
+      startTs: fts?.range_box?.start_date ? tsForDate(fts.range_box.start_date) : null,
+      endTs: fts?.range_box?.end_date ? tsForDate(fts.range_box.end_date) : null,
+      active: fts?.range_box?.active === true,
+    },
     roles: (fts?.roles ?? {}) as Record<string, SignalRole>,
   };
 }
@@ -261,8 +279,14 @@ export function buildPatternOverlays(
     return { color: col(k), size: s.size, style: s.style, opacity: Math.min(op(k), s.opacityCap) };
   };
 
-  /** کمربندِ تمام‌عرض: یا مستطیلِ پر، یا (وقتی از پنل بلندتر است) دو خطِ سطح */
-  const pushBand = (kind: PatternKind, role: SignalRole, overlayName: string, label: string, hi: number, lo: number) => {
+  /** کمربند: یا مستطیلِ پر، یا (وقتی از پنل بلندتر است) دو خطِ سطح.
+   *  `bounds` یعنی لایه کرانۀ زمانیِ خودش را دارد (جعبۀ رنج = ۲۰ کندل) و نباید
+   *  روی کلِ دید کشیده شود؛ بی‌`bounds` کمربند تمام‌عرضِ دید است. سقفِ ارتفاعِ
+   *  بصری برایِ هر دو شکل یکی است (سنجشِ زندهٔ «آكام»). */
+  const pushBand = (
+    kind: PatternKind, role: SignalRole, overlayName: string, label: string,
+    hi: number, lo: number, bounds?: { startTs: number; endTs: number },
+  ) => {
     const edge = col(kind);
     const fill = alpha(edge, Math.min(op(kind), ROLE_STYLES[role].opacityCap));
     if (span > 0 && (hi - lo) / span > BAND_MAX_OF_VIEW) {
@@ -284,12 +308,11 @@ export function buildPatternOverlays(
       role,
       overlayName,
       label,
-      points: [
-        { timestamp: lastTs, value: hi },
-        { timestamp: lastTs, value: lo },
-      ],
+      points: bounds
+        ? [{ timestamp: bounds.startTs, value: hi }, { timestamp: bounds.endTs, value: lo }]
+        : [{ timestamp: lastTs, value: hi }, { timestamp: lastTs, value: lo }],
       styles: { color: fill, borderColor: edge, borderSize: 1, borderStyle: 'dashed' },
-      extendData: { label },
+      extendData: bounds ? { label, bounded: true } : { label },
     });
   };
 
@@ -488,21 +511,42 @@ export function buildPatternOverlays(
   }
 
   // ۱۱) ساختارِ روند — مارکرِ هر نقطۀ تأییدشده (HH/HL/LH/LL)؛ رنگِ برچسبِ
-  //      نزولی/صعودی از خودِ لیبل می‌آید، نه از داوریِ این فایل.
+  //      نزولی/صعودی از خودِ لیبل می‌آید، نه از داوریِ این فایل. هفتگی با
+  //      پسوندِ (W) می‌آید تا «زمینۀ هفتگی» از «مرجعِ روزانه» جدا خوانده شود.
   if (on('structure')) {
     for (const p of inputs.structure ?? []) {
       if (!(Number.isFinite(p.value) && p.value > 0)) continue;
       const bear = p.label === 'LH' || p.label === 'LL';
+      const label = p.tf === 'W' ? `${p.label} (W)` : p.label;
       out.push({
         kind: 'structure',
         role: roleOf('structure'),
         overlayName: 'ftsStructureMarker',
-        label: p.label,
+        label,
         points: [{ timestamp: p.ts, value: p.value }],
         styles: { color: bear ? '#f87171' : col('structure'), size: 1, style: 'solid', opacity: op('structure') },
-        extendData: { label: p.label, confirmTs: p.confirmTs },
+        extendData: { label, confirmTs: p.confirmTs, tf: p.tf ?? 'D' },
       });
     }
+  }
+
+  // ۱۲) جعبۀ رنج — باکسِ کراندار به همان ۲۰ کندلی که قاعدۀ سرور تعریف کرده؛
+  //      بی‌تاریخِ start/end از سرور رسم نمی‌شود، وگرنه extent روی کلِ دید دروغ می‌گفت.
+  //      از همان pushBand می‌گذرد تا سقفِ ارتفاعِ بصری (BAND_MAX_OF_VIEW) به جعبه هم
+  //      بخورد — باکسِ بلند (مثلاً نمادی که درِ این ۲۰ کندل دو برابر شده) به دو خطِ
+  //      سطحِ سقف/کف تنزل می‌کند و پنل را نمی‌پوشاند.
+  const box = inputs.rangeBox;
+  if (on('rangebox') && box && box.top != null && box.bottom != null
+      && box.startTs != null && box.endTs != null) {
+    pushBand(
+      'rangebox',
+      roleOf('range_break'),
+      'ftsZoneBands',
+      box.active ? 'شکست جعبه رنج' : 'جعبه رنج',
+      box.top,
+      box.bottom,
+      { startTs: box.startTs, endTs: box.endTs },
+    );
   }
 
   return out;

@@ -245,19 +245,23 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
     };
   }
 
-  // ۳) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی): مستطیلِ تمام‌عرض با پرِ ملایم و بوردرِ خط‌چین.
+  // ۳) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی، جعبه رنج): مستطیلِ پر با
+  //    بوردرِ خط‌چین. جعبه‌هایِ کراندار (`bounded`) فقط بینِ دو timestampِ خودشان
+  //    رسم می‌شوند؛ بی‌این باکسِ ۲۰ کندلی روی کلِ تاریخچه کشیده می‌شد.
   if (spec.points.length >= 2) {
     const a = spec.points[0].value;
     const b = spec.points[1].value;
     const hi = Math.max(a, b);
     const lo = Math.min(a, b);
+    const bounded = (spec.extendData as { bounded?: boolean } | undefined)?.bounded === true;
+    const leftTs = bounded ? spec.points[0].timestamp : startTs;
     const lastTs = spec.points[1].timestamp || p0.timestamp;
     return {
       name: 'rect',
       groupId: PATTERN_GROUP_ID,
       lock: true,
       points: [
-        { timestamp: startTs, value: hi },
+        { timestamp: leftTs, value: hi },
         { timestamp: lastTs, value: lo },
       ],
       styles: { polygon: { color, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
@@ -290,12 +294,14 @@ function toZoneFallback(spec: PatternOverlaySpec, startTs: number): Record<strin
   const color = patternOverlayColor(spec);
   const a = spec.points[0].value;
   const b = spec.points.length > 1 ? spec.points[1].value : a;
+  const bounded = (spec.extendData as { bounded?: boolean } | undefined)?.bounded === true;
+  const leftTs = bounded ? spec.points[0].timestamp : startTs;
   const lastTs = spec.points.length > 1 ? (spec.points[1].timestamp || startTs) : startTs;
   return {
     name: 'priceChannelLine',
     groupId: PATTERN_GROUP_ID,
     lock: true,
-    points: [{ timestamp: startTs, value: a }, { timestamp: lastTs, value: b }],
+    points: [{ timestamp: leftTs, value: a }, { timestamp: lastTs, value: b }],
     styles: { line: { color, size: 1, style: 'dashed' } },
   };
 }

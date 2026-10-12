@@ -34,6 +34,7 @@ function noPatterns(): PatternInputs {
     ma14Exit: { active: false, level: null },
     hourglass: { active: false, ma52Weekly: null, rsi5Weekly: null, bandPct: null },
     pullback: { active: false, touching: false, level: null, weeklyConfirms: null },
+    rangeBox: { active: false, top: null, bottom: null, startTs: null, endTs: null },
     structure: [],
     roles: {},
   };
@@ -54,6 +55,8 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     },
     hourglass: { active: true, ma52: 2980, weekly_rsi5: 24.6, ma52_band_pct: 3.0 },
     pullback: { active: true, touching: true, level: 2400, weekly_confirms: true },
+    range_box: { active: true, top: 2750, bottom: 2410, pct_above_top: 1.2,
+      start_date: '2026-01-06', end_date: '2026-01-26' },
     structure_points: {
       D: [
         { idx: 3, time: '2026-01-04', confirm_idx: 5, confirm_time: '2026-01-06', price: 1900, kind: 'low', label: 'HL' },
@@ -81,13 +84,19 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     expect(i.ma14Exit).toEqual({ active: true, level: 2450 });
     expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi5Weekly: 24.6, bandPct: 3.0 });
     expect(i.pullback).toEqual({ active: true, touching: true, level: 2400, weeklyConfirms: true });
-    // ساختار: فقط نقاطِ تأییدشدهٔ سرور با زمانِ وقوع + زمانِ تأیید (ضدِ repaint)
+    // ساختار: فقط نقاطِ تأییدشدهٔ سرور با زمانِ وقوع + زمانِ تأیید (ضدِ repaint)،
+    // و tfِ خودِ نقطه تا «مرجعِ روزانه» از «زمینۀ هفتگی» در شواهد جدا بماند.
     expect(i.structure).toEqual([
       { ts: Date.parse('2026-01-04T00:00:00Z'), value: 1900, label: 'HL',
-        confirmTs: Date.parse('2026-01-06T00:00:00Z') },
+        confirmTs: Date.parse('2026-01-06T00:00:00Z'), tf: 'D' },
       { ts: Date.parse('2026-01-10T00:00:00Z'), value: 2600, label: 'HH',
-        confirmTs: Date.parse('2026-01-12T00:00:00Z') },
+        confirmTs: Date.parse('2026-01-12T00:00:00Z'), tf: 'D' },
     ]);
+    // جعبۀ رنج: سقف/کف + بازۀ خودش از سرور، نه حدسِ چارت
+    expect(i.rangeBox).toEqual({
+      active: true, top: 2750, bottom: 2410,
+      startTs: Date.parse('2026-01-06T00:00:00Z'), endTs: Date.parse('2026-01-26T00:00:00Z'),
+    });
     expect(i.roles.jet).toBe('entry');
     expect(i.roles.third_peak).toBe('warning');
   });
@@ -229,6 +238,44 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     expect(bad.find((s) => s.kind === 'structure')).toBeUndefined();
   });
 
+  it('ساختارِ هفتگی ازِ همان payload می‌آید و با پسوندِ (W) از مرجعِ روزانه جدا خوانده می‌شود (ب-۱)', () => {
+    const both = {
+      structure_points: {
+        D: [{ time: '2026-01-04', price: 1900, label: 'HL', confirm_time: '2026-01-06' }],
+        W: [{ time: '2026-01-05', price: 1500, label: 'LL', confirm_time: '2026-01-09' }],
+      },
+    } as unknown as FtsAnalysisData;
+    const i = patternInputsFromFts(both, plain);
+    expect(i.structure?.map((p) => p.tf)).toEqual(['D', 'W']);
+    const specs = buildPatternOverlays({ ...noPatterns(), structure: i.structure }, PATTERN_PREFS_DEFAULT, barRows)
+      .filter((s) => s.kind === 'structure');
+    expect(specs.map((s) => s.label)).toEqual(['HL', 'LL (W)']);
+    expect(specs[1].points[0].timestamp).toBe(Date.parse('2026-01-05T00:00:00Z'));
+    expect(specs[1].extendData?.tf).toBe('W');
+    expect(specs[1].extendData?.confirmTs).toBe(Date.parse('2026-01-09T00:00:00Z'));
+  });
+
+  it('جعبۀ رنج: باکسِ کراندار به بازۀ اعلامیِ سرور؛ بی‌تاریخِ start/end رسم نمی‌شود (ب-۳)', () => {
+    const box = { active: true, top: 2750, bottom: 2410, startTs: t0 + 6 * DAY, endTs: t0 + 26 * DAY };
+    const specs = buildPatternOverlays({ ...noPatterns(), rangeBox: box }, PATTERN_PREFS_DEFAULT, barRows)
+      .filter((s) => s.kind === 'rangebox');
+    expect(specs).toHaveLength(1);
+    expect(specs[0].overlayName).toBe('ftsZoneBands');
+    expect(specs[0].extendData?.bounded).toBe(true);
+    expect(specs[0].points.map((p) => p.timestamp)).toEqual([t0 + 6 * DAY, t0 + 26 * DAY]);
+    expect(specs[0].points.map((p) => p.value)).toEqual([2750, 2410]);
+    expect(specs[0].label).toBe('شکست جعبه رنج');
+    expect(buildPatternOverlays({ ...noPatterns(), rangeBox: { ...box, active: false } }, PATTERN_PREFS_DEFAULT, barRows)
+      .find((s) => s.kind === 'rangebox')!.label).toBe('جعبه رنج');
+    // کرانِ زمانیِ باکس از سرور نیست ⇒ extent روی کلِ دید دروغ می‌گفت؛ رسم نمی‌شود
+    expect(buildPatternOverlays({ ...noPatterns(), rangeBox: { ...box, startTs: null } }, PATTERN_PREFS_DEFAULT, barRows)
+      .find((s) => s.kind === 'rangebox')).toBeUndefined();
+    expect(buildPatternOverlays({ ...noPatterns(), rangeBox: { ...box, top: null } }, PATTERN_PREFS_DEFAULT, barRows)
+      .find((s) => s.kind === 'rangebox')).toBeUndefined();
+    const prefs: PatternPrefs = { ...PATTERN_PREFS_DEFAULT, rangebox: { ...PATTERN_PREFS_DEFAULT.rangebox, enabled: false } };
+    expect(buildPatternOverlays({ ...noPatterns(), rangeBox: box }, prefs, barRows).find((s) => s.kind === 'rangebox')).toBeUndefined();
+  });
+
   // #193 داورِ jev-pilot «الف»: کمربندِ بلندتر از یک‌پنجمِ دید، پنل را پر می‌کرد
   // (سنجشِ زندهٔ «آكام»: ۲۶۶۲۳۳ پیکسل). حالا فقط دو خطِ سطح می‌ماند.
   describe('سقفِ ارتفاعِ بصریِ کمربند (#193)', () => {
@@ -266,6 +313,26 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
       expect(tight).toHaveLength(2);
       expect(wide).toHaveLength(1);
     });
+
+    it('جعبۀ رنج هم زیرِ همان سقف است: باکسِ بلند ⇒ دو خطِ سقف/کف، بدونِ کمربندِ تمام‌پنل', () => {
+      // دیدِ تنگ (۱۰۰..۱۰۳): باکسِ ۱۰۱→۱۰۲ یک‌سومِ پنل را می‌پوشاند ⇒ تنزل
+      const tall = buildPatternOverlays(
+        { ...noPatterns(), rangeBox: { active: true, top: 102, bottom: 101, startTs: t0, endTs: t0 + 20 * DAY } },
+        PATTERN_PREFS_DEFAULT, tightRows,
+      ).filter((s) => s.kind === 'rangebox');
+      expect(tall).toHaveLength(2);
+      expect(tall.every((s) => s.overlayName === 'ftsJetLine' && s.points.length === 1)).toBe(true);
+      expect(tall.every((s) => s.extendData?.linesOnly === true)).toBe(true);
+      expect(tall.map((s) => s.points[0].value).sort((a, b) => b - a)).toEqual([102, 101]);
+      // دیدِ باز (۶۰..۱۴۰): همان باکس مستطیلِ کراندار می‌ماند
+      const short = buildPatternOverlays(
+        { ...noPatterns(), rangeBox: { active: true, top: 102, bottom: 101, startTs: t0, endTs: t0 + 20 * DAY } },
+        PATTERN_PREFS_DEFAULT, wideRows,
+      ).filter((s) => s.kind === 'rangebox');
+      expect(short).toHaveLength(1);
+      expect(short[0].points.map((p) => p.timestamp)).toEqual([t0, t0 + 20 * DAY]);
+      expect(short[0].extendData?.bounded).toBe(true);
+    });
   });
 });
 
@@ -275,18 +342,19 @@ describe('سوییچ‌های UI (PatternToggles) + پایداری', () => {
     usePatternPrefsStore.getState().reset();
   });
 
-  it('ده الگو، همه روشن؛ فیبو حذف شده چون لایۀ ۴ِ سرور خودش را می‌کشد (#193)', () => {
+  it('یازده الگو، همه روشن؛ فیبو حذف شده چون لایۀ ۴ِ سرور خودش را می‌کشد (#193)', () => {
     const kinds = Object.keys(PATTERN_PREFS_DEFAULT);
-    expect(kinds).toHaveLength(10);
+    expect(kinds).toHaveLength(11);
     expect(kinds).not.toContain('fib');
+    expect(kinds).toContain('rangebox');
     expect(kinds.every((k) => PATTERN_PREFS_DEFAULT[k as keyof PatternPrefs].enabled)).toBe(true);
     expect(PATTERN_PREFS_DEFAULT.jet.opacity).toBeLessThanOrEqual(0.2);
   });
 
-  it('ده توسلِ روشن/خاموش/رنگ/شفافیت رندر می‌شوند', () => {
+  it('یازده توسلِ روشن/خاموش/رنگ/شفافیت رندر می‌شوند', () => {
     render(<PatternToggles />);
     expect(screen.getByTestId('pattern-toggles')).toBeInTheDocument();
-    for (const k of ['jet', 'choch', 'pointhunt', 'double', 'headshoulders', 'thirdpeak', 'ma14exit', 'hourglass', 'pullback', 'structure']) {
+    for (const k of ['jet', 'choch', 'pointhunt', 'double', 'headshoulders', 'thirdpeak', 'ma14exit', 'hourglass', 'pullback', 'structure', 'rangebox']) {
       expect(screen.getByTestId(`pattern-toggle-${k}`)).toBeInTheDocument();
       expect(screen.getByTestId(`pattern-color-${k}`)).toBeInTheDocument();
       expect(screen.getByTestId(`pattern-opacity-${k}`)).toBeInTheDocument();
@@ -308,7 +376,7 @@ describe('سوییچ‌های UI (PatternToggles) + پایداری', () => {
     // store ماژول-سطحی یک‌بار ساخته می‌شود؛ بازخوانیِ صریحِ load را با reset می‌سنجیم
     usePatternPrefsStore.getState().reset();
     const prefs = usePatternPrefsStore.getState().prefs as unknown as Record<string, unknown>;
-    expect(Object.keys(prefs)).toHaveLength(10);
+    expect(Object.keys(prefs)).toHaveLength(11);
     expect(prefs.fib).toBeUndefined();
   });
 
