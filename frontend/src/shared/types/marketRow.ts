@@ -149,6 +149,14 @@ export const MarketRowSchema = z.object({
   stop_state: z.string().nullish(),
   stop_since: z.string().nullish(),
   stop_reasons: z.string().nullish(),
+  // ── «خارج از غربالگری» (گزینهٔ الف) ──────────────────────────────────────────
+  // رأیِ خودِ موتورِ غربالگری (`funnel_engine.screening_eligibility`) رویِ ردیفِ
+  // تابلو، تا رابط بگوید کدام نمادِ دارایِ فیلترِ تابلو به چه علتی واردِ قیف نمی‌شود.
+  // فقط نمایش است: شمارۀ چیپ و داوریِ فیلترها را دست نمی‌زند. نبودِ کلید (پاسخِ
+  // قدیمی) ⇒ «نمی‌دانیم»، نه «خارج است» — پس `nullish` و رابط بی‌اطلاعی را نمی‌بندد.
+  screening_eligible: z.boolean().nullish(),
+  screening_exclusion_code: z.string().nullish(),
+  screening_exclusion_reason: z.string().nullish(),
   // مبدأِ ارزشِ حقیقی/حقوقی: native | mixed | reconstructed. یک‌بار درِ نویسنده
   // حساب شده و همین‌جا خوانده می‌شود؛ رابط حق ندارد از خودِ عددها بازسازیش کند.
   // فقط درِ «جزئیات» نشان داده می‌شود — نه بج، نه ستونِ تابلو، و هرگز وارد

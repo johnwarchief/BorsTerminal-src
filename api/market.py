@@ -1345,6 +1345,21 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                         pass
 
         records = _slim_records(df, drop_unused)
+        # ── برچسبِ «خارج از غربالگری» (رأیِ مالک، گزینهٔ الف) ────────────────────
+        # شمارۀ چیپِ تابلو «واقعاً» جامعۀ تابلو را می‌شمرد و هیچ نمادی را برای
+        # برابرشدن با قیف کم نمی‌کند. در عوض هر ردیف رأیِ خودِ موتورِ غربالگری را
+        # می‌گیرد — همان `funnel_engine.screening_eligibility` که قیف مصرف می‌کند،
+        # نه فرمولِ دوم. این فقط *خواندنِ* رأی است: هیچ قاعدۀ FTS، هیچ جامعۀ مجاز
+        # و هیچ شمارشی عوض نمی‌شود؛ رابط با آن می‌گوید «این نماد فیلتر را دارد ولی
+        # به این علت واردِ غربالگری نمی‌شود». importِ محلی، مثلِ `_tape_unmeasurable`.
+        from funnel_engine import screening_eligibility as _screening_eligibility
+        _sday = market_state.session_day()
+        for _rec in records:
+            _ok, _code, _reason = _screening_eligibility(_rec, _sday)
+            _rec["screening_eligible"] = bool(_ok)
+            if not _ok:
+                _rec["screening_exclusion_code"] = _code
+                _rec["screening_exclusion_reason"] = _reason
         # یکِ پاس رویِ ستونِ bool، نه سه تا (`sum` و بعد `~df[...]` و `sum` دوبار):
         # دو تای آخرِ پیشین برایِ هر بازسازی یکِ قابِ ۵٬۶۰۰×۱ جدید می‌ساختند، فقط
         # برایِ «منفیِ» همان عدد.

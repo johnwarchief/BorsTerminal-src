@@ -1130,6 +1130,18 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
         ))}
         {!reasons.length ? <span data-testid="funnel-exclusion-none">چیزی خارج از جامعه نیست.</span> : null}
       </div>
+      {/* توضیحِ تفاوتِ شمارۀ تابلو با غربالگری (گزینهٔ الف): شمارۀ چیپِ تبِّ تابلو
+          این نمادها را هم می‌شمرد (چون فیلتر را پاس می‌کنند)؛ اینجا فقط علتِ بیرون‌
+          ماندنشان از غربالگری نوشته می‌شود. تفاوت از جامعۀ نماد/قواعدِ پذیرش است،
+          نه از اختلافِ محاسبه — و شمارۀ تابلو برایِ برابرشدن کم نمی‌شود. */}
+      {rows.length ? (
+        <p className="mb-1 text-3xs leading-4 text-text-muted" data-testid="funnel-universe-reconcile">
+          این نمادها فیلترِ تابلو را پاس می‌کنند و درِ شمارۀ چیپِ تبِّ «تابلوخوانی» شمرده
+          می‌شوند؛ قواعدِ پذیرشِ غربالگری (توقف/ممنوعیت/پسوندِ عددی) آن‌ها را از جامعۀ
+          غربالگری بیرون می‌گذارد. پس تفاوتِ شمارۀ تابلو و غربالگری از جامعۀ نماد است،
+          نه اختلافِ محاسبه.
+        </p>
+      ) : null}
       <div ref={ref} className="max-h-56 overflow-y-auto">
         <div className="relative" style={{ height: virt.getTotalSize() }}>
           {virt.getVirtualItems().map((it) => {

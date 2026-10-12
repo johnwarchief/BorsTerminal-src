@@ -283,6 +283,19 @@ export const TapeRow = memo(function TapeRow({
             {b.label}
           </MicroBadge>
         ))}
+        {/* «خارج از غربالگری» (گزینهٔ الف): این نماد فیلترِ تابلو را دارد، ولی
+            موتورِ غربالگری به این علت آن را candidate نمی‌گیرد (متوقف/ممنوع/…).
+            شمارۀ چیپ را کم نمی‌کند — فقط علتِ تفاوتِ تابلو با قیف را رویِ همان
+            ردیف نشان می‌دهد. بی‌اطلاعی (پاسخِ قدیمی) برچسب نمی‌زند. */}
+        {row.screening_eligible === false && badges.some((b) => b.filter) ? (
+          <MicroBadge
+            pattern="out-of-screening"
+            tone="gray"
+            title={`دارایِ فیلترِ تابلو، اما واردِ غربالگری نمی‌شود — ${row.screening_exclusion_reason ?? row.screening_exclusion_code ?? 'خارج از جامعۀ غربالگری'}`}
+          >
+            خارج از غربالگری
+          </MicroBadge>
+        ) : null}
       </span>
     </div>
   );
