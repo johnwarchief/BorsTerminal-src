@@ -184,18 +184,29 @@ def _coverage(conn):
     """پوششِ ستون‌ها بعد از اجرا — برای راستی‌آزمایی.
 
     شمارِ «بی‌دوره» از همان `codal_periods.undated_counts` خوانده می‌شود که هر
-    consumerِ دیگر می‌خواند؛ این فایل کوئریِ شمارشِ خودش را ندارد."""
+    consumerِ دیگر می‌خواند؛ این فایل کوئریِ شمارشِ خودش را ندارد. بعضی guardها
+    عمداً فقط یکی از جدول‌های داده را می‌سازند؛ نبودِ جدول با صفرِ جعلی اشتباه نمی‌شود.
+    """
     import codal_periods as CP
+    tables = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
     out = {
-        "fs_total": conn.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0],
-        "ms_total": conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0],
+        "fs_total": (conn.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+                     if "financial_statements" in tables else None),
+        "ms_total": (conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]
+                     if "monthly_sales" in tables else None),
     }
+    ms_cols = ({r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+               if "monthly_sales" in tables else set())
     for prev_col, _src in _PREV_COLS:
-        out[f"ms_{prev_col}_nonnull"] = conn.execute(
-            f"SELECT COUNT(*) FROM monthly_sales WHERE {prev_col} IS NOT NULL"
-        ).fetchone()[0]
+        out[f"ms_{prev_col}_nonnull"] = (
+            conn.execute(f"SELECT COUNT(*) FROM monthly_sales WHERE {prev_col} IS NOT NULL").fetchone()[0]
+            if prev_col in ms_cols else None
+        )
     for table, pe_col in _DUP_TABLES:
-        out[f"{table}_dupgroups"] = len(_dup_groups(conn, table, pe_col))
+        out[f"{table}_dupgroups"] = (
+            len(_dup_groups(conn, table, pe_col)) if table in tables else None
+        )
     out["undated"] = CP.undated_counts(conn)
     return out
 
