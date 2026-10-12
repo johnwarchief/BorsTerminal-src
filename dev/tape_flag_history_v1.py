@@ -181,7 +181,10 @@ def main():
     ck("'tape_flag_history'" in spec, "fts_terminal.spec: hiddenimports (EXE روی اولین درخواست نمیرد)")
 
     os.remove(tmp)
-    print(f"\ntape_flag_history: {PASS} ok / {FAIL} fail")
+    # قالبِ سطرِ آخر برایِ `dev/run_all_tests.py` است: parser آنجا `N passed / M failed`
+    # را می‌شناسد؛ با «ok/fail» شمارِ چک‌ها درِ گزارشِ مجموعه «0 pass / 0 fail» می‌شد
+    # و کور می‌ماند (نگهبانِ بی‌شمارش، همان دامِ §۲۲).
+    print(f"\ntape_flag_history: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0
 
 
