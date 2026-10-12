@@ -10,7 +10,8 @@
 // کندلِ روز، پایانی، سپس چهار خانۀ تقاضا/عرضه (تقاضا سبز، عرضه قرمز)، وضعیت،
 // ساعتِ خودِ ردیف و حذف. هیچ ستونِ پیشین حذف نشده — «تعدادِ معاملات» و
 // «حجم/ارزش» سرِ جایش‌اند و صفِ اول جایِ جمعِ کلِ صف را نگرفته، چون مرجع همان
-// صفِ اول را نشان می‌دهد.
+// صفِ اول را نشان می‌دهد. ستونِ «برچسب‌های تابلو» (رأیِ مالک 1405-07-21): همان
+// هفت چیپِ `patternBadges`ِ تابلو، بی‌موتورِ دوم.
 //
 // ترازِ عددی طبقِ گاردِ UI: مقدارِ num در لبۀِ start، بعدش نشان؛ جدولِ عریض درِ
 // `min-w-0 max-w-full overflow-auto`.
@@ -19,6 +20,9 @@ import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
+import { patternBadges } from '@features/market/lib/tapeBadges';
+import { MicroBadge } from '@features/market/components/TapeTable';
+import { useTapeStore } from '@features/market/stores/tapeStore';
 import {
   MATRIX_STATE_LABEL, matrixBySymbol, useWatchMatrix,
   type MatrixState, type WatchMatrixRow,
@@ -78,6 +82,11 @@ type Props = {
 const TH = 'px-2 py-1.5 text-start text-3xs font-bold whitespace-nowrap';
 const TD = 'px-2 py-1 text-start whitespace-nowrap';
 
+/** برچسب‌های تابلوخوانی (هفت فیلتر) — همان `patternBadges` و همان `MicroBadge`
+ * ِ خودِ تابلو (رأیِ مالک ۱۴۰-۰۷-۱۹: «همون برچسب‌های تابلوخوانی»، بی‌ترجمۀ دوم).
+ *  فقط چیپ‌هایِ فیلتر (`filter:true`)؛ وضعیت‌هایِ صف+/نظارت درِ ستونِ
+ *  «وضعیت» هست. */
+
 /** «تکنیکال» و «بنیادی» درِ دیده‌بان (رأیِ مالک ۱۴۰۵-۰۷-۲۲): دو ستونِ وضعیت،
  *  با همان چهار حالتِ `confidence_engine.PILLAR_STATES`. داوری اینجا ساخته
  *  نمی‌شود — `/api/watchlist/matrix` همان «تأیید سه‌گانه» را می‌دهد که سبدگردانی
@@ -129,6 +138,7 @@ function PillarCell({ row, pillar, pending }: {
 export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
   const feedQ = useMarketFeedShared(selectRowMap, 60_000);
   const byNorm = feedQ.data ?? EMPTY_MAP;
+  const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
   // یک درخواست برایِ کلِ فهرستِ رصد (ضدِN+1 درِ خودِ بک‌اند هم همین‌طور)، بی‌
   // پولینگِ موازی با ریتمِ تابلو.
   const matrixQ = useWatchMatrix(symbols);
@@ -162,6 +172,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
               <th className={`${TH} bg-accent-red/10 text-accent-red`}>قیمت عرضه</th>
               <th className={`${TH} bg-accent-red/10 text-accent-red`}>حجم عرضه</th>
               <th className={TH}>وضعیت</th>
+              <th className={TH}>برچسب‌های تابلو</th>
               <th className={TH}>تکنیکال</th>
               <th className={TH}>بنیادی</th>
               <th className={TH}>به‌روزرسانی</th>
@@ -175,6 +186,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
               const isSel = normalizeFa(symbol) === normalizeFa(selected);
               const dem = queueCell(row?.buy_q1_px);
               const sup = queueCell(row?.sell_q1_px);
+              const badges = row ? patternBadges(row, tapeCfg).filter((b) => b.filter) : [];
               return (
                 <tr
                   key={symbol}
@@ -235,6 +247,22 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                   <td className={TD}>
                     <span className={`text-2xs font-bold ${st.tone}`} title={st.title}>{st.text}</span>
                     {row && row.is_live === false ? <span className="ms-1 text-3xs text-accent-yellow" title="قیمت‌ها از آخرین روز معاملاتیِ بسته‌شده است">آخرین داده</span> : null}
+                  </td>
+                  <td className={TD} title="همان هفت فیلترِ تابلوخوانی که درِ تبِّ تابلو روشن می‌شوند (وضعیتِ همین نشست)">
+                    {badges.length ? (
+                      <span className="flex min-w-0 flex-wrap items-center gap-0.5" data-testid={`watch-tape-badges-${symbol}`}>
+                        {badges.map((b) => (
+                          <MicroBadge key={b.key} pattern={b.pattern} tone={b.tone} title={b.title}>
+                            {b.label}
+                          </MicroBadge>
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="text-3xs text-text-muted"
+                            data-testid={`watch-tape-badges-${symbol}`}>
+                        {row ? 'بی‌برچسب' : '—'}
+                      </span>
+                    )}
                   </td>
                   <td className={TD}>
                     <PillarCell row={mtx.get(normalizeFa(symbol))} pillar="tech" pending={matrixPending} />

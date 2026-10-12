@@ -283,6 +283,24 @@ describe('ستون‌هایِ «تکنیکال» و «بنیادی» درِ دی
     expect(screen.getByTestId('watch-matrix-state').textContent).toContain('۰ نماد');
   });
 
+  it('ستونِ «برچسب‌های تابلو» همان هفت پرچمِ فید را با MicroBadgeِ خودِ تابلو می‌زند (رأیِ مالک ۱۴۰۵-۰۷-۲۱)', async () => {
+    // بی‌موتورِ دوم: چیپ‌ها فقط از f_*ِ همان ردیفِ فید می‌آیند (patternBadges).
+    const hot = row({ symbol: 'زرنخ', ins_code: 'Z1', f_smart: true, f_legal: true, f_roobi: false });
+    const cold = row();
+    mockFeed([hot, cold]);
+    renderTable([hot, cold]);
+    await cellHas('watch-row-زرنخ', '۱٬۰۲۵');
+    const chips = screen.getByTestId('watch-tape-badges-زرنخ');
+    expect(chips.textContent).toContain('پول هوشمند');
+    expect(chips.textContent).toContain('کد به کد');
+    expect(chips.textContent).not.toContain('کف‌روب');
+    // بج‌ها همان کامپوننتِ تابلویند (data-testid=badge-<pattern>) — ترجمۀ دوم نیست
+    expect(chips.querySelector('[data-testid="badge-smart"]')).not.toBeNull();
+    expect(chips.querySelector('[data-testid="badge-legal"]')).not.toBeNull();
+    // نمادِ بی‌پرچم «بی‌برچسب» می‌گیرد، نه جایِ خالیِ بی‌دلیل
+    expect(screen.getByTestId('watch-tape-badges-شپنا').textContent).toBe('بی‌برچسب');
+  });
+
   it('بی‌ماتریس جدول نمی‌شکند: هم «۲۰۰ با statusِ error» و هم HTTP ۴۰۴ به پاورقی می‌آیند', async () => {
     // مسیرِ واقعی: `api/watchlist.py` استثنا را می‌گیرد و با ۲۰۰ و
     // `status: 'error'` برمی‌گرداند؛ `isError` درِ react-query این را خطا نمی‌داند.
