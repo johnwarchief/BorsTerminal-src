@@ -1,11 +1,29 @@
 name: mobile-apk
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'انتشار ریلیز + tag (پیش‌فرض false؛ اجرای عادی فقط artifact می‌سازد)'
+        type: boolean
+        required: false
+        default: false
+      prerelease:
+        description: 'ریلیز را prerelease نگه دارد (کاندیدای آزمایشی)'
+        type: boolean
+        required: false
+        default: true
   push:
     branches:
       - 'arena/**'
     paths:
       - 'frontend/**'
+
+# گیتِ انتشار (Stage 0 مأموریت اندروید): تا پیش‌ازِ این، همین workflow درِ هرِ
+# push به frontend/** روی arena/** یکِ `gh release create` + tag می‌ساخت
+# (`mobile-parity-<sha>`؛ شاهد: سطرِ A4 درِ docs/MASTER-EXECUTION-ROADMAP.md،
+# ریلیزِ mobile-parity-f91b031). حالا اجرایِ عادی فقط artifact می‌دهد و
+# انتشار/tag فقط با workflow_dispatch و publish=true، یعنی یکِ کلیکِ صریحِ دستی.
+# الگویِ همان gating درِ release.yml (`if: github.event_name == 'workflow_dispatch'`) بود.
 
 permissions:
   contents: write
@@ -83,16 +101,27 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bors-mobile-uiux-apk
+          name: bors-mobile-candidate-apk-${{ github.sha }}
           path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      - name: Publish gate status
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
+            echo "PUBLISH = صریحاً درخواست‌شده (workflow_dispatch, publish=true)"
+          else
+            echo "PUBLISH = رد شد؛ اینِ ران فقط artifact می‌سازد. برایِ tag/ریلیز: Run workflow با publish=true."
+          fi
+
       - name: Publish Android release
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           SHA="${GITHUB_SHA::7}"
+          PRERELEASE_FLAG="--prerelease"
+          if [ "${{ github.event.inputs.prerelease }}" = "false" ]; then PRERELEASE_FLAG=""; fi
           # base_main_commit = جایی که این شاخه از main جدا شده؛ بی‌این، ریلیزِ
           # موبایل قابلِ ردیابی به کدِ دسکتاپ نیست
           git fetch -q origin main
@@ -101,7 +130,7 @@ jobs:
           SUM=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(stat -c '%s' "$APK")
           TAG="mobile-parity-$SHA"
-          gh release create "$TAG" --prerelease --target "$GITHUB_SHA"             --title "BorsTerminal Android — parity pack — $SHA"             --notes "بستۀ تجمیعیِ اندروید (یک ریلیز، نه per-fix).
+          gh release create "$TAG" $PRERELEASE_FLAG --target "$GITHUB_SHA"             --title "BorsTerminal Android — parity pack — $SHA"             --notes "بستۀ تجمیعیِ اندروید (یک ریلیز، نه per-fix).
 
           source commit: $GITHUB_SHA
           base_main_commit: $BASE
