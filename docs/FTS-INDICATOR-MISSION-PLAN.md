@@ -33,7 +33,7 @@
 | B5 | `toDisp` در FFC همانی است ⇒ در حالت تعدیل‌شده لایه‌ها روی کندل تعدیل‌شده با قیمتِ تعدیل‌نشده می‌افتند | `FtsEngineChart.tsx:122` | صحت رندر |
 | B6 | `majorResistance/Support`: فضای index ناسازگار (نسبی slice vs مطلق fallback) | `indicators.ts:154-160` | زمین‌لاغم (فعلاً بی‌مصرف) — نقضِ index در `5408fba` با تست بسته شد؛ بی‌مصرفی (صفر مصرف‌کنندۀ UI، مصرف‌کننده از `3495fbe` برداشته شد) هنوز رأیِ مالک می‌خواهد: وصل یا حذف |
 | B7 | `STDEV_SAMPLE=false` (جمعیتی) در برابر Pine نمونه | `mabnaIndicators.ts:158-166` | اختلاف مستندِ باقی‌مانده |
-| B8 | overlayهای ثبت‌شدۀ بی‌مصرف `ftsJetMarker/ftsPullbackMarker` | `ftsOverlays.ts:37,167-175` | مرده — به `status.trigger` وصل یا حذف |
+| B8 | overlayهای ثبت‌شدۀ `ftsJetMarker`/`ftsPullbackMarker` بی‌مصرف خوانده شده بودند | **تصحیح با خواندنِ کدِ امروز (مرحلۀ ۷):** نیمی درست بود. `ftsPullbackMarker` بی‌مصرف نیست: ثبت در `ftsOverlays.ts:177`، تولید در `patternOverlays.ts:506`، مصرف در `KLineChartWrapper.tsx:222` (و آزمونِ `technical-pattern-wiring.spec.tsx:220`). آنچه بی‌مصرف است `JET_MARKER_OVERLAY` است: فقط در `ftsOverlays.ts:167` *رجیستر* می‌شود و هیچ تولیدکننده‌ای `overlayName: 'ftsJetMarker'` نمی‌دهد (grep در `frontend/src`: تنها سطرِ تعریف) | یک نیم **مرده** (رجیسترِ بی‌تولید، رأیِ حذفِ مالک می‌خواهد)؛ یک نیم **رفعِ ادعا** — بی‌مصرف نبودن با شاهد |
 | B9 | `MIN_WEEKLY=8` ثابت مرده | `trend_classify.py:20` | P0 #10 |
 | B10 | UI سه‌حالته را می‌ریزد: `not_evaluated` → «دادهٔ ناکافی» | `FtsStatusCard.tsx:41-49` (P0 §۳) | UX/صداقت |
 | B11 | dedup حجم بی‌صدا + `LIMIT 250` پیش از dedup؛ `message` به UI نمی‌رسد؛ `/api/patterns` مصرف‌کننده ندارد | `chart.py:818-824,1288-1294` (P0 #12) | صحت داده |
@@ -59,3 +59,8 @@
 تست‌های عددی جدید → کاتالوگ و پنل → موتور سوم → راستی‌آزمایی repaint/as-of → سنجۀ Rahavard
 (انجام شد: ۲۷ نماد × ۲ تایم‌فریم؛ `docs/TECHNICAL-RAHAVARD-PARITY-AUDIT.md`) → گیت‌های کامل →
 کامیت‌های مرحله‌ای push.
+
+وضعیتِ این دور (۱۴۰۵-۰۷-۲۰/۲۱) در `technical-indicators/reviewed/FTS-MISSION-CLOSURE-1405-07-20.md`
+است: هفت معیار از هشت معیارِ بستنِ پرونده بسته، م‑۴ (تطبیقِ دیدنیِ لایه‌ها با رهاورد) باز به
+نشستِ لاگینِ مالک، و موتورِ سوم بی‌مرجعِ بیرونی با `reference_status` درِ payload. ردیفِ B8 درِ
+§۳ همین سند با خواندنِ کدِ امروز تصحیح شد (`ftsPullbackMarker` بی‌مصرف نیست).
