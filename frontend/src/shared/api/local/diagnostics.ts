@@ -7,7 +7,8 @@
 //
 // بدون React و بدون وابستگی به پوسته — حتی اگر کل UI از کار افتاده باشد، این
 // پنل باید کار کند (همان فلسفهٔ بنر قرمز localData).
-import { baked, metaValue, query, bootTiming, snapshotStatus, requestManualCheck } from './localData';
+import { baked, metaValue, query, bootTiming, snapshotStatus, requestManualCheck,
+  rollbackToPreviousPackage } from './localData';
 import { liveWatch } from './live';
 import { overlayStatus } from './resolvers';
 
@@ -100,6 +101,7 @@ async function collect(): Promise<string> {
     }
     if (st.lastOkAt) parts.push(row('آخرینِ فعال‌سازیِ موفق', new Date(st.lastOkAt).toLocaleString('fa-IR')));
     parts.push('<div id="bors-diag-check"></div>');
+    parts.push('<div id="bors-diag-rollback"></div>');
   }
   parts.push(row('صفحه', `${window.innerWidth}×${window.innerHeight} · bors-mobile=` +
     String(document.documentElement.classList.contains('bors-mobile'))));
@@ -154,6 +156,34 @@ export function mountDiagnostics(): void {
           });
       });
       slot.appendChild(b);
+      // بازگشت به آخرین بستۀِ **فعال‌شدۀِ معتبر**. بی‌این دکمه، اگر یکِ بستۀِ
+      // خرابِ تازه فعال می‌شد و برنامه رویِ دادهٔ کهنه می‌ماند، کاربر رویِ گوشی
+      // هیچ راهی جز پاک‌کردنِ کش نداشت — و پاک‌کردنِ کش هر دو بسته را می‌برد.
+      const prevId = snapshotStatus().previousPackageId;
+      if (prevId) {
+        const rbSlot = panel.querySelector('#bors-diag-rollback');
+        if (rbSlot) {
+          const rb = document.createElement('button');
+          rb.type = 'button';
+          rb.textContent = `بازگشت به نسخۀ پیشین (${prevId})`;
+          rb.style.cssText =
+            'width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);' +
+            'background:rgba(120,80,20,.25);color:#e5e7eb;font:inherit;font-size:12px';
+          rb.addEventListener('click', () => {
+            rb.disabled = true;
+            rb.textContent = 'در حال بازگشت…';
+            void rollbackToPreviousPackage()
+              .then((r) => {
+                rb.textContent = r.ok ? `بازگشت شد: ${r.detail}` : `بازنگشت: ${r.detail}`;
+                setTimeout(() => { void show(); }, 900);
+              })
+              .catch((e: unknown) => {
+                rb.textContent = `خطا: ${e instanceof Error ? e.message : String(e)}`;
+              });
+          });
+          rbSlot.appendChild(rb);
+        }
+      }
     };
     const show = () => collect().then(render).catch((e: unknown) => {
       panel.textContent = `خطای عیب‌یابی: ${e instanceof Error ? e.message : String(e)}`;

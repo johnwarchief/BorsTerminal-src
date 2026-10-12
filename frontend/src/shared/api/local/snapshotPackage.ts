@@ -33,6 +33,10 @@ export type SnapshotManifest = {
   baked_fail?: number;
   tables?: string[];
   required_baked_keys?: string[];
+  /** چیدمانِ دیتابیسِ بسته (درِ جدول `meta` به‌همین نام نوشته می‌شود). با
+   *  `schema_version` یکی نیست: آن نسخۀ *قراردادِ manifest* است، این نسخۀ *فایلِ
+   *  SQLite*. اگر سازنده هر دو را بفرستد، کلاینت مقایسه می‌کند. */
+  db_schema?: number;
 };
 
 export type RejectReason =
@@ -40,7 +44,8 @@ export type RejectReason =
   | 'manifest-field-missing' | 'app-version-too-low'
   | 'size-mismatch' | 'digest-missing-on-device' | 'digest-mismatch'
   | 'not-gzip' | 'gunzip-failed' | 'db-open-failed' | 'table-missing'
-  | 'baked-key-missing' | 'meta-missing' | 'storage-unavailable' | 'storage-full';
+  | 'baked-key-missing' | 'meta-missing' | 'storage-unavailable' | 'storage-full'
+  | 'db-schema-mismatch';
 
 export type Check<T> = { ok: true; value: T } | { ok: false; reason: RejectReason; detail: string };
 
@@ -137,7 +142,15 @@ export async function validateDatabase(bytes: Uint8Array, m: SnapshotManifest, p
     }
     const built = db.metaValue('built_at');
     if (!built) return bad('meta-missing', 'meta.built_at نیست');
+    // چیدمانِ فایلِ SQLite با چیزی که manifest می‌گوید باید یکی باشد. بی‌این،
+    // «contract v2» می‌توانست بسته‌ای با چیدمانِ دیگری را بپذیرد و گوشی تا
+    // بازگشاییِ بعدی بفهمد. نبودش (بستۀ سازندۀ کهنه) داوری را عوض نمی‌کند.
     const schema = db.metaValue('schema');
+    if (m.db_schema !== undefined && schema !== null
+        && String(m.db_schema) !== String(schema)) {
+      return bad('db-schema-mismatch',
+        `meta.schema=${schema} در برابرِ db_schema=${m.db_schema} درِ manifest`);
+    }
     if (schema !== null && m.schema_version && Number(schema) > 99) {
       return bad('manifest-schema-unknown', `meta.schema=${schema} غیرمنتظره است`);
     }

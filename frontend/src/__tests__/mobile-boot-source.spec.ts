@@ -8,10 +8,31 @@
 //    دیوار خورد، درگاهِ بومی — و آن‌جا درصد ساخته نمی‌شود.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BootProgress } from '@shared/api/local/localData';
+import { makeTestSigner } from './minisignTestKey';
+
+// کلیدِ آزمایشیِ همین اجرا — قراردادِ تازه: manifest بی‌امضا خوانده نمی‌شود
+const SIGNER = makeTestSigner();
+
+const ab = (u: Uint8Array): ArrayBuffer => u.slice().buffer as ArrayBuffer;
+const encAb = (t: string): ArrayBuffer => ab(new TextEncoder().encode(t));
+
+/** manifest + .sig رویِ همان بایت‌ها (همان دو فایلِ کنارِ هم درِ ریلیز). */
+function signedMeta(manifest: unknown): { meta: ArrayBuffer; sig: ArrayBuffer } {
+  const meta = encAb(JSON.stringify(manifest, null, 1));
+  return { meta, sig: encAb(SIGNER.signBlock(meta)) };
+}
+
+const META_URL =
+  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
+
+/** مسیری که nativeGetBytes می‌بیند: gz/manifest/sig. بی‌routes یعنی null. */
+function routeNative(routes: Record<string, ArrayBuffer | null>) {
+  h.nativeGetBytes.mockImplementation(async (url: string) =>
+    (url in routes && routes[url] ? routes[url]!.slice(0) : null));
+}
 
 const h = vi.hoisted(() => ({
   nativeGetBytes: vi.fn(),
-  nativeGetJson: vi.fn(),
   match: vi.fn(),
   put: vi.fn(),
   del: vi.fn(),
@@ -20,7 +41,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@shared/api/local/nativeHttp', () => ({
   nativeGetBytes: h.nativeGetBytes,
-  nativeGetJson: h.nativeGetJson,
 }));
 
 const STAMP_KEY = 'bors_snapshot_cached_stamp';
@@ -50,6 +70,8 @@ function streamed(bytes: ArrayBuffer, declareLength = true): Response {
 async function load(stamp: string | undefined): Promise<typeof import('@shared/api/local/localData')> {
   vi.resetModules();
   vi.stubEnv('VITE_SNAPSHOT_STAMP', stamp ?? '');
+  vi.stubEnv('VITE_APP_VERSION', '1.0.79');
+  vi.stubEnv('VITE_MOBILE_MANIFEST_PUBKEY', SIGNER.pubB64);
   return import('@shared/api/local/localData') as Promise<typeof import('@shared/api/local/localData')>;
 }
 
@@ -85,8 +107,6 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     h.put.mockReset();
     h.del.mockReset();
     h.nativeGetBytes.mockReset();
-    h.nativeGetJson.mockReset();
-    h.nativeGetJson.mockResolvedValue(null);   // پیش‌فرض: ریلیزی با manifest منتشر نشده
     h.fetchMock.mockReset();
     vi.stubGlobal('fetch', h.fetchMock);
     vi.stubGlobal('caches', { open: async () => ({
@@ -142,12 +162,10 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     // اندازه+digest+ساختار می‌سنجد. نگهبانیِ اینِ آزمون همان «درصدِ واقعی» است.
     h.match.mockResolvedValue(undefined);
     const bytes = gzBytes(4_194_304);
-    h.nativeGetJson.mockImplementation(async (url: string) =>
-      url.endsWith('.meta.json')
-        ? { schema_version: 2, package_id: 'p1', built_at: '2026-10-12T09:00:00',
-            gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
-            app_version: '1.0.79', min_app_version: '1.0.0' }
-        : null);
+    const m1 = signedMeta({ schema_version: 2, package_id: 'p1', built_at: '2026-10-12T09:00:00',
+      gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
+      app_version: '1.0.79', min_app_version: '1.0.0' });
+    routeNative({ [META_URL]: m1.meta, [META_URL + '.sig']: m1.sig, [RELEASE_URL]: null });
     routeFetch({
       [GZ_URL]: () => new Response(null, { status: 404 }),
       [RELEASE_URL]: () => streamed(bytes),
@@ -173,13 +191,10 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     h.fetchMock.mockImplementation((input: RequestInfo | URL) =>
       String(input) === RELEASE_URL ? Promise.reject(new TypeError('CORS')) : Promise.resolve(new Response(null, { status: 500 })));
     const bytes = gzBytes(2_097_152);
-    h.nativeGetJson.mockImplementation(async (url: string) =>
-      url.endsWith('.meta.json')
-        ? { schema_version: 2, package_id: 'p2', built_at: '2026-10-12T09:00:00',
-            gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
-            app_version: '1.0.79', min_app_version: '1.0.0' }
-        : null);
-    h.nativeGetBytes.mockResolvedValue(bytes);
+    const m2 = signedMeta({ schema_version: 2, package_id: 'p2', built_at: '2026-10-12T09:00:00',
+      gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
+      app_version: '1.0.79', min_app_version: '1.0.0' });
+    routeNative({ [META_URL]: m2.meta, [META_URL + '.sig']: m2.sig, [RELEASE_URL]: bytes });
     mod = await load('2026-10-08T16:16:15');
 
     const events = await withProgress(mod, () => mod.__fetchSnapshotForTest().catch(() => null));
@@ -213,13 +228,10 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     const html = () => new Response('<html>not found</html>', { status: 200 });
     routeFetch({ [GZ_URL]: html, [RELEASE_URL]: html });
     const htmlBytes = new TextEncoder().encode('<html>not found</html>').buffer as ArrayBuffer;
-    h.nativeGetJson.mockImplementation(async (url: string) =>
-      url.endsWith('.meta.json')
-        ? { schema_version: 2, package_id: 'p3', built_at: '2026-10-12T09:00:00',
-            gz_bytes: htmlBytes.byteLength, gz_sha256: '0'.repeat(64),
-            app_version: '1.0.79', min_app_version: '1.0.0' }
-        : null);
-    h.nativeGetBytes.mockResolvedValue(htmlBytes);
+    const m3 = signedMeta({ schema_version: 2, package_id: 'p3', built_at: '2026-10-12T09:00:00',
+      gz_bytes: htmlBytes.byteLength, gz_sha256: '0'.repeat(64),
+      app_version: '1.0.79', min_app_version: '1.0.0' });
+    routeNative({ [META_URL]: m3.meta, [META_URL + '.sig']: m3.sig, [RELEASE_URL]: htmlBytes });
     mod = await load('2026-10-08T16:16:15');
 
     await expect(mod.__fetchSnapshotForTest()).rejects.toThrow(/not-gzip/);

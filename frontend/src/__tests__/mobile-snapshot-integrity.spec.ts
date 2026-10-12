@@ -8,18 +8,17 @@
 //   • دادهٔ کاربر (`bors_mobile_decisions_v1`) — باید دست‌نخورده بماند
 import { webcrypto } from 'node:crypto';
 import { Blob as NodeBlob } from 'node:buffer';
+import { makeTestSigner } from './minisignTestKey';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DbProbe } from '@shared/api/local/snapshotPackage';
 
 const h = vi.hoisted(() => ({
   nativeGetBytes: vi.fn(),
-  nativeGetJson: vi.fn(),
   fetchMock: vi.fn(),
 }));
 
 vi.mock('@shared/api/local/nativeHttp', () => ({
   nativeGetBytes: h.nativeGetBytes,
-  nativeGetJson: h.nativeGetJson,
 }));
 
 const POINTER_KEY = 'bors_snapshot_active_v2';
@@ -28,11 +27,21 @@ const CHECK_KEY = 'bors_snapshot_check_at';
 const FAILS_KEY = 'bors_snapshot_fail_streak';
 const NEXT_TRY_KEY = 'bors_snapshot_next_try_at';
 const LAST_OK_KEY = 'bors_snapshot_last_ok_at';
-const GZ_URL = '/mobile_snapshot.db.gz';
+const SNAP_PATH = '/mobile_snapshot.db.gz';
+/** کلاینت کشِ واقعی کلید را به URLِ مطلق حل می‌کند؛ درِ مرورگر `cache.keys()` هرگز
+ *  'pkg/…' نمی‌دهد. بی‌این تقلید، آزمونِ نگهداشت (۱۸) باگِ مقایسهٔ کلیدِ ناهمسنج
+ *  را ندید و سبز بود. */
+const ABS = (u: string): string => new URL(u, globalThis.location?.href ?? 'http://localhost/').href;
+const GZ_URL = ABS(SNAP_PATH);
 const STAGING = 'bors-mobile-snapshot-staging-v2';
 const LEGACY = 'bors-mobile-snapshot-v1';
 const RELEASE_GZ = 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz';
 const RELEASE_META = 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
+const RELEASE_SIG = RELEASE_META + '.sig';
+// کلیدِ آزمایشیِ همین اجرا — امضا/بررسی درِ آزمون‌هایِ چرخه از همین می‌آید
+const SIGNER = makeTestSigner();
+const META_TEXT = (m: unknown): string => JSON.stringify(m, null, 1);
+
 const USER_DATA_KEY = 'bors_mobile_decisions_v1';
 
 type Mod = typeof import('@shared/api/local/localData');
@@ -49,14 +58,15 @@ function installCaches(overrides: { put?: (k: string) => void } = {}) {
       const store = cacheOf(name);
       return {
         match: async (req: string) => {
-          const v = store.get(req);
+          const v = store.get(ABS(req));
           return v ? new Response(v.slice(0)) : undefined;
         },
         put: async (req: string, res: Response) => {
-          if (overrides.put) overrides.put(req);
-          store.set(req, await res.arrayBuffer());
+          const k = ABS(req);
+          if (overrides.put) overrides.put(k);
+          store.set(k, await res.arrayBuffer());
         },
-        delete: async (req: string) => store.delete(req),
+        delete: async (req: string) => store.delete(ABS(req)),
         keys: async () => [...store.keys()].map((u) => ({ url: u } as Request)),
       };
     },
@@ -75,6 +85,7 @@ async function sha256(buf: ArrayBuffer): Promise<string> {
 }
 
 /** manifestِ درست‌وسازمان‌دهندۀ همان بایت‌ها. `over` برای خراب‌کردن عمدی. */
+/** manifest + بایت‌هایِ همان manifest + امضایِ «Ed» رویِ همان بایت‌ها. */
 async function makeManifest(over: Record<string, unknown> = {}) {
   const bytes = GZ();
   const base = {
@@ -89,7 +100,11 @@ async function makeManifest(over: Record<string, unknown> = {}) {
     tables: ['baked', 'meta', 'instruments', 'price_history'],
     required_baked_keys: ['market_board'],
   };
-  return { manifest: { ...base, ...over }, bytes };
+  const manifest = { ...base, ...over };
+  const text = META_TEXT(manifest);
+  const mb = new TextEncoder().encode(text).slice().buffer as ArrayBuffer;
+  return { manifest, bytes: GZ(), manifestBytes: mb, manifestText: text,
+           sigText: SIGNER.signBlock(mb) };
 }
 
 /** کاوشگرِ ساختارِ قابل‌کنترل: «بسته» را سالم یا جدول‌کم/بازگشایی‌خراب می‌کند. */
@@ -112,18 +127,29 @@ async function load(stamp = '2026-10-08T16:16:15'): Promise<Mod> {
   vi.resetModules();
   vi.stubEnv('VITE_SNAPSHOT_STAMP', stamp);
   vi.stubEnv('VITE_APP_VERSION', '1.0.79');
+  // کلیدِ عمومیِ build-time: همان چیزی که CI از public keyِ انتشار می‌سازد
+  vi.stubEnv('VITE_MOBILE_MANIFEST_PUBKEY', SIGNER.pubB64);
   const m = await import('@shared/api/local/localData') as Mod;
   m.__setDbProbeForTest(probeWith({}));
   return m;
 }
 
 /** مسیرِ APK را می‌بندیم تا ریلیز آزموده شود؛ `bytes` همان چیزی که شبکه می‌دهد. */
-function serveRelease(bytes: ArrayBuffer | null, manifest: unknown) {
-  h.nativeGetJson.mockImplementation(async (url: string) => (url === RELEASE_META ? manifest : null));
-  h.nativeGetBytes.mockImplementation(async (url: string) => (url === RELEASE_GZ && bytes ? bytes.slice(0) : null));
+/** مسیرِ APK بسته؛ manifest و .sig از درگاهِ بومی می‌آیند (کلاینت بایتِ خام می‌خواند). */
+function serveRelease(bytes: ArrayBuffer | null, manifest: unknown,
+                      opts: { sig?: string | null; manifestBytes?: ArrayBuffer | null } = {}) {
+  const mb = opts.manifestBytes ?? (manifest === null ? null
+    : new TextEncoder().encode(META_TEXT(manifest)).slice().buffer as ArrayBuffer);
+  const sig = opts.sig === undefined ? (mb ? SIGNER.signBlock(mb) : null) : opts.sig;
+  h.nativeGetBytes.mockImplementation(async (url: string) => {
+    if (url === RELEASE_GZ) return bytes ? bytes.slice(0) : null;
+    if (url === RELEASE_META) return mb ? mb.slice(0) : null;
+    if (url === RELEASE_SIG) return sig ? new TextEncoder().encode(sig).slice().buffer as ArrayBuffer : null;
+    return null;
+  });
   h.fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
     const u = String(input);
-    if (u === GZ_URL) return new Response(null, { status: 404 });   // بی‌بستۀ APK
+    if (u === SNAP_PATH) return new Response(null, { status: 404 });   // بی‌بستۀ APK
     return new Response(null, { status: 500 });
   });
   vi.stubGlobal('fetch', h.fetchMock);
@@ -136,7 +162,6 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
     localStorage.clear();
     localStorage.setItem(USER_DATA_KEY, JSON.stringify({ decisions: ['شپنا'] }));
     h.nativeGetBytes.mockReset();
-    h.nativeGetJson.mockReset();
     h.fetchMock.mockReset();
     vi.stubGlobal('crypto', webcrypto);
     // jsdom بی‌Blob.stream است؛ WebView دارد. gunzipِ تولید بهِ آن تکیه می‌کند، پس
@@ -224,6 +249,32 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
     expect((await mod.__fetchSnapshotForTest()).byteLength).toBe(GZ().byteLength);
   });
 
+  it('۵ت) db_schemaِ manifest با meta.schemaِ بسته نمی‌خواند ⇒ رد', async () => {
+    mod = await load();
+    mod.__setDbProbeForTest(probeWith({ meta: { built_at: '2026-10-12T09:00:00', schema: '1' } }));
+    const { manifest, bytes } = await makeManifest({ db_schema: 2 });
+    serveRelease(bytes, manifest);
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/db-schema-mismatch/);
+    expect(localStorage.getItem(POINTER_KEY)).toBeNull();
+  });
+
+  it('۵ث) db_schemaِ همخوان و نبودش (بستۀ سازندۀ کهنه): هر دو پذیرفته می‌شوند', async () => {
+    mod = await load();
+    mod.__setDbProbeForTest(probeWith({ meta: { built_at: '2026-10-12T09:00:00', schema: '1' } }));
+    const a = await makeManifest({ db_schema: 1 });
+    serveRelease(a.bytes, a.manifest);
+    expect((await mod.requestManualCheck())?.ok).toBe(true);
+    localStorage.removeItem(POINTER_KEY);
+    mod.__setDbProbeForTest(probeWith({ meta: { built_at: '2026-10-12T09:00:00', schema: '9' } }));
+    const b = await makeManifest({ package_id: '20261012T090001-old-build',
+                                   built_at: '2026-10-12T09:00:01' });
+    serveRelease(b.bytes, b.manifest);
+    expect((await mod.requestManualCheck())?.detail, 'بی‌db_schema داوریِ تازه اعمال نمی‌شود')
+      .toMatch(/فعال شد|تازه‌تر/);
+  });
+
   it('۵ب) جدولِ لازمِ غایب: رد با نامِ همان جدول', async () => {
     mod = await load();
     mod.__setDbProbeForTest(probeWith({ tables: ['baked', 'meta', 'instruments'] }));
@@ -264,7 +315,7 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
   it('۷) کمبود فضا در نوشتنِ staging: خطا بلعیده نمی‌شود؛ پیشین می‌ماند', async () => {
     cacheOf(LEGACY).set(GZ_URL, GZ());
     localStorage.setItem(STAMP_KEY, '2026-10-09T07:30:00');
-    installCaches({ put: (k) => { if (k.startsWith('pkg/')) throw new Error('QuotaExceededError'); } });
+    installCaches({ put: (k) => { if (k.includes('/pkg/')) throw new Error('QuotaExceededError'); } });
     mod = await load();
     const { manifest, bytes } = await makeManifest();
     serveRelease(bytes, manifest);
@@ -288,7 +339,7 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
 
     // «راه‌اندازیِ بعدی»: pointer نیست ⇒ بستۀ APK خوانده می‌شود، stagingِ یتیم آزار نمی‌دهد
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
-      String(input) === GZ_URL ? new Response(new Uint8Array(GZ())) : new Response(null, { status: 500 })));
+      String(input) === SNAP_PATH ? new Response(new Uint8Array(GZ())) : new Response(null, { status: 500 })));
     const m2 = await load();
     const got = await m2.__fetchSnapshotForTest();
     expect(got.byteLength).toBeGreaterThan(0);
@@ -346,12 +397,12 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
     const { manifest, bytes } = await makeManifest();
     serveRelease(bytes, manifest);
     const both = await Promise.all([mod.requestManualCheck(), mod.requestManualCheck()]);
-    expect(h.nativeGetJson.mock.calls.filter((c) => c[0] === RELEASE_META).length).toBe(1);
+    expect(h.nativeGetBytes.mock.calls.filter((c) => c[0] === RELEASE_META).length).toBe(1);
     expect(both[0]).toBe(both[1]);
     // بعد از موفقیت، چرخۀ خودکار تا ۲۴ ساعت نباید دوباره manifest بخواند
-    const before = h.nativeGetJson.mock.calls.length;
+    const before = h.nativeGetBytes.mock.calls.length;
     await (mod as unknown as { __maybeRefreshForTest?: () => Promise<void> }).__maybeRefreshForTest?.();
-    expect(h.nativeGetJson.mock.calls.length).toBe(before);
+    expect(h.nativeGetBytes.mock.calls.length).toBe(before);
   });
 
   it('۱۲) مهاجرت از کشِ کهنه: خوانده می‌شود، دادهٔ کاربر می‌ماند، و فعال‌سازیِ تازه بازش می‌کند', async () => {
@@ -405,5 +456,172 @@ describe('چرخۀ بستهٔ آفلاین: staging، اعتبارسنجی، ف�
     expect(cacheOf(LEGACY).has(GZ_URL)).toBe(true);
     expect(localStorage.getItem(FAILS_KEY)).toBeNull();
     expect(localStorage.getItem(NEXT_TRY_KEY)).toBeNull();
+  });
+  // ── مرحلۀ ۲ (دور ۴): لایۀ اصالت — بی‌امضا هیچ بسته‌ای فعال نمی‌شود ──────
+  it('۱۴) امضایِ مفقود: رد، و نسخۀ فعالِ پیشین دست‌نخورده می‌ماند', async () => {
+    mod = await load();
+    const m1 = await makeManifest({ built_at: '2026-10-12T09:00:00' });
+    serveRelease(m1.bytes, m1.manifest);
+    expect((await mod.requestManualCheck())?.ok).toBe(true);
+    const activePkg = JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId;
+    const legacyBytesBefore = cacheOf(STAGING).size;
+    const m2 = await makeManifest({ built_at: '2026-10-13T09:00:00',
+                                    package_id: '20261013T090000-bbbb1111' });
+    serveRelease(m2.bytes, m2.manifest, { sig: null });          // .sig نیست
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/signature-missing/);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe(activePkg);
+    expect(cacheOf(STAGING).size).toBe(legacyBytesBefore);        // هیچ پاک‌سازیِ پیش‌دستانه‌ای نه
+    expect(JSON.parse(localStorage.getItem(USER_DATA_KEY)!).decisions).toEqual(['شپنا']);
+  });
+
+  it('۱۵) manifestِ دستکاری‌شده (امضا رویِ بایتِ دیگر) ⇒ signature-invalid', async () => {
+    mod = await load();
+    const m = await makeManifest();
+    const signedOver = new TextEncoder().encode(META_TEXT({ ...m.manifest, gz_bytes: 1 }))
+      .slice().buffer as ArrayBuffer;
+    serveRelease(m.bytes, m.manifest, { sig: SIGNER.signBlock(signedOver) });
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/signature-invalid/);
+    expect(localStorage.getItem(POINTER_KEY)).toBeNull();
+  });
+
+  it('۱۶) امضایِ کلیدِ دیگر ⇒ signature-key-mismatch، حتی با بایت‌هایِ درست', async () => {
+    mod = await load();
+    const m = await makeManifest();
+    const other = makeTestSigner();
+    serveRelease(m.bytes, m.manifest, { sig: other.signBlock(m.manifestBytes) });
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/signature-key-mismatch/);
+    expect(localStorage.getItem(POINTER_KEY)).toBeNull();
+  });
+
+  it('۱۷) بی‌کلیدِ عمومی درِ بیلد ⇒ fail-closed (کلید از جایِ نامطمئن خوانده نمی‌شود)', async () => {
+    vi.resetModules();
+    vi.stubEnv('VITE_SNAPSHOT_STAMP', '2026-10-08T16:16:15');
+    vi.stubEnv('VITE_APP_VERSION', '1.0.79');
+    vi.stubEnv('VITE_MOBILE_MANIFEST_PUBKEY', '');
+    const m0 = await import('@shared/api/local/localData') as Mod;
+    m0.__setDbProbeForTest(probeWith({}));
+    const m = await makeManifest();
+    serveRelease(m.bytes, m.manifest);
+    const out = await m0.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/signing-key-unconfigured/);
+    expect(localStorage.getItem(POINTER_KEY)).toBeNull();
+    vi.stubEnv('VITE_MOBILE_MANIFEST_PUBKEY', SIGNER.pubB64);
+  });
+
+  // ── مرحلۀ ۴ (دور ۴): دو بسته می‌ماند؛ rollback فقط به فعال‌شدۀ معتبر ─────
+  it('۱۸) سه فعال‌سازی پیاپی ⇒ دقیقاً دو بسته می‌ماند (فعال + آخرین معتبرِ پیشین)', async () => {
+    mod = await load();
+    for (const [pid, at] of ([['20261010T090000-aaaa0001', '2026-10-10T09:00:00'], ['20261011T090000-aaaa0002', '2026-10-11T09:00:00'], ['20261012T090000-aaaa0003', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      const out = await mod.requestManualCheck();
+      expect(out?.ok, pid + ': ' + out?.detail).toBe(true);
+    }
+    const keys = [...cacheOf(STAGING).keys()];
+    expect(keys.length).toBe(2);
+    expect(keys.some((k) => k.includes('aaaa0003'))).toBe(true);
+    expect(keys.some((k) => k.includes('aaaa0002'))).toBe(true);
+    expect(keys.some((k) => k.includes('aaaa0001'))).toBe(false);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-aaaa0003');
+    expect(JSON.parse(localStorage.getItem(USER_DATA_KEY)!).decisions).toEqual(['شپنا']);
+  });
+
+  it('۱۹) اجرایِ دوبارهِ نگهداشت پایدار است و فعال/پیشین را تصادفاً نمی‌کَند', async () => {
+    mod = await load();
+    for (const [pid, at] of ([['20261011T090000-bb02', '2026-10-11T09:00:00'], ['20261012T090000-bb03', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      expect((await mod.requestManualCheck())?.ok).toBe(true);
+    }
+    const before = [...cacheOf(STAGING).keys()].sort();
+    expect(before.length).toBe(2);
+    for (let i = 0; i < 3; i++) {
+      expect((await mod.requestManualCheck())?.ok).toBe(true);   // همان built_at ⇒ فعال‌سازیِ دوباره نیست
+    }
+    expect([...cacheOf(STAGING).keys()].sort()).toEqual(before);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-bb03');
+  });
+
+  it('۲۰) rollback به آخرین فعال‌شدۀ معتبر؛ ردیفِ stagingِ یتیم نامزد نیست', async () => {
+    mod = await load();
+    for (const [pid, at] of ([['20261011T090000-cc01', '2026-10-11T09:00:00'], ['20261012T090000-cc02', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      expect((await mod.requestManualCheck())?.ok).toBe(true);
+    }
+    cacheOf(STAGING).set(ABS('pkg/20261013T090000-orph3n.gz'), GZ());   // هرگز فعال نشده
+    const rb = await mod.rollbackToPreviousPackage();
+    expect(rb.ok, rb.detail).toBe(true);
+    expect(rb.detail).toBe('20261011T090000-cc01');
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261011T090000-cc01');
+    expect(String(JSON.parse(localStorage.getItem(POINTER_KEY)!).cacheKey).includes('orph3n')).toBe(false);
+    const back = await mod.rollbackToPreviousPackage();            // رفت‌وبرگشتِ متقابل
+    expect(back.ok).toBe(true);
+    expect(back.detail).toBe('20261012T090000-cc02');
+  });
+
+  it('۲۱) بستۀ پیشینی که digestش درِ حافظه نمی‌خواند، rollback نمی‌شود', async () => {
+    mod = await load();
+    for (const [pid, at] of ([['20261011T090000-dd01', '2026-10-11T09:00:00'], ['20261012T090000-dd02', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      expect((await mod.requestManualCheck())?.ok).toBe(true);
+    }
+    const victim = [...cacheOf(STAGING).keys()].find((k) => k.includes('dd01'))!;
+    cacheOf(STAGING).set(victim, new Uint8Array(64 * 1024).fill(9).buffer as ArrayBuffer);
+    const before = JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId;
+    const rb = await mod.rollbackToPreviousPackage();
+    expect(rb.ok).toBe(false);
+    expect(rb.detail).toMatch(/digest-mismatch/);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe(before);
+  });
+
+  it('۲۲) کمبودِ فضا درِ نگهداشتِ پس ازِ فعال‌سازی، معتبرها را نمی‌کَشد و فعال را بی‌اعتبار نمی‌کند', async () => {
+    mod = await load();
+    const m = await makeManifest({ package_id: '20261012T090000-ee01',
+                                   built_at: '2026-10-12T09:00:00' });
+    serveRelease(m.bytes, m.manifest);
+    expect((await mod.requestManualCheck())?.ok).toBe(true);
+    const staging = cacheOf(STAGING);
+    const realDelete = staging.delete.bind(staging);
+    staging.delete = () => { throw new Error('QuotaExceededError on delete'); };
+    const m2 = await makeManifest({ package_id: '20261013T090000-ee02',
+                                    built_at: '2026-10-13T09:00:00' });
+    serveRelease(m2.bytes, m2.manifest);
+    expect((await mod.requestManualCheck())?.ok).toBe(true);       // فعال شد
+    staging.delete = realDelete;
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261013T090000-ee02');
+    expect(staging.size).toBeGreaterThanOrEqual(1);                // دادهٔ فعال هنوز رویِ دستگاه است
+    expect((await mod.__fetchSnapshotForTest()).byteLength).toBe(m2.bytes.byteLength);
+  });
+
+  it('۲۳) بستۀِ ردشده درِ staging نمی‌ماند؛ فعال و پیشینِ سالم می‌مانند', async () => {
+    mod = await load();
+    for (const [pid, at] of ([['20261011T090000-gg01', '2026-10-11T09:00:00'], ['20261012T090000-gg02', '2026-10-12T09:00:00']] as Array<[string, string]>)) {
+      const m = await makeManifest({ package_id: pid, built_at: at });
+      serveRelease(m.bytes, m.manifest);
+      expect((await mod.requestManualCheck())?.ok).toBe(true);
+    }
+    expect(cacheOf(STAGING).size).toBe(2);
+    // نامزدِ تازه: امضا، اندازه و digest سالم، ولی SQLite باز نمی‌شود ⇒ ردِ فعال‌سازی
+    mod.__setDbProbeForTest(probeWith({ throwOnOpen: true }));
+    const bad = await makeManifest({ package_id: '20261013T090000-gg03',
+                                     built_at: '2026-10-13T09:00:00' });
+    serveRelease(bad.bytes, bad.manifest);
+    const out = await mod.requestManualCheck();
+    expect(out?.ok).toBe(false);
+    expect(out?.detail).toMatch(/db-open-failed/);
+    const keys = [...cacheOf(STAGING).keys()];
+    expect(keys.some((k) => k.includes('gg03'))).toBe(false);      // ردیفِ نامزدِ ردشده نماند
+    expect(keys.length).toBe(2);
+    expect(JSON.parse(localStorage.getItem(POINTER_KEY)!).packageId).toBe('20261012T090000-gg02');
+    expect(JSON.parse(localStorage.getItem(USER_DATA_KEY)!).decisions).toEqual(['شپنا']);
   });
 });

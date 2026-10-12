@@ -1,0 +1,22 @@
+{
+ "schema_version": 2,
+ "package_id": "20261012T120000-fixture1",
+ "app_version": "1.0.79",
+ "min_app_version": "1.0.70",
+ "built_at": "2026-10-12T12:00:00",
+ "gz_bytes": 2048,
+ "gz_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+ "db_bytes": 4096,
+ "baked_ok": 58,
+ "baked_fail": 0,
+ "tables": [
+  "baked",
+  "meta",
+  "instruments",
+  "price_history"
+ ],
+ "required_baked_keys": [
+  "market_board"
+ ],
+ "db_schema": 1
+}

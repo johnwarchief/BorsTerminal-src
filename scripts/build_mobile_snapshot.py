@@ -60,6 +60,16 @@ RAW_TABLES = (
 # 2 = + gz_sha256، package_id، min_app_version، db_bytes، tables، required_baked_keys
 MANIFEST_SCHEMA_VERSION = 2
 
+# نسخۀ **چیدمانِ دیتابیسِ بسته** (جدول‌های baked/meta/instruments/price_history).
+# از قراردادِ manifest جدا است — گوشی ممکن است manifestِ v2 را با چیدمانِ ۱ بخواند.
+# کلاینت این دو را با هم مقایسه می‌کند (`validateDatabase`) تا «سازنده چه نوشت» و
+# «بسته چه هست» یکِ عدد بمانند؛ بی‌این سنجش، همان چک قبلی تنهایِ بی‌معنا بود.
+DB_SCHEMA_VERSION = 1
+
+# با `--require-signature` روشن می‌شود (مسیرِ انتشار). پیش‌فرض خاموش است تا بیلدِ
+# کاندید/محلی بی‌کلید نشکند؛ artifactِ بی‌امضا درِ CI هرگز منتشر نمی‌شود.
+REQUIRE_SIGNATURE = False
+
 # price_history ستون‌به‌ستون برداشته می‌شود: value و src درِ هیچ کوئریِ
 # موبایلی نیستند و رویِ همان ۴۳۳٬۹۲۲ ردیف مگابایتِ خامِ بی‌مصرف‌اند.
 PH_COLUMNS = ("symbol", "date", "open", "high", "low", "close", "volume", "last")
@@ -107,6 +117,50 @@ def _symbols_from_screener(payload) -> list:
         if s:
             out.append(s)
     return out
+
+
+def sign_manifest(meta_json: str, require: bool = False) -> dict:
+    """امضایِ detached رویِ بایت‌هایِ manifest، با کلیدِ **خارجِ مخزن**.
+
+    منبعِ کلید: `BORS_MOBILE_MANIFEST_KEY` (مسیرِ فایلِ PEM) یا
+    `BORS_MOBILE_MANIFEST_KEY_PEM` (متنِ PEM — همان کاری که CI از secret می‌کند).
+    نبودِ کلید ⇒ بیلدِ کاندید بی‌امضا ادامه می‌دهد و `signature:false` گزارش می‌شود؛
+    با `--require-signature` (مسیرِ انتشار) همان‌جا می‌شکند. هیچ کلیدِ آزمایشیِ
+    ساختگی جایِ کلیدِ انتشار را نمی‌گیرد و هیچِ کلیدِ خصوصی‌ای نوشته نمی‌شود.
+    """
+    import tempfile
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    try:
+        import sign_mobile_manifest as sm
+    except Exception as e:                                    # noqa: BLE001
+        if require:
+            raise SystemExit("BLOCKED: ابزارِ امضا بارگذاری نشد: %s" % e)
+        return {"signature": False, "reason": "signer-unavailable: %s" % e}
+    priv = os.environ.get("BORS_MOBILE_MANIFEST_KEY", "").strip()
+    pem = os.environ.get("BORS_MOBILE_MANIFEST_KEY_PEM", "").strip()
+    tmp = ""
+    if not priv and pem:
+        fd, tmp = tempfile.mkstemp(prefix="bors-mobile-sign-", text=True)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(pem)
+        priv = tmp
+        os.chmod(tmp, 0o600)
+    if not priv:
+        if require:
+            raise SystemExit("BLOCKED: artifactِ امضاشدهٔ انتشار درِ نبودِ "
+                             "BORS_MOBILE_MANIFEST_KEY(_PEM) ساخته نمی‌شود")
+        return {"signature": False, "reason": "no-signing-key (کاندید بدونِ امضا منتشر نمی‌شود)"}
+    try:
+        res = sm.sign(meta_json, priv)
+        # خودسنجی با همان فایلِ کلید (`_pub_der` هم private و هم public را می‌خواند)
+        res["verified"] = sm.verify(meta_json, res["sig_path"], priv)
+        if res["verified"] is not True:
+            raise SystemExit("امضایِ ساخته‌شده با bors_minisign نخواند — انتشار ممنوع")
+        res["signature"] = True
+        return res
+    finally:
+        if tmp:
+            os.unlink(tmp)
 
 
 def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
@@ -220,7 +274,7 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
     for k, v in (
         ("app_version", APP_VERSION),
         ("built_at", now),
-        ("schema", "1"),
+        ("schema", str(DB_SCHEMA_VERSION)),
         ("baked_ok", str(ok)),
         ("baked_fail", str(fail)),
     ):
@@ -285,10 +339,21 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
         # همین‌ها را می‌خواند (resolvers.ts ⇒ baked/meta/instruments/price_history).
         "tables": ["baked", "meta", "instruments", "price_history"],
         "required_baked_keys": ["market_board"],
+        # چیدمانِ دیتابیسِ بسته — کلاینت با meta.schema داخلِ بسته می‌سنجد
+        "db_schema": DB_SCHEMA_VERSION,
     }
-    with open(meta_json, "w", encoding="utf-8") as fo:
+    # امضا رویِ **بایت‌هایِ فایل** است، پس جداکننده‌هایِ خط باید بینِ Windows و
+    # Linuxِ CI یکسان بمانند (با CRLF، هم digestِ manifest هم اعتبارِ امضا بهِ
+    # ماشینِ سازنده بند می‌شد) ⇒ newline="LF" صریح.
+    with open(meta_json, "w", encoding="utf-8", newline="\n") as fo:
         json.dump(manifest, fo, ensure_ascii=False, indent=1)
     print(f"[bake] {meta_json} · sha256={gz_hex[:16]}… · gz={manifest['gz_bytes']} B")
+    signed = sign_manifest(meta_json, require=REQUIRE_SIGNATURE)
+    if signed.get("signature"):
+        print("[sign] manifest امضا شد · key_id=%s · alg=%s · verified=%s"
+              % (signed["key_id"], signed["algorithm"], signed["verified"]))
+    else:
+        print("[sign] بی‌امضا: %s" % signed.get("reason"))
 
     if do_lzma:
         lz = out_db + ".lzma"
@@ -309,7 +374,11 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0,
                     help="فقط N نماد اول (برای تست سریع)")
     ap.add_argument("--no-lzma", action="store_true", help="بدون فشرده‌سازی")
+    ap.add_argument("--require-signature", action="store_true",
+                    help="مسیرِ انتشار: بی‌کلیدِ امضا، بیلد **می‌شکند** (نه artifactِ بی‌امضا)")
     args = ap.parse_args()
+    global REQUIRE_SIGNATURE
+    REQUIRE_SIGNATURE = bool(args.require_signature)
     build(args.out, limit=args.limit, do_lzma=not args.no_lzma)
 
 

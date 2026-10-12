@@ -210,6 +210,13 @@ SUITES = [
     # «بی‌دوره» می‌بینند. بی‌شبکه؛ خواندنِ market.db فقط read-only است.
     ('dev/codal_period_canonical_v1075.py',
                                      'one canonical period rule; SQL and Python agree; every consumer sees one count'),
+    # Android Stage 4 (دور ۴): manifestِ بستۀ داده باید **امضا** داشته باشد، نه فقط
+    # digest — SHA-256 بی‌کلیدِ عمومیِ مستقل هیچ ادعایی دربارهٔ ناشر نمی‌کند. این
+    # گارد سازوِ پایتون را با `bors_minisign`ِ stdlibِ خودِ مخزن می‌سنجد: Ed25519 رویِ
+    # بایتِ خام («Ed»، چون WebCrypto blake2b ندارد)، هر حالتِ نامعتبر رد، بی‌کلید
+    # ساختنِ artifact امضاشده مسدود، و هیچ کلیدِ خصوصی داخلِ مخزن ساخته نمی‌شود.
+    ('dev/mobile_manifest_sign_v1079.py',
+                                     'mobile data manifest is signed (minisign Ed25519); every invalid case rejected; no key in repo'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

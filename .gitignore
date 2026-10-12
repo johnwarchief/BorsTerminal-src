@@ -192,6 +192,11 @@ _audit/indicator_audit/__pycache__/
 _audit/*.json
 !_audit/ra_parity_report.json
 !_audit/parity_root_cause.json
+# گزارشِ ماشین‌خوانِ دو پروبِ موبایل (مرحلۀ ۵ و ۶). بازتولید با:
+#   node --experimental-strip-types tools/mobile_signed_package_e2e.mts
+#   node --experimental-strip-types tools/mobile_old_client_compat_probe.mts
+!_audit/mobile_stage5_e2e.json
+!_audit/mobile_stage6_old_client.json
 
 # خروجیِ بیلدِ موبایل (snapshot db + bundle) — بازتولیدشدنی، ~127MB
 /dist_mobile/

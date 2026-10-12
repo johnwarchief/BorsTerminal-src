@@ -1,4 +1,58 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
+
+// ── منبعِ یکتایِ نسخۀ برنامه ─────────────────────────────────────────────────
+// `frontend/package.json` لنگرِ رسمی است (همان که dev/version_anchor_guard.py و
+// tools/bump_version.py نگه می‌دارند). پیش‌ازِ این این فایل `versionName "1.0"` و
+// `versionCode 1`ِ قالبِ Capacitor را داشت ⇒ APK هیچ‌وقت نسخۀ واقعی را نمی‌گفت و
+// «سازگاریِ نسخه» درِ کلاینت با عددی می‌سوخت که هیچ‌جا منتشر نمی‌شد.
+// CI می‌تواند با -PBorsVersionName / -PBorsVersionCode همان عددِ رسمی را تزریق کند؛
+// اگر تزریق کرد، **باید** با package.json بخواند — بی‌این، دو منبعِ متفاوت
+// ساکت دو جواب می‌دهند. versionCode از همان نسخه مشتق می‌شود و تنها در
+// equality سنجیده می‌شود (بازشماری/پایین‌آمدنِ نسخهٔ منتشرشده ممکن نیست، چون
+// x.y.z یکنوا است و مشتق هم یکنوا: major·1e6 + minor·1e3 + patch، با minor/patch < 1000).
+def borsPkgVersion = {
+    def f = new File(rootProject.projectDir, "../package.json")
+    if (!f.exists()) {
+        throw new GradleException("BORS-VERSION: package.json یافت نشد (${f}) — منبعِ رسمی نسخه نیست")
+    }
+    def v = new JsonSlurper().parse(f).version?.toString()?.trim()
+    if (!v?.matches(/\d+\.\d+\.\d+/)) {
+        throw new GradleException("BORS-VERSION: نسخۀ رسمی نامعتبر است: '${v}' (x.y.z لازم است)")
+    }
+    return v
+}()
+
+def borsDeriveCode = { String v ->
+    def p = v.split(/\./).collect { it.toInteger() }
+    if (p[1] > 999 || p[2] > 999) {
+        throw new GradleException("BORS-VERSION: minor/patch باید <۱۰۰۰ بماند تا versionCode یکتا بماند (${v})")
+    }
+    return p[0] * 1000000 + p[1] * 1000 + p[2]
+}
+
+def borsVersionName = {
+    def inj = (findProperty('BorsVersionName') ?: System.getenv('BORS_VERSION_NAME'))?.toString()?.trim()
+    if (inj) {
+        if (inj != borsPkgVersion) {
+            throw new GradleException("BORS-VERSION: versionName تزریق‌شده (${inj}) با نسخۀ رسمی (${borsPkgVersion}) نمی‌خواند")
+        }
+        return inj
+    }
+    return borsPkgVersion
+}()
+
+def borsVersionCode = {
+    def inj = (findProperty('BorsVersionCode') ?: System.getenv('BORS_VERSION_CODE'))?.toString()?.trim()
+    def want = borsDeriveCode(borsPkgVersion)
+    if (!inj) return want
+    def got = inj.toInteger()
+    if (got != want || got <= 0) {
+        throw new GradleException("BORS-VERSION: versionCode تزریق‌شده (${got}) با مشتقِ رسمی (${want}) یا مثبت نیست")
+    }
+    return got
+}()
 
 android {
     namespace = "com.borsterminal.mobile"
@@ -7,8 +61,8 @@ android {
         applicationId "com.borsterminal.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode borsVersionCode
+        versionName borsVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

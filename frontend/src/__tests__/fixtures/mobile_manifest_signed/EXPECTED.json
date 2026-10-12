@@ -1,0 +1,8 @@
+{
+ "note": "fixtureِ پلِ پایتون⇄تایپاسکریپت. کلیدِ خصوصی commit نشده و این کلید برایِ انتشار نیست — فقط ثابت می‌کند بلوکِ «Ed» که scripts/sign_mobile_manifest.py می‌سازد درِ WebCrypto هم بررسی می‌شود.",
+ "key_id": "a0fe0438e9fe0ef0",
+ "algorithm": "Ed",
+ "trusted_comment": "timestamp=1791833979 file=manifest.json",
+ "manifest_sha256": "3689b61c6a80fd71515034d199a2c5a61b73ad82a80fd8c74155b823a7d9f34a",
+ "generator": "python scripts/sign_mobile_manifest.py --keygen --key"
+}

@@ -12,6 +12,11 @@ on:
         type: boolean
         required: false
         default: true
+      snapshot_series:
+        description: 'tagِ بستهٔ داده‌ای که APK از آن می‌خواند (mobile-latest = کهنهٔ بی‌امضا؛ mobile-latest-v2 = سریِ امضاشده)'
+        type: string
+        required: false
+        default: 'mobile-latest'
   push:
     branches:
       - 'arena/**'
@@ -32,6 +37,13 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      # سریِ بستهٔ داده. پیش‌فرض همان چیزی است که امروز رویِ گوشی‌هاست
+      # (`mobile-latest`، manifestِ چهارکلیدیِ بی‌امضا). سریِ جدیدِ v2 **مسیرِ
+      # مستقل** است تا کلاینتِ کهنه هرگز با قراردادِ تازه روبه‌رو نشود؛
+      # هیچ‌جا درِ این workflow چیزی رویِ `mobile-latest` منتشر یا بازنویسی
+      # نمی‌شود — این job فقط *می‌خواند*.
+      SNAPSHOT_SERIES: ${{ github.event.inputs.snapshot_series || 'mobile-latest' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,6 +59,45 @@ jobs:
         working-directory: frontend
         run: npm ci --no-audit --no-fund
 
+      # ── منبعِ یکتایِ نسخۀ برنامه ─────────────────────────────────────────────
+      # `frontend/package.json` تنها جایِ تعریفِ نسخۀ معنایی است (همان لنگرِ
+      # dev/version_anchor_guard.py). از همین‌جا به سه مصرف‌کننده می‌رسد:
+      #   • VITE_APP_VERSION → دروازۀ سازگاریِ کلاینت (localData.downloadToStaging)
+      #   • BorsVersionName  → versionName درِ Gradle
+      #   • BorsVersionCode  → مشتقِ یکنوا: major·1e6 + minor·1e3 + patch
+      # Gradle هم خودِ package.json را می‌خواند و هر تزریقِ ناهمخوان را می‌شکند؛
+      # این گام فقط پیش ازِ بیلد همان داوری را تکرار می‌کند تا خطا درِ لاگِ CI
+      # معلوم باشد، نه درِ `gradlew`. بی‌این، نسخه‌هایِ متفاوتِ APK و manifest
+      # ساکت از هم جدا می‌شدند (پیش‌ازِ این versionName "1.0" نوشتهٔ قالب بود).
+      - name: "Canonical app version (single source — frontend/package.json)"
+        id: ver
+        run: |
+          set -e
+          V=$(node -p "JSON.parse(require('fs').readFileSync('frontend/package.json','utf8')).version")
+          case "$V" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "نسخۀ رسمی نامعتبر است: '$V' (x.y.z لازم است)" >&2; exit 1;;
+          esac
+          MAJ=${V%%.*}; REST=${V#*.}; MIN=${REST%%.*}; PAT=${REST#*.}
+          case "$MIN$PAT" in (*[!0-9]*|'') echo "جزءهای نسخۀ عددی نیستند: $V" >&2; exit 1;; esac
+          if [ "$MIN" -ge 1000 ] || [ "$PAT" -ge 1000 ]; then
+            echo "minor/patch باید <۱۰۰۰ بماند تا versionCode یکتا باشد: $V" >&2; exit 1
+          fi
+          CODE=$(( MAJ * 1000000 + MIN * 1000 + PAT ))
+          if [ "$CODE" -le 0 ] || [ "$CODE" -gt 2100000000 ]; then
+            echo "versionCode نامعتبر از $V: $CODE" >&2; exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          {
+            echo "APP_VERSION=$V"
+            echo "APP_VERSION_CODE=$CODE"
+            echo "VITE_APP_VERSION=$V"
+            echo "BORS_VERSION_NAME=$V"
+            echo "BORS_VERSION_CODE=$CODE"
+          } >> "$GITHUB_ENV"
+          echo "منبعِ واحدِ نسخه: frontend/package.json → $V (versionCode $CODE)"
+
       # گیتِ تست: بدونِ این، گاردهایِ موبایل (انتخابگرِ مرده، resolver آفلاین،
       # برابریِ تیب، روتِ قیف) هیچ‌وقت درِ CI اجرا نمی‌شدند و APK از رویِ کدِ
       # قرمز ساخته می‌شد. صفرِ خطا درِ tsc شرطِ ساختِ اپ است.
@@ -58,16 +109,26 @@ jobs:
 
       - name: Build mobile frontend
         working-directory: frontend
+        env:
+          # کلیدِ عمومیِ امضایِ manifest داده (فقط public؛ کلیدِ خصوصی درِ repo نیست).
+          # بی‌این، کلاینت هیچ ریلیزی را نمی‌پذیرد (fail-closed) — پس بیلدِ بدونِ
+          # کلید، بیلدی است که هرگز تازه نمی‌شود؛ انتشار با publish=true پایین
+          # همان‌جا بسته می‌شود.
+          VITE_MOBILE_MANIFEST_PUBKEY: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
         run: |
+          set -e
           export VITE_BUILD_TAG="uiux-${GITHUB_SHA::7} · run${GITHUB_RUN_NUMBER}"
           # مهرِ بستۀ داده (built_at از meta.json کنارِ همان gz): گوشی با آن
           # می‌فهمد نسخۀ کشیدۀ پس‌زمینه از بستۀ همراهِ APK تازه‌تر است یا نه.
           # بی‌مهر، نسخۀ کهنۀ کشیده‌شده بر APKِ تازه می‌برد (localData.ts).
-          # نبودِ meta.json بیلد را نمی‌شکند: فقط مهر خالی می‌ماند.
-          BASE=https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest
+          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
           STAMP=$(curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" \
                   | python3 -c 'import json,sys;print(json.load(sys.stdin)["built_at"])' 2>/dev/null || true)
           export VITE_SNAPSHOT_STAMP="$STAMP"
+          # کلاینت هم دقیقاً همان سری را می‌خواند که APK از آن پخته شده؛
+          # بی‌این، بیلدِ سریِ تازه درِ برنامه هنوز mobile-latestِ کهنه را چک می‌کرد.
+          export VITE_SNAPSHOT_REMOTE="$BASE"
+          echo "snapshot series=$SNAPSHOT_SERIES remote=$BASE"
           VITE_LOCAL_DATA=1 npm run build
           curl -fL --retry 3 "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz
           test -s dist/mobile_snapshot.db.gz
@@ -78,6 +139,59 @@ jobs:
           echo "SNAP_STAMP=${STAMP:-none}" >> "$GITHUB_ENV"
           echo "SNAP_BYTES=$SNAP_BYTES" >> "$GITHUB_ENV"
 
+      # راستی‌آزماییِ خروجیِ واقعیِ vite، نه متغیرهایِ YAML: نسخۀ رسمی باید درِ
+      # فایل‌هایِ بیلدشده باشد (وگرنه دروازۀ سازگاریِ کلاینت بی‌صدا «نسخۀ نامعلوم»
+      # می‌گیرد و هیچ ریلیزی را نمی‌پذیرد).
+      - name: Verify the built bundle carries the canonical version
+        working-directory: frontend
+        run: |
+          set -e
+          if [ -z "$VITE_APP_VERSION" ]; then
+            echo "VITE_APP_VERSION خالی است؛ نسخۀ نامعلوم هرگز سازگار فرض نمی‌شود" >&2; exit 1
+          fi
+          HIT=$(grep -rl -- "$VITE_APP_VERSION" dist/assets 2>/dev/null | head -1 || true)
+          if [ -z "$HIT" ]; then
+            echo "نسخۀ $VITE_APP_VERSION درِ هیچ فایلِ بیلدشده‌ای پیدا نشد ⇒ تزریق نشسته" >&2; exit 1
+          fi
+          echo "نسخۀ بیلدشده در $HIT"
+
+      # ── اصالتِ بستۀ داده درِ CI ──────────────────────────────────────────────
+      # گوشی بی‌امضایِ معتبر هیچ بستۀ بیرونی را فعال نمی‌کند
+      # (`manifestSignature.ts` + `localData.fetchSignedManifest`). اگر همین‌جا
+      # هم بررسی نشود، APK ای می‌سازیم که *می‌دانیم* دادهٔ تازه نمی‌گیرد.
+      # continue-on-error: اسنپ‌شاتِ منتشرشدهٔ امروز (mobile-latest) هنوز بی‌امضاست؛
+      # بیلدِ کاندید نباید بشکند، اما گیتِ انتشار پایین همان را می‌بندد.
+      - name: Verify the data package signature
+        id: sigcheck
+        continue-on-error: true
+        env:
+          PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
+        run: |
+          set -e
+          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
+          mkdir -p _sigcheck
+          curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" -o _sigcheck/meta.json
+          if ! curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json.sig" -o _sigcheck/meta.json.sig; then
+            echo "فایلِ .sig کنارِ manifest منتشر نشده ⇒ بستۀ داده بی‌امضا است" >&2; exit 2
+          fi
+          if [ -z "$PUB" ]; then
+            echo "vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده ⇒ بررسیِ اصالت ممکن نیست" >&2; exit 3
+          fi
+          python3 scripts/sign_mobile_manifest.py --verify --in _sigcheck/meta.json \
+            --sig _sigcheck/meta.json.sig --pubkey-b64 "$PUB"
+          echo "signed=verified" >> "$GITHUB_OUTPUT"
+
+      - name: Record the data package identity
+        run: |
+          set -e
+          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
+          curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" -o /tmp/meta.json 2>/dev/null || true
+          if [ -s /tmp/meta.json ]; then
+            python3 -c 'import json;m=json.load(open("/tmp/meta.json",encoding="utf-8"));e={"SNAP_PACKAGE_ID":m.get("package_id"),"SNAP_SCHEMA_VERSION":m.get("schema_version"),"SNAP_DB_SCHEMA":m.get("db_schema"),"SNAP_BUILT_AT":m.get("built_at"),"SNAP_GZ_SHA":str(m.get("gz_sha256",""))[:16]};[print("%s=%s"%(k,v)) for k,v in e.items()]' >> "$GITHUB_ENV"
+          else
+            echo "SNAP_PACKAGE_ID=none" >> "$GITHUB_ENV"
+          fi
+
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -86,10 +200,26 @@ jobs:
       - name: Sync Capacitor and build APK
         working-directory: frontend
         run: |
+          set -e
           npx cap sync android
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon \
+            -PBorsVersionName="$BORS_VERSION_NAME" -PBorsVersionCode="$BORS_VERSION_CODE"
+
+      # Gradle را باور نمی‌کنیم: AndroidManifestِ ادغام‌شده‌ای که واقعاً درِ APK
+      # رفته خوانده می‌شود (metadataِ نهایی، نه YAML).
+      - name: Verify the APK metadata carries the canonical version
+        run: |
+          set -e
+          MAN=$(find frontend/android/app/build/intermediates -name AndroidManifest.xml \
+                -path '*merged_manifest*' | head -1)
+          if [ -z "$MAN" ]; then echo "merged AndroidManifest پیدا نشد" >&2; exit 1; fi
+          VN=$(grep -o 'android:versionName="[^"]*"' "$MAN" | head -1 | sed 's/.*="\(.*\)"/\1/')
+          VC=$(grep -o 'android:versionCode="[^"]*"' "$MAN" | head -1 | sed 's/.*="\(.*\)"/\1/')
+          echo "manifest: versionName=$VN versionCode=$VC ($MAN)"
+          [ "$VN" = "$BORS_VERSION_NAME" ] || { echo "versionName درِ APK ($VN) ≠ نسخۀ رسمی ($BORS_VERSION_NAME)" >&2; exit 1; }
+          [ "$VC" = "$BORS_VERSION_CODE" ] || { echo "versionCode درِ APK ($VC) ≠ مشتقِ رسمی ($BORS_VERSION_CODE)" >&2; exit 1; }
 
       - name: Verify APK
         run: |
@@ -106,17 +236,48 @@ jobs:
           if-no-files-found: error
 
       - name: Publish gate status
+        env:
+          PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
+          VERIFIED: ${{ steps.sigcheck.outputs.signed }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
             echo "PUBLISH = صریحاً درخواست‌شده (workflow_dispatch, publish=true)"
+            # دروازۀ انتشار: APK ای که کلیدِ عمومی ندارد یا بستۀ داده‌اش امضایِ
+            # معتبر ندارد، رویِ گوشی هیچ‌وقت دادهٔ تازه نمی‌گیرد ⇒ منتشر نمی‌شود.
+            if [ -z "$PUB" ]; then
+              echo "BLOCKED: vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده؛ کلیدِ آزمایشی جایِ کلیدِ انتشار را نمی‌گیرد." >&2
+              exit 1
+            fi
+            if [ "$VERIFIED" != "verified" ]; then
+              echo "BLOCKED: امضایِ بستۀ داده درِ mobile-latest بررسی/معتبر نشد؛ انتشارِ APKِ بی‌منبعِ اعتماد ممنوع." >&2
+              exit 1
+            fi
           else
             echo "PUBLISH = رد شد؛ اینِ ران فقط artifact می‌سازد. برایِ tag/ریلیز: Run workflow با publish=true."
           fi
+
+      # کلیدِ عمومی باید درِ خودِ باندلِ همراهِ APK نشسته باشد (ثابتِ build-time،
+      # نه چیزی که زمانِ اجرا از همان منبعِ بسته خوانده شود).
+      - name: Verify the bundled public key
+        env:
+          PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
+        run: |
+          set -e
+          if [ -z "$PUB" ]; then
+            echo "کلیدِ عمومی تنظیم نشده ⇒ بیلد بی‌ریشۀ اعتماد ساخته می‌شود (کاندید)" >&2
+            exit 0
+          fi
+          if ! grep -rlq -- "$PUB" frontend/dist/assets; then
+            echo "کلیدِ عمومی درِ هیچ فایلِ بیلدشده‌ای نیست ⇒ دروازۀ اصالت درِ گوشی بسته می‌ماند" >&2
+            exit 1
+          fi
+          echo "کلیدِ عمومی درِ باندل نشسته است"
 
       - name: Publish Android release
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          VERIFIED: ${{ steps.sigcheck.outputs.signed }}
         run: |
           set -e
           SHA="${GITHUB_SHA::7}"
@@ -134,8 +295,10 @@ jobs:
 
           source commit: $GITHUB_SHA
           base_main_commit: $BASE
+          app version: $BORS_VERSION_NAME (versionCode $BORS_VERSION_CODE) — منبع: frontend/package.json
           build: frontend tsc + vitest سبز، سپس vite build (VITE_LOCAL_DATA=1) و gradlew assembleDebug
           artifact: app-debug.apk · $SIZE بایت · sha256 $SUM
-          snapshot داده: mobile-latest · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} (تازگی و بازپخت درِ docs/MASTER-EXECUTION-ROADMAP.md §15 ثبت می‌شود)
+          snapshot داده: mobile-latest · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} · package_id ${SNAP_PACKAGE_ID:-نامعلوم} · schema ${SNAP_SCHEMA_VERSION:-?}/db ${SNAP_DB_SCHEMA:-?} · gz sha ${SNAP_GZ_SHA:-?}…
+          امضایِ manifest: ${VERIFIED:-بررسی‌نشده} (کلیدِ عمومی درِ باندل بیلد نشسته است؛ کلیدِ خصوصی درِ مخزن نیست)
           وضعیتِ آیتم‌ها و شاهد هر کدام: docs/MASTER-EXECUTION-ROADMAP.md §15"
           gh release upload "$TAG" "$APK#bors-terminal-mobile.apk" --clobber

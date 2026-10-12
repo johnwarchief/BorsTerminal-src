@@ -1,0 +1,220 @@
+{
+ "generated_at": "2026-10-12T21:00:33.459Z",
+ "old_client": {
+  "source": "APK از mobile-latest (فقط خواندنی)",
+  "www": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal-android\\_audit\\tmp\\stage6\\oldwww",
+  "live_base": "https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest"
+ },
+ "candidate": {
+  "first_served": "pkg_full",
+  "first_built_at": "2026-10-12T22:48:41",
+  "pkg": "pkg3",
+  "manifest": {
+   "schema_version": 2,
+   "package_id": "20261012T235415-59808ca6",
+   "app_version": "1.0.79",
+   "min_app_version": "1.0.79",
+   "built_at": "2026-10-12T23:54:15",
+   "gz_bytes": 1333013,
+   "gz_sha256": "59808ca6c2b29647a04e176a3911c2cf019c6a6c4af06ed0dd7bc1ea3b9ba100",
+   "db_bytes": 8675328,
+   "baked_ok": 48,
+   "baked_fail": 0,
+   "tables": [
+    "baked",
+    "meta",
+    "instruments",
+    "price_history"
+   ],
+   "required_baked_keys": [
+    "market_board"
+   ],
+   "db_schema": 1
+  },
+  "gz_bytes": 1333013,
+  "gz_sha256": "59808ca6c2b29647a04e176a3911c2cf019c6a6c4af06ed0dd7bc1ea3b9ba100"
+ },
+ "requests_seen": [
+  "/mobile_snapshot.db.gz",
+  "/mobile_snapshot.db.meta.json",
+  "/mobile_snapshot.db.gz"
+ ],
+ "dom": {
+  "at_boot": {
+   "boot": false,
+   "banner": "",
+   "hash": "#/market",
+   "rootText": "بترمینال بورسFTS v2.1🚀⚙⎋تابلوخوانی / بازارجستجوی سریع نماد...جستجوCtrl+Kشاخص کل۸٬۳۳۴٬۰۲۴▲ ۹۱٬۱۵۷ ۱.۱۱٪شاخص هموزن۲٬۱۸۱٬۴۵۸▲ ۱۶٬۲۳۹ ۰.۷۵٪ورود به بازارپایِ بازار بماننقدینگی: عالی · روندِ اخیر: تداومِ مساعد✓ارزش معاملات بازار سهام۸۲.۰۱ همت✓رو",
+   "testids": [
+    "app-update-btn",
+    "user-settings-btn",
+    "market-pulse-bar",
+    "pulse-index",
+    "pulse-verdict",
+    "pulse-verdict-label",
+    "pulse-verdict-reason",
+    "pulse-verdict-gate-liquidity",
+    "pulse-verdict-mark-liquidity",
+    "pulse-verdict-gate-continuity",
+    "pulse-verdict-mark-continuity",
+    "pulse-verdict-gate-breadth",
+    "pulse-verdict-mark-breadth",
+    "pulse-verdict-gate-flow",
+    "pulse-verdict-mark-flow",
+    "pulse-verdict-gate-window",
+    "pulse-verdict-mark-window",
+    "pulse-verdict-whys-toggle",
+    "pulse-hemat",
+    "pulse-market-cap",
+    "pulse-trade-value",
+    "pulse-smart",
+    "pulse-alpha-conditions",
+    "pulse-queues",
+    "pulse-percapita",
+    "pulse-groups",
+    "micro-charts-toggle",
+    "micro-charts-toggle-hint",
+    "market-filters-bar",
+    "quick-filters-bar"
+   ]
+  },
+  "after_reload": {
+   "boot": false,
+   "banner": "",
+   "hash": "#/market",
+   "rootText": "بترمینال بورسFTS v2.1🚀⚙⎋تابلوخوانی / بازارجستجوی سریع نماد...جستجوCtrl+Kشاخص کل۸٬۳۳۴٬۰۲۴▲ ۹۱٬۱۵۷ ۱.۱۱٪شاخص هموزن۲٬۱۸۱٬۴۵۸▲ ۱۶٬۲۳۹ ۰.۷۵٪ورود به بازارپایِ بازار بماننقدینگی: عالی · روندِ اخیر: تداومِ مساعد✓ارزش معاملات بازار سهام۸۱.۹۸ همت✓رو",
+   "testids": [
+    "app-update-btn",
+    "user-settings-btn",
+    "market-pulse-bar",
+    "pulse-index",
+    "pulse-verdict",
+    "pulse-verdict-label",
+    "pulse-verdict-reason",
+    "pulse-verdict-gate-liquidity",
+    "pulse-verdict-mark-liquidity",
+    "pulse-verdict-gate-continuity",
+    "pulse-verdict-mark-continuity",
+    "pulse-verdict-gate-breadth",
+    "pulse-verdict-mark-breadth",
+    "pulse-verdict-gate-flow",
+    "pulse-verdict-mark-flow",
+    "pulse-verdict-gate-window",
+    "pulse-verdict-mark-window",
+    "pulse-verdict-whys-toggle",
+    "pulse-hemat",
+    "pulse-market-cap",
+    "pulse-trade-value",
+    "pulse-smart",
+    "pulse-alpha-conditions",
+    "pulse-queues",
+    "pulse-percapita",
+    "pulse-groups",
+    "micro-charts-toggle",
+    "micro-charts-toggle-hint",
+    "market-filters-bar",
+    "quick-filters-bar"
+   ]
+  }
+ },
+ "panels": {
+  "at_boot": {
+   "بیلد": "uiux-b336ad3 · run41",
+   "WebView": "Chrome/151.0.0.0",
+   "حالت": "مرورگر/پیش‌نمایش",
+   "بستهٔ داده": "v1.0.79 · 2026-10-12T22:48:41 · 4627 بسته ✅",
+   "تابلوی آفلاین": "5921 ردیف ✅",
+   "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+   "پختِ هر-نماد": "calendar=927 · quarters=922 · orderbook=922 · fts=922 · fundamental=921 · mstat=6 · index=1 ✅",
+   "تاریخچۀ چارت": "436635 کندل · 6082 نماد · 2024-08-24 ← 2026-10-12",
+   "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+   "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+   "منبعِ بسته": "دانلود از ریلیز",
+   "راه‌اندازی": "545ms  (دریافت 356 · بازگشایی 175 · باز کردن 15) ✅",
+   "حجمِ بسته": "15.4MB فشرده ← 67.4MB در حافظه",
+   "صفحه": "390×844 · bors-mobile=true"
+  },
+  "after_reload": {
+   "بیلد": "uiux-b336ad3 · run41",
+   "WebView": "Chrome/151.0.0.0",
+   "حالت": "مرورگر/پیش‌نمایش",
+   "بستهٔ داده": "v1.0.79 · 2026-10-12T23:54:15 · 48 بسته ✅",
+   "تابلوی آفلاین": "5921 ردیف ✅",
+   "بنیادی (اسکرینر)": "922 ردیف · count=922 ✅",
+   "پختِ هر-نماد": "calendar=11 · quarters=6 · orderbook=6 · mstat=6 · fundamental=6 · fts=6 · index=1 ✅",
+   "تاریخچۀ چارت": "4740 کندل · 2497 نماد · 2025-02-26 ← 2026-10-12",
+   "آخرین رونشانیِ زندۀ تابلو": "هنوز رونشانی نشده ❌",
+   "TSETMC زنده": "در دسترس نیست (آفلاین/فیلتر؟) ❌",
+   "منبعِ بسته": "کشِ دستگاه",
+   "راه‌اندازی": "33ms  (دریافت 9 · بازگشایی 22 · باز کردن 2) ✅",
+   "حجمِ بسته": "1.3MB فشرده ← 8.3MB در حافظه",
+   "صفحه": "390×844 · bors-mobile=true"
+  }
+ },
+ "counts": {
+  "checks": 8,
+  "passed": 8,
+  "failed": 0
+ },
+ "verdict": "PASS",
+ "page_errors": [],
+ "checks": [
+  {
+   "id": "O1",
+   "step": "کلاینتِ کهنه با بستۀِ v2 راه‌اندازی شد (پنلِ 🛠 همان بسته را می‌خواند)",
+   "expect": "2026-10-12T22:48:41 و ردیفِ تابلو > 0",
+   "observed": "بستهٔ داده=v1.0.79 · 2026-10-12T22:48:41 · 4627 بسته ✅ · تابلو=5921 ردیف ✅ · منبع=دانلود از ریلیز · tape-row=0",
+   "pass": true
+  },
+  {
+   "id": "O2",
+   "step": "درخواستِ manifest/بسته به همان مسیرِ موبایل‌لیتست رفت",
+   "expect": ">= 2",
+   "observed": "[\"/mobile_snapshot.db.gz\",\"/mobile_snapshot.db.meta.json\",\"/mobile_snapshot.db.gz\"]",
+   "pass": true
+  },
+  {
+   "id": "O3",
+   "step": "دورۀِ بررسیِ کهنه اجرا شد (bors_snapshot_check_at نوشته شد)",
+   "expect": "non-empty",
+   "observed": "1791838831325",
+   "pass": true
+  },
+  {
+   "id": "O4",
+   "step": "بستۀِ v2 دانلود و درِ کشِ کهنه نشست",
+   "expect": "1333013",
+   "observed": "1333013",
+   "pass": true
+  },
+  {
+   "id": "O5",
+   "step": "مُهرِ built_at از manifestِ v2 خوانده شد (فیلدهایِ افزوده بی‌ضرر)",
+   "expect": "2026-10-12T23:54:15",
+   "observed": "2026-10-12T23:54:15",
+   "pass": true
+  },
+  {
+   "id": "O6",
+   "step": "کلیدهایِ وضعیتِ نسلِ جدید را نمی‌نویسد (بی‌تداخلِ فضایِ وضعیت)",
+   "expect": "null",
+   "observed": "null",
+   "pass": true
+  },
+  {
+   "id": "O7",
+   "step": "پس ازِ reload، همان بستۀِ v2 از کشِ کهنه مصرف می‌شود",
+   "expect": "2026-10-12T23:54:15 · منبع=کش",
+   "observed": "بستهٔ داده=v1.0.79 · 2026-10-12T23:54:15 · 48 بسته ✅ · منبع=کشِ دستگاه · tape-row=0",
+   "pass": true
+  },
+  {
+   "id": "O8",
+   "step": "بی‌استثنایِ مدیریت‌نشده درِ کلاینتِ کهنه",
+   "expect": "[]",
+   "observed": "[]",
+   "pass": true
+  }
+ ],
+ "note": "این پروب هیچ چیزی رویِ mobile-latest منتشر نمی‌کند؛ مسیرِ ریلیز فقط ربوده (page.route) می‌شود تا بایلدِ کهنه کاندیدای v2 را بخواند."
+}
