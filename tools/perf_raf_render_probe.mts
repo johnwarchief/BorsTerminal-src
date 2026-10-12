@@ -28,6 +28,8 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { installPageHooks, installTapeSensor, readTapeSensor, induceSensorBurst, revertSensorBurst, clockPrecision }
+  from './perf_probe_sensors.mts';
 
 const PKG = process.env.JEV_BROWSER_DIR ??
   'C:/Users/PCMOD/.cline/plugins/_installed/official/jev-browser-b15ae305f536/package';
@@ -41,6 +43,11 @@ const BASE = arg('url', 'http://127.0.0.1:5173/').replace(/\/+$/, '');
 const OUT = arg('out', '_audit/perf_raf_render');
 const SYM = arg('symbol', 'فولاد');
 const SECONDS = Math.max(10, Math.min(Number(arg('seconds', '60')) || 60, 600));
+// KALIBRATION (Stage 7): نمونۀِ ۲۵۰ms درِ صفحه هیچِ هزینه‌ای اندازه‌گیری‌شدنی نساخت
+// (perf_probe_calib: idle script A=0.11 / C(1s)=0.15 / D(250ms)=0.27 ms، هرِ نمونه ~۰.۶ms
+// wall-time درِ Node) و پنجرۀِ تنگِ [+0,+۷۰۰ms] بهِ سنجشِ چسبیده نزدیک‌تر است از پنجرۀِ
+// [+۲.۵s] که ~۴-۶× بیش‌نسبت می‌دهد. پس پیش‌فرضِ cadence = ۲۵۰ms.
+const CADENCE = Math.max(0, Math.min(Number(arg('cadence', '250')) || 250, 10000));
 const SELFTEST = flag('selftest');
 const SKIP_TECH = flag('skip-tech');
 mkdirSync(OUT.replace(/[^/]*$/, ''), { recursive: true });
@@ -52,42 +59,7 @@ const browser = await chromium.launch({
 });
 const ctx = await browser.newContext({ viewport: { width: 1366, height: 768 } });
 
-// ── قلاب‌ها پیش‌ازِ هر کدِ برنامه (addInitScript) تا mountِ نمودار هم دیده شود ──
-await ctx.addInitScript(() => {
-  try { sessionStorage.setItem('bors_auth_session', 'true'); } catch { /* دروازۀ UI */ }
-  const w = window as unknown as Record<string, any>;
-  w.__p = {
-    raf: { requested: 0, executed: 0, frames: [] as number[], stacks: {} as Record<string, number> },
-    fetch: [] as { url: string; t0: number; t1: number; status: number; bytes: number }[],
-    rafAfterVisible: 0,
-    navStart: Date.now(),
-  };
-  const P = w.__p;
-  const origRaf = w.requestAnimationFrame.bind(w);
-  w.requestAnimationFrame = function (cb: FrameRequestCallback) {
-    P.raf.requested++;
-    const st = (new Error().stack || '').split('\n').slice(2, 5)
-      .map((s) => (s.trim().match(/at ([\w.$<>]+)/) || [0, '?'])[1]).join(' < ');
-    P.raf.stacks[st] = (P.raf.stacks[st] || 0) + 1;
-    return origRaf((ts) => { P.raf.executed++; if (P.raf.frames.length < 20000) P.raf.frames.push(Math.round(ts)); return cb(ts); });
-  };
-  // فقط مشاهدهٔ آدرسِ خودِ درخواست‌هایِ تابلو — هیچ بدنه‌ای اینجا خوانده نمی‌شود.
-  const origFetch = w.fetch.bind(w);
-  w.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request)?.url || '';
-    const track = /\/api\/market(\/delta)?\?|\/api\/market$/.test(url);
-    const t0 = Date.now();
-    const res = await origFetch(input as RequestInfo, init);
-    if (track) {
-      P.fetch.push({
-        url: url.replace(/^https?:\/\/[^/]+/, ''), t0, t1: Date.now(),
-        status: res.status, bytes: Number(res.headers.get('content-length') || 0),
-      });
-      if (P.fetch.length > 4000) P.fetch.splice(0, 2000);
-    }
-    return res;
-  };
-});
+await ctx.addInitScript(installPageHooks);
 
 // ── شبکهٔ مشاهده‌ای: بدنه‌هایِ دلتا بیرونِ نخِ اصلیِ صفحه خوانده می‌شوند ──
 type NetEv = { url: string; status: number; tNode: number; bytes: number;
@@ -135,12 +107,13 @@ const stat = async () => {
 };
 
 const out: Record<string, unknown> = {
-  base: BASE, startedAt: new Date().toISOString(), secondsRequested: SECONDS,
+  base: BASE, startedAt: new Date().toISOString(), secondsRequested: SECONDS, cadenceMs: CADENCE,
   clock: null, network: null, technical: null, board: null, limits: {
     react_render_commits: 'شمارشِ مستقیمِ render/commitِ React با این ابزار ممکن نیست؛ معیارِ جایگزین: سلول‌هایِ تغییرمقدار (flash/متن) + ScriptΔ هر دور',
     source_publish_time: 'درِ هیچ پاسخی نیست. meta.last_sync = زمانِ چرخۀِ سرور؛ rev_at = زمانِ دیدنِ کلاینت. Source→Backend غیرقابل‌اندازه‌گیریِ مستقیم.',
     virtualization: 'فقط ردیف‌هایِ دیدنی درِ DOM هست‌اند؛ «۰ ردیفِ دست‌خورده» می‌تواند یعنی «تغییری درِ دیدِ فعلی نبود»، نه «داده عوض نشد». برایِ همانیِ ردیفِ دیدنی از `select-box-${symbol}` استفاده می‌شود (data-testidِ خودِ ردیف ثابت است و هویت نمی‌دهد).',
     delta_body_symbols: 'سرفصلِ ردیف‌هایِ دلتا تا ۴۰۰ نماد نگه داشته می‌شود؛ درِ دلتاهایِ بزرگ‌تر همپوشانیِ «ردیف‌هایِ دیدنیِ نامبرده‌شده درِ دلتا» کم‌برآورد است.',
+    cost_attribution: 'KALIBRATED (Stage 7): با پنجرۀِ نمونه‌برداری، هزینهٔ یکِ رویدادِ معروف (۲۴ رکوردِ INDUCED: script میانه ۰.۰۷ms) درِ پنجرۀِ +۲.۵s تا ۰.۴۲ms خوانده شد، یعنی ~۴-۶× بیش‌نسبت. tightMs (پنجۀِ ~۷۰۰ms) کم‌تر خطا دارد و wide هم گزارش می‌شود؛ هیچ‌کدام «هزینۀِ خالصِ دلتا» نیست، کرانِ بالاییِ سنجیده‌شده است.',
   },
 };
 
@@ -214,86 +187,39 @@ await page.waitForSelector('[data-testid="tape-row"] .num.inline-block', { timeo
 await page.waitForTimeout(2500);
 
 const rafBeforeBoard = await page.evaluate(() => (window as any).__p.raf.requested);
-await page.evaluate(() => {
-  const w = window as unknown as Record<string, any>;
-  const host = document.querySelector('[data-testid="tape-scroll"]');
-  w.__dom = {
-    installed: !!host, hostTag: host ? (host.getAttribute('data-testid') || host.tagName) : null,
-    t0: Date.now(), batches: 0, added: 0, removed: 0, text: 0, flash: 0, otherAttr: 0,
-    events: [] as { t: number; kind: string; sym: string | null }[],
-    batchTimes: [] as number[],
-    rowsSeen: 0,
-  };
-  const D = w.__dom;
-  const symOf = (n: Element | null): string | null => {
-    const row = n?.closest?.('[data-testid="tape-row"]');
-    if (!row) return null;
-    const box = row.querySelector('[data-testid^="select-box-"]');
-    return box ? box.getAttribute('data-testid').slice('select-box-'.length) : 'row#?';
-  };
-  const kindOf = (m: MutationRecord): string | null => {
-    if (m.type === 'childList') return m.addedNodes.length ? 'added' : (m.removedNodes.length ? 'removed' : null);
-    if (m.type === 'characterData') return 'text';
-    const tn = (m.target as Element).nodeType === 1 ? (m.target as Element) : (m.target as Element).parentElement;
-    const cls = tn && (tn as Element).className;
-    const isCell = typeof cls === 'string' && cls.includes('inline-block') && cls.includes('num');
-    if (m.attributeName === 'class') return isCell && /flash-(up|down|neutral)/.test((cls as string)) ? 'flash' : 'otherAttr';
-    if (m.attributeName === 'title') return 'title';
-    return 'otherAttr';
-  };
-  new MutationObserver((muts) => {
-    D.batches++;
-    if (D.batchTimes.length < 8000) D.batchTimes.push(Date.now());
-    for (const m of muts) {
-      const k = kindOf(m);
-      if (!k) continue;
-      if (k === 'added') D.added += m.addedNodes.length;
-      else if (k === 'removed') D.removed += m.removedNodes.length;
-      else if (k === 'text') D.text++;
-      else if (k === 'flash') D.flash++;
-      else D.otherAttr++;
-      const tn = (m.target.nodeType === 1 ? m.target : m.target.parentElement) as Element;
-      if (D.events.length < 60000) D.events.push({ t: Date.now(), kind: k, sym: symOf(tn) });
-    }
-    D.rowsSeen = document.querySelectorAll('[data-testid="tape-row"]').length;
-  }).observe(host || document.body, { subtree: true, childList: true, characterData: true, attributes: true });
-});
+await page.evaluate(installTapeSensor, 'tape-scroll');
 const install = await page.evaluate(() => {
   const D = (window as any).__dom;
   return { installed: D.installed, hostTag: D.hostTag, rowsVisible: document.querySelectorAll('[data-testid="tape-row"]').length };
 });
 if (!install.installed) { console.log('!! ناظر رویِ tape-scroll نصب نشد — selector با ساختارِ فعلی نمی‌خواند'); }
 
-// خودآزمونِ سنسور: ثابت می‌کند شمارنده‌ها کور نیست‌اند. هیچ داده‌ای دستکاری نمی‌شود؛
-// فقط یکِ سلولِ دیدنی یک‌بار کلاسِ فلاش/متنِ موقت می‌گیرد و به حالتِ اول برمی‌گردد.
+// خودآزمونِ سنسور: ثابت می‌کند شمارنده‌ها کور نیست‌اند — با همان تابعی که درِ
+// کالیبراسیون آزموده می‌شود (perf_probe_sensors.induceSensorBurst). فقط کلاس/متنِ
+// موقت و بعدِ بازگردانیِ کامل؛ هیچ ردیفی حذف نمی‌شود و هیچ داده‌ای دستکاری نمی‌شود.
 let selftest: Record<string, unknown> = { skipped: true };
 if (SELFTEST) {
-  selftest = await page.evaluate(() => {
-    const D = (window as any).__dom;
-    const before = { batches: D.batches, flash: D.flash, text: D.text };
-    const cell = document.querySelector('[data-testid="tape-row"] .num.inline-block');
-    if (!cell) return { error: 'no .num.inline-block cell' };
-    const origText = cell.textContent, origCls = cell.className;
-    cell.classList.add('flash-up');
-    (cell.firstChild as Text).nodeValue = ((cell.firstChild as Text)?.nodeValue || '') + ' ';
-    return new Promise((res) => setTimeout(() => {
-      const mid = { batches: D.batches, flash: D.flash, text: D.text };
-      cell.className = origCls; (cell.firstChild as Text).nodeValue = origText;
-      setTimeout(() => res({
-        injected: { flash: mid.flash - before.flash, text: mid.text - before.text, batches: mid.batches - before.batches },
-        afterRevert: { batches: D.batches - before.batches, flash: D.flash - before.flash, text: D.text - before.text },
-        restored: cell.textContent === origText && cell.className === origCls,
-        note: 'selftest = اثباتِ دیدِ سنسور، نه شاهدِ بازار',
-      }), 120);
-    }, 120));
-  });
+  const probe = async (mode: string, key: string) => {
+    const before = await page.evaluate(readTapeSensor, false) as Record<string, number>;
+    const inj = await page.evaluate(induceSensorBurst, { n: 3, mode }) as Record<string, unknown>;
+    await page.waitForTimeout(250);
+    const mid = await page.evaluate(readTapeSensor, false) as Record<string, number>;
+    const saw = (mid[key] ?? 0) - (before[key] ?? 0);
+    const rev = await page.evaluate(revertSensorBurst) as Record<string, unknown>;
+    await page.waitForTimeout(250);
+    return { mode, injected: inj, sensorSaw: { [key]: saw, batches: (mid.batches ?? 0) - (before.batches ?? 0), records: (mid.records ?? 0) - (before.records ?? 0) }, revert: rev };
+  };
+  const cls = await probe('class', 'flash');
+  const ndv = await probe('nodeValue', 'text');
+  const txc = await probe('textContent', 'textReplaced');
+  const ok = cls.sensorSaw.flash === 3 && ndv.sensorSaw.text === 3 && txc.sensorSaw.textReplaced === 3;
+  selftest = { class: cls, nodeValue: ndv, textContent: txc,
+               verdict: ok ? 'PASS' : 'FAIL — یکِ نوعِ تغییر دیده نشد',
+               note: 'selftest = اثباتِ دیدِ سنسور، نه شاهدِ بازار. nodeValue همان کاری است که React درِ به‌روزرسانیِ عدد می‌کند؛ textContent گرهٔ متنی را جایگزین می‌کند و باید textReplaced شود نه «گرهٔ حذف‌شده».' };
 }
 
 const netWinStart = Date.now();
-const baseCounters = (await page.evaluate(() => {
-  const D = (window as any).__dom;
-  return { batches: D.batches, added: D.added, removed: D.removed, text: D.text, flash: D.flash, otherAttr: D.otherAttr };
-})) as Record<string, number>;
+const baseCounters = await page.evaluate(readTapeSensor, false) as Record<string, number>;
 const visibleSymbols = () => page.evaluate(() =>
   [...document.querySelectorAll('[data-testid="tape-row"]')].map((r) => {
     const box = r.querySelector('[data-testid^="select-box-"]');
@@ -302,34 +228,32 @@ const visibleSymbols = () => page.evaluate(() =>
 const symStart = await visibleSymbols();
 const mBoardA = await metrics();
 const clockA = await stat();
-// نمونۀِ ۱-ثانیه‌ایِ هزینه (یکِ فراخوانیِ CDP در هر ثانیه) تا بتوان Script/Layout را
+// نمونۀِ دوره‌ایِ هزینه (یکِ فراخوانیِ CDP در هر CADENCE ms) تا بتوان Script/Layout را
 // به‌ازایِ هر دلتا نسبت داد؛ بی‌این فقطِ میانگینِ کلِ پنجره درِ دست است.
+// CADENCE=0 یعنی بی‌نمونه‌بردار (برایِ مقایسۀِ سربارِ خودِ ابزار — Stage 7).
 const series: { t: number; task: number; script: number; layout: number; style: number }[] = [];
 const tEnd = Date.now() + SECONDS * 1000;
 while (Date.now() < tEnd) {
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(CADENCE || (tEnd - Date.now()));
+  if (!CADENCE) break;
   const m = await metrics();
   series.push({ t: Date.now(), task: +m.task.toFixed(4), script: +m.script.toFixed(4),
                 layout: +m.layout.toFixed(4), style: +m.style.toFixed(4) });
-  if (series.length > 900) series.splice(0, 300);
+  if (series.length > 4000) series.splice(0, 1000);
 }
 const mBoardB = await metrics();
 const clockB = await stat();
 const symEnd = await visibleSymbols();
-const board = await page.evaluate((winStart: number) => {
-  const D = (window as any).__dom;
-  const P = (window as any).__p;
-  return {
-    secs: Math.round((Date.now() - D.t0) / 1000), batches: D.batches, added: D.added, removed: D.removed,
-    text: D.text, flash: D.flash, otherAttr: D.otherAttr, events: D.events,
-    batchTimes: D.batchTimes.filter((t: number) => t >= winStart),
-    rowsVisibleNow: document.querySelectorAll('[data-testid="tape-row"]').length,
-    domNodes: document.querySelectorAll('*').length,
-    countersNow: { batches: D.batches, added: D.added, removed: D.removed, text: D.text, flash: D.flash, otherAttr: D.otherAttr },
-    fetchLog: P.fetch.slice(-400),
-    rafRequestedDuringBoard: P.raf.requested,
-  };
-}, netWinStart);
+const board = await page.evaluate(readTapeSensor, true) as Record<string, any>;
+const boardExtra = await page.evaluate((winStart: number) => ({
+  secs: Math.round((Date.now() - (window as any).__dom.t0) / 1000),
+  batchTimes: ((window as any).__dom.batchTimes as number[]).filter((t) => t >= winStart),
+  rowsVisibleNow: document.querySelectorAll('[data-testid="tape-row"]').length,
+  domNodes: document.querySelectorAll('*').length,
+  fetchLog: (window as any).__p.fetch.slice(-400),
+  rafRequestedDuringBoard: (window as any).__p.raf.requested,
+}), netWinStart);
+Object.assign(board, boardExtra);
 // چشمِ رویداد: لاگِ خودِ صفحه (t1 = لحظۀ رسیدنِ پاسخ روی ساعتِ صفحه، که با ساعتِ
 // Node روی این ماشین تا ~۱ms یکی است). بدنه‌هایِ Playwright فقط پیوست می‌شوند.
 const winEvents = (board.fetchLog as { url: string; t1: number; status: number; bytes: number }[])
@@ -351,8 +275,11 @@ const joined = winEvents.map((f) => {
   };
 });
 const changedDeltas = joined.filter((j) => j.kind === 'delta' && j.body?.kind === 'delta');
-const windowOnly = (k: string) => (board.countersNow?.[k] ?? 0) - (baseCounters?.[k] ?? 0);
+const C = board as unknown as Record<string, number>;
+const B = baseCounters as unknown as Record<string, number>;
+const windowOnly = (k: string) => (C[k] ?? 0) - (B[k] ?? 0);
 out.clock = { nodeMinusPageMs: Math.round(((clockA.nodeNow + clockB.nodeNow) / 2) - ((clockA.pageNow + clockB.pageNow) / 2)),
+              precision: await page.evaluate(clockPrecision),
               note: 'همۀِ زمان‌ها Date.now() رویِ یکِ ماشین؛ اختلافِ ساعتِ صفحه/Node باید ~۰ باشد' };
 out.network = {
   window: joined,
@@ -368,24 +295,38 @@ out.board = {
   blocked: joined.length === 0
     ? 'BLOCKED — درِ اینِ پنجره هیچِ درخواستِ تازۀِ تابلو دیده نشد (بیرونِ ساعتِ بازار ریتم ۵ دقیقۀ CLOSED_POLL_MS است). نسبت‌دهیِ رندر به دلتا نیازمندِ بازارِ باز.'
     : null,
-  window: { secs: board.secs, startWall: netWinStart, rowsVisibleNow: board.rowsVisibleNow, domNodes: board.domNodes,
+  window: { secs: board.secs, startWall: netWinStart, cadenceMs: CADENCE, rowsVisibleNow: board.rowsVisibleNow, domNodes: board.domNodes,
             taskMs: +((mBoardB.task - mBoardA.task) * 1000).toFixed(1),
             scriptMs: +((mBoardB.script - mBoardA.script) * 1000).toFixed(1),
             layoutMs: +((mBoardB.layout - mBoardA.layout) * 1000).toFixed(1),
             styleMs: +((mBoardB.style - mBoardA.style) * 1000).toFixed(1),
             rafRequestedDelta: board.rafRequestedDuringBoard - rafBeforeBoard },
-  counters: { batches: windowOnly('batches'), nodesAdded: windowOnly('added'), nodesRemoved: windowOnly('removed'),
-              textChangedCells: windowOnly('text'), flashCells: windowOnly('flash'), otherAttr: windowOnly('otherAttr'),
-              note: 'text/flash = سلولِ دیدنیِ تغییرمقدار، نه تعدادِ renderِ React؛ otherAttr/title = ردیفی که آبجکتِ داده‌اش عوض شده' },
+  counters: { mutationBatches: windowOnly('batches'), records: windowOnly('records'), ignored: windowOnly('ignored'),
+              cellsValueChanged: windowOnly('text') + windowOnly('textReplaced'),
+              cellsFlashClass: windowOnly('flash'), cellsCharData: windowOnly('text'), cellsTextReplaced: windowOnly('textReplaced'),
+              rowTitleAttr: windowOnly('title'),
+              elemsAdded: windowOnly('addedElems'), elemsRemoved: windowOnly('removedElems'),
+              textNodesAdded: windowOnly('addedText'), textNodesRemoved: windowOnly('removedText'),
+              otherAttr: windowOnly('otherAttr'),
+              sensorSelfMs: +windowOnly('sensorMs').toFixed(2), sensorBatchesHandled: windowOnly('sensorCalls'),
+              note: 'cellsValueChanged = سلولِ دیدنیِ تغییرمقدار، نه تعدادِ renderِ React. addedElems/removedElems = کوه‌کشیِ ساختار (ردیف/گره)، textNodes* = فقطِ گرهٔ متنی. هرگز این شمارۀِ گره را معادلِ شمارۀِ ردیف نخوان. sensorSelfMs = وقتِ خودِ ناظر (سربارِ ابزار، از وقتِ برنامه جدا؛ کفِ دقتِ ساعتِ اینِ Chromium ~۰.۱ms).' },
   perResponse: joined.map((j) => {
     const after = ev.filter((x) => x.t > j.at && x.t <= j.at + 4000);
-    const syms = new Set(after.filter((x) => x.kind === 'flash' || x.kind === 'text').map((x) => x.sym).filter(Boolean));
+    const VAL = new Set(['flash', 'text', 'textReplaced']);
+    const syms = new Set(after.filter((x) => VAL.has(x.kind)).map((x) => x.sym).filter(Boolean));
     const objSyms = new Set(after.filter((x) => x.kind === 'title').map((x) => x.sym).filter(Boolean));
-    // s0 = آخرینِ نمونه پیش‌ازِ رسیدنِ پاسخ (تا کارِ JSON/React میانِ دو نمونه جا نیفتد)
+    // KALIBRATION (perf_probe_calib: attributionRecovery): پنجرۀِ [+2.5s] کارِ
+    // بی‌ربطِ میاندو نمونه‌ها را هم می‌گیرد و هزینه را ~۴-۶× بیش‌نسبت می‌دهد؛ پنجرۀِ
+    // تنگِ [+0, +۷۰۰ms] بهِ سنجشِ چسبیده نزدیک‌تر است. هر دو گزارش می‌شوند.
     const beforeS = series.filter((s) => s.t <= j.at);
     const s0 = beforeS[beforeS.length - 1] ?? series[0];
-    const s1 = series.filter((s) => s.t > j.at + 2500)[0] ?? series[series.length - 1];
+    const sTight = series.filter((s) => s.t >= j.at + 700)[0] ?? series[series.length - 1];
+    const sWide = series.filter((s) => s.t > j.at + 2500)[0] ?? series[series.length - 1];
     const inDelta = new Set(j.body?.symbols ?? []);
+    // واحد: CDP Performance.*Duration برحسبِ **ثانیه** است. بی‌ضربِ ۱۰۰۰، ۶۸ms به
+    // شکلِ «۰.۱ms» خوانده می‌شود — باگِ واحدی که درِ Stage 6 رخ داد و درِ Stage 7
+    // با سریِ خامِ ذخیره‌شده کشف شد (perf_probe_calib → attributionRecovery).
+    const dms = (a: number, b: number) => +(((b - a) * 1000)).toFixed(1);
     return { at: j.at, kind: j.kind, bodyKind: j.body?.kind ?? null, rev: j.body?.rev ?? null,
              rowsInDelta: j.body?.rows ?? null, pageBytes: j.pageBytes, last_sync: j.body?.last_sync ?? null,
              visibleRowsNamedInDelta: (j.kind === 'delta' ? symStart.filter((s) => inDelta.has(s)).length : null),
@@ -393,10 +334,17 @@ out.board = {
              mutationBatches4s: bTimes.filter((t) => t > j.at && t <= j.at + 4000).length,
              visibleRowsValueChanged: syms.size, visibleRowsDataObjectReplaced: objSyms.size,
              changedSymbols: [...syms].slice(0, 12),
-             nodesAdded: after.filter((x) => x.kind === 'added').length,
-             nodesRemoved: after.filter((x) => x.kind === 'removed').length,
-             scriptMsAfter: +(s1.script - s0.script).toFixed(1), layoutMsAfter: +(s1.layout - s0.layout).toFixed(1),
-             styleMsAfter: +(s1.style - s0.style).toFixed(1), taskMsAfter: +(s1.task - s0.task).toFixed(1) };
+             elemsAdded: after.filter((x) => x.kind === 'added').length,
+             elemsRemoved: after.filter((x) => x.kind === 'removed').length,
+             cellCharData: after.filter((x) => x.kind === 'text').length,
+             cellTextReplaced: after.filter((x) => x.kind === 'textReplaced').length,
+             cellsFlash: after.filter((x) => x.kind === 'flash').length,
+             scriptMsTight: dms(s0.script, sTight.script), taskMsTight: dms(s0.task, sTight.task),
+             layoutMsTight: dms(s0.layout, sTight.layout), styleMsTight: dms(s0.style, sTight.style),
+             tightWindowMs: sTight.t - s0.t,
+             scriptMsWide: dms(s0.script, sWide.script), taskMsWide: dms(s0.task, sWide.task),
+             layoutMsWide: dms(s0.layout, sWide.layout), styleMsWide: dms(s0.style, sWide.style),
+             wideWindowMs: sWide.t - s0.t, cadenceMs: CADENCE };
   }),
   visibleSymbols: { start: symStart, end: symEnd },
   costSeries: series,
