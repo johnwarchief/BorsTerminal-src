@@ -218,6 +218,19 @@ SUITES = [
     # «بی‌دوره» می‌بینند. بی‌شبکه؛ خواندنِ market.db فقط read-only است.
     ('dev/codal_period_canonical_v1075.py',
                                      'one canonical period rule; SQL and Python agree; every consumer sees one count'),
+    # CA-2 (ممیزی CODAL دور ۲، ۱۴۰۵-۰۷-۲۰): `/api/fundamental/*/quarters` برندهٔ
+    # هر دوره را با `ORDER BY publish_date DESC LIMIT ?` می‌گزید و رقمِ فارسی
+    # (U+06F0..) در واژگانِ SQLite بعدِ لاتین می‌آید ⇒ ردیفِ کهنه «تازه‌ترین»
+    # شد (سنجشِ بانکِ کاری: ۱۲۱ اسلات، ۱۱۷ تا با عددِ عوض‌شده) و LIMIT پیش از
+    # dedupe دوره کم می‌آورد. حالا همان `statement_rank`ِ موتور حاکم است.
+    ('dev/codal_reference_select_v1088.py',
+                                     'one reference-row rule for quarters; digit script never decides; losers preserved'),
+    # CA-3 (همان ممیزی): «نبودِ upsert ⇒ انباشتِ تکراری» باطل شد — `tracing_no`
+    # PRIMARY KEY + `FS_UPSERT ... ON CONFLICT DO UPDATE` است. هویتِ یکِ گزارش
+    # فقط شمارهٔ ردّ کدال است؛ این گارد ثابت می‌کند بازنشرِ یکِ اطلاعیه ردیفِ دوم
+    # نمی‌سازد، دو اطلاعیهٔ یکِ دوره ادغام نمی‌شوند، و هیچِ مسیرِ ingest حذف نمی‌کند.
+    ('dev/codal_ingest_identity_v1088.py',
+                                     'notice identity = tracing_no; re-ingest never adds or deletes a row'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

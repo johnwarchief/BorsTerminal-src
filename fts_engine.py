@@ -560,6 +560,45 @@ def _is_amendment(title: str) -> bool:
     return "اصلاحیه" in norm_fa(title)
 
 
+# پسوندهای پرانتزیِ «مقطعِ نامه»، نه نامِ شرکت — همان سه زیررشته‌ای که
+# `_is_audited`/`_is_consolidated`/`_is_amendment` می‌خوانند.
+_TITLE_SCOPE_MARKS = ("حسابرس", "تلفیق", "اصلاحی")
+_TITLE_PAREN_OPEN = "（("
+_TITLE_PAREN_CLOSE = "）)"
+
+
+def title_entity_suffix(title: str) -> str:
+    """نامِ شرکتِ دیگری که درِ پایانِ عنوانِ نامه آمده، یا ''.
+
+    کدال صورتِ مالیِ شرکت‌هایِ فرعی را زیرِ نمادِ هلدینگ منتشر می‌کند و آن شرکت
+    را در پرانتزِ آخرِ عنوان می‌نویسد: «… (حسابرسی شده) (شرکت هلپاک)». چنین
+    ردیفی *وضعیتِ مالیِ شرکتِ دیگری* است، نه خودِ نماد — پس نمی‌تواند نمایندۀ
+    آن نماد باشد. این تابع فقط «هویتِ filed-by» را می‌خواند؛ هیچ رأیِ مالیِ
+    دوم نمی‌سازد و هیچِ توابعِ بالا را تغییر نمی‌دهد. بی‌regex، چون این ماژول
+    `re` را وارد نمی‌کند (همان قراردادی که `_is_consolidated` را ساده نگه داشته).
+
+    مصرفِ فعلی: خوانندۀ `/api/fundamental/{symbol}/quarters` (گاردِ
+    dev/codal_reference_select_v1088.py). موتورِ قیف هنوز این لایه را ندارد —
+    چون `statement_rank` درِ نویسندۀ `collapse_symbol` ردیف حذف می‌کند و
+    «هلدینگ را کدامِ رکورد نمایندگی می‌کند» رأیِ جزوه می‌خواهد (NEEDS_REVIEW).
+    """
+    s = str(title or "")
+    found = ""
+    i, n = 0, len(s)
+    while i < n:
+        if s[i] in _TITLE_PAREN_OPEN:
+            j = i + 1
+            while j < n and s[j] not in _TITLE_PAREN_CLOSE:
+                j += 1
+            span = norm_fa(s[i + 1:j]).strip()
+            if len(span) > 2 and not any(m in span for m in _TITLE_SCOPE_MARKS):
+                found = span
+            i = j + 1
+        else:
+            i += 1
+    return found
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  تک‌منبعِ «کدامِ ردیف، این دورۀ این نماد را نمایندگی می‌کند»
 #  (نویسنده: codal_fetcher.period_winners — خواننده‌ها: annual_statements،

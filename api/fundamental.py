@@ -2094,12 +2094,38 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
     """سری میاندوره‌ای خام برای نمودار روند فصلی فرانت React (فاز 3) — فقط خواندنی.
 
     ردیف‌ها تجمعی سال مالی‌اند (3/6/9/12 ماهه)؛ تفکیک فصلی در فرانت انجام میشود.
-    هیچ منطق موجودی را تغییر نمیدهد.
+    قواعدِ محاسبهٔ کارت/قیف دست‌نخورده است؛ فقط «کدام ردیف نمایندهٔ این دوره است»
+    در همین سری درست شد (بندِ پایین).
 
     #102 (رأیِ جزوه): «سود ناخالص» هم فرستاده میشود — روند فصلیِ درآمد باید با
     سود ناخالص سنجیده شود نه سود خالص. ستون در کدال NULL است وقتی صورتِ مالی
     سطر «بهای تمام‌شده» ندارد (صندوق/سرمایه‌گذاری)؛ NULL هیچ‌وقت صفر نمی‌شود و
     هیچ‌وقت با سود خالص جایگزین نمی‌گردد — نبودش در پاسخ حفظ میشود.
+
+    انتخابِ ردیفِ هر دوره (اصلاحِ CA-2، ۱۴۰۵-۰۷-۲۰): پیش از این کوئری
+    `ORDER BY period_end DESC, publish_date DESC LIMIT ?` بود و نخستین ردیفِ هر
+    (دوره، طول) برنده می‌شد. سه نقص:
+      • `publish_date` مخلوطِ رقمِ فارسی (U+06F0..) و لاتین است و قفسۀ فارسی
+        در واژگانِ SQLite **بعد** از لاتین می‌آید ⇒ ردیفِ کهنه‌تر «تازه‌ترین»
+        خوانده می‌شد.
+      • `LIMIT` پیش از حذفِ تکراری اعمال می‌شد ⇒ دوره‌هایِ واقعی کم می‌آمدند
+        (۲۲ نماد از ۱۱۱ نمادِ چندردیفی، ۷۳ دوره).
+      • صورتِ مالیِ شرکتِ فرعیِ یکِ هلدینگ هم زیرِ همان نماد ذخیره می‌شود، پس
+        «تازه‌ترینِ واژگانی» می‌تواند عددِ **شرکتِ دیگری** را نمایش دهد.
+    حالا برنده با همان قاعدۀ یگانۀ پروژه انتخاب می‌شود: دامنۀ شرکت
+    (`fts_engine.title_entity_suffix`) ← `fts_engine.statement_rank`
+    (غیرتلفیقی ← ردیفِ کامل‌تر ← newest `tracing_no`) — همان که
+    `annual_statements`/`pick_reference` (موتور قیف) و `codal_fetcher.period_winners`
+    (نویسنده) مصرف می‌کنند. نه parser دوم، نه آستانۀ دوم، نه قاعدۀ دومِ «برنده»:
+    لایۀ دامنۀ شرکت هم به‌عنوان یکِ *صفتِ عنوان* درِ همان `fts_engine` نوشته شده
+    (کنارِ `_is_audited`/`_is_consolidated`). ردیف‌هایِ دیگر حذف نمی‌شوند: فقط از
+    دیدِ این سریِ فصلی کنار می‌روند.
+
+    سنجشِ این تغییر رویِ بانکِ کاری (۱۴۰۵-۰۷-۲۰،
+    `tools/codal_reference_before_after.py`): ۱۶۵ اسلاتِ چندردیفی، ۹۳ اسلاتِ
+    ردیفِ عوض‌شده، ۸۱ اسلات با عددِ نمایشیِ عوض‌شده، و **۰** اسلاتی که از ردیفِ
+    خودِ نماد به ردیفِ شرکتِ فرعی رفته باشد. تفصیل:
+    `docs/fts-notes/CODAL-AUDIT-ROUND2-2026-10-12.md`.
     """
     conn = get_db()
     try:
@@ -2108,22 +2134,40 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
         _fp, _fa = fts_engine.sym_in("symbol", symbol)
         _raw = conn.execute(
             "SELECT period_end, period_months, revenue, gross_profit,"
-            " operating_profit, net_profit, basic_eps, publish_date"
+            " operating_profit, net_profit, basic_eps, publish_date,"
+            " tracing_no, title"
             " FROM financial_statements"
-            " WHERE %s AND %s ORDER BY period_end DESC, publish_date DESC LIMIT ?"
-            % (_fp, CP.DATED_SQL),
-            (*_fa, max(1, min(limit, 40)))).fetchall()
-        # حذف تکراریِ (period_end, period_months): نمادِ دو-املا می‌تواند یک دوره را
-        # در دو نوشتار داشته باشد؛ تازه‌ترین ردیف می‌ماند.
-        _seen, rows = set(), []
+            " WHERE %s AND %s ORDER BY %s"
+            % (_fp, CP.DATED_SQL, CP.order_expr()),
+            _fa).fetchall()
+        # یکِ (دوره، طولِ دوره) = یکِ ردیف؛ بردۀ همان قاعدۀ موتور.
+        # لایۀ اول «دامنۀ شرکت» است: صورتِ مالیِ شرکتِ فرعی که کدال زیرِ نمادِ
+        # هلدینگ منتشر می‌کند («… (شرکت هلپاک)») نمایندۀ خودِ نماد نیست
+        # (`fts_engine.title_entity_suffix`). اگر همهٔ ردیف‌هایِ یکِ دوره فرعی
+        # باشند، همان قاعدۀ موتور بینِ آن‌ها می‌گزیند — پاسخی حذف نمی‌شود و
+        # ردیفی پاک نمی‌شود؛ فقط برایِ این سریِ فصلی کنار می‌رود.
+        _keys = fts_engine.FS_NUMBER_KEYS
+        by_slot: dict = {}
         for r in _raw:
-            k = (r[0], r[1])
-            if k in _seen:
-                continue
-            _seen.add(k)
-            rows.append(r)
+            d = dict(r)
+            rank = ((1 if fts_engine.title_entity_suffix(d.get("title") or "") else 0),
+                    ) + fts_engine.statement_rank(
+                _keys, fts_engine._is_consolidated(d.get("title") or ""),
+                fts_engine.row_completeness(_keys, d), d["tracing_no"])
+            k = (d["period_end"], d["period_months"])
+            cur = by_slot.get(k)
+            if cur is None or rank < cur[0]:
+                by_slot[k] = (rank, d)
+        # شکلِ canonical پهنایثابت است ⇒ ترتیبِ واژگانی = ترتیبِ زمانی
+        ordered = [d for _rk, d in sorted(by_slot.values(),
+                                          key=lambda t: t[1]["period_end"],
+                                          reverse=True)]
+        rows = [{c: d[c] for c in ("period_end", "period_months", "revenue",
+                                   "gross_profit", "operating_profit", "net_profit",
+                                   "basic_eps", "publish_date")}
+                for d in ordered[:max(1, min(limit, 40))]]
         return {"status": "success", "symbol": symbol, "count": len(rows),
-                "quarters": [dict(r) for r in rows]}
+                "quarters": rows}
     finally:
         conn.close()
 
