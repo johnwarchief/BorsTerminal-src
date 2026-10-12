@@ -88,7 +88,7 @@ chk("  " not in syms and "" not in syms and None not in syms,
 chk(len(syms) == 3, "ت۱پ: سه نمادِ واقعی از شش ردیف", len(syms))
 
 # ── ت۲ ──────────────────────────────────────────────────────────────────────
-TRICKY = [DIRTY, "حق تقدم/آذر2", "選択", "آ س پ3", "a'b(c)*~d", "100%", "ف\u200cص",
+TRICKY = [DIRTY, "حق تقدم/آذر2", "عىار", "آ س پ3", "a'b(c)*~d", "100%", "ف\u200cص",
           "di\u00e7", "  leading"]
 bad = []
 for s in TRICKY:
