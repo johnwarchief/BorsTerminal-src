@@ -7,7 +7,7 @@
 //
 // بدون React و بدون وابستگی به پوسته — حتی اگر کل UI از کار افتاده باشد، این
 // پنل باید کار کند (همان فلسفهٔ بنر قرمز localData).
-import { baked, metaValue, query, bootTiming } from './localData';
+import { baked, metaValue, query, bootTiming, snapshotStatus, requestManualCheck } from './localData';
 import { liveWatch } from './live';
 import { overlayStatus } from './resolvers';
 
@@ -85,6 +85,22 @@ async function collect(): Promise<string> {
       parts.push(row('حجمِ بسته', `${mb(t.gzBytes)}MB فشرده ← ${mb(t.rawBytes)}MB در حافظه`));
     }
   }
+  // وضعیتِ چرخۀِ بسته: کدام نسخۀ **اعتبارسنجی‌شده** فعال است، آخرینِ نتیجه چه بود،
+  // و چندِ شکست پشتِ هم جمع شده (backoff). بی‌این، «داده کهنه است یا دانلود شکست
+  // خورد؟» رویِ گوشیِ کاربر پاسخ‌نداشت — و کاربر راهِ دیگری جزِ پاک‌کردنِ کش نداشت.
+  {
+    const st = snapshotStatus();
+    parts.push(row('بستۀِ فعال', st.packageId ? `${st.packageId} · ${st.builtAt}` : 'بستۀ همراهِ برنامه (بی‌فعال‌سازیِ تازه)', !!st.packageId));
+    parts.push(row('آخرینِ نتیجه', st.lastOutcome
+      ? `${st.lastOutcome.ok ? 'موفق' : 'ناموفق'}: ${st.lastOutcome.detail}`
+      : 'هنوز بررسی نشده', st.lastOutcome ? st.lastOutcome.ok : undefined));
+    if (st.failStreak > 0) {
+      const mins = Math.max(0, Math.round((st.nextTryAt - Date.now()) / 60000));
+      parts.push(row('تلاشِ دوباره', `${st.failStreak} شکستِ پی‌درپی · ${mins} دقیقه دیگر`));
+    }
+    if (st.lastOkAt) parts.push(row('آخرینِ فعال‌سازیِ موفق', new Date(st.lastOkAt).toLocaleString('fa-IR')));
+    parts.push('<div id="bors-diag-check"></div>');
+  }
   parts.push(row('صفحه', `${window.innerWidth}×${window.innerHeight} · bors-mobile=` +
     String(document.documentElement.classList.contains('bors-mobile'))));
   return parts.join('');
@@ -112,11 +128,37 @@ export function mountDiagnostics(): void {
       'line-height:1.9;font-family:inherit;word-break:break-word;direction:rtl;text-align:right';
     panel.innerHTML = '<div>در حال جمع‌آوری وضعیت…</div>';
     document.body.appendChild(panel);
-    void collect()
-      .then((html) => { panel.innerHTML = html; })
-      .catch((e: unknown) => {
-        panel.textContent = `خطای عیب‌یابی: ${e instanceof Error ? e.message : String(e)}`;
+    const render = (html: string) => {
+      panel.innerHTML = html;
+      const slot = panel.querySelector('#bors-diag-check');
+      if (!slot) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'بررسی دستیِ به‌روزرسانی داده';
+      b.style.cssText =
+        'width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.25);' +
+        'background:rgba(37,99,235,.25);color:#e5e7eb;font:inherit;font-size:12px';
+      b.addEventListener('click', () => {
+        b.disabled = true;
+        b.textContent = 'در حال بررسی…';
+        void requestManualCheck()
+          .then((out) => {
+            // نتیجه از خودِ وضعیت خوانده می‌شود، نه از چیزی که اینجا حدس بزنیم:
+            // «موفق» فقط وقتی است که اعتبارسنجی کامل شده و pointer جابه‌جا شده باشد.
+            b.textContent = out?.ok ? 'بررسی شد — نسخۀ تازه فعال شد'
+              : out ? `بررسی نشد: ${out.detail}` : 'بررسی لازم نبود (پنجرۀ زمانی یا بی‌اتصال)';
+            setTimeout(() => { void show(); }, 1200);
+          })
+          .catch((e: unknown) => {
+            b.textContent = `خطا: ${e instanceof Error ? e.message : String(e)}`;
+          });
       });
+      slot.appendChild(b);
+    };
+    const show = () => collect().then(render).catch((e: unknown) => {
+      panel.textContent = `خطای عیب‌یابی: ${e instanceof Error ? e.message : String(e)}`;
+    });
+    void show();
   });
   document.body.appendChild(btn);
 }

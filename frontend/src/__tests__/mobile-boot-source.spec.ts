@@ -11,6 +11,7 @@ import type { BootProgress } from '@shared/api/local/localData';
 
 const h = vi.hoisted(() => ({
   nativeGetBytes: vi.fn(),
+  nativeGetJson: vi.fn(),
   match: vi.fn(),
   put: vi.fn(),
   del: vi.fn(),
@@ -19,7 +20,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@shared/api/local/nativeHttp', () => ({
   nativeGetBytes: h.nativeGetBytes,
-  nativeGetJson: vi.fn(async () => null),
+  nativeGetJson: h.nativeGetJson,
 }));
 
 const STAMP_KEY = 'bors_snapshot_cached_stamp';
@@ -84,6 +85,8 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     h.put.mockReset();
     h.del.mockReset();
     h.nativeGetBytes.mockReset();
+    h.nativeGetJson.mockReset();
+    h.nativeGetJson.mockResolvedValue(null);   // پیش‌فرض: ریلیزی با manifest منتشر نشده
     h.fetchMock.mockReset();
     vi.stubGlobal('fetch', h.fetchMock);
     vi.stubGlobal('caches', { open: async () => ({
@@ -135,18 +138,32 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
   });
 
   it('اگر بستۀ APK باز نشد، ریلیز را با درصدِ واقعیِ بایت می‌گیرد', async () => {
+    // قراردادِ تازه: ریلیز بی‌manifest پذیرفته نمی‌شود و پیش‌ازِ فعال‌شدن
+    // اندازه+digest+ساختار می‌سنجد. نگهبانیِ اینِ آزمون همان «درصدِ واقعی» است.
     h.match.mockResolvedValue(undefined);
+    const bytes = gzBytes(4_194_304);
+    h.nativeGetJson.mockImplementation(async (url: string) =>
+      url.endsWith('.meta.json')
+        ? { schema_version: 2, package_id: 'p1', built_at: '2026-10-12T09:00:00',
+            gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
+            app_version: '1.0.79', min_app_version: '1.0.0' }
+        : null);
     routeFetch({
       [GZ_URL]: () => new Response(null, { status: 404 }),
-      [RELEASE_URL]: () => streamed(gzBytes(4_194_304)),
+      [RELEASE_URL]: () => streamed(bytes),
     });
     mod = await load('2026-10-08T16:16:15');
+    mod.__setDbProbeForTest(async () => ({
+      tables: new Set(['baked', 'meta', 'instruments', 'price_history']),
+      hasRow: () => true,
+      metaValue: (k: string) => (k === 'built_at' ? '2026-10-12T09:00:00' : null),
+    }));
 
-    const events = await withProgress(mod, () => mod.__fetchSnapshotForTest());
-    expect(mod.bootTiming.source).toBe('release');
-    expect(h.put).toHaveBeenCalled();
+    const events = await withProgress(mod, () => mod.__fetchSnapshotForTest().catch(() => null));
     const download = events.filter((e) => e.phase === 'download');
     expect(download.some((e) => e.totalBytes === 4_194_304 && e.percent === 100)).toBe(true);
+    // digestِ manifest با این بایت‌ها نمی‌خواند ⇒ بسته فعال نمی‌شود
+    expect(localStorage.getItem('bors_snapshot_active_v2')).toBeNull();
   });
 
   it('اگر ریلیز هم از fetch رد شد، درگاهِ بومی می‌آید و درصد نمی‌سازد', async () => {
@@ -155,12 +172,18 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     routeFetch({ [GZ_URL]: () => new Response(null, { status: 500 }) });
     h.fetchMock.mockImplementation((input: RequestInfo | URL) =>
       String(input) === RELEASE_URL ? Promise.reject(new TypeError('CORS')) : Promise.resolve(new Response(null, { status: 500 })));
-    h.nativeGetBytes.mockResolvedValue(gzBytes(2_097_152));
+    const bytes = gzBytes(2_097_152);
+    h.nativeGetJson.mockImplementation(async (url: string) =>
+      url.endsWith('.meta.json')
+        ? { schema_version: 2, package_id: 'p2', built_at: '2026-10-12T09:00:00',
+            gz_bytes: bytes.byteLength, gz_sha256: '0'.repeat(64),
+            app_version: '1.0.79', min_app_version: '1.0.0' }
+        : null);
+    h.nativeGetBytes.mockResolvedValue(bytes);
     mod = await load('2026-10-08T16:16:15');
 
-    const events = await withProgress(mod, () => mod.__fetchSnapshotForTest());
+    const events = await withProgress(mod, () => mod.__fetchSnapshotForTest().catch(() => null));
     expect(h.nativeGetBytes).toHaveBeenCalledWith(RELEASE_URL);
-    expect(mod.bootTiming.source).toBe('release');
     const first = events.find((e) => e.source === 'release');
     expect(first?.totalBytes).toBe(0);
     expect(first?.percent).toBeNull();
@@ -189,12 +212,20 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     h.match.mockResolvedValue(undefined);
     const html = () => new Response('<html>not found</html>', { status: 200 });
     routeFetch({ [GZ_URL]: html, [RELEASE_URL]: html });
-    h.nativeGetBytes.mockResolvedValue(new Response('<html>not found</html>').arrayBuffer());
+    const htmlBytes = new TextEncoder().encode('<html>not found</html>').buffer as ArrayBuffer;
+    h.nativeGetJson.mockImplementation(async (url: string) =>
+      url.endsWith('.meta.json')
+        ? { schema_version: 2, package_id: 'p3', built_at: '2026-10-12T09:00:00',
+            gz_bytes: htmlBytes.byteLength, gz_sha256: '0'.repeat(64),
+            app_version: '1.0.79', min_app_version: '1.0.0' }
+        : null);
+    h.nativeGetBytes.mockResolvedValue(htmlBytes);
     mod = await load('2026-10-08T16:16:15');
 
-    await expect(mod.__fetchSnapshotForTest()).rejects.toThrow(/بستهٔ دادهٔ آفلاین/);
+    await expect(mod.__fetchSnapshotForTest()).rejects.toThrow(/not-gzip/);
     expect(h.nativeGetBytes).toHaveBeenCalledWith(RELEASE_URL);
-    expect(h.put).not.toHaveBeenCalled();
+    expect(h.put).not.toHaveBeenCalled();          // کلیدِ کهنه (SNAPSHOT_URL) نوشته نشد
     expect(mod.bootTiming.source).not.toBe('bundle');
+    expect(localStorage.getItem('bors_snapshot_active_v2')).toBeNull();
   });
 });

@@ -25,6 +25,7 @@
           fundamental/<نماد> · quarters/<نماد> · mstat/<نام> · calendar
 """
 import argparse
+import hashlib
 import json
 import lzma
 import os
@@ -52,6 +53,12 @@ RAW_TABLES = (
     "instruments",
     "price_history",
 )
+
+# نسخۀ قراردادِ manifest (`.meta.json`). کلاینت هر نسخۀ ناشناخته‌ای را **رد** می‌کند
+# (نه پذیرشِ بی‌آزمون): `snapshotPackage.ts` همین عدد را می‌خواند.
+# 1 = فقط app_version/built_at/baked_ok/gz_bytes
+# 2 = + gz_sha256، package_id، min_app_version، db_bytes، tables، required_baked_keys
+MANIFEST_SCHEMA_VERSION = 2
 
 # price_history ستون‌به‌ستون برداشته می‌شود: value و src درِ هیچ کوئریِ
 # موبایلی نیستند و رویِ همان ۴۳۳٬۹۲۲ ردیف مگابایتِ خامِ بی‌مصرف‌اند.
@@ -241,17 +248,47 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True) -> str:
     print(f"[bake] {gz} = {os.path.getsize(gz)/1048576:.1f}MB")
 
     # متای کوچک کنار gz برای بروزرسانی خودکارِ درون‌برنامه‌ای: کلاینت روی گوشی
-    # فقط همین فایل ~۲۰۰ بایتی را روزانه از GitHub Releases چک می‌کند و اگر
-    # built_at جدیدتر بود gz کامل را در پس‌زمینه می‌کشد (localData.ts).
+    # همین فایلِ کوچک را روزانه از GitHub Releases چک می‌کند و بستۀ تازه را فقط
+    # پس از **کامل شدنِ اعتبارسنجی** فعال می‌کند (localData.ts).
+    #
+    # پروتکل digest (عمداً بیرون از خودِ artifact): manifest فایلِ **جدا** است، پس
+    # sha256 روی بایت‌های نهاییِ همان .gz که گوشی دانلود می‌کند گرفته می‌شود و هیچ
+    # دورِ باطلی (هشِ فایلی که خودش را هش می‌کند) ندارد. ترتیب تحویل:
+    #   ۱) gz دانلود می‌شود  ۲) طول و sha256 با manifest مقایسه می‌شود
+    #   ۳) gunzip + بازگشایی SQLite + اعتبارسنجی ساختار  ۴) فعال‌سازی (آخرین گام)
+    #
+    # sha256 = تشخیص خرابی تصادفی / انتقال ناقص. این **امضا نیست**: بی کلیدِ عمومیِ
+    # مستقل هیچ ادعایی درباره اصالت ناشر نمی‌کند (مستند در snapshotPackage.ts).
+    h = hashlib.sha256()
+    with open(gz, "rb") as fi:
+        while True:
+            blk = fi.read(1 << 20)
+            if not blk:
+                break
+            h.update(blk)
+    gz_hex = h.hexdigest()
     meta_json = out_db + ".meta.json"
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "package_id": "%s-%s" % (now.replace("-", "").replace(":", "").replace(" ", "T"), gz_hex[:8]),
+        "app_version": APP_VERSION,
+        # گوشیِ کهنه‌تر از این نسخه نباید بستۀ تازه را بپذیرد: پاسخِ پختۀ دسکتاپ با
+        # نسخهٔ خودِ دسکتاپ قفل می‌شود.
+        "min_app_version": APP_VERSION,
+        "built_at": now,
+        "gz_bytes": os.path.getsize(gz),
+        "gz_sha256": gz_hex,
+        "db_bytes": os.path.getsize(out_db),
+        "baked_ok": ok,
+        "baked_fail": fail,
+        # قرارداد ساختار از خودِ همین سازنده: این چهار جدول ساخته می‌شود و گوشی هم
+        # همین‌ها را می‌خواند (resolvers.ts ⇒ baked/meta/instruments/price_history).
+        "tables": ["baked", "meta", "instruments", "price_history"],
+        "required_baked_keys": ["market_board"],
+    }
     with open(meta_json, "w", encoding="utf-8") as fo:
-        json.dump({
-            "app_version": APP_VERSION,
-            "built_at": now,
-            "baked_ok": ok,
-            "gz_bytes": os.path.getsize(gz),
-        }, fo, ensure_ascii=False, indent=1)
-    print(f"[bake] {meta_json}")
+        json.dump(manifest, fo, ensure_ascii=False, indent=1)
+    print(f"[bake] {meta_json} · sha256={gz_hex[:16]}… · gz={manifest['gz_bytes']} B")
 
     if do_lzma:
         lz = out_db + ".lzma"

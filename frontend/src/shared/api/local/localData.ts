@@ -12,6 +12,17 @@ import initSqlJs, { type Database } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { HttpError } from '../http';
 import { nativeGetBytes, nativeGetJson } from './nativeHttp';
+import {
+  parseManifest, parsePointer, verifyBytes, validateDatabase, versionAtLeast,
+  type ActivePointer, type DbProbe, type SnapshotManifest,
+} from './snapshotPackage';
+
+/** نسخۀ خودِ برنامه. `npm_package_version` را vite از package.json برمی‌دارد و
+ *  `dev/version_anchor_guard.py` همان عدد را بهِ `bors_config.APP_VERSION` قفل
+ *  می‌کند ⇒ یکِ منبعِ واحد، بی‌عددِ تازه. اگر روزی نبود، دروازۀِ «حداقلِ نسخه»
+ *  بسته می‌ماند (رد، نه پذیرشِ بی‌آزمون). */
+const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined)
+  ?? (import.meta.env as unknown as { npm_package_version?: string }).npm_package_version ?? '';
 
 const SNAPSHOT_URL =
   (import.meta.env.VITE_SNAPSHOT_URL as string | undefined) ?? '/mobile_snapshot.db.gz';
@@ -119,9 +130,10 @@ async function responseArrayBufferWithProgress(
 
 
 // --- بروزرسانی خودکار داده از GitHub Releases (بدون سرور، بدون هزینه) -----
-// یک بار در روز metaی کوچک (~۲۰۰ بایت) چک می‌شود؛ اگر built_at جدیدتر بود،
-// gz کامل در پس‌زمینه دانلود و در Cache API جایگزین می‌شود — از اجرای بعدی
-// برنامه دادهٔ تازه بار می‌شود (اجرای جاری دست‌نخورده می‌ماند).
+// manifestِ کوچک چک می‌شود؛ اگر built_at تازه‌تر بود، gz کامل در **فضای موقت**
+// (staging cache) دانلود می‌شود و تنها پس از اندازه + SHA-256 + gunzip + بازگشایی
+// SQLite، با نوشتنِ یکِ **pointer** در آخرین گام فعال می‌شود. تا آن لحظه نسخهٔ سالم
+// قبلی مرجع است، و هر شکستی همان نسخه را باقی می‌گذارد.
 // تگ ثابت «mobile-latest» (pre-release غلتان که CI با هر بیلد تازه می‌کند) —
 // عمداً نه releases/latest، تا ریلیزهای رسمی دسکتاپ مالک دست‌نخورده بمانند.
 const REMOTE_BASE =
@@ -129,8 +141,20 @@ const REMOTE_BASE =
   'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest';
 const REMOTE_META_URL = `${REMOTE_BASE}/mobile_snapshot.db.meta.json`;
 const REMOTE_GZ_URL = `${REMOTE_BASE}/mobile_snapshot.db.gz`;
-const CHECK_KEY = 'bors_snapshot_check_at';
-const CHECK_EVERY_MS = 24 * 3600 * 1000;
+
+// کلیدهایِ وضعیت. جدا بودنشان عمدی است: «کی آخرین بار **موفق** بررسی شد» با
+// «آخرین بار **تلاش** شد» یکی نیست — پیش‌ازِ این همان CHECK_KEY پیش از دانلود
+// نوشته می‌شد و هر شکست، بررسیِ بعدی را ۲۴ ساعت عقب می‌انداخت.
+const CHECK_KEY = 'bors_snapshot_check_at';          // legacy: آخرین تلاش (برایِ خواندنِ دادهٔ کهنه)
+const LAST_OK_KEY = 'bors_snapshot_last_ok_at';      // آخرین **فعال‌سازیِ** موفق
+const NEXT_TRY_KEY = 'bors_snapshot_next_try_at';    // سقفِ زمانیِ تلاشِ بعدی (backoff)
+const FAILS_KEY = 'bors_snapshot_fail_streak';       // شمارشِ شکست‌هایِ پی‌درپی
+const POINTER_KEY = 'bors_snapshot_active_v2';       // مرجعِ نسخۀِ فعال (آخرین گامِ فعال‌سازی)
+const STAGING_CACHE_NAME = 'bors-mobile-snapshot-staging-v2';
+
+const CHECK_EVERY_MS = 24 * 3600 * 1000;             // ریتمِ عادیِ بررسی (تغییر نکرد)
+const BACKOFF_BASE_MS = 5 * 60 * 1000;               // اولینِ فاصلۀِ پس ازِ شکست
+const BACKOFF_CAP_MS = CHECK_EVERY_MS;               // سقفِ فاصل ⇒ هرگز بهِ pollingِ پرتکرار برنمی‌گردد
 
 /** آیا اتصال سنجه‌دار (دادهٔ همراه) یا کاربر «صرفه‌جویی» خواسته است؟
  *
@@ -151,33 +175,214 @@ function isMeteredConnection(): boolean {
   return c.effectiveType === 'slow-2g' || c.effectiveType === '2g' || c.effectiveType === '3g';
 }
 
-async function maybeRefreshSnapshot(): Promise<void> {
-  try {
-    const lastCheck = Number(localStorage.getItem(CHECK_KEY) ?? 0);
-    if (Date.now() - lastCheck < CHECK_EVERY_MS) return;
-    if (isMeteredConnection()) {
-      // مُهر را جلو نمی‌بریم: وای‌فایِ بعدی باید دوباره بررسی کند.
-      return;
+// ── وضعیتِ زمان‌بندی (موفق ≠ تلاش) ────────────────────────────────────────
+function lsGet(k: string): string | null { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k: string, v: string): void { try { localStorage.setItem(k, v); } catch { /* بی‌حافظه */ } }
+function lsDel(k: string): void { try { localStorage.removeItem(k); } catch { /* بی‌حافظه */ } }
+
+function readPointer(): ActivePointer | null {
+  return parsePointer(lsGet(POINTER_KEY));
+}
+
+async function openCache(name: string): Promise<Cache | null> {
+  try { return await caches.open(name); } catch { return null; } // Cache API درِ برخی WebViewها نیست
+}
+
+/** فاصلۀِ تلاشِ بعدی: ۵ دقیقه، دو‌برابرِ هرِ شکست، سقفِ یکِ روز. با موفقیت صفر می‌شود. */
+export function backoffMs(failStreak: number): number {
+  if (failStreak <= 0) return 0;
+  return Math.min(BACKOFF_CAP_MS, BACKOFF_BASE_MS * 2 ** Math.min(failStreak - 1, 10));
+}
+
+function noteFailure(detail: string): void {
+  const n = Number(lsGet(FAILS_KEY) ?? 0) + 1;
+  lsSet(FAILS_KEY, String(n));
+  lsSet(NEXT_TRY_KEY, String(Date.now() + backoffMs(n)));
+  lsSet(CHECK_KEY, String(Date.now())); // legacy: «تلاش شد» — موفقیت نیست
+  lastOutcome = { at: Date.now(), ok: false, detail: detail.slice(0, 200) };
+}
+
+function noteSuccess(detail: string): void {
+  lsSet(FAILS_KEY, '0');
+  lsSet(LAST_OK_KEY, String(Date.now()));
+  lsSet(NEXT_TRY_KEY, '0');
+  lsSet(CHECK_KEY, String(Date.now()));
+  lastOutcome = { at: Date.now(), ok: true, detail: detail.slice(0, 200) };
+}
+
+export type SnapshotOutcome = { at: number; ok: boolean; detail: string };
+let lastOutcome: SnapshotOutcome | null = null;
+let inFlight: Promise<SnapshotOutcome | null> | null = null;
+
+/** وضعیتِ بسته برایِ پنلِ 🛠 و دکمۀِ «بررسی دستی». */
+export function snapshotStatus(): {
+  source: string; builtAt: string; packageId: string; activatedAt: number | null;
+  failStreak: number; nextTryAt: number; lastOkAt: number; lastOutcome: SnapshotOutcome | null;
+  checking: boolean;
+} {
+  const p = readPointer();
+  return {
+    source: bootTiming.source || p ? (bootTiming.source || 'pointer') : '—',
+    builtAt: p?.builtAt ?? '',
+    packageId: p?.packageId ?? '',
+    activatedAt: p?.activatedAt ?? null,
+    failStreak: Number(lsGet(FAILS_KEY) ?? 0),
+    nextTryAt: Number(lsGet(NEXT_TRY_KEY) ?? 0),
+    lastOkAt: Number(lsGet(LAST_OK_KEY) ?? 0),
+    lastOutcome,
+    checking: inFlight !== null,
+  };
+}
+
+/** یکِ دورِ بررسی: manifest ← مقایسهٔ built_at ← staging ← اعتبارسنجی ← فعال‌سازی.
+ *  هرگز دو دورِ هم‌زمان نمی‌دود (دکمهٔ دستی و تایمرِ پس‌زمینه یکی را شریک می‌شوند). */
+async function runCheck(opts: { manual: boolean }): Promise<SnapshotOutcome | null> {
+  if (inFlight) return inFlight;
+  inFlight = (async (): Promise<SnapshotOutcome | null> => {
+    const now = Date.now();
+    if (!opts.manual && now < Number(lsGet(NEXT_TRY_KEY) ?? 0)) return null; // backoff
+    if (!opts.manual && now - Number(lsGet(CHECK_KEY) ?? 0) < CHECK_EVERY_MS) return null;
+    if (!opts.manual && isMeteredConnection()) {
+      // مُهرِ موفقیت جلو نمی‌رود: وای‌فایِ بعدی باید دوباره بتواند بررسی کند.
+      return null;
     }
-    localStorage.setItem(CHECK_KEY, String(Date.now()));
-    // درگاه بومی: داخل اپ اندروید بدون دیوار CORS؛ در مرورگر fetch معمولی
-    const meta = (await nativeGetJson(REMOTE_META_URL)) as { built_at?: string } | null;
-    if (!meta) return; // ریلیزی با بستهٔ داده هنوز منتشر نشده / آفلاین
-    const remoteBuilt = String(meta.built_at ?? '');
-    if (!remoteBuilt) return;
-    const localBuilt = (await metaValue('built_at')) ?? '';
-    if (remoteBuilt <= localBuilt) return; // همین دادهٔ فعلی یا قدیمی‌تر
-    const buf = await nativeGetBytes(REMOTE_GZ_URL);
-    if (!isGz(buf)) return;
-    const cache = await caches.open(CACHE_NAME);
-    await cache.put(SNAPSHOT_URL, new Response(buf));
-    // مهرِ همین بسته: اجرایِ بعدی با دیدنِ آن می‌فهمد کش از APK تازه‌تر است
-    localStorage.setItem(STAMP_KEY, remoteBuilt);
-  } catch { /* آفلاین/Cache API غایب — دفعهٔ بعد دوباره تلاش می‌شود */ }
+    try {
+      const raw = await nativeGetJson(REMOTE_META_URL);
+      const mf = parseManifest(raw);
+      if (!mf.ok) {
+        // نخواندنِ manifest یکِ «بستۀِ خراب» نیست؛ فقط نمی‌توان تازه شد.
+        noteFailure(`manifest: ${mf.reason} — ${mf.detail}`);
+        return lastOutcome;
+      }
+      // مقایسه از روی pointer/مُهر، نه با بازکردنِ دیتابیس: بی‌این، هرِ بررسیِ
+      // پس‌زمینه یعنی گشودنِ ۲۲ مگابایت درِ حافظه فقط برایِ خواندنِ یکِ تاریخ.
+      const localBuilt = readPointer()?.builtAt ?? lsGet(STAMP_KEY) ?? '';
+      if (localBuilt && mf.value.built_at <= localBuilt) {
+        noteSuccess('بستۀِ فعلی تازه‌تر یا هم‌سطح است');
+        return lastOutcome;
+      }
+      const got = await downloadToStaging(mf.value);
+      if (!got.ok) { noteFailure(got.detail); return lastOutcome; }
+      const act = await activate(got.key, mf.value);
+      if (!act.ok) { noteFailure(act.detail); return lastOutcome; }
+      noteSuccess(`فعال شد: ${mf.value.package_id}`);
+      cleanupStaging(got.key); // پاک‌سازی **پس از** فعال‌سازیِ موفق؛ بی‌خطا، بی‌اعتراض
+      return lastOutcome;
+    } catch (e) {
+      noteFailure(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
+      return lastOutcome;
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
+}
+
+/** «بررسی دستی» برایِ کاربر: بی‌پاک‌کردنِ کش، بی‌انتظار‌ماندنِ پنجرۀِ ۲۴ ساعته. */
+export function requestManualCheck(): Promise<SnapshotOutcome | null> {
+  return runCheck({ manual: true });
+}
+
+/** دانلود درِ فضایِ موقت؛ کلیدِ فعالِ `SNAPSHOT_URL` هنوز دست‌نخورده است. */
+async function downloadToStaging(m: SnapshotManifest):
+  Promise<{ ok: true; key: string } | { ok: false; detail: string }> {
+  // دروازۀ سازگاری: هر مسیری که بخواهد بستۀ بیرونی را بپذیرد (هم بررسیِ
+  // پس‌زمینه و هم پشتیبانِ راه‌اندازی) از همین‌جا می‌گذرد. پیش‌ازِ این فقطِ مسیرِ
+  // بررسی آن را داشت و پشتیبانِ راه‌اندازی می‌توانست بستۀ ناسازگار را بیاورد.
+  if (!APP_VERSION) {
+    return { ok: false, detail: 'app-version-unknown: نسخۀ برنامه معلوم نیست؛ فعال نمی‌شود' };
+  }
+  if (!versionAtLeast(APP_VERSION, m.min_app_version)) {
+    return { ok: false, detail: `app-version-too-low: بسته به ${m.min_app_version} می‌خواهد، برنامه ${APP_VERSION} است` };
+  }
+  const key = `pkg/${m.package_id}.gz`;
+  // اول fetchِ معمولی — پاسخِ streaming درصدِ واقعیِ بایت می‌دهد؛ اگر WebView به
+  // دیوارِ CORS خورد درگاهِ بومی می‌آید و آن‌جا یکجا است، پس درصد نمی‌سازیم.
+  let buf: ArrayBuffer | null = null;
+  try {
+    const r = await fetch(REMOTE_GZ_URL);
+    if (r.ok) buf = await responseArrayBufferWithProgress(r, 'release');
+  } catch { /* CORS/شبکه — درگاهِ بومی */ }
+  if (!isGz(buf)) {
+    emitDownloadProgress('release', 0, 0);
+    try {
+      buf = await nativeGetBytes(REMOTE_GZ_URL);
+    } catch (e) {
+      return { ok: false, detail: `دریافت بسته شکست خورد: ${e instanceof Error ? e.message : String(e)}` };
+    }
+  }
+  if (!buf) return { ok: false, detail: 'storage-unavailable: هیچ مسیری بایتی برنگرداند' };
+  const v = await verifyBytes(buf, m);
+  if (!v.ok) return { ok: false, detail: `${v.reason}: ${v.detail}` };
+  const staging = await openCache(STAGING_CACHE_NAME);
+  if (!staging) return { ok: false, detail: 'storage-unavailable: Cache API در دسترس نیست' };
+  try {
+    await staging.put(key, new Response(buf.slice(0))); // کپی: buf بعداً درِ بازگشایی مصرف می‌شود
+  } catch (e) {
+    return { ok: false, detail: `storage-full: نوشتنِ فضایِ موقت ناموفق بود (${e instanceof Error ? e.message : String(e)})` };
+  }
+  // اعتبارسنجیِ **از روی همان چیزی که درِ کش نشست** — نه بایتی که درِ حافظه بود،
+  // تا نوشتنِ نصفه‌نیمه هم گرفته شود.
+  const back = await staging.match(key);
+  if (!back) return { ok: false, detail: 'storage: نوشتنِ موقت تأیید نشد (بازخوانی نشد)' };
+  const stored = await back.arrayBuffer();
+  const vv = await verifyBytes(stored, m);
+  if (!vv.ok) return { ok: false, detail: `${vv.reason} پس از ذخیره: ${vv.detail}` };
+  const db = await validateStoredPackage(stored, m);
+  if (!db.ok) return { ok: false, detail: db.detail };
+  return { ok: true, key };
+}
+
+/** بازگشاییِ واقعی با همان sql.js که مصرفِ برنامه است (نه یک شبیه‌سازِ دیگر). */
+async function validateStoredPackage(gzBuf: ArrayBuffer, m: SnapshotManifest):
+  Promise<{ ok: true } | { ok: false; detail: string }> {
+  try {
+    const raw = await gunzip(gzBuf);
+    const r = await validateDatabase(raw, m, activeProbe());
+    return r.ok ? { ok: true } : { ok: false, detail: `${r.reason}: ${r.detail}` };
+  } catch (e) {
+    return { ok: false, detail: `gunzip/db: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
+/** آخرین گام: نوشتنِ pointer. تا این خط اجرا نشده، نسخهٔ قبلی مرجع است. */
+async function activate(stagingKey: string, m: SnapshotManifest): Promise<{ ok: boolean; detail: string }> {
+  const staging = await openCache(STAGING_CACHE_NAME);
+  const hit = staging ? await staging.match(stagingKey) : undefined;
+  if (!hit) return { ok: false, detail: 'staging گم شد (پیش از فعال‌سازی)' };
+  const p: ActivePointer = {
+    cacheKey: stagingKey, packageId: m.package_id, builtAt: m.built_at,
+    sha256: m.gz_sha256, activatedAt: Date.now(), schema: m.schema_version,
+  };
+  lsSet(POINTER_KEY, JSON.stringify(p));
+  lsSet(STAMP_KEY, m.built_at); // سازگاری: مسیرهایِ کهنه همین مُهر را می‌خوانند
+  return { ok: true, detail: m.package_id };
+}
+
+/** پاک‌سازیِ نسخههایِ کهنۀِ staging — همیشه **پس از** فعال‌سازیِ موفق. */
+async function cleanupStaging(keepKey: string): Promise<void> {
+  try {
+    const staging = await openCache(STAGING_CACHE_NAME);
+    if (!staging) return;
+    const keys = await staging.keys();
+    for (const r of keys) {
+      const k = r.url;
+      if (k !== keepKey && !k.endsWith(keepKey)) await staging.delete(k);
+    }
+    const legacy = await openCache(CACHE_NAME);
+    if (legacy) await legacy.delete(SNAPSHOT_URL); // کشِ دورِ پیش، حالا بی‌مصرف
+  } catch { /* پاک‌سازی شکست = فقط فضا آزاد نمانده؛ داده درِ خطر نیست */ }
+}
+
+async function maybeRefreshSnapshot(): Promise<void> {
+  await runCheck({ manual: false });
 }
 
 /** فقط برایِ تست — مسیرِ بارگذاریِ بسته و راهِ دومش. */
 export const __isMeteredForTest = (): boolean => isMeteredConnection();
+
+/** فقط برایِ تست — دورۀ خودکار (همانِ setTimeoutِ راه‌اندازی). */
+export const __maybeRefreshForTest = (): Promise<void> => maybeRefreshSnapshot();
 
 export const __fetchSnapshotForTest = (): Promise<ArrayBuffer> => fetchSnapshot();
 
@@ -201,21 +406,30 @@ function isGz(buf: ArrayBuffer | null, minBytes = 1_000_000): buf is ArrayBuffer
 }
 
 async function fetchSnapshot(): Promise<ArrayBuffer> {
-  // ترتیب: ۱) نسخۀ کشیده‌شده در پس‌زمینه، اگر از بستۀ خودِ APK تازه‌تر باشد
+  // ترتیب: ۱) نسخۀ **فعال** (pointer) اگر از بستۀ خودِ APK تازه‌تر باشد
   //        ۲) بستۀ همراهِ APK (مسیر عادی — بی‌نیاز به شبکه)
-  //        ۳) همان بسته از ریلیزِ mobile-latest (نصبِ ناقص / بیلدِ بی‌بسته)
-  let cache: Cache | null = null;
-  try {
-    cache = await caches.open(CACHE_NAME);
-  } catch {
-    cache = null; // Cache API در برخی WebViewها نیست
+  //        ۳) ریلیزِ mobile-latest ← فضایِ موقت ← اعتبارسنجی ← فعال‌سازی
+  // در همۀِ مسیرها اگر گامی شکست بخورد، همان چیزی که پیش‌تر سالم بود باقی می‌ماند؛
+  // هیچ‌جا نسخهٔ سالم **پیش از** تأییدِ نسخۀِ جدید حذف نمی‌شود.
+  const pointer = readPointer();
+  if (pointer && (!BUNDLE_STAMP || pointer.builtAt > BUNDLE_STAMP)) {
+    const staging = await openCache(STAGING_CACHE_NAME);
+    const hit = staging ? await staging.match(pointer.cacheKey) : undefined;
+    if (hit) {
+      bootTiming.source = 'cache';
+      const buf = await hit.arrayBuffer();
+      emitDownloadProgress('cache', buf.byteLength, buf.byteLength);
+      return buf;
+    }
+    // pointer هست و بسته‌اش نیست (کشِ پاک‌شده/میانِ راه‌اندازیِ نیمه) ⇒ pointer را
+    // برمی‌داریم تا همین اجرایِ برنامه بهِ بستۀِ APK برگردد، نه بهِ خطایِ بی‌بسته.
+    lsDel(POINTER_KEY);
   }
-
-  const cachedStamp = (() => {
-    try { return localStorage.getItem(STAMP_KEY) ?? ''; } catch { return ''; }
-  })();
-  if (cache && cachedStamp && (!BUNDLE_STAMP || cachedStamp > BUNDLE_STAMP)) {
-    const hit = await cache.match(SNAPSHOT_URL);
+  // مهاجرت: دورهای که فقط مُهرِ کهنه و کشِ `SNAPSHOT_URL` داشتند (schema v1، بی‌digest).
+  const legacyCache = await openCache(CACHE_NAME);
+  const legacyStamp = lsGet(STAMP_KEY) ?? '';
+  if (!pointer && legacyCache && legacyStamp && (!BUNDLE_STAMP || legacyStamp > BUNDLE_STAMP)) {
+    const hit = await legacyCache.match(SNAPSHOT_URL);
     if (hit) {
       bootTiming.source = 'cache';
       const buf = await hit.arrayBuffer();
@@ -223,7 +437,7 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
       return buf;
     }
     // مهر هست و بسته نیست (کشِ دورِ پیش پاک شده) — مهر را هم بردار
-    await dropCachedSnapshot(cache);
+    await dropCachedSnapshot(legacyCache);
   }
 
   // ۲) بستۀ همراهِ APK. دیگر درِ Cache API ذخیره نمی‌شود: رویِ گوشی هست،
@@ -242,41 +456,45 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
     const buf = await responseArrayBufferWithProgress(local, 'bundle');
     if (isGz(buf, 2)) {
       bootTiming.source = 'bundle';
-      // اگر دورِ پیش چیزی کش شده بود، حالا خودِ برنامه مرجع است و برگۀ
+      // اگر دورِ پیش چیزی درِ کشِ کهنه بود، حالا خودِ برنامه مرجع است و برگۀ
       // کهنه‌اش باید برود — هم ۱۵ مگابایتِ حافظه آزاد می‌شود هم دادهٔ کهنه.
-      if (cache && cachedStamp) await dropCachedSnapshot(cache);
+      if (legacyCache && legacyStamp) await dropCachedSnapshot(legacyCache);
       return buf;
     }
     localWhy = 'بستۀ همراهِ برنامه gz نبود';
   }
 
-  // ۳) پشتیبان: همان بسته از ریلیز. اول fetchِ معمولی — پاسخِ streaming
-  // درصدِ واقعیِ بایت را می‌دهد؛ اگر WebView به دیوارِ CORS خورد درگاهِ بومی
-  // می‌آید و آن‌جا یکجا است، پس درصد نمی‌سازیم و indeterminate می‌ماند.
-  let buf: ArrayBuffer | null = null;
-  try {
-    const r = await fetch(REMOTE_GZ_URL);
-    if (r.ok) buf = await responseArrayBufferWithProgress(r, 'release');
-  } catch { /* CORS/شبکه — درگاهِ بومی */ }
-  if (!isGz(buf)) {
-    emitDownloadProgress('release', 0, 0);
-    try {
-      buf = await nativeGetBytes(REMOTE_GZ_URL);
-    } catch { /* شبکه هم نبود — پیامِ زیر را می‌دهیم */ }
-  }
-  if (!isGz(buf)) {
+  // ۳) پشتیبان: ریلیز، ولی از همۀِ گام‌هایِ اعتبارسنجیِ یکِ «بررسی» می‌گذرد:
+  // manifest ← staging ← اندازه+digest ← gunzip+بازگشایی SQLite ← pointer.
+  // اگر همان لحظه بسته لازم است (نصبِ بی‌بسته)، پس از فعال‌سازی از staging خوانده
+  // می‌شود؛ اگر هر گام شکست بخورد، پیامِ زیر می‌آید و هیچ نسخۀِ سالمی حذف نشده.
+  const mf = parseManifest(await nativeGetJson(REMOTE_META_URL).catch(() => null));
+  if (!mf.ok) {
     throw new HttpError(
       0,
       SNAPSHOT_URL,
-      `بستهٔ دادهٔ آفلاین نه در برنامه بود نه از اینترنت آمد (${localWhy || 'بدون پاسخ'}). `
-      + 'یک‌بار با اینترنتِ متصل باز کنید تا بسته دانلود شود.',
+      `بستهٔ دادهٔ آفلاین درِ برنامه نبود و manifest هم خوانده نشد (${localWhy || mf.detail}). `
+      + 'یک‌بار با اینترنتِ متصل باز کنید.',
     );
   }
-  if (cache) {
-    // کپی برایِ کش: `buf` بعد از این هنوز مصرف می‌شود (بازگشایی و دیتابیس)،
-    // پس نباید وابستهٔ مالکیتِ پاسخ بماند.
-    try { await cache.put(SNAPSHOT_URL, new Response(buf.slice(0))); } catch { /* جا نبود */ }
+  emitDownloadProgress('release', 0, 0);
+  const staged = await downloadToStaging(mf.value);
+  if (!staged.ok) {
+    throw new HttpError(0, SNAPSHOT_URL,
+      `بستۀِ داده رد شد: ${staged.detail}. نسخهٔ پیشینِ برنامه دست‌نخورده مانده است.`);
   }
+  const act = await activate(staged.key, mf.value);
+  if (!act.ok) {
+    throw new HttpError(0, SNAPSHOT_URL, `فعال‌سازی نشد: ${act.detail}`);
+  }
+  noteSuccess(`فعال شد (راه‌اندازی): ${mf.value.package_id}`);
+  void cleanupStaging(staged.key);
+  const staging = await openCache(STAGING_CACHE_NAME);
+  const again = staging ? await staging.match(staged.key) : undefined;
+  if (!again) {
+    throw new HttpError(0, SNAPSHOT_URL, 'بستۀ فعال‌شده درِ حافظهٔ موقت پیدا نشد');
+  }
+  const buf = await again.arrayBuffer();
   bootTiming.source = 'release';
   emitDownloadProgress('release', buf.byteLength, buf.byteLength);
   return buf;
@@ -321,8 +539,10 @@ function showFatalBanner(message: string): void {
     el.appendChild(txt);
 
     // دکمهٔ تلاشِ دوباره. بی‌این، تنها راهِ کاربر بستن و بازکردنِ اپ بود —
-    // و چون dbPromise کش شده، حتی آن هم همیشه جواب نمی‌داد. اینجا کشِ بسته
-    // و خودِ promise پاک می‌شوند تا واقعاً از نو تلاش شود.
+    // و چون dbPromise کش شده، حتی آن هم همیشه جواب نمی‌داد.
+    // این‌جا دیگر **کلِ کش پاک نمی‌شود**: پاک‌کردنِ کشِ کامل، تنها نسخۀِ سالم را
+    // هم از بین می‌برد و بستۀِ ۲۲ مگابایتی را دوباره دانلود می‌کرد. فقط promise
+    // بازنشسته می‌شود و شمارندهٔ backoff آزاد می‌گردد تا تلاشِ واقعی تکرار شود.
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = 'تلاش دوباره';
@@ -330,8 +550,9 @@ function showFatalBanner(message: string): void {
       btn.disabled = true;
       btn.textContent = 'در حال تلاش…';
       void (async () => {
-        try { await caches.delete(CACHE_NAME); } catch { /* کش نبود */ }
-        try { localStorage.removeItem(CHECK_KEY); } catch { /* مهم نیست */ }
+        try { localStorage.removeItem(FAILS_KEY); } catch { /* مهم نیست */ }
+        try { localStorage.removeItem(NEXT_TRY_KEY); } catch { /* مهم نیست */ }
+        dbPromise = null;
         location.reload();
       })();
     };
@@ -358,13 +579,53 @@ export const bootTiming: {
 } = { source: '', gzBytes: 0, rawBytes: 0, fetchMs: 0, gunzipMs: 0, openMs: 0, totalMs: 0 };
 
 let dbPromise: Promise<Database> | null = null;
+let sqlPromise: Promise<Awaited<ReturnType<typeof initSqlJs>>> | null = null;
+
+/** همان sql.js که مصرف‌کنندهٔ واقعی استفاده می‌کند — اعتبارسنجیِ بسته با
+ *  **همین** موتور انجام می‌شود، نه با یک شبیه‌سازِ دیگر. */
+function getSql() {
+  sqlPromise ??= initSqlJs({ locateFile: () => wasmUrl });
+  return sqlPromise;
+}
+
+/** شیارِ آزمون: کاوشگرِ واقعی sql.js درِ jsdom سنگین و بی‌نیاز است؛ تست‌ها کاوشگرِ
+ *  خودشان را می‌گذارند تا «بازگشاییِ ناموفق/جدولِ کم» را بسنجند. درِ تولید این هرگز
+ *  صدا زده نمی‌شود و sqlProbe باقی می‌ماند. */
+export const __setDbProbeForTest = (p: DbProbe | null): void => { probeOverride = p; };
+let probeOverride: DbProbe | null = null;
+const activeProbe = (): DbProbe => probeOverride ?? sqlProbe;
+
+/** کاوشگرِ ساختار: جدول‌ها، کلیدهایِ پختۀِ لازم، و meta. هیچِ آستانۀِ ردیفی ندارد. */
+const sqlProbe: DbProbe = async (bytes) => {
+  const SQL = await getSql();
+  const db = new SQL.Database(bytes);
+  const tables = new Set<string>(
+    (db.exec("SELECT name FROM sqlite_master WHERE type='table'")[0]?.values ?? [])
+      .map((r) => String(r[0])),
+  );
+  return {
+    tables,
+    hasRow(table, keyColumn, key) {
+      if (!tables.has(table)) return false;
+      const r = db.exec(`SELECT 1 FROM "${table}" WHERE ${keyColumn} = ? LIMIT 1`, [key]);
+      return (r[0]?.values?.length ?? 0) > 0;
+    },
+    metaValue(key) {
+      if (!tables.has('meta')) return null;
+      const r = db.exec('SELECT value FROM meta WHERE key = ? LIMIT 1', [key]);
+      const v = r[0]?.values?.[0]?.[0];
+      return typeof v === 'string' ? v : null;
+    },
+    close() { db.close(); },
+  };
+};
 
 /** دیتابیس اسنپ‌شات — singleton؛ اولین فراخوانی دانلود/بازگشایی می‌کند */
 export function getDb(): Promise<Database> {
   dbPromise ??= (async () => {
     const t0 = performance.now();
     const [SQL, gz] = await Promise.all([
-      initSqlJs({ locateFile: () => wasmUrl }),
+      getSql(),
       fetchSnapshot(),
     ]);
     const t1 = performance.now();
@@ -398,6 +659,13 @@ export function getDb(): Promise<Database> {
   })().catch((e: unknown) => {
     // بدون این بنر، هر تب فقط «بی‌داده» می‌ماند و کاربر سرنخی ندارد؛
     // dbPromise هم ریست می‌شود تا اجرای بعدیِ برنامه دوباره تلاش کند.
+    // بازیابیِ امن: اگر خواندن از **pointerِ فعال** شکست خورد (کشِ نیمه، نوشتنِ
+    // قطع‌شده، SQLite خراب)، pointer برداشته می‌شود تا راه‌اندازیِ بعدی بهِ بستۀِ
+    // همراهِ APK برگردد. هیچ‌گاه بستۀِ APK یا stagingِ سالمِ دیگر پاک نمی‌شود.
+    if (readPointer()) {
+      lsDel(POINTER_KEY);
+      lsDel(STAMP_KEY);
+    }
     showFatalBanner(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
     dbPromise = null;
     throw e;
