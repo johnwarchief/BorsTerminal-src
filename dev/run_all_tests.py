@@ -99,6 +99,14 @@ SUITES = [
     ('dev/test_structure3_engine.py',
      'engine 3 contract: explicit input states, thresholds only from the engine itself, '
      'prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote'),
+    # مرحلۀ ۳ دورِ تطبیقِ دوم: جدولِ «قاعده → الگوریتم → ترسیم» اگر اسمِ بی‌کد
+    # ببرد، رجیستریِ توهمی می‌شود (مرحلۀ ۹ همان را ممنوع می‌کند). این گارد
+    # ارجاع‌های سند را با خودِ کد می‌سنجد: وجودِ نام، سطرِ `NAME:LINE`،
+    # پربودنِ ستونِ «کد» به‌جز ردیف‌های صریحاً AMBIGUOUS، و درستِ موتورِ
+    # نسبت‌داده‌شده (`engine1`/`CE`/`tape`). چهار سندِ دست‌کاری‌شده هم به‌عنوان
+    # کنترلِ منفی روی‌اش اجرا می‌شود — سبزی که خطا را نمی‌بیند دلیلِ درستی نیست.
+    ('dev/test_rule_map_citations.py',
+     'FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file'),
     ('dev/test_trend_engine_flag.py',
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
