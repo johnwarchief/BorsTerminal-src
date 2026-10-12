@@ -1168,6 +1168,8 @@ def smart_money(conn) -> dict:
       نبض بازار یک fetch داشته باشد نه دو.
     """
     rows, meta = enrich(conn)
+    import market_phase as MP
+    ph = MP.from_db(conn)
     buckets = category_rows(rows)
     eq = _agg(buckets["eq_all"])
     sr = _agg(buckets["stock_right"])
@@ -1175,7 +1177,10 @@ def smart_money(conn) -> dict:
     allm = _agg(buckets["all"])
 
     # --- شاخص نقدینگی کلان (همان داورِ macro_health_from؛ فقط برچسب‌ها با آن یکی است)
-    macro = macro_health_from(eq, allm, *market_total_rials(conn))
+    # رأیِ مالک 1405-07-20 (بند ۵) + اصلاح 1405-07-20: مرحل باید به این مسیرِ حکم هم
+    # برسد. پیش‌تر smart_money بی‌phase صدا می‌زد و دروازۀ verdict_allowed فقط دورِ
+    # mainwatch را می‌پوشاند؛ حکمِ «امروز وارد نشو» از همان راهِ بی‌مرحل می‌آمد.
+    macro = macro_health_from(eq, allm, *market_total_rials(conn), phase=ph, conn=conn)
 
     # --- شرط هشدار ۸۰٪: منفی یا صف فروش در میانِ نمادهای معامله‌شدهٔ سهام/حق‌تقدم
     sel = [r for r in buckets["stock_right"] if r["_m"]["vol"] > 0]
@@ -1203,7 +1208,15 @@ def smart_money(conn) -> dict:
                      "market_value_hemat": macro["market_value_hemat"],
                      "market_value_source": macro["market_value_source"],
                      "excellent": macro["excellent"],
+                     "cause": macro.get("cause"),
                      "index": market_index(conn),
+                     # مرحل درِ همین dict هم سوار می‌شود تا درِ نقدینگیِ حکم بداند
+                     # عدد «جمعِ تا-لحظه» است یا «جمعِ نهاییِ نشست» (بند ۳ مأموریت).
+                     "phase": macro.get("phase") or ph.get("phase"),
+                     "phase_label": macro.get("phase_label") or ph.get("label"),
+                     "session_day": macro.get("session_day") or ph.get("session_day"),
+                     "session_is_live": bool(ph.get("is_live")),
+                     "partial_session": ph.get("phase") == MP.CONTINUOUS,
                      "good_min": HEMAT_GOOD, "bad_max": HEMAT_BAD},
            "watch_entry": {"active": watch_entry, "bearish_pct": None if bear_pct is None else round(bear_pct, 1),
                            "rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,
@@ -1220,7 +1233,7 @@ def smart_money(conn) -> dict:
     out["flow"]["trio_fts"] = _flow_trio(out["flow"])[0]
     # حکمِ امروز (ورود / عدمِ ورود) در همان یک fetch می‌نشیند — «نبض بازار»
     # هیچ درخواستِ دومی برایش نمی‌زند.
-    out["verdict"] = day_verdict(conn, out)
+    out["verdict"] = day_verdict(conn, out, phase=ph)
     return out
 
 
@@ -1438,36 +1451,65 @@ def _gate_why(key: str, state: str, macro: dict, entry: dict) -> str:
     return ""
 
 
-def day_verdict(conn, sm: dict = None, when=None) -> dict:
+def day_verdict(conn, sm: dict = None, when=None, phase: dict = None) -> dict:
     """حکمِ «آیا امروز روزِ ورود است؟» — پنج شرطِ جزوه، هرکدام با توضیحِ رنگش.
 
     شمارهٔ «قدمِ ۱/۲/۳» حذف شده (#170): کاربر آن را ترتیبِ اجرا نمی‌فهمید و
     هیچ ترتیبی هم در داوری نیست. هر در `why` دارد — یک جمله که می‌گوید رنگش
     دقیقاً چه می‌گوید.
+
+    اصلاح 1405-07-20 (بندهای ۲/۳/۵/۶ مأموریتِ وضعیت بازار):
+      • مرحل داور است: بی‌`verdict_allowed` هیچ حکمی صادر نمی‌شود؛ «امروز وارد
+        نشو» از صفِ بی‌معامله یا از دادهٔ دیروز ساخته نمی‌شود.
+      • جمعِ ناقصِ نشست با آستانۀ تمام‌روز یک‌طرفه داوری می‌شود: ≥۲۰ همت در
+        میانهٔ روز قطعی است (زیرِ آن نمی‌آید)، <۱۰ در میانهٔ روز هیچ است —
+        رأیِ منفیِ نقدینگی فقط رویِ جمعِ نهایی (بند ۳).
+      • درِ پولِ حقیقی بی‌دادهٔ معتبرِ همان نشست رأی ندارد (تأخیرِ client_type
+        یا مرحلِ بی‌اجازه ⇒ «بدون داده»، نه «خروج»). در نشستِ جاری رأیِ منفی
+        تا پایانِ نیم‌ساعتِ اولِ جزوه و بی‌تداومِ «۳» اختلافِ پیاپی در
+        mstat_snap قاطع نیست — هر دو عدد قرض‌برچسب تا رأیِ صریحِ مالک
+        (docs/plans/MARKET-STATE-STAGES-1405-07-20.md).
     """
     sm = sm or smart_money(conn)
+    import market_phase as MP
+    ph = phase if phase is not None else (sm.get("phase") or MP.from_db(conn))
     macro = sm.get("macro") or {}
     entry = sm.get("watch_entry") or {}
     flow = sm.get("flow") or {}
     asof = sm.get("asof") or {}
     gates = []
+    partial = bool(macro.get("partial_session")) or ph.get("phase") == MP.CONTINUOUS
+    hm = _hm_from_h_even(asof.get("h_even"))
+    if hm < 0 and when is not None:
+        hm = when.hour * 60 + when.minute
 
     # ---- ۱) نقدینگی -------------------------------------------------------
     hemat = macro.get("value_hemat")
     side = _liq_side(hemat)
-    liq_state = {"good": "ok", "bad": "bad", "mid": "mid", "nodata": "nodata"}[side]
-    # وضعیت در یک کلمه؛ عددِ همت در `detail` و آستانه‌ها در `rule` (و tooltip)
-    # می‌مانند. «مساعد — بالایِ ۲۰ همت» دلیل را دو بار بلند می‌کرد و گنگ شد.
-    liq_label = {"good": "عالی" if macro.get("excellent") else "مساعد",
-                 "bad": "نامساعد", "mid": "متوسط", "nodata": "بدون داده"}[side]
-    liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
+    liq_detail = None if hemat is None else "%s همت" % _fa_num(hemat)
+    if side == "bad" and partial:
+        # جمعِ تا-لحظه زیرِ آستانه ادعایی نیست؛ فقط می‌گوید هنوز نه‌شده.
+        liq_state, liq_label, liq_vote = "mid", "هنوز نه‌شده", 0
+        liq_detail = "%s همت تا این لحظه — آستانه رویِ جمعِ کاملِ نشست است" % _fa_num(hemat)
+    else:
+        liq_state = {"good": "ok", "bad": "bad", "mid": "mid", "nodata": "nodata"}[side]
+        # وضعیت در یک کلمه؛ عددِ همت در `detail` و آستانه‌ها در `rule` (و tooltip)
+        # می‌مانند. «مساعد — بالایِ ۲۰ همت» دلیل را دو بار بلند می‌کرد و گنگ شد.
+        liq_label = {"good": "عالی" if macro.get("excellent") else "مساعد",
+                     "bad": "نامساعد", "mid": "متوسط", "nodata": "بدون داده"}[side]
+        liq_vote = 1 if side == "good" else (-1 if side == "bad" else 0)
     gates.append(_gate("liquidity", "ارزش معاملات بازار سهام", "نقدینگی",
                        liq_state, liq_label,
-                       liq_vote, None if hemat is None else "%s همت" % _fa_num(hemat),
+                       liq_vote, liq_detail,
                        "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)"))
 
     # ---- ۱ب) تداومِ ۳–۴ روز ------------------------------------------------
     hist = liquidity_history(conn)
+    sess_day = ph.get("session_day")
+    if partial and sess_day:
+        # ردیفِ نیمه‌کارِ امروز «سه نشستِ اخیر» نمی‌شود؛ جزوه تداومِ نشست‌های
+        # تمام‌شده را می‌خواهد (بند ۳: ابتدای روز با کل روز مقایسه نمی‌شود).
+        hist = [h for h in hist if h.get("d_even") != sess_day]
     known = [h for h in hist if h["value_hemat"] is not None]
     if len(known) < LIQ_CONTINUITY_MIN:
         cont_state, cont_label, cont_vote = "nodata", "بدون داده", 0
@@ -1511,21 +1553,42 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     eq_val = flow.get("eq_flow_b_toman")
     trio, gd_out = _flow_trio(flow)
     gd = flow.get("gold_flow_b_toman")
-    if eq_val is None and flow.get("fixed_flow_b_toman") is None:
-        flow_state, flow_label, flow_vote, flow_detail = "nodata", "بدون داده", 0, None
+    realized = bool((ph.get("computable") or {}).get("realized_flow"))
+    stale_clients = bool(asof.get("client_lag_days"))
+    flow_detail = None
+    if (eq_val is None and flow.get("fixed_flow_b_toman") is None) or not realized or stale_clients:
+        # نبودِ معاملۀ امروز یا تفکیکِ به‌روزِ نرسیده ⇒ شاهدی در کار نیست؛
+        # «خروجِ پول» از عددِ دیروز ساخته نمی‌شود (بند ۶: دادهٔ نامعتبر نه‌شودِ زنده).
+        flow_state, flow_label, flow_vote = "nodata", "بدون داده", 0
+        if stale_clients:
+            flow_detail = ("تفکیکِ حقیقی/حقوقی به روزِ نشست نرسیده (روزِ %s)"
+                           % _fa_num(asof.get("client_d_even")))
+        elif not realized:
+            flow_detail = (ph.get("why_not") or {}).get("realized_flow")
     elif trio:
         # حالت آرمانیِ ص۱۴: پول از داراییِ امن بیرون و به سهام داخل می‌شود
         flow_state, flow_label, flow_vote = "ok", "پولِ تازه واردِ سهام", 1
     elif not flow.get("eq_inflow") and _f(eq_val) < 0:
-        # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «وضعِ مطلوب ندارد»
+        # جهتِ مخالفِ صریح: پول از ریسک بیرون می‌رود، نه فقط «وضعِ مطلوب ندارد».
+        # در نشستِ جاری یک منفیِ لحظه‌ای حکم نیست: نیم‌ساعتِ اولِ جزوه و
+        # تداومِ «۳» اختلافِ پیاپی (FLOW_CONFIRM_DELTAS، قرض تا رأیِ مالک).
+        trend, n_dl = _flow_trend(conn, sess_day, asof.get("h_even"))
+        in_formation = hm < FORMATION_END_HM   # هر نقطۀ پیش از ۰۹:۳۰ (نیم‌ساعتِ اولِ جزوه)
         flow_state, flow_label, flow_vote = "bad", "خروجِ پول از سهام", -1
+        if partial and (in_formation or not (trend == "worsening" and n_dl >= FLOW_CONFIRM_DELTAS)):
+            flow_state, flow_label, flow_vote = "mid", "شواهدِ اولیهٔ خروج", 0
+            flow_detail = ("بازار تازه باز شده؛ برای ارزیابی جریانِ پول هنوز دادهٔ کافی نداریم"
+                           if in_formation else
+                           "پیوستگیِ نزولی در %s اختلافِ پیاپیِ امروز دیده نشد؛ رأیِ قاطع نیست"
+                           % _fa_num(FLOW_CONFIRM_DELTAS))
     elif flow.get("eq_inflow") and flow.get("fixed_outflow"):
         flow_state, flow_label, flow_vote = "mid", "ورودِ پولِ ناقص", 0
     else:
         flow_state, flow_label, flow_vote = "mid", "جهتِ پول روشن نیست", 0
-    flow_detail = ("خرد %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
-        _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
-        "بدون داده" if gd_out is None else _fa_signed(gd)))
+    if flow_detail is None:
+        flow_detail = ("خرد %s · درآمد ثابت %s · طلا %s (میلیارد تومان)" % (
+            _fa_signed(eq_val), _fa_signed(flow.get("fixed_flow_b_toman")),
+            "بدون داده" if gd_out is None else _fa_signed(gd)))
     gates.append(_gate("flow", "جهتِ پولِ حقیقی", "پولِ حقیقی",
                        flow_state, flow_label, flow_vote,
                        flow_detail, "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)"))
@@ -1540,27 +1603,206 @@ def day_verdict(conn, sm: dict = None, when=None) -> dict:
     for g in gates:
         g["why"] = _gate_why(g["key"], g["state"], macro, entry)
 
-    decisive = [g for g in gates if g["vote"]]
-    negative = [g for g in decisive if g["vote"] < 0]
-    positive = [g for g in decisive if g["vote"] > 0]
-    if not decisive:
-        verdict, vlabel = "nodata", "بدونِ حکم"
-        reason = "هیچ‌یک از شرط‌هایِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
-    elif negative and not positive:
-        verdict, vlabel = "avoid", "امروز وارد نشو"
-        reason = _clause(negative)
-    elif positive and not negative:
-        if any(g["key"] == "liquidity" for g in positive) and any(g["key"] == "flow" for g in positive):
-            verdict, vlabel = "go", "روزِ ورود است"
-        else:
-            verdict, vlabel = "watch", "پایِ بازار بمان"
-        reason = _clause(positive)
+    if not ph.get("verdict_allowed"):
+        verdict, vlabel = "nodata", "بدونِ حکم — %s" % (ph.get("label") or "مرحل نامشخص")
+        _why = [w for w in (ph.get("why_not") or {}).values() if w]
+        reason = "در مرحلِ «%s» حکمی صادر نمی‌شود%s" % (
+            ph.get("label"), (" — " + " · ".join(_why)) if _why else "")
     else:
-        verdict, vlabel = "wait", "صبر — نشانه‌ها مخالف‌اند"
-        reason = "موافقِ ورود — %s · مخالفِ ورود — %s" % (
-            _clause(positive, "، "), _clause(negative, "، "))
+        decisive = [g for g in gates if g["vote"]]
+        negative = [g for g in decisive if g["vote"] < 0]
+        positive = [g for g in decisive if g["vote"] > 0]
+        if not decisive:
+            verdict, vlabel = "nodata", "بدونِ حکم"
+            reason = "هیچ‌یک از شرط‌هایِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود."
+        elif negative and not positive:
+            verdict, vlabel = "avoid", "امروز وارد نشو"
+            reason = _clause(negative)
+        elif positive and not negative:
+            if any(g["key"] == "liquidity" for g in positive) and any(g["key"] == "flow" for g in positive):
+                verdict, vlabel = "go", "روزِ ورود است"
+            else:
+                verdict, vlabel = "watch", "پایِ بازار بمان"
+            reason = _clause(positive)
+        else:
+            verdict, vlabel = "wait", "صبر — نشانه‌ها مخالف‌اند"
+            reason = "موافقِ ورود — %s · مخالفِ ورود — %s" % (
+                _clause(positive, "، "), _clause(negative, "، "))
     return {"status": "ok", "verdict": verdict, "label": vlabel, "reason": reason,
-            "gates": gates, "basis": "fts_notes_p13_p14"}
+            "gates": gates, "basis": "fts_notes_p13_p14",
+            "phase": {k: ph.get(k) for k in ("phase", "label", "phase_source", "official",
+                                             "session_day", "is_live", "verdict_allowed")},
+            "market_state": _market_state(ph, asof, gates, verdict, hm, conn, sess_day)}
+
+
+def _hm_from_h_even(h_even) -> int:
+    """دقیقه‌هایِ پس از نیمه‌شب از h_evenِ خودِ داده؛ -1 یعنی نرسیده."""
+    try:
+        s = "%06d" % int(_f(h_even))
+    except (TypeError, ValueError):
+        return -1
+    if s == "000000":
+        return -1
+    return int(s[0:2]) * 60 + int(s[2:4])
+
+
+# ---- دو قرضِ ساختاری تا رأیِ صریحِ مالک (docs/plans/MARKET-STATE-STAGES-1405-07-20.md):
+# پایانِ «نیم‌ساعتِ اول» همان مرزِ میانیِ پنجرۀ درآمد ثابتِ خودِ جزوه (ص۱۴) است و
+# شمارۀ تداوم همان ۳ِ جزوه (LIQ_CONTINUITY_MIN) که روی نقطه‌هایِ mstat_snap خوانده
+# می‌شود. آستانۀ داوریِ تازه‌ای نیست — فقط مرزِ «کی رأی قاطع شدنی است».
+FORMATION_END_HM = 570                       # ۰۹:۳۰ — انتهای نیم‌ساعتِ اولِ جزوه
+FLOW_CONFIRM_DELTAS = LIQ_CONTINUITY_MIN     # ۳ اختلافِ پیاپی
+
+
+def _flow_trend(conn, day, h_even) -> tuple:
+    """جهتِ تغییرِ جریانِ تجمعیِ سهام در آخرین نقطه‌هایِ mstat_snapِ همان نشست.
+
+    بند ۴ مأموریت: «سرعتِ تغییر را از مقدارِ تجمعی جدا کن».
+    بازگشت (trend, n_deltas) با trend در {"worsening","improving","mixed","nodata"}.
+    بی‌آینده: فقط نقاطِ h_even <= لحظه خوانده می‌شوند.
+    """
+    if not day or not h_even:
+        return ("nodata", 0)
+    try:
+        rows = conn.execute(
+            "SELECT agg FROM mstat_snap WHERE d_even=? AND h_even<=? AND h_even>=? "
+            "ORDER BY h_even DESC LIMIT ?",
+            (int(day), int(h_even), SESSION_OPEN_HM, FLOW_CONFIRM_DELTAS + 1)).fetchall()
+    except sqlite3.Error:
+        return ("nodata", 0)
+    vals = []
+    for r in rows:
+        try:
+            j = json.loads(r[0])
+        except Exception:
+            continue
+        v = j.get("flow_eq_bt")
+        if isinstance(v, (int, float)):
+            vals.append(float(v))
+    vals.reverse()                        # ascendingِ زمانی
+    if len(vals) < 2:
+        return ("nodata", max(len(vals) - 1, 0))
+    deltas = [vals[i + 1] - vals[i] for i in range(len(vals) - 1)]
+    if all(d <= 0 for d in deltas):
+        return ("worsening", len(deltas))
+    if all(d >= 0 for d in deltas):
+        return ("improving", len(deltas))
+    return ("mixed", len(deltas))
+
+
+def _same_clock_ref(conn, day, h_even, field, max_days: int = 8) -> tuple:
+    """میانهٔ مقدارِ تجمعیِ فیلد در «همین ساعت»ِ نشست‌هایِ پیش — توضیحی، نه داور.
+
+    بند ۳ مأموریت: ابتدای روز با کل روز مقایسه نمی‌شود؛ سنجشِ «رفتارِ معمولِ
+    بازار در همان مرحله» از خودِ mstat_snap درمی‌آید. برای هر روزِ پیش از امروز
+    آخرین نقطه‌ای با ساعتِ <= لحظه (و درونِ پنجرۀ رسمی) خوانده می‌شود.
+    بازگشت (median|None, n_days). هیچ آستانه‌ای از این عدد رأی نمی‌گیرد.
+    """
+    if not day or not h_even:
+        return (None, 0)
+    try:
+        days = [int(r[0]) for r in conn.execute(
+            "SELECT DISTINCT d_even FROM mstat_snap WHERE d_even<? ORDER BY d_even DESC LIMIT ?",
+            (int(day), int(max_days))).fetchall()]
+    except sqlite3.Error:
+        return (None, 0)
+    vals = []
+    for d in days:
+        try:
+            r = conn.execute(
+                "SELECT agg FROM mstat_snap WHERE d_even=? AND h_even<=? AND h_even>=? "
+                "ORDER BY h_even DESC LIMIT 1",
+                (d, int(h_even), SESSION_OPEN_HM)).fetchone()
+        except sqlite3.Error:
+            continue
+        if not r:
+            continue
+        try:
+            j = json.loads(r[0])
+        except Exception:
+            continue
+        v = j.get(field)
+        if isinstance(v, (int, float)):
+            vals.append(float(v))
+    if not vals:
+        return (None, 0)
+    vals.sort()
+    mid = (vals[len(vals) // 2] if len(vals) % 2
+           else (vals[len(vals) // 2 - 1] + vals[len(vals) // 2]) / 2.0)
+    return (round(mid, 1), len(vals))
+
+
+# آخرین حکمِ صادرشده به‌ازای روزِ نشست — برایِ «تغییرِ وضعیت نسبت به ارزیابیِ پیش»
+# (بند ۶). کشِ درون‌فرآیندی است؛ پس از هر راه‌اندازیِ دوباره «نخستین» خوانده می‌شود.
+_STATE_MEMO: dict = {}
+
+
+def _market_state(ph: dict, asof: dict, gates: list, verdict: str, hm: int,
+                  conn, sess_day) -> dict:
+    """وضعیتِ مرحله‌مندِ بازار — جدا از حکمِ ورود: مرحل، شدتِ شواهد، محدودیتِ داده.
+
+    §۷ مأموریت: هیچ درصدِ احتمال و هیچ «امتیانِ اطمینان»ی اینجا ساخته نمی‌شود؛
+    `evidence_strength` صفتِ کیفیِ همان شمارِ شاهدِ قاطعِ لحظه است.
+    """
+    p = ph.get("phase")
+    stale_clients = bool(asof.get("client_lag_days"))
+    data_clock = (_hhmm(asof.get("h_even")) or "").translate(_FA_DIGITS) or None if hm >= 0 else None
+    limitations = [w for w in (ph.get("why_not") or {}).values() if w]
+    if stale_clients:
+        limitations.append("تفکیکِ حقیقی/حقوقی هنوز به روزِ نشست نرسیده")
+    since_open = hm - 540 if (p == "continuous" and hm >= 540) else None
+    strong_neg = [g for g in gates if g["vote"] < 0]
+    strong_pos = [g for g in gates if g["vote"] > 0]
+    early = [g for g in gates if g["label_state"] == "شواهدِ اولیهٔ خروج"]
+    if p == "pre_open":
+        stage, stage_label = "pre_open", "پیش از آغازِ معاملات — هنوز مبنایِ تصمیم نیست"
+    elif p == "holiday":
+        stage, stage_label = "holiday", "تعطیلِ رسمی — عددِ آخرینِ نشست با تاریخِ خودش"
+    elif p == "closed":
+        stage, stage_label = "after_close", "پایانِ نشست — حکم رویِ جمعِ نهایی"
+    elif p == "unknown":
+        stage, stage_label = "data_limited", "مرحلِ رسمیِ بازار خوانده نشده — ارزیابیِ قابل‌اعتماد نیست"
+    elif hm < FORMATION_END_HM:
+        stage, stage_label = "forming", "بازار تازه باز شده — دورۀ شکل‌گیریِ داده"
+    elif early and verdict == "nodata":
+        stage, stage_label = ("forming", "نشانه‌هایِ اولیه در حالِ مشاهده است، هنوز تأیید نشده — بازار در حالِ شکل‌گیری")
+    elif verdict == "nodata" or stale_clients:
+        stage, stage_label = "data_limited", "دادهٔ کافی یا معتبر نیست"
+    elif strong_neg and not strong_pos:
+        stage, stage_label = "risky", "فشارِ فروش در چند شاهدِ مستقل تأیید شده — ریسکِ بازار بالا رفته"
+    elif strong_pos and not strong_neg:
+        if verdict == "go":
+            stage, stage_label = "confirmed", "جریانِ ورودِ پول تأیید شده و مشارکت در حال گسترش است"
+        else:
+            stage, stage_label = "establishing", "نشانه‌هایِ اولیهٔ ورودِ پول دیده می‌شود، هنوز تأیید نشده"
+    else:
+        stage, stage_label = "mixed", "نشانه‌ها مخالف‌اند — پایشِ فعال"
+    direction = ("مثبت" if strong_pos and not strong_neg else
+                 "منفی" if strong_neg and not strong_pos else
+                 "ترکیبی" if strong_pos and strong_neg else
+                 "اولیه" if early else "بی‌جهت")
+    strength = ("قابل‌اتکا (جمعِ نهایی)" if p in ("closed", "holiday") else
+                "شواهدِ اولیه" if stage == "forming" or early else
+                "پایدار" if (strong_neg or strong_pos) else "کافی نیست")
+    pace = None
+    if p == "continuous":
+        ref, n = _same_clock_ref(conn, sess_day, asof.get("h_even"), "val_bt")
+        if ref and n >= 2:
+            pace = ("میانهٔ گردشِ کلِ بازار در همین ساعتِ %s نشستِ پیش: %s میلیارد تومان"
+                    % (_fa_num(n), _fa_num(ref)))
+    memo_key = str(sess_day)
+    prev = _STATE_MEMO.get(memo_key)
+    _STATE_MEMO[memo_key] = verdict
+    return {"stage": stage, "stage_label": stage_label,
+            "minutes_since_open": since_open,
+            "since_open_text": ("%s دقیقه از آغاز" % _fa_num(since_open)) if since_open is not None else None,
+            "data_clock": data_clock, "data_h_even": asof.get("h_even"),
+            "client_day": asof.get("client_d_even"), "stale_clients": stale_clients,
+            "evidence_direction": direction, "evidence_strength": strength,
+            "for": [g["short"] + ": " + g["label_state"] for g in strong_pos],
+            "against": [g["short"] + ": " + g["label_state"] for g in strong_neg],
+            "changed_from": prev if prev and prev != verdict else None,
+            "limitations": limitations, "pace_note": pace}
 
 
 def _fa_num(v) -> str:

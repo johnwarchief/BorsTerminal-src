@@ -53,6 +53,25 @@ export const VerdictGateSchema = z.object({
 });
 export type VerdictGate = z.infer<typeof VerdictGateSchema>;
 
+export const MarketStateSchema = z.object({
+  stage: z.string().nullish(),
+  stage_label: z.string().nullish(),
+  minutes_since_open: z.number().nullish(),
+  since_open_text: z.string().nullish(),
+  data_clock: z.string().nullish(),
+  data_h_even: z.number().nullish(),
+  client_day: z.number().nullish(),
+  stale_clients: z.boolean().nullish(),
+  evidence_direction: z.string().nullish(),
+  evidence_strength: z.string().nullish(),
+  for: z.array(z.string()).nullish(),
+  against: z.array(z.string()).nullish(),
+  changed_from: z.string().nullish(),
+  limitations: z.array(z.string()).nullish(),
+  pace_note: z.string().nullish(),
+});
+export type MarketState = z.infer<typeof MarketStateSchema>;
+
 export const DayVerdictSchema = z.object({
   status: z.string(),
   verdict: z.enum(['go', 'watch', 'wait', 'avoid', 'nodata']),
@@ -60,6 +79,20 @@ export const DayVerdictSchema = z.object({
   reason: z.string(),
   gates: z.array(VerdictGateSchema).nullish(),
   basis: z.string().nullish(),
+  // مرحل و وضعیتِ مرحله‌مند از موتور (market_phase + mstat_engine._market_state)؛
+  // لایهٔ نمایش داوریِ تازه نمی‌سازد.
+  phase: z
+    .object({
+      phase: z.string().nullish(),
+      label: z.string().nullish(),
+      phase_source: z.string().nullish(),
+      official: z.boolean().nullish(),
+      session_day: z.number().nullish(),
+      is_live: z.boolean().nullish(),
+      verdict_allowed: z.boolean().nullish(),
+    })
+    .nullish(),
+  market_state: MarketStateSchema.nullish(),
 });
 export type DayVerdict = z.infer<typeof DayVerdictSchema>;
 

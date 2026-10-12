@@ -266,6 +266,9 @@ SUITES = [
     # بند ۵ مأموریت: مرحلِ جلسه از وضعیتِ رسمیِ بازار، و داوری بی‌مرحل ممنوع.
     ('dev/test_market_phase_v1.py',
                                       'session phase from the official market state; no verdict without a phase'),
+    # مأموریت 1405-07-20: وضعیتِ زمان‌مند — حکم بی‌مرحل و مقایسۀ ابتدای-روز-با-کل-روز ممنوع
+    ('dev/test_market_state_stages_v1.py',
+                                      'time-aware market state: staged verdict, one-sided partial liquidity, no lookahead'),
     # بندِ ۴ مأموریتِ انتشار: Portable صریح (نشانۀ کنارِ EXE)، دادۀ جدا، پورتِ
     # جدا، و «Inno درِ پرتابیل هرگز اجرا نمی‌شود».
     ('dev/test_portable_v1.py',
