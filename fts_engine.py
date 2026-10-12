@@ -577,10 +577,11 @@ def title_entity_suffix(title: str) -> str:
     دوم نمی‌سازد و هیچِ توابعِ بالا را تغییر نمی‌دهد. بی‌regex، چون این ماژول
     `re` را وارد نمی‌کند (همان قراردادی که `_is_consolidated` را ساده نگه داشته).
 
-    مصرفِ فعلی: خوانندۀ `/api/fundamental/{symbol}/quarters` (گاردِ
-    dev/codal_reference_select_v1088.py). موتورِ قیف هنوز این لایه را ندارد —
-    چون `statement_rank` درِ نویسندۀ `collapse_symbol` ردیف حذف می‌کند و
-    «هلدینگ را کدامِ رکورد نمایندگی می‌کند» رأیِ جزوه می‌خواهد (NEEDS_REVIEW).
+    مصرفِ فعلی: لایۀ canonicalِ انتخابِ مرجع (`quarter_reference_rows` برایِ
+    سریِ فصلیِ `/api/fundamental/{symbol}/quarters`؛ گاردِ
+    dev/codal_reference_select_v1088.py). موتورِ قیفِ سالانۀ این لایه را جدا
+    ندارد — «هلدینگ را کدامِ رکورد نمایندگی می‌کند» برایِ آنجا رأیِ جزوه
+    می‌خواهد (NEEDS_REVIEW).
     """
     s = str(title or "")
     found = ""
@@ -631,6 +632,87 @@ def statement_rank(keys, consolidated, completeness, tracing_no) -> tuple:
     ۳) درِ تساوی، newest `tracing_no` (اصلاحیه) — قراردادِ پیشین دست‌نخورده.
     """
     return (1 if consolidated else 0, -completeness, -int(tracing_no or 0))
+
+
+def quarter_reference_rows(rows, limit=16) -> list[dict]:
+    """ساختِ نمای مرجعِ سری فصلی بدون حذفِ اطلاعیه‌های منبع.
+
+    یک دوره ممکن است اطلاعیه‌های مستقل، تلفیقی یا اصلاحیه‌های مشروع داشته باشد.
+    این تابع صرفاً برای نمودار یک مرجع در هر (period_end, period_months, report_kind)
+    انتخاب می‌کند. تقدمِ مرجع: دامنۀ شرکت (`title_entity_suffix`، شرکتِ فرعیِ
+    زیرِ نمادِ هلدینگ کنار می‌رود) و سپس همان `statement_rank` موجود
+    (غیرتلفیقی ← کامل‌بودن ← tracing_no بالاتر). publish_date خام عمداً در
+    رتبه‌بندی نیست؛ چون encoding فارسی/ASCII آن در داده یکسان نیست و مقایسهٔ
+    لغوی قابل اعتماد نیست.
+
+    limit پس از انتخابِ مرجع اعمال می‌شود تا چند نسخهٔ یک دوره پنجره را پر نکنند.
+    """
+    best = {}
+    stable_fields = (
+        "title", "report_kind", "revenue", "gross_profit",
+        "operating_profit", "net_profit", "basic_eps",
+    )
+    for raw in rows or ():
+        row = dict(raw)
+        period_end = CP.canonicalize(row.get("period_end"))
+        if not period_end:
+            continue
+        row["period_end"] = period_end
+        raw_months = row.get("period_months")
+        try:
+            months = int(raw_months) if raw_months is not None and str(raw_months).strip() else None
+        except (TypeError, ValueError):
+            months = None
+        row["period_months"] = months
+        report_kind = str(row.get("report_kind") or "")
+        key = (period_end, months, report_kind)
+        title = str(row.get("title") or "")
+        # لایۀ صفر «دامنۀ شرکت» است: کدال صورتِ مالیِ شرکتِ فرعی را زیرِ نمادِ
+        # هلدینگ منتشر می‌کند و آن شرکت را در پرانتزِ عنوان می‌نویسد؛ چنین ردیفی
+        # وضعیتِ مالیِ شرکتِ دیگری است و نمی‌تواند نمایندۀ این نماد باشد.
+        # پس ازِ آن همان `statement_rank`ِ موتور (غیرتلفیقی ← کامل‌بودن ← newest
+        # tracing_no). اگر همهٔ ردیف‌هایِ یکِ دوره فرعی باشند، همان قاعده بینِ
+        # آن‌ها می‌گزیند — پاسخی حذف نمی‌شود.
+        rank = ((1 if title_entity_suffix(title) else 0,) + statement_rank(
+            FS_NUMBER_KEYS,
+            _is_consolidated(title),
+            row_completeness(FS_NUMBER_KEYS, row),
+            row.get("tracing_no") or 0,
+        ))
+        # tracing_no در DB یکتا است؛ این signature فقط برای ورودی ناسازگارِ موقت
+        # که دو ردیف با رتبه یکسان دارد، ترتیب را قطعی می‌کند.
+        signature = tuple(
+            "" if row.get(name) is None else str(row.get(name))
+            for name in stable_fields
+        )
+        current = best.get(key)
+        if current is None or rank < current[0] or (rank == current[0] and signature > current[1]):
+            best[key] = (rank, signature, row)
+
+    selected = [entry[2] for entry in best.values()]
+
+    def order_key(row):
+        try:
+            months = int(row.get("period_months") or 0)
+        except (TypeError, ValueError):
+            months = 0
+        try:
+            tracing_no = int(row.get("tracing_no") or 0)
+        except (TypeError, ValueError):
+            tracing_no = 0
+        return (
+            str(row.get("period_end") or ""),
+            months,
+            str(row.get("report_kind") or ""),
+            tracing_no,
+        )
+
+    selected.sort(key=order_key, reverse=True)
+    try:
+        bounded_limit = max(1, min(int(limit), 40))
+    except (TypeError, ValueError):
+        bounded_limit = 16
+    return selected[:bounded_limit]
 
 
 FS_COLS = ("period_end, period_months, title, revenue, gross_profit, "

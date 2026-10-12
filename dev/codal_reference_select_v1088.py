@@ -532,20 +532,36 @@ def t11_spelling_variants():
 
 
 def t10_no_second_rule():
-    """لایۀ دامنۀ شرکت باید از خودِ موتور خوانده شود، نه تعریفِ دوباره درِ API."""
+    """«کدامِ ردیف برنده است» فقط درِ لایۀ canonical نوشته می‌شود، نه درِ API.
+
+    متنِ docstring منظور نیست: بدنهٔ اجراشدۀ اندپوینت خوانده می‌شود (docstring
+    و توضیح‌هایِ کنارِ سطر حذف می‌شوند) و باید *واگذار* کند، نه خودش بگزیند.
+    """
     import inspect
     import io
     import re as _re
-    src = io.open(os.path.join(ROOT, "api", "fundamental.py"), encoding="utf-8").read()
-    chk("title_entity_suffix" in src,
-        "۱۰ اندپوینت از `fts_engine.title_entity_suffix` می‌خواند (تک‌منبع)")
     body = _re.sub(r'""".*?"""', "", inspect.getsource(fundamental.get_fundamental_quarters),
                    count=1, flags=_re.S)
+    body = _re.sub(r"#.*", "", body)
+    chk("quarter_reference_rows" in body,
+        "۱۰ اندپوینت به `fts_engine.quarter_reference_rows` واگذار می‌کند (تک‌منبع)")
+    for second_rule in ("statement_rank", "title_entity_suffix", "row_completeness"):
+        chk(second_rule not in body,
+            "۱۰ «%s» درِ بدانۀ اندپوینت تکرار نمی‌شود" % second_rule)
     chk("publish_date DESC" not in body,
         "۱۰ درِ بدانۀ کوئری هیچ ترتیبِ واژگانیِ publish_date نمانده")
+    chk("ORDER BY" not in body,
+        "۱۰ کوئریِ سریِ فصلی بی‌ORDER BY است (ترتیبِ مرجع کارِ لایۀ canonical است)",
+        "")
     eng = io.open(os.path.join(ROOT, "fts_engine.py"), encoding="utf-8").read()
-    chk(eng.count("def title_entity_suffix") == 1,
-        "۱۰ تعریفِ «پسوندِ شرکتِ دیگر» یکی است", str(eng.count("def title_entity_suffix")))
+    for name in ("def title_entity_suffix", "def quarter_reference_rows",
+                 "def statement_rank"):
+        chk(eng.count(name) == 1, "۱۰ تعریفِ `%s` یکی است" % name,
+            str(eng.count(name)))
+    # لایۀ دامنۀ شرکت باید درِ همان تابعِ canonical مصرف شود، نه فقط تعریف شده باشد.
+    qr = _re.search(r"def quarter_reference_rows\(.*?\n(?=\ndef |\nFS_COLS)", eng, _re.S)
+    chk(qr is not None and "title_entity_suffix(" in qr.group(0),
+        "۱۰ `quarter_reference_rows` خودِ `title_entity_suffix` را می‌خواند")
 
 
 def main():

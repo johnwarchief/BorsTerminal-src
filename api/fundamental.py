@@ -2112,14 +2112,13 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
         (۲۲ نماد از ۱۱۱ نمادِ چندردیفی، ۷۳ دوره).
       • صورتِ مالیِ شرکتِ فرعیِ یکِ هلدینگ هم زیرِ همان نماد ذخیره می‌شود، پس
         «تازه‌ترینِ واژگانی» می‌تواند عددِ **شرکتِ دیگری** را نمایش دهد.
-    حالا برنده با همان قاعدۀ یگانۀ پروژه انتخاب می‌شود: دامنۀ شرکت
-    (`fts_engine.title_entity_suffix`) ← `fts_engine.statement_rank`
-    (غیرتلفیقی ← ردیفِ کامل‌تر ← newest `tracing_no`) — همان که
-    `annual_statements`/`pick_reference` (موتور قیف) و `codal_fetcher.period_winners`
-    (نویسنده) مصرف می‌کنند. نه parser دوم، نه آستانۀ دوم، نه قاعدۀ دومِ «برنده»:
-    لایۀ دامنۀ شرکت هم به‌عنوان یکِ *صفتِ عنوان* درِ همان `fts_engine` نوشته شده
-    (کنارِ `_is_audited`/`_is_consolidated`). ردیف‌هایِ دیگر حذف نمی‌شوند: فقط از
-    دیدِ این سریِ فصلی کنار می‌روند.
+    حالا خواننده فقط ردیف‌هایِ نامحدودِ همان نماد را می‌خواند و لایۀ
+    canonicalِ `fts_engine.quarter_reference_rows` برنده را می‌گزیند: دامنۀ
+    شرکت (`title_entity_suffix`) ← غیرتلفیقی ← ردیفِ کامل‌تر ← newest
+    `tracing_no` (همان `statement_rank` که `annual_statements`/`pick_reference`
+    برایِ موتورِ قیف و `codal_fetcher.period_winners` برایِ نویسنده مصرف
+    می‌کنند). نه parser دوم، نه آستانۀ دوم، نه قاعدۀ دومِ «برنده» — و هیچِ
+    ردیفی حذف نمی‌شود: بازنده‌ها فقط از دیدِ این سریِ فصلی کنار می‌روند.
 
     سنجشِ این تغییر رویِ بانکِ کاری (۱۴۰۵-۰۷-۲۰،
     `tools/codal_reference_before_after.py`): ۱۶۵ اسلاتِ چندردیفی، ۹۳ اسلاتِ
@@ -2132,42 +2131,29 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
         # تطبیق چند-نویشتاری (ك/ي عربی ↔ فارسی): ورودیِ کاربر ممکن است فارسی
         # باشد و رکوردهای کدالِ همان نماد با نوشتار عربی ذخیره شده باشند.
         _fp, _fa = fts_engine.sym_in("symbol", symbol)
+        # تمام candidateهای نماد خوانده می‌شوند؛ LIMIT قبل از انتخاب مرجع
+        # می‌توانست چند اطلاعیه از یک دوره را وارد پنجره کند و دوره‌های یکتا را حذف کند.
+        # publish_date خام عمداً مرتب نمی‌شود: ارقام فارسی/ASCII در DB مخلوط‌اند.
         _raw = conn.execute(
             "SELECT period_end, period_months, revenue, gross_profit,"
             " operating_profit, net_profit, basic_eps, publish_date,"
-            " tracing_no, title"
+            " title, tracing_no, report_kind"
             " FROM financial_statements"
-            " WHERE %s AND %s ORDER BY %s"
-            % (_fp, CP.DATED_SQL, CP.order_expr()),
-            _fa).fetchall()
-        # یکِ (دوره، طولِ دوره) = یکِ ردیف؛ بردۀ همان قاعدۀ موتور.
-        # لایۀ اول «دامنۀ شرکت» است: صورتِ مالیِ شرکتِ فرعی که کدال زیرِ نمادِ
-        # هلدینگ منتشر می‌کند («… (شرکت هلپاک)») نمایندۀ خودِ نماد نیست
-        # (`fts_engine.title_entity_suffix`). اگر همهٔ ردیف‌هایِ یکِ دوره فرعی
-        # باشند، همان قاعدۀ موتور بینِ آن‌ها می‌گزیند — پاسخی حذف نمی‌شود و
-        # ردیفی پاک نمی‌شود؛ فقط برایِ این سریِ فصلی کنار می‌رود.
-        _keys = fts_engine.FS_NUMBER_KEYS
-        by_slot: dict = {}
-        for r in _raw:
-            d = dict(r)
-            rank = ((1 if fts_engine.title_entity_suffix(d.get("title") or "") else 0),
-                    ) + fts_engine.statement_rank(
-                _keys, fts_engine._is_consolidated(d.get("title") or ""),
-                fts_engine.row_completeness(_keys, d), d["tracing_no"])
-            k = (d["period_end"], d["period_months"])
-            cur = by_slot.get(k)
-            if cur is None or rank < cur[0]:
-                by_slot[k] = (rank, d)
-        # شکلِ canonical پهنایثابت است ⇒ ترتیبِ واژگانی = ترتیبِ زمانی
-        ordered = [d for _rk, d in sorted(by_slot.values(),
-                                          key=lambda t: t[1]["period_end"],
-                                          reverse=True)]
-        rows = [{c: d[c] for c in ("period_end", "period_months", "revenue",
-                                   "gross_profit", "operating_profit", "net_profit",
-                                   "basic_eps", "publish_date")}
-                for d in ordered[:max(1, min(limit, 40))]]
-        return {"status": "success", "symbol": symbol, "count": len(rows),
-                "quarters": rows}
+            " WHERE %s AND %s" % (_fp, CP.DATED_SQL),
+            (*_fa,)).fetchall()
+        # یکِ (دوره، طول، نوع) = یکِ ردیف؛ برنده را لایۀ canonical می‌گزیند:
+        # `fts_engine.quarter_reference_rows` (دامنۀ شرکت ← غیرتلفیقی ←
+        # ردیفِ کامل‌تر ← newest `tracing_no`). نه parser دوم، نه آستانۀ دوم،
+        # نه قاعدۀ دومِ «برنده» درِ خواننده. ردیف‌هایِ بازنده حذف نمی‌شوند:
+        # فقط از دیدِ این سریِ فصلی کنار می‌روند.
+        _selected = fts_engine.quarter_reference_rows(_raw, limit=max(1, min(limit, 40)))
+        _public_fields = (
+            "period_end", "period_months", "revenue", "gross_profit",
+            "operating_profit", "net_profit", "basic_eps", "publish_date",
+        )
+        quarters = [{key: row.get(key) for key in _public_fields} for row in _selected]
+        return {"status": "success", "symbol": symbol, "count": len(quarters),
+                "quarters": quarters}
     finally:
         conn.close()
 

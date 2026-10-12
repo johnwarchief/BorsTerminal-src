@@ -2301,8 +2301,8 @@ def _deep_extract(rows, processed, conn, store_notices=True):
         **شکست** خورد (429/قطع شبکه) — آن باید درِ اجرای بعدی دوباره تلاش شود،
         ولی گزارشی که باز نشد یا عدد نداشت دوباره باز نمی‌شود (برایِ آن
         `--repair` هست).
-      • درِ پایان، قاعدۀ ترجیحِ خودِ فایل (مستقل بر تلفیقی، وگرنه newest) برایِ
-        زوج‌هایِ لمس‌شده اعمال می‌شود؛ همان `dedupe_symbol`، بی‌منطقِ دوم.
+      • انتخابِ یک مرجع برایِ هر دوره، کارِ لایهٔ خواندن است؛ `tracing_no`
+        هویتِ اطلاعیه است و دو اطلاعیهٔ متفاوتِ هم‌دوره درِ این جدول حفظ می‌شوند.
       • `store_notices=False` برایِ ردیف‌هایی است که از قبل درِ `codal_notices`
         هستند و فقط مشتقشان عقب مانده — وگرنه NOTICE_UPSERT (INSERT OR REPLACE)
         `fetched_at` و پیوندهایِ ثبت‌شده را بازنویسی می‌کرد.
@@ -2368,7 +2368,6 @@ def _deep_extract(rows, processed, conn, store_notices=True):
             return n[0], kind, None, "empty"
         return n[0], kind, None, "empty"
 
-    touched = set()
     n_done = 0
     # همان قراردادِ --rebuild-fs: پروفایلِ polite (بی‌ADB، بی‌روتاریشن) تک‌کارگر
     # است؛ آنجا تنها اهرمِ امنیت، کم‌کردنِ همزمانی است نه مکث (polite_pause فقط
@@ -2396,14 +2395,10 @@ def _deep_extract(rows, processed, conn, store_notices=True):
             if kind == "ms":
                 conn.execute(MS_UPSERT, row)
                 n_ms += 1
-                touched.add((row[1], _pe_key(row[3])))
             else:
                 conn.execute(FS_UPSERT, row)
                 n_fs += 1
-                touched.add((row[1], _pe_key(row[6])))
     conn.commit()
-    for sym in {s for s, _p in touched}:
-        collapse_symbol(conn, sym)
     return n_fs, n_ms
 
 
@@ -2451,24 +2446,15 @@ def period_winners(conn, table, symbol=None):
 
 
 def collapse_symbol(conn, sym):
-    """یکِ دوره، یکِ ردیف — `period_winners` رویِ یکِ نماد، با همان `conn`.
+    """سازگاری با فراخوان‌های قدیمی؛ عمداً دادهٔ منبع را حذف نمی‌کند.
 
-    `conn` از فراخوان می‌آید تا `_deep_extract` بتواند درست بعدِ نوشتنِ
-    ردیف‌هایِ خودش همان connection را جمع کند؛ `dedupe_symbol` همان قاعده با
-    اتصالِ خودش است. commit با فراخوان است.
+    tracing_no کلیدِ یکتای اطلاعیه است. چند اطلاعیه برای یک نماد/دوره می‌توانند
+    نسخهٔ اصلی، تلفیقی یا اصلاحیهٔ مستقل باشند؛ یک گروه‌بندیِ دوره‌ای مدرکِ
+    تکراری‌بودن نیست. `period_winners` فقط برای انتخابِ نمای مرجع مصرف می‌شود.
+    این تابع برای سازگاریِ API داخلی مقدار (حذف‌شده از صورت‌ها، حذف‌شده از ماهانه)
+    را برمی‌گرداند؛ تا وقتی هویتِ duplicate واقعی اثبات نشده، هر دو صفرند.
     """
-    removed = removed_ms = 0
-    for (_s, pe), tno in period_winners(conn, "financial_statements", sym).items():
-        cur = conn.execute(
-            "DELETE FROM financial_statements WHERE symbol=? AND period_end=? AND tracing_no<>?",
-            (sym, pe, tno))
-        removed += cur.rowcount
-    for (_s, pe), tno in period_winners(conn, "monthly_sales", sym).items():
-        cur = conn.execute(
-            "DELETE FROM monthly_sales WHERE symbol=? AND period_end=? AND tracing_no<>?",
-            (sym, pe, tno))
-        removed_ms += cur.rowcount
-    return removed, removed_ms
+    return 0, 0
 
 
 def dedupe_symbol(sym):

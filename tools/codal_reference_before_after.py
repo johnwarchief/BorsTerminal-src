@@ -18,22 +18,26 @@ db = os.path.abspath(_a.db).replace("\\", "/")
 c = sqlite3.connect("file:%s?mode=ro" % db, uri=True)
 c.row_factory = sqlite3.Row
 
-# همان دو قاعده، فقط برایِ نمادهایی که قاعدهٔ تازه ردیفِ دیگری می‌گزیند
+# همان دو قاعده، فقط برایِ نمادهایی که قاعدهٔ تازه ردیفِ دیگری می‌گزیند.
+# «تازه» = خودِ لایۀ canonical (`fts_engine.quarter_reference_rows`)؛ این ابزار
+# قاعدۀ سوم نمی‌سازد، فقط ردیفِ «قدیم» (ORDER BY واژگانیِ publish_date) را در
+# برابرِ ردیفِ همان تابع می‌گذارد و جابه‌جایی را می‌شمارد.
 rows_by_slot = {}
-for r in c.execute("SELECT symbol, period_end, period_months, tracing_no, title,"
-                   " publish_date, revenue, gross_profit, operating_profit, net_profit,"
-                   " basic_eps FROM financial_statements WHERE " + CP.DATED_SQL +
+for r in c.execute("SELECT symbol, period_end, period_months, report_kind,"
+                   " tracing_no, title, publish_date, revenue, gross_profit,"
+                   " operating_profit, net_profit, basic_eps"
+                   " FROM financial_statements WHERE " + CP.DATED_SQL +
                    " ORDER BY period_end DESC, publish_date DESC"):
-    rows_by_slot.setdefault((r["symbol"], r["period_end"], r["period_months"]), []).append(dict(r))
+    rows_by_slot.setdefault(
+        (r["symbol"], r["period_end"], r["period_months"], r["report_kind"]),
+        []).append(dict(r))
 
 out = []
 for k, rows in rows_by_slot.items():
     if len(rows) < 2:
         continue
     cur = rows[0]
-    new = min(rows, key=lambda r: ((1 if FE.title_entity_suffix(r["title"]) else 0),) +
-              FE.statement_rank(FE.FS_NUMBER_KEYS, FE._is_consolidated(r["title"] or ""),
-                                FE.row_completeness(FE.FS_NUMBER_KEYS, r), r["tracing_no"]))
+    new = FE.quarter_reference_rows(rows, limit=len(rows))[0]
     if int(cur["tracing_no"]) == int(new["tracing_no"]):
         continue
     moved = tuple(cur[x] for x in FE.FS_NUMBER_KEYS) != tuple(new[x] for x in FE.FS_NUMBER_KEYS)

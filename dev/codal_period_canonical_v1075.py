@@ -151,20 +151,46 @@ def test_order():
     conn.close()
 
 
-# ── ۴) ردیفِ بی‌دوره حذف نمی‌شود ─────────────────────────────────────────────
+# ── ۴) هیچ ردیفی حذف نمی‌شود؛ بازنده فقط از دیدِ مرجع کنار می‌رود ───────────
 def test_undated_survives():
-    print("\n— ۴) جمع‌شدنِ دوره‌ها به ردیفِ بی‌دوره دست نمی‌زند")
+    print("\n— ۴) «جمع‌شدنِ دوره» دیگر حذفِ فیزیکی نیست (سیاستِ CA-3، دور ۲)")
     conn = new_db()
     seed_fs(conn, [(21, "د", "1405" + SLASH + "06" + SLASH + "31", 1, 160.0),
                    (22, "د", "1405" + SLASH + "06" + SLASH + "31", 0, 100.0),
                    (23, "د", None, 0, 7.0),
                    (24, "د", "1404" + SLASH + "12" + SLASH + "29", 0, 60.0)])
     removed = CF.collapse_symbol(conn, "د")
+    # «تلفیقی» باید درِ *عنوان* باشد: هم `period_winners` (نویسنده) و هم
+    # `fts_engine._is_consolidated` (خواننده) از عنوان می‌خوانند؛ ستونِ
+    # `is_consolidated` درِ audit ۱۴۰۵-۰۷-۱۱ بی‌اعتبار شناخته شد. بی‌این سطر
+    # fixture یکِ ردیفِ «تلفیقی» نداشت و شاخۀ مبنا هرگز اجرا نمی‌شد.
+    CONS_TITLE = FS_TITLE.replace("میاندورهای", "تلفیقی میاندورهای")
+    import fts_engine as FE
+    conn.execute("UPDATE financial_statements SET title=? WHERE tracing_no=21",
+                 (CONS_TITLE,))
+    conn.commit()
+    # سنسور: خودِ fixture را با همان تابعِ قاعده بسنج، وگرنه سبزِ بعد بی‌مغزا است.
+    ck(FE._is_consolidated(CONS_TITLE) and not FE._is_consolidated(FS_TITLE),
+       "سنسور: عنوانِ ۲۱ واقعاً «تلفیقی» و عنوانِ ۲۲ واقعاً غیرتلفیقی است",
+       "%s / %s" % (FE._is_consolidated(CONS_TITLE), FE._is_consolidated(FS_TITLE)))
     left = conn.execute("SELECT tracing_no FROM financial_statements ORDER BY tracing_no"
                         ).fetchall()
-    ck([r[0] for r in left] == [22, 23, 24],
-       "تلفیقیِ هم‌دوره حذف شد؛ بی‌دوره و تنها-ردیفِ دورهٔ دیگر سالم‌اند",
+    # پیش از دور ۲ این سطر «[22, 23, 24]» انتظار داشت، یعنی حذفِ فیزیکیِ ردیفِ
+    # تلفیقی. آن حذف با سیاستِ جدیدِ CA-3 باطل شد: دو اطلاعیهٔ متمایزِ یکِ دوره
+    # (اصلی/تلفیقی/اصلاحیه) تاریخچه‌اند و `tracing_no` هویتشان است.
+    ck([r[0] for r in left] == [21, 22, 23, 24],
+       "هیچ ردیفی حذف نمی‌شود: تلفیقی، بی‌دوره و تنها-ردیفِ دورۀ دیگر همه سالم‌اند",
        "%s removed=%s" % ([r[0] for r in left], removed))
+    ck(tuple(removed) == (0, 0),
+       "collapse_symbol دیگر حذف نمی‌کند ⇒ (۰، ۰) برمی‌گرداند", str(removed))
+    # عوضِ آن، لایۀ مرجع باید همان رأیِ قبل را بدهد: تلفیقی نمایندۀ دوره نیست.
+    # ۲۱ عددِ بزرگ‌تری دارد (۱۶۰ در برابر ۱۰۰) تا اگر مبنا بردۀ عددی می‌شد، فرق کند.
+    win = CF.period_winners(conn, "financial_statements", "د")
+    ck(win.get(("د", "1405" + SLASH + "06" + SLASH + "31")) == 22,
+       "درِ نمای مرجع، مستقل (۲۲) برِ تلفیقیِ درشت‌عدد (۲۱) می‌ماند",
+       str(win.get(("د", "1405" + SLASH + "06" + SLASH + "31"))))
+    ck(("د", None) not in win,
+       "ردیفِ بی‌دوره اصلاً واردِ نمای مرجع نمی‌شود", str(sorted(win)))
     ck(CP.undated_counts(conn)["financial_statements"] == 1,
        "و آن یکِ ردیفِ سالم، درِ شمارشِ واحد «بی‌دوره» دیده می‌شود",
        str(CP.undated_counts(conn)))
