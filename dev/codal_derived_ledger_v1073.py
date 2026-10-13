@@ -596,7 +596,63 @@ def main():
     ck(_quarters(qg, 10)[0]["tracing_no"] == 800,
        "رتبه کامل‌بودن از ردیف اصلاحی ناقص جدیدتر محافظت می‌کند", "")
 
-    for c in (conn, c2, c3, c4, c5, c6, c7, c8, c10, c11, c12):
+    print("\n— ۱۷) نوشتنِ سالانه با نامِ ستون؛ انحرافِ schema نباید بی‌صدا بمیرد")
+    # ۱۴۰۵-۰۷-۲۴: `dev/codal_fts_updater.save_annual` بیست‌ویک مقدارِ موقعیتی به
+    # جدولِ بیست‌وشش‌ستونه می‌زد. خطا درِ `except`ِ فراخوان «استخراج ناموفق» چاپ
+    # می‌شد و `--mode full` از روزِ افزودنِ ستون‌های مشتق هیچ ردیفِ سالانه‌ای
+    # نمی‌نوشت — یعنی پوششِ شاخص ۲ و ۳ بی‌هیچ پیامِ مرگِ اجرا متوقف می‌ماند.
+    import codal_fts_updater as UPD  # noqa: E402
+    c17 = new_db()
+    order = [r[1] for r in c17.execute("PRAGMA table_info(financial_statements)")]
+    ck(len(order) == 26 and "has_operating_sales" in order,
+       "فیکچر همان ۲۶ ستونِ تولید را دارد (پس این بندِ گاردِ زنده است، نه کاغذی)",
+       str(len(order)))
+    ck(order != CF.FS_COLS,
+       "دامِ موقعیتی: ترتیبِ FS_COLS با ترتیبِ جدول یکی نیست، پس نام‌محور بودن بارِ واقعی دارد",
+       "اولین اختلاف: %s" % str(next(((i, a, b) for i, (a, b) in
+                                      enumerate(zip(order, CF.FS_COLS)) if a != b), "—")))
+    L17 = {"TracingNo": "999", "Symbol": "دعبید", "CompanyName": "شرکت دعبید",
+           "Title": FS_TITLE, "PublishDateTime": "1405/07/23 10:00:00",
+           "Url": "https://codal.ir/Reports?a=999"}
+    V17 = {k: 100.0 for k in CF.FS_KEYS}
+    V17["basic_eps"] = 25.0
+    UPD.save_annual(c17, L17, V17,
+                    {"period": "۱۲", "end": "1404-12-29", "is_consolidated": 0},
+                    "کليه مبالغ به ميليون ريال است")
+    r17 = c17.execute("SELECT * FROM financial_statements").fetchone()
+    d17 = dict(zip(order, r17))
+    ck(r17 is not None and d17["unit_norm"] == "mrl" and d17["fiscal_year"] == "1404"
+       and d17["revenue"] == 100.0 and d17["basic_eps"] == 25.0,
+       "ردیفِ سالانۀِ واکشی‌شده با مقیاس و سالِ مالی و ستون‌هایِ درست می‌نشیند", str(d17))
+    # کنترلِ منفی: همان ردیف با فرمانِ موقعیتیِ پیشین باید خطا بدهد — اگر خطا
+    # ندهد و این بند سبز بماند، یعنی سنسور کور است.
+    try:
+        c17.execute("INSERT OR REPLACE INTO financial_statements VALUES ("
+                    + ",".join("?" * (8 + len(CF.FS_KEYS) + 3)) + ")",
+                    ("9998", "دعبید", "x", "y", "z", 12, "1404-12-29", "p")
+                    + tuple(1.0 for _ in CF.FS_KEYS) + ("u", "url", "now"))
+        dead = "no error"
+    except sqlite3.OperationalError as e:
+        dead = str(e)
+    ck("columns but" in dead,
+       "کنترلِ منفی: درجِ موقعیتی رویِ همین schema واقعاً می‌شکند (پس بندِ بالا کور نیست)", dead)
+    c17.execute("UPDATE financial_statements SET has_operating_sales=1 WHERE tracing_no=999")
+    UPD.save_annual(c17, L17, V17,
+                    {"period": "۱۲", "end": "1404-12-29", "is_consolidated": 0},
+                    "کليه مبالغ به ميليون ريال است")
+    keep = c17.execute("SELECT COUNT(*), MAX(has_operating_sales)"
+                       " FROM financial_statements").fetchone()
+    ck(keep == (1, 1),
+       "بازنشرِ همان گزارش نه ردیف می‌سازد نه ستونِ خوانده‌نشده را NULL می‌کند", str(keep))
+    for fname in ("codal_fetcher.py", "codal_fts_updater.py", "pipeline_updater.py",
+                  "db_housekeeping.py"):
+        p = os.path.join(ROOT if fname.endswith("fetcher.py") else
+                         os.path.dirname(os.path.abspath(__file__)), fname)
+        src = open(p, encoding="utf-8").read()
+        ck("INTO financial_statements VALUES (" not in src,
+           "هیچ نوشتنِ موقعیتیِ صورتِ مالی درِ %s نمانده" % fname, "")
+
+    for c in (conn, c2, c3, c4, c5, c6, c7, c8, c10, c11, c12, c17):
         c.close()
     print(f"\nنتیجه: {PASS} سبز، {FAIL} قرمز")
     return 1 if FAIL else 0
