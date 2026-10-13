@@ -245,6 +245,156 @@ def main():
                 "۲۲ب بلوکِ امضا همان چهارخطِ minisign است")
         finally:
             shutil.rmtree(kdir2, ignore_errors=True)
+        # ── ۲۷..۳۶ روالِ نگهداریِ کلید (backup / verify / restore) ─────────
+        # این سنجه‌ها «نگهداری» را از یکِ فایلِ کپی‌شده بیرون می‌آورند: باندلِ
+        # رمزدار + checksum + چالشِ امضا/بررسیِ واقعی + بازیابیِ اثبات‌شده.
+        # چهار منفیِ آخر همان اشتباه‌هایِ تشخیص‌اند که درِ توسعهٔ همین ابزار دیدم:
+        # باندلِ خراب «رمزِ غلط» گزارش می‌شد، عبارتِ غلط traceback خام می‌داد، و
+        # مقصدِ داخلِ مخزن پشتِ پیامِ رمز پنهان می‌شد.
+        PASSPHRASE = b"kiscenotarealsake-passphrase-123"
+        kdir3 = tempfile.mkdtemp(prefix="bors-guard-custody-")
+        ksrc = os.path.join(kdir3, "keys")
+        bdir = os.path.join(kdir3, "backup")
+        rdir = os.path.join(kdir3, "restore")
+        os.environ[sm.KEY_PASS_ENV] = PASSPHRASE.decode()
+        try:
+            kg3 = sm.keygen(ksrc, passphrase=PASSPHRASE)
+            bund = sm.backup(kg3["private"], bdir)
+            chk(os.path.exists(bund["bundle"]) and os.path.exists(bund["checksum_file"])
+                and bund["key_id"] == kg3["public_key_id"]
+                and bund["encrypted"] is True,
+                "۲۷ باندلِ پشتیبانِ کلیدِ رمزدار بیرونِ مخزن ساخته می‌شود")
+            chk(not os.path.abspath(bund["bundle"]).startswith(ROOT + os.sep),
+                "۲۷ب مسیرِ باندل بیرونِ مخزن است", bund["bundle"])
+            v = sm.verify_backup(bund["bundle"])
+            chk(v["verdict"] == "PASS" and v["signature_roundtrip"] is True
+                and v["key_id_matches"] is True,
+                "۲۸ سنجشِ باندل با چالشِ امضایِ واقعی PASS می‌دهد", str(v)[:170])
+            rs = sm.restore(bund["bundle"], rdir)
+            chk(rs["verify"]["verdict"] == "PASS"
+                and rs["verify"].get("same_public_as_original") is True
+                and os.path.exists(rs["restored_pub"]),
+                "۲۹ بازیابی همان کلید را می‌سازد و publicِ او را اثبات می‌کند",
+                str(rs["verify"])[:170])
+            chk(len(rs["expect_in_ci_var"] or "") >= 40,
+                "۲۹ب بازیابی رشته‌ای که درِ vars.MOBILE_MANIFEST_PUBKEY می‌نشیند را می‌دهد")
+            try:
+                sm.restore(bund["bundle"], rdir)
+                chk(False, "۳۰ بازیابی رویِ کلیدِ موجود باید رد شود")
+            except SystemExit as e:
+                chk("هست" in str(e), "۳۰ بازیابی رویِ کلیدِ موجود رد می‌شود", str(e)[:120])
+
+            # ۳۱ منفی: کلیدِ بی‌رمز پشتیبان نمی‌شود (کلیدِ انتشار)
+            try:
+                sm.backup(kg["private"], os.path.join(kdir3, "bad"))
+                chk(False, "۳۱ پشتیبانِ کلیدِ بی‌رمز باید رد شود")
+            except SystemExit as e:
+                chk(str(e).startswith("BLOCKED"),
+                    "۳۱ پشتیبانِ کلیدِ بی‌رمز رد می‌شود", str(e)[:120])
+
+            # ۳۲ منفی: باندلِ یک‌بایت‌خورده ⇒ دلیلِ شکست «checksum» باشد نه «رمز»
+            tsrc = open(bund["bundle"], encoding="utf-8").read()
+            head, body = tsrc.split("\n\n", 1)
+            i = len(body) // 2
+            rep = "B" if body[i] != "B" else "C"
+            tp = os.path.join(kdir3, "tampered.bundle.txt")
+            with open(tp, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(head + "\n\n" + body[:i] + rep + body[i + 1:])
+            tv = sm.verify_backup(tp)
+            chk(tv["verdict"] == "FAIL" and tv["checksum_matches"] is False
+                and "checksum" in str(tv.get("fail_reason", "")),
+                "۳۲ باندلِ خراب با دلیلِ تمامیت رد می‌شود، نه «رمزِ غلط»", str(tv)[:170])
+
+            # ۳۳/۳۴ منفی: نبودِ فایل و نبودِ عبارتِ عبور ⇒ BLOCKED تمیز، بی‌traceback
+            CLI = os.path.join(ROOT, "scripts", "sign_mobile_manifest.py")
+            for args, why in (
+                    ([sys.executable, CLI, "--verify-backup",
+                      os.path.join(kdir3, "ghost.bundle.txt")],
+                     "۳۳ باندلِ گم‌شده"),
+                    ([sys.executable, CLI, "--verify-backup", bund["bundle"]],
+                     "۳۴ بی‌عبارتِ عبور")):
+                env = dict(os.environ)
+                env.pop(sm.KEY_PASS_ENV, None)
+                p = subprocess.run(args, capture_output=True, text=True,
+                                   encoding="utf-8", errors="replace", env=env)
+                err = (p.stderr or "") + (p.stdout or "")
+                chk(p.returncode != 0 and "BLOCKED" in err and "Traceback" not in err,
+                    why + " ⇒ BLOCKED تمیز، بی‌استثنای خام", err[:150].replace("\n", " "))
+
+            # ۳۵/۳۶ منفی: مقصد داخلِ مخزن ⇒ پیامِ «مخزن»، نه پیامِ رمز
+            for call, name in (
+                    (lambda: sm.backup(kg3["private"],
+                                       os.path.join(ROOT, "_audit", "tmp",
+                                                    "custody_should_fail")),
+                     "۳۵ پشتیبان داخلِ مخزن"),
+                    (lambda: sm.restore(bund["bundle"],
+                                        os.path.join(ROOT, "_audit", "tmp",
+                                                     "restore_should_fail")),
+                     "۳۶ بازیابی داخلِ مخزن")):
+                try:
+                    call()
+                    chk(False, name + " باید رد شود")
+                except SystemExit as e:
+                    chk("مخزن" in str(e), name + " رد می‌شود", str(e)[:120])
+            chk(not os.path.exists(os.path.join(ROOT, "_audit", "tmp",
+                                                "custody_should_fail"))
+                and not os.path.exists(os.path.join(ROOT, "_audit", "tmp",
+                                                    "restore_should_fail")),
+                "مقصدِ ردشده درِ مخزن هیچ پوشه‌ای نساخت")
+            chk(PASSPHRASE.decode() not in open(bund["bundle"], encoding="utf-8").read()
+                and PASSPHRASE.decode() not in json.dumps(bund),
+                "۳۷ عبارتِ عبور درِ باندل یا گزارشِ آن تکرار نمی‌شود")
+        finally:
+            os.environ.pop(sm.KEY_PASS_ENV, None)
+            shutil.rmtree(kdir3, ignore_errors=True)
+
+
+        # ── مسیرِ CLI/openssl — همان چیزی که CI مصرف می‌کند ──────────────────
+        # ریشهٔ سرخیِ CI (run 38322487153): `openssl pkey -in <pub>` کلیدِ
+        # *خصوصی* می‌خواهد و با PUBLIC KEY می‌شکند؛ درِ runner که `cryptography`
+        # نصب نیست همان شاخه می‌رفت و گارد `rc=1 | 0 pass / 0 fail` شد — سکوت،
+        # نه قبولی. رویِ این ماشین `cryptography` هست، پس آن شاخه هرگز اجرا
+        # نمی‌شد و ۳۱/۳۱ سبزِ بی‌معنا می‌داد. این سنجه‌ها backend را می‌بندند تا
+        # مسیرِ واقعیِ CI همین‌جا هم اجرا شود، نه فقط رویِ ماشینِ سازنده.
+        _orig_backend = sm._backend
+        try:
+            sm._backend = lambda: None            # هیچ ابزارِ بیرونی مجاز نیست
+            kid_std = sm.key_id_from_pem(kg["public"])
+            chk(kid_std == kg["public_key_id"],
+                "۲۳ key_idِ کلیدِ عمومی بی‌backend و بی‌openssl ساخته می‌شود", kid_std)
+            chk(len(sm.raw_public32(kg["public"])) == 32,
+                "۲۳ب raw publicِ 32 بایتی از همان راهِ stdlib می‌آید")
+        finally:
+            sm._backend = _orig_backend
+
+        # ۲۴ کنترلِ منفی: PEMِ غیر-Ed25519 باید رد شود، نه 32 بایتِ هرچه بدهد
+        bogus = os.path.join(work, "not_ed25519.pub")
+        with open(bogus, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----\n"
+                     % base64.b64encode(b"\x30\x82\x01\x22" + b"\x00" * 40).decode())
+        try:
+            sm._pub_der(bogus)
+            chk(False, "۲۴ PEMِ غیر-Ed25519 باید رد شود")
+        except SystemExit:
+            chk(True, "۲۴ PEMِ غیر-Ed25519 رد می‌شود (prefix نخورد)")
+
+        # ۲۵ شاخۀ openssl با کلیدِ *خصوصی* — همان ترکیبِ CI
+        if shutil.which("openssl"):
+            sm._backend = lambda: "openssl"
+            try:
+                chk(sm.key_id_from_pem(kg["private"]) == kg["public_key_id"],
+                    "۲۵ key_id از کلیدِ خصوصی با backend=openssl همان key_id را می‌دهد")
+                sig_op = os.path.join(work, "openssl.sig")
+                sm.sign(mpath, kg["private"], sig_op)
+                chk(sm.verify(mpath, sig_op, kg["public"]) is True,
+                    "۲۵ب امضا و بررسی از شاخۀ openssl می‌خوانند")
+            finally:
+                sm._backend = _orig_backend
+            chk(sm._backend() == _orig_backend(),
+                "۲۶ backend پس ازِ سنجه‌ها بازگردانده شده است")
+        else:
+            print("  note  openssl نیست ⇒ سنجه‌هایِ ۲۵ اجرا نشد (درِ runnerهایِ CI هست)")
+
     finally:
         shutil.rmtree(keydir, ignore_errors=True)
         shutil.rmtree(work, ignore_errors=True)

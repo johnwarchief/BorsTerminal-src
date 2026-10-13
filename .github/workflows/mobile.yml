@@ -282,8 +282,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERIFIED: ${{ steps.sigcheck.outputs.signed }}
+          PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
         run: |
           set -e
+          # دروازۀ انتشار درِ *همین* گام هم بازخوانی می‌شود، نه فقط درِ گامِ
+          # «Publish gate status»: آن گام با exit 1 شغل را می‌بندد، ولی اعتماد به
+          # ترتیبِ گام‌ها یعنی یکِ جابه‌جاییِ بعدی، انتشارِ بی‌کلید. سه شرط، هر سه
+          # همین‌جا: کلیدِ عمومی تنظیم‌شده، امضایِ بستۀ داده معتبر، و tag هدف
+          # هیچ‌کدام از سری‌هایِ کهنه نیست.
+          if [ -z "$PUB" ]; then
+            echo "BLOCKED: vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده؛ APK بی‌ریشۀ اعتماد منتشر نمی‌شود." >&2
+            exit 1
+          fi
+          if [ "$VERIFIED" != "verified" ]; then
+            echo "BLOCKED: امضایِ بستۀ داده معتبر نشد (sig-check زودتر رد شد)؛ انتشار ممنوع." >&2
+            exit 1
+          fi
+          case "$SNAPSHOT_SERIES" in
+            mobile-latest|data-latest|"")
+              echo "BLOCKED: سریِ هدف '$SNAPSHOT_SERIES' سریِ کهنه/خالی است؛ این workflow هرگز سری منتشرشدۀ گوشی‌ها را بازنویسی نمی‌کند." >&2
+              exit 1;;
+          esac
           SHA="${GITHUB_SHA::7}"
           PRERELEASE_FLAG="--prerelease"
           if [ "${{ github.event.inputs.prerelease }}" = "false" ]; then PRERELEASE_FLAG=""; fi
@@ -302,7 +321,7 @@ jobs:
           app version: $BORS_VERSION_NAME (versionCode $BORS_VERSION_CODE) — منبع: frontend/package.json
           build: frontend tsc + vitest سبز، سپس vite build (VITE_LOCAL_DATA=1) و gradlew assembleDebug
           artifact: app-debug.apk · $SIZE بایت · sha256 $SUM
-          snapshot داده: mobile-latest · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} · package_id ${SNAP_PACKAGE_ID:-نامعلوم} · schema ${SNAP_SCHEMA_VERSION:-?}/db ${SNAP_DB_SCHEMA:-?} · gz sha ${SNAP_GZ_SHA:-?}…
+          snapshot داده: ${SNAPSHOT_SERIES} · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} · package_id ${SNAP_PACKAGE_ID:-نامعلوم} · schema ${SNAP_SCHEMA_VERSION:-?}/db ${SNAP_DB_SCHEMA:-?} · gz sha ${SNAP_GZ_SHA:-?}…
           امضایِ manifest: ${VERIFIED:-بررسی‌نشده} (کلیدِ عمومی درِ باندل بیلد نشسته است؛ کلیدِ خصوصی درِ مخزن نیست)
           وضعیتِ آیتم‌ها و شاهد هر کدام: docs/MASTER-EXECUTION-ROADMAP.md §15"
           gh release upload "$TAG" "$APK#bors-terminal-mobile.apk" --clobber

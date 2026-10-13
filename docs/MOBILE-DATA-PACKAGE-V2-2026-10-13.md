@@ -383,3 +383,158 @@ schemaشان از `market.db` فقط‌خواندنیِ untracked می‌آید.
 | شکاف WebView | BLOCKED (محلی) / NOT RUN (CI) با شواهد و حداقلِ راه باز شدن |
 | گیت‌های این مأموریت | PASS — vitest: 148 پرونده / 1547 pass / 1 skip / 0 fail؛ `tsc -b`: ۰ خطا؛ `npx eslint src`: ۰ خطا (یک `no-irregular-whitespace` درِ همان regexِ BOMِ `manifestSignature.ts` گرفته شد و با escape جایگزین شد — بدونِ تغییرِ رفتار: ۶۸/۶۸ آزمون موبایل سبز)؛ `vite build`: موفق و نسخه/کلید/سری درِ بایلد grep شد؛ `py_compile`: OK؛ گارد امضا ۳۱/۳۱؛ گارد هم‌کلیدی ۱۳/۱۳؛ پروب Chromium ۷۴/۷۴؛ پروب کلاینت کهنه ۸/۸ |
 | انتشار | NOT RUN — مجاز نبود |
+
+---
+
+# دور 6 (مرحلۀ انتشار) — چرا منتشر نشد، و چه چیزی درست شد
+
+مبدأ: کامیت `e20300b` روی همان شاخه. خواستۀ دور: «اگر همهٔ پیش‌نیازها برقرار
+است منتشر کن، وگرنه منتشر نکن و مانع را دقیق بنویس». **انتشار انجام نشد** — و
+این از سرِ احتیاطِ کلی نبود: سه پیش‌نیازِ ضروری، هر سه با شاهدِ زنده، برقرار
+نیستند.
+
+## 16-الف) شمارشِ پیش‌نیازها با شاهد (هیچ‌کدام از روایتِ دورهایِ پیشین)
+
+| پیش‌نیاز | وضعیت | شاهدهٔ همین دور |
+| --- | --- | --- |
+| کلیدِ خصوصیِ انتشار، رمزدار و پشتیبان‌گیری‌شده | **MISSING** | `~/.bors_mobile_keys` وجود ندارد (`ls: cannot access`). تنها چیزی که رویِ این ماشین هست دو جفت‌کلیدِ **نمایشی** در `Desktop/_bors_mobile_e2e_keys/{A,B}` است، هر دو **بی‌رمز** (119 بایت، `-----BEGIN PRIVATE KEY-----`). پشتیبانِ هیچ‌کدام گرفته نشده. |
+| `vars.MOBILE_MANIFEST_PUBKEY` درِ CI | **NOT SET** | لاگِ رانِ `38320593444` (تازۀ‌ترینِ mobile-apk، 2026-10-12T23:08Z): سطرِ `VITE_MOBILE_MANIFEST_PUBKEY:` **تهی**. تنظیمِ آن ازِ این نشست هم ممکن نیست: توکنِ `gh` درِ scopesِ `repo, workflow, read:org, gist` است و `/repos/…/variables` را 404 می‌دهد (needs admin). |
+| امضایِ بستۀ دادۀ موجود | **MISSING** | همان لاگ: گامِ «Verify the data package signature» با `curl: (22) The requested URL returns error 404` رویِ `mobile_snapshot.db.meta.json.sig` رد شد ⇒ «بستۀ داده بی‌امضا است». `gh release view mobile-latest-v2 --repo johnwarchief/BorsTerminal-src` ⇒ `release not found`. |
+| گیت‌هایِ خودِ مأموریت درِ CI | **RED → FIXED (درِ این دور)** | گاردِ `mobile data manifest is signed` درِ رانِ `guards` شمارهٔ `38322487153` با `rc=1 | 0 pass / 0 fail` سرخ بود (علتِ واقعی درِ 16-ب). پس ازِ رفع: 51 سنجه، درِ هر دو پیکربندیِ backend سبز. |
+| سازگاریِ نسخۀ APK و versionCode | PASS | لاگِ همان ران: `منبعِ واحدِ نسخه: frontend/package.json → 1.0.79 (versionCode 1000079)` و گامِ «Verify the APK metadata» از `merged_manifests` همان را خواند. |
+| rollback و نگهداشتِ دو بستۀ سالم | PASS محلی/Chromium، **NOT RUN درِ WebView** | دورهایِ 4 و 5 (74/74 درِ `_audit/mobile_stage8_e2e.json`). |
+| آزمونِ Android WebView | **NOT RUN** | محلی: `java` نیست، `ANDROID_HOME`/`ANDROID_SDK_ROOT` تهی، `local.properties` نیست، هیچ AVD/emulator/docker نصب نیست. درِ CI هیچ job ایمولاتور نیست. |
+
+نتیجه: منتشر نکردم. منتشرکردن با این وضعیت یعنی یا APKی که رویِ گوشی هیچ‌وقت
+دادهٔ تازه نمی‌گیرد (بی‌کلید درِ باندل)، یا گذاشتنِ کلیدِ نمایشی جایِ کلیدِ
+انتشار — که هر دو دقیقاً همان چیزی است که دروازۀ `mobile.yml` منع می‌کند.
+
+## 16-ب) علتِ واقعیِ سرخیِ گاردِ امضا درِ CI (و چهار باگِ دیگرِ همان خانواده)
+
+گاردِ `dev/mobile_manifest_sign_v1079.py` رویِ این ماشین 31/31 سبز بود و درِ CI
+`rc=1 | 0 pass / 0 fail` (یعنی **پیش ازِ اولین سنجه** می‌شکست). علتِ اندازه‌گیری‌شده،
+درِ لاگِ ران:
+
+```
+subprocess.CalledProcessError: Command '['openssl', 'pkey', '-in',
+'.../mobile_manifest.key.pub', '-pubout', '-outform', 'DER']' returned non-zero exit status 1
+```
+
+`openssl pkey -in` کلیدِ **خصوصی** می‌خواهد؛ برایِ PUBLIC KEY بایتِ `-pubin`
+لازم است («Could not find private key of key»). درِ `requirements.txt` هیچ
+`cryptography` نیست، پس runner همین شاخه را می‌رفت، ولی رویِ ماشینِ من
+`cryptography 46.0.7` نصب است و آن شاخه **هرگز اجرا نمی‌شد** — همان الگویِ
+شناختهٔ «شاخۀ مرده‌ای که fixture پنهانش می‌کند»، این بار درِ مسیرِ انتشار.
+
+| # | باگ | رفع |
+| --- | --- | --- |
+| 1 | خواندنِ DERِ کلیدِ عمومی با زیررویه، و آن هم با پرچمِ غلط | `_spki_der_from_pem()`: PEMِ `PUBLIC KEY` با stdlib بازخوانده می‌شود (base64ِ بدنه)؛ بی‌هیچ ابزارِ بیرونی، با نتیجۀ یکسانِ ویندوز/لینوکس. `raw_public32` هم از یکِ ثابتِ تنها (`ED25519_SPKI_PREFIX`) می‌خواند. |
+| 2 | `openssl genpkey` گزینهٔ `-cipher` **ندارد** ⇒ `--keygen --encrypted` رویِ هر ماشینِ بی‌`cryptography` می‌شکست (`genpkey: Extra (unknown) options: "cipher"`) | رمزگذاری با `openssl pkcs8 -topk8 -v2 aes-256-cbc -passout env:…` رویِ همان PKCS#8، و سپس `pkey -pubout -passin env:…`. |
+| 3 | openssl بی‌passphrase **درنگ** می‌کرد (دو `openssl.exe` معلق رویِ این ماشین دیدم) | `_run()` حالا `stdin=DEVNULL` و `timeout=120` دارد، و `_require_passphrase_if_encrypted()` پیش ازِ هر تماسِ openssl پیامِ خودِ ما را می‌دهد. هیچ سوالی ازِ TTY پرسیده نمی‌شود. |
+| 4 | «باندلِ خراب» با پیامِ «رمزِ غلط» گزارش می‌شد | اولِ اول تمامیت سنجیده می‌شود (اثرِ درونِ باندل + فایلِ `.sha256`) و درِ شکست **هیچ رمزگشایی‌ای امتحان نمی‌شود**؛ `_load_private()` سه حالتِ «رمز ندارد / عبارت نیست / عبارت غلط است» را جدا می‌کند. |
+| 5 | `restore()` با `ValueError` خام می‌ترکید و باندلِ خراب را رویِ دیسک می‌نوشت | پیش ازِ هر نوشتن می‌سنجد؛ باندلِ ردشده هیچ پوشه‌ای نمی‌سازد؛ رویِ کلیدِ موجود نمی‌نویسد. |
+
+سنجشِ رفع، درِ **هر دو** پیکربندی: `dev/ci_parity_harness.py` (همین دور اضافه
+شد) ماژولِ `cryptography` را هم درِ فرایندِ والد و هم درِ همهٔ زیرروندها (همان
+CLI که گارد با subprocess صدا می‌زند) مسدود می‌کند — بی‌بخشِ زیررونده، آزمون‌هایِ
+CLI ازِ شاخۀ cryptography رد می‌شدند و باگِ 2 هرگز دیده نمی‌شد.
+
+| پیکربندی | پیش ازِ رفع | پس ازِ رفع |
+| --- | --- | --- |
+| `python dev/mobile_manifest_sign_v1079.py` (این ماشین) | 31 passed / 0 failed | **51 passed / 0 failed** |
+| `python dev/ci_parity_harness.py` (بدونِ cryptography، مثلِ runner) | کرش: `0 pass / 0 fail` | **51 passed / 0 failed** |
+
+## 16-پ) آنچه برایِ بسته‌شدنِ گیتِ کلید ساخته شد (نه ساختنِ خودِ کلید)
+
+مانعِ اصلی نبودِ *کلید* نبود، نبودِ *روالِ نگهداری* بود («روالِ نگهداری و
+بازیابیِ مشخص‌نشده را نباید فعال کرد»). پس سه فرمانِ تازه به
+`scripts/sign_mobile_manifest.py` اضافه شد که آن روال را اثبات‌پذیر می‌کند:
+
+- `--backup --key <priv> --backup-dir <dir>`: باندلِ base64ِ **متن‌محور** (بیرونِ
+  مخزن، `0600`) با `key_id`، `encrypted` و `body_sha256` **درونِ خودش** + فایلِ
+  `.sha256` کناری. باندلِ کلیدِ بی‌رمز رد می‌شود (پرچمِ `--allow-unencrypted` فقط
+  برایِ کلیدِ نمایشی است)، و مقصدِ داخلِ مخزن رد می‌شود.
+- `--verify-backup <bundle>`: تمامیت ← بازگردانی درِ حافظه ← key_id ← **چالشِ
+  امضا/بررسی** با `bors_minisign` (یعنی «این فایل هست» با «این کلید کار می‌کند»
+  یکی نمی‌شود). `rc=0` فقط برایِ `verdict: PASS`، پس درِ اسکریپتِ نگهداری گیت است.
+- `--restore <bundle> --restore-out <dir>`: اول می‌سنجد، بعد می‌نویسد؛ public را
+  از خودِ کلیدِ بازگردانده می‌سازد و هم‌انگشتی‌اش را با باندل می‌سنجد؛ و رشته‌ای
+  که باید درِ `vars.MOBILE_MANIFEST_PUBKEY` بنشیند (`expect_in_ci_var`) را چاپ
+  می‌کند.
+
+آزمون‌هایِ 27 تا 37 درِ همان گارد (14 سنجۀ تازه) این مسیر را می‌سنجند، با شش
+کنترلِ منفی: کلیدِ بی‌رمز، باندلِ یک‌بایت‌خورده (دلیلِ شکست باید «checksum» باشد
+نه «رمزِ غلط»)، باندلِ گم‌شده و بی‌عبارتِ عبور (پیامِ BLOCKED، بی‌traceback)،
+مقصدِ داخلِ مخزن، و تکرارنشدنِ خودِ عبارتِ عبور درِ هیچ خروجی.
+
+## 16-ت) حلقۀ گمشدۀ انتشار: ناشرِ سریِ امضاشده
+
+درِ مخزن **هیچ** مسیری برایِ *انتشارِ* سریِ v2 نبود: `mobile.yml` بستۀ داده را
+فقط می‌خواند (`curl …/releases/download/${SNAPSHOT_SERIES}/…`)،
+`market-data.yml` سریِ دسکتاپ (`data-latest`) را می‌فرستد، و سازندۀ بستۀ موبایل
+`market.db` لازم دارد که درِ CI نیست. «انتشار v2» یعنی چند دستورِ دستیِ
+فراموش‌شدنی رویِ مخزنِ عمومی — و یکِ `--clobber` اشتباه رویِ `mobile-latest`
+قطعِ به‌روزرسانیِ همۀ گوشی‌هایِ کهنه است. `scripts/publish_mobile_series.py`
+همان حلقه است، fail-closed:
+
+| دروازۀ داخلی | رفتاری که سنجیده شد |
+| --- | --- |
+| سریِ هدف ≠ `mobile-latest`/`data-latest` | `--series mobile-latest` ⇒ rc=3، `ready_to_publish: false` |
+| manifest با بایت‌هایِ دیسک بخواند | بستۀ **منتشرشدۀِ امروز** (`dist_mobile/`، 111 بایت، چهار کلید) ⇒ سه سنجۀ سرخ: `manifest-series` (بی‌series)، `manifest-gz_sha256` (بی‌hash)، `manifest-lf-only` (**CRLF**) ⇒ rc=3 |
+| امضا + بازبینیِ مستقل | با کلیدِ رمزدار رویِ بستۀ v2 (`20261013T020546-010db36a`) ⇒ `ready_to_publish: true`، `signature_ok: true`، `inspector_ok: true`، و **هیچ چیزی به GitHub نرفت** (dry-run پیش‌فرض) |
+| `--expect-key-id` (کلیدِ بیلد ≠ کلیدِ var) | ⇒ rc=4، دلیل: «APK این بستۀ را نمی‌پذیرد» |
+| `--yes` بی‌آمادگی | ⇒ rc=4 با پیامِ دروازۀ انتشار؛ `gh` هرگز صدا زده نمی‌شود |
+| پس ازِ انتشارِ واقعی | سه فایل ازِ **همان URL که گوشی می‌خواند** بازخوانده، digest مقایسه و امضایِ زنده بررسی می‌شود («upload rc=0» دلیلِ موفقیت نیست) |
+
+شاهدِ بی‌تغییرِ وضعیتِ عمومی: `gh release view mobile-latest-v2` ⇒ `release not
+found` (پس ازِ همۀ این اجراها)، و `mobile-latest` دست‌نخورده با همان چهار asset.
+
+## 16-ث) سخت‌گیریِ دروازۀ انتشار درِ `mobile.yml`
+
+- گامِ `Publish Android release` حالا **خودش** هم سه شرط را بازمی‌خواند (کلیدِ
+  عمومی تنظیم‌شده، `signed=verified`، سریِ هدف ≠ سری‌هایِ کهنه). پیش ازِ این فقط
+  به `exit 1` گامِ «Publish gate status» و به **ترتیبِ گام‌ها** وابسته بود؛ یکِ
+  جابه‌جاییِ بعدی یا `if: always()` گذاشتنش، انتشارِ بی‌کلید را ممکن می‌کرد.
+- متنِ ریلیز دروغِ کوچکی داشت: «snapshot داده: mobile-latest» ثابت نوشته شده بود
+  در حالی که بستۀ خوانده‌شده `$SNAPSHOT_SERIES` است. حالا همان متغیر چاپ می‌شود.
+- هر 17 گامِ این job با `bash -n` و YAML-parse بررسی شد (0 خطا).
+
+## 16-گ) آنچه مالک باید بگذراند (انتشار ازِ این نشست انجام نمی‌شود)
+
+1. رویِ دستگاهِ خودِ مالک، با عبارتِ عبوری که فقط او می‌داند و **نگهداری‌اش مالِ
+   خودِ اوست**:
+   ```bash
+   export BORS_MOBILE_MANIFEST_KEY_PASS='…'
+   python scripts/sign_mobile_manifest.py --keygen --encrypted --out-dir ~/.bors_mobile_keys
+   python scripts/sign_mobile_manifest.py --backup --key ~/.bors_mobile_keys/mobile_manifest.key
+   python scripts/sign_mobile_manifest.py --verify-backup <مسیرِ باندل>   # rc=0 لازم است
+   ```
+   باندل را رویِ دو مدیایِ مستقلِ آفلاین بگذارد و بازیابی را **یک بارِ واقعی**
+   با `--restore --restore-out <پوشۀ خالی>` بیازماید (همان `expect_in_ci_var` را
+   برمی‌گرداند).
+2. درِ `johnwarchief/BorsTerminal-src → Settings → Secrets and variables → Actions
+   → Variables`: `MOBILE_MANIFEST_PUBKEY` = همان رشته (این ازِ این نشست ممکن نبود:
+   توکنِ `gh` scopeِ admin ندارد و `/variables` را 404 می‌دهد).
+3. ساختِ بستۀ تازه و انتشارِ سری:
+   ```bash
+   python scripts/build_mobile_snapshot.py --require-signature --series mobile-latest-v2
+   python scripts/publish_mobile_series.py --dir dist_mobile            # اول خشک
+   python scripts/publish_mobile_series.py --dir dist_mobile --yes \
+       --key ~/.bors_mobile_keys/mobile_manifest.key --expect-key-id <kidِ var>
+   ```
+4. سپس `Run workflow` رویِ `mobile.yml` با `snapshot_series=mobile-latest-v2` و
+   `publish=true`. تا گامِ 2 و 3 انجام نشده باشند، همان‌جا `BLOCKED` می‌خورد —
+   که خواستۀ همین دور است، نه نقص.
+
+## 16-ح) Release Readiness — شمارشِ دوباره
+
+| شرط | وضعیتِ این دور |
+| --- | --- |
+| مانعِ انتشارِ v2 دقیق و مستند | **COMPLETE & PROVEN** (سه جدولِ بالا، با شمارۀ ران‌ها و خروجیِ فرمان‌ها) |
+| گیتِ CIِ خودِ مأموریت (`mobile data manifest is signed`) | **COMPLETE & PROVEN** محلی + CI-parity: 51/51 درِ هر دو پیکربندی (پیش ازِ رفع: کرشِ `0 pass / 0 fail`) |
+| روالِ نگهداریِ کلید (backup/verify/restore + کنترلِ منفی) | **IMPLEMENTED, LOCALLY PROVEN** — با کلیدِ نمایشیِ رمزدار سنجیده شد؛ کلیدِ واقعی ساخته نشده (کارِ مالک) |
+| حلقۀ انتشارِ سریِ امضاشده | **IMPLEMENTED, LOCALLY PROVEN** — dry-run و چهار دروازۀ ردِ واقعی و یکِ dry-runِ آماده سنجیده شد؛ `--yes` هرگز اجرا نشد و چیزی منتشر نشد |
+| سخت‌گیریِ دروازۀ `mobile.yml` + صحتِ متنِ ریلیز | **IMPLEMENTED, UNVERIFIED IN CI** (YAML/bash سنجیده شد؛ گامِ publish عملاً درِ CI اجرا نشد چون کلید نیست) |
+| Android WebView | **NOT RUN** (محلی BLOCKED: بی‌JDK/SDK/emulator؛ CI: بی‌job ایمولاتور) |
+| انتشارِ واقعی | **NOT RUN — مجاز نبود** (سه پیش‌نیازِ ضروری برقرار نیست) |
+
