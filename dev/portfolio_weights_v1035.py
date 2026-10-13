@@ -77,7 +77,11 @@ def open_board_db(path):
     """اتصالِ تازه به بانکِ ساختگیِ get_db — endpoint هر بار می‌بنددش."""
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
-    conn.create_function("norm_fa", 1, fts_engine.norm_fa, deterministic=True)
+    # یک‌جا ثبتِ توابعِ SQL، همان‌طور که `api._core.get_db()` می‌کند. ثبتِ دستیِ
+    # تک‌تابعیِ `norm_fa` اینجا باعث شد `sym_key` (کلیدِ هویتِ لایۀ canonical،
+    # که جعبۀ جست‌وجو حالا مصرف می‌کند) «no such function» بدهد و جست‌وجو تهی
+    # برگردد — یعنی گارد به‌جای موتور، نیمه‌ثبتِ خودش مقصر بود.
+    fts_engine.register_sql(conn)
     return conn
 
 

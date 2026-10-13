@@ -112,8 +112,13 @@ def sym_key(symbol) -> str:
     return SI.key(symbol)
 
 
-def symbol_evidence(conn, symbol) -> str:
-    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | no-isin | unmatched."""
+def symbol_class_siblings(conn, symbol):
+    """خطِ کلاسِ یکتای همان نام درِ تابلو — فقط با ردپا، بی‌رقم‌چندنفری."""
+    return SI.class_siblings(conn, symbol)
+
+
+def symbol_evidence(conn, symbol, domain=None) -> str:
+    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | no-isin | isin-clash | unmatched."""
     return SI.evidence(conn, symbol, domain or SI.CODAL)
 
 

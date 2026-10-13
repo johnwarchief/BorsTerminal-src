@@ -1900,17 +1900,11 @@ def get_fundamental(symbol: str, months: int = 0):
     """
     conn = get_db()
     try:
-        _pred_i, _params_i = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
-        inst = conn.execute(f"""
-            SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
-            FROM instruments i
-            LEFT JOIN market_watch m ON i.ins_code = m.ins_code
-            WHERE {_pred_i}
-            ORDER BY i.updated_at DESC LIMIT 1
-        """, _params_i).fetchone()
-        if not inst:
-            _pk, _pa = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
-            inst = conn.execute(INSTR_SQL_TMPL.format(_pk), _pa).fetchone()
+        # یکِ کوئری، یکِ تعریفِ هویت: `sym_in`ِ دامنهٔ تابلو (بدونِ الحاقِ پسوندِ رقمی —
+        # آن کارِ `class_siblings` است، پایین‌تر). پیش‌تر همین SELECT دو بار نوشته
+        # شده بود: بارِ اول درونِ f-string و بارِ دوم با `INSTR_SQL_TMPL`.
+        _pk, _pa = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
+        inst = conn.execute(INSTR_SQL_TMPL.format(_pk), _pa).fetchone()
         pred, params = fts_engine.sym_in(conn, "symbol", symbol)
         cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
                           "%s LIMIT 1" % (pred, CP.latest_order_sql()),
@@ -1924,17 +1918,26 @@ def get_fundamental(symbol: str, months: int = 0):
         else:
             sector = str(inst["sector_name"] or "")
 
-        # نرمال‌سازی پسوند عددی (TSETMC: «آ س پ3» → کدال: «آ س پ»)
+        # الحاقِ «خطِ کلاس» درِ تابلو — جهتِ برعکسِ گیتِ ISIN: نمادِ درخواستی رویِ
+        # تابلو نیست ولی یکِ خطِ شماره‌دارِ همان نام وجود دارد (کدال «پارتین» ←
+        # تابلو «پارتین2») تا ارزشِ بازار از ستونِ رسمیِ تابلو خوانده شود. قاعده
+        # درِ `symbol_identity.class_siblings` است: **یک** کاندیدا ⇒ قبول با ردپا،
+        # دو کاندیدا ⇒ رد (`كم ر ۱..۵` دو صادرکننده‌اند، نه دو خطِ یکِ ابزار).
+        # پیش‌تر این شاخه `^(.*?)\d+$`ِ دستی بود که رقم‌های چندتایی را هم می‌کَند
+        # و به هیچ شاهدی نگاه نمی‌کرد.
         norm_symbol, ref_reason = symbol, None
         option_contract = False
-        m_und = re.match(r"^(.*?)\d+$", symbol)
-        base_cand = m_und.group(1) if m_und else None
-        if base_cand and base_cand != symbol and inst is None:
-            inst = conn.execute(_INSTR_SQL, (base_cand,)).fetchone()
-            if inst:
-                sector = str(inst["sector_name"] or "")
-                norm_symbol = base_cand
-                ref_reason = "نماد با پسوند عددی — دادهٔ کدال روی نماد پایه"
+        if inst is None:
+            cands, ev = fts_engine.symbol_class_siblings(conn, symbol)
+            if cands:
+                _ck, _ca = fts_engine.sym_in(conn, "i.l_val18", cands[0], "board")
+                _i2 = conn.execute(INSTR_SQL_TMPL.format(_ck), _ca).fetchone()
+                if _i2:
+                    inst = _i2
+                    sector = str(inst["sector_name"] or "")
+                    norm_symbol = str(cands[0])
+                    ref_reason = ("نمادِ پایه درِ کدال؛ خطِ کلاسِ تابلو «%s» — شاهد: %s"
+                                  % (cands[0], ev))
 
         # ارزش بازار: فقط از ستونِ رسمیِ تابلو (get_tsetmc_market_cap_info).
         # ضربهٔ پشتیبانِ «total_shares × p_closing» عمداً حذف شد — اگر تابلو عددِ

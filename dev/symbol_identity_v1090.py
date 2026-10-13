@@ -123,7 +123,8 @@ def make_db():
             ("6", "پا ر 5", "سرمایه‌گذاری پا ر", "IRE9P0D05001", 2000.0),
             ("7", "داریک", "داریک", "IRO1DARIK001", 10.0),
             ("8", "اراد275", "اوراق اراد", "IRB4O03001", 10.0),
-            ("9", "اراد276", "اوراق اراد", "IRB4O03701", 10.0)]
+            ("9", "اراد276", "اوراق اراد", "IRB4O03701", 10.0),
+            ("10", "تازگی2", "تازگی", "IRO1TAZIG002", 5.0)]
     c.executemany("INSERT INTO instruments (ins_code, l_val18, l_val30, isin, total_shares) "
                   "VALUES (?,?,?,?,?)", inst)
     c.execute("INSERT INTO financial_statements (tracing_no, symbol, company_name, title, "
@@ -212,6 +213,16 @@ def section_layer(conn):
        SI.evidence(conn, "پا ر 2") == "isin-clash" and
        SI.evidence(conn, "ZZZ9") == "unmatched",
        "T9 ردپا «الحاقِ ردشده» را از «بی‌نامزد» و «کلیدِ خود» جدا می‌کند")
+    # خطِ «کلاس» درِ تابلو، جهتِ برعکسِ گیتِ ISIN (`پارتین` ← `پارتین2`)
+    cs, evc = SI.class_siblings(conn, "پا ر")
+    ck(not cs and evc == "ambiguous",
+       "T19 دو خطِ کلاسِ بی‌شاهد ⇒ الحاق ممنوع و اعلام می‌شود", (cs, evc))
+    cs2, evc2 = SI.class_siblings(conn, "تازگی")
+    ck(set(cs2) == {"تازگی2"} and evc2 == "no-isin",
+       "T19ب خطِ کلاسِ یکتا پذیرفته می‌شود، با ردپایِ بی‌شاهد", (cs2, evc2))
+    cs3, evc3 = SI.class_siblings(conn, "آباد")
+    ck(not cs3 and evc3 == "same-key",
+       "T19پ خودِ پایه رویِ تابلو هست ⇒ الحاقِ خطِ کلاس لازم نیست", (cs3, evc3))
     st = SI.identity_stats(conn)
     ck(st["keys_with_multiple_spellings"] >= 2 and st["sources_codal"] and st["sources_board"],
        "T10 سرشماریِ خودِ لایه پرنشدنی است", st)
@@ -224,6 +235,27 @@ def section_layer(conn):
     vp = SI.variants(conn, "شهر فرش")
     ck("شهر فرش" in vp and "شهر " + Z + "فرش" in vp and " جعلی" not in vp,
        "T17 نقشۀِ بیگانه بی‌اعتبار می‌شود و از خودِ بانک بازسازی می‌گردد", sorted(vp))
+    # کنترلِ منفی ۵: نوشتنِ **خودِ همین اتصال**. `PRAGMA data_version` با commitِ
+    # همان connection تکان نمی‌خورد (سنجیده شد: بعد از INSERT همان ۱ ماند)، پس
+    # سینکِ کدال یا هر نوشتِ تک‌اتصاله نقشۀ کهنه را نگه می‌داشت و نوشتارِ تازه هرگز
+    # دیده نمی‌شد. سیگنالِ دوم `conn.total_changes` است. خانوادۀ «تازگی» ساخته
+    # می‌شود — نه «شهر فرش» — تا شمارِ ردیف (T3) و سال‌هایِ پنجره (T12) و مرجعِ
+    # سال (R5ب) دست‌نخورده بمانند؛ نوشتارِ دوم با ZWNJِ برنامۀ‌نوشته ساخته می‌شود
+    # (دستِ تایپ، رقم و نویسه می‌دزدد).
+    fam = "تازگی"
+    fam2 = fam[:3] + Z + fam[3:]
+    dv_before = conn.execute("PRAGMA data_version").fetchone()[0]
+    v_before = SI.variants(conn, fam)
+    conn.execute("INSERT INTO financial_statements (tracing_no, symbol, company_name, "
+                 "title, period_months, period_end, revenue) VALUES (905,?,?,?,12,?,1.0)",
+                 (fam2, fam, "صورت‌های مالی سال مالی منتهی به 1405/12/29",
+                  "1405/12/29"))
+    conn.commit()
+    dv_after = conn.execute("PRAGMA data_version").fetchone()[0]
+    v_after = SI.variants(conn, fam)
+    ck(dv_before == dv_after and fam2 not in v_before and fam2 in v_after,
+       "T21 نوشتنِ همین اتصال (بی‌تغییرِ data_version) در نقشۀ هویت دیده می‌شود",
+       (dv_before, dv_after, sorted(v_before), sorted(v_after)))
 
 
 # ── ب) هر دو مسیر، یک دید ──────────────────────────────────────────────────
@@ -359,6 +391,12 @@ PROD = ("fts_engine.py", "api/fundamental.py", "api/chart.py", "api/screener.py"
 
 
 def section_ast():
+    # حلقه‌هایِ AST «بی‌مصرف» می‌شوند اگر فایلِ مصرف‌کننده جابه‌یا حذف شود
+    # (`continue` رویِ isfile). پس اولِ کار حضورِ تک‌تکِ فایل‌ها assert می‌شود:
+    # یکِ rename نباید چک‌هایِ ضدِ کلیدِ دوم را بی‌صدا سبز کند.
+    gone = [rel for rel in PROD if not os.path.isfile(os.path.join(ROOT, rel))]
+    ck(not gone, "T18 هر مصرف‌کنندۀ فهرست‌شده درِ مخزن هست (AST بی‌فایل کور می‌شود)",
+       gone[:4])
     offenders = []
     for rel in PROD:
         p = os.path.join(ROOT, rel)

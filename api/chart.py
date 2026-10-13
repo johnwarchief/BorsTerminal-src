@@ -599,16 +599,19 @@ def get_chart_tsetmc(symbol: str):
             f"SELECT ins_code FROM instruments WHERE {_pred} ORDER BY updated_at DESC LIMIT 1", _params
         ).fetchone()
         if not ins:
+            # همان خانوادۀ نوشتاریِ خودِ تابلو (فاصله/نیم‌فاصله/ي-ك) — نه حذفِ
+            # رقمِ انتهایی: درِ جهانِ تابلو «خودرو2» ابزارِ دیگری است.
             try:
                 import fts_engine
-                norm_s = fts_engine.sym_key(symbol)
+                _bvar = list(fts_engine.symbol_variants(conn, symbol, "board"))
             except Exception:
-                norm_s = symbol
-            ins = conn.execute(
-                "SELECT ins_code FROM instruments WHERE l_val18 IN (%s) "
-                "ORDER BY updated_at DESC LIMIT 1" % ",".join("?" * len(_var)),
-                _var,
-            ).fetchone()
+                _bvar = [symbol]
+            if _bvar:
+                ins = conn.execute(
+                    "SELECT ins_code FROM instruments WHERE l_val18 IN (%s) "
+                    "ORDER BY updated_at DESC LIMIT 1" % ",".join("?" * len(_bvar)),
+                    _bvar,
+                ).fetchone()
         conn.close()
         if not ins:
             fb = _fallback_local()

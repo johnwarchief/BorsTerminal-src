@@ -257,6 +257,12 @@ SUITES = [
     # منفی + پرونده‌هایِ نیم‌فاصله/شرکتِ فرعی/اصلاحیه/تلفیقی/چندنویشتاری.
     ('dev/symbol_identity_v1090.py',
                                      'one canonical symbol-identity layer; ISIN gate; card and bulk see the same rows'),
+    # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
+    # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
+    # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند
+    # سنسور می‌بیند. بی‌market.db، بی‌شبکه، بی‌نوشت.
+    ('tools/codal_identity_sensor_selftest.py',
+                                     'the identity guard really detects the six historical defects (mutation control)'),
     # همان لایه، همان پرونده‌هایِ v9.10.4 (پسوندِ رقمی) که از `symbol_aliases`ِ
     # جایگشتی به `symbol_identity` منتقل شدند — با کنترلِ «دو صادرکننده زیرِ یک
     # نام هرگز الحاق نمی‌شوند».

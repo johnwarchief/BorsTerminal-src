@@ -166,7 +166,7 @@ def main():
                     (new_tn,)).fetchone()[0] == 5200.0,
        "به‌روزرسانی مقدار را بازنویسی کرد (اصلاحیه برنده شد)")
     # _dedupe_ym ردیفِ جدید را به‌درستی یکی می‌کند
-    pred, params = sym_in(conn, "symbol", sym)
+    pred, params = fe.sym_in(conn, "symbol", sym)
     ms_rows = conn.execute("SELECT year, month, monthly_revenue, ytd_revenue FROM monthly_sales "
                            "WHERE %s AND ytd_revenue IS NOT NULL AND ytd_revenue>0" % pred,
                            params).fetchall()

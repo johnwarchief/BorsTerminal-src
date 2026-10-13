@@ -53,7 +53,14 @@ for fn in ['scan_all', 'bulk_scan']:
                        if re.match(r'\s*for\b', l)]
             ck(not for_ind or ind <= min(for_ind),
                '%s: %s is outside the per-symbol loop' % (fn, call))
-    ck(re.search(r'\n\s*key = norm_fa\(', body), '%s defines key = norm_fa(...)' % fn)
+    # کلیدِ هویت درِ این دو حلقه باید از لایۀ canonical بیاید. پیش ازِ Stage 1.2
+    # این چک رشته‌متنِ `key = norm_fa(` را می‌خواست؛ آن منطق به `symbol_identity`
+    # منتقل شد، پس expectation هم با حرکت پیاده‌سازی می‌آید — و درِ همان حرکت،
+    # برگشتنِ به norm_fa هم قرمز می‌شود (دو جهت، نه یکی).
+    ck(re.search(r'\n\s*key = (SI\.key|sym_key)\(', body),
+       '%s defines key from the canonical identity layer' % fn)
+    ck(not re.search(r'\n\s*key = norm_fa\(', body),
+       '%s does NOT key rows by norm_fa any more' % fn)
 
 # ---------- گارد ۳: تزریق از بیرون، رفتار را عوض نمی‌کند ----------
 ck(re.search(r'm141_hit:\s*Optional\[bool\]\s*=\s*None', eng_src),

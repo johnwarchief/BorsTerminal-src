@@ -47,6 +47,12 @@
           خواهرش، «كم ر ۱..۵») یا نخواندنِ ISINِ خودِ خط با آن صادرکننده.
         - شاهدی نیست  → بپذیر ولی **اعلام کن** (evidence='no-isin') تا در ردپای
           کارت دیده شود؛ این تنها حالتی است که ریسک دارد و بی‌اعلان نمی‌ماند.
+     جهتِ برعکسِ همین بند (`class_siblings`): نمادِ کدال رویِ تابلو نیست و یکِ
+     خطِ شماره‌دارِ همان نام وجود دارد («پارتین» ← «پارتین2»؛ کارت برایِ ارزشِ
+     بازار به `instruments` نیاز دارد). تنها شاهدِ ممکن **یگانگی** است: یکِ
+     کاندیدا ⇒ بپذیر با `no-isin`، دو کاندیدا ⇒ رد با `ambiguous`. سنجشِ همین
+     بانک: ۱ نمادِ کدال این راه را می‌رود و ۰ نمادِ چندکاندیدیداد — پس امروز
+     رفتار عوض نمی‌شود و این هم نگهبانِ روزِ بعد است.
   ۴) هیچ تطبیقِ فازی/تقریبی/نام‌محور در این لایه نیست. اگر دو رشته کلیدِ
      متفاوت دارند، دو ابزارند. (قاعدهٔ_hardِ مرحلۀ 9.3 مأموریت: سفارش هرگز با
      fuzzy match به ابزار دیگر متصل نشود — این لایه همان کلید را به اجرا می‌دهد.)
@@ -64,7 +70,7 @@ import re
 import sqlite3
 
 __all__ = [
-    "key", "norm", "variants", "line_variants", "pred", "sources",
+    "key", "norm", "variants", "line_variants", "class_siblings", "pred", "sources",
     "reset_cache", "cache_info", "identity_stats", "EVIDENCE",
 ]
 
@@ -131,24 +137,35 @@ def sources(conn, domain=CODAL) -> tuple:
 
 
 def _slot(conn):
-    """نقشۀ کشیدۀ این اتصال، یا بازسازی وقتی `data_version` عوض شده است.
+    """نقشۀ کشیدۀ این اتصال، یا بازسازی وقتی بانک زیرِ پای آن عوض شده است.
 
-    کلیدِ کش `id(conn)` است و آدرسِ حافظه درِ CPython بازاستفاده می‌شود: اتصالِ
-    بسته‌شدۀ `market.db` می‌تواند جایش را به اتصالِ تازه‌ای از `codal.db` یا یک
-    بانکِ آزمونِ درِ حافظه بدهد، و `data_version` فقط می‌گوید «چند بار نوشته
-    شده» — نه *کدام* فایل. `_sqlite3.Connection` weakref را نمی‌پذیرد
-    (`cannot create weak reference`)، پس خودِ آبجکتِ اتصال درِ درز نگه داشته
-    می‌شود و هویت با `is` سنجیده می‌شود: تا نقشه‌ای زنده است آبجکتش آزاد
-    نمی‌شود، پس هیچ اتصالِ دیگری idِ او را به ارث نمی‌برد و نقشۀِ اشتباه
-    تحویل نمی‌گیرد. کرانِ `len(_CACHE)` درِ `reset_cache`/انداختنِ تازه همین
-    ارجاع‌ها را آزاد می‌کند.
+    دو سیگنالِ بی‌اعتباری، چون یکی کافی نیست:
+
+      * `PRAGMA data_version` — نوشتنِ **اتصالِ دیگر** را می‌بیند (سینکِ کدال،
+        نوشتۀ `--mode monthly`، هر نوشتِ مسیرِ feed). اما سنجیده شد که نوشتنِ
+        **خودِ همین اتصال** شماره را تکان نمی‌دهد: بعد از `UPDATE … ; commit()`
+        روی همان connection، `data_version` همان یک ماند و نقشۀ کهنه، ردیفِ
+        تازه‌درِ `داريك` را ندید.
+      * `conn.total_changes` — شمارندۀ درونیِ خودِ connection است و با هر
+        INSERT/UPDATE/DELETE همین اتصال زیاد می‌شود، پس دقیقاً همان سوراخِ بالا
+        را می‌بندد.
+
+    کلیدِ کش `id(conn)` است و آدرسِ حافظه درِ CPython بازاستفاده می‌شود؛
+    `_sqlite3.Connection` weakref را نمی‌پذیرد (`cannot create weak reference`)،
+    پس خودِ آبجکتِ اتصال درِ درز نگه داشته می‌شود و هویت با `is` سنجیده می‌شود:
+    تا نقشه‌ای زنده است آبجکتش آزاد نمی‌شود، پس هیچ اتصالِ دیگری idِ او را به
+    ارث نمی‌برد. کرانِ `len(_CACHE)` همین ارجاع‌ها را آزاد می‌کند.
     """
     try:
         dv = conn.execute("PRAGMA data_version").fetchone()[0]
     except sqlite3.Error:
         dv = -1
+    try:
+        tc = conn.total_changes
+    except Exception:
+        tc = -1
     slot = _CACHE.get(id(conn))
-    if slot and slot["conn"] is conn and slot["dv"] == dv:
+    if slot and slot["conn"] is conn and slot["dv"] == dv and slot["tc"] == tc:
         return slot
     by_key, by_key_board, isin = {}, {}, {}
     for t, col in sources(conn, CODAL):
@@ -190,8 +207,8 @@ def _slot(conn):
                 isin.setdefault(k, set()).add(seg[:9])
     except sqlite3.Error:
         pass
-    slot = {"conn": conn, "dv": dv, "by_key": by_key, "by_key_board": by_key_board,
-            "isin": isin}
+    slot = {"conn": conn, "dv": dv, "tc": tc, "by_key": by_key,
+            "by_key_board": by_key_board, "isin": isin}
     _CACHE[id(conn)] = slot
     if len(_CACHE) > 8:                       # اتصال‌هایِ زودگذرِ API انباشته نشوند
         for stale in list(_CACHE)[:-8]:
@@ -215,7 +232,8 @@ def variants(conn, symbol, domain=CODAL) -> tuple:
 
 # ── ۳) پسوندِ خطِ تابلو، با گیتِ ISIN ──────────────────────────────────────
 _ONE_DIGIT = re.compile(r"(?<=\D)\d$")
-EVIDENCE = ("exact", "same-key", "isin-agree", "no-isin", "isin-clash", "unmatched")
+EVIDENCE = ("exact", "same-key", "isin-agree", "no-isin", "isin-clash", "ambiguous",
+            "unmatched")
 
 
 def line_variants(conn, symbol, domain=CODAL):
@@ -253,6 +271,38 @@ def line_variants(conn, symbol, domain=CODAL):
     ev = "isin-agree" if (mine and theirs) else "no-isin"
     raws = tuple(r for r in slot["by_key"].get(base, ()) if key(r) == base)
     return raws, ev
+
+
+def class_siblings(conn, symbol):
+    """خط‌هایِ «کلاس»ِ همان نامِ پایه درِ **تابلو** (`پارتین` ← `پارتین2`).
+
+    جهتِ برعکسِ `line_variants`: این‌جا پایۀِ کدال را داریم و خطِ شماره‌دارِ
+    تابلو را می‌خواهیم (کارتِ بنیادی برایِ ارزشِ بازار به `instruments` نیاز
+    دارد). تنها شاهدِ ممکن **یگانگی** است: اگر دو خطِ شماره‌دار زیرِ یکِ نام
+    باشد (`كم ر ۱..۵` — دو صادرکننده با ISINِ متفاوت) الحاق ممنوع و ردپا
+    `ambiguous` می‌ماند؛ یکِ کاندیدا ⇒ قبول با ردپایِ `no-isin` (بی‌شاهد، ولی
+    اعلام‌شده). سنجشِ همین بانک: از ۱۱۹۵ نمادِ کدال، دقیقاً **۱** نماد
+    (`پارتین`) رویِ تابلو نیست و با یکِ رقمِ اضافی پیدا می‌شود (`پارتین2`)، و
+    صفر نماد چندکاندیدیداد — پس این قاعده امروز رفتار را عوض نمی‌کند و فقط
+    classِ خطرناک را می‌بندد.
+    """
+    k = key(symbol)
+    if not k:
+        return (), "unmatched"
+    slot = _slot(conn)
+    cands = set()
+    for kk, raws in slot["by_key_board"].items():
+        if kk != k and _ONE_DIGIT.search(kk) and _ONE_DIGIT.sub("", kk) == k:
+            cands.update(raws)
+    bases = set(slot["by_key_board"].get(k, ()))
+    if bases:
+        # خودِ پایه رویِ تابلو هست: الحاقِ خطِ کلاس لازم و جائز نیست
+        return (), "same-key"
+    if not cands:
+        return (), "unmatched"
+    if len(cands) > 1:
+        return (), "ambiguous"
+    return tuple(cands), "no-isin"
 
 
 def _has_codal_rows(conn, k: str) -> bool:
