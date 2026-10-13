@@ -78,6 +78,12 @@ for _c in _YA_CLASS:
     _CHAR_CLASS[_c] = _YA_CLASS
 for _c in _KAF_CLASS:
     _CHAR_CLASS[_c] = _KAF_CLASS
+# «فاصله ↔ نیم‌فاصله» عمداً اینجا اضافه نشده: ضربِ آن با جایگشت‌هایِ ی/ك
+# بی‌حد می‌شود (سنجشِ بانکِ کاری: با سقفِ ۹۶ بیشینۀ جایگشت ۲۱۶ و با سقفِ ۲۵۶
+# باز ۶۴۸ شد، یعنی سقف فقط نقطۀ برش را جابه‌جا می‌کند). واگراییِ «شهر فرش»
+# که از این می‌آید درِ `docs/fts-notes/CODAL-AUDIT-ROUND2-2026-10-12.md` بند
+# ۹-پ) با عدد ثبت شده و راهِ درستش مقایسه رویِ کلیدِ نرمال‌شده است، نه
+# حدسِ نوشتارها.
 del _c
 
 
@@ -563,8 +569,31 @@ def _is_amendment(title: str) -> bool:
 # پسوندهای پرانتزیِ «مقطعِ نامه»، نه نامِ شرکت — همان سه زیررشته‌ای که
 # `_is_audited`/`_is_consolidated`/`_is_amendment` می‌خوانند.
 _TITLE_SCOPE_MARKS = ("حسابرس", "تلفیق", "اصلاحی")
+
+# نشانۀ «اسمِ یکِ شخصیتِ حقوقی»: کدال شرکتِ فرعی را درِ پرانتز با نامِ
+# خودش و با این پیشوندها می‌نویسد. بی‌این شرط، صفت‌هایِ بی‌نام هم «شرکتِ
+# دیگر» خوانده می‌شدند — سنجشِ بانکِ کاری: از ۱۹۱ پسوندِ درِ
+# financial_statements دقیقاً ۱۸۹ تا با نشانۀ شخصیت‌اند و ۲ تایِ باقی‌مانده
+# صفتِ «شامل مقادیر برآوردی» (بی‌نام) بودند.
+_TITLE_ENTITY_MARKS = ("شرکت", "شرکای", "موسسه", "مؤسسه", "گروه",
+                        "بانک", "بانك", "صندوق", "بیمه", "بيمه")
+# واژه‌هایِ عمومیِ پس از نشانهد: «(شرکت اصلی)» نامِ شرکتِ دیگری نیست.
+_TITLE_ENTITY_GENERIC = ("اصلی", "مادر", "خود", "دیگر", "همه", "فرعی")
 _TITLE_PAREN_OPEN = "（("
 _TITLE_PAREN_CLOSE = "）)"
+
+
+def _entity_span(span):
+    """آیا این پرانتزِ عنوان نامِ یکِ شخصیتِ حقوقی است؟ اگر نه، رشتهٔ خالی."""
+    t = str(span or "").strip()
+    if len(t) <= 2 or any(m in t for m in _TITLE_SCOPE_MARKS):
+        return ""
+    if not t.startswith(_TITLE_ENTITY_MARKS):
+        return ""
+    rest = t.split(" ", 1)[1].strip() if " " in t else ""
+    if not rest or rest in _TITLE_ENTITY_GENERIC:
+        return ""
+    return t
 
 
 def title_entity_suffix(title: str) -> str:
@@ -577,11 +606,12 @@ def title_entity_suffix(title: str) -> str:
     دوم نمی‌سازد و هیچِ توابعِ بالا را تغییر نمی‌دهد. بی‌regex، چون این ماژول
     `re` را وارد نمی‌کند (همان قراردادی که `_is_consolidated` را ساده نگه داشته).
 
-    مصرفِ فعلی: لایۀ canonicalِ انتخابِ مرجع (`quarter_reference_rows` برایِ
-    سریِ فصلیِ `/api/fundamental/{symbol}/quarters`؛ گاردِ
-    dev/codal_reference_select_v1088.py). موتورِ قیفِ سالانۀ این لایه را جدا
-    ندارد — «هلدینگ را کدامِ رکورد نمایندگی می‌کند» برایِ آنجا رأیِ جزوه
-    می‌خواهد (NEEDS_REVIEW).
+    مصرفِ همین حالا: لایۀ صفرِ `statement_rank` — یعنی کارتِ بنیادی،
+    موتورِ قیف (`annual_statements`/`pick_reference`)، نویسندۀ
+    `codal_fetcher.period_winners` و سریِ فصلی (`quarter_reference_rows`)
+    هر چهار رأیِ «کدامِ ردیف نمایندۀ این نماد است» را از یکِ تابع می‌گیرند.
+    هیچ ردیفی به‌خاطرِ این لایه حذف نمی‌شود؛ فقط از دیدِ انتخابِ مرجع کنار
+    می‌رود (سیاستِ CA-3: تاریخچه حفظ است).
     """
     s = str(title or "")
     found = ""
@@ -592,8 +622,9 @@ def title_entity_suffix(title: str) -> str:
             while j < n and s[j] not in _TITLE_PAREN_CLOSE:
                 j += 1
             span = norm_fa(s[i + 1:j]).strip()
-            if len(span) > 2 and not any(m in span for m in _TITLE_SCOPE_MARKS):
-                found = span
+            hit = _entity_span(span)
+            if hit:
+                found = hit
             i = j + 1
         else:
             i += 1
@@ -621,9 +652,14 @@ def row_completeness(keys, row) -> int:
     return n
 
 
-def statement_rank(keys, consolidated, completeness, tracing_no) -> tuple:
-    """کلیدِ ascendingِ «برنده اول»: مبنایِ جزوه، سپس کامل‌بودن، سپس تازگی.
+def statement_rank(keys, consolidated, completeness, tracing_no,
+                   other_entity=False) -> tuple:
+    """کلیدِ ascendingِ «برنده اول»: هویتِ شرکت، مبنایِ جزوه، کامل‌بودن، تازگی.
 
+    ۰) ردیفی که *شرکتِ دیگری* درِ عنوانش ذکر شده (صورتِ مالیِ شرکتِ فرعی که
+       کدال زیرِ نمادِ هلدینگ منتشر می‌کند: «… (شرکت هلپاک)») نمایندۀ این نماد
+       نیست و همیشه کنار می‌رود. این لایه *همین‌جا* است، نه درِ خواننده‌ها —
+       وگرنه کارت/قیف/سریِ فصلی سه رأیِ متفاوت می‌گرفتند (`title_entity_suffix`).
     ۱) غیرتلفیقی (مبنایِ جزوه) برِ تلفیقی — این جابه‌جا نمی‌شود.
     ۲) ردیفی که ستون‌هایِ کلیدیِ پُرتر دارد برنده است. این لایه پیش ازِ این نبود
        و نتیجه‌اش آن بود که پوستۀ بی‌عددِ تازه‌تر (نامه‌ای که پارسر عددش را
@@ -631,7 +667,8 @@ def statement_rank(keys, consolidated, completeness, tracing_no) -> tuple:
        ۱۴۰۵-۰۷-۱۰: ومهرگان ۱۴۰۱/۰۶/۳۱ و ۱۴۰۲/۰۶/۳۱ (۸ ستونِ پُر در برابر ۰).
     ۳) درِ تساوی، newest `tracing_no` (اصلاحیه) — قراردادِ پیشین دست‌نخورده.
     """
-    return (1 if consolidated else 0, -completeness, -int(tracing_no or 0))
+    return (1 if other_entity else 0,
+            1 if consolidated else 0, -completeness, -int(tracing_no or 0))
 
 
 def quarter_reference_rows(rows, limit=16) -> list[dict]:
@@ -673,12 +710,13 @@ def quarter_reference_rows(rows, limit=16) -> list[dict]:
         # پس ازِ آن همان `statement_rank`ِ موتور (غیرتلفیقی ← کامل‌بودن ← newest
         # tracing_no). اگر همهٔ ردیف‌هایِ یکِ دوره فرعی باشند، همان قاعده بینِ
         # آن‌ها می‌گزیند — پاسخی حذف نمی‌شود.
-        rank = ((1 if title_entity_suffix(title) else 0,) + statement_rank(
+        rank = statement_rank(
             FS_NUMBER_KEYS,
             _is_consolidated(title),
             row_completeness(FS_NUMBER_KEYS, row),
             row.get("tracing_no") or 0,
-        ))
+            bool(title_entity_suffix(title)),
+        )
         # tracing_no در DB یکتا است؛ این signature فقط برای ورودی ناسازگارِ موقت
         # که دو ردیف با رتبه یکسان دارد، ترتیب را قطعی می‌کند.
         signature = tuple(
@@ -716,7 +754,7 @@ def quarter_reference_rows(rows, limit=16) -> list[dict]:
 
 
 FS_COLS = ("period_end, period_months, title, revenue, gross_profit, "
-           "operating_profit, net_profit, basic_eps")
+           "operating_profit, net_profit, basic_eps, company_name")
 
 
 def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool = True,
@@ -743,7 +781,7 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     # نه با ترتیبِ پیشآمدِ SQLite — وگرنه یکِ پوستۀ بی‌عددِ تازه‌تر، ردیفِ
     # عدددار را از دیدِ کلِ لایه‌ها پنهان می‌کرد.
     by_year: dict = {}
-    for pe, pm, title, rev, gp, op, np_, eps, tn in rows:
+    for pe, pm, title, rev, gp, op, np_, eps, cn, tn in rows:
         t = title or ""
         if exclude_consolidated and _is_consolidated(t):
             continue
@@ -754,8 +792,13 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
             continue
         cand = {"period_end": pe, "fiscal_year": yr, "period_months": pm, "title": t,
                 "audited": _is_audited(t), "consolidated": _is_consolidated(t),
+                "other_entity": bool(title_entity_suffix(t)),
+                "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
+        # لایۀ شرکت درِ این مسیر فعلاً خاموش است: مسیرِ تک‌نمادیِ SQL نوشتارها
+        # را با `symbol_aliases` می‌شناسد و `bulk_scan` با `norm_fa`، و تا این دو
+        # یکی نشوند «حذف/رتبه» درِ سالانه دو رأیِ متفاوت می‌سازد (بند ۹-پ).
         rank = statement_rank(FS_NUMBER_KEYS, _is_consolidated(t),
                               row_completeness(FS_NUMBER_KEYS, cand), tn)
         cur = by_year.get(yr)
@@ -768,6 +811,43 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
             break
     return out
 
+
+def reference_identity(rows, reference):
+    # آیا گزارشِ منتخب واقعاً به همین نماد تعلق دارد؟ بله/نه + دلیل، بی‌رأیِ مالی.
+
+    # کدال شناسۀ مستقلِ شرکت ندارد (خودِ فیدِ زنده فقط Symbol/CompanyName/
+    # TracingNo می‌دهد — سنجیده ۱۴۰-۰۷-۲)، پس تنها شاهدِ موجود درِ بانک
+    # «نامِ شرکتِ غالبِ همین نماد» در برابرِ «نامِ شرکتِ ردیفِ منتخب» است.
+    # این دو نخوانند، انتخاب **قطعی نیست** و باید دیده شود: نه رد، نه پاس،
+    # نه صفر. سنجشِ بانکِ کاری (فقط‌خواندنی): از ۱۱۵۵ نمادِ دارای صورتِ مالی
+    # ۴۴ تا بیش از یک نامِ شرکت دارند و ۱۸ تا ردیفِ منتخبشان با نامِ غالبِ
+    # خودشان نمی‌خواند (اکثراً صندوق/سریِ صندوق زیرِ یکِ نماد مثلِ «گوهر» و
+    # «ستاره»، و یکِ تغییرِ نامِ واقعی: «غگز»).
+
+    # برگردان: {"checked", "match", "reason", "reference_company",
+    #          "dominant_company", "names"}
+    ref = reference or {}
+    rc = norm_fa(str(ref.get("company_name") or ""))
+    if not rc:
+        return {"checked": False, "match": None, "reason": None,
+                "reference_company": "", "dominant_company": "", "names": 0}
+    counts = {}
+    for r in rows or []:
+        n = norm_fa(str(r.get("company_name") or ""))
+        if n:
+            counts[n] = counts.get(n, 0) + 1
+    if not counts:
+        return {"checked": False, "match": None, "reason": None,
+                "reference_company": rc, "dominant_company": "", "names": 0}
+    dominant = max(counts, key=lambda k: (counts[k], k))
+    if rc == dominant:
+        return {"checked": True, "match": True, "reason": None,
+                "reference_company": rc, "dominant_company": dominant,
+                "names": len(counts)}
+    return {"checked": True, "match": False,
+            "reason": "نامِ شرکتِ گزارشِ منتخب («" + rc + "») با نامِ غالبِ این نماد («" + dominant + "») یکی نیست",
+            "reference_company": rc, "dominant_company": dominant,
+            "names": len(counts)}
 
 def pick_reference(rows) -> Optional[dict]:
     """ردیفٔ مرجعٔ شاخص‌های ۳ و ۴ — خالص روی هر فهرست ردیف.
@@ -792,11 +872,22 @@ def pick_reference(rows) -> Optional[dict]:
             by_year[yr] = (rank, r)
     cand = sorted(by_year.values(), key=lambda t: str(t[1].get("fiscal_year") or ""),
                   reverse=True)
-    for want in (lambda a, c: a and not c,      # حسابرسی‌شدۀ غیرتلفیقی
-                 lambda a, c: not c,            # غیرتلفیقی
-                 lambda a, c: True):            # هر سالانۀ اخیر
+    # پرچمِ `other_entity` درِ ردیف‌ها هست (برایِ اعلامِ ابهامِ هویت) ولی این
+    # پلکان فعلاً از آن نمی‌گذرد: تا نوشتارها درِ دو مسیر یکی نشوند، بیرون‌
+    # گذاشتنِ ردیفِ «شرکتِ دیگر» درِ سالانه دو جواب می‌سازد — گاردِ
+    # fts_engine_paths_parity_v1076 رویِ «شهر فرش» همین را قرمز می‌کند.
+    # سنجشِ دور ۲: ۱۹۱ ردیفِ درِ financial_statements این پرچم را دارند.
+    for want in (lambda a, c, o: a and not c,             # حسابرسی‌شدۀ غیرتلفیقی
+                 lambda a, c, o: not c,                   # غیرتلفیقی
+                 lambda a, c, o: True):                   # هر سالانۀ اخیر
+    # ردیفی که عنوانش شرکتِ *دیگری* را نام می‌برد هرگز مرجع نمی‌شود —
+    # حتی به‌عنوانِ تنزلِ آخر. دلیلِ صریح: عددِ آن ردیف صورتِ مالیِ آن
+    # شرکت است، نه این نماد؛ «شهر فرش» دقیقاً همین جا دو جواب می‌داد
+    # (مسیرِ SQL ۲۰٪ از ردیفِ غیرتلفیقیِ «شرکت داتیس نوین ایرانیان»،
+    # مسیرِ bulk ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
         for _rank, r in cand:
-            if want(bool(r.get("audited")), bool(r.get("consolidated"))):
+            if want(bool(r.get("audited")), bool(r.get("consolidated")),
+                    bool(r.get("other_entity"))):
                 return r
     return None
 
@@ -2220,7 +2311,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     # v9.7.3: کلید = norm_fa(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
     # (داریک/داريك) دو ردیف اسکنر می‌ساخت و نوشتارِ بی‌داده امتیاز ۰ می‌گرفت.
     annual, disp_of = {}, {}
-    for sym, pe, pm, title, rev, gp, op, np_, eps, tn in conn.execute(
+    for sym, pe, pm, title, rev, gp, op, np_, eps, cn, tn in conn.execute(
             "SELECT symbol, " + FS_COLS + ", tracing_no FROM financial_statements "
             "WHERE period_months>=12 ORDER BY symbol, %s" % CP.order_expr()):
         key = norm_fa(sym)
@@ -2229,7 +2320,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         annual.setdefault(key, []).append(
             {"period_end": pe, "period_months": _fn(pm), "tracing_no": tn,
              "fiscal_year": CP.fiscal_year(pe), "title": title or "",
+             "company_name": str(cn or ""),
              "audited": _is_audited(title), "consolidated": _is_consolidated(title),
+             "other_entity": bool(title_entity_suffix(title)),
              "revenue": _fn(rev), "gross_profit": _fn(gp), "net_profit": _fn(np_),
              "basic_eps": _fn(eps)})
         if key not in disp_of:

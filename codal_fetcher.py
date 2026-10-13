@@ -2439,7 +2439,8 @@ def period_winners(conn, table, symbol=None):
             f"SELECT {cols} FROM {table} {where}", params):
         consol = _fe._is_consolidated(title or "") if basis_from_title else False
         rank = _fe.statement_rank(keys, bool(consol),
-                                  _fe.row_completeness(keys, dict(zip(keys, vals))), tno)
+                                  _fe.row_completeness(keys, dict(zip(keys, vals))), tno,
+                                  bool(_fe.title_entity_suffix(title or "")))
         cur = keep.get((sym, pe))
         if cur is None or rank < cur[0]:
             keep[(sym, pe)] = (rank, tno)
