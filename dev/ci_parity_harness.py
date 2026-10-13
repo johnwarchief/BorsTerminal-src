@@ -1,7 +1,7 @@
 """dev/ci_parity_harness.py — CI-parity harness: the guard must pass where `cryptography` is absent.
 
 runnerهای GitHub Actions `cryptography` ندارند (درِ requirements.txt نیست) ⇒ هر
-شاخۀ openssl-تنها آنجا می‌دود. این harness هم درِ همین进程 و هم درِ همهٔ
+شاخۀ openssl-تنها آنجا می‌دود. این harness هم درِ همین فرایند و هم درِ همهٔ
 زیرروندها (CLI که گارد با subprocess صدا می‌زند) ماژول را مسدود می‌کند؛ بی‌بخشِ
 زیررونده، آزمون‌های CLI همان‌جا از شاخۀ cryptography رد می‌شدند و باگِ
 `genpkey -cipher` دیده نمی‌شد.
