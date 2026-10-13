@@ -225,10 +225,31 @@ def test_one_number(conn, label):
             if CP.is_undated(row["period_end"]) or not row["fiscal_year"]:
                 bad.append((sym, row["period_end"]))
     ck(not bad, "fts_engine.annual_statements: نه ردیفِ بی‌دوره، نه سالِ مالیِ تهی", str(bad[:3]))
-    # موتورِ بنیادی (card): کوئری‌هایِ «آخرین» به canonical واگرد کرده‌اند
+    # موتورِ بنیادی (card): کوئری‌هایِ «آخرین» به canonical واگرد کرده‌اند.
+    # ۱۴۰۵-۰۷-۲۴: این بند متنِ **یک فایل** را می‌شمرد. «آخرینِ نامِ شرکت» از
+    # api/fundamental.py به `fts_engine.company_name_of` منتقل شد (مرحلۀ ۳ —
+    # تک‌منبعِ کارت و اسکرینر) و شمارشِ بیرونی به ۲ افتاد، بی‌آن‌که واگردی از دست
+    # برود. حالا مجموعِ دو فایل سنجیده می‌شود **و** همان تابع زنده آزموده می‌شود؛
+    # اگر روزی واگرد واقعاً حذف شود، هر دو بند قرمز می‌شوند.
     src = open(os.path.join(ROOT, "api", "fundamental.py"), encoding="utf-8").read()
-    ck(src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql") >= 3,
-       "api/fundamental.py هر سه کوئریِ «آخرین» را به canonical واگرد کرده", "")
+    fesrc = open(os.path.join(ROOT, "fts_engine.py"), encoding="utf-8").read()
+    ck(src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql")
+       + fesrc.count("CP.latest_order_sql") >= 3,
+       "کوئری‌هایِ «آخرین»ِ مسیرِ بنیادی به canonical واگرد کرده‌اند (کارت + موتور)",
+       "fundamental=%d fts_engine=%d" % (
+           src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql"),
+           fesrc.count("CP.latest_order_sql")))
+    _mem = sqlite3.connect(":memory:")
+    _mem.execute("CREATE TABLE financial_statements (tracing_no INTEGER PRIMARY KEY,"
+                 " symbol TEXT, company_name TEXT, period_end TEXT, unit_norm TEXT)")
+    _mem.execute("INSERT INTO financial_statements VALUES (1,'واحدکهنه','نامِ کهنه',"
+                 " '۱۴۰۵/۱۲/۲۹', NULL)")     # نوشتارِ فارسی ⇒ درِ canonical باخته است
+    _mem.execute("INSERT INTO financial_statements VALUES (2,'واحدکهنه','نامِ تازه',"
+                 " '1404/12/29', NULL)")
+    ck(FE.company_name_of(_mem, "واحدکهنه") == "نامِ تازه",
+       "company_name_of «آخرین» را با canonical می‌خواند، نه با ترتیبِ خامِ رقم",
+       repr(FE.company_name_of(_mem, "واحدکهنه")))
+    _mem.close()
     scr = open(os.path.join(ROOT, "api", "screener.py"), encoding="utf-8").read()
     ck("ORDER BY period_end DESC" not in scr,
        "api/screener.py ترتیبِ خامِ period_end ندارد", "")
