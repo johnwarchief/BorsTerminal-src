@@ -92,6 +92,16 @@ SUITES = [
      'api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA'),
     ('dev/test_candle_boundary_v1.py',
      'RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price'),
+    # مرحلۀِ ۳ (§B): هویتِ رویداد از محاسبۀِ ضریب جدا شود — ضریبِ دقیق از ردیفِ مبدأ می‌نشیند
+    # ولی تاریخِ دیدہ‌شدہ جابه‌جا نمی‌شود؛ ردیفِ مبدأِ ناهمخوان جای عددِ درست را نمی‌گیرد؛
+    # مطالبۀِ یکِ ردیفِ مبدأ با دو رویداد → هیچ‌کدام تیز/حذف نمی‌شود؛ بی‌دفتر → نه صفر نه حدس.
+    ('dev/test_fts_event_identity_v1.py',
+     '§B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged'),
+    # مرحلۀِ ۳ (§C): RC4 — تشخیصِ تکرارپذیرِ شکافِ price_history و ترمیمِ idempotentِ
+    # «فقطِ روزهایِ مفقود» رویِ بانکِ موقت؛ بی‌حذف، بی‌duplicate، بی‌جعلِ open/last،
+    # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
+    ('dev/test_history_gap_repair_v1.py',
+     'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
