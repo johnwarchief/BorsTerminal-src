@@ -107,6 +107,11 @@ SUITES = [
     # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.
     ('dev/test_adjustment_engine_v1.py',
      'Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check'),
+    # Phase 5 (مرحلۀِ ۳): ledgerِ canonicalِ رویداد — نسبتِ رسمی از خودِ ردیف (بی‌proxy)، همانِ
+    # روز ادغام با تقدمِ priceAdjust (بی‌اعمالِ دوباره)، مفقود→incomplete، خارجازکران→invalid،
+    # idempotent، ابزارِ نادرست→تهی، نوع فقط وقتی CODAL یکتا (مختلط→unresolved)، مؤثر≠انتشار.
+    ('dev/test_corporate_ledger_v1.py',
+     'Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),

@@ -34,8 +34,15 @@ KIND_CAPITAL_RESERVE = "capital_increase_reserve"
 KIND_CAPITAL_CONTRIBUTION = "capital_increase_contribution"
 KIND_SPLIT = "stock_split"
 KIND_MERGE = "stock_merge"
+# رویدادی که نسبتِ تعدیلِ آن را **خودِ مبدأ رسمی** (TSETMC p_closing/p_closing_not_adjusted
+# یا shares_old/shares_new) منتشر کرده: قوی‌ترینِ منشأ، بی‌محاسبۀِ مجدد و بی‌proxy.
+KIND_SOURCE_RATIO = "source_ratio"
 KNOWN_KINDS = (KIND_CASH_DIVIDEND, KIND_CAPITAL_RESERVE, KIND_CAPITAL_CONTRIBUTION,
-               KIND_SPLIT, KIND_MERGE)
+               KIND_SPLIT, KIND_MERGE, KIND_SOURCE_RATIO)
+
+# کرانِ معقولِ نسبتِ یکِ اقدامِ شرکتی؛ بیرونِ آن یعنی دادهٔ خراب (مثلِ artifactِ ۱e۸ درِ
+# share_change صندوق‌ها) یا صفر → هرگز به‌عنوانِ ضریبِ صحیح رد نمی‌شود.
+_RATIO_MIN, _RATIO_MAX = 1e-4, 1e4
 
 OK = "ok"
 
@@ -107,6 +114,16 @@ def event_factor(ev):
         if old <= 0 or new <= 0:
             return None, "invalid:shares_nonpositive"
         return old / new, OK
+
+    if kind == KIND_SOURCE_RATIO:
+        r = _num(ev.get("ratio"))
+        if r is None:
+            return None, "incomplete:ratio"
+        if r <= 0:
+            return None, "invalid:ratio_nonpositive"
+        if r < _RATIO_MIN or r > _RATIO_MAX:
+            return None, "invalid:ratio_out_of_range"
+        return r, OK            # نسبتِ منتشرشدهٔ مبدأ = خودش مرجعِ رسمی، بی‌بازمحاسبه
 
     return None, "unknown_type"         # هرگز بی‌سکوت با ratio=۱
 
