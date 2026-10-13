@@ -129,7 +129,7 @@ def m_ladder_blind():
     پلکانِ بی‌پرچم هم چیزی را عوض نمی‌کند (دفاعِ چندلایه). نقصِ تاریخیِ واقعی
     «خاموش‌بودنِ هر دو» بود، پس کارز هم هر دو را خاموش می‌کند.
     """
-    def blind(rows):
+    def blind(rows, need=None):
         by_year = {}
         for r in rows or []:
             if int(FE._f(r.get("period_months"))) < 12:

@@ -887,13 +887,39 @@ def reference_identity(rows, reference):
             "names": len(counts), "conflicts": conflicts, "conflict_note": note}
 
 
-def pick_reference(rows) -> Optional[dict]:
+# آنچه شاخص ۳ برایِ ساختنِ یک عدد لازم دارد: صورتِ سود و زیانی که هم «سود
+# ناخالص» در آن خوانده شده و هم درآمدِ عملیاتی. نبودِ هر دو ⇒ «قابل محاسبه
+# نبود»، نه صفر.
+MARGIN_NEED = ("gross_profit", "revenue")
+
+
+def row_carries(row, need=MARGIN_NEED) -> bool:
+    for k in need or ():
+        v = (row or {}).get(k)
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return False
+        if k == "revenue" and _f(v) <= 0:
+            return False
+    return True
+
+
+def pick_reference(rows, need=None) -> Optional[dict]:
     """ردیفٔ مرجعٔ شاخص‌های ۳ و ۴ — خالص روی هر فهرست ردیف.
 
     سلسلۀ‌مراتب همانِ `reference_annual` است: سالانۀ حسابرسی‌شدۀ غیرتلفیقی →
     سالانۀ غیرتلفیقی → سالانۀ اخیر. انتخابِ داخلِ هر سالِ مالی با `statement_rank`
-    (مبنا ← کامل‌بودن ← تازگی) است، پس مسیرِ تک‌نمادی (SQL) و مسیرِ کل‌بازار
-    (`bulk_scan` که ردیف‌ها را از پیش خوانده) یکِ ردیف را مرجع می‌گیرند، نه دو تا.
+    (دامنۀ شرکت ← مبنا ← کامل‌بودن ← تازگی) است، پس مسیرِ تک‌نمادی (SQL) و مسیرِ
+    کل‌بازار (`bulk_scan` که ردیف‌ها را از پیش خوانده) یکِ ردیف را مرجع می‌گیرند،
+    نه دو تا.
+
+    آرگومانِ `need` برایِ بندِ P-2 سیاست نوشته شده: جزوه «غیرتلفیقی بودن» را درِ
+    بندِ **شاخص ۲** شرط کرده، نه درِ حاشیۀ سود. بی‌آن، نمادی که آخرین سالانۀ
+    غیرتلفیقی‌اش عددِ سودِ ناخالص ندارد حاشیه‌اش `None` می‌شد، در حالی که
+    سالانۀ تلفیقیِ همان شرکت با هر دو عدد درِ بانک بود (`وكادو` ۱۴۰۴ با
+    ۲۹٫۶٪، `سيتا` ۱۴۰۴ با ۴۰٫۲٪). با `need`، اول ردیفی که آن ستون‌ها را دارد
+    جست‌وجو می‌شود و اگر نبود، همان ردیفِ پیشین برمی‌گردد (یعنی عددِ شرکتِ
+    دیگر هرگز نیاید، ولی نبودِ یک ستون هم باعث نشود سالِ دارایِ عدد دور ریخته
+    شود).
     """
     by_year: dict = {}
     for r in rows or []:
@@ -911,45 +937,44 @@ def pick_reference(rows) -> Optional[dict]:
             by_year[yr] = (rank, r)
     cand = sorted(by_year.values(), key=lambda t: str(t[1].get("fiscal_year") or ""),
                   reverse=True)
-    # پرچمِ `other_entity` درِ ردیف‌ها هست (برایِ اعلامِ ابهامِ هویت) ولی این
-    # پلکان فعلاً از آن نمی‌گذرد: تا نوشتارها درِ دو مسیر یکی نشوند، بیرون‌
-    # گذاشتنِ ردیفِ «شرکتِ دیگر» درِ سالانه دو جواب می‌سازد — گاردِ
-    # fts_engine_paths_parity_v1076 رویِ «شهر فرش» همین را قرمز می‌کند.
-    # سنجشِ دور ۲: ۱۹۱ ردیفِ درِ financial_statements این پرچم را دارند.
-    # پرچمِ `other_entity` از همین دور درِ **هر سه** پلۀ تنزل مصرف می‌شود. تا
-    # پیش ازِ این سه پلکان آن را نادیده می‌گرفت و کامنتِ پایین ادعایِ contrary
-    # می‌کرد؛ دلیلِ واقعیِ نگه‌داشتنش این بود که دو مسیرِ خواندن دو دستۀ ردیف
-    # متفاوت می‌دیدند (کارت ۱ ردیف، قیف ۷ ردیف برایِ «شهر فرش») و افزودنِ این
-    # پل واگراییِ دوم را می‌ساخت. Stage 1.2 آن مانع را برداشت: هر دو مسیر حالا
-    # نامزدها را از خودِ بانک می‌خوانند (`symbol_identity`)، پس یکِ قاعده برایِ
-    # هر دو ممکن است. سنجشِ همین بانک: ۳۸۴ نمادِ کدال در خانوادۀ دو-نوشتاری‌اند
-    # و واگراییِ کارت/قیف از ۱ به ۰ رسید (`_audit/symbol_identity_before_after.json`).
-    for want in (lambda a, c, o: a and not c and not o,   # حسابرسی‌شدۀ غیرتلفیقی
-                 lambda a, c, o: not c and not o,         # غیرتلفیقی
-                 lambda a, c, o: True):                   # هر سالانۀ اخیر
-        # قاعدۀ «هرگز» برایِ ردیفِ شرکتِ دیگر: پلِ سوم هم `o` را بیرون می‌گذارد،
-        # و اگر سالِ مالی تنها ردیفش آن بود، آن سال درِ این پلکان حضور ندارد.
-        # دلیل: عددِ آن ردیف صورتِ مالیِ آن شرکت است، نه این نماد — «شهر فرش»
-        # دقیقاً همین‌جا دو جواب می‌داد (۲۰٪ از ردیفِ «شرکت داتیس نوین ایرانیان»
-        # در برابرِ ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
-        for _rank, r in cand:
-            if bool(r.get("other_entity")):
-                continue
-            if want(bool(r.get("audited")), bool(r.get("consolidated")),
-                    bool(r.get("other_entity"))):
+    tiers = (lambda a, c, o: a and not c,      # حسابرسی‌شدۀ غیرتلفیقی
+             lambda a, c, o: not c,            # غیرتلفیقی
+             lambda a, c, o: True)             # هر سالانۀ اخیر
+    # دو گذر، نه دو قاعده: اگر `need` داده شد، اول **هر سه پلّه** با شرطِ «این
+    # عدد را دارد» جست‌وجو می‌شود و فقط اگر هیچ‌کدام نداشت، همان پلّه‌ها بی‌آن
+    # شرط. بی‌این ترتیب، پلۀ اول با یکِ ردیفِ تهی برنده می‌شد و گذرِ دوم هرگز
+    # دیده نمی‌شد (همان اشتباهی که `وكادو` را بی‌حاشیه می‌گذاشت).
+    for require_numbers in ((True, False) if need else (False,)):
+        for want in tiers:
+            # قاعدۀ «هرگز» برایِ ردیفِ شرکتِ دیگر: پلِ سوم هم آن را بیرون
+            # می‌گذارد، و اگر سالِ مالی تنها ردیفش آن بود، آن سال درِ این
+            # پلکان حضور ندارد. دلیل: عددِ آن ردیف صورتِ مالیِ آن شرکت است،
+            # نه این نماد — «شهر فرش» دقیقاً همین‌جا دو جواب می‌داد (۲۰٪ از
+            # ردیفِ «شرکت داتیس نوین ایرانیان» در برابرِ ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
+            for _rank, r in cand:
+                if bool(r.get("other_entity")):
+                    continue
+                if not want(bool(r.get("audited")), bool(r.get("consolidated")), False):
+                    continue
+                if require_numbers and not row_carries(r, need):
+                    continue
                 return r
     return None
 
 
-def reference_annual(conn: sqlite3.Connection, symbol: str) -> Optional[dict]:
+def reference_annual(conn: sqlite3.Connection, symbol: str,
+                     need=None) -> Optional[dict]:
     """آخرین صورت مالی سالانۀ «حسابرسی‌شدۀ غیرتلفیقی»؛ در نبودش سلسلۀ‌مراتب تنزل:
     سالانۀ غیرتلفیقی → سالانۀ اخیر. (منبع قطعی شاخص‌های ۳ و ۴)
 
     یک پنجرۀ ۱۲ماهه از DB خوانده می‌شود و انتخاب در `pick_reference` است — همان
-    تابعی که `bulk_scan` روی ردیف‌های ازپیش‌خواندۀ خودش صدا می‌زند.
+    تابعی که `bulk_scan` روی ردیف‌های ازپیش‌خواندۀ خودش صدا می‌زند. `need` فقط
+    جست‌وجو را برایِ همان شاخص دقیق‌تر می‌کند (بندِ P-2 سیاست) و منبعِ انتخابی را
+    عوض نمی‌کند جز در موردِ «این عدد را نداشت».
     """
     return pick_reference(annual_statements(conn, symbol, require_audit=False,
-                                           exclude_consolidated=False, limit=12))
+                                           exclude_consolidated=False, limit=12),
+                          need=need)
 
 
 
@@ -1439,8 +1464,26 @@ def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
 
 
 # ==================================== شاخص ۳: حاشیه سود ناخالص (Gross Margin)
+def margin_reference(conn: sqlite3.Connection, symbol: str, ref=None,
+                     rows=None) -> Optional[dict]:
+    """ردیفی که شاخص ۳ از آن حاشیه می‌سازد — همان پلکان، با اولویتِ عددِ موجود.
+
+    مسیرِ تک‌نمادی با یک کوئری اضافه کار می‌کند؛ `bulk_scan` ردیف‌هایِ ازپیش‌خوانده
+    را می‌دهد (`rows=annual[key]`) تا به‌ازایِ هر نماد کوئریِ دوم زده نشود. بی‌این،
+    دو نماد (`وكادو`، `سيتا`) حاشیه‌شان `None` می‌ماند در حالی که تلفیقیِ حسابرسی‌
+    شدۀ *خودِ شرکت* با هر دو عدد درِ بانک بود — شرطِ «غیرتلفیقی» مالِ شاخص ۲ است،
+    نه مالِ حاشیه (بندِ P-2 سیاست).
+    """
+    if row_carries(ref, MARGIN_NEED):
+        return ref
+    if rows is not None:
+        return pick_reference(rows, need=MARGIN_NEED) or ref
+    return reference_annual(conn, symbol, need=MARGIN_NEED) or ref
+
+
 def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0,
-                 optimal: float = 30.0, ref: Optional[dict] = None) -> Optional[dict]:
+                 optimal: float = 30.0, ref: Optional[dict] = None,
+                 rows=None) -> Optional[dict]:
     """حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰.
 
     ممیزی v8: فرمول v7.3 درست بود؛ **منبع** غلط بود — `ORDER BY period_end DESC
@@ -1448,7 +1491,10 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
     آخرین صورت مالی **سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی** مبنا قرار میگیرد.
     تأیید: `net_profit` و `operating_profit` در این شاخص هیچ نقشی ندارند.
     """
-    row = ref or reference_annual(conn, symbol)
+    # مرجعِ این شاخص با «توانِ محاسبه» گزینش می‌شود، نه تنها با مبنایِ صورتِ مالی:
+    # `margin_reference` همان پلکانِ مشترک است، فقط ردیفِ دارایِ عدد را ترجیح
+    # می‌دهد (بندِ P-2 سیاست: شرطِ غیرتلفیقی مالِ شاخص ۲ است، نه حاشیه).
+    row = margin_reference(conn, symbol, ref=ref, rows=rows)
     if not row:
         return None
     rev, gp = _f(row.get("revenue")), row.get("gross_profit")
@@ -2432,7 +2478,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     for key in annual:
         annual[key].sort(key=lambda r: CP.desc_sort_key(r["period_end"]), reverse=True)
 
-    def _ref(sym):
+    def _ref(sym, need=None):
         """مرجعِ شاخص‌های ۳ و ۴ درِ bulk — همان `pick_reference` که مسیرِ
         تک‌نمادی (`reference_annual`) می‌زند.
 
@@ -2442,7 +2488,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         که لازم بود این است که ردیفِ هر سالِ مالی با `statement_rank` انتخاب
         شود — که حالا درِ هر دو مسیر همین کار می‌کند.
         """
-        return pick_reference(annual.get(sym) or [])
+        return pick_reference(annual.get(sym) or [], need=need)
 
 
 
@@ -2551,8 +2597,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # با عددِ گرد شده می‌شد، حاشیۀ ۱۹٫۹۶٪ «≥ ۲۰» می‌شد — واگراییِ واقعیِ
         # این دور درِ لخزر/كمينا/شرنگي/سجام، که بندِ تازهٔ گاردِ پاریتی گرفتش.
         margin_raw = margin = None
-        if ref and _f(ref["revenue"]) > 0 and ref["gross_profit"] is not None:
-            margin_raw = (ref["gross_profit"] / _f(ref["revenue"])) * 100.0
+        # همان `margin_reference`ِ کارت، رویِ همان ردیف‌هایِ ازپیش‌خوانده: اگر
+        # مرجعِ اصلی سودِ ناخالص نداشت، سالِ دارایِ عدد جانشین می‌شود و `basis`
+        # آن را اعلام می‌کند. بی‌این، کارت و قیف دو عددِ متفاوت می‌دادند.
+        mref = ref
+        if not row_carries(ref, MARGIN_NEED):
+            mref = pick_reference(annual.get(key) or [], need=MARGIN_NEED) or ref
+        if mref and _f(mref["revenue"]) > 0 and mref["gross_profit"] is not None:
+            margin_raw = (mref["gross_profit"] / _f(mref["revenue"])) * 100.0
             margin = round(margin_raw, 1)
         # رأی ۱۶ روی شاخص ۳: حاشیه‌ای که هرگز ساخته نشد سنجیده نشده، نه رد —
         # همان قاعده‌ای که برای شاخص ۴ و در api/screener جاری است. (حاشیۀ صفرِ

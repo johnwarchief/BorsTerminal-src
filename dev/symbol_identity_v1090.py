@@ -372,6 +372,37 @@ def section_regressions(conn):
        == "consolidated_audited",
        "R13ب تنزلِ شاخص ۲ به تلفیقیِ خودِ نماد **اعلام** می‌ماند، نه پنهان",
        (lad.get("evidence"), lad.get("relaxed_evidence")))
+    # P-2 (بندِ ۲.۳ مأموریت/سیاست): شرطِ «غیرتلفیقی» مالِ شاخص ۲ است. حاشیهٔ سود
+    # نباید به‌خاطرِ آن شرط، سالی را که هر دو عددش درِ بانک هست دور بریزد — این
+    # دقیقاً علتِ «بی‌داده» شدنِ `وكادو` و `سيتا` بود (سنجش: tn=1391011 با
+    # ۱۰٬۶۷۷٬۸۷۵ ÷ ۳۶٬۰۸۳٬۶۱۷ در برابرِ tn=1224928 بی‌سودِ ناخالص).
+    mix = [
+        {"period_months": 12, "fiscal_year": "1404", "tracing_no": 1, "title": "اصلی",
+         "audited": True, "consolidated": False, "other_entity": False, "conflicts": [],
+         "revenue": 100.0, "gross_profit": None, "operating_profit": None,
+         "net_profit": None, "basic_eps": None, "company_name": "الف",
+         "period_end": "1404/12/29"},
+        {"period_months": 12, "fiscal_year": "1403", "tracing_no": 2, "title": "تلفیقی",
+         "audited": True, "consolidated": True, "other_entity": False, "conflicts": [],
+         "revenue": 360.0, "gross_profit": 106.0, "operating_profit": 90.0,
+         "net_profit": 70.0, "basic_eps": 5.0, "company_name": "الف",
+         "period_end": "1403/12/30"},
+    ]
+    plain = FE.pick_reference(mix)
+    ck(bool(plain) and plain["tracing_no"] == 1,
+       "R15 پلکانِ عمومی همان سالانۀ غیرتلفیقی را می‌گزیند (رفتارِ پیشین)",
+       (plain or {}).get("tracing_no"))
+    mneed = FE.pick_reference(mix, need=FE.MARGIN_NEED)
+    ck(bool(mneed) and mneed["tracing_no"] == 2,
+       "R15ب شاخص ۳ ردیفی را می‌گزیند که سودِ ناخالص و درآمد دارد",
+       (mneed or {}).get("tracing_no"))
+    only = FE.pick_reference([mix[0]], need=FE.MARGIN_NEED)
+    ck(bool(only) and only["tracing_no"] == 1,
+       "R15پ اگر هیچ ردیفی عدد نداشته باشد، مرجع هم نمی‌پرد و None نمی‌شود",
+       (only or {}).get("tracing_no"))
+    ck(FE.row_carries(mix[0], FE.MARGIN_NEED) is False and
+       FE.row_carries(mix[1], FE.MARGIN_NEED) is True,
+       "R15ت سنجهٔ «توانِ محاسبه» صفرِ جعلی نمی‌سازد (None ≠ ۰)")
     # کنترلِ منفی ۲: اگر روزی پرچمِ other_entity درِ پلکان سالانه نادیده گرفته شود
     one = FE.pick_reference([
         {"period_months": 12, "fiscal_year": "1404", "tracing_no": 1,
