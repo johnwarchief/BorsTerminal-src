@@ -569,7 +569,7 @@ ALL SUITES PASSED با شمارۀِ واقعیِ هر گارد؛ فرانت ۱۶
 
 ## 9-ژ) آزمونِ زندهٔ مرورگر و وضعیتِ «دوتا jev» (۱۴۰۵-۰۷-۲۲)
 
-**نیمۀ داوری (jev-pilot) اجرا نشد — بن‌بستِ بیرونی.** دو فراخوانِ
+**نیمۀ داوری (jev-pilot) اجرا نشد — `UNVERIFIED-BY-PILOT`.** بن‌بستِ بیرونی، نه نقصِ ابزار. دو فراخوانِ
 `tools/pilot_ctl.py arbitrate` (با متنِ صرفاً_prose، بی‌کد) هر دو رد شدند:
 
     RuntimeError: TypeSafe Jev API HTTP 451:
