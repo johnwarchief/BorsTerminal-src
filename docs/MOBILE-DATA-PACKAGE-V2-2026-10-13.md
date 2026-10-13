@@ -365,7 +365,7 @@ decodeشده = کلیدِ پخت؛ و پیام خطا نام کلیدِ خام �
 | `candle integrity + published-TSETMC parity` | بله | نه | خودِ گیت: «به بک‌اند زنده با `--api` نیاز دارد» ⇒ عملاً NOT RUN |
 | `R1/R2 housekeeping` | بله | نه | `market.db.lzma not found` در این worktree |
 | `tape filters: five formulas` | بله (۲۱۴/۲۱۶) | نه | دو رأی داده‌ای tape_history همین بانک |
-| `mobile_manifest_sign_v1079` (گیت خودِ این مأموریت) | محلی ۳۱/۳۱ سبز، در CI سرخ (`0 pass / 0 fail`) | **بله** | باید علتش را در CI قطعی کنم؛ این تنها آیتمِ سرخی است که مالِ این مأموریت است — در دور بعد |
+| `mobile_manifest_sign_v1079` (گیت خودِ این مأموریت) | **بسته شد در دور 6**: CI الان `rc=0 | 51/51` می‌دهد (ران 38395254615) | **بله** | علتِ واقعی و رفعش در §16-ب: `openssl pkey -in <pub>` با کلیدِ عمومی می‌شکست و آن شاخه رویِ این ماشین هرگز اجرا نمی‌شد |
 
 گیت‌های دیگری که فقط در CI سرخ‌اند (`screener<->card parity`،
 `scan_symbol==bulk_scan`، `codal logic F-01..F-05`، `incremental sync`،
