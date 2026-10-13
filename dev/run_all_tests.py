@@ -102,6 +102,11 @@ SUITES = [
     # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
     ('dev/test_history_gap_repair_v1.py',
      'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
+    # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
+    # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
+    # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.
+    ('dev/test_adjustment_engine_v1.py',
+     'Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),

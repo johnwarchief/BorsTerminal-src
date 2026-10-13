@@ -75,7 +75,7 @@ check("۲ تاریخ‌هایِ نهاییِ صعودی و کامل", dates(con)
 # ── ۳) idempotent: اجرایِ دوم هیچ چیز نمی‌نویسد
 f2, p2, _ = H.repair_from_bars(con, "خودرو", bars, dry_run=False)
 check("۳ اجرایِ دوم صفر نوشتن", f2, 0)
-check("۳行数 ثابت ماند", len(dates(con)), 4)
+check("۳ تعدادِ سطر ثابت ماند", len(dates(con)), 4)
 
 # ── ۴) dry_run هیچ اثری نمی‌گذارد
 con2 = new_db()
