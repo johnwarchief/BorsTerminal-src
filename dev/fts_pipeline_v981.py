@@ -208,7 +208,12 @@ ck(F.sector_filter("مواد و محصولات دارویی")["pass"],
 # ── هم‌ارزی مسیر تک‌نمادی ⇄ دسته‌ای (پاریتی شاخص ۴) ──
 conn = mk_fts_db()
 single = F.scan_symbol(conn, "تستF", 500_000.0, 500_000.0, "فلزات اساسي", cfg={})
-bulk = [r for r in F.bulk_scan(conn, cfg={}) if r["symbol_norm"] == F.norm_fa("تستF")]
+# `symbol_norm` درِ `bulk_scan` همان کلیدِ هویتِ canonical است (`symbol_identity.key`)،
+# نه `norm_fa` — و آن کلید حرفِ بزرگ را کوچک هم می‌کند. فیکچرِ این گارد «تستF»
+# با لاتینِ بزرگ است، پس مقایسه با norm_fa ردیف را پیدا نمی‌کرد (سنجشِ بانکِ
+# واقعی: هیچ‌یک از ۵۹۸۹ نماد تابلو و ۱۱۹۵ نماد کدال حرفِ بزرگ ندارد، پس این
+# تفاوت فقط درِ همین فیکچر است).
+bulk = [r for r in F.bulk_scan(conn, cfg={}) if r["symbol_norm"] == F.sym_key("تستF")]
 ck(len(bulk) == 1, "bulk_scan دقیقاً یک ردیف برای نماد آزمون میدهد")
 ck(bool(bulk) and bulk[0]["sales_to_mcap"]
    == single["detail"]["sales_to_mcap"]["sales_to_mcap"],

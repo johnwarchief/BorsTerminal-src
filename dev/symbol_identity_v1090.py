@@ -328,6 +328,18 @@ def section_regressions(conn):
        and ident_c["conflicts"] == ["title_months"] and "ماه" in ident_c["conflict_note"],
        "R12ج ردپایِ انتخابِ مرجع تناقض را هم حمل می‌کند (رأیِ هویت را عوض نمی‌کند)",
        ident_c)
+    # ۱۱) نردبانِ شاخص ۲ هم باید همان قاعدۀ «شرکتِ دیگر» را ببیند: این reader
+    # پنجم بود و پرچم را نمی‌دید — درِ بانکِ واقعی دقیقاً «شهر فرش» را می‌گرفت
+    # (EPS ۱۴۰۴ از ردیفِ «شرکت داتیس نوین ایرانیان» در برابرِ EPSِ خودِ نماد).
+    lad = FE.eps_ladder(conn, "شهر فرش", years=3)
+    ck("1404" in (lad.get("fiscal_years") or []) and 382.0 in (lad.get("eps_series") or [])
+       and 109.0 not in (lad.get("eps_series") or []),
+       "R13 نردبانِ EPS هم سودِ شرکتِ دیگر را به این نماد نمی‌چسباند",
+       (lad.get("eps_series"), lad.get("fiscal_years"), lad.get("evidence")))
+    ck(lad.get("consolidated_used") is True and (lad.get("evidence") or [])[-1]
+       == "consolidated_audited",
+       "R13ب تنزلِ شاخص ۲ به تلفیقیِ خودِ نماد **اعلام** می‌ماند، نه پنهان",
+       (lad.get("evidence"), lad.get("relaxed_evidence")))
     # کنترلِ منفی ۲: اگر روزی پرچمِ other_entity درِ پلکان سالانه نادیده گرفته شود
     one = FE.pick_reference([
         {"period_months": 12, "fiscal_year": "1404", "tracing_no": 1,
