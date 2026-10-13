@@ -532,6 +532,40 @@ def _is_amendment(title: str) -> bool:
     return "اصلاحیه" in norm_fa(title)
 
 
+def row_conflicts(period_end, title, period_months) -> list:
+    """تناقض‌هایِ اعلامی یکِ ردیف: دوره/ماه درِ متن با درِ ستون نمی‌خواند.
+
+    بندِ ۱.۲/۱۰ مأموریت: ردیفی که عنوان، شرکت، دوره و نمادش یکی نیستند باید
+    درِ انتخابِ مرجع **دیده** شود، نه خاموش رد یا خاموش پذیرفته. اینجا هیچ
+    آستانه‌ای وضع نمی‌شود و هیچ ردیفی کنار نمی‌رود (آن رأیِ مالک است، نه
+    حدسِ مهندس) — فقط برچسبِ تناقض رویِ ردیف می‌نشیند و درِ همان
+    `reference_identity` که ابهامِ هویت را اعلام می‌کند خوانده می‌شود.
+
+    دو تناقضِ سنجیده‌شده رویِ ۸٬۷۲۳ ردیفِ بانکِ کاری (۱۴۰۵-۰۷-۲۲):
+      * `title_period`: دورۀ داخلِ عنوان ≠ دورۀ ستون — صفر ردیف؛ یعنی
+        زنجیرۀ `codal_periods.derive` امروز می‌خواند و این نگهبانِ روزِ بعد است.
+      * `title_months`: «X ماهه» درِ عنوان ≠ `period_months` — ۱ ردیف
+        («۶ ماهه» با `period_months=12`، tracing_no 1447293) و ۳۸ ردیفِ
+        `period_months` خالی. شاخص ۲ فقط سالانۀ ۱۲ماهه می‌خواهد، پس همین
+        یکی هم رأیِ «دو تا سالِ کامل» را می‌تواند بسازد؛ اعلام می‌شود تا
+        داوریِ بعدی رویِ عددِ حدسی نشیند.
+    """
+    out = []
+    t = str(title or "")
+    tp = CP.from_title(t)
+    pe = CP.canonicalize(period_end)
+    if tp and pe and tp != pe:
+        out.append("title_period")
+    tm = CP.months_from_title(t)
+    try:
+        pm = int(period_months) if period_months is not None and str(period_months).strip() else None
+    except (TypeError, ValueError):
+        pm = None
+    if tm and pm and tm != pm:
+        out.append("title_months")
+    return out
+
+
 # پسوندهای پرانتزیِ «مقطعِ نامه»، نه نامِ شرکت — همان سه زیررشته‌ای که
 # `_is_audited`/`_is_consolidated`/`_is_amendment` می‌خوانند.
 _TITLE_SCOPE_MARKS = ("حسابرس", "تلفیق", "اصلاحی")
@@ -759,6 +793,7 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
         cand = {"period_end": pe, "fiscal_year": yr, "period_months": pm, "title": t,
                 "audited": _is_audited(t), "consolidated": _is_consolidated(t),
                 "other_entity": bool(title_entity_suffix(t)),
+                "conflicts": row_conflicts(pe, t, pm),
                 "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
@@ -783,25 +818,35 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     return out
 
 
+_CONFLICT_LABEL = {"title_period": "دورۀ داخلِ عنوان با دورۀ ستون یکی نیست",
+                   "title_months": "شمارِ ماه‌هایِ دورۀ عنوان با ستون نمی‌خواند"}
+
+
 def reference_identity(rows, reference):
     # آیا گزارشِ منتخب واقعاً به همین نماد تعلق دارد؟ بله/نه + دلیل، بی‌رأیِ مالی.
 
     # کدال شناسۀ مستقلِ شرکت ندارد (خودِ فیدِ زنده فقط Symbol/CompanyName/
-    # TracingNo می‌دهد — سنجیده ۱۴۰-۰۷-۲)، پس تنها شاهدِ موجود درِ بانک
+    # TracingNo می‌دهد — سنجیده ۱۴۰۵-۰۷-۲)، پس تنها شاهدِ موجود درِ بانک
     # «نامِ شرکتِ غالبِ همین نماد» در برابرِ «نامِ شرکتِ ردیفِ منتخب» است.
     # این دو نخوانند، انتخاب **قطعی نیست** و باید دیده شود: نه رد، نه پاس،
-    # نه صفر. سنجشِ بانکِ کاری (فقط‌خواندنی): از ۱۱۵۵ نمادِ دارای صورتِ مالی
+    # نه صفر. سنجشِ بانکِ کاری (فقط‌خواندنی): از ۱۱۹۵ نمادِ دارای صورتِ مالی
     # ۴۴ تا بیش از یک نامِ شرکت دارند و ۱۸ تا ردیفِ منتخبشان با نامِ غالبِ
     # خودشان نمی‌خواند (اکثراً صندوق/سریِ صندوق زیرِ یکِ نماد مثلِ «گوهر» و
     # «ستاره»، و یکِ تغییرِ نامِ واقعی: «غگز»).
 
     # برگردان: {"checked", "match", "reason", "reference_company",
-    #          "dominant_company", "names"}
+    #          "dominant_company", "names", "conflicts", "conflict_note"}
+    # `checked`/`match` تنها از نامِ شرکت حرف می‌زنند (معنایشان درِ این دور عوض
+    # نشد). `conflicts` چیزِ دیگری است: برچسب‌هایِ `row_conflicts` رویِ همان
+    # ردیفِ منتخب — تناقضِ متن/ستون، که رأیِ هویت نیست ولی باید درِ ردپا باشد.
     ref = reference or {}
+    conflicts = list(ref.get("conflicts") or [])
+    note = "؛ ".join(_CONFLICT_LABEL.get(c, c) for c in conflicts)
     rc = norm_fa(str(ref.get("company_name") or ""))
     if not rc:
         return {"checked": False, "match": None, "reason": None,
-                "reference_company": "", "dominant_company": "", "names": 0}
+                "reference_company": "", "dominant_company": "", "names": 0,
+                "conflicts": conflicts, "conflict_note": note}
     counts = {}
     for r in rows or []:
         n = norm_fa(str(r.get("company_name") or ""))
@@ -809,16 +854,20 @@ def reference_identity(rows, reference):
             counts[n] = counts.get(n, 0) + 1
     if not counts:
         return {"checked": False, "match": None, "reason": None,
-                "reference_company": rc, "dominant_company": "", "names": 0}
+                "reference_company": rc, "dominant_company": "", "names": 0,
+                "conflicts": conflicts, "conflict_note": note}
     dominant = max(counts, key=lambda k: (counts[k], k))
     if rc == dominant:
         return {"checked": True, "match": True, "reason": None,
                 "reference_company": rc, "dominant_company": dominant,
-                "names": len(counts)}
+                "names": len(counts), "conflicts": conflicts,
+                "conflict_note": note}
     return {"checked": True, "match": False,
-            "reason": "نامِ شرکتِ گزارشِ منتخب («" + rc + "») با نامِ غالبِ این نماد («" + dominant + "») یکی نیست",
+            "reason": ("نامِ شرکتِ گزارشِ منتخب («" + rc + "») با نامِ غالبِ این نماد («"
+                       + dominant + "») یکی نیست" + (("؛ " + note) if note else "")),
             "reference_company": rc, "dominant_company": dominant,
-            "names": len(counts)}
+            "names": len(counts), "conflicts": conflicts, "conflict_note": note}
+
 
 def pick_reference(rows) -> Optional[dict]:
     """ردیفٔ مرجعٔ شاخص‌های ۳ و ۴ — خالص روی هر فهرست ردیف.
@@ -2303,6 +2352,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             {"period_end": pe, "period_months": _fn(pm), "tracing_no": tn,
              "fiscal_year": CP.fiscal_year(pe), "title": title or "",
              "company_name": str(cn or ""),
+             "conflicts": row_conflicts(pe, title, pm),
              "audited": _is_audited(title), "consolidated": _is_consolidated(title),
              "other_entity": bool(title_entity_suffix(title)),
              "revenue": _fn(rev), "gross_profit": _fn(gp), "net_profit": _fn(np_),

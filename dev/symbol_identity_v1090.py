@@ -307,6 +307,27 @@ def section_regressions(conn):
                    ("صورت‌های مالی (شرکت اصلی) سال 1403", "R9ب «شرکت اصلی» یعنی خودِ صادرکننده"),
                    ("اطلاعیهٔ عادی بدونِ برچسب", "R9پ بی‌برچسب ⇒ شرکتِ دیگر شمرده نمی‌شود")):
         ck(not FE.title_entity_suffix(t), why)
+    # ۱۰) ردیفی که «منتهی به»اش با دورۀ ستون، یا «X ماهه»اش با period_months نمی‌خواند:
+    # تناقض **اعلام** می‌شود (نه رأیِ جدید، نه حذفِ خاموش). رقمِ عنوان عمداً با
+    # translate ساخته می‌شود — دست‌نوشتِ فارسی رقم را می‌دزدد.
+    FAD = str.maketrans("0123456789", "".join(chr(0x06F0 + d) for d in range(10)))
+    t_mixed = ("اطلاعات و صورت‌های مالی میاندوره‌ای دوره 6 ماهه منتهی به 1403/06/31 "
+               "(حسابرسی نشده)").translate(FAD)
+    ck(FE.row_conflicts("1403/12/29", t_mixed, 12) == ["title_period", "title_months"],
+       "R12 تناقضِ عنوان⇄ستون (دوره و ماه) رویِ ردیف برچسب می‌گیرد",
+       FE.row_conflicts("1403/12/29", t_mixed, 12))
+    t_clean = ("صورت‌های مالی سال مالی منتهی به 1403/12/29 (حسابرسی شده)").translate(FAD)
+    ck(FE.row_conflicts("1403/12/29", t_clean, 12) == [],
+       "R12پ ردیفِ هم‌خوان هیچ برچسبی نمی‌گیرد (کنترلِ مثبتِ سنسور)")
+    ck(FE.row_conflicts("1403/12/29", t_mixed, None) == ["title_period"],
+       "R12ت بی‌period_months داوری نمی‌کند — فقط همان تناقضِ قطعی اعلام می‌شود",
+       FE.row_conflicts("1403/12/29", t_mixed, None))
+    ident_c = FE.reference_identity([{"company_name": "الف", "conflicts": []}],
+                                    {"company_name": "الف", "conflicts": ["title_months"]})
+    ck(ident_c["checked"] is True and ident_c["match"] is True
+       and ident_c["conflicts"] == ["title_months"] and "ماه" in ident_c["conflict_note"],
+       "R12ج ردپایِ انتخابِ مرجع تناقض را هم حمل می‌کند (رأیِ هویت را عوض نمی‌کند)",
+       ident_c)
     # کنترلِ منفی ۲: اگر روزی پرچمِ other_entity درِ پلکان سالانه نادیده گرفته شود
     one = FE.pick_reference([
         {"period_months": 12, "fiscal_year": "1404", "tracing_no": 1,

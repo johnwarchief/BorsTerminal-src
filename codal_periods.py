@@ -150,6 +150,28 @@ def from_title(title) -> str | None:
     return canonicalize(s)
 
 
+_MONTHS_ANCHOR = re.compile(r"([0-9]+)\s*ماهه")
+
+
+def months_from_title(title) -> int | None:
+    """شمارِ ماه‌هایِ دورۀ اعلام‌شده درِ عنوانِ نامه («دوره ۶ ماهه») یا None.
+
+    یگانۀ خواندنِ این عبارت است: `fts_engine.row_conflicts` همان را با ستونِ
+    `period_months` می‌سنجد تا تناقضِ یکِ ردیف **اعلام** شود (نه ردِ خاموش، نه
+    پذیرشِ خاموش). رقمِ فارسی با همان `_DIGITS` ترجمه می‌شود که `canonicalize`
+    می‌زند، پس الگویِ regex فقط رقمِ ASCII می‌خواهد. بی‌حدسِ تقویم: عنوان
+    رقمی پیشِ «ماهه» نداشت ⇒ None، نه ۱۲.
+    """
+    m = _MONTHS_ANCHOR.search(str(title or "").translate(_DIGITS))
+    if not m:
+        return None
+    try:
+        n = int(m.group(1))
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= 12 else None
+
+
 def derive(datasource_end=None, title=None):
     """زنجیرۀ قرارداد: اول datasource، در نبودش عنوان. `(period, source)` می‌دهد.
 
