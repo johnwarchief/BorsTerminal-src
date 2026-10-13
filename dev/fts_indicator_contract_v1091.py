@@ -125,6 +125,46 @@ def main() -> int:
                 if n in src.replace(",", "").replace("٬", "")]
         ck(not hits, "C5 مثالِ عددیِ جزوه درِ %s hardcode نشده" % f, hits)
 
+    # ── C8 صنعتِ تابلو از همان شرطِ هویت خوانده می‌شود ────────────────────
+    # باگِ واقعیِ همین دور: `INSTR_SQL_TMPL`predicateِ ساخته‌شدۀ `sym_in` را درونِ
+    # `i.l_val18 IN ({})` می‌گذاشت ⇒ `IN (i.l_val18 IN (?))` ⇒ همیشه صفر ردیف ⇒
+    # کارت صنعت را از حدسِ نامِ شرکت می‌گرفت و اسکرینر از تابلو (۱۱ واگرایی از
+    # ۴۷ نمادِ زنده، ۵ تای آن واگراییِ امتیاز). این بند همان را درِ گیت قفل می‌کند.
+    board = conn.execute("SELECT DISTINCT l_val18, sector_name FROM instruments "
+                      "WHERE sector_name IS NOT NULL AND TRIM(sector_name) <> '' "
+                      "ORDER BY l_val18 LIMIT 250").fetchall()
+    wrong = []
+    for r in board:
+        pk, pa = FE.sym_in(conn, "i.l_val18", r["l_val18"], "board")
+        inst = conn.execute(F.INSTR_SQL_TMPL.format(pk), pa).fetchone()
+        if not inst or str(inst["sector_name"] or "") != str(r["sector_name"] or ""):
+            wrong.append((r["l_val18"], (inst or {}).get("sector_name") if inst else None,
+                          r["sector_name"]))
+    ck(board and not wrong, "C8 کارت و تابلو یکِ صنعت می‌بینند (%d نماد)" % len(board),
+       wrong[:4])
+    # کنترلِ منفیِ همان بند: اگر قالب به `IN ({})` برگردد، چک باید قرمز شود
+    tainted = F.INSTR_SQL_TMPL.replace("WHERE {}", "WHERE i.l_val18 IN ({})", 1)
+    pk, pa = FE.sym_in(conn, "i.l_val18", board[0]["l_val18"], "board")
+    ck(len(conn.execute(tainted.format(pk), pa).fetchall()) == 0,
+       "C8ب قالبِ معیوبِ «IN (predicate)» صفر ردیف می‌دهد — پس C8 بی‌صدا سبز نمی‌ماند")
+
+    # ── C9 حالتِ سه‌حالۀ کارت با پرچم‌هایِ خودِ موتور می‌خواند ──────────────
+    def tri(v):
+        return "P" if v is True else ("F" if v is False else "n")
+    bulk = {r["symbol"]: r for r in FE.bulk_scan(conn, cfg=cfg)}
+    KEY = ("1_growth", "2_eps_trend", "3_gross_margin", "4_sales_to_mcap", "5_industry")
+    diff = []
+    for s in [x for x in ("شهرفرش", "وكادو", "شتهران", "تيپيكو", "ثاخت", "قچار", "خاور")
+              if x in bulk][:7]:
+        mc, se, tt, _i = F._fts_market_ctx(conn, s)
+        card = F.evaluate_v10(conn, s, mc or 0.0, tt, se, cfg=cfg,
+                              company_name=FE.company_name_of(conn, s))
+        cs = "".join(tri((card.get("states") or {}).get(k)) for k in KEY)
+        bs = "".join(tri(bulk[s].get("i%d_pass" % i)) for i in (1, 2, 3, 4, 5))
+        if cs != bs or card.get("score") != bulk[s].get("score"):
+            diff.append((s, cs, bs, card.get("score"), bulk[s].get("score")))
+    ck(not diff, "C9 حالتِ پنج محورِ کارت == پرچم‌هایِ bulk_scan (امتیاز هم یکی)", diff[:4])
+
     # ── C6 کنترلِ منفی: سنسورِ ردپا کور نیست ──────────────────────────────
     stripped = dict(i3)
     stripped.pop("ref_tracing_no", None)

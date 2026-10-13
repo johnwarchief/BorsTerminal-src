@@ -323,6 +323,43 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
     const hint = screen.getAllByTestId('gap-hint')[0];
     expect(hint.getAttribute('title')).toContain('فقط ۱ سال از ۳ سال');
   });
+
+  // دو حکمی که `EpsLadder` (کامپوننتِ مرده) تنها جایِ رابط می‌گفت؛ با حذفِ آن
+  // باید رویِ همان `FtsDrillDown`ِ زنده قفل می‌شدند، نه اینکه پوشش کم شود.
+  it('سالِ میاندوره از سودِ سالانۀ کامل جدا برچسب می‌گیرد (۳ ماهه، نه «سال مالی»)', () => {
+    const card = baseCard();
+    card.indicators!['2'] = {
+      ...card.indicators!['2']!,
+      eps_series: [96, 130, 202],
+      period_slots: ['1403', '1404', '1405'],
+      partial: false,
+      strictly_rising: true,
+      interim: { available: true, eps_interim: 51, period_months: 3, period_end: '1405-03-31' },
+    };
+    render(<FtsDrillDown card={card} active="2" quarters={FISCAL} physicalApplicable />);
+    const text = document.body.textContent ?? '';
+    // برچسبِ متمایزِ میاندوره (با ماه‌هایِ خودش) کنارِ میله‌هایِ سالانۀ کامل
+    expect(text).toMatch(/میاندوره:\s*۵۱\s*\(\s*۳\s*ماهه\s*\)/);
+    expect(screen.getByTestId('drilldown-eps-chart').textContent).toContain('۲۰۲');
+    expect(text).not.toContain('سال مالی کامل');   // برچسبِ نردبانِ مرده، نه رابطِ زنده
+  });
+
+  it('بدونِ سریِ سالانه، پنل پیامِ «موجود نیست» می‌دهد — نه نمودارِ تهی', () => {
+    const card = baseCard();
+    card.indicators!['2'] = {
+      ...card.indicators!['2']!,
+      eps_series: [],
+      period_slots: [],
+      fiscal_years: [],
+      partial: true,
+      strictly_rising: null,
+      data_gap: true,
+      reason: 'هیچ صورتِ مالیِ سالانۀ حسابرسی‌شدۀ غیرتلفیقی وجود ندارد',
+    };
+    render(<FtsDrillDown card={card} active="2" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByText('سری EPS سالانهٔ حسابرسی‌شده موجود نیست.')).toBeInTheDocument();
+    expect(screen.queryByTestId('drilldown-eps-chart')).toBeNull();
+  });
 });
 
 describe('پنل شاخص ۳ — حاشیه سود ناخالص', () => {
