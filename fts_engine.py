@@ -1889,7 +1889,7 @@ def m141_map(conn: sqlite3.Connection) -> dict:
         SELECT symbol, capital, total_equity, period_end, publish_date
         FROM financial_statements
         WHERE period_months >= 12 AND capital > 0 AND total_equity IS NOT NULL
-        ORDER BY symbol, %s, publish_date DESC""" % CP.order_expr()).fetchall()
+        ORDER BY symbol, %s, %s""" % (CP.order_expr(), CP.pub_order_expr())).fetchall()
     out = {}
     for sym, cap, eq, _pe, _pd in rows:
         key = norm_fa(sym)

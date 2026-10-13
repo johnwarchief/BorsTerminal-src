@@ -35,11 +35,21 @@ const KIND_FA: Record<string, string> = {
   other: 'بی‌طبقه',
 };
 
-/** «۱۴۰/۰۷/۰ ۱۵:۳۸» — تاریخِ جلالیِ خودِ کدال، بی‌تبدیلِ دوباره درِ رابط */
+/** «۱۴۰۵/۰۷/۰۹ ۱۵:۳۸» — رابط رقمِ فارسی می‌دهد، حتی وقتی پاسخ canonicalِ لاتین است */
 function stamp(iso: string | null | undefined): string {
   const s = String(iso || '').trim();
   if (!s) return '—';
-  return s.replace('T', ' ').slice(0, 16);
+  // `sources()` از دور ۳ نمایشِ canonicalِ لاتین برمی‌گرداند (تا رقمِ مخلوط
+  // «تازۀترین» را عوض نکند)، پس رابط رقمِ فارسی می‌سازد — تبدیل درِ نمایش است،
+  // نه درِ داده.
+  return toFaDigits(s.replace('T', ' ').slice(0, 16));
+}
+
+/** زمانِ *خودِ برنامه* (میلادی، ASCII) — همان‌طور که درِ بانک نوشته شده می‌ماند؛
+ *  قاعدۀ رابط فقط تاریخِ جلالیِ کدال را فارسی رقم می‌کند. */
+function stampApp(iso: string | null | undefined): string {
+  const s = String(iso || '').trim();
+  return s ? s.replace('T', ' ').slice(0, 16) : '—';
 }
 
 function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: () => void }) {
@@ -93,7 +103,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
       </div>
       <p className="line-clamp-2 text-2xs leading-5 text-text-primary" title={n.title}>{n.title}</p>
       <p className="num-text text-3xs text-text-muted">
-        انتشار: {stamp(n.publish_date)} · دریافتِ برنامه: {stamp(n.received_at)}
+        انتشار: {stamp(n.publish_date)} · دریافتِ برنامه: {stampApp(n.received_at)}
         {n.company ? ` · ${n.company}` : ''}
       </p>
     </li>
@@ -127,7 +137,7 @@ export default function NotificationsPage() {
         {srcState === 'ok' ? (
           <span className="num text-3xs text-text-muted" data-testid="notice-source-fresh">
             {toFaDigits(src?.rows ?? 0)} اطلاعیه درِ بانک · تازه‌ترینِ انتشار {stamp(src?.newest_publish)} ·
-            آخرینِ واکشی {stamp(src?.last_fetch)}
+            آخرینِ واکشی {stampApp(src?.last_fetch)}
           </span>
         ) : srcState === 'empty' ? (
           <span className="text-3xs text-accent-amber" data-testid="notice-source-empty">

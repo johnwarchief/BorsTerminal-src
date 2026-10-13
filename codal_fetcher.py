@@ -2115,8 +2115,6 @@ def _trigger_backoff(seconds=60):
           + (" via ADB rotate" if rotated else ""), flush=True)
 
 
-_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
-
 
 def _parse_year_month(period_end):
     """'1404/06/31' -> (1404, 6) or (None, None).
@@ -2210,30 +2208,33 @@ def derived_state(conn, symbol=None):
     return ledger | fs_done | ms_done, fs_done, ms_done
 
 
-def newest_publish_date(conn):
-    """تازۀ‌ترین `publish_date` بانک، **بعد از** یکسان‌سازیِ رقم و جداکننده.
+def newest_publish_date(conn, symbol=None):
+    """تازۀ‌ترین `publish_date` بانک (یا یکِ نماد)، **بعد از** یکسان‌سازیِ رقم.
 
     `MAX(publish_date)` در SQLite لغت‌شناختی است و نیمی از سطرهایِ همین بانک تاریخ
     «۱۴۰۵/۰۶/۱۳…» (ارقامِ فارسی) دارند؛ قفسۀ Unicode آن‌ها بالا‌تر از ارقامِ لاتین
     است، پس MAX یکِ تاریخِ قدیمی‌تر برمی‌گرداند و پنجرۀ incrementِ فید اشتباه
-    می‌شود. اینجا مقدار خوانده و با `date_key` مقایسه می‌شود. خروجی با «/» — همان
-    شکلی که خودِ داکسترینگِ `feed_sync` برایِ `FromDate` نوشته است.
+    می‌شود. مقایسه حالا رویِ عبارتِ canonicalِ `codal_periods.pub_canon_sql`
+    انجام می‌شود (همان دربی که گاردِ v1089 با مسیرِ پایتون هم‌سنج می‌کند)، و
+    خروجی روزِ خالصِ `'YYYY/MM/DD'` است — همان شکلی که `FromDate` خودِ کدال
+    می‌خواهد. ساعتِ اطلاعیه دورِ این پنجره ریخته نمی‌شود، «بی‌ساعت» هم ساعتِ
+    ساختگی نمی‌گیرد.
+
+    `symbol=None` ⇒ سراسری (پنجرۀ فید)؛ با `symbol` ⇒ پنجرۀ افزایشیِ همان نماد.
     """
-    best = None
-    for (v,) in conn.execute("SELECT publish_date FROM codal_notices"):
-        k = date_key(v)
-        if k and (best is None or k > best):
-            best = k
-    return best
+    pred, params = ("WHERE symbol=?", (symbol,)) if symbol is not None else ("", ())
+    v = conn.execute("SELECT MAX(%s) FROM codal_notices %s"
+                     % (CP.pub_canon_sql(), pred), params).fetchone()[0]
+    return CP.pub_date_only(v)
 
 
 def date_key(v):
-    """'۱۴۰۵-۰۶-۱۳ 23:11' / '1405/06/13' → '1405/06/13' برایِ مقایسهٔ درست."""
-    if v is None:
-        return None
-    s = str(v).translate(_FA_DIGITS)
-    m = re.search(r"(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})", s)
-    return "%s/%02d/%02d" % (m.group(1), int(m.group(2)), int(m.group(3))) if m else None
+    """'۱۴۰۵-۰۶-۱۳ ۲۳:۱۱' / '۱۴۰۵/۰۶/۱۳' → '۱۴۰۵/۰۶/۱۳' برایِ مقایسهٔ درست."""
+    # دیگر اینجا نوشته نمی‌شود: قاعدۀ «چگونه یکِ تاریخِ کدال قابلِ مقایسه
+    # می‌شود» فقط درِ `codal_periods` است (`pub_date_only`)؛ این نام فقط برایِ
+    # سازگاریِ فراخوان‌هایِ قدیمی مانده. بی‌این واگذاری سه پیادۀ جدا از یکِ کار
+    # باز بود (اینجا، `tools/codal_fundamental_audit.py`، `dev/pipeline_updater.py`).
+    return CP.pub_date_only(v)
 
 
 def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Activity Report"),
@@ -2283,7 +2284,7 @@ def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Ac
         if any(_is_fund(r[1], nm) or _is_derivative(r[1], nm) for nm in names):
             continue
         out.append(r)
-    out.sort(key=lambda r: date_key(r[5]) or "0", reverse=True)
+    out.sort(key=lambda r: CP.pub_key(r[5]) or "", reverse=True)
     return out[:limit] if limit else out
 
 
@@ -2473,16 +2474,16 @@ def update_symbol_incremental(sym, sess):
     FromDate = آخرین publish_date DB (نرمالشده) → فقط اسناد پس از آن (اصلاحیهها/جدیدها).
     بعد از شستشو: dedupe → تثبیت 5-index (با بازیابی در app.py)."""
     conn = sqlite3.connect(DB_PATH, timeout=60)
-    r = conn.execute("SELECT MAX(publish_date) FROM codal_notices WHERE symbol=?", (sym,)).fetchone()
+    # پنجرۀ افزایشی از نمایشِ canonical خوانده می‌شود، نه از `MAX(publish_date)`ِ
+    # خام: با دو encoding درِ یکِ ستون، MAXِ خام همیشه ردیفِ فارسی‌رقم را
+    # «تازه‌ترین» می‌داد (حتی وقتی سه سال کهنه‌تر است) ⇒ یا روزهایِ دیدۀ‌قبل
+    # دوباره واکشی می‌شد یا روزهایِ تازه جا می‌ماند.
+    from_date = newest_publish_date(conn, sym)
     has_fs = conn.execute("SELECT 1 FROM financial_statements WHERE symbol=? LIMIT 1", (sym,)).fetchone()
     has_ms = conn.execute("SELECT 1 FROM monthly_sales WHERE symbol=? LIMIT 1", (sym,)).fetchone()
     conn.close()
     if not (has_fs or has_ms):
         return _process_symbol(sym, sess)   # تازهکار → full discovery via _process_symbol
-    from_date = None
-    if r and r[0]:
-        v = str(r[0]).translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"))
-        from_date = v[:10]
     n_notices = 0
     for cat in ("1", "3"):
         q = dict(QUERY, Symbol=sym, Category=cat, LetterType="-1")
@@ -2568,7 +2569,7 @@ def _process_symbol(sym, sess):
         pool_all = [tuple(r) for r in c2.execute(
             "SELECT tracing_no, symbol, company_name, title, letter_code,"
             " publish_date, sent_date, url, fetched_at, pdf_url, excel_url"
-            " FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC", (sym,))]
+            " FROM codal_notices WHERE symbol=? ORDER BY " + CP.pub_order_expr(), (sym,))]
         c2.close()
     except Exception:
         pass
@@ -2640,7 +2641,7 @@ def _process_symbol(sym, sess):
             pool = [tuple(r) for r in conn.execute(
                 "SELECT tracing_no, symbol, company_name, title, letter_code,"
                 " publish_date, sent_date, url, fetched_at, pdf_url, excel_url"
-                " FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC", (sym,))]
+                " FROM codal_notices WHERE symbol=? ORDER BY " + CP.pub_order_expr(), (sym,))]
             fs_done = {r[0] for r in conn.execute(
                 "SELECT tracing_no FROM financial_statements WHERE symbol=?", (sym,))}
             ms_done = {r[0] for r in conn.execute(
@@ -3589,7 +3590,7 @@ def fetch_symbol(symbol):
     pool = sym_rows or [tuple(r) for r in conn.execute(
         """SELECT tracing_no, symbol, company_name, title, letter_code,
                   publish_date, sent_date, url, fetched_at, pdf_url, excel_url
-           FROM codal_notices WHERE symbol=? ORDER BY publish_date DESC""", (symbol,))]
+           FROM codal_notices WHERE symbol=? ORDER BY """ + CP.pub_order_expr(), (symbol,))]
     ms_targets = [n for n in pool
                   if kind_of(n[3]) == "Monthly Activity Report" and n[0] not in ms_done]
     fs_targets = [n for n in pool

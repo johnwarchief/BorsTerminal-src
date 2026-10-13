@@ -241,6 +241,15 @@ SUITES = [
     # بی‌صدا حقیقت نشود. آستانه‌ها هم با حکمِ مالک مقایسه می‌شوند.
     ('dev/fts_notebook_examples_v1089.py',
                                      'notebook numeric examples reproduce; its two internal conflicts stay open'),
+    # CA-۱ (مأموریت بنیادی، ۱۴۰۵-۰۷-۲۱): publish_date درِ یکِ ستون دو
+    # encoding دارد (۲۲,۵۶۰ ردیفِ فارسی‌رقم + ۱۳,۷۸۸ ردیفِ لاتین در
+    # codal_notices). MAX/ORDER BYِ خام همیشه فارسی‌رقم را «تازه‌ترین»
+    # می‌گزید ⇒ پنجرۀ واکشیِ افزایشی رویِ ۱,۱۱۰ نماد از ۱,۸۰۰ کهنه‌تر
+    # از واقع می‌رفت (بیش‌دریافت/خطر ۴۲۹). حالا همه از
+    # `codal_periods.pub_canon_sql` / `pub_key` می‌خوانند؛ ستونِ خام
+    # برایِ ردیابیِ منبع دست‌نخورده می‌ماند.
+    ('dev/codal_publish_date_v1089.py',
+                                     'newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

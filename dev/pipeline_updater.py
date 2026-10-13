@@ -16,7 +16,8 @@ HDRS = cf._headers() if hasattr(cf, "_headers") else {"User-Agent": "Mozilla/5.0
 
 def last_publish(sym):
     conn = sqlite3.connect(DB, timeout=60)
-    r = conn.execute("SELECT MAX(publish_date) FROM codal_notices WHERE symbol=?", (sym,)).fetchone()
+    r = conn.execute("SELECT MAX(" + CP.pub_canon_sql() + ") FROM codal_notices"
+                       " WHERE symbol=?", (sym,)).fetchone()
     conn.close()
     if not r or not r[0]:
         return None

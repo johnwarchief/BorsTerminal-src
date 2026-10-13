@@ -11,7 +11,15 @@
 """
 import os
 import sqlite3
+
 import sys
+
+FA = str.maketrans("0123456789", "".join(chr(0x06F0 + d) for d in range(10)))
+SEP = chr(47)      # «/» — بیرونِ رشتهٔ دوزبانه، تا رقم/جداکننده دزدیده نشود
+
+
+def fa(x):
+    return x.translate(FA)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -115,7 +123,24 @@ ck("sources ردیفِ صفر را «empty» می‌گوید (تفاوتِ «ن�
    N.sources(bank([]))["sources"][0]["state"] == "empty")
 ck("sourcesِ سالم تعداد و تازه‌ترینِ انتشار را می‌دهد",
    N.sources(c)["sources"][0]["rows"] == 4
-   and N.sources(c)["sources"][0]["newest_publish"].startswith("۱۴۰۵"), N.sources(c))
+   and N.sources(c)["sources"][0]["newest_publish"]
+       == "1405" + SEP + "07" + SEP + "10 10:00:00", N.sources(c))
+
+# «تازۀترین» باید بی‌توجه به رقمِ فارسی/لاتین گزیده شود (CA-1). بانکِ مخلوط:
+# ردیفِ لاتین واقعاً تازه‌تر است، ولی MAXِ خام ردیفِ فارسیِ کهنه را برمی‌دارد.
+mixed = bank([
+    row(11, "فولاد", "اطلاعات و صورت‌های مالی سالانه (حسابرسی شده)",
+        "1405" + SEP + "06" + SEP + "13 10:00:00"),
+    row(12, "خودرو", "بازخرید سهام", fa("1402") + SEP + "01" + SEP + "01 10:00:00"),
+])
+ms = N.sources(mixed)["sources"][0]
+ck("sources درِ بانکِ مخلوط‌الencoding «تازۀترین» را با رقمِ درست می‌گوید",
+   ms["newest_publish"] == "1405" + SEP + "06" + SEP + "13 10:00:00", ms)
+ck("کنترلِ منفی: MAXِ خام همان ردیفِ کهنۀ فارسی‌رقم را برمی‌دارد",
+   mixed.execute("SELECT MAX(publish_date) FROM codal_notices").fetchone()[0]
+       .startswith(fa("1402")),
+   mixed.execute("SELECT MAX(publish_date) FROM codal_notices").fetchone()[0])
+mixed.close()
 
 # ── ۳) مقابله با بانکِ واقعی ─────────────────────────────────────────────────
 db = os.path.join(ROOT, "market.db")
@@ -139,5 +164,8 @@ else:
     conn.close()
 
 print("─" * 72)
-print(f"نتیجۀِ گاردِ مرکزِ اعلان: {PASS}_pass / {FAIL}_fail / {SKIP}_skip")
+# شمارنده در قالبِ «N passed / M failed» چاپ می‌شود: `dev/run_all_tests.py` فقط
+# سه قالب را می‌خواند و با این، سبزِ واقعیِ این گارد در گزارشِ مجموعه دیده
+# می‌شود (پیش از این «0 pass / 0 fail» چاپ می‌شد — یعنی سکوت، نه قبولی).
+print(f"نتیجۀِ گاردِ مرکزِ اعلان: {PASS} passed / {FAIL} failed  (skip={SKIP})")
 sys.exit(1 if FAIL else 0)
