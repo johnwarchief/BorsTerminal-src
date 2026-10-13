@@ -818,3 +818,54 @@ provenance که بندِ 1/6 مأموریت می‌خواهد). «خطِ ناخ�
 رویِ بانکِ کپی؛ `market.db` عملیاتی نوشته نشد. عددِ 336 «ردیفِ بی‌واحد» درِ
 سنجشِ `annualize_reconciled` هم صفر بود، چون آن پرچم درِ ستون‌هایِ `bulk_scan`
 منتشر نمی‌شد؛ حالا `fs_unit`/`unit_unverified` منتشر می‌شوند.
+
+
+## 9-ی) مرحلہ 5 — contractِ خروجیِ پنج شاخص: رأی + دلیل + «کدامِ گزارش» + واحد و منبع (1405-07-23)
+
+گاردِ تازه `dev/fts_indicator_contract_v1091.py` (84/0) contractِ بندِ ۵ را رویِ
+همان `evaluate_v10`ِ کارت می‌سنجد — نه رویِ fixtureِ آرزو. شش پروب: «شهرفرش»،
+«خزالی»، «تيپيكو»، «شتهران»، «وكادو»، «شهر فرش» (دو نوشتارِ یکِ نماد هم عمداً
+درِ فهرست است).
+
+| شاخص | قاعدۀ جزوه (نقشۀ `FUND-NOTEBOOK-RULEMAP`) | آستانه از | رأیِ سه‌حالۀ امروز | ردپایِ خروجی |
+| --- | --- | --- | --- | --- |
+| ۱ رشد فروش | تجمیعیِ YTDِ ماهِ آخر ÷ همان دورۀ سالِ قبل؛ مخرج هرگز «ماه قبل» نیست | `growth_min` ۴۰٪ / `v10_monetary_growth_min` ۶۰٪ (رأی ۳) | پاس / مردود / `data_gap` با دلیل | `source` = «کدال — گزارش فعالیت ماهانه»، `denominator_basis` (ستون رسمی ← ردیفِ سال−۱)، `unit: null` + `unit_note` که صریح می‌گوید این جدول ستونِ واحد ندارد |
+| ۲ روند سه‌سالۀ EPS | سه سالِ متوالیِ رو به بالا، سالانۀ حسابرسی‌شدۀ غیرتلفیقی (P-2: تنزلِ اعلام‌شده مجاز) | `eps_years` = ۳ | پاس / مردود / `na` یا `data_gap` | `ref_tracing_nos` به‌ازای هر خانۀ سری + `period_ends` + `evidence_tier` + `source` |
+| ۳ حاشیۀ سود ناخالص | سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰ | `margin_min` ۲۰٪ / `margin_ideal` ۳۰٪ | پاس / مردود / `band=not_applicable` با دلیلِ جدا | `ref_tracing_no`، `period_end`، `fiscal_year`، `basis` (اعلانِ تنزل)، `unit` + `unit_label` + `unit_valid`، `source` |
+| ۴ فروش ÷ ارزش بازار | فروشِ سالانۀ annualized ÷ ارزشِ بازارِ روز (یا پتانسیلِ سود ناخالص) | `sales_to_mcap_min` ⅓ / `potential_min` ۴۰٪ | پاس / مردود / **None** در سه حالت: معافیتِ F-04، بی‌فروشِ سالانۀ راستی‌آزمایی‌شده، بی‌ارزشِ بازار | `annualize_basis` + `fs_unit`/`fs_unit_label` + `unit_unverified` + `gap_cause` |
+| ۵ فیلتر صنعت | رژیمِ قیمت‌گذاری (آزاد/بورس کالا ← بورسی؛ دستوری ← حذف) | از `funnel_registry`/`cfg`، بدونِ آستانۀ تازه | پاس / مردود / `verdict=mandatory` با `exclusion_active` | `sector`، `matched_tokens`، `rule_ref`، `regime_label` |
+
+آنچه درِ این مرحلہ **کم** بود و افزوده شد:
+
+1. **شناسۀ گزارش.** `gross_margin` فقط «دورۀ مرجع» را می‌داد؛ حالا
+   `ref_tracing_no` + `ref_company` + `fiscal_year` را حمل می‌کند، و نردبانِ EPS
+   برایِ هر خانۀ سری `ref_tracing_nos` می‌دهد (تا پیش از این، «۱۴۰۴: ۳۸۲» قابلِ
+   بازگشت به خودِ ردیفِ کدال نبود). کوئریِ `eps_ladder` هم `tracing_no` را
+   برمی‌دارد و `_rank`/`_pick` هفت‌عضوی شدند.
+2. **واحد درِ خروجی.** `unit`/`unit_label`/`unit_valid` درِ حاشیه؛
+   `fs_unit`/`unit_unverified` درِ شاخص ۴؛ و برایِ شاخص ۱ صریحاً
+   `unit: null` + `unit_note` — چون `monthly_sales` ستونِ واحدِ پول **ندارد**.
+3. **رابط.** zodِ کارت این کلیدها را نمی‌شناخت و بی‌صدا دورشان می‌ریخت؛
+   `Indicator1MonetarySchema`/`Indicator2Schema`/`Indicator3Schema`/
+   `Indicator4Schema` گسترده شدند (یک `source` تکراری هم درِ `Indicator2Schema`
+   پیدا و حذف شد — `tsc` آن را با TS1117 قرمز کرده بود). درِ drill-down دو سطرِ
+   کوتاهِ جدید هست: `drilldown-margin-reference` («گزارش ۱۵۹۰۶۸۲ · دوره
+   ۱۴۰۴-۱۲-۲۹ · میلیون ریال · کدال — صورت سود و زیان سالانه») و
+   `drilldown-eps-reference` («۱۴۰۲→۱۵۹۱۲۱۴ · ۱۴۰۳→۱۵۹۱۰۳۷ · ۱۴۰۴→۱۵۹۰۶۸۲»)،
+   و سطرِ `annualize-basis` حالا «· واحد: …» هم می‌گیرد.
+4. **بی‌hardcode.** چکِ C5 هیچ‌یک از اعدادِ مثالِ جزوه (۳۹۲۱، ۳۶۲۱، ۲۱۲۴،
+   ۵۸٫۶۶، ۷۷۴، ۷۴۴) را درِ `fts_engine.py` یا `api/fundamental.py` پیدا نمی‌کند؛
+   دو تعارضِ عددیِ خودِ جزوه همچنان درِ `FUND-POLICY-2026-10-13.md` باز نوشته
+   شده‌اند و رأیِ مالک‌اند.
+5. **کنترلِ سنسور.** دو کنترلِ منفی درِ گارد هست: بریدنِ `ref_tracing_no` از
+   دیکشنری باید چکِ ردپا را قرمز کند، و «ردِ بی‌دلیل» هم باید درِ چکِ دلیل
+   بیفتد — وگرنه سبزبودنِ 84 چک بی‌معناست.
+
+گیت‌های همزمانِ این مرحلہ: `dev/fts_indicator_contract_v1091.py` 84/0 ·
+`dev/codal_unit_scale_v1090.py` 34/0 · `dev/fts_engine_paths_parity_v1076.py`
+7/0 · `dev/fts_screener_card_parity_v10.py` PASS · `npx tsc -b` صفر خطا ·
+`npx vitest run src/__tests__/fts-drilldown.spec.tsx` 30/30.
+
+**هنوز راستی‌آزمایی‌نشده:** خطِ «واحد: …» و دو سطرِ ردپا درِ **مرورگرِ زنده**
+دیده نشده‌اند (بندِ ۶ مأموریت، دورِ بعد درِ همین سند). تستِ Vitest روی jsdom
+نمی‌تواند جایِ آن را بگیرد.

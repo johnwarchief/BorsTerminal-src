@@ -44,6 +44,13 @@ const Indicator1MonetarySchema = z
     data_gap: z.boolean().nullish(),
     reason: z.string().nullish(),
     denominator_basis: z.string().nullish(),
+    // منبع و واحدِ صریح (contractِ بندِ ۵): `monthly_sales` ستونِ واحدِ پول ندارد
+    // و بک‌اند این را اعلام می‌کند؛ بی‌این کلیدها zod آن‌ها را دور می‌ریخت.
+    source: z.string().nullish(),
+    unit: z.string().nullish(),
+    unit_note: z.string().nullish(),
+    ref_period_end: z.string().nullish(),
+    remediation: z.string().nullish(),
   })
   .nullish();
 
@@ -95,6 +102,10 @@ const Indicator2Schema = z
      *  بدونِ این کلید zod آن را بی‌صدا دور می‌ریخت. */
     eps_yoy_pct: z.array(z.number().nullable()).nullish(),
     net_profit_series: z.array(z.number().nullable()).nullish(),
+    /** ردپای بند ۵ مأموریت: هر خانۀ سری EPS از کدام گزارشِ کدال آمده. zod
+     *  کلیدهایِ ناشناخته را دور می‌ریزد، پس بی‌این خط درِ رابط هرگز دیده
+     *  نمی‌شد. */
+    ref_tracing_nos: z.array(z.number().nullable()).nullish(),
     fiscal_years: z.array(z.string()).nullish(),
     period_ends: z.array(z.string()).nullish(),
     period_slots: z.array(z.string()).nullish(),
@@ -149,6 +160,13 @@ const Indicator3Schema = z
     period_end: z.string().nullish(),
     basis: z.string().nullish(),
     formula: z.string().nullish(),
+    // «کدامِ گزارش» + «چه مقیاسی» — از `fts_engine.gross_margin`
+    ref_tracing_no: z.number().nullish(),
+    fiscal_year: z.string().nullish(),
+    unit: z.string().nullish(),
+    unit_label: z.string().nullish(),
+    unit_valid: z.boolean().nullish(),
+    source: z.string().nullish(),
     pass: z.boolean().nullish(),
     optimal: z.boolean().nullish(),
     threshold: z.number().nullish(),
@@ -183,6 +201,9 @@ const Indicator4Schema = z
     pass: z.boolean().nullish(),
     na: z.boolean().nullish(),
     exempt: z.boolean().nullish(),
+    // چرا سنجیده نشد: «معافیتِ F-04» با «بی‌فروشِ سالانۀ راستی‌آزمایی‌شده» با
+    // «بی‌ارزشِ بازار» سه چیزند و رابط باید تفاوت را بگوید.
+    gap_cause: z.string().nullish(),
     reason: z.string().nullish(),
     annual: z
       .object({

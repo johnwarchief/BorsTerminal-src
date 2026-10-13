@@ -302,6 +302,8 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 function Panel2({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['2'];
   const series = ind?.eps_series ?? [];
+  // ردپای بند ۵: هر خانۀ سریِ EPS از کدام گزارشِ کدال خوانده شده
+  const refNos = (ind as { ref_tracing_nos?: (number | null)[] } | undefined)?.ref_tracing_nos ?? [];
   /** #101: درصد رشدِ همان سری — اگر موتور فرستاده باشد همان مقدم است (کارت و
    *  دریل‌دان یک عدد)، وگرنه از روی سریِ خودِ بک‌اند حساب می‌شود. */
   const changes = epsChanges(series, ind?.eps_yoy_pct);
@@ -372,6 +374,13 @@ function Panel2({ card }: { card: FtsCard }) {
         {ind?.evidence_tier ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-evidence-tier">
             مدرک: {EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier}
+          </span>
+        ) : null}
+        {refNos.length ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-eps-reference">
+            {slots
+              .map((s, i) => `${s}→${refNos[i] ?? '—'}`)
+              .join(' · ')}
           </span>
         ) : null}
         {ind?.interim?.eps_interim != null ? (
@@ -480,6 +489,12 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         {ind?.basis ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
             مبنای محاسبه: {toFaDigits(ind.basis)}
+          </span>
+        ) : null}
+        {ind?.ref_tracing_no ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-margin-reference">
+            گزارش {toFaDigits(String(ind.ref_tracing_no))} · دوره {toFaDigits(ind.period_end ?? '—')} ·{' '}
+            {ind.unit_label ?? 'واحد نامعلوم'} · {ind.source ?? 'کدال'}
           </span>
         ) : null}
       </div>
@@ -617,6 +632,7 @@ function Panel4({ card }: { card: FtsCard }) {
         <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
           مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
           {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
+          {` · واحد: ${toFaDigits(ind?.annual?.fs_unit_label ?? 'نامعلوم')}`}
         </p>
         {ind?.annual?.unit_unverified ? (
           <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unit-unverified">

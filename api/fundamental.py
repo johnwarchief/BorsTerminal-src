@@ -533,7 +533,14 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
         gap = {"monetary_pct": None, "pass": False, "data_gap": True,
                "threshold": th["monetary_growth_min"],
                "revenue_basis": prof["revenue_basis"], "reason": reason,
-               "remediation": _MS_GAP_HINT}
+               "remediation": _MS_GAP_HINT,
+               # بندِ ۵ مأموریت: منبع و واحدِ هر شاخص درِ خروجی می‌نشیند، نه درِ
+               # حافظۀ خواننده. `monthly_sales` ستونِ واحدِ پول **ندارد** — این
+               # صراحتاً اعلام می‌شود، نه اینکه میلیون‌ریال فرض شود.
+               "source": "کدال — گزارش فعالیت ماهانه",
+               "unit": None,
+               "unit_note": ("جدولِ فروشِ ماهانه ستونِ واحدِ پول ندارد؛ مقیاسش تنها "
+                             "با فروشِ سالانۀ کدال (گیتِ واحدِ مشکوک) سنجیده می‌شود")}
         gap.update(extra)
         return gap
 
@@ -567,7 +574,12 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
             # پس این فقط برچسب است و امتیازِ اضافه نمی‌سازد (جزوه ص ۳ + بند ۳).
             "strong": growth is not None and growth >= th["monetary_growth_target"],
             "pass": growth is not None and growth >= th["monetary_growth_min"],
-            "data_gap": False, "reason": ""}
+            "data_gap": False, "reason": "",
+            "source": "کدال — گزارش فعالیت ماهانه",
+            "unit": None,
+            "unit_note": ("تجمیعیِ میلیونِ ریال از جدولِ بدونِ ستونِ واحد؛ مخرج هم از "
+                          "همان جدول یا ستون «مقایسهٔ دورهٔ مشابه» می‌آید"),
+            "ref_period_end": (series[0][5] if len(series[0]) > 5 else None)}
 
 
 # ═══════════════════════════════════════════════════════════════════════════

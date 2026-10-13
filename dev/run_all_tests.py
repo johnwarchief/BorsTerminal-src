@@ -266,6 +266,12 @@ SUITES = [
     # همان ردیف با واحد در برابرِ بی‌واحد).
     ('dev/codal_unit_scale_v1090.py',
                                      'one money-unit definition; per-row scale; unitless never becomes a fabricated rial number'),
+    # بندِ ۵ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): contractِ خروجیِ پنج شاخص — رأی
+    # سه‌حالۀ واقعی، دلیلِ هر بی‌رأیی، ردپایِ «کدامِ گزارش» (tracing_no + دوره +
+    # منبع)، اعلامِ واحد (یا صریحِ «ستونِ واحد ندارد»)، و بی‌hardcode بودنِ
+    # اعدادِ مثالِ جزوه. رویِ `evaluate_v10`ِ واقعی و با دو کنترلِ منفی.
+    ('dev/fts_indicator_contract_v1091.py',
+                                     'five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

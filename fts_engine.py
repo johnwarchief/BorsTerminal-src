@@ -1276,14 +1276,14 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
     """
     pred, params = sym_in(conn, "symbol", symbol)
     rows = conn.execute(
-        "SELECT period_end, period_months, title, basic_eps, net_profit"
+        "SELECT period_end, period_months, title, basic_eps, net_profit, tracing_no"
         " FROM financial_statements "
         "WHERE %s AND basic_eps IS NOT NULL "
         "AND (period_months > 0 OR period_months IS NULL) "
         "AND %s ORDER BY period_end DESC LIMIT 120" % (pred, CP.DATED_SQL),
         params).fetchall()
     per_year: dict = {}
-    for pe, pm, title, eps, net in rows:
+    for pe, pm, title, eps, net, tn in rows:
         # همان قاعدۀ «شرکتِ دیگر» که درِ `statement_rank` و `quarter_reference_rows`
         # می‌نشیند: این نردبان یگانۀ readerِ شاخص ۲ است و بی‌این خط، EPS یکِ
         # شرکتِ فرعی واردِ سابقۀ سودسازی نماد می‌شد. سنجشِ فقط‌خواندنی رویِ
@@ -1311,12 +1311,12 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         bucket = per_year.setdefault(y, {"annual": [], "interim": []})
         (bucket["annual"] if months >= 12 else bucket["interim"]).append(
             (months, _is_audited(title or ""), ev, _fn(net), CP.canonicalize(pe) or "",
-             cons))
+             cons, tn))
     if not per_year:
         return {}
 
     def _rank(r):
-        pm, aud, eps, net, pe, cons = r
+        pm, aud, eps, net, pe, cons, _tn = r
         if pm >= 12:
             return ((2 if cons else 0) + (0 if aud else 1), -pm, pe)
         return (4, -pm, pe)
@@ -1325,12 +1325,12 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         """بهترین رکوردِ یکِ سال مالی → (eps, period_end, quality, months, cons, net)."""
         b = per_year[y]
         best = sorted(list(b["annual"]) + list(b["interim"]), key=_rank)[0]
-        pm, aud, eps, net, pe, cons = best
+        pm, aud, eps, net, pe, cons, tn = best
         if pm >= 12:
-            return eps, pe, _EPS_QUALITY[_rank(best)[0]], pm, cons, net
+            return eps, pe, _EPS_QUALITY[_rank(best)[0]], pm, cons, net, tn
         return (round(eps * 12.0 / pm, 2), pe,
                 "annualized_interim_short" if pm < 6 else "annualized_interim",
-                pm, cons, None)
+                pm, cons, None, tn)
 
     def _has_annual(y):
         return bool(per_year[y]["annual"])
@@ -1371,6 +1371,7 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
             "evidence": [picked_g[y][2] if y in picked_g else "missing" for y in slots],
             "period_months": [picked_g[y][3] if y in picked_g else None for y in slots],
             "net_profit_series": [(picked_g[y][5] if y in picked_g else None) for y in slots],
+            "ref_tracing_nos": [(picked_g[y][6] if y in picked_g else None) for y in slots],
             "available_periods": len(have),
             "periods_missing": need - len(have),
             "partial": True,
@@ -1391,6 +1392,8 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         "evidence": ev,
         "period_months": [p[3] for p in reversed(picked)],
         "net_profit_series": [p[5] for p in reversed(picked)],
+        # ردپایِ بندِ ۵: هر خانه از سری EPS به کدامِ گزارش برمی‌گردد.
+        "ref_tracing_nos": [p[6] for p in reversed(picked)],
         "consecutive_years": True,
         "strictly_rising": all(series[i] < series[i + 1] for i in range(len(series) - 1)),
         "all_profitable": all(_f(s) > 0 for s in series),
@@ -1571,6 +1574,16 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
         "revenue_bt": round(normalize_mrl_to_btom(rev), 1),
         "period_end": str(row.get("period_end"))[:10],
         "basis": src,
+        # ردپایِ بندِ ۵ مأموریت: «کدامِ گزارش» نه فقط «چه دوره‌ای». بی‌`tracing_no`
+        # خواننده نمی‌تواند ردیفِ منبع را درِ کدال بازبینی کند، و بی‌`unit` معلوم
+        # نیست عدد مقیاسش را از کجا آورده (بندِ P-4 سیاست).
+        "ref_tracing_no": row.get("tracing_no"),
+        "ref_company": str(row.get("company_name") or ""),
+        "fiscal_year": fy or None,
+        "unit": row.get("unit_norm"),
+        "unit_label": CU.label(row.get("unit_norm")),
+        "unit_valid": CU.is_valid(row.get("unit_norm")),
+        "source": "کدال — صورت سود و زیان سالانه",
         "pass": margin >= min_margin,
         "optimal": margin >= optimal,
         "threshold": min_margin,
