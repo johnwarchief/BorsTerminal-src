@@ -140,7 +140,11 @@ for r in rows:
     # نمونه‌ای از مسیرِ تک‌نمادیِ موتور (/api/fts/{symbol} = scan_symbol) هم
     # سنجیده می‌شود: bulk_scan و scan_symbol دو ورودیِ ind4_exempt‌اند.
     if ind4_checked % 25 == 0:
-        scan_probe.append((key, r["symbol"], mcap or 0.0, total, sector, ce, b))
+        # `exempt`ِ خامِ کارت هم رد می‌شود: «نظر ندادن»ِ شاخص ۴ سه علّت دارد
+        # (معافیتِ F-04، بی‌فروشِ سالانه، بی‌ارزشِ بازار) و مقایسهٔ `na` با
+        # `is_exempt` آن‌ها را به هم می‌آلاورد.
+        scan_probe.append((key, r["symbol"], mcap or 0.0, total, sector, ce, b,
+                           bool(v4.get("exempt"))))
 
 print("بررسی‌شده: %d | ناهم‌خوانی: %d" % (checked, len(mismatches)))
 for sym, ss, sp, se, cs, cp, ce in mismatches[:15]:
@@ -163,11 +167,20 @@ for sym, sector, er, cr in value_disagree[:20]:
     print("  ✗ %-14s هیچ‌کدام معاف نیست ولی یکی عدد ندارد: موتور=%s کارت=%s (%s)"
           % (sym, er, cr, sector))
 scan_bad = []
-for key, sym, mcap, total, sector, ce, bulk_row in scan_probe:
+for key, sym, mcap, total, sector, ce, bulk_row, c_exempt in scan_probe:
     _rec = fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg)
     d = (_rec.get("detail") or {}).get("sales_to_mcap") or {}
-    if bool(d.get("is_exempt")) != ce:
-        scan_bad.append((sym, bool(d.get("is_exempt")), ce))
+    # دو حکمِ جدا، هر دو قفل:
+    #   الف) معافیتِ F-04 درِ کارت و درِ تک‌کوئریِ موتور یکی باشد؛
+    #   ب) «نظر داده نشد» (None) درِ دو مسیر یکی باشد — بی‌این، نمادی که
+    #      ارزشِ بازار یا فروشِ سالانه ندارد در یک مسیر «رد» و در دیگری
+    #      «سنجیده نشد» می‌شد (همان اشتباهی که بندِ ۵ مأموریت ممنوع می‌کند).
+    if bool(d.get("is_exempt")) != c_exempt:
+        scan_bad.append((sym, "معافیتِ دو مسیر: %s ≠ %s"
+                         % (bool(d.get("is_exempt")), c_exempt), ""))
+    if ((_rec.get("passes") or {}).get("4_sales_to_mcap") is None) != ce:
+        scan_bad.append((sym, "نظرندادنِ دو مسیر: scan=%s کارت(na)=%s"
+                         % ((_rec.get("passes") or {}).get("4_sales_to_mcap"), ce), ""))
     # رأی ۱۶ رویِ مسیرِ تک‌نمادی هم قفل می‌شود: معاف = None، و امتیاز = شمارشِ Trueها.
     if bool(d.get("is_exempt")) and _rec.get("passes", {}).get("4_sales_to_mcap") is not None:
         scan_bad.append((sym, "معاف ولی پاسِ شاخص ۴ سنجیده شد",

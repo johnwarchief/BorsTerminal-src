@@ -87,8 +87,11 @@ FTS_V10_DEFAULTS = {
     "inflation_basis": 60.0,
 }
 
-MRL_TO_RIAL = 1e6      # جداول کدال «میلیون ریال» هستند
-BT_FACTOR = 1e-4       # میلیون ریال → میلیارد تومان (حذف ۴ رقم راست)
+# هیچ ضریبِ مقیاسِ دومی درِ این فایل نوشته نمی‌شود: هر دو از `codal_units`
+# (و از همان‌جا از `fts_engine`) می‌آیند. پیش ازین `1e6` و `1e-4` اینجا مستقل
+# بودند و «واحد» چهار جا تعریف داشت (`docs/fts-notes/FUND-POLICY-2026-10-13.md`).
+MRL_TO_RIAL = fts_engine.MRL_TO_RIAL      # = CU.SCALES["mrl"]
+BT_FACTOR = fts_engine.MRL_TO_BTM_FACTOR  # = SCALES['mrl'] / RIAL_PER_BTM = 1e-4
 
 # پیش‌فرضِ «مبنای تورم» وقتی کاربر هنوز عددی نگذاشته: همان هدفِ ۶۰٪ جزوه
 # (حکم ۳ — کف ۴۰٪ قبولی، ۶۰٪ پوشش تورم). ثابتِ ۵۸٪ بی‌منبع حذف شده است.
@@ -925,12 +928,23 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
                 "potential_pass": False, "sales_pass": False, "rule_ref": "F-04",
                 "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."}
     mcap = _f(market_cap_rials)
-    if not annual or mcap <= 0:
-        return {"available": False, "pass": False, "potential_pass": False,
+    # سه‌حالۀ `ind4_vote` درِ `fts_engine` این‌جا هم باید دیده شود: «عددِ فروشِ
+    # سالانه نداریم» با «عدد زیرِ آستانه است» یکی نیست. بی‌این، کارت برایِ
+    # نمادی که هیچِ شاهدِ مقیاس ندارد `na=False` می‌داد و گاردِ پاریتی آن را
+    # در برابرِ `exempt=True`/None موتور «رد» می‌شمرد (شتهران، هلد لیان).
+    no_sales = not annual or _f(annual.get("annual_sales_mrl")) <= 0
+    if no_sales or mcap <= 0:
+        return {"available": False, "na": True,
+                "gap_cause": ("annual_sales" if no_sales else "market_cap"),
+                "pass": False, "potential_pass": False,
                 "sales_pass": False, "mcap_ht": round(mcap / 1e13, 2),
                 "potential_threshold": th["potential_min"],
                 "sales_threshold": th["sales_to_mcap_min"],
-                "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."}
+                "reason": ("دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."
+                           if not no_sales else
+                           "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست "
+                           "(گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به "
+                           "ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.")}
     ann_rial = _f(annual["annual_sales_mrl"]) * MRL_TO_RIAL
     sales_ratio = ann_rial / mcap
     margin = None
@@ -950,6 +964,10 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
             "annual_sales_bt": annual["annual_sales_bt"],
             "months_used": annual["months_used"], "scale_factor": annual["scale_factor"],
             "annualize_basis": annual["basis"], "reconciled": annual["reconciled"],
+            # «واحدِ این عدد از کجا آمده» و «آیا راستی‌آزمایی شد»: بی‌این دو،
+            # کارتی که مقیاسش شاهد ندارد هم مثلِ کارتِ سالم بهنظر می‌رسید.
+            "fs_unit": annual.get("fs_unit"), "fs_unit_label": annual.get("fs_unit_label"),
+            "unit_unverified": bool(annual.get("unit_unverified")),
             "sales_to_mcap": (round(sales_ratio, 2)
                            if _sane(sales_ratio, -1000.0, 1000.0) is not None else None),
             "sales_threshold": th["sales_to_mcap_min"], "sales_pass": sales_pass,
@@ -1628,7 +1646,10 @@ def build_insights(res: dict) -> tuple:
                     _n(val.get("mcap_ht"), 2),
                     _pct_txt(val.get("potential_pct"), signed=False),
                     val.get("margin_label") or "—",
-                    "" if ann.get("reconciled", True) else " | ⚠️ Annualized مردود شد → فروش سالانهٔ کدال")),
+                    (" | ⚠️ واحدِ ردیفِ مرجع اعلام نشده — مقیاس راستی‌آزمایی نشد"
+                     if ann.get("unit_unverified") else
+                     (" | ⚠️ Annualized مردود شد → فروش سالانهٔ کدال"
+                      if not ann.get("reconciled", True) else "")))),
         "what": ("ضریب سالانه‌سازی ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۵ ماه ×۲٫۴، ۶ ماه ×۲ … — "
                  "تا نمادی که ۵ ماه از سال مالی‌اش گذشته با فروشِ ۵ ماه قضاوت نشود. "
                  "پتانسیل سود روی «سود ناخالص» است نه سود خالص، تا اوراق‌بهادار و "
@@ -1749,7 +1770,13 @@ def v10_data_gaps(res: dict) -> list:
         gaps.append({"layer": "۳", "axis": "3_gross_margin",
                      "why": m.get("reason") or "سود ناخالصِ سالِ مرجع در کدال نیست.",
                      "fix": m.get("remediation") or "با همگام‌سازی کدال بررسی مجدد می‌شود."})
-    if ann.get("reconciled") is False:
+    if ann.get("unit_unverified"):
+        gaps.append({"layer": "۴", "axis": "4_sales_to_mcap",
+                     "why": "واحدِ پولِ ردیفِ مرجعِ کدال اعلام نشده، پس مقیاسِ این عدد "
+                            "راستی‌آزمایی نشد (گیتِ واحد بی‌شاهد اجرا شد).",
+                     "fix": "با همگام‌سازیِ تازهٔ کدال، ستونِ واحدِ همان صورتِ مالی "
+                            "پر می‌شود و مقایسه برقرار می‌گردد."})
+    elif ann.get("reconciled") is False:
         gaps.append({"layer": "۴", "axis": "4_sales_to_mcap",
                      "why": "سالانه‌سازی ×۱۲÷م با گیتِ fts_engine سازگار نشد؛ "
                             "فروش سالانهٔ کدال جانشین شد.",

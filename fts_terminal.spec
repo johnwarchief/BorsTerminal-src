@@ -73,6 +73,12 @@ a = Analysis(
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # مرحلۀ ۴ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): `codal_units` تنها
+                   # تعریفِ «واحدِ پول» است؛ fts_engine (مقیاسِ هر ردیف),
+                   # codal_fetcher (`_classify_unit`) و api.fundamental (ضریب‌های
+                   # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
+                   'codal_units',
                    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
                    # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
                    # api._core / api.fundamental / api.chart / api.screener و

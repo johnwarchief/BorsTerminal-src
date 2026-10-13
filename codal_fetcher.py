@@ -24,6 +24,10 @@ from urllib.parse import urlencode, quote
 
 import requests
 from requests.adapters import HTTPAdapter
+
+# تنها تعریفِ «واحدِ پول» — `_classify_unit` به این واگرد می‌کند تا نوشتنِ مقیاس
+# و خواندنِ مقیاس یک مجموعه باشند (`codal_units` stdlib-only است، بی‌چرخه).
+import codal_units as CU
 from urllib3.util.retry import Retry
 
 # تنها تعریفِ «دورۀ گزارش» (شکل، بی‌دوره، زنجیرۀ استخراج، شمارش). این فایل دیگر
@@ -824,24 +828,18 @@ def migrate_schema(conn):
     # «حسابرسی‌نشده» (یک verdict واقعی)؛ NULL یعنی عنوان نبود/غیرقابل‌طبقه‌بندی.
 # fts_engine در کوئری باید NULL را به پارسِ عنوان برگرداند، نه به‌جای ۰.
 def _classify_unit(unit):
-    """ستون unit کدال → 'mrl' | 'btl' | None.
+    """ستون unit کدال → 'mrl' | 'btl' | None — **واگرد به `codal_units.classify`**.
 
-    دادهٔ واقعی market.db: ۹ نوشتارِ متفاوتِ عربی/فارسی/ZWNJ همگی «میلیون
-    ریال» می‌گویند (۳۲۸۶+۱۴۹۶+۱۰۵۱+۸۵۵+۱۰۴+۱۰۰+۶۳+۷ = ۶۹۶۲ ردیف) و ۱۰۴۷ ردیف
-    NULL. هیچ ردیفی «میلیارد تومان» نیست، ولی برای امنیتِ آینده هر دو را
-    می‌شناسیم. NULL → None (نامعلوم؛ موتور به عنوانِ unknown رفتار می‌کند).
+    پیش از این همین تشخیص در دو جا مستقل نوشته شده بود (این‌جا و `codal_units`)
+    و همان duplicatesِ چهارگانۀ «واحدِ پول» را می‌ساخت. نوشتن از اینجا می‌گذرد و
+    خواندن از `codal_units.PRESENT_SQL` — یکِ مجموعه، دو سمت.
 
-    از norm() خودِ همین ماژول استفاده می‌کند (یونیکدِ عربی/فارسی + حذفِ
-    فاصله)؛ norm_fa مالِ fts_engine است و اینجا import نمی‌کنیم.
+    دادهٔ واقعی market.db: ۹ نوشتارِ متفاوتِ عربی/فارسی/ZWNJ همگی «میلیون ریال»
+    می‌گویند و ۱۰۴۷ ردیف NULL. «میلیون تومان» عمداً شناخته نمی‌شود (fail-closed؛
+    سندِ `codal_units` بند ۵). NULL → None، یعنی «واحد گفته نشده» — نه صفر و نه
+    فرضِ میلیون‌ریال.
     """
-    if unit is None:
-        return None
-    t = norm(unit)                       # ي→ی ، ك→ک ، حذفِ فاصله/نیم‌فاصله
-    if "میلیارد" in t and "تومان" in t:
-        return "btl"
-    if "میلیون" in t and "ریال" in t:    # norm() «ريال» عربی را هم «ریال» می‌کند
-        return "mrl"
-    return None
+    return CU.classify(unit)
 
 
 def backfill_derived(conn, verbose=True):

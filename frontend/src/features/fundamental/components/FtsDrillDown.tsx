@@ -618,7 +618,11 @@ function Panel4({ card }: { card: FtsCard }) {
           مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
           {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
         </p>
-        {ind?.annual?.reconciled === false ? (
+        {ind?.annual?.unit_unverified ? (
+          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unit-unverified">
+            واحدِ پولِ ردیفِ مرجع در کدال اعلام نشده؛ مقیاسِ این عدد راستی‌آزمایی نشده است.
+          </p>
+        ) : ind?.annual?.reconciled === false ? (
           <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
             برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
           </p>

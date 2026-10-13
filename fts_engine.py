@@ -34,6 +34,7 @@ from typing import Optional
 import mstat_engine
 # تنها تعریفِ «دورۀ گزارش» (شکل، بی‌دوره، سالِ مالی) — ببین `codal_periods.py`.
 import codal_periods as CP
+import codal_units as CU                # تنها تعریفِ «واحدِ پول» (mrl/btl/بی‌واحد)
 import symbol_identity as SI            # تنها تعریفِ «این ردیف مالکِ کدام ابزار است»
 
 
@@ -760,8 +761,12 @@ def quarter_reference_rows(rows, limit=16) -> list[dict]:
     return selected[:bounded_limit]
 
 
+# `unit_norm` از همین دور درِ **هر دو** مسیرِ خواندن هست: مقیاسِ پولِ یک ردیف فقط
+# از خودِ ردیف خوانده می‌شود (`codal_units`)، نه از ثابتِ ماژول. تا پیش از این
+# ستون درِ بانک پر می‌شد ولی هیچ کوئری‌ای نمی‌خواندش، پس «بی‌واحد» با «میلیون
+# ریال» یکی به‌نظر می‌رسید.
 FS_COLS = ("period_end, period_months, title, revenue, gross_profit, "
-           "operating_profit, net_profit, basic_eps, company_name")
+           "operating_profit, net_profit, basic_eps, company_name, unit_norm")
 
 
 def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool = True,
@@ -791,7 +796,7 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     # نه با ترتیبِ پیشآمدِ SQLite — وگرنه یکِ پوستۀ بی‌عددِ تازه‌تر، ردیفِ
     # عدددار را از دیدِ کلِ لایه‌ها پنهان می‌کرد.
     by_year: dict = {}
-    for pe, pm, title, rev, gp, op, np_, eps, cn, tn in rows:
+    for pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in rows:
         t = title or ""
         # طولِ دوره از `CP.effective_months` خوانده می‌شود، نه از ستونِ خام:
         # یکِ ردیفِ بانک «دورۀ ۶ ماهه» است ولی `period_months=12` دارد، و ۲۴
@@ -812,6 +817,9 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
                 "audited": _is_audited(t), "consolidated": _is_consolidated(t),
                 "other_entity": bool(title_entity_suffix(t)),
                 "conflicts": row_conflicts(pe, t, months),
+                # مقیاسِ همین ردیف، از خودِ ردیف. `unit_valid` نقیضِ
+                # `codal_units.PRESENT_SQL` است — یکِ تعریف، دوconsumer.
+                "unit_norm": un, "unit_valid": CU.is_valid(un),
                 "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
@@ -980,9 +988,30 @@ def reference_annual(conn: sqlite3.Connection, symbol: str,
 
 
 # ============================================================ تبدیل واحد
+# مقیاس‌ها از `codal_units` می‌آیند (تنها تعریف). دو ثابتِ این فایل دیگر «عددِ
+# ماژول» نیستند، فقط نامِ محلّیِ همان جدول‌اند: اگر روزی مقیاسِ تازه‌ای به
+# `CU.SCALES` بیافزایید، اینجا خودبه‌خود درست می‌شود و هیچ consumer دومی برای
+# اصلاح باقی نمی‌ماند (`api/fundamental` هم از همین‌جا واگرد می‌کند).
+MRL_TO_BTM_FACTOR = CU.SCALES["mrl"] / CU.RIAL_PER_BTM     # = 1e-4 (قاعدۀ جزوه)
+
+
 def normalize_mrl_to_btom(value_million_rials) -> float:
-    """میلیون ریال → میلیارد تومان (حذف ۴ رقم سمت راست — قاعدهٔ جزوه)."""
-    return _f(value_million_rials) / 10_000.0
+    """میلیون ریال → میلیارد تومان (حذف ۴ رقم سمت راست — قاعدهٔ جزوه).
+
+    ورودی این تابع **باید** میلیون ریال باشد؛ تبدیلِ خودِ ردیف (که ممکن است
+    میلیارد تومانِ خالصِ منبع باشد) از `fs_amount_mrl` می‌گذرد، نه اینجا.
+    """
+    return _f(value_million_rials) * MRL_TO_BTM_FACTOR
+
+
+def fs_amount_mrl(row, key: str = "revenue"):
+    """پولِ یک ردیفِ صورتِ مالی ← مبناىِ داخلیِ موتور (میلیون ریال).
+
+    مقیاس از خودِ `unit_norm`ِ ردیف می‌آید (`codal_units.to_mrl`). ردیفِ
+    بی‌واحد **None** می‌دهد: نه صفر، نه فرضِ «مثلِ بقیه میلیون ریال است». مصرف‌
+    کننده باید آن را «قابل محاسبه نبود» اعلام کند، نه رأیِ منفی.
+    """
+    return CU.to_mrl((row or {}).get(key), (row or {}).get("unit_norm"))
 
 
 def _f(v) -> float:
@@ -1033,7 +1062,10 @@ def _dedupe_ym(rows, ytd_idx: int = 3):
 
 
 
-MRL_TO_RIAL = 1e6                        # جداول کدال همگی «میلیون ریال» هستند
+MRL_TO_RIAL = CU.SCALES["mrl"]        # مبناىِ داخلی = میلیون ریال؛ مقیاسِ هر
+#                                       # ردیفِ صورتِ مالی جدا خوانده می‌شود
+#                                       # (`fs_amount_mrl`) — این ثابت تنها برایِ
+#                                       # مسیری است که خودش میلیون ریال ساخته.
 
 
 # فالۀبکِ آستانه‌ها وقتی کلید در cfg نباشد، فقط همین‌جا
@@ -1481,6 +1513,27 @@ def margin_reference(conn: sqlite3.Connection, symbol: str, ref=None,
     return reference_annual(conn, symbol, need=MARGIN_NEED) or ref
 
 
+def ind4_vote(annual, s2m_d, pot_d, exempt: bool, mcap=None):
+    """سه‌حالۀ رأیِ شاخص ۴ — درِ **هر سه** مسیر (کارت، `scan_symbol`، `bulk_scan`).
+
+    سه حالتِ «None» با هم یکی نیستند ولی هر سه نظر ندادن‌اند، و هیچ‌کدام «رد» نیست:
+      * معافیتِ هلدینگ/صندوق (رأی ۱۶) — مدلِ کسب‌وکار فروشِ عملیاتیِ ماهانه ندارد؛
+      * نبودِ فروشِ سالانۀ راستی‌آزمایی‌شده (نه گزارشِ ماهانه، نه صورتِ مالیِ
+        واحددار) — چیزی که هرگز ساخته نشده مردود نیست؛
+      * نبودِ ارزشِ بازار — مخرجِ کسر غایب است، نه بزرگ.
+    بی‌این سه‌حالگی، ۱۰۳ ردیفِ بی‌ارزش‌بازار و چند ردیفِ بی‌شاهدِ فروش درِ قیف
+    «رد» می‌خوردند (بندِ ۵ مأموریت: فیلدِ گمشده با رأی جایگزین نشود). ردِ واقعی
+    فقط وقتی است که عدد باشد و زیرِ آستانه بماند.
+    """
+    if exempt:
+        return None
+    if mcap is not None and _f(mcap) <= 0:
+        return None
+    if not annual or _f(annual.get("annual_sales_mrl")) <= 0:
+        return None
+    return bool((s2m_d or {}).get("pass") or (pot_d or {}).get("pass"))
+
+
 def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0,
                  optimal: float = 30.0, ref: Optional[dict] = None,
                  rows=None) -> Optional[dict]:
@@ -1590,7 +1643,7 @@ _OP_BASIS_KINDS = ("financial", "service", "fund", "holding")
 ANNUALIZATION_SCALE = (3, 4, 5, 6, 9, 12)
 
 
-def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
+def annualize_rows(rows, fs_rev, op_basis: bool = False, fs_unit_known: bool = True) -> dict:
     """خالصِ سالانه‌سازی — **یک** قاعده برای مسیرِ SQL و مسیرِ کل‌بازار.
 
     قاعده (رأیِ مالک، OWNER_RULINGS ردیف ۴ + سند v2.1):
@@ -1605,9 +1658,15 @@ def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
     نه از تقویم — تا نمادی که ماهِ جاافتاده دارد درست annualize شود.
     `rows`: [(سال, ماه، فروشِ ماه، تجمیعی), …] — ردیف‌هایِ تازه‌ترینِ سالِ مالی اول.
     برگردان: {} یعنی «قابل محاسبه نبود» (هیچ‌وقت صفرِ ساختگی نه).
+
+    `fs_rev` **باید** با مقیاسِ خودِ ردیف به میلیون‌ریال تبدیل شده باشد
+    (`fs_amount_mrl`)، و `fs_unit_known` بگوید آن تبدیل شاهدِ واحد داشته یا نه.
+    بی‌شاهدِ واحد، هیچ یک از سه قاعدۀ وابسته به مقیاس (۰، ۳، ۴) اجرا نمی‌شود:
+    ضریبِ حدسیِ ۱e۶ رویِ عددی که منبعش مقیاسش را نگفته گذاشته نمی‌شود. این
+    «بی‌رأی» است، نه رأیِ منفی.
     """
     if op_basis:
-        if fs_rev <= 0:
+        if fs_rev is None or not fs_unit_known or _f(fs_rev) <= 0:
             return {}
         return {"annual_sales_mrl": fs_rev, "months_used": 12, "reconciled": True,
                 "operational_revenue_basis": True,
@@ -1626,20 +1685,31 @@ def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
                           % (months, year, months, 12.0 / months))
                          if months < 12 else
                          "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)" % year)
-    if annual <= 0 and fs_rev > 0:
-        annual, months = fs_rev, 12
+    # هر دو شاخۀ وابسته به مقیاسِ صورتِ مالی از `fsr` می‌گذرند: ردیفی که واحدش
+    # اعلام نشده نه صفرِ واقعی است و نه مبنایِ محاسبه.
+    fsr = _f(fs_rev) if fs_unit_known else 0.0
+    if annual <= 0 and fsr > 0:
+        annual, months = fsr, 12
         basis = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
     if annual <= 0:
         return {}
     # گیتِ «واحد مشکوک» فقط برای سالانه‌سازیِ واقعی (۰ < م < ۱۲) معنا دارد؛
     # گزارشی که خودش ۱۲ ماهِ کامل را پوشش می‌دهد مستقیم پذیرفته می‌شود.
-    if (fs_rev > 0 and 0 < months < 12
-            and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25)):
+    if (fsr > 0 and 0 < months < 12
+            and (annual > fsr * 4.0 or annual < fsr * 0.25)):
         reconciled = False
-        annual, months = fs_rev, 12
+        annual, months = fsr, 12
         basis = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
+        witness = True
+    else:
+        # ردیفِ مرجعِ بی‌واحد تنها شاهدِ مقیاسِ `monthly_sales` را از کار می‌اندازد
+        # (آن جدول ستونِ واحدِ پول ندارد). بی‌شاهد، عددِ ماهانه **راستی‌آزمایی‌نشده**
+        # می‌ماند و رأیِ وابسته به مقیاس داده نمی‌شود — «قابل محاسبه نبود»، نه صفر
+        # و نه PASSِ ساختگی (بندِ ۵ مأموریت).
+        witness = fs_unit_known
     return {"annual_sales_mrl": annual, "months_used": months, "basis": basis,
-            "reconciled": reconciled, "operational_revenue_basis": False}
+            "reconciled": reconciled and witness, "unit_unverified": not witness,
+            "operational_revenue_basis": False}
 
 
 def annualized_sales(conn: sqlite3.Connection, symbol: str,
@@ -1664,7 +1734,9 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
         series = [list(r[:-1]) for r in series if not title_entity_suffix(r[-1] or "")]
     series = _dedupe_ym([list(r) for r in series])
     ref_row = ref if ref is not None else reference_annual(conn, symbol)
-    fs_rev = _f((ref_row or {}).get("revenue"))
+    # مقیاس از خودِ ردیفِ مرجع، نه از ثابتِ ماژول (`fs_amount_mrl` بی‌واحد → None).
+    fs_rev = fs_amount_mrl(ref_row, "revenue")
+    fs_unit_known = CU.is_valid((ref_row or {}).get("unit_norm"))
     prof = profile or company_profile()
     _na = (prof.get("kind") == "holding") if exempt is None else bool(exempt)
     if _na:
@@ -1674,9 +1746,13 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
                 "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
                 "operational_revenue_basis": False, "na": True}
     core = annualize_rows(series, fs_rev,
-                          op_basis=(prof.get("kind") in _OP_BASIS_KINDS) and fs_rev > 0)
+                          op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
+                          and _f(fs_rev) > 0 and fs_unit_known,
+                          fs_unit_known=fs_unit_known)
     if not core:
         return None
+    core["fs_unit"] = (ref_row or {}).get("unit_norm")
+    core["fs_unit_label"] = CU.label((ref_row or {}).get("unit_norm"))
     months = core["months_used"]
     annual = core["annual_sales_mrl"]
     out = dict(core)
@@ -2204,7 +2280,10 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # می‌کرد و موتور به آن تراز شد.
         passes_s2m = None
     else:
-        passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
+        # سه‌حالۀ مشترک با `bulk_scan` (تابعِ `ind4_vote`): بی‌شاهدِ فروشِ سالانه
+        # «رد» نیست، «سنجیده نشد» است. پیش از این همین‌جا `bool(None or None)`
+        # صفر می‌شد و نمادِ بی‌داده مردود شمرده می‌شد.
+        passes_s2m = ind4_vote(annual, s2m, pot, False, mcap=mcap)
 
     # رأیِ ۱۶ رویِ I1 و I2 هم، درِ هر دو مسیر: چیزی که هرگز محاسبه نشد «سنجیده
     # نشده» است نه «رد». بی‌این، قاعدهٔ «حداقل سه شاخص PASS» نمادِ بی‌گزارش را
@@ -2438,7 +2517,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     # v9.7.3: کلید = SI.key(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
     # (داریک/داريك) دو ردیف اسکنر می‌ساخت و نوشتارِ بی‌داده امتیاز ۰ می‌گرفت.
     annual, disp_of = {}, {}
-    for sym, pe, pm, title, rev, gp, op, np_, eps, cn, tn in conn.execute(
+    for sym, pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in conn.execute(
             "SELECT symbol, " + FS_COLS + ", tracing_no FROM financial_statements "
             "WHERE period_months>=12 OR period_months IS NULL "
             "ORDER BY symbol, %s" % CP.order_expr()):
@@ -2459,6 +2538,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
              "conflicts": row_conflicts(pe, title, months),
              "audited": _is_audited(title), "consolidated": _is_consolidated(title),
              "other_entity": bool(title_entity_suffix(title)),
+             "unit_norm": un, "unit_valid": CU.is_valid(un),
              "revenue": _fn(rev), "gross_profit": _fn(gp), "net_profit": _fn(np_),
              "basic_eps": _fn(eps)})
         if key not in disp_of:
@@ -2617,11 +2697,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # نسخۀ بی‌`op_basis` نوشته شده بود: طبقۀ مالی/خدماتی/هلدینگ در کارت
         # «درآمد صورت مالی سالانه» می‌گرفت و در اسکرینر «YTD×۱۲÷م» — ۵۰ نماد
         # واگرا در سنجشِ این دور (docs/fts-notes/FUND_LIVE_AUDIT.md).
-        fs_rev = _f(ref["revenue"]) if ref else 0.0
+        fs_rev = fs_amount_mrl(ref, "revenue") if ref else None
+        fs_unit_known = bool(ref) and CU.is_valid(ref.get("unit_norm"))
         prof = company_profile(sector, cname_of.get(key, ""))
         core = annualize_rows(recs or [], fs_rev,
                               op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
-                              and fs_rev > 0)
+                              and _f(fs_rev) > 0 and fs_unit_known,
+                              fs_unit_known=fs_unit_known)
         annual_sales = _f(core.get("annual_sales_mrl"))
         months_used = int(core.get("months_used") or 0)
         # شاخص ۴ و پتانسیل سود از **خودِ توابعِ مشترک** می‌آیند (نسخۀ سومِ فرمول
@@ -2657,9 +2739,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # با آستانه). پیش‌ازین این‌جا با مقدارِ **گردشدۀ منتشرشده** مقایسه
             # می‌شد: نسبتِ ۰٫۳۲۹۹ به ۰٫۳۳ گرد می‌شد و «≥ ⅓» می‌شد — سه نماد
             # (سجام/نمرينو/بپيوند) درِ اسکرینر پاس و درِ /api/fts مردود بودند.
-            sales_pass = bool((s2m_d or {}).get("pass"))
-            pot_pass = bool((pot_d or {}).get("pass"))
-            i4 = bool(sales_pass or pot_pass)
+            # از این دور همان `ind4_vote`ِ کارت این‌جا هم می‌نشیند: بی‌شاهدِ فروشِ
+            # سالانه (مثلاً ردیفِ مرجعِ بی‌واحد در برابرِ نبودِ گزارشِ ماهانه) رأی
+            # نمی‌دهد، نه اینکه «رد» بخورد.
+            i4 = ind4_vote(ann_core, s2m_d, pot_d, False, mcap=mcap)
 
         # ۵) فیلتر صنعت (قیمت‌گذاری آزاد/بورس کالا در برابر دستوری)
         sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
@@ -2702,6 +2785,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             "annualize_months": months_used,
+            # «مقیاسِ این عدد از کجا آمد»: واحدِ خودِ ردیفِ مرجع، و پرچمِ
+            # راستی‌آزمایی‌نشدن وقتی آن واحد اعلام نشده (`unit_unverified`). بی‌این
+            # دو ستون، عددِ شاخص ۴ بی‌شاهدِ مقیاس هم «سنجیده‌شده» به‌نظر می‌رسید.
+            "fs_unit": CU.label((ref or {}).get("unit_norm")),
+            "unit_unverified": bool(core.get("unit_unverified")),
             "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
             "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),

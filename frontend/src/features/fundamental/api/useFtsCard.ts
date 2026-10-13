@@ -192,6 +192,11 @@ const Indicator4Schema = z
         scale_factor: z.number().nullish(),
         basis: z.string().nullish(),
         reconciled: z.boolean().nullish(),
+        // مقیاسِ عدد از کجا آمده و آیا شاهد دارد: «بی‌واحد» با «میلیون ریال» یکی
+        // نیست و رابط باید فرق را بگوید (`codal_units` تنها تعریفِ واحد است).
+        unit_unverified: z.boolean().nullish(),
+        fs_unit: z.string().nullish(),
+        fs_unit_label: z.string().nullish(),
         ytd_sales_bt: z.number().nullish(),
         scale_table: z.array(z.object({ months: z.number(), factor: z.number() })).nullish(),
       })
